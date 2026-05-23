@@ -1,0 +1,33 @@
+---
+lt:
+  provisioning:
+    new:
+      errors_title: 'Inicijavimas nepavyko:'
+      fields:
+        cluster: Sektoriaus priskyrimas (klasteris)
+        family: Biologinė šeima
+        hardware_uid: Fizinis kristalo ID (aparatūros UID)
+        hardware_uid_placeholder: 00E4...BF12
+        latitude: Platuma
+        latitude_placeholder: 49.44...
+        longitude: Ilguma
+        longitude_placeholder: 32.06...
+        node_class: Mazgo klasė
+        queen: Queen (Šliuzas)
+        soldier: Soldier (Medis)
+      submit: SUSIETI APARATŪRĄ SU MATRICA
+      subtitle: Sukurti 40 metų biometrinį ryšį
+      title: Aparatūros inicijavimas
+    success:
+      assigned_did: Priskirtas DID
+      hardware_uid: Aparatūros UID
+      hkdf:
+        algorithm: HKDF-SHA256
+        description_after: " tiek galinėje sistemoje, tiek programinėje įrangoje. Rakto perdavimas nereikalingas."
+        description_before: 'AES-256 raktas ir Lorenz K_seed nepriklausomai išvedami per '
+        note: Užtikrinkite, kad PROVISIONING_MASTER_KEY būtų užprogramuotas įrenginyje gamyklos aprūpinimo metu.
+        title: 'HKDF REŽIMAS: NULINĖS PASITIKĖJIMO RAKTO IŠVEDIMAS'
+      not_available: Nėra
+      ritual_complete: Ritualas baigtas
+      view_in_matrix: Peržiūrėti mazgą matricoje →
+      woven: Mazgas įaustas į Silken Net.

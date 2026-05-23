@@ -1,0 +1,36 @@
+---
+lt:
+  alerts:
+    badge:
+      severities:
+        critical: kritinis
+        high: aukštas
+        low: žemas
+        medium: vidutinis
+      statuses:
+        active: aktyvus
+        ignored: ignoruotas
+        resolved: išspręstas
+      summary: "%{severity} — %{status}"
+    index:
+      filter_all: visi
+      filter_aria_all: Rodyti visus įspėjimus
+      filter_aria_severity: Filtruoti įspėjimus pagal %{severity} sunkumą
+      filter_critical: kritinis
+      filter_low: žemas
+      filter_medium: vidutinis
+      subtitle: Realiojo laiko telemetrijos stebėjimas anomalijoms ir bazinės linijos nukrypimams.
+      title: Aktyvių grėsmių matrica
+    row:
+      acknowledge: Patvirtinti ir išspręsti →
+      resolve_aria: 'Išspręsti įspėjimą #%{id}'
+      resolve_confirm: 'Patvirtinti grėsmės lokalizavimą įspėjimui #%{id}?'
+      resolved: "✓ Išspręsta"
+      severity_aria: 'Sunkumas: %{severity}'
+    table:
+      alert_type: Įspėjimo tipas
+      command: Komanda
+      message: Įvykis / Pranešimas
+      severity: Sunkumas
+      source: Šaltinis
+      timestamp: Laiko žyma

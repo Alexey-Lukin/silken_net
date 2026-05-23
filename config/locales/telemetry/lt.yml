@@ -1,0 +1,18 @@
+---
+lt:
+  telemetry:
+    live_stream:
+      awaiting: Laukiama Starlink įkėlimo... CoAP:5683 klauso...
+      carrier_label: 'Operatorius: Tiesiogiai į ląstelę'
+      header_eyebrow: Neuralinio ryšio išvestis
+      header_title: Globalus telemetrijos srautas
+    log_entry:
+      batch_received: PARTIJA_GAUTA
+      ip_label: 'IP: %{ip}'
+      unknown_ip: "?.?.?.?"
+      unknown_relay: NEŽINOMA_RELĖ
+    table:
+      gateway: Queen / Šliuzas
+      payload: Neapdorotas CoAP turinys (Hex srautas)
+      status: Būsena
+      timestamp: Laiko žyma

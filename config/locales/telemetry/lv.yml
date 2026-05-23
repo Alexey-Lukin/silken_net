@@ -1,0 +1,18 @@
+---
+lv:
+  telemetry:
+    live_stream:
+      awaiting: Gaida Starlink augšupielādi... CoAP:5683 klausās...
+      carrier_label: 'Operators: Tiešs uz šūnu'
+      header_eyebrow: Neirālā saites izeja
+      header_title: Globālā telemetrijas plūsma
+    log_entry:
+      batch_received: PARTIJA_SAŅEMTA
+      ip_label: 'IP: %{ip}'
+      unknown_ip: "?.?.?.?"
+      unknown_relay: NEZINĀMS_RELĒJS
+    table:
+      gateway: Queen / Vārteja
+      payload: Neapstrādāts CoAP saturs (Hex plūsma)
+      status: Statuss
+      timestamp: Laika zīmogs

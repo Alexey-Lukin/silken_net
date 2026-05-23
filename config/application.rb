@@ -24,9 +24,9 @@ module SilkenNet
     # nested load_path picks them up automatically. New languages are added
     # by appending to `available_locales` and shipping a matching YAML set.
     config.i18n.load_path += Dir[Rails.root.join("config/locales/**/*.{rb,yml}")]
-    config.i18n.available_locales = %i[uk en]
+    config.i18n.available_locales = %i[uk en lv lt]
     config.i18n.default_locale    = :uk
-    config.i18n.fallbacks         = { uk: %i[uk en], en: %i[en] }
+    config.i18n.fallbacks         = { uk: %i[uk en], en: %i[en], lv: %i[lv en], lt: %i[lt en] }
 
     # [GAIA SHIELD]: Rack::Attack — DDoS / brute-force / bot-scanner protection.
     # Inserted early in the middleware stack so malicious traffic is dropped

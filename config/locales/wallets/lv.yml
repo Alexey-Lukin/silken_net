@@ -1,0 +1,43 @@
+---
+lv:
+  wallets:
+    balance_display:
+      available: 'Pieejams:'
+      decoration: SCC
+      esg_retired: 'ESG izņemts:'
+      locked: 'Bloķēts:'
+      locked_for: 'Bloķēts: %{owner}'
+      verified_balance: Verificētais atlikums
+    index:
+      audit_link: Audita virsgrāmata →
+      kind_clan: Klana kase
+      kind_soldier: Karavīra maks
+      locked_label: "🔒 %{amount} bloķēts"
+      retired_label: "♻ %{amount} izņemts"
+      subtitle: Silken oglekļa monētu plūsmas uzraudzība tīklā.
+      system_reserve: Sistēmas rezerve
+      title: Kases matrica
+      total_liquidity: 'Kopējā likviditāte:'
+    metadata_frame:
+      available_balance: Pieejamais atlikums
+      esg_retired: ESG izņemts
+      locked_balance: Bloķētais atlikums
+      network: Tīkls
+      not_provisioned: NAV_NODROŠINĀTS
+      polygon_address: Polygon adrese
+      polygon_mainnet: Polygon PoS (Mainnet)
+      title: Blokķēdes identitāte
+    show:
+      actions: Darbības
+      columns:
+        amount: Summa
+        status: Statuss
+        timestamp: Laika zīmogs
+        tx_hash: TX Kods
+        type: Veids
+      empty: Nav konstatētu darījumu.
+      export_csv: Eksportēt CSV virsgrāmatu
+      export_csv_aria: Eksportēt darījumu virsgrāmatu kā CSV
+      ledger_title: Ķēdes darījumu virsgrāmata
+      sync_polygon: Sinhronizēt ar Polygon
+      sync_polygon_aria: Sinhronizēt maku ar Polygon blokķēdi

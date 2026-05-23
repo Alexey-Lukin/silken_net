@@ -1,0 +1,50 @@
+---
+lt:
+  flash:
+    actuators:
+      command_in_flight: Aktuatorius jau turi aktyvią komandą. Palaukite, kol ji bus baigta.
+      idempotency_required: Aktuatoriaus komandos vykdymui reikalinga Idempotency-Key antraštė.
+    alerts:
+      acknowledged: 'Įspėjimas #%{id} patvirtintas.'
+      invalid_severity: 'Neteisingas sunkumo filtras: %{value}.'
+      invalid_status: 'Neteisingas būsenos filtras: %{value}.'
+      resolved: Grėsmė lokalizuota.
+    blockchain_transactions:
+      invalid_status: 'Neteisingas būsenos filtras: %{value}.'
+      invalid_token_type: 'Neteisingas token_type filtras: %{value}.'
+    firmwares:
+      deployment_dispatched: Diegimo užsakymas v%{version} išsiųstas.
+      file_too_large: Failo dydis viršija %{limit} MB limitą.
+      invalid_target_type: 'target_type turi būti vienas iš: %{allowed}.'
+      target_all: Visas miškas
+      target_cluster: 'Klasteris #%{id}'
+      uploaded: Nauja evoliucija v%{version} įkelta į Vandenyną.
+    maintenance:
+      hardware_verified: Aparatūros būsena patikrinta. STM32 impulsas patvirtintas.
+      invalid_date: 'Neteisinga ISO8601 data: %{value}.'
+      photo_deleted: Nuotrauka pašalinta iš įrodymų matricos.
+      photo_not_found: Nuotrauka nerasta.
+      record_created: Gydymo įrašas išsaugotas. Ekosistema atnaujinta.
+      record_updated: Įrašas atnaujintas.
+    notifications:
+      updated: Pranešimų nustatymai atnaujinti.
+    oracle:
+      simulation_started: Oracle pradėjo simuliaciją.
+    provisioning:
+      defective_uid: Tai rezervuota programinės įrangos reikšmė defektuotam STM32 UID — registracija uždrausta. Perflešuokite įrenginį ir nuskaitykite unikalų ID iš naujo.
+      fallback_magic_rejected: Aparatūros UID baigiasi programinės įrangos atsarginės magiškos reikšmės (%{magic}). %{detail}
+      node_initiated: 'Mazgo inicijavimas baigtas. DID: %{did}. Aparatūros UID: %{uid}'
+      uid_taken: Įrenginys su UID %{uid} jau užregistruotas sistemoje.
+    sessions:
+      authenticated_via: Autentifikuota per %{provider}.
+      blocked_provider: Šis prisijungimo metodas užblokuotas. Susisiekite su administratoriumi arba naudokite kitą metodą.
+      invalid_credentials: Neteisingos prieigos koordinatės.
+      logout_success: Atsijungta sėkmingai. Vartai uždaryti.
+      neural_link_established: Neuralinis ryšys užmegztas.
+      neural_link_severed: Neuralinis ryšys nutrauktas.
+      rate_limited: Per daug prisijungimo bandymų. Bandykite dar kartą po minutės.
+    settings:
+      org_updated: Organizacijos nustatymai atnaujinti.
+      updated: Nustatymai atnaujinti.
+    telemetry:
+      payload_too_large: Naudingoji apkrova viršija %{limit} KiB limitą.

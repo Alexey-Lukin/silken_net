@@ -1,0 +1,28 @@
+---
+lt:
+  dashboard:
+    event_row:
+      etherisc_claim: "🛡️ Etherisc DIP reikalavimas %{amount} USDC → %{address}"
+      maintenance: "🔧 %{action}: atliko %{user}"
+      minted: "⬢ Nukalinta %{amount} SCC → %{target}"
+      pool: Fondas
+      system_pulse: "● Aptiktas sistemos impulsas"
+      system_user: Sistema
+      threat: "⚠ Grėsmė: %{type} %{cluster}"
+      unknown_cluster: Nežinomas
+    home:
+      feed:
+        empty: Nėra naujausio aktyvumo
+        title: Tiesioginės transliacijos srautas
+        view_all: Atidaryti misijų žurnalą →
+      map:
+        coordinates_label: 'PLAT: %{lat} // ILG: %{lon} // AUKŠT: %{alt}m'
+        loading: Inicializuojama geospatinė matrica...
+      stats:
+        active_soldiers: Aktyvūs kariai
+        carbon_treasury: Anglies iždas
+        forest_vitality: Miško gyvybingumas
+        ionic_potential: Joninis potencialas
+    map:
+      heading: Geospatinė matrica
+      live_nodes: 'Aktyvūs tiesioginiai mazgai: %{count}'

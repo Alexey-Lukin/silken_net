@@ -1,0 +1,12 @@
+---
+lv:
+  m2m_auth:
+    device_no_organization: Ierīce nav saistīta ar nevienu organizāciju.
+    device_not_found: Ierīce nav atrasta sistēmā.
+    invalid_signature: Nederīgs paraksts.
+    invalid_signature_format: Nederīgs paraksta formāts.
+    invalid_timestamp: Nederīgs laika zīmoga formāts (nepieciešams ISO 8601).
+    no_public_key: Šai ierīcei nav reģistrēta Ed25519 publiskā atslēga.
+    no_users_in_organization: Organizācijā nav lietotāju, kam izsniegt žetonu.
+    replay_detected: Konstatēts atkārtošanas uzbrukums.
+    timestamp_expired: Laika zīmogs beidzies. Sinhronizējiet ierīces pulksteni.

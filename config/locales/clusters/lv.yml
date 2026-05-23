@@ -1,0 +1,49 @@
+---
+lv:
+  clusters:
+    grid:
+      empty_description: Izvietojiet sensorus, lai inicializētu klastera režģi.
+      empty_title: Matrica ir tukša. Nav atklātu klasteru.
+    item:
+      health: Veselība
+      id: 'ID: %{id}'
+      open_matrix: Atvērt matricu →
+      trees: Koki
+    show:
+      alerts:
+        heading: Aktīvie draudi
+        nominal: Nav aktīvu draudu. Sektors ir normāls.
+      contract:
+        emitted: Emitētie SCC
+        empty: Nav aktīva NaaS līguma.
+        heading: NaaS līgums
+        status: Statuss
+        value: Vērtība
+      gateways:
+        coordinates: Koordinātas
+        empty: Nav izvietotu vārteju
+        heading: Vārteju flote
+        last_seen: Pēdējo reizi redzēts
+        state: Stāvoklis
+        uid: UID
+      geography:
+        centroid: Centroīds
+        heading: Ģeogrāfiskais enkurs
+        mapped: Kartēts
+        mapped_no: 'Nē'
+        mapped_yes: 'Jā'
+        region: Reģions
+        view_on_map: Skatīt kartē →
+      header:
+        eyebrow: Klastera matrica
+        nominal: Normāls
+        threat_detected: Draudi konstatēti
+      vitals:
+        active_trees: Aktīvie koki
+        env_config: Vides konfigurācija
+        fire_threshold: Uguns slieksnis
+        heading: Sektora vitālie rādītāji
+        health_index: Veselības indekss
+        queen_gateways: Queen vārtejas
+        seismic_sensitivity: Seismiskā jutība
+        timezone: Laika zona

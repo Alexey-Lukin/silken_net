@@ -1,0 +1,31 @@
+---
+lt:
+  notifications:
+    settings:
+      active_channels:
+        connected: Prisijungta
+        email: "📧 El. paštas"
+        heading: Aktyvūs kanalai
+        not_configured: Nesukonfigūruota
+        push: "🔔 Push"
+        sms: "📱 SMS / Telefonas"
+        telegram: "✈️ Telegram"
+      channels:
+        email_address: El. pašto adresas
+        heading: Kanalų konfigūracija
+        phone_number: Telefono numeris (E.164)
+        push_placeholder: FCM arba APNs žetonas
+        push_token: Push žetonas
+        save: Išsaugoti kanalus →
+        telegram_chat_id: Telegram pokalbio ID
+      email_hint: El. paštas gali būti keičiamas profilyje.
+      heading: "🔔 Neuralinis tinklas — Pranešimų kanalai"
+      notification_types:
+        active: AKTYVUS
+        critical_alerts: Kritiniai įspėjimai
+        heading: Pranešimų tipai
+        minting_events: Kalimo įvykiai
+        slashing_events: Baudų įvykiai
+        system_health: Sistemos sveikata
+        warning_alerts: Perspėjimo pranešimai
+      subtitle: Konfigūruoti pranešimų kanalus — kur pristatyti įspėjimus ir įvykius.

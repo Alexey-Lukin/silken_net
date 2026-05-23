@@ -1,0 +1,44 @@
+---
+lt:
+  audit_logs:
+    index:
+      columns:
+        action: Veiksmas
+        details: Detalės
+        target: Taikinys
+        timestamp: Laiko žyma
+        user: Naudotojas
+      empty_title: Nėra įrašytų audito įvykių.
+      inspect: Patikrinti →
+      inspect_aria: 'Patikrinti audito žurnalą #%{id}'
+      records: 'Įrašai:'
+      subtitle: 'Administratorių veiksmų žurnalas: kas, kada ir ką keitė.'
+      system_user: Sistema
+      title: "👁️ Stebėtojas — Audito žurnalas"
+    show:
+      actor:
+        email: El. paštas
+        name: Vardas
+        role: Vaidmuo
+        system: Sistemos veikėjas.
+        title: Veikėjo tapatybė
+      decoration: ŽURNALAS
+      details:
+        action: Veiksmas
+        field: Laukas
+        performed_by: Atliko
+        target_id: Taikinio ID
+        target_type: Taikinio tipas
+        timestamp: Laiko žyma
+        value: Vertė
+      event_record: Audito įvykio įrašas
+      metadata:
+        empty: Nėra papildomų metaduomenų.
+        title: Įvykio metaduomenys
+      system_user: Sistema
+      target:
+        empty: Nėra konkretaus taikinio.
+        id: ID
+        title: Audituojamas taikinys
+        type: Tipas
+      tx_id_line: "#%{id} // %{at}"

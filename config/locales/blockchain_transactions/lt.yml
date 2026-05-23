@@ -1,0 +1,54 @@
+---
+lt:
+  blockchain_transactions:
+    index:
+      subtitle: Kalimas, baudos ir visi grandinės įvykiai jūsų organizacijai.
+      table:
+        amount: Suma
+        empty: Nėra įrašytų blokų grandinės sandorių.
+        network: Tinklas
+        status: Būsena
+        timestamp: Laiko žyma
+        tree: Medis
+        tx_hash: TX Kodas
+        type: Tipas
+    on_chain_frame:
+      explorer:
+        celo: Celo Explorer
+        polygon: Polygonscan
+        solana: Solana Explorer
+      heading: Patikrinimas grandinėje
+      not_submitted: Sandoris dar nepateiktas grandinei.
+      tx_hash_label: Sandorio kodas
+      view_on: Žiūrėti %{explorer} →
+    show:
+      decoration: TX
+      details:
+        amount: Suma
+        block_number: Bloko numeris
+        blockchain_network: Blokų grandinės tinklas
+        confirmed_at: Patvirtinta
+        created: Sukurta
+        field: Laukas
+        gas_price: Dujų kaina
+        gas_used: Sunaudotos dujos
+        locked_points: Užblokuoti taškai
+        nonce: Nonce
+        sent_at: Išsiųsta
+        status: Būsena
+        to_address: Gavėjo adresas
+        token_type: Žetono tipas
+        updated: Atnaujinta
+        value: Vertė
+      notes:
+        empty: Nėra pridėtų pastabų.
+        error_message: Klaidos pranešimas
+        title: Sandorio pastabos
+      transaction_record: Sandorio įrašas
+      tx_id_line: "#%{id} // %{at}"
+      wallet:
+        no_wallet: Nėra susietos piniginės.
+        not_available: Nėra
+        title: Susieta piniginė
+        tree_did: Medžio DID
+        wallet_balance: Piniginės balansas

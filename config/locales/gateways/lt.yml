@@ -1,0 +1,43 @@
+---
+lt:
+  gateways:
+    index:
+      nodes_online: 'Mazgai prisijungę:'
+      subtitle: Miško tinklo neuralinių sinapsių stebėjimas.
+      title: Queen registras // Globalūs relės
+    item:
+      cluster: 'Klasteris: %{name}'
+      label: Queen // %{uid}
+      open: Atidaryti relę →
+      open_aria: Atidaryti šliuzo %{uid} detales
+      signal: Signalas
+      silent: TYLUS
+      soldiers: Kariai
+      unassigned: NEPRISKIRTA
+    show:
+      config:
+        cluster: Klasteris
+        firmware_hash: Programinės įrangos kodas
+        firmware_version: Programinės įrangos versija
+        heading: Tinklo konfigūracija
+        mesh_enabled: Įjungta
+        mesh_mode: Tinklo režimas
+        push: Siųsti naują konfigūraciją →
+        sleep_interval: Miego intervalas
+      crypto:
+        aes_provisioned: AES-256 aprūpinta
+        heading: Aparatūros kriptografija
+        uid_label: 'Aparatūros UID:'
+      fleet:
+        active_nodes: "%{count} aktyvūs mazgai"
+        heading: Karių flotilė komandoje
+      header:
+        heartbeat: Širdies plakimas
+      telemetry:
+        heading: Sistemos telemetrija (Queen diagnostika)
+        internal_core: Vidinis branduolys
+        mvolt: mVoltai (Li-Po)
+        signal_csq: 'CSQ: %{csq}'
+        signal_strength: Signalo stiprumas
+        thermal_state: Šiluminė būsena
+        voltage_matrix: Įtampos matrica

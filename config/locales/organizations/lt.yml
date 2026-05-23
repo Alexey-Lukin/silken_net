@@ -1,0 +1,47 @@
+---
+lt:
+  organizations:
+    index:
+      columns:
+        audit: Auditas
+        identity: Grandinės tapatybė
+        investment: Investicija (SCC)
+        name: Organizacijos pavadinimas
+        sectors: Sektoriai
+      investment_value: "%{amount} SCC"
+      subtitle: Daugianuomininkių entitetų ir jų aplinkos kapitalo valdymas.
+      title: Globalus klanų registras
+      view_aria: Peržiūrėti %{name} profilį
+      view_profile: PERŽIŪRĖTI_PROFILĮ →
+    show:
+      activity:
+        asset_expansion: Turto plėtra
+        carbon_audit: Anglies auditas
+        contract_renewal: Sutarties atnaujinimas
+        pending: LAUKIAMA
+        title: Globalūs įvykiai
+      clusters:
+        matrix: Matrica
+        open_aria: Atidaryti %{name} klasterio matricą
+        open_matrix: Atidaryti matricą →
+        population: Populiacija
+        sector_name: Sektoriaus pavadinimas
+        soldiers_count: "%{count} kariai"
+        title: Priskirti sektoriai (klasteriai)
+        vitality: Gyvybingumas
+      fully_synced: VISIŠKAI_SINCHRONIZUOTA
+      hero_decoration: KLANAS
+      identity_vault:
+        billing_contact: Atsiskaitymo kontaktas
+        not_available: Nėra
+        public_address: Viešasis kriptografijos adresas
+        title: Grandinės tapatybės saugykla
+      member_since: 'Narys nuo: %{date}'
+      operational_status: Veiklos būsena
+      performance:
+        biological_assets: Biologinis turtas
+        biological_assets_sub: Karių medžiai
+        capital_injected: Investuotas kapitalas
+        capital_injected_sub: SCC iš viso
+        carbon_yield: Anglies derlius
+        carbon_yield_sub: Nukalinta SCC

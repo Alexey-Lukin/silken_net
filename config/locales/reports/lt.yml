@@ -1,0 +1,73 @@
+---
+lt:
+  reports:
+    carbon_absorption:
+      decoration: CO₂
+      footer: Ataskaita sugeneruota %{at} %{org}
+      generated: 'Sugeneruota: %{at}'
+      metrics:
+        active_trees: Aktyvūs medžiai
+        active_trees_sub: Prisijungę
+        active_wallets: Aktyvios piniginės
+        active_wallets_sub: Piniginės
+        total_carbon_points: Iš viso anglies taškų
+        total_carbon_points_sub: SCC
+        total_trees: Iš viso medžių
+        total_trees_sub: Įdiegta
+      table:
+        active_wallets: Aktyvios piniginės, generuojančios taškus
+        metric: Metrika
+        total_points: Iš viso sukaupta anglies taškų
+        trees_deployed: Įdiegti medžiai (visos būsenos)
+        trees_online: Šiuo metu prisijungę medžiai
+        value: Vertė
+      title: "🌿 Anglies absorbcijos ataskaita"
+    financial_summary:
+      breakdown:
+        category: Kategorija
+        confirmed: Patvirtinta
+        count: Skaičius
+        failed: Nepavyko
+        pending: Laukiama
+        title: Blokų grandinės sandorių suskirstymas
+        total_transactions: Iš viso sandorių
+      decoration: FIN
+      footer: Ataskaita sugeneruota %{at} %{org}
+      generated: 'Sugeneruota: %{at}'
+      metrics:
+        active_contracts: Aktyvios sutartys
+        active_contracts_sub: NaaS
+        total_contracts: Iš viso sutarčių
+        total_contracts_sub: Per visą laiką
+        total_invested: Iš viso investuota
+        total_invested_sub: SCC
+      title: "💎 Finansinės suvestinės ataskaita"
+    index:
+      actions:
+        csv: CSV ↓
+        pdf: PDF ↓
+        view: Peržiūrėti →
+      available: Galimos ataskaitos
+      carbon:
+        description: CO₂ absorbcija ir aplinkos auditas.
+        title: Anglies absorbcijos ataskaita
+      financial:
+        description: Finansinis našumas ir blokų grandinės sandoriai.
+        title: Finansinės suvestinės ataskaita
+      hero:
+        biological_assets: Biologinis turtas
+        biological_assets_sub: Medžiai
+        capital_injected: Investuotas kapitalas
+        capital_injected_sub: SCC investuota
+        carbon_yield: Anglies derlius
+        carbon_yield_sub: SCC iš viso
+        health_score: Sveikatos rodiklis
+        health_score_sub: Indeksas
+        sectors: Sektoriai
+        sectors_sub: Klasteriai
+        threat_active: AKTYVUS
+        threat_clear: SAUGU
+        threat_level: Grėsmės lygis
+      organization: 'Organizacija:'
+      subtitle: 'Konsoliduotos ataskaitos investuotojams: aplinkos auditai ir finansinis našumas.'
+      title: "📊 Archyvas — Ataskaitų centras"

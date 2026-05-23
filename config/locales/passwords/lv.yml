@@ -1,0 +1,27 @@
+---
+lv:
+  passwords:
+    forgot:
+      back_link: "← Atpakaļ uz pieteikšanās portālu"
+      email_label: E-pasta adrese
+      heading: Atjaunošana
+      submit: NOSŪTĪT ATIESTATĪŠANAS SAITI
+      subtitle: Paroles atiestatīšanas protokols
+    forgot_sent_flash: Ja e-pasts pastāv, saņemsiet vēstuli ar instrukcijām.
+    forgot_sent_json: Ja e-pasts pastāv sistēmā, saņemsiet paroles atiestatīšanas instrukcijas.
+    forgot_title: Atjaunošana
+    rate_limited: Pārāk daudz mēģinājumu. Mēģiniet vēlreiz pēc 5 minūtēm.
+    reset:
+      back_link: "← Atpakaļ uz pieteikšanās portālu"
+      confirm_password_label: Apstiprināt jauno paroli
+      heading: Jaunā atslēga
+      invalid_token_flash: Žetons beidzies. Pieprasiet jaunu atiestatīšanu.
+      invalid_token_json: Atiestatīšanas žetons ir nederīgs vai beidzies.
+      mismatch: Paroles nesakrīt.
+      new_password_label: Jaunā parole (min. 12 rakstzīmes)
+      submit: IESTATĪT JAUNU PAROLI
+      subtitle: Iestatīt jauno piekļuves kodu
+      too_short: Parolei jābūt vismaz 12 rakstzīmes garai.
+      updated_flash: Parole atjaunināta. Piesakieties ar jauno paroli.
+      updated_json: Parole veiksmīgi atjaunināta.
+    reset_title: Atiestatīt paroli

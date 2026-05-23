@@ -1,0 +1,59 @@
+---
+lt:
+  trees:
+    chronicle:
+      events: "%{count} įvykiai"
+      heading: Skaitmeninė kronika
+    index:
+      eyebrow: Sektoriaus matricos diegimas
+      header_operational: Veikiantys
+      header_operational_unit: Mazgai
+      header_population: Populiacija
+      header_population_unit: Kariai
+      ionic_pulse: Joninis impulsas
+    show:
+      actions:
+        locate_node: Surasti mazgą →
+        rotate_key_aria: Rotuoti aparatūros šifravimo raktą
+        rotate_key_label: Rotuoti aparatūros raktą →
+      biometrics:
+        impedance_unit: kΩ Impedansas
+        ionic_potential: Joninis potencialas
+        ionic_sub: Srauto potencialo krūvis
+        stress_index: Streso indeksas
+        xylem_sub: Vidinio branduolio temperatūra
+        xylem_thermal: Ksilemos šiluminė būsena
+      headings:
+        biometrics: Tiesioginės biometrinės matricos
+        deployment_matrix: Diegimo matrica
+        economic_yield: Ekonominis derlius
+        hardware_vault: Aparatūros saugumo saugykla
+        impedance_flux: Impedanso svyravimai (paskutiniai 10 ciklų)
+        maintenance: Priežiūros ritualai ir gydymo istorija
+      impedance:
+        current: Dabartinis
+        sampling: Realiojo laiko matavimai
+        t10: T-10 ciklai
+      labels:
+        family: 'Šeima: %{name}'
+        family_unknown: Nežinoma
+        uplink_state: Įkėlimo būsena
+        verified_balance: Patikrintas balansas
+      metadata:
+        cluster: Klasteris
+        coordinates: Koordinatės
+      security:
+        address: Adresas
+        cipher_suite: Šifro rinkinys
+        cipher_value: AES-256-ECB (CoAP lygis)
+        integrity: Vientisumas
+        integrity_value: Patikrintas aparatūros inkaras
+        key_identity: Rakto tapatybė
+        ota_status: OTA būsena
+        ota_value: Kanalas užšifruotas
+      table:
+        action: Veiksmas
+        empty: Nėra įrašytų fizinių įsikišimų
+        observations: Stebėjimai
+        technician: Technikas
+        timestamp: Laiko žyma

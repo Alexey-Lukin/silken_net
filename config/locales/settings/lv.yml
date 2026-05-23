@@ -1,0 +1,26 @@
+---
+lv:
+  settings:
+    show:
+      config:
+        heading: Konfigurācija
+      fields:
+        ai_sensitivity: MI jutība (0.0 — 1.0)
+        alert_threshold: Brīdinājuma slieksnis (Kritiskais Z)
+        billing_email: Norēķinu e-pasts
+        crypto_address: Kriptogrāfijas publiskā adrese
+        current_logo: 'Pašreizējais: %{filename}'
+        logo: Organizācijas logotips
+        org_name: Organizācijas nosaukums
+      heading: "🧠 Smadzeņu karte — Organizācijas iestatījumi"
+      metadata:
+        created: Izveidots
+        heading: Sistēmas metadati
+        org_id: Organizācijas ID
+        updated: Pēdējo reizi atjaunināts
+      submit: Atjaunināt iestatījumus →
+      subtitle: 'Organizācijas konfigurācija: nosaukums, norēķini, kriptogrāfijas adrese, brīdinājumu sliekšņi un MI jutība.'
+      vault:
+        address: Publiskā kriptogrāfijas adrese
+        billing: Norēķinu kontakts
+        heading: Ķēdes identitātes glabātuve

@@ -1,0 +1,31 @@
+---
+lv:
+  notifications:
+    settings:
+      active_channels:
+        connected: Pievienots
+        email: "📧 E-pasts"
+        heading: Aktīvie kanāli
+        not_configured: Nav konfigurēts
+        push: "🔔 Push"
+        sms: "📱 SMS / Tālrunis"
+        telegram: "✈️ Telegram"
+      channels:
+        email_address: E-pasta adrese
+        heading: Kanālu konfigurācija
+        phone_number: Tālruņa numurs (E.164)
+        push_placeholder: FCM vai APNs žetons
+        push_token: Push žetons
+        save: Saglabāt kanālus →
+        telegram_chat_id: Telegram čata ID
+      email_hint: E-pastu var mainīt profilā.
+      heading: "🔔 Neirālais tīkls — Paziņojumu kanāli"
+      notification_types:
+        active: AKTĪVS
+        critical_alerts: Kritiski brīdinājumi
+        heading: Paziņojumu veidi
+        minting_events: Kalšanas notikumi
+        slashing_events: Sodīšanas notikumi
+        system_health: Sistēmas veselība
+        warning_alerts: Brīdinājuma paziņojumi
+      subtitle: Konfigurēt paziņojumu kanālus — kur piegādāt brīdinājumus un notikumus.

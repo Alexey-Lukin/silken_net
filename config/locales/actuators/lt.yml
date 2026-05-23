@@ -1,0 +1,43 @@
+---
+lt:
+  actuators:
+    card:
+      endpoint: 'Galutinis taškas:'
+      energy_budget: 'Energijos biudžetas:'
+      energy_budget_value: "%{mj} mJ"
+      execute_off: VYKDYTI_IŠJUNGTI
+      execute_off_aria: Vykdyti IŠJUNGIMO komandą aktuatoriui %{device_type}
+      execute_on: VYKDYTI_ĮJUNGTI
+      execute_on_aria: Vykdyti ĮJUNGIMO komandą aktuatoriui %{device_type}
+      gateway: 'Šliuzas: %{uid}'
+      idle: NEAKTYVUS
+      last_activated: 'Paskutinį kartą suaktyvinta:'
+      last_sync_status: 'Paskutinė sinchronizacijos būsena:'
+      max_duration: 'Maksimali trukmė:'
+      max_duration_value: "%{seconds}s"
+      never: NIEKADA
+      physical_state: 'Fizinė būsena:'
+    command_status_badge:
+      acknowledged: patvirtinta
+      confirmed: patvirtinta
+      failed: nepavyko
+      issued: išduota
+      sent: išsiųsta
+    index:
+      active_nodes: Aktyvūs mazgai
+      decoration: AKTUATORIAI
+      empty_description: Įdiekite aparatūrą, kad pradėtumėte stebėjimą.
+      empty_title: Šiame sektoriuje nėra aprūpintų aktuatorių mazgų.
+      sector_matrix: Sektoriaus matrica // %{name}
+      title: Aparatūros sąveikos sluoksnis
+      total_units: Iš viso vienetų
+    show:
+      columns:
+        executed_at: Įvykdyta
+        id: ID
+        operator: Operatorius
+        payload: Duomenys
+        status: Būsena
+      log_title: Komandų vykdymo žurnalas
+      not_executed: "---"
+      system_operator: SISTEMA

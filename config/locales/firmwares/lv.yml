@@ -1,0 +1,41 @@
+---
+lv:
+  firmwares:
+    form:
+      binary_label: Binārais artefakts (.bin)
+      notes_label: Laidiena piezīmes / Loģiskās izmaiņas
+      notes_placeholder: Aprakstiet izmaiņas biogēnajā programmaparatūrā...
+      submit: APSTIPRINĀT EVOLŪCIJU
+      target_label: Mērķa aparatūras arhitektūra
+      target_queen: ESP32-S3 (Queen)
+      target_soldier: STM32-L0 (Soldier)
+      version_label: Evolūcijas versija
+      version_placeholder: piem. 1.4.2
+    index:
+      columns:
+        checksum: Kontrolsumma (MD5)
+        command: Komanda
+        target_hardware: Mērķa aparatūra
+        uploaded: Augšupielādēts
+        version: Versija
+      deploy_aria: Izvietot programmaparatūru v%{version}
+      inventory_title: Meža inventārs (versiju sadalījums)
+      queens: Queens (Vārtejas)
+      registry_title: Pieejamās bināro evolūciju versijas
+      soldiers: Soldiers (Koki)
+      units: "%{count} vienības"
+      upload: "+ Injicēt jaunu kodu"
+      upload_aria: Augšupielādēt jaunu programmaparatūras bināro failu
+      version_label: v%{version}
+    new:
+      subtitle: Sagatavot bināro artefaktu OTA izvietošanai
+      title: Jauna koda injekcija
+    ota_progress_bar:
+      chunk: 'GABALS: %{current} / %{total}'
+      complete: "%{percent}% PABEIGTS"
+      link_label: 'OTA_SAITE: %{uid}'
+    row:
+      confirm: Inicializēt evolūciju uz v%{version} izvēlētajai aparatūrai?
+      not_available: Nav
+      order_evolution: Pasūtīt evolūciju →
+      version: v%{version}

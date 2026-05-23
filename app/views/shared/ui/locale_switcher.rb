@@ -33,7 +33,7 @@ module Views
           form_with(
             url: api_v1_locale_path,
             method: :post,
-            data: { turbo_frame: "_top" },
+            data: { turbo: "false" },
             class: "inline-flex items-center gap-2"
           ) do |f|
             render_label(f)
@@ -96,7 +96,7 @@ module Views
         end
 
         def option_label(locale)
-          short = { uk: "UA", en: "EN" }[locale.to_sym] || locale.to_s.upcase
+          short = { uk: "UA", en: "EN", lv: "LV", lt: "LT" }[locale.to_sym] || locale.to_s.upcase
           long  = t("locale.available.#{locale}", default: locale.to_s)
           "#{short} · #{long}"
         end

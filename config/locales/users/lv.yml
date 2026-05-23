@@ -1,0 +1,46 @@
+---
+lv:
+  users:
+    index:
+      active_prefix: Aktīvs
+      heading: Organizācijas apkalpes reģistrs
+      link_offline: Saite bezsaistē
+      subtitle: Autorizēts personāls ekosistēmas iejaukšanās veikšanai.
+      table:
+        audit: Audits
+        identity: Identitāte
+        neural_link: Neirālā savienojuma stāvoklis
+        role_access: Loma / Piekļuve
+        view_logs: ŽURNĀLS
+    profile:
+      access:
+        command_execution: Komandu izpilde
+        encryption: Šifrēšanas līmenis
+        full: Pilna
+        limited: Ierobežota
+        organization: Organizācijas piekļuve
+      activity:
+        last_sync: Pēdējā sinhronizācija
+        offline: BEZSAISTĒ
+        online: TIEŠSAISTĒ
+        records: Ieraksti
+      id: 'ID: #%{id}'
+      none: Nav
+      provider:
+        primary: Primārais
+      role: 'Loma: %{role}'
+      sections:
+        access_privileges: Neirālās piekļuves privilēģijas
+        activity: Operacionālā aktivitāte
+        linked_providers: Saistītie identitātes pakalpojumu sniedzēji
+        security: Drošības statuss
+      security:
+        active: Aktīvs
+        disabled: Atspējots
+        linked_count: "%{count} saistīti"
+        manage: Pārvaldīt →
+        mfa: 2FA / MFA
+        not_set: Nav iestatīts
+        password: Parole
+        providers: Pakalpojumu sniedzēji
+        set: Iestatīts

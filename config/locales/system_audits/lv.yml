@@ -1,0 +1,19 @@
+---
+lv:
+  system_audits:
+    index:
+      badges:
+        critical: kritisks
+        ok: labi
+      checked_at: Pārbaudīts %{at}
+      columns:
+        source: Avots
+        total: SCC kopā
+      critical: "🚨 KRITISKS — Delta %{delta} SCC pārsniedz slieksni 0.0001"
+      ok: "✓ INTEGRITĀTE LABA — Delta %{delta} SCC tolerances ietvaros"
+      sources:
+        delta: Δ Delta
+        polygon: Polygon viedlīgums (totalSupply)
+        postgres: Postgres DB (apstiprinātie darījumi)
+      subtitle: Postgres DB SCC summas salīdzinājums ar kopējo emisiju Polygon viedlīgumā.
+      title: "⛓️ Ķēdes audits — Sistēmas integritāte"

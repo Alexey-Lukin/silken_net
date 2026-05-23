@@ -9,6 +9,8 @@ uk:
     apply: Застосувати
     available:
       en: English
+      lt: Lietuvių
+      lv: Latviešu
       uk: Українська
     switcher_label: Мова
   theme:

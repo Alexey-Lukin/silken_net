@@ -1,0 +1,54 @@
+---
+lv:
+  blockchain_transactions:
+    index:
+      subtitle: Kalšana, sodīšana un visi ķēdes notikumi jūsu organizācijai.
+      table:
+        amount: Summa
+        empty: Nav reģistrētu blokķēdes darījumu.
+        network: Tīkls
+        status: Statuss
+        timestamp: Laika zīmogs
+        tree: Koks
+        tx_hash: TX Kods
+        type: Veids
+    on_chain_frame:
+      explorer:
+        celo: Celo Explorer
+        polygon: Polygonscan
+        solana: Solana Explorer
+      heading: Verifikācija ķēdē
+      not_submitted: Darījums vēl nav iesniegts ķēdē.
+      tx_hash_label: Darījuma kods
+      view_on: Skatīt %{explorer} →
+    show:
+      decoration: TX
+      details:
+        amount: Summa
+        block_number: Bloka numurs
+        blockchain_network: Blokķēdes tīkls
+        confirmed_at: Apstiprināts
+        created: Izveidots
+        field: Lauks
+        gas_price: Gāzes cena
+        gas_used: Izmantotā gāze
+        locked_points: Bloķētie punkti
+        nonce: Nonce
+        sent_at: Nosūtīts
+        status: Statuss
+        to_address: Adresāta adrese
+        token_type: Žetona veids
+        updated: Atjaunināts
+        value: Vērtība
+      notes:
+        empty: Nav pievienotu piezīmju.
+        error_message: Kļūdas ziņojums
+        title: Darījuma piezīmes
+      transaction_record: Darījuma ieraksts
+      tx_id_line: "#%{id} // %{at}"
+      wallet:
+        no_wallet: Nav saistīta maka.
+        not_available: Nav
+        title: Saistītais maks
+        tree_did: Koka DID
+        wallet_balance: Maka atlikums

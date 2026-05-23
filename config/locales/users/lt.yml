@@ -1,0 +1,46 @@
+---
+lt:
+  users:
+    index:
+      active_prefix: Aktyvus
+      heading: Organizacijos įgulos registras
+      link_offline: Nuoroda neprisijungusi
+      subtitle: Įgaliotas personalas ekosistemos įsikišimams.
+      table:
+        audit: Auditas
+        identity: Tapatybė
+        neural_link: Neuralinio ryšio būsena
+        role_access: Vaidmuo / Prieiga
+        view_logs: ŽURNALAS
+    profile:
+      access:
+        command_execution: Komandų vykdymas
+        encryption: Šifravimo lygis
+        full: Pilna
+        limited: Ribota
+        organization: Organizacijos prieiga
+      activity:
+        last_sync: Paskutinė sinchronizacija
+        offline: NEPRISIJUNGĘS
+        online: PRISIJUNGĘS
+        records: Įrašai
+      id: 'ID: #%{id}'
+      none: Nėra
+      provider:
+        primary: Pirminis
+      role: 'Vaidmuo: %{role}'
+      sections:
+        access_privileges: Neuralinės prieigos privilegijos
+        activity: Veiklos aktyvumas
+        linked_providers: Susieti tapatybės tiekėjai
+        security: Saugumo būsena
+      security:
+        active: Aktyvus
+        disabled: Išjungta
+        linked_count: "%{count} susieti"
+        manage: Valdyti →
+        mfa: 2FA / MFA
+        not_set: Nenustatyta
+        password: Slaptažodis
+        providers: Tiekėjai
+        set: Nustatyta

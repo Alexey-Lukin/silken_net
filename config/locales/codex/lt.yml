@@ -1,0 +1,121 @@
+---
+lt:
+  codex:
+    atlas:
+      count:
+        one: "%{count} archtipas kataloguotas"
+        other: "%{count} archetipų kataloguota"
+      empty:
+        description: Pabandykite platesnę sritį arba išvalykite paiešką.
+        title: Codex tylus. Nė vienas archetipas neatitinka šio filtro.
+      kicker: Lore sluoksnis
+      title: Archetipų Codex
+    attunements:
+      attune: Derinti
+      attuned: Suderinta
+      title: Derinimas
+    battle_arena:
+      elo_summary: 'Elo: %{elo} · %{matches}m'
+      heading: Mazgų mūšis
+      page_title: Codex · Mūšių arena
+      pick: Pasirinkti
+      realm_prefix: 'Sritis:'
+      realm_unknown: "—"
+      skip: Praleisti
+      vs: PRIEŠ
+    citations:
+      aria_with_note: "%{base} — %{note}"
+      aria_with_realm: 'Codex citata: %{title} (%{realm})'
+      strip:
+        untold: Nepasakyta.
+      title_with_note: "%{base} — %{note}"
+      unknown_realm: nežinoma sritis
+    comments:
+      empty: Būkite pirmas, kuris pasidalins, ką šis archetipas reiškia jums.
+      heading: Diskusija
+      hidden: Paslėpta moderatoriaus.
+      placeholder: Rašykite komentarą Markdown formatu…
+      post: Paskelbti
+    discoveries:
+      counter: 'Atrakinta: %{count}'
+      empty: Dar nieko neatrakinta — stebėkite medį, balsuokite Arenoje, pasirinkite frakciją.
+      heading: Mano Codex
+      meta: "%{trigger} · %{timestamp}"
+      page_title: Codex · Mano atradimai
+      toast:
+        kicker: Codex Atrakinta
+        triggers:
+          attunement_streak: Serija
+          default: Atrakinta
+          fraction_choice: Paktas
+          manual_unlock: Suteikta
+          match_milestone: Mūšis
+          oracle_seasonal: Oracle
+          telemetry_observation: Stebėta
+        visit: "→ Apsilankyti"
+    fractions:
+      change: Keisti →
+      choose: Pasirinkti frakciją
+      choose_short: Pasirinkti
+      cooldown:
+        locked: Užblokuota
+        open: Atvira
+        title: Kitas keitimas galimas %{timestamp}
+      current: Dabartinis
+      empty: Dar nesusilyginote su Codex archetipu.
+      label: Frakcija
+      my_heading: Mano frakcija
+      my_page_title: Codex · Mano frakcija
+      onboarding:
+        aria_label: Codex įvadas
+        body: Suderinkite savo paskyrą su Codex archetipu, kad atrakintumėte lore sluoksnį, prisijungtumėte prie Mūšių arenos ir atskleistumėte Atradimus augant miškui.
+        cta_primary: Pasirinkite savo frakciją →
+        cta_secondary: Naršyti Codex
+        kicker: Codex // Įvadas
+        welcome: Sveiki atvykę į Codex.
+        welcome_named: Sveiki atvykę į Codex, %{name}.
+      picker:
+        confirm: Pasirinkti "%{slug}"? Pakartotinis pasirinkimas užblokuotas 7 dienoms.
+        empty: Šioje srityje nėra pasirenkamų mazgų.
+        heading: Pasirinkti frakciją
+        locked: Užblokuota
+        pick: Pasirinkti
+        subtitle: Vienas archetipas, viena tapatybė. Pakartotinis pasirinkimas galimas kas 7 dienas.
+      picker_page_title: Codex · Pasirinkti frakciją
+      since: Nuo %{date}
+      updated: Atnaujinta %{date}
+    leaderboard:
+      columns:
+        elo: Elo
+        lifecycle: Gyvavimo ciklas
+        matches: Mūšiai
+        rank: "#"
+        title: Pavadinimas
+      empty: Dar nėra reitinguotų mazgų.
+      heading: Codex lentelė
+      page_title: Codex · Lentelė
+      realm_prefix: 'Sritis: %{realm} · '
+      top_n: Top %{limit}
+    node_card:
+      aria_label: 'Atidaryti Codex kortelę: %{title}'
+      elo: Elo %{value}
+      no_region: "—"
+    realm_tabs:
+      all: Visi
+      aria_label: Codex srities filtras
+    show:
+      meta:
+        archetype: Archetipas
+        attunement: Derinimas
+        cited_by: Cituojama
+        discovered: Atrasta
+        elo: Elo
+        geo_region: Geografinis regionas
+        lifecycle: 'Gyvavimo ciklas:'
+        realm: Sritis
+      sections:
+        context: Kontekstas
+        cyber_meaning: Kiberreikšmė
+        external_references: Išorinės nuorodos
+        lore: Lore
+        metadata: Metaduomenys

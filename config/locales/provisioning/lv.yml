@@ -1,0 +1,33 @@
+---
+lv:
+  provisioning:
+    new:
+      errors_title: 'Iniciācija neizdevās:'
+      fields:
+        cluster: Sektora piesaiste (klasteris)
+        family: Bioloģiskā dzimta
+        hardware_uid: Fiziskais kristāla ID (aparatūras UID)
+        hardware_uid_placeholder: 00E4...BF12
+        latitude: Platuma grādi
+        latitude_placeholder: 49.44...
+        longitude: Garuma grādi
+        longitude_placeholder: 32.06...
+        node_class: Mezgla klase
+        queen: Queen (Vārteja)
+        soldier: Soldier (Koks)
+      submit: SAISTĪT APARATŪRU AR MATRICU
+      subtitle: Izveidot 40 gadu biometrisko saiti
+      title: Aparatūras iniciācija
+    success:
+      assigned_did: Piesaistītais DID
+      hardware_uid: Aparatūras UID
+      hkdf:
+        algorithm: HKDF-SHA256
+        description_after: " gan aizmugursistēmā, gan programmaparatūrā. Nav nepieciešama atslēgas pārraide."
+        description_before: 'AES-256 atslēga un Lorenz K_seed tiek neatkarīgi atvasināti, izmantojot '
+        note: Pārliecinieties, ka PROVISIONING_MASTER_KEY ir ieprogrammēts ierīcē rūpnīcas nodrošinājuma laikā.
+        title: 'HKDF REŽĪMS: NULLES UZTICĪBAS ATSLĒGAS ATVASINĀŠANA'
+      not_available: Nav
+      ritual_complete: Rituāls pabeigts
+      view_in_matrix: Skatīt mezglu matricā →
+      woven: Mezgls ir ieausts Silken Net.

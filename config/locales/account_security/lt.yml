@@ -1,0 +1,56 @@
+---
+lt:
+  account_security:
+    identity:
+      cannot_unlink_last: Negalima atjungti paskutinio prisijungimo metodo be slaptažodžio.
+      locked_flash: "%{provider} užblokuotas."
+      locked_json: Tapatybė %{provider} užblokuota.
+      set_password_first: Nustatykite slaptažodį prieš atjungiant paskutinį tiekėją.
+      unlinked_flash: "%{provider} atjungtas."
+      unlinked_json: Tiekėjas %{provider} atjungtas.
+      unlocked_flash: "%{provider} atblokuotas."
+      unlocked_json: Tapatybė %{provider} atblokuota.
+    mfa:
+      disabled: MFA išjungta.
+      enabled: MFA įjungta.
+      enabled_with_codes: MFA įjungta. Išsaugokite atkūrimo kodus!
+    password:
+      current_invalid: Dabartinis slaptažodis neteisingas.
+      mismatch: Slaptažodžiai nesutampa.
+      too_short_flash: Slaptažodis turi būti bent 12 simbolių ilgio.
+      too_short_json: Naujas slaptažodis turi būti bent 12 simbolių ilgio.
+      updated_flash: Slaptažodis sėkmingai atnaujintas.
+      updated_json: Slaptažodis atnaujintas.
+    show:
+      heading: "🔐 Paskyros saugumas"
+      identities:
+        available_heading: Galimi tiekėjai
+        heading: Susieti tapatybės tiekėjai
+        link_provider: Susieti %{provider}
+        lock: Užblokuoti
+        locked: Užblokuotas
+        none_linked: Nesusieti tiekėjai.
+        primary: Pirminis
+        uid_line: 'UID: %{prefix}...'
+        unlink: Atjungti
+        unlink_confirm: Atjungti %{provider}?
+        unlink_disabled_title: Nustatykite slaptažodį prieš atjungiant.
+        unlock: Atblokuoti
+      mfa:
+        disable_button: Išjungti MFA
+        disabled_hint: "⚠️ MFA išjungta. Rekomenduojame ją įjungti, kad apsaugotumėte paskyrą."
+        enable_button: Įjungti MFA
+        enabled_with_remaining: "✅ MFA įjungta. Likusių atkūrimo kodų: %{count}"
+        heading: Dviejų veiksnių autentifikacija (2FA)
+        recovery_warning: Išsaugokite atkūrimo kodus saugioje vietoje. Jie reikalingi prisijungimui, jei prarasite TOTP įrenginį.
+      password:
+        change_submit: Keisti slaptažodį
+        confirm_label: Patvirtinti naują slaptažodį
+        current_label: Dabartinis slaptažodis
+        heading: Slaptažodis
+        new_label: Naujas slaptažodis (min. 12 simbolių)
+        not_set: "⚠️ Slaptažodis nenustatytas. Nustatykite slaptažodį, kad galėtumėte atjungti tiekėjus."
+        set_ok: "✅ Slaptažodis nustatytas"
+        set_submit: Nustatyti slaptažodį
+      subtitle: Tvarkykite prisijungimo metodus, dviejų veiksnių autentifikaciją ir susietų tiekėjus.
+    title: Paskyros saugumas

@@ -1,0 +1,27 @@
+---
+lt:
+  passwords:
+    forgot:
+      back_link: "← Atgal į prisijungimo portalą"
+      email_label: El. pašto adresas
+      heading: Atkūrimas
+      submit: SIŲSTI NUSTATYMO NUORODĄ
+      subtitle: Slaptažodžio nustatymo protokolas
+    forgot_sent_flash: Jei el. paštas egzistuoja, gausite laišką su instrukcijomis.
+    forgot_sent_json: Jei sistemoje yra el. paštas, gausite slaptažodžio nustatymo instrukcijas.
+    forgot_title: Atkūrimas
+    rate_limited: Per daug bandymų. Bandykite dar kartą po 5 minučių.
+    reset:
+      back_link: "← Atgal į prisijungimo portalą"
+      confirm_password_label: Patvirtinti naują slaptažodį
+      heading: Naujas raktas
+      invalid_token_flash: Žetonas pasibaigė. Paprašykite naujo nustatymo.
+      invalid_token_json: Nustatymo žetonas negaliojantis arba pasibaigęs.
+      mismatch: Slaptažodžiai nesutampa.
+      new_password_label: Naujas slaptažodis (min. 12 simbolių)
+      submit: NUSTATYTI NAUJĄ SLAPTAŽODĮ
+      subtitle: Nustatyti naują prieigos kodą
+      too_short: Slaptažodis turi būti bent 12 simbolių ilgio.
+      updated_flash: Slaptažodis atnaujintas. Prisijunkite su nauju slaptažodžiu.
+      updated_json: Slaptažodis sėkmingai atnaujintas.
+    reset_title: Nustatyti slaptažodį

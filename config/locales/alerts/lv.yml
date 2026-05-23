@@ -1,0 +1,36 @@
+---
+lv:
+  alerts:
+    badge:
+      severities:
+        critical: kritisks
+        high: augsts
+        low: zems
+        medium: vidējs
+      statuses:
+        active: aktīvs
+        ignored: ignorēts
+        resolved: atrisināts
+      summary: "%{severity} — %{status}"
+    index:
+      filter_all: visi
+      filter_aria_all: Rādīt visus brīdinājumus
+      filter_aria_severity: Filtrēt brīdinājumus pēc %{severity} smaguma
+      filter_critical: kritisks
+      filter_low: zems
+      filter_medium: vidējs
+      subtitle: Reāllaika telemetrijas uzraudzība anomālijām un bāzlīnijas novirzēm.
+      title: Aktīvo draudu matrica
+    row:
+      acknowledge: Apstiprināt un atrisināt →
+      resolve_aria: 'Atrisināt brīdinājumu #%{id}'
+      resolve_confirm: 'Apstiprināt draudu lokalizāciju brīdinājumam #%{id}?'
+      resolved: "✓ Atrisināts"
+      severity_aria: 'Smagums: %{severity}'
+    table:
+      alert_type: Brīdinājuma veids
+      command: Komanda
+      message: Notikums / Ziņojums
+      severity: Smagums
+      source: Avots
+      timestamp: Laika zīmogs

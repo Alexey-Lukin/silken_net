@@ -1,0 +1,15 @@
+---
+lv:
+  sessions:
+    new:
+      access_code_label: Piekļuves kods (Parole)
+      access_code_placeholder: "● ● ● ● ● ● ● ●"
+      footer_status: Sistēmas integritāte verificēta // AES-256 iespējots
+      forgot_link: Aizmirsāt piekļuves kodu?
+      identity_label: Identitāte (E-pasts)
+      identity_placeholder: operators@silken.net
+      provider_aria: Pierakstīties ar %{provider}
+      provider_separator: Vai autentificēties ar pakalpojumu sniedzēju
+      submit: Autentificēties
+      subtitle: Neirālā savienojuma izveidošana
+      title: Citadele

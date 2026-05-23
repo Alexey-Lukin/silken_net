@@ -1,0 +1,55 @@
+---
+lv:
+  tree_families:
+    form:
+      bark_thickness: Mizas biezums (mm)
+      baseline_impedance: Bāzes impedance (kΩ)
+      co2_coefficient: CO₂ sekvestrācijas koeficients
+      co2_placeholder: '1.0'
+      critical_z_max: Kritiskais Z maks.
+      critical_z_min: Kritiskais Z min.
+      sap_flow: Sulas plūsmas indekss
+      scientific_name: Zinātniskais nosaukums (latīņu)
+      scientific_placeholder: piem. Quercus robur
+      species_identity: Sugas identitāte
+      species_placeholder: piem. Parastais ozols
+      submit: IERAKSTĪT ĢENĒTISKO KODU
+    index:
+      audit: AUDITS
+      audit_aria: Auditēt %{name} sugu
+      baseline_value: "%{value} kΩ"
+      columns:
+        baseline_z: Bāzes Z
+        command: Komanda
+        population: Populācija
+        safe_range: Drošais diapazons
+        species_name: Sugas nosaukums
+      define_aria: Definēt jaunu koku sugu
+      define_dna: "+ Definēt DNS"
+      edit: REDIĢĒT
+      edit_aria: Rediģēt %{name} sugu
+      kicker: Bioloģiskā matrica
+      range_value: "%{min} - %{max} kΩ"
+      soldiers_count: "%{count} karavīri"
+      title: Globālās sugas konstantes
+    show:
+      baseline_info: 'Bāzes impedance: %{baseline} kOhm // CO₂ koeficients: %{coef}'
+      defaults:
+        not_available: Nav
+        zero: '0.0'
+      marker_value: "%{value}kΩ"
+      markers:
+        baseline: BĀZE
+        death: NĀVE
+        safe_max: DROŠAIS_MAKS
+        safe_min: DROŠAIS_MIN
+      props:
+        bark_thickness: Mizas biezums
+        bark_thickness_value: "%{value} mm"
+        co2: CO₂ sekvestrācijas koef.
+        fire_rating: Uguns novērtējums
+        foliage_density: Lapotnes blīvums
+        foliage_density_value: "%{value} %"
+        sap_flow: Sulas plūsmas indekss
+      props_title: TinyML bioloģiskās pazīmes
+      scale_title: Homeostāzes skala

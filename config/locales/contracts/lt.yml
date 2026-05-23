@@ -1,0 +1,59 @@
+---
+lt:
+  contracts:
+    index:
+      audit_aria: 'Peržiūrėti sutarties #%{id} detales'
+      audit_details: AUDITO_DETALĖS →
+      columns:
+        command: Komanda
+        current_yield: Dabartinis derlius
+        id_status: ID / Būsena
+        investment: Investicija
+        organization: Organizacija
+        performance: Našumas
+        period: Laikotarpis
+        target_cluster: Tikslinis klasteris
+      portfolio_title: Aktyvus turto portfelis
+      stats:
+        biogenic_yield: Biogeninis derlius
+        network_health: Tinklo sveikata
+        portfolio_avg: Portfelio vid.
+        portfolio_capital: Portfelio kapitalas
+        total_injected: Iš viso investuota
+        total_minted: Iš viso nukalinta
+      unassigned: NEPRISKIRTA
+    show:
+      backing:
+        active_soldiers: Aktyvūs kariai
+        danger: PAVOJINGA
+        nominal: NORMALU
+        threat_status: Grėsmės būsena
+        title: Pagrindinio turto sveikata
+        vitality: Klasterio gyvybingumas
+      current_yield: Dabartinis derlius
+      decoration: NaaS
+      identity: Sutarties tapatybė
+      ledger:
+        amount: Suma
+        amount_value: "+ %{amount} SCC"
+        empty: Nėra įrašytų emisijų.
+        pending_block: LAUKIAMAS_BLOKAS
+        timestamp: Laiko žyma
+        title: Blokų grandinės emisijų istorija
+        tx_hash: TX Kodas
+      legal:
+        burn_no: 'Ne'
+        burn_points: Sukauptų taškų deginimas
+        burn_yes: 'Taip'
+        cancellation_title: Atšaukimo sąlygos
+        early_exit_fee: Išankstinio išėjimo mokestis
+        early_exit_value: "%{value}%"
+        min_days: Min. dienos prieš išėjimą
+        title: Išmaniosios sutarties duomenys
+        verified: Patikrinta Silken Net Oracle. Našumas indeksuotas pagal LorentzA atraktoriaus stabilumą.
+      organization: 'Organizacija: %{name}'
+      period: 'Laikotarpis: %{start} → %{end}'
+      status: 'Būsena: %{value}'
+      title: "#%{id} // SEC_%{sector}"
+      total_funding: 'Bendras finansavimas: %{amount} SCC'
+      yield_unit: SCC

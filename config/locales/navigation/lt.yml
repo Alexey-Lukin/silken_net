@@ -1,0 +1,50 @@
+---
+lt:
+  navigation:
+    breadcrumb:
+      root: Citadelė
+    footer:
+      access: Visos prieigos nuoroda
+      role: Architektas
+    items:
+      account_security: Paskyros saugumas
+      audit_log: Audito žurnalas
+      battle_arena: Mūšių arena
+      blockchain_ledger: Blokų grandinės knyga
+      clan_hierarchy: Klano hierarchija
+      codex_atlas: Codex atlasas
+      crew_registry: Įgulos registras
+      firmware_ota: Programinės įrangos OTA
+      initiate_node: Inicijuoti mazgą
+      leaderboard: Lentelė
+      live_telemetry: Tiesioginė telemetrija
+      maintenance_log: Priežiūros žurnalas
+      my_codex: Mano Codex
+      my_fraction: Mano frakcija
+      naas_contracts: NaaS sutartys
+      notifications: Pranešimai
+      oracle_visions: Oracle vizijos
+      org_settings: Org. nustatymai
+      queen_relays: Queen relės
+      reports_archive: Ataskaitų archyvas
+      soldier_fleet: Karių flotilė
+      species_dna: Rūšių DNR
+      system_audits: Sistemos auditai
+      system_health: Sistemos sveikata
+      threat_alerts: Grėsmių įspėjimai
+      treasury_matrix: Iždo matrica
+    logo:
+      subtitle: Centrinės komandos citadelė
+      title: Silken Net
+    sections:
+      administration: Administracija
+      forest_operations: Miško operacijos
+      library: Biblioteka
+      neural_network: Neuralinis tinklas
+      strategic_insight: Strateginė įžvalga
+    status:
+      sync_label: 'Sync: 1.12 THz'
+      version: v8.0.ocean
+    top_bar:
+      core_sync_label: Branduolio sinchronizacija
+      core_sync_value: 1.12 THz

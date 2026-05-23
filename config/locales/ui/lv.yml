@@ -1,0 +1,46 @@
+---
+lv:
+  ui:
+    data_table:
+      empty: Nav atrasto ierakstu.
+    photo_card:
+      confirm_remove: Noņemt šo fotogrāfiju no pierādījumu ieraksta?
+      remove_photo: 'Noņemt fotogrāfiju: %{filename}'
+      view_photo: 'Skatīt fotogrāfiju: %{filename}'
+    skeleton:
+      loading: Ielādē…
+    status:
+      acknowledged: apstiprināts
+      active: aktīvs
+      aria_label: 'Statuss: %{status}'
+      breached: pārkāpts
+      cancelled: atcelts
+      confirmed: apstiprināts
+      deceased: miris
+      destroyed: iznīcināts
+      dormant: neaktīvs
+      draft: melnraksts
+      endangered: apdraudēts
+      expired: beidzies
+      extinct: izmirušais
+      failed: neizdevās
+      faulty: bojāts
+      fulfilled: izpildīts
+      idle: dīkstāvē
+      ignored: ignorēts
+      issued: izdots
+      maintenance: apkope
+      maintenance_needed: nepieciešama apkope
+      manual_review: manuāla pārskatīšana
+      mythical: mītisks
+      offline: bezsaistē
+      paid: apmaksāts
+      pending: gaida
+      processing: apstrādā
+      removed: noņemts
+      resolved: atrisināts
+      sent: nosūtīts
+      thriving: plaukstošs
+      triggered: aktivizēts
+      unknown: nezināms
+      updating: atjaunina

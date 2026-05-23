@@ -1,0 +1,43 @@
+---
+lv:
+  actuators:
+    card:
+      endpoint: 'Galapunkts:'
+      energy_budget: 'Enerģijas budžets:'
+      energy_budget_value: "%{mj} mJ"
+      execute_off: IZPILDĪT_IZSLĒGT
+      execute_off_aria: Izpildīt IZSLĒGŠANAS komandu aktuatoram %{device_type}
+      execute_on: IZPILDĪT_IESLĒGT
+      execute_on_aria: Izpildīt IESLĒGŠANAS komandu aktuatoram %{device_type}
+      gateway: 'Vārteja: %{uid}'
+      idle: NEAKTĪVS
+      last_activated: 'Pēdējo reizi aktivizēts:'
+      last_sync_status: 'Pēdējais sinhronizācijas statuss:'
+      max_duration: 'Maksimālais ilgums:'
+      max_duration_value: "%{seconds}s"
+      never: NEKAD
+      physical_state: 'Fiziskais stāvoklis:'
+    command_status_badge:
+      acknowledged: apstiprināts
+      confirmed: apstiprināts
+      failed: neizdevās
+      issued: izdots
+      sent: nosūtīts
+    index:
+      active_nodes: Aktīvie mezgli
+      decoration: AKTUATORI
+      empty_description: Izvietojiet aparatūru, lai sāktu monitoringu.
+      empty_title: Šajā sektorā nav nodrošinātu aktuatoru mezglu.
+      sector_matrix: Sektora matrica // %{name}
+      title: Aparatūras mijiedarbības slānis
+      total_units: Kopā vienību
+    show:
+      columns:
+        executed_at: Izpildīts
+        id: ID
+        operator: Operators
+        payload: Dati
+        status: Statuss
+      log_title: Komandu izpildes žurnāls
+      not_executed: "---"
+      system_operator: SISTĒMA

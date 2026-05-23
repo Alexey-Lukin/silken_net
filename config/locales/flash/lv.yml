@@ -1,0 +1,50 @@
+---
+lv:
+  flash:
+    actuators:
+      command_in_flight: Aktuatoram jau ir aktīva komanda. Pagaidiet, kamēr tā pabeigta.
+      idempotency_required: Aktuatora komandas izpildei nepieciešama Idempotency-Key galvene.
+    alerts:
+      acknowledged: 'Brīdinājums #%{id} apstiprināts.'
+      invalid_severity: 'Nederīgs smaguma filtrs: %{value}.'
+      invalid_status: 'Nederīgs statusa filtrs: %{value}.'
+      resolved: Draudi lokalizēti.
+    blockchain_transactions:
+      invalid_status: 'Nederīgs statusa filtrs: %{value}.'
+      invalid_token_type: 'Nederīgs token_type filtrs: %{value}.'
+    firmwares:
+      deployment_dispatched: Izvietošanas rīkojums v%{version} nosūtīts.
+      file_too_large: Faila izmērs pārsniedz %{limit} MB ierobežojumu.
+      invalid_target_type: 'target_type jābūt vienam no: %{allowed}.'
+      target_all: Viss mežs
+      target_cluster: 'Klasteris #%{id}'
+      uploaded: Jaunā evolūcija v%{version} augšupielādēta Okeānā.
+    maintenance:
+      hardware_verified: Aparatūras stāvoklis verificēts. STM32 impulss apstiprināts.
+      invalid_date: 'Nederīgs ISO8601 datums: %{value}.'
+      photo_deleted: Fotogrāfija noņemta no pierādījumu matricas.
+      photo_not_found: Fotogrāfija nav atrasta.
+      record_created: Dziedināšanas ieraksts saglabāts. Ekosistēma atjaunināta.
+      record_updated: Ieraksts atjaunināts.
+    notifications:
+      updated: Paziņojumu iestatījumi atjaunināti.
+    oracle:
+      simulation_started: Oracle ir sācis simulāciju.
+    provisioning:
+      defective_uid: Šī ir rezervēta programmaparatūras vērtība defektīvam STM32 UID — reģistrācija aizliegta. Pārflešojiet ierīci un nolasiet unikālo ID atkārtoti.
+      fallback_magic_rejected: Aparatūras UID beidzas ar programmaparatūras rezerves burvju vērtību (%{magic}). %{detail}
+      node_initiated: 'Mezgla iniciācija pabeigta. DID: %{did}. Aparatūras UID: %{uid}'
+      uid_taken: Ierīce ar UID %{uid} jau ir reģistrēta sistēmā.
+    sessions:
+      authenticated_via: Autentificēts ar %{provider}.
+      blocked_provider: Šī pieteikšanās metode ir bloķēta. Sazinieties ar administratoru vai izmantojiet citu metodi.
+      invalid_credentials: Nepareizas piekļuves koordinātes.
+      logout_success: Iziet veiksmīgi. Vārti ir slēgti.
+      neural_link_established: Neirālais savienojums izveidots.
+      neural_link_severed: Neirālais savienojums pārtraukts.
+      rate_limited: Pārāk daudz pieteikšanās mēģinājumu. Mēģiniet vēlreiz pēc minūtes.
+    settings:
+      org_updated: Organizācijas iestatījumi atjaunināti.
+      updated: Iestatījumi atjaunināti.
+    telemetry:
+      payload_too_large: Slodze pārsniedz %{limit} KiB ierobežojumu.

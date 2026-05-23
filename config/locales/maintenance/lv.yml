@@ -1,0 +1,115 @@
+---
+lv:
+  maintenance:
+    form:
+      action_prompt: "— Izvēlēties iejaukšanās veidu —"
+      action_type: Darbības veids
+      cancel: Atcelt
+      errors:
+        heading: Validācijas kļūdas
+      evidence:
+        attach_photos: Pievienot fotogrāfijas
+        heading: Pierādījumu protokols // Fotogrāfijas
+        hint: Nepieciešams remontam un uzstādīšanai. JPEG/PNG/WebP/HEIC · maks. 20 MB · maks. 10 fotogrāfijas
+      ews_association: EWS brīdinājuma asociācija (pēc izvēles)
+      ews_placeholder: Atrisinātā draudu ID
+      gps:
+        capture: "⊕ Fiksēt GPS"
+        heading: Iejaukšanās koordinātas
+        latitude: Platuma grādi
+        longitude: Garuma grādi
+      hardware_verified: Aparatūra verificēta — STM32 apstiprināja jaunu impulsu
+      header:
+        edit: 'Rediģēt iejaukšanās ierakstu // #%{id}'
+        new: Reģistrēt iejaukšanās rituālu
+      notes: Lauka piezīmes (min. 10 rakstzīmes)
+      notes_placeholder: 'Aprakstiet iejaukšanos: enkura stāvoklis, nomainītie komponenti, novērojumi...'
+      opex:
+        heading: OpEx finanšu izsekošana
+        labor_hours: Darba stundas
+        parts_cost: Rezerves daļu izmaksas (USD)
+      performed_at: Veikts
+      submit:
+        create: Saglabāt matricā
+        update: Atjaunināt ierakstu
+      target_id: Mērķa ID
+      target_type: Mērķa veids
+    index:
+      filter:
+        clear: Notīrīt
+        verified: "✓ Tikai verificētie"
+      heading: Apkopes ieraksti
+      hw_pending_title: Gaida verifikāciju
+      hw_verified_title: Aparatūra verificēta
+      page_info: "%{count} iejaukšanās · Lapa %{page} no %{total}"
+      register: "+ Reģistrēt iejaukšanos"
+      table:
+        action: Darbība
+        cost: Izmaksas
+        empty: Nav reģistrētu iejaukšanos
+        hw: APR
+        open: ATVĒRT →
+        photos: Foto
+        technician: Tehniķis
+        timestamp: Laika zīmogs
+        unit: Vienība
+    photo_gallery:
+      empty:
+        description: Augšupielādējiet pierādījumus, lai sāktu dokumentēšanu.
+        title: Nav fotogrāfiju
+      evidence_heading: Pierādījumu protokols
+      load_more: Ielādēt vairāk // %{remaining} atlikušas →
+      page_of: Lapa %{page} no %{total}
+      photo_count:
+        one: 1 fotogrāfija
+        other: "%{count} fotogrāfijas"
+    show:
+      cost:
+        heading: OpEx sadalījums
+        labor_label: Darbs
+        labor_sub: Stundas × Likme
+        parts_label: Daļas
+        parts_sub: Nomainītie komponenti
+        total_label: Kopējās izmaksas
+        total_sub: Darbs + Daļas
+      edit: Rediģēt ierakstu →
+      evidence:
+        attach: Pievienot pierādījumus →
+        heading: Pierādījumu protokols
+        no_photos: Nav pievienotu fotogrāfiju
+        trust_protocol: "⚠ Uzticības protokols prasa fotogrāfijas %{action_type}"
+      gps:
+        drift: 'Novirze no koka:'
+        heading: Iejaukšanās koordinātas
+        lat: Plat
+        lng: Gar
+        locate: Atrast patruļu →
+        no_gps: GPS nav reģistrēts
+        no_gps_sub: Fiksēts ar mobilo lietotni ieraksta izveidošanas brīdī.
+      hardware:
+        heading: Aparatūras stāvoklis
+        pending: GAIDA
+        record_type: Ieraksta veids
+        stm_verified: STM32 verificēts
+        verified: JĀ
+        verify_confirm: 'Atzīmēt STM32 impulsa apstiprinājumu ierakstam #%{id}?'
+        verify_now: Verificēt →
+      hardware_badge:
+        pending: Gaida verifikāciju
+        verified: "✓ APR Verificēts"
+      header:
+        new_record: "+ Jauns ieraksts"
+        verify_confirm: 'STM32 apstiprināja impulsu ierakstam #%{id}?'
+        verify_hardware: Verificēt aparatūru →
+      metadata:
+        action: Darbība
+        created: Izveidots
+        ews_alert: EWS brīdinājums
+        heading: Iejaukšanās metadati
+        photos: Fotogrāfijas
+        role: Loma
+        target: Mērķis
+        technician: Tehniķis
+        updated: Atjaunināts
+      notes:
+        heading: Lauka piezīmes

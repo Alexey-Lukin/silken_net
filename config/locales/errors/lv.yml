@@ -1,0 +1,47 @@
+---
+lv:
+  activerecord:
+    errors:
+      models:
+        actuator_command:
+          attributes:
+            duration_seconds:
+              exceeds_actuator_limit: pārsniedz aktuatora drošības maksimumu (%{limit}s).
+            expires_at:
+              must_be_future: jābūt nākotnē
+        bio_contract_firmware:
+          attributes:
+            compatible_hardware_versions:
+              must_be_array: jābūt masīvam
+              version_must_be_non_blank_string: katrai versijai jābūt nepustukšai virknei
+        maintenance_record:
+          attributes:
+            photos:
+              required_for_action_type: nepieciešams 'remontam' un 'uzstādīšanas' darbību veidiem (Uzticības protokols)
+        naas_contract:
+          attributes:
+            end_date:
+              must_be_after_start: jābūt pēc sākuma datuma
+        tiny_ml_model:
+          attributes:
+            accuracy_score:
+              must_be_in_unit_range: jābūt diapazonā 0..1
+              must_be_numeric: jābūt derīgai skaitliskai vērtībai
+            threshold:
+              must_be_in_unit_range: jābūt diapazonā 0..1
+              must_be_numeric: jābūt derīgai skaitliskai vērtībai
+  errors:
+    api:
+      forbidden: Nepietiekamas privilēģijas šai evolūcijai.
+      internal: Kodola kļūme Okeānā. Paziņojiet Arhitektam.
+      missing_parameter: 'Trūkst obligātā parametra: %{param}'
+      no_organization: Šim kontam nav piesaistītas organizācijas.
+      no_organization_title: Piekļuve liegta
+      not_found: "%{model} nav atrasts meža matricā."
+      unauthorized: Nepieciešama autentifikācija. Vārti ir slēgti.
+    no_organization:
+      body_1: Jūsu konts pašlaik nav saistīts ar nevienu organizāciju Meža matricā. Bez klastera Citadele nevar norobežot telemetriju, makus vai brīdinājumus.
+      body_2: Sazinieties ar administratoru, lai tiktu iekļauts klasterī.
+      heading: Karantīna
+      sign_out: "← Iziet"
+      subtitle: Nav piesaistītas organizācijas

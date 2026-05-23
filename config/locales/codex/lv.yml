@@ -1,0 +1,121 @@
+---
+lv:
+  codex:
+    atlas:
+      count:
+        one: "%{count} arhetips katalogizēts"
+        other: "%{count} arhetipi katalogizēti"
+      empty:
+        description: Mēģiniet plašāku jomu vai notīriet meklēšanu.
+        title: Codex klusē. Neviens arhetips neatbilst šim filtram.
+      kicker: Lore slānis
+      title: Arhetipa Codex
+    attunements:
+      attune: Saskaņot
+      attuned: Saskaņots
+      title: Saskaņošana
+    battle_arena:
+      elo_summary: 'Elo: %{elo} · %{matches}m'
+      heading: Mezglu cīņa
+      page_title: Codex · Cīņas arēna
+      pick: Izvēlēties
+      realm_prefix: 'Joma:'
+      realm_unknown: "—"
+      skip: Izlaist
+      vs: PRET
+    citations:
+      aria_with_note: "%{base} — %{note}"
+      aria_with_realm: 'Codex citāts: %{title} (%{realm})'
+      strip:
+        untold: Nepastāstīts.
+      title_with_note: "%{base} — %{note}"
+      unknown_realm: nezināma joma
+    comments:
+      empty: Esiet pirmais, kas dalās ar to, ko šis arhetips nozīmē jums.
+      heading: Diskusija
+      hidden: Paslēpts moderatora.
+      placeholder: Rakstiet komentāru Markdown formātā…
+      post: Publicēt
+    discoveries:
+      counter: 'Atbloķēts: %{count}'
+      empty: Vēl nekas nav atbloķēts — novērojiet koku, balsojiet Arēnā, izvēlieties frakciju.
+      heading: Mans Codex
+      meta: "%{trigger} · %{timestamp}"
+      page_title: Codex · Mani atklājumi
+      toast:
+        kicker: Codex Atbloķēts
+        triggers:
+          attunement_streak: Sērija
+          default: Atbloķēts
+          fraction_choice: Pakts
+          manual_unlock: Piešķirts
+          match_milestone: Cīņa
+          oracle_seasonal: Oracle
+          telemetry_observation: Novērots
+        visit: "→ Apmeklēt"
+    fractions:
+      change: Mainīt →
+      choose: Izvēlēties frakciju
+      choose_short: Izvēlēties
+      cooldown:
+        locked: Bloķēts
+        open: Atvērts
+        title: Nākamā maiņa pieejama %{timestamp}
+      current: Pašreizējais
+      empty: Vēl neesat izvēlējies Codex arhetipa pieskaņošanu.
+      label: Frakcija
+      my_heading: Mana frakcija
+      my_page_title: Codex · Mana frakcija
+      onboarding:
+        aria_label: Codex ievads
+        body: Pieskaņojiet savu kontu Codex arhetipam, lai atbloķētu lore slāni, pievienotos Cīņas arēnai un atklātu Atklājumus, pieaugot mežam.
+        cta_primary: Izvēlieties savu frakciju →
+        cta_secondary: Pārlūkot Codex
+        kicker: Codex // Ievads
+        welcome: Laipni lūgti Codex.
+        welcome_named: Laipni lūgti Codex, %{name}.
+      picker:
+        confirm: Izvēlēties "%{slug}"? Atkārtota izvēle bloķēta uz 7 dienām.
+        empty: Šajā jomā nav izvēlējamu mezglu.
+        heading: Izvēlēties frakciju
+        locked: Bloķēts
+        pick: Izvēlēties
+        subtitle: Viens arhetips, viena identitāte. Atkārtota izvēle pieejama ik pēc 7 dienām.
+      picker_page_title: Codex · Izvēlēties frakciju
+      since: Kopš %{date}
+      updated: Atjaunināts %{date}
+    leaderboard:
+      columns:
+        elo: Elo
+        lifecycle: Dzīves cikls
+        matches: Cīņas
+        rank: "#"
+        title: Nosaukums
+      empty: Vēl nav ierindotu mezglu.
+      heading: Codex tabula
+      page_title: Codex · Tabula
+      realm_prefix: 'Joma: %{realm} · '
+      top_n: Top %{limit}
+    node_card:
+      aria_label: 'Atvērt Codex karti: %{title}'
+      elo: Elo %{value}
+      no_region: "—"
+    realm_tabs:
+      all: Visi
+      aria_label: Codex jomas filtrs
+    show:
+      meta:
+        archetype: Arhetips
+        attunement: Saskaņošana
+        cited_by: Citēts no
+        discovered: Atklāts
+        elo: Elo
+        geo_region: Ģeogrāfiskais reģions
+        lifecycle: 'Dzīves cikls:'
+        realm: Joma
+      sections:
+        context: Konteksts
+        cyber_meaning: Kibermedijs
+        external_references: Ārējās atsauces
+        lore: Lore
+        metadata: Metadati

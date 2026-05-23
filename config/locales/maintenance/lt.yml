@@ -1,0 +1,116 @@
+---
+lt:
+  maintenance:
+    form:
+      action_prompt: "— Pasirinkite įsikišimo tipą —"
+      action_type: Veiksmo tipas
+      cancel: Atšaukti
+      errors:
+        heading: Validacijos klaidos
+      evidence:
+        attach_photos: Pridėti nuotraukas
+        heading: Įrodymų protokolas // Nuotraukos
+        hint: Reikalinga remontui ir montavimui. JPEG/PNG/WebP/HEIC · maks. 20 MB · maks. 10 nuotraukų
+      ews_association: EWS įspėjimo sąsaja (neprivaloma)
+      ews_placeholder: Sprendžiamos grėsmės ID
+      gps:
+        capture: "⊕ Fiksuoti GPS"
+        heading: Įsikišimo koordinatės
+        latitude: Platuma
+        longitude: Ilguma
+      hardware_verified: Aparatūra patikrinta — STM32 patvirtino naują impulsą
+      header:
+        edit: 'Redaguoti įsikišimo įrašą // #%{id}'
+        new: Registruoti įsikišimo ritualą
+      notes: Lauko pastabos (min. 10 simbolių)
+      notes_placeholder: 'Apibūdinkite įsikišimą: inkaro būsena, pakeisti komponentai, stebėjimai...'
+      opex:
+        heading: OpEx finansinis sekimas
+        labor_hours: Darbo valandos
+        parts_cost: Atsarginių dalių kaina (USD)
+      performed_at: Atlikta
+      submit:
+        create: Išsaugoti matricoje
+        update: Atnaujinti įrašą
+      target_id: Taikinio ID
+      target_type: Taikinio tipas
+    index:
+      filter:
+        clear: Valyti
+        verified: "✓ Tik patikrinti"
+      heading: Priežiūros įrašai
+      hw_pending_title: Laukia patikrinimo
+      hw_verified_title: Aparatūra patikrinta
+      page_info: "%{count} įsikišimų · Puslapis %{page} iš %{total}"
+      register: "+ Registruoti įsikišimą"
+      table:
+        action: Veiksmas
+        cost: Kaina
+        empty: Nėra įrašytų įsikišimų
+        hw: APR
+        open: ATIDARYTI →
+        photos: Nuotr.
+        technician: Technikas
+        timestamp: Laiko žyma
+        unit: Vienetas
+    photo_gallery:
+      empty:
+        description: Įkelkite įrodymus, kad pradėtumėte dokumentavimą.
+        title: Nėra nuotraukų
+      evidence_heading: Įrodymų protokolas
+      load_more: Įkelti daugiau // %{remaining} liko →
+      page_of: Puslapis %{page} iš %{total}
+      photo_count:
+        few: "%{count} nuotraukos"
+        one: 1 nuotrauka
+        other: "%{count} nuotraukų"
+    show:
+      cost:
+        heading: OpEx suskirstymas
+        labor_label: Darbas
+        labor_sub: Valandos × Tarifas
+        parts_label: Dalys
+        parts_sub: Pakeisti komponentai
+        total_label: Bendros išlaidos
+        total_sub: Darbas + Dalys
+      edit: Redaguoti įrašą →
+      evidence:
+        attach: Pridėti įrodymus →
+        heading: Įrodymų protokolas
+        no_photos: Nėra pridėtų nuotraukų
+        trust_protocol: "⚠ Pasitikėjimo protokolas reikalauja nuotraukų %{action_type}"
+      gps:
+        drift: 'Nukrypimas nuo medžio:'
+        heading: Įsikišimo koordinatės
+        lat: Plat
+        lng: Ilg
+        locate: Surasti patruliavimą →
+        no_gps: GPS neužregistruotas
+        no_gps_sub: Fiksuota mobiliąja programa įrašo sukūrimo metu.
+      hardware:
+        heading: Aparatūros būsena
+        pending: LAUKIAMA
+        record_type: Įrašo tipas
+        stm_verified: STM32 patikrinta
+        verified: TAIP
+        verify_confirm: 'Pažymėti STM32 impulso patvirtinimą įrašui #%{id}?'
+        verify_now: Patikrinti →
+      hardware_badge:
+        pending: Laukia patikrinimo
+        verified: "✓ APR Patikrinta"
+      header:
+        new_record: "+ Naujas įrašas"
+        verify_confirm: 'STM32 patvirtino impulsą įrašui #%{id}?'
+        verify_hardware: Patikrinti aparatūrą →
+      metadata:
+        action: Veiksmas
+        created: Sukurta
+        ews_alert: EWS įspėjimas
+        heading: Įsikišimo metaduomenys
+        photos: Nuotraukos
+        role: Vaidmuo
+        target: Taikinys
+        technician: Technikas
+        updated: Atnaujinta
+      notes:
+        heading: Lauko pastabos

@@ -1,0 +1,12 @@
+---
+lt:
+  m2m_auth:
+    device_no_organization: Įrenginys nesusietas su jokia organizacija.
+    device_not_found: Įrenginys nerastas sistemoje.
+    invalid_signature: Neteisinga parašas.
+    invalid_signature_format: Neteisingas parašo formatas.
+    invalid_timestamp: Neteisingas laiko žymos formatas (reikalingas ISO 8601).
+    no_public_key: Šiam įrenginiui neregistruotas Ed25519 viešasis raktas.
+    no_users_in_organization: Organizacijoje nėra naudotojų žetonui išduoti.
+    replay_detected: Aptakta pakartojimo ataka.
+    timestamp_expired: Laiko žyma pasibaigusi. Sinchronizuokite įrenginio laikrodį.

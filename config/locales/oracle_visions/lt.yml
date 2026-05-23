@@ -1,0 +1,26 @@
+---
+lt:
+  oracle_visions:
+    forecast_card:
+      deploy_shield: Diegti prevencinį skydą
+      economic_impact: Ekonominis poveikis
+      ignore: Ignoruoti singuliarumą
+      impact_value: "%{value} SCC"
+      predicted_window: Prognozuojamas įvykio langas
+      probability: "%{value}%"
+      yield_impact_default: "-0.04%"
+    index:
+      active_simulations: Aktyvios simuliacijos
+      confidence: 'DI pasitikėjimas: %{value}'
+      expected_yield: Tikėtinas 24h derlius
+      title: Strateginių prognozių matrica
+      yield_unit: SCC
+    simulation_panel:
+      sector_option: 'Sektorius: %{name}'
+      sliders:
+        humidity_drop: Drėgmės kritimas (%)
+        sap_flow_bias: Sulų srauto poslinkis
+        temp_offset: Temp. poslinkis (Δt)
+      submit: Iškviesti neuralinę simuliaciją
+      target_sector: Tikslinis sektorius
+      title: Simuliacijos variklis // Kas jei?

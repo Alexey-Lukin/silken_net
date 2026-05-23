@@ -1,0 +1,17 @@
+---
+lt:
+  accessibility:
+    open_navigation: Atidaryti navigaciją
+  flash:
+    locale_changed: Kalba pakeista į %{lang}
+    unsupported_locale: Nepalaikoma kalba
+  locale:
+    apply: Taikyti
+    available:
+      en: English
+      lt: Lietuvių
+      lv: Latviešu
+      uk: Українська
+    switcher_label: Kalba
+  theme:
+    toggle_label: Perjungti šviesią / tamsią temą

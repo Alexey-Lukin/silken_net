@@ -1,0 +1,10 @@
+---
+lv:
+  pagination:
+    aria_label: Lappusēšana
+    next: Nākamā →
+    next_aria: Doties uz nākamo lapu
+    page_indicator: Lapa %{current} / %{total}
+    page_indicator_compact: "%{current} / %{total}"
+    previous: "← Iepriekšējā"
+    previous_aria: Doties uz iepriekšējo lapu

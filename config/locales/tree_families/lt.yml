@@ -1,0 +1,55 @@
+---
+lt:
+  tree_families:
+    form:
+      bark_thickness: Žievės storis (mm)
+      baseline_impedance: Bazinė impedansas (kΩ)
+      co2_coefficient: CO₂ sekvestracijos koeficientas
+      co2_placeholder: '1.0'
+      critical_z_max: Kritinis Z maks.
+      critical_z_min: Kritinis Z min.
+      sap_flow: Sulų srauto indeksas
+      scientific_name: Mokslinis pavadinimas (lotynų k.)
+      scientific_placeholder: pvz. Quercus robur
+      species_identity: Rūšies tapatybė
+      species_placeholder: pvz. Paprastasis ąžuolas
+      submit: ĮRAŠYTI GENETINĮ KODĄ
+    index:
+      audit: AUDITAS
+      audit_aria: Audituoti %{name} rūšį
+      baseline_value: "%{value} kΩ"
+      columns:
+        baseline_z: Bazinis Z
+        command: Komanda
+        population: Populiacija
+        safe_range: Saugus diapazonas
+        species_name: Rūšies pavadinimas
+      define_aria: Apibrėžti naują medžių rūšį
+      define_dna: "+ Apibrėžti DNR"
+      edit: REDAGUOTI
+      edit_aria: Redaguoti %{name} rūšį
+      kicker: Biologinė matrica
+      range_value: "%{min} - %{max} kΩ"
+      soldiers_count: "%{count} kariai"
+      title: Globalios rūšių konstantos
+    show:
+      baseline_info: 'Bazinis impedansas: %{baseline} kOhm // CO₂ koeficientas: %{coef}'
+      defaults:
+        not_available: Nėra
+        zero: '0.0'
+      marker_value: "%{value}kΩ"
+      markers:
+        baseline: BAZĖ
+        death: MIRTIS
+        safe_max: SAUGUS_MAKS
+        safe_min: SAUGUS_MIN
+      props:
+        bark_thickness: Žievės storis
+        bark_thickness_value: "%{value} mm"
+        co2: CO₂ sekvestracijos koef.
+        fire_rating: Gaisro įvertinimas
+        foliage_density: Lapijos tankis
+        foliage_density_value: "%{value} %"
+        sap_flow: Sulų srauto indeksas
+      props_title: TinyML biologiniai požymiai
+      scale_title: Homeostazės skalė

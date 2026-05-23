@@ -1,0 +1,43 @@
+---
+lv:
+  gateways:
+    index:
+      nodes_online: 'Mezgli tiešsaistē:'
+      subtitle: Meža tīkla neirālo sinapšu uzraudzība.
+      title: Queen reģistrs // Globālie relēji
+    item:
+      cluster: 'Klasteris: %{name}'
+      label: Queen // %{uid}
+      open: Atvērt relēju →
+      open_aria: Atvērt vārtejas %{uid} detaļas
+      signal: Signāls
+      silent: KLUSS
+      soldiers: Karavīri
+      unassigned: NEPIESAISTĪTS
+    show:
+      config:
+        cluster: Klasteris
+        firmware_hash: Programmaparatūras kods
+        firmware_version: Programmaparatūras versija
+        heading: Tīkla konfigurācija
+        mesh_enabled: Iespējots
+        mesh_mode: Tīkla režīms
+        push: Nosūtīt jaunu konfigurāciju →
+        sleep_interval: Miega intervāls
+      crypto:
+        aes_provisioned: AES-256 nodrošināts
+        heading: Aparatūras kriptogrāfija
+        uid_label: 'Aparatūras UID:'
+      fleet:
+        active_nodes: "%{count} aktīvie mezgli"
+        heading: Karavīru flote komandā
+      header:
+        heartbeat: Sirdsdarbība
+      telemetry:
+        heading: Sistēmas telemetrija (Queen diagnostika)
+        internal_core: Iekšējais kodols
+        mvolt: mVolti (Li-Po)
+        signal_csq: 'CSQ: %{csq}'
+        signal_strength: Signāla stiprums
+        thermal_state: Termiskais stāvoklis
+        voltage_matrix: Sprieguma matrica

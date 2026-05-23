@@ -1,0 +1,73 @@
+---
+lv:
+  reports:
+    carbon_absorption:
+      decoration: CO₂
+      footer: Atskaite ģenerēta %{at} par %{org}
+      generated: 'Ģenerēts: %{at}'
+      metrics:
+        active_trees: Aktīvie koki
+        active_trees_sub: Tiešsaistē
+        active_wallets: Aktīvie maki
+        active_wallets_sub: Maki
+        total_carbon_points: Kopējie oglekļa punkti
+        total_carbon_points_sub: SCC
+        total_trees: Kopā koki
+        total_trees_sub: Izvietoti
+      table:
+        active_wallets: Aktīvie maki, kas ģenerē punktus
+        metric: Metrika
+        total_points: Kopā uzkrātie oglekļa punkti
+        trees_deployed: Izvietotie koki (visi statusi)
+        trees_online: Pašlaik tiešsaistes koki
+        value: Vērtība
+      title: "🌿 Oglekļa absorbcijas atskaite"
+    financial_summary:
+      breakdown:
+        category: Kategorija
+        confirmed: Apstiprināts
+        count: Skaits
+        failed: Neizdevās
+        pending: Gaida
+        title: Blokķēdes darījumu sadalījums
+        total_transactions: Kopā darījumi
+      decoration: FIN
+      footer: Atskaite ģenerēta %{at} par %{org}
+      generated: 'Ģenerēts: %{at}'
+      metrics:
+        active_contracts: Aktīvie līgumi
+        active_contracts_sub: NaaS
+        total_contracts: Kopā līgumi
+        total_contracts_sub: Mūža laikā
+        total_invested: Kopā ieguldīts
+        total_invested_sub: SCC
+      title: "💎 Finanšu kopsavilkuma atskaite"
+    index:
+      actions:
+        csv: CSV ↓
+        pdf: PDF ↓
+        view: Skatīt →
+      available: Pieejamās atskaites
+      carbon:
+        description: CO₂ absorbcija un vides audits.
+        title: Oglekļa absorbcijas atskaite
+      financial:
+        description: Finanšu veiktspēja un blokķēdes darījumi.
+        title: Finanšu kopsavilkuma atskaite
+      hero:
+        biological_assets: Bioloģiskie aktīvi
+        biological_assets_sub: Koki
+        capital_injected: Ieguldītais kapitāls
+        capital_injected_sub: SCC ieguldīts
+        carbon_yield: Oglekļa raža
+        carbon_yield_sub: SCC kopā
+        health_score: Veselības rādītājs
+        health_score_sub: Indekss
+        sectors: Sektori
+        sectors_sub: Klasteri
+        threat_active: AKTĪVS
+        threat_clear: DROŠS
+        threat_level: Draudu līmenis
+      organization: 'Organizācija:'
+      subtitle: 'Konsolidētas atskaites investoriem: vides auditi un finanšu veiktspēja.'
+      title: "📊 Arhīvs — Atskaišu centrs"

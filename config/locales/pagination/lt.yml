@@ -1,0 +1,10 @@
+---
+lt:
+  pagination:
+    aria_label: Puslapiavimas
+    next: Kitas →
+    next_aria: Eiti į kitą puslapį
+    page_indicator: Puslapis %{current} / %{total}
+    page_indicator_compact: "%{current} / %{total}"
+    previous: "← Ankstesnis"
+    previous_aria: Eiti į ankstesnį puslapį

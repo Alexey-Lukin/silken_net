@@ -1,0 +1,43 @@
+---
+lt:
+  wallets:
+    balance_display:
+      available: 'Galima:'
+      decoration: SCC
+      esg_retired: 'ESG išimta:'
+      locked: 'Užblokuota:'
+      locked_for: 'Užblokuota: %{owner}'
+      verified_balance: Patikrintas balansas
+    index:
+      audit_link: Audito knyga →
+      kind_clan: Klano iždas
+      kind_soldier: Kario piniginė
+      locked_label: "🔒 %{amount} užblokuota"
+      retired_label: "♻ %{amount} išimta"
+      subtitle: Silken anglies monetų srauto stebėjimas tinkle.
+      system_reserve: Sistemos rezervas
+      title: Iždo matrica
+      total_liquidity: 'Bendra likvidumas:'
+    metadata_frame:
+      available_balance: Galimas balansas
+      esg_retired: ESG išimta
+      locked_balance: Užblokuotas balansas
+      network: Tinklas
+      not_provisioned: NEAPRŪPINTA
+      polygon_address: Polygon adresas
+      polygon_mainnet: Polygon PoS (Mainnet)
+      title: Blokų grandinės tapatybė
+    show:
+      actions: Veiksmai
+      columns:
+        amount: Suma
+        status: Būsena
+        timestamp: Laiko žyma
+        tx_hash: TX Kodas
+        type: Tipas
+      empty: Sandorių nerasta.
+      export_csv: Eksportuoti CSV knygą
+      export_csv_aria: Eksportuoti sandorių knygą kaip CSV
+      ledger_title: Grandinės sandorių knyga
+      sync_polygon: Sinchronizuoti su Polygon
+      sync_polygon_aria: Sinchronizuoti piniginę su Polygon blokų grandinė

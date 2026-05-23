@@ -1,0 +1,19 @@
+---
+lt:
+  system_audits:
+    index:
+      badges:
+        critical: kritinis
+        ok: gerai
+      checked_at: Patikrinta %{at}
+      columns:
+        source: Šaltinis
+        total: SCC iš viso
+      critical: "🚨 KRITINIS — Delta %{delta} SCC viršija slenkstį 0.0001"
+      ok: "✓ VIENTISUMAS GERAI — Delta %{delta} SCC tolerancijos ribose"
+      sources:
+        delta: Δ Delta
+        polygon: Polygon išmanioji sutartis (totalSupply)
+        postgres: Postgres DB (patvirtinti sandoriai)
+      subtitle: Postgres DB SCC sumos palyginimas su bendrąja emisija Polygon išmaniosios sutarties.
+      title: "⛓️ Grandinės auditas — Sistemos vientisumas"

@@ -1,0 +1,44 @@
+---
+lv:
+  audit_logs:
+    index:
+      columns:
+        action: Darbība
+        details: Detaļas
+        target: Mērķis
+        timestamp: Laika zīmogs
+        user: Lietotājs
+      empty_title: Nav reģistrētu audita notikumu.
+      inspect: Pārbaudīt →
+      inspect_aria: 'Pārbaudīt audita žurnālu #%{id}'
+      records: 'Ieraksti:'
+      subtitle: 'Administratoru darbību žurnāls: kas, kad un ko mainīja.'
+      system_user: Sistēma
+      title: "👁️ Novērotājs — Audita žurnāls"
+    show:
+      actor:
+        email: E-pasts
+        name: Vārds
+        role: Loma
+        system: Sistēmas aktors.
+        title: Aktora identitāte
+      decoration: ŽURNĀLS
+      details:
+        action: Darbība
+        field: Lauks
+        performed_by: Izpildīja
+        target_id: Mērķa ID
+        target_type: Mērķa veids
+        timestamp: Laika zīmogs
+        value: Vērtība
+      event_record: Audita notikuma ieraksts
+      metadata:
+        empty: Nav papildu metadatu.
+        title: Notikuma metadati
+      system_user: Sistēma
+      target:
+        empty: Nav konkrēta mērķa.
+        id: ID
+        title: Auditējamais mērķis
+        type: Veids
+      tx_id_line: "#%{id} // %{at}"

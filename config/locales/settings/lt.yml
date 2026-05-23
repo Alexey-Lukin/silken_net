@@ -1,0 +1,26 @@
+---
+lt:
+  settings:
+    show:
+      config:
+        heading: Konfigūracija
+      fields:
+        ai_sensitivity: DI jautrumas (0.0 — 1.0)
+        alert_threshold: Įspėjimo slenkstis (Kritinis Z)
+        billing_email: Atsiskaitymo el. paštas
+        crypto_address: Kriptografijos viešasis adresas
+        current_logo: 'Dabartinis: %{filename}'
+        logo: Organizacijos logotipas
+        org_name: Organizacijos pavadinimas
+      heading: "🧠 Smegenų žemėlapis — Organizacijos nustatymai"
+      metadata:
+        created: Sukurta
+        heading: Sistemos metaduomenys
+        org_id: Organizacijos ID
+        updated: Paskutinį kartą atnaujinta
+      submit: Atnaujinti nustatymus →
+      subtitle: 'Organizacijos konfigūracija: pavadinimas, atsiskaitymas, kriptografijos adresas, įspėjimų slenksčiai ir DI jautrumas.'
+      vault:
+        address: Viešasis kriptografijos adresas
+        billing: Atsiskaitymo kontaktas
+        heading: Grandinės tapatybės saugykla

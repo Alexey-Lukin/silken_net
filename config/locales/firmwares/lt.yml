@@ -1,0 +1,41 @@
+---
+lt:
+  firmwares:
+    form:
+      binary_label: Dvejetainis artefaktas (.bin)
+      notes_label: Leidimo pastabos / Loginiai pakeitimai
+      notes_placeholder: Apibūdinkite biogeninės programinės įrangos pakeitimus...
+      submit: PATVIRTINTI EVOLIUCIJĄ
+      target_label: Tikslinė aparatūros architektūra
+      target_queen: ESP32-S3 (Queen)
+      target_soldier: STM32-L0 (Soldier)
+      version_label: Evoliucijos versija
+      version_placeholder: pvz. 1.4.2
+    index:
+      columns:
+        checksum: Kontrolinė suma (MD5)
+        command: Komanda
+        target_hardware: Tikslinė aparatūra
+        uploaded: Įkelta
+        version: Versija
+      deploy_aria: Diegti programinę įrangą v%{version}
+      inventory_title: Miško inventorius (versijų pasiskirstymas)
+      queens: Queens (Šliuzai)
+      registry_title: Galimos dvejetainių evoliucijų versijos
+      soldiers: Soldiers (Medžiai)
+      units: "%{count} vienetai"
+      upload: "+ Injekuoti naują kodą"
+      upload_aria: Įkelti naują programinės įrangos dvejetainį failą
+      version_label: v%{version}
+    new:
+      subtitle: Paruošti dvejetainį artefaktą OTA diegimui
+      title: Naujo kodo injekcija
+    ota_progress_bar:
+      chunk: 'DALIS: %{current} / %{total}'
+      complete: "%{percent}% BAIGTA"
+      link_label: 'OTA_NUORODA: %{uid}'
+    row:
+      confirm: Inicijuoti evoliuciją iki v%{version} pasirinktai aparatūrai?
+      not_available: Nėra
+      order_evolution: Užsakyti evoliuciją →
+      version: v%{version}

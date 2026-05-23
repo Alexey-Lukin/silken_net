@@ -1,0 +1,56 @@
+---
+lv:
+  account_security:
+    identity:
+      cannot_unlink_last: Nevar atvienot pēdējo pieteikšanās metodi bez paroles.
+      locked_flash: "%{provider} bloķēts."
+      locked_json: Identitāte %{provider} bloķēta.
+      set_password_first: Iestatiet paroli pirms atvienot pēdējo pakalpojumu sniedzēju.
+      unlinked_flash: "%{provider} atvienots."
+      unlinked_json: Pakalpojumu sniedzējs %{provider} atvienots.
+      unlocked_flash: "%{provider} atbloķēts."
+      unlocked_json: Identitāte %{provider} atbloķēta.
+    mfa:
+      disabled: MFA atspējota.
+      enabled: MFA iespējota.
+      enabled_with_codes: MFA iespējota. Saglabājiet savus atjaunošanas kodus!
+    password:
+      current_invalid: Pašreizējā parole ir nepareiza.
+      mismatch: Paroles nesakrīt.
+      too_short_flash: Parolei jābūt vismaz 12 rakstzīmes garai.
+      too_short_json: Jaunajai parolei jābūt vismaz 12 rakstzīmes garai.
+      updated_flash: Parole veiksmīgi atjaunināta.
+      updated_json: Parole atjaunināta.
+    show:
+      heading: "🔐 Konta drošība"
+      identities:
+        available_heading: Pieejamie pakalpojumu sniedzēji
+        heading: Saistītie identitātes pakalpojumu sniedzēji
+        link_provider: Saistīt %{provider}
+        lock: Bloķēt
+        locked: Bloķēts
+        none_linked: Nav saistītu pakalpojumu sniedzēju.
+        primary: Primārais
+        uid_line: 'UID: %{prefix}...'
+        unlink: Atvienot
+        unlink_confirm: Atvienot %{provider}?
+        unlink_disabled_title: Iestatiet paroli pirms atvienot.
+        unlock: Atbloķēt
+      mfa:
+        disable_button: Atspējot MFA
+        disabled_hint: "⚠️ MFA atspējota. Iesakām to iespējot, lai aizsargātu kontu."
+        enable_button: Iespējot MFA
+        enabled_with_remaining: "✅ MFA iespējota. Atlikušie atjaunošanas kodi: %{count}"
+        heading: Divu faktoru autentifikācija (2FA)
+        recovery_warning: Saglabājiet atjaunošanas kodus drošā vietā. Tie nepieciešami, lai pieteiktos, ja pazaudēsiet TOTP ierīci.
+      password:
+        change_submit: Mainīt paroli
+        confirm_label: Apstiprināt jauno paroli
+        current_label: Pašreizējā parole
+        heading: Parole
+        new_label: Jaunā parole (min. 12 rakstzīmes)
+        not_set: "⚠️ Parole nav iestatīta. Iestatiet paroli, lai varētu atvienot pakalpojumu sniedzējus."
+        set_ok: "✅ Parole iestatīta"
+        set_submit: Iestatīt paroli
+      subtitle: Pārvaldiet pieteikšanās metodes, divu faktoru autentifikāciju un saistītos pakalpojumu sniedzējus.
+    title: Konta drošība

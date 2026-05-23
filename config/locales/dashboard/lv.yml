@@ -1,0 +1,28 @@
+---
+lv:
+  dashboard:
+    event_row:
+      etherisc_claim: "🛡️ Etherisc DIP prasība %{amount} USDC → %{address}"
+      maintenance: "🔧 %{action}: veica %{user}"
+      minted: "⬢ Kalts %{amount} SCC → %{target}"
+      pool: Fonds
+      system_pulse: "● Sistēmas impulss konstatēts"
+      system_user: Sistēma
+      threat: "⚠ Draudi: %{type} %{cluster}"
+      unknown_cluster: Nezināms
+    home:
+      feed:
+        empty: Nav nesenās aktivitātes
+        title: Tiešraides pārraides plūsma
+        view_all: Atvērt misijas žurnālu →
+      map:
+        coordinates_label: 'PLAT: %{lat} // GAR: %{lon} // ALT: %{alt}m'
+        loading: Inicializē ģeotelpisko matricu...
+      stats:
+        active_soldiers: Aktīvie karavīri
+        carbon_treasury: Oglekļa kase
+        forest_vitality: Meža vitalitāte
+        ionic_potential: Joniskais potenciāls
+    map:
+      heading: Ģeotelpiskā matrica
+      live_nodes: 'Aktīvie tiešraides mezgli: %{count}'

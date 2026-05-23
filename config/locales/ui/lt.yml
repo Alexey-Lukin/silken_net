@@ -1,0 +1,46 @@
+---
+lt:
+  ui:
+    data_table:
+      empty: Įrašų nerasta.
+    photo_card:
+      confirm_remove: Pašalinti šią nuotrauką iš įrodymų įrašo?
+      remove_photo: 'Pašalinti nuotrauką: %{filename}'
+      view_photo: 'Peržiūrėti nuotrauką: %{filename}'
+    skeleton:
+      loading: Kraunama…
+    status:
+      acknowledged: patvirtinta
+      active: aktyvus
+      aria_label: 'Būsena: %{status}'
+      breached: pažeista
+      cancelled: atšaukta
+      confirmed: patvirtinta
+      deceased: miręs
+      destroyed: sunaikinta
+      dormant: neaktyvus
+      draft: juodraštis
+      endangered: nykstantis
+      expired: pasibaigęs
+      extinct: išnykęs
+      failed: nepavyko
+      faulty: sugedusi
+      fulfilled: įvykdyta
+      idle: laukimo režimas
+      ignored: ignoruota
+      issued: išduota
+      maintenance: priežiūra
+      maintenance_needed: reikalinga priežiūra
+      manual_review: rankinis peržiūra
+      mythical: mitinis
+      offline: neprisijungęs
+      paid: apmokėta
+      pending: laukiama
+      processing: apdorojama
+      removed: pašalinta
+      resolved: išspręsta
+      sent: išsiųsta
+      thriving: klestintis
+      triggered: suaktyvinta
+      unknown: nežinoma
+      updating: atnaujinama

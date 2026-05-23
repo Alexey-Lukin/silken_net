@@ -1,0 +1,49 @@
+---
+lt:
+  clusters:
+    grid:
+      empty_description: Įdiekite jutiklius, kad inicializuotumėte klasterio tinklelį.
+      empty_title: Matrica tuščia. Nerasta klasterių.
+    item:
+      health: Sveikata
+      id: 'ID: %{id}'
+      open_matrix: Atidaryti matricą →
+      trees: Medžiai
+    show:
+      alerts:
+        heading: Aktyvios grėsmės
+        nominal: Nėra aktyvių grėsmių. Sektorius normalus.
+      contract:
+        emitted: Išleistieji SCC
+        empty: Nėra aktyvios NaaS sutarties.
+        heading: NaaS sutartis
+        status: Būsena
+        value: Vertė
+      gateways:
+        coordinates: Koordinatės
+        empty: Nėra įdiegtų šliuzų
+        heading: Šliuzų flotilė
+        last_seen: Paskutinį kartą matytas
+        state: Būsena
+        uid: UID
+      geography:
+        centroid: Centroidas
+        heading: Geografinis inkaras
+        mapped: Sužymėta
+        mapped_no: 'Ne'
+        mapped_yes: 'Taip'
+        region: Regionas
+        view_on_map: Žiūrėti žemėlapyje →
+      header:
+        eyebrow: Klasterio matrica
+        nominal: Normalus
+        threat_detected: Aptikta grėsmė
+      vitals:
+        active_trees: Aktyvūs medžiai
+        env_config: Aplinkos konfigūracija
+        fire_threshold: Gaisro slenkstis
+        heading: Sektoriaus gyvybiniai rodikliai
+        health_index: Sveikatos indeksas
+        queen_gateways: Queen šliuzai
+        seismic_sensitivity: Seisminis jautrumas
+        timezone: Laiko juosta
