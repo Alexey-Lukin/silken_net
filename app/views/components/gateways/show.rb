@@ -52,7 +52,7 @@ module Gateways
 
         div(class: "mt-4 md:mt-0 flex items-center gap-10") do
           div(class: "text-right") do
-            p(class: "text-mini text-gray-600 uppercase tracking-widest") { "Heartbeat" }
+            p(class: "text-mini text-gray-600 uppercase tracking-widest") { t(".header.heartbeat") }
             p(class: "text-sm font-mono text-emerald-100") { @gateway.last_seen_at&.strftime("%H:%M:%S // %d.%m.%y") || "SILENT" }
           end
           div(class: tokens("h-4 w-4 rounded-sm rotate-45", connection_led_classes))
@@ -62,30 +62,30 @@ module Gateways
 
     def render_technical_matrix
       div(class: "p-8 border border-emerald-900 bg-zinc-950") do
-        h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-10") { "System Telemetry (Queen Diagnostics)" }
+        h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-10") { t(".telemetry.heading") }
 
         div(class: "grid grid-cols-1 md:grid-cols-3 gap-12") do
           # Cellular Signal (CSQ)
           render_circular_metric(
-            label: "Signal Strength",
+            label: t(".telemetry.signal_strength"),
             value: "#{@latest_log&.signal_quality_percentage || 0}%",
-            subtext: "CSQ: #{@latest_log&.cellular_signal_csq || 0}",
+            subtext: t(".telemetry.signal_csq", csq: @latest_log&.cellular_signal_csq || 0),
             color: signal_color
           )
 
           # Power / Battery
           render_circular_metric(
-            label: "Voltage Matrix",
+            label: t(".telemetry.voltage_matrix"),
             value: "#{@latest_log&.voltage_mv || '---'}",
-            subtext: "mVolts (Li-Po)",
+            subtext: t(".telemetry.mvolt"),
             color: battery_color
           )
 
           # Internal Temperature
           render_circular_metric(
-            label: "Thermal State",
+            label: t(".telemetry.thermal_state"),
             value: "#{@latest_log&.temperature_c || '--'}°C",
-            subtext: "Internal Core",
+            subtext: t(".telemetry.internal_core"),
             color: temp_color
           )
         end
@@ -95,8 +95,8 @@ module Gateways
     def render_soldier_fleet_overview
       div(class: "p-6 border border-emerald-900 bg-black/20") do
         div(class: "flex justify-between items-center mb-6") do
-          h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Soldier Fleet Under Command" }
-          span(class: "text-tiny font-mono text-emerald-500") { "#{@active_soldiers.count} Active nodes" }
+          h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".fleet.heading") }
+          span(class: "text-tiny font-mono text-emerald-500") { t(".fleet.active_nodes", count: @active_soldiers.count) }
         end
 
         # Маленька сітка солдатів у реальному часі
@@ -110,20 +110,20 @@ module Gateways
 
     def render_network_config
       div(class: "p-6 border border-emerald-900 bg-emerald-950/5") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { "Network Configuration" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { t(".config.heading") }
         div(class: "space-y-4 font-mono text-compact") do
-          config_row("Cluster", @gateway.cluster&.name || "UNASSIGNED")
-          config_row("Sleep Interval", "#{@gateway.config_sleep_interval_s || 60}s")
-          config_row("Firmware Version", @gateway.firmware_version || "—")
-          config_row("Firmware Hash", @gateway.try(:firmware_hash)&.first(16) || "—")
-          config_row("Mesh Mode", "Enabled")
+          config_row(t(".config.cluster"), @gateway.cluster&.name || "UNASSIGNED")
+          config_row(t(".config.sleep_interval"), "#{@gateway.config_sleep_interval_s || 60}s")
+          config_row(t(".config.firmware_version"), @gateway.firmware_version || "—")
+          config_row(t(".config.firmware_hash"), @gateway.try(:firmware_hash)&.first(16) || "—")
+          config_row(t(".config.mesh_mode"), t(".config.mesh_enabled"))
 
           button(
             class: "w-full mt-4 p-2 border border-emerald-800 text-tiny uppercase text-emerald-600 hover:bg-emerald-900 " \
                    "hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-all",
             aria_label: "Push new configuration to gateway"
           ) do
-            "Push New Configuration →"
+            t(".config.push")
           end
         end
       end
@@ -131,14 +131,14 @@ module Gateways
 
     def render_hardware_vault
       div(class: "p-6 border border-emerald-900 bg-black") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { "Hardware Cryptography" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".crypto.heading") }
         div(class: "space-y-2 text-tiny font-mono") do
-          p(class: "text-gray-600") { "Hardware UID:" }
+          p(class: "text-gray-600") { t(".crypto.uid_label") }
           p(class: "text-emerald-500 truncate") { @gateway.hardware_key&.device_uid || "UNDEFINED" }
 
           div(class: "mt-4 flex items-center gap-2 text-emerald-800") do
             span(class: "h-2 w-2 bg-emerald-900 rounded-full")
-            span { "AES-256 Provisioned" }
+            span { t(".crypto.aes_provisioned") }
           end
         end
       end

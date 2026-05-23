@@ -48,7 +48,7 @@ module Maintenance
           class: "inline-block px-6 py-2 border border-emerald-900 text-emerald-700 " \
                  "hover:border-emerald-500 hover:text-emerald-500 uppercase text-mini " \
                  "tracking-widest transition-all font-mono"
-        ) { "Load More // #{remaining} remaining →" }
+        ) { t("maintenance.photo_gallery.load_more", remaining: remaining) }
       end
     end
   end

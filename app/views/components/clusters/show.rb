@@ -42,7 +42,7 @@ module Clusters
         div(class: "absolute top-0 right-0 p-4 text-[80px] font-bold text-emerald-900/5 select-none") { "SECTOR" }
         div(class: "flex justify-between items-start") do
           div do
-            p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-2") { "Cluster Matrix" }
+            p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-2") { t(".header.eyebrow") }
             h2(class: "text-3xl font-extralight tracking-tighter text-white") { @cluster.name }
             p(class: "text-tiny font-mono text-gray-600 mt-2") { "#{@cluster.region} // ID: #{@cluster.id}" }
             render_codex_citations
@@ -54,7 +54,7 @@ module Clusters
               "bg-emerald-500": !@cluster.active_threats?
             ))
             span(class: "text-tiny font-mono text-emerald-800 uppercase") do
-              @cluster.active_threats? ? "Threat Detected" : "Nominal"
+              @cluster.active_threats? ? t(".header.threat_detected") : t(".header.nominal")
             end
           end
         end
@@ -76,24 +76,24 @@ module Clusters
 
     def render_vitals_panel
       div(class: "p-8 border border-emerald-900 bg-zinc-950") do
-        h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-8") { "Sector Vitals" }
+        h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-8") { t(".vitals.heading") }
         div(class: "grid grid-cols-3 gap-8") do
-          vital_block("Health Index", "#{(@cluster.health_index * 100).round}%")
-          vital_block("Active Trees", @cluster.total_active_trees.to_s)
-          vital_block("Queen Gateways", @gateways.size.to_s)
+          vital_block(t(".vitals.health_index"), "#{(@cluster.health_index * 100).round}%")
+          vital_block(t(".vitals.active_trees"), @cluster.total_active_trees.to_s)
+          vital_block(t(".vitals.queen_gateways"), @gateways.size.to_s)
         end
         if @cluster.environmental_settings.present?
           div(class: "mt-8 pt-6 border-t border-emerald-900/30") do
-            h4(class: "text-mini uppercase tracking-widest text-emerald-800 mb-4") { "Environmental Config" }
+            h4(class: "text-mini uppercase tracking-widest text-emerald-800 mb-4") { t(".vitals.env_config") }
             div(class: "grid grid-cols-3 gap-6 text-tiny font-mono") do
               if @cluster.environmental_settings["custom_fire_threshold"]
-                env_block("Fire Threshold", "#{@cluster.environmental_settings['custom_fire_threshold']}°C")
+                env_block(t(".vitals.fire_threshold"), "#{@cluster.environmental_settings['custom_fire_threshold']}°C")
               end
               if @cluster.environmental_settings["seismic_sensitivity_threshold"]
-                env_block("Seismic Sensitivity", @cluster.environmental_settings["seismic_sensitivity_threshold"].to_s)
+                env_block(t(".vitals.seismic_sensitivity"), @cluster.environmental_settings["seismic_sensitivity_threshold"].to_s)
               end
               if @cluster.environmental_settings["timezone"]
-                env_block("Timezone", @cluster.environmental_settings["timezone"])
+                env_block(t(".vitals.timezone"), @cluster.environmental_settings["timezone"])
               end
             end
           end
@@ -117,21 +117,21 @@ module Clusters
 
     def render_gateways_table
       div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
-        h3(class: "p-4 text-tiny uppercase tracking-widest text-emerald-700 border-b border-emerald-900/30") { "Gateway Fleet" }
+        h3(class: "p-4 text-tiny uppercase tracking-widest text-emerald-700 border-b border-emerald-900/30") { t(".gateways.heading") }
         table(role: "table", class: "w-full text-left font-mono text-tiny") do
           thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-micro tracking-widest") do
             tr do
-              th(scope: "col", class: "p-4") { "UID" }
-              th(scope: "col", class: "p-4") { "State" }
-              th(scope: "col", class: "p-4") { "Coordinates" }
-              th(scope: "col", class: "p-4 text-right") { "Last Seen" }
+              th(scope: "col", class: "p-4") { t(".gateways.uid") }
+              th(scope: "col", class: "p-4") { t(".gateways.state") }
+              th(scope: "col", class: "p-4") { t(".gateways.coordinates") }
+              th(scope: "col", class: "p-4 text-right") { t(".gateways.last_seen") }
             end
           end
           tbody(class: "divide-y divide-emerald-900/30") do
             if @gateways.any?
               @gateways.each { |gw| render_gateway_row(gw) }
             else
-              tr { td(colspan: 4, class: "p-10 text-center text-emerald-900 uppercase tracking-widest") { "No gateways deployed" } }
+              tr { td(colspan: 4, class: "p-10 text-center text-emerald-900 uppercase tracking-widest") { t(".gateways.empty") } }
             end
           end
         end
@@ -149,7 +149,7 @@ module Clusters
 
     def render_alerts_panel
       div(class: "p-6 border border-emerald-900 bg-black") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { "Active Threats" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".alerts.heading") }
         # ⚡ [СИНХРОНІЗАЦІЯ]: alerts_list — контейнер для broadcast_prepend нових алертів
         div(id: "alerts_list", class: "space-y-2") do
           if @recent_alerts.any?
@@ -163,7 +163,7 @@ module Clusters
               end
             end
           else
-            p(class: "text-compact text-gray-700 italic") { "No active threats. Sector is nominal." }
+            p(class: "text-compact text-gray-700 italic") { t(".alerts.nominal") }
           end
         end
       end
@@ -171,15 +171,15 @@ module Clusters
 
     def render_contract_panel
       div(class: "p-6 border border-emerald-900 bg-emerald-950/5") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { "NaaS Contract" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".contract.heading") }
         if @active_contract
           div(class: "space-y-3 font-mono text-tiny") do
-            contract_row("Status", @active_contract.status.upcase)
-            contract_row("Value", @active_contract.total_value.to_s)
-            contract_row("Emitted SCC", @active_contract.emitted_tokens.to_s)
+            contract_row(t(".contract.status"), @active_contract.status.upcase)
+            contract_row(t(".contract.value"), @active_contract.total_value.to_s)
+            contract_row(t(".contract.emitted"), @active_contract.emitted_tokens.to_s)
           end
         else
-          p(class: "text-compact text-gray-700 italic") { "No active NaaS contract." }
+          p(class: "text-compact text-gray-700 italic") { t(".contract.empty") }
         end
       end
     end
@@ -194,18 +194,18 @@ module Clusters
     def render_geography_panel
       center = @cluster.geo_center
       div(class: "p-6 border border-emerald-900 bg-black space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Geographic Anchor" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".geography.heading") }
         div(class: "space-y-3 text-tiny font-mono") do
-          geo_row("Region", @cluster.region)
-          geo_row("Mapped", @cluster.mapped? ? "Yes" : "No")
+          geo_row(t(".geography.region"), @cluster.region)
+          geo_row(t(".geography.mapped"), @cluster.mapped? ? t(".geography.mapped_yes") : t(".geography.mapped_no"))
           if center
-            geo_row("Centroid", "#{center[:lat].round(4)}, #{center[:lng].round(4)}")
+            geo_row(t(".geography.centroid"), "#{center[:lat].round(4)}, #{center[:lng].round(4)}")
             a(
               href: "https://www.google.com/maps?q=#{center[:lat]},#{center[:lng]}",
               target: "_blank",
               class: "block mt-4 text-center p-2 border border-emerald-800 text-emerald-600 hover:bg-emerald-900 hover:text-white transition-all uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
               aria_label: "View cluster location on Google Maps"
-            ) { "View on Map →" }
+            ) { t(".geography.view_on_map") }
           end
         end
       end

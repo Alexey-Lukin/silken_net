@@ -1,0 +1,115 @@
+---
+en:
+  maintenance:
+    form:
+      action_prompt: "— Select intervention type —"
+      action_type: Action Type
+      cancel: Cancel
+      errors:
+        heading: Validation Errors
+      evidence:
+        attach_photos: Attach Photos
+        heading: Evidence Protocol // Photos
+        hint: Required for repair and installation. JPEG/PNG/WebP/HEIC · max 20 MB · max 10 photos
+      ews_association: EWS Alert Association (Optional)
+      ews_placeholder: ID of the threat being resolved
+      gps:
+        capture: "⊕ Capture GPS"
+        heading: Intervention Coordinates
+        latitude: Latitude
+        longitude: Longitude
+      hardware_verified: Hardware Verified — STM32 confirmed new pulse
+      header:
+        edit: 'Edit Intervention Record // #%{id}'
+        new: Register Intervention Ritual
+      notes: Field Notes (min. 10 chars)
+      notes_placeholder: 'Describe the intervention: state of anchor, replaced components, observations...'
+      opex:
+        heading: OpEx Financial Tracking
+        labor_hours: Labor Hours
+        parts_cost: Parts Cost (USD)
+      performed_at: Performed At
+      submit:
+        create: Commit to Matrix
+        update: Update Record
+      target_id: Target ID
+      target_type: Target Type
+    index:
+      filter:
+        clear: Clear
+        verified: "✓ Verified Only"
+      heading: Maintenance Records
+      hw_pending_title: Pending Verification
+      hw_verified_title: Hardware Verified
+      page_info: "%{count} interventions · Page %{page} of %{total}"
+      register: "+ Register Intervention"
+      table:
+        action: Action
+        cost: Cost
+        empty: No interventions recorded
+        hw: HW
+        open: OPEN →
+        photos: Photos
+        technician: Technician
+        timestamp: Timestamp
+        unit: Unit
+    photo_gallery:
+      empty:
+        description: Upload evidence to begin documentation.
+        title: No Photos
+      evidence_heading: Evidence Protocol
+      load_more: Load More // %{remaining} remaining →
+      page_of: Page %{page} of %{total}
+      photo_count:
+        one: 1 Photo
+        other: "%{count} Photos"
+    show:
+      cost:
+        heading: OpEx Breakdown
+        labor_label: Labor
+        labor_sub: Hours × Rate
+        parts_label: Parts
+        parts_sub: Components replaced
+        total_label: Total Cost
+        total_sub: Labor + Parts
+      edit: Edit Record →
+      evidence:
+        attach: Attach Evidence →
+        heading: Evidence Protocol
+        no_photos: No Photos Attached
+        trust_protocol: "⚠ Trust Protocol requires photos for %{action_type}"
+      gps:
+        drift: 'Drift from Tree:'
+        heading: Intervention Coordinates
+        lat: Lat
+        lng: Lng
+        locate: Locate Patrol →
+        no_gps: No GPS recorded
+        no_gps_sub: Captured via mobile app at time of record creation.
+      hardware:
+        heading: Hardware State
+        pending: PENDING
+        record_type: Record Type
+        stm_verified: STM32 Verified
+        verified: 'YES'
+        verify_confirm: 'Mark STM32 pulse confirmed for record #%{id}?'
+        verify_now: Verify Now →
+      hardware_badge:
+        pending: Pending Verify
+        verified: "✓ HW Verified"
+      header:
+        new_record: "+ New Record"
+        verify_confirm: 'STM32 acknowledged the pulse for record #%{id}?'
+        verify_hardware: Verify Hardware →
+      metadata:
+        action: Action
+        created: Created
+        ews_alert: EWS Alert
+        heading: Intervention Metadata
+        photos: Photos
+        role: Role
+        target: Target
+        technician: Technician
+        updated: Updated
+      notes:
+        heading: Field Notes

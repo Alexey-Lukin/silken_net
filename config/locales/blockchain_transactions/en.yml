@@ -3,6 +3,24 @@ en:
   blockchain_transactions:
     index:
       subtitle: Minting, slashing, and all on-chain events for your Organization.
+      table:
+        amount: Amount
+        empty: No blockchain transactions recorded.
+        network: Network
+        status: Status
+        timestamp: Timestamp
+        tree: Tree
+        tx_hash: TX Hash
+        type: Type
+    on_chain_frame:
+      explorer:
+        celo: Celo Explorer
+        polygon: Polygonscan
+        solana: Solana Explorer
+      heading: On-Chain Verification
+      not_submitted: Transaction not yet submitted to chain.
+      tx_hash_label: Transaction Hash
+      view_on: View on %{explorer} →
     show:
       decoration: TX
       details:

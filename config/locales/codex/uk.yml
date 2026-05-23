@@ -28,6 +28,8 @@ uk:
     citations:
       aria_with_note: "%{base} — %{note}"
       aria_with_realm: 'Цитата Кодексу: %{title} (%{realm})'
+      strip:
+        untold: Не розказано.
       title_with_note: "%{base} — %{note}"
       unknown_realm: невідомий realm
     comments:

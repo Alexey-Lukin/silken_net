@@ -2,4 +2,25 @@
 en:
   settings:
     show:
+      config:
+        heading: Configuration
+      fields:
+        ai_sensitivity: AI Sensitivity (0.0 — 1.0)
+        alert_threshold: Alert Threshold (Critical Z)
+        billing_email: Billing Email
+        crypto_address: Crypto Public Address
+        current_logo: 'Current: %{filename}'
+        logo: Organization Logo
+        org_name: Organization Name
+      heading: "🧠 Brain Map — Organization Settings"
+      metadata:
+        created: Created
+        heading: System Metadata
+        org_id: Organization ID
+        updated: Last Updated
+      submit: Update Settings →
       subtitle: 'Organization configuration: name, billing, crypto address, alert thresholds, and AI sensitivity.'
+      vault:
+        address: Public Crypto Address
+        billing: Billing Contact
+        heading: On-Chain Identity Vault

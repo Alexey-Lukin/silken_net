@@ -22,17 +22,17 @@ module Passwords
             render_flash_messages
 
             div(class: "space-y-6") do
-              field_container("New Password (min 12 chars)") do
+              field_container(t(".new_password_label")) do
                 input(type: "password", name: "password", class: input_classes, placeholder: "••••••••••••", required: true, minlength: "12")
               end
 
-              field_container("Confirm New Password") do
+              field_container(t(".confirm_password_label")) do
                 input(type: "password", name: "password_confirmation", class: input_classes, placeholder: "••••••••••••", required: true, minlength: "12")
               end
             end
 
             div(class: "pt-4") do
-              button(type: "submit", class: submit_classes) { "SET NEW PASSWORD" }
+              button(type: "submit", class: submit_classes) { t(".submit") }
             end
 
             render_back_link
@@ -48,8 +48,8 @@ module Passwords
         div(class: "inline-block h-12 w-12 border border-emerald-500 rotate-45 mb-4 relative") do
           div(class: "absolute inset-1 bg-emerald-500 animate-pulse")
         end
-        h1(class: "text-3xl font-extralight text-white tracking-[0.3em] uppercase") { "New Key" }
-        p(class: "text-tiny text-emerald-700 uppercase tracking-[0.5em]") { "Set New Access Code" }
+        h1(class: "text-3xl font-extralight text-white tracking-[0.3em] uppercase") { t(".heading") }
+        p(class: "text-tiny text-emerald-700 uppercase tracking-[0.5em]") { t(".subtitle") }
       end
     end
 
@@ -79,7 +79,7 @@ module Passwords
     def render_back_link
       div(class: "text-center pt-2") do
         a(href: api_v1_login_path, class: "text-tiny text-emerald-900 uppercase tracking-widest hover:text-emerald-500 transition-colors") do
-          "← Back to Login Portal"
+          t(".back_link")
         end
       end
     end

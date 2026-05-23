@@ -19,29 +19,29 @@ module Maintenance
 
           # --- РЯДОК 1: Target + EWS ---
           div(class: "grid grid-cols-2 gap-6") do
-            field_container("Target Type") do
+            field_container(t(".target_type")) do
               f.select :maintainable_type, [ "Tree", "Gateway" ], {}, class: input_classes
             end
-            field_container("Target ID") do
+            field_container(t(".target_id")) do
               f.number_field :maintainable_id, class: input_classes, placeholder: "e.g. 42"
             end
           end
 
-          field_container("EWS Alert Association (Optional)") do
+          field_container(t(".ews_association")) do
             f.number_field :ews_alert_id, class: input_classes,
-                           placeholder: "ID of the threat being resolved"
+                           placeholder: t(".ews_placeholder")
           end
 
           # --- РЯДОК 2: Action + Timestamp ---
           div(class: "grid grid-cols-2 gap-6") do
-            field_container("Action Type") do
+            field_container(t(".action_type")) do
               f.select :action_type,
                 MaintenanceRecord.action_types.keys.map { |k| [ k.humanize, k ] },
-                { prompt: "— Select intervention type —" },
+                { prompt: t(".action_prompt") },
                 class: input_classes,
                 data: { action: "change->maintenance-form#togglePhotoRequired" }
             end
-            field_container("Performed At") do
+            field_container(t(".performed_at")) do
               f.datetime_local_field :performed_at,
                 value: (@record.performed_at || Time.current).strftime("%Y-%m-%dT%H:%M"),
                 class: input_classes
@@ -49,22 +49,22 @@ module Maintenance
           end
 
           # --- НОТАТКИ ---
-          field_container("Field Notes (min. 10 chars)") do
+          field_container(t(".notes")) do
             f.text_area :notes, rows: 4, class: input_classes,
-                        placeholder: "Describe the intervention: state of anchor, replaced components, observations..."
+                        placeholder: t(".notes_placeholder")
           end
 
           # -----------------------------------------------------------------------
           # OpEx ФІНАНСОВИЙ ОБЛІК (Series C)
           # -----------------------------------------------------------------------
           div(class: "border border-gaia-border p-4 space-y-4") do
-            p(class: "text-mini uppercase tracking-widest text-gaia-text-muted mb-2") { "OpEx Financial Tracking" }
+            p(class: "text-mini uppercase tracking-widest text-gaia-text-muted mb-2") { t(".opex.heading") }
             div(class: "grid grid-cols-2 gap-6") do
-              field_container("Labor Hours") do
+              field_container(t(".opex.labor_hours")) do
                 f.number_field :labor_hours, step: 0.5, min: 0, class: input_classes,
                                placeholder: "e.g. 2.5"
               end
-              field_container("Parts Cost (USD)") do
+              field_container(t(".opex.parts_cost")) do
                 f.number_field :parts_cost, step: 0.01, min: 0, class: input_classes,
                                placeholder: "e.g. 150.00"
               end
@@ -76,19 +76,19 @@ module Maintenance
           # -----------------------------------------------------------------------
           div(class: "border border-gaia-border p-4 space-y-4") do
             div(class: "flex justify-between items-center mb-2") do
-              p(class: "text-mini uppercase tracking-widest text-gaia-text-muted") { "Intervention Coordinates" }
+              p(class: "text-mini uppercase tracking-widest text-gaia-text-muted") { t(".gps.heading") }
               button(
                 type: "button",
                 class: "text-micro border border-gaia-border text-gaia-text-muted px-2 py-1 hover:border-gaia-primary hover:text-gaia-primary transition-all uppercase",
                 data: { action: "click->maintenance-form#captureGPS" }
-              ) { "⊕ Capture GPS" }
+              ) { t(".gps.capture") }
             end
             div(class: "grid grid-cols-2 gap-6") do
-              field_container("Latitude") do
+              field_container(t(".gps.latitude")) do
                 f.number_field :latitude, step: 0.000001, class: input_classes,
                                placeholder: "49.428500", id: "record_latitude"
               end
-              field_container("Longitude") do
+              field_container(t(".gps.longitude")) do
                 f.number_field :longitude, step: 0.000001, class: input_classes,
                                placeholder: "32.062000", id: "record_longitude"
               end
@@ -102,9 +102,9 @@ module Maintenance
             class: "border border-gaia-border p-4 space-y-4",
             id: "photo_upload_section"
           ) do
-            p(class: "text-mini uppercase tracking-widest text-gaia-text-muted") { "Evidence Protocol // Photos" }
+            p(class: "text-mini uppercase tracking-widest text-gaia-text-muted") { t(".evidence.heading") }
             p(class: "text-micro text-gaia-text-muted mb-3") do
-              "Required for repair and installation. JPEG/PNG/WebP/HEIC · max 20 MB · max 10 photos"
+              t(".evidence.hint")
             end
 
             # Існуючі фото при редагуванні (перша сторінка, без load more в формі)
@@ -117,7 +117,7 @@ module Maintenance
             end
 
             # Direct upload — файли йдуть напряму на S3, не через Rails
-            field_container("Attach Photos") do
+            field_container(t(".evidence.attach_photos")) do
               f.file_field :photos,
                 multiple: true,
                 accept: "image/jpeg,image/png,image/webp,image/heic,image/heif",
@@ -149,14 +149,14 @@ module Maintenance
               label(
                 for: "maintenance_record_hardware_verified",
                 class: "text-mini uppercase tracking-widest text-gaia-text-muted cursor-pointer"
-              ) { "Hardware Verified — STM32 confirmed new pulse" }
+              ) { t(".hardware_verified") }
             end
           end
 
           # --- SUBMIT ---
           div(class: "pt-6 flex items-center gap-4") do
             f.submit(
-              @editing ? "Update Record" : "Commit to Matrix",
+              @editing ? t(".submit.update") : t(".submit.create"),
               class: "flex-1 py-4 bg-gaia-primary/10 border border-gaia-primary text-gaia-primary " \
                      "uppercase text-xs tracking-widest hover:bg-gaia-primary hover:text-black " \
                      "transition-all cursor-pointer shadow-sm"
@@ -166,7 +166,7 @@ module Maintenance
                 href: api_v1_maintenance_record_path(@record),
                 class: "px-4 py-4 border border-gaia-border text-gaia-text-muted hover:text-gaia-primary " \
                        "uppercase text-mini tracking-widest transition-all"
-              ) { "Cancel" }
+              ) { t(".cancel") }
             end
           end
 
@@ -180,7 +180,7 @@ module Maintenance
     def render_form_header(f)
       div(class: "flex justify-between items-center mb-2") do
         h3(class: "text-tiny uppercase tracking-[0.5em] text-gaia-text-muted") do
-          @editing ? "Edit Intervention Record // ##{@record.id}" : "Register Intervention Ritual"
+          @editing ? t(".header.edit", id: @record.id) : t(".header.new")
         end
         span(class: "text-micro text-gaia-text-muted font-mono") { @record.maintainable_type&.upcase || "PENDING" }
       end
@@ -189,7 +189,7 @@ module Maintenance
 
     def render_errors
       div(class: "mt-6 p-4 border border-status-danger-accent bg-status-danger") do
-        p(class: "text-mini uppercase tracking-widest text-status-danger-text mb-2") { "Validation Errors" }
+        p(class: "text-mini uppercase tracking-widest text-status-danger-text mb-2") { t(".errors.heading") }
         ul(class: "space-y-1") do
           @record.errors.full_messages.each do |msg|
             li(class: "text-tiny text-status-danger-accent font-mono") { "× #{msg}" }

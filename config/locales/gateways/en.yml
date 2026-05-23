@@ -14,3 +14,30 @@ en:
       silent: SILENT
       soldiers: Soldiers
       unassigned: UNASSIGNED
+    show:
+      config:
+        cluster: Cluster
+        firmware_hash: Firmware Hash
+        firmware_version: Firmware Version
+        heading: Network Configuration
+        mesh_enabled: Enabled
+        mesh_mode: Mesh Mode
+        push: Push New Configuration →
+        sleep_interval: Sleep Interval
+      crypto:
+        aes_provisioned: AES-256 Provisioned
+        heading: Hardware Cryptography
+        uid_label: 'Hardware UID:'
+      fleet:
+        active_nodes: "%{count} Active nodes"
+        heading: Soldier Fleet Under Command
+      header:
+        heartbeat: Heartbeat
+      telemetry:
+        heading: System Telemetry (Queen Diagnostics)
+        internal_core: Internal Core
+        mvolt: mVolts (Li-Po)
+        signal_csq: 'CSQ: %{csq}'
+        signal_strength: Signal Strength
+        thermal_state: Thermal State
+        voltage_matrix: Voltage Matrix

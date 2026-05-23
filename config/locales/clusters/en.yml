@@ -9,3 +9,41 @@ en:
       id: 'ID: %{id}'
       open_matrix: Open Matrix →
       trees: Trees
+    show:
+      alerts:
+        heading: Active Threats
+        nominal: No active threats. Sector is nominal.
+      contract:
+        emitted: Emitted SCC
+        empty: No active NaaS contract.
+        heading: NaaS Contract
+        status: Status
+        value: Value
+      gateways:
+        coordinates: Coordinates
+        empty: No gateways deployed
+        heading: Gateway Fleet
+        last_seen: Last Seen
+        state: State
+        uid: UID
+      geography:
+        centroid: Centroid
+        heading: Geographic Anchor
+        mapped: Mapped
+        mapped_no: 'No'
+        mapped_yes: 'Yes'
+        region: Region
+        view_on_map: View on Map →
+      header:
+        eyebrow: Cluster Matrix
+        nominal: Nominal
+        threat_detected: Threat Detected
+      vitals:
+        active_trees: Active Trees
+        env_config: Environmental Config
+        fire_threshold: Fire Threshold
+        heading: Sector Vitals
+        health_index: Health Index
+        queen_gateways: Queen Gateways
+        seismic_sensitivity: Seismic Sensitivity
+        timezone: Timezone

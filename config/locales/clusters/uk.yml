@@ -9,3 +9,41 @@ uk:
       id: 'ID: %{id}'
       open_matrix: Відкрити матрицю →
       trees: Дерева
+    show:
+      alerts:
+        heading: Активні загрози
+        nominal: Жодних загроз. Сектор в нормі.
+      contract:
+        emitted: Емітовано SCC
+        empty: Активного NaaS-контракту немає.
+        heading: NaaS Контракт
+        status: Статус
+        value: Вартість
+      gateways:
+        coordinates: Координати
+        empty: Шлюзи не розгорнуто
+        heading: Флот шлюзів
+        last_seen: Остання активність
+        state: Стан
+        uid: UID
+      geography:
+        centroid: Центроїд
+        heading: Географічний анкер
+        mapped: Картографовано
+        mapped_no: Ні
+        mapped_yes: Так
+        region: Регіон
+        view_on_map: Переглянути на карті →
+      header:
+        eyebrow: Матриця кластера
+        nominal: Норма
+        threat_detected: Загрозу виявлено
+      vitals:
+        active_trees: Активні дерева
+        env_config: Конфігурація середовища
+        fire_threshold: Поріг пожежі
+        heading: Вітальні показники сектора
+        health_index: Індекс здоров'я
+        queen_gateways: Шлюзи-королеви
+        seismic_sensitivity: Сейсмічна чутливість
+        timezone: Часовий пояс

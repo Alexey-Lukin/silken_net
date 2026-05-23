@@ -1,6 +1,9 @@
 ---
 en:
   trees:
+    chronicle:
+      events: "%{count} events"
+      heading: Digital Chronicle
     index:
       eyebrow: Sector Matrix Deployment
       header_operational: Operational
@@ -12,6 +15,14 @@ en:
       actions:
         locate_node: Locate Node →
         rotate_key_aria: Rotate hardware encryption key
+        rotate_key_label: Rotate Hardware Key →
+      biometrics:
+        impedance_unit: kΩ Impedance
+        ionic_potential: Ionic Potential
+        ionic_sub: Streaming potential charge
+        stress_index: Stress Index
+        xylem_sub: Internal core temp
+        xylem_thermal: Xylem Thermal
       headings:
         biometrics: Live Biometric Matrix
         deployment_matrix: Deployment Matrix
@@ -19,11 +30,27 @@ en:
         hardware_vault: Hardware Security Vault
         impedance_flux: Impedance Flux (Last 10 Cycles)
         maintenance: Maintenance Rituals & Healing History
+      impedance:
+        current: Current
+        sampling: Real-time Sampling
+        t10: T-10 Cycles
       labels:
         family: 'Family: %{name}'
         family_unknown: Unknown
         uplink_state: Uplink State
         verified_balance: Verified Balance
+      metadata:
+        cluster: Cluster
+        coordinates: Coordinates
+      security:
+        address: Address
+        cipher_suite: Cipher Suite
+        cipher_value: AES-256-ECB (CoAP Level)
+        integrity: Integrity
+        integrity_value: Verified Hardware Anchor
+        key_identity: Key Identity
+        ota_status: OTA Status
+        ota_value: Channel Encrypted
       table:
         action: Action
         empty: No physical interventions recorded

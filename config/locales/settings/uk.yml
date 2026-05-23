@@ -2,4 +2,25 @@
 uk:
   settings:
     show:
+      config:
+        heading: Конфігурація
+      fields:
+        ai_sensitivity: Чутливість AI (0.0 — 1.0)
+        alert_threshold: Поріг тривоги (Critical Z)
+        billing_email: Платіжний Email
+        crypto_address: Публічна крипто-адреса
+        current_logo: 'Поточний: %{filename}'
+        logo: Логотип організації
+        org_name: Назва організації
+      heading: "🧠 Карта мозку — Налаштування організації"
+      metadata:
+        created: Створено
+        heading: Системні метадані
+        org_id: ID організації
+        updated: Останнє оновлення
+      submit: Оновити налаштування →
       subtitle: 'Конфігурація Організації: назва, білінг, крипто-адреса, пороги тривоги та AI-чутливість.'
+      vault:
+        address: Публічна крипто-адреса
+        billing: Платіжний контакт
+        heading: Сховище On-Chain ідентичності

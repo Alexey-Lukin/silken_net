@@ -103,15 +103,15 @@ module Trees
             render_radial_svg
             div(class: "absolute inset-0 flex flex-col items-center justify-center") do
               span(class: "text-6xl font-extralight text-gaia-text-strong") { @latest_log&.z_value || "---" }
-              span(class: "text-tiny text-gaia-text-subtle font-mono uppercase") { "kΩ Impedance" }
+              span(class: "text-tiny text-gaia-text-subtle font-mono uppercase") { t(".biometrics.impedance_unit") }
             end
           end
 
           div(class: "space-y-6") do
-            metric_row("Ionic Potential", "#{@latest_log&.voltage_mv || 0} mV", sub: "Streaming potential charge")
-            metric_row("Xylem Thermal", "#{@latest_log&.temperature_c || 0} °C", sub: "Internal core temp")
+            metric_row(t(".biometrics.ionic_potential"), "#{@latest_log&.voltage_mv || 0} mV", sub: t(".biometrics.ionic_sub"))
+            metric_row(t(".biometrics.xylem_thermal"), "#{@latest_log&.temperature_c || 0} °C", sub: t(".biometrics.xylem_sub"))
             stress_pct = ((@tree.current_stress || 0) * 100).round(1)
-            metric_row("Stress Index", "#{stress_pct}%", danger: @tree.under_threat?)
+            metric_row(t(".biometrics.stress_index"), "#{stress_pct}%", danger: @tree.under_threat?)
           end
         end
       end
@@ -136,9 +136,9 @@ module Trees
           end
         end
         div(class: "flex justify-between mt-2 text-micro font-mono text-gaia-text-subtle uppercase") do
-          span { "T-10 Cycles" }
-          span { "Real-time Sampling" }
-          span { "Current" }
+          span { t(".impedance.t10") }
+          span { t(".impedance.sampling") }
+          span { t(".impedance.current") }
         end
       end
     end
@@ -184,15 +184,15 @@ module Trees
         end
 
         div(class: "space-y-4 text-tiny font-mono") do
-          security_item("Key Identity", @hardware_key&.device_uid || "NOT_PROVISIONED")
-          security_item("Cipher Suite", "AES-256-ECB (CoAP Level)")
-          security_item("Integrity", "Verified Hardware Anchor")
-          security_item("OTA Status", "Channel Encrypted")
+          security_item(t(".security.key_identity"), @hardware_key&.device_uid || "NOT_PROVISIONED")
+          security_item(t(".security.cipher_suite"), t(".security.cipher_value"))
+          security_item(t(".security.integrity"), t(".security.integrity_value"))
+          security_item(t(".security.ota_status"), t(".security.ota_value"))
         end
 
         div(class: "pt-4 border-t border-gaia-border") do
           button(class: "w-full py-2 border border-gaia-border text-mini uppercase text-gaia-text-muted hover:border-gaia-primary hover:text-gaia-primary transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary", aria_label: t(".actions.rotate_key_aria")) do
-            "Rotate Hardware Key →"
+            t(".actions.rotate_key_label")
           end
         end
       end
@@ -211,7 +211,7 @@ module Trees
           end
           wallet_address = @tree.wallet&.crypto_public_address
           address_display = wallet_address.present? ? "#{wallet_address.first(12)}..." : "NOT_PROVISIONED"
-          security_item("Address", address_display, full: wallet_address)
+          security_item(t(".security.address"), address_display, full: wallet_address)
         end
       end
     end
@@ -220,8 +220,8 @@ module Trees
       div(class: "p-6 border border-gaia-border bg-gaia-surface space-y-4") do
         h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".headings.deployment_matrix") }
         div(class: "space-y-3 text-tiny font-mono") do
-          meta_row("Cluster", @tree.cluster&.name)
-          meta_row("Coordinates", "#{@tree.latitude}, #{@tree.longitude}")
+          meta_row(t(".metadata.cluster"), @tree.cluster&.name)
+          meta_row(t(".metadata.coordinates"), "#{@tree.latitude}, #{@tree.longitude}")
 
           a(
             href: "https://www.google.com/maps?q=#{@tree.latitude},#{@tree.longitude}",

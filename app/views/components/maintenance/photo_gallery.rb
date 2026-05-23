@@ -36,10 +36,10 @@ module Maintenance
       div(class: "flex justify-between items-center") do
         div(class: "text-mini uppercase tracking-widest text-emerald-700") do
           total = @pagy.count
-          "Evidence Protocol // #{total} Photo#{total == 1 ? '' : 's'}"
+          "#{t('.evidence_heading')} // #{t('.photo_count', count: total)}"
         end
         span(class: "text-micro text-gray-600 font-mono") do
-          "Page #{@pagy.page} of #{@pagy.last}"
+          t(".page_of", page: @pagy.page, total: @pagy.last)
         end
       end
     end
@@ -75,16 +75,16 @@ module Maintenance
                  "hover:border-emerald-500 hover:text-emerald-500 uppercase text-mini " \
                  "tracking-widest transition-all font-mono"
         ) do
-          "Load More // #{[ remaining, 0 ].max} remaining →"
+          t(".load_more", remaining: [ remaining, 0 ].max)
         end
       end
     end
 
     def render_empty_state
       render Views::Shared::UI::EmptyState.new(
-        title: "No Photos",
+        title: t(".empty.title"),
         icon: "📷",
-        description: "Upload evidence to begin documentation."
+        description: t(".empty.description")
       )
     end
   end

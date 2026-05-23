@@ -1,6 +1,9 @@
 ---
 uk:
   trees:
+    chronicle:
+      events: "%{count} подій"
+      heading: Цифровий хронограф
     index:
       eyebrow: Розгортання матриці сектору
       header_operational: Операційні
@@ -12,6 +15,14 @@ uk:
       actions:
         locate_node: Локалізувати вузол →
         rotate_key_aria: Ротація апаратного ключа шифрування
+        rotate_key_label: Ротувати апаратний ключ →
+      biometrics:
+        impedance_unit: кΩ Імпеданс
+        ionic_potential: Іонний потенціал
+        ionic_sub: Заряд потенціалу потоку
+        stress_index: Індекс стресу
+        xylem_sub: Температура внутрішнього ядра
+        xylem_thermal: Ксилемна температура
       headings:
         biometrics: Жива біометрична матриця
         deployment_matrix: Матриця розгортання
@@ -19,11 +30,27 @@ uk:
         hardware_vault: Апаратне сховище безпеки
         impedance_flux: Імпедансний потік (останні 10 циклів)
         maintenance: Ритуали обслуговування та історія зцілення
+      impedance:
+        current: Поточний
+        sampling: Вимірювання в реальному часі
+        t10: T-10 Циклів
       labels:
         family: 'Родина: %{name}'
         family_unknown: Невідома
         uplink_state: Стан зв'язку
         verified_balance: Підтверджений баланс
+      metadata:
+        cluster: Кластер
+        coordinates: Координати
+      security:
+        address: Адреса
+        cipher_suite: Набір шифрів
+        cipher_value: AES-256-ECB (рівень CoAP)
+        integrity: Цілісність
+        integrity_value: Верифікований апаратний анкер
+        key_identity: Ідентифікатор ключа
+        ota_status: OTA статус
+        ota_value: Канал зашифровано
       table:
         action: Дія
         empty: Фізичних втручань не зафіксовано

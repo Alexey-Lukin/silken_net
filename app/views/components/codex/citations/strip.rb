@@ -60,7 +60,7 @@ module Codex
           role:  "note"
         ) do
           span(aria_hidden: "true", class: "tracking-widest") { "· · ·" }
-          span { "Untold." }
+          span { t(".untold") }
         end
       end
 

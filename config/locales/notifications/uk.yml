@@ -2,5 +2,30 @@
 uk:
   notifications:
     settings:
+      active_channels:
+        connected: Підключено
+        email: "📧 Email"
+        heading: Активні канали
+        not_configured: Не налаштовано
+        push: "🔔 Push"
+        sms: "📱 SMS / Телефон"
+        telegram: "✈️ Telegram"
+      channels:
+        email_address: Email адреса
+        heading: Конфігурація каналів
+        phone_number: Номер телефону (E.164)
+        push_placeholder: FCM або APNs токен
+        push_token: Push-токен
+        save: Зберегти канали →
+        telegram_chat_id: Telegram Chat ID
       email_hint: Змінити email можна в профілі.
+      heading: "🔔 Нейронна мережа — Канали сповіщень"
+      notification_types:
+        active: АКТИВНО
+        critical_alerts: Критичні тривоги
+        heading: Типи сповіщень
+        minting_events: Мінтинг-події
+        slashing_events: Слешинг-події
+        system_health: Системне здоров'я
+        warning_alerts: Попереджувальні тривоги
       subtitle: 'Налаштування каналів зв''язку: куди надсилати сповіщення про тривоги та події.'

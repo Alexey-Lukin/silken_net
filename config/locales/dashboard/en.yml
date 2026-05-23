@@ -23,3 +23,6 @@ en:
         carbon_treasury: Carbon Treasury
         forest_vitality: Forest Vitality
         ionic_potential: Ionic Potential
+    map:
+      heading: Geospatial Matrix
+      live_nodes: 'Live Active Nodes: %{count}'

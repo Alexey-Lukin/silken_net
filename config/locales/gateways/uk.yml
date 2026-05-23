@@ -14,3 +14,30 @@ uk:
       silent: ТИША
       soldiers: Солдати
       unassigned: НЕ ПРИЗНАЧЕНО
+    show:
+      config:
+        cluster: Кластер
+        firmware_hash: Хеш прошивки
+        firmware_version: Версія прошивки
+        heading: Конфігурація мережі
+        mesh_enabled: Увімкнено
+        mesh_mode: Mesh-режим
+        push: Надіслати нову конфігурацію →
+        sleep_interval: Інтервал сну
+      crypto:
+        aes_provisioned: AES-256 Налаштовано
+        heading: Апаратна криптографія
+        uid_label: 'Апаратний UID:'
+      fleet:
+        active_nodes: "%{count} Активних вузлів"
+        heading: Флот солдатів під командою
+      header:
+        heartbeat: Пульс
+      telemetry:
+        heading: Системна телеметрія (Діагностика Королеви)
+        internal_core: Внутрішнє ядро
+        mvolt: мВольт (Li-Po)
+        signal_csq: 'CSQ: %{csq}'
+        signal_strength: Потужність сигналу
+        thermal_state: Тепловий стан
+        voltage_matrix: Матриця напруги

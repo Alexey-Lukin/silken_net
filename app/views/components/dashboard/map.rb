@@ -26,9 +26,9 @@ module Dashboard
         div(class: "absolute top-4 left-4 z-[400] bg-black/80 border border-emerald-900 p-3 backdrop-blur-md pointer-events-none") do
           h3(class: "text-tiny uppercase tracking-widest text-emerald-500 mb-1 flex items-center gap-2") do
             div(class: "w-2 h-2 rounded-full bg-emerald-500 animate-pulse")
-            plain "Geospatial Matrix"
+            plain t(".heading")
           end
-          p(class: "text-mini text-gray-400 font-mono") { "Live Active Nodes: #{@trees.count}" }
+          p(class: "text-mini text-gray-400 font-mono") { t(".live_nodes", count: @trees.count) }
         end
       end
     end

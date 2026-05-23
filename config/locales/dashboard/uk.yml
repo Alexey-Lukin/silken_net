@@ -23,3 +23,6 @@ uk:
         carbon_treasury: Вуглецева скарбниця
         forest_vitality: Життєздатність лісу
         ionic_potential: Іонний потенціал
+    map:
+      heading: Геопросторова матриця
+      live_nodes: 'Живих активних вузлів: %{count}'

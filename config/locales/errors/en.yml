@@ -39,3 +39,9 @@ en:
       no_organization_title: Access Denied
       not_found: "%{model} not found in the forest matrix."
       unauthorized: Authentication required. The Gate is closed.
+    no_organization:
+      body_1: Your account is not currently linked to any organization in the Forest Matrix. Without a Cluster, the Citadel cannot scope telemetry, wallets, or alerts.
+      body_2: Contact your administrator to be onboarded into a cluster.
+      heading: Quarantine
+      sign_out: "← Sign Out"
+      subtitle: No Organization Assigned

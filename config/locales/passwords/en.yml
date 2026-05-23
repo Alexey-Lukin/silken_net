@@ -1,14 +1,26 @@
 ---
 en:
   passwords:
+    forgot:
+      back_link: "← Back to Login Portal"
+      email_label: Email Address
+      heading: Recovery
+      submit: SEND RESET LINK
+      subtitle: Password Reset Protocol
     forgot_sent_flash: If the email exists, you will receive a letter with instructions.
     forgot_sent_json: If an email exists in the system, you will receive password reset instructions.
     forgot_title: Recovery
     rate_limited: Too many attempts. Try again in 5 minutes.
     reset:
+      back_link: "← Back to Login Portal"
+      confirm_password_label: Confirm New Password
+      heading: New Key
       invalid_token_flash: Token expired. Request a new reset.
       invalid_token_json: Reset token is invalid or expired.
       mismatch: Passwords do not match.
+      new_password_label: New Password (min 12 chars)
+      submit: SET NEW PASSWORD
+      subtitle: Set New Access Code
       too_short: Password must be at least 12 characters long.
       updated_flash: Password updated. Sign in with your new password.
       updated_json: Password successfully updated.

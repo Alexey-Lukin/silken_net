@@ -1,0 +1,117 @@
+---
+uk:
+  maintenance:
+    form:
+      action_prompt: "— Оберіть тип втручання —"
+      action_type: Тип дії
+      cancel: Скасувати
+      errors:
+        heading: Помилки валідації
+      evidence:
+        attach_photos: Прикріпити фото
+        heading: Протокол доказів // Фото
+        hint: Обов'язково для ремонту та монтажу. JPEG/PNG/WebP/HEIC · макс 20 МБ · макс 10 фото
+      ews_association: Прив'язка до EWS-тривоги (необов'язково)
+      ews_placeholder: ID загрози що вирішується
+      gps:
+        capture: "⊕ Захопити GPS"
+        heading: Координати втручання
+        latitude: Широта
+        longitude: Довгота
+      hardware_verified: Обладнання верифіковано — STM32 підтвердив новий імпульс
+      header:
+        edit: 'Редагування запису // #%{id}'
+        new: Реєстрація ритуалу втручання
+      notes: Польові нотатки (мін. 10 символів)
+      notes_placeholder: 'Опишіть втручання: стан анкера, замінені компоненти, спостереження...'
+      opex:
+        heading: Облік операційних витрат
+        labor_hours: Трудо-години
+        parts_cost: Вартість деталей (USD)
+      performed_at: Виконано о
+      submit:
+        create: Зберегти в матрицю
+        update: Оновити запис
+      target_id: ID цілі
+      target_type: Тип цілі
+    index:
+      filter:
+        clear: Очистити
+        verified: "✓ Тільки верифіковані"
+      heading: Журнал обслуговування
+      hw_pending_title: Очікує верифікації
+      hw_verified_title: Обладнання верифіковано
+      page_info: "%{count} втручань · Сторінка %{page} з %{total}"
+      register: "+ Реєстрація втручання"
+      table:
+        action: Дія
+        cost: Вартість
+        empty: Жодного втручання не зафіксовано
+        hw: ОБЛ
+        open: ВІДКРИТИ →
+        photos: Фото
+        technician: Технік
+        timestamp: Час
+        unit: Об'єкт
+    photo_gallery:
+      empty:
+        description: Завантажте докази для початку документування.
+        title: Немає фото
+      evidence_heading: Протокол доказів
+      load_more: Завантажити ще // %{remaining} залишилось →
+      page_of: Сторінка %{page} з %{total}
+      photo_count:
+        few: "%{count} фото"
+        many: "%{count} фото"
+        one: 1 фото
+        other: "%{count} фото"
+    show:
+      cost:
+        heading: Операційні витрати
+        labor_label: Праця
+        labor_sub: Год × Ставка
+        parts_label: Деталі
+        parts_sub: Замінені компоненти
+        total_label: Всього
+        total_sub: Праця + Деталі
+      edit: Редагувати запис →
+      evidence:
+        attach: Прикріпити докази →
+        heading: Протокол доказів
+        no_photos: Фото не прикріплені
+        trust_protocol: "⚠ Протокол довіри вимагає фото для %{action_type}"
+      gps:
+        drift: 'Відхилення від дерева:'
+        heading: Координати втручання
+        lat: Шир
+        lng: Довг
+        locate: Локалізувати патруль →
+        no_gps: GPS не зафіксовано
+        no_gps_sub: Фіксується мобільним додатком у момент створення запису.
+      hardware:
+        heading: Стан обладнання
+        pending: ОЧІКУЄ
+        record_type: Тип запису
+        stm_verified: STM32 верифіковано
+        verified: ТАК
+        verify_confirm: 'Позначити підтвердження імпульсу STM32 для запису #%{id}?'
+        verify_now: Верифікувати →
+      hardware_badge:
+        pending: Очікує верифікації
+        verified: "✓ ОБЛ Верифіковано"
+      header:
+        new_record: "+ Новий запис"
+        verify_confirm: 'STM32 підтвердив імпульс для запису #%{id}?'
+        verify_hardware: Верифікувати обладнання →
+      metadata:
+        action: Дія
+        created: Створено
+        ews_alert: EWS-тривога
+        heading: Метадані втручання
+        photos: Фото
+        role: Роль
+        target: Ціль
+        technician: Технік
+        updated: Оновлено
+      notes:
+        heading: Польові нотатки

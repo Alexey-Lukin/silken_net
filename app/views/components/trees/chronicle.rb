@@ -38,8 +38,8 @@ module Trees
 
     def render_header
       div(class: "flex items-center justify-between") do
-        h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "Digital Chronicle" }
-        span(class: "text-micro text-emerald-900 font-mono") { "#{@pagy.count} events" }
+        h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { t(".heading") }
+        span(class: "text-micro text-emerald-900 font-mono") { t(".events", count: @pagy.count) }
       end
     end
 

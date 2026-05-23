@@ -16,10 +16,10 @@ module BlockchainTransactions
 
     def render_on_chain_panel
       div(class: "p-6 border border-emerald-900 bg-emerald-950/5 space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "On-Chain Verification" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".heading") }
         if @tx.tx_hash.present?
           div do
-            p(class: "text-mini text-gray-600 uppercase mb-1") { "Transaction Hash" }
+            p(class: "text-mini text-gray-600 uppercase mb-1") { t(".tx_hash_label") }
             p(class: "text-tiny font-mono text-emerald-500 break-all leading-relaxed") { @tx.tx_hash }
           end
           div(class: "mt-4") do
@@ -28,21 +28,21 @@ module BlockchainTransactions
               target: "_blank",
               class: explorer_link_classes,
               aria_label: "View transaction on blockchain explorer"
-            ) { "View on #{explorer_name} →" }
+            ) { t(".view_on", explorer: explorer_name) }
           end
         else
-          p(class: "text-compact text-gray-700 italic") { "Transaction not yet submitted to chain." }
+          p(class: "text-compact text-gray-700 italic") { t(".not_submitted") }
         end
       end
     end
 
     def explorer_name
       if @tx.solana_network?
-        "Solana Explorer"
+        t(".explorer.solana")
       elsif @tx.celo_network?
-        "Celo Explorer"
+        t(".explorer.celo")
       else
-        "Polygonscan"
+        t(".explorer.polygon")
       end
     end
 

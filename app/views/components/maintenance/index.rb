@@ -24,16 +24,16 @@ module Maintenance
     def header_section
       div(class: "flex justify-between items-end mb-2") do
         div do
-          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "Maintenance Records" }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { t(".heading") }
           p(class: "text-xs text-gray-600 mt-1") do
-            "#{@pagy.count} intervention#{@pagy.count == 1 ? '' : 's'} · Page #{@pagy.page} of #{@pagy.last}"
+            t(".page_info", count: @pagy.count, page: @pagy.page, total: @pagy.last)
           end
         end
         a(
           href: new_api_v1_maintenance_record_path,
           aria_label: "Register new maintenance intervention",
           class: register_button_classes
-        ) { "+ Register Intervention" }
+        ) { t(".register") }
       end
     end
 
@@ -51,12 +51,12 @@ module Maintenance
           href: api_v1_maintenance_records_path(verified: "1"),
           aria_label: "Show only verified records",
           class: filter_verified_classes
-        ) { "✓ Verified Only" }
+        ) { t(".filter.verified") }
         a(
           href: api_v1_maintenance_records_path,
           aria_label: "Clear all filters",
           class: filter_clear_classes
-        ) { "Clear" }
+        ) { t(".filter.clear") }
       end
     end
 
@@ -65,13 +65,13 @@ module Maintenance
         table(class: "w-full text-left font-mono text-compact min-w-[900px]", role: "table") do
           thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
             tr do
-              th(scope: "col", class: "p-4") { "Technician" }
-              th(scope: "col", class: "p-4") { "Unit" }
-              th(scope: "col", class: "p-4") { "Action" }
-              th(scope: "col", class: "p-4 text-right") { "Cost" }
-              th(scope: "col", class: "p-4 text-center") { "Photos" }
-              th(scope: "col", class: "p-4 text-center") { "HW" }
-              th(scope: "col", class: "p-4") { "Timestamp" }
+              th(scope: "col", class: "p-4") { t(".table.technician") }
+              th(scope: "col", class: "p-4") { t(".table.unit") }
+              th(scope: "col", class: "p-4") { t(".table.action") }
+              th(scope: "col", class: "p-4 text-right") { t(".table.cost") }
+              th(scope: "col", class: "p-4 text-center") { t(".table.photos") }
+              th(scope: "col", class: "p-4 text-center") { t(".table.hw") }
+              th(scope: "col", class: "p-4") { t(".table.timestamp") }
               th(scope: "col", class: "p-4 text-right") { "" }
             end
           end
@@ -81,7 +81,7 @@ module Maintenance
             else
               tr do
                 td(colspan: 8, class: "p-10 text-center text-emerald-900 uppercase tracking-widest text-mini") do
-                  "No interventions recorded"
+                  t(".table.empty")
                 end
               end
             end
@@ -111,9 +111,9 @@ module Maintenance
         end
         td(class: "p-4 text-center") do
           if record.hardware_verified
-            span(class: "text-emerald-500 text-compact", title: "Hardware Verified") { "✓" }
+            span(class: "text-emerald-500 text-compact", title: t(".hw_verified_title")) { "✓" }
           else
-            span(class: "text-status-warning text-compact", title: "Pending Verification") { "◌" }
+            span(class: "text-status-warning text-compact", title: t(".hw_pending_title")) { "◌" }
           end
         end
         td(class: "p-4 text-gray-600 text-tiny") { record.performed_at&.strftime("%d.%m.%y // %H:%M") }
@@ -122,7 +122,7 @@ module Maintenance
             href: api_v1_maintenance_record_path(record),
             aria_label: "Open maintenance record details",
             class: "text-emerald-700 hover:text-white text-tiny focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors"
-          ) { "OPEN →" }
+          ) { t(".table.open") }
         end
       end
     end

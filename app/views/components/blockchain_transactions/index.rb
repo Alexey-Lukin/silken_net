@@ -27,8 +27,8 @@ module BlockchainTransactions
           p(class: "text-xs text-gray-600 mt-1") { t(".subtitle") }
         end
         div(class: "flex gap-2") do
-          %w[carbon_coin forest_coin].each do |t|
-            span(class: "px-2 py-0.5 border border-emerald-900 text-mini text-emerald-900 uppercase", role: "status") { t }
+          %w[carbon_coin forest_coin].each do |token_type|
+            span(class: "px-2 py-0.5 border border-emerald-900 text-mini text-emerald-900 uppercase", role: "status") { token_type }
           end
         end
       end
@@ -39,13 +39,13 @@ module BlockchainTransactions
         table(class: "w-full text-left font-mono text-compact min-w-[640px]", role: "table") do
           thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
             tr do
-              th(scope: "col", class: "p-4") { "Type" }
-              th(scope: "col", class: "p-4") { "Amount" }
-              th(scope: "col", class: "p-4") { "Status" }
-              th(scope: "col", class: "p-4") { "Network" }
-              th(scope: "col", class: "p-4") { "Tree" }
-              th(scope: "col", class: "p-4") { "TX Hash" }
-              th(scope: "col", class: "p-4 text-right") { "Timestamp" }
+              th(scope: "col", class: "p-4") { t(".table.type") }
+              th(scope: "col", class: "p-4") { t(".table.amount") }
+              th(scope: "col", class: "p-4") { t(".table.status") }
+              th(scope: "col", class: "p-4") { t(".table.network") }
+              th(scope: "col", class: "p-4") { t(".table.tree") }
+              th(scope: "col", class: "p-4") { t(".table.tx_hash") }
+              th(scope: "col", class: "p-4 text-right") { t(".table.timestamp") }
             end
           end
           tbody(class: "divide-y divide-emerald-900/30") do
@@ -53,7 +53,7 @@ module BlockchainTransactions
               @transactions.each { |tx| render_transaction_row(tx) }
             else
               render Views::Shared::UI::EmptyState.new(
-                title: "No blockchain transactions recorded.",
+                title: t(".table.empty"),
                 icon: "⬢",
                 colspan: 7
               )

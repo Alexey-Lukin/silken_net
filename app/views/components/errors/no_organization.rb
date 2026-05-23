@@ -37,19 +37,18 @@ module Errors
         div(class: "inline-block h-12 w-12 border border-status-danger-accent rotate-45 mb-4 relative", aria_hidden: "true") do
           div(class: "absolute inset-1 bg-status-danger-accent animate-pulse")
         end
-        h1(class: "text-3xl font-extralight text-white tracking-[0.3em] uppercase") { "Quarantine" }
-        p(class: "text-tiny text-emerald-700 uppercase tracking-[0.5em]") { "No Organization Assigned" }
+        h1(class: "text-3xl font-extralight text-white tracking-[0.3em] uppercase") { t(".heading") }
+        p(class: "text-tiny text-emerald-700 uppercase tracking-[0.5em]") { t(".subtitle") }
       end
     end
 
     def render_message
       div(class: "space-y-4 text-compact text-emerald-300/80 leading-relaxed") do
         p do
-          plain "Your account is not currently linked to any organization in the Forest Matrix. "
-          plain "Without a Cluster, the Citadel cannot scope telemetry, wallets, or alerts."
+          plain t(".body_1")
         end
         p(class: "text-tiny text-emerald-700 uppercase tracking-widest") do
-          "Contact your administrator to be onboarded into a cluster."
+          t(".body_2")
         end
       end
     end
@@ -57,7 +56,7 @@ module Errors
     def render_logout_link
       div(class: "pt-4 border-t border-emerald-900/30 text-center") do
         button_to(
-          "← Sign Out",
+          t(".sign_out"),
           api_v1_logout_path,
           method: :delete,
           aria: { label: "Sign out" },

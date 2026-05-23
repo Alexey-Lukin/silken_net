@@ -15,10 +15,10 @@ module Users
           table(role: "table", class: "w-full text-left font-mono text-compact") do
             thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
               tr do
-                th(scope: "col", class: "p-4") { "Identity" }
-                th(scope: "col", class: "p-4") { "Role / Access" }
-                th(scope: "col", class: "p-4") { "Neural Link State" }
-                th(scope: "col", class: "p-4 text-right") { "Audit" }
+                th(scope: "col", class: "p-4") { t(".table.identity") }
+                th(scope: "col", class: "p-4") { t(".table.role_access") }
+                th(scope: "col", class: "p-4") { t(".table.neural_link") }
+                th(scope: "col", class: "p-4 text-right") { t(".table.audit") }
               end
             end
             tbody(class: "divide-y divide-emerald-900/30") do
@@ -41,8 +41,8 @@ module Users
     def header_section
       div(class: "flex justify-between items-end mb-6") do
         div do
-          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "Organization Crew Registry" }
-          p(class: "text-xs text-gray-600 mt-1") { "Authorized personnel for ecosystem intervention." }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { t(".heading") }
+          p(class: "text-xs text-gray-600 mt-1") { t(".subtitle") }
         end
       end
     end
@@ -63,14 +63,14 @@ module Users
              render Views::Shared::UI::RelativeTime.new(
                datetime: user.last_seen_at,
                css_class: "text-gray-600 text-compact font-mono",
-               prefix: "Active "
+               prefix: "#{t('.active_prefix')} "
              )
            else
-             plain "Link offline"
+             plain t(".link_offline")
            end
         end
         td(class: "p-4 text-right") do
-          a(href: "#", class: "text-emerald-700 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "View logs for #{user.first_name} #{user.last_name}") { "VIEW_LOGS" }
+          a(href: "#", class: "text-emerald-700 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "View logs for #{user.first_name} #{user.last_name}") { t(".table.view_logs") }
         end
       end
     end

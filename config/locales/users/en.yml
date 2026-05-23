@@ -1,6 +1,17 @@
 ---
 en:
   users:
+    index:
+      active_prefix: Active
+      heading: Organization Crew Registry
+      link_offline: Link offline
+      subtitle: Authorized personnel for ecosystem intervention.
+      table:
+        audit: Audit
+        identity: Identity
+        neural_link: Neural Link State
+        role_access: Role / Access
+        view_logs: VIEW_LOGS
     profile:
       access:
         command_execution: Command Execution

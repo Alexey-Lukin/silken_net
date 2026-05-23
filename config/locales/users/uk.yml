@@ -1,6 +1,17 @@
 ---
 uk:
   users:
+    index:
+      active_prefix: Активний
+      heading: Реєстр персоналу організації
+      link_offline: Зв'язок відсутній
+      subtitle: Авторизований персонал для втручань в екосистему.
+      table:
+        audit: Аудит
+        identity: Ідентифікація
+        neural_link: Стан нейронного зв'язку
+        role_access: Роль / Доступ
+        view_logs: ЖУРНАЛ
     profile:
       access:
         command_execution: Виконання команд

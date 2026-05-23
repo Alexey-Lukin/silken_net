@@ -3,6 +3,24 @@ uk:
   blockchain_transactions:
     index:
       subtitle: Minting, slashing та всі on-chain події вашої Організації.
+      table:
+        amount: Сума
+        empty: Жодної блокчейн-транзакції не зафіксовано.
+        network: Мережа
+        status: Статус
+        timestamp: Час
+        tree: Дерево
+        tx_hash: TX Хеш
+        type: Тип
+    on_chain_frame:
+      explorer:
+        celo: Celo Explorer
+        polygon: Polygonscan
+        solana: Solana Explorer
+      heading: On-Chain верифікація
+      not_submitted: Транзакцію ще не надіслано в мережу.
+      tx_hash_label: Хеш транзакції
+      view_on: Переглянути на %{explorer} →
     show:
       decoration: TX
       details:
