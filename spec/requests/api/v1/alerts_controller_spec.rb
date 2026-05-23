@@ -41,6 +41,31 @@ RSpec.describe Api::V1::AlertsController, type: :request do
       get "/api/v1/alerts", params: { cluster_id: own_cluster.id }, headers: headers, as: :json
       expect(response).to have_http_status(:ok)
     end
+
+    # =========================================================================
+    # ENUM WHITELIST: status/severity hit AR enums backed by PG columns; passing
+    # a non-enum string used to surface as PG::InvalidTextRepresentation (HTTP
+    # 500 + Sentry spam). Both branches now respond 400 with an i18n message.
+    # =========================================================================
+    it "rejects bogus status with 400" do
+      get "/api/v1/alerts", params: { status: "bogus_status_xx" }, headers: headers, as: :json
+      expect(response).to have_http_status(:bad_request)
+      expect(response.parsed_body["error"]).to include("bogus_status_xx")
+    end
+
+    it "rejects bogus severity with 400" do
+      get "/api/v1/alerts", params: { severity: "nuclear" }, headers: headers, as: :json
+      expect(response).to have_http_status(:bad_request)
+      expect(response.parsed_body["error"]).to include("nuclear")
+    end
+
+    it "accepts the 'resolved' status keyword" do
+      own_alert.update!(status: :resolved, resolved_at: Time.current, resolved_by: user)
+      get "/api/v1/alerts", params: { status: "resolved" }, headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+      ids = response.parsed_body["data"].map { |a| a["id"] }
+      expect(ids).to include(own_alert.id)
+    end
   end
 
   describe "GET /api/v1/alerts/:id" do

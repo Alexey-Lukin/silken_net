@@ -8,6 +8,14 @@ module Api
 
       # Максимальний розмір прошивки (20 МБ) для захисту від перевантаження RAM
       MAX_FIRMWARE_SIZE = 20.megabytes
+      # Hex-encoded payload guard: 20 MB binary == 40 MB hex string.
+      # Without this an attacker bypassing the file upload could POST
+      # bytecode_payload directly and exhaust RAM/disk.
+      MAX_BYTECODE_PAYLOAD_HEX_SIZE = 2 * MAX_FIRMWARE_SIZE
+
+      # Allow-list of canonical target hardware classes — matches both
+      # OtaTransmissionWorker dispatch and the docs (04_03 §5.7).
+      DEPLOY_TARGET_TYPES = %w[Tree Gateway].freeze
 
       # --- РЕЄСТР ЕВОЛЮЦІЙ (The Evolution Hub) ---
       # GET /api/v1/firmwares
@@ -61,7 +69,7 @@ module Api
       # --- ЗАВАНТАЖЕННЯ НОВОГО ІНТЕЛЕКТУ ---
       # POST /api/v1/firmwares
       def create
-        @firmware = BioContractFirmware.new(firmware_params.except(:binary_file))
+        @firmware = BioContractFirmware.new(firmware_params.except(:binary_file, :bytecode_payload))
 
         # [ЗАХИСТ ПАМ'ЯТІ]: Обмежуємо розмір файлу перед завантаженням у RAM
         if params[:firmware][:binary_file].present?
@@ -73,6 +81,18 @@ module Api
 
           binary_data = uploaded_file.read
           @firmware.bytecode_payload = binary_data.unpack1("H*").upcase
+        elsif params[:firmware][:bytecode_payload].present?
+          # [SIZE BYPASS FIX]: Without this branch a client could skip the
+          # multipart upload (and its MAX_FIRMWARE_SIZE check) by submitting
+          # `firmware[bytecode_payload]` directly. Hex is 2× the binary size,
+          # so cap accordingly. We also assign through the typed setter rather
+          # than mass-assignment so the value goes through model validations.
+          hex_payload = params[:firmware][:bytecode_payload].to_s
+          if hex_payload.bytesize > MAX_BYTECODE_PAYLOAD_HEX_SIZE
+            render json: { error: I18n.t("flash.firmwares.file_too_large", limit: MAX_FIRMWARE_SIZE / 1.megabyte) }, status: :unprocessable_content
+            return
+          end
+          @firmware.bytecode_payload = hex_payload
         end
 
         if @firmware.save
@@ -83,7 +103,7 @@ module Api
                 firmware: @firmware
               }, status: :created
             end
-            format.html { redirect_to api_v1_firmwares_path, notice: "Evolution v#{@firmware.version} uploaded successfully." }
+            format.html { redirect_to api_v1_firmwares_path, notice: I18n.t("flash.firmwares.uploaded", version: @firmware.version) }
           end
         else
           respond_to do |format|
@@ -118,12 +138,32 @@ module Api
         @firmware = BioContractFirmware.find(params[:id])
         canary_percentage = params[:canary_percentage].present? ? params[:canary_percentage].to_i.clamp(1, 100) : 100
 
+        # [INPUT GUARD]: target_type must be on the allow-list — otherwise an
+        # arbitrary string reaches the worker (Sidekiq job) and crashes it
+        # asynchronously, leaving a dead deploy attempt with no client feedback.
+        target_type = params[:target_type].presence
+        if target_type && !DEPLOY_TARGET_TYPES.include?(target_type)
+          render json: {
+            error: I18n.t("flash.firmwares.invalid_target_type", allowed: DEPLOY_TARGET_TYPES.join(", "))
+          }, status: :bad_request
+          return
+        end
+
+        # [TENANT-ISOLATION]: cluster_id must belong to the caller's organization.
+        # Without this, an admin from org A could deploy firmware into org B's
+        # cluster — the worker walks devices by cluster_id without re-checking.
+        cluster_id = params[:cluster_id].presence
+        if cluster_id && !current_user.organization.clusters.exists?(id: cluster_id)
+          render json: { error: I18n.t("errors.api.not_found", model: "Cluster") }, status: :not_found
+          return
+        end
+
         # Запускаємо масове оновлення через Sidekiq
         # [СИНХРОНІЗОВАНО]: OtaTransmissionWorker обробить чергу завантажень
         OtaTransmissionWorker.perform_async(
           @firmware.id,
-          params[:cluster_id],
-          params[:target_type],
+          cluster_id,
+          target_type,
           canary_percentage
         )
 
@@ -136,7 +176,7 @@ module Api
             }, status: :accepted
           end
           format.html do
-            redirect_to api_v1_firmwares_path, notice: "Evolution deployment initiated for v#{@firmware.version} (#{canary_percentage}% canary)."
+            redirect_to api_v1_firmwares_path, notice: I18n.t("flash.firmwares.deployment_dispatched", version: @firmware.version)
           end
         end
       end

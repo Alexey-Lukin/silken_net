@@ -240,7 +240,7 @@ RSpec.describe "Controller coverage — uncovered paths" do
         expect(response).to have_http_status(:ok)
         json = response.parsed_body
         expect(json["hardware_verified"]).to be true
-        expect(json["message"]).to include("Hardware state verified")
+        expect(json["message"]).to include(I18n.t("flash.maintenance.hardware_verified"))
       end
 
       it "returns error when verify update fails" do

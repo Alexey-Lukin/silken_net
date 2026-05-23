@@ -9,3 +9,33 @@ uk:
       no_organization_title: Доступ заборонено
       not_found: "%{model} не знайдено в матриці лісу."
       unauthorized: Необхідна автентифікація. Брама закрита.
+  activerecord:
+    errors:
+      models:
+        actuator_command:
+          attributes:
+            duration_seconds:
+              exceeds_actuator_limit: 'перевищує безпечний ліміт актуатора (%{limit}с).'
+            expires_at:
+              must_be_future: має бути в майбутньому
+        bio_contract_firmware:
+          attributes:
+            compatible_hardware_versions:
+              must_be_array: має бути масивом
+              version_must_be_non_blank_string: кожна версія має бути непорожнім рядком
+        maintenance_record:
+          attributes:
+            photos:
+              required_for_action_type: обов'язкові для типів 'repair' та 'installation' (Trust Protocol)
+        naas_contract:
+          attributes:
+            end_date:
+              must_be_after_start: повинна бути пізніше дати початку
+        tiny_ml_model:
+          attributes:
+            accuracy_score:
+              must_be_numeric: має бути коректним числовим значенням
+              must_be_in_unit_range: має бути в діапазоні 0..1
+            threshold:
+              must_be_numeric: має бути коректним числовим значенням
+              must_be_in_unit_range: має бути в діапазоні 0..1

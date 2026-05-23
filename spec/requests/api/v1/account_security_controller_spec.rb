@@ -61,16 +61,52 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
       expect(user.reload.otp_required_for_login).to be true
     end
 
-    it "disables MFA when already enabled" do
+    it "disables MFA when already enabled (with valid current_password)" do
       user.update!(otp_required_for_login: true, recovery_codes: %w[a b c].to_json)
 
-      patch "/api/v1/account_security/mfa", headers: headers, as: :json
+      patch "/api/v1/account_security/mfa",
+            params: { current_password: "password12345" },
+            headers: headers, as: :json
 
       expect(response).to have_http_status(:ok)
       body = response.parsed_body
       expect(body["mfa_enabled"]).to be false
       expect(user.reload.otp_required_for_login).to be false
       expect(user.recovery_codes).to be_nil
+    end
+
+    # =========================================================================
+    # STEP-UP AUTH: disabling MFA is a security downgrade, so require a fresh
+    # password proof. Tests below pin both the "deny" and "allow" branches.
+    # =========================================================================
+    it "rejects MFA disable when current_password is wrong" do
+      user.update!(otp_required_for_login: true, recovery_codes: %w[a b c].to_json)
+
+      patch "/api/v1/account_security/mfa",
+            params: { current_password: "wrong-password" },
+            headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(user.reload.otp_required_for_login).to be true
+    end
+
+    it "rejects MFA disable when current_password is missing" do
+      user.update!(otp_required_for_login: true, recovery_codes: %w[a b c].to_json)
+
+      patch "/api/v1/account_security/mfa", headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(user.reload.otp_required_for_login).to be true
+    end
+
+    it "allows MFA disable without password challenge when user is OAuth-only (no password_digest)" do
+      user.update!(otp_required_for_login: true, recovery_codes: %w[a b c].to_json)
+      user.update_columns(password_digest: nil)
+
+      patch "/api/v1/account_security/mfa", headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(user.reload.otp_required_for_login).to be false
     end
   end
 
@@ -131,6 +167,59 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(user.reload.authenticate("first_password_1")).to be_truthy
+    end
+
+    # =========================================================================
+    # SESSION REVOCATION: a password change is a security event — other
+    # sessions on stolen devices must be invalidated, the current session
+    # must survive so the user is not bounced out of the dashboard mid-flow.
+    # =========================================================================
+    context "with session revocation on password change" do
+      let!(:other_session) do
+        user.sessions.create!(
+          ip_address: "10.0.0.99",
+          user_agent: "AnotherDevice/1.0"
+        )
+      end
+
+      let!(:current_request_session) do
+        user.sessions.create!(
+          ip_address: "127.0.0.1",
+          user_agent: "Rails Testing"
+        )
+      end
+
+      it "revokes other sessions and keeps the matching IP+UA session alive" do
+        # Match the Rack test default IP/UA to current_request_session
+        patch "/api/v1/account_security/password",
+              headers: headers.merge("User-Agent" => current_request_session.user_agent),
+              params: {
+                current_password: "password12345",
+                new_password: "fresh_secure_pass_1",
+                new_password_confirmation: "fresh_secure_pass_1"
+              }, as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(Session.find_by(id: other_session.id)).to be_nil
+        expect(Session.find_by(id: current_request_session.id)).to be_present
+      end
+
+      it "falls back to keeping the newest session row when IP+UA does not match" do
+        # No IP/UA match → fallback keeps the newest row (current_request_session
+        # is the most recently created and therefore preserved).
+        patch "/api/v1/account_security/password",
+              headers: headers.merge("User-Agent" => "MismatchedClient/3.0"),
+              params: {
+                current_password: "password12345",
+                new_password: "fresh_secure_pass_2",
+                new_password_confirmation: "fresh_secure_pass_2"
+              }, as: :json
+
+        expect(response).to have_http_status(:ok)
+        # The fallback keeps the newest row regardless of IP/UA.
+        surviving_ids = user.sessions.pluck(:id)
+        expect(surviving_ids).to eq([ current_request_session.id ])
+      end
     end
   end
 

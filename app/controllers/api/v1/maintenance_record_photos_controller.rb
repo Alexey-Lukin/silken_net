@@ -13,7 +13,7 @@ module Api
         @photo.purge_later # async — не блокуємо запит, S3 deletion в Sidekiq
         respond_to do |format|
           format.json { render json: { message: I18n.t("flash.maintenance.photo_deleted") }, status: :ok }
-          format.html { redirect_to api_v1_maintenance_record_path(@record), notice: "Photo removed." }
+          format.html { redirect_to api_v1_maintenance_record_path(@record), notice: I18n.t("flash.maintenance.photo_deleted") }
         end
       end
 

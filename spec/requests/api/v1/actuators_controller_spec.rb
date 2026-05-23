@@ -168,6 +168,58 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
     end
   end
 
+  describe "GET /api/v1/actuator_commands/:id" do
+    let(:own_command) do
+      allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
+      own_actuator.commands.create!(
+        user: user,
+        command_payload: "OPEN_VALVE",
+        duration_seconds: 30,
+        status: :issued
+      )
+    end
+
+    let(:other_command) do
+      allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
+      other_actuator.commands.create!(
+        user: create(:user, :forester, organization: other_organization),
+        command_payload: "OPEN_VALVE",
+        duration_seconds: 30,
+        status: :issued
+      )
+    end
+
+    it "returns the command status when the actuator belongs to the user's org" do
+      get "/api/v1/actuator_commands/#{own_command.id}", headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      body = response.parsed_body
+      expect(body["id"]).to eq(own_command.id)
+      expect(body["actuator_id"]).to eq(own_actuator.id)
+      expect(body["status"]).to eq("issued")
+      expect(body).to have_key("command_payload")
+      expect(body).to have_key("issued_at")
+    end
+
+    it "returns 404 for a command from another organization" do
+      get "/api/v1/actuator_commands/#{other_command.id}", headers: headers, as: :json
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "returns 404 for an unknown command id" do
+      get "/api/v1/actuator_commands/9999999", headers: headers, as: :json
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "requires forester role" do
+      investor = create(:user, organization: organization, role: :investor)
+      token = investor.generate_token_for(:api_access)
+      get "/api/v1/actuator_commands/#{own_command.id}",
+          headers: { "Authorization" => "Bearer #{token}" }, as: :json
+      expect(response).to have_http_status(:forbidden)
+    end
+  end
+
   context "with turbo_stream format" do
     before do
       allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)

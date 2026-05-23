@@ -136,7 +136,7 @@ class ActuatorCommand < ApplicationRecord
     return unless actuator&.max_active_duration_s.present? && duration_seconds.present?
 
     if duration_seconds > actuator.max_active_duration_s
-      errors.add(:duration_seconds, "перевищує безпечний ліміт актуатора (#{actuator.max_active_duration_s}с)")
+      errors.add(:duration_seconds, :exceeds_actuator_limit, limit: actuator.max_active_duration_s)
     end
   end
 
@@ -145,7 +145,7 @@ class ActuatorCommand < ApplicationRecord
     return unless expires_at.present?
 
     if expires_at <= Time.current
-      errors.add(:expires_at, "має бути в майбутньому")
+      errors.add(:expires_at, :must_be_future)
     end
   end
 

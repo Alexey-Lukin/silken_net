@@ -9,3 +9,33 @@ en:
       no_organization_title: Access Denied
       not_found: "%{model} not found in the forest matrix."
       unauthorized: Authentication required. The Gate is closed.
+  activerecord:
+    errors:
+      models:
+        actuator_command:
+          attributes:
+            duration_seconds:
+              exceeds_actuator_limit: 'exceeds the actuator safety ceiling (%{limit}s).'
+            expires_at:
+              must_be_future: must be in the future
+        bio_contract_firmware:
+          attributes:
+            compatible_hardware_versions:
+              must_be_array: must be an array
+              version_must_be_non_blank_string: every version must be a non-blank string
+        maintenance_record:
+          attributes:
+            photos:
+              required_for_action_type: required for 'repair' and 'installation' action types (Trust Protocol)
+        naas_contract:
+          attributes:
+            end_date:
+              must_be_after_start: must be after the start date
+        tiny_ml_model:
+          attributes:
+            accuracy_score:
+              must_be_numeric: must be a valid numeric value
+              must_be_in_unit_range: must be in the 0..1 range
+            threshold:
+              must_be_numeric: must be a valid numeric value
+              must_be_in_unit_range: must be in the 0..1 range

@@ -42,6 +42,44 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
       expect(response).to have_http_status(:accepted)
       expect(response.parsed_body["canary_percentage"]).to eq(100)
     end
+
+    # =========================================================================
+    # INPUT GUARDS: deploy is enqueued asynchronously into a Sidekiq worker
+    # that walks devices by cluster_id without re-checking org or accepting
+    # arbitrary target_type — the guards live in the controller.
+    # =========================================================================
+    it "rejects unknown target_type with 400 and does not enqueue" do
+      post "/api/v1/firmwares/#{firmware.id}/deploy",
+           params: { target_type: "Quantum" }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:bad_request)
+      expect(response.parsed_body["error"]).to include("Tree", "Gateway")
+      expect(OtaTransmissionWorker).not_to have_received(:perform_async)
+    end
+
+    it "passes Tree target_type through to the worker" do
+      cluster = create(:cluster, organization: organization)
+      post "/api/v1/firmwares/#{firmware.id}/deploy",
+           params: { target_type: "Tree", cluster_id: cluster.id, canary_percentage: 25 },
+           headers: headers, as: :json
+
+      expect(response).to have_http_status(:accepted)
+      # `as: :json` keeps `cluster.id` as an integer through the param parser;
+      # `.presence` returns it untouched.
+      expect(OtaTransmissionWorker).to have_received(:perform_async)
+        .with(firmware.id, cluster.id, "Tree", 25)
+    end
+
+    it "rejects cluster_id from another organization with 404" do
+      other_org = create(:organization)
+      other_cluster = create(:cluster, organization: other_org)
+
+      post "/api/v1/firmwares/#{firmware.id}/deploy",
+           params: { cluster_id: other_cluster.id }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:not_found)
+      expect(OtaTransmissionWorker).not_to have_received(:perform_async)
+    end
   end
 
   describe "GET /api/v1/firmwares (index)" do
@@ -84,6 +122,20 @@ RSpec.describe Api::V1::FirmwaresController, type: :request do
            headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
       # Phlex component may not fully render in test env, but code path is exercised
       expect(response.status).to be_in([ 200, 500 ])
+    end
+
+    # =========================================================================
+    # SIZE BYPASS GUARD: clients posting bytecode_payload directly (no
+    # multipart upload) used to skip MAX_FIRMWARE_SIZE. The cap is now
+    # enforced against the hex string length (2× binary size).
+    # =========================================================================
+    it "rejects oversized bytecode_payload with 422" do
+      huge_hex = "AA" * (Api::V1::FirmwaresController::MAX_BYTECODE_PAYLOAD_HEX_SIZE / 2 + 1)
+      post "/api/v1/firmwares",
+           params: { firmware: { version: "9.9.9", bytecode_payload: huge_hex } },
+           headers: headers, as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["error"]).to be_present
     end
   end
 

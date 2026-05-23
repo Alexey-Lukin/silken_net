@@ -6,14 +6,22 @@ en:
       idempotency_required: Idempotency-Key header is required for actuator command execution.
     alerts:
       acknowledged: 'Alert #%{id} acknowledged.'
+      invalid_severity: 'Invalid severity filter: %{value}.'
+      invalid_status: 'Invalid status filter: %{value}.'
       resolved: Threat localised.
+    blockchain_transactions:
+      invalid_status: 'Invalid status filter: %{value}.'
+      invalid_token_type: 'Invalid token_type filter: %{value}.'
     firmwares:
       deployment_dispatched: Deployment order for v%{version} dispatched.
       file_too_large: File size exceeds the %{limit} MB limit.
+      invalid_target_type: 'target_type must be one of: %{allowed}.'
       target_all: Entire forest
       target_cluster: 'Cluster #%{id}'
       uploaded: New evolution v%{version} uploaded to the Ocean.
     maintenance:
+      hardware_verified: Hardware state verified. STM32 pulse acknowledged.
+      invalid_date: 'Invalid ISO8601 date: %{value}.'
       photo_deleted: Photo removed from the Evidence Matrix.
       photo_not_found: Photo not found.
       record_created: Healing record committed. Ecosystem updated.
@@ -24,13 +32,19 @@ en:
       simulation_started: The Oracle has started the simulation.
     provisioning:
       defective_uid: This is a reserved firmware value for a defective STM32 UID — registration forbidden. Reflash the device and re-read the unique ID.
+      fallback_magic_rejected: 'Hardware UID ends with the firmware fallback magic value (%{magic}). %{detail}'
       node_initiated: 'Node initiation complete. DID: %{did}. Hardware UID: %{uid}'
       uid_taken: Device with UID %{uid} is already registered in the system.
     sessions:
+      authenticated_via: 'Authenticated via %{provider}.'
       blocked_provider: This login method is blocked. Contact an administrator or use a different method.
       invalid_credentials: Invalid access coordinates.
       logout_success: Logout successful. The Gate is closed.
+      neural_link_established: Neural Link Established.
+      neural_link_severed: Neural Link Severed.
       rate_limited: Too many login attempts. Try again in a minute.
+    telemetry:
+      payload_too_large: 'Payload exceeds %{limit} KiB ceiling.'
     settings:
       org_updated: Organization settings updated.
       updated: Settings updated.

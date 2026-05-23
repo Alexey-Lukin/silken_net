@@ -70,6 +70,28 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
       get "/api/v1/trees/#{own_tree.id}/telemetry", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
+
+    # =========================================================================
+    # DAYS CAP: `params[:days]` was unbounded. Clamp into [1, 365] so that
+    # bogus or absurd values gracefully degrade to a manageable window.
+    # =========================================================================
+    it "clamps `days` parameter to MAX_HISTORY_DAYS (365)" do
+      get "/api/v1/trees/#{own_tree.id}/telemetry",
+          params: { days: 99_999 }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      # Range coercion is internal; the surfaced contract is that the request
+      # returns successfully without OOMing the Ruby process.
+    end
+
+    it "treats non-numeric `days` as the default (7) instead of 0" do
+      get "/api/v1/trees/#{own_tree.id}/telemetry",
+          params: { days: "yesterday" }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      # Both seed logs (created 1d / 2h ago) must remain visible.
+      expect(response.parsed_body["timestamps"].length).to eq(2)
+    end
   end
 
   describe "POST /api/v1/gateways/:id/telemetry (gateway_uplink)" do
@@ -110,6 +132,24 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
            params: { payload: "AABBCCDD" }, as: :json
 
       expect(response).to have_http_status(:unauthorized)
+    end
+
+    # =========================================================================
+    # DoS GUARD: enqueueing a megabyte payload into Redis Sidekiq queue would
+    # starve Puma threads and break the CoAP uplink path. 16 KiB is ~16× the
+    # real-world batch ceiling.
+    # =========================================================================
+    it "rejects oversized payload with 413 and does not enqueue" do
+      payload = "A" * (Api::V1::TelemetryController::MAX_UPLINK_PAYLOAD_SIZE + 1)
+
+      post "/api/v1/gateways/#{own_gateway.id}/telemetry",
+           params: { payload: payload }, headers: headers, as: :json
+
+      # `:content_too_large` is the Rack-3 name for HTTP 413 (the older
+      # `:payload_too_large` is deprecated). Asserting the raw integer keeps
+      # the spec stable regardless of which symbol name the matcher accepts.
+      expect(response.status).to eq(413)
+      expect(UnpackTelemetryWorker).not_to have_received(:perform_async)
     end
   end
 

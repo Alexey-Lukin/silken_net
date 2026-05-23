@@ -11,9 +11,26 @@ module Api
                               .includes(:cluster, :tree)
                               .order(created_at: :desc)
 
-        # Фільтрація
-        @alerts = @alerts.where(status: params[:status] || :active)
-        @alerts = @alerts.where(severity: params[:severity]) if params[:severity].present?
+        # Фільтрація — параметри клієнта обмежуємо до enum-словника моделі,
+        # інакше довільна строка ламає AR PG::InvalidTextRepresentation
+        # та поглинає Sentry events. .keys повертає коректний whitelist.
+        status_param = params[:status].presence&.to_s || "active"
+        if EwsAlert.statuses.key?(status_param)
+          @alerts = @alerts.where(status: status_param)
+        else
+          render json: { error: I18n.t("flash.alerts.invalid_status", value: status_param) }, status: :bad_request
+          return
+        end
+
+        if params[:severity].present?
+          severity_param = params[:severity].to_s
+          unless EwsAlert.severities.key?(severity_param)
+            render json: { error: I18n.t("flash.alerts.invalid_severity", value: severity_param) }, status: :bad_request
+            return
+          end
+          @alerts = @alerts.where(severity: severity_param)
+        end
+
         @alerts = @alerts.where(cluster_id: params[:cluster_id]) if params[:cluster_id].present?
 
         @pagy, @alerts = pagy(@alerts)

@@ -29,16 +29,35 @@ RSpec.describe Api::V1::BlockchainTransactionsController, type: :request do
       expect(ids).not_to include(other_tx.id)
     end
 
-    it "filters by token_type" do
+    it "filters by token_type (carbon_coin)" do
       get "/api/v1/blockchain_transactions",
-          params: { token_type: "SCC" }, headers: headers, as: :json
+          params: { token_type: "carbon_coin" }, headers: headers, as: :json
       expect(response).to have_http_status(:ok)
     end
 
-    it "filters by status" do
+    it "filters by status (pending)" do
       get "/api/v1/blockchain_transactions",
           params: { status: "pending" }, headers: headers, as: :json
       expect(response).to have_http_status(:ok)
+    end
+
+    # =========================================================================
+    # ENUM WHITELIST: status/token_type are integer-backed AR enums; passing
+    # an unrecognised string used to surface as PG::InvalidTextRepresentation
+    # (HTTP 500). Both branches now respond 400 with an i18n message.
+    # =========================================================================
+    it "rejects bogus token_type with 400" do
+      get "/api/v1/blockchain_transactions",
+          params: { token_type: "SCC" }, headers: headers, as: :json
+      expect(response).to have_http_status(:bad_request)
+      expect(response.parsed_body["error"]).to include("SCC")
+    end
+
+    it "rejects bogus status with 400" do
+      get "/api/v1/blockchain_transactions",
+          params: { status: "garbled" }, headers: headers, as: :json
+      expect(response).to have_http_status(:bad_request)
+      expect(response.parsed_body["error"]).to include("garbled")
     end
   end
 

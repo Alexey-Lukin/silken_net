@@ -5,6 +5,7 @@ module Api
     class MaintenanceRecordsController < BaseController
       before_action :authorize_forester!
       before_action :set_record, only: [ :show, :edit, :update, :verify, :photos ]
+      before_action :authorize_record_mutation!, only: [ :edit, :update, :verify ]
 
       # --- ЖУРНАЛ ВТРУЧАНЬ ---
       def index
@@ -21,8 +22,22 @@ module Api
 
         @records = @records.where(action_type: params[:action_type]) if params[:action_type].present?
         @records = @records.hardware_verified if params[:verified].present?
-        @records = @records.where("performed_at >= ?", params[:from]) if params[:from].present?
-        @records = @records.where("performed_at <= ?", params[:to]) if params[:to].present?
+
+        # [INPUT GUARD]: invalid ISO8601 dates passed to `where("performed_at >= ?")`
+        # surface as `PG::InvalidDatetimeFormat` mid-query (HTTP 500). Parse and
+        # validate once; if either bound is malformed, fail fast with 400 so the
+        # client sees a clear error and Sentry doesn't see the noise.
+        if params[:from].present?
+          parsed_from = parse_iso8601_filter(params[:from])
+          return render(json: { error: I18n.t("flash.maintenance.invalid_date", value: params[:from]) }, status: :bad_request) if parsed_from.nil?
+          @records = @records.where("performed_at >= ?", parsed_from)
+        end
+
+        if params[:to].present?
+          parsed_to = parse_iso8601_filter(params[:to])
+          return render(json: { error: I18n.t("flash.maintenance.invalid_date", value: params[:to]) }, status: :bad_request) if parsed_to.nil?
+          @records = @records.where("performed_at <= ?", parsed_to)
+        end
 
         @pagy, @records = pagy(@records, items: 50)
 
@@ -68,7 +83,7 @@ module Api
                 record: MaintenanceRecordBlueprint.render_as_hash(@record, view: :show)
               }, status: :created
             end
-            format.html { redirect_to api_v1_maintenance_record_path(@record), notice: "Healing ritual recorded." }
+            format.html { redirect_to api_v1_maintenance_record_path(@record), notice: I18n.t("flash.maintenance.record_created") }
           end
         else
           respond_to do |format|
@@ -133,7 +148,7 @@ module Api
                 record: MaintenanceRecordBlueprint.render_as_hash(@record, view: :show)
               }
             end
-            format.html { redirect_to api_v1_maintenance_record_path(@record), notice: "Record updated." }
+            format.html { redirect_to api_v1_maintenance_record_path(@record), notice: I18n.t("flash.maintenance.record_updated") }
           end
         else
           respond_to do |format|
@@ -158,12 +173,12 @@ module Api
           respond_to do |format|
             format.json do
               render json: {
-                message: "Hardware state verified. STM32 pulse acknowledged.",
+                message: I18n.t("flash.maintenance.hardware_verified"),
                 hardware_verified: true,
                 record_id: @record.id
               }
             end
-            format.html { redirect_to api_v1_maintenance_record_path(@record), notice: "Hardware verified." }
+            format.html { redirect_to api_v1_maintenance_record_path(@record), notice: I18n.t("flash.maintenance.hardware_verified") }
           end
         else
           render_validation_error(@record)
@@ -171,6 +186,25 @@ module Api
       end
 
       private
+
+      # Returns nil for malformed input; both ISO8601 and date-only ("2026-05-23")
+      # strings parse cleanly via Time.iso8601. Returning nil lets the caller
+      # produce a 400 instead of leaking a server-side exception.
+      def parse_iso8601_filter(raw)
+        Time.iso8601(raw.to_s)
+      rescue ArgumentError
+        nil
+      end
+
+      # [AUTHZ FIX]: Forester could edit/verify another forester's maintenance
+      # record within the same org — the only check was `authorize_forester!`.
+      # Restrict mutations to the author; admin+ keep the override for audit.
+      def authorize_record_mutation!
+        return if current_user.role_admin? || current_user.role_super_admin?
+        return if @record.user_id == current_user.id
+
+        render_forbidden
+      end
 
       def set_record
         @record = organization_scoped_records

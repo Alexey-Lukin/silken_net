@@ -98,6 +98,6 @@ class MaintenanceRecord < ApplicationRecord
     return unless action_type_repair? || action_type_installation?
     return if photos.any?
 
-    errors.add(:photos, "обов'язкові для типів 'repair' та 'installation' (Trust Protocol)")
+    errors.add(:photos, :required_for_action_type)
   end
 end

@@ -87,7 +87,14 @@ POST /api/v1/auth/m2m_token
 - `spec/initializers/rack_attack_spec.rb` — throttle правила `m2m_auth/ip` та `oracle_callbacks/ip`
 - `spec/requests/api/v1/m2m_auth_controller_spec.rb` — некоректний Ed25519 підпис → 401; nonce replay → 401; Redis unavailable → DB fallback (Solid Cache)
 - `spec/requests/api/v1/oracle_callbacks_controller_spec.rb` — replay callback → 409 Conflict; state machine guard
-- `spec/requests/api/v1/actuators_controller_spec.rb` — відсутній `Idempotency-Key` → 400; ідемпотентний повтор → 202
+- `spec/requests/api/v1/actuators_controller_spec.rb` — відсутній `Idempotency-Key` → 400; ідемпотентний повтор → 202; `command_status` 404 для cross-org команди; forester-guard
+- `spec/requests/api/v1/account_security_controller_spec.rb` — **MFA disable step-up** (3 examples: wrong password / missing password / OAuth-only bypass); **session revocation на password change** (2 examples: keeps current IP+UA / fallback на newest row)
+- `spec/requests/api/v1/alerts_controller_spec.rb` — enum allow-list для `status`/`severity` (2 fail-fast + 1 happy "resolved")
+- `spec/requests/api/v1/blockchain_transactions_controller_spec.rb` — enum allow-list для `status`/`token_type` (2 fail-fast)
+- `spec/requests/api/v1/firmwares_controller_spec.rb` — bytecode_payload size cap (422), `target_type` allow-list (400), cluster tenant guard (404)
+- `spec/requests/api/v1/maintenance_records_controller_spec.rb` — `authorize_record_mutation!` (403 для not-author, admin override); ISO8601 date validation (`from`/`to` → 400)
+- `spec/requests/api/v1/oracle_visions_controller_spec.rb` — cross-tenant scoping (polymorphic analyzable, per-org cache key); simulate cluster_id tenant guard
+- `spec/requests/api/v1/telemetry_controller_spec.rb` — payload size cap (413), days cap clamp (365), non-numeric days fallback to default 7
 
 ---
 
@@ -182,8 +189,8 @@ POST /api/v1/auth/m2m_token
 | 8a | POST | `/api/v1/auth/m2m_token/refresh` | `m2m_auth#refresh` | 🔑 Auth (Bearer) | **M2M Refresh:** Оновлення Bearer token без Ed25519 re-auth |
 | **🛡️ Безпека Акаунту** | | | | | |
 | 9 | GET | `/api/v1/account_security` | `account_security#show` | �� Auth | MFA-стан, прив'язані identity |
-| 10 | PATCH | `/api/v1/account_security/mfa` | `account_security#toggle_mfa` | 🔑 Auth | Увімкнути/вимкнути MFA |
-| 11 | PATCH | `/api/v1/account_security/password` | `account_security#change_password` | 🔑 Auth | Змінити пароль |
+| 10 | PATCH | `/api/v1/account_security/mfa` | `account_security#toggle_mfa` | 🔑 Auth | Увімкнути/вимкнути MFA. **Disable вимагає `current_password` (step-up auth)**, окрім OAuth-only акаунтів. |
+| 11 | PATCH | `/api/v1/account_security/password` | `account_security#change_password` | 🔑 Auth | Змінити пароль. **Усі інші Session-row відкликаються**, поточний request session виживає (IP+UA match → fallback на newest). |
 | 12 | DELETE | `/api/v1/account_security/identities/:id` | `account_security#unlink_identity` | 🔑 Auth | Відв'язати OAuth-провайдера |
 | 13 | PATCH | `/api/v1/account_security/identities/:id/lock` | `account_security#lock_identity` | 🔑 Auth | Заблокувати OAuth-ідентичність |
 | 14 | PATCH | `/api/v1/account_security/identities/:id/unlock` | `account_security#unlock_identity` | 🔑 Auth | Розблокувати OAuth-ідентичність |
@@ -227,7 +234,7 @@ POST /api/v1/auth/m2m_token
 | **⚙️ Актуатори** | | | | | |
 | 46 | GET | `/api/v1/actuators/:id` | `actuators#show` | 🌿 Forester | Деталі актуатора + історія команд |
 | 47 | POST | `/api/v1/actuators/:id/execute` | `actuators#execute` | 🌿 Forester | Виконати команду на актуаторі |
-| 48 | GET | `/api/v1/actuator_commands/:id` | `actuators#command_status` | 🌿 Forester | Статус команди актуатора |
+| 48 | GET | `/api/v1/actuator_commands/:id` | `actuators#command_status` | 🌿 Forester | Статус команди актуатора. Скоупиться через `actuator → gateway → cluster` до org caller-а (404 для чужої команди). Повертає `id`, `actuator_id`, `status`, `priority`, `command_payload`, `duration_seconds`, `issued_at`, `sent_at`, `executed_at`, `error_message`, `expires_at`. |
 | **🚀 Прошивка (OTA)** | | | | | |
 | 49 | GET | `/api/v1/firmwares` | `firmwares#index` | 👑 Admin | Список версій прошивки |
 | 50 | GET | `/api/v1/firmwares/new` | `firmwares#new` | 👑 Admin | Форма завантаження прошивки |
@@ -238,13 +245,13 @@ POST /api/v1/auth/m2m_token
 | 54 | GET | `/api/v1/alerts` | `alerts#index` | 🔑 Auth | Список EWS-тривог |
 | 55 | GET | `/api/v1/alerts/:id` | `alerts#show` | 🔑 Auth | Деталі EWS-тривоги (з cluster, tree, coordinates, actionable?) |
 | 56 | PATCH | `/api/v1/alerts/:id/resolve` | `alerts#resolve` | 🔑 Auth | Закрити тривогу |
-| 57 | GET | `/api/v1/maintenance_records` | `maintenance_records#index` | 🌿 Forester | Журнал технічного обслуговування |
+| 57 | GET | `/api/v1/maintenance_records` | `maintenance_records#index` | 🌿 Forester | Журнал технічного обслуговування. Query: `?action_type=`, `?verified=1`, `?maintainable_type=`, `?maintainable_id=`, `?from=<ISO8601>`, `?to=<ISO8601>`. Невалідні `from`/`to` → `400 Bad Request` (`flash.maintenance.invalid_date`). |
 | 58 | GET | `/api/v1/maintenance_records/new` | `maintenance_records#new` | 🌿 Forester | Форма нового запису |
 | 59 | POST | `/api/v1/maintenance_records` | `maintenance_records#create` | 🌿 Forester | Створити запис обслуговування |
 | 60 | GET | `/api/v1/maintenance_records/:id` | `maintenance_records#show` | 🌿 Forester | Деталі запису |
 | 61 | GET | `/api/v1/maintenance_records/:id/edit` | `maintenance_records#edit` | 🌿 Forester | Форма редагування запису (HTML) |
-| 62 | PATCH | `/api/v1/maintenance_records/:id` | `maintenance_records#update` | 🌿 Forester | Оновити запис |
-| 63 | PATCH | `/api/v1/maintenance_records/:id/verify` | `maintenance_records#verify` | 🌿 Forester | Підтвердити hardware-стан (STM32) |
+| 62 | PATCH | `/api/v1/maintenance_records/:id` | `maintenance_records#update` | 🌿 Forester | Оновити запис. **Тільки автор або admin+** (запобігає cross-forester tampering). |
+| 63 | PATCH | `/api/v1/maintenance_records/:id/verify` | `maintenance_records#verify` | 🌿 Forester | Підтвердити hardware-стан (STM32). **Тільки автор або admin+** (запобігає cross-forester tampering). |
 | 64 | GET | `/api/v1/maintenance_records/:id/photos` | `maintenance_records#photos` | 🌿 Forester | Фото запису (пагінація) |
 | 65 | DELETE | `/api/v1/maintenance_records/:maintenance_record_id/photos/:id` | `maintenance_record_photos#destroy` | 🌿 Forester | Видалити фото |
 | **⊙ Оракул (AI Insights)** | | | | | |
@@ -252,7 +259,7 @@ POST /api/v1/auth/m2m_token
 | 67 | POST | `/api/v1/oracle_visions/simulate` | `oracle_visions#simulate` | 👑 Admin | Запустити Lorenz-симуляцію |
 | 68 | GET | `/api/v1/oracle_visions/stream_config?cluster_id=:id` | `oracle_visions#stream_config` | 🌿 Forester | Конфіг підписки на стрім. `cluster_id` — обов'язковий query param. 404 при невідомому `cluster_id`. |
 | **⛓️ Блокчейн** | | | | | |
-| 69 | GET | `/api/v1/blockchain_transactions` | `blockchain_transactions#index` | 🔑 Auth | Список блокчейн-транзакцій |
+| 69 | GET | `/api/v1/blockchain_transactions` | `blockchain_transactions#index` | 🔑 Auth | Список блокчейн-транзакцій. Query: `?token_type=` (allow-list з `BlockchainTransaction.token_types.keys`: `carbon_coin`, `forest_coin`, `cusd`), `?status=` (allow-list з `.statuses.keys`). Невідомі значення → `400 Bad Request`. |
 | 70 | GET | `/api/v1/blockchain_transactions/:id` | `blockchain_transactions#show` | 🔑 Auth | Деталі транзакції |
 | 71 | GET | `/api/v1/blockchain_transactions/:id/on_chain` | `blockchain_transactions#on_chain` | 🔑 Auth | On-chain верифікація (Turbo Frame) |
 | 72 | POST | `/api/v1/oracle_callbacks` | `oracle_callbacks#create` | 🌐 Public (HMAC) | Chainlink Oracle callback — захищено `X-Chainlink-Signature` HMAC-SHA256 |
@@ -499,7 +506,7 @@ POST /api/v1/auth/m2m_token
 
 | Параметр | Тип | За замовчуванням | Опис |
 |---|---|---|---|
-| `days` | Integer | 7 | Глибина вибірки (у днях) |
+| `days` | Integer | 7 | Глибина вибірки (у днях). Обмежено до `MAX_HISTORY_DAYS = 365`; невалідні/від'ємні значення відкочуються до `7`. |
 
 **Success Response `200 OK`:**
 
@@ -531,7 +538,7 @@ POST /api/v1/auth/m2m_token
 
 | Параметр | Тип | За замовчуванням | Опис |
 |---|---|---|---|
-| `days` | Integer | 7 | Глибина вибірки (у днях) |
+| `days` | Integer | 7 | Глибина вибірки (у днях). Обмежено до `MAX_HISTORY_DAYS = 365`; невалідні/від'ємні значення відкочуються до `7`. |
 
 **Success Response `200 OK`:**
 
@@ -680,8 +687,8 @@ POST /api/v1/auth/m2m_token
 
 | Параметр | Тип | Опис |
 |---|---|---|
-| `cluster_id` | Integer | ID кластера (якщо відсутній — оновлення для всього лісу) |
-| `target_type` | String | `"Tree"` або `"Gateway"` |
+| `cluster_id` | Integer | ID кластера (якщо відсутній — оновлення для всього лісу). **MUST належати організації caller-а** — інакше `404 Not Found` (запобігає cross-tenant OTA-розгортанню). |
+| `target_type` | String | `"Tree"` або `"Gateway"` **тільки** (allow-list `DEPLOY_TARGET_TYPES`). Інші значення → `400 Bad Request` з `flash.firmwares.invalid_target_type`. |
 | `canary_percentage` | Integer | 1–100. За замовчуванням 100 (всі пристрої). Canary: поступове розгортання |
 
 **Success Response `202 Accepted`:**
@@ -709,6 +716,7 @@ POST /api/v1/auth/m2m_token
 | `firmware[notes]` | String | Нотатки до версії (опційно) |
 | `firmware[target_hardware_type]` | String | `"Tree"` або `"Gateway"` |
 | `firmware[tree_family_id]` | Integer | Прив'язка до породи (опційно) |
+| `firmware[bytecode_payload]` | String (HEX) | Альтернатива `binary_file`: hex-encoded bytecode. Розмір обмежено до `MAX_BYTECODE_PAYLOAD_HEX_SIZE = 2 × MAX_FIRMWARE_SIZE` (40 MB hex = 20 MB binary). |
 
 **Success Response `201 Created`:**
 
@@ -848,6 +856,8 @@ POST /api/v1/auth/m2m_token
 
 > **`job_id`** — це Sidekiq JID (рядок ~24 hex-символи), а не числовий id. Використовується для відстеження статусу симуляції.
 
+> **🔒 Tenant Guard:** `cluster_id` MUST належати організації caller-а. SimulationWorker обходить дерева кластера без повторної перевірки org, тому admin з org A раніше міг тригернути симуляцію проти кластера org B. Тепер контролер виконує `current_user.organization.clusters.find(params[:cluster_id])` → `404 Not Found` при невідповідності.
+
 ---
 
 ### 5.11 POST `/api/v1/maintenance_records` — Фіксація Обслуговування
@@ -887,9 +897,9 @@ POST /api/v1/auth/m2m_token
 
 | Параметр | Тип | Опис |
 |---|---|---|
-| `status` | String | `"active"` (за замовчуванням), `"resolved"` |
-| `severity` | String | Фільтр за рівнем небезпеки |
-| `cluster_id` | Integer | Фільтр за кластером |
+| `status` | String | `"active"` (за замовчуванням), `"resolved"`. Allow-list з `EwsAlert.statuses.keys`. Інше → `400 Bad Request` (`flash.alerts.invalid_status`). |
+| `severity` | String | Фільтр за рівнем небезпеки. Allow-list з `EwsAlert.severities.keys`. Інше → `400 Bad Request` (`flash.alerts.invalid_severity`). Раніше bogus значення давало `PG::InvalidTextRepresentation` (HTTP 500) — fail-fast тепер ловить це до запиту. |
+| `cluster_id` | Integer | Фільтр за кластером (org-scoped — інший org-cluster дає порожній результат) |
 
 **Success Response `200 OK`:**
 
@@ -1111,7 +1121,7 @@ if (days_until_token_expiry() < 7) {
 
 | Параметр | Тип | Обов'язковий | Опис |
 |---|---|---|---|
-| `payload` | String (Base64) | ✅ | Base64-encoded бінарний батч: `[IV:16][AES-256-CBC encrypted records]`. Формат ідентичний CoAP uplink |
+| `payload` | String (Base64) | ✅ | Base64-encoded бінарний батч: `[IV:16][AES-256-CBC encrypted records]`. Формат ідентичний CoAP uplink. Розмір обмежено до `MAX_UPLINK_PAYLOAD_SIZE = 16 KiB` (~16× headroom над реальним flush'ем 45 entries). Перевищення → `413 Payload Too Large` (`flash.telemetry.payload_too_large`). Запобігає DoS через Redis-Sidekiq queue. |
 
 **Success Response `202 Accepted`:**
 

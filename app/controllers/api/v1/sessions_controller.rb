@@ -27,7 +27,7 @@ module Api
 
           respond_to do |format|
             format.json { render_api_login_success(user) }
-            format.html { redirect_to api_v1_dashboard_index_path, notice: "Neural Link Established." }
+            format.html { redirect_to api_v1_dashboard_index_path, notice: I18n.t("flash.sessions.neural_link_established") }
           end
         else
           render_login_failure
@@ -59,7 +59,7 @@ module Api
 
         establish_session(user)
 
-        redirect_to api_v1_dashboard_index_path, notice: "Authenticated via #{auth.provider.titleize}."
+        redirect_to api_v1_dashboard_index_path, notice: I18n.t("flash.sessions.authenticated_via", provider: auth.provider.titleize)
       end
 
       # --- ВИХІД (Logout) ---
@@ -70,7 +70,7 @@ module Api
 
         respond_to do |format|
           format.json { render json: { message: I18n.t("flash.sessions.logout_success") }, status: :ok }
-          format.html { redirect_to api_v1_login_path, notice: "Neural Link Severed." }
+          format.html { redirect_to api_v1_login_path, notice: I18n.t("flash.sessions.neural_link_severed") }
         end
       end
 

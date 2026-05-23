@@ -6,14 +6,22 @@ uk:
       idempotency_required: Заголовок Idempotency-Key обов'язковий для виконання команд актуатора.
     alerts:
       acknowledged: 'Тривогу #%{id} втихомирено.'
+      invalid_severity: 'Невірний фільтр severity: %{value}.'
+      invalid_status: 'Невірний фільтр status: %{value}.'
       resolved: Загрозу локалізовано.
+    blockchain_transactions:
+      invalid_status: 'Невірний фільтр status: %{value}.'
+      invalid_token_type: 'Невірний фільтр token_type: %{value}.'
     firmwares:
       deployment_dispatched: Наказ на еволюцію v%{version} відправлено в ефір.
       file_too_large: Розмір файлу перевищує ліміт %{limit} МБ.
+      invalid_target_type: 'target_type має бути одним з: %{allowed}.'
       target_all: Весь ліс
       target_cluster: 'Кластер #%{id}'
       uploaded: Нову еволюцію v%{version} завантажено в Океан.
     maintenance:
+      hardware_verified: Стан hardware верифіковано. STM32 pulse підтверджено.
+      invalid_date: 'Невірна ISO8601-дата: %{value}.'
       photo_deleted: Фото видалено з Evidence Matrix.
       photo_not_found: Фото не знайдено.
       record_created: Запис про зцілення зафіксовано. Екосистема оновлена.
@@ -24,13 +32,19 @@ uk:
       simulation_started: Оракул почав симуляцію.
     provisioning:
       defective_uid: Це резервоване firmware значення для defective STM32 UID — реєстрація заборонена. Перепрошийте пристрій та повторно зчитайте unique ID.
+      fallback_magic_rejected: 'Hardware UID закінчується магічним fallback значенням (%{magic}). %{detail}'
       node_initiated: 'Ініціація вузла завершена. DID: %{did}. Hardware UID: %{uid}'
       uid_taken: Пристрій з UID %{uid} вже зареєстрований в системі.
     sessions:
+      authenticated_via: 'Автентифіковано через %{provider}.'
       blocked_provider: Цей метод входу заблоковано. Зверніться до адміністратора або використайте інший метод.
       invalid_credentials: Невірні координати доступу.
       logout_success: Вихід успішний. Брама закрита.
+      neural_link_established: Нейронний зв'язок встановлено.
+      neural_link_severed: Нейронний зв'язок розірвано.
       rate_limited: Забагато спроб входу. Спробуйте через хвилину.
+    telemetry:
+      payload_too_large: 'Payload перевищує ліміт %{limit} KiB.'
     settings:
       org_updated: Налаштування Організації оновлено.
       updated: Налаштування оновлено.

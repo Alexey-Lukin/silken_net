@@ -58,10 +58,15 @@ class TinyMlModel < ApplicationRecord
   # ВПЕВНЕНІСТЬ ОРАКУЛА (Inference Confidence — BigDecimal Bridge)
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-  # BigDecimal для accuracy_score, щоб уникнути похибок Float при порівнянні
+  # BigDecimal для accuracy_score, щоб уникнути похибок Float при порівнянні.
+  # Повертає nil для непарсабельних значень — їх ловить
+  # `validate_decimal_precision_fields` і додає `:must_be_numeric`.
   def accuracy_score
     val = metadata&.dig("accuracy_score")
-    val.nil? ? nil : BigDecimal(val.to_s)
+    return nil if val.nil?
+    BigDecimal(val.to_s)
+  rescue ArgumentError, TypeError
+    nil
   end
 
   def accuracy_score=(value)
@@ -71,7 +76,10 @@ class TinyMlModel < ApplicationRecord
   # BigDecimal для threshold, щоб P(anomaly) > threshold був детермінованим тригером EwsAlert
   def threshold
     val = metadata&.dig("threshold")
-    val.nil? ? nil : BigDecimal(val.to_s)
+    return nil if val.nil?
+    BigDecimal(val.to_s)
+  rescue ArgumentError, TypeError
+    nil
   end
 
   def threshold=(value)
@@ -199,12 +207,12 @@ class TinyMlModel < ApplicationRecord
       begin
         val = BigDecimal(raw.to_s)
       rescue ArgumentError, TypeError
-        errors.add(method, "має бути коректним числовим значенням")
+        errors.add(method, :must_be_numeric)
         next
       end
 
       if val.negative? || val > 1
-        errors.add(method, "має бути в діапазоні 0..1")
+        errors.add(method, :must_be_in_unit_range)
       end
     end
   end

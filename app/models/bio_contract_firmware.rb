@@ -140,12 +140,12 @@ class BioContractFirmware < ApplicationRecord
   # Кожен елемент — рядок (наприклад, "v1.0", "v2.1-STM32H7").
   def compatible_hardware_versions_format
     unless compatible_hardware_versions.is_a?(Array)
-      errors.add(:compatible_hardware_versions, "має бути масивом")
+      errors.add(:compatible_hardware_versions, :must_be_array)
       return
     end
 
     unless compatible_hardware_versions.all? { |v| v.is_a?(String) && v.present? }
-      errors.add(:compatible_hardware_versions, "кожна версія має бути непорожнім рядком")
+      errors.add(:compatible_hardware_versions, :version_must_be_non_blank_string)
     end
   end
 end

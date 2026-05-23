@@ -40,6 +40,20 @@ module Api
       # PATCH /api/v1/account_security/mfa
       def toggle_mfa
         if current_user.mfa_enabled?
+          # [STEP-UP AUTH FIX]: Disabling MFA is a critical downgrade — if a
+          # session is hijacked (XSS, stolen cookie) the attacker could turn
+          # off the second factor silently. Require fresh proof of the
+          # account password before lowering the security level. Users who
+          # signed in purely via OAuth (no local password) keep the previous
+          # behaviour, since there is no shared secret to challenge with.
+          if current_user.password_digest.present? &&
+             !current_user.authenticate(params[:current_password].to_s)
+            return respond_to do |format|
+              format.json { render json: { error: t("account_security.password.current_invalid") }, status: :unprocessable_content }
+              format.html { redirect_to api_v1_account_security_path, alert: t("account_security.password.current_invalid") }
+            end
+          end
+
           current_user.update!(otp_required_for_login: false, recovery_codes: nil)
           respond_to do |format|
             format.json { render json: { message: t("account_security.mfa.disabled"), mfa_enabled: false }, status: :ok }
@@ -130,10 +144,31 @@ module Api
 
         current_user.update!(password: params[:new_password])
 
+        # [SECURITY] Revoke every other Rails session — a password change is a
+        # security event; lingering sessions on other devices should not retain
+        # access. We keep the row backing the current request so the user is
+        # not bounced out of the dashboard mid-flow.
+        keep_id = session_record_id_for_current_request
+        scope = current_user.sessions
+        scope = scope.where.not(id: keep_id) if keep_id
+        scope.destroy_all
+
         respond_to do |format|
           format.json { render json: { message: t("account_security.password.updated_json") }, status: :ok }
           format.html { redirect_to api_v1_account_security_path, notice: t("account_security.password.updated_flash") }
         end
+      end
+
+      private
+
+      # We don't track the current-request Session id directly. Approximate by
+      # the most recent row matching the request's IP+user-agent, falling back
+      # to the newest row. Returns nil when the user has zero session rows
+      # (e.g. pure Bearer-token clients).
+      def session_record_id_for_current_request
+        scope = current_user.sessions
+        match = scope.find_by(ip_address: request.remote_ip, user_agent: request.user_agent.presence)
+        (match || scope.order(created_at: :desc).first)&.id
       end
     end
   end

@@ -20,7 +20,13 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
     before do
       Rails.cache.clear
       allow(Rails.cache).to receive(:fetch).and_call_original
-      allow(Rails.cache).to receive(:fetch).with("oracle_expected_yield_24h", anything).and_return(1.5)
+      # [TENANT-ISOLATION]: Cache key was promoted from a global
+      # "oracle_expected_yield_24h" to a per-org "oracle_expected_yield_24h_org_<id>"
+      # to stop cross-tenant leakage. Match the org-scoped key so the stub fires
+      # for the forester/admin tests below.
+      allow(Rails.cache).to receive(:fetch)
+        .with("oracle_expected_yield_24h_org_#{organization.id}", anything)
+        .and_return(1.5)
     end
 
     context "when as JSON" do
@@ -162,6 +168,67 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
     it "returns 401 without authentication" do
       post "/api/v1/oracle_visions/simulate", as: :json
       expect(response).to have_http_status(:unauthorized)
+    end
+
+    # =========================================================================
+    # TENANT-ISOLATION: SimulationWorker walks Trees by cluster_id without
+    # re-checking org. Admin from org A used to be able to fire a simulation
+    # against org B's cluster — pattern matches firmware deploy guard.
+    # =========================================================================
+    it "returns 404 when cluster_id belongs to another organization" do
+      other_org = create(:organization)
+      other_cluster = create(:cluster, organization: other_org)
+
+      post "/api/v1/oracle_visions/simulate",
+           params: { cluster_id: other_cluster.id, variables: { sigma: 10 } },
+           headers: admin_headers, as: :json
+
+      expect(response).to have_http_status(:not_found)
+    end
+  end
+
+  # ===========================================================================
+  # TENANT-ISOLATION: visions and yield calculation must scope to current org.
+  # Previously the index leaked global AiInsight + cached the protocol-wide
+  # yield total under a single key.
+  # ===========================================================================
+  describe "GET /api/v1/oracle_visions — cross-tenant scoping" do
+    let(:foreign_org) { create(:organization) }
+    let(:foreign_cluster) { create(:cluster, organization: foreign_org) }
+
+    before { Rails.cache.clear }
+
+    it "does not surface AiInsight rows from another organization" do
+      own_tree = create(:tree, cluster: cluster)
+      foreign_tree = create(:tree, cluster: foreign_cluster)
+      own_vision = create(:ai_insight, analyzable: own_tree, target_date: 1.day.from_now)
+      foreign_vision = create(:ai_insight, analyzable: foreign_tree, target_date: 1.day.from_now)
+
+      get "/api/v1/oracle_visions", headers: forester_headers, as: :json
+      expect(response).to have_http_status(:ok)
+
+      ids = response.parsed_body["visions"].map { |v| v["id"] }
+      expect(ids).to include(own_vision.id)
+      expect(ids).not_to include(foreign_vision.id)
+    end
+
+    it "caches yield forecast under a per-org key" do
+      allow(Rails.cache).to receive(:fetch).and_call_original
+      allow(Rails.cache).to receive(:fetch)
+        .with("oracle_expected_yield_24h_org_#{organization.id}", expires_in: 1.hour)
+        .and_return(2.5)
+
+      get "/api/v1/oracle_visions", headers: forester_headers, as: :json
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["yield_forecast"].to_f).to eq(2.5)
+
+      # `allow` + `have_received` separates stub setup (test fixture) from
+      # the behavioural assertion (the per-org key was used, the legacy
+      # global key was not). This pattern keeps RSpec/StubbedMock happy.
+      expect(Rails.cache).to have_received(:fetch)
+        .with("oracle_expected_yield_24h_org_#{organization.id}", expires_in: 1.hour)
+      expect(Rails.cache).not_to have_received(:fetch)
+        .with("oracle_expected_yield_24h", anything)
     end
   end
 

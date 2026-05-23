@@ -3,6 +3,20 @@
 module Api
   module V1
     class TelemetryController < BaseController
+      # 16 KB is a generous ceiling for a single Gateway batch: 21-byte
+      # encrypted records × ~700 entries × Base64 overhead (4/3) ≈ 19,600 bytes.
+      # Real-world batches flush at 45 entries, so 16 KB is ~16× headroom.
+      # Without this an attacker holding a Bearer token could POST megabyte
+      # payloads that occupy Puma worker threads and reach Sidekiq queues.
+      MAX_UPLINK_PAYLOAD_SIZE = 16.kilobytes
+
+      # Cap on `?days=` for history endpoints. Beyond a year the response is
+      # millions of rows of telemetry, which exhausts Ruby memory and is
+      # never a legitimate user request — chronicle/charting tools page
+      # through history in smaller windows.
+      MAX_HISTORY_DAYS = 365
+      DEFAULT_HISTORY_DAYS = 7
+
       # --- ЖИВИЙ ПОТІК ІСТИНИ (The Pulse) ---
       # GET /api/v1/telemetry/live
       def live
@@ -19,7 +33,7 @@ module Api
       # --- ДИХАННЯ СОЛДАТА (Існуючий метод) ---
       def tree_history
         @tree = current_user.organization.trees.find(params[:id])
-        days = (params[:days] || 7).to_i
+        days = clamp_history_days(params[:days])
         logs = @tree.telemetry_logs.where(created_at: days.days.ago..Time.current).order(:created_at)
 
         # Оптимізація: використовуємо pluck замість map для зменшення навантаження на пам'ять
@@ -52,7 +66,21 @@ module Api
       def gateway_uplink
         @gateway = current_user.organization.gateways.find(params[:id])
 
-        payload = params.require(:payload)
+        payload = params.require(:payload).to_s
+
+        # [DoS GUARD]: cap the payload before it leaves the request thread.
+        # Sidekiq enqueues `payload` straight into Redis — letting a megabyte
+        # blob through wastes both Puma memory and Redis. The CoAP daemon
+        # already enforces a strict size limit upstream.
+        if payload.bytesize > MAX_UPLINK_PAYLOAD_SIZE
+          # Rack 3 renamed :payload_too_large → :content_too_large (both 413).
+          # Use the new symbol to dodge the deprecation warning emitted by
+          # ActionDispatch::Response and rspec-rails matchers.
+          render json: {
+            error: I18n.t("flash.telemetry.payload_too_large", limit: MAX_UPLINK_PAYLOAD_SIZE / 1.kilobyte)
+          }, status: :content_too_large
+          return
+        end
 
         # Аргументи UnpackTelemetryWorker: (encoded_payload, sender_ip, gateway_uid)
         # Сигнатура ідентична виклику з CoAP daemon (lib/daemons/coap_listener).
@@ -71,7 +99,7 @@ module Api
       # --- ПУЛЬС КОРЛЕВИ (Існуючий метод) ---
       def gateway_history
         @gateway = current_user.organization.gateways.find(params[:id])
-        days = (params[:days] || 7).to_i
+        days = clamp_history_days(params[:days])
         logs = @gateway.gateway_telemetry_logs.where(created_at: days.days.ago..Time.current).order(:created_at)
 
         # Оптимізація: використовуємо pluck замість map
@@ -84,6 +112,17 @@ module Api
           signal: plucked.map { |row| row[2] },
           temp: plucked.map { |row| row[3] }
         }
+      end
+
+      private
+
+      # `to_i` swallows non-numeric input as 0 (silently returning an empty
+      # window). Clamp into [1, MAX_HISTORY_DAYS] so that bogus or unbounded
+      # input gracefully degrades to the default rather than nothing.
+      def clamp_history_days(raw)
+        n = raw.to_i
+        n = DEFAULT_HISTORY_DAYS if n <= 0
+        [ n, MAX_HISTORY_DAYS ].min
       end
     end
   end

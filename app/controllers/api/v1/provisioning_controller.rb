@@ -32,25 +32,31 @@ module Api
 
       # --- РИТУАЛ ПРИВ'ЯЗКИ ---
       def register
-        uid = provisioning_params[:hardware_uid]
+        # [SEC] Normalize hardware_uid ONCE — every downstream check
+        # (FW.24 guard, double-init check, DID generation) must operate
+        # on the same canonical form. Mixing `.last(8).upcase` (DID path)
+        # with `.strip.upcase.last(8)` (guard path) created a bypass:
+        # `"  any511CEE01"` passed the FW.24 guard via `.strip` but
+        # generated DID `SNET-511CEE01` collision in the firmware fallback space.
+        normalized_uid = provisioning_params[:hardware_uid].to_s.strip.upcase
+        normalized_suffix = normalized_uid.last(8)
 
-        # [FW.24 GUARD]: Reject hardware_uid, останні 8 hex символів якого збігаються
-        # з firmware DID fallback magic (`FIRMWARE_FALLBACK_DID_MAGIC`, class-level
-        # constant). DID генерується як `"SNET-#{uid.last(8).upcase}"`,
-        # отже якщо UID закінчується на `511CEE01` — DID буде `SNET-511CEE01` (firmware
-        # fallback). Перевірка hex/case-insensitive.
-        normalized_suffix = uid.to_s.strip.upcase.last(8)
+        # [FW.24 GUARD]: Reject hardware_uid whose last 8 hex chars match
+        # firmware DID fallback magic (`FIRMWARE_FALLBACK_DID_MAGIC`).
+        # DID is generated as `"SNET-#{normalized_uid.last(8)}"`, so any UID
+        # ending in `511CEE01` would produce the firmware fallback DID.
         if normalized_suffix == FIRMWARE_FALLBACK_DID_MAGIC
           render json: {
-            error: "Hardware UID закінчується магічним fallback значенням (#{FIRMWARE_FALLBACK_DID_MAGIC}). " \
-                   "#{I18n.t('flash.provisioning.defective_uid')}"
+            error: I18n.t("flash.provisioning.fallback_magic_rejected",
+                          magic: FIRMWARE_FALLBACK_DID_MAGIC,
+                          detail: I18n.t("flash.provisioning.defective_uid"))
           }, status: :unprocessable_content
           return
         end
 
-        # [ЗАХИСТ ВІД ПОДВІЙНОЇ ІНІЦІАЦІЇ]: Перевіряємо чи hardware_uid вже зареєстрований
-        if HardwareKey.exists?(device_uid: uid.to_s.strip.upcase)
-          render json: { error: I18n.t("flash.provisioning.uid_taken", uid: uid) }, status: :conflict
+        # [ЗАХИСТ ВІД ПОДВІЙНОЇ ІНІЦІАЦІЇ]: hardware_uid already provisioned?
+        if HardwareKey.exists?(device_uid: normalized_uid)
+          render json: { error: I18n.t("flash.provisioning.uid_taken", uid: normalized_uid) }, status: :conflict
           return
         end
 
@@ -58,7 +64,7 @@ module Api
           @device = build_device(provisioning_params)
 
           if @device.is_a?(Tree)
-            @device.did ||= "SNET-#{provisioning_params[:hardware_uid].last(8).upcase}"
+            @device.did ||= "SNET-#{normalized_suffix}"
             device_identifier = @device.did
           else
             device_identifier = @device.uid

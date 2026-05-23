@@ -12,9 +12,26 @@ module Api
                           .includes(wallet: :tree)
                           .order(created_at: :desc)
 
-        # Фільтрація
-        @transactions = @transactions.where(token_type: params[:token_type]) if params[:token_type].present?
-        @transactions = @transactions.where(status: params[:status]) if params[:status].present?
+        # Фільтрація — параметри клієнта обмежуємо до enum-словника моделі,
+        # інакше довільна строка ламає AR PG::InvalidTextRepresentation
+        # (e.g. `?status=robert');drop table--`) та поглинає Sentry events.
+        if params[:token_type].present?
+          token_type_param = params[:token_type].to_s
+          unless BlockchainTransaction.token_types.key?(token_type_param)
+            render json: { error: I18n.t("flash.blockchain_transactions.invalid_token_type", value: token_type_param) }, status: :bad_request
+            return
+          end
+          @transactions = @transactions.where(token_type: token_type_param)
+        end
+
+        if params[:status].present?
+          status_param = params[:status].to_s
+          unless BlockchainTransaction.statuses.key?(status_param)
+            render json: { error: I18n.t("flash.blockchain_transactions.invalid_status", value: status_param) }, status: :bad_request
+            return
+          end
+          @transactions = @transactions.where(status: status_param)
+        end
 
         @pagy, @transactions = pagy(@transactions, limit: params.fetch(:limit, 50).to_i.clamp(1, 100))
 

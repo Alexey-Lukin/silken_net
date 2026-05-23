@@ -34,10 +34,11 @@ RSpec.describe "Account security and password management" do
       expect(json["recovery_codes"]).to be_present
     end
 
-    it "PATCH /api/v1/account_security/mfa disables MFA when already enabled" do
+    it "PATCH /api/v1/account_security/mfa disables MFA when already enabled (with step-up password)" do
       user.update!(otp_required_for_login: true, recovery_codes: [ "code1", "code2" ])
 
       patch "/api/v1/account_security/mfa",
+            params: { current_password: "securepass1234" },
             headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)

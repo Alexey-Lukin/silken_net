@@ -6,6 +6,7 @@ module Api
       before_action :authorize_forester!
       before_action :set_cluster, only: [ :index ]
       before_action :set_actuator, only: [ :show, :execute ]
+      before_action :set_command, only: [ :command_status ]
 
       # --- РЕЄСТР ВИКОНАВЧИХ ВУЗЛІВ ---
       def index
@@ -107,7 +108,37 @@ module Api
         end
       end
 
+      # --- СТАТУС КОМАНДИ (Audit Trail) ---
+      # GET /api/v1/actuator_commands/:id
+      # Documented as endpoint #48 in 04_03 §4 but was missing from the controller
+      # before this fix. The route resolved to NoMethodError at runtime.
+      def command_status
+        respond_to do |format|
+          format.json do
+            render json: {
+              id: @command.id,
+              actuator_id: @command.actuator_id,
+              status: @command.status,
+              priority: @command.priority,
+              command_payload: @command.command_payload,
+              duration_seconds: @command.duration_seconds,
+              issued_at: @command.created_at,
+              sent_at: @command.sent_at,
+              executed_at: @command.executed_at,
+              error_message: @command.error_message,
+              expires_at: @command.expires_at
+            }
+          end
+        end
+      end
+
       private
+
+      def set_command
+        @command = ActuatorCommand.joins(actuator: { gateway: :cluster })
+                                  .where(clusters: { organization_id: current_user.organization_id })
+                                  .find(params[:id])
+      end
 
       def set_cluster
         @cluster = current_user.organization.clusters.find(params[:cluster_id])

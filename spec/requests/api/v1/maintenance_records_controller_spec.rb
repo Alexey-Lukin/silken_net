@@ -88,6 +88,24 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
           headers: headers, as: :json
       expect(response).to have_http_status(:ok)
     end
+
+    # =========================================================================
+    # ISO8601 DATE GUARD: an unparseable date used to surface as
+    # PG::InvalidDatetimeFormat (HTTP 500). Now it fails fast with 400.
+    # =========================================================================
+    it "rejects malformed `from` date with 400" do
+      get "/api/v1/maintenance_records",
+          params: { from: "yesterday" }, headers: headers, as: :json
+      expect(response).to have_http_status(:bad_request)
+      expect(response.parsed_body["error"]).to include("yesterday")
+    end
+
+    it "rejects malformed `to` date with 400" do
+      get "/api/v1/maintenance_records",
+          params: { to: "next-tuesday" }, headers: headers, as: :json
+      expect(response).to have_http_status(:bad_request)
+      expect(response.parsed_body["error"]).to include("next-tuesday")
+    end
   end
 
   describe "PATCH /api/v1/maintenance_records/:id/verify" do
@@ -122,6 +140,45 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       patch "/api/v1/maintenance_records/#{other_record.id}/verify",
             headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
+    end
+
+    # =========================================================================
+    # AUTHZ FIX: only the author OR admin+ may verify/update/edit a record.
+    # Forester #2 within the same org used to slip through `authorize_forester!`.
+    # =========================================================================
+    it "forbids verifying another forester's record (same org)" do
+      other_forester = create(:user, :forester, organization: organization)
+      other_record = MaintenanceRecord.create!(
+        maintainable: own_tree,
+        user: other_forester,
+        action_type: :inspection,
+        performed_at: 1.hour.ago,
+        notes: "Inspection authored by a different forester in the same org."
+      )
+
+      patch "/api/v1/maintenance_records/#{other_record.id}/verify",
+            headers: headers, as: :json
+      expect(response).to have_http_status(:forbidden)
+      expect(other_record.reload.hardware_verified).to be_falsey
+    end
+
+    it "lets admins override and verify any record in their org" do
+      other_forester = create(:user, :forester, organization: organization)
+      other_record = MaintenanceRecord.create!(
+        maintainable: own_tree,
+        user: other_forester,
+        action_type: :inspection,
+        performed_at: 1.hour.ago,
+        notes: "Routine inspection that needs admin verification override."
+      )
+
+      admin = create(:user, :admin, organization: organization)
+      admin_headers = { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" }
+
+      patch "/api/v1/maintenance_records/#{other_record.id}/verify",
+            headers: admin_headers, as: :json
+      expect(response).to have_http_status(:ok)
+      expect(other_record.reload.hardware_verified).to be true
     end
   end
 
