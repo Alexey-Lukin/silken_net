@@ -38,18 +38,18 @@ module Iotex
       }
     end
 
-    # [BLOCKER-06 FIX]: Ed25519-підпис payload'у ключем з HardwareKey.binary_key.
-    # Замість SHA256-хеша, формуємо криптографічний підпис, що доводить
-    # апаратне походження даних із конкретного STM32 пристрою.
-    # W3bstream може верифікувати, що саме цей пристрій надіслав цю телеметрію.
+    # [BLOCKER-06 FIX + ARCH.42 update 2026-05-23]: Ed25519-підпис payload'у
+    # окремим Iotex-seed (HKDF з PROVISIONING_MASTER_KEY + device_uid). До ARCH.42
+    # підпис використовував HardwareKey.binary_key (AES-256, 32 байти випадково
+    # збігалося з Ed25519 seed size). Після ARCH.42 Tree AES = 16 байт — недосить
+    # для Ed25519. Тому деривуємо окремий 32-байтний seed через info "silken-ed25519
+    # -iotex-v1" — domain separation з AES (LoRa/CoAP) та Lorenz K_seed.
     def hardware_signature
       hardware_key = @tree.hardware_key
       if hardware_key&.binary_key.present?
         message = "#{@tree.did}:#{@telemetry_log.id_value}:#{@telemetry_log.created_at.to_i}"
-        # `Ed25519Crypto::SigningService.sign` validates the seed as a 64-char
-        # hex string, so re-encode the 32 raw bytes from `binary_key` rather
-        # than passing them directly (would trip `must be a valid hex string`).
-        Ed25519Crypto::SigningService.sign(hardware_key.binary_key.unpack1("H*"), message)
+        iotex_seed_hex = HardwareKeyService.derive_iotex_seed(@tree.did)
+        Ed25519Crypto::SigningService.sign(iotex_seed_hex, message)
       else
         # [S6.13]: Fallback допустимий ТІЛЬКИ для legacy/dev (TRL ≤ 5, lab benches).
         # У production / WEB3_STRICT_MODE — fail-closed: SHA256 не доводить апаратне

@@ -13,6 +13,13 @@ class HardwareKeyService
   LORA_KEY_SIZE_BYTES = 16
   LORA_HKDF_INFO      = "silken-aes-128-lora-key"
 
+  # Iotex W3bstream Ed25519 attestation seed (post-ARCH.42). Окремий 32-byte seed
+  # для підпису telemetry attestation, derived через HKDF з різним info-string
+  # для domain separation з AES (LoRa) та Lorenz K_seed. До ARCH.42 використовував
+  # ту саму змінну, що AES-256 ключ (key-reuse антипаттерн, тепер виправлено).
+  IOTEX_SEED_SIZE_BYTES = 32
+  IOTEX_HKDF_INFO       = "silken-ed25519-iotex-v1"
+
   # Backwards-compat aliases (CoAP keys — поточний default до повного code-side rollout).
   KEY_SIZE_BYTES = COAP_KEY_SIZE_BYTES
   HKDF_INFO      = COAP_HKDF_INFO
@@ -71,6 +78,12 @@ class HardwareKeyService
   # HKDF info: "silken-aes-128-lora-key". Узгоджено з ATECC608B SE Slot 0.
   def self.derive_lora_key(device_uid)
     hkdf_derive(device_uid, info: LORA_HKDF_INFO, length: LORA_KEY_SIZE_BYTES)
+  end
+
+  # Iotex W3bstream Ed25519 seed (post-ARCH.42) — derived on-demand для signature
+  # attestation. Returns 64-char HEX (32 bytes). Domain-separated from AES/Lorenz keys.
+  def self.derive_iotex_seed(device_uid)
+    hkdf_derive(device_uid, info: IOTEX_HKDF_INFO, length: IOTEX_SEED_SIZE_BYTES)
   end
 
   # Gateway CoAP AES-256 key — без змін після ARCH.42 (32 bytes).

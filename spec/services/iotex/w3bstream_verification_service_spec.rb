@@ -213,8 +213,9 @@ RSpec.describe Iotex::W3bstreamVerificationService, type: :service do
 
     context "when HardwareKey is present (Ed25519 signature path) [BLOCKER-06]" do
       let(:hardware_key) do
+        # Post-ARCH.42 (2026-05-23): Tree LoRa AES-128 = 16 bytes / 32 hex.
         create(:hardware_key, device_uid: tree.did,
-                              aes_key_hex: SecureRandom.hex(32).upcase,
+                              aes_key_hex: SecureRandom.hex(16).upcase,
                               lorenz_seed_hex: SecureRandom.hex(32).upcase)
       end
 
@@ -227,7 +228,7 @@ RSpec.describe Iotex::W3bstreamVerificationService, type: :service do
         )
       end
 
-      it "signs the message with the hex-encoded hardware key via Ed25519" do
+      it "signs the message with a per-device Ed25519 seed derived via HKDF (post-ARCH.42)" do
         response = Web3::HttpClient::Response.new({ "proof_id" => "zk-proof-ed25519" }.to_json)
         signed_payload = nil
         allow(Web3::HttpClient).to receive(:post) do |_url, **kwargs|
@@ -235,9 +236,13 @@ RSpec.describe Iotex::W3bstreamVerificationService, type: :service do
           response
         end
 
-        expected_hex = hardware_key.binary_key.unpack1("H*")
+        # Post-ARCH.42 (2026-05-23): Ed25519 seed більше не співпадає з AES key.
+        # Окремо derive'ується через HKDF info "silken-ed25519-iotex-v1" (32 bytes).
+        # Це усуває key-reuse antipattern: AES key (LoRa AES-128 = 16 bytes) НЕ
+        # підходить як Ed25519 seed (потребує рівно 32 bytes).
+        expected_seed_hex = HardwareKeyService.derive_iotex_seed(tree.did)
         expect(Ed25519Crypto::SigningService).to receive(:sign)
-          .with(expected_hex, kind_of(String))
+          .with(expected_seed_hex, kind_of(String))
           .and_call_original
 
         described_class.new(telemetry_log).verify!

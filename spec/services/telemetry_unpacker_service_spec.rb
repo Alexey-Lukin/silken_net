@@ -21,7 +21,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
   let!(:hardware_key) do
     HardwareKey.create!(
       device_uid: extracted_did,
-      aes_key_hex: SecureRandom.hex(32).upcase,
+      aes_key_hex: SecureRandom.hex(16).upcase,
       lorenz_seed_hex: SecureRandom.hex(32).upcase
     )
   end
@@ -223,7 +223,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       it "sets queen_uid from gateway when gateway is present" do
         tree_r2 = create(:tree, did: format("SNET-%08X", "0000AB01".to_i(16)), cluster: cluster)
         tree_r2.create_device_calibration! if tree_r2.device_calibration.nil?
-        HardwareKey.create!(device_uid: tree_r2.did, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
+        HardwareKey.create!(device_uid: tree_r2.did, aes_key_hex: SecureRandom.hex(16).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
 
         did_int = "0000AB01".to_i(16)
         did_bytes = [ did_int ].pack("N")
@@ -311,7 +311,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       it "sets firmware_version_id when firmware_id is positive" do
         tree_r2 = create(:tree, did: format("SNET-%08X", "0000AB01".to_i(16)), cluster: cluster)
         tree_r2.create_device_calibration! if tree_r2.device_calibration.nil?
-        HardwareKey.create!(device_uid: tree_r2.did, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
+        HardwareKey.create!(device_uid: tree_r2.did, aes_key_hex: SecureRandom.hex(16).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
 
         did_int = "0000AB01".to_i(16)
         did_bytes = [ did_int ].pack("N")
@@ -330,7 +330,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       it "sets firmware_version_id to nil when firmware_id is zero" do
         tree_r2 = create(:tree, did: format("SNET-%08X", "0000AB01".to_i(16)), cluster: cluster)
         tree_r2.create_device_calibration! if tree_r2.device_calibration.nil?
-        HardwareKey.create!(device_uid: tree_r2.did, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
+        HardwareKey.create!(device_uid: tree_r2.did, aes_key_hex: SecureRandom.hex(16).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
 
         did_int = "0000AB01".to_i(16)
         did_bytes = [ did_int ].pack("N")
@@ -588,7 +588,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
             tree_family: tree_family)
           t.create_device_calibration! if t.device_calibration.nil?
           HardwareKey.create!(device_uid: t.did,
-            aes_key_hex: SecureRandom.hex(32).upcase,
+            aes_key_hex: SecureRandom.hex(16).upcase,
             lorenz_seed_hex: seed_hex)
           t
         end
@@ -677,7 +677,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
             tree_family: tree_family)
           t.create_device_calibration! if t.device_calibration.nil?
           HardwareKey.create!(device_uid: t.did,
-            aes_key_hex: SecureRandom.hex(32).upcase,
+            aes_key_hex: SecureRandom.hex(16).upcase,
             lorenz_seed_hex: seed_hex)
           t
         end
@@ -810,7 +810,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       let!(:tree2) do
         t = create(:tree, did: extracted_did2)
         t.create_device_calibration! if t.device_calibration.nil?
-        HardwareKey.create!(device_uid: t.did, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
+        HardwareKey.create!(device_uid: t.did, aes_key_hex: SecureRandom.hex(16).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
         t
       end
 
@@ -1006,7 +1006,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       create(:tree, did: other_extracted)
       HardwareKey.create!(
         device_uid: other_extracted,
-        aes_key_hex: SecureRandom.hex(32).upcase,
+        aes_key_hex: SecureRandom.hex(16).upcase,
         lorenz_seed_hex: SecureRandom.hex(32).upcase
       )
 
