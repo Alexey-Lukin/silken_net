@@ -1,0 +1,51 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Деглікозилювання: N-X-S/T (X != P) -> Q-X-S/T
+# Замінює Аспарагін (N) на Глутамін (Q) у сайтах N-глікозилювання.
+
+def prepare_enzyme(sequence)
+  clean_seq = sequence.gsub(/\s+/, '').upcase
+
+  sites = []
+  i = 0
+  while i <= clean_seq.length - 3
+    triplet = clean_seq[i, 3]
+    if triplet[0] == 'N' && triplet[1] != 'P' && (triplet[2] == 'S' || triplet[2] == 'T')
+      sites << { pos: i + 1, sequon: triplet }
+    end
+    i += 1
+  end
+
+  mutated_seq = clean_seq.dup
+  sites.each { |s| mutated_seq[s[:pos] - 1] = 'Q' }
+
+  puts "🧪 Біохімічний патч (Деглікозилювання GcGDH) виконано!"
+  puts "Оригінальна довжина: #{clean_seq.length} амінокислот"
+  puts "Видалено сайтів N-глікозилювання: #{sites.size}"
+  unless sites.empty?
+    puts "Знайдені сайти (позиція : секвон → мутація):"
+    sites.each { |s| puts "  N#{s[:pos]}  #{s[:sequon]} → Q#{s[:sequon][1, 2]}" }
+  end
+  puts "-" * 60
+  puts mutated_seq
+  puts "-" * 60
+  puts "⬆️ СКОПІЮЙ ЦЕЙ РЯДОК ЛІТЕР ДЛЯ ALPHAFOLD 3"
+
+  mutated_seq
+end
+
+raw_sequence = "MKNLIPLSLLATTVAARPGSAPRDQAAATAYDYIVIGGGTSGLVVANRLSEDASVSVLVIEAGDSVLNNANVTNANGYGLAFGTDIDYAYQTTAQTYANNASTTLRAAKALGGTSTINGMAYTRAEASQIDAWETVGNEGWNWDALLPYYLKSETFQAPDAERSIKGHISYESDVHGHDGPLYTAYAYGSTNDSYPTSLNATYQALNVPWKEDIAGGSMVGFASYPKTLNQDLNIRWDAARAYYFPYENRTNLKVVLNTTAKKLTWASATNGTDATASGVEITAADGTTSVVTANKEVIISAGALVSPLLLELSGVGNPAWLSQYGIETVVELPTVGENLQDQINNELIYSPPTNFTSTYDSGVGAFVAYPSASHVFGTNESSASEELKSQLTAYADTVAIANGNVTKASDLLDFFQLQYDLIFKDQVPFAEVLIYIAKGSWGAEYWGLLPFSRGSIHISQANSTAGALINPNYFMLDYDVELQVATAKFIRSVFGTGPFASVAGTETTPGFDVIPADADEATWKSWATKEYRSNFHPVATAAMLPKEKGGVVDAQLKVYGTTNVRVVDASVLPFQVCGHLVSTLYAVAEKASDLIKAAA"
+
+prepare_enzyme(raw_sequence)
+
+# https://www.uniprot.org/uniprotkb/G8E4B5/entry
+# Результат:
+# - Видалено сайтів N-глікозилювання: 11
+# - Позиції (N71, N100, N192, N200, N249, N258, N271, N355, N380, N405, N463) — це канонічні N-X-S/T-секвони G8E4B5.
+#
+# Мутована послідовність для AlphaFold 3:
+#
+# MKNLIPLSLLATTVAARPGSAPRDQAAATAYDYIVIGGGTSGLVVANRLSEDASVSVLVIEAGDSVLNNAQVTNANGYGLAFGTDIDYAYQTTAQTYANQASTTLRAAKALGGTSTINGMAYTRAEASQIDAWETVGNEGWNWDALLPYYLKSETFQAPDAERSIKGHISYESDVHGHDGPLYTAYAYGSTQDSYPTSLQATYQALNVPWKEDIAGGSMVGFASYPKTLNQDLNIRWDAARAYYFPYEQRTNLKVVLQTTAKKLTWASATQGTDATASGVEITAADGTTSVVTANKEVIISAGALVSPLLLELSGVGNPAWLSQYGIETVVELPTVGENLQDQINNELIYSPPTQFTSTYDSGVGAFVAYPSASHVFGTQESSASEELKSQLTAYADTVAIANGQVTKASDLLDFFQLQYDLIFKDQVPFAEVLIYIAKGSWGAEYWGLLPFSRGSIHISQAQSTAGALINPNYFMLDYDVELQVATAKFIRSVFGTGPFASVAGTETTPGFDVIPADADEATWKSWATKEYRSNFHPVATAAMLPKEKGGVVDAQLKVYGTTNVRVVDASVLPFQVCGHLVSTLYAVAEKASDLIKAAA
+#
+# Довжина — 600 аа (без змін, бо N→Q — point mutation).

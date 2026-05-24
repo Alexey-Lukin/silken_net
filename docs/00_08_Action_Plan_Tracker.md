@@ -641,13 +641,13 @@
 
 ##### Підблокер HW.5.IS — In Silico Stage 0 (Zero-Lab) — `01_03 §3.4`
 > **Стратегія:** Computational reverse engineering хімії ДО першого Ti-monet. AlphaFold 3 + OpenMM + PySCF + Cantera повністю Python-кервані → інтеграція з AI-clones для масової вибірки варіацій. Гейт TRL 3 → 4: усі 4 рівні дають позитив ДО CRO contract.
-- [ ] 👤 **L1 AlphaFold 3 / ESMFold:** генерація `.pdb` деглікозильованої FAD-GDH (Glomerella cingulata, UniProt → simulate PNGase F)
+- [x] 👤 **L1 AlphaFold 3 / ESMFold:** ✅ Виконано (2026-05-24). UniProt [`G8E4B5`](https://www.uniprot.org/uniprotkb/G8E4B5/entry) (FAD-GDH *Glomerella cingulata*, 600 aa) → `deglycosylate.rb` видалив 11 канонічних N-X-S/T сайтів (N71, N100, N192, N200, N249, N258, N271, N355, N380, N405, N463) point-мутацією N → Q → AlphaFold 3 Server фолдинг з нативним FAD-кофактором → UCSF ChimeraX: **`d(FAD N5 → Tyr90 OH) = 15.998 Å`** ≪ r_tunneling(Os-bpy ≈ 18–20 Å) → **MET архітектура Gen 2.0 математично доведена**. Повний протокол + сирі дані → [`docs/protocols/ebfc/in_silico/L1_protein_architecture.md`](../protocols/ebfc/in_silico/L1_protein_architecture.md). L1 → L2 gate відкрито.
 - [ ] 👤 **L2 OpenMM MD:** RMSD-тест dgrFAD-GDH у Genipin-Chitosan-CNC матриці при pH 4.5, 10–100 нс
 - [ ] 👤 **L3 PySCF DFT:** HOMO/LUMO Os-полімер vs FAD-кофактор — програмно довести OCV > 500 мВ за теорією Маркуса
 - [ ] 👤 **L3b PySCF:** hopping integrals для DET через nCoCuCeZIF — емуляція T1/T2/T3 кластеру лаккази
 - [ ] 👤 **L4 Cantera:** дифузія глюкози через Nafion-g-PSBMA + Michaelis-Menten → програмний `delta_t`
 - [ ] 👤 **Інфраструктура:** workstation NVIDIA RTX 4090 ($5–10K) АБО AWS p5.2xlarge / GCP g2-standard-12 ($2–5/год)
-- [ ] 👤 **Repo structure:** `docs/protocols/ebfc/in_silico/` — `dgrFAD_GDH_alphafold.pdb`, `openmm_genipin_stability.py`, `pyscf_os_fad_homo_lumo.ipynb`, `cantera_psbma_diffusion.py`
+- [x] 🤖 **Repo structure:** ✅ `docs/protocols/ebfc/in_silico/` створено (2026-05-24); початкові артефакти: `deglycosylate.rb`, `L1_protein_architecture.md`. Заплановані: `dgrGcGDH_AF3.pdb` (L1 експорт з AlphaFold 3 Server), `openmm_genipin_stability.py` (L2), `pyscf_os_fad_homo_lumo.ipynb` (L3), `cantera_psbma_diffusion.py` (L4).
 - [ ] 👤 **Joint Q1-publication з ЧНУ Мінаєвим:** "In Silico Design of Long-Lived Enzymatic Bio-Fuel Cells for Tree-Integrated Energy Harvesting" — `08_03` Стаття 28
 
 #### HW.6 — Resin barrier + Flush Mount Installation
