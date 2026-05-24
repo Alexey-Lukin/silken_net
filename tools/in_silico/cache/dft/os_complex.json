@@ -1,0 +1,34 @@
+{
+  "method": "B3LYP/lanl2dz(Os)+6-31g(d)(others)+PCM(water,C-PCM)",
+  "model_note": "minimal [Os(NH3)5Cl]^n+ \u2014 NH3 ligands as \u03c3-donor surrogate for bpy/Im (lacks \u03c0-backbonding)",
+  "os2_plus": {
+    "label": "Os(II) [Os(NH3)5Cl]+",
+    "charge": 1,
+    "spin": 0,
+    "n_atoms": 22,
+    "n_electrons": 82,
+    "converged": true,
+    "wall_seconds": 10.651380062103271,
+    "E_total_Ha": -834.0416695007773,
+    "HOMO_Ha": -0.12307650457732673,
+    "LUMO_Ha": 0.017244943908775952,
+    "HOMO_eV": -3.3490823038597477,
+    "LUMO_eV": 0.46925882949210046,
+    "gap_eV": 3.818341133351848
+  },
+  "os3_plus": {
+    "label": "Os(III) [Os(NH3)5Cl]2+",
+    "charge": 2,
+    "spin": 1,
+    "n_atoms": 22,
+    "n_electrons": 81,
+    "converged": true,
+    "wall_seconds": 18.77678084373474,
+    "E_total_Ha": -833.9170021300254,
+    "HOMO_Ha": -0.20729263885707305,
+    "LUMO_Ha": -0.1256651096547913,
+    "HOMO_eV": -5.640720061889915,
+    "LUMO_eV": -3.419521836460962,
+    "gap_eV": 2.2211982254289535
+  }
+}

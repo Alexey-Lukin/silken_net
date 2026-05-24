@@ -14,6 +14,11 @@ dependencies:
   - rdkit
   - openff-toolkit
   - openmmforcefields
+  # --- L3 quantum chemistry (DFT) ---
+  # pyscf: pure-Python DFT engine. geometric: external geometry optimiser
+  # used via pyscf-geometric integration.
+  - pyscf
+  - geometric
   # --- analysis / notebooks ---
   - matplotlib
   - numpy

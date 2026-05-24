@@ -338,7 +338,7 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 1. ✅ L1 (AF3 + ChimeraX d_FAD)
 2. ✅ L2 (genipin RMSD, baseline)
 3. ⏳ L2-extended (genipin + chitosan + CNC, 10-100 ns) — опційно, не блокер
-4. ⏳ L3 (PySCF DFT: Os HOMO/LUMO vs FAD, hopping integrals, β coefficient)
+4. 🟡 L3 partial pass (Pipeline ✅, FAD ✅, Os з NH₃ surrogate; cascade verdict bias-corrected ✅, raw Koopmans biased; publication-grade rerun in queue — деталі [`L3_quantum_chemistry.md`](protocols/ebfc/in_silico/L3_quantum_chemistry.md))
 5. ⏳ L4 (Cantera/COPASI: glucose diffusion + Michaelis-Menten → `delta_t`)
 
 **Гейт TRL 3 → 4 (Zero-Lab):** Усі 4 рівні мають дати позитивний результат **ДО** замовлення Ti-monet у CRO. Це нова умова Stage 1 → Stage 2 переходу.

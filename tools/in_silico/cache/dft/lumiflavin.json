@@ -1,0 +1,33 @@
+{
+  "method": "B3LYP/6-31g(d)+PCM(water,C-PCM)",
+  "ox": {
+    "label": "lumiflavin_ox",
+    "charge": 0,
+    "spin": 0,
+    "n_atoms": 31,
+    "n_electrons": 134,
+    "converged": true,
+    "wall_seconds": 62.95181584358215,
+    "E_total_Ha": -872.1150515126999,
+    "HOMO_Ha": -0.22741250075573619,
+    "LUMO_Ha": -0.1021419392936398,
+    "HOMO_eV": -6.188209395230375,
+    "LUMO_eV": -2.779423762033491,
+    "gap_eV": 3.408785633196884
+  },
+  "red": {
+    "label": "lumiflavin_red",
+    "charge": 0,
+    "spin": 0,
+    "n_atoms": 33,
+    "n_electrons": 136,
+    "converged": true,
+    "wall_seconds": 61.28112483024597,
+    "E_total_Ha": -873.309964536006,
+    "HOMO_Ha": -0.18878172204233318,
+    "LUMO_Ha": -0.05852218798989745,
+    "HOMO_eV": -5.137012354676674,
+    "LUMO_eV": -1.5924698613534196,
+    "gap_eV": 3.544542493323255
+  }
+}
