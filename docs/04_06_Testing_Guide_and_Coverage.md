@@ -333,10 +333,11 @@ it "test that status works" do
 | Сервіс | Спека | Покриття | Примітки |
 |--------|-------|----------|----------|
 | BlockchainMintingService | ✅ 1092L | 🟢 Повне | batchMint, guard clauses, binary search |
-| TelemetryUnpackerService | ✅ 560L+ | 🟢 **Повне** | **check_z_divergence! (effective_lorenz_thresholds FW.8), update_health_streak!, boundary sensors, acoustic overflow, [FW.5] delta_t/vcap β-perturbation, [SEC.11] per-tree warm/cold dispatch, lorenz_state persist, MissingLorenzSeedError, cold_start_flag, [FW.31] numeric tolerance band feature-flag (6 examples), [SEC.10] panic Frame Counter anti-replay (8 examples: fresh accept, replay reject via Redis SETNX, distinct counters/DIDs accepted, non-panic skip, legacy counter=0 skip, FW.22 firmware_id coexistence, TTL ≈ 25h guard)** |
+| TelemetryUnpackerService | ✅ 560L+ | 🟢 **Повне** | **check_z_divergence! (effective_lorenz_thresholds FW.8), update_health_streak!, boundary sensors, acoustic overflow, [FW.5] delta_t/vcap β-perturbation, [SEC.11] per-tree warm/cold dispatch, lorenz_state persist, MissingLorenzSeedError, cold_start_flag, [FW.31] numeric tolerance band feature-flag (6 examples), [SEC.10] panic Frame Counter anti-replay (8 examples: fresh accept, replay reject via Redis SETNX, distinct counters/DIDs accepted, non-panic skip, legacy counter=0 skip, FW.22 firmware_id coexistence, TTL ≈ 25h guard), [FW.2 / ARCH.42, 2026-05-24] CCM 25-byte path (11 examples — feature-flagged `ENV TELEMETRY_CCM_ENABLED`: happy decrypt, MIC tamper, CT tamper, FC replay reject, cross-DID FC reuse accept, Queen sentinel drop, short chunk skip, sensor noise reject, growth_points credit, feature flag off → ECB fallback, ENV roundtrip)** |
 | InsightGeneratorService | ✅ 670L | 🟢 Повне | Fraud guard, cleanup_old_logs! |
 | SilkenNet::Attractor | ✅ 310L+ | 🟢 Повне | Float precision, deterministic chaos, **[FW.5] perturb_beta, parity-fuzz 500 cases (0 mismatches), [SEC.11] sole `calculate_z_from_state` API (legacy `calculate_z(seed,…)` removed)** |
 | **SilkenNet::SeedDerivation** [SEC.11] | ✅ 16 examples | 🟢 **Нове** | **HKDF-SHA256 (RFC 5869) + HMAC-SHA256 + signed-unit-float unpack; raises `SecurityError` без `PROVISIONING_MASTER_KEY`; firmware-equivalence vectors з `firmware/test/test_seed_derivation.c`; daily epoch_day rotation; (x₀,y₀,z₀) ∈ [-1,+1]³ deterministic** |
+| **Cryptography::LoraCcm** [FW.2 / ARCH.42] 🆕 | ✅ 18 examples | 🟢 **Нове (2026-05-24)** | **AES-128-CCM encrypt/decrypt helper для LoRa Soldier↔Queen 24B packet. Golden vector parity з firmware host tests (`test_ccm.c`). Input validation (key 16B, DID 4B, FC uint32, payload 8B, MIC 8B). Tamper rejection: MIC, ciphertext, AAD DID, AAD FC, wrong key. 12-byte nonce = DID‖FC‖4×0x00; 8-byte AAD = DID‖FC; 8-byte tag (NIST SP 800-38C `t=8`).** |
 | BlockchainBurningService | ✅ 420L+ | 🟢 **Повне** | **SLASHER_KEY fallback (E.2), Prometheus SCC_SLASHED_TOTAL, AiInsight+source_tree combined ratio, damage_ratio cap** |
 | Treasury::MonitorService | ✅ 330L+ | 🟢 **Повне** | **build_config, missing credentials, humanize edge cases, multiple alerts** |
 | TreeChronicleService | ✅ 350L+ | 🟢 **Повне** | **Pagination edges, nil wallet, boundary stress_index, mixed sources** |
@@ -573,6 +574,30 @@ it "test that status works" do
 | `bytes_to_signed_unit_float` boundary (zero → -1, max → +1, mid → ~0) | 3 | 🟢 IEEE-754 unpack |
 | Mixed-seed shape (різні `K_seed` → різні координати) | 1 | 🟢 Distinct seeds → distinct trajectories |
 | Initial state shape для відомого `(K_seed, epoch_day)` (mixed seed) | 3 | 🟢 Backend-firmware parity vector |
+
+### B.2.7 AES-128-CCM LoRa Packet (test_ccm.c) [FW.2 / ARCH.42 Variant B] 🆕
+
+> **Freeze-contract (2026-05-24):** Soldier emit + Queen decrypt написано як гілка під `#define FW2_CCM_ENABLED 0` (production не активна до hardware bench `CRYP_AES_CCM` верифікації). Host-тести через **libcrypto-backed mock HAL** (`HAL_CRYPEx_AESCCM_Encrypt/Decrypt` у `hal_mock.h` гейтнуто `#define HAL_MOCK_CCM_ENABLED`, лінкується через `pkg-config openssl`). SSOT для packet layout + RTC FC packing — `firmware/common/lora_ccm.h`. Byte-level parity з Rails `Cryptography::LoraCcm` (та сама OpenSSL EVP CCM на обох сторонах).
+
+| Область | Тести | Покриття |
+|---------|-------|----------|
+| Golden vector encrypt (DID=0x01020304, FC=5, zero key) | 1 | 🟢 ciphertext `08ceca97bbf4fdc5` + tag `a6d8e20ce0deeae9` — identичний до Rails spec |
+| Golden vector decrypt round-trip | 1 | 🟢 Тот же вектор у зворотний бік |
+| RTC_BKP_DR15 `[FW2_FC_MAGIC:8 \| frame_counter:24]` pack/unpack | 1 | 🟢 Magic `0x46` ('F') у high byte, 24-bit FC у low |
+| Cold-boot invalid magic detection | 1 | 🟢 DR15=0 або wrong magic → Unpack returns 0 (caller reseeds) |
+| HRNG reseed clamps to `[FW2_FC_HRNG_MIN, FW2_FC_HRNG_MAX]` | 1 | 🟢 0→0x000001, 0xFFFFFFFF→0xFFFFFE, in-band passthrough |
+| Sensor payload pack/unpack (Vcap/temp/acoustic/dt/status/mesh_ctrl) | 1 | 🟢 Roundtrip + bitfield extraction (mesh_ctrl TTL:4 + fw_nibble:4) |
+| Full Soldier → Queen 24B packet roundtrip | 1 | 🟢 Sensor data byte-identична після decrypt |
+| MIC tamper detection (flip bit у MIC) | 1 | 🟢 `HAL_CRYPEx_AESCCM_Decrypt` returns HAL_ERROR |
+| AAD DID tamper detection (flip DID byte) | 1 | 🟢 Nonce + AAD divergence → MIC fail |
+| AAD FC tamper detection (flip FC byte) | 1 | 🟢 Same |
+| Ciphertext tamper detection (flip ct byte) | 1 | 🟢 MIC fail |
+| Wrong key rejection (encrypt key ≠ decrypt key) | 1 | 🟢 MIC fail |
+| **[FW.29]** Panic flag inside encrypted payload (bit 7 of byte 14 flip) | 1 | 🟢 MIC fail — закриває pre-CCM bit-flip атаку на panic broadcast |
+| mesh_ctrl bitfield (TTL high nibble + fw_nibble low nibble) | 1 | 🟢 Roundtrip + extraction macros |
+| **TOTAL** | **14** | 🟢 **All passing (538 firmware host tests overall)** |
+
+**Інструментарій:** `make -C firmware/test ccm`. CI gate включено в `make all`. Cross-platform: macOS Homebrew + Linux apt-get openssl через `pkg-config`.
 
 ### B.2.6 TinyML Pipeline (test_tinyml_pipeline.c)
 

@@ -2378,6 +2378,100 @@ static void MX_CRYP_Init(void)
   HAL_CRYP_Init(&hcryp);
 }
 
+// ============================================================================
+// [FW.2 / ARCH.42 Variant B] AES-128-CCM 24-byte LoRa packet — freeze-contract
+// ============================================================================
+// Гілка вмикається `#define FW2_CCM_ENABLED 1` після hardware bench
+// підтвердження `HAL_CRYPEx_AESCCM_Encrypt` на STM32WLE5JC. До flip — функції
+// нижче не викликаються з production cycle (Build_LoRa_Payload + ECB
+// продовжує жити), але host-тести у `firmware/test/test_ccm.c` верифікують
+// логіку через mock HAL CCM (libcrypto-backed).
+//
+// Структура пакета, packing helpers, та RTC_BKP_DR15 layout — SSOT у
+// `firmware/common/lora_ccm.h`. Тут лише: (a) CRYP_AES_CCM реконфігурація,
+// (b) HAL_CRYPEx виклик, (c) RTC FC management через HAL_RTCEx_BKUPRead/Write.
+#include "../common/lora_ccm.h"
+
+#define FW2_CCM_ENABLED  0  // freeze-contract — flip після HAL verification
+
+#if FW2_CCM_ENABLED || defined(HAL_MOCK_CCM_ENABLED)
+// Reconfigure hcryp для CCM-режиму. Викликається перед HAL_CRYPEx_AESCCM_Encrypt;
+// після завершення CCM операції слід викликати `MX_CRYP_Init()` для повернення
+// у дефолтний ECB-режим (LoRa control frames, mesh relay).
+static void MX_CRYP_Init_CCM(uint8_t *nonce_12b, uint8_t *aad_8b)
+{
+    hcryp.Init.Algorithm  = CRYP_AES_CCM;
+    hcryp.Init.pInitVect  = (uint32_t*)nonce_12b;  // mock semantic — see hal_mock.h
+    hcryp.Init.Header     = aad_8b;
+    hcryp.Init.HeaderSize = FW2_CCM_AAD_LEN;
+    HAL_CRYP_Init(&hcryp);
+}
+
+// Load / Save Frame Counter to RTC_BKP_DR15.
+// Returns the current FC (post-load, post-reseed if cold-boot).
+static uint32_t Load_Frame_Counter(void)
+{
+    uint32_t packed = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR15);
+    uint32_t fc = Unpack_FW2_Frame_Counter(packed);
+    if (fc == 0) {
+        // Magic mismatch (cold boot, VBAT loss). Reseed from HRNG.
+        uint32_t hrng_word = 0;
+        if (HAL_RNG_GenerateRandomNumber(&hrng, &hrng_word) != HAL_OK) {
+            hrng_word = HAL_GetTick(); // last-resort fallback (degraded entropy)
+        }
+        fc = Reseed_FW2_Frame_Counter(hrng_word);
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR15, Pack_FW2_Frame_Counter(fc));
+    }
+    return fc;
+}
+
+static void Save_Frame_Counter(uint32_t fc_24bit)
+{
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR15, Pack_FW2_Frame_Counter(fc_24bit));
+}
+
+// Build the full 24-byte CCM LoRa packet and increment FC.
+// On success returns HAL_OK and out_packet[0..23] is the on-air payload.
+// On HAL_CRYPEx failure returns HAL_ERROR; caller must NOT TX.
+int Soldier_Build_CCM_LoRa_Packet(
+    uint32_t did, uint16_t vcap_mv, int8_t temp_c, uint8_t acoustic,
+    uint16_t delta_t_s, uint8_t status_byte, uint8_t mesh_ctrl,
+    uint8_t out_packet[FW2_CCM_AIR_PACKET_LEN])
+{
+    uint32_t fc = Load_Frame_Counter();
+    // Saturating increment (DR15 magic stays 0x46, value stays in 24-bit window).
+    uint32_t next_fc = (fc + 1u) & FW2_FC_VALUE_MASK;
+    if (next_fc == 0u) next_fc = FW2_FC_HRNG_MIN; // wrap → skip 0 (would invalidate magic check)
+
+    uint8_t nonce[FW2_CCM_NONCE_LEN];
+    uint8_t aad[FW2_CCM_AAD_LEN];
+    uint8_t plaintext[FW2_CCM_PLAINTEXT_LEN];
+    uint8_t ct_and_tag[FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN];
+
+    Build_CCM_Nonce(did, next_fc, nonce);
+    Build_CCM_AAD(did, next_fc, aad);
+    Pack_CCM_Sensor_Payload(vcap_mv, temp_c, acoustic, delta_t_s,
+                            status_byte, mesh_ctrl, plaintext);
+
+    MX_CRYP_Init_CCM(nonce, aad);
+    int status = HAL_CRYPEx_AESCCM_Encrypt(&hcryp, plaintext, FW2_CCM_PLAINTEXT_LEN,
+                                           ct_and_tag, 1000);
+    // Restore ECB context immediately so subsequent control-frame paths work.
+    MX_CRYP_Init();
+    if (status != HAL_OK) {
+        return HAL_ERROR; // Do NOT persist FC on encrypt failure.
+    }
+
+    // Assemble on-air packet: AAD (header) || ciphertext || MIC.
+    memcpy(&out_packet[0],  aad,           FW2_CCM_AAD_LEN);
+    memcpy(&out_packet[8],  ct_and_tag,    FW2_CCM_PLAINTEXT_LEN);
+    memcpy(&out_packet[16], ct_and_tag + FW2_CCM_PLAINTEXT_LEN, FW2_CCM_MIC_LEN);
+
+    Save_Frame_Counter(next_fc);
+    return HAL_OK;
+}
+#endif // FW2_CCM_ENABLED || HAL_MOCK_CCM_ENABLED
+
 /* USER CODE END 4 */
 
 /**

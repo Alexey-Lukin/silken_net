@@ -1421,6 +1421,77 @@ static void MX_CRYP_Init(void)
   HAL_CRYP_Init(&hcryp);
 }
 
+// ============================================================================
+// [FW.2 / ARCH.42 Variant B] AES-128-CCM 24-byte LoRa packet — freeze-contract
+// ============================================================================
+// Queen decrypt path. Symmetric до Soldier `Soldier_Build_CCM_LoRa_Packet`.
+// Gated `#define FW2_CCM_ENABLED 0` до hardware bench для `CRYP_AES_CCM` HAL
+// верифікації. Host-тести у `firmware/test/test_ccm.c` верифікують через
+// mock HAL CCM (libcrypto-backed).
+//
+// SSOT для packet layout та packing helpers — `firmware/common/lora_ccm.h`.
+#include "../common/lora_ccm.h"
+
+#define FW2_CCM_ENABLED  0  // freeze-contract — flip після HAL verification
+
+#if FW2_CCM_ENABLED || defined(HAL_MOCK_CCM_ENABLED)
+// Reconfigure hcryp для CCM-режиму (LoRa decrypt). Викликається перед
+// HAL_CRYPEx_AESCCM_Decrypt; після завершення слід викликати `MX_CRYP_Init()`
+// для повернення у дефолтний ECB-режим LoRa control frame relay.
+static void MX_CRYP_Init_CCM_Decrypt(uint8_t *nonce_12b, uint8_t *aad_8b)
+{
+    hcryp.Init.Algorithm  = CRYP_AES_CCM;
+    hcryp.Init.pInitVect  = (uint32_t*)nonce_12b;
+    hcryp.Init.Header     = aad_8b;
+    hcryp.Init.HeaderSize = FW2_CCM_AAD_LEN;
+    HAL_CRYP_Init(&hcryp);
+}
+
+// Parse a 24-byte CCM LoRa packet. On success returns HAL_OK and fills:
+//   *out_did, *out_fc            — from AAD
+//   out_sensor[8]                — decrypted sensor payload
+// On MIC failure, malformed input, or HAL error returns HAL_ERROR and
+// caller MUST drop the packet (do not relay, do not forward to backend).
+//
+// FC monotonic enforcement is NOT done here — keep that policy on Rails
+// (`Cryptography::LoraCcm` + Redis SETNX per-DID). Queen-side dedup
+// could be added in a follow-up using `recent_mesh_dids` if needed for
+// mesh storms.
+int Queen_Parse_CCM_LoRa_Packet(const uint8_t in_packet[FW2_CCM_AIR_PACKET_LEN],
+                                uint32_t *out_did, uint32_t *out_fc,
+                                uint8_t out_sensor[FW2_CCM_PLAINTEXT_LEN])
+{
+    if (!in_packet || !out_did || !out_fc || !out_sensor) return HAL_ERROR;
+
+    uint32_t did =
+        ((uint32_t)in_packet[0] << 24) | ((uint32_t)in_packet[1] << 16) |
+        ((uint32_t)in_packet[2] << 8)  | (uint32_t)in_packet[3];
+    uint32_t fc =
+        ((uint32_t)in_packet[4] << 24) | ((uint32_t)in_packet[5] << 16) |
+        ((uint32_t)in_packet[6] << 8)  | (uint32_t)in_packet[7];
+
+    uint8_t nonce[FW2_CCM_NONCE_LEN];
+    uint8_t aad[FW2_CCM_AAD_LEN];
+    Build_CCM_Nonce(did, fc, nonce);
+    Build_CCM_AAD(did, fc, aad);
+
+    // HAL_CRYPEx_AESCCM_Decrypt expects single input buffer = ciphertext || tag.
+    uint8_t ct_and_tag[FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN];
+    memcpy(ct_and_tag, &in_packet[8], FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN);
+
+    MX_CRYP_Init_CCM_Decrypt(nonce, aad);
+    int status = HAL_CRYPEx_AESCCM_Decrypt(&hcryp, ct_and_tag, FW2_CCM_PLAINTEXT_LEN,
+                                           out_sensor, 1000);
+    MX_CRYP_Init(); // Restore LoRa ECB context for control frame relay.
+
+    if (status != HAL_OK) return HAL_ERROR;
+
+    *out_did = did;
+    *out_fc  = fc;
+    return HAL_OK;
+}
+#endif // FW2_CCM_ENABLED || HAL_MOCK_CCM_ENABLED
+
 // =========================================================================
 // [PLAN 2.6] INDEPENDENT WATCHDOG (IWDG) — AUTO-RECOVERY FROM HANG
 // =========================================================================

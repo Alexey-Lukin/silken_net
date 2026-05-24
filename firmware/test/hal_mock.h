@@ -37,7 +37,15 @@ typedef struct {
         int KeySize;
         uint32_t* pKey;
         int Algorithm;
-        uint32_t* pInitVect;
+        uint32_t* pInitVect;  /* For CCM (mock): 12-byte nonce. Real STM32 HAL uses B0 block. */
+        /* [FW.2 / ARCH.42] CCM-specific fields. Real STM32 HAL also has
+         * Init.B0 (16-byte formatted nonce+length block). Mock skips B0
+         * formatting and reads pInitVect directly as the raw 12-byte
+         * nonce — firmware code that calls HAL_CRYPEx_AESCCM_Encrypt on
+         * real hardware must construct B0 from the same nonce (TODO at
+         * HW bench day). */
+        uint8_t* Header;
+        uint32_t HeaderSize;  /* bytes */
     } Init;
 } CRYP_HandleTypeDef;
 
@@ -282,5 +290,104 @@ static inline int HAL_RTC_GetDate(RTC_HandleTypeDef *h, RTC_DateTypeDef *d, int 
     d->Year = _mock_rtc_year; d->Month = _mock_rtc_month; d->Date = _mock_rtc_date;
     return HAL_OK;
 }
+
+/* ── [FW.2 / ARCH.42 Variant B] AES-128-CCM mock via OpenSSL libcrypto ──
+ *
+ * Real STM32WLE5JC HAL_CRYPEx_AESCCM_Encrypt/Decrypt use the on-chip
+ * CRYP peripheral; the mock here calls OpenSSL EVP_CIPHER aes-128-ccm
+ * so host tests can verify byte-level parity with the Rails-side
+ * `Cryptography::LoraCcm` helper (which also uses OpenSSL). HW bench
+ * day verifies that the silicon HAL produces the same ciphertext+MIC.
+ *
+ * Enable per-test by `#define HAL_MOCK_CCM_ENABLED` BEFORE including
+ * hal_mock.h. Only test binaries that need CCM link `-lcrypto`.
+ *
+ * API contract intentionally mirrors the STM32 HAL_CRYPEx surface so
+ * firmware code reads identically on host vs target. The only mock
+ * simplification: pInitVect is the raw 12-byte nonce (skip B0 block
+ * formatting — production firmware will add Build_CCM_B0_Block helper
+ * at HW bench day, gated under FW2_CCM_ENABLED #define).
+ */
+#ifdef HAL_MOCK_CCM_ENABLED
+#include <openssl/evp.h>
+
+#define CCM_MOCK_NONCE_LEN  12
+#define CCM_MOCK_TAG_LEN    8
+#define CCM_MOCK_AAD_LEN    8
+
+/* Encrypt: input=plaintext (Size bytes), output buffer must hold
+ * Size + CCM_MOCK_TAG_LEN bytes (ciphertext || tag). Returns HAL_OK
+ * on success, HAL_ERROR on EVP failure. */
+static inline int HAL_CRYPEx_AESCCM_Encrypt(CRYP_HandleTypeDef *hcryp,
+                                            uint8_t *Input, uint16_t Size,
+                                            uint8_t *Output, uint32_t Timeout) {
+    (void)Timeout;
+    if (!hcryp || !Input || !Output) return HAL_ERROR;
+    if (hcryp->Init.Algorithm != CRYP_AES_CCM) return HAL_ERROR;
+    if (hcryp->Init.KeySize != CRYP_KEYSIZE_128B) return HAL_ERROR;
+
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) return HAL_ERROR;
+
+    int ok = 1;
+    int len = 0;
+    ok &= EVP_EncryptInit_ex(ctx, EVP_aes_128_ccm(), NULL, NULL, NULL);
+    ok &= EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_CCM_SET_IVLEN, CCM_MOCK_NONCE_LEN, NULL);
+    ok &= EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_CCM_SET_TAG, CCM_MOCK_TAG_LEN, NULL);
+    ok &= EVP_EncryptInit_ex(ctx, NULL, NULL,
+                             (const unsigned char *)hcryp->Init.pKey,
+                             (const unsigned char *)hcryp->Init.pInitVect);
+    /* Required for CCM: provide total plaintext length before AAD. */
+    ok &= EVP_EncryptUpdate(ctx, NULL, &len, NULL, (int)Size);
+    if (hcryp->Init.Header && hcryp->Init.HeaderSize > 0) {
+        ok &= EVP_EncryptUpdate(ctx, NULL, &len,
+                                hcryp->Init.Header, (int)hcryp->Init.HeaderSize);
+    }
+    ok &= EVP_EncryptUpdate(ctx, Output, &len, Input, (int)Size);
+    int final_len = 0;
+    ok &= EVP_EncryptFinal_ex(ctx, Output + len, &final_len);
+    ok &= EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_CCM_GET_TAG, CCM_MOCK_TAG_LEN,
+                              Output + Size);
+    EVP_CIPHER_CTX_free(ctx);
+    return ok ? HAL_OK : HAL_ERROR;
+}
+
+/* Decrypt: input=ciphertext (Size bytes) followed by Size+CCM_MOCK_TAG_LEN
+ * region of tag bytes; expected layout is Input[0..Size-1] = ciphertext,
+ * Input[Size..Size+7] = tag (matches HAL_CRYPEx behaviour where caller
+ * provides one buffer). Output (Size bytes) = plaintext. Returns HAL_OK
+ * on MIC verify, HAL_ERROR on tamper or invalid params. */
+static inline int HAL_CRYPEx_AESCCM_Decrypt(CRYP_HandleTypeDef *hcryp,
+                                            uint8_t *Input, uint16_t Size,
+                                            uint8_t *Output, uint32_t Timeout) {
+    (void)Timeout;
+    if (!hcryp || !Input || !Output) return HAL_ERROR;
+    if (hcryp->Init.Algorithm != CRYP_AES_CCM) return HAL_ERROR;
+    if (hcryp->Init.KeySize != CRYP_KEYSIZE_128B) return HAL_ERROR;
+
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) return HAL_ERROR;
+
+    int ok = 1;
+    int len = 0;
+    ok &= EVP_DecryptInit_ex(ctx, EVP_aes_128_ccm(), NULL, NULL, NULL);
+    ok &= EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_CCM_SET_IVLEN, CCM_MOCK_NONCE_LEN, NULL);
+    /* Tag must be set BEFORE key/iv during decrypt-init for CCM. */
+    ok &= EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_CCM_SET_TAG, CCM_MOCK_TAG_LEN,
+                              Input + Size);
+    ok &= EVP_DecryptInit_ex(ctx, NULL, NULL,
+                             (const unsigned char *)hcryp->Init.pKey,
+                             (const unsigned char *)hcryp->Init.pInitVect);
+    ok &= EVP_DecryptUpdate(ctx, NULL, &len, NULL, (int)Size);
+    if (hcryp->Init.Header && hcryp->Init.HeaderSize > 0) {
+        ok &= EVP_DecryptUpdate(ctx, NULL, &len,
+                                hcryp->Init.Header, (int)hcryp->Init.HeaderSize);
+    }
+    /* For CCM, EVP_DecryptUpdate returns 1 on MIC OK, 0 on tamper. */
+    int verify = EVP_DecryptUpdate(ctx, Output, &len, Input, (int)Size);
+    EVP_CIPHER_CTX_free(ctx);
+    return (ok && verify == 1) ? HAL_OK : HAL_ERROR;
+}
+#endif /* HAL_MOCK_CCM_ENABLED */
 
 #endif /* HAL_MOCK_H */
