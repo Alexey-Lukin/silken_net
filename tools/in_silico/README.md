@@ -14,6 +14,37 @@ in-silico validation pipeline described in
 SSOT artifacts (PDB structures, validation results, papers) live in
 `docs/protocols/ebfc/in_silico/`. Scripts live in `scripts/` here.
 
+## Scripts in `scripts/` (ordered)
+
+| # | Script | What it does | Cost |
+|---|--------|--------------|------|
+| 01 | `01_smoke_test_water_box.py` | Engine sanity check — load protein, water box, 1000 steps | ~30 s |
+| 02 | `02_parameterize_fad.py` | AF3 PDB + CCD SMILES → `FAD.sdf` + cached GAFF params | ~4 min |
+| 03 | `03_parameterize_genipin.py` | SMILES → `genipin.sdf` + cached GAFF params | ~7 s |
+| 10 | `10_genipin_stability_md.py` | Full L2 stability MD: protein + FAD + N×genipin in water, RMSD analysis | varies |
+
+The numbering leaves room for additional parameterization steps (Os-polymer,
+CNC) at 04–09 before the main MD at 10.
+
+## Why the GAFF detour (script 02 + 03)?
+
+AMBER ff14SB only ships templates for the 20 standard amino acids. The
+moment you call `forcefield.createSystem()` on a topology that still contains
+`FAD` or `GEN` residues, OpenMM aborts with
+`No template found for residue X`. So before any real L2 run you must
+parameterize each ligand once. We do this via the GAFF (General Amber Force
+Field) pipeline shipped in `openmmforcefields`:
+
+1. RDKit reads the molecule (PDB coords + SMILES bond orders / pure SMILES).
+2. `openff.toolkit.Molecule` wraps it with chemistry-aware metadata.
+3. `GAFFTemplateGenerator` shells out to AmberTools' `antechamber` →
+   AM1-BCC charges, GAFF atom types, then `parmchk2` for missing FF terms.
+4. Result is serialized to `cache/gaff_cache.json`. Re-running scripts
+   that touch the same ligand is a cache hit (seconds, not minutes).
+
+The cache file is committed (small, deterministic). MD trajectories under
+`cache/runs/` are not.
+
 ---
 
 ## Quickstart (one-time setup)

@@ -3,9 +3,18 @@ channels:
   - conda-forge
 dependencies:
   - python=3.12
+  # --- MD engine ---
   - openmm
   - pdbfixer
   - mdtraj
+  # --- ligand parameterization (L2 step 2) ---
+  # rdkit: SMILES → 3D conformer; openff-toolkit: modern force-field engine;
+  # openmmforcefields: bridges GAFF/OpenFF → OpenMM topology + bundles AmberTools
+  # (antechamber, parmchk2) used as the GAFF backend.
+  - rdkit
+  - openff-toolkit
+  - openmmforcefields
+  # --- analysis / notebooks ---
   - matplotlib
   - numpy
   - scipy

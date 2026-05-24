@@ -252,14 +252,25 @@ O₂ + 4H⁺ + 4e⁻ → 2H₂O   (повне 4-електронне відно�
 #  симуляцію на 10 нс і виведи графік RMSD структури білка — чи денатурує?"
 ```
 
-**Очікувані вихідні артефакти (storage у `docs/protocols/ebfc/in_silico/`):**
+**Очікувані вихідні артефакти:**
 
-- `deglycosylate.rb` — Ruby sliding-window імітація PNGase F (видалення N-X-S/T sequons)
-- `L1_protein_architecture.md` — SSOT-запис L1 рівня з валідаційними метриками
-- `dgrGcGDH_AF3.pdb` — 3D структура деглікозильованої форми з нативним FAD-кофактором
-- `openmm_genipin_stability.py` — MD-скрипт для перевірки матриці
-- `pyscf_os_fad_homo_lumo.ipynb` — DFT-розрахунок електронної естафети
-- `cantera_psbma_diffusion.py` — кінетика з виходом на `delta_t`
+| Шлях | Опис | Рівень |
+|---|---|---|
+| `docs/protocols/ebfc/in_silico/deglycosylate.rb` | Ruby sliding-window імітація PNGase F (N-X-S/T sequons) | L1 |
+| `docs/protocols/ebfc/in_silico/L1_protein_architecture.md` | SSOT-запис L1 рівня + валідаційні метрики | L1 |
+| `docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb` | Канонічний PDB деглікозильованого GcGDH з FAD у активному центрі | L1 |
+| `docs/protocols/ebfc/in_silico/alphafold3/` | Raw AF3 output (5 ranked CIF + summaries + job_request) | L1 |
+| `docs/protocols/ebfc/in_silico/ligands/FAD.sdf` | FAD з AF3-позою та правильними bond orders (для L2) | L2 |
+| `docs/protocols/ebfc/in_silico/ligands/genipin.sdf` | Genipin reference structure (SMILES → 3D) | L2 |
+| `tools/in_silico/cache/gaff_cache.json` | GAFF-2.11 параметри (AM1-BCC charges) для FAD + genipin, deterministic | L2 |
+| `tools/in_silico/scripts/01_smoke_test_water_box.py` | Engine sanity check — протеїн + water box, 1000 кроків | L2 |
+| `tools/in_silico/scripts/02_parameterize_fad.py` | AF3 PDB + CCD SMILES → FAD.sdf + GAFF cache (≈ 4 хв) | L2 |
+| `tools/in_silico/scripts/03_parameterize_genipin.py` | SMILES → genipin.sdf + GAFF cache (≈ 7 сек) | L2 |
+| `tools/in_silico/scripts/10_genipin_stability_md.py` | Повна стабільність-MD з протеїном + FAD + N×genipin → backbone RMSD | L2 |
+| `tools/in_silico/scripts/pyscf_os_fad_homo_lumo.ipynb` | DFT-розрахунок електронної естафети | L3 (TODO) |
+| `tools/in_silico/scripts/cantera_psbma_diffusion.py` | Кінетика з виходом на `delta_t` для атрактора Лоренца | L4 (TODO) |
+
+> **Інженерний нюанс L2 (важливо):** AMBER ff14SB має шаблони лише для 20 стандартних амінокислот. Для **FAD** (кофактор) і **геніпіну** (зшивач матриці) шаблонів немає — OpenMM падає з `No template found for residue X`. Тому L2 розбита на два кроки: спочатку lіганди параметризуються через **GAFF-2.11 + AM1-BCC** (скрипти `02_…`, `03_…` — використовують `antechamber`/`sqm` з AmberTools), результат кешується у `gaff_cache.json`. Лише після цього `10_…` запускає повну MD з білком + лігандами + матрицею. Skip cache → ~5 хв на холодний старт; cache hit → секунди. Той самий патерн пізніше повторюється для Os-полімеру та CNC у наступних L2-етапах.
 
 #### ✅ L1 Validation Status: Passed (2026-05-24)
 
@@ -284,7 +295,7 @@ O₂ + 4H⁺ + 4e⁻ → 2H₂O   (повне 4-електронне відно�
 **Інфраструктура:**
 - **Локально:** Workstation з NVIDIA RTX 4090 (24 GB VRAM) або RTX 5090 (32 GB VRAM) — повний робочий стек за $5–10K hardware (GPU + CPU + 64–128 GB RAM + NVMe storage для PDB-датасетів). Достатньо для більшості L1–L4 розрахунків.
 - **Хмара (для великих DFT-задач):** GCP `g2-standard-12` (1× L4 GPU) — ~$1–2/година on-demand; AWS `g5.2xlarge` (1× A10G) — ~$1.20/година; AWS `p5.2xlarge` (1× H100) — ~$30/година для важких MD-симуляцій (10+ нс на великих білках). Для prototype-фази достатньо L4/A10G тарифу.
-- **Сетап:** Базовий стек встановлюється за ~30 хв через `conda` env-spec (Miniforge → `tools/in_silico/environment.yml` → `silken_md` env). Pin-нуті версії на 2026-Q2: **Python 3.12**, **OpenMM 8.5.1**, `pdbfixer`, `mdtraj 1.11+`, `matplotlib 3.10+`, `numpy 2.x`, `scipy 1.17+`. Для L3/L4 додатково — PySCF 2.x + Cantera 3.x (додавати в той самий `environment.yml`). AlphaFold 3 weights — потребують registration на DeepMind; ESMFold — повністю open-weight (HuggingFace).
+- **Сетап:** Базовий стек встановлюється за ~30 хв через `conda` env-spec (Miniforge → `tools/in_silico/environment.yml` → `silken_md` env). Pin-нуті версії на 2026-Q2: **Python 3.12**, **OpenMM 8.5.1**, `pdbfixer`, `mdtraj 1.11+`, **RDKit 2025.09+**, **OpenFF Toolkit 0.18+**, **openmmforcefields 0.16+** (бридж GAFF/OpenFF → OpenMM, тягне AmberTools 24.x з `antechamber`/`sqm`/`parmchk2` для AM1-BCC параметризації лігандів), `matplotlib 3.10+`, `numpy 2.x`, `scipy 1.17+`. Для L3/L4 додатково — PySCF 2.x + Cantera 3.x (додавати в той самий `environment.yml`). AlphaFold 3 weights — потребують registration на DeepMind; ESMFold — повністю open-weight (HuggingFace).
 - **GPU на macOS arm64:** локально доступні платформи OpenMM — `Reference`, `CPU`, `OpenCL` (legacy Apple GPU backend, deprecated Apple-ом але ще працює — verified 2026-05-24 на M-серії: forces within tolerance). `CUDA` — Nvidia only. Tobто **локальний Mac = розробка скриптів + sanity runs (≤ 1 нс)**, production runs (10–100 нс) → GCP L4 / AWS A10G/H100.
 - **Локальна інфраструктура in-silico стеку:** код у `tools/in_silico/scripts/`, conda env spec у `tools/in_silico/environment.yml`, SSOT артефакти (PDB, AF3 output, results) у `docs/protocols/ebfc/in_silico/`. Quickstart — `tools/in_silico/README.md`.
 

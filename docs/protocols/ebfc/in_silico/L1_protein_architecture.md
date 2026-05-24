@@ -124,18 +124,32 @@ distance #1:FAD@N5 #1:90@OH
 
 ## 7. Артефакти у цій папці
 
+**SSOT-артефакти (chemistry, ця папка):**
+
 | Файл | Опис | Статус |
 |---|---|---|
-| `deglycosylate.rb` | Ruby-скрипт sliding-window для імітації PNGase F | ✅ Закомічено |
+| `deglycosylate.rb` | Ruby-скрипт sliding-window для імітації PNGase F | ✅ |
 | `L1_protein_architecture.md` | Цей документ | ✅ |
-| `dgrGcGDH_AF3.pdb` | Output AlphaFold 3 (deglycosylated GcGDH + FAD), конвертовано з `alphafold3/fold_dgrgcgdh_fad_v1_model_0.cif` | ✅ |
-| `alphafold3/` | AF3 raw output: 5 ranked CIF моделей, 5 summary JSON, job request, terms of use | ✅ |
+| `dgrGcGDH_AF3.pdb` | Канонічний PDB (deglycosylated GcGDH + FAD), конвертовано з `alphafold3/…_model_0.cif` | ✅ |
+| `alphafold3/` | AF3 raw output: 5 ranked CIF моделей + summaries + job_request + terms_of_use | ✅ |
+| `ligands/FAD.sdf` | FAD з AF3-позою та хімічно правильними bond orders (вхід для L2) | ✅ |
+| `ligands/genipin.sdf` | Genipin reference structure (SMILES → 3D) | ✅ |
 | `chimerax_distance_session.cxs` | ChimeraX session з вимірюванням 15.998 Å | ⏳ Опційно |
-| `openmm_genipin_stability.py` | L2 MD-скрипт (повна симуляція з матрицею) | ⏳ L2 (потребує parameterization FAD/genipin через GAFF/OpenFF) |
+
+**Робочі скрипти L2+ (engine, `tools/in_silico/scripts/`):**
+
+| Файл | Опис | Статус |
+|---|---|---|
+| `01_smoke_test_water_box.py` | Engine sanity check (протеїн + water box + 1000 кроків) | ✅ Passed |
+| `02_parameterize_fad.py` | AF3 PDB + CCD SMILES → `ligands/FAD.sdf` + GAFF cache (≈ 4 хв AM1-BCC) | ✅ |
+| `03_parameterize_genipin.py` | SMILES → `ligands/genipin.sdf` + GAFF cache (≈ 7 сек AM1-BCC) | ✅ |
+| `10_genipin_stability_md.py` | Повна стабільність-MD: protein + FAD + N×genipin → backbone RMSD vs frame 0 | ⏳ TODO: run + analyze |
 | `pyscf_os_fad_homo_lumo.ipynb` | L3 DFT (наступний рівень) | ⏳ L3 |
 | `cantera_psbma_diffusion.py` | L4 кінетика (наступний рівень) | ⏳ L4 |
 
-**Робочі скрипти L2 (engine):** живуть у [`tools/in_silico/scripts/`](../../../../tools/in_silico/) — там же `environment.yml` для conda env `silken_md`.
+**Параметризаційний кеш:** `tools/in_silico/cache/gaff_cache.json` (62.6 KB) — deterministic AM1-BCC charges + GAFF-2.11 atom types для FAD і genipin; cache hit економить ~5 хв на чистому checkout.
+
+> **L1 → L2 inженерний міст:** AMBER ff14SB має шаблони лише для 20 стандартних амінокислот → щоб запустити MD з FAD (кофактор) і геніпіном (зшивач матриці), потрібен окремий ligand-parameterization крок. Він реалізований через `openmmforcefields.GAFFTemplateGenerator` поверх AmberTools `antechamber`/`sqm`. Деталі — `docs/01_03 §3.4 Інженерний нюанс L2`.
 
 ---
 

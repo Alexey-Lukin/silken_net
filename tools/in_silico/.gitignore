@@ -20,9 +20,13 @@ __pycache__/
 *.chk
 *.cpt
 
-# Downloaded PDBs / cached structures
+# Downloaded PDBs / one-off staging
 downloads/
-cache/
+
+# MD run artefacts (trajectories, checkpoints) — large, regenerable
+cache/runs/
+
+# Keep small deterministic caches (e.g. GAFF parameter cache) under cache/
 
 # Jupyter
 *.nbconvert.ipynb
