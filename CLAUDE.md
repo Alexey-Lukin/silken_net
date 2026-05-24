@@ -273,7 +273,7 @@ Solana: Ed25519 підпис, SPL Token Transfer, ATA резолюція чер�
 
 | BLOCKER | Файл | Суть |
 |---------|------|------|
-| HW-AES-KEY | `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82` | ✅ Firmware CLOSED (FW.1, 2026-05-02): `Load_AES_Key()` + per-device HKDF + Protected Flash. Залишається: Factory Flashing Pipeline (SEC.3, threat model: `03_05 §3.4г`) + RDP Level 2 (SEC.2) |
+| HW-AES-KEY | `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82` | ✅ Firmware CLOSED (FW.1, 2026-05-02): `Load_AES_Key()` + per-device HKDF + Protected Flash. SEC.3 Factory Flashing Pipeline tool — ✅ Rake CLI dry-run (2026-05-24, `app/services/factory_flashing/*`, threat model: `03_05 §3.4г`). 👤 Залишається: real `STM32_Programmer_CLI` execution на bench + RDP Level 2 (SEC.2) |
 | ARCH.42 LoRa AES-size | `firmware/soldier/main.c` MX_CRYP_Init, `firmware/queen/main.c` MX_CRYP_Init | ✅ DECIDED 2026-05-23 (Variant B = AES-128 LoRa + ATECC608B SE). LoRa channel: `CRYP_KEYSIZE_128B`, `aes_key[4]`; CoAP канал залишається AES-256. Деталі — `docs/03_05 §3.7` |
 | AES-ECB | `firmware/soldier/main.c` (MX_CRYP_Init) | 🟡 Transitional AES-128-ECB після ARCH.42; повне закриття через FW.2 (AES-128-CCM, 24B packet, 8B MIC, Frame Counter). Hardware bench needed для `CRYP_AES_CCM` HAL верифікації |
 | TINYML-COMMENT | `firmware/soldier/main.c:413` | `Run_Inference()` закоментована; model header відсутній |

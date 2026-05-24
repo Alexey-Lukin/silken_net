@@ -1,6 +1,7 @@
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -1743,6 +1744,50 @@ ALTER SEQUENCE public.parametric_insurances_id_seq OWNED BY public.parametric_in
 
 
 --
+-- Name: provisioning_sessions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.provisioning_sessions (
+    id bigint NOT NULL,
+    state character varying DEFAULT 'pending'::character varying NOT NULL,
+    gilka character varying NOT NULL,
+    device_uid character varying NOT NULL,
+    batch_id character varying NOT NULL,
+    atecc_serial_hex character varying,
+    firmware_version character varying NOT NULL,
+    flash_addr character varying DEFAULT '0x0803E000'::character varying NOT NULL,
+    rdp_level integer DEFAULT 1 NOT NULL,
+    operator_id bigint NOT NULL,
+    supervisor_id bigint,
+    supervisor_approved_at timestamp(6) without time zone,
+    started_at timestamp(6) without time zone,
+    completed_at timestamp(6) without time zone,
+    error_message text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: provisioning_sessions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.provisioning_sessions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: provisioning_sessions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.provisioning_sessions_id_seq OWNED BY public.provisioning_sessions.id;
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2739,6 +2784,13 @@ ALTER TABLE ONLY public.parametric_insurances ALTER COLUMN id SET DEFAULT nextva
 
 
 --
+-- Name: provisioning_sessions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.provisioning_sessions ALTER COLUMN id SET DEFAULT nextval('public.provisioning_sessions_id_seq'::regclass);
+
+
+--
 -- Name: sessions id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3152,6 +3204,14 @@ ALTER TABLE ONLY public.organizations
 
 ALTER TABLE ONLY public.parametric_insurances
     ADD CONSTRAINT parametric_insurances_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: provisioning_sessions provisioning_sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.provisioning_sessions
+    ADD CONSTRAINT provisioning_sessions_pkey PRIMARY KEY (id);
 
 
 --
@@ -4757,6 +4817,34 @@ CREATE INDEX index_parametric_insurances_on_etherisc_policy_id ON public.paramet
 --
 
 CREATE INDEX index_parametric_insurances_on_organization_id ON public.parametric_insurances USING btree (organization_id);
+
+
+--
+-- Name: index_provisioning_sessions_on_device_uid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_provisioning_sessions_on_device_uid ON public.provisioning_sessions USING btree (device_uid);
+
+
+--
+-- Name: index_provisioning_sessions_on_operator_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_provisioning_sessions_on_operator_id ON public.provisioning_sessions USING btree (operator_id);
+
+
+--
+-- Name: index_provisioning_sessions_on_state_and_batch_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_provisioning_sessions_on_state_and_batch_id ON public.provisioning_sessions USING btree (state, batch_id);
+
+
+--
+-- Name: index_provisioning_sessions_on_supervisor_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_provisioning_sessions_on_supervisor_id ON public.provisioning_sessions USING btree (supervisor_id);
 
 
 --
@@ -6808,11 +6896,27 @@ ALTER TABLE ONLY public.actuator_commands
 
 
 --
+-- Name: provisioning_sessions fk_rails_7f7fde687f; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.provisioning_sessions
+    ADD CONSTRAINT fk_rails_7f7fde687f FOREIGN KEY (operator_id) REFERENCES public.users(id);
+
+
+--
 -- Name: tiny_ml_models fk_rails_8ebc5faedf; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.tiny_ml_models
     ADD CONSTRAINT fk_rails_8ebc5faedf FOREIGN KEY (tree_family_id) REFERENCES public.tree_families(id);
+
+
+--
+-- Name: provisioning_sessions fk_rails_938bba5b8c; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.provisioning_sessions
+    ADD CONSTRAINT fk_rails_938bba5b8c FOREIGN KEY (supervisor_id) REFERENCES public.users(id);
 
 
 --
@@ -6998,5 +7102,6 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260524120000'),
 ('20260509120000');
 

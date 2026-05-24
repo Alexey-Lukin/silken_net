@@ -28,7 +28,7 @@
 | **Mesh Anti-Pingpong (3 слоти)** | ✅ Реалізовано (DR8, DR9, DR11; зменшено з 8 до 3 у FW.21, DR10/DR12 під EMA, DR13..DR15 — резерв) |
 | **CIFO Priority-Aware Eviction** | ✅ Виправлено (критичні записи захищені від витіснення) |
 | **OTA Integrity (CRC32)** | ✅ Виправлено (ISO 3309 перевірка перед flash write) |
-| **AES Key — per-device HKDF provisioning (FW.1)** | ✅ Firmware CLOSED (2026-05-02). `Load_AES_Key()` + Protected Flash. Залишається: Factory Flashing Pipeline (SEC.3) + RDP Level 2 (SEC.2). Key rotation — FW.17 (Post-FW.1, P3) |
+| **AES Key — per-device HKDF provisioning (FW.1)** | ✅ Firmware CLOSED (2026-05-02). `Load_AES_Key()` + Protected Flash. Factory Flashing Pipeline tool (SEC.3) — ✅ реалізовано як dry-run Rake CLI (2026-05-24, `app/services/factory_flashing/*`); 👤 залишається real `STM32_Programmer_CLI` execution + RDP Level 2 (SEC.2). Key rotation — FW.17 (Post-FW.1, P3) |
 | **AT Command Blocking (~25 s flush)** | 🟡 Частково виправлено — CoAP retry з UART RX парсингом (FW.9) + LoRa RX **ring buffer** (FW.3, 2026-05-02) → під час flush'у Queen більше НЕ губить пакети ≤ 15 burst; повна async UART DMA — відкрито |
 | **Starlink Latency Gap** | 🟡 OPEN (HAL_Delay(1000) для CoAP session може бути замало) |
 | **Error_Handler** | ✅ Виправлено — `NVIC_SystemReset()` через 100 мс замість вічного циклу (FW.14) |
@@ -41,7 +41,7 @@
 
 ### ✅ BLOCKER-1: Hardcoded AES-256 Key — Firmware CLOSED (FW.1, 2026-05-02)
 
-**Статус:** ✅ Firmware ЗАКРИТО (FW.1, 2026-05-02). `Load_AES_Key()` зчитує per-device HKDF-derived ключ з Protected Flash Sector (`FLASH_KEY_ADDR = 0x0803E000`, magic `"KEYS"`). Hardcoded ідентичний ключ видалено. Залишається: Factory Flashing Pipeline tool (SEC.3 — threat model: `03_05 §3.4г`) та RDP Level 2 activation (SEC.2).
+**Статус:** ✅ Firmware ЗАКРИТО (FW.1, 2026-05-02). `Load_AES_Key()` зчитує per-device HKDF-derived ключ з Protected Flash Sector (`FLASH_KEY_ADDR = 0x0803E000`, magic `"KEYS"`). Hardcoded ідентичний ключ видалено. Factory Flashing Pipeline tool (SEC.3) — ✅ реалізовано як Rake-driven internal admin tool (2026-05-24, dry-run by default; threat model: `03_05 §3.4г`). Залишається: 👤 real `STM32_Programmer_CLI` execution на bench та RDP Level 2 activation (SEC.2).
 
 **Файли:** `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82`
 
@@ -57,7 +57,7 @@ uint32_t aes_key[8] = {0};  // Overwritten by Load_AES_Key() before MX_CRYP_Init
 - ✅ `Security::WeakKeyDetector` (SEC.9) — FIPS-197 test vector не може потрапити у production.
 
 **Залишається:**
-- [ ] SEC.3: Factory Flashing Pipeline tool (реалізація + integration тест; threat model задокументований у `03_05 §3.4г`).
+- [x] SEC.3: Factory Flashing Pipeline tool (✅ 2026-05-24, dry-run; реалізація + integration тест; threat model: `03_05 §3.4г`). 👤 Hardware-gated: real `STM32_Programmer_CLI` subprocess execution на STM32WLE5JC bench.
 - [ ] SEC.2: RDP Level 2 activation (необоротний final lock перед field deployment).
 - [ ] FW.17: Hash Ratchet KDF key rotation без перепрошивки (Post-FW.1, P3).
 

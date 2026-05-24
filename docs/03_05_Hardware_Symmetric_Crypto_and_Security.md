@@ -85,7 +85,7 @@ uint32_t aes_key[8] = {0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX,
 
 **Залишається:**
 
-- [ ] SEC.3: Factory Flashing Pipeline tool (реалізація, integration тест, threat model → §3.4г)
+- [x] SEC.3: Factory Flashing Pipeline tool (✅ 2026-05-24, dry-run mode; реалізація, integration тест, threat model → §3.4г). Hardware-gated: real `STM32_Programmer_CLI` subprocess + live `cryptoauthlib` I²C — deferred до HW bench
 - [ ] SEC.2: RDP Level 2 activation (необоротний final lock перед field deployment)
 
 > **⚠️ ОПЕРАЦІЙНИЙ РИЗИК (Pre-Flight Checklist):** При кожному циклі прошивки — верифікувати що firmware binary отримує ключ з vault (не хардкоджений placeholder). Симптом помилки: Queen бачить щойно декриптований Soldier-пакет як хаотичний сміттєвий масив, ліс мовчазний, жодних помилок у Rails. Причина — ключ не синхронізований між Soldier і Queen Flash секторами.
@@ -1435,6 +1435,44 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 
 ---
 
+#### Implementation status (2026-05-24)
+
+> Дизайн A–D нижче імплементовано як Rake-driven internal admin tool. Реальний `STM32_Programmer_CLI` subprocess execution та live `cryptoauthlib` I²C — gated на HW bench (deferred).
+
+| Шар | Файл | Статус |
+|-----|------|--------|
+| Session AASM | `app/models/provisioning_session.rb` | ✅ `pending → supervisor_approved → active → completed \| failed`, 2-Person Rule валідація `supervisor_id != operator_id` |
+| Master key source | `app/services/factory_flashing/master_key_source.rb` | ✅ `EnvAdapter` (з `Security::WeakKeyDetector` SEC.9), `BitwardenAdapter` skeleton (raise `NotImplementedError` — TODO live `bw` API) |
+| Command emission | `app/services/factory_flashing/command_builder.rb` | ✅ Гілка A — `STM32_Programmer_CLI -w32` per word для `KEYL`/`LSED`/`KEYC` slots, RDP level 1/2 config; Гілка B — skip key writes (keys через ATCA), only firmware connect + RDP lock |
+| Subprocess executor | `app/services/factory_flashing/executor.rb` | ✅ dry-run default (`[dry-run] cmd`); `dry_run: false` → `Open3.capture3` з `ProgrammerMissingError` коли CLI відсутній у PATH; `CommandFailedError` зупиняє на першому non-zero exit |
+| ATECC provisioning | `app/services/factory_flashing/atecc_provisioner.rb` | ✅ Гілка B skeleton — emit `atcab_init` + `atcab_read_serial_number` + slot writes (0/1/2/3) + `atcab_lock_config_zone` + `atcab_lock_data_zone`; raw key bytes scrubbed (`/* NB elided */`) |
+| Audit trail | `app/services/factory_flashing/audit_trail.rb` | ✅ `AuditLog(action: "factory_flash")` chain-hashed + `MaintenanceRecord(action_type: :installation, skip_photo_validation: true)`; metadata містить `operator_id`/`supervisor_id`/`batch_id`/`flash_addr`/`rdp_level`/`atecc_serial_hex`/`firmware_version`/`command_count`/`dry_run` |
+| Orchestrator | `app/services/factory_flashing/session.rb` | ✅ `ActiveRecord::Base.transaction` — failure rolls back HardwareKey + audit writes разом; `PreflightError` для non-approved sessions / missing device / unavailable master key |
+| Operator CLI | `lib/tasks/factory.rake` | ✅ `factory:flash[device_uid,batch_id,gilka,operator_id,supervisor_id,firmware_version]` (`ATECC_SERIAL` env для Гілки B, `RDP_LEVEL` env override) → `factory:approve[session_id]` (з `SUPERVISOR_ID` env guard) → `factory:execute[session_id]` (`EXECUTE=1` для real subprocess) |
+
+**Test coverage:** 63 examples — model AASM/validations (15), MasterKeySource (6), CommandBuilder golden vectors (11), Executor dry-run/execute (6), AteccProvisioner (10), AuditTrail (6), Session orchestration (7), E2E Rake trio (3 — firmware-equivalent HKDF verification).
+
+**Зразок dry-run вивода** (Tree, Гілка A, RDP=1):
+```
+[dry-run] STM32_Programmer_CLI -c port=SWD reset=HWrst
+[dry-run] STM32_Programmer_CLI -w32 0x0803E000 0x4B45594C       # KEYL magic
+[dry-run] STM32_Programmer_CLI -w32 0x0803E004 0xAABBCCDD       # AES key word 0
+[dry-run] STM32_Programmer_CLI -w32 0x0803E008 0xEEFF0011       # AES key word 1
+[dry-run] STM32_Programmer_CLI -w32 0x0803E00C 0x22334455       # AES key word 2
+[dry-run] STM32_Programmer_CLI -w32 0x0803E010 0x66778899       # AES key word 3
+[dry-run] STM32_Programmer_CLI -w32 0x0803E014 0x4C534544       # LSED magic
+… (8 K_seed words at 0x0803E018..0x0803E034)
+[dry-run] STM32_Programmer_CLI -ob RDP=1
+[dry-run] STM32_Programmer_CLI -c port=SWD --quietMode
+```
+
+**Hardware-gated TODO:**
+- 👤 Реальний `STM32_Programmer_CLI` execution на STM32WLE5JC bench (зараз `EXECUTE=1` raise'ить `ProgrammerMissingError` без CLI у PATH)
+- 👤 Bitwarden Secrets Manager live API (`BitwardenAdapter#fetch_master_key` placeholder)
+- 🔗 Live `cryptoauthlib` I²C call в `AteccProvisioner` — після SEC.6 PCBA з ATECC608B
+
+---
+
 #### A. Access Control до `PROVISIONING_MASTER_KEY`
 
 **Хто має право запускати Factory Flashing Tool:**
@@ -2019,7 +2057,7 @@ HAL_CRYP_Init(&hcryp);
 | **ECB для LoRa** | 🟡 Transitional після ARCH.42 | AES-128-ECB → AES-128-CCM (target FW.2, 24B packet + Frame Counter + 8B MIC) |
 | **MAC/MIC** | 🟡 OPEN — закривається з FW.2 CCM | 8-byte MIC (64-bit, forge probability $5.4×10^{-20}$) |
 | **RDP Protection** | 🟡 OPEN | Level 0 (розробка). Level 1/2 — фінальний крок Factory Flashing (розділ 3.3). Pre-flight checklist та незворотна процедура задокументовані у §3.6 🤖 |
-| **Factory Flashing Pipeline** | 🟡 OPEN (SEC.3) | Архітектура (§3.4) + HKDF (§3.4а) + Operations Security threat model (§3.4г, 2026-05-17). Залишається: tool implementation + integration test |
+| **Factory Flashing Pipeline** | 🟡 PARTIAL (SEC.3) | ✅ Архітектура (§3.4) + HKDF (§3.4а) + Operations Security threat model (§3.4г, 2026-05-17) + tool implementation (§3.4г Implementation status, 2026-05-24 — `app/services/factory_flashing/*`, `lib/tasks/factory.rake`, 63 specs, dry-run). 👤 Залишається: real `STM32_Programmer_CLI` execution на bench + Bitwarden live API + ATCA I²C |
 | **Shipping Mode (Геркон)** | 🟡 OPEN | Концепт визначено (розділ 3.5); компонент не доданий до BOM |
 | **Secure Element (ATECC608B)** | ✅ Узгоджено з ARCH.42 (Variant B) | §3.7 — Slot 0 (AES-128 LoRa), Slot 1 (ECC P-256 ID), Slot 2 (cert), Slot 3 (HMAC OTA). Bench eval kit + I²C integration — HW track |
 | **Key Rotation** | 🟡 OPEN | Рекомендовано: Hash Ratchet KDF (PFS без передачі ключа по мережі) — `[FW.17]` |

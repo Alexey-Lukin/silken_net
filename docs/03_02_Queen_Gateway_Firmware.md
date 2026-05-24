@@ -38,7 +38,7 @@
 | **RSSI Clamp (int16 → int8)** | ✅ Виправлено (SX1262 може давати < -128 dBm) |
 | **Thundering Herd Jitter (HRNG)** | ✅ Виправлено (0–60 секунд рандомне зміщення) |
 | **AT Command Timeout (blind delay)** | 🔴 BLOCKER (немає парсингу відповіді модему) |
-| **Hardcoded AES Key у Flash** | ✅ Firmware CLOSED (FW.1, 2026-05-02). Залишається: Factory Flashing Pipeline (SEC.3) + RDP Level 2 (SEC.2) |
+| **Hardcoded AES Key у Flash** | ✅ Firmware CLOSED (FW.1, 2026-05-02). Factory Flashing Pipeline tool (SEC.3) — ✅ Rake CLI dry-run (2026-05-24); 👤 real subprocess execution на bench + RDP Level 2 (SEC.2) |
 | **Queen UID hardcoded "QUEEN-001"** | ✅ Виправлено (Flash-based provisioning з fallback на STM32 HW UID) |
 | **Error_Handler без IWDG у Queen** | ✅ Виправлено (IWDG додано з timeout ~26 с + refresh у main loop) |
 | **No CoAP retry logic** | ✅ Виправлено (FW.9) — `SIM7070_SendATCommand_WithResponse`, max 3 retry, парсинг `OK`/`ERROR` |
@@ -53,7 +53,7 @@
 
 ### ✅ BLOCKER-1: Hardcoded AES-256 Key — Firmware CLOSED (FW.1, 2026-05-02)
 
-**Статус:** ✅ Firmware ЗАКРИТО (FW.1, 2026-05-02). Queen `Load_AES_Key()` зчитує per-device HKDF-derived ключ з Protected Flash Sector (`FLASH_KEY_ADDR = 0x0803E000`, magic `"KEYS"`). Hardcoded ідентичний ключ видалено. Залишається: Factory Flashing Pipeline tool (SEC.3 — threat model: `03_05 §3.4г`) та RDP Level 2 activation (SEC.2).
+**Статус:** ✅ Firmware ЗАКРИТО (FW.1, 2026-05-02). Queen `Load_AES_Key()` зчитує per-device HKDF-derived ключ з Protected Flash Sector (`FLASH_KEY_ADDR = 0x0803E000`, magic `"KEYS"`). Hardcoded ідентичний ключ видалено. Factory Flashing Pipeline tool (SEC.3) — ✅ реалізовано як Rake-driven internal admin tool (2026-05-24, dry-run by default; threat model: `03_05 §3.4г`; Гілка A + Гілка B skeleton). Залишається: 👤 real `STM32_Programmer_CLI` execution на bench та RDP Level 2 activation (SEC.2).
 
 **Файл:** `firmware/queen/main.c:81-82`
 
@@ -68,7 +68,7 @@ uint32_t aes_key[8] = {0};  // Overwritten by Load_AES_Key() before MX_CRYP_Init
 - ✅ Per-Soldier ключі для cluster decrypt — Queen знає ключ кожного свого Soldier (`HardwareKey#binary_key` cache).
 
 **Залишається:**
-- [ ] SEC.3: Factory Flashing Pipeline tool (реалізація + integration тест; threat model: `03_05 §3.4г`).
+- [x] SEC.3: Factory Flashing Pipeline tool (✅ 2026-05-24, dry-run; реалізація + integration тест; threat model: `03_05 §3.4г`). 👤 Hardware-gated: real `STM32_Programmer_CLI` execution на bench.
 - [ ] SEC.2: RDP Level 2 activation (необоротний final lock перед field deployment).
 - [ ] Опційно (mass production >10k): ATECC608B Secure Element — SEC.6 / `03_05 §3.7`.
 
@@ -1239,6 +1239,6 @@ make -C firmware/test queen    # 128 тестів, ~0.1 секунди
 |--------|----------------|
 | [05_02 Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Втрата пакетів на Queen → ZK-proof не формується → мінтинг SCC блокується |
 | [04_02 Business Logic and Services](04_02_Business_Logic_and_Services) | `UnpackTelemetryWorker` очікує батч формату `[IV:16][CBC ciphertext]` |
-| Factory Flashing | BLOCKER-1 firmware-частина закрита (FW.1); SEC.3 — tool implementation залишається, threat model: `03_05 §3.4г` |
+| Factory Flashing | BLOCKER-1 firmware-частина закрита (FW.1); SEC.3 tool implementation — ✅ Rake CLI dry-run (2026-05-24, `app/services/factory_flashing/*`); 👤 hardware-gated: real `STM32_Programmer_CLI` subprocess execution на bench; threat model: `03_05 §3.4г` |
 
 ---

@@ -30,7 +30,7 @@
 
 ### Перед будь-яким польовим деплоєм (life-safety + security)
 1. **SEC.9** — замінити master AES key (FIPS-197 test vector) на криптостійкий random — **P0**
-2. **FW.1 + SEC.3** — Per-device HKDF provisioning + Factory Flashing pipeline — **P0**
+2. **FW.1 + SEC.3** — Per-device HKDF provisioning ✅ + Factory Flashing pipeline tool ✅ (Rake CLI dry-run, 2026-05-24); 👤 залишається real `STM32_Programmer_CLI` execution на STM32WLE5JC bench — **P0**
 3. **FW.2** — AES-128-CCM [post-ARCH.42] (вирішує одразу: ECB→CCM, MIC, FW.23 OTA auth, SEC.10 panic auth, FW.29 disambiguation) — **P0**
 4. **SEC.1** — Gnosis Safe multisig для `DEFAULT_ADMIN_ROLE` SCC/SFC до mainnet — **P0**
 5. ✅ ~~**ARCH.42**~~ — DECIDED 2026-05-23 (Variant B: AES-128 LoRa + ATECC608B SE; CoAP залишається AES-256). SSOT-патч виконано. Code-side firmware/Ruby rollout — see ARCH.42 row деталі
@@ -918,10 +918,18 @@
 - **Джерело:** `03_05` NOTE-2
 - **Опис:** Multi-step factory process: (1) Flash firmware з placeholder key, (2) Backend → HKDF(master_key, device_uid) → unique_key, (3) Robot пише key у protected Flash sector, (4) STM32CubeProgrammer → RDP Level 1/2
 - **Блокує:** Mass production
-- **Статус (🤖, 2026-05-13):** ✅ Дизайн Factory Flashing pipeline завершено та задокументовано у `03_05` §3.4 у вигляді двох гілок: Гілка A (Protected Flash Sector, TRL 6/7, ≤10k unit) та Гілка B (ATECC608B/STSAFE-A110 Secure Element, mass production >10k або high-value). Включено: decision matrix (pilot / 1-10k / >10k / regulated), defense-in-depth таблицю, двошарову схему lock (data zone lock + RDP), latency/power/cost impact, irreversibility note (B→A неможливо). Cross-ref до §3.4а (HKDF) та §3.7 (SE оцінка).
+- **Статус (🤖, 2026-05-13 дизайн → 2026-05-24 implementation):** ✅ Дизайн Factory Flashing pipeline завершено (`03_05` §3.4 — Гілка A + Гілка B) та реалізовано як Rake-driven internal admin tool (2026-05-24). Implementation:
+  - **DB**: `provisioning_sessions` (AASM `pending → supervisor_approved → active → completed | failed`, 2-Person Rule guard через `supervisor_must_differ_from_operator`).
+  - **Services** (`app/services/factory_flashing/`): `MasterKeySource::EnvAdapter` (з вбудованим `Security::WeakKeyDetector`) + `BitwardenAdapter` skeleton (raise `NotImplementedError`); `CommandBuilder` (golden-vector STM32CubeProgrammer `-w32` команди для KEYL/LSED/KEYC slots — match firmware `FLASH_KEY_ADDR/FLASH_SEED_ADDR/FLASH_COAP_KEY_ADDR`); `Executor` (dry-run by default, `EXECUTE=1` спавнить `Open3.capture3`, `ProgrammerMissingError` якщо STM32_Programmer_CLI відсутній у PATH); `AteccProvisioner` (Гілка B skeleton — emits `atcab_write_zone` slot 0/1/2/3 + `atcab_lock_*`, raw key bytes scrubbed); `AuditTrail` (`AuditLog(action: "factory_flash")` chain-hashed + `MaintenanceRecord(action_type: :installation)`); `Session` orchestrator (atomic `ActiveRecord::Base.transaction` — failure rolls back HardwareKey + audit писалки разом).
+  - **Rake**: `factory:flash[device_uid,batch_id,gilka,operator_id,supervisor_id,firmware_version]`, `factory:approve[session_id]` (SUPERVISOR_ID env guard), `factory:execute[session_id]` (dry-run by default, `EXECUTE=1` для real subprocess).
+  - **Spec coverage**: 63 examples (model 15 + master_key_source 6 + command_builder 11 + executor 6 + atecc_provisioner 10 + audit_trail 6 + session 7 + E2E 3) — всі зелені. Firmware-equivalence перевіряється: persisted `aes_key_hex` === `HardwareKeyService.derive_lora_key(device_uid)` (HKDF-SHA256 byte-for-byte match).
+  - **Залишається 👤 / hardware-gated**: реальне `STM32_Programmer_CLI` execution на STM32WLE5JC bench (зараз dry-run only), Bitwarden Secrets Manager API live integration (`BitwardenAdapter` placeholder), реальний `cryptoauthlib` I²C (AteccProvisioner зараз emit-only), 2-Person Rule UI у Rails (Rake-level only).
 - [x] 🤖 Дизайн завершений — ✅ `03_05` §3.4 Гілка A + Гілка B (2026-05-13)
-- [ ] 🤖 Реалізація Factory Flashing tool
-- [ ] 🤖 Integration тест з provisioning API
+- [x] 🤖 Реалізація Factory Flashing tool — ✅ Rake `factory:flash/approve/execute` + `app/services/factory_flashing/*` + `app/models/provisioning_session.rb` (2026-05-24)
+- [x] 🤖 Integration тест з provisioning API — ✅ `spec/integration/factory_flashing_e2e_spec.rb` (3 examples, firmware-equivalent HKDF verification)
+- [ ] 👤 Реальний STM32_Programmer_CLI execution на bench (post-FW.2 HW gate); зараз `EXECUTE=1` шлях рейзить `ProgrammerMissingError` коли CLI відсутній у PATH
+- [ ] 👤 Bitwarden Secrets Manager API live integration (`BitwardenAdapter#fetch_master_key` зараз raise `NotImplementedError`)
+- [ ] 🔗 Реальний `cryptoauthlib` I²C для AteccProvisioner — після SEC.6 PCBA з ATECC608B
 - [x] 🤖 **Задокументувати Factory Flashing pipeline як окрему секцію** з явною позначкою **"Internal Admin Tool, поза публічним REST API"** (запит: 2026-05-17). Розмежування з `/api/v1/provisioning/register` (registration-after-deployment) має бути нерозмитим: `04_03 §5.2` залишається Zero-Trust (no keys in response), нова секція описує **окремий канал** доставки ключів програматору. Проектування з нуля з повним threat model:
   - **Access control до `PROVISIONING_MASTER_KEY`:** хто (роль/особа) має право запускати tool, як master key потрапляє у tool (HSM injection / envelope encryption / short-lived token + KMS), як ротується, fail-closed boot guard (cross-ref `master_key_strength_check.rb` SEC.11)
   - **Anti-key-leak via factory operator:** operator UI показує тільки `status: key_burned` (без raw key), key flow `tool → SWD/JTAG → protected Flash sector` без проходження через operator screen / clipboard / logfile, secure RAM wipe після write, відсутність персистентного key cache на factory machine, screen-recording mitigations
