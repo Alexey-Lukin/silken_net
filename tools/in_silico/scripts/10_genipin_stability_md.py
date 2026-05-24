@@ -136,6 +136,24 @@ def pick_platform() -> Platform:
     raise RuntimeError("No OpenMM platform available")
 
 
+def positions_to_nm_array(positions) -> np.ndarray:
+    """OpenMM positions Quantity → (N, 3) numpy array in nm.
+
+    `Quantity.value_in_unit(nanometer)` is annoyingly polymorphic across
+    OpenMM versions / call sites: it can be a 2D ndarray of floats, a list
+    of 3-element ndarrays, or (older API) a list of `Vec3` objects with
+    `.x/.y/.z`. Try numeric coercion first, fall back to attribute access.
+    """
+    val = positions.value_in_unit(nanometer)
+    try:
+        arr = np.asarray(val, dtype=float)
+        if arr.ndim == 2 and arr.shape[1] == 3:
+            return arr
+    except (TypeError, ValueError):
+        pass
+    return np.array([[v.x, v.y, v.z] for v in val], dtype=float)
+
+
 def restraint_protein_heavy_atoms(system: openmm.System, positions, topology, k=10.0):
     """Add a harmonic position restraint on protein heavy atoms (NVT stage).
 
@@ -206,14 +224,11 @@ def main() -> int:
 
     # Reference template topology + positions in nm (centered on its centroid)
     g_top = genipin_template.to_topology().to_openmm()
-    g_pos_quantity = genipin_template.conformers[0].to_openmm()
-    g_coords_nm = np.array([[v.x, v.y, v.z] for v in g_pos_quantity.value_in_unit(nanometer)])
+    g_coords_nm = positions_to_nm_array(genipin_template.conformers[0].to_openmm())
     g_coords_nm -= g_coords_nm.mean(axis=0)  # centroid at origin
 
     # Find a "shell radius" just outside the protein bounding sphere
-    protein_coords_nm = np.array(
-        [[v.x, v.y, v.z] for v in modeller.positions.value_in_unit(nanometer)]
-    )
+    protein_coords_nm = positions_to_nm_array(modeller.positions)
     protein_center = protein_coords_nm.mean(axis=0)
     shell_radius = (protein_coords_nm - protein_center).max() + 0.8  # 0.8 nm margin
 
@@ -344,7 +359,7 @@ def main() -> int:
     verdict = "✅ STABLE (RMSD_max < 3 Å)" if plateau_test else "⚠ NEEDS LONGER RUN OR DESIGN REVIEW"
     print(f"  Verdict          : {verdict}")
 
-    with (run_dir / "summary.txt").open("w") as fh:
+    with (run_dir / "summary.txt").open("w", encoding="utf-8") as fh:
         fh.write(
             f"# L2 stability MD summary — run {run_id}\n\n"
             f"Production length : {PRODUCTION_PS} ps\n"

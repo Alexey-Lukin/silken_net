@@ -143,7 +143,7 @@ distance #1:FAD@N5 #1:90@OH
 | `01_smoke_test_water_box.py` | Engine sanity check (протеїн + water box + 1000 кроків) | ✅ Passed |
 | `02_parameterize_fad.py` | AF3 PDB + CCD SMILES → `ligands/FAD.sdf` + GAFF cache (≈ 4 хв AM1-BCC) | ✅ |
 | `03_parameterize_genipin.py` | SMILES → `ligands/genipin.sdf` + GAFF cache (≈ 7 сек AM1-BCC) | ✅ |
-| `10_genipin_stability_md.py` | Повна стабільність-MD: protein + FAD + N×genipin → backbone RMSD vs frame 0 | ⏳ TODO: run + analyze |
+| `10_genipin_stability_md.py` | Повна стабільність-MD: protein + FAD + N×genipin → backbone RMSD vs frame 0 | ✅ Passed (2026-05-24, 100 ps run, backbone RMSD `0.951 ± 0.200 Å`, max `1.142 Å` ≪ 3 Å поріг → **STABLE**) |
 | `pyscf_os_fad_homo_lumo.ipynb` | L3 DFT (наступний рівень) | ⏳ L3 |
 | `cantera_psbma_diffusion.py` | L4 кінетика (наступний рівень) | ⏳ L4 |
 

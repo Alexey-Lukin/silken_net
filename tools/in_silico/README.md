@@ -28,12 +28,17 @@ CNC) at 04–09 before the main MD at 10.
 
 ## Why the GAFF detour (script 02 + 03)?
 
-AMBER ff14SB only ships templates for the 20 standard amino acids. The
-moment you call `forcefield.createSystem()` on a topology that still contains
-`FAD` or `GEN` residues, OpenMM aborts with
-`No template found for residue X`. So before any real L2 run you must
-parameterize each ligand once. We do this via the GAFF (General Amber Force
-Field) pipeline shipped in `openmmforcefields`:
+The `amber14-all.xml` bundle we load ships templates for proteins
+(20 amino acids + protonation variants HID/HIE/HIP, CYX, GLH/ASH +
+N-/C-caps), nucleic acids, lipids, sugars, and the standard monatomic
+ions (Na+, Cl-, K+, …). It does **not** ship templates for
+small-molecule cofactors (FAD, NAD, heme, …) or custom organic ligands
+like genipin. The moment `forcefield.createSystem()` walks the topology
+and hits an unknown residue, it raises
+`ValueError: No template found for residue N (FAD)`. So before any real
+L2 run you must parameterize each non-standard residue once. We do this
+via the GAFF (General Amber Force Field) pipeline shipped in
+`openmmforcefields`:
 
 1. RDKit reads the molecule (PDB coords + SMILES bond orders / pure SMILES).
 2. `openff.toolkit.Molecule` wraps it with chemistry-aware metadata.
