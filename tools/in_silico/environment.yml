@@ -1,0 +1,13 @@
+name: silken_md
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - openmm
+  - pdbfixer
+  - mdtraj
+  - matplotlib
+  - numpy
+  - scipy
+  - jupyterlab
+  - pip

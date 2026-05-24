@@ -1,0 +1,28 @@
+# Conda envs should NEVER be committed (multi-GB, machine-specific binaries)
+env/
+.env/
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# MD simulation artifacts (large binary files — output, not source)
+*.dcd
+*.xtc
+*.trr
+*.h5
+*.nc
+*.log
+*.chk
+*.cpt
+
+# Downloaded PDBs / cached structures
+downloads/
+cache/
+
+# Jupyter
+*.nbconvert.ipynb

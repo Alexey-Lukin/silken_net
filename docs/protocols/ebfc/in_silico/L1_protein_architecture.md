@@ -60,10 +60,24 @@ MKNLIPLSLLATTVAARPGSAPRDQAAATAYDYIVIGGGTSGLVVANRLSEDASVSVLVIEAGDSVLNNAQVTNANGYGL
 ## 3. 3D-фолдинг (AlphaFold 3)
 
 - **Інструмент:** AlphaFold 3 Server (DeepMind, registration-gated).
-- **Вхід:** мутована амінокислотна послідовність (600 aa) + **FAD** як native cofactor у multi-entity input.
-- **Вихід:** `.pdb`-структура `dgrGcGDH_AF3.pdb` з прив'язаним FAD-кофактором у активному центрі.
+- **Job ID:** `fold_dgrgcgdh_fad_v1` (job spec — [`alphafold3/fold_dgrgcgdh_fad_v1_job_request.json`](alphafold3/fold_dgrgcgdh_fad_v1_job_request.json)).
+- **Вхід:** мутована амінокислотна послідовність (600 aa) + **FAD** (CCD entry) як native cofactor у multi-entity input. Seed: `1390281012`, `useStructureTemplate: true`.
+- **Вихід (5 ranked models):** mmCIF — [`alphafold3/fold_dgrgcgdh_fad_v1_model_{0..4}.cif`](alphafold3/). Top-ranked **model_0** конвертовано в PDB як канонічний артефакт: [`dgrGcGDH_AF3.pdb`](dgrGcGDH_AF3.pdb) (2 chains, 601 residues, 4584 atoms; chain A = протеїн, chain B = FAD).
 
-> Розташувати фактичний PDB у цій же папці після експорту з AF3 Server: `docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb` (відповідає очікуваному артефакту з [`01_03 §3.4`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
+**AF3 confidence metrics (model_0, top-ranked):**
+
+| Metric | Value | Interpretation |
+|---|---|---|
+| **ranking_score** | **1.00** | Top-1 серед 5 моделей |
+| **ipTM** (interface predicted TM) | **0.99** | Protein↔FAD interface майже ідеально передбачений |
+| **pTM** (predicted TM-score) | **0.93** | Глобальний fold — high-confidence |
+| **chain_pTM (protein)** | 0.92 | Глобуля протеїну стабільна |
+| **chain_pTM (FAD)** | 0.84 | Ліганд orientation — high-confidence |
+| **fraction_disordered** | 0.04 | 4% дисордерованих ділянок (терміни/loops) |
+| **has_clash** | 0.0 | Стеричних конфліктів немає |
+| **num_recycles** | 10 | Повний recycling cycle |
+
+> Bulk intermediates (msas 49MB, full_data_*.json 17.5MB, templates) **не комітимо** — regenerable з `job_request.json` за допомогою AlphaFold 3 Server.
 
 ## 4. Вимірювання глибини залягання FAD (UCSF ChimeraX)
 
@@ -114,11 +128,14 @@ distance #1:FAD@N5 #1:90@OH
 |---|---|---|
 | `deglycosylate.rb` | Ruby-скрипт sliding-window для імітації PNGase F | ✅ Закомічено |
 | `L1_protein_architecture.md` | Цей документ | ✅ |
-| `dgrGcGDH_AF3.pdb` | Output AlphaFold 3 (deglycosylated GcGDH + FAD) | ⏳ Покласти після експорту |
+| `dgrGcGDH_AF3.pdb` | Output AlphaFold 3 (deglycosylated GcGDH + FAD), конвертовано з `alphafold3/fold_dgrgcgdh_fad_v1_model_0.cif` | ✅ |
+| `alphafold3/` | AF3 raw output: 5 ranked CIF моделей, 5 summary JSON, job request, terms of use | ✅ |
 | `chimerax_distance_session.cxs` | ChimeraX session з вимірюванням 15.998 Å | ⏳ Опційно |
-| `openmm_genipin_stability.py` | L2 MD-скрипт (наступний рівень) | ⏳ L2 |
+| `openmm_genipin_stability.py` | L2 MD-скрипт (повна симуляція з матрицею) | ⏳ L2 (потребує parameterization FAD/genipin через GAFF/OpenFF) |
 | `pyscf_os_fad_homo_lumo.ipynb` | L3 DFT (наступний рівень) | ⏳ L3 |
 | `cantera_psbma_diffusion.py` | L4 кінетика (наступний рівень) | ⏳ L4 |
+
+**Робочі скрипти L2 (engine):** живуть у [`tools/in_silico/scripts/`](../../../../tools/in_silico/) — там же `environment.yml` для conda env `silken_md`.
 
 ---
 
