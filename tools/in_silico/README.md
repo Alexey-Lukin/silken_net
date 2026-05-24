@@ -52,6 +52,14 @@ The cache file is committed (small, deterministic). MD trajectories under
 
 ---
 
+## CI gate
+
+`.github/workflows/in_silico_smoke.yml` runs `01_smoke_test_water_box.py` on
+every PR that touches `tools/in_silico/**` or `docs/protocols/ebfc/in_silico/**`,
+with `SILKEN_FORCE_PLATFORM=CPU` so the run is deterministic on hosted
+runners. The conda env is cached by `mamba-org/setup-micromamba@v2` (keyed
+on `environment.yml`), so cold runs take ~10 min, cached runs ~3 min.
+
 ## Quickstart (one-time setup)
 
 ```bash

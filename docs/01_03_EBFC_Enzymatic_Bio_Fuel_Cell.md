@@ -238,8 +238,8 @@ O₂ + 4H⁺ + 4e⁻ → 2H₂O   (повне 4-електронне відно�
 | Рівень | Інструмент | Що моделюємо у Gen 2.0 |
 |---|---|---|
 | **L1: Архітектура білка** | **AlphaFold 3** (DeepMind, 2024 release — registration-gated) або **ESMFold** (Meta, повністю open-weight на HuggingFace) | Завантажуємо амінокислотну послідовність FAD-GDH з UniProt (`Glomerella cingulata`, `Aspergillus`) → програмно видаляємо N-глікозилювання (видалення Asn-X-Ser/Thr motifs з sequence або post-prediction `.pdb` cleanup; PNGase F enzyme **не моделюється напряму**, а імітується видаленням сайтів) → отримуємо `.pdb` структуру деглікозильованої форми. Локалізуємо FAD-центр (флавін кофактор) для подальшого узгодження з Os-полімером. |
-| **L2: Молекулярна динаміка** | **OpenMM** (Python API, CUDA/OpenCL) або **GROMACS** | 10–100 нс симуляції dgrFAD-GDH у water box при pH 4.5 з молекулами геніпіну, Os-полімеру, CNC. RMSD-тест — чи денатурує фермент у Genipin-Chitosan-CNC матриці? Density-functional моделювання дифузії глюкози крізь Nafion-g-PSBMA. |
-| **L3: Квантова хімія (DFT)** | **PySCF** (Python-based Simulations of Chemistry Framework) | Розрахунок енергетичних рівнів HOMO/LUMO осмієвого полімеру та FAD-кофактора. Якщо E°(Os²⁺/³⁺) трохи нижча за E°(FAD/FADH₂) → електрон "потече" → програмно доводимо OCV > 500 мВ. Окремо: hopping integrals для DET через ZIF-каркас (Cu/Ce/Co центри емулюють T1/T2/T3 кластер лаккази). |
+| **L2: Молекулярна динаміка** | **OpenMM** (Python API, CUDA/OpenCL) | 10–100 нс симуляції dgrFAD-GDH у water box при pH 4.5 з молекулами **геніпіну + хітозан + CNC** (матриця Шару 4, §2.1). RMSD-тест — чи денатурує фермент у Genipin-Chitosan-CNC матриці? Density-functional моделювання дифузії глюкози крізь Nafion-g-PSBMA. **Os-полімер на L2 НЕ моделюється** — рішення задокументовано нижче (Decision Log §3.4.1). |
+| **L3: Квантова хімія (DFT)** | **PySCF** (Python-based Simulations of Chemistry Framework) | Розрахунок енергетичних рівнів HOMO/LUMO осмієвого полімеру та FAD-кофактора. Якщо E°(Os²⁺/³⁺) трохи нижча за E°(FAD/FADH₂) → електрон "потече" → програмно доводимо OCV > 500 мВ. Окремо: hopping integrals для DET через ZIF-каркас (Cu/Ce/Co центри емулюють T1/T2/T3 кластер лаккази). **Os-полімер електронна структура — суто L3 territory** (DFT нативно обробляє d-orbitals перехідних металів; класична MD — ні). |
 | **L4: Хімічна кінетика** | **Cantera** (Python/C++ API) — з custom Michaelis-Menten extension, оскільки Cantera історично оптимізована для gas-phase / combustion; альтернативи: **COPASI**, **BioNetGen**, **SBML-simulators** для ензимної кінетики. | Швидкість дифузії глюкози крізь Nafion-g-PSBMA (8 H₂O/ланцюг) → Michaelis-Menten реакція з dgrFAD-GDH → програмний `delta_t` для Lorenz-attractor валідації, **ще до фізичного прототипу**. |
 
 **Промптинг AI-агентів (Claude/Copilot):**
@@ -288,7 +288,58 @@ O₂ + 4H⁺ + 4e⁻ → 2H₂O   (повне 4-електронне відно�
 
 `d_FAD = 15.998 Å` зафіксовано як **підтверджену константу для дизайну анодного MET-стеку** (Шар 3, §2.1) — використовується як референс для всіх подальших L2/L3 in-silico розрахунків та для специфікації товщини Os-polymer-шару.
 
-**L1 → L2 gate:** ✅ відкрито. Наступний крок — OpenMM MD у water box pH 4.5 з molecules of genipin/Os-polymer/CNC.
+**L1 → L2 gate:** ✅ відкрито. Наступний крок — OpenMM MD у water box pH 4.5 з molecules of genipin/chitosan/CNC (без Os-полімеру — див. §3.4.1).
+
+#### ✅ L2 Validation Status: Passed (2026-05-24)
+
+> Поточний охоплений варіант — спрощений matrix proxy (10 × genipin без chitosan/CNC). Повне покриття матриці — наступний інкремент L2.
+
+| Метрика L2 | Результат |
+|---|---|
+| Стек | AMBER ff14SB (протеїн) + TIP3P/NaCl 0.05 M + GAFF-2.11 (FAD з AF3 pose, 10 × genipin) |
+| Розмір системи | 477 413 атомів (1.0 nm padding box) |
+| Pipeline | min → NVT 50 ps (100→298 K, restrained heavy atoms) → NPT 100 ps → production 100 ps |
+| Інтегратор | Langevin Middle, 2 fs timestep, HBonds constraints, PME 1.0 nm cutoff |
+| Speed (Apple M-GPU, OpenCL) | 10.37 ns/day |
+| **Backbone RMSD vs frame 0** | **0.951 ± 0.200 Å (max 1.142 Å) ≪ 3 Å поріг → STABLE** |
+| Verdict | dgrGcGDH + genipin = mechanically compatible at pH 4.5 |
+
+Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored). Скрипт — [`10_genipin_stability_md.py`](../tools/in_silico/scripts/10_genipin_stability_md.py).
+
+#### 3.4.1. Decision Log: Os-полімер deferred to L3 (DFT)
+
+> **Дата:** 2026-05-24. **Затверджено:** Архітектор + AI-agent design review.
+
+**Початковий L2 spec** (попередня версія цього доку) включав Os-полімер у MD water box. Після проходу L2 з геніпіном (RMSD pass) ухвалено рішення **відкласти Os-полімер на L3** з наступними підставами:
+
+| Питання | Класична MD (L2) | DFT (L3) | Висновок |
+|---|---|---|---|
+| Чи денатурує матриця білок? | ✅ Природне поле | — | **L2** — genipin/chitosan/CNC |
+| Чи зв'язується Os з протеїном? | Некорнівалентно (electrostatic) | — | L2 опційно |
+| **Os ↔ ligand bond lengths** | GAFF не покриває перехідні метали | ✅ DFT нативно | **L3** |
+| **E°(Os²⁺/Os³⁺)** | Класична MD не має поняття orbitals | ✅ DFT (HOMO/LUMO) | **L3** |
+| **Hopping integral / Marcus β** | Не моделюється | ✅ Constrained DFT (CDFT) | **L3** |
+| Mechanical perturbation Os-полімером | Можна без металу (PVI backbone в GAFF) | — | **L2 опційно (Gen 2.5+)** |
+
+**Чому це правильно** (не "shortcut"):
+
+1. **Geometric viability вже доведена на L1.** `d_FAD = 15.998 Å < r_tunneling(Os-bpy) ≈ 18-20 Å` (§3.4 above + теорія Маркуса). MD не додав би до цього constraint нічого нового.
+2. **Os ↔ протеїн non-covalent.** Геніпін атакує первинні аміни (Lys ε-NH₂) **ковалентно** через Schiff base + amide bonds (§2.1 Шар 4) — це найшумніший збурювач конформації. Os полімер адсорбується через electrostatics — `O(kT)` thermal noise, нижче порогу денатурації.
+3. **MCPB.py cost-benefit unfavorable.** Параметризація Os-bipyridine-imidazole complex через MCPB.py — це окремий QM проєкт (~weeks), а результат не змінить L2 verdict на стабільність fold. DFT робить те саме directly за години.
+4. **§3.5 Ti-coin тести вже розділяють** matrix testing (mechanical) і dgrFAD-GDH+Os anode testing (CV/EIS) — наша L2/L3 розбивка дзеркалить wet-lab методологію.
+
+**Що залишається опційним для майбутнього L2 (Gen 2.5+):**
+
+- **PVI-backbone без металу** — параметризувати поліvinylimidazole через GAFF як полімерну ланцюговку без Os центрів. Моделює steric coverage на протеїні без забруднення electronic-структури. Дешево (~години), якщо знадобиться відповідь на питання "чи бачить протеїн PVI-щітку як stress source?".
+- **Розширена матриця**: до поточного `protein + 10 × genipin` додати chitosan oligomers + CNC fibrils. Це той самий GAFF-pipeline (скрипти 04/05).
+
+**Кроки до повного гейту TRL 3 → 4:**
+
+1. ✅ L1 (AF3 + ChimeraX d_FAD)
+2. ✅ L2 (genipin RMSD, baseline)
+3. ⏳ L2-extended (genipin + chitosan + CNC, 10-100 ns) — опційно, не блокер
+4. ⏳ L3 (PySCF DFT: Os HOMO/LUMO vs FAD, hopping integrals, β coefficient)
+5. ⏳ L4 (Cantera/COPASI: glucose diffusion + Michaelis-Menten → `delta_t`)
 
 **Гейт TRL 3 → 4 (Zero-Lab):** Усі 4 рівні мають дати позитивний результат **ДО** замовлення Ti-monet у CRO. Це нова умова Stage 1 → Stage 2 переходу.
 

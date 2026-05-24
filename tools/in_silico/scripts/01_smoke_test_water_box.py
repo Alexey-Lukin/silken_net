@@ -28,6 +28,7 @@ Run
 """
 from __future__ import annotations
 
+import os
 import sys
 import time
 from pathlib import Path
@@ -57,8 +58,17 @@ def banner(msg: str) -> None:
 def pick_fastest_platform() -> Platform:
     """Pick the fastest available OpenMM platform.
 
-    On Apple Silicon: OpenCL > CPU > Reference. CUDA is Nvidia-only.
+    `SILKEN_FORCE_PLATFORM` (env var) overrides the auto-selection — used by
+    CI to pin "CPU" so the smoke test stays deterministic across runners
+    without GPU drivers. Auto order on a free-form machine: CUDA > OpenCL >
+    CPU > Reference.
     """
+    forced = os.environ.get("SILKEN_FORCE_PLATFORM", "").strip()
+    if forced:
+        try:
+            return Platform.getPlatformByName(forced)
+        except openmm.OpenMMException as e:
+            sys.exit(f"SILKEN_FORCE_PLATFORM='{forced}' is not available: {e}")
     for name in ("CUDA", "OpenCL", "CPU", "Reference"):
         try:
             return Platform.getPlatformByName(name)
