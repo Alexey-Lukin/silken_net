@@ -111,6 +111,8 @@
 > - **Native compatibility** з AlphaFold 3 `.pdb` output та OpenMM MD trajectories (Рівні L1–L4 In Silico pipeline)
 >
 > Спільна Q1-стаття: *"In Silico Design of Long-Lived Enzymatic Bio-Fuel Cells for Tree-Integrated Energy Harvesting"* (Мінаєв B.F. + Архітектор Silken Net + AI-pipeline) — журнали *Journal of Chemical Theory and Computation* (Q1), *Computational and Structural Biotechnology Journal* (Q1).
+>
+> **Поточний статус Pipeline (2026-05-24):** L2 Stability MD ✅ — backbone RMSD 0.95 ± 0.20 Å (max 1.142 Å ≪ 3 Å threshold), GcGDH(deglyco)+FAD+10×genipin стабільний при pH 4.5 у TIP3P/NaCl боксі (477k атомів, 10.37 ns/day, Apple GPU). L3 DFT ⚠️ partial — pipeline PySCF+B3LYP+PCM+Marcus cascade ✅; FAD: HOMO = -5.14 eV, HOMO-LUMO gap = 3.55 eV; Os (NH₃ surrogate): LUMO(Os(III)) = -3.42 eV; raw Koopmans verdict uphill (артефакт: B3LYP -0.64 eV + відсутній π-backbonding від bpy ≈ +1.22 eV); bias-corrected → Δε ≈ +0.14 eV **downhill** — узгоджується з exp. E°(Os)-E°(FAD) = +140 мВ (Cosnier 1999). **Перший конкретний запит до школи Мінаєва:** publication-grade L3 rerun — full [Os(bpy)₂(Im)Cl]⁺ геометрія + ωB97X-D/def2-TZVP + ΔSCF + RRHO для definitive in-silico verdict.
 
 **Додатковий запит — біоміметичні покриття та інтерфазна хімія (Batch Integration Session 3):**
 - DFT-моделювання адсорбції **Zn-HAp** та **PEDOT:PSS** кластерів на TiO₂-поверхні Ti-6Al-4V: енергії зв'язування, заряд-перенос на межі покриття/метал, вплив на роботу EBFC.
@@ -261,6 +263,17 @@
 **Мета:** Квантово-хімічне обґрунтування механізму генерації струму на двох біоелектродах тризонного анкера Gen 2.0 ([`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK) §1):
 - **Анод (Zone 1) — одношарова FAD-GDH архітектура (REWRITTEN 2026-05-22):** `fMWCNT + Os-полімер + dgrFAD-GDH` (деглікозильована FAD-GDH) у захисній матриці **Genipin-Chitosan-CNC**; зовнішня **Nafion-g-PSBMA** цвітеріонна мембрана. Каталаза не потрібна (FAD-GDH не виробляє H₂O₂).
 - **Катод (Zone 3)** — DET-стек **Laccase + ZIF-nanozyme** (nCoCuCeZIF/Lac або nCuCeAuZIF/Lac) на межі кори/повітря.
+
+**🤖 Поточний статус Zero-Lab Pipeline (2026-05-24):**
+
+| Рівень | Задача | Статус | Ключовий результат |
+|--------|--------|--------|--------------------|
+| **L1** | Protein architecture (AlphaFold 3) | ✅ Pass | dgrGcGDH+FAD fold, ipTM=0.99, pTM=0.93; d\_FAD = 15.998 Å < tunneling range ~18–20 Å |
+| **L2** | Stability MD (OpenMM 8.5.1, TIP3P, 477k atoms) | ✅ Pass | Backbone RMSD 0.95 ± 0.20 Å (max 1.142 Å ≪ 3 Å); GcGDH(deglyco)+FAD+10×genipin стабільний при pH 4.5; 10.37 ns/day (Apple GPU, OpenCL) |
+| **L3** | DFT frontier orbitals (PySCF B3LYP+PCM) | ⚠️ Partial | Pipeline ✅; HOMO(FADH₂) = −5.14 eV; LUMO(Os(III), NH₃ surrogate) = −3.42 eV; raw Koopmans → UPHILL (артефакт методу); bias-corrected → Δε ≈ **+0.14 eV downhill** ≡ exp. +140 мВ (Cosnier 1999). Definitive rerun: full bpy/Im + ωB97X-D/def2-TZVP + ΔSCF |
+| **L4** | Kinetics / hopping integrals (CDFT) | ⏳ Not started | Marcus β coefficient + ET rate constants |
+
+> **Для pitch Мінаєву:** Zero-Lab pipeline вже запущено і дає числа, зіставні з публікованим CV (+140 мВ). Школа Мінаєва входить на готову Python-керовану інфраструктуру (PySCF + B3LYP + PCM + Marcus cascade diagram). Перший конкретний запит — publication-grade L3 rerun (full [Os(bpy)₂(Im)Cl]⁺ + ωB97X-D/def2-TZVP + ΔSCF + RRHO) → готова Q1-стаття. Деталі → [`L3_quantum_chemistry.md`](../protocols/ebfc/in_silico/L3_quantum_chemistry.md)
 
 **Кроки:**
 1. **Моделювання одношарового анодного стеку (Gen 2.0 priority):** DFT/TDDFT розрахунок (a) енергій зв'язування **деглікозильованої FAD-GDH** з Os²⁺/Os³⁺ медіатором на fMWCNT — вплив видалення глікозидних ланцюгів на k_s; (b) узгодження редокс-потенціалів за теорією Маркуса; (c) діелектричні властивості геніпін-зшитого хітозану з CNC-нанокристалами; (d) термодинаміка PSBMA-шару — гідратаційний бар'єр проти абієтинової кислоти.
