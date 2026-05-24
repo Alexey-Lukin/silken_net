@@ -92,3 +92,14 @@ contracts/broadcast/
 
 coverage/
 .gitnexus
+
+# Firmware host-test binaries — build artifacts produced by `make -C firmware/test`.
+# Platform-specific (macOS Mach-O vs Linux ELF) — CI rebuilds them per run.
+# The .c source files are tracked; the compiled outputs are not.
+/firmware/test/test_queen
+/firmware/test/test_soldier
+/firmware/test/test_bio_contract
+/firmware/test/test_tinyml
+/firmware/test/test_encryption
+/firmware/test/test_seed_derivation
+/firmware/test/test_ccm
