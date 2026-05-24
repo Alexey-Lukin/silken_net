@@ -69,6 +69,31 @@ module SilkenNet
       docstring: "Panic packets rejected as replay via SEC.10 Frame Counter SETNX nonce"
     )
 
+    # [FW.2] AES-128-CCM packet decrypted and MIC verified successfully.
+    # Should track ~1:1 with TELEMETRY_PROCESSED_TOTAL on the CCM code path
+    # once `TELEMETRY_CCM_ENABLED=true` ships fleet-wide.
+    TELEMETRY_CCM_DECRYPT_OK_TOTAL = REGISTRY.counter(
+      :silkennet_telemetry_ccm_decrypt_ok_total,
+      docstring: "FW.2 CCM packets successfully decrypted with valid MIC"
+    )
+
+    # [FW.2] CCM MIC verification failed — wrong key, tampered ciphertext,
+    # mutilated AAD, or wrong DID/FrameCounter pairing. Any nonzero rate
+    # in production is a security signal worth paging on.
+    TELEMETRY_CCM_MIC_FAIL_TOTAL = REGISTRY.counter(
+      :silkennet_telemetry_ccm_mic_fail_total,
+      docstring: "FW.2 CCM packets rejected due to MIC verification failure"
+    )
+
+    # [FW.2] Per-DID Frame Counter not strictly monotonic — either replay
+    # of an already-seen FC or out-of-order delivery beyond what mesh
+    # buffering should produce. Grafana alert: rising rate > 0.1% of all
+    # CCM packets/min → attacker injection or device clock reset event.
+    TELEMETRY_CCM_FC_REPLAY_REJECTED_TOTAL = REGISTRY.counter(
+      :silkennet_telemetry_ccm_fc_replay_rejected_total,
+      docstring: "FW.2 CCM packets rejected because per-DID Frame Counter was not strictly increasing"
+    )
+
     # -----------------------------------------------------------------------
     # ⚙️ SIDEKIQ QUEUE METRICS (Gauges — sampled at scrape time)
     # -----------------------------------------------------------------------

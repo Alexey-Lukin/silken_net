@@ -1,8 +1,18 @@
 # frozen_string_literal: true
 
 class TelemetryUnpackerService < ApplicationService
-  # [DID:4][RSSI:1][Payload:16] = 21 байт
-  CHUNK_SIZE = 21
+  # [DID:4][RSSI:1][Payload:16] = 21 байт — ECB transitional format (pre-FW.2)
+  CHUNK_SIZE     = 21
+  ECB_CHUNK_SIZE = 21
+
+  # [FW.2] CCM 25-byte chunk = Queen-prepended RSSI(1) + 24B LoRa air format
+  # ([DID:4][FC:4 BE] AAD + [ciphertext:8] + [MIC:8]).
+  # Enabled via ENV `TELEMETRY_CCM_ENABLED=true`; defaults to ECB so the
+  # production wire format is unchanged until firmware ships CCM emission.
+  CCM_CHUNK_SIZE             = 25
+  CCM_SENSOR_PAYLOAD_FORMAT  = "n c C n C C" # Vcap(2BE) Temp(i8) Acoustic(u8) dt(2BE) Status(u8) MeshCtrl(u8)
+  CCM_FC_NONCE_TTL           = 25.hours
+  CCM_FC_NONCE_KEY_PREFIX    = "silken:ccm:fc"
 
   # --- КОНСТАНТИ ЕВОЛЮЦІЇ (The Immutable Offsets) ---
   # Формат: DID(N), Vcap(n), Temp(c), Acoustic(C), Metabolism(n), Status(C), TTL(C), Pad(a4)
@@ -54,15 +64,19 @@ class TelemetryUnpackerService < ApplicationService
   def perform
     return if @binary_batch.blank?
 
-    # Розрізаємо бінарний моноліт на 21-байтні чанки
-    chunks = @binary_batch.b.scan(/.{1,#{CHUNK_SIZE}}/m)
+    chunk_size = active_chunk_size
+    chunks = @binary_batch.b.scan(/.{1,#{chunk_size}}/m)
 
     # ⚡ [ОПТИМІЗАЦІЯ N+1]: Спершу витягуємо всі DID з батчу
     preload_trees(chunks)
 
     chunks.each do |chunk|
-      next if chunk.bytesize < CHUNK_SIZE
-      process_chunk(chunk)
+      next if chunk.bytesize < chunk_size
+      if ccm_enabled?
+        process_ccm_chunk(chunk)
+      else
+        process_chunk(chunk)
+      end
     end
   end
 
@@ -210,10 +224,144 @@ class TelemetryUnpackerService < ApplicationService
     Rails.logger.error "🛑 [Telemetry Error] DID #{hex_did || 'UNKNOWN'}: #{e.message}\n#{trace}"
   end
 
+  # [FW.2] AES-128-CCM 25-byte chunk path. Activated via
+  # `TELEMETRY_CCM_ENABLED=true`. Chunk layout:
+  #
+  #   [DID:4][RSSI:1][FrameCounter:4 BE][ciphertext:8][MIC:8]
+  #
+  # Queen prepends RSSI(1) to the 24B LoRa air packet — RSSI is NOT
+  # covered by the CCM MIC (it's receiver-side metadata), DID and
+  # FrameCounter form the 8-byte AAD which IS authenticated.
+  def process_ccm_chunk(chunk)
+    raw_did       = chunk[0..3].unpack1("N")
+    hex_did       = format("SNET-%08X", raw_did)
+    actual_rssi   = -chunk[4].unpack1("C")
+    did_bytes     = chunk[0..3]
+    frame_counter = chunk[5..8].unpack1("N")
+    ciphertext    = chunk[9..16]
+    mic           = chunk[17..24]
+
+    # Queen sentinel — see ECB path. In CCM mode the Queen does not
+    # encrypt its own self-telemetry as a fake Soldier (different key
+    # domain). If it ever needs to, route via the dedicated CoAP
+    # endpoint instead. Until then, drop silently.
+    if raw_did.zero?
+      Rails.logger.info "👑 [CCM] Drop Queen sentinel packet on CCM path — use CoAP self-telemetry channel instead."
+      return
+    end
+
+    tree = @trees_cache[hex_did]
+    unless tree
+      Rails.logger.warn "⚠️ [CCM Uplink] DID #{hex_did} не знайдено в реєстрі."
+      SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL.increment
+      return
+    end
+
+    aes_key = tree.hardware_key&.binary_key
+    if aes_key.nil? || aes_key.bytesize != 16
+      Rails.logger.warn "🛑 [CCM] DID #{hex_did}: missing/invalid LoRa AES-128 key (expected 16 bytes, got #{aes_key&.bytesize.inspect})."
+      SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL.increment
+      return
+    end
+
+    begin
+      plaintext = Cryptography::LoraCcm.decrypt(
+        key: aes_key,
+        did_bytes: did_bytes,
+        frame_counter: frame_counter,
+        ciphertext: ciphertext,
+        mic: mic
+      )
+    rescue Cryptography::LoraCcm::AuthError => e
+      Rails.logger.warn "🛡️ [CCM] DID #{hex_did} fc=#{frame_counter} MIC verification failed: #{e.message}"
+      SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL.increment
+      return
+    end
+
+    if frame_counter_replayed?(hex_did, frame_counter)
+      Rails.logger.warn "🛡️ [FW.2] DID #{hex_did}: frame_counter=#{frame_counter} already seen within #{CCM_FC_NONCE_TTL.inspect} window."
+      SilkenNet::Metrics::TELEMETRY_CCM_FC_REPLAY_REJECTED_TOTAL.increment
+      return
+    end
+
+    SilkenNet::Metrics::TELEMETRY_CCM_DECRYPT_OK_TOTAL.increment
+
+    sensor   = plaintext.unpack(CCM_SENSOR_PAYLOAD_FORMAT)
+    vcap_mv, temp_c, acoustic, delta_t_s, status_byte, mesh_ctrl = sensor
+
+    unless SAFE_VOLTAGE_RANGE.cover?(vcap_mv) && SAFE_TEMP_RANGE.cover?(temp_c)
+      Rails.logger.warn "📡 [CCM Sensor Noise] DID #{hex_did}: vcap=#{vcap_mv} temp=#{temp_c} — out of physical bounds."
+      SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL.increment
+      return
+    end
+
+    calibration = tree.device_calibration || tree.build_device_calibration
+
+    # mesh_ctrl bitfield = [ttl:4 (high nibble) | fw_version_epoch_nibble:4 (low nibble)].
+    # 4-bit version nibble is an OTA-managed epoch stamp; full
+    # firmware_version_id reconstruction needs OTA epoch config which is
+    # not landed yet — record the nibble verbatim and skip the
+    # check_firmware_mismatch! comparison on the CCM path.
+    mesh_ttl     = (mesh_ctrl >> 4) & 0x0F
+    fw_nibble    = mesh_ctrl & 0x0F
+
+    log_attributes = {
+      queen_uid: @gateway&.uid,
+      rssi: actual_rssi,
+      voltage_mv: calibration.normalize_voltage(vcap_mv),
+      temperature_c: calibration.normalize_temperature(temp_c),
+      acoustic_events: acoustic,
+      metabolism_s: delta_t_s,
+      growth_points: (status_byte & 0x1F) * 2,
+      mesh_ttl: mesh_ttl,
+      firmware_version_id: (fw_nibble.positive? ? fw_nibble : nil),
+      bio_status: interpret_status((status_byte >> 5) & 0x03)
+    }
+
+    if acoustic == 255
+      SilkenNet::Metrics::TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL.increment
+    end
+
+    server_z, lorenz_xyz, cold_start = compute_server_z(tree, log_attributes)
+    log_attributes[:z_value]         = server_z
+    log_attributes[:lorenz_state_x]  = lorenz_xyz[0]
+    log_attributes[:lorenz_state_y]  = lorenz_xyz[1]
+    log_attributes[:lorenz_state_z]  = lorenz_xyz[2]
+    log_attributes[:cold_start_flag] = cold_start
+
+    check_z_divergence!(tree, log_attributes)
+    commit_telemetry(tree, log_attributes)
+
+  rescue MissingLorenzSeedError
+    raise
+  rescue StandardError => e
+    trace = e.backtrace.first(5).join("\n")
+    Rails.logger.error "🛑 [CCM Telemetry Error] DID #{hex_did || 'UNKNOWN'}: #{e.message}\n#{trace}"
+  end
+
   def valid_sensor_data?(data)
     voltage = data[1]
     temp = data[2]
     SAFE_VOLTAGE_RANGE.cover?(voltage) && SAFE_TEMP_RANGE.cover?(temp)
+  end
+
+  # [FW.2] Per-DID Frame Counter replay guard. Same SETNX pattern as the
+  # SEC.10 panic counter — reject exact FC repeats inside a 25h window.
+  # Firmware emits monotonic FC (`RTC_BKP_DR2`), so within the TTL a
+  # duplicate means either LoRa mesh retransmission (benign, but we drop
+  # to keep tokenomics idempotent) or an active replay attack.
+  def frame_counter_replayed?(hex_did, frame_counter)
+    nonce_key = "#{CCM_FC_NONCE_KEY_PREFIX}:#{hex_did}:#{frame_counter}"
+    inserted = Rails.cache.write(nonce_key, "1", expires_in: CCM_FC_NONCE_TTL, unless_exist: true)
+    !inserted
+  end
+
+  def ccm_enabled?
+    ENV["TELEMETRY_CCM_ENABLED"].to_s.downcase == "true"
+  end
+
+  def active_chunk_size
+    ccm_enabled? ? CCM_CHUNK_SIZE : ECB_CHUNK_SIZE
   end
 
   # [SEC.10] Panic Frame Counter anti-replay. Atomic SETNX через Rails.cache

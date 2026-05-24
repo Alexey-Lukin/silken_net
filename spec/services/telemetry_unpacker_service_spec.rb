@@ -1114,4 +1114,153 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         .not_to change { tree.reload.firmware_update_status }
     end
   end
+
+  # [FW.2] AES-128-CCM 25-byte chunk path, gated on TELEMETRY_CCM_ENABLED=true.
+  # Wire format produced by Queen after receiving a 24B CCM packet on LoRa:
+  #
+  #   [DID:4][RSSI:1][FrameCounter:4 BE][ciphertext:8][MIC:8]
+  #
+  # Defaults stay on the 21B ECB path until firmware ships CCM emission.
+  describe "FW.2 CCM 25-byte path [TELEMETRY_CCM_ENABLED=true]" do
+    let(:lora_key_hex) { SecureRandom.hex(16).upcase }
+    let(:lora_key_bin) { [ lora_key_hex ].pack("H*") }
+
+    before do
+      # Re-provision the tree's HardwareKey with a Tree-shape AES-128 key
+      # so binary_key returns exactly 16 bytes (matches firmware HKDF output).
+      hardware_key.update!(aes_key_hex: lora_key_hex)
+      Rails.cache.clear
+      ENV["TELEMETRY_CCM_ENABLED"] = "true"
+      allow(SilkenNet::Metrics::TELEMETRY_CCM_DECRYPT_OK_TOTAL).to receive(:increment)
+      allow(SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL).to receive(:increment)
+      allow(SilkenNet::Metrics::TELEMETRY_CCM_FC_REPLAY_REJECTED_TOTAL).to receive(:increment)
+    end
+
+    after { ENV.delete("TELEMETRY_CCM_ENABLED") }
+
+    # Helper: build a valid CCM 25-byte chunk by encrypting fresh sensor
+    # bytes with the tree's LoRa AES-128 key — exact contract Soldier
+    # firmware will produce via HAL_CRYPEx_AESCCM_Encrypt.
+    def build_ccm_chunk(rssi:, vcap:, temp:, acoustic:, dt:, status:, ttl:, fw_nibble: 0, fc: 1,
+                        did_hex_arg: did_hex, key: lora_key_bin)
+      did_int    = did_hex_arg.to_i(16)
+      did_bytes  = [ did_int ].pack("N")
+      mesh_ctrl  = ((ttl & 0x0F) << 4) | (fw_nibble & 0x0F)
+      plaintext  = [ vcap, temp, acoustic, dt, status, mesh_ctrl ].pack("n c C n C C")
+      ct, mic = Cryptography::LoraCcm.encrypt(
+        key: key, did_bytes: did_bytes, frame_counter: fc, plaintext: plaintext
+      )
+      did_bytes + [ -rssi ].pack("C") + [ fc ].pack("N") + ct + mic
+    end
+
+    it "decrypts a 25-byte CCM chunk and creates a telemetry log" do
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fc: 42)
+
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+
+      log = TelemetryLog.last
+      expect(log.tree).to eq(tree)
+      expect(log.voltage_mv).to eq(3500)
+      expect(log.temperature_c).to eq(25.0)
+      expect(log.acoustic_events).to eq(5)
+      expect(log.metabolism_s).to eq(100)
+      expect(log.rssi).to eq(-70)
+      expect(log.mesh_ttl).to eq(3)
+      expect(SilkenNet::Metrics::TELEMETRY_CCM_DECRYPT_OK_TOTAL).to have_received(:increment)
+      expect(SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL).not_to have_received(:increment)
+    end
+
+    it "rejects a chunk with a tampered ciphertext byte" do
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fc: 43)
+      tampered = chunk.dup
+      tampered.setbyte(10, tampered.getbyte(10) ^ 0x01)
+
+      expect { described_class.call(tampered) }.not_to change(TelemetryLog, :count)
+      expect(SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL).to have_received(:increment).once
+    end
+
+    it "rejects a chunk with a tampered MIC" do
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fc: 44)
+      tampered = chunk.dup
+      tampered.setbyte(20, tampered.getbyte(20) ^ 0x80)
+
+      expect { described_class.call(tampered) }.not_to change(TelemetryLog, :count)
+      expect(SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL).to have_received(:increment).once
+    end
+
+    it "rejects a replayed frame counter for the same DID" do
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fc: 100)
+
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      # Same chunk → same FC → SETNX collision → reject.
+      expect { described_class.call(chunk) }.not_to change(TelemetryLog, :count)
+      expect(SilkenNet::Metrics::TELEMETRY_CCM_FC_REPLAY_REJECTED_TOTAL)
+        .to have_received(:increment).once
+    end
+
+    it "accepts the same frame counter from a different DID (nonce key scoped per-DID)" do
+      other_did_hex = "0000BEEF"
+      other_extracted = format("SNET-%08X", other_did_hex.to_i(16))
+      other_tree = create(:tree, did: other_extracted)
+      other_tree.create_device_calibration!
+      other_key_hex = SecureRandom.hex(16).upcase
+      HardwareKey.create!(
+        device_uid: other_extracted,
+        aes_key_hex: other_key_hex,
+        lorenz_seed_hex: SecureRandom.hex(32).upcase
+      )
+
+      c1 = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                           dt: 100, status: 0, ttl: 3, fc: 7)
+      c2 = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                           dt: 100, status: 0, ttl: 3, fc: 7,
+                           did_hex_arg: other_did_hex,
+                           key: [ other_key_hex ].pack("H*"))
+
+      expect { described_class.call(c1) }.to change(TelemetryLog, :count).by(1)
+      expect { described_class.call(c2) }.to change(TelemetryLog, :count).by(1)
+      expect(SilkenNet::Metrics::TELEMETRY_CCM_FC_REPLAY_REJECTED_TOTAL).not_to have_received(:increment)
+    end
+
+    it "drops the Queen-sentinel CCM packet (DID=0) without raising or committing a log" do
+      # CCM path does not support Queen self-telemetry — see process_ccm_chunk.
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fc: 1,
+                              did_hex_arg: "00000000",
+                              key: ("\x00".b * 16))
+
+      expect { described_class.call(chunk) }.not_to change(TelemetryLog, :count)
+      expect(SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL).not_to have_received(:increment)
+    end
+
+    it "skips a chunk shorter than 25 bytes" do
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fc: 1)
+      expect { described_class.call(chunk[0..23]) }.not_to change(TelemetryLog, :count)
+    end
+
+    it "rejects sensor data outside the safe voltage range (post-decrypt sanity check)" do
+      chunk = build_ccm_chunk(rssi: -70, vcap: 5500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fc: 50)
+      expect { described_class.call(chunk) }.not_to change(TelemetryLog, :count)
+    end
+
+    it "credits growth_points × 2 the same way as the 21B path" do
+      # Wire status_byte = 10 → growth_points nibble = 10 → stored gp = 20.
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 10, ttl: 3, fc: 200)
+      expect { described_class.call(chunk) }.to change { tree.wallet.reload.balance }.by(20)
+    end
+
+    it "falls back to the 21B ECB path when the feature flag is unset" do
+      ENV.delete("TELEMETRY_CCM_ENABLED")
+      ecb_chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+      expect { described_class.call(ecb_chunk) }.to change(TelemetryLog, :count).by(1)
+      expect(SilkenNet::Metrics::TELEMETRY_CCM_DECRYPT_OK_TOTAL).not_to have_received(:increment)
+    end
+  end
 end
