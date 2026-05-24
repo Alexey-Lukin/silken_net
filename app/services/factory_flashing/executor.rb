@@ -65,8 +65,21 @@ module FactoryFlashing
 
     # Class-level probe so specs can stub it without violating RSpec/SubjectStub
     # (stubbing the subject under test). Returns true if the binary is in PATH.
+    # Pure-Ruby lookup avoids shelling out (no command injection surface).
     def self.programmer_available?(bin)
-      system("command -v #{bin} >/dev/null 2>&1")
+      return false if bin.nil? || bin.empty?
+
+      if bin.include?(File::SEPARATOR) || (File::ALT_SEPARATOR && bin.include?(File::ALT_SEPARATOR))
+        return File.file?(bin) && File.executable?(bin)
+      end
+
+      exts = ENV["PATHEXT"] ? ENV["PATHEXT"].split(File::PATH_SEPARATOR) : [ "" ]
+      ENV.fetch("PATH", "").split(File::PATH_SEPARATOR).any? do |dir|
+        exts.any? do |ext|
+          candidate = File.join(dir, "#{bin}#{ext}")
+          File.file?(candidate) && File.executable?(candidate)
+        end
+      end
     end
   end
 end
