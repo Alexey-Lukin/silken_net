@@ -295,19 +295,33 @@ O₂ + 4H⁺ + 4e⁻ → 2H₂O   (повне 4-електронне відно�
 
 #### ✅ L2 Validation Status: Passed (2026-05-24)
 
-> Поточний охоплений варіант — спрощений matrix proxy (10 × genipin без chitosan/CNC). Повне покриття матриці — наступний інкремент L2.
+> **L2 baseline:** спрощений matrix proxy (10 × genipin без chitosan/CNC).
 
-| Метрика L2 | Результат |
+| Метрика L2 baseline | Результат |
 |---|---|
 | Стек | AMBER ff14SB (протеїн) + TIP3P/NaCl 0.05 M + GAFF-2.11 (FAD з AF3 pose, 10 × genipin) |
 | Розмір системи | 477 413 атомів (1.0 nm padding box) |
 | Pipeline | min → NVT 50 ps (100→298 K, restrained heavy atoms) → NPT 100 ps → production 100 ps |
-| Інтегратор | Langevin Middle, 2 fs timestep, HBonds constraints, PME 1.0 nm cutoff |
 | Speed (Apple M-GPU, OpenCL) | 10.37 ns/day |
 | **Backbone RMSD vs frame 0** | **0.951 ± 0.200 Å (max 1.142 Å) ≪ 3 Å поріг → STABLE** |
 | Verdict | dgrGcGDH + genipin = mechanically compatible at pH 4.5 |
 
 Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored). Скрипт — [`10_genipin_stability_md.py`](../tools/in_silico/scripts/10_genipin_stability_md.py).
+
+#### ✅ L2-extended Validation Status: Passed (2026-05-25)
+
+> **L2-extended:** повна матриця Gen 2.0 — genipin + chitosan trimer (3×GlcN) + cellobiose (CNC proxy).
+
+| Метрика L2-extended | Результат |
+|---|---|
+| Стек | AMBER ff14SB + TIP3P/NaCl 0.05 M + GAFF-2.11 (FAD + 10×genipin + 5×chitosan trimer + 8×cellobiose) |
+| Розмір системи | 467 417 атомів |
+| Matrix atoms | 975 (10×GEN 270 + 5×CSO 345 + 8×CLB 360) |
+| Speed (Apple M-GPU, OpenCL) | 10.83 ns/day |
+| **Backbone RMSD vs frame 0** | **1.108 ± 0.263 Å (max 1.439 Å) ≪ 3 Å поріг → STABLE** |
+| Verdict | dgrGcGDH + повна матриця Gen 2.0 = mechanically compatible at pH 4.5 |
+
+Скрипти: [`04_parameterize_chitosan.py`](../tools/in_silico/scripts/04_parameterize_chitosan.py), [`05_parameterize_cnc.py`](../tools/in_silico/scripts/05_parameterize_cnc.py), [`11_full_matrix_md.py`](../tools/in_silico/scripts/11_full_matrix_md.py).
 
 #### 3.4.1. Decision Log: Os-полімер deferred to L3 (DFT)
 
@@ -334,13 +348,13 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 **Що залишається опційним для майбутнього L2 (Gen 2.5+):**
 
 - **PVI-backbone без металу** — параметризувати поліvinylimidazole через GAFF як полімерну ланцюговку без Os центрів. Моделює steric coverage на протеїні без забруднення electronic-структури. Дешево (~години), якщо знадобиться відповідь на питання "чи бачить протеїн PVI-щітку як stress source?".
-- **Розширена матриця**: до поточного `protein + 10 × genipin` додати chitosan oligomers + CNC fibrils. Це той самий GAFF-pipeline (скрипти 04/05).
+- ✅ ~~**Розширена матриця**~~: chitosan trimer + cellobiose (CNC proxy) додано (2026-05-25). RMSD 1.108 ± 0.263 Å (max 1.439 Å) — STABLE.
 
 **Кроки до повного гейту TRL 3 → 4:**
 
 1. ✅ L1 (AF3 + ChimeraX d_FAD)
 2. ✅ L2 (genipin RMSD, baseline)
-3. ⏳ L2-extended (genipin + chitosan + CNC, 10-100 ns) — опційно, не блокер
+3. ✅ L2-extended (genipin + chitosan + CNC, 100 ps, 2026-05-25) — RMSD 1.11 Å ≪ 3 Å
 4. 🟢 L3 strong partial pass (Pipeline ✅, FAD ✅, **Os full [Os(bpy)₂(1-MeIm)Cl] ✅** (2026-05-25): π-backbonding +0.81 eV → LUMO(Os(III)) = -4.23 eV. Raw Δε = -0.91 eV (uphill, B3LYP HOMO bias); corrected ≈ -0.07 eV — within 0.14 eV of exp. Publication-grade: ωB97X-D + geom opt. Деталі → [`L3_quantum_chemistry.md`](protocols/ebfc/in_silico/L3_quantum_chemistry.md))
 5. ⏳ L4 (Cantera/COPASI: glucose diffusion + Michaelis-Menten → `delta_t`)
 
