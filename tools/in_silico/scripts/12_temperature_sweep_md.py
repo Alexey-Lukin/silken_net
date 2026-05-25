@@ -1,0 +1,340 @@
+#!/usr/bin/env python
+"""
+L2 — temperature sweep: full matrix stability at multiple temperatures.
+
+Purpose (per docs/01_03 §4 "Zero Instrumental Noise")
+------------------------------------------------------
+Verify that the Gen 2.0 matrix (genipin + chitosan + CNC) does not
+denature dgrFAD-GDH across the operational temperature range of a tree
+(-10°C to +40°C). This replaces the Arrhenius extrapolation in L4 with
+first-principles MD data.
+
+Runs the same system as script 11 (full matrix) at 4 temperatures:
+  -10°C (263 K) — winter minimum
+    5°C (278 K) — early spring / late autumn
+   25°C (298 K) — summer baseline (same as script 11)
+   40°C (313 K) — extreme heat
+
+Each run: min → NVT → NPT → 100 ps production → RMSD analysis.
+Results compared as RMSD(T) curve.
+
+Prerequisites: scripts 02-05 (parameterize FAD, genipin, chitosan, CNC).
+
+Run
+---
+    conda activate silken_md
+    python tools/in_silico/scripts/12_temperature_sweep_md.py
+
+    # Single temperature only:
+    SILKEN_SWEEP_TEMPS=278 python tools/in_silico/scripts/12_temperature_sweep_md.py
+
+Expected wall time: ~2.5 hours GPU (4 × ~35 min each at 10 ns/day).
+"""
+from __future__ import annotations
+
+import json
+import os
+import sys
+import time
+from datetime import datetime
+from pathlib import Path
+
+import numpy as np
+import openmm
+from openff.toolkit import Molecule
+from openmm import (
+    LangevinMiddleIntegrator,
+    MonteCarloBarostat,
+    Platform,
+    Vec3,
+)
+from openmm.app import (
+    PME,
+    DCDReporter,
+    ForceField,
+    HBonds,
+    Modeller,
+    PDBFile,
+    Simulation,
+    StateDataReporter,
+)
+from openmm.unit import (
+    atmosphere,
+    femtosecond,
+    kelvin,
+    kilojoule_per_mole,
+    molar,
+    nanometer,
+    picosecond,
+)
+from openmmforcefields.generators import GAFFTemplateGenerator
+from pdbfixer import PDBFixer
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+AF3_PDB = REPO_ROOT / "docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb"
+LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
+FAD_SDF = LIGANDS_DIR / "FAD.sdf"
+GENIPIN_SDF = LIGANDS_DIR / "genipin.sdf"
+CHITOSAN_SDF = LIGANDS_DIR / "chitosan_trimer.sdf"
+CELLOBIOSE_SDF = LIGANDS_DIR / "cellobiose.sdf"
+CACHE_FILE = REPO_ROOT / "tools/in_silico/cache/gaff_cache.json"
+RUNS_DIR = REPO_ROOT / "tools/in_silico/cache/runs"
+
+DEFAULT_TEMPS_K = [263, 278, 298, 313]  # -10, 5, 25, 40 °C
+
+PH = 4.5
+PRESSURE_ATM = 1.0
+IONIC_STRENGTH = 0.05
+WATER_PADDING_NM = 1.0
+TIMESTEP_FS = 2.0
+EQUIL_NVT_PS = 50
+EQUIL_NPT_PS = 100
+PRODUCTION_PS = int(os.environ.get("SILKEN_PRODUCTION_PS", "100"))
+
+N_GENIPIN = 10
+N_CHITOSAN = 5
+N_CELLOBIOSE = 8
+GAFF_VERSION = "gaff-2.11"
+REPORT_EVERY_PS = 1.0
+TRAJECTORY_EVERY_PS = 2.0
+
+
+def banner(msg: str) -> None:
+    print(f"\n[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
+
+
+def ps_to_steps(ps: float) -> int:
+    return int(round(ps * 1000.0 / TIMESTEP_FS))
+
+
+def pick_platform() -> Platform:
+    forced = os.environ.get("SILKEN_FORCE_PLATFORM")
+    if forced:
+        return Platform.getPlatformByName(forced)
+    for name in ("CUDA", "OpenCL", "CPU", "Reference"):
+        try:
+            return Platform.getPlatformByName(name)
+        except openmm.OpenMMException:
+            continue
+    raise RuntimeError("No OpenMM platform available")
+
+
+def positions_to_nm_array(positions) -> np.ndarray:
+    val = positions.value_in_unit(nanometer)
+    try:
+        arr = np.asarray(val, dtype=float)
+        if arr.ndim == 2 and arr.shape[1] == 3:
+            return arr
+    except (TypeError, ValueError):
+        pass
+    return np.array([[v.x, v.y, v.z] for v in val], dtype=float)
+
+
+def place_on_sphere(modeller, template, n_copies, protein_center, shell_radius, rng, offset=0):
+    t = template.to_topology().to_openmm()
+    coords_nm = positions_to_nm_array(template.conformers[0].to_openmm())
+    coords_nm -= coords_nm.mean(axis=0)
+    for i in range(n_copies):
+        idx = i + offset
+        phi = np.pi * (3.0 - np.sqrt(5.0)) * idx
+        y = 1.0 - (idx / max(1, n_copies + offset - 1)) * 2.0 if (n_copies + offset) > 1 else 0.0
+        r = np.sqrt(max(0.0, 1.0 - y * y))
+        unit_vec = np.array([np.cos(phi) * r, y, np.sin(phi) * r])
+        unit_vec += rng.normal(scale=0.02, size=3)
+        translated = coords_nm + (protein_center + unit_vec * shell_radius)
+        new_pos = [Vec3(*xyz) for xyz in translated] * nanometer
+        modeller.add(t, new_pos)
+
+
+def restraint_protein_heavy_atoms(system, positions, topology, k=10.0):
+    restraint = openmm.CustomExternalForce("0.5*k*((x-x0)^2 + (y-y0)^2 + (z-z0)^2)")
+    restraint.addGlobalParameter("k", k * kilojoule_per_mole / nanometer**2)
+    restraint.addPerParticleParameter("x0")
+    restraint.addPerParticleParameter("y0")
+    restraint.addPerParticleParameter("z0")
+    standard_aa = {
+        "ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE",
+        "LEU", "LYS", "MET", "PHE", "PRO", "SER", "THR", "TRP", "TYR", "VAL",
+    }
+    for atom in topology.atoms():
+        if atom.residue.name not in standard_aa:
+            continue
+        if atom.element is None or atom.element.symbol == "H":
+            continue
+        pos = positions[atom.index]
+        restraint.addParticle(atom.index, [pos.x, pos.y, pos.z])
+    system.addForce(restraint)
+    return restraint
+
+
+def run_single_temperature(temp_k: int, platform: Platform) -> dict:
+    """Run full matrix MD at a single temperature. Returns RMSD stats."""
+    temp_c = temp_k - 273
+    banner(f"=== Temperature sweep: {temp_c}°C ({temp_k} K) ===")
+
+    run_id = datetime.now().strftime("%Y%m%dT%H%M%S") + f"_T{temp_k}K"
+    run_dir = RUNS_DIR / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    # Protein
+    fixer = PDBFixer(filename=str(AF3_PDB))
+    fixer.removeHeterogens(keepWater=False)
+    fixer.findMissingResidues()
+    fixer.findMissingAtoms()
+    fixer.addMissingAtoms()
+    fixer.addMissingHydrogens(pH=PH)
+    modeller = Modeller(fixer.topology, fixer.positions)
+
+    # FAD
+    fad = Molecule.from_file(str(FAD_SDF))
+    fad.name = "FAD"
+    modeller.add(fad.to_topology().to_openmm(), fad.conformers[0].to_openmm())
+
+    # Ligands
+    genipin = Molecule.from_file(str(GENIPIN_SDF))
+    genipin.name = "GEN"
+    if not genipin.conformers:
+        genipin.generate_conformers(n_conformers=1)
+    chitosan = Molecule.from_file(str(CHITOSAN_SDF))
+    chitosan.name = "CSO"
+    if not chitosan.conformers:
+        chitosan.generate_conformers(n_conformers=1)
+    cellobiose = Molecule.from_file(str(CELLOBIOSE_SDF))
+    cellobiose.name = "CLB"
+    if not cellobiose.conformers:
+        cellobiose.generate_conformers(n_conformers=1)
+
+    protein_coords_nm = positions_to_nm_array(modeller.positions)
+    protein_center = protein_coords_nm.mean(axis=0)
+    shell_radius = (protein_coords_nm - protein_center).max() + 0.8
+    rng = np.random.default_rng(42)
+
+    place_on_sphere(modeller, genipin, N_GENIPIN, protein_center, shell_radius, rng, 0)
+    place_on_sphere(modeller, chitosan, N_CHITOSAN, protein_center, shell_radius + 0.5, rng, N_GENIPIN)
+    place_on_sphere(modeller, cellobiose, N_CELLOBIOSE, protein_center, shell_radius + 0.3, rng, N_GENIPIN + N_CHITOSAN)
+
+    # Force field
+    forcefield = ForceField("amber14-all.xml", "amber14/tip3pfb.xml")
+    gaff = GAFFTemplateGenerator(
+        molecules=[fad, genipin, chitosan, cellobiose],
+        forcefield=GAFF_VERSION, cache=str(CACHE_FILE),
+    )
+    forcefield.registerTemplateGenerator(gaff.generator)
+
+    # Solvate
+    modeller.addSolvent(forcefield, padding=WATER_PADDING_NM * nanometer,
+                        ionicStrength=IONIC_STRENGTH * molar, positiveIon="Na+", negativeIon="Cl-")
+
+    # System
+    system = forcefield.createSystem(modeller.topology, nonbondedMethod=PME,
+                                     nonbondedCutoff=1.0 * nanometer, constraints=HBonds)
+    integrator = LangevinMiddleIntegrator(temp_k * kelvin, 1.0 / picosecond, TIMESTEP_FS * femtosecond)
+    sim = Simulation(modeller.topology, system, integrator, platform)
+    sim.context.setPositions(modeller.positions)
+
+    with (run_dir / "system.pdb").open("w") as fh:
+        PDBFile.writeFile(modeller.topology, modeller.positions, fh, keepIds=True)
+
+    # Minimise
+    sim.minimizeEnergy(maxIterations=5000)
+
+    # NVT with restraints — heat to target T
+    restraint = restraint_protein_heavy_atoms(system, modeller.positions, modeller.topology, k=10.0)
+    sim.context.reinitialize(preserveState=True)
+    sim.context.setVelocitiesToTemperature(100 * kelvin)
+    start_t = min(100, temp_k)
+    steps_per_ramp = ps_to_steps(EQUIL_NVT_PS) // max(1, (temp_k - start_t) // 5)
+    for t_step in range(start_t, temp_k + 1, 5):
+        sim.integrator.setTemperature(t_step * kelvin)
+        sim.step(steps_per_ramp)
+    sim.context.setParameter("k", 0.0)
+
+    # NPT
+    barostat = MonteCarloBarostat(PRESSURE_ATM * atmosphere, temp_k * kelvin)
+    system.addForce(barostat)
+    sim.context.reinitialize(preserveState=True)
+    sim.step(ps_to_steps(EQUIL_NPT_PS))
+
+    # Production
+    dcd_path = run_dir / "production.dcd"
+    csv_path = run_dir / "production.csv"
+    sim.reporters.append(DCDReporter(str(dcd_path), ps_to_steps(TRAJECTORY_EVERY_PS)))
+    sim.reporters.append(StateDataReporter(str(csv_path), ps_to_steps(REPORT_EVERY_PS),
+                                           step=True, time=True, potentialEnergy=True,
+                                           temperature=True, speed=True))
+    t0 = time.time()
+    sim.step(ps_to_steps(PRODUCTION_PS))
+    dt_prod = time.time() - t0
+    ns_per_day = (PRODUCTION_PS / 1000.0) / (dt_prod / 86400)
+
+    # RMSD
+    import mdtraj as md
+    traj = md.load(str(dcd_path), top=str(run_dir / "system.pdb"))
+    backbone = traj.topology.select("backbone")
+    traj.superpose(traj, frame=0, atom_indices=backbone)
+    rmsd_nm = md.rmsd(traj, traj, frame=0, atom_indices=backbone)
+    rmsd_A = rmsd_nm * 10.0
+
+    result = {
+        "temp_K": temp_k,
+        "temp_C": temp_c,
+        "rmsd_mean_A": round(float(rmsd_A.mean()), 3),
+        "rmsd_std_A": round(float(rmsd_A.std()), 3),
+        "rmsd_max_A": round(float(rmsd_A.max()), 3),
+        "stable": bool(rmsd_A.max() < 3.0),
+        "ns_per_day": round(ns_per_day, 2),
+        "run_dir": str(run_dir.relative_to(REPO_ROOT)),
+    }
+
+    verdict = "✅ STABLE" if result["stable"] else "⚠️ UNSTABLE"
+    print(f"  RMSD: {result['rmsd_mean_A']:.3f} ± {result['rmsd_std_A']:.3f} Å (max {result['rmsd_max_A']:.3f}) → {verdict}")
+    print(f"  Speed: {ns_per_day:.2f} ns/day")
+    return result
+
+
+def main() -> int:
+    for p in (AF3_PDB, FAD_SDF, GENIPIN_SDF, CHITOSAN_SDF, CELLOBIOSE_SDF, CACHE_FILE):
+        if not p.exists():
+            sys.exit(f"Missing prerequisite: {p}\nRun scripts 02-05 first.")
+
+    temps_env = os.environ.get("SILKEN_SWEEP_TEMPS")
+    if temps_env:
+        temps = [int(t) for t in temps_env.split(",")]
+    else:
+        temps = DEFAULT_TEMPS_K
+
+    banner(f"L2 temperature sweep — {len(temps)} temperatures: {temps}")
+    platform = pick_platform()
+    print(f"  Platform: {platform.getName()}")
+
+    results = []
+    for temp_k in temps:
+        result = run_single_temperature(temp_k, platform)
+        results.append(result)
+
+    # Summary
+    banner("Temperature sweep summary")
+    print(f"  {'T(°C)':>6s}  {'RMSD mean':>10s}  {'RMSD max':>9s}  {'Verdict':>10s}")
+    print("  " + "-" * 42)
+    all_stable = True
+    for r in results:
+        v = "STABLE" if r["stable"] else "UNSTABLE"
+        if not r["stable"]:
+            all_stable = False
+        print(f"  {r['temp_C']:>5d}°C  {r['rmsd_mean_A']:>9.3f} Å  {r['rmsd_max_A']:>8.3f} Å  {v:>10s}")
+
+    overall = "✅ All temperatures STABLE" if all_stable else "⚠️ Some temperatures UNSTABLE"
+    print(f"\n  {overall}")
+
+    # Save
+    out_path = REPO_ROOT / "tools/in_silico/cache/kinetics/temperature_sweep.json"
+    with out_path.open("w", encoding="utf-8") as fh:
+        json.dump({"sweep": results, "verdict": overall}, fh, indent=2)
+    print(f"  Wrote {out_path.relative_to(REPO_ROOT)}")
+
+    banner("✅ Temperature sweep complete")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
