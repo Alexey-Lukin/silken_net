@@ -1,0 +1,25 @@
+{
+  "model": "Modified Randles: Rs + [Rct||CPE] + Zw",
+  "parameters": {
+    "Rs_ohm": 100.0,
+    "Rct_ohm": 130.0,
+    "Cdl_uF_cm2": 50.0,
+    "CPE_n": 0.85,
+    "sigma_warburg": 1.7,
+    "j_max_uA_cm2": 494.0,
+    "A_electrode_cm2": 2.0,
+    "D_glucose_cm2_s": 2e-06,
+    "C_glucose_mM": 10.0
+  },
+  "diagnostics": {
+    "semicircle_diameter_ohm": 130.0,
+    "high_freq_intercept_ohm": 100.0,
+    "low_freq_slope": "45\u00b0 Warburg tail",
+    "time_constant_s": 0.013
+  },
+  "predictions_for_ti_coin": {
+    "expected_Rct_range_ohm": "65-260",
+    "expected_Rs_range_ohm": "50-200",
+    "warburg_region_below_Hz": 12.24
+  }
+}

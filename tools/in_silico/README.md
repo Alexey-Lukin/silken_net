@@ -23,6 +23,8 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 03 | `03_parameterize_genipin.py` | SMILES → `genipin.sdf` + cached GAFF params | ~7 s |
 | 04 | `04_parameterize_chitosan.py` | Chitosan trimer (3×GlcN) → `chitosan_trimer.sdf` + GAFF cache | ~43 s |
 | 05 | `05_parameterize_cnc.py` | Cellobiose (CNC proxy) → `cellobiose.sdf` + GAFF cache | ~15 s |
+| 06 | `06_parameterize_ppy.py` | Polypyrrole pentamer (conductive copolymer) → GAFF cache | ~49 s |
+| 07 | `07_parameterize_pvi.py` | Poly(vinylimidazole) trimer (Os-polymer backbone, no metal) → GAFF cache | ~106 s |
 | 10 | `10_genipin_stability_md.py` | Full L2 stability MD: protein + FAD + N×genipin in water, RMSD analysis | varies |
 | 11 | `11_full_matrix_md.py` | L2-extended: protein + FAD + genipin + chitosan + CNC full matrix MD | varies |
 | 20 | `20_dft_lumiflavin.py` | L3 DFT: FAD/FADH₂ frontier orbitals (B3LYP/6-31G(d)+PCM) | ~2 min |
@@ -33,10 +35,10 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 23 | `23_build_zif_clusters.py` | L3b: bimetallic ZIF cluster models for DET hopping pathway | < 1 s |
 | 24 | `24_dft_hopping_integrals.py` | L3b DFT: ΔSCF hopping integrals (Marcus ET rates through ZIF) | ~3-4 h |
 | 30 | `30_kinetics_delta_t.py` | L4: EBFC kinetics → delta_t(glucose, temp) for Lorenz attractor | ~1 s |
+| 31 | `31_eis_impedance_model.py` | L4b: EIS Randles circuit → Nyquist/Bode predictions for Ti-coin tests | ~1 s |
 
-Scripts 06-09 are reserved for future ligand parameterization (Os-polymer,
-additional matrix components). 10-11 are MD runs. 20-range is L3 DFT.
-23-24 are L3b cathode DET. 30-range is L4 kinetics.
+Scripts 08-09 are reserved for future ligands. 10-11 are MD runs.
+20-range is L3 DFT. 23-24 are L3b cathode DET. 30-range is L4 kinetics/EIS.
 
 ## Why the GAFF detour (script 02 + 03)?
 
