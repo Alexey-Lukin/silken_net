@@ -76,6 +76,9 @@ from openmm.unit import (
     picosecond,
 )
 from openmmforcefields.generators import GAFFTemplateGenerator
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
@@ -301,6 +304,10 @@ def main() -> int:
         for r in glc_residues:
             glc_atom_indices.extend([a.index for a in r.atoms])
 
+    expected_glc_atoms = N_GLUCOSE * glucose.n_atoms
+    assert len(glc_atom_indices) == expected_glc_atoms, \
+        f"Glucose atom count mismatch: expected {expected_glc_atoms}, got {len(glc_atom_indices)}"
+
     # Compute center-of-mass for each glucose at each frame
     n_frames = traj.n_frames
     n_atoms_per_glc = glucose.n_atoms
@@ -383,11 +390,6 @@ def main() -> int:
     banner("✅ PSBMA diffusion MD complete")
     return 0
 
-
-# matplotlib import at module level for the plot
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     raise SystemExit(main())

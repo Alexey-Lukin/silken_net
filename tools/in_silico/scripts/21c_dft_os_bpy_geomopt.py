@@ -145,6 +145,8 @@ def main() -> int:
 
     os_n_after = os_n_distances(opt_atoms)
     print(f"  Os-N distances (after opt):  {[f'{d:.3f}' for d in sorted(os_n_after)[:6]]}")
+    if any(d < 1.5 or d > 3.0 for d in os_n_after[:6]):
+        print(f"  ⚠️  WARNING: Unusual Os-N distances — geometry may be a local minimum")
 
     write_xyz(opt_atoms, OUTPUT_XYZ, "cis-[Os(bpy)2(1-MeIm)Cl] — B3LYP/6-31G(d)+LANL2DZ geom opt")
     print(f"  Wrote {OUTPUT_XYZ.relative_to(REPO_ROOT)}")

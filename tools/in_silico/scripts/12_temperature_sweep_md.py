@@ -169,7 +169,7 @@ def restraint_protein_heavy_atoms(system, positions, topology, k=10.0):
 
 def run_single_temperature(temp_k: int, platform: Platform) -> dict:
     """Run full matrix MD at a single temperature. Returns RMSD stats."""
-    temp_c = temp_k - 273
+    temp_c = temp_k - 273.15
     banner(f"=== Temperature sweep: {temp_c}°C ({temp_k} K) ===")
 
     run_id = datetime.now().strftime("%Y%m%dT%H%M%S") + f"_T{temp_k}K"
@@ -243,10 +243,13 @@ def run_single_temperature(temp_k: int, platform: Platform) -> dict:
     sim.context.reinitialize(preserveState=True)
     sim.context.setVelocitiesToTemperature(100 * kelvin)
     start_t = min(100, temp_k)
-    steps_per_ramp = ps_to_steps(EQUIL_NVT_PS) // max(1, (temp_k - start_t) // 5)
-    for t_step in range(start_t, temp_k + 1, 5):
-        sim.integrator.setTemperature(t_step * kelvin)
-        sim.step(steps_per_ramp)
+    if temp_k <= start_t:
+        sim.step(ps_to_steps(EQUIL_NVT_PS))
+    else:
+        steps_per_ramp = ps_to_steps(EQUIL_NVT_PS) // ((temp_k - start_t) // 5)
+        for t_step in range(start_t, temp_k + 1, 5):
+            sim.integrator.setTemperature(t_step * kelvin)
+            sim.step(steps_per_ramp)
     sim.context.setParameter("k", 0.0)
 
     # NPT
