@@ -28,6 +28,8 @@ import sys
 import time
 from pathlib import Path
 
+import os
+
 import numpy as np
 from pyscf import dft, gto
 
@@ -36,9 +38,11 @@ LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
 DFT_CACHE = REPO_ROOT / "tools/in_silico/cache/dft"
 DFT_CACHE.mkdir(parents=True, exist_ok=True)
 
+# charge, spin tuned per cluster to match electron count parity.
+# Odd electron count → odd spin; even → even.
 CLUSTERS = [
     ("cu_co_zif.xyz", "Cu", "Co", "Cu-Co (T1↔ZIF node)", +2, 2),
-    ("co_ce_zif.xyz", "Co", "Ce", "Co-Ce (ZIF node↔vacancy)", +2, 2),
+    ("co_ce_zif.xyz", "Co", "Ce", "Co-Ce (ZIF node↔vacancy)", +2, 3),
     ("ce_graphene.xyz", "Ce", "C", "Ce-graphene (vacancy↔electrode)", +1, 1),
 ]
 
@@ -104,11 +108,15 @@ def marcus_rate(t_ij_eV: float, dG: float = 0.0) -> float:
 
 def main() -> int:
     # Validate metal basis sets are available in this PySCF installation
+    test_spins = {"Cu": 1, "Co": 3, "Ce": 1}
     for element, basis_name in BASIS_METALS.items():
         try:
-            gto.M(atom=[(element, (0, 0, 0))], basis=basis_name, ecp=ECP_METALS[element])
-        except Exception as e:
-            sys.exit(f"Basis/ECP '{basis_name}' not available for {element} in PySCF: {e}")
+            gto.M(atom=[(element, (0, 0, 0))], basis=basis_name,
+                   ecp=ECP_METALS[element], spin=test_spins.get(element, 0))
+        except gto.mole.BasisNotFoundError as e:
+            sys.exit(f"Basis/ECP '{basis_name}' not available for {element}: {e}")
+        except RuntimeError:
+            pass  # electron/spin mismatch OK — we just test basis existence
 
     results = {
         "method": f"ΔSCF {XC_FUNCTIONAL.upper()}/{BASIS_LIGHT}+SDD(metals)",
@@ -117,7 +125,14 @@ def main() -> int:
         "pairs": [],
     }
 
+    # Skip pairs already computed (check for cached partial results)
+    skip_env = os.environ.get("SILKEN_SKIP_PAIRS", "")
+    skip_labels = [s.strip() for s in skip_env.split(",") if s.strip()]
+
     for xyz_name, metal1, metal2, label, charge, spin in CLUSTERS:
+        if any(sk in label for sk in skip_labels):
+            print(f"\n  Skipping {label} (SILKEN_SKIP_PAIRS)")
+            continue
         xyz_path = LIGANDS_DIR / xyz_name
         if not xyz_path.exists():
             sys.exit(f"Missing {xyz_path}. Run script 23 first.")
@@ -126,7 +141,18 @@ def main() -> int:
         atoms = read_xyz(xyz_path)
         print(f"  Atoms: {len(atoms)}, charge={charge}, spin={spin}")
 
-        mol = build_mol(atoms, charge, spin)
+        try:
+            mol = build_mol(atoms, charge, spin)
+        except RuntimeError as e:
+            if "not consistent" in str(e):
+                alt_spin = spin + 1 if spin % 2 == 0 else spin - 1
+                if alt_spin < 0:
+                    alt_spin = spin + 1
+                print(f"  ⚠️  Spin {spin} inconsistent with electron count, trying spin={alt_spin}")
+                mol = build_mol(atoms, charge, alt_spin)
+                spin = alt_spin
+            else:
+                raise
 
         # State A: default SCF (electron delocalized or biased to first metal)
         e_a, conv_a = run_uks(mol, "State A (default)")
