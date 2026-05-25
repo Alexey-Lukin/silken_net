@@ -28,11 +28,15 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 20 | `20_dft_lumiflavin.py` | L3 DFT: FAD/FADH₂ frontier orbitals (B3LYP/6-31G(d)+PCM) | ~2 min |
 | 21 | `21_dft_os_bipy_complex.py` | L3 DFT: Os mediator — NH₃ surrogate (baseline, superseded by 21b) | ~30 s |
 | 21b | `21b_dft_os_bpy_full.py` | L3 DFT: Os mediator — full [Os(bpy)₂(1-MeIm)Cl] with π-backbonding | ~15-30 min |
+| 21c | `21c_dft_os_bpy_geomopt.py` | L3 DFT: Os mediator — geometry optimization via PySCF + geomeTRIC | ~6-12 h |
 | 22 | `22_compare_homo_lumo.py` | L3 aggregator: Marcus cascade diagram + verdict | ~1 s |
+| 23 | `23_build_zif_clusters.py` | L3b: bimetallic ZIF cluster models for DET hopping pathway | < 1 s |
+| 24 | `24_dft_hopping_integrals.py` | L3b DFT: ΔSCF hopping integrals (Marcus ET rates through ZIF) | ~3-4 h |
 | 30 | `30_kinetics_delta_t.py` | L4: EBFC kinetics → delta_t(glucose, temp) for Lorenz attractor | ~1 s |
 
-The numbering leaves room for additional parameterization steps (Os-polymer,
-CNC) at 04–09 before the main MD at 10. L3 DFT scripts are in the 20-range.
+Scripts 06-09 are reserved for future ligand parameterization (Os-polymer,
+additional matrix components). 10-11 are MD runs. 20-range is L3 DFT.
+23-24 are L3b cathode DET. 30-range is L4 kinetics.
 
 ## Why the GAFF detour (script 02 + 03)?
 

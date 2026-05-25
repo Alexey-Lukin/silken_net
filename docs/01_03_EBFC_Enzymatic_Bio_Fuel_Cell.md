@@ -266,11 +266,17 @@ O₂ + 4H⁺ + 4e⁻ → 2H₂O   (повне 4-електронне відно�
 | `tools/in_silico/scripts/01_smoke_test_water_box.py` | Engine sanity check — протеїн + water box, 1000 кроків | L2 |
 | `tools/in_silico/scripts/02_parameterize_fad.py` | AF3 PDB + CCD SMILES → FAD.sdf + GAFF cache (≈ 4 хв) | L2 |
 | `tools/in_silico/scripts/03_parameterize_genipin.py` | SMILES → genipin.sdf + GAFF cache (≈ 7 сек) | L2 |
-| `tools/in_silico/scripts/10_genipin_stability_md.py` | Повна стабільність-MD з протеїном + FAD + N×genipin → backbone RMSD | L2 |
+| `tools/in_silico/scripts/04_parameterize_chitosan.py` | Chitosan trimer (3×GlcN) → GAFF cache | L2 ✅ |
+| `tools/in_silico/scripts/05_parameterize_cnc.py` | Cellobiose (CNC proxy) → GAFF cache | L2 ✅ |
+| `tools/in_silico/scripts/10_genipin_stability_md.py` | L2 baseline: протеїн + FAD + genipin → RMSD | L2 ✅ |
+| `tools/in_silico/scripts/11_full_matrix_md.py` | L2-ext: повна матриця (genipin+chitosan+CNC) → RMSD | L2 ✅ |
 | `tools/in_silico/scripts/20_dft_lumiflavin.py` | FAD/FADH₂ frontier orbitals (B3LYP/6-31G(d)+PCM) | L3 ✅ |
 | `tools/in_silico/scripts/21_dft_os_bipy_complex.py` | Os NH₃ surrogate — superseded by 21b | L3 (superseded) |
 | `tools/in_silico/scripts/21b_dft_os_bpy_full.py` | **Os full [Os(bpy)₂(1-MeIm)Cl]** — π-backbonding included | L3 ✅ |
+| `tools/in_silico/scripts/21c_dft_os_bpy_geomopt.py` | Os complex — DFT geometry optimization (PySCF + geomeTRIC) | L3 ⏳ |
 | `tools/in_silico/scripts/22_compare_homo_lumo.py` | Marcus cascade aggregator + energy_ladder.png | L3 ✅ |
+| `tools/in_silico/scripts/23_build_zif_clusters.py` | Bimetallic ZIF clusters (Cu/Co/Ce) для катодного DET | L3b ✅ |
+| `tools/in_silico/scripts/24_dft_hopping_integrals.py` | ΔSCF hopping integrals через ZIF → Marcus ET rates | L3b ⏳ |
 | `tools/in_silico/scripts/30_kinetics_delta_t.py` | **L4: MM + Arrhenius → delta_t(glucose, temp)** — BASELINE 60s validated | L4 ✅ |
 
 > **Інженерний нюанс L2 (важливо):** Стандартний бандл `amber14-all.xml` (який ми використовуємо) має шаблони для 20 amino acids (із варіантами протонування HID/HIE/HIP, CYX, GLH/ASH + N-/C-caps), нуклеїнових кислот, ліпідів, цукрів і стандартних monoatomic іонів. Але **small-molecule кофакторів** (FAD, NAD, heme, …) і **custom лігандів** (геніпін, Os-полімер, CNC monomer) у бандлі немає → OpenMM падає з `ValueError: No template found for residue N (FAD)` коли `createSystem()` зустрічає такий residue. Тому L2 розбита на два кроки: спочатку lіганди параметризуються через **GAFF-2.11 + AM1-BCC** (скрипти `02_…`, `03_…` — використовують `antechamber`/`sqm` з AmberTools), результат кешується у `gaff_cache.json`. Лише після цього `10_…` запускає повну MD з білком + лігандами + матрицею. Skip cache → ~5 хв на холодний старт; cache hit → секунди. Той самий патерн пізніше повторюється для Os-полімеру та CNC у наступних L2-етапах.

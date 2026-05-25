@@ -649,6 +649,8 @@ _«Дослідження акустичних властивостей пори
 
 **Тип зв'язку:** Комплементарний — ЧНУ: теоретична модель (DFT), ЧМА: in vitro валідація, Silken Net: системні вимоги
 
+> **In-silico baseline для Статті 28 (2026-05-25):** Zero-Lab pipeline L1-L4 PASSED. L1: d_FAD = 15.998 Å (AlphaFold 3). L2: full matrix RMSD 1.11 Å (genipin+chitosan+CNC). L3: LUMO(Os(III)) = -4.23 eV (full bpy DFT), bias-corrected Δε ≈ -0.07 eV. L4: delta_t = 36s (healthy tree) validated vs BASELINE 60s. Publication-grade refinement: ωB97X-D + DFT geom opt (школа Мінаєва).
+
 ---
 
 ### Стаття 29: Токсикологічна Оцінка Ti-6Al-4V Гіроїдних Анкерів для Лісових Кіберфізичних Систем

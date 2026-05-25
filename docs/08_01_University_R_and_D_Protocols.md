@@ -332,7 +332,7 @@ t_lab = t_field × exp(−Ea/k × (1/T_field − 1/T_lab))
 
 | Stage | Що тестується | Орієнтовний термін |
 |---|---|---|
-| **Stage 2 — Ti-coin (Gen 2.0 baseline)** | 10 шт. плоских дисків Ti-6Al-4V 10×10 мм: SLM + EAAE з обов'язковим dehydrogenation bake (`01_02 §1.3 Крок 5b`) → **тестування Gen 2.0 стеку** (`01_03 §2.1`): (a) одношаровий `dgrFAD-GDH + Os polymer` електроактивний шар; (b) `Genipin-Chitosan-CNC` захисна матриця (геніпін cross-linking при pH 4.5); (c) Шар 5 — `Nafion-g-PSBMA` цвітеріонна мембрана (SI-ATRP синтез); катод — `Laccase + nCoCuCeZIF nanozyme` гібрид (DET без AuNPs). CV/EIS у синтетичному ксилемному соку, ICP-MS перевірка вимивання Os/Cu/Ce/Co. **Ключові метрики Gen 2.0:** (1) k_s для dgrFAD-GDH vs повністю глікозильованої — target ≥+30%; (2) H⁺-conductance Nafion-g-PSBMA — target ~45.2 мС/см (vs ~30 мС/см чистого Nafion); (3) UCST winter-lock тест (-10°C → +25°C цикл); (4) Chloride tolerance @ 0.25 М NaCl — target +5% активності катоду; (5) 30-day stability — target >90% активності. **Gen 1.0 negative controls** (опційно для порівняння): GOx, Catalase, глутаральдегід, PEG — підтвердження чому виключено | 4–8 тижнів |
+| **Stage 2 — Ti-coin (Gen 2.0 baseline)** | 10 шт. плоских дисків Ti-6Al-4V 10×10 мм: SLM + EAAE з обов'язковим dehydrogenation bake (`01_02 §1.3 Крок 5b`) → **тестування Gen 2.0 стеку** (`01_03 §2.1`): (a) одношаровий `dgrFAD-GDH + Os polymer` електроактивний шар; (b) `Genipin-Chitosan-CNC` захисна матриця (геніпін cross-linking при pH 4.5); (c) Шар 5 — `Nafion-g-PSBMA` цвітеріонна мембрана (SI-ATRP синтез); катод — `Laccase + nCoCuCeZIF nanozyme` гібрид (DET без AuNPs). CV/EIS у синтетичному ксилемному соку, ICP-MS перевірка вимивання Os/Cu/Ce/Co. **Ключові метрики Gen 2.0:** (1) k_s для dgrFAD-GDH vs повністю глікозильованої — target ≥+30%; (2) H⁺-conductance Nafion-g-PSBMA — target ~45.2 мС/см (vs ~30 мС/см чистого Nafion); (3) UCST winter-lock тест (-10°C → +25°C цикл); (4) Chloride tolerance @ 0.25 М NaCl — target +5% активності катоду; (5) 30-day stability — target >90% активності. **Gen 1.0 negative controls** (deprecated — GOx/Catalase/глутаральдегід/PEG pipeline нежиттєздатний per Gen 2.0 architecture freeze 2026-05-22; порівняння лише within Gen 2.0: dgrFAD-GDH vs fully glycosylated FAD-GDH для k_s differential) | 4–8 тижнів |
 | **Stage 3 — Повноцінний анкер** | 3–5 SLM+HIP гіроїдних анкерів: повноцінний тризонний прототип, EBFC у синтетичному соку | 8–12 тижнів |
 | **Stage 4 — Партія 100 шт.** | DMLS-партія для польових випробувань (Черкаський бір) | TRL 5→6 |
 
@@ -351,7 +351,7 @@ t_lab = t_field × exp(−Ea/k × (1/T_field − 1/T_lab))
 | **Final** | Аcептична ламінація PTFE на Zone 3 у ISO Class 5 cleanroom | Параметричний випуск (ISO 13408-1) | bioburden ≤ 100 CFU перед збіркою; particle count ≤ ISO 5 |
 
 **Заборонено для лабораторії:**
-- **Етиленоксид (EtO) на зразках з іммобілізованими ферментами** — реагує з білками → незворотна денатурація GOx/CAT/Laccase + цитотоксичні залишки (этиленгліколь, этиленхлоргідрин). EtO дозволено лише для гілки B (без ферментів).
+- **Етиленоксид (EtO) на зразках з іммобілізованими ферментами** — реагує з білками → незворотна денатурація dgrFAD-GDH/Laccase/ZIF-nanozyme + цитотоксичні залишки (этиленгліколь, этиленхлоргідрин). EtO дозволено лише для гілки B (без ферментів).
 - **Terminal gamma на готовому виробі з PTFE-GDL** — chain scission → крихкість мембрани → втрата breakthrough pressure.
 - **Автоклав на зразках з ферментами** — денатурація.
 

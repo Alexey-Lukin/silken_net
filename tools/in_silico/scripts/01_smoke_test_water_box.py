@@ -8,7 +8,7 @@ Verify that the MD engine (OpenMM + AMBER ff14SB) can:
   1. Load the deglycosylated GcGDH structure from AlphaFold 3.
   2. Strip non-standard residues (FAD cofactor, etc.) that have no force-field
      parameters yet — ligand parameterization (GAFF / OpenFF) is a separate L2
-     milestone, see docs/01_03 §3.4 and `02_genipin_ligand_param.py` (TODO).
+     milestone, see docs/01_03 §3.4 and scripts 02-05 for ligand parameterization.
   3. Protonate the protein at pH 4.5 (xylem-like).
   4. Wrap it in a TIP3P water box with NaCl at xylem-relevant ionic strength.
   5. Energy-minimise and run 1000 MD steps (≈ 2 ps at 2 fs timestep).
