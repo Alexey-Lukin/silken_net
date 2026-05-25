@@ -51,13 +51,13 @@ N_ELECTRONS = 2            # electrons per glucose (FAD → FADH₂)
 # ═══════════════════════════════════════════════════════════════════
 # EBFC parameters (from literature + docs)
 # ═══════════════════════════════════════════════════════════════════
-J_MAX_25C = 494e-6         # A/cm² — dgrGcGDH + Os-polymer at 20 mM glucose, 25°C
-KM_GLUCOSE = 20.0          # mM — estimated Km for GcGDH (see plan)
-EA_ENZYME = 40_000.0       # J/mol — Arrhenius activation energy
+J_MAX_25C = 494e-6         # A/cm² — dgrGcGDH + Os-polymer at 20 mM glucose, 25°C (Zafar 2012, PMC3275720)
+KM_GLUCOSE = 20.0          # mM — estimated for GcGDH (between Asp 87 mM and Mucor 28 mM; j_max reached at 20 mM suggests Km ≤ 20)
+EA_ENZYME = 40_000.0       # J/mol — typical Arrhenius Ea for FAD-dependent enzyme reactions (literature range 30-50 kJ/mol)
 T_REF = 298.15             # K — reference temperature (25°C)
 
-V_OP = 0.5                 # V — EBFC operating voltage under load
-A_ELECTRODE = 2.0          # cm² — effective electroactive area on gyroid
+V_OP = 0.5                 # V — EBFC under load (OCV 0.6-0.8 V from 01_03 §1, ~60-70% under MPPT)
+A_ELECTRODE = 2.0          # cm² — conservative estimate: portion of ~30 cm² gyroid surface with active enzyme layer
 
 ETA_BQ = 0.85              # BQ25570 boost converter efficiency
 E_CYCLE = 5e-3             # J — energy per MCU wake cycle (sense + compute + LoRa TX)

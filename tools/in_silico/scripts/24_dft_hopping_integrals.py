@@ -103,6 +103,13 @@ def marcus_rate(t_ij_eV: float, dG: float = 0.0) -> float:
 
 
 def main() -> int:
+    # Validate metal basis sets are available in this PySCF installation
+    for element, basis_name in BASIS_METALS.items():
+        try:
+            gto.M(atom=[(element, (0, 0, 0))], basis=basis_name, ecp=ECP_METALS[element])
+        except Exception as e:
+            sys.exit(f"Basis/ECP '{basis_name}' not available for {element} in PySCF: {e}")
+
     results = {
         "method": f"ΔSCF {XC_FUNCTIONAL.upper()}/{BASIS_LIGHT}+SDD(metals)",
         "lambda_reorg_eV": LAMBDA_REORG,

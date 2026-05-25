@@ -94,7 +94,7 @@ GLUCOSE_SMILES = "OC[C@H]1OC(O)[C@H](O)[C@@H](O)[C@@H]1O"
 
 N_SBMA = 30          # SBMA monomers in membrane slab
 N_GLUCOSE = 5        # glucose probes
-SLAB_THICKNESS_NM = 3.0  # target membrane thickness
+SLAB_THICKNESS_NM = 3.0  # nm — represents Layers 4+5 combined (~20 µm in reality, scaled down for tractable MD box)
 TEMPERATURE_K = 298
 PRESSURE_ATM = 1.0
 TIMESTEP_FS = 2.0

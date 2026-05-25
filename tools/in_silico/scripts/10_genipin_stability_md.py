@@ -230,7 +230,7 @@ def main() -> int:
     # Find a "shell radius" just outside the protein bounding sphere
     protein_coords_nm = positions_to_nm_array(modeller.positions)
     protein_center = protein_coords_nm.mean(axis=0)
-    shell_radius = (protein_coords_nm - protein_center).max() + 0.8  # 0.8 nm margin
+    shell_radius = (protein_coords_nm - protein_center).max() + 0.8  # 0.8 nm margin beyond protein surface — prevents steric clash while keeping ligands close enough for interaction during equilibration
 
     rng = np.random.default_rng(42)
     for i in range(N_GENIPIN):
