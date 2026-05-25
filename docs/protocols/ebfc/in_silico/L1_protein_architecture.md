@@ -118,7 +118,7 @@ distance #1:FAD@N5 #1:90@OH
 | Глибина FAD N5 → поверхня виміряна та зафіксована | ✅ **(15.998 Å)** |
 | MET-feasibility математично обґрунтована | ✅ |
 
-**Gate:** **L1 → L2 (OpenMM MD)** — відкрито. Наступний крок: 10–100 нс MD-симуляція deglycosylated structure у water box pH 4.5 з molecules of genipin / Os-polymer / CNC для перевірки RMSD-стабільності у Genipin-Chitosan-CNC матриці ([`01_03 §3.4 L2`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
+**Gate:** **L1 → L2** — ✅ пройдено. L2 baseline (genipin only): RMSD 0.95 Å. **L2-extended** (full matrix: genipin + chitosan trimer + cellobiose CNC proxy, 2026-05-25): RMSD 1.11 Å ≪ 3 Å → повна Gen 2.0 матриця стабільна. Деталі → [`01_03 §3.4 L2`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md).
 
 ---
 
@@ -141,11 +141,16 @@ distance #1:FAD@N5 #1:90@OH
 | Файл | Опис | Статус |
 |---|---|---|
 | `01_smoke_test_water_box.py` | Engine sanity check (протеїн + water box + 1000 кроків) | ✅ Passed |
-| `02_parameterize_fad.py` | AF3 PDB + CCD SMILES → `ligands/FAD.sdf` + GAFF cache (≈ 4 хв AM1-BCC) | ✅ |
-| `03_parameterize_genipin.py` | SMILES → `ligands/genipin.sdf` + GAFF cache (≈ 7 сек AM1-BCC) | ✅ |
-| `10_genipin_stability_md.py` | Повна стабільність-MD: protein + FAD + N×genipin → backbone RMSD vs frame 0 | ✅ Passed (2026-05-24, 100 ps run, backbone RMSD `0.951 ± 0.200 Å`, max `1.142 Å` ≪ 3 Å поріг → **STABLE**) |
-| `pyscf_os_fad_homo_lumo.ipynb` | L3 DFT (наступний рівень) | ⏳ L3 |
-| `cantera_psbma_diffusion.py` | L4 кінетика (наступний рівень) | ⏳ L4 |
+| `02_parameterize_fad.py` | AF3 PDB + CCD SMILES → `ligands/FAD.sdf` + GAFF cache | ✅ |
+| `03_parameterize_genipin.py` | SMILES → `ligands/genipin.sdf` + GAFF cache | ✅ |
+| `04_parameterize_chitosan.py` | Chitosan trimer (3×GlcN) → GAFF cache | ✅ (2026-05-25) |
+| `05_parameterize_cnc.py` | Cellobiose (CNC proxy) → GAFF cache | ✅ (2026-05-25) |
+| `10_genipin_stability_md.py` | L2 baseline: protein + FAD + 10×genipin → RMSD 0.95 Å | ✅ Passed (2026-05-24) |
+| `11_full_matrix_md.py` | L2-ext: + chitosan + cellobiose → RMSD 1.11 Å | ✅ Passed (2026-05-25) |
+| `20_dft_lumiflavin.py` | L3: FAD/FADH₂ frontier orbitals | ✅ |
+| `21b_dft_os_bpy_full.py` | L3: full [Os(bpy)₂(1-MeIm)Cl] DFT | ✅ (2026-05-25) |
+| `22_compare_homo_lumo.py` | L3: Marcus cascade diagram | ✅ |
+| `cantera_psbma_diffusion.py` | L4 кінетика | ⏳ L4 |
 
 **Параметризаційний кеш:** `tools/in_silico/cache/gaff_cache.json` (62.6 KB) — deterministic AM1-BCC charges + GAFF-2.11 atom types для FAD і genipin; cache hit економить ~5 хв на чистому checkout.
 

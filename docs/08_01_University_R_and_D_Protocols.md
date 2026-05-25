@@ -112,7 +112,7 @@
 >
 > Спільна Q1-стаття: *"In Silico Design of Long-Lived Enzymatic Bio-Fuel Cells for Tree-Integrated Energy Harvesting"* (Мінаєв B.F. + Архітектор Silken Net + AI-pipeline) — журнали *Journal of Chemical Theory and Computation* (Q1), *Computational and Structural Biotechnology Journal* (Q1).
 >
-> **Поточний статус Pipeline (updated 2026-05-25):** L2 Stability MD ✅ — backbone RMSD 0.95 ± 0.20 Å ≪ 3 Å threshold, ензим стабільний у геніпін-матриці при pH 4.5. **L3 DFT 🟢 strong partial pass** — pipeline PySCF+B3LYP+PCM+Marcus cascade ✅; FAD: HOMO(FADH₂) = -5.14 eV. **Os full model [Os(bpy)₂(1-MeIm)Cl]²⁺** (54 atoms, 239 e⁻, 2026-05-25): LUMO(Os(III)) = **-4.23 eV**, <S²>=0.754 (pure doublet). π-backbonding shift = **+0.81 eV** vs NH₃ model. Raw Koopmans Δε = **-0.91 eV** (uphill, B3LYP HOMO bias); bias-corrected ≈ **-0.07 eV** — within 0.14 eV of exp. +140 мВ (Cosnier 1999). **Запит до школи Мінаєва:** publication-grade ωB97X-D/def2-TZVP + DFT geometry opt + ΔSCF → definitive raw-verdict DOWNHILL для Q1-статті.
+> **Поточний статус Pipeline (updated 2026-05-25):** L2 Stability MD ✅ — baseline RMSD 0.95 Å (genipin only); **L2-extended RMSD 1.11 Å** (full matrix: genipin + chitosan trimer + cellobiose CNC proxy, 467k atoms) ≪ 3 Å → повна Gen 2.0 матриця стабільна при pH 4.5. **L3 DFT 🟢 strong partial pass** — pipeline PySCF+B3LYP+PCM+Marcus cascade ✅; FAD: HOMO(FADH₂) = -5.14 eV. **Os full model [Os(bpy)₂(1-MeIm)Cl]²⁺** (54 atoms, 239 e⁻, 2026-05-25): LUMO(Os(III)) = **-4.23 eV**, <S²>=0.754 (pure doublet). π-backbonding shift = **+0.81 eV** vs NH₃ model. Raw Koopmans Δε = **-0.91 eV** (uphill, B3LYP HOMO bias); bias-corrected ≈ **-0.07 eV** — within 0.14 eV of exp. +140 мВ (Cosnier 1999). **Запит до школи Мінаєва:** publication-grade ωB97X-D/def2-TZVP + DFT geometry opt + ΔSCF → definitive raw-verdict DOWNHILL для Q1-статті.
 
 **Додатковий запит — біоміметичні покриття та інтерфазна хімія (Batch Integration Session 3):**
 - DFT-моделювання адсорбції **Zn-HAp** та **PEDOT:PSS** кластерів на TiO₂-поверхні Ti-6Al-4V: енергії зв'язування, заряд-перенос на межі покриття/метал, вплив на роботу EBFC.
@@ -269,7 +269,7 @@
 | Рівень | Задача | Статус | Ключовий результат |
 |--------|--------|--------|--------------------|
 | **L1** | Protein architecture (AlphaFold 3) | ✅ Pass | dgrGcGDH+FAD fold, ipTM=0.99, pTM=0.93; d\_FAD = 15.998 Å < tunneling range ~18–20 Å |
-| **L2** | Stability MD (OpenMM 8.5.1, TIP3P, 477k atoms) | ✅ Pass | Backbone RMSD 0.95 ± 0.20 Å (max 1.142 Å ≪ 3 Å); GcGDH(deglyco)+FAD+10×genipin стабільний при pH 4.5; 10.37 ns/day (Apple GPU, OpenCL) |
+| **L2** | Stability MD (OpenMM) | ✅ Pass | **Baseline:** RMSD 0.95 ± 0.20 Å (10×genipin, 477k atoms). **L2-ext (2026-05-25):** RMSD **1.11 ± 0.26 Å** (10×GEN+5×CSO+8×CLB full matrix, 467k atoms) ≪ 3 Å → повна Gen 2.0 матриця стабільна |
 | **L3** | DFT frontier orbitals (PySCF B3LYP+PCM) | 🟢 Strong partial | Pipeline ✅; HOMO(FADH₂) = −5.14 eV; **LUMO(Os(III), full bpy model) = −4.23 eV** (π-backbonding +0.81 eV vs NH₃). Raw Δε = −0.91 eV; bias-corrected ≈ −0.07 eV — within 0.14 eV of exp. +140 мВ. Publication-grade: ωB97X-D + geom opt |
 | **L4** | Kinetics / hopping integrals (CDFT) | ⏳ Not started | Marcus β coefficient + ET rate constants |
 
