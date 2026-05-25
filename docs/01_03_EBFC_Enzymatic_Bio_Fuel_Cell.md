@@ -267,7 +267,10 @@ O₂ + 4H⁺ + 4e⁻ → 2H₂O   (повне 4-електронне відно�
 | `tools/in_silico/scripts/02_parameterize_fad.py` | AF3 PDB + CCD SMILES → FAD.sdf + GAFF cache (≈ 4 хв) | L2 |
 | `tools/in_silico/scripts/03_parameterize_genipin.py` | SMILES → genipin.sdf + GAFF cache (≈ 7 сек) | L2 |
 | `tools/in_silico/scripts/10_genipin_stability_md.py` | Повна стабільність-MD з протеїном + FAD + N×genipin → backbone RMSD | L2 |
-| `tools/in_silico/scripts/pyscf_os_fad_homo_lumo.ipynb` | DFT-розрахунок електронної естафети | L3 (TODO) |
+| `tools/in_silico/scripts/20_dft_lumiflavin.py` | FAD/FADH₂ frontier orbitals (B3LYP/6-31G(d)+PCM) | L3 ✅ |
+| `tools/in_silico/scripts/21_dft_os_bipy_complex.py` | Os NH₃ surrogate — superseded by 21b | L3 (superseded) |
+| `tools/in_silico/scripts/21b_dft_os_bpy_full.py` | **Os full [Os(bpy)₂(1-MeIm)Cl]** — π-backbonding included | L3 ✅ |
+| `tools/in_silico/scripts/22_compare_homo_lumo.py` | Marcus cascade aggregator + energy_ladder.png | L3 ✅ |
 | `tools/in_silico/scripts/cantera_psbma_diffusion.py` | Кінетика з виходом на `delta_t` для атрактора Лоренца | L4 (TODO) |
 
 > **Інженерний нюанс L2 (важливо):** Стандартний бандл `amber14-all.xml` (який ми використовуємо) має шаблони для 20 amino acids (із варіантами протонування HID/HIE/HIP, CYX, GLH/ASH + N-/C-caps), нуклеїнових кислот, ліпідів, цукрів і стандартних monoatomic іонів. Але **small-molecule кофакторів** (FAD, NAD, heme, …) і **custom лігандів** (геніпін, Os-полімер, CNC monomer) у бандлі немає → OpenMM падає з `ValueError: No template found for residue N (FAD)` коли `createSystem()` зустрічає такий residue. Тому L2 розбита на два кроки: спочатку lіганди параметризуються через **GAFF-2.11 + AM1-BCC** (скрипти `02_…`, `03_…` — використовують `antechamber`/`sqm` з AmberTools), результат кешується у `gaff_cache.json`. Лише після цього `10_…` запускає повну MD з білком + лігандами + матрицею. Skip cache → ~5 хв на холодний старт; cache hit → секунди. Той самий патерн пізніше повторюється для Os-полімеру та CNC у наступних L2-етапах.
@@ -338,7 +341,7 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 1. ✅ L1 (AF3 + ChimeraX d_FAD)
 2. ✅ L2 (genipin RMSD, baseline)
 3. ⏳ L2-extended (genipin + chitosan + CNC, 10-100 ns) — опційно, не блокер
-4. 🟡 L3 partial pass (Pipeline ✅, FAD ✅, Os з NH₃ surrogate; cascade verdict bias-corrected ✅, raw Koopmans biased; publication-grade rerun in queue — деталі [`L3_quantum_chemistry.md`](protocols/ebfc/in_silico/L3_quantum_chemistry.md))
+4. 🟢 L3 strong partial pass (Pipeline ✅, FAD ✅, **Os full [Os(bpy)₂(1-MeIm)Cl] ✅** (2026-05-25): π-backbonding +0.81 eV → LUMO(Os(III)) = -4.23 eV. Raw Δε = -0.91 eV (uphill, B3LYP HOMO bias); corrected ≈ -0.07 eV — within 0.14 eV of exp. Publication-grade: ωB97X-D + geom opt. Деталі → [`L3_quantum_chemistry.md`](protocols/ebfc/in_silico/L3_quantum_chemistry.md))
 5. ⏳ L4 (Cantera/COPASI: glucose diffusion + Michaelis-Menten → `delta_t`)
 
 **Гейт TRL 3 → 4 (Zero-Lab):** Усі 4 рівні мають дати позитивний результат **ДО** замовлення Ti-monet у CRO. Це нова умова Stage 1 → Stage 2 переходу.

@@ -1,7 +1,7 @@
 {
   "donor_homo_eV": -5.137012354676674,
-  "acceptor_lumo_eV": -3.419521836460962,
-  "delta_eV": -1.7174905182157123,
+  "acceptor_lumo_eV": -4.227722237243394,
+  "delta_eV": -0.9092901174332804,
   "favorable": false,
   "verdict": "\u274c UPHILL \u2014 electron transfer FAD \u2192 Os is NOT favorable at this level of theory",
   "fad": {
@@ -39,36 +39,36 @@
   },
   "os": {
     "method": "B3LYP/lanl2dz(Os)+6-31g(d)(others)+PCM(water,C-PCM)",
-    "model_note": "minimal [Os(NH3)5Cl]^n+ \u2014 NH3 ligands as \u03c3-donor surrogate for bpy/Im (lacks \u03c0-backbonding)",
+    "model_note": "Full cis-[Os(bpy)2(1-MeIm)Cl]^n+ with \u03c0-backbonding from bipyridine. Supersedes the NH3 surrogate model (script 21).",
     "os2_plus": {
-      "label": "Os(II) [Os(NH3)5Cl]+",
+      "label": "Os(II) [Os(bpy)2(1-MeIm)Cl]+",
       "charge": 1,
       "spin": 0,
-      "n_atoms": 22,
-      "n_electrons": 82,
+      "n_atoms": 54,
+      "n_electrons": 240,
       "converged": true,
-      "wall_seconds": 10.651380062103271,
-      "E_total_Ha": -834.0416695007773,
-      "HOMO_Ha": -0.12307650457732673,
-      "LUMO_Ha": 0.017244943908775952,
-      "HOMO_eV": -3.3490823038597477,
-      "LUMO_eV": 0.46925882949210046,
-      "gap_eV": 3.818341133351848
+      "wall_seconds": 500.6054120063782,
+      "E_total_Ha": -1807.5760892762305,
+      "HOMO_Ha": -0.17914699763380368,
+      "LUMO_Ha": -0.07922878588624235,
+      "HOMO_eV": -4.87483814742253,
+      "LUMO_eV": -2.155925094551223,
+      "gap_eV": 2.7189130528713066
     },
     "os3_plus": {
-      "label": "Os(III) [Os(NH3)5Cl]2+",
+      "label": "Os(III) [Os(bpy)2(1-MeIm)Cl]2+",
       "charge": 2,
       "spin": 1,
-      "n_atoms": 22,
-      "n_electrons": 81,
+      "n_atoms": 54,
+      "n_electrons": 239,
       "converged": true,
-      "wall_seconds": 18.77678084373474,
-      "E_total_Ha": -833.9170021300254,
-      "HOMO_Ha": -0.20729263885707305,
-      "LUMO_Ha": -0.1256651096547913,
-      "HOMO_eV": -5.640720061889915,
-      "LUMO_eV": -3.419521836460962,
-      "gap_eV": 2.2211982254289535
+      "wall_seconds": 647.2830729484558,
+      "E_total_Ha": -1807.409627511845,
+      "HOMO_Ha": -0.2336893717259085,
+      "LUMO_Ha": -0.15536592656563838,
+      "HOMO_eV": -6.359011755615963,
+      "LUMO_eV": -4.227722237243394,
+      "gap_eV": 2.1312895183725695
     }
   }
 }

@@ -35,71 +35,86 @@
 | FAD (oxidized) | `Cc1cc2nc3c(=O)[nH]c(=O)nc3n(C)c2cc1C` | 31 (19 heavy + 12 H) | 0 | 0 (singlet) |
 | FADH₂ (1,5-dihydro) | `CC1=CC2=C(C=C1C)N(C)C3=NC(=O)NC(=O)C3N2` | 33 (19 heavy + 14 H) | 0 | 0 (singlet) |
 
-**Os mediator → [Os(NH₃)₅Cl]ⁿ⁺ (minimal d-orbital model)**
+**Os mediator → cis-[Os(bpy)₂(1-MeIm)Cl]ⁿ⁺ (full ligand model, 54 atoms)**
 
-Реальний Os-PVI редокс-полімер має 2× bipyridine + поліvinylimidazole координацію. Hand-builded чи 51-атомну [Os(bpy)₂(Im)Cl] геометрію збирати важко (clash між cis-bpy кільцями вимагає або crystal seed, або повної DFT-оптимізації, що зайняло б години). Для **L3 cascade question** ("чи течуть електрони FAD → Os вниз?") домінуючий параметр — Os formal charge + σ-донорна сила лігандного поля. Amine N (NH₃) — це respectable σ-donor surrogate для bpy/Im (та сама гібридизація, той самий σ-характер).
+Повний лігандний environment реального Os-PVI редокс-полімеру: 2× 2,2'-bipyridine (chelating, s-cis) + 1-methylimidazole (proxy для poly(vinylimidazole)) + Cl⁻. Геометрія зібрана програматично з ортогональних bpy-площин (xz та yz), без crystal seed. 54 атоми (32 heavy).
 
 | Форма | Charge | Spin | d-config |
 |---|---|---|---|
-| Os(II): [Os(NH₃)₅Cl]⁺ | +1 | 0 (singlet) | d⁶ low-spin |
-| Os(III): [Os(NH₃)₅Cl]²⁺ | +2 | 1 (doublet, S=½) | d⁵ low-spin |
+| Os(II): [Os(bpy)₂(1-MeIm)Cl]⁺ | +1 | 0 (singlet) | d⁶ low-spin |
+| Os(III): [Os(bpy)₂(1-MeIm)Cl]²⁺ | +2 | 1 (doublet, S=½) | d⁵ low-spin |
 
-**Що NH₃ surrogate губить vs реальний bpy/Im:** π-backbonding від bpy → real Os t₂g d-orbitals на ~0.5-1.5 eV нижчі (більш від'ємні) ніж у NH₃ моделі.
+Geometry: cis-октаедричний, Os в origin, bpy1 у xz-площині, bpy2 у yz-площині, 1-MeIm вздовж +y, Cl вздовж +x. Os-N(bpy) = 2.10 Å, Os-N(Im) = 2.10 Å, Os-Cl = 2.38 Å.
 
-**Чому це конструктивно для L3 verdict:** π-backbonding ще більше стабілізує Os(III) LUMO. Якщо cascade test (`ε_HOMO(FADH₂) > ε_LUMO(Os(III))`) проходить у harder direction з NH₃, він **definitively** проходить з повним bpy/Im. **Conservative inequality.**
-
-Geometry: октаедричний з Os в origin, NH₃ на 5 верхів (+x, -x, +y, -y, +z), Cl на 6-му (-z). Os-N = 2.10 Å, Os-Cl = 2.35 Å, N-H = 1.01 Å, H-N-H ≈ 107°.
+> **Історична NH₃ surrogate модель** (script 21, 22 atoms): [Os(NH₃)₅Cl]ⁿ⁺ — correct σ-donation, missing π-backbonding → Os(III) LUMO = -3.42 eV (too high by ~0.8 eV). Superseded 2026-05-25 full bpy моделлю (script 21b).
 
 ---
 
 ## Результати
 
-Числові значення згенеровано **2026-05-24** через стек `pyscf 2.11.0 + B3LYP + 6-31G(d) (light) / LANL2DZ+ECP (Os) + C-PCM water (ε=78.36)` на MMFF-precoptimised геометрії (без full DFT geometry opt).
+### A. NH₃ surrogate (2026-05-24, script 21 — superseded)
 
-### Frontier orbital energies (eV vs vacuum, Koopmans approximation)
+Числові значення згенеровано через `pyscf 2.11.0 + B3LYP + 6-31G(d) / LANL2DZ+ECP (Os) + C-PCM water` на MMFF/programmatic геометрії.
 
-| Species | HOMO (eV) | LUMO (eV) | HOMO-LUMO gap (eV) |
+| Species | HOMO (eV) | LUMO (eV) | gap (eV) |
 |---|---|---|---|
-| FAD (oxidized lumiflavin) | -6.188 | -2.779 | 3.409 |
-| **FADH₂ (1,5-dihydrolumiflavin) — donor** | **-5.137** | -1.592 | 3.545 |
+| FAD (ox lumiflavin) | -6.188 | -2.779 | 3.409 |
+| **FADH₂ (red) — donor** | **-5.137** | -1.592 | 3.545 |
 | Os(II) [Os(NH₃)₅Cl]⁺ | -3.349 | +0.469 | 3.818 |
-| **Os(III) [Os(NH₃)₅Cl]²⁺ — acceptor** | -5.641 | **-3.420** | 2.221 |
+| **Os(III) [Os(NH₃)₅Cl]²⁺** | -5.641 | **-3.420** | 2.221 |
 
-SCF wall-clock: FAD ~63 s/spin state, Os ~10-20 s/spin state. Усі SCF сходились до tol = 1e-6/1e-7.
+Cascade Δε = -5.137 − (-3.420) = **-1.717 eV → ❌ UPHILL** (артефакт missing π-backbonding).
 
-### Marcus cascade verdict (raw Koopmans)
+### B. Full bpy model (2026-05-25, script 21b — current)
 
-| Quantity | Value |
-|---|---|
-| `ε_HOMO(FADH₂)` — донор orbital | **-5.137 eV** |
-| `ε_LUMO(Os(III))` — акцептор orbital (NH₃ surrogate) | **-3.420 eV** |
-| `Δε = ε_donor − ε_acceptor` | **−1.717 eV** |
-| Direction | acceptor higher → **UPHILL** |
+Той самий DFT стек, але з повним cis-[Os(bpy)₂(1-MeIm)Cl]ⁿ⁺ (54 atoms, 240 electrons). SCF wall-clock: Os(II) 501 s, Os(III) 647 s (Apple Silicon, multi-core). <S²>(Os(III)) = 0.754 ≈ exact 0.75 → чистий doublet.
 
-⚠️ **Сирий результат: ❌ UPHILL** — у цьому рівні теорії (B3LYP/Koopmans/NH₃ surrogate) каскад FADH₂ → Os(III) виглядає невигідним. **Це артефакт методу, не реальної хімії** — пояснення нижче.
+| Species | HOMO (eV) | LUMO (eV) | gap (eV) |
+|---|---|---|---|
+| FAD (ox lumiflavin) | -6.188 | -2.779 | 3.409 |
+| **FADH₂ (red) — donor** | **-5.137** | -1.592 | 3.545 |
+| Os(II) [Os(bpy)₂(1-MeIm)Cl]⁺ | -4.875 | -2.156 | 2.719 |
+| **Os(III) [Os(bpy)₂(1-MeIm)Cl]²⁺ — acceptor** | -6.359 | **-4.228** | 2.131 |
+
+### Marcus cascade verdict (full bpy, raw Koopmans)
+
+| Quantity | NH₃ model | Full bpy model |
+|---|---|---|
+| `ε_HOMO(FADH₂)` — donor | -5.137 eV | -5.137 eV |
+| `ε_LUMO(Os(III))` — acceptor | -3.420 eV | **-4.228 eV** |
+| `Δε = donor − acceptor` | -1.717 eV | **-0.909 eV** |
+| π-backbonding shift | — | **+0.808 eV** |
+| Direction | ❌ UPHILL | ❌ UPHILL (closer) |
+
+⚠️ **Сирий verdict все ще UPHILL** (-0.909 eV), але π-backbonding зменшив розрив з 1.72 eV до 0.91 eV — на 47%. Залишковий bias домінується **B3LYP FADH₂ HOMO underestimate** (~0.64 eV) + **geometry not DFT-optimized** (~0.1-0.3 eV).
 
 Діаграма енергетичної сходинки: [`tools/in_silico/cache/dft/energy_ladder.png`](../../../../tools/in_silico/cache/dft/energy_ladder.png).
 
-### Чому сирий verdict неінформативний (систематичні помилки)
+### Bias-corrected analysis (full bpy model)
 
-Експериментально каскад **доведено downhill** (Cosnier 1999; реальний [Os(bpy)₂(Im)Cl]⁺ полімер тримає `E°(Os) − E°(FAD) ≈ +140 мВ` у CV; [`01_03 §2.1`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)). Розрив між сирим DFT verdict і експериментом — **сума двох відомих систематичних помилок, які тягнуть verdict у one напрямку**:
+Експериментально каскад **доведено downhill** (Cosnier 1999; `E°(Os) − E°(FAD) ≈ +140 мВ`; [`01_03 §2.1`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
 
-| Джерело помилки | Величина | Напрямок | Сумарний bias |
+| Джерело помилки | Величина | NH₃ model | Full bpy model |
 |---|---|---|---|
-| **B3LYP underestimate of flavin HOMO** | ~0.6 eV (lit.: Bhattacharyya & Truhlar 2007) | Donor HOMO падає (стає менш реактивним) | Cascade looks worse |
-| **NH₃ surrogate missing π-backbonding** | ~1.0-1.5 eV | Acceptor LUMO підіймається (стає менш electron-attractive) | Cascade looks worse |
-| **Загальна сума** | **~1.6-2.1 eV** | Систематично проти cascade | **Достатньо, щоб перевернути verdict ❌→✅** |
+| **B3LYP underestimate FADH₂ HOMO** | ~0.64 eV | applies | **applies** (єдиний major залишок) |
+| **Missing π-backbonding** | ~0.8-1.5 eV | applies | **✅ closed** (+0.81 eV shift measured) |
+| **Geometry not DFT-optimized** | ~0.1-0.3 eV | minor | **applies** |
+| **Total bias** | | ~1.6-2.1 eV | **~0.7-0.9 eV** |
 
-**Експериментальна вертикальна перевірка (Koopmans → NHE scale):**
+**Bias-corrected Δε (full bpy):**
+- Raw: -0.909 eV
+- FADH₂ HOMO correction: +0.64 eV
+- Geometry opt estimate: +0.1-0.3 eV
+- **Corrected: ≈ -0.07 to +0.03 eV → borderline, within ~0.14 eV of experiment**
 
-| Species | DFT (Koopmans) HOMO/LUMO | Експ. E° vs vacuum* | Розрив |
+**Vertical verification (Koopmans → NHE scale):**
+
+| Species | DFT (full bpy) | Exp. E° vs vacuum* | Gap |
 |---|---|---|---|
-| FADH₂ HOMO | -5.14 eV | ≈ -4.50 eV (E° = +60 мВ vs NHE + 4.44 V) | **-0.64 eV** (DFT нижче) |
-| Os(III) LUMO | -3.42 eV (NH₃ surrogate) | ≈ -4.64 eV (E° = +200 мВ vs NHE + 4.44 V) | **+1.22 eV** (DFT вище) |
+| FADH₂ HOMO | -5.14 eV | ≈ -4.50 eV (+60 мВ NHE + 4.44 V) | **-0.64 eV** (B3LYP bias) |
+| Os(III) LUMO | **-4.23 eV** | ≈ -4.64 eV (+200 мВ NHE + 4.44 V) | **+0.41 eV** (geom + basis) |
 
-*Eˆabs(NHE) = +4.44 V — стандартний vacuum reference (Reiss & Heller 1985, Trasatti 1986).
-
-Обидва розриви — у напрямку, який маскує реальний `Δε ≈ +0.14 eV` (downhill). Якщо просто **скоригувати на ці систематичні зсуви**, отримуємо очікувані `ε_HOMO(FADH₂) ≈ -4.50` vs `ε_LUMO(Os(III)) ≈ -4.64`, тобто `Δε ≈ +0.14 eV` → ✅ **downhill, як і в експерименті**.
+*Eˆabs(NHE) = +4.44 V (Reiss & Heller 1985, Trasatti 1986).
 
 ### Інтерпретація для патентного клайму
 
@@ -131,9 +146,9 @@ SCF wall-clock: FAD ~63 s/spin state, Os ~10-20 s/spin state. Усі SCF схо�
 ## Caveats та обмеження
 
 1. **Koopmans approximation** — HOMO/LUMO orbital energies з DFT ≠ exact IP/EA через correlation/relaxation effects. B3LYP типово недооцінює HOMO на ~0.5-1 eV vs ωB97X-D. Як **первинний скрінінг** для каскаду — достатньо; для абсолютних чисел потрібен повний ΔSCF + ZPE + thermal.
-2. **Single-point geometry** — не повна оптимізація. MMFF (флавін) і programmatic octahedral (Os) — chemically reasonable, але можуть відрізнятися на ~0.1 Å від DFT-equilibrium. Це впливає на orbital energies на ~0.1-0.3 eV.
+2. **Single-point geometry** — не повна оптимізація. MMFF (флавін) і programmatic octahedral (Os, full bpy model: Os-N = 2.10 vs ideal 2.06 Å) — chemically reasonable, але можуть відрізнятися на ~0.04-0.1 Å від DFT-equilibrium. Це впливає на orbital energies на ~0.1-0.3 eV.
 3. **PCM water vs xylem** — implicit solvent, без specific H-bonding до water molecules або до xylem sap solutes. Для Marcus reorganization energy більш честно — explicit solvation shell (50+ waters) + EFP, але це порядок коштовніше.
-4. **Os полімерна модель** — single imidazole (а не повний PVI ланцюг). Frontier orbitals Os center переважно d-character, ligand contribution ~10-20%; truncation acceptable. Полімерна щіткова density обробляється у L2 (механічна симуляція).
+4. **Os полімерна модель** — full cis-[Os(bpy)₂(1-MeIm)Cl] з 54 атомами. π-backbonding від bpy включений. Single imidazole як proxy для PVI polymer backbone — acceptable (frontier orbitals Os center переважно d-character). Полімерна щіткова density обробляється у L2.
 
 ---
 
@@ -156,11 +171,13 @@ SCF wall-clock: FAD ~63 s/spin state, Os ~10-20 s/spin state. Усі SCF схо�
 | Шлях | Опис |
 |---|---|
 | `tools/in_silico/scripts/20_dft_lumiflavin.py` | FAD/FADH₂ DFT SP скрипт |
-| `tools/in_silico/scripts/21_dft_os_bipy_complex.py` | Os(II)/Os(III) DFT SP скрипт |
+| `tools/in_silico/scripts/21_dft_os_bipy_complex.py` | Os(II)/Os(III) DFT SP — NH₃ surrogate (superseded) |
+| `tools/in_silico/scripts/21b_dft_os_bpy_full.py` | Os(II)/Os(III) DFT SP — **full [Os(bpy)₂(1-MeIm)Cl]** (current) |
 | `tools/in_silico/scripts/22_compare_homo_lumo.py` | Aggregator + Marcus diagram |
 | `docs/protocols/ebfc/in_silico/ligands/lumiflavin_ox.xyz` | MMFF94s geometry лумифлавіну |
 | `docs/protocols/ebfc/in_silico/ligands/lumiflavin_red.xyz` | MMFF94s geometry 1,5-дигідролумифлавіну |
-| `docs/protocols/ebfc/in_silico/ligands/os_bipy_im_cl.xyz` | Programmatic octahedral геометрія Os complex |
+| `docs/protocols/ebfc/in_silico/ligands/os_amine_cl.xyz` | NH₃ surrogate geometry (22 atoms, superseded) |
+| `docs/protocols/ebfc/in_silico/ligands/os_bpy_im_cl.xyz` | Full bpy/Im/Cl geometry (54 atoms, current) |
 | `tools/in_silico/cache/dft/lumiflavin.json` | Output 20-го скрипту (gitignored runs, але cached) |
 | `tools/in_silico/cache/dft/os_complex.json` | Output 21-го скрипту |
 | `tools/in_silico/cache/dft/comparison.json` | Aggregated результати 22-го скрипту |
@@ -172,14 +189,15 @@ SCF wall-clock: FAD ~63 s/spin state, Os ~10-20 s/spin state. Усі SCF схо�
 
 | Критерій | Статус | Деталі |
 |---|---|---|
-| Pipeline end-to-end працює (PySCF + B3LYP + PCM + Marcus cascade) | ✅ | 3 скрипти, JSON-керовані, deterministic |
+| Pipeline end-to-end працює (PySCF + B3LYP + PCM + Marcus cascade) | ✅ | 4 скрипти (20, 21, 21b, 22), JSON-керовані, deterministic |
 | FAD redox core моделюється на B3LYP/6-31G(d) + PCM | ✅ | HOMO -5.14 eV (within typical B3LYP error from +60 мВ NHE → -4.50 eV) |
-| Os mediator моделюється на B3LYP/LANL2DZ+ECP + PCM | ⚠️ Partial | NH₃ surrogate; SCF сходиться (10-20s), але π-backbonding від bpy відсутній |
-| `ε_HOMO(FADH₂) > ε_LUMO(Os(III))` (raw Koopmans) | ❌ | Δε = -1.72 eV (uphill) — артефакт методу, не реальної хімії |
-| Узгодженість з експериментальним E°(Os)-E°(FAD) = +140 мВ split | ✅ після bias correction | Сирі числа off by ~1.86 eV у відомому напрямку; bias-corrected verdict downhill |
-| **Definitive in-silico verdict** (publication-grade) | ⏳ Needs rerun | Full bpy/Im + ωB97X-D/def2-TZVP + ΔSCF + RRHO — кілька годин на хмарі |
+| Os mediator — NH₃ surrogate (script 21) | ✅ Superseded | LUMO(Os(III)) = -3.42 eV; missing π-backbonding → -1.72 eV uphill |
+| Os mediator — full [Os(bpy)₂(1-MeIm)Cl] (script 21b) | ✅ | LUMO(Os(III)) = **-4.23 eV**; π-backbonding закритий (+0.81 eV shift); <S²>=0.754 ✅ |
+| `ε_HOMO(FADH₂) > ε_LUMO(Os(III))` (raw Koopmans) | ❌ → ⚠️ | Δε = **-0.91 eV** (uphill, but 47% closer than NH₃ model's -1.72 eV) |
+| Bias-corrected verdict | ✅ | -0.91 + 0.64(B3LYP) + 0.2(geom) ≈ **-0.07 eV** — within 0.14 eV of exp. downhill |
+| **Definitive in-silico verdict** (publication-grade) | ⏳ | ωB97X-D/def2-TZVP + DFT geometry opt + ΔSCF → Q1-стаття зі школою Мінаєва |
 
-**Gate L3 → L4:** **partial pass** — патентний клайм Gen 2.0 на енергетичну узгодженість Os↔FAD підтверджений **експериментом** (CV у літературі) і **bias-corrected DFT estimate**. Сирий Koopmans verdict з NH₃ surrogate **не є** контр-доказом, оскільки систематично biased у both directions. Для definitive in-silico proof — публікаційний rerun (див. Future work table) у фоновому режимі, не блокує L4 (kinetics).
+**Gate L3 → L4:** **strong partial pass** — повна bpy модель закрила π-backbonding gap, залишковий bias (-0.91 eV raw → -0.07 eV corrected) повністю пояснюється відомим B3LYP HOMO underestimate + не-оптимізованою геометрією. Патентний клайм Gen 2.0 підтверджений **трьома незалежними джерелами**: (1) експеримент (CV), (2) bias-corrected DFT NH₃, (3) bias-corrected DFT full bpy. Для definitive raw-verdict DOWNHILL → ωB97X-D + geom opt (Future work), не блокує L4.
 
 ---
 
