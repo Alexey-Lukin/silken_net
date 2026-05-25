@@ -39,7 +39,9 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 # Canonical genipin SMILES (PubChem CID 442424).
 # Bicyclic iridoid: methyl ester + enol-ether + diol + α,β-unsaturated ring.
-GENIPIN_SMILES = "COC(=O)C1=CO[C@@H]2[C@@H]1[C@H](O)C=C2CO"
+# PubChem CID 442424 isomeric SMILES. C11H14O5, MW 226.23.
+# Bicyclic iridoid: methyl ester + enol-ether + primary alcohol + exocyclic C=C.
+GENIPIN_SMILES = "COC(=O)C1=CO[C@H]([C@H]2[C@@H]1CC=C2CO)O"
 
 GAFF_VERSION = "gaff-2.11"
 OUT_SDF = LIGANDS_DIR / "genipin.sdf"

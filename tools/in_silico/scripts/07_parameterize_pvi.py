@@ -38,8 +38,10 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 # Poly(1-vinylimidazole) trimer — 3 repeat units.
 # Each unit: vinyl backbone (CH₂-CH) + imidazole ring attached at N1.
 # This is the organic polymer backbone WITHOUT Os metal centers.
-# Backbone stereo specified (atactic — random R/S, typical for radical polymerization)
-PVI_TRIMER_SMILES = "C[C@@H](c1ncc[nH]1)C[C@H](c2ncc[nH]2)C[C@@H](c3ncc[nH]3)C"
+# Poly(1-vinylimidazole): backbone attached to N1 of imidazole.
+# N3 (the other ring nitrogen) remains free to coordinate Os.
+# This matches the real Os-PVI polymer where Os binds through N3.
+PVI_TRIMER_SMILES = "C[C@@H](n1ccnc1)C[C@H](n2ccnc2)C[C@@H](n3ccnc3)C"
 
 GAFF_VERSION = "gaff-2.11"
 OUT_SDF = LIGANDS_DIR / "pvi_trimer.sdf"

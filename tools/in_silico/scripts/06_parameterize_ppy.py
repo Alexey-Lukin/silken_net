@@ -37,7 +37,9 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 # Polypyrrole pentamer (5 × pyrrole linked 2,5).
 # Neutral (undoped) form — doping is an electrochemical process, not
 # captured in classical FF. Neutral parameterization is standard for MD.
-PPY_PENTAMER_SMILES = "c1cc([nH]c1)-c2cc([nH]c2)-c3cc([nH]c3)-c4cc([nH]c4)-c5cc[nH]c5"
+# Alpha,alpha' (2,5) linked polypyrrole — the standard oxidative coupling.
+# Each pyrrole ring: N-C2=C3-C4=C5, linked at C2 and C5 (alpha positions).
+PPY_PENTAMER_SMILES = "c1ccc([nH]1)-c2ccc([nH]2)-c3ccc([nH]3)-c4ccc([nH]4)-c5ccc[nH]5"
 
 GAFF_VERSION = "gaff-2.11"
 OUT_SDF = LIGANDS_DIR / "ppy_pentamer.sdf"
