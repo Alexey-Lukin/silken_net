@@ -46,8 +46,10 @@ jobs:
         shell: bash -el {0}
         run: python -m openmm.testInstallation
 
-      - name: L2 engine smoke test (CPU-only)
+      - name: L2 engine smoke test (CPU-only, small box for CI speed)
         shell: bash -el {0}
         env:
           SILKEN_FORCE_PLATFORM: CPU
+          SILKEN_WATER_PADDING: "0.5"
+          SILKEN_MIN_ITERATIONS: "200"
         run: python tools/in_silico/scripts/01_smoke_test_water_box.py

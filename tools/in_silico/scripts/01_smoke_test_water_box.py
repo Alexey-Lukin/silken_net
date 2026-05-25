@@ -46,9 +46,10 @@ INPUT_PDB = REPO_ROOT / "docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb"
 PH = 4.5
 IONIC_STRENGTH = 0.05  # molar — physiologically representative; xylem itself is ~0.001–0.005 M
 TEMPERATURE = 298       # K — room temperature; trees in spring/summer
-WATER_PADDING = 1.0     # nm around protein
+WATER_PADDING = float(os.environ.get("SILKEN_WATER_PADDING", "1.0"))  # nm; CI uses 0.5 for speed
 TIMESTEP_FS = 2.0
 MD_STEPS = 1000
+MIN_ITERATIONS = int(os.environ.get("SILKEN_MIN_ITERATIONS", "500"))
 
 
 def banner(msg: str) -> None:
@@ -140,10 +141,10 @@ def main() -> int:
     e0 = state0.getPotentialEnergy().value_in_unit(kilojoule_per_mole)
     print(f"  PE before min: {e0:>14.2f} kJ/mol")
     t = time.time()
-    simulation.minimizeEnergy(maxIterations=1000)
+    simulation.minimizeEnergy(maxIterations=MIN_ITERATIONS)
     dt_min = time.time() - t
     e1 = simulation.context.getState(getEnergy=True).getPotentialEnergy().value_in_unit(kilojoule_per_mole)
-    print(f"  PE after  min: {e1:>14.2f} kJ/mol  ({dt_min:.2f}s, 1000 iter max)")
+    print(f"  PE after  min: {e1:>14.2f} kJ/mol  ({dt_min:.2f}s, {MIN_ITERATIONS} iter max)")
     if e1 >= e0:
         sys.exit(f"FAIL: minimisation did not reduce PE: {e0:.2f} → {e1:.2f}")
     if e1 > 0:
