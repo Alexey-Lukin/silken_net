@@ -29,6 +29,7 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 21 | `21_dft_os_bipy_complex.py` | L3 DFT: Os mediator — NH₃ surrogate (baseline, superseded by 21b) | ~30 s |
 | 21b | `21b_dft_os_bpy_full.py` | L3 DFT: Os mediator — full [Os(bpy)₂(1-MeIm)Cl] with π-backbonding | ~15-30 min |
 | 22 | `22_compare_homo_lumo.py` | L3 aggregator: Marcus cascade diagram + verdict | ~1 s |
+| 30 | `30_kinetics_delta_t.py` | L4: EBFC kinetics → delta_t(glucose, temp) for Lorenz attractor | ~1 s |
 
 The numbering leaves room for additional parameterization steps (Os-polymer,
 CNC) at 04–09 before the main MD at 10. L3 DFT scripts are in the 20-range.
