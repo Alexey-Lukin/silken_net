@@ -1,0 +1,17 @@
+{
+  "predictions": {
+    "E_cascade_eV": -0.9092901174332804,
+    "HOMO_FADH2_eV": -5.137012354676674,
+    "LUMO_Os3_eV": -4.227722237243394,
+    "delta_t_healthy_s": 35.7,
+    "delta_t_stressed_s": 190.0,
+    "j_max_uA_cm2": 494.0,
+    "Km_mM": 20.0,
+    "Rct_ohm": 130.0,
+    "Rs_ohm": 100.0,
+    "Cdl_uF_cm2": 50.0,
+    "delta_t_healthy_p5": 14.2,
+    "delta_t_healthy_p95": 120.4
+  },
+  "experimental": {}
+}
