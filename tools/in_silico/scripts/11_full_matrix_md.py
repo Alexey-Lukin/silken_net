@@ -215,7 +215,7 @@ def main() -> int:
     # ── 8. Minimise ──
     banner("Energy minimisation (max 5000 iter)")
     t = time.time()
-    sim.minimizeEnergy(maxIterations=5000)
+    sim.minimizeEnergy(maxIterations=10000)
     e_min = sim.context.getState(getEnergy=True).getPotentialEnergy().value_in_unit(kilojoule_per_mole)
     print(f"  PE after min: {e_min:.2f} kJ/mol  ({time.time()-t:.1f}s)")
 
@@ -224,8 +224,9 @@ def main() -> int:
     restraint = restraint_protein_heavy_atoms(system, modeller.positions, modeller.topology, k=10.0)
     sim.context.reinitialize(preserveState=True)
     sim.context.setVelocitiesToTemperature(100 * kelvin)
-    steps_per_ramp = ps_to_steps(EQUIL_NVT_PS) // ((TEMPERATURE_K - 100) // 5)
-    for T in range(100, TEMPERATURE_K + 1, 5):
+    ramp_step = 10
+    steps_per_ramp = ps_to_steps(EQUIL_NVT_PS) // ((TEMPERATURE_K - 100) // ramp_step)
+    for T in range(100, TEMPERATURE_K + 1, ramp_step):
         sim.integrator.setTemperature(T * kelvin)
         sim.step(steps_per_ramp)
     e_nvt = sim.context.getState(getEnergy=True).getPotentialEnergy().value_in_unit(kilojoule_per_mole)
