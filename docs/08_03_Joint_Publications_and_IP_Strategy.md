@@ -10,7 +10,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 3 — публікаційний план визначено, авторські колективи формуються
+- **Поточний TRL:** TRL 3 baseline; **TRL 3→4 gate PASSED** (2026-05-25) — Zero-Lab in-silico pipeline L1-L4 ✅
 - **Стратегічна цінність:** Наукові публікації ЧНУ + ЧДТУ (3 кафедри) + ЧІПБ + ЧМА + СЄУ = легітимізація технології + Hardware Proof для seed-раунду + Data Science валідація + RF-верифікація + акустична валідація + пожежна безпека та параметричне страхування + біохімічна валідація EBFC та токсикологія + макроекономічна валідація токеноміки та правова архітектура RWA
 - **Пов'язані модулі:**
   - Університетські протоколи → [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols)
@@ -649,7 +649,7 @@ _«Дослідження акустичних властивостей пори
 
 **Тип зв'язку:** Комплементарний — ЧНУ: теоретична модель (DFT), ЧМА: in vitro валідація, Silken Net: системні вимоги
 
-> **In-silico baseline для Статті 28 (updated 2026-05-26):** Zero-Lab pipeline L1-L4 PASSED. L1: d_FAD = 15.998 Å. L2: full matrix RMSD 1.11 Å. L3: LUMO(Os(III)) = -4.23 eV, bias-corrected Δε ≈ -0.07 eV. **L3b cathode DET:** Cu-Co t_ij=0.0325 eV, k_ET=2.34×10¹⁰ s⁻¹ (не лімітує ORR). L4: delta_t = 36s (healthy), Monte Carlo 90% CI 14-120s. EIS predictions: Rct=130Ω. Ti-coin validation script ready (`40_validate_vs_experiment.py`). **ωB97X/def2-TZVP publication-grade DFT ⏳ running** (script 21d). Xylem sap configurator: 7 species profiles (`lib/xylem_sap.py`). Повний звіт: [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md), [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md).
+> **In-silico baseline для Статті 28 (updated 2026-05-26):** Zero-Lab pipeline L1-L4 PASSED. L1: d_FAD = 15.998 Å. L2: full matrix RMSD 1.11 Å. L3: LUMO(Os(III)) = -4.23 eV, bias-corrected Δε ≈ -0.07 eV. **L3b cathode DET:** Cu-Co t_ij=0.0325 eV, k_ET=2.34×10¹⁰ s⁻¹ (не лімітує ORR). L4: delta_t = 36s (healthy), Monte Carlo 90% CI 14-120s. EIS predictions: Rct=130Ω. Ti-coin validation script ready (`40_validate_vs_experiment.py`). **ωB97X/def2-TZVP publication-grade DFT ⏳ running** (script 21d, restarted with `level_shift=0.3` after Os(III) UKS stuck 60h). Xylem sap configurator: 7 species profiles (`lib/xylem_sap.py`). L2 10ns extended MD: 96% complete (energy converged). 68 pytest tests, CI gate. Повний звіт: [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md), [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md).
 
 ---
 
