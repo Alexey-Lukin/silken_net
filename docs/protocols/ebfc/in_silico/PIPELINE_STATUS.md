@@ -35,8 +35,8 @@
 
 | # | Script | Status | Resource | ETA |
 |---|--------|--------|----------|-----|
-| 24 | `dft_hopping_integrals` | Cu-Co ✅, Co-Ce State B computing (~130 min, CPU shared) | CPU 220% | ~10:30-11:00 |
-| 21d | `dft_os_bpy_wb97xd` | Os(II) SP at ωB97X/def2-TZVP (~54 min, CPU shared) | CPU 210% | Os(II) ~11:00, then Os(III) + FADH₂ |
+| 24 | `dft_hopping_integrals` | Cu-Co ✅, Co-Ce killed (State B stuck ~270 min). Restart solo after ωB97X | CPU — | After ωB97X |
+| 21d | `dft_os_bpy_wb97xd` | Os(II) ✅ converged (-7.128 eV HOMO). Os(III) SP computing solo | CPU 700% | Os(III) ~14:00, FADH₂ ~15:00 |
 | 11* | `full_matrix_md` (10ns) | Production ~14.5h/22h | GPU | ~18:00 |
 
 ### ❗ Needs Rerun (correct genipin SMILES fixed 2026-05-25)

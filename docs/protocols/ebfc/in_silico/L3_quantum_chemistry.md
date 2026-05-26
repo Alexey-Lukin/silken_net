@@ -152,6 +152,33 @@ Cascade Δε = -5.137 − (-3.420) = **-1.717 eV → ❌ UPHILL** (артефа�
 
 ---
 
+## D. ωB97X/def2-TZVP — Publication-grade (⏳ running, 2026-05-26)
+
+**Script:** `21d_dft_os_bpy_wb97xd.py`. Range-separated hybrid functional з triple-zeta basis.
+
+**Why ωB97X instead of B3LYP:** B3LYP underestimates HOMO by ~0.6 eV (Bhattacharyya & Truhlar 2007). ωB97X has range-separated exact exchange → more accurate HOMO/LUMO for charge-transfer states. PySCF не підтримує wb97x-d (dispersion); wb97x без dispersion — main improvement is range separation (~0.6 eV), dispersion minor (~0.05 eV).
+
+### Partial results (Os(II) converged, Os(III) + FADH₂ in progress)
+
+| Species | HOMO (eV) | LUMO (eV) | Gap (eV) | Status |
+|---|---|---|---|---|
+| Os(II) [Os(bpy)₂(1-MeIm)Cl]⁺ (ωB97X) | **-7.128** | -0.438 | 6.691 | ✅ |
+| Os(III) [Os(bpy)₂(1-MeIm)Cl]²⁺ (ωB97X) | — | — | — | ⏳ computing |
+| FADH₂ lumiflavin (ωB97X) | — | — | — | ⏳ queued |
+
+**B3LYP vs ωB97X (Os(II)):**
+
+| Parameter | B3LYP/6-31G(d) | ωB97X/def2-TZVP | Δ |
+|---|---|---|---|
+| HOMO | -4.875 eV | **-7.128 eV** | -2.25 eV (deeper, expected for RSH) |
+| LUMO | -2.156 eV | **-0.438 eV** | +1.72 eV (higher) |
+| Gap | 2.719 eV | **6.691 eV** | +3.97 eV (much larger — range separation opens gap) |
+| Wall time | 501 s | **13384 s** (~27×) | def2-TZVP + ωB97X expensive |
+
+**Preliminary observation:** ωB97X gives dramatically different orbital energies than B3LYP. The much larger gap (6.7 vs 2.7 eV) is characteristic of range-separated hybrids — they correctly separate occupied and virtual orbital energies. The cascade verdict will depend on relative HOMO(FADH₂) vs LUMO(Os(III)) at this consistent level of theory.
+
+---
+
 ## Future work (Gen 2.5+ refinements)
 
 | Покращення | Cost | Очікуваний імпакт |

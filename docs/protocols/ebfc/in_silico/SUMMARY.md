@@ -102,6 +102,13 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 
 **Conclusion:** Raw verdict UPHILL is an artifact of B3LYP systematic bias. Bias-corrected result within 0.14 eV of experiment. Patent claim confirmed by three independent sources (experiment + DFT NH₃ + DFT full bpy).
 
+### Publication-grade: ωB97X/def2-TZVP (⏳ running)
+
+**Os(II) converged:** HOMO = **-7.128 eV**, LUMO = -0.438 eV, Gap = 6.691 eV (223 min, 54 atoms).
+Os(III) + FADH₂ ⏳ computing. Full cascade verdict ETA ~15:00-16:00 today.
+
+Range-separated hybrid gives dramatically different orbital energies — the cascade verdict at this level may differ from B3LYP. Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
+
 ### Cathode: DET Through ZIF Nanozyme
 
 **Method:** ΔSCF (UKS) for bimetallic ZIF clusters
