@@ -262,14 +262,19 @@ O₂ + 4H⁺ + 4e⁻ → 2H₂O   (повне 4-електронне відно�
 | `docs/protocols/ebfc/in_silico/alphafold3/` | Raw AF3 output (5 ranked CIF + summaries + job_request) | L1 |
 | `docs/protocols/ebfc/in_silico/ligands/FAD.sdf` | FAD з AF3-позою та правильними bond orders (для L2) | L2 |
 | `docs/protocols/ebfc/in_silico/ligands/genipin.sdf` | Genipin reference structure (SMILES → 3D) | L2 |
-| `tools/in_silico/cache/gaff_cache.json` | GAFF-2.11 параметри (AM1-BCC charges) для FAD + genipin, deterministic | L2 |
+| `tools/in_silico/cache/gaff_cache.json` | GAFF-2.11 параметри (AM1-BCC charges) для 7 лігандів (FAD, genipin, chitosan, cellobiose, PPy, PVI, SBMA) | L2 |
 | `tools/in_silico/scripts/01_smoke_test_water_box.py` | Engine sanity check — протеїн + water box, 1000 кроків | L2 |
 | `tools/in_silico/scripts/02_parameterize_fad.py` | AF3 PDB + CCD SMILES → FAD.sdf + GAFF cache (≈ 4 хв) | L2 |
 | `tools/in_silico/scripts/03_parameterize_genipin.py` | SMILES → genipin.sdf + GAFF cache (≈ 7 сек) | L2 |
 | `tools/in_silico/scripts/04_parameterize_chitosan.py` | Chitosan trimer (3×GlcN) → GAFF cache | L2 ✅ |
 | `tools/in_silico/scripts/05_parameterize_cnc.py` | Cellobiose (CNC proxy) → GAFF cache | L2 ✅ |
+| `tools/in_silico/scripts/06_parameterize_ppy.py` | PPy pentamer (α,α' 2,5-linked) → GAFF cache | L2 ✅ |
+| `tools/in_silico/scripts/07_parameterize_pvi.py` | PVI trimer (poly(1-vinylimidazole), N3 free for Os) → GAFF cache | L2 ✅ |
+| `tools/in_silico/scripts/08_parameterize_sbma.py` | SBMA monomer (zwitterionic) → GAFF cache | L2 ✅ |
 | `tools/in_silico/scripts/10_genipin_stability_md.py` | L2 baseline: протеїн + FAD + genipin → RMSD | L2 ✅ |
 | `tools/in_silico/scripts/11_full_matrix_md.py` | L2-ext: повна матриця (genipin+chitosan+CNC) → RMSD | L2 ✅ |
+| `tools/in_silico/scripts/12_temperature_sweep_md.py` | L2: full matrix at -10, 5, 25, 40°C → RMSD(T) curve | L2 ⏳ queued |
+| `tools/in_silico/scripts/13_psbma_diffusion_md.py` | L2: glucose diffusion through SBMA slab → D_eff from MSD | L2 ⏳ queued |
 | `tools/in_silico/scripts/20_dft_lumiflavin.py` | FAD/FADH₂ frontier orbitals (B3LYP/6-31G(d)+PCM) | L3 ✅ |
 | `tools/in_silico/scripts/21_dft_os_bipy_complex.py` | Os NH₃ surrogate — superseded by 21b | L3 (superseded) |
 | `tools/in_silico/scripts/21b_dft_os_bpy_full.py` | **Os full [Os(bpy)₂(1-MeIm)Cl]** — π-backbonding included | L3 ✅ |
@@ -283,7 +288,9 @@ O₂ + 4H⁺ + 4e⁻ → 2H₂O   (повне 4-електронне відно�
 | `tools/in_silico/scripts/31_eis_impedance_model.py` | L4c: EIS Randles circuit → Nyquist/Bode predictions | L4 ✅ |
 | `tools/in_silico/scripts/40_validate_vs_experiment.py` | **Ti-coin Stage 2: in-silico vs experiment comparison** | Validation ⏳ |
 | `tools/in_silico/scripts/14_xylem_sap_sweep_md.py` | L2: stability across 6 tree species (pH 4.2-6.0) | L2 ⏳ queued |
-| `tools/in_silico/lib/` | Shared modules: constants, geometry, utils, xylem_sap | Infra ✅ |
+| `tools/in_silico/lib/` | Shared modules: constants, geometry, utils, xylem_sap, dft_utils, md_utils | Infra ✅ |
+| `tools/in_silico/tests/test_cache_integrity.py` | 68 pytest tests: ligands, GAFF cache, DFT, kinetics, constants, scripts | QA ✅ |
+| `.github/workflows/in_silico_smoke.yml` | CI gate: script 01 on CPU (path-filtered, cached conda env) | CI ✅ |
 
 > **Pipeline operational dashboard:** [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md) — повний статус, dependency graph, decision matrix.
 > **All results summary:** [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) — single-page report для pitch/publication.
@@ -370,7 +377,9 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 1. ✅ L1 (AF3 + ChimeraX d_FAD)
 2. ✅ L2 (genipin RMSD, baseline)
 3. ✅ L2-extended (genipin + chitosan + CNC, 100 ps, 2026-05-25) — RMSD 1.11 Å ≪ 3 Å
-4. 🟢 L3 strong partial pass. B3LYP: LUMO(Os III) = -4.23 eV, Δε = -0.91 eV raw / -0.07 eV corrected. **ωB97X/def2-TZVP (script 21d): Os(II) ✅ converged** (HOMO=-7.13 eV, Gap=6.69 eV — RSH dramatically different from B3LYP), **Os(III) ⏳ computing** solo ~700% CPU, FADH₂ queued. **L3b cathode DET**: Cu-Co t_ij=0.0325 eV ✅; Co-Ce — restart solo after ωB97X. Деталі → [`L3_quantum_chemistry.md`](protocols/ebfc/in_silico/L3_quantum_chemistry.md))
+   - ⏳ L2-extended 10 ns run: 94% complete (~9.4/10 ns), converged energy (drift 0.05%)
+   - ⚠️ L2 runs used wrong genipin isomer (C₁₀→C₁₁, fixed 2026-05-25). Rerun queued with correct SMILES — RMSD verdict unchanged (genipin is a minor matrix component)
+4. 🟢 L3 strong partial pass. B3LYP: LUMO(Os III) = -4.23 eV, Δε = -0.91 eV raw / -0.07 eV corrected. **ωB97X/def2-TZVP (script 21d):** Os(II) ✅ converged (HOMO=-7.13 eV, Gap=6.69 eV). Os(III) UKS stuck after 60h CPU → killed & restarted with `level_shift=0.3` (2026-05-26). FADH₂ queued after Os(III). **L3b cathode DET**: Cu-Co t_ij=0.0325 eV ✅; Co-Ce queued after ωB97X. Деталі → [`L3_quantum_chemistry.md`](protocols/ebfc/in_silico/L3_quantum_chemistry.md)
 5. ✅ L4 (2026-05-25): Michaelis-Menten + Arrhenius + BQ25570 boost → **delta_t validated**. Healthy tree (10 mM, 25°C): 35.7 s < 60s baseline; stressed (5 mM, 5°C): 190 s > 60s. EBFC discriminates health → Lorenz attractor receives meaningful β-perturbation. Скрипт: `30_kinetics_delta_t.py`. Diffusion NOT rate-limiting (j_diff >> j_kinetic).
 
 **Гейт TRL 3 → 4 (Zero-Lab):** ✅ **PASSED** (2026-05-25). Усі 4 рівні дали позитивний результат. Zero-Lab computational proof завершено — EBFC Gen 2.0 доведено in silico на всіх рівнях (структура → стабільність → редокс-потенціал → кінетика). Наступний крок — замовлення Ti-monet у CRO (Stage 2).
@@ -378,7 +387,7 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 **Інфраструктура:**
 - **Локально:** Workstation з NVIDIA RTX 4090 (24 GB VRAM) або RTX 5090 (32 GB VRAM) — повний робочий стек за $5–10K hardware (GPU + CPU + 64–128 GB RAM + NVMe storage для PDB-датасетів). Достатньо для більшості L1–L4 розрахунків.
 - **Хмара (для великих DFT-задач):** GCP `g2-standard-12` (1× L4 GPU) — ~$1–2/година on-demand; AWS `g5.2xlarge` (1× A10G) — ~$1.20/година; AWS `p5.2xlarge` (1× H100) — ~$30/година для важких MD-симуляцій (10+ нс на великих білках). Для prototype-фази достатньо L4/A10G тарифу.
-- **Сетап:** Базовий стек встановлюється за ~30 хв через `conda` env-spec (Miniforge → `tools/in_silico/environment.yml` → `silken_md` env). Pin-нуті версії на 2026-Q2: **Python 3.12**, **OpenMM 8.5.1**, `pdbfixer`, `mdtraj 1.11+`, **RDKit 2025.09+**, **OpenFF Toolkit 0.18+**, **openmmforcefields 0.16+** (бридж GAFF/OpenFF → OpenMM, тягне AmberTools 24.x з `antechamber`/`sqm`/`parmchk2` для AM1-BCC параметризації лігандів), `matplotlib 3.10+`, `numpy 2.x`, `scipy 1.17+`. Для L3 додатково — PySCF 2.x + geometric (вже в `environment.yml`). L4 використовує scipy/numpy (вже в env; Cantera не потрібен для аналітичної MM+Arrhenius моделі). AlphaFold 3 weights — потребують registration на DeepMind; ESMFold — повністю open-weight (HuggingFace).
+- **Сетап:** Базовий стек встановлюється за ~30 хв через `conda` env-spec (Miniforge → `tools/in_silico/environment.yml` → `silken_md` env). Pin-нуті версії на 2026-Q2: **Python 3.12**, **OpenMM ≥8.1** (tested 8.5.1), `pdbfixer`, `mdtraj ≥1.10`, **RDKit ≥2024.03**, **OpenFF Toolkit ≥0.16**, **openmmforcefields ≥0.14** (бридж GAFF/OpenFF → OpenMM, тягне AmberTools 24.x з `antechamber`/`sqm`/`parmchk2` для AM1-BCC параметризації лігандів), `matplotlib 3.10+`, `numpy 2.x`, `scipy 1.17+`. Для L3 додатково — PySCF 2.x + geometric (вже в `environment.yml`). L4 використовує scipy/numpy (вже в env; Cantera не потрібен для аналітичної MM+Arrhenius моделі). AlphaFold 3 weights — потребують registration на DeepMind; ESMFold — повністю open-weight (HuggingFace).
 - **GPU на macOS arm64:** локально доступні платформи OpenMM — `Reference`, `CPU`, `OpenCL` (legacy Apple GPU backend, deprecated Apple-ом але ще працює — verified 2026-05-24 на M-серії: forces within tolerance). `CUDA` — Nvidia only. Tobто **локальний Mac = розробка скриптів + sanity runs (≤ 1 нс)**, production runs (10–100 нс) → GCP L4 / AWS A10G/H100.
 - **Локальна інфраструктура in-silico стеку:** код у `tools/in_silico/scripts/`, conda env spec у `tools/in_silico/environment.yml`, SSOT артефакти (PDB, AF3 output, results) у `docs/protocols/ebfc/in_silico/`. Quickstart — `tools/in_silico/README.md`.
 
