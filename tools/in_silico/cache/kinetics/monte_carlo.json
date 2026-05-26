@@ -1,0 +1,41 @@
+{
+  "n_samples": 10000,
+  "scenarios": [
+    {
+      "label": "Healthy summer",
+      "glucose_mM": 10,
+      "temp_C": 25,
+      "p5_s": 14.2,
+      "median_s": 40.6,
+      "p95_s": 120.4,
+      "vs_baseline": "< baseline"
+    },
+    {
+      "label": "Active growth",
+      "glucose_mM": 20,
+      "temp_C": 30,
+      "p5_s": 7.3,
+      "median_s": 19.6,
+      "p95_s": 56.8,
+      "vs_baseline": "< baseline"
+    },
+    {
+      "label": "Cold winter",
+      "glucose_mM": 5,
+      "temp_C": 5,
+      "p5_s": 72.8,
+      "median_s": 224.1,
+      "p95_s": 698.0,
+      "vs_baseline": "> baseline"
+    },
+    {
+      "label": "Severe stress",
+      "glucose_mM": 3,
+      "temp_C": 0,
+      "p5_s": 147.7,
+      "median_s": 481.8,
+      "p95_s": 1553.4,
+      "vs_baseline": "> baseline"
+    }
+  ]
+}
