@@ -27,25 +27,21 @@ import sys
 import time
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.constants import LIGANDS_DIR, CACHE_FILE, GAFF_VERSION
+
 from openff.toolkit import Molecule
 from openmm.app import ForceField
 from openmmforcefields.generators import GAFFTemplateGenerator
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
-CACHE_DIR = REPO_ROOT / "tools/in_silico/cache"
 LIGANDS_DIR.mkdir(parents=True, exist_ok=True)
-CACHE_DIR.mkdir(parents=True, exist_ok=True)
+CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-# Canonical genipin SMILES (PubChem CID 442424).
-# Bicyclic iridoid: methyl ester + enol-ether + diol + α,β-unsaturated ring.
 # PubChem CID 442424 isomeric SMILES. C11H14O5, MW 226.23.
 # Bicyclic iridoid: methyl ester + enol-ether + primary alcohol + exocyclic C=C.
 GENIPIN_SMILES = "COC(=O)C1=CO[C@H]([C@H]2[C@@H]1CC=C2CO)O"
 
-GAFF_VERSION = "gaff-2.11"
 OUT_SDF = LIGANDS_DIR / "genipin.sdf"
-CACHE_FILE = CACHE_DIR / "gaff_cache.json"  # shared with FAD — single cache file for all ligands
 
 
 def banner(msg: str) -> None:

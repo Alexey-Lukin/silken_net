@@ -31,20 +31,18 @@ from openff.toolkit import Molecule
 from openmm.app import ForceField
 from openmmforcefields.generators import GAFFTemplateGenerator
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
-CACHE_DIR = REPO_ROOT / "tools/in_silico/cache"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.constants import LIGANDS_DIR, CACHE_FILE, GAFF_VERSION
+
 LIGANDS_DIR.mkdir(parents=True, exist_ok=True)
-CACHE_DIR.mkdir(parents=True, exist_ok=True)
+CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 # SBMA monomer: N-(3-sulfopropyl)-N-methacryloxyethyl-N,N-dimethylammonium betaine
 # Zwitterionic: quaternary ammonium (+) and sulfonate (−), net charge 0.
 # Structure: methacrylate ester — ethyl linker — N+(CH₃)₂ — propyl — SO₃⁻
 SBMA_SMILES = "C=C(C)C(=O)OCC[N+](C)(C)CCCS([O-])(=O)=O"
 
-GAFF_VERSION = "gaff-2.11"
 OUT_SDF = LIGANDS_DIR / "sbma_monomer.sdf"
-CACHE_FILE = CACHE_DIR / "gaff_cache.json"
 
 
 def banner(msg: str) -> None:

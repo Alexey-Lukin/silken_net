@@ -28,11 +28,11 @@ from openff.toolkit import Molecule
 from openmm.app import ForceField
 from openmmforcefields.generators import GAFFTemplateGenerator
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
-CACHE_DIR = REPO_ROOT / "tools/in_silico/cache"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.constants import LIGANDS_DIR, CACHE_FILE, GAFF_VERSION
+
 LIGANDS_DIR.mkdir(parents=True, exist_ok=True)
-CACHE_DIR.mkdir(parents=True, exist_ok=True)
+CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 # Polypyrrole pentamer (5 × pyrrole linked 2,5).
 # Neutral (undoped) form — doping is an electrochemical process, not
@@ -41,9 +41,7 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 # Each pyrrole ring: N-C2=C3-C4=C5, linked at C2 and C5 (alpha positions).
 PPY_PENTAMER_SMILES = "c1ccc([nH]1)-c2ccc([nH]2)-c3ccc([nH]3)-c4ccc([nH]4)-c5ccc[nH]5"
 
-GAFF_VERSION = "gaff-2.11"
 OUT_SDF = LIGANDS_DIR / "ppy_pentamer.sdf"
-CACHE_FILE = CACHE_DIR / "gaff_cache.json"
 
 
 def banner(msg: str) -> None:

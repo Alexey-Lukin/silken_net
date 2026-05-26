@@ -2,7 +2,8 @@
 from pathlib import Path
 
 # ── Project paths ──
-REPO_ROOT = Path(__file__).resolve().parents[4]
+# lib/constants.py → tools/in_silico/lib/ → parents[3] = repo root
+REPO_ROOT = Path(__file__).resolve().parents[3]
 LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
 CACHE_DIR = REPO_ROOT / "tools/in_silico/cache"
 DFT_CACHE = CACHE_DIR / "dft"

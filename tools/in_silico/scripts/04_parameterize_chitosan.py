@@ -31,11 +31,11 @@ from openff.toolkit import Molecule
 from openmm.app import ForceField
 from openmmforcefields.generators import GAFFTemplateGenerator
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
-CACHE_DIR = REPO_ROOT / "tools/in_silico/cache"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.constants import LIGANDS_DIR, CACHE_FILE, GAFF_VERSION
+
 LIGANDS_DIR.mkdir(parents=True, exist_ok=True)
-CACHE_DIR.mkdir(parents=True, exist_ok=True)
+CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 # Chitosan trimer: 3 × D-glucosamine linked β-1,4.
 # Each unit: 2-amino-2-deoxy-D-glucose (GlcN), fully deacetylated.
@@ -46,9 +46,7 @@ CHITOSAN_TRIMER_SMILES = (
     "O[C@H]3[C@H](O)[C@@H](N)[C@H](O)[C@@H](CO)O3"
 )
 
-GAFF_VERSION = "gaff-2.11"
 OUT_SDF = LIGANDS_DIR / "chitosan_trimer.sdf"
-CACHE_FILE = CACHE_DIR / "gaff_cache.json"
 
 
 def banner(msg: str) -> None:

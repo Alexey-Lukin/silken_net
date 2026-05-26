@@ -28,11 +28,11 @@ from openff.toolkit import Molecule
 from openmm.app import ForceField
 from openmmforcefields.generators import GAFFTemplateGenerator
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
-CACHE_DIR = REPO_ROOT / "tools/in_silico/cache"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.constants import LIGANDS_DIR, CACHE_FILE, GAFF_VERSION
+
 LIGANDS_DIR.mkdir(parents=True, exist_ok=True)
-CACHE_DIR.mkdir(parents=True, exist_ok=True)
+CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 # Cellobiose: β-D-glucopyranosyl-(1→4)-β-D-glucopyranose.
 # PubChem CID 10712. The minimal repeat of cellulose.
@@ -44,9 +44,7 @@ CELLOBIOSE_SMILES = (
     "O[C@@H]2[C@@H](CO)O[C@@H](O)[C@H](O)[C@@H]2O"
 )
 
-GAFF_VERSION = "gaff-2.11"
 OUT_SDF = LIGANDS_DIR / "cellobiose.sdf"
-CACHE_FILE = CACHE_DIR / "gaff_cache.json"
 
 
 def banner(msg: str) -> None:

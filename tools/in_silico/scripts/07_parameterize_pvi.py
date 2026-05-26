@@ -29,11 +29,11 @@ from openff.toolkit import Molecule
 from openmm.app import ForceField
 from openmmforcefields.generators import GAFFTemplateGenerator
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
-CACHE_DIR = REPO_ROOT / "tools/in_silico/cache"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.constants import LIGANDS_DIR, CACHE_FILE, GAFF_VERSION
+
 LIGANDS_DIR.mkdir(parents=True, exist_ok=True)
-CACHE_DIR.mkdir(parents=True, exist_ok=True)
+CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 # Poly(1-vinylimidazole) trimer — 3 repeat units.
 # Each unit: vinyl backbone (CH₂-CH) + imidazole ring attached at N1.
@@ -43,9 +43,7 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 # This matches the real Os-PVI polymer where Os binds through N3.
 PVI_TRIMER_SMILES = "C[C@@H](n1ccnc1)C[C@H](n2ccnc2)C[C@@H](n3ccnc3)C"
 
-GAFF_VERSION = "gaff-2.11"
 OUT_SDF = LIGANDS_DIR / "pvi_trimer.sdf"
-CACHE_FILE = CACHE_DIR / "gaff_cache.json"
 
 
 def banner(msg: str) -> None:
