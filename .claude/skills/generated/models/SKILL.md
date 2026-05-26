@@ -1,98 +1,82 @@
 ---
 name: models
-description: "Skill for the Models area of silken_net. 196 symbols across 79 files."
+description: "Domain knowledge for core ActiveRecord models — Tree/Gateway AASM states, HardwareKey dual-key rotation, partitioned tables, Wallet tokenomics"
 ---
 
-# Models
+# Core Domain Models
 
-196 symbols | 79 files | Cohesion: 78%
+## Tree (Soldier node — STM32WLE5JC)
+- **DID format**: `SNET-XXXXXXXX` (8 hex digits), validated by `/\ASNET-[0-9A-F]{8}\z/`
+- **peaq_did**: `"did:peaq:0x{40hex}"` — Web3 DID registered via `PeaqRegistrationWorker`
+- **Includes**: `AASM`, `Firmwareable`, `GeoLocatable`, `NormalizeIdentifier`
+- **AASM states** (column: `status`, enum-backed):
+  - `active` (initial) -> `dormant` (suspend/reactivate) -> `removed` | `deceased`
+  - `decommission` from active/dormant -> removed; `declare_deceased` from active/dormant -> deceased
+- **bio_status** lives on `TelemetryLog`, NOT on Tree. Tree.status is lifecycle state.
+- `mark_seen!(voltage_mv)` — `GREATEST(COALESCE(...))` atomic UPDATE, no callbacks, hot-path safe
+- `effective_lorenz_thresholds` — 3-level priority: cluster per-species override > TreeFamily > global defaults (Z_MIN=2.0, Z_MAX=45.0, Z_OPTIMAL=29.0)
+- `after_create` builds Wallet and DeviceCalibration automatically
+- `trigger_slashing_protocol` fires `BurnCarbonTokensWorker` when tree becomes removed/deceased
 
-## When to Use
+## Gateway (Queen — STM32WLE5JC + SIM7070G)
+- **UID format**: `SNET-Q-XXXXXXXX`, validated by `/\ASNET-Q-[0-9A-F]{8}\z/`
+- **AASM states** (column: `state`, enum-backed):
+  - `idle` (initial) <-> `active` (wake/sleep)
+  - `idle`/`active` -> `updating` (begin_update) -> `idle` (finish_update)
+  - `idle`/`active`/`faulty` -> `maintenance` (enter/exit_maintenance)
+  - any operational state -> `faulty` (report_fault)
+- `mark_seen!(new_ip:, voltage_mv:)` — same GREATEST atomic pattern as Tree
+- `online?` = `last_seen_at >= (config_sleep_interval_s * 1.2).seconds.ago` — dynamic per-gateway threshold
+- `scope :online` uses PostgreSQL `make_interval(secs => ...)` for DB-side check
 
-- Working with code in `app/`
-- Understanding how Actuator, ActuatorCommand, AiInsight work
-- Modifying models-related functionality
+## HardwareKey (AES key store)
+- **Conditional key size** (post-ARCH.42): Tree = 32 hex (AES-128 LoRa), Gateway = 64 hex (AES-256 CoAP)
+- **AR Encryption**: `encrypts :aes_key_hex, :previous_aes_key_hex, :lorenz_seed_hex` — non-deterministic
+- **LRU cache**: `SinLruRedux::ThreadSafeCache` (10K entries), keys never leave Ruby process (no Redis)
+- **Cache key versioning**: `"#{device_uid}:v:#{updated_at.to_f}"` — self-invalidating on any update
+- **Dual-Key Grace Period**: `previous_aes_key_hex` kept after rotation until device confirms sync via `clear_grace_period!`
+- **HKDF domain separation**: `"silken-aes-128-lora-key"` (Tree) vs `"silken-aes-256-device-key"` (Gateway)
+- `owner` returns `tree || gateway` — polymorphic via `device_uid` FK
+- `rotate_key!` is DEPRECATED — use `HardwareKeyService.rotate(device_uid)` for full rotation with downlink
+- `lorenz_seed_hex`: 64 hex (32 bytes), required, used by `SilkenNet::SeedDerivation`
 
-## Key Files
+## TelemetryLog (partitioned)
+- **RANGE-partitioned by `created_at`** — always use `find_with_partition_pruning(id, created_at)` to avoid full-partition scan
+- **bio_status enum**: `homeostasis(0)`, `stress(1)`, `anomaly(2)`, `tamper_detected(3)` — prefix: `bio_status_`
+- **oracle_status enum** (string-backed): `pending`, `dispatched`, `fulfilled`, `failed` — prefix: `oracle_status_`
+- **KENOSIS TITAN**: ALL validations removed from model hot path. Data validated upstream in `TelemetryUnpackerService.valid_sensor_data?` before INSERT. Do NOT add ActiveRecord validations here.
+- `recovery_confirmed?` reads denormalized `tree.health_streak >= 3` (no N+1)
 
-| File | Symbols |
-|------|---------|
-| `app/models/cluster.rb` | Cluster, lorenz_overrides_for, numeric_or_nil, validate_lorenz_overrides_by_species, local_yesterday (+6) |
-| `app/models/ews_alert.rb` | EwsAlert, broadcast_new_alert, broadcast_status_change, broadcast_alert_update, should_broadcast? (+6) |
-| `app/controllers/api/v1/reports_controller.rb` | carbon_absorption, financial_summary, generate_carbon_csv_enum, generate_financial_csv_enum, generate_carbon_pdf (+2) |
-| `app/models/system_parameter.rb` | current, current_values, typed_value, invalidate_cache, cache_key_for (+2) |
-| `app/models/hardware_key.rb` | HardwareKey, owner, cached_binary_key, binary_previous_key, clear_grace_period! (+2) |
-| `app/models/organization.rb` | Organization, cached_trees_count, total_clusters, total_invested, total_carbon_points (+1) |
-| `app/models/actuator_command.rb` | expires_at_in_future, ActuatorCommand, expired?, dispatch_to_edge!, broadcast_prepend_to_activity_feed |
-| `app/models/naas_contract.rb` | terminate_early!, NaasContract, check_cluster_health!, calculate_early_exit_fee, calculate_prorated_refund |
-| `app/models/tiny_ml_model.rb` | record_prediction!, recalculate_drift_metrics!, TinyMlModel, firmware_compatible?, sanitize_version |
-| `app/workers/unpack_telemetry_worker.rb` | perform, broadcast_to_matrix, broadcast_raw_hex, attempt_decryption, decrypt_aes |
+## BlockchainTransaction (partitioned)
+- **RANGE-partitioned by `created_at`**, composite PK `(id, created_at)`, `self.primary_key = "id"`
+- **Always use** `find_with_partition_pruning(id, created_at)` — plain `find(id)` scans ALL partitions
+- **AASM states**: `pending -> processing -> sent -> confirmed` | `failed` | `manual_review`
+- **manual_review = DOUBLE-SPEND GUARD**: tx_hash exists but on-chain state unknown; funds stay in `locked_balance` until manual reconciliation
+- `mark_as_sent(hash)` sets `tx_hash` + `sent_at`; `confirm(block_num, gas_cost)` sets finality fields
+- **token_type**: `carbon_coin(0)`, `forest_coin(1)`, `cusd(2)`
+- **blockchain_network**: `evm` | `solana` | `celo` — address validation differs per network
 
-## Entry Points
+## Wallet (tokenomics)
+- `credit!(points)` — pessimistic lock (`with_lock`), increments balance, broadcast-throttled (10s)
+- `lock_and_mint!(points, threshold, token_type)` — 10,000 growth_points = 1 SCC. Checks `tree.active?`, resolves target address (wallet -> org fallback), creates `BlockchainTransaction(:pending)`
+- `available_balance` = `balance - locked_balance` — double-spend protection
+- `lock_funds!` / `release_locked_funds!` / `finalize_spend!` — all use `with_lock` for TOCTOU safety
+- `lock_for_toucan_bridge!(amount)` — bridges SCC to TCO2 via Toucan Protocol
 
-Start here when exploring this area:
+## Cluster (forest sector)
+- `belongs_to :organization`; `has_many :trees, :gateways`
+- `active_trees_count` — denormalized counter cache maintained by Tree callbacks (atomic SQL increment/decrement)
+- `lorenz_overrides_for(scientific_name)` — per-species Lorenz Z thresholds stored in JSONB `lorenz_overrides_by_species`
+- `health_index` — cached Float updated by `ClusterHealthCheckWorker`, formula: `1.0 - stress_index`
+- `local_yesterday` — timezone-aware date using cluster's configured timezone (UTC fallback)
+- PostGIS: `geo_boundary` column with GIST index, `containing_point(lat, lng)` scope
 
-- **`Actuator`** (Class) — `app/models/actuator.rb:2`
-- **`ActuatorCommand`** (Class) — `app/models/actuator_command.rb:2`
-- **`AiInsight`** (Class) — `app/models/ai_insight.rb:2`
-- **`ApplicationRecord`** (Class) — `app/models/application_record.rb:0`
-- **`AuditLog`** (Class) — `app/models/audit_log.rb:2`
+## Gotchas
 
-## Key Symbols
-
-| Symbol | Type | File | Line |
-|--------|------|------|------|
-| `Actuator` | Class | `app/models/actuator.rb` | 2 |
-| `ActuatorCommand` | Class | `app/models/actuator_command.rb` | 2 |
-| `AiInsight` | Class | `app/models/ai_insight.rb` | 2 |
-| `ApplicationRecord` | Class | `app/models/application_record.rb` | 0 |
-| `AuditLog` | Class | `app/models/audit_log.rb` | 2 |
-| `BioContractFirmware` | Class | `app/models/bio_contract_firmware.rb` | 4 |
-| `BlockchainTransaction` | Class | `app/models/blockchain_transaction.rb` | 2 |
-| `Cluster` | Class | `app/models/cluster.rb` | 2 |
-| `Attunement` | Class | `app/models/codex/attunement.rb` | 12 |
-| `Citation` | Class | `app/models/codex/citation.rb` | 12 |
-| `Comment` | Class | `app/models/codex/comment.rb` | 15 |
-| `Discovery` | Class | `app/models/codex/discovery.rb` | 14 |
-| `DiscoveryRule` | Class | `app/models/codex/discovery_rule.rb` | 17 |
-| `Fraction` | Class | `app/models/codex/fraction.rb` | 13 |
-| `Match` | Class | `app/models/codex/match.rb` | 22 |
-| `Node` | Class | `app/models/codex/node.rb` | 22 |
-| `Realm` | Class | `app/models/codex/realm.rb` | 12 |
-| `DeviceCalibration` | Class | `app/models/device_calibration.rb` | 2 |
-| `EthereumAnchor` | Class | `app/models/ethereum_anchor.rb` | 6 |
-| `EwsAlert` | Class | `app/models/ews_alert.rb` | 2 |
-
-## Execution Flows
-
-| Flow | Type | Steps |
-|------|------|-------|
-| `Perform → Cache_key_for` | cross_community | 9 |
-| `Perform → Typed_value` | cross_community | 9 |
-| `Show → Inline` | cross_community | 6 |
-| `View_template → Inline` | cross_community | 6 |
-| `View_template → Map` | cross_community | 6 |
-| `View_template → Cache_key_for` | cross_community | 6 |
-| `View_template → Typed_value` | cross_community | 6 |
-| `View_template → Inline` | cross_community | 6 |
-| `View_template → Map` | cross_community | 6 |
-| `FlushQueue → Cache_key_for` | cross_community | 6 |
-
-## Connected Areas
-
-| Area | Connections |
-|------|-------------|
-| Previews | 12 calls |
-| V1 | 11 calls |
-| Maintenance | 9 calls |
-| Workers | 4 calls |
-| Codex | 3 calls |
-| Ed25519_crypto | 1 calls |
-| Silken_net | 1 calls |
-| Dclimate | 1 calls |
-
-## How to Explore
-
-1. `gitnexus_context({name: "Actuator"})` — see callers and callees
-2. `gitnexus_query({query: "models"})` — find related execution flows
-3. Read key files listed above for implementation details
+1. **DID format**: peaq DID is `"did:peaq:0x{40hex}"`, hardware DID is `"SNET-XXXXXXXX"` — do not confuse
+2. **Partitioned tables**: TelemetryLog and BlockchainTransaction require `created_at` in WHERE clauses for partition pruning. Never use bare `find(id)`.
+3. **TelemetryLog validations**: removed by design (KENOSIS TITAN). Do NOT re-add — data is validated in the service layer before insert_all
+4. **Tree.status vs TelemetryLog.bio_status**: Tree status is lifecycle (active/dormant/removed/deceased); bio_status is per-reading health (homeostasis/stress/anomaly/tamper)
+5. **HardwareKey key length**: 32 hex = AES-128 (Tree/LoRa), 64 hex = AES-256 (Gateway/CoAP). Custom validators enforce owner-type consistency.
+6. **Wallet locking**: all balance mutations use `with_lock` (SELECT FOR UPDATE). Never modify balance/locked_balance outside these methods.
+7. **Gateway online?**: threshold is dynamic per-device (`config_sleep_interval_s * 1.2`), not a global constant
