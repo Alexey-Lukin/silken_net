@@ -157,7 +157,7 @@ Cascade Δε = -5.137 − (-3.420) = **-1.717 eV → ❌ UPHILL** (артефа�
 | Покращення | Cost | Очікуваний імпакт |
 |---|---|---|
 | **Повна geometric/pyberny opt** обох species | ~6-12 год CPU | Frontier orbital energies → точніше на ~0.1-0.3 eV |
-| **ωB97X-D + def2-TZVP** | ~3-5× довше за B3LYP/6-31G(d) | Better treatment of charge-transfer states; publication-grade for paper |
+| **ωB97X + def2-TZVP** | ~3-5× довше за B3LYP/6-31G(d) | Better treatment of charge-transfer states; publication-grade for paper. **Script 21d ⏳ running** (2026-05-26). PySCF не підтримує wb97x-d, використовується wb97x (range separation — головне покращення, dispersion — minor ~0.05 eV). |
 | **ΔSCF redox potentials** з RRHO thermal corrections | ~2× за SP | Direct E° prediction vs NHE/SHE, не Koopmans approximation |
 | **TD-DFT excited states** для Os complex | ~5× за GS | Підтверджує MLCT character + Marcus reorganization energy |
 | **Explicit water shells + ONIOM/EFP** | ~10× за PCM | Realistic xylem solvent environment |
@@ -172,8 +172,12 @@ Cascade Δε = -5.137 − (-3.420) = **-1.717 eV → ❌ UPHILL** (артефа�
 |---|---|
 | `tools/in_silico/scripts/20_dft_lumiflavin.py` | FAD/FADH₂ DFT SP скрипт |
 | `tools/in_silico/scripts/21_dft_os_bipy_complex.py` | Os(II)/Os(III) DFT SP — NH₃ surrogate (superseded) |
-| `tools/in_silico/scripts/21b_dft_os_bpy_full.py` | Os(II)/Os(III) DFT SP — **full [Os(bpy)₂(1-MeIm)Cl]** (current) |
+| `tools/in_silico/scripts/21b_dft_os_bpy_full.py` | Os(II)/Os(III) DFT SP — **full [Os(bpy)₂(1-MeIm)Cl]** (B3LYP, current) |
+| `tools/in_silico/scripts/21c_dft_os_bpy_geomopt.py` | Geometry optimization — terminated (Cl flat PES) |
+| `tools/in_silico/scripts/21d_dft_os_bpy_wb97xd.py` | **ωB97X/def2-TZVP publication-grade** (⏳ running) |
 | `tools/in_silico/scripts/22_compare_homo_lumo.py` | Aggregator + Marcus diagram |
+| `tools/in_silico/scripts/23_build_zif_clusters.py` | Bimetallic ZIF clusters (Cu/Co/Ce) for L3b |
+| `tools/in_silico/scripts/24_dft_hopping_integrals.py` | ΔSCF hopping integrals (⏳ Co-Ce running) |
 | `docs/protocols/ebfc/in_silico/ligands/lumiflavin_ox.xyz` | MMFF94s geometry лумифлавіну |
 | `docs/protocols/ebfc/in_silico/ligands/lumiflavin_red.xyz` | MMFF94s geometry 1,5-дигідролумифлавіну |
 | `docs/protocols/ebfc/in_silico/ligands/os_amine_cl.xyz` | NH₃ surrogate geometry (22 atoms, superseded) |
@@ -227,4 +231,6 @@ Scripts: `23_build_zif_clusters.py` (geometry), `24_dft_hopping_integrals.py` (�
 - Decision Log: Os→L3 → [`01_03 §3.4.1`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)
 - Anode MET stack (де Os полімер живе) → [`01_03 §2.1`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)
 - L1 protein architecture → [`L1_protein_architecture.md`](L1_protein_architecture.md)
+- Pipeline operational status → [`PIPELINE_STATUS.md`](PIPELINE_STATUS.md)
+- All results summary → [`SUMMARY.md`](SUMMARY.md)
 - Patent claim Gen 2.0 → [`08_03_Joint_Publications_and_IP_Strategy`](../../../08_03_Joint_Publications_and_IP_Strategy.md)

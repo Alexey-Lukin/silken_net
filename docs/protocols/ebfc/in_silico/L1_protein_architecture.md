@@ -150,9 +150,18 @@ distance #1:FAD@N5 #1:90@OH
 | `20_dft_lumiflavin.py` | L3: FAD/FADH₂ frontier orbitals | ✅ |
 | `21b_dft_os_bpy_full.py` | L3: full [Os(bpy)₂(1-MeIm)Cl] DFT | ✅ (2026-05-25) |
 | `22_compare_homo_lumo.py` | L3: Marcus cascade diagram | ✅ |
-| `cantera_psbma_diffusion.py` | L4 кінетика | ⏳ L4 |
+| `21d_dft_os_bpy_wb97xd.py` | L3: ωB97X/def2-TZVP publication-grade | ⏳ running |
+| `23_build_zif_clusters.py` | L3b: ZIF cluster geometry | ✅ |
+| `24_dft_hopping_integrals.py` | L3b: ΔSCF hopping integrals | ⏳ Co-Ce |
+| `30_kinetics_delta_t.py` | L4: delta_t(glucose, temp) | ✅ |
+| `30b_kinetics_monte_carlo.py` | L4b: Monte Carlo uncertainty | ✅ |
+| `31_eis_impedance_model.py` | L4c: EIS Nyquist predictions | ✅ |
+| `40_validate_vs_experiment.py` | Ti-coin: in-silico vs experiment | ✅ (awaiting data) |
+| `14_xylem_sap_sweep_md.py` | L2: stability across tree species | ⏳ queued |
 
-**Параметризаційний кеш:** `tools/in_silico/cache/gaff_cache.json` (62.6 KB) — deterministic AM1-BCC charges + GAFF-2.11 atom types для FAD і genipin; cache hit економить ~5 хв на чистому checkout.
+**Параметризаційний кеш:** `tools/in_silico/cache/gaff_cache.json` (226 KB) — deterministic AM1-BCC charges + GAFF-2.11 atom types для 7 лігандів; cache hit економить ~5 хв на чистому checkout.
+
+> **Повний pipeline status та dependency graph** → [`PIPELINE_STATUS.md`](PIPELINE_STATUS.md)
 
 > **L1 → L2 inженерний міст:** AMBER ff14SB має шаблони лише для 20 стандартних амінокислот → щоб запустити MD з FAD (кофактор) і геніпіном (зшивач матриці), потрібен окремий ligand-parameterization крок. Він реалізований через `openmmforcefields.GAFFTemplateGenerator` поверх AmberTools `antechamber`/`sqm`. Деталі — `docs/01_03 §3.4 Інженерний нюанс L2`.
 

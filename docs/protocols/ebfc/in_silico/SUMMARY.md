@@ -158,9 +158,8 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 
 | Component | Location |
 |-----------|----------|
-| Scripts (19 total) | `tools/in_silico/scripts/01-31` |
-| Shared constants | `tools/in_silico/lib/constants.py` |
-| Shared geometry | `tools/in_silico/lib/geometry.py` |
+| Scripts (25 total) | `tools/in_silico/scripts/01-40` |
+| Shared lib | `tools/in_silico/lib/` (constants, geometry, utils, xylem_sap) |
 | Ligand SDF files | `docs/protocols/ebfc/in_silico/ligands/` |
 | GAFF parameter cache | `tools/in_silico/cache/gaff_cache.json` |
 | DFT results | `tools/in_silico/cache/dft/` |
@@ -177,10 +176,13 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 |------|------|-----|------------|
 | L2 10ns extended run | GPU | ~18:00 today | GPU busy |
 | L2 rerun scripts 10-11 (correct genipin) | GPU | After L2 10ns | GPU |
-| L2 temperature sweep (4 temps) | GPU | After reruns | GPU |
-| L2 PSBMA diffusion MD | GPU | After temp sweep | GPU |
-| L3b Co-Ce + Ce-graphene hopping | CPU | Hours | Running |
-| Shared lib migration (scripts 10-13, 20-24, 30-31) | Code | After all tasks done | Running tasks |
+| L2 temperature sweep (4 temps, script 12) | GPU | After reruns | GPU |
+| L2 PSBMA diffusion MD (script 13) | GPU | After temp sweep | GPU |
+| L2 xylem sap sweep (6 species, script 14) | GPU | After PSBMA | GPU |
+| L3 ωB97X/def2-TZVP (script 21d) | CPU | ⏳ Running | — |
+| L3b Co-Ce + Ce-graphene hopping | CPU | ⏳ Running | — |
+
+> Full dependency graph and operational status → [`PIPELINE_STATUS.md`](PIPELINE_STATUS.md)
 
 ---
 
