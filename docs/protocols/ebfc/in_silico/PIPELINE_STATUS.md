@@ -1,6 +1,6 @@
 # In-Silico Pipeline — Operational Status & Dependencies
 
-> **Last updated:** 2026-05-26 09:00 EEST
+> **Last updated:** 2026-05-26 19:30 EEST
 > **TRL 3→4 Gate:** ✅ PASSED (2026-05-25)
 
 ---
@@ -35,9 +35,8 @@
 
 | # | Script | Status | Resource | ETA |
 |---|--------|--------|----------|-----|
-| 24 | `dft_hopping_integrals` | Cu-Co ✅, Co-Ce killed (State B stuck ~270 min). Restart solo after ωB97X | CPU — | After ωB97X |
-| 21d | `dft_os_bpy_wb97xd` | Os(II) ✅ converged (-7.128 eV HOMO). Os(III) SP computing solo | CPU 700% | Os(III) ~14:00, FADH₂ ~15:00 |
-| 11* | `full_matrix_md` (10ns) | Production ~14.5h/22h | GPU | ~18:00 |
+| 21d | `dft_os_bpy_wb97xd` | Os(II) ✅ converged (-7.128 eV HOMO). Os(III) UKS computing solo (~60h CPU) | CPU 631% | Os(III) TBD |
+| 11* | `full_matrix_md` (10ns) | Production 8.9 ns / 10 ns | CPU | ~1-2h |
 
 ### ❗ Needs Rerun (correct genipin SMILES fixed 2026-05-25)
 
@@ -55,6 +54,7 @@
 | 12 | `temperature_sweep_md` | 03-05 ✅ | ~2.5h (4 temps) | P1 |
 | 13 | `psbma_diffusion_md` | 08 ✅ | ~1-2h | P1 |
 | 14 | `xylem_sap_sweep_md` | 03-05 ✅ | ~3-4h (6 species) | P2 |
+| 24* | `dft_hopping_integrals` (Co-Ce, Ce-gr) | 23 ✅ | ~2-3h CPU each | P1 (after ωB97X) |
 
 ### 🆕 Recently Added (not yet run)
 

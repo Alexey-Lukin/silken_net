@@ -166,7 +166,7 @@ Range-separated hybrid gives dramatically different orbital energies — the cas
 | Component | Location |
 |-----------|----------|
 | Scripts (25 total) | `tools/in_silico/scripts/01-40` |
-| Shared lib | `tools/in_silico/lib/` (constants, geometry, utils, xylem_sap) |
+| Shared lib | `tools/in_silico/lib/` (constants, geometry, utils, xylem_sap, dft_utils, md_utils) |
 | Ligand SDF files | `docs/protocols/ebfc/in_silico/ligands/` |
 | GAFF parameter cache | `tools/in_silico/cache/gaff_cache.json` |
 | DFT results | `tools/in_silico/cache/dft/` |
@@ -187,7 +187,7 @@ Range-separated hybrid gives dramatically different orbital energies — the cas
 | L2 PSBMA diffusion MD (script 13) | GPU | After temp sweep | GPU |
 | L2 xylem sap sweep (6 species, script 14) | GPU | After PSBMA | GPU |
 | L3 ωB97X/def2-TZVP (script 21d) | CPU | ⏳ Running | — |
-| L3b Co-Ce + Ce-graphene hopping | CPU | ⏳ Running | — |
+| L3b Co-Ce + Ce-graphene hopping | CPU | Queued | After ωB97X |
 
 > Full dependency graph and operational status → [`PIPELINE_STATUS.md`](PIPELINE_STATUS.md)
 
