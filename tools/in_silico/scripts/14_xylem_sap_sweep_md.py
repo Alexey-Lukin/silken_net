@@ -172,14 +172,15 @@ def run_single_sap(species: str, platform) -> dict:
         PDBFile.writeFile(modeller.topology, modeller.positions, fh, keepIds=True)
 
     # Minimise
-    sim.minimizeEnergy(maxIterations=5000)
+    sim.minimizeEnergy(maxIterations=10000)
 
     # NVT
+    ramp_step = 10
     restraint = restraint_protein_heavy_atoms(system, modeller.positions, modeller.topology, k=10.0)
     sim.context.reinitialize(preserveState=True)
     sim.context.setVelocitiesToTemperature(100 * kelvin)
-    steps_per_ramp = ps_to_steps(EQUIL_NVT_PS) // ((TEMPERATURE_K - 100) // 5)
-    for T in range(100, TEMPERATURE_K + 1, 5):
+    steps_per_ramp = ps_to_steps(EQUIL_NVT_PS) // ((TEMPERATURE_K - 100) // ramp_step)
+    for T in range(100, TEMPERATURE_K + 1, ramp_step):
         sim.integrator.setTemperature(T * kelvin)
         sim.step(steps_per_ramp)
     sim.context.setParameter("k", 0.0)
