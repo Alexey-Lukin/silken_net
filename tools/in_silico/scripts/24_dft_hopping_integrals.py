@@ -87,8 +87,10 @@ def run_uks(mol, label: str) -> tuple[float, bool]:
     mf = dft.UKS(mol)
     mf.xc = XC_FUNCTIONAL
     mf.conv_tol = 1e-5
-    mf.max_cycle = 500
-    mf.verbose = 0
+    mf.max_cycle = 200
+    mf.verbose = 3
+    mf.level_shift = 0.3  # helps convergence for multi-metal open-shell systems
+    mf.diis_space = 12
 
     t0 = time.time()
     e = mf.kernel()
