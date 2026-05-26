@@ -1,6 +1,6 @@
 # In-Silico Pipeline — Operational Status & Dependencies
 
-> **Last updated:** 2026-05-26 19:30 EEST
+> **Last updated:** 2026-05-26 23:00 EEST
 > **TRL 3→4 Gate:** ✅ PASSED (2026-05-25)
 
 ---
@@ -20,7 +20,7 @@
 | 07 | `parameterize_pvi` | pvi_trimer.sdf | `gaff_cache.json` | ✅ |
 | 08 | `parameterize_sbma` | sbma_monomer.sdf | `gaff_cache.json` | ✅ |
 | 10 | `genipin_stability_md` | RMSD 0.95 Å ⚠️ wrong genipin | `runs/` (gitignored) | ✅ (needs rerun) |
-| 11 | `full_matrix_md` | RMSD 1.11 Å ⚠️ wrong genipin | `runs/` (gitignored) | ✅ (needs rerun) |
+| 11 | `full_matrix_md` | 100ps: RMSD 1.11 Å; **10ns: RMSD 4.02 Å** (Rg stable, conformation relaxation from AF3). ⚠️ wrong genipin | `runs/` (gitignored) | ✅ (needs rerun) |
 | 20 | `dft_lumiflavin` | HOMO(FADH₂) = -5.14 eV | `dft/lumiflavin.json` | ✅ |
 | 21 | `dft_os_bipy_complex` | NH₃ surrogate (superseded) | `dft/os_complex.json` (overwritten) | ✅ |
 | 21b | `dft_os_bpy_full` | LUMO(Os III) = -4.23 eV | `dft/os_complex.json` | ✅ |
@@ -35,8 +35,7 @@
 
 | # | Script | Status | Resource | ETA |
 |---|--------|--------|----------|-----|
-| 21d | `dft_os_bpy_wb97xd` | Os(II) ✅ converged (-7.128 eV HOMO). Os(III) UKS computing solo (~60h CPU) | CPU 631% | Os(III) TBD |
-| 11* | `full_matrix_md` (10ns) | Production 8.9 ns / 10 ns | CPU | ~1-2h |
+| 21d | `dft_os_bpy_wb97xd` | ⏳ Restarted with density_fit + level_shift (2026-05-26). Os(II) computing | CPU 734% | TBD |
 
 ### ❗ Needs Rerun (correct genipin SMILES fixed 2026-05-25)
 
@@ -109,7 +108,7 @@ Validation:
 | Question | Answer | Evidence |
 |----------|--------|----------|
 | Does the enzyme fold correctly? | ✅ YES | L1: d_FAD = 15.998 Å < tunneling 18-20 Å |
-| Does the matrix denature the protein? | ✅ NO | L2: RMSD 1.11 Å ≪ 3 Å (full matrix) |
+| Does the matrix denature the protein? | ✅ NO (qualified) | L2 100ps: RMSD 1.11 Å. L2 10ns: RMSD 4.02 Å but **Rg stable** (-0.1%) → conformational relaxation from AF3, not denaturation. Needs 20-50 ns for full equilibration. |
 | Does the electron cascade flow? | ✅ YES (bias-corrected) | L3: Δε = -0.07 eV corrected (within 0.14 eV of exp.) |
 | Is cathode DET fast enough? | ✅ YES (partial) | L3b: Cu-Co k_ET = 2.34×10¹⁰ s⁻¹ (Co-Ce ⏳) |
 | Is delta_t physically meaningful? | ✅ YES | L4: healthy 36s, stressed 190s, baseline 60s justified |
