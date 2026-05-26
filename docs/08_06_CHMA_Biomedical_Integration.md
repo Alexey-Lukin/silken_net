@@ -268,6 +268,8 @@ EBFC Gen 2.0 ([`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)) — це серце
 
 **Завдання А: Валідація Gen 2.0 захисної матриці EBFC-ферментів**
 
+> **In-silico computational baseline (2026-05-26):** L2 MD підтвердив RMSD 1.11 Å для повної матриці (genipin+chitosan+CNC). L4 kinetics validated delta_t=36s (healthy). Monte Carlo 90% CI: 14-120s. EIS predictions: Rct=130Ω, Cdl=50µF/cm². Ti-coin validation script готовий (`tools/in_silico/scripts/40_validate_vs_experiment.py`) — порівняє in-silico predictions з реальними CV/EIS даними коли вони надійдуть від Бушуєвої.
+
 ```
 Вхід: Протокол іммобілізації з 01_03 §2 (Gen 2.0)
       Середовище: синтетичний ксилемний сік Pinus sylvestris (08_01 §2, «Xylem-Sim»):

@@ -649,7 +649,7 @@ _«Дослідження акустичних властивостей пори
 
 **Тип зв'язку:** Комплементарний — ЧНУ: теоретична модель (DFT), ЧМА: in vitro валідація, Silken Net: системні вимоги
 
-> **In-silico baseline для Статті 28 (2026-05-25):** Zero-Lab pipeline L1-L4 PASSED. L1: d_FAD = 15.998 Å (AlphaFold 3). L2: full matrix RMSD 1.11 Å (genipin+chitosan+CNC). L3: LUMO(Os(III)) = -4.23 eV (full bpy DFT), bias-corrected Δε ≈ -0.07 eV. L4: delta_t = 36s (healthy tree) validated vs BASELINE 60s. Publication-grade refinement: ωB97X-D + DFT geom opt (школа Мінаєва).
+> **In-silico baseline для Статті 28 (updated 2026-05-26):** Zero-Lab pipeline L1-L4 PASSED. L1: d_FAD = 15.998 Å. L2: full matrix RMSD 1.11 Å. L3: LUMO(Os(III)) = -4.23 eV, bias-corrected Δε ≈ -0.07 eV. **L3b cathode DET:** Cu-Co t_ij=0.0325 eV, k_ET=2.34×10¹⁰ s⁻¹ (не лімітує ORR). L4: delta_t = 36s (healthy), Monte Carlo 90% CI 14-120s. EIS predictions: Rct=130Ω. Ti-coin validation script ready (`40_validate_vs_experiment.py`). Повний звіт: [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md).
 
 ---
 
