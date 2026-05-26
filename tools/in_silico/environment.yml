@@ -4,24 +4,21 @@ channels:
 dependencies:
   - python=3.12
   # --- MD engine ---
-  - openmm
+  - openmm>=8.1
   - pdbfixer
-  - mdtraj
+  - mdtraj>=1.10
   # --- ligand parameterization (L2 step 2) ---
-  # rdkit: SMILES → 3D conformer; openff-toolkit: modern force-field engine;
-  # openmmforcefields: bridges GAFF/OpenFF → OpenMM topology + bundles AmberTools
-  # (antechamber, parmchk2) used as the GAFF backend.
-  - rdkit
-  - openff-toolkit
-  - openmmforcefields
+  - rdkit>=2024.03
+  - openff-toolkit>=0.16
+  - openmmforcefields>=0.14
   # --- L3 quantum chemistry (DFT) ---
-  # pyscf: pure-Python DFT engine. geometric: external geometry optimiser
-  # used via pyscf-geometric integration.
-  - pyscf
-  - geometric  # geomeTRIC optimizer for PySCF geometry optimization (pyscf.geomopt)
+  - pyscf>=2.4
+  - geometric  # geomeTRIC optimizer for PySCF (pyscf.geomopt)
   # --- analysis / notebooks ---
-  - matplotlib
-  - numpy
-  - scipy
+  - matplotlib>=3.8
+  - numpy>=1.26
+  - scipy>=1.12
   - jupyterlab
+  # --- testing ---
+  - pytest>=7.0
   - pip
