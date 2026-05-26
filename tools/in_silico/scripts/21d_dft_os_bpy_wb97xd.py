@@ -72,7 +72,7 @@ def build_mol(atoms, charge: int, spin: int):
 def dft_singlepoint(atoms, charge: int, spin: int, label: str) -> dict:
     banner(f"DFT SP ({XC_FUNCTIONAL.upper()}/{BASIS_LIGHT}): {label}")
     mol = build_mol(atoms, charge, spin)
-    mf = dft.RKS(mol).density_fit() if spin == 0 else dft.UKS(mol).density_fit()
+    mf = dft.RKS(mol) if spin == 0 else dft.UKS(mol)
     mf.xc = XC_FUNCTIONAL
     mf = solvent.PCM(mf)
     mf.with_solvent.eps = SOLVENT_EPS
