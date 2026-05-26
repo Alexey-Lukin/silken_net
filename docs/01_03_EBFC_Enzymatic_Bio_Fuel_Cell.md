@@ -273,7 +273,8 @@ O₂ + 4H⁺ + 4e⁻ → 2H₂O   (повне 4-електронне відно�
 | `tools/in_silico/scripts/20_dft_lumiflavin.py` | FAD/FADH₂ frontier orbitals (B3LYP/6-31G(d)+PCM) | L3 ✅ |
 | `tools/in_silico/scripts/21_dft_os_bipy_complex.py` | Os NH₃ surrogate — superseded by 21b | L3 (superseded) |
 | `tools/in_silico/scripts/21b_dft_os_bpy_full.py` | **Os full [Os(bpy)₂(1-MeIm)Cl]** — π-backbonding included | L3 ✅ |
-| `tools/in_silico/scripts/21c_dft_os_bpy_geomopt.py` | Os complex — DFT geometry optimization (PySCF + geomeTRIC) | L3 ⏳ |
+| `tools/in_silico/scripts/21c_dft_os_bpy_geomopt.py` | Os complex — geom opt (terminated: Cl flat PES) | L3 ❌ |
+| `tools/in_silico/scripts/21d_dft_os_bpy_wb97xd.py` | **ωB97X/def2-TZVP publication-grade** DFT | L3 ⏳ running |
 | `tools/in_silico/scripts/22_compare_homo_lumo.py` | Marcus cascade aggregator + energy_ladder.png | L3 ✅ |
 | `tools/in_silico/scripts/23_build_zif_clusters.py` | Bimetallic ZIF clusters (Cu/Co/Ce) для катодного DET | L3b ✅ |
 | `tools/in_silico/scripts/24_dft_hopping_integrals.py` | ΔSCF hopping integrals через ZIF → Marcus ET rates | L3b ⏳ |
@@ -281,6 +282,11 @@ O₂ + 4H⁺ + 4e⁻ → 2H₂O   (повне 4-електронне відно�
 | `tools/in_silico/scripts/30b_kinetics_monte_carlo.py` | L4b: Monte Carlo uncertainty (10k samples, 90% CI) | L4 ✅ |
 | `tools/in_silico/scripts/31_eis_impedance_model.py` | L4c: EIS Randles circuit → Nyquist/Bode predictions | L4 ✅ |
 | `tools/in_silico/scripts/40_validate_vs_experiment.py` | **Ti-coin Stage 2: in-silico vs experiment comparison** | Validation ⏳ |
+| `tools/in_silico/scripts/14_xylem_sap_sweep_md.py` | L2: stability across 6 tree species (pH 4.2-6.0) | L2 ⏳ queued |
+| `tools/in_silico/lib/` | Shared modules: constants, geometry, utils, xylem_sap | Infra ✅ |
+
+> **Pipeline operational dashboard:** [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md) — повний статус, dependency graph, decision matrix.
+> **All results summary:** [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) — single-page report для pitch/publication.
 
 > **Інженерний нюанс L2 (важливо):** Стандартний бандл `amber14-all.xml` (який ми використовуємо) має шаблони для 20 amino acids (із варіантами протонування HID/HIE/HIP, CYX, GLH/ASH + N-/C-caps), нуклеїнових кислот, ліпідів, цукрів і стандартних monoatomic іонів. Але **small-molecule кофакторів** (FAD, NAD, heme, …) і **custom лігандів** (геніпін, Os-полімер, CNC monomer) у бандлі немає → OpenMM падає з `ValueError: No template found for residue N (FAD)` коли `createSystem()` зустрічає такий residue. Тому L2 розбита на два кроки: спочатку lіганди параметризуються через **GAFF-2.11 + AM1-BCC** (скрипти `02_…`, `03_…` — використовують `antechamber`/`sqm` з AmberTools), результат кешується у `gaff_cache.json`. Лише після цього `10_…` запускає повну MD з білком + лігандами + матрицею. Skip cache → ~5 хв на холодний старт; cache hit → секунди. Той самий патерн пізніше повторюється для Os-полімеру та CNC у наступних L2-етапах.
 
@@ -364,7 +370,7 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 1. ✅ L1 (AF3 + ChimeraX d_FAD)
 2. ✅ L2 (genipin RMSD, baseline)
 3. ✅ L2-extended (genipin + chitosan + CNC, 100 ps, 2026-05-25) — RMSD 1.11 Å ≪ 3 Å
-4. 🟢 L3 strong partial pass (Pipeline ✅, FAD ✅, **Os full [Os(bpy)₂(1-MeIm)Cl] ✅** (2026-05-25): π-backbonding +0.81 eV → LUMO(Os(III)) = -4.23 eV. Raw Δε = -0.91 eV (uphill, B3LYP HOMO bias); corrected ≈ -0.07 eV — within 0.14 eV of exp. Geom opt terminated (Cl displacement on flat PES never converges, but geometry practically optimal — dE<1e-6 Ha from Step 13). **L3b cathode DET**: Cu-Co hopping t_ij=0.0325 eV, k_ET=2.34×10¹⁰ s⁻¹ (fast DET ✅); Co-Ce + Ce-graphene ⏳ computing. Деталі → [`L3_quantum_chemistry.md`](protocols/ebfc/in_silico/L3_quantum_chemistry.md))
+4. 🟢 L3 strong partial pass. B3LYP: LUMO(Os III) = -4.23 eV, Δε = -0.91 eV raw / -0.07 eV corrected. Geom opt terminated (Cl flat PES). **ωB97X/def2-TZVP publication-grade ⏳ running** (script 21d). **L3b cathode DET**: Cu-Co t_ij=0.0325 eV, k_ET=2.34×10¹⁰ s⁻¹ ✅; Co-Ce ⏳ computing; Ce-graphene ⏳ queued. Деталі → [`L3_quantum_chemistry.md`](protocols/ebfc/in_silico/L3_quantum_chemistry.md))
 5. ✅ L4 (2026-05-25): Michaelis-Menten + Arrhenius + BQ25570 boost → **delta_t validated**. Healthy tree (10 mM, 25°C): 35.7 s < 60s baseline; stressed (5 mM, 5°C): 190 s > 60s. EBFC discriminates health → Lorenz attractor receives meaningful β-perturbation. Скрипт: `30_kinetics_delta_t.py`. Diffusion NOT rate-limiting (j_diff >> j_kinetic).
 
 **Гейт TRL 3 → 4 (Zero-Lab):** ✅ **PASSED** (2026-05-25). Усі 4 рівні дали позитивний результат. Zero-Lab computational proof завершено — EBFC Gen 2.0 доведено in silico на всіх рівнях (структура → стабільність → редокс-потенціал → кінетика). Наступний крок — замовлення Ti-monet у CRO (Stage 2).
