@@ -1,9 +1,23 @@
 ---
 name: in-silico
-description: "Domain knowledge for EBFC in-silico validation pipeline — L1-L4 levels, script dependencies, DFT/MD gotchas, rerun rules"
+description: "Navigation + gotchas for EBFC in-silico pipeline. Read SSOT docs first."
 ---
 
 # In-Silico Pipeline (EBFC Gen 2.0 Zero-Lab Proof)
+
+## SSOT Documents — Read These First
+
+| Document | What it covers |
+|----------|---------------|
+| `docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md §3.4` | Pipeline spec, TRL gate, L1-L4 definitions |
+| `docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md` | Live status: running/queued/completed scripts |
+| `docs/protocols/ebfc/in_silico/SUMMARY.md` | All L1-L4 results in one page |
+| `docs/protocols/ebfc/in_silico/L3_quantum_chemistry.md` | DFT details, cascade verdict, L3b cathode |
+| `docs/protocols/ebfc/in_silico/L1_protein_architecture.md` | AlphaFold 3 results, d_FAD distance |
+| `docs/08_01_University_R_and_D_Protocols.md` | Мінаєв collaboration, xylem sap protocols |
+| `docs/08_03_Joint_Publications_and_IP_Strategy.md` | Publication plan, Стаття 28 |
+| `docs/08_06_CHMA_Biomedical_Integration.md` | ЧМА collaboration, Бушуєва |
+| `tools/in_silico/README.md` | Setup, quickstart, GPU notes, GAFF explanation |
 
 ## Purpose
 
