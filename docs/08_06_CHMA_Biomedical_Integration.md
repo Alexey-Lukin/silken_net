@@ -17,7 +17,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 3 — контакти ідентифіковані, формальну співпрацю не розпочато
+- **Поточний TRL:** TRL 3→4 — Zero-Lab in-silico gate PASSED (2026-05-25). Контакти ідентифіковані, формальну лабораторну співпрацю не розпочато. In-silico baseline: L2 RMSD 1.11 Å, L3 LUMO(Os III)=-4.23 eV, L4 delta_t=36s healthy. EIS predictions: Rct=130Ω. Script 40 готовий для автоматичного порівняння predictions vs in vitro CV/EIS data від Бушуєвої
 - **Стратегічний пріоритет:** P0 — без біохімічної валідації EBFC та токсикологічного клірансу хардвер залишається теорією; це прямий блокер для seed-раунду та whitepaper
 - **Пов'язані модулі:**
   - EBFC ензимний паливний елемент → [`01_03_EBFC_Enzymatic_Bio_Fuel_Cell`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) (Gen 2.0: dgrFAD-GDH, Laccase/ZIF-nanozyme, Genipin-Chitosan-CNC, Nafion-g-PSBMA)
