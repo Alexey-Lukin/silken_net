@@ -10,6 +10,7 @@ DFT_CACHE = CACHE_DIR / "dft"
 KINETICS_DIR = CACHE_DIR / "kinetics"
 RUNS_DIR = CACHE_DIR / "runs"
 CACHE_FILE = CACHE_DIR / "gaff_cache.json"
+AF3_PDB = REPO_ROOT / "docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb"
 
 # ── Force field ──
 GAFF_VERSION = "gaff-2.11"

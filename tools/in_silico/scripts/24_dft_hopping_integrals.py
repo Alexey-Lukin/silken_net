@@ -33,13 +33,14 @@ import os
 import numpy as np
 from pyscf import dft, gto
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
-DFT_CACHE = REPO_ROOT / "tools/in_silico/cache/dft"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.constants import (
+    LIGANDS_DIR, DFT_CACHE, HARTREE_TO_EV, BASIS_LIGHT, TEMPERATURE_K,
+)
+from lib.utils import banner
+
 DFT_CACHE.mkdir(parents=True, exist_ok=True)
 
-# charge, spin tuned per cluster to match electron count parity.
-# Odd electron count → odd spin; even → even.
 CLUSTERS = [
     ("cu_co_zif.xyz", "Cu", "Co", "Cu-Co (T1↔ZIF node)", +2, 2),
     ("co_ce_zif.xyz", "Co", "Ce", "Co-Ce (ZIF node↔vacancy)", +2, 3),
@@ -47,21 +48,13 @@ CLUSTERS = [
 ]
 
 XC_FUNCTIONAL = "b3lyp"
-BASIS_LIGHT = "6-31g(d)"
-# lanl2dz for 3d metals, stuttgart_rsc for lanthanide Ce (lanl2dz lacks Ce in PySCF)
 BASIS_METALS = {"Cu": "lanl2dz", "Co": "lanl2dz", "Ce": "stuttgart_rsc"}
 ECP_METALS = {"Cu": "lanl2dz", "Co": "lanl2dz", "Ce": "stuttgart_rsc"}
-HARTREE_TO_EV = 27.211386245988
 
-# Marcus theory constants
 HBAR = 6.582119569e-16   # eV·s
 KB = 8.617333262e-5       # eV/K
-TEMP = 298.15             # K
+TEMP = TEMPERATURE_K
 LAMBDA_REORG = 0.7        # eV (typical for d-metal ET in aqueous)
-
-
-def banner(msg: str) -> None:
-    print(f"\n[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
 def read_xyz(path: Path):

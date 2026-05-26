@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import json
 import sys
-import time
 from pathlib import Path
 
 import matplotlib
@@ -29,23 +28,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, LIGANDS_DIR, DFT_CACHE, KINETICS_DIR, HARTREE_TO_EV
+from lib.constants import (
+    KINETICS_DIR, R_GAS, F_CONST, TEMPERATURE_K,
+    N_ELECTRONS, V_OP, ETA_BQ, BASELINE_DELTA_T_S,
+)
+from lib.utils import banner
+
 OUT_DIR = KINETICS_DIR
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-R_GAS = 8.31446
-F_CONST = 96485.33
-T_REF = 298.15
+T_REF = TEMPERATURE_K
 N_SAMPLES = 10_000
-N_ELECTRONS = 2
-
-V_OP = 0.5
-ETA_BQ = 0.85
-BASELINE = 60.0
-
-
-def banner(msg: str) -> None:
-    print(f"\n[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
+BASELINE = float(BASELINE_DELTA_T_S)
 
 
 def delta_t(glucose_mm, temp_c, km, ea, jmax, a_el, e_cyc):

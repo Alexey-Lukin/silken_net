@@ -29,6 +29,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import LIGANDS_DIR, CACHE_FILE, GAFF_VERSION
+from lib.utils import banner
 
 from openff.toolkit import Molecule
 from openmm.app import ForceField
@@ -42,10 +43,6 @@ CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
 GENIPIN_SMILES = "COC(=O)C1=CO[C@H]([C@H]2[C@@H]1CC=C2CO)O"
 
 OUT_SDF = LIGANDS_DIR / "genipin.sdf"
-
-
-def banner(msg: str) -> None:
-    print(f"\n[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
 def main() -> int:

@@ -30,6 +30,7 @@ from openmmforcefields.generators import GAFFTemplateGenerator
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import LIGANDS_DIR, CACHE_FILE, GAFF_VERSION
+from lib.utils import banner
 
 LIGANDS_DIR.mkdir(parents=True, exist_ok=True)
 CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -42,10 +43,6 @@ CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
 PPY_PENTAMER_SMILES = "c1ccc([nH]1)-c2ccc([nH]2)-c3ccc([nH]3)-c4ccc([nH]4)-c5ccc[nH]5"
 
 OUT_SDF = LIGANDS_DIR / "ppy_pentamer.sdf"
-
-
-def banner(msg: str) -> None:
-    print(f"\n[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
 def main() -> int:

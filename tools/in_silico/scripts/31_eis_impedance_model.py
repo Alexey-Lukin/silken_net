@@ -32,42 +32,34 @@ from __future__ import annotations
 
 import json
 import sys
-import time
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, LIGANDS_DIR, DFT_CACHE, KINETICS_DIR, HARTREE_TO_EV
+from lib.constants import (
+    KINETICS_DIR, F_CONST, R_GAS, TEMPERATURE_K,
+    N_ELECTRONS, J_MAX_25C, A_ELECTRODE, D_EFF_GLUCOSE,
+)
+from lib.utils import banner
+
 OUT_DIR = KINETICS_DIR
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# Physical constants
-F_CONST = 96485.0        # C/mol
-R_GAS = 8.314            # J/(mol·K)
-T = 298.15               # K
-N_E = 2                  # electrons per glucose
-
-# EBFC parameters (from L2/L3/L4 pipeline)
-J_MAX = 494e-6           # A/cm² — exchange current proxy
-A_ELECTRODE = 2.0        # cm²
-D_GLUCOSE = 2e-6         # cm²/s — through chitosan/Nafion matrix
+T = TEMPERATURE_K
+N_E = N_ELECTRONS
+J_MAX = J_MAX_25C
+D_GLUCOSE = D_EFF_GLUCOSE
 C_GLUCOSE = 10e-6        # mol/cm³ (= 10 mM)
 
-# Equivalent circuit parameters
 R_S = 100.0              # Ω — solution resistance (xylem sap ~50-200 Ω)
 CDL = 50e-6              # F/cm² — double layer capacitance
 CPE_N = 0.85             # CPE exponent (1.0 = ideal capacitor, 0.5 = Warburg)
 
-# Frequency range for EIS sweep
 FREQ_MIN = 0.01          # Hz
 FREQ_MAX = 100_000       # Hz
 N_POINTS = 200
-
-
-def banner(msg: str) -> None:
-    print(f"\n[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
 def compute_rct() -> float:

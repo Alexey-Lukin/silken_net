@@ -32,52 +32,28 @@ from __future__ import annotations
 
 import json
 import sys
-import time
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, LIGANDS_DIR, DFT_CACHE, KINETICS_DIR, HARTREE_TO_EV
+from lib.constants import (
+    KINETICS_DIR, F_CONST, R_GAS, N_ELECTRONS,
+    J_MAX_25C, KM_GLUCOSE, EA_ENZYME, TEMPERATURE_K,
+    V_OP, A_ELECTRODE, ETA_BQ, E_CYCLE,
+    D_EFF_GLUCOSE, DELTA_MEMBRANE, BASELINE_DELTA_T_S,
+)
+
+T_REF = TEMPERATURE_K
+D_EFF = D_EFF_GLUCOSE
+from lib.utils import banner
+
 OUT_DIR = KINETICS_DIR
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# ═══════════════════════════════════════════════════════════════════
-# Physical constants
-# ═══════════════════════════════════════════════════════════════════
-F_CONST = 96485.0          # Faraday constant, C/mol
-R_GAS = 8.314              # gas constant, J/(mol·K)
-N_ELECTRONS = 2            # electrons per glucose (FAD → FADH₂)
-
-# ═══════════════════════════════════════════════════════════════════
-# EBFC parameters (from literature + docs)
-# ═══════════════════════════════════════════════════════════════════
-J_MAX_25C = 494e-6         # A/cm² — dgrGcGDH + Os-polymer at 20 mM glucose, 25°C (Zafar 2012, PMC3275720)
-KM_GLUCOSE = 20.0          # mM — estimated for GcGDH (between Asp 87 mM and Mucor 28 mM; j_max reached at 20 mM suggests Km ≤ 20)
-EA_ENZYME = 40_000.0       # J/mol — typical Arrhenius Ea for FAD-dependent enzyme reactions (literature range 30-50 kJ/mol)
-T_REF = 298.15             # K — reference temperature (25°C)
-
-V_OP = 0.5                 # V — EBFC under load (OCV 0.6-0.8 V from 01_03 §1, ~60-70% under MPPT)
-A_ELECTRODE = 2.0          # cm² — conservative estimate: portion of ~30 cm² gyroid surface with active enzyme layer
-
-ETA_BQ = 0.85              # BQ25570 boost converter efficiency
-E_CYCLE = 5e-3             # J — energy per MCU wake cycle (sense + compute + LoRa TX)
-
-# Diffusion (for mass-transport limitation check)
-D_EFF = 2e-6               # cm²/s — glucose in chitosan/Nafion matrix
-DELTA_MEMBRANE = 20e-4     # cm (= 20 µm) — total membrane + hydrogel thickness
-
-# Firmware constants (for validation)
-BASELINE_DELTA_T_S = 60    # seconds (bio_contract.rb)
-
-# Sweep ranges
 GLUCOSE_RANGE_MM = np.linspace(1, 30, 60)       # mM
 TEMP_RANGE_C = np.linspace(-10, 40, 51)          # °C
-
-
-def banner(msg: str) -> None:
-    print(f"\n[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
 def j_max_at_temp(temp_c: float) -> float:

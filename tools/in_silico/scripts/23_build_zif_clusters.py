@@ -20,30 +20,25 @@ Run
 """
 from __future__ import annotations
 
-import time
+import sys
 from pathlib import Path
 
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.constants import LIGANDS_DIR
+from lib.utils import banner
+
 LIGANDS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Metal-N bond lengths (Å) from crystallographic data
-BOND_CU_N = 2.02   # Cu²⁺ in ZIF / imidazolate
-BOND_CO_N = 2.05   # Co²⁺ in ZIF-67
-BOND_CE_N = 2.45   # Ce³⁺ in imidazolate (larger ionic radius)
-
-# ZIF node-to-node distance (through imidazolate bridge)
+BOND_CU_N = 2.02   # Å — Cu²⁺ in ZIF / imidazolate
+BOND_CO_N = 2.05   # Å — Co²⁺ in ZIF-67
+BOND_CE_N = 2.45   # Å — Ce³⁺ in imidazolate (larger ionic radius)
 ZIF_NODE_DIST = 6.0  # Å (sodalite topology)
 
 MEIMID_SMILES = "Cc1ncc[nH]1"
-
-
-def banner(msg: str) -> None:
-    print(f"\n[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
 def build_meimidazole() -> tuple[list[tuple[str, np.ndarray]], int, int]:

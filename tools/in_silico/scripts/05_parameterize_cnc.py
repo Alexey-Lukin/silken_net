@@ -30,6 +30,7 @@ from openmmforcefields.generators import GAFFTemplateGenerator
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import LIGANDS_DIR, CACHE_FILE, GAFF_VERSION
+from lib.utils import banner
 
 LIGANDS_DIR.mkdir(parents=True, exist_ok=True)
 CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -45,10 +46,6 @@ CELLOBIOSE_SMILES = (
 )
 
 OUT_SDF = LIGANDS_DIR / "cellobiose.sdf"
-
-
-def banner(msg: str) -> None:
-    print(f"\n[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
 def main() -> int:

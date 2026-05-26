@@ -46,28 +46,20 @@ from openmmforcefields.generators import GAFFTemplateGenerator
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-AF3_PDB = REPO_ROOT / "docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb"
-LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
-CACHE_DIR = REPO_ROOT / "tools/in_silico/cache"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.constants import REPO_ROOT, AF3_PDB, LIGANDS_DIR, CACHE_DIR, CACHE_FILE, GAFF_VERSION
+from lib.utils import banner
+
 LIGANDS_DIR.mkdir(parents=True, exist_ok=True)
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 # Canonical FAD SMILES from AF3 job's CCD entry (chemical formula C27H33N9O15P2).
-# Source: docs/protocols/ebfc/in_silico/alphafold3/fold_dgrgcgdh_fad_v1_model_0.cif
-# (chem_comp.pdbx_smiles for residue FAD).
 FAD_SMILES = (
     "Cc1cc2N=C3C(=O)NC(=O)N=C3N(C[C@H](O)[C@H](O)[C@H](O)CO[P@](O)(=O)"
     "O[P@@](O)(=O)OC[C@H]4O[C@H]([C@H](O)[C@@H]4O)n5cnc6c(N)ncnc56)c2cc1C"
 )
 
-GAFF_VERSION = "gaff-2.11"
 OUT_SDF = LIGANDS_DIR / "FAD.sdf"
-CACHE_FILE = CACHE_DIR / "gaff_cache.json"
-
-
-def banner(msg: str) -> None:
-    print(f"\n[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
 def extract_fad_pdb_block(pdb_path: Path) -> str:

@@ -57,7 +57,11 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, LIGANDS_DIR, DFT_CACHE, KINETICS_DIR, HARTREE_TO_EV
+from lib.constants import (
+    REPO_ROOT, LIGANDS_DIR, DFT_CACHE, KINETICS_DIR, HARTREE_TO_EV,
+    BASIS_LIGHT, SOLVENT_EPS_WATER,
+)
+from lib.utils import banner
 
 
 
@@ -71,13 +75,7 @@ LUMIFLAVIN_OX_SMILES = "Cc1cc2nc3c(=O)[nH]c(=O)nc3n(C)c2cc1C"
 LUMIFLAVIN_RED_SMILES = "CC1=CC2=C(C=C1C)N(C)C3=NC(=O)NC(=O)C3N2"
 
 XC_FUNCTIONAL = "b3lyp"
-BASIS_LIGHT = "6-31g(d)"      # for organic ligands; bump to def2-tzvp for publication
-SOLVENT_EPS_WATER = 78.3553   # xylem ≈ water
 MMFF_ITER = 2000
-
-
-def banner(msg: str) -> None:
-    print(f"\n[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
 def build_mol_from_smiles(smiles: str, name: str) -> Chem.Mol:

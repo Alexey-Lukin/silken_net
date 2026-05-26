@@ -33,6 +33,7 @@ from openmmforcefields.generators import GAFFTemplateGenerator
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import LIGANDS_DIR, CACHE_FILE, GAFF_VERSION
+from lib.utils import banner
 
 LIGANDS_DIR.mkdir(parents=True, exist_ok=True)
 CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -43,10 +44,6 @@ CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
 SBMA_SMILES = "C=C(C)C(=O)OCC[N+](C)(C)CCCS([O-])(=O)=O"
 
 OUT_SDF = LIGANDS_DIR / "sbma_monomer.sdf"
-
-
-def banner(msg: str) -> None:
-    print(f"\n[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
 def main() -> int:

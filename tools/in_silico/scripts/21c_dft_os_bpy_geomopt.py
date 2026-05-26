@@ -30,9 +30,13 @@ import numpy as np
 from pyscf import dft, gto, solvent
 from pyscf.geomopt import geometric_solver
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
-DFT_CACHE = REPO_ROOT / "tools/in_silico/cache/dft"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.constants import (
+    LIGANDS_DIR, DFT_CACHE, HARTREE_TO_EV, BOHR_TO_ANG,
+    BASIS_LIGHT, BASIS_OS, ECP_OS, SOLVENT_EPS_WATER,
+)
+from lib.utils import banner
+
 LIGANDS_DIR.mkdir(parents=True, exist_ok=True)
 DFT_CACHE.mkdir(parents=True, exist_ok=True)
 
@@ -41,16 +45,7 @@ OUTPUT_XYZ = LIGANDS_DIR / "os_bpy_im_cl_opt.xyz"
 OUTPUT_JSON = DFT_CACHE / "os_complex_geomopt.json"
 
 XC_FUNCTIONAL = "b3lyp"
-BASIS_LIGHT = "6-31g(d)"
-BASIS_OS = "lanl2dz"
-ECP_OS = "lanl2dz"
-SOLVENT_EPS = 78.3553
-HARTREE_TO_EV = 27.211386245988
-BOHR_TO_ANG = 0.529177249
-
-
-def banner(msg: str) -> None:
-    print(f"\n[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
+SOLVENT_EPS = SOLVENT_EPS_WATER
 
 
 def read_xyz(path: Path) -> list[tuple[str, tuple[float, float, float]]]:

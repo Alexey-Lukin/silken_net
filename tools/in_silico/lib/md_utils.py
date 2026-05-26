@@ -2,15 +2,10 @@
 from __future__ import annotations
 
 from datetime import datetime
-from pathlib import Path
 
 import numpy as np
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-RUNS_DIR = REPO_ROOT / "tools/in_silico/cache/runs"
-AF3_PDB = REPO_ROOT / "docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb"
-LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
-CACHE_FILE = REPO_ROOT / "tools/in_silico/cache/gaff_cache.json"
+from .constants import RUNS_DIR, AF3_PDB, LIGANDS_DIR, CACHE_FILE
 
 
 def create_run_dir(prefix: str = "") -> tuple[str, Path]:

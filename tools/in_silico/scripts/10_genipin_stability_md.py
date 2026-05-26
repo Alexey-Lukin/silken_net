@@ -89,35 +89,18 @@ from openmmforcefields.generators import GAFFTemplateGenerator
 from pdbfixer import PDBFixer
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.constants import (
+    REPO_ROOT, AF3_PDB, LIGANDS_DIR, CACHE_FILE, RUNS_DIR,
+    PH, IONIC_STRENGTH, PRESSURE_ATM, WATER_PADDING_NM, TIMESTEP_FS,
+    EQUIL_NVT_PS, EQUIL_NPT_PS, N_GENIPIN, GAFF_VERSION,
+)
 from lib.geometry import positions_to_nm_array, restraint_protein_heavy_atoms
 from lib.utils import banner, ps_to_steps, pick_platform
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-AF3_PDB = REPO_ROOT / "docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb"
-LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
 FAD_SDF = LIGANDS_DIR / "FAD.sdf"
 GENIPIN_SDF = LIGANDS_DIR / "genipin.sdf"
-CACHE_FILE = REPO_ROOT / "tools/in_silico/cache/gaff_cache.json"
-RUNS_DIR = REPO_ROOT / "tools/in_silico/cache/runs"
-
-# Physical parameters (xylem-like environment per docs/01_03 §3.5)
-PH = 4.5
 TEMPERATURE_K = 298
-PRESSURE_ATM = 1.0
-IONIC_STRENGTH = 0.05      # molar
-WATER_PADDING_NM = 1.0
-TIMESTEP_FS = 2.0
-
-# Stage lengths (picoseconds → steps)
-EQUIL_NVT_PS = 50
-EQUIL_NPT_PS = 100
-# Production length is small by default so the smoke run completes in
-# ~10 minutes; override with env var SILKEN_PRODUCTION_PS for a longer run.
 PRODUCTION_PS = int(os.environ.get("SILKEN_PRODUCTION_PS", "100"))
-
-# Ligand layout
-N_GENIPIN = 10
-GAFF_VERSION = "gaff-2.11"
 
 REPORT_EVERY_PS = 1.0    # state log frequency
 TRAJECTORY_EVERY_PS = 2.0   # DCD frame frequency

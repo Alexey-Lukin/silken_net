@@ -25,7 +25,6 @@ Run
 from __future__ import annotations
 
 import json
-import time
 from pathlib import Path
 
 import matplotlib
@@ -33,9 +32,12 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-DFT_CACHE = REPO_ROOT / "tools/in_silico/cache/dft"
-KINETICS = REPO_ROOT / "tools/in_silico/cache/kinetics"
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.constants import DFT_CACHE, KINETICS_DIR
+from lib.utils import banner
+
+KINETICS = KINETICS_DIR
 OUT_DIR = KINETICS
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -94,10 +96,6 @@ EXPERIMENTAL = {
     # "Km_mM": 25,                # From Lineweaver-Burk plot
     # "stability_30d_pct": 92,    # Activity retention after 30 days
 }
-
-
-def banner(msg: str) -> None:
-    print(f"\n[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
 def main() -> int:

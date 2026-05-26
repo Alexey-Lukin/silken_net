@@ -83,29 +83,25 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.constants import (
+    REPO_ROOT, LIGANDS_DIR, CACHE_FILE, RUNS_DIR, KINETICS_DIR,
+    PRESSURE_ATM, TIMESTEP_FS, GAFF_VERSION,
+)
 from lib.geometry import positions_to_nm_array
 from lib.utils import banner, ps_to_steps, pick_platform
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
 SBMA_SDF = LIGANDS_DIR / "sbma_monomer.sdf"
-CACHE_FILE = REPO_ROOT / "tools/in_silico/cache/gaff_cache.json"
-RUNS_DIR = REPO_ROOT / "tools/in_silico/cache/runs"
-OUT_DIR = REPO_ROOT / "tools/in_silico/cache/kinetics"
+OUT_DIR = KINETICS_DIR
 
-# Glucose SMILES (D-glucose, β-pyranose)
 GLUCOSE_SMILES = "OC[C@H]1OC(O)[C@H](O)[C@@H](O)[C@@H]1O"
 
-N_SBMA = 30          # SBMA monomers in membrane slab
-N_GLUCOSE = 5        # glucose probes
-SLAB_THICKNESS_NM = 3.0  # nm — represents Layers 4+5 combined (~20 µm in reality, scaled down for tractable MD box)
+N_SBMA = 30
+N_GLUCOSE = 5
+SLAB_THICKNESS_NM = 3.0
 TEMPERATURE_K = 298
-PRESSURE_ATM = 1.0
-TIMESTEP_FS = 2.0
 EQUIL_NVT_PS = 20
 EQUIL_NPT_PS = 50
 PRODUCTION_PS = int(os.environ.get("SILKEN_PRODUCTION_PS", "200"))
-GAFF_VERSION = "gaff-2.11"
 REPORT_EVERY_PS = 0.5
 TRAJECTORY_EVERY_PS = 1.0
 

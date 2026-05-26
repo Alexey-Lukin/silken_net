@@ -45,9 +45,13 @@ from pathlib import Path
 import numpy as np
 from pyscf import dft, gto, solvent
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
-DFT_CACHE = REPO_ROOT / "tools/in_silico/cache/dft"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.constants import (
+    LIGANDS_DIR, DFT_CACHE, HARTREE_TO_EV,
+    BASIS_LIGHT, BASIS_OS, ECP_OS, SOLVENT_EPS_WATER,
+)
+from lib.utils import banner
+
 LIGANDS_DIR.mkdir(parents=True, exist_ok=True)
 DFT_CACHE.mkdir(parents=True, exist_ok=True)
 
@@ -56,15 +60,6 @@ OS_CL = 2.35
 N_H_AMINE = 1.01
 
 XC_FUNCTIONAL = "b3lyp"
-BASIS_LIGHT = "6-31g(d)"
-BASIS_OS = "lanl2dz"
-ECP_OS = "lanl2dz"
-SOLVENT_EPS_WATER = 78.3553
-HARTREE_TO_EV = 27.211386245988
-
-
-def banner(msg: str) -> None:
-    print(f"\n[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
 def build_nh3_at_position(n_pos: np.ndarray, os_pos: np.ndarray) -> list[tuple[str, np.ndarray]]:

@@ -46,8 +46,11 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, LIGANDS_DIR, DFT_CACHE, KINETICS_DIR, HARTREE_TO_EV
-
+from lib.constants import (
+    REPO_ROOT, LIGANDS_DIR, DFT_CACHE, KINETICS_DIR, HARTREE_TO_EV,
+    BASIS_LIGHT, BASIS_OS, ECP_OS, SOLVENT_EPS_WATER,
+)
+from lib.utils import banner
 
 
 # ── Bond lengths (Å) from crystallographic data of Os-bpy complexes ──
@@ -56,16 +59,8 @@ OS_N_IM = 2.10
 OS_CL = 2.38
 BITE_DEG = 78.0
 
-# ── DFT settings ──
 XC_FUNCTIONAL = "b3lyp"
-BASIS_LIGHT = "6-31g(d)"
-BASIS_OS = "lanl2dz"
-ECP_OS = "lanl2dz"
-SOLVENT_EPS = 78.3553
-
-
-def banner(msg: str) -> None:
-    print(f"\n[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
+SOLVENT_EPS = SOLVENT_EPS_WATER
 
 
 # ═══════════════════════════════════════════════════════════════════

@@ -39,43 +39,15 @@ from openmm.app import PME, ForceField, HBonds, Modeller, PDBFile, Simulation
 from openmm.unit import femtosecond, kelvin, kilojoule_per_mole, molar, nanometer, picosecond
 from pdbfixer import PDBFixer
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-INPUT_PDB = REPO_ROOT / "docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.constants import REPO_ROOT, AF3_PDB, PH, IONIC_STRENGTH, TIMESTEP_FS
+from lib.utils import banner, pick_platform
 
-# Xylem-like environment per docs/01_03 §3.5.
-PH = 4.5
-IONIC_STRENGTH = 0.05  # molar — physiologically representative; xylem itself is ~0.001–0.005 M
-TEMPERATURE = 298       # K — room temperature; trees in spring/summer
+INPUT_PDB = AF3_PDB
+TEMPERATURE = 298       # K
 WATER_PADDING = float(os.environ.get("SILKEN_WATER_PADDING", "1.0"))  # nm; CI uses 0.5 for speed
-TIMESTEP_FS = 2.0
 MD_STEPS = int(os.environ.get("SILKEN_MD_STEPS", "1000"))  # CI uses 100 for speed
 MIN_ITERATIONS = int(os.environ.get("SILKEN_MIN_ITERATIONS", "500"))
-
-
-def banner(msg: str) -> None:
-    print(f"\n[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
-
-
-def pick_fastest_platform() -> Platform:
-    """Pick the fastest available OpenMM platform.
-
-    `SILKEN_FORCE_PLATFORM` (env var) overrides the auto-selection — used by
-    CI to pin "CPU" so the smoke test stays deterministic across runners
-    without GPU drivers. Auto order on a free-form machine: CUDA > OpenCL >
-    CPU > Reference.
-    """
-    forced = os.environ.get("SILKEN_FORCE_PLATFORM", "").strip()
-    if forced:
-        try:
-            return Platform.getPlatformByName(forced)
-        except openmm.OpenMMException as e:
-            sys.exit(f"SILKEN_FORCE_PLATFORM='{forced}' is not available: {e}")
-    for name in ("CUDA", "OpenCL", "CPU", "Reference"):
-        try:
-            return Platform.getPlatformByName(name)
-        except openmm.OpenMMException:
-            continue
-    raise RuntimeError("No OpenMM platform available")
 
 
 def main() -> int:
@@ -130,7 +102,7 @@ def main() -> int:
         1.0 / picosecond,
         TIMESTEP_FS * femtosecond,
     )
-    platform = pick_fastest_platform()
+    platform = pick_platform()
     print(f"Platform: {platform.getName()}")
     simulation = Simulation(modeller.topology, system, integrator, platform)
     simulation.context.setPositions(modeller.positions)

@@ -31,6 +31,7 @@ from openmmforcefields.generators import GAFFTemplateGenerator
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import LIGANDS_DIR, CACHE_FILE, GAFF_VERSION
+from lib.utils import banner
 
 LIGANDS_DIR.mkdir(parents=True, exist_ok=True)
 CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -44,10 +45,6 @@ CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
 PVI_TRIMER_SMILES = "C[C@@H](n1ccnc1)C[C@H](n2ccnc2)C[C@@H](n3ccnc3)C"
 
 OUT_SDF = LIGANDS_DIR / "pvi_trimer.sdf"
-
-
-def banner(msg: str) -> None:
-    print(f"\n[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
 def main() -> int:

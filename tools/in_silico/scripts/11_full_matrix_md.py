@@ -34,8 +34,6 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-import sys
-
 import numpy as np
 import openmm
 from openff.toolkit import Molecule

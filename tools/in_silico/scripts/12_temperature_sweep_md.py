@@ -71,34 +71,22 @@ from openmmforcefields.generators import GAFFTemplateGenerator
 from pdbfixer import PDBFixer
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.constants import (
+    REPO_ROOT, AF3_PDB, LIGANDS_DIR, CACHE_FILE, RUNS_DIR,
+    PH, PRESSURE_ATM, IONIC_STRENGTH, WATER_PADDING_NM, TIMESTEP_FS,
+    EQUIL_NVT_PS, EQUIL_NPT_PS,
+    N_GENIPIN, N_CHITOSAN, N_CELLOBIOSE, GAFF_VERSION,
+)
 from lib.geometry import positions_to_nm_array, place_on_sphere, restraint_protein_heavy_atoms
 from lib.utils import banner, ps_to_steps, pick_platform
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-AF3_PDB = REPO_ROOT / "docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb"
-LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
 FAD_SDF = LIGANDS_DIR / "FAD.sdf"
 GENIPIN_SDF = LIGANDS_DIR / "genipin.sdf"
 CHITOSAN_SDF = LIGANDS_DIR / "chitosan_trimer.sdf"
 CELLOBIOSE_SDF = LIGANDS_DIR / "cellobiose.sdf"
-CACHE_FILE = REPO_ROOT / "tools/in_silico/cache/gaff_cache.json"
-RUNS_DIR = REPO_ROOT / "tools/in_silico/cache/runs"
 
 DEFAULT_TEMPS_K = [263, 278, 298, 313]  # -10, 5, 25, 40 °C
-
-PH = 4.5
-PRESSURE_ATM = 1.0
-IONIC_STRENGTH = 0.05
-WATER_PADDING_NM = 1.0
-TIMESTEP_FS = 2.0
-EQUIL_NVT_PS = 50
-EQUIL_NPT_PS = 100
 PRODUCTION_PS = int(os.environ.get("SILKEN_PRODUCTION_PS", "100"))
-
-N_GENIPIN = 10
-N_CHITOSAN = 5
-N_CELLOBIOSE = 8
-GAFF_VERSION = "gaff-2.11"
 REPORT_EVERY_PS = 1.0
 TRAJECTORY_EVERY_PS = 2.0
 
