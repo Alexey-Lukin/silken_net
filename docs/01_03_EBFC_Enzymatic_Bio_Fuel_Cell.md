@@ -370,7 +370,7 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 1. ✅ L1 (AF3 + ChimeraX d_FAD)
 2. ✅ L2 (genipin RMSD, baseline)
 3. ✅ L2-extended (genipin + chitosan + CNC, 100 ps, 2026-05-25) — RMSD 1.11 Å ≪ 3 Å
-4. 🟢 L3 strong partial pass. B3LYP: LUMO(Os III) = -4.23 eV, Δε = -0.91 eV raw / -0.07 eV corrected. Geom opt terminated (Cl flat PES). **ωB97X/def2-TZVP publication-grade ⏳ running** (script 21d). **L3b cathode DET**: Cu-Co t_ij=0.0325 eV, k_ET=2.34×10¹⁰ s⁻¹ ✅; Co-Ce ⏳ computing; Ce-graphene ⏳ queued. Деталі → [`L3_quantum_chemistry.md`](protocols/ebfc/in_silico/L3_quantum_chemistry.md))
+4. 🟢 L3 strong partial pass. B3LYP: LUMO(Os III) = -4.23 eV, Δε = -0.91 eV raw / -0.07 eV corrected. **ωB97X/def2-TZVP (script 21d): Os(II) ✅ converged** (HOMO=-7.13 eV, Gap=6.69 eV — RSH dramatically different from B3LYP), **Os(III) ⏳ computing** solo ~700% CPU, FADH₂ queued. **L3b cathode DET**: Cu-Co t_ij=0.0325 eV ✅; Co-Ce — restart solo after ωB97X. Деталі → [`L3_quantum_chemistry.md`](protocols/ebfc/in_silico/L3_quantum_chemistry.md))
 5. ✅ L4 (2026-05-25): Michaelis-Menten + Arrhenius + BQ25570 boost → **delta_t validated**. Healthy tree (10 mM, 25°C): 35.7 s < 60s baseline; stressed (5 mM, 5°C): 190 s > 60s. EBFC discriminates health → Lorenz attractor receives meaningful β-perturbation. Скрипт: `30_kinetics_delta_t.py`. Diffusion NOT rate-limiting (j_diff >> j_kinetic).
 
 **Гейт TRL 3 → 4 (Zero-Lab):** ✅ **PASSED** (2026-05-25). Усі 4 рівні дали позитивний результат. Zero-Lab computational proof завершено — EBFC Gen 2.0 доведено in silico на всіх рівнях (структура → стабільність → редокс-потенціал → кінетика). Наступний крок — замовлення Ti-monet у CRO (Stage 2).
