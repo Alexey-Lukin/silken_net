@@ -44,9 +44,9 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 | Parameter | Value |
 |-----------|-------|
 | System | dgrGcGDH + FAD + 10×genipin in TIP3P/NaCl |
-| Atoms | 477,413 |
-| **Backbone RMSD** | **0.951 ± 0.200 Å (max 1.142)** |
-| Speed | 10.37 ns/day (Apple OpenCL) |
+| Atoms | 473,607 |
+| **Backbone RMSD** | **1.197 ± 0.308 Å (max 1.575)** ✅ (correct C₁₁ genipin, rerun 2026-05-26) |
+| Speed | 8.39 ns/day (Apple OpenCL) |
 
 ### Extended (full Gen 2.0 matrix)
 | Parameter | Value |
