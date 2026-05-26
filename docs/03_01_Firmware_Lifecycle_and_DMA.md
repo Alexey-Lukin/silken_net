@@ -348,6 +348,8 @@ last_wakeup_timestamp = current_time;
 
 `delta_t_seconds` — час між пробудженнями в секундах. Відображає швидкість заряду EDLC суперконденсатора (іоністора). Чим швидше заряд → тим активніший фотосинтез → тим здоровіше дерево. Це є первинний біофізичний сигнал для Атрактора Лоренца.
 
+> **In-silico L4 validation (2026-05-25):** Michaelis-Menten + Arrhenius модель підтверджує `BASELINE_DELTA_T_S=60` фізично обґрунтованим. Очікувані значення: здорове дерево (10 мМ глюкози, 25°C) → delta_t ≈ 36 с; стресоване (5 мМ, 5°C) → ≈ 190 с; Monte Carlo 90% CI для healthy: 14–120 с. Деталі → [`01_03 §3.4 L4`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell), [`in_silico/SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md).
+
 **АЦП (два окремих цикли Start/Poll/Stop):**
 
 ```c

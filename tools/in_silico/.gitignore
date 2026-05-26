@@ -1,3 +1,6 @@
+# macOS
+.DS_Store
+
 # Conda envs should NEVER be committed (multi-GB, machine-specific binaries)
 env/
 .env/
