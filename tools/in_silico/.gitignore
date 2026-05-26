@@ -1,6 +1,14 @@
 # macOS
 .DS_Store
 
+# IDE
+.vscode/
+.idea/
+
+# Serialized objects
+*.pkl
+*.pickle
+
 # Conda envs should NEVER be committed (multi-GB, machine-specific binaries)
 env/
 .env/

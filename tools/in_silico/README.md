@@ -8,8 +8,8 @@ in-silico validation pipeline described in
 |-------|------|---------------|
 | **L1** | AlphaFold 3 / ESMFold | Protein architecture — ✅ Passed 2026-05-24 (`d_FAD = 15.998 Å`) |
 | **L2** | **OpenMM** (Python API) | Molecular dynamics — water box, pH 4.5, genipin/Os-polymer/CNC stability |
-| **L3** | PySCF | DFT — HOMO/LUMO of Os redox polymer vs FAD cofactor |
-| **L4** | Cantera + MM extension | Reaction kinetics — `delta_t` for Lorenz attractor |
+| **L3** | PySCF | DFT — HOMO/LUMO of Os redox polymer vs FAD cofactor + cathode DET hopping |
+| **L4** | Python (scipy/numpy) | Reaction kinetics + EIS impedance → `delta_t` + Nyquist predictions |
 
 SSOT artifacts (PDB structures, validation results, papers) live in
 `docs/protocols/ebfc/in_silico/`. Scripts live in `scripts/` here.
@@ -79,6 +79,25 @@ every PR that touches `tools/in_silico/**` or `docs/protocols/ebfc/in_silico/**`
 with `SILKEN_FORCE_PLATFORM=CPU` so the run is deterministic on hosted
 runners. The conda env is cached by `mamba-org/setup-micromamba@v2` (keyed
 on `environment.yml`), so cold runs take ~10 min, cached runs ~3 min.
+
+## L1 protein structure (AlphaFold 3)
+
+L1 uses AlphaFold 3 Server to predict the GOx homodimer + FAD cofactor
+structure. The result PDB is stored in `docs/protocols/ebfc/in_silico/`
+and used as input for all L2 MD simulations.
+
+1. Go to [AlphaFold 3 Server](https://alphafoldserver.com/) and sign in
+   with a Google account (free for academic/non-commercial use).
+2. Create a new job:
+   - **Protein**: paste GOx sequence (UniProt P13006, chain A, 583 aa)
+   - **Ligand**: add FAD (CCD code `FAD`)
+   - **Copies**: 2 (homodimer)
+3. Submit and wait (~5 min). Download the top-ranked PDB.
+4. Rename to `fold_gox_fad_model_0.pdb` and place in
+   `docs/protocols/ebfc/in_silico/`.
+
+Current result: `d_FAD = 15.998 Å` (inter-subunit FAD distance),
+pLDDT = 93.2 (high confidence). See `01_03 §3.4` for validation.
 
 ## Quickstart (one-time setup)
 

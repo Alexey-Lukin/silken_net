@@ -21,4 +21,5 @@ dependencies:
   - jupyterlab
   # --- testing ---
   - pytest>=7.0
+  - pytest-cov>=4.0
   - pip

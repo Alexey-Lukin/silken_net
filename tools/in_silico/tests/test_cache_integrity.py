@@ -158,6 +158,57 @@ def test_constants_importable():
     assert KM_GLUCOSE == 20.0
 
 
+# ── Constants vs documentation consistency ──
+
+def test_constants_match_kinetics_output():
+    """Verify constants.py values are used in kinetics output."""
+    import sys
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib.constants import J_MAX_25C, KM_GLUCOSE, BASELINE_DELTA_T_S
+
+    data = json.loads((KINETICS / "delta_t_lookup.json").read_text())
+    assert data["parameters"]["j_max_25C_uA_cm2"] == J_MAX_25C * 1e6
+    assert data["parameters"]["Km_mM"] == KM_GLUCOSE
+    assert data["parameters"]["BASELINE_DELTA_T_S"] == BASELINE_DELTA_T_S
+
+
+def test_dft_os_redox_pair_ordering():
+    """Os(II) HOMO should be higher than Os(III) HOMO (reduced is less bound)."""
+    path = DFT / "os_complex.json"
+    if not path.exists():
+        pytest.skip("os_complex.json missing")
+    data = json.loads(path.read_text())
+    os2_homo = data["os2_plus"]["HOMO_eV"]
+    os3_homo = data["os3_plus"]["HOMO_eV"]
+    assert os2_homo > os3_homo, f"Os(II) HOMO {os2_homo} should be > Os(III) HOMO {os3_homo}"
+
+
+def test_xylem_sap_profiles():
+    """Verify xylem sap configurator has expected profiles."""
+    import sys
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib.xylem_sap import SAP_PROFILES, get_sap_profile
+
+    assert len(SAP_PROFILES) >= 6
+    pine = get_sap_profile("pinus_sylvestris")
+    assert 4.0 <= pine["ph"] <= 6.0
+    assert pine["glucose_mM"] > 0
+    spruce = get_sap_profile("picea_abies")
+    assert spruce["ph"] < pine["ph"], "Spruce should be more acidic than pine"
+
+
+def test_shared_lib_modules():
+    """Verify all shared lib modules importable."""
+    import sys
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib.constants import REPO_ROOT
+    from lib.geometry import positions_to_nm_array, place_on_sphere, restraint_protein_heavy_atoms
+    from lib.utils import banner, ps_to_steps, pick_platform
+    from lib.xylem_sap import SAP_PROFILES
+    assert REPO_ROOT.exists()
+    assert len(SAP_PROFILES) >= 6
+
+
 # ── Script existence ──
 
 EXPECTED_SCRIPTS = [
