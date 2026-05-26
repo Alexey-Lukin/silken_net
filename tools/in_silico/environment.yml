@@ -18,7 +18,7 @@ dependencies:
   # pyscf: pure-Python DFT engine. geometric: external geometry optimiser
   # used via pyscf-geometric integration.
   - pyscf
-  - geometric
+  - geometric  # geomeTRIC optimizer for PySCF geometry optimization (pyscf.geomopt)
   # --- analysis / notebooks ---
   - matplotlib
   - numpy
