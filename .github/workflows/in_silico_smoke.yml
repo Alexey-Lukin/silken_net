@@ -51,6 +51,6 @@ jobs:
         env:
           SILKEN_FORCE_PLATFORM: CPU
           SILKEN_WATER_PADDING: "0.5"
-          SILKEN_MIN_ITERATIONS: "200"
+          SILKEN_MIN_ITERATIONS: "1000"
           SILKEN_MD_STEPS: "100"
         run: python tools/in_silico/scripts/01_smoke_test_water_box.py

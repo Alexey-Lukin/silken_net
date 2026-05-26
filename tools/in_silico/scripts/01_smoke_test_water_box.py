@@ -113,10 +113,11 @@ def main() -> int:
     e0 = state0.getPotentialEnergy().value_in_unit(kilojoule_per_mole)
     print(f"  PE before min: {e0:>14.2f} kJ/mol")
     t = time.time()
-    simulation.minimizeEnergy(maxIterations=MIN_ITERATIONS)
+    simulation.minimizeEnergy(maxIterations=max(MIN_ITERATIONS, 500))
     dt_min = time.time() - t
     e1 = simulation.context.getState(getEnergy=True).getPotentialEnergy().value_in_unit(kilojoule_per_mole)
-    print(f"  PE after  min: {e1:>14.2f} kJ/mol  ({dt_min:.2f}s, {MIN_ITERATIONS} iter max)")
+    actual_iters = max(MIN_ITERATIONS, 500)
+    print(f"  PE after  min: {e1:>14.2f} kJ/mol  ({dt_min:.2f}s, {actual_iters} iter max)")
     if e1 >= e0:
         sys.exit(f"FAIL: minimisation did not reduce PE: {e0:.2f} → {e1:.2f}")
     if e1 > 0:
