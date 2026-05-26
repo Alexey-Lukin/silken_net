@@ -292,7 +292,7 @@ Solana: Ed25519 підпис, SPL Token Transfer, ATA резолюція чер�
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **silken_net** (10018 symbols, 18539 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **silken_net** (10925 symbols, 19601 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -330,5 +330,25 @@ This project is indexed by GitNexus as **silken_net** (10018 symbols, 18539 rela
 | Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
 | Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
 | Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
+| Work in the Maintenance area (198 symbols) | `.claude/skills/generated/maintenance/SKILL.md` |
+| Work in the Models area (196 symbols) | `.claude/skills/generated/models/SKILL.md` |
+| Work in the V1 area (158 symbols) | `.claude/skills/generated/v1/SKILL.md` |
+| Work in the Test area (119 symbols) | `.claude/skills/generated/test/SKILL.md` |
+| Work in the Ui area (114 symbols) | `.claude/skills/generated/ui/SKILL.md` |
+| Work in the Previews area (112 symbols) | `.claude/skills/generated/previews/SKILL.md` |
+| Work in the Scripts area (108 symbols) | `.claude/skills/generated/scripts/SKILL.md` |
+| Work in the Services area (107 symbols) | `.claude/skills/generated/services/SKILL.md` |
+| Work in the Codex area (99 symbols) | `.claude/skills/generated/codex/SKILL.md` |
+| Work in the Workers area (57 symbols) | `.claude/skills/generated/workers/SKILL.md` |
+| Work in the Fractions area (46 symbols) | `.claude/skills/generated/fractions/SKILL.md` |
+| Work in the Web3 area (40 symbols) | `.claude/skills/generated/web3/SKILL.md` |
+| Work in the Soldier area (37 symbols) | `.claude/skills/generated/soldier/SKILL.md` |
+| Work in the Trees area (32 symbols) | `.claude/skills/generated/trees/SKILL.md` |
+| Work in the Factory_flashing area (30 symbols) | `.claude/skills/generated/factory-flashing/SKILL.md` |
+| Work in the Queen area (27 symbols) | `.claude/skills/generated/queen/SKILL.md` |
+| Work in the Clusters area (24 symbols) | `.claude/skills/generated/clusters/SKILL.md` |
+| Work in the Tree_chronicle area (23 symbols) | `.claude/skills/generated/tree-chronicle/SKILL.md` |
+| Work in the Policies area (20 symbols) | `.claude/skills/generated/policies/SKILL.md` |
+| Work in the Hil area (20 symbols) | `.claude/skills/generated/hil/SKILL.md` |
 
 <!-- gitnexus:end -->
