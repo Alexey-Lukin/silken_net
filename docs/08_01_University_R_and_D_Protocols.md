@@ -12,7 +12,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 3 — протоколи сформульовані, лабораторні контакти встановлюються
+- **Поточний TRL:** TRL 3 baseline; **TRL 3→4 gate PASSED** (2026-05-25) — Zero-Lab in-silico pipeline L1-L4 ✅
 - **Стратегічний пріоритет:** P0 — без академічної верифікації хардвер залишається теорією
 - **Пов'язані модулі:**
   - Гіроїдний анкер → [`01_01_Coaxial_Gyroid_Topology_and_PEEK`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
@@ -270,11 +270,11 @@
 |--------|--------|--------|--------------------|
 | **L1** | Protein architecture (AlphaFold 3) | ✅ Pass | dgrGcGDH+FAD fold, ipTM=0.99, pTM=0.93; d\_FAD = 15.998 Å < tunneling range ~18–20 Å |
 | **L2** | Stability MD (OpenMM) | ✅ Pass | **Baseline:** RMSD 0.95 ± 0.20 Å (10×genipin, 477k atoms). **L2-ext (2026-05-25):** RMSD **1.11 ± 0.26 Å** (10×GEN+5×CSO+8×CLB full matrix, 467k atoms) ≪ 3 Å → повна Gen 2.0 матриця стабільна |
-| **L3** | DFT frontier orbitals (PySCF) | 🟢 Strong partial → ⏳ pub-grade | B3LYP: LUMO(Os III) = −4.23 eV, Δε = −0.07 eV corrected. **ωB97X/def2-TZVP (script 21d) ⏳ running:** Os(II) ✅ HOMO=−7.13 eV (RSH); Os(III) computing; FADH₂ queued |
-| **L3b** | Cathode DET hopping (ΔSCF) | ⏳ Partial | Cu-Co: t_ij=0.0325 eV, k_ET=2.34×10¹⁰ s⁻¹ ✅; Co-Ce ⏳ computing; Ce-graphene ⏳ queued |
+| **L3** | DFT frontier orbitals (PySCF) | 🟢 Strong partial → ⏳ pub-grade | B3LYP: LUMO(Os III) = −4.23 eV, Δε = −0.07 eV corrected. **ωB97X/def2-TZVP (script 21d) ⏳ running:** Os(II) ✅ HOMO=−7.13 eV. Os(III) restarted with level\_shift=0.3; FADH₂ queued |
+| **L3b** | Cathode DET hopping (ΔSCF) | ⏳ Partial | Cu-Co: t_ij=0.0325 eV, k_ET=2.34×10¹⁰ s⁻¹ ✅; Co-Ce queued (after ωB97X); Ce-graphene queued |
 | **L4** | EBFC kinetics (MM+Arrhenius) | ✅ Validated (2026-05-25) | delta_t: healthy 36s, stressed 190s. MC 90% CI: 14-120s. BASELINE 60s justified. EIS: Rct=130Ω, Cdl=50µF/cm² |
 
-> **Для pitch Мінаєву:** Zero-Lab pipeline L1-L4 повністю пройдений (TRL 3→4 gate PASSED 2026-05-25). Повна bpy модель (54 атоми) + L3b cathode DET (Cu-Co k_ET=2.34×10¹⁰ s⁻¹) + L4 kinetics (delta_t=36s validated). **ωB97X/def2-TZVP publication-grade DFT ⏳ running** (script 21d, 2026-05-26): Os(II) ✅ converged (HOMO=-7.13 eV, 223 min); Os(III) ⏳ computing solo; FADH₂ queued. Школа Мінаєва входить на готову Python-керовану інфраструктуру: 25 скриптів, shared lib, 64 pytest тести, CI gate. Конкретний запит — co-authored Q1 стаття з ωB97X результатами. Деталі → [`L3_quantum_chemistry.md`](../protocols/ebfc/in_silico/L3_quantum_chemistry.md), [`PIPELINE_STATUS.md`](../protocols/ebfc/in_silico/PIPELINE_STATUS.md), [`SUMMARY.md`](../protocols/ebfc/in_silico/SUMMARY.md).
+> **Для pitch Мінаєву:** Zero-Lab pipeline L1-L4 повністю пройдений (TRL 3→4 gate PASSED 2026-05-25). Повна bpy модель (54 атоми) + L3b cathode DET (Cu-Co k_ET=2.34×10¹⁰ s⁻¹) + L4 kinetics (delta_t=36s validated). **ωB97X/def2-TZVP publication-grade DFT ⏳ running** (script 21d, 2026-05-26): Os(II) ✅ converged (HOMO=-7.13 eV). Os(III) UKS stuck after 60h CPU → killed & restarted with `level_shift=0.3`; FADH₂ queued. Школа Мінаєва входить на готову Python-керовану інфраструктуру: 25 скриптів, 6 shared lib модулів, 68 pytest тестів, CI gate. Конкретний запит — co-authored Q1 стаття з ωB97X результатами. Деталі → [`L3_quantum_chemistry.md`](../protocols/ebfc/in_silico/L3_quantum_chemistry.md), [`PIPELINE_STATUS.md`](../protocols/ebfc/in_silico/PIPELINE_STATUS.md), [`SUMMARY.md`](../protocols/ebfc/in_silico/SUMMARY.md).
 
 **Кроки:**
 1. **Моделювання одношарового анодного стеку (Gen 2.0 priority):** DFT/TDDFT розрахунок (a) енергій зв'язування **деглікозильованої FAD-GDH** з Os²⁺/Os³⁺ медіатором на fMWCNT — вплив видалення глікозидних ланцюгів на k_s; (b) узгодження редокс-потенціалів за теорією Маркуса; (c) діелектричні властивості геніпін-зшитого хітозану з CNC-нанокристалами; (d) термодинаміка PSBMA-шару — гідратаційний бар'єр проти абієтинової кислоти.
@@ -409,6 +409,7 @@ t_lab = t_field × exp(−Ea/k × (1/T_field − 1/T_lab))
 | Базова вода | Деіонізована | Без мінеральних контамінантів |
 
 > **Точний склад** (сезонні варіації, регіональна специфіка) надають біоекологи ЧНУ (Спрягайло / Гаврилюк) на основі 10-річних вимірювань у Черкаському борі.
+> **In-silico конфігуратор:** `tools/in_silico/lib/xylem_sap.py` — 7 профілів (Pinus sylvestris summer/winter, Picea abies, Quercus robur, Fagus sylvatica + generic), pH 4.2-6.0, різні іонні сили. Script 14 (`14_xylem_sap_sweep_md.py`) тестує стабільність ензиму у соку різних видів. Лабораторні дані Спрягайла оновлять ці профілі для точнішої валідації.
 
 #### Умови тестового стенду (повний протокол)
 
@@ -610,7 +611,7 @@ CTO & Architect, Silken Net
 
 HARDWARE (TRL 4-5):
   Ti-6Al-4V DMLS gyroid → EBFC Gen 2.0 (dgrFAD-GDH/Laccase+ZIF nanozyme) → BQ25570 MPPT → EDLC 0.47F
-  → STM32WLE5JC (Cortex-M4 + SX1262 LoRa) → AES-256-ECB/CCM
+  → STM32WLE5JC (Cortex-M4 + SX1262 LoRa) → AES-128-ECB (transitional) / AES-128-CCM (FW.2 target)
 
 FIRMWARE (TRL 6):
   mruby Lorenz Attractor → 250 ітерацій Ейлера → bio_status
