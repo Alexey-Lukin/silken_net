@@ -35,8 +35,9 @@
 
 | # | Script | Status | Resource | ETA |
 |---|--------|--------|----------|-----|
-| 24 | `dft_hopping_integrals` | Cu-Co ✅, Co-Ce State B computing | CPU | ~09:30 (State B), then Ce-graphene ~2h |
-| 11* | `full_matrix_md` (10ns) | Production ~15h/22h | GPU | ~18:00 |
+| 24 | `dft_hopping_integrals` | Cu-Co ✅, Co-Ce State B computing (~130 min, CPU shared) | CPU 220% | ~10:30-11:00 |
+| 21d | `dft_os_bpy_wb97xd` | Os(II) SP at ωB97X/def2-TZVP (~54 min, CPU shared) | CPU 210% | Os(II) ~11:00, then Os(III) + FADH₂ |
+| 11* | `full_matrix_md` (10ns) | Production ~14.5h/22h | GPU | ~18:00 |
 
 ### ❗ Needs Rerun (correct genipin SMILES fixed 2026-05-25)
 
@@ -54,6 +55,13 @@
 | 12 | `temperature_sweep_md` | 03-05 ✅ | ~2.5h (4 temps) | P1 |
 | 13 | `psbma_diffusion_md` | 08 ✅ | ~1-2h | P1 |
 | 14 | `xylem_sap_sweep_md` | 03-05 ✅ | ~3-4h (6 species) | P2 |
+
+### 🆕 Recently Added (not yet run)
+
+| # | Script | Depends On | Purpose |
+|---|--------|------------|---------|
+| 14 | `xylem_sap_sweep_md` | 03-05 ✅ | Stability across 6 tree species (Pinus/Picea/Quercus/Fagus) |
+| 21d | `dft_os_bpy_wb97xd` | 21b ✅ | ωB97X/def2-TZVP publication-grade DFT (⏳ running) |
 
 ### ❌ Terminated
 

@@ -183,6 +183,9 @@ EXPECTED_SCRIPTS = [
     "30_kinetics_delta_t.py",
     "30b_kinetics_monte_carlo.py",
     "31_eis_impedance_model.py",
+    "40_validate_vs_experiment.py",
+    "14_xylem_sap_sweep_md.py",
+    "21d_dft_os_bpy_wb97xd.py",
 ]
 
 
