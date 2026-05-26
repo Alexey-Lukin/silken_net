@@ -82,6 +82,10 @@ import matplotlib.pyplot as plt
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.geometry import positions_to_nm_array
+from lib.utils import banner, ps_to_steps, pick_platform
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
 SBMA_SDF = LIGANDS_DIR / "sbma_monomer.sdf"
@@ -104,37 +108,6 @@ PRODUCTION_PS = int(os.environ.get("SILKEN_PRODUCTION_PS", "200"))
 GAFF_VERSION = "gaff-2.11"
 REPORT_EVERY_PS = 0.5
 TRAJECTORY_EVERY_PS = 1.0
-
-
-def banner(msg: str) -> None:
-    print(f"\n[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
-
-
-def ps_to_steps(ps: float) -> int:
-    return int(round(ps * 1000.0 / TIMESTEP_FS))
-
-
-def pick_platform() -> Platform:
-    forced = os.environ.get("SILKEN_FORCE_PLATFORM")
-    if forced:
-        return Platform.getPlatformByName(forced)
-    for name in ("CUDA", "OpenCL", "CPU", "Reference"):
-        try:
-            return Platform.getPlatformByName(name)
-        except openmm.OpenMMException:
-            continue
-    raise RuntimeError("No OpenMM platform available")
-
-
-def positions_to_nm_array(positions) -> np.ndarray:
-    val = positions.value_in_unit(nanometer)
-    try:
-        arr = np.asarray(val, dtype=float)
-        if arr.ndim == 2 and arr.shape[1] == 3:
-            return arr
-    except (TypeError, ValueError):
-        pass
-    return np.array([[v.x, v.y, v.z] for v in val], dtype=float)
 
 
 def build_glucose() -> Molecule:

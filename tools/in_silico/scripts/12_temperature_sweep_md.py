@@ -70,6 +70,10 @@ from openmm.unit import (
 from openmmforcefields.generators import GAFFTemplateGenerator
 from pdbfixer import PDBFixer
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.geometry import positions_to_nm_array, place_on_sphere, restraint_protein_heavy_atoms
+from lib.utils import banner, ps_to_steps, pick_platform
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 AF3_PDB = REPO_ROOT / "docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb"
 LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
@@ -97,74 +101,6 @@ N_CELLOBIOSE = 8
 GAFF_VERSION = "gaff-2.11"
 REPORT_EVERY_PS = 1.0
 TRAJECTORY_EVERY_PS = 2.0
-
-
-def banner(msg: str) -> None:
-    print(f"\n[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
-
-
-def ps_to_steps(ps: float) -> int:
-    return int(round(ps * 1000.0 / TIMESTEP_FS))
-
-
-def pick_platform() -> Platform:
-    forced = os.environ.get("SILKEN_FORCE_PLATFORM")
-    if forced:
-        return Platform.getPlatformByName(forced)
-    for name in ("CUDA", "OpenCL", "CPU", "Reference"):
-        try:
-            return Platform.getPlatformByName(name)
-        except openmm.OpenMMException:
-            continue
-    raise RuntimeError("No OpenMM platform available")
-
-
-def positions_to_nm_array(positions) -> np.ndarray:
-    val = positions.value_in_unit(nanometer)
-    try:
-        arr = np.asarray(val, dtype=float)
-        if arr.ndim == 2 and arr.shape[1] == 3:
-            return arr
-    except (TypeError, ValueError):
-        pass
-    return np.array([[v.x, v.y, v.z] for v in val], dtype=float)
-
-
-def place_on_sphere(modeller, template, n_copies, protein_center, shell_radius, rng, offset=0):
-    t = template.to_topology().to_openmm()
-    coords_nm = positions_to_nm_array(template.conformers[0].to_openmm())
-    coords_nm -= coords_nm.mean(axis=0)
-    for i in range(n_copies):
-        idx = i + offset
-        phi = np.pi * (3.0 - np.sqrt(5.0)) * idx
-        y = 1.0 - (idx / max(1, n_copies + offset - 1)) * 2.0 if (n_copies + offset) > 1 else 0.0
-        r = np.sqrt(max(0.0, 1.0 - y * y))
-        unit_vec = np.array([np.cos(phi) * r, y, np.sin(phi) * r])
-        unit_vec += rng.normal(scale=0.02, size=3)
-        translated = coords_nm + (protein_center + unit_vec * shell_radius)
-        new_pos = [Vec3(*xyz) for xyz in translated] * nanometer
-        modeller.add(t, new_pos)
-
-
-def restraint_protein_heavy_atoms(system, positions, topology, k=10.0):
-    restraint = openmm.CustomExternalForce("0.5*k*((x-x0)^2 + (y-y0)^2 + (z-z0)^2)")
-    restraint.addGlobalParameter("k", k * kilojoule_per_mole / nanometer**2)
-    restraint.addPerParticleParameter("x0")
-    restraint.addPerParticleParameter("y0")
-    restraint.addPerParticleParameter("z0")
-    standard_aa = {
-        "ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE",
-        "LEU", "LYS", "MET", "PHE", "PRO", "SER", "THR", "TRP", "TYR", "VAL",
-    }
-    for atom in topology.atoms():
-        if atom.residue.name not in standard_aa:
-            continue
-        if atom.element is None or atom.element.symbol == "H":
-            continue
-        pos = positions[atom.index]
-        restraint.addParticle(atom.index, [pos.x, pos.y, pos.z])
-    system.addForce(restraint)
-    return restraint
 
 
 def run_single_temperature(temp_k: int, platform: Platform) -> dict:

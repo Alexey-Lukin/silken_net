@@ -88,6 +88,10 @@ from openmm.unit import (
 from openmmforcefields.generators import GAFFTemplateGenerator
 from pdbfixer import PDBFixer
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.geometry import positions_to_nm_array, restraint_protein_heavy_atoms
+from lib.utils import banner, ps_to_steps, pick_platform
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 AF3_PDB = REPO_ROOT / "docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb"
 LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
@@ -117,68 +121,6 @@ GAFF_VERSION = "gaff-2.11"
 
 REPORT_EVERY_PS = 1.0    # state log frequency
 TRAJECTORY_EVERY_PS = 2.0   # DCD frame frequency
-
-
-def banner(msg: str) -> None:
-    print(f"\n[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
-
-
-def ps_to_steps(ps: float) -> int:
-    return int(round(ps * 1000.0 / TIMESTEP_FS))
-
-
-def pick_platform() -> Platform:
-    for name in ("CUDA", "OpenCL", "CPU", "Reference"):
-        try:
-            return Platform.getPlatformByName(name)
-        except openmm.OpenMMException:
-            continue
-    raise RuntimeError("No OpenMM platform available")
-
-
-def positions_to_nm_array(positions) -> np.ndarray:
-    """OpenMM positions Quantity → (N, 3) numpy array in nm.
-
-    `Quantity.value_in_unit(nanometer)` is annoyingly polymorphic across
-    OpenMM versions / call sites: it can be a 2D ndarray of floats, a list
-    of 3-element ndarrays, or (older API) a list of `Vec3` objects with
-    `.x/.y/.z`. Try numeric coercion first, fall back to attribute access.
-    """
-    val = positions.value_in_unit(nanometer)
-    try:
-        arr = np.asarray(val, dtype=float)
-        if arr.ndim == 2 and arr.shape[1] == 3:
-            return arr
-    except (TypeError, ValueError):
-        pass
-    return np.array([[v.x, v.y, v.z] for v in val], dtype=float)
-
-
-def restraint_protein_heavy_atoms(system: openmm.System, positions, topology, k=10.0):
-    """Add a harmonic position restraint on protein heavy atoms (NVT stage).
-
-    Returns the force object so the caller can release the restraint later
-    by setting k → 0 (avoids rebuilding the System on the GPU).
-    """
-    restraint = openmm.CustomExternalForce("0.5*k*((x-x0)^2 + (y-y0)^2 + (z-z0)^2)")
-    restraint.addGlobalParameter("k", k * kilojoule_per_mole / nanometer**2)
-    restraint.addPerParticleParameter("x0")
-    restraint.addPerParticleParameter("y0")
-    restraint.addPerParticleParameter("z0")
-
-    standard_aa = {
-        "ALA","ARG","ASN","ASP","CYS","GLN","GLU","GLY","HIS","ILE",
-        "LEU","LYS","MET","PHE","PRO","SER","THR","TRP","TYR","VAL",
-    }
-    for atom in topology.atoms():
-        if atom.residue.name not in standard_aa:
-            continue
-        if atom.element is None or atom.element.symbol == "H":
-            continue
-        pos = positions[atom.index]
-        restraint.addParticle(atom.index, [pos.x, pos.y, pos.z])
-    system.addForce(restraint)
-    return restraint
 
 
 def main() -> int:
