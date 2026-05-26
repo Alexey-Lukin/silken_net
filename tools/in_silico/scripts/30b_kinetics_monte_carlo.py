@@ -19,6 +19,7 @@ Run
 from __future__ import annotations
 
 import json
+import sys
 import time
 from pathlib import Path
 
@@ -27,8 +28,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-OUT_DIR = REPO_ROOT / "tools/in_silico/cache/kinetics"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.constants import REPO_ROOT, LIGANDS_DIR, DFT_CACHE, KINETICS_DIR, HARTREE_TO_EV
+OUT_DIR = KINETICS_DIR
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 R_GAS = 8.31446

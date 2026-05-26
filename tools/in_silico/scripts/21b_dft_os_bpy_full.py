@@ -45,11 +45,10 @@ from pyscf import dft, gto, solvent
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-LIGANDS_DIR = REPO_ROOT / "docs/protocols/ebfc/in_silico/ligands"
-DFT_CACHE = REPO_ROOT / "tools/in_silico/cache/dft"
-LIGANDS_DIR.mkdir(parents=True, exist_ok=True)
-DFT_CACHE.mkdir(parents=True, exist_ok=True)
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.constants import REPO_ROOT, LIGANDS_DIR, DFT_CACHE, KINETICS_DIR, HARTREE_TO_EV
+
+
 
 # ── Bond lengths (Å) from crystallographic data of Os-bpy complexes ──
 OS_N_BPY = 2.06
@@ -63,7 +62,6 @@ BASIS_LIGHT = "6-31g(d)"
 BASIS_OS = "lanl2dz"
 ECP_OS = "lanl2dz"
 SOLVENT_EPS = 78.3553
-HARTREE_TO_EV = 27.211386245988
 
 
 def banner(msg: str) -> None:

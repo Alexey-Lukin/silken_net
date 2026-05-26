@@ -35,8 +35,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-DFT_CACHE = REPO_ROOT / "tools/in_silico/cache/dft"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.constants import REPO_ROOT, LIGANDS_DIR, DFT_CACHE, KINETICS_DIR, HARTREE_TO_EV
 FLAV_JSON = DFT_CACHE / "lumiflavin.json"
 OS_JSON = DFT_CACHE / "os_complex.json"
 OUT_JSON = DFT_CACHE / "comparison.json"
