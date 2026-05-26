@@ -38,23 +38,18 @@ import numpy as np
 from pyscf import dft, gto, solvent
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, LIGANDS_DIR, DFT_CACHE, HARTREE_TO_EV
+from lib.constants import (
+    REPO_ROOT, LIGANDS_DIR, DFT_CACHE, HARTREE_TO_EV,
+    BASIS_OS, ECP_OS, SOLVENT_EPS_WATER,
+)
+from lib.utils import banner
 
 INPUT_XYZ = LIGANDS_DIR / "os_bpy_im_cl.xyz"
 OUTPUT_JSON = DFT_CACHE / "os_complex_wb97xd.json"
 
-# wb97x (without -d): range-separated hybrid. PySCF doesn't support wb97x-d
-# dispersion module yet. wb97x alone fixes the HOMO underestimate (~0.6 eV)
-# which is the dominant B3LYP error. Dispersion is a minor correction (~0.05 eV).
 XC_FUNCTIONAL = "wb97x"
-BASIS_LIGHT = "def2-tzvp"
-BASIS_OS = "lanl2dz"
-ECP_OS = "lanl2dz"
-SOLVENT_EPS = 78.3553
-
-
-def banner(msg: str) -> None:
-    print(f"\n[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
+BASIS_LIGHT = "def2-tzvp"  # publication-grade triple-zeta (overrides constants.py 6-31g(d))
+SOLVENT_EPS = SOLVENT_EPS_WATER
 
 
 def read_xyz(path: Path):
@@ -84,6 +79,8 @@ def dft_singlepoint(atoms, charge: int, spin: int, label: str) -> dict:
     mf.with_solvent.method = "C-PCM"
     mf.conv_tol = 1e-6
     mf.max_cycle = 400
+    if spin != 0:
+        mf.level_shift = 0.3
 
     t0 = time.time()
     energy = mf.kernel()
