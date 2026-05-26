@@ -48,7 +48,7 @@ IONIC_STRENGTH = 0.05  # molar — physiologically representative; xylem itself 
 TEMPERATURE = 298       # K — room temperature; trees in spring/summer
 WATER_PADDING = float(os.environ.get("SILKEN_WATER_PADDING", "1.0"))  # nm; CI uses 0.5 for speed
 TIMESTEP_FS = 2.0
-MD_STEPS = 1000
+MD_STEPS = int(os.environ.get("SILKEN_MD_STEPS", "1000"))  # CI uses 100 for speed
 MIN_ITERATIONS = int(os.environ.get("SILKEN_MIN_ITERATIONS", "500"))
 
 
