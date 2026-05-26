@@ -52,10 +52,10 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 | Parameter | Value |
 |-----------|-------|
 | System | + 5×chitosan trimer + 8×cellobiose (CNC proxy) |
-| Atoms | 467,417 |
-| Matrix atoms | 975 (270 GEN + 345 CSO + 360 CLB) |
-| **Backbone RMSD** | **1.108 ± 0.263 Å (max 1.439)** |
-| Speed | 10.83 ns/day |
+| Atoms | 481,804 |
+| Matrix atoms | 1005 (300 GEN + 345 CSO + 360 CLB) |
+| **Backbone RMSD** | **1.215 ± 0.327 Å (max 1.665)** ✅ (correct C₁₁ genipin, rerun 2026-05-27) |
+| Speed | 7.72 ns/day |
 
 ### Extended 10 ns (long-timescale validation)
 | Parameter | Value |

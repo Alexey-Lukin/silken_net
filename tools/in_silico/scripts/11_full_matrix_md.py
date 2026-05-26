@@ -213,7 +213,7 @@ def main() -> int:
         PDBFile.writeFile(modeller.topology, modeller.positions, fh, keepIds=True)
 
     # ── 8. Minimise ──
-    banner("Energy minimisation (max 5000 iter)")
+    banner("Energy minimisation (max 10000 iter)")
     t = time.time()
     sim.minimizeEnergy(maxIterations=10000)
     e_min = sim.context.getState(getEnergy=True).getPotentialEnergy().value_in_unit(kilojoule_per_mole)

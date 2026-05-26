@@ -20,7 +20,7 @@
 | 07 | `parameterize_pvi` | pvi_trimer.sdf | `gaff_cache.json` | ✅ |
 | 08 | `parameterize_sbma` | sbma_monomer.sdf | `gaff_cache.json` | ✅ |
 | 10 | `genipin_stability_md` | ~~RMSD 0.95 Å (wrong genipin)~~ → **RMSD 1.20 Å (correct C₁₁ genipin, 2026-05-26)** ✅ | `runs/` (gitignored) | ✅ |
-| 11 | `full_matrix_md` | 100ps: RMSD 1.11 Å; **10ns: RMSD 4.02 Å** (Rg stable, conformation relaxation from AF3). ⚠️ wrong genipin | `runs/` (gitignored) | ✅ (needs rerun) |
+| 11 | `full_matrix_md` | ~~RMSD 1.11 Å (wrong genipin)~~ → **RMSD 1.22 Å (correct C₁₁ genipin, 2026-05-27)** ✅. 10ns run: RMSD 4.02 Å (Rg stable, AF3 relaxation) | `runs/` (gitignored) | ✅ |
 | 20 | `dft_lumiflavin` | HOMO(FADH₂) = -5.14 eV | `dft/lumiflavin.json` | ✅ |
 | 21 | `dft_os_bipy_complex` | NH₃ surrogate (superseded) | `dft/os_complex.json` (overwritten) | ✅ |
 | 21b | `dft_os_bpy_full` | LUMO(Os III) = -4.23 eV | `dft/os_complex.json` | ✅ |
@@ -49,7 +49,7 @@
 | # | Script | Depends On | GPU Time | Priority |
 |---|--------|------------|----------|----------|
 | 10* | `genipin_stability_md` (rerun) | 03 ✅ | ~35 min | ✅ DONE (2026-05-26) |
-| 11* | `full_matrix_md` (rerun) | 03-05 ✅ | ~35 min | ⏳ Running |
+| 11* | `full_matrix_md` (rerun) | 03-05 ✅ | ~35 min | ✅ DONE (2026-05-27) |
 | 12 | `temperature_sweep_md` | 03-05 ✅ | ~2.5h (4 temps) | P1 |
 | 13 | `psbma_diffusion_md` | 08 ✅ | ~1-2h | P1 |
 | 14 | `xylem_sap_sweep_md` | 03-05 ✅ | ~3-4h (6 species) | P2 |
