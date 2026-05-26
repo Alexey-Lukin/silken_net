@@ -43,7 +43,10 @@ from lib.constants import REPO_ROOT, LIGANDS_DIR, DFT_CACHE, HARTREE_TO_EV
 INPUT_XYZ = LIGANDS_DIR / "os_bpy_im_cl.xyz"
 OUTPUT_JSON = DFT_CACHE / "os_complex_wb97xd.json"
 
-XC_FUNCTIONAL = "wb97x-d"
+# wb97x (without -d): range-separated hybrid. PySCF doesn't support wb97x-d
+# dispersion module yet. wb97x alone fixes the HOMO underestimate (~0.6 eV)
+# which is the dominant B3LYP error. Dispersion is a minor correction (~0.05 eV).
+XC_FUNCTIONAL = "wb97x"
 BASIS_LIGHT = "def2-tzvp"
 BASIS_OS = "lanl2dz"
 ECP_OS = "lanl2dz"
