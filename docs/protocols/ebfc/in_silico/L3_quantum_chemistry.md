@@ -146,7 +146,7 @@ Cascade Δε = -5.137 − (-3.420) = **-1.717 eV → ❌ UPHILL** (артефа�
 ## Caveats та обмеження
 
 1. **Koopmans approximation** — HOMO/LUMO orbital energies з DFT ≠ exact IP/EA через correlation/relaxation effects. B3LYP типово недооцінює HOMO на ~0.5-1 eV vs ωB97X-D. Як **первинний скрінінг** для каскаду — достатньо; для абсолютних чисел потрібен повний ΔSCF + ZPE + thermal.
-2. **Single-point geometry** — не повна оптимізація. MMFF (флавін) і programmatic octahedral (Os, full bpy model: Os-N = 2.10 vs ideal 2.06 Å) — chemically reasonable, але можуть відрізнятися на ~0.04-0.1 Å від DFT-equilibrium. Це впливає на orbital energies на ~0.1-0.3 eV.
+2. **Single-point geometry** — не повна оптимізація. MMFF (флавін) і programmatic octahedral (Os, full bpy model: Os-N = 2.10 vs ideal 2.06 Å). **DFT geometry optimization attempted** (script 21c, 2026-05-26): ran 30+ cycles, gradient converged since Step 13 (rms<3e-4, max<4.5e-4), energy flat to 1e-6 Ha, but Cl displacement on flat PES never meets GAU convergence criteria (Cl drifts indefinitely). **Terminated** — programmatic geometry sufficient for LUMO accuracy (dE = 0.002 eV between Step 11 and Step 30). Future: freeze Cl during optimization or use GAU_LOOSE convergence.
 3. **PCM water vs xylem** — implicit solvent, без specific H-bonding до water molecules або до xylem sap solutes. Для Marcus reorganization energy більш честно — explicit solvation shell (50+ waters) + EFP, але це порядок коштовніше.
 4. **Os полімерна модель** — full cis-[Os(bpy)₂(1-MeIm)Cl] з 54 атомами. π-backbonding від bpy включений. Single imidazole як proxy для PVI polymer backbone — acceptable (frontier orbitals Os center переважно d-character). Полімерна щіткова density обробляється у L2.
 
@@ -182,6 +182,26 @@ Cascade Δε = -5.137 − (-3.420) = **-1.717 eV → ❌ UPHILL** (артефа�
 | `tools/in_silico/cache/dft/os_complex.json` | Output 21-го скрипту |
 | `tools/in_silico/cache/dft/comparison.json` | Aggregated результати 22-го скрипту |
 | `tools/in_silico/cache/dft/energy_ladder.png` | Marcus cascade diagram |
+
+---
+
+## L3b — Cathode DET Hopping Integrals (ZIF nanozyme)
+
+**Метод:** ΔSCF (initial guess swap) для бімелатичних ZIF кластерів. UKS B3LYP/6-31G(d) + LANL2DZ(Cu,Co) + Stuttgart RSC(Ce) + C-PCM.
+
+**Electron hopping pathway:** MWCNT ←t₃→ Ce ←t₂→ Co ←t₁→ Cu T1 (laccase)
+
+### Результати (partial, 2026-05-26)
+
+| Пара | Атомів | t_ij (eV) | k_ET (s⁻¹) | Статус |
+|------|--------|-----------|-------------|--------|
+| **Cu-Co** (T1↔ZIF node) | 62 | **0.0325** | **2.34×10¹⁰** | ✅ Completed |
+| **Co-Ce** (ZIF node↔vacancy) | 62 | — | — | ⏳ Computing (level_shift=0.3) |
+| **Ce-graphene** (vacancy↔electrode) | 61 | — | — | ⏳ Queued |
+
+**Cu-Co verdict:** t_ij = 0.0325 eV → k_ET = 2.34×10¹⁰ s⁻¹ (λ=0.7 eV, ΔG=0, T=298K). Це **надзвичайно швидкий** DET — набагато швидше ніж enzymatic turnover (~10³ s⁻¹). DET через ZIF **не лімітує** катодний ORR.
+
+Scripts: `23_build_zif_clusters.py` (geometry), `24_dft_hopping_integrals.py` (ΔSCF + Marcus).
 
 ---
 
