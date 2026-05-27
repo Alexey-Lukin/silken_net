@@ -1,6 +1,6 @@
 # In-Silico Pipeline — Operational Status & Dependencies
 
-> **Last updated:** 2026-05-27 08:00 EEST
+> **Last updated:** 2026-05-27 20:00 EEST
 > **TRL 3→4 Gate:** ✅ PASSED (2026-05-25)
 
 ---
@@ -36,8 +36,13 @@
 | # | Script | Status | Resource | ETA |
 |---|--------|--------|----------|-----|
 | 14 | `xylem_sap_sweep_md` | ✅ 6/6 species: pine=1.03, winter=1.03, spruce=1.09, oak=1.05, beech=0.98, generic=1.05 Å — ALL STABLE | — | DONE |
+| 15 | `pvi_coverage_md` | ⏳ PVI backbone (without Os) on protein — steric stress test | GPU | Running |
+| 29 | `dft_reorganization_energy` | ⏳ Nelsen 4-point λ_inner (replaces 0.7 eV) — geom opts ✅, cross-SPs | CPU | Running |
+| 27 | `md_dft_ensemble` | ⏳ FAD HOMO/LUMO from 5 MD snapshots — thermal robustness | CPU | Running |
 | 21d | `dft_os_bpy_wb97xd` | ✅ COMPLETE. Koopmans Δε=-5.88 eV (RSH artifact). **Adiabatic ΔSCF: ΔG=+0.884 eV** (0.9 eV gap = PCM solvation limit). B3LYP corrected -0.07 eV remains best. | — | DONE |
 | 28 | `electron_tunneling_pathway` | ✅ Beratan-Onuchic: FAD→ALA260→THR259→THR282→THR287 (10 atoms, 23.7 Å, β·d=2.05 — tunneling feasible) | — | DONE |
+| 16 | `strain_cycling_md` | ✅ ±5% × 10 cycles: PE drift 1.0% (borderline, small box). Compress < stretch → pseudoplastic | GPU | DONE |
+| 50 | `thermal_stress_lame` | ✅ Lamé Ti↔PEEK: safety 9.9× at -30°C. 20yr creep 76µm → barbs mandatory | CPU | DONE |
 
 ### ✅ Recently Completed (2026-05-26 — 2026-05-27)
 

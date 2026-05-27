@@ -649,7 +649,7 @@ _«Дослідження акустичних властивостей пори
 
 **Тип зв'язку:** Комплементарний — ЧНУ: теоретична модель (DFT), ЧМА: in vitro валідація, Silken Net: системні вимоги
 
-> **In-silico baseline для Статті 28 (updated 2026-05-27):** Zero-Lab pipeline L1-L4 PASSED. L1: d_FAD = 15.998 Å. L2: full matrix RMSD 1.22 Å (correct genipin); 10ns Rg stable; temp sweep -10°C→25°C ✅; xylem sap 6/6 species ✅ (pH 4.2-5.8). L3: B3LYP corrected Δε ≈ -0.07 eV (best); **ωB97X ✅ COMPLETE** — adiabatic ΔSCF ΔG=+0.884 eV (PCM limit). **Tunneling pathway** (script 28): FAD→THR287, β·d=2.05. **L3b ✅ COMPLETE** (3/3): Cu-Co 2.34×10¹⁰, Co-Ce 1.1×10⁸, Ce-gr 3.07×10¹¹ → total k_DET=1.09×10⁸ s⁻¹. L4: delta_t = 36s, MC 90% CI 14-120s, EIS Rct=130Ω. **26 scripts**, 68 tests, CI gate. Повний звіт: [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md), [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md).
+> **In-silico baseline для Статті 28 (updated 2026-05-27):** Zero-Lab pipeline L1-L4 PASSED. L1: d_FAD = 15.998 Å. L2: full matrix RMSD 1.22 Å (correct genipin); 10ns Rg stable; temp sweep -10°C→25°C ✅; xylem sap 6/6 species ✅ (pH 4.2-5.8). L3: B3LYP corrected Δε ≈ -0.07 eV (best); **ωB97X ✅ COMPLETE** — adiabatic ΔSCF ΔG=+0.884 eV (PCM limit). **Tunneling pathway** (script 28): FAD→THR287, β·d=2.05. **L3b ✅ COMPLETE** (3/3): Cu-Co 2.34×10¹⁰, Co-Ce 1.1×10⁸, Ce-gr 3.07×10¹¹ → total k_DET=1.09×10⁸ s⁻¹. L4: delta_t = 36s, MC 90% CI 14-120s, EIS Rct=130Ω. HW.3.IS: thermal stress safety 9.9× + strain cycling pseudoplastic ✅. **30 scripts**, 76 tests, CI gate. Повний звіт: [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md), [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md).
 
 ---
 

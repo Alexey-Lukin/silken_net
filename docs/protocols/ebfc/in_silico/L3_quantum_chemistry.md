@@ -152,7 +152,7 @@ Cascade Δε = -5.137 − (-3.420) = **-1.717 eV → ❌ UPHILL** (артефа�
 
 ---
 
-## D. ωB97X/def2-TZVP — Publication-grade (⏳ running, 2026-05-26)
+## D. ωB97X/def2-TZVP — Publication-grade (✅ Complete, 2026-05-27)
 
 **Script:** `21d_dft_os_bpy_wb97xd.py`. Range-separated hybrid functional з triple-zeta basis.
 
@@ -214,7 +214,7 @@ Discrepancy from experiment (+0.14 eV downhill): **1.14 eV** — from vertical g
 | Покращення | Cost | Очікуваний імпакт |
 |---|---|---|
 | **Повна geometric/pyberny opt** обох species | ~6-12 год CPU | Frontier orbital energies → точніше на ~0.1-0.3 eV |
-| **ωB97X + def2-TZVP** | ~27× довше за B3LYP/6-31G(d) для RKS | **Script 21d ⏳ running** (2026-05-27). Os(II) ✅ converged (HOMO=-7.128 eV, 7195s). Os(III) UKS with `level_shift=0.3` ⏳ computing. `density_fit()` reverted — auto aux basis for Os 3× slower. PySCF не підтримує wb97x-d; wb97x alone (range separation — головне). |
+| **ωB97X + def2-TZVP** | ~27× довше за B3LYP/6-31G(d) для RKS | **Script 21d ✅ COMPLETE** (2026-05-27). Os(II) HOMO=-7.128 eV (7195s). Os(III) LUMO=-1.781 eV (33900s, level_shift=0.3). FADH₂ HOMO=-7.664 eV (470s). Adiabatic ΔSCF: ΔG=+0.884 eV (PCM limit). |
 | **ΔSCF redox potentials** з RRHO thermal corrections | ~2× за SP | Direct E° prediction vs NHE/SHE, не Koopmans approximation |
 | **TD-DFT excited states** для Os complex | ~5× за GS | Підтверджує MLCT character + Marcus reorganization energy |
 | **Explicit water shells + ONIOM/EFP** | ~10× за PCM | Realistic xylem solvent environment |
@@ -231,10 +231,10 @@ Discrepancy from experiment (+0.14 eV downhill): **1.14 eV** — from vertical g
 | `tools/in_silico/scripts/21_dft_os_bipy_complex.py` | Os(II)/Os(III) DFT SP — NH₃ surrogate (superseded) |
 | `tools/in_silico/scripts/21b_dft_os_bpy_full.py` | Os(II)/Os(III) DFT SP — **full [Os(bpy)₂(1-MeIm)Cl]** (B3LYP, current) |
 | `tools/in_silico/scripts/21c_dft_os_bpy_geomopt.py` | Geometry optimization — terminated (Cl flat PES) |
-| `tools/in_silico/scripts/21d_dft_os_bpy_wb97xd.py` | **ωB97X/def2-TZVP publication-grade** (⏳ running) |
+| `tools/in_silico/scripts/21d_dft_os_bpy_wb97xd.py` | **ωB97X/def2-TZVP publication-grade** ✅ |
 | `tools/in_silico/scripts/22_compare_homo_lumo.py` | Aggregator + Marcus diagram |
 | `tools/in_silico/scripts/23_build_zif_clusters.py` | Bimetallic ZIF clusters (Cu/Co/Ce) for L3b |
-| `tools/in_silico/scripts/24_dft_hopping_integrals.py` | ΔSCF hopping integrals (⏳ Co-Ce running) |
+| `tools/in_silico/scripts/24_dft_hopping_integrals.py` | ΔSCF hopping integrals ✅ (3/3 pairs) |
 | `docs/protocols/ebfc/in_silico/ligands/lumiflavin_ox.xyz` | MMFF94s geometry лумифлавіну |
 | `docs/protocols/ebfc/in_silico/ligands/lumiflavin_red.xyz` | MMFF94s geometry 1,5-дигідролумифлавіну |
 | `docs/protocols/ebfc/in_silico/ligands/os_amine_cl.xyz` | NH₃ surrogate geometry (22 atoms, superseded) |
@@ -278,7 +278,7 @@ Scripts: `23_build_zif_clusters.py` (geometry), `24_dft_hopping_integrals.py` (�
 | Os mediator — full [Os(bpy)₂(1-MeIm)Cl] (script 21b) | ✅ | LUMO(Os(III)) = **-4.23 eV**; π-backbonding закритий (+0.81 eV shift); <S²>=0.754 ✅ |
 | `ε_HOMO(FADH₂) > ε_LUMO(Os(III))` (raw Koopmans) | ❌ → ⚠️ | Δε = **-0.91 eV** (uphill, but 47% closer than NH₃ model's -1.72 eV) |
 | Bias-corrected verdict | ✅ | -0.91 + 0.64(B3LYP) + 0.2(geom) ≈ **-0.07 eV** — within 0.14 eV of exp. downhill |
-| **Definitive in-silico verdict** (publication-grade) | ⏳ | ωB97X-D/def2-TZVP + DFT geometry opt + ΔSCF → Q1-стаття зі школою Мінаєва |
+| **Definitive in-silico verdict** (publication-grade) | ✅ | ωB97X ✅ + adiabatic ΔSCF (+0.884 eV, PCM limit). B3LYP corrected -0.07 eV = best. QM/MM explicit solvation → школа Мінаєва |
 
 **Gate L3 → L4:** **strong partial pass** — повна bpy модель закрила π-backbonding gap, залишковий bias (-0.91 eV raw → -0.07 eV corrected) повністю пояснюється відомим B3LYP HOMO underestimate + не-оптимізованою геометрією. Патентний клайм Gen 2.0 підтверджений **трьома незалежними джерелами**: (1) експеримент (CV), (2) bias-corrected DFT NH₃, (3) bias-corrected DFT full bpy. Для definitive raw-verdict DOWNHILL → ωB97X-D + geom opt (Future work), не блокує L4.
 

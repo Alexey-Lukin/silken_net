@@ -231,11 +231,31 @@ Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
 
 ---
 
+## HW.3.IS — Mechanical Integrity
+
+### Thermal Stress (script 50, Lamé + Findley)
+| Parameter | Value |
+|-----------|-------|
+| Worst-case stress (-30°C) | σ_t = 10.1 MPa |
+| Safety factor | **9.9×** vs PEEK yield (100 MPa) |
+| 20-year PEEK creep | 76 µm gap loss → **annular barbs mandatory** |
+| **Verdict** | ✅ Ti↔PEEK press-fit survives 20+ years |
+
+### Cyclic Strain (script 16, ±5% × 10 cycles)
+| Parameter | Value |
+|-----------|-------|
+| Stretch PE | -60,821 ± 182 kJ/mol |
+| Compress PE | -61,608 ± 236 kJ/mol (absorbs energy) |
+| PE drift | 1.0% (borderline, small box) |
+| **Verdict** | 🟢 Pseudoplastic — compress < stretch = energy absorption |
+
+---
+
 ## Infrastructure
 
 | Component | Location |
 |-----------|----------|
-| Scripts (25 total) | `tools/in_silico/scripts/01-40` |
+| Scripts (30 total) | `tools/in_silico/scripts/01-50` |
 | Shared lib | `tools/in_silico/lib/` (constants, geometry, utils, xylem_sap, dft_utils, md_utils) |
 | Ligand SDF files | `docs/protocols/ebfc/in_silico/ligands/` |
 | GAFF parameter cache | `tools/in_silico/cache/gaff_cache.json` |

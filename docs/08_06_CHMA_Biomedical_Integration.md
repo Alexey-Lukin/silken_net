@@ -268,7 +268,7 @@ EBFC Gen 2.0 ([`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)) — це серце
 
 **Завдання А: Валідація Gen 2.0 захисної матриці EBFC-ферментів**
 
-> **In-silico computational baseline (2026-05-27):** L2: RMSD 1.22 Å (correct genipin); 10ns Rg stable; temp sweep ✅ (-10°C→25°C); PSBMA ✅; xylem sap ✅ (6/6 species, pH 4.2-5.8). L3: B3LYP corrected -0.07 eV (best); **ωB97X ✅ COMPLETE** (adiabatic ΔSCF +0.884 eV, PCM limit). Tunneling pathway: FAD→THR287, β·d=2.05 ✅. **L3b ✅ COMPLETE** (3/3): Cu-Co 2.34×10¹⁰, Co-Ce 1.1×10⁸, Ce-gr 3.07×10¹¹ → total k_DET=1.09×10⁸ s⁻¹. L4: delta_t=36s, MC 90% CI 14-120s, EIS Rct=130Ω. 26 scripts, 68 tests, CI gate. Full report: [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md), [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md).
+> **In-silico computational baseline (2026-05-27):** L2: RMSD 1.22 Å (correct genipin); 10ns Rg stable; temp sweep ✅ (-10°C→25°C); PSBMA ✅; xylem sap ✅ (6/6 species, pH 4.2-5.8). L3: B3LYP corrected -0.07 eV (best); **ωB97X ✅ COMPLETE** (adiabatic ΔSCF +0.884 eV, PCM limit). Tunneling pathway: FAD→THR287, β·d=2.05 ✅. **L3b ✅ COMPLETE** (3/3): Cu-Co 2.34×10¹⁰, Co-Ce 1.1×10⁸, Ce-gr 3.07×10¹¹ → total k_DET=1.09×10⁸ s⁻¹. L4: delta_t=36s, MC 90% CI 14-120s, EIS Rct=130Ω. HW.3.IS: thermal stress safety 9.9× + strain cycling pseudoplastic ✅. 30 scripts, 76 tests, CI gate. Full report: [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md), [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md).
 
 ```
 Вхід: Протокол іммобілізації з 01_03 §2 (Gen 2.0)
