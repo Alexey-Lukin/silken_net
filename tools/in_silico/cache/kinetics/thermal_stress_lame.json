@@ -1,0 +1,31 @@
+{
+  "method": "Lam\u00e9 thick-walled cylinder + Findley creep",
+  "materials": {
+    "Ti-6Al-4V": {
+      "alpha": 8.6e-06,
+      "E_GPa": 110.0,
+      "nu": 0.33
+    },
+    "PEEK-450G": {
+      "alpha": 4.7e-05,
+      "E_GPa": 3.6,
+      "nu": 0.4,
+      "yield_MPa": 100.0
+    }
+  },
+  "geometry_mm": {
+    "r_inner": 3.0,
+    "r_interface": 5.0,
+    "r_outer": 8.0
+  },
+  "worst_case": {
+    "T_C": -30.0,
+    "sigma_t_MPa": -10.111242603550291,
+    "safety_factor": 9.889981273408244
+  },
+  "creep_20yr": {
+    "strain_pct": 1.5179804942010011,
+    "gap_loss_um": 75.89902471005006
+  },
+  "verdict": "Ti\u2194PEEK press-fit survives 20+ years seasonal cycling"
+}
