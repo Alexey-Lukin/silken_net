@@ -1,0 +1,11 @@
+{
+  "model": "SBMA slab + glucose MSD",
+  "N_SBMA": 30,
+  "N_glucose": 5,
+  "production_ps": 200,
+  "D_eff_cm2_s": 0.0005114520228315435,
+  "MSD_slope_nm2_ns": 306.87121369892617,
+  "D_literature_cm2_s": 2e-06,
+  "D_water_cm2_s": 6.7e-06,
+  "ratio_vs_L4_assumption": 255.73
+}
