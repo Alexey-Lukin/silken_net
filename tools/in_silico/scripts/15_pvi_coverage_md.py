@@ -55,7 +55,7 @@ from lib.constants import (
     PH, IONIC_STRENGTH, PRESSURE_ATM, WATER_PADDING_NM, TIMESTEP_FS,
     EQUIL_NVT_PS, EQUIL_NPT_PS, N_GENIPIN, GAFF_VERSION,
 )
-from lib.geometry import positions_to_nm_array, restraint_protein_heavy_atoms
+from lib.geometry import positions_to_nm_array, place_on_sphere, restraint_protein_heavy_atoms
 from lib.utils import banner, ps_to_steps, pick_platform
 
 FAD_SDF = LIGANDS_DIR / "FAD.sdf"
