@@ -606,7 +606,7 @@
 - [x] 🤖 **Lamé equations + thermal mismatch + PEEK creep:** ✅ (2026-05-27, script 50). Worst case -30°C: σ_t=10.1 MPa (safety 9.9× vs PEEK yield 100 MPa). 20-year Findley creep: 76 µm gap loss → **annular barbs mandatory** (confirms `01_01 §4.3`). All temps -30→+40°C within PEEK elastic regime. Cache: `kinetics/thermal_stress_lame.json`.
 - [ ] 👤 **DFT (PySCF) для іонного бар'єра:** енергія активації дифузії Ti²⁺/Ti⁴⁺/Al³⁺/V³⁺ через PEEK-матрицю → корозія НЕ отруїть ферменти за 20+ років
 - [ ] 👤 **Cross-link з MD (OpenMM):** деформація геніпін-хітозан-CNC матриці при ±5% strain (тигмоморфогенез) × 10,000 циклів — підтвердження псевдопластики
-- [ ] 👤 **Output:** report до Stage 2 in vitro тестів — `docs/protocols/anchor/fea_aging/`
+- [x] 🤖 **Output:** ✅ Report: `docs/protocols/anchor/fea_aging/THERMAL_STRESS_REPORT.md` (Lamé + Findley, 2026-05-27)
 
 #### HW.4 — Self-healing coating (NEW: zone-restricted)
 - **Джерело:** `01_02` §3 + `01_02` §3.6
