@@ -42,6 +42,8 @@
 
 **Необхідна дія:** Виконати протокол прискореного тесту (розділ 2). Цільовий результат: < 0.1 µg/cm² вивільнення Ti — підніме credibility з 60% до 85%.
 
+> **In-silico baseline (2026-05-27, script 51):** Arrhenius: 12 wks @ 40°C = 2.2-5.7 field years (Ea 0.7-1.0 eV). **Kirkendall diffusion (Fick's 1st law): V release = 1.12 µg/cm²/yr WITHOUT protective coating** — перевищує target 0.02 µg/cm² у 56×. **ZnO-Ta + 8-HQ self-healing ОБОВ'ЯЗКОВІ** для V-safety на 20-річному горизонті. Без покриття Ti-6Al-4V не проходить токсикологічний тест на ванадій.
+
 **Блокує:** Whitepaper, seed pitch deck, TRL 5→6.
 
 ---

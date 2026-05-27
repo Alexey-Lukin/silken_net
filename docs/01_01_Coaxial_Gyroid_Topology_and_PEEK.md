@@ -25,9 +25,9 @@
 
 ### 🔴 BLOCKER-1: Розрахунок Допусків Press-Fit з Урахуванням ΔCTE
 
-**Необхідна дія:** Розрахувати «вікно натягу» для системи `Ti-вал ↔ PEEK-втулка ↔ Ti-фланець катода` з урахуванням п'ятикратної різниці коефіцієнтів теплового розширення (PEEK ~45×10⁻⁶ K⁻¹ vs Ti ~8.6×10⁻⁶ K⁻¹). Мінімальний натяг повинен гарантувати герметичність та передачу моменту при +40°C; максимальний — не перевищувати межу плинності PEEK (~90 МПа) при −30°C. Цільовий клас допусків — H7/s6. Верифікація — FEA модель за рівняннями Ляме для товстостінних циліндрів. Деталі — §4.
+**Необхідна дія:** ✅ **Partially closed (2026-05-27).** H7/s6 interference window розраховано аналітично (script 51): min interference 3 µm (assembly) → effective -4.7 µm at +40°C (loosening!) → **annular barbs MANDATORY** (confirms BLOCKER-3). Max hoop stress at -30°C: 33 MPa ≪ 100 MPa yield (safe). Lamé thermal stress (script 50): safety 9.9×. **Залишається:** FEA barb stress concentration + ANSYS LS-DYNA visco-elastic Prony series creep simulation.
 
-**Блокує:** Виробництво першої тестової партії, TRL 4.
+**Блокує:** FEA barb detail → TRL 4.
 
 ### 🔴 BLOCKER-2: Staged Validation Gate
 

@@ -298,8 +298,12 @@
 t_lab = t_field × exp(−Ea/k × (1/T_field − 1/T_lab))
 
 При Ea ≈ 0.7–1.0 eV (для Ti-сплавів у рідинах):
-4 тижні @ 40°C ≈ 1 рік у лісі @ 15°C
-12 тижнів @ 40°C ≈ 3–5 років у лісі
+4 тижні @ 40°C ≈ 0.7–1.9 років у лісі @ 15°C
+12 тижнів @ 40°C ≈ 2.2–5.7 років у лісі
+(In-silico validated: script 51, 2026-05-27)
+
+⚠️ Kirkendall prediction (script 51): V release = 1.12 µg/cm²/yr
+   WITHOUT coating → 56× above 0.02 target → ZnO-Ta + 8-HQ mandatory
 ```
 
 **Склад симульованого ксилемного соку (погоджено з біо-хабом):**
