@@ -35,7 +35,7 @@ from pyscf import dft, gto
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
-    LIGANDS_DIR, DFT_CACHE, HARTREE_TO_EV, BASIS_LIGHT, TEMPERATURE_K,
+    REPO_ROOT, LIGANDS_DIR, DFT_CACHE, HARTREE_TO_EV, BASIS_LIGHT, TEMPERATURE_K,
 )
 from lib.utils import banner
 

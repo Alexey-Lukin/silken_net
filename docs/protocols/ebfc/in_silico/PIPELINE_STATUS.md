@@ -105,7 +105,7 @@ Validation:
 | Does the enzyme fold correctly? | ✅ YES | L1: d_FAD = 15.998 Å < tunneling 18-20 Å |
 | Does the matrix denature the protein? | ✅ NO (qualified) | L2 100ps: RMSD 1.11 Å. L2 10ns: RMSD 4.02 Å but **Rg stable** (-0.1%) → conformational relaxation from AF3, not denaturation. Needs 20-50 ns for full equilibration. |
 | Does the electron cascade flow? | ✅ YES (bias-corrected) | L3: Δε = -0.07 eV corrected (within 0.14 eV of exp.) |
-| Is cathode DET fast enough? | ✅ YES | L3b: Cu-Co k_ET=2.34×10¹⁰, Co-Ce k_ET=1.1×10⁸ s⁻¹. Ce-gr ⏳ |
+| Is cathode DET fast enough? | ✅ YES | L3b: 3/3 pairs ✅. Total k_DET=1.09×10⁸ s⁻¹ (10⁵× above turnover) |
 | Is delta_t physically meaningful? | ✅ YES | L4: healthy 36s, stressed 190s, baseline 60s justified |
 | Can we predict EIS results? | ✅ YES | L4c: Rct=130Ω, Cdl=50µF/cm² |
 

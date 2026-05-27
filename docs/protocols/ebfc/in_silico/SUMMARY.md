@@ -184,7 +184,10 @@ Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
 |-----|-----------|-------------|--------|
 | Cu↔Co (T1↔ZIF node) | 0.0325 | 2.34×10¹⁰ | ✅ |
 | Co↔Ce (ZIF node↔vacancy) | 0.0022 | 1.10×10⁸ | ✅ |
-| Ce↔graphene (vacancy↔MWCNT) | — | — | ⏳ Computing (State B) |
+| Ce↔graphene (vacancy↔MWCNT) | 0.1177 | 3.07×10¹¹ | ✅ |
+| **Total (series)** | — | **1.09×10⁸** | rate-limited by Co-Ce |
+
+**Conclusion:** All 3 hops ✅. Total DET rate 1.09×10⁸ s⁻¹ — **10⁵× faster than enzymatic turnover**. ZIF nanozyme cathode DET is NOT rate-limiting.
 
 **Conclusion (partial):** Cu-Co DET rate 2.34×10¹⁰ s⁻¹ is 7 orders of magnitude faster than enzymatic turnover (~10³ s⁻¹). ZIF DET is NOT rate-limiting.
 

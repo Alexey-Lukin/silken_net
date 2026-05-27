@@ -257,8 +257,10 @@ Discrepancy from experiment (+0.14 eV downhill): **1.14 eV** — from vertical g
 | Пара | Атомів | t_ij (eV) | k_ET (s⁻¹) | Статус |
 |------|--------|-----------|-------------|--------|
 | **Cu-Co** (T1↔ZIF node) | 62 | **0.0325** | **2.34×10¹⁰** | ✅ Completed |
-| **Co-Ce** (ZIF node↔vacancy) | 62 | — | — | Queued (after ωB97X 21d finishes, run solo) |
-| **Ce-graphene** (vacancy↔electrode) | 61 | — | — | Queued (after Co-Ce) |
+| **Co-Ce** (ZIF node↔vacancy) | 62 | **0.0022** | **1.10×10⁸** | ✅ Completed (2026-05-27) |
+| **Ce-graphene** (vacancy↔electrode) | 61 | **0.1177** | **3.07×10¹¹** | ✅ Completed (2026-05-27) |
+
+**Total DET rate (series):** 1/k_total = 1/k₁ + 1/k₂ + 1/k₃ → **k_total = 1.09×10⁸ s⁻¹** (rate-limited by Co-Ce). This is **10⁵× faster** than enzymatic turnover (~10³ s⁻¹). **Cathode DET is NOT rate-limiting.**
 
 **Cu-Co verdict:** t_ij = 0.0325 eV → k_ET = 2.34×10¹⁰ s⁻¹ (λ=0.7 eV, ΔG=0, T=298K). Це **надзвичайно швидкий** DET — набагато швидше ніж enzymatic turnover (~10³ s⁻¹). DET через ZIF **не лімітує** катодний ORR.
 
