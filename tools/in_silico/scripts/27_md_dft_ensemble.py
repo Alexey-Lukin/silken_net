@@ -58,8 +58,30 @@ def extract_fad_ring_atoms(traj) -> list[tuple[int, str]]:
     if fad_residue is None:
         return []
 
-    return [(a.index, a.element.symbol) for a in fad_residue.atoms
-            if a.element.symbol not in ("H", "P")]
+    # Full FAD (51 heavy atoms) is too large for SCF on MD snapshots.
+    # Extract only the isoalloxazine ring (≈19 heavy atoms = lumiflavin equivalent).
+    # In GAFF topology: ring atoms are N5x-N8x, C9x-C21x, O7x-O8x
+    # (the tricyclic dimethylbenzene + pyrazine + pyrimidine system).
+    ring_atom_prefixes = {
+        "N5", "N6", "N7", "N8",
+        "C9", "C10", "C11", "C12", "C13", "C14", "C15",
+        "C16", "C17", "C18", "C19", "C20", "C21",
+        "O7", "O8",
+    }
+    ring_atoms = []
+    for a in fad_residue.atoms:
+        if a.element.symbol == "H":
+            continue
+        prefix = a.name.rstrip("x")
+        if prefix in ring_atom_prefixes:
+            ring_atoms.append((a.index, a.element.symbol))
+
+    if len(ring_atoms) < 10:
+        # Fallback: take all non-H non-P (less accurate but works)
+        ring_atoms = [(a.index, a.element.symbol) for a in fad_residue.atoms
+                      if a.element.symbol not in ("H", "P")]
+
+    return ring_atoms
 
 
 def main() -> int:
@@ -122,8 +144,9 @@ def main() -> int:
 
         mf = dft.RKS(mol)
         mf.xc = "b3lyp"
-        mf.conv_tol = 1e-6
-        mf.max_cycle = 200
+        mf.conv_tol = 1e-5  # relaxed for MD snapshots
+        mf.max_cycle = 500
+        mf.level_shift = 0.2  # help convergence on non-optimized geometry
 
         t0 = time.time()
         energy = mf.kernel()
