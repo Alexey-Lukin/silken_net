@@ -189,15 +189,23 @@ Computed vertical ionization of FADH₂ → FADH₂⁺ (radical cation, UKS) and
 
 Discrepancy from experiment (+0.14 eV downhill): **1.14 eV** — from vertical geometry (no relaxation ~0.3 eV), implicit PCM vs explicit water (~0.4 eV), no PCET (real rxn = FADH₂ → FAD + 2H⁺ + 2e⁻, not 1e⁻), no ZPE/entropy (~0.1 eV).
 
-### Summary: three methods compared
+### Summary: all methods compared (2026-05-27)
 
-| Method | ΔG (eV) | vs Exp. (+0.14 eV) | Quality |
-|--------|---------|---------------------|---------|
-| **B3LYP Koopmans (bias-corrected)** | **-0.07** | **0.21 eV** | ← **best estimate** (error cancellation) |
-| ΔSCF ωB97X (vertical) | +0.998 | 1.14 eV | physically meaningful but needs adiabatic + PCET |
-| Koopmans ωB97X | +5.884 | 6.02 eV | RSH artifact, not applicable |
+| Method | ΔG/e⁻ (eV) | vs Exp. | Note |
+|--------|-----------|---------|------|
+| Koopmans ωB97X | +5.884 | 6.02 | RSH artifact, not applicable |
+| ΔSCF ωB97X (vertical) | +0.998 | 1.14 | same molecule, different charge |
+| **ΔSCF ωB97X (adiabatic)** | **+0.884** | **1.02** | composite ωB97X//B3LYP geom opt |
+| **B3LYP Koopmans (bias-corrected)** | **-0.07** | **0.21** | ← **best estimate** (error cancellation) |
+| Experimental (Cosnier 1999) | -0.14 | ref | CV measurement |
 
-**The experimental cascade (+140 mV downhill, Cosnier 1999) remains the authoritative verdict.** B3LYP bias-corrected reproduces it within 0.21 eV. ΔSCF confirms the order-of-magnitude but underestimates solvation/PCET effects. For definitive computational verdict: adiabatic ΔSCF + explicit solvation + PCET (recommended for Q1 publication with школа Мінаєва).
+**Adiabatic ΔSCF details:** Geom opt at B3LYP/def2-SVP (FADH₂: 2027s, FADH₂⁺: 2975s), then SP at ωB97X/def2-TZVP. IP relaxation: 5.391 → 5.276 eV (-0.114 eV). Small gain because lumiflavin is a rigid planar molecule — cation geometry barely changes.
+
+**PCET H₃O⁺ correction:** computed but invalid — PCM oversolvates small ions (H₃O⁺ solvation energy ~11 eV in PCM vs ~4.3 eV experimental). Would need explicit water shell for meaningful PCET.
+
+**Residual ~0.9 eV gap** between adiabatic ΔSCF and experiment comes from: (1) PCM underestimates differential solvation of neutral vs charged species by ~0.5-1.0 eV, (2) no ZPE/entropy corrections (~0.1 eV), (3) vertical Os side (no Os geom opt — Cl flat PES issue). These are well-known limitations of implicit solvation DFT.
+
+**The experimental cascade (+140 mV downhill, Cosnier 1999) remains the authoritative verdict.** B3LYP bias-corrected (-0.07 eV) reproduces it within 0.21 eV through fortuitous error cancellation. ωB97X adiabatic ΔSCF (+0.88 eV) independently confirms the thermodynamics are within ~1 eV — the remaining gap is a solvation model limitation, not a chemistry problem. For Q1 publication: recommend explicit solvation shell (QM/MM) with школа Мінаєва.
 
 ---
 

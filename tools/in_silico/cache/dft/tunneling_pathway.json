@@ -1,0 +1,18 @@
+{
+  "method": "Beratan-Onuchic (Dijkstra shortest path)",
+  "beta_through_space": 1.1,
+  "path_atoms": 10,
+  "euclidean_distance_A": 21.7,
+  "through_bond_path_A": 23.73,
+  "coupling_penalty": 7.8,
+  "effective_beta_d": 2.054,
+  "residue_pathway": [
+    "FAD600",
+    "ALA260",
+    "THR259",
+    "THR282",
+    "THR287"
+  ],
+  "source": "FAD600",
+  "target": "THR287"
+}
