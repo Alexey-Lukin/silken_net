@@ -162,6 +162,10 @@ def run_single_temperature(temp_k: int, platform: Platform) -> dict:
     # Minimise — 0 means until convergence (critical for high-T runs)
     sim.minimizeEnergy(maxIterations=0)
 
+    # Brief low-T relaxation to resolve residual clashes after minimization
+    sim.context.setVelocitiesToTemperature(10 * kelvin)
+    sim.step(500)
+
     # NVT with restraints — heat to target T
     ramp_step = 10
     restraint = restraint_protein_heavy_atoms(system, modeller.positions, modeller.topology, k=10.0)
