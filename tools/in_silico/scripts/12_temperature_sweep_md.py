@@ -159,16 +159,15 @@ def run_single_temperature(temp_k: int, platform: Platform) -> dict:
     with (run_dir / "system.pdb").open("w") as fh:
         PDBFile.writeFile(modeller.topology, modeller.positions, fh, keepIds=True)
 
-    # Minimise
-    min_iters = 20000 if temp_k > 300 else 10000
-    sim.minimizeEnergy(maxIterations=min_iters)
+    # Minimise — 0 means until convergence (critical for high-T runs)
+    sim.minimizeEnergy(maxIterations=0)
 
     # NVT with restraints — heat to target T
     ramp_step = 10
     restraint = restraint_protein_heavy_atoms(system, modeller.positions, modeller.topology, k=10.0)
     sim.context.reinitialize(preserveState=True)
-    sim.context.setVelocitiesToTemperature(100 * kelvin)
-    start_t = min(100, temp_k)
+    start_t = min(50, temp_k)
+    sim.context.setVelocitiesToTemperature(start_t * kelvin)
     if temp_k <= start_t:
         sim.step(ps_to_steps(EQUIL_NVT_PS))
     else:
