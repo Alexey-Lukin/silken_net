@@ -1,0 +1,197 @@
+{
+  "method": "OpenMM NVT cyclic uniaxial strain",
+  "strain_pct": 5.0,
+  "n_cycles": 10,
+  "hold_ps": 5.0,
+  "temperature_K": 298,
+  "results": [
+    {
+      "cycle": 0,
+      "phase": "stretch",
+      "strain_pct": 5.0,
+      "PE_kJ_mol": -60620.80472522887
+    },
+    {
+      "cycle": 0,
+      "phase": "compress",
+      "strain_pct": -5.0,
+      "PE_kJ_mol": -61252.06804728205
+    },
+    {
+      "cycle": 0,
+      "phase": "restore",
+      "strain_pct": 0.0,
+      "PE_kJ_mol": -61177.29582493269
+    },
+    {
+      "cycle": 1,
+      "phase": "stretch",
+      "strain_pct": 5.0,
+      "PE_kJ_mol": -60657.507545053086
+    },
+    {
+      "cycle": 1,
+      "phase": "compress",
+      "strain_pct": -5.0,
+      "PE_kJ_mol": -61425.79595255549
+    },
+    {
+      "cycle": 1,
+      "phase": "restore",
+      "strain_pct": 0.0,
+      "PE_kJ_mol": -61274.889208721754
+    },
+    {
+      "cycle": 2,
+      "phase": "stretch",
+      "strain_pct": 5.0,
+      "PE_kJ_mol": -60953.931068002305
+    },
+    {
+      "cycle": 2,
+      "phase": "compress",
+      "strain_pct": -5.0,
+      "PE_kJ_mol": -61538.52703165705
+    },
+    {
+      "cycle": 2,
+      "phase": "restore",
+      "strain_pct": 0.0,
+      "PE_kJ_mol": -61685.94609348738
+    },
+    {
+      "cycle": 3,
+      "phase": "stretch",
+      "strain_pct": 5.0,
+      "PE_kJ_mol": -60672.72116809996
+    },
+    {
+      "cycle": 3,
+      "phase": "compress",
+      "strain_pct": -5.0,
+      "PE_kJ_mol": -61174.4937674969
+    },
+    {
+      "cycle": 3,
+      "phase": "restore",
+      "strain_pct": 0.0,
+      "PE_kJ_mol": -61738.66691868269
+    },
+    {
+      "cycle": 4,
+      "phase": "stretch",
+      "strain_pct": 5.0,
+      "PE_kJ_mol": -61098.70737415465
+    },
+    {
+      "cycle": 4,
+      "phase": "compress",
+      "strain_pct": -5.0,
+      "PE_kJ_mol": -61756.645500895334
+    },
+    {
+      "cycle": 4,
+      "phase": "restore",
+      "strain_pct": 0.0,
+      "PE_kJ_mol": -61537.88273899519
+    },
+    {
+      "cycle": 5,
+      "phase": "stretch",
+      "strain_pct": 5.0,
+      "PE_kJ_mol": -60767.65915638121
+    },
+    {
+      "cycle": 5,
+      "phase": "compress",
+      "strain_pct": -5.0,
+      "PE_kJ_mol": -61788.569634196116
+    },
+    {
+      "cycle": 5,
+      "phase": "restore",
+      "strain_pct": 0.0,
+      "PE_kJ_mol": -61590.89854710066
+    },
+    {
+      "cycle": 6,
+      "phase": "stretch",
+      "strain_pct": 5.0,
+      "PE_kJ_mol": -60737.586646615586
+    },
+    {
+      "cycle": 6,
+      "phase": "compress",
+      "strain_pct": -5.0,
+      "PE_kJ_mol": -61881.367974039866
+    },
+    {
+      "cycle": 6,
+      "phase": "restore",
+      "strain_pct": 0.0,
+      "PE_kJ_mol": -61623.1518429991
+    },
+    {
+      "cycle": 7,
+      "phase": "stretch",
+      "strain_pct": 5.0,
+      "PE_kJ_mol": -60748.877662240586
+    },
+    {
+      "cycle": 7,
+      "phase": "compress",
+      "strain_pct": -5.0,
+      "PE_kJ_mol": -61832.857414957834
+    },
+    {
+      "cycle": 7,
+      "phase": "restore",
+      "strain_pct": 0.0,
+      "PE_kJ_mol": -61687.979174542066
+    },
+    {
+      "cycle": 8,
+      "phase": "stretch",
+      "strain_pct": 5.0,
+      "PE_kJ_mol": -61180.09921985777
+    },
+    {
+      "cycle": 8,
+      "phase": "compress",
+      "strain_pct": -5.0,
+      "PE_kJ_mol": -61695.73033976252
+    },
+    {
+      "cycle": 8,
+      "phase": "restore",
+      "strain_pct": 0.0,
+      "PE_kJ_mol": -61361.97148411238
+    },
+    {
+      "cycle": 9,
+      "phase": "stretch",
+      "strain_pct": 5.0,
+      "PE_kJ_mol": -60768.9480968109
+    },
+    {
+      "cycle": 9,
+      "phase": "compress",
+      "strain_pct": -5.0,
+      "PE_kJ_mol": -61736.2379081219
+    },
+    {
+      "cycle": 9,
+      "phase": "restore",
+      "strain_pct": 0.0,
+      "PE_kJ_mol": -61796.37187473738
+    }
+  ],
+  "summary": {
+    "stretch_PE_mean": -60820.68426624448,
+    "compress_PE_mean": -61608.229357096505,
+    "restore_PE_mean": -61547.50537083112,
+    "PE_drift_pct": 1.0119375847802417,
+    "stable": false
+  },
+  "verdict": "Matrix degrading under cyclic strain"
+}
