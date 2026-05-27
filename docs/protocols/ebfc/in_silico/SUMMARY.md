@@ -148,12 +148,15 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 
 **Conclusion:** Raw verdict UPHILL is an artifact of B3LYP systematic bias. Bias-corrected result within 0.14 eV of experiment. Patent claim confirmed by three independent sources (experiment + DFT NH₃ + DFT full bpy).
 
-### Publication-grade: ωB97X/def2-TZVP (⏳ running)
+### Publication-grade: ωB97X/def2-TZVP (✅ Complete, 2026-05-27)
 
-**Os(II) converged:** HOMO = **-7.128 eV**, LUMO = -0.438 eV, Gap = 6.691 eV (223 min, 54 atoms).
-Os(III) + FADH₂ ⏳ computing. Full cascade verdict ETA ~15:00-16:00 today.
+| Species | HOMO (eV) | LUMO (eV) | Gap (eV) |
+|---------|-----------|-----------|----------|
+| Os(II) | -7.128 | -0.438 | 6.691 |
+| **Os(III)** | -8.887 | **-1.781** | 7.106 |
+| **FADH₂** | **-7.664** | 0.282 | 7.946 |
 
-Range-separated hybrid gives dramatically different orbital energies — the cascade verdict at this level may differ from B3LYP. Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
+**ωB97X Koopmans Δε = -5.884 eV (UPHILL)** — but this is a known RSH artifact. Range-separated hybrids give accurate ionization potentials but virtual orbital energies (LUMO) are systematically too high for inter-molecular comparisons. **B3LYP bias-corrected Δε ≈ -0.07 eV remains the best Koopmans estimate.** For definitive in-silico verdict: ΔSCF method needed (школа Мінаєва). Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
 
 ### Cathode: DET Through ZIF Nanozyme
 

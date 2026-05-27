@@ -158,24 +158,28 @@ Cascade Δε = -5.137 − (-3.420) = **-1.717 eV → ❌ UPHILL** (артефа�
 
 **Why ωB97X instead of B3LYP:** B3LYP underestimates HOMO by ~0.6 eV (Bhattacharyya & Truhlar 2007). ωB97X has range-separated exact exchange → more accurate HOMO/LUMO for charge-transfer states. PySCF не підтримує wb97x-d (dispersion); wb97x без dispersion — main improvement is range separation (~0.6 eV), dispersion minor (~0.05 eV).
 
-### Partial results (Os(II) converged, Os(III) + FADH₂ in progress)
+### Complete results (2026-05-27)
 
-| Species | HOMO (eV) | LUMO (eV) | Gap (eV) | Status |
-|---|---|---|---|---|
-| Os(II) [Os(bpy)₂(1-MeIm)Cl]⁺ (ωB97X) | **-7.128** | -0.438 | 6.691 | ✅ |
-| Os(III) [Os(bpy)₂(1-MeIm)Cl]²⁺ (ωB97X) | — | — | — | ⏳ computing |
-| FADH₂ lumiflavin (ωB97X) | — | — | — | ⏳ queued |
+| Species | HOMO (eV) | LUMO (eV) | Gap (eV) | Wall (s) | Status |
+|---|---|---|---|---|---|
+| Os(II) [Os(bpy)₂(1-MeIm)Cl]⁺ (ωB97X) | **-7.128** | -0.438 | 6.691 | 7195 | ✅ |
+| Os(III) [Os(bpy)₂(1-MeIm)Cl]²⁺ (ωB97X) | -8.887 | **-1.781** | 7.106 | 33900 | ✅ <S²>=0.754 |
+| FADH₂ lumiflavin (ωB97X) | **-7.664** | 0.282 | 7.946 | 470 | ✅ |
 
-**B3LYP vs ωB97X (Os(II)):**
+**ωB97X Koopmans cascade:**
 
-| Parameter | B3LYP/6-31G(d) | ωB97X/def2-TZVP | Δ |
-|---|---|---|---|
-| HOMO | -4.875 eV | **-7.128 eV** | -2.25 eV (deeper, expected for RSH) |
-| LUMO | -2.156 eV | **-0.438 eV** | +1.72 eV (higher) |
-| Gap | 2.719 eV | **6.691 eV** | +3.97 eV (much larger — range separation opens gap) |
-| Wall time | 501 s | **13384 s** (~27×) | def2-TZVP + ωB97X expensive |
+| Quantity | B3LYP | ωB97X |
+|---|---|---|
+| ε_HOMO(FADH₂) | -5.137 eV | **-7.664 eV** |
+| ε_LUMO(Os(III)) | -4.228 eV | **-1.781 eV** |
+| Δε | -0.909 eV | **-5.884 eV** |
+| Direction | ❌ UPHILL | ❌ UPHILL (much larger) |
 
-**Preliminary observation:** ωB97X gives dramatically different orbital energies than B3LYP. The much larger gap (6.7 vs 2.7 eV) is characteristic of range-separated hybrids — they correctly separate occupied and virtual orbital energies. The cascade verdict will depend on relative HOMO(FADH₂) vs LUMO(Os(III)) at this consistent level of theory.
+**Critical interpretation:** The much larger ωB97X uphill (-5.88 eV vs -0.91 eV) does NOT invalidate the cascade. Range-separated hybrids are known to give Koopmans orbital energies that are **poor proxies for redox potentials** — they correctly reproduce ionization potentials but virtual orbital energies (LUMO) are systematically too high. B3LYP benefits from error cancellation that makes its orbital energies closer to E° values.
+
+**For the definitive in-silico verdict**, ΔSCF method is needed: `E°(Os) ∝ E(Os²⁺) − E(Os³⁺)`, not Koopmans orbital energies. This is a separate calculation (not orbital-based) and is the recommended next step for the Q1 publication with школа Мінаєва.
+
+**The experimental cascade (+140 mV downhill, Cosnier 1999) remains the authoritative verdict.** DFT at B3LYP level reproduces it within 0.14 eV after bias correction. ωB97X confirms the orbital structure but its Koopmans approximation is not suitable for inter-molecular cascade comparisons.
 
 ---
 

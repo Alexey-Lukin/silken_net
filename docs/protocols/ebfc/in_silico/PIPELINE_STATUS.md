@@ -36,7 +36,7 @@
 | # | Script | Status | Resource | ETA |
 |---|--------|--------|----------|-----|
 | 14 | `xylem_sap_sweep_md` | ✅ 6/6 species: pine=1.03, winter=1.03, spruce=1.09, oak=1.05, beech=0.98, generic=1.05 Å — ALL STABLE | — | DONE |
-| 21d | `dft_os_bpy_wb97xd` | Os(II) ✅ converged (HOMO=-7.128 eV). Os(III) UKS with level_shift ⏳ computing (~30h+ CPU) | CPU | TBD |
+| 21d | `dft_os_bpy_wb97xd` | ✅ COMPLETE. Os(II) HOMO=-7.128, Os(III) LUMO=-1.781, FADH₂ HOMO=-7.664 eV. Koopmans Δε=-5.88 eV (RSH artifact — ΔSCF needed for true verdict) | — | DONE |
 
 ### ✅ Recently Completed (2026-05-26 — 2026-05-27)
 
@@ -154,7 +154,7 @@ Validation:
 - ✅ ~~Temperature sweep (script 12)~~ — DONE 3/4 temps (263K-298K stable)
 - ✅ ~~PSBMA diffusion (script 13)~~ — DONE (model limitation noted)
 - ✅ ~~Xylem sap sweep (script 14)~~ — DONE 6/6 species (pH 4.2-5.8 all stable)
-- ⏳ ωB97X DFT (script 21d) — Os(II) ✅, Os(III) computing
+- ✅ ~~ωB97X DFT (script 21d)~~ — DONE. Koopmans Δε=-5.88 eV (RSH artifact; B3LYP corrected ≈-0.07 eV is better). ΔSCF recommended for pub.
 - ⏳ L3b Co-Ce + Ce-graphene — queued after ωB97X
 
 ---

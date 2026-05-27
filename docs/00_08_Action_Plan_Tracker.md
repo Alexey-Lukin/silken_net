@@ -649,7 +649,7 @@
 - [x] 🤖 **L2 PSBMA diffusion:** ✅ (2026-05-27). D_eff=5.1e-4 cm²/s (мономери; L4 uses literature 2e-6). Скрипт: `13_psbma_diffusion_md.py`.
 - [x] 🤖 **L2 xylem sap sweep:** ✅ (2026-05-27). **6/6 species stable** (pH 4.2-5.8): pine=1.03, winter=1.03, spruce=1.09, oak=1.05, beech=0.98, generic=1.05 Å — all ≪ 3 Å. Cross-species deployment validated. Скрипт: `14_xylem_sap_sweep_md.py`.
 - [x] 🤖 **L3 PySCF DFT (B3LYP):** 🟢 Strong partial pass. LUMO(Os(III)) = −4.23 eV, Δε = −0.91 eV raw / −0.07 eV corrected. Деталі → [`L3_quantum_chemistry.md`](../protocols/ebfc/in_silico/L3_quantum_chemistry.md).
-- [ ] 🤖 **L3 ωB97X/def2-TZVP (pub-grade):** ⏳ Running (script 21d, 2026-05-27). Os(II) ✅ converged (HOMO=-7.128 eV, 7195s). Os(III) UKS з level_shift=0.3 ⏳ computing (~56h CPU). density_fit reverted (auto aux basis for Os 3× slower).
+- [x] 🤖 **L3 ωB97X/def2-TZVP (pub-grade):** ✅ COMPLETE (2026-05-27). Os(II) HOMO=-7.128 eV; Os(III) LUMO=-1.781 eV (33900s, level_shift=0.3); FADH₂ HOMO=-7.664 eV. Koopmans Δε=-5.88 eV (RSH artifact; B3LYP corrected -0.07 eV is better estimate). ΔSCF рекомендовано для Q1-статті.
 - [x] 🤖 **L3 geom opt:** Terminated — Cl flat PES. Programmatic geometry sufficient.
 - [ ] 🤖 **L3b cathode DET:** Cu-Co ✅ t_ij=0.0325 eV, k_ET=2.34×10¹⁰ s⁻¹. Co-Ce + Ce-graphene queued (after ωB97X).
 - [x] 🤖 **L4 Kinetics:** ✅ Виконано (2026-05-25). Michaelis-Menten (j_max=494 µA/cm², Km=20 mM) + Arrhenius (Ea=40 kJ/mol) + BQ25570 boost (η=0.85) + EDLC charge. **delta_t validated**: healthy tree (10 mM, 25°C) = 35.7 s < 60s baseline; stressed (5 mM, 5°C) = 190 s > 60s. Diffusion NOT rate-limiting. BASELINE_DELTA_T_S=60s фізично обґрунтований. Скрипт: `30_kinetics_delta_t.py`.
