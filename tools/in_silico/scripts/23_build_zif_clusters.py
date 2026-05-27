@@ -28,7 +28,7 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import LIGANDS_DIR
+from lib.constants import REPO_ROOT, LIGANDS_DIR
 from lib.utils import banner
 
 LIGANDS_DIR.mkdir(parents=True, exist_ok=True)

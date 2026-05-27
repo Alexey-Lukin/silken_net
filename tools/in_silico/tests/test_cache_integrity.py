@@ -158,6 +158,61 @@ def test_constants_importable():
     assert KM_GLUCOSE == 20.0
 
 
+# ── New cache files (scripts 21d, 24, 28) ──
+
+def test_wb97x_cache_complete():
+    """ωB97X cache has all 3 species + ΔSCF."""
+    path = DFT / "os_complex_wb97xd.json"
+    if not path.exists():
+        pytest.skip("ωB97X cache missing")
+    data = json.loads(path.read_text())
+    assert "os2_plus" in data
+    assert "os3_plus" in data
+    assert "fadh2_red" in data
+    assert data["os2_plus"]["converged"] is True
+    assert data["os3_plus"]["converged"] is True
+
+
+def test_tunneling_pathway():
+    """Tunneling pathway should find a route with β·d < 5."""
+    path = DFT / "tunneling_pathway.json"
+    if not path.exists():
+        pytest.skip("tunneling pathway not computed")
+    data = json.loads(path.read_text())
+    assert data["path_atoms"] > 0
+    assert data["effective_beta_d"] < 5.0
+
+
+def test_zif_hopping_all_pairs():
+    """ZIF hopping should have Cu-Co + Co-Ce at minimum."""
+    path = DFT / "zif_hopping.json"
+    if not path.exists():
+        pytest.skip("hopping not computed")
+    data = json.loads(path.read_text())
+    assert len(data["pairs"]) >= 2
+    assert "total" in data
+    assert data["total"]["k_DET"] > 1e6
+
+
+def test_xylem_sap_sweep_results():
+    """Xylem sap sweep should cover 6 species."""
+    path = KINETICS / "xylem_sap_sweep.json"
+    if not path.exists():
+        pytest.skip("xylem sap sweep not computed")
+    data = json.loads(path.read_text())
+    assert len(data.get("sweep", data)) >= 6
+
+
+def test_psbma_diffusion_results():
+    """PSBMA diffusion should have D_eff."""
+    path = KINETICS / "psbma_diffusion.json"
+    if not path.exists():
+        pytest.skip("PSBMA diffusion not computed")
+    data = json.loads(path.read_text())
+    assert "D_eff_cm2_s" in data
+    assert data["D_eff_cm2_s"] > 0
+
+
 # ── Constants vs documentation consistency ──
 
 def test_constants_match_kinetics_output():
@@ -237,6 +292,9 @@ EXPECTED_SCRIPTS = [
     "40_validate_vs_experiment.py",
     "14_xylem_sap_sweep_md.py",
     "21d_dft_os_bpy_wb97xd.py",
+    "27_md_dft_ensemble.py",
+    "28_electron_tunneling_pathway.py",
+    "29_dft_reorganization_energy.py",
 ]
 
 

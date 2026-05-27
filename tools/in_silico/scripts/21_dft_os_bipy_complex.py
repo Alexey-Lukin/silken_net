@@ -47,7 +47,7 @@ from pyscf import dft, gto, solvent
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
-    LIGANDS_DIR, DFT_CACHE, HARTREE_TO_EV,
+    REPO_ROOT, LIGANDS_DIR, DFT_CACHE, HARTREE_TO_EV,
     BASIS_LIGHT, BASIS_OS, ECP_OS, SOLVENT_EPS_WATER,
 )
 from lib.utils import banner

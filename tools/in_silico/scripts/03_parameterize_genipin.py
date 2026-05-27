@@ -28,7 +28,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import LIGANDS_DIR, CACHE_FILE, GAFF_VERSION
+from lib.constants import REPO_ROOT, LIGANDS_DIR, CACHE_FILE, GAFF_VERSION
 from lib.utils import banner
 
 from openff.toolkit import Molecule
