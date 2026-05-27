@@ -36,7 +36,8 @@
 | # | Script | Status | Resource | ETA |
 |---|--------|--------|----------|-----|
 | 14 | `xylem_sap_sweep_md` | ✅ 6/6 species: pine=1.03, winter=1.03, spruce=1.09, oak=1.05, beech=0.98, generic=1.05 Å — ALL STABLE | — | DONE |
-| 21d | `dft_os_bpy_wb97xd` | ✅ COMPLETE. Os(II) HOMO=-7.128, Os(III) LUMO=-1.781, FADH₂ HOMO=-7.664 eV. Koopmans Δε=-5.88 eV (RSH artifact — ΔSCF needed for true verdict) | — | DONE |
+| 21d | `dft_os_bpy_wb97xd` | ✅ COMPLETE. Koopmans Δε=-5.88 eV (RSH artifact). **Adiabatic ΔSCF: ΔG=+0.884 eV** (0.9 eV gap = PCM solvation limit). B3LYP corrected -0.07 eV remains best. | — | DONE |
+| 28 | `electron_tunneling_pathway` | ✅ Beratan-Onuchic: FAD→ALA260→THR259→THR282→THR287 (10 atoms, 23.7 Å, β·d=2.05 — tunneling feasible) | — | DONE |
 
 ### ✅ Recently Completed (2026-05-26 — 2026-05-27)
 
@@ -104,7 +105,7 @@ Validation:
 | Does the enzyme fold correctly? | ✅ YES | L1: d_FAD = 15.998 Å < tunneling 18-20 Å |
 | Does the matrix denature the protein? | ✅ NO (qualified) | L2 100ps: RMSD 1.11 Å. L2 10ns: RMSD 4.02 Å but **Rg stable** (-0.1%) → conformational relaxation from AF3, not denaturation. Needs 20-50 ns for full equilibration. |
 | Does the electron cascade flow? | ✅ YES (bias-corrected) | L3: Δε = -0.07 eV corrected (within 0.14 eV of exp.) |
-| Is cathode DET fast enough? | ✅ YES (partial) | L3b: Cu-Co k_ET = 2.34×10¹⁰ s⁻¹ (Co-Ce ⏳) |
+| Is cathode DET fast enough? | ✅ YES | L3b: Cu-Co k_ET=2.34×10¹⁰, Co-Ce k_ET=1.1×10⁸ s⁻¹. Ce-gr ⏳ |
 | Is delta_t physically meaningful? | ✅ YES | L4: healthy 36s, stressed 190s, baseline 60s justified |
 | Can we predict EIS results? | ✅ YES | L4c: Rct=130Ω, Cdl=50µF/cm² |
 

@@ -156,7 +156,25 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 | **Os(III)** | -8.887 | **-1.781** | 7.106 |
 | **FADH₂** | **-7.664** | 0.282 | 7.946 |
 
-**ωB97X Koopmans Δε = -5.884 eV (UPHILL)** — but this is a known RSH artifact. Range-separated hybrids give accurate ionization potentials but virtual orbital energies (LUMO) are systematically too high for inter-molecular comparisons. **B3LYP bias-corrected Δε ≈ -0.07 eV remains the best Koopmans estimate.** For definitive in-silico verdict: ΔSCF method needed (школа Мінаєва). Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
+**All methods comparison:**
+
+| Method | ΔG/e⁻ (eV) | vs Exp. |
+|--------|-----------|---------|
+| Koopmans ωB97X | +5.884 | RSH artifact |
+| ΔSCF ωB97X (vertical) | +0.998 | 1.14 eV |
+| **ΔSCF ωB97X (adiabatic)** | **+0.884** | **1.02 eV** (PCM solvation limit) |
+| **B3LYP corrected** | **-0.07** | **0.21 eV ← best** |
+| Experiment | -0.14 | ref |
+
+Residual 0.9 eV gap in ΔSCF = PCM underestimates charged species solvation.
+
+### Electron Tunneling Pathway (script 28, Beratan-Onuchic)
+
+FAD:C5B → FAD:O4B → FAD:C4A → FAD:N1A → **ALA260** → **THR259** → **THR282** → **THR287** (surface)
+- 10 atoms, through-bond path 23.7 Å, β·d = 2.05
+- Os mediator at surface can reach FAD via this covalent/H-bond pathway
+
+Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
 
 ### Cathode: DET Through ZIF Nanozyme
 
@@ -165,8 +183,8 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 | Hop | t_ij (eV) | k_ET (s⁻¹) | Status |
 |-----|-----------|-------------|--------|
 | Cu↔Co (T1↔ZIF node) | 0.0325 | 2.34×10¹⁰ | ✅ |
-| Co↔Ce (ZIF node↔vacancy) | — | — | ⏳ Computing |
-| Ce↔graphene (vacancy↔MWCNT) | — | — | ⏳ Queued |
+| Co↔Ce (ZIF node↔vacancy) | 0.0022 | 1.10×10⁸ | ✅ |
+| Ce↔graphene (vacancy↔MWCNT) | — | — | ⏳ Computing (State B) |
 
 **Conclusion (partial):** Cu-Co DET rate 2.34×10¹⁰ s⁻¹ is 7 orders of magnitude faster than enzymatic turnover (~10³ s⁻¹). ZIF DET is NOT rate-limiting.
 
