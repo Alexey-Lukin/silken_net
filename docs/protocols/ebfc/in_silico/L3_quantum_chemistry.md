@@ -214,7 +214,8 @@ Discrepancy from experiment (+0.14 eV downhill): **1.14 eV** — from vertical g
 | Покращення | Cost | Очікуваний імпакт |
 |---|---|---|
 | **Повна geometric/pyberny opt** обох species | ~6-12 год CPU | Frontier orbital energies → точніше на ~0.1-0.3 eV |
-| **ωB97X + def2-TZVP** | ~27× довше за B3LYP/6-31G(d) для RKS | **Script 21d ✅ COMPLETE** (2026-05-27). Os(II) HOMO=-7.128 eV (7195s). Os(III) LUMO=-1.781 eV (33900s, level_shift=0.3). FADH₂ HOMO=-7.664 eV (470s). Adiabatic ΔSCF: ΔG=+0.884 eV (PCM limit). |
+| **ωB97X + def2-TZVP** | ~27× довше за B3LYP/6-31G(d) для RKS | **Script 21d ✅ COMPLETE** (2026-05-27). Adiabatic ΔSCF: ΔG=+0.884 eV (PCM limit). |
+| **Nelsen 4-point λ** | 2 geom opts + 4 SPs | **Script 29 ❌ FAILED** (2026-05-27). E(neutral@cation_geom) = -867.1 Ha (6.3 Ha above diagonal = SCF artifact on distorted geometry). Cross-SP UKS never converged after 41.5h CPU. **Literature λ=0.7 eV retained.** |
 | **ΔSCF redox potentials** з RRHO thermal corrections | ~2× за SP | Direct E° prediction vs NHE/SHE, не Koopmans approximation |
 | **TD-DFT excited states** для Os complex | ~5× за GS | Підтверджує MLCT character + Marcus reorganization energy |
 | **Explicit water shells + ONIOM/EFP** | ~10× за PCM | Realistic xylem solvent environment |
