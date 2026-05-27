@@ -1,0 +1,16 @@
+{
+  "E_H2O_Ha": -76.45004036993706,
+  "E_H3O_Ha": -76.85725529842296,
+  "dE_proton_eV": -11.08088270416219,
+  "IP_vertical_eV": 5.390766095035305,
+  "IP_adiabatic_eV": 5.276448810966792,
+  "relaxation_eV": -0.11431728406851291,
+  "dG_vertical_eV": 0.998467395521321,
+  "dG_pcet_eV": -10.08241530864087,
+  "dG_adiabatic_eV": 0.8841501114528081,
+  "dG_adiabatic_pcet_eV": -10.196732592709383,
+  "geom_opt_converged": {
+    "FADH2": true,
+    "FADH2_cation": true
+  }
+}
