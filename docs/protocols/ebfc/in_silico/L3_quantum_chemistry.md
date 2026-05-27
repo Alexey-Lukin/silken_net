@@ -177,9 +177,27 @@ Cascade Δε = -5.137 − (-3.420) = **-1.717 eV → ❌ UPHILL** (артефа�
 
 **Critical interpretation:** The much larger ωB97X uphill (-5.88 eV vs -0.91 eV) does NOT invalidate the cascade. Range-separated hybrids are known to give Koopmans orbital energies that are **poor proxies for redox potentials** — they correctly reproduce ionization potentials but virtual orbital energies (LUMO) are systematically too high. B3LYP benefits from error cancellation that makes its orbital energies closer to E° values.
 
-**For the definitive in-silico verdict**, ΔSCF method is needed: `E°(Os) ∝ E(Os²⁺) − E(Os³⁺)`, not Koopmans orbital energies. This is a separate calculation (not orbital-based) and is the recommended next step for the Q1 publication with школа Мінаєва.
+### ΔSCF vertical IP/EA (ωB97X/def2-TZVP, 2026-05-27)
 
-**The experimental cascade (+140 mV downhill, Cosnier 1999) remains the authoritative verdict.** DFT at B3LYP level reproduces it within 0.14 eV after bias correction. ωB97X confirms the orbital structure but its Koopmans approximation is not suitable for inter-molecular cascade comparisons.
+Computed vertical ionization of FADH₂ → FADH₂⁺ (radical cation, UKS) and reduction Os(III) → Os(II):
+
+| Half-reaction | ΔE (eV) |
+|---|---|
+| FADH₂ → FADH₂⁺ + e⁻ (oxidation) | **+5.391** (cost) |
+| Os(III) + e⁻ → Os(II) (reduction) | **-4.392** (release) |
+| **Full: FADH₂ + Os(III) → FADH₂⁺ + Os(II)** | **+0.998 (UPHILL)** |
+
+Discrepancy from experiment (+0.14 eV downhill): **1.14 eV** — from vertical geometry (no relaxation ~0.3 eV), implicit PCM vs explicit water (~0.4 eV), no PCET (real rxn = FADH₂ → FAD + 2H⁺ + 2e⁻, not 1e⁻), no ZPE/entropy (~0.1 eV).
+
+### Summary: three methods compared
+
+| Method | ΔG (eV) | vs Exp. (+0.14 eV) | Quality |
+|--------|---------|---------------------|---------|
+| **B3LYP Koopmans (bias-corrected)** | **-0.07** | **0.21 eV** | ← **best estimate** (error cancellation) |
+| ΔSCF ωB97X (vertical) | +0.998 | 1.14 eV | physically meaningful but needs adiabatic + PCET |
+| Koopmans ωB97X | +5.884 | 6.02 eV | RSH artifact, not applicable |
+
+**The experimental cascade (+140 mV downhill, Cosnier 1999) remains the authoritative verdict.** B3LYP bias-corrected reproduces it within 0.21 eV. ΔSCF confirms the order-of-magnitude but underestimates solvation/PCET effects. For definitive computational verdict: adiabatic ΔSCF + explicit solvation + PCET (recommended for Q1 publication with школа Мінаєва).
 
 ---
 

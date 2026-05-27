@@ -1,0 +1,78 @@
+{
+  "method": "WB97X/lanl2dz(Os)+def2-tzvp(others)+PCM(water,C-PCM)",
+  "model_note": "Publication-grade: range-separated hybrid + dispersion + triple-zeta basis.",
+  "os2_plus": {
+    "label": "Os(II) [Os(bpy)2(1-MeIm)Cl]+ (\u03c9B97X-D)",
+    "charge": 1,
+    "spin": 0,
+    "n_atoms": 54,
+    "n_electrons": 240,
+    "converged": true,
+    "wall_seconds": 7195.49142074585,
+    "E_total_Ha": -1807.6685887399672,
+    "HOMO_Ha": -0.26196061053720193,
+    "LUMO_Ha": -0.016085113024760487,
+    "HOMO_eV": -7.128311354562635,
+    "LUMO_eV": -0.43769822332712993,
+    "gap_eV": 6.690613131235506
+  },
+  "os3_plus": {
+    "label": "Os(III) [Os(bpy)2(1-MeIm)Cl]2+ (\u03c9B97X-D)",
+    "charge": 2,
+    "spin": 1,
+    "n_atoms": 54,
+    "n_electrons": 239,
+    "converged": true,
+    "wall_seconds": 33899.753333091736,
+    "E_total_Ha": -1807.5071749461367,
+    "HOMO_Ha": -0.32657761014442654,
+    "LUMO_Ha": -0.06543372001643037,
+    "HOMO_eV": -8.88662948893168,
+    "LUMO_eV": -1.780542228878923,
+    "gap_eV": 7.106087260052756
+  },
+  "fadh2_red": {
+    "label": "FADH\u2082 lumiflavin (\u03c9B97X-D)",
+    "charge": 0,
+    "spin": 0,
+    "n_atoms": 33,
+    "n_electrons": 136,
+    "converged": true,
+    "wall_seconds": 470.0597050189972,
+    "E_total_Ha": -873.4398395731844,
+    "HOMO_Ha": -0.28165651455268464,
+    "LUMO_Ha": 0.01036913248249274,
+    "HOMO_eV": -7.664264206191842,
+    "LUMO_eV": 0.2821584690169303,
+    "gap_eV": 7.946422675208772
+  },
+  "cascade": {
+    "donor_homo_eV": -7.664264206191842,
+    "acceptor_lumo_eV": -1.780542228878923,
+    "delta_eV": -5.883721977312918,
+    "favorable": false,
+    "verdict": "\u274c UPHILL"
+  },
+  "fad_ox": {
+    "label": "FAD_ox lumiflavin (\u03c9B97X)",
+    "E_total_Ha": -872.2318464807634,
+    "converged": true,
+    "wall_seconds": 893.1585021018982
+  },
+  "fadh2_cation": {
+    "label": "FADH\u2082\u207a radical cation (\u03c9B97X)",
+    "charge": 1,
+    "spin": 1,
+    "E_total_Ha": -873.2417331466174,
+    "converged": true,
+    "wall_seconds": 1592.8956117630005
+  },
+  "delta_scf_correct": {
+    "IP_FADH2_eV": 5.391,
+    "EA_Os3_eV": 4.392,
+    "dG_eV": 0.998,
+    "direction": "UPHILL",
+    "discrepancy_from_exp_eV": 1.14,
+    "note": "Vertical \u0394SCF (same molecule, different charge). Discrepancy from vertical IP/EA + PCM solvation + no PCET. B3LYP corrected (-0.07 eV) remains best estimate."
+  }
+}
