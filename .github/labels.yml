@@ -24,7 +24,7 @@
 
 - name: "cluster:cross-cluster"
   color: "F1E05A"
-  description: "Task does not architecturally belong to one cluster — needs resolution into a primary or stays cross-cluster by design"
+  description: "Task spans multiple clusters — resolve into primary or keep as cross-cluster"
 
 # ─────────────────────────────────────────────────────────────────────────
 # Cluster cross-reference (secondary, optional)
