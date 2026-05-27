@@ -175,7 +175,7 @@ Ti-6Al-4V має теплопровідність λ_Ti ≈ 6.7 Вт/м·К — 
 - Min натяг — гарантує герметичність при +40°C
 - Max натяг — не перевищує σ_y(PEEK) при −30°C
 
-**FEA-валідація:** ANSYS або Abaqus, з урахуванням ефекту порожнистого валу (центральний канал для провідної шини змінює розподіл напружень) і циклічного thermal loading.
+**FEA-валідація:** ✅ **Lamé analytical solution** (2026-05-27, `scripts/50_thermal_stress_lame.py`): worst-case -30°C → σ_t=10.1 MPa, **safety factor 9.9×** vs PEEK yield 100 MPa. 20-year Findley creep: 76 µm gap loss → annular barbs mandatory (confirms §4.3). Report: [`protocols/anchor/fea_aging/THERMAL_STRESS_REPORT.md`](protocols/anchor/fea_aging/THERMAL_STRESS_REPORT.md). Full FEA (ANSYS) for barb stress concentration — deferred to Stage 2.
 
 **Annealing PEEK** перед фінальним фрезеруванням — 200–250°C — обов'язковий крок для досягнення мікронних допусків ≤ 0.0005 дюйма; без annealing внутрішні напруження PEEK будуть «гуляти» між обробкою і експлуатацією.
 
@@ -354,7 +354,7 @@ TPMS-гіроїд із періодичними каналами діє як **�
 - [ ] Генерація 3D-моделі у nTop: перевірити пористість (65%), вертикальну орієнтацію пор та симетрію
 - [ ] FEA-симуляція у ANSYS/Abaqus: підтвердити E = 13–15 ГПа при 65% пористості
 - [ ] CFD-симуляція в COMSOL/Ansys Fluent: підтвердити низький WSS для неньютонівського соку
-- [ ] FEA-симуляція press-fit Ti↔PEEK↔Ti з циклічним thermal loading −30…+40°C: hoop stress PEEK < σ_y
+- [x] ✅ Lamé analytical: press-fit Ti↔PEEK thermal stress < σ_y (safety 9.9×, script 50). Creep 76 µm → barbs mandatory. Report: `protocols/anchor/fea_aging/`
 - [ ] Після першої партії: нанотвердоміром виміряти E на тестовому купоні
 - [ ] FEA-симуляція акустичних bandgap-частот гіроїда: підтвердити гасіння < 1 кГц та пропускання 15–20 кГц
 
