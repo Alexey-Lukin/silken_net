@@ -160,7 +160,7 @@ def run_single_temperature(temp_k: int, platform: Platform) -> dict:
         PDBFile.writeFile(modeller.topology, modeller.positions, fh, keepIds=True)
 
     # Minimise — 0 means until convergence (critical for high-T runs)
-    sim.minimizeEnergy(maxIterations=0)
+    sim.minimizeEnergy(maxIterations=10000)
 
     # Brief low-T relaxation to resolve residual clashes after minimization
     sim.context.setVelocitiesToTemperature(10 * kelvin)

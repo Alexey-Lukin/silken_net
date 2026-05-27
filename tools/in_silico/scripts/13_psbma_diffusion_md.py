@@ -226,7 +226,11 @@ def main() -> int:
 
     # ── 7. Minimise ──
     banner("Energy minimisation")
-    sim.minimizeEnergy(maxIterations=5000)
+    sim.minimizeEnergy(maxIterations=10000)
+
+    # Brief low-T relaxation
+    sim.context.setVelocitiesToTemperature(10 * kelvin)
+    sim.step(1000)
 
     # ── 8. NVT ──
     banner(f"NVT equilibration: {EQUIL_NVT_PS} ps @ {TEMPERATURE_K} K")
