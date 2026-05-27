@@ -55,7 +55,7 @@ from lib.constants import (
     PH, IONIC_STRENGTH, PRESSURE_ATM, WATER_PADDING_NM, TIMESTEP_FS,
     EQUIL_NVT_PS, EQUIL_NPT_PS, N_GENIPIN, GAFF_VERSION,
 )
-from lib.geometry import positions_to_nm_array, place_on_sphere, restraint_protein_heavy_atoms
+from lib.geometry import positions_to_nm_array, restraint_protein_heavy_atoms
 from lib.utils import banner, ps_to_steps, pick_platform
 
 FAD_SDF = LIGANDS_DIR / "FAD.sdf"
@@ -108,7 +108,19 @@ def main() -> int:
     shell_r = (protein_coords - protein_center).max() + 0.8
 
     rng = np.random.default_rng(42)
-    for pos in place_on_sphere(N_GENIPIN, shell_r, protein_center, rng):
+
+    def fibonacci_positions(n, radius, center):
+        positions = []
+        for i in range(n):
+            phi = np.pi * (3.0 - np.sqrt(5.0)) * i
+            y = 1.0 - (i / max(1, n - 1)) * 2.0 if n > 1 else 0.0
+            r = np.sqrt(max(0.0, 1.0 - y * y))
+            unit_vec = np.array([np.cos(phi) * r, y, np.sin(phi) * r])
+            unit_vec += rng.normal(scale=0.02, size=3)
+            positions.append(center + unit_vec * radius)
+        return positions
+
+    for pos in fibonacci_positions(N_GENIPIN, shell_r, protein_center):
         translated = g_coords + pos
         modeller.add(g_top, [Vec3(*xyz) for xyz in translated] * nanometer)
 
@@ -121,9 +133,9 @@ def main() -> int:
     pvi_top = pvi.to_topology().to_openmm()
     pvi_coords = positions_to_nm_array(pvi.conformers[0].to_openmm())
     pvi_coords -= pvi_coords.mean(axis=0)
-    inner_shell = shell_r - 0.3  # closer to protein than genipin
+    inner_shell = shell_r - 0.3
 
-    for pos in place_on_sphere(N_PVI, inner_shell, protein_center, rng):
+    for pos in fibonacci_positions(N_PVI, inner_shell, protein_center):
         translated = pvi_coords + pos
         modeller.add(pvi_top, [Vec3(*xyz) for xyz in translated] * nanometer)
 
