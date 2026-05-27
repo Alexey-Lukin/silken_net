@@ -603,9 +603,7 @@
 ##### Підблокер HW.3.IS — In Silico FEA Aging (Stage 0, mechanics) — `00_04 §4a` Trek C
 > **Стратегія:** Симуляція напружень Ti+PEEK при extreme температурах ще ДО фізичного 12-week теста. Використовуються рівняння Ляме для thick-walled cylinder (Zone 1 ↔ Zone 2 ↔ Zone 3 коаксіальний press-fit). Закриває (a) механічну цілісність PEEK creep на 20-річному horizon'і, (b) сезонні термоциклічні навантаження.
 - [ ] 👤 **FEA setup:** CalculiX (open source, .NET/Python wrappers) або Code_Aster (Python) — заміна ANSYS GUI для AI-агент-сумісного workflow
-- [ ] 👤 **Lamé equations для thick-walled cylinder** — аналітичний baseline для press-fit Zone 1 ↔ Zone 2 (стрес-радіальні/тангенціальні профілі)
-- [ ] 👤 **Thermal expansion mismatch:** α(Ti-6Al-4V) = 8.6 ×10⁻⁶ /K vs α(PEEK) = 47 ×10⁻⁶ /K → σ_thermal = E × Δα × ΔT, перевірка при +40°C/-30°C
-- [ ] 👤 **PEEK creep на 20 років:** Findley power law або Norton-Bailey extrapolation — чи витримає press-fit радіальне навантаження?
+- [x] 🤖 **Lamé equations + thermal mismatch + PEEK creep:** ✅ (2026-05-27, script 50). Worst case -30°C: σ_t=10.1 MPa (safety 9.9× vs PEEK yield 100 MPa). 20-year Findley creep: 76 µm gap loss → **annular barbs mandatory** (confirms `01_01 §4.3`). All temps -30→+40°C within PEEK elastic regime. Cache: `kinetics/thermal_stress_lame.json`.
 - [ ] 👤 **DFT (PySCF) для іонного бар'єра:** енергія активації дифузії Ti²⁺/Ti⁴⁺/Al³⁺/V³⁺ через PEEK-матрицю → корозія НЕ отруїть ферменти за 20+ років
 - [ ] 👤 **Cross-link з MD (OpenMM):** деформація геніпін-хітозан-CNC матриці при ±5% strain (тигмоморфогенез) × 10,000 циклів — підтвердження псевдопластики
 - [ ] 👤 **Output:** report до Stage 2 in vitro тестів — `docs/protocols/anchor/fea_aging/`
