@@ -50,7 +50,7 @@
 |---|--------|------------|----------|----------|
 | 10* | `genipin_stability_md` (rerun) | 03 ✅ | ~35 min | ✅ DONE (2026-05-26) |
 | 11* | `full_matrix_md` (rerun) | 03-05 ✅ | ~35 min | ✅ DONE (2026-05-27) |
-| 12 | `temperature_sweep_md` | 03-05 ✅ | ~2.5h (4 temps) | ⏳ Starting |
+| 12 | `temperature_sweep_md` | 03-05 ✅ | ~2h | ✅ DONE 3/4 temps (263K=0.80Å, 278K=0.83Å, 298K=1.09Å; 313K skipped — NaN from ligand placement) |
 | 13 | `psbma_diffusion_md` | 08 ✅ | ~10 min | ✅ DONE (2026-05-27) — D_eff=5.1e-4 cm²/s (monomers, not polymerized; L4 uses literature 2e-6) |
 | 14 | `xylem_sap_sweep_md` | 03-05 ✅ | ~3-4h (6 species) | P2 |
 | 24* | `dft_hopping_integrals` (Co-Ce, Ce-gr) | 23 ✅ | ~2-3h CPU each | P1 (after ωB97X) |
