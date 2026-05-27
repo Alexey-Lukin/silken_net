@@ -41,10 +41,14 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 30 | `30_kinetics_delta_t.py` | L4: EBFC kinetics → delta_t(glucose, temp) for Lorenz attractor | ~1 s |
 | 30b | `30b_kinetics_monte_carlo.py` | L4b: Monte Carlo uncertainty (10k samples) → 90% CI for delta_t | ~1 s |
 | 31 | `31_eis_impedance_model.py` | L4c: EIS Randles circuit → Nyquist/Bode predictions for Ti-coin tests | ~1 s |
+| 27 | `27_md_dft_ensemble.py` | L3/L2 bridge: FAD HOMO/LUMO from 5 MD snapshots (thermal robustness) | ~2-3 h |
+| 28 | `28_electron_tunneling_pathway.py` | L3: Beratan-Onuchic electron tunneling pathway (NetworkX graph) | < 1 s |
+| 29 | `29_dft_reorganization_energy.py` | L3: Nelsen 4-point reorganization energy λ_inner | ~2 h |
 | 40 | `40_validate_vs_experiment.py` | Ti-coin Stage 2: compare in-silico predictions vs experimental CV/EIS | ~1 s |
 
-Scripts 08-09 are reserved for future ligands. 10-11 are MD runs.
-20-range is L3 DFT. 23-24 are L3b cathode DET. 30-range is L4 kinetics/EIS.
+Scripts 08-09 are reserved for future ligands. 10-14 are L2 MD runs.
+20-range is L3 DFT. 23-24 are L3b cathode DET. 27-29 are advanced L3 analyses.
+30-range is L4 kinetics/EIS.
 
 ## Why the GAFF detour (script 02 + 03)?
 
