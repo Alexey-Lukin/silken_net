@@ -14,7 +14,7 @@ L7  Polygon + DeFi    SCC/SFC мінтинг, Solana нагороди, Celo ReFi
 L6  Верифікація       peaq DID, IoTeX ZK-proofs, Streamr P2P, Filecoin/IPFS
 L5  Rails Backend     Rails 8.1 API, PostgreSQL, Sidekiq (31+ воркерів)
 L4  LoRa Мережа       868 МГц меш, CoAP/UDP, шлюзи Королеви, Starlink/LTE
-L3  Прошивка + AI     STM32WLE5JC, TinyML (CMSIS-NN), mruby Лоренц, AES-256
+L3  Прошивка + AI     STM32WLE5JC, TinyML (CMSIS-NN), mruby Лоренц, AES-128-ECB/CCM
 L2  Апаратна Капсула  BQ25570 MPPT, суперконденсатор 0.47Ф, Pogo Pin
 L1  Біофізика         Ti-6Al-4V гіроїдний анкер, EBFC Gen 2.0 (dgrFAD-GDH анод + Laccase/ZIF-nanozyme катод)
 ```
@@ -245,7 +245,7 @@ kamal deploy
 ## 🔐 Безпека Прошивки
 
 - **RDP Level 2:** Апаратне блокування зчитування пам'яті STM32
-- **AES-256:** Кожен пакет шифрується унікальним апаратним ключем (`HardwareKey`)
+- **AES-128-ECB (transitional → CCM):** LoRa пакети шифруються per-device ключем (HKDF). CoAP batch: AES-256-CBC.
 - **Shipping Mode:** Магнітний геркон утримує вузол у глибокому сні (2.1 µА) до монтажу
 - **OTA Updates:** Зашифровані пакети прошивки (512 байт/чанк) через `OtaPackagerService`
 
@@ -339,9 +339,9 @@ kamal deploy
 | Прошивка Солдата (C + mruby + TinyML) | 6 | 112 тестів проходять |
 | Прошивка Королеви (C + SIM7070G) | 6 | 59 тестів проходять |
 | Апаратна капсула (BOM, MPPT) | 6 | Архітектура заморожена |
-| Ti-6Al-4V гіроїдний анкер | 3 | nTop ліцензія отримана, 3D-модель в роботі |
-| EBFC (GOx/Laccase ферменти) | 3 | Лабораторний етап (ЧНУ + ЧМА) |
-| Академічна мережа (ЧНУ/ФОТІУС/ЧДТУ/ЧІПБ/ЧМА/СЄУ) | 3 | 6 університетів, 33+ публікацій Q1 pipeline |
+| Ti-6Al-4V гіроїдний анкер | 4 | nTop ліцензія, Lamé press-fit validated (safety 9.9×) |
+| EBFC Gen 2.0 (dgrFAD-GDH + Laccase/ZIF) | 4 | **Zero-Lab L1-L4 PASSED** (32 in-silico scripts, 76 tests, 6 tree species) |
+| Академічна мережа (ЧНУ/ФОТІУС/ЧДТУ/ЧІПБ/ЧМА/СЄУ) | 3 | 6 університетів, 35+ публікацій Q1 pipeline |
 | Розгортання GCP + Kamal | 4 | Код існує, деплой не проводився |
 
 ---
