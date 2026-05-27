@@ -647,7 +647,7 @@
 - [x] 🤖 **L2 10ns extended:** ✅ (2026-05-26). 10 ns production, 474k атомів. RMSD 4.02 Å але **Rg стабільний (-0.1%)** → конформаційна релаксація AF3, не денатурація.
 - [x] 🤖 **L2 temp sweep:** ✅ (2026-05-27). 3/4 temps: 263K=0.80Å, 278K=0.83Å, 298K=1.09Å ✅. 313K skipped (NaN). Скрипт: `12_temperature_sweep_md.py`.
 - [x] 🤖 **L2 PSBMA diffusion:** ✅ (2026-05-27). D_eff=5.1e-4 cm²/s (мономери; L4 uses literature 2e-6). Скрипт: `13_psbma_diffusion_md.py`.
-- [ ] 🤖 **L2 xylem sap sweep:** ⏳ Running (2026-05-27). 2/6 species: pine_summer=1.03Å ✅, pine_winter=1.03Å ✅, spruce ⏳. Скрипт: `14_xylem_sap_sweep_md.py`.
+- [x] 🤖 **L2 xylem sap sweep:** ✅ (2026-05-27). **6/6 species stable** (pH 4.2-5.8): pine=1.03, winter=1.03, spruce=1.09, oak=1.05, beech=0.98, generic=1.05 Å — all ≪ 3 Å. Cross-species deployment validated. Скрипт: `14_xylem_sap_sweep_md.py`.
 - [x] 🤖 **L3 PySCF DFT (B3LYP):** 🟢 Strong partial pass. LUMO(Os(III)) = −4.23 eV, Δε = −0.91 eV raw / −0.07 eV corrected. Деталі → [`L3_quantum_chemistry.md`](../protocols/ebfc/in_silico/L3_quantum_chemistry.md).
 - [ ] 🤖 **L3 ωB97X/def2-TZVP (pub-grade):** ⏳ Running (script 21d, 2026-05-27). Os(II) ✅ converged (HOMO=-7.128 eV, 7195s). Os(III) UKS з level_shift=0.3 ⏳ computing (~56h CPU). density_fit reverted (auto aux basis for Os 3× slower).
 - [x] 🤖 **L3 geom opt:** Terminated — Cl flat PES. Programmatic geometry sufficient.

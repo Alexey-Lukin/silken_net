@@ -35,7 +35,7 @@
 
 | # | Script | Status | Resource | ETA |
 |---|--------|--------|----------|-----|
-| 14 | `xylem_sap_sweep_md` | ⏳ 6 species sweep (pre-relaxation fix). 1/6 done: pine=1.03Å ✅ | GPU | ~3h |
+| 14 | `xylem_sap_sweep_md` | ✅ 6/6 species: pine=1.03, winter=1.03, spruce=1.09, oak=1.05, beech=0.98, generic=1.05 Å — ALL STABLE | — | DONE |
 | 21d | `dft_os_bpy_wb97xd` | Os(II) ✅ converged (HOMO=-7.128 eV). Os(III) UKS with level_shift ⏳ computing (~30h+ CPU) | CPU | TBD |
 
 ### ✅ Recently Completed (2026-05-26 — 2026-05-27)
@@ -153,7 +153,7 @@ Validation:
 - ✅ ~~Genipin rerun (scripts 10-11)~~ — DONE (RMSD 1.20/1.22 Å)
 - ✅ ~~Temperature sweep (script 12)~~ — DONE 3/4 temps (263K-298K stable)
 - ✅ ~~PSBMA diffusion (script 13)~~ — DONE (model limitation noted)
-- ⏳ Xylem sap sweep (script 14) — running, 1/6 species done
+- ✅ ~~Xylem sap sweep (script 14)~~ — DONE 6/6 species (pH 4.2-5.8 all stable)
 - ⏳ ωB97X DFT (script 21d) — Os(II) ✅, Os(III) computing
 - ⏳ L3b Co-Ce + Ce-graphene — queued after ωB97X
 

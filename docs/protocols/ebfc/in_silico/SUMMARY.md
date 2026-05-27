@@ -94,6 +94,19 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 
 **Note:** SBMA monomers don't form dense membrane in 200 ps MD. L4 kinetics correctly uses literature D_eff.
 
+### Xylem Sap Cross-Species Stability (script 14)
+
+| Species | pH | RMSD (Å) | Verdict |
+|---------|-----|----------|---------|
+| Pinus sylvestris (summer) | 5.0 | 1.026 ± 0.244 (max 1.316) | ✅ STABLE |
+| Pinus sylvestris (winter) | 5.0 | 1.030 ± 0.260 (max 1.340) | ✅ STABLE |
+| Picea abies (spruce) | 4.2 | 1.090 ± 0.269 (max 1.420) | ✅ STABLE |
+| Quercus robur (oak) | 5.5 | 1.045 ± 0.288 (max 1.428) | ✅ STABLE |
+| Fagus sylvatica (beech) | 5.8 | 0.984 ± 0.244 (max 1.322) | ✅ STABLE |
+| Generic simplified | 5.0 | 1.052 ± 0.268 (max 1.426) | ✅ STABLE |
+
+**Conclusion:** dgrGcGDH + Gen 2.0 matrix stable across all tested tree species (pH 4.2-5.8). Lowest RMSD at pH 5.8 (beech) — less acidic = gentler. Highest at pH 4.2 (spruce) — most acidic, still well within threshold. **Cross-species deployment validated.**
+
 ### Parameterized Ligands
 
 | Ligand | Script | Atoms | GAFF Cache |

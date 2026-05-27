@@ -378,7 +378,8 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 2. ✅ L2 (genipin RMSD, baseline)
 3. ✅ L2-extended (genipin + chitosan + CNC, 100 ps, 2026-05-25) — RMSD 1.11 Å ≪ 3 Å
    - ✅ L2-extended 10 ns run COMPLETE (2026-05-26): **RMSD 4.02 ± 0.82 Å**, Rg stable (-0.1%). Higher RMSD is normal conformational relaxation from AF3 structure under AMBER ff14SB (not denaturation — Rg proves fold intact). Full equilibration requires 20-50 ns for 600-residue enzyme.
-   - ⚠️ L2 runs used wrong genipin isomer (C₁₀→C₁₁, fixed 2026-05-25). Rerun queued with correct SMILES.
+   - ✅ Genipin rerun (correct C₁₁): baseline 1.20 Å, full matrix 1.22 Å. Temp sweep: -10°C to 25°C all stable.
+   - ✅ **Cross-species validation (2026-05-27):** 6/6 xylem sap profiles stable (pH 4.2-5.8): Pinus=1.03, Picea=1.09, Quercus=1.05, Fagus=0.98 Å — all ≪ 3 Å.
 4. 🟢 L3 strong partial pass. B3LYP: LUMO(Os III) = -4.23 eV, Δε = -0.91 eV raw / -0.07 eV corrected. **ωB97X/def2-TZVP (script 21d):** Os(II) ✅ converged (HOMO=-7.13 eV, Gap=6.69 eV). Os(III) UKS stuck after 60h CPU → killed & restarted with `level_shift=0.3` (2026-05-26). FADH₂ queued after Os(III). **L3b cathode DET**: Cu-Co t_ij=0.0325 eV ✅; Co-Ce queued after ωB97X. Деталі → [`L3_quantum_chemistry.md`](protocols/ebfc/in_silico/L3_quantum_chemistry.md)
 5. ✅ L4 (2026-05-25): Michaelis-Menten + Arrhenius + BQ25570 boost → **delta_t validated**. Healthy tree (10 mM, 25°C): 35.7 s < 60s baseline; stressed (5 mM, 5°C): 190 s > 60s. EBFC discriminates health → Lorenz attractor receives meaningful β-perturbation. Скрипт: `30_kinetics_delta_t.py`. Diffusion NOT rate-limiting (j_diff >> j_kinetic).
 
