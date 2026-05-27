@@ -710,9 +710,9 @@ Silken Net = Digital MRV (Measurement, Reporting, Verification):
 ```
 ✅ Backend: Rails 8.1 + PostgreSQL — TRL 8 (production-ready)
 ✅ Smart Contracts: 6 контрактів на Solidity, 178 тестів, аудит Slither
-✅ Firmware: STM32WLE5JC, 137 тестів, LoRa mesh, AES-256
+✅ Firmware: STM32WLE5JC, 137+ тестів, LoRa mesh, AES-128-ECB (transitional → CCM)
 ✅ Web3 Pipeline: 12 блокчейн-мереж (Polygon, Ethereum, Solana, Celo...)
-✅ Hardware design: Ti-6Al-4V gyroid, EBFC, BQ25570 MPPT
+✅ Hardware design: Ti-6Al-4V gyroid, EBFC Gen 2.0 (**TRL 4**, Zero-Lab L1-L4 PASSED), BQ25570 MPPT
 ❌ ВІДСУТНЄ: Economic Whitepaper, Legal Framework, ESG Accounting, Industrial Design
    → Це саме зона СЄУ
 ```
