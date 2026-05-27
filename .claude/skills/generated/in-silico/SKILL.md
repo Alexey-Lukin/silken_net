@@ -1,6 +1,6 @@
 ---
 name: in-silico
-description: "Navigation + gotchas for EBFC in-silico pipeline. Read SSOT docs first."
+description: "Navigation + gotchas for EBFC in-silico pipeline (27 scripts, L1-L4). Read SSOT docs first."
 ---
 
 # In-Silico Pipeline (EBFC Gen 2.0 Zero-Lab Proof)
@@ -9,89 +9,94 @@ description: "Navigation + gotchas for EBFC in-silico pipeline. Read SSOT docs f
 
 | Document | What it covers |
 |----------|---------------|
-| `docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md §3.4` | Pipeline spec, TRL gate, L1-L4 definitions |
-| `docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md` | Live status: running/queued/completed scripts |
+| `docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md §3.4` | Pipeline spec, TRL gate, L1-L4 definitions, artifact table |
+| `docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md` | Live status: running/queued/completed scripts, decision matrix |
 | `docs/protocols/ebfc/in_silico/SUMMARY.md` | All L1-L4 results in one page |
-| `docs/protocols/ebfc/in_silico/L3_quantum_chemistry.md` | DFT details, cascade verdict, L3b cathode |
+| `docs/protocols/ebfc/in_silico/L3_quantum_chemistry.md` | DFT details, cascade methods comparison, ΔSCF, L3b cathode |
 | `docs/protocols/ebfc/in_silico/L1_protein_architecture.md` | AlphaFold 3 results, d_FAD distance |
 | `docs/08_01_University_R_and_D_Protocols.md` | Мінаєв collaboration, xylem sap protocols |
-| `docs/08_03_Joint_Publications_and_IP_Strategy.md` | Publication plan, Стаття 28 |
-| `docs/08_06_CHMA_Biomedical_Integration.md` | ЧМА collaboration, Бушуєва |
+| `docs/08_03_Joint_Publications_and_IP_Strategy.md` | Publication plan, Стаття 28 baseline |
+| `docs/08_06_CHMA_Biomedical_Integration.md` | ЧМА collaboration, Бушуєва EIS predictions |
+| `docs/00_08_Action_Plan_Tracker.md` | HW.5.IS section — operational task status |
 | `tools/in_silico/README.md` | Setup, quickstart, GPU notes, GAFF explanation |
 
-## Purpose
+**After completing ANY task in this pipeline — update ALL 8 docs above.**
 
-Computationally prove the EBFC works BEFORE ordering Ti-coin prototypes.
-Four levels: L1 protein → L2 stability → L3 electron cascade → L4 kinetics.
-
-## Architecture
-
-```
-tools/in_silico/
-  lib/          ← shared constants, geometry, utils, xylem_sap, dft_utils, md_utils
-  scripts/      ← 01-40 numbered scripts (run in order within each level)
-  cache/        ← gaff_cache.json, dft/*.json, kinetics/*.json, runs/ (gitignored)
-  tests/        ← test_cache_integrity.py (68 tests)
-  environment.yml ← conda env "silken_md" (Python 3.12)
-docs/protocols/ebfc/in_silico/
-  ligands/      ← SDF/XYZ files (committed, small)
-  *.md          ← L1/L3 details, PIPELINE_STATUS, SUMMARY
-```
-
-## Script Dependency Graph
+## Script Dependency Graph (27 scripts)
 
 ```
 Parameterization (CPU, ~minutes):
-  02 (FAD) ──┐
-  03 (GEN) ──┼── 10 (baseline MD) ── 11 (full matrix) ── 12 (temp sweep)
-  04 (CSO) ──┤                                           14 (xylem sap)
-  05 (CLB) ──┘
-  06 (PPy) ── future
-  07 (PVI) ── future
-  08 (SBMA) ─── 13 (PSBMA diffusion)
+  02 FAD → 03 GEN → 04 CSO → 05 CLB → 06 PPy → 07 PVI → 08 SBMA
+           ↓
+L2 MD (GPU):            ↓ SMILES change → rerun ALL downstream
+  10 (baseline) ← 02,03
+  11 (full matrix) ← 02-05    → 11* (10ns extended)
+  12 (temp sweep) ← 02-05     → 4 temperatures
+  13 (PSBMA diffusion) ← 08   → D_eff
+  14 (xylem sap) ← 02-05      → 6 species
 
-DFT (CPU, hours):
+L3 DFT anode (CPU):
   20 (FAD) ──┐
-  21b (Os)  ─┼── 22 (cascade verdict)
-  21d (ωB97X)┘
-  23 (ZIF clusters) → 24 (hopping integrals)
+  21b (Os B3LYP) ─┼── 22 (cascade verdict) ← rerun after 21d
+  21d (Os ωB97X) ──┘
+  28 (tunneling pathway) ← PDB only, no DFT deps
+  29 (Nelsen λ) ← standalone
 
-Kinetics (CPU, seconds):
+L3b DFT cathode (CPU):
+  23 (ZIF clusters) → 24 (hopping integrals, 3 pairs)
+
+L4 Kinetics (CPU, seconds):
   30 (delta_t) → 30b (Monte Carlo) → 31 (EIS) → 40 (validation)
+
+Bridge:
+  27 (MD→DFT ensemble) ← 11 (DCD trajectory) + DFT
 ```
 
 ## Critical Rules
 
-1. **Shared lib is SSOT** — all constants, paths, banner() come from `lib/`. Never redefine locally.
-2. **GAFF cache is append-only** — `cache/gaff_cache.json` grows as new ligands are parameterized. Don't delete entries.
-3. **SMILES fixes require cascade reruns** — if you fix a SMILES in scripts 02-08, ALL downstream MD scripts using that ligand must rerun.
-4. **DFT jobs are CPU-bound** — NEVER run two DFT scripts on same machine simultaneously (cache thrashing makes both 2× slower).
-5. **MD trajectories are gitignored** — only JSON summaries in `cache/dft/` and `cache/kinetics/` are committed.
-6. **CI smoke test** — `in_silico_smoke.yml` runs script 01 with `SILKEN_FORCE_PLATFORM=CPU`, padding 0.5nm, 1000 min iterations.
+1. **Shared lib is SSOT** — all constants, paths, banner() from `lib/`. Never redefine locally (19 local banners eliminated in refactoring).
+2. **SMILES fixes cascade** — fixing a SMILES in 02-08 → rerun ALL downstream MD using that ligand. Check GAFF cache too.
+3. **DFT: NEVER two heavy jobs on same CPU** — cache thrashing makes both 2× slower. Small molecules (H₂O, lumiflavin) OK to parallelize.
+4. **No density_fit() for Os/Ce** — auto-generated aux basis for heavy metals is 3× SLOWER than standard integrals.
+5. **level_shift=0.3 for open-shell transition metals** — UKS on Os(III), Co-Ce, Ce without it → SCF oscillates forever (60h+ observed).
+6. **MD NaN at NVT ramp** — 10K pre-relaxation (1000 steps at 10K) + start NVT from 50K + ramp step 10K (not 5K). Especially at high T (313K) and with many ligands. Use `maxIterations=10000` for minimization.
+7. **MD trajectories gitignored** — only JSON/PNG summaries in `cache/dft/` and `cache/kinetics/` committed.
+8. **CI smoke test** — `in_silico_smoke.yml`: CPU-only, padding 0.5nm, 500 min iterations, 30 min timeout.
 
-## DFT Gotchas
+## DFT Gotchas (Hard-Won Lessons)
 
-- **PySCF has no SDD basis** — use `lanl2dz` for Cu/Co, `stuttgart_rsc` for Ce
-- **wb97x-d not supported** — PySCF dispersion module lacks it; use `wb97x` (range separation is the main fix)
-- **UKS convergence** — open-shell transition metals need `level_shift=0.3` to avoid SCF oscillation
-- **Geometry optimization** — Cl atom on flat PES never converges GAU displacement criterion; programmatic geometry sufficient
-- **Spin parity** — odd electrons requires odd spin (2S); even electrons requires even spin. Auto-detect with fallback.
+- **PySCF no SDD** — use `lanl2dz` for Cu/Co, `stuttgart_rsc` for Ce (Ce not in lanl2dz)
+- **wb97x-d not supported** — use `wb97x` (range separation is the main fix, dispersion ~0.05 eV)
+- **ωB97X Koopmans orbital energies ≠ redox potentials** — RSH gives accurate IPs but LUMO systematically too high for inter-molecular comparisons. Use ΔSCF (total energies) instead. B3LYP Koopmans works better due to error cancellation.
+- **Adiabatic ΔSCF** — composite approach: geom opt at B3LYP/def2-SVP, SP at ωB97X/def2-TZVP. Saves orders of magnitude vs full ωB97X opt.
+- **Cl on flat PES** — geometry optimization never converges GAU displacement criterion for Cl in Os complex. Programmatic octahedral geometry sufficient (LUMO diff < 0.002 eV after 30 cycles).
+- **Spin parity** — odd electrons → odd spin (2S). Auto-detect: `spin = mol.nelectron % 2` as fallback.
+- **PCET with H₃O⁺/PCM** — PCM oversolvates small ions (H₃O⁺ by ~7 eV). Don't use for proton transfer corrections. Need explicit water for meaningful PCET.
+- **FAD in MD topology** — GAFF renames FAD to "UNK", all atoms have "x" suffix. 86 atoms total, 53 heavy. Full FAD has odd electron count — set charge=1 for even.
 
-## MD Gotchas
+## MD Gotchas (Hard-Won Lessons)
 
-- **OpenMM NaN** — usually insufficient minimization. Floor at 500 iterations for any box.
-- **GAFF matching** — `GAFFTemplateGenerator` matches by graph structure, not by name. One `Molecule` per unique species.
-- **Fibonacci sphere** — ligand placement uses deterministic Fibonacci sphere + tiny jitter (seed=42).
-- **Temperature ramp** — NVT equilibration ramps 100K → 298K in 5K steps with protein heavy-atom restraints.
+- **10K pre-relaxation mandatory** — 500-1000 steps at 10K before NVT ramp. Without it → NaN on ~50% of runs with multiple ligands.
+- **Fibonacci sphere placement** — deterministic (seed=42) but can create bad contacts at specific positions. 313K (40°C) particularly vulnerable — skip if NaN persists after 3 attempts (3/4 temps sufficient).
+- **GAFF matching** — `GAFFTemplateGenerator` matches by graph structure. One `Molecule` per unique chemical species is enough.
+- **L2 10ns RMSD ~4 Å is normal** — AF3 structures relax 3-5 Å under AMBER ff14SB for large enzymes. Check **Rg** (radius of gyration) — if stable → protein folded, RMSD is just conformational relaxation. Full equilibration needs 20-50 ns.
+- **25GB DCD files** — use `stride=10` or `stride=100` when loading with mdtraj. Full load kills memory.
 
-## Xylem Sap Configurator
+## Cascade Verdict Summary
 
-`lib/xylem_sap.py` has 7 profiles (Pinus summer/winter, Picea, Quercus, Fagus, generic).
-Each profile: pH, glucose_mM, ionic_strength, ions dict. Used by script 14.
+| Method | ΔG/e⁻ (eV) | vs Exp (-0.14) | Use for |
+|--------|-----------|----------------|---------|
+| B3LYP Koopmans (corrected) | -0.07 | 0.21 eV | **Best estimate** |
+| ΔSCF ωB97X (adiabatic) | +0.884 | 1.02 eV | Independent validation |
+| ΔSCF ωB97X (vertical) | +0.998 | 1.14 eV | Baseline |
+| Koopmans ωB97X | +5.884 | 6.02 eV | **Never use** (RSH artifact) |
+
+Residual ~0.9 eV gap = PCM solvation limit (not chemistry error).
 
 ## When Modifying
 
-- **Adding a new ligand**: create parameterize script (0N), add to gaff_cache, add SDF to ligands/, add test
-- **Adding a sensor field**: update packet format in CLAUDE.md §3, update TelemetryUnpackerService, update firmware
-- **Changing a constant**: update `lib/constants.py` ONLY, check which scripts use it, verify cached results still valid
-- **After any script change**: run `pytest tools/in_silico/tests/` to verify 68 tests pass
+- **Adding a ligand**: script 0N (parameterize) → add to gaff_cache → SDF to ligands/ → add test → rerun downstream MD
+- **Changing a constant**: `lib/constants.py` ONLY → check which cached JSON uses it
+- **After any change**: `pytest tools/in_silico/tests/` (68 tests) → commit → update all 8 SSOT docs above
+- **New DFT script**: import from `lib.constants` + `lib.utils` + `lib.dft_utils`. Use `level_shift=0.3` for UKS. No density_fit for heavy metals.
+- **New MD script**: import from `lib.constants` + `lib.geometry` + `lib.utils`. Use 10K pre-relaxation + 10K ramp step + `maxIterations=10000`.
