@@ -34,7 +34,7 @@ import numpy as np
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import DFT_CACHE, KINETICS_DIR
+from lib.constants import REPO_ROOT, DFT_CACHE, KINETICS_DIR
 from lib.utils import banner
 
 KINETICS = KINETICS_DIR
