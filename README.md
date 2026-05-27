@@ -336,8 +336,8 @@ kamal deploy
 | Токеноміка та Proof of Growth | 8 | Production Ready |
 | REST API (82 ендпоінти) | 8 | Production Ready |
 | Phlex UI + Tailwind дизайн-система | 8 | Production Ready |
-| Прошивка Солдата (C + mruby + TinyML) | 6 | 112 тестів проходять |
-| Прошивка Королеви (C + SIM7070G) | 6 | 59 тестів проходять |
+| Прошивка Солдата (C + mruby + TinyML) | 6 | Host-based тести проходять |
+| Прошивка Королеви (C + SIM7070G) | 6 | Host-based тести проходять |
 | Апаратна капсула (BOM, MPPT) | 6 | Архітектура заморожена |
 | Ti-6Al-4V гіроїдний анкер | 4 | nTop ліцензія, Lamé press-fit validated (safety 9.9×) |
 | EBFC Gen 2.0 (dgrFAD-GDH + Laccase/ZIF) | 4 | **Zero-Lab L1-L4 PASSED** (32 in-silico scripts, 76 tests, 6 tree species) |
