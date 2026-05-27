@@ -174,13 +174,17 @@ def run_single_sap(species: str, platform) -> dict:
     # Minimise
     sim.minimizeEnergy(maxIterations=10000)
 
+    # Brief low-T relaxation to resolve residual clashes
+    sim.context.setVelocitiesToTemperature(10 * kelvin)
+    sim.step(1000)
+
     # NVT
     ramp_step = 10
     restraint = restraint_protein_heavy_atoms(system, modeller.positions, modeller.topology, k=10.0)
     sim.context.reinitialize(preserveState=True)
-    sim.context.setVelocitiesToTemperature(100 * kelvin)
-    steps_per_ramp = ps_to_steps(EQUIL_NVT_PS) // ((TEMPERATURE_K - 100) // ramp_step)
-    for T in range(100, TEMPERATURE_K + 1, ramp_step):
+    sim.context.setVelocitiesToTemperature(50 * kelvin)
+    steps_per_ramp = ps_to_steps(EQUIL_NVT_PS) // ((TEMPERATURE_K - 50) // ramp_step)
+    for T in range(50, TEMPERATURE_K + 1, ramp_step):
         sim.integrator.setTemperature(T * kelvin)
         sim.step(steps_per_ramp)
     sim.context.setParameter("k", 0.0)
