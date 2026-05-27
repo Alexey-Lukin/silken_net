@@ -187,15 +187,22 @@ def main() -> int:
     strain_frac = STRAIN_PERCENT / 100.0
     results = []
 
+    prev_strain = 0.0
+    ramp_substeps = 20  # gradual box deformation
+
     for cycle in range(N_CYCLES):
         for phase, strain in [("stretch", +strain_frac), ("compress", -strain_frac), ("restore", 0.0)]:
-            Lx_new = Lx0 * (1.0 + strain)
-            sim.context.setPeriodicBoxVectors(
-                Vec3(Lx_new, 0, 0) * nanometer,
-                Vec3(0, Ly0, 0) * nanometer,
-                Vec3(0, 0, Lz0) * nanometer,
-            )
-            sim.step(ps_to_steps(RAMP_PS))
+            # Gradually ramp box size to avoid NaN
+            for sub in range(1, ramp_substeps + 1):
+                frac = prev_strain + (strain - prev_strain) * sub / ramp_substeps
+                Lx_new = Lx0 * (1.0 + frac)
+                sim.context.setPeriodicBoxVectors(
+                    Vec3(Lx_new, 0, 0) * nanometer,
+                    Vec3(0, Ly0, 0) * nanometer,
+                    Vec3(0, 0, Lz0) * nanometer,
+                )
+                sim.step(ps_to_steps(RAMP_PS) // ramp_substeps)
+            prev_strain = strain
 
             # Hold and measure
             sim.step(ps_to_steps(HOLD_PS))
