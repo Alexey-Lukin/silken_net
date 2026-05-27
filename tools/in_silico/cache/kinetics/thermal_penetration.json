@@ -1,0 +1,52 @@
+{
+  "method": "1D FTCS Fourier heat equation (Ti-6Al-4V)",
+  "anchor_length_mm": 80.0,
+  "surface_temp_C": 200.0,
+  "target_tip_temp_C": 150.0,
+  "time_to_target_s": 1359.7121982089552,
+  "time_to_target_min": 22.661869970149255,
+  "thermal_diffusivity_m2s": 2.875314353397592e-06,
+  "time_constant_s": 225.52510634001445,
+  "milestones": {
+    "30": {
+      "time_s": 30,
+      "tip_temp_C": 20.000000367372177,
+      "mid_temp_C": 20.416051323982927
+    },
+    "60": {
+      "time_s": 60,
+      "tip_temp_C": 20.00636220853845,
+      "mid_temp_C": 25.629114937909534
+    },
+    "120": {
+      "time_s": 120,
+      "tip_temp_C": 20.87788598681657,
+      "mid_temp_C": 43.01851021009395
+    },
+    "300": {
+      "time_s": 300,
+      "tip_temp_C": 39.91485512345858,
+      "mid_temp_C": 81.13924593218185
+    },
+    "600": {
+      "time_s": 600,
+      "tip_temp_C": 83.12390920643459,
+      "mid_temp_C": 116.77386819672905
+    },
+    "1200": {
+      "time_s": 1200,
+      "tip_temp_C": 140.21010242982814,
+      "mid_temp_C": 157.5537059540614
+    },
+    "1800": {
+      "time_s": 1800,
+      "tip_temp_C": 169.46361673600018,
+      "mid_temp_C": 178.3217883675338
+    },
+    "3600": {
+      "time_s": 3600,
+      "tip_temp_C": 195.9306611100938,
+      "mid_temp_C": 197.1111187880263
+    }
+  }
+}
