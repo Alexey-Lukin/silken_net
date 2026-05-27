@@ -28,45 +28,44 @@ OUT_JSON = DFT_CACHE / "md_dft_ensemble.json"
 SAMPLE_TIMES_NS = [2, 4, 6, 8, 10]
 
 
-def find_latest_fullmatrix_run() -> Path | None:
-    """Find the latest full matrix MD run directory."""
-    candidates = sorted(RUNS_DIR.glob("*fullmatrix*"), reverse=True)
-    for c in candidates:
+def find_largest_fullmatrix_run() -> Path | None:
+    """Find the full matrix MD run with the largest DCD (= longest production)."""
+    best, best_size = None, 0
+    for c in RUNS_DIR.glob("*fullmatrix*"):
         dcd = c / "production.dcd"
         pdb = c / "system.pdb"
         if dcd.exists() and pdb.exists():
-            return c
-    return None
+            size = dcd.stat().st_size
+            if size > best_size:
+                best, best_size = c, size
+    return best
 
 
-def extract_fad_ring_atoms(traj) -> list[int]:
-    """Find isoalloxazine ring atoms in topology.
+def extract_fad_ring_atoms(traj) -> list[tuple[int, str]]:
+    """Find isoalloxazine ring heavy atoms in topology.
 
-    FAD residue has ~86 atoms. We want only the redox-active
-    isoalloxazine ring (equivalent to lumiflavin): atoms with
-    element C/N/O that are part of the tricyclic ring system.
-    We identify them as FAD residue atoms excluding the ribitol
-    chain (atoms with names starting with C1', C2', etc.).
+    FAD is parameterized as "UNK" residue (86 atoms, 53 heavy).
+    Select the large non-standard residue, then filter to ring
+    atoms (C/N/O, excluding P and ribitol-ADP chain atoms).
     """
     top = traj.topology
-    fad_atoms = []
-    for atom in top.atoms:
-        if atom.residue.name in ("FAD", "LFN"):
-            fad_atoms.append(atom.index)
+    fad_residue = None
+    for r in top.residues:
+        if r.n_atoms > 50 and r.name not in ("HOH", "NA", "CL", "WAT"):
+            fad_residue = r
+            break
 
-    if not fad_atoms:
-        for atom in top.atoms:
-            if atom.residue.index >= top.n_residues - 5:
-                if atom.element.symbol != "H":
-                    fad_atoms.append(atom.index)
+    if fad_residue is None:
+        return []
 
-    return fad_atoms
+    return [(a.index, a.element.symbol) for a in fad_residue.atoms
+            if a.element.symbol not in ("H", "P")]
 
 
 def main() -> int:
     banner("MD→DFT Ensemble: FAD HOMO/LUMO across MD trajectory")
 
-    run_dir = find_latest_fullmatrix_run()
+    run_dir = find_largest_fullmatrix_run()
     if run_dir is None:
         sys.exit("No full matrix MD run found in cache/runs/")
 
@@ -87,19 +86,12 @@ def main() -> int:
     times_ps = traj.time
     print(f"  Time range: {times_ps[0]:.0f} — {times_ps[-1]:.0f} ps")
 
-    fad_atoms = extract_fad_ring_atoms(traj)
-    if len(fad_atoms) < 10:
-        print(f"  ⚠️ Only {len(fad_atoms)} FAD atoms found — using all non-H non-water")
-        fad_atoms = [a.index for a in traj.topology.atoms
-                     if a.residue.name not in ("HOH", "NA", "CL", "WAT")
-                     and a.element.symbol != "H"
-                     and a.residue.index >= traj.topology.n_residues - 5]
+    heavy_fad = extract_fad_ring_atoms(traj)
+    if len(heavy_fad) < 5:
+        print(f"  ⚠️ Only {len(heavy_fad)} FAD ring atoms found")
+        return 1
 
-    print(f"  FAD atoms: {len(fad_atoms)}")
-
-    fad_elements = [traj.topology.atom(i).element.symbol for i in fad_atoms]
-    heavy_fad = [(i, e) for i, e in zip(fad_atoms, fad_elements) if e != "H"]
-    print(f"  FAD heavy atoms: {len(heavy_fad)}")
+    print(f"  FAD ring heavy atoms: {len(heavy_fad)}")
 
     results = []
 
@@ -122,7 +114,8 @@ def main() -> int:
         mol = gto.Mole()
         mol.atom = atom_str
         mol.basis = "6-31g(d)"
-        mol.charge = 0
+        n_electrons = sum({"C": 6, "N": 7, "O": 8, "S": 16}.get(e, 0) for _, e in heavy_fad)
+        mol.charge = n_electrons % 2  # make electron count even
         mol.spin = 0
         mol.verbose = 0
         mol.build()
