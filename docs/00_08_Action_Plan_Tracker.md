@@ -653,7 +653,11 @@
 - [x] 🤖 **L3b cathode DET:** ✅ COMPLETE (3/3 pairs). Cu-Co k_ET=2.34×10¹⁰, Co-Ce k_ET=1.1×10⁸, **Ce-graphene k_ET=3.07×10¹¹**. Total k_DET=1.09×10⁸ s⁻¹ (10⁵× above enzymatic turnover). Rate-limited by Co-Ce.
 - [x] 🤖 **L4 Kinetics:** ✅ Виконано (2026-05-25). Michaelis-Menten (j_max=494 µA/cm², Km=20 mM) + Arrhenius (Ea=40 kJ/mol) + BQ25570 boost (η=0.85) + EDLC charge. **delta_t validated**: healthy tree (10 mM, 25°C) = 35.7 s < 60s baseline; stressed (5 mM, 5°C) = 190 s > 60s. Diffusion NOT rate-limiting. BASELINE_DELTA_T_S=60s фізично обґрунтований. Скрипт: `30_kinetics_delta_t.py`.
 - [ ] 👤 **Інфраструктура:** workstation NVIDIA RTX 4090 ($5–10K) АБО AWS p5.2xlarge / GCP g2-standard-12 ($2–5/год)
-- [x] 🤖 **Repo structure:** ✅ (updated 2026-05-27). 25 скриптів, 6 shared lib модулів, 68 pytest тестів, CI gate. L2: `02`-`08` parameterizers + `10`-`14` MD runs. L3: `20`-`24` DFT. L4: `30`-`31` kinetics. Validation: `40`. Operational dashboard: [`PIPELINE_STATUS.md`](../protocols/ebfc/in_silico/PIPELINE_STATUS.md).
+- [x] 🤖 **L2 PVI coverage (script 15):** ✅ (2026-05-27). PVI backbone (без Os) RMSD 1.10 Å → brush safe, не денатурує фермент.
+- [x] 🤖 **HW.3.IS strain cycling (script 16):** ✅ (2026-05-27). ±5% × 10 cycles: compress PE < stretch PE → pseudoplastic.
+- [x] 🤖 **HW.3 Гусак degradation models (script 51):** ✅ (2026-05-27). Arrhenius: 12 wks=2.2-5.7 yrs. **Kirkendall: V release 1.12 µg/cm²/yr без покриття → ZnO-Ta+8-HQ обов'язкові.** H7/s6: safe -30→+40°C.
+- [x] 🤖 **01_04 thermal penetration:** ✅ (2026-05-27). 1D Fourier: tip 150°C in 22.7 min (induction 200°C).
+- [x] 🤖 **Repo structure:** ✅ (updated 2026-05-27). **32 скрипти** (01-51), 6 shared lib модулів, 76 pytest тестів, CI gate. Operational dashboard: [`PIPELINE_STATUS.md`](../protocols/ebfc/in_silico/PIPELINE_STATUS.md).
 - [ ] 👤 **Joint Q1-publication з ЧНУ Мінаєвим:** "In Silico Design of Long-Lived Enzymatic Bio-Fuel Cells for Tree-Integrated Energy Harvesting" — `08_03` Стаття 28
 
 #### HW.6 — Resin barrier + Flush Mount Installation

@@ -162,6 +162,7 @@ O₂ + 4H⁺ + 4e⁻ → 2H₂O   (повне 4-електронне відно�
    - **Товщина шару:** 5–10 µm — оптимум між густиною Os↔FAD couples та diffusion length глюкози.
    - **Глибина FAD N5 від поверхні білка (in-silico L1):** `d_FAD = 15.998 Å` (AlphaFold 3 + ChimeraX, deglycosylated G8E4B5 → Tyr90 OH; повний протокол — [`protocols/ebfc/in_silico/L1_protein_architecture.md`](protocols/ebfc/in_silico/L1_protein_architecture.md)). Підтверджена константа для дизайну Os-shell.
    - **Узгодження потенціалів:** E°(Os²⁺/³⁺) ≈ +200 мВ vs NHE — на ~140 мВ позитивніше за E°(FAD/FADH₂ ≈ +60 мВ) — оптимум за теорією Маркуса.
+   - **PVI backbone стеричний тест (in-silico L2, script 15):** RMSD 1.10 ± 0.29 Å з 5×PVI трімером на протеїні → **PVI-щітка НЕ денатурує фермент** (2026-05-27). Безпечно для Gen 2.0 MET-стеку.
    - **Альтернатива:** PPy (поліпірол) як кополімерний підсилювач провідності — додається electrochemically між Os-polymer і ферментом (§2.3).
 
 4. **Шар 4 (Захисний/Каталітичний, **Geniпin-Chitosan-CNC**):** Поверх Шару 3 — гідрогель з:
@@ -286,10 +287,17 @@ O₂ + 4H⁺ + 4e⁻ → 2H₂O   (повне 4-електронне відно�
 | `tools/in_silico/scripts/30_kinetics_delta_t.py` | **L4: MM + Arrhenius → delta_t(glucose, temp)** — BASELINE 60s validated | L4 ✅ |
 | `tools/in_silico/scripts/30b_kinetics_monte_carlo.py` | L4b: Monte Carlo uncertainty (10k samples, 90% CI) | L4 ✅ |
 | `tools/in_silico/scripts/31_eis_impedance_model.py` | L4c: EIS Randles circuit → Nyquist/Bode predictions | L4 ✅ |
-| `tools/in_silico/scripts/40_validate_vs_experiment.py` | **Ti-coin Stage 2: in-silico vs experiment comparison** | Validation ⏳ |
-| `tools/in_silico/scripts/14_xylem_sap_sweep_md.py` | L2: stability across 6 tree species (pH 4.2-6.0) | L2 ⏳ queued |
+| `tools/in_silico/scripts/14_xylem_sap_sweep_md.py` | L2: stability across 6 tree species (pH 4.2-5.8) | L2 ✅ (2026-05-27, 6/6 stable) |
+| `tools/in_silico/scripts/15_pvi_coverage_md.py` | L2 Gen 2.5+: PVI backbone coverage test (RMSD 1.10 Å — brush safe) | L2 ✅ |
+| `tools/in_silico/scripts/16_strain_cycling_md.py` | HW.3.IS: cyclic ±5% strain (pseudoplastic matrix) | L2/HW ✅ |
+| `tools/in_silico/scripts/27_md_dft_ensemble.py` | L3/L2 bridge: FAD HOMO/LUMO from MD snapshots | L3 ⏳ |
+| `tools/in_silico/scripts/28_electron_tunneling_pathway.py` | L3: Beratan-Onuchic tunneling FAD→THR287, β·d=2.05 | L3 ✅ |
+| `tools/in_silico/scripts/29_dft_reorganization_energy.py` | L3: Nelsen 4-point λ_inner | L3 ⏳ |
+| `tools/in_silico/scripts/40_validate_vs_experiment.py` | **Ti-coin Stage 2: in-silico vs experiment comparison** | Validation ✅ (ready) |
+| `tools/in_silico/scripts/50_thermal_stress_lame.py` | HW.3.IS: Lamé thermal stress (safety 9.9×) + Findley creep | HW ✅ |
+| `tools/in_silico/scripts/51_gusak_degradation_model.py` | HW.3: Arrhenius aging + Kirkendall V diffusion + H7/s6 window | HW ✅ |
 | `tools/in_silico/lib/` | Shared modules: constants, geometry, utils, xylem_sap, dft_utils, md_utils | Infra ✅ |
-| `tools/in_silico/tests/test_cache_integrity.py` | 68 pytest tests: ligands, GAFF cache, DFT, kinetics, constants, scripts | QA ✅ |
+| `tools/in_silico/tests/test_cache_integrity.py` | 76 pytest tests: ligands, GAFF cache, DFT, kinetics, constants, scripts | QA ✅ |
 | `.github/workflows/in_silico_smoke.yml` | CI gate: script 01 on CPU (path-filtered, cached conda env) | CI ✅ |
 
 > **Pipeline operational dashboard:** [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md) — повний статус, dependency graph, decision matrix.

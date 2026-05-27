@@ -148,7 +148,11 @@
 - **Для pitch:** Печатка лабораторії Гусака = залізобетонний документ про безпеку анкера для інвесторів
 
 **Конкретний запит до школи Гусака:**
-- Математичне моделювання дифузії іонів V та Al в тканини дерева (горизонт 20 років, ефект Кіркендалла)
+
+> **In-silico baseline вже готовий (scripts 50-51, 2026-05-27):** Lamé thermal stress: safety 9.9× at -30°C. Findley PEEK creep: 76 µm gap loss → barbs mandatory. H7/s6 press-fit window: safe -30→+40°C. **Kirkendall V diffusion: 1.12 µg/cm²/yr WITHOUT coating → 56× above 0.02 target → ZnO-Ta + 8-HQ ОБОВ'ЯЗКОВІ.** Arrhenius: 12 wks @ 40°C = 2.2-5.7 field years. Ці розрахунки потребують **експериментальної верифікації** лабораторією Гусака.
+
+- **Експериментальна верифікація Kirkendall:** ICP-MS вимірювання V/Al release на Ti-coins в синтетичному ксилемному соку — порівняти з in-silico prediction 1.12 µg/cm²/yr
+- **FEA barb stress concentration:** ANSYS LS-DYNA з visco-elastic PEEK Prony series — підтвердити residual pull-out force > 200 N при 10-річному creep (in-silico baseline: 76 µm gap loss)
 - Тест трибокорозії: гіроїдна структура під постійними мікровібраціями вітру
 - Тести прискореного старіння в середовищі підвищеної кислотності та температури
 - **NEW 2026-05-16 — Hydrogen Embrittlement з EAAE (`01_02 §1.3 Крок 5b` + Failure Mode C):** експериментально підтвердити, що **dehydrogenation bake** (вакуум 250°C / 10⁻³ mbar / 3 год) усуває brittle TiH₂ шар, який утворюється під час EAAE-травлення (H₂SO₄/HCl + ультразвук). Метод: LECO RH404 vacuum hot extraction на трьох групах Ti-coins (no etch / etched no bake / etched + bake) → порівняти H content (ціль < 100 ppm проти ASTM B348 150 ppm ліміту); fatigue testing (Wöhler) у синтетичному ксилемному соку — без bake очікувано raptor цикл < 10⁵, з bake > 10⁷
