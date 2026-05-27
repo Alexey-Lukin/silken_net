@@ -184,7 +184,7 @@ Cascade Δε = -5.137 − (-3.420) = **-1.717 eV → ❌ UPHILL** (артефа�
 | Покращення | Cost | Очікуваний імпакт |
 |---|---|---|
 | **Повна geometric/pyberny opt** обох species | ~6-12 год CPU | Frontier orbital energies → точніше на ~0.1-0.3 eV |
-| **ωB97X + def2-TZVP** | ~3-5× довше за B3LYP/6-31G(d) | Better treatment of charge-transfer states; publication-grade for paper. **Script 21d ⏳ running** (2026-05-26). PySCF не підтримує wb97x-d, використовується wb97x (range separation — головне покращення, dispersion — minor ~0.05 eV). |
+| **ωB97X + def2-TZVP** | ~27× довше за B3LYP/6-31G(d) для RKS | **Script 21d ⏳ running** (2026-05-27). Os(II) ✅ converged (HOMO=-7.128 eV, 7195s). Os(III) UKS with `level_shift=0.3` ⏳ computing. `density_fit()` reverted — auto aux basis for Os 3× slower. PySCF не підтримує wb97x-d; wb97x alone (range separation — головне). |
 | **ΔSCF redox potentials** з RRHO thermal corrections | ~2× за SP | Direct E° prediction vs NHE/SHE, не Koopmans approximation |
 | **TD-DFT excited states** для Os complex | ~5× за GS | Підтверджує MLCT character + Marcus reorganization energy |
 | **Explicit water shells + ONIOM/EFP** | ~10× за PCM | Realistic xylem solvent environment |
@@ -227,8 +227,8 @@ Cascade Δε = -5.137 − (-3.420) = **-1.717 eV → ❌ UPHILL** (артефа�
 | Пара | Атомів | t_ij (eV) | k_ET (s⁻¹) | Статус |
 |------|--------|-----------|-------------|--------|
 | **Cu-Co** (T1↔ZIF node) | 62 | **0.0325** | **2.34×10¹⁰** | ✅ Completed |
-| **Co-Ce** (ZIF node↔vacancy) | 62 | — | — | ⏳ Computing (level_shift=0.3) |
-| **Ce-graphene** (vacancy↔electrode) | 61 | — | — | ⏳ Queued |
+| **Co-Ce** (ZIF node↔vacancy) | 62 | — | — | Queued (after ωB97X 21d finishes, run solo) |
+| **Ce-graphene** (vacancy↔electrode) | 61 | — | — | Queued (after Co-Ce) |
 
 **Cu-Co verdict:** t_ij = 0.0325 eV → k_ET = 2.34×10¹⁰ s⁻¹ (λ=0.7 eV, ΔG=0, T=298K). Це **надзвичайно швидкий** DET — набагато швидше ніж enzymatic turnover (~10³ s⁻¹). DET через ZIF **не лімітує** катодний ORR.
 

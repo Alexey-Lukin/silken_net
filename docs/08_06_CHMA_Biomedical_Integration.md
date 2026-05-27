@@ -268,7 +268,7 @@ EBFC Gen 2.0 ([`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)) — це серце
 
 **Завдання А: Валідація Gen 2.0 захисної матриці EBFC-ферментів**
 
-> **In-silico computational baseline (2026-05-26):** L2 MD підтвердив RMSD 1.11 Å для повної матриці (genipin+chitosan+CNC); L2 10ns extended run 96% complete (energy converged). L4 kinetics validated delta_t=36s (healthy). Monte Carlo 90% CI: 14-120s. EIS predictions: Rct=130Ω, Cdl=50µF/cm². **ωB97X/def2-TZVP publication-grade DFT ⏳ running** (script 21d, restarted with level_shift). L3b cathode DET: Cu-Co k_ET=2.34×10¹⁰ s⁻¹ ✅. Xylem sap configurator: 7 profiles. 68 pytest tests. Ti-coin validation script ready (`40_validate_vs_experiment.py`). Full report: [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md), [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md).
+> **In-silico computational baseline (2026-05-27):** L2 MD — RMSD 1.22 Å (correct C₁₁ genipin, rerun ✅); 10ns run: RMSD 4.02 Å, Rg stable (-0.1%) = AF3 relaxation, not denaturation. Temp sweep: -10°C→25°C all stable ✅. PSBMA diffusion ✅ (monomers; L4 uses literature D_eff). Xylem sap sweep ⏳ running (6 species). L4 kinetics validated delta_t=36s. Monte Carlo 90% CI: 14-120s. EIS: Rct=130Ω, Cdl=50µF/cm². **ωB97X/def2-TZVP ⏳**: Os(II) ✅ HOMO=-7.128 eV; Os(III) computing with level_shift. L3b: Cu-Co k_ET=2.34×10¹⁰ ✅. 68 pytest tests, CI gate. Full report: [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md), [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md).
 
 ```
 Вхід: Протокол іммобілізації з 01_03 §2 (Gen 2.0)

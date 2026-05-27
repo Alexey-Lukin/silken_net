@@ -1,6 +1,6 @@
 # In-Silico Pipeline — Operational Status & Dependencies
 
-> **Last updated:** 2026-05-26 23:00 EEST
+> **Last updated:** 2026-05-27 08:00 EEST
 > **TRL 3→4 Gate:** ✅ PASSED (2026-05-25)
 
 ---
@@ -35,32 +35,26 @@
 
 | # | Script | Status | Resource | ETA |
 |---|--------|--------|----------|-----|
-| 21d | `dft_os_bpy_wb97xd` | ⏳ Restarted with density_fit + level_shift (2026-05-26). Os(II) computing | CPU 734% | TBD |
+| 14 | `xylem_sap_sweep_md` | ⏳ 6 species sweep (pre-relaxation fix). 1/6 done: pine=1.03Å ✅ | GPU | ~3h |
+| 21d | `dft_os_bpy_wb97xd` | Os(II) ✅ converged (HOMO=-7.128 eV). Os(III) UKS with level_shift ⏳ computing (~30h+ CPU) | CPU | TBD |
 
-### ❗ Needs Rerun (correct genipin SMILES fixed 2026-05-25)
+### ✅ Recently Completed (2026-05-26 — 2026-05-27)
 
-| # | Script | Why | Depends On | GPU Time |
-|---|--------|-----|------------|----------|
-| 10 | `genipin_stability_md` | Wrong genipin isomer (C₁₀→C₁₁) | 03 ✅ | ~35 min |
-| 11 | `full_matrix_md` | Wrong genipin isomer | 03-05 ✅ | ~35 min |
+| # | Script | Result | Date |
+|---|--------|--------|------|
+| 10* | `genipin_stability_md` (rerun) | RMSD 1.20 Å ✅ (correct C₁₁ genipin) | 2026-05-26 |
+| 11* | `full_matrix_md` (rerun) | RMSD 1.22 Å ✅ (correct C₁₁ genipin, NaN fix: 10k min + 10K ramp) | 2026-05-27 |
+| 11** | `full_matrix_md` (10ns) | RMSD 4.02 Å, **Rg stable -0.1%** → AF3 conformational relaxation, not denaturation | 2026-05-26 |
+| 12 | `temperature_sweep_md` | 3/4 temps: 263K=0.80Å, 278K=0.83Å, 298K=1.09Å ✅ (313K skipped — NaN) | 2026-05-27 |
+| 13 | `psbma_diffusion_md` | D_eff=5.1e-4 cm²/s (monomers, not polymerized; L4 uses literature 2e-6) | 2026-05-27 |
 
-### 📋 Queued (awaiting GPU after L2 10ns finishes ~18:00)
+### 📋 Queued (after current runs)
 
-| # | Script | Depends On | GPU Time | Priority |
-|---|--------|------------|----------|----------|
-| 10* | `genipin_stability_md` (rerun) | 03 ✅ | ~35 min | ✅ DONE (2026-05-26) |
-| 11* | `full_matrix_md` (rerun) | 03-05 ✅ | ~35 min | ✅ DONE (2026-05-27) |
-| 12 | `temperature_sweep_md` | 03-05 ✅ | ~2h | ✅ DONE 3/4 temps (263K=0.80Å, 278K=0.83Å, 298K=1.09Å; 313K skipped — NaN from ligand placement) |
-| 13 | `psbma_diffusion_md` | 08 ✅ | ~10 min | ✅ DONE (2026-05-27) — D_eff=5.1e-4 cm²/s (monomers, not polymerized; L4 uses literature 2e-6) |
-| 14 | `xylem_sap_sweep_md` | 03-05 ✅ | ~3-4h (6 species) | P2 |
+| # | Script | Depends On | Time | Priority |
+|---|--------|------------|------|----------|
 | 24* | `dft_hopping_integrals` (Co-Ce, Ce-gr) | 23 ✅ | ~2-3h CPU each | P1 (after ωB97X) |
-
-### 🆕 Recently Added (not yet run)
-
-| # | Script | Depends On | Purpose |
-|---|--------|------------|---------|
-| 14 | `xylem_sap_sweep_md` | 03-05 ✅ | Stability across 6 tree species (Pinus/Picea/Quercus/Fagus) |
-| 21d | `dft_os_bpy_wb97xd` | 21b ✅ | ωB97X/def2-TZVP publication-grade DFT (⏳ running) |
+| 22* | `compare_homo_lumo` (ωB97X update) | 21d | ~1 s | After 21d |
+| 40* | `validate_vs_experiment` | all | ~1 s | Final |
 
 ### ❌ Terminated
 
@@ -121,7 +115,7 @@ Validation:
 | Component | Status | What's Missing |
 |-----------|--------|----------------|
 | L1 protein architecture | ✅ Complete | — |
-| L2 stability MD | ✅ Complete | Genipin rerun (cosmetic, RMSD won't change) |
+| L2 stability MD | ✅ Complete | Genipin rerun ✅, temp sweep ✅, PSBMA ✅, xylem sap ⏳ |
 | L3 anode DFT | 🟢 Strong partial | ωB97X-D/def2-TZVP rerun (publication-grade, школа Мінаєва) |
 | L3b cathode DET | ⏳ Partial (1/3 pairs) | Co-Ce + Ce-graphene computing |
 | L4 kinetics | ✅ Complete | — |
@@ -156,12 +150,12 @@ Validation:
 - ~~L4 Cantera~~ — replaced by scipy analytical model, validated
 
 ### Nice-to-Have (improve confidence, needed for publication):
-- L3b Co-Ce + Ce-graphene (⏳ computing) — completes cathode DET proof
-- Genipin rerun (scripts 10-11) — correct molecule for scientific accuracy
-- Temperature sweep (script 12) — first-principles T-dependence
-- PSBMA diffusion (script 13) — replace literature D_eff estimate
-- Xylem sap sweep (script 14) — cross-species stability proof
-- ωB97X-D DFT rerun (школа Мінаєва) — publication-grade anode cascade
+- ✅ ~~Genipin rerun (scripts 10-11)~~ — DONE (RMSD 1.20/1.22 Å)
+- ✅ ~~Temperature sweep (script 12)~~ — DONE 3/4 temps (263K-298K stable)
+- ✅ ~~PSBMA diffusion (script 13)~~ — DONE (model limitation noted)
+- ⏳ Xylem sap sweep (script 14) — running, 1/6 species done
+- ⏳ ωB97X DFT (script 21d) — Os(II) ✅, Os(III) computing
+- ⏳ L3b Co-Ce + Ce-graphene — queued after ωB97X
 
 ---
 

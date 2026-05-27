@@ -12,7 +12,7 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 | Level | Question | Method | Verdict |
 |-------|----------|--------|---------|
 | **L1** | Does deglycosylated FAD-GDH fold correctly? | AlphaFold 3 | ✅ d_FAD = 15.998 Å < tunneling 18-20 Å |
-| **L2** | Does the full matrix denature the protein? | OpenMM MD (467k atoms) | ✅ RMSD 1.11 Å ≪ 3 Å |
+| **L2** | Does the full matrix denature the protein? | OpenMM MD (481k atoms) | ✅ RMSD 1.22 Å (100ps), Rg stable at 10ns |
 | **L3** | Does electron cascade FAD→Os flow downhill? | PySCF DFT (54 atoms) | ✅ Bias-corrected Δε ≈ -0.07 eV (within 0.14 eV of exp.) |
 | **L3b** | Is DET through ZIF nanozyme fast enough? | PySCF ΔSCF | ✅ Cu-Co: k_ET = 2.34×10¹⁰ s⁻¹ (not rate-limiting) |
 | **L4** | Does BASELINE_DELTA_T_S = 60s make physical sense? | Analytical MM+Arrhenius | ✅ Healthy 36s / Stressed 190s |
@@ -212,15 +212,15 @@ Range-separated hybrid gives dramatically different orbital energies — the cas
 
 ## Pending Tasks
 
-| Task | Type | ETA | Blocked By |
-|------|------|-----|------------|
-| L2 10ns extended run | GPU | ~18:00 today | GPU busy |
-| L2 rerun scripts 10-11 (correct genipin) | GPU | After L2 10ns | GPU |
-| L2 temperature sweep (4 temps, script 12) | GPU | After reruns | GPU |
-| L2 PSBMA diffusion MD (script 13) | GPU | After temp sweep | GPU |
-| L2 xylem sap sweep (6 species, script 14) | GPU | After PSBMA | GPU |
-| L3 ωB97X/def2-TZVP (script 21d) | CPU | ⏳ Running | — |
-| L3b Co-Ce + Ce-graphene hopping | CPU | Queued | After ωB97X |
+| Task | Type | Status |
+|------|------|--------|
+| ~~L2 10ns extended run~~ | GPU | ✅ DONE (RMSD 4.02 Å, Rg stable) |
+| ~~L2 rerun scripts 10-11~~ | GPU | ✅ DONE (1.20/1.22 Å correct genipin) |
+| ~~L2 temp sweep (script 12)~~ | GPU | ✅ DONE 3/4 temps |
+| ~~L2 PSBMA diffusion (script 13)~~ | GPU | ✅ DONE |
+| L2 xylem sap sweep (script 14) | GPU | ⏳ Running (6 species) |
+| L3 ωB97X/def2-TZVP (script 21d) | CPU | ⏳ Os(II) ✅, Os(III) computing |
+| L3b Co-Ce + Ce-graphene hopping | CPU | Queued (after ωB97X) |
 
 > Full dependency graph and operational status → [`PIPELINE_STATUS.md`](PIPELINE_STATUS.md)
 
