@@ -1,0 +1,83 @@
+{
+  "arrhenius_aging": {
+    "0.7": {
+      "4": 0.7,
+      "8": 1.5,
+      "12": 2.2
+    },
+    "0.85": {
+      "4": 1.2,
+      "8": 2.4,
+      "12": 3.5
+    },
+    "1.0": {
+      "4": 1.9,
+      "8": 3.8,
+      "12": 5.7
+    }
+  },
+  "kirkendall_diffusion": {
+    "1": {
+      "V_ug_cm2": 1.118401,
+      "Al_ug_cm2": 8.38801,
+      "V_safe": false
+    },
+    "5": {
+      "V_ug_cm2": 5.592007,
+      "Al_ug_cm2": 41.94005,
+      "V_safe": false
+    },
+    "10": {
+      "V_ug_cm2": 11.184013,
+      "Al_ug_cm2": 83.880101,
+      "V_safe": false
+    },
+    "20": {
+      "V_ug_cm2": 22.368027,
+      "Al_ug_cm2": 167.760202,
+      "V_safe": false
+    },
+    "40": {
+      "V_ug_cm2": 44.736054,
+      "Al_ug_cm2": 335.520403,
+      "V_safe": false
+    }
+  },
+  "press_fit_H7s6": {
+    "-30": {
+      "delta_I_um": -19.2,
+      "eff_min_um": 22.2,
+      "eff_max_um": 46.2,
+      "sigma_hoop_MPa": 33.26,
+      "safe": true
+    },
+    "-10": {
+      "delta_I_um": -11.52,
+      "eff_min_um": 14.52,
+      "eff_max_um": 38.52,
+      "sigma_hoop_MPa": 27.73,
+      "safe": true
+    },
+    "0": {
+      "delta_I_um": -7.68,
+      "eff_min_um": 10.68,
+      "eff_max_um": 34.68,
+      "sigma_hoop_MPa": 24.97,
+      "safe": true
+    },
+    "20": {
+      "delta_I_um": 0.0,
+      "eff_min_um": 3.0,
+      "eff_max_um": 27.0,
+      "sigma_hoop_MPa": 19.44,
+      "safe": true
+    },
+    "40": {
+      "delta_I_um": 7.68,
+      "eff_min_um": -4.68,
+      "eff_max_um": 19.32,
+      "sigma_hoop_MPa": 13.91,
+      "safe": true
+    }
+  }
+}
