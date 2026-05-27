@@ -160,7 +160,8 @@ def run_single_temperature(temp_k: int, platform: Platform) -> dict:
         PDBFile.writeFile(modeller.topology, modeller.positions, fh, keepIds=True)
 
     # Minimise
-    sim.minimizeEnergy(maxIterations=10000)
+    min_iters = 20000 if temp_k > 300 else 10000
+    sim.minimizeEnergy(maxIterations=min_iters)
 
     # NVT with restraints — heat to target T
     ramp_step = 10
