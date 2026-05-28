@@ -85,7 +85,7 @@
 
 1. **Організації фінансують лісові кластери** через NaaS-контракти (`NaasContract`).
 2. **Дерева заробляють growth points** через верифікований біологічний гомеостаз.
-3. **Points конвертуються в SCC токени** на Polygon (10,000 points = 1 SCC, ~$25.5).
+3. **Points конвертуються в SCC токени** на Polygon (10,000 points = 1 SCC). Кожен SCC підкріплений верифікованим поглинанням CO₂ — on-chain конверсія `ProtocolParameters.sol#sccPerTonneCo2()` (**2000 SCC = 1 верифікована тонна CO₂**, [`07_02`](07_02_Unit_Economics_and_BOM)). Ринкова ціна SCC визначається ліквідністю DEX та вуглецевими оракулами — у маніфесті фіатні суми НЕ фіксуються (вони застаріли б при русі ринку $10↔$100/т і виглядали б маніпулятивно).
 4. **Інвестори отримують токени** пропорційно до результатів кластера.
 5. **Деградація кластера** запускає **двокатегорійну реакцію** (див. §6): або slashing, або страхове відшкодування.
 6. **Параметричне страхування** забезпечує автоматичні виплати при катастрофічних подіях, що виходять за рамки операторського контролю (форс-мажор).
@@ -104,21 +104,37 @@
 
 | Категорія | Приклади | Прокся-сигнал | Реакція |
 |-----------|----------|---------------|---------|
-| **A. Negligence / Operator fault** | Несанкціонована вирубка, незаконний випас, відсутність протипожежної смуги після алерту, неприєднання Forester'а до інциденту в SLA, втручання у hardware (tamper) | Acoustic: chainsaw class, `vandalized` scope, відсутність MaintenanceRecord після P0 alert | **Slashing активний** — спалюється до `max_slash_ratio` пропорційно `damage_ratio` |
+| **A. Negligence / Operator fault** | Несанкціонована вирубка, незаконний випас, відсутність протипожежної смуги після алерту, неприєднання Forester'а до інциденту в SLA, втручання у hardware (tamper) | Acoustic: chainsaw class, `vandalized` scope, відсутність MaintenanceRecord після P0 alert | **Slashing активний** — спалюється за прогресивною кривою `damage_ratio^GAMMA × penalty_factor` (до 100% при повній загибелі; §6.2) |
 | **B. Force Majeure / Acts of Nature** | Блискавка, лісова пожежа природного походження, землетрус, екстремальна посуха (`dClimate ≥ severe`), повінь, ураган, біопатоген | Кореляція з dClimate / NASA FIRMS / параметричні тригери; **відсутність ознак людської активності** в acoustic feed | **Slashing вимкнено** — кошти **заморожуються** у `wallet.locked_balance`, активується `InsurancePayoutWorker` через Etherisc |
 | **C. Indeterminate (default safety)** | Дані недостатні для класифікації (втрата зв'язку, перерване покриття, мала вибірка) | `oracle_status_failed` для класифікаційного callback'а | **Заморозка без спалювання** — DAO голосує `peer-review` upgrade до A або B (вікно 30 днів) |
 
 ### 6.2 Slashing формула (тільки для категорії A)
 
-```
-slash_amount = locked_balance × min(damage_ratio × penalty_factor, max_slash_ratio)
+> **⚠️ Переписано (2026-05-28): прибрано «безкоштовну недбалість».** Стара формула `min(damage_ratio × penalty_factor, max_slash_ratio=0.40)` мала critical incentive-bug — жорстка стеля min() створювала **мертву зону**: при `penalty_factor=1.5` уже `damage_ratio ≥ 0.27` дає `0.405 → clamp 0.40`. Тобто загибель 27% лісу = 40% slash, але й загибель **80% чи 100%** = **теж лише 40%** — після порогу ліснику фінансово байдуже, що буде з рештою лісу (нульовий маржинальний стимул берегти ліс).
 
-damage_ratio    = (stressed_trees + dead_trees) / total_trees_in_cluster
-penalty_factor  = 1.0   (negligence baseline)
-                  + 0.5 (якщо є запис у `EwsAlert` з `severity=critical` 30+ хв без MaintenanceRecord)
-                  + 0.5 (якщо AuditLog показує відсутність acknowledged alert'ів)
-max_slash_ratio = 0.40  (DAO-governed via ProtocolParameters)
 ```
+slash_ratio  = clamp( damage_ratio^GAMMA × min(penalty_factor, PENALTY_FACTOR_MAX), 0, 1.0 )
+slash_amount = locked_balance × slash_ratio
+
+damage_ratio       = (stressed_trees + dead_trees) / total_trees_in_cluster   ∈ [0,1]
+GAMMA              = 1.3   # прогресивна (опукла) крива: м'яко на дрібних помилках,
+                          # без мертвої зони, монотонно → 1.0 при повній загибелі
+penalty_factor     = 1.0  (negligence baseline)
+                   + 0.5  (EwsAlert severity=critical 30+ хв без MaintenanceRecord)
+                   + 0.5  (AuditLog: відсутність acknowledged alert'ів)
+PENALTY_FACTOR_MAX = 2.0   # стеля застосовується до МНОЖНИКА (penalty_factor),
+                          # а НЕ до фінального slash_ratio (DAO-governed)
+# max_slash_ratio ВИДАЛЕНО — стеля на фінальному результаті і була джерелом мертвої зони
+```
+
+**Властивості нової кривої** (GAMMA=1.3, баланс «захист дрібних помилок ↔ нема стелі»):
+- дрібна помилка `d=0.10, pf=1.0` → ~5% slash (інвестор захищений від катастрофи через дрібницю);
+- `d=0.27, pf=1.5` → ~28% (порівнянно зі старим, але без обриву);
+- **повна недбала загибель `d=1.0, pf=1.0` → 100% slash** (мертва зона ліквідована).
+
+Монотонність гарантована: більше шкоди → завжди більший slash, аж до 100%. **Логістична крива тут гірша** за опуклу степеневу — логіста сатурує нижче 1.0 (асимптота), тобто повертає м'яку стелю, і має зайві параметри (k, d₀). Точне калібрування GAMMA / PENALTY_FACTOR_MAX — DAO-governed у [`05_03 §Slashing`](05_03_Tokenomics_SCC_and_SFC).
+
+> **Принципал-агент (governance flag):** `locked_balance` належить **інвестору**, а недбалість зазвичай — провина **оператора (Forester)**. Чи коректно зрізати капітал інвестора за дії оператора (vs окремий operator-bond) — відкрите питання дизайну для [`05_03`](05_03_Tokenomics_SCC_and_SFC) / [`00_08` BIZ](00_08_Action_Plan_Tracker).
 
 > Реалізація: `BlockchainBurningService` (див. §1.2 у [`04_02`](04_02_Business_Logic_and_Services)) перевіряє `cause_classification` перед викликом `slash()` на SCC контракті. Якщо `cause_classification != "A_negligence"` — burn skipped, тільки `freeze_balance!` через `Wallet.lock_and_mint!`.
 
@@ -140,14 +156,25 @@ ForceMajeure event → InsurancePayoutWorker
 - DAO ставить пропозицію `Codex(): cluster_X_event_Y → upgrade_to(A | B)` через `SilkenGovernor`.
 - Quorum: 4% SFC voting power (стандарт `GovernorVotesQuorumFraction`), затримка 48 годин у `SilkenTimelock`.
 - Після затвердження пропозиції — застосовується відповідна реакція (slash або insurance payout).
-- Якщо DAO не голосує протягом 30 днів — кошти автоматично розморожуються (default safety, на користь інвестора).
+- **Якщо DAO не голосує протягом 30 днів — кошти ЗАЛИШАЮТЬСЯ замороженими**, статус кластера → `Field Audit Required`. Розморозка/виплата відбувається ЛИШЕ за підтвердженими даними (фізична інспекція рейнджером або підтверджена телеметрія після відновлення зв'язку).
+
+  > **⚠️ Корекція exploit (2026-05-28): прибрано авто-розморозку по таймауту.** Попереднє «no vote → auto-unfreeze» було вектором атаки: зловмисник/недбалий оператор міг навмисно глушити LoRa чи екранувати анкери, перетворюючи явний фрод (A) на «брак даних» (C), і просто чекати 30 днів — при мільйонах дерев voter fatigue гарантує, що DAO не встигне розглянути всі кейси, і кошти порушника звільнились би автоматично. Презумпція невинуватості ≠ авто-розблокування за відсутності телеметрії.
+  >
+  > **Додатковий захист на етапі класифікації:** раптове «going dark» (втрата зв'язку / глушіння / екранування) **одразу після P0-алерту** саме по собі є tamper-індикатором → інцидент іде в категорію **A**, а не C. Це закриває атаку «перетворити A на C» біля джерела.
+  >
+  > **Phase scope:** для Phase 2 (Regional) достатньо простого статусу `Field Audit Required` (ручна інспекція). On-chain Bounty-ринок для рейнджерів/дронів (EXIF-верифікація, anti-GPS-spoofing) — окремий великий пласт, відкладено до **Phase 3 (Planetary Scale)**; план — [`08_05` Forester Guild Fallback Oracle](08_05_CHIPB_Fire_Safety_Integration).
 
 ### 6.5 Anti-fraud cross-checks
 
 Перед класифікацією `cause_classification`:
 
 - **Hardware tamper detection** (`HardwareKey.tamper_detected_at`) — якщо встановлено: автоматично категорія A, незалежно від dClimate.
-- **Dual computation integrity divergence > 30%** ([`05_02 §Dual Computation Integrity`](05_02_Proof_of_Growth_Pipeline)) — автоматично категорія A (фальсифікація device Z).
+- **Dual computation integrity divergence** ([`05_02 §Dual Computation Integrity`](05_02_Proof_of_Growth_Pipeline)) — **НЕ є самостійним тригером спалювання.**
+
+  > **⚠️ Уточнення (2026-05-28):** Поширена помилка — вважати, що розбіжність Z «математично неминуча» через хаос Лоренца + різні FPU (Float32 ARM vs backend). Це було б правдою лише до [FW.7]. Зараз backend рахує Z у **Float64 (IEEE 754), бітово ідентично** firmware mruby (`8.0/3.0`, верифіковано 50 000 parity-тестами) — НЕ BigDecimal. Тому в чесній роботі divergence ≈ 0 за тих самих входів, і велика divergence є **реальним сигналом тамперу** (девайс рапортує Z, несумісний із заявленими входами), а не «шумом флоат-округлення».
+  >
+  > **Але** через дві причини divergence сам по собі НЕ повинен запускати незворотне спалювання: (1) LoRa-канал наразі AES-128-ECB **без MIC** → можливий bit-flip пакету (хибна divergence); (2) розбіжність версій прошивки після OTA (інші Lorenz-константи) теж дає divergence. Тому: divergence — **сильний доказ** категорії A лише **у поєднанні** з другим сигналом (`HardwareKey.tamper_detected_at`, chainsaw-acoustic, або підтверджена версія FW). Самостійна divergence → категорія C (заморозка + peer-review / Field Audit), а не автоматичний burn.
+
 - **Streamr P2P broadcast gap** довше 24 год без MaintenanceRecord — посилення penalty_factor на +0.25.
 
 ---
@@ -158,14 +185,14 @@ ForceMajeure event → InsurancePayoutWorker
 
 - Кожен SCC токен підкріплений сенсорно-верифікованим фотосинтезом та поглинанням вуглецю.
 - On-device обчислення (mruby) запобігає підробці на рівні заліза.
-- Server-side верифікація (Ruby BigDecimal) забезпечує redundant integrity checking.
+- Server-side верифікація (Ruby Float64, IEEE 754 — бітово ідентично firmware після [FW.7]) забезпечує redundant integrity checking.
 - Slashing protocol (§6) гарантує економічні наслідки за деградацію через халатність, **не караючи** інвесторів за форс-мажор.
 
 ---
 
 ## 🔗 8. Cross-ref
 
-- `docs/05_03 §Slashing` — конкретні параметри `ProtocolParameters` registry (`max_slash_ratio`, `penalty_factor_base`).
+- `docs/05_03 §Slashing` — конкретні параметри `ProtocolParameters` registry (`GAMMA` progress-curve, `PENALTY_FACTOR_MAX`, `penalty_factor_base`).
 - `docs/07_01 §Insurance Pool & Etherisc` — операційні деталі парам. страхування.
 - `docs/00_03 §Web3 Fallback` — як Slashing/Insurance продовжує працювати при недоступності окремих мостів.
 - `docs/00_08 BIZ section` — open business questions та DAO governance backlog.
