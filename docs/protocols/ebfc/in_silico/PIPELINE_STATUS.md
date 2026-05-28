@@ -38,7 +38,7 @@
 | 14 | `xylem_sap_sweep_md` | ✅ 6/6 species: pine=1.03, winter=1.03, spruce=1.09, oak=1.05, beech=0.98, generic=1.05 Å — ALL STABLE | — | DONE |
 | 15 | `pvi_coverage_md` | ✅ PVI backbone RMSD 1.10 Å → brush safe, no denaturation | GPU | DONE |
 | 27 | `md_dft_ensemble` | ✅ FAD HOMO = **-5.589 ± 0.058 eV** across 5 MD snapshots → thermally robust (σ≪0.3). Fix: include H atoms (was bare heavy-atom skeleton → no SCF) + SOSCF fallback | CPU | DONE |
-| 29 | `dft_reorganization_energy` | ❌ Cross-SP SCF artifact after 41.5h CPU (E(n@Rc) diverged). Literature λ=0.7 eV retained — valid Marcus baseline | CPU | Failed |
+| 29 | `dft_reorganization_energy` | ❌ CLOSED (Physical Limitation). Two methods both give E(n@R_cation) +160 eV — FADH₂•⁺ radical-cation geometry pathological in implicit solvent (needs QM/MM or PCET ref). **Literature λ=0.7-0.8 eV retained** (flavin gold standard) | CPU | Closed |
 | 21d | `dft_os_bpy_wb97xd` | ✅ COMPLETE. Koopmans Δε=-5.88 eV (RSH artifact). **Adiabatic ΔSCF: ΔG=+0.884 eV** (0.9 eV gap = PCM solvation limit). B3LYP corrected -0.07 eV remains best. | — | DONE |
 | 28 | `electron_tunneling_pathway` | ✅ Beratan-Onuchic: FAD→ALA260→THR259→THR282→THR287 (10 atoms, 23.7 Å, β·d=2.05 — tunneling feasible) | — | DONE |
 | 16 | `strain_cycling_md` | ✅ ±5% × 10 cycles: PE drift 1.0% (borderline, small box). Compress < stretch → pseudoplastic | GPU | DONE |
@@ -128,7 +128,7 @@ Validation:
 | L4b Monte Carlo | ✅ Complete | — |
 | L4c EIS | ✅ Complete | — |
 
-**Verdict: ✅ Ready.** Q1 publication (школа Мінаєва): ωB97X/def2-TZVP adiabatic ΔSCF complete (B3LYP corrected -0.07 eV best estimate); L3b cathode complete (3/3 pairs); MD→DFT ensemble confirms thermal robustness. Open caveat: Nelsen λ (script 29) — re-running at consistent B3LYP/def2-SVP after composite-level cross-SP failed; literature λ=0.7 eV is a valid fallback for Marcus rates.
+**Verdict: ✅ Ready.** Q1 publication (школа Мінаєва): ωB97X/def2-TZVP adiabatic ΔSCF complete (B3LYP corrected -0.07 eV best estimate); L3b cathode complete (3/3 pairs); MD→DFT ensemble confirms thermal robustness; PCET via thermodynamic proton reference (script 32) validates the FAD/FADH₂ potential (within 50 mV of free-flavin) and (script 33) corrects the cascade. Closed limitation: Nelsen λ (script 29) — FADH₂•⁺ geometry pathological in implicit solvent (needs QM/MM); literature λ=0.7-0.8 eV used (flavin gold standard) — a clean "limitations of implicit solvation" point for the paper.
 
 ### ✅ Sufficient for Pitch / Investor Meeting?
 

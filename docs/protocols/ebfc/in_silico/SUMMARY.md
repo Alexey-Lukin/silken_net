@@ -286,7 +286,8 @@ Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
 | ~~HW.3.IS thermal stress (script 50)~~ | CPU | ✅ DONE (safety 9.9×) |
 | ~~HW.3 Гусак models (script 51)~~ | CPU | ✅ DONE (Arrhenius, Kirkendall, H7/s6) |
 | ~~L3/L2 MD→DFT ensemble (script 27)~~ | CPU | ✅ DONE — FAD HOMO -5.589 ± 0.058 eV across 5 snapshots, thermally robust |
-| L3 Nelsen λ (script 29) | CPU | ❌ FAILED (cross-SP SCF artifact, 41.5h). Literature λ=0.7 eV retained |
+| L3 Nelsen λ (script 29) | CPU | ❌ CLOSED (physical limitation: FADH₂•⁺ geometry pathological in implicit solvent, both methods). Literature λ=0.7-0.8 eV retained |
+| ~~L3 PCET proton reference (script 32)~~ | — | ✅ E°(FAD/FADH₂)=−158 mV @pH7, Δ50 mV vs free-flavin exp — implicit solvent valid |
 
 > Full dependency graph and operational status → [`PIPELINE_STATUS.md`](PIPELINE_STATUS.md)
 

@@ -1,0 +1,18 @@
+{
+  "method": "Thermodynamic proton reference (Isse-Gennaro 2010) on B3LYP/6-31G(d)+PCM SP energies (screening tier)",
+  "couple": "FAD + 2H+ + 2e- -> FADH2",
+  "E_ox_Ha": -872.1150515126999,
+  "E_red_Ha": -873.309964536006,
+  "G_star_H_aq_eV": -11.7209,
+  "SHE_abs_V": 4.281,
+  "E_abs_V": 4.5367,
+  "E_vs_SHE_mV": {
+    "pH_0.0": 255.7,
+    "pH_4.5": -10.5,
+    "pH_7.0": -158.4
+  },
+  "exp_free_flavin_pH7_mV": -208,
+  "delta_vs_exp_pH7_mV": 49.6,
+  "valid_proton_reference": true,
+  "caveats": "Electronic E proxy for G; SHE_abs convention \u00b10.15 V; geom-opt+thermal at wB97X is the publication-grade refinement."
+}

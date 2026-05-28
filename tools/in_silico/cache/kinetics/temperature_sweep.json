@@ -1,0 +1,45 @@
+{
+  "sweep": [
+    {
+      "temp_K": 263,
+      "temp_C": -10.149999999999977,
+      "rmsd_mean_A": 0.757,
+      "rmsd_std_A": 0.158,
+      "rmsd_max_A": 0.953,
+      "stable": true,
+      "ns_per_day": 9.06,
+      "run_dir": "tools/in_silico/cache/runs/20260528T084025_T263K"
+    },
+    {
+      "temp_K": 278,
+      "temp_C": 4.850000000000023,
+      "rmsd_mean_A": 0.87,
+      "rmsd_std_A": 0.206,
+      "rmsd_max_A": 1.133,
+      "stable": true,
+      "ns_per_day": 8.93,
+      "run_dir": "tools/in_silico/cache/runs/20260528T092104_T278K"
+    },
+    {
+      "temp_K": 298,
+      "temp_C": 24.850000000000023,
+      "rmsd_mean_A": 0.896,
+      "rmsd_std_A": 0.187,
+      "rmsd_max_A": 1.107,
+      "stable": true,
+      "ns_per_day": 9.05,
+      "run_dir": "tools/in_silico/cache/runs/20260528T100307_T298K"
+    },
+    {
+      "temp_K": 313,
+      "temp_C": 39.85000000000002,
+      "rmsd_mean_A": 1.467,
+      "rmsd_std_A": 0.461,
+      "rmsd_max_A": 2.23,
+      "stable": true,
+      "ns_per_day": 9.02,
+      "run_dir": "tools/in_silico/cache/runs/20260528T104502_T313K"
+    }
+  ],
+  "verdict": "\u2705 All temperatures STABLE"
+}
