@@ -39,7 +39,7 @@ Gaia 2.0 відмовляється від класичного Agile на ко�
 ### 1.1 Build Cycle (6 тижнів): структура
 
 ```
-Week 0 (Betting Table, ≤4 год) — рішення які Big Bets входять у цикл
+Week 0 (Betting Table — async pre-read ≥3 дні + синхронний колл ≤1.5 год) — рішення які Big Bets входять у цикл
 Week 1-2 (Discovery) — shaping documents до "fat marker sketch" рівня
 Week 3-4 (Build) — основна імплементація, перші demo
 Week 5    (Hill chart) — кожна Big Bet проходить middle line; ризики уточнюються
@@ -57,10 +57,10 @@ Week 7-8 (Cool-down, 2 тижні) — рефакторинг, SSOT-аудит, 
 
 | Кластер | Сфера відповідальності | Типові epic-домени | Базова команда |
 |---------|-------------------------|---------------------|-----------------|
-| **A — Hardware / EBFC** | Атоми, фізика, матеріали, біопаливний елемент, гідрогелі | EBFC catalyst R&D, Ti-6Al-4V DMLS, EDLC supercap MPPT, friction-fit pull-out, біосумісність, BIO.* sterilization | ChNU FOTIUS (декан, біохімія), ChDTU materials, ChIPB safety |
-| **B — Verification / Math** | Докази, математика, верифікація, ZK | Lorenz attractor params, IoTeX W3bstream, peaq DID schemes, Chainlink Functions, dual-computation integrity, Solidity governance | ChNU math/CS, ChIPB cryptography, AI agents (theorem proving) |
-| **C — Scaling / Cloud** | Software stack, infrastructure, performance | Rails core (`04_02`), multi-chain web3 (12 chains), Akash deploy (`06_02`), Prometheus/Grafana, Sidekiq queues, Solid Cable, Phlex UI | Architect + AI agents (Copilot, Cursor) |
-| **D — Compliance / Legal** | Юриспруденція, регуляторика, IP, B2B | Polygon Hadron (ERC-3643), MSA з СЄУ, Verra / Gold Standard методологія, GDPR / ESG звітність, patent portfolio | СЄУ (Аблязов), UNI.8, external advisors |
+| **A — Hardware / EBFC** | Атоми, фізика, матеріали, біопаливний елемент, гідрогелі | EBFC catalyst R&D, Ti-6Al-4V DMLS, EDLC supercap MPPT, friction-fit pull-out, біосумісність, BIO.* sterilization | **ЧНУ** (Мінаєв — квант. хімія `08_01`, Гусак — металургія/FEA, Біо-Хаб Спрягайло), **ЧМА** (біохімія EBFC, токсикологія `08_06`), **ЧДТУ ПМКТ** (Базіло/Бондаренко — акустика `08_04`), **СЄУ** (Денисенко — промдизайн радому `08_07`) |
+| **B — Verification / Math** | Докази, математика, верифікація, ZK | Lorenz attractor params, IoTeX W3bstream, peaq DID schemes, Chainlink Functions, dual-computation integrity, Solidity governance | **ЧНУ ФОТІУС** (Порубльов — дискр. математика, Онищенко — стох. оптимізація, Любченко — Master of Logic/GA `08_02`), **ЧДТУ** (Карапетян — Data Science/статистика `08_04`), AI agents (theorem proving) |
+| **C — Scaling / Cloud** | Software stack, infrastructure, performance | Rails core (`04_02`), multi-chain web3 (12 chains), Akash deploy (`06_02`), Prometheus/Grafana, Sidekiq queues, Solid Cable, Phlex UI | Architect + AI agents (Copilot, Cursor), **ЧНУ ФОТІУС** (Супруненко — Rails PN-верифікація, Ярмілко — firmware/crypto, Косенюк — RF/FEC, Бушин — CNN/Web-DB `08_02`), **ЧДТУ ФЕТР** (Гончаров — RF-лабораторія `08_04`) |
+| **D — Compliance / Legal** | Юриспруденція, регуляторика, IP, B2B, операційні SOP | Polygon Hadron (ERC-3643), MSA з СЄУ, Verra / Gold Standard методологія, GDPR / ESG звітність, patent portfolio, аварійні SOP | **СЄУ** (Аблязов — право, Чудаєва/Ус — економіка, Гедз — D-MRV аудит `08_07`), **ЧІПБ** (пожежна безпека, SOP, параметричне страхування `08_05`), **ЧНУ ФОТІУС** (Осауленко — R&D-портфель `08_02`) |
 
 > **Принцип взаємовиключності:** кожна задача має **рівно один primary cluster label** (`cluster:A-hardware` / `cluster:B-verification` / `cluster:C-scaling` / `cluster:D-compliance`). Cross-cluster задачі мають **secondary label** (`cluster-ref:X`). Primary cluster визначає, хто веде задачу на betting table; secondary — кого консультують у RACI-режимі. Повна label-таксономія + YAML SSOT — у [`00_07 §Labels`](00_07_GitHub_Projects_and_IaC_Automation).
 
@@ -70,11 +70,13 @@ Week 7-8 (Cool-down, 2 тижні) — рефакторинг, SSOT-аудит, 
 
 > **Проблема:** Архітектор не може фізично рев'ювити кожен PR / схему / звіт з 4 паралельних кластерів — це створює bottleneck, який нівелює сенс Concurrent Engineering. Раніше документ казав "Архітектор перевіряє результат і піднімає рівень TRL", без розрізнення між low-TRL прототипом і production-критичним merge.
 
+> **⚠️ Хто такий «Лід кластера» (корекція 2026-05-28):** Це **внутрішній R&D-інженер Silken Net** (представник ActiveBridge або Архітектор), який оперує GitHub (PR, approve, CI). Це **НЕ** професор ЧНУ/ЧМА/ЧІПБ — науковці не мають GitHub-акаунтів і не роблять Git-approve. Академічний «апрув» — це **підписаний офіційний лабораторний звіт / протокол (PDF/Markdown)**. Лід кластера агрегує ці звіти від університетів і конвертує їх у затверджений PR з посиланням на звіт. Тобто Git-процес — для інженерів Silken Net; підпис на лабораторному звіті — для науковців.
+
 **Async-review правила (TRL-stratified):**
 
 | TRL | Хто рев'ює | Тригер на втручання Архітектора |
 |-----|------------|----------------------------------|
-| **TRL 1-2** (Idea / Principle) | Лід відповідного кластера (наприклад, декан ChNU FOTIUS для cluster A; lead developer для C) + AI agent self-check | Тільки на запит ліда: коли потрібна "epoch-defining" архітектурна декларація. |
+| **TRL 1-2** (Idea / Principle) | Лід кластера (внутрішній R&D-інженер Silken Net — див. ⚠️ вище) на основі підписаного лаб-звіту від науковців + AI agent self-check | Тільки на запит ліда: коли потрібна "epoch-defining" архітектурна декларація. |
 | **TRL 3-4** (PoC / Breadboard) | Лід кластера + Required CI checks: `rubocop`, `rspec`, `brakeman`, `bundler-audit`, host-firmware tests, `solidity_audit.yml` (Foundry + Slither). | Тільки на TRL Gate (перехід з 4 → 5). |
 | **TRL 5-6** (Prototype / Pilot) | Лід кластера + Architect approval **required** + повний `SSOT Integrity Guard`. | Always. |
 | **TRL 7-8** (Field / Qualification) | Architect + DAO governance proposal (`SilkenGovernor.sol`) + Quality Gate (Codex ADR-CDX-1..7). | Always + multisig (`Gnosis Safe`). |
@@ -83,7 +85,9 @@ Week 7-8 (Cool-down, 2 тижні) — рефакторинг, SSOT-аудит, 
 **TRL Gate Events** (єдині точки, де Архітектор **гарантовано** втручається):
 - 4 → 5: перехід з лабораторії до pilot (потребує HIL-валідації, `00_06`).
 - 6 → 7: перехід до canopy environment (real LoRa mesh, real CoAP intake).
-- 8 → 9: production mainnet deploy (SCC mint enabled на Polygon mainnet).
+- 8 → 9: **зняття «тренувальних коліс»** — передача повного управління контрактами від Multi-sig (`Gnosis Safe`) до децентралізованого DAO (`SilkenGovernor` + Timelock) + зняття штучних лімітів емісії, при доведеній стабільній роботі на масштабі (мільйони вузлів без втручання).
+
+  > **⚠️ Корекція (2026-05-28):** мінтинг SCC — **НЕ перемикач**, який Архітектор вмикає на TRL 9. Він керується децентралізованим оракулом (Chainlink) + Guard Clauses (`verified_by_iotex` + `oracle_status_fulfilled` + `hadron_kyc`, [`05_02`](05_02_Proof_of_Growth_Pipeline)/[`00_01 §5`](00_01_Vision_Market_and_Slashing_Policy)). На TRL 7-8 система **вже** в mainnet — з малим лімітом емісії та multi-sig на DAO-скарбниці. TRL 9 = **масштаб + децентралізація**, а не «deploy».
 
 ---
 
@@ -134,7 +138,9 @@ Week 7-8 (Cool-down, 2 тижні) — рефакторинг, SSOT-аудит, 
 
 ### 5.2 Betting Table процедура
 
-Betting Table — `≤4 години` event у Week 0 кожного 8-тижневого циклу. Учасники: Архітектор, представник кожного активного кластера (A/B/C/D), AI-agent з access до `docs/` SSOT.
+Betting Table — у Week 0 кожного 8-тижневого циклу. **Асинхронний за замовчуванням** (поважає час розподіленої академічної команди): огляд попереднього циклу + shaping documents викладаються у Wiki **за ≥3 дні** до зустрічі для async-читання. Синхронний колл — **≤1.5 години**, лише для відкритих конфліктів (rabbit holes) та фінальних рішень. Учасники: Архітектор, представник кожного активного кластера (A/B/C/D), AI-agent з access до `docs/` SSOT.
+
+> **⚠️ Корекція (2026-05-28):** 4-годинний синхронний колл (4 кластери × 15 хв презентації + 10 хв питань + огляди) для 6 ВНЗ і розподіленої команди = некерований хаос і марнування часу професури. Тому фази «Огляд» та «Презентація shape-документів» — **асинхронні** (Wiki за 3 дні); синхронно обговорюємо лише `Rabbit holes` і рішення `Drop/Park/Bet`.
 
 **Pre-bet checklist (👤 Architect, за тиждень до Betting Table):**
 
@@ -143,16 +149,21 @@ Betting Table — `≤4 години` event у Week 0 кожного 8-тижн�
 - [ ] TRL-матриця у Projects V2 переглянута на наявність stuck cards (закрита без advance — flag).
 - [ ] Bandwidth check кожного кластера: hours-per-week × cycle weeks мінус известні відсутності (захисти, конференції).
 
-**Betting Table процедура (Week 0, 4 години):**
+**Фаза A — Асинхронно (Wiki, ≥3 дні до коллу):**
+
+| Step | Хто веде | Артефакт |
+|------|----------|----------|
+| 1. Огляд попереднього циклу | Architect | Hill chart + closed/dropped bets у Wiki |
+| 2. Shaping documents для читання | Автор shape | `shaping/<slug>.md` + fat-marker sketch у Wiki |
+| 3. Cluster bandwidth check | Architect | Таблиця cluster ↔ bet з % allocation (pre-bet checklist) |
+
+**Фаза B — Синхронний колл (Week 0, ≤1.5 год):**
 
 | Step | Час | Хто веде | Артефакт |
 |------|-----|----------|----------|
-| 1. Огляд попереднього циклу | 30 хв | Architect | Hill chart + closed/dropped bets |
-| 2. Презентація shaping documents | по 15 хв на bet | Автор shape | Slide / fat-marker walkthrough |
-| 3. Per-bet open questions | по 10 хв | Усі | Notes у shaping doc під "Rabbit holes" |
-| 4. Cluster bandwidth match | 30 хв | Architect | Таблиця cluster ↔ bet з % allocation |
-| 5. Drop / Park / Bet рішення | 30 хв | Architect (final say) | Updated Projects V2 cards |
-| 6. Кодифікація рішень | 30 хв | AI-agent | PR з оновленим `docs/00_08` + `docs/00_05` milestone link |
+| 4. Відкриті конфлікти / rabbit holes | ~45 хв | Усі | Notes у shaping doc під "Rabbit holes" |
+| 5. Drop / Park / Bet рішення | ~30 хв | Architect (final say) | Updated Projects V2 cards |
+| 6. Кодифікація рішень | ~15 хв | AI-agent | PR з оновленим `docs/00_08` + `docs/00_05` milestone link |
 
 **Рішення для кожного shape:**
 - **Bet** — потрапляє в цикл, прив'язується до кластера + `Cycle YYYY.QN` milestone.
@@ -167,14 +178,17 @@ Betting Table — `≤4 години` event у Week 0 кожного 8-тижн�
 
 ### 5.3 Cool-down (2 тижні) — обов'язкові пункти
 
-Cool-down — не "відпустка", а інвестиція у SSOT-цілісність. Без цього система втрачає synchronicity між кодом і документами.
+Cool-down — це **дихальний простір** (Shape Up: unstructured time), а НЕ ще один спринт. Якщо набити його обов'язковим bug-bash + refactor + документуванням, після 6 тижнів Big Bets це дає миттєвий burnout. Тому жорстко-обов'язкові — лише пункти, що підтримують **життєздатність системи**; решта — на розсуд команди.
 
+**Обов'язково (system viability):**
 - [ ] **SSOT drift audit** для змінених модулів циклу: code-vs-doc diff проти `docs/04_02` §13b (Drift Register), `docs/04_03`, `docs/05_02`, `docs/06_02`.
-- [ ] Закриті cycle issues анотувати TRL advancement (через `trl_sync.yml` — авто, див. `00_07`).
-- [ ] Bug-bash: 1-2 дні фікс bugs, які накопичились але були "не critical".
-- [ ] Refactor: тільки якщо явно покращує цикл наступного betting (наприклад, виносимо повторюваний код у service, який повинні юзати 2+ нові bets).
-- [ ] Підготовка shaping documents до наступного Betting Table.
-- [ ] Update `docs/00_06_Strategic_Roadmap_and_HIL_Simulators`: фактичні TRL зрушення проти прогнозованих.
+- [ ] Закриті cycle issues анотувати TRL advancement (через `trl_sync.yml` — авто, див. `00_07`); update `docs/00_06` (фактичні TRL зрушення).
+
+**Опціонально (на розсуд команди, НЕ мандат):**
+- [ ] Bug-bash дрібних некритичних багів — скільки команда захоче, без квоти днів.
+- [ ] Легка підготовка shaping-чернеток до наступного Betting Table (повний shaping — асинхронно, див. §5.2).
+
+> **⚠️ Не в cool-down (2026-05-28):** Великий **refactor** та значущий **bug-bash** планувати як окремі **Small Bets** у наступному 6-тижневому циклі (з власним appetite/shape), а не вганяти у 2-тижневий cool-down. Інакше cool-down перетворюється на прихований спринт → вигорання.
 
 ---
 
