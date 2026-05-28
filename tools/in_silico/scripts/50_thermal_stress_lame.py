@@ -10,9 +10,16 @@ Analytical solution for thick-walled cylinder thermal mismatch:
 Computes radial and tangential stress at Ti↔PEEK interface across
 temperature range -30°C to +40°C (Cherkasy forest extremes).
 
-Also estimates PEEK creep (Findley power law) over 20-year horizon.
+Press-fit long-term integrity is modelled as STRESS RELAXATION (constant
+strain), NOT creep (constant stress): a press-fit fixes the interference
+geometrically, so the contact pressure decays toward a semicrystalline
+floor — it does not "open a gap". Failure metric = residual contact
+pressure P_c(t) vs xylem sap pressure. Also computes the winter cold-leak
+at the OUTER interface (PEEK shrinks away from the outer Ti shell).
 
 No FEA needed — axisymmetric Lamé equations have closed-form solution.
+Relaxation params are literature-grounded estimates pending a Prony-series
+fit from школа Гусака (08_01 §1.2).
 """
 from __future__ import annotations
 
@@ -51,9 +58,19 @@ R_OUTER = 8.0e-3         # m — outer Ti flange radius
 T_ASSEMBLY = 20.0        # °C — assembly temperature
 T_RANGE = np.linspace(-30, 40, 71)  # °C sweep
 
-# PEEK creep (Findley power law: ε = ε₀ + A·t^n)
-FINDLEY_A = 0.002        # strain coefficient (typical PEEK at 10 MPa)
-FINDLEY_N = 0.15         # time exponent (typical semi-crystalline polymer)
+# Press-fit interference (radial) and sealing requirement
+DELTA_INTERFERENCE = 50e-6   # m — radial press-fit interference (~50 µm)
+P_SAP_MPa = 0.5              # MPa — conservative xylem positive/capillary sap pressure (seal must exceed)
+
+# PEEK stress relaxation under CONSTANT STRAIN (press-fit), NOT creep.
+# Semicrystalline PEEK retains a substantial relaxed (equilibrium) modulus —
+# the crystalline phase forms a permanent elastic network, so stress relaxes
+# toward a floor E_∞, NOT to zero. Single-Maxwell + floor (≈ 2-term Prony):
+#   P_c(t) = P_c(0) · [ E∞/E0 + (1 − E∞/E0)·exp(−t/τ) ]
+# These two numbers are literature-grounded ESTIMATES; school of Gusak to
+# supply the proper Prony series (Maxwell-Wiechert) fit (08_01 §1.2).
+PEEK_RELAX_FLOOR = 0.65      # E_∞/E_0 — fraction of modulus retained at equilibrium
+PEEK_RELAX_TAU_YEARS = 1.0   # relaxation time constant (years)
 
 
 def lame_interface_stress(dT: float) -> dict:
@@ -79,12 +96,25 @@ def lame_interface_stress(dT: float) -> dict:
     }
 
 
-def findley_creep(stress_MPa: float, years: float) -> float:
-    """Findley power law creep strain for PEEK."""
-    hours = years * 365.25 * 24
-    epsilon_elastic = stress_MPa * 1e6 / E_PEEK
-    epsilon_creep = FINDLEY_A * (stress_MPa / 10) * hours**FINDLEY_N
-    return epsilon_elastic + epsilon_creep
+def contact_pressure(delta: float, b: float, c: float) -> float:
+    """Initial press-fit contact pressure: PEEK hub (b→c) on rigid Ti shaft.
+    Lamé interference fit, rigid inner member (E_Ti ≫ E_PEEK)."""
+    geom = (c**2 + b**2) / (c**2 - b**2) + NU_PEEK
+    return E_PEEK * delta / (b * geom)        # Pa
+
+
+def relaxed_pressure(p0: float, years: float) -> float:
+    """Stress relaxation under CONSTANT STRAIN (press-fit): contact pressure
+    decays toward the semicrystalline floor, NOT to zero."""
+    return p0 * (PEEK_RELAX_FLOOR + (1.0 - PEEK_RELAX_FLOOR)
+                 * np.exp(-years / PEEK_RELAX_TAU_YEARS))
+
+
+def cold_effective_interference(delta_init: float, r: float, dT_cold: float):
+    """Winter effective interference at the OUTER interface: PEEK (higher CTE)
+    shrinks away from the outer Ti shell on cooling → interference is LOST."""
+    loss = r * (ALPHA_PEEK - ALPHA_TI) * abs(dT_cold)
+    return delta_init - loss, loss
 
 
 def main() -> int:
@@ -106,21 +136,39 @@ def main() -> int:
     worst = max(results, key=lambda r: abs(r["sigma_t_MPa"]))
     print(f"\n  Worst case: T={worst['T_C']:.0f}°C, σ_t={worst['sigma_t_MPa']:.2f} MPa, safety={worst['safety_factor']:.1f}×")
 
-    banner("PEEK Creep (Findley power law, 20-year projection)")
-    stress_at_worst = abs(worst["sigma_t_MPa"])
-    years = [1, 5, 10, 15, 20]
-    print(f"  At worst-case stress {stress_at_worst:.1f} MPa:")
-    creep_results = []
+    # --- Press-fit contact pressure + STRESS RELAXATION (constant strain) ---
+    banner("Press-fit contact pressure & stress relaxation (constant strain)")
+    p0 = contact_pressure(DELTA_INTERFERENCE, R_INNER, R_OUTER)  # Pa
+    print(f"  Initial interference: {DELTA_INTERFERENCE*1e6:.0f} µm → P_c(0) = {p0/1e6:.1f} MPa")
+    print(f"  Model: stress relaxation (NOT creep) — P_c decays to {PEEK_RELAX_FLOOR*100:.0f}% floor (semicrystalline)")
+    years = [0, 1, 5, 10, 20]
+    relax_results = []
     for y in years:
-        strain = findley_creep(stress_at_worst, y)
-        gap_loss = strain * R_INTERFACE * 1e6  # µm
-        print(f"  {y:>3d} years: ε = {strain:.6f} ({strain*100:.4f}%), gap loss = {gap_loss:.2f} µm")
-        creep_results.append({"years": y, "strain": strain, "gap_loss_um": gap_loss})
+        pc = relaxed_pressure(p0, y)
+        print(f"  {y:>3d} years: P_c = {pc/1e6:.1f} MPa  ({'seal holds' if pc/1e6 > P_SAP_MPa else 'SEAL LOST'} vs sap {P_SAP_MPa} MPa)")
+        relax_results.append({"years": y, "P_c_MPa": pc / 1e6})
+    pc_20 = relax_results[-1]["P_c_MPa"]
+
+    # --- Winter cold-leak at the OUTER interface ---
+    banner("Winter cold-leak check (OUTER interface, -30°C)")
+    dT_cold = -50.0
+    delta_eff, loss = cold_effective_interference(DELTA_INTERFERENCE, R_OUTER, dT_cold)
+    print(f"  At ΔT={dT_cold:.0f} K, outer r={R_OUTER*1e3:.0f} mm:")
+    print(f"    interference loss = r·(α_PEEK−α_Ti)·|ΔT| = {loss*1e6:.1f} µm")
+    print(f"    effective interference = {DELTA_INTERFERENCE*1e6:.0f} − {loss*1e6:.1f} = {delta_eff*1e6:.1f} µm")
+    print(f"  Inner interface TIGHTENS in cold (PEEK grips Ti shaft); OUTER is the weak link.")
+    cold_ok = delta_eff > 0
+    print(f"  {'✅ outer interface survives winter' if cold_ok else '❌ outer interface opens in winter'} "
+          f"({delta_eff*1e6:.0f} µm residual)")
 
     banner("Verdict")
-    print(f"  Max thermal stress: {abs(worst['sigma_t_MPa']):.2f} MPa ≪ PEEK yield {SIGMA_YIELD_PEEK/1e6:.0f} MPa (safety {worst['safety_factor']:.0f}×)")
-    print(f"  20-year creep gap loss: {creep_results[-1]['gap_loss_um']:.1f} µm — negligible vs press-fit interference ~50 µm")
-    print(f"  ✅ Ti↔PEEK press-fit survives 20+ years of seasonal cycling")
+    print(f"  Thermal stress: {abs(worst['sigma_t_MPa']):.2f} MPa ≪ PEEK yield {SIGMA_YIELD_PEEK/1e6:.0f} MPa (safety {worst['safety_factor']:.0f}×)")
+    print(f"  Stress relaxation: P_c {p0/1e6:.1f} → {pc_20:.1f} MPa over 20yr (NOT zero — semicrystalline floor)")
+    print(f"  Winter outer interface: {delta_eff*1e6:.0f} µm residual interference (survives)")
+    print(f"  Sealing: residual P_c {pc_20:.1f} MPa > sap {P_SAP_MPa} MPa, BUT primary hermetic seal = elastomer O-ring")
+    print(f"           (FKM/EPDM, rubber-elastic → immune to PEEK relaxation). Barbs/retaining ring")
+    print(f"           handle AXIAL pull-out + anti-rotation ONLY (they do NOT seal).")
+    print(f"  ✅ Ti↔PEEK press-fit survives 20+ years; PEEK = structural isolator + backup P_c")
 
     # Plot
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
@@ -138,12 +186,14 @@ def main() -> int:
     ax1.legend()
     ax1.grid(True, alpha=0.3)
 
-    creep_years = [c["years"] for c in creep_results]
-    creep_strain = [c["strain"] * 100 for c in creep_results]
-    ax2.plot(creep_years, creep_strain, "go-", linewidth=2, markersize=8)
+    relax_years = [r["years"] for r in relax_results]
+    relax_pc = [r["P_c_MPa"] for r in relax_results]
+    ax2.plot(relax_years, relax_pc, "go-", linewidth=2, markersize=8, label="P_c(t)")
+    ax2.axhline(y=P_SAP_MPa, color="r", linestyle="--", label=f"sap pressure ({P_SAP_MPa} MPa)")
     ax2.set_xlabel("Time (years)")
-    ax2.set_ylabel("Total strain (%)")
-    ax2.set_title(f"PEEK Creep at {stress_at_worst:.1f} MPa (Findley)")
+    ax2.set_ylabel("Contact pressure P_c (MPa)")
+    ax2.set_title("PEEK Stress Relaxation (constant strain)")
+    ax2.legend()
     ax2.grid(True, alpha=0.3)
 
     plt.tight_layout()
@@ -153,7 +203,7 @@ def main() -> int:
 
     # Save JSON
     output = {
-        "method": "Lamé thick-walled cylinder + Findley creep",
+        "method": "Lamé thick-walled cylinder + stress relaxation (constant strain)",
         "materials": {
             "Ti-6Al-4V": {"alpha": ALPHA_TI, "E_GPa": E_TI/1e9, "nu": NU_TI},
             "PEEK-450G": {"alpha": ALPHA_PEEK, "E_GPa": E_PEEK/1e9, "nu": NU_PEEK, "yield_MPa": SIGMA_YIELD_PEEK/1e6},
@@ -164,11 +214,28 @@ def main() -> int:
             "sigma_t_MPa": worst["sigma_t_MPa"],
             "safety_factor": worst["safety_factor"],
         },
-        "creep_20yr": {
-            "strain_pct": creep_results[-1]["strain"] * 100,
-            "gap_loss_um": creep_results[-1]["gap_loss_um"],
+        "press_fit": {
+            "interference_um": DELTA_INTERFERENCE * 1e6,
+            "P_c_initial_MPa": p0 / 1e6,
+            "relaxation_model": "stress relaxation (constant strain), Maxwell+floor",
+            "relax_floor": PEEK_RELAX_FLOOR,
+            "relax_tau_years": PEEK_RELAX_TAU_YEARS,
+            "P_c_20yr_MPa": pc_20,
+            "sap_pressure_MPa": P_SAP_MPa,
+            "seal_holds_20yr": bool(pc_20 > P_SAP_MPa),
+            "relaxation_series": relax_results,
+            "note": "relax_floor/tau are literature-grounded estimates; Prony fit pending (Gusak, 08_01 §1.2)",
         },
-        "verdict": "Ti↔PEEK press-fit survives 20+ years seasonal cycling",
+        "winter_cold_leak": {
+            "dT_K": dT_cold,
+            "outer_radius_mm": R_OUTER * 1e3,
+            "interference_loss_um": loss * 1e6,
+            "effective_interference_um": delta_eff * 1e6,
+            "outer_survives_winter": bool(cold_ok),
+            "note": "OUTER interface is the winter weak link (PEEK shrinks from outer Ti shell); inner tightens",
+        },
+        "sealing": "primary hermetic seal = elastomer O-ring (FKM/EPDM); PEEK = structural isolator + residual P_c; barbs = axial pull-out + anti-rotation only (NOT sealing)",
+        "verdict": "Ti↔PEEK press-fit survives 20+ years seasonal cycling (stress relaxation to semicrystalline floor, not creep collapse)",
     }
     json_path = OUT_DIR / "thermal_stress_lame.json"
     json_path.write_text(json.dumps(output, indent=2))

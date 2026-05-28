@@ -603,10 +603,10 @@
 ##### Підблокер HW.3.IS — In Silico FEA Aging (Stage 0, mechanics) — `00_04 §4a` Trek C
 > **Стратегія:** Симуляція напружень Ti+PEEK при extreme температурах ще ДО фізичного 12-week теста. Використовуються рівняння Ляме для thick-walled cylinder (Zone 1 ↔ Zone 2 ↔ Zone 3 коаксіальний press-fit). Закриває (a) механічну цілісність PEEK creep на 20-річному horizon'і, (b) сезонні термоциклічні навантаження.
 - [ ] 👤 **FEA setup:** CalculiX (open source, .NET/Python wrappers) або Code_Aster (Python) — заміна ANSYS GUI для AI-агент-сумісного workflow
-- [x] 🤖 **Lamé equations + thermal mismatch + PEEK creep:** ✅ (2026-05-27, script 50). Worst case -30°C: σ_t=10.1 MPa (safety 9.9× vs PEEK yield 100 MPa). 20-year Findley creep: 76 µm gap loss → **annular barbs mandatory** (confirms `01_01 §4.3`). All temps -30→+40°C within PEEK elastic regime. Cache: `kinetics/thermal_stress_lame.json`.
+- [x] 🤖 **Lamé thermal stress + PEEK stress relaxation:** ✅ (script 50, corrected 2026-05-28). Worst case -30°C: σ_t=10.1 MPa (safety 9.9×). **Press-fit is constant-strain → stress relaxation, not creep:** P_c 34.7→22.6 MPa over 20yr (relaxes to semicrystalline floor, NOT zero; ≫ sap 0.5 MPa). Winter outer interface: 34.6 µm residual (weak link, survives). **Sealing = elastomer O-ring; PEEK = structural + backup P_c; barbs = axial pull-out/anti-rotation only (NOT sealing).** Prony-series fit pending (Гусак). Cache: `kinetics/thermal_stress_lame.json`.
 - [ ] 👤 **DFT (PySCF) для іонного бар'єра:** енергія активації дифузії Ti²⁺/Ti⁴⁺/Al³⁺/V³⁺ через PEEK-матрицю → корозія НЕ отруїть ферменти за 20+ років
 - [x] 🤖 **Cross-link з MD (OpenMM):** ✅ (2026-05-27, script 16). ±5% × 10 cycles: PE drift 1.0%, compress < stretch → pseudoplastic behavior. Small box (3.74 nm, no protein); full-scale 10K cycles deferred to GPU cloud.
-- [x] 🤖 **Output:** ✅ Report: `docs/protocols/anchor/fea_aging/THERMAL_STRESS_REPORT.md` (Lamé + Findley, 2026-05-27)
+- [x] 🤖 **Output:** ✅ Report: `docs/protocols/anchor/fea_aging/THERMAL_STRESS_REPORT.md` (Lamé + stress relaxation, corrected 2026-05-28)
 
 #### HW.4 — Self-healing coating (NEW: zone-restricted)
 - **Джерело:** `01_02` §3 + `01_02` §3.6

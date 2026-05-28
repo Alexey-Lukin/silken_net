@@ -233,13 +233,14 @@ Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
 
 ## HW.3.IS — Mechanical Integrity
 
-### Thermal Stress (script 50, Lamé + Findley)
+### Thermal Stress + Stress Relaxation (script 50, Lamé + relaxation)
 | Parameter | Value |
 |-----------|-------|
-| Worst-case stress (-30°C) | σ_t = 10.1 MPa |
-| Safety factor | **9.9×** vs PEEK yield (100 MPa) |
-| 20-year PEEK creep | 76 µm gap loss → **annular barbs mandatory** |
-| **Verdict** | ✅ Ti↔PEEK press-fit survives 20+ years |
+| Worst-case stress (-30°C) | σ_t = 10.1 MPa, safety **9.9×** vs PEEK yield |
+| Press-fit P_c (constant strain) | 34.7 → **22.6 MPa** over 20 yr (relaxes to semicrystalline floor, NOT to zero) |
+| Winter outer-interface | 50 → 34.6 µm residual at -30°C (survives; outer is the weak link) |
+| Sealing | elastomer **O-ring** (primary); PEEK = structural + backup P_c; barbs = axial/anti-rotation only |
+| **Verdict** | ✅ Ti↔PEEK press-fit survives 20+ years (stress relaxation, not creep collapse) |
 
 ### Cyclic Strain (script 16, ±5% × 10 cycles)
 | Parameter | Value |
