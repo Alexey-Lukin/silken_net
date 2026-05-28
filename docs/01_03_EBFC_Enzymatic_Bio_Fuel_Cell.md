@@ -290,9 +290,9 @@ O₂ + 4H⁺ + 4e⁻ → 2H₂O   (повне 4-електронне відно�
 | `tools/in_silico/scripts/14_xylem_sap_sweep_md.py` | L2: stability across 6 tree species (pH 4.2-5.8) | L2 ✅ (2026-05-27, 6/6 stable) |
 | `tools/in_silico/scripts/15_pvi_coverage_md.py` | L2 Gen 2.5+: PVI backbone coverage test (RMSD 1.10 Å — brush safe) | L2 ✅ |
 | `tools/in_silico/scripts/16_strain_cycling_md.py` | HW.3.IS: cyclic ±5% strain (pseudoplastic matrix) | L2/HW ✅ |
-| `tools/in_silico/scripts/27_md_dft_ensemble.py` | L3/L2 bridge: FAD HOMO/LUMO from MD snapshots | L3 ⏳ |
+| `tools/in_silico/scripts/27_md_dft_ensemble.py` | L3/L2 bridge: FAD HOMO = -5.589 ± 0.058 eV across 5 MD snapshots → thermally robust | L3 ✅ |
 | `tools/in_silico/scripts/28_electron_tunneling_pathway.py` | L3: Beratan-Onuchic tunneling FAD→THR287, β·d=2.05 | L3 ✅ |
-| `tools/in_silico/scripts/29_dft_reorganization_energy.py` | L3: Nelsen 4-point λ_inner | L3 ⏳ |
+| `tools/in_silico/scripts/29_dft_reorganization_energy.py` | L3: Nelsen 4-point λ_inner — cross-SP failed (41.5h), literature λ=0.7 eV retained | L3 ❌ |
 | `tools/in_silico/scripts/40_validate_vs_experiment.py` | **Ti-coin Stage 2: in-silico vs experiment comparison** | Validation ✅ (ready) |
 | `tools/in_silico/scripts/50_thermal_stress_lame.py` | HW.3.IS: Lamé thermal stress (safety 9.9×) + Findley creep | HW ✅ |
 | `tools/in_silico/scripts/51_gusak_degradation_model.py` | HW.3: Arrhenius aging + Kirkendall V diffusion + H7/s6 window | HW ✅ |

@@ -657,6 +657,8 @@
 - [x] 🤖 **HW.3.IS strain cycling (script 16):** ✅ (2026-05-27). ±5% × 10 cycles: compress PE < stretch PE → pseudoplastic.
 - [x] 🤖 **HW.3 Гусак degradation models (script 51):** ✅ (2026-05-27). Arrhenius: 12 wks=2.2-5.7 yrs. **Kirkendall: V release 1.12 µg/cm²/yr без покриття → ZnO-Ta+8-HQ обов'язкові.** H7/s6: safe -30→+40°C.
 - [x] 🤖 **01_04 thermal penetration:** ✅ (2026-05-27). 1D Fourier: tip 150°C in 22.7 min (induction 200°C).
+- [ ] 🤖 **L3 Nelsen λ (script 29):** ❌ FAILED (2026-05-28). Cross-SP E(neutral@cation_geom) SCF artifact after 41.5h CPU — B3LYP/def2-SVP cation geometry diverged too far from neutral for cross-evaluation. **Literature λ=0.7 eV retained** (valid baseline for Marcus rates).
+- [x] 🤖 **L3 MD→DFT ensemble (script 27):** ✅ (2026-05-28). **FAD HOMO = -5.589 ± 0.058 eV** across 5 MD snapshots → frontier orbital thermally robust (σ ≪ 0.3 eV). Root-cause fix: script extracted heavy atoms WITHOUT hydrogens → dangling valences → SCF never converged; now distance-attaches H + SOSCF fallback. Cache: `dft/md_dft_ensemble.json`.
 - [x] 🤖 **Repo structure:** ✅ (updated 2026-05-27). **32 скрипти** (01-51), 6 shared lib модулів, 76 pytest тестів, CI gate. Operational dashboard: [`PIPELINE_STATUS.md`](../protocols/ebfc/in_silico/PIPELINE_STATUS.md).
 - [ ] 👤 **Joint Q1-publication з ЧНУ Мінаєвим:** "In Silico Design of Long-Lived Enzymatic Bio-Fuel Cells for Tree-Integrated Energy Harvesting" — `08_03` Стаття 28
 

@@ -194,6 +194,19 @@ def test_zif_hopping_all_pairs():
     assert data["total"]["k_DET"] > 1e6
 
 
+def test_md_dft_ensemble_thermally_robust():
+    """FAD frontier orbital must be stable across MD snapshots (σ < 0.3 eV)."""
+    path = DFT / "md_dft_ensemble.json"
+    if not path.exists():
+        pytest.skip("ensemble not computed")
+    data = json.loads(path.read_text())
+    ens = data["ensemble"]
+    assert len(data["frames"]) >= 3
+    assert ens["HOMO_std_eV"] < 0.3
+    assert ens["thermally_robust"] is True
+    assert -7.0 < ens["HOMO_mean_eV"] < -4.0  # physical flavin HOMO range
+
+
 def test_xylem_sap_sweep_results():
     """Xylem sap sweep should cover 6 species."""
     path = KINETICS / "xylem_sap_sweep.json"

@@ -215,6 +215,7 @@ Discrepancy from experiment (+0.14 eV downhill): **1.14 eV** — from vertical g
 |---|---|---|
 | **Повна geometric/pyberny opt** обох species | ~6-12 год CPU | Frontier orbital energies → точніше на ~0.1-0.3 eV |
 | **ωB97X + def2-TZVP** | ~27× довше за B3LYP/6-31G(d) для RKS | **Script 21d ✅ COMPLETE** (2026-05-27). Adiabatic ΔSCF: ΔG=+0.884 eV (PCM limit). |
+| **MD→DFT ensemble** | 5 SP on MD snapshots | **Script 27 ✅ DONE** (2026-05-28). FAD isoalloxazine HOMO = **-5.589 ± 0.058 eV** across 5 thermal snapshots → frontier orbital thermally robust (σ ≪ 0.3 eV). Confirms FAD→Os cascade stable against thermal fluctuation. Root-cause fix: heavy-atom-only fragment had dangling valences (no SCF); now includes distance-attached H + SOSCF fallback. |
 | **Nelsen 4-point λ** | 2 geom opts + 4 SPs | **Script 29 ❌ FAILED** (2026-05-27). E(neutral@cation_geom) = -867.1 Ha (6.3 Ha above diagonal = SCF artifact on distorted geometry). Cross-SP UKS never converged after 41.5h CPU. **Literature λ=0.7 eV retained.** |
 | **ΔSCF redox potentials** з RRHO thermal corrections | ~2× за SP | Direct E° prediction vs NHE/SHE, не Koopmans approximation |
 | **TD-DFT excited states** для Os complex | ~5× за GS | Підтверджує MLCT character + Marcus reorganization energy |

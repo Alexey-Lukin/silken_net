@@ -1,6 +1,6 @@
 # In-Silico Pipeline — Operational Status & Dependencies
 
-> **Last updated:** 2026-05-27 20:00 EEST
+> **Last updated:** 2026-05-28 08:00 EEST
 > **TRL 3→4 Gate:** ✅ PASSED (2026-05-25)
 
 ---
@@ -36,9 +36,9 @@
 | # | Script | Status | Resource | ETA |
 |---|--------|--------|----------|-----|
 | 14 | `xylem_sap_sweep_md` | ✅ 6/6 species: pine=1.03, winter=1.03, spruce=1.09, oak=1.05, beech=0.98, generic=1.05 Å — ALL STABLE | — | DONE |
-| 15 | `pvi_coverage_md` | ⏳ PVI backbone (without Os) on protein — steric stress test | GPU | Running |
-| 29 | `dft_reorganization_energy` | ❌ Cross-SP failed (41.5h CPU, E(n@Rc) SCF artifact). Literature λ=0.7 eV retained | CPU | Failed |
-| 27 | `md_dft_ensemble` | ❌ All 5 frames SCF failed (MD snapshots too distorted for gas-phase DFT). Needs PCM or QM/MM. | CPU | Failed |
+| 15 | `pvi_coverage_md` | ✅ PVI backbone RMSD 1.10 Å → brush safe, no denaturation | GPU | DONE |
+| 27 | `md_dft_ensemble` | ✅ FAD HOMO = **-5.589 ± 0.058 eV** across 5 MD snapshots → thermally robust (σ≪0.3). Fix: include H atoms (was bare heavy-atom skeleton → no SCF) + SOSCF fallback | CPU | DONE |
+| 29 | `dft_reorganization_energy` | ❌ Cross-SP SCF artifact after 41.5h CPU (E(n@Rc) diverged). Literature λ=0.7 eV retained — valid Marcus baseline | CPU | Failed |
 | 21d | `dft_os_bpy_wb97xd` | ✅ COMPLETE. Koopmans Δε=-5.88 eV (RSH artifact). **Adiabatic ΔSCF: ΔG=+0.884 eV** (0.9 eV gap = PCM solvation limit). B3LYP corrected -0.07 eV remains best. | — | DONE |
 | 28 | `electron_tunneling_pathway` | ✅ Beratan-Onuchic: FAD→ALA260→THR259→THR282→THR287 (10 atoms, 23.7 Å, β·d=2.05 — tunneling feasible) | — | DONE |
 | 16 | `strain_cycling_md` | ✅ ±5% × 10 cycles: PE drift 1.0% (borderline, small box). Compress < stretch → pseudoplastic | GPU | DONE |

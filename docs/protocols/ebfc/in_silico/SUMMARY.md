@@ -283,8 +283,8 @@ Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
 | ~~L3b all 3 pairs (script 24)~~ | CPU | ✅ DONE (k_DET=1.09×10⁸) |
 | ~~HW.3.IS thermal stress (script 50)~~ | CPU | ✅ DONE (safety 9.9×) |
 | ~~HW.3 Гусак models (script 51)~~ | CPU | ✅ DONE (Arrhenius, Kirkendall, H7/s6) |
-| L3 Nelsen λ (script 29) | CPU | ❌ FAILED (cross-SP artifact, 41.5h). Literature λ=0.7 eV |
-| L3/L2 MD→DFT ensemble (script 27) | CPU | ❌ FAILED (all 5 frames SCF not converged). Needs PCM |
+| ~~L3/L2 MD→DFT ensemble (script 27)~~ | CPU | ✅ DONE — FAD HOMO -5.589 ± 0.058 eV across 5 snapshots, thermally robust |
+| L3 Nelsen λ (script 29) | CPU | ❌ FAILED (cross-SP SCF artifact, 41.5h). Literature λ=0.7 eV retained |
 
 > Full dependency graph and operational status → [`PIPELINE_STATUS.md`](PIPELINE_STATUS.md)
 

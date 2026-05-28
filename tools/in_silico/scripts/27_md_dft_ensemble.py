@@ -41,9 +41,10 @@ def find_largest_fullmatrix_run() -> Path | None:
     return best
 
 
-def extract_fad_ring_atoms(traj) -> list[tuple[int, str]]:
-    """Find isoalloxazine ring heavy atoms in topology.
+def extract_fad_ring_atoms(traj) -> tuple[list[int], list[int]]:
+    """Find isoalloxazine ring heavy atoms + candidate hydrogens.
 
+    Returns (heavy_ring_indices, candidate_h_indices).
     FAD is parameterized as "UNK" residue (86 atoms, 53 heavy).
     Select the large non-standard residue, then filter to ring
     atoms (C/N/O, excluding P and ribitol-ADP chain atoms).
@@ -56,7 +57,7 @@ def extract_fad_ring_atoms(traj) -> list[tuple[int, str]]:
             break
 
     if fad_residue is None:
-        return []
+        return [], []
 
     # Full FAD (51 heavy atoms) is too large for SCF on MD snapshots.
     # Extract only the isoalloxazine ring (≈19 heavy atoms = lumiflavin equivalent).
@@ -85,17 +86,12 @@ def extract_fad_ring_atoms(traj) -> list[tuple[int, str]]:
         heavy_ring = {a.index for a in fad_residue.atoms
                       if a.element.symbol not in ("H", "P")}
 
-    # Include hydrogens bonded to any selected heavy atom (cap dangling valences).
-    selected = set(heavy_ring)
-    for bond in top.bonds:
-        a0, a1 = bond[0], bond[1]
-        if a0.element.symbol == "H" and a1.index in heavy_ring:
-            selected.add(a0.index)
-        elif a1.element.symbol == "H" and a0.index in heavy_ring:
-            selected.add(a1.index)
-
-    atoms = [(a.index, a.element.symbol) for a in top.atoms if a.index in selected]
-    return sorted(atoms, key=lambda t: t[0])
+    # FAD is a non-standard "UNK" residue → mdtraj has NO bond records for it
+    # (no CONECT in PDB). So bond-based H selection finds nothing. Instead we
+    # collect candidate hydrogens (all H in the residue) and let the caller
+    # attach them by distance at each frame (geometry-dependent).
+    candidate_h = [a.index for a in fad_residue.atoms if a.element.symbol == "H"]
+    return sorted(heavy_ring), candidate_h
 
 
 def main() -> int:
@@ -122,12 +118,14 @@ def main() -> int:
     times_ps = traj.time
     print(f"  Time range: {times_ps[0]:.0f} — {times_ps[-1]:.0f} ps")
 
-    heavy_fad = extract_fad_ring_atoms(traj)
-    if len(heavy_fad) < 5:
-        print(f"  ⚠️ Only {len(heavy_fad)} FAD ring atoms found")
+    heavy_ring, candidate_h = extract_fad_ring_atoms(traj)
+    if len(heavy_ring) < 5:
+        print(f"  ⚠️ Only {len(heavy_ring)} FAD ring atoms found")
         return 1
 
-    print(f"  FAD ring heavy atoms: {len(heavy_fad)}")
+    top = traj.topology
+    sym = {a.index: a.element.symbol for a in top.atoms}
+    print(f"  FAD ring heavy atoms: {len(heavy_ring)}, candidate H: {len(candidate_h)}")
 
     results = []
 
@@ -140,23 +138,37 @@ def main() -> int:
 
         coords = traj.xyz[frame_idx] * 10.0  # nm → Å
 
-        from pyscf import dft, gto, solvent
+        # Attach hydrogens by distance: any candidate H within 1.3 Å of a
+        # selected ring heavy atom caps that valence. FAD is a non-standard
+        # residue with no bond records, so distance is the robust criterion.
+        ring_coords = np.array([coords[i] for i in heavy_ring])
+        frag = list(heavy_ring)
+        for h_idx in candidate_h:
+            d = np.linalg.norm(ring_coords - coords[h_idx], axis=1)
+            if d.min() < 1.3:
+                frag.append(h_idx)
+        frag_atoms = [(i, sym[i]) for i in frag]
+
+        from pyscf import dft, gto
 
         atom_str = "; ".join(
             f"{e} {coords[i][0]:.4f} {coords[i][1]:.4f} {coords[i][2]:.4f}"
-            for i, e in heavy_fad
+            for i, e in frag_atoms
         )
 
         mol = gto.Mole()
         mol.atom = atom_str
         mol.basis = "6-31g(d)"
-        # Fragment now includes H (capped valences) → neutral closed-shell.
+        # Fragment includes H (capped valences) → neutral closed-shell.
         Z = {"H": 1, "C": 6, "N": 7, "O": 8, "S": 16, "P": 15}
-        n_electrons = sum(Z.get(e, 0) for _, e in heavy_fad)
+        n_electrons = sum(Z.get(e, 0) for _, e in frag_atoms)
         mol.charge = n_electrons % 2  # safety: enforce even electron count
         mol.spin = 0
         mol.verbose = 0
         mol.build()
+
+        n_h = sum(1 for _, e in frag_atoms if e == "H")
+        print(f"  Fragment: {len(frag_atoms)} atoms ({n_h} H), {mol.nelectron} e⁻")
 
         mf = dft.RKS(mol)
         mf.xc = "b3lyp"
@@ -213,7 +225,7 @@ def main() -> int:
     print(f"  LUMO: {np.mean(lumos):.3f} ± {np.std(lumos):.3f} eV")
     print(f"  HOMO range: {np.min(homos):.3f} to {np.max(homos):.3f} eV (spread {np.max(homos)-np.min(homos):.3f})")
 
-    robust = np.std(homos) < 0.3
+    robust = bool(np.std(homos) < 0.3)  # cast np.bool_ → Python bool (JSON-safe)
     print(f"  Thermally robust (σ < 0.3 eV): {'✅ YES' if robust else '❌ NO'}")
 
     output = {
