@@ -68,7 +68,9 @@
 |--------|----------|--------|
 | **L1: Зона Королеви** | Queen `Radio.Rx(LORA_RX_INFINITE)` — ніколи не спить, приймач SX1262 завжди активний. Живиться від сонячної панелі/акумулятора. Будь-який Солдат у радіусі 150–200 м може передати в будь-яку секунду — Королева завжди зловить. | ✅ Реалізовано |
 | **L2: Синхронні Вікна (TDMA)** | Координоване пробудження вузлів за RTC-розкладом. Queen beacon → Time Sync → спільне "Вікно Зв'язку" кожні 15 хвилин (2 секунди RX). Усуває необхідність постійного прослуховування. | ❌ Не реалізовано ([ARCH.26](00_08_Action_Plan_Tracker)) |
-| **L3: CAD (Channel Activity Detection)** | Апаратна фіча SX1262: вузол прокидається на ~2 мс кожну секунду, "нюхає" ефір на наявність LoRa-преамбули. Якщо є — залишається слухати. Якщо ні — миттєво засинає (витративши ~0.0001% заряду). Критично для PANIC mode (chainsaw detection). | ❌ Не реалізовано ([ARCH.26](00_08_Action_Plan_Tracker)) |
+| **L3: CAD (Channel Activity Detection)** | Апаратна фіча SX1262: вузол робить короткий CAD-«нюх» ефіру на наявність LoRa-преамбули. **Cadence — НЕ «кожну секунду»** (див. ⚠️ нижче): CAD прив'язаний до TDMA-вікон L2 або грубого інтервалу. PANIC mode (chainsaw) ініціюється **відправником** через extended-preamble (preamble sampling), а не постійним прослуховуванням приймача. | ❌ Не реалізовано ([ARCH.26](00_08_Action_Plan_Tracker)) |
+
+> **⚠️ Енергетична корекція CAD (2026-05-28):** Попереднє «прокидатися ~2 мс кожну секунду, ~0.0001% заряду» **недооцінювало вартість** і енергетично нежиттєздатне для µW-вузла на EBFC. Реальний цикл — це не лише радіо: wake MCU зі STOP2 → init SPI → конфіг SX1262 на CAD → очікування результату → знову сон. Активна фаза ≈ кілька мс при ~5 мА (MCU+SX1262), тобто десятки–сотні µJ **на один цикл**. ×86,400 циклів/добу → одиниці джоулів/добу, що **багатократно перевищує** і добовий харвест EBFC, і запас EDLC (½·0.47F·3.3² ≈ 2.56 J). Тому CAD НЕ можна робити щосекунди. Правильно: CAD **у синхронних TDMA-вікнах** (L2, кожні ~15 хв) або з грубим інтервалом; для миттєвого PANIC — **відправник** подовжує преамбулу довше за період сну приймача (LoRa preamble sampling), і низько-duty-cycle CAD-приймач її зловить. Енергобюджет CAD переглянути окремо ([ARCH.26](00_08_Action_Plan_Tracker)).
 
 **Поточний mesh relay (Soldier↔Soldier)** працює стохастично: Солдат А TX → якщо Солдат Б випадково слухає ефір у своїх 600 мс RX-вікна (Phase 4.5) → пакет ретранслюється. Без TDMA/CAD mesh relay **ненадійний** за межами прямої видимості Королеви.
 
@@ -168,6 +170,8 @@ L1: Soldier Nodes (Regular Tree — Листя) — поточна архіте�
 
 **Геохешинг:** Кожен супер-кластер отримує ID на основі координат. Пакет не шукає маршрут — він тече в бік зменшення градієнта до найближчої Королеви. Усуває broadcast storm.
 
+> **⚠️ Розмежування рівнів (2026-05-28): геохешинг — це здатність L2 Conductor, НЕ L1 Soldier.** Поточна прошивка ([`03_01`](03_01_Firmware_Lifecycle_and_DMA), [`08_02`](08_02_Cybernetic_and_Mathematical_Validation)) — наївний **TTL-flood relay** (PANIC_TTL=5, DEFAULT_TTL=3) без маршрутизації. Градієнтний геохешинг вимагає, щоб вузол оперував координатами та сусідським градієнтом — це покладається на **L2 Conductor** (має RTC, більший енергобюджет, відомі координати). **L1 Soldiers залишаються TTL-flood вузлами**, які просто «кричать» у радіусі свого найближчого L2 Conductor (відповідно до фрактальної ієрархії вище). H-LDSE — це цільова еволюція рівня L2, а не зміна поведінки L1.
+
 **Spatial Multiplexing:** L1 та L2 працюють на різних частотних підканалах 868 MHz ISM — усуває міжрівневі колізії (inter-tier interference).
 
 ### Edge Data Fusion — Стиснення Інформації
@@ -256,12 +260,18 @@ Z-значення — проксі "конвективної інтенсивн
 
 ### 2. 🏗️ Незнищенне Тіло — Akash Network (Децентралізована Хмара)
 
-Queen-шлюз (STM32 + SIM7070G) збирає LoRa-пакети від до 50 Soldiers, пакетує їх через алгоритм CIFO, шифрує AES-256-CBC та передає через CoAP PUT через Starlink Direct-to-Cell або LTE.
+Queen-шлюз (STM32 + SIM7070G) збирає LoRa-пакети від до 50 Soldiers, дедуплікує їх за **незашифрованим DID-заголовком** через алгоритм CIFO, загортає батч у CoAP та застосовує AES-256-CBC як **транспортний** шар поверх стільникового/Starlink-каналу.
+
+> **🔐 Уточнення (2026-05-28): це ВКЛАДЕНЕ (layered) шифрування, НЕ повторне.** Два AES-шари захищають різні скоупи, тож тут немає «подвійного шифрування того ж plaintext» чи MITM:
+> - **Внутрішній (E2EE по payload):** Soldier шифрує 16-байтовий сенсорний блок своїм **per-device AES-128** ключем (LoRa). Цей блок лишається зашифрованим **до бекенду** — backend `TelemetryUnpackerService` розгортає внутрішні AES-128 записи per-Soldier ключем (див. [`05_02`](05_02_Proof_of_Growth_Pipeline) §Pipeline B).
+> - **Зовнішній (транспорт):** Queen додає **AES-256-CBC** лише як транспортну обгортку CoAP-батча (Queen→Rails). Дедуплікація CIFO потребує лише **cleartext DID** (перші 4 байти пакета), а не вмісту.
+> - **Zero-Trust ціль:** внутрішній sensor-payload не має ставати plaintext на Queen. Чи Queen взагалі торкається внутрішнього блоку для edge-логіки — питання **відкладеного детального AES-пасу** (FW.2: AES-128-CCM + MIC; деталі crypto — [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security) / [`03_02`](03_02_Queen_Gateway_Firmware)).
 
 Rails 8.1 backend отримує цей сигнал не на єдиній корпоративній хмарі, а на **Akash Network** — децентралізованому ринку обчислень. Жодна компанія не може вимкнути кіберфізичний стан. Провайдери змагаються за деплой, система автоматично мігрує у разі відмови одного.
 
 ```
-Queen (LoRa RX) → AES-256-CBC → CoAP PUT → Akash (Rails 8.1 + Sidekiq)
+Soldier (inner AES-128, per-device) → Queen (CIFO dedup за cleartext DID;
+  + outer AES-256-CBC transport) → CoAP PUT → Akash (Rails) → unwrap inner AES-128
 ```
 
 > **Worker:** `UnpackTelemetryWorker` (черга `uplink`, найвищий пріоритет)
@@ -312,48 +322,58 @@ DID доводить: це не підроблений сенсор, не про
 **IoTeX W3bstream** генерує zero-knowledge proof того, що:
 1. Телеметрія прийшла з **реального кремнію** (верифікація апаратного підпису)
 2. Математика атрактора Лоренца підтверджує **гомеостаз** дерева
-3. **CID архіву telemetry-батча** є частиною ZK-witness — гарантує, що дані, які мінтить Polygon на кроці #8, посилаються на той самий незмінний Filecoin-архів (крок #11), і неможливо підмінити archive ex-post.
+3. **Merkle-корінь архіву (`archive_root`)** є частиною ZK-witness — кожне дерево доводить inclusion свого payload у спільний корінь (§5.1), гарантуючи, що дані, які мінтить Polygon на кроці #8, посилаються на той самий незмінний Filecoin-архів (крок #11), і неможливо підмінити archive ex-post.
 
-Серверний `SilkenNet::Attractor` незалежно обчислює те саме Z-значення з **BigDecimal** (18-значна точність) — для крос-платформної детермінованості та юридичної аудитопридатності.
+Серверний `SilkenNet::Attractor` незалежно обчислює те саме Z-значення у **Float64 (IEEE 754 double)** — **бітово ідентично** firmware mruby після [FW.7] (раніше було BigDecimal, що давало інший Z після 250 ітерацій). Це і дає крос-платформну детермінованість та юридичну аудитопридатність.
 
 ```ruby
-# SilkenNet::Attractor (BigDecimal, 250 ітерацій × 0.01 timestep)
-sigma = BigDecimal("10") + (acoustic * BigDecimal("0.1")).clamp(5, 30)
-rho   = BigDecimal("28") + (temperature * BigDecimal("0.2")).clamp(10, 50)
-beta  = BigDecimal("8") / BigDecimal("3")
+# SilkenNet::Attractor (Float64, 250 ітерацій × 0.01 timestep — ідентично firmware)
+sigma = 10.0 + (acoustic * 0.1).clamp(5, 30)
+rho   = 28.0 + (temperature * 0.2).clamp(10, 50)
+beta  = 8.0 / 3.0   # = 2.6666666666666665 (той самий double, що в mruby)
 ```
 
-Якщо Z-значення пристрою відхиляється від серверного більш ніж на 30%, `InsightGeneratorService` позначає це як **шахрайство** — запобігання підробці на математичному рівні.
+> **⚠️ Уточнення (2026-05-28):** Оскільки Z бітово ідентичний (верифіковано 50 000 parity-тестами), у чесній роботі divergence ≈ 0. Тому розбіжність device↔server Z є **реальним сигналом тамперу**, а НЕ «неминучим шумом флоат-хаосу». Але `divergence > 30%` САМ ПО СОБІ не запускає незворотних фінансових наслідків (ECB без MIC → можливий bit-flip; OTA version mismatch) — потрібне підтвердження другим сигналом; деталі політики — [`00_01` §6.5](00_01_Vision_Market_and_Slashing_Policy).
 
 #### 5.1 CID як witness у ZK-proof (data integrity bridge до Filecoin)
 
 > ⚠️ **Архітектурне посилення (2026):** Раніше Filecoin/IPFS pin (крок #11) відбувався **після** мінту в Polygon (крок #8) — це означало, що блокчейн-транзакція не мала криптографічного зв'язку з архівом. Зловмисник міг ex-post підмінити archive у Pinata (надавши новий CID), і ніхто би не помітив, що SCC-token насправді посилається на інший набір даних.
 
-**Виправлення:** На кроці #5 (IoTeX W3bstream) до ZK-proof включається `archive_cid_preimage` — IPFS CID **майбутнього** Filecoin-архіву telemetry batch. CID обчислюється **детерміністично** з payload до того, як архів буде запінений:
+> **⚠️ Архітектурна корекція (2026-05-28): batch-CID НЕ може бути witness для per-device ZK-proof.** W3bstream доводить ZK-факт для **окремого** пристрою (`device_uid`, його Z). Якщо witness — це CID цілого batch (з `telemetry_log_ids` багатьох дерев), то: (а) CID змінюється, щойно в batch потрапляє будь-який інший лог; (б) per-device proof, що містить batch-CID, не доводить криптографічно, що payload САМЕ цього дерева включений в архів — лише що пристрій «знав» CID. Рішення — **Merkle-дерево**: листя = індивідуальні per-tree payload'и, корінь = `archive_root` (= те, що пінить Filecoin), і кожне дерево несе **Merkle inclusion proof** свого листа в корінь.
+
+**Виправлення (Merkle-based):** archive стає масивом індивідуальних payload'ів; `archive_root` — Merkle Root над ними. Per-device ZK-witness містить **лист цього дерева + inclusion proof**:
 
 ```ruby
-# Iotex::W3bstreamVerificationService — пропозиція E.60
-archive_payload = {
-  telemetry_log_ids: batch.map(&:id),
-  z_values: batch.map(&:z_value),
-  bio_statuses: batch.map(&:bio_status),
-  created_at_range: [batch.first.created_at, batch.last.created_at]
-}.to_json
-
-# CIDv1 derivation — same algorithm as IPFS would compute on pin
-archive_cid = Filecoin::CidGenerator.cidv1(archive_payload)  # multihash sha256 → base32
-
-zk_witness = {
+# Iotex::W3bstreamVerificationService — пропозиція E.60 (revised)
+# 1) Per-tree leaf — детермінований CID індивідуального payload
+leaf_payload = {
+  telemetry_log_id: log.id,
   device_uid: tree.device_uid,
-  attractor_z: server_z_value,
-  lambda_exp: lyapunov_exponent,
-  archive_cid: archive_cid  # ← новий witness field
+  z_value: log.z_value,
+  bio_status: log.bio_status,
+  created_at: log.created_at
+}.to_json
+leaf_cid = Filecoin::CidGenerator.cidv1(leaf_payload)   # multihash sha256 → base32
+
+# 2) Batch Merkle Root над листям усіх дерев батча
+leaves       = batch.map { |l| Filecoin::CidGenerator.cidv1(leaf_for(l)) }
+archive_root = MerkleTree.root(leaves)                   # = archive_cid (batch-level)
+inclusion    = MerkleTree.proof(leaves, index_of(log))   # шлях листа → корінь
+
+# 3) Per-device witness доводить включення СВОГО листа у спільний корінь
+zk_witness = {
+  device_uid:     tree.device_uid,
+  attractor_z:    server_z_value,
+  lambda_exp:     lyapunov_exponent,
+  leaf_cid:       leaf_cid,
+  merkle_proof:   inclusion,
+  archive_root:   archive_root   # ← стабільний корінь батча
 }
 proof = Iotex.generate_zk_proof(zk_witness)
-log.update!(zk_proof_ref: proof.id, archive_cid: archive_cid)
+log.update!(zk_proof_ref: proof.id, archive_cid: archive_root, merkle_leaf: leaf_cid)
 ```
 
-На кроці #8 (Polygon mint) `archive_cid` передається у `mint()` як `bytes32` metadata. На кроці #11 (Filecoin) `FilecoinArchiveWorker` пінить **той самий** payload — Pinata повертає CID, який має збігатися з `archive_cid`, інакше worker fail-fast і запис іде в `manual_review`. Це форсує **bidirectional integrity** між Polygon SCC і Filecoin archive.
+На кроці #8 (Polygon mint) `archive_root` передається у `mint()` як `bytes32` metadata. На кроці #11 (Filecoin) `FilecoinArchiveWorker` пінить масив листя — обчислений Merkle Root має збігатися з `archive_root`, інакше worker fail-fast і запис іде в `manual_review`. Кожне дерево залишається незалежно верифіковним через `merkle_proof` (O(log n)), а додавання інших логів змінює лише корінь — усі proof'и одного батча посилаються на той самий `archive_root`. Це форсує **bidirectional integrity** між Polygon SCC і Filecoin archive **на рівні окремого дерева**.
 
 > **Worker:** `IotexVerificationWorker` (черга `web3`, retry: 5)
 > **Service:** `Iotex::W3bstreamVerificationService` · `SilkenNet::Attractor` · `Filecoin::CidGenerator` (новий, E.60)
@@ -489,14 +509,18 @@ payload = {
 Раз на тиждень — у понеділок, 03:00 UTC — після завершення всіх нічних агрегацій, перевірок здоров'я та протоколів slashing — хеш цього грандіозного процесу назавжди закарбовується в **Ethereum Mainnet**.
 
 ```ruby
-# Ethereum::StateAnchorService
+# Ethereum::StateAnchorService#generate_state_root (канонічно — 05_04 §3)
 state_root = Digest::SHA256.hexdigest(
-  "#{total_scc_supply}:#{chain_hash}:#{timestamp}"
+  "#{total_scc}|#{total_sfc}|#{active_tree_count}|#{chain_hash}|#{anchored_at.utc.iso8601}"
 )
-# → Ethereum L1: store(bytes32 state_root)
+# → StateRootAnchor.sol: store(bytes32 state_root)
 ```
 
-Це rollup-стиль фіналізації. Один запис `bytes32` на тиждень. Газ-ефективно, але абсолютно незмінно. Навіть якщо Polygon зазнає катастрофічного збою — L1-anchor Ethereum доводить стан всієї економіки Silken Net у кожному тижневому чекпоінті.
+> **⚠️ Уточнення термінології (2026-05-28): це aggregate-commitment, а НЕ Merkle Patricia Trie.** Поточний `state_root` — це SHA-256 над **агрегатами** (сумарний SCC + SFC supply + к-ть активних дерев + голова hash-ланцюга `AuditLog` + timestamp). Він криптографічно фіксує **глобальний економічний стан** і незмінну голову event-ланцюга, і дозволяє зовнішньому аудитору відтворити хеш (`EthereumAnchor#verify_state_root`, 05_04). **Але** він НЕ є State Root у сенсі блокчейну — він **не** містить per-account Merkle-дерева, тож з нього **не можна** довести стан окремого дерева («чи було дерево X здоровим на чекпоінті T») через O(log n) inclusion proof.
+>
+> **Цільове посилення:** для per-tree inclusion proofs — згенерувати `state_root` як **Merkle Root над станами всіх активних `Tree` + балансами `Wallet`** (листя = (tree_id, bio_status, z, …) / (wallet, scc_balance)), де кожен суб'єкт доводить включення Merkle-proof'ом. Узгоджується з batch-Merkle підходом §5.1. SSOT та as-built деталі — [`05_04`](05_04_Ethereum_L1_State_Anchor).
+
+Це rollup-стиль фіналізації. Один запис `bytes32` на тиждень. Газ-ефективно, але абсолютно незмінно. Навіть якщо Polygon зазнає катастрофічного збою — L1-anchor Ethereum фіксує агрегатний стан економіки Silken Net у кожному тижневому чекпоінті.
 
 > **Worker:** `EthereumAnchorWorker` (черга `web3`, retry: 3, cron: `0 3 * * 1`)
 > **Service:** `Ethereum::StateAnchorService`
@@ -551,9 +575,9 @@ state_root = Digest::SHA256.hexdigest(
 | Services | **29+** |
 | API controllers | **28** |
 | Рівнів пріоритету черг | **9** |
-| Точність атрактора Лоренца | **18 знаків** (BigDecimal) |
+| Точність атрактора Лоренца | **Float64** (IEEE 754, бітово ідентично firmware — FW.7) |
 | Розмір бінарного пакету | **21 байт** (outer) / **16 байт** (inner) |
-| Шифрування AES | **256-bit** (апаратно-прив'язані ключі) |
+| Шифрування AES | **128-bit** (LoRa, per-device, inner E2EE) + **256-bit** (CoAP transport) |
 | Струм глибокого сну | **300 нА** (STOP2 RTC-only — `02_03 §9.6 Сценарій C`) |
 | Генерація EBFC | **>500 мВ** |
 | Поріг емісії | **10,000 growth points = 1 SCC** |
