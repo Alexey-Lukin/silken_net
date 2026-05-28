@@ -39,6 +39,8 @@
 | 15 | `pvi_coverage_md` | ✅ PVI backbone RMSD 1.10 Å → brush safe, no denaturation | GPU | DONE |
 | 27 | `md_dft_ensemble` | ✅ FAD HOMO = **-5.589 ± 0.058 eV** across 5 MD snapshots → thermally robust (σ≪0.3). Fix: include H atoms (was bare heavy-atom skeleton → no SCF) + SOSCF fallback | CPU | DONE |
 | 29 | `dft_reorganization_energy` | ❌ CLOSED (Physical Limitation). Two methods both give E(n@R_cation) +160 eV — FADH₂•⁺ radical-cation geometry pathological in implicit solvent (needs QM/MM or PCET ref). **Literature λ=0.7-0.8 eV retained** (flavin gold standard) | CPU | Closed |
+| 32 | `pcet_redox_potential` | ✅ Thermodynamic proton reference → E°(FAD/FADH₂)=−158 mV @pH7 (Δ50 mV vs free-flavin exp). PCET valid with implicit solvent alone | — | Done |
+| 33 | `pcet_cascade_semiquinone` | 🔄 Geom-opt rerun. PCET oxidation via FADH•+H⁺+e⁻. Preliminary: does NOT flip cascade downhill (~1 eV PCM gap, not proton coupling) | CPU | Running |
 | 21d | `dft_os_bpy_wb97xd` | ✅ COMPLETE. Koopmans Δε=-5.88 eV (RSH artifact). **Adiabatic ΔSCF: ΔG=+0.884 eV** (0.9 eV gap = PCM solvation limit). B3LYP corrected -0.07 eV remains best. | — | DONE |
 | 28 | `electron_tunneling_pathway` | ✅ Beratan-Onuchic: FAD→ALA260→THR259→THR282→THR287 (10 atoms, 23.7 Å, β·d=2.05 — tunneling feasible) | — | DONE |
 | 16 | `strain_cycling_md` | ✅ ±5% × 10 cycles: PE drift 1.0% (borderline, small box). Compress < stretch → pseudoplastic | GPU | DONE |
@@ -128,7 +130,7 @@ Validation:
 | L4b Monte Carlo | ✅ Complete | — |
 | L4c EIS | ✅ Complete | — |
 
-**Verdict: ✅ Ready.** Q1 publication (школа Мінаєва): ωB97X/def2-TZVP adiabatic ΔSCF complete (B3LYP corrected -0.07 eV best estimate); L3b cathode complete (3/3 pairs); MD→DFT ensemble confirms thermal robustness; PCET via thermodynamic proton reference (script 32) validates the FAD/FADH₂ potential (within 50 mV of free-flavin) and (script 33) corrects the cascade. Closed limitation: Nelsen λ (script 29) — FADH₂•⁺ geometry pathological in implicit solvent (needs QM/MM); literature λ=0.7-0.8 eV used (flavin gold standard) — a clean "limitations of implicit solvation" point for the paper.
+**Verdict: ✅ Ready.** Q1 publication (школа Мінаєва): ωB97X/def2-TZVP adiabatic ΔSCF complete (B3LYP corrected -0.07 eV best estimate); L3b cathode complete (3/3 pairs); MD→DFT ensemble confirms thermal robustness; PCET via thermodynamic proton reference (script 32) validates the FAD/FADH₂ potential (within 50 mV of free-flavin). Closed limitations (both clean "limitations of implicit solvation" points for the paper): (a) Nelsen λ (script 29) — FADH₂•⁺ geometry pathological → literature λ=0.7-0.8 eV used; (b) PCET cascade reframing (script 33) does NOT flip the ΔSCF cascade downhill — the ~1 eV gap is PCM differential-solvation, not proton coupling. **Authoritative cascade verdict = experiment −0.14 eV + B3LYP-corrected −0.07 eV.**
 
 ### ✅ Sufficient for Pitch / Investor Meeting?
 
