@@ -227,6 +227,19 @@ def test_xylem_sap_sweep_results():
     assert len(data.get("sweep", data)) >= 6
 
 
+def test_temperature_sweep_all_stable():
+    """All 4 temperatures (-10 to +40°C) must be RMSD-stable (≪ 3 Å)."""
+    path = KINETICS / "temperature_sweep.json"
+    if not path.exists():
+        pytest.skip("temperature sweep not computed")
+    data = json.loads(path.read_text())
+    sweep = data.get("sweep", [])
+    assert len(sweep) >= 4
+    for r in sweep:
+        assert r["rmsd_mean_A"] < 3.0
+        assert r["stable"] is True
+
+
 def test_psbma_diffusion_results():
     """PSBMA diffusion should have D_eff."""
     path = KINETICS / "psbma_diffusion.json"

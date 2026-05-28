@@ -51,7 +51,7 @@
 | 10* | `genipin_stability_md` (rerun) | RMSD 1.20 Å ✅ (correct C₁₁ genipin) | 2026-05-26 |
 | 11* | `full_matrix_md` (rerun) | RMSD 1.22 Å ✅ (correct C₁₁ genipin, NaN fix: 10k min + 10K ramp) | 2026-05-27 |
 | 11** | `full_matrix_md` (10ns) | RMSD 4.02 Å, **Rg stable -0.1%** → AF3 conformational relaxation, not denaturation | 2026-05-26 |
-| 12 | `temperature_sweep_md` | 3/4 temps: 263K=0.80Å, 278K=0.83Å, 298K=1.09Å ✅ (313K skipped — NaN) | 2026-05-27 |
+| 12 | `temperature_sweep_md` | ✅ **4/4 temps**: 263K=0.76, 278K=0.87, 298K=0.90, 313K=1.47 Å — all ≪3Å STABLE (313K NaN fixed: 10k min + 1000-step pre-relax) | 2026-05-28 |
 | 13 | `psbma_diffusion_md` | D_eff=5.1e-4 cm²/s (monomers, not polymerized; L4 uses literature 2e-6) | 2026-05-27 |
 
 ### 📋 Queued (after current runs)
@@ -157,7 +157,7 @@ Validation:
 
 ### Nice-to-Have (improve confidence, needed for publication):
 - ✅ ~~Genipin rerun (scripts 10-11)~~ — DONE (RMSD 1.20/1.22 Å)
-- ✅ ~~Temperature sweep (script 12)~~ — DONE 3/4 temps (263K-298K stable)
+- ✅ ~~Temperature sweep (script 12)~~ — DONE 4/4 temps (263K-313K all stable, ≪3Å)
 - ✅ ~~PSBMA diffusion (script 13)~~ — DONE (model limitation noted)
 - ✅ ~~Xylem sap sweep (script 14)~~ — DONE 6/6 species (pH 4.2-5.8 all stable)
 - ✅ ~~ωB97X DFT (script 21d)~~ — DONE. Koopmans Δε=-5.88 eV (RSH artifact; B3LYP corrected ≈-0.07 eV is better). ΔSCF recommended for pub.
