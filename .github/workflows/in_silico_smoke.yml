@@ -34,7 +34,7 @@ jobs:
         # micromamba is much faster than full conda; the action caches the
         # whole env keyed on environment.yml hash, so subsequent runs reuse
         # the ~2.5 GB env in ~30 s instead of installing for ~8 min.
-        uses: mamba-org/setup-micromamba@v2
+        uses: mamba-org/setup-micromamba@v3
         with:
           environment-file: tools/in_silico/environment.yml
           environment-name: silken_md
