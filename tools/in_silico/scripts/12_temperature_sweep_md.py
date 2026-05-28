@@ -159,12 +159,13 @@ def run_single_temperature(temp_k: int, platform: Platform) -> dict:
     with (run_dir / "system.pdb").open("w") as fh:
         PDBFile.writeFile(modeller.topology, modeller.positions, fh, keepIds=True)
 
-    # Minimise — 0 means until convergence (critical for high-T runs)
+    # Thorough minimisation (critical for high-T runs — 313 K blows up otherwise)
     sim.minimizeEnergy(maxIterations=10000)
 
-    # Brief low-T relaxation to resolve residual clashes after minimization
+    # Low-T relaxation to resolve residual clashes before heating (1000 steps
+    # at 10 K — needed for the 313 K case where leftover clashes → NaN)
     sim.context.setVelocitiesToTemperature(10 * kelvin)
-    sim.step(500)
+    sim.step(1000)
 
     # NVT with restraints — heat to target T
     ramp_step = 10

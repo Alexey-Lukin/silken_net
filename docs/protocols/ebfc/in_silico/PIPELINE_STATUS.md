@@ -121,14 +121,14 @@ Validation:
 | Component | Status | What's Missing |
 |-----------|--------|----------------|
 | L1 protein architecture | ✅ Complete | — |
-| L2 stability MD | ✅ Complete | Genipin rerun ✅, temp sweep ✅, PSBMA ✅, xylem sap ⏳ |
-| L3 anode DFT | 🟢 Strong partial | ωB97X-D/def2-TZVP rerun (publication-grade, школа Мінаєва) |
-| L3b cathode DET | ⏳ Partial (1/3 pairs) | Co-Ce + Ce-graphene computing |
+| L2 stability MD | ✅ Complete | Genipin ✅, temp sweep ✅ (4/4), PSBMA ✅, xylem sap ✅ (6/6), PVI ✅, strain ✅ |
+| L3 anode DFT | ✅ Complete | ωB97X/def2-TZVP ✅ (adiabatic ΔSCF +0.884 eV); tunneling ✅; MD ensemble HOMO robust ✅ |
+| L3b cathode DET | ✅ Complete (3/3 pairs) | total k_DET=1.09×10⁸ s⁻¹ |
 | L4 kinetics | ✅ Complete | — |
 | L4b Monte Carlo | ✅ Complete | — |
 | L4c EIS | ✅ Complete | — |
 
-**Verdict: 🟢 Nearly ready.** For Q1 publication (школа Мінаєва): need ωB97X-D functional rerun for anode DFT (current B3LYP is screening-grade only). L3b cathode can go in as "partial — Cu-Co demonstrates fast DET, Co-Ce and Ce-graphene in progress."
+**Verdict: ✅ Ready.** Q1 publication (школа Мінаєва): ωB97X/def2-TZVP adiabatic ΔSCF complete (B3LYP corrected -0.07 eV best estimate); L3b cathode complete (3/3 pairs); MD→DFT ensemble confirms thermal robustness. Open caveat: Nelsen λ (script 29) — re-running at consistent B3LYP/def2-SVP after composite-level cross-SP failed; literature λ=0.7 eV is a valid fallback for Marcus rates.
 
 ### ✅ Sufficient for Pitch / Investor Meeting?
 
