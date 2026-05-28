@@ -246,25 +246,39 @@ def main() -> int:
         result = run_single_temperature(temp_k, platform)
         results.append(result)
 
+    # Merge into any existing sweep so a single-temperature rerun
+    # (SILKEN_SWEEP_TEMPS=313) does not clobber previously-passed temps.
+    out_path = REPO_ROOT / "tools/in_silico/cache/kinetics/temperature_sweep.json"
+    by_temp: dict[int, dict] = {}
+    if out_path.exists():
+        try:
+            prior = json.loads(out_path.read_text())
+            for r in prior.get("sweep", []):
+                by_temp[int(r["temp_K"])] = r
+        except (json.JSONDecodeError, KeyError):
+            pass
+    for r in results:
+        by_temp[int(r["temp_K"])] = r
+    merged = [by_temp[k] for k in sorted(by_temp)]
+
     # Summary
     banner("Temperature sweep summary")
     print(f"  {'T(°C)':>6s}  {'RMSD mean':>10s}  {'RMSD max':>9s}  {'Verdict':>10s}")
     print("  " + "-" * 42)
     all_stable = True
-    for r in results:
+    for r in merged:
         v = "STABLE" if r["stable"] else "UNSTABLE"
         if not r["stable"]:
             all_stable = False
-        print(f"  {r['temp_C']:>5d}°C  {r['rmsd_mean_A']:>9.3f} Å  {r['rmsd_max_A']:>8.3f} Å  {v:>10s}")
+        print(f"  {int(round(r['temp_C'])):>5d}°C  {r['rmsd_mean_A']:>9.3f} Å  {r['rmsd_max_A']:>8.3f} Å  {v:>10s}")
 
     overall = "✅ All temperatures STABLE" if all_stable else "⚠️ Some temperatures UNSTABLE"
     print(f"\n  {overall}")
 
-    # Save
-    out_path = REPO_ROOT / "tools/in_silico/cache/kinetics/temperature_sweep.json"
+    # Save merged sweep
     with out_path.open("w", encoding="utf-8") as fh:
-        json.dump({"sweep": results, "verdict": overall}, fh, indent=2)
-    print(f"  Wrote {out_path.relative_to(REPO_ROOT)}")
+        json.dump({"sweep": merged, "verdict": overall}, fh, indent=2)
+    print(f"  Wrote {out_path.relative_to(REPO_ROOT)} ({len(merged)} temps)")
 
     banner("✅ Temperature sweep complete")
     return 0
