@@ -99,6 +99,20 @@ end
 
 ---
 
+### 7. `rack.response_finished` — відкладений запис кешу після flush (Puma 7.0+)
+
+`actuators#execute` зберігає Idempotency-Key через `Rails.cache.write(cache_key, response_body, expires_in: 24.hours)` у Solid Cache (PostgreSQL). Запис перенесено у `rack.response_finished` callback (Puma 7.0+):
+
+```ruby
+env["rack.response_finished"] << -> { Rails.cache.write(cache_key, response_body, expires_in: 24.hours) }
+```
+
+Кеш пишеться **після** flush відповіді клієнту → зменшує p50 latency на ~1-2 мс. TTL та логіка незмінні; spec coverage оновлено. *(Мігровано з `00_08 PUMA-RACK-1` 2026-05-28.)*
+
+> **Майбутнє (planetary scale):** при > 1M actuator-команд/добу — переглянути на користь batched cache writes.
+
+---
+
 ## 🌐 MarkWeb3RequestsAsIoBound Middleware
 
 **Файл:** `app/middleware/mark_web3_requests_as_io_bound.rb`

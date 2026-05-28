@@ -9,7 +9,7 @@
 ## ✅ Статус
 
 - **Поточний TRL (System):** TRL 4 — EBFC TRL 3→4 PASSED (Zero-Lab 2026-05-25). Програмні домени TRL 6-9.
-- **Per-domain TRL (декаплінг):** Rails TRL 8, Web3 / Smart contracts TRL 8–9 (Solidity ready для mainnet), DevOps TRL 5–6 (06_01 Kamal=4, 06_02 Akash=5, 06_03/06_05=6; жодного production-деплою — open у [`00_08 §TRL Матриця`](00_08_Action_Plan_Tracker)), Firmware TRL 6, Security TRL 7 (Rails web layer ✅), Hardware capsule TRL 6, anchor/EBFC **TRL 4** (Zero-Lab L1-L4 PASSED 2026-05-25; 32 in-silico scripts; in vitro Stages 1-3 ще не закриті). **Канонічне джерело per-module TRL — `00_08 §TRL Матриця` (line ~1183-1192)**; цей рядок є снапшотом для швидкої навігації, оновлюється при кожному cool-down.
+- **Per-domain TRL (декаплінг):** Rails TRL 8, Web3 / Smart contracts TRL 8–9 (Solidity ready для mainnet), DevOps TRL 5–6 (06_01 Kamal=4, 06_02 Akash=5, 06_03/06_05=6; жодного production-деплою — open, див. `§1 Per-module TRL` нижче), Firmware TRL 6, Security TRL 7 (Rails web layer ✅), Hardware capsule TRL 6, anchor/EBFC **TRL 4** (Zero-Lab L1-L4 PASSED 2026-05-25; 32 in-silico scripts; in vitro Stages 1-3 ще не закриті). **Канонічне джерело per-module TRL — `§1 Per-module TRL` (нижче в цьому документі)**; оновлюється при кожному cool-down.
 - **Пов'язані модулі:**
   - Бізнес-візія та slashing → [`00_01_Vision_Market_and_Slashing_Policy`](00_01_Vision_Market_and_Slashing_Policy)
   - AI-Native методологія (TRL philosophy) → [`00_04_AI_Native_Engineering_and_TRL`](00_04_AI_Native_Engineering_and_TRL)
@@ -29,6 +29,24 @@
 | **TRL 5-6** | Прототипування | Робота кластера "Солдат-Королева" в Черкаському борі (30 днів). | Silken Lab |
 | **TRL 7-8** | Кваліфікація | Повна інтеграція: DID → ZK-Proof → Chainlink → Polygon. | Production (Canopy) |
 | **TRL 9** | Експлуатація | Стабільний мінтинг SCC на мільйонах вузлів, фіналізація в L1. | Global Mainnet |
+
+### Per-module TRL (канонічне джерело)
+
+> SSOT для per-domain TRL. **System TRL = найнижчий модуль.** Оновлюється при кожному cool-down. *(Мігровано з `00_08 §TRL Матриця` 2026-05-28 — тепер канон тут.)*
+
+| Модуль | TRL | Цільовий | Головний блокер |
+|--------|-----|----------|-----------------|
+| 00 System Architecture | 4 | 9 | Module 01 chemistry |
+| 01 Materials & EBFC | 3 | 6 | Lab tests (ЧНУ) |
+| 02 Hardware & BOM | 4 | 6 | BQ25570, PCB, Pogo, PEEK |
+| 03 Firmware | 6 | 8 | AES key, TinyML, AT blocking |
+| 04 Backend Rails | 8 | 9 | RSpec тести |
+| 05 Web3 Pipeline | 8-9 | 9 | SFC address |
+| 06 DevOps | 7 | 9 | Docker registry, TLS |
+| 07 Business | 5 | 8 | CO₂ methodology, MSA, ToS |
+| 08 University R&D | 2 | 6 | 5-сторонній партнерський фреймворк (ChNU + ChDTU + ChIPB + ChMA + СЄУ) — UNI.4-14 |
+| 09 Project Management | 7 | 9 | OPS.3 R&D portfolio, OPS.4 semester sync |
+| 10 Security | 7 | 9 | SEC.9 master key, ✅ SEC.11 Lorenz seed provenance, Multisig, RDP, Factory (Rails web layer ✅ S6.18) |
 
 ---
 

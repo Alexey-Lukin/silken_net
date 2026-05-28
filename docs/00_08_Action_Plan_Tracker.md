@@ -2,18 +2,7 @@
 
 ## 🎯 Мета
 
-Зберігати ТІЛЬКИ незавершені задачі з пріоритетами, виконавцями та статусами. Виконана робота задокументована у відповідних docs (`00_00` → `08_07`). Документ є живим операційним інструментом — оновлюється при кожному завершенні задачі.
-
----
-
-## ✅ Статус
-
-- **Поточний TRL:** TRL 4 (System) / per-domain decoupled через HIL Simulators ([`00_06`](00_06_Strategic_Roadmap_and_HIL_Simulators)). Операційний трекер активний.
-- **Пов'язані модулі:**
-  - SSOT індекс → [`00_00_SSOT_Index`](00_00_SSOT_Index)
-  - Матриця покриття тестами → [`04_06_Testing_Guide_and_Coverage`](04_06_Testing_Guide_and_Coverage)
-  - Деплой та інфраструктура → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
-  - Resilience & failover policy → [`00_03_Resilience_and_Failover_Policy`](00_03_Resilience_and_Failover_Policy)
+Зберігати ТІЛЬКИ незавершені задачі з пріоритетами, виконавцями та статусами. Виконана робота задокументована у відповідних docs (`00_00` → `08_07`). Повністю завершені пункти виносяться у **§🗄️ Архів закритих пунктів** (вказівник ID→канон, внизу). Документ є живим операційним інструментом — оновлюється при кожному завершенні задачі.
 
 ---
 
@@ -33,32 +22,29 @@
 2. **FW.1 + SEC.3** — Per-device HKDF provisioning ✅ + Factory Flashing pipeline tool ✅ (Rake CLI dry-run, 2026-05-24); 👤 залишається real `STM32_Programmer_CLI` execution на STM32WLE5JC bench — **P0**
 3. **FW.2** — AES-128-CCM [post-ARCH.42] (вирішує одразу: ECB→CCM, MIC, FW.23 OTA auth, SEC.10 panic auth, FW.29 disambiguation) — **P0**
 4. **SEC.1** — Gnosis Safe multisig для `DEFAULT_ADMIN_ROLE` SCC/SFC до mainnet — **P0**
-5. ✅ ~~**ARCH.42**~~ — DECIDED 2026-05-23 (Variant B: AES-128 LoRa + ATECC608B SE; CoAP залишається AES-256). SSOT-патч виконано. Code-side firmware/Ruby rollout — see ARCH.42 row деталі
 
 ### Перед production-запуском Web3 mintingу
-6. **S1.1** — заповнити GitHub Secrets (`DATABASE_PASSWORD`, `GCP_SA_KEY`, `SSH_PRIVATE_KEY`, ...) — **P0**
-7. **E.45 / S3.5** — підставити реальну адресу SCC/SFC у `subgraph.yaml` — **P0**
-8. **E.47** — встановити `SOLANA_RPC_URL` mainnet (інакше Devnet за замовчуванням) — **P0**
-9. ✅ ~~**S6.12**~~ — аудит `TokenomicsEvaluatorWorker` оракул-guards bypass — **виконано** (аудит + spec coverage + документація завершено)
-10. **INF.4 + INF.6** — TLS termination + CoAP Proxy verification на Akash ingress — **P1**
+5. **S1.1** — заповнити GitHub Secrets (`DATABASE_PASSWORD`, `GCP_SA_KEY`, `SSH_PRIVATE_KEY`, ...) — **P0**
+6. **E.45 / S3.5** — підставити реальну адресу SCC/SFC у `subgraph.yaml` — **P0**
+7. **E.47** — встановити `SOLANA_RPC_URL` mainnet (інакше Devnet за замовчуванням) — **P0**
+8. **INF.4 + INF.6** — TLS termination + CoAP Proxy verification на Akash ingress — **P1**
 
 ### Парк аналітики/спостережуваності перед першим Akash deploy
-11. **S2.1 + S2.2 + S2.3** — Grafana Cloud dashboards & alerts після першого `/metrics` пуш — **P0** (ops)
-12. ✅ ~~**S5.2**~~ — `RELEASE_VERSION` ENV додано у Kamal/Akash/CI config — **реалізовано** (залишилось: 👤 верифікувати Sentry release tracking після першого деплою)
+9. **S2.1 + S2.2 + S2.3** — Grafana Cloud dashboards & alerts після першого `/metrics` пуш — **P0** (ops)
 
 ### Лабораторно-критичний шлях (TRL 4→6 hardware)
-13. **HW.24** — Staged validation gate (SLA → Ti-coin → full anchor) — **P0** (блокує замовлення 100 шт. DMLS до проходження попередніх етапів)
-14. **HW.23** — HIP postprocess specification for SLM anode — **P0** (блокує перший SLM-замовлення)
-15. **HW.22** — Sterilization protocol (no EtO) — **P1** (блокує перехід до Stage 4 польових тестів)
-16. **HW.7** — BQ25570 VBAT_OV резистори: виміряти і замінити SMD якщо мисматч — **P1** (блокує PCBA freeze)
-17. **HW.13 / ARCH.29-MPPT** — P-V крива EBFC + перейти з 50% VOC на 65% — **P1**
-18. **HW.3** — 12-тижневий Arrhenius accelerated aging тест (синтетичний ксилемний сік) — **P1** (блокує seed)
-19. **HW.25** — PTFE-GDL membrane для катода (Zone 3) — **P1** (блокує EBFC у новій тризонній архітектурі)
+10. **HW.24** — Staged validation gate (SLA → Ti-coin → full anchor) — **P0** (блокує замовлення 100 шт. DMLS до проходження попередніх етапів)
+11. **HW.23** — HIP postprocess specification for SLM anode — **P0** (блокує перший SLM-замовлення)
+12. **HW.22** — Sterilization protocol (no EtO) — **P1** (блокує перехід до Stage 4 польових тестів)
+13. **HW.7** — BQ25570 VBAT_OV резистори: виміряти і замінити SMD якщо мисматч — **P1** (блокує PCBA freeze)
+14. **HW.13 / ARCH.29-MPPT** — P-V крива EBFC + перейти з 50% VOC на 65% — **P1**
+15. **HW.3** — 12-тижневий Arrhenius accelerated aging тест (синтетичний ксилемний сік) — **P1** (блокує seed)
+16. **HW.25** — PTFE-GDL membrane для катода (Zone 3) — **P1** (блокує EBFC у новій тризонній архітектурі)
 
 ### Академічний critical path
-20. **UNI.1** — Перша зустріч з деканом Онищенком (ChNU FOTIUS) — **P0** (блокує всі публікації Q1)
-21. **UNI.8** — Перший контакт з ректоратом СЄУ — **P0** (блокує MSA / B2B legal)
-22. **UNI.13 / UNI.14** — Верифікувати посади науковців ЧМА і СЄУ через офіційні сайти — **P0**
+17. **UNI.1** — Перша зустріч з деканом Онищенком (ChNU FOTIUS) — **P0** (блокує всі публікації Q1)
+18. **UNI.8** — Перший контакт з ректоратом СЄУ — **P0** (блокує MSA / B2B legal)
+19. **UNI.13 / UNI.14** — Верифікувати посади науковців ЧМА і СЄУ через офіційні сайти — **P0**
 
 ---
 
@@ -165,14 +151,6 @@
 - [x] 🤖 Архітектурний дизайн task assignment — ✅ `04_02` §Forester Guild (2026-05-13)
 - [ ] 🔗 Зв'язати з Forester Guild PoPhW (E.20)
 
-#### S6.12 — TokenomicsEvaluatorWorker: oracle-guards bypass для не-oracle flow
-- **P1** | `04_02` §4.2.2 (BlockchainMintingService) | **Складність: M** | **🤖 Аудит**
-- **Опис:** Документація явно заявляє: «Guards (`verified_by_iotex?`, `oracle_status_fulfilled?`, `hadron_kyc_status=="approved"`) активні лише при `telemetry_log` (oracle-driven flow); tokenomics flow працює без прямої прив'язки до log — growth_points вже верифіковані pipeline'ом». **Ризик:** якщо `TokenomicsEvaluatorWorker` довіряє upstream pipeline без власної перевірки, можливе мінтінг неверифікованих growth_points при пошкодженні pipeline upstream
-- **Статус (✅ виконано):** Audit виконано: `TokenomicsEvaluatorWorker → EvaluateTreeBatchWorker → wallet.lock_and_mint!` створює `BlockchainTransaction(:pending)`, який потім `MintCarbonCoinWorker#process_batch` передає у `BlockchainMintingService.call_batch(ids)` БЕЗ `telemetry_log:`. Виявлено: фактичний upstream perimeter — це **AES-256-CBC decrypt + `valid_sensor_data?`** у `TelemetryUnpackerService`, а **не** повний oracle pipeline (IoTeX/Chainlink виконуються async і незалежно для Path 1). **Hadron KYC — єдиний обов'язковий guard для всіх шляхів** (Path 1, Path 2, Path 3, Path 5). Документація уточнена у двох місцях: `04_02` (BlockchainMintingService row — деталізація `[BLOCKER-11 / S6.12]` з перерахуванням guards per-path) та `05_02` (PATH 2 callout розгорнуто з фактичним інваріантом + залишковий ризик AES-key compromise + mitigation track FW.1/FW.2/SEC.3). Spec coverage: `spec/services/blockchain_minting_service_spec.rb` → context "tokenomics flow without telemetry_log [S6.12]" (3 examples: skip oracle guards / enforce KYC pending / enforce KYC rejected).
-- [x] 🤖 Code audit: `TokenomicsEvaluatorWorker` довіряє upstream (per-packet AES + sensor validation), Hadron KYC enforced незалежно
-- [x] 🤖 Документувати фактичний інваріант: «всі шляхи до `Wallet#lock_and_mint!` повинні мати Hadron KYC guard; oracle-guards активні лише в Path 1 (per-telemetry); growth_points perimeter — AES decrypt у `TelemetryUnpackerService`»
-- [x] 🤖 Spec coverage: tokenomics flow з KYC `pending` / `rejected` → expect raise `Compliance Breach`
-
 #### S6.14 — peaq_signing_key: відсутня rotation policy
 - **P2** | `04_02` §4.2.2 (GeneratePeaqDidService, BLOCKER-08) | **Складність: M** | **🤖 Архітектура + Док**
 - **Опис:** `peaq_signing_key` — обов'язковий (W3C DID compliance), raise `RegistrationError` при відсутності. Але немає процесу для: (1) ротації ключа без зламу існуючих DID, (2) emergency revocation при компрометації, (3) синхронізації між staging/production
@@ -205,16 +183,6 @@
 - [ ] 👤 Після першого деплою canopy: `kamal app exec -i 'ss -tlnp | grep 3000'` — очікуємо `tcp6 LISTEN [::]:3000`
 - [ ] 👤 `curl -fsS http://127.0.0.1:3000/up` і `curl -fsS http://[::1]:3000/up` — обидва 200
 - [ ] 👤 Задокументувати результат у `06_05_Puma_Configuration` (IPv6 runbook section)
-
-#### PUMA-RACK-1 — Idempotency-Key write поза response path
-- **Low** | `06_05` | **Складність: S** | **🤖 Код** — актуально при planetary scale
-- **Опис:** `actuators#execute` зберігає Idempotency-Key через `Rails.cache.write(..., expires_in: 24.hours)` у Solid Cache (PostgreSQL). Виклик ~1-2ms додає latency до відповіді. `rack.response_finished` callback (Puma 7.0+) дозволяє виконати write ПІСЛЯ flush response до клієнта. Поточний 1-2ms не блокер (TRL 6–8), але при мільйонах актуаторних команд/добу — значуща економія latency p50.
-- **Статус:** ✅ Виконано. `Rails.cache.write` переміщено у `rack.response_finished` callback (Puma 7.0+). Кеш записується ПІСЛЯ flush response клієнту, зменшуючи p50 latency на ~1-2ms. TTL та логіка незмінні. Spec coverage оновлено.
-- [x] 🤖 Перенести `Rails.cache.write(cache_key, response_body, ...)` в `actuators#execute` на `rack.response_finished` callback: `env["rack.response_finished"] << -> { Rails.cache.write(...) }`
-- [x] 🤖 Верифікувати що TTL та logic незмінні, додати spec coverage
-- 🔗 Залежить від: planetary scale milestone (перегляд при > 1M actuator commands/добу)
-
----
 
 ## 🔧 Firmware
 
@@ -278,16 +246,6 @@
 
 ### 🟠 P1 — Важливі
 
-#### ✅ FW.5 — Lorenz Attractor: β-пертурбація від delta_t/vcap — РЕАЛІЗОВАНО
-- `03_04`, `05_02`
-- **Опис:** Spec: `calculate_state(delta_t, vcap)`, реалізація: `calculate_state(chaos_seed, temp, acoustic)`. Аналіз показав: `chaos_seed` (HRNG) вносить значний випадковий компонент у growth_points — при 250 ітераціях Ейлера Z суттєво залежить від початкових умов. `delta_t` та `vcap` — прямі фізичні індикатори метаболізму дерева.
-- **Статус:** ✅ **Реалізовано (2026-04-30). Варіант B+:** зберегти FW.6 state continuity, chaos_seed тільки для cold-start; `delta_t_s`/`vcap_mv` передаються як soft β-perturbation. Firmware `bio_contract.rb` та backend `SilkenNet::Attractor` оновлені координовано. 500-case parity fuzz: 0 mismatches. `TelemetryUnpackerService` передає `metabolism_s`/`voltage_mv`.
-- [x] 🤖 Математичний аналіз: порівняти variance Z від chaos_seed vs delta_t/vcap після 250 ітерацій
-- [x] 🤖 Архітектурне рішення: замінити chaos_seed на delta_t (Варіант A), додати delta_t/vcap як додаткові пертурбації (Варіант B), або зберегти + EMA фільтр (Варіант C) — **обрано B+**
-- [x] 🤖 Задокументувати рішення в `03_04` з обґрунтуванням впливу на токеноміку
-- [x] 🤖 Реалізувати (firmware mruby + backend mirror update, 500-case fuzz)
-- [x] 🤖 Передавання args[5..6] у C (EMA delta_t_s/vcap_mv з RTC DR10/DR12 у mruby args) — ✅ Виконано (2026-05-02). `firmware/soldier/main.c` біля `mrb_funcall_argv("calculate_state", 7, ...)`: warmup-guard `EMA_Is_Warmed_Up()` → `EMA_Get_DeltaT_Sec()` / `EMA_Get_Vcap_Mv()`; до warmup — нейтральні defaults `60 c` / `3300 mV` (= `BASELINE_DELTA_T_S` / `NOMINAL_VCAP_MV` у `bio_contract.rb`, β-перетурбація = 0). 6 host-тестів у `firmware/test/test_soldier_logic.c` блок `EMA → mruby calculate_state args[5..6]`: cold-boot defaults / warmup-phase defaults / warmed-up forwarding / boundary vcap=5500 / fast charge dt=1 / zero-input после warmup. 130 soldier tests passed, +6 від 124.
-
 #### FW.7 — Float vs BigDecimal divergence (TRL 6 mitigation)
 - `05_02`
 - **Опис:** firmware `8.0/3.0 = 2.6666666666666665` vs backend BigDecimal `2.666666666666666667`
@@ -320,17 +278,6 @@
 - [ ] 🔗 Cluster-wide activation confirmation (ACK від усіх вузлів)
 - [ ] 🔗 Зберігання `K_current` та `rotation_counter` у Flash/RTC Backup Domain
 - [ ] 🔗 Consider ECDH/Curve25519 key exchange при provisioning (альтернатива)
-
-#### FW.18 — Hardcoded confidence threshold 0.80
-- `03_03` BLOCKER-6
-- **Опис:** `if (ml_confidence > 0.80)` hardcoded в Flash. Неможливо remote-tune для різних лісів/сезонів. Немає "warning" рівня (лише binary: alarm / no alarm)
-- **Статус:** 🤖 ✅ Реалізовано (firmware-частина): RTC-storage у `DR13/DR14` + dual-threshold decision logic + Phase 5 writeback + 19 host-tests (44 у TinyML suite, 283 загалом). Hardcoded `0.80` повністю замінено зонами SILENCE/WARNING/CRITICAL з ескалацією. **Уточнення розташування:** оригінальний дизайн вказував `DR6/DR7`, але після FW.21 ці регістри зайняті (`DR6 = mesh_relay_payload[12..15]`, `DR7 = tree_did`); канонічна SSOT-таблиця в `03_01` §2 показує `DR13/DR14` як вільний резерв (єдиний залишок `DR15`). **OTA CMD dispatcher закрито** (2026-05-02) — Soldier-side downlink-CMD-фреймворк реалізовано окремою опкод-картою: `0x9D = CMD_SET_AUDIO_THRESHOLDS` (FW.18) щоб не зіткнутися з `0x9A = CMD_SET_THRESHOLDS` (FW.8 Lorenz Z thresholds). Парсер у `firmware/soldier/main.c` Сценарій 2 + 7 host-тестів (default/CRC/range/inversion/short_frame). Опкод-карта SSOT: `0x99=OTA / 0x9A=Lorenz thresholds / 0x9B=HMAC trailer / 0x9C=TIME_SYNC envelope / 0x9D=audio confidence thresholds`.
-- [x] 🤖 Зберегти threshold у RTC Backup Register (updateable via OTA) — RTC + decision logic + tests + dispatcher (2026-05-02)
-- [x] 🤖 Дизайн dual-threshold: WARNING (0.60) → event counter; CRITICAL (0.85) → Emergency TX
-- [x] 🤖 Реалізація dual-threshold zones з warning_counter ескалацією (3× → fallback Emergency для chainsaw)
-- [x] 🤖 19 host-тестів: 9 zones + 10 validation/RTC roundtrip
-- [x] 🤖 Doc оновлено: `03_03` BLOCKER-6 (DR6/DR7 → DR13/DR14, ✅ partial), `03_01` §2 (RTC map), `04_06` §2.5 (test count 25→44)
-- [x] 🤖 Soldier OTA CMD dispatcher (`CMD_SET_AUDIO_THRESHOLDS` 0x9D) + 7 host-тестів (2026-05-02)
 
 #### FW.19 — Float32 vs Float64 mruby compile flags
 - `03_04` BLOCKER-4
@@ -433,32 +380,6 @@
 - [x] 🤖 Магічна Re-Request Дизайн B — повна імплементація (firmware/soldier + firmware/queen + 22 host-тести) — 2026-05-02
 - [x] 🤖 **Edge cases follow-up (2026-05-03):** 6 додаткових host-тестів — anti-tamper duplicate з іншим payload, STOP2 between OTA chunks (out-of-order + duplicate after sleep), HMAC trailer cross-cycle persistence + idempotent overwrite, total_chunks=0 malformed packet. Деталі: [`03_02 §5.X.5 FW.27 follow-up`](03_02_Queen_Gateway_Firmware). Жодних змін у production firmware — це freeze-contract regression bank.
 
-#### FW.29 — Panic packet (0xFF) vs saturated acoustic_events (255) — disambiguation
-- `03_03` §5.3 | **P1**
-- **Опис:** Panic пакети (chainsaw detection) форматуються з маркером `0xFF` (255). Saturated acoustic_events теж досягає 255 (FW.22 cap). **Без MAC/MIC** Queen не може розрізнити: bit-flip атака може перетворити нормальний пакет з 255 events на panic broadcast → false fire alert. Вирішується разом з FW.2 (CCM MIC), але потребує окремого дизайну на канальному рівні
-- **Статус:** ✅ Виконано. `PANIC_FLAG_BIT` (0x80) додано в біт 7 StatusByte (байт 10). Нормальні пакети маскують біт 7 (`& 0x7F`), panic пакети встановлюють його. StatusByte формат: `[panic:1 | status:2 | growth_points:5]`. 2 unit tests: `test_panic_flag_set_in_emergency_payload`, `test_normal_payload_panic_flag_clear`.
-- [x] 🤖 Дизайн: окреме поле `panic_flag:1 bit` у StatusByte (звільнити 1 біт від growth_points 6→5)
-- [x] 🤖 АБО: panic packets мають окремий destination header byte
-- [x] 🔗 Інтегрувати з FW.2 CCM transition — ✅ Виконано (2026-05-24) як freeze-contract. У 24-байтному CCM пакеті `status_byte` живе у байті 14 (всередині 8-байтного encrypted payload), тож `PANIC_FLAG_BIT` (bit 7) покривається MIC автоматично — bit-flip атака на байт 14 ламає MIC verification на Queen-стороні (підтверджено host-тестом `test_panic_flag_inside_encrypted_payload` у `firmware/test/test_ccm.c`). Активується разом з `#define FW2_CCM_ENABLED 1` після HW bench.
-
-#### FW.29-PACK — StatusByte layout collision з PANIC_FLAG_BIT (silent corruption fix)
-- `firmware/bio_contracts/bio_contract.rb`, `firmware/queen/main.c`, `app/services/telemetry_unpacker_service.rb` | **P1** | 🔗 closure для FW.29
-- **Опис:** SSOT-аудит (2026-05-13) виявив, що FW.29 додав `PANIC_FLAG_BIT = 0x80` у bit 7 StatusByte і нормальні пакети маскують `lora_payload[10] &= ~PANIC_FLAG_BIT`, але `bio_contract.rb` продовжував пакувати `(status << 6) | growth_points` (status у bits 7..6). Bit 7 status'у конфліктував з PANIC_FLAG_BIT mask'ом → backend читав:
-  - `status=2` (anomaly) → `0x80 | gp` → mask → `0x00` → `(0x00 >> 6) = 0` (homeostasis) — **anomaly events silently lost**
-  - `status=3` (tamper) → `0xC0 | gp` → mask → `0x40` → `(0x40 >> 6) = 1` (stress) — **tamper events demoted**
-  - `BIO_STATUS_VM_ERROR=0xFF` (crashed mruby) → mask → `0x7F` → `(0x7F >> 6) = 1` (stress), `gp=63` — **crashed VM мінтить SCC як здорове "stressed" дерево**
-  - Queen CIFO eviction (`firmware/queen/main.c:835`) використовує той самий `>> 6` → anomaly/tamper trees не отримували cache-pressure protection
-- **Документи з canonical layout** (`docs/03_01 §1.6` line 443, `docs/03_05 §FW.2` line 147) уже описували правильний `[PanicFlag:1 | Status:2 | GrowthPoints:5]` — лише код від нього відстав.
-- **Статус:** ✅ Виконано (2026-05-13). Wire format узгоджено з документованим дизайном:
-  - **Firmware mruby (`bio_contract.rb`):** `(status << 5) | growth_points`, gp clamped до 0..31, reward `(50 - dev) / 2` для 5-bit wire space
-  - **Firmware Queen (`main.c`):** `QUEEN_HEALTH_GP_MAX = 31`, sentinel cap, eviction `(payload[10] >> 5) & 0x03`
-  - **Backend ×2 upscale** на unpack: `growth_points: (status_byte & 0x1F) * 2` → stored 0..62 (vs old 0..63, **≤1.6% resolution loss**); `bio_status: (status_byte >> 5) & 0x03`. **Tokenomic invariant збережений** — `Wallet#lock_and_mint!` 10 000-point threshold та emission rate без змін.
-  - **Tests:** 504 firmware host tests + 74 RSpec examples pass. Додано 2 firmware regression guards (`test_bio_anomaly_survives_panic_mask`, `test_status_anomaly_no_panic_bit_collision`, `test_vm_error_byte_0xFF_decodes_as_tamper_after_mask`) + 2 backend regression specs (anomaly/tamper survive PANIC_FLAG_BIT mask).
-  - **Doc cleanup:** `03_01 §11.5` (packing example), `03_02 §6.4` (Queen CIFO + Sentinel cap), `03_04 §4.3/§4.4/§5.2` (formula + bit diagram + verification flow), `05_02` (3 діаграми pipeline + storage layout), `04_02` Solana reward range, `07_02` GP/SCC unit economics, `08_06`/`08_04` cross-refs.
-- [x] 🤖 Firmware fix (3 files: bio_contract.rb, queen/main.c, telemetry_unpacker_service.rb)
-- [x] 🤖 Test updates (3 firmware test files + 1 RSpec) + 5 нових regression guards
-- [x] 🤖 SSOT cross-doc audit + cleanup (8 documents)
-
 #### FW.30 — SEC.11 C-bridge gap: `firmware/soldier/main.c` mruby виклик не оновлено
 - `firmware/soldier/main.c:685-740`, `firmware/bio_contracts/bio_contract.rb` | **P1** | 🔗 Блокує FW.5 B+
 - **Опис:** SEC.11 cutover змінив API `bio_contract.rb` (видалено `calculate_state_continued` і старий 3-arg `calculate_state(seed, ...)`; залишена лише єдина сигнатура `calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)`). Проте `firmware/soldier/main.c` **не було оновлено** разом з mruby-скриптом:
@@ -496,16 +417,6 @@
 - [ ] 🔗 Активація: викликати `Fauna_Should_Sample()` всередині fauna-pathway після FW.4 uncomment
 - [ ] 🤖 Прометей метрика + Grafana panel "Fauna skip rate per cluster" — після FW.4 (метрика без даних = шум)
 
-#### FW.43 — 03_05 §3.1 SSOT drift (привид hardcoded AES-key після FW.1)
-- `docs/03_05_Hardware_Symmetric_Crypto_and_Security.md` §3.1 | **P3**
-- **Опис:** Hot-fix doc-only. FW.1 (Per-device HKDF provisioning) вже реалізовано — `Load_AES_Key()` зчитує унікальний ключ з Protected Flash. Проте §3.1 досі описує "ідентичний на ВСІХ вузлах" + hardcoded `uint32_t aes_key[8] = { 0xXXXXXXXX, ... }`. Це SSOT-drift, який вводить в оману нових інженерів.
-- [x] 🤖 Замінити блок §3.1 на актуальний (`uint32_t aes_key[8] = {0};` + посилання на `Load_AES_Key()` у §3.4а HKDF derivation) — ✅ BLOCKER-1 оновлено до `✅ Firmware CLOSED (FW.1)`, historical code анотовано, status table виправлено (2026-05-17)
-- [x] 🤖 Прибрати фразу "Ідентичний на ВСІХ вузлах мережі" — поточна архітектура per-device unique через HKDF — ✅ header змінено на `✅ BLOCKER-1: ... Firmware CLOSED`; historical блок чітко анотований `[PRE-FW.1 HISTORICAL]` (2026-05-17)
-- [x] 🤖 **Розширено scope (2026-05-17):** Той самий SSOT-drift виправлено у `03_01 BLOCKER-1` + `03_02 BLOCKER-1` + status tables (03_01, 03_02, 03_05 §10) + `03_05 §9 Resources` (provisioning endpoint `Майбутній` → `✅ Реалізовано`) + `03_02 §BLOCKER-7 Footer` (IV reuse mitigation note) + `03_02 §13 Cross-ref` (Factory Flashing row) + `CLAUDE.md §12 HW-AES-KEY`. Усі посилання cross-ref на новий `03_05 §3.4г`.
-- [x] 🤖 **Cleanup tail (2026-05-17 v2):** Доаудит — `03_05 §1.1/1.2 MX_CRYP_Init` коментарі `// Вказівник на hardcoded ключ у Flash` (Soldier + Queen) оновлено до `Per-device HKDF-derived key (RAM mirror, populated by Load_AES_Key() at boot — see §3.4а)`. `03_05 §1.1 параметри ключа` таблиця: `pKey` примітка з `hardcoded ключа` → `per-device HKDF-derived ключа з Protected Flash Sector через Load_AES_Key() — §3.4а, BLOCKER-1 closed via FW.1`. `03_05 §9 Cross-ref` рядок `03_01 Firmware Lifecycle` — `Hardcoded Key BLOCKER` → `✅ BLOCKER-1 (Hardcoded Key — Firmware CLOSED via FW.1)`. Фінальний sweep `grep -in "hardcoded ключ\|ідентичний.*ВСІХ"` exclude'нувши properly-annotated historical anchors — `0 residue`.
-
----
-
 ## 🧭 Architecture / SSOT-drift fixes (2026-05-16 cross-doc audit)
 
 > Знахідки з рев'ю модулів 00_, 01_, 02_, 03_, 03_05 (інженерний аудит, 2026-05-16). Слоти ARCH.39–ARCH.42 зарезервовано під цей патч-комплект.
@@ -534,27 +445,6 @@
 - [x] 🤖 (A) Реалізувати `compute_server_z` retry logic + `time_unsynced_fallback` колонка — ✅ Виконано (2026-05-17). `TelemetryUnpackerService#try_time_sync_recovery` + `FIRMWARE_RTC_DEFAULT_EPOCH_DAY=10_951`. Колонка `time_unsynced_fallback boolean NOT NULL DEFAULT false` squash'нута в `db/structure.sql` (parent + 7 partitions, O(1) PG16). 9 нових spec examples. Документовано: `04_01` (TelemetryLog fields), `04_02` (ARCH.41 fallback row).
 - [x] 🤖 (A) Trigger CMD_TIME_SYNC downlink — ✅ Виконано (2026-05-17). `TimeSyncDownlinkWorker` (queue: downlink, retry: 2). Envelope-only CoAP: `coap_encrypt("".b, key)` → Queen `Handle_CoAP_Command` line 1203-1204 → `inner_aligned==0` → `return` після `Apply_Server_Time`. Endpoint: `/cmd/time_sync`.
 - [ ] 🔗 (B/C) Розглянути після стабілізації (A) — потребують координованого firmware rollout
-
-#### ✅ ARCH.42 — ATECC608B AES-128 vs system AES-256 — DECIDED (Variant B, 2026-05-23)
-- `docs/03_05_Hardware_Symmetric_Crypto_and_Security.md` §3.7 | **P1** → **✅ Resolved**
-- **Опис:** §3.7 пропонує мапінг Slot 0 → "AES-128 key", але початкова Gaia 2.0 архітектура використовувала AES-256 (`CRYP_KEYSIZE_256B`). ATECC608B апаратно підтримує лише AES-128 → конфлікт.
-- **Рішення (2026-05-23 — Variant B обрано):** **Даунгрейд LoRa-каналу до AES-128-CCM**. CoAP-магістраль (Queen↔Rails) залишається на AES-256-CBC. Per-channel domain separation у HKDF info-strings.
-- **Обґрунтування:** (i) AES-128 — золотий стандарт constrained IoT (LoRaWAN/Helium/Sigfox/Thread/BLE/Zigbee нативно AES-128); (ii) BOM saving $2.40-3.25/unit × million-tree fleet = $2.4–3.25M; (iii) DPA/EM-захист SE збережено (ключ ніколи не покидає кремній ATECC608B Slot 0); (iv) post-Grover margin компенсується `[FW.17]` Hash Ratchet KDF + §11 PQC roadmap.
-- **Cross-ref:** SEC.6 (Secure Element integration) — узгоджено з ARCH.42 Variant B. §11 PQC Migration Roadmap у `03_05`.
-- **SSOT-патч виконано (2026-05-23):**
-  - [x] 🤖 docs/03_05 повністю переписано (status table, BLOCKER-2, §1, §2.1, §2.4, §3.1, §3.2, §3.4а, §3.7, §10) + новий §11 PQC roadmap
-  - [x] 🤖 docs/00_08 ARCH.42 + FW.2 оновлено (цей рядок + FW.2 нижче)
-  - [x] 🤖 docs/03_01, 03_02, 04_01, 04_02, 05_02, 02_05, 02_01, 06_01, 08_02, 08_03 surgical update — LoRa AES-256→AES-128
-  - [x] 🤖 CLAUDE.md §1, §3 AES table, §4 HardwareKey, §12 BLOCKER table — оновлено
-  - [x] 🤖 README.md + docs/00_00 SSOT index — оновлено описи та посилання
-  - [x] 🤖 Файл `03_05_Hardware_AES256_and_Security.md` → `03_05_Hardware_Symmetric_Crypto_and_Security.md` (git mv + всі internal links оновлено)
-- **Code-side TODO (виносяться як окремі підзадачі — FW + Ruby):**
-  - [x] 🤖 **FW (firmware C):** `firmware/soldier/main.c` + `firmware/queen/main.c` — `CRYP_KEYSIZE_256B → CRYP_KEYSIZE_128B` (MX_CRYP_Init для LoRa); `aes_key[8] → aes_key[4]` (16 bytes); `FLASH_KEY_WORDS 8 → 4`; magic `"SKEY" (0x534B4559) → "KEYL" (0x4B45594C)`; Queen додатково тримає `coap_key[8]` (32 bytes) для CoAP CBC, окремий MX_CRYP re-init на `CRYP_KEYSIZE_256B` під час `Flush_Cache_To_Rails()` + `Handle_CoAP_Command` + `Restore_ECB_Mode()` повертає LoRa context (KeySize=128B + pKey=aes_key + ECB). ✅ Виконано (commits `419f473` + `338afa5`)
-  - [x] 🤖 **FW tests:** `firmware/test/hal_mock.h` (CRYP_KEYSIZE_128B + CRYP_AES_CCM constants), `test_encryption.c` (test_aes_key[4] + CRYP_KEYSIZE_128B init у обох test scenarios), `test_soldier_logic.c` (FLASH_KEY_WORDS=4, magic 0x4B45594CUL, перейменовано `*_preserves_8_words → *_preserves_4_words`), `test_queen_logic.c` (те саме + Queen test fixtures). ✅ Виконано (commits `419f473` + `338afa5`). Всі host-тести зелені (135 queen + 260 soldier + 21 encryption)
-  - [x] 🤖 **Backend Ruby:** `app/models/hardware_key.rb` — `ALLOWED_AES_HEX_LENGTHS = [32, 64].freeze` + `aes_key_length_in_allowed_set` + `aes_key_length_matches_owner_type` (detect_owner_kind через association/Tree/Gateway exists?); `app/services/hardware_key_service.rb` — `derive_lora_key` (16B, info `silken-aes-128-lora-key`) + `derive_device_key` (32B, info `silken-aes-256-device-key`) + `derive_iotex_seed` (32B, info `silken-ed25519-iotex-v1` — закриває key-reuse antipattern в Iotex W3bstream); `app/services/security/weak_key_detector.rb` — prefix-match logic (рядок 174-175) `bytes.byteslice(0, vector.bytesize) == vector` покриває обидва 16B та 32B perspectives без додаткових entries; `app/services/ota_hmac_key_service.rb` — domain-separation коментар оновлено (LoRa AES-128 + CoAP AES-256); `app/services/iotex/w3bstream_verification_service.rb` — Ed25519 sign тепер бере окремий iotex_seed_hex (FIX: Tree binary_key = 16B < Ed25519 32B вимога); `spec/factories/hardware_keys.rb` — traits `:for_tree` (hex(16)) / `:for_gateway` (hex(32)); `spec/services/telemetry_unpacker_service_spec.rb`, `spec/services/iotex/w3bstream_verification_service_spec.rb`, `spec/views/components/trees/show_spec.rb` — fixture/assertion updates; `db/seeds.rb` — Tree rows `hex(16)`, Gateway rows `hex(32)`. ✅ Виконано (commits `419f473` + `338afa5`). Full suite: 6319 examples, 0 failures
-- [x] 🔗 Розблоковує: SEC.6 (Secure Element integration), BOM freeze з ATECC608B — ✅ Архітектурно розблоковано (ATECC608B Slot 0 AES-128 узгоджено з LoRa channel). Hardware-side integration залишається в SEC.6 row
-
----
 
 ## 🧪 Hardware / Lab
 
@@ -958,17 +848,6 @@
 - [ ] 👤 Додати Hamlin 59140-1-T-00-A reed switch + N52 neodymium magnet до BOM
 - [ ] 👤 Оновити KiCad schematic
 
-#### SEC.6 — Secure Element (ATECC608B) не використовується
-- **Джерело:** `03_05` | Firmware architecture
-- **Опис:** AES-256 ключ зберігається у plain Flash STM32 (навіть з RDP Level 1 — key extraction можливий через glitching/side-channel). ATECC608B забезпечує hardware-protected key storage з tamper-detection. Ціна ~$0.60/unit
-- **Пріоритет:** P2 (Post-TRL 7, перед mass production >1000 units)
-- **✅ Cross-ref ARCH.42 (2026-05-23):** ATECC608B вибір розблоковано — **Variant B** обрано (LoRa channel = AES-128 узгоджено з ATECC608B Slot 0 SE constraint). CoAP магістраль залишається AES-256-CBC у MCU (без SE involvement). Тепер SEC.6 hardware integration може стартувати без архітектурного blocker'а.
-- **Статус:** 🤖 ✅ Інтеграційна оцінка ATECC608B з STM32WLE5JC задокументована в `03_05` §3.7 «ATECC608B Secure Element — оцінка інтеграції»: I²C interface (PB6/PB7), slot mapping (slot 0=AES, 1=ECC priv, 2=cert, 3=HMAC OTA), latency impact (~1.5 мс/блок vs 10 µs HAL_CRYP — нехтовно), power impact (+0.1% energy budget), Factory Flashing pipeline з ATECC, альтернатива STSAFE-A110 (native CubeMX, переважна для unified ST toolchain), OPTIGA Trust M (overkill), NXP A71CH (EOL — уникати). Firmware HAL drop-in API окреслено. Factory Flashing pipeline §3.4 оновлено (2026-05-13) з Гілкою B що включає повний I²C provisioning sequence, `(device_uid, atecc_serial)` pinning (tamper-detect chip swap), slot write послідовність та dual lock strategy.
-- [x] 🤖 Оцінити ATECC608B integration з STM32WLE5JC (I²C interface)
-- [x] 🤖 Дизайн key storage: ATECC608B slot 0 = AES key, slot 1 = device certificate
-- [x] 🤖 Оновити Factory Flashing pipeline (SEC.3) для ATECC608B provisioning — ✅ Виконано (2026-05-13). `03_05` §3.4 містить повну Гілку B з ATECC608B/STSAFE-A110: I²C provisioning sequence (7 steps), (device_uid, atecc_serial) pinning для chip-swap tamper detection, slot mapping cross-ref до §3.7, irreversibility note, decision matrix pilot/1-10k/>10k/regulated
-- [x] 🤖 Оцінити альтернативи: STSAFE-A110 (ST ecosystem), Infineon OPTIGA Trust M
-
 #### SEC.7 — OTA image автентифікація (cross-ref FW.23)
 - **Джерело:** `03_05`, `03_02`
 - **Опис:** OTA broadcast (mruby bytecode та потенційно firmware updates) не має цифрового підпису. Пов'язано з FW.23 але виділено як окремий security item через критичність.
@@ -987,42 +866,6 @@
 - [x] 🤖 Верифікувати що новий master key НЕ є жодним відомим test vector (FIPS-197, NIST, RFC) — автоматичний boot-time guard, див. статус вище
 - [ ] 👤 Задокументувати процес генерації нового master key у vault (Bitwarden/1Password) — **без коміту ключа в репозиторій**
 - [ ] 👤 Після заміни: re-flash всі існуючі прототипи
-
-#### SEC.10 — Emergency TX пакети без MAC/MIC автентифікації
-- **Джерело:** `03_05`, `03_02` | **Пріоритет: P1**
-- **Опис:** EwsAlert panic packets (chainsaw detection, PANIC_TTL=5) відправляються без жодної автентифікації. Зловмисник може: (1) replay легітимний panic packet → false forest fire alert → евакуація/паніка, (2) inject forged panic packets → множинні false alarms → недовіра до системи та страхових виплат
-- **Важливо:** Критичніше за звичайні пакети — emergency TX обходить звичайні rate limits. Вирішується разом з FW.2 (AES-128-CCM), але потребує окремої уваги через life-safety implications
-- [x] 🤖 Не відкладати вирішення на "після FW.2" — мінімальний fix: Frame Counter у RTC як anti-replay для panic packets
-- [x] 🔗 Верифікувати що `EwsAlert` broadcast застосовує той самий CCM MIC що і звичайні пакети (після FW.2) — ✅ Виконано (2026-05-24) як freeze-contract. CCM 24B packet format однаковий для нормальних та panic-фреймів — `PANIC_FLAG_BIT` живе у `status_byte` (байт 14, всередині encrypted payload), покривається MIC. Після `#define FW2_CCM_ENABLED 1` транзитивний DR0[31:16] `panic_frame_counter` стає рудиментарним (DR15 CCM FC subsumes anti-replay для ALL packets). До flip — DR0[31:16] залишається активним.
-- [x] Backend: rate limiting на emergency callbacks — не більше N panic alerts/хвилину від одного DID
-- **Статус (Frame Counter anti-replay, 2026-05-03):** ✅ **Реалізовано як життєво-безпекова сторожа панічного каналу до приходу повного FW.2 CCM.**
-  - **Firmware (Soldier):** `panic_frame_counter` (uint16, monotonic + saturating @ 0xFFFF) пакується у `RTC_BKP_DR0[31:16]` поряд з `acoustic_events` у `DR0[7:0]` — **без використання нових RTC слотів** (DR15 залишається вільним для майбутніх фічей). Cold-boot resync через HRNG (range 0x0001..0xFFFF) уникає колізії з ще-не-протухлими nonce-ключами Redis попереднього втілення. Counter інкрементується перед кожним `Trigger_Emergency_LoRa_TX`, пакується BE у `panic_payload[14..15]` (вільні PAD-байти), персистується у DR0 НЕГАЙНО + при Phase 5 + при PVD-брауноуті (ARCH.21 callback теж збергіає packed DR0).
-  - **Backend:** `TelemetryUnpackerService` детектує panic через `status_byte & 0x80` (FW.29 PANIC_FLAG_BIT), читає counter з `pad_data[2..3].unpack1("n")`, виконує SETNX через `Rails.cache.write(unless_exist: true)` з ключем `silken:panic:nonce:{hex_did}:{counter}` і TTL 25 годин. При replay → log warning + Prometheus increment + early return (TelemetryLog НЕ створюється, AlertDispatchService не викликається). Counter==0 (legacy firmware без SEC.10) пропускає перевірку, бо існує rate-limit на AlertDispatchService рівні (вже існував).
-  - **Метрики:** новий Prometheus counter `silkennet_panic_replay_rejected_total` (`SilkenNet::Metrics::PANIC_REPLAY_REJECTED_TOTAL`) — Grafana alert при різкому стрибку = можлива spoofing-атака.
-  - **Тести:** 13 host-тестів firmware (`test_sec10_*` у `test_soldier_logic.c`: DR0 packing roundtrip, BE counter encoding, saturate @ 0xFFFF, cold-boot HRNG reseed, warm-boot preserve, two-panic distinct nonces, no-overlap with DID/PANIC_FLAG/firmware_id) + 8 backend rspec у `spec/services/telemetry_unpacker_service_spec.rb` (fresh accept, replay reject, distinct counters accepted, distinct DIDs accepted, non-panic skip, legacy counter=0 skip, FW.22 firmware_id coexistence, TTL guard ≈ 25h).
-  - **DR map оптимізація:** замість претендування на новий регістр (DR15 був останнім вільним), packing у DR0 економить дефіцитний ресурс RTC Backup Domain — критично для майбутніх ARCH.21 brownout state extensions.
-
-#### SEC.11 — Lorenz Seed Provenance (Dual Computation Integrity hardening) — **✅ DONE**
-- **Джерело:** `03_04` BLOCKER-1 cross-ref, `03_05` §3.4а K_seed | **Пріоритет: P1** | **Закрито:** 2026-05-02 (PR `copilot/update-documents-and-tests`)
-- **Опис (історичний):** Firmware mruby `bio_contract.rb` стартував атрактор з `(x₀,y₀,z₀)` виведених із `chaos_seed = HRNG()` (Soldier-side) і `DID` (server-side mirror). DID їде відкритим текстом у заголовку LoRa-пакета (`[DID:4]`, поза AES-блоком). Чотири фундаментальні вади: (1) публічний seed → атакер з open-source формулою Лоренца обчислює очікуваний Z для будь-якого дерева → підробляє телеметрію з валідним StatusByte, `check_z_divergence!` мовчить; (2) сусідні DID видаються послідовно → перші ~30 ітерацій Ейлера дають майже ідентичні траєкторії (знижена статистична ентропія); (3) семантична помилка категорій — DID *identifier*, не *key*; (4) відсутність forward secrecy.
-- **Прийнятий дизайн (гібрид A + B + D):** `K_seed = HKDF-SHA256(PROVISIONING_MASTER_KEY, salt="silken-lorenz-v1", info="silken-lorenz-seed|<DID>", len=32)`, виведений при provisioning, збережений в `hardware_keys.lorenz_seed_hex` (AR Encryption non-deterministic) і в Soldier Flash. Daily epoch rotation: `(x₀,y₀,z₀) = unpack_signed_unit_floats(HMAC-SHA256(K_seed, "init|" || epoch_day_be)[0..23])` — forward secrecy ≤ 24 год, синхронізовано через FW.20 `CMD_TIME_SYNC`. Cold-start derive відбувається лише після VBAT loss (рідкісна подія); у норму FW.6 RTC continuation (DR16-DR18 magic `"LZST"`) пропускає re-init. Документація — у §03_04 §2.1 (entry-point), §03_05 §3.4а (HKDF info-string), §04_01 (HardwareKey + TelemetryLog колонки), §04_02 (`SilkenNet::SeedDerivation`), §04_03 (provisioning контракт), §05_02 (DCI pipeline).
-- **Ефект на DCI:** обидві сторони стартують з byte-identical `(x₀,y₀,z₀)`. Float divergence між ARM та x86 IEEE-754 за 250 ітерацій < 1e-12 (емпірично, FW.7 closure). `check_z_divergence!` зберігає категоричну невідповідність і отримує hook для числового tolerance band — flip під feature-flag після інструментального вимірювання реального drift.
-- **Hard-cutover deliverables (pre-prod, без shim'ів):**
-  - [x] 🤖 Schema migration `db/migrate/20260502090000_add_lorenz_seed_provenance_columns.rb` — `hardware_keys.lorenz_seed_hex` (RANGE-partitioned `telemetry_logs` отримує `lorenz_state_x/y/z` + `cold_start_flag` через DDL на parent + всі live partitions)
-  - [x] 🤖 `SilkenNet::SeedDerivation` (HKDF-SHA256 + HMAC-SHA256 + signed-unit-float unpack) + 16 examples в `spec/services/silken_net/seed_derivation_spec.rb`
-  - [x] 🤖 `HardwareKey#binary_lorenz_seed` (AR Encryption non-deterministic, як `binary_key`); `lorenz_seed_hex` validated `presence: true`
-  - [x] 🤖 `Attractor.calculate_z_from_state(x0, y0, z0, σ, ρ, β, n)` — sole entry-point; legacy `calculate_z(chaos_seed, ...)` та `calculate_z_continued` ВИДАЛЕНО (не deprecated — hard cutover)
-  - [x] 🤖 `TelemetryUnpackerService` — single K_seed-derived path; raises `MissingLorenzSeedError` при відсутньому K_seed; persist `lorenz_state_x/y/z` + `cold_start_flag` на кожному uplink; chaining continuation з попереднього `TelemetryLog` tail
-  - [x] 🤖 `HardwareKeyService.provision` — деривує AES key + K_seed одним викликом (single source of truth); raises `SecurityError` без `PROVISIONING_MASTER_KEY` (no SecureRandom fallback ANYWHERE — навіть у dev/test, тести pin-ять `PROVISIONING_MASTER_KEY` в `spec/rails_helper.rb`)
-  - [x] 🤖 `ProvisioningController#register` — НІКОЛИ не повертає `aes_key`/`lorenz_seed`/`warning` (Zero-Trust)
-  - [x] 🔥 Firmware `bio_contracts/bio_contract.rb` — sole entry-point `calculate_state(x_prev, y_prev, z_prev, …)`; chaos_seed і всі legacy сигнатури видалено
-  - [x] 🔥 `firmware/test/test_bio_contract.c` — нова сигнатура `calculate_z_axis(x, y, z, …)`; `seed_to_xyz()` test helper для детермінованих фікстур
-  - [x] 🔥 `firmware/test/test_seed_derivation.c` — host-based parity test (OpenSSL HKDF/HMAC = mbedTLS на MCU), 13 examples
-  - [x] 🤖 `db/seeds.rb` + `spec/factories/hardware_keys.rb` — populate `lorenz_seed_hex`
-  - [x] 🤖 `docs/03_06_Lorenz_Seed_Provenance` — DELETED, контент розподілено в `03_04`/`03_05`/`04_02`/`05_02` (див. вище)
-- **Свідомо НЕ робимо** (pre-prod, no field devices, no prototypes, no firmware in flight): `POST ty6/api/v1/provisioning/upgrade_seed` field-migration endpoint, TRL4 lab-mode response, SecureRandom fallback в `Rails.env != production`.
-
----
 
 ## 📝 Документаційні невідповідності (DOC)
 
@@ -1083,31 +926,6 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - [x] 🤖 Spec/тест: 16 прикладів у `spec/lib/github_bootstrap_spec.rb` з stubbed executor (без потреби живого репо)
 - [ ] 👤 Запустити `bin/bootstrap_github.sh` проти живого Projects V2 при першому setup'і / в новому fork'у
 
-#### OPS.8 — TreeFamily seed drift vs Lorenz attractor SSOT (`db/seeds.rb`)
-- **Джерело:** Cross-doc audit 01_01–01_04 + 03_04 (2026-05-16) | **Пріоритет: P1** (silent — fail-shut, не fail-fast) | **Складність: XS** | **🤖 Код**
-- **Опис:** Рядки 196–212 `db/seeds.rb` сіяли `Pinus sylvestris` з `critical_z_min: -2.5, critical_z_max: 2.5` і `Quercus robur` з `-3.0 .. 3.0`. Ці значення — реліквія impedance-based bio_status моделі до Lorenz cutover'а. Природний Lorenz Z сидить ~9..50 (≈ ρ−1 при ρ_eff ∈ [10, 50]), тож після `db:seed`:
-  - `Tree#effective_lorenz_thresholds` повертав [-2.5, 2.5];
-  - `SilkenNet::Attractor.homeostatic?` повертав `false` для **усіх** Lorenz Z;
-  - `TelemetryUnpackerService#check_z_divergence!` flag'ив fraud на КОЖНОМУ пакеті (device-claim homeostasis vs server-classified anomaly);
-  - `OtaPackagerService` відправляв `CMD_SET_THRESHOLDS [-2.5, 2.5]` → firmware класифікував всі живі дерева як anomaly → growth_points=0 → ніякого мінтингу.
-- **Виправлено (2026-05-16):**
-  - `db/seeds.rb` тепер сіє Pine `5.0 .. 45.0` (`optimal_z_target: 29.0`) і Oak `8.0 .. 40.0` (`optimal_z_target: 24.0`) — узгоджено з `Tree::GLOBAL_LORENZ_Z_MIN/MAX/OPTIMAL` і `spec/factories/tree_families.rb`.
-  - Regression spec `spec/integration/seeded_tree_families_lorenz_alignment_spec.rb` (14 examples) фіксує SSOT: optimal_z_target homeostatic, off-band non-homeostatic, band всередині глобального Lorenz envelope, raw seed source match. Якщо seed колись відкотять — спек впаде голосно.
-  - Production rebaseline rake task НЕ потрібен — підтверджено що seed ніколи не запускався проти живої БД.
-- [x] 🤖 Виправити seeds.rb (Pine + Oak + optimal_z_target)
-- [x] 🤖 Regression spec для catch майбутніх регресій seed
-- [x] 🤖 Перевірити що `spec/models/tree_family_spec.rb`, `spec/integration/cluster_tree_family_spec.rb`, `spec/integration/fw8_threshold_governance_spec.rb` все ще зелені (177/177 ✅)
-- **Cross-ref:** `03_04 §4.1` (Lorenz Decision Table), `04_01 §TreeFamily`, `firmware/bio_contracts/bio_contract.rb:97-99` (firmware-side CRITICAL_Z_*).
-
-#### OPS.7 — Sync labels.yml + Projects V2 fields with 00_07 §4
-- **Джерело:** `00_07` §4 audit (2026-05-16) | **Пріоритет: P2** | **Складність: XS** | **🤖 Код**
-- **Опис:** SSOT audit виявив 3 невідповідності між `00_07 §4`/§1.1 і `.github/labels.yml`: (1) `cluster:cross-cluster` був у Projects V2 R&D Cluster field option, але не у `labels.yml`; (2) `shape:building` та `shape:done` були у Shape Up Stage field options, але не у `labels.yml`; (3) `agent:*` labels у `00_07 §4.4` показувалися з emoji prefix у назві (`agent:🤖 ai`), але `labels.yml` має `agent:ai` без emoji. **Що зроблено (2026-05-16):** додано 3 нові labels (`cluster:cross-cluster`, `shape:building`, `shape:done`) у `labels.yml`; виправлено `00_07 §4.4` emoji rationale (emoji — лише візуальні маркери у 00_08, не у label names); додано mapping table label ↔ Projects V2 field option у §4.3.
-- **Статус:** ✅ Done.
-- [x] 🤖 Додати `cluster:cross-cluster` label у `labels.yml` (color `#F1E05A`)
-- [x] 🤖 Додати `shape:building` (color `#0E8A16`) + `shape:done` (color `#1D76DB`)
-- [x] 🤖 Виправити `00_07 §4.4` emoji rationale
-- [x] 🤖 Додати mapping table label ↔ Projects V2 field у `00_07 §4.3`
-
 #### OPS.5 — EU DMLS quotes від 2-3 backup підрядників
 - **Джерело:** `07_02` §8.1.1 | **Складність: S** | **🔧 Операційна**
 - **Опис:** BIZ.6 ✅ ідентифікував 4 EU кандидати (3D Lab PL, Materialise BE, Sauber CH/Lithoz AT, TRUMPF DE). Наступний крок — отримати quotes на пробну партію 10 шт. для benchmarking + frame agreement letter
@@ -1149,15 +967,6 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - [ ] 👤 Terms of Service draft
 - [ ] 👤 Privacy Policy (GDPR-compliant)
 - [ ] 👤 Cookie Policy
-
-#### BIZ.4 — DAO Governance Process ✅
-- **Джерело:** `07_01`, `05_03`
-- **Опис:** SFC voting mechanism — Governance DAO
-- **Статус:** ✅ Реалізовано (ARCH.4 / E.35 / E.1)
-- [x] SilkenGovernor.sol — OZ Governor + GovernorVotes + GovernorTimelockControl + GovernorCountingSimple + GovernorVotesQuorumFraction (4% quorum, 43200 blocks delay ~1 day, 302400 blocks period ~7 days, 100 SFC threshold)
-- [x] SilkenTimelock.sol — TimelockController (48h min delay)
-- [x] ProtocolParameters.sol — on-chain registry з 13 well-known parameter keys (Lorenz, tokenomics, slashing)
-- [x] Governance::ParameterSyncWorker — queue: web3_low, 1×/day, Eth::Contract + Web3::RpcConnectionPool → SystemParameter
 
 #### BIZ.5 — Patent application
 - **Джерело:** `08_03`
@@ -1543,21 +1352,27 @@ DOC.9 — потребує лабораторного вимірювання TX-
 
 ---
 
-## 📊 TRL Матриця
+## 🗄️ Архів закритих пунктів (мігровано в канон)
 
-| Модуль | TRL | Цільовий | Головний блокер |
-|--------|-----|----------|-----------------|
-| 00 System Architecture | 4 | 9 | Module 01 chemistry |
-| 01 Materials & EBFC | 3 | 6 | Lab tests (ЧНУ) |
-| 02 Hardware & BOM | 4 | 6 | BQ25570, PCB, Pogo, PEEK |
-| 03 Firmware | 6 | 8 | AES key, TinyML, AT blocking |
-| 04 Backend Rails | 8 | 9 | RSpec тести |
-| 05 Web3 Pipeline | 8-9 | 9 | SFC address |
-| 06 DevOps | 7 | 9 | Docker registry, TLS |
-| 07 Business | 5 | 8 | CO₂ methodology, MSA, ToS |
-| 08 University R&D | 2 | 6 | 5-сторонній партнерський фреймворк (ChNU + ChDTU + ChIPB + ChMA + СЄУ) — UNI.4-14 |
-| 09 Project Management | 7 | 9 | OPS.3 R&D portfolio, OPS.4 semester sync |
-| 10 Security | 7 | 9 | SEC.9 master key, ✅ SEC.11 Lorenz seed provenance, Multisig, RDP, Factory (Rails web layer ✅ S6.18) |
+> Повністю завершені пункти, винесені з активного трекера 2026-05-28. Знання — у канонічних доках (стовпець «Канон»); повна історія — у git. Тримаємо лише вказівник для крос-реф цілісності (CLAUDE.md та живі пункти посилаються на ці ID).
+
+| ID | Пункт | Канон |
+|----|-------|-------|
+| ARCH.42 | ATECC608B AES-128 vs AES-256 — DECIDED (Variant B) | `03_05 §3.7` |
+| SEC.6 | ATECC608B Secure Element — оцінка інтеграції | `03_05 §3.7`, §3.4 |
+| SEC.10 | Emergency-TX anti-replay frame counter (DR0 packing) | `03_02`, `03_01 §2` |
+| SEC.11 | Lorenz Seed Provenance (DCI hardening, K_seed HKDF) | `03_04`, `03_05 §3.4а`, `04_02`, `05_02` |
+| FW.5 | Lorenz β-пертурбація від delta_t/vcap (Variant B+) | `03_04`, `05_02` |
+| FW.18 | TinyML confidence threshold (RTC DR13/14 dual-zone) | `03_03`, `03_01 §2`, `04_06` |
+| FW.29 | Panic vs saturated acoustic disambiguation (PANIC_FLAG_BIT) | `03_03 §5.3` |
+| FW.29-PACK | StatusByte layout collision fix (5-bit growth_points) | `03_01 §11.5`, `03_04 §4.3-5.2`, `05_02` |
+| FW.43 | 03_05 §3.1 SSOT drift fix (post-FW.1 hardcoded-key ghost) | `03_05 §3.1/§3.4г` |
+| S6.12 | TokenomicsEvaluator oracle-guards audit (KYC all-paths) | `04_02`, `05_02` |
+| OPS.7 | Sync labels.yml + Projects V2 ↔ 00_07 §4 | `00_07 §4.3/§4.4` |
+| OPS.8 | TreeFamily seed drift vs Lorenz SSOT fix | `03_04 §4.1`, `04_01` |
+| BIZ.4 | DAO Governance (SilkenGovernor + Timelock) | `05_03`, `07_01` |
+| PUMA-RACK-1 | Idempotency write off response path (`rack.response_finished`) | `06_05 §7` |
+| TRL Матриця | Per-module TRL (мігровано з 00_08) | `00_06 §1` |
 
 ---
 
