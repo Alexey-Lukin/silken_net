@@ -253,55 +253,21 @@ O₂ + 4H⁺ + 4e⁻ → 2H₂O   (повне 4-електронне відно�
 #  симуляцію на 10 нс і виведи графік RMSD структури білка — чи денатурує?"
 ```
 
-**Очікувані вихідні артефакти:**
+**Вхідні / SSOT-артефакти** (стабільні input-файли pipeline):
 
 | Шлях | Опис | Рівень |
 |---|---|---|
 | `docs/protocols/ebfc/in_silico/deglycosylate.rb` | Ruby sliding-window імітація PNGase F (N-X-S/T sequons) | L1 |
 | `docs/protocols/ebfc/in_silico/L1_protein_architecture.md` | SSOT-запис L1 рівня + валідаційні метрики | L1 |
-| `docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb` | Канонічний PDB деглікозильованого GcGDH з FAD у активному центрі | L1 |
-| `docs/protocols/ebfc/in_silico/alphafold3/` | Raw AF3 output (5 ranked CIF + summaries + job_request) | L1 |
-| `docs/protocols/ebfc/in_silico/ligands/FAD.sdf` | FAD з AF3-позою та правильними bond orders (для L2) | L2 |
-| `docs/protocols/ebfc/in_silico/ligands/genipin.sdf` | Genipin reference structure (SMILES → 3D) | L2 |
-| `tools/in_silico/cache/gaff_cache.json` | GAFF-2.11 параметри (AM1-BCC charges) для 7 лігандів (FAD, genipin, chitosan, cellobiose, PPy, PVI, SBMA) | L2 |
-| `tools/in_silico/scripts/01_smoke_test_water_box.py` | Engine sanity check — протеїн + water box, 1000 кроків | L2 |
-| `tools/in_silico/scripts/02_parameterize_fad.py` | AF3 PDB + CCD SMILES → FAD.sdf + GAFF cache (≈ 4 хв) | L2 |
-| `tools/in_silico/scripts/03_parameterize_genipin.py` | SMILES → genipin.sdf + GAFF cache (≈ 7 сек) | L2 |
-| `tools/in_silico/scripts/04_parameterize_chitosan.py` | Chitosan trimer (3×GlcN) → GAFF cache | L2 ✅ |
-| `tools/in_silico/scripts/05_parameterize_cnc.py` | Cellobiose (CNC proxy) → GAFF cache | L2 ✅ |
-| `tools/in_silico/scripts/06_parameterize_ppy.py` | PPy pentamer (α,α' 2,5-linked) → GAFF cache | L2 ✅ |
-| `tools/in_silico/scripts/07_parameterize_pvi.py` | PVI trimer (poly(1-vinylimidazole), N3 free for Os) → GAFF cache | L2 ✅ |
-| `tools/in_silico/scripts/08_parameterize_sbma.py` | SBMA monomer (zwitterionic) → GAFF cache | L2 ✅ |
-| `tools/in_silico/scripts/10_genipin_stability_md.py` | L2 baseline: протеїн + FAD + genipin → RMSD | L2 ✅ |
-| `tools/in_silico/scripts/11_full_matrix_md.py` | L2-ext: повна матриця (genipin+chitosan+CNC) → RMSD | L2 ✅ |
-| `tools/in_silico/scripts/12_temperature_sweep_md.py` | L2: full matrix at -10, 5, 25, 40°C → RMSD(T) curve | L2 ⏳ queued |
-| `tools/in_silico/scripts/13_psbma_diffusion_md.py` | L2: glucose diffusion through SBMA slab → D_eff from MSD | L2 ⏳ queued |
-| `tools/in_silico/scripts/20_dft_lumiflavin.py` | FAD/FADH₂ frontier orbitals (B3LYP/6-31G(d)+PCM) | L3 ✅ |
-| `tools/in_silico/scripts/21_dft_os_bipy_complex.py` | Os NH₃ surrogate — superseded by 21b | L3 (superseded) |
-| `tools/in_silico/scripts/21b_dft_os_bpy_full.py` | **Os full [Os(bpy)₂(1-MeIm)Cl]** — π-backbonding included | L3 ✅ |
-| `tools/in_silico/scripts/21c_dft_os_bpy_geomopt.py` | Os complex — geom opt (terminated: Cl flat PES) | L3 ❌ |
-| `tools/in_silico/scripts/21d_dft_os_bpy_wb97xd.py` | **ωB97X/def2-TZVP publication-grade** DFT | L3 ⏳ running |
-| `tools/in_silico/scripts/22_compare_homo_lumo.py` | Marcus cascade aggregator + energy_ladder.png | L3 ✅ |
-| `tools/in_silico/scripts/23_build_zif_clusters.py` | Bimetallic ZIF clusters (Cu/Co/Ce) для катодного DET | L3b ✅ |
-| `tools/in_silico/scripts/24_dft_hopping_integrals.py` | ΔSCF hopping integrals через ZIF → Marcus ET rates | L3b ⏳ |
-| `tools/in_silico/scripts/30_kinetics_delta_t.py` | **L4: MM + Arrhenius → delta_t(glucose, temp)** — BASELINE 60s validated | L4 ✅ |
-| `tools/in_silico/scripts/30b_kinetics_monte_carlo.py` | L4b: Monte Carlo uncertainty (10k samples, 90% CI) | L4 ✅ |
-| `tools/in_silico/scripts/31_eis_impedance_model.py` | L4c: EIS Randles circuit → Nyquist/Bode predictions | L4 ✅ |
-| `tools/in_silico/scripts/14_xylem_sap_sweep_md.py` | L2: stability across 6 tree species (pH 4.2-5.8) | L2 ✅ (2026-05-27, 6/6 stable) |
-| `tools/in_silico/scripts/15_pvi_coverage_md.py` | L2 Gen 2.5+: PVI backbone coverage test (RMSD 1.10 Å — brush safe) | L2 ✅ |
-| `tools/in_silico/scripts/16_strain_cycling_md.py` | HW.3.IS: cyclic ±5% strain (pseudoplastic matrix) | L2/HW ✅ |
-| `tools/in_silico/scripts/27_md_dft_ensemble.py` | L3/L2 bridge: FAD HOMO = -5.589 ± 0.058 eV across 5 MD snapshots → thermally robust | L3 ✅ |
-| `tools/in_silico/scripts/28_electron_tunneling_pathway.py` | L3: Beratan-Onuchic tunneling FAD→THR287, β·d=2.05 | L3 ✅ |
-| `tools/in_silico/scripts/29_dft_reorganization_energy.py` | L3: Nelsen 4-point λ_inner — cross-SP failed (41.5h), literature λ=0.7 eV retained | L3 ❌ |
-| `tools/in_silico/scripts/40_validate_vs_experiment.py` | **Ti-coin Stage 2: in-silico vs experiment comparison** | Validation ✅ (ready) |
-| `tools/in_silico/scripts/50_thermal_stress_lame.py` | HW.3.IS: Lamé thermal stress (safety 9.9×) + Findley creep | HW ✅ |
-| `tools/in_silico/scripts/51_gusak_degradation_model.py` | HW.3: Arrhenius aging + Kirkendall V diffusion + H7/s6 window | HW ✅ |
-| `tools/in_silico/lib/` | Shared modules: constants, geometry, utils, xylem_sap, dft_utils, md_utils | Infra ✅ |
-| `tools/in_silico/tests/test_cache_integrity.py` | 76 pytest tests: ligands, GAFF cache, DFT, kinetics, constants, scripts | QA ✅ |
-| `.github/workflows/in_silico_smoke.yml` | CI gate: script 01 on CPU (path-filtered, cached conda env) | CI ✅ |
+| `docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb` | Канонічний PDB деглікозильованого GcGDH з FAD | L1 |
+| `docs/protocols/ebfc/in_silico/alphafold3/` | Raw AF3 output (5 ranked CIF + summaries) | L1 |
+| `docs/protocols/ebfc/in_silico/ligands/*.sdf` | Reference structures (FAD, genipin, …) для L2 | L2 |
+| `tools/in_silico/cache/gaff_cache.json` | GAFF-2.11 параметри (AM1-BCC) для 7 лігандів | L2 |
 
-> **Pipeline operational dashboard:** [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md) — повний статус, dependency graph, decision matrix.
-> **All results summary:** [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) — single-page report для pitch/publication.
+> 🟢 **Скрипти L1–L4 + HW та їх статус — НЕ дублюються тут** (SSOT-політика, щоб не розсинхронізувати). Канонічні джерела:
+> • **опис кожного скрипта** + час виконання → [`tools/in_silico/README.md`](../tools/in_silico/README.md)
+> • **поточний статус виконання** + dependency graph + decision matrix → [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md)
+> • **результати (числа)** + executive summary для pitch/publication → [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md)
 
 > **Інженерний нюанс L2 (важливо):** Стандартний бандл `amber14-all.xml` (який ми використовуємо) має шаблони для 20 amino acids (із варіантами протонування HID/HIE/HIP, CYX, GLH/ASH + N-/C-caps), нуклеїнових кислот, ліпідів, цукрів і стандартних monoatomic іонів. Але **small-molecule кофакторів** (FAD, NAD, heme, …) і **custom лігандів** (геніпін, Os-полімер, CNC monomer) у бандлі немає → OpenMM падає з `ValueError: No template found for residue N (FAD)` коли `createSystem()` зустрічає такий residue. Тому L2 розбита на два кроки: спочатку lіганди параметризуються через **GAFF-2.11 + AM1-BCC** (скрипти `02_…`, `03_…` — використовують `antechamber`/`sqm` з AmberTools), результат кешується у `gaff_cache.json`. Лише після цього `10_…` запускає повну MD з білком + лігандами + матрицею. Skip cache → ~5 хв на холодний старт; cache hit → секунди. Той самий патерн пізніше повторюється для Os-полімеру та CNC у наступних L2-етапах.
 

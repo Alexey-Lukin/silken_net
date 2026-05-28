@@ -74,7 +74,7 @@ AI-агенти розглядаються як автономні інжене�
 
 Hardware Stream історично був "повільним" потоком (друк металу → лабораторія → in vitro → польові тести). Це **усувається** через два паралельні Code-as-Engineering трекі:
 
-**Трек A — Code-as-Chemistry** (`01_03 §3.4`): AlphaFold 3 + OpenMM + PySCF + scipy/numpy для EBFC ферментів та матриці. **TRL 3→4 gate PASSED (2026-05-25).** 32 скрипти, 76 тестів, CI gate.
+**Трек A — Code-as-Chemistry** (`01_03 §3.4`): AlphaFold 3 + OpenMM + PySCF + scipy/numpy для EBFC ферментів та матриці. **TRL 3→4 gate PASSED (2026-05-25)** — повний статус і числа: [`PIPELINE_STATUS.md`](../protocols/ebfc/in_silico/PIPELINE_STATUS.md).
 **Трек B — Code-as-CAD** (`01_02 §6 PicoGK`): PicoGK + C# для гіроїдної топології через SDF/вокселі.
 **Трек C — Code-as-Mechanics** (планується): FEA-симуляція напружень Ti+PEEK при +40°C/-30°C через open-source CalculiX або Code_Aster з Python wrapper'ами (закриває питання PEEK creep та механічної цілісності 20-річного horizon'у).
 

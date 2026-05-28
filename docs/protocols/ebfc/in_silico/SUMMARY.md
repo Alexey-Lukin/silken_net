@@ -1,7 +1,9 @@
 # In Silico Pipeline Summary — EBFC Gen 2.0 Zero-Lab Proof
 
-> **Date:** 2026-05-26 | **TRL Gate 3→4:** ✅ PASSED (2026-05-25)
+> **Date:** 2026-05-28 | **TRL Gate 3→4:** ✅ PASSED (2026-05-25)
 > **Purpose:** Computational proof that EBFC Gen 2.0 is thermodynamically viable, mechanically stable, and kinetically functional — BEFORE ordering any Ti-coin prototypes.
+>
+> 🟢 **CANONICAL SOURCE (SSOT).** This file + [`PIPELINE_STATUS.md`](PIPELINE_STATUS.md) are the **single source of truth** for in-silico results (this = results, PIPELINE_STATUS = per-script/operational status). All other docs (01_03, 08_01/03/06, 00_08, READMEs) must **link here, not duplicate numbers**. When a result changes, update here + PIPELINE_STATUS only. Volatile counts (script/test totals) live in PIPELINE_STATUS exclusively.
 
 ---
 

@@ -649,7 +649,7 @@ _«Дослідження акустичних властивостей пори
 
 **Тип зв'язку:** Комплементарний — ЧНУ: теоретична модель (DFT), ЧМА: in vitro валідація, Silken Net: системні вимоги
 
-> **In-silico baseline для Статті 28 (updated 2026-05-28):** Zero-Lab pipeline L1-L4 PASSED. L1: d_FAD = 15.998 Å. L2: full matrix RMSD 1.22 Å (correct genipin); 10ns Rg stable; temp sweep -10°C→25°C ✅; xylem sap 6/6 species ✅ (pH 4.2-5.8); PVI brush RMSD 1.10 Å (script 15). L3: B3LYP corrected Δε ≈ -0.07 eV (best); **ωB97X ✅ COMPLETE** — adiabatic ΔSCF ΔG=+0.884 eV (PCM limit). **Tunneling pathway** (script 28): FAD→THR287, β·d=2.05. **L3b ✅ COMPLETE** (3/3): Cu-Co 2.34×10¹⁰, Co-Ce 1.1×10⁸, Ce-gr 3.07×10¹¹ → total k_DET=1.09×10⁸ s⁻¹. L4: delta_t = 36s, MC 90% CI 14-120s, EIS Rct=130Ω. HW.3.IS: thermal stress safety 9.9× + strain cycling pseudoplastic ✅. HW.3 Гусак: Kirkendall V=1.12 µg/cm²/yr (coatings mandatory), H7/s6 safe -30→+40°C. **L3 caveats:** Nelsen λ (script 29) — cross-SP SCF artifact, **literature λ=0.7 eV retained**; MD→DFT ensemble (script 27) — FAD HOMO stable ≈-5.5 eV across thermal snapshots. **32 scripts**, 76 tests, CI gate. Повний звіт: [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md), [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md).
+> **In-silico baseline для Статті 28:** Zero-Lab L1-L4 PASSED (2026-05-25). Публікаційні headline-claims: L1 **d_FAD=15.998 Å** (MET viable); L3 cascade B3LYP corrected **-0.07 eV** + adiabatic ΔSCF +0.884 eV (ωB97X); L3b **k_DET=1.09×10⁸ s⁻¹**; L4 delta_t=36s. **Повні поточні числа та статус — канонічний [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) + [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md)** (тут не дублюємо, щоб уникнути розсинхрону).
 
 ---
 

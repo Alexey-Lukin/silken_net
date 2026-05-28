@@ -30,7 +30,9 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 11 | `11_full_matrix_md.py` | L2-extended: protein + FAD + genipin + chitosan + CNC full matrix MD | varies |
 | 12 | `12_temperature_sweep_md.py` | L2: full matrix at -10, 5, 25, 40°C → RMSD(T) curve | ~2.5 h GPU |
 | 13 | `13_psbma_diffusion_md.py` | L2: glucose diffusion through SBMA slab → D_eff from MSD | ~1-2 h GPU |
-| 14 | `14_xylem_sap_sweep_md.py` | L2: enzyme stability across 6 tree species (different pH/ions) | ~3-4 h GPU |
+| 14 | `14_xylem_sap_sweep_md.py` | L2: enzyme stability across 6 tree species (✅ 6/6 stable, pH 4.2-5.8) | ~3-4 h GPU |
+| 15 | `15_pvi_coverage_md.py` | L2 Gen 2.5+: PVI backbone steric test (✅ RMSD 1.10 Å — brush safe) | ~1 h GPU |
+| 16 | `16_strain_cycling_md.py` | HW.3.IS: cyclic ±5% strain on matrix (✅ pseudoplastic) | ~30 min GPU |
 | 20 | `20_dft_lumiflavin.py` | L3 DFT: FAD/FADH₂ frontier orbitals (B3LYP/6-31G(d)+PCM) | ~2 min |
 | 21 | `21_dft_os_bipy_complex.py` | L3 DFT: Os mediator — NH₃ surrogate (baseline, superseded by 21b) | ~30 s |
 | 21b | `21b_dft_os_bpy_full.py` | L3 DFT: Os mediator — full [Os(bpy)₂(1-MeIm)Cl] with π-backbonding | ~15-30 min |
@@ -41,14 +43,17 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 30 | `30_kinetics_delta_t.py` | L4: EBFC kinetics → delta_t(glucose, temp) for Lorenz attractor | ~1 s |
 | 30b | `30b_kinetics_monte_carlo.py` | L4b: Monte Carlo uncertainty (10k samples) → 90% CI for delta_t | ~1 s |
 | 31 | `31_eis_impedance_model.py` | L4c: EIS Randles circuit → Nyquist/Bode predictions for Ti-coin tests | ~1 s |
-| 27 | `27_md_dft_ensemble.py` | L3/L2 bridge: FAD HOMO/LUMO from 5 MD snapshots (thermal robustness) | ~2-3 h |
-| 28 | `28_electron_tunneling_pathway.py` | L3: Beratan-Onuchic electron tunneling pathway (NetworkX graph) | < 1 s |
-| 29 | `29_dft_reorganization_energy.py` | L3: Nelsen 4-point reorganization energy λ_inner | ~2 h |
+| 27 | `27_md_dft_ensemble.py` | L3/L2 bridge: FAD HOMO from 5 MD snapshots (✅ -5.589 ± 0.058 eV, thermally robust) | ~30 min |
+| 28 | `28_electron_tunneling_pathway.py` | L3: Beratan-Onuchic electron tunneling pathway (✅ FAD→THR287, β·d=2.05) | < 1 s |
+| 29 | `29_dft_reorganization_energy.py` | L3: Nelsen 4-point λ_inner (B3LYP/def2-SVP, seeded cross-SPs) | ~1-2 h |
 | 40 | `40_validate_vs_experiment.py` | Ti-coin Stage 2: compare in-silico predictions vs experimental CV/EIS | ~1 s |
+| 50 | `50_thermal_stress_lame.py` | HW.3.IS: Lamé thermal stress + Findley creep (✅ safety 9.9×, 76 µm/20yr) | ~1 s |
+| 51 | `51_gusak_degradation_model.py` | HW.3: Arrhenius aging + Kirkendall V diffusion + H7/s6 window | ~1 s |
 
-Scripts 08-09 are reserved for future ligands. 10-14 are L2 MD runs.
+Scripts 08-09 are reserved for future ligands. 10-16 are L2 MD runs.
 20-range is L3 DFT. 23-24 are L3b cathode DET. 27-29 are advanced L3 analyses.
-30-range is L4 kinetics/EIS.
+30-range is L4 kinetics/EIS. 50-51 are HW.3 anchor mechanics/degradation
+(analytical, numpy — no MD/DFT).
 
 ## Why the GAFF detour (script 02 + 03)?
 
@@ -86,22 +91,31 @@ on `environment.yml`), so cold runs take ~10 min, cached runs ~3 min.
 
 ## L1 protein structure (AlphaFold 3)
 
-L1 uses AlphaFold 3 Server to predict the GOx homodimer + FAD cofactor
-structure. The result PDB is stored in `docs/protocols/ebfc/in_silico/`
-and used as input for all L2 MD simulations.
+> **Gen 2.0 — NOT GOx.** The anode enzyme is **deglycosylated FAD-GDH**
+> (dgrGcGDH from *Glomerella cingulata*), not the rejected Gen 1.0 GOx.
+
+L1 uses AlphaFold 3 Server to predict the deglycosylated FAD-GDH + FAD
+cofactor structure. The result PDB is stored in
+`docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb` and used as input for all
+L2 MD simulations.
 
 1. Go to [AlphaFold 3 Server](https://alphafoldserver.com/) and sign in
    with a Google account (free for academic/non-commercial use).
-2. Create a new job:
-   - **Protein**: paste GOx sequence (UniProt P13006, chain A, 583 aa)
+2. Deglycosylate first: run [`deglycosylate.rb`](../../docs/protocols/ebfc/in_silico/deglycosylate.rb)
+   on UniProt **G8E4B5** (FAD-GDH *G. cingulata*, 600 aa) → removes 11
+   N-X-S/T sequons via N→Q point mutation. **These same 11 mutations are
+   the production gene design (dgr-mutant) so Pichia can't glycosylate —
+   see `01_03 §3.7`.**
+3. Create a new AF3 job:
+   - **Protein**: paste the deglycosylated sequence (600 aa, monomer)
    - **Ligand**: add FAD (CCD code `FAD`)
-   - **Copies**: 2 (homodimer)
-3. Submit and wait (~5 min). Download the top-ranked PDB.
-4. Rename to `fold_gox_fad_model_0.pdb` and place in
-   `docs/protocols/ebfc/in_silico/`.
+4. Submit and wait (~5 min). Download the top-ranked PDB → `dgrGcGDH_AF3.pdb`.
 
-Current result: `d_FAD = 15.998 Å` (inter-subunit FAD distance),
-pLDDT = 93.2 (high confidence). See `01_03 §3.4` for validation.
+Current result: **`d_FAD = 15.998 Å`** (FAD N5 → Tyr90 OH, the tunneling
+distance to the Os mediator), confirmed in UCSF ChimeraX. < r_tunneling
+(Os-bpy ≈ 18-20 Å) → MET architecture viable. See
+[`L1_protein_architecture.md`](../../docs/protocols/ebfc/in_silico/L1_protein_architecture.md)
+and `01_03 §3.4` for validation.
 
 ## Quickstart (one-time setup)
 
@@ -134,7 +148,7 @@ python tools/in_silico/scripts/<script>.py
 
 Pinned to **Python 3.12** in `environment.yml`. This is the highest version
 with full conda-forge coverage for the L2-L4 stack as of 2026-Q2
-(`openmm 8.3+`, `pdbfixer`, `mdtraj`, `pyscf`, `cantera`). When 3.13 ships
+(`openmm 8.3+`, `pdbfixer`, `mdtraj`, `pyscf`, `scipy/numpy`). When 3.13 ships
 stable builds for all dependencies, bump and refresh `environment.yml`.
 
 ## GPU notes (macOS arm64)
