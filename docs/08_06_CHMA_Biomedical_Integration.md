@@ -114,9 +114,7 @@ Silken Net вживляє **тризонний коаксіальний тита
      - Flush Mount step drilling — чи коректна аналогія з flush-mount dental implants?
      - Microfrezing замість стандартного свердла — порівняння з принципами piezosurgery
        (кістки) — чи можна перенести медичні best-practices?
-     - Стерилізація без EtO (гамма 15 кГр low-dose / UV-C+EtOH, `01_04` §6) — клінічна валідація
-       сумісності з ферментами **Gen 2.0 одношарової анодної архітектури** (`01_03 §2.1`):
-       dgrFAD-GDH + Os electroactive layer у Genipin-Chitosan-CNC матриці + Nafion-g-PSBMA + Laccase/ZIF-nanozyme DET катод. Окремо валідувати гамма-стійкість кожного шару — ZIF-каркас додатково
+     - Стерилізація — **ЧМА валідує ВИКЛЮЧНО Гілку А split-cycle протоколу** (`01_04 §6`): низькодозова гамма Co-60 **15 кГр** + UV-C 254 нм + 70% EtOH. **Автоклав та EtO — ЕКСПЛІЦИТНО ЗАБОРОНЕНІ для контакту з білками** (руйнують структуру dgrFAD-GDH/лаккази; вони йдуть лише на Гілку B — PTFE-GDL/O-ring, окремо). Критерій: початкова активність dgrFAD-GDH + лаккази (в порах ZIF) падає **не більше ніж на 20%**. Окремо валідувати гамма-стійкість кожного шару Gen 2.0 (`01_03 §2.1`: dgrFAD-GDH+Os у Genipin-Chitosan-CNC + Nafion-g-PSBMA + Laccase/ZIF DET) — ZIF-каркас додатково
        екранує лакказу від radiation damage; геніпін має іншу поведінку під радіацією, ніж глутаральдегід (чого нам і треба)
      - Anti-Overgrowth Shield (`01_04 §5.5` новий): чи безпечне super-hydrophobic
        fluoropolymer coating (Fluoropel PFC-1601V) для живих тканин? Аналогія
@@ -291,8 +289,8 @@ EBFC Gen 2.0 ([`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)) — це серце
      - SI-ATRP синтез (товщина прищепленого PSBMA шару 50-200 нм)
      - Гідратаційний шар 8 H₂O/ланцюг (порівняння з 1 H₂O для PEG)
      - Anti-fouling test з абієтиновою кислотою (10 mg/mL у синтетичному соку, 7 днів)
-     - Протонна провідність — target 45.2 мС/см
-     - UCST winter-lock тест: -10°C → +25°C цикл, hydration retention
+     - Протонна провідність — target 45.2 мС/см (при +25°C)
+     - UCST winter-lock тест: -10°C → +25°C цикл, hydration retention. **ОБОВ'ЯЗКОВО зафіксувати точку падіння σ(H⁺) при <5°C:** колапс PSBMA рятує білок від вимерзання, але різко знижує протонну провідність → анодний струм падає → EBFC у режимі глибокого сну. Це **НЕ баг**, а задокументований зимовий анабіоз: фізичне обґрунтування L4-кінетики (script 30), де delta_t зростає до 190 с взимку. Виміряти σ(H⁺) vs T кривою (точка зламу ~5°C).
   4. Валідація Laccase/nCoCuCeZIF гібрид катоду:
      - Стабільність 30 днів (target 75% активності vs 30% для чистої лаккази)
      - Chloride tolerance @ 0.25 М NaCl — target +5-10% активності (vs -41.7% для чистої)
@@ -420,8 +418,14 @@ Ti-6Al-4V містить ~6% алюмінію та ~4% ванадію. При ф
     :safety_margin_v,        # Safety Margin = LC50(V) / C_measured (ціль > 100×)
     :8hq_phytotox_threshold  # поріг фітотоксичності 8-HQ (µg/L)
 
-Результат: InsightGeneratorService може розраховувати ion_risk_index на базі
-  реальних ICP-MS даних (від Гусака) та видо-специфічних порогів (від Суховоя)
+Результат: видо-специфічні токсикологічні пороги (LC50) зберігаються у TreeFamily
+  як КОНСТАНТИ дизайну (з lab ICP-MS Гусака/Суховоя — ex-situ, in vitro).
+
+  ⚠️ ICP-MS — це стаціонарний лабораторний прилад; його НЕ можна читати на борту
+  анкера чи в backend у лісі. ion_risk_index НЕ обчислюється з live ICP-MS.
+  Бортовий проксі деградації (корозія / руйнування TiO₂-плівки) = падіння Vcap
+  + аномальне зростання delta_t при незмінній швидкості потоку соку. LC50-пороги
+  лише задають, наскільки консервативним має бути дизайн покриття (Safety Margin).
 ```
 
 **Зв'язок із ЧНУ (Гусак, [`08_01`](08_01_University_R_and_D_Protocols) §1.2):**
@@ -548,7 +552,8 @@ Self-healing покриття ([`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) §
 | Lorenz Attractor (backend) | `app/services/silken_net/attractor.rb` | Z-value → bio_status класифікація | Боєчко (біомаркери стресу → калібрація порогів Z) |
 | Lorenz BioContract (firmware) | `firmware/bio_contracts/bio_contract.rb` | growth_points = f(z_value), 250 ітерацій Euler | Боєчко (recovery curve → CODIT-aware growth_points) |
 | InsightGeneratorService | `app/services/insight_generator_service.rb` | stress_index (0-1), ML + heuristic fallback. **Heuristic ignores `sap_deviation`** — це прямий R&D-gap для Боєчка | Боєчко (:preclinical_stress, sap_deviation threshold) |
-| TreeFamily | `app/models/tree_family.rb` | `attractor_thresholds` → `{min: critical_z_min, max: critical_z_max, baseline: baseline_impedance}`. `healthy_z?(z_value)`. `biological_properties` JSONB (`sap_flow_index, bark_thickness, foliage_density`). `stress_level(impedance)` | Боєчко (species-specific Z bounds); Суховой (додати `vanadium_lc50_ug_l`, `aluminum_lc50_ug_l` у `biological_properties`) |
+| TreeFamily | `app/models/tree_family.rb` | `attractor_thresholds` → `{min: critical_z_min, max: critical_z_max, baseline: historical_delta_t_baseline}`. `healthy_z?(z_value)`. `biological_properties` JSONB (`sap_flow_index, bark_thickness, foliage_density`). `stress_level(delta_t)` | Боєчко (species-specific Z bounds); Суховой (додати `vanadium_lc50_ug_l`, `aluminum_lc50_ug_l` у `biological_properties`) |
+> ⚠️ **Кондуктометрія/імпеданс відкинуто on-board:** пряме AC-вимірювання імпедансу дерева дає величезний інструментальний шум (окислення металу + калюс). Єдиний чистий бортовий біосенсорний параметр — **delta_t** (час заряду іоністора від EBFC). Тому baseline = `historical_delta_t_baseline`, а `stress_level` бере delta_t, не impedance. EIS (Rct≈130 Ω, in-silico плато) використовується **виключно в лабораторії на Ti-монетах** (Бушуєва), не на живому анкері.
 | Tree model | `app/models/tree.rb` | `bio_status` enum, `latest_stress_index`, AASM states. Delegates `attractor_thresholds` to `tree_family` | Губенко (CODIT phase → tree state transitions) |
 | TelemetryUnpackerService | `app/services/telemetry_unpacker_service.rb` | 21-byte decode: `voltage_mv` (Vcap), `delta_t`, `temperature_c` → зберігає у `TelemetryLog.sap_flow` | Бушуєва (EBFC `voltage_mv` → enzyme degradation tracking) |
 | TelemetryLog | `app/models/telemetry_log.rb` | `bio_status`, `z_value`, `growth_points`, `delta_t`, `sap_flow`. `FRAUD_DEVIATION_THRESHOLD = 0.30` (в InsightGeneratorService) | Всі (CODIT-phase-aware аналіз телеметрії) |
@@ -766,7 +771,7 @@ docs/reports/xylemo/stress_calibration_curve_v1.md    # Боєчко
 
 Пріоритетний науковий партнер: стаття 28 (Biosensors and Bioelectronics Q1) — найближча до публікації, оскільки in vitro протокол не потребує спеціального обладнання, тільки фармацевтичний стенд ЧМА.
 
-> _"Інно Іванівно, у мене класична задача фармацевтичної хімії — стабілізація глюкозооксидази та лакцази в кислому рослинному середовищі (pH 4.5–5.5) на 20 років. Ваш досвід з іммобілізацією ферментів та захисними матрицями — це єдине, чого мені не вистачає для whitepaper. Це стаття Biosensors and Bioelectronics Q1."_
+> _"Інно Іванівно, у мене класична задача фармацевтичної хімії — стабілізація **деглікозильованої FAD-глюкозодегідрогенази (dgrFAD-GDH)** та лакази в кислому рослинному середовищі (pH 4.5–5.5) на 20 років. Ваш досвід з іммобілізацією ферментів та захисними матрицями — це єдине, чого мені не вистачає для whitepaper. Це стаття Biosensors and Bioelectronics Q1."_
 
 ### Крок 3: Суховой Геннадій + Глущенко Олександр (через Бушуєву)
 
@@ -790,7 +795,7 @@ docs/reports/xylemo/stress_calibration_curve_v1.md    # Боєчко
 
 > _"Шановні колеги, я — розробник кіберфізичної системи моніторингу лісів Silken Net. Наша система використовує ензимний біопаливний елемент (EBFC), вбудований у титановий гіроїдний анкер, для живлення IoT-сенсорів безпосередньо від дерева._
 >
-> _Ми стикнулись з фундаментальною біохімічною проблемою: як стабілізувати ферменти (глюкозооксидазу та лакказу) у кислому середовищі ксилемного соку сосни (pH 4.5-5.5) на термін 20+ років? Паралельно потрібна токсикологічна оцінка: чи безпечний наш сплав Ti-6Al-4V для дерева при фретинговій корозії?_
+> _Ми стикнулись з фундаментальною біохімічною проблемою: як стабілізувати ферменти (**деглікозильовану FAD-GDH** на аноді + **лакказу/ZIF-нанозим** на катоді — Gen 2.0, без H₂O₂) у кислому середовищі ксилемного соку сосни (pH 4.5-5.5) на термін 20+ років? Паралельно потрібна токсикологічна оцінка: чи безпечний наш сплав Ti-6Al-4V для дерева при фретинговій корозії?_
 >
 > _ЧМА — єдиний заклад у Черкасах, який поєднує фармацевтичну хімію (іммобілізація ферментів), токсикологію (оцінка металів) та фізіологію (маркери стресу). Ми пропонуємо партнерство: ваша біомедична експертиза + наші IoT-дані та технологія = спільні публікації Scopus Q1, грантові заявки та перша в Україні кіберфізична D-MRV платформа з медично валідованим хардверним стеком."_
 
