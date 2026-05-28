@@ -62,26 +62,40 @@ def extract_fad_ring_atoms(traj) -> list[tuple[int, str]]:
     # Extract only the isoalloxazine ring (≈19 heavy atoms = lumiflavin equivalent).
     # In GAFF topology: ring atoms are N5x-N8x, C9x-C21x, O7x-O8x
     # (the tricyclic dimethylbenzene + pyrazine + pyrimidine system).
+    #
+    # CRITICAL: heavy atoms alone (no H) leave dangling valences → radical
+    # character → SCF will NOT converge. We MUST include the hydrogens bonded
+    # to the selected ring atoms so the fragment is a valid closed-shell molecule.
     ring_atom_prefixes = {
         "N5", "N6", "N7", "N8",
         "C9", "C10", "C11", "C12", "C13", "C14", "C15",
         "C16", "C17", "C18", "C19", "C20", "C21",
         "O7", "O8",
     }
-    ring_atoms = []
+    heavy_ring = set()
     for a in fad_residue.atoms:
         if a.element.symbol == "H":
             continue
         prefix = a.name.rstrip("x")
         if prefix in ring_atom_prefixes:
-            ring_atoms.append((a.index, a.element.symbol))
+            heavy_ring.add(a.index)
 
-    if len(ring_atoms) < 10:
-        # Fallback: take all non-H non-P (less accurate but works)
-        ring_atoms = [(a.index, a.element.symbol) for a in fad_residue.atoms
-                      if a.element.symbol not in ("H", "P")]
+    if len(heavy_ring) < 10:
+        # Fallback: full FAD heavy atoms (no P)
+        heavy_ring = {a.index for a in fad_residue.atoms
+                      if a.element.symbol not in ("H", "P")}
 
-    return ring_atoms
+    # Include hydrogens bonded to any selected heavy atom (cap dangling valences).
+    selected = set(heavy_ring)
+    for bond in top.bonds:
+        a0, a1 = bond[0], bond[1]
+        if a0.element.symbol == "H" and a1.index in heavy_ring:
+            selected.add(a0.index)
+        elif a1.element.symbol == "H" and a0.index in heavy_ring:
+            selected.add(a1.index)
+
+    atoms = [(a.index, a.element.symbol) for a in top.atoms if a.index in selected]
+    return sorted(atoms, key=lambda t: t[0])
 
 
 def main() -> int:
@@ -136,24 +150,34 @@ def main() -> int:
         mol = gto.Mole()
         mol.atom = atom_str
         mol.basis = "6-31g(d)"
-        n_electrons = sum({"C": 6, "N": 7, "O": 8, "S": 16}.get(e, 0) for _, e in heavy_fad)
-        mol.charge = n_electrons % 2  # make electron count even
+        # Fragment now includes H (capped valences) → neutral closed-shell.
+        Z = {"H": 1, "C": 6, "N": 7, "O": 8, "S": 16, "P": 15}
+        n_electrons = sum(Z.get(e, 0) for _, e in heavy_fad)
+        mol.charge = n_electrons % 2  # safety: enforce even electron count
         mol.spin = 0
         mol.verbose = 0
         mol.build()
 
         mf = dft.RKS(mol)
         mf.xc = "b3lyp"
-        mf.conv_tol = 1e-5  # relaxed for MD snapshots
-        mf.max_cycle = 500
-        mf.level_shift = 0.2  # help convergence on non-optimized geometry
+        mf.conv_tol = 1e-6
+        mf.max_cycle = 200
 
         t0 = time.time()
         energy = mf.kernel()
+
+        # MD snapshots are not energy-minimized — first-order DIIS can stall.
+        # Fall back to second-order SOSCF (Newton), the robust convergence path.
+        if not mf.converged:
+            print(f"  DIIS stalled at {ns} ns — retrying with SOSCF (Newton)")
+            mf = mf.newton()
+            mf.max_cycle = 100
+            energy = mf.kernel()
+
         dt = time.time() - t0
 
         if not mf.converged:
-            print(f"  ⚠️ SCF not converged at {ns} ns — skipping")
+            print(f"  ⚠️ SCF not converged at {ns} ns (even with SOSCF) — skipping")
             continue
 
         nocc = mol.nelectron // 2
