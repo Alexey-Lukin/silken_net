@@ -295,7 +295,7 @@ O₂ + 4H⁺ + 4e⁻ → 2H₂O   (повне 4-електронне відно�
 | Розмір системи | 477 413 атомів (1.0 nm padding box) |
 | Pipeline | min → NVT 50 ps (100→298 K, restrained heavy atoms) → NPT 100 ps → production 100 ps |
 | Speed (Apple M-GPU, OpenCL) | 10.37 ns/day |
-| **Backbone RMSD vs frame 0** | **0.951 ± 0.200 Å (max 1.142 Å) ≪ 3 Å поріг → STABLE** |
+| **Backbone RMSD vs frame 0** | ~~0.951 Å (wrong genipin isomer)~~ → **1.20 Å (correct C₁₁ genipin, rerun 2026-05-26)** ≪ 3 Å → STABLE |
 | Verdict | dgrGcGDH + genipin = mechanically compatible at pH 4.5 |
 
 Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored). Скрипт — [`10_genipin_stability_md.py`](../tools/in_silico/scripts/10_genipin_stability_md.py).
