@@ -127,19 +127,17 @@ Cascade Δε = -5.137 − (-3.420) = **-1.717 eV → ❌ UPHILL** (артефа�
 
 ## Інтерпретація
 
----
-
-## Інтерпретація
-
 **Що означає `ε_HOMO(FADH₂) > ε_LUMO(Os(III))`** (downhill):
 
 1. Електрон у заповненому **HOMO відновленого FADH₂** має вищу енергію (менш від'ємну vs vacuum), ніж порожнє **β-spin SOMO окисненого Os(III) комплексу**.
-2. У теорії Маркуса: `ΔG° < 0` (точніше, `ΔG° ≈ −(ε_donor − ε_acceptor) + λ_reorg` де λ — reorganization energy). При досить великій `|ΔG°|` електрон тунелює спонтанно.
+2. У теорії Маркуса термодинамічна рушійна сила `ΔG° ≈ −(ε_donor − ε_acceptor)` (з ΔSCF — різниця повних енергій; **без** λ). Енергія реорганізації **λ не входить у ΔG°** — вона визначає *бар'єр активації*: `ΔG‡ = (ΔG° + λ)² / 4λ`. (Раніше тут було помилково `ΔG° = … + λ` — це дало б енергію вертикального оптичного переходу, а не термодинамічний потенціал для CV.) При `ΔG° < 0` перенос спонтанний.
 3. У вольтаметричному expression: `E°(Os²⁺/³⁺) > E°(FAD/FADH₂)` (більш позитивний → краще acceptor). Узгоджується з експериментальним рівнянням з [`01_03 §2.1`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md): `E°(Os) ≈ +200 мВ` > `E°(FAD) ≈ +60 мВ` vs NHE — різниця ~140 мВ.
 
 **Що означає `gap` (HOMO-LUMO)**:
 
-Великий gap у обох species (~3.4 eV для FAD, ~_TODO_ eV для Os) → стабільність до фотохімічної деградації + електронна жорсткість (не легка деформація через зовнішні впливи). Це підтверджує `Gen 2.0 "Zero Instrumental Noise"` принцип ([`01_03 §4`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
+Великий gap → **хімічна жорсткість (chemical hardness, η = (LUMO−HOMO)/2)** кофактора: стійкість до УФ, поляризовності та нуклеофільних атак, запобігання неспецифічним побічним реакціям розкладу (напр., генерації ROS) у циклічному редокс-процесі.
+
+> ⚠️ **Виправлення (рецензія):** великий gap **НЕ** має прямого стосунку до електричного "Zero Instrumental Noise". Інструментальний шум біосенсора походить від (а) неспецифічного окислення інших метаболітів (аскорбат, сечова кислота) на електроді та (б) флуктуацій ємності подвійного шару (C_dl) — це макроскопічні електрохімічні ефекти, не молекулярна щілина FAD. Gap гарантує лише *хімічну* стабільність кофактора. (Zero Instrumental Noise як системний принцип — окремо в [`01_03 §4`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md), через стабільність ECSA/PSBMA, а не через HOMO-LUMO.)
 
 ---
 
@@ -149,6 +147,8 @@ Cascade Δε = -5.137 − (-3.420) = **-1.717 eV → ❌ UPHILL** (артефа�
 2. **Single-point geometry** — не повна оптимізація. MMFF (флавін) і programmatic octahedral (Os, full bpy model: Os-N = 2.10 vs ideal 2.06 Å). **DFT geometry optimization attempted** (script 21c, 2026-05-26): ran 30+ cycles, gradient converged since Step 13 (rms<3e-4, max<4.5e-4), energy flat to 1e-6 Ha, but Cl displacement on flat PES never meets GAU convergence criteria (Cl drifts indefinitely). **Terminated** — programmatic geometry sufficient for LUMO accuracy (dE = 0.002 eV between Step 11 and Step 30). Future: freeze Cl during optimization or use GAU_LOOSE convergence.
 3. **PCM water vs xylem** — implicit solvent, без specific H-bonding до water molecules або до xylem sap solutes. Для Marcus reorganization energy більш честно — explicit solvation shell (50+ waters) + EFP, але це порядок коштовніше.
 4. **Os полімерна модель** — full cis-[Os(bpy)₂(1-MeIm)Cl] з 54 атомами. π-backbonding від bpy включений. Single imidazole як proxy для PVI polymer backbone — acceptable (frontier orbitals Os center переважно d-character). Полімерна щіткова density обробляється у L2.
+5. **Акватація Cl-ліганду (важливо для абсолютного E°)** — у водному середовищі Os/Ru-поліпіридильні хлориди схильні до рівноваги акватації: `[Os(bpy)₂(Im)Cl]⁺ + H₂O ⇌ [Os(bpy)₂(Im)(H₂O)]²⁺ + Cl⁻`. Заміна σ-/π-донора Cl⁻ на нейтральну воду зсуває E° на **+100…200 мВ** (кращий акцептор). У реальному PVI-полімері Os часто координований **двома** імідазолами ланцюга (Cl витіснений). Тобто наша Cl-модель — одна з форм; цитований експериментальний E° ≈ +200 мВ ймовірно належить аква- або біс-імідазольному комплексу. Для статті — явно зазначити рівновагу акватації.
+6. **Іонна сила середовища (Debye-Hückel screening)** — PCM використовує чисту воду (ε=78.36, без екранування). Ксилемний сік має іонну силу 0.01–0.05 М (script 14). Дебаївський екран стабілізує вищий заряд (Os³⁺) сильніше за нижчий (Os²⁺) → зсуває термодинамічний редокс-потенціал (помірно, ~десятки мВ при 0.05 М, Debye length ~13 Å). Поточна термодинаміка Os(III)/Os(II) неявно моделює дист. воду. Refinement: C-PCM з ionic-strength/kappa параметром (перевірити підтримку в PySCF) — flagged, ефект малий відносно ~1 eV solvation-gap.
 
 ---
 
@@ -201,7 +201,9 @@ Discrepancy from experiment (+0.14 eV downhill): **1.14 eV** — from vertical g
 
 **Adiabatic ΔSCF details:** Geom opt at B3LYP/def2-SVP (FADH₂: 2027s, FADH₂⁺: 2975s), then SP at ωB97X/def2-TZVP. IP relaxation: 5.391 → 5.276 eV (-0.114 eV). Small gain because lumiflavin is a rigid planar molecule — cation geometry barely changes.
 
-**PCET H₃O⁺ correction:** computed but invalid — PCM oversolvates small ions (H₃O⁺ solvation energy ~11 eV in PCM vs ~4.3 eV experimental). Would need explicit water shell for meaningful PCET.
+**PCET correction — method corrected (rec. review):** the earlier attempt computed H₃O⁺ explicitly in PCM and was rightly discarded (PCM oversolvates small ions). But the **fix is NOT explicit water** — it is the standard **thermodynamic proton reference**: never compute H⁺ in DFT; instead add the experimentally-fixed solvated-proton free energy
+`G_solv(H⁺) = G_gas(H⁺) [−6.28 kcal/mol, Sackur-Tetrode] + ΔG°_solv(H⁺) [−265.9 kcal/mol] ≈ −11.7 eV`
+to the deprotonated product. This makes the FAD/FADH₂ PCET (FADH₂ → FAD + 2H⁺ + 2e⁻) valid with implicit solvation alone, recovering the ~1 eV proton term without QM/MM. **Status:** flagged as a clean follow-up — needs the oxidized lumiflavin (quinone) energy at the same level; recompute when CPU frees (no Мінаєв cluster required).
 
 **Residual ~0.9 eV gap** between adiabatic ΔSCF and experiment comes from: (1) PCM underestimates differential solvation of neutral vs charged species by ~0.5-1.0 eV, (2) no ZPE/entropy corrections (~0.1 eV), (3) vertical Os side (no Os geom opt — Cl flat PES issue). These are well-known limitations of implicit solvation DFT.
 
@@ -262,7 +264,7 @@ Discrepancy from experiment (+0.14 eV downhill): **1.14 eV** — from vertical g
 | **Co-Ce** (ZIF node↔vacancy) | 62 | **0.0022** | **1.10×10⁸** | ✅ Completed (2026-05-27) |
 | **Ce-graphene** (vacancy↔electrode) | 61 | **0.1177** | **3.07×10¹¹** | ✅ Completed (2026-05-27) |
 
-**Total DET rate (series):** 1/k_total = 1/k₁ + 1/k₂ + 1/k₃ → **k_total = 1.09×10⁸ s⁻¹** (rate-limited by Co-Ce). This is **10⁵× faster** than enzymatic turnover (~10³ s⁻¹). **Cathode DET is NOT rate-limiting.**
+**Bottleneck hop (NOT a 1D series sum — rec. review):** the slowest hop is **Co-Ce, k = 1.10×10⁸ s⁻¹**. A series-resistance formula (`1/k_total = Σ1/kᵢ`) would apply only to a single 1D wire; ZIF is a **3D porous framework** with many parallel percolation paths, so the macroscopic charge-diffusion rate is bounded *below* by this bottleneck hop (the true 3D rate is ≥ this — series sum is a conservative lower bound; numerically it coincides here since Co-Ce dominates). Either way: **≥ 1.10×10⁸ s⁻¹ = 10⁵× faster** than enzymatic turnover (~10³ s⁻¹) → **cathode DET is NOT rate-limiting.**
 
 **Cu-Co verdict:** t_ij = 0.0325 eV → k_ET = 2.34×10¹⁰ s⁻¹ (λ=0.7 eV, ΔG=0, T=298K). Це **надзвичайно швидкий** DET — набагато швидше ніж enzymatic turnover (~10³ s⁻¹). DET через ZIF **не лімітує** катодний ORR.
 
