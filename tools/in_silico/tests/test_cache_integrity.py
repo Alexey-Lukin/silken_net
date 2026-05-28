@@ -207,6 +207,17 @@ def test_md_dft_ensemble_thermally_robust():
     assert -7.0 < ens["HOMO_mean_eV"] < -4.0  # physical flavin HOMO range
 
 
+def test_pcet_redox_potential_valid():
+    """Proton-reference PCET must land within 100 mV of free-flavin exp (pH 7)."""
+    path = DFT / "pcet_redox_potential.json"
+    if not path.exists():
+        pytest.skip("PCET not computed")
+    data = json.loads(path.read_text())
+    assert data["valid_proton_reference"] is True
+    assert abs(data["delta_vs_exp_pH7_mV"]) < 100
+    assert data["couple"].startswith("FAD")
+
+
 def test_xylem_sap_sweep_results():
     """Xylem sap sweep should cover 6 species."""
     path = KINETICS / "xylem_sap_sweep.json"
@@ -308,6 +319,9 @@ EXPECTED_SCRIPTS = [
     "27_md_dft_ensemble.py",
     "28_electron_tunneling_pathway.py",
     "29_dft_reorganization_energy.py",
+    "32_pcet_redox_potential.py",
+    "50_thermal_stress_lame.py",
+    "51_gusak_degradation_model.py",
 ]
 
 

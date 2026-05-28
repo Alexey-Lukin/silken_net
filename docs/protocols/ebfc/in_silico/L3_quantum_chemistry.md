@@ -203,7 +203,9 @@ Discrepancy from experiment (+0.14 eV downhill): **1.14 eV** — from vertical g
 
 **PCET correction — method corrected (rec. review):** the earlier attempt computed H₃O⁺ explicitly in PCM and was rightly discarded (PCM oversolvates small ions). But the **fix is NOT explicit water** — it is the standard **thermodynamic proton reference**: never compute H⁺ in DFT; instead add the experimentally-fixed solvated-proton free energy
 `G_solv(H⁺) = G_gas(H⁺) [−6.28 kcal/mol, Sackur-Tetrode] + ΔG°_solv(H⁺) [−265.9 kcal/mol] ≈ −11.7 eV`
-to the deprotonated product. This makes the FAD/FADH₂ PCET (FADH₂ → FAD + 2H⁺ + 2e⁻) valid with implicit solvation alone, recovering the ~1 eV proton term without QM/MM. **Status:** flagged as a clean follow-up — needs the oxidized lumiflavin (quinone) energy at the same level; recompute when CPU frees (no Мінаєв cluster required).
+to the deprotonated product. This makes the FAD/FADH₂ PCET (FAD + 2H⁺ + 2e⁻ → FADH₂) valid with implicit solvation alone, recovering the proton term without QM/MM.
+
+**✅ Computed (script 32, 2026-05-28):** thermodynamic proton reference (Isse-Gennaro 2010: `G*(H⁺,aq) = −11.72 eV`, `|SHE_abs| = 4.281 V`) on the cached B3LYP/6-31G(d)+PCM ox/red energies → **E°(FAD/FADH₂) = −158 mV vs NHE @ pH 7** (−10 mV @ pH 4.5, +256 mV @ pH 0). vs experimental **free-flavin −208 mV @ pH 7 → Δ = +50 mV** (within 100 mV). The protein-bound FAD-GDH is tuned higher (~+60 mV); this is the free cofactor. **Conclusion:** the proton reference recovers a physically correct redox potential with implicit solvation alone — explicit water was never needed. Cache: `dft/pcet_redox_potential.json`. Screening tier (electronic E proxy for G; SHE_abs convention ±0.15 V); publication-grade refinement = geom-opt + thermal G at ωB97X.
 
 **Residual ~0.9 eV gap** between adiabatic ΔSCF and experiment comes from: (1) PCM underestimates differential solvation of neutral vs charged species by ~0.5-1.0 eV, (2) no ZPE/entropy corrections (~0.1 eV), (3) vertical Os side (no Os geom opt — Cl flat PES issue). These are well-known limitations of implicit solvation DFT.
 
