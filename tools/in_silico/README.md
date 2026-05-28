@@ -40,20 +40,21 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 22 | `22_compare_homo_lumo.py` | L3 aggregator: Marcus cascade diagram + verdict | ~1 s |
 | 23 | `23_build_zif_clusters.py` | L3b: bimetallic ZIF cluster models for DET hopping pathway | < 1 s |
 | 24 | `24_dft_hopping_integrals.py` | L3b DFT: ΔSCF hopping integrals (Marcus ET rates through ZIF) | ~3-4 h |
-| 30 | `30_kinetics_delta_t.py` | L4: EBFC kinetics → delta_t(glucose, temp) for Lorenz attractor | ~1 s |
-| 30b | `30b_kinetics_monte_carlo.py` | L4b: Monte Carlo uncertainty (10k samples) → 90% CI for delta_t | ~1 s |
-| 31 | `31_eis_impedance_model.py` | L4c: EIS Randles circuit → Nyquist/Bode predictions for Ti-coin tests | ~1 s |
 | 27 | `27_md_dft_ensemble.py` | L3/L2 bridge: FAD HOMO from 5 MD snapshots (✅ -5.589 ± 0.058 eV, thermally robust) | ~30 min |
 | 28 | `28_electron_tunneling_pathway.py` | L3: Beratan-Onuchic electron tunneling pathway (✅ FAD→THR287, β·d=2.05) | < 1 s |
 | 29 | `29_dft_reorganization_energy.py` | L3: Nelsen 4-point λ_inner (B3LYP/def2-SVP, seeded cross-SPs) | ~1-2 h |
+| 30 | `30_kinetics_delta_t.py` | L4: EBFC kinetics → delta_t(glucose, temp) for Lorenz attractor | ~1 s |
+| 30b | `30b_kinetics_monte_carlo.py` | L4b: Monte Carlo uncertainty (10k samples) → 90% CI for delta_t | ~1 s |
+| 31 | `31_eis_impedance_model.py` | L4c: EIS Randles circuit → Nyquist/Bode predictions for Ti-coin tests | ~1 s |
 | 40 | `40_validate_vs_experiment.py` | Ti-coin Stage 2: compare in-silico predictions vs experimental CV/EIS | ~1 s |
-| 50 | `50_thermal_stress_lame.py` | HW.3.IS: Lamé thermal stress + Findley creep (✅ safety 9.9×, 76 µm/20yr) | ~1 s |
-| 51 | `51_gusak_degradation_model.py` | HW.3: Arrhenius aging + Kirkendall V diffusion + H7/s6 window | ~1 s |
+| 50 | `50_thermal_stress_lame.py` | HW.3 anchor: Lamé thermal stress + Findley creep (✅ safety 9.9×, 76 µm/20yr) | ~1 s |
+| 51 | `51_gusak_degradation_model.py` | HW.3 anchor: Arrhenius aging + Kirkendall V diffusion + H7/s6 window | ~1 s |
 
-Scripts 08-09 are reserved for future ligands. 10-16 are L2 MD runs.
-20-range is L3 DFT. 23-24 are L3b cathode DET. 27-29 are advanced L3 analyses.
-30-range is L4 kinetics/EIS. 50-51 are HW.3 anchor mechanics/degradation
-(analytical, numpy — no MD/DFT).
+Numeric prefixes encode the pipeline DAG and group: 02-08 prep (GAFF),
+10-16 L2 MD, 20-29 L3 DFT (23-24 L3b cathode DET; 27-29 advanced L3),
+30-31 L4 kinetics/EIS, 40 validation, 50-51 HW.3 anchor mechanics
+(analytical numpy — not part of the L1-L4 enzyme DAG). Rows are listed in
+execution order; 08-09 reserved for future ligands.
 
 ## Why the GAFF detour (script 02 + 03)?
 
@@ -89,6 +90,13 @@ with `SILKEN_FORCE_PLATFORM=CPU` so the run is deterministic on hosted
 runners. The conda env is cached by `mamba-org/setup-micromamba@v2` (keyed
 on `environment.yml`), so cold runs take ~10 min, cached runs ~3 min.
 
+> ⚠️ **Known CI fragility:** `environment.yml` uses `>=` version specifiers,
+> so the solver picks the latest compatible build each cold run. A breaking
+> release of a transitive conda-forge dep can fail CI on code nobody touched.
+> Hardening path (recommended follow-up): generate a `conda-lock.yml`
+> (`conda-lock -f environment.yml`) pinning exact versions + hashes, and
+> point CI at the lock file for 100% reproducible environments.
+
 ## L1 protein structure (AlphaFold 3)
 
 > **Gen 2.0 — NOT GOx.** The anode enzyme is **deglycosylated FAD-GDH**
@@ -101,13 +109,19 @@ L2 MD simulations.
 
 1. Go to [AlphaFold 3 Server](https://alphafoldserver.com/) and sign in
    with a Google account (free for academic/non-commercial use).
-2. Deglycosylate first: run [`deglycosylate.rb`](../../docs/protocols/ebfc/in_silico/deglycosylate.rb)
-   on UniProt **G8E4B5** (FAD-GDH *G. cingulata*, 600 aa) → removes 11
-   N-X-S/T sequons via N→Q point mutation. **These same 11 mutations are
-   the production gene design (dgr-mutant) so Pichia can't glycosylate —
-   see `01_03 §3.7`.**
+2. Build the dgr-mutant sequence: run [`deglycosylate.rb`](../../docs/protocols/ebfc/in_silico/deglycosylate.rb)
+   on UniProt **G8E4B5** (FAD-GDH *G. cingulata*, 600 aa) → mutates 11
+   N-X-S/T sequons N→Q.
+   > **Why mutate, not just "skip sugars":** AF3 does not model glycans
+   > unless you explicitly add sugar ligands — feeding it the wild-type
+   > sequence already yields a bare (unglycosylated) fold. So the N→Q edits
+   > are **not** "removing sugars from the model." Their real purpose is
+   > twofold: (a) they ARE the production gene design (dgr-mutant) so
+   > *Pichia* physically can't glycosylate those sites (`01_03 §3.7`); and
+   > (b) we fold the mutant to confirm the 11 point mutations themselves
+   > don't destabilize the globule or perturb the FAD active site.
 3. Create a new AF3 job:
-   - **Protein**: paste the deglycosylated sequence (600 aa, monomer)
+   - **Protein**: paste the dgr-mutant sequence (600 aa, monomer)
    - **Ligand**: add FAD (CCD code `FAD`)
 4. Submit and wait (~5 min). Download the top-ranked PDB → `dgrGcGDH_AF3.pdb`.
 
@@ -154,12 +168,19 @@ stable builds for all dependencies, bump and refresh `environment.yml`.
 ## GPU notes (macOS arm64)
 
 OpenMM ships four platforms: `Reference`, `CPU`, `OpenCL`, `CUDA`. On Apple
-Silicon only `Reference` and `CPU` are reliable — Apple deprecated OpenCL
-years ago and `CUDA` is Nvidia-only.
+Silicon **`OpenCL` is the GPU platform to use** — despite Apple's "deprecated"
+label, OpenMM 8.x runs on the Apple GPU through it. **Verified on this project:**
+our L2 production MD (467k-atom system) auto-selects `OpenCL` and sustains
+**~10–11 ns/day** on the M-series GPU. `CUDA` is Nvidia-only; `CPU`/`Reference`
+are ~10–20× slower and reserved for CI determinism and tiny sanity runs.
 
-**This means**: locally, use Mac for **script development and short
-sanity runs (≤ 1 ns)**. Production runs (10–100 ns) go to cloud GPU per
-the infra section of `docs/01_03 §3.4`:
+Scripts auto-select the fastest available platform; force one with
+`SILKEN_FORCE_PLATFORM=CPU` (CI uses this for reproducibility).
+
+**This means**: the Mac (OpenCL) handles development **and** the short-to-medium
+production runs we actually do (single MD trajectories up to ~10 ns ≈ a day).
+Reach for cloud GPU only for **large/parallel campaigns** (100+ ns, or many
+trajectories at once) per `docs/01_03 §3.4`:
 
 - GCP `g2-standard-12` (1× L4) — ~$1–2/h
 - AWS `g5.2xlarge` (1× A10G) — ~$1.20/h
