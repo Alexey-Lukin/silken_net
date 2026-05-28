@@ -1,0 +1,20 @@
+{
+  "method": "PCET semiquinone: \u03c9B97X/def2-TZVP+PCM // MMFF; thermodynamic proton reference (G*(H+,aq)=-11.72 eV)",
+  "semiquinone_site": "N18",
+  "E_FADH2_Ha": -873.4525983337478,
+  "E_FADH_radical_Ha": -872.806177351275,
+  "G_star_H_aq_eV": -11.72,
+  "bare_IP_eV": 5.391,
+  "pcet_oxidation_cost_eV": 5.87,
+  "drop_vs_bare_eV": 0.479,
+  "os_reduction_eV": -4.392,
+  "cascade_pcet_eV": 1.478,
+  "cascade_bare_eV": 0.998,
+  "exp_cascade_eV": -0.14,
+  "downhill": false,
+  "converged": {
+    "FADH2": true,
+    "FADH_radical": true
+  },
+  "wall_seconds": 3708.48570895195
+}

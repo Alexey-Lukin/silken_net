@@ -218,6 +218,18 @@ def test_pcet_redox_potential_valid():
     assert data["couple"].startswith("FAD")
 
 
+def test_pcet_cascade_converged():
+    """PCET cascade run must have both SCFs converged (result itself is a
+    documented does-not-flip negative; we guard convergence + plausible cost)."""
+    path = DFT / "pcet_cascade.json"
+    if not path.exists():
+        pytest.skip("PCET cascade not computed")
+    data = json.loads(path.read_text())
+    assert data["converged"]["FADH2"] is True
+    assert data["converged"]["FADH_radical"] is True
+    assert 4.0 < data["pcet_oxidation_cost_eV"] < 7.0  # physical oxidation cost range
+
+
 def test_xylem_sap_sweep_results():
     """Xylem sap sweep should cover 6 species."""
     path = KINETICS / "xylem_sap_sweep.json"

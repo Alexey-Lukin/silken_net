@@ -31,6 +31,7 @@ import time
 from pathlib import Path
 
 from pyscf import dft, gto, solvent
+from pyscf.geomopt import geometric_solver
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
@@ -86,7 +87,7 @@ def pyscf_mol(atoms, charge, spin, basis):
     return mol
 
 
-def run_sp(mol, xc, level_shift=0.0):
+def _mf(mol, xc, level_shift=0.0):
     mf = dft.RKS(mol) if mol.spin == 0 else dft.UKS(mol)
     mf.xc = xc
     mf = solvent.PCM(mf)
@@ -97,12 +98,24 @@ def run_sp(mol, xc, level_shift=0.0):
     mf.verbose = 0
     if level_shift:
         mf.level_shift = level_shift
+    return mf
+
+
+def run_sp(mol, xc, level_shift=0.0):
+    mf = _mf(mol, xc, level_shift)
     e = mf.kernel()
     if not mf.converged:
         mf = mf.newton()
         mf.max_cycle = 100
         e = mf.kernel()
     return float(e), bool(mf.converged)
+
+
+def run_opt(mol, xc, level_shift=0.0):
+    """Geometry-optimize (well-behaved neutral species only) → optimized Mole."""
+    mf = _mf(mol, xc, level_shift)
+    mol_opt = geometric_solver.optimize(mf, maxsteps=50)
+    return mol_opt
 
 
 def main() -> int:
@@ -129,13 +142,33 @@ def main() -> int:
     h_idx, _, n_idx, rad_atoms = best
     print(f"  → most stable semiquinone: H removed from N{n_idx}")
 
-    # --- final energies at ωB97X/def2-TZVP+PCM ---
-    banner("Final energies (ωB97X/def2-TZVP+PCM)")
+    # --- geometry-optimize BOTH neutral species (B3LYP/6-31G(d)+PCM) ---
+    # Both are well-behaved closed-shell/doublet neutrals — no cation-radical
+    # pathology (that only afflicts FADH₂•⁺, which we never optimize). Relaxing
+    # is essential: an unrelaxed semiquinone is artificially strained.
+    banner("Geometry optimization (B3LYP/6-31G(d)+PCM)")
     t = time.time()
-    e_fadh2, c1 = run_sp(pyscf_mol(atoms_red, 0, 0, "def2-tzvp"), "wb97x")
+    mol_red_opt = run_opt(pyscf_mol(atoms_red, 0, 0, "6-31g(d)"), "b3lyp")
+    print(f"  FADH₂ opt done ({time.time()-t:.0f}s)")
+    t = time.time()
+    mol_rad_opt = run_opt(pyscf_mol(rad_atoms, 0, 1, "6-31g(d)"), "b3lyp", level_shift=0.2)
+    print(f"  FADH• opt done ({time.time()-t:.0f}s)")
+
+    def opt_atoms(mol_opt):
+        syms = [mol_opt.atom_symbol(i) for i in range(mol_opt.natm)]
+        coords = mol_opt.atom_coords(unit="Angstrom")
+        return [(s, tuple(c)) for s, c in zip(syms, coords)]
+
+    red_opt_atoms = opt_atoms(mol_red_opt)
+    rad_opt_atoms = opt_atoms(mol_rad_opt)
+
+    # --- final energies at ωB97X/def2-TZVP+PCM (on optimized geometries) ---
+    banner("Final energies (ωB97X/def2-TZVP+PCM, geom-optimized)")
+    t = time.time()
+    e_fadh2, c1 = run_sp(pyscf_mol(red_opt_atoms, 0, 0, "def2-tzvp"), "wb97x")
     print(f"  E(FADH₂)  = {e_fadh2:.6f} Ha ({time.time()-t:.0f}s) conv={c1}")
     t = time.time()
-    e_fadhrad, c2 = run_sp(pyscf_mol(rad_atoms, 0, 1, "def2-tzvp"), "wb97x", level_shift=0.2)
+    e_fadhrad, c2 = run_sp(pyscf_mol(rad_opt_atoms, 0, 1, "def2-tzvp"), "wb97x", level_shift=0.2)
     print(f"  E(FADH•)  = {e_fadhrad:.6f} Ha ({time.time()-t:.0f}s) conv={c2}")
 
     # --- PCET arithmetic ---
@@ -152,8 +185,8 @@ def main() -> int:
     print(f"  Verdict: {'✅ DOWNHILL — matches experiment' if downhill else '⚠️ still uphill'}")
 
     output = {
-        "method": "PCET semiquinone: ωB97X/def2-TZVP+PCM // MMFF; "
-                  "thermodynamic proton reference (G*(H+,aq)=-11.72 eV)",
+        "method": "PCET semiquinone: ωB97X/def2-TZVP+PCM // B3LYP/6-31G(d)+PCM "
+                  "geom-opt; thermodynamic proton reference (G*(H+,aq)=-11.72 eV)",
         "semiquinone_site": f"N{n_idx}",
         "E_FADH2_Ha": e_fadh2,
         "E_FADH_radical_Ha": e_fadhrad,
