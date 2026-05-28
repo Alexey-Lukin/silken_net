@@ -15,7 +15,7 @@ SilkenNet / Gaia 2.0 — планетарна кіберфізична плат�
 - **Backend**: Rails 8.1 / Ruby 4.0.2 / PostgreSQL / Sidekiq — декодує, верифікує через 12-chain Web3 pipeline, мінтить SCC.
 - **Tokenomics**: Proof of Growth — 10,000 growth_points = 1 SCC (Polygon ERC-20). Слешинг при деградації лісу.
 
-**Поточний TRL**: firmware TRL 6, backend TRL 8, hardware capsule TRL 6, anchor/EBFC **TRL 4** (Zero-Lab L1-L4 PASSED 2026-05-25; 32 in-silico scripts, 76 tests).
+**Поточний TRL**: firmware TRL 6, backend TRL 8, hardware capsule TRL 6, anchor/EBFC **TRL 4** (Zero-Lab L1-L4 PASSED 2026-05-25). Поточні числа pipeline — `docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md`.
 
 ---
 
@@ -292,7 +292,7 @@ Solana: Ed25519 підпис, SPL Token Transfer, ATA резолюція чер�
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **silken_net** (11131 symbols, 19960 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **silken_net** (11242 symbols, 20073 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 

@@ -340,7 +340,7 @@ kamal deploy
 | Прошивка Королеви (C + SIM7070G) | 6 | Host-based тести проходять |
 | Апаратна капсула (BOM, MPPT) | 6 | Архітектура заморожена |
 | Ti-6Al-4V гіроїдний анкер | 4 | nTop ліцензія, Lamé press-fit validated (safety 9.9×) |
-| EBFC Gen 2.0 (dgrFAD-GDH + Laccase/ZIF) | 4 | **Zero-Lab L1-L4 PASSED** (32 in-silico scripts, 76 tests, 6 tree species) |
+| EBFC Gen 2.0 (dgrFAD-GDH + Laccase/ZIF) | 4 | **Zero-Lab L1-L4 PASSED** (in-silico; see `docs/protocols/ebfc/in_silico/SUMMARY.md`) |
 | Академічна мережа (ЧНУ/ФОТІУС/ЧДТУ/ЧІПБ/ЧМА/СЄУ) | 3 | 6 університетів, 35+ публікацій Q1 pipeline |
 | Розгортання GCP + Kamal | 4 | Код існує, деплой не проводився |
 

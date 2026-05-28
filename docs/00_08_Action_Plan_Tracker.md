@@ -383,7 +383,7 @@
 
 #### FW.23 — OTA firmware broadcast: ECB без автентифікації
 - `03_05` | `firmware/queen/main.c`
-- **Опис:** OTA bytecode chunks (`[0x99][index:2][total:2][bytecode:11]`) передаються через AES-256-ECB без MAC/signature. Зловмисник може підмінити firmware chunks → code injection на всіх Soldiers у радіусі Queen. Відсутня верифікація цілісності зібраного bytecode перед записом у Flash (`0x0803F000`)
+- **Опис:** OTA bytecode chunks (`[0x99][index:2][total:2][bytecode:11]`) передаються через AES-128-ECB (OTA reflex, post-ARCH.42) без MAC/signature. Зловмисник може підмінити firmware chunks → code injection на всіх Soldiers у радіусі Queen. Відсутня верифікація цілісності зібраного bytecode перед записом у Flash (`0x0803F000`)
 - **Пріоритет:** P1 (критичний для security, але блокується FW.2 CCM transition)
 - **Статус:** 🤖 ✅ Реалізовано (2026-05-02). Backend HMAC-SHA256 повний пайплайн + Soldier dual-gate framework + Queen stateless relay. Implementation:
   - **Backend:** `OtaHmacKeyService.fetch_for(cluster_id)` — HKDF-SHA256 з info `"silken-ota-hmac-v1"` (domain separation від FW.1 AES key); `SecurityError` без master key (SEC.11 hard cutover). `OtaPackagerService.compute_hmac_tag(bytecode, version_id, lora_total_chunks, cluster_id:)` — anti-replay+anti-truncation binding. `OtaPackagerService.build_hmac_trailer_chunks` — 3 LoRa-formatted блоки `[0x9B][seg_idx:2][total:2][hmac:11]`. `OtaPackagerService.prepare(..., cluster_id:)` — opt-in, backward-compat без cluster_id. **30 нових RSpec прикладів** (services + integration end-to-end).
@@ -989,7 +989,7 @@
 #### SEC.10 — Emergency TX пакети без MAC/MIC автентифікації
 - **Джерело:** `03_05`, `03_02` | **Пріоритет: P1**
 - **Опис:** EwsAlert panic packets (chainsaw detection, PANIC_TTL=5) відправляються без жодної автентифікації. Зловмисник може: (1) replay легітимний panic packet → false forest fire alert → евакуація/паніка, (2) inject forged panic packets → множинні false alarms → недовіра до системи та страхових виплат
-- **Важливо:** Критичніше за звичайні пакети — emergency TX обходить звичайні rate limits. Вирішується разом з FW.2 (AES-256-CCM), але потребує окремої уваги через life-safety implications
+- **Важливо:** Критичніше за звичайні пакети — emergency TX обходить звичайні rate limits. Вирішується разом з FW.2 (AES-128-CCM), але потребує окремої уваги через life-safety implications
 - [x] 🤖 Не відкладати вирішення на "після FW.2" — мінімальний fix: Frame Counter у RTC як anti-replay для panic packets
 - [x] 🔗 Верифікувати що `EwsAlert` broadcast застосовує той самий CCM MIC що і звичайні пакети (після FW.2) — ✅ Виконано (2026-05-24) як freeze-contract. CCM 24B packet format однаковий для нормальних та panic-фреймів — `PANIC_FLAG_BIT` живе у `status_byte` (байт 14, всередині encrypted payload), покривається MIC. Після `#define FW2_CCM_ENABLED 1` транзитивний DR0[31:16] `panic_frame_counter` стає рудиментарним (DR15 CCM FC subsumes anti-replay для ALL packets). До flip — DR0[31:16] залишається активним.
 - [x] Backend: rate limiting на emergency callbacks — не більше N panic alerts/хвилину від одного DID

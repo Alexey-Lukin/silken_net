@@ -50,7 +50,7 @@
 - **Сенсорика:** Апаратний DMA-буфер мікрофона.
 - **TinyML:** Нейромережа на пристрої для класифікації аудіо (Тиша / Вітер / Пилка).
 - **Математика:** mruby VM розраховує Атрактор Лоренца (гомеостаз) на базі часу заряду іоністора.
-- **Безпека:** Апаратне шифрування AES-256 (пакети EwsAlert).
+- **Безпека:** Апаратне шифрування — AES-128 на LoRa-каналі (post-ARCH.42), AES-256-CBC на CoAP-каналі Queen→Rails.
 
 ### 📡 Рівень 4: Мережа (The Veins)
 - **Протокол:** LoRa mesh 868 МГц (custom TTL-based, DEFAULT_TTL=3). Binary payload 21 bytes (4 DID + 1 RSSI + 16 encrypted).
@@ -239,7 +239,7 @@ Route metric = f(hop_count, remaining_energy, bio_potential)
 - Фаза 1.5: TinyML-класифікація звуку (тиша / вітер / кавітація / пилка)
 - Фаза 2: Упаковка у 16-байтний payload
 - Фаза 3: mruby Lorenz attractor → `growth_points` + `bio_status`
-- Фаза 4: AES-256-ECB шифрування → LoRa TX (868 МГц)
+- Фаза 4: AES-128-ECB шифрування (transitional, post-ARCH.42; FW.2 target — AES-128-CCM) → LoRa TX (868 МГц)
 - Фаза 5: Повернення у глибокий сон STOP2
 
 ```
