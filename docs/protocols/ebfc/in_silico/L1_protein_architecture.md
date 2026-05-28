@@ -27,11 +27,17 @@
 - **UniProt accession:** [`G8E4B5`](https://www.uniprot.org/uniprotkb/G8E4B5/entry) — 600 aa, expressed natively as a heavily N-glycosylated secreted glycoprotein.
 - **Чому саме G8E4B5:** baseline-кандидат у Gen 2.0 архітектурі — кисень-незалежний (без H₂O₂), FAD-кофактор узгоджується з осмієвим редокс-полімером, доступний для рекомбінантної експресії у *Pichia pastoris* (див. [`01_03 §1`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
 
-## 2. Деглікозилювання (in silico імітація PNGase F)
+## 2. Аглікозильований мутант (N→Q design, НЕ модель PNGase F)
 
-PNGase F фізично не моделюється — замість цього програмно видаляються канонічні **N-X-S/T sequons** (X ≠ P) шляхом point-мутації Asparagine (N) → Glutamine (Q). Q зберігає геометрію бічного ланцюга без -NH₂ для glycan attachment.
+> ⚠️ **Термінологічна точність (виправлено):** N→Q — це **раціональний дизайн аглікозильованого мутанта**, а **не** in-silico імітація PNGase F. Це різні хімічні шляхи:
+> - **PNGase F** (ензимна обробка wild-type) відрізає глікан *і деамідує* Asn → **аспарагінову кислоту (Asp, D)** → додає негативний заряд на поверхню, зсуває локальну pI. Модель цього шляху мала б мати мутації **N→D**.
+> - **N→Q (наш шлях)** зберігає нейтральний заряд (Gln ізостеричний до Asn без -NH₂ для glycan attachment) і вбудовується **прямо в синтетичний ген (dgr-mutant)** → *Pichia* фізично не глікозилює ці сайти → PNGase F у лабораторії **взагалі не потрібен** ([`01_03 §3.7`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
+>
+> Ми свідомо обрали N→Q (aglycosylated mutant) як чистіший виробничий маршрут. Фолдинг мутанта (§3) також підтверджує, що самі 11 точкових замін не дестабілізують глобулу/активний центр.
 
-**Скрипт:** [`deglycosylate.rb`](deglycosylate.rb) — sliding window O(n), 3-residue triplets.
+Програмно мутуються канонічні **N-X-S/T sequons** (X ≠ P): Asparagine (N) → Glutamine (Q).
+
+**Скрипт:** [`deglycosylate.rb`](deglycosylate.rb) — sliding window O(n), 3-residue triplets (детектує sequons; назва історична).
 
 **Знайдені та мутовані сайти (11 шт.):**
 
@@ -90,7 +96,14 @@ MKNLIPLSLLATTVAARPGSAPRDQAAATAYDYIVIGGGTSGLVVANRLSEDASVSVLVIEAGDSVLNNAQVTNANGYGL
 distance #1:FAD@N5 #1:90@OH
 ```
 
-**Результат:** **d(N5 → Tyr90 OH) = 15.998 Å**
+**Результат:** **d(N5 → Tyr90 OH) = 15.998 Å** (Евклідова відстань — геометричний показник *глибини залягання* FAD, тобто мінімальної товщини Os-шару; це **не** маршрут тунелювання — див. §5).
+
+**Локальна впевненість точки виходу електрона (виправлення SSOT-рецензії):** глобальні pTM/fraction_disordered не гарантують жорсткість конкретного якірного залишку. Витягнуто per-residue pLDDT з AF3 CIF (B-factor колонка):
+
+| Залишок | pLDDT | Інтерпретація |
+|---|---|---|
+| **Tyr90 (точка виходу для d_FAD)** | **98.71** | Дуже жорсткий (≫ 80) → координати надійні, **не** гнучка петля → 15.998 Å стабільна |
+| res 287 (Gly у цій нумерації) | 93.56 | Жорсткий. ⚠️ Script 28 називає exit-residue «THR287» — ймовірний зсув нумерації (deglycosylated seq) або інша індексація; узгодити при фіналізації статті |
 
 ## 5. Фізичне обґрунтування MET (Mediated Electron Transfer)
 
@@ -100,13 +113,19 @@ distance #1:FAD@N5 #1:90@OH
 
 | Параметр | Значення | Інтерпретація |
 |---|---|---|
-| Глибина залягання N5 | **15.998 Å** | Підтверджено експериментально (ChimeraX) |
+| Глибина залягання N5 (Евклід) | **15.998 Å** | Геометричний bound — товщина Os-шару, НЕ маршрут тунелювання |
 | Радіус ефективного quantum tunneling для Os-polymer | ≈ 18–20 Å | Літературна межа для bipyridyl-Os mediators |
+| **Through-bond tunneling pathway (script 28, Beratan-Onuchic)** | **FAD→…→THR287, β·d = 2.05** | **Справжній доказ MET** — граф ковалентних/H-зв'язків, не пряма лінія |
+| Жорсткість точки виходу (Tyr90 pLDDT) | **98.71** | Не гнучка петля → відстань не «стрибає» 15→25 Å |
 | Необхідність руйнування глобули | **Ні** | Os-центри підходять через native conformation |
 | Необхідність проміжних медіаторів | **Ні** | One-step MET достатній |
-| k_s (heterogeneous electron transfer rate) | експоненційно росте при d ↓ | Marcus equation: k ∝ exp(−β·d), β ≈ 1.1 Å⁻¹ |
+| k_et (intermolecular ET rate, FAD→Os) | експоненційно росте при d ↓ | Marcus: k ∝ exp(−β·d), β ≈ 1.1 Å⁻¹ |
 
-**Висновок:** **~16 Å математично доводить життєздатність MET архітектури Gen 2.0**. Осмієвий редокс-полімер фізично здатний забезпечити квантове тунелювання електрона без необхідності деглікозилювання понад 11 N-X-S/T сайтів, без руйнування білкової глобули, без додаткових проміжних медіаторів.
+> 📐 **Чому два показники, а не один (виправлення рецензії):** Електрон не тунелює по прямій Евклідовій лінії — він іде мережею ковалентних/H-зв'язків. Тому **кінетичний доказ MET — це through-bond pathway зі Script 28** (β·d = 2.05, [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md)), а 15.998 Å — лише геометричний показник глибини залягання FAD (визначає товщину Os-шару). Обидва підтверджують feasibility, але роль у них різна.
+>
+> 🔤 **Термінологія:** FAD→Os — це **intermolecular** перенос (k_et / k_ex), а **не** гетерогенний k_s. k_s описує крок Os→електрод (молекула↔тверде тіло). Раніше тут було помилково «k_s».
+
+**Висновок:** Through-bond tunneling pathway (β·d = 2.05, script 28) + жорстка точка виходу (Tyr90 pLDDT 98.71) + глибина залягання 15.998 Å ≪ 18-20 Å межі **разом доводять життєздатність MET архітектури Gen 2.0** — без руйнування глобули, без проміжних медіаторів.
 
 ## 6. TRL-гейт L1 → L2
 
@@ -118,7 +137,7 @@ distance #1:FAD@N5 #1:90@OH
 | Глибина FAD N5 → поверхня виміряна та зафіксована | ✅ **(15.998 Å)** |
 | MET-feasibility математично обґрунтована | ✅ |
 
-**Gate:** **L1 → L2** — ✅ пройдено. L2 baseline (genipin only): RMSD 0.95 Å. **L2-extended** (full matrix: genipin + chitosan trimer + cellobiose CNC proxy, 2026-05-25): RMSD 1.11 Å ≪ 3 Å → повна Gen 2.0 матриця стабільна. Деталі → [`01_03 §3.4 L2`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md).
+**Gate:** **L1 → L2** — ✅ пройдено. (L2 результати — канонічний [`SUMMARY.md`](SUMMARY.md) + [`PIPELINE_STATUS.md`](PIPELINE_STATUS.md); тут не дублюємо, щоб не тримати застарілі RMSD — попередні значення 0.95/1.11 Å були отримані з неправильним ізомером геніпіну і замінені на 1.20/1.22 Å після перезапуску з коректним C₁₁.)
 
 ---
 
@@ -128,40 +147,14 @@ distance #1:FAD@N5 #1:90@OH
 
 | Файл | Опис | Статус |
 |---|---|---|
-| `deglycosylate.rb` | Ruby-скрипт sliding-window для імітації PNGase F | ✅ |
+| `deglycosylate.rb` | Ruby sliding-window — детекція N-X-S/T sequons + N→Q (aglycosylated mutant) | ✅ |
 | `L1_protein_architecture.md` | Цей документ | ✅ |
-| `dgrGcGDH_AF3.pdb` | Канонічний PDB (deglycosylated GcGDH + FAD), конвертовано з `alphafold3/…_model_0.cif` | ✅ |
+| `dgrGcGDH_AF3.pdb` | Канонічний PDB (aglycosylated GcGDH + FAD), конвертовано з `alphafold3/…_model_0.cif` | ✅ |
 | `alphafold3/` | AF3 raw output: 5 ranked CIF моделей + summaries + job_request + terms_of_use | ✅ |
-| `ligands/FAD.sdf` | FAD з AF3-позою та хімічно правильними bond orders (вхід для L2) | ✅ |
-| `ligands/genipin.sdf` | Genipin reference structure (SMILES → 3D) | ✅ |
+| `ligands/FAD.sdf`, `ligands/genipin.sdf` | Reference structures (вхід для L2) | ✅ |
 | `chimerax_distance_session.cxs` | ChimeraX session з вимірюванням 15.998 Å | ⏳ Опційно |
 
-**Робочі скрипти L2+ (engine, `tools/in_silico/scripts/`):**
-
-| Файл | Опис | Статус |
-|---|---|---|
-| `01_smoke_test_water_box.py` | Engine sanity check (протеїн + water box + 1000 кроків) | ✅ Passed |
-| `02_parameterize_fad.py` | AF3 PDB + CCD SMILES → `ligands/FAD.sdf` + GAFF cache | ✅ |
-| `03_parameterize_genipin.py` | SMILES → `ligands/genipin.sdf` + GAFF cache | ✅ |
-| `04_parameterize_chitosan.py` | Chitosan trimer (3×GlcN) → GAFF cache | ✅ (2026-05-25) |
-| `05_parameterize_cnc.py` | Cellobiose (CNC proxy) → GAFF cache | ✅ (2026-05-25) |
-| `10_genipin_stability_md.py` | L2 baseline: protein + FAD + 10×genipin → RMSD 0.95 Å | ✅ Passed (2026-05-24) |
-| `11_full_matrix_md.py` | L2-ext: + chitosan + cellobiose → RMSD 1.11 Å | ✅ Passed (2026-05-25) |
-| `20_dft_lumiflavin.py` | L3: FAD/FADH₂ frontier orbitals | ✅ |
-| `21b_dft_os_bpy_full.py` | L3: full [Os(bpy)₂(1-MeIm)Cl] DFT | ✅ (2026-05-25) |
-| `22_compare_homo_lumo.py` | L3: Marcus cascade diagram | ✅ |
-| `21d_dft_os_bpy_wb97xd.py` | L3: ωB97X/def2-TZVP publication-grade | ⏳ running |
-| `23_build_zif_clusters.py` | L3b: ZIF cluster geometry | ✅ |
-| `24_dft_hopping_integrals.py` | L3b: ΔSCF hopping integrals | ⏳ Co-Ce |
-| `30_kinetics_delta_t.py` | L4: delta_t(glucose, temp) | ✅ |
-| `30b_kinetics_monte_carlo.py` | L4b: Monte Carlo uncertainty | ✅ |
-| `31_eis_impedance_model.py` | L4c: EIS Nyquist predictions | ✅ |
-| `40_validate_vs_experiment.py` | Ti-coin: in-silico vs experiment | ✅ (awaiting data) |
-| `14_xylem_sap_sweep_md.py` | L2: stability across tree species | ⏳ queued |
-
-**Параметризаційний кеш:** `tools/in_silico/cache/gaff_cache.json` (226 KB) — deterministic AM1-BCC charges + GAFF-2.11 atom types для 7 лігандів; cache hit економить ~5 хв на чистому checkout.
-
-> **Повний pipeline status та dependency graph** → [`PIPELINE_STATUS.md`](PIPELINE_STATUS.md)
+> 🟢 **Робочі скрипти L2+ та їх статус — НЕ дублюються тут** (SSOT-політика). Канонічні джерела: опис → [`tools/in_silico/README.md`](../../../../tools/in_silico/README.md); статус виконання + dependency graph → [`PIPELINE_STATUS.md`](PIPELINE_STATUS.md); результати/числа → [`SUMMARY.md`](SUMMARY.md). Параметризаційний кеш: `tools/in_silico/cache/gaff_cache.json`.
 
 > **L1 → L2 inженерний міст:** AMBER ff14SB має шаблони лише для 20 стандартних амінокислот → щоб запустити MD з FAD (кофактор) і геніпіном (зшивач матриці), потрібен окремий ligand-parameterization крок. Він реалізований через `openmmforcefields.GAFFTemplateGenerator` поверх AmberTools `antechamber`/`sqm`. Деталі — `docs/01_03 §3.4 Інженерний нюанс L2`.
 
