@@ -1190,7 +1190,7 @@ OtaPackagerService → 512-byte chunks → OtaTransmissionWorker → Queen → S
 
 > **Контекст:** Federated Learning Pipeline вище — це **top-down** (cloud навчає → edge виконує). Це **достатньо для TRL 9**, але обмежує адаптивність: модель оновлюється раз на тижні/місяці, а кліматичні мікро-зміни відбуваються щодоби.
 >
-> **Майбутній напрям (TRL 10+) — Edge AI Self-Evolution:**
+> **Майбутній напрям (Beyond TRL 9 / SRL roadmap) — Edge AI Self-Evolution:**
 > - **On-device class-incremental learning:** додавання нових акустичних патернів (нові інвазивні комахи у Черкаському борі, нові типи браконьєрської техніки) без необхідності retraining у cloud. Обмежено 1–4 incremental classes на STM32WLE5JC; для повного on-device backprop потрібен AI-coprocessor (Syntiant NDP120 / Maxim MAX78000) у v3 hardware.
 > - **Edge Reinforcement Learning:** tabular Q-learning з 12-state × 4-action lookup для прийняття рішень (sleep_extend / normal / sample_extra / emergency_tx); reward = days-to-next-VBAT_OK. State buffer у RTC backup registers DR20-DR31.
 > - **Координація з mruby evolutionary algorithms у `03_04`** — спільна `device-side learning loop` між TinyML (perception) і Lorenz contract (decision).

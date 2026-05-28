@@ -791,7 +791,7 @@ contract SilkenGovernor is Governor, GovernorSettings, GovernorCountingSimple,
 
 > **Контекст:** Поточні захисти (Snapshot Voting, Timelock, Quorum, Flash Loan defense) — **реактивні** і **достатні для TRL 9**. Але як тільки SCC market cap перевищить ~$100M, система стане апетитною ціллю для **AI-driven trading bots** і **adversarial ML attacks** (синтетичні telemetry-патерни, які проходять Dual Computation Integrity).
 >
-> **Майбутній напрям (TRL 10+) — Proactive AI Sentinel:**
+> **Майбутній напрям (Beyond TRL 9 / SRL roadmap) — Proactive AI Sentinel:**
 > - **Cluster-level statistical fingerprints:** замість per-tree fraud detection — federated anomaly detection. Якщо 100 дерев кластера раптом видають «too perfect» Z-curves (lower variance than physically possible) → suspicious activity flag.
 > - **Honeypot Trees:** 1 з кожних 100 — honeypot (справжній анкер, але SCC-emission заблокований). Будь-яка mint-спроба = доведена адресна атака → instant slashing + 12-chain rotation.
 > - **Red Team Adversarial Telemetry Generators:** GAN-вироблені синтетичні patterns як частина CI/CD (`04_06`) — знаходимо вразливості до того, як їх знайде зовнішній attacker.

@@ -61,7 +61,7 @@ RSpec.describe GithubBootstrap do
           owner: owner, project_number: project_number, executor: executor
         )
         single_select_calls = invocations.drop(1).select { |i| i[:argv].join(" ").include?("SINGLE_SELECT") }
-        # FIELDS contains 9 single-select definitions + 1 TEXT field.
+        # FIELDS contains 10 single-select definitions + 1 TEXT field.
         expect(single_select_calls.size).to eq(described_class::FIELDS.count { |f| f[:type] == :single_select })
       end
 
@@ -204,10 +204,16 @@ RSpec.describe GithubBootstrap do
   end
 
   describe "field schema invariants (docs/00_07 SSOT)" do
-    it "spans TRL 1–12 to match docs/00_04 §1 + 00_06 §7 Beyond TRL 9" do
-      expect(described_class::TRL_OPTIONS.size).to eq(12)
+    it "caps TRL at 1–9 (NASA/ISO 16290), per docs/00_04 §1" do
+      expect(described_class::TRL_OPTIONS.size).to eq(9)
       expect(described_class::TRL_OPTIONS.first).to eq("TRL:1")
-      expect(described_class::TRL_OPTIONS.last).to eq("TRL:12")
+      expect(described_class::TRL_OPTIONS.last).to eq("TRL:9")
+    end
+
+    it "tracks beyond-TRL-9 as SRL/MRL Readiness Horizon (docs/00_04 §1 + 00_06 §7)" do
+      expect(described_class::READINESS_HORIZON_OPTIONS).to include("SRL:Concept", "SRL:Pilot", "SRL:Deployed")
+      expect(described_class::READINESS_HORIZON_OPTIONS).to include("MRL:8", "MRL:10")
+      expect(described_class::READINESS_HORIZON_OPTIONS).not_to include("TRL:10", "TRL:11", "TRL:12")
     end
 
     it "lists the four primary R&D clusters + Cross-cluster" do
@@ -219,10 +225,10 @@ RSpec.describe GithubBootstrap do
       expect(described_class::SHAPE_UP_STAGE_OPTIONS).to contain_exactly("Shaping", "Bet (active)", "Building", "Hill (uphill)", "Hill (downhill)", "Park", "Drop", "Done")
     end
 
-    it "exposes nine single-select fields + one TEXT field (SSOT Link)" do
+    it "exposes ten single-select fields + one TEXT field (SSOT Link)" do
       single = described_class::FIELDS.count { |f| f[:type] == :single_select }
       text   = described_class::FIELDS.count { |f| f[:type] == :text }
-      expect(single).to eq(9)
+      expect(single).to eq(10)
       expect(text).to eq(1)
     end
   end

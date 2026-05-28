@@ -29,8 +29,9 @@
 
 | Поле | Тип | Опис / Функція |
 | :--- | :--- | :--- |
-| **Current TRL** | Single Select | Поточний рівень (1-12). Шкала розширена до 1-12 згідно з [`00_04 §1`](00_04_AI_Native_Engineering_and_TRL) та [`00_06 §7`](00_06_Strategic_Roadmap_and_HIL_Simulators) "Beyond TRL 9 — Planetary Intelligence". Головна колонка на дошці "Матриця TRL". |
-| **Target TRL** | Single Select | Цільовий рівень (1-12) для поточного циклу розробки. TRL 10–12 опційні, використовуються для R&D-епіків (forest-level emergence, edge self-evolution, cross-biome generalization, AI-adversarial security). |
+| **Current TRL** | Single Select | Поточний рівень (**1-9**, NASA/ISO 16290 — лише технологічна готовність) згідно з [`00_04 §1`](00_04_AI_Native_Engineering_and_TRL). Головна колонка на дошці "Матриця TRL". |
+| **Target TRL** | Single Select | Цільовий рівень (**1-9**) для поточного циклу. TRL НЕ розширюється до «10-12» (це нестандартно). |
+| **Readiness Horizon** | Single Select | Beyond-TRL-9 R&D-епіки ([`00_04 §1`](00_04_AI_Native_Engineering_and_TRL), [`00_06 §7`](00_06_Strategic_Roadmap_and_HIL_Simulators)): **SRL** (System Readiness — forest-level emergence, edge self-evolution, cross-biome generalization, AI-adversarial security) стадії `SRL:Concept` / `SRL:Pilot` / `SRL:Deployed`, та **MRL** (Manufacturing Readiness, `MRL:8/9/10` — серійний друк 5 SKU). |
 | **Assigned Agent** | Single Select | Виконавець: `Architect`, `AI Agent`, `Lab (ChNU)`, `Factory`, `nTop Expert`. |
 | **Module** | Single Select | Компонент екосистеми (наприклад, `04: Server Core`). Формує Swimlanes. |
 | **Appetite** | Single Select | `Small Batch` (1-2w) або `Big Bet` (6w) згідно з методологією Shape Up. |
@@ -48,12 +49,13 @@
 # bin/setup_github_project.sh — заплановано як частина IaC bootstrap
 PROJECT_ID="PVT_xxxx"  # отримати через `gh project list --owner Alexey-Lukin --format json`
 
-# Single-select option sets (SSOT — синхронізувати з §1.1)
-TRL_OPTIONS=(TRL:1 TRL:2 TRL:3 TRL:4 TRL:5 TRL:6 TRL:7 TRL:8 TRL:9 TRL:10 TRL:11 TRL:12)
-# ↑ Шкала 1-12 (а не 1-9): TRL 10-12 = Beyond TRL 9 / Planetary Intelligence (00_04 §1, 00_06 §7).
-#   Якщо API/CI відмовить через "TRL:10" не в whitelist — це симптом застарілого schema; синхронізувати тут.
+# Single-select option sets (SSOT — синхронізувати з §1.1 та lib/github_bootstrap.rb)
+TRL_OPTIONS=(TRL:1 TRL:2 TRL:3 TRL:4 TRL:5 TRL:6 TRL:7 TRL:8 TRL:9)
+# ↑ Шкала 1-9 (NASA/ISO 16290). TRL НЕ розширюється до 10-12 (00_04 §1).
+READINESS_HORIZON_OPTIONS=(SRL:Concept SRL:Pilot SRL:Deployed MRL:8 MRL:9 MRL:10)
+# ↑ Beyond TRL 9 = окремий вимір SRL/MRL (00_04 §1, 00_06 §7), не "TRL 10-12".
 
-for FIELD in "Current TRL" "Target TRL" "Assigned Agent" "Module" "Appetite" "R&D Cluster" "Shape Up Stage" "Cycle" "Academic Semester"; do
+for FIELD in "Current TRL" "Target TRL" "Readiness Horizon" "Assigned Agent" "Module" "Appetite" "R&D Cluster" "Shape Up Stage" "Cycle" "Academic Semester"; do
   echo "Ensuring field: $FIELD"
   # gh api graphql -f query='mutation { addProjectV2Field(...) }'
   # Для Current TRL / Target TRL передавати TRL_OPTIONS[@] як SingleSelect options.

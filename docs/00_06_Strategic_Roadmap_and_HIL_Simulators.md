@@ -135,7 +135,9 @@
 
 > **Контекст:** TRL 1–9 описують шлях від ідеї до «стабільного мінтингу SCC на мільйонах вузлів». Це готує **Silken Net як інструмент** — фізично надійний D-MRV для лісу. Але **жодний з TRL-рівнів не описує перехід від «розумних дерев» до «розумного лісу»** — від суми ізольованих агентів до колективного інтелекту планетарного масштабу.
 >
-> Цей розділ фіксує **4 архітектурні прогалини**, які стоять між поточною архітектурою та справжнім "planetary intelligence". Це **не блокери** для TRL 9 (комерційний продукт можливий і без них), але це **дослідницький горизонт TRL 10+** — наукова програма на 5–15 років, яка перетворить Silken Net з IoT-системи в самоорганізовану кібер-екосистему.
+> Цей розділ фіксує **4 архітектурні прогалини**, які стоять між поточною архітектурою та справжнім "planetary intelligence". Це **не блокери** для TRL 9 (комерційний продукт можливий і без них), але це **дослідницький горизонт за межами TRL 9** — наукова програма на 5–15 років, яка перетворить Silken Net з IoT-системи в самоорганізовану кібер-екосистему.
+>
+> **⚠️ Метрика (2026-05-28): «TRL 10-12» — НЕ використовується.** TRL стандартизовано на 1-9 (NASA / ISO 16290) і вимірює лише технологічну готовність. Зрілість за межами TRL 9 трекається окремими шкалами ([`00_04 §1`](00_04_AI_Native_Engineering_and_TRL)): **SRL (System Readiness Level)** — системна/інтеграційна зрілість, стадії `Concept → Pilot → Deployed`; **MRL (Manufacturing Readiness Level, 8-10)** — серійне виробництво (5 SKU). Нижче «TRL шлях» кожної прогалини переформульовано як **SRL-шлях**.
 >
 > **Не плутати з блокерами в `00_08`:** там — конкретні інженерні задачі з measurable outcomes. Тут — стратегічні R&D-вектори, які потребують академічної колаборації (Q1 публікації) та можуть стати темою PhD-дисертацій під школами Кирилюка (синергетика) + Мінаєва (квантова хімія) + Порубльова (FOTIUS кібернетика).
 
@@ -157,14 +159,14 @@
 | **Chimera States у network of attractors** | Математична теорія Куромото (Kuramoto-Battogtokh 2002): network coupled Lorenz oscillators утворює **частково синхронізовані, частково хаотичні patterns** — це саме структура здорового лісу (homeostasis-coupled domains across disturbance gradients) | Кирилюк синергетика економічних систем (`08_01 §1.4`); Гусак нелінійна динаміка (`08_01 §1.2`) |
 | **Forest-Wide Lorenz Coupling** | Розширення `bio_contract.rb`: вхідні параметри атрактора містять не лише власні `delta_t/temp/acoustic`, а й aggregated neighbor signals (median Z у кластері за останню годину) | Розширення `03_04 §X.Y` (новий розділ після TRL 9) |
 
-**TRL шлях:** TRL 10 (concept formulated) → TRL 11 (Q1 publication "Chimera states in tree-borne IoT sensors of Cherkasy Pine Forest") → TRL 12 (deployed as opt-in firmware extension у кластерах ≥ 100 дерев).
+**SRL шлях:** `SRL:Concept` (concept formulated) → `SRL:Pilot` (Q1 publication "Chimera states in tree-borne IoT sensors of Cherkasy Pine Forest") → `SRL:Deployed` (opt-in firmware extension у кластерах ≥ 100 дерев).
 
 > ⚠️ **Ієрархічне делегування інтелекту (Compute Budget Constraint).** L1 Soldier (STM32WLE5JC + 0.47F supercap, енергобаланс `02_03 §9.6 Сценарій C` = +1.4 мДж/год запасу) **фізично не може** тренувати моделі або агрегувати градієнти — будь-який Federated Learning epoch, обчислення Chimera coupling або forest-wide attractor inversion утримуватиме MCU в active-режимі (≥12 mA × ≥секунди) і **гарантовано виведе supercap у brownout** ще до завершення першої епохи. Тому:
 >
 > - **L1 Soldiers (STM32 + 0.47F):** залишаються наївними виконавцями (Inference only). Емітують 1-bit stigmergic сигнали (рядок «Stigmergic Communication» — це **єдина дешева опція** на L1, ~110 ms LoRa TX @ +14 dBm).
 > - **L2 Conductors / L3 Queens (LiFePO4 + Solar):** тут відбуваються Federated Learning, Chimera coupling math та network-level Lorenz координація. Queen має 20Ah батарею і Cortex-M4 + LTE backbone — обчислювально на 4-5 порядків багатший за Soldier.
 >
-> Solidiers отримують результат як **скомпільований mruby bytecode через OTA-канал** (`03_02` Queen → broadcast chunks по 11 байт), що зберігається у `MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000`. Жодного "self-training" на L1.
+> Solidiers отримують результат як **скомпільований mruby bytecode через OTA-канал** (`03_02` Queen → broadcast chunks по 11 байт), що зберігається у `MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000`. Жодного "self-training" на L1. Зберігає SRL roadmap реалістичним.
 
 ### 7.2. Gap #2 — Self-Evolving Behaviour (On-Device Edge AI)
 
@@ -200,9 +202,9 @@
 > | **L2 Conductor** *(Hub Tree, formerly "Sergeant")* | Кластерний агрегатор: збирає 50-200 Soldiers lambda-stream, обчислює **локальний GA** на (σ, ρ, β) для свого кластера, відправляє candidate sets до Queen. Динамічно обирається на основі `vcap` та якості зв'язку. | Solar + LiFePO4 (TBD spec, `00_02 §3` L2 placeholder) |
 > | **L3 Queen** *(Mother Tree)* | Агрегатор розподіленого навчання: для Lorenz — обмін **оцінками параметрів σ/ρ/β** (distributed parameter estimation, PSO/GA); для TinyML — справжній Federated Learning (агрегація градієнтів / ретренінг → `.tflite` OTA), privacy-preserving. Компілює mruby contracts, broadcast'ить chunked OTA. | 20Ah LiFePO4 + Solar + LTE backbone (`02_05`) |
 >
-> Q-learning, GA-evolution, online TinyML training **відбуваються на L2/L3 з обмеженням енергії на 4-5 порядків легшим**, ніж у Soldier. До Soldier приходить **готовий compiled bytecode через OTA** (магік `0x45544952 "RITE"` у `MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000`, `03_02`). Це усуває "self-training on edge" парадокс і зберігає TRL 11+ roadmap реалістичним.
+> Q-learning, GA-evolution, online TinyML training **відбуваються на L2/L3 з обмеженням енергії на 4-5 порядків легшим**, ніж у Soldier. До Soldier приходить **готовий compiled bytecode через OTA** (магік `0x45544952 "RITE"` у `MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000`, `03_02`). Це усуває "self-training on edge" парадокс і зберігає SRL roadmap реалістичним.
 
-**TRL шлях:** TRL 10 (Q1 paper "Edge evolutionary Lorenz parameter tuning **за делегованою L2/L3 архітектурою**") → TRL 11 (opt-in firmware feature for select клумбоів cluster owners) → TRL 12 (default behavior після формальної верифікації безпеки).
+**SRL шлях:** `SRL:Concept` (Q1 paper "Edge evolutionary Lorenz parameter tuning **за делегованою L2/L3 архітектурою**") → `SRL:Pilot` (opt-in firmware feature for select cluster owners) → `SRL:Deployed` (default behavior після формальної верифікації безпеки).
 
 ### 7.3. Gap #3 — Cross-Species / Cross-Biome Generalization
 
@@ -233,7 +235,7 @@
 - НАН України через школу НБС Гришка (intro Спрягайла, кандидатська 2013) — broadleaf і fruit tree calibration
 - Future: international university partnerships (Brazil INPA для tropical, Australia CSIRO для eucalyptus, ASEAN MUSE для mangrove)
 
-**TRL шлях:** TRL 10 (multi-species PoC у 3 lab settings) → TRL 11 (deployed pilots у 3 biomes одночасно) → TRL 12 (open framework для community-driven biome onboarding).
+**SRL/MRL шлях:** `SRL:Concept` (multi-species PoC у 3 lab settings) → `SRL:Pilot` + `MRL:8` (deployed pilots у 3 biomes одночасно, мала серія 5 SKU) → `SRL:Deployed` + `MRL:10` (open framework + повносерійне виробництво per-biome SKU).
 
 ### 7.4. Gap #4 — Apex Predator Defense (Proactive AI-Adversarial Security)
 
@@ -255,15 +257,15 @@
 | **Adversarial Telemetry Generators (Red Team)** | Внутрішня команда генерує **GAN-вироблені синтетичні telemetry, які намагаються пройти Dual Computation** → знаходить вразливості до того, як їх знайде зовнішній attacker | Регулярні Red Team Exercises як частина CI/CD (`04_06 §B`); Q1 paper "Adversarial robustness of bio-token mints" |
 | **Decoy DID Tripwire (backend, НЕ on-chain honeypot)** | ⚠️ Виправлено: on-chain honeypot не працює — стейт контракту публічний, а навіть «реальне-але-заблоковане» дерево видає себе **відсутністю mint-подій** (атакер аналізує on-chain патерн і обходить). Тому — **бекенд-tripwire**: набір **decoy DID**, яких немає як реальних анкерів, у серверному watchlist (НЕ публікуються, НЕ on-chain). **Будь-яка телеметрія/mint-спроба від decoy DID = доведена підробка** (жоден реальний Soldier його не має) → instant alert + slashing + 12-chain rotation. Додатково: **Shadow Trees** — синтетичні фейкові дані у *публічному дашборді* (information warfare: торговий бот, що будує атаку на shadow-даних, руйнує свою стратегію). | Backend watchlist decoy DIDs + `TelemetryUnpackerService` tripwire (НЕ on-chain flag) |
 | **Quantum-Resistant Oracle Migration** | Сучасні ECDSA-підписи (Chainlink) вразливі до post-quantum cryptanalysis (~2030+). Перехід на **NIST PQC standards** (Kyber/Dilithium) у Web3 stack | Координовано з Аблязовим Д. (СЄУ, `08_07`) для правової рамки + Ярмілко (`08_02`) для firmware integration |
-| **Apex Predator AI Sentinel** | Окремий ML-сервіс, який моніторить весь стек 24/7 в режимі **«hunting for hunters»** — шукає координовані patterns між: trading volume на SCC DEXs + telemetry anomalies + oracle response patterns. Це **проактивний counter-AI** проти adversarial AI | Roadmap TRL 11+; вимагає budget на dedicated AI/ML engineer; партнерство з академічними лабораторіями з ML security |
+| **Apex Predator AI Sentinel** | Окремий ML-сервіс, який моніторить весь стек 24/7 в режимі **«hunting for hunters»** — шукає координовані patterns між: trading volume на SCC DEXs + telemetry anomalies + oracle response patterns. Це **проактивний counter-AI** проти adversarial AI | Roadmap `SRL:Pilot`+; вимагає budget на dedicated AI/ML engineer; партнерство з академічними лабораторіями з ML security |
 
 **Філософська позиція:** Silken Net — це **критична інфраструктура планетарного клімату**. Тому стандарт безпеки має бути не «не гірше за DeFi», а **на рівні national-grid SCADA**: continuous threat hunting, mandatory bug bounty, formal verification critical path.
 
-**TRL шлях:** TRL 10 (Red Team exercises у production) → TRL 11 (AI Sentinel deployed) → TRL 12 (formal verification of slashing protocol против всіх известных vectors).
+**SRL шлях:** `SRL:Concept` (Red Team exercises у production) → `SRL:Pilot` (AI Sentinel deployed) → `SRL:Deployed` (formal verification of slashing protocol проти всіх відомих vectors).
 
 ### 7.5. Зведена Таблиця Чотирьох Прогалин
 
-| # | Gap | Поточний стан (TRL 9) | Майбутній стан (TRL 12+) | Партнер | Q1 паперів |
+| # | Gap | Поточний стан (TRL 9) | Майбутній стан (SRL:Deployed) | Партнер | Q1 паперів |
 |---|---|---|---|---|---|
 | 1 | Forest-Level Emergence | Ізольовані Lorenz | Chimera states у network of attractors | Кирилюк, Гусак, Любченко | 2–3 (Synergetics + Network Science) |
 | 2 | Self-Evolving Behaviour | Top-down OTA only | On-device edge GA + RL | Порубльов, Ярмілко | 2 (Edge AI + Evolutionary Comp.) |
@@ -272,13 +274,14 @@
 
 ### 7.6. Як це впливає на TRL ladder
 
-Ці 4 прогалини **не блокують** TRL 9 (commercial product можливий і без них). Але вони визначають **TRL 10 → 12** ієрархію, яка перетворює Silken Net з **D-MRV-інструменту** на **планетарну нервову систему**:
+Ці 4 прогалини **не блокують** TRL 9 (commercial product можливий і без них). Але вони визначають **SRL-ієрархію за межами TRL 9** (а не «TRL 10-12»), яка перетворює Silken Net з **D-MRV-інструменту** на **планетарну нервову систему**:
 
 ```
-TRL 9  ━━━ Operational. Stable SCC mint.                    ← Silken Net як IoT-продукт
-TRL 10 ━━━ Forest-level emergence + cross-biome PoC          ← Silken Net як нервова система
-TRL 11 ━━━ Self-evolving + AI Sentinel deployed              ← Silken Net як адаптивний симбіонт
-TRL 12 ━━━ Verified, formal, planetary-scale autopoiesis     ← Silken Net як планетарний інтелект
+TRL 9        ━━━ Operational. Stable SCC mint.                ← Silken Net як IoT-продукт
+SRL:Concept  ━━━ Forest-level emergence + cross-biome PoC      ← Silken Net як нервова система
+SRL:Pilot    ━━━ Self-evolving + AI Sentinel deployed          ← Silken Net як адаптивний симбіонт
+SRL:Deployed ━━━ Verified, formal, planetary-scale autopoiesis ← Silken Net як планетарний інтелект
+             (+ MRL:8-10 — серійне виробництво 5 SKU per biome)
 ```
 
 Це **15-річний горизонт** (2026–2040+) — за ним вже сяє візія Гедз+Чудаєвої (`08_07`): D-MRV як база для **global climate governance protocol**, на рівні WTO або ISO.

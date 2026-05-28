@@ -31,7 +31,17 @@ module GithubBootstrap
 
   # Field schema — order matters for stable diffs against existing
   # Projects V2 boards.
-  TRL_OPTIONS = (1..12).map { |n| "TRL:#{n}" }.freeze
+  # TRL caps at 9 (NASA / ISO 16290 — technology readiness only).
+  TRL_OPTIONS = (1..9).map { |n| "TRL:#{n}" }.freeze
+
+  # Beyond TRL 9 is NOT "TRL 10-12" (non-standard). Planetary-intelligence R&D
+  # is tracked as a separate dimension: SRL (System Readiness — emergence,
+  # self-evolution, cross-biome, AI-security) staged Concept→Pilot→Deployed,
+  # and MRL (Manufacturing Readiness, 8-10 — 5-SKU mass production).
+  # See 00_04 §1 / 00_06 §7.
+  READINESS_HORIZON_OPTIONS = %w[
+    SRL:Concept SRL:Pilot SRL:Deployed MRL:8 MRL:9 MRL:10
+  ].freeze
 
   AGENT_OPTIONS = [
     "Architect", "AI Agent", "Lab (ChNU)", "Factory", "nTop Expert"
@@ -66,6 +76,7 @@ module GithubBootstrap
   FIELDS = [
     { name: "Current TRL",       type: :single_select, options: TRL_OPTIONS },
     { name: "Target TRL",        type: :single_select, options: TRL_OPTIONS },
+    { name: "Readiness Horizon", type: :single_select, options: READINESS_HORIZON_OPTIONS },
     { name: "Assigned Agent",    type: :single_select, options: AGENT_OPTIONS },
     { name: "Module",            type: :single_select, options: MODULE_OPTIONS },
     { name: "Appetite",          type: :single_select, options: APPETITE_OPTIONS },

@@ -32,7 +32,7 @@
   - **MRL (Manufacturing Readiness Level, 1-10)** — виробнича зрілість: серійний друк 5 SKU, заводське штампування.
   - Деталі — [`00_06 §7`](00_06_Strategic_Roadmap_and_HIL_Simulators) Beyond TRL 9 — Planetary Intelligence Gaps.
 
-  > **⚠️ Cross-doc sync (2026-05-28):** Легасі-позначки «TRL 10-12» у [`00_06 §7`](00_06_Strategic_Roadmap_and_HIL_Simulators) та в label-whitelist/Projects-схемі [`00_07`](00_07_GitHub_Projects_and_IaC_Automation) (`TRL:10/11/12`) слід мігрувати на `SRL:*` / `MRL:*` — інакше залишиться розбіжність із цією SSOT і ризик зламати CI label-gate. (Не зроблено в цьому коміті, щоб не зламати наявну Projects-автоматизацію без узгодження.)
+  > **✅ Cross-doc sync (2026-05-28, виконано):** Легасі-позначки «TRL 10-12» мігровано на `SRL:*` / `MRL:*` у [`00_06 §7`](00_06_Strategic_Roadmap_and_HIL_Simulators), label-whitelist/Projects-схемі [`00_07 §1.1`](00_07_GitHub_Projects_and_IaC_Automation), `lib/github_bootstrap.rb` (`TRL_OPTIONS=(1..9)` + нове поле `Readiness Horizon`) та споживачах (00_08, 01_01, 03_03, 03_04, 05_03). 👤 Залишилось: перезапустити `rake github:project_fields`, щоб додати поле `Readiness Horizon` на live-дошку (issues з TRL:10-12 не існує, тож re-tag не потрібен).
 
 ### Суть паралельного інжинірингу
 
