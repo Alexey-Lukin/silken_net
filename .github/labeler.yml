@@ -1,4 +1,4 @@
-# PR Auto-Labeler config (actions/labeler@v5).
+# PR Auto-Labeler config (actions/labeler@v6).
 # Drives cluster routing per docs/00_07_GitHub_Projects_and_IaC_Automation.md §2.6.
 
 "cluster:A-hardware":
@@ -14,7 +14,6 @@
       - any-glob-to-any-file:
           - 'contracts/**'
           - 'app/services/iotex/**'
-          - 'app/services/web3/chainlink_router_version*'
           - 'app/services/silken_net/attractor*'
           - 'app/services/silken_net/seed_derivation*'
           - 'docs/05_*'
@@ -31,6 +30,13 @@
           - 'terraform/**'
           - 'docs/04_*'
           - 'docs/06_*'
+      # [OPS.9] Exclude cluster-B and cluster-D subtrees so the broad app/**
+      # glob doesn't double-label them (primary-cluster mutual exclusivity, 00_05 §2).
+      - all-globs-to-all-files:
+          - '!app/services/iotex/**'
+          - '!app/services/silken_net/attractor*'
+          - '!app/services/silken_net/seed_derivation*'
+          - '!app/services/polygon/hadron_*'
 
 "cluster:D-compliance":
   - changed-files:
@@ -44,6 +50,7 @@
           - 'app/services/blockchain_*'
           - 'app/services/celo/**'
           - 'app/services/solana/**'
+          - 'app/services/web3/chainlink_router_version*'
 
 "module:03-firmware":
   - changed-files:

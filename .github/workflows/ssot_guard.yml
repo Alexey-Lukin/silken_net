@@ -115,9 +115,11 @@ jobs:
             // Generic skip-label was rejected because it would be abused without
             // forcing classification. Semantic labels are visible in PR title/UI,
             // so a mismatch (e.g. `type:bugfix` on a schema change) is caught by reviewers.
+            // [OPS.9] type:refactor & type:bugfix removed from bypass — they
+            // change names/paths/logic → context drift. Such PRs must update
+            // docs OR add a Drift Register entry (04_02 §13b). Only genuinely
+            // non-architectural classes may bypass the docs requirement.
             const BYPASS_LABELS = [
-              'type:bugfix',
-              'type:refactor',
               'type:chore',
               'type:deps',
               'type:perf',
@@ -160,13 +162,13 @@ jobs:
               '**(a)** Update relevant SSOT file in `docs/` (or `README.md` / `CLAUDE.md`), OR',
               '',
               '**(b)** Add one of these semantic labels if the PR genuinely does not alter architecture:',
-              '   - `type:bugfix` — defect fix, no architectural change',
-              '   - `type:refactor` — rename/extract, no behavior change',
               '   - `type:chore` — build/CI/tooling',
               '   - `type:deps` — dependency bump',
               '   - `type:perf` — performance optimization',
               '   - `type:test` — test-only change',
               '',
+              '> `type:refactor` / `type:bugfix` no longer bypass — they change names/paths/logic',
+              '> (context drift). Update `docs/` OR add a Drift Register entry (04_02 §13b).',
               '> Generic skip-label was deliberately rejected — the semantic label forces classification.',
               '> Ref: [00_07 §2.3 SSOT Integrity Guard](../docs/00_07_GitHub_Projects_and_IaC_Automation.md)',
             ].join('\n');

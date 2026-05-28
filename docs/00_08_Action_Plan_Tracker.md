@@ -894,7 +894,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 #### OPS.2 — SSOT Integrity Guard
 - **Джерело:** `00_07` | **Складність: M**
 - **Опис:** GitHub Action що блокує merge PRs якщо зміни в `app/models/` або `firmware/` не супроводжуються відповідними оновленнями в `docs/` або Wiki. Запобігає context drift між кодом та документацією
-- **Статус:** ✅ Виконано (Сесія 18). `.github/workflows/ssot_guard.yml` створено. Перевіряє: `app/models/`, `firmware/soldier/`, `firmware/queen/`, `firmware/bio_contracts/`, `contracts/`, `app/services/`. Bypass через label `ssot-bypass`. Виводить деталізований звіт у PR check.
+- **Статус:** ✅ Виконано (Сесія 18). `.github/workflows/ssot_guard.yml` створено. Перевіряє: `app/models/`, `firmware/soldier/`, `firmware/queen/`, `firmware/bio_contracts/`, `contracts/`, `app/services/`. Bypass через семантичні `type:*` labels (`type:chore/deps/perf/test`; `type:refactor`/`type:bugfix` НЕ обходять — потребують docs-update або Drift Register `04_02 §13b`, per OPS.9). Виводить деталізований звіт у PR check.
 - [x] Створити `.github/workflows/ssot_guard.yml`
 - [x] Визначити mapping: які файли потребують яких doc updates
 - [ ] 👤 Налаштувати як required check на `main` branch
@@ -935,12 +935,12 @@ DOC.9 — потребує лабораторного вимірювання TX-
 
 #### OPS.9 — CI/CD workflow hardening (00_07 review, 2026-05-28)
 - **Джерело:** `00_07` §2.2/§2.3/§2.5/§2.6 review (2026-05-28) | **Пріоритет: P2** | **Складність: M** | **🤖 Код**
-- **Опис:** Рев'ю `00_07` виявило 4 розбіжності між специфікацією та реальними `.github/`-файлами + 1 stale-опис у цьому трекері. Doc-частину виправлено у `00_07`; лишається синхронізувати workflow-файли з оновленою специфікацією:
-- [ ] 🤖 **`trl_sync.yml` — TRL-gate.** Зараз копіює `Target TRL → Current TRL` беззумовно на будь-який `issues.closed` → обходить обов'язкові Architect/DAO-гейти (`00_05 §3`: TRL≥5 = Architect approval). Треба: `Target TRL ≤ 4` → авто; `≥ 5` → статус `Pending Architect Approval` + просування лише за лейблом `architect-approved`.
-- [ ] 🤖 **`ssot_guard.yml` — bypass whitelist.** Прибрати `type:refactor` і `type:bugfix` з `BYPASS_LABELS` (вони міняють імена/шляхи/логіку → context drift). Лишити `type:chore/deps/perf/test`. Для refactor/bugfix — вимога docs-update АБО запису у Drift Register (`04_02 §13b`).
-- [ ] 🤖 **`labels_sync.yml` — `delete-other-labels: true → false`.** Інакше label-sync затирає ефемерні лейбли ботів (Dependabot/Snyk/Renovate) і дефолтні GitHub-лейбли.
-- [ ] 🤖 **`labeler.yml` — overlap fix.** Широкий `app/**` (cluster C) поглинає піддерева B (`iotex`, `attractor*`, `seed_derivation*`) і D (`hadron_*`) → подвійні primary-cluster labels (ламає взаємовиключність `00_05 §2`). Додати `!`-виключення у C (v6 `all-globs-to-all-files`). Перемістити `chainlink_router_version*` з primary-B → cluster-ref:B (це failover-інфра, `00_03`). Workflow вже `actions/labeler@v6`.
-- [ ] 🤖 **Виправити stale-опис OPS.2 вище:** каже «Bypass через label `ssot-bypass`», але реальний `ssot_guard.yml` використовує семантичні `type:*` labels (не `ssot-bypass`).
+- **Опис:** Рев'ю `00_07` виявило 4 розбіжності між специфікацією та реальними `.github/`-файлами + 1 stale-опис у цьому трекері. Doc-частину виправлено у `00_07`; workflow-файли синхронізовано з оновленою специфікацією (✅ 2026-05-28):
+- [x] 🤖 **`trl_sync.yml` — TRL-gate.** Зараз копіює `Target TRL → Current TRL` беззумовно на будь-який `issues.closed` → обходить обов'язкові Architect/DAO-гейти (`00_05 §3`: TRL≥5 = Architect approval). Треба: `Target TRL ≤ 4` → авто; `≥ 5` → статус `Pending Architect Approval` + просування лише за лейблом `architect-approved`.
+- [x] 🤖 **`ssot_guard.yml` — bypass whitelist.** Прибрати `type:refactor` і `type:bugfix` з `BYPASS_LABELS` (вони міняють імена/шляхи/логіку → context drift). Лишити `type:chore/deps/perf/test`. Для refactor/bugfix — вимога docs-update АБО запису у Drift Register (`04_02 §13b`).
+- [x] 🤖 **`labels_sync.yml` — `delete-other-labels: true → false`.** Інакше label-sync затирає ефемерні лейбли ботів (Dependabot/Snyk/Renovate) і дефолтні GitHub-лейбли.
+- [x] 🤖 **`labeler.yml` — overlap fix.** Широкий `app/**` (cluster C) поглинає піддерева B (`iotex`, `attractor*`, `seed_derivation*`) і D (`hadron_*`) → подвійні primary-cluster labels (ламає взаємовиключність `00_05 §2`). Додати `!`-виключення у C (v6 `all-globs-to-all-files`). Перемістити `chainlink_router_version*` з primary-B → cluster-ref:B (це failover-інфра, `00_03`). Workflow вже `actions/labeler@v6`.
+- [x] 🤖 **Виправити stale-опис OPS.2 вище:** каже «Bypass через label `ssot-bypass`», але реальний `ssot_guard.yml` використовує семантичні `type:*` labels (не `ssot-bypass`).
 
 ---
 

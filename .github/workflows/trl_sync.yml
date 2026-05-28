@@ -183,6 +183,25 @@ jobs:
             const targetTrlName = targetValue.name;
             core.info(`Target TRL value: "${targetTrlName}"`);
 
+            // ── 4a. [OPS.9] Architect-approval gate for TRL ≥ 5 ────
+            // 00_05 §3: advancing to TRL ≥ 5 requires Architect/DAO approval.
+            // Auto-advance only TRL ≤ 4; for ≥ 5 require the `architect-approved`
+            // label on the issue, otherwise leave Current TRL untouched.
+            const targetTrlNum = parseInt((targetTrlName.match(/\d+/) || ['0'])[0], 10);
+            const issueLabels = (context.payload.issue.labels || [])
+              .map(l => (typeof l === 'string' ? l : l.name));
+            if (targetTrlNum >= 5 && !issueLabels.includes('architect-approved')) {
+              core.warning(
+                `⛔ Pending Architect Approval: Target TRL "${targetTrlName}" (≥ 5) needs the ` +
+                `\`architect-approved\` label before Current TRL advances (00_05 §3). ` +
+                `Current TRL left unchanged for issue #${issueNumber}.`
+              );
+              return;
+            }
+            if (targetTrlNum >= 5) {
+              core.info(`Architect approval present — proceeding with TRL ${targetTrlNum} advance.`);
+            }
+
             // ── 5. Map to Current TRL option ID ────────────────────
             const currentOption = currentField.options.find(o => o.name === targetTrlName);
             if (!currentOption) {
