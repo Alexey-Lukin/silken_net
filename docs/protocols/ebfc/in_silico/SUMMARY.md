@@ -16,7 +16,7 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 | **L1** | Does deglycosylated FAD-GDH fold correctly? | AlphaFold 3 | ✅ d_FAD = 15.998 Å < tunneling 18-20 Å |
 | **L2** | Does the full matrix denature the protein? | OpenMM MD (481k atoms) | ✅ RMSD 1.22 Å (100ps), Rg stable at 10ns |
 | **L3** | Does electron cascade FAD→Os flow downhill? | PySCF DFT (54 atoms) | ✅ Bias-corrected Δε ≈ -0.07 eV (within 0.14 eV of exp.) |
-| **L3b** | Is DET through ZIF nanozyme fast enough? | PySCF ΔSCF | ✅ Cu-Co: k_ET = 2.34×10¹⁰ s⁻¹ (not rate-limiting) |
+| **L3b** | Is DET through ZIF nanozyme fast enough? | PySCF ΔSCF | ✅ 3/3 hops → total k_DET = 1.09×10⁸ s⁻¹ (10⁵× above turnover) |
 | **L4** | Does BASELINE_DELTA_T_S = 60s make physical sense? | Analytical MM+Arrhenius | ✅ Healthy 36s / Stressed 190s |
 
 **Bottom line:** All computational checks pass. The design is ready for physical prototyping (Ti-coin Stage 2).
@@ -80,12 +80,12 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 ### Temperature Sweep (script 12)
 | Temperature | RMSD (Å) | Verdict |
 |-------------|----------|---------|
-| 263 K (-10°C) | 0.795 ± 0.167 (max 0.968) | ✅ STABLE |
-| 278 K (5°C) | 0.834 ± 0.190 (max 1.030) | ✅ STABLE |
-| 298 K (25°C) | 1.094 ± 0.256 (max 1.398) | ✅ STABLE |
-| 313 K (40°C) | — (NaN, ligand placement clash) | Skipped |
+| 263 K (-10°C) | 0.76 (max 0.95) | ✅ STABLE |
+| 278 K (5°C) | 0.87 (max 1.13) | ✅ STABLE |
+| 298 K (25°C) | 0.90 (max 1.11) | ✅ STABLE |
+| 313 K (40°C) | 1.47 (max 2.23) | ✅ STABLE |
 
-**Conclusion:** Protein stable across -10°C to 25°C range (covers all temperate/boreal forests). RMSD scales with temperature as expected (more thermal motion at higher T). 313K skipped — edge case for tree physiology.
+**Conclusion:** Protein stable across the full -10°C to +40°C range (covers all temperate/boreal forests + extreme summer heat). RMSD rises with temperature as expected (more thermal motion); even 313K stays well below the 3 Å denaturation threshold. The earlier 313K NaN (ligand-placement clash) was fixed with 10k-step minimization + 1000-step low-T pre-relaxation. **4/4 STABLE.**
 
 ### PSBMA Glucose Diffusion (script 13)
 | Parameter | Value |
@@ -189,9 +189,7 @@ Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
 | Ce↔graphene (vacancy↔MWCNT) | 0.1177 | 3.07×10¹¹ | ✅ |
 | **Total (series)** | — | **1.09×10⁸** | rate-limited by Co-Ce |
 
-**Conclusion:** All 3 hops ✅. Total DET rate 1.09×10⁸ s⁻¹ — **10⁵× faster than enzymatic turnover**. ZIF nanozyme cathode DET is NOT rate-limiting.
-
-**Conclusion (partial):** Cu-Co DET rate 2.34×10¹⁰ s⁻¹ is 7 orders of magnitude faster than enzymatic turnover (~10³ s⁻¹). ZIF DET is NOT rate-limiting.
+**Conclusion:** All 3 hops ✅. Bottleneck hop Co-Ce → total DET rate 1.09×10⁸ s⁻¹ — **10⁵× faster than enzymatic turnover** (~10³ s⁻¹). ZIF nanozyme cathode DET is NOT rate-limiting.
 
 ---
 
@@ -257,7 +255,7 @@ Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
 
 | Component | Location |
 |-----------|----------|
-| Scripts (30 total) | `tools/in_silico/scripts/01-50` |
+| Scripts | `tools/in_silico/scripts/` (count + per-script status → [`PIPELINE_STATUS.md`](PIPELINE_STATUS.md)) |
 | Shared lib | `tools/in_silico/lib/` (constants, geometry, utils, xylem_sap, dft_utils, md_utils) |
 | Ligand SDF files | `docs/protocols/ebfc/in_silico/ligands/` |
 | GAFF parameter cache | `tools/in_silico/cache/gaff_cache.json` |
@@ -269,13 +267,13 @@ Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
 
 ---
 
-## Pending Tasks
+## Milestone Tasks (all closed — nothing pending, CPU free)
 
 | Task | Type | Status |
 |------|------|--------|
 | ~~L2 10ns extended run~~ | GPU | ✅ DONE (RMSD 4.02 Å, Rg stable) |
 | ~~L2 rerun scripts 10-11~~ | GPU | ✅ DONE (1.20/1.22 Å correct genipin) |
-| ~~L2 temp sweep (script 12)~~ | GPU | ✅ DONE 3/4 temps |
+| ~~L2 temp sweep (script 12)~~ | GPU | ✅ DONE 4/4 temps (263K–313K all stable) |
 | ~~L2 PSBMA diffusion (script 13)~~ | GPU | ✅ DONE |
 | ~~L2 xylem sap sweep (script 14)~~ | GPU | ✅ DONE 6/6 species |
 | ~~L2 PVI coverage (script 15)~~ | GPU | ✅ DONE (RMSD 1.10 Å, brush safe) |
@@ -286,7 +284,7 @@ Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
 | ~~HW.3.IS thermal stress (script 50)~~ | CPU | ✅ DONE (safety 9.9×) |
 | ~~HW.3 Гусак models (script 51)~~ | CPU | ✅ DONE (Arrhenius, Kirkendall, H7/s6) |
 | ~~L3/L2 MD→DFT ensemble (script 27)~~ | CPU | ✅ DONE — FAD HOMO -5.589 ± 0.058 eV across 5 snapshots, thermally robust |
-| L3 Nelsen λ (script 29) | CPU | ❌ CLOSED (physical limitation: FADH₂•⁺ geometry pathological in implicit solvent, both methods). Literature λ=0.7-0.8 eV retained |
+| ~~L3 Nelsen λ (script 29)~~ | CPU | ❌ CLOSED — work done, result is a documented negative (FADH₂•⁺ geometry pathological in implicit solvent, both methods). Literature λ=0.7-0.8 eV retained |
 | ~~L3 PCET proton reference (script 32)~~ | — | ✅ E°(FAD/FADH₂)=−158 mV @pH7, Δ50 mV vs free-flavin exp — implicit solvent valid |
 | ~~L3 PCET cascade (script 33)~~ | CPU | ✅ DONE (geom-opt): PCET cost +5.87 eV → cascade +1.48 eV, does NOT flip downhill. ~1 eV gap = PCM solvation limit. Exp −0.14 + B3LYP-corr −0.07 authoritative |
 
