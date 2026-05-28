@@ -1,74 +1,58 @@
 # In-Silico Pipeline — Operational Status & Dependencies
 
-> **Last updated:** 2026-05-28 08:00 EEST
+> **Last updated:** 2026-05-28 13:30 EEST
 > **TRL 3→4 Gate:** ✅ PASSED (2026-05-25)
 
 ---
 
 ## Script Execution Status
 
-### ✅ Completed (results in cache)
+> **Nothing running.** All scripts below are complete or closed. Volatile
+> counts live here only (other docs link, not duplicate).
 
-| # | Script | Result | Cache File | Docs Updated |
-|---|--------|--------|------------|--------------|
-| 01 | `smoke_test_water_box` | Engine works | — | ✅ |
-| 02 | `parameterize_fad` | FAD.sdf + GAFF | `gaff_cache.json` | ✅ |
-| 03 | `parameterize_genipin` | genipin.sdf + GAFF | `gaff_cache.json` | ✅ |
-| 04 | `parameterize_chitosan` | chitosan_trimer.sdf | `gaff_cache.json` | ✅ |
-| 05 | `parameterize_cnc` | cellobiose.sdf | `gaff_cache.json` | ✅ |
-| 06 | `parameterize_ppy` | ppy_pentamer.sdf | `gaff_cache.json` | ✅ |
-| 07 | `parameterize_pvi` | pvi_trimer.sdf | `gaff_cache.json` | ✅ |
-| 08 | `parameterize_sbma` | sbma_monomer.sdf | `gaff_cache.json` | ✅ |
-| 10 | `genipin_stability_md` | ~~RMSD 0.95 Å (wrong genipin)~~ → **RMSD 1.20 Å (correct C₁₁ genipin, 2026-05-26)** ✅ | `runs/` (gitignored) | ✅ |
-| 11 | `full_matrix_md` | ~~RMSD 1.11 Å (wrong genipin)~~ → **RMSD 1.22 Å (correct C₁₁ genipin, 2026-05-27)** ✅. 10ns run: RMSD 4.02 Å (Rg stable, AF3 relaxation) | `runs/` (gitignored) | ✅ |
-| 20 | `dft_lumiflavin` | HOMO(FADH₂) = -5.14 eV | `dft/lumiflavin.json` | ✅ |
-| 21 | `dft_os_bipy_complex` | NH₃ surrogate (superseded) | `dft/os_complex.json` (overwritten) | ✅ |
-| 21b | `dft_os_bpy_full` | LUMO(Os III) = -4.23 eV | `dft/os_complex.json` | ✅ |
-| 22 | `compare_homo_lumo` | Δε = -0.91 eV raw | `dft/comparison.json` | ✅ |
-| 23 | `build_zif_clusters` | 3 XYZ files | `ligands/cu_co_zif.xyz` etc. | ✅ |
-| 30 | `kinetics_delta_t` | delta_t = 36s healthy | `kinetics/delta_t_lookup.json` | ✅ |
-| 30b | `kinetics_monte_carlo` | 90% CI: 14-120s | `kinetics/monte_carlo.json` | ✅ |
-| 31 | `eis_impedance_model` | Rct=130Ω, Rs=100Ω | `kinetics/eis_model.json` | ✅ |
-| 40 | `validate_vs_experiment` | Predictions ready | `kinetics/validation_report.json` | ✅ |
+### ✅ Completed (numeric order — results in cache)
 
-### ⏳ Running Now
+| # | Script | Result | Cache |
+|---|--------|--------|-------|
+| 01 | `smoke_test_water_box` | Engine works | — |
+| 02 | `parameterize_fad` | FAD.sdf + GAFF | `gaff_cache.json` |
+| 03 | `parameterize_genipin` | genipin.sdf | `gaff_cache.json` |
+| 04 | `parameterize_chitosan` | chitosan_trimer.sdf | `gaff_cache.json` |
+| 05 | `parameterize_cnc` | cellobiose.sdf | `gaff_cache.json` |
+| 06 | `parameterize_ppy` | ppy_pentamer.sdf | `gaff_cache.json` |
+| 07 | `parameterize_pvi` | pvi_trimer.sdf | `gaff_cache.json` |
+| 08 | `parameterize_sbma` | sbma_monomer.sdf | `gaff_cache.json` |
+| 10 | `genipin_stability_md` | **RMSD 1.20 Å** (correct C₁₁ genipin) | `runs/` |
+| 11 | `full_matrix_md` | **RMSD 1.22 Å** (100ps); 10ns 4.02 Å, **Rg stable** → AF3 relaxation, not denaturation | `runs/` |
+| 12 | `temperature_sweep_md` | **4/4 temps** 0.76–1.47 Å, all ≪3Å STABLE (313K NaN fixed) | `kinetics/temperature_sweep.json` |
+| 13 | `psbma_diffusion_md` | D_eff=5.1e-4 cm²/s (monomer; L4 uses lit. 2e-6) | — |
+| 14 | `xylem_sap_sweep_md` | **6/6 species** stable (pH 4.2–5.8) | `kinetics/xylem_sap_sweep.json` |
+| 15 | `pvi_coverage_md` | RMSD 1.10 Å → PVI brush safe, no denaturation | `runs/` |
+| 16 | `strain_cycling_md` | pseudoplastic (compress<stretch), PE drift 1.0% | `kinetics/strain_cycling.json` |
+| 20 | `dft_lumiflavin` | HOMO(FADH₂) = -5.14 eV | `dft/lumiflavin.json` |
+| 21b | `dft_os_bpy_full` | LUMO(Os III) = -4.23 eV (π-backbonding) | `dft/os_complex.json` |
+| 21d | `dft_os_bpy_wb97xd` | **Adiabatic ΔSCF +0.884 eV**; B3LYP-corrected -0.07 eV = best | `dft/os_complex_wb97xd.json` |
+| 22 | `compare_homo_lumo` | cascade Δε = -0.91 raw / **-0.07 corrected** | `dft/comparison.json` |
+| 23 | `build_zif_clusters` | 3 ZIF cluster XYZ | `ligands/` |
+| 24 | `dft_hopping_integrals` | **3/3 pairs ✅** → total **k_DET=1.09×10⁸ s⁻¹** | `dft/zif_hopping.json` |
+| 27 | `md_dft_ensemble` | FAD HOMO **-5.589 ± 0.058 eV** (thermally robust, σ≪0.3) | `dft/md_dft_ensemble.json` |
+| 28 | `electron_tunneling_pathway` | Beratan-Onuchic FAD→THR287, **β·d=2.05** (feasible) | `dft/tunneling_pathway.json` |
+| 30 | `kinetics_delta_t` | delta_t = 36s healthy / 190s stressed | `kinetics/delta_t_lookup.json` |
+| 30b | `kinetics_monte_carlo` | 90% CI: 14–120s | `kinetics/monte_carlo.json` |
+| 31 | `eis_impedance_model` | Rct=130Ω, Rs=100Ω | `kinetics/eis_model.json` |
+| 32 | `pcet_redox_potential` | E°(FAD/FADH₂) **-158 mV** (Δ50 mV vs free-flavin exp) — PCET valid w/ implicit solvent | `dft/pcet_redox_potential.json` |
+| 33 | `pcet_cascade_semiquinone` | PCET cost +5.87 eV → cascade +1.48 eV, **does NOT flip downhill** (~1 eV = PCM solvation limit) | `dft/pcet_cascade.json` |
+| 40 | `validate_vs_experiment` | predictions ready for Ti-coin CV/EIS | `kinetics/validation_report.json` |
+| 50 | `thermal_stress_lame` | safety 9.9× at -30°C; 20yr creep 76µm → barbs | `kinetics/thermal_stress_lame.json` |
+| 51 | `gusak_degradation_model` | Arrhenius + Kirkendall V=1.12 µg/cm²/yr + H7/s6 | `kinetics/gusak_degradation.json` |
 
-| # | Script | Status | Resource | ETA |
-|---|--------|--------|----------|-----|
-| 14 | `xylem_sap_sweep_md` | ✅ 6/6 species: pine=1.03, winter=1.03, spruce=1.09, oak=1.05, beech=0.98, generic=1.05 Å — ALL STABLE | — | DONE |
-| 15 | `pvi_coverage_md` | ✅ PVI backbone RMSD 1.10 Å → brush safe, no denaturation | GPU | DONE |
-| 27 | `md_dft_ensemble` | ✅ FAD HOMO = **-5.589 ± 0.058 eV** across 5 MD snapshots → thermally robust (σ≪0.3). Fix: include H atoms (was bare heavy-atom skeleton → no SCF) + SOSCF fallback | CPU | DONE |
-| 29 | `dft_reorganization_energy` | ❌ CLOSED (Physical Limitation). Two methods both give E(n@R_cation) +160 eV — FADH₂•⁺ radical-cation geometry pathological in implicit solvent (needs QM/MM or PCET ref). **Literature λ=0.7-0.8 eV retained** (flavin gold standard) | CPU | Closed |
-| 32 | `pcet_redox_potential` | ✅ Thermodynamic proton reference → E°(FAD/FADH₂)=−158 mV @pH7 (Δ50 mV vs free-flavin exp). PCET valid with implicit solvent alone | — | Done |
-| 33 | `pcet_cascade_semiquinone` | ✅ Geom-optimized. PCET oxidation cost +5.87 eV (>bare IP) → cascade +1.48 eV, **does NOT flip downhill**. Confirms ~1 eV gap is PCM differential-solvation, not proton coupling | CPU | Done |
-| 21d | `dft_os_bpy_wb97xd` | ✅ COMPLETE. Koopmans Δε=-5.88 eV (RSH artifact). **Adiabatic ΔSCF: ΔG=+0.884 eV** (0.9 eV gap = PCM solvation limit). B3LYP corrected -0.07 eV remains best. | — | DONE |
-| 28 | `electron_tunneling_pathway` | ✅ Beratan-Onuchic: FAD→ALA260→THR259→THR282→THR287 (10 atoms, 23.7 Å, β·d=2.05 — tunneling feasible) | — | DONE |
-| 16 | `strain_cycling_md` | ✅ ±5% × 10 cycles: PE drift 1.0% (borderline, small box). Compress < stretch → pseudoplastic | GPU | DONE |
-| 50 | `thermal_stress_lame` | ✅ Lamé Ti↔PEEK: safety 9.9× at -30°C. 20yr creep 76µm → barbs mandatory | CPU | DONE |
-
-### ✅ Recently Completed (2026-05-26 — 2026-05-27)
-
-| # | Script | Result | Date |
-|---|--------|--------|------|
-| 10* | `genipin_stability_md` (rerun) | RMSD 1.20 Å ✅ (correct C₁₁ genipin) | 2026-05-26 |
-| 11* | `full_matrix_md` (rerun) | RMSD 1.22 Å ✅ (correct C₁₁ genipin, NaN fix: 10k min + 10K ramp) | 2026-05-27 |
-| 11** | `full_matrix_md` (10ns) | RMSD 4.02 Å, **Rg stable -0.1%** → AF3 conformational relaxation, not denaturation | 2026-05-26 |
-| 12 | `temperature_sweep_md` | ✅ **4/4 temps**: 263K=0.76, 278K=0.87, 298K=0.90, 313K=1.47 Å — all ≪3Å STABLE (313K NaN fixed: 10k min + 1000-step pre-relax) | 2026-05-28 |
-| 13 | `psbma_diffusion_md` | D_eff=5.1e-4 cm²/s (monomers, not polymerized; L4 uses literature 2e-6) | 2026-05-27 |
-
-### 📋 Queued (after current runs)
-
-| # | Script | Depends On | Time | Priority |
-|---|--------|------------|------|----------|
-| 24* | `dft_hopping_integrals` (Co-Ce, Ce-gr) | 23 ✅ | ~2-3h CPU each | P1 (after ωB97X) |
-| 22* | `compare_homo_lumo` (ωB97X update) | 21d | ~1 s | After 21d |
-| 40* | `validate_vs_experiment` | all | ~1 s | Final |
-
-### ❌ Terminated
+### ❌ Terminated / Closed
 
 | # | Script | Why | Resolution |
 |---|--------|-----|------------|
-| 21c | `dft_os_bpy_geomopt` | Cl displacement never converges (GAU criteria) | Programmatic geometry (21b) sufficient. LUMO diff < 0.002 eV |
+| 21 | `dft_os_bipy_complex` | NH₃ surrogate (no π-backbonding) | Superseded by 21b full bpy model |
+| 21c | `dft_os_bpy_geomopt` | Cl displacement never converges (flat PES) | Programmatic geometry (21b) sufficient — LUMO Δ<0.002 eV |
+| 29 | `dft_reorganization_energy` | λ: two methods both give E(n@R_cation) +160 eV — **FADH₂•⁺ radical-cation geometry pathological in implicit solvent** (needs QM/MM or PCET ref) | **Literature λ=0.7-0.8 eV retained** (flavin gold standard); clean "limitations of implicit solvation" point for the paper |
 
 ---
 
@@ -90,7 +74,7 @@ DFT (CPU, done):
   21b (Os full bpy) ───┼── 22 (cascade comparison) ──→ verdict
                        │
   23 (ZIF clusters) ───┤
-  24 (hopping ΔSCF) ───┘── L3b verdict (Cu-Co ✅, Co-Ce ⏳, Ce-gr ⏳)
+  24 (hopping ΔSCF) ───┘── L3b verdict (Cu-Co ✅, Co-Ce ✅, Ce-gr ✅ → k_DET=1.09×10⁸ s⁻¹)
 
 Kinetics (CPU, done):
   30 (delta_t) ──→ BASELINE 60s validated
@@ -144,10 +128,10 @@ Validation:
 
 **Verdict: ✅ YES.** Key pitch points:
 1. Pipeline PySCF+B3LYP+PCM runs end-to-end ✅
-2. Full bpy model (54 atoms) closes π-backbonding gap ✅
-3. **Ask:** ωB97X-D/def2-TZVP rerun for definitive raw DOWNHILL verdict
-4. **Ask:** CDFT hopping integrals for full ZIF cluster (multi-week project)
-5. Co-authored Q1 paper: "In Silico Design of Long-Lived Enzymatic Bio-Fuel Cells"
+2. Full bpy model (54 atoms) closes π-backbonding gap ✅; ωB97X/def2-TZVP adiabatic ΔSCF **done ourselves** (+0.884 eV)
+3. **Ask:** QM/MM with explicit solvation shell to overcome the **~1 eV PCM differential-solvation limit** we established via ωB97X adiabatic ΔSCF (raw DOWNHILL is unreachable with implicit solvent — proven, not pending)
+4. **Ask:** CDFT hopping integrals for the full periodic ZIF lattice (our 24 used cluster ΔSCF; multi-week project)
+5. Co-authored Q1 paper: "In Silico Design of Long-Lived Enzymatic Bio-Fuel Cells" — incl. a "limitations of implicit solvation" section (λ + cascade)
 
 ---
 
@@ -162,8 +146,12 @@ Validation:
 - ✅ ~~Temperature sweep (script 12)~~ — DONE 4/4 temps (263K-313K all stable, ≪3Å)
 - ✅ ~~PSBMA diffusion (script 13)~~ — DONE (model limitation noted)
 - ✅ ~~Xylem sap sweep (script 14)~~ — DONE 6/6 species (pH 4.2-5.8 all stable)
-- ✅ ~~ωB97X DFT (script 21d)~~ — DONE. Koopmans Δε=-5.88 eV (RSH artifact; B3LYP corrected ≈-0.07 eV is better). ΔSCF recommended for pub.
-- ⏳ L3b Co-Ce + Ce-graphene — queued after ωB97X
+- ✅ ~~ωB97X DFT (script 21d)~~ — DONE. Koopmans Δε=-5.88 eV (RSH artifact; B3LYP corrected ≈-0.07 eV is better). Adiabatic ΔSCF +0.884 eV.
+- ✅ ~~L3b Co-Ce + Ce-graphene (script 24)~~ — DONE (3/3 pairs, total k_DET=1.09×10⁸ s⁻¹)
+- ✅ ~~PCET potential + cascade (scripts 32, 33)~~ — DONE (potential -158 mV valid; cascade does not flip — PCM limit)
+
+### Future (publication-grade, needs external compute / collaboration):
+- QM/MM explicit-solvation shell (школа Мінаєв) — to resolve the ~1 eV PCM differential-solvation gap on the cascade + enable a true 4-point λ
 
 ---
 
