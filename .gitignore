@@ -103,3 +103,4 @@ coverage/
 /firmware/test/test_encryption
 /firmware/test/test_seed_derivation
 /firmware/test/test_ccm
+.claude/scheduled_tasks.lock
