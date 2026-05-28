@@ -709,6 +709,23 @@ H = 38.25 / (81 − 15.04) = 0.58 години = 35 хв
 > ```
 > → Зимовий режим: повне відключення MCU sleep current через PFET cut-off, TX лише при VSTOR ≥ 5.0V (накопичення кілька днів). Деталі — ARCH.8 "мовчання = здоров'я" та `02_05_Queen_Hardware_and_Starlink` HW.14.
 
+### 9.9. Fauna Acoustic Overlay (ARCH.39 — поза baseline TX-циклом)
+
+Енергобаланс §9.4–9.7 рахує **лише** baseline TX-цикл (sense → Lorenz → 1 TX). Fauna-акустичні сесії (TinyML biodiversity inference, `03_03 §10.3` / ARCH.39) — **окрема активність поверх** нього:
+
+```
+E_fauna_session ≈ 78.3 мДж     (~12 мА × 1.56 с active CPU: 156 MFCC+inference вікон, через η_buck)
+E_fauna_daily   ≈ 156.6 мДж/добу (~2 сесії/добу) — × 20 від застарілої оцінки 3.3 мДж/добу
+```
+
+Це **перевищує** запас Сценарію C (+1.4 мДж/год ≈ +33.6 мДж/добу), тож fauna **не може** бути гарантованою щоденною статтею бюджету. SSOT-рішення:
+
+1. **Opportunistic-only:** fauna-сесія запускається **лише** коли `V_cap ≥ FAUNA_VCAP_MIN_MV` — guard `Fauna_Should_Sample()` (**FW.42**). Fauna споживає **профіцит**, не baseline.
+2. **Транзієнт:** пік ~12 мА × 1.56 с потребує V_cap margin над `VBAT_OK ON`, інакше brownout посеред inference (звідси guard, а не просто лічильник).
+3. Baseline TX-бюджет (Сценарій C) **лишається чинним без змін** — fauna не входить у H-розрахунок інтервалу TX.
+
+Cross-ref: ARCH.39 (`03_03 §10.3`), FW.42 (V_cap guard), ARCH.40 (монолітна 5-с сесія через SRAM2-wipe constraint).
+
 ---
 
 ## 🧪 10. Лабораторна Валідація (Production Breadboard, Post-Pivot)
