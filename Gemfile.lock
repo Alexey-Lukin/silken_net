@@ -121,7 +121,7 @@ GEM
       bigdecimal
       h2c (>= 0.2.1, < 0.3)
     blueprinter (1.3.0)
-    bootsnap (1.24.4)
+    bootsnap (1.24.5)
       msgpack (~> 1.2)
     brakeman (8.0.4)
       racc
