@@ -1115,6 +1115,15 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - [ ] 👤 Заповнити порівняльну таблицю у `07_02` §8.1.1
 - [ ] 👤 Letter of Intent / Frame Agreement з top vendor
 
+#### OPS.9 — CI/CD workflow hardening (00_07 review, 2026-05-28)
+- **Джерело:** `00_07` §2.2/§2.3/§2.5/§2.6 review (2026-05-28) | **Пріоритет: P2** | **Складність: M** | **🤖 Код**
+- **Опис:** Рев'ю `00_07` виявило 4 розбіжності між специфікацією та реальними `.github/`-файлами + 1 stale-опис у цьому трекері. Doc-частину виправлено у `00_07`; лишається синхронізувати workflow-файли з оновленою специфікацією:
+- [ ] 🤖 **`trl_sync.yml` — TRL-gate.** Зараз копіює `Target TRL → Current TRL` беззумовно на будь-який `issues.closed` → обходить обов'язкові Architect/DAO-гейти (`00_05 §3`: TRL≥5 = Architect approval). Треба: `Target TRL ≤ 4` → авто; `≥ 5` → статус `Pending Architect Approval` + просування лише за лейблом `architect-approved`.
+- [ ] 🤖 **`ssot_guard.yml` — bypass whitelist.** Прибрати `type:refactor` і `type:bugfix` з `BYPASS_LABELS` (вони міняють імена/шляхи/логіку → context drift). Лишити `type:chore/deps/perf/test`. Для refactor/bugfix — вимога docs-update АБО запису у Drift Register (`04_02 §13b`).
+- [ ] 🤖 **`labels_sync.yml` — `delete-other-labels: true → false`.** Інакше label-sync затирає ефемерні лейбли ботів (Dependabot/Snyk/Renovate) і дефолтні GitHub-лейбли.
+- [ ] 🤖 **`labeler.yml` — overlap fix.** Широкий `app/**` (cluster C) поглинає піддерева B (`iotex`, `attractor*`, `seed_derivation*`) і D (`hadron_*`) → подвійні primary-cluster labels (ламає взаємовиключність `00_05 §2`). Додати `!`-виключення у C (v6 `all-globs-to-all-files`). Перемістити `chainlink_router_version*` з primary-B → cluster-ref:B (це failover-інфра, `00_03`). Workflow вже `actions/labeler@v6`.
+- [ ] 🤖 **Виправити stale-опис OPS.2 вище:** каже «Bypass через label `ssot-bypass`», але реальний `ssot_guard.yml` використовує семантичні `type:*` labels (не `ssot-bypass`).
+
 ---
 
 ## 📋 Юридичні / Бізнес
@@ -1201,6 +1210,14 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - [ ] 👤 Submission прив'язати до моменту acceptance Статті 24a (08_03) → "published research" status
 - [ ] 🔗 Залежить від E.59 / FW.4-EXT (5-class TinyML модель — навіть на TRL 5 рівні достатньо для гранту)
 - [ ] 🔗 Залежить від UNI.13a (Cherkasy Soundscape Library — preliminary data для Section "Methodology" заявки)
+
+#### BIZ.13 — Slashing principal-agent: investor capital vs operator-bond (governance design)
+- **Джерело:** `00_01` §6.2 (governance flag) | **Пріоритет: P2** | **Складність: M** | **👤 Governance + 🤖 Док/Код**
+- **Опис:** Slashing категорії A (negligence) зрізає `wallet.locked_balance`, який належить **інвестору** — але недбалість (немає протипожежної смуги після алерту, Forester не приєднався до інциденту) зазвичай провина **оператора (Forester)**. Зрізати капітал інвестора за дії оператора порушує принцип principal-agent і демотивує інвесторів брати географічний ризик. Відкрите питання дизайну: лишити slash на investor `locked_balance` чи ввести окремий **operator-bond** (Forester стейкає власний депозит, що слешиться першим; можливий гібрид: bond → потім locked_balance).
+- [ ] 👤 DAO/governance рішення: investor-slash vs operator-bond vs гібрид
+- [ ] 🤖 Якщо operator-bond — `OperatorBond` модель + `ProtocolParameters` запис + контракт-механіка
+- [ ] 🤖 Синхронізувати фінальне рішення у `00_01 §6.2`, `05_03 §Slashing`, `04_02` (BlockchainBurningService)
+- **Cross-ref:** `00_01 §6.2`, `05_03 §Slashing`, `04_02 §1.2` (BlockchainBurningService).
 
 ---
 

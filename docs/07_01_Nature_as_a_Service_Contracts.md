@@ -114,8 +114,8 @@ NaaS — це модель підписки, де клієнти (Організ
 
 | Параметр | Значення | Джерело |
 |---|---|---|
-| **Конверсія: growth_points → SCC** | 10,000 growth_points = 1 SCC | `docs/TOKENOMICS.md`, `TokenomicsEvaluatorWorker` |
-| **Денне накопичення** | ~24 growth_points/дерево/добу (при 44 mV сап-потенціалі, 1 LoRa пакет/год) | `docs/TOKENOMICS.md` |
+| **Конверсія: growth_points → SCC** | 10,000 growth_points = 1 SCC | [`05_03`](05_03_Tokenomics_SCC_and_SFC), `TokenomicsEvaluatorWorker` |
+| **Денне накопичення** | ~24 growth_points/дерево/добу (~1 LoRa пакет/год; живлення EBFC Gen 2.0 **>500 mV**, а не застаріле 44 mV) | [`05_03`](05_03_Tokenomics_SCC_and_SFC) |
 | **Поріг емісії** | `Wallet.balance >= 10,000` | `TokenomicsEvaluatorWorker` |
 | **Страхова премія** | 5% від `total_funding` → DAO Treasury Pool | `NaasContract::INSURANCE_PREMIUM_RATE = BigDecimal("0.05")` |
 | **Частка форестера** | 95% від `total_funding` | `NaasContract#forester_share_amount` |

@@ -412,7 +412,7 @@ Silken Net позиціонує себе як D-MRV (Digital Measurement, Report
 # 4. BlockchainMintingService — Guard clauses (iotex + oracle + hadron_kyc)
 #
 # Dual Computation Integrity:
-# SilkenNet::Attractor (BigDecimal, 18-digit) vs device Z (Float64)
+# SilkenNet::Attractor (Float64, IEEE 754 — ідентично firmware [FW.7]) vs device Z (Float64)
 # Divergence > 30% → fraud flag (FRAUD_DEVIATION_THRESHOLD)
 ```
 

@@ -441,10 +441,10 @@ firmware/soldier/main.c → LoRa TX → Queen → CoAP PUT → UnpackTelemetryWo
 Внутрішня математика (Атрактор Лоренца) рахує значення осі Z. `Z-value` порівнюється з константами `TreeFamily` (напр. 20.0). Якщо дерево в гомеостазі — нараховуються `growth_points`.
 
 ```ruby
-# SilkenNet::Attractor (BigDecimal, 250 iterations × 0.01 timestep)
-sigma = BigDecimal("10") + (acoustic * BigDecimal("0.1")).clamp(5, 30)
-rho   = BigDecimal("28") + (temperature * BigDecimal("0.2")).clamp(10, 50)
-beta  = BigDecimal("8") / BigDecimal("3")
+# SilkenNet::Attractor (Float IEEE 754 double, 250 iterations × 0.01 timestep — ідентично firmware mruby [FW.7])
+sigma = (10.0 + acoustic * 0.1).clamp(5.0, 30.0)
+rho   = (28.0 + temperature * 0.2).clamp(10.0, 50.0)
+beta  = 8.0 / 3.0
 ```
 
 | Компонент | Файл |

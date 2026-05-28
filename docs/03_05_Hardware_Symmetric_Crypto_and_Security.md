@@ -568,9 +568,9 @@ CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<IDEMPOTENCY_TOKEN>
 
 ---
 
-### 2.4 Queen → Soldier: OTA LoRa Broadcast (AES-256-ECB)
+### 2.4 Queen → Soldier: OTA LoRa Broadcast (AES-128-ECB)
 
-**Режим:** AES-256-ECB · **Розмір:** 16 байт
+**Режим:** AES-128-ECB · **Розмір:** 16 байт (LoRa-канал, post-ARCH.42)
 
 ```
 +--------+--------+--------+--------+--------+--------+--------+--------+
@@ -1229,7 +1229,7 @@ log.update!(lorenz_state_x: x_f, lorenz_state_y: y_f, lorenz_state_z: z_f,
 2. **Bit-flip атака на CRC16** → CRC16-CCITT не криптографічний, валідний CRC можна підрахувати для будь-якого payload
 3. **Replay старого OTA** → відкочити Солдат на застарілу/вразливу прошивку
 
-Симетричне шифрування (AES-256-ECB) гарантує лише **конфіденційність**, не **автентичність походження**. Дзеркало проблеми FW.2 для каналу телеметрії, але з більшою серйозністю — OTA bytecode виконується на всіх Солдатах у радіусі.
+Симетричне шифрування (AES-128-ECB) гарантує лише **конфіденційність**, не **автентичність походження**. Дзеркало проблеми FW.2 для каналу телеметрії, але з більшою серйозністю — OTA bytecode виконується на всіх Солдатах у радіусі.
 
 #### Криптографічна основа: HMAC-SHA256 поверх повного image
 
@@ -1248,7 +1248,7 @@ HMAC-SHA256(K_ota, full_bytecode || version_id || total_chunks) → 32 bytes
 OTA-broadcast emit'ить 3 додаткові LoRa-чанки `[0x9B]` після останнього bytecode chunk. Існуючий формат `[0x99]` для bytecode chunks не змінюється — окремий маркер дає чисте розділення payload-і-tag шарів (audit trail у логах Queen, простіший parser у firmware).
 
 ```
-LoRa Reflex Shot чанки (16 байт після AES-256-ECB encrypt):
+LoRa Reflex Shot чанки (16 байт після AES-128-ECB encrypt):
 
 Chunks 0..N-1:                                Marker
   [0x99][idx:2][total:2][bytecode:11]          ← Bytecode chunks
@@ -1935,7 +1935,7 @@ Phase 4: Encrypt & TX
   HAL_CRYP_Encrypt(ECB, lora_payload, 4 words, encrypted_payload)
   Radio.Send(encrypted_payload, 16)
          │
-         │ LoRa 868 MHz (AES-256-ECB, 16 bytes, no IV, no MAC)
+         │ LoRa 868 MHz (AES-128-ECB, 16 bytes, no IV, no MAC)
          ▼
 QUEEN (STM32WLE5JC)
 ──────────────────────────────────────────────────────
@@ -1977,11 +1977,11 @@ Handle_CoAP_Command():
 
 | Канал | Алгоритм | Режим | IV / Nonce | MAC/MIC | Примітка |
 |-------|----------|-------|-----------|---------|---------|
-| **Soldier → Queen** (LoRa, 16B) | AES-256 | ECB | ❌ Відсутній | ❌ Відсутній | ⚠️ Replay вразливість |
-| **EwsAlert / Panic → Queen** (LoRa, 16B) | AES-256 | ECB | ❌ Відсутній | ❌ Відсутній | ⚠️ Критичні пакети без автентифікації |
+| **Soldier → Queen** (LoRa, 16B) | AES-128 | ECB | ❌ Відсутній | ❌ Відсутній | ⚠️ Replay вразливість |
+| **EwsAlert / Panic → Queen** (LoRa, 16B) | AES-128 | ECB | ❌ Відсутній | ❌ Відсутній | ⚠️ Критичні пакети без автентифікації |
 | **Queen → Rails** (CoAP Batch) | AES-256 | CBC | ✅ HRNG (128-bit) | ❌ Відсутній | IV prepend |
 | **Rails → Queen** (CoAP Command) | AES-256 | CBC | ✅ Від Backend | ❌ Відсутній | IV в перших 16 байтах |
-| **Queen → Soldier** (OTA LoRa) | AES-256 | ECB | ❌ Відсутній | ❌ Відсутній | ⚠️ Прошивка без автентифікації |
+| **Queen → Soldier** (OTA LoRa) | AES-128 | ECB | ❌ Відсутній | ❌ Відсутній | ⚠️ Прошивка без автентифікації |
 
 ---
 

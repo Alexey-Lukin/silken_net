@@ -36,10 +36,10 @@
 | **Module** | Single Select | Компонент екосистеми (наприклад, `04: Server Core`). Формує Swimlanes. |
 | **Appetite** | Single Select | `Small Batch` (1-2w) або `Big Bet` (6w) згідно з методологією Shape Up. |
 | **SSOT Link** | URL | Пряме посилання на сторінку Wiki або звіт (Лабораторна валідація). |
-| **R&D Cluster** | Single Select | Primary кластер відповідальності | `A — Hardware/EBFC`, `B — Verification/Math`, `C — Scaling/Cloud`, `D — Compliance/Legal`, `Cross-cluster` |
-| **Shape Up Stage** | Single Select | Стадія всередині 8-тижневого циклу | `Shaping`, `Bet (active)`, `Building`, `Hill (uphill)`, `Hill (downhill)`, `Park`, `Drop`, `Done` |
-| **Cycle** | Single Select | Cycle milestone (формат `YYYY.QN`) | `Cycle 2026.Q2`, `Cycle 2026.Q3`, … |
-| **Academic Semester** | Single Select | Прив'язка до семестру партнерських ВНЗ | `Fall 2025-2026`, `Spring 2025-2026`, `Fall 2026-2027`, … |
+| **R&D Cluster** | Single Select | Primary кластер відповідальності: `A — Hardware/EBFC`, `B — Verification/Math`, `C — Scaling/Cloud`, `D — Compliance/Legal`, `Cross-cluster` |
+| **Shape Up Stage** | Single Select | Стадія всередині 8-тижневого циклу: `Shaping`, `Bet (active)`, `Building`, `Hill (uphill)`, `Hill (downhill)`, `Park`, `Drop`, `Done` |
+| **Cycle** | Single Select | Cycle milestone (формат `YYYY.QN`): `Cycle 2026.Q2`, `Cycle 2026.Q3`, … |
+| **Academic Semester** | Single Select | Прив'язка до семестру партнерських ВНЗ: `Fall 2025-2026`, `Spring 2025-2026`, `Fall 2026-2027`, … |
 
 ### 1.2 Створення полів через GitHub CLI (IaC)
 
@@ -70,7 +70,7 @@ done
 
 | Workflow | Файл | Тригер | Статус |
 |----------|------|--------|--------|
-| TRL Auto-Advancement | `.github/workflows/trl_sync.yml` | `issues: [closed]` | ✅ Реалізовано (OPS.1; чекає `PROJECT_PAT` secret) |
+| TRL Auto-Advancement | `.github/workflows/trl_sync.yml` | `issues: [closed]` | 🟡 Workflow існує (OPS.1); **TRL-gate (≥5 → Architect approval) ще не імплементовано** — чекає `PROJECT_PAT` + gate (00_08) |
 | Labels Sync (IaC) | `.github/workflows/labels_sync.yml` | `push` на `.github/labels.yml` | ✅ Реалізовано |
 | PR Auto-Labeler | `.github/workflows/labeler.yml` | `pull_request` | ✅ Реалізовано |
 | SSOT Integrity Guard | `.github/workflows/ssot_guard.yml` | `pull_request` | ✅ Реалізовано (OPS.2; semantic `type:*` bypass — §2.3) |
@@ -84,8 +84,10 @@ done
 
 - **Тригер:** `issues: types: [closed]`
 - **Умова:** Завдання закрите (Done).
-- **Дія:** GraphQL скрипт зчитує значення поля `Target TRL` закритого Issue і перезаписує ним значення `Current TRL` на дошці Project V2. Картка автоматично "перелітає" у нову колонку. Додатково: обчислює `completion_semester` із `closed_at` (UTC) — записує `Academic Semester` опцію.
+- **Дія (TRL-stratified gate):** скрипт зчитує `Target TRL` закритого Issue. **`Target TRL ≤ 4`** → авто-перезапис `Current TRL` (картка «перелітає» у нову колонку), бо рев'ю TRL 1-4 делеговане лідам + CI ([`00_05 §3`](00_05_Shape_Up_Operations_and_RnD_Clusters)). **`Target TRL ≥ 5`** → скрипт **НЕ** рухає `Current TRL`, а ставить статус **`Pending Architect Approval`** + коментує issue; реальне просування відбувається лише за наявності лейбла `architect-approved` (його ставить виключно Архітектор). Це поважає обов'язкові TRL-гейти 4→5 / 6→7 / 8→9 (Architect/DAO approval, [`00_05 §3`](00_05_Shape_Up_Operations_and_RnD_Clusters), [`00_04 §5`](00_04_AI_Native_Engineering_and_TRL)). Додатково: рахує `completion_semester` з `closed_at` (UTC) → поле `Academic Semester`.
 - **Авторизація:** Здійснюється через спеціальний токен Архітектора (`secrets.PROJECT_PAT`).
+
+> **Чому gate, а не безумовний авто-рух (корекція 2026-05-28):** інакше будь-який «Close Issue» (розробник або AI-агент) підняв би технологію до TRL 9, обійшовши обов'язкові Architect/DAO-гейти — і TRL-метрика з інструмента оцінки зрілості виродилась би у звичайний task-tracker. Авто-рух лишається лише для TRL 1-4 (рев'ю там і так делеговане); TRL ≥5 завжди проходить людський gate. **Поточний `trl_sync.yml` рухає картку беззумовно — TRL-gate ще не імплементовано (tracked у `00_08`).**
 
 ```yaml
 # .github/workflows/trl_sync.yml — skeleton
@@ -112,7 +114,7 @@ jobs:
 
 - **Умова:** Pull Request вносить зміни в `app/models/`, `app/services/`, `firmware/` або `contracts/`.
 - **Дія:** Action перевіряє наявність відповідних змін у папці `docs/` (або заповненого поля `SSOT Link` у linked issue). Мердж блокується, якщо документація не оновлена.
-- **Bypass:** PR із semantic-label з whitelist (`type:bugfix`, `type:refactor`, `type:chore`, `type:deps`, `type:perf`, `type:test`) автоматично пропускається — ці зміни не змінюють архітектуру. Не-архітектурний характер змін підтверджується явним вибором label автором PR (форс-функція: автор зобов'язаний класифікувати зміну, а не просто додавати порожній коміт у `docs/`).
+- **Bypass:** PR із semantic-label з whitelist (`type:chore`, `type:deps`, `type:perf`, `type:test`) автоматично пропускається — ці типи **за визначенням** не змінюють архітектуру/контракти. **`type:refactor` та `type:bugfix` навмисно ВИКЛЮЧЕНО з auto-bypass** (корекція 2026-05-28): рефакторинг змінює імена класів / шляхи (напр. `app/services/blockchain_minting_service.rb`), а багфікс — логіку (класичний приклад: FW.7 Lorenz BigDecimal→Float) → обидва спричиняють Context Drift у Wiki. Для них guard вимагає **або** оновлення відповідного `docs/`-файла, **або** запис у Drift Register (`04_02 §13b`) — а він сам є зміною у `docs/04_02`, тож автоматично задовольняє перевірку. Явний вибір label лишається форс-функцією: автор класифікує зміну, а не додає порожній коміт у `docs/`.
 
 > **Чому семантичні label замість `skip-ssot-guard`:** Generic skip-label буде зловживатись (натиснув-обійшов). Семантичні `type:*` змушують автора публічно класифікувати зміну. Якщо PR має `type:bugfix`, але насправді міняє схему — code reviewer одразу побачить mismatch у заголовку та назві label.
 
@@ -138,8 +140,9 @@ jobs:
         env:
           LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
         run: |
-          # Whitelist non-architectural change types
-          BYPASS_LABELS="type:bugfix type:refactor type:chore type:deps type:perf type:test"
+          # Whitelist non-architectural change types.
+          # type:refactor / type:bugfix НЕ тут — вони міняють імена/шляхи/логіку (drift). Див. §2.3.
+          BYPASS_LABELS="type:chore type:deps type:perf type:test"
           for label in $BYPASS_LABELS; do
             if echo "$LABELS" | grep -q "\"$label\""; then
               echo "✅ Bypass: PR has label '$label' — non-architectural change, SSOT update not required."
@@ -160,14 +163,15 @@ jobs:
             echo "❌ Code changed but no docs/* updated."
             echo ""
             echo "Either:"
-            echo "  (a) Update relevant SSOT file in docs/, or"
-            echo "  (b) Add one of: type:bugfix, type:refactor, type:chore, type:deps, type:perf, type:test"
-            echo "      if this PR genuinely does not alter architecture."
+            echo "  (a) Update the relevant SSOT file in docs/ (for type:refactor / type:bugfix a"
+            echo "      Drift Register entry in docs/04_02 §13b counts as a docs/ change), or"
+            echo "  (b) Add one of: type:chore, type:deps, type:perf, type:test"
+            echo "      if this PR genuinely does not alter architecture or logic."
             exit 1
           fi
 ```
 
-**Whitelist `type:*` labels потрібно додати у `.github/labels.yml`** як частину Labels-as-Code SSOT (див. §2.5). Запропоновані визначення:
+**`type:*` labels потрібно додати у `.github/labels.yml`** як частину Labels-as-Code SSOT (див. §2.5). Auto-bypass SSOT Guard дають **лише** `chore/deps/perf/test` (§2.3). Запропоновані визначення:
 
 | Label | Колір | Семантика |
 |-------|-------|-----------|
@@ -196,7 +200,7 @@ jobs:
 
 ### 2.5 Labels Sync (IaC) — `.github/labels.yml` + `labels_sync.yml`
 
-> **Чому Labels-as-Code:** ручні інструкції типу "створи 12 лейблів через UI" — це не автоматизація. Файл `.github/labels.yml` — SSOT; workflow `labels_sync.yml` синхронізує лейбли при кожному push, що змінює цей файл. Видалення лейбла з YAML → автоматичне видалення з репозиторію (з `delete: true` опцією).
+> **Чому Labels-as-Code:** ручні інструкції типу "створи 12 лейблів через UI" — це не автоматизація. Файл `.github/labels.yml` — SSOT; workflow `labels_sync.yml` синхронізує лейбли при кожному push, що змінює цей файл. **`delete-other-labels: false` (корекція 2026-05-28):** sync **створює/оновлює** лейбли з YAML, але **не видаляє** ті, яких у файлі немає — інакше label-sync затирав би ефемерні лейбли зовнішніх ботів (Dependabot `dependencies`, Snyk, Renovate) і дефолтні GitHub-лейбли (`good first issue`, `help wanted`), ламаючи їхні інтеграції. Прибирання застарілого project-label — **свідома** окрема дія (видалити з YAML + цілеспрямований cleanup), а не агресивний `delete` на кожен push.
 
 ```yaml
 # .github/workflows/labels_sync.yml — skeleton
@@ -214,7 +218,7 @@ jobs:
       - uses: EndBug/label-sync@v2
         with:
           config-file: .github/labels.yml
-          delete-other-labels: true
+          delete-other-labels: false  # НЕ видаляти лейбли ботів (Dependabot/Snyk) і GitHub-дефолти; прибирання — свідомо, див. §2.5
           token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
@@ -222,24 +226,44 @@ jobs:
 
 Routes PRs автоматично у відповідні кластери на основі шляхів файлів.
 
+> **⚠️ Конфіг — `actions/labeler@v6` синтаксис, overlap усунено (корекція 2026-05-28):** (1) попередній `- any: [...]` формат був v4 і не парситься на v6; (2) широкий `app/**` кластера C **поглинав** спеціалізовані піддерева B (`iotex`, `attractor*`, `seed_derivation*`) і D (`hadron_*`) → PR отримував ДВА primary-cluster labels, ламаючи взаємовиключність (§4.1). Тепер C явно виключає їх (`!`-глоби) → специфічний кластер виграє над загальним. (3) `chainlink_router_version*` прибрано з primary-B (це Router-ABI **failover**, інфраструктура — `00_03`, а не математика/ZK) → лишається primary-C через `app/**` + secondary `cluster-ref:B`, як інші web3-сервіси. PR, що чіпає одночасно різні top-level дерева (напр. `app/` + `contracts/`) — справді cross-cluster, резолвиться вручну (`cluster:cross-cluster`, §4.1). Застосування цих правок у реальному `.github/labeler.yml` — tracked у `00_08`.
+
 ```yaml
-# .github/labeler.yml — config
+# .github/labeler.yml — config (actions/labeler@v6 syntax: changed-files / *-glob-to-*-file)
+# Primary cluster labels mutually-exclusive (§4.1): спеціалізовані B/D-піддерева
+# ВИКЛЮЧЕНО з широкого app/** кластера C (!-глоби) → специфічний кластер виграє.
 'cluster:C-scaling':
-  - any: ['app/**', 'config/**', 'lib/**', 'db/**', 'spec/**']
+  - all:
+      - changed-files:
+          - any-glob-to-any-file: ['app/**', 'config/**', 'lib/**', 'db/**', 'spec/**']
+      - changed-files:
+          - all-globs-to-all-files:
+              - '!app/services/iotex/**'
+              - '!app/services/silken_net/attractor*'
+              - '!app/services/silken_net/seed_derivation*'
+              - '!app/services/polygon/hadron_*'
 'cluster:D-compliance':
-  - any: ['app/services/polygon/hadron_*', 'docs/07_*']
+  - changed-files:
+      - any-glob-to-any-file: ['app/services/polygon/hadron_*', 'docs/07_*']
 'cluster:A-hardware':
-  - any: ['firmware/**', 'docs/01_*', 'docs/02_*', 'docs/08_*']
+  - changed-files:
+      - any-glob-to-any-file: ['firmware/**', 'docs/01_*', 'docs/02_*', 'docs/08_*']
 'cluster:B-verification':
-  - any: ['contracts/**', 'app/services/iotex/**', 'app/services/web3/chainlink_router_version*', 'app/services/silken_net/attractor*', 'app/services/silken_net/seed_derivation*']
+  - changed-files:
+      - any-glob-to-any-file: ['contracts/**', 'app/services/iotex/**', 'app/services/silken_net/attractor*', 'app/services/silken_net/seed_derivation*']
+# secondary (RACI consult) — НЕ mutually-exclusive, співіснують з primary C:
 'cluster-ref:B':
-  - any: ['app/services/blockchain_*', 'app/services/celo/**', 'app/services/solana/**']
+  - changed-files:
+      - any-glob-to-any-file: ['app/services/blockchain_*', 'app/services/celo/**', 'app/services/solana/**', 'app/services/web3/chainlink_router_version*']
 'module:04-server-core':
-  - any: ['app/models/**', 'app/controllers/**', 'app/services/**', 'app/workers/**', 'app/views/**']
+  - changed-files:
+      - any-glob-to-any-file: ['app/models/**', 'app/controllers/**', 'app/services/**', 'app/workers/**', 'app/views/**']
 'module:03-firmware':
-  - any: ['firmware/**']
+  - changed-files:
+      - any-glob-to-any-file: ['firmware/**']
 'module:06-infra':
-  - any: ['deploy/**', '.kamal/**', 'terraform/**']
+  - changed-files:
+      - any-glob-to-any-file: ['deploy/**', '.kamal/**', 'terraform/**']
 ```
 
 ```yaml
@@ -269,7 +293,7 @@ jobs:
 
 ## 🏷️ 4. Label Conventions (SSOT)
 
-Файл `.github/labels.yml` — Single Source of Truth для всіх лейблів. Будь-яке нове label має бути занесене сюди до використання. Видалення з файла → видаленне з репозиторію через `labels_sync.yml`.
+Файл `.github/labels.yml` — Single Source of Truth для всіх **керованих проєктом** лейблів. Будь-яке нове project-label має бути занесене сюди до використання. `labels_sync.yml` створює/оновлює їх, але **не видаляє** сторонні/ботівські лейбли (`delete-other-labels: false`, §2.5) — прибирання застарілого project-label робиться свідомо, щоб не ламати інтеграції ботів.
 
 ### 4.1 Cluster routing (primary, mutually exclusive)
 
@@ -308,14 +332,14 @@ jobs:
 - `complexity:XS/S/M/L/XL`
 - `agent:ai` / `agent:human` / `agent:ops` / `agent:hybrid` _(назви labels без emoji у [`.github/labels.yml`](../.github/labels.yml); emoji `🤖 / 👤 / 🔧 / 🔗` використовуються лише як **візуальні маркери у `00_08`** для swimlane-навігації)_
 - `module:00-codex` / `module:01-anchor` / `module:02-capsule` / `module:03-firmware` / `module:04-server-core` / `module:05-ledger` / `module:06-matrix` / `module:07-naas` / `module:08-academic`
-- `type:bugfix` / `type:refactor` / `type:chore` / `type:deps` / `type:perf` / `type:test` — **SSOT Guard bypass** (див. §2.3)
+- `type:chore` / `type:deps` / `type:perf` / `type:test` — **SSOT Guard auto-bypass**; `type:refactor` / `type:bugfix` — класифікація **без** bypass (вимагають docs-update або Drift Register, див. §2.3)
 
 ---
 
 ## ✔️ 5. Верифікація та Критерії Виходу
 
-- **Протокол тестування:** Закриття тестового Issue повинно фізично перемістити його колонку на дошці "Матриця TRL" — без ручного втручання.
-- **Критерій Виходу:** Жодного ручного перетягування карток або зміни статусів Архітектором.
+- **Протокол тестування:** Закриття тестового Issue з `Target TRL ≤ 4` фізично переміщує колонку на дошці "Матриця TRL" без ручного втручання; Issue з `Target TRL ≥ 5` переходить у `Pending Architect Approval` і просувається лише після лейбла `architect-approved` (§2.2 gate).
+- **Критерій Виходу:** Жодного ручного перетягування карток. Єдине свідоме втручання Архітектора — `architect-approved` на TRL-гейтах ≥5 (approval, а не рутинна зміна статусу).
 - **Критерій IaC:** Жодного ручного клікання у GitHub UI для створення / видалення labels (все через `.github/labels.yml`).
 - **Результат валідації:** `[Dashboard: Gaia 2.0 Command Center]` (URL TBD)
 

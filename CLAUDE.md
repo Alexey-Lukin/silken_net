@@ -165,7 +165,7 @@ D. Minting (BlockchainMintingService):
    Dynamic Tax: 2% до DAO_TREASURY якщо insurance_pool < 100,000 SCC
 ```
 
-**Dual Computation Integrity**: SilkenNet::Attractor (BigDecimal, 18-digit) розраховує Z server-side. Divergence > 30% між device Z і server Z -> fraud flag.
+**Dual Computation Integrity**: SilkenNet::Attractor (**Float, IEEE 754 double** — бітово ідентично firmware mruby після [FIX FW.7], НЕ BigDecimal; див. §3) розраховує Z server-side. Divergence > 30% між device Z і server Z -> fraud flag.
 
 ---
 
@@ -292,7 +292,7 @@ Solana: Ed25519 підпис, SPL Token Transfer, ATA резолюція чер�
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **silken_net** (11242 symbols, 20073 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **silken_net** (11325 symbols, 20188 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 

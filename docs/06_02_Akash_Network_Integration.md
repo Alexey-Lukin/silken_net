@@ -498,7 +498,7 @@ expose:
 
 ```
 Soldier (STM32WLE5JC)
-    │ LoRa 868 MHz (AES-256 зашифровані 21-байтні пакети)
+    │ LoRa 868 MHz (AES-128 зашифровані 21-байтні пакети, post-ARCH.42)
     ▼
 Queen Gateway (STM32 + SIM7070G)
     │ CoAP/UDP → статичний IP Ingress Anchor :5683
