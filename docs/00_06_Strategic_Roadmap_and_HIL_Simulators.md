@@ -25,7 +25,7 @@
 | Рівень | Етап | Технічний критерій (Evidence) | Лабораторія / Хаб |
 |:---|:---|:---|:---|
 | **TRL 1-2** | Ідея / Принцип | Математичне обґрунтування EBFC та Атрактора Лоренца. | ЧНУ (Хімія/Фізика) |
-| **TRL 3-4** | Proof of Concept | Валідація 44 мВ → 3.3V та перша транзакція в Sandbox. | ЧНУ (ФОТІУС) |
+| **TRL 3-4** | Proof of Concept | Валідація EBFC Gen 2.0 **>500 мВ** (OCV ~600 мВ > BQ25570 Cold-Start 330 мВ; `01_03`) → 3.3V boost та перша транзакція в Sandbox. *(«44 мВ» — застаріла гіпотеза streaming-potential/п'єзо, відкинута з Gen 2.0.)* | ЧНУ (ФОТІУС) |
 | **TRL 5-6** | Прототипування | Робота кластера "Солдат-Королева" в Черкаському борі (30 днів). | Silken Lab |
 | **TRL 7-8** | Кваліфікація | Повна інтеграція: DID → ZK-Proof → Chainlink → Polygon. | Production (Canopy) |
 | **TRL 9** | Експлуатація | Стабільний мінтинг SCC на мільйонах вузлів, фіналізація в L1. | Global Mainnet |
@@ -88,7 +88,7 @@
 
 | Симулятор | Імітує | Файл | Замінює реальний компонент для |
 |-----------|--------|------|-------------------------------|
-| `bin/forest_simulator` | LoRa-flow з 5–15 Soldier'ів, CoAP-пакети кожні 3–8 сек, AES-256-CBC encrypted, full Lorenz attractor curves | `bin/forest_simulator` (вже існує) | Локальна розробка Rails + sidekiq + Web3 pipeline |
+| `bin/forest_simulator` | Емулює **Queen→Backend CoAP-батчі** (AES-256-**CBC**, кожні 3–8 сек) з телеметрією 5–15 Soldier'ів, full Lorenz attractor curves. ⚠️ Це Queen-рівень: per-Soldier LoRa-хоп, який представлено в батчі, на залізі — **AES-128** (ECB→CCM, `03_05`), але до бекенду доходить саме CoAP-батч (AES-256-CBC) | `bin/forest_simulator` (вже існує) | Локальна розробка Rails + sidekiq + Web3 pipeline |
 | `HilQueenSimulator` | Queen self-telemetry (`DID == 0x00000000`), CIFO flush, Starlink/LTE timing | новий: `lib/hil/queen_simulator.rb` (планований) | Test Queen failover ([`00_03 §Queen Failover`](00_03_Resilience_and_Failover_Policy)) |
 | `HilWebPipelineSimulator` | peaq → IoTeX → Chainlink → Polygon → KlimaDAO → Filecoin → L1 — повний 12-chain mock з deterministic responses | `WEB3_STRICT_MODE=false` + stub services у `app/services/web3/*_stub.rb` | E2E pipeline тестування + load testing на Akash |
 | `HilLorenzGenerator` | mruby Lorenz curves з різних tree species, environmental conditions (temp, vibration), faulty/normal patterns | `lib/hil/lorenz_generator.rb` (планований) | TinyML training data + Rails Attractor validation |
@@ -96,12 +96,14 @@
 
 ### 4.3 TRL Промоція через HIL
 
-| Per-domain TRL | Hardware TRL Required | HIL Equivalent | Status |
+> ⚠️ **Колонка нижче — НЕ блокер (інакше це повернуло б TRL-Lock з §3).** Сенс HIL саме в тому, щоб **не чекати** фізичних дерев. Тому це **Physical-Equivalent Target** — той фізичний стан, який HIL-симулятор *відтворює навантаженням*, а НЕ передумова. Software досягає TRL завдяки тому, що HIL генерує еквівалентне навантаження (напр. 1000+ віртуальних дерев), а не тому, що вони є в полі.
+
+| Per-domain TRL | Physical-Equivalent Target (НЕ блокер) | HIL, що його відтворює | Status |
 |----------------|----------------------|----------------|--------|
-| Software TRL 5 (Prototype validated) | Hardware TRL 5 (анкер у дереві 30 днів) | `bin/forest_simulator` + integration tests | ✅ Достатньо |
-| Software TRL 6 (Demonstration in relevant environment) | Hardware TRL 6 (LoRa mesh у канопі) | HIL Queen Simulator + Akash staging deploy + multi-node forest_simulator | 🟡 Частково (HIL Queen ще не написаний) |
-| Software TRL 7 (Operational prototype) | Hardware TRL 7 (pilot 100 дерев) | Все HIL + chaos engineering + Solana/Celo testnet smoke | 🟡 Частково (chaos engineering — `proof_of_growth_chaos_engineering` integration test exists) |
-| Software TRL 8 (Production-validated) | Hardware TRL 8 (1000+ дерев у полі) | Все HIL + Polygon mainnet integration tests + Slither high-severity = 0 + multi-sig deployment dry-run | 🟢 Досягнуто для smart-contracts (TRL 9 ready) |
+| Software TRL 5 (Prototype validated) | ~анкер у дереві 30 днів | `bin/forest_simulator` + integration tests | ✅ Достатньо |
+| Software TRL 6 (Demonstration in relevant environment) | ~LoRa mesh у канопі | HIL Queen Simulator + Akash staging deploy + multi-node forest_simulator | 🟡 Частково (HIL Queen ще не написаний) |
+| Software TRL 7 (Operational prototype) | ~pilot 100 дерев | Все HIL + chaos engineering + Solana/Celo testnet smoke | 🟡 Частково (chaos engineering — `proof_of_growth_chaos_engineering` integration test exists) |
+| Software TRL 8 (Production-validated) | ~1000+ дерев у полі | **HIL відтворює 1000+ віртуальних дерев** + Polygon mainnet integration tests + Slither high-severity = 0 + multi-sig deployment dry-run | 🟢 Досягнуто для smart-contracts (TRL 9 ready) |
 
 ### 4.4 Прозорість
 
@@ -150,7 +152,7 @@
 
 | Підхід | Принцип | Потенційний партнер ЧНУ/СЄУ |
 |---|---|---|
-| **Federated Learning між Queens** | Кожна Queen тренує локальну Lorenz-модель на власному кластері Soldiers, обмінюється gradient updates з сусідніми Queens (не сирими даними — privacy-preserving) | Любченко GA-оптимізація (`08_02`); Карапетян статистика (`08_04`) |
+| **Розподілене навчання між Queens (дві РІЗНІ математики — не плутати):** | (a) **Lorenz σ/ρ/β** — це ODE-система **без ваг**, її не тренують backprop'ом → **Distributed Parameter Estimation** (PSO/GA на Queen знаходить оптимальні σ,ρ,β для локального кластера; Queens обмінюються *оцінками параметрів*, не градієнтами). (b) **TinyML акустика** — ось тут справжній **Federated Learning** доречний: агрегація градієнтів мікро-моделей (коли HW дозволить on-device training) АБО ретренінг класифікатора на Queen + компіляція `.tflite` → OTA. Privacy-preserving (не сирі дані). | Любченко GA/NSGA-II (`08_02`); Карапетян статистика (`08_04`) |
 | **Stigmergic Communication між Soldiers** | LoRa-broadcast мікро-сигналів стресу (1-bit: «я в червоному Z-bucket») → сусіди підвищують sampling rate, як мурахи реагують на pheromone trail | Порубльов кібернетика (`08_02`); mruby VM mod (`03_04`) |
 | **Chimera States у network of attractors** | Математична теорія Куромото (Kuramoto-Battogtokh 2002): network coupled Lorenz oscillators утворює **частково синхронізовані, частково хаотичні patterns** — це саме структура здорового лісу (homeostasis-coupled domains across disturbance gradients) | Кирилюк синергетика економічних систем (`08_01 §1.4`); Гусак нелінійна динаміка (`08_01 §1.2`) |
 | **Forest-Wide Lorenz Coupling** | Розширення `bio_contract.rb`: вхідні параметри атрактора містять не лише власні `delta_t/temp/acoustic`, а й aggregated neighbor signals (median Z у кластері за останню годину) | Розширення `03_04 §X.Y` (новий розділ після TRL 9) |
@@ -196,7 +198,7 @@
 > |--------|----------------|-------------------|
 > | **L1 Soldier** | Inference-only: запуск **попередньо скомпільованого** mruby bytecode (Lorenz constants, fitness evaluation, threshold lookup). Періодична відправка `lambda_exponent` + 1-bit stigmergic сигналу. | STM32WLE5JC + 0.47F, +1.4 мДж/год headroom |
 > | **L2 Conductor** *(Hub Tree, formerly "Sergeant")* | Кластерний агрегатор: збирає 50-200 Soldiers lambda-stream, обчислює **локальний GA** на (σ, ρ, β) для свого кластера, відправляє candidate sets до Queen. Динамічно обирається на основі `vcap` та якості зв'язку. | Solar + LiFePO4 (TBD spec, `00_02 §3` L2 placeholder) |
-> | **L3 Queen** *(Mother Tree)* | Federated Learning aggregator: обмінюється gradient updates з сусідніми Queens (privacy-preserving), компілює нові mruby contracts, broadcast'ить chunked OTA до Conductors → Soldiers. | 20Ah LiFePO4 + Solar + LTE backbone (`02_05`) |
+> | **L3 Queen** *(Mother Tree)* | Агрегатор розподіленого навчання: для Lorenz — обмін **оцінками параметрів σ/ρ/β** (distributed parameter estimation, PSO/GA); для TinyML — справжній Federated Learning (агрегація градієнтів / ретренінг → `.tflite` OTA), privacy-preserving. Компілює mruby contracts, broadcast'ить chunked OTA. | 20Ah LiFePO4 + Solar + LTE backbone (`02_05`) |
 >
 > Q-learning, GA-evolution, online TinyML training **відбуваються на L2/L3 з обмеженням енергії на 4-5 порядків легшим**, ніж у Soldier. До Soldier приходить **готовий compiled bytecode через OTA** (магік `0x45544952 "RITE"` у `MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000`, `03_02`). Це усуває "self-training on edge" парадокс і зберігає TRL 11+ roadmap реалістичним.
 
@@ -251,7 +253,7 @@
 |---|---|---|
 | **Proactive Anomaly Detection (Federated)** | Замість per-tree fraud detection — **cluster-level statistical fingerprints**. Якщо 100 дерев одного кластера раптом починають видавати «too perfect» Z-curves (lower variance than possible), це → suspicious | ML-сервіс у Rails + GA-оптимізація Любченка (`08_02`); запит до Карапетяна (статистика, `08_04`) |
 | **Adversarial Telemetry Generators (Red Team)** | Внутрішня команда генерує **GAN-вироблені синтетичні telemetry, які намагаються пройти Dual Computation** → знаходить вразливості до того, як їх знайде зовнішній attacker | Регулярні Red Team Exercises як частина CI/CD (`04_06 §B`); Q1 paper "Adversarial robustness of bio-token mints" |
-| **Honeypot Trees** | 1 з кожних 100 дерев — **honeypot**: справжній анкер, але з SCC-emission заблокованим. Будь-яка спроба mint від нього = доведена адресна атака → instant slashing of attacker + 12-chain rotation | Розширення `Tree.honeypot_at` flag + special-case у `BlockchainMintingService` |
+| **Decoy DID Tripwire (backend, НЕ on-chain honeypot)** | ⚠️ Виправлено: on-chain honeypot не працює — стейт контракту публічний, а навіть «реальне-але-заблоковане» дерево видає себе **відсутністю mint-подій** (атакер аналізує on-chain патерн і обходить). Тому — **бекенд-tripwire**: набір **decoy DID**, яких немає як реальних анкерів, у серверному watchlist (НЕ публікуються, НЕ on-chain). **Будь-яка телеметрія/mint-спроба від decoy DID = доведена підробка** (жоден реальний Soldier його не має) → instant alert + slashing + 12-chain rotation. Додатково: **Shadow Trees** — синтетичні фейкові дані у *публічному дашборді* (information warfare: торговий бот, що будує атаку на shadow-даних, руйнує свою стратегію). | Backend watchlist decoy DIDs + `TelemetryUnpackerService` tripwire (НЕ on-chain flag) |
 | **Quantum-Resistant Oracle Migration** | Сучасні ECDSA-підписи (Chainlink) вразливі до post-quantum cryptanalysis (~2030+). Перехід на **NIST PQC standards** (Kyber/Dilithium) у Web3 stack | Координовано з Аблязовим Д. (СЄУ, `08_07`) для правової рамки + Ярмілко (`08_02`) для firmware integration |
 | **Apex Predator AI Sentinel** | Окремий ML-сервіс, який моніторить весь стек 24/7 в режимі **«hunting for hunters»** — шукає координовані patterns між: trading volume на SCC DEXs + telemetry anomalies + oracle response patterns. Це **проактивний counter-AI** проти adversarial AI | Roadmap TRL 11+; вимагає budget на dedicated AI/ML engineer; партнерство з академічними лабораторіями з ML security |
 
