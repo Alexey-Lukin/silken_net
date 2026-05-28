@@ -17,7 +17,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 3→4 PASSED (2026-05-25). In-silico: L2 RMSD 1.22 Å (correct genipin, 6/6 species stable), L3 cascade -0.07 eV (B3LYP corrected), L3b k_DET=1.09×10⁸, L4 delta_t=36s. 32 scripts, 76 tests. Контакти ЧМА ідентифіковані, формальну співпрацю не розпочато.
+- **Поточний TRL:** TRL 3→4 PASSED (2026-05-25). In-silico headline: L2 RMSD 1.22 Å (correct genipin, 6/6 species stable), L3 cascade -0.07 eV (B3LYP corrected), L3b k_DET=1.09×10⁸, L4 delta_t=36s. Поточні числа/статус — канонічний [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md). Контакти ЧМА ідентифіковані, формальну співпрацю не розпочато.
 - **Стратегічний пріоритет:** P0 — без біохімічної валідації EBFC та токсикологічного клірансу хардвер залишається теорією; це прямий блокер для seed-раунду та whitepaper
 - **Пов'язані модулі:**
   - EBFC ензимний паливний елемент → [`01_03_EBFC_Enzymatic_Bio_Fuel_Cell`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) (Gen 2.0: dgrFAD-GDH, Laccase/ZIF-nanozyme, Genipin-Chitosan-CNC, Nafion-g-PSBMA)
