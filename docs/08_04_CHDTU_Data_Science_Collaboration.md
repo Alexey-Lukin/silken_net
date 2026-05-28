@@ -92,7 +92,7 @@ Silken Net використовує **LoRa 868 МГц** у найскладні�
 | LC-ланцюг узгодження (П/Т-фільтр) для VSWR < 1.5 | VNA-вимір S11-параметра реальної зборки у PEEK-корпусі |
 | Link Budget LoRa у лісі (SF=7–9, запас > +55 дБ) | Натурні вимірювання propagation loss у реальному лісі |
 | 3D-діаграма спрямованості (FEKO/CST моделювання) | Вимірювання реальної діаграми в анехоїдній камері (або open-field) |
-| CE/FCC pre-compliance | EMC-тестування емісій у лабораторії ФЕТР |
+| Pre-diagnostic EMC scan (educational) | груба діагностика гармонік у лаб. ФЕТР — НЕ акредитована CE/FCC сертифікація (→ приватна 17025-лаб) |
 
 **Конкретний R&D-запит (три завдання):**
 
@@ -116,13 +116,15 @@ Silken Net використовує **LoRa 868 МГц** у найскладні�
   4. Результат: калібрований path loss model для firmware (оптимальний SF per дальність)
 ```
 
-**Завдання В: EMC-тестування для CE/FCC pre-compliance**
+**Завдання В: Pre-diagnostic EMC scan (educational, НЕ акредитована сертифікація)**
+
+> ⚠️ **Реалістичні очікування:** університетські EMC-стенди (без ISO/IEC 17025 акредитації та каліброваної безехової камери) **НЕ дають легітимних FCC Part 15 / CE RED звітів** — вимір spurious < -36 dBm потребує обладнання на сотні тис. $. ФЕТР робить **pre-diagnostic / educational EMC scan** (груба діагностика гармонік), а реальне CE/FCC pre-compliance — у **сертифікованій приватній лабораторії**. Університет дає академічну статтю + ранню діагностику, не маркування.
 
 ```
-Мета: Підтвердити, що LoRa TX +22 dBm під PEEK-радомом:
-  1. Не перевищує duty cycle 1% (ETSI EN 300 220, EU)
-  2. Spurious emissions < -36 dBm за межами ISM-смуги
-  3. Conducted emissions від BQ25570 MPPT не інтерферують з RX
+Мета (pre-diagnostic, орієнтовно):
+  1. Перевірити duty cycle 1% (ETSI EN 300 220, EU) — легко на стенді
+  2. Виявити ГРУБІ гармоніки / spurious за межами ISM (індикативно, не -36 dBm cert)
+  3. Conducted emissions від BQ25570 MPPT vs RX (діагностика інтерференції)
 ```
 
 ---
@@ -149,7 +151,7 @@ Silken Net використовує **LoRa 868 МГц** у найскладні�
 | DSP-path choice (A/B/C) → 5-class TinyML CNN | **Бушин (ЧНУ ФОТІУС, [`08_02`](08_02_Cybernetic_and_Mathematical_Validation) §1.5)** + **Любченко (NSGA-II, §1.8)** | FW.25 choice gate — див. [`03_03 §3.2 Decision Matrix`](03_03_TinyML_Acoustic_Inference); default Path B (log-mel) |
 | ADC/DMA 16 кГц + CMSIS-DSP integration (Path B) | Ярмілко (ЧНУ, [`08_02`](08_02_Cybernetic_and_Mathematical_Validation) §1.1) | Integration consultant **після** вибору шляху ML-партнером; SPI/DMA + custom Mel-bank якщо Path B |
 | Стохастична фільтрація delta_t | Косенюк (ЧНУ, [`08_02`](08_02_Cybernetic_and_Mathematical_Validation) §1.3) | Kalman Filter для шумозниження |
-| Статистичний аналіз акустичних даних + fauna_activity_index distributions | Карапетян (ЧДТУ, §1.1) | Характеризація розподілів `acoustic_events` (класи 0–3) + ANOVA dawn/dusk peak amplitude для класу 4 (Mongabay) — feature semantics залежать від обраного DSP-шляху |
+| **Мета-аналіз** ML-виходу (НЕ повторна класифікація) | Карапетян (ЧДТУ, §1.1) | ⚠️ `acoustic_events` — вже класифікований TinyML масив (напр. `[wind:12, chainsaw:0, fauna:45]`); статистичне "виявлення аномалій" по ньому **дублювало б класифікатор** (бензопила = аномалія, яку NN вже знайшов). Тому Карапетян робить **мета-аналіз**: (a) **калібрація confidence-порогу** класифікатора (FPR/TPR, ROC), (b) **кореляція fauna_activity_index з температурними та dawn/dusk циклами** (ANOVA, Mongabay) — це аналіз ДО/НАВКОЛО класифікації, не замість неї |
 
 **Чому саме Базіло + Бондаренко:**
 - Базіло визначає **резонансну частоту та чутливість п'єзосенсора** через EIS (завдання Б) — без цього невідомо, на якій частоті налаштовувати TinyML-вікно ADC 16 кГц
@@ -307,10 +309,12 @@ Silken Net будує багаторівневу академічну екоси
 
 **Відкриті задачі для ЧДТУ (рівень публікацій):**
 
+> 💡 **Primary methods (не "меню підручника"):** для шумного біологічного `delta_t` з пропусками та подвійною сезонністю (день/ніч + зима/літо) робочий вибір — **Prophet** (стійкий до пропусків + multi-seasonality) + **STL-декомпозиція**. Решта алгоритмів нижче (SARIMA/ETS/PELT/BOCPD/Kriging…) — це **method-comparison через серію статей** (кожна задача = окрема стаття, 08_03 §1B/1C), а НЕ вимога прогнати 10 алгоритмів на одному сигналі. Spread по задачах легітимний академічно; для конкретного deliverable — 2-3 методи.
+
 | # | Задача | Метод | Scopus рівень |
 |---|--------|-------|---------------|
-| 1 | Декомпозиція часових рядів `delta_t` (тренд + сезонність + залишок) | STL (Seasonal-Trend Loess), MSTL | Q2 |
-| 2 | Прогнозування `delta_t` на 7-30 днів (засуха, хвороби) | ARIMA, SARIMA, Prophet, ETS | Q2 |
+| 1 | Декомпозиція часових рядів `delta_t` (тренд + сезонність + залишок) | **STL** (Seasonal-Trend Loess) [primary], MSTL | Q2 |
+| 2 | Прогнозування `delta_t` на 7-30 днів (засуха, хвороби) | **Prophet** [primary, шумостійкий], ARIMA/SARIMA/ETS (порівняння) | Q2 |
 | 3 | Виявлення точок структурних змін у часових рядах `z_value` | PELT (Pruned Exact Linear Time), BOCPD | Q1 |
 | 4 | Крос-кореляційний аналіз між деревами одного кластера | Кроскореляція, Granger causality | Q2 |
 | 5 | Характеризація розподілів `growth_points` для різних порід дерев | Goodness-of-fit тести, QQ-plots, MLE | Q2 |
@@ -344,7 +348,7 @@ Silken Net будує багаторівневу академічну екоси
 
 **Поточний стан:**
 - **Random Forest** (Rumale gem, 100 estimators): бінарна класифікація stress vs healthy за 5 ознаками (`avg_temp`, `avg_vcap`, `avg_z`, `sap_deviation`, `max_acoustic`)
-- **TinyML** (INT8 quantized NN): 5-класова акустична класифікація на MCU (silence/wind/cavitation/chainsaw/fauna_activity) — **BLOCKER: модель відсутня, inference закоментований**
+- **TinyML** (INT8 quantized NN): 5-класова акустична класифікація на MCU (silence/wind/cavitation/chainsaw/fauna_activity). **Статус: модель ще не натренована, але pipeline активно готується (не stalled)** — DSP-шлях обрано (Path B log-mel, FW.25), задачі делеговані: ПМКТ (акустичний стенд, §1.3) + ЧНУ біо-хаб (записи фауни, Mongabay) + Любченко (NSGA-II GA). `Run_Inference()` закоментована у firmware лише до отримання калібрувального датасету (TINYML-COMMENT).
 - **Stress Index:** гібридний (RF predict_proba + rule-based fallback), поріг слешингу: 0.83
 
 **Код:** `lib/tasks/ai_train.rake`, `app/models/tiny_ml_model.rb`, `app/services/insight_generator_service.rb` (рядки 235–258)
@@ -366,7 +370,11 @@ Silken Net будує багаторівневу академічну екоси
 
 ### 3.4. Виявлення Аномалій та Шахрайства (Fraud Detection)
 
-**Поточний стан:** Відносне відхилення від кластерної базової лінії (`FRAUD_DEVIATION_THRESHOLD = 30%`) по `sap_flow` AND `temperature`. Dual Computation: firmware Z vs backend Z, divergence > 30% → fraud flag.
+**Поточний стан:** Активна перевірка — відносне відхилення від кластерної базової лінії (`FRAUD_DEVIATION_THRESHOLD = 30%`) по `sap_flow` AND `temperature`.
+
+> ⚠️ **Уточнення механіки Dual Computation Integrity (DCI):** firmware і backend рахують Z **обидва на Float64 і бітово-ідентично** (FW.7: 50k parity-тестів, ARM↔x86 divergence < 1e-12 за 250 ітерацій — НЕ "butterfly" розбіжність; Лоренц за 2.5 t-units не встигає роздути 1e-12 до значимого). Тож порогом DCI **не 30%**, а **< 1e-3** (FW.31 tolerance band). АЛЕ: production 21-байтний пакет **не несе raw Z** → пряме firmware-Z vs backend-Z порівняння **інертне** до FW.2 (backend реконструює Z з входів). Тому пряме Z==Z НЕ є робочим fraud-сигналом сьогодні.
+>
+> 🎯 **Найцінніший внесок Карапетян (fraud-шар, що працює БЕЗ raw Z):** не покрокове Z==Z, а **статистичні інваріанти атрактора** — чи належить реконструйований/звітний Z-ряд до класу дивних атракторів Лоренца (Ляпуновські показники, фрактальна розмірність, RQA-метрики, густина розподілу Z). Підробка ("ряд не з Лоренца") виявляється навіть якщо точні значення відрізняються. Це робастно до точності обчислень і не потребує передачі raw Z.
 
 **Код:** `app/services/insight_generator_service.rb` (рядки 175–228), `app/services/alert_dispatch_service.rb`
 
@@ -490,7 +498,7 @@ Silken Net будує багаторівневу академічну екоси
 Підтеми:
 1. Вимірювання імпедансу та VSWR SMD-антени під PEEK-радомом методами VNA
 2. Натурні вимірювання Link Budget LoRa 868 МГц у лісовому масиві при різних умовах (волога кора, сезонна крона)
-3. EMC pre-compliance тестування для сертифікації CE RED та FCC Part 15.247
+3. Pre-diagnostic EMC scan (educational) — рання діагностика гармонік; акредитована CE RED / FCC Part 15.247 сертифікація — окремо в 17025-лабораторії
 
 **Кафедра ПМКТ ЧДТУ (Базіло К.В., Бондаренко М.О.):**
 
