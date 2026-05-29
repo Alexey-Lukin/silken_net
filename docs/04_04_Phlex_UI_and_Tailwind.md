@@ -10,38 +10,44 @@
 
 - **Поточний TRL:** TRL 8 — Дизайн-система відповідає SSOT. Потребує production verification.
 - **Стек:** Rails 8.1 · Phlex · Tailwind CSS 4 · TailwindMerge · Stimulus · Turbo 8
-- **Пов'язані модулі:**
-  - Бізнес-логіка → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
-  - REST API → [`04_03_REST_API_v1_Reference`](04_03_REST_API_v1_Reference)
-  - Моделі → [`04_01_Data_Models_and_Entities`](04_01_Data_Models_and_Entities)
-  - Прошивка → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
+- **Відкрите:** production verification (UI на живому деплої) → [`00_08`](00_08_Action_Plan_Tracker).
 
 ---
 
+## 🔗 Cross-references
+
+| Ресурс | Опис |
+|--------|------|
+| [04_01_Data_Models_and_Entities](04_01_Data_Models_and_Entities) | Моделі (дані для компонентів) |
+| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (сервіси) |
+| [04_03_REST_API_v1_Reference](04_03_REST_API_v1_Reference) | REST API (Turbo Frame ендпоінти) |
+| [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Прошивка (OTA progress streams) |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | Open backlog (UI verification, i18n) |
+
 ## 📑 Зміст
 
-1. [Огляд Архітектури](#1-огляд-архітектури)
-2. [ApplicationComponent — Базовий Клас](#2-applicationcomponent--базовий-клас)
-3. [Tailwind Дизайн-Токени](#3-tailwind-дизайн-токени)
-4. [Шкала Типографіки](#4-шкала-типографіки)
-5. [TailwindMerge та патерн `tokens()`](#5-tailwindmerge-та-патерн-tokens)
-6. [Реєстр Компонентів](#6-реєстр-компонентів)
-   - [Спільні UI Примітиви](#61-спільні-ui-примітиви-appviewssharedui)
-   - [Спільні IoT Компоненти](#62-спільні-iot-компоненти-appviewssharediot)
-   - [Спільні Web3 Компоненти](#63-спільні-web3-компоненти-appviewssharedweb3)
-   - [Доменні Компоненти](#64-доменні-компоненти-appviewscomponents)
-7. [Stimulus Контролери](#7-stimulus-контролери)
-8. [Інтеграція Turbo (Streams & Frames)](#8-інтеграція-turbo-streams--frames)
-9. [Чекліст Доступності](#9-чекліст-доступності)
-10. [Тестування та Lookbook](#10-тестування-та-lookbook)
-11. [Міграція на токени (Phase 1)](#11-міграція-на-токени-phase-1)
-12. [Інтернаціоналізація та Локалізація (i18n)](#12-інтернаціоналізація-та-локалізація-i18n)
-13. [Mobile Drawer (Phase 2)](#13-mobile-drawer-phase-2)
-14. [Animations & Motion (Phase 3)](#14-animations--motion-phase-3)
-15. [Native HTML over Stimulus (Phase 3.5)](#15-native-html-over-stimulus-де-доречно)
-16. [Codemod-Driven Migration (Phase 4)](#16-codemod-driven-migration-phase-4)
-17. [Responsive Tables — CSS-only Card Flip (Phase 5)](#17-responsive-tables--css-only-card-flip-phase-5)
-18. [Industry Standards (SSOT) + Per-PR DoD (Phase 6)](#18-industry-standards-ssot--per-pr-definition-of-done)
+<!-- TOC:AUTO:START -->
+- [1. Огляд Архітектури](#1-огляд-архітектури)
+- [2. ApplicationComponent — Базовий Клас](#2-applicationcomponent--базовий-клас)
+- [3. Tailwind Дизайн-Токени](#3-tailwind-дизайн-токени)
+- [4. Шкала Типографіки](#4-шкала-типографіки)
+- [5. TailwindMerge та патерн `tokens](#5-tailwindmerge-та-патерн-tokens)
+- [6. Реєстр Компонентів](#6-реєстр-компонентів)
+- [7. Stimulus Контролери](#7-stimulus-контролери)
+- [8. Інтеграція Turbo (Streams & Frames)](#8-інтеграція-turbo-streams--frames)
+- [9. Чекліст Доступності](#9-чекліст-доступності)
+- [10. Тестування та Lookbook](#10-тестування-та-lookbook)
+- [Додаткові Матеріали](#додаткові-матеріали)
+- [11. Міграція з ActionController::API на ActionController::Base](#11-міграція-з-actioncontrollerapi-на-actioncontrollerbase)
+- [12. Інтернаціоналізація та Локалізація (i18n)](#12-інтернаціоналізація-та-локалізація-i18n)
+- [13. Mobile Drawer (Phase 2)](#13-mobile-drawer-phase-2)
+- [14. Animations & Motion (Phase 3)](#14-animations--motion-phase-3)
+- [15. Native HTML over Stimulus (де доречно)](#15-native-html-over-stimulus-де-доречно)
+- [16. Codemod-Driven Migration (Phase 4)](#16-codemod-driven-migration-phase-4)
+- [17. Responsive Tables — CSS-only Card Flip (Phase 5)](#17-responsive-tables--css-only-card-flip-phase-5)
+- [18. Industry Standards (SSOT) + Per-PR Definition of Done](#18-industry-standards-ssot--per-pr-definition-of-done)
+- [Status: Frontend Overhaul Complete](#status-frontend-overhaul-complete)
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -959,7 +965,7 @@ Lookbook надає живий попередній перегляд усіх к
 
 > Відстежує відповідність **Маніфесту 29 Найкращих Практик TailwindCSS** для всіх 67+ компонентів.
 
-#### ✅ Повністю Застосовано (всі 67 компонентів + shared/ui + layout + navigation)
+#### ✅ Повністю Застосовано (всі компоненти + shared/ui + layout + navigation)
 
 | Правило | Опис | Статус |
 |---------|------|--------|
@@ -1223,7 +1229,7 @@ Layout-компоненти (`AuthLayout`, `DashboardLayout`) використо
    - Абсолютний ключ (`t("flash.errors.unauthorized")`) працює без autoscope
    - Працює як у controller-render контексті, так і в `Component.new(...).call` (specs/Turbo broadcasts)
    - Для анонімних subclasses (`Class.new(Component)` у тестах) scope обчислюється по першому named ancestor
-   - **Міграція завершена:** всі 54 компоненти переведені на `t(".key")` relative-lookup. Абсолютні `t("codex.fractions.current")` залишаються тільки для cross-scope ключів (ключ із сусіднього компонента). `I18n.t()` у view-шарі повністю замінено на `t()` — 0 залишків. Detail-pattern та приклади — §12.6.
+   - **Міграція завершена:** всі компоненти переведені на `t(".key")` relative-lookup. Абсолютні `t("codex.fractions.current")` залишаються тільки для cross-scope ключів (ключ із сусіднього компонента). `I18n.t()` у view-шарі повністю замінено на `t()` — 0 залишків. Detail-pattern та приклади — §12.6.
 4. **Controller-side strings.** Flash, error JSON, redirect notice — всі через `I18n.t("flash.<controller>.<action>")` / `I18n.t("errors.api.<code>")`. Hardcoded UA рядки у контролерах = CI failure. Детальний мапінг доменів — §12.8.
 5. **Mailer та service-worker.** Mailer templates (`app/views/<mailer>/*.erb`) та `pwa/service-worker.js` поки **out of scope** для авто-перевірки — їх локалізують вручну за тим самим патерном (`config/locales/mailers/...`, `pwa/...`). Service-worker не йде через I18n (це JS у браузері). Поточний backlog — §12.13.
 
