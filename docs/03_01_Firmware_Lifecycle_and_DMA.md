@@ -8,118 +8,22 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — C-код написаний, host-based тести
-- **Пов'язані модулі:**
-  - EDLC Супераконденсатор → [`02_04_EDLC_Supercapacitor_Buffer`](02_04_EDLC_Supercapacitor_Buffer)
-  - Прошивка Королеви → [`03_02_Queen_Gateway_Firmware`](03_02_Queen_Gateway_Firmware)
-  - TinyML Акустичний Інференс → [`03_03_TinyML_Acoustic_Inference`](03_03_TinyML_Acoustic_Inference)
-  - mruby Атрактор Лоренца → [`03_04_mruby_Lorenz_Attractor`](03_04_mruby_Lorenz_Attractor)
-  - Апаратне симетричне шифрування та Безпека → [`03_05_Hardware_Symmetric_Crypto_and_Security`](03_05_Hardware_Symmetric_Crypto_and_Security)
+- **Поточний TRL:** TRL 6 — увесь C-код Soldier+Queen реалізований, host-based тести зелені (`make -C firmware/test`). Відкриті обмеження (чому не вище): async UART DMA flush (`FW.3` AT-blind), key-rotation (`FW.17`), RDP-2 (`SEC.2`) — реєстр у [`00_08 §03`](00_08_Action_Plan_Tracker)
 
 ---
 
-| Компонент | Стан |
-|-----------|------|
-| **Soldier main loop (Phases 0-5)** | ✅ Реалізовано (`firmware/soldier/main.c`) |
-| **Queen main loop (RX → Cache → Flush)** | ✅ Реалізовано (`firmware/queen/main.c`) |
-| **DMA Audio Pipeline (TinyML)** | ✅ Реалізовано (TIM2 + ADC DMA + CPU SLEEP) |
-| **RTC Backup Domain (20 регістрів)** | ✅ Реалізовано (DR0..DR19, персистентний стан) |
-| **Hardware ISR Map** | ✅ Задокументовано (4 рефлекси: RxDone, EXTI, PVD, DMA) |
-| **Mesh Anti-Pingpong (3 слоти)** | ✅ Реалізовано (DR8, DR9, DR11; зменшено з 8 до 3 у FW.21, DR10/DR12 під EMA, DR13..DR15 — резерв) |
-| **CIFO Priority-Aware Eviction** | ✅ Виправлено (критичні записи захищені від витіснення) |
-| **OTA Integrity (CRC32)** | ✅ Виправлено (ISO 3309 перевірка перед flash write) |
-| **AES Key — per-device HKDF provisioning (FW.1)** | ✅ Firmware CLOSED (2026-05-02). `Load_AES_Key()` + Protected Flash. Factory Flashing Pipeline tool (SEC.3) — ✅ реалізовано як dry-run Rake CLI (2026-05-24, `app/services/factory_flashing/*`); 👤 залишається real `STM32_Programmer_CLI` execution + RDP Level 2 (SEC.2). Key rotation — FW.17 (Post-FW.1, P3) |
-| **AT Command Blocking (~25 s flush)** | 🟡 Частково виправлено — CoAP retry з UART RX парсингом (FW.9) + LoRa RX **ring buffer** (FW.3, 2026-05-02) → під час flush'у Queen більше НЕ губить пакети ≤ 15 burst; повна async UART DMA — відкрито |
-| **Starlink Latency Gap** | 🟡 OPEN (HAL_Delay(1000) для CoAP session може бути замало) |
-| **Error_Handler** | ✅ Виправлено — `NVIC_SystemReset()` через 100 мс замість вічного циклу (FW.14) |
-| **CMD_DECRYPT_BUF_SIZE розбіжність** | ✅ Виправлено — тест синхронізовано з firmware (96 → 544) |
-| **Host-based Tests (264)** | ✅ Всі проходять (`make -C firmware/test`) |
+## 🔗 Cross-references
 
----
-
-## 🛑 Блокери
-
-### ✅ BLOCKER-1: Hardcoded AES-256 Key — Firmware CLOSED (FW.1, 2026-05-02)
-
-**Статус:** ✅ Firmware ЗАКРИТО (FW.1, 2026-05-02). `Load_AES_Key()` зчитує per-device HKDF-derived ключ з Protected Flash Sector (`FLASH_KEY_ADDR = 0x0803E000`, magic `"KEYS"`). Hardcoded ідентичний ключ видалено. Factory Flashing Pipeline tool (SEC.3) — ✅ реалізовано як Rake-driven internal admin tool (2026-05-24, dry-run by default; threat model: `03_05 §3.4г`). Залишається: 👤 real `STM32_Programmer_CLI` execution на bench та RDP Level 2 activation (SEC.2).
-
-**Файли:** `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82`
-
-```c
-// [FW.1] Hardcoded key removed. Key loaded from Protected Flash Sector via Load_AES_Key().
-uint32_t aes_key[8] = {0};  // Overwritten by Load_AES_Key() before MX_CRYP_Init()
-```
-
-**Виконані дії (FW.1, 2026-05-02):**
-- ✅ Per-device key через `HKDF(PROVISIONING_MASTER_KEY, device_uid, "silkennet-v1-aes256")` → Protected Flash.
-- ✅ `Load_AES_Key()` + magic `"KEYS"` guard — boot відмовляє без provisioning (infinite reset loop).
-- ✅ Per-device ізоляція: компрометація одного Soldier не розкриває ключі сусідів.
-- ✅ `Security::WeakKeyDetector` (SEC.9) — FIPS-197 test vector не може потрапити у production.
-
-**Залишається:**
-- [x] SEC.3: Factory Flashing Pipeline tool (✅ 2026-05-24, dry-run; реалізація + integration тест; threat model: `03_05 §3.4г`). 👤 Hardware-gated: real `STM32_Programmer_CLI` subprocess execution на STM32WLE5JC bench.
-- [ ] SEC.2: RDP Level 2 activation (необоротний final lock перед field deployment).
-- [ ] FW.17: Hash Ratchet KDF key rotation без перепрошивки (Post-FW.1, P3).
-
-> Cross-ref: [`03_05 §3.1 Джерело AES-Ключа при Старті`](03_05_Hardware_Symmetric_Crypto_and_Security#31-джерело-aes-ключа-при-старті), [`03_05 §3.4 Factory Flashing Pipeline`](03_05_Hardware_Symmetric_Crypto_and_Security), [`03_05 §3.4а HKDF Derivation`](03_05_Hardware_Symmetric_Crypto_and_Security), [`03_05 §3.4г Operations Security`](03_05_Hardware_Symmetric_Crypto_and_Security).
-
----
-
-### 🟡 BLOCKER-2: AT Command Blocking — Queen сліпа ~25 секунд під час flush
-
-**Статус:** 🟡 Частково виправлено. **FW.9** — CoAP retry з UART RX парсингом (до 3 спроб, парсинг `OK`/`ERROR`). **FW.3 (2026-05-02)** — LoRa RX ring buffer заміняє single-packet `incoming_lora_payload[16]` + `lora_rx_flag` на 16-слотовий FIFO; ISR-side `LoRa_Rx_Ring_Push` ловить кожен голос рою, навіть коли main loop у CoAP-каналі. Повна async UART DMA-переробка `Flush_Cache_To_Rails()` залишається відкритою.
-
-**Файл:** `firmware/queen/main.c`
-
-```c
-// [FW.9] CoAP send з retry-логікою — парсинг відповіді модему замість blind delay
-for (uint8_t retry = 0; retry < COAP_MAX_RETRIES && !send_success; retry++) {
-    if (!SIM7070_SendATCommand_WithResponse("AT+CCOAPNEW=...", COAP_BASE_TIMEOUT_MS)) {
-        continue;  // Session open failed → retry
-    }
-    // ... AT+CCOAPSEND hex TX ...
-    if (HAL_UART_Receive(&huart1, uart_rx_buf, ..., COAP_SEND_TIMEOUT_MS) == HAL_OK) {
-        if (strstr(uart_rx_buf, "OK")) { send_success = 1; }
-    }
-    SIM7070_SendATCommand("AT+CCOAPDEL=0\r\n", 500);
-}
-
-// [FW.3] Ring buffer — single-producer (ISR) / single-consumer (main loop)
-typedef struct { uint8_t payload[16]; int8_t rssi; } LoRaRxSlot;
-static volatile LoRaRxSlot lora_rx_ring[16];
-static volatile uint8_t    lora_rx_head, lora_rx_tail;
-static volatile uint16_t   lora_rx_drops;   // переповнення видиме для backend
-
-void OnRxDone(uint8_t *p, uint16_t sz, int16_t rssi, int8_t snr) {
-    if (sz != 16) return;
-    if (rssi < -128) rssi = -128;  if (rssi > 127) rssi = 127;
-    LoRa_Rx_Ring_Push(p, (int8_t)rssi);   // ISR-side enqueue
-}
-// main loop: while (LoRa_Rx_Ring_Pop(rx_payload, &rx_rssi)) { decrypt + cache + Radio.Rx() }
-```
-
-**Ризики (залишкові, після FW.3):**
-1. ✅ Single-packet overwrite — закрито (FW.3). До 15 голосів буферуються; переповнення фіксує `lora_rx_drops`.
-2. Bursts > 15 пакетів за 25-секундне вікно — все ще пропадають, але видимо. Це відкритий ризик для масових fire-events; потребує full async UART DMA.
-3. Retry не вирішує проблему блокування головного циклу — UART RX залишається polling-based під час hex TX (~21 секунда).
-
-**Залишкові необхідні дії:**
-- Переписати `Flush_Cache_To_Rails()` на UART DMA interrupt-driven (async hex TX через `HAL_UART_Transmit_DMA` + IDLE-line callback для RX).
-- Експортувати `lora_rx_drops` у queen_health sentinel-payload (наразі — лише внутрішня RAM-метрика).
-
-**Блокує:** Mainnet-надійність Queen при пожежі-сценарії (≥ 16 emergency packets); звичайний LoRa-трафік (1 пакет / кілька сек) повністю покритий ringom.
-
----
-
-### ✅ BLOCKER-4: Starlink Latency Gap (Виправлено)
-
-**Статус:** Виправлено (FW.9 + PR #273). CoAP таймаути збільшено та реалізовано повноцінний retry.
-
-- `AT+CCOAPNEW`: `1000 ms` → `2000 ms` (`COAP_BASE_TIMEOUT_MS`)
-- ACK wait: `2000 ms` → `5000 ms` (`COAP_SEND_TIMEOUT_MS`)
-- До 3 retry-спроб (`COAP_MAX_RETRIES=3`) з парсингом відповіді `OK`/`ERROR`
-
-**Закриває:** Стабільність CoAP uplink через Starlink DTC (worst-case RTT 600–2400 ms).
+| Ресурс | Опис |
+|--------|------|
+| `firmware/soldier/main.c` · `firmware/queen/main.c` · `firmware/bio_contracts/bio_contract.rb` | Джерела: C-код Soldier/Queen + mruby bio-contract |
+| `firmware/test/` | Host-based x86 тести (`make -C firmware/test`) |
+| [03_02_Queen_Gateway_Firmware](03_02_Queen_Gateway_Firmware) | Queen: LoRa RX, CIFO, SIM7070G modem |
+| [03_03_TinyML_Acoustic_Inference](03_03_TinyML_Acoustic_Inference) | TinyML класифікатор звуку |
+| [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | Математика Атрактора Лоренца |
+| [03_05_Hardware_Symmetric_Crypto_and_Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Шифрування, ключі, RDP |
+| [02_04_EDLC_Supercapacitor_Buffer](02_04_EDLC_Supercapacitor_Buffer) | EBFC та іоністор 0.47F |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | **Відкриті блокери модуля 03** (SSOT): `FW.3` AT-blind, `FW.17` key-rotation, `SEC.2` RDP-2, `SEC.3` factory |
 
 ---
 
@@ -214,7 +118,7 @@ PA0 (Piezo):   Клік на пін PA0 на схемі → GPIO_EXTI0  (Кан�
 ### Host-Based Тести (без CubeIDE, без плат)
 
 ```bash
-# Запуск всіх 264 тестів на x86 (не потрібен ARM toolchain)
+# Запуск усіх host-based тестів на x86 (не потрібен ARM toolchain)
 make -C firmware/test
 
 # Тільки Soldier:
@@ -811,7 +715,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
    Без діаграми наступна людина (або ти за рік) не зрозумієш порядок бітів.
 4. **Magic marker policy.** Якщо `0` — валідне значення поля (як `(0.0, 0.0, 0.0)` для Lorenz state), то ОБОВ'ЯЗКОВО потрібен окремий 32-бітний marker у сусідньому регістрі АБО 8-бітний sentinel у packed-регістрі. Маркер додати у §2.1. Якщо `0` валідно інтерпретується як «cold-boot default» (як `tinyml_warning_threshold == 0.0f` → fallback `TINYML_DEFAULT_WARNING`), маркер не потрібен — достатньо range-check.
 5. **Restore guard.** При читанні з RTC ПЕРЕД використанням — `isfinite()` для float, magic-check для structured fields, range-validation для цілочисельних. Захищає від bit-flip у backup domain (рідкісне, але документоване ST явище у high-radiation environments).
-6. **Host-test bank.** Кожна нова фіча, що торкається RTC, повинна мати ≥3 host-тести: (a) cold-boot fallback, (b) warm-boot roundtrip, (c) corruption/bit-flip відкочується на default. Приклади: `test_arch21_pvd_*` (5 тестів), `test_sec10_dr0_*` (13 тестів).
+6. **Host-test bank.** Кожна нова фіча, що торкається RTC, повинна мати ≥3 host-тести: (a) cold-boot fallback, (b) warm-boot roundtrip, (c) corruption/bit-flip відкочується на default. Приклади: `test_arch21_pvd_*`, `test_sec10_dr0_*`.
 7. **Doc update.** Оновити §2 канонічну таблицю + §2.1 magic markers + cross-link з 00_08 (відповідний ID).
 
 **Якщо DR15 виявиться зайнятий:** перейти до §2.3 — Flash-based KV store як overflow strategy.
@@ -1095,7 +999,7 @@ HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
 |----------|--------|-----|
 | `OnRxDone(payload, size, rssi, snr)` | LoRa RX (рівно 16 байт) | RSSI clamp → `LoRa_Rx_Ring_Push` (FIFO 15-slot, FW.3) → лічильник `lora_rx_drops` при переповненні |
 
-Queen не має PVD, EXTI, DMA або IWDG ISR. Мінімальний ISR-footprint + **single-producer ring buffer** дозволяють Queen залишатися "завжди активною" без race conditions і без втрати голосів рою під час 25-секундного CoAP-flush'у (BLOCKER-2 part-1 закрито у FW.3).
+Queen не має PVD, EXTI, DMA або IWDG ISR. Мінімальний ISR-footprint + **single-producer ring buffer** дозволяють Queen залишатися "завжди активною" без race conditions і без втрати голосів рою під час 25-секундного CoAP-flush'у (FW.3 — part-1 закрито; повна async UART DMA flush відкрита → `00_08 §03`).
 
 ---
 
@@ -1191,22 +1095,22 @@ HAL_RNG_DeInit(&hrng);                                  // DeInit одразу �
 
 ---
 
-## 🧪 10. Покриття Host-Based Тестами (264 тестів)
+## 🧪 10. Покриття Host-Based Тестами
 
 Firmware логіка тестується на x86 з GCC (не потребує ARM toolchain):
 
 ```bash
-make -C firmware/test             # Всі 511 тестів (260 soldier + 135 queen + 44 bio_contract + 51 tinyml + 21 encryption)
-make -C firmware/test queen       # Queen-only (135 тестів)
-make -C firmware/test soldier     # Soldier-only (260 тестів)
-make -C firmware/test bio_contract # Bio-Contract (44 тестів)
-make -C firmware/test tinyml      # TinyML pipeline (51 тест, включно з 7 для FW.18 OTA invalid counter)
-make -C firmware/test encryption  # AES encryption (21 тестів)
+make -C firmware/test             # Усі host-based тести (soldier / queen / bio_contract / tinyml / encryption)
+make -C firmware/test queen       # Queen-only
+make -C firmware/test soldier     # Soldier-only
+make -C firmware/test bio_contract # Bio-Contract
+make -C firmware/test tinyml      # TinyML pipeline (включно з FW.18 OTA invalid-counter)
+make -C firmware/test encryption  # AES encryption
 ```
 
 **CI:** Firmware тести інтегровані в GitHub Actions (`firmware_test` job у `.github/workflows/ci.yml`).
 
-### Тести Queen (83)
+### Тести Queen
 
 | Модуль | Тести | Що покривається |
 |--------|-------|-----------------|
@@ -1223,7 +1127,7 @@ make -C firmware/test encryption  # AES encryption (21 тестів)
 | CBC Command Decryption | 3 | ECB restored after CMD decrypt, CBC during decrypt, both transitions in sequence |
 | **CoAP Retry (FW.9)** | **4** | **`COAP_MAX_RETRIES=3` константа, `COAP_BASE_TIMEOUT_MS=2000`, `COAP_SEND_TIMEOUT_MS=5000`, `UART_RX_BUF_SIZE=128`** |
 
-### Тести Soldier (105)
+### Тести Soldier
 
 | Модуль | Тести | Що покривається |
 |--------|-------|-----------------|
@@ -1375,8 +1279,8 @@ payload_byte = (status << 5) | growth_points
 ```
 firmware/test/
   hal_mock.h          — Мінімальні HAL stubs для компіляції без STM32 HAL
-  test_soldier_logic.c — 58 тестів, pure-logic функції з soldier/main.c
-  test_queen_logic.c   — 79 тестів, pure-logic функції з queen/main.c
+  test_soldier_logic.c — pure-logic функції з soldier/main.c
+  test_queen_logic.c   — pure-logic функції з queen/main.c
   Makefile             — gcc, -Wall -Wextra -Wpedantic -std=c11 -O2
 ```
 
@@ -1456,28 +1360,9 @@ make -C firmware/test clean   # Remove test_queen, test_soldier binaries
 
 ---
 
-## 🔗 13. Посилання
-
-| Ресурс | Опис |
-|--------|------|
-| `firmware/soldier/main.c` | Повний C-код вузла Soldier |
-| `firmware/queen/main.c` | Повний C-код шлюзу Queen |
-| `firmware/bio_contracts/bio_contract.rb` | mruby Lorenz Attractor bio-contract |
-| `firmware/test/hal_mock.h` | HAL stubs для x86 тестів |
-| `firmware/test/test_soldier_logic.c` | 58 Soldier тестів |
-| `firmware/test/test_queen_logic.c` | 79 Queen тестів |
-| `firmware/test/Makefile` | Build system для host-based тестів |
-| [03_02_Queen_Gateway_Firmware](03_02_Queen_Gateway_Firmware) | Детальна документація Queen |
-| [03_03_TinyML_Acoustic_Inference](03_03_TinyML_Acoustic_Inference) | TinyML класифікатор звуку |
-| [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | Математика Атрактора |
-| [03_05_Hardware_Symmetric_Crypto_and_Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Деталі шифрування та RDP |
-| [02_04_EDLC_Supercapacitor_Buffer](02_04_EDLC_Supercapacitor_Buffer) | EBFC та іоністор 0.47F |
-
----
-
 ## 📈 14. EMA (Exponential Moving Average) на Soldier — FW.21 🤖
 
-> **Cross-ref:** [00_08 FW.21](00_08_Action_Plan_Tracker) — ✅ реалізовано (`firmware/soldier/main.c` + 8 тестів у `firmware/test/test_soldier_logic.c`)
+> **Cross-ref:** [00_08 FW.21](00_08_Action_Plan_Tracker) — ✅ реалізовано (`firmware/soldier/main.c` + тести у `firmware/test/test_soldier_logic.c`)
 
 ### 14.1 Мета та контекст
 
