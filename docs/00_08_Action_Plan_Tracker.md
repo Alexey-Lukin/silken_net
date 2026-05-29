@@ -562,7 +562,8 @@
 - **Пріоритет:** TRL 8+ (після базової валідації в полі)
 - [ ] 🤖 Валідувати концепт на вбудованому 12-біт ADC (firmware: GPIO disconnect EDLC → measure VOC → reconnect)
 - [ ] 👤 Якщо 12-біт недостатньо — додати ADS1220 + TPS22860 до BOM
-- [ ] 🤖 Backend: поле `voc_mv` у TelemetryLog для серверної корекції моделі Лоренца
+- ✅ Зроблено (🤖 verify, 2026-05-29): DCI-safe дизайн зафіксовано → `02_04 §4.2`. Попереднє «корекція моделі Лоренца» **зламало б DCI** (server-Z ≠ device-Z, бо firmware VOC не має → fraud-flag на кожному пакеті). Корекція має жити на slashing-шарі, не в Z.
+- [ ] 🤖 Backend (gated): `voc_mv` колонка + VOC-корекція у `ContractHealthCheckService` (виключити hardware-confounded дерева зі slashing-підрахунку), **НЕ в `Attractor`**. Чекає firmware VOC-вимір + delivery-контракт.
 
 #### HW.20 — Buffer Cap: Tantalum → MLCC migration
 - **Джерело:** `02_03` §6 + Legacy notes
