@@ -379,3 +379,55 @@ echo "Stub shape for cluster C: First Akash production deploy" > docs/shaping/ak
 - `docs/00_08` — open backlog задач (OPS.3 / OPS.4).
 - `docs/06_01` — Kamal / Terraform CI integration.
 - `docs/04_02 §13b` — Drift Register, який живиться SSOT Integrity Guard результатами.
+
+---
+
+## 📐 8. SSOT Documentation Standards & Drift Prevention
+
+> Як писати канонічні `docs/NN_MM_*.md`, щоб не накопичувався SSOT-drift. Зафіксовано під час §06/§07 deep-review (2026-05-29); поширюється на всі модулі.
+
+### 8.1 Canonical doc skeleton
+
+```
+# NN_MM: Title
+## 🎯 Мета
+## ✅ Статус            — TRL → реф 00_06 §1 (НЕ дублювати число) + 1 рядок rationale
+## 🛑 Блокери (active)  — стабільна нумерація; вирішені → 🗄️ Архів (НЕ renumber)
+## <Content>
+## 🔗 Cross-references  — таблиця: ключові файли + sibling-доки + 00_08-link
+```
+
+- **File Map** — опційно; як правило згортається у Cross-references.
+- **Cross-references** — обов'язково; має містити `00_08`-link (трекер) для кожного doc з відкритими пунктами.
+
+### 8.2 Canonical-home registry (одна річ — один дім)
+
+Кожен факт має **ОДИН** SSOT-дім; усе інше — реф, не re-statement. Дзеркало позначати: «значення тут — дзеркало SSOT, правити там».
+
+| Факт | SSOT home |
+|---|---|
+| Per-module TRL | `00_06 §1` (НЕ дублювати у §intro чи модульних доках — лише реф) |
+| AES per-channel modes | `03_05 §3.7` |
+| Lorenz константи | `03_04 §4.1` |
+| Tokenomics rate / slashing thresholds / insurance pool | `05_03` · `00_01 §6.2/§6.3` |
+| Carbon (2000 SCC = 1 tCO₂) | `05_03` + `07_01 §3` (business view) |
+| Financial constants (business) | `07_01 §3` (з рефами на 05_03/00_01) |
+| Slashing penalty formula | `00_01 §6.2` ↔ `BlockchainBurningService` |
+| Secrets inventory | `06_04` (canonical = `config/deploy.yml env.secret`) |
+| Prometheus metric registry | `06_03 §2.8` (regen з `SilkenNet::Metrics::REGISTRY`) |
+| DR / backup posture | `06_06` (config SSOT = `terraform/database.tf`) |
+| CI/CD workflows + runbook index | `06_07` |
+
+> Повний канон↔канон дубль-аудит — `00_08 DOC.2`.
+
+### 8.3 Drift-prevention tooling (CI-enforced)
+
+| Guard | Що ловить | Команда / місце |
+|---|---|---|
+| `docs:check_refs` | dangling `NN_NN` doc-links (hard) + §-section label drift (advisory) | `bin/rails docs:check_refs` (ci.yml) |
+| `tracker:check` | 00_08: dup-IDs, meta-line conformance, canon-ref resolution | `bin/rails tracker:check` (ci.yml) |
+| `ssot_guard.yml` | protected code змінено → docs мусять оновитись | CI PR gate (§2.3) |
+| regen-from-code | enumerable lists (метрики) генеруються з SSOT, не вручну | `06_03 §2.8` regen cmd |
+| TRL-consistency | _(roadmap)_ per-doc TRL == `00_06 §1` | — |
+
+**Правило при зміні факту:** правити лише у home (§8.2) → рефи лишаються чинними; будь-який новий NN_NN-док/реф — `docs:check_refs` має лишатись зеленим перед merge.
