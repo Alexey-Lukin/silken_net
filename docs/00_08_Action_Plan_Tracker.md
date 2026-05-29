@@ -61,6 +61,8 @@
 
 ## §04 · Backend / API / UI / DevOps
 
+> 📍 **Навігація:** містить також **§06-canon deploy/observability** пункти (історичне «DevOps»-групування): `S1.1/S1.5`, `S2.1–S2.5`, `INF.3/4/6`, `S4.3`, `S5.2/5.6`, `S6.14`, `PUMA-IPV6-1`. Кожен має правильний `→ canon`-реф на `06_0x`; фізичне перенесення у §06 свідомо відкладене (zero-loss). Реєстр — у §06 нижче.
+
 > **Складність:** XS < 1 год · S = 1–4 год · M = 4–8 год · L = 1–3 дні
 
 #### SLASH-1 — Slashing cause_classification gate (financial-safety) 🔴
@@ -639,6 +641,8 @@ DOC.9 — потребує лабораторного вимірювання TX-
 ---
 
 ## §06 · Deploy / Observability / Ops (OPS)
+
+> 📍 **§06-canon пункти, наразі бакетовані під §04** (deploy/observability, історичне «DevOps»): `S1.1/S1.5`→`06_01/04` · `S2.1–S2.5`→`06_03` · `INF.3/4/6`→`06_01/02` · `S4.3`→`06_02` · `S5.2/5.6`→`06_01/03` · `S6.14`→`06_04` · `PUMA-IPV6-1`→`06_05`. Нижче — §06-native (DR/OPS).
 
 #### DR.1 — Disaster Recovery drill + master-key backup
 - **P1** · 👤 · → `06_06`
