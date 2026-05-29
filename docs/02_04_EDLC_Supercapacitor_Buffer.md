@@ -7,16 +7,27 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 4 — Іоністор 0.47F / 5.5V протестований у зв'язці з BQ25570 на макетній платі
-- **Пов'язані модулі:**
-  - Живлення → [`02_03_BQ25570_MPPT_Nano_Power`](02_03_BQ25570_MPPT_Nano_Power)
-  - Математика (δt як вхід Лоренца) → [`03_04_mruby_Lorenz_Attractor`](03_04_mruby_Lorenz_Attractor)
-  - Прошивка Солдата → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
+- **Поточний TRL:** TRL 4 — іоністор 0.47F / 5.5V протестований у зв'язці з BQ25570 на макетній платі. Зимова ESR-деградація ✅ закрита (FW.10: cold-TX-deferral guard, `03_01` Phase 4); відкритих блокерів немає.
 
 ---
 
-## 🛑 Блокери
-- **Зимова деградація:** ✅ **Вирішено (FW.10).** При температурах нижче -15°C ESR іоністора зростає, що може спричинити просадку напруги під час імпульсу LoRa. Реалізовано temperature-based TX deferral: `if (temp < -15°C && vcap < 4.0V) → skip TX` у `firmware/soldier/main.c` (Phase 4 guard clause, `goto phase5_kenosis`). Named constants: `COLD_TX_DEFER_TEMP = -15`, `COLD_TX_DEFER_VCAP_MV = 4000`. 10 host-based unit tests. **Поріг VCAP лишається 4.0V** — при +14 dBm TX (`02_03 §9.6`) impulse сила менша, але ESR-просадка при -15°C все одно близька до brownout margin при vcap < 4.0V; threshold не послаблюється.
+## 🔗 Cross-references
+
+| Ресурс | Опис |
+|--------|------|
+| [02_03_BQ25570_MPPT_Nano_Power](02_03_BQ25570_MPPT_Nano_Power) | Живлення (MPPT, VBAT пороги, cold-start) |
+| [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | Математика: δt заряду як вхід Лоренца |
+| [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Прошивка Солдата (FW.10 cold-TX guard, Phase 4) |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | Трекер (TEG / series-stack winter-energy R&D) |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [1. Фізична Специфікація](#-1-фізична-специфікація)
+- [2. Подвійне Призначення: Іоністор як Біо-Сенсор](#-2-подвійне-призначення-іоністор-як-біо-сенсор)
+- [3. Зв'язок з BioContract](#-3-звязок-з-biocontract)
+- [4. Розглянуті Альтернативи Накопичувача Енергії](#-4-розглянуті-альтернативи-накопичувача-енергії)
+<!-- TOC:AUTO:END -->
 
 ---
 
