@@ -373,7 +373,7 @@
 - **P1** | `02_01 §3.4` / `07_02 §1.3` | **Складність: L** | 🤖 (docs/firmware/backend specs) + 👤 (bench + механіка)
 - **Опис:** BME280 (t°/RH/тиск, I2C, за TPS22860-гейтом) → **VPD** як прямий фізіологічний confounder (вбивця False Slashing, `00_01 §6.5/§6.6`) + гіперлокальний клімат-оракул (NaaS-дохід, `07_01`). 🚨 DCI-guard: VPD **НЕ** входить у Lorenz-Z. Поправки до вихідної нотатки: BME280 (не BME680); MCU sleep 300нА (не 2.1µA); gated draw ≈8нА.
 - ✅ Зроблено (docs): `02_01 §3.4` ADR + §7.2 promote + §2 + §3.2; `00_01 §6.6`; `08_02 §4` (collection + VPD-confounder); `07_02 §1.3` (+$2.60 add-on); `02_03 §9.6` (gated energy); `07_01` (climate data-product).
-- [ ] 🤖 `03_01`: SENSE-фаза читає BME280; hybrid packet (1B VPD-індекс hot-path + періодичний climate frame).
+- [x] 🤖 ✅ (2026-05-29) `03_01`: BME280 SENSE-read (TPS22860-gated forced-mode, on-node VPD) + Phase 2 байт 14 = VPD-індекс (non-panic; co-exists з SEC.10 panic frame counter); raw RH/тиск climate-frame → FW.2 24B CCM; DCI-guard документовано. **Лишається 👤 bench:** I2C pinout (CubeMX) + main.c імплементація + BME280 driver + `compute_vpd_index`.
 - [x] 🤖 ✅ (2026-05-29) TelemetryLog поля `humidity`/`pressure`/`vpd` — у `structure.sql` (parent + 7 партицій via ALTER+pg17 dump), recreate+seed verified, 04_01 doc + модель-коментар.
 - [ ] 🤖 VPD confounder-gate — **spec'd, calibration-pending** (`04_02 §InsightGeneratorService`): `apply_weather_confounder` discount-only. Активувати лише після (a) firmware VPD `03_01`, (b) ML-retrain з VPD-фічею, (c) ground-truth калібрування `08_02 §4`. Свідомо НЕ хардкодимо вгадані slashing-пороги (де-ризик `00_01 §6.6`).
 - [ ] 👤 Bench: I2C bring-up, forced-mode середній струм, TPS22860 gate-timing, VPD-калібрування vs референс-гігрометр.

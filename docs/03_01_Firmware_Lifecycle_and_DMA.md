@@ -375,6 +375,20 @@ HAL_RNG_GenerateRandomNumber(&hrng, &chaos_seed);
 
 Апаратний генератор випадкових чисел на основі теплового шуму кристала. **[SEC.11 / FW.30]** `chaos_seed` більше НЕ використовується для Атрактора Лоренца — початковий стан `(x₀,y₀,z₀)` деривується з per-device K_seed (Flash `FLASH_SEED_ADDR`) через HKDF/HMAC. `chaos_seed` залишається для mesh anti-pingpong, TX jitter та CoAP nonce.
 
+**BME280 (мікроклімат — HW.20, ADR `02_01 §3.4`):**
+```c
+// Гейтований TPS22860: GPIO ON → settle → forced-mode read → GPIO OFF (idle ~10 нА).
+// Клімат змінюється повільно → опитування раз на N пробуджень (climate_due), не щоцикл.
+if (climate_due) {
+  HAL_GPIO_WritePin(BME_PWR_PORT, BME_PWR_PIN, GPIO_PIN_SET);   // power-gate ON
+  bme280_forced_read(&bme_temp_c, &bme_rh_pct, &bme_pressure_hpa);  // ~10 мс @ ~700 µA
+  HAL_GPIO_WritePin(BME_PWR_PORT, BME_PWR_PIN, GPIO_PIN_RESET);  // OFF
+  vpd_index = compute_vpd_index(bme_temp_c, bme_rh_pct);  // VPD=f(t°,RH), on-node → 1 байт
+}
+```
+
+> **VPD (Vapor Pressure Deficit)** обчислюється на вузлі з t°+RH і пакується **1 байтом** (Phase 2, байт 14) як **прямий confounder сокоруху** — backend використовує його, щоб не штрафувати за погоду (False-Slashing guard, `00_01 §6.5/§6.6`). Сирі RH/тиск (для NaaS клімат-оракула, `07_01`) — у періодичному **climate frame** (FW.2 24B CCM extended payload; транзитний 16B-кадр місця не має). Тригер climate frame: кожні N uplink'ів або значна Δтиску (раннє попередження про шторм). Енергія: за TPS22860-гейтом ≈8нА avg (`02_01 §3.4`, `02_03 §9.6`). 🚨 **DCI-guard:** BME280-дані (VPD/RH/тиск) **НЕ** входять у входи Атрактора Лоренца (ті — temp/acoustic/delta_t/vcap, FW.5) → firmware↔backend bit-identity не зачіпається.
+
 **RSSI (Канал 5 — Zero-Energy Фенологія):**
 
 > RSSI не вимірюється Soldier напряму. Значення RSSI (`rssi_byte`) автоматично фіксується на стороні **Queen (Gateway)** при кожному прийнятому пакеті SX1262. Без жодного додаткового датчика на дереві або мікроватів витрат:
@@ -444,7 +458,8 @@ Offset | Size | Field            | Значення
 10     | 1    | BioContract      | [PanicFlag:1 bit | Status:2 bits | GrowthPoints:5 bits]
 11     | 1    | TTL              | Mesh Time-To-Live (initial = 3)
 12-13  | 2    | FirmwareVersionID| FIRMWARE_VERSION_ID (BE uint16)
-14-15  | 2    | Reserved         | Зарезервовано (нулі)
+14     | 1    | VPD index        | [HW.20] BME280 VPD (non-panic): 0–255 ≈ 0–5.1 kPa @ 0.02 kPa/LSB. Panic-пакет: байт належить SEC.10 frame counter
+15     | 1    | Reserved         | Зарезервовано (0). Panic-пакет: SEC.10 frame counter (14-15 BE)
 ```
 
 **Байт 10 (BioContract) — результат mruby Атрактора:**
@@ -453,6 +468,8 @@ Offset | Size | Field            | Значення
 - Біти `[4:0]`: Growth Points → `0-31` (Proof of Growth; нормальний діапазон 10–31)
 
 > **[FW.29] Disambiguація panic vs насичений acoustic_events:** до FW.29 `acoustic_events == 0xFF` вказував і на реальне насичення кавітаційних подій, і на panic. Тепер `PANIC_FLAG_BIT` (bit 7 байта 10) однозначно маркує паніку: `panic_payload[10] = 0x80`, а `panic_payload[7] = 0xFF` (acoustic). Нормальні пакети завжди виконують `lora_payload[10] &= ~PANIC_FLAG_BIT`.
+
+> **[HW.20] Байт 14 (VPD index) — co-existence з SEC.10:** на **non-panic** пакетах байт 14 несе VPD-індекс (BME280, on-node), а байт 15 = 0. На **panic**-пакетах байти 14-15 належать SEC.10 anti-replay frame counter (BE) — VPD там не інтерпретується. Конфлікту немає: інтерпретація розрізняється `PANIC_FLAG_BIT` (байт 10, bit 7). Backend (`TelemetryUnpackerService`) читає байт 14 → `vpd` лише для non-panic пакетів. Сирі RH/тиск чекають FW.2 24B CCM (climate frame).
 
 Після пакування:
 
