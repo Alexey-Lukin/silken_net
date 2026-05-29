@@ -16,21 +16,36 @@
 - **Ключовий Півот (v4 — EBFC Gen 2.0 baseline, 2026-05-22):** Біохімічний стек переписаний. Анод — одношаровий **dgrFAD-GDH + Os** (deglycosylated FAD-залежна глюкозодегідрогеназа) у захисній **Genipin-Chitosan-CNC** матриці з **Nafion-g-PSBMA** цвітеріонною мембраною; катод — гібрид **Laccase + ZIF-nanozyme** (nCoCuCeZIF/Lac). Очікуваний термін служби 20–25 років. Gen 1.0 (GOx+CAT+глутаральдегід+PEG) виключена як нежиттєздатна (`01_03`).
 - **Антенна Підсистема (v2):** Відмова від зовнішніх U.FL-кабелів та 4 голок-електродів. Прийнято рішення: керамічна SMD-антена 868 МГц + PEEK-радом (детально в розділі 5).
 - **Повна вартість вузла:** ~$32–$35 / шт (при 10k+), з урахуванням анкера + PEEK + герметизації. Детально → `07_02_Unit_Economics_and_BOM`.
-- **Пов'язані модулі:**
-  - Гіроїдний анкер та PEEK → [`01_01_Coaxial_Gyroid_Topology_and_PEEK`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
-  - BQ25570 MPPT → [`02_03_BQ25570_MPPT_Nano_Power`](02_03_BQ25570_MPPT_Nano_Power)
-  - Іоністор EDLC → [`02_04_EDLC_Supercapacitor_Buffer`](02_04_EDLC_Supercapacitor_Buffer)
-  - Прошивка Солдата → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
-  - Юніт-економіка → [`07_02_Unit_Economics_and_BOM`](07_02_Unit_Economics_and_BOM)
+- **Відкриті:** conformal coating Parylene C (HW.11), EBFC >5.5V overcharge protection (HW.12/HW.7) → [`00_08`](00_08_Action_Plan_Tracker).
 
 ---
 
-## 🛑 Блокери
+## 🔗 Cross-references
 
-| # | Блокер | Вплив | Відповідальний |
-|---|--------|-------|----------------|
-| 1 | **Захист плати (revised v3):** перехід з full-potting Sylgard 184 на **Parylene C 10 µm conformal coating** (`02_02 §3.4`) — Sylgard повністю заливав би капсулу та глушив 16 кГц TinyML акустику п'єзодиска. Залишається обов'язковим: акустичне вікно для п'єзо, IP67 у комбінації з O-ring | Без conformal: вологість знищує плату; з Sylgard: оглухлий TinyML | Апаратний інженер |
-| 2 | **Верхній ліміт напруги EBFC:** при тривалій інсоляції можливий сплеск >5.5 В → перезаряд іоністора | Деградація іоністора | `02_04` |
+| Ресурс | Опис |
+|--------|------|
+| [01_01_Coaxial_Gyroid_Topology_and_PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Гіроїдний анкер + PEEK (65% пористість, площа EBFC) |
+| [02_02_Blind_Mate_Pogo_Pin_Interface](02_02_Blind_Mate_Pogo_Pin_Interface) | Сліпе з'єднання анкер↔капсула; §3.4 Parylene C conformal |
+| [02_03_BQ25570_MPPT_Nano_Power](02_03_BQ25570_MPPT_Nano_Power) | MPPT, резисторна мережа порогів (VBAT_OV) |
+| [02_04_EDLC_Supercapacitor_Buffer](02_04_EDLC_Supercapacitor_Buffer) | Ємність, ESR, циклічна деградація іоністора |
+| [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Фази прошивки (STOP2, TX, TinyML) + енергоспоживання |
+| [01_03_EBFC_Enzymatic_Bio_Fuel_Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | Хімія EBFC, V-I крива, >500 мВ |
+| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | CAPEX/OPEX, ROI, Supply Chain Ukraine |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.7 VBAT_OV, HW.11 Parylene, HW.12 overvoltage |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [1. Архітектура «Бутерброд» — Фізичний Стек Вузла Soldier](#-1-архітектура-бутерброд--фізичний-стек-вузла-soldier)
+- [2. Енергетичний Бюджет](#-2-енергетичний-бюджет)
+- [3. Зведений Bill of Materials](#-3-зведений-bill-of-materials)
+- [5. RF & Antenna Subsystem — Zero-Touch RF Architecture](#-5-rf--antenna-subsystem--zero-touch-rf-architecture)
+- [6. Апаратні Хаки](#-6-апаратні-хаки)
+- [7. Development Toolchain](#-7-development-toolchain)
+- [10. Критичне Попередження: LoRa-Антена](#-10-критичне-попередження-lora-антена)
+- [11. Lab Validation Stand (Post-Pivot)](#-11-lab-validation-stand-post-pivot)
+- [12. Розглянуті Альтернативні Компоненти](#-12-розглянуті-альтернативні-компоненти)
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -526,23 +541,6 @@ STM32WLE5JC
 | PCB Queen (KiCad layout) | 🔴 Не розпочато | Модем зафіксовано: **SIM7070G** (рішення HW.10 / `02_05`) — кращий PSM/eDRX для NB-IoT |
 | Керамічна антена (прототип) | 🟡 Відбір моделей | Оцінка Yageo, Taoglas та Ignion Virtual Antenna™ на макетній платі |
 | PEEK-радом (прототип) | 🔴 Не розпочато | Потребує KiCad PCB розмірів для замовлення |
-
----
-
-## 🔗 9. Залежності та Посилання
-
-| Документ | Зв'язок |
-|---|---|
-| `02_02_Blind_Mate_Pogo_Pin_Interface` | Механіка та електрика сліпого з'єднання анкер ↔ капсула |
-| `02_03_BQ25570_MPPT_Nano_Power` | Детальні розрахунки MPPT, схема резисторної мережі порогів |
-| `02_04_EDLC_Supercapacitor_Buffer` | Розрахунок ємності, ESR, циклічна деградація іоністора |
-| `01_01_Coaxial_Gyroid_Topology` | Геометрія анкера (65% пористість, TPMS), площа EBFC |
-| `01_03_EBFC_Enzymatic_Bio_Fuel_Cell` | Хімія EBFC (GOx/Laccase), крива V-I, >500 мВ |
-| `03_01_Firmware_Lifecycle_and_DMA` | Фази прошивки (STOP2, TX, TinyML) та їх енергоспоживання |
-| `07_02_Unit_Economics_and_BOM` | CAPEX/OPEX розбивка по підсистемах, ROI кластера ($4k / ~9.2 міс payback), Supply Chain Ukraine |
----
-
-*Документ є живим інженерним артефактом*
 
 ---
 
