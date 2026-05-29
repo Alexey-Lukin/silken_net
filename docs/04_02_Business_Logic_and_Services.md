@@ -109,6 +109,8 @@
 | **Зовнішні виклики** | `AlertDispatchService.create_fraud_alert!` |
 | **Вихід** | `{ processed_count: Integer, date: Date }`. Створює `AiInsight` per tree та per cluster. |
 
+> **🌫️ VPD weather-confounder gate [design, calibration-pending — HW.20]:** Щоб не штрафувати за погоду (де-ризик `00_01 §6.5/§6.6`), `stress_index` має дисконтуватися, коли низький `sap_flow` пояснюється **погодою**, а не хворобою: насичене повітря (дощ/туман → **низький VPD**) дає нульову транспіраційну тягу → сік природно падає на здоровому дереві. Дизайн: після `calculate_stress_index` застосувати `apply_weather_confounder(stress_index, avg_vpd, sap_deviation)` — **discount-only** (ніколи не підвищує stress), inert коли `avg_vpd` nil. **Три залежності перед активацією (свідомо НЕ хардкодимо вгадані пороги у slashing — це суперечило б де-ризику):** (1) ML-модель `silken_forest.marshal` не має VPD-фічі → **retrain** з `[temp, vcap, Z, sap_dev, acoustic, vpd]` (heuristic-only до того); (2) `calculate_stress_index_heuristic` наразі **ігнорує sap** взагалі (GAP, `00_01 §6.6`); (3) пороги «низький VPD» (kPa) + величина знижки — з **ground-truth калібрування** `08_02 §4`. Firmware VPD — `HW.20`/`03_01` (ще не шле → `vpd` nil → gate inert). **Активувати лише після (firmware VPD + ML-retrain + калібрування).**
+
 ### `SilkenNet::Attractor`
 
 | | |
