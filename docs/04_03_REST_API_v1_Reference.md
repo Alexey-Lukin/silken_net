@@ -9,14 +9,32 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 (System Qualified / Production Ready). Впроваджено Zero-Trust (HKDF, Ed25519, HMAC), асинхронну розшифровку телеметрії та Rate Limiting (Rack::Attack).
-- **Кількість ендпоінтів:** 110 (включно з `POST /api/v1/auth/m2m_token`, `POST /api/v1/auth/m2m_token/refresh`, `POST /api/v1/gateways/:id/telemetry`, `GET /api/v1/users/:id`, `GET /api/v1/system_audits`; плюс Codex-група: 3 read-ендпоінти + 3 community write-ендпоінти Phase 2 + 3 identity-ендпоінти Phase 3 + 3 battle-ендпоінти Phase 4 + 6 discovery-ендпоінтів Phase 5 (1 user + 5 admin CRUD) + 7 cross-domain stitch-ендпоінтів Phase 6 (2 citations + 5 admin nodes CRUD))
+- **Ендпоінти:** повний канонічний перелік — §4 (таблиця ендпоінтів); усі під `/api/v1` (core + Codex Phase 2-6 групи).
 - **Базовий URL:** `https://<host>/api/v1`
 - **Формат відповідей:** JSON (якщо не вказано інше)
-- **Пов'язані модулі:**
-  - Бізнес-логіка → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
-  - Схема БД → [`04_01_Data_Models_and_Entities`](04_01_Data_Models_and_Entities)
-  - Прошивка → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
-  - Токеноміка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
+---
+
+## 🔗 Cross-references
+
+| Ресурс | Опис |
+|--------|------|
+| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (сервіси за ендпоінтами) |
+| [04_01_Data_Models_and_Entities](04_01_Data_Models_and_Entities) | Схема БД (моделі) |
+| [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Прошивка (CoAP uplink, gateway telemetry) |
+| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (wallet/mint ендпоінти) |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | Open backlog (API-related) |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [1. Автентифікація](#1-автентифікація)
+- [2. Стандартний Формат Відповідей](#2-стандартний-формат-відповідей)
+- [3. Ролева Модель Доступу (RBAC)](#3-ролева-модель-доступу-rbac)
+- [4. Повна Таблиця Ендпоінтів](#4-повна-таблиця-ендпоінтів)
+- [5. Ключові Ендпоінти: Детальний Опис](#5-ключові-ендпоінти-детальний-опис)
+- [6. Приклад Взаємодії Gateway (Queen) з API](#6-приклад-взаємодії-gateway-queen-з-api)
+- [7. Заголовки Запитів](#7-заголовки-запитів)
+<!-- TOC:AUTO:END -->
 
 ---
 
