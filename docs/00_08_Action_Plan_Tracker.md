@@ -706,51 +706,28 @@
 ## §03/§05 · Безпека (Edge crypto + Web3)
 
 #### SEC.1 — Multisig Gnosis Safe для production admin role
-- **Джерело:** `05_03` Operational Security
-- **Опис:** `DEFAULT_ADMIN_ROLE` у production контрактах SCC/SFC має бути Gnosis Safe multisig (3/5 або 2/3), а не EOA
-- **Пріоритет:** Before mainnet deploy
-- ✅ Зроблено (🤖 prep): `Deploy.s.sol` ставить admin=Safe на genesis + `REQUIRE_SAFE_ADMIN` guard (revert якщо admin=EOA); runbook + cast-верифікація. Канон: `05_03 §Admin-Role → Gnosis Safe`. **Нічого не задеплоєно → reassign НЕ потрібен.**
-- [ ] 👤 Створити Gnosis Safe wallet (3/5 або 2/3) на Polygon
-- [ ] 👤 Деплоїти з `ADMIN_ADDRESS=<Safe>` + `REQUIRE_SAFE_ADMIN=true` (admin = Safe одразу)
+- **P0** · 👤 · → `05_03 §Admin-Role`
+- ✅ `Deploy.s.sol` admin=Safe на genesis + `REQUIRE_SAFE_ADMIN` guard + runbook (нічого не задеплоєно → reassign не треба). · [ ] 👤 створити Gnosis Safe (3/5|2/3) на Polygon + деплой з `ADMIN_ADDRESS=<Safe>` `REQUIRE_SAFE_ADMIN=true`
 
 #### SEC.2 — RDP Level 2 activation timeline
-- **Джерело:** `03_05` NOTE-1
-- **Опис:** Поточний стан: RDP Level 0 (development). Level 1 потрібен перед першою польовою партією, Level 2 — тільки після повної OTA верифікації (незворотній — лише OTA updates можливі)
-- ✅ Зроблено: процедура активації RDP Level 2 (pre-flight + STM32CubeProgrammer CLI + rollout R&D→Pilot→Mass). Канон: `03_05 §3.6`.
-- [ ] 🤖 Верифікувати OTA flow end-to-end
-- [ ] 👤 Перейти на RDP Level 1 для field batch
+- **P1** · 🤖+👤 · → `03_05 §3.6`
+- ✅ процедура активації RDP L2 (pre-flight + CubeProgrammer CLI + rollout R&D→Pilot→Mass). · [ ] 🤖 верифікувати OTA flow end-to-end · [ ] 👤 перейти на RDP L1 для field batch
 
 #### SEC.3 — Factory Flashing pipeline
-- **Джерело:** `03_05` NOTE-2
-- **Опис:** Multi-step factory process: (1) Flash firmware з placeholder key, (2) Backend → HKDF(master_key, device_uid) → unique_key, (3) Robot пише key у protected Flash sector, (4) STM32CubeProgrammer → RDP Level 1/2
-- **Блокує:** Mass production
-- ✅ Зроблено: дизайн (Гілка A + B) + Rake-driven tool — `provisioning_sessions` AASM + 2-Person Rule; `app/services/factory_flashing/*` (MasterKeySource / CommandBuilder / Executor / AteccProvisioner / AuditTrail / Session); rake `factory:flash|approve|execute` (dry-run) + 63 specs (firmware-equivalence verified). Канон: `03_05 §3.4` + `§3.4г` (ops-security threat model: access control / anti-key-leak / audit-trail / Гілка A↔B).
-- [ ] 👤 Реальний STM32_Programmer_CLI execution на bench (post-FW.2 HW gate); зараз `EXECUTE=1` шлях рейзить `ProgrammerMissingError` коли CLI відсутній у PATH
-- [ ] 👤 Bitwarden Secrets Manager API live integration (`BitwardenAdapter#fetch_master_key` зараз raise `NotImplementedError`)
-- [ ] 🔗 Реальний `cryptoauthlib` I²C для AteccProvisioner — після SEC.6 PCBA з ATECC608B
+- **P0** · 👤 · → `03_05 §3.4` (+ §3.4г threat model)
+- ✅ Гілка A+B Rake-tool: `provisioning_sessions` AASM + 2-Person Rule + `factory_flashing/*` + rake `factory:flash|approve|execute` (dry-run) + 63 specs. · [ ] 👤 real `STM32_Programmer_CLI` на bench (post-FW.2) · [ ] 👤 Bitwarden Secrets API live (`BitwardenAdapter` зараз `NotImplementedError`) · [ ] 🔗 real `cryptoauthlib` I²C — після SEC.6 ATECC608B PCBA
 
 #### SEC.4 — Reed Switch shipping mode (not in BOM)
-- **Джерело:** `03_05` NOTE-3
-- **Опис:** Reed switch (магнітний сенсор) для zero consumption при транспортуванні. Магніт на коробці → circuit open. Інсталятор знімає магніт → first power-up. ~$0.05/unit. Дизайн approved, BOM не оновлений
-- [ ] 👤 Додати Hamlin 59140-1-T-00-A reed switch + N52 neodymium magnet до BOM
-- [ ] 👤 Оновити KiCad schematic
+- **P2** · 👤 · → `03_05`
+- Zero-consumption transport: магніт→circuit open, інсталятор знімає→first power-up (~$0.05/unit). Дизайн approved, BOM ні. · [ ] 👤 додати Hamlin 59140-1-T-00-A + N52 магніт до BOM + оновити KiCad schematic
 
 #### SEC.7 — OTA image автентифікація (cross-ref FW.23)
-- **Джерело:** `03_05`, `03_02`
-- **Опис:** OTA broadcast (mruby bytecode та потенційно firmware updates) не має цифрового підпису. Пов'язано з FW.23 але виділено як окремий security item через критичність.
-- **Пріоритет:** P1 (перед першою OTA в полі)
-- ✅ Зроблено (🟡 частково через FW.23): HMAC-SHA256 dual-gate (`OtaHmacKeyService` + `OtaPackagerService` + Soldier dual-gate + Queen relay). Лишається mbedTLS compute на STM32 (lab); Ed25519 — post-TRL 7. Канон: `03_05 §3.4б`.
-- [ ] 🟡 mbedTLS HMAC-SHA256 compute на STM32 HASH peripheral — deferred до lab build (cross-ref FW.23)
-- [ ] 🔗 Ed25519 key pair (Post-TRL 7, якщо SRAM бюджет дозволить після RTOS/FW.2 оптимізацій)
+- **P1** · 🔗 · → `03_05 §3.4б`
+- ✅ HMAC-SHA256 dual-gate (OtaHmacKeyService + OtaPackagerService + Soldier dual-gate + Queen relay). · [ ] 🟡 mbedTLS HMAC compute на STM32 HASH (lab) · [ ] 🔗 Ed25519 key pair (Post-TRL 7)
 
 #### SEC.9 — Production AES Key містить FIPS-197 Appendix B Test Vector
-- **Джерело:** `03_05` | **Пріоритет: P0 (до будь-якого field deploy)**
-- **Опис:** Аудит виявив: перші 4 слова production AES key **ідентичні публічно відомому** FIPS-197 Appendix B AES-128 test vector (стандартний тест-вектор зі специфікації NIST). Будь-який фахівець з криптографії може впізнати цей паттерн. При RDP Level 0 — trivial key extraction
-- **Важливо:** Це ОКРЕМЕ від FW.1 (hardcoded key) — навіть після per-device provisioning, якщо master seed базується на цьому ключі, весь derivation tree скомпрометований
-- ✅ Зроблено (guard): `Security::WeakKeyDetector` + boot-guard `master_key_strength_check.rb` — refuse-to-boot на FIPS-197/NIST/RFC/degenerate/placeholder vectors; 30 specs. Канон: `03_05 §3.1а`. (Заміна самого ключа — 👤 нижче.)
-- [ ] 👤 Негайно замінити seed key на криптографічно стійкий random (hardware RNG або аудитований генератор)
-- [ ] 👤 Задокументувати процес генерації нового master key у vault (Bitwarden/1Password) — **без коміту ключа в репозиторій**
-- [ ] 👤 Після заміни: re-flash всі існуючі прототипи
+- **P0** · 👤 · → `03_05 §3.1а`
+- ✅ guard `Security::WeakKeyDetector` + boot-guard refuse-to-boot на FIPS-197/NIST/degenerate vectors (30 specs). ⚠️ ОКРЕМЕ від FW.1: якщо master seed базується на цьому ключі — весь derivation tree скомпрометований. · [ ] 👤 замінити seed key на crypto-random → задокументувати генерацію у vault (без коміту) → re-flash прототипи
 
 ## 🔀 Cross-cutting · Doc-drift (DOC) — синх з `04_02 §11` divergence registry
 
