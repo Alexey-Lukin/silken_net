@@ -695,6 +695,30 @@ HAL_CRYP_Init(&hcryp);
 
 ---
 
+### 1.11 Node Role Flag (ARCH.27) — Soldier vs Provisioner
+
+ARCH.26 (TDMA / CAD mesh relay) вимагає рольової диференціації: **Soldier** = TX-only (глухий між вікнами), **Provisioner** = TX + CAD (елітний вузол з надлишком енергії, ловить преамбули). Прошивка компілюється **ідентично** для обох — роль персистується даними, не білдом.
+
+**Зберігання — Protected Flash, не RTC.** `FLASH_ROLE_ADDR = FLASH_KEY_ADDR + 72` (`0x0803E000 + 72 = 0x0803E048`) — у тому ж WRPROT-захищеному 4 KB Protected Flash Sector, що AES key (`+0`, magic `"KEYS"`) та K_seed (`+36`, magic `"LSED"` [SEC.11]), **без створення нового сектора**. Роль живе у Flash, бо при cold-boot / VBAT-loss вона **не повинна змінюватися** — RTC було б помилкою (стирається при повному знеструмленні; див. §2.1).
+
+**Формат — один `uint32` magic-word:**
+
+| Значення | Роль |
+|----------|------|
+| `0x534F4C44` (`"SOLD"`) | `ROLE_SOLDIER` |
+| `0x50524F56` (`"PROV"`) | `ROLE_PROVISIONER` |
+| `0xFFFFFFFF` (unprovisioned) / `0x00000000` (erased) / інше (корупція) | fallback → `ROLE_SOLDIER` |
+
+Fallback на `ROLE_SOLDIER` безпечний — переважна більшість вузлів є звичайними датчиками.
+
+**Runtime.** Глобальний `volatile uint8_t g_node_role` встановлюється `Load_Node_Role()` у `main()` одразу після `Load_Lorenz_Seed()`. ARCH.26 (CAD relay) і повний FW.20-S2 (mesh time-sync relay) споживають прапорець без додаткової логіки. Backend `HardwareKeyService` не зачіпається — це чистий firmware-flag (інкрементальний патч, 2026-05-03).
+
+**Тести.** 5 host-тестів (`test_arch27_*` у `firmware/test/test_soldier_logic.c`): `"SOLD"` / `"PROV"` / unprovisioned `0xFFFFFFFF` / zero / corrupted magic → коректний fallback.
+
+**Cross-ref:** ARCH.26 (`00_01`; §1.9 RX-вікно), [SEC.11] K_seed Flash layout, §2.1 (чому роль у Flash, не RTC).
+
+---
+
 ## 🗺️ 2. Soldier RTC Backup Register Map (DR0..DR19) — Canonical SSOT [DOC.3]
 
 > **SSOT (єдина точка істини):** ця таблиця — **єдине** канонічне джерело розкладки RTC Backup Domain Soldier'а. Будь-яка зміна (додавання нового поля, перепакування біт-полів, новий магічний маркер) **повинна** починатися з оновлення цієї таблиці. Документація `03_04` (Lorenz state), `03_03` (TinyML EMA) та firmware-код посилаються на цю таблицю, а не дублюють її.
