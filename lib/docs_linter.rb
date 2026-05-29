@@ -24,11 +24,15 @@ module DocsLinter
   end
 
   # Blockers live in 00_08, not canon (decided 2026-05-29). Canon docs must not
-  # host a "## 🛑 Блокери" or "## ✅ Архів вирішених блокерів" section — ALL
-  # blockers (open + closed) are tracked in 00_08 (open → §module, closed → §🗄️
-  # Архів); canon keeps the design/constraint as body prose. Returns the offending
-  # "## ..." headings. Lines inside ``` fenced blocks are skipped, so a skeleton
-  # *example* (e.g. 00_07 §8.1) is not a false positive. (Caller exempts 00_08.)
+  # host a blocker SECTION — neither open ("🛑 Блокери", "🛑 Відкриті Блокери")
+  # nor a resolved-archive ("✅ Архів", "✅ Закриті Блокери (PR #…)"). ALL blockers
+  # (open + closed) live in 00_08 (open → §module, closed → §🗄️ Архів); canon keeps
+  # the design/constraint as body prose. Heuristic: a `## ` heading bearing a status
+  # emoji (🛑/✅/🟢/🟡/🔴) together with a blocker/archive word. Returns the offending
+  # headings. Lines inside ``` fenced blocks are skipped, so a skeleton *example*
+  # (e.g. 00_07 §8.1) is not a false positive. (Caller exempts 00_08.)
+  STATUS_EMOJI = "🛑✅🟢🟡🔴"
+
   def canon_blocker_sections(text)
     in_fence = false
     text.each_line.filter_map do |line|
@@ -37,7 +41,10 @@ module DocsLinter
       next unless line.start_with?("## ")
 
       heading = line.strip
-      heading if heading.match?(/🛑\s*Блокери/) || heading.match?(/✅\s*Архів\s+вирішених\s+блокер/)
+      next unless heading.match?(/[#{STATUS_EMOJI}]/)
+
+      # "Архів" alone (resolved-archive) or any "…Блокер…" with the status emoji.
+      heading if heading.match?(/Архів/i) || heading.match?(/блокер/i)
     end
   end
 end

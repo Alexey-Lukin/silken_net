@@ -44,6 +44,17 @@ RSpec.describe DocsLinter do
         .to contain_exactly("## ✅ Архів вирішених блокерів")
     end
 
+    it "flags open ('🛑 Відкриті Блокери') and resolved ('✅ Закриті Блокери') variants" do
+      md = "## 🛑 Відкриті Блокери\n## ✅ Закриті Блокери (PR #254)\n"
+      expect(described_class.canon_blocker_sections(md))
+        .to contain_exactly("## 🛑 Відкриті Блокери", "## ✅ Закриті Блокери (PR #254)")
+    end
+
+    it "does not flag a status-emoji heading lacking a blocker/archive word" do
+      md = "## 🛑 Архітектурні правила (фіксоване)\n## ✅ Governance DAO — Реалізовано\n"
+      expect(described_class.canon_blocker_sections(md)).to be_empty
+    end
+
     it "does not flag body prose that merely mentions a blocker/constraint" do
       md = "## 🔐 1. Crypto\nLoRa uses AES-128-ECB (transitional, no MAC) — see 00_08 §03.\n"
       expect(described_class.canon_blocker_sections(md)).to be_empty
