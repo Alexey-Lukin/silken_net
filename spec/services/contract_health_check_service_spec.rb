@@ -26,23 +26,25 @@ RSpec.describe ContractHealthCheckService do
       end
     end
 
-    context "when Oracle is silent (no daily insights)" do
-      it "activates slashing protocol" do
+    # [SLASH-1] Cluster-wide blackout = gateway-fault / force-majeure signature,
+    # NOT negligence → must NOT auto-burn (00_01 §6.5). Route to Field Audit.
+    context "when Oracle is silent (no daily insights) — cluster-wide blackout" do
+      it "does NOT slash (no breach, no burn)" do
         create(:tree, cluster: cluster, status: :active)
         cluster.reload
 
         described_class.call(contract, target_date)
 
-        expect(contract.reload).to be_status_breached
+        expect(contract.reload).to be_status_active
+        expect(BurnCarbonTokensWorker.jobs.size).to eq(0)
       end
 
-      it "enqueues BurnCarbonTokensWorker" do
+      it "raises a system_fault Field-Audit alert for the cluster" do
         create(:tree, cluster: cluster, status: :active)
         cluster.reload
 
-        described_class.call(contract, target_date)
-
-        expect(BurnCarbonTokensWorker.jobs.size).to eq(1)
+        expect { described_class.call(contract, target_date) }
+          .to change { EwsAlert.where(cluster: cluster, alert_type: :system_fault).count }.by(1)
       end
     end
 
@@ -112,23 +114,23 @@ RSpec.describe ContractHealthCheckService do
     end
 
     context "when activate_slashing_protocol! encounters a database error" do
-      it "does not enqueue BurnCarbonTokensWorker when update! fails" do
-        create(:tree, cluster: cluster, status: :active)
+      # Trigger the REAL slash path (>20% critical insights — data present), since
+      # absence-of-data now routes to Field Audit instead of slashing [SLASH-1].
+      before do
+        trees = create_list(:tree, 10, cluster: cluster, status: :active)
+        trees[0..2].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 1.0) }
+        trees[3..9].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.1) }
         cluster.reload
-
         allow(contract).to receive(:update!).and_raise(StandardError, "DB lock timeout")
+      end
 
+      it "does not enqueue BurnCarbonTokensWorker when update! fails" do
         described_class.call(contract, target_date)
 
         expect(BurnCarbonTokensWorker.jobs.size).to eq(0)
       end
 
       it "logs the slashing activation failure" do
-        create(:tree, cluster: cluster, status: :active)
-        cluster.reload
-
-        allow(contract).to receive(:update!).and_raise(StandardError, "DB lock timeout")
-
         expect(Rails.logger).to receive(:error).with(/Провал активації Slashing/)
 
         described_class.call(contract, target_date)
