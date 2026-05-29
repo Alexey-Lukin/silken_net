@@ -96,6 +96,25 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 
 **Блокує:** Лише Phase 3 (Planetary Scale). Phase 1 та Phase 2.5 — не блоковані.
 
+**🤖 Decision memo [HW.18] — рекомендація: ESP32-S3** (confirm/adjust):
+
+Роль co-processor у Phase 3 **єдина** — WiFi-STA + TCP/IP-міст STM32 → Starlink Mini (Ethernet/WiFi). Обидва варіанти це вміють; вирішують вартість/енергія/доцільність:
+
+| Вісь | **ESP32-S3** (Варіант А) | SIM8200G-M2 (Варіант Б) |
+|------|--------------------------|--------------------------|
+| Ціна | ~$2–4 | ~$50–90 (5G M.2 модуль) |
+| 5G-можливість | — (не потрібна) | **марнується** — у глибокому лісі стільникового нема (тому й Starlink) |
+| Idle power | deep-sleep ~10 µA між погодинними TX | вищий module-idle → гірше для BLOCKER-2 |
+| Active | 80–240 мА (~0.3–0.9 Вт) WiFi-burst | співмірно у WiFi-режимі, але модуль важчий |
+| Інтеграція | UART/SPI; ESP-IDF/lwIP зрілі; **треба написати прошивку** | один UART-AT, простіша схема |
+| Екосистема | величезна (ESP-IDF, lwIP) | нішевий M.2-модем |
+
+**Рекомендація: ESP32-S3.** Co-proc лише мостить до WiFi Starlink Mini — ESP32-S3 робить це за ~$3 з near-zero sleep (критично: Queen уже тягне 20–40 Вт Starlink-burst, зимовий дефіцит BLOCKER-2 — кожен mW idle важить). 5G у SIM8200G-M2 безсенсовий (нема покриття у Phase-3 ultra-remote) + ~20× дорожчий + вищий idle. Єдина ціна ESP32-S3 — написати co-proc прошивку (UART-AT bridge + WiFi-STA + lwIP), обмежено й зріло.
+
+**SIM8200G-M2 виправданий ЛИШЕ** якщо Phase 3 переосмислити як «5G-where-available як другий backhaul» (суперечить ultra-remote премісі). Інакше — ESP32-S3.
+
+**Після confirm:** оновити схему + `03_02` (firmware-контракт co-proc) + `firmware/esp32_coproc/` (UART-AT + WiFi-STA + lwIP).
+
 ---
 
 ### 🔴 BLOCKER-2: Зимовий Енергетичний Дефіцит
