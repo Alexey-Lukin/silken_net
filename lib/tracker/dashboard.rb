@@ -71,7 +71,7 @@ module Tracker
         in_role = open.select { |it| it.executors.include?(role) }
         low = %w[P2 P3]
         focus = in_role.reject { |it| low.include?(it.priority) }
-                       .sort_by { |it| [PRIORITY_RANK[it.priority] || 9, it.id] }
+                       .sort_by { |it| [ PRIORITY_RANK[it.priority] || 9, it.id ] }
         lown = in_role.count { |it| low.include?(it.priority) }
         out << "### #{heading}"
         if focus.empty?
