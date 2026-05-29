@@ -42,6 +42,7 @@ NaaS — це модель підписки, де клієнти (Організ
 - Real-time dashboard зі станом лісового кластера через Streamr P2P та Prometheus.
 - Параметричне страхування кластера (`ParametricInsurance`) від `critical_fire`, `extreme_drought`, `insect_epidemic`.
 - Корпоративний ESG-звіт з можливістю ретайрменту SCC через KlimaDAO.
+- **(Roadmap, ADR `02_01 §3.4`)** Гіперлокальні мікрокліматичні дані (t°/RH/тиск/VPD з BME280) — data-as-a-service для агрохолдингів і страховиків: 1000+ датчиків *усередині* екосистеми проти усереднених метеостанцій на 50 км². Окреме джерело доходу поза SCC; доводить біопреципітацію цифрами.
 
 **Умови входу:**
 - KYC/KYB верифікація через Polygon Hadron Identity Platform (ERC-3643). Поле `hadron_kyc_status = 'approved'` на `Wallet` є обов'язковою guard clause перед будь-яким мінтингом SCC.

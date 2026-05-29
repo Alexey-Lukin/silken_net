@@ -369,6 +369,15 @@
 
 > ⚠️ Потребують фізичної роботи в лабораторії та/або з підрядниками.
 
+#### HW.20 — BME280 environmental sensing + VPD confounder [ADR `02_01 §3.4`]
+- **P1** | `02_01 §3.4` / `07_02 §1.3` | **Складність: L** | 🤖 (docs/firmware/backend specs) + 👤 (bench + механіка)
+- **Опис:** BME280 (t°/RH/тиск, I2C, за TPS22860-гейтом) → **VPD** як прямий фізіологічний confounder (вбивця False Slashing, `00_01 §6.5/§6.6`) + гіперлокальний клімат-оракул (NaaS-дохід, `07_01`). 🚨 DCI-guard: VPD **НЕ** входить у Lorenz-Z. Поправки до вихідної нотатки: BME280 (не BME680); MCU sleep 300нА (не 2.1µA); gated draw ≈8нА.
+- ✅ Зроблено (docs): `02_01 §3.4` ADR + §7.2 promote + §2 + §3.2; `00_01 §6.6`; `08_02 §4` (collection + VPD-confounder); `07_02 §1.3` (+$2.60 add-on); `02_03 §9.6` (gated energy); `07_01` (climate data-product).
+- [ ] 🤖 `03_01`: SENSE-фаза читає BME280; hybrid packet (1B VPD-індекс hot-path + періодичний climate frame).
+- [ ] 🤖 `04_01`/`04_02`: TelemetryLog поля `humidity`/`pressure`/`vpd` (consolidated schema, без міграції) + VPD confounder-gate у `ContractHealthCheckService` (тісно з SLASH-1).
+- [ ] 👤 Bench: I2C bring-up, forced-mode середній струм, TPS22860 gate-timing, VPD-калібрування vs референс-гігрометр.
+- [ ] 👤 Механіка: PTFE/Gore мікро-вент у корпусі (`02_02`), IP68 re-test.
+
 #### HW.1 — nTop model → SLM+HIP factory (Anode Zone 1)
 - **Джерело:** `01_01`, `01_02` §1.7 | ✅ Ліцензія отримана
 - **Контекст:** Тризонний анкер (`01_01` §1) — Zone 1 (анод, гіроїд) виготовляється SLM+HIP; Zone 3 (катодний фланець) — SLM або EBM (`01_02` §1.7); Zone 2 (PEEK-втулка) — CNC з annealing 200–250°C
