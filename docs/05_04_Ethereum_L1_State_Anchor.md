@@ -10,10 +10,36 @@
 
 - **Поточний TRL:** TRL 8 — Механізм якорування повністю імплементовано.
 - **Цільовий TRL:** TRL 9 — Production-ready з повним gas management та аудит-трейлом у БД.
-- **Пов'язані модулі:**
-  - Мультичейн → [`05_01_Multichain_Architecture`](05_01_Multichain_Architecture)
-  - Proof of Growth → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
-  - Токеноміка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
+- **Відкрите:** Production gas-management tuning + Mainnet contract deploy → [`00_08`](00_08_Action_Plan_Tracker).
+
+---
+
+## 🔗 Cross-references
+
+| Ресурс | Опис |
+|--------|------|
+| [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Мультичейн (L1 у стеку фіналізації) |
+| [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Pipeline (джерело state даних) |
+| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (total_scc/total_sfc у root) |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | Open backlog (Mainnet deploy, gas) |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [Огляд](#-огляд)
+- [1. Cron-Розклад (The Ethereum Seal)](#1-cron-розклад-the-ethereum-seal)
+- [2. Sidekiq Worker](#2-sidekiq-worker)
+- [3. Алгоритм Формування state_root](#3-алгоритм-формування-state_root)
+- [4. Відправка L1 Транзакції](#4-відправка-l1-транзакції)
+- [5. Обробка Помилок](#5-обробка-помилок)
+- [6. Web3::RpcConnectionPool](#6-web3rpcconnectionpool)
+- [7. RSpec Покриття](#7-rspec-покриття)
+- [8. Місце в Gaia 2.0 Pipeline](#8-місце-в-gaia-20-pipeline)
+- [9. Залежності](#9-залежності)
+- [10. Конфігурація Production](#10-конфігурація-production)
+- [Зміни від Попередньої Версії SSOT](#зміни-від-попередньої-версії-ssot)
+- [Перспективи Розвитку L1 Якоріння](#-перспективи-розвитку-l1-якоріння)
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -47,48 +73,6 @@ Ethereum L1 State Anchor — це **фінальна печатка** всьог
 | `StateRootAnchor.sol` | `contracts/StateRootAnchor.sol` | ✅ Real |
 
 ---
-
-## ✅ Закриті Блокери (PR #254)
-
-### ✅ BLOCKER-1: `StateRootAnchor.sol` створено
-
-`contracts/StateRootAnchor.sol` додано до репозиторію. Контракт успадковує `AccessControl` (OpenZeppelin), визначає роль `ANCHOR_ROLE`, зберігає `latestRoot`, `anchorCount`, маппінг `rootTimestamps`, маппінг `rootHistory` (anchorIndex → root) та емітує `StateRootStored(bytes32 indexed root, uint256 timestamp, uint256 anchorIndex)`. Дедуплікація: `require(rootTimestamps[root] == 0, "root already anchored")` — кожен state root можна записати тільки один раз. Мінімальний інтервал між записами: `MIN_ANCHOR_INTERVAL = 6 days`. Історичні запити: `getRootAtIndex(uint256 index)`. Захист від видалення останнього адміна: `_adminCount` лічильник. Pragma locked: `0.8.28` (оновлено з 0.8.24 для сумісності з OZ v5.6 Governor contracts). Деплой через Foundry; адреса зберігається в `ENV["ETHEREUM_ANCHOR_CONTRACT"]`.
-
-### ✅ BLOCKER-2: Персистентність state_root у БД — `EthereumAnchor` модель
-
-Модель `EthereumAnchor` (таблиця `ethereum_anchors`) зберігає повний аудит-трейл кожної L1 операції. `anchor_to_l1!` тепер **до TX** створює запис `status: :pending` (crash recovery), після TX — `update!(status: :sent, tx_hash:)`. Race condition safety: Sidekiq `unique_for: 7.days` + DB unique index на `state_root`.
-
-### ✅ BLOCKER-3: Gas management з safety caps
-
-Явні константи: `DEFAULT_GAS_LIMIT = 100_000`, `DEFAULT_MAX_FEE_GWEI = 100`, `DEFAULT_PRIORITY_FEE_GWEI = 2`. Всі перекриваються ENV: `ETHEREUM_MAX_FEE_GWEI`, `ETHEREUM_PRIORITY_FEE_GWEI`, `ETHEREUM_GAS_LIMIT`. Захист від gas spikes.
-
-### ✅ BLOCKER-4: Inline ETH balance guard
-
-`MIN_ANCHOR_BALANCE_WEI = 0.01 ETH`. Перед `client.transact(...)` перевіряється баланс: `balance = client.get_balance(anchor_key.address)`. При `balance < MIN_ANCHOR_BALANCE_WEI` — `anchor.update!(status: :failed, error_message: ...)` + raise. `EwsAlert` через `TreasuryMonitorWorker` (cron кожні 15 хв) є додатковим проактивним шаром.
-
-### ✅ BLOCKER-5: `.env.example` з усіма ENV-змінними
-
-`.env.example` додано до репозиторію з документацією всіх ENV-змінних включаючи `ALCHEMY_ETHEREUM_RPC_URL`, `ETHEREUM_ANCHOR_PRIVATE_KEY`, `ETHEREUM_ANCHOR_CONTRACT` та gas management змінні.
-
-### ✅ BLOCKER-6: Reproducible state_root — збережені компоненти
-
-`generate_state_root` повертає `Hash { state_root, total_scc, total_sfc, active_tree_count, chain_hash, anchored_at }`. Всі компоненти зберігаються в `EthereumAnchor`. `EthereumAnchor#verify_state_root` дозволяє зовнішньому аудитору незалежно відтворити хеш: `SHA256("#{total_scc}|#{total_sfc}|#{active_tree_count}|#{chain_hash}|#{anchored_at.utc.iso8601}")`. [E.53] SFC supply та [E.54] active tree count додані для повноти верифікації.
-
----
-
-> **Усі блокери нижче вирішені в PR #254.** Секція збережена для історичної довідки.
-
-### ✅ ~~BLOCKER-1~~: `StateRootAnchor.sol` — вирішено
-
-~~Директорія `contracts/` містить тільки `SilkenCarbonCoin.sol` та `SilkenForestCoin.sol`. Смарт-контракт `StateRootAnchor`, у який щотижня записується `state_root`, **відсутній у кодбейсі**.~~
-
-- **Статус:** ✅ Вирішено. `contracts/StateRootAnchor.sol` створено з `AccessControl`, `ANCHOR_ROLE`, deduplicate guard.
-
-### ✅ ~~BLOCKER-2~~: Персистентність state_root — вирішено
-
-~~`Ethereum::StateAnchorService#anchor_to_l1!` виконує L1-транзакцію та логує `tx_hash` тільки в `Rails.logger`.~~
-
-- **Статус:** ✅ Вирішено. Модель `EthereumAnchor` зберігає повний аудит-трейл. Crash recovery через `status: :pending` до TX.
 
 ## 1. Cron-Розклад (The Ethereum Seal)
 
@@ -556,6 +540,7 @@ bundle exec rspec spec/services/ethereum/ spec/workers/ethereum_anchor_worker_sp
 - **Multisig:** Для production deployment `DEFAULT_ADMIN_ROLE` має бути призначено Gnosis Safe multisig (3/5 або 2/3) замість EOA — стандартна operational security practice для контрактів, що управляють L1 finality
 - **Admin Protection:** Контракт блокує видалення останнього `DEFAULT_ADMIN_ROLE` через `_adminCount` лічильник — `renounceRole()` та `revokeRole()` ревертять якщо залишився один адмін
 - **Anti-Spam:** `MIN_ANCHOR_INTERVAL = 6 days` запобігає спаму фейковими state roots компрометованим oracle
+- **Roles & Events:** запис авторизується роллю `ANCHOR_ROLE` (oracle-гаманець); кожен запис емітує `StateRootStored(bytes32 indexed root, uint256 timestamp, uint256 anchorIndex)` — джерело для subgraph-індексації
 - **Timestamp:** `block.timestamp` може відрізнятись від реального часу до ~12 секунд (Ethereum PoS). Для compliance-звітності крос-референс з `EthereumAnchor.anchored_at` в PostgreSQL
 
 ---
