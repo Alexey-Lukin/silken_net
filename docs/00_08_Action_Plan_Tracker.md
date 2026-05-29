@@ -866,7 +866,8 @@ DOC.9 — потребує лабораторного вимірювання TX-
 #### BIZ.13 — Slashing principal-agent: investor capital vs operator-bond (governance design)
 - **Джерело:** `00_01` §6.2 (governance flag) | **Пріоритет: P2** | **Складність: M** | **👤 Governance + 🤖 Док/Код**
 - **Опис:** Slashing категорії A (negligence) зрізає `wallet.locked_balance`, який належить **інвестору** — але недбалість (немає протипожежної смуги після алерту, Forester не приєднався до інциденту) зазвичай провина **оператора (Forester)**. Зрізати капітал інвестора за дії оператора порушує принцип principal-agent і демотивує інвесторів брати географічний ризик. Відкрите питання дизайну: лишити slash на investor `locked_balance` чи ввести окремий **operator-bond** (Forester стейкає власний депозит, що слешиться першим; можливий гібрид: bond → потім locked_balance).
-- [ ] 👤 DAO/governance рішення: investor-slash vs operator-bond vs гібрид
+- ✅ Зроблено (🤖): decision memo → рекомендація **hybrid operator-bond** (`00_01 §6.2.1`)
+- [ ] 👤 DAO confirm: hybrid operator-bond (рекоменд.) vs investor-slash vs pure operator-bond
 - [ ] 🤖 Якщо operator-bond — `OperatorBond` модель + `ProtocolParameters` запис + контракт-механіка
 - [ ] 🤖 Синхронізувати фінальне рішення у `00_01 §6.2`, `05_03 §Slashing`, `04_02` (BlockchainBurningService)
 - **Cross-ref:** `00_01 §6.2`, `05_03 §Slashing`, `04_02 §1.2` (BlockchainBurningService).

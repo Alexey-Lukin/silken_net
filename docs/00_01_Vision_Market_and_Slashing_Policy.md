@@ -138,6 +138,25 @@ PENALTY_FACTOR_MAX = 2.0   # стеля застосовується до МНО
 
 > Реалізація: `BlockchainBurningService` (див. §1.2 у [`04_02`](04_02_Business_Logic_and_Services)) перевіряє `cause_classification` перед викликом `slash()` на SCC контракті. Якщо `cause_classification != "A_negligence"` — burn skipped, тільки `freeze_balance!` через `Wallet.lock_and_mint!`.
 
+#### 6.2.1 Principal-Agent resolution [BIZ.13] — рекомендація: hybrid operator-bond (confirm/adjust)
+
+Категорія A **за визначенням** operator-attributable (chainsaw, відсутність firebreak після алерту, Forester не приєднався до SLA, tamper). Тож зрізати **інвесторський** `locked_balance` за провину **оператора** — principal-agent помилка: (1) moral hazard — оператор без skin-in-the-game; (2) інвестор тікає від гео-ризику.
+
+| Модель | + | − |
+|--------|---|---|
+| **Investor-slash (статус-кво)** | проста; нуль нової механіки | principal-agent порушено; оператор без stake; інвестор демотивований |
+| **Pure operator-bond** | оператор має skin-in-game; інвестор захищений | капітальний барʼєр для Forester (особливо post-war UA); sizing; Sybil |
+| **Hybrid (рекомендовано)** | bond-first вирівнює оператора + інвестор захищений від рутинної недбалості, експонований лише до катастрофічного excess | трохи складніша механіка |
+
+**Рекомендація: hybrid, attribution-driven.** Для категорії A спершу слешиться **operator-bond** (до розміру bond), і лише надлишок (катастрофа > bond) ескалює на інвесторський `locked_balance`. Категорія B — без змін (insurance). Формула §6.2 застосовується послідовно: **bond first, then locked_balance**.
+
+**Операційні застереження:**
+- **Bond sizing** — DAO-параметр у `ProtocolParameters` (напр. `bond = max(BOND_FLOOR, k × expected_cluster_reward)`).
+- **Капітальний барʼєр (post-war UA foresters):** bond фінансується з накопичених PoPhW-винагород (E.20 Forester Guild) — *earned-bond*, не upfront; добра історія → менший bond (reputation-scaled).
+- **Sybil:** KYC-gated (Hadron) + per-operator + geo-staking.
+
+**🤖 Реалізація після DAO-confirm:** `OperatorBond` модель + `ProtocolParameters` (bond_size, bond_first) + `BlockchainBurningService` (слеш bond перед `locked_balance` для A) + контракт-escrow. Sync → `05_03 §Slashing`, `04_02 §1.2`.
+
 ### 6.3 Insurance Payout (тільки для категорії B)
 
 ```
