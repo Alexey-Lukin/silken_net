@@ -392,13 +392,13 @@ echo "Stub shape for cluster C: First Akash production deploy" > docs/shaping/ak
 # NN_MM: Title
 ## 🎯 Мета
 ## ✅ Статус            — власний (member) TRL доку + rationale; агрегат-матриця лише в 00_06 §1
-## 🛑 Блокери (active)  — стабільна нумерація; вирішені → «✅ Архів вирішених блокерів» (НЕ renumber)
-## <Content>
+## <Content>           — інженерна суть; поточні обмеження документуються прозою тут
 ## 🔗 Cross-references  — таблиця: ключові файли + sibling-доки + 00_08-link
 ```
 
+- **Блокери — НЕ в каноні (рішення 2026-05-29).** Канон-док **не тримає** секцій `🛑 Блокери` чи `✅ Архів вирішених блокерів`. **Усі** блокери — і відкриті, і закриті — живуть **тільки в `00_08`** (відкриті → §модуль-реєстр як тонкі вказівники → канон; закриті → `00_08 §🗄️ Архів`). Канон описує дизайн і **відоме обмеження прозою в body** («як воно є»); чому member-TRL не вищий — 1 рядок у Статус із рефом `→ 00_08 §NN`. `docs:check_refs` ловить будь-яку лишкову блокер-секцію (§8.3).
 - **File Map** — опційно; як правило згортається у Cross-references.
-- **Cross-references** — обов'язково; має містити `00_08`-link (трекер) для кожного doc з відкритими пунктами.
+- **Cross-references** — обов'язково; має містити `00_08`-link (трекер) для кожного doc з відкритими пунктами — це **канонічний дім блокерів**.
 
 ### 8.2 Canonical-home registry (одна річ — один дім)
 
@@ -428,7 +428,9 @@ echo "Stub shape for cluster C: First Akash production deploy" > docs/shaping/ak
 | `tracker:check` | 00_08: dup-IDs, meta-line conformance, canon-ref resolution | `bin/rails tracker:check` (ci.yml) |
 | `ssot_guard.yml` | protected code змінено → docs мусять оновитись | CI PR gate (§2.3) |
 | regen-from-code | enumerable lists (метрики) генеруються з SSOT, не вручну | `06_03 §2.8` regen cmd |
-| TRL presence | кожен док з `## ✅ Статус` декларує TRL (ловить 06_04-клас gap) | `bin/rails docs:check_refs` (ci.yml) |
-| TRL range-consistency | _(roadmap)_ per-doc TRL у межах діапазону модуля `00_06 §1` | — |
+| TRL presence | кожен док з `## ✅ Статус` декларує TRL (ловить 06_04-клас gap) | `bin/rails docs:check_refs` (hard) |
+| TRL single-value | `00_06 §1` matrix-клітинки — одинарне 1-9, без діапазонів (§1.1) | `bin/rails docs:check_refs` (hard; `lib/docs_linter.rb`) |
+| blocker-hygiene | канон-док не тримає `🛑 Блокери`/`✅ Архів` секцій — блокери лише в `00_08` (§8.1) | `bin/rails docs:check_refs` (advisory → hard по завершенні sweep) |
+| TRL range-consistency | _(roadmap)_ per-doc member-TRL у межах діапазону модуля `00_06 §1` | — |
 
 **Правило при зміні факту:** правити лише у home (§8.2) → рефи лишаються чинними; будь-який новий NN_NN-док/реф — `docs:check_refs` має лишатись зеленим перед merge.

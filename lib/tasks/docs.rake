@@ -10,7 +10,14 @@
 #   HARD  (gates CI): every doc with a `## ✅ Статус` section declares a TRL there
 #                     (Поточний TRL / Conceptual (TRL …)) — catches the 06_04-class
 #                     "Статус without a readiness level" gap. All 50 docs pass today.
-# Pure file I/O, no Rails boot needed.
+#   HARD  (gates CI): the 00_06 §1 per-module TRL matrix has single-value cells
+#                     (1-9), never a range — 00_07 §1.1 Current TRL is single-select.
+#   ADVISORY (→ HARD post-sweep): no canon doc hosts a "🛑 Блокери" / "✅ Архів
+#                     вирішених блокерів" section — ALL blockers (open + closed) live
+#                     in 00_08 (decided 2026-05-29); canon keeps design substance as body prose.
+# Pure file I/O, no Rails boot needed. Engine: lib/docs_linter.rb (unit-tested).
+require_relative "../docs_linter"
+
 namespace :docs do
   DOCS_DIR = File.expand_path("../../docs", __dir__)
   DOC_RE   = /\A\d\d_\d\d_/
@@ -56,6 +63,15 @@ namespace :docs do
       end
     end
 
+    # [TRL single-value] HARD — 00_06 §1 per-module matrix cells single 1-9.
+    matrix     = File.join(DOCS_DIR, "00_06_Strategic_Roadmap_and_HIL_Simulators.md")
+    trl_ranges = File.exist?(matrix) ? DocsLinter.trl_matrix_range_violations(File.read(matrix)) : []
+
+    # [Blockers → 00_08] ADVISORY (→ HARD once the sweep removes them all). Canon
+    # docs must not host a 🛑/✅-archive blocker section; 00_08 is the tracker — exempt.
+    blocker_sections = files.reject { |f| File.basename(f).start_with?("00_08") }
+                            .flat_map { |f| DocsLinter.canon_blocker_sections(File.read(f)).map { |h| "#{File.basename(f, '.md')}: #{h}" } }
+
     puts "docs:check_refs — #{files.size} docs scanned"
     if dangling.empty?
       puts "  doc links:      all resolve ✓"
@@ -73,10 +89,23 @@ namespace :docs do
       puts "  MISSING TRL in ✅ Статус (#{trl_missing.size}):"
       trl_missing.sort.uniq.each { |d| puts "    ✗ #{d}" }
     end
+    if trl_ranges.empty?
+      puts "  TRL single-value: 00_06 §1 matrix cells all single 1-9 ✓"
+    else
+      puts "  TRL RANGE in 00_06 §1 matrix (#{trl_ranges.size}):"
+      trl_ranges.each { |r| puts "    ✗ #{r}" }
+    end
+    if blocker_sections.empty?
+      puts "  blockers→00_08:  no canon doc hosts a 🛑/✅-archive blocker section ✓"
+    else
+      puts "  ⚠️ canon docs still hosting blocker sections (#{blocker_sections.size}) — advisory, migrate to 00_08:"
+      blocker_sections.sort.each { |b| puts "    · #{b}" }
+    end
 
     failed = []
     failed << "dangling doc links" unless dangling.empty?
     failed << "✅ Статус docs without a TRL" unless trl_missing.empty?
+    failed << "TRL ranges in 00_06 §1 matrix" unless trl_ranges.empty?
     abort("docs:check_refs FAILED — #{failed.join(', ')}") unless failed.empty?
   end
 end
