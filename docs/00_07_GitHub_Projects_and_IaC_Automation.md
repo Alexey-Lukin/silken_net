@@ -14,12 +14,32 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 7 — CI/CD пайплайн TRL Auto-Advancement на стадії впровадження.
-- **Пов'язані модулі:**
-  - AI-Native методологія (philosophy) → [`00_04_AI_Native_Engineering_and_TRL`](00_04_AI_Native_Engineering_and_TRL)
-  - Shape Up operations → [`00_05_Shape_Up_Operations_and_RnD_Clusters`](00_05_Shape_Up_Operations_and_RnD_Clusters)
-  - Стратегічна дорожня карта → [`00_06_Strategic_Roadmap_and_HIL_Simulators`](00_06_Strategic_Roadmap_and_HIL_Simulators)
-  - Деплой та CI/CD → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
+- **Поточний TRL:** TRL 7 — CI/CD пайплайн TRL Auto-Advancement на стадії впровадження. Відкриті: `trl_sync.yml` TRL-gate + `labeler.yml` apply (OPS.*) → [`00_08`](00_08_Action_Plan_Tracker).
+
+---
+
+## 🔗 Cross-references
+
+| Ресурс | Опис |
+|--------|------|
+| [00_04_AI_Native_Engineering_and_TRL](00_04_AI_Native_Engineering_and_TRL) | AI-Native методологія (philosophy) |
+| [00_05_Shape_Up_Operations_and_RnD_Clusters](00_05_Shape_Up_Operations_and_RnD_Clusters) | Shape Up operations; §5.2 Betting Table, §6 Academic Semester |
+| [00_06_Strategic_Roadmap_and_HIL_Simulators](00_06_Strategic_Roadmap_and_HIL_Simulators) | Стратегічна дорожня карта + TRL-матриця |
+| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | §13b Drift Register (живиться результатами SSOT Integrity Guard) |
+| [06_01_Deployment_Kamal_Terraform](06_01_Deployment_Kamal_Terraform) | Kamal / Terraform CI integration |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | Open backlog (OPS.3 / OPS.4 + trl_sync/labeler) |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [1. Налаштування GitHub Projects V2](#-1-налаштування-github-projects-v2)
+- [2. Автоматизація через GitHub Actions](#-2-автоматизація-через-github-actions)
+- [3. Репозиторії Екосистеми](#-3-репозиторії-екосистеми)
+- [4. Label Conventions (SSOT)](#-4-label-conventions-ssot)
+- [5. Верифікація та Критерії Виходу](#-5-верифікація-та-критерії-виходу)
+- [6. Первинне налаштування репозиторію (Bootstrap)](#-6-первинне-налаштування-репозиторію-bootstrap)
+- [8. SSOT Documentation Standards & Drift Prevention](#-8-ssot-documentation-standards--drift-prevention)
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -369,16 +389,6 @@ gh api repos/Alexey-Lukin/silken_net/milestones \
 mkdir -p docs/shaping
 echo "Stub shape for cluster C: First Akash production deploy" > docs/shaping/akash-prod-deploy.md
 ```
-
----
-
-## 🔗 7. Cross-ref
-
-- `docs/00_05` §5.2 — Betting Table процедура.
-- `docs/00_05` §6 — Academic Semester мапінг.
-- `docs/00_08` — open backlog задач (OPS.3 / OPS.4).
-- `docs/06_01` — Kamal / Terraform CI integration.
-- `docs/04_02 §13b` — Drift Register, який живиться SSOT Integrity Guard результатами.
 
 ---
 
