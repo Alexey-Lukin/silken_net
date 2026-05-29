@@ -9,7 +9,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 6 — 11 workflows активні; production+canopy deploy налаштовані; частина gates ще не `required` (INF.6, OPS.2).
-- **Пов'язані модулі:** [`06_01`](06_01_Deployment_Kamal_Terraform) (deploy) · [`06_02`](06_02_Akash_Network_Integration) (Akash) · [`06_04`](06_04_Secrets_Checklist) (secrets/revocation) · [`06_05`](06_05_Puma_Configuration) (Puma runbooks) · [`06_06`](06_06_Disaster_Recovery_and_Backup) (DR) · [`00_07`](00_07_Project_Management_GitHub) (Projects/TRL automation)
+- **Пов'язані модулі:** [`06_01`](06_01_Deployment_Kamal_Terraform) (deploy) · [`06_02`](06_02_Akash_Network_Integration) (Akash) · [`06_04`](06_04_Secrets_Checklist) (secrets/revocation) · [`06_05`](06_05_Puma_Configuration) (Puma runbooks) · [`06_06`](06_06_Disaster_Recovery_and_Backup) (DR) · [`00_07`](00_07_GitHub_Projects_and_IaC_Automation) (Projects/TRL automation)
 
 ---
 
@@ -75,5 +75,5 @@ release published ─→ deploy-production.yml (verify-secrets → terraform →
 | `.github/workflows/*.yml` | 11 workflows (SSOT — фактична конфігурація) |
 | `06_01_Deployment_Kamal_Terraform` | deploy-flow, Kamal/Terraform |
 | `06_06_Disaster_Recovery_and_Backup` | DR runbooks |
-| `00_07_Project_Management_GitHub` | TRL/Projects automation (trl_sync, labels) |
+| `00_07_GitHub_Projects_and_IaC_Automation` | TRL/Projects automation (trl_sync, labels) |
 | `00_08_Action_Plan_Tracker` | INF.6 (coap gate), OPS.1/OPS.2 |

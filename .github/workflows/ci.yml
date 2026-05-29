@@ -145,6 +145,9 @@ jobs:
       - name: Lint 00_08 tracker (DRY — duplicate IDs, meta-line conformance, canon-ref resolution)
         run: bin/rails tracker:check
 
+      - name: Lint docs cross-references (SSOT anti-drift — every NN_NN doc link resolves)
+        run: bin/rails docs:check_refs
+
   alloy_config_validate:
     # [OBS hardening, 06_03 §2.9] Parse-validate the Grafana Alloy River config so a
     # syntax error is caught HERE, not as a crash-loop of the `alloy` sidecar on Akash
