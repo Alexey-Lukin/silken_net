@@ -9,10 +9,33 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 — Мультичейн архітектура повністю спроєктована. Структурний скелет усіх 12 мереж присутній у кодбейсі. Всі сервіси мають RSpec-покриття.
-- **Пов'язані модулі:**
-  - Proof of Growth → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
-  - Токеноміка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
-  - Ethereum L1 → [`05_04_Ethereum_L1_State_Anchor`](05_04_Ethereum_L1_State_Anchor)
+- **Відкрите:** dClimate mock→real API (E.7), Production credentials (S3.2), chain-outage DR (§8) → [`00_08`](00_08_Action_Plan_Tracker).
+
+---
+
+## 🔗 Cross-references
+
+| Ресурс | Опис |
+|--------|------|
+| [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof of Growth (consensus, верифікація) |
+| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (SCC/SFC контракти) |
+| [05_04_Ethereum_L1_State_Anchor](05_04_Ethereum_L1_State_Anchor) | Ethereum L1 фіналізація (state root) |
+| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Chain-сервіси (`Blockchain::Orchestrator`) |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | Open backlog (E.7 dClimate, S3.2, DR) |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [0. Модульний DePIN Стек: Рольова Карта (The Protocol Symphony)](#-0-модульний-depin-стек-рольова-карта-the-protocol-symphony)
+- [1. Топологія 12 Мереж (The 12-Network Stack)](#-1-топологія-12-мереж-the-12-network-stack)
+- [2. Консенсус "Proof of Growth" (Трубопровід Верифікації)](#-2-консенсус-proof-of-growth-трубопровід-верифікації)
+- [3. Смарт-Контракти та Взаємодія (Polygon)](#-3-смарт-контракти-та-взаємодія-polygon)
+- [4. Абсолютна Фіналізація (Ethereum State Root Anchoring)](#-4-абсолютна-фіналізація-ethereum-state-root-anchoring)
+- [5. Конфігурація Credentials та ENV](#-5-конфігурація-credentials-та-env)
+- [6. Shared Infrastructure Layer](#-6-shared-infrastructure-layer)
+- [7. Повна Матриця Сервісів та Черг](#-7-повна-матриця-сервісів-та-черг)
+- [8. Disaster Recovery / Chain Outage Strategy (S6.11)](#-8-disaster-recovery--chain-outage-strategy-s611)
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -85,14 +108,6 @@ SilkenNet не обирає один блокчейн. Система викор
 | 12 | Ethereum L1 | `Ethereum::StateAnchorService` | ✅ Real | `storeStateRoot(bytes32)` через Alchemy Ethereum RPC |
 
 **Легенда:** ✅ Real = Бойова імплементація з реальними RPC-викликами · ⚠️ Hybrid = Працює в реальному режимі з credentials, fallback до симуляції без них · ⚠️ Devnet = Бойова логіка, але транзакції йдуть на Devnet (simulateTransaction)
-
----
-
-## 🛑 Відкриті Блокери
-
-### 🟢 INFO: dClimate Verification — Mock Mode
-
-`Dclimate::VerificationService` працює в mock-режимі (повертає випадковий результат замість реального API dClimate). Це прийнятно для TRL 8, але потребує реальної інтеграції для Production.
 
 ---
 
@@ -430,8 +445,8 @@ firmware/soldier/main.c → LoRa TX → Queen → CoAP PUT → UnpackTelemetryWo
 
 | Компонент | Файл |
 |-----------|------|
-| Прошивка Солдата | `firmware/soldier/main.c` (888 рядків C) |
-| Прошивка Королеви | `firmware/queen/main.c` (927 рядків C) |
+| Прошивка Солдата | `firmware/soldier/main.c` |
+| Прошивка Королеви | `firmware/queen/main.c` |
 | mruby Lorenz (on-device) | `firmware/bio_contracts/bio_contract.rb` |
 | Воркер розпакування | `UnpackTelemetryWorker` (черга: `uplink`, пріоритет 1) |
 | Сервіс розпакування | `TelemetryUnpackerService` (21-байт binary decoding) |
