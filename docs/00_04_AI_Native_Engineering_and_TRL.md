@@ -12,10 +12,28 @@
 
 - **Поточний TRL:** TRL 9 — філософія імплементована та використовується як ядро проєкту.
 - **Головне правило:** Ніхто (ні людина, ні ШІ) не пише код і не паяє плати, доки Специфікація не затверджена у цій Wiki.
-- **Пов'язані модулі:**
-  - Операційна реалізація (Shape Up, R&D кластери, Betting Table) → [`00_05_Shape_Up_Operations_and_RnD_Clusters`](00_05_Shape_Up_Operations_and_RnD_Clusters)
-  - Стратегічна дорожня карта та TRL матриця → [`00_06_Strategic_Roadmap_and_HIL_Simulators`](00_06_Strategic_Roadmap_and_HIL_Simulators)
-  - GitHub Projects + IaC automation → [`00_07_GitHub_Projects_and_IaC_Automation`](00_07_GitHub_Projects_and_IaC_Automation)
+
+---
+
+## 🔗 Cross-references
+
+| Ресурс | Опис |
+|--------|------|
+| [00_05_Shape_Up_Operations_and_RnD_Clusters](00_05_Shape_Up_Operations_and_RnD_Clusters) | Операційна реалізація: Shape Up 6+2, R&D кластери, Betting Table |
+| [00_06_Strategic_Roadmap_and_HIL_Simulators](00_06_Strategic_Roadmap_and_HIL_Simulators) | TRL-матриця + per-domain TRL + HIL |
+| [00_07_GitHub_Projects_and_IaC_Automation](00_07_GitHub_Projects_and_IaC_Automation) | Projects V2 fields, labels-as-code, workflows |
+| [04_05_Codex_Lore_Module](04_05_Codex_Lore_Module) | Codex (read-only Atlas) застосовує ці ж AI-Native принципи |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | Поточний backlog задач (SSOT) |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [1. Метрика Прогресу: NASA TRL (Technology Readiness Level)](#-1-метрика-прогресу-nasa-trl-technology-readiness-level)
+- [2. Протокол Делегування ШІ (The AI Pipeline)](#-2-протокол-делегування-ші-the-ai-pipeline)
+- [3. Intent-First Development](#-3-intent-first-development)
+- [4. Три паралельні потоки (The Triple Stream)](#-4-три-паралельні-потоки-the-triple-stream)
+- [5. Управління через TRL-Ready Issues](#-5-управління-через-trl-ready-issues)
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -126,12 +144,3 @@ Hardware Stream історично був "повільним" потоком (�
 > - **Logic / Verification (Bytes / Proofs):** CI + HIL-симуляції + code review — достатньо (критерій (c)).
 > - **Hardware / Chemistry (Atoms):** CI необхідний, але НЕ достатній. Вимагаються **згенеровані ТА валідовані фізичні метрики** (напр., ΔG < 0, RMSD < поріг, k_ET у літературному діапазоні), підтверджені домен-експертом або крос-перевіркою (cross-validated In-Silico report, [`PIPELINE_STATUS.md`](../protocols/ebfc/in_silico/PIPELINE_STATUS.md)) — тобто пройдений **Validation Gate** (§2 крок 2).
 
----
-
-## 🔗 6. Cross-ref
-
-- `docs/00_05_Shape_Up_Operations_and_RnD_Clusters` — операційний template 6+2 циклу, кластери, Betting Table.
-- `docs/00_06_Strategic_Roadmap_and_HIL_Simulators` — TRL Matrix + per-domain TRL + HIL-симулятори.
-- `docs/00_07_GitHub_Projects_and_IaC_Automation` — Projects V2 fields, labels (IaC), workflows.
-- `docs/00_08_Action_Plan_Tracker` — поточний backlog задач.
-- `docs/04_05_Codex_Lore_Module` — як Codex (read-only Atlas) використовує ці ж принципи для гейміфікаційного шару.
