@@ -530,3 +530,14 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
 4. **Single Source of Truth для зв'язків:** Якщо особа вже описана глибоко
    в 08_*, тут — тільки cross-link, не дубль профілю. Дубль профілю
    зруйнує SSOT.
+
+---
+
+## 🔗 Cross-references
+
+| Файл / Документ | Зв'язок |
+|---|---|
+| `07_01_Nature_as_a_Service_Contracts` | B2B/B2C контракти, SLA (§2) |
+| `08_03` / `08_04` / `08_05` / `08_06` / `08_07` | глибокі stakeholder/академ. профілі (SSOT — тут лише cross-link) |
+| `02_05` / `03_04` | LoRa висотні точки / Lorenz stress-аналіз |
+| `00_08_Action_Plan_Tracker` | UNI.x, BIZ.x stakeholder items |

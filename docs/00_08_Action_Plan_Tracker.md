@@ -720,6 +720,10 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - **P2** · 👤+🤖 · → `00_01 §6.2.1`, `05_03 §Slashing`, `04_02 §1.2`
 - Кат-A slash зрізає інвесторський `locked_balance`, хоча недбалість — провина оператора (principal-agent). ✅ decision memo → рекомендація **hybrid operator-bond**. · [ ] 👤 DAO confirm: hybrid vs investor-slash vs pure operator-bond · [ ] 🤖 якщо operator-bond — `OperatorBond` + `ProtocolParameters` + контракт + синх `00_01 §6.2`/`05_03`/`04_02`
 
+#### BIZ.14 — SFC Vote-Escrow during breach→slash lag (07_01 BLOCKER-7 residual)
+- **P3** · 🔗 · → `07_01 §8`
+- ✅ Core закрито: `SilkenForestCoin.slash()` (SLASHER_ROLE) зменшує voting power при slashing → атака «купити SFC + навмисне порушення NaaS» неможлива. 🟡 Residual: ~1–5 хв lag (`web3_critical` черга) між SCC-slash і SFC-slash — у вікні учасник технічно ще може проголосувати. · [ ] 🔗 Vote-Escrow (veToken) при `breached`-контрактах — опціонально, gated на повний DAO governance launch (BIZ.4)
+
 ---
 
 ## §08 · Академічні блокери (5 установ)

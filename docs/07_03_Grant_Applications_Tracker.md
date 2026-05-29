@@ -231,3 +231,14 @@ WP9 Exploitation & IPR            → ActiveBridge + Silken Net
 **Тема заявки:** _"Trustless D-MRV: IoTeX W3bstream ZK-proofs for biological homeostasis verification on STM32WLE5JC edge devices"_ — пов'язано з `IotexVerificationWorker`, `Iotex::W3bstreamVerificationService` та `05_02_Proof_of_Growth_Pipeline`.
 
 > **Детально про консорціум та грантову стратегію:** [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration) §1.4 (Аблязова Н.).
+
+---
+
+## 🔗 Cross-references
+
+| Файл / Документ | Зв'язок |
+|---|---|
+| `07_01` / `07_02` | NaaS value-prop / unit economics для заявок |
+| `08_01` / `08_03` / `08_07` | академічні гранти + консорціум (ЧНУ/СЄУ) |
+| `05_02_Proof_of_Growth_Pipeline` | IoTeX D-MRV (ZK / EF grant тема) |
+| `00_08_Action_Plan_Tracker` | BIZ.12 (Horizon CLUSTER 6), UNI.1/UNI.8 |

@@ -580,4 +580,17 @@ SilkenNet = **Modular DePIN Stack** (агностична інфраструкт
 | **CO₂ методологія** | ✅ 2000 SCC = 1 tCO₂ (1 SCC = 0.5 kg CO₂) — on-chain + SystemParameter |
 | **DAO Governance** | 🟡 SFC slash() реалізовано; Vote Escrow — опціонально |
 | **RWA реєстрація** | 🟡 Інфраструктура є, процес не відпрацьований |
-| **DB schema** | 🟡 `signed_at` відсутнє в schema |
+| **DB schema** | ✅ Узгоджено (`signed_at` прибрано з коду — BLOCKER-8 закрито) |
+
+---
+
+## 🔗 Cross-references
+
+| Файл / Документ | Зв'язок |
+|---|---|
+| `app/models/naas_contract.rb` | NaasContract lifecycle (AASM) — SSOT коду |
+| `05_03_Tokenomics_SCC_and_SFC` | SCC/SFC + фінансові константи (home) |
+| `00_01 §6.2` | slashing thresholds (stress 0.83 / 20%) |
+| `06_04_Secrets_Checklist` | KYC / peaq keys |
+| `08_07_SEU_Economics_and_Legal_Integration` | MSA / KYC legal (Аблязов) |
+| `00_08_Action_Plan_Tracker` | BIZ.1/2/3/4/6/9/11/13/14, UNI.8 |

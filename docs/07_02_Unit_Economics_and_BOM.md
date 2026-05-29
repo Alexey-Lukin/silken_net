@@ -254,7 +254,7 @@
 | 1 дерево / рік (52 SCC) | **~26 кг CO₂** |
 | Кластер 100 дерев / рік (≈5,200 SCC) | **~2.6 tCO₂** |
 
-> **CO₂ еквівалент [BIZ.1]:** `2000 SCC = 1 тонна поглиненого CO₂`. Зафіксовано on-chain у `ProtocolParameters.sol#sccPerTonneCo2()` та `SystemParameter(:scc_per_tonne_co2)`. Детально: `07_01` BLOCKER-4 (закрито).
+> **CO₂ еквівалент [BIZ.1]:** `2000 SCC = 1 тонна поглиненого CO₂`. **SSOT:** `05_03` + `07_01 §3` (on-chain `ProtocolParameters.sol#sccPerTonneCo2()` + `SystemParameter(:scc_per_tonne_co2)`) — значення в таблиці вище **дзеркало SSOT**, при зміні правити там, не тут. Детально: `07_01` BLOCKER-4 (закрито).
 
 > Детально про Lorenz attractor та формулу growth_points: `03_04_mruby_Lorenz_Attractor` та `05_02_Proof_of_Growth_Pipeline`.
 
