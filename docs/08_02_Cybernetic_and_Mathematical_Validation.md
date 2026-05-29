@@ -1981,12 +1981,13 @@ Gaia 2.0 як офіційний полігон → студенти напря�
 **Дизайн (ЧНУ — UNI.9 Карапетян Data Science + UNI.5 Гусак + bio-hub UNI.13a):**
 - **Когорта:** 20–30 дерев (Черкаський бір), SilkenNet-анкер + **незалежний ground-truth**: еталонний sap-flow сенсор (незалежний від EBFC `delta_t`), дендрометр (приріст), періодичний NDVI/leaf-area, експертний бал стану + події смертності/хвороби.
 - **Тривалість:** ≥1 вегетаційний сезон (захопити стрес-події: посуха, шкідники).
-- **Збір:** щоденні `stress_index` + компоненти (`Z`, `sap_flow`, `acoustic`, `temp`, `vcap`), `growth_points`, ground-truth.
-- **Аналіз** (backend-харнес `SilkenNet::LorenzValidationService`, planned):
+- **Збір:** щоденні `stress_index` + компоненти (`Z`, `sap_flow`, `acoustic`, `temp`, `vcap`, **`RH`/`VPD`** (BME280, `02_01 §3.4`)), `growth_points`, ground-truth.
+- **Аналіз** (backend-харнес `SilkenNet::LorenzValidationService` — ✅ реалізовано, `app/services/silken_net/`, 12 specs):
   1. Кореляція `stress_index` ↔ ground-truth decline (Spearman ρ).
   2. **Incremental value Z:** чи додає Z предиктивність ПОНАД прямі сигнали (sap_flow)? Якщо ні → демоут Z до **DCI-only**.
   3. Agreement device bio_status (Z-derived) vs експертний бал (Cohen's κ).
   4. ROC детекції стресу + false-positive rate (slashing-safety).
+  5. **VPD-confounder:** частка sap_flow-drops, пояснених погодою (high VPD) vs хворобою — валідує False-Slashing guard (`00_01 §6.5`, BME280 `02_01 §3.4`).
 - **Критерії приймання (proposed):** ρ(stress_index, decline) ≥ 0.6; Z дає incremental ΔAUC > 0.05 над sap_flow-baseline (інакше Z = лише DCI); FPR < 5% на операційному порозі.
 - **Вихід:** калібровані ваги ML-`stress_index` + heuristic + slashing-пороги (DAO-tunable, BIZ.4); рішення про роль Z (predictive vs DCI-only).
 

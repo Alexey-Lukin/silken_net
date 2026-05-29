@@ -4,6 +4,8 @@
 
 Зафіксувати повний trustless консенсусний пайплайн SilkenNet — від фізичних біосигналів дерева (Lorenz Z-координата гомеостазу) до верифікованих on-chain активів (SilkenCarbonCoin / SCC). Включає опис прошивок Солдата й Королеви, всіх кроків верифікації (peaq DID → IoTeX ZK → Chainlink → Polygon + Solana) та відкритих блокерів.
 
+> **⚠️ [Lorenz de-risk]** Інтерпретація «Z-координата = гомеостаз/здоров'я» — недоведена гіпотеза ([`08_02 §4`](08_02_Cybernetic_and_Mathematical_Validation)); slashing вимагає ≥1 прямого сигналу (sap_flow / VPD / acoustic), не лише Z ([`00_01 §6.6`](00_01_Vision_Market_and_Slashing_Policy)). Lorenz-DCI (anti-fraud) валідний незалежно — пайплайн нижче коректний як механіка, навіть якщо роль Z демоутиться до DCI-only.
+
 ---
 
 ## ✅ Статус
