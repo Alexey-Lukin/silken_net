@@ -82,6 +82,7 @@ _Деплой, моніторинг, секрети та децентраліз�
 - [06\_04\_Secrets\_Checklist](06_04_Secrets_Checklist) (Інвентаризація секретів: GitHub Secrets, Kamal, Akash, Terraform)
 - [06\_05\_Puma\_Configuration](06_05_Puma_Configuration) (Puma 8 IO-bound pool + кластерні хуки + runbook'и)
 - [06\_06\_Disaster\_Recovery\_and\_Backup](06_06_Disaster_Recovery_and_Backup) (Cloud SQL PITR/HA + restore-runbook'и + RTO/RPO + master-key backup)
+- [06\_07\_CICD\_and\_Runbook\_Index](06_07_CICD_and_Runbook_Index) (11 CI/CD workflows + єдиний operations runbook-індекс)
 
 ## 🌿 Модуль 07: Економіка та Бізнес (Nature-as-a-Service)
 
