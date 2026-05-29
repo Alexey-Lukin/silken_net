@@ -9,13 +9,34 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 4 — заявки подано до 7 екосистем; чекаємо відповідей
-- **Пов'язані модулі:**
-  - Мультичейн → [`05_01_Multichain_Architecture`](05_01_Multichain_Architecture)
-  - Контракти → [`07_01_Nature_as_a_Service_Contracts`](07_01_Nature_as_a_Service_Contracts)
-  - Юніт-економіка → [`07_02_Unit_Economics_and_BOM`](07_02_Unit_Economics_and_BOM)
-  - Університетські протоколи → [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols)
-  - СЄУ (консорціум, гранти Horizon Europe) → [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration)
-- **Готові артефакти:** Технічна документація Wiki, BOM, демо Attractor, збірна інструкція
+- **Готові артефакти:** Технічна документація Wiki, BOM, демо Attractor, збірна інструкція.
+- **Відкрите:** відповіді від 7 грантових екосистем (waiting) → [`00_08`](00_08_Action_Plan_Tracker) (BIZ.12, UNI.1/UNI.8).
+
+---
+
+## 🔗 Cross-references
+
+| Ресурс | Зв'язок |
+|---|---|
+| [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Мультичейн (EF/IoTeX grant теми) |
+| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | NaaS value-prop |
+| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Unit economics для заявок |
+| [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | академічні гранти |
+| [08_07_SEU_Economics_and_Legal_Integration](08_07_SEU_Economics_and_Legal_Integration) | консорціум (Horizon Europe) |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | BIZ.12, UNI.1/UNI.8 |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [1. Карта Стратегічних Грантів (Ecosystem Matrix)](#-1-карта-стратегічних-грантів-ecosystem-matrix)
+- [2. Деталізація Цінності (Value Proposition per Partner)](#-2-деталізація-цінності-value-proposition-per-partner)
+- [3. Модель Public Goods Funding (Giveth.io)](#-3-модель-public-goods-funding-givethio)
+- [4. Артефакти для Milestone 1 (Grant Deliverables)](#-4-артефакти-для-milestone-1-grant-deliverables)
+- [5. Інструкція Монтажу Анкера (Field Assembly Guide)](#-5-інструкція-монтажу-анкера-field-assembly-guide)
+- [6. Інструменти для Паралельної Розробки (Virtual Prototyping)](#-6-інструменти-для-паралельної-розробки-virtual-prototyping)
+- [7. Дорожня Карта Фінансування (Funding Roadmap)](#-7-дорожня-карта-фінансування-funding-roadmap)
+- [8. Академічні Гранти (Horizon Europe & Ethereum Foundation)](#-8-академічні-гранти-horizon-europe--ethereum-foundation)
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -231,14 +252,3 @@ WP9 Exploitation & IPR            → ActiveBridge + Silken Net
 **Тема заявки:** _"Trustless D-MRV: IoTeX W3bstream ZK-proofs for biological homeostasis verification on STM32WLE5JC edge devices"_ — пов'язано з `IotexVerificationWorker`, `Iotex::W3bstreamVerificationService` та `05_02_Proof_of_Growth_Pipeline`.
 
 > **Детально про консорціум та грантову стратегію:** [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration) §1.4 (Аблязова Н.).
-
----
-
-## 🔗 Cross-references
-
-| Файл / Документ | Зв'язок |
-|---|---|
-| `07_01` / `07_02` | NaaS value-prop / unit economics для заявок |
-| `08_01` / `08_03` / `08_07` | академічні гранти + консорціум (ЧНУ/СЄУ) |
-| `05_02_Proof_of_Growth_Pipeline` | IoTeX D-MRV (ZK / EF grant тема) |
-| `00_08_Action_Plan_Tracker` | BIZ.12 (Horizon CLUSTER 6), UNI.1/UNI.8 |

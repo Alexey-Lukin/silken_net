@@ -15,11 +15,35 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 6 — апаратна архітектура заморожена, BOM синхронізовано, ціни підтверджено локальними DMLS-виробниками
-- **Пов'язані модулі:**
-  - Апаратне забезпечення → [`02_01_Hardware_Architecture_and_BOM`](02_01_Hardware_Architecture_and_BOM)
-  - Шлюз Королева → [`02_05_Queen_Hardware_and_Starlink`](02_05_Queen_Hardware_and_Starlink)
-  - Токеноміка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
-  - NaaS контракти → [`07_01_Nature_as_a_Service_Contracts`](07_01_Nature_as_a_Service_Contracts)
+- **Відкрите:** ціновий моніторинг BOM (DMLS, EBFC) при масштабуванні → [`00_08`](00_08_Action_Plan_Tracker).
+
+---
+
+## 🔗 Cross-references
+
+| Ресурс | Зв'язок |
+|---|---|
+| [02_01_Hardware_Architecture_and_BOM](02_01_Hardware_Architecture_and_BOM) | Апаратна архітектура (BOM source) |
+| [02_05_Queen_Hardware_and_Starlink](02_05_Queen_Hardware_and_Starlink) | Шлюз Королева (Queen BOM) |
+| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (revenue side) |
+| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | NaaS контракти (pricing) |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | Open backlog |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [1. Специфікація апаратного забезпечення вузла "Soldier" (BOM)](#-1-специфікація-апаратного-забезпечення-вузла-soldier-bom)
+- [2. Витратні матеріали та інсталяція](#-2-витратні-матеріали-та-інсталяція)
+- [3. Економічний аналіз (Unit Economics) — Анкер](#-3-економічний-аналіз-unit-economics--анкер)
+- [4. CAPEX: Специфікація шлюзу "Queen" (BOM)](#-4-capex-специфікація-шлюзу-queen-bom)
+- [5. Економіка Кластера (100 Дерев)](#-5-економіка-кластера-100-дерев)
+- [6. Операційні витрати (OPEX) та Інфраструктура](#-6-операційні-витрати-opex-та-інфраструктура)
+- [7. Фінансова модель: ROI та Токеноміка](#-7-фінансова-модель-roi-та-токеноміка)
+- [8. Виробничі хаби в Україні (Supply Chain)](#-8-виробничі-хаби-в-україні-supply-chain)
+- [8a. Replacement OPEX та деградація обладнання (BIZ.7)](#-8a-replacement-opex-та-деградація-обладнання-biz7)
+- [9. Порівняльна таблиця: Стара vs Нова Архітектура](#-9-порівняльна-таблиця-стара-vs-нова-архітектура)
+- [10. Залежності та Посилання](#-10-залежності-та-посилання)
+<!-- TOC:AUTO:END -->
 
 ---
 
