@@ -64,124 +64,80 @@
 > **Складність:** XS < 1 год · S = 1–4 год · M = 4–8 год · L = 1–3 дні
 
 #### SLASH-1 — Slashing cause_classification gate (financial-safety) 🔴
-- **P0** | `00_01 §6.2/§6.5` | **Складність: M** | 🤖+👤 (DAO/founder-go: незворотна фінансова логіка)
-- **Опис:** `00_01 §6.2` обіцяє, що `BlockchainBurningService` перевіряє `cause_classification` перед `slash()`, плюс penalty-формулу `damage_ratio^1.3 × min(penalty_factor,2.0)`. **Код цього не має взагалі** (grep `cause_classification` → 0): `ContractHealthCheckService#perform` слешить на `daily_insights.empty?` (коментар «Starlink-блекаут») і `stress_index>=0.83` → `BurnCarbonTokensWorker` → `BlockchainBurningService` палить лінійно `total_minted × damage_ratio`. Наслідок: **force-majeure comms-loss (вкрадений/збитий шлюз, Starlink-блекаут) = незворотний burn інвесторських токенів, класифікований як ніщо.** Divergence: [`04_02 §11` 2026-05-29](04_02_Business_Logic_and_Services).
-- [x] 🤖 ✅ (2026-05-29) **Blackout → Field Audit, НЕ burn:** `ContractHealthCheckService#flag_data_blackout!` — cluster-wide `daily_insights.empty?` → `system_fault` EwsAlert + контракт лишається `:active` (без `BurnCarbonTokensWorker`). 10 specs green, rubocop clean, GitNexus impact LOW. Лишається: B/insurance auto-route + going-dark-after-P0→A refinement (`00_01 §6.5`).
-- [ ] 🤖 De-correlate penalty signals: no-ack (+0.5) + Streamr-gap (+0.25) мають спільний root-cause — не складати при недоступності шлюзу.
-- [ ] 🤖 Реалізувати penalty-формулу §6.2 (`damage_ratio^GAMMA × min(penalty_factor, 2.0)`) у `BlockchainBurningService` (зараз лінійно).
-- [ ] 👤 DAO/founder-confirm перед mainnet (тісно з BIZ.13 operator-bond, `00_01 §6.2.1`).
+- **P0** · 🤖+👤 · → `00_01 §6.2/§6.5` (divergence `04_02 §11`)
+- ✅ (2026-05-29) blackout → Field Audit, НЕ burn: `ContractHealthCheckService#flag_data_blackout!` (cluster-wide empty → `system_fault` alert, contract :active, no burn; 10 specs). · [ ] 🤖 de-correlate penalty signals (no-ack +0.5 / Streamr-gap +0.25 спільний root-cause) · [ ] 🤖 penalty-формула §6.2 `damage_ratio^GAMMA × min(pf,2.0)` у `BlockchainBurningService` · [ ] 👤 DAO/founder-confirm перед mainnet (BIZ.13 operator-bond, `00_01 §6.2.1`)
 
 #### S1.1 — GitHub Secrets заповнення
-- **P0** | `06_01` | **Складність: XS** | **🔧 Операційна** — ручне заповнення в GitHub UI, без коду
-- **Опис:** 12 критичних секретів не встановлені: `GCP_SA_KEY`, `DATABASE_PASSWORD`, `DATABASE_URL`, `SSH_PRIVATE_KEY`, тощо. Блокує весь CI/CD pipeline.
-- ✅ Зроблено: checklist + інвентаризація 4 місць зберігання секретів. Канон: `06_04_Secrets_Checklist`.
-- [ ] 👤 Заповнити GitHub repository secrets
-- [ ] 👤 Верифікувати CI pipeline проходить
+- **P0** · 👤 · → `06_04`
+- ✅ checklist + інвентаризація 4 місць секретів. · [ ] 👤 заповнити GitHub repository secrets (12 крит.: `GCP_SA_KEY`, `DATABASE_PASSWORD`, `SSH_PRIVATE_KEY`…) → верифікувати CI
 
 #### S1.5 — Kamal IP placeholders
-- **P2** | `06_01` | **Складність: XS** | **🔧 Операційна** — підстановка IP після `terraform apply`
-- **Опис:** `192.168.0.1` та `<CANOPY_SERVER_IP>` — плейсхолдери в Kamal config
-- [ ] 👤 Підставити реальні IP після `terraform apply`
-- [ ] 👤 Верифікувати Kamal deploy з реальними IP
+- **P2** · 👤 · → `06_01`
+- `192.168.0.1` / `<CANOPY_SERVER_IP>` плейсхолдери в Kamal config. · [ ] 👤 підставити реальні IP після `terraform apply` → верифікувати deploy
 
 #### S2.1 — Верифікація метрик після deploy
-- **P0** | `06_03` | **Складність: XS** | **🔧 Операційна** — верифікація після першого Akash deploy, без коду
-- **Опис:** `/metrics` endpoint працює (10+ метрик), скрейпиться Grafana Alloy sidecar → Grafana Cloud. Інфраструктура налаштована (prometheus.rb, middleware, Alloy sidecar, Terraform vars). Потрібна верифікація після першого Akash deploy
-- [ ] 👤 Верифікувати що метрики збираються (після першого Akash deploy)
+- **P0** · 👤 · → `06_03`
+- `/metrics` (10+ метрик) + Alloy sidecar → Grafana Cloud налаштовано. · [ ] 👤 верифікувати збір метрик після першого Akash deploy
 
 #### S2.2 — Grafana Cloud dashboards
-- **P0** | `06_03` | **Складність: S** | **🔧 Операційна** — налаштування в Grafana Cloud UI, без коду
-- **Опис:** Grafana Cloud SaaS — метрики доступні, дашборди створюються в UI
-- ✅ Зроблено: dashboard IaC (5 секцій, 15 панелів) → `deploy/grafana/dashboards/silkennet-overview.json` (інструкції `deploy/grafana/README.md`).
-- [ ] 👤 Імпортувати dashboard у Grafana Cloud (UI або API — інструкції у `deploy/grafana/README.md`)
+- **P0** · 👤 · → `06_03`
+- ✅ dashboard IaC (5 секцій, 15 панелів) → `deploy/grafana/`. · [ ] 👤 імпортувати у Grafana Cloud (інструкції `deploy/grafana/README.md`)
 
 #### S2.3 — Grafana Cloud alerting rules
-- **P0** | `06_03` | **Складність: S** | **🔧 Операційна** — налаштування в Grafana Cloud UI, без коду
-- **Опис:** Grafana Cloud Alerting замінює потребу в self-hosted Alertmanager
-- ✅ Зроблено: 12 alert rules IaC (4 P0 / 5 P1 / 3 P2) → `deploy/grafana/alerts/silkennet-alerts.yaml`; backend counter `silkennet_telemetry_acoustic_overflow_total` у `TelemetryUnpackerService`.
-- [ ] 👤 Замінити `${DATASOURCE_UID}` на реальний UID і застосувати через API або Grafana UI
-- [ ] 👤 Налаштувати notification channel (Slack / Email / PagerDuty) — інструкції у README
+- **P0** · 👤 · → `06_03`
+- ✅ 12 alert rules IaC (4P0/5P1/3P2) → `deploy/grafana/alerts/` + counter `silkennet_telemetry_acoustic_overflow_total`. · [ ] 👤 замінити `${DATASOURCE_UID}` + notification channel (Slack/Email/PagerDuty)
 
 #### S3.2 — dClimate Real API verification
-- **P1** | `05_01` | **Складність: S** | **🔧 Операційна** - отримати та встановити API key, сервіс реалізований, потрібна staging верифікація
-- **Опис:** `Dclimate::VerificationService` реалізований з реальним API (NASA FIRMS через dClimate). Fire detection (FRP ≥ 10 MW, confidence ≥ 50%), cloud obscuration fallback, metadata extraction — все працює. Потрібна верифікація з реальним ключем
-- [ ] 👤 Верифікувати з реальним API ключем в staging (отримати та встановити API key)
-- [ ] 👤 End-to-end тест з `DclimateVerificationWorker`
+- **P1** · 👤 · → `05_01`
+- ✅ `Dclimate::VerificationService` (NASA FIRMS, FRP≥10MW, cloud fallback). · [ ] 👤 верифікувати з реальним API key у staging + e2e `DclimateVerificationWorker`
 
 #### S3.5 — Subgraph contract address
-- **P2** | `05_03` | **Складність: XS** | **🔧 Операційна** — замінити placeholder після deploy контракту
-- **Опис:** SFC events (ForestMinted, GovernanceSlashed) додано до subgraph. Задокументовано в `05_03` розділ Subgraph. Але contract address — placeholder. Блокує deploy subgraph.
-- [ ] 👤 ⚠️ Замінити placeholder `0x0000...0000` на реальну адресу SFC контракту у `subgraph.yaml`
+- **P2** · 👤 · → `05_03`
+- SFC events (ForestMinted, GovernanceSlashed) у subgraph; адреса = placeholder. · [ ] 👤 замінити `0x0000…` на реальну SFC-адресу у `subgraph.yaml` (після контракт-деплою)
 
 #### INF.3 — TLS termination
-- **P2** | `06_02` BLOCKER-5 | **Складність: S** | **🔧 Операційна** — конфігурація Cloudflare або Akash ingress, без коду в Rails
-- **Опис:** SDL відкриває HTTP (port 80), CoAP UDP (5683), та port 443 (додано Сесія 6). Але TLS termination не налаштовано. Browsers block WebSocket from HTTPS → HTTP
-- [ ] 👤 Налаштувати TLS (Akash ingress `*.ingress.akash.pub` або Cloudflare)
+- **P2** · 👤 · → `06_02 §BLOCKER-5`
+- SDL відкриває 80/443/CoAP-UDP 5683, але TLS termination не налаштовано (browsers block WS HTTPS→HTTP). · [ ] 👤 налаштувати TLS (Akash ingress або Cloudflare)
 
 #### INF.6 — CoAP UDP smoke test через Ingress Anchor (post-deploy gate)
-- **P1** | `06_01` §6 рядок 113, `06_02` runbook, `00_03` §🛑 | **Складність: XS** | **🤖 Код + 👤 верифікація**
-- **Опис:** Без end-to-end UDP smoke перевірки `Queen → Ingress Anchor (HAProxy/socat) → Akash → CoAP daemon` silent UDP failure не помітний з HTTP-only health checks — це блокер для будь-якої uplink-resilience політики у [`00_03 §1.2 L1`](00_03_Resilience_and_Failover_Policy). **Що зроблено:** workflow `.github/workflows/coap_smoke.yml` (`workflow_dispatch` для ad-hoc + `workflow_call` від `deploy.yml` як post-deploy gate); приймає inputs `host`/`port`/`path`/`timeout_seconds`. **Що залишається:** активувати як required post-deploy gate у `deploy.yml`, виконати перший boundary-test з реальної Queen Soldier-симулятором (`bin/forest_simulator`).
-- ✅ Зроблено: workflow `coap_smoke.yml` (`workflow_call` від `deploy.yml`). 🟡 ще не required gate у `deploy.yml`.
-- [ ] 👤 Активувати як required post-deploy gate (set `coap-smoke` як `needs:` у production job після першого зеленого прогону)
-- [ ] 👤 Перший boundary smoke з реальної Queen або `bin/forest_simulator`
+- **P1** · 🤖+👤 · → `06_01 §6`, `06_02`, `00_03 §1.2`
+- ✅ workflow `coap_smoke.yml` (`workflow_call` від `deploy.yml`) — 🟡 ще не required gate. Без UDP-smoke silent UDP failure не помітний (Queen→Ingress Anchor→Akash→CoAP). · [ ] 👤 активувати як required post-deploy gate (`needs: coap-smoke`) · [ ] 👤 перший boundary smoke з Queen/`bin/forest_simulator`
 
 #### INF.4 — Akash TLS strategy decision: hostname operator vs Cloudflare
-- **P1** | `06_02` BLOCKER-5, `06_01` | **Складність: S** | **🔧 Операційна + Док**
-- **Опис:** Розширення INF.3. Не прийнято архітектурне рішення: (a) Akash hostname operator + Let's Encrypt автоматизація, (b) Cloudflare Proxy перед Akash (DDoS + WAF, але ще одна mw залежність), (c) Traefik у Kamal (тільки GCP path). Вибір впливає на CoAP UDP (Cloudflare НЕ proxies UDP — потребує separate Spectrum або direct ingress)
-- ✅ Зроблено (док): runbook TLS termination — Опція A (Cloudflare HTTPS + direct UDP CoAP) рекоменд. + pre-flight checklist + verification commands + failure modes + fallback Опція B. Канон: `06_02` BLOCKER-5.
-- [ ] 👤 Прийняти архітектурне рішення (Cloudflare Proxy для HTTPS + direct UDP для CoAP — рекомендовано)
-- [ ] 🤖 Якщо Akash hostname — додати automation у `terraform/`
+- **P1** · 👤+🤖 · → `06_02 §BLOCKER-5`
+- ✅ runbook: Опція A (Cloudflare HTTPS + direct UDP CoAP) рекоменд. + pre-flight + fallback B. Cloudflare НЕ proxies UDP → CoAP потребує direct ingress. · [ ] 👤 прийняти рішення (рекоменд. A) · [ ] 🤖 якщо Akash hostname — automation у `terraform/`
 
 #### S4.3 — Akash SDL secrets
-- **P3** | `06_02` | **Складність: XS** | **🔧 Операційна** — заповнити 4 змінні у `deploy.yaml`
-- **Опис:** `REQUIRED_SECRET_NOT_SET` для 4 критичних змінних
-- [ ] 👤 Заповнити в `deploy/akash/deploy.yaml`
-- [ ] 👤 Верифікувати startup
+- **P3** · 👤 · → `06_02`
+- `REQUIRED_SECRET_NOT_SET` для 4 крит. змінних. · [ ] 👤 заповнити в `deploy/akash/deploy.yaml` → верифікувати startup
 
 #### S5.2 — RELEASE_VERSION ENV для Sentry
-- **P2** | `06_03` | **Складність: XS** | **🔧 Операційна**
-- **Опис:** `RELEASE_VERSION` ENV не встановлено — Sentry release tracking не працює. Потрібно додати у Kamal/Akash deploy config
-- ✅ Зроблено: `RELEASE_VERSION` у `deploy.yml` / `deploy-production.yml` / `config/deploy.yml` / `deploy/akash/deploy.yaml`.
-- [ ] 👤 Верифікувати Sentry release tracking
+- **P2** · 👤 · → `06_03`
+- ✅ `RELEASE_VERSION` у deploy configs. · [ ] 👤 верифікувати Sentry release tracking
 
 #### S5.6 — GCS bucket для Terraform state (chicken-and-egg)
-- **P3** | `06_02` BLOCKER-6 | **Складність: XS** | **🔧 Операційна**
-- **Опис:** GCS bucket для remote Terraform state має бути створений вручну перед `terraform init`. Документація є, але checklist відсутній
-- [ ] 👤 Створити GCS bucket вручну (`gsutil mb`)
-- [ ] 👤 Верифікувати `terraform init` проходить
+- **P3** · 👤 · → `06_02 §BLOCKER-6`
+- GCS bucket для remote TF state — вручну перед `terraform init`. · [ ] 👤 `gsutil mb` → верифікувати `terraform init`
 
 #### S6.1 — Redis SPOF для M2M автентифікації
-- **P1** | `04_03` | **Складність: M** | **Код**
-- **Опис:** Redis = single point of failure для Gateway M2M auth. Redis down → всі шлюзи заблоковані (503). Відсутній fallback
-- **Варіанти fallback:** (a) DB-backed nonce validation з TTL index (performance overhead, але survives restarts), (b) Upstash Redis Cluster (managed HA, рекомендовано для production), (c) Memcached cluster (не зберігає стан між restarts). **Рекомендація:** Upstash Redis вже використовується — переконатись що включений multi-zone replication
-- ✅ Зроблено: graceful degradation (Redis down → DB-backed nonce lookup, TTL 10 хв) + тести. Канон: `04_03` (M2M nonce fallback [S6.1]).
-- [ ] 👤 Верифікувати Upstash multi-zone replication у production
+- **P1** · 👤 · → `04_03`
+- ✅ graceful degradation (Redis down → DB-backed nonce, TTL 10хв) + тести. · [ ] 👤 верифікувати Upstash multi-zone replication у production
 
 #### S6.10 — MaintenanceRecord — лише лог
-- **P3** | `04_02` | **Складність: L** | **Архітектурна**
-- **Опис:** MaintenanceRecord — лише запис логу. Немає: призначення задач, оплати, верифікації. Потребує Forester Guild (E.20)
-- ✅ Зроблено: архітектурний дизайн task-assignment (bounty fields, candidate filtering, composite scoring, notification cascade, race resolution `FOR UPDATE NOWAIT`, GPS/EXIF/IPFS verification → USDC payout, anti-Sybil). Канон: `04_02` §Forester Guild.
-- [ ] 🔗 Зв'язати з Forester Guild PoPhW (E.20)
+- **P3** · 🔗 · → `04_02 §Forester Guild`
+- ✅ архітектурний дизайн task-assignment (bounty, scoring, `FOR UPDATE NOWAIT`, GPS/EXIF/IPFS→USDC, anti-Sybil). · [ ] 🔗 зв'язати з Forester Guild PoPhW (E.20)
 
 #### S6.14 — peaq_signing_key: відсутня rotation policy
-- **P2** | `04_02` §4.2.2 (GeneratePeaqDidService, BLOCKER-08) | **Складність: M** | **🤖 Архітектура + Док**
-- **Опис:** `peaq_signing_key` — обов'язковий (W3C DID compliance), raise `RegistrationError` при відсутності. Але немає процесу для: (1) ротації ключа без зламу існуючих DID, (2) emergency revocation при компрометації, (3) синхронізації між staging/production
-- ✅ Зроблено: key rotation policy (dual-key 72h overlap, rotation/90 днів) → `04_02 §S6.14`; emergency revocation runbook (5-step) → `06_04 §5.4`.
-- [ ] 👤 Vault-store production peaq_signing_key (Bitwarden/1Password)
+- **P2** · 👤 · → `04_02 §S6.14`, `06_04 §5.4`
+- ✅ rotation policy (dual-key 72h, 90д) + emergency revocation runbook. · [ ] 👤 vault-store production `peaq_signing_key`
 
-#### S6.18 — Rails web security hardening (maquina-app/rails-claude-code §8 audit)
-- **P1** | `06_01`, `06_02`, `06_04` | **Складність: M** | **🤖 Код + Конфігурація**
-- **Опис:** Повний security audit Rails-шару по категоріях: PROD (SSL/HSTS), CSRF, HDR (Security Headers), CSP, SESS (Session cookie), RATE, AUTH, GEM (brakeman/bundler-audit), CI, DATA, FWKD.
-- ✅ Зроблено: `production.rb` (force_ssl/assume_ssl/HSTS/config.hosts boot-warning), CSP initializer (jspm/unpkg/cartocdn/transparenttextures, report-only), `security_headers.rb` (X-Frame DENY/COOP/CORP/Permissions-Policy), `session_store.rb` (secure/httponly/same_site/14d) + нові ENV. Без змін (вже ок): CSRF/RATE/AUTH/GEM/CI/DATA/FWKD. Канон: `06_04 §2.1` (+ `06_01`/`06_02`).
-- [ ] 👤 Встановити `RAILS_ALLOWED_HOSTS=api.silkennet.com,.silkennet.com` у Kamal `env.clear` / Akash SDL **перед першим production деплоєм**
-- [ ] 👤 Після 1–2 тижнів спостережень CSP violation-репортів — встановити `CSP_ENFORCE=true` (переведення CSP з report-only у enforced)
+#### S6.18 — Rails web security hardening (§8 audit)
+- **P1** · 👤 · → `06_04 §2.1`
+- ✅ production.rb (force_ssl/HSTS/hosts) + CSP (report-only) + security_headers.rb + session_store. · [ ] 👤 `RAILS_ALLOWED_HOSTS` у Kamal/Akash перед prod · [ ] 👤 після 1-2 тиж CSP-репортів → `CSP_ENFORCE=true`
 
 #### PUMA-IPV6-1 — Верифікація IPv6 bind після першого Kamal-деплою
-- **High** | `06_05` | **Складність: XS** | **🔧 Операційна** — верифікація після першого реального деплою, без коду
-- **Опис:** Puma 8.0+ за замовчуванням bind'иться на `tcp://[::]:3000` (dual-stack) якщо є non-loopback IPv6 інтерфейс. Thruster конектиться до Puma по `127.0.0.1:3000`. Linux `IPV6_V6ONLY=0` = `[::]:3000` приймає і v4, і v6 → має працювати. Перевірка потрібна для впевненості.
-- [ ] 👤 Після першого деплою canopy: `kamal app exec -i 'ss -tlnp | grep 3000'` — очікуємо `tcp6 LISTEN [::]:3000`
-- [ ] 👤 `curl -fsS http://127.0.0.1:3000/up` і `curl -fsS http://[::1]:3000/up` — обидва 200
-- [ ] 👤 Задокументувати результат у `06_05_Puma_Configuration` (IPv6 runbook section)
+- **P1** · 👤 · → `06_05`
+- Puma 8 bind `[::]:3000` dual-stack; Thruster → `127.0.0.1:3000`. · [ ] 👤 після canopy deploy: `ss -tlnp\|grep 3000` (`tcp6 [::]:3000`) + `curl` v4/v6 `/up` → задокументувати у `06_05`
 
 ## §03 · Firmware
 
