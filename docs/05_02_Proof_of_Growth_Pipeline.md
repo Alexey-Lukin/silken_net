@@ -212,19 +212,11 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 
 **Модуль `SilkenNet::Attractor` (firmware):**
 ```ruby
-BASE_SIGMA = 10.0   # Float (не BigDecimal!)
-BASE_RHO   = 28.0
-BASE_BETA  = 8.0 / 3.0   # ≈ 2.6666... (точне в Ruby Float)
-DT = 0.01
-ITERATIONS = 250
-SIGMA_LIMITS = (5.0..30.0)
-RHO_LIMITS   = (10.0..50.0)
-# [FW.5] β-perturbation від EBFC-метаболізму
-BETA_DELTA_T_COEFF = 0.0001  # 1 с швидше baseline → β +0.0001
-BETA_VCAP_COEFF    = 0.001   # 1 mV вище nominal → β +0.001
-BETA_LIMITS        = (2.0..4.0)
-BASELINE_DELTA_T_S = 60
-NOMINAL_VCAP_MV    = 3300
+# ─ Константи Лоренца (BASE_SIGMA/RHO/BETA, DT, ITERATIONS, SIGMA/RHO/BETA_LIMITS,
+#   BETA_DELTA_T_COEFF/BETA_VCAP_COEFF [FW.5], BASELINE_DELTA_T_S, NOMINAL_VCAP_MV)
+#   — SSOT: 03_04 §4.1 (firmware↔backend дзеркало, дві колонки). Значення тут НЕ
+#   дублюються: правити ЛИШЕ в 03_04, інакше — тихий DCI-дрейф device-Z vs server-Z.
+#   Нижче — лише pipeline-поведінка стадії (сигнатура + потік).
 
 def self.calculate_z_axis(x, y, z, temp, acoustic, delta_t_s = BASELINE_DELTA_T_S, vcap_mv = NOMINAL_VCAP_MV)
   # [SEC.11] (x, y, z) приходять як аргументи: warm — з RTC DR16-18,
@@ -238,9 +230,8 @@ end
 
 **Модуль `SilkenNet::BioContract` (firmware) — токеноміка:**
 ```ruby
-CRITICAL_Z_MIN  = 2.0   # Порóг посухи (HARDCODED у firmware!)
-CRITICAL_Z_MAX  = 45.0  # Поріг критичного стресу (HARDCODED!)
-OPTIMAL_Z_TARGET = 29.0 # Ідеальний стан конвекції (HARDCODED!)
+# CRITICAL_Z_MIN/MAX, OPTIMAL_Z_TARGET — SSOT: 03_04 §4.1 + §Z→bio_status mapping.
+# (firmware hardcoded у Flash; per-species OTA override — FW.8 нижче). НЕ дублювати тут.
 
 def self.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)
   # (x_prev, y_prev, z_prev): warm — з RTC DR16-18; cold — з SEC.11 K_seed/epoch_day
