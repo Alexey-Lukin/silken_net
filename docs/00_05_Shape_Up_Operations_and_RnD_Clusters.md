@@ -13,18 +13,30 @@
 
 - **Поточний TRL:** TRL 8 — методологія інтегрована в операційні процеси, інструментарій MCP налаштований.
 - **Контекст:** Синхронізація двох потоків: **Атоми** (Hardware: лабораторія ЧНУ, заводи DMLS) та **Байти** (Software: Rails, прошивка, смарт-контракти).
-- **Пов'язані модулі:**
-  - Концептуальна основа (NASA TRL, AI pipeline, Triple Stream, Wiki-First) → [`00_04_AI_Native_Engineering_and_TRL`](00_04_AI_Native_Engineering_and_TRL)
-  - Стратегічна дорожня карта та TRL матриця → [`00_06_Strategic_Roadmap_and_HIL_Simulators`](00_06_Strategic_Roadmap_and_HIL_Simulators)
-  - GitHub Projects + IaC automation → [`00_07_GitHub_Projects_and_IaC_Automation`](00_07_GitHub_Projects_and_IaC_Automation)
-  - Open backlog → [`00_08_Action_Plan_Tracker`](00_08_Action_Plan_Tracker)
+- **Стоячі ризики (мітиговані):** Context Drift → автоматизований SSOT Integrity Guard ([`00_07`](00_07_GitHub_Projects_and_IaC_Automation)); Hardware lead-times → HIL-симулятори ([`00_06`](00_06_Strategic_Roadmap_and_HIL_Simulators)).
 
 ---
 
-## 🛑 Блокери
+## 🔗 Cross-references
 
-- **Context Drift:** Ризик розсинхронізації між кодом та документацією. Вимагає суворого дотримання протоколу "Wiki-First" та автоматизованого SSOT Integrity Guard ([`00_07 §SSOT Guard`](00_07_GitHub_Projects_and_IaC_Automation)).
-- **Hardware Lead Times:** Затримки у виробництві титанових анкерів обмежують швидкість валідації натурних випробувань. Mitigation — HIL Simulators ([`00_06 §HIL`](00_06_Strategic_Roadmap_and_HIL_Simulators)).
+| Ресурс | Опис |
+|--------|------|
+| [00_04_AI_Native_Engineering_and_TRL](00_04_AI_Native_Engineering_and_TRL) | Концептуальна основа: NASA TRL, AI pipeline, Triple Stream, Wiki-First |
+| [00_06_Strategic_Roadmap_and_HIL_Simulators](00_06_Strategic_Roadmap_and_HIL_Simulators) | TRL-матриця + HIL (decoupling software TRL від hardware) |
+| [00_07_GitHub_Projects_and_IaC_Automation](00_07_GitHub_Projects_and_IaC_Automation) | Projects V2 fields, labels-as-code, cluster routing |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | Open backlog (OPS.3 / OPS.4 + Convolution Method context) |
+| [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | Стратегічні підстави для multi-cluster R&D (§1.1-1.3) |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [1. Методологія Shape Up (6+2 Cycle)](#-1-методологія-shape-up-62-cycle)
+- [2. Кадрова організація: 4 R&D кластери](#-2-кадрова-організація-4-rd-кластери)
+- [3. Async-Review Policy (Розблокування Архітектора)](#-3-async-review-policy-розблокування-архітектора)
+- [4. Triple Stream & AI Handoff](#-4-triple-stream--ai-handoff)
+- [5. Shape Up Cycle Template (OPS.3)](#-5-shape-up-cycle-template-ops3)
+- [6. Академічний календар ↔ TRL milestones (OPS.4)](#-6-академічний-календар--trl-milestones-ops4)
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -221,10 +233,3 @@ TRL-матриця крокує "квартально-функціональни
 
 ---
 
-## 🔗 7. Cross-ref
-
-- `docs/00_04` — філософська основа (TRL, AI pipeline, Triple Stream, Wiki-First).
-- `docs/00_06` — TRL Matrix + HIL Simulators (як ми технічно decoupling-уємо software TRL від hardware TRL).
-- `docs/00_07 §6 Kanban / Labels / Routing` — Projects V2 fields, labels.yml, GitHub Actions workflows для cluster routing.
-- `docs/00_08 OPS.3 / OPS.4` — оригінальний задачний контекст + alignment з Convolution Method (10× / 100× speedup PN-state explosion).
-- `docs/08_01 §1.1-1.3` — стратегічні підстави для multi-cluster R&D.
