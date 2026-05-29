@@ -31,8 +31,8 @@ contract SilkenGovernorTest is Test {
     address public voter2 = address(0x2);
     address public voter3 = address(0x3);
 
-    uint256 public constant VOTING_DELAY = 43200;   // ~1 day on Polygon
-    uint256 public constant VOTING_PERIOD = 302400;  // ~7 days on Polygon
+    uint256 public constant VOTING_DELAY = 43200; // ~1 day on Polygon
+    uint256 public constant VOTING_PERIOD = 302400; // ~7 days on Polygon
     uint256 public constant PROPOSAL_THRESHOLD = 100e18; // 100 SFC
 
     function setUp() public {
@@ -105,16 +105,8 @@ contract SilkenGovernorTest is Test {
         // voter1 has 1M SFC (above 100 SFC threshold)
         vm.roll(block.number + 1);
 
-        (
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            string memory description
-        ) = _createSetParameterProposal(
-            keccak256("lorenz_sigma"),
-            12e18,
-            "Set lorenz_sigma to 12.0"
-        );
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
+            _createSetParameterProposal(keccak256("lorenz_sigma"), 12e18, "Set lorenz_sigma to 12.0");
 
         vm.prank(voter1);
         uint256 proposalId = governor.propose(targets, values, calldatas, description);
@@ -126,16 +118,8 @@ contract SilkenGovernorTest is Test {
         address noTokens = address(0xDEAD);
         vm.roll(block.number + 1);
 
-        (
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            string memory description
-        ) = _createSetParameterProposal(
-            keccak256("lorenz_sigma"),
-            12e18,
-            "Should fail - no tokens"
-        );
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
+            _createSetParameterProposal(keccak256("lorenz_sigma"), 12e18, "Should fail - no tokens");
 
         vm.prank(noTokens);
         vm.expectRevert(); // GovernorInsufficientProposerVotes
@@ -152,12 +136,8 @@ contract SilkenGovernorTest is Test {
         // Step 1: Create proposal
         vm.roll(block.number + 1);
 
-        (
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            string memory description
-        ) = _createSetParameterProposal(paramKey, newValue, "GIP-1: Update lorenz_sigma to 12.0");
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
+            _createSetParameterProposal(paramKey, newValue, "GIP-1: Update lorenz_sigma to 12.0");
 
         vm.prank(voter1);
         uint256 proposalId = governor.propose(targets, values, calldatas, description);
@@ -199,16 +179,8 @@ contract SilkenGovernorTest is Test {
         vm.roll(block.number + 1);
 
         // Create proposal at block N
-        (
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            string memory description
-        ) = _createSetParameterProposal(
-            keccak256("lorenz_sigma"),
-            15e18,
-            "Flash loan test"
-        );
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
+            _createSetParameterProposal(keccak256("lorenz_sigma"), 15e18, "Flash loan test");
 
         vm.prank(voter1);
         uint256 proposalId = governor.propose(targets, values, calldatas, description);
@@ -245,16 +217,8 @@ contract SilkenGovernorTest is Test {
     function test_proposalNeedsQueuing() public {
         vm.roll(block.number + 1);
 
-        (
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            string memory description
-        ) = _createSetParameterProposal(
-            keccak256("lorenz_sigma"),
-            12e18,
-            "Queue test"
-        );
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
+            _createSetParameterProposal(keccak256("lorenz_sigma"), 12e18, "Queue test");
 
         vm.prank(voter1);
         uint256 proposalId = governor.propose(targets, values, calldatas, description);
@@ -273,16 +237,11 @@ contract SilkenGovernorTest is Test {
         // sfc.delegate(to);
     }
 
-    function _createSetParameterProposal(
-        bytes32 paramKey,
-        uint256 paramValue,
-        string memory description
-    ) internal view returns (
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas,
-        string memory desc
-    ) {
+    function _createSetParameterProposal(bytes32 paramKey, uint256 paramValue, string memory description)
+        internal
+        view
+        returns (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory desc)
+    {
         targets = new address[](1);
         targets[0] = address(protocolParams);
 
@@ -290,11 +249,7 @@ contract SilkenGovernorTest is Test {
         values[0] = 0;
 
         calldatas = new bytes[](1);
-        calldatas[0] = abi.encodeWithSelector(
-            ProtocolParameters.setParameter.selector,
-            paramKey,
-            paramValue
-        );
+        calldatas[0] = abi.encodeWithSelector(ProtocolParameters.setParameter.selector, paramKey, paramValue);
 
         desc = description;
     }

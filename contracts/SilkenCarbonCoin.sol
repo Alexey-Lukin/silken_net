@@ -27,7 +27,6 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
  * [B-15] String length validation: treeDid/clusterId <= 256 bytes (The Graph safety).
  */
 contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ERC20Permit {
-
     /// @notice Роль для карбування нових токенів (Proof of Growth oracle).
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
@@ -100,11 +99,7 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @param amount Кількість токенів (wei).
     /// @param treeDid DID дерева-джерела.
     /// @dev Reverts if totalSupply() + amount > MAX_SUPPLY.
-    function mint(address to, uint256 amount, string calldata treeDid)
-        external
-        onlyRole(MINTER_ROLE)
-        nonReentrant
-    {
+    function mint(address to, uint256 amount, string calldata treeDid) external onlyRole(MINTER_ROLE) nonReentrant {
         _mintSCC(to, amount, treeDid);
     }
 
@@ -125,11 +120,11 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @param recipients Масив адрес отримувачів (max 200).
     /// @param amounts Масив сум для кожного отримувача.
     /// @param treeDids Масив DID дерев-джерел.
-    function batchMint(
-        address[] calldata recipients,
-        uint256[] calldata amounts,
-        string[] calldata treeDids
-    ) external onlyRole(MINTER_ROLE) nonReentrant {
+    function batchMint(address[] calldata recipients, uint256[] calldata amounts, string[] calldata treeDids)
+        external
+        onlyRole(MINTER_ROLE)
+        nonReentrant
+    {
         uint256 length = recipients.length;
         require(length > 0, "SCC: empty batch");
         require(length == amounts.length && length == treeDids.length, "SCC: array length mismatch");
@@ -157,11 +152,7 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @param investor Адреса, з якої спалюються токени.
     /// @param amount Кількість токенів для спалювання (wei).
     /// @dev Reverts if investor balance < amount ("SCC: insufficient balance").
-    function slash(address investor, uint256 amount)
-        external
-        onlyRole(SLASHER_ROLE)
-        nonReentrant
-    {
+    function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE) nonReentrant {
         require(investor != address(0), "SCC: zero investor");
         require(amount > 0, "SCC: zero amount");
         require(balanceOf(investor) >= amount, "SCC: insufficient balance");
@@ -173,10 +164,7 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @param payer Адреса платника премії.
     /// @param amount Сума премії (wei).
     /// @dev Тільки запис події (off-chain tracking). Валідація запобігає event spoofing.
-    function recordPremiumPaid(address payer, uint256 amount)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
+    function recordPremiumPaid(address payer, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(payer != address(0), "SCC: zero payer");
         require(amount > 0, "SCC: zero premium");
         emit PremiumPaid(payer, amount);
@@ -200,10 +188,7 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @dev Do NOT add external calls or callbacks to this function without adding nonReentrant guard.
     /// @dev Note: nonReentrant cannot be added here directly — it would conflict with the outer
     ///      nonReentrant guard on mint/slash/batchMint (nested nonReentrant reverts).
-    function _update(address from, address to, uint256 value)
-        internal
-        override
-    {
+    function _update(address from, address to, uint256 value) internal override {
         // Allow burn (slash) to bypass pause — to == address(0) means _burn() was called.
         // Minting (from == 0, to != 0) and transfers (from != 0, to != 0) are still blocked.
         if (paused() && to != address(0)) {
@@ -235,5 +220,4 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         }
         return revoked;
     }
-
 }

@@ -22,7 +22,6 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
  * @custom:security-contact security@silkennet.io
  */
 contract ProtocolParameters is AccessControl {
-
     /// @notice Роль для оновлення параметрів. Призначається SilkenTimelock.
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
 
@@ -66,12 +65,7 @@ contract ProtocolParameters is AccessControl {
     /// @param oldValue Попереднє значення (0 якщо раніше не встановлювалось).
     /// @param newValue Нове значення (uint256, 18 decimals fixed-point).
     /// @param updatedBy Адреса, що ініціювала зміну (зазвичай Timelock).
-    event ParameterUpdated(
-        bytes32 indexed key,
-        uint256 oldValue,
-        uint256 newValue,
-        address indexed updatedBy
-    );
+    event ParameterUpdated(bytes32 indexed key, uint256 oldValue, uint256 newValue, address indexed updatedBy);
 
     /// @notice Конструктор ProtocolParameters.
     /// @param admin Адміністратор контракту (DEFAULT_ADMIN_ROLE). Рекомендовано: Gnosis Safe multisig.

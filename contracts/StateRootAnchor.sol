@@ -17,7 +17,6 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
  * [BLOCKER-1] Контракт створено для заміни захардкодженого ABI в Ruby-сервісі.
  */
 contract StateRootAnchor is AccessControl {
-
     /// @notice Роль для запису state root (EthereumAnchorWorker oracle).
     bytes32 public constant ANCHOR_ROLE = keccak256("ANCHOR_ROLE");
 
@@ -77,10 +76,7 @@ contract StateRootAnchor is AccessControl {
     function storeStateRoot(bytes32 root) external onlyRole(ANCHOR_ROLE) {
         require(root != bytes32(0), "StateRootAnchor: empty root");
         require(rootTimestamps[root] == 0, "StateRootAnchor: root already anchored");
-        require(
-            block.timestamp >= lastAnchorTime + MIN_ANCHOR_INTERVAL,
-            "StateRootAnchor: too soon since last anchor"
-        );
+        require(block.timestamp >= lastAnchorTime + MIN_ANCHOR_INTERVAL, "StateRootAnchor: too soon since last anchor");
 
         lastAnchorTime = block.timestamp;
         anchorCount++;

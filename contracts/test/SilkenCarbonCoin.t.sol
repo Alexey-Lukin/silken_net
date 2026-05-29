@@ -145,7 +145,9 @@ contract SilkenCarbonCoinTest is Test {
     function testRevert_mint_treeDidTooLong() public {
         // 257 bytes — exceeds 256 limit
         bytes memory longDid = new bytes(257);
-        for (uint i = 0; i < 257; i++) longDid[i] = "A";
+        for (uint256 i = 0; i < 257; i++) {
+            longDid[i] = "A";
+        }
 
         vm.prank(minter);
         vm.expectRevert("SCC: treeDid too long");
@@ -175,9 +177,15 @@ contract SilkenCarbonCoinTest is Test {
         uint256[] memory amounts = new uint256[](3);
         string[] memory dids = new string[](3);
 
-        recipients[0] = user1; amounts[0] = 100e18; dids[0] = "SNET-001";
-        recipients[1] = user2; amounts[1] = 200e18; dids[1] = "SNET-002";
-        recipients[2] = user1; amounts[2] = 50e18;  dids[2] = "SNET-003";
+        recipients[0] = user1;
+        amounts[0] = 100e18;
+        dids[0] = "SNET-001";
+        recipients[1] = user2;
+        amounts[1] = 200e18;
+        dids[1] = "SNET-002";
+        recipients[2] = user1;
+        amounts[2] = 50e18;
+        dids[2] = "SNET-003";
 
         vm.prank(minter);
         scc.batchMint(recipients, amounts, dids);
@@ -209,8 +217,10 @@ contract SilkenCarbonCoinTest is Test {
         uint256[] memory a = new uint256[](size);
         string[] memory d = new string[](size);
 
-        for (uint i = 0; i < size; i++) {
-            r[i] = user1; a[i] = 1e18; d[i] = "SNET-X";
+        for (uint256 i = 0; i < size; i++) {
+            r[i] = user1;
+            a[i] = 1e18;
+            d[i] = "SNET-X";
         }
 
         vm.prank(minter);
@@ -223,8 +233,12 @@ contract SilkenCarbonCoinTest is Test {
         uint256[] memory a = new uint256[](2);
         string[] memory d = new string[](2);
 
-        r[0] = user1; a[0] = scc.MAX_SUPPLY(); d[0] = "SNET-1";
-        r[1] = user2; a[1] = 1;                d[1] = "SNET-2";
+        r[0] = user1;
+        a[0] = scc.MAX_SUPPLY();
+        d[0] = "SNET-1";
+        r[1] = user2;
+        a[1] = 1;
+        d[1] = "SNET-2";
 
         vm.prank(minter);
         vm.expectRevert("SCC: cap exceeded");
@@ -438,7 +452,9 @@ contract SilkenCarbonCoinTest is Test {
     function testFuzz_mint_treeDidMaxLength(uint8 len) public {
         len = uint8(bound(uint256(len), 1, 256));
         bytes memory did = new bytes(len);
-        for (uint i = 0; i < len; i++) did[i] = "X";
+        for (uint256 i = 0; i < len; i++) {
+            did[i] = "X";
+        }
 
         vm.prank(minter);
         scc.mint(user1, 1e18, string(did));

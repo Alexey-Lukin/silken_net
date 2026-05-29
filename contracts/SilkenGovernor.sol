@@ -54,65 +54,41 @@ contract SilkenGovernor is
     constructor(IVotes _token, TimelockController _timelock)
         Governor("Silken Governor")
         GovernorSettings(
-            43200,   // votingDelay: ~1 день на Polygon (86400s / 2s per block)
-            302400,  // votingPeriod: ~7 днів на Polygon (604800s / 2s per block)
-            100e18   // proposalThreshold: 100 SFC для створення пропозиції
+            43200, // votingDelay: ~1 день на Polygon (86400s / 2s per block)
+            302400, // votingPeriod: ~7 днів на Polygon (604800s / 2s per block)
+            100e18 // proposalThreshold: 100 SFC для створення пропозиції
         )
         GovernorVotes(_token)
-        GovernorVotesQuorumFraction(4)  // 4% quorum від totalSupply для прийняття
+        GovernorVotesQuorumFraction(4) // 4% quorum від totalSupply для прийняття
         GovernorTimelockControl(_timelock)
-    // solhint-disable-next-line no-empty-blocks
+        // solhint-disable-next-line no-empty-blocks
+
     {}
 
     // ─── Required Overrides (OZ Diamond Inheritance Resolution) ──────
 
     /// @dev Повертає затримку голосування (блоки між створенням та початком голосування).
-    function votingDelay()
-        public
-        view
-        override(Governor, GovernorSettings)
-        returns (uint256)
-    {
+    function votingDelay() public view override(Governor, GovernorSettings) returns (uint256) {
         return super.votingDelay();
     }
 
     /// @dev Повертає тривалість голосування (кількість блоків).
-    function votingPeriod()
-        public
-        view
-        override(Governor, GovernorSettings)
-        returns (uint256)
-    {
+    function votingPeriod() public view override(Governor, GovernorSettings) returns (uint256) {
         return super.votingPeriod();
     }
 
     /// @dev Повертає мінімальний баланс SFC для створення пропозиції.
-    function proposalThreshold()
-        public
-        view
-        override(Governor, GovernorSettings)
-        returns (uint256)
-    {
+    function proposalThreshold() public view override(Governor, GovernorSettings) returns (uint256) {
         return super.proposalThreshold();
     }
 
     /// @dev Повертає поточний quorum (4% від totalSupply при заданому timepoint).
-    function quorum(uint256 blockNumber)
-        public
-        view
-        override(Governor, GovernorVotesQuorumFraction)
-        returns (uint256)
-    {
+    function quorum(uint256 blockNumber) public view override(Governor, GovernorVotesQuorumFraction) returns (uint256) {
         return super.quorum(blockNumber);
     }
 
     /// @dev Стан пропозиції з урахуванням Timelock.
-    function state(uint256 proposalId)
-        public
-        view
-        override(Governor, GovernorTimelockControl)
-        returns (ProposalState)
-    {
+    function state(uint256 proposalId) public view override(Governor, GovernorTimelockControl) returns (ProposalState) {
         return super.state(proposalId);
     }
 
@@ -133,11 +109,7 @@ contract SilkenGovernor is
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    )
-        internal
-        override(Governor, GovernorTimelockControl)
-        returns (uint48)
-    {
+    ) internal override(Governor, GovernorTimelockControl) returns (uint48) {
         return super._queueOperations(proposalId, targets, values, calldatas, descriptionHash);
     }
 
@@ -148,10 +120,7 @@ contract SilkenGovernor is
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    )
-        internal
-        override(Governor, GovernorTimelockControl)
-    {
+    ) internal override(Governor, GovernorTimelockControl) {
         super._executeOperations(proposalId, targets, values, calldatas, descriptionHash);
     }
 
@@ -161,21 +130,12 @@ contract SilkenGovernor is
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    )
-        internal
-        override(Governor, GovernorTimelockControl)
-        returns (uint256)
-    {
+    ) internal override(Governor, GovernorTimelockControl) returns (uint256) {
         return super._cancel(targets, values, calldatas, descriptionHash);
     }
 
     /// @dev Адреса executor (Timelock контракт).
-    function _executor()
-        internal
-        view
-        override(Governor, GovernorTimelockControl)
-        returns (address)
-    {
+    function _executor() internal view override(Governor, GovernorTimelockControl) returns (address) {
         return super._executor();
     }
 }

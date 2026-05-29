@@ -160,7 +160,9 @@ contract SilkenForestCoinTest is Test {
 
     function testRevert_mint_clusterIdTooLong() public {
         bytes memory longId = new bytes(257);
-        for (uint i = 0; i < 257; i++) longId[i] = "A";
+        for (uint256 i = 0; i < 257; i++) {
+            longId[i] = "A";
+        }
 
         vm.prank(minter);
         vm.expectRevert("SFC: clusterId too long");
@@ -183,8 +185,12 @@ contract SilkenForestCoinTest is Test {
         uint256[] memory amounts = new uint256[](2);
         string[] memory ids = new string[](2);
 
-        recipients[0] = user1; amounts[0] = 500e18; ids[0] = "cl-1";
-        recipients[1] = user2; amounts[1] = 300e18; ids[1] = "cl-2";
+        recipients[0] = user1;
+        amounts[0] = 500e18;
+        ids[0] = "cl-1";
+        recipients[1] = user2;
+        amounts[1] = 300e18;
+        ids[1] = "cl-2";
 
         vm.prank(minter);
         sfc.batchMint(recipients, amounts, ids);
@@ -198,8 +204,12 @@ contract SilkenForestCoinTest is Test {
         uint256[] memory amounts = new uint256[](2);
         string[] memory ids = new string[](2);
 
-        recipients[0] = user1; amounts[0] = 500e18; ids[0] = "cl-1";
-        recipients[1] = user2; amounts[1] = 300e18; ids[1] = "cl-2";
+        recipients[0] = user1;
+        amounts[0] = 500e18;
+        ids[0] = "cl-1";
+        recipients[1] = user2;
+        amounts[1] = 300e18;
+        ids[1] = "cl-2";
 
         vm.prank(minter);
         sfc.batchMint(recipients, amounts, ids);
@@ -225,8 +235,10 @@ contract SilkenForestCoinTest is Test {
         address[] memory r = new address[](size);
         uint256[] memory a = new uint256[](size);
         string[] memory d = new string[](size);
-        for (uint i = 0; i < size; i++) {
-            r[i] = user1; a[i] = 1e18; d[i] = "cl";
+        for (uint256 i = 0; i < size; i++) {
+            r[i] = user1;
+            a[i] = 1e18;
+            d[i] = "cl";
         }
 
         vm.prank(minter);

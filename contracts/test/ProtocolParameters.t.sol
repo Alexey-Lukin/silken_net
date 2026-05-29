@@ -25,12 +25,7 @@ contract ProtocolParametersTest is Test {
     bytes32 public constant KEY_SLASH_THRESHOLD = keccak256("slash_threshold");
     bytes32 public constant KEY_DYNAMIC_TAX_RATE = keccak256("dynamic_tax_rate");
 
-    event ParameterUpdated(
-        bytes32 indexed key,
-        uint256 oldValue,
-        uint256 newValue,
-        address indexed updatedBy
-    );
+    event ParameterUpdated(bytes32 indexed key, uint256 oldValue, uint256 newValue, address indexed updatedBy);
 
     function setUp() public {
         params = new ProtocolParameters(admin, timelock);
@@ -122,9 +117,12 @@ contract ProtocolParametersTest is Test {
         bytes32[] memory keys = new bytes32[](3);
         uint256[] memory values = new uint256[](3);
 
-        keys[0] = KEY_LORENZ_SIGMA;  values[0] = 10e18;
-        keys[1] = KEY_LORENZ_RHO;    values[1] = 28e18;
-        keys[2] = KEY_LORENZ_BETA;   values[2] = 2666666666666666667; // 8/3
+        keys[0] = KEY_LORENZ_SIGMA;
+        values[0] = 10e18;
+        keys[1] = KEY_LORENZ_RHO;
+        values[1] = 28e18;
+        keys[2] = KEY_LORENZ_BETA; // 8/3
+        values[2] = 2666666666666666667;
 
         vm.prank(timelock);
         params.setParameters(keys, values);
@@ -141,8 +139,10 @@ contract ProtocolParametersTest is Test {
         bytes32[] memory keys = new bytes32[](2);
         uint256[] memory values = new uint256[](2);
 
-        keys[0] = KEY_LORENZ_SIGMA;  values[0] = 10e18;
-        keys[1] = KEY_LORENZ_RHO;    values[1] = 28e18;
+        keys[0] = KEY_LORENZ_SIGMA;
+        values[0] = 10e18;
+        keys[1] = KEY_LORENZ_RHO;
+        values[1] = 28e18;
 
         vm.prank(timelock);
 
@@ -192,8 +192,10 @@ contract ProtocolParametersTest is Test {
         bytes32[] memory keys = new bytes32[](2);
         uint256[] memory values = new uint256[](2);
 
-        keys[0] = KEY_LORENZ_SIGMA;  values[0] = 10e18;
-        keys[1] = bytes32(0);        values[1] = 28e18;
+        keys[0] = KEY_LORENZ_SIGMA;
+        values[0] = 10e18;
+        keys[1] = bytes32(0);
+        values[1] = 28e18;
 
         vm.prank(timelock);
         vm.expectRevert("ProtocolParameters: zero key");

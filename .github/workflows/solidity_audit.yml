@@ -36,6 +36,9 @@ jobs:
       - name: Install contract dependencies
         run: npm ci
 
+      - name: Check formatting (forge fmt --check)
+        run: forge fmt --check
+
       - name: Build contracts
         run: forge build --sizes
 

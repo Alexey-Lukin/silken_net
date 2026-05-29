@@ -29,7 +29,6 @@ import "@openzeppelin/contracts/utils/Nonces.sol";
  * [B-15] String length validation: clusterId <= 256 bytes (The Graph safety).
  */
 contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ERC20Permit, ERC20Votes {
-
     /// @notice Роль для карбування нових governance токенів.
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
@@ -84,11 +83,7 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @param amount Кількість токенів (wei).
     /// @param clusterId ID кластера лісу.
     /// @dev Reverts if totalSupply() + amount > MAX_SUPPLY.
-    function mint(address to, uint256 amount, string calldata clusterId)
-        external
-        onlyRole(MINTER_ROLE)
-        nonReentrant
-    {
+    function mint(address to, uint256 amount, string calldata clusterId) external onlyRole(MINTER_ROLE) nonReentrant {
         require(to != address(0), "SFC: zero recipient");
         require(amount > 0, "SFC: zero amount");
         require(bytes(clusterId).length > 0, "SFC: empty clusterId");
@@ -108,11 +103,11 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @param recipients Масив адрес отримувачів (max 200).
     /// @param amounts Масив сум для кожного отримувача.
     /// @param clusterIds Масив ID кластерів.
-    function batchMint(
-        address[] calldata recipients,
-        uint256[] calldata amounts,
-        string[] calldata clusterIds
-    ) external onlyRole(MINTER_ROLE) nonReentrant {
+    function batchMint(address[] calldata recipients, uint256[] calldata amounts, string[] calldata clusterIds)
+        external
+        onlyRole(MINTER_ROLE)
+        nonReentrant
+    {
         uint256 length = recipients.length;
         require(length > 0, "SFC: empty batch");
         require(length == amounts.length && length == clusterIds.length, "SFC: array length mismatch");
@@ -145,11 +140,7 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @param investor Адреса, з якої спалюються governance токени.
     /// @param amount Кількість токенів для спалювання (wei).
     /// @dev Reverts if investor balance < amount ("SFC: insufficient balance").
-    function slash(address investor, uint256 amount)
-        external
-        onlyRole(SLASHER_ROLE)
-        nonReentrant
-    {
+    function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE) nonReentrant {
         require(investor != address(0), "SFC: zero investor");
         require(amount > 0, "SFC: zero amount");
         require(balanceOf(investor) >= amount, "SFC: insufficient balance");
@@ -174,10 +165,7 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @dev Do NOT add external calls or callbacks to this function without adding nonReentrant guard.
     /// @dev Note: nonReentrant cannot be added here directly — it would conflict with the outer
     ///      nonReentrant guard on mint/slash/batchMint (nested nonReentrant reverts).
-    function _update(address from, address to, uint256 value)
-        internal
-        override(ERC20, ERC20Votes)
-    {
+    function _update(address from, address to, uint256 value) internal override(ERC20, ERC20Votes) {
         // Allow burn (slash) to bypass pause — to == address(0) means _burn() was called.
         // Minting (from == 0, to != 0) and transfers (from != 0, to != 0) are still blocked.
         if (paused() && to != address(0)) {
@@ -210,12 +198,7 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @notice Override nonces for ERC20Permit + ERC20Votes diamond inheritance resolution.
     /// @dev Both ERC20Permit and Votes (via ERC20Votes) inherit Nonces, creating a diamond
     ///      that requires explicit override in the derived contract.
-    function nonces(address owner)
-        public
-        view
-        override(ERC20Permit, Nonces)
-        returns (uint256)
-    {
+    function nonces(address owner) public view override(ERC20Permit, Nonces) returns (uint256) {
         return super.nonces(owner);
     }
 }

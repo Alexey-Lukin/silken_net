@@ -64,7 +64,9 @@ contract DeploySilkenNet is Script {
                 "SEC.1: ADMIN_ADDRESS must be a Gnosis Safe contract (unset REQUIRE_SAFE_ADMIN for testnet EOA)"
             );
         } else if (admin.code.length == 0) {
-            console.log("[SEC.1] WARNING: ADMIN is an EOA, not a Gnosis Safe. OK for testnet; for mainnet set a Safe + REQUIRE_SAFE_ADMIN=true.");
+            console.log(
+                "[SEC.1] WARNING: ADMIN is an EOA, not a Gnosis Safe. OK for testnet; for mainnet set a Safe + REQUIRE_SAFE_ADMIN=true."
+            );
         }
 
         vm.startBroadcast(deployerKey);
@@ -92,10 +94,7 @@ contract DeploySilkenNet is Script {
         console.log("SilkenTimelock deployed at:", address(timelock));
 
         // ─── 5. SilkenGovernor ────────────────────────────────────────
-        SilkenGovernor governor = new SilkenGovernor(
-            IVotes(address(sfc)),
-            timelock
-        );
+        SilkenGovernor governor = new SilkenGovernor(IVotes(address(sfc)), timelock);
         console.log("SilkenGovernor deployed at:", address(governor));
 
         // ─── 6. ProtocolParameters ────────────────────────────────────

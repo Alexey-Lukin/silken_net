@@ -17,7 +17,6 @@ import "@openzeppelin/contracts/governance/TimelockController.sol";
  * @custom:security-contact security@silkennet.io
  */
 contract SilkenTimelock is TimelockController {
-
     /// @notice Мінімальна затримка Timelock: 48 годин.
     /// @dev Достатньо для виявлення шкідливих пропозицій та організації veto.
     ///      Занадто коротко → ризик пропустити атаку; занадто довго → повільна реакція DAO.
@@ -28,17 +27,14 @@ contract SilkenTimelock is TimelockController {
     /// @param executors Масив адрес з правом виконання. address(0) = будь-хто може execute після delay.
     /// @param admin Адміністратор Timelock. Рекомендовано: address(0) для immutable governance,
     ///              або Gnosis Safe multisig для bootstrap period.
-    constructor(
-        address[] memory proposers,
-        address[] memory executors,
-        address admin
-    )
+    constructor(address[] memory proposers, address[] memory executors, address admin)
         TimelockController(
             MIN_DELAY_HOURS * 1 hours, // minDelay = 48 hours
             proposers,
             executors,
             admin
         )
-    // solhint-disable-next-line no-empty-blocks
+        // solhint-disable-next-line no-empty-blocks
+
     {}
 }
