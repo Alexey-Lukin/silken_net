@@ -12,9 +12,12 @@
 #                     "Статус without a readiness level" gap. All 50 docs pass today.
 #   HARD  (gates CI): the 00_06 §1 per-module TRL matrix has single-value cells
 #                     (1-9), never a range — 00_07 §1.1 Current TRL is single-select.
-#   ADVISORY (→ HARD post-sweep): no canon doc hosts a "🛑 Блокери" / "✅ Архів
-#                     вирішених блокерів" section — ALL blockers (open + closed) live
-#                     in 00_08 (decided 2026-05-29); canon keeps design substance as body prose.
+#   HARD  (gates CI): no canon doc hosts a blocker section (🛑/✅ + Блокери/Архів) —
+#                     ALL blockers live in 00_08 (sweep complete 2026-05-30); open ones
+#                     are reframed in-doc to non-blocker headings + a → 00_08 pointer.
+#   HARD  (gates CI): every canon NN_NN doc carries the standard skeleton — ✅ Статус
+#                     + top 🔗 Cross-references + auto-ToC (00_07 §8). Exempt: 00_00
+#                     (index), 00_08 (tracker / blocker home), *_appendix_*.
 # Pure file I/O, no Rails boot needed. Engines: lib/docs_linter.rb + lib/docs_toc.rb (unit-tested).
 require_relative "../docs_linter"
 require_relative "../docs_toc"
@@ -79,6 +82,13 @@ namespace :docs do
                      .select { |f| DocsToc.regen(File.read(f)).last }
                      .map { |f| File.basename(f, ".md") }
 
+    # [Standard conformance] HARD — every canon NN_NN doc carries the standard
+    # skeleton (✅ Статус + top 🔗 Cross-references + auto-ToC). Sweep done 2026-05-30.
+    conformance = files.flat_map do |f|
+      v = DocsLinter.conformance_violations(File.basename(f, ".md"), File.read(f))
+      v.empty? ? [] : [ "#{File.basename(f, '.md')}: missing #{v.join(', ')}" ]
+    end
+
     puts "docs:check_refs — #{files.size} docs scanned"
     if dangling.empty?
       puts "  doc links:      all resolve ✓"
@@ -114,12 +124,20 @@ namespace :docs do
       puts "  ToC DRIFT (#{toc_drift.size}) — run `bin/rails docs:toc`:"
       toc_drift.each { |d| puts "    ✗ #{d}" }
     end
+    if conformance.empty?
+      puts "  conformance:    every canon doc carries Статус + Cross-references + ToC ✓"
+    else
+      puts "  STANDARD non-conformance (#{conformance.size}):"
+      conformance.sort.each { |c| puts "    ✗ #{c}" }
+    end
 
     failed = []
     failed << "dangling doc links" unless dangling.empty?
     failed << "✅ Статус docs without a TRL" unless trl_missing.empty?
     failed << "TRL ranges in 00_06 §1 matrix" unless trl_ranges.empty?
     failed << "ToC drift (run docs:toc)" unless toc_drift.empty?
+    failed << "canon docs hosting blocker sections (→ 00_08)" unless blocker_sections.empty?
+    failed << "docs missing the standard skeleton" unless conformance.empty?
     abort("docs:check_refs FAILED — #{failed.join(', ')}") unless failed.empty?
   end
 

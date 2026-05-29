@@ -47,4 +47,22 @@ module DocsLinter
       heading if heading.match?(/Архів/i) || heading.match?(/блокер/i)
     end
   end
+
+  # [SSOT standard conformance] Each canon doc must carry the standard skeleton
+  # (00_07 §8): a ✅ Статус, a top 🔗 Cross-references, and an auto-ToC (TOC:AUTO
+  # markers). Exempt: 00_00 (SSOT index), 00_08 (tracker / blocker home), and
+  # *_appendix_* files. Caller passes basename (sans .md) + text; returns the
+  # missing element names so a CI gate can keep the swept tree from regressing.
+  CONFORMANCE_EXEMPT = /\A00_00_|\A00_08_|_appendix_/
+
+  def conformance_violations(basename, text)
+    return [] unless basename.match?(/\A\d\d_\d\d_/)
+    return [] if basename.match?(CONFORMANCE_EXEMPT)
+
+    miss = []
+    miss << "## ✅ Статус" unless text.include?("## ✅ Статус")
+    miss << "## 🔗 Cross-references" unless text.include?("## 🔗 Cross-references")
+    miss << "📑 auto-ToC markers" unless text.include?("<!-- TOC:AUTO:START -->")
+    miss
+  end
 end

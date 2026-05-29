@@ -65,4 +65,28 @@ RSpec.describe DocsLinter do
       expect(described_class.canon_blocker_sections(md)).to be_empty
     end
   end
+
+  describe ".conformance_violations" do
+    let(:ok) { "## ✅ Статус\n## 🔗 Cross-references\n## 📑 Зміст\n<!-- TOC:AUTO:START -->\n<!-- TOC:AUTO:END -->\n" }
+
+    it "passes a doc carrying Статус + top Cross-references + auto-ToC markers" do
+      expect(described_class.conformance_violations("03_05_Crypto", ok)).to be_empty
+    end
+
+    it "flags each missing standard element" do
+      expect(described_class.conformance_violations("01_01_Anchor", "## 🎯 Мета\nbody\n"))
+        .to contain_exactly("## ✅ Статус", "## 🔗 Cross-references", "📑 auto-ToC markers")
+    end
+
+    it "exempts the index, the tracker, and appendix docs" do
+      bare = "## 🎯 Мета\n"
+      expect(described_class.conformance_violations("00_00_SSOT_Index", bare)).to be_empty
+      expect(described_class.conformance_violations("00_08_Action_Plan_Tracker", bare)).to be_empty
+      expect(described_class.conformance_violations("02_03_appendix_legacy_breadboard", bare)).to be_empty
+    end
+
+    it "ignores non-canon filenames (README, etc.)" do
+      expect(described_class.conformance_violations("README", "x")).to be_empty
+    end
+  end
 end
