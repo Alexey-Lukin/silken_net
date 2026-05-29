@@ -8,17 +8,37 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 9 — Бізнес-візія та фази масштабування затверджені.
+- **Поточний TRL:** TRL 9 — Бізнес-візія та фази масштабування затверджені. Відкриті: SLASH-1 cause-gate, BIZ.* DAO governance → [00_08](00_08_Action_Plan_Tracker).
 - **Pivot v3 (тризонний анкер):** Стара моноліт-«Матрьошка» переписана на тризонну архітектуру (анод-гіроїд у заболоні + PEEK-терморозрив + катодний фланець на межі кори/повітря) — деталі [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK). Усуває тепловий міст крізь титан, кисневе голодування катода і неможливий моноліт-друк Ti+PEEK.
 - **Slashing v2 (травень 2026):** Жорстке "burn-on-degradation" правило з попередньої редакції замінено на **двокатегорійну модель** — окремо для людської недбалості та окремо для форс-мажору (див. §6).
-- **Пов'язані модулі:**
-  - 8-рівнева архітектура та конвеєр → [`00_02_System_Architecture_and_12_Chain_Pipeline`](00_02_System_Architecture_and_12_Chain_Pipeline)
-  - Резервування, Failover та fallback Web3 → [`00_03_Resilience_and_Failover_Policy`](00_03_Resilience_and_Failover_Policy)
-  - Стратегічна дорожня карта (TRL Matrix + HIL) → [`00_06_Strategic_Roadmap_and_HIL_Simulators`](00_06_Strategic_Roadmap_and_HIL_Simulators)
-  - Мультичейн архітектура → [`05_01_Multichain_Architecture`](05_01_Multichain_Architecture)
-  - Токеноміка SCC/SFC → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
-  - Бізнес-контракти NaaS → [`07_01_Nature_as_a_Service_Contracts`](07_01_Nature_as_a_Service_Contracts)
-  - Юніт-економіка та BOM → [`07_02_Unit_Economics_and_BOM`](07_02_Unit_Economics_and_BOM)
+
+---
+
+## 🔗 Cross-references
+
+| Ресурс | Опис |
+|--------|------|
+| [00_02_System_Architecture_and_12_Chain_Pipeline](00_02_System_Architecture_and_12_Chain_Pipeline) | 8-рівнева архітектура та 12-chain конвеєр |
+| [00_03_Resilience_and_Failover_Policy](00_03_Resilience_and_Failover_Policy) | Резервування, failover, Web3 fallback (Slashing/Insurance при недоступності мостів) |
+| [00_06_Strategic_Roadmap_and_HIL_Simulators](00_06_Strategic_Roadmap_and_HIL_Simulators) | TRL-матриця + HIL + дорожня карта |
+| [01_01_Coaxial_Gyroid_Topology_and_PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Тризонний анкер (Pivot v3) |
+| [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Мультичейн архітектура |
+| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка SCC/SFC; §Slashing — `ProtocolParameters` (GAMMA, PENALTY_FACTOR_MAX, penalty_factor_base) |
+| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | NaaS-контракти; §Insurance Pool & Etherisc — параметри страхування |
+| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Юніт-економіка та BOM |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | **Відкриті бізнес-блокери** (SSOT): SLASH-1, BIZ.* DAO governance backlog |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [1. Місія (The Mission)](#-1-місія-the-mission)
+- [2. Проблема Ринку (Market Opportunity)](#-2-проблема-ринку-market-opportunity)
+- [3. Науковий Підхід (The Science)](#-3-науковий-підхід-the-science)
+- [4. Дорожня Карта Масштабування (High-Level Roadmap)](#-4-дорожня-карта-масштабування-high-level-roadmap)
+- [5. Nature-as-a-Service (NaaS) — Бізнес-Модель](#-5-nature-as-a-service-naas--бізнес-модель)
+- [6. Slashing Policy v2 — Negligence vs Force Majeure](#-6-slashing-policy-v2--negligence-vs-force-majeure)
+- [7. "Proof of Growth" Консенсус](#-7-proof-of-growth-консенсус)
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -223,12 +243,3 @@ ForceMajeure event → InsurancePayoutWorker
 - On-device обчислення (mruby) запобігає підробці на рівні заліза.
 - Server-side верифікація (Ruby Float64, IEEE 754 — бітово ідентично firmware після [FW.7]) забезпечує redundant integrity checking.
 - Slashing protocol (§6) гарантує економічні наслідки за деградацію через халатність, **не караючи** інвесторів за форс-мажор.
-
----
-
-## 🔗 8. Cross-ref
-
-- `docs/05_03 §Slashing` — конкретні параметри `ProtocolParameters` registry (`GAMMA` progress-curve, `PENALTY_FACTOR_MAX`, `penalty_factor_base`).
-- `docs/07_01 §Insurance Pool & Etherisc` — операційні деталі парам. страхування.
-- `docs/00_03 §Web3 Fallback` — як Slashing/Insurance продовжує працювати при недоступності окремих мостів.
-- `docs/00_08 BIZ section` — open business questions та DAO governance backlog.
