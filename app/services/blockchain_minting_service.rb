@@ -100,6 +100,18 @@ class BlockchainMintingService < ApplicationService
       end
     end
 
+    # [SEC.13]: Skip minting for trees flagged `peaq_did_compromised` (emergency
+    # revocation runbook, 06_04 §5.4) — a forged peaq signing key could mint for a
+    # fake DID. SKIP (not raise) so one compromised tree never aborts the whole
+    # batch; the rest mints normally. Org/cluster txs (no tree) are never flagged.
+    compromised = @wallet_mapping.select { |_id, tx| tx.wallet&.tree&.peaq_did_compromised? }
+    if compromised.any?
+      Rails.logger.warn "🚫 [SEC.13] Mint skipped for #{compromised.size} peaq_did_compromised tree(s): " \
+                        "#{compromised.values.filter_map { |tx| tx.wallet.tree.did }.join(', ')}"
+      compromised.each_key { |id| @wallet_mapping.delete(id) }
+      return if @wallet_mapping.empty?
+    end
+
     # 1. ПІДКЛЮЧЕННЯ (The Alchemy Link) — Thread-cached RPC client
     client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
     # [E.2 ROLE SEPARATION]: Окремий ключ для MINTER_ROLE зменшує blast radius

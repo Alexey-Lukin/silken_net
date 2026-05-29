@@ -73,6 +73,27 @@ end
       end
     end
 
+    context "when the tree is peaq_did_compromised (SEC.13)" do
+      it "skips minting for the compromised tree (revocation guard)" do
+        tree = create(:tree, peaq_did_compromised: true)
+        wallet = tree.wallet
+        wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
+
+        tx = wallet.blockchain_transactions.create!(
+          amount: 100,
+          token_type: :carbon_coin,
+          status: :pending,
+          to_address: wallet.crypto_public_address,
+          locked_points: 1000
+        )
+
+        expect(mock_client).not_to receive(:transact)
+        described_class.call(tx.id)
+
+        expect(tx.reload.status).to eq("pending") # not minted — skipped
+      end
+    end
+
     context "with already confirmed transactions" do
       it "returns early when no pending transactions" do
         tree = create(:tree)

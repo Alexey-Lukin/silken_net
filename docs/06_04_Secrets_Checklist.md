@@ -349,7 +349,7 @@ bin/rails runner "
 
 #### Крок 4: Recovery
 
-> ⚠️ **НЕ реалізовано (tracked `00_08 SEC.13`, review 2026-05-29):** колонка `peaq_did_compromised` та guard-clause у `BlockchainMintingService` **відсутні в коді** — команди нижче впадуть (`unknown column`). **Mitigation під час інциденту (доки SEC.13 не зроблено):** використати Крок 2c (призупинити provisioning) + ротувати `ORACLE_MINTER_PRIVATE_KEY` (зупиняє будь-який мінтинг on-chain). Нижче — цільовий дизайн.
+> ✅ **Реалізовано (SEC.13, 2026-05-29):** колонка `trees.peaq_did_compromised` (structure.sql) + skip-guard у `BlockchainMintingService` (мінтинг **пропускає** flagged-дерева, не валить весь батч) + spec. Команди нижче робочі. Defense-in-depth під час інциденту: додатково Крок 2c (suspend provisioning) + ротація `ORACLE_MINTER_PRIVATE_KEY`.
 
 ```bash
 # Позначити потенційно компрометовані DIDs

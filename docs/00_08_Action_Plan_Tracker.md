@@ -602,7 +602,7 @@
 
 #### SEC.13 — peaq_did_compromised guard (revocation-runbook gap)
 - **P2** · 🤖 · → `06_04 §5.4`
-- 🔴 GAP (06-module review 2026-05-29): emergency-revocation runbook `06_04 §5.4 Крок 4` інструктує `update_all(peaq_did_compromised: true)` + guard у `BlockchainMintingService`, але **ні колонки, ні guard немає** → runbook впав би під час інциденту. Runbook позначено aspirational + interim mitigation (suspend provisioning + rotate minter key). · [ ] 🤖 колонка `trees.peaq_did_compromised` (schema squash → structure.sql + seeds) + mint guard + spec
+- ✅ закрито (2026-05-29): колонка `trees.peaq_did_compromised` (structure.sql) + skip-guard у `BlockchainMintingService` (пропускає flagged-дерева, не валить батч) + spec (minting 72 ex green). Runbook `06_04 §5.4` тепер робочий.
 
 ## 🔀 Cross-cutting · Doc-drift (DOC) — синх з `04_02 §11` divergence registry
 
