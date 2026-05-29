@@ -12,39 +12,47 @@
 
 ## ✅ Статус
 
-| Компонент | Файл | Статус |
-|-----------|------|--------|
-| SDL маніфест (статичний) | `deploy/akash/deploy.yaml` | ✅ Існує, плейсхолдери не заповнені |
-| SDL шаблон (Terraform) | `deploy/akash/deploy.yaml.tpl` | ✅ Існує, рендериться через `templatefile()` |
-| Terraform конфігурація | `terraform/akash/main.tf` | ✅ Існує, null_resource provisioner через Akash CLI |
-| Terraform змінні | `terraform/akash/variables.tf` | ✅ Повністю задокументовані з валідацією |
-| Terraform outputs | `terraform/akash/outputs.tf` | ✅ Виводить SDL path та наступні кроки |
-| Приклад конфігурації | `terraform/akash/terraform.tfvars.example` | ✅ Існує |
-| Реальний деплой (DSEQ) | `terraform/akash/akash-dseq.txt` | 🔴 Відсутній (деплой не проводився) |
-| Sidekiq у SDL | `deploy/akash/deploy.yaml` (`job` сервіс) | ✅ Додано (BLOCKER-2 виправлено) |
-| Grafana Alloy у SDL | `deploy/akash/deploy.yaml` (`alloy` сервіс) | ✅ Додано (OBS.1 — Grafana Cloud SaaS) |
-| Alloy config | `deploy/akash/config.alloy` | ✅ Створено |
-| Cloud SQL connectivity | Cloud SQL Auth Proxy в контейнері | ✅ Вирішено (BLOCKER-1) |
-| Redis connectivity | Upstash serverless Redis (TLS) | ✅ Вирішено (BLOCKER-1) |
-| Ingress Anchor (GCP) | `e2-micro` зі статичним IP | ✅ Замінює важкі web VM |
-| Multi-replica ActionCable | Solid Cable (PostgreSQL LISTEN/NOTIFY) | ✅ Вирішено (BLOCKER-8) |
-| GHCR image mirror | `.github/workflows/mirror-ghcr.yml` | ✅ Вирішено (BLOCKER-4 виправлено) |
-| HTTPS / TLS термінація | `deploy/akash/deploy.yaml` | 🟡 Порт `443` оголошено в SDL; Rails-side `force_ssl`/`assume_ssl` + HSTS активні; TLS termination через Akash ingress або Cloudflare ще не конфігурована (BLOCKER-5) |
-| Rails security hardening | `config/environments/production.rb`, `config/initializers/` | ✅ `force_ssl`, `assume_ssl`, HSTS (1рік), `X-Frame-Options: DENY`, CSP, Permissions-Policy, session cookie hardening |
-
-- **Поточний TRL:** TRL 5 — SDL повністю конфігурований (`web` + `job` + `alloy`), DB+Redis connectivity вирішені (Cloud SQL Auth Proxy + Upstash TLS), GHCR mirror активний; однак жоден реальний деплой на Akash Mainnet не проведений — TRL 6 підтверджується після першого успішного деплою
-- **Пов'язані модулі:**
-  - Розгортання → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
-  - Observability → [`06_03_Prometheus_Observability`](06_03_Prometheus_Observability)
-  - Бізнес-логіка → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
+- **Поточний TRL:** TRL 5 — SDL повністю конфігурований (`web` + `job` + `alloy`), DB+Redis connectivity вирішені (Cloud SQL Auth Proxy + Upstash TLS), GHCR mirror активний; жоден реальний деплой на Akash Mainnet ще не проведений (TRL 6 — після першого успішного деплою).
+- **Конфігуровано:** Cloud SQL Auth Proxy, Upstash Redis (TLS), Solid Cable (multi-replica ActionCable), GHCR mirror, Ingress Anchor, Rails security hardening (`force_ssl`/HSTS/CSP).
+- **Відкрите:** SDL secrets, TLS термінація, GCS state bucket, перший Mainnet деплой → [`00_08`](00_08_Action_Plan_Tracker) (S4.3, INF.4, S6.1).
 
 ---
 
-## 🛑 Активні Блокери
+## 🔗 Cross-references
 
-> Вирішені блокери (BLOCKER-1, 2, 4, 8) перенесені у секцію **"✅ Архів вирішених блокерів"** наприкінці документа.
+| Ресурс | Зв'язок |
+|---|---|
+| `deploy/akash/deploy.yaml` · `deploy.yaml.tpl` | SDL: `web` + `job` + `alloy` сервіси |
+| `deploy/akash/config.alloy` | Grafana Alloy scrape + remote_write |
+| `terraform/akash/` | SDL templating + Akash CLI provisioner |
+| [06_01_Deployment_Kamal_Terraform](06_01_Deployment_Kamal_Terraform) | GCP/Kamal, Ingress Anchor |
+| [06_03_Prometheus_Observability](06_03_Prometheus_Observability) | Alloy → Grafana Cloud |
+| [06_04_Secrets_Checklist](06_04_Secrets_Checklist) | SDL secrets — SSOT |
+| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (що деплоїться) |
+| [06_07_CICD_and_Runbook_Index](06_07_CICD_and_Runbook_Index) | mirror-ghcr, deploy pipeline |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | S4.3, INF.4, S6.1 |
 
-### 🔴 BLOCKER-3: Секрети SDL не заповнені — Rails не стартує + Web3 воркери у DeadSet
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [Відкриті передумови деплою та Runbooks](#-відкриті-передумови-деплою-та-runbooks)
+- [1. SDL Маніфест — Розбір "Як Є"](#1-sdl-маніфест--розбір-як-є)
+- [2. Змінні Середовища (Environment Variables)](#2-змінні-середовища-environment-variables)
+- [3. Terraform Конфігурація](#3-terraform-конфігурація)
+- [4. Процес Деплою (CLI Commands)](#4-процес-деплою-cli-commands)
+- [5. Порівняння: Akash vs GCP Production](#5-порівняння-akash-vs-gcp-production)
+- [6. Відповідність Kamal → Akash](#6-відповідність-kamal--akash)
+- [7. Інтеграція у Загальну Архітектуру Gaia 2.0](#7-інтеграція-у-загальну-архітектуру-gaia-20)
+- [8. Дорожня Карта (Path to TRL 5 → 9)](#8-дорожня-карта-path-to-trl-5--9)
+<!-- TOC:AUTO:END -->
+
+---
+
+## ⚙️ Відкриті передумови деплою та Runbooks
+
+> Відкриті передумови першого деплою + операційні runbooks. Статуси трекаються в [`00_08`](00_08_Action_Plan_Tracker) (S4.3, INF.4, S6.1).
+
+### Секрети SDL не заповнені — Rails не стартує + Web3 воркери у DeadSet
 
 **Статус:** Критичний. Блокує будь-який тест деплою.
 
@@ -163,7 +171,7 @@ akash provider lease-logs --service alloy ...
 
 ---
 
-### 🟡 BLOCKER-5: TLS термінація не конфігурована
+### TLS термінація не конфігурована
 
 **Статус:** Середній. Порт `443` вже оголошений у SDL — потрібна конфігурація Akash ingress або Cloudflare для TLS термінації.
 
@@ -306,7 +314,7 @@ coap-client -m get coap://$INGRESS_IP:5683/health -v 6
 
 ---
 
-### 🟡 BLOCKER-6: GCS bucket для Terraform State — потрібно створити вручну
+### GCS bucket для Terraform State — потрібно створити вручну
 
 **Статус:** Середній. Chicken-and-egg проблема.
 
@@ -322,7 +330,7 @@ backend "gcs" {
 
 ---
 
-### 🟡 BLOCKER-7: Akash не має офіційного Terraform provider
+### Akash не має офіційного Terraform provider
 
 **Статус:** Середній. Архітектурне обмеження.
 
@@ -1060,41 +1068,3 @@ L1  Biophysics            Ti-6Al-4V EBFC            (не залежить ві�
 | **TRL 7** 🎯 | GCS bucket для Terraform state | 🟡 BLOCKER-6 (створити вручну перед `terraform init`) |
 | **TRL 8** | Production деплой з Grafana Cloud метриками + alerting | Потребує TRL 7 + GRAFANA_* secrets |
 | **TRL 9** | Automated failover GCP ↔ Akash + повна CI/CD інтеграція | — |
-
----
-
-## ✅ Архів вирішених блокерів
-
-> Деталі реалізованих рішень для довідки.
-
-### ✅ BLOCKER-1: Мережева ізоляція — Cloud SQL та Redis (Вирішено)
-
-- **Cloud SQL:** Cloud SQL Auth Proxy запускається в Docker-контейнері (через `bin/docker-entrypoint`). Тунелює трафік через Google Cloud API (HTTPS) — публічний IP на Cloud SQL не потрібен (`ipv4_enabled=false`). `DATABASE_URL` вказує на `127.0.0.1:5432`.
-- **Redis:** GCP Memorystore замінено на **Upstash** serverless Redis з публічними TLS-ендпоінтами (`rediss://`). Free tier достатній до TRL 8.
-
-### ✅ BLOCKER-2: Sidekiq `job` сервіс в SDL (Вирішено)
-
-SDL `deploy/akash/deploy.yaml` визначає три сервіси: `web` (Puma + Thruster), `job` (Sidekiq, 9 черг, strict priority), `alloy` (Grafana Alloy → Grafana Cloud). Всі 36+ воркерів (telemetry, Web3, slashing, OTA, L1 anchoring) запускаються на Akash.
-
-### ✅ BLOCKER-4: Docker образ — GHCR mirror (Вирішено)
-
-`.github/workflows/mirror-ghcr.yml` автоматично збирає та пушить образ `ghcr.io/alexey-lukin/silken_net:latest` (public) після CI на `main` та на GitHub Release. SDL та Terraform variable `docker_image` посилаються на GHCR. Kamal + GCP Artifact Registry залишаються для GCP деплою.
-
-### ✅ BLOCKER-8: Multi-replica ActionCable (Вирішено — Solid Cable)
-
-**Solid Cable** (`adapter: solid_cable`, `config/cable.yml`) — нативний Rails 8.1 adapter, PostgreSQL LISTEN/NOTIFY як pub/sub брокер. Виділена БД `silken_net_production_cable` (без навантаження на основну). При `deployment.web.count = N` всі репліки отримують broadcasts через LISTEN/NOTIFY < 1 мс. Sticky sessions не потрібні.
-
----
-
-## 🔗 Cross-references
-
-| Файл / Документ | Зв'язок |
-|---|---|
-| `deploy/akash/deploy.yaml` · `deploy.yaml.tpl` | SDL: `web` + `job` + `alloy` сервіси |
-| `deploy/akash/config.alloy` | Grafana Alloy scrape + remote_write |
-| `terraform/akash/` | SDL templating + Akash CLI provisioner |
-| `06_01_Deployment_Kamal_Terraform` | GCP/Kamal, Ingress Anchor |
-| `06_03_Prometheus_Observability` | Alloy → Grafana Cloud |
-| `06_04_Secrets_Checklist` | SDL secrets — SSOT |
-| `06_07_CICD_and_Runbook_Index` | mirror-ghcr, deploy pipeline |
-| `00_08_Action_Plan_Tracker` | S4.3, INF.4, S6.1 |
