@@ -193,7 +193,7 @@
 - ✅ saturating counter `tinyml_threshold_invalid_count` (відкидає NaN/out-of-range/інверсію OTA payload) + 7 host-тестів. · [ ] 🔗 wiring до LoRa packet (перерозподіл бітів) · [ ] 🔗 backend Prometheus `tinyml_threshold_invalid_total{soldier_did}` + Grafana
 
 #### FW.7 — Float vs BigDecimal divergence (TRL 6 mitigation)
-- **P1** · 👤 · → `03_04 §BLOCKER-4`
+- **P1** · 👤 · → `03_04 §5`
 - ✅ backend `Attractor` BigDecimal→Float (IEEE 754, ідентично firmware → DCI однакові Z). ⚠️ ARM↔x86 Float drift лишається; категоричний tolerance band компенсує для TRL 6, строгий consensus → `ARCH.18`. · [ ] 👤 верифікувати `MRB_USE_FLOAT` при lab-тесті
 
 #### FW.8 — CRITICAL_Z_MIN/MAX hardcoded
@@ -205,7 +205,7 @@
 - Після FW.1. Статичний ключ при Factory Flashing → немає rotation без re-flash (GDPR/ISO 27001/NIST SP 800-57). Рішення: Hash Ratchet KDF (`CMD:ROTATE_KEY` → `K_current`→`K_next` AES-KDF, PFS). · [ ] 🔗 дизайн протоколу + CoAP command + cluster ACK + Flash/RTC storage + ECDH alt
 
 #### FW.19 — Float32 vs Float64 mruby compile flags
-- **P2** · 👤 · → `03_04 §BLOCKER-4`
+- **P2** · 👤 · → `03_04 §5`
 - ✅ tolerance band «by design» (категорична `check_z_divergence!`); compile-flag verify — lab. mruby без `MRB_USE_FLOAT`=double, з=float32; ±5-10 units на Z → bio_status зсув. · [ ] 👤 верифікувати `MRB_USE_FLOAT` (Makefile/mrbconf.h) при lab-тесті
 
 #### FW.20 + FW.20-S2 — Time Sync (Rails ↔ Queen ↔ Soldier)
@@ -241,7 +241,7 @@
 - ✅ warm/cold paths → єдиний 7-arg `calculate_state`; `Load_Lorenz_Seed()` (K_seed Flash, magic `LSED`) + `Derive_Cold_Start_State()` (placeholder hash, TODO mbedTLS lab) + 11 host-тестів. (SEC.11 cutover зламав стару C-bridge сигнатуру → `BIO_STATUS_VM_ERROR`; новий bytecode не OTA-деплоївся до фіксу.) · [ ] 🔗 після FW.30 — FW.5 B+ (EMA delta_t/vcap як args[5..6]) незалежний
 
 #### FW.31 — DCI: числовий tolerance band у `check_z_divergence!` (feature-flag flip)
-- **P2** · 👤+🤖 · → `03_04 §BLOCKER-2`
+- **P2** · 👤+🤖 · → `03_04 §7.1`
 - Після SEC.11 byte-identical `(x₀,y₀,z₀)` + ідентична Float math (drift ARM↔x86 <1e-12). check лишається категоричним; числовий `|Δz|<ε` (ε=0.001) готовий до flip → числовий fraud-detect (replay з правильним status, неправильним Z magnitude). · [ ] 👤 lab: однакові тест-вектори STM32 vs x86, `|Δz|` distribution (N=10k) · [ ] 🤖 оновити `03_04 §BLOCKER-2` з drift+ε (lab-blocked: STM32WLE5JC REVB; ε=0.001 default)
 
 #### FW.42 — Vcap guard для fauna acoustic sampling (brownout protection)

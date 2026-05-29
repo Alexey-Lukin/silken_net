@@ -14,231 +14,36 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — mruby-скрипт написаний, виконується у VM на мікроконтролері
-- **Пов'язані модулі:**
-  - Життєвий Цикл Прошивки та DMA → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
-  - TinyML Акустичний Інференс → [`03_03_TinyML_Acoustic_Inference`](03_03_TinyML_Acoustic_Inference)
-  - Апаратне симетричне шифрування та Безпека → [`03_05_Hardware_Symmetric_Crypto_and_Security`](03_05_Hardware_Symmetric_Crypto_and_Security)
-  - Бізнес-Логіка та Сервіси → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
-  - Proof of Growth Pipeline → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
+- **Поточний TRL:** TRL 6 — Lorenz атрактор bitwise-identical firmware↔backend (FW.7 Float parity, 50k fuzz); SEC.11 seed provenance закрито. Канонічний дім Lorenz-констант (§1.2). Відкрите: numeric DCI ε flip (`FW.31`, deferred) → [`00_08`](00_08_Action_Plan_Tracker).
 
 ---
 
-### ⚙️ Стан Реалізації
+## 🔗 Cross-references
 
-| Компонент | Стан |
-|---|---|
-| **mruby VM ініціалізація** (`mrb_open()` один раз при старті) | ✅ Реалізовано |
-| **Байт-код (`lorenz_bytecode[]`) вбудований у Flash** | ✅ Реалізовано |
-| **OTA-оновлення контракту** (MRUBY_CONTRACT_FLASH_ADDR = `0x0803F000`) | ✅ Реалізовано |
-| **GC Arena save/restore** (запобігання heap fragmentation) | ✅ Реалізовано |
-| **Обробка mruby виключень** (`mrb->exc` перевірка) | ✅ Реалізовано |
-| **Lorenz math (σ, ρ, β, DT, ITERATIONS)** | ✅ Реалізовано |
-| **Sigma/Rho clamp** (захист від вибуху) | ✅ Реалізовано |
-| **Z → growth_points конвертація** | ✅ Реалізовано |
-| **Bit-packing `[Status:2&#124;GrowthPoints:6]`** | ✅ Реалізовано |
-| **Backend дзеркало** (`SilkenNet::Attractor` у Rails) | ✅ Реалізовано |
-| **`delta_t` та `vcap` як β-пертурбація атрактора** | ✅ Реалізовано (FW.5 + FW.5 B+) — β обчислюється з `delta_t_s` і `vcap_mv`; firmware та backend дзеркальні; 500-case parity fuzz 0 mismatches. **FW.5 B+ final step (2026-05-02):** firmware C-bridge передає **EMA-згладжені** значення (`EMA_Get_DeltaT_Sec()` / `EMA_Get_Vcap_Mv()`) у mruby `args[5..6]` після warmup (`count ≥ EMA_WARMUP_CYCLES = 3`); до того — нейтральні defaults (60 c / 3300 mV) = baseline → β-перетурбація = 0. 6 нових host-тестів у `firmware/test/test_soldier_logic.c` (cold-boot, warmup-phase, post-warmup forwarding, boundary clamps).
-| **Збереження стану (x, y, z) між циклами сну** | ✅ Реалізовано (FW.6) — RTC DR16-DR18 + DR19 маркер валідності |
-| **Float32 vs Float64 верифікація** | ✅ Виправлено — backend переведено на Float (IEEE 754), ідентично firmware |
-| **Коментар OPTIMAL_Z_TARGET (20.0 vs 29.0)** | ✅ Виправлено — коментар виправлено на 29.0 |
-| **`deviation.to_i` (Truncation замість Round)** | ✅ Виправлено — `deviation.round` |
-| **K_seed-derived `(x₀, y₀, z₀)` cold start (заміна `chaos_seed`/DID-as-seed)** | ✅ Реалізовано (SEC.11, 2026-05-02) — `SilkenNet::SeedDerivation` (HKDF + HMAC), firmware mbedTLS bridge, host-parity test 13 examples |
-| **Єдина mruby сигнатура `calculate_state(x_prev, y_prev, z_prev, …)`** | ✅ Реалізовано (SEC.11 + FW.30) — `calculate_state_continued` видалено, dual-path C-міст у `firmware/soldier/main.c` замінено на single-path 7-arg виклик `calculate_state(x,y,z,temp,acoustic,delta_t_s,vcap_mv)`. Cold-start через K_seed замість `chaos_seed`. 11 нових host-тестів |
-| **`telemetry_logs.lorenz_state_x/y/z` + `cold_start_flag` (chaining server-side)** | ✅ Реалізовано (SEC.11) — `TelemetryUnpackerService` persist'ить tail кожного uplink; наступний пакет дзеркалить firmware-side RTC continuation |
+| Ресурс | Опис |
+|--------|------|
+| [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Soldier lifecycle; RTC DR16-18 Lorenz state (FW.6) |
+| [03_03_TinyML_Acoustic_Inference](03_03_TinyML_Acoustic_Inference) | `acoustic_events` → σ-пертурбація |
+| [03_05_Hardware_Symmetric_Crypto_and_Security](03_05_Hardware_Symmetric_Crypto_and_Security) | §3.4в K_seed derivation (SEC.11, HKDF/HMAC) |
+| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | TelemetryUnpacker, SeedDerivation, DCI check |
+| [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Dual Computation Integrity (Z крос-верифікація) |
+| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | CRITICAL_Z_MIN/MAX → slashing |
+| [08_02_Cybernetic_and_Mathematical_Validation](08_02_Cybernetic_and_Mathematical_Validation) | Матем. верифікація числової стабільності |
+| `firmware/bio_contracts/bio_contract.rb` · `app/services/silken_net/attractor.rb` · `seed_derivation.rb` | mruby + Rails-дзеркало (Float parity); SEC.11 entry-point |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.31 numeric-DCI flip (deferred); FW.45 fixed-point hardening |
 
----
+## 📑 Зміст
 
-## 🛑 Блокери
-
----
-
-### ✅ BLOCKER-1 (Закрито FW.5): β-Пертурбація від EBFC-Метаболізму — РЕАЛІЗОВАНО
-
-**Статус:** ✅ **Реалізовано (FW.5, 2026-04-30).** Firmware `bio_contract.rb` та backend `SilkenNet::Attractor` оновлені координовано. 500-case parity fuzz: 0 mismatches.
-
-**Коротко:** `delta_t_s` (час заряду EBFC, секунди) та `vcap_mv` (напруга суперконденсатора, mV) більше не ігноруються — вони змінюють параметр β (геометрія конвективної клітини Лоренца):
-
-```ruby
-# firmware/bio_contracts/bio_contract.rb та app/services/silken_net/attractor.rb
-BETA_DELTA_T_COEFF = 0.0001  # 1 с швидше за baseline → β +0.0001
-BETA_VCAP_COEFF    = 0.001   # 1 mV вище nominal → β +0.001
-BETA_LIMITS        = (2.0..4.0)
-BASELINE_DELTA_T_S = 60      # 60 с очікуваний час заряду EBFC
-NOMINAL_VCAP_MV    = 3300    # 3.3 V nominal
-
-delta_t_improvement_s = [0, BASELINE_DELTA_T_S - delta_t_s].max
-vcap_centered = vcap_mv - NOMINAL_VCAP_MV
-local_beta = (BASE_BETA + (delta_t_improvement_s * BETA_DELTA_T_COEFF) +
-                          (vcap_centered * BETA_VCAP_COEFF)).clamp(*BETA_LIMITS)
-```
-
-**Сигнатура (post-SEC.11 hard cutover):**
-- Firmware: `calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s = 60, vcap_mv = 3300) → [payload_byte, x_final, y_final, z_final]`
-- Backend: `SilkenNet::Attractor.calculate_z_from_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s = 60, vcap_mv = 3300) → [z_rounded, x_final, y_final, z_final]`
-- C-side подає `(x_prev, y_prev, z_prev)` з одного з двох джерел: (а) RTC DR16-DR18 (warm STOP2 continuation, FW.6); або (б) `(x₀, y₀, z₀) = unpack_signed_unit_floats(HMAC-SHA256(K_seed, "init|" || epoch_day_be)[0..23])` з per-device `K_seed` у Flash (cold start після VBAT loss, SEC.11). DID **більше не є** входом атрактора — лише identifier.
-- `TelemetryUnpackerService` дзеркально: на cold-start derive із `hardware_keys.lorenz_seed_hex` (через `SilkenNet::SeedDerivation`); на наступних uplink — з попереднього `telemetry_logs.lorenz_state_x/y/z`.
-
-**Вплив на токеноміку:**
-- Здорові дерева з активним EBFC (швидший заряд + стабільна vcap) систематично отримують ~10–15% більше GP.
-- Slashing-межі (`CRITICAL_Z_MIN/MAX`) незмінні — `BETA_LIMITS=[2.0, 4.0]` не виштовхує систему за межі атрактора.
-
-**Фізична інтерпретація:** β — геометрія конвективної клітини соку. Активний EBFC → швидший ксилемний потік → більше β → траєкторія тяжіє до `OPTIMAL_Z_TARGET=29.0`.
-
-**Закриті пункти (всі ✅):**
-- [x] 🤖 Firmware: `bio_contract.rb` з β-perturbation (`delta_t_s`, `vcap_mv`)
-- [x] 🤖 Backend: `SilkenNet::Attractor` — дзеркальна логіка (Float)
-- [x] 🤖 Backend: `TelemetryUnpackerService` передає `metabolism_s`/`voltage_mv`
-- [x] 🤖 Тести: 500-case parity fuzz firmware vs backend Z-divergence < 0.0001 (0 mismatches)
-- [x] 🤖 Документація: оновлено §3 алгоритм + §2.1 вхідні параметри + §5.1 таблиця порівняння
-
-**Залишається:**
-- [ ] Firmware C-код: передавати EMA-згладжені `delta_t_ms`/`vcap_mv` з RTC DR10/DR12 у args mruby (FW.21 EMA вже є, передача як args[5..6] — окремий крок)
-- [ ] Калібрування коефіцієнтів `BETA_DELTA_T_COEFF`/`BETA_VCAP_COEFF` на денdrometric-baselines (академічний партнер ЧНУ)
-
----
-
-### ✅ BLOCKER-2 (Закрито SEC.11): DID-as-seed → Dual Computation Integrity bypass — ВИРІШЕНО
-
-**Статус:** ✅ **Реалізовано (SEC.11, 2026-05-02, hard cutover, pre-prod).** Firmware `bio_contracts/bio_contract.rb` та backend `SilkenNet::Attractor` + `SilkenNet::SeedDerivation` оновлені координовано. 13 host-parity examples (OpenSSL ↔ mbedTLS), 17 backend specs, 0 mismatches на детермінованих векторах і 100-case fuzz.
-
-**Коротко (історично):** До SEC.11 firmware стартував атрактор з `chaos_seed = HRNG()` (недетермінований для backend), а server-side mirror `SilkenNet::Attractor.calculate_z(did, …)` використовував публічний 4-байтний DID як deterministic seed. Це означало, що:
-
-1. **Публічний seed → публічна траєкторія.** DID їде відкритим текстом у заголовку LoRa-пакета. Атакер з open-source формулою Лоренца обчислював очікуваний Z для будь-якого дерева → підробляв StatusByte → `check_z_divergence!` мовчав.
-2. **Кореляція сусідніх DID.** Послідовно видані DID давали майже ідентичні перші ~30 ітерацій Ейлера → знижена статистична ентропія.
-3. **Identifier-as-key антипатерн.** DID — *identifier*, а не *key*. Identifier має бути входом до KDF, ніколи виходом.
-4. **Відсутність forward secrecy.** Одне дерево все життя стартувало з тієї ж точки.
-
-Наслідок: `check_z_divergence!` був вимушено **категоричним** (homeostasis/stress/anomaly enum), а не числовим, бо публічний seed не дозволяв безпечно використовувати точне `(server_z − device_z).abs < ε`.
-
-**Прийнятий дизайн:** гібрид варіантів **A + B + D** —
-
-```ruby
-# A) Per-device secret seed, derive once at provisioning:
-K_seed = HKDF_SHA256(
-  ikm:  ENV["PROVISIONING_MASTER_KEY"],
-  salt: "silken-lorenz-v1",                # ВІДМІННИЙ від AES salt → domain separation
-  info: "silken-lorenz-seed|#{DID}",       # ВІДМІННИЙ info-string від AES key
-  len:  32
-)
-
-# B) Daily epoch rotation на кожному cold start:
-epoch_day = Time.now.utc.to_i / 86_400
-digest    = HMAC_SHA256(K_seed, "init|" + [epoch_day].pack("Q>"))
-x0 = bytes_to_signed_unit_float(digest[ 0,  8])    # ∈ [-1, +1]
-y0 = bytes_to_signed_unit_float(digest[ 8,  8])
-z0 = bytes_to_signed_unit_float(digest[16,  8])
-
-# D) Stateful continuation (FW.6) — у норму cold start не виконується:
-(x_prev, y_prev, z_prev) ← RTC DR16-DR18 + DR19 magic "LZST"
-```
-
-Варіант **C** (per-packet seed) відкинуто — overhead на STM32WLE5JC не виправдовує marginal security gain над B + continuation.
-
-**Реалізація (hard cutover, без shim'ів):**
-- Backend: `app/services/silken_net/seed_derivation.rb` (HKDF + HMAC + signed-unit-float unpack), `HardwareKey#binary_lorenz_seed` (AR Encryption non-deterministic, validated `presence: true`), `Attractor.calculate_z_from_state(x₀, y₀, z₀, …)` (єдиний entry-point), `TelemetryUnpackerService` (raises `MissingLorenzSeedError` без `K_seed`; persist `lorenz_state_x/y/z` + `cold_start_flag`; chain continuation з попереднього tail).
-- Firmware: `bio_contract.rb#calculate_state(x_prev, y_prev, z_prev, …)` (єдина сигнатура; chaos_seed/DID-derive code path видалено), C-міст у `firmware/soldier/main.c` оновлено (FW.30): unified 7-arg `mrb_funcall_argv("calculate_state", 7, ...)` для обох warm/cold paths; `Load_Lorenz_Seed()` зчитує K_seed з Flash (`FLASH_SEED_ADDR = FLASH_KEY_ADDR + 36`, magic `"LSED"`); `Derive_Cold_Start_State()` — placeholder hash деривація (TODO: mbedTLS HMAC-SHA256).
-- Tests: `firmware/test/test_seed_derivation.c` (OpenSSL host-parity, 13 examples), `firmware/test/test_soldier_logic.c` (11 нових FW.30 тестів: 6 seed loading + 4 cold-start derivation + 1 C-bridge 7-arg), `spec/services/silken_net/seed_derivation_spec.rb` (17 examples).
-
-**Threat model post-SEC.11:** sniff LoRa → відтворити Z ❌ (без `K_seed` непередбачуваний); replay вчорашнього пакета ❌ (`epoch_day` змінився); compromise одного `K_seed` ⚠️ (вузол уразливий ≤ 24 год, інші — ні); compromise `PROVISIONING_MASTER_KEY` 🚨 (cascading — окрема rotation strategy SEC.9).
-
-**Вплив на DCI:** обидві сторони стартують з byte-identical `(x₀,y₀,z₀)`. Float divergence між ARM↔x86 IEEE-754 за 250 ітерацій < 1e-12 (емпірично, FW.7 closure). `check_z_divergence!` зберігає категоричну невідповідність як default; **[FW.31, 2026-05-02]** числовий tolerance band (`< 0.001`) реалізовано під feature-flag `GAIA_DCI_NUMERIC_TOLERANCE` + `GAIA_DCI_NUMERIC_EPSILON` (constant `TelemetryUnpackerService::DEFAULT_DCI_EPSILON = 0.001`, malformed ENV → graceful fallback). Numeric branch виконується ON-TOP-OF категоричного (не замінює) і лише коли `attributes[:device_z]` присутній — сьогодні LoRa packet 21B не несе raw Z, тож branch інертний у production. Стає активним після post-FW.2 packet revision АБО після лабораторного вимірювання реального drift на target HW (STM32WLE5JC vs GCP x86-64) → flip `GAIA_DCI_NUMERIC_TOLERANCE=true` через Kamal env, без code change. 6 spec examples (`[FW.31] numeric tolerance band` describe).
-
-**Cross-ref:** [00_08 SEC.11](00_08_Action_Plan_Tracker), [03_05 §3.4в Lorenz K_seed Derivation](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-), [04_02 SilkenNet::SeedDerivation](04_02_Business_Logic_and_Services), [05_02 Dual Computation Integrity](05_02_Proof_of_Growth_Pipeline).
-
----
-
-### 🧮 [FW.31] Numeric Tolerance Band — Flip Procedure (deferred to lab measurement)
-
-**Контекст:** SEC.11 закрив BLOCKER-2 і відкрив технічну можливість використовувати **числовий** DCI-перевірний крок (`|server_z − device_z| < ε`) замість суто **категоричного** enum-match'у. Числова перевірка значно потужніша: дозволяє ловити replay-атаки з правильним StatusByte, але неправильною Z-magnitude (наприклад, attacker викликав легітимний enum через clamp-логіку, але справжня траєкторія розійшлася). Категорична перевірка пропускає такі сценарії.
-
-**Стан коду (✅ ready, awaits lab data):** Feature-flag реалізовано у [`TelemetryUnpackerService#check_z_divergence!`](04_02_Business_Logic_and_Services) (2026-05-02). У production-середовищі branch неактивний — це навмисно. Активація через Kamal env, **без code change та без redeploy** контейнера.
-
-**ENV-контракт:**
-
-| ENV | Default | Тип | Семантика |
-|-----|---------|-----|-----------|
-| `GAIA_DCI_NUMERIC_TOLERANCE` | unset → `false` | Boolean (`true`/`1`/`yes`) | Вмикає numeric branch **on top of** категоричної перевірки (не замінює). Категоричний enum-match завжди виконується першим. |
-| `GAIA_DCI_NUMERIC_EPSILON` | `0.001` (constant `TelemetryUnpackerService::DEFAULT_DCI_EPSILON`) | Float (parsed via `Float()`) | Tolerance threshold. Malformed/non-numeric value → graceful fallback до DEFAULT_DCI_EPSILON + `Rails.logger.warn`. |
-
-**Гейт активації — `device_z` має бути в payload:**
-
-Numeric branch виконується **лише** коли `attributes[:device_z]` присутній. Сьогодні LoRa packet 21B (`Soldier → Queen`) **не несе** raw Z — фірмварний `bio_contract.rb#calculate_state` повертає тільки `status_byte = [PanicFlag:1 | Status:2 | GrowthPoints:5]` (FW.29-PACK). Branch стає активним після одного з:
-
-1. **FW.2 CCM transition** (24-байтний пакет, [`03_05 §3.2 BLOCKER-2`](03_05_Hardware_Symmetric_Crypto_and_Security)) — якщо при перепакуванні зарезервувати ≥2 байти на стиснутий Z (наприклад, [E.7 ARCH.22 lambda-exponent](05_02_Proof_of_Growth_Pipeline)).
-2. **Окремий пакет-варіант ML2** — рідкісний uplink (~1/добу) із повним Z-snapshot для калібровки.
-3. **Server-side surrogate** — backend сам обчислює `device_z` зі збереженого `(x_prev, y_prev, z_prev)` chain'у + telemetry inputs, як референс для self-check (це робить numeric branch ефективно lab-only).
-
-До цього часу — branch інертний, але код вже staged у production без поведінкової зміни.
-
-**Lab measurement protocol (pre-flip gate):**
-
-Потрібно фактично виміряти ARM↔x86 IEEE-754 drift на цільовому залізі, перш ніж довірити numeric ε фінансовим рішенням (slashing, mint). Емпірика [FW.7](../00_08_Action_Plan_Tracker.md) дала `< 1e-12` теоретично — але без instrumented testing цифру не можна "закладати в конституцію".
-
-| Крок | Дія | Артефакт |
-|------|-----|----------|
-| 1 | Згенерувати N=10 000 детермінованих тест-векторів через `SilkenNet::SeedDerivation` для синтетичних `K_seed` (різні per-vector) + випадкові `(temp, acoustic, delta_t_s, vcap_mv)` у валідних діапазонах | `firmware/test/test_dci_drift_vectors.json` (gitignored, recreatable) |
-| 2 | Прогнати ті самі вектори через `Attractor.calculate_z_from_state` на GCP x86-64 (production-mirror Docker image) | CSV: `vector_id, server_z` |
-| 3 | Прошити test-фірмвар на STM32WLE5JC (REVB silicon, той самий що у Pilot Site), прогнати вектори через mruby `calculate_state`, прочитати Z через SWD/RTT | CSV: `vector_id, device_z` |
-| 4 | Diff: `device_z − server_z` distribution. Скласти histogram (logspace bins для tail), розрахувати p50/p99/p99.9/p99.99/max | Jupyter notebook `analysis/dci_drift_distribution.ipynb` (deferred) |
-| 5 | Перевірити нульовий drift на subset, де `chaos_seed → byte-identical (x₀,y₀,z₀)` (SEC.11 invariant) — будь-який non-zero drift тут = баг в seed derivation, не Float | Assertion у notebook |
-| 6 | Обрати ε := max(p99.99, 2 × max_observed_drift). Якщо ε ≥ 0.1 — Lorenz dynamics зламана й треба окремо розбиратися (ARCH.18 fixed-point). Якщо ε < 0.0001 — поставити `0.001` як conservative default (надлишок margin) | Кеп ε у `DEFAULT_DCI_EPSILON` constant + PR |
-
-**Rollout gates (порядок активації):**
-
-1. **Gate L (Lab):** Lab measurement виконано, ε обраний, distribution stored.
-2. **Gate D (Device coverage):** `device_z` доступний у ≥ 95% telemetry packets (після FW.2 wire revision АБО після ML2 variant).
-3. **Gate C (Canary):** Активація в `WEB3_STRICT_MODE=false` staging кластері на 24 год. Watch `silkennet_dci_numeric_rejections_total` (новий Prometheus counter, додати в [`06_03`](06_03_Prometheus_Observability) після Gate D). Очікувано: 0 rejections (бо ε > max observed drift у Gate L). Будь-яке non-zero rejection → analiza root cause (seed corruption? RTC drift? overflow?) перед production.
-4. **Gate P (Production canary):** Single Genesis cluster, `GAIA_DCI_NUMERIC_TOLERANCE=true` через `kamal env push`, моніторинг 72 год.
-5. **Gate G (Global):** Flip всіх production кластерів.
-
-**Rollback procedure:**
-
-```bash
-# Kamal env push без redeploy:
-kamal env push --secret GAIA_DCI_NUMERIC_TOLERANCE=false
-# АБО видалити з .kamal/secrets, тоді next deploy картки залишиться без флагу
-```
-
-Жоден код-rollback не потрібен — feature-flag перетворює numeric branch на no-op. Категорична перевірка продовжує захищати DCI.
-
-**Side effects після flip:**
-
-- Fraud detection стає **числовим**: ловить replay-атаки з правильним enum, неправильним magnitude — як написано у §145 вище.
-- `TelemetryLog#fraud_flagged` зростає на ~0.001-0.01% legitimate traffic (false positives на ε boundary) — це **acceptable noise**, бо `fraud_flagged` тригерить ручний review, не automatic slashing.
-- Mint pipeline ([`05_02`](05_02_Proof_of_Growth_Pipeline)) НЕ блокується numeric divergence — це лише signal для AML/risk layer.
-
-**Specs (вже в коді):**
-
-`spec/services/telemetry_unpacker_service_spec.rb` describe `[FW.31] numeric tolerance band` — 6 examples:
-1. toggle off (default) → numeric branch inert, тільки категорична перевірка
-2. within ε → silent pass (no fraud flag)
-3. drift > ε → fraud flag + structured log entry
-4. default ε constant — pin `DEFAULT_DCI_EPSILON = 0.001`
-5. malformed `GAIA_DCI_NUMERIC_EPSILON="abc"` → graceful fallback + warn
-6. `device_z` missing → numeric branch skipped (Gate D guard)
-
-**Cross-ref:** [00_08 FW.31](00_08_Action_Plan_Tracker), [03_05 §3.2 BLOCKER-2 FW.2 CCM wire format](03_05_Hardware_Symmetric_Crypto_and_Security), [04_02 TelemetryUnpackerService](04_02_Business_Logic_and_Services), [06_03 Prometheus](06_03_Prometheus_Observability) (після Gate D — додати `silkennet_dci_numeric_rejections_total`).
-
----
-
-### 🟡 BLOCKER-5: Чисельна Нестабільність Методу Ейлера при DT=0.01
-
-**Опис:** Метод Ейлера першого порядку застосовується для інтегрування системи Лоренца:
-
-```
-x_{n+1} = x_n + dx/dt · DT
-y_{n+1} = y_n + dy/dt · DT
-z_{n+1} = z_n + dz/dt · DT
-```
-
-При стандартних параметрах (σ=10, ρ=28, β=8/3), DT=0.01 є прийнятним, але **не стабільним** для методу Ейлера. Характеристичні значення системи мають власні значення з від'ємними дійсними частинами ~O(σ), тому граничний безпечний крок Ейлера: `DT_max ≈ 2/|Re(λ_max)| ≈ 0.1`. DT=0.01 знаходиться в безпечній зоні, але на межі.
-
-**Ризик:** При пертурбованих параметрах (наприклад, `acoustic=200` → `σ_eff=30.0`, що є максимально дозволеним після clamp), крок стає відносно більшим, що збільшує локальну похибку.
-
-**Захисний механізм (вже реалізований):** Clamp σ ∈ [5, 30] та ρ ∈ [10, 50] запобігає найгіршим сценаріям.
-
-**Дія:** Документувати як відомий компроміс. Альтернатива (RK4) потребує 4× більше обчислень — критично для EBFC-живлення. Поточний DT=0.01 прийнятний для "Proof of Growth" (не для наукових симуляцій).
+<!-- TOC:AUTO:START -->
+- [1. Теоретична Основа: Система Лоренца](#-1-теоретична-основа-система-лоренца)
+- [2. Архітектура Bio-Contract: Вхідні Дані](#-2-архітектура-bio-contract-вхідні-дані)
+- [3. Алгоритм: Крок за Кроком](#-3-алгоритм-крок-за-кроком)
+- [4. Логіка Гомеостазу: Z → growth_points](#-4-логіка-гомеостазу-z--growth_points)
+- [5. Подвійне Обчислення: Firmware vs Backend](#-5-подвійне-обчислення-firmware-vs-backend)
+- [6. Точка Входу та Інтеграція з C](#-6-точка-входу-та-інтеграція-з-c)
+- [6.3 Майбутнє: Forest-Level Lorenz Coupling (Beyond TRL 9)](#-63-майбутнє-forest-level-lorenz-coupling-beyond-trl-9)
+- [7. Відомі Обмеження та Deferred-Фічі](#-7-відомі-обмеження-та-deferred-фічі)
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -891,40 +696,101 @@ if (mrb) {
 
 ---
 
-## 🔗 7. Залежності та Cross-References
+## ⚠️ 7. Відомі Обмеження та Deferred-Фічі
 
-### 7.1 Upstream Dependencies (Що потрібно ПЕРЕД цим модулем)
+### 7.1 Numeric Tolerance Band — DCI ε (deferred, code-staged; `00_08 FW.31`)
 
-| Залежність | Статус | Посилання |
-|---|---|---|
-| Firmware Lifecycle (Phase 1 Sensor Acquisition) | ✅ Синхронізовано | [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) |
-| TinyML Acoustic Inference (acoustic_events) | ⚠️ `Run_Inference()` закоментовано | [03_03_TinyML_Acoustic_Inference](03_03_TinyML_Acoustic_Inference) |
-| ADC Temperature Acquisition | ✅ Реалізовано | [02_03_BQ25570_MPPT_Nano_Power](02_03_BQ25570_MPPT_Nano_Power) |
-| **K_seed Provisioning + HKDF/HMAC bridge** [SEC.11] | ✅ Реалізовано — `K_seed = HKDF-SHA256(PROVISIONING_MASTER_KEY, salt="silken-lorenz-v1", info="silken-lorenz-seed\|<DID>")`, mbedtls bridge для HMAC-SHA256 cold-start derivation | [03_05 §3.4в Lorenz K_seed Derivation](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-) |
-| RTC State Persistence (FW.6) | ✅ Реалізовано — DR16-DR18 + DR19 magic `"LZST"`, читається warm-restart-ом перед mruby | [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA#-2-soldier-rtc-backup-register-map-dr0dr19--canonical-ssot-doc3) |
 
-### 7.2 Downstream Dependencies (Що блокує ЦЕЙ модуль)
+**Контекст:** SEC.11 закрив BLOCKER-2 і відкрив технічну можливість використовувати **числовий** DCI-перевірний крок (`|server_z − device_z| < ε`) замість суто **категоричного** enum-match'у. Числова перевірка значно потужніша: дозволяє ловити replay-атаки з правильним StatusByte, але неправильною Z-magnitude (наприклад, attacker викликав легітимний enum через clamp-логіку, але справжня траєкторія розійшлася). Категорична перевірка пропускає такі сценарії.
 
-| Залежність | Що потрібно | Посилання |
-|---|---|---|
-| Proof of Growth Pipeline | Точна математична модель для крос-верифікації Z-значень | [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) |
-| Slashing Protocol | `CRITICAL_Z_MIN/MAX` для оцінки кластерного стресу | [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) |
-| TelemetryUnpackerService | Формат `payload_byte` та `growth_points` | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) |
-| AlertDispatchService | `bio_status` для детектування stress/anomaly | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) |
-| University Cybernetics Hub | Математична верифікація числової стабільності | [08_02_Cybernetic_and_Mathematical_Validation](08_02_Cybernetic_and_Mathematical_Validation) |
+**Стан коду (✅ ready, awaits lab data):** Feature-flag реалізовано у [`TelemetryUnpackerService#check_z_divergence!`](04_02_Business_Logic_and_Services) (2026-05-02). У production-середовищі branch неактивний — це навмисно. Активація через Kamal env, **без code change та без redeploy** контейнера.
+
+**ENV-контракт:**
+
+| ENV | Default | Тип | Семантика |
+|-----|---------|-----|-----------|
+| `GAIA_DCI_NUMERIC_TOLERANCE` | unset → `false` | Boolean (`true`/`1`/`yes`) | Вмикає numeric branch **on top of** категоричної перевірки (не замінює). Категоричний enum-match завжди виконується першим. |
+| `GAIA_DCI_NUMERIC_EPSILON` | `0.001` (constant `TelemetryUnpackerService::DEFAULT_DCI_EPSILON`) | Float (parsed via `Float()`) | Tolerance threshold. Malformed/non-numeric value → graceful fallback до DEFAULT_DCI_EPSILON + `Rails.logger.warn`. |
+
+**Гейт активації — `device_z` має бути в payload:**
+
+Numeric branch виконується **лише** коли `attributes[:device_z]` присутній. Сьогодні LoRa packet 21B (`Soldier → Queen`) **не несе** raw Z — фірмварний `bio_contract.rb#calculate_state` повертає тільки `status_byte = [PanicFlag:1 | Status:2 | GrowthPoints:5]` (FW.29-PACK). Branch стає активним після одного з:
+
+1. **FW.2 CCM transition** (24-байтний пакет, [`03_05 §3.2 BLOCKER-2`](03_05_Hardware_Symmetric_Crypto_and_Security)) — якщо при перепакуванні зарезервувати ≥2 байти на стиснутий Z (наприклад, [E.7 ARCH.22 lambda-exponent](05_02_Proof_of_Growth_Pipeline)).
+2. **Окремий пакет-варіант ML2** — рідкісний uplink (~1/добу) із повним Z-snapshot для калібровки.
+3. **Server-side surrogate** — backend сам обчислює `device_z` зі збереженого `(x_prev, y_prev, z_prev)` chain'у + telemetry inputs, як референс для self-check (це робить numeric branch ефективно lab-only).
+
+До цього часу — branch інертний, але код вже staged у production без поведінкової зміни.
+
+**Lab measurement protocol (pre-flip gate):**
+
+Потрібно фактично виміряти ARM↔x86 IEEE-754 drift на цільовому залізі, перш ніж довірити numeric ε фінансовим рішенням (slashing, mint). Емпірика [FW.7](../00_08_Action_Plan_Tracker.md) дала `< 1e-12` теоретично — але без instrumented testing цифру не можна "закладати в конституцію".
+
+| Крок | Дія | Артефакт |
+|------|-----|----------|
+| 1 | Згенерувати N=10 000 детермінованих тест-векторів через `SilkenNet::SeedDerivation` для синтетичних `K_seed` (різні per-vector) + випадкові `(temp, acoustic, delta_t_s, vcap_mv)` у валідних діапазонах | `firmware/test/test_dci_drift_vectors.json` (gitignored, recreatable) |
+| 2 | Прогнати ті самі вектори через `Attractor.calculate_z_from_state` на GCP x86-64 (production-mirror Docker image) | CSV: `vector_id, server_z` |
+| 3 | Прошити test-фірмвар на STM32WLE5JC (REVB silicon, той самий що у Pilot Site), прогнати вектори через mruby `calculate_state`, прочитати Z через SWD/RTT | CSV: `vector_id, device_z` |
+| 4 | Diff: `device_z − server_z` distribution. Скласти histogram (logspace bins для tail), розрахувати p50/p99/p99.9/p99.99/max | Jupyter notebook `analysis/dci_drift_distribution.ipynb` (deferred) |
+| 5 | Перевірити нульовий drift на subset, де `chaos_seed → byte-identical (x₀,y₀,z₀)` (SEC.11 invariant) — будь-який non-zero drift тут = баг в seed derivation, не Float | Assertion у notebook |
+| 6 | Обрати ε := max(p99.99, 2 × max_observed_drift). Якщо ε ≥ 0.1 — Lorenz dynamics зламана й треба окремо розбиратися (ARCH.18 fixed-point). Якщо ε < 0.0001 — поставити `0.001` як conservative default (надлишок margin) | Кеп ε у `DEFAULT_DCI_EPSILON` constant + PR |
+
+**Rollout gates (порядок активації):**
+
+1. **Gate L (Lab):** Lab measurement виконано, ε обраний, distribution stored.
+2. **Gate D (Device coverage):** `device_z` доступний у ≥ 95% telemetry packets (після FW.2 wire revision АБО після ML2 variant).
+3. **Gate C (Canary):** Активація в `WEB3_STRICT_MODE=false` staging кластері на 24 год. Watch `silkennet_dci_numeric_rejections_total` (новий Prometheus counter, додати в [`06_03`](06_03_Prometheus_Observability) після Gate D). Очікувано: 0 rejections (бо ε > max observed drift у Gate L). Будь-яке non-zero rejection → analiza root cause (seed corruption? RTC drift? overflow?) перед production.
+4. **Gate P (Production canary):** Single Genesis cluster, `GAIA_DCI_NUMERIC_TOLERANCE=true` через `kamal env push`, моніторинг 72 год.
+5. **Gate G (Global):** Flip всіх production кластерів.
+
+**Rollback procedure:**
+
+```bash
+# Kamal env push без redeploy:
+kamal env push --secret GAIA_DCI_NUMERIC_TOLERANCE=false
+# АБО видалити з .kamal/secrets, тоді next deploy картки залишиться без флагу
+```
+
+Жоден код-rollback не потрібен — feature-flag перетворює numeric branch на no-op. Категорична перевірка продовжує захищати DCI.
+
+**Side effects після flip:**
+
+- Fraud detection стає **числовим**: ловить replay-атаки з правильним enum, неправильним magnitude — як написано у §145 вище.
+- `TelemetryLog#fraud_flagged` зростає на ~0.001-0.01% legitimate traffic (false positives на ε boundary) — це **acceptable noise**, бо `fraud_flagged` тригерить ручний review, не automatic slashing.
+- Mint pipeline ([`05_02`](05_02_Proof_of_Growth_Pipeline)) НЕ блокується numeric divergence — це лише signal для AML/risk layer.
+
+**Specs (вже в коді):**
+
+`spec/services/telemetry_unpacker_service_spec.rb` describe `[FW.31] numeric tolerance band` — 6 examples:
+1. toggle off (default) → numeric branch inert, тільки категорична перевірка
+2. within ε → silent pass (no fraud flag)
+3. drift > ε → fraud flag + structured log entry
+4. default ε constant — pin `DEFAULT_DCI_EPSILON = 0.001`
+5. malformed `GAIA_DCI_NUMERIC_EPSILON="abc"` → graceful fallback + warn
+6. `device_z` missing → numeric branch skipped (Gate D guard)
+
+**Cross-ref:** [00_08 FW.31](00_08_Action_Plan_Tracker), [03_05 §3.2 BLOCKER-2 FW.2 CCM wire format](03_05_Hardware_Symmetric_Crypto_and_Security), [04_02 TelemetryUnpackerService](04_02_Business_Logic_and_Services), [06_03 Prometheus](06_03_Prometheus_Observability) (після Gate D — додати `silkennet_dci_numeric_rejections_total`).
 
 ---
 
-## 📎 Пов'язані Файли
+### 7.2 Чисельна стабільність методу Ейлера (відомий компроміс)
 
-| Файл | Призначення |
-|---|---|
-| `firmware/bio_contracts/bio_contract.rb` | mruby скрипт Bio-Contract (SilkenNet::Attractor + SilkenNet::BioContract). [SEC.11] єдина точка входу `calculate_state(x_prev, y_prev, z_prev, …)`; [FW.5] β-perturbation від `delta_t_s`/`vcap_mv` |
-| `firmware/soldier/main.c` (Фаза 1 + Фаза 3 + Фаза 5) | C-код: відновлення стану з RTC DR16-DR18 АБО cold-start derive `(x₀,y₀,z₀)` через HMAC(K_seed, "init\|"\|\|epoch_day) [SEC.11], виклик mruby, збереження стану перед STOP2 |
-| `app/services/silken_net/attractor.rb` | Rails-сервіс (Float, дзеркало firmware) [FIX FW.7]. [SEC.11] єдиний entry-point `calculate_z_from_state(x₀,y₀,z₀,…)`; [FW.5] `perturb_beta(delta_t_s, vcap_mv)` |
-| `app/services/silken_net/seed_derivation.rb` | [SEC.11] `derive_seed(device_uid)` (HKDF-SHA256), `derive_initial_state(K_seed_bin, epoch_day)` (HMAC + signed-unit-float unpack); ↔ host-parity test `firmware/test/test_seed_derivation.c` |
-| `app/services/telemetry_unpacker_service.rb` | Розпакування `payload_byte`, виклик `Attractor.calculate_z_from_state(x_prev, y_prev, z_prev, temp, acoustic, metabolism_s, voltage_mv)`; persist `lorenz_state_x/y/z` + `cold_start_flag` [SEC.11] |
-| `firmware/test/test_bio_contract.c` | Host-based тести (Bio-Contract + Lorenz State Persistence + [FW.5] β-perturbation; `seed_to_xyz()` helper для детермінованих фікстур) |
-| `firmware/test/test_seed_derivation.c` | [SEC.11] OpenSSL host-parity test для HKDF/HMAC/initial-state derivation |
-| `spec/services/silken_net/attractor_spec.rb` | RSpec тести Rails-дзеркала; firmware/backend Z-divergence fuzz |
-| `spec/services/silken_net/seed_derivation_spec.rb` | [SEC.11] HKDF determinism, domain separation з AES key, byte-identical match із firmware |
+
+**Опис:** Метод Ейлера першого порядку застосовується для інтегрування системи Лоренца:
+
+```
+x_{n+1} = x_n + dx/dt · DT
+y_{n+1} = y_n + dy/dt · DT
+z_{n+1} = z_n + dz/dt · DT
+```
+
+При стандартних параметрах (σ=10, ρ=28, β=8/3), DT=0.01 є прийнятним, але **не стабільним** для методу Ейлера. Характеристичні значення системи мають власні значення з від'ємними дійсними частинами ~O(σ), тому граничний безпечний крок Ейлера: `DT_max ≈ 2/|Re(λ_max)| ≈ 0.1`. DT=0.01 знаходиться в безпечній зоні, але на межі.
+
+**Ризик:** При пертурбованих параметрах (наприклад, `acoustic=200` → `σ_eff=30.0`, що є максимально дозволеним після clamp), крок стає відносно більшим, що збільшує локальну похибку.
+
+**Захисний механізм (вже реалізований):** Clamp σ ∈ [5, 30] та ρ ∈ [10, 50] запобігає найгіршим сценаріям.
+
+**Дія:** Документувати як відомий компроміс. Альтернатива (RK4) потребує 4× більше обчислень — критично для EBFC-живлення. Поточний DT=0.01 прийнятний для "Proof of Growth" (не для наукових симуляцій).
+
+---
+
