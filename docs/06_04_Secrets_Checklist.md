@@ -16,6 +16,7 @@
 
 ## ✅ Статус
 
+- **Поточний TRL:** TRL 5 — механізм секретів (AR-encryption non-deterministic, HKDF per-device, `.kamal/secrets`, `verify-secrets` CI gate) реалізований і перевірений у Canopy; production-значення ще не провіженені (операційна, не технологічна задача). Канон модульного TRL — [`00_06 §1`](00_06_Strategic_Roadmap_and_HIL_Simulators).
 - **Поточний стан:** Backend код підтримує всі секрети, але production значення **не встановлені** в GitHub repository та `.kamal/secrets`. Це блокує весь CI/CD pipeline.
 - **Пов'язані модулі:**
   - Деплой → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform) — BLOCKER-3 (вихідний опис проблеми)

@@ -23,6 +23,7 @@
   - Розгортання → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
   - Akash → [`06_02_Akash_Network_Integration`](06_02_Akash_Network_Integration)
   - Бізнес-логіка → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
+  - Action tracker → [`00_08_Action_Plan_Tracker`](00_08_Action_Plan_Tracker) — OBS.1 (Grafana Cloud), S2.2/S2.3 (circuit-breaker/acoustic метрики)
 
 ---
 

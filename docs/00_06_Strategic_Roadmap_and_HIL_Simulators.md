@@ -9,7 +9,7 @@
 ## ✅ Статус
 
 - **Поточний TRL (System):** TRL 4 — EBFC TRL 3→4 PASSED (Zero-Lab 2026-05-25). Програмні домени TRL 6-9.
-- **Per-domain TRL (декаплінг):** Rails TRL 8, Web3 / Smart contracts TRL 8–9 (Solidity ready для mainnet), DevOps TRL 5–6 (06_01 Kamal=4, 06_02 Akash=5, 06_03/06_05=6; жодного production-деплою — open, див. `§1 Per-module TRL` нижче), Firmware TRL 6, Security TRL 7 (Rails web layer ✅), Hardware capsule TRL 6, anchor/EBFC **TRL 4** (Zero-Lab L1-L4 PASSED 2026-05-25; 32 in-silico scripts; in vitro Stages 1-3 ще не закриті). **Канонічне джерело per-module TRL — `§1 Per-module TRL` (нижче в цьому документі)**; оновлюється при кожному cool-down.
+- **Per-domain TRL (декаплінг):** суть зняття TRL-Lock — програмні домени (Rails, Web3, Firmware, Security) рухаються до TRL 8–9 незалежно від фізичного відставання металу/хімії (anchor/EBFC **TRL 4**, Zero-Lab L1-L4 PASSED 2026-05-25; in vitro Stages 1-3 ще не закриті). **Канонічні per-module числа — `§1 Per-module TRL` нижче (єдиний дім; тут свідомо НЕ дублюються, щоб уникнути drift).** Оновлюється при кожному cool-down.
 - **Пов'язані модулі:**
   - Бізнес-візія та slashing → [`00_01_Vision_Market_and_Slashing_Policy`](00_01_Vision_Market_and_Slashing_Policy)
   - AI-Native методологія (TRL philosophy) → [`00_04_AI_Native_Engineering_and_TRL`](00_04_AI_Native_Engineering_and_TRL)
@@ -42,7 +42,7 @@
 | 03 Firmware | 6 | 8 | AES key, TinyML, AT blocking |
 | 04 Backend Rails | 8 | 9 | RSpec тести |
 | 05 Web3 Pipeline | 8-9 | 9 | SFC address |
-| 06 DevOps | 7 | 9 | Docker registry, TLS |
+| 06 DevOps | 5-6 | 9 | production deploy не проведено (06_01=4 outlier); Docker registry, TLS |
 | 07 Business | 5 | 8 | CO₂ methodology, MSA, ToS |
 | 08 University R&D | 2 | 6 | 5-сторонній партнерський фреймворк (ChNU + ChDTU + ChIPB + ChMA + СЄУ) — UNI.4-14 |
 | 09 Project Management | 7 | 9 | OPS.3 R&D portfolio, OPS.4 semester sync |
