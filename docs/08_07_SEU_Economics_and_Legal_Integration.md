@@ -20,25 +20,42 @@
 
 - **Поточний TRL:** TRL 3 — контакти ідентифіковані, формальну співпрацю не розпочато
 - **Стратегічний пріоритет:** P1 — без макроекономічної валідації та юридичних шаблонів NaaS-контракти залишаються нелегітимними для інституційних інвесторів; без промислового дизайну PEEK-радому хардвер не готовий до серійного виробництва
-- **Пов'язані модулі:**
-  - NaaS контракти та юридичні шаблони → [`07_01_Nature_as_a_Service_Contracts`](07_01_Nature_as_a_Service_Contracts) (BLOCKER-1: KYC/Legal Templates)
-  - Юніт-економіка та BOM → [`07_02_Unit_Economics_and_BOM`](07_02_Unit_Economics_and_BOM)
-  - Трекер грантів → [`07_03_Grant_Applications_Tracker`](07_03_Grant_Applications_Tracker) (Horizon Europe, Ethereum Foundation)
-  - Токеноміка SCC/SFC → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
-  - Proof of Growth → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
-  - Мультичейн архітектура → [`05_01_Multichain_Architecture`](05_01_Multichain_Architecture) (Hadron, Solana, Celo, KlimaDAO)
-  - PEEK-радом та гіроїдна топологія → [`01_01_Coaxial_Gyroid_Topology_and_PEEK`](01_01_Coaxial_Gyroid_Topology_and_PEEK) (Деталь 4)
-  - Phlex UI дизайн-система → [`04_04_Phlex_UI_and_Tailwind`](04_04_Phlex_UI_and_Tailwind)
-  - ЧНУ протоколи → [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols)
-  - ФОТІУС кіберфізика → [`08_02_Cybernetic_and_Mathematical_Validation`](08_02_Cybernetic_and_Mathematical_Validation)
-  - Публікації та IP → [`08_03_Joint_Publications_and_IP_Strategy`](08_03_Joint_Publications_and_IP_Strategy)
-  - ЧДТУ Data Science → [`08_04_CHDTU_Data_Science_Collaboration`](08_04_CHDTU_Data_Science_Collaboration)
-  - ЧІПБ пожежна безпека → [`08_05_CHIPB_Fire_Safety_Integration`](08_05_CHIPB_Fire_Safety_Integration)
-  - ЧМА біохімія → [`08_06_CHMA_Biomedical_Integration`](08_06_CHMA_Biomedical_Integration)
+- **Відкрите:** макроекономічна валідація + юридичні шаблони NaaS + промдизайн PEEK-радому (формальна співпраця СЄУ не розпочата) → [`00_08`](00_08_Action_Plan_Tracker) (BIZ.*, UNI.*).
 
 ---
 
-## 🛑 Блокери
+## 🔗 Cross-references
+
+| Ресурс | Зв'язок |
+|---|---|
+| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | NaaS контракти, юридичні шаблони |
+| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Юніт-економіка та BOM |
+| [07_03_Grant_Applications_Tracker](07_03_Grant_Applications_Tracker) | Гранти (Horizon Europe, EF) |
+| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка SCC/SFC |
+| [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof of Growth |
+| [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Мультичейн (Hadron, Solana, Celo, Klima) |
+| [01_01_Coaxial_Gyroid_Topology_and_PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | PEEK-радом (Деталь 4) |
+| [04_04_Phlex_UI_and_Tailwind](04_04_Phlex_UI_and_Tailwind) | Phlex UI дизайн-система |
+| [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | ЧНУ протоколи |
+| [08_02_Cybernetic_and_Mathematical_Validation](08_02_Cybernetic_and_Mathematical_Validation) | ФОТІУС кіберфізика |
+| [08_03_Joint_Publications_and_IP_Strategy](08_03_Joint_Publications_and_IP_Strategy) | Публікації та IP |
+| [08_04_CHDTU_Data_Science_Collaboration](08_04_CHDTU_Data_Science_Collaboration) | ЧДТУ Data Science |
+| [08_05_CHIPB_Fire_Safety_Integration](08_05_CHIPB_Fire_Safety_Integration) | ЧІПБ пожежна безпека |
+| [08_06_CHMA_Biomedical_Integration](08_06_CHMA_Biomedical_Integration) | ЧМА біохімія |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | BIZ.*, UNI.* |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [Відкриті передумови та статус](#-відкриті-передумови-та-статус)
+- [1. Ключові Наукові Партнери СЄУ](#-1-ключові-наукові-партнери-сєу)
+<!-- TOC:AUTO:END -->
+
+---
+
+## 🚧 Відкриті передумови та статус
+
+> Статуси трекаються в [`00_08`](00_08_Action_Plan_Tracker) (UNI.*); нижче — контекст партнерства.
 
 - **Верифікація посад та наукових профілів** — дані про поточні посади, наукові ступені та спеціалізацію ідентифікованих дослідників потребують підтвердження через офіційний сайт СЄУ. Інформація базується на попередній ідентифікації та може містити неточності
 - **Формальна зустріч з ректоратом СЄУ** — узгодження формату партнерства (міжкафедральна тема, спільні публікації, юридичні консультації)
@@ -777,7 +794,7 @@ Silken Net = Digital MRV (Measurement, Reporting, Verification):
 
 ```
 ✅ Backend: Rails 8.1 + PostgreSQL — TRL 8 (production-ready)
-✅ Smart Contracts: 6 контрактів на Solidity, 178 тестів, аудит Slither
+✅ Smart Contracts: 6 контрактів на Solidity, Foundry-тести зелені, аудит Slither
 ✅ Firmware: STM32WLE5JC, 137+ тестів, LoRa mesh, AES-128-ECB (transitional → CCM)
 ✅ Web3 Pipeline: 12 блокчейн-мереж (Polygon, Ethereum, Solana, Celo...)
 ✅ Hardware design: Ti-6Al-4V gyroid, EBFC Gen 2.0 (**TRL 4**, Zero-Lab L1-L4 PASSED), BQ25570 MPPT

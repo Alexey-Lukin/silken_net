@@ -19,22 +19,49 @@
 
 - **Поточний TRL:** TRL 3→4 PASSED (2026-05-25). In-silico headline: L2 RMSD 1.22 Å (correct genipin, 6/6 species stable), L3 cascade -0.07 eV (B3LYP corrected), L3b k_DET=1.09×10⁸, L4 delta_t=36s. Поточні числа/статус — канонічний [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md). Контакти ЧМА ідентифіковані, формальну співпрацю не розпочато.
 - **Стратегічний пріоритет:** P0 — без біохімічної валідації EBFC та токсикологічного клірансу хардвер залишається теорією; це прямий блокер для seed-раунду та whitepaper
-- **Пов'язані модулі:**
-  - EBFC ензимний паливний елемент → [`01_03_EBFC_Enzymatic_Bio_Fuel_Cell`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) (Gen 2.0: dgrFAD-GDH, Laccase/ZIF-nanozyme, Genipin-Chitosan-CNC, Nafion-g-PSBMA)
-  - CODIT та ксилемоінтеграція → [`01_04_CODIT_and_Xylemointegration`](01_04_CODIT_and_Xylemointegration) (4 фази, смоляний бар'єр, калюс)
-  - Ti-6Al-4V та self-healing → [`01_02_Ti_6Al_4V_Metallurgy_and_DMLS`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) (8-HQ мікрокапсули, ZnO-Ta, PEO — лише на неактивних поверхнях, карта обмежень §3.6)
-  - Гіроїдна топологія → [`01_01_Coaxial_Gyroid_Topology_and_PEEK`](01_01_Coaxial_Gyroid_Topology_and_PEEK) (макропористість 60-70%)
-  - BQ25570 та живлення → [`02_03_BQ25570_MPPT_Nano_Power`](02_03_BQ25570_MPPT_Nano_Power) (Cold Start 330 мВ)
-  - ЧНУ протоколи → [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols) (Мінаєв — квантова хімія, Гусак — дифузія, Спрягайло — біо-хаб)
-  - ФОТІУС кіберфізика → [`08_02_Cybernetic_and_Mathematical_Validation`](08_02_Cybernetic_and_Mathematical_Validation) (firmware валідація)
-  - Публікації та IP → [`08_03_Joint_Publications_and_IP_Strategy`](08_03_Joint_Publications_and_IP_Strategy)
-  - ЧДТУ Data Science → [`08_04_CHDTU_Data_Science_Collaboration`](08_04_CHDTU_Data_Science_Collaboration) (статистична валідація)
-  - ЧІПБ пожежна безпека → [`08_05_CHIPB_Fire_Safety_Integration`](08_05_CHIPB_Fire_Safety_Integration)
-  - СЄУ: Токеноміка NaaS, RWA-легалізація → [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration)
+- **Відкрите:** біохімічна валідація EBFC + токсикологічний кліренс (формальна співпраця ЧМА не розпочата) → [`00_08`](00_08_Action_Plan_Tracker) (UNI.*).
 
 ---
 
-## 🛑 Блокери
+## 🔗 Cross-references
+
+| Ресурс | Зв'язок |
+|---|---|
+| [01_03_EBFC_Enzymatic_Bio_Fuel_Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC Gen 2.0 (dgrFAD-GDH, Laccase/ZIF, Genipin-Chitosan-CNC) |
+| [01_04_CODIT_and_Xylemointegration](01_04_CODIT_and_Xylemointegration) | CODIT, ксилемоінтеграція (смоляний бар'єр, калюс) |
+| [01_02_Ti_6Al_4V_Metallurgy_and_DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Ti-6Al-4V self-healing (8-HQ, ZnO-Ta, PEO §3.6) |
+| [01_01_Coaxial_Gyroid_Topology_and_PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Гіроїдна топологія (макропористість 60-70%) |
+| [02_03_BQ25570_MPPT_Nano_Power](02_03_BQ25570_MPPT_Nano_Power) | Живлення (Cold Start 330 мВ) |
+| [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | ЧНУ протоколи (Мінаєв, Гусак, Спрягайло) |
+| [08_02_Cybernetic_and_Mathematical_Validation](08_02_Cybernetic_and_Mathematical_Validation) | firmware валідація |
+| [08_03_Joint_Publications_and_IP_Strategy](08_03_Joint_Publications_and_IP_Strategy) | Публікації та IP |
+| [08_04_CHDTU_Data_Science_Collaboration](08_04_CHDTU_Data_Science_Collaboration) | статистична валідація |
+| [08_05_CHIPB_Fire_Safety_Integration](08_05_CHIPB_Fire_Safety_Integration) | ЧІПБ пожежна безпека |
+| [08_07_SEU_Economics_and_Legal_Integration](08_07_SEU_Economics_and_Legal_Integration) | СЄУ (токеноміка, RWA-legal) |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | UNI.* |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [Відкриті передумови та статус](#-відкриті-передумови-та-статус)
+- [1. Ключові Наукові Партнери ЧМА](#-1-ключові-наукові-партнери-чма)
+- [2. Інтеграція з Існуючим Кодбейсом](#-2-інтеграція-з-існуючим-кодбейсом)
+- [3. Міжуніверситетська Синергія: ЧМА ↔ ЧНУ ↔ ЧДТУ](#-3-міжуніверситетська-синергія-чма--чну--чдту)
+- [4. Публікації (Доповнення до (08_03_Joint_Publications_and_IP_Strategy))](#-4-публікації-доповнення-до-08_0308_03_joint_publications_and_ip_strategy)
+- [5. Студентські Роботи ЧМА](#-5-студентські-роботи-чма)
+- [6. IP та Конфіденційність](#-6-ip-та-конфіденційність)
+- [7. Дорожня Карта Співпраці](#-7-дорожня-карта-співпраці)
+- [8. Рекомендації щодо Координації](#-8-рекомендації-щодо-координації)
+- [9. Стратегія Входу до ЧМА](#-9-стратегія-входу-до-чма)
+- [10. Промпт для Першого Контакту](#-10-промпт-для-першого-контакту)
+- [11. Пов'язані Документи](#-11-повязані-документи)
+<!-- TOC:AUTO:END -->
+
+---
+
+## 🚧 Відкриті передумови та статус
+
+> Статуси трекаються в [`00_08`](00_08_Action_Plan_Tracker) (UNI.*); нижче — контекст партнерства.
 
 - **Уточнення посад та наукових профілів** — верифікація поточних посад та наукових інтересів ідентифікованих дослідників через офіційний сайт ЧМА. Назва «Черкаська медична академія» потребує підтвердження — заклад може мати іншу офіційну назву або бути структурним підрозділом іншого ВНЗ
 - **Формальна зустріч з керівництвом ЧМА** — узгодження формату партнерства (міжкафедральна тема, студентські роботи, спільні публікації)

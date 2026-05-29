@@ -12,19 +12,47 @@
 
 - **Поточний TRL:** TRL 3 baseline; **TRL 3→4 gate PASSED** (2026-05-25) — Zero-Lab in-silico pipeline L1-L4 ✅
 - **Стратегічна цінність:** Наукові публікації ЧНУ + ЧДТУ (3 кафедри) + ЧІПБ + ЧМА + СЄУ = легітимізація технології + Hardware Proof для seed-раунду + Data Science валідація + RF-верифікація + акустична валідація + пожежна безпека та параметричне страхування + біохімічна валідація EBFC та токсикологія + макроекономічна валідація токеноміки та правова архітектура RWA
-- **Пов'язані модулі:**
-  - Університетські протоколи → [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols)
-  - Кіберфізична валідація → [`08_02_Cybernetic_and_Mathematical_Validation`](08_02_Cybernetic_and_Mathematical_Validation)
-  - ЧДТУ Data Science → [`08_04_CHDTU_Data_Science_Collaboration`](08_04_CHDTU_Data_Science_Collaboration)
-  - ЧІПБ: Пожежна безпека та SOP → [`08_05_CHIPB_Fire_Safety_Integration`](08_05_CHIPB_Fire_Safety_Integration)
-  - ЧМА: Біохімія EBFC, токсикологія металів → [`08_06_CHMA_Biomedical_Integration`](08_06_CHMA_Biomedical_Integration)
-  - СЄУ: Токеноміка NaaS, RWA-легалізація → [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration)
-  - Юніт-економіка → [`07_02_Unit_Economics_and_BOM`](07_02_Unit_Economics_and_BOM)
-  - Токеноміка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
+- **Відкрите:** спільні публікації + patent filing (потребує MoU) → [`00_08`](00_08_Action_Plan_Tracker) (UNI.*).
 
 ---
 
-## 🛑 Блокери
+## 🔗 Cross-references
+
+| Ресурс | Зв'язок |
+|---|---|
+| [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | Університетські протоколи |
+| [08_02_Cybernetic_and_Mathematical_Validation](08_02_Cybernetic_and_Mathematical_Validation) | Кіберфізична валідація |
+| [08_04_CHDTU_Data_Science_Collaboration](08_04_CHDTU_Data_Science_Collaboration) | ЧДТУ Data Science |
+| [08_05_CHIPB_Fire_Safety_Integration](08_05_CHIPB_Fire_Safety_Integration) | ЧІПБ (пожежна безпека, SOP) |
+| [08_06_CHMA_Biomedical_Integration](08_06_CHMA_Biomedical_Integration) | ЧМА (біохімія EBFC) |
+| [08_07_SEU_Economics_and_Legal_Integration](08_07_SEU_Economics_and_Legal_Integration) | СЄУ (токеноміка, RWA-legal) |
+| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Юніт-економіка |
+| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | UNI.* |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [Відкриті передумови та статус](#-відкриті-передумови-та-статус)
+- [0. MOIC — Mission-Oriented Innovation Cluster (Концепція та Архітектура Кластера)](#-0-moic--mission-oriented-innovation-cluster-концепція-та-архітектура-кластера)
+- [1. План Публікацій (Scopus / Web of Science)](#-1-план-публікацій-scopus--web-of-science)
+- [1B. Публікації ЧДТУ (Data Science, Радіотехніка та Акустика)](#-1b-публікації-чдту-data-science-радіотехніка-та-акустика)
+- [1C. Міжуніверситетські Публікації (ЧНУ ФОТІУС × ЧДТУ)](#-1c-міжуніверситетські-публікації-чну-фотіус--чдту)
+- [1D. Публікації ЧІПБ (Пожежна Безпека, Параметричне Страхування та SOP)](#-1d-публікації-чіпб-пожежна-безпека-параметричне-страхування-та-sop)
+- [1E. Публікації ЧМА (Біохімія EBFC, Токсикологія, Ксилемоінтеграція)](#-1e-публікації-чма-біохімія-ebfc-токсикологія-ксилемоінтеграція)
+- [1F. Публікації СЄУ (Токеноміка, Право, Промисловий Дизайн)](#-1f-публікації-сєу-токеноміка-право-промисловий-дизайн)
+- [1G. Публікації Ректорату ЧНУ × ННІ Економіки і Права (Біоекономіка та Синергетика)](#-1g-публікації-ректорату-чну--нні-економіки-і-права-біоекономіка-та-синергетика)
+- [2. Розподіл Інтелектуальної Власності (IP Framework)](#-2-розподіл-інтелектуальної-власності-ip-framework)
+- [2.1. ЧНУ Інституційні Інструменти IP-захисту (TISC + Кафедра ІВ)](#-21-чну-інституційні-інструменти-ip-захисту-tisc--кафедра-ів)
+- [3. Alumni Bridge (Кадровий Резерв)](#-3-alumni-bridge-кадровий-резерв)
+- [4. Стратегія "Повернення Випускника як CTO"](#-4-стратегія-повернення-випускника-як-cto)
+<!-- TOC:AUTO:END -->
+
+---
+
+## 🚧 Відкриті передумови та статус
+
+> Статуси трекаються в [`00_08`](00_08_Action_Plan_Tracker) (UNI.*); нижче — контекст партнерства.
 
 - **Лабораторні дані відсутні** — перша публікація можлива лише після протоколів з 08_01
 - **Авторський колектив не сформований** — потрібні конкретні викладачі ЧНУ

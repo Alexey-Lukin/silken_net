@@ -20,15 +20,40 @@
 
 - **Поточний TRL:** TRL 3 — контакт встановлений, формальну співпрацю не розпочато
 - **Стратегічний пріоритет:** P1 — математична статистика та Data Science критичні для верифікації Proof of Growth pipeline та масштабування на мільйони дерев
-- **Пов'язані модулі:**
-  - Університетські протоколи ЧНУ → [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols)
-  - Кібернетична валідація ФОТІУС → [`08_02_Cybernetic_and_Mathematical_Validation`](08_02_Cybernetic_and_Mathematical_Validation)
-  - Спільні публікації та IP → [`08_03_Joint_Publications_and_IP_Strategy`](08_03_Joint_Publications_and_IP_Strategy)
-  - Біомедична інтеграція ЧМА → [`08_06_CHMA_Biomedical_Integration`](08_06_CHMA_Biomedical_Integration)
+- **Відкрите:** формальна співпраця ЧДТУ (Data Science, actuarial) — не розпочато → [`00_08`](00_08_Action_Plan_Tracker) (UNI.*).
 
 ---
 
-## 🛑 Блокери
+## 🔗 Cross-references
+
+| Ресурс | Зв'язок |
+|---|---|
+| [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | Університетські протоколи ЧНУ |
+| [08_02_Cybernetic_and_Mathematical_Validation](08_02_Cybernetic_and_Mathematical_Validation) | Кібернетична валідація ФОТІУС |
+| [08_03_Joint_Publications_and_IP_Strategy](08_03_Joint_Publications_and_IP_Strategy) | Спільні публікації та IP |
+| [08_06_CHMA_Biomedical_Integration](08_06_CHMA_Biomedical_Integration) | Біомедична інтеграція ЧМА |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | UNI.* |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [Відкриті передумови та статус](#-відкриті-передумови-та-статус)
+- [1. Ключові Наукові Партнери ЧДТУ](#-1-ключові-наукові-партнери-чдту)
+- [2. Чому ЧДТУ є Стратегічним Партнером](#-2-чому-чдту-є-стратегічним-партнером)
+- [3. Повний Реєстр Data Science Задач у Silken Net](#-3-повний-реєстр-data-science-задач-у-silken-net)
+- [4. Формати Академічної Співпраці](#-4-формати-академічної-співпраці)
+- [5. Існуюча Кодова База для Data Science](#-5-існуюча-кодова-база-для-data-science)
+- [6. Доступ до Даних для Досліджень](#-6-доступ-до-даних-для-досліджень)
+- [7. Дорожня Карта Співпраці](#-7-дорожня-карта-співпраці)
+- [8. Міжуніверситетська Синергія: ЧДТУ ↔ ЧНУ ФОТІУС](#-8-міжуніверситетська-синергія-чдту--чну-фотіус)
+- [9. Пов'язані Документи](#-9-повязані-документи)
+<!-- TOC:AUTO:END -->
+
+---
+
+## 🚧 Відкриті передумови та статус
+
+> Статуси трекаються в [`00_08`](00_08_Action_Plan_Tracker) (UNI.*); нижче — контекст партнерства.
 
 - **Формальна зустріч із Карапетян А.Р.** — узгодження формату партнерства (кафедральна тема, студентські роботи, спільні публікації)
 - **Формальна зустріч із Гончаровим А. (Декан ФЕТР)** — узгодження RF-аудиту SMD-антени під PEEK-радомом та EMC-тестування у лабораторіях ФЕТР
@@ -430,7 +455,7 @@ Silken Net будує багаторівневу академічну екоси
 
 **Поточний стан:** Фільтр Калмана для `delta_t` — запланований (ЧНУ ФОТІУС, `08_02`). Калібрація апаратна: `DeviceCalibration` модель з offset/coefficient корекцією та drift detection.
 
-**Код:** `app/models/device_calibration.rb` (84 рядки), `app/services/telemetry_unpacker_service.rb`
+**Код:** `app/models/device_calibration.rb`, `app/services/telemetry_unpacker_service.rb`
 
 **Відкриті задачі для ЧДТУ:**
 

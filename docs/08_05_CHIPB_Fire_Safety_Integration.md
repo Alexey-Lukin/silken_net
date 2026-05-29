@@ -19,22 +19,45 @@
 
 - **Поточний TRL:** TRL 3 — контакти ідентифіковані, формальну співпрацю не розпочато
 - **Стратегічний пріоритет:** P1 — без валідації тригерів параметричне страхування юридично необґрунтоване; без SOP алерти EWS не конвертуються в реальне реагування
-- **Пов'язані модулі:**
-  - Алерти та реагування → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services) (AlertDispatchService, EmergencyResponseService)
-  - Параметричне страхування → [`07_01_Nature_as_a_Service_Contracts`](07_01_Nature_as_a_Service_Contracts) (NaaS, ParametricInsurance, slashing)
-  - Proof of Growth Pipeline → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline) (Oracle consensus)
-  - Токеноміка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC) (SlashingProtocol)
-  - Супутникова верифікація → [`04_02`](04_02_Business_Logic_and_Services) (dClimate Cosmic Eye)
-  - ЧНУ протоколи → [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols) (Хімія, Фізика, Біоценологія)
-  - ФОТІУС кіберфізика → [`08_02_Cybernetic_and_Mathematical_Validation`](08_02_Cybernetic_and_Mathematical_Validation) (Mesh надійність, PN-верифікація)
-  - Публікації та IP → [`08_03_Joint_Publications_and_IP_Strategy`](08_03_Joint_Publications_and_IP_Strategy)
-  - ЧДТУ Data Science → [`08_04_CHDTU_Data_Science_Collaboration`](08_04_CHDTU_Data_Science_Collaboration) (Актуарна аналітика, anomaly detection)
-  - ЧМА: Біохімія EBFC, токсикологія → [`08_06_CHMA_Biomedical_Integration`](08_06_CHMA_Biomedical_Integration)
-  - СЄУ: Токеноміка NaaS, RWA-легалізація → [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration)
+- **Відкрите:** валідація тригерів страхування + SOP для EWS-алертів (ДСНС) → [`00_08`](00_08_Action_Plan_Tracker) (UNI.*, ARCH.31).
 
 ---
 
-## 🛑 Блокери
+## 🔗 Cross-references
+
+| Ресурс | Зв'язок |
+|---|---|
+| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Alert/Emergency сервіси, dClimate Cosmic Eye |
+| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | Параметричне страхування, slashing |
+| [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Oracle consensus |
+| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | SlashingProtocol |
+| [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | ЧНУ протоколи (Хімія/Фізика/Біоценологія) |
+| [08_02_Cybernetic_and_Mathematical_Validation](08_02_Cybernetic_and_Mathematical_Validation) | Mesh надійність, PN-верифікація |
+| [08_03_Joint_Publications_and_IP_Strategy](08_03_Joint_Publications_and_IP_Strategy) | Публікації та IP |
+| [08_04_CHDTU_Data_Science_Collaboration](08_04_CHDTU_Data_Science_Collaboration) | Актуарна аналітика, anomaly detection |
+| [08_06_CHMA_Biomedical_Integration](08_06_CHMA_Biomedical_Integration) | ЧМА (біохімія EBFC) |
+| [08_07_SEU_Economics_and_Legal_Integration](08_07_SEU_Economics_and_Legal_Integration) | СЄУ (токеноміка, RWA-legal) |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | UNI.*, ARCH.31 |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [Відкриті передумови та статус](#-відкриті-передумови-та-статус)
+- [1. Ключові Наукові Партнери ЧІПБ](#-1-ключові-наукові-партнери-чіпб)
+- [2. Інтеграція з Існуючим Кодбейсом](#-2-інтеграція-з-існуючим-кодбейсом)
+- [3. Міжуніверситетська Синергія: ЧІПБ ↔ ЧНУ ФОТІУС ↔ ЧДТУ](#-3-міжуніверситетська-синергія-чіпб--чну-фотіус--чдту)
+- [4. Публікації (Доповнення до (08_03_Joint_Publications_and_IP_Strategy))](#-4-публікації-доповнення-до-08_0308_03_joint_publications_and_ip_strategy)
+- [5. Студентські Роботи ЧІПБ](#-5-студентські-роботи-чіпб)
+- [6. IP та Конфіденційність](#-6-ip-та-конфіденційність)
+- [7. Дорожня Карта Співпраці](#-7-дорожня-карта-співпраці)
+- [8. Промпт для Першого Контакту](#-8-промпт-для-першого-контакту)
+<!-- TOC:AUTO:END -->
+
+---
+
+## 🚧 Відкриті передумови та статус
+
+> Статуси трекаються в [`00_08`](00_08_Action_Plan_Tracker) (UNI.*); нижче — контекст партнерства.
 
 - **Формальна зустріч з керівництвом ЧІПБ** — узгодження формату партнерства (міжкафедральна тема, спільні публікації, SOP-розробка)
 - **Уточнення посад та наукових профілів** — верифікація поточних посад та наукових інтересів ідентифікованих дослідників (дані потребують підтвердження через офіційний сайт ЧІПБ / НУЦЗУ)
