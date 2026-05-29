@@ -10,10 +10,18 @@
 
 - **Поточний TRL:** TRL 8 — System Qualified / Mainnet Ready.
 - **Обґрунтування:** Всі заглушки (dClimate, Puro.earth) замінено на бойові Web3/HTTP інтеграції. Бізнес-логіка пройшла параноїдальний AI-аудит: повністю усунуто пастки `Network-in-Transaction`, витоки пам'яті (OOM) та ризики подвійної витрати (Double-Spend). Воркери ідемпотентні та fault-tolerant. **Примітка:** Chainlink dispatch має dev/test stub-режим (ENV-gated: при відсутності `CHAINLINK_FUNCTIONS_ROUTER` генерується локальний request ID); production вимагає `CHAINLINK_FUNCTIONS_ROUTER` та `CHAINLINK_SUBSCRIPTION_ID`.
-- **Пов'язані модулі:**
-  - Схема БД → [`04_01_Data_Models_and_Entities`](04_01_Data_Models_and_Entities)
-  - Proof of Growth пайплайн → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
-  - Апаратне шифрування → [`03_05_Hardware_Symmetric_Crypto_and_Security`](03_05_Hardware_Symmetric_Crypto_and_Security)
+- **Відкрите:** Drift Register моніторинг (§13b); Planned-сервіси (Forester Guild, Cross-Registry, Federated Learning) → [`00_08`](00_08_Action_Plan_Tracker).
+
+---
+
+## 🔗 Cross-references
+
+| Ресурс | Опис |
+|--------|------|
+| [04_01_Data_Models_and_Entities](04_01_Data_Models_and_Entities) | Схема БД (моделі під сервісами) |
+| [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof-of-Growth пайплайн (порядок сервісів) |
+| [03_05_Hardware_Symmetric_Crypto_and_Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Апаратне шифрування, HKDF ключі |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | Open backlog (Drift Register, Planned services) |
 
 ### Конвенція впорядкування розділів
 
@@ -29,23 +37,27 @@
 
 ## 📑 Зміст
 
-- [1. Архітектурні Засади](#️-1-архітектурні-засади) — базові класи, Web3 utility layer
-- [2. Домен: Телеметрія](#️-2-домен-телеметрія-telemetry) — `TelemetryUnpackerService`, `AlertDispatchService`
-- [3. Домен: AI та Аналітика](#-3-домен-ai-та-аналітика-ai--analytics) — Insights, Attractor, SeedDerivation, GeoUtils, Entropy, Chronicle
+<!-- TOC:AUTO:START -->
+- [1. Архітектурні Засади](#-1-архітектурні-засади) — базові класи, Web3 utility layer
+- [2. Домен: Телеметрія (Telemetry)](#-2-домен-телеметрія-telemetry) — `TelemetryUnpackerService`, `AlertDispatchService`
+- [3. Домен: AI та Аналітика (AI & Analytics)](#-3-домен-ai-та-аналітика-ai--analytics) — Insights, Attractor, SeedDerivation, GeoUtils, Entropy, Chronicle
 - [4. Домен: Блокчейн — Polygon (Primary Chain)](#-4-домен-блокчейн--polygon-primary-chain) — Minting, Burning, Audit, Rollback, Puro.earth, Etherisc
-- [5. Домен: Верифікація та Ідентичність](#️-5-домен-верифікація-та-ідентичність-verification--identity) — IoTeX, peaq, Chainlink, Ed25519
-- [6. Домен: NaaS Контракти](#-6-домен-naas-контракти-contract-management) — Contract health/termination
-- [7. Домен: Надзвичайне Реагування](#-7-домен-надзвичайне-реагування-emergency-response) — `EmergencyResponseService`
-- [8. Домен: Апаратне Забезпечення та Безпека](#-8-домен-апаратне-забезпечення-та-безпека-hardware-iot--security) — HardwareKey, OTA HMAC, OtaPackager, **WeakKeyDetector**
-- [9. Домен: Фінансові Оракули](#-9-домен-фінансові-оракули-finance-oracles) — `PriceOracleService`
-- [10. Домен: Мультичейн — Паралельні Рейки](#-10-домен-мультичейн--паралельні-рейки-multi-chain) — Solana, Celo, Klima, Hadron, Ethereum L1, Filecoin, Streamr, The Graph, dClimate, Toucan, Treasury
+- [5. Домен: Верифікація та Ідентичність (Verification & Identity)](#-5-домен-верифікація-та-ідентичність-verification--identity) — IoTeX, peaq, Chainlink, Ed25519
+- [6. Домен: NaaS Контракти (Contract Management)](#-6-домен-naas-контракти-contract-management) — Contract health/termination
+- [7. Домен: Надзвичайне Реагування (Emergency Response)](#-7-домен-надзвичайне-реагування-emergency-response) — `EmergencyResponseService`
+- [8. Домен: Апаратне Забезпечення та Безпека (Hardware, IoT & Security)](#-8-домен-апаратне-забезпечення-та-безпека-hardware-iot--security) — HardwareKey, OTA HMAC, OtaPackager, **WeakKeyDetector**
+- [9. Домен: Фінансові Оракули (Finance Oracles)](#-9-домен-фінансові-оракули-finance-oracles) — `PriceOracleService`
+- [10. Домен: Мультичейн — Паралельні Рейки (Multi-chain)](#-10-домен-мультичейн--паралельні-рейки-multi-chain) — Solana, Celo, Klima, Hadron, Ethereum L1, Filecoin, Streamr, The Graph, dClimate, Toucan, Treasury
 - [10b. Codex (Lore Layer) Сервіси](#-10b-codex-lore-layer-сервіси)
-- [11. Реєстр Воркерів (Workers Registry)](#️-11-реєстр-воркерів-workers-registry) — групування за чергами
+- [11. Реєстр Воркерів (Workers Registry)](#-11-реєстр-воркерів-workers-registry) — групування за чергами
 - [12. Карта Ланцюгів Викликів (Call Chains)](#-12-карта-ланцюгів-викликів-call-chains)
 - [13. Зовнішні API Залежності](#-13-зовнішні-api-залежності)
 - [13b. SSOT Drift Register (Doc ↔ Code Sync)](#-13b-ssot-drift-register-doc--code-sync)
-- [Planned: Forester Guild, Cross-Registry, Federated Learning](#-planned-forester-guild--proof-of-physical-work-міністерство-праці)
+- [Planned: Forester Guild — Proof-of-Physical-Work (Міністерство Праці)](#-planned-forester-guild--proof-of-physical-work-міністерство-праці)
+- [Planned: Cross-Registry API (Міністерство Закордонних Справ)](#-planned-cross-registry-api-міністерство-закордонних-справ)
+- [Planned: Federated Learning Loop (Міністерство Освіти)](#-planned-federated-learning-loop-міністерство-освіти)
 - [Додаткові Матеріали](#додаткові-матеріали) — math, security principles, RSpec coverage
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -187,7 +199,7 @@
 | **Файл** | `app/services/blockchain_minting_service.rb` |
 | **Інтерфейс** | Два методи: `.call(id: Integer, telemetry_log: nil)` — одиночний мінтинг; `.call_batch(ids: Array<Integer>, telemetry_log: nil)` — пакетний мінтинг |
 | **Вхід** | `.call`: `id` (Integer); `.call_batch`: `ids` (Array\<Integer>); `telemetry_log:` (опціонально, для oracle-driven flow) |
-| **Що робить** | Пакетна емісія SCC/SFC на Polygon через `mint` або `batchMint`. Guard clauses: `verified_by_iotex?`, `oracle_status_fulfilled?` (enum method), `hadron_kyc_status == "approved"`. **[BLOCKER-11 / S6.12]** Guards `verified_by_iotex?` + `oracle_status_fulfilled?` активні **лише** при `telemetry_log:` (oracle-driven flow Path 1). У tokenomics-flow Path 2 (`TokenomicsEvaluatorWorker → EvaluateTreeBatchWorker → wallet.lock_and_mint! → process_batch → call_batch(ids)` без `telemetry_log:`) ці перевірки **свідомо пропускаються** — `growth_points` вже зараховані через `Wallet#credit!` після AES-256-CBC decrypt + `valid_sensor_data?` у `TelemetryUnpackerService` (per-packet integrity perimeter). `hadron_kyc_status == "approved"` — **єдиний обов'язковий guard для всіх шляхів** (security perimeter проти non-compliant wallets). При `hadron_kyc_status != "approved"` — raise `Compliance Breach` без виклику `transact`; transaction залишається `:pending`, `locked_points` не звільняються (потребують admin-розблокування або повторної KYC). Spec coverage: `spec/services/blockchain_minting_service_spec.rb` → context "tokenomics flow without telemetry_log [S6.12]" (3 examples). Cross-ref: [05_02 Усі Шляхи до lock_and_mint! [DOC.7]](../docs/05_02_Proof_of_Growth_Pipeline#усі-шляхи-до-walletlock_and_mint-guard-inventory-doc7). Dynamic Tax 2% при carbon_coin + недофінансований страховий пул (→ DAO Treasury). `Kredis.lock(expires_in: 120.seconds)` проти race conditions (120s покриває worst-case: dry-run + binary search isolation до 6 рівнів ≈ ~130s). `transact` (fire-and-forget). Prometheus metric `SCC_MINTED_TOTAL`. **[B-05]** `insurance_pool_requires_funding?` — cached on-chain `balanceOf` oracle: `INSURANCE_POOL_THRESHOLD = 100_000 SCC`; кеш 15 хв (`dao_treasury_needs_funding`); timeout 10 сек; failsafe → `true` при збої RPC. **[DRY-RUN GUARD]** Перед кожним `batchMint` виконується `eth_call` симуляція (`batch_dry_run_reverts?`) — zero-gas виконання на поточному блоці. Якщо симуляція повертає EVM revert (ознаки: `"revert"`, `"execution reverted"`, `"out of gas"`), активується **Binary Search Poisoned Record Isolation** (Divide & Conquer): замість наївного fallback на N×`mint()`, алгоритм розбиває батч навпіл і тестує кожну половину через `eth_call` dry-run. "Чисті" половини відправляються через `batchMint`, "отруйні" — далі діляться рекурсивно до `MIN_BINARY_SEARCH_SIZE=4` або `MAX_BINARY_SEARCH_DEPTH=6`. Результат: для типового сценарію (1-2 отруйних з 100) ~14 `eth_call` + 2-3 `batchMint` замість 100 `mint()`. `POISONED_RATIO_THRESHOLD=0.3` — при >30% отруйних binary search неефективний → fallback на індивідуальні mints. `send_clean_batch` відправляє чисті підбатчі через `batchMint` з fallback на `mint_individual` при збої transact. Мережеві помилки (RPC timeout) не рахуються як revert — оптимістичний фолбек на `transact`. |
+| **Що робить** | Пакетна емісія SCC/SFC на Polygon через `mint` або `batchMint`. Guard clauses: `verified_by_iotex?`, `oracle_status_fulfilled?` (enum method), `hadron_kyc_status == "approved"`. **[BLOCKER-11 / S6.12]** Guards `verified_by_iotex?` + `oracle_status_fulfilled?` активні **лише** при `telemetry_log:` (oracle-driven flow Path 1). У tokenomics-flow Path 2 (`TokenomicsEvaluatorWorker → EvaluateTreeBatchWorker → wallet.lock_and_mint! → process_batch → call_batch(ids)` без `telemetry_log:`) ці перевірки **свідомо пропускаються** — `growth_points` вже зараховані через `Wallet#credit!` після AES-256-CBC decrypt + `valid_sensor_data?` у `TelemetryUnpackerService` (per-packet integrity perimeter). `hadron_kyc_status == "approved"` — **єдиний обов'язковий guard для всіх шляхів** (security perimeter проти non-compliant wallets). При `hadron_kyc_status != "approved"` — raise `Compliance Breach` без виклику `transact`; transaction залишається `:pending`, `locked_points` не звільняються (потребують admin-розблокування або повторної KYC). Spec coverage: `spec/services/blockchain_minting_service_spec.rb` → context "tokenomics flow without telemetry_log [S6.12]". Cross-ref: [05_02 Усі Шляхи до lock_and_mint! [DOC.7]](../docs/05_02_Proof_of_Growth_Pipeline#усі-шляхи-до-walletlock_and_mint-guard-inventory-doc7). Dynamic Tax 2% при carbon_coin + недофінансований страховий пул (→ DAO Treasury). `Kredis.lock(expires_in: 120.seconds)` проти race conditions (120s покриває worst-case: dry-run + binary search isolation до 6 рівнів ≈ ~130s). `transact` (fire-and-forget). Prometheus metric `SCC_MINTED_TOTAL`. **[B-05]** `insurance_pool_requires_funding?` — cached on-chain `balanceOf` oracle: `INSURANCE_POOL_THRESHOLD = 100_000 SCC`; кеш 15 хв (`dao_treasury_needs_funding`); timeout 10 сек; failsafe → `true` при збої RPC. **[DRY-RUN GUARD]** Перед кожним `batchMint` виконується `eth_call` симуляція (`batch_dry_run_reverts?`) — zero-gas виконання на поточному блоці. Якщо симуляція повертає EVM revert (ознаки: `"revert"`, `"execution reverted"`, `"out of gas"`), активується **Binary Search Poisoned Record Isolation** (Divide & Conquer): замість наївного fallback на N×`mint()`, алгоритм розбиває батч навпіл і тестує кожну половину через `eth_call` dry-run. "Чисті" половини відправляються через `batchMint`, "отруйні" — далі діляться рекурсивно до `MIN_BINARY_SEARCH_SIZE=4` або `MAX_BINARY_SEARCH_DEPTH=6`. Результат: для типового сценарію (1-2 отруйних з 100) ~14 `eth_call` + 2-3 `batchMint` замість 100 `mint()`. `POISONED_RATIO_THRESHOLD=0.3` — при >30% отруйних binary search неефективний → fallback на індивідуальні mints. `send_clean_batch` відправляє чисті підбатчі через `batchMint` з fallback на `mint_individual` при збої transact. Мережеві помилки (RPC timeout) не рахуються як revert — оптимістичний фолбек на `transact`. |
 | **Зовнішні виклики** | Polygon RPC (`ALCHEMY_POLYGON_RPC_URL`), `Web3::RpcConnectionPool`, `Web3::WeiConverter`, `BlockchainConfirmationWorker.perform_in` |
 | **Вихід** | `tx_hash` (String). Оновлює `BlockchainTransaction.status = :sent`. Turbo Stream broadcast балансу гаманця. |
 
@@ -1893,11 +1905,11 @@ Guard clauses повністю покриті RSpec тестами. Тести �
 
 | Сценарій | Spec файл | Тести |
 |----------|-----------|-------|
-| Oracle-driven: IoTeX guard | `spec/services/blockchain_minting_service_spec.rb` | 4 тести (not verified, pending, dispatched, failed) |
-| Oracle-driven: Chainlink guard | `spec/services/blockchain_minting_service_spec.rb` | 2 тести (pending/dispatched = blocked) |
-| Oracle-driven: successful flow | `spec/services/blockchain_minting_service_spec.rb` | 2 тести (both guards pass → mint + audit trail) |
-| Batch emission: bypass guards | `spec/services/blockchain_minting_service_spec.rb` | 2 тести (no telemetry_log → no guards → mint) |
-| Hadron KYC: always enforced | `spec/services/blockchain_minting_service_spec.rb` | 5 тестів (pending/rejected в обох flows, approved pass) |
-| Prometheus guard interaction | `spec/services/blockchain_minting_service_spec.rb` | 3 тести (metrics NOT incremented on guard rejection) |
-| IoTeX worker guards | `spec/workers/iotex_verification_worker_spec.rb` | 4 тести (already-verified skip, pipeline ordering, failure isolation) |
-| Chainlink worker guards | `spec/workers/chainlink_dispatch_worker_spec.rb` | 2 тести (idempotency, oracle_status tracking) |
+| Oracle-driven: IoTeX guard | `spec/services/blockchain_minting_service_spec.rb` | (not verified, pending, dispatched, failed) |
+| Oracle-driven: Chainlink guard | `spec/services/blockchain_minting_service_spec.rb` | (pending/dispatched = blocked) |
+| Oracle-driven: successful flow | `spec/services/blockchain_minting_service_spec.rb` | (both guards pass → mint + audit trail) |
+| Batch emission: bypass guards | `spec/services/blockchain_minting_service_spec.rb` | (no telemetry_log → no guards → mint) |
+| Hadron KYC: always enforced | `spec/services/blockchain_minting_service_spec.rb` | (pending/rejected в обох flows, approved pass) |
+| Prometheus guard interaction | `spec/services/blockchain_minting_service_spec.rb` | (metrics NOT incremented on guard rejection) |
+| IoTeX worker guards | `spec/workers/iotex_verification_worker_spec.rb` | (already-verified skip, pipeline ordering, failure isolation) |
+| Chainlink worker guards | `spec/workers/chainlink_dispatch_worker_spec.rb` | (idempotency, oracle_status tracking) |
