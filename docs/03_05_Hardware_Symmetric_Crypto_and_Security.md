@@ -16,14 +16,41 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — апаратне шифрування налаштовано, 137 host-based тестів проходять
+- **Поточний TRL:** TRL 6 — апаратне шифрування налаштовано; host-based тести проходять
 - **Архітектурне рішення ARCH.42 (2026-05-23):** Варіант B — LoRa-канал переведено на **AES-128-CCM** (constraint ATECC608B); CoAP-магістраль залишається на **AES-256-CBC**. Глобальний SSOT-патч виконано.
-- **Пов'язані модулі:**
-  - Життєвий Цикл Прошивки та DMA → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
-  - Прошивка Шлюзу Королеви → [`03_02_Queen_Gateway_Firmware`](03_02_Queen_Gateway_Firmware)
-  - mruby Атрактор Лоренца → [`03_04_mruby_Lorenz_Attractor`](03_04_mruby_Lorenz_Attractor)
-  - Бізнес-Логіка та Сервіси → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
-  - Proof of Growth Pipeline → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
+- **Відкрите:** ECB→AES-128-CCM (FW.2), MAC/MIC, ротація ключів → [`00_08`](00_08_Action_Plan_Tracker) (SEC.*).
+
+---
+
+## 🔗 Cross-references
+
+| Ресурс | Зв'язок |
+|---|---|
+| `firmware/soldier/main.c` · `firmware/queen/main.c` | Крипто call-sites: `MX_CRYP_Init`, `HAL_CRYP_Encrypt/Decrypt`, `Flush_Cache_To_Rails` (CBC), `Handle_CoAP_Command` (ECB restore) |
+| `app/services/telemetry_unpacker_service.rb` | Rails-сторона дешифрування батча |
+| [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Фази 0-5, RTC, IWDG, key loading |
+| [03_02_Queen_Gateway_Firmware](03_02_Queen_Gateway_Firmware) | Прошивка Королеви (CBC flush, ECB restore) |
+| [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | mruby атрактор |
+| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | TelemetryUnpacker, ActuatorCommandWorker |
+| [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Pipeline (decrypt стадія) |
+| [02_05_Queen_Hardware_and_Starlink](02_05_Queen_Hardware_and_Starlink) | Апаратний контекст Queen |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | SEC.* (ECB→CCM, MAC, key rotation) |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [Відкриті безпекові питання та аналіз загроз (open → 00_08)](#-відкриті-безпекові-питання-та-аналіз-загроз-open--00_08)
+- [1. Ініціалізація Крипто-Модуля (MX_CRYP_Init)](#-1-ініціалізація-крипто-модуля-mx_cryp_init)
+- [2. Структура Зашифрованих Пакетів (Payload Structure)](#-2-структура-зашифрованих-пакетів-payload-structure)
+- [3. Управління Ключами (Key Management)](#-3-управління-ключами-key-management)
+- [4. Генерація Вектора Ініціалізації (IV)](#-4-генерація-вектора-ініціалізації-iv)
+- [5. Діаграма Криптографічного Пайплайну](#-5-діаграма-криптографічного-пайплайну)
+- [6. Зведена Таблиця Криптографічних Каналів](#-6-зведена-таблиця-криптографічних-каналів)
+- [7. Відновлення Стану CRYP (ECB Restoration Pattern)](#-7-відновлення-стану-cryp-ecb-restoration-pattern)
+- [8. Тестове Покриття (Host-Based Tests)](#-8-тестове-покриття-host-based-tests)
+- [9. Резюме Аудиту Безпеки](#-9-резюме-аудиту-безпеки)
+- [10. PQC Migration Roadmap (TRL-Stratified Post-Quantum Layering)](#-10-pqc-migration-roadmap-trl-stratified-post-quantum-layering)
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -46,7 +73,7 @@
 | **Per-device CoAP AES-256 key (32-byte) — Gateway only** | ✅ Backend `HardwareKeyService.derive_device_key` (info `"silken-aes-256-device-key"`) + Queen Flash 8 words |
 | **ECB Mode для Soldier ↔ Queen (відсутність IV)** | 🟡 OPEN — transitional AES-128-ECB після ARCH.42; повне закриття після FW.2 CCM rollout |
 | **Відсутність MAC/MIC для LoRa-пакетів** | 🟡 OPEN — закривається разом з FW.2 CCM (8-byte MIC + 4-byte Frame Counter) |
-| **HRNG Fallback — передбачуваний seed** | ✅ Reuse закрито (`coap_iv.h`: uid×device + unix_ts×reboot + flush_seq×flush + 4 host-тести); 🟡 predictability residual **low-severity** (no chosen-plaintext на CoAP — §BLOCKER-4) |
+| **HRNG Fallback — передбачуваний seed** | ✅ Reuse закрито (`coap_iv.h`: uid×device + unix_ts×reboot + flush_seq×flush + 4 host-тести); 🟡 predictability residual **low-severity** (no chosen-plaintext на CoAP — §HRNG Fallback) |
 | **Відсутність ротації ключів (Key Rotation)** | 🟡 OPEN (рекомендовано Hash Ratchet KDF — PFS без передачі ключа; PQC bridge через §11) |
 | **ECB Restoration Race (HAL_CRYP_Init failure)** | ✅ Виправлено (SEC.8) — RCC reset + `NVIC_SystemReset()` при апаратному збої |
 | **ATECC608B Secure Element — LoRa AES-128 + ECC P-256 [ARCH.42 enabler]** | 🟡 OPEN — slot mapping + I²C integration spec'нуто у §3.7; bench eval kit замовлення = HW-task |
@@ -54,11 +81,11 @@
 
 ---
 
-## 🛑 Блокери
+## 🚧 Відкриті безпекові питання та аналіз загроз (open → 00_08)
 
----
+> Статуси трекаються в [`00_08`](00_08_Action_Plan_Tracker) (SEC.*); нижче — канонічний аналіз загроз + рішення.
 
-### ✅ BLOCKER-1: Hardcoded AES-256 Key — Firmware CLOSED (FW.1, 2026-05-02)
+### Hardcoded AES-256 Key — Firmware CLOSED (FW.1, 2026-05-02)
 
 **Статус:** ✅ Firmware ЗАКРИТО (FW.1, 2026-05-02). `Load_AES_Key()` зчитує per-device HKDF-derived ключ з Protected Flash Sector (`FLASH_KEY_ADDR`, magic `"KEYS"`). Hardcoded ідентичний ключ видалено. Factory Flashing Pipeline (SEC.3) та RDP Level 2 activation (SEC.2) — залишаються.
 
@@ -92,7 +119,7 @@ uint32_t aes_key[8] = {0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX,
 
 ---
 
-### 🟡 BLOCKER-2: ECB Mode для LoRa Soldier → Queen (transitional після ARCH.42)
+### ECB Mode для LoRa Soldier → Queen (transitional після ARCH.42)
 
 **Статус:** 🟡 Частково мітиговано через ARCH.42 (key-size 128). **Повне закриття — після FW.2 CCM rollout.**
 
@@ -126,7 +153,7 @@ hcryp.Init.Algorithm = CRYP_AES_ECB;          // ECB transitional — TARGET: CR
 
 **Необхідна дія (рекомендоване рішення — AES-128-CCM, після ARCH.42 Варіант B):**
 
-Найефективніший шлях вирішення BLOCKER-2 та BLOCKER-3 одночасно — перехід на **AES-128-CCM** (Counter with CBC-MAC), який **апаратно підтримується STM32WLE5JC** (`CRYP_AES_CCM` у HAL) та **повністю узгоджений з ATECC608B Secure Element** (AES-engine SE підтримує лише 128-бітні ключі). CCM надає конфіденційність + автентифікацію + захист від replay в одній операції. Силова margin: $2^{128}$ комбінацій — золотий стандарт LoRaWAN/Zigbee/Thread/BLE (індустріальне підтвердження "достатньо" для constrained IoT на 25-річний горизонт). Постквантовий розгляд — у §11.
+Найефективніший шлях вирішення §ECB Mode та §MAC/MIC одночасно — перехід на **AES-128-CCM** (Counter with CBC-MAC), який **апаратно підтримується STM32WLE5JC** (`CRYP_AES_CCM` у HAL) та **повністю узгоджений з ATECC608B Secure Element** (AES-engine SE підтримує лише 128-бітні ключі). CCM надає конфіденційність + автентифікацію + захист від replay в одній операції. Силова margin: $2^{128}$ комбінацій — золотий стандарт LoRaWAN/Zigbee/Thread/BLE (індустріальне підтвердження "достатньо" для constrained IoT на 25-річний горизонт). Постквантовий розгляд — у §11.
 
 **Нова структура 24-байтного LoRa-пакета (замість поточних 16-байтних) — фінальний дизайн 🤖 (FW.2, AES-128-CCM):**
 
@@ -207,7 +234,7 @@ HAL_CRYPEx_AESCCM_Encrypt(&hcryp, sensor_payload, 8, ciphertext_with_mic, 100);
 
 > **Примітка airtime:** 24-байтний пакет збільшує LoRa airtime на **+10%** vs поточних 21B (включаючи 5-байтний LoRa header), але залишається в межах duty-cycle бюджету EU868 (< 0.013% при 1 TX/година, SF10/DR2). Детальний розрахунок — нижче.
 
-> **Cross-ref для backend (✅ Виконано 2026-05-24):** `TelemetryUnpackerService.process_ccm_chunk` реалізовано feature-flagged через `ENV["TELEMETRY_CCM_ENABLED"]=true` (default off → 21B ECB path без змін). Парсить 25-байтний chunk `[DID:4][RSSI:1][FC:4 BE][ciphertext:8][MIC:8]` (Queen prepends RSSI до 24B LoRa air format), виконує AES-128-CCM decrypt + MIC verify через `Cryptography::LoraCcm.decrypt(...)` (8-byte AAD=DID‖FC, 12-byte nonce=AAD‖4×0x00, 8-byte tag, `HardwareKey#binary_key` — 16 bytes після ARCH.42), per-DID Frame Counter SETNX `silken:ccm:fc:{did}:{fc}` TTL=25h (як SEC.10 panic guard), unpack 8-byte sensor payload (`n c C n C C` = Vcap BE / temp i8 / acoustic u8 / dt BE / status / mesh_ctrl), upscale `growth_points` 5-bit (0..31) → stored 0..62 через ×2 multiplier (per-species coefficient залишається у `Wallet#lock_and_mint!` через `tree_family.carbon_sequestration_coefficient` — без змін). Prometheus метрики: `silkennet_telemetry_ccm_decrypt_ok_total`, `silkennet_telemetry_ccm_mic_fail_total`, `silkennet_telemetry_ccm_fc_replay_rejected_total`. Spec coverage: `spec/services/cryptography/lora_ccm_spec.rb` (18 examples, golden vectors) + `spec/services/telemetry_unpacker_service_spec.rb` "FW.2 CCM 25-byte path" (11 examples: happy-path / MIC tamper / CT tamper / FC replay / cross-DID FC reuse / Queen sentinel drop / short chunk / sensor noise / growth_points credit / feature flag off → ECB fallback / ENV roundtrip).
+> **Cross-ref для backend (✅ Виконано 2026-05-24):** `TelemetryUnpackerService.process_ccm_chunk` реалізовано feature-flagged через `ENV["TELEMETRY_CCM_ENABLED"]=true` (default off → 21B ECB path без змін). Парсить 25-байтний chunk `[DID:4][RSSI:1][FC:4 BE][ciphertext:8][MIC:8]` (Queen prepends RSSI до 24B LoRa air format), виконує AES-128-CCM decrypt + MIC verify через `Cryptography::LoraCcm.decrypt(...)` (8-byte AAD=DID‖FC, 12-byte nonce=AAD‖4×0x00, 8-byte tag, `HardwareKey#binary_key` — 16 bytes після ARCH.42), per-DID Frame Counter SETNX `silken:ccm:fc:{did}:{fc}` TTL=25h (як SEC.10 panic guard), unpack 8-byte sensor payload (`n c C n C C` = Vcap BE / temp i8 / acoustic u8 / dt BE / status / mesh_ctrl), upscale `growth_points` 5-bit (0..31) → stored 0..62 через ×2 multiplier (per-species coefficient залишається у `Wallet#lock_and_mint!` через `tree_family.carbon_sequestration_coefficient` — без змін). Prometheus метрики: `silkennet_telemetry_ccm_decrypt_ok_total`, `silkennet_telemetry_ccm_mic_fail_total`, `silkennet_telemetry_ccm_fc_replay_rejected_total`. Spec coverage: `spec/services/cryptography/lora_ccm_spec.rb` (golden vectors) + `spec/services/telemetry_unpacker_service_spec.rb` "FW.2 CCM 25-byte path" (happy-path / MIC tamper / CT tamper / FC replay / cross-DID FC reuse / Queen sentinel drop / short chunk / sensor noise / growth_points credit / feature flag off → ECB fallback / ENV roundtrip).
 
 > **Cross-ref для firmware (✅ 2026-05-24 doc-fix + freeze-contract impl):** RTC Backup Domain розширення — Frame Counter у DR15 (єдиний вільний слот; DR2 ❌ був помилково вказаний — насправді DR2 зайнято `has_mesh_relay`). Magic marker `FW2_FC_MAGIC = 0x46434E54` ("FCNT") у high 8 бітах захищає cold-boot. Реалізовано freeze-contract у `firmware/soldier/main.c` (`Load_Frame_Counter` / `Save_Frame_Counter` / `Build_CCM_Packet`) та `firmware/queen/main.c` (`Decrypt_CCM_Packet`) під `#define FW2_CCM_ENABLED 0` — production cycle не активний до hardware bench. Host-тести у `firmware/test/test_encryption.c` (CCM секція) забезпечують byte-level parity з OpenSSL CCM (linked via `-lcrypto`); єдине, що залишається для HW bench — підтвердити що STM32WLE5JC `HAL_CRYPEx_AESCCM_Encrypt` дає байт-точну відповідність до OpenSSL.
 
@@ -285,7 +312,7 @@ Duty cycle = T_airtime / T_period
 
 ---
 
-### 🔴 BLOCKER-3: Відсутність MAC/MIC (Message Authentication Code) для LoRa-пакетів
+### Відсутність MAC/MIC (Message Authentication Code) для LoRa-пакетів
 
 **Статус:** Відкрито. **Критична відсутність автентифікації повідомлень.**
 
@@ -299,7 +326,7 @@ Duty cycle = T_airtime / T_period
 
 **Необхідна дія:**
 
-- **Рекомендоване рішення (після ARCH.42 Варіант B):** Перейти на **AES-128-CCM** з 24-байтним пакетом — вирішує BLOCKER-2 та BLOCKER-3 одночасно (див. BLOCKER-2 вище для повної специфікації 24-байтного формату з Frame Counter + MIC).
+- **Рекомендоване рішення (після ARCH.42 Варіант B):** Перейти на **AES-128-CCM** з 24-байтним пакетом — вирішує §ECB Mode та §MAC/MIC одночасно (див. §ECB Mode вище для повної специфікації 24-байтного формату з Frame Counter + MIC).
 - Альтернатива: **AES-128-GCM** (надає одночасно конфіденційність + автентифікацію + nonce).
 - Або: додати **HMAC-SHA256 MIC** (4 байти суфіксу) до кожного LoRa-пакету, скоротивши сенсорний payload до 12 корисних байтів.
 - LoRaWAN-нативний вибір: **AES-128-CMAC** (стандарт LoRaWAN MAC layer) — спрощує bridging до Helium/Sigfox/Things Network (ARCH.34).
@@ -308,13 +335,13 @@ Duty cycle = T_airtime / T_period
 
 ---
 
-### ✅ BLOCKER-4: HRNG Fallback — покращена ентропія (Виправлено)
+### HRNG Fallback — покращена ентропія (Виправлено)
 
 **Статус:** ✅ Reuse закрито; **harden 2026-05-29** (cross-reboot/flush uniqueness + host-тести).
 
 **Реалізація:** fallback-IV винесено у pure-функцію `firmware/queen/coap_iv.h` →
 `coap_fallback_iv_word(i, tick, uid_hash, unix_ts, flush_seq)`, host-тестовану в
-`firmware/test/test_encryption.c` (4 тести: per-word / per-device / cross-reboot /
+`firmware/test/test_encryption.c` (per-word / per-device / cross-reboot /
 cross-flush uniqueness). Нормальний шлях — HRNG (CSPRNG); fallback спрацьовує лише
 при апаратній відмові RNG.
 
@@ -333,7 +360,7 @@ batch_iv[i] = (tick + i)                  // sub-second + per-word
 
 ---
 
-### 🟡 BLOCKER-5: Відсутній Механізм Ротації Ключів (Key Rotation)
+### Відсутній Механізм Ротації Ключів (Key Rotation)
 
 **Статус:** Відкрито. Системна проблема при масштабуванні.
 
@@ -375,7 +402,7 @@ batch_iv[i] = (tick + i)                  // sub-second + per-word
 
 ---
 
-### ✅ BLOCKER-6: Захист від ECB Restoration Race — реалізовано (SEC.8)
+### Захист від ECB Restoration Race — реалізовано (SEC.8)
 
 **Статус:** Виправлено (SEC.8). ECB-відновлення тепер захищене RCC-скиданням та `NVIC_SystemReset()`.
 **Файл:** `firmware/queen/main.c`
@@ -441,7 +468,7 @@ static void MX_CRYP_Init(void)
 |----------|----------|---------|
 | `KeySize` | `CRYP_KEYSIZE_128B` | 128-бітний ключ (16 байт, 4 × uint32_t) — ARCH.42 |
 | `DataType` | `CRYP_DATATYPE_32B` | Endianness: 32-бітний порядок байтів |
-| `pKey` | `&aes_key[0]` | RAM-адреса per-device HKDF-derived ключа (завантажується з Protected Flash Sector через `Load_AES_Key()` — §3.4а, BLOCKER-1 closed via FW.1) |
+| `pKey` | `&aes_key[0]` | RAM-адреса per-device HKDF-derived ключа (завантажується з Protected Flash Sector через `Load_AES_Key()` — §3.4а, §Hardcoded AES Key closed via FW.1) |
 
 **Параметри ключа (CoAP-режим, тільки Queen, для batch flush + downlink):**
 
@@ -458,7 +485,7 @@ static void MX_CRYP_Init(void)
 ### 2.1 Soldier → Queen: LoRa Uplink (AES-128-ECB transitional → AES-128-CCM target)
 
 **Поточний режим (transitional після ARCH.42, 2026-05-23):** AES-128-ECB · **Розмір:** 16 байт = 1 AES-блок · **IV:** відсутній
-**Цільовий режим (FW.2):** AES-128-CCM · **Розмір:** 24 байти (header 8B + ciphertext 8B + MIC 8B) — див. BLOCKER-2
+**Цільовий режим (FW.2):** AES-128-CCM · **Розмір:** 24 байти (header 8B + ciphertext 8B + MIC 8B) — див. §ECB Mode
 
 ```
 +--------+--------+--------+--------+--------+--------+--------+--------+
@@ -619,9 +646,9 @@ Load_AES_Key();  // reads from FLASH_LORA_KEY_ADDR, validates magic "KEYL",
                  // populates aes_key[4] in RAM; on Queen also loads FLASH_COAP_KEY_ADDR → coap_key[8]
 ```
 
-> 🚫 **Архітектурний baseline:** "ідентичний на ВСІХ вузлах" — **історична форма BLOCKER-1**, закрита FW.1. Цей блок документа явно зберігає згадку як warning для аудиторів, що інспектують стару прошивку до FW.1. При відсутності magic `"KEYS"` у Flash (raw чіп з фабрики) — `Load_AES_Key()` відмовляє у boot і enter'ить infinite reset loop (захист від випуску партії без provisioning). Цей invariant перевіряється у `firmware/test/test_soldier_logic.c::test_aes_key_load_fail_no_magic`.
+> 🚫 **Архітектурний baseline:** "ідентичний на ВСІХ вузлах" — **історична форма §Hardcoded AES Key**, закрита FW.1. Цей блок документа явно зберігає згадку як warning для аудиторів, що інспектують стару прошивку до FW.1. При відсутності magic `"KEYS"` у Flash (raw чіп з фабрики) — `Load_AES_Key()` відмовляє у boot і enter'ить infinite reset loop (захист від випуску партії без provisioning). Цей invariant перевіряється у `firmware/test/test_soldier_logic.c::test_aes_key_load_fail_no_magic`.
 
-> ⚠️ **Audit-trail (історичний BLOCKER-1):** До FW.1 перші 4 слова ключа збігалися зі стандартним тестовим ключем AES-128 з FIPS-197 (Appendix B). Поточна верифікація — `Security::WeakKeyDetector` (§3.1а нижче) + boot-time HKDF derivation гарантують, що цей вектор більше **не може потрапити** у production. Якщо інженер бачить hardcoded `0xXXXXXXXX` константи у будь-якій робочій копії — це означає, що FW.1 patch був відкочений; **stop and escalate**.
+> ⚠️ **Audit-trail (історичний §Hardcoded AES Key):** До FW.1 перші 4 слова ключа збігалися зі стандартним тестовим ключем AES-128 з FIPS-197 (Appendix B). Поточна верифікація — `Security::WeakKeyDetector` (§3.1а нижче) + boot-time HKDF derivation гарантують, що цей вектор більше **не може потрапити** у production. Якщо інженер бачить hardcoded `0xXXXXXXXX` константи у будь-якій робочій копії — це означає, що FW.1 patch був відкочений; **stop and escalate**.
 
 #### 3.1а Boot-time guard: `Security::WeakKeyDetector` (SEC.9 mitigation)
 
@@ -1009,7 +1036,7 @@ K_seed зберігається одразу після AES ключа у тій
 
 // Flash layout (post-ARCH.42 — AES-128 LoRa key only):
 //   [KEY_MAGIC:4][AES_KEY:16] | [SEED_MAGIC:4][K_SEED:32]
-//   ^FLASH_LORA_KEY_ADDR        ^FLASH_SEED_ADDR (+20)
+//   ^FLASH_LORA_KEY_ADDR        ^FLASH_SEED_ADDR
 // (Gateway-only Queen також має окрему пару [COAP_MAGIC:4][COAP_KEY:32] у наступному slot)
 #define FLASH_SEED_ADDR   (FLASH_LORA_KEY_ADDR + 20)  // 0x0803E014 (4 magic + 16 key = 20)
 #define FLASH_SEED_WORDS  8                        // 8 × uint32_t = 32 bytes
@@ -1223,8 +1250,8 @@ log.update!(lorenz_state_x: x_f, lorenz_state_y: y_f, lorenz_state_z: z_f,
 | Backend (signing) | `app/services/ota_packager_service.rb` | `compute_hmac_tag(bytecode, version_id, lora_total_chunks, cluster_id:)` + `build_hmac_trailer_chunks(tag, lora_total_chunks)` (3× `[0x9B][seg_idx:2 BE][total:2 BE][hmac:11]`) + `prepare(..., cluster_id:)` opt-in з `manifest[:hmac_signed/lora_total_chunks/total_packages/hmac_cluster_id]` |
 | Firmware Queen | `firmware/queen/main.c` | Stateless relay: `Handle_CoAP_Command` зберігає 3 trailer-блоки у `pending_ota_hmac_chunks[3][16]`; reflex broadcast loop додає Phase 1 (HMAC trailer) після Phase 0 (bytecode); 60 ms pacing |
 | Firmware Soldier | `firmware/soldier/main.c` | `Parse_HMAC_Trailer_Chunk` (32-byte `received_hmac_tag` посегментно) + `Hmac_Constant_Time_Compare` + `OTA_Verify_Dual_Gate` (Gate 1 magic 0x45544952 "RITE" + Gate 2 HMAC compare); fail-safe затирання magic у RAM-bytecode при negative gate |
-| Backend specs | `spec/services/ota_hmac_key_service_spec.rb` (16 examples), `spec/services/ota_packager_service_spec.rb` (+21), `spec/integration/ota_firmware_flow_spec.rb` (+7 e2e) | determinism / domain separation / anti-replay / anti-truncation / per-cluster isolation / manifest metadata / package ordering / blank input / SEC.11 |
-| Firmware host-tests | `firmware/test/test_soldier_logic.c` (+13), `test_queen_logic.c` (+4) | 3-chunk assemble (in-order/out-of-order) / reject seg_idx>3 / dual-gate magic-fail / dual-gate hmac-fail / both-pass / cleanup-on-failure / constant-time first/last byte / Queen relay segments assemble / wrong marker reject / overwrite same segment |
+| Backend specs | `spec/services/ota_hmac_key_service_spec.rb`, `spec/services/ota_packager_service_spec.rb`, `spec/integration/ota_firmware_flow_spec.rb` | determinism / domain separation / anti-replay / anti-truncation / per-cluster isolation / manifest metadata / package ordering / blank input / SEC.11 |
+| Firmware host-tests | `firmware/test/test_soldier_logic.c`, `test_queen_logic.c` | 3-chunk assemble (in-order/out-of-order) / reject seg_idx>3 / dual-gate magic-fail / dual-gate hmac-fail / both-pass / cleanup-on-failure / constant-time first/last byte / Queen relay segments assemble / wrong marker reject / overwrite same segment |
 
 **Залишковий TODO (не блокує цикл):** реальна mbedTLS HMAC-SHA256 деривація на STM32 HASH-peripheral у Soldier (`Phase 4.5 OTA assembly` має `TODO: Compute expected HMAC via mbedTLS` — потребує лабораторної ARM-збірки з mbedTLS link integration; до того гейт-логіка перевірена host-tests, runtime call вимкнений у бойовій збірці. Аналог FW.30 cold-start mbedTLS placeholder.).
 
@@ -1458,7 +1485,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 | Orchestrator | `app/services/factory_flashing/session.rb` | ✅ `ActiveRecord::Base.transaction` — failure rolls back HardwareKey + audit writes разом; `PreflightError` для non-approved sessions / missing device / unavailable master key |
 | Operator CLI | `lib/tasks/factory.rake` | ✅ `factory:flash[device_uid,batch_id,gilka,operator_id,supervisor_id,firmware_version]` (`ATECC_SERIAL` env для Гілки B, `RDP_LEVEL` env override) → `factory:approve[session_id]` (з `SUPERVISOR_ID` env guard) → `factory:execute[session_id]` (`EXECUTE=1` для real subprocess) |
 
-**Test coverage:** 63 examples — model AASM/validations (15), MasterKeySource (6), CommandBuilder golden vectors (11), Executor dry-run/execute (6), AteccProvisioner (10), AuditTrail (6), Session orchestration (7), E2E Rake trio (3 — firmware-equivalent HKDF verification).
+**Test coverage:** model AASM/validations (15), MasterKeySource (6), CommandBuilder golden vectors (11), Executor dry-run/execute (6), AteccProvisioner (10), AuditTrail (6), Session orchestration (7), E2E Rake trio (3 — firmware-equivalent HKDF verification).
 
 **Зразок dry-run вивода** (Tree, Гілка A, RDP=1):
 ```
@@ -1661,9 +1688,9 @@ MaintenanceRecord.create!(
 - [ ] OTA flow end-to-end протестований: `OtaPackagerService` → CoAP downlink → Queen broadcast → Soldier Flash write → magic check `0x45544952` ("RITE") → reboot → нова прошивка живе у `MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000`.
 - [ ] OTA verification: щонайменше **2 успішні цикли** оновлення на тому ж пристрої (не лише бенчмарки).
 - [ ] OTA rollback тестований: якщо новий bytecode falls back до embedded `lorenz_bytecode[]` при corrupt magic.
-- [ ] Provisioning HKDF flow завершено (BLOCKER-1 mitigation): унікальний `aes_key` записано в protected sector, master_key генерується HRNG (не FIPS-197 test vector).
+- [ ] Provisioning HKDF flow завершено (§Hardcoded AES Key mitigation): унікальний `aes_key` записано в protected sector, master_key генерується HRNG (не FIPS-197 test vector).
 - [ ] FW.2 (CCM) integrated: інакше після RDP-2 вже не можна «полагодити» AES-ECB вразливість через SWD reflash.
-- [ ] Watchdog (IWDG) тестовано: якщо firmware зависає, IWDG перезавантажує MCU без SWD (BLOCKER-6 в `02_05` ✅).
+- [ ] Watchdog (IWDG) тестовано: якщо firmware зависає, IWDG перезавантажує MCU без SWD (§ECB Restoration Race в `02_05` ✅).
 - [ ] Final firmware version task-snapshot задокументовано у `RELEASE_VERSION` ENV (Sentry release tracking) та git tag `vX.Y.Z`.
 - [ ] Spare batch (≥10 одиниць) залишено на RDP Level 1 для in-field troubleshooting (RDP-1 дозволяє стирати+перепрошивати, але не зчитувати → ключ безпечний).
 
@@ -2025,32 +2052,11 @@ HAL_CRYP_Init(&hcryp);
 | Key hardcoding detection | `app/services/security/weak_key_detector.rb` + boot guard | ✅ Backend |
 | **AES-128-CCM encrypt + MIC verify [FW.2 target]** | TBD — STM32 hardware bench | 🟡 Pending |
 
-**Загальний статус:** 137 host-based тестів проходять (`make -C firmware/test`). Але тестове покриття **криптографічного пайплайну** є неповним — зокрема HRNG fallback, EwsAlert panic TX та **FW.2 CCM mode** не тестуються (CCM потребує hardware bench для верифікації `CRYP_AES_CCM` HAL модуля).
+**Загальний статус:** host-based тести проходять (`make -C firmware/test`). Але тестове покриття **криптографічного пайплайну** є неповним — зокрема HRNG fallback, EwsAlert panic TX та **FW.2 CCM mode** не тестуються (CCM потребує hardware bench для верифікації `CRYP_AES_CCM` HAL модуля).
 
 ---
 
-## 🔗 9. Пов'язані Ресурси
-
-| Ресурс | Опис |
-|--------|------|
-| `firmware/soldier/main.c:60-67` | Оголошення `hcryp`, `hrng`, `aes_key` |
-| `firmware/soldier/main.c:741-748` | `MX_CRYP_Init()` Soldier |
-| `firmware/soldier/main.c:458` | `HAL_CRYP_Encrypt` Phase 4 TX |
-| `firmware/soldier/main.c:477` | `HAL_CRYP_Decrypt` Mesh RX |
-| `firmware/soldier/main.c:720` | `HAL_CRYP_Encrypt` Emergency TX |
-| `firmware/queen/main.c:81-82` | `aes_key[8] = {0}` (RAM mirror); `Load_AES_Key()` → per-device key з Protected Flash (post-FW.1) |
-| `firmware/queen/main.c:247` | `HAL_CRYP_Decrypt` LoRa RX |
-| `firmware/queen/main.c:493-576` | `Flush_Cache_To_Rails()` CBC batch encrypt |
-| `firmware/queen/main.c:632-662` | `Handle_CoAP_Command()` CBC decrypt + ECB restore |
-| `firmware/queen/main.c:770-782` | `MX_CRYP_Init()` Queen |
-| `app/services/telemetry_unpacker_service.rb` | Rails-сторона дешифрування батча |
-| [03_01 Firmware Lifecycle](03_01_Firmware_Lifecycle_and_DMA) | Фази 0-5, RTC, IWDG, ✅ BLOCKER-1 (Hardcoded Key — Firmware CLOSED via FW.1) |
-| [04_02 Business Logic](04_02_Business_Logic_and_Services) | TelemetryUnpackerService, ActuatorCommandWorker |
-| `POST /api/v1/provisioning/register` | ✅ Реалізовано — `Api::V1::ProvisioningController#register` (Zero-Trust, no keys in response — `04_03 §5.2`). Internal admin tool: §3.4г |
-
----
-
-## 📋 10. Резюме Аудиту Безпеки
+## 📋 9. Резюме Аудиту Безпеки
 
 | Категорія | Стан | Деталі |
 |-----------|------|--------|
@@ -2074,7 +2080,7 @@ HAL_CRYP_Init(&hcryp);
 
 ---
 
-## 🛡️ 11. PQC Migration Roadmap (TRL-Stratified Post-Quantum Layering)
+## 🛡️ 10. PQC Migration Roadmap (TRL-Stratified Post-Quantum Layering)
 
 > **Cross-ref:** [ARCH.42](00_08_Action_Plan_Tracker) (ARCH-decision цього документа), [FW.17](00_08_Action_Plan_Tracker) (Hash Ratchet KDF — Perfect Forward Secrecy bridge), [05_01 Multichain Architecture](05_01_Multichain_Architecture) (peaq DID + IoTeX W3bstream рівні), [INF.4](00_08_Action_Plan_Tracker) (Cloudflare TLS termination), `manifest.md` §3 (Cryptographic Integrity).
 
