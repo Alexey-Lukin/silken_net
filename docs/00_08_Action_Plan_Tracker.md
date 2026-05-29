@@ -640,6 +640,10 @@ DOC.9 — потребує лабораторного вимірювання TX-
 
 ## §06 · Deploy / Observability / Ops (OPS)
 
+#### DR.1 — Disaster Recovery drill + master-key backup
+- **P1** · 👤 · → `06_06`
+- ✅ DR-постуру задокументовано (`06_06`): Cloud SQL PITR + REGIONAL HA + 30×daily + restore-runbook'и + RTO/RPO. · [ ] 👤 quarterly DR-drill (PITR-clone + TF-state rollback на staging, зафіксувати факт. RTO/RPO vs цілі) · [ ] 👤 master-ключі (`RAILS_MASTER_KEY`/`PROVISIONING_MASTER_KEY`) → vault + offline-копія (незамінні, поза backup)
+
 #### OPS.1 — TRL Auto-Advancement GitHub Action
 - **P1** · 👤 · → `00_07`
 - ✅ `trl_sync.yml` (GraphQL Projects v2, TRL≥5 gate). · [ ] 👤 створити `PROJECT_PAT` (project:write) + тест з issues

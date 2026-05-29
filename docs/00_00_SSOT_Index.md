@@ -81,6 +81,7 @@ _Деплой, моніторинг, секрети та децентраліз�
 - [06\_03\_Prometheus\_Observability](06_03_Prometheus_Observability) (Grafana Alloy → Grafana Cloud + Alerting)
 - [06\_04\_Secrets\_Checklist](06_04_Secrets_Checklist) (Інвентаризація секретів: GitHub Secrets, Kamal, Akash, Terraform)
 - [06\_05\_Puma\_Configuration](06_05_Puma_Configuration) (Puma 8 IO-bound pool + кластерні хуки + runbook'и)
+- [06\_06\_Disaster\_Recovery\_and\_Backup](06_06_Disaster_Recovery_and_Backup) (Cloud SQL PITR/HA + restore-runbook'и + RTO/RPO + master-key backup)
 
 ## 🌿 Модуль 07: Економіка та Бізнес (Nature-as-a-Service)
 

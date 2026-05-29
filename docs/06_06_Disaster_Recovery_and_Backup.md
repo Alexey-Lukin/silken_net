@@ -1,0 +1,138 @@
+# 06_06: Disaster Recovery & Backup
+
+## 🎯 Мета
+
+Зафіксувати backup-постуру SilkenNet, цілі відновлення (RTO/RPO) та **restore-runbook'и** для кожного класу втрати: пошкодження даних, втрата інстансу/регіону, втрата Terraform-state, втрата незамінних master-ключів. Документ — SSOT для DR-аудиту перед mainnet.
+
+> **Принцип:** бекап, який ніколи не відновлювали в навчанні — це **не бекап**. Кожен runbook нижче має бути проганяний у DR-drill (див. §6).
+
+---
+
+## ✅ Статус
+
+- **Поточний TRL:** TRL 5 — backup-конфіг IaC присутній і ввімкнений (Cloud SQL PITR + REGIONAL HA + deletion_protection), але restore-runbook'и не проганялися в drill, master-key backup — операційна задача.
+- **Пов'язані модулі:**
+  - Деплой/Terraform → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
+  - Akash → [`06_02_Akash_Network_Integration`](06_02_Akash_Network_Integration)
+  - Secrets → [`06_04_Secrets_Checklist`](06_04_Secrets_Checklist)
+  - Resilience/failover → [`00_03_Resilience_and_Failover_Policy`](00_03_Resilience_and_Failover_Policy)
+  - Action Plan → [`00_08_Action_Plan_Tracker`](00_08_Action_Plan_Tracker) — DR.1, S5.6
+
+---
+
+## 🛑 Gaps (→ 00_08)
+
+- 🔴 **DR-drill не проводився** — restore-runbook'и (§5) не верифіковані на реальному відновленні. `DR.1`.
+- 🟡 **Master-key backup — операційна задача** — `RAILS_MASTER_KEY` / `PROVISIONING_MASTER_KEY` незамінні; процедура зберігання у vault не виконана (§4). `DR.1`.
+- 🟡 **GCS state bucket + versioning** — `S5.6` (chicken-and-egg при першому `terraform init`).
+
+---
+
+## 1. Інвентар: що захищаємо
+
+| Актив | Сховище | Backup-механізм | Втрата = |
+|---|---|---|---|
+| **PostgreSQL production** (`trees`, `wallets`, `blockchain_transactions`, `telemetry_logs`-партиції) | Cloud SQL `silken-db` | PITR + 30×daily snapshot (§2) | 🔴 Критично — але **канонічний баланс токенів живе on-chain** (Polygon), БД — проєкція |
+| Solid **Cache/Queue/Cable** БД (`*_cache/_queue/_cable`) | Cloud SQL (той самий інстанс) | той самий backup | 🟢 Низько — регенеровні (cache transient, queue re-enqueue, cable ephemeral) |
+| **Terraform state** | GCS `silken-net-terraform-state` | bucket versioning (`S5.6`) | 🟡 Високо — infra drift/lock; відновлюється з версій |
+| **`RAILS_MASTER_KEY`** (`config/master.key`) | git-ignored + vault | ручний (password manager) | 🔴 **Незамінний** — `credentials.yml.enc` без нього не розшифрувати |
+| **`PROVISIONING_MASTER_KEY`** | secrets store | ручний | 🔴 **Незамінний** — без нього не деривувати нові per-device ключі (вже прошиті пристрої працюють; нове provisioning — ні) |
+| **On-chain state** (SCC/SFC баланси, slashing, anchors) | Polygon / Ethereum L1 | сам блокчейн = immutable backup | 🟢 N/A — мережа є джерелом правди |
+| Oracle/anchor private keys, contract addresses | secrets (`06_04`) | ручний | 🟡 Високо — redeployable, але disruptive (revoke+redeploy) |
+| **Redis** (Sidekiq queue, Kredis locks, Rack::Attack) | Upstash (managed) | managed durability; **app-tolerant** | 🟢 Низько — jobs re-enqueue, locks re-acquire, rate-limit лічильники не критичні |
+| Schema | `db/structure.sql` (git) | git | 🟢 Низько — у репозиторії |
+
+---
+
+## 2. Cloud SQL — backup + HA (фактична конфігурація)
+
+З `terraform/database.tf` + `variables.tf` (defaults):
+
+| Параметр | Значення | DR-роль |
+|---|---|---|
+| `point_in_time_recovery_enabled` | `true` | Відновлення на будь-яку секунду в межах вікна WAL |
+| `transaction_log_retention_days` | `30` | Глибина PITR — 30 днів |
+| daily backup `start_time` | `03:00` | Щоденний snapshot |
+| `retained_backups` | `30` (COUNT) | 30 останніх snapshot'ів |
+| `availability_type` | `REGIONAL` (default) | **HA з автоматичним failover** між зонами |
+| `deletion_protection` | `true` (default) | Захист від випадкового `terraform destroy` |
+| `read_replica_count` | `0` (default) | Read-репліки вимкнені (увімкнути для read-scaling, не для DR) |
+| `disk_autoresize` | `true` | Запобігає full-disk outage |
+
+> **Наслідок:** на default-конфігу production має zone-failure resilience (REGIONAL auto-failover, ~хвилини) + 30-денне вікно PITR. Read-репліка (`failover_target = false`) — НЕ для DR, лише read-scaling.
+
+---
+
+## 3. RTO / RPO targets
+
+| Сценарій | RPO (макс. втрата даних) | RTO (час відновлення) |
+|---|---|---|
+| Zone failure (1 зона GCP) | 0 | ~хвилини (REGIONAL auto-failover) |
+| Data corruption / bad migration | ≤ 5 хв (PITR WAL) | ≤ 1 год (PITR restore + redeploy) |
+| Instance loss | ≤ 5 хв (PITR) | ≤ 1 год |
+| Region loss (вся `europe-west1`) | ≤ 24 год (останній snapshot, якщо WAL у тому ж регіоні) | ≤ 4 год (restore у новий регіон + `terraform apply` + redeploy) |
+| On-chain token state | 0 (immutable) | N/A |
+
+> Token-баланси завжди відновлювані з блокчейну незалежно від стану БД — backend re-індексує on-chain події. БД-втрата впливає на **телеметрію/аналітику**, не на кошти.
+
+---
+
+## 4. Незамінні master-ключі (НЕ в Cloud SQL backup!)
+
+`RAILS_MASTER_KEY` та `PROVISIONING_MASTER_KEY` **не зберігаються** у жодному автоматичному backup (git-ignored, не в БД). Їх втрата незворотна:
+
+- **`RAILS_MASTER_KEY`** → `config/credentials.yml.enc` (усі Web3-ключі, HMAC-секрети) стає нечитабельним. Recovery: НЕМАЄ — лише повна ротація всіх credentials + re-encrypt.
+- **`PROVISIONING_MASTER_KEY`** → HKDF-корінь per-device AES. Втрата: вже прошиті Soldier/Queen працюють (ключі у Flash), але **нове provisioning неможливе** і backend не деривує ключі для replay-перевірки нових пристроїв.
+
+**Процедура (👤, DR.1):** обидва ключі — у password manager / Vault (offline-копія в сейфі для founder-level). Ротація — `06_04 §5.2`.
+
+---
+
+## 5. Restore Runbooks
+
+### 5.1 Point-in-time restore (corruption / bad migration)
+```bash
+# Відновити у НОВИЙ інстанс на момент ДО інциденту (не перезаписує prod):
+gcloud sql instances clone silken-db silken-db-restored \
+  --point-in-time '2026-05-29T02:55:00Z'
+# Перевірити дані → за потреби переключити DATABASE_URL на restored → redeploy.
+```
+
+### 5.2 Terraform state recovery
+```bash
+# State у GCS з versioning (S5.6). Відкат до попередньої версії:
+gsutil ls -a gs://silken-net-terraform-state/   # знайти попередній generation
+gsutil cp gs://silken-net-terraform-state/default.tfstate#<GEN> \
+          gs://silken-net-terraform-state/default.tfstate
+# Або terraform state pull/push. Lock: terraform force-unlock <LOCK_ID> при stuck lock.
+```
+
+### 5.3 Region loss (full rebuild)
+1. `terraform apply` у новому регіоні (`var.region`) — підніме Cloud SQL + Ingress Anchor.
+2. Restore Cloud SQL з backup у новий регіон (`gcloud sql backups restore`).
+3. Відновити секрети (`06_04`) + master-ключі (§4) у CI/Akash SDL.
+4. `kamal deploy` (production) / Akash redeploy.
+5. Backend re-індексує on-chain стан (баланси самовідновлюються з Polygon).
+6. Оновити DNS A-запис → новий `ingress_ip`.
+
+### 5.4 Redis (Upstash) loss
+Не потребує restore: Sidekiq jobs re-enqueue з БД-стану, Kredis locks re-acquire, Rack::Attack лічильники скидаються. Достатньо вказати новий `REDIS_URL`/`KREDIS_REDIS_URL` + redeploy.
+
+---
+
+## 6. DR Drill (👤, DR.1 — обов'язково перед mainnet)
+
+Щоквартально проганяти §5.1 (PITR clone у throwaway-інстанс) + §5.2 (state-version rollback) на staging. Фіксувати фактичні RTO/RPO vs цілі §3. Неперевірений backup = відсутній backup.
+
+---
+
+## 🔗 Cross-references
+
+| Файл / Документ | Зв'язок |
+|---|---|
+| `terraform/database.tf` | Cloud SQL backup_configuration + REGIONAL HA + read replica (SSOT конфігу) |
+| `terraform/main.tf` | GCS state backend (`silken-net-terraform-state`) |
+| `06_01_Deployment_Kamal_Terraform` | `terraform apply`, Ingress Anchor, deploy-flow |
+| `06_04_Secrets_Checklist` | master-ключі, ротація (§5.2), revocation runbook (§5.4) |
+| `00_03_Resilience_and_Failover_Policy` | runtime failover (circuit breakers, comms-loss) — runtime, не backup |
+| `00_08_Action_Plan_Tracker` | DR.1 (drill + master-key backup), S5.6 (state bucket) |
