@@ -12,436 +12,37 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — модель інтегрована, DMA налаштовано; `Run_Inference()` закоментована
-- **Пов'язані модулі:**
-  - Життєвий Цикл Прошивки та DMA → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
-  - Прошивка Шлюзу Королеви → [`03_02_Queen_Gateway_Firmware`](03_02_Queen_Gateway_Firmware)
-  - mruby Атрактор Лоренца → [`03_04_mruby_Lorenz_Attractor`](03_04_mruby_Lorenz_Attractor)
-  - Апаратне симетричне шифрування та Безпека → [`03_05_Hardware_Symmetric_Crypto_and_Security`](03_05_Hardware_Symmetric_Crypto_and_Security)
-  - Моделі Даних та Сутності → [`04_01_Data_Models_and_Entities`](04_01_Data_Models_and_Entities)
+- **Поточний TRL:** TRL 6 — модель інтегрована, DMA налаштовано, DSP Path B зафіксовано; `Run_Inference()` закоментована (stub fallback). Відкриті: Run_Inference + model.h + Tensor Arena (`FW.4`), confidence threshold (`FW.18`) → [`00_08 §03`](00_08_Action_Plan_Tracker).
 
 ---
 
-### ⚙️ Стан Реалізації
-
-| Компонент | Стан |
-|-----------|------|
-| **Piezoelectric EXTI trigger** | ✅ Реалізовано (`HAL_GPIO_EXTI_Callback`, GPIO_PIN_0) |
-| **TIM2 metronome (16 kHz DMA clock)** | ✅ Реалізовано (`MX_TIM2_Init`) |
-| **ADC DMA mode (512 samples)** | ✅ Реалізовано (`HAL_ADC_Start_DMA`) |
-| **CPU SLEEP під час DMA** | ✅ Реалізовано (`HAL_PWR_EnterSLEEPMode` + WFI) |
-| **DMA Complete ISR (`audio_ready`)** | ✅ Реалізовано (`HAL_ADC_ConvCpltCallback`) |
-| **Memory barrier (`__DMB()`)** | ✅ Реалізовано (між DMA write та CPU read) |
-| **12-bit → float нормалізація** | ✅ Реалізовано (`/ 4095.0f`) |
-| **`Run_Inference()` виклик** | 🟡 BLOCKER-1 (частково) — оголошення доступне через stub, але call-site `main.c:1422` залишається закоментованим до інтеграції реальної моделі ML-партнером |
-| **`silken_net_audio_model.h`** | 🟡 BLOCKER-2 (compilation unblocked) — реального файлу немає, але `silken_net_audio_model_stub.h` додано (2026-05-22) з контрактом (`Run_Inference` sig, `TENSOR_ARENA_SIZE=16K`, `NUM_CLASSES=5`, `ML_CLASS_*`). main.c використовує `__has_include` fallback. Дозволяє `arm-none-eabi-size firmware.elf` для реальної RAM verification |
-| **Tensor Arena (SRAM budget)** | 🟡 BLOCKER-3 (estimate) — stub фіксує 16 KB (Path B baseline §3.2); реальне значення міряється після інтеграції моделі через `make size-check` або `arm-none-eabi-size firmware.elf` |
-| **DSP preprocessing (FFT/MFCC)** | 🟢 Path B (log-mel) **офіційно зафіксовано** (2026-05-22, §3.2 Decision Matrix). Implementation gate — ML-партнер тренує з `librosa.feature.melspectrogram` (без DCT) + firmware додає CMSIS-DSP Mel-bank. Конкретний контракт — **§3.4** |
-| **Confidence threshold (0.80)** | ✅ FW.18: dual-threshold у RTC DR13/DR14 (defaults 0.60/0.85), OTA-tunable через `CMD_SET_AUDIO_THRESHOLDS` (опкод `0x9D`) — Soldier dispatcher та 7 host-тестів імплементовано (`firmware/soldier/main.c:1003-1108`, `firmware/test/test_soldier_logic.c:4436-4442`). |
-| **OTA threshold invalid counter** | ✅ Реалізовано (2026-05-22): `tinyml_threshold_invalid_count` (saturating uint8) у `firmware/soldier/main.c §1.11` — інкрементується на NaN/out-of-range/inversion. 7 host-тестів у `test_tinyml_pipeline.c`. Wiring до 21-byte packet — TBD. |
-| **Decision: Cavitation → acoustic_events++** | ✅ Реалізовано (але мертве: inference закоментована) |
-| **Decision: Chainsaw → Emergency LoRa TX** | ✅ Реалізовано (але мертве: inference закоментована) |
-| **Host-based tests для аудіо-пайплайну** | ✅ Реалізовано (`firmware/test/test_tinyml_pipeline.c`, **51 тест** включно з 7 новими для invalid counter) |
-
----
-
-## 🛑 Блокери
-
-### 🟡 BLOCKER-1: `Run_Inference()` — Виклик інференсу закоментовано
-
-**Статус:** Частково розблоковано (2026-05-22). Compilation більше не блокується (stub fallback закриває include), але call-site `main.c:1422` залишається закоментованим до інтеграції реальної моделі ML-партнером. TinyML inference поки що не виконується runtime.
-
-**Файл:** `firmware/soldier/main.c:355`
-
-```c
-// 5. Запускаємо "Свідомість" (Шаховий розтин звуку)
-// ml_event_id = Run_Inference(audio_buffer, &ml_confidence);
-```
-
-**Вплив:**
-1. `ml_event_id` завжди `0` (ініціалізовано як глобальна змінна), `ml_confidence` завжди `0.0`.
-2. Перевірка `if (ml_confidence > 0.80)` **завжди false** → жодна акустична класифікація ніколи не спрацює.
-3. Кавітація (`ml_event_id == 2`) ніколи не записується в `acoustic_events`.
-4. Тривога бензопили (`ml_event_id == 3`) ніколи не викликає `Trigger_Emergency_LoRa_TX()`.
-5. `lora_payload[7]` (acoustic byte) завжди `0` — дані в хмарі є артефактом, не реальними вимірами.
-
-**Причина (guesstimate):** Функція `Run_Inference()` оголошена в `silken_net_audio_model.h`, який відсутній у репо (BLOCKER-2). Закоментування — тимчасовий workaround для компіляції.
-
-**Необхідна дія:**
-- Додати `silken_net_audio_model.h` до репозиторію (BLOCKER-2).
-- Розкоментувати `ml_event_id = Run_Inference(audio_buffer, &ml_confidence);`.
-- Провести smoke-тест: запустити з тестовим сигналом, перевірити `ml_event_id` та `ml_confidence`.
-
-**Блокує:** Весь TinyML пайплайн, EwsAlert (03_05), Proof of Growth (05_02).
-
----
-
-### 🟡 BLOCKER-2: `silken_net_audio_model.h` — compilation unblocked via stub
-
-**Статус:** Compilation unblocked (2026-05-22). `firmware/soldier/silken_net_audio_model_stub.h` додано як IP-friendly fallback з повним контрактом (`Run_Inference` signature, `TENSOR_ARENA_SIZE=16K`, `NUM_CLASSES=5`, `ML_CLASS_*` enums). `main.c` використовує `__has_include` — якщо реальна модель є, бере її; інакше падає на stub з `#warning`. Реальний `silken_net_audio_model.h` від ML-партнера залишається TBD.
-
-**Файл:** `firmware/soldier/main.c:21`
-
-```c
-// Підключаємо скомпільовану нейромережу TinyML
-#include "silken_net_audio_model.h"
-```
-
-**Вплив:**
-1. `Run_Inference()`, `TENSOR_ARENA_SIZE`, та всі константи моделі визначені виключно в цьому файлі.
-2. Без нього неможливо знати: розмір Tensor Arena, сигнатуру функції інференсу, кількість шарів, тип квантизації.
-3. SSOT для Edge AI є неповним — Wiki не може зафіксувати ключові параметри.
-4. Будь-який розробник, що клонує репо, отримає помилку компіляції в режимі з TinyML.
-
-**Виконано (2026-05-22):**
-- ✅ `firmware/soldier/silken_net_audio_model_stub.h` додано — повний контракт без розкриття IP.
-- ✅ `main.c:22-27` використовує `__has_include` fallback: реальна модель має пріоритет, stub — fallback з `#warning`.
-- ✅ `make size-check` тепер проходить з stub (RAM budget verification без реальної моделі).
-
-**Залишається (для ML-партнера, Бушин/Любченко):**
-- Натренувати модель за Path B (log-mel, §3.2 Decision Matrix).
-- Згенерувати реальний `silken_net_audio_model.h` через X-CUBE-AI або вручну з TFLite Micro.
-- Розкоментувати `ml_event_id = Run_Inference(...)` у `main.c:1422`.
-- Виміряти фактичний `TENSOR_ARENA_SIZE` через `arm-none-eabi-size firmware.elf` та оновити stub baseline (16 KB).
-
-**Структура stub (актуальна):**
-```c
-// firmware/soldier/silken_net_audio_model_stub.h
-#define ML_CLASS_SILENCE         0u
-#define ML_CLASS_WIND            1u
-#define ML_CLASS_CAVITATION      2u
-#define ML_CLASS_CHAINSAW        3u
-#define ML_CLASS_FAUNA_ACTIVITY  4u   /* Mongabay pivot, post-TRL 7 */
-#define NUM_CLASSES              5u
-#define MODEL_INPUT_SIZE         40u  /* Path B log-mel bands */
-#define TENSOR_ARENA_SIZE        (16u * 1024u)
-uint8_t Run_Inference(const float* buffer, float* confidence);
-```
-
----
-
-### 🔴 BLOCKER-3: Tensor Arena — розмір SRAM під час інференсу невідомий
-
-**Статус:** Відкрито. Критичний для планування RAM-бюджету.
-
-**Вплив:**
-1. `TENSOR_ARENA_SIZE` визначений у `silken_net_audio_model.h` (відсутній).
-2. STM32WLE5JC має лише **64 KB SRAM**. Аудіо-буфери вже займають ~3.1 KB:
-   - `raw_audio_buffer[512]` → **1024 B**
-   - `audio_buffer[512]` → **2048 B**
-   - Разом: **3072 B** (4.7% SRAM)
-3. Tensor Arena типово займає **8–32 KB** для моделей класифікації аудіо на CMSIS-NN.
-4. Якщо Tensor Arena + аудіо-буфери + решта heap/stack перевищать 64 KB → **Stack Overflow → HardFault → IWDG reset**.
-
-**Розрахунок залишкового SRAM:**
-
-| Сегмент | Розмір |
-|---------|--------|
-| `raw_audio_buffer[512]` (uint16_t) | 1 024 B |
-| `audio_buffer[512]` (float) | 2 048 B |
-| LoRa/OTA/Mesh буфери (з 03_01) | ~1 800 B |
-| mruby VM heap | ~4 096 B |
-| **Разом відомих змінних** | **~9 000 B** |
-| **Залишок для Tensor Arena** | **~54 000 B** |
-| **Залишок мінус типовий stack (8 KB)** | **~46 000 B** |
-
-Теоретично достатньо (**~25 KB пік з fauna-вікном** — див. §7), але без фактичного `TENSOR_ARENA_SIZE` це залишається **"освіченим припущенням"**. Після розблокування `main.c` (BLOCKER-1) **першою дією** має бути:
-
-```bash
-make firmware_ram_budget   # custom target → arm-none-eabi-size firmware.elf
-```
-
-**Необхідна дія (порядок виконання):**
-1. Отримати stub або реальний `silken_net_audio_model.h` (BLOCKER-2 — stub-стратегія IP-friendly).
-2. Розкоментувати `Run_Inference()` (BLOCKER-1, `main.c:355`).
-3. Скомпілювати firmware → запустити `arm-none-eabi-size firmware.elf` → зафіксувати фактичні `.text/.data/.bss` сегменти.
-4. Порівняти з прогнозом §7 (~25 KB peak); якщо overshoot → зменшити `ota_buffer[1024]` (1 KB → 512 B) або аудіо-вікно.
-
-**Блокує:** Безпечна робота системи, SRAM planning, OTA updates.
-
-**[FW.26] CI gate активовано (2026-05-03):** `make -C firmware/test size-check` запускає host gcc проти `test_soldier` + `test_queen`, рахує `.bss + .data` і fail'ить якщо > 51200 байт (50 KB). Інтегровано як step у `firmware_test` job у `.github/workflows/ci.yml`. Поточна baseline: soldier=2.5 KB, queen=12.4 KB — комфортно < 50 KB запасу. Host build — placeholder (mock-структури, host-stdlib), але поділяє ті ж глобальні буфери (`raw_audio_buffer`, OTA chunk map, EMA state, mesh cache etc.), що і ARM build, тому регресія тут = регресія на target. ARM `arm-none-eabi-size` gate (`firmware_ram_budget` job) живе паралельно і автоматично активується після появи ELF artifacts (post-FW.4 lab build). Майбутні розширення (FW.21 EMA вже додав ~1 KB, ARCH.21 PVD save +0 B, FW.26 model TBD) пройдуть через свідомий budget review.
-
----
-
-### ✅ BLOCKER-4: Host-based тести для TinyML аудіо-пайплайну (Реалізовано)
-
-**Статус:** Виправлено. `firmware/test/test_tinyml_pipeline.c` додано з 25 тестами.
-
-**Покриття:**
-- Audio normalization (boundary values: 0, 2047, 4095, full 512-element buffer)
-- Confidence threshold (0.80): below, exactly at, just above, max 1.0
-- All 4 event classes: silence (no action), wind (no action), cavitation (acoustic_events++), chainsaw (Emergency TX)
-- Acoustic events saturation (FW.12/FW.22): uint8 cap at 255
-- Vibration race condition guard (FW.11): NVIC-level read-and-clear atomicity
-- Multi-cycle accumulation: 10 consecutive cavitations, mixed events
-
-**Залишкові обмеження:**
-- Mock `Run_Inference()` — тести перевіряють decision logic, не саму нейромережу
-- Реальний ISR timing та DMA race conditions не тестуються в host-based середовищі
-- `HAL_ADC_Start_DMA` return code (`HAL_BUSY`) не тестується
-
-**Закриває:** TRL 7 checklist item #5, FW.15 (частково)
-
----
-
-### 🟢 BLOCKER-5: DSP-шлях обрано — Path B (log-mel) [CLOSED 2026-05-22]
-
-**Статус:** ✅ Choice gate **closed**. Архітектурне рішення зафіксовано як **Path B (log-mel spectrogram)** — деталі §3.2 Decision Matrix. Очікує формального підтвердження від ML-партнера (Бушин/Любченко) у training pipeline + переходу від "choice gate" до "implementation gate". Конкретний log-mel контракт (параметри + librosa reference + firmware-інтерфейс) — **§3.4**.
-
-**Файл:** `firmware/soldier/main.c:1417-1419`
-
-```c
-// 4. Швидко переводимо 12-бітні RAW-дані у Float для TinyML
-for(int i = 0; i < 512; i++) {
-    audio_buffer[i] = (float)raw_audio_buffer[i] / 4095.0f; // Нормалізація 0.0 - 1.0
-}
-```
-
-**Поточний пайплайн:** `ADC raw (12-bit) → linear normalization [0.0, 1.0] → model input`. Це валідний вхід для Path A (raw 1D CNN), але **не достатній** для Path B/C з частотним аналізом — див. §3.2 Decision Matrix.
-
-**Реальна проблема (re-framed 2026-05-17):** Не "відсутній FFT/MFCC", а **відсутнє рішення про DSP-шлях**:
-
-1. **Для класів 0–3** (silence/wind/cavitation/chainsaw) — кожен з трьох шляхів §3.2 принципово працює. Path A (raw 1D CNN, поточна нормалізація) може дати робочу 4-class модель для MVP без частотного аналізу.
-2. **Для класу 4 fauna** (Mongabay pivot, §10) — Path A **не оптимальний**: без spectral structure layered soundscape (комахи 4–8 кГц + птахи 1–6 кГц + амфібії 0.5–3 кГц) важко відрізнити від хаотичного шуму вітру. Path B (log-mel) або C (TFLM microfrontend) дають перевагу. Це сучасний bioacoustic-ESC консенсус (Salamon & Bello 2015; BirdNET 2021).
-3. **Чи `silken_net_audio_model.h` буде Path A/B/C** — невідомо без файлу (BLOCKER-2) та без рішення ML-партнера (Бушин або Любченко, [`08_02 §1.5/§1.8`](08_02_Cybernetic_and_Mathematical_Validation)).
-
-**Розрахунок тривалості вікна:**
-- 512 семплів × (1 / 16 000 Hz) = **32 мс** вікно
-- Для бензопили (F0 ~ 100 Hz) → 32 мс = 3.2 повних цикли (достатньо для виявлення)
-- Для кавітації (broadband noise) → 32 мс достатньо для енергетичного детектора
-- Для fauna soundscape — 32 мс **недостатньо** окремо; потрібне 5 s акумульоване вікно (§10.2, ARCH.40)
-
-**Необхідна дія (за пріоритетом):**
-1. **Узгодити з ML-партнером** (Бушин/Любченко) обраний шлях за §3.2 Decision Matrix — це передує будь-якій CMSIS-DSP роботі.
-2. **Залежно від обраного шляху:**
-   - **Path A:** залишити поточну нормалізацію; перевести зусилля на більшу INT8 модель.
-   - **Path B:** додати `arm_rfft_fast_f32()` + `arm_cmplx_mag_f32()` + custom Mel-filterbank + `arm_vlog_f32()`. **НЕ додавати `arm_mfcc_f32`** (повний MFCC з DCT — не оптимальний для CNN).
-   - **Path C:** інтегрувати TFLM `signal::microfrontend` op у TFLite runtime; firmware DSP — нуль рядків коду.
-3. Задокументувати фактичну архітектуру моделі у `silken_net_audio_model.h` (BLOCKER-2).
-
-> 🎯 **Архітектурна рекомендація (review note 2026-05-22):** Враховуючи **Mongabay pivot** як стратегічний пріоритет (`§10`, 5-й клас fauna), **Path B (log-mel spectrogram) рекомендований як офіційний default**:
-> - **Чому НЕ Path A:** Raw audio працює для класів 0–3 (кавітація, бензопила), але **вкрай неефективний** для біоакустики, де ключова ознака — структура звуку у **частотній області** (layered soundscape).
-> - **Чому НЕ Path C:** TFLM `microfrontend` "чистіший" (firmware DSP = 0 рядків), але має **дещо більший RAM-overhead** ніж custom Mel-bank Path B. Path C залишається fallback'ом якщо ML-партнер обере його за simplicity.
-> - **Дія:** Зафіксувати Path B як baseline у *Firmware_Architecture_Audit* після формального підтвердження від Бушин/Любченко. Це переводить FW.25 з "choice gate" у "implementation gate".
-
-**Блокує:** Точність класифікації, особливо для класу 4 fauna. Класи 0–3 можуть бути MVP-сумісними з Path A (раннє розкоментування `Run_Inference()`).
-
-> **🌿 Mongabay/Delgado 2026 — практичне посилення:** Стаття Delgado et al. описує лісовий звуковий ландшафт як **«багатошаровий» (layered soundscape)** — одночасні шари комах, птахів, амфібій з характерними піками на світанку та в сутінках. У часовій області ці шари **складно** відрізнити від рівномірного шуму вітру/дощу — подібна енергетична огинаюча, абсолютно різна спектральна структура. Це робить **Path B (log-mel) або Path C (TFLM microfrontend) сильно бажаним** для класу 4. Path A може давати робочі класи 0–3, але fauna потребує spectral features. Це переводить FW.25 з "повинні зробити MFCC" на "повинні узгодити шлях за §3.2 Decision Matrix" — стратегічна паралель Бушин ↔ TinyML, див. [`08_02` §1.5 Macro-Micro verification](08_02_Cybernetic_and_Mathematical_Validation). **Без частотних ознак біорізноманіття не вимірюється** — сенсор бачить лише «шум», як супутник бачить лише «зелений піксель».
-
----
-
-### 🟡 BLOCKER-6: Хардкодований поріг впевненості `0.80`
-
-**Статус:** 🤖 ✅ **Реалізовано (FW.18, повний)** — RTC-storage, dual-threshold decision logic та OTA CMD dispatcher (опкод `0x9D = CMD_SET_AUDIO_THRESHOLDS`) у `firmware/soldier/main.c` (секції 1.5а + 1.14, Phase 1.5). 7 host-тестів покривають happy-path/wrong-marker/CRC/inversion/short-frame/zero-warn/over-crit (`firmware/test/test_soldier_logic.c:4436-4442`). Спільний CMD-фреймворк з FW.8 (`CMD_SET_THRESHOLDS 0x9A`) залишається на Queen-стороні.
-
-**Файл (історичний):** `firmware/soldier/main.c:357` — рядок `if (ml_confidence > 0.80)` замінено на dual-threshold zone-логіку.
-
-**Проблема (вирішено для firmware-частини):**
-1. ~~Поріг 80% хардкодований у Flash. Зміна вимагає повної перекомпіляції та перепрошивки.~~ → Тепер обидва пороги завантажуються з RTC `DR13/DR14` на boot, дефолти 0.60/0.85.
-2. ~~Неможливо дистанційно налаштувати (через OTA), що критично для польових умов.~~ → Soldier dispatcher `CMD_SET_AUDIO_THRESHOLDS` (опкод `0x9D`) імплементовано: парсить 10-байтний фрейм, валідує CRC16/range/inversion, пише в RAM + DR13/DR14 через Phase 5 writeback. 7 host-тестів зелені.
-3. ~~Відсутня градація: бінарне `так/ні`.~~ → Реалізовано SILENCE / WARNING / CRITICAL зони з ескалацією.
-
-**Необхідна дія (виконана):**
-- ✅ Зберігати поріг у RTC Backup регістрі — оновлюється через OTA-команду `0x9D` (Soldier `Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS`, [код](../firmware/soldier/main.c)).
-- ✅ Дворівневий поріг: `WARNING_THRESHOLD (0.60)` → лічильник події; `CRITICAL_THRESHOLD (0.85)` → Emergency TX.
-
-#### 🤖 Дизайн Dual-Threshold System (FW.18)
-
-**Архітектура: два рівні реагування замість бінарного "так/ні"**
-
-```
-                    ┌──────────────────────────────────────────────────┐
-                    │              ml_confidence                      │
-                    │                                                  │
-  0.0 ─────────────┼─── SILENCE ZONE ──────────────── 0.60 ──────────┤
-                    │   (no action, normal noise)      │              │
-                    │                                   ▼              │
-                    │                           WARNING ZONE           │
-                    │                    (0.60 ≤ confidence < 0.85)    │
-                    │                    → acoustic_events++           │
-                    │                    → warning_counter++           │
-                    │                    → NO Emergency TX             │
-                    │                                   │              │
-                    │                                   0.85 ─────────┤
-                    │                                   ▼              │
-                    │                           CRITICAL ZONE          │
-                    │                      (confidence ≥ 0.85)         │
-                    │                    → acoustic_events++           │
-                    │                    → Trigger_Emergency_LoRa_TX() │
-                    │                    → IMMEDIATE action            │
-                    └──────────────────────────────────────────────────┘
-```
-
-**Firmware змінні (RTC Backup Domain — зберігаються при STOP2):**
-
-```c
-// Зберігання у RTC Backup Registers (updateable via OTA CMD).
-// SSOT для розташування — 03_01 §2 (Soldier RTC Backup Map).
-// DR13 = WARNING_THRESHOLD  (float як uint32 bit-copy: default 0x3F19999A = 0.60f)
-// DR14 = CRITICAL_THRESHOLD (float як uint32 bit-copy: default 0x3F59999A = 0.85f)
-//
-// Magic-маркер не використовується: cold boot RTC=0x00000000 → float 0.0f →
-// не проходить діапазон [TINYML_THRESHOLD_MIN_VALID=0.01, MAX_VALID=0.99] →
-// TinyML_Validate_Threshold() віддає дефолт. Інваріант warning<critical
-// атомарно відновлюється через TinyML_Apply_Thresholds().
-
-// Runtime variables
-uint8_t warning_counter = 0;       // Лічильник WARNING-подій між TX
-                                    // (SRAM зберігається в STOP2; reset при VBAT-loss/IWDG)
-#define TINYML_WARNING_ESCALATION 3 // Після 3 WARNING поспіль → ескалація CRITICAL
-```
-
-> **⚠️ Історичне уточнення:** Оригінальний дизайн використовував `RTC_BKP_DR6/DR7`, але після оновлення SSOT-таблиці RTC у `03_01` §2 (FW.21 розширення EMA) ці регістри зайняті: `DR6 = mesh_relay_payload[12..15]`, `DR7 = tree_did`. Реалізація FW.18 використовує **DR13/DR14** з резерву `DR13..DR15`, що залишився після FW.21.
-
-**Логіка рішення (замість поточного `if (ml_confidence > 0.80)`):**
-
-```c
-// На boot: TinyML_Apply_Thresholds() завантажує валідовану пару з DR13/DR14
-// у глобальні tinyml_warning_threshold / tinyml_critical_threshold.
-// При cold boot або корупції — дефолти 0.60/0.85.
-
-if (ml_confidence >= tinyml_critical_threshold) {
-    // === CRITICAL ZONE ===
-    if (ml_event_id == 2) {  // Кавітація
-        if (acoustic_events < 255) acoustic_events++;  // FW.22 saturating
-    } else if (ml_event_id == 3) {  // Бензопила / вандалізм
-        if (acoustic_events < 255) acoustic_events++;
-        Trigger_Emergency_LoRa_TX();   // НЕГАЙНИЙ panic TX, PANIC_TTL=5
-    }
-    warning_counter = 0;  // Reset — ми вже відреагували
-
-} else if (ml_confidence >= tinyml_warning_threshold) {
-    // === WARNING ZONE ===
-    if (ml_event_id == 2 || ml_event_id == 3) {
-        if (acoustic_events < 255) acoustic_events++;  // Рахуємо, але не паніка
-        if (warning_counter < 255) warning_counter++;
-        if (warning_counter >= TINYML_WARNING_ESCALATION) {
-            // 3+ послідовних WARNING → ескалація. Тільки бензопила отримує
-            // fallback Emergency TX — кавітація рідко погіршується через шум,
-            // тож ескалація обмежується саме ml_event_id == 3.
-            if (ml_event_id == 3) {
-                Trigger_Emergency_LoRa_TX();  // Ескальований alarm
-            }
-            warning_counter = 0;
-        }
-    }
-} else {
-    // === SILENCE ZONE ===
-    warning_counter = 0;  // Reset при нормі
-}
-```
-
-**OTA-оновлення порогів (через CoAP CMD downlink) — DEFERRED до FW.8 cycle:**
-
-```c
-// Queen → Soldier OTA command: CMD_SET_THRESHOLDS (0x9A — coordinated with FW.8)
-// Payload: [CMD_ID:1][WARNING:4][CRITICAL:4] = 9 байт
-//
-// Виконується після TinyML_Apply_Thresholds() валідації, не як raw write —
-// інакше зловмисник може записати warn=0.99/crit=0.50 і ефективно вимкнути
-// ескалацію. Apply гарантує інваріант warn<crit та діапазон.
-//
-// case CMD_SET_THRESHOLDS:
-//     {
-//         float w = bytes_to_float(&payload[1]);
-//         float c = bytes_to_float(&payload[5]);
-//         TinyML_Apply_Thresholds(w, c, &tinyml_warning_threshold,
-//                                  &tinyml_critical_threshold);
-//         // Phase 5 writeback автоматично персистить оновлені значення.
-//         break;
-//     }
-```
-
-> **✅ Audit refinement (implemented 2026-05-22):** Embedded LOG_ERR на headless STM32 марний (немає консолі), тому замість printf реалізовано **saturating uint8 counter** `tinyml_threshold_invalid_count` (`firmware/soldier/main.c §1.11`), який інкрементується коли `TinyML_Apply_Thresholds` відкидає OTA payload через NaN, out-of-range або інверсію `warn >= crit`. Це справжня production-visibility — backend може piggybacked'ити лічильник на телеметрію → Grafana panel "OTA threshold corruption rate per Soldier". 7 нових host-тестів у `test_tinyml_pipeline.c` (`test_invalid_count_*`) покривають happy-path, NaN, out-of-range, inversion, cold-boot zeros, accumulation, saturation @ 255. Wiring до 21-byte packet — окрема задача.
-
-**Стан:** Soldier-side OTA CMD dispatcher для `CMD_SET_AUDIO_THRESHOLDS` (`0x9D`)
-**реалізовано** у `firmware/soldier/main.c` (секція 1.14: `Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS`,
-10-байтний frame layout: marker / warn:2 / crit:2 / version:1 / reserved:1 / crc16:2).
-Парсер інтегровано в основний RX-цикл після AES-256-ECB decrypt.
-Поточний Soldier-firmware обробляє опкоди: `0x99` OTA bytecode, `0x55/'R'` OTA-ReRequest,
-`0x56/'S'` Time-Sync Request, **`0x9D` Audio Thresholds** (FW.18 imp).
-Спільний CMD-фреймворк (`CMD:` prefix) залишається на Queen-стороні (`03_02` §6) —
-Soldier використовує per-opcode dispatch для мінімізації RAM/flash overhead.
-
-**Backend mirror (для серверного аналізу):**
-
-```ruby
-# app/services/telemetry_unpacker_service.rb — оновити decision matrix:
-# acoustic_events > 0 && acoustic_events < 255 → WARNING-рівень подій (кавітація/шум)
-# acoustic_events == 255 → saturated, ймовірна CRITICAL ситуація
-# EwsAlert створюється лише при Emergency TX (panic_payload[7] = 0xFF)
-```
-
-**Maпінг подій на Payload та Backend (оновлена таблиця):**
-
-| Подія | `ml_event_id` | `ml_confidence` | Зона | Дія firmware | Backend ефект |
-|-------|:------------:|:---------------:|------|-------------|---------------|
-| Тиша | 0 | будь-яка | SILENCE | Нічого | `acoustic_events == 0` |
-| Вітер | 1 | будь-яка | будь-яка | Нічого | `acoustic_events == 0` |
-| Кавітація | 2 | < 0.60 | SILENCE | Нічого | — |
-| Кавітація | 2 | 0.60–0.84 | **WARNING** | `acoustic_events++` | `TelemetryLog#acoustic_events > 0` |
-| **Кавітація** | **2** | **≥ 0.85** | **CRITICAL** | `acoustic_events++` | `TelemetryLog` + вищий пріоритет |
-| Пилка | 3 | < 0.60 | SILENCE | Нічого | — |
-| Пилка | 3 | 0.60–0.84 | **WARNING** | `acoustic_events++`, ескалація після 3× | Ескальований `EwsAlert` |
-| **Пилка** | **3** | **≥ 0.85** | **CRITICAL** | `Trigger_Emergency_LoRa_TX()` | `EwsAlert(severity: :critical)` |
-
-**Переваги dual-threshold:**
-
-1. **Менше false positives:** Шум/вітер з confidence 0.65 не викликає паніку — лише лічильник
-2. **Ескалація:** 3 послідовні WARNING → CRITICAL навіть без високої confidence (персистентна загроза)
-3. **OTA-tune:** Для тропічного лісу (більше фонового шуму) → WARNING=0.70, CRITICAL=0.90
-4. **Audit trail:** Backend бачить градацію (acoustic_events від 1 до 254 = warning; 255 = saturated/critical)
-5. **RTC Backup:** Пороги зберігаються при STOP2 sleep — не потрібна Flash-перепрошивка
-
-**Тести (реалізовано в `firmware/test/test_tinyml_pipeline.c`):**
-
-19 нових host-based unit tests (44 total у TinyML suite):
-
-*Dual-Threshold Confidence Zones (9):*
-- `test_dual_threshold_silence_zone_no_action` — confidence < warning → no action
-- `test_dual_threshold_warning_zone_at_boundary` — c == warning → WARNING (≥, не >)
-- `test_dual_threshold_critical_just_below_no_emergency` — 0.84 → WARNING для chainsaw, не Emergency
-- `test_dual_threshold_critical_zone_at_boundary` — c == critical → Emergency TX
-- `test_dual_threshold_warning_escalation_chainsaw` — 3× WARNING → fallback Emergency
-- `test_dual_threshold_warning_no_escalation_for_cavitation` — кавітація не ескалюється навіть при 5×
-- `test_dual_threshold_silence_resets_counter_between_warnings` — SILENCE → counter=0
-- `test_dual_threshold_chainsaw_critical_resets_counter` — CRITICAL після WARNING-серії → counter=0
-- `test_dual_threshold_silence_with_chainsaw_class_no_emergency` — клас 3 + низька confidence → no emergency
-
-*Threshold Validation & RTC Roundtrip (10):*
-- `test_validate_threshold_in_range` — 0.55 / 0.95 → kept
-- `test_validate_threshold_below_min_falls_back` — 0.005 / 0.0 / negative → default
-- `test_validate_threshold_above_max_falls_back` — 1.0 / 99.0 → default
-- `test_validate_threshold_nan_falls_back` — NaN → default
-- `test_apply_thresholds_cold_boot_zeros` — RTC = 0x00 → defaults
-- `test_apply_thresholds_inverted_falls_back_both` — warn ≥ crit → atomic rollback
-- `test_apply_thresholds_equal_falls_back_both` — warn == crit → defaults
-- `test_apply_thresholds_valid_pair_passes_through` — tropical config (0.70/0.90) → kept
-- `test_apply_thresholds_partial_corruption_one_default` — частковий fallback з invariant check
-- `test_threshold_rtc_roundtrip_bit_exact` — float32 ↔ uint32 bit-copy через DR13/DR14
-
-**Блокує:** ~~Гнучкість налаштування~~ → закрито на firmware-рівні. Залишковий блокер: OTA CMD dispatcher на Soldier (DEFERRED → FW.8 cycle).
-
----
-
-### ✅ BLOCKER-7: Накопичення `acoustic_events` — ВИРІШЕНО (FW.22)
-
-**Статус:** ✅ Вирішено (Сесія 18).
-
-**Рішення:** Тип змінено з `uint16_t` на `uint8_t` із saturating increment:
-```c
-uint8_t acoustic_events = 0;           // [FW.22] Saturating uint8_t
-// ...
-if (acoustic_events < 255) acoustic_events++;  // Saturating increment
-// ...
-lora_payload[7] = (uint8_t)acoustic_events;    // Direct assignment (no clamping needed)
-```
-
-8 host-based unit tests підтверджують: нуль, нормальне значення, 254→255, 255 залишається 255, ramp to max, repeated at max, packing.
-
-Backend warning для `acoustic_events == 255` реалізовано в `TelemetryUnpackerService` (Сесія 15).
-
-**Блокує:** Коректність даних кавітації, точність backend-аналізу.
+## 🔗 Cross-references
+
+| Ресурс | Опис |
+|--------|------|
+| [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Soldier lifecycle, DMA audio (Phase 1.5), DR13/14 thresholds |
+| [03_02_Queen_Gateway_Firmware](03_02_Queen_Gateway_Firmware) | Queen (EwsAlert relay) |
+| [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | `acoustic_events` → атрактор Лоренца |
+| [03_05_Hardware_Symmetric_Crypto_and_Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Шифрування panic-пакетів EwsAlert |
+| [04_01_Data_Models_and_Entities](04_01_Data_Models_and_Entities) | `TelemetryLog.acoustic_events` |
+| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | `TelemetryUnpackerService`, `EwsAlertCreatorService` |
+| `firmware/soldier/main.c` · `silken_net_audio_model.h` (TBD) · `_stub.h` | Phase 1.5 + ISR; реальна модель TBD ML-партнером; IP-friendly stub |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.4 Run_Inference/model.h/Tensor-Arena, FW.18 threshold, FW.25 DSP Path B |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [1. Апаратна Платформа та Тригер](#-1-апаратна-платформа-та-тригер)
+- [2. Параметри Збору Аудіо (Audio Acquisition)](#-2-параметри-збору-аудіо-audio-acquisition)
+- [3. Передобробка (DSP Preprocessing)](#-3-передобробка-dsp-preprocessing)
+- [4. Архітектура Моделі (TinyML Inference)](#-4-архітектура-моделі-tinyml-inference)
+- [5. Логіка Прийняття Рішень (Decision Logic)](#-5-логіка-прийняття-рішень-decision-logic)
+- [6. Бюджет Пам'яті (Memory Audit)](#-6-бюджет-памяті-memory-audit)
+- [7. Інтеграція з Іншими Модулями](#-7-інтеграція-з-іншими-модулями)
+- [8. Верифікація TRL 7 — Чеклист](#-8-верифікація-trl-7--чеклист)
+- [10. Mongabay Pivot — 5-й клас «Fauna Activity» та біорізноманіття як D-MRV сигнал](#-10-mongabay-pivot--5-й-клас-fauna-activity-та-біорізноманіття-як-d-mrv-сигнал)
+- [OTA Model Format та Federated Learning Pipeline](#-ota-model-format-та-federated-learning-pipeline)
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -488,7 +89,7 @@ HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 if (vib) { /* запустити аудіо-пайплайн */ }
 ```
 
-Перевага над `__disable_irq()`: блокується лише конкретна EXTI0 лінія п'єзодиска, менший ризик пропуску радіо-пакетів при mesh relay. Тести: `firmware/test/test_tinyml_pipeline.c` — 3 тести для vibration race condition guard.
+Перевага над `__disable_irq()`: блокується лише конкретна EXTI0 лінія п'єзодиска, менший ризик пропуску радіо-пакетів при mesh relay. Тести: `firmware/test/test_tinyml_pipeline.c` — host-тести для vibration race-condition guard (`make -C firmware/test tinyml`).
 
 **Фізичний сенс:** П'єзодиск фіксує механічні вібрації деревини. Бензопила → характерна вібрація частотою 50–200 Hz (обертання ланцюга). Кавітаційний колапс у ксилемі → ультразвукові мікроімпульси 10–100 µs.
 
@@ -1042,12 +643,12 @@ TinyML-результат безпосередньо впливає на Lorenz 
 | 2 | `Run_Inference()` розкоментовано та функціонує | 🔴 Відкрито (потребує реальної моделі) |
 | 3 | `TENSOR_ARENA_SIZE` задокументовано з реального файлу | 🟡 Stub фіксує 16 KB (Path B baseline); реальна — TBD |
 | 4 | Memory Map верифіковано (`arm-none-eabi-size`) | 🟡 `make size-check` проходить зі stub; ARM elf — після інтеграції моделі |
-| 5 | Host-based тести TinyML pipeline додані | ✅ Реалізовано (`test_tinyml_pipeline.c`, **51 тест** включно з 7 для invalid counter) |
+| 5 | Host-based тести TinyML pipeline додані | ✅ Реалізовано (`test_tinyml_pipeline.c`; `make -C firmware/test tinyml`) |
 | 6 | Smoke-тест: class 2 → `acoustic_events++` верифіковано | 🔴 Відкрито |
 | 7 | Smoke-тест: class 3 → `Trigger_Emergency_LoRa_TX()` верифіковано | 🔴 Відкрито |
 | 8 | Confidence threshold конфігурується (не хардкод) | ✅ FW.18: dual-threshold у RTC DR13/DR14 + 19 host-tests + Soldier OTA CMD dispatcher `0x9D` (`CMD_SET_AUDIO_THRESHOLDS`) з 7 host-tests |
 | 9 | DSP preprocessing задокументовано (чи є FFT в моделі) | 🟡 Відкрито |
-| 10 | `acoustic_events` overflow захист реалізовано | ✅ Реалізовано (FW.22: `uint8_t` + saturating increment, 8 тестів) |
+| 10 | `acoustic_events` overflow захист реалізовано | ✅ Реалізовано (FW.22: `uint8_t` + saturating increment) |
 | 11 | План 5-го класу «Fauna Activity» (§10, Mongabay pivot) задокументовано | ✅ Реалізовано (цей doc §10 + cross-ref до 08_01/08_02/08_03/00_08) |
 
 ---
@@ -1257,15 +858,3 @@ OtaPackagerService → 512-byte chunks → OtaTransmissionWorker → Queen → S
 
 ---
 
-## 📚 Пов'язані Ресурси
-
-- **[03_01 Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA)** — загальний lifecycle Soldier, фази 0-5, Watchdog
-- **[03_04 mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor)** — як `acoustic_events` впливає на атрактор
-- **[03_05 Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security)** — шифрування panic-пакетів EwsAlert
-- **[04_01 Data Models and Entities](04_01_Data_Models_and_Entities)** — модель `TelemetryLog`, поле `acoustic_events`
-- **[04_02 Business Logic and Services](04_02_Business_Logic_and_Services)** — `TelemetryUnpackerService`, `EwsAlertCreatorService`
-- **`firmware/soldier/main.c`** — реалізація Phase 1.5 (рядки 316–365) та ISR (рядки 731–737)
-- **`firmware/soldier/silken_net_audio_model.h`** — TBD ML-партнером (реальна модель)
-- **`firmware/soldier/silken_net_audio_model_stub.h`** — ✅ IP-friendly stub (2026-05-22, BLOCKER-2 partial close)
-- **CMSIS-DSP Documentation** — `arm_rfft_fast_f32`, `arm_cmplx_mag_f32`
-- **TensorFlow Lite for Microcontrollers** — https://www.tensorflow.org/lite/microcontrollers
