@@ -7,19 +7,29 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 3 baseline; TRL 3→4 gate PASSED (2026-05-25) — EBFC in-silico pipeline L1-L4 validated. Xylem sap sweep: enzyme stable across 6 species (pH 4.2-5.8). Очікуються польові випробування.
-- **Пов'язані модулі:**
-  - Геометрія пор та тризонна архітектура → [`01_01_Coaxial_Gyroid_Topology_and_PEEK`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
-  - Металургія та покриття → [`01_02_Ti_6Al_4V_Metallurgy_and_DMLS`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)
-  - EBFC ферменти → [`01_03_EBFC_Enzymatic_Bio_Fuel_Cell`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)
+- **Поточний TRL:** TRL 4 — TRL 3→4 gate PASSED (2026-05-25), EBFC in-silico pipeline L1-L4 validated; xylem sap sweep: enzyme stable across 6 species (pH 4.2-5.8). Відкриті: resin-barrier + Flush Mount drilling (HW.6), No-EtO sterilization (HW.22), польові випробування → [`00_08`](00_08_Action_Plan_Tracker).
 
 ---
 
-## 🛑 Блокери
+## 🔗 Cross-references
 
-- **Смоляний бар'єр (resinosis):** Хвойні дерева (сосни) миттєво заливають будь-яку рану смолою. Смола — діелектрик і фізичний бар'єр. Вона може заблокувати доступ соку до анодних ферментів (біообростання) до того, як почнеться генерація струму. **Корінь проблеми — інструмент свердління:** стандартні шнекові свердла та перфоратори не ріжуть, а виривають клітини деревини, створюючи мікротріщини та локальний термоопік камбію → масивна смолотеча. Деталі — §3.3.
-- **Пошкодження камбію при глибокому зенкеруванні:** Традиційні арбористичні методи кріплення передбачають глибоке зенкерування для опорної шайби, що стимулює гниття та CODIT-каскад. Рішення — **Flush Mount step drilling** (§3.1).
-- **Сумісність стерилізації з ферментами:** Стандартний медичний газ етиленоксид (EtO) **незворотно денатурує** іммобілізовані dgrFAD-GDH/Laccase. Без альтернативного протоколу стерилізації установка анкера ризикує занести інфекцію або зруйнувати EBFC-стек ще до експлуатації. Деталі — §6.
+| Ресурс | Опис |
+|--------|------|
+| [01_01_Coaxial_Gyroid_Topology_and_PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Геометрія пор + тризонна архітектура |
+| [01_02_Ti_6Al_4V_Metallurgy_and_DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Металургія та покриття (self-healing zone-restriction) |
+| [01_03_EBFC_Enzymatic_Bio_Fuel_Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC ферменти (катод anti-flooding → §5 PTFE-GDL) |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.6 resin/Flush-Mount drilling, HW.22 No-EtO sterilization |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [1. Парадигма CODIT](#-1-парадигма-codit)
+- [2. Ксилемоінтеграція](#-2-ксилемоінтеграція)
+- [3. Хірургічне Встановлення: Flush Mount + Microfrezing](#-3-хірургічне-встановлення-flush-mount--microfrezing)
+- [4. Біоміметичні Покриття як Засіб «Обману» CODIT](#-4-біоміметичні-покриття-як-засіб-обману-codit)
+- [5. PTFE-GDL: Газодифузійний Захист Катода](#-5-ptfe-gdl-газодифузійний-захист-катода)
+- [6. Стерилізація: Чому НЕ Етиленоксид](#-6-стерилізація-чому-не-етиленоксид)
+<!-- TOC:AUTO:END -->
 
 ---
 
