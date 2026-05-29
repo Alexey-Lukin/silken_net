@@ -55,7 +55,7 @@
 ### 🔗 Заблоковано (чекає іншого)
 - `FW.2` **P0** — AES-128-CCM (backend-parser ✅; firmware emit + `CRYP_AES_CCM` verify → STM32 bench). Закриває ECB→CCM, MIC, `FW.23` OTA auth, `SEC.10` panic auth, `FW.29`
 - Multi-signal slashing de-risk (`00_01 §6.6`) — код ✅: усі 3 прямі сигнали в `InsightGeneratorService`-евристиці (VPD-gate + sap-term + acoustic/cavitation-term; inert, ENV-calibration-gated; sap+acoustic через max() не суму). Активація → ground-truth калібрування ваг (`08_02 §4`) + ML-retrain (vpd-фіча) + firmware VPD (`HW.32`). Багатше on-device acoustic-джерело → TinyML unblock (`Run_Inference` закоментована, §03)
-- SLASH-1 deeper (B/insurance auto-route, penalty-формула) → DAO/founder
+- SLASH-1 deeper (B/insurance auto-route, A/B/C cause_classification, cause-driven pf uplift) → DAO/founder
 
 ---
 
@@ -65,7 +65,7 @@
 
 #### SLASH-1 — Slashing cause_classification gate (financial-safety) 🔴
 - **P0** · 🤖+👤 · → `00_01 §6.2/§6.5` (divergence `04_02 §11`)
-- ✅ (2026-05-29) blackout → Field Audit, НЕ burn: `ContractHealthCheckService#flag_data_blackout!` (cluster-wide empty → `system_fault` alert, contract :active, no burn; 10 specs). · [ ] 🤖 de-correlate penalty signals (no-ack +0.5 / Streamr-gap +0.25 спільний root-cause) · [ ] 🤖 penalty-формула §6.2 `damage_ratio^GAMMA × min(pf,2.0)` у `BlockchainBurningService` · [ ] 👤 DAO/founder-confirm перед mainnet (BIZ.13 operator-bond, `00_01 §6.2.1`)
+- ✅ (2026-05-29) blackout → Field Audit, НЕ burn: `ContractHealthCheckService#flag_data_blackout!` (cluster-wide empty → `system_fault` alert, contract :active, no burn; 10 specs). · [ ] 🤖 de-correlate penalty signals (no-ack +0.5 / Streamr-gap +0.25 спільний root-cause) · [x] 🤖 penalty-формула §6.2 `damage_ratio^GAMMA × min(pf,2.0)` у `BlockchainBurningService` (✅ `#calculate_slash_ratio`, GAMMA/PF_MAX через `SystemParameter`, 8 specs) · [ ] 👤 DAO/founder-confirm перед mainnet (BIZ.13 operator-bond, `00_01 §6.2.1`)
 
 #### S1.1 — GitHub Secrets заповнення
 - **P0** · 👤 · → `06_04`

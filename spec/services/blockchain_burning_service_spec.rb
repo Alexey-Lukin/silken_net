@@ -82,7 +82,8 @@ RSpec.describe BlockchainBurningService do
         described_class.call(organization.id, naas_contract.id)
 
         expect(mock_client).to have_received(:transact) do |_contract, _method, _addr, amount_in_wei, **_opts|
-          burn_amount = (2000 * 0.5).ceil
+          # §6.2 convex curve: slash_ratio = damage_ratio^GAMMA (0.5^1.3), NOT linear 0.5
+          burn_amount = (2000 * (0.5**1.3)).ceil
           expected_wei = (burn_amount.to_f * (10**18)).to_i
           expect(amount_in_wei).to eq(expected_wei)
         end
@@ -146,11 +147,53 @@ RSpec.describe BlockchainBurningService do
 
         expect(mock_client).to have_received(:transact) do |_contract, _method, _addr, amount_in_wei, **_opts|
           total_minted = 1500
-          burn_amount = (total_minted * (1.0 / 2)).ceil
+          # §6.2 convex curve: slash_ratio = 0.5^1.3 (not linear 0.5)
+          burn_amount = (total_minted * (0.5**1.3)).ceil
           expected_wei = (burn_amount.to_f * (10**18)).to_i
           expect(amount_in_wei).to eq(expected_wei)
         end
       end
+    end
+  end
+
+  describe "#calculate_slash_ratio (§6.2 convex curve)" do
+    subject(:service) { described_class.new(organization.id, naas_contract.id) }
+
+    it "reaches 100% slash for full negligent loss (no dead-zone)" do
+      expect(service.send(:calculate_slash_ratio, 1.0)).to eq(1.0)
+    end
+
+    it "punishes a small loss gently (convex: d=0.1 → ~5%, not 10%)" do
+      expect(service.send(:calculate_slash_ratio, 0.1)).to be_within(0.005).of(0.05)
+    end
+
+    it "is strictly below the old linear ratio for partial damage" do
+      expect(service.send(:calculate_slash_ratio, 0.5)).to be < 0.5
+    end
+
+    it "is monotonic — more damage always burns strictly more" do
+      ratios = [ 0.1, 0.3, 0.6, 1.0 ].map { |d| service.send(:calculate_slash_ratio, d) }
+      expect(ratios).to eq(ratios.sort)
+      expect(ratios.uniq.size).to eq(4)
+    end
+
+    it "returns 0.0 for zero damage" do
+      expect(service.send(:calculate_slash_ratio, 0.0)).to eq(0.0)
+    end
+
+    it "caps the penalty_factor at PENALTY_FACTOR_MAX (multiplier ceiling, not final ratio)" do
+      expect(service.send(:calculate_slash_ratio, 0.5, 5.0)).to be_within(1e-9).of((0.5**1.3) * 2.0)
+    end
+
+    it "clamps the final ratio to 1.0 even when the multiplier would exceed it" do
+      expect(service.send(:calculate_slash_ratio, 1.0, 2.0)).to eq(1.0)
+    end
+
+    it "reads GAMMA from SystemParameter (DAO-governed)" do
+      allow(SystemParameter).to receive(:current).and_call_original
+      allow(SystemParameter).to receive(:current).with(:slash_gamma, default: 1.3).and_return(2.0)
+      # γ=2.0 → 0.5^2 × 1.0 = 0.25
+      expect(service.send(:calculate_slash_ratio, 0.5)).to be_within(1e-9).of(0.25)
     end
   end
 

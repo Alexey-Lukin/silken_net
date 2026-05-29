@@ -10,6 +10,11 @@ class BlockchainBurningService < ApplicationService
   # Змініть тут, якщо почнемо підтримувати стейблкоіни з іншою розрядністю (напр. USDC = 6).
   TOKEN_DECIMALS = 18
 
+  # [§6.2 Slashing curve — DAO-governed via SystemParameter ← ProtocolParameters.sol (05_03)]
+  DEFAULT_SLASH_GAMMA = 1.3          # convex progressive curve (no dead-zone)
+  DEFAULT_PENALTY_FACTOR_MAX = 2.0   # ceiling on the penalty MULTIPLIER (not final slash_ratio)
+  DEFAULT_PENALTY_FACTOR = 1.0       # negligence baseline; cause-driven uplift = separate SLASH-1 task
+
   def initialize(organization_id, naas_contract_id, source_tree: nil)
     @organization = Organization.find(organization_id)
     @naas_contract = NaasContract.find(naas_contract_id)
@@ -45,8 +50,11 @@ class BlockchainBurningService < ApplicationService
     # [КОЕФІЦІЄНТ ВТРАТ]: Спалюємо лише ту частку токенів, що відповідає
     # відсотку пошкодженої біомаси (розрахунок через AiInsight).
     # Це запобігає повній ануляції контракту при загибелі одного дерева з тисячі.
+    # [§6.2] Progressive convex slash curve (damage_ratio^GAMMA × min(pf, MAX)),
+    # NOT the old linear total × damage_ratio. See #calculate_slash_ratio.
     damage_ratio = calculate_damage_ratio
-    burn_amount  = (total_minted_amount * damage_ratio).ceil
+    slash_ratio  = calculate_slash_ratio(damage_ratio)
+    burn_amount  = (total_minted_amount * slash_ratio).ceil
 
     return if burn_amount.zero?
 
@@ -69,7 +77,7 @@ class BlockchainBurningService < ApplicationService
       tx_hash = nil
       reason = @source_tree ? "загибель дерева #{@source_tree.did}" : "порушення умов кластера"
 
-      Rails.logger.warn "🔥 [Slashing] Вилучення #{burn_amount}/#{total_minted_amount} SCC (#{(damage_ratio * 100).round(1)}%) у #{@organization.name}. Причина: #{reason}."
+      Rails.logger.warn "🔥 [Slashing] Вилучення #{burn_amount}/#{total_minted_amount} SCC (damage #{(damage_ratio * 100).round(1)}% → slash #{(slash_ratio * 100).round(1)}%, §6.2 γ=#{slash_gamma}) у #{@organization.name}. Причина: #{reason}."
 
       # [ВИПРАВЛЕНО: Lock Duration]: 30 секунд достатньо для transact() (fire-and-forget,
       # повертається миттєво після відправки TX у мемпул). Операції всередині локу:
@@ -156,6 +164,34 @@ class BlockchainBurningService < ApplicationService
       # Немає даних від AiInsight і немає конкретного дерева → повне вилучення
       1.0
     end
+  end
+
+  # [§6.2 Slashing curve] Progressive CONVEX penalty:
+  #   slash_ratio = clamp(damage_ratio^GAMMA × min(penalty_factor, PENALTY_FACTOR_MAX), 0, 1.0)
+  # Replaces the old LINEAR burn (total × damage_ratio — no GAMMA, no penalty_factor; the
+  # verified code↔doc divergence, 00_01 §6.2 / 04_02 §11). GAMMA>1 makes the curve convex:
+  # a small loss is punished gently (d=0.10 → ~5%) so an investor isn't wiped out over a
+  # minor incident, yet full negligent loss reaches 100% (d=1.0, pf=1.0 → 1.0) — the
+  # "no dead-zone" property (the old min(…, 0.40) ceiling that flat-lined 40%→100% damage
+  # is removed). penalty_factor baseline 1.0 (negligence); cause-driven uplift (Streamr
+  # gap, repeat offence) + signal de-correlation is a separate SLASH-1 sub-task.
+  # GAMMA + PENALTY_FACTOR_MAX are DAO-governed (SystemParameter ← ProtocolParameters.sol).
+  def calculate_slash_ratio(damage_ratio, penalty_factor = DEFAULT_PENALTY_FACTOR)
+    return 0.0 if damage_ratio <= 0.0
+
+    effective_pf = [ penalty_factor, penalty_factor_max ].min
+    ((damage_ratio**slash_gamma) * effective_pf).clamp(0.0, 1.0)
+  end
+
+  # DAO-governed slash curve exponent (SystemParameter ← on-chain ProtocolParameters.sol).
+  # Memoized per instance. Falls back to the canon default (1.3) when unset.
+  def slash_gamma
+    @slash_gamma ||= SystemParameter.current(:slash_gamma, default: DEFAULT_SLASH_GAMMA).to_f
+  end
+
+  # DAO-governed ceiling on the penalty MULTIPLIER (not the final slash_ratio). Memoized.
+  def penalty_factor_max
+    @penalty_factor_max ||= SystemParameter.current(:slash_penalty_factor_max, default: DEFAULT_PENALTY_FACTOR_MAX).to_f
   end
 
   def handle_slashing_failure(error_msg, amount)
