@@ -13,76 +13,43 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 4 — інфраструктурний код існує, реальний деплой не проводився
-- **Пов'язані модулі:**
-  - Backend → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
-  - Observability → [`06_03_Prometheus_Observability`](06_03_Prometheus_Observability)
-  - Akash → [`06_02_Akash_Network_Integration`](06_02_Akash_Network_Integration)
-  - Contracts → [`docs/DEPLOYMENT.md`](../DEPLOYMENT.md) — детальна операційна документація
-  - IaC → `terraform/`, `terraform/akash/`
-  - Kamal → `config/deploy.yml`, `config/deploy.canopy.yml`
-  - SDL → `deploy/akash/deploy.yaml`
+- **Відкрите:** deploy-readiness (Ingress IP, GitHub Secrets, Akash SDL secrets) → [`00_08`](00_08_Action_Plan_Tracker) (S1.1, INF.3/4/6, S5.6).
 
 ---
 
-## 🛑 Блокери
+## 🔗 Cross-references
 
-> Цей розділ є критично важливим. Жоден реальний деплой неможливий без вирішення цих пунктів.
+| Ресурс | Зв'язок |
+|---|---|
+| `config/deploy.yml` · `config/deploy.canopy.yml` | Kamal (production / canopy) |
+| `terraform/` · `terraform/akash/` | IaC: Cloud SQL, Ingress Anchor, Akash |
+| `.github/workflows/deploy.yml` · `deploy-production.yml` | Canopy / Production CI/CD (деталі — `06_07`) |
+| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Backend (що деплоїться) |
+| [06_02_Akash_Network_Integration](06_02_Akash_Network_Integration) | Akash SDL, ENV, TLS |
+| [06_03_Prometheus_Observability](06_03_Prometheus_Observability) | Observability |
+| [06_04_Secrets_Checklist](06_04_Secrets_Checklist) | секрети — SSOT |
+| [06_06_Disaster_Recovery_and_Backup](06_06_Disaster_Recovery_and_Backup) | backup / restore / RTO·RPO |
+| [06_07_CICD_and_Runbook_Index](06_07_CICD_and_Runbook_Index) | CI/CD pipeline + runbook index |
+| [`docs/DEPLOYMENT.md`](../DEPLOYMENT.md) | детальна операційна документація |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | S1.1, S1.5, INF.3/4/6, S5.6 |
 
-### 🔴 BLOCKER-1: IP-адреса Ingress Anchor — плейсхолдер
+## 📑 Зміст
 
-**Статус:** Не заповнено. Блокує DNS та маршрутизацію трафіку до Akash.
-
-Після інфраструктурного піввоту залишається лише одна статична IP — **Ingress Anchor** (`e2-micro`), який проксює HTTP/HTTPS/CoAP трафік на Akash deployment. GCP web/canopy VM більше не існують.
-
-**Дія:** Після `terraform apply` отримати IP:
-```bash
-terraform output ingress_ip    # → єдина статична IP (Ingress Anchor)
-```
-
-> `web_server_ips` та `canopy_server_ip` більше не існують. DNS A-запис вказує на `ingress_ip`.
-
----
-
-### 🔴 BLOCKER-3: GitHub Secrets — не заповнені
-
-**Статус:** Жоден CI/CD pipeline не спрацює без них.
-
-**Повний список GitHub secrets (P0/P1/P2) + де отримати — SSOT [`06_04 §1`](06_04_Secrets_Checklist)** (13 P0: `GCP_SA_KEY`/`GCP_PROJECT_ID`, `DATABASE_*`, `REDIS_*`/`KREDIS_*`, `SSH_*`, `RAILS_MASTER_KEY`, `KAMAL_MASTER_KEY`). Затрековано — [`00_08 S1.1`](00_08_Action_Plan_Tracker).
-
-_(Перелік раніше дублювався тут — прибрано для DRY/anti-drift; єдине джерело правди = `06_04`.)_
-
----
-
-### ⬜ BLOCKER-4: `canopy_enabled` — N/A (Canopy на Akash)
-
-**Статус:** N/A. Canopy (staging) тепер розгортається на Akash Network, а не на окремій GCP VM. Змінна `canopy_enabled` в Terraform більше не впливає на інфраструктуру — GCP містить лише Cloud SQL та Ingress Anchor (`e2-micro`).
-
-**Дія:** Створити `terraform/terraform.tfvars` (в `.gitignore`!):
-```hcl
-project_id     = "your-gcp-project-id"
-db_password    = "your-super-secret-password-16chars+"
-ssh_source_ranges = ["<your-ip>/32"]
-```
-
-> ⚠️ `terraform.tfvars` містить секрети — **ніколи не комітити в git**.
-> Canopy/Production розрізняються на рівні Akash SDL та environment variables, не GCP ресурсів.
-
----
-
-### 🟡 BLOCKER-5: Akash SDL має `REQUIRED_SECRET_NOT_SET` плейсхолдери
-
-**Статус:** `deploy/akash/deploy.yaml` потребує ручного редагування перед деплоєм. SDL дзеркалює повний список `env.secret` з Kamal (`config/deploy.yml`), включно з:
-- 🛑 **Boot-critical:** `PROVISIONING_MASTER_KEY` (Puma crash без значення — `master_key_strength_check.rb`)
-- **Web3 worker (DeadSet без значення):** `ORACLE_PRIVATE_KEY`, `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY`, `ETHEREUM_ANCHOR_PRIVATE_KEY`, `ALCHEMY_POLYGON_RPC_URL`, `ALCHEMY_ETHEREUM_RPC_URL`, `SOLANA_RPC_URL`, `SOLANA_WALLET_KEYPAIR`/`FEE_PAYER_PUBKEY`/`FEE_PAYER_TOKEN_ACCOUNT`/`USDC_MINT_ADDRESS`, `CHAINLINK_FUNCTIONS_ROUTER`/`SUBSCRIPTION_ID`/`DON_ID`/`HMAC_SECRET`
-- **Observability (silent failure):** `SENTRY_DSN`
-
-**Дія (рекомендовано):** Використати Terraform-шаблон `deploy/akash/deploy.yaml.tpl` — секрети підставляються автоматично з `terraform.tfvars`. Повний список Terraform-змінних та per-секрет breakdown див. [`06_02 §BLOCKER-3`](06_02_Akash_Network_Integration) та [`06_02 §Розділ 2 ENV Variables`](06_02_Akash_Network_Integration). Drift guard: будь-який новий ENV у `env.secret` Kamal має паралельно з'явитись у `.kamal/secrets`, обох сервісах SDL (`web` + `job`), `deploy.yaml.tpl`, `terraform/akash/variables.tf`, та `terraform/akash/main.tf` (`templatefile()` map). Інакше Akash deployment отримає boot crash або тиху Web3 відмову.
-
----
-
-### ✅ INFO: `deploy-production.yml` — наявний
-
-`.github/workflows/deploy-production.yml` **існує** (trigger `on: release: [published]` + `workflow_dispatch`): `verify-secrets` (SEC.11 — assert `PROVISIONING_MASTER_KEY` ≥64 hex + `KAMAL_MASTER_KEY`) → `terraform apply` → `kamal deploy` (production, без `-d canopy`, `RELEASE_VERSION` = release tag). Canopy деплоїться через `deploy.yml` (`-d canopy`). _(2026-05-29: попередня нотатка «не знайдено» була застарілою — drift виправлено.)_
+<!-- TOC:AUTO:START -->
+- [Pre-Flight Checklist (до першого фізичного деплою)](#-pre-flight-checklist-до-першого-фізичного-деплою)
+- [Quickstart: Перший Деплой Інфраструктури](#-quickstart-перший-деплой-інфраструктури)
+- [Архітектура Деплою (The Big Picture)](#-архітектура-деплою-the-big-picture)
+- [Canopy vs 🌲 Production — Порівняльна Таблиця](#-canopy-vs--production--порівняльна-таблиця)
+- [GCP vs Akash — Розподіл Ресурсів](#-gcp-vs-akash--розподіл-ресурсів)
+- [Redis DB Isolation Strategy](#-redis-db-isolation-strategy)
+- [Kamal — Детальний Аналіз](#-kamal--детальний-аналіз)
+- [Terraform (GCP) — Детальний Аналіз](#-terraform-gcp--детальний-аналіз)
+- [Docker — Multi-stage Build](#-docker--multi-stage-build)
+- [Akash SDL — Технічний Аналіз](#-akash-sdl--технічний-аналіз)
+- [Чеклист першого деплою (Priority Order)](#-чеклист-першого-деплою-priority-order)
+- [Масштабування до Планетарного Рівня — CoAP/UDP та Ingress](#-масштабування-до-планетарного-рівня--coapudp-та-ingress)
+- [Змінні Середовища: Web3 та Мультичейн](#-змінні-середовища-web3-та-мультичейн)
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -827,18 +794,3 @@ forge create SilkenCarbonCoin \
   --private-key $ORACLE_PRIVATE_KEY \
   --verify --etherscan-api-key $POLYGONSCAN_API_KEY
 ```
-
----
-
-## 🔗 Cross-references
-
-| Файл / Документ | Зв'язок |
-|---|---|
-| `config/deploy.yml` · `config/deploy.canopy.yml` | Kamal (production / canopy) |
-| `terraform/` · `terraform/akash/` | IaC: Cloud SQL, Ingress Anchor, Akash |
-| `.github/workflows/deploy.yml` · `deploy-production.yml` | Canopy / Production CI/CD (деталі — `06_07`) |
-| `06_02_Akash_Network_Integration` | Akash SDL, ENV, TLS |
-| `06_04_Secrets_Checklist` | секрети — SSOT |
-| `06_06_Disaster_Recovery_and_Backup` | backup / restore / RTO·RPO |
-| `06_07_CICD_and_Runbook_Index` | CI/CD pipeline + runbook index |
-| `00_08_Action_Plan_Tracker` | S1.1, S1.5, INF.3/4/6, S5.6 |
