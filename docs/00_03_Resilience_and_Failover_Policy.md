@@ -13,25 +13,31 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — політика затверджена, **6 з 10 Implementation Anchors ✅ Реалізовано** (Web3CircuitBreaker, Multi-RPC fallback, Queen self-telemetry, CoAP retry, Chainlink router probe, Manual review terminal state — див. §3). Залишаються 🟡: Queen-to-Queen Backhaul Mesh, Helium Queen-side LoRaWAN (ARCH.34), Ingress Proxy (INF.4/INF.6), Conductor L2 (HW.27, formerly "Sergeant"). Production-rollout — Phase 2 (`00_06`).
-- **Пов'язані модулі:**
-  - 8-рівнева архітектура + конвеєр → [`00_02_System_Architecture_and_12_Chain_Pipeline`](00_02_System_Architecture_and_12_Chain_Pipeline)
-  - Hardware Queen → [`02_05_Queen_Hardware_and_Starlink`](02_05_Queen_Hardware_and_Starlink)
-  - Prowadinij firmware → [`03_02_Queen_Gateway_Firmware`](03_02_Queen_Gateway_Firmware)
-  - Multichain → [`05_01_Multichain_Architecture`](05_01_Multichain_Architecture)
-  - Proof-of-Growth pipeline → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
-  - Akash деплой → [`06_02_Akash_Network_Integration`](06_02_Akash_Network_Integration)
-  - Циркул-брейкер concern → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services) `Web3CircuitBreaker`
+- **Поточний TRL:** TRL 6 — політика затверджена, **6 з 10 Implementation Anchors ✅ Реалізовано** (Web3CircuitBreaker, Multi-RPC fallback, Queen self-telemetry, CoAP retry, Chainlink router probe, Manual review terminal state — див. §3). Залишаються 🟡 (→ [`00_08`](00_08_Action_Plan_Tracker)): Queen-to-Queen Backhaul Mesh + Flash overflow tier (ARCH.35), Helium Queen-side LoRaWAN (ARCH.34), TDMA/CAD sync (ARCH.26), Ingress Proxy (INF.4/INF.6), Conductor L2 (ARCH.1, formerly "Sergeant"). Production-rollout — Phase 2 (`00_06`).
 
 ---
 
-## 🛑 Блокери
+## 🔗 Cross-references
 
-- **ARCH.26** (TDMA Sync Windows + CAD) — без них Queen-to-Queen Backhaul fallback неможливий для Soldier'ів за межами Queen RX, документується відкрито у [`00_08`](00_08_Action_Plan_Tracker).
-- **INF.4 / INF.6** — Ingress Proxy / CoAP Proxy перед Rails — критично для буферизації uplink при недоступності backend pods на Akash.
-- **HW.27** (Conductor L2, formerly "Sergeant") — повноцінний failover на L2 cluster heads потребує Conductor вузлів (Hub Trees, TRL 1, концепція).
-- **ARCH.35** (Queen Flash Ring Buffer) — без SPI NOR Flash overflow tier, CIFO 50-slot RAM cache переповнюється за ~30 хв при 100 Soldiers/Queen × 1 пакет/год → дані стираються. SPI flash чип (W25Q32, ~$0.50) знімає це обмеження.
-- **ARCH.34** (Queen-side LoRaWAN Helium fallback) — без LoRaWAN MAC stack на Queen, L3 Helium резерв архітектурно неможливий. Soldier-side `helium_compat_emit` (попередній план) відкинуто через flash/RAM constraints STM32WLE5JC + Soldier не повинен знати про uplink topology.
+| Ресурс | Опис |
+|--------|------|
+| [00_02_System_Architecture_and_12_Chain_Pipeline](00_02_System_Architecture_and_12_Chain_Pipeline) | 8-рівнева архітектура + 12-chain конвеєр |
+| [02_05_Queen_Hardware_and_Starlink](02_05_Queen_Hardware_and_Starlink) | Hardware Queen + Q2Q mesh + Helium fallback |
+| [03_02_Queen_Gateway_Firmware](03_02_Queen_Gateway_Firmware) | Прошивка Queen (CoAP retry, CIFO) |
+| [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Мультичейн архітектура |
+| [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof-of-Growth pipeline; §Dynamic Tax — `insurance_pool` fallback economics |
+| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | `Web3CircuitBreaker` concern; §13b Drift Register (E.49 Celo cascade, S6.15 router probe) |
+| [06_02_Akash_Network_Integration](06_02_Akash_Network_Integration) | Multi-provider SDL, fallback GCP/Kamal |
+| [06_03_Prometheus_Observability](06_03_Prometheus_Observability) | Метрики Resilience SLO |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): ARCH.26 TDMA/CAD, ARCH.34 Helium, ARCH.35 Flash, INF.4/INF.6 Ingress, ARCH.1 Conductor L2 |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [1. ☂️ Queen Gateway Failover Protocol](#1--queen-gateway-failover-protocol)
+- [2. 🪜 Web3 Chain Fallback Matrix (Anti-Lego Tower)](#2--web3-chain-fallback-matrix-anti-lego-tower)
+- [3. 🧰 Реалізаційні Якорі (Implementation Anchors)](#3--реалізаційні-якорі-implementation-anchors)
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -173,10 +179,3 @@ end
 
 ---
 
-## 4. 🔗 Cross-ref
-
-- `docs/00_08 INF.4 / INF.6 / ARCH.26 / HW.27 / ARCH.34 / ARCH.35` — open tasks для повної реалізації цієї політики (Helium Queen-side LoRaWAN та Flash Ring Buffer overflow tier).
-- `docs/04_02 §13b Drift Register` — як приземлити цю SSOT policy у код (E.49 Celo cascade, S6.15 Chainlink router probe).
-- `docs/05_02 §Dynamic Tax` — як cap `insurance_pool` підтримує fallback economics (slashing/insurance політика — [`00_01 §6`](00_01_Vision_Market_and_Slashing_Policy)).
-- `docs/06_02 §Akash Deploy` — multi-provider SDL та fallback на GCP/Kamal.
-- `docs/06_03 §Prometheus` — метрики, які живлять Resilience SLO.
