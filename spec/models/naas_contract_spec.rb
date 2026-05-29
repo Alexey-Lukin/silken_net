@@ -26,23 +26,25 @@ RSpec.describe NaasContract, type: :model do
       end
     end
 
-    context "when Oracle is silent (no daily insights)" do
-      it "activates slashing protocol" do
+    # [SLASH-1] Cluster-wide blackout = gateway-fault / force-majeure signature,
+    # NOT negligence → must NOT auto-burn (00_01 §6.5). Route to Field Audit.
+    context "when Oracle is silent (no daily insights) — cluster-wide blackout" do
+      it "does NOT slash (no breach, no burn)" do
         create(:tree, cluster: cluster, status: :active)
         cluster.reload
 
         contract.check_cluster_health!(target_date)
 
-        expect(contract.reload).to be_status_breached
+        expect(contract.reload).to be_status_active
+        expect(BurnCarbonTokensWorker.jobs.size).to eq(0)
       end
 
-      it "enqueues BurnCarbonTokensWorker" do
+      it "raises a system_fault Field-Audit alert for the cluster" do
         create(:tree, cluster: cluster, status: :active)
         cluster.reload
 
-        contract.check_cluster_health!(target_date)
-
-        expect(BurnCarbonTokensWorker.jobs.size).to eq(1)
+        expect { contract.check_cluster_health!(target_date) }
+          .to change { EwsAlert.where(cluster: cluster, alert_type: :system_fault).count }.by(1)
       end
     end
 
@@ -476,11 +478,15 @@ RSpec.describe NaasContract, type: :model do
 
     it "enqueues worker when slashing succeeds" do
       contract = create(:naas_contract, organization: organization, cluster: cluster, status: :active)
-      create(:tree, cluster: cluster, status: :active)
+      trees = create_list(:tree, 10, cluster: cluster, status: :active)
+      # [SLASH-1] >20% critical stress = legitimate slash (data present, NOT a
+      # blackout — absence-of-data now routes to Field Audit instead).
+      target = Time.current.utc.to_date - 1
+      trees[0..2].each { |t| create(:ai_insight, analyzable: t, target_date: target, stress_index: 1.0) }
+      trees[3..9].each { |t| create(:ai_insight, analyzable: t, target_date: target, stress_index: 0.1) }
       cluster.reload
 
-      # No insights = Oracle silent = breach
-      contract.check_cluster_health!(Time.current.utc.to_date - 1)
+      contract.check_cluster_health!(target)
 
       expect(contract.reload).to be_status_breached
       expect(BurnCarbonTokensWorker.jobs.size).to eq(1)
