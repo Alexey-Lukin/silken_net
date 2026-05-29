@@ -798,11 +798,11 @@ DOC.9 — потребує лабораторного вимірювання TX-
 
 #### BIZ.9 — Незалежний carbon credit методолог (Verra/Gold Standard)
 - **P2** · 👤 · → `07_01 §3`, `07_02 §7.3`
-- Конвертація SCC utility-token → сертифіковані kg CO₂ для institutional buyers потребує independent methodology audit (Verra/Gold Standard/Puro.earth). · [ ] 👤 engagement methodologist (~$50-100k) → PDD у Verra · [ ] 🔗 залежить від HW.3 (Arrhenius) + UNI.6/7 (DFT+diffusion)
+- Конвертація SCC utility-token → сертифіковані kg CO₂ для institutional buyers потребує independent methodology audit (Verra/Gold Standard/Puro.earth). · [ ] 👤 engagement methodologist (~$50-100k) → PDD у Verra · [ ] 🔗 залежить від HW.3 (Arrhenius) + UNI.6/UNI.7 (DFT+diffusion)
 
 #### BIZ.10 — Multi-party IP Contract + NDA framework
 - **P1** · 👤 · → `08_03`, `08_05-07`
-- 5-сторонній фреймворк (ChNU+ChDTU+ChIPB+ChMA+СЄУ+SilkenNet): bilateral NDA, IP-договір спільного авторства, патентні права, royalty. · [ ] 👤 патентний повірений (UA+EU) → bilateral NDA × 5 → Master IP Framework Agreement · [ ] 🔗 після UNI.1/8/9/12/13
+- 5-сторонній фреймворк (ChNU+ChDTU+ChIPB+ChMA+СЄУ+SilkenNet): bilateral NDA, IP-договір спільного авторства, патентні права, royalty. · [ ] 👤 патентний повірений (UA+EU) → bilateral NDA × 5 (паралельно UNI.4-14) → Master IP Framework Agreement · [ ] 🔗 після UNI.1/8/9/12/13
 
 #### BIZ.11 — RWA pilot реєстрація лісової ділянки через Polygon Hadron
 - **P2** · 👤+🤖 · → `07_01 §BLOCKER-6`
