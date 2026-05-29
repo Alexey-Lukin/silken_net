@@ -236,17 +236,11 @@
 > ⚠️ Потребують фізичної роботи в лабораторії та/або з підрядниками.
 
 #### HW.32 — BME280 environmental sensing + VPD confounder [ADR `02_01 §3.4`]
-- **P1** | `02_01 §3.4` / `07_02 §1.3` | **Складність: L** | 🤖 (docs/firmware/backend specs) + 👤 (bench + механіка)
-- **Опис:** BME280 (t°/RH/тиск, I2C, за TPS22860-гейтом) → **VPD** як прямий фізіологічний confounder (вбивця False Slashing, `00_01 §6.5/§6.6`) + гіперлокальний клімат-оракул (NaaS-дохід, `07_01`). 🚨 DCI-guard: VPD **НЕ** входить у Lorenz-Z. Поправки до вихідної нотатки: BME280 (не BME680); MCU sleep 300нА (не 2.1µA); gated draw ≈8нА.
-- ✅ Зроблено (docs): `02_01 §3.4` ADR + §7.2 promote + §2 + §3.2; `00_01 §6.6`; `08_02 §4` (collection + VPD-confounder); `07_02 §1.3` (+$2.60 add-on); `02_03 §9.6` (gated energy); `07_01` (climate data-product).
-- [x] 🤖 ✅ (2026-05-29) `03_01`: BME280 SENSE-read (TPS22860-gated forced-mode, on-node VPD) + Phase 2 байт 14 = VPD-індекс (non-panic; co-exists з SEC.10 panic frame counter); raw RH/тиск climate-frame → FW.2 24B CCM; DCI-guard документовано. **Лишається 👤 bench:** I2C pinout (CubeMX) + main.c імплементація + BME280 driver + `compute_vpd_index`.
-- [x] 🤖 ✅ (2026-05-29) TelemetryLog поля `humidity`/`pressure`/`vpd` — у `structure.sql` (parent + 7 партицій via ALTER+pg17 dump), recreate+seed verified, 04_01 doc + модель-коментар.
-- [ ] 🤖 VPD confounder-gate — **spec'd, calibration-pending** (`04_02 §InsightGeneratorService`): `apply_weather_confounder` discount-only. Активувати лише після (a) firmware VPD `03_01`, (b) ML-retrain з VPD-фічею, (c) ground-truth калібрування `08_02 §4`. Свідомо НЕ хардкодимо вгадані slashing-пороги (де-ризик `00_01 §6.6`).
-- [ ] 👤 Bench: I2C bring-up, forced-mode середній струм, TPS22860 gate-timing, VPD-калібрування vs референс-гігрометр.
-- [ ] 👤 Механіка: PTFE/Gore мікро-вент у корпусі (`02_02`), IP68 re-test.
+- **P1** · 🤖+👤 · → `02_01 §3.4`, `07_02 §1.3`
+- BME280 (t°/RH/тиск, I2C за TPS22860) → VPD confounder (False-Slashing kill, `00_01 §6.5/§6.6`) + клімат-оракул (`07_01`). DCI-guard: VPD НЕ в Lorenz-Z. ✅ docs (02_01/00_01/08_02/07_02/02_03/07_01) + `03_01` SENSE+packet (byte 14 VPD-індекс) + TelemetryLog cols (structure.sql, recreate+seed). · [ ] 🤖 VPD confounder-gate (spec'd, calibration-pending `04_02`) · [ ] 👤 bench (I2C bring-up, gate-timing, VPD-калібрування) + PTFE-мембрана механіка (`02_02`)
 
 #### HW.1 — nTop model → SLM+HIP factory (Anode Zone 1)
-- **Джерело:** `01_01`, `01_02` §1.7 | ✅ Ліцензія отримана
+- **P0** · 👤 · → `01_01`, `01_02 §1.7` · ✅ ліцензія отримана
 - **Контекст:** Тризонний анкер (`01_01` §1) — Zone 1 (анод, гіроїд) виготовляється SLM+HIP; Zone 3 (катодний фланець) — SLM або EBM (`01_02` §1.7); Zone 2 (PEEK-втулка) — CNC з annealing 200–250°C
 - [ ] 👤 Генерація TPMS gyroid geometry (65% porosity, **тільки для Zone 1**)
 - [ ] 👤 **Вертикальна орієнтація пор** (`01_01` §5.5): головна вісь TPMS-комірки паралельна осі анкера (паралельно потоку соку)
@@ -269,7 +263,7 @@
 - [ ] 👤 **Annular barbs SDF:** реалізувати asymmetric triangle profile h=0.3mm у C# для PEEK mechanical lock (`01_01 §4.3`, HW.26)
 
 #### HW.2 — Dual-scale roughness spec
-- **Джерело:** `01_02`
+- **P1** · 👤 · → `01_02`
 - **Опис:** Sa 0.5-5 µm, Sv 50-500 nm НЕ передана на завод
 - **Блокує:** Максимальний струм EBFC, TRL 5
 - [ ] 👤 Підготувати factory spec з метриками
@@ -277,7 +271,7 @@
 - [ ] 👤 Отримати SEM images ×500/×5,000/×50,000
 
 #### HW.3 — Accelerated aging test (Arrhenius)
-- **Джерело:** `01_02`
+- **P1** · 👤 · → `01_02`
 - **Опис:** 12-тижневий тест у synthetic xylem sap
 - **Блокує:** Seed раунд, whitepaper, TRL 5→6
 - [ ] 👤 Синтез штучного ксилемного соку (потрібен ботанік)
@@ -291,7 +285,7 @@
 - [ ] 👤 **DFT (PySCF) для іонного бар'єра:** енергія активації дифузії Ti²⁺/Ti⁴⁺/Al³⁺/V³⁺ через PEEK-матрицю → корозія НЕ отруїть ферменти за 20+ років
 
 #### HW.4 — Self-healing coating (NEW: zone-restricted)
-- **Джерело:** `01_02` §3 + `01_02` §3.6
+- **P1** · 👤 · → `01_02 §3/§3.6`
 - **Опис:** 8-HQ мікрокапсули не синтезовані
 - **⚠️ Zone restriction:** Self-healing наноситься **тільки на неактивні поверхні** (зовнішня сорочка катодного фланця Zone 3, торці PEEK-втулки). НЕ наноситься на гіроїдні стінки Zone 1 (блокує DET) і не на катодну каталітичну поверхню (блокує DET до Cu T1 лаккази). Деталі — `01_02` §3.6.
 - **Блокує:** 20+ років longevity claims, TRL 6
@@ -301,7 +295,7 @@
 - [ ] 👤 **Thiol-Michael interphase** (`01_02` §1a.1): тест адгезії self-healing шару при ростовому навантаженні, порівняння з простою APTES-силанізацією — додано в `01_02`
 
 #### HW.5 — Enzyme lifespan + Gen 2.0 chemistry stack
-- **Джерело:** `01_03` § 1–3 (REWRITTEN 2026-05-22)
+- **P1** · 👤 · → `01_03 §1–3` (REWRITTEN 2026-05-22)
 - **Опис:** Довгострокова стабільність біоелектрохімічного стеку у кислому ксилемному середовищі (pH 4.5–5.5) при повній імунологічній невидимості для CODIT-каскаду. Цільовий термін **20–25 років**.
 - **Gen 2.0 baseline (REWRITTEN 2026-05-22 — одношарова FAD-GDH архітектура):** Архітектура `01_03` повністю переписана на Gen 2.0. Gen 1.0 (GOx + Catalase + глутаральдегід + PEG) **визнана нежиттєздатною** і виключена з усіх лабораторних протоколів — не використовується навіть як baseline. Новий стек:
   - **Анод (Zone 1):** одношаровий `fMWCNT + Os-полімер + dgrFAD-GDH` (деглікозильована FAD-залежна глюкозодегідрогеназа з *Glomerella cingulata* або *Aspergillus*) → не виробляє H₂O₂, O₂-незалежна, повний pH 4.0–8.0 діапазон. Каталаза не потрібна.
@@ -325,7 +319,7 @@
 - [ ] 👤 **Joint Q1-publication з ЧНУ Мінаєвим:** "In Silico Design of Long-Lived Enzymatic Bio-Fuel Cells for Tree-Integrated Energy Harvesting" — `08_03` Стаття 28
 
 #### HW.6 — Resin barrier + Flush Mount Installation
-- **Джерело:** `01_04` §3 + Legacy notes
+- **P1** · 👤 · → `01_04 §3`
 - **Опис:** Сосни заливають рану смолою → блокує доступ до ферментів. **Корінь проблеми = інструмент свердління**, а не лише матеріал анкера.
 - **Стратегія:** (a) Flush Mount step drilling — анкер врівень з корою, камбій не пошкоджено; (b) Microfrezing замість стандартного свердла — хірургічно чистий розріз не тригерить resinosis
 - [ ] 👤 **Flush Mount step drilling** (`01_04` §3.1): тестування багатоступеневого свердла на калібрувальних колодах сосни (товщина перидерми → ширина широкої ступені)
@@ -342,7 +336,7 @@
 - [ ] 🔗 **SA reservoir — НЕ інтегрувати без верифікації** (`01_04` §4.2 caveat #2): чи не маскує екзогенна саліцилова кислота природний сигнал стресу, який вимірює Lorenz attractor (запит до біо-хабу, [`08_01`](08_01_University_R_and_D_Protocols))
 
 #### HW.7 — BQ25570 resistors verification
-- **Джерело:** `02_03`
+- **P1** · 👤 · → `02_03`
 - **Опис:** CJMCU-25570 може мати Li-Po дефолт (VBAT_OV = 4.2V замість 5.5V для supercap)
 - **Блокує:** Фіналізацію схеми, PCBA production
 - [ ] 👤 Виміряти 8 резисторів мультиметром
@@ -351,7 +345,7 @@
 - [ ] 👤 Задокументувати фінальні номінали
 
 #### HW.8 — Pogo pin specification (7 блокерів)
-- **Джерело:** `02_02`
+- **P1** · 👤 · → `02_02`
 - [ ] 👤 BLOCKER-1: Матеріал напилення piн → Gold (Hard Gold, Au 0.76 µm)
 - [ ] 👤 **BLOCKER-1a (NEW 2026-05-16): Hard Gold ENIG на центральній площадці анкера** (торець виводу шини Zone 1, ø 4–5 мм) — **обов'язково**, інакше золотий pogo притискається до голого Ti → гальванічна пара Ti↔Au → Rc drift > 500 мОм за 18–36 міс → cold-start fail. Передати specмапу селективного gold-plating заводу (~$0.05/анкер). Деталі — `02_02 §1.2` ⚠️ блок.
 - [ ] 👤 BLOCKER-2: Сила пружини → ~100 г/пін, Travel ≥ 1.5 мм
@@ -361,7 +355,7 @@
 - [ ] 👤 **BLOCKER-6 (NEW 2026-05-16): 1D Tolerance Stack-Up по Z-осі** — обов'язковий розрахунок RSS або worst-case envelope для PCB→Radome→O-ring→Zone3 stack так, щоб O-ring завжди компресував 15-25% **і** Pogo Pin завжди в 50-70% страйку (0.76-1.06 мм з 1.52). Без цього ~10-30% капсул йде у брак (О-ring under-compressed → water ingress, АБО Pogo under-engaged → Cold-Start Fail). Деталі — `02_02 BLOCKER-6`. **P0** для PCBA/анкер/Радом freeze.
 
 #### HW.9 — PCB KiCad layouts
-- **Джерело:** `02_01`
+- **P1** · 👤 · → `02_01`
 - **Опис:** Soldier PCB та Queen PCB: "Не розпочато"
 - [ ] 👤 Soldier PCB layout (KiCad)
 - [ ] 👤 Queen PCB layout (KiCad)
