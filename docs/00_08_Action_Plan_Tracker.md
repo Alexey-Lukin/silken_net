@@ -141,172 +141,81 @@
 
 ## §03 · Firmware
 
-### 🔴 P0 — Критичні
-
 #### FW.1 — Hardcoded AES-256 Key
-- `03_01`, `03_02`, `03_05`, `05_02` | `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82`
-- **Опис:** Один і той самий ключ на ВСІХ вузлах мережі. Злам одного пристрою = компрометація всієї мережі
-- **Рішення:** Per-device provisioning через HKDF, Factory Flashing pipeline
-- [ ] 👤 Firmware: RDP Level 2 activation як final step
+- **P0** · 👤 · → `03_05`, `03_01`
+- ✅ per-device HKDF provisioning + Factory Flashing (раніше: один ключ на всіх → компрометація мережі). · [ ] 👤 RDP Level 2 activation як final step (bench)
 
 #### FW.2 — AES-128-ECB → AES-128-CCM (24B packet) [post-ARCH.42]
-- `03_05` | `firmware/soldier/main.c` (MX_CRYP_Init), `firmware/queen/main.c` (MX_CRYP_Init)
-- **Опис:** Детерміністичний шифротекст, replay/bit-flip attacks можливі. Немає автентифікації пакетів. Після ARCH.42 (Variant B, 2026-05-23) LoRa-канал на AES-128, але режим залишається transitional ECB до повного CCM rollout.
-- **Рішення (рекомендоване):** **AES-128-CCM** (апаратно підтримується STM32WLE5JC через `CRYP_AES_CCM` у HAL) з новим 24-байтним пакетом. Вирішує BLOCKER-2 та BLOCKER-3 одночасно. Узгоджено з ATECC608B Slot 0 (AES-128 SE constraint).
-- **Альтернативи:** AES-128-GCM, AES-128-CTR + HMAC-SHA256 MIC (4-byte suffix), AES-128-CMAC LoRaWAN-style.
-- ✅ Зроблено: дизайн 24B AES-128-CCM + backend парсер + firmware freeze-contract emit/decrypt + 14 host-тестів (byte-parity з `Cryptography::LoraCcm`); FC у RTC DR15. Лишається 1 HW-bench verify → flip `FW2_CCM_ENABLED`/`TELEMETRY_CCM_ENABLED`. Канон: `03_05 §3.2` BLOCKER-2.
-- [ ] 🤖 Верифікувати `CRYP_AES_CCM` підтримку на цільовій ревізії STM32WLE5JC (RM0461 §27.4 — needs hardware bench). **ЄДИНИЙ HW-залежний пункт після 2026-05-24 freeze-contract landing.**
+- **P0** · 🤖 · → `03_05 §3.2`
+- ✅ дизайн 24B AES-128-CCM + backend парсер + firmware freeze-contract emit/decrypt + 14 host-тестів (byte-parity `Cryptography::LoraCcm`); FC у RTC DR15. Закриває ECB→CCM/MIC/replay (BLOCKER-2/3); узгоджено з ATECC608B Slot 0. · [ ] 🤖 верифікувати `CRYP_AES_CCM` на STM32WLE5JC REVB (RM0461 §27.4, bench) → flip `FW2_CCM_ENABLED`/`TELEMETRY_CCM_ENABLED` — **ЄДИНИЙ HW-залежний пункт**
 
 #### FW.3 — Queen AT Command Blocking (~25 сек)
-- `03_01`, `03_02`
-- **Опис:** Queen "сліпа" до LoRa пакетів під час CoAP flush. Single-packet buffer — пакети втрачаються
-- ✅ Зроблено (🟡 частково): ring buffer + drain-loop закрив single-packet overwrite / emergency loss. Повний async UART DMA flush — окрема ітерація (HW bench). Канон: `03_02`.
-- **Рішення:** UART DMA interrupt-driven + ring buffer
-- [ ] 🟡 Переписати `Flush_Cache_To_Rails()` на UART DMA — deferred (наступна ітерація FW.3, потребує STM32 hardware bench)
+- **P1** · 🟡 · → `03_02`
+- ✅ ring buffer + drain-loop закрив single-packet overwrite/emergency loss (Queen сліпа під час CoAP flush). · [ ] 🟡 переписати `Flush_Cache_To_Rails()` на UART DMA interrupt-driven — deferred (HW bench)
 
 #### FW.4 — TinyML `Run_Inference()` — compilation unblocked, inference TBD
-- `03_03` | `main.c:1422` call-site закоментований; stub додано
-- **Опис:** Compilation більше не блокується (stub fallback 2026-05-22); реальна модель + uncomment call-site залишаються.
-- **Блокує:** Acoustic detection runtime (chainsaw, cavitation, wind), Mongabay biodiversity pivot
-- [ ] 👤 Тренування моделі (Path B log-mel, 5 класів включно з fauna)
-- [ ] 👤 Генерація реального `silken_net_audio_model.h` від ML-партнера (Бушин/Любченко) — заміняє stub автоматично через `__has_include`
-- [ ] 🔗 Verify реальний Tensor Arena size через `arm-none-eabi-size firmware.elf` після інтеграції моделі
-- [ ] 🔗 Розкоментувати `ml_event_id = Run_Inference(...)` у `main.c:1422`
-- [ ] 🔗 Host-based golden vector тести
-- [ ] 🌿 **FW.4-EXT (Mongabay pivot, post-TRL 7):** Розширення моделі з 4 → **5 класів** з додаванням `4 = fauna_activity` (циркадний dawn/dusk soundscape) — див. [`03_03` §10](../docs/03_03_TinyML_Acoustic_Inference). Залежить від калібрувального датасету ЧДТУ ПМКТ + ЧНУ Біо-хабу (UNI.11 + UNI.13a). Альтернативна архітектура: спектральний descriptor ACI (Acoustic Complexity Index) на STM32 без NN, як TRL-7 інкремент
+- **P0** · 👤+🔗 · → `03_03`
+- Compilation unblocked (stub fallback); реальна модель + uncomment лишаються. Блокує acoustic detection (chainsaw/cavitation/wind) + Mongabay pivot. · [ ] 👤 тренування Path B log-mel 5-class (Бушин/Любченко) → `silken_net_audio_model.h` (заміна stub через `__has_include`) · [ ] 🔗 verify Tensor Arena (`arm-none-eabi-size`) + uncomment `main.c:1422` + golden-vector тести · [ ] 🌿 FW.4-EXT (post-TRL 7): 5-й клас `fauna_activity` dawn/dusk (`03_03 §10`), залежить від UNI.11+UNI.13a; альт. ACI descriptor
 
-#### ✅ FW.18b — OTA threshold invalid counter (production-visibility) — РЕАЛІЗОВАНО
-- `03_03` §FW.18 audit refinement | `firmware/soldier/main.c §1.11` | **P2**
-- **Опис:** Saturating uint8 counter `tinyml_threshold_invalid_count` інкрементується коли `TinyML_Apply_Thresholds` відкидає OTA payload (NaN, out-of-range, інверсія `warn >= crit`). Embedded LOG_ERR марний на headless STM32 — counter дає production visibility замість debugging-toy.
-- ✅ Зроблено: saturating counter `tinyml_threshold_invalid_count` + 7 host-тестів (51/51 TinyML green). Канон: `03_03 §FW.18`.
-- [ ] 🔗 Wiring до 21-byte LoRa packet (потребує перерозподілу бітів або додавання поля в Status Byte) — окрема задача
-- [ ] 🔗 Backend: Prometheus метрика `tinyml_threshold_invalid_total{soldier_did}` + Grafana panel "OTA threshold corruption rate per Soldier"
-
-### 🟠 P1 — Важливі
+#### FW.18b — OTA threshold invalid counter (production-visibility)
+- **P2** · 🔗 · → `03_03 §FW.18`
+- ✅ saturating counter `tinyml_threshold_invalid_count` (відкидає NaN/out-of-range/інверсію OTA payload) + 7 host-тестів. · [ ] 🔗 wiring до LoRa packet (перерозподіл бітів) · [ ] 🔗 backend Prometheus `tinyml_threshold_invalid_total{soldier_did}` + Grafana
 
 #### FW.7 — Float vs BigDecimal divergence (TRL 6 mitigation)
-- `05_02`
-- **Опис:** firmware `8.0/3.0 = 2.6666666666666665` vs backend BigDecimal `2.666666666666666667`
-- ✅ Зроблено: backend `SilkenNet::Attractor` BigDecimal→Float (IEEE 754, ідентично firmware mruby → DCI однакові Z). Канон: `03_04` BLOCKER-4.
-- ⚠️ *Увага: IEEE 754 Float математика все одно буде давати незначний drift між ARM (STM32 Soldier) та x86 (GCP/Akash Backend) архітектурами. Категоричний tolerance band (homeostasis/stress/anomaly) компенсує це для TRL 6, але строгий побітовий consensus потребує `ARCH.18`.*
-- [ ] 👤 Верифікувати `MRB_USE_FLOAT` при першому lab-тестуванні (залишковий ризик)
+- **P1** · 👤 · → `03_04 §BLOCKER-4`
+- ✅ backend `Attractor` BigDecimal→Float (IEEE 754, ідентично firmware → DCI однакові Z). ⚠️ ARM↔x86 Float drift лишається; категоричний tolerance band компенсує для TRL 6, строгий consensus → `ARCH.18`. · [ ] 👤 верифікувати `MRB_USE_FLOAT` при lab-тесті
 
 #### FW.8 — CRITICAL_Z_MIN/MAX hardcoded
-- `05_02`, `04_01`, `04_02`
-- **Опис:** firmware: global 2.0/45.0 vs backend: per-species через `TreeFamily`
-- **Рішення:** OTA sync species-specific thresholds
-- ✅ Зроблено (🟡 deferred TRL-7): Rails-сторона + firmware-парсер `Soldier_Handle_CMD_SET_THRESHOLDS` (freeze-contract, `FW8_PARSER_ENABLED 0`) + 12 host-тестів. Defer: брак вільних RTC-регістрів (DR0-19 зайняті); розблок після FW.21. Канон: `03_01 §2`, `04_01`, `04_02`.
-- [ ] 🟡 **Deferred TRL-7:** Активувати `FW8_PARSER_ENABLED 1` після того, як FW.21 рефакторинг звільнить хоча б 1 RTC Backup register
-
-### 🟢 P2 — Низькопріоритетні
+- **P1** · 🟡 · → `03_01 §2`, `04_01`, `04_02`
+- ✅ Rails + firmware-парсер `Soldier_Handle_CMD_SET_THRESHOLDS` (freeze-contract, `FW8_PARSER_ENABLED 0`) + 12 host-тестів (firmware 2.0/45.0 vs backend per-species `TreeFamily`). · [ ] 🟡 deferred TRL-7: активувати `FW8_PARSER_ENABLED 1` після FW.21 звільнить RTC register
 
 #### FW.17 — Key rotation mechanism (Hash Ratchet KDF)
-- `03_05` BLOCKER-5 | Після FW.1 (per-device provisioning) — future cycle
-- **Опис:** Поточна архітектура: статичний ключ при Factory Flashing. Немає механізму зміни ключа без перепрошивки всіх вузлів. Порушує GDPR/ISO 27001/NIST SP 800-57
-- **Рішення (рекомендоване — Hash Ratchet KDF):** Синхронна деривація нового ключа на обох кінцях без передачі ключа по мережі. Backend надсилає `CMD:ROTATE_KEY:<UUID>` → Queen + Soldier проганяють `K_current` через AES-KDF → `K_next`. Забезпечує Perfect Forward Secrecy (PFS)
-- [ ] 🔗 Дизайн Hash Ratchet протоколу (AES-based KDF on STM32 hardware)
-- [ ] 🔗 CMD:ROTATE_KEY CoAP command + OTA relay через Queen
-- [ ] 🔗 Cluster-wide activation confirmation (ACK від усіх вузлів)
-- [ ] 🔗 Зберігання `K_current` та `rotation_counter` у Flash/RTC Backup Domain
-- [ ] 🔗 Consider ECDH/Curve25519 key exchange при provisioning (альтернатива)
+- **P2** · 🔗 · → `03_05 §BLOCKER-5`
+- Після FW.1. Статичний ключ при Factory Flashing → немає rotation без re-flash (GDPR/ISO 27001/NIST SP 800-57). Рішення: Hash Ratchet KDF (`CMD:ROTATE_KEY` → `K_current`→`K_next` AES-KDF, PFS). · [ ] 🔗 дизайн протоколу + CoAP command + cluster ACK + Flash/RTC storage + ECDH alt
 
 #### FW.19 — Float32 vs Float64 mruby compile flags
-- `03_04` BLOCKER-4
-- **Опис:** mruby без `MRB_USE_FLOAT` використовує double (64-bit), з прапорцем — float (32-bit). Makefile не верифікований. Різниця ±5-10 units на Z-осі після 250 ітерацій може змінити bio_status (false slashing)
-- ✅ Зроблено (🟡 частково): tolerance band задокументовано як «by design» (категорична перевірка `check_z_divergence!`); верифікація mruby compile flags — lab. Канон: `03_04` BLOCKER-4.
-- [ ] 👤 Верифікувати mruby compile flags (`MRB_USE_FLOAT` у Makefile або mrbconf.h) при lab-тестуванні
+- **P2** · 👤 · → `03_04 §BLOCKER-4`
+- ✅ tolerance band «by design» (категорична `check_z_divergence!`); compile-flag verify — lab. mruby без `MRB_USE_FLOAT`=double, з=float32; ±5-10 units на Z → bio_status зсув. · [ ] 👤 верифікувати `MRB_USE_FLOAT` (Makefile/mrbconf.h) при lab-тесті
 
 #### FW.20 + FW.20-S2 — Time Sync (Rails ↔ Queen ↔ Soldier)
-- **SSOT (повний контекст, wire-формати, регресійний бенч):** [`03_02 §5а Time Sync — Канонічний хаб`](03_02_Queen_Gateway_Firmware). Цей запис у 00_08 — лише чек-лист прогресу.
-- **TRL impact:** P2 для TRL-6 (`Derive_Cold_Start_State` живе з ±12 год толерантністю); блокер для TRL-7 (ARCH.26 TDMA, HMAC nonce replay-protection, корельовані події fire detection ±1 сек).
-
-**FW.20 (Rails+Queen+Soldier 1-hop) — ✅ Done:**
-- [ ] 👤 Lab drift compensation тест при ΔT = ±60°C (потребує термокамери — TRL-7)
-
-**FW.20-S2 (mesh-relay extension, 5 підпунктів) — 4 з 5 ✅ Done, 1 deferred:**
-- [ ] 🟡 (4/5) Anti-storm dedup bitmap — потребує вільного RTC регістра (DR15 наразі резерв; стратегія див. [`03_01 §2.3 ARCH.28`](03_01_Firmware_Lifecycle_and_DMA))
-
-**Cross-ref:** ARCH.26 (TDMA Sync Windows), FW.30 (cold-start `epoch_day` consumer), SEC.10 (panic frame counter — disambiguator FW.29 PANIC_FLAG_BIT для нормал/паніка байтів 14-15).
-
+- **P2** · 👤+🟡 · → `03_02 §5а` (канон-хаб)
+- TRL-6 P2 (`Derive_Cold_Start_State` ±12год толер.); TRL-7 блокер (ARCH.26 TDMA, HMAC nonce, fire ±1с). ✅ FW.20 1-hop Done; FW.20-S2 4/5 Done. · [ ] 👤 lab drift-test ΔT=±60°C (термокамера, TRL-7) · [ ] 🟡 (4/5) anti-storm dedup bitmap — потребує RTC register (DR15, `03_01 §2.3 ARCH.28`). Cross-ref: ARCH.26, FW.30, SEC.10/FW.29
 
 #### FW.21 — Edge data aggregation (RAM-aware Soldier)
-- Legacy notes + `08_02` (Kalman filter Vector 4) | P2 (потребує R&D partnership)
-- **Опис:** Soldier MCU має обмежений RAM (~20 KB вільного). Поточна архітектура: кожен wakeup → один 21-байтний пакет → TX. Для майбутнього (Kalman filtering, TinyML context) потрібна локальна агрегація
-- **Рішення:** Moving average / EMA прямо на MCU. Відправляти на Queen лише: (1) поточне значення, (2) дельту від попереднього EMA, (3) стиснуті "summary" пакети. Зменшує трафік LoRa та економить батарею
-- ✅ Зроблено: `EmaState` + 4 функції (`EMA_Update`/`EMA_Get_DeltaT_Sec`/`EMA_Get_Vcap_Mv`/`EMA_Is_Warmed_Up`) у `main.c §1.10`, persistence RTC DR10+DR12 (звільнено DR11), 102 host-тести. Передача EMA→mruby — у FW.5 B+. Канон: `03_01 §2`.
-- [ ] 👤 Інтегрувати з Kalman filter design (E.10 — Косенук)
+- **P2** · 👤 · → `03_01 §2`, `08_02`
+- ✅ `EmaState` + 4 функції (`EMA_Update`/`Get_DeltaT_Sec`/`Get_Vcap_Mv`/`Is_Warmed_Up`) + RTC DR10+DR12 (звільнено DR11) + 102 host-тести (EMA на MCU зменшує LoRa-трафік). · [ ] 👤 інтегрувати з Kalman filter design (E.10 — Косенук)
 
 #### FW.22 — acoustic_events payload overflow (uint16 → uint8 truncation)
-- `03_03` BLOCKER-7
-- **Опис:** `acoustic_events` — тип `uint16_t` в firmware, але в 21-байтний пакет пишеться лише молодший байт (low byte). Якщо між TX циклами більше 255 подій — silent overflow, дані корумпуються. Backend отримує обрізане значення без можливості виявити overflow
-- **Пріоритет:** P2 (рідкий сценарій при нормальній роботі, критичний при stress-тестуванні)
-- ✅ Зроблено: тип `uint8_t` + saturating increment (cap 255), backend overflow-warning + Prometheus counter у `TelemetryUnpackerService`, 8 тестів. Канон: `03_03` BLOCKER-7.
-- [ ] 🔗 АБО: виділити 2 байти в payload (потребує перепакування — пов'язано з FW.2 CCM transition)
+- **P2** · 🔗 · → `03_03 §BLOCKER-7`
+- ✅ тип `uint8_t` + saturating increment (cap 255) + backend overflow-warning + Prometheus counter + 8 тестів. · [ ] 🔗 АБО 2 байти в payload (перепакування — FW.2 CCM)
 
 #### FW.23 — OTA firmware broadcast: ECB без автентифікації
-- `03_05` | `firmware/queen/main.c`
-- **Опис:** OTA bytecode chunks (`[0x99][index:2][total:2][bytecode:11]`) передаються через AES-128-ECB (OTA reflex, post-ARCH.42) без MAC/signature. Зловмисник може підмінити firmware chunks → code injection на всіх Soldiers у радіусі Queen. Відсутня верифікація цілісності зібраного bytecode перед записом у Flash (`0x0803F000`)
-- **Пріоритет:** P1 (критичний для security, але блокується FW.2 CCM transition)
-- ✅ Зроблено: HMAC-SHA256 OTA auth — `OtaHmacKeyService` (HKDF info `silken-ota-hmac-v1`) + `OtaPackagerService` (`compute_hmac_tag` / `build_hmac_trailer_chunks` `[0x9B]`) + Queen stateless relay + Soldier dual-gate (magic `RITE` + constant-time HMAC) → Flash. 30 RSpec + 17 host-тестів. Канон: `03_05 §3.4б`.
-- [ ] 🟡 mbedTLS HMAC-SHA256 compute on STM32 HASH peripheral — deferred до lab integration (analog FW.30 mbedTLS deferred TODO)
+- **P1** · 🟡 · → `03_05 §3.4б`
+- ✅ HMAC-SHA256 OTA auth: `OtaHmacKeyService` (HKDF `silken-ota-hmac-v1`) + `OtaPackagerService` (`[0x9B]` trailer) + Queen relay + Soldier dual-gate (magic `RITE` + constant-time HMAC) + 30 RSpec/17 host. · [ ] 🟡 mbedTLS HMAC compute на STM32 HASH (lab, analog FW.30)
 
-#### FW.25 — TinyML DSP-path: **Path B (log-mel) SELECTED** [DECISION 2026-05-22]
-- `03_03` §3.2 Decision Matrix + BLOCKER-5 | `firmware/soldier/main.c:1417-1419` | **P0** — implementation gate, не choice gate
-- **Owner (revised 2026-05-22):** **Primary: Бушин або Любченко (ЧНУ ФОТІУС, ML)** — тренування 2D-CNN з log-mel features (`librosa.feature.melspectrogram` без DCT); **Secondary: Ярмілко (ЧНУ ФОТІУС, embedded)** — CMSIS-DSP integration (`arm_rfft_fast_f32` + custom Mel-bank + `arm_vlog_f32`)
-- **Опис (FINALIZED 2026-05-22):** Choice gate **закрито**. Архітектурне рішення: **Path B (log-mel spectrogram + 2D CNN)** як офіційний baseline. Обґрунтування:
-  1. **Path A провалюється на fauna (клас 4):** layered soundscape (комахи 4–8 кГц + птахи 1–6 кГц + амфібії 0.5–3 кГц) має ідентичну часову огинаючу з шумом вітру/дощу — розрізнення можливе тільки через spectral structure. Time-domain 1D CNN на STM32WLE5JC (64 KB SRAM) не вистачить ємності навчити FFT-features з нуля. Path A залишається fast-path MVP для 4-class (без fauna), якщо ML-партнер недоступний.
-  2. **Path C (TFLM microfrontend) має більший Tensor Arena overhead** (+5-10 KB vs Path B) — критично на 64 KB SRAM. Path C залишається fallback'ом, якщо ML-партнер натисне на TFLM end-to-end через Edge Impulse workflow.
-  3. **ESC консенсус:** Salamon & Bello 2015 (ESC-50), BirdNET 2021, UrbanSound8K — усі сходяться на log-mel для CNN-based ESC. DCT-крок MFCC декорелює ознаки для GMM/HMM (speech anachronism), але знищує spatial structure для 2D-CNN.
-  4. **CMSIS-DSP вже в стеку** (FW.21 EMA, FW.5 Lorenz). Custom Mel-bank ~50 рядків C додасться без зміни toolchain.
-  5. **Mongabay pivot** робить fauna стратегічним — рішення мусить бути fauna-ready з самого початку.
-- [ ] 👤 ML-партнер (Бушин/Любченко) **підтверджує/коригує log-mel контракт** `03_03 §3.4` (конкретні параметри готові: 16k / n_fft=512 / 40 mel / HTK / ln+1e-6) — переводить FW.25 з implementation-gate у executing
-- [ ] 🤖 **Path B implementation** (`Compute_LogMel` per `03_03 §3.4` contract): CMSIS-DSP `arm_rfft_fast_f32` + вшитий HTK mel-bank (40 bands, sparse triplet) + `arm_vlog_f32` + golden-vector host-тести (numpy ↔ C, tol 1e-3). **НЕ `arm_mfcc_f32`** (DCT anti-pattern). Розблоковано після §3.4 confirm.
-- [ ] 🤖 Verify TENSOR_ARENA budget для Path B (~15-30 KB target; cross-ref FW.26 + BLOCKER-3)
-- [ ] 🤖 Тести: золотий вектор inference (наперед відома класифікація) на log-mel input
-- [ ] 🌿 Cross-ref UNI.11 + UNI.13a: акустичний датасет dawn/dusk Черкаського бору
-- [ ] 🤖 Фалбек-план: якщо ML-партнер сильно натисне на Path C (Edge Impulse / TFLM end-to-end) — допустимо, але потребує повторної верифікації Tensor Arena
+#### FW.25 — TinyML DSP-path: Path B (log-mel) SELECTED [DECISION 2026-05-22]
+- **P0** · 👤+🤖 · → `03_03 §3.2/§3.4`
+- Choice gate закрито: **Path B (log-mel + 2D-CNN)** baseline (Path A провалює fauna layered soundscape; Path C +5-10KB arena на 64KB SRAM; ESC-консенсус log-mel — Salamon&Bello/BirdNET; CMSIS-DSP вже в стеку; Mongabay → fauna-ready). Owner: Бушин/Любченко (ML) + Ярмілко (CMSIS-DSP). · [ ] 👤 ML-партнер підтверджує log-mel контракт `03_03 §3.4` (16k/n_fft=512/40 mel/HTK/ln+1e-6) · [ ] 🤖 `Compute_LogMel` (`arm_rfft_fast_f32` + HTK mel-bank sparse + `arm_vlog_f32`, **НЕ** `arm_mfcc_f32`) + golden-vector тести (tol 1e-3) · [ ] 🤖 verify TENSOR_ARENA (~15-30KB, FW.26) + inference тести · [ ] 🌿 UNI.11+UNI.13a dataset dawn/dusk · [ ] 🤖 fallback Path C (TFLM) — потребує re-verify arena
 
 #### FW.26 — TENSOR_ARENA_SIZE ніколи не верифіковано
-- `03_03` BLOCKER-3 | `firmware/soldier/main.c` | **P1**
-- **Опис:** Точна величина `TENSOR_ARENA_SIZE` невідома з коду — документація оцінює ~8-16 KB. Ніколи не виміряно через `arm-none-eabi-size`. Якщо tensor arena > 46 KB → stack overflow при Lorenz обчисленнях (250 ітерацій mruby + Lorenz state)
-- [ ] 🤖 Запустити `arm-none-eabi-size firmware/soldier/build/soldier.elf` після додавання моделі (FW.4) → виміряти `.bss + .data`
-- [ ] 🤖 Якщо > 46 KB — оптимізувати модель (INT8 quantization, prune)
-- ✅ Зроблено (CI gate): `make -C firmware/test size-check` (host `.bss+.data` < 51200B; baseline soldier 2.5K / queen 12.4K) у `ci.yml`. ARM-gate (`arm-none-eabi-size`) — після lab build (FW.4). Канон: `03_03` BLOCKER-3, `04_06`.
+- **P1** · 🤖 · → `03_03 §BLOCKER-3`, `04_06`
+- ✅ CI gate `make size-check` (host `.bss+.data`<51200B; soldier 2.5K/queen 12.4K). Точний arena невідомий (~8-16KB оцінка); >46KB → stack overflow при Lorenz (250 ітер). · [ ] 🤖 `arm-none-eabi-size` після моделі (FW.4) → виміряти `.bss+.data` · [ ] 🤖 якщо >46KB — INT8 quantization/prune
 
 #### FW.27 — OTA broadcast: відсутня RX-верифікація Soldier
-- `03_02` §5 | **P2**
-- **Опис:** Queen транслює OTA chunks послідовно через LoRa без перевірки чи Soldier активно слухає. Якщо Soldier у STOP2 під час broadcast — chunk втрачається без retry. Документація **не описує recovery механізм** для пропущених chunks. Без TDMA Sync Windows (ARCH.26) — broadcast ненадійний
-- ✅ Зроблено: обидва recovery-дизайни + Дизайн B (Magic Re-Request) реалізовано — Soldier bitmap uplink `[0x55]` → Queen targeted re-broadcast (60-90% economy), 22 host-тести. Дизайн A (ACK-aggregation) — з ARCH.26. Канон: `03_02 §5`.
-- [ ] 🔗 Залежить від ARCH.26 (TDMA для координованого RX вікна) — лише для Дизайну A; B реалізовано незалежно
+- **P2** · 🔗 · → `03_02 §5`
+- ✅ Дизайн B (Magic Re-Request): Soldier bitmap uplink `[0x55]` → Queen targeted re-broadcast (60-90% economy) + 22 host-тести (Soldier у STOP2 пропускає chunk). Дизайн A (ACK-aggregation) — з ARCH.26. · [ ] 🔗 Дизайн A залежить від ARCH.26 (TDMA RX-вікно); B незалежний
 
-#### FW.30 — SEC.11 C-bridge gap: `firmware/soldier/main.c` mruby виклик не оновлено
-- `firmware/soldier/main.c:685-740`, `firmware/bio_contracts/bio_contract.rb` | **P1** | 🔗 Блокує FW.5 B+
-- **Опис:** SEC.11 cutover змінив API `bio_contract.rb` (видалено `calculate_state_continued` і старий 3-arg `calculate_state(seed, ...)`; залишена лише єдина сигнатура `calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)`). Проте `firmware/soldier/main.c` **не було оновлено** разом з mruby-скриптом:
-  - warm path (рядок 701): викликає `calculate_state_continued` з 5 args → **mruby NoMethodError** → `BIO_STATUS_VM_ERROR` на кожному теплому старті
-  - cold path (рядок 724): викликає `calculate_state(chaos_seed, temp, acoustic)` з 3 args → **ArgumentError** (нова сигнатура очікує 7 args); крім того, вручну повторює `seed→(x,y,z)` перетворення (рядки 731-735) замість mbedTLS HKDF cold-start
-- **Наслідок:** поточна пара (main.c + новий bio_contract bytecode) **не функціонує**. Пристрої працюють на старому OTA-байткоді (до SEC.11). Новий bytecode OTA-деплоїти до виправлення main.c — неможливо.
-- **Рішення:** оновити `firmware/soldier/main.c` mruby-секцію:
-  - Об'єднати warm/cold paths в один виклик `calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s_default, vcap_mv_default)` (7 args; `delta_t_s`/`vcap_mv` default поки без EMA — FW.5 B+ наступний крок)
-  - Cold-start: замість `chaos_seed → seed→xyz` перетворення — mbedTLS HKDF-SHA256 cold-start derive із K_seed у Flash (такий самий алгоритм як у firmware/test/test_seed_derivation.c)
-  - Додати `firmware/test/` тест для нової C-bridge сигнатури
-- ✅ Зроблено: warm/cold paths → єдиний 7-arg `calculate_state`; `Load_Lorenz_Seed()` (K_seed з Flash, magic `LSED`) + `Derive_Cold_Start_State()` (placeholder hash, TODO mbedTLS lab); 11 host-тестів. Канон: `03_04`.
-- [ ] 🔗 Після FW.30 — FW.5 B+ (передавання EMA delta_t/vcap як args[5..6]) стає незалежним кроком
+#### FW.30 — SEC.11 C-bridge gap: `main.c` mruby виклик не оновлено
+- **P1** · 🔗 · → `03_04`
+- ✅ warm/cold paths → єдиний 7-arg `calculate_state`; `Load_Lorenz_Seed()` (K_seed Flash, magic `LSED`) + `Derive_Cold_Start_State()` (placeholder hash, TODO mbedTLS lab) + 11 host-тестів. (SEC.11 cutover зламав стару C-bridge сигнатуру → `BIO_STATUS_VM_ERROR`; новий bytecode не OTA-деплоївся до фіксу.) · [ ] 🔗 після FW.30 — FW.5 B+ (EMA delta_t/vcap як args[5..6]) незалежний
 
 #### FW.31 — DCI: числовий tolerance band у `check_z_divergence!` (feature-flag flip)
-- `app/services/telemetry_unpacker_service.rb`, `docs/03_04` §BLOCKER-2 | **P2**
-- **Опис:** Після SEC.11 обидві сторони стартують з byte-identical `(x₀,y₀,z₀)` і виконують ідентичну Float IEEE-754 математику. Емпіричний Float divergence ARM↔x86 за 250 ітерацій < 1e-12. Проте `check_z_divergence!` зберігає **категоричну** перевірку (homeostasis/stress/anomaly enum match) замість числового `|server_z − device_z| < ε`. Числовий tolerance band (`ε < 0.001`) вже закоментований як "готовий до flip" у docs/03_04 §BLOCKER-2.
-- **Умова для flip:** потрібно виміряти реальний drift `server_z − device_z` на цільовому ARM hardware (STM32WLE5JC vs GCP x86-64) з тією ж Float/mruby compile-flag комбінацією. Очікуваний drift < 0.001 — це значно менше розміру одного growth_points step (~1 unit), тому false-слешинг малоймовірний.
-- **Вплив після flip:** fraud detection стає **числовим** — дозволяє виявляти не лише категоричні (homeostasis vs stress) помилки, але й систематичне зміщення Z (наприклад, replay атаку з правильним status-byte але неправильним Z magnitude).
-- [ ] 👤 Лабораторне вимірювання: запустити однакові тест-вектори на STM32WLE5JC + GCP x86-64, виміряти `|server_z - device_z|` distribution (N=10,000)
-- [ ] 🤖 Оновити `03_04` §BLOCKER-2 з реально виміряним drift + остаточно обраним ε — **залишається lab-blocked** (потребує STM32WLE5JC REVB + GCP x86-64 instrumented run); попередньо ε=0.001 closed-loop default
+- **P2** · 👤+🤖 · → `03_04 §BLOCKER-2`
+- Після SEC.11 byte-identical `(x₀,y₀,z₀)` + ідентична Float math (drift ARM↔x86 <1e-12). check лишається категоричним; числовий `|Δz|<ε` (ε=0.001) готовий до flip → числовий fraud-detect (replay з правильним status, неправильним Z magnitude). · [ ] 👤 lab: однакові тест-вектори STM32 vs x86, `|Δz|` distribution (N=10k) · [ ] 🤖 оновити `03_04 §BLOCKER-2` з drift+ε (lab-blocked: STM32WLE5JC REVB; ε=0.001 default)
 
 #### FW.42 — Vcap guard для fauna acoustic sampling (brownout protection)
-- `firmware/soldier/main.c` (FW.4 fauna sampler), `docs/03_03` §10.3 | **P1**
-- **Опис:** Після audit-fix енергетичного бюджету (`03_03 §10.3`, патч 2026-05-16) реальна вартість одного fauna-сесійного циклу = **~78.3 мДж** (× 20 від попередньої оцінки `3.3 мДж/доба`). Активний CPU під час 156 MFCC+inference вікон тягне ~12 мА × 1.56 с → транзієнтна просадка V_cap. При `V_cap ≈ 3.5 V` (margin ~100 мВ над `VBAT_OK ON = 3.4V`) просадка ~37 мВ ставить EDLC на межу — будь-який concurrent TX = brownout посеред інференсу.
-- **Рішення:** Guard clause `Fauna_Should_Sample(uint16_t vcap_mv)` — повертає 1 коли V_cap ≥ FAUNA_VCAP_MIN_MV, інакше 0 і інкрементує saturating uint8 counter `fauna_skipped_low_vcap`.
-- ✅ Зроблено (firmware-side): `Fauna_Should_Sample()` + `fauna_skipped_low_vcap` counter (freeze-contract) + 8 host-тестів. Активація — 2 рядки у fauna-pathway після FW.4. Канон: `03_03 §10.3`.
-- [ ] 🔗 Активація: викликати `Fauna_Should_Sample()` всередині fauna-pathway після FW.4 uncomment
-- [ ] 🤖 Прометей метрика + Grafana panel "Fauna skip rate per cluster" — після FW.4 (метрика без даних = шум)
+- **P1** · 🔗 · → `03_03 §10.3`
+- ✅ `Fauna_Should_Sample(vcap_mv)` (≥FAUNA_VCAP_MIN_MV інакше skip + counter `fauna_skipped_low_vcap`) + 8 host-тестів. Fauna-сесія ~78.3мДж (×20 audit-fix); при V_cap≈3.5V просадка ~37мВ → concurrent TX = brownout. · [ ] 🔗 активація: виклик у fauna-pathway після FW.4 uncomment · [ ] 🤖 Prometheus "fauna skip rate" — після FW.4
 
 ## 🔀 Cross-cutting · Architecture & SSOT-drift (2026-05-16 cross-doc audit)
 
