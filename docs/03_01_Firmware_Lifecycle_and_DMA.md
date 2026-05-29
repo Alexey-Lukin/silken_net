@@ -27,6 +27,27 @@
 
 ---
 
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [Інструментарій Розробки](#-інструментарій-розробки)
+- [1. Soldier — Архітектура Вузла-Датчика](#-1-soldier--архітектура-вузла-датчика)
+- [2. Soldier RTC Backup Register Map (DR0..DR19) — Canonical SSOT](#-2-soldier-rtc-backup-register-map-dr0dr19--canonical-ssot-doc3)
+- [3. Soldier RAM Budget (~5 KB з 64 KB SRAM)](#-3-soldier-ram-budget-5-kb-з-64-kb-sram)
+- [4. Queen — Архітектура Шлюзу-Агрегатора](#-4-queen--архітектура-шлюзу-агрегатора)
+- [5. Queen RAM Budget (~3.7 KB з 64 KB SRAM)](#-5-queen-ram-budget-37-kb-з-64-kb-sram)
+- [6. ISR Map (Апаратні Рефлекси)](#-6-isr-map-апаратні-рефлекси)
+- [7. DID Generation (Народження)](#-7-did-generation-народження)
+- [8. Binary Packet Format (Зовнішній фрейм, 21 байт)](#-8-binary-packet-format-зовнішній-фрейм-21-байт)
+- [9. Encryption Architecture](#-9-encryption-architecture)
+- [10. Покриття Host-Based Тестами](#-10-покриття-host-based-тестами)
+- [11. Bio-Contract Specification](#-11-bio-contract-specification-firmwarebio_contractsbio_contractrb)
+- [12. Тестова Інфраструктура](#-12-тестова-інфраструктура-firmwaretest)
+- [13. EMA (Exponential Moving Average) на Soldier — FW.21](#-13-ema-exponential-moving-average-на-soldier--fw21-)
+<!-- TOC:AUTO:END -->
+
+---
+
 ## 🛠️ Інструментарій Розробки
 
 ### STM32CubeIDE
@@ -546,7 +567,7 @@ Mesh-relay у §1.9 повторює прийнятий 16-байтний шиф
 | `recent_mesh_dids[1]` | `DR9` | shift з [0] |
 | `recent_mesh_dids[2]` | `DR11` | shift з [1] (eviction) |
 
-> **Чому 3 слоти, а не 8 (як було у v1.x):** EMA-блок `FW.21` ([§14](#-14-ema-exponential-moving-average-на-soldier--fw21-)) забрав DR10/DR12 під `ema_delta_t_x100` і запакований `ema_vcap_x10`. Скорочення кешу до 3-х слотів вистачає для типової щільності 2-3 сусідні Солдати в радіусі — більше слотів давало б маргінальний appendix, але блокувало EMA.
+> **Чому 3 слоти, а не 8 (як було у v1.x):** EMA-блок `FW.21` ([§13](#-13-ema-exponential-moving-average-на-soldier--fw21-)) забрав DR10/DR12 під `ema_delta_t_x100` і запакований `ema_vcap_x10`. Скорочення кешу до 3-х слотів вистачає для типової щільності 2-3 сусідні Солдати в радіусі — більше слотів давало б маргінальний appendix, але блокувало EMA.
 
 **Псевдокод (виконується у фазі 1.9, гілка "Сценарій Б: Mesh Relay"):**
 
@@ -684,7 +705,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 | Магічний маркер | Значення (hex) | ASCII | Регістр-прапор | Захищає блок | Документ |
 |-----------------|----------------|-------|----------------|--------------|----------|
 | `LORENZ_STATE_MAGIC` | `0x4C5A5354` | `"LZST"` | `DR19` | `DR16/DR17/DR18` (lorenz_x/y/z) | [03_04 §2.1](03_04_mruby_Lorenz_Attractor#21-звідки-беруться-вхідні-параметри) |
-| `EMA_VALID_FLAG` (8 біт у DR12) | `0xA5` (high byte) | — | `DR12[31:24]` | `DR10` (ema_delta_t), `DR12[15:0]` (ema_vcap_x10) | [§14.3](#143-persistence--rtc-backup-registers-dr10--dr12-packed) |
+| `EMA_VALID_FLAG` (8 біт у DR12) | `0xA5` (high byte) | — | `DR12[31:24]` | `DR10` (ema_delta_t), `DR12[15:0]` (ema_vcap_x10) | [§13.3](#133-persistence--rtc-backup-registers-dr10--dr12-packed) |
 | `tree_did != 0` | будь-яке non-zero | — | `DR7` (self) | `DR7` (захист від перезапису DID при OTA) | [§7](#-7-did-generation-народження) |
 
 > **DR12 packed format (FW.21):** `[valid:8 | count:8 | ema_vcap_x10:16]`. `valid == 0xA5` означає що EMA fields ініціалізовано та накопичено ≥1 семпл. При cold boot DR12 == 0 → `valid != 0xA5` → EMA reset.
@@ -1360,11 +1381,11 @@ make -C firmware/test clean   # Remove test_queen, test_soldier binaries
 
 ---
 
-## 📈 14. EMA (Exponential Moving Average) на Soldier — FW.21 🤖
+## 📈 13. EMA (Exponential Moving Average) на Soldier — FW.21 🤖
 
 > **Cross-ref:** [00_08 FW.21](00_08_Action_Plan_Tracker) — ✅ реалізовано (`firmware/soldier/main.c` + тести у `firmware/test/test_soldier_logic.c`)
 
-### 14.1 Мета та контекст
+### 13.1 Мета та контекст
 
 **Проблема:** Сигнали `delta_t` та `vcap` мають значний шум при вимірюванні:
 - `delta_t` (час заряду EDLC): ±8% через RTC jitter, кварцевий drift та нерегулярні прокидання
@@ -1374,7 +1395,7 @@ make -C firmware/test clean   # Remove test_queen, test_soldier binaries
 
 **Рішення:** Lightweight EMA (Exponential Moving Average) — **O(1) пам'ять, O(1) обчислення**, ідеально для STM32 embedded.
 
-### 14.2 Математика EMA
+### 13.2 Математика EMA
 
 ```
 EMA_t = α × x_t + (1−α) × EMA_{t-1}
@@ -1391,7 +1412,7 @@ EMA_t = α × x_t + (1−α) × EMA_{t-1}
 - σ_EMA = σ_x × √(α / (2−α)) = σ_x × √(0.2/1.8) ≈ **0.33 × σ_x** (зменшення шуму в 3×)
 - Для delta_t: ±8% → ±2.7%; для vcap: ±5% → ±1.7%
 
-### 14.3 Persistence — RTC Backup Registers DR10 + DR12 (packed)
+### 13.3 Persistence — RTC Backup Registers DR10 + DR12 (packed)
 
 > **🔄 Дизайн уточнено під час імплементації (FW.21 fallback):** STM32WLE5JC має лише 20 RTC backup регістрів (DR0..DR19). Оригінальна специфікація (DR24-DR26) фізично неможлива. Перша ітерація FW.21 звільнила 6 регістрів через `MESH_DID_CACHE_SIZE` 8→2 (DR8..DR9 mesh, DR10..DR12 EMA). Подальший аналіз показав: `ema_vcap_x10` має фізичний максимум **5500 × 10 = 55 000 ≤ 2¹⁶** і вкладається в **16 біт**, тому ми пакуємо його в low 16 біт DR12, звільняючи DR11 під 3-й mesh-слот. Поточна розкладка:
 >
@@ -1417,7 +1438,7 @@ EMA_t = α × x_t + (1−α) × EMA_{t-1}
 
 **Cross-VBAT поведінка:** при втраті живлення RTC backup domain очищається → `ema_valid != 0x45` на boot → cold-start → 3 цикли warmup перед `EMA_Is_Warmed_Up()`. Споживач (FW.5 Lorenz) у ці 3 цикли мав би працювати з raw значеннями — але передавання EMA у mruby `calculate_state()` ще НЕ виконано (відкладено у задачу FW.5 B+ через потребу в координованому backend апдейті: `SilkenNet::Attractor` mirror, per-tree EMA state на сервері, 50k fuzz-тести Z-divergence < 1%).
 
-### 14.4 Firmware — реалізація
+### 13.4 Firmware — реалізація
 
 ```c
 // firmware/soldier/main.c — секція 1.10 (стиль матчить FW.6 Lorenz state)
@@ -1499,7 +1520,7 @@ EMA_Update(delta_t_seconds, vcap_voltage);
 
 > ⚠️ Поточна реалізація **тільки** оновлює EMA-стан. Передавання `EMA_Get_*()` у mruby `calculate_state()` — задача FW.5 (Варіант B+).
 
-### 14.5 RAM Footprint
+### 13.5 RAM Footprint
 
 | Компонент | RAM | Коментар |
 |-----------|-----|---------|
@@ -1509,7 +1530,7 @@ EMA_Update(delta_t_seconds, vcap_voltage);
 | CPU code | ~250 байтів Flash | 4 функції + load/save inline |
 | **Net SRAM impact** | **10 байтів** | 0.015% від 64KB SRAM |
 
-### 14.6 Вплив на Backend
+### 13.6 Вплив на Backend
 
 **TelemetryLog:** поле `metabolism_s` (`delta_t`) в payload залишається **raw** значенням (не EMA). EMA — тільки для внутрішнього використання firmware (Lorenz input). Це дозволяє backend:
 - Бачити реальний raw `delta_t` для діагностики
@@ -1517,7 +1538,7 @@ EMA_Update(delta_t_seconds, vcap_voltage);
 
 **Dual Computation Integrity:** Backend `SilkenNet::Attractor` після реалізації FW.5 B+ отримуватиме raw `delta_t` з payload та застосовуватиме той самий EMA алгоритм server-side для верифікації → Divergence check залишається можливим.
 
-### 14.7 Тести (`firmware/test/test_soldier_logic.c` — секція FW.21)
+### 13.7 Тести (`firmware/test/test_soldier_logic.c` — секція FW.21)
 
 10 host-based тестів (компілюються x86 gcc, без ARM toolchain):
 

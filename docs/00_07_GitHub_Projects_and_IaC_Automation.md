@@ -393,6 +393,7 @@ echo "Stub shape for cluster C: First Akash production deploy" > docs/shaping/ak
 ## 🎯 Мета
 ## ✅ Статус            — власний (member) TRL доку + rationale; агрегат-матриця лише в 00_06 §1; +1 рядок «відкриті → 00_08 §NN»
 ## 🔗 Cross-references  — ОДИН раз, угорі зразу під Статус: sibling-доки + ключові файли + 00_08-link
+## 📑 Зміст             — авто-ToC між <!-- TOC:AUTO --> маркерами (h2 контенту); regen `bin/rails docs:toc`
 ## <Content>           — інженерна суть; поточні обмеження документуються прозою тут
 ```
 
@@ -400,6 +401,7 @@ echo "Stub shape for cluster C: First Akash production deploy" > docs/shaping/ak
 - **Cross-references — угорі, DRY.** ОДНА секція зразу під Статус: sibling-доки + ключові файли + `00_08`-link (канонічний дім блокерів). Прибрано дубль: окремий список «Пов'язані модулі» в Статус та окрема References-секція внизу більше НЕ використовуються — це й була основна дуплікація.
 - **Статус — lean (рішення 2026-05-29).** Лише member-TRL + rationale (+ «відкриті → `00_08 §NN`»). БЕЗ build-state таблиць «Компонент | Стан» — стан компонентів живе в body + code-рефах Cross-references (інакше дубль body/00_08 → drift).
 - **Без волатильних лічильників (рішення 2026-05-29).** Не хардкодити в прозі к-сть тестів / рядків коду — дрейфують на кожен коміт (у 03_01 знайдено `264` vs `511` vs `83/105` в одному доку). Рефати на джерело (`make -C firmware/test`, suite) або генерувати (як метрики `06_03 §2.8`). Spec/wire-константи (21-байт фрейм, DR0..DR19, 0.47F) — design-факти, лишаються.
+- **Зміст — авто (рішення 2026-05-29).** `## 📑 Зміст` зразу під Cross-references; тіло між `<!-- TOC:AUTO:START/END -->` ГЕНЕРУЄТЬСЯ з h2-заголовків (`bin/rails docs:toc`), `docs:check_refs` падає при дрейфі. Потрібен бо Wiki не має авто-outline; ручний список заборонено (дрейф). Анкори = GitHub-слаги (`lib/docs_toc.rb`).
 - **File Map** — опційно; згортається у Cross-references.
 
 ### 8.2 Canonical-home registry (одна річ — один дім)
@@ -433,6 +435,7 @@ echo "Stub shape for cluster C: First Akash production deploy" > docs/shaping/ak
 | TRL presence | кожен док з `## ✅ Статус` декларує TRL (ловить 06_04-клас gap) | `bin/rails docs:check_refs` (hard) |
 | TRL single-value | `00_06 §1` matrix-клітинки — одинарне 1-9, без діапазонів (§1.1) | `bin/rails docs:check_refs` (hard; `lib/docs_linter.rb`) |
 | blocker-hygiene | канон-док не тримає `🛑 Блокери`/`✅ Архів` секцій — блокери лише в `00_08` (§8.1) | `bin/rails docs:check_refs` (advisory → hard по завершенні sweep) |
+| ToC sync | docs з `TOC:AUTO` маркерами — зміст збігається з h2-заголовками | `bin/rails docs:check_refs` (HARD; writer `docs:toc`; engine `lib/docs_toc.rb`) |
 | TRL range-consistency | _(roadmap)_ per-doc member-TRL у межах діапазону модуля `00_06 §1` | — |
 
 **Правило при зміні факту:** правити лише у home (§8.2) → рефи лишаються чинними; будь-який новий NN_NN-док/реф — `docs:check_refs` має лишатись зеленим перед merge.

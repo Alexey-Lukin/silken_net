@@ -1,0 +1,80 @@
+# frozen_string_literal: true
+
+require "rails_helper"
+require Rails.root.join("lib/docs_toc")
+
+# [SSOT anti-drift] Unit coverage for the auto-ToC engine (rake docs:toc +
+# docs:check_refs ToC-sync gate). Pure functions over fixture strings.
+RSpec.describe DocsToc do
+  describe ".github_anchor" do
+    it "reproduces real repo anchors incl. emoji / punctuation / path edge cases" do
+      expect(described_class.github_anchor("3.4а HKDF Key Derivation Protocol Design 🤖"))
+        .to eq("34а-hkdf-key-derivation-protocol-design-")
+      expect(described_class.github_anchor("🗺️ 2. Soldier RTC Backup Register Map (DR0..DR19) — Canonical SSOT [DOC.3]"))
+        .to eq("-2-soldier-rtc-backup-register-map-dr0dr19--canonical-ssot-doc3")
+    end
+  end
+
+  describe ".link_text" do
+    it "strips leading/trailing emoji and link-breaking [TAG]s / code spans" do
+      expect(described_class.link_text("🌲 1. Soldier — Архітектура")).to eq("1. Soldier — Архітектура")
+      expect(described_class.link_text("🧪 10. Тести [DOC.3]")).to eq("10. Тести")
+      expect(described_class.link_text("11. Bio-Contract (`firmware/x.rb`)")).to eq("11. Bio-Contract")
+      expect(described_class.link_text("13. EMA — FW.21 🤖")).to eq("13. EMA — FW.21")
+    end
+  end
+
+  describe ".content_headings" do
+    it "lists content ## headings, skipping front-matter and fenced examples" do
+      md = <<~MD
+        # Title
+        ## 🎯 Мета
+        ## ✅ Статус
+        ## 🔗 Cross-references
+        ## 📑 Зміст
+        ## 🛠️ 1. Tools
+        ```
+        ## 🛑 Блокери
+        ```
+        ## 🔐 2. Crypto
+      MD
+      expect(described_class.content_headings(md)).to eq([ "🛠️ 1. Tools", "🔐 2. Crypto" ])
+    end
+  end
+
+  describe ".regen" do
+    let(:md) do
+      <<~MD
+        # Title
+        ## 🔗 Cross-references
+        x
+        ## 📑 Зміст
+
+        #{DocsToc::START_MARK}
+        stale
+        #{DocsToc::END_MARK}
+
+        ## 🛠️ 1. Tools
+        ## 🔐 2. Crypto
+      MD
+    end
+
+    it "fills the markers with a linked ToC built from current headings" do
+      out, changed = described_class.regen(md)
+      expect(changed).to be(true)
+      expect(out).to include("- [1. Tools](#-1-tools)", "- [2. Crypto](#-2-crypto)")
+      expect(out).not_to include("stale")
+    end
+
+    it "is idempotent — a second regen makes no change" do
+      out, = described_class.regen(md)
+      _, changed = described_class.regen(out)
+      expect(changed).to be(false)
+    end
+
+    it "no-ops when markers are absent" do
+      plain = "# Title\n## 🛠️ 1. Tools\n"
+      expect(described_class.regen(plain)).to eq([ plain, false ])
+    end
+  end
+end

@@ -15,8 +15,9 @@
 #   ADVISORY (→ HARD post-sweep): no canon doc hosts a "🛑 Блокери" / "✅ Архів
 #                     вирішених блокерів" section — ALL blockers (open + closed) live
 #                     in 00_08 (decided 2026-05-29); canon keeps design substance as body prose.
-# Pure file I/O, no Rails boot needed. Engine: lib/docs_linter.rb (unit-tested).
+# Pure file I/O, no Rails boot needed. Engines: lib/docs_linter.rb + lib/docs_toc.rb (unit-tested).
 require_relative "../docs_linter"
+require_relative "../docs_toc"
 
 namespace :docs do
   DOCS_DIR = File.expand_path("../../docs", __dir__)
@@ -72,6 +73,12 @@ namespace :docs do
     blocker_sections = files.reject { |f| File.basename(f).start_with?("00_08") }
                             .flat_map { |f| DocsLinter.canon_blocker_sections(File.read(f)).map { |h| "#{File.basename(f, '.md')}: #{h}" } }
 
+    # [ToC sync] HARD — docs with TOC:AUTO markers must match current headings
+    # (regen is a no-op when in sync). Run `bin/rails docs:toc` to fix drift.
+    toc_drift = files.select { |f| DocsToc.markers?(File.read(f)) }
+                     .select { |f| DocsToc.regen(File.read(f)).last }
+                     .map { |f| File.basename(f, ".md") }
+
     puts "docs:check_refs — #{files.size} docs scanned"
     if dangling.empty?
       puts "  doc links:      all resolve ✓"
@@ -101,11 +108,32 @@ namespace :docs do
       puts "  ⚠️ canon docs still hosting blocker sections (#{blocker_sections.size}) — advisory, migrate to 00_08:"
       blocker_sections.sort.each { |b| puts "    · #{b}" }
     end
+    if toc_drift.empty?
+      puts "  ToC sync:       every TOC:AUTO doc matches its headings ✓"
+    else
+      puts "  ToC DRIFT (#{toc_drift.size}) — run `bin/rails docs:toc`:"
+      toc_drift.each { |d| puts "    ✗ #{d}" }
+    end
 
     failed = []
     failed << "dangling doc links" unless dangling.empty?
     failed << "✅ Статус docs without a TRL" unless trl_missing.empty?
     failed << "TRL ranges in 00_06 §1 matrix" unless trl_ranges.empty?
+    failed << "ToC drift (run docs:toc)" unless toc_drift.empty?
     abort("docs:check_refs FAILED — #{failed.join(', ')}") unless failed.empty?
+  end
+
+  desc "Regenerate the 📑 Зміст ToC between TOC:AUTO markers in docs that have them"
+  task :toc do
+    files = Dir[File.join(DOCS_DIR, "*.md")]
+    regenerated = files.select do |f|
+      md = File.read(f)
+      next false unless DocsToc.markers?(md)
+
+      new_md, changed = DocsToc.regen(md)
+      File.write(f, new_md) if changed
+      changed
+    end.map { |f| File.basename(f, ".md") }
+    puts "docs:toc — regenerated #{regenerated.size} doc(s)#{": #{regenerated.join(', ')}" unless regenerated.empty?}"
   end
 end
