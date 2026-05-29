@@ -283,7 +283,7 @@ Solana: Ed25519 підпис, SPL Token Transfer, ATA резолюція чер�
 | QUEEN-UID | `firmware/queen/main.c` | ✅ Виправлено (PLAN 2.4): Flash-based UID з fallback |
 | QUEEN-OTA-LOOP | `firmware/queen/main.c` | ✅ Виправлено (PLAN 2.5): `ota_is_active` скидається після повного циклу |
 | QUEEN-AT-BLIND | `firmware/queen/main.c:542` | ~25 сек blind wait під час CoAP flush |
-| HRNG-IV-REUSE | `firmware/queen/main.c:588` | ⚠️ Покращено (PLAN 2.7): djb2 fallback замість IV=0, але djb2 НЕ криптографічний PRNG — CBC IV залишається передбачуваним при HRNG failure |
+| HRNG-IV-REUSE | `firmware/queen/coap_iv.h` | ✅ Harden (2026-05-29): fallback IV винесено у pure `coap_fallback_iv_word` (uid_hash×device + queen_unix_ts×reboot + coap_flush_seq×flush) + 4 host-тести → **reuse закрито** (унікальність across device/reboot/flush). 🟡 Residual: IV передбачуваний на fallback-шляху — **low-severity** (CoAP-батч без chosen-plaintext вектора; uniqueness = операційна вимога тут, `03_05 BLOCKER-4`); повна unpredictability = key-derived `E_key(ctr)`, bench-gated |
 | BQ25570-R | `docs/02_03` | VBAT_OV резистори не верифіковані |
 | PROMETHEUS | `deploy/akash/config.alloy` | ✅ Вирішено (OBS.1): Grafana Alloy → Grafana Cloud SaaS (remote_write); self-hosted не потрібен. Залишок 👤: import dashboards (S2.2) + verify post-deploy — `06_03` |
 | SENTRY-DSN | `.kamal/secrets` | ✅ Додано: `SENTRY_DSN=$SENTRY_DSN` (потребує ENV at deploy time) |

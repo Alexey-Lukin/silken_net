@@ -46,7 +46,7 @@
 | **Per-device CoAP AES-256 key (32-byte) — Gateway only** | ✅ Backend `HardwareKeyService.derive_device_key` (info `"silken-aes-256-device-key"`) + Queen Flash 8 words |
 | **ECB Mode для Soldier ↔ Queen (відсутність IV)** | 🟡 OPEN — transitional AES-128-ECB після ARCH.42; повне закриття після FW.2 CCM rollout |
 | **Відсутність MAC/MIC для LoRa-пакетів** | 🟡 OPEN — закривається разом з FW.2 CCM (8-byte MIC + 4-byte Frame Counter) |
-| **HRNG Fallback — передбачуваний seed** | ✅ Виправлено (djb2 STM32 HW UID XOR tick — унікальний на кожній Queen) |
+| **HRNG Fallback — передбачуваний seed** | ✅ Reuse закрито (`coap_iv.h`: uid×device + unix_ts×reboot + flush_seq×flush + 4 host-тести); 🟡 predictability residual **low-severity** (no chosen-plaintext на CoAP — §BLOCKER-4) |
 | **Відсутність ротації ключів (Key Rotation)** | 🟡 OPEN (рекомендовано Hash Ratchet KDF — PFS без передачі ключа; PQC bridge через §11) |
 | **ECB Restoration Race (HAL_CRYP_Init failure)** | ✅ Виправлено (SEC.8) — RCC reset + `NVIC_SystemReset()` при апаратному збої |
 | **ATECC608B Secure Element — LoRa AES-128 + ECC P-256 [ARCH.42 enabler]** | 🟡 OPEN — slot mapping + I²C integration spec'нуто у §3.7; bench eval kit замовлення = HW-task |
@@ -310,18 +310,26 @@ Duty cycle = T_airtime / T_period
 
 ### ✅ BLOCKER-4: HRNG Fallback — покращена ентропія (Виправлено)
 
-**Статус:** Виправлено (PR #273).
+**Статус:** ✅ Reuse закрито; **harden 2026-05-29** (cross-reboot/flush uniqueness + host-тести).
 
-**Реалізація:** Fallback тепер використовує djb2 хеш STM32 HW UID (унікальний для кожного чіпу, `0x1FFF7590`) XOR `HAL_GetTick()` з bit-shift для кожного слова IV:
+**Реалізація:** fallback-IV винесено у pure-функцію `firmware/queen/coap_iv.h` →
+`coap_fallback_iv_word(i, tick, uid_hash, unix_ts, flush_seq)`, host-тестовану в
+`firmware/test/test_encryption.c` (4 тести: per-word / per-device / cross-reboot /
+cross-flush uniqueness). Нормальний шлях — HRNG (CSPRNG); fallback спрацьовує лише
+при апаратній відмові RNG.
 
 ```c
-// djb2 hash of STM32 HW UID (unique per chip)
-uint32_t uid_hash = djb2_hash((uint8_t*)0x1FFF7590, 12);
-// i ∈ {0,1,2,3}: shift забезпечує різні слова IV
-batch_iv[i] = uid_hash ^ (HAL_GetTick() << (i * 8)) ^ (i * RNG_FALLBACK_XOR_MASK);
+// coap_iv.h — uniqueness-preserving degradation (НЕ CSPRNG)
+batch_iv[i] = (tick + i)                  // sub-second + per-word
+            ^ (uid_hash << i)             // per-DEVICE (djb2 queen_uid / STM32 HW UID)
+            ^ (unix_ts * 65537U)          // cross-REBOOT (server-synced wall-clock)
+            ^ (flush_seq * 2654435761U)   // cross-FLUSH (monotonic per-boot)
+            ^ ((uint32_t)i * RNG_FALLBACK_XOR_MASK);
 ```
 
-Оскільки STM32 HW UID унікальний для кожної Queen, навіть при масовому blackout-відновленні (всі Queens перезавантажились одночасно) IV будуть різними для кожного пристрою — IV Reuse Attack унеможливлена на рівні fallback.
+**IV Reuse** унеможливлено по всіх осях: `uid_hash` (per-device, mass blackout-reboot guard) + `queen_unix_ts` (cross-reboot) + `coap_flush_seq` (cross-flush).
+
+> 🟡 **Чесний residual (predictability):** fallback-IV **унікальний, але передбачуваний** (uid/час/лічильник вгадувані). Сувора вимога CBC — *непередбачуваність*; але загроза тут **low-severity**, бо CoAP-батч несе власну телеметрію Королеви → **немає chosen-plaintext вектора** (BEAST-патерн непридатний), отже операційна вимога — саме *uniqueness* (досягнуто). Повна unpredictability = key-derived IV `E_key(counter)` через AES-engine (окремий CRYP-крок + SEC.8 restore) — **bench-gated** roadmap-пункт. Normal-path HRNG вже непередбачуваний.
 
 ---
 

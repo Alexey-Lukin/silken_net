@@ -26,6 +26,7 @@
 #include <stdint.h>
 
 #include "hal_mock.h"
+#include "../queen/coap_iv.h"  /* [HRNG-IV] real fallback-IV derivation under test */
 
 /* ══════════════════════════════════════════════════════════════════
  * CONSTANTS (from queen/main.c)
@@ -568,6 +569,40 @@ TEST(test_key_loaded_before_ecb_restore_preserves_key)
 }
 
 /* ══════════════════════════════════════════════════════════════════
+ * HRNG-IV FALLBACK (coap_iv.h — the REAL derivation, not re-implemented)
+ *
+ * Verifies the CoAP-batch fallback IV (used only when HAL_RNG fails) stays
+ * UNIQUE across the dimensions that matter for CBC on a no-chosen-plaintext
+ * channel (03_05 BLOCKER-4): device, reboot, flush, and per-word.
+ * ══════════════════════════════════════════════════════════════════ */
+TEST(test_coap_fallback_iv_words_distinct) {
+    uint32_t w0 = coap_fallback_iv_word(0, 1000U, 0xDEADBEEFU, 1700000000U, 1U);
+    uint32_t w1 = coap_fallback_iv_word(1, 1000U, 0xDEADBEEFU, 1700000000U, 1U);
+    uint32_t w2 = coap_fallback_iv_word(2, 1000U, 0xDEADBEEFU, 1700000000U, 1U);
+    uint32_t w3 = coap_fallback_iv_word(3, 1000U, 0xDEADBEEFU, 1700000000U, 1U);
+    ASSERT_EQ(w0 != w1 && w0 != w2 && w0 != w3 && w1 != w2 && w1 != w3 && w2 != w3, 1);
+    ASSERT_EQ((w0 | w1 | w2 | w3) != 0U, 1);  /* never all-zero */
+}
+
+TEST(test_coap_fallback_iv_per_device) {
+    /* mass blackout-reboot: same tick/unix/seq, different device UID → different IV */
+    ASSERT_EQ(coap_fallback_iv_word(0, 1000U, 0xAAAA1111U, 1700000000U, 1U)
+           != coap_fallback_iv_word(0, 1000U, 0xBBBB2222U, 1700000000U, 1U), 1);
+}
+
+TEST(test_coap_fallback_iv_cross_reboot) {
+    /* different wall-clock (queen_unix_ts) → different IV (cross-reboot uniqueness) */
+    ASSERT_EQ(coap_fallback_iv_word(0, 1000U, 0xDEADBEEFU, 1700000000U, 1U)
+           != coap_fallback_iv_word(0, 1000U, 0xDEADBEEFU, 1700003600U, 1U), 1);
+}
+
+TEST(test_coap_fallback_iv_cross_flush) {
+    /* different flush sequence → different IV (within-boot uniqueness) */
+    ASSERT_EQ(coap_fallback_iv_word(0, 1000U, 0xDEADBEEFU, 1700000000U, 1U)
+           != coap_fallback_iv_word(0, 1000U, 0xDEADBEEFU, 1700000000U, 2U), 1);
+}
+
+/* ══════════════════════════════════════════════════════════════════
  * MAIN
  * ══════════════════════════════════════════════════════════════════ */
 int main(void)
@@ -610,6 +645,12 @@ int main(void)
     RUN(test_load_key_then_cryp_init_uses_flash_key);
     RUN(test_no_key_means_no_cryp_init);
     RUN(test_key_loaded_before_ecb_restore_preserves_key);
+
+    printf("\n  HRNG-IV Fallback (coap_iv.h):\n");
+    RUN(test_coap_fallback_iv_words_distinct);
+    RUN(test_coap_fallback_iv_per_device);
+    RUN(test_coap_fallback_iv_cross_reboot);
+    RUN(test_coap_fallback_iv_cross_flush);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n", tests_run - tests_failed, tests_failed);

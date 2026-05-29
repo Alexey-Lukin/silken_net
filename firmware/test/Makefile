@@ -56,7 +56,7 @@ $(BINDIR)/test_bio_contract: test_bio_contract.c
 $(BINDIR)/test_tinyml: test_tinyml_pipeline.c hal_mock.h
 	$(CC) $(CFLAGS) -o $@ test_tinyml_pipeline.c -lm
 
-$(BINDIR)/test_encryption: test_encryption.c hal_mock.h
+$(BINDIR)/test_encryption: test_encryption.c hal_mock.h ../queen/coap_iv.h
 	$(CC) $(CFLAGS) $(OPENSSL_CFLAGS) -o $@ test_encryption.c $(OPENSSL_LIBS)
 
 # [SEC.11] Host parity for SilkenNet::SeedDerivation. Uses OpenSSL
