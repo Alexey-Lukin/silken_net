@@ -50,9 +50,28 @@ module DocsToc
     end
   end
 
-  # The ToC body (the `- [..](#..)` lines), generated from current headings.
+  # Existing trailing descriptions (" — …" after a ToC link), keyed by anchor, so a
+  # curated description (04_01-style) survives regeneration of titles/anchors.
+  def existing_descriptions(markdown)
+    block = markdown[/#{Regexp.escape(START_MARK)}(.*?)#{Regexp.escape(END_MARK)}/m, 1]
+    return {} unless block
+
+    block.each_line.each_with_object({}) do |line, h|
+      m = line.match(/\A- \[[^\]]*\]\(#([^)]*)\)\s*(—\s.*\S)\s*\z/)
+      # normalize the parsed anchor (strip variation-selectors/marks) so a curated
+      # hand-ToC anchor (e.g. `#️-0-…` with VS) matches the clean github_anchor key.
+      h[m[1].gsub(/[\p{Mn}\p{Me}\p{Cf}]/u, "")] = " #{m[2]}" if m
+    end
+  end
+
+  # The ToC body (`- [..](#..)` lines) from current headings; any curated
+  # `— description` present in the existing block is preserved per anchor.
   def render_body(markdown)
-    content_headings(markdown).map { |h| "- [#{link_text(h)}](##{github_anchor(h)})" }.join("\n")
+    desc = existing_descriptions(markdown)
+    content_headings(markdown).map do |h|
+      anchor = github_anchor(h)
+      "- [#{link_text(h)}](##{anchor})#{desc[anchor] || ''}"
+    end.join("\n")
   end
 
   def markers?(markdown)

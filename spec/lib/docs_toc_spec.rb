@@ -76,5 +76,21 @@ RSpec.describe DocsToc do
       plain = "# Title\n## 🛠️ 1. Tools\n"
       expect(described_class.regen(plain)).to eq([ plain, false ])
     end
+
+    it "preserves a curated `— description` across regeneration (keyed by anchor)" do
+      md = <<~MD
+        ## 📑 Зміст
+
+        #{DocsToc::START_MARK}
+        - [1. Tools](#-1-tools) — keep me
+        #{DocsToc::END_MARK}
+
+        ## 🛠️ 1. Tools
+        ## 🔐 2. Crypto
+      MD
+      out, = described_class.regen(md)
+      expect(out).to include("- [1. Tools](#-1-tools) — keep me")
+      expect(out).to include("- [2. Crypto](#-2-crypto)")
+    end
   end
 end

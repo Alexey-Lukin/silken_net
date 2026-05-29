@@ -8,11 +8,19 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 8 — Схема БД затверджена, міграції написані, поліморфні зв'язки та індекси оптимізовані для planetary-scale highload.
-- **Пов'язані модулі:**
-  - Фізичний рівень → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
-  - Бізнес-логіка → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
-  - Web3-економіка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
+- **Поточний TRL:** TRL 8 — Схема БД затверджена, міграції написані, поліморфні зв'язки та індекси оптимізовані для planetary-scale highload. Відкрите: SSOT Drift Register моніторинг (§12) → [`00_08`](00_08_Action_Plan_Tracker).
+
+---
+
+## 🔗 Cross-references
+
+| Ресурс | Опис |
+|--------|------|
+| [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Фізичний рівень (Soldier/Queen DID, RTC) |
+| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (сервіси над моделями) |
+| [03_05_Hardware_Symmetric_Crypto_and_Security](03_05_Hardware_Symmetric_Crypto_and_Security) | HardwareKey HKDF (§3.4а/в): aes_key, lorenz_seed |
+| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Web3-економіка (Wallet, BlockchainTransaction) |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | Open backlog (SSOT Drift Register §12) |
 
 ### Конвенція впорядкування розділів
 
@@ -34,20 +42,22 @@
 
 ## 📑 Зміст
 
-- [0. PostgreSQL Інфраструктура](#️-0-postgresql-інфраструктура) — extensions, тригери, партиціонування (4 таблиці), TimescaleDB rationale
+<!-- TOC:AUTO:START -->
+- [0. PostgreSQL Інфраструктура](#-0-postgresql-інфраструктура) — extensions, тригери, партиціонування (4 таблиці), TimescaleDB rationale
 - [1. Concerns](#-1-concerns) — 6 mixin'ів (EthAddressValidatable, Firmwareable, GeoLocatable, HasArgon2Password, NormalizeIdentifier, OtaChunkable)
 - [2. Біологічний Рівень](#-2-біологічний-рівень) — TreeFamily, **Tree** (Soldier), Cluster
-- [3. Апаратний Рівень](#️-3-апаратний-рівень) — **Gateway** (Queen), HardwareKey, DeviceCalibration, **TelemetryLog** (partitioned), GatewayTelemetryLog (partitioned)
+- [3. Апаратний Рівень](#-3-апаратний-рівень) — **Gateway** (Queen), HardwareKey, DeviceCalibration, **TelemetryLog** (partitioned), GatewayTelemetryLog (partitioned)
 - [4. AI / OTA / Актуатори](#-4-ai--ota--актуатори) — TinyMlModel, BioContractFirmware, Actuator, ActuatorCommand
 - [5. Люди та Організації](#-5-люди-та-організації) — Organization, User, Session, Identity
 - [6. Економічний Рівень](#-6-економічний-рівень) — Wallet, **BlockchainTransaction** (partitioned), NaasContract, ParametricInsurance
 - [7. Інтелект та Аудит](#-7-інтелект-та-аудит) — AiInsight, EwsAlert, AuditLog, MaintenanceRecord, EthereumAnchor, SystemParameter
-- [7b. Codex — Lore Layer](#-7b-codex--lore-layer-кодекс-архетипів) — Realm, Node, Citation, Comment, Attunement, Fraction, **Match** (partitioned), Discovery, DiscoveryRule
+- [7b. Codex — Lore Layer (Кодекс Архетипів)](#-7b-codex--lore-layer-кодекс-архетипів) — Realm, Node, Citation, Comment, Attunement, Fraction, **Match** (partitioned), Discovery, DiscoveryRule
 - [8. Seeds — Початковий Стан Системи](#-8-seeds--початковий-стан-системи)
 - [9. Ключові Індекси](#-9-ключові-індекси)
-- [10. Карта Зв'язків](#️-10-карта-звязків)
-- [11. Архітектурні Принципи БД](#️-11-архітектурні-принципи-бд)
+- [10. Карта Зв'язків](#-10-карта-звязків)
+- [11. Архітектурні Принципи БД](#-11-архітектурні-принципи-бд)
 - [12. SSOT Drift Register (Doc ↔ Schema Sync)](#-12-ssot-drift-register-doc--schema-sync)
+<!-- TOC:AUTO:END -->
 
 > **Bold** = модель/таблиця з партиціонуванням RANGE BY `created_at`. Завжди передавайте `created_at_iso` у відповідні воркери для partition pruning.
 
