@@ -196,6 +196,18 @@ ForceMajeure event → InsurancePayoutWorker
 
 - **Streamr P2P broadcast gap** довше 24 год без MaintenanceRecord — посилення penalty_factor на +0.25.
 
+### 6.6 Multi-signal slashing — Лоренц ≠ єдина правда [Lorenz de-risk, 2026-05-29]
+
+**Принцип:** фінансовий slashing **ніколи** не спирається лише на Z-Лоренца. Роль Лоренца подвійна й обмежена: (1) **DCI / anti-fraud** (`check_z_divergence!` — device-Z vs server-Z, §6.5); (2) **один із кількох** stress-features. Мапінг «Z → здоров'я дерева» сам по собі — **недоведена гіпотеза** (потребує ground-truth — [`08_02` Lorenz↔health protocol](08_02_Cybernetic_and_Mathematical_Validation)).
+
+**Стан (verified 2026-05-29):**
+- Драйвер slashing — `stress_index` (`ContractHealthCheckService`: tree ≥0.83 / cluster >20% дерев ≥1.0).
+- `stress_index` (`InsightGeneratorService#calculate_stress_index`) — **мульти-сигнальний ML** на `[temp, vcap, Z, sap_deviation, acoustic]`. Z = 1 з 5; `sap_flow` (прямий фізіологічний) — окрема ознака. ✅ Архітектурно вже не «ставка лише на Z».
+- ⚠️ **GAP:** heuristic-fallback (`calculate_stress_index_heuristic`, активний доки ML-модель не натренована) спирається на `max_status` (device-Z-класифікація) + `avg_z` + temp — **ігнорує `sap_flow`/acoustic**. У no-model стані slashing де-факто спирається на недоведений Z. → **Fix:** heuristic мусить вимагати corroboration прямим сигналом перед high-stress (HW.19-аналог: не штрафувати без прямого підтвердження).
+- ML-модель потребує **ground-truth калібрування** перед mainnet slashing.
+
+**Інваріант:** доки Z↔health не підтверджено емпірично, slashing вимагає підтвердження **≥1 прямим вимірним сигналом** (sap_flow / chainsaw-acoustic / dClimate), не лише Z/device-status.
+
 ---
 
 ## 🔒 7. "Proof of Growth" Консенсус
