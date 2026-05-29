@@ -419,6 +419,7 @@
 - [ ] 👤 Виміряти VOC та VMP при різному освітленні (ранок/день/вечір, сезонно)
 - [ ] 👤 Визначити оптимальну фракцію (починати з 65%)
 - [ ] 👤 Якщо потрібно — замінити R_OC1/R_OC2 (звіряти з TI Figure 42 та `02_03 §4.А` SSOT Convention block)
+- [ ] 👤 **Cold-start R_int** (`02_03 §1.5`): виміряти R_int EBFC (V_OC + V@15µA); якщо > 12 кΩ → cold-start oscillation-loop → серійний стек 2× EBFC (A) / паралель (B) / LTC3108 DNP-footprint (C). Не замовляти 100 PCBA без DNP-LTC3108 до перевірки.
 
 #### HW.14 — Winter energy deficit for Queen Phase 3 (Starlink Mini)
 - **P1** · 👤 · → `02_05 §BLOCKER-2`
