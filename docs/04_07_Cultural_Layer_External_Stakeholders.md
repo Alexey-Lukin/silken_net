@@ -26,6 +26,32 @@ SCC/SFC ([`05_03`](05_03_Tokenomics_SCC_and_SFC)).
 
 ---
 
+## 🔗 Cross-references
+
+| Ресурс | Опис |
+|--------|------|
+| [04_04_Phlex_UI_and_Tailwind](04_04_Phlex_UI_and_Tailwind) | Design tokens, custom typography |
+| [04_05_Codex_Lore_Module](04_05_Codex_Lore_Module) | Lore Layer, ADR-CDX-1…7 |
+| [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Genesis cluster pipeline |
+| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | SCC + майбутня Genesis NFT емісія |
+| [07_04_B2G_External_Stakeholders](07_04_B2G_External_Stakeholders) | B2G/B2B зовнішні (Social API Registry) |
+| [08_07_SEU_Economics_and_Legal_Integration](08_07_SEU_Economics_and_Legal_Integration) | §1.7 Теліженко — UX партнерство (MoU) |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | § External Stakeholders — outreach tracker |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [Архітектурні правила (фіксоване)](#-архітектурні-правила-фіксоване)
+- [1. Стратегічна функція Культурного Шару](#1-стратегічна-функція-культурного-шару)
+- [2. Stakeholder Matrix](#2-stakeholder-matrix)
+- [3. Концепція: Genesis NFT (deferred → 05_03 Phase 6+)](#3-концепція-genesis-nft-deferred--05_03-phase-6)
+- [4. Концепція: Data Sonification (deferred → TRL 8-9)](#4-концепція-data-sonification-deferred--trl-8-9)
+- [5. Концепція: Codex Realm Population](#5-концепція-codex-realm-mythos-population)
+- [6. Філософське обґрунтування (одне речення)](#6-філософське-обґрунтування-одне-речення)
+<!-- TOC:AUTO:END -->
+
+---
+
 ## 🛑 Архітектурні правила (фіксоване)
 
 1. **Декаплінг від hot-path:** жоден агент Культурного Шару не запускає
@@ -406,21 +432,7 @@ art × science (`08_07` cross-ref для grant-pipeline).
 
 ---
 
-## 6. Cross-References
-
-- [`04_04`](04_04_Phlex_UI_and_Tailwind) — design tokens, custom typography.
-- [`04_05`](04_05_Codex_Lore_Module) — Lore Layer, ADR-CDX-1…7.
-- [`05_02`](05_02_Proof_of_Growth_Pipeline) — Genesis cluster pipeline.
-- [`05_03`](05_03_Tokenomics_SCC_and_SFC) — SCC + майбутня Genesis NFT емісія.
-- [`07_04`](07_04_B2G_External_Stakeholders) — B2G/B2B зовнішні залежності
-  (доповнюючий кластер; разом утворюють Social API Registry).
-- [`08_07 §1.7 Теліженко`](08_07_SEU_Economics_and_Legal_Integration) — UX
-  партнерство (поточне MoU).
-- [`00_08`](00_08_Action_Plan_Tracker) § External Stakeholders — outreach tracker.
-
----
-
-## 7. Філософське обґрунтування (одне речення)
+## 6. Філософське обґрунтування (одне речення)
 
 Цифрова D-MRV-система не замінює емпатію — вона дає митцям новий медіум,
 де живе дерево стає співавтором мистецтва, а митець — голосом, який
