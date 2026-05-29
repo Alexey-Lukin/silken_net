@@ -11,11 +11,34 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 — Пайплайн повністю імплементовано.
-- **Пов'язані модулі:**
-  - Мультичейн → [`05_01_Multichain_Architecture`](05_01_Multichain_Architecture)
-  - Токеноміка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
-  - Моделі → [`04_01_Data_Models_and_Entities`](04_01_Data_Models_and_Entities)
-  - Сервіси → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
+- **Відкрите:** прямих блокерів немає (пайплайн імплементовано); залежні інтеграції (Hadron/Chainlink hybrid) трекаються в [`00_08`](00_08_Action_Plan_Tracker).
+
+---
+
+## 🔗 Cross-references
+
+| Ресурс | Опис |
+|--------|------|
+| [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Мультичейн (12-chain топологія) |
+| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (мінтинг SCC/SFC) |
+| [04_01_Data_Models_and_Entities](04_01_Data_Models_and_Entities) | Моделі (TelemetryLog, Wallet, BlockchainTransaction) |
+| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Сервіси (Unpacker, Verification, Minting) |
+| [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz SSOT (константи, DCI parity) |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | Open backlog |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [Огляд](#-огляд)
+- [Повна Архітектурна Схема](#повна-архітектурна-схема)
+- [Детальний Опис Кожного Кроку](#детальний-опис-кожного-кроку)
+- [Усі Шляхи до (Guard Inventory)](#усі-шляхи-до-walletlock_and_mint-guard-inventory-doc7)
+- [Схема Полів БД (Proof of Growth State Machine)](#схема-полів-бд-proof-of-growth-state-machine)
+- [Змінні Середовища та Credentials](#змінні-середовища-та-credentials)
+- [SEC.11 — Lorenz Seed Provenance & Dual Computation Integrity](#-sec11--lorenz-seed-provenance--dual-computation-integrity)
+- [Блокери (Needs Action)](#-блокери-needs-action)
+- [Матриця Ризиків](#-матриця-ризиків)
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -188,7 +211,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 
 ### Firmware: Солдат (STM32WLE5JC)
 
-**Файл:** `firmware/soldier/main.c` (771 рядків)
+**Файл:** `firmware/soldier/main.c`
 
 #### Фаза 1 — SENSE (Збір фізичних даних)
 
@@ -425,7 +448,7 @@ Backend вже має `TreeFamily#critical_z_min|max|optimal_z_target` чере�
 
 ### Firmware: Королева (STM32WLE5JC + SIM7070G)
 
-**Файл:** `firmware/queen/main.c` (550 рядків)
+**Файл:** `firmware/queen/main.c`
 
 #### CIFO Edge Cache
 
@@ -795,7 +818,7 @@ total = base + bonus    # max: 10_000 + 62×100 = 16_200 lamports = 0.0162 USDC
 > - `growth_points` зараховуються у `wallet.balance` через `Wallet#credit!` у `TelemetryUnpackerService.commit_telemetry` **до** проходження пакетом IoTeX/Chainlink. Тобто upstream-перевірка для Path 2 — це **AES-256-CBC decrypt CoAP batch (Gateway key) → AES-128-ECB decrypt per-record (Tree LoRa key) + `valid_sensor_data?`** (per-packet integrity perimeter, post-ARCH.42), а **не** повний oracle pipeline.
 > - Path 1 (oracle-driven mint per-telemetry) і Path 2 (hourly tokenomics aggregate) — **окремі шляхи мінтингу для тих самих growth_points**: Path 1 мінтить за конкретним verified `telemetry_log`, Path 2 агрегує накопичений `wallet.balance`. Без розмежування — циклічна залежність "не можна нарахувати tokenomics-bonus, доки oracle не підтвердив сам bonus".
 > - **Hadron KYC є справжнім security perimeter Path 2** — `BlockchainMintingService` raise `Compliance Breach` для будь-якого `hadron_kyc_status != "approved"` незалежно від присутності `telemetry_log`. Це блокує ескалацію fake-`growth_points` (з compromised AES-key) у мінт через non-KYC wallet.
-> - Spec coverage: `spec/services/blockchain_minting_service_spec.rb` → context "tokenomics flow without telemetry_log [S6.12]" (3 examples).
+> - Spec coverage: `spec/services/blockchain_minting_service_spec.rb` → context "tokenomics flow without telemetry_log [S6.12]".
 > - **Залишковий ризик (документований):** компрометація per-device LoRa AES-128 ключа конкретного дерева → fake `growth_points` зараховуються `Wallet#credit!` → Path 2 щогодини мінтить SCC якщо wallet KYC-approved. Mitigation track: per-device HKDF key provisioning (FW.1 / SEC.3) + **AES-128-CCM** з 8-byte MIC + Frame Counter (FW.2 post-ARCH.42) + Hash Ratchet KDF rotation (FW.17) — обидва P0 у roadmap до польового deploy.
 
 > **Path 3 raises замість silent-skip:** Slashing rollback — фінансово-критична операція. Беззвучне ігнорування призвело б до асиметрії "burn застосовано, mint-rollback пропущено → дисбаланс supply". Тому будь-який guard fail у Path 3 → exception + Sentry.
@@ -870,7 +893,7 @@ blockchain_transactions
 | Attractor | Sole entry-point `Attractor.calculate_z_from_state(x_prev, y_prev, z_prev, …)`; legacy `calculate_z(seed, …)` ВИДАЛЕНО | `app/services/silken_net/attractor.rb` |
 | Unpacker | Per-tree dispatch: warm tail з попереднього `TelemetryLog.lorenz_state_*`, cold start з `K_seed/epoch_day` + `cold_start_flag = true`; persist tail | `app/services/telemetry_unpacker_service.rb` |
 | Firmware | mruby `bio_contract.rb` єдина сигнатура `calculate_state(x, y, z, …)`; chaos_seed та DID-as-seed видалено | `firmware/bio_contracts/bio_contract.rb` |
-| Parity | Host-test OpenSSL HKDF/HMAC ↔ mbedTLS на MCU, 13 examples (детерміновані вектори + 100-case fuzz mirror Ruby) | `firmware/test/test_seed_derivation.c` |
+| Parity | Host-test OpenSSL HKDF/HMAC ↔ mbedTLS на MCU (детерміновані вектори + 100-case fuzz mirror Ruby) | `firmware/test/test_seed_derivation.c` |
 
 ### Cold-start vs Warm continuation dispatch у `TelemetryUnpackerService`
 
