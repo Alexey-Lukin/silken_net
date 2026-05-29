@@ -13,10 +13,32 @@
 - **Конфігураційний SSOT:** `config/puma.rb`
 - **Runtime-архітектура:** `Thruster (HTTP/2, TLS) → Puma (clustered, preload_app!) → Rails 8.1`
 - **Puma middleware:** `MarkWeb3RequestsAsIoBound` (`app/middleware/mark_web3_requests_as_io_bound.rb`)
-- **Пов'язані модулі:**
-  - Kamal деплой → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
-  - Akash SDL → [`06_02_Akash_Network_Integration`](06_02_Akash_Network_Integration)
-  - Observability → [`06_03_Prometheus_Observability`](06_03_Prometheus_Observability)
+- **Відкрите:** production verification (живий деплой) → [`00_08`](00_08_Action_Plan_Tracker).
+
+---
+
+## 🔗 Cross-references
+
+| Ресурс | Зв'язок |
+|---|---|
+| `config/puma.rb` | Конфігурація (SSOT) |
+| `app/middleware/mark_web3_requests_as_io_bound.rb` | IO-bound middleware |
+| `Dockerfile` | `LD_PRELOAD=libjemalloc2.so`, `CMD: thrust ./bin/rails server` |
+| `config/application.rb` | Реєстрація middleware (після `PrometheusCollector`) |
+| [06_01_Deployment_Kamal_Terraform](06_01_Deployment_Kamal_Terraform) | Kamal phased restart, `WEB_CONCURRENCY` |
+| [06_02_Akash_Network_Integration](06_02_Akash_Network_Integration) | `WEB_CONCURRENCY=4` у Akash SDL |
+| [06_03_Prometheus_Observability](06_03_Prometheus_Observability) | `/metrics` endpoint |
+| [04_03_REST_API_v1_Reference](04_03_REST_API_v1_Reference) | Список IO-bound endpoints |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | production verification |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [Конфігурація — ключові рішення](#-конфігурація--ключові-рішення)
+- [MarkWeb3RequestsAsIoBound Middleware](#-markweb3requestsasiobound-middleware)
+- [Операційні Runbooks](#-операційні-runbooks)
+- [Валідація](#-валідація)
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -207,19 +229,3 @@ bundle exec ruby -e '
 bundle exec rspec spec/middleware/mark_web3_requests_as_io_bound_spec.rb
 # Очікується: 10 examples, 0 failures
 ```
-
----
-
-## 🔗 Cross-references
-
-| Файл / Документ | Зв'язок |
-|---|---|
-| `config/puma.rb` | Конфігурація (SSOT) |
-| `app/middleware/mark_web3_requests_as_io_bound.rb` | IO-bound middleware |
-| `spec/middleware/mark_web3_requests_as_io_bound_spec.rb` | 10 RSpec прикладів |
-| `Dockerfile` | `LD_PRELOAD=libjemalloc2.so`, `CMD: thrust ./bin/rails server` |
-| `config/application.rb` | Реєстрація middleware (після `PrometheusCollector`) |
-| `06_01_Deployment_Kamal_Terraform` | Kamal phased restart, `WEB_CONCURRENCY` |
-| `06_02_Akash_Network_Integration` | `WEB_CONCURRENCY=4` у Akash SDL |
-| `06_03_Prometheus_Observability` | `/metrics` endpoint (PrometheusCollector) |
-| `04_03_REST_API_v1_Reference` | Список IO-bound endpoints |

@@ -8,8 +8,31 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — 11 workflows активні; production+canopy deploy налаштовані; частина gates ще не `required` (INF.6, OPS.2).
-- **Пов'язані модулі:** [`06_01`](06_01_Deployment_Kamal_Terraform) (deploy) · [`06_02`](06_02_Akash_Network_Integration) (Akash) · [`06_04`](06_04_Secrets_Checklist) (secrets/revocation) · [`06_05`](06_05_Puma_Configuration) (Puma runbooks) · [`06_06`](06_06_Disaster_Recovery_and_Backup) (DR) · [`00_07`](00_07_GitHub_Projects_and_IaC_Automation) (Projects/TRL automation)
+- **Поточний TRL:** TRL 6 — workflows активні; production+canopy deploy налаштовані; частина gates ще не `required` (INF.6, OPS.2).
+- **Відкрите:** required-check прогалини (coap_smoke INF.6, ssot_guard OPS.2) → [`00_08`](00_08_Action_Plan_Tracker).
+
+---
+
+## 🔗 Cross-references
+
+| Ресурс | Зв'язок |
+|---|---|
+| `.github/workflows/*.yml` | workflows (SSOT — фактична конфігурація) |
+| [06_01_Deployment_Kamal_Terraform](06_01_Deployment_Kamal_Terraform) | deploy-flow, Kamal/Terraform |
+| [06_02_Akash_Network_Integration](06_02_Akash_Network_Integration) | Akash deploy |
+| [06_04_Secrets_Checklist](06_04_Secrets_Checklist) | secrets/revocation |
+| [06_05_Puma_Configuration](06_05_Puma_Configuration) | Puma runbooks |
+| [06_06_Disaster_Recovery_and_Backup](06_06_Disaster_Recovery_and_Backup) | DR runbooks |
+| [00_07_GitHub_Projects_and_IaC_Automation](00_07_GitHub_Projects_and_IaC_Automation) | TRL/Projects automation |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | INF.6, OPS.1/OPS.2 |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [1. CI/CD Workflows](#1-cicd-workflows-githubworkflows)
+- [2. Pipeline flow](#2-pipeline-flow)
+- [3. Operations Runbook Index (канонічні доми — НЕ дублювати тут)](#3-operations-runbook-index-канонічні-доми--не-дублювати-тут)
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -65,15 +88,3 @@ release published ─→ deploy-production.yml (verify-secrets → terraform →
 | **DR:** Cloud SQL PITR restore, TF-state rollback, region rebuild | [`06_06 §5`](06_06_Disaster_Recovery_and_Backup) |
 | Runtime failover (circuit breakers, comms-loss) | [`00_03`](00_03_Resilience_and_Failover_Policy) |
 | `config.alloy` validation (local) | [`06_03 §2.9`](06_03_Prometheus_Observability) + `alloy_config_validate` CI |
-
----
-
-## 🔗 Cross-references
-
-| Файл / Документ | Зв'язок |
-|---|---|
-| `.github/workflows/*.yml` | 11 workflows (SSOT — фактична конфігурація) |
-| `06_01_Deployment_Kamal_Terraform` | deploy-flow, Kamal/Terraform |
-| `06_06_Disaster_Recovery_and_Backup` | DR runbooks |
-| `00_07_GitHub_Projects_and_IaC_Automation` | TRL/Projects automation (trl_sync, labels) |
-| `00_08_Action_Plan_Tracker` | INF.6 (coap gate), OPS.1/OPS.2 |

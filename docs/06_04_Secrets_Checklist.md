@@ -18,11 +18,29 @@
 
 - **Поточний TRL:** TRL 5 — механізм секретів (AR-encryption non-deterministic, HKDF per-device, `.kamal/secrets`, `verify-secrets` CI gate) реалізований і перевірений у Canopy; production-значення ще не провіженені (операційна, не технологічна задача). Канон модульного TRL — [`00_06 §1`](00_06_Strategic_Roadmap_and_HIL_Simulators).
 - **Поточний стан:** Backend код підтримує всі секрети, але production значення **не встановлені** в GitHub repository та `.kamal/secrets`. Це блокує весь CI/CD pipeline.
-- **Пов'язані модулі:**
-  - Деплой → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform) — BLOCKER-3 (вихідний опис проблеми)
-  - Akash → [`06_02_Akash_Network_Integration`](06_02_Akash_Network_Integration) — BLOCKER-5 (`REQUIRED_SECRET_NOT_SET` плейсхолдери)
-  - Observability → [`06_03_Prometheus_Observability`](06_03_Prometheus_Observability) — Grafana Cloud та Sentry DSN
-  - Action Plan → [`00_08_Action_Plan_Tracker`](00_08_Action_Plan_Tracker) — S1.1, S4.3, S5.6
+- **Відкрите:** production secret values не провіжені (блокує CI/CD) → [`00_08`](00_08_Action_Plan_Tracker) (S1.1, S4.3, S5.6).
+
+---
+
+## 🔗 Cross-references
+
+| Ресурс | Зв'язок |
+|---|---|
+| [06_01_Deployment_Kamal_Terraform](06_01_Deployment_Kamal_Terraform) | Деплой (Kamal/Terraform secrets) |
+| [06_02_Akash_Network_Integration](06_02_Akash_Network_Integration) | Akash SDL secrets (§Секрети SDL) |
+| [06_03_Prometheus_Observability](06_03_Prometheus_Observability) | Grafana Cloud + Sentry DSN |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | S1.1, S4.3, S5.6 |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [1. GitHub Repository Secrets (CI/CD)](#1-github-repository-secrets-cicd)
+- [2. (Kamal Runtime)](#2-kamalsecrets-kamal-runtime)
+- [3. Akash SDL ( + )](#3-akash-sdl-deployakashdeployyaml--deployyamltpl)
+- [4. `terraform/terraform.tfvars](#4-terraformterraformtfvars)
+- [5. Operational Procedures](#5-operational-procedures)
+- [Залежності та посилання](#-залежності-та-посилання)
+<!-- TOC:AUTO:END -->
 
 ---
 

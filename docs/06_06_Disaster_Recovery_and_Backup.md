@@ -11,12 +11,32 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 5 — backup-конфіг IaC присутній і ввімкнений (Cloud SQL PITR + REGIONAL HA + deletion_protection), але restore-runbook'и не проганялися в drill, master-key backup — операційна задача.
-- **Пов'язані модулі:**
-  - Деплой/Terraform → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
-  - Akash → [`06_02_Akash_Network_Integration`](06_02_Akash_Network_Integration)
-  - Secrets → [`06_04_Secrets_Checklist`](06_04_Secrets_Checklist)
-  - Resilience/failover → [`00_03_Resilience_and_Failover_Policy`](00_03_Resilience_and_Failover_Policy)
-  - Action Plan → [`00_08_Action_Plan_Tracker`](00_08_Action_Plan_Tracker) — DR.1, S5.6
+- **Відкрите:** DR drill + master-key backup (ще не проганялися) → [`00_08`](00_08_Action_Plan_Tracker) (DR.1, S5.6).
+
+---
+
+## 🔗 Cross-references
+
+| Ресурс | Зв'язок |
+|---|---|
+| `terraform/database.tf` | Cloud SQL backup + REGIONAL HA + read replica (SSOT) |
+| `terraform/main.tf` | GCS state backend (`silken-net-terraform-state`) |
+| [06_01_Deployment_Kamal_Terraform](06_01_Deployment_Kamal_Terraform) | `terraform apply`, Ingress Anchor, deploy-flow |
+| [06_04_Secrets_Checklist](06_04_Secrets_Checklist) | master-ключі, ротація (§5.2), revocation (§5.4) |
+| [00_03_Resilience_and_Failover_Policy](00_03_Resilience_and_Failover_Policy) | runtime failover (не backup) |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | DR.1 (drill + master-key backup), S5.6 |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [Gaps (→ 00_08)](#-gaps--00_08)
+- [1. Інвентар: що захищаємо](#1-інвентар-що-захищаємо)
+- [2. Cloud SQL — backup + HA (фактична конфігурація)](#2-cloud-sql--backup--ha-фактична-конфігурація)
+- [3. RTO / RPO targets](#3-rto--rpo-targets)
+- [4. Незамінні master-ключі (НЕ в Cloud SQL backup!)](#4-незамінні-master-ключі-не-в-cloud-sql-backup)
+- [5. Restore Runbooks](#5-restore-runbooks)
+- [6. DR Drill (👤, DR.1 — обов'язково перед mainnet)](#6-dr-drill--dr1--обовязково-перед-mainnet)
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -123,16 +143,3 @@ gsutil cp gs://silken-net-terraform-state/default.tfstate#<GEN> \
 ## 6. DR Drill (👤, DR.1 — обов'язково перед mainnet)
 
 Щоквартально проганяти §5.1 (PITR clone у throwaway-інстанс) + §5.2 (state-version rollback) на staging. Фіксувати фактичні RTO/RPO vs цілі §3. Неперевірений backup = відсутній backup.
-
----
-
-## 🔗 Cross-references
-
-| Файл / Документ | Зв'язок |
-|---|---|
-| `terraform/database.tf` | Cloud SQL backup_configuration + REGIONAL HA + read replica (SSOT конфігу) |
-| `terraform/main.tf` | GCS state backend (`silken-net-terraform-state`) |
-| `06_01_Deployment_Kamal_Terraform` | `terraform apply`, Ingress Anchor, deploy-flow |
-| `06_04_Secrets_Checklist` | master-ключі, ротація (§5.2), revocation runbook (§5.4) |
-| `00_03_Resilience_and_Failover_Policy` | runtime failover (circuit breakers, comms-loss) — runtime, не backup |
-| `00_08_Action_Plan_Tracker` | DR.1 (drill + master-key backup), S5.6 (state bucket) |
