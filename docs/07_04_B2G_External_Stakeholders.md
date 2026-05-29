@@ -211,7 +211,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
     [`03_04`](03_04_mruby_Lorenz_Attractor)). Замість гектарних вирубок
     — точкове видалення. Економія мільйонів грн + еко-PR.
 - **SSOT-мапінг:** [`02_05`](02_05_Queen_Hardware_and_Starlink) (LoRa
-  висотні точки), [`05_02 §SLA`](05_02_Proof_of_Growth_Pipeline) (B2B
+  висотні точки), [`07_01 §2 SLA`](07_01_Nature_as_a_Service_Contracts) (B2B
   subscription).
 - **Status:** ⚪ Conceptual.
 

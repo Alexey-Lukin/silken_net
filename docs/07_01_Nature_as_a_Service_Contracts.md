@@ -372,9 +372,7 @@ SilkenForestCoin має `ERC20Votes` (checkpoint-based voting power), але:
 
 **Статус:** `hadron_asset_id` поле є в `naas_contracts`, `HadronAssetRegistrationWorker` реалізовано, але процес реєстрації не визначений.
 
-Для реєстрації лісового масиву як Real World Asset (R
-
-WA) через Polygon Hadron необхідно:
+Для реєстрації лісового масиву як Real World Asset (RWA) через Polygon Hadron необхідно:
 
 - Правовстановлюючі документи на земельну ділянку (cadastral number, deed).
 - Незалежна оцінка вартості біомаси.
@@ -410,13 +408,9 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 
 ---
 
-### 🟡 BLOCKER-8: `signed_at` поле відсутнє у DB schema
+### ✅ BLOCKER-8: `signed_at` divergence — ЗАКРИТО (stale, verified 2026-05-29)
 
-**Статус:** Розбіжність між кодом контролера та схемою БД.
-
-`Api::V1::ContractsController#index` серіалізує `NaasContract` з полем `signed_at`, однак таблиця `naas_contracts` в `db/structure.sql` **не містить колонки `signed_at`**.
-
-**Дія:** Додати міграцію з `signed_at timestamp` або видалити з `only:` у контролері.
+**Статус:** ✅ Розбіжності немає. `signed_at` **відсутній і в коді, і в схемі** (`grep signed_at app/ db/structure.sql` → 0) — поле прибрано з серіалізатора контролера, колонки в `naas_contracts` ніколи не було. Дій не потрібно. _(Попередній опис «контролер серіалізує signed_at» був застарілим.)_
 
 ---
 
