@@ -8,31 +8,31 @@ require "rails_helper"
 RSpec.describe SilkenNet::LorenzValidationService do
   describe ".pearson" do
     it "is +1.0 for a perfect positive linear relationship" do
-      expect(described_class.pearson([1, 2, 3, 4], [2, 4, 6, 8])).to be_within(1e-9).of(1.0)
+      expect(described_class.pearson([ 1, 2, 3, 4 ], [ 2, 4, 6, 8 ])).to be_within(1e-9).of(1.0)
     end
 
     it "is -1.0 for a perfect negative linear relationship" do
-      expect(described_class.pearson([1, 2, 3, 4], [8, 6, 4, 2])).to be_within(1e-9).of(-1.0)
+      expect(described_class.pearson([ 1, 2, 3, 4 ], [ 8, 6, 4, 2 ])).to be_within(1e-9).of(-1.0)
     end
 
     it "is 0.0 for degenerate input (zero variance, empty, length mismatch)" do
-      expect(described_class.pearson([5, 5, 5], [1, 2, 3])).to eq(0.0)
+      expect(described_class.pearson([ 5, 5, 5 ], [ 1, 2, 3 ])).to eq(0.0)
       expect(described_class.pearson([], [])).to eq(0.0)
-      expect(described_class.pearson([1, 2], [1, 2, 3])).to eq(0.0)
+      expect(described_class.pearson([ 1, 2 ], [ 1, 2, 3 ])).to eq(0.0)
     end
   end
 
   describe ".spearman" do
     it "is +1.0 for a monotonic (non-linear) increasing relationship" do
-      expect(described_class.spearman([1, 2, 3, 4], [1, 4, 9, 16])).to be_within(1e-9).of(1.0)
+      expect(described_class.spearman([ 1, 2, 3, 4 ], [ 1, 4, 9, 16 ])).to be_within(1e-9).of(1.0)
     end
 
     it "is -1.0 for monotonic decreasing" do
-      expect(described_class.spearman([1, 2, 3, 4], [10, 7, 5, 1])).to be_within(1e-9).of(-1.0)
+      expect(described_class.spearman([ 1, 2, 3, 4 ], [ 10, 7, 5, 1 ])).to be_within(1e-9).of(-1.0)
     end
 
     it "stays finite and bounded with tied ranks" do
-      expect(described_class.spearman([1, 2, 2, 3], [1, 2, 3, 4])).to be_between(-1.0, 1.0)
+      expect(described_class.spearman([ 1, 2, 2, 3 ], [ 1, 2, 3, 4 ])).to be_between(-1.0, 1.0)
     end
   end
 
@@ -55,8 +55,8 @@ RSpec.describe SilkenNet::LorenzValidationService do
 
   describe ".binary_metrics" do
     it "computes the confusion matrix + FPR/TPR/precision" do
-      predicted = [true, true, false, false, true]
-      actual    = [true, false, false, true, false]
+      predicted = [ true, true, false, false, true ]
+      actual    = [ true, false, false, true, false ]
       m = described_class.binary_metrics(predicted, actual)
 
       expect(m).to include(tp: 1, fp: 2, tn: 1, fn: 1)
