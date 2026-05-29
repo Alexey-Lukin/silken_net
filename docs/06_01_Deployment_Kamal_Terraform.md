@@ -827,3 +827,18 @@ forge create SilkenCarbonCoin \
   --private-key $ORACLE_PRIVATE_KEY \
   --verify --etherscan-api-key $POLYGONSCAN_API_KEY
 ```
+
+---
+
+## 🔗 Cross-references
+
+| Файл / Документ | Зв'язок |
+|---|---|
+| `config/deploy.yml` · `config/deploy.canopy.yml` | Kamal (production / canopy) |
+| `terraform/` · `terraform/akash/` | IaC: Cloud SQL, Ingress Anchor, Akash |
+| `.github/workflows/deploy.yml` · `deploy-production.yml` | Canopy / Production CI/CD (деталі — `06_07`) |
+| `06_02_Akash_Network_Integration` | Akash SDL, ENV, TLS |
+| `06_04_Secrets_Checklist` | секрети — SSOT |
+| `06_06_Disaster_Recovery_and_Backup` | backup / restore / RTO·RPO |
+| `06_07_CICD_and_Runbook_Index` | CI/CD pipeline + runbook index |
+| `00_08_Action_Plan_Tracker` | S1.1, S1.5, INF.3/4/6, S5.6 |

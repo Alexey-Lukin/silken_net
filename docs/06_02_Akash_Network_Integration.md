@@ -1083,3 +1083,18 @@ SDL `deploy/akash/deploy.yaml` визначає три сервіси: `web` (Pu
 ### ✅ BLOCKER-8: Multi-replica ActionCable (Вирішено — Solid Cable)
 
 **Solid Cable** (`adapter: solid_cable`, `config/cable.yml`) — нативний Rails 8.1 adapter, PostgreSQL LISTEN/NOTIFY як pub/sub брокер. Виділена БД `silken_net_production_cable` (без навантаження на основну). При `deployment.web.count = N` всі репліки отримують broadcasts через LISTEN/NOTIFY < 1 мс. Sticky sessions не потрібні.
+
+---
+
+## 🔗 Cross-references
+
+| Файл / Документ | Зв'язок |
+|---|---|
+| `deploy/akash/deploy.yaml` · `deploy.yaml.tpl` | SDL: `web` + `job` + `alloy` сервіси |
+| `deploy/akash/config.alloy` | Grafana Alloy scrape + remote_write |
+| `terraform/akash/` | SDL templating + Akash CLI provisioner |
+| `06_01_Deployment_Kamal_Terraform` | GCP/Kamal, Ingress Anchor |
+| `06_03_Prometheus_Observability` | Alloy → Grafana Cloud |
+| `06_04_Secrets_Checklist` | SDL secrets — SSOT |
+| `06_07_CICD_and_Runbook_Index` | mirror-ghcr, deploy pipeline |
+| `00_08_Action_Plan_Tracker` | S4.3, INF.4, S6.1 |
