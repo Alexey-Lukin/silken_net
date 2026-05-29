@@ -26,6 +26,12 @@ class TelemetryLog < ApplicationRecord
     failed: "failed"
   }, prefix: true
 
+  # --- КЛІМАТ (BME280, HW.20 — ADR 02_01 §3.4) ---
+  # humidity (% RH), pressure (hPa), vpd (kPa) — усі nullable/sparse: hot-path шле
+  # лише VPD-індекс, raw RH/тиск приходять у періодичному climate frame. `vpd` —
+  # прямий confounder сокоруху (False-Slashing guard, 00_01 §6.5/§6.6).
+  # ⚠️ DCI-guard: жодне з цих НЕ входить у Lorenz-Z (firmware↔backend bit-identity).
+
   # --- ВАЛІДАЦІЇ ---
   # [KENOSIS TITAN]: Валідації видалено з hot path.
   # На Series C/D масштабі (мільйони пакетів/хв) дані перевіряються

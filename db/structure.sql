@@ -1898,7 +1898,10 @@ CREATE TABLE public.telemetry_logs (
     lorenz_state_y double precision,
     lorenz_state_z double precision,
     cold_start_flag boolean DEFAULT false NOT NULL,
-    time_unsynced_fallback boolean DEFAULT false NOT NULL
+    time_unsynced_fallback boolean DEFAULT false NOT NULL,
+    humidity numeric,
+    pressure numeric,
+    vpd numeric
 )
 PARTITION BY RANGE (created_at);
 
@@ -1953,7 +1956,10 @@ CREATE TABLE public.telemetry_logs_default (
     lorenz_state_y double precision,
     lorenz_state_z double precision,
     cold_start_flag boolean DEFAULT false NOT NULL,
-    time_unsynced_fallback boolean DEFAULT false NOT NULL
+    time_unsynced_fallback boolean DEFAULT false NOT NULL,
+    humidity numeric,
+    pressure numeric,
+    vpd numeric
 );
 
 
@@ -1988,7 +1994,10 @@ CREATE TABLE public.telemetry_logs_y2026m01 (
     lorenz_state_y double precision,
     lorenz_state_z double precision,
     cold_start_flag boolean DEFAULT false NOT NULL,
-    time_unsynced_fallback boolean DEFAULT false NOT NULL
+    time_unsynced_fallback boolean DEFAULT false NOT NULL,
+    humidity numeric,
+    pressure numeric,
+    vpd numeric
 );
 
 
@@ -2023,7 +2032,10 @@ CREATE TABLE public.telemetry_logs_y2026m02 (
     lorenz_state_y double precision,
     lorenz_state_z double precision,
     cold_start_flag boolean DEFAULT false NOT NULL,
-    time_unsynced_fallback boolean DEFAULT false NOT NULL
+    time_unsynced_fallback boolean DEFAULT false NOT NULL,
+    humidity numeric,
+    pressure numeric,
+    vpd numeric
 );
 
 
@@ -2058,7 +2070,10 @@ CREATE TABLE public.telemetry_logs_y2026m03 (
     lorenz_state_y double precision,
     lorenz_state_z double precision,
     cold_start_flag boolean DEFAULT false NOT NULL,
-    time_unsynced_fallback boolean DEFAULT false NOT NULL
+    time_unsynced_fallback boolean DEFAULT false NOT NULL,
+    humidity numeric,
+    pressure numeric,
+    vpd numeric
 );
 
 
@@ -2093,7 +2108,10 @@ CREATE TABLE public.telemetry_logs_y2026m04 (
     lorenz_state_y double precision,
     lorenz_state_z double precision,
     cold_start_flag boolean DEFAULT false NOT NULL,
-    time_unsynced_fallback boolean DEFAULT false NOT NULL
+    time_unsynced_fallback boolean DEFAULT false NOT NULL,
+    humidity numeric,
+    pressure numeric,
+    vpd numeric
 );
 
 
@@ -2128,7 +2146,10 @@ CREATE TABLE public.telemetry_logs_y2026m05 (
     lorenz_state_y double precision,
     lorenz_state_z double precision,
     cold_start_flag boolean DEFAULT false NOT NULL,
-    time_unsynced_fallback boolean DEFAULT false NOT NULL
+    time_unsynced_fallback boolean DEFAULT false NOT NULL,
+    humidity numeric,
+    pressure numeric,
+    vpd numeric
 );
 
 
@@ -2163,7 +2184,10 @@ CREATE TABLE public.telemetry_logs_y2026m06 (
     lorenz_state_y double precision,
     lorenz_state_z double precision,
     cold_start_flag boolean DEFAULT false NOT NULL,
-    time_unsynced_fallback boolean DEFAULT false NOT NULL
+    time_unsynced_fallback boolean DEFAULT false NOT NULL,
+    humidity numeric,
+    pressure numeric,
+    vpd numeric
 );
 
 
