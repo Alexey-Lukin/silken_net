@@ -10,18 +10,25 @@ require_relative "../tracker/dashboard"
 namespace :tracker do
   desc "Lint 00_08: duplicate IDs + #3 conformance (priority + canon-ref per item)"
   task :check do
-    items  = Tracker::Dashboard.parse(File.read(Tracker::Dashboard::DEFAULT_PATH))
-    dups   = items.map(&:id).tally.select { |_, v| v > 1 }
-    issues = Tracker::Dashboard.issues(items)
+    items    = Tracker::Dashboard.parse(File.read(Tracker::Dashboard::DEFAULT_PATH))
+    dups     = items.map(&:id).tally.select { |_, v| v > 1 }
+    issues   = Tracker::Dashboard.issues(items)
+    dangling = Tracker::Dashboard.dangling_refs(items)
 
-    puts "00_08 lint — #{Tracker::Dashboard.open_items(items).size} open #### items"
+    puts "00_08 lint — #{items.size} #### items (#{Tracker::Dashboard.open_items(items).size} actionable)"
     puts "  duplicate IDs:    #{dups.empty? ? 'none ✓' : dups.inspect}"
     if issues.empty?
-      puts "  #3 conformance:   all items carry priority + canon-ref ✓"
+      puts "  #3 conformance:   every item has priority + executor + canon-ref ✓"
     else
       puts "  #3 conformance gaps (#{issues.size}):"
       issues.each { |i| puts "    - #{i}" }
     end
-    abort("tracker:check FAILED") if dups.any? || issues.any?
+    if dangling.empty?
+      puts "  canon refs:       all resolve to docs/NN_NN_*.md ✓"
+    else
+      puts "  dangling canon refs (#{dangling.size}):"
+      dangling.each { |d| puts "    - #{d}" }
+    end
+    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any?
   end
 end

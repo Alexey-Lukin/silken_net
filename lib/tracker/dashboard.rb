@@ -11,6 +11,7 @@
 module Tracker
   class Dashboard
     DEFAULT_PATH = File.expand_path("../../docs/00_08_Action_Plan_Tracker.md", __dir__)
+    DOCS_DIR = File.expand_path("../../docs", __dir__)
     START_MARK = "<!-- DASHBOARD:AUTO:START -->"
     END_MARK   = "<!-- DASHBOARD:AUTO:END -->"
 
@@ -48,8 +49,13 @@ module Tracker
           items << current if current
           current = Item.new(id: m[1], title: m[2].sub(/\s*✅\s*\z/, ""), executors: [])
         elsif current
-          current.priority ||= line[/\*\*(P[0-3])\*\*/, 1]
-          if line.match?(/^\s*-\s*\[ \]/) # executor classified from UNCHECKED bullets only
+          if (pr = line[/\*\*(P[0-3])\*\*/, 1])
+            current.priority ||= pr
+            # the meta-line `- **P?** · 👤/🤖/🔗 · → canon` carries the executor(s)
+            EXECUTORS.each { |emoji, role| current.executors << role if line.include?(emoji) }
+          end
+          # also pick up executors from unchecked checkbox bullets (HW light-touch items)
+          if line.match?(/^\s*-\s*\[ \]/)
             EXECUTORS.each { |emoji, role| current.executors << role if line.include?(emoji) }
           end
           current.canon ||= line[/`(\d{2}_\d{2}[^`]*)`/, 1]
@@ -91,11 +97,24 @@ module Tracker
 
     # --- #3 conformance: open items missing priority / canon-ref ---
     def self.issues(items)
-      open_items(items).filter_map do |it|
+      items.filter_map do |it|
         missing = []
         missing << "priority" unless it.priority
+        missing << "executor" if it.executors.empty?
         missing << "canon-ref" unless it.canon
         "#{it.id}: missing #{missing.join(', ')}" if missing.any?
+      end
+    end
+
+    # --- canon-ref resolution [#2]: each → `NN_NN …` must point to a real docs/NN_NN_*.md ---
+    def self.dangling_refs(items)
+      items.filter_map do |it|
+        next unless it.canon
+
+        prefix = it.canon[/\A\d{2}_\d{2}/]
+        next unless prefix
+
+        "#{it.id}: canon `#{it.canon}` → no docs/#{prefix}_*.md" if Dir.glob(File.join(DOCS_DIR, "#{prefix}_*.md")).empty?
       end
     end
 

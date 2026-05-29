@@ -142,6 +142,9 @@ jobs:
             exit 1
           fi
 
+      - name: Lint 00_08 tracker (DRY — duplicate IDs, meta-line conformance, canon-ref resolution)
+        run: bin/rails tracker:check
+
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
