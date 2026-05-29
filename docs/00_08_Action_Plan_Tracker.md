@@ -17,6 +17,27 @@
 
 ---
 
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [Dashboard — що робити зараз (за виконавцем)](#-dashboard--що-робити-зараз-за-виконавцем)
+- [§04 · Backend / API / UI / DevOps](#04--backend--api--ui--devops)
+- [§03 · Firmware](#03--firmware)
+- [Cross-cutting · Architecture & SSOT-drift (2026-05-16 cross-doc audit)](#-cross-cutting--architecture--ssot-drift-2026-05-16-cross-doc-audit)
+- [§01–§02 · Hardware & Lab](#0102--hardware--lab)
+- [§03/§05 · Безпека (Edge crypto + Web3)](#0305--безпека-edge-crypto--web3)
+- [Cross-cutting · Doc-drift (DOC) — синх з divergence registry](#-cross-cutting--doc-drift-doc--синх-з-04_02-11-divergence-registry)
+- [§06 · Deploy / Observability / Ops (OPS)](#06--deploy--observability--ops-ops)
+- [§07 · Юридичні / Бізнес](#07--юридичні--бізнес)
+- [§08 · Академічні блокери (5 установ)](#08--академічні-блокери-5-установ)
+- [§07 · External Stakeholders (B2G/B2B/Cultural — non-academic outreach)](#07--external-stakeholders-b2gb2bcultural--non-academic-outreach)
+- [Backlog · Додаткові знахідки (не блокери)](#-backlog--додаткові-знахідки-не-блокери)
+- [Backlog · Архітектурні пропозиції (довгострокові)](#-backlog--архітектурні-пропозиції-довгострокові)
+- [Архів закритих пунктів (мігровано в канон)](#-архів-закритих-пунктів-мігровано-в-канон)
+<!-- TOC:AUTO:END -->
+
+---
+
 ## 🚦 Dashboard — що робити зараз (за виконавцем)
 
 > Сортовано за **виконавцем**, потім пріоритетом. Повний опис кожного пункту — у §модулі нижче (**one place**); тут — тонкий індекс. Легенда: 🤖 AI-doable · 👤 власник · 🔗 заблоковано.
