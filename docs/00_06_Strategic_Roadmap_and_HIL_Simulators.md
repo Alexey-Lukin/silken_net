@@ -37,12 +37,12 @@
 | Модуль | TRL | Цільовий | Головний блокер |
 |--------|-----|----------|-----------------|
 | 00 System Architecture | 4 | 9 | Module 01 chemistry |
-| 01 Materials & EBFC | 3 | 6 | Lab tests (ЧНУ) |
+| 01 Materials & EBFC | 4 | 6 | Lab tests (ЧНУ) |
 | 02 Hardware & BOM | 4 | 6 | BQ25570, PCB, Pogo, PEEK |
 | 03 Firmware | 6 | 8 | AES key, TinyML, AT blocking |
 | 04 Backend Rails | 8 | 9 | RSpec тести |
-| 05 Web3 Pipeline | 8-9 | 9 | SFC address |
-| 06 DevOps | 5-6 | 9 | production deploy не проведено (06_01=4 outlier); Docker registry, TLS |
+| 05 Web3 Pipeline | 8 | 9 | SFC address |
+| 06 DevOps | 5 | 9 | production deploy не проведено (06_01=4 outlier); Docker registry, TLS |
 | 07 Business | 5 | 8 | CO₂ methodology, MSA, ToS |
 | 08 University R&D | 2 | 6 | 5-сторонній партнерський фреймворк (ChNU + ChDTU + ChIPB + ChMA + СЄУ) — UNI.4-14 |
 | 09 Project Management | 7 | 9 | OPS.3 R&D portfolio, OPS.4 semester sync |
