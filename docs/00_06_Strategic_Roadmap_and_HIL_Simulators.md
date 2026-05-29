@@ -10,11 +10,31 @@
 
 - **Поточний TRL (System):** TRL 4 — EBFC TRL 3→4 PASSED (Zero-Lab 2026-05-25). Програмні домени TRL 6-9.
 - **Per-domain TRL (декаплінг):** суть зняття TRL-Lock — програмні домени (Rails, Web3, Firmware, Security) рухаються до TRL 8–9 незалежно від фізичного відставання металу/хімії (anchor/EBFC **TRL 4**, Zero-Lab L1-L4 PASSED 2026-05-25; in vitro Stages 1-3 ще не закриті). **Канонічні per-module числа — `§1 Per-module TRL` нижче (єдиний дім; тут свідомо НЕ дублюються, щоб уникнути drift).** Оновлюється при кожному cool-down.
-- **Пов'язані модулі:**
-  - Бізнес-візія та slashing → [`00_01_Vision_Market_and_Slashing_Policy`](00_01_Vision_Market_and_Slashing_Policy)
-  - AI-Native методологія (TRL philosophy) → [`00_04_AI_Native_Engineering_and_TRL`](00_04_AI_Native_Engineering_and_TRL)
-  - Shape Up operations → [`00_05_Shape_Up_Operations_and_RnD_Clusters`](00_05_Shape_Up_Operations_and_RnD_Clusters)
-  - GitHub Projects + IaC → [`00_07_GitHub_Projects_and_IaC_Automation`](00_07_GitHub_Projects_and_IaC_Automation)
+
+---
+
+## 🔗 Cross-references
+
+| Ресурс | Опис |
+|--------|------|
+| [00_01_Vision_Market_and_Slashing_Policy](00_01_Vision_Market_and_Slashing_Policy) | Бізнес-візія та slashing |
+| [00_04_AI_Native_Engineering_and_TRL](00_04_AI_Native_Engineering_and_TRL) | AI-Native TRL philosophy (метрика прогресу) |
+| [00_05_Shape_Up_Operations_and_RnD_Clusters](00_05_Shape_Up_Operations_and_RnD_Clusters) | Shape Up operations; §Async-Review TRL Gates |
+| [00_07_GitHub_Projects_and_IaC_Automation](00_07_GitHub_Projects_and_IaC_Automation) | TRL Auto-Advancement (HIL → Projects V2 cards) |
+| [04_06_Testing_Guide_and_Coverage](04_06_Testing_Guide_and_Coverage) | §B Coverage Matrix — HIL → RSpec/Firmware/Foundry coverage |
+| [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | Фізичні валідаційні протоколи ВНЗ (TRL 1-4) |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): Module 01 chemistry (HW.*), 06 DevOps deploy, 08 UNI.* |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [1. Матриця готовності Silken Net (The TRL Matrix)](#-1-матриця-готовності-silken-net-the-trl-matrix)
+- [2. Стратегічні фази масштабування (The Roadmap)](#-2-стратегічні-фази-масштабування-the-roadmap)
+- [3. Принцип "TRL-Lock" → "TRL-Layered Independence"](#-3-принцип-trl-lock--trl-layered-independence)
+- [4. HIL Simulators — Програмне розблокування Software TRL](#-4-hil-simulators--програмне-розблокування-software-trl)
+- [5. Поточний фокус (Cycle Focus)](#-5-поточний-фокус-cycle-focus)
+- [7. Beyond TRL 9 — Planetary Intelligence Gaps (Long-Horizon R&D Agenda)](#-7-beyond-trl-9--planetary-intelligence-gaps-long-horizon-rd-agenda)
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -32,7 +52,7 @@
 
 ### Per-module TRL (канонічне джерело)
 
-> SSOT для per-domain TRL. **System TRL = найнижчий модуль.** Оновлюється при кожному cool-down. *(Мігровано з `00_08 §TRL Матриця` 2026-05-28 — тепер канон тут.)*
+> SSOT для per-domain TRL. **System TRL = найнижчий модуль критичного шляху (00–07 build-path)** — наразі 4 (модулі 00/01/02 — hardware-критичні). Модулі 08 (R&D-партнерства), 09 (PM-процес), 10 (Security-hardening) — це org/process/безпекова зрілість, яка трекається окремо і **не гейтить** System TRL (інакше System=2 за рахунок ранніх ВНЗ-партнерств, що хибно). Оновлюється при кожному cool-down. *(Мігровано з `00_08 §TRL Матриця` 2026-05-28 — канон тут.)*
 
 | Модуль | TRL | Цільовий | Головний блокер |
 |--------|-----|----------|-----------------|
@@ -83,7 +103,7 @@
 
 ### Нова формулювання (Concurrent + HIL):
 
-1. **System TRL** залишається обмеженим найнижчим модулем — це чесна метрика для grant заявок та regulator-комунікації ("система готова до пілоту тоді й тільки тоді, коли всі шари готові").
+1. **System TRL** залишається обмеженим найнижчим модулем **критичного шляху** (00–07; §1-note) — це чесна метрика для grant заявок та regulator-комунікації ("система готова до пілоту тоді й тільки тоді, коли всі шари готові").
 2. **Per-domain TRL** є **незалежним** і відстежується в `docs/00_06 §TRL Matrix` per-module. Software може бути TRL 8 коли Hardware TRL 4.
 3. **HIL Simulators** (Hardware-in-the-Loop) — програмні генератори, які імітують поведінку реального hardware, дозволяють software-домену пройти TRL 5-8 без живої EBFC/анкера.
 
@@ -140,16 +160,6 @@
 - **EBFC (Module 01) TRL 4 → 6** — Stages 1-3 закрити (5 SLA-макетів → 10 Ti-monets → 3-5 повноцінних SLM+HIP анкерів).
 - **ZK-Pipeline (Module 05) TRL 7 → 8** — IoTeX → Chainlink → Polygon Mainnet smoke з реальним LINK token balance.
 - **HIL Queen Simulator (Module 03/04) TRL 0 → 5** — реалізація `HilQueenSimulator` для розблокування Queen failover testing без живого STM32WLE5JC.
-
----
-
-## 🔗 6. Cross-ref
-
-- `docs/00_04 §TRL` — філософська основа метрики прогресу.
-- `docs/00_05 §Async-Review` — як TRL Gates інтегруються з review policy.
-- `docs/00_07 §TRL Auto-Advancement` — як HIL-валідація рухає Projects V2 cards автоматично.
-- `docs/04_06 §B Coverage Matrix` — як HIL виміри транслюються у RSpec/Firmware/Foundry coverage.
-- `docs/08_*` — фізичні валідаційні протоколи (TRL 1-4 партнерських ВНЗ).
 
 ---
 
