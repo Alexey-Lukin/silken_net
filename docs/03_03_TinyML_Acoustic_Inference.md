@@ -36,7 +36,7 @@
 | **`Run_Inference()` виклик** | 🟡 BLOCKER-1 (частково) — оголошення доступне через stub, але call-site `main.c:1422` залишається закоментованим до інтеграції реальної моделі ML-партнером |
 | **`silken_net_audio_model.h`** | 🟡 BLOCKER-2 (compilation unblocked) — реального файлу немає, але `silken_net_audio_model_stub.h` додано (2026-05-22) з контрактом (`Run_Inference` sig, `TENSOR_ARENA_SIZE=16K`, `NUM_CLASSES=5`, `ML_CLASS_*`). main.c використовує `__has_include` fallback. Дозволяє `arm-none-eabi-size firmware.elf` для реальної RAM verification |
 | **Tensor Arena (SRAM budget)** | 🟡 BLOCKER-3 (estimate) — stub фіксує 16 KB (Path B baseline §3.2); реальне значення міряється після інтеграції моделі через `make size-check` або `arm-none-eabi-size firmware.elf` |
-| **DSP preprocessing (FFT/MFCC)** | 🟢 Path B (log-mel) **офіційно зафіксовано** (2026-05-22, §3.2 Decision Matrix). Implementation gate — ML-партнер тренує з `librosa.feature.melspectrogram` (без DCT) + firmware додає CMSIS-DSP Mel-bank |
+| **DSP preprocessing (FFT/MFCC)** | 🟢 Path B (log-mel) **офіційно зафіксовано** (2026-05-22, §3.2 Decision Matrix). Implementation gate — ML-партнер тренує з `librosa.feature.melspectrogram` (без DCT) + firmware додає CMSIS-DSP Mel-bank. Конкретний контракт — **§3.4** |
 | **Confidence threshold (0.80)** | ✅ FW.18: dual-threshold у RTC DR13/DR14 (defaults 0.60/0.85), OTA-tunable через `CMD_SET_AUDIO_THRESHOLDS` (опкод `0x9D`) — Soldier dispatcher та 7 host-тестів імплементовано (`firmware/soldier/main.c:1003-1108`, `firmware/test/test_soldier_logic.c:4436-4442`). |
 | **OTA threshold invalid counter** | ✅ Реалізовано (2026-05-22): `tinyml_threshold_invalid_count` (saturating uint8) у `firmware/soldier/main.c §1.11` — інкрементується на NaN/out-of-range/inversion. 7 host-тестів у `test_tinyml_pipeline.c`. Wiring до 21-byte packet — TBD. |
 | **Decision: Cavitation → acoustic_events++** | ✅ Реалізовано (але мертве: inference закоментована) |
@@ -186,7 +186,7 @@ make firmware_ram_budget   # custom target → arm-none-eabi-size firmware.elf
 
 ### 🟢 BLOCKER-5: DSP-шлях обрано — Path B (log-mel) [CLOSED 2026-05-22]
 
-**Статус:** ✅ Choice gate **closed**. Архітектурне рішення зафіксовано як **Path B (log-mel spectrogram)** — деталі §3.2 Decision Matrix. Очікує формального підтвердження від ML-партнера (Бушин/Любченко) у training pipeline + переходу від "choice gate" до "implementation gate".
+**Статус:** ✅ Choice gate **closed**. Архітектурне рішення зафіксовано як **Path B (log-mel spectrogram)** — деталі §3.2 Decision Matrix. Очікує формального підтвердження від ML-партнера (Бушин/Любченко) у training pipeline + переходу від "choice gate" до "implementation gate". Конкретний log-mel контракт (параметри + librosa reference + firmware-інтерфейс) — **§3.4**.
 
 **Файл:** `firmware/soldier/main.c:1417-1419`
 
