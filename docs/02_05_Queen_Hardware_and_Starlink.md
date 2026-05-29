@@ -17,20 +17,43 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 5 — Схеми/прототипи існують, прошивка готова; Phase 2.5 Starlink DTC підтверджено через Київстар
-- **Пов'язані модулі:**
-  - MPPT → [`02_03_BQ25570_MPPT_Nano_Power`](02_03_BQ25570_MPPT_Nano_Power)
-  - Суперконденсатор → [`02_04_EDLC_Supercapacitor_Buffer`](02_04_EDLC_Supercapacitor_Buffer)
-  - Прошивка Королеви → [`03_02_Queen_Gateway_Firmware`](03_02_Queen_Gateway_Firmware)
-  - Апаратне симетричне шифрування → [`03_05_Hardware_Symmetric_Crypto_and_Security`](03_05_Hardware_Symmetric_Crypto_and_Security)
-  - Бізнес-логіка → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
+- **Відкрите:** зимовий енергодефіцит, SIM7070G BMS/decoupling, теплове управління IP67 → [`00_08`](00_08_Action_Plan_Tracker) (HW.14/15/18).
 
 ---
 
-## 🛑 Блокери
+## 🔗 Cross-references
+
+| Ресурс | Зв'язок |
+|---|---|
+| [02_03_BQ25570_MPPT_Nano_Power](02_03_BQ25570_MPPT_Nano_Power) | MPPT (живлення, cold-start) |
+| [02_04_EDLC_Supercapacitor_Buffer](02_04_EDLC_Supercapacitor_Buffer) | Суперконденсатор-буфер |
+| [03_02_Queen_Gateway_Firmware](03_02_Queen_Gateway_Firmware) | Прошивка Королеви (CIFO, OTA, AT) |
+| [03_05_Hardware_Symmetric_Crypto_and_Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Аудит безпеки (ECB/CBC, ключі) |
+| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (gateway telemetry) |
+| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Вартість розгортання |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | HW.14/15/18 (energy, BMS, thermal) |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [Відкриті апаратні питання (open → 00_08)](#-відкриті-апаратні-питання-open--00_08)
+- [2. Детальна Архітектура Підключень](#-2-детальна-архітектура-підключень)
+- [3. Power Tree (Дерево Живлення)](#-3-power-tree-дерево-живлення)
+- [4. Енергетичний Бюджет](#-4-енергетичний-бюджет)
+- [4а. Тепловий бюджет IP67 корпусу](#-4а-тепловий-бюджет-ip67-корпусу-)
+- [5. Топологія Uplink](#-5-топологія-uplink)
+- [6. Стратегія Підключення](#-6-стратегія-підключення)
+- [6.1 Helium Network (HNT) — Резервна Нервова Система (Queen-side)](#-61-helium-network-hnt--резервна-нервова-система-queen-side)
+- [7. BOM Королеви](#-7-bom-королеви)
+<!-- TOC:AUTO:END -->
 
 ---
 
-### ⚡ BLOCKER-1 → ПЕРЕКЛАСИФІКОВАНО: Starlink DTC (Phase 2.5) vs Starlink Mini
+## 🚧 Відкриті апаратні питання (open → 00_08)
+
+> Статуси трекаються в [`00_08`](00_08_Action_Plan_Tracker) (HW.14/15/18).
+
+### Starlink DTC (Phase 2.5) vs Starlink Mini
 
 **Статус:** Частково вирішено для Phase 2.5. Відкрито для Phase 3.
 
@@ -104,12 +127,12 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 |------|--------------------------|--------------------------|
 | Ціна | ~$2–4 | ~$50–90 (5G M.2 модуль) |
 | 5G-можливість | — (не потрібна) | **марнується** — у глибокому лісі стільникового нема (тому й Starlink) |
-| Idle power | deep-sleep ~10 µA між погодинними TX | вищий module-idle → гірше для BLOCKER-2 |
+| Idle power | deep-sleep ~10 µA між погодинними TX | вищий module-idle → гірше для §Зимовий енергодефіцит |
 | Active | 80–240 мА (~0.3–0.9 Вт) WiFi-burst | співмірно у WiFi-режимі, але модуль важчий |
 | Інтеграція | UART/SPI; ESP-IDF/lwIP зрілі; **треба написати прошивку** | один UART-AT, простіша схема |
 | Екосистема | величезна (ESP-IDF, lwIP) | нішевий M.2-модем |
 
-**Рекомендація: ESP32-S3.** Co-proc лише мостить до WiFi Starlink Mini — ESP32-S3 робить це за ~$3 з near-zero sleep (критично: Queen уже тягне 20–40 Вт Starlink-burst, зимовий дефіцит BLOCKER-2 — кожен mW idle важить). 5G у SIM8200G-M2 безсенсовий (нема покриття у Phase-3 ultra-remote) + ~20× дорожчий + вищий idle. Єдина ціна ESP32-S3 — написати co-proc прошивку (UART-AT bridge + WiFi-STA + lwIP), обмежено й зріло.
+**Рекомендація: ESP32-S3.** Co-proc лише мостить до WiFi Starlink Mini — ESP32-S3 робить це за ~$3 з near-zero sleep (критично: Queen уже тягне 20–40 Вт Starlink-burst, зимовий дефіцит §Зимовий енергодефіцит — кожен mW idle важить). 5G у SIM8200G-M2 безсенсовий (нема покриття у Phase-3 ultra-remote) + ~20× дорожчий + вищий idle. Єдина ціна ESP32-S3 — написати co-proc прошивку (UART-AT bridge + WiFi-STA + lwIP), обмежено й зріло.
 
 **SIM8200G-M2 виправданий ЛИШЕ** якщо Phase 3 переосмислити як «5G-where-available як другий backhaul» (суперечить ultra-remote премісі). Інакше — ESP32-S3.
 
@@ -117,7 +140,7 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 
 ---
 
-### 🔴 BLOCKER-2: Зимовий Енергетичний Дефіцит
+### Зимовий Енергетичний Дефіцит
 
 **Статус:** Відкрито. Критичний ризик автономності Королеви взимку при використанні Starlink Mini.
 
@@ -154,7 +177,7 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 
 ---
 
-### 🔴 BLOCKER-3: Розбіжність найменування модему
+### Розбіжність найменування модему
 
 **Статус:** Відкрито. Блокер для закупівлі обладнання та BOM.
 
@@ -188,7 +211,7 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 
 ---
 
-### 🟡 BLOCKER-4: Пікові струми SIM7070G — BMS не специфікований + VBAT decoupling
+### Пікові струми SIM7070G — BMS не специфікований + VBAT decoupling
 
 **Статус:** Часткове рішення зафіксовано (VBAT tank-cap bank — §2.2.1, BOM 17–20). BMS/MPPT моделі залишаються відкритими.
 
@@ -211,7 +234,7 @@ SIM7070G у режимі LTE-M TX може споживати імпульсно
 
 ---
 
-### 🟡 BLOCKER-5: Теплове управління в IP67 корпусі
+### Теплове управління в IP67 корпусі
 
 **Статус:** 🤖 Тепловий бюджет розраховано (див. §3.4 нижче). Залишок — фізична інтеграція NTC/DS18B20 та charge-protect MOSFET (👤).
 
@@ -231,13 +254,6 @@ SIM7070G у режимі LTE-M TX може споживати імпульсно
 
 ---
 
-### ✅ BLOCKER-6: IWDG (Watchdog) додано до Queen прошивки (Виправлено)
-
-**Статус:** Виправлено. Задокументовано в [03_02 Queen Gateway Firmware](03_02_Queen_Gateway_Firmware) (BLOCKER-5 виправлено).
-
-`firmware/queen/main.c`: Queen тепер має апаратний watchdog (`IWDG`). `HAL_IWDG_Init()` ініціалізується при старті, `HAL_IWDG_Refresh()` викликається в main loop — включаючи pre-refresh перед CoAP flush (до 5-секундного delay). При зависанні або HardFault IWDG автоматично перезавантажує MCU через ~26.6 с.
-
----
 
 ## 🌐 2. Детальна Архітектура Підключень
 
@@ -289,7 +305,7 @@ void cifo_drain_from_flash(void) {
 }
 ```
 
-**Енерго-бюджет flash write:** W25Q32 page write ~10 мА × 0.7 мс/page = 7 µA·s. При середньому 100 overflow-events/добу на Queen — ~700 µA·s/добу, що нижче добового нойзу LiFePO4 12V/20Ah (~3.2 Вт·год/добу phase 2.5, див. §1.2 BLOCKER-2). **Не змінює зимовий енергобюджет.**
+**Енерго-бюджет flash write:** W25Q32 page write ~10 мА × 0.7 мс/page = 7 µA·s. При середньому 100 overflow-events/добу на Queen — ~700 µA·s/добу, що нижче добового нойзу LiFePO4 12V/20Ah (~3.2 Вт·год/добу phase 2.5, див. §1.2 §Зимовий енергодефіцит). **Не змінює зимовий енергобюджет.**
 
 ---
 
@@ -334,7 +350,7 @@ SIM7070_SendATCommand("AT+CCOAPDEL=0\r\n", 500);
 
 #### 2.2.1 VBAT Decoupling Network (захист від brownout reboot)
 
-> 🔴 **Класична IoT-пастка:** DC-DC конвертер 12V→3.7V специфіковано на ≥3А continuous / ≥5А peak (`§3 Power Tree`, `BLOCKER-4`). Але **час реакції регулятора + паразитна індуктивність доріжок плати** означають, що при наносекундному переході модему з 10 мА (idle) у 2 А (LTE-M TX burst) напруга на піні `VBAT` модему **миттєво просідає** перш ніж DC-DC встигне піднятися. Якщо просадка перевищує brownout-поріг SIM7070G (~3.0–3.2 В) навіть на мілісекунди — **модем апаратно перезавантажується посеред CoAP-пакету**. Симптом: Queen «втрачає» Starlink DTC з'єднання раз на ~1–10 spike-frames, незрозумілі gaps у telemetry.
+> 🔴 **Класична IoT-пастка:** DC-DC конвертер 12V→3.7V специфіковано на ≥3А continuous / ≥5А peak (`§3 Power Tree`, `§Пікові струми SIM7070G`). Але **час реакції регулятора + паразитна індуктивність доріжок плати** означають, що при наносекундному переході модему з 10 мА (idle) у 2 А (LTE-M TX burst) напруга на піні `VBAT` модему **миттєво просідає** перш ніж DC-DC встигне піднятися. Якщо просадка перевищує brownout-поріг SIM7070G (~3.0–3.2 В) навіть на мілісекунди — **модем апаратно перезавантажується посеред CoAP-пакету**. Симптом: Queen «втрачає» Starlink DTC з'єднання раз на ~1–10 spike-frames, незрозумілі gaps у telemetry.
 >
 > Рішення — локальна «батарея» конденсаторів **безпосередньо біля пінів VBAT модему** (як можна ближче, доріжка ≤ 5 мм), яка віддає заряд миттєво поки DC-DC «розганяється».
 
@@ -459,7 +475,7 @@ Starlink Mini — компактний термінал LEO-супутника �
 
 ## 🌡️ 4а. Тепловий бюджет IP67 корпусу 🤖
 
-**Cross-ref:** [00_08 HW.16](00_08_Action_Plan_Tracker), BLOCKER-5 вище.
+**Cross-ref:** [00_08 HW.16](00_08_Action_Plan_Tracker), §Теплове управління IP67 вище.
 
 **Мета:** перевірити, що температура всередині корпусу не виходить за робочі діапазони компонентів при найгіршому сценарії: T_зовн = +40°C, прямі сонячні промені, штиль.
 
@@ -749,14 +765,3 @@ if (uplink_down_minutes >= HELIUM_FALLBACK_THRESHOLD_MIN &&
 | 18 | **C_MID (SIM7070G VBAT)** | 100 µF / 25V / X7R / 1210 (Murata GRM32ER71E107K) | 1/2.5 | 🔴 Обов'язково — С_eff ≈ 85 µF після DC bias derating |
 | 19 | **C_HF1 (SIM7070G VBAT)** | 10 µF / 25V / X7R / 0805 | 1/2.5 | 🔴 Обов'язково |
 | 20 | **C_HF2 + C_RF (SIM7070G VBAT)** | 100 nF / 50V / X7R / 0402 + 33 pF / 50V / NP0 / 0402 | 1/2.5 | 🔴 Обов'язково — HF фільтр + RF-burst guard |
-
----
-
-## 🔗 Пов'язані Документи
-
-| Модуль | Зміст |
-|--------|-------|
-| [03_02 Queen Gateway Firmware](03_02_Queen_Gateway_Firmware) | Детальна логіка прошивки: CIFO, дедуплікація, OTA, AT-команди |
-| [03_05 Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Повний аудит безпеки: ECB vs CBC, управління ключами |
-| [02_03 BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power) | MPPT для Soldier |
-| [07_02 Unit Economics and BOM](07_02_Unit_Economics_and_BOM) | Вартість розгортання (блокується цим документом) |

@@ -422,7 +422,7 @@
 - [ ] 👤 **Cold-start R_int** (`02_03 §1.5`): виміряти R_int EBFC (V_OC + V@15µA); якщо > 12 кΩ → cold-start oscillation-loop → серійний стек 2× EBFC (A) / паралель (B) / LTC3108 DNP-footprint (C). Не замовляти 100 PCBA без DNP-LTC3108 до перевірки.
 
 #### HW.14 — Winter energy deficit for Queen Phase 3 (Starlink Mini)
-- **P1** · 👤 · → `02_05 §BLOCKER-2`
+- **P1** · 👤 · → `02_05 §Зимовий енергодефіцит`
 - **Опис:** Phase 3 (Starlink Mini): 44 Wh/day consumption vs 18.75 Wh/day winter generation = -25 Wh/day deficit. 12V/20Ah LiFePO4 → 7.7 днів автономності
 - **Пріоритет:** Phase 3 only (Phase 2.5 unaffected)
 - [ ] 👤 Збільшити батарею до 40Ah (15 днів автономності), АБО
@@ -430,7 +430,7 @@
 - [ ] 👤 Встановити 100W solar panel
 
 #### HW.15 — BMS + VBAT decoupling для SIM7070G
-- **P1** · 👤 · → `02_05 §BLOCKER-4`, `§2.2.1`
+- **P1** · 👤 · → `02_05 §Пікові струми SIM7070G`, `§2.2.1`
 - **Опис:** SIM7070G TX peak current до 2A. Дві окремі проблеми: (1) BMS model не вказано в BOM (system-level); (2) транзієнтна просадка VBAT модему при 2A burst → brownout reboot (module-level). Тепер з обома вирішеннями.
 - **Module-level fix (✅ specification зафіксовано 2026-05-16):** 5-cap tank bank біля VBAT pin SIM7070G — 470 µF aluminum polymer SP-Cap (Panasonic EEFCX0J471R) + 100 µF MLCC X7R 25V 1210 + 10 µF X7R 0805 + 100 nF X7R 0402 + 33 pF NP0 0402. Розрахункова просадка: 8 mV (margin > 35× проти 700 mV brownout). Деталі — `02_05 §2.2.1`.
 - [ ] 👤 Обрати BMS: мінімум 12V / 20A continuous / 50A peak
@@ -439,7 +439,7 @@
 - [ ] 👤 Оновити BOM (закупка 5 нових компонентів)
 
 #### HW.16 — Thermal management в IP67 enclosure
-- **P1** · 👤 · → `02_05 §BLOCKER-5`
+- **P1** · 👤 · → `02_05 §Теплове управління IP67`
 - **Опис:** SIM7070G + MCU при TX: ~500 mW × 5 sec. Літній interior temp до 60-70°C. LiFePO4 charging при T < 0°C пошкоджує батарею; розряд нижче −20°C → graphite plating damage
 - ✅ Зроблено: тепловий бюджет IP67 (Phase 1/2.5 ~130мВт→ΔT<1K; Phase 3 3Вт→ΔT~4.5K; sun load +15K; sun-shade рекоменд.) + backend critical-temp гілка. Канон: `02_05 §4а`.
 - [ ] 👤 Додати temperature sensor (NTC або DS18B20)
@@ -459,7 +459,7 @@
 - [ ] 👤 12-місячний польовий тест anti-overgrowth shield на тестовому дереві — фотодокументація щоквартально
 
 #### HW.18 — Starlink DTC: ESP32-S3 vs SIM8200G-M2 WiFi co-processor
-- **P2** · 👤 · → `02_05 §BLOCKER-1`
+- **P2** · 👤 · → `02_05 §Starlink DTC vs Mini`
 - **Опис:** Phase 3 (Starlink Mini terminal) потребує WiFi co-processor. Архітектурне рішення між ESP32-S3 та SIM8200G-M2 не прийнято
 - **Пріоритет:** Phase 3 only
 - ✅ Зроблено (🤖): decision memo + рекомендація **ESP32-S3** → `02_05` BLOCKER-1.
