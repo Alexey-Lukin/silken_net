@@ -12,244 +12,31 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — C-код шлюзу написаний
-- **Пов'язані модулі:**
-  - Життєвий Цикл Прошивки та DMA → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
-  - Апаратне симетричне шифрування та Безпека → [`03_05_Hardware_Symmetric_Crypto_and_Security`](03_05_Hardware_Symmetric_Crypto_and_Security)
-  - Бізнес-Логіка та Сервіси → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
-  - Proof of Growth Pipeline → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
+- **Поточний TRL:** TRL 6 — C-код шлюзу написаний, host-based тести зелені (`make -C firmware/test queen`). Відкрите: AT-blind async UART DMA flush (`FW.3`) → [`00_08 §03`](00_08_Action_Plan_Tracker).
 
 ---
 
-| Компонент | Стан |
-|-----------|------|
-| **LoRa RX (OnRxDone ISR → main loop)** | ✅ Реалізовано (`firmware/queen/main.c`) |
-| **AES-128-ECB decrypt (HAL hardware, LoRa channel post-ARCH.42)** | ✅ Реалізовано (апаратний CRYP модуль) |
-| **CIFO EdgeCache (50 слотів)** | ✅ Реалізовано (`Process_And_Cache_Data`) |
-| **Priority-Aware CIFO Eviction** | ✅ Виправлено (критичні записи захищені) |
-| **Flush trigger (≥45 entries OR 1 год)** | ✅ Реалізовано з HRNG-джиттером |
-| **AES-256-CBC batch encrypt (HRNG IV)** | ✅ Реалізовано (`Flush_Cache_To_Rails`) |
-| **CoAP PUT через SIM7070G AT-команди** | ✅ Реалізовано (hex-рядок over UART) |
-| **ECB mode restore після CBC flush** | ✅ Виправлено (без цього LoRa decrypt руйнується) |
-| **OTA Broadcast (Reflex Shot)** | ✅ Реалізовано (16-байтний чанк після кожного RX) |
-| **OTA Assembly від CoAP Downlink** | ✅ Реалізовано (bitmap dedup, RAM assembly) |
-| **Actuator Command Dedup (DJB2 Ring)** | ✅ Реалізовано (16-слотний кільцевий буфер) |
-| **Queen Health Sentinel (DID=0)** | ✅ Виправлено (власний health packet у батч) |
-| **RSSI Clamp (int16 → int8)** | ✅ Виправлено (SX1262 може давати < -128 dBm) |
-| **Thundering Herd Jitter (HRNG)** | ✅ Виправлено (0–60 секунд рандомне зміщення) |
-| **AT Command Timeout (blind delay)** | 🔴 BLOCKER (немає парсингу відповіді модему) |
-| **Hardcoded AES Key у Flash** | ✅ Firmware CLOSED (FW.1, 2026-05-02). Factory Flashing Pipeline tool (SEC.3) — ✅ Rake CLI dry-run (2026-05-24); 👤 real subprocess execution на bench + RDP Level 2 (SEC.2) |
-| **Queen UID hardcoded "QUEEN-001"** | ✅ Виправлено (Flash-based provisioning з fallback на STM32 HW UID) |
-| **Error_Handler без IWDG у Queen** | ✅ Виправлено (IWDG додано з timeout ~26 с + refresh у main loop) |
-| **No CoAP retry logic** | ✅ Виправлено (FW.9) — `SIM7070_SendATCommand_WithResponse`, max 3 retry, парсинг `OK`/`ERROR` |
-| **CMD_DECRYPT_BUF_SIZE розбіжність** | ✅ Виправлено (тест синхронізовано: 96 → 544) |
-| **HRNG Fallback → IV Reuse (CBC)** | ✅ Виправлено (fallback використовує djb2 STM32 HW UID XOR tick) |
-| **OTA Broadcast Infinite Loop** | ✅ Виправлено (`ota_is_active = 0` розкоментовано після повного циклу бродкасту) |
-| **Host-based Tests (59 queen-specific)** | ✅ Всі проходять (`make -C firmware/test queen`) |
+## 🔗 Cross-references
 
----
+| Ресурс | Опис |
+|--------|------|
+| [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Soldier lifecycle, binary packet, DID provisioning, RTC map |
+| [02_05_Queen_Hardware_and_Starlink](02_05_Queen_Hardware_and_Starlink) | Hardware Queen, SIM7070G, Starlink/Helium |
+| [03_05_Hardware_Symmetric_Crypto_and_Security](03_05_Hardware_Symmetric_Crypto_and_Security) | AES режими, ключі (§3.1), HRNG IV |
+| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | `UnpackTelemetryWorker` (батч [IV:16][CBC ciphertext]) |
+| [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Втрата пакетів Queen → ZK-proof/мінтинг |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.3 AT-blind async-DMA, FW.27 OTA ACK-agg |
 
-## 🛑 Блокери
+## 📑 Зміст
 
-### ✅ BLOCKER-1: Hardcoded AES-256 Key — Firmware CLOSED (FW.1, 2026-05-02)
-
-**Статус:** ✅ Firmware ЗАКРИТО (FW.1, 2026-05-02). Queen `Load_AES_Key()` зчитує per-device HKDF-derived ключ з Protected Flash Sector (`FLASH_KEY_ADDR = 0x0803E000`, magic `"KEYS"`). Hardcoded ідентичний ключ видалено. Factory Flashing Pipeline tool (SEC.3) — ✅ реалізовано як Rake-driven internal admin tool (2026-05-24, dry-run by default; threat model: `03_05 §3.4г`; Гілка A + Гілка B skeleton). Залишається: 👤 real `STM32_Programmer_CLI` execution на bench та RDP Level 2 activation (SEC.2).
-
-**Файл:** `firmware/queen/main.c:81-82`
-
-```c
-// [FW.1] Hardcoded key removed. Key loaded from Protected Flash Sector via Load_AES_Key().
-uint32_t aes_key[8] = {0};  // Overwritten by Load_AES_Key() before MX_CRYP_Init()
-```
-
-**Виконані дії (FW.1, 2026-05-02):**
-- ✅ Queen-side `HKDF(PROVISIONING_MASTER_KEY, queen_uid, "silkennet-v1-aes256")` → Protected Flash.
-- ✅ `Load_AES_Key()` + magic `"KEYS"` guard — boot відмовляє без provisioning.
-- ✅ Per-Soldier ключі для cluster decrypt — Queen знає ключ кожного свого Soldier (`HardwareKey#binary_key` cache).
-
-**Залишається:**
-- [x] SEC.3: Factory Flashing Pipeline tool (✅ 2026-05-24, dry-run; реалізація + integration тест; threat model: `03_05 §3.4г`). 👤 Hardware-gated: real `STM32_Programmer_CLI` execution на bench.
-- [ ] SEC.2: RDP Level 2 activation (необоротний final lock перед field deployment).
-- [ ] Опційно (mass production >10k): ATECC608B Secure Element — SEC.6 / `03_05 §3.7`.
-
-> Cross-ref: [`03_05 §3.1 Джерело AES-Ключа`](03_05_Hardware_Symmetric_Crypto_and_Security), [`03_05 §3.4 Factory Flashing Pipeline`](03_05_Hardware_Symmetric_Crypto_and_Security), [`03_05 §3.4г Operations Security`](03_05_Hardware_Symmetric_Crypto_and_Security), [`03_01 BLOCKER-1`](03_01_Firmware_Lifecycle_and_DMA).
-
----
-
-### 🟡 BLOCKER-2: AT Command Blocking — Queen сліпа ~25 секунд під час flush
-
-**Статус:** Частково виправлено — single-packet buffer overwrite закрито (FW.3, 2026-05-02). Повна async-переробка `Flush_Cache_To_Rails()` на UART DMA — відкрито.
-**Файл:** `firmware/queen/main.c:805-870` (drain) + `firmware/queen/main.c:184-260` (ring buffer)
-
-**Реальний час блокування під час flush (розрахунок для 50 записів):**
-
-| Етап | Деталь | Час |
-|------|--------|-----|
-| `AT+CCOAPNEW` + delay | `SIM7070_SendATCommand(..., 1000)` | ~1.0 с |
-| AT+CCOAPSEND заголовок | `HAL_UART_Transmit(..., 100)` | ~0.1 с |
-| **UART hex TX** | 1072 байт × 2 ASCII символи × 10 ms/байт | **~21.4 с** |
-| Завершення команди | 3 байти `\"\r\n` + `HAL_Delay(2000)` | ~2.1 с |
-| `AT+CCOAPDEL` + delay | `SIM7070_SendATCommand(..., 500)` | ~0.5 с |
-| **Разом** | | **~25.1 с** |
-
-```c
-// Hex TX: кожен байт окремим викликом, 10 ms timeout
-for (int i = 0; i < total_size; i++) {
-    snprintf(hex_byte, sizeof(hex_byte), "%02x", encrypted_batch_buffer[i]);
-    HAL_UART_Transmit(&huart1, (uint8_t*)hex_byte, 2, 10); // ← 10 ms/byte
-}
-HAL_Delay(2000); // ← Чекаємо ACK — але не читаємо відповідь!
-```
-
-**Ризики (ескалація від "2 секунди" до "~25 секунд"):**
-
-1. ✅ **Single-packet buffer overwrite — закрито (FW.3, 2026-05-02).** Раніше `incoming_lora_payload[16]` + однобітний `lora_rx_flag` — кожен новий ISR від `OnRxDone` мовчки переписував попередній голос. Тепер між ISR і main loop стоїть **FIFO ring buffer** (16 слотів × 17 байтів = 272 байти RAM, capacity = 15). ISR-side `LoRa_Rx_Ring_Push` атомарно додає голос; при переповненні рою інкрементує лічильник `lora_rx_drops` — жодна жертва не зникає у тиші. Main loop дренує весь ринг за одну ітерацію (`while (LoRa_Rx_Ring_Pop(...))`) перед перевіркою flush-таймера. 13 host-тестів покривають FIFO-семантику, переповнення, RSSI-clamp passthrough та симуляцію 25-секундного flush-сценарію (30 ISR-пакетів → 15 уцілілих + 15 видимих втрат). Single-producer/single-consumer інваріант + ARM Cortex-M4 атомарність 8-біт читання робить ринг lock-free.
-2. **Emergency packet loss — суттєво пом'якшено.** До 15 emergency TinyML-сигналів за 25-секундне вікно тепер зберігаються; якщо рій кричить ще густіше — лічильник `lora_rx_drops` робить це видимим для backend gateway-телеметрії (наступний крок: експорт у queen_health sentinel-payload).
-3. ✅ **Reflex `Radio.Rx()` після кожного дренованого пакета** — main loop викликає `Radio.Rx(LORA_RX_INFINITE)` всередині drain-петлі, після кожного pop'а. Жодного режиму Radio idle між пакетами.
-4. **Відповідь модему частково парситься (FW.9).** `SIM7070_SendATCommand_WithResponse` шукає `OK`/`ERROR` у `Flush_Cache_To_Rails`, з `COAP_MAX_RETRIES=3` retry-логікою. Boot-time AT-команди (CNMP, CPSMS, CEDRXS) залишаються на blind delay — вони не у критичному 25-секундному вікні.
-
-**Залишок роботи (наступна ітерація FW.3):**
-- Переписати `Flush_Cache_To_Rails()` на UART DMA interrupt-driven (DMA UART + IDLE-line callback) — повна async, не блокуюча головний цикл.
-- Експортувати `lora_rx_drops` у `queen_health` sentinel-payload (наразі — внутрішня метрика без backend-видимості).
-
-**Блокує:** Часткове закриття — Queen більше не глуха в умовах щільного LoRa-трафіку (bursts ≤ 15 пакетів покриті ringom), Emergency Alerting суттєво підсилений. Повна async UART DMA — для full Mainnet-надійності при ≥ 16-пакетних bursts.
-
----
-
-### ✅ BLOCKER-3: Queen UID — статичний рядок у Flash (Виправлено)
-
-**Статус:** Виправлено. Flash-based provisioning реалізовано.
-**Файл:** `firmware/queen/main.c`
-
-**Реалізація:** Queen читає UID з виділеної сторінки Flash `0x0803F800` з перевіркою magic-маркера. При незаповненому Flash (значення `0xFFFFFFFF`) або невалідному маркері — генерує унікальний UID на основі апаратного STM32 UID (адреса `0x1FFF7590`) у форматі `"UNPROV-{8HEX}"`. Це гарантує унікальність навіть до заводського провізіонування — колізії між непровізіонованими Queens неможливі.
-
-```c
-// Flash provisioning page: 0x0803F800
-// Format: [magic:4][len:1][uid:len]
-// Fallback: STM32 HW UID at 0x1FFF7590 → "UNPROV-DEADBEEF"
-```
-
-**Закриває:** Уніфікований Factory Flashing, масштабування мережі Queens.
-
----
-
-### ✅ BLOCKER-4: Starlink Latency Gap (Частково виправлено)
-
-**Статус:** Таймаути збільшено. Повноцінний retry залишається відкритим (потребує UART RX парсингу).
-**Файл:** `firmware/queen/main.c`
-
-CoAP таймаути збільшені для Starlink DTC (worst-case RTT 600–2400 ms):
-- `AT+CCOAPNEW`: `1000 ms` → `2000 ms`
-- ACK wait (`HAL_Delay`): `2000 ms` → `5000 ms`
-
-**Залишилось:** Реалізувати polling UART RX з перевіркою `OK` відповіді для повноцінного retry з exponential backoff. TODO-коментар додано у firmware.
-
-**Частково закриває:** Стабільність CoAP uplink через Starlink.
-
----
-
-### ✅ BLOCKER-5: IWDG Watchdog додано до Queen
-
-**Статус:** Виправлено. IWDG ініціалізовано та інтегровано в main loop.
-**Файл:** `firmware/queen/main.c`
-
-**Реалізація:**
-- `HAL_IWDG_Init()` викликається при ініціалізації Queen з timeout ~26.6 с (Reload × Prescaler / LSI_freq).
-- `HAL_IWDG_Refresh()` викликається в головному циклі — до початку CoAP flush (IWDG pre-refresh перед 5-секундним delay) та після завершення flush.
-- При HardFault або зависанні — IWDG автоматично перезавантажує MCU без фізичного втручання.
-
-**Закриває:** Autonomous 24/7 operation без людського втручання в Production.
-
----
-
-### ✅ BLOCKER-6: CoAP Retry-логіка — реалізовано (FW.9)
-
-**Статус:** Виправлено. `SIM7070_SendATCommand_WithResponse` реалізовано, retry-цикл до 3 спроб.
-**Файл:** `firmware/queen/main.c`
-
-**Реалізація:**
-```c
-#define COAP_MAX_RETRIES  3    // [FW.9] Максимум спроб CoAP flush
-#define UART_RX_BUF_SIZE  128  // [FW.9] Буфер для парсингу відповіді модему
-
-for (uint8_t retry = 0; retry < COAP_MAX_RETRIES && !send_success; retry++) {
-    // 1. Відкриваємо CoAP-сесію з перевіркою OK/ERROR
-    if (!SIM7070_SendATCommand_WithResponse("AT+CCOAPNEW=...", COAP_BASE_TIMEOUT_MS)) {
-        continue;  // Session open failed → retry
-    }
-    // 2. Відправляємо hex-кодований payload
-    // ... AT+CCOAPSEND ...
-    // 3. Парсимо відповідь: шукаємо "OK" у UART буфері
-    if (HAL_UART_Receive(&huart1, uart_rx_buf, UART_RX_BUF_SIZE - 1, COAP_SEND_TIMEOUT_MS) == HAL_OK) {
-        for (uint8_t j = 0; uart_rx_buf[j] != '\0'; j++) {
-            if (strncmp(&uart_rx_buf[j], "OK", 2) == 0) { send_success = 1; break; }
-        }
-    }
-    SIM7070_SendATCommand("AT+CCOAPDEL=0\r\n", 500);
-}
-```
-
-Якщо після 3 спроб `send_success == 0` — кеш очищується (дані все ще втрачаються, persistent buffer — наступний крок). Але при транзієнтних збоях (моментовий Starlink gap, тимчасова помилка модему) retry значно підвищує надійність.
-
-**Залишкова проблема:** Persistent буфер при 3-кратному збої не реалізовано — майбутня задача.
-
-**Закриває:** Надійність CoAP uplink при транзієнтних мережевих збоях.
-
----
-
-### ✅ BLOCKER-7: CMD_DECRYPT_BUF_SIZE синхронізовано
-
-**Статус:** Виправлено. Тест синхронізовано з firmware.
-**Файли:** `firmware/queen/main.c:122` та `firmware/test/test_queen_logic.c:21`
-
-```c
-// Обидва файли тепер:
-#define CMD_DECRYPT_BUF_SIZE 544  // 512 OTA payload + 5 header + 2 CRC + 16 AES padding + 9 margin
-```
-
-**Закриває:** Повнота тестового покриття OTA downlink шляху.
-
----
-
-### ✅ BLOCKER-8: HRNG Fallback — покращена ентропія IV
-
-**Статус:** Виправлено. Fallback тепер використовує STM32 HW UID для унікальності між Queen-вузлами.
-**Файл:** `firmware/queen/main.c`
-
-**Реалізація:** При недоступності HRNG, IV генерується через комбінований seed:
-```c
-// djb2 хеш STM32 HW UID (0x1FFF7590) XOR HAL_GetTick() XOR XOR_MASK(i)
-// Кожен bit-shift для i ∈ {0,1,2,3} гарантує різні слова IV
-uint32_t tick     = HAL_GetTick();
-uint32_t uid_hash = djb2_hash(queen_uid, strlen(queen_uid));
-batch_iv[i] = tick ^ (uid_hash << i) ^ ((uint32_t)i * RNG_FALLBACK_XOR_MASK)
-            ^ (tick >> (8U * i));
-```
-
-Оскільки STM32 HW UID унікальний для кожного чіпу, IV більше не буде однаковим навіть при масовому blackout-відновленні. Повністю усуває IV Reuse Attack у сценарії "всі Queens перезавантажились одночасно".
-
-**Примітка:** ✅ BLOCKER-1 (однаковий AES ключ) закрито через FW.1 — кожен вузол має per-device HKDF-derived ключ; IV reuse тепер дійсно неможлива.
-
-**Закриває:** IV Reuse Attack при blackout-відновленні.
-
----
-
-### ✅ BLOCKER-9: OTA Broadcast Infinite Loop — виправлено
-
-**Статус:** Виправлено. `ota_is_active` тепер скидається після завершення одного повного циклу бродкасту.
-**Файл:** `firmware/queen/main.c`
-
-```c
-current_ota_chunk_idx++;
-if (current_ota_chunk_idx >= total_chunks) {
-    current_ota_chunk_idx = 0;
-    ota_is_active = 0;   // ← розкоментовано: один повний цикл → стоп
-}
-```
-
-Після того як усі LoRa-чанки надіслані (745 чанків для 8192 байт bytecode), Queen автоматично зупиняє бродкаст. Солдати, що підключились пізніше, можуть отримати оновлення лише якщо надійде новий CoAP downlink з `ota_is_active = 1`.
-
-**Закриває:** Стабільна OTA-доставка при масовому оновленні лісу, коректна робота шлюзу після першої OTA-сесії.
+<!-- TOC:AUTO:START -->
+- [Архітектура: Повний Data Flow](#-архітектура-повний-data-flow)
+- [0. Всі #define Константи (SSOT)](#-0-всі-define-константи-ssot)
+- [1. LoRa Reception та ISR](#-1-lora-reception-та-isr)
+- [2. CIFO EdgeCache (Алгоритм дедуплікації та кешування)](#-2-cifo-edgecache-алгоритм-дедуплікації-та-кешування)
+- [3. Flush: Бінарна Упаковка та AES-CBC](#-3-flush-бінарна-упаковка-та-aes-cbc)
+- [4. SIM7070G Модем: Життєвий Цикл та AT-Команди](#-4-sim7070g-модем-життєвий-цикл-та-at-команди)
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -1223,22 +1010,3 @@ make -C firmware/test queen    # 128 тестів, ~0.1 секунди
 
 ---
 
-## 🔗 Залежності
-
-### Висхідні (Requires)
-
-| Модуль | Статус | Деталь |
-|--------|--------|--------|
-| [03_01 Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | ✅ Синхронізовано | Soldier lifecycle, binary packet format, DID provisioning |
-| [02_05 Queen Hardware and Starlink](02_05_Queen_Hardware_and_Starlink) | — | Схема живлення Queen, антена SIM7070G |
-| [03_05 Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | — | Деталі ключової інфраструктури |
-
-### Низхідні (Blocks)
-
-| Модуль | Чому блокується |
-|--------|----------------|
-| [05_02 Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Втрата пакетів на Queen → ZK-proof не формується → мінтинг SCC блокується |
-| [04_02 Business Logic and Services](04_02_Business_Logic_and_Services) | `UnpackTelemetryWorker` очікує батч формату `[IV:16][CBC ciphertext]` |
-| Factory Flashing | BLOCKER-1 firmware-частина закрита (FW.1); SEC.3 tool implementation — ✅ Rake CLI dry-run (2026-05-24, `app/services/factory_flashing/*`); 👤 hardware-gated: real `STM32_Programmer_CLI` subprocess execution на bench; threat model: `03_05 §3.4г` |
-
----
