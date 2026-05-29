@@ -18,130 +18,32 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — бібліотеки встановлені, кастомні метрики реалізовані та інструментовані (повний реєстр + кількість — §2.8), структуровані JSON-логи активні; Grafana Alloy sidecar налаштований для scrape + remote_write до Grafana Cloud (BLOCKERs 1-3 вирішені); TRL 7 підтверджується після першого реального деплою з метриками в Grafana Cloud
-- **Пов'язані модулі:**
-  - Розгортання → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
-  - Akash → [`06_02_Akash_Network_Integration`](06_02_Akash_Network_Integration)
-  - Бізнес-логіка → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
-  - Action tracker → [`00_08_Action_Plan_Tracker`](00_08_Action_Plan_Tracker) — OBS.1 (Grafana Cloud), S2.2/S2.3 (circuit-breaker/acoustic метрики)
+- **Поточний TRL:** TRL 6 — бібліотеки встановлені, кастомні метрики реалізовані та інструментовані (повний реєстр + кількість — §2.8), структуровані JSON-логи активні; Grafana Alloy sidecar налаштований для scrape + remote_write до Grafana Cloud (Grafana Cloud SaaS, OBS.1); TRL 7 підтверджується після першого реального деплою з метриками в Grafana Cloud
+- **Відкрите:** перший деплой з метриками в Grafana Cloud (TRL 6→7); dashboard import → [`00_08`](00_08_Action_Plan_Tracker) (OBS.1, S2.2/S2.3).
 
 ---
 
-## ✅ Архів вирішених блокерів
+## 🔗 Cross-references
 
-> Усі 5 блокерів спостережуваності вирішені (Grafana Cloud SaaS / Alerting — OBS.1; `SENTRY_DSN`; 9-черговий Sidekiq моніторинг). Збережено для аудиту; **активних блокерів немає**. Нумерація стабільна (НЕ renumber).
+| Ресурс | Зв'язок |
+|---|---|
+| [06_01_Deployment_Kamal_Terraform](06_01_Deployment_Kamal_Terraform) | Розгортання (Kamal/Terraform) |
+| [06_02_Akash_Network_Integration](06_02_Akash_Network_Integration) | Akash SDL (`alloy` сервіс) |
+| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (інструментовані метрики) |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | OBS.1 (Grafana Cloud), S2.2/S2.3 |
 
-### ✅ BLOCKER-1: Prometheus Server — вирішено через Grafana Cloud SaaS (OBS.1)
+## 📑 Зміст
 
-**Статус:** ✅ Вирішено. Grafana Alloy sidecar (`alloy` сервіс в Akash SDL) скрейпить `/metrics` endpoint кожні 15 секунд і пушить метрики в Grafana Cloud через Prometheus remote_write.
-
-Замість розгортання self-hosted Prometheus Server, обрано SaaS підхід:
-- **Grafana Alloy** (`grafana/alloy:latest`) — легковажний agent, 3-й мікросервіс в Akash SDL (поряд з `web` та `job`)
-- **Scrape**: `web:80/metrics` по внутрішній мережі Akash (Basic Auth)
-- **Push**: `prometheus.remote_write` → Grafana Cloud endpoint (HTTPS)
-- **Config**: `deploy/akash/config.alloy` (River format), кодується в Base64 через Terraform `filebase64()` і передається як ENV
-
-```
-Grafana Alloy (Akash) ──scrapes──→ Rails web:80/metrics (кожні 15s, Basic Auth)
-      │
-      └──remote_write──→ Grafana Cloud (Prometheus endpoint, HTTPS)
-                              │
-                              ├──→ Grafana Dashboards (PromQL)
-                              └──→ Grafana Alerting (правила алертів)
-```
-
-**Файли:**
-- `deploy/akash/config.alloy` — конфігурація Alloy (scrape + remote_write)
-- `deploy/akash/deploy.yaml` / `deploy.yaml.tpl` — `alloy` сервіс (0.5 CPU, 512Mi RAM)
-- `terraform/akash/variables.tf` — 5 нових змінних (Grafana Cloud credentials)
-- `terraform/akash/main.tf` — `filebase64()` для config injection
-
----
-
-### ✅ BLOCKER-2: Grafana — вирішено через Grafana Cloud SaaS (OBS.1)
-
-**Статус:** ✅ Вирішено. Grafana Cloud надає повнофункціональні дашборди та PromQL-запити.
-
-Метрики, що надходять через remote_write від Alloy sidecar, автоматично доступні в Grafana Cloud для побудови дашбордів. Залишається операційна задача: створити конкретні дашборди в Grafana Cloud UI.
-
-**Критичні дашборди (операційна задача):**
-
-| Подія | Метрика | Дашборд |
-|-------|---------|---------|
-| Alchemy RPC починає відхиляти запити | `silkennet_rpc_errors_total{network="polygon"}` | Web3 RPC Errors by Network |
-| Sidekiq `web3_critical` черга переповнюється | `silkennet_web3_queue_size{queue="web3_critical"}` | Sidekiq Queues (9 черг, size + latency) |
-| Атака підробленими DID | `silkennet_telemetry_fraud_detected_total` | Telemetry Ingest + Fraud Detection |
-| Слешинг кластерів | `silkennet_scc_slashed_total` | Treasury / Token Economics |
-
----
-
-### ✅ BLOCKER-3: Alertmanager — вирішено через Grafana Cloud Alerting (OBS.1)
-
-**Статус:** ✅ Вирішено. Grafana Cloud включає вбудовану систему алертів (Grafana Alerting), яка замінює потребу в self-hosted Alertmanager.
-
-Після створення дашбордів у Grafana Cloud — алерти налаштовуються через Grafana Alerting UI:
-- Alert rules на базі PromQL
-- Notification channels (Slack, Email, PagerDuty, Telegram)
-- Silence / mute rules
-- Escalation policies
-
-**Мінімальні алерти (операційна задача — створити в Grafana Cloud UI):**
-
-```yaml
-# Приклад правил (створюються в Grafana Cloud UI, не в коді)
-- alert: Web3QueueCritical
-  expr: silkennet_web3_queue_size{queue="web3_critical"} > 500
-  for: 5m
-  annotations:
-    summary: "Критична Web3 черга переповнена — мінтинг SCC заблокований"
-
-- alert: TelemetryIngestDown
-  expr: rate(silkennet_telemetry_processed_total[10m]) == 0
-  for: 10m
-  annotations:
-    summary: "Телеметрія з дерев зупинилась — CoAP/LoRa канал недоступний"
-
-- alert: RpcErrorSpike
-  expr: rate(silkennet_rpc_errors_total[5m]) > 10
-  for: 2m
-  annotations:
-    summary: "RPC помилки: {{ $labels.network }} / {{ $labels.error_type }}"
-```
-
----
-
-### ✅ BLOCKER-4: `SENTRY_DSN` додано до `.kamal/secrets` (Виправлено)
-
-**Статус:** Виправлено. `SENTRY_DSN` додано до `.kamal/secrets` та `config/deploy.yml env.secret`. Для Akash деплоїв — задається в SDL env vars.
-
-Sentry тепер активний у production. Всі помилки Sidekiq, збої Web3 та виключення Rails надсилаються до Sentry.
-
----
-
-### ✅ BLOCKER-5: Усі 9 Sidekiq черг моніторяться Prometheus (Виправлено)
-
-**Статус:** Виправлено. `refresh_sidekiq_gauges` розширено для всіх 9 черг.
-
-`PrometheusCollector` middleware тепер моніторить усі 9 черг:
-```ruby
-ALL_QUEUES = %w[uplink alerts critical downlink default web3_critical web3 web3_low low]
-```
-
-| Черга | Пріоритет | Воркери | Статус |
-|-------|-----------|---------|--------|
-| `uplink` | 1 (найвищий) | `UnpackTelemetryWorker` | ✅ Моніториться |
-| `alerts` | 2 | `EwsAlertWorker` | ✅ Моніториться |
-| `critical` | 3 | `SlashingProtocolWorker` | ✅ Моніториться |
-| `downlink` | 4 | `OtaTransmissionWorker` | ✅ Моніториться |
-| `default` | 5 | Агрегація, health checks, **Codex** (`Codex::AttunementBroadcastWorker`, `Codex::FractionAuditWorker`, `Codex::DiscoveryProbeWorker`, `PartitionMaintenanceWorker`) | ✅ Моніториться |
-| `web3_critical` | 6 | Мінтинг, Oracle, ZK | ✅ Моніториться |
-| `web3` | 7 | Celo, Solana, peaq | ✅ Моніториться |
-| `web3_low` | 8 | L1 anchoring, KlimaDAO | ✅ Моніториться |
-| `low` | 9 (найнижчий) | Audit logging, analytics, **Codex** (`Codex::EloRecomputeWorker`) | ✅ Моніториться |
-
-> **Phase 7:** Codex воркери (Phase 1–6) приземляються виключно у `default` та `low` — вони ніколи не конкурують з `uplink`/`alerts`/`critical`/`web3_critical`. Це гарантує що геймифікація Lore-шару не може застрянути телеметрії дерев. Окремих `codex_*` черг немає за дизайном (ADR-CDX-3).
->
-> **PartitionMaintenanceWorker alert ✅ (S2.5, 2026-05-29):** rescue воркера тепер інкрементить custom counter `silkennet_partition_maintenance_failures_total` (рекомендований `sidekiq_jobs_failed_total` реєстром НЕ емітиться) + `Sentry.capture_exception`. P0 Grafana alert `sn-alert-partition-maintenance-failed` (`increase[24h] > 0`) у `deploy/grafana/alerts/`. Без цього silent failure означав би `no partition of relation` PostgreSQL крах 1-го числа місяця для всіх 4 RANGE-таблиць (`telemetry_logs`, `gateway_telemetry_logs`, `blockchain_transactions`, `codex_matches`).
+<!-- TOC:AUTO:START -->
+- [Частина I: APM — Sentry Error Tracking](#-частина-i-apm--sentry-error-tracking)
+- [Частина II: Time-Series — Prometheus Metrics](#-частина-ii-time-series--prometheus-metrics)
+- [Частина III: Logs — GCP Cloud Logging](#-частина-iii-logs--gcp-cloud-logging)
+- [Архітектура спостережуваності (Поточний стан vs Цільовий)](#-архітектура-спостережуваності-поточний-стан-vs-цільовий)
+- [Карта файлів (File Map)](#-карта-файлів-file-map)
+- [Зовнішні Залежності та ENV змінні](#-зовнішні-залежності-та-env-змінні)
+- [Висновки аудиту](#-висновки-аудиту)
+- [Архітектурне Рішення: Чому `prometheus-client](#-архітектурне-рішення-чому-prometheus-client)
+<!-- TOC:AUTO:END -->
 
 ---
 
