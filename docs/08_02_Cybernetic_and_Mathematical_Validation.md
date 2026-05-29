@@ -38,19 +38,38 @@
 
 - **Поточний TRL:** TRL 3 — контакти ідентифіковані, зустрічі не проведено
 - **Домашня база:** Архітектор — випускник ФОТІУС ЧНУ (2011, ПЗАС). Повернення як CTO, а не студент.
-- **Пов'язані модулі:**
-  - mruby атрактор Лоренца → [`03_04_mruby_Lorenz_Attractor`](03_04_mruby_Lorenz_Attractor)
-  - TinyML → [`03_03_TinyML_Acoustic_Inference`](03_03_TinyML_Acoustic_Inference)
-  - Університетські протоколи → [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols)
-  - Публікації та IP → [`08_03_Joint_Publications_and_IP_Strategy`](08_03_Joint_Publications_and_IP_Strategy)
-  - ЧДТУ Data Science, RF-верифікація, акустика (міжуніверситетська синергія) → [`08_04_CHDTU_Data_Science_Collaboration`](08_04_CHDTU_Data_Science_Collaboration)
-  - ЧІПБ: Пожежна безпека, параметричне страхування, SOP → [`08_05_CHIPB_Fire_Safety_Integration`](08_05_CHIPB_Fire_Safety_Integration)
-  - ЧМА: Біохімія EBFC, токсикологія металів, ксилемоінтеграція → [`08_06_CHMA_Biomedical_Integration`](08_06_CHMA_Biomedical_Integration)
-  - СЄУ: Токеноміка NaaS, RWA-легалізація, промисловий дизайн → [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration)
+- **Відкрите:** зустрічі з ФОТІУС (Супруненко/Онищенко), формальна верифікація Rails/mesh → [`00_08`](00_08_Action_Plan_Tracker) (UNI.*).
 
 ---
 
-## 🛑 Блокери
+## 🔗 Cross-references
+
+| Ресурс | Зв'язок |
+|---|---|
+| [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | mruby атрактор Лоренца |
+| [03_03_TinyML_Acoustic_Inference](03_03_TinyML_Acoustic_Inference) | TinyML |
+| [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | Університетські протоколи |
+| [08_03_Joint_Publications_and_IP_Strategy](08_03_Joint_Publications_and_IP_Strategy) | Публікації та IP |
+| [08_04_CHDTU_Data_Science_Collaboration](08_04_CHDTU_Data_Science_Collaboration) | ЧДТУ (Data Science, RF, акустика) |
+| [08_05_CHIPB_Fire_Safety_Integration](08_05_CHIPB_Fire_Safety_Integration) | ЧІПБ (пожежна безпека) |
+| [08_06_CHMA_Biomedical_Integration](08_06_CHMA_Biomedical_Integration) | ЧМА (біохімія EBFC) |
+| [08_07_SEU_Economics_and_Legal_Integration](08_07_SEU_Economics_and_Legal_Integration) | СЄУ (токеноміка, legal) |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | UNI.* |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [Відкриті передумови та статус](#-відкриті-передумови-та-статус)
+- [1. Ключові Фігури ФОТІУС (The Inner Circle)](#-1-ключові-фігури-фотіус-the-inner-circle)
+- [3. Технічні Завдання для ФОТІУС (Deliverables)](#-3-технічні-завдання-для-фотіус-deliverables)
+- [4. Валідація гіпотези «Лоренц Z ↔ здоров'я» (Ground-Truth Protocol)](#-4-валідація-гіпотези-лоренц-z--здоровя-ground-truth-protocol-lorenz-de-risk)
+<!-- TOC:AUTO:END -->
+
+---
+
+## 🚧 Відкриті передумови та статус
+
+> Статуси трекаються в [`00_08`](00_08_Action_Plan_Tracker) (UNI.*); нижче — контекст партнерства.
 
 - **Зустріч із Супруненко** — **завідувачка ПЗАС** (підписує партнерські угоди від кафедри) + власні три вектори R&D: PN-верифікація Rails моноліту; Convolution Method для state explosion; аналіз вимог та SSOT-формалізація Shape Up циклів
 - **Зустріч з Онищенком** — **Декан ФОТІУС** (вищий адміністративний рівень факультету — підписує партнерські угоди від імені всього ФОТІУС, відчиняє двері до всіх кафедр та лабораторій одночасно) + доцент ПЗАС, науковий партнер Супруненко (спільна публікація 2023) + три вектори R&D: stochastic B&B для Mesh-надійності; мінорантні методи on-MCU; Petri nets + Akash паралелізм
