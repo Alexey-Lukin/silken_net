@@ -181,7 +181,7 @@ class InsightGeneratorService < ApplicationService
 
     # Розраховуємо індекс стресу (враховуючи відхилення Z Атрактора та Фрод)
     # $$Stress = \min(1.0, \text{base\_stress} + \text{anomaly\_penalties})$$
-    stress_index = is_fraud ? 1.0 : calculate_stress_index(stats.max_status.to_i, stats.avg_temp.to_f, stats.max_acoustic.to_i, stats.avg_z.to_f, stats.avg_vcap.to_i, calculate_deviation(stats.avg_sap.to_f, baseline[:sap]))
+    stress_index = is_fraud ? 1.0 : calculate_stress_index(stats.max_status.to_i, stats.avg_temp.to_f, stats.max_acoustic.to_i, stats.avg_z.to_f, stats.avg_vcap.to_i, calculate_deviation(stats.avg_sap.to_f, baseline[:sap]), signed_deviation(stats.avg_sap.to_f, baseline[:sap]))
 
     # [VPD weather-confounder, 00_01 §6.5/§6.6] Discount-only weather gate so a
     # humid spell (low VPD → suppressed sap on a HEALTHY tree) cannot push a
@@ -245,6 +245,15 @@ class InsightGeneratorService < ApplicationService
     ((value - base).abs / base).round(4)
   end
 
+  # Signed relative deviation: NEGATIVE = below baseline (the stress direction for
+  # sap_flow — suppressed transpiration). Distinct from calculate_deviation, which
+  # is the absolute magnitude used for fraud detection + the ML feature. 0.0 when
+  # baseline is zero.
+  def signed_deviation(value, base)
+    return 0.0 if base.zero?
+    ((value - base) / base).round(4)
+  end
+
   # [VPD weather-confounder gate — 04_02 §VPD, 00_01 §6.5/§6.6] DISCOUNT-ONLY.
   # Lowers stress_index when a low sap_flow is explained by WEATHER, not disease:
   # saturated air (rain/fog → low VPD) gives near-zero transpiration pull, so sap
@@ -287,7 +296,11 @@ class InsightGeneratorService < ApplicationService
     { low_kpa: low, max_discount: [ discount, 1.0 ].min }
   end
 
-  def calculate_stress_index(max_status, avg_temp, max_acoustic, avg_z, avg_vcap = 0, sap_deviation = 0.0)
+  # sap_deviation = ABSOLUTE deviation (ML feature, unchanged — model trained on it).
+  # sap_signed_deviation = SIGNED (negative = below baseline) — fed only to the
+  # heuristic's sap term (#sap_stress_contribution), which the ML path doesn't need
+  # (its trained feature already carries sap).
+  def calculate_stress_index(max_status, avg_temp, max_acoustic, avg_z, avg_vcap = 0, sap_deviation = 0.0, sap_signed_deviation = 0.0)
     if @ai_model
       features = Numo::DFloat.cast([ [ avg_temp.to_f, avg_vcap.to_f, avg_z.to_f, sap_deviation.to_f, max_acoustic.to_f ] ])
       proba = @ai_model.predict_proba(features)
@@ -295,21 +308,54 @@ class InsightGeneratorService < ApplicationService
 
       unless stress_class_index
         Rails.logger.error "🛑 [Insight] ML-модель не містить клас 1 (stress). Fallback на евристику."
-        return calculate_stress_index_heuristic(max_status, avg_temp, max_acoustic, avg_z)
+        return calculate_stress_index_heuristic(max_status, avg_temp, max_acoustic, avg_z, sap_signed_deviation)
       end
 
       proba[0, stress_class_index].round(3)
     else
-      calculate_stress_index_heuristic(max_status, avg_temp, max_acoustic, avg_z)
+      calculate_stress_index_heuristic(max_status, avg_temp, max_acoustic, avg_z, sap_signed_deviation)
     end
   end
 
-  def calculate_stress_index_heuristic(max_status, avg_temp, _max_acoustic, avg_z)
+  def calculate_stress_index_heuristic(max_status, avg_temp, _max_acoustic, avg_z, sap_signed_deviation = 0.0)
     return 1.0 if max_status >= 2
     base_stress = (max_status == 1 ? 0.6 : 0.0)
     base_stress += 0.2 if avg_z.abs > 2.0
     base_stress += 0.1 if avg_temp > 35.0 || avg_temp < -5.0
+    base_stress += sap_stress_contribution(sap_signed_deviation)
     [ base_stress, 0.99 ].min
+  end
+
+  # [Sap-flow stress term — closes the 00_01 §6.6 GAP where the heuristic ignored
+  # sap entirely.] Low sap_flow (below cluster baseline) is the PRIMARY DIRECT
+  # drought/disease signal — more grounded than the unproven Lorenz-Z. Only LOW
+  # sap (signed dev ≤ −threshold) adds stress; high sap is vigour, never penalised.
+  # BOUNDED so sap CORROBORATES but never SOLELY triggers slashing — a status-0
+  # tree maxes at this weight (≈0.2 ≪ 0.83), honouring the de-risk "≥1 direct
+  # corroborating signal, not Z alone". The VPD gate later discounts this when the
+  # low sap is weather-driven (#apply_weather_confounder) → the full sap↔weather loop.
+  #
+  # INERT by default (0.0): like the VPD gate, NO guessed weight enters live
+  # slashing — activates only once ground-truth calibration sets ENV
+  # STRESS_SAP_LOW_THRESHOLD + STRESS_SAP_WEIGHT (08_02 §4).
+  def sap_stress_contribution(sap_signed_deviation)
+    calibration = sap_stress_calibration
+    return 0.0 unless calibration
+    return 0.0 unless sap_signed_deviation <= -calibration[:threshold] # only LOW sap
+
+    calibration[:weight]
+  end
+
+  # Calibration-pending config for the sap-stress term. nil (→ term inert) until
+  # BOTH ground-truth values are set via ENV (08_02 §4): threshold = fraction below
+  # baseline that counts as drought-stress (e.g. 0.30); weight = stress increment
+  # (e.g. 0.2). Deliberately not hardcoded — no guessed weight in live slashing.
+  def sap_stress_calibration
+    threshold = ENV["STRESS_SAP_LOW_THRESHOLD"]&.to_f
+    weight = ENV["STRESS_SAP_WEIGHT"]&.to_f
+    return nil unless threshold&.positive? && weight&.positive?
+
+    { threshold: threshold, weight: [ weight, 0.99 ].min }
   end
 
   def aggregate_clusters!(cluster_ids)

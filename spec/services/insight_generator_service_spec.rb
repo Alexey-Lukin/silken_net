@@ -485,6 +485,102 @@ RSpec.describe InsightGeneratorService, type: :service do
     end
   end
 
+  # [Sap-flow stress term — closes the 00_01 §6.6 GAP where the heuristic ignored
+  # sap.] Low sap (below baseline) is the primary DIRECT drought signal. Inert
+  # until calibrated; bounded so it corroborates but never solely triggers slashing.
+  describe "#sap_stress_contribution" do
+    let(:service) { described_class.new }
+
+    it "is inert (0.0) by default — no guessed weight enters live slashing" do
+      expect(service.send(:sap_stress_contribution, -0.9)).to eq(0.0)
+    end
+
+    context "when calibrated (post ground-truth, 08_02 §4)" do
+      before { allow(service).to receive(:sap_stress_calibration).and_return({ threshold: 0.3, weight: 0.2 }) }
+
+      it "adds the weight when sap is well below baseline (drought signal)" do
+        expect(service.send(:sap_stress_contribution, -0.5)).to eq(0.2)
+      end
+
+      it "ignores high sap (vigour is never penalised)" do
+        expect(service.send(:sap_stress_contribution, 0.5)).to eq(0.0)
+      end
+
+      it "ignores sap near baseline (shallower than the −threshold floor)" do
+        expect(service.send(:sap_stress_contribution, -0.1)).to eq(0.0)
+      end
+    end
+  end
+
+  describe "#sap_stress_calibration" do
+    let(:service) { described_class.new }
+
+    it "returns nil by default (term inert until calibrated)" do
+      expect(service.send(:sap_stress_calibration)).to be_nil
+    end
+
+    it "returns config when both ENV thresholds are set" do
+      ENV["STRESS_SAP_LOW_THRESHOLD"] = "0.3"
+      ENV["STRESS_SAP_WEIGHT"] = "0.2"
+      expect(service.send(:sap_stress_calibration)).to eq({ threshold: 0.3, weight: 0.2 })
+    ensure
+      ENV.delete("STRESS_SAP_LOW_THRESHOLD")
+      ENV.delete("STRESS_SAP_WEIGHT")
+    end
+  end
+
+  describe "sap-flow in the stress heuristic" do
+    let(:service) { described_class.new }
+
+    it "leaves the heuristic unchanged by default (sap term inert despite low sap)" do
+      # status 1 (0.6) + z>2 (0.2) + temp>35 (0.1) = 0.9; sap inert while uncalibrated
+      expect(service.send(:calculate_stress_index_heuristic, 1, 40.0, 0, 3.0, -0.9)).to eq(0.9)
+    end
+
+    context "when calibrated" do
+      before { allow(service).to receive(:sap_stress_calibration).and_return({ threshold: 0.3, weight: 0.2 }) }
+
+      it "raises stress for a low-sap stressed tree" do
+        # status 1 (0.6) + low sap (0.2); z/temp normal = 0.8
+        expect(service.send(:calculate_stress_index_heuristic, 1, 25.0, 0, 0.5, -0.5)).to eq(0.8)
+      end
+
+      it "sap alone (homeostasis tree) cannot reach the 0.83 slash threshold" do
+        # status 0 (0.0) + low sap (0.2) = 0.2 — corroborator, never sole trigger
+        result = service.send(:calculate_stress_index_heuristic, 0, 25.0, 0, 0.5, -0.9)
+        expect(result).to eq(0.2)
+        expect(result).to be < 0.83
+      end
+    end
+  end
+
+  describe "sap stress end-to-end (signed deviation plumbed via generate_for_tree)" do
+    let(:high_sap_tree) { create(:tree, cluster: cluster, status: :active) }
+    let(:low_sap_tree) { create(:tree, cluster: cluster, status: :active) }
+
+    it "applies the sap term only to the below-baseline tree when calibrated" do
+      ENV["STRESS_SAP_LOW_THRESHOLD"] = "0.3"
+      ENV["STRESS_SAP_WEIGHT"] = "0.2"
+      # baseline sap = avg(100, 40) = 70 → low tree signed dev = (40-70)/70 = -0.43 ≤ -0.3
+      create(:telemetry_log, tree: high_sap_tree, temperature_c: 25.0, sap_flow: 100.0,
+        voltage_mv: 3500, z_value: 0.5, acoustic_events: 1, growth_points: 10,
+        bio_status: :homeostasis, metabolism_s: 1000, created_at: date.beginning_of_day + 12.hours)
+      create(:telemetry_log, tree: low_sap_tree, temperature_c: 25.0, sap_flow: 40.0,
+        voltage_mv: 3500, z_value: 0.5, acoustic_events: 1, growth_points: 10,
+        bio_status: :homeostasis, metabolism_s: 1000, created_at: date.beginning_of_day + 12.hours)
+
+      described_class.call(date)
+
+      high = AiInsight.find_by(analyzable: high_sap_tree, target_date: date)
+      low = AiInsight.find_by(analyzable: low_sap_tree, target_date: date)
+      expect(high.stress_index).to eq(0.0)  # vigour — no penalty
+      expect(low.stress_index).to eq(0.2)   # drought corroborator
+    ensure
+      ENV.delete("STRESS_SAP_LOW_THRESHOLD")
+      ENV.delete("STRESS_SAP_WEIGHT")
+    end
+  end
+
   describe "ML model integration" do
     context "when model file is missing" do
       it "falls back to heuristic stress_index calculation" do

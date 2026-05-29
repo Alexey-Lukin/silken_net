@@ -201,25 +201,22 @@ Silken Net використовує **Lorenz Attractor** ([`03_04`](03_04_mruby_
      Tree.codit_phase → модифікатор stress_index (не вважати Фазу 1 за стрес)
 ```
 
-**Завдання В: Конкретний Gap у calculate_stress_index_heuristic**
+**Завдання В: Калібрування sap-term у calculate_stress_index_heuristic**
 
-Поточна реалізація евристики (`app/services/insight_generator_service.rb:252`) ігнорує `sap_deviation` повністю:
+✅ **Оновлено (2026-05-29):** евристика більше НЕ сліпа до sap — додано signed below-baseline sap-term (`sap_stress_contribution`), **inert доки калібрування не задасть** `STRESS_SAP_LOW_THRESHOLD` + `STRESS_SAP_WEIGHT` (ENV; жодного вгаданого порогу в live slashing). Високий sap (вигор) ніколи не штрафується; внесок обмежений так, що sap **корелює, але не слешить сам**. Лишилось завдання Боєчка — медично обґрунтовані **поріг + вага**:
 
 ```ruby
-# ПОТОЧНИЙ КОД (app/services/insight_generator_service.rb:252)
-def calculate_stress_index_heuristic(max_status, avg_temp, _max_acoustic, avg_z)
+# РЕАЛІЗОВАНО (app/services/insight_generator_service.rb)
+def calculate_stress_index_heuristic(max_status, avg_temp, _max_acoustic, avg_z, sap_signed_deviation = 0.0)
   return 1.0 if max_status >= 2  # anomaly/tamper → max stress
   base_stress = (max_status == 1 ? 0.6 : 0.0)
   base_stress += 0.2 if avg_z.abs > 2.0
   base_stress += 0.1 if avg_temp > 35.0 || avg_temp < -5.0
+  base_stress += sap_stress_contribution(sap_signed_deviation)  # ← signed, лише LOW sap; inert доки ENV-калібрування
   [ base_stress, 0.99 ].min
-  # ⚠️ sap_deviation (delta_t відхилення від baseline) = НЕ ВИКОРИСТОВУЄТЬСЯ
-  # Навіть при -20% sap_deviation → stress_index = 0.0 якщо max_status == 0
 end
-
-# ML-шлях (якщо модель завантажена) ВИКОРИСТОВУЄ sap_deviation як feature:
-# features = [avg_temp, avg_vcap, avg_z, sap_deviation, max_acoustic]
-# Але heuristic fallback — ні.
+# ML-шлях незмінний: sap_deviation (abs) лишається фічею моделі
+# [avg_temp, avg_vcap, avg_z, sap_deviation, max_acoustic].
 ```
 
 **Завдання Боєчка:** визначити медично обґрунтований поріг для `sap_deviation`, що відповідає «preclinical stress»:
@@ -229,9 +226,10 @@ end
   Медичний "прихований стрес" = підвищений кортизол при нормальному ЧСС
   Silken Net "прихований стрес" = sap_deviation < -15% при bio_status = homeostasis
 
-Пропонована доробка InsightGeneratorService (після валідації Боєчком):
-  base_stress += 0.25 if sap_deviation < -0.15  # preclinical zone (Боєчко)
-  base_stress += 0.40 if sap_deviation < -0.25  # stress onset (Боєчко)
+Калібрування (після валідації Боєчком) → ENV для sap_stress_contribution:
+  STRESS_SAP_LOW_THRESHOLD = 0.15   # preclinical zone (Боєчко) — частка нижче baseline
+  STRESS_SAP_WEIGHT        = 0.25   # внесок у stress (Боєчко)
+  # Багатотірний поріг (-0.15 preclinical / -0.25 onset) — майбутнє розширення sap_stress_calibration
   # Якщо sap_deviation > +0.30 → FRAUD_DEVIATION_THRESHOLD (вже є в коді)
 
 Новий insight_type: :preclinical_stress_detected
