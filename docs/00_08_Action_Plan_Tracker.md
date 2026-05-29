@@ -54,7 +54,7 @@
 
 ### 🔗 Заблоковано (чекає іншого)
 - `FW.2` **P0** — AES-128-CCM (backend-parser ✅; firmware emit + `CRYP_AES_CCM` verify → STM32 bench). Закриває ECB→CCM, MIC, `FW.23` OTA auth, `SEC.10` panic auth, `FW.29`
-- VPD confounder-gate → firmware VPD (`HW.32`) + ML-retrain + ground-truth калібрування (`08_02 §4`)
+- Multi-signal slashing de-risk (`00_01 §6.6`) — код ✅: VPD-gate + sap-term у `InsightGeneratorService` (inert, ENV-calibration-gated). Активація → ground-truth калібрування (`08_02 §4`) + ML-retrain (vpd-фіча) + firmware VPD (`HW.32`). 3-й прямий сигнал (acoustic) → TinyML unblock (`Run_Inference`, §03)
 - SLASH-1 deeper (B/insurance auto-route, penalty-формула) → DAO/founder
 
 ---
@@ -237,7 +237,7 @@
 
 #### HW.32 — BME280 environmental sensing + VPD confounder [ADR `02_01 §3.4`]
 - **P1** · 🤖+👤 · → `02_01 §3.4`, `07_02 §1.3`
-- BME280 (t°/RH/тиск, I2C за TPS22860) → VPD confounder (False-Slashing kill, `00_01 §6.5/§6.6`) + клімат-оракул (`07_01`). DCI-guard: VPD НЕ в Lorenz-Z. ✅ docs (02_01/00_01/08_02/07_02/02_03/07_01) + `03_01` SENSE+packet (byte 14 VPD-індекс) + TelemetryLog cols (structure.sql, recreate+seed). · [ ] 🤖 VPD confounder-gate (spec'd, calibration-pending `04_02`) · [ ] 👤 bench (I2C bring-up, gate-timing, VPD-калібрування) + PTFE-мембрана механіка (`02_02`)
+- BME280 (t°/RH/тиск, I2C за TPS22860) → VPD confounder (False-Slashing kill, `00_01 §6.5/§6.6`) + клімат-оракул (`07_01`). DCI-guard: VPD НЕ в Lorenz-Z. ✅ docs (02_01/00_01/08_02/07_02/02_03/07_01) + `03_01` SENSE+packet (byte 14 VPD-індекс) + TelemetryLog cols (structure.sql, recreate+seed). · [x] 🤖 VPD-gate + sap-term реалізовано (inert, ENV-calibration-gated; `04_02` / `00_01 §6.6`; активація `08_02 §4`) · [ ] 👤 bench (I2C bring-up, gate-timing, VPD-калібрування) + PTFE-мембрана механіка (`02_02`)
 
 #### HW.1 — nTop model → SLM+HIP factory (Anode Zone 1)
 - **P0** · 👤 · → `01_01`, `01_02 §1.7` · ✅ ліцензія отримана
