@@ -54,7 +54,7 @@
 
 ### 🔗 Заблоковано (чекає іншого)
 - `FW.2` **P0** — AES-128-CCM (backend-parser ✅; firmware emit + `CRYP_AES_CCM` verify → STM32 bench). Закриває ECB→CCM, MIC, `FW.23` OTA auth, `SEC.10` panic auth, `FW.29`
-- VPD confounder-gate → firmware VPD (`HW.20`) + ML-retrain + ground-truth калібрування (`08_02 §4`)
+- VPD confounder-gate → firmware VPD (`HW.32`) + ML-retrain + ground-truth калібрування (`08_02 §4`)
 - SLASH-1 deeper (B/insurance auto-route, penalty-формула) → DAO/founder
 
 ---
@@ -376,7 +376,7 @@
 
 > ⚠️ Потребують фізичної роботи в лабораторії та/або з підрядниками.
 
-#### HW.20 — BME280 environmental sensing + VPD confounder [ADR `02_01 §3.4`]
+#### HW.32 — BME280 environmental sensing + VPD confounder [ADR `02_01 §3.4`]
 - **P1** | `02_01 §3.4` / `07_02 §1.3` | **Складність: L** | 🤖 (docs/firmware/backend specs) + 👤 (bench + механіка)
 - **Опис:** BME280 (t°/RH/тиск, I2C, за TPS22860-гейтом) → **VPD** як прямий фізіологічний confounder (вбивця False Slashing, `00_01 §6.5/§6.6`) + гіперлокальний клімат-оракул (NaaS-дохід, `07_01`). 🚨 DCI-guard: VPD **НЕ** входить у Lorenz-Z. Поправки до вихідної нотатки: BME280 (не BME680); MCU sleep 300нА (не 2.1µA); gated draw ≈8нА.
 - ✅ Зроблено (docs): `02_01 §3.4` ADR + §7.2 promote + §2 + §3.2; `00_01 §6.6`; `08_02 §4` (collection + VPD-confounder); `07_02 §1.3` (+$2.60 add-on); `02_03 §9.6` (gated energy); `07_01` (climate data-product).
