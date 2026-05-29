@@ -12,46 +12,31 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 3 — Тризонна архітектура затверджена; в nTop генерація 3D-моделі анодної секції
-- **Пов'язані модулі:**
-  - Металургія → [`01_02_Ti_6Al_4V_Metallurgy_and_DMLS`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)
-  - EBFC → [`01_03_EBFC_Enzymatic_Bio_Fuel_Cell`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)
-  - CODIT та хірургічне встановлення → [`01_04_CODIT_and_Xylemointegration`](01_04_CODIT_and_Xylemointegration)
-  - Pogo Pin інтерфейс → [`02_02_Blind_Mate_Pogo_Pin_Interface`](02_02_Blind_Mate_Pogo_Pin_Interface)
+- **Поточний TRL:** TRL 3 — тризонна архітектура затверджена; nTop-генерація 3D-моделі анодної секції. Відкриті: press-fit FEA/aging (HW.3), staged validation (HW.24), PEEK mechanical-lock (HW.26) → [`00_08`](00_08_Action_Plan_Tracker).
 
 ---
 
-## 🛑 Блокери
+## 🔗 Cross-references
 
-### 🔴 BLOCKER-1: Розрахунок Допусків Press-Fit з Урахуванням ΔCTE
+| Ресурс | Опис |
+|--------|------|
+| [01_02_Ti_6Al_4V_Metallurgy_and_DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Металургія Ti-6Al-4V, DMLS/SLM+HIP |
+| [01_03_EBFC_Enzymatic_Bio_Fuel_Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC біопаливний елемент |
+| [01_04_CODIT_and_Xylemointegration](01_04_CODIT_and_Xylemointegration) | CODIT та хірургічне встановлення |
+| [02_02_Blind_Mate_Pogo_Pin_Interface](02_02_Blind_Mate_Pogo_Pin_Interface) | Pogo Pin інтерфейс (сліпе сполучення) |
+| [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | Ti-coin протокол + синтетичний ксилемний сік (Мінаєв/Гусак, §2) |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.3 FEA/aging, HW.24 staged validation, HW.26 PEEK mechanical-lock |
 
-**Необхідна дія:** ✅ **Partially closed (2026-05-27).** H7/s6 interference window розраховано аналітично (script 51): min interference 3 µm (assembly) → effective -4.7 µm at +40°C (loosening!) → **annular barbs MANDATORY** (confirms BLOCKER-3). Max hoop stress at -30°C: 33 MPa ≪ 100 MPa yield (safe). Lamé thermal stress (script 50): safety 9.9×. **Залишається:** FEA barb stress concentration + ANSYS LS-DYNA visco-elastic Prony series creep simulation.
+## 📑 Зміст
 
-**Блокує:** FEA barb detail → TRL 4.
-
-### 🔴 BLOCKER-2: Staged Validation Gate
-
-**Необхідна дія:** До замовлення повноцінних DMLS-анкерів виконати поетапне прототипування: (1) 5 SLA-макетів для перевірки form & fit; (2) 10 Ti-«монет» для in vitro біохімії в синтетичному ксилемному соку (cм. [`08_01`](08_01_University_R_and_D_Protocols) Протокол «Quantum-Sap» + Ti-coin in vitro). Тільки після отримання стабільних мілівольт переходимо до повноцінного гіроїдного анкера. Деталі — §6.
-
-**Блокує:** Передчасне замовлення 100 шт. DMLS — TRL 4 gate.
-
-### 🔴 BLOCKER-3: Аксіальне Утримання PEEK-Втулки (Mechanical Lock)
-
-**Статус:** Відкрито. Critical (виявлено архітектурною рецензією 2026-05-16; механіку уточнено 2026-05-28). Без вирішення — ризик **аксіального роз'єднання** через 5–10 років.
-
-**Суть проблеми (виправлена механіка):** press-fit — це стан **фіксованої деформації (constant strain)**, тож PEEK зазнає **релаксації напружень (stress relaxation)**, а НЕ повзучості (creep) зі «зникненням геометрії». Контактний тиск релаксує до **напівкристалічного плато ~22.6 MPa** (script 50, не до нуля) — цього **достатньо** для радіальної герметизації Ti-PEEK інтерфейсу. **Тобто радіальне ущільнення НЕ під загрозою.** Реальні ризики — **аксіальні / зсувні**:
-
-- **+40°C: ефективний натяг стає від'ємним** (script 51: −4.7 µm — PEEK розширюється сильніше за Ti) → влітку фрикційне утримання слабшає
-- Під час сильного шторму капсула (Деталь 4 Радом) з електронікою може **вирвати катодний фланець із PEEK-втулки аксіально** — катастрофа
-- Вітровий крутний момент → torsional creep шестигранного з'єднання
-
-> ⚠️ **Важливо (виправлення):** герметизація Ti-PEEK забезпечується **самим контактним тиском press-fit** (релаксований P_c 22.6 MPa ≫ тиск соку), а НЕ O-ring'ом. O-ring сидить в окремій канавці на нижньому боці фланця і ущільнює **фланець↔кора** (зовнішнє середовище), а не інтерфейс Ti-PEEK (§1 Zone 3, крок 8 §3). Раніше тут хибно зв'язувалися релаксація PEEK і робота O-ring — це різні ущільнення.
-
-**🛠 Mandatory fix — Mechanical Lock (суто аксіальне утримання):** деталі — §4.3. Стисло: кільцеві **barbs / micro-keys / canavki** на торцевих стінках Zone 1/Zone 3 + DIN 471 retaining rings утримують деталі від **аксіального висмикування та провертання** (шторм, +40°C loosening). Вони **не герметизують** — ущільнення робить залишковий контактний тиск + O-ring (фланець↔кора).
-
-**Блокує:** Long-term reliability (заявлений термін служби 20+ років), TRL 7→8 gate, заявка на медичну сертифікацію (якщо ця технологія перейде у CHMA biomedical, `08_06`).
-
-> **📝 Фаски (Legacy notes):** При press-fit збірці Ti↔PEEK додати мінімальні фаски (радіуси округлення R ≥ 0.2 мм) на кутах титанових деталей. Без фасок гострі кути Ti-6Al-4V створюють пікові концентрації напружень у PEEK (K_t ≈ 2–3×), що при динамічних навантаженнях (вітер) спричиняє мікротріщини.
+<!-- TOC:AUTO:START -->
+- [1. Тризонна Анатомія Анкера](#-1-тризонна-анатомія-анкера)
+- [2. Інтерфейс Pogo Pin (Сліпе Сполучення)](#-2-інтерфейс-pogo-pin-сліпе-сполучення)
+- [3. Заводська Збірка](#-3-заводська-збірка)
+- [4. Механіка Інтерференційної Посадки](#-4-механіка-інтерференційної-посадки)
+- [5. Ізоеластичність та Топологія TPMS-Гіроїда (Анод)](#-5-ізоеластичність-та-топологія-tpms-гіроїда-анод)
+- [6. Виробничий План та Staged Validation](#-6-виробничий-план-та-staged-validation)
+<!-- TOC:AUTO:END -->
 
 ---
 
