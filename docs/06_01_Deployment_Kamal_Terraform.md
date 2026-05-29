@@ -80,11 +80,9 @@ ssh_source_ranges = ["<your-ip>/32"]
 
 ---
 
-### 🟢 INFO: `deploy-production.yml` workflow не знайдено
+### ✅ INFO: `deploy-production.yml` — наявний
 
-У репо є тільки `.github/workflows/deploy.yml` (для Canopy). Production деплой потребує окремого `deploy-production.yml`.
-
-**Дія:** Створити аналогічно `deploy.yml` з тригером `on: release: types: [published]` та деплоєм без `-d canopy`.
+`.github/workflows/deploy-production.yml` **існує** (trigger `on: release: [published]` + `workflow_dispatch`): `verify-secrets` (SEC.11 — assert `PROVISIONING_MASTER_KEY` ≥64 hex + `KAMAL_MASTER_KEY`) → `terraform apply` → `kamal deploy` (production, без `-d canopy`, `RELEASE_VERSION` = release tag). Canopy деплоїться через `deploy.yml` (`-d canopy`). _(2026-05-29: попередня нотатка «не знайдено» була застарілою — drift виправлено.)_
 
 ---
 

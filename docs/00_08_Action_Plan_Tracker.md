@@ -115,10 +115,6 @@
 - **P1** · 👤+🤖 · → `06_02 §BLOCKER-5`
 - ✅ runbook: Опція A (Cloudflare HTTPS + direct UDP CoAP) рекоменд. + pre-flight + fallback B. Cloudflare НЕ proxies UDP → CoAP потребує direct ingress. · [ ] 👤 прийняти рішення (рекоменд. A) · [ ] 🤖 якщо Akash hostname — automation у `terraform/`
 
-#### INF.9 — deploy-production.yml workflow (відсутній)
-- **P2** · 🤖 · → `06_01 §INFO`
-- 🟡 GAP (06-review 2026-05-29): є лише `.github/workflows/deploy.yml` (Canopy). Production-деплой workflow відсутній. · [ ] 🤖 створити `deploy-production.yml` (trigger `on: release: types: [published]`, деплой без `-d canopy`) за зразком `deploy.yml`
-
 #### S4.3 — Akash SDL secrets
 - **P3** · 👤 · → `06_02`
 - `REQUIRED_SECRET_NOT_SET` для 4 крит. змінних. · [ ] 👤 заповнити в `deploy/akash/deploy.yaml` → верифікувати startup
