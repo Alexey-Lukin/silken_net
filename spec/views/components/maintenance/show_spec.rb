@@ -280,4 +280,46 @@ RSpec.describe Maintenance::Show do
       end
     end
   end
+
+  describe "GPS drift — close range (< 50 m) [coverage]" do
+    let(:tree_with_coords) do
+      t = mock_maintainable
+      t.define_singleton_method(:latitude) { 49.4285 }
+      t.define_singleton_method(:longitude) { 32.0620 }
+      t
+    end
+
+    it "renders the close-range drift value (emerald branch)" do
+      allow(SilkenNet::GeoUtils).to receive(:haversine_distance_m).and_return(30.0)
+      rec = mock_record(latitude: 49.4285, longitude: 32.0620, maintainable: tree_with_coords)
+      html = render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
+      expect(html).to include("30 m")
+    end
+  end
+
+  describe "GPS drift-check guards [coverage]" do
+    it "skips the drift calc when the maintainable is not a Tree" do
+      expect(SilkenNet::GeoUtils).not_to receive(:haversine_distance_m)
+      gw = mock_maintainable
+      gw.define_singleton_method(:latitude) { 49.0 }
+      gw.define_singleton_method(:longitude) { 32.0 }
+      rec = mock_record(latitude: 49.0, longitude: 32.0, maintainable_type: "Gateway", maintainable: gw)
+      render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
+    end
+
+    it "skips the drift calc when the Tree has no coordinates" do
+      expect(SilkenNet::GeoUtils).not_to receive(:haversine_distance_m)
+      bare = mock_maintainable # OpenStruct → latitude/longitude return nil
+      rec = mock_record(latitude: 49.0, longitude: 32.0, maintainable_type: "Tree", maintainable: bare)
+      render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
+    end
+  end
+
+  describe "action badge fallback [coverage]" do
+    it "uses the gray default color for an unknown action_type" do
+      rec = mock_record(action_type: "calibration")
+      html = render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
+      expect(html).to include("border-gray-600 text-gray-600")
+    end
+  end
 end
