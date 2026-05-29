@@ -9,13 +9,19 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 — Фази 1–7 повністю реалізовані та живуть у коді.
-- **Пов'язані модулі:**
-  - DB-таблиці / моделі → [`04_01_Data_Models_and_Entities`](04_01_Data_Models_and_Entities) § 7b
-  - Сервіси / воркери → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
-  - REST API `/api/v1/codex/*` → [`04_03_REST_API_v1_Reference`](04_03_REST_API_v1_Reference)
-  - Phlex-компоненти → [`04_04_Phlex_UI_and_Tailwind`](04_04_Phlex_UI_and_Tailwind)
+- **Відкрите:** Phase 6+ deferred робота (§3) → [`00_08`](00_08_Action_Plan_Tracker).
 
 ---
+
+## 🔗 Cross-references
+
+| Ресурс | Опис |
+|--------|------|
+| [04_01_Data_Models_and_Entities](04_01_Data_Models_and_Entities) | DB-таблиці / моделі (§7b) |
+| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Сервіси / воркери (Codex-підрозділи) |
+| [04_03_REST_API_v1_Reference](04_03_REST_API_v1_Reference) | REST API `/api/v1/codex/*` (§4) |
+| [04_04_Phlex_UI_and_Tailwind](04_04_Phlex_UI_and_Tailwind) | Phlex-компоненти (§6.4, §8.1) |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | Open backlog (Phase 6+ deferred) |
 
 > **Примітка (Phase 8 — Stimulus-аудит + баг-фікси + REST/CoC рефактор):** Фази 1–7 — **DONE**, живуть у коді.
 > SSOT реалізації переніс у канонічні docs:
@@ -31,6 +37,18 @@
 > Тут залишається **тільки** те, чого *ще немає* в коді: філософія дизайну
 > (щоб майбутні мейнтейнери розуміли *чому* схема виглядає саме так),
 > реєстр формальних ADR, та відкладена робота Phase 6+.
+
+---
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [1. Навіщо існує Шар Лору](#1-навіщо-існує-шар-лору)
+- [2. Architecture Decision Records (ADR-CDX-1 … ADR-CDX-7)](#2-architecture-decision-records-adr-cdx-1--adr-cdx-7)
+- [3. Відкрита робота (Phase 6+ — ще не в коді)](#3-відкрита-робота-phase-6--ще-не-в-коді)
+- [4. Quality Gates (мають залишатися зеленими)](#4-quality-gates-мають-залишатися-зеленими)
+- [5. Трекер (компактний)](#5-трекер-компактний)
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -197,7 +215,7 @@ TRL 8) **буде** вимагати справжнього Batch callback — �
 
 | Gate | Де | Власник |
 |---|---|---|
-| 300+ Codex specs (`spec/{models,services,policies,requests/api/v1,views/components,workers,blueprints}/codex/**`) | `bundle exec rspec` | Автор фази |
+| Codex specs зелені (`spec/{models,services,policies,requests/api/v1,views/components,workers,blueprints}/codex/**`) | `bundle exec rspec` | Автор фази |
 | `bundle exec rubocop` 0 offenses на `app/**/codex/**`, `spec/**/codex/**` | CI | Автор фази |
 | Brakeman 0 warnings на `app/controllers/api/v1/codex/**` (`citable_type` allow-list у `Codex::CitationsController::CITABLE_CLASS_MAP`) | CI | Автор фази |
 | `Codex::Citation.bulk_for(targets)` використано в кожному collection view, що рендерить strip (без per-row N+1) | Code review | Автор фази |
@@ -207,18 +225,18 @@ TRL 8) **буде** вимагати справжнього Batch callback — �
 
 ## 5. Трекер (компактний)
 
-| Фаза | Статус | Кількість спеків | Нотатки |
-|---|---|---|---|
-| 1 — Foundation 🌱 (Realms, Nodes, atlas read-only) | ✅ done | ~95 | seeds: 4 realms + 79 nodes |
-| 2 — Community 💬 (Comments, Attunements) | ✅ done | ~85 | soft-hide модерація |
-| 3 — Identity 🛡 (Fractions, Picker, ProfileBadge) | ✅ done | ~70 | 7-денний cooldown |
-| 4 — Battle ⚔ (Pair selector, Vote recorder, Elo) | ✅ done | ~80 | `codex_matches` RANGE-partitioned |
-| 5 — Discovery 🔓 (Engine + 5 адаптерів + Presence) | ✅ done | ~75 | DAO-tunable правила |
-| 6 — Cross-domain stitch 🪡 (Citations, Admin CRUD, +3 адаптери) | ✅ done | ~45 | Stimulus: 2 залишено, 3 видалено (§ 3.1) |
-| 7 — PR cleanup pass | ✅ done | — | migration squash, N+1 fix, citation `polymorphic_type_for` |
-| 8 — Stimulus-аудит + баг-фікси | ✅ done | — | EloMath `\|\|`, Redis GETDEL, PII, TOCTOU fraction, nil-safe audit |
-| 8a — REST/CoC рефактор | ✅ done | — | `BattleController` → `MatchesController#new/#create`; `destroy_me` → `destroy`; `me` → `index`/`show`; Phlex `Codex::Battle::Arena` UI-назва лишилась |
-| 8b — Onboarding wizard + Wiki/README | ✅ done | +6 (`Codex::Fractions::OnboardingWizard`) | First-login банер у `DashboardLayout`, Lore Layer one-liner у `README.md`, `04_05` посилання у `00_00_SSOT_Index` (Модуль 04) |
+| Фаза | Статус | Нотатки |
+|---|---|---|
+| 1 — Foundation 🌱 (Realms, Nodes, atlas read-only) | ✅ done | seeds: 4 realms + 79 nodes |
+| 2 — Community 💬 (Comments, Attunements) | ✅ done | soft-hide модерація |
+| 3 — Identity 🛡 (Fractions, Picker, ProfileBadge) | ✅ done | 7-денний cooldown |
+| 4 — Battle ⚔ (Pair selector, Vote recorder, Elo) | ✅ done | `codex_matches` RANGE-partitioned |
+| 5 — Discovery 🔓 (Engine + 5 адаптерів + Presence) | ✅ done | DAO-tunable правила |
+| 6 — Cross-domain stitch 🪡 (Citations, Admin CRUD, +3 адаптери) | ✅ done | Stimulus: 2 залишено, 3 видалено (§ 3.1) |
+| 7 — PR cleanup pass | ✅ done | migration squash, N+1 fix, citation `polymorphic_type_for` |
+| 8 — Stimulus-аудит + баг-фікси | ✅ done | EloMath `\|\|`, Redis GETDEL, PII, TOCTOU fraction, nil-safe audit |
+| 8a — REST/CoC рефактор | ✅ done | `BattleController` → `MatchesController#new/#create`; `destroy_me` → `destroy`; `me` → `index`/`show`; Phlex `Codex::Battle::Arena` UI-назва лишилась |
+| 8b — Onboarding wizard + Wiki/README | ✅ done | First-login банер у `DashboardLayout`, Lore Layer one-liner у `README.md`, `04_05` посилання у `00_00_SSOT_Index` (Модуль 04) |
 
 > Історія посесійних ADR-нотаток для Phases 1–6 зберігається в git log
 > `docs/04_05_Codex_Lore_Module` (`git log -p --follow`) та в merged PR.
