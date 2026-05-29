@@ -309,6 +309,7 @@
 - [ ] 👤 Запуск 12-тижневого тесту
 - [ ] 👤 ICP-MS аналіз: Ti < 0.1 µg/cm², V < 0.02 µg/cm²
 - [ ] 👤 EIS degradation < 50%
+- [ ] 👤 **V-release Zone 1 mitigation** (відкритий конфлікт, `01_02 §2.5`): голий Ti-6Al-4V ≈ 1.12 µg/cm²/yr V (56× over target), ZnO не можна на Zone 1 → in-vitro тест chitosan-matrix бар'єру (b) ± опція V-free сплав Ti-6Al-7Nb / Ti-5Al-2.5Fe (a)
 
 ##### Підблокер HW.3.IS — In Silico FEA Aging (Stage 0, mechanics) — `00_04 §4a` Trek C
 > **Стратегія:** Симуляція напружень Ti+PEEK при extreme температурах ще ДО фізичного 12-week теста. Використовуються рівняння Ляме для thick-walled cylinder (Zone 1 ↔ Zone 2 ↔ Zone 3 коаксіальний press-fit). Закриває (a) механічну цілісність PEEK creep на 20-річному horizon'і, (b) сезонні термоциклічні навантаження.
