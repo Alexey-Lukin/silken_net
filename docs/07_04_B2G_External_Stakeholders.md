@@ -33,6 +33,38 @@
 
 ---
 
+## 🔗 Cross-references
+
+| Ресурс | Зв'язок |
+|---|---|
+| [04_07_Cultural_Layer_External_Stakeholders](04_07_Cultural_Layer_External_Stakeholders) | Cultural Layer (разом — Social API Registry) |
+| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка, CBAM offset |
+| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | B2B/B2C контракти, SLA (§2) |
+| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Unit economics за tier |
+| [07_03_Grant_Applications_Tracker](07_03_Grant_Applications_Tracker) | Horizon Europe pipeline |
+| [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | §1.4 Кирилюк — ректорський парасоль |
+| [08_05_CHIPB_Fire_Safety_Integration](08_05_CHIPB_Fire_Safety_Integration) | ДСНС partner cluster |
+| [08_07_SEU_Economics_and_Legal_Integration](08_07_SEU_Economics_and_Legal_Integration) | §1.3 Аблязов — legal wrapper |
+| `08_03` / `08_04` / `08_06` | глибокі академ./stakeholder профілі (SSOT — тут лише cross-link) |
+| `02_05` / `03_04` | LoRa висотні точки / Lorenz stress-аналіз |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | § External Stakeholders (UNI.x, BIZ.x) |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [Архітектурні правила (фіксоване)](#-архітектурні-правила-фіксоване)
+- [1. Чотиритирна архітектура](#1-чотиритирна-архітектура)
+- [2. Tier 1 — Legal & Land Shield (Без цього проєкт не може існувати)](#2-tier-1--legal--land-shield-без-цього-проєкт-не-може-існувати)
+- [3. Tier 2 — Infrastructure & Field Operations](#3-tier-2--infrastructure--field-operations)
+- [4. Tier 3 — Certification & Metrology](#4-tier-3--certification--metrology)
+- [5. Tier 4 — B2B Customers (Revenue Side)](#5-tier-4--b2b-customers-revenue-side)
+- [6. Tier 5 — Social Inclusion (EU Grants Pathway)](#6-tier-5--social-inclusion-eu-grants-pathway)
+- [7. Tier 6 — Низькопріоритетні / Опціональні залежності](#7-tier-6--низькопріоритетні--опціональні-залежності)
+- [8. Принципи Соціальної Архітектури](#8-принципи-соціальної-архітектури)
+<!-- TOC:AUTO:END -->
+
+---
+
 ## 🛑 Архітектурні правила (фіксоване)
 
 1. **Без B2G-фічей у hot-path:** запити з urgent priority (наприклад,
@@ -502,24 +534,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
 
 ---
 
-## 8. Cross-References
-
-- [`04_07`](04_07_Cultural_Layer_External_Stakeholders) — Cultural Layer
-  (доповнюючий кластер; разом утворюють Social API Registry).
-- [`05_03`](05_03_Tokenomics_SCC_and_SFC) — токеноміка, CBAM offset.
-- [`07_01`](07_01_Nature_as_a_Service_Contracts) — NaaS contract tiers.
-- [`07_02`](07_02_Unit_Economics_and_BOM) — unit economics за tier.
-- [`07_03`](07_03_Grant_Applications_Tracker) — Horizon Europe pipeline.
-- [`08_01 §1.4 Кирилюк`](08_01_University_R_and_D_Protocols) — ректорський
-  парасоль для legal/economic outreach.
-- [`08_05`](08_05_CHIPB_Fire_Safety_Integration) — ДСНС partner cluster.
-- [`08_07 §1.3 Аблязов`](08_07_SEU_Economics_and_Legal_Integration) —
-  legal wrapper координація.
-- [`00_08`](00_08_Action_Plan_Tracker) § External Stakeholders — outreach tracker.
-
----
-
-## 9. Принципи Соціальної Архітектури
+## 8. Принципи Соціальної Архітектури
 
 1. **People as External APIs:** Кожен стейкхолдер описаний інтерфейсами,
    не сюжетами. Це не есей про "як було б добре дружити з лісівником",
@@ -530,14 +545,3 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
 4. **Single Source of Truth для зв'язків:** Якщо особа вже описана глибоко
    в 08_*, тут — тільки cross-link, не дубль профілю. Дубль профілю
    зруйнує SSOT.
-
----
-
-## 🔗 Cross-references
-
-| Файл / Документ | Зв'язок |
-|---|---|
-| `07_01_Nature_as_a_Service_Contracts` | B2B/B2C контракти, SLA (§2) |
-| `08_03` / `08_04` / `08_05` / `08_06` / `08_07` | глибокі stakeholder/академ. профілі (SSOT — тут лише cross-link) |
-| `02_05` / `03_04` | LoRa висотні точки / Lorenz stress-аналіз |
-| `00_08_Action_Plan_Tracker` | UNI.x, BIZ.x stakeholder items |
