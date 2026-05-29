@@ -768,43 +768,28 @@ DOC.9 — потребує лабораторного вимірювання TX-
 ## §06 · Deploy / Observability / Ops (OPS)
 
 #### OPS.1 — TRL Auto-Advancement GitHub Action
-- **Джерело:** `00_07` | **Складність: M**
-- **Опис:** `trl_sync.yml` — GitHub Action що автоматично переміщує картки на Project Board при закритті issues з TRL-labels. Описаний як "на стадії впровадження" (TRL 7), але не реалізований. Потребує `secrets.PROJECT_PAT` з GraphQL project board permissions
-- ✅ Зроблено: `.github/workflows/trl_sync.yml` (GraphQL Projects v2, user+org fallback; TRL≥5 gate per OPS.9). Канон: `00_07`.
-- [ ] 👤 Створити `PROJECT_PAT` secret з project:write scope
-- [ ] 👤 Тестування з тестовими issues
+- **P1** · 👤 · → `00_07`
+- ✅ `trl_sync.yml` (GraphQL Projects v2, TRL≥5 gate). · [ ] 👤 створити `PROJECT_PAT` (project:write) + тест з issues
 
 #### OPS.2 — SSOT Integrity Guard
-- **Джерело:** `00_07` | **Складність: M**
-- **Опис:** GitHub Action що блокує merge PRs якщо зміни в `app/models/` або `firmware/` не супроводжуються відповідними оновленнями в `docs/` або Wiki. Запобігає context drift між кодом та документацією
-- ✅ Зроблено: `.github/workflows/ssot_guard.yml` (перевіряє app/models, firmware/*, contracts, app/services; bypass через `type:*` labels — `refactor`/`bugfix` НЕ обходять, OPS.9). Канон: `00_07`.
-- [ ] 👤 Налаштувати як required check на `main` branch
+- **P1** · 👤 · → `00_07`
+- ✅ `ssot_guard.yml` (app/models·firmware·contracts·services; `type:*` bypass). · [ ] 👤 зробити required check на `main`
 
 #### OPS.3 — R&D Portfolio Management: Shape Up + cluster routing
-- **Джерело:** `08_01` §1.1-1.3, `08_02` §1, `08_03`, `00_05` | **Складність: L** | **🤖 Методологія + Док**
-- **Опис:** 25+ паралельних R&D-задач розподілені між 8+ науковцями (ChNU FOTIUS + ChDTU + ChIPB + ChMA + СЄУ). Поточно — ad-hoc розподіл. Запропоновано: 4-кластерна структура (A: Hardware/EBFC, B: Verification/Math, C: Scaling/Cloud, D: Compliance/Legal) + Shape Up 6-week cycles + Convolution Method для скорочення PN-state explosion 10-100×
-- ✅ Зроблено: Shape Up cycle template (`00_05 §5`) + Projects V2 kanban-mapping (`00_07 §6`: R&D Cluster/Shape Up Stage/Cycle fields + labels + auto-routing). Лишається 👤 перший betting cycle після UNI.1/8. Канон: `00_05 §5`, `00_07 §6`.
-- [ ] 👤 Перший betting cycle після UNI.1 (декан) та UNI.8 (СЄУ)
+- **P1** · 👤 · → `00_05 §5`, `00_07 §6`
+- ✅ Shape Up template + Projects V2 kanban-mapping (R&D Cluster/Stage/Cycle + auto-routing; 4 кластери A/B/C/D). · [ ] 👤 перший betting cycle після UNI.1/UNI.8
 
 #### OPS.4 — GitHub Projects V2: семестрова синхронізація з ChNU/ChDTU
-- **Джерело:** `00_07`, `08_01` | **Складність: M** | **🤖 Код**
-- **Опис:** TRL-матриця прив'язана до seasons (Q1/Q2/Q3/Q4), але навчальний рік ChNU/ChDTU має семестри (вересень-грудень, лютий-травень). Без mapping — milestone-deadlines не синхронізовані з академічним календарем (наприклад, фінальні захисти магістерських у червні)
-- ✅ Зроблено: семестр-мапінг (`00_07 §5`: Fall/Spring таблиці + TRL milestones + 15.VI deadline) + `trl_sync.yml` стемпить `Academic Semester` з `closed_at` (graceful no-op). Канон: `00_07 §5`.
-- [ ] 👤 Узгодити календар з 8 науковцями ФОТІУС (UNI.2 — 8 зустрічей)
-- [ ] 👤 Створити single-select field `Academic Semester` у Projects V2 + опції `Fall {Y}-{Y+1}` / `Spring {Y-1}-{Y}` на 3-5 років наперед
+- **P2** · 👤 · → `00_07 §5`
+- ✅ семестр-мапінг (Fall/Spring + TRL milestones + 15.VI; `trl_sync.yml` стемпить `Academic Semester`). · [ ] 👤 узгодити календар з ФОТІУС (UNI.2) + створити `Academic Semester` single-select field у Projects V2
 
 #### OPS.6 — Bootstrap scripts для GitHub Projects V2 + IaC initial sync
-- **Джерело:** `00_07` §1.2 + §6 | **Пріоритет: P2** | **Складність: M** | **🤖 Код**
-- **Опис:** `00_07` посилається на два планований скрипти, яких **не існує**: (1) `bin/setup_github_project.sh` — створює Projects V2 fields (`Current TRL`, `Target TRL`, `Assigned Agent`, `Module`, `Appetite`, `R&D Cluster`, `Shape Up Stage`, `Cycle`, `Academic Semester`) через `gh api graphql` (gh CLI не підтримує `project add-field` повністю); (2) `bin/bootstrap_github.sh` — orchestrate: label sync (через push, що тригерить `labels_sync.yml`) → fields create → first milestone (`Cycle 2026.QN`) → baseline shaping docs. Без них нові ВНЗ-партнери або deploy у форкований репозиторій вимагає ручного клікання у GitHub UI, що суперечить IaC філософії `00_07`.
-- ✅ Зроблено: `lib/github_bootstrap.rb` (`GithubBootstrap::FIELDS` SSOT — 11 полів, TRL 1-9 + Readiness Horizon; idempotent GraphQL diff; rake `github:project_fields`/`bootstrap`; 16 specs). Канон: `00_07`, `00_04 §1`, `00_06 §7`.
-- [ ] 👤 Запустити `bin/bootstrap_github.sh` проти живого Projects V2 при першому setup'і / в новому fork'у
+- **P2** · 👤 · → `00_07 §1.2/§6`
+- ✅ `lib/github_bootstrap.rb` (`FIELDS` SSOT 11 полів, idempotent GraphQL diff, rake `github:bootstrap`, 16 specs). · [ ] 👤 запустити `bin/bootstrap_github.sh` проти живого Projects V2 при setup/fork
 
 #### OPS.5 — EU DMLS quotes від 2-3 backup підрядників
-- **Джерело:** `07_02` §8.1.1 | **Складність: S** | **🔧 Операційна**
-- **Опис:** BIZ.6 ✅ ідентифікував 4 EU кандидати (3D Lab PL, Materialise BE, Sauber CH/Lithoz AT, TRUMPF DE). Наступний крок — отримати quotes на пробну партію 10 шт. для benchmarking + frame agreement letter
-- [ ] 👤 Запит quotes у 3D Lab PL (priority 1) + Materialise BE (priority 2)
-- [ ] 👤 Заповнити порівняльну таблицю у `07_02` §8.1.1
-- [ ] 👤 Letter of Intent / Frame Agreement з top vendor
+- **P1** · 👤 · → `07_02 §8.1.1`
+- BIZ.6 ✅ ідентифікував 4 EU кандидати (3D Lab PL, Materialise BE, Sauber/Lithoz, TRUMPF). · [ ] 👤 quotes у 3D Lab PL + Materialise BE → порівняльна таблиця → LoI/Frame Agreement з top vendor
 
 ---
 
