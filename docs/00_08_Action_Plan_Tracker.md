@@ -772,83 +772,49 @@ DOC.9 — потребує лабораторного вимірювання TX-
 
 ## §07 · Юридичні / Бізнес
 
-#### BIZ.1 — 1 SCC = ? kg CO₂ ✅
-- **Джерело:** `07_01`
-- **Опис:** CO₂ еквівалент для 1 SCC — визначено: **2000 SCC = 1 tCO₂ (1 SCC = 0.5 кг CO₂)**
-- ✅ Зроблено (2026-04-23): carbon coefficient per-species. Канон: `07_01`, `05_03`.
-- [ ] 👤 Сертифікація методології (Verra VCS / Gold Standard) — потребує залучення методолога (Post-TRL 7)
+#### BIZ.1 — 1 SCC = ? kg CO₂
+- **P2** · 👤 · → `07_01`, `05_03`
+- ✅ 2000 SCC = 1 tCO₂ (0.5 кг/SCC), carbon coefficient per-species. · [ ] 👤 сертифікація методології (Verra/Gold Standard, Post-TRL 7 → BIZ.9)
 
 #### BIZ.2 — B2B MSA (Master Service Agreement)
-- **Джерело:** `07_01`
-- **Академічний партнер:** СЄУ (Аблязов Д.Е., к.ю.н.) → [`08_07`](08_07_SEU_Economics_and_Legal_Integration) §1.3
-- [ ] 👤 Організувати юридичну консультацію з Аблязовим Д.Е. (СЄУ) — MiCA, ERC-3643, RWA
-- [ ] 👤 Створити юридичний шаблон MSA (Term Sheet + Carbon Credit Purchase Agreement)
-- [ ] 👤 Review з практикуючим юристом
+- **P1** · 👤 · → `07_01`, `08_07 §1.3`
+- Партнер: СЄУ (Аблязов Д.Е., к.ю.н.). · [ ] 👤 юр-консультація (MiCA/ERC-3643/RWA) → MSA template (Term Sheet + Carbon Credit Purchase Agreement) → review практикуючим юристом
 
 #### BIZ.3 — B2C ToS / Privacy Policy
-- **Джерело:** `07_01`
-- [ ] 👤 Terms of Service draft
-- [ ] 👤 Privacy Policy (GDPR-compliant)
-- [ ] 👤 Cookie Policy
+- **P2** · 👤 · → `07_01`
+- [ ] 👤 ToS draft + Privacy Policy (GDPR) + Cookie Policy
 
 #### BIZ.5 — Patent application
-- **Джерело:** `08_03`
-- [ ] 👤 Engagement з патентним адвокатом
-- [ ] 👤 Патентна заявка на дизайн анкера
+- **P1** · 👤 · → `08_03`
+- [ ] 👤 engagement з патентним адвокатом → патентна заявка на дизайн анкера
 
 #### BIZ.6 — Supply chain war-zone risk mitigation
-- **Джерело:** `07_02` | **Пріоритет: P1**
-- **Опис:** DMLS manufacturing залежить від українських підрядників (Київ 3D Metal Tech, Дніпро ALT Ukraine, Черкаси SVS-ARTA) — зона активних бойових дій. Логістичні ризики, енергетичні перебої, мобілізація персоналу. Відсутній contingency plan з EU/US альтернативами
-- ✅ Зроблено: `07_02 §8.1.1` Contingency Plan EU Backup DMLS Hubs (4 кандидати: 3D Lab PL / Materialise BE / Sauber CH+Lithoz AT / TRUMPF DE; triggers; +~20% payback). Канон: `07_02 §8.1.1`.
-- [ ] 👤 Отримати quotes для порівняння вартості
+- **P1** · 👤 · → `07_02 §8.1.1`
+- ✅ Contingency Plan EU Backup DMLS Hubs (4 кандидати; triggers; +~20% payback) — UA-підрядники у зоні бойових дій. · [ ] 👤 отримати quotes для порівняння (→ OPS.5/BIZ.8)
 
 #### BIZ.8 — EU DMLS Frame Agreement (extension of BIZ.6)
-- **Джерело:** `07_02` §8.1.1 | **Пріоритет: P1**
-- **Опис:** BIZ.6 ✅ ідентифікував кандидатів. Наступний рівень — формальний frame agreement з sample part quotes для активації при war-zone disruption. Без цього contingency — лише на папері (~3 місяці lead-time на onboarding нового підрядника якщо буде emergency)
-- [ ] 👤 NDA + RFQ зі 3D Lab PL (priority 1)
-- [ ] 👤 Sample part order (10 шт.) для quality benchmark vs UA-вендорів
-- [ ] 👤 Frame Agreement: pricing locked at +20% premium з 30-day activation clause
+- **P1** · 👤 · → `07_02 §8.1.1`
+- [ ] 👤 NDA+RFQ зі 3D Lab PL → sample part order (10 шт) quality benchmark → Frame Agreement (+20% premium, 30-day activation)
 
 #### BIZ.9 — Незалежний carbon credit методолог (Verra/Gold Standard)
-- **Джерело:** `07_01` §3, `07_02` §7.3 | **Пріоритет: P2** (Post-TRL 7)
-- **Опис:** BIZ.1 ✅ визначив `2000 SCC = 1 tCO₂` через ProtocolParameters. Для конвертації SCC з utility token у сертифіковані kg CO₂ для institutional buyers (ESG, retiring) — потрібна **independent methodology audit** від акредитованого реєстра (Verra VCS / Gold Standard / Puro.earth)
-- [ ] 👤 Engagement акредитованого carbon methodologist (cost ~$50-100k)
-- [ ] 👤 Подача Project Description Document (PDD) у Verra
-- [ ] 🔗 Залежить від HW.3 (lab data Arrhenius) + UNI.6/UNI.7 (DFT + diffusion publications)
+- **P2** · 👤 · → `07_01 §3`, `07_02 §7.3`
+- Конвертація SCC utility-token → сертифіковані kg CO₂ для institutional buyers потребує independent methodology audit (Verra/Gold Standard/Puro.earth). · [ ] 👤 engagement methodologist (~$50-100k) → PDD у Verra · [ ] 🔗 залежить від HW.3 (Arrhenius) + UNI.6/7 (DFT+diffusion)
 
 #### BIZ.10 — Multi-party IP Contract + NDA framework
-- **Джерело:** `08_03`, `08_05`, `08_06`, `08_07` | **Пріоритет: P1**
-- **Опис:** 5-сторонній партнерський фреймворк ChNU + ChDTU + ChIPB + ChMA + СЄУ + Silken Net. Потребує: (1) bilateral NDA з кожною установою для preprint sharing, (2) шаблон IP-договору щодо спільного авторства Q1 публікацій, (3) патентні права на анкер-дизайн/EBFC-протокол, (4) clear royalty structure при комерціалізації
-- [ ] 👤 Залучити патентний повірений (Україна + EU)
-- [ ] 👤 Bilateral NDA з кожною з 5 установ (паралельно з UNI.4-14)
-- [ ] 👤 Master IP Framework Agreement (post-перших зустрічей)
-- [ ] 🔗 Залежить від UNI.1 (декан) + UNI.8 (СЄУ) + UNI.9 (ChDTU) + UNI.12 (ChIPB) + UNI.13 (ChMA)
+- **P1** · 👤 · → `08_03`, `08_05-07`
+- 5-сторонній фреймворк (ChNU+ChDTU+ChIPB+ChMA+СЄУ+SilkenNet): bilateral NDA, IP-договір спільного авторства, патентні права, royalty. · [ ] 👤 патентний повірений (UA+EU) → bilateral NDA × 5 → Master IP Framework Agreement · [ ] 🔗 після UNI.1/8/9/12/13
 
 #### BIZ.11 — RWA pilot реєстрація лісової ділянки через Polygon Hadron
-- **Джерело:** `07_01` BLOCKER-6 | **Пріоритет: P2**
-- **Опис:** Hadron (ERC-3643 KYC/Compliance) — обраний шлях для RWA tokenization. Потрібна пілотна реєстрація **однієї** реальної лісової ділянки з: (1) кадастровими документами, (2) незалежною оцінкою біомаси (LIDAR + ground truth), (3) Hadron compliance attestation
-- [ ] 👤 Знайти партнера-лісокористувача в Україні (post-war або Carpathian region)
-- [ ] 👤 Кадастровий експерт + biomass appraisal company
-- [ ] 🤖 Hadron integration spec: `Hadron::TokenizeForestPlotService` + KYC flow
-- [ ] 🔗 Залежить від BIZ.2 (MSA template)
+- **P2** · 👤+🤖 · → `07_01 §BLOCKER-6`
+- Hadron (ERC-3643) RWA-pilot: 1 ділянка з кадастром + biomass appraisal (LIDAR+ground) + Hadron compliance. · [ ] 👤 партнер-лісокористувач (post-war/Carpathian) + кадастр/biomass appraisal · [ ] 🤖 `Hadron::TokenizeForestPlotService` + KYC flow spec · [ ] 🔗 після BIZ.2 (MSA)
 
 #### 🌿 BIZ.12 — Horizon Europe CLUSTER 6 заявка (Biodiversity Monitoring, Mongabay pivot)
-- **Джерело:** `03_03` §10 + `08_03` Стаття 24a + E.59 | **Пріоритет: P1 (стратегічна заявка, post-publication)**
-- **Опис:** Horizon Europe CLUSTER 6 — Food, Bioeconomy, Natural Resources, Agriculture and Environment, тематика _Biodiversity Monitoring_ (бюджет однієї дії 2–6 М€, terms 36–48 місяців). Mongabay/Delgado pivot робить Silken Net природним кандидатом: єдиний планетарний D-MRV проєкт з безперервною micro-acoustic верифікацією біорізноманіття на on-tree IoT-сенсорах. Заявка прив'язана до моменту, коли Стаття 24a (`08_03`) приймається до Q1-журналу — це переводить заявку з категорії «концепт» у категорію «published research» (вирішальна різниця для Horizon evaluators)
-- [ ] 👤 Identify call topic (HORIZON-CL6-202X-BIODIV-* — щорічно оновлюється)
-- [ ] 👤 Сформувати consortium: Silken Net (coordinator) + ЧНУ ФОТІУС (Бушин/Любченко) + ЧДТУ (Карапетян/Базіло/Бондаренко) + ЧНУ біо-хаб (Спрягайло/Гаврилюк) + 1–2 EU академічні партнери (рекомендовано: Linköping University через зв'язок Мінаєв-KTH/`08_01`, або іспанський CSIC bioacoustics group)
-- [ ] 👤 Submission прив'язати до моменту acceptance Статті 24a (08_03) → "published research" status
-- [ ] 🔗 Залежить від E.59 / FW.4-EXT (5-class TinyML модель — навіть на TRL 5 рівні достатньо для гранту)
-- [ ] 🔗 Залежить від UNI.13a (Cherkasy Soundscape Library — preliminary data для Section "Methodology" заявки)
+- **P1** · 👤 · → `08_03 §24a`, `03_03 §10`
+- Horizon CL6 Biodiversity Monitoring (2-6 М€, 36-48 міс); SilkenNet = єдиний планетарний D-MRV з micro-acoustic біорізноманіттям. Submission прив'язати до acceptance Статті 24a → "published research". · [ ] 👤 identify call (HORIZON-CL6-*-BIODIV) → consortium (SilkenNet coord + ЧНУ/ЧДТУ/біо-хаб + 1-2 EU: Linköping/CSIC) → submit при acceptance 24a · [ ] 🔗 E.59/FW.4-EXT (5-class TinyML) + UNI.13a (Soundscape Library)
 
-#### BIZ.13 — Slashing principal-agent: investor capital vs operator-bond (governance design)
-- **Джерело:** `00_01` §6.2 (governance flag) | **Пріоритет: P2** | **Складність: M** | **👤 Governance + 🤖 Док/Код**
-- **Опис:** Slashing категорії A (negligence) зрізає `wallet.locked_balance`, який належить **інвестору** — але недбалість (немає протипожежної смуги після алерту, Forester не приєднався до інциденту) зазвичай провина **оператора (Forester)**. Зрізати капітал інвестора за дії оператора порушує принцип principal-agent і демотивує інвесторів брати географічний ризик. Відкрите питання дизайну: лишити slash на investor `locked_balance` чи ввести окремий **operator-bond** (Forester стейкає власний депозит, що слешиться першим; можливий гібрид: bond → потім locked_balance).
-- ✅ Зроблено (🤖): decision memo → рекомендація **hybrid operator-bond** (`00_01 §6.2.1`)
-- [ ] 👤 DAO confirm: hybrid operator-bond (рекоменд.) vs investor-slash vs pure operator-bond
-- [ ] 🤖 Якщо operator-bond — `OperatorBond` модель + `ProtocolParameters` запис + контракт-механіка
-- [ ] 🤖 Синхронізувати фінальне рішення у `00_01 §6.2`, `05_03 §Slashing`, `04_02` (BlockchainBurningService)
-- **Cross-ref:** `00_01 §6.2`, `05_03 §Slashing`, `04_02 §1.2` (BlockchainBurningService).
+#### BIZ.13 — Slashing principal-agent: investor capital vs operator-bond
+- **P2** · 👤+🤖 · → `00_01 §6.2.1`, `05_03 §Slashing`, `04_02 §1.2`
+- Кат-A slash зрізає інвесторський `locked_balance`, хоча недбалість — провина оператора (principal-agent). ✅ decision memo → рекомендація **hybrid operator-bond**. · [ ] 👤 DAO confirm: hybrid vs investor-slash vs pure operator-bond · [ ] 🤖 якщо operator-bond — `OperatorBond` + `ProtocolParameters` + контракт + синх `00_01 §6.2`/`05_03`/`04_02`
 
 ---
 
