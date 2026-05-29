@@ -14,20 +14,40 @@
 
 - **Поточний TRL:** TRL 3 baseline; **TRL 3→4 gate PASSED** (2026-05-25) — Zero-Lab in-silico pipeline L1-L4 ✅
 - **Стратегічний пріоритет:** P0 — без академічної верифікації хардвер залишається теорією
-- **Пов'язані модулі:**
-  - Гіроїдний анкер → [`01_01_Coaxial_Gyroid_Topology_and_PEEK`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
-  - Металургія → [`01_02_Ti_6Al_4V_Metallurgy_and_DMLS`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)
-  - EBFC → [`01_03_EBFC_Enzymatic_Bio_Fuel_Cell`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)
-  - Кіберфізична валідація → [`08_02_Cybernetic_and_Mathematical_Validation`](08_02_Cybernetic_and_Mathematical_Validation)
-  - Публікації та IP → [`08_03_Joint_Publications_and_IP_Strategy`](08_03_Joint_Publications_and_IP_Strategy)
-  - ЧДТУ: Data Science, RF-верифікація, акустична валідація → [`08_04_CHDTU_Data_Science_Collaboration`](08_04_CHDTU_Data_Science_Collaboration)
-  - ЧІПБ: Пожежна безпека, параметричне страхування, SOP → [`08_05_CHIPB_Fire_Safety_Integration`](08_05_CHIPB_Fire_Safety_Integration)
-  - ЧМА: Біохімія EBFC, токсикологія металів, ксилемоінтеграція → [`08_06_CHMA_Biomedical_Integration`](08_06_CHMA_Biomedical_Integration)
-  - СЄУ: Токеноміка NaaS, RWA-легалізація, промисловий дизайн → [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration)
+- **Відкрите:** ЧНУ MoU (зустрічі 6/8 травня — очікуємо рішення), biocompat/ICP-MS lab tests, синтез ксилемного соку → [`00_08`](00_08_Action_Plan_Tracker) (UNI.*).
 
 ---
 
-## 🛑 Блокери
+## 🔗 Cross-references
+
+| Ресурс | Зв'язок |
+|---|---|
+| [01_01_Coaxial_Gyroid_Topology_and_PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Гіроїдний анкер |
+| [01_02_Ti_6Al_4V_Metallurgy_and_DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Металургія |
+| [01_03_EBFC_Enzymatic_Bio_Fuel_Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC |
+| [08_02_Cybernetic_and_Mathematical_Validation](08_02_Cybernetic_and_Mathematical_Validation) | Кіберфізична валідація |
+| [08_03_Joint_Publications_and_IP_Strategy](08_03_Joint_Publications_and_IP_Strategy) | Публікації та IP |
+| [08_04_CHDTU_Data_Science_Collaboration](08_04_CHDTU_Data_Science_Collaboration) | ЧДТУ (Data Science, RF, акустика) |
+| [08_05_CHIPB_Fire_Safety_Integration](08_05_CHIPB_Fire_Safety_Integration) | ЧІПБ (пожежна безпека, страхування) |
+| [08_06_CHMA_Biomedical_Integration](08_06_CHMA_Biomedical_Integration) | ЧМА (біохімія EBFC, токсикологія) |
+| [08_07_SEU_Economics_and_Legal_Integration](08_07_SEU_Economics_and_Legal_Integration) | СЄУ (токеноміка, RWA-legal) |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | UNI.* (rectorate, MoU, lab tests) |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [Відкриті передумови та статус ЧНУ-виходу](#-відкриті-передумови-та-статус-чну-виходу)
+- [1. Ключові Наукові Школи та Дослідники (Key Partners)](#-1-ключові-наукові-школи-та-дослідники-key-partners)
+- [2. Протоколи R&D (Hard Science Protocols)](#-2-протоколи-rd-hard-science-protocols)
+- [3. Стратегія Входу до Університету ("Золотий Міст")](#-3-стратегія-входу-до-університету-золотий-міст)
+- [4. Презентація Проєкту для Декана Онищенка (UNI.1)](#-4-презентація-проєкту-для-декана-онищенка-uni1)
+<!-- TOC:AUTO:END -->
+
+---
+
+## 🚧 Відкриті передумови та статус ЧНУ-виходу
+
+> Статуси трекаються в [`00_08`](00_08_Action_Plan_Tracker) (UNI.*); нижче — детальний контекст партнерства.
 
 - **Акселерований тест біосумісності не проведено** — блокує seed pitch deck та whitepaper
 - **Синтез штучного ксилемного соку Pinus sylvestris (Черкаський бір)** — потребує контакту з ботаніками
