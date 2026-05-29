@@ -15,9 +15,38 @@
 - **Зовнішній аудит (19 findings):** ✅ Аналіз 19 знахідок: 9 виправлено on-chain (slash bypass pause, admin protection, auto-delegate, batch size 100, anchor interval, locked pragma, mint dedup, rootHistory, timestamp NatSpec), 10 задокументовано як operational/by-design
 - **Backend інтеграція:** ✅ `BlockchainMintingService` + `BlockchainBurningService`
 - **The Graph subgraph:** ✅ `TokenSlashed` виправлено, `PremiumPaid` додано, `treeDidHash` (bytes32) додано. ✅ SFC: `ForestMintEvent` + `GovernanceSlashEvent` + handlers додано (Sprint 3, S3.5). ⚠️ SFC contract address — placeholder до Mainnet deploy.
-- **Пов'язані модулі:**
-  - Мультичейн → [`05_01_Multichain_Architecture`](05_01_Multichain_Architecture)
-  - Proof of Growth → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
+- **Відкрите:** SFC contract address placeholder до Mainnet deploy; зовнішній аудит execution → [`00_08`](00_08_Action_Plan_Tracker).
+
+---
+
+## 🔗 Cross-references
+
+| Ресурс | Опис |
+|--------|------|
+| [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Мультичейн (Polygon у стеку) |
+| [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Pipeline (мінтинг-тригер) |
+| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | `BlockchainMinting`/`BlockchainBurning` сервіси |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | Open backlog (Mainnet deploy, audit) |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [Dual Token System (Архітектура)](#-dual-token-system-архітектура)
+- [OpenZeppelin — Успадковані Стандарти](#-openzeppelin--успадковані-стандарти)
+- [Ієрархія Ролей (AccessControl)](#-ієрархія-ролей-accesscontrol)
+- [Функції Контрактів](#-функції-контрактів)
+- [Події (Events)](#-події-events)
+- [Dynamic Tax — HYBRID PROTOCOL GAIA](#-dynamic-tax--hybrid-protocol-gaia)
+- [Потік Мінтингу (Поточний Стан)](#-потік-мінтингу-поточний-стан)
+- [Потік Slashing (Поточний Стан)](#-потік-slashing-поточний-стан)
+- [Зв'язок з Rails Backend](#-звязок-з-rails-backend)
+- [Subgraph (The Graph)](#-subgraph-the-graph)
+- [Зовнішні Залежності](#-зовнішні-залежності)
+- [Структура Файлів (File Map)](#-структура-файлів-file-map)
+- [Governance DAO (Законодавча Гілка Влади) — Реалізовано](#--governance-dao-законодавча-гілка-влади--реалізовано)
+- [Smart Contract Audit Roadmap](#-smart-contract-audit-roadmap)
+- [Посмертна Економіка — Інтеграція Puro.earth Biochar](#-посмертна-економіка--інтеграція-puroearth-biochar)
+<!-- TOC:AUTO:END -->
 
 ---
 
