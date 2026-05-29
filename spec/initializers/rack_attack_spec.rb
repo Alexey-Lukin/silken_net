@@ -6,6 +6,13 @@ RSpec.describe "Rack::Attack", type: :request do
   # Reset Rack::Attack state between examples so throttle counters and
   # Fail2Ban bans don't leak across tests.
   before do
+    # Freeze time so the throttle period-window key (Time.now / period) stays
+    # constant across the multi-request loops below. In a slow full-suite run the
+    # 300+ requests can straddle a 5-min wall-clock boundary → the counter splits
+    # across two windows → 301st request not throttled (flaky 200 instead of 429).
+    # Isolated runs are fast enough to stay in one window, hence pass-in-isolation.
+    freeze_time
+
     Rack::Attack.cache.store.clear
     Rack::Attack.reset!
 
@@ -15,6 +22,7 @@ RSpec.describe "Rack::Attack", type: :request do
   end
 
   after do
+    travel_back
     Prosopite.resume if defined?(Prosopite)
   end
 
