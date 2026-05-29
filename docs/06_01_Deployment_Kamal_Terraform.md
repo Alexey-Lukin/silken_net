@@ -47,21 +47,9 @@ terraform output ingress_ip    # → єдина статична IP (Ingress Anc
 
 **Статус:** Жоден CI/CD pipeline не спрацює без них.
 
-| Секрет | Опис | Де отримати |
-|--------|------|------------|
-| `GCP_SA_KEY` | JSON ключ GCP Service Account (base64) | IAM → Service Accounts → Keys |
-| `GCP_PROJECT_ID` | ID GCP проєкту | GCP Console |
-| `DATABASE_PASSWORD` | Пароль Cloud SQL (≥16 символів) | Придумати. Зберегти у vault. |
-| `DATABASE_URL` | Production DB URL | `terraform output database_url` |
-| `CANOPY_DATABASE_URL` | Canopy DB URL | Окрема БД або схема |
-| `REDIS_URL` | Production Redis (DB 0) — Sidekiq | Upstash: `rediss://<host>:<port>/0` (TLS) |
-| `CANOPY_REDIS_URL` | Canopy Redis (DB 0) | Upstash: `rediss://<host>:<port>/0` |
-| `KREDIS_REDIS_URL` | Production Redis (DB 1) — Kredis locks | Upstash: `rediss://<host>:<port>/1` |
-| `RACK_ATTACK_REDIS_URL` | Production Redis (DB 2) — Rate limiting (опц., auto-derive) | Upstash: `rediss://<host>:<port>/2` |
-| `SSH_PRIVATE_KEY` | Приватний SSH ключ (ed25519) | `ssh-keygen -t ed25519` |
-| `SSH_PUBLIC_KEY` | Публічний SSH ключ | Пара до SSH_PRIVATE_KEY |
-| `SSH_KNOWN_HOSTS` | SSH fingerprints серверів | `ssh-keyscan <server-ip>` |
-| `KAMAL_MASTER_KEY` | Ключ шифрування Kamal secrets | `config/master.key` |
+**Повний список GitHub secrets (P0/P1/P2) + де отримати — SSOT [`06_04 §1`](06_04_Secrets_Checklist)** (13 P0: `GCP_SA_KEY`/`GCP_PROJECT_ID`, `DATABASE_*`, `REDIS_*`/`KREDIS_*`, `SSH_*`, `RAILS_MASTER_KEY`, `KAMAL_MASTER_KEY`). Затрековано — [`00_08 S1.1`](00_08_Action_Plan_Tracker).
+
+_(Перелік раніше дублювався тут — прибрано для DRY/anti-drift; єдине джерело правди = `06_04`.)_
 
 ---
 

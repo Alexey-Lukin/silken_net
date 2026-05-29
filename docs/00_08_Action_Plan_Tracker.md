@@ -115,6 +115,10 @@
 - **P1** · 👤+🤖 · → `06_02 §BLOCKER-5`
 - ✅ runbook: Опція A (Cloudflare HTTPS + direct UDP CoAP) рекоменд. + pre-flight + fallback B. Cloudflare НЕ proxies UDP → CoAP потребує direct ingress. · [ ] 👤 прийняти рішення (рекоменд. A) · [ ] 🤖 якщо Akash hostname — automation у `terraform/`
 
+#### INF.9 — deploy-production.yml workflow (відсутній)
+- **P2** · 🤖 · → `06_01 §INFO`
+- 🟡 GAP (06-review 2026-05-29): є лише `.github/workflows/deploy.yml` (Canopy). Production-деплой workflow відсутній. · [ ] 🤖 створити `deploy-production.yml` (trigger `on: release: types: [published]`, деплой без `-d canopy`) за зразком `deploy.yml`
+
 #### S4.3 — Akash SDL secrets
 - **P3** · 👤 · → `06_02`
 - `REQUIRED_SECRET_NOT_SET` для 4 крит. змінних. · [ ] 👤 заповнити в `deploy/akash/deploy.yaml` → верифікувати startup
@@ -599,6 +603,10 @@
 #### SEC.12 — HRNG-IV fallback hardening (CoAP CBC IV)
 - **P2** · 🔗 · → `03_05 §BLOCKER-4`
 - ✅ (2026-05-29) fallback IV → pure `coap_iv.h#coap_fallback_iv_word` (uid×device + `queen_unix_ts`×reboot + `coap_flush_seq`×flush) + 4 host-тести → **reuse закрито** по всіх осях. 🟡 Residual: IV передбачуваний на fallback — **low-severity** (CoAP-батч без chosen-plaintext вектора). · [ ] 🔗 повна unpredictability = key-derived IV `E_key(counter)` (AES-engine + SEC.8 restore) — bench-gated
+
+#### SEC.13 — peaq_did_compromised guard (revocation-runbook gap)
+- **P2** · 🤖 · → `06_04 §5.4`
+- 🔴 GAP (06-module review 2026-05-29): emergency-revocation runbook `06_04 §5.4 Крок 4` інструктує `update_all(peaq_did_compromised: true)` + guard у `BlockchainMintingService`, але **ні колонки, ні guard немає** → runbook впав би під час інциденту. Runbook позначено aspirational + interim mitigation (suspend provisioning + rotate minter key). · [ ] 🤖 колонка `trees.peaq_did_compromised` (schema squash → structure.sql + seeds) + mint guard + spec
 
 ## 🔀 Cross-cutting · Doc-drift (DOC) — синх з `04_02 §11` divergence registry
 
