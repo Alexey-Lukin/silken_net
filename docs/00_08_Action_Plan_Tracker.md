@@ -52,6 +52,14 @@
 
 > **Складність:** XS < 1 год · S = 1–4 год · M = 4–8 год · L = 1–3 дні
 
+#### SLASH-1 — Slashing cause_classification gate (financial-safety) 🔴
+- **P0** | `00_01 §6.2/§6.5` | **Складність: M** | 🤖+👤 (DAO/founder-go: незворотна фінансова логіка)
+- **Опис:** `00_01 §6.2` обіцяє, що `BlockchainBurningService` перевіряє `cause_classification` перед `slash()`, плюс penalty-формулу `damage_ratio^1.3 × min(penalty_factor,2.0)`. **Код цього не має взагалі** (grep `cause_classification` → 0): `ContractHealthCheckService#perform` слешить на `daily_insights.empty?` (коментар «Starlink-блекаут») і `stress_index>=0.83` → `BurnCarbonTokensWorker` → `BlockchainBurningService` палить лінійно `total_minted × damage_ratio`. Наслідок: **force-majeure comms-loss (вкрадений/збитий шлюз, Starlink-блекаут) = незворотний burn інвесторських токенів, класифікований як ніщо.** Divergence: [`04_02 §11` 2026-05-29](04_02_Business_Logic_and_Services).
+- [ ] 🤖 `cause_classification` gate у slash-шляху: cluster-wide `daily_insights.empty?` → **B/insurance або C/peer-review**, НЕ A-burn (`00_01 §6.5` correlated comms-loss guard).
+- [ ] 🤖 De-correlate penalty signals: no-ack (+0.5) + Streamr-gap (+0.25) мають спільний root-cause — не складати при недоступності шлюзу.
+- [ ] 🤖 Реалізувати penalty-формулу §6.2 (`damage_ratio^GAMMA × min(penalty_factor, 2.0)`) у `BlockchainBurningService` (зараз лінійно).
+- [ ] 👤 DAO/founder-confirm перед mainnet (тісно з BIZ.13 operator-bond, `00_01 §6.2.1`).
+
 #### S1.1 — GitHub Secrets заповнення
 - **P0** | `06_01` | **Складність: XS** | **🔧 Операційна** — ручне заповнення в GitHub UI, без коду
 - **Опис:** 12 критичних секретів не встановлені: `GCP_SA_KEY`, `DATABASE_PASSWORD`, `DATABASE_URL`, `SSH_PRIVATE_KEY`, тощо. Блокує весь CI/CD pipeline.

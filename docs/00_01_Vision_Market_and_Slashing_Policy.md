@@ -195,6 +195,9 @@ ForceMajeure event → InsurancePayoutWorker
   > **Але** через дві причини divergence сам по собі НЕ повинен запускати незворотне спалювання: (1) LoRa-канал наразі AES-128-ECB **без MIC** → можливий bit-flip пакету (хибна divergence); (2) розбіжність версій прошивки після OTA (інші Lorenz-константи) теж дає divergence. Тому: divergence — **сильний доказ** категорії A лише **у поєднанні** з другим сигналом (`HardwareKey.tamper_detected_at`, chainsaw-acoustic, або підтверджена версія FW). Самостійна divergence → категорія C (заморозка + peer-review / Field Audit), а не автоматичний burn.
 
 - **Streamr P2P broadcast gap** довше 24 год без MaintenanceRecord — посилення penalty_factor на +0.25.
+- **Correlated comms-loss guard [SLASH-SAFETY, 2026-05-29].** Сигнали втрати зв'язку **не є незалежними** і не повинні складатися: «немає ack» (+0.5), «Streamr gap» (+0.25) та «daily_insights порожні» мають **один root-cause** — недоступність вузла/шлюзу. **Одночасна втрата даних по ВСЬОМУ кластеру** (усі дерева «згасли» разом) — це сигнатура **відмови шлюзу / Starlink-блекауту** (force-majeure → B/insurance або C/peer-review), а НЕ per-tree недбалість (A). Класифікувати масовий blackout як A = карати лісника за збитий машиною / вкрадений шлюз. Той самий де-ризик-принцип, що VPD-confounder (`02_01 §3.4`) і Lorenz (§6.6): незворотний фінансовий вирок вимагає **прямого, некорельованого** підтвердження халатності.
+
+  > **🛑 Code↔doc divergence (verified 2026-05-29):** §6.2 стверджує, що `BlockchainBurningService` перевіряє `cause_classification` перед `slash()`. **Код цього НЕ робить** — терміна `cause_classification` немає в коді ніде (grep). Повний шлях `ContractHealthCheckService` (`daily_insights.empty?` → slash; коментар прямо каже «Starlink-блекаут») → `BurnCarbonTokensWorker` → `BlockchainBurningService.slash()` палить **лінійно `total_minted × damage_ratio`** — без penalty_factor, без GAMMA, без класифікації A/B/C. Тобто одноденний blackout = незворотне спалювання інвесторських токенів. → fix tracked: [`00_08` SLASH-1] (gate класифікації + blackout=force-majeure routing); реєстр divergence — [`04_02 §11`](04_02_Business_Logic_and_Services).
 
 ### 6.6 Multi-signal slashing — Лоренц ≠ єдина правда [Lorenz de-risk, 2026-05-29]
 
@@ -207,6 +210,8 @@ ForceMajeure event → InsurancePayoutWorker
 - ML-модель потребує **ground-truth калібрування** перед mainnet slashing.
 
 **Інваріант:** доки Z↔health не підтверджено емпірично, slashing вимагає підтвердження **≥1 прямим вимірним сигналом** (sap_flow / chainsaw-acoustic / dClimate), не лише Z/device-status.
+
+**Прямі сигнали (corroboration set):** `sap_flow`/`delta_t` (метаболізм), chainsaw-acoustic (TinyML), dClimate (супутник), і — **новий [ADR `02_01 §3.4`]** — **VPD з BME280** (t°+RH): прямий фізіологічний confounder, що відрізняє падіння сокоруху через погоду (дощ/туман, RH≈100%) від хвороби. VPD — апаратне втілення цього інваріанта: вбиває False Slashing біля джерела. ⚠️ VPD живе на slashing/confounder-шарі, **НЕ** в Lorenz-Z (DCI-guard, `03_04`). Разом з §6.5 «correlated comms-loss guard» це формує повний принцип: **не штрафувати за недоведений Z, за погоду, ані за втрату зв'язку** — лише за прямо підтверджену халатність.
 
 ---
 
