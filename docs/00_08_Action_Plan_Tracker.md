@@ -356,21 +356,15 @@
 
 > Знахідки з рев'ю модулів 00_, 01_, 02_, 03_, 03_05 (інженерний аудит, 2026-05-16). Слоти ARCH.39–ARCH.42 зарезервовано під цей патч-комплект.
 
-#### ARCH.40 — Fauna 5-секундне вікно: монолітне awake-обчислення (SRAM2 wipe constraint)
-- `docs/03_03_TinyML_Acoustic_Inference.md` §10.2 | **P1** | ✅ **Doc-fix вкочено 2026-05-16**
-- **Опис:** Architecture v3 використовує STOP2 RTC-only з `PWR_CR1_RRSTP=1` → SRAM2 wipe при кожному переході в сон. Декомпозиція 5 с акумульованого вікна (156 MFCC-векторів `mean+std`) на «32 мс → STOP2 → 32 мс» неможлива: проміжна float-матриця у RAM не переживе сну, DR15 (єдиний вільний RTC регістр) не вміщає float[156][N_mfcc].
-- **Рішення:** Явно зафіксовано у §10.2 — fauna-сесія мусить виконуватись монолітно за один цикл активного пробудження (156 циклів TIM2+DMA послідовно).
-- [ ] 🔗 При імплементації FW.4 fauna-pivot: вимагати unit-тест `test_fauna_sampling_no_stop2_in_session()`
+#### ARCH.40 — Fauna 5-сек вікно: монолітне awake-обчислення (SRAM2 wipe)
+- **P1** · 🔗 · → `03_03 §10.2`
+- ✅ Doc-fix вкочено: fauna-сесія монолітна за 1 awake (SRAM2 wipe не зберігає float[156][N_mfcc] між STOP2; DR15 не вміщає).
+- [ ] 🔗 при FW.4 fauna-pivot — unit-тест `test_fauna_sampling_no_stop2_in_session()`
 
-#### ARCH.41 — Cold-start Time Paradox для Dual Computation Integrity
-- `docs/03_04_mruby_Lorenz_Attractor.md` §2.1, `firmware/soldier/main.c` `Derive_Cold_Start_State`, `app/services/telemetry_unpacker_service.rb#compute_server_z` | **P2**
-- **Опис:** Після VBAT loss Soldier'ський RTC скидається на default-дату (2000-01-01) → `Derive_Cold_Start_State()` обчислює `epoch_day ≈ 10 951` замість серверного ≈ 20 585. Server при дереві з історією chain'ить з попереднього `lorenz_state_tail` (не cold-derive) → траєкторії розходяться категорично доки `CMD_TIME_SYNC` beacon від Queen не оновить RTC Soldier'а.
-- **Поточний імпакт:** Категоричний DCI можуть тригерити false-positives на cold-boot пакетах (≤ 50 wake-up циклів до ergodicity ~2 доби). Numeric DCI branch (FW.31) інертний у production (LoRa packet 21B не несе raw Z) — стане критичним після post-FW.2 packet revision.
-- **План мітигації (вибрати один):**
-  - **(A) Server-side fallback** (рекомендовано, без firmware change): У `compute_server_z` при категоричному DCI mismatch + tree має історію → retry через cold-start derivation з трьома кандидатами `epoch_day` (today, today−1, firmware RTC-default ≈ 10 951). При збігу — позначити `TelemetryLog#time_unsynced_fallback = true`, queue `CMD_TIME_SYNC` через downlink, не падати DCI.
-  - **(B) Soldier-side sentinel** (потрібен координований firmware rollout): При cold-boot Soldier шле `acoustic_events = 0xFE` як sentinel у першому uplink. Backend трактує як «time uncertain».
-  - **(C) Defer first uplink** (потребує firmware redesign): Soldier у grace-вікні (10 хв) шле спрощений «hello» пакет без Lorenz state — тільки DID + Vcap + TIME_REQ маркер.
-- [ ] 🔗 (B/C) Розглянути після стабілізації (A) — потребують координованого firmware rollout
+#### ARCH.41 — Cold-start Time Paradox (DCI)
+- **P2** · 🔗 · → `03_04 §2.1`
+- VBAT loss → RTC `epoch_day` розходиться з сервером (cold-derive ≈10951 vs chained ≈20585) → категоричний DCI false-positive до `CMD_TIME_SYNC`. **Mitigation A** (server-side: 3 epoch_day кандидати → `time_unsynced_fallback`, не падати DCI) ✅ реалізовано → `04_02` (`try_time_sync_recovery`).
+- [ ] 🔗 (B/C) після стабілізації A, координований firmware rollout: **B** Soldier sentinel `acoustic_events=0xFE` на cold-boot; **C** defer-first-uplink grace «hello» (DID+Vcap+TIME_REQ, без Lorenz state)
 
 ## §01–§02 · Hardware & Lab
 
