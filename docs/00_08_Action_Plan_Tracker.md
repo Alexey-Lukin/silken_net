@@ -2,7 +2,11 @@
 
 ## 🎯 Мета
 
-Зберігати ТІЛЬКИ незавершені задачі з пріоритетами, виконавцями та статусами. Виконана робота задокументована у відповідних docs (`00_00` → `08_07`). Повністю завершені пункти виносяться у **§🗄️ Архів закритих пунктів** (вказівник ID→канон, внизу). Документ є живим операційним інструментом — оновлюється при кожному завершенні задачі.
+Зберігати **ТІЛЬКИ незавершене** — кожен пункт як **тонкий вказівник**: `ID · пріоритет · виконавець` + 1 рядок + **→ канон-реф**. Повний опис «як має бути» живе в каноні (`00_00`→`08_07`), описаний **в одному місці**; 00_08 на нього посилається, **не дублює**.
+
+**Правило одного місця (DRY):** редагуєш канон → онови залежні пункти 00_08 (за рефами); закрив пункт → онови канон + познач тут (✅ → **§🗄️ Архів**, вказівник ID→канон). Так апдейт робиться в одному місці, а референси ведуть, де ще синхронізувати.
+
+**Структура:** **🚦 Dashboard** (що робити зараз, за виконавцем) → **§00–§08 модуль-секції** (реєстр незробленого, дзеркалить канон) → **🔀 Cross-cutting** / **📌 Backlog** → **🗄️ Архів**. Документ — живий операційний інструмент.
 
 ---
 
@@ -13,38 +17,45 @@
 
 ---
 
-## 🚨 Top-Critical Path (рекомендований порядок виконання)
+## 🚦 Dashboard — що робити зараз (за виконавцем)
 
-> Виведено окремо, щоб видно «що варто робити прямо зараз». Це **не нові задачі**, а індекс уже існуючих пунктів, які блокують найбільше іншого.
+> Сортовано за **виконавцем**, потім пріоритетом. Повний опис кожного пункту — у §модулі нижче (**one place**); тут — тонкий індекс. Легенда: 🤖 AI-doable · 👤 власник · 🔗 заблоковано.
 
-### Перед будь-яким польовим деплоєм (life-safety + security)
-1. **SEC.9** — замінити master AES key (FIPS-197 test vector) на криптостійкий random — **P0**
-2. **FW.1 + SEC.3** — Per-device HKDF provisioning ✅ + Factory Flashing pipeline tool ✅ (Rake CLI dry-run, 2026-05-24); 👤 залишається real `STM32_Programmer_CLI` execution на STM32WLE5JC bench — **P0**
-3. **FW.2** — AES-128-CCM [post-ARCH.42] (вирішує одразу: ECB→CCM, MIC, FW.23 OTA auth, SEC.10 panic auth, FW.29 disambiguation) — **P0**
-4. **SEC.1** — Gnosis Safe multisig для `DEFAULT_ADMIN_ROLE` SCC/SFC до mainnet — **P0**
+### 🤖 Machine-doable зараз (AI, non-gated)
+> Основна 🤖-робота цієї сесії (Lorenz де-ризик, BME280 SSOT-інтеграція, SLASH-1 blackout-fix, climate-схема) — закрита. Залишок 🤖 переважно **gated** (ML-retrain, ground-truth калібрування, STM32 bench) → див. 🔗. Незаблокований 🤖-backlog ітемізується у §модулях (P2 ре-бакетинг).
 
-### Перед production-запуском Web3 mintingу
-5. **S1.1** — заповнити GitHub Secrets (`DATABASE_PASSWORD`, `GCP_SA_KEY`, `SSH_PRIVATE_KEY`, ...) — **P0**
-6. **E.45 / S3.5** — підставити реальну адресу SCC/SFC у `subgraph.yaml` — **P0**
-7. **E.47** — встановити `SOLANA_RPC_URL` mainnet (інакше Devnet за замовчуванням) — **P0**
-8. **INF.4 + INF.6** — TLS termination + CoAP Proxy verification на Akash ingress — **P1**
+### 👤 На тобі (власник)
 
-### Парк аналітики/спостережуваності перед першим Akash deploy
-9. **S2.1 + S2.2 + S2.3** — Grafana Cloud dashboards & alerts після першого `/metrics` пуш — **P0** (ops)
+**Перед польовим деплоєм (life-safety + security):**
+- `SEC.9` **P0** — замінити master AES key (FIPS-197 vector) на криптостійкий random
+- `FW.1`+`SEC.3` **P0** — provisioning ✅; залишається real `STM32_Programmer_CLI` на STM32WLE5JC bench
+- `SEC.1` **P0** — Gnosis Safe multisig для `DEFAULT_ADMIN_ROLE` SCC/SFC до mainnet
 
-### Лабораторно-критичний шлях (TRL 4→6 hardware)
-10. **HW.24** — Staged validation gate (SLA → Ti-coin → full anchor) — **P0** (блокує замовлення 100 шт. DMLS до проходження попередніх етапів)
-11. **HW.23** — HIP postprocess specification for SLM anode — **P0** (блокує перший SLM-замовлення)
-12. **HW.22** — Sterilization protocol (no EtO) — **P1** (блокує перехід до Stage 4 польових тестів)
-13. **HW.7** — BQ25570 VBAT_OV резистори: виміряти і замінити SMD якщо мисматч — **P1** (блокує PCBA freeze)
-14. **HW.13 / ARCH.29-MPPT** — P-V крива EBFC + перейти з 50% VOC на 65% — **P1**
-15. **HW.3** — 12-тижневий Arrhenius accelerated aging тест (синтетичний ксилемний сік) — **P1** (блокує seed)
-16. **HW.25** — PTFE-GDL membrane для катода (Zone 3) — **P1** (блокує EBFC у новій тризонній архітектурі)
+**Перед Web3 mainnet:**
+- `S1.1` **P0** — GitHub Secrets (`DATABASE_PASSWORD`, `GCP_SA_KEY`, `SSH_PRIVATE_KEY`, …)
+- `E.45`/`S3.5` **P0** — реальна адреса SCC/SFC у `subgraph.yaml`
+- `E.47` **P0** — `SOLANA_RPC_URL` mainnet (інакше Devnet за замовчуванням)
+- `INF.4`+`INF.6` **P1** — TLS termination + CoAP Proxy verification (Akash ingress)
+- `S2.1`+`S2.2`+`S2.3` **P0** (ops) — Grafana Cloud dashboards & alerts після першого `/metrics`
 
-### Академічний critical path
-17. **UNI.1** — Перша зустріч з деканом Онищенком (ChNU FOTIUS) — **P0** (блокує всі публікації Q1)
-18. **UNI.8** — Перший контакт з ректоратом СЄУ — **P0** (блокує MSA / B2B legal)
-19. **UNI.13 / UNI.14** — Верифікувати посади науковців ЧМА і СЄУ через офіційні сайти — **P0**
+**Hardware TRL 4→6 (лаб/підрядники):**
+- `HW.24` **P0** — staged validation gate (SLA→Ti-coin→full anchor); блокує 100 шт DMLS
+- `HW.23` **P0** — HIP postprocess spec для SLM anode; блокує перший SLM-замовлення
+- `HW.22` **P1** — sterilization protocol (no EtO); блокує Stage 4 польові
+- `HW.7` **P1** — BQ25570 VBAT_OV резистори; блокує PCBA freeze
+- `HW.13`/`ARCH.29-MPPT` **P1** — P-V крива EBFC, 50%→65% VOC
+- `HW.3` **P1** — Arrhenius accelerated aging тест; блокує seed
+- `HW.25` **P1** — PTFE-GDL катодна мембрана (Zone 3)
+
+**Academic:**
+- `UNI.1` **P0** — зустріч з деканом Онищенком (ChNU FOTIUS); блокує публікації Q1
+- `UNI.8` **P0** — контакт з ректоратом СЄУ; блокує MSA/B2B legal
+- `UNI.13`/`UNI.14` **P0** — верифікувати посади науковців ЧМА і СЄУ (офіційні сайти)
+
+### 🔗 Заблоковано (чекає іншого)
+- `FW.2` **P0** — AES-128-CCM (backend-parser ✅; firmware emit + `CRYP_AES_CCM` verify → STM32 bench). Закриває ECB→CCM, MIC, `FW.23` OTA auth, `SEC.10` panic auth, `FW.29`
+- VPD confounder-gate → firmware VPD (`HW.20`) + ML-retrain + ground-truth калібрування (`08_02 §4`)
+- SLASH-1 deeper (B/insurance auto-route, penalty-формула) → DAO/founder
 
 ---
 
