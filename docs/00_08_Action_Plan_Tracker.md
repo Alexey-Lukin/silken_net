@@ -362,7 +362,7 @@
 - [ ] 👤 RF Keep-Out Zone verification
 
 #### HW.11 — Conformal Coating (REVISED 2026-05-16: Sylgard відхилено через TinyML)
-- **Джерело:** `02_01` BLOCKER-1, `02_02` §3.4
+- **P1** · 👤 · → `02_01 §BLOCKER-1`, `02_02 §3.4`
 - **Опис:** Раніше планувався full-potting Sylgard 184 (Shore A < 50 проти crack кварцу при -20°C). Архітектурна рецензія виявила **критичний конфлікт**: Sylgard 184 — відомий **акустичний демпфер** (3-bands attenuation 15–25 dB @ 16 kHz), який глушить п'єзодиск Soldier для TinyML-детекції бензопили та кавітації ксилеми (`03_03`).
 - **Нове рішення (v3):** **Parylene C 10 µm (CVD)** для серійного виробництва — конформне покриття всіх SMD-компонентів та припою через CVD-деposition; selective masking п'єзодиска (відкрита поверхня або тонка PDMS ≤ 10 µm); внутрішній об'єм капсули — повітря (опційно desiccant). Для прототипів TRL 4–5 — acrylic conformal (Humiseal 1A33) easily reworkable. ✅ Acoustically transparent, ✅ IP67 з O-ring.
 - **Блокує:** Hardware freeze, IP67 certification, TinyML функціональність
@@ -372,14 +372,14 @@
 - [ ] 👤 Верифікувати з кварцовим резонатором при -20°C / +60°C (Parylene Shore D ~50, м'якший за air-gap воду)
 
 #### HW.12 — EBFC upper voltage limit >5.5V protection
-- **Джерело:** `02_01` BLOCKER-2
+- **P1** · 👤 · → `02_01 §BLOCKER-2`
 - **Опис:** При тривалій інсоляції EBFC може генерувати напругу >5.5V → overcharge supercap → деградація/вибух
 - **Блокує:** Hardware safety, TRL 5
 - [ ] 👤 Верифікувати BQ25570 OV protection threshold (VBAT_OV = 5.5V, див. HW.7)
 - [ ] 👤 Додати TVS-діод або зенерівський обмежувач як backup
 
 #### HW.13 — MPPT coefficient verification for EBFC
-- **Джерело:** `02_03` BLOCKER-2 + Legacy notes
+- **P1** · 👤 · → `02_03 §BLOCKER-2`
 - **Опис:** Поточний MPPT = 50% VOC (R_OC1=R_OC2=10MΩ) — **занадто низько для EBFC**. EBFC (GOx/Laccase) має специфічну поляризаційну криву (Міхаеліс-Ментен + Тафель), MPP лежить у діапазоні 60-70% VOC. При 50% — зона масо-транспортних обмежень ферменту
 - **Рекомендація (REVISED 2026-05-16 — TI convention):** Почати з 65%, з іменуванням за TI BQ25570 datasheet SLUSBH2G §8.2.3.2: **R_OC1 = 10.0 MΩ** (нижнє плече, VOC_SAMP → GND), **R_OC2 = 5.36 MΩ** (верхнє плече, VSTOR → VOC_SAMP). Формула: V_MPP / V_OC = R_OC1 / (R_OC1 + R_OC2). ⚠️ Не плутати позначення — якщо запаяти за зворотньою конвенцією, фракція стане 35% замість 65% → знекровлення ферменту.
 - **Блокує:** Max EBFC power, optimal charge speed
@@ -389,7 +389,7 @@
 - [ ] 👤 Якщо потрібно — замінити R_OC1/R_OC2 (звіряти з TI Figure 42 та `02_03 §4.А` SSOT Convention block)
 
 #### HW.14 — Winter energy deficit for Queen Phase 3 (Starlink Mini)
-- **Джерело:** `02_05` BLOCKER-2
+- **P1** · 👤 · → `02_05 §BLOCKER-2`
 - **Опис:** Phase 3 (Starlink Mini): 44 Wh/day consumption vs 18.75 Wh/day winter generation = -25 Wh/day deficit. 12V/20Ah LiFePO4 → 7.7 днів автономності
 - **Пріоритет:** Phase 3 only (Phase 2.5 unaffected)
 - [ ] 👤 Збільшити батарею до 40Ah (15 днів автономності), АБО
@@ -397,7 +397,7 @@
 - [ ] 👤 Встановити 100W solar panel
 
 #### HW.15 — BMS + VBAT decoupling для SIM7070G
-- **Джерело:** `02_05` BLOCKER-4, §2.2.1 (новий блок)
+- **P1** · 👤 · → `02_05 §BLOCKER-4`, `§2.2.1`
 - **Опис:** SIM7070G TX peak current до 2A. Дві окремі проблеми: (1) BMS model не вказано в BOM (system-level); (2) транзієнтна просадка VBAT модему при 2A burst → brownout reboot (module-level). Тепер з обома вирішеннями.
 - **Module-level fix (✅ specification зафіксовано 2026-05-16):** 5-cap tank bank біля VBAT pin SIM7070G — 470 µF aluminum polymer SP-Cap (Panasonic EEFCX0J471R) + 100 µF MLCC X7R 25V 1210 + 10 µF X7R 0805 + 100 nF X7R 0402 + 33 pF NP0 0402. Розрахункова просадка: 8 mV (margin > 35× проти 700 mV brownout). Деталі — `02_05 §2.2.1`.
 - [ ] 👤 Обрати BMS: мінімум 12V / 20A continuous / 50A peak
@@ -406,14 +406,14 @@
 - [ ] 👤 Оновити BOM (закупка 5 нових компонентів)
 
 #### HW.16 — Thermal management в IP67 enclosure
-- **Джерело:** `02_05` BLOCKER-5
+- **P1** · 👤 · → `02_05 §BLOCKER-5`
 - **Опис:** SIM7070G + MCU при TX: ~500 mW × 5 sec. Літній interior temp до 60-70°C. LiFePO4 charging при T < 0°C пошкоджує батарею; розряд нижче −20°C → graphite plating damage
 - ✅ Зроблено: тепловий бюджет IP67 (Phase 1/2.5 ~130мВт→ΔT<1K; Phase 3 3Вт→ΔT~4.5K; sun load +15K; sun-shade рекоменд.) + backend critical-temp гілка. Канон: `02_05 §4а`.
 - [ ] 👤 Додати temperature sensor (NTC або DS18B20)
 - [ ] 👤 Реалізувати hardware charge protection при T < 0°C
 
 #### HW.17 — PEEK radome prototype (Деталь 4) — REVISED 2026-05-16
-- **Джерело:** `02_01` §5.2 + `01_04` §5.5 + Legacy notes
+- **P1** · 👤 · → `02_01 §5.2`, `01_04 §5.5`
 - **Опис:** Деталь 4 (PEEK Crown / Капсула-Радом) — радіопрозорий купол ∅20–30 мм, який «насаджується» на зовнішню різьбу **Деталі 3 = Zone 3 = КАТОДНОГО ФЛАНЦЯ** (раніше документ помилково писав «Деталь 3 (Анод)» — критичний SSOT-bug, виправлено). Різьба або байонет + O-ring EPDM → IP68. Керамічна SMD-антена в ≥ 8 мм Z-clearance від Ti-фланця (`02_01 §5.3` revised — 2D ≥3мм, **3D ≥8мм** вертикально + overhang за периметр Ti). Anti-overgrowth shield: виступ ≥ 3 мм + R ≥ 5 мм + super-hydrophobic coating (Fluoropel PFC-1601V) — `01_04 §5.5`.
 - **Блокує:** Ceramic antenna protection, RF performance validation, Zero-Touch Assembly validation, long-term cathode O₂ access
 - [ ] 👤 KiCad PCB layout (HW.9) → PEEK radome dimensions
@@ -426,7 +426,7 @@
 - [ ] 👤 12-місячний польовий тест anti-overgrowth shield на тестовому дереві — фотодокументація щоквартально
 
 #### HW.18 — Starlink DTC: ESP32-S3 vs SIM8200G-M2 WiFi co-processor
-- **Джерело:** `02_05` BLOCKER-1
+- **P2** · 👤 · → `02_05 §BLOCKER-1`
 - **Опис:** Phase 3 (Starlink Mini terminal) потребує WiFi co-processor. Архітектурне рішення між ESP32-S3 та SIM8200G-M2 не прийнято
 - **Пріоритет:** Phase 3 only
 - ✅ Зроблено (🤖): decision memo + рекомендація **ESP32-S3** → `02_05` BLOCKER-1.
@@ -435,7 +435,7 @@
 - [ ] 🔗 Додати co-processor firmware до `firmware/`
 
 #### HW.19 — VOC-діагностика деградації конденсатора (ADS1220 + TPS22860)
-- **Джерело:** Legacy notes + `02_04` §4.2
+- **P2** · 👤 · → `02_04 §4.2`
 - **Опис:** Раз на добу вимірювати чисту VOC EBFC (при від'єднаному навантаженні) для розрізнення "дерево хворіє" vs "конденсатор деградує". Обидва стани проявляються як зростання delta_t. ADS1220 (24-bit ADC) + TPS22860 (load switch) для прецизійного duty-cycling вимірювання. Для TRL 6 достатньо вбудованого 12-біт ADC STM32
 - **Пріоритет:** TRL 8+ (після базової валідації в полі)
 - [ ] 🤖 Валідувати концепт на вбудованому 12-біт ADC (firmware: GPIO disconnect EDLC → measure VOC → reconnect)
@@ -444,14 +444,14 @@
 - [ ] 🤖 Backend (gated): `voc_mv` колонка + VOC-корекція у `ContractHealthCheckService` (виключити hardware-confounded дерева зі slashing-підрахунку), **НЕ в `Attractor`**. Чекає firmware VOC-вимір + delivery-контракт.
 
 #### HW.20 — Buffer Cap: Tantalum → MLCC migration
-- **Джерело:** `02_03` §6 + Legacy notes
+- **P2** · 👤 · → `02_03 §6`
 - **Опис:** Buffer Cap 100µF на лінії VOUT для LoRa TX peak. Рання специфікація вказувала танталовий конденсатор, але його струм витоку (1-10 мкА) подвоює/потроює E_sleep (1.5 мкА). Документація оновлена на MLCC X5R/X7R (виток ~десятки нА)
 - ✅ Зроблено: DC bias derating (~20% @3.3V/6.3V → ~80µF ефективна, достатньо для 100мс LoRa TX піку). Канон: `02_03 §6`.
 - [ ] 👤 Обрати конкретний part number: 100µF/6.3V X5R 1210 (напр. Murata GRM32ER60J107ME20)
 - [ ] 👤 Додати до KiCad BOM (HW.9)
 
 #### HW.21 — Hybrid energy R&D: TEG + Anchor stacking (post-TRL 6)
-- **Джерело:** `01_03` §5 (Batch Integration Session 3)
+- **P3** · 👤 · → `01_03 §5`
 - **Опис:** Future R&D для усунення зимового енергодефіциту без збільшення EDLC. Два **доповнювальні** (НЕ замінюючі) джерела: (a) TEG Bi₂Te₃ на стовбурі (~50–200 µW зимою при ΔT 15–25 K серцевина ↔ амбієнт), (b) послідовне з'єднання 3–4 анкерів (V_OC × 3–4 для кластерних/арктичних розгортань).
 - **Пріоритет:** TRL 7+ (post field validation Phase 2.5). Поточна одно-анкерна архітектура задовольняє BQ25570 cold-start 330 мВ.
 - **Не плутати з:** SolarBotanic «nano-leaves» — не інтегруємо без peer-reviewed per-node даних
@@ -462,7 +462,7 @@
 - [ ] 🔗 Залежить від HW.13 (P-V крива EBFC) для правильного бюджетування доповнення
 
 #### HW.22 — Sterilization protocol (No EtO, Split-cycle + Aseptic, REVISED 2026-05-16)
-- **Джерело:** `01_04` §6 (REVISED)
+- **P1** · 👤 · → `01_04 §6`
 - **Опис:** Раніше — single-cycle terminal gamma 25 кГр в запакованому стані. **Виявлений архітектурний конфлікт:** PTFE-GDL мембрана (HW.25, Zone 3) зазнає chain scission при ≥10 кГр → крихкість, втрата bubble point → катод затоплюється першим дощем. Terminal gamma 25 кГр **неможлива** на готовому виробі з PTFE.
 - **Нова стратегія (Split-cycle + Aseptic Assembly, `01_04 §6.3`):**
   - **ГІЛКА A — Ti-анкер з ферментами (без PTFE):** UV-C + 70% EtOH → low-dose gamma **15 кГр** (не 25) → SAL 10⁻⁶
@@ -479,7 +479,7 @@
 - [ ] 👤 Постачальник Co-60: Чорнобиль НДІ радіаційної медицини / Київ ІРОНЦ — підтвердити можливість low-dose 15 кГр (не стандартної 25)
 
 #### HW.23 — HIP postprocess specification for SLM anode
-- **Джерело:** `01_02` §1.7 BLOCKER-3
+- **P0** · 👤 · → `01_02 §1.7 BLOCKER-3`
 - **Опис:** SLM-друк створює залишкові термічні напруження та внутрішню металургійну пористість. Без HIP (Hot Isostatic Pressing) ці дефекти стануть зародками втомних тріщин при 20-річному циклічному навантаженні.
 - **Параметри:** 920°C ± 20°C / 100–150 МПа Ar / 2–4 год / контрольоване охолодження
 - **Блокує:** Втомну міцність, 20-річну довговічність, TRL 5
@@ -489,7 +489,7 @@
 - [ ] 👤 Втомні випробування (Wöhler) у синтетичному ксилемному соку — еквівалент 5+ років фретингу
 
 #### HW.24 — Staged validation gate (SLA → Ti-coin → full anchor)
-- **Джерело:** `01_01` §6.1 BLOCKER-2
+- **P0** · 👤 · → `01_01 §6.1 BLOCKER-2`
 - **Опис:** Тризонний анкер — складна збірка. Передчасний перехід на DMLS-партію 100 шт. без верифікації базових принципів був методологічною помилкою. Цей блокер фіксує гейт: 100 анкерів замовляємо **тільки** після проходження двох попередніх етапів.
 - [ ] 👤 **Stage 1 — SLA макети (5 шт):** друк прозорого фотополімеру (Form 3 або SLA-сервіс) для перевірки form & fit, ергономіки, Flush Mount step drilling, допусків press-fit «пластик-в-пластик»
 - [ ] 👤 **Stage 2 — Ti-coins (~15 шт, ⌀10–15 мм або 10×10×1 мм):** SLM-друк + EAAE (з обов'язковим dehydrogenation bake `01_02 §1.3 Крок 5b`) → **Gen 2.0 анодний стек** (одношаровий dgrFAD-GDH + Os polymer в geniпin-chitosan-CNC матриці поверх fMWCNT, `01_03 §2.1`) + **Gen 2.0 катодний стек** (Laccase + nCoCuCeZIF nanozyme гібрид DET, `01_03 §2.2`) + **Nafion-g-PSBMA анти-resin coating** → in vitro CV/EIS у синтетичному ксилемному соку (рецептура від біо-хабу ЧНУ, [`08_01`](08_01_University_R_and_D_Protocols)). 30-day stability gate. Chloride tolerance test (0.25 М NaCl). UCST winter-lock тест (-10°C → +25°C цикл). 💡 **Electrode-дизайн:** замовити з «вушком» (отвір/виступ на краю) для кріплення потенціостат-кліпси без пошкодження активної площі (A_electrode = 2 см²). In-silico predictions для порівняння — `40_validate_vs_experiment.py` готовий. (`01_03 §3.7`)
@@ -497,7 +497,7 @@
 - [ ] 👤 **Stage 4 — Партія 100 шт:** після підтвердження Stage 3 — оптове замовлення для польових випробувань
 
 #### HW.25 — PTFE-GDL membrane (Cathode)
-- **Джерело:** `01_04` §5
+- **P1** · 👤 · → `01_04 §5`
 - **Опис:** Газодифузійний шар для катодного фланця (Zone 3) — пропускає атмосферний O₂, блокує краплі води. Без коректної специфікації катод або задихається (опір O₂), або затоплюється (flooding) при дощі/росі.
 - **Параметри:** e-PTFE або d-PTFE, розмір пор 0.2–1.0 µm, товщина 20–100 µm, крайовий кут > 110°
 - [ ] 👤 Закупка зразків e-PTFE / d-PTFE (Gore-Tex industrial, Donaldson, або український постачальник)
@@ -508,7 +508,7 @@
 - [ ] 👤 Метод ламінації PTFE на катодний фланець (без клеїв — механічний обтиск по периметру)
 
 #### HW.26 — PEEK Cold-Flow Creep: Mechanical Lock (NEW 2026-05-16)
-- **Джерело:** `01_01` BLOCKER-3 + §4.3
+- **P1** · 👤 · → `01_01 §4.3 BLOCKER-3`
 - **Опис:** PEEK як термопласт **повзе** під постійним hoop-stress press-fit на 5–10 років. Без mechanical lock через 10 років contact pressure падає на 60% → втрата герметичності O-ring + ризик вириву Zone 3 при штормі. Mandatory complementary fix до §4.2 ΔCTE розрахунку натягу.
 - **Параметри:** Annular barbs (трикутні, h=0.25-0.4mm, α=30°/β=70°) на Zone 1 та Zone 3 контактних поверхнях + DIN 471 Ti retaining ring у канавках ∅0.8×0.6mm + hex tolerance ≤ 0.05mm radial. Press-fit при T = 150°C (>T_g PEEK 143°C) для barb engagement.
 - **Cost impact:** ~$0.30/анкер (negligible vs $15-18 base DMLS cost)
@@ -521,7 +521,7 @@
 - [ ] 👤 Stage 1 SLA-mock (HW.24): включити barb-detail у фотополімерну збірку для перевірки клацання
 
 #### HW.27 — Dehydrogenation Bake: Hydrogen Embrittlement Mitigation (NEW 2026-05-16)
-- **Джерело:** `01_02` §1.3 Крок 5b + Failure Mode C
+- **P1** · 👤 · → `01_02 §1.3`
 - **Опис:** EAAE (Крок 4) генерує атомарний H через реакції Ti+HCl/H₂SO₄; ультразвукова кавітація прискорює дифузію H у кристалічну ґратку Ti. Без вакуумного відпалу між промивкою (Крок 5) та пасивацією (Крок 6) поверхневий шар TPMS-гіроїда стає brittle (TiH₂) на глибину 5–50 µm → втомне руйнування при першому ж шторм-навантаженні.
 - **Параметри:** Вакуумна піч 250°C ± 25°C, 10⁻³ mbar, 3 год (range: 200–300°C / 2–4 год). Обов'язково within 2 hours of rinse (H мігрує глибше при кімнатній T).
 - **Контроль:** LECO RH404 vacuum hot extraction → H content < 100 ppm (ASTM B348 grade 5 ліміт 150 ppm).
@@ -532,7 +532,7 @@
 - [ ] 👤 Втомне тестування Ti-coin Stage 2 (HW.24) — порівняння з/без dehydrogenation bake для підтвердження ефекту
 
 #### HW.28 — Anti-Overgrowth Shield для Zone 3 (NEW 2026-05-16)
-- **Джерело:** `01_04` §5.5 + §2 Фаза 4 revision
+- **P2** · 👤 · → `01_04 §5.5`
 - **Опис:** Поправка Фази 4 ксилемоінтеграції — анкер **НЕ повинен** повністю поглинатися стовбуром. Лише Zone 1 (анод) інтегрується; Zone 3 (катод) має залишатися постійно експонованим атмосфері для ORR (Laccase + AuNPs + O₂). Без shield через 3–5+ років нова кора накриває PTFE-GDL → дифузія O₂ зупиняється → EBFC мертва за 2–3 додаткових роки.
 - **Три захисти (complementary):** (A) виступаючий PEEK Radome conus ≥ 3 мм + R заокруглення ≥ 5 мм; (B) super-hydrophobic fluoropolymer coating (CA > 150°, Fluoropel PFC-1601V); (C) periodic forester maintenance every 5–7 років (мікрорізець для зчищення приростаючої тканини).
 - **Cross-ref:** Інтегровано у HW.17 (PEEK radome prototype) + OPEX додано у `07_02`
@@ -544,7 +544,7 @@
 - [ ] 👤 Update `07_02` OPEX: 1 visit / 5–7 років × $20/visit = ~$3–4/рік/анкер (форестер у Черкаському борі)
 
 #### HW.29 — Board-to-Board Connector pair: Power Deck ↔ RF Deck (NEW 2026-05-16)
-- **Джерело:** `02_01` §3.1 (BOM поз. 12), §5.3
+- **P1** · 👤 · → `02_01 §3.1`, `§5.3`
 - **Опис:** Multi-deck PCB архітектура (Power Deck + RF Deck, standoff 8–10 мм) була специфікована у §5.3 без відповідного компонента у BOM. Без B2B-конектора RF Deck не отримує живлення 3V3 (Pogo Pins зайняті VIN_DC+GND). Тепер BOM включає Samtec FTSH header + CLT socket (1.27 мм pitch SMD, 8–10 мм stack) ~$0.85/пара.
 - **Альтернатива (дорожча):** rigid-flex PCB замість двох плат + B2B (~+$1.50, але усуває механічну точку відмови).
 - [ ] 👤 KiCad: place B2B footprints на обидві деки + перевірка signal integrity для 6-8 сигналів (3V3, GND, VSTOR_sense, EBFC_sense, piezo_EXTI, BQ25570 EN)
@@ -552,7 +552,7 @@
 - [ ] 👤 Pre-fabrication sanity check vs `HW.8 BLOCKER-6` (B2B stack height впливає на Z-tolerance envelope)
 
 #### HW.30 — SMD Piezo + Acoustic Pad (Zero-Touch Wake) (NEW 2026-05-16)
-- **Джерело:** `02_01` §6.2 (REVISED 2026-05-16)
+- **P2** · 👤 · → `02_01 §6.2`
 - **Опис:** Раніше — клеєний ZP-3/ZP-5 ∅27 мм через-отворний з дротами до GPIO. **Порушення Zero-Touch §5.2:** клеєння + дроти ≠ робот pick-and-place. Pogo Pins вже зайняті VIN_DC+GND.
 - **Нове рішення:** SMD-piezo (Murata 7BB-15-6L0 / TDK B-Series / Mallory MSR205P) на нижній стороні Power Deck + Bergquist Sil-Pad 1500ST (0.5–1.0 мм, Z_acoustic ≈ 1.5 МRayl ~ Ti) як coupling до Ti Zone 3. Сигнал через B2B (HW.29) до RF Deck → BAT54S → EXTI GPIO. Усе SMD; робот installs everything.
 - [ ] 👤 Вибрати SMD-piezo з 3 кандидатів (Murata/TDK/Mallory), компроміс sensitivity vs пасивний voltage swing на резонансі ~4 кГц
