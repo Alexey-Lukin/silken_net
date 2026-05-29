@@ -8,24 +8,36 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 4 — Архітектура затверджена, інтеграційні компоненти тестуються локально (EBFC TRL 3→4 PASSED 2026-05-25 через Zero-Lab in-silico pipeline; програмні домени рухаються паралельно через HIL-симулятори, [`00_06`](00_06_Strategic_Roadmap_and_HIL_Simulators)).
+- **Поточний TRL:** TRL 4 — Архітектура затверджена, інтеграційні компоненти тестуються локально (EBFC TRL 3→4 PASSED 2026-05-25 через Zero-Lab in-silico pipeline; програмні домени рухаються паралельно через HIL-симулятори, [`00_06`](00_06_Strategic_Roadmap_and_HIL_Simulators)). Відкрите System-gating (Module 01 chemistry, FW.2) → [00_08](00_08_Action_Plan_Tracker).
 - **Оновлення:** Проведено півот апаратної частини. Повністю видалено рівень електрокінетики (Streaming Potential / LTC3108). Затверджено нову біохімічну базу (EBFC).
-- **Пов'язані модулі:**
-  - Бізнес-візія та slashing → [`00_01_Vision_Market_and_Slashing_Policy`](00_01_Vision_Market_and_Slashing_Policy)
-  - Failover та fallback → [`00_03_Resilience_and_Failover_Policy`](00_03_Resilience_and_Failover_Policy)
-  - Біомеханіка та анкер → [`01_01_Coaxial_Gyroid_Topology_and_PEEK`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
-  - Апаратура та BOM → [`02_01_Hardware_Architecture_and_BOM`](02_01_Hardware_Architecture_and_BOM)
-  - Прошивка та Edge AI → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
-  - Backend та моделі → [`04_01_Data_Models_and_Entities`](04_01_Data_Models_and_Entities)
-  - Web3 мультичейн → [`05_01_Multichain_Architecture`](05_01_Multichain_Architecture)
-  - DevOps та деплой → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
-  - Бізнес-контракти → [`07_01_Nature_as_a_Service_Contracts`](07_01_Nature_as_a_Service_Contracts)
 
 ---
 
-## 🛑 Блокери
+## 🔗 Cross-references
 
-- Відсутні на рівні макроархітектури. Успіх системи залежить від розблокування TRL 4 у хіміків (Модуль 01) — але цей блокер тепер **не блокує програмні домени**, які мають paralлельний шлях через HIL-симулятори ([`00_06 §HIL`](00_06_Strategic_Roadmap_and_HIL_Simulators)).
+| Ресурс | Опис |
+|--------|------|
+| [00_01_Vision_Market_and_Slashing_Policy](00_01_Vision_Market_and_Slashing_Policy) | Бізнес-візія та slashing |
+| [00_03_Resilience_and_Failover_Policy](00_03_Resilience_and_Failover_Policy) | Failover та Web3 fallback |
+| [01_01_Coaxial_Gyroid_Topology_and_PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Біомеханіка та тризонний анкер |
+| [02_01_Hardware_Architecture_and_BOM](02_01_Hardware_Architecture_and_BOM) | Апаратура та BOM |
+| [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Прошивка та Edge AI |
+| [04_01_Data_Models_and_Entities](04_01_Data_Models_and_Entities) | Backend та моделі даних |
+| [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Web3 мультичейн |
+| [06_01_Deployment_Kamal_Terraform](06_01_Deployment_Kamal_Terraform) | DevOps та деплой |
+| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | Бізнес-контракти NaaS |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): System TRL gated by Module 01 chemistry (HW.*) + firmware (FW.2); софт розв'язано через HIL (`00_06`) |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [1. Технічна Специфікація: 8 Рівнів Gaia 2.0](#-1-технічна-специфікація-8-рівнів-gaia-20)
+- [2. Redis Infrastructure — DB Isolation](#-2-redis-infrastructure--db-isolation)
+- [3. Gaia 2.0 Scaling Roadmap — Фрактальна Топологія](#-3-gaia-20-scaling-roadmap--фрактальна-топологія)
+- [4. Анатомія Кіберфізичного Стану — Повний 12-Крокової Конвеєр](#-4-анатомія-кіберфізичного-стану--повний-12-крокової-конвеєр)
+- [5. Ключові Параметри Системи](#-5-ключові-параметри-системи)
+- [6. Топологія Мережі (High-Level)](#-6-топологія-мережі-high-level)
+<!-- TOC:AUTO:END -->
 
 ---
 
