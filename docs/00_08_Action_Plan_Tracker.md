@@ -81,7 +81,7 @@
 
 #### S2.4 — Observability industrial-grade hardening
 - **P1** · 🤖+👤 · → `06_03 §2.9`
-- ✅ `external_labels` (env/service/source/release) у `config.alloy` — атрибуція prod/canopy + Akash multi-provider. · [x] 🤖 CI-валідація `config.alloy` ✅ (`grafana/alloy fmt`, CI job `alloy_config_validate`) · [ ] 🤖 `queue_config`/WAL tune + process/runtime метрики + cardinality budget · [ ] 👤 `up`-scrape alert + SLO/error-budget
+- ✅ `external_labels` (env/service/source/release) у `config.alloy` — атрибуція prod/canopy + Akash multi-provider. · [x] 🤖 CI-валідація `config.alloy` ✅ (`grafana/alloy fmt`, CI job `alloy_config_validate`) · [x] 🤖 process/runtime метрики ✅ (9 gauges: RSS/GC/threads/Puma; `sample_process_runtime!` + sample_connection_pool! wired; 13 specs) · [ ] 🤖 `queue_config`/WAL tune + cardinality budget · [ ] 👤 `up`-scrape alert + SLO/error-budget
 
 #### S2.2 — Grafana Cloud dashboards
 - **P0** · 👤 · → `06_03`

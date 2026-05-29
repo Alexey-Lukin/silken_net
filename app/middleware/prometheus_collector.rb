@@ -44,8 +44,10 @@ class PrometheusCollector
     return forbidden_response unless allowed_ip?(request.ip)
     return forbidden_response unless authorized?(env)
 
-    # --- REFRESH SIDEKIQ GAUGES ---
+    # --- REFRESH ON-SCRAPE GAUGES (Sidekiq queues + DB pool + process/runtime) ---
     refresh_sidekiq_gauges
+    SilkenNet::Metrics.sample_connection_pool!
+    SilkenNet::Metrics.sample_process_runtime!
 
     # --- RENDER METRICS ---
     body = Prometheus::Client::Formats::Text.marshal(SilkenNet::Metrics::REGISTRY)

@@ -405,7 +405,7 @@ end
     summary: "RPC provider {{ $labels.provider }} circuit breaker open"
 ```
 
-**📊 Загальний підсумок реєстру (SSOT, verified vs `config/initializers/prometheus.rb` 2026-05-29): 32 кастомні метрики = 20 counters + 10 gauges + 2 histograms.**
+**📊 Загальний підсумок реєстру (SSOT, verified vs `config/initializers/prometheus.rb` 2026-05-29): 41 кастомна метрика = 20 counters + 19 gauges + 2 histograms.**
 
 > Це **ЄДИНЕ канонічне джерело кількості метрик**. Усі інші згадки (CLAUDE.md, `config.alloy`, діаграми/таблиці нижче) **рефлять сюди**, а не дублюють число — щоб уникнути doc-drift. При зміні реєстру в коді — оновити ЛИШЕ тут.
 
@@ -420,6 +420,7 @@ end
 - **`scrape_timeout = 10s`** явно (< 15s interval).
 - Header-коментар більше не дублює реєстр метрик — реф на §2.8 (DRY).
 - **CI-gate `alloy_config_validate`** (`.github/workflows/ci.yml`) — `grafana/alloy fmt` парсить `config.alloy` на кожен PR/push (env-незалежно); River parse-error = **red CI замість crash-loop sidecar** на Akash-деплої.
+- **Process/runtime метрики** (`prometheus.rb` §2.9, 9 gauges) — Ruby VM/GC/RSS/Puma-threads, `sample_process_runtime!` на кожен scrape. **Bonus fix:** `sample_connection_pool!` тепер ВИКЛИКАЄТЬСЯ у `PrometheusCollector` (раніше визначений, але ніде не звався → DB-pool gauges були завжди 0/stale).
 
 **🟡 Рекомендований роадмеп (потребує валідації/ops, поза цим коммітом):**
 
@@ -427,7 +428,7 @@ end
 |---|------------|------|-----------|
 | 1 | ✅ **CI-валідація `config.alloy`** (2026-05-29) — CI job `alloy_config_validate` (`grafana/alloy fmt`, parse-check) | Раніше **ніщо** не лінтило River-конфіг; parse-error = crash-loop alloy-sidecar у проді (`06_02 §debug`). Гейт ловить це до деплою | ✅ DONE |
 | 2 | **`queue_config` + явний WAL** на `remote_write` | Default WAL ~2h буферить аутейдж; tune `capacity`/`max_shards`/`batch_send_deadline` під реальний об'єм для backpressure | MED |
-| 3 | **Process/runtime метрики** (Ruby VM/GC, Puma threads, RSS) | Реєстр — лише business-метрики; немає видимості memory leak / GC pause / thread saturation. Додати process-collector (без авто-magic, у дусі §«Чому prometheus-client») | MED |
+| 3 | ✅ **Process/runtime метрики** (2026-05-29) — 9 gauges (RSS · GC count/major/heap_live · ruby_threads · Puma running/max/pool_capacity/backlog), sampled on-scrape (`sample_process_runtime!`) + 13 specs | Закрило сліпоту до memory leak / GC pause / thread saturation. Pure stdlib (GC.stat / Thread / /proc / Puma.stats) | ✅ DONE |
 | 4 | **Cardinality budget** | `cluster_id` (entropy) + потенційні per-DID labels → high cardinality на планетарному масштабі (Grafana Cloud біллить за active series / DPM). Визначити бюджет + drop/relabel | MED |
 | 5 | **`up` scrape-health alert** | `prometheus.scrape` авто-емітить `up{job="silken_net_scraper"}`; алерт на `==0` = web/alloy впав → метрики «осліпли» | ops |
 | 6 | **SLO + error-budget** (ingest availability, mint/slash success) | Зараз лише ad-hoc alert rules; SLO дають об'єктивний reliability-таргет | ops |

@@ -211,4 +211,49 @@ RSpec.describe SilkenNet::Metrics do
       expect(metric.get(labels: { provider: "alchemy.example.com:443" })).to eq(0.0)
     end
   end
+
+  # -----------------------------------------------------------------------
+  # 06_03 §2.9: Process / runtime health metrics (Ruby VM, GC, memory, Puma)
+  # -----------------------------------------------------------------------
+
+  describe "§2.9 — process/runtime metrics registration" do
+    %i[
+      silkennet_process_resident_memory_bytes
+      silkennet_ruby_gc_count
+      silkennet_ruby_gc_major_count
+      silkennet_ruby_gc_heap_live_slots
+      silkennet_ruby_threads
+      silkennet_puma_running_threads
+      silkennet_puma_max_threads
+      silkennet_puma_pool_capacity
+      silkennet_puma_backlog
+    ].each do |name|
+      it "registers #{name} gauge" do
+        expect(described_class::REGISTRY.get(name)).to be_a(Prometheus::Client::Gauge)
+      end
+    end
+  end
+
+  describe "§2.9 — sample_process_runtime!" do
+    it "populates GC + thread gauges with live values" do
+      described_class.sample_process_runtime!
+      expect(described_class::RUBY_GC_COUNT.get).to be > 0
+      expect(described_class::RUBY_THREADS.get).to be > 0
+      expect(described_class::RUBY_GC_HEAP_LIVE_SLOTS.get).to be > 0
+    end
+
+    it "is resilient — never raises even if a source is unavailable" do
+      expect { described_class.sample_process_runtime! }.not_to raise_error
+    end
+
+    it "process_rss_bytes returns a non-negative Integer (0 off-Linux)" do
+      rss = described_class.process_rss_bytes
+      expect(rss).to be_a(Integer)
+      expect(rss).to be >= 0
+    end
+
+    it "sample_puma_pool! never raises (no-op when Puma stats absent)" do
+      expect { described_class.sample_puma_pool! }.not_to raise_error
+    end
+  end
 end

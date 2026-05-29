@@ -306,6 +306,58 @@ module SilkenNet
       labels: [ :cluster_id ]
     )
 
+    # -----------------------------------------------------------------------
+    # [06_03 §2.9 Process / runtime health] Ruby VM, GC, memory + Puma pool.
+    # Refreshed on each scrape (sample_process_runtime!) — gives prod visibility
+    # into memory leaks, GC pressure, and thread/worker saturation that business
+    # metrics cannot. Pure Ruby stdlib (GC.stat / Thread.list / /proc / Puma.stats),
+    # no extra gems (consistent with §"Чому prometheus-client").
+    # -----------------------------------------------------------------------
+    PROCESS_RESIDENT_MEMORY_BYTES = REGISTRY.gauge(
+      :silkennet_process_resident_memory_bytes,
+      docstring: "Resident set size (RSS) of the scraped process in bytes (Linux /proc; 0 elsewhere)"
+    )
+
+    RUBY_GC_COUNT = REGISTRY.gauge(
+      :silkennet_ruby_gc_count,
+      docstring: "Total Ruby GC runs since process start (GC.stat[:count])"
+    )
+
+    RUBY_GC_MAJOR_COUNT = REGISTRY.gauge(
+      :silkennet_ruby_gc_major_count,
+      docstring: "Major Ruby GC runs since process start (GC.stat[:major_gc_count])"
+    )
+
+    RUBY_GC_HEAP_LIVE_SLOTS = REGISTRY.gauge(
+      :silkennet_ruby_gc_heap_live_slots,
+      docstring: "Live objects on the Ruby heap (GC.stat[:heap_live_slots]); sustained growth = leak"
+    )
+
+    RUBY_THREADS = REGISTRY.gauge(
+      :silkennet_ruby_threads,
+      docstring: "Live Ruby threads in the process (Thread.list.size); sustained growth = thread leak"
+    )
+
+    PUMA_RUNNING_THREADS = REGISTRY.gauge(
+      :silkennet_puma_running_threads,
+      docstring: "Puma worker threads currently spawned (busy + idle)"
+    )
+
+    PUMA_MAX_THREADS = REGISTRY.gauge(
+      :silkennet_puma_max_threads,
+      docstring: "Puma configured max threads (pool ceiling)"
+    )
+
+    PUMA_POOL_CAPACITY = REGISTRY.gauge(
+      :silkennet_puma_pool_capacity,
+      docstring: "Puma free thread-pool capacity (0 = saturated → requests queue in backlog)"
+    )
+
+    PUMA_BACKLOG = REGISTRY.gauge(
+      :silkennet_puma_backlog,
+      docstring: "Puma requests waiting for a free thread (backlog; sustained >0 = under-provisioned)"
+    )
+
     # Snapshot connection pool stats for Prometheus scraping.
     # Called from PrometheusCollector middleware or a periodic job.
     def self.sample_connection_pool!
@@ -322,6 +374,61 @@ module SilkenNet
       end
     rescue StandardError => e
       Rails.logger.warn "⚠️ [Prometheus] Connection pool sampling failed: #{e.message}"
+    end
+
+    # Snapshot Ruby VM / GC / memory + Puma pool stats for Prometheus scraping.
+    # Called from PrometheusCollector on each scrape (cheap: GC.stat is O(1)).
+    def self.sample_process_runtime!
+      gc = GC.stat
+      RUBY_GC_COUNT.set(gc[:count].to_i)
+      RUBY_GC_MAJOR_COUNT.set(gc[:major_gc_count].to_i)
+      RUBY_GC_HEAP_LIVE_SLOTS.set(gc[:heap_live_slots].to_i)
+      RUBY_THREADS.set(Thread.list.size)
+      PROCESS_RESIDENT_MEMORY_BYTES.set(process_rss_bytes)
+      sample_puma_pool!
+    rescue StandardError => e
+      Rails.logger.warn "⚠️ [Prometheus] Process runtime sampling failed: #{e.message}"
+    end
+
+    # Resident set size in bytes from Linux /proc/self/status (VmRSS, kB → bytes).
+    # Returns 0 on non-Linux (dev/test macOS) or if unreadable — gauge stays 0.
+    def self.process_rss_bytes
+      kb = File.read("/proc/self/status")[/^VmRSS:\s+(\d+)\s+kB/, 1]
+      kb ? kb.to_i * 1024 : 0
+    rescue StandardError
+      0
+    end
+
+    # Puma thread-pool stats (web process only). Handles single + clustered modes.
+    # No-op when Puma is absent or stats unparseable (e.g. the Sidekiq process).
+    def self.sample_puma_pool!
+      return unless defined?(::Puma) && ::Puma.respond_to?(:stats)
+
+      raw = ::Puma.stats
+      stats = raw.is_a?(String) ? JSON.parse(raw) : raw
+      return unless stats.is_a?(Hash)
+
+      if (workers = stats["worker_status"])
+        running = capacity = backlog = max = 0
+        workers.each do |w|
+          ls = w["last_status"] || {}
+          running  += ls["running"].to_i
+          capacity += ls["pool_capacity"].to_i
+          backlog  += ls["backlog"].to_i
+          max      += ls["max_threads"].to_i
+        end
+        PUMA_RUNNING_THREADS.set(running)
+        PUMA_POOL_CAPACITY.set(capacity)
+        PUMA_BACKLOG.set(backlog)
+        PUMA_MAX_THREADS.set(max)
+      else
+        PUMA_RUNNING_THREADS.set(stats["running"].to_i)
+        PUMA_POOL_CAPACITY.set(stats["pool_capacity"].to_i)
+        PUMA_BACKLOG.set(stats["backlog"].to_i)
+        PUMA_MAX_THREADS.set(stats["max_threads"].to_i)
+      end
+    rescue StandardError => e
+      Rails.logger.warn "⚠️ [Prometheus] Puma stats sampling failed: #{e.message}"
     end
   end
 end
