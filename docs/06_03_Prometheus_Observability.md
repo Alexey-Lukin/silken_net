@@ -419,12 +419,13 @@ end
 - **`external_labels`** на `remote_write` — `service` / `source` / `env` (з `RAILS_ENV`) / `release` (з `RELEASE_VERSION`). Без них серії з prod/canopy **та** з різних Akash-провайдерів (multi-provider failover, `06_02`) зливаються в Grafana Cloud — неможливо скоупити дашборди/алерти за середовищем чи провайдером, ні відстежити регресію за релізом (корелює з Sentry `release`).
 - **`scrape_timeout = 10s`** явно (< 15s interval).
 - Header-коментар більше не дублює реєстр метрик — реф на §2.8 (DRY).
+- **CI-gate `alloy_config_validate`** (`.github/workflows/ci.yml`) — `grafana/alloy fmt` парсить `config.alloy` на кожен PR/push (env-незалежно); River parse-error = **red CI замість crash-loop sidecar** на Akash-деплої.
 
 **🟡 Рекомендований роадмеп (потребує валідації/ops, поза цим коммітом):**
 
 | # | Покращення | Чому | Пріоритет |
 |---|------------|------|-----------|
-| 1 | **CI-валідація `config.alloy`** — job `grafana/alloy fmt` (parse-check) | Зараз **ніщо** не лінтить River-конфіг; parse-error = crash-loop alloy-sidecar у проді (`06_02 §debug`). Гейт ловить це до деплою | **HIGH** |
+| 1 | ✅ **CI-валідація `config.alloy`** (2026-05-29) — CI job `alloy_config_validate` (`grafana/alloy fmt`, parse-check) | Раніше **ніщо** не лінтило River-конфіг; parse-error = crash-loop alloy-sidecar у проді (`06_02 §debug`). Гейт ловить це до деплою | ✅ DONE |
 | 2 | **`queue_config` + явний WAL** на `remote_write` | Default WAL ~2h буферить аутейдж; tune `capacity`/`max_shards`/`batch_send_deadline` під реальний об'єм для backpressure | MED |
 | 3 | **Process/runtime метрики** (Ruby VM/GC, Puma threads, RSS) | Реєстр — лише business-метрики; немає видимості memory leak / GC pause / thread saturation. Додати process-collector (без авто-magic, у дусі §«Чому prometheus-client») | MED |
 | 4 | **Cardinality budget** | `cluster_id` (entropy) + потенційні per-DID labels → high cardinality на планетарному масштабі (Grafana Cloud біллить за active series / DPM). Визначити бюджет + drop/relabel | MED |
