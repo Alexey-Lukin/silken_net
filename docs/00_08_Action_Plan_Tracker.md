@@ -77,7 +77,11 @@
 
 #### S2.1 — Верифікація метрик після deploy
 - **P0** · 👤 · → `06_03`
-- `/metrics` (10+ метрик) + Alloy sidecar → Grafana Cloud налаштовано. · [ ] 👤 верифікувати збір метрик після першого Akash deploy
+- `/metrics` (реєстр — `06_03 §2.8`) + Alloy sidecar → Grafana Cloud налаштовано. · [ ] 👤 верифікувати збір метрик після першого Akash deploy
+
+#### S2.4 — Observability industrial-grade hardening
+- **P1** · 🤖+👤 · → `06_03 §2.9`
+- ✅ `external_labels` (env/service/source/release) у `config.alloy` — атрибуція prod/canopy + Akash multi-provider. · [ ] 🤖 CI-валідація `config.alloy` (`grafana/alloy fmt`) — parse-error = crash-loop sidecar (HIGH) · [ ] 🤖 `queue_config`/WAL tune + process/runtime метрики + cardinality budget · [ ] 👤 `up`-scrape alert + SLO/error-budget
 
 #### S2.2 — Grafana Cloud dashboards
 - **P0** · 👤 · → `06_03`

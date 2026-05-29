@@ -2,31 +2,28 @@
 // Grafana Alloy Configuration — SilkenNet Observability (River format)
 // =============================================================================
 //
-// This configuration runs inside the Akash `alloy` sidecar service.
-// It scrapes the Rails `/metrics` endpoint from the `web` service every 15s
-// and pushes metrics to Grafana Cloud via Prometheus remote_write.
+// Runs inside the Akash `alloy` sidecar. Scrapes the Rails `/metrics` endpoint
+// (web service) every 15s and pushes to Grafana Cloud via Prometheus remote_write.
 //
 // Environment variables (injected via Akash SDL):
-//   PROMETHEUS_AUTH_USER      — Basic Auth username for Rails /metrics endpoint
-//   PROMETHEUS_AUTH_PASSWORD   — Basic Auth password for Rails /metrics endpoint
-//   GRAFANA_REMOTE_WRITE_URL  — Grafana Cloud Prometheus endpoint
-//   GRAFANA_REMOTE_WRITE_USERNAME — Grafana Cloud instance ID
-//   GRAFANA_REMOTE_WRITE_TOKEN    — Grafana Cloud API token (write scope)
+//   PROMETHEUS_AUTH_USER / PROMETHEUS_AUTH_PASSWORD — Basic Auth for /metrics
+//   GRAFANA_REMOTE_WRITE_URL / _USERNAME / _TOKEN   — Grafana Cloud remote_write
+//   RAILS_ENV (optional)        — environment label (default "production")
+//   RELEASE_VERSION (optional)  — release label (regression attribution; matches Sentry)
 //
-// Metrics scraped (10 custom business metrics):
-//   Counters: silkennet_scc_minted_total, silkennet_scc_slashed_total,
-//             silkennet_rpc_errors_total, silkennet_telemetry_processed_total,
-//             silkennet_telemetry_fraud_detected_total, silkennet_slashing_events_total,
-//             silkennet_ota_chunks_sent_total, silkennet_ews_alerts_total,
-//             silkennet_coap_packets_received_total
-//   Histogram: silkennet_oracle_dispatch_duration_seconds
-//   Gauges: silkennet_sidekiq_queue_size, silkennet_sidekiq_queue_latency_seconds
+// Metric registry SSOT (names, types, count) — docs/06_03 §2.8. Deliberately NOT
+// restated here (avoids doc-drift); this agent scrapes whatever /metrics exposes.
+//
+// ⚠️ Validate after edits before deploy (no local linter in this repo):
+//   docker run --rm -v "$PWD/deploy/akash:/c" grafana/alloy:latest fmt /c/config.alloy
+// A River parse error makes the alloy sidecar crash-loop (see 06_02 §debug).
 // =============================================================================
 
 prometheus.scrape "silken_net_scraper" {
-  targets = [{"__address__" = "web:80"}]
-  metrics_path = "/metrics"
+  targets         = [{ "__address__" = "web:80" }]
+  metrics_path    = "/metrics"
   scrape_interval = "15s"
+  scrape_timeout  = "10s"
 
   basic_auth {
     username = sys.env("PROMETHEUS_AUTH_USER")
@@ -37,6 +34,17 @@ prometheus.scrape "silken_net_scraper" {
 }
 
 prometheus.remote_write "grafanacloud" {
+  // [Industrial-grade] External labels — attribute every series to its deployment
+  // so prod/canopy AND Akash multi-provider failover (06_02) stay distinguishable
+  // in Grafana Cloud. Without these, series from different environments/providers
+  // collide and dashboards/alerts cannot be scoped. Empty values are dropped.
+  external_labels = {
+    service = "silken-net",
+    source  = "akash-alloy",
+    env     = coalesce(sys.env("RAILS_ENV"), "production"),
+    release = sys.env("RELEASE_VERSION"),
+  }
+
   endpoint {
     url = sys.env("GRAFANA_REMOTE_WRITE_URL")
 
@@ -45,4 +53,9 @@ prometheus.remote_write "grafanacloud" {
       password = sys.env("GRAFANA_REMOTE_WRITE_TOKEN")
     }
   }
+
+  // NB: Alloy keeps an on-disk WAL (~2h) by default, so a transient Grafana Cloud
+  // outage does not lose samples. Explicit queue_config tuning (capacity / shards /
+  // batch_send_deadline) is recommended once metric volume is known — see the
+  // industrial-hardening roadmap in docs/06_03 (validate with `alloy fmt` first).
 }

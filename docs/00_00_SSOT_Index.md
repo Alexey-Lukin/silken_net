@@ -78,7 +78,7 @@ _Деплой, моніторинг, секрети та децентраліз�
 
 - [06\_01\_Deployment\_Kamal\_Terraform](06_01_Deployment_Kamal_Terraform) (Kamal + Terraform GCP, Canopy vs Production)
 - [06\_02\_Akash\_Network\_Integration](06_02_Akash_Network_Integration) (SDL 2.0 манифест + multi-provider failover)
-- [06\_03\_Prometheus\_Observability](06_03_Prometheus_Observability) (20 метрик + Grafana Cloud + Alerting)
+- [06\_03\_Prometheus\_Observability](06_03_Prometheus_Observability) (Grafana Alloy → Grafana Cloud + Alerting)
 - [06\_04\_Secrets\_Checklist](06_04_Secrets_Checklist) (Інвентаризація секретів: GitHub Secrets, Kamal, Akash, Terraform)
 - [06\_05\_Puma\_Configuration](06_05_Puma_Configuration) (Puma 8 IO-bound pool + кластерні хуки + runbook'и)
 

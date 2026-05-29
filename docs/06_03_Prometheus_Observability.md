@@ -18,7 +18,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — бібліотеки встановлені, 25 кастомних метрик реалізовані та інструментовані (13 counters + 10 gauges + 2 histograms), структуровані JSON-логи активні; Grafana Alloy sidecar налаштований для scrape + remote_write до Grafana Cloud (BLOCKERs 1-3 вирішені); TRL 7 підтверджується після першого реального деплою з метриками в Grafana Cloud
+- **Поточний TRL:** TRL 6 — бібліотеки встановлені, кастомні метрики реалізовані та інструментовані (повний реєстр + кількість — §2.8), структуровані JSON-логи активні; Grafana Alloy sidecar налаштований для scrape + remote_write до Grafana Cloud (BLOCKERs 1-3 вирішені); TRL 7 підтверджується після першого реального деплою з метриками в Grafana Cloud
 - **Пов'язані модулі:**
   - Розгортання → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
   - Akash → [`06_02_Akash_Network_Integration`](06_02_Akash_Network_Integration)
@@ -153,7 +153,7 @@ ALL_QUEUES = %w[uplink alerts critical downlink default web3_critical web3 web3_
 | `sentry-sidekiq` gem | `Gemfile` | ✅ 6.5.0 (auto-instruments Sidekiq) |
 | `prometheus-client` gem | `Gemfile` | ✅ 4.2.5 |
 | Sentry initializer | `config/initializers/sentry.rb` | ✅ Повністю налаштований |
-| Prometheus initializer | `config/initializers/prometheus.rb` | ✅ 25 метрик (13 Counters + 10 Gauges + 2 Histograms) визначені |
+| Prometheus initializer | `config/initializers/prometheus.rb` | ✅ реєстр метрик визначено (кількість — §2.8) |
 | `/metrics` endpoint | `app/middleware/prometheus_collector.rb` | ✅ Реалізований (IP allowlist + Basic Auth) |
 | Middleware registration | `config/application.rb` | ✅ `config.middleware.use PrometheusCollector` |
 | `SCC_MINTED_TOTAL` instrumentation | `app/services/blockchain_minting_service.rb` | ✅ Реалізовано |
@@ -305,7 +305,7 @@ end
 | `silkennet_sidekiq_queue_size` | `SilkenNet::Metrics::SIDEKIQ_QUEUE_SIZE` | `queue` (всі 9 черг) | `PrometheusCollector#refresh_sidekiq_gauges` | Поточна кількість задач у кожній Sidekiq черзі |
 | `silkennet_sidekiq_queue_latency_seconds` | `SilkenNet::Metrics::SIDEKIQ_QUEUE_LATENCY` | `queue` (всі 9 черг) | `PrometheusCollector#refresh_sidekiq_gauges` | Вік найстарішої задачі в черзі (секунди) |
 
-> Проміжний підсумок видалено — див. фінальну цифру у §2.8 (25 метрик).
+> Проміжний підсумок видалено — див. фінальну цифру у §2.8 (SSOT).
 
 ### 2.4 Реалізовані додаткові метрики (Sprint 2, S2.4)
 
@@ -320,7 +320,7 @@ end
 | `silkennet_coap_packets_received_total` | Counter | `UnpackTelemetryWorker` | `status` |
 | `silkennet_streamr_broadcast_failures_total` | Counter | `StreamrBroadcastWorker` | — |
 
-> Проміжний підсумок видалено — див. фінальну цифру у §2.8 (25 метрик).
+> Проміжний підсумок видалено — див. фінальну цифру у §2.8 (SSOT).
 
 ### 2.4.1 RSpec покриття нових метрик (S2.4 — Виконано)
 
@@ -344,7 +344,7 @@ end
 
 Обидві метрики зареєстровані в `config/initializers/prometheus.rb` та інструментовані у відповідних класах. `ORACLE_DISPATCH_DURATION` вимірює повний цикл dispatch (від виклику до отримання request_id). `LORENZ_COMPUTATION_DURATION` вимірює час серверного розрахунку 250 ітерацій Лоренца (Float арифметика).
 
-> Проміжний підсумок видалено — див. фінальну цифру у §2.8 (25 метрик).
+> Проміжний підсумок видалено — див. фінальну цифру у §2.8 (SSOT).
 
 ### 2.6 Entropy Monitor Metric (Quantum Pre-Stress Detector)
 
@@ -363,7 +363,7 @@ end
     summary: "Передстресовий сигнал: кластер {{ $labels.cluster_id }} — ентропія {{ $value }}"
 ```
 
-> Проміжний підсумок видалено — див. фінальну цифру у §2.8 (25 метрик).
+> Проміжний підсумок видалено — див. фінальну цифру у §2.8 (SSOT).
 
 ### 2.7 Governance Parameter Sync Observability
 
@@ -405,7 +405,42 @@ end
     summary: "RPC provider {{ $labels.provider }} circuit breaker open"
 ```
 
-**📊 Загальний підсумок реєстру (SSOT): 25 кастомних метрик = 13 counters + 10 gauges + 2 histograms.**
+**📊 Загальний підсумок реєстру (SSOT, verified vs `config/initializers/prometheus.rb` 2026-05-29): 32 кастомні метрики = 20 counters + 10 gauges + 2 histograms.**
+
+> Це **ЄДИНЕ канонічне джерело кількості метрик**. Усі інші згадки (CLAUDE.md, `config.alloy`, діаграми/таблиці нижче) **рефлять сюди**, а не дублюють число — щоб уникнути doc-drift. При зміні реєстру в коді — оновити ЛИШЕ тут.
+
+---
+
+### 2.9 Industrial-Grade Hardening (аналіз 2026-05-29)
+
+Аудит чинного стеку (Grafana Alloy → Grafana Cloud) на production-grade зрілість. Архітектура **достатня** (WAL-буферизація, Basic Auth, всі 9 черг, 32 метрики), але до «industrial» бракувало атрибуції та захисних гейтів.
+
+**✅ Зроблено зараз (`config.alloy`):**
+- **`external_labels`** на `remote_write` — `service` / `source` / `env` (з `RAILS_ENV`) / `release` (з `RELEASE_VERSION`). Без них серії з prod/canopy **та** з різних Akash-провайдерів (multi-provider failover, `06_02`) зливаються в Grafana Cloud — неможливо скоупити дашборди/алерти за середовищем чи провайдером, ні відстежити регресію за релізом (корелює з Sentry `release`).
+- **`scrape_timeout = 10s`** явно (< 15s interval).
+- Header-коментар більше не дублює реєстр метрик — реф на §2.8 (DRY).
+
+**🟡 Рекомендований роадмеп (потребує валідації/ops, поза цим коммітом):**
+
+| # | Покращення | Чому | Пріоритет |
+|---|------------|------|-----------|
+| 1 | **CI-валідація `config.alloy`** — job `grafana/alloy fmt` (parse-check) | Зараз **ніщо** не лінтить River-конфіг; parse-error = crash-loop alloy-sidecar у проді (`06_02 §debug`). Гейт ловить це до деплою | **HIGH** |
+| 2 | **`queue_config` + явний WAL** на `remote_write` | Default WAL ~2h буферить аутейдж; tune `capacity`/`max_shards`/`batch_send_deadline` під реальний об'єм для backpressure | MED |
+| 3 | **Process/runtime метрики** (Ruby VM/GC, Puma threads, RSS) | Реєстр — лише business-метрики; немає видимості memory leak / GC pause / thread saturation. Додати process-collector (без авто-magic, у дусі §«Чому prometheus-client») | MED |
+| 4 | **Cardinality budget** | `cluster_id` (entropy) + потенційні per-DID labels → high cardinality на планетарному масштабі (Grafana Cloud біллить за active series / DPM). Визначити бюджет + drop/relabel | MED |
+| 5 | **`up` scrape-health alert** | `prometheus.scrape` авто-емітить `up{job="silken_net_scraper"}`; алерт на `==0` = web/alloy впав → метрики «осліпли» | ops |
+| 6 | **SLO + error-budget** (ingest availability, mint/slash success) | Зараз лише ad-hoc alert rules; SLO дають об'єктивний reliability-таргет | ops |
+| 7 | Dashboards + alerts **import** у Grafana Cloud (IaC у `deploy/grafana/`) | S2.2/S2.3 — IaC готовий, лишається 👤 import | ops |
+
+**Запропонований snippet для #2 (додати в `endpoint`, після `alloy fmt`-валідації):**
+```alloy
+queue_config {
+  capacity             = 10000
+  max_samples_per_send = 2000
+  max_shards           = 50
+  batch_send_deadline  = "5s"
+}
+```
 
 ---
 
@@ -483,7 +518,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │  /metrics endpoint (PrometheusCollector middleware)     │   │
-│  │  ✅ 22 кастомні метрики  ✅ Всі 9 черг                 │   │
+│  │  ✅ custom метрики §2.8  ✅ Всі 9 черг                 │   │
 │  │  ✅ Basic Auth (PROMETHEUS_AUTH_USER/PASSWORD)          │   │
 │  └──────────────────────────┬──────────────────────────────┘   │
 │                             │ [Alloy scrapes кожні 15s]        │
@@ -519,7 +554,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 │  (errors, 0.1% traces)    ✅ SENTRY_DSN налаштований                 │
 │                                                                       │
 │  /metrics endpoint ──────→ Grafana Alloy ──remote_write──→           │
-│  (10 метрик, Basic Auth)     (Akash sidecar)              │           │
+│  (метрики §2.8, Basic Auth)  (Akash sidecar)             │           │
 │                                                           ▼           │
 │                                                    Grafana Cloud     │
 │                                                    (dashboards +     │
@@ -538,7 +573,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 |------|------|--------|
 | `Gemfile` | `prometheus-client` 4.2.5, `sentry-ruby/rails/sidekiq` 6.5.0 | ✅ |
 | `config/initializers/sentry.rb` | Ініціалізація Sentry (DSN, sampling, exclusions, scrubbing) | ✅ |
-| `config/initializers/prometheus.rb` | Визначення `SilkenNet::Metrics` (13 Counters + 10 Gauges + 2 Histograms = 25 метрик) | ✅ |
+| `config/initializers/prometheus.rb` | Визначення `SilkenNet::Metrics` (реєстр + кількість — §2.8) | ✅ |
 | `app/middleware/prometheus_collector.rb` | Rack middleware: `/metrics` endpoint, IP allowlist, Basic Auth, Sidekiq gauge refresh | ✅ |
 | `config/application.rb` (рядок 31) | `config.middleware.use PrometheusCollector` | ✅ |
 | `app/services/blockchain_minting_service.rb` (р.162) | `SCC_MINTED_TOTAL.increment(labels: {token_type:})` | ✅ |
@@ -580,7 +615,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 
 ### Що реально реалізовано (TRL 6 факти)
 
-1. **Prometheus-client інтегрований** — 10 метрик визначені (7 counters + 1 histogram + 2 gauges), `/metrics` endpoint працює з IP-захистом + Basic Auth.
+1. **Prometheus-client інтегрований** — повний реєстр метрик визначено (кількість — §2.8), `/metrics` endpoint працює з IP-захистом + Basic Auth.
 2. **Sentry SDK встановлений і налаштований** — zero-noise конфігурація з 34 виключеннями, автоматична Sidekiq-інтеграція, PII-scrubbing.
 3. **Інструментація в бізнес-логіці** — всі критичні операції (мінтинг, слешинг, RPC-помилки, телеметрія, OTA, EWS, CoAP) мають Prometheus-лічильники.
 4. **GCP Cloud Logging** — WARNING+ логи зберігаються, cost-control фільтр активний.

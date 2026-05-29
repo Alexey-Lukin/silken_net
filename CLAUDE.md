@@ -244,10 +244,10 @@ uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5)
 
 - **GCP** `europe-west1` (GDPR): Cloud SQL PostgreSQL 16, Memorystore Redis 7.0, GCE instances.
 - **Kamal**: production + canopy. SSH deploy, Traefik reverse proxy, Let's Encrypt SSL.
-- **Akash Network**: децентралізована хмара (ЄС, цензуростійкість). SDL в `deploy/akash/`. **BLOCKER: Sidekiq відсутній в Akash SDL**.
+- **Akash Network**: децентралізована хмара (ЄС, цензуростійкість). SDL в `deploy/akash/`: `web` + `job` (Sidekiq) + `alloy` сервіси.
 - **Docker**: `ruby:4.0.1-slim`, multi-stage, `thrust ./bin/rails server`.
-- **Prometheus** (`/metrics` endpoint): 20 метрик (10 counters + 8 gauges + 2 histograms). **BLOCKER: Prometheus Server відсутній у Terraform**.
-- **Sentry** 6.5.0: налаштований, але **`SENTRY_DSN` відсутній у `.kamal/secrets`**.
+- **Observability**: `/metrics` endpoint (custom business-метрики — реєстр + кількість SSOT: `06_03 §2.8`) скрейпиться **Grafana Alloy** sidecar (Akash SDL) → `remote_write` → **Grafana Cloud** (Prometheus storage + dashboards + alerting, SaaS). Self-hosted Prometheus НЕ потрібен (Rails на Akash, не GCP).
+- **Sentry** 6.5.0: налаштований; `SENTRY_DSN` у `.kamal/secrets` (значення задається при деплої).
 - **Pre-flight**: антена ПЕРЕД живленням на SX1262 (згорить без антени). Per-device унікальні AES ключі через HKDF (LoRa AES-128 для Tree+Queen LoRa-сесії, CoAP AES-256 для Queen↔Rails).
 
 ---
@@ -285,14 +285,14 @@ Solana: Ed25519 підпис, SPL Token Transfer, ATA резолюція чер�
 | QUEEN-AT-BLIND | `firmware/queen/main.c:542` | ~25 сек blind wait під час CoAP flush |
 | HRNG-IV-REUSE | `firmware/queen/main.c:588` | ⚠️ Покращено (PLAN 2.7): djb2 fallback замість IV=0, але djb2 НЕ криптографічний PRNG — CBC IV залишається передбачуваним при HRNG failure |
 | BQ25570-R | `docs/02_03` | VBAT_OV резистори не верифіковані |
-| PROMETHEUS | `terraform/` | Prometheus Server відсутній |
+| PROMETHEUS | `deploy/akash/config.alloy` | ✅ Вирішено (OBS.1): Grafana Alloy → Grafana Cloud SaaS (remote_write); self-hosted не потрібен. Залишок 👤: import dashboards (S2.2) + verify post-deploy — `06_03` |
 | SENTRY-DSN | `.kamal/secrets` | ✅ Додано: `SENTRY_DSN=$SENTRY_DSN` (потребує ENV at deploy time) |
 | AKASH-SIDEKIQ | `deploy/akash/deploy.yaml` | ✅ Виправлено (PLAN 5.8): `job:` service з Sidekiq entrypoint додано |
 
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **silken_net** (11325 symbols, 20188 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **silken_net** (11354 symbols, 20287 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
