@@ -161,6 +161,7 @@ class InsightGeneratorService < ApplicationService
                   "AVG(voltage_mv) as avg_vcap",
                   "AVG(z_value) as avg_z",
                   "AVG(sap_flow) as avg_sap",
+                  "AVG(vpd) as avg_vpd",
                   "MAX(acoustic_events) as max_acoustic",
                   "SUM(growth_points) as total_growth",
                   "MAX(bio_status) as max_status"
@@ -182,6 +183,17 @@ class InsightGeneratorService < ApplicationService
     # $$Stress = \min(1.0, \text{base\_stress} + \text{anomaly\_penalties})$$
     stress_index = is_fraud ? 1.0 : calculate_stress_index(stats.max_status.to_i, stats.avg_temp.to_f, stats.max_acoustic.to_i, stats.avg_z.to_f, stats.avg_vcap.to_i, calculate_deviation(stats.avg_sap.to_f, baseline[:sap]))
 
+    # [VPD weather-confounder, 00_01 §6.5/§6.6] Discount-only weather gate so a
+    # humid spell (low VPD → suppressed sap on a HEALTHY tree) cannot push a
+    # cluster over the slash threshold. Inert until firmware sends VPD + ML
+    # retrain + ground-truth calibration (see #apply_weather_confounder). Fraud
+    # stays pinned at 1.0 — weather never excuses anomalous deviation.
+    unless is_fraud
+      stress_index = apply_weather_confounder(
+        stress_index, stats.avg_vpd&.to_f, calculate_deviation(stats.avg_sap.to_f, baseline[:sap])
+      )
+    end
+
     summary = is_fraud ? "🚨 КРИТИЧНО: Виявлено фрод-телеметрію (аномальне відхилення від кластера)." : generate_summary(stats.max_status.to_i, stats.avg_temp.to_f)
 
     AiInsight.create!(
@@ -197,6 +209,7 @@ class InsightGeneratorService < ApplicationService
         avg_z: stats.avg_z.to_f.round(4),
         max_acoustic: stats.max_acoustic.to_i,
         avg_vcap: stats.avg_vcap.to_i,
+        avg_vpd: stats.avg_vpd&.to_f&.round(3), # nil доки firmware не шле VPD (HW.32)
         deviation_from_baseline: calculate_deviation(stats.avg_sap.to_f, baseline[:sap])
       }
     )
@@ -230,6 +243,48 @@ class InsightGeneratorService < ApplicationService
   def calculate_deviation(value, base)
     return 0.0 if base.zero?
     ((value - base).abs / base).round(4)
+  end
+
+  # [VPD weather-confounder gate — 04_02 §VPD, 00_01 §6.5/§6.6] DISCOUNT-ONLY.
+  # Lowers stress_index when a low sap_flow is explained by WEATHER, not disease:
+  # saturated air (rain/fog → low VPD) gives near-zero transpiration pull, so sap
+  # legitimately drops on a HEALTHY tree. Without this, a regional humid spell
+  # would push a whole cluster past the 20% slash threshold — a FALSE slash
+  # against the forester. Never RAISES stress (discount-only invariant).
+  #
+  # INERT (returns stress unchanged) when ANY holds — by design we ship NO guessed
+  # kPa threshold into the slashing path:
+  #   • avg_vpd nil       → firmware not yet emitting VPD (HW.32 / 03_01)
+  #   • calibration nil   → ground-truth thresholds unset (08_02 §4)
+  #   • VPD not low        → normal/high VPD = no weather excuse for low sap
+  #   • sap near baseline  → nothing weather could account for
+  #
+  # ⚠️ Activate ONLY after all three land: firmware VPD + ML-retrain (vpd feature
+  # in silken_forest.marshal) + ground-truth calibration. Until then a wired,
+  # tested no-op. NB: the heuristic still ignores sap entirely (GAP, 00_01 §6.6) —
+  # a signed low-sap (not |dev|) test is part of that calibration follow-up.
+  def apply_weather_confounder(stress_index, avg_vpd, sap_deviation)
+    return stress_index if avg_vpd.nil?
+
+    calibration = vpd_confounder_calibration
+    return stress_index unless calibration
+    return stress_index unless avg_vpd <= calibration[:low_kpa]
+    return stress_index unless sap_deviation.to_f.positive?
+
+    discounted = stress_index * (1.0 - calibration[:max_discount])
+    [ discounted, stress_index ].min.round(3) # discount-only: never above input
+  end
+
+  # Calibration-pending config for the VPD gate. Returns nil (→ gate inert) until
+  # BOTH ground-truth values are supplied (08_02 §4) via ENV — deliberately not
+  # hardcoded, so no guessed threshold can silently enter slashing. low_kpa =
+  # "saturated air" VPD floor (kPa); max_discount = max stress reduction (0..1].
+  def vpd_confounder_calibration
+    low = ENV["VPD_CONFOUNDER_LOW_KPA"]&.to_f
+    discount = ENV["VPD_CONFOUNDER_MAX_DISCOUNT"]&.to_f
+    return nil unless low&.positive? && discount&.positive?
+
+    { low_kpa: low, max_discount: [ discount, 1.0 ].min }
   end
 
   def calculate_stress_index(max_status, avg_temp, max_acoustic, avg_z, avg_vcap = 0, sap_deviation = 0.0)

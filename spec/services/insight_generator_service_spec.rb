@@ -404,6 +404,87 @@ RSpec.describe InsightGeneratorService, type: :service do
     end
   end
 
+  # [VPD weather-confounder gate — 00_01 §6.5/§6.6] Discount-only, inert until
+  # calibrated. Guards against FALSE slashing during a humid spell (low VPD →
+  # suppressed sap on a healthy tree). Must never raise stress and must ship no
+  # guessed kPa threshold into the slashing path until ground-truth calibration.
+  describe "#apply_weather_confounder" do
+    let(:service) { described_class.new }
+
+    it "is inert when avg_vpd is nil (firmware not yet emitting VPD — HW.32)" do
+      allow(service).to receive(:vpd_confounder_calibration).and_return({ low_kpa: 0.5, max_discount: 0.4 })
+      expect(service.send(:apply_weather_confounder, 0.9, nil, 0.5)).to eq(0.9)
+    end
+
+    it "is inert when calibration is absent (no guessed threshold enters slashing)" do
+      allow(service).to receive(:vpd_confounder_calibration).and_return(nil)
+      expect(service.send(:apply_weather_confounder, 0.9, 0.2, 0.5)).to eq(0.9)
+    end
+
+    context "when calibrated (post ground-truth, 08_02 §4)" do
+      before { allow(service).to receive(:vpd_confounder_calibration).and_return({ low_kpa: 0.5, max_discount: 0.4 }) }
+
+      it "discounts stress when air is saturated (low VPD) and sap departs baseline" do
+        expect(service.send(:apply_weather_confounder, 0.9, 0.2, 0.5)).to eq(0.54) # 0.9 × (1 − 0.4)
+      end
+
+      it "never raises stress (discount-only invariant)" do
+        expect(service.send(:apply_weather_confounder, 0.9, 0.1, 0.8)).to be <= 0.9
+      end
+
+      it "is inert when VPD is not low (normal/high VPD = no weather excuse)" do
+        expect(service.send(:apply_weather_confounder, 0.9, 1.8, 0.5)).to eq(0.9)
+      end
+
+      it "is inert when sap is near baseline (nothing weather could account for)" do
+        expect(service.send(:apply_weather_confounder, 0.9, 0.2, 0.0)).to eq(0.9)
+      end
+    end
+  end
+
+  describe "#vpd_confounder_calibration" do
+    let(:service) { described_class.new }
+
+    it "returns nil by default (gate inert until ground-truth calibration)" do
+      expect(service.send(:vpd_confounder_calibration)).to be_nil
+    end
+
+    it "returns the calibrated config when both ENV thresholds are set" do
+      ENV["VPD_CONFOUNDER_LOW_KPA"] = "0.5"
+      ENV["VPD_CONFOUNDER_MAX_DISCOUNT"] = "0.4"
+      expect(service.send(:vpd_confounder_calibration)).to eq({ low_kpa: 0.5, max_discount: 0.4 })
+    ensure
+      ENV.delete("VPD_CONFOUNDER_LOW_KPA")
+      ENV.delete("VPD_CONFOUNDER_MAX_DISCOUNT")
+    end
+
+    it "clamps max_discount to 1.0" do
+      ENV["VPD_CONFOUNDER_LOW_KPA"] = "0.5"
+      ENV["VPD_CONFOUNDER_MAX_DISCOUNT"] = "1.5"
+      expect(service.send(:vpd_confounder_calibration)[:max_discount]).to eq(1.0)
+    ensure
+      ENV.delete("VPD_CONFOUNDER_LOW_KPA")
+      ENV.delete("VPD_CONFOUNDER_MAX_DISCOUNT")
+    end
+  end
+
+  describe "VPD gate end-to-end (inert while uncalibrated)" do
+    it "plumbs avg_vpd into reasoning yet leaves stress_index unchanged (gate inert)" do
+      create(:telemetry_log, tree: tree,
+        temperature_c: 40.0, voltage_mv: 3500, z_value: 3.0, sap_flow: 5.0, vpd: 0.1,
+        acoustic_events: 2, growth_points: 5,
+        bio_status: :stress, metabolism_s: 1000,
+        created_at: date.beginning_of_day + 12.hours)
+
+      described_class.call(date)
+
+      insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
+      # stress(1)=0.6 + z>2(+0.2) + temp>35(+0.1) = 0.9; VPD present but gate inert (no calibration)
+      expect(insight.stress_index).to eq(0.9)
+      expect(insight.reasoning["avg_vpd"]).to eq(0.1)
+    end
+  end
+
   describe "ML model integration" do
     context "when model file is missing" do
       it "falls back to heuristic stress_index calculation" do
