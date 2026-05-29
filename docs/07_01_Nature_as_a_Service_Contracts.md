@@ -11,21 +11,38 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 5 — бізнес-логіка зафіксована в SSOT; юридичні документи відсутні
-- **Пов'язані модулі:**
-  - Токеноміка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
-  - Юніт-економіка → [`07_02_Unit_Economics_and_BOM`](07_02_Unit_Economics_and_BOM)
-  - Proof of Growth → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
+- **Відкрите:** юридичні/compliance артефакти (MSA, KYC/AML, DAO governance, RWA реєстрація) → [`00_08`](00_08_Action_Plan_Tracker) (BIZ.*).
 
-| Компонент | Стан |
-|-----------|------|
-| **NaasContract модель** | ✅ Реалізована (AASM state machine: `draft → active → fulfilled / breached / cancelled`) |
-| **ContractHealthCheckService** | ✅ Реалізований (D-MRV арбітраж, 20% поріг критичних аномалій) |
-| **ContractTerminationService** | ✅ Реалізований (Early exit з пропорційним поверненням та штрафом) |
-| **SCC `mint()` + `slash()`** | ✅ Задеплоєно на Amoy testnet (Polygon) |
-| **Parametric Insurance** | ✅ Реалізована (3 типи тригерів: `critical_fire`, `extreme_drought`, `insect_epidemic`) |
-| **API ендпоінти** | ✅ `GET /contracts`, `GET /contracts/:id`, `GET /contracts/stats` |
-| **KYC / Legal Templates** | 🔴 ВІДСУТНІ — блокери задокументовані нижче |
-| **Mainnet деплой** | 🔴 Заблоковано критичними блокерами B-01–B-06 з [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) |
+---
+
+## 🔗 Cross-references
+
+| Ресурс | Зв'язок |
+|---|---|
+| `app/models/naas_contract.rb` | NaasContract lifecycle (AASM) — SSOT коду |
+| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | SCC/SFC + фінансові константи (home) |
+| [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof of Growth (мінтинг-тригер) |
+| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Юніт-економіка, BOM |
+| [08_07_SEU_Economics_and_Legal_Integration](08_07_SEU_Economics_and_Legal_Integration) | MSA / KYC legal (Аблязов) |
+| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | BIZ.1/2/3/4/6/9/11/13/14, UNI.8 |
+
+## 📑 Зміст
+
+<!-- TOC:AUTO:START -->
+- [1. Реєстр Типів Контрактів (Contract Type Registry)](#-1-реєстр-типів-контрактів-contract-type-registry)
+- [2. Таблиця SLA: Юридична Подія → On-Chain Транзакція](#-2-таблиця-sla-юридична-подія--on-chain-транзакція)
+- [3. Фінансові Константи (Financial Constants)](#-3-фінансові-константи-financial-constants)
+- [4. Життєвий Цикл NaaS Контракту](#-4-життєвий-цикл-naas-контракту)
+- [5. Структура Даних (Data Model)](#-5-структура-даних-data-model)
+- [6. Ієрархія Ролей та Доступу](#-6-ієрархія-ролей-та-доступу)
+- [7. Параметричне Страхування (Insurance Layer)](#-7-параметричне-страхування-insurance-layer)
+- [8. Юридичні та бізнес-передумови (open → 00_08)](#-8-юридичні-та-бізнес-передумови-open--00_08)
+- [9. Міжланцюгові Залежності (Cross-Module Dependencies)](#-9-міжланцюгові-залежності-cross-module-dependencies)
+- [10. API Endpoints (Contracts Registry)](#-10-api-endpoints-contracts-registry)
+- [11. Технічна Перевірка Due Diligence (Investor Q&A)](#-11-технічна-перевірка-due-diligence-investor-qa)
+- [12. Грантова Дипломатія (Cross-chain Grant Strategy)](#-12-грантова-дипломатія-cross-chain-grant-strategy)
+- [Висновки (Summary)](#-висновки-summary)
+<!-- TOC:AUTO:END -->
 
 ---
 
@@ -282,13 +299,13 @@ NaasContract (status: cancelled, cancelled_at: now)
 
 ---
 
-## 🛑 8. Блокери
+## ⚖️ 8. Юридичні та бізнес-передумови (open → 00_08)
 
-> Цей розділ є критично важливим. Жоден реальний B2B продаж неможливий без вирішення наступних пунктів.
+> Специфікація потрібних юридичних / compliance-артефактів для B2B/B2C запуску. Статуси трекаються в [`00_08`](00_08_Action_Plan_Tracker) (BIZ.*).
 
 ---
 
-### 🔴 BLOCKER-1: Відсутній юридичний шаблон NaaS угоди (Master Service Agreement)
+### Відсутній юридичний шаблон NaaS угоди (Master Service Agreement)
 
 **Статус:** Не розроблено. Блокує B2B продажі.
 
@@ -302,7 +319,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 
 ---
 
-### 🔴 BLOCKER-2: Відсутні Terms of Service та Privacy Policy для B2C
+### Відсутні Terms of Service та Privacy Policy для B2C
 
 **Статус:** Не розроблено. Блокує публічний онбординг.
 
@@ -316,7 +333,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 
 ---
 
-### 🔴 BLOCKER-3: Відсутній KYC/AML процес для B2B клієнтів
+### Відсутній KYC/AML процес для B2B клієнтів
 
 **Статус:** Технічна інфраструктура є (`hadron_kyc_status` на `Wallet`), юридичний процес — відсутній.
 
@@ -331,30 +348,8 @@ Polygon Hadron Identity Platform надає технічну верифікац�
 
 ---
 
-### ✅ BLOCKER-4: Юридичне визначення "1 SCC = X кг CO₂" — ЗАКРИТО
 
-**Статус:** ✅ Визначено (BIZ.1 — 2026-04-23).
-
-**Офіційний еквівалент: 2000 SCC = 1 тонна поглиненого CO₂ → 1 SCC = 0.5 кг CO₂.**
-
-Зафіксовано на трьох рівнях:
-- **On-chain:** `ProtocolParameters.sol#KEY_SCC_PER_TONNE_CO2` + `sccPerTonneCo2()` getter (2000e18). Змінюється тільки через governance (SilkenGovernor → SilkenTimelock 48h).
-- **Backend:** `SystemParameter.current(:scc_per_tonne_co2, default: 2000)` — seeds задеплоєні, кеш 24h, зміна через admin panel або DAO.
-- **Документація:** `07_02` §7.1 (механізм накопичення), `07_01` §3 (таблиця параметрів).
-
-**Поточний стан:**
-- `10,000 growth_points = 1 SCC` — незмінно (emission_threshold)
-- `2000 SCC = 1 tCO₂` — нове офіційне визначення (scc_per_tonne_co2)
-- `1 дерево × 1 тиждень гомеостазу = 1 SCC = 0.5 кг CO₂`
-- `100-дерев кластер × 1 рік = ~5,200 SCC = ~2.6 tCO₂`
-
-**Залишкові питання (не блокери):**
-- **Методологія:** Verra VCS або Gold Standard сертифікація (потребує залучення методолога). До сертифікації SCC є utility токеном з фіксованим внутрішнім еквівалентом.
-- **Верифікація:** IoTeX ZK-proof підтверджує факт телеметрії; незалежний аудит CO₂ секвестрації — після TRL 7+.
-
----
-
-### 🟡 BLOCKER-5: Відсутній DAO Governance процес для SFC
+### Відсутній DAO Governance процес для SFC
 
 **Статус:** SFC контракт задеплоєно, механізм голосування — не визначено.
 
@@ -368,7 +363,7 @@ SilkenForestCoin має `ERC20Votes` (checkpoint-based voting power), але:
 
 ---
 
-### 🔴 BLOCKER-6: Відсутній процес реєстрації лісових ділянок як RWA
+### Відсутній процес реєстрації лісових ділянок як RWA
 
 **Статус:** `hadron_asset_id` поле є в `naas_contracts`, `HadronAssetRegistrationWorker` реалізовано, але процес реєстрації не визначений.
 
@@ -387,7 +382,7 @@ SilkenForestCoin має `ERC20Votes` (checkpoint-based voting power), але:
 
 ---
 
-### 🟡 BLOCKER-7: SFC Voting Power зберігається після Slashing (Security Attack Vector)
+### SFC Voting Power зберігається після Slashing (Security Attack Vector)
 
 **Статус:** 🟡 ЧАСТКОВО ВИРІШЕНО — `SilkenForestCoin.sol` реалізує `SLASHER_ROLE` + `slash()`. Голосування токени SFC тепер зменшуються при slashing (ERC20Votes `_update` → `_transferVotingUnits` → checkpoint update). Атака через купівлю SFC + навмисне порушення NaaS більше неможлива.
 
@@ -408,11 +403,6 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 
 ---
 
-### ✅ BLOCKER-8: `signed_at` divergence — ЗАКРИТО (stale, verified 2026-05-29)
-
-**Статус:** ✅ Розбіжності немає. `signed_at` **відсутній і в коді, і в схемі** (`grep signed_at app/ db/structure.sql` → 0) — поле прибрано з серіалізатора контролера, колонки в `naas_contracts` ніколи не було. Дій не потрібно. _(Попередній опис «контролер серіалізує signed_at» був застарілим.)_
-
----
 
 ## 🔗 9. Міжланцюгові Залежності (Cross-Module Dependencies)
 
@@ -519,7 +509,7 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 
 **Q10: "Якщо гроші гранту закінчаться — ви залежите від підрядника?"**
 
-> **A:** Ні. Lead Architect є автором всієї архітектури: Rails 8.1 backend, 25 моделей БД, 31 Sidekiq worker, прошивка STM32 (648 рядків Soldier, 550 рядків Queen). Підрядники — "робочі руки" для прискорення Time-to-Market (UI, test coverage). Коли грант закінчиться, система перейде в автономний режим збору даних, поточну підтримку Lead Architect забезпечує самостійно, поки токеноміка (Proof of Growth → SCC) не генерує дохід протоколу.
+> **A:** Ні. Lead Architect є автором всієї архітектури: повний Rails 8.1 backend (моделі + Sidekiq-воркери) та прошивку STM32 (Soldier + Queen). Підрядники — "робочі руки" для прискорення Time-to-Market (UI, test coverage). Коли грант закінчиться, система перейде в автономний режим збору даних, поточну підтримку Lead Architect забезпечує самостійно, поки токеноміка (Proof of Growth → SCC) не генерує дохід протоколу.
 
 ---
 
@@ -581,16 +571,3 @@ SilkenNet = **Modular DePIN Stack** (агностична інфраструкт
 | **DAO Governance** | 🟡 SFC slash() реалізовано; Vote Escrow — опціонально |
 | **RWA реєстрація** | 🟡 Інфраструктура є, процес не відпрацьований |
 | **DB schema** | ✅ Узгоджено (`signed_at` прибрано з коду — BLOCKER-8 закрито) |
-
----
-
-## 🔗 Cross-references
-
-| Файл / Документ | Зв'язок |
-|---|---|
-| `app/models/naas_contract.rb` | NaasContract lifecycle (AASM) — SSOT коду |
-| `05_03_Tokenomics_SCC_and_SFC` | SCC/SFC + фінансові константи (home) |
-| `00_01 §6.2` | slashing thresholds (stress 0.83 / 20%) |
-| `06_04_Secrets_Checklist` | KYC / peaq keys |
-| `08_07_SEU_Economics_and_Legal_Integration` | MSA / KYC legal (Аблязов) |
-| `00_08_Action_Plan_Tracker` | BIZ.1/2/3/4/6/9/11/13/14, UNI.8 |
