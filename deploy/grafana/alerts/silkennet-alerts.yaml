@@ -27,6 +27,42 @@ groups:
     rules:
 
       # -----------------------------------------------------------------------
+      # P0: PartitionMaintenanceWorker failure — silent monthly PG-crash guard
+      # (06_03 §BLOCKER-5). Without a new-month partition, the first INSERT on
+      # day-1 crashes with `no partition of relation` for all 4 RANGE tables.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-partition-maintenance-failed
+        title: "🔴 Partition maintenance failed (day-1 INSERT crash risk)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 86400, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: "increase(silkennet_partition_maintenance_failures_total[24h])"
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 0m
+        annotations:
+          summary: "PartitionMaintenanceWorker провалився ({{ $values.A.Value }}× за 24h) — партиція наступного місяця може бути відсутня."
+          description: "Без партиції на новий місяць перший INSERT 1-го числа впаде з `no partition of relation` (telemetry_logs / gateway_telemetry_logs / blockchain_transactions / codex_matches). Sidekiq retry:3 + Sentry активні. Перевірити DDL-права оракула / disk / cron. 06_03 §BLOCKER-5."
+        labels:
+          severity: critical
+          component: database
+          team: ops
+
+      # -----------------------------------------------------------------------
       # P0: web3_critical queue overflow — мінтинг SCC заблокований
       # -----------------------------------------------------------------------
       - uid: sn-alert-web3-queue-critical

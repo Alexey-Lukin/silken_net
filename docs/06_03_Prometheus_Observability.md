@@ -140,7 +140,7 @@ ALL_QUEUES = %w[uplink alerts critical downlink default web3_critical web3 web3_
 
 > **Phase 7:** Codex воркери (Phase 1–6) приземляються виключно у `default` та `low` — вони ніколи не конкурують з `uplink`/`alerts`/`critical`/`web3_critical`. Це гарантує що геймифікація Lore-шару не може застрянути телеметрії дерев. Окремих `codex_*` черг немає за дизайном (ADR-CDX-3).
 >
-> **PartitionMaintenanceWorker alert:** Phase 7 додав `Sentry.capture_exception` у rescue. Рекомендований Grafana alert: `sidekiq_jobs_failed_total{queue="default", class="PartitionMaintenanceWorker"} > 0` triggers PagerDuty. Без цього silent failure означає `no partition of relation` PostgreSQL крах 1-го числа місяця для всіх 4 RANGE-таблиць (`telemetry_logs`, `gateway_telemetry_logs`, `blockchain_transactions`, `codex_matches`).
+> **PartitionMaintenanceWorker alert ✅ (S2.5, 2026-05-29):** rescue воркера тепер інкрементить custom counter `silkennet_partition_maintenance_failures_total` (рекомендований `sidekiq_jobs_failed_total` реєстром НЕ емітиться) + `Sentry.capture_exception`. P0 Grafana alert `sn-alert-partition-maintenance-failed` (`increase[24h] > 0`) у `deploy/grafana/alerts/`. Без цього silent failure означав би `no partition of relation` PostgreSQL крах 1-го числа місяця для всіх 4 RANGE-таблиць (`telemetry_logs`, `gateway_telemetry_logs`, `blockchain_transactions`, `codex_matches`).
 
 ---
 
@@ -405,7 +405,7 @@ end
     summary: "RPC provider {{ $labels.provider }} circuit breaker open"
 ```
 
-**📊 Загальний підсумок реєстру (SSOT, verified vs `config/initializers/prometheus.rb` 2026-05-29): 41 кастомна метрика = 20 counters + 19 gauges + 2 histograms.**
+**📊 Загальний підсумок реєстру (SSOT, verified vs `config/initializers/prometheus.rb` 2026-05-29): 42 кастомні метрики = 21 counters + 19 gauges + 2 histograms.**
 
 > Це **ЄДИНЕ канонічне джерело кількості метрик**. Усі інші згадки (CLAUDE.md, `config.alloy`, діаграми/таблиці нижче) **рефлять сюди**, а не дублюють число — щоб уникнути doc-drift. При зміні реєстру в коді — оновити ЛИШЕ тут.
 

@@ -297,6 +297,15 @@ module SilkenNet
       labels: [ :caller ]
     )
 
+    # [06_03 §BLOCKER-5 / S2.5]: PartitionMaintenanceWorker run failures.
+    # Each failure = a monthly partition may be missing → the first INSERT against
+    # the affected RANGE table on day-1 of the new month crashes with
+    # `no partition of relation`. Alert (silkennet-alerts.yaml, P0): increase>0 → page.
+    PARTITION_MAINTENANCE_FAILURES_TOTAL = REGISTRY.counter(
+      :silkennet_partition_maintenance_failures_total,
+      docstring: "PartitionMaintenanceWorker run failures (missing partition → day-1 INSERT crash risk)"
+    )
+
     # [ENTROPY MONITOR]: Shannon entropy of Z-value distribution per cluster.
     # Healthy forest: ≈ 0.75-0.95 (diverse Z-values). Pre-stress: < 0.65.
     # Updated by ClusterEntropyAnalyzerWorker (queue: alerts, hourly).

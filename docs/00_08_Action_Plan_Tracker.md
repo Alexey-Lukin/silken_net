@@ -89,11 +89,11 @@
 
 #### S2.3 — Grafana Cloud alerting rules
 - **P0** · 👤 · → `06_03`
-- ✅ 12 alert rules IaC (4P0/5P1/3P2) → `deploy/grafana/alerts/` + counter `silkennet_telemetry_acoustic_overflow_total`. · [ ] 👤 замінити `${DATASOURCE_UID}` + notification channel (Slack/Email/PagerDuty)
+- ✅ 13 alert rules IaC (5P0/5P1/3P2) → `deploy/grafana/alerts/` + counter `silkennet_telemetry_acoustic_overflow_total`. · [ ] 👤 замінити `${DATASOURCE_UID}` + notification channel (Slack/Email/PagerDuty)
 
 #### S2.5 — PartitionMaintenanceWorker failure alert (silent monthly PG-crash guard)
 - **P1** · 🤖 · → `06_03 §BLOCKER-5`
-- 🔴 GAP (06_03-review 2026-05-29): §BLOCKER-5 рекомендує alert на провал `PartitionMaintenanceWorker` (інакше `no partition of relation` крах 1-го числа місяця для 4 RANGE-таблиць), але (a) НЕ серед 12 IaC-правил, (b) рек. expr `sidekiq_jobs_failed_total{class=…}` посилається на метрику, яку реєстр **не емітить**. · [ ] 🤖 counter `silkennet_partition_maintenance_failures_total` (increment у rescue воркера поряд із `Sentry.capture_exception`) + alert rule у `deploy/grafana/alerts/silkennet-alerts.yaml` + spec
+- ✅ закрито (2026-05-29): rescue воркера інкрементить counter `silkennet_partition_maintenance_failures_total` (рек. `sidekiq_jobs_failed_total` НЕ емітиться) + Sentry; P0 alert `sn-alert-partition-maintenance-failed` (`increase[24h]>0`) у `deploy/grafana/alerts/`; spec. Захист від `no partition of relation` крах 1-го числа для 4 RANGE-таблиць.
 
 #### S3.2 — dClimate Real API verification
 - **P1** · 👤 · → `05_01`
