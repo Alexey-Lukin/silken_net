@@ -391,8 +391,8 @@ echo "Stub shape for cluster C: First Akash production deploy" > docs/shaping/ak
 ```
 # NN_MM: Title
 ## 🎯 Мета
-## ✅ Статус            — TRL → реф 00_06 §1 (НЕ дублювати число) + 1 рядок rationale
-## 🛑 Блокери (active)  — стабільна нумерація; вирішені → 🗄️ Архів (НЕ renumber)
+## ✅ Статус            — власний (member) TRL доку + rationale; агрегат-матриця лише в 00_06 §1
+## 🛑 Блокери (active)  — стабільна нумерація; вирішені → «✅ Архів вирішених блокерів» (НЕ renumber)
 ## <Content>
 ## 🔗 Cross-references  — таблиця: ключові файли + sibling-доки + 00_08-link
 ```
@@ -406,7 +406,7 @@ echo "Stub shape for cluster C: First Akash production deploy" > docs/shaping/ak
 
 | Факт | SSOT home |
 |---|---|
-| Per-module TRL | `00_06 §1` (НЕ дублювати у §intro чи модульних доках — лише реф) |
+| Per-module TRL матриця | `00_06 §1` (агрегат-дім). Модульний док = власний member-TRL у Статус (це джерело, не дубль); заборонено відтворювати всю матрицю поза §1 |
 | AES per-channel modes | `03_05 §3.7` |
 | Lorenz константи | `03_04 §4.1` |
 | Tokenomics rate / slashing thresholds / insurance pool | `05_03` · `00_01 §6.2/§6.3` |
@@ -428,6 +428,7 @@ echo "Stub shape for cluster C: First Akash production deploy" > docs/shaping/ak
 | `tracker:check` | 00_08: dup-IDs, meta-line conformance, canon-ref resolution | `bin/rails tracker:check` (ci.yml) |
 | `ssot_guard.yml` | protected code змінено → docs мусять оновитись | CI PR gate (§2.3) |
 | regen-from-code | enumerable lists (метрики) генеруються з SSOT, не вручну | `06_03 §2.8` regen cmd |
-| TRL-consistency | _(roadmap)_ per-doc TRL == `00_06 §1` | — |
+| TRL presence | кожен док з `## ✅ Статус` декларує TRL (ловить 06_04-клас gap) | `bin/rails docs:check_refs` (ci.yml) |
+| TRL range-consistency | _(roadmap)_ per-doc TRL у межах діапазону модуля `00_06 §1` | — |
 
 **Правило при зміні факту:** правити лише у home (§8.2) → рефи лишаються чинними; будь-який новий NN_NN-док/реф — `docs:check_refs` має лишатись зеленим перед merge.

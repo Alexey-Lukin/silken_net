@@ -7,6 +7,9 @@
 #                     have a matching heading in the target doc (catches the
 #                     "label cites a section that isn't there" drift, e.g. the
 #                     06_02 §Workload-Identity / 07_04 §SLA refs found 2026-05-29).
+#   HARD  (gates CI): every doc with a `## ✅ Статус` section declares a TRL there
+#                     (Поточний TRL / Conceptual (TRL …)) — catches the 06_04-class
+#                     "Статус without a readiness level" gap. All 50 docs pass today.
 # Pure file I/O, no Rails boot needed.
 namespace :docs do
   DOCS_DIR = File.expand_path("../../docs", __dir__)
@@ -20,8 +23,9 @@ namespace :docs do
       [ File.basename(f, ".md"), File.readlines(f).grep(/^\#{1,6}\s/).join("\n").downcase ]
     end
 
-    dangling = []  # hard: link target doc missing
-    suspect  = []  # soft: §-section label not found in target headings
+    dangling    = []  # hard: link target doc missing
+    suspect     = []  # soft: §-section label not found in target headings
+    trl_missing = []  # hard: ## ✅ Статус section without a TRL declaration
 
     files.each do |f|
       base = File.basename(f, ".md")
@@ -40,6 +44,16 @@ namespace :docs do
           suspect << "#{base}: label `§#{ref}` → #{target} (no heading contains '#{ref}')"
         end
       end
+
+      # [TRL presence] a doc with a ✅ Статус section must declare its TRL there.
+      lines = text.lines
+      si = lines.index { |l| l =~ /^\#{1,3}\s.*Статус/ }
+      if si
+        rest = lines[(si + 1)..] || []
+        ei = rest.index { |l| l =~ /^\#{2}\s/ }
+        section = (ei ? rest[0...ei] : rest).join
+        trl_missing << base unless section =~ /Поточний TRL|TRL\s*\d|Conceptual\s*\(TRL/
+      end
     end
 
     puts "docs:check_refs — #{files.size} docs scanned"
@@ -53,7 +67,16 @@ namespace :docs do
       puts "  ⚠️ §-section labels with no matching heading (#{suspect.uniq.size}) — advisory:"
       suspect.sort.uniq.first(40).each { |s| puts "    · #{s}" }
     end
+    if trl_missing.empty?
+      puts "  TRL presence:   every ✅ Статус doc declares a TRL ✓"
+    else
+      puts "  MISSING TRL in ✅ Статус (#{trl_missing.size}):"
+      trl_missing.sort.uniq.each { |d| puts "    ✗ #{d}" }
+    end
 
-    abort("docs:check_refs FAILED — dangling doc links") unless dangling.empty?
+    failed = []
+    failed << "dangling doc links" unless dangling.empty?
+    failed << "✅ Статус docs without a TRL" unless trl_missing.empty?
+    abort("docs:check_refs FAILED — #{failed.join(', ')}") unless failed.empty?
   end
 end
