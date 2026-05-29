@@ -203,16 +203,18 @@ Silken Net використовує **Lorenz Attractor** ([`03_04`](03_04_mruby_
 
 **Завдання В: Калібрування sap-term у calculate_stress_index_heuristic**
 
-✅ **Оновлено (2026-05-29):** евристика більше НЕ сліпа до sap — додано signed below-baseline sap-term (`sap_stress_contribution`), **inert доки калібрування не задасть** `STRESS_SAP_LOW_THRESHOLD` + `STRESS_SAP_WEIGHT` (ENV; жодного вгаданого порогу в live slashing). Високий sap (вигор) ніколи не штрафується; внесок обмежений так, що sap **корелює, але не слешить сам**. Лишилось завдання Боєчка — медично обґрунтовані **поріг + вага**:
+✅ **Оновлено (2026-05-29):** евристика більше НЕ сліпа до sap — додано signed below-baseline sap-term (`sap_stress_contribution`), **inert доки калібрування не задасть** `STRESS_SAP_LOW_THRESHOLD` + `STRESS_SAP_WEIGHT` (ENV; жодного вгаданого порогу в live slashing). Високий sap (вигор) ніколи не штрафується; внесок обмежений так, що sap **корелює, але не слешить сам**. Симетрично додано **acoustic/cavitation-term** (`acoustic_stress_contribution`); sap+acoustic — correlated drought → беруться через **max(), не суму**. Лишилось завдання Боєчка — медично обґрунтовані **поріг + вага** (для sap):
 
 ```ruby
 # РЕАЛІЗОВАНО (app/services/insight_generator_service.rb)
-def calculate_stress_index_heuristic(max_status, avg_temp, _max_acoustic, avg_z, sap_signed_deviation = 0.0)
+def calculate_stress_index_heuristic(max_status, avg_temp, max_acoustic, avg_z, sap_signed_deviation = 0.0)
   return 1.0 if max_status >= 2  # anomaly/tamper → max stress
   base_stress = (max_status == 1 ? 0.6 : 0.0)
   base_stress += 0.2 if avg_z.abs > 2.0
   base_stress += 0.1 if avg_temp > 35.0 || avg_temp < -5.0
-  base_stress += sap_stress_contribution(sap_signed_deviation)  # ← signed, лише LOW sap; inert доки ENV-калібрування
+  # sap↓ + cavitation↑ = correlated drought → max(), не сума; inert доки ENV-калібрування
+  base_stress += [ sap_stress_contribution(sap_signed_deviation),
+                  acoustic_stress_contribution(max_acoustic) ].max
   [ base_stress, 0.99 ].min
 end
 # ML-шлях незмінний: sap_deviation (abs) лишається фічею моделі

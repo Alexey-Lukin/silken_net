@@ -54,7 +54,7 @@
 
 ### 🔗 Заблоковано (чекає іншого)
 - `FW.2` **P0** — AES-128-CCM (backend-parser ✅; firmware emit + `CRYP_AES_CCM` verify → STM32 bench). Закриває ECB→CCM, MIC, `FW.23` OTA auth, `SEC.10` panic auth, `FW.29`
-- Multi-signal slashing de-risk (`00_01 §6.6`) — код ✅: VPD-gate + sap-term у `InsightGeneratorService` (inert, ENV-calibration-gated). Активація → ground-truth калібрування (`08_02 §4`) + ML-retrain (vpd-фіча) + firmware VPD (`HW.32`). 3-й прямий сигнал (acoustic) → TinyML unblock (`Run_Inference`, §03)
+- Multi-signal slashing de-risk (`00_01 §6.6`) — код ✅: усі 3 прямі сигнали в `InsightGeneratorService`-евристиці (VPD-gate + sap-term + acoustic/cavitation-term; inert, ENV-calibration-gated; sap+acoustic через max() не суму). Активація → ground-truth калібрування ваг (`08_02 §4`) + ML-retrain (vpd-фіча) + firmware VPD (`HW.32`). Багатше on-device acoustic-джерело → TinyML unblock (`Run_Inference` закоментована, §03)
 - SLASH-1 deeper (B/insurance auto-route, penalty-формула) → DAO/founder
 
 ---

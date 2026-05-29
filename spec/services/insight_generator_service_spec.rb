@@ -581,6 +581,71 @@ RSpec.describe InsightGeneratorService, type: :service do
     end
   end
 
+  # [Acoustic (cavitation) stress term — closes the acoustic half of the 00_01 §6.6
+  # heuristic GAP.] acoustic_events = cavitation count (drought signal); chainsaw is
+  # a separate panic path. Inert until calibrated; max()'d with sap (correlated).
+  describe "#acoustic_stress_contribution" do
+    let(:service) { described_class.new }
+
+    it "is inert (0.0) by default even at high cavitation count" do
+      expect(service.send(:acoustic_stress_contribution, 200)).to eq(0.0)
+    end
+
+    context "when calibrated (post ground-truth, 08_02 §4)" do
+      before { allow(service).to receive(:acoustic_stress_calibration).and_return({ threshold: 50, weight: 0.2 }) }
+
+      it "adds the weight when cavitation is at/above the calibrated count" do
+        expect(service.send(:acoustic_stress_contribution, 80)).to eq(0.2)
+      end
+
+      it "ignores low cavitation (below the count threshold)" do
+        expect(service.send(:acoustic_stress_contribution, 10)).to eq(0.0)
+      end
+
+      it "treats nil cavitation as inert" do
+        expect(service.send(:acoustic_stress_contribution, nil)).to eq(0.0)
+      end
+    end
+  end
+
+  describe "#acoustic_stress_calibration" do
+    let(:service) { described_class.new }
+
+    it "returns nil by default (term inert until calibrated)" do
+      expect(service.send(:acoustic_stress_calibration)).to be_nil
+    end
+
+    it "returns config when both ENV thresholds are set" do
+      ENV["STRESS_ACOUSTIC_THRESHOLD"] = "50"
+      ENV["STRESS_ACOUSTIC_WEIGHT"] = "0.2"
+      expect(service.send(:acoustic_stress_calibration)).to eq({ threshold: 50, weight: 0.2 })
+    ensure
+      ENV.delete("STRESS_ACOUSTIC_THRESHOLD")
+      ENV.delete("STRESS_ACOUSTIC_WEIGHT")
+    end
+  end
+
+  describe "correlated drought signals (sap + acoustic) do not stack" do
+    let(:service) { described_class.new }
+
+    before do
+      allow(service).to receive_messages(
+        sap_stress_calibration: { threshold: 0.3, weight: 0.2 },
+        acoustic_stress_calibration: { threshold: 50, weight: 0.2 }
+      )
+    end
+
+    it "takes max(sap, acoustic), not their sum (00_01 SLASH-SAFETY)" do
+      # status 1 (0.6) + low sap (0.2) AND high cavitation (0.2) → +max(0.2,0.2)=0.2, NOT 0.4
+      expect(service.send(:calculate_stress_index_heuristic, 1, 25.0, 80, 0.5, -0.5)).to eq(0.8)
+    end
+
+    it "still corroborates when only the acoustic signal fires" do
+      # cavitation only (sap normal): status 1 (0.6) + max(0, 0.2) = 0.8
+      expect(service.send(:calculate_stress_index_heuristic, 1, 25.0, 80, 0.5, 0.0)).to eq(0.8)
+    end
+  end
+
   describe "ML model integration" do
     context "when model file is missing" do
       it "falls back to heuristic stress_index calculation" do

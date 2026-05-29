@@ -317,12 +317,17 @@ class InsightGeneratorService < ApplicationService
     end
   end
 
-  def calculate_stress_index_heuristic(max_status, avg_temp, _max_acoustic, avg_z, sap_signed_deviation = 0.0)
+  def calculate_stress_index_heuristic(max_status, avg_temp, max_acoustic, avg_z, sap_signed_deviation = 0.0)
     return 1.0 if max_status >= 2
     base_stress = (max_status == 1 ? 0.6 : 0.0)
     base_stress += 0.2 if avg_z.abs > 2.0
     base_stress += 0.1 if avg_temp > 35.0 || avg_temp < -5.0
-    base_stress += sap_stress_contribution(sap_signed_deviation)
+    # sap_flow↓ and cavitation↑ are CORRELATED drought signals (one root cause) →
+    # take the STRONGER, never SUM (00_01 SLASH-SAFETY: correlated signals must not
+    # stack — corroboration raises confidence, not double the penalty). Both inert
+    # until ENV-calibrated.
+    base_stress += [ sap_stress_contribution(sap_signed_deviation),
+                    acoustic_stress_contribution(max_acoustic) ].max
     [ base_stress, 0.99 ].min
   end
 
@@ -353,6 +358,36 @@ class InsightGeneratorService < ApplicationService
   def sap_stress_calibration
     threshold = ENV["STRESS_SAP_LOW_THRESHOLD"]&.to_f
     weight = ENV["STRESS_SAP_WEIGHT"]&.to_f
+    return nil unless threshold&.positive? && weight&.positive?
+
+    { threshold: threshold, weight: [ weight, 0.99 ].min }
+  end
+
+  # [Acoustic (cavitation) stress term — closes the acoustic half of the 00_01 §6.6
+  # heuristic GAP, symmetric to the sap term.] acoustic_events = COUNT of phloem
+  # cavitation events (TinyML, uint8 saturating at 255; 03_04) — a DIRECT drought /
+  # water-tension signal (high cavitation = xylem under stress).
+  # ⚠️ This field is CAVITATION only; chainsaw/tamper rides a separate panic /
+  # PANIC_FLAG path — so this term NEVER slashes a forester for third-party logging.
+  # Only HIGH cavitation (≥ calibrated count) adds stress; bounded + max()'d with the
+  # sap term so drought CORROBORATES but never SOLELY slashes. INERT by default —
+  # activates only via ground-truth ENV STRESS_ACOUSTIC_THRESHOLD + STRESS_ACOUSTIC_WEIGHT
+  # (08_02 §4); the max() in the heuristic already prevents same-root-cause stacking.
+  def acoustic_stress_contribution(max_acoustic)
+    calibration = acoustic_stress_calibration
+    return 0.0 unless calibration
+    return 0.0 unless max_acoustic.to_i >= calibration[:threshold] # only HIGH cavitation
+
+    calibration[:weight]
+  end
+
+  # Calibration-pending config for the acoustic-stress term. nil (→ inert) until both
+  # ground-truth values are set via ENV (08_02 §4): threshold = cavitation event count
+  # that counts as drought-stress (e.g. 50); weight = stress increment (e.g. 0.2).
+  # Deliberately not hardcoded — no guessed count in live slashing.
+  def acoustic_stress_calibration
+    threshold = ENV["STRESS_ACOUSTIC_THRESHOLD"]&.to_i
+    weight = ENV["STRESS_ACOUSTIC_WEIGHT"]&.to_f
     return nil unless threshold&.positive? && weight&.positive?
 
     { threshold: threshold, weight: [ weight, 0.99 ].min }
