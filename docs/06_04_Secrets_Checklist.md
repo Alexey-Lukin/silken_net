@@ -158,7 +158,7 @@
 
 - [ ] **Усе з §3.1** (Sidekiq потребує boot-critical guards так само як Puma) — окрім `PORT` / `WEB_CONCURRENCY`.
 
-> **⚠️ AKASH ENV plaintext exposure:** Akash не шифрує ENV-блок SDL — значення видимі провайдеру через `lease-logs`/kubectl. Mitigation: scoped on-chain roles (MINTER/SLASHER only, ніколи DEFAULT_ADMIN), 90-day key rotation, audited providers (`signedBy.anyOf`). Детальніше: [`06_02 §BLOCKER-3 Akash ENV plaintext exposure`](06_02_Akash_Network_Integration).
+> **⚠️ AKASH ENV plaintext exposure:** Akash не шифрує ENV-блок SDL — значення видимі провайдеру через `lease-logs`/kubectl. Mitigation: scoped on-chain roles (MINTER/SLASHER only, ніколи DEFAULT_ADMIN), 90-day key rotation, audited providers (`signedBy.anyOf`). Детальніше: [`06_02 §Секрети SDL (Akash ENV plaintext)`](06_02_Akash_Network_Integration).
 
 ### 3.3. Grafana Alloy sidecar (observability)
 

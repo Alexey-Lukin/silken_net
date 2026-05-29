@@ -57,8 +57,8 @@ release published ─→ deploy-production.yml (verify-secrets → terraform →
 | Runbook | Дім (SSOT) |
 |---|---|
 | Перший деплой інфраструктури (GCS state → terraform → secrets → deploy) | [`06_01 §Quickstart`](06_01_Deployment_Kamal_Terraform) |
-| Akash SDL deploy + `ALLOY_CONFIG_BASE64` encode + Alloy debug | [`06_02 §BLOCKER-3/INF.7`](06_02_Akash_Network_Integration) |
-| TLS / Cloudflare verification (8-step) | [`06_02 §BLOCKER-5`](06_02_Akash_Network_Integration) |
+| Akash SDL deploy + `ALLOY_CONFIG_BASE64` encode + Alloy debug | [`06_02 §2 ENV (Секрети SDL)/INF.7`](06_02_Akash_Network_Integration) |
+| TLS / Cloudflare verification (8-step) | [`06_02 §TLS термінація`](06_02_Akash_Network_Integration) |
 | Secrets: pre-deploy checklist, rotation, audit | [`06_04 §5.1–5.3`](06_04_Secrets_Checklist) |
 | **Emergency:** `peaq_signing_key` compromise/revocation | [`06_04 §5.4`](06_04_Secrets_Checklist) |
 | Puma: SIGPWR backtrace dump, IPv6 listen verify | [`06_05 §Runbooks`](06_05_Puma_Configuration) |

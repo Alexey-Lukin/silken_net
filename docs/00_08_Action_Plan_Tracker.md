@@ -127,7 +127,7 @@
 - SFC events (ForestMinted, GovernanceSlashed) у subgraph; адреса = placeholder. · [ ] 👤 замінити `0x0000…` на реальну SFC-адресу у `subgraph.yaml` (після контракт-деплою)
 
 #### INF.3 — TLS termination
-- **P2** · 👤 · → `06_02 §BLOCKER-5`
+- **P2** · 👤 · → `06_02 §TLS термінація`
 - SDL відкриває 80/443/CoAP-UDP 5683, але TLS termination не налаштовано (browsers block WS HTTPS→HTTP). · [ ] 👤 налаштувати TLS (Akash ingress або Cloudflare)
 
 #### INF.6 — CoAP UDP smoke test через Ingress Anchor (post-deploy gate)
@@ -135,7 +135,7 @@
 - ✅ workflow `coap_smoke.yml` (`workflow_call` від `deploy.yml`) — 🟡 ще не required gate. Без UDP-smoke silent UDP failure не помітний (Queen→Ingress Anchor→Akash→CoAP). · [ ] 👤 активувати як required post-deploy gate (`needs: coap-smoke`) · [ ] 👤 перший boundary smoke з Queen/`bin/forest_simulator`
 
 #### INF.4 — Akash TLS strategy decision: hostname operator vs Cloudflare
-- **P1** · 👤+🤖 · → `06_02 §BLOCKER-5`
+- **P1** · 👤+🤖 · → `06_02 §TLS термінація`
 - ✅ runbook: Опція A (Cloudflare HTTPS + direct UDP CoAP) рекоменд. + pre-flight + fallback B. Cloudflare НЕ proxies UDP → CoAP потребує direct ingress. · [ ] 👤 прийняти рішення (рекоменд. A) · [ ] 🤖 якщо Akash hostname — automation у `terraform/`
 
 #### S4.3 — Akash SDL secrets
@@ -147,7 +147,7 @@
 - ✅ `RELEASE_VERSION` у deploy configs. · [ ] 👤 верифікувати Sentry release tracking
 
 #### S5.6 — GCS bucket для Terraform state (chicken-and-egg)
-- **P3** · 👤 · → `06_02 §BLOCKER-6`
+- **P3** · 👤 · → `06_02 §GCS bucket`
 - GCS bucket для remote TF state — вручну перед `terraform init`. · [ ] 👤 `gsutil mb` → верифікувати `terraform init`
 
 #### S6.1 — Redis SPOF для M2M автентифікації
