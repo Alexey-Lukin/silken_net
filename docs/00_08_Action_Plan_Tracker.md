@@ -356,10 +356,6 @@
 
 > Знахідки з рев'ю модулів 00_, 01_, 02_, 03_, 03_05 (інженерний аудит, 2026-05-16). Слоти ARCH.39–ARCH.42 зарезервовано під цей патч-комплект.
 
-#### ARCH.39 — Fauna acoustic energy budget — арифметична + системна корекція
-- `docs/03_03_TinyML_Acoustic_Inference.md` §10.3 | **P2** | ✅ **Doc-fix вкочено 2026-05-16**
-- **Опис:** Перша редакція §10.3 містила (1) арифметичну помилку `1 мА × 3.3V × 10 с = 3.3 мДж` (правильно 33 мДж — у 10× нижче), (2) ігнорування активного CPU під час MFCC+inference (~12 мА × 1.56 с). Реальна вартість fauna-сесії ≈ 78.3 мДж/сесію, ~156.6 мДж/добу (× 20 від оригінальної оцінки). Все ще сумісно з EDLC бюджетом, але імпульсна потужність потребує V_cap guard'у — див. **FW.42**.
-
 #### ARCH.40 — Fauna 5-секундне вікно: монолітне awake-обчислення (SRAM2 wipe constraint)
 - `docs/03_03_TinyML_Acoustic_Inference.md` §10.2 | **P1** | ✅ **Doc-fix вкочено 2026-05-16**
 - **Опис:** Architecture v3 використовує STOP2 RTC-only з `PWR_CR1_RRSTP=1` → SRAM2 wipe при кожному переході в сон. Декомпозиція 5 с акумульованого вікна (156 MFCC-векторів `mean+std`) на «32 мс → STOP2 → 32 мс» неможлива: проміжна float-матриця у RAM не переживе сну, DR15 (єдиний вільний RTC регістр) не вміщає float[156][N_mfcc].
@@ -816,10 +812,6 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - [ ] 👤 Заповнити порівняльну таблицю у `07_02` §8.1.1
 - [ ] 👤 Letter of Intent / Frame Agreement з top vendor
 
-#### OPS.9 — CI/CD workflow hardening (00_07 review, 2026-05-28)
-- **Джерело:** `00_07` §2.2/§2.3/§2.5/§2.6 review (2026-05-28) | **Пріоритет: P2** | **Складність: M** | **🤖 Код**
-- **Опис:** Рев'ю `00_07` виявило 4 розбіжності між специфікацією та реальними `.github/`-файлами + 1 stale-опис у цьому трекері. Doc-частину виправлено у `00_07`; workflow-файли синхронізовано з оновленою специфікацією (✅ 2026-05-28):
-
 ---
 
 ## §07 · Юридичні / Бізнес
@@ -1240,6 +1232,8 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | E.47 | Solana RPC production guard (raise on missing ENV) | `05_01` |
 | E.49 | Celo RPC fallback cascade (ResilientClient) | `04_02`, `05_01` |
 | E.62 | Dead `clusters.active_firmware_id` assoc removed | `04_01` |
+| ARCH.39 | Fauna acoustic energy budget — арифм.+системна корекція (doc-fix) | `03_03 §10.x` |
+| OPS.9 | CI/CD workflow hardening — 00_07 spec ↔ .github sync | `00_07 §2.2-2.6` |
 | ARCH.21 | Brownout PVD → Lorenz state save в RTC | `03_01`, `08_02` |
 | ARCH.28 | RTC Backup Domain allocation policy | `03_01 §2` |
 | ARCH.27 | Node-role flag (Soldier/Provisioner, Flash magic) | `03_01 §1.11` |
