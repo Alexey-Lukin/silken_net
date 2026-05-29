@@ -222,7 +222,7 @@ module SilkenNet
     # Lorenz attractor computation duration (BigDecimal, 250 iterations)
     LORENZ_COMPUTATION_DURATION = REGISTRY.histogram(
       :silkennet_lorenz_computation_duration_seconds,
-      docstring: "Lorenz attractor server-side computation time (BigDecimal, 250 iterations)",
+      docstring: "Lorenz attractor server-side computation time (Float IEEE-754, 250 iterations)",
       buckets: [ 0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5 ]
     )
 
@@ -280,6 +280,16 @@ module SilkenNet
       :silkennet_rpc_circuit_breaker_open,
       docstring: "Whether RPC provider circuit breaker is open (1=open/disabled, 0=closed/healthy)",
       labels: [ :provider ]
+    )
+
+    # [S2.2 fix 2026-05-29]: Web3 circuit-breaker fast-fail rejections.
+    # `Web3CircuitBreaker` already increments this (guarded `if defined?`), but the
+    # metric was never registered → the increment was a silent no-op (rejections
+    # invisible). Defining it activates that existing instrumentation.
+    CIRCUIT_BREAKER_REJECTIONS = REGISTRY.counter(
+      :silkennet_circuit_breaker_rejections_total,
+      docstring: "Web3 requests fast-failed because a provider circuit breaker was open",
+      labels: [ :service ]
     )
 
     # [S6.16]: TelemetryLog lookup without partition pruning (degraded path).

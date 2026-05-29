@@ -405,9 +405,79 @@ end
     summary: "RPC provider {{ $labels.provider }} circuit breaker open"
 ```
 
-**📊 Загальний підсумок реєстру (SSOT, verified vs `config/initializers/prometheus.rb` 2026-05-29): 42 кастомні метрики = 21 counters + 19 gauges + 2 histograms.**
+### 📊 Канонічний реєстр метрик (SSOT)
 
-> Це **ЄДИНЕ канонічне джерело кількості метрик**. Усі інші згадки (CLAUDE.md, `config.alloy`, діаграми/таблиці нижче) **рефлять сюди**, а не дублюють число — щоб уникнути doc-drift. При зміні реєстру в коді — оновити ЛИШЕ тут.
+> **ЄДИНЕ авторитетне джерело переліку + кількості метрик** — згенеровано з
+> `SilkenNet::Metrics::REGISTRY`, verified vs `config/initializers/prometheus.rb`
+> 2026-05-29. Усі інші згадки (CLAUDE.md, `config.alloy`, підсекції §2.3–2.7 з
+> обґрунтуванням/alert-прикладами) **рефлять сюди**, не дублюють число/перелік.
+> При зміні реєстру в коді — **регенерувати ЛИШЕ цю таблицю** (команда в кінці).
+> Де інкрементується/оновлюється кожна — `grep -rn "SilkenNet::Metrics::<CONST>" app/`.
+>
+> **Разом: 43 метрики = 22 counters + 19 gauges + 2 histograms.**
+
+**Counters (22):**
+
+| Metric | Labels | Призначення |
+|---|---|---|
+| `silkennet_anchor_missed_weeks_total` | — | Total missed Ethereum L1 anchor weeks detected (gap > 8 days) |
+| `silkennet_circuit_breaker_rejections_total` | `service` | Web3 requests fast-failed because a provider circuit breaker was open |
+| `silkennet_coap_packets_received_total` | `status` | Total CoAP UDP packets received by the telemetry daemon |
+| `silkennet_ews_alerts_total` | `alert_type` | Total EWS alerts dispatched (fire, drought, pest, storm) |
+| `silkennet_m2m_nonce_fallback_total` | — | M2M nonce checks falling back from Redis to DB-backed cache (Redis outage indicator) |
+| `silkennet_ota_chunks_sent_total` | `firmware_version` | Total OTA firmware chunks transmitted to field devices |
+| `silkennet_panic_replay_rejected_total` | — | Panic packets rejected as replay via SEC.10 Frame Counter SETNX nonce |
+| `silkennet_partition_maintenance_failures_total` | — | PartitionMaintenanceWorker run failures (missing partition → day-1 INSERT crash risk) |
+| `silkennet_rpc_errors_total` | `network`, `error_type` | Total Web3 RPC errors |
+| `silkennet_scc_minted_total` | `token_type` | Total SCC (SilkenCarbonCoin) tokens minted |
+| `silkennet_scc_slashed_total` | — | Total tokens slashed (burned due to cluster stress) |
+| `silkennet_slashing_events_total` | `reason` | Total slashing (burn) events by reason |
+| `silkennet_streamr_broadcast_failures_total` | — | Total Streamr broadcast failures (P2P real-time telemetry delivery) |
+| `silkennet_telemetry_acoustic_overflow_total` | — | Telemetry packets with acoustic_events=255 (uint8 saturation) |
+| `silkennet_telemetry_ccm_decrypt_ok_total` | — | FW.2 CCM packets successfully decrypted with valid MIC |
+| `silkennet_telemetry_ccm_fc_replay_rejected_total` | — | FW.2 CCM packets rejected (per-DID Frame Counter not strictly increasing) |
+| `silkennet_telemetry_ccm_mic_fail_total` | — | FW.2 CCM packets rejected due to MIC verification failure |
+| `silkennet_telemetry_fraud_detected_total` | — | Telemetry packets rejected (sensor noise, unknown DID, tamper) |
+| `silkennet_telemetry_log_unpruned_lookups_total` | `caller` | TelemetryLog lookups without partition pruning (degraded path; missing/invalid created_at_iso) |
+| `silkennet_telemetry_processed_total` | — | Telemetry chunks processed by TelemetryUnpackerService |
+| `silkennet_treasury_check_errors_total` | `network`, `error_type` | Treasury monitoring RPC errors |
+| `silkennet_w3bstream_signature_fallback_total` | `reason` | W3bstream verifications using SHA256 fallback instead of Ed25519 hardware signature |
+
+**Gauges (19):**
+
+| Metric | Labels | Призначення |
+|---|---|---|
+| `silkennet_cluster_entropy_score` | `cluster_id` | Normalized Shannon entropy of Z-value distribution per cluster (0.0-1.0) |
+| `silkennet_db_pool_connections` | `database` | Active (checked out) database connections |
+| `silkennet_db_pool_idle` | `database` | Idle database connections in the pool |
+| `silkennet_db_pool_size` | `database` | Maximum connections in the database pool |
+| `silkennet_db_pool_waiting` | `database` | Threads waiting for a database connection |
+| `silkennet_oracle_balance` | `network` | Oracle wallet balance in native currency (wei/lamports) |
+| `silkennet_oracle_balance_ratio` | `network` | Oracle balance as ratio to minimum threshold (below 1.0 = critical) |
+| `silkennet_process_resident_memory_bytes` | — | Resident set size (RSS) of the scraped process in bytes (Linux /proc; 0 elsewhere) |
+| `silkennet_puma_backlog` | — | Puma requests waiting for a free thread (backlog; sustained >0 = under-provisioned) |
+| `silkennet_puma_max_threads` | — | Puma configured max threads (pool ceiling) |
+| `silkennet_puma_pool_capacity` | — | Puma free thread-pool capacity (0 = saturated → requests queue in backlog) |
+| `silkennet_puma_running_threads` | — | Puma worker threads currently spawned (busy + idle) |
+| `silkennet_rpc_circuit_breaker_open` | `provider` | RPC provider circuit breaker open (1=open/disabled, 0=closed/healthy) |
+| `silkennet_ruby_gc_count` | — | Total Ruby GC runs since process start (GC.stat[:count]) |
+| `silkennet_ruby_gc_heap_live_slots` | — | Live objects on the Ruby heap (GC.stat[:heap_live_slots]); sustained growth = leak |
+| `silkennet_ruby_gc_major_count` | — | Major Ruby GC runs since process start (GC.stat[:major_gc_count]) |
+| `silkennet_ruby_threads` | — | Live Ruby threads (Thread.list.size); sustained growth = thread leak |
+| `silkennet_sidekiq_queue_latency_seconds` | `queue` | Latency (age of oldest job) in a Sidekiq queue (all 9 queues) |
+| `silkennet_sidekiq_queue_size` | `queue` | Current size of a Sidekiq queue (all 9 queues) |
+
+**Histograms (2):**
+
+| Metric | Labels | Призначення |
+|---|---|---|
+| `silkennet_lorenz_computation_duration_seconds` | — | Lorenz attractor server-side computation time (Float IEEE-754, 250 iterations) |
+| `silkennet_oracle_dispatch_duration_seconds` | — | Chainlink oracle dispatch latency in seconds |
+
+**Регенерація таблиці** (після зміни реєстру):
+```bash
+bin/rails runner 'SilkenNet::Metrics::REGISTRY.metrics.sort_by{|m|[m.type.to_s,m.name.to_s]}.each{|m| l=(m.instance_variable_get(:@labels)||[]).map{|x| "`#{x}`"}.join(", "); puts "| `#{m.name}` | #{l.empty? ? %(—) : l} | #{m.docstring} |"}'
+```
 
 ---
 

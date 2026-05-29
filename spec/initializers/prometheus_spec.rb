@@ -201,6 +201,12 @@ RSpec.describe SilkenNet::Metrics do
       expect(metric).to be_a(Prometheus::Client::Gauge)
     end
 
+    it "registers circuit_breaker_rejections_total counter with service label" do
+      # Was incremented (guarded) but never registered → silent no-op; now defined.
+      metric = described_class::REGISTRY.get(:silkennet_circuit_breaker_rejections_total)
+      expect(metric).to be_a(Prometheus::Client::Counter)
+    end
+
     it "sets rpc_circuit_breaker_open gauge for a provider" do
       metric = described_class::RPC_CIRCUIT_BREAKER_OPEN
 
