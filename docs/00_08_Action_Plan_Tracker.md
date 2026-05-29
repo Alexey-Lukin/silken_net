@@ -688,8 +688,9 @@
 - **Джерело:** `05_03` Operational Security
 - **Опис:** `DEFAULT_ADMIN_ROLE` у production контрактах SCC/SFC має бути Gnosis Safe multisig (3/5 або 2/3), а не EOA
 - **Пріоритет:** Before mainnet deploy
-- [ ] 👤 Створити Gnosis Safe wallet
-- [ ] 👤 Reassign DEFAULT_ADMIN_ROLE у SCC та SFC контрактах
+- ✅ Зроблено (🤖 prep): `Deploy.s.sol` ставить admin=Safe на genesis + `REQUIRE_SAFE_ADMIN` guard (revert якщо admin=EOA); runbook + cast-верифікація. Канон: `05_03 §Admin-Role → Gnosis Safe`. **Нічого не задеплоєно → reassign НЕ потрібен.**
+- [ ] 👤 Створити Gnosis Safe wallet (3/5 або 2/3) на Polygon
+- [ ] 👤 Деплоїти з `ADMIN_ADDRESS=<Safe>` + `REQUIRE_SAFE_ADMIN=true` (admin = Safe одразу)
 
 #### SEC.2 — RDP Level 2 activation timeline
 - **Джерело:** `03_05` NOTE-1

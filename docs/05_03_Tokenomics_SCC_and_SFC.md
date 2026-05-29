@@ -155,6 +155,36 @@ constructor(address admin, address oracle, address slasherOracle)
 
 ---
 
+### 🔐 Admin-Role → Gnosis Safe [SEC.1]
+
+`DEFAULT_ADMIN_ROLE` (SCC, SFC, StateRootAnchor, SilkenTimelock, ProtocolParameters) дає повний контроль (pause, видача/відкликання ролей). У production він **мусить** належати **Gnosis Safe multisig (3/5 або 2/3)**, не EOA.
+
+**Контракти ще ніде не задеплоєно → міграція ролей не потрібна;** admin виставляється правильно одразу на genesis-деплої через `ADMIN_ADDRESS`:
+
+| Крок | Дія |
+|------|-----|
+| 1 | Створити Gnosis Safe (3/5 або 2/3) на Polygon — `app.safe.global` |
+| 2 | `ADMIN_ADDRESS=<Safe>` у deploy ENV |
+| 3 | `REQUIRE_SAFE_ADMIN=true` (mainnet) → `Deploy.s.sol` hard-fail якщо admin = EOA |
+| 4 | `forge script script/Deploy.s.sol --rpc-url $RPC --broadcast` |
+| 5 | Верифікація (нижче) |
+
+**Guard у `Deploy.s.sol` [SEC.1]:** при `REQUIRE_SAFE_ADMIN=true` деплой ревертиться, якщо `ADMIN_ADDRESS` — EOA (`admin.code.length == 0`); інакше — warning (testnet/local EOA допустимо).
+
+**Last-admin guard (код SCC/SFC):** `_revokeRole` блокує видалення останнього `DEFAULT_ADMIN_ROLE` (`require(_adminCount > 1)`) — захист від lockout (релевантно лише при майбутньому reassign на live-контракті: grant-before-renounce).
+
+**Верифікація (`cast`):**
+```bash
+ADMIN=0x0000000000000000000000000000000000000000000000000000000000000000  # DEFAULT_ADMIN_ROLE
+cast call $SCC "hasRole(bytes32,address)(bool)" $ADMIN $SAFE      # → true
+cast call $SCC "hasRole(bytes32,address)(bool)" $ADMIN $DEPLOYER  # → false
+# повторити для $SFC, $ANCHOR, $TIMELOCK, $PROTOCOL_PARAMS
+```
+
+> `MINTER_ROLE` / `SLASHER_ROLE` належать backend-оракулам (operational, не admin) — нормально. `ProtocolParameters` керується `SilkenTimelock` (DAO).
+
+---
+
 ## ⚙️ Функції Контрактів
 
 ### SCC — SilkenCarbonCoin

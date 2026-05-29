@@ -55,6 +55,18 @@ contract DeploySilkenNet is Script {
         require(slasherOracle != address(0), "Deploy: SLASHER_ORACLE not set");
         require(anchorOracle != address(0), "Deploy: ANCHOR_ORACLE not set");
 
+        // [SEC.1] Admin must be a Gnosis Safe multisig (a contract), not an EOA. Nothing is
+        // deployed yet, so admin is set correctly at genesis — no later role migration needed.
+        // REQUIRE_SAFE_ADMIN=true hard-enforces (mainnet); default only warns (testnet/local EOA OK).
+        if (vm.envOr("REQUIRE_SAFE_ADMIN", false)) {
+            require(
+                admin.code.length > 0,
+                "SEC.1: ADMIN_ADDRESS must be a Gnosis Safe contract (unset REQUIRE_SAFE_ADMIN for testnet EOA)"
+            );
+        } else if (admin.code.length == 0) {
+            console.log("[SEC.1] WARNING: ADMIN is an EOA, not a Gnosis Safe. OK for testnet; for mainnet set a Safe + REQUIRE_SAFE_ADMIN=true.");
+        }
+
         vm.startBroadcast(deployerKey);
 
         // ─── 1. SilkenCarbonCoin (SCC) ────────────────────────────────
@@ -115,6 +127,6 @@ contract DeploySilkenNet is Script {
         console.log("3. Set ETHEREUM_ANCHOR_CONTRACT =", address(anchor));
         console.log("4. Update subgraph.yaml with SFC address (S3.5)");
         console.log("5. Verify contracts on Polygonscan");
-        console.log("6. Transfer ADMIN_ADDRESS to Gnosis Safe multisig (SEC.1)");
+        console.log("6. [SEC.1] Verify admin = Gnosis Safe (set at deploy; use REQUIRE_SAFE_ADMIN=true on mainnet)");
     }
 }
