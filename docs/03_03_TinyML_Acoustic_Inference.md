@@ -722,6 +722,62 @@ PVD safety, з запасом). Path B має найменшу sum, але рі�
 
 ---
 
+### 3.4 Log-Mel Feature Contract (FW.25) — конкретна специфікація
+
+> **Призначення:** конвертувати «implementation gate» (BLOCKER-5) у простий *confirm*. Нижче — повний MCU-готовий контракт log-mel ознак. Firmware (`Compute_LogMel`) і тренувальний pipeline ML-партнера **мусять використовувати ідентичні параметри** — інакше модель, натренована на librosa-фічах, не працюватиме на MCU-фічах. ML-партнер (Бушин/Любченко) **підтверджує або коригує** ці значення; після цього DSP-імплементація (CMSIS-DSP + golden-vector host-тести) розблокована.
+
+#### Параметри (proposed baseline)
+
+| Параметр | Значення | Обґрунтування (MCU + ESC) |
+|----------|----------|---------------------------|
+| Sample rate | **16 000 Hz** | TIM2 метроном (§2.1) |
+| Frame / `n_fft` | **512** (= 32 ms) | один DMA-блок = один FFT-кадр (§2.2) |
+| Window | **Hann**, `win_length=512` | стандарт для спектрограм; `arm_mult_f32` |
+| `hop_length` | **512** (без overlap) | 5 с / 32 мс = **156 кадрів** — точно збігається з монолітним fauna-вікном (§10.2 / ARCH.40); overlap зламав би 156-кадровий Welford |
+| `n_mels` | **40** | = `MODEL_INPUT_SIZE` (stub); ESC-стандарт |
+| `fmin` / `fmax` | **50 Hz / 8000 Hz** | fmax = Nyquist@16k; покриває комах 4–8 кГц, птахів 1–6, амфібій 0.5–3 (§10) |
+| Mel-scale | **HTK** (`mel = 2595·log₁₀(1 + f/700)`) | замкнена формула для precompute на MCU (Slaney — кусково-лінійна, зайва складність) |
+| Power | **2.0** (`|X|²`) | librosa default; `re² + im²` без sqrt |
+| Mel-filter norm | **None** (сирі трикутні фільтри) | уникаємо Slaney area-нормалізації; масштаб компенсує BatchNorm моделі |
+| Log | **`ln(mel + 1e-6)`** (натуральний) | `arm_vlog_f32`; floor 1e-6 проти log(0) |
+| Вхід-нормалізація | **у моделі** (BatchNorm 1-й шар) | MCU видає сирий log-mel; модель нормалізує — стандарт ESC-CNN |
+
+**Вихід:** `float[40]` на кадр (4-class: один стовпець → `Run_Inference`; fauna: 156 стовпців → Welford mean+std, §10.2).
+
+#### Firmware-інтерфейс
+
+```c
+/* Один 512-семпловий кадр (32 ms @ 16 kHz) → 40 log-mel ознак.
+ * audio: нормалізований [0,1) (як audio_buffer[] зараз) — DC прибирається всередині.
+ * out_mel: 40 float, далі → Run_Inference(out_mel, &confidence). */
+void Compute_LogMel(const float audio[512], float out_mel[40]);
+```
+
+Пайплайн: DC-remove (− mean) → Hann → **RFFT 512→257** (`arm_rfft_fast_f32` на ARM; портативний radix-2 для host-тестів) → power `re²+im²` (257 bins) → **mel-bank 40×257** (precomputed трикутні, HTK, sparse-triplet для Flash) → `ln(·+1e-6)`. Mel-матриця генерується офлайн (скрипт нижче) і вшивається як `const`.
+
+#### Reference (ML-партнер тренує на ЦЬОМУ)
+
+```python
+import librosa, numpy as np
+SR, N_FFT, HOP, N_MELS, FMIN, FMAX = 16000, 512, 512, 40, 50, 8000
+mel = librosa.feature.melspectrogram(
+    y=audio, sr=SR, n_fft=N_FFT, hop_length=HOP, win_length=N_FFT,
+    window="hann", n_mels=N_MELS, fmin=FMIN, fmax=FMAX,
+    power=2.0, htk=True, norm=None)            # htk=True + norm=None ⇔ MCU mel-bank
+logmel = np.log(mel + 1e-6).astype(np.float32)  # натуральний log, floor 1e-6
+# logmel.shape == (40, n_frames); один стовпець [40] = вхід Run_Inference
+```
+
+Той самий скрипт генерує mel-фільтробанк для вшивання у firmware:
+`librosa.filters.mel(sr=SR, n_fft=N_FFT, n_mels=N_MELS, fmin=FMIN, fmax=FMAX, htk=True, norm=None)` → `float[40][257]` (sparse triplet).
+
+#### Розблокування після confirm
+1. ML-партнер підтверджує/коригує таблицю (особливо `fmin/fmax`, HTK vs Slaney, log-type).
+2. Firmware: `Compute_LogMel` (`arm_rfft_fast_f32` + вшитий mel-bank) + golden-vector host-тести (numpy reference ↔ C, tolerance 1e-3).
+3. Розкоментувати `Run_Inference` call-site (`main.c:1422`) + виміряти Tensor Arena (BLOCKER-3).
+
+---
+
 ## 🧠 4. Архітектура Моделі (TinyML Inference)
 
 ### 4.1 Фреймворк

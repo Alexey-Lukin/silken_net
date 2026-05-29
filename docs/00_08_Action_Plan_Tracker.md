@@ -284,8 +284,8 @@
   3. **ESC консенсус:** Salamon & Bello 2015 (ESC-50), BirdNET 2021, UrbanSound8K — усі сходяться на log-mel для CNN-based ESC. DCT-крок MFCC декорелює ознаки для GMM/HMM (speech anachronism), але знищує spatial structure для 2D-CNN.
   4. **CMSIS-DSP вже в стеку** (FW.21 EMA, FW.5 Lorenz). Custom Mel-bank ~50 рядків C додасться без зміни toolchain.
   5. **Mongabay pivot** робить fauna стратегічним — рішення мусить бути fauna-ready з самого початку.
-- [ ] 👤 ML-партнер (Бушин/Любченко) формально підтверджує тренувальний pipeline на log-mel features (без DCT) — переведення FW.25 з "implementation gate" у "executing"
-- [ ] 🤖 **Path B implementation:** CMSIS-DSP `arm_rfft_fast_f32` + custom Mel-filterbank (40 bands, `sparse triplet` для Flash economy) + `arm_vlog_f32`. **НЕ використовувати `arm_mfcc_f32`** (повний MFCC з DCT — anti-pattern для CNN ESC).
+- [ ] 👤 ML-партнер (Бушин/Любченко) **підтверджує/коригує log-mel контракт** `03_03 §3.4` (конкретні параметри готові: 16k / n_fft=512 / 40 mel / HTK / ln+1e-6) — переводить FW.25 з implementation-gate у executing
+- [ ] 🤖 **Path B implementation** (`Compute_LogMel` per `03_03 §3.4` contract): CMSIS-DSP `arm_rfft_fast_f32` + вшитий HTK mel-bank (40 bands, sparse triplet) + `arm_vlog_f32` + golden-vector host-тести (numpy ↔ C, tol 1e-3). **НЕ `arm_mfcc_f32`** (DCT anti-pattern). Розблоковано після §3.4 confirm.
 - [ ] 🤖 Verify TENSOR_ARENA budget для Path B (~15-30 KB target; cross-ref FW.26 + BLOCKER-3)
 - [ ] 🤖 Тести: золотий вектор inference (наперед відома класифікація) на log-mel input
 - [ ] 🌿 Cross-ref UNI.11 + UNI.13a: акустичний датасет dawn/dusk Черкаського бору
