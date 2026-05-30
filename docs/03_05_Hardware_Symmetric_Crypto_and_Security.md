@@ -105,7 +105,7 @@ uint32_t aes_key[8] = {0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX,
 
 **Виконані дії (FW.1, 2026-05-02):**
 
-- ✅ `HKDF(PROVISIONING_MASTER_KEY, device_uid, "silkennet-v1-aes256")` → Protected Flash (`FLASH_KEY_ADDR`) — per-device unique key.
+- ✅ `HKDF(PROVISIONING_MASTER_KEY, device_uid, "silken-aes-128-lora-key")` → Protected Flash (`FLASH_KEY_ADDR`) — per-device unique key.
 - ✅ `Load_AES_Key()` + magic `"KEYS"` guard — boot відмовляє без provisioning (infinite reset loop; тест: `test_aes_key_load_fail_no_magic`).
 - ✅ Per-device ізоляція: злам одного Soldier не розкриває ключі сусідів.
 - ✅ `Security::WeakKeyDetector` + boot-time guard (§3.1а, SEC.9) — FIPS-197 test vector не може потрапити в production.
@@ -793,7 +793,7 @@ Device Memory → Option Bytes → Read Out Protection → RDP: Level 1 (або 
        - Зберігає (device_uid, atecc_serial) у HardwareKey (для tamper-detect: підміна
          чіпа на іншому boards тригерить mismatch при наступному провіженінгу)
        - Деривує HKDF як у §3.4а:
-           aes_key  = HKDF_SHA256(master_key, device_uid, "silkennet-v1-aes256")
+           aes_key  = HKDF_SHA256(master_key, device_uid, "silken-aes-128-lora-key")
            ota_hmac = HKDF_SHA256(master_key, device_uid, "silken-ota-hmac-v1")
        - Генерує ECC P-256 keypair (для майбутнього peaq DID signing, ARCH.27 evolution)
        - Видає device cert (X.509, підписаний intermediate CA Silken Net)
@@ -952,7 +952,7 @@ STEP 4: Queen — знає ключі ВСІХ своїх Soldiers
 
 Варіант A (рекомендований для TRL 7):
   Queen теж provisioned із ключем:
-    queen_key = HKDF_SHA256(master_key, queen_uid, "silkennet-v1-aes256")
+    queen_key = HKDF_SHA256(master_key, queen_uid, "silken-aes-128-lora-key")
   Але для декриптування Soldier-пакетів потрібна інша стратегія.
 
 Варіант B (production-ready):

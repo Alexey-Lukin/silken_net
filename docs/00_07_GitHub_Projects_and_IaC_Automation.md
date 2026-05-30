@@ -97,6 +97,7 @@ done
 | Solidity Audit | `.github/workflows/solidity_audit.yml` | `push` / PR з `contracts/**` | ✅ Реалізовано |
 | CoAP Smoke Test | `.github/workflows/coap_smoke.yml` | `workflow_dispatch` / `workflow_call` від `deploy.yml` | ✅ Реалізовано (INF.6 post-deploy gate) |
 | In-silico L2 Smoke | `.github/workflows/in_silico_smoke.yml` | `pull_request` / `push` з path-filter `tools/in_silico/**`, `docs/protocols/ebfc/in_silico/**` | ✅ Реалізовано (Zero-Lab L2 engine gate; CPU-only via `SILKEN_FORCE_PLATFORM=CPU`, micromamba env cache, не гейтить деплой) |
+| Docs CI (SSOT gates) | `.github/workflows/docs.yml` | `push` / PR path-filter `docs/**`, `**.md`, linter-engine/специ | ✅ Реалізовано (2026-05-30) — `tracker:check` + `docs:check_refs` + linter-специ. Виділено з `ci.yml`, щоб docs-only зміни **не** ганяли важкий код-CI (`ci.yml` має `paths-ignore: ['**.md','docs/**']`) — економія Actions-хвилин. ⚠️ якщо ci.yml-джоби required, познач `docs_check` required теж |
 
 ### 2.2 Протокол "TRL Auto-Advancement" (`trl_sync.yml`)
 
@@ -438,14 +439,18 @@ echo "Stub shape for cluster C: First Akash production deploy" > docs/shaping/ak
 
 | Guard | Що ловить | Команда / місце |
 |---|---|---|
-| `docs:check_refs` | dangling `NN_NN` doc-links (hard) + §-section label drift (advisory) | `bin/rails docs:check_refs` (ci.yml) |
-| `tracker:check` | 00_08: dup-IDs, meta-line conformance, canon-ref resolution | `bin/rails tracker:check` (ci.yml) |
+| `docs:check_refs` | dangling `NN_NN` doc-links (hard) + §-section label drift (advisory) | `bin/rails docs:check_refs` (ci.yml + docs.yml) |
+| `tracker:check` | 00_08: dup-IDs, meta-line conformance, canon-ref resolution | `bin/rails tracker:check` (ci.yml + docs.yml) |
 | `ssot_guard.yml` | protected code змінено → docs мусять оновитись | CI PR gate (§2.3) |
 | regen-from-code | enumerable lists (метрики) генеруються з SSOT, не вручну | `06_03 §2.8` regen cmd |
 | TRL presence | кожен док з `## ✅ Статус` декларує TRL (ловить 06_04-клас gap) | `bin/rails docs:check_refs` (hard) |
 | TRL single-value | `00_06 §1` matrix-клітинки — одинарне 1-9, без діапазонів (§1.1) | `bin/rails docs:check_refs` (hard; `lib/docs_linter.rb`) |
-| blocker-hygiene | канон-док не тримає `🛑 Блокери`/`✅ Архів` секцій — блокери лише в `00_08` (§8.1) | `bin/rails docs:check_refs` (advisory → hard по завершенні sweep) |
+| blocker-hygiene | канон-док не тримає `🛑 Блокери`/`✅ Архів` секцій — блокери лише в `00_08` (§8.1) | `bin/rails docs:check_refs` (**HARD** — sweep завершено 2026-05-30) |
+| standard-conformance | кожен NN_NN-канон несе ✅ Статус + top 🔗 Cross-references + auto-ToC | `bin/rails docs:check_refs` (HARD; `lib/docs_linter.rb`) |
 | ToC sync | docs з `TOC:AUTO` маркерами — зміст збігається з h2-заголовками | `bin/rails docs:check_refs` (HARD; writer `docs:toc`; engine `lib/docs_toc.rb`) |
+| **RTC reg-map drift** | register availability (`DRn free/reserve`) живе лише в owner `03_01 §2`; інші доки не дублюють (зловив stale «DR15 резерв» у 03_02/00_08/03_03) | `bin/rails docs:check_refs` (HARD 2026-05-30; `lib/docs_linter.rb`) |
 | TRL range-consistency | _(roadmap)_ per-doc member-TRL у межах діапазону модуля `00_06 §1` | — |
 
 **Правило при зміні факту:** правити лише у home (§8.2) → рефи лишаються чинними; будь-який новий NN_NN-док/реф — `docs:check_refs` має лишатись зеленим перед merge.
+
+**Публікація канону на Wiki:** `bin/rails wiki:sync` (dry-run за замовч.; `PUSH=1` публікує) дзеркалить `docs/NN_NN_*.md` → GitHub Wiki — нормалізує лінки (canon → bare wiki-link; non-doc repo-файли → absolute `blob/main` URL) + переносить зображення. **Ручний** запуск (рішення власника — НЕ on-merge); engine `lib/wiki_link_normalizer.rb` (unit-tested). Деталі — `lib/tasks/wiki.rake`.

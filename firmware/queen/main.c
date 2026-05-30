@@ -1378,7 +1378,7 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
 //
 // Записується при Factory Flashing через SWD:
 //   STM32CubeProgrammer --write key_payload.bin 0x0803E000
-// Ключ деривується на backend: HKDF-SHA256(master_key, device_uid, "silkennet-v1-aes256")
+// Ключ деривується на backend: HKDF-SHA256(master_key, device_uid, "silken-aes-128-lora-key") [post-ARCH.42]
 // Див. docs/03_05 §3.4а для повного протоколу.
 static void Load_AES_Key(void)
 {

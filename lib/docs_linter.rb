@@ -105,4 +105,19 @@ module DocsLinter
       "DR#{dr} availability claim outside owner (03_01 RTC map) → #{line.strip[0, 110]}"
     end
   end
+
+  # [SSOT anti-drift] Deprecated-term registry. Tokens retired SSOT-wide must
+  # not reappear in any canon doc; as each drift is fixed, the old form is added
+  # here so CI blocks its return (the general "scripts catch drift" net). Keyed
+  # deprecated-token → replacement hint. Use only for UNAMBIGUOUS retired strings
+  # (no legit current/historical use), else this false-positives.
+  DEPRECATED_TERMS = {
+    "silkennet-v1-aes256" => 'use "silken-aes-128-lora-key" / "silken-aes-256-device-key" (ARCH.42 256→128 HKDF info)',
+  }.freeze
+
+  def deprecated_terms(text)
+    DEPRECATED_TERMS.filter_map do |term, hint|
+      "deprecated term `#{term}` present → #{hint}" if text.include?(term)
+    end
+  end
 end

@@ -128,4 +128,20 @@ RSpec.describe DocsLinter do
         "04_06_Testing", "```\nDR15 вільний\n```\n")).to be_empty
     end
   end
+
+  describe ".deprecated_terms" do
+    it "flags a retired token and gives the replacement hint" do
+      hits = described_class.deprecated_terms("derive via HKDF info silkennet-v1-aes256 here")
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("silken-aes-128-lora-key")
+    end
+
+    it "is clean when only current tokens are present" do
+      expect(described_class.deprecated_terms("HKDF info silken-aes-128-lora-key")).to be_empty
+    end
+
+    it "exposes a non-empty registry of retired tokens" do
+      expect(described_class::DEPRECATED_TERMS).not_to be_empty
+    end
+  end
 end
