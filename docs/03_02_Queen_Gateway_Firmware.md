@@ -730,7 +730,7 @@ Soldier — direct
    │  ③ Drift-monitor + panic sync request `[0x56][DID:4][secs:4][TTL][magic 'S']`     ✅ FW.20-S2 (2/5)
    │  ④ Per-hop drift compensation (Provisioner-only relay): freeze-contract callable  ✅ FW.20-S2 (3/5)
    │     — `Soldier_Try_Relay_Time_Beacon` готова, активація потребує Queen TTL≥2
-   │     + anti-storm dedup-bitmap у вільному RTC регістрі (DR15 наразі резерв)
+   │     + anti-storm dedup-bitmap → Flash-KV store (DR15 зайнято FW.2 CCM FC, 03_01 §2)
    │
    │  2-hop reach (mesh relay через Provisioners)
    ▼
@@ -803,7 +803,7 @@ Soldier — gossip-uplift (3-hop reach)
 
 ### 5а.6 Що ще лежить як freeze-contract (deferred TRL-7)
 
-- **Anti-storm dedup bitmap** для повного активного mesh-relay'у (потребує вільного RTC регістра — DR15 наразі резерв; cross-ref [`03_01 §2.3 ARCH.28`](03_01_Firmware_Lifecycle_and_DMA#23-overflow-strategy-flash-based-kv-store-arch28))
+- **Anti-storm dedup bitmap** для повного активного mesh-relay'у — у Flash-KV store (DR15 зайнято FW.2 CCM Frame Counter, `03_01 §2`; cross-ref [`03_01 §2.3 ARCH.28`](03_01_Firmware_Lifecycle_and_DMA#23-overflow-strategy-flash-based-kv-store-arch28))
 - **Queen beacon TTL≥2** (зараз hardcoded TTL=1 у `BEACON_BYTE9_AUTHORITATIVE = 0x81`; перемикається коли реалізуємо anti-storm)
 - **Hot-path виклик** `Soldier_Pack_Gossip_Ts_Byte` у Phase 2 normal-telemetry pack + RX-обробник для прийому
 - **Drift compensation** при ΔT = ±60°C lab-вимірювання (потребує термокамери, відсутня @ TRL-6)
