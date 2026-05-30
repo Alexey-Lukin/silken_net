@@ -41,6 +41,7 @@ namespace :docs do
     lorenz_drift = [] # hard: Lorenz β formula re-stated outside 03_04 owner
     deprecated  = []  # hard: retired SSOT term reappeared (DocsLinter::DEPRECATED_TERMS)
     label_drift = []  # hard: link label leads with a different NN_NN than its href resolves to
+    magic_drift = []  # soft: magic-marker hex ≠ BE/LE ASCII of its quoted name
 
     files.each do |f|
       base = File.basename(f, ".md")
@@ -72,6 +73,7 @@ namespace :docs do
       lorenz_drift.concat(DocsLinter.lorenz_formula_drift(base, text).map { |h| "#{base}: #{h}" })
       deprecated.concat(DocsLinter.deprecated_terms(text).map { |h| "#{base}: #{h}" })
       label_drift.concat(DocsLinter.link_label_target_mismatch(text).map { |h| "#{base}: #{h}" })
+      magic_drift.concat(DocsLinter.magic_marker_hex_drift(text).map { |h| "#{base}: #{h}" })
     end
 
     # [TRL single-value] HARD — 00_03 §1 per-module matrix cells single 1-9.
@@ -106,6 +108,10 @@ namespace :docs do
     unless suspect.empty?
       puts "  ⚠️ §-section labels with no matching heading (#{suspect.uniq.size}) — advisory:"
       suspect.sort.uniq.first(40).each { |s| puts "    · #{s}" }
+    end
+    unless magic_drift.empty?
+      puts "  ⚠️ magic-marker hex ≠ BE/LE ASCII of its name (#{magic_drift.uniq.size}) — advisory:"
+      magic_drift.sort.uniq.first(40).each { |s| puts "    · #{s}" }
     end
     if trl_missing.empty?
       puts "  TRL presence:   every ✅ Статус doc declares a TRL ✓"

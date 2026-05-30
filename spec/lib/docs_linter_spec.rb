@@ -231,4 +231,39 @@ RSpec.describe DocsLinter do
         "[`99_99 §1.3`](99_99_Missing_Doc)", headings)).to be_empty
     end
   end
+
+  describe ".magic_marker_hex_drift" do
+    it "passes little-endian (RITE=0x45544952) and big-endian (LZST=0x4C5A5354) markers" do
+      md = %(magic "RITE" = 0x45544952\nRTC magic `LZST` = 0x4C5A5354 (FW.6)\n)
+      expect(described_class.magic_marker_hex_drift(md)).to be_empty
+    end
+
+    it "flags a typo'd marker hex (neither BE nor LE of the named marker)" do
+      hits = described_class.magic_marker_hex_drift(%(RTC magic "LZST" = 0x4C5A5355 (stale)\n))
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("LZST")
+    end
+
+    it "ignores Flash addresses (0x0803… is out of the ASCII range) next to a valid def" do
+      expect(described_class.magic_marker_hex_drift(
+        %(magic `KEYL` = 0x4B45594C (sector 0x0803E000)\n))).to be_empty
+    end
+
+    it "does NOT flag a value-referenced hex with no adjacent name, beside another def" do
+      # the real 03_01 line: DR19 compared to the LZST value, while LSED is *defined*
+      md = %(cold-start if DR19 ≠ `0x4C5A5354`; seed magic `"LSED"` = `0x4C534544`\n)
+      expect(described_class.magic_marker_hex_drift(md)).to be_empty
+    end
+
+    it "passes a multi-marker definition line (each name validates its own hex)" do
+      expect(described_class.magic_marker_hex_drift(
+        %(magic "KEYL" = 0x4B45594C, "KEYC" = 0x4B455943\n))).to be_empty
+    end
+
+    it "skips magic lines lacking a quoted 4-letter marker or a magic-range hex" do
+      expect(described_class.magic_marker_hex_drift("magic marker check at boot\n")).to be_empty
+      expect(described_class.magic_marker_hex_drift(%(the "LZST" state is restored at boot\n))).to be_empty
+      expect(described_class.magic_marker_hex_drift("magic float value 0x4188EE90 here\n")).to be_empty
+    end
+  end
 end

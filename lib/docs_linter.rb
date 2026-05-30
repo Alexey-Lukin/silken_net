@@ -199,4 +199,33 @@ module DocsLinter
       "label `§#{ref}` → #{target} (no heading contains '#{ref}')"
     end
   end
+
+  # [SSOT anti-drift] Magic-marker hex self-consistency (ADVISORY). Firmware uses
+  # 4-byte ASCII magic markers ("RITE"/"LZST"/"KEYL"/"LSED"/"KEYC"/"QUID"…) whose
+  # uint32 literal is the byte-packing of the four characters — but the codebase
+  # mixes endianness ("RITE"=0x45544952 little-endian vs "LZST"=0x4C5A5354 big-
+  # endian), so a hardcoded name→hex table would itself drift. Instead this guard is
+  # SELF-VALIDATING + table-free: it inspects only a *definition* — a quoted 4-letter
+  # marker immediately (≤24 chars) followed by an ASCII-range hex literal (0x4x/0x5x,
+  # the printable-letter byte range, which excludes 0x0803… Flash addresses) — and
+  # requires that hex to equal the big- OR little-endian packing of that marker's
+  # bytes. A mismatch → a typo'd/stale marker value (the 9cb1d86 drift class). A hex
+  # *referenced by value* with no adjacent quoted name (e.g. "DR19 ≠ 0x4C5A5354") is
+  # NOT a definition and is left alone, so the guard stays false-positive-free. Pure:
+  # no I/O, no table. Scoped to lines mentioning `magic`.
+  MAGIC_DEF_RE = /["'`]([A-Z]{4})["'`][^\n]{0,24}?0x([45][0-9A-Fa-f]{7})(?![0-9A-Fa-f])/
+
+  def magic_marker_hex_drift(text)
+    text.each_line.flat_map do |line|
+      next [] unless line.match?(/magic/i)
+
+      line.scan(MAGIC_DEF_RE).filter_map do |name, hex|
+        bs = name.bytes
+        valid = [ bs, bs.reverse ].map { |b| b.map { |c| format("%02X", c) }.join }
+        next if valid.include?(hex.upcase)
+
+        "magic `\"#{name}\"` = 0x#{hex.upcase} ≠ its BE/LE ASCII → #{line.strip[0, 80]}"
+      end
+    end
+  end
 end
