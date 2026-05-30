@@ -50,7 +50,7 @@ EBFC (дерево) → delta_t → Lorenz Z → growth_points → TelemetryLog
 peaq DID → IoTeX ZK-proof → Chainlink Oracle → Polygon mint(SCC)
     ↓
 10 000 growth_points = 1 SCC токен
-Slashing: якщо >20% дерев кластера в стресі → автоматичне спалювання SCC
+Slashing: лише за доведену халатність (cause-gate A/B/C; стихія → insurance) — 05_05
 ```
 
 ---
@@ -225,14 +225,14 @@ kamal deploy
 
 **SCC (Silken Carbon Coin)** — утилітарний ERC-20 токен за верифіковану секвестрацію CO₂.
 - 10 000 `growth_points` = 1 SCC
-- Slashing: автоматичне спалювання при деградації кластера (поріг: >20% дерев зі `stress_index ≥ 1.0`)
+- Slashing: за деградацію від **халатності** (cause-gate A/B/C — стихія покривається страхуванням); cluster-trigger >20% дерев зі `stress_index ≥ 1.0`. Політика → [`05_05`](docs/05_05_Slashing_and_Risk_Policy.md)
 - MAX_SUPPLY: 1 мільярд SCC
 
 **SFC (Silken Forest Coin)** — governance ERC-20 + Votes (EIP-712) для DAO голосування.
 - MAX_SUPPLY: 100 мільйонів SFC
 - Підтримує gasless транзакції через EIP-712 permit
 
-**Governance DAO** — SFC holders голосують за зміну параметрів протоколу:
+**Governance DAO** ([`05_06`](docs/05_06_Governance_and_DAO.md)) — SFC holders голосують за зміну параметрів протоколу:
 - `SilkenGovernor.sol` — OZ Governor + GovernorVotes (snapshot defense) + 48h Timelock
 - `SilkenTimelock.sol` — TimelockController з 48h мінімальною затримкою
 - `ProtocolParameters.sol` — on-chain registry (13 параметрів: Lorenz σ/ρ/β, tokenomics, slashing)
