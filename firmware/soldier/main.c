@@ -14,6 +14,13 @@
 /* USER CODE BEGIN Includes */
 // Флюси для плавки: Підключаємо віртуальну машину mruby
 #include <mruby.h>
+
+// [FW.2] Бенч-атестація CCM-двигуна (POST). Компілюється ЛИШЕ у CCM_SELFTEST-збірці
+// (у бойовій прошивці вимкнено). Header-only, сам підтягує lora_ccm.h.
+#if defined(CCM_SELFTEST)
+#include "../common/ccm_selftest.h"
+volatile int g_ccm_selftest_failed = -1;  // читати через SWD: 0 = PASS (silicon == OpenSSL == backend)
+#endif
 #include <mruby/irep.h>
 #include <mruby/array.h>
 #include <math.h>     // [FW.6] isfinite() для валідації RTC Lorenz state
@@ -1186,6 +1193,14 @@ int main(void)
   Load_Lorenz_Seed();  // [SEC.11 / FW.30] Завантажити K_seed для cold-start Lorenz derivation
   Load_Node_Role();    // [ARCH.27] Завантажити роль вузла (Soldier/Provisioner) з Flash
   MX_CRYP_Init(); // Вмикаємо апаратний AES (використовує aes_key, вже завантажений)
+
+#if defined(CCM_SELFTEST)
+  // [FW.2] POST: бенч-атестація CCM-двигуна на реальному кремнії. Результат у
+  // g_ccm_selftest_failed (читати через SWD): 0 → кремній == OpenSSL == backend
+  // → дозволено flip FW2_CCM_ENABLED; >0 → HAL/endianness/errata → CCM не вмикати.
+  // KAT-вектори: firmware/common/ccm_kat_vectors.h (єдине джерело, спільне з host).
+  g_ccm_selftest_failed = Ccm_Run_Self_Test(&hcryp, NULL);
+#endif
 
   /* USER CODE BEGIN 2 */
 

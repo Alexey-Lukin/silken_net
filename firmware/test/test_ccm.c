@@ -51,19 +51,10 @@
 
 /* ── shared fixtures ─────────────────────────────────────────────────── */
 
-/* AES-128 zero key + DID 0x01020304 + FC 5 + plaintext 01..08 → golden:
- *   ciphertext = 08 ce ca 97 bb f4 fd c5
- *   tag        = a6 d8 e2 0c e0 de ea e9
- * (Identical to the Rails Cryptography::LoraCcm spec golden vector.) */
-static const uint8_t G_ZERO_KEY[16] = {0};
-static const uint32_t G_DID = 0x01020304;
-static const uint32_t G_FC  = 5;
-static const uint8_t G_PT[FW2_CCM_PLAINTEXT_LEN] =
-    { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
-static const uint8_t G_CT[FW2_CCM_PLAINTEXT_LEN] =
-    { 0x08, 0xce, 0xca, 0x97, 0xbb, 0xf4, 0xfd, 0xc5 };
-static const uint8_t G_TAG[FW2_CCM_MIC_LEN] =
-    { 0xa6, 0xd8, 0xe2, 0x0c, 0xe0, 0xde, 0xea, 0xe9 };
+/* Golden vector (G_ZERO_KEY/G_DID/G_FC/G_PT/G_CT/G_TAG) lives in the shared
+ * single-source KAT header (DRY) — also consumed by the on-target POST
+ * (firmware/common/ccm_selftest.h). Keeps one canonical set of vectors. */
+#include "../common/ccm_kat_vectors.h"
 
 /* hcryp instance (firmware code references &hcryp; declare it locally). */
 static CRYP_HandleTypeDef hcryp;

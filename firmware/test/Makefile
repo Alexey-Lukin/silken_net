@@ -19,9 +19,9 @@ BINDIR   = .
 OPENSSL_CFLAGS = $(shell pkg-config --cflags openssl 2>/dev/null)
 OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
-.PHONY: all queen soldier bio_contract tinyml encryption seed_derivation ccm size-check clean
+.PHONY: all queen soldier bio_contract tinyml encryption seed_derivation ccm selftest size-check clean
 
-all: queen soldier bio_contract tinyml encryption seed_derivation ccm
+all: queen soldier bio_contract tinyml encryption seed_derivation ccm selftest
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -43,6 +43,9 @@ seed_derivation: $(BINDIR)/test_seed_derivation
 
 ccm: $(BINDIR)/test_ccm
 	@./$(BINDIR)/test_ccm
+
+selftest: $(BINDIR)/test_ccm_selftest
+	@./$(BINDIR)/test_ccm_selftest
 
 $(BINDIR)/test_queen: test_queen_logic.c hal_mock.h
 	$(CC) $(CFLAGS) -o $@ test_queen_logic.c
@@ -67,13 +70,17 @@ $(BINDIR)/test_seed_derivation: test_seed_derivation.c
 	$(CC) $(CFLAGS) $(OPENSSL_CFLAGS) -o $@ test_seed_derivation.c $(OPENSSL_LIBS) -lm
 
 # [FW.2] AES-128-CCM packet roundtrip — links libcrypto for the mock HAL.
-$(BINDIR)/test_ccm: test_ccm.c hal_mock.h ../common/lora_ccm.h
+$(BINDIR)/test_ccm: test_ccm.c hal_mock.h ../common/lora_ccm.h ../common/ccm_kat_vectors.h
 	$(CC) $(CFLAGS) $(OPENSSL_CFLAGS) -o $@ test_ccm.c $(OPENSSL_LIBS)
+
+# [FW.2] On-target CCM self-test (POST) — host verification via OpenSSL mock.
+$(BINDIR)/test_ccm_selftest: test_ccm_selftest.c hal_mock.h ../common/lora_ccm.h ../common/ccm_selftest.h ../common/ccm_kat_vectors.h
+	$(CC) $(CFLAGS) $(OPENSSL_CFLAGS) -o $@ test_ccm_selftest.c $(OPENSSL_LIBS)
 
 clean:
 	rm -f $(BINDIR)/test_queen $(BINDIR)/test_soldier $(BINDIR)/test_bio_contract \
 	      $(BINDIR)/test_tinyml $(BINDIR)/test_encryption $(BINDIR)/test_seed_derivation \
-	      $(BINDIR)/test_ccm
+	      $(BINDIR)/test_ccm $(BINDIR)/test_ccm_selftest
 
 # [FW.26] CI gate — Static RAM budget check (.bss + .data ≤ 50 KB).
 #
