@@ -257,7 +257,7 @@ kamal deploy
 
 **Архітектура, Стратегія та Операції (Модуль 00)**
 - [`00_00`](docs/00_00_SSOT_Index.md) — єдине джерело істини (SSOT), головний реєстр
-- [`00_01`](docs/00_01_Vision_Market_and_Slashing_Policy.md) — місія, проблема VCM, NaaS та Slashing v2 (negligence vs force-majeure)
+- [`00_01`](docs/00_01_Vision_Market_and_Slashing_Policy.md) — місія, проблема VCM, NaaS (філософія Slashing → [`05_05`](docs/05_05_Slashing_and_Risk_Policy.md))
 - [`00_02`](docs/00_02_System_Architecture_and_12_Chain_Pipeline.md) — 8-рівнева кіберфізична архітектура + 12-крокової конвеєр
 - [`00_03`](docs/00_03_Resilience_and_Failover_Policy.md) — Queen failover + Per-Chain Fallback Matrix
 - [`00_04`](docs/00_04_AI_Native_Engineering_and_TRL.md) — AI-Native філософія: TRL метрика, Intent-First, Wiki-First
@@ -300,6 +300,7 @@ kamal deploy
 - [`05_02`](docs/05_02_Proof_of_Growth_Pipeline.md) — повний пайплайн Proof of Growth
 - [`05_03`](docs/05_03_Tokenomics_SCC_and_SFC.md) — токеноміка SCC/SFC
 - [`05_04`](docs/05_04_Ethereum_L1_State_Anchor.md) — щотижнева фіналізація в Ethereum L1
+- [`05_05`](docs/05_05_Slashing_and_Risk_Policy.md) — політика штрафів і ризиків (negligence/force-majeure + формула + insurance + anti-fraud + multi-signal de-risk)
 
 **Розгортання та Інфраструктура (Модуль 06)**
 - [`06_01`](docs/06_01_Deployment_Kamal_Terraform.md) — Kamal + Terraform (GCP) + Web3 ENV

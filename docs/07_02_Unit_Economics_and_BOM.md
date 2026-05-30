@@ -101,7 +101,7 @@
 | 9 | Buffer cap VOUT | 47 µF / **25V X7R 1210** (Murata GRM32E70J476ME20), **НЕ 6.3V** — `02_03 §6.1` | ~$0.18 |
 | — | **Electronics TOTAL** | | **~$11.33** |
 | — | _LTC3108 + Coilcraft xfmr 1:100 (DNP footprint)_ | _Cold-start fallback, не populated за замовчуванням — `02_03 BLOCKER-3`. PCB pads ~$0._ | _$0 / +$1.20 якщо populated після lab R_int test_ |
-| — | _BME280 + TPS22860 gate + PTFE vent (climate add-on)_ | _t°/RH/тиск → VPD confounder (False-Slashing kill, `00_01 §6.5/§6.6`) + клімат-оракул NaaS (`07_01`); ADR `02_01 §3.4`, pending bench._ | _+$2.60 якщо populated_ |
+| — | _BME280 + TPS22860 gate + PTFE vent (climate add-on)_ | _t°/RH/тиск → VPD confounder (False-Slashing kill, `05_05 §6/§7`) + клімат-оракул NaaS (`07_01`); ADR `02_01 §3.4`, pending bench._ | _+$2.60 якщо populated_ |
 
 > **Climate add-on (BME280, ADR `02_01 §3.4`):** +$2.60/вузол якщо populated — **НЕ** входить у baseline Electronics TOTAL ($11.33) ані CAPEX §1.2, доки ADR не закрито bench'ем. Перетворює вузол на кліматичний (VPD-confounder + NaaS клімат-оракул) — підвищує цінність D-MRV-даних для агро/страхового ринку.
 

@@ -75,7 +75,7 @@
 
 ### 🔗 Заблоковано (чекає іншого)
 - `FW.2` **P0** — AES-128-CCM (backend-parser ✅; firmware emit + `CRYP_AES_CCM` verify → STM32 bench). Закриває ECB→CCM, MIC, `SEC.10` panic auth, `FW.29`. FC/nonce/cold-boot SSOT → `03_05` (📐 КАНОНІЧНЕ ДЖЕРЕЛО). NB: `FW.23` OTA auth — окремий HMAC-механізм, уже закрито (§3.4б); FW.2 його **не** закриває
-- Multi-signal slashing de-risk (`00_01 §6.6`) — код ✅: усі 3 прямі сигнали в `InsightGeneratorService`-евристиці (VPD-gate + sap-term + acoustic/cavitation-term; inert, ENV-calibration-gated; sap+acoustic через max() не суму). Активація → ground-truth калібрування ваг (`08_02 §4`) + ML-retrain (vpd-фіча) + firmware VPD (`HW.32`). Багатше on-device acoustic-джерело → TinyML unblock (`Run_Inference` закоментована, §03)
+- Multi-signal slashing de-risk (`05_05 §7`) — код ✅: усі 3 прямі сигнали в `InsightGeneratorService`-евристиці (VPD-gate + sap-term + acoustic/cavitation-term; inert, ENV-calibration-gated; sap+acoustic через max() не суму). Активація → ground-truth калібрування ваг (`08_02 §4`) + ML-retrain (vpd-фіча) + firmware VPD (`HW.32`). Багатше on-device acoustic-джерело → TinyML unblock (`Run_Inference` закоментована, §03)
 - SLASH-1 deeper (B/insurance auto-route, A/B/C cause_classification, cause-driven pf uplift) → DAO/founder
 
 ---
@@ -87,8 +87,8 @@
 > **Складність:** XS < 1 год · S = 1–4 год · M = 4–8 год · L = 1–3 дні
 
 #### SLASH-1 — Slashing cause_classification gate (financial-safety) 🔴
-- **P0** · 🤖+👤 · → `00_01 §6.2/§6.5` (divergence `04_02 §11`)
-- ✅ (2026-05-29) blackout → Field Audit, НЕ burn: `ContractHealthCheckService#flag_data_blackout!` (cluster-wide empty → `system_fault` alert, contract :active, no burn; 10 specs). · [ ] 🤖 de-correlate penalty signals (no-ack +0.5 / Streamr-gap +0.25 спільний root-cause) · [x] 🤖 penalty-формула §6.2 `damage_ratio^GAMMA × min(pf,2.0)` у `BlockchainBurningService` (✅ `#calculate_slash_ratio`, GAMMA/PF_MAX через `SystemParameter`, 8 specs) · [ ] 👤 DAO/founder-confirm перед mainnet (BIZ.13 operator-bond, `00_01 §6.2.1`)
+- **P0** · 🤖+👤 · → `05_05 §3/§6` (divergence `04_02 §11`)
+- ✅ (2026-05-29) blackout → Field Audit, НЕ burn: `ContractHealthCheckService#flag_data_blackout!` (cluster-wide empty → `system_fault` alert, contract :active, no burn; 10 specs). · [ ] 🤖 de-correlate penalty signals (no-ack +0.5 / Streamr-gap +0.25 спільний root-cause) · [x] 🤖 penalty-формула §3 `damage_ratio^GAMMA × min(pf,2.0)` у `BlockchainBurningService` (✅ `#calculate_slash_ratio`, GAMMA/PF_MAX через `SystemParameter`, 8 specs) · [ ] 👤 DAO/founder-confirm перед mainnet (BIZ.13 operator-bond, `05_05 §3.1`)
 
 #### S1.1 — GitHub Secrets заповнення
 - **P0** · 👤 · → `06_04`
@@ -268,7 +268,7 @@
 
 #### HW.32 — BME280 environmental sensing + VPD confounder [ADR `02_01 §3.4`]
 - **P1** · 🤖+👤 · → `02_01 §3.4`, `07_02 §1.3`
-- BME280 (t°/RH/тиск, I2C за TPS22860) → VPD confounder (False-Slashing kill, `00_01 §6.5/§6.6`) + клімат-оракул (`07_01`). DCI-guard: VPD НЕ в Lorenz-Z. ✅ docs (02_01/00_01/08_02/07_02/02_03/07_01) + `03_01` SENSE+packet (byte 14 VPD-індекс) + TelemetryLog cols (structure.sql, recreate+seed). · [x] 🤖 VPD-gate + sap-term реалізовано (inert, ENV-calibration-gated; `04_02` / `00_01 §6.6`; активація `08_02 §4`) · [ ] 👤 bench (I2C bring-up, gate-timing, VPD-калібрування) + PTFE-мембрана механіка (`02_02`)
+- BME280 (t°/RH/тиск, I2C за TPS22860) → VPD confounder (False-Slashing kill, `05_05 §6/§7`) + клімат-оракул (`07_01`). DCI-guard: VPD НЕ в Lorenz-Z. ✅ docs (02_01/00_01/08_02/07_02/02_03/07_01) + `03_01` SENSE+packet (byte 14 VPD-індекс) + TelemetryLog cols (structure.sql, recreate+seed). · [x] 🤖 VPD-gate + sap-term реалізовано (inert, ENV-calibration-gated; `04_02` / `05_05 §7`; активація `08_02 §4`) · [ ] 👤 bench (I2C bring-up, gate-timing, VPD-калібрування) + PTFE-мембрана механіка (`02_02`)
 
 #### HW.1 — nTop model → SLM+HIP factory (Anode Zone 1)
 - **P0** · 👤 · → `01_01`, `01_02 §1.7` · ✅ ліцензія отримана
@@ -650,8 +650,8 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | Lorenz константи (Z 2.0/45.0/29.0 · σ10 ρ28 β8÷3 · dt0.01 · 250 iter) | `03_04 §4.1` | ✅ **05_02 «Фаза 2» зроблено** (повна ре-декларація → SSOT-ref, 2026-05-29). Решта легітимні (НЕ дубль): 04_01 self-labeled mirror Rails-конст., 03_01 firmware-doc контекст, 04_02 service-impl, 08_xx академ. верифікація |
 | Tokenomics rate 10 000 GP = 1 SCC | `05_03` | 00_02/05_01/07_01/07_02/03_03 |
 | Carbon 2000 SCC = 1 tCO₂ (0.5 кг) | `05_03` + `07_01` коеф. | 00_01/07_01/07_02 |
-| Slashing пороги stress 0.83 / slash 0.20 | `00_01 §6.2` + `04_02` (ContractHealthCheckService) | 05_03/07_01 |
-| Insurance pool 100 000 SCC | `00_01 §6.3` + `05_03` (Dynamic Tax) | 04_02/05_03 |
+| Slashing пороги stress 0.83 / slash 0.20 | `05_05 §3` + `04_02` (ContractHealthCheckService) | 05_03/07_01 |
+| Insurance pool 100 000 SCC | `05_05 §4` + `05_03` (Dynamic Tax) | 04_02/05_03 |
 | delta_t baseline 60 с | `03_04` (BASELINE_DELTA_T_S) | 03_01/04_02/05_02/01_03 |
 | Gyroid пористість 65% (60-70%) | `01_01` | 01_02/02_01/07_02 + 08_xx |
 
@@ -740,8 +740,8 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - Horizon CL6 Biodiversity Monitoring (2-6 М€, 36-48 міс); SilkenNet = єдиний планетарний D-MRV з micro-acoustic біорізноманіттям. Submission прив'язати до acceptance Статті 24a → "published research". · [ ] 👤 identify call (HORIZON-CL6-*-BIODIV) → consortium (SilkenNet coord + ЧНУ/ЧДТУ/біо-хаб + 1-2 EU: Linköping/CSIC) → submit при acceptance 24a · [ ] 🔗 E.59/FW.4-EXT (5-class TinyML) + UNI.13a (Soundscape Library)
 
 #### BIZ.13 — Slashing principal-agent: investor capital vs operator-bond
-- **P2** · 👤+🤖 · → `00_01 §6.2.1`, `05_03 §Slashing`, `04_02 §1.2`
-- Кат-A slash зрізає інвесторський `locked_balance`, хоча недбалість — провина оператора (principal-agent). ✅ decision memo → рекомендація **hybrid operator-bond**. · [ ] 👤 DAO confirm: hybrid vs investor-slash vs pure operator-bond · [ ] 🤖 якщо operator-bond — `OperatorBond` + `ProtocolParameters` + контракт + синх `00_01 §6.2`/`05_03`/`04_02`
+- **P2** · 👤+🤖 · → `05_05 §3.1`, `05_03 §Slashing`, `04_02 §1.2`
+- Кат-A slash зрізає інвесторський `locked_balance`, хоча недбалість — провина оператора (principal-agent). ✅ decision memo → рекомендація **hybrid operator-bond**. · [ ] 👤 DAO confirm: hybrid vs investor-slash vs pure operator-bond · [ ] 🤖 якщо operator-bond — `OperatorBond` + `ProtocolParameters` + контракт + синх `05_05 §3`/`05_03`/`04_02`
 
 #### BIZ.14 — SFC Vote-Escrow during breach→slash lag (07_01 BLOCKER-7 residual)
 - **P3** · 🔗 · → `07_01 §8`

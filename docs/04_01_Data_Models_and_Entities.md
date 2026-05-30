@@ -531,7 +531,7 @@ any ──report_fault──► faulty
 | `sap_flow` | numeric | Потік соку ксилеми |
 | `humidity` | numeric | **[HW.32]** Відносна вологість повітря (% RH, BME280) — climate frame, nullable |
 | `pressure` | numeric | **[HW.32]** Атмосферний тиск (hPa, BME280) — nullable; барометр → раннє попередження про шторм |
-| `vpd` | numeric | **[HW.32]** Vapor Pressure Deficit (kPa) — прямий confounder сокоруху (False-Slashing guard, `00_01 §6.5/§6.6`). Hot-path: device шле VPD-індекс; nullable. ⚠️ НЕ входить у Lorenz-Z (DCI-guard) |
+| `vpd` | numeric | **[HW.32]** Vapor Pressure Deficit (kPa) — прямий confounder сокоруху (False-Slashing guard, `05_05 §6/§7`). Hot-path: device шле VPD-індекс; nullable. ⚠️ НЕ входить у Lorenz-Z (DCI-guard) |
 | `verified_by_iotex` | boolean | Підтверджено IoTeX W3bstream ZK-proof |
 | `zk_proof_ref` | string | Посилання на ZK-proof IoTeX |
 | `chainlink_request_id` | string | ID запиту Chainlink Oracle |

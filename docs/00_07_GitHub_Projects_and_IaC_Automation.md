@@ -424,10 +424,10 @@ echo "Stub shape for cluster C: First Akash production deploy" > docs/shaping/ak
 | Per-module TRL матриця | `00_06 §1` (агрегат-дім). Модульний док = власний member-TRL у Статус (це джерело, не дубль); заборонено відтворювати всю матрицю поза §1 |
 | AES per-channel modes | `03_05 §3.7` |
 | Lorenz константи | `03_04 §4.1` |
-| Tokenomics rate / slashing thresholds / insurance pool | `05_03` · `00_01 §6.2/§6.3` |
+| Tokenomics rate / slashing thresholds / insurance pool | `05_03` · `05_05 §3/§4` |
 | Carbon (2000 SCC = 1 tCO₂) | `05_03` + `07_01 §3` (business view) |
 | Financial constants (business) | `07_01 §3` (з рефами на 05_03/00_01) |
-| Slashing penalty formula | `00_01 §6.2` ↔ `BlockchainBurningService` |
+| Slashing penalty formula | `05_05 §3` ↔ `BlockchainBurningService` |
 | Secrets inventory | `06_04` (canonical = `config/deploy.yml env.secret`) |
 | Prometheus metric registry | `06_03 §2.8` (regen з `SilkenNet::Metrics::REGISTRY`) |
 | DR / backup posture | `06_06` (config SSOT = `terraform/database.tf`) |

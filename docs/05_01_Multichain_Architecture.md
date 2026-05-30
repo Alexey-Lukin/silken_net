@@ -455,7 +455,7 @@ firmware/soldier/main.c → LoRa TX → Queen → CoAP PUT → UnpackTelemetryWo
 
 Внутрішня математика (Атрактор Лоренца) рахує значення осі Z. `Z-value` порівнюється з константами `TreeFamily` (напр. 20.0). Якщо дерево в гомеостазі — нараховуються `growth_points`.
 
-> **⚠️ [Lorenz de-risk]** «Z = здоров'я» — недоведена гіпотеза ([`08_02 §4`](08_02_Cybernetic_and_Mathematical_Validation)); slashing вимагає ≥1 прямого сигналу (sap_flow / VPD / acoustic), не лише Z ([`00_01 §6.6`](00_01_Vision_Market_and_Slashing_Policy)). Lorenz-DCI (anti-fraud) валідний незалежно.
+> **⚠️ [Lorenz de-risk]** «Z = здоров'я» — недоведена гіпотеза ([`08_02 §4`](08_02_Cybernetic_and_Mathematical_Validation)); slashing вимагає ≥1 прямого сигналу (sap_flow / VPD / acoustic), не лише Z ([`05_05 §7`](05_05_Slashing_and_Risk_Policy)). Lorenz-DCI (anti-fraud) валідний незалежно.
 
 ```ruby
 # SilkenNet::Attractor (Float IEEE 754 double, 250 iterations × 0.01 timestep — ідентично firmware mruby [FW.7])

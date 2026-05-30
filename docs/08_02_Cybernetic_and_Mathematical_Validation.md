@@ -1995,7 +1995,7 @@ Gaia 2.0 як офіційний полігон → студенти напря�
 
 ## 🔬 4. Валідація гіпотези «Лоренц Z ↔ здоров'я» (Ground-Truth Protocol) [Lorenz de-risk]
 
-**Проблема:** ланцюг Z-атрактора → `stress_index` → slashing **елегантний, але емпірично недоведений**. Потрібен ground-truth, щоб (а) підтвердити/спростувати предиктивність Z, (б) калібрувати ML-`stress_index`, (в) безпечно виставити slashing-пороги. Cross-ref [`00_01 §6.6`](00_01_Vision_Market_and_Slashing_Policy).
+**Проблема:** ланцюг Z-атрактора → `stress_index` → slashing **елегантний, але емпірично недоведений**. Потрібен ground-truth, щоб (а) підтвердити/спростувати предиктивність Z, (б) калібрувати ML-`stress_index`, (в) безпечно виставити slashing-пороги. Cross-ref [`05_05 §7`](05_05_Slashing_and_Risk_Policy).
 
 **Дизайн (ЧНУ — UNI.9 Карапетян Data Science + UNI.5 Гусак + bio-hub UNI.13a):**
 - **Когорта:** 20–30 дерев (Черкаський бір), SilkenNet-анкер + **незалежний ground-truth**: еталонний sap-flow сенсор (незалежний від EBFC `delta_t`), дендрометр (приріст), періодичний NDVI/leaf-area, експертний бал стану + події смертності/хвороби.
@@ -2006,7 +2006,7 @@ Gaia 2.0 як офіційний полігон → студенти напря�
   2. **Incremental value Z:** чи додає Z предиктивність ПОНАД прямі сигнали (sap_flow)? Якщо ні → демоут Z до **DCI-only**.
   3. Agreement device bio_status (Z-derived) vs експертний бал (Cohen's κ).
   4. ROC детекції стресу + false-positive rate (slashing-safety).
-  5. **VPD-confounder:** частка sap_flow-drops, пояснених погодою (high VPD) vs хворобою — валідує False-Slashing guard (`00_01 §6.5`, BME280 `02_01 §3.4`).
+  5. **VPD-confounder:** частка sap_flow-drops, пояснених погодою (high VPD) vs хворобою — валідує False-Slashing guard (`05_05 §6`, BME280 `02_01 §3.4`).
 - **Критерії приймання (proposed):** ρ(stress_index, decline) ≥ 0.6; Z дає incremental ΔAUC > 0.05 над sap_flow-baseline (інакше Z = лише DCI); FPR < 5% на операційному порозі.
 - **Вихід:** калібровані ваги ML-`stress_index` + heuristic + slashing-пороги (DAO-tunable, BIZ.4); рішення про роль Z (predictive vs DCI-only).
 

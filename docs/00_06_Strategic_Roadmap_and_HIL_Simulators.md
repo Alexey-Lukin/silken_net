@@ -130,7 +130,7 @@
 | `HilQueenSimulator` | Queen self-telemetry (`DID == 0x00000000`), CIFO flush, Starlink/LTE timing | новий: `lib/hil/queen_simulator.rb` (планований) | Test Queen failover ([`00_03 §Queen Failover`](00_03_Resilience_and_Failover_Policy)) |
 | `HilWebPipelineSimulator` | peaq → IoTeX → Chainlink → Polygon → KlimaDAO → Filecoin → L1 — 12-chain mock з deterministic responses. ⚠️ Це **логіко-рівневий** інструмент (TRL 5-6): валідує pipeline-логіку та guard clauses, але **НЕ** Web3 реального світу (gas spikes, RPC 429/rate-limit, orphaned blocks, nonce collisions, Chainlink DON latency). НЕ є достатнім для TRL 7-8 — див. §4.3. | `WEB3_STRICT_MODE=false` + stub services у `app/services/web3/*_stub.rb` | Логіка pipeline + unit/integration (TRL 5-6) |
 | `HilLorenzGenerator` | mruby Lorenz curves з різних tree species, environmental conditions (temp, vibration), faulty/normal patterns | `lib/hil/lorenz_generator.rb` (планований) | TinyML training data + Rails Attractor validation |
-| `HilAttackerScenarios` | Bit-flip attacks, replay attacks, hardware tamper detection, dual-computation divergence > 30% | RSpec scenarios у `spec/integration/security/` (частково існує) | Anti-fraud cross-checks ([`00_01 §6.5`](00_01_Vision_Market_and_Slashing_Policy)) |
+| `HilAttackerScenarios` | Bit-flip attacks, replay attacks, hardware tamper detection, dual-computation divergence > 30% | RSpec scenarios у `spec/integration/security/` (частково існує) | Anti-fraud cross-checks ([`05_05 §6`](05_05_Slashing_and_Risk_Policy)) |
 
 > **⚠️ Реалістичний профіль навантаження vs DDoS (корекція 2026-05-28):** батч «кожні 3–8 сек» суперечить буферу CIFO ([`00_03 §1.2`](00_03_Resilience_and_Failover_Policy): flush на 45 записів **або** раз на годину) — для цього Soldier мав би передавати кілька разів на хвилину, що неможливо за енергобюджетом. Тобто 3–8 сек = `load_test_mode` (стрес черг/пропускної здатності), а НЕ реальний IoT-профіль. **`realistic_mode`** (потрібно додати) має відтворювати фізичну Queen: рідкі об'ємні батчі раз на ~годину, + мережеві умови **Starlink Direct-to-Cell**: Carrier-NAT, можливе блокування вхідного UDP (CoAP), зміна портів, високий jitter / packet loss супутникового LTE. Це тестує дефіцит з'єднань, тайм-аути long-poll та розриви TCP-сесій — справжні відмови, яких load-test не ловить. Транспортний фолбек (CoAP-over-TCP / MQTT-SN) — див. [`00_02`](00_02_System_Architecture_and_12_Chain_Pipeline) + Ingress Proxy [`06_01`](06_01_Deployment_Kamal_Terraform).
 
@@ -273,7 +273,7 @@
 
 ### 7.4. Gap #4 — Apex Predator Defense (Proactive AI-Adversarial Security)
 
-**Поточний стан:** DAO governance існує (SFC, `05_03`), Slashing v2 реактивний (`00_01 §6.5`), 12-chain pipeline має cross-validation (`05_02`). Але:
+**Поточний стан:** DAO governance існує (SFC, `05_03`), Slashing v2 реактивний (`05_05 §6`), 12-chain pipeline має cross-validation (`05_02`). Але:
 - **Немає proactive захисту від AI-driven economic attack** — coordinated manipulation SCC market через synthetic telemetry patterns
 - **Oracle attack surface** — Chainlink DON має finite operator count; targeted bribe + adversarial generation може зсунути medianer
 - **Slashing — реактивний**: чекає, поки факт зловживання stane on-chain, тоді штрафує. До цього моменту attacker вже випередив 1000× ROI на dump SCC
@@ -325,4 +325,4 @@ SRL:Deployed ━━━ Verified, formal, planetary-scale autopoiesis ← Silken 
 - **Gap #1 (Forest Emergence):** деталі у [`03_04 §X.Y`](03_04_mruby_Lorenz_Attractor) (новий розділ — TBD); координація з [`08_02 §Підгрупа Б`](08_02_Cybernetic_and_Mathematical_Validation) (Порубльов кібернетика) та [`08_01 §1.4`](08_01_University_R_and_D_Protocols) (Кирилюк синергетика)
 - **Gap #2 (Self-Evolving):** firmware extension у [`03_03 §Y`](03_03_TinyML_Acoustic_Inference) (TinyML online learning) + [`03_04 §Z`](03_04_mruby_Lorenz_Attractor) (mruby GA); безпекова валідація у [`05_03 §SCC Anti-Adversarial`](05_03_Tokenomics_SCC_and_SFC)
 - **Gap #3 (Cross-Biome):** parametric CAD у [`01_01 §6`](01_01_Coaxial_Gyroid_Topology_and_PEEK) (Stages 2+ extended до 5 biomes); R&D у [`08_01 §1.3`](08_01_University_R_and_D_Protocols) (Спрягайло + НАН України канал)
-- **Gap #4 (Apex Predator):** розширення Slashing v2 у [`00_01 §6.5`](00_01_Vision_Market_and_Slashing_Policy) + [`05_03`](05_03_Tokenomics_SCC_and_SFC) + Chainlink hardening у [`05_02`](05_02_Proof_of_Growth_Pipeline)
+- **Gap #4 (Apex Predator):** розширення Slashing v2 у [`05_05 §6`](05_05_Slashing_and_Risk_Policy) + [`05_03`](05_03_Tokenomics_SCC_and_SFC) + Chainlink hardening у [`05_02`](05_02_Proof_of_Growth_Pipeline)
