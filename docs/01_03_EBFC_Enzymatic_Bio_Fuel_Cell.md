@@ -555,7 +555,7 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 **Можливий R&D напрямок (joint з ЧДТУ ПМКТ):** Кафедра Прикладної Механіки + Комп'ютерних Технологій ЧДТУ (проф. Базіло К.В., проф. Бондаренко М.О.) вже задіяна як власник п'єзо-експертизи та EIS-стенду ([`08_02 §2`](08_02_Academic_Institutions_Registry)).
 
 **Cross-references:**
-- ЧДТУ ПМКТ співпраця → [`08_02_Academic_Institutions_Registry §1.3`](08_02_Academic_Institutions_Registry)
+- ЧДТУ ПМКТ співпраця → [`08_02 §2`](08_02_Academic_Institutions_Registry)
 - Joint publication tracker → [`08_01_Joint_Publications_and_IP_Strategy`](08_01_Joint_Publications_and_IP_Strategy) Стаття 24
 - Lorenz-attractor input vector → [`03_04_mruby_Lorenz_Attractor`](03_04_mruby_Lorenz_Attractor)
 

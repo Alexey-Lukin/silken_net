@@ -220,7 +220,7 @@ Q4 2026:   Seed-раунд (climate/deeptech фонди)
 | **Вимоги до консорціуму** | Мін. 3 країни ЄС; Ukraine є асоційованою країною (partial eligibility) |
 | **Статус** | Не подано — потребує підготовки |
 | **Академічний лідер консорціуму** | **СЄУ (Аблязова Наталія Рауфівна)** — координація, управління консорціумом, Triple Helix модель (ЧНУ/ЧДТУ/СЄУ + ActiveBridge + лісові господарства) |
-| **Парасоль ЧНУ (інституційний)** | **В.о. ректора Кирилюк Є.М.** (директор ННІ економіки і права) — підпис парасольового MoU ЧНУ↔Silken Net, ко-PI WP-Bioeconomy; **проректор з науки Спрягайло О.В.** — ко-PI WP-Biodiversity, регіональний contact з Черкаською ОДА, ПЗФ-сумісність pilot'у. Деталі: [`08_02` §1.3, §1.4 та блок «🔗 Перехресна синергія»](08_02_Academic_Institutions_Registry), [`08_01` §1G](08_01_Joint_Publications_and_IP_Strategy). |
+| **Парасоль ЧНУ (інституційний)** | **В.о. ректора Кирилюк Є.М.** (директор ННІ економіки і права) — підпис парасольового MoU ЧНУ↔Silken Net, ко-PI WP-Bioeconomy; **проректор з науки Спрягайло О.В.** — ко-PI WP-Biodiversity, регіональний contact з Черкаською ОДА, ПЗФ-сумісність pilot'у. Деталі: [`08_02 §1A`](08_02_Academic_Institutions_Registry), [`08_01` §1G](08_01_Joint_Publications_and_IP_Strategy). |
 
 **Структура консорціуму для Horizon Europe:**
 
@@ -252,7 +252,7 @@ WP9 Exploitation & IPR            → ActiveBridge + Silken Net
 
 **Тема заявки:** _"Trustless D-MRV: IoTeX W3bstream ZK-proofs for biological homeostasis verification on STM32WLE5JC edge devices"_ — пов'язано з `IotexVerificationWorker`, `Iotex::W3bstreamVerificationService` та `05_02_Proof_of_Growth_Pipeline`.
 
-> **Детально про консорціум та грантову стратегію:** [`08_02_Academic_Institutions_Registry`](08_02_Academic_Institutions_Registry) §1.4 (Аблязова Н.).
+> **Детально про консорціум та грантову стратегію:** [`08_02 §5`](08_02_Academic_Institutions_Registry) (Аблязова Н.).
 
 ## 🗺️ 9. Грантова Дипломатія (Cross-chain Grant Strategy)
 

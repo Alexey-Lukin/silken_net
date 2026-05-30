@@ -119,7 +119,7 @@ Akash Network **не шифрує** ENV-блок SDL на стороні про�
 - Vault/Doppler sidecar агент, який тягне секрети у runtime memory без появи у SDL ENV (потрібен окремий identity для Akash → Vault auth).
 - Hardware Security Module (HSM) для підпису транзакцій без експорту приватного ключа (наприклад, через AWS KMS asymmetric keys або Fireblocks API).
 
-Cross-ref: [`06_04_Secrets_Checklist §2.1`](06_04_Secrets_Checklist) — повний список секретів, [`06_01 §Boot-time guard rationale`](06_01_Deployment_Kamal_Terraform) — eqv. пояснення для Kamal.
+Cross-ref: [`06_04 §2.1`](06_04_Secrets_Checklist) — повний список секретів, [`06_01`](06_01_Deployment_Kamal_Terraform) — eqv. Boot-time guard rationale для Kamal.
 
 > **⚠️ Security Exception — GCP_SA_KEY_BASE64 (Akash-only):** На TRL 5-6 Akash-вузли автентифікуються до Cloud SQL Auth Proxy довгоживучим Service Account JSON ключем у форматі `GCP_SA_KEY_BASE64`. Це **архітектурний виняток** з принципу **Workload Identity Federation** (WIF — короткоживучі OIDC-токени замість довгоживучих SA-ключів), за яким GCP-сервіси не повинні тримати статичні JSON-ключі. Akash як зовнішній провайдер не має доступу до GCE метаданих та не може напряму використовувати WIF без додаткового OIDC provider'а. **Mitigation:** SA з якого згенеровано ключ має **тільки** роль `roles/cloudsql.client` (нічого більше — ні Storage, ні Secret Manager), key rotation кожні 90 днів через Terraform pipeline. На TRL 7+ розглянути міграцію на WIF через зовнішній OIDC provider (наприклад, GitHub Actions як trust anchor для Akash deployment manifests). Cross-ref: [`06_04 §3.1/§4`](06_04_Secrets_Checklist) — `GCP_SA_KEY_BASE64` / `gcp_sa_key_base64` (scoped `roles/cloudsql.client`).
 

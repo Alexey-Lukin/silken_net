@@ -287,7 +287,7 @@ SRL:Deployed ━━━ Verified, formal, planetary-scale autopoiesis ← Silken 
 
 ### 7.7. Cross-references та де ще згадано
 
-- **Gap #1 (Forest Emergence):** деталі у [`03_04 §X.Y`](03_04_mruby_Lorenz_Attractor) (новий розділ — TBD); координація з [`08_02 §1`](08_02_Academic_Institutions_Registry) (Порубльов кібернетика) та [`08_02 §1`](08_02_Academic_Institutions_Registry) (Кирилюк синергетика)
+- **Gap #1 (Forest Emergence):** деталі у [`03_04 §6.3`](03_04_mruby_Lorenz_Attractor); координація з [`08_02 §1B`](08_02_Academic_Institutions_Registry) (Порубльов кібернетика) та [`08_02 §1A`](08_02_Academic_Institutions_Registry) (Кирилюк синергетика)
 - **Gap #2 (Self-Evolving):** firmware extension у [`03_03 §Y`](03_03_TinyML_Acoustic_Inference) (TinyML online learning) + [`03_04 §Z`](03_04_mruby_Lorenz_Attractor) (mruby GA); безпекова валідація у [`05_03 §SCC Anti-Adversarial`](05_03_Tokenomics_SCC_and_SFC)
 - **Gap #3 (Cross-Biome):** parametric CAD у [`01_01 §6`](01_01_Coaxial_Gyroid_Topology_and_PEEK) (Stages 2+ extended до 5 biomes); R&D у [`08_02 §1`](08_02_Academic_Institutions_Registry) (Спрягайло + НАН України канал)
 - **Gap #4 (Apex Predator):** розширення Slashing v2 у [`05_05 §6`](05_05_Slashing_and_Risk_Policy) + [`05_06 §5`](05_06_Governance_and_DAO) + Chainlink hardening у [`05_02`](05_02_Proof_of_Growth_Pipeline)

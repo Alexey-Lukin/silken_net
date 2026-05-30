@@ -52,7 +52,7 @@
 | Рівень | Механізм | Trigger | Latency | Реалізація |
 |--------|----------|---------|---------|------------|
 | **L1: Queen Local Buffer (Two-Tier)** | **Hot tier:** CIFO EdgeCache до 50 slots in-RAM (дедуплікація за DID + priority-aware eviction), flush на 1 год TTL або при ≥ 45 entries. **Overflow tier:** при `AT+CCOAPSEND` fail після N retry — drain CIFO у SPI NOR Flash Ring Buffer (W25Q32, 4 МБ, ~190k слотів × 21 байт; ARCH.35). Якщо Starlink/LTE недоступні — повторити flush експоненційно (1, 2, 4, 8, 16 хв cap = 60 хв). При відновленні uplink — спочатку drain Flash Ring Buffer (FIFO), потім CIFO. | `AT+CCOAPSEND` timeout або UART fail | Seconds (RAM tier) / Hours-days (Flash tier) | `firmware/queen/main.c` CoAP retry (FW.9), 4 host-tests `test_coap_retry_constants`; Flash Ring Buffer — ARCH.35 planned |
-| **L2: Queen-to-Queen LoRa Backhaul** | Сусідня Queen у радіусі 5–15 км (SF12 спред-фактор, ~6 кбіт/с) приймає `delegate_uplink_frame` від основної Queen. Якщо власний Starlink також впав — пересилає далі по LoRa-магістралі до Queen з активним uplink. | Local Starlink/LTE down >5 хв OR `coap_health = false` | Minutes | `Queen → Queen` через `RELAY_QUEEN` фрейм (DEFAULT_TTL=4); планується [`02_05 §Q2Q Mesh`](02_05_Queen_Hardware_and_Starlink) |
+| **L2: Queen-to-Queen LoRa Backhaul** | Сусідня Queen у радіусі 5–15 км (SF12 спред-фактор, ~6 кбіт/с) приймає `delegate_uplink_frame` від основної Queen. Якщо власний Starlink також впав — пересилає далі по LoRa-магістралі до Queen з активним uplink. | Local Starlink/LTE down >5 хв OR `coap_health = false` | Minutes | `Queen → Queen` через `RELAY_QUEEN` фрейм (DEFAULT_TTL=4); планується [`02_05`](02_05_Queen_Hardware_and_Starlink) (Q2Q Mesh) |
 | **L3: Helium SOS-маяк Королеви (Queen-side)** | Queen формує валідний **LoRaWAN** frame (DevEUI/AppEUI/AppKey, FCntUp, OTAA). **Лише SOS, НЕ телеметрія кластера** (див. ⚠️ нижче): один малий пакет (~12 байт: `queen_did`, `vcap`, error-code) → Helium hotspot (~15 км, SF12) → Helium LNS → HTTP Integration → Rails `POST /api/v1/telemetry/helium` (HMAC). Бекенд створює `EwsAlert(queen_uplink_lost)` → ескалація L4 (виїзд лісника). Телеметрія Солдатів тим часом буферизується у SPI Flash Королеви (ARCH.35). **NB:** Soldier лишається на raw LoRa P2P (**AES-128**, 21-байт payload, post-ARCH.42); LoRaWAN stack живе ТІЛЬКИ на Queen. | Власний Starlink/LTE-M down + Q2Q backhaul недоступний | Tens of seconds | Queen firmware `queen_helium_lorawan_uplink()` (ARCH.34, planned); деталі — [`02_05 §6.1 Helium Fallback`](02_05_Queen_Hardware_and_Starlink) |
 | **L4: Field Operator Pull (Forester app)** | Лісник з мобільним пристроєм підходить до фізичної Queen, підключається через BLE (Forester app) і вручну дренує CIFO буфер на 4G/Wi-Fi. | Manual escalation коли L1-L3 fail >24 год | Hours-Days | Forester mobile app (UI заплановано Phase 2) |
 
@@ -60,7 +60,7 @@
 
 ### 1.3 Queen Health Heartbeat → Rails
 
-Сама Queen відправляє себе як `DID == 0x00000000` (Queen Sentinel, [`03_02 §Queen Self-Telemetry`](03_02_Queen_Gateway_Firmware)) з полями: `vcap_mv`, `uptime_s`, `cifo_fill`, `coap_retries_24h`, `last_starlink_rssi`. Backend записує у `GatewayTelemetryLog` і обчислює:
+Сама Queen відправляє себе як `DID == 0x00000000` (Queen Sentinel, [`03_02 §7`](03_02_Queen_Gateway_Firmware)) з полями: `vcap_mv`, `uptime_s`, `cifo_fill`, `coap_retries_24h`, `last_starlink_rssi`. Backend записує у `GatewayTelemetryLog` і обчислює:
 
 - `online?` = `last_seen_at >= (sleep_interval * 1.2).seconds.ago` (поточна модель `Gateway`, [`04_01`](04_01_Data_Models_and_Entities))
 - Якщо `online?` стає `false` довше 10 хв → `Gateway.state` AASM `mark_faulty!` + dispatch `EwsAlert(type: queen_offline)` → Forester Guild notify (Slack/SMS).
@@ -78,7 +78,7 @@ Soldier'и **не знають**, що "їх" Queen впала. Вони про�
 
 > **Передумова:** Для надійності цього шляху необхідні TDMA Sync Windows (ARCH.26) + CAD (SX1262) — інакше mesh relay стохастичний. Це не блокує політику в принципі, але обмежує її TRL до 4-5 поки FW.20 / ARCH.26 не закриті.
 
-> **🔬 Open Research (академічна валідація надійності mesh):** формальна модель надійності flood-relay — **ланцюги Маркова** для TTL-маршрутизації + **теорія перколяції** (критичний поріг `q_c` фазового переходу, за яким мережа розпадається на ізольовані від Queen кластери) — математично обґрунтовує `PANIC_TTL=5`/`DEFAULT_TTL=3` і постачає `q_c` як науковий параметр тригера параметричного страхування ([`05_05`](05_05_Slashing_and_Risk_Policy) / [`07_01`](07_01_Nature_as_a_Service_Contracts)). Deliverable ЧНУ-ФОТІУС (Порубльов/Онищенко) — профіль у [`08_02 §1`](08_02_Academic_Institutions_Registry); спільна Q1-публікація → [`08_01`](08_01_Joint_Publications_and_IP_Strategy).
+> **🔬 Open Research (академічна валідація надійності mesh):** формальна модель надійності flood-relay — **ланцюги Маркова** для TTL-маршрутизації + **теорія перколяції** (критичний поріг `q_c` фазового переходу, за яким мережа розпадається на ізольовані від Queen кластери) — математично обґрунтовує `PANIC_TTL=5`/`DEFAULT_TTL=3` і постачає `q_c` як науковий параметр тригера параметричного страхування ([`05_05`](05_05_Slashing_and_Risk_Policy) / [`07_01`](07_01_Nature_as_a_Service_Contracts)). Deliverable ЧНУ-ФОТІУС (Порубльов/Онищенко) — профіль у [`08_02 §1B`](08_02_Academic_Institutions_Registry); спільна Q1-публікація → [`08_01`](08_01_Joint_Publications_and_IP_Strategy).
 
 ---
 
@@ -86,7 +86,7 @@ Soldier'и **не знають**, що "їх" Queen впала. Вони про�
 
 ### 2.1 Загальна абстракція: Local Buffer + Circuit Breaker
 
-Жодна Web3-операція (peaq registration, IoTeX verification, Chainlink dispatch, Hadron compliance, KlimaDAO retire, Filecoin pin, L1 anchor) не повинна виконуватись **синхронно** в hot path Rails. Вже сьогодні всі вони — Sidekiq workers з `retry: 5` та `Web3CircuitBreaker` concern ([`04_02 §Web3CircuitBreaker`](04_02_Business_Logic_and_Services)).
+Жодна Web3-операція (peaq registration, IoTeX verification, Chainlink dispatch, Hadron compliance, KlimaDAO retire, Filecoin pin, L1 anchor) не повинна виконуватись **синхронно** в hot path Rails. Вже сьогодні всі вони — Sidekiq workers з `retry: 5` та `Web3CircuitBreaker` concern ([`04_02`](04_02_Business_Logic_and_Services)).
 
 Політика resilience:
 
@@ -168,13 +168,13 @@ end
 
 | Концепція | Файл / Сервіс | Статус |
 |-----------|---------------|--------|
-| Web3 circuit breaker | `app/workers/concerns/web3_circuit_breaker.rb` (`04_02 §Web3CircuitBreaker`) | ✅ Реалізовано (320L+ spec) |
+| Web3 circuit breaker | `app/workers/concerns/web3_circuit_breaker.rb` (`04_02`) | ✅ Реалізовано (320L+ spec) |
 | Multi-RPC fallback (Polygon, Solana, Celo) | `RPC_FALLBACK_ENV_KEYS` constants | ✅ Реалізовано (E.49 in `00_07`) |
 | Queen self-telemetry (`DID == 0x00000000`) | `GatewayTelemetryWorker` + `Gateway.mark_seen!` | ✅ Реалізовано |
 | CoAP retry constants on Queen | `firmware/queen/main.c` + 4 host tests (FW.9) | ✅ Реалізовано |
 | Chainlink router version probe | `Web3::ChainlinkRouterVersion` [S6.15] | ✅ Реалізовано (17 examples spec) |
 | Manual review terminal state | `BlockchainTransaction` AASM | ✅ Реалізовано |
-| Queen-to-Queen Backhaul Mesh | Concept у [`02_05 §Q2Q`](02_05_Queen_Hardware_and_Starlink) | 🟡 Concept, planned Phase 2 |
+| Queen-to-Queen Backhaul Mesh | Concept у [`02_05`](02_05_Queen_Hardware_and_Starlink) | 🟡 Concept, planned Phase 2 |
 | Helium fallback emit (Queen-side LoRaWAN) | Queen firmware `queen_helium_lorawan_uplink()` | 🟡 ARCH.34 planned (Soldier-side `helium_compat_emit` відкинуто — Soldier не несе LoRaWAN MAC stack) |
 | Ingress Proxy (CoAP buffer) | INF.4 / INF.6 | 🟡 Planned (P1) |
 | Conductor L2 cluster heads (formerly "Sergeant") | [`00_03 §8.1`](00_03_TRL_Matrix_HIL_and_Beyond) | 🟡 Concept (HW.27, TRL 1) |
