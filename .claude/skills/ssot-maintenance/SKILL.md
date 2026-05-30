@@ -1,6 +1,6 @@
 ---
 name: ssot-maintenance
-description: "Use when working on the SSOT docs (docs/NN_NN_*.md) — editing or creating a canon doc, hunting or fixing SSOT drift, adding a docs linter / CI gate, checking where a fact canonically lives, or publishing canon to the GitHub wiki. Operational playbook for docs:check_refs / docs:toc / tracker:check / wiki:sync; defers the STANDARD itself to 00_04 + 00_07 §8. Examples: \"edit 03_05\", \"is this value consistent across the docs?\", \"add a drift linter\", \"publish the docs to the wiki\", \"where does the Lorenz constant live?\""
+description: "Use when working on the SSOT docs (docs/NN_NN_*.md) — editing or creating a canon doc, hunting or fixing SSOT drift, adding a docs linter / CI gate, checking where a fact canonically lives, or publishing canon to the GitHub wiki. Operational playbook for docs:check_refs / docs:toc / tracker:check / wiki:sync; defers the STANDARD itself to 09_01 + 09_05. Examples: \"edit 03_05\", \"is this value consistent across the docs?\", \"add a drift linter\", \"publish the docs to the wiki\", \"where does the Lorenz constant live?\""
 ---
 
 # SSOT Maintenance
@@ -13,10 +13,10 @@ These are the canonical homes. Read them before acting; never copy their content
 
 | Source | Owns |
 |---|---|
-| `docs/00_04_AI_Native_Engineering_and_TRL` | **Philosophy**: NASA TRL (1-9, never 10-12), the AI Pipeline + 🚦 **Validation Gate** (LLM proposes a *hypothesis*, it does NOT compute physics), Intent-First, golden rule: *no code/solder until the spec is approved in the Wiki*. |
-| `docs/00_07 §8.1` | **Canonical doc skeleton** (🎯 Мета / ✅ Статус / 🔗 Cross-references / 📑 auto-ToC / Content; blockers→00_08; no volatile counts). |
-| `docs/00_07 §8.2` | **Canonical-home registry** — *одна річ, один дім*. The table of which fact lives where (TRL matrix→00_06 §1, AES modes→03_05 §3.7, Lorenz→03_04 §4.1, …). |
-| `docs/00_07 §8.3` | **Drift-prevention tooling** — the CI-enforced guard table. Add new guards here. |
+| `docs/09_01_AI_Native_Engineering_and_TRL` | **Philosophy**: NASA TRL (1-9, never 10-12), the AI Pipeline + 🚦 **Validation Gate** (LLM proposes a *hypothesis*, it does NOT compute physics), Intent-First, golden rule: *no code/solder until the spec is approved in the Wiki*. |
+| `docs/09_05 §1` | **Canonical doc skeleton** (🎯 Мета / ✅ Статус / 🔗 Cross-references / 📑 auto-ToC / Content; blockers→09_06; no volatile counts). |
+| `docs/09_05 §2` | **Canonical-home registry** — *одна річ, один дім*. The table of which fact lives where (TRL matrix→09_02 §1, AES modes→03_05 §3.7, Lorenz→03_04 §4.1, …). |
+| `docs/09_05 §3` | **Drift-prevention tooling** — the CI-enforced guard table. Add new guards here. |
 | `docs/00_00` | SSOT index + reading order. |
 
 **State** (what's done / next) lives in memory, not here: `[[ssot-stabilization-campaign]]`, `[[post-sweep-backlog]]`, plus `[[feedback_no_volatile_counts]]`, `[[feedback_ssot_review_workflow]]`, `[[project_wiki_sync]]`.
@@ -26,12 +26,12 @@ These are the canonical homes. Read them before acting; never copy their content
 - Editing or creating any `docs/NN_NN_*.md` canon doc.
 - "Is this value/fact consistent across the docs?" / suspect drift.
 - Adding or tuning a docs linter / CI gate.
-- "Where should fact X live?" (→ 00_07 §8.2 registry).
+- "Where should fact X live?" (→ 09_05 §2 registry).
 - Publishing canon to the GitHub wiki.
 
 ## Core principle
 
-**Every fact has ONE canonical home (00_07 §8.2); everything else references it, never restates.** When a fact changes, edit it *only* at its home — references stay valid. A mirror must be labelled "значення тут — дзеркало SSOT, правити там". The linters below enforce *owner-only vocabulary* (e.g. RTC register availability words may appear only in 03_01).
+**Every fact has ONE canonical home (09_05 §2); everything else references it, never restates.** When a fact changes, edit it *only* at its home — references stay valid. A mirror must be labelled "значення тут — дзеркало SSOT, правити там". The linters below enforce *owner-only vocabulary* (e.g. RTC register availability words may appear only in 03_01).
 
 ## Workflow — hunt → automate → fix
 
@@ -40,7 +40,7 @@ The loop that stabilises the SSOT (repeat per drift class):
 ```
 1. HUNT     Find a fact restated inconsistently across docs/code
             (same value, two numbers; same string, two spellings).
-            Identify its canonical OWNER (00_07 §8.2).
+            Identify its canonical OWNER (09_05 §2).
 2. AUTOMATE Write a precise, low-false-positive linter (recipe below)
             so the drift can never silently return.
 3. FIX      Clean every off-home restatement → make it a reference.
@@ -57,7 +57,7 @@ All via binstubs — **`bin/rails` / `bin/rspec`**, never `bundle exec` (`[[feed
 |---|---|---|
 | `bin/rails docs:check_refs` | The omnibus gate: dangling `NN_NN` links (HARD) · §-label drift (advisory) · TRL presence (HARD) · TRL single-value (HARD) · blocker-hygiene (HARD) · standard-conformance (HARD) · ToC sync (HARD) · RTC reg-map drift (HARD) · Lorenz-formula drift (HARD) · deprecated terms (HARD). | `lib/docs_linter.rb`, `lib/docs_toc.rb` |
 | `bin/rails docs:toc` | Regenerate the `📑 Зміст` auto-ToC between `<!-- TOC:AUTO:START/END -->` from current `## ` headings (curated `— descriptions` preserved). Run after changing headings. | `lib/docs_toc.rb` |
-| `bin/rails tracker:check` | 00_08 DRY: duplicate IDs, meta-line conformance, canon-ref resolution. | `lib/tracker/dashboard.rb` |
+| `bin/rails tracker:check` | 09_06 DRY: duplicate IDs, meta-line conformance, canon-ref resolution. | `lib/tracker/dashboard.rb` |
 | `bin/rails wiki:sync` | **Dry-run** (default): clone wiki, transform links + carry images, show `--stat` diff + unresolved links. Publishes nothing. | `lib/wiki_link_normalizer.rb` |
 | `bin/rails wiki:sync PUSH=1` | Commit + push the canon `NN_NN` pages to the GitHub wiki (SSH to `*.wiki.git`). | ↑ |
 | `COVERAGE=0 bin/rspec spec/lib/docs_linter_spec.rb spec/lib/docs_toc_spec.rb` | Unit-test the linter/ToC engines (pure functions — `spec_helper`, **no Rails/DB**; `COVERAGE=0` skips the whole-suite coverage gate on a subset run). | — |
@@ -68,7 +68,7 @@ CI: `docs.yml` runs the gates on doc/lib changes; `ci.yml` runs them on code cha
 
 This is the point: the skill stays small, but it lets you turn **any** newly-found drift class into a permanent gate. The defenses grow; the skill doesn't. Recipe, mirroring the existing `DocsLinter` methods:
 
-1. **Pick the owner.** Which doc canonically owns this fact (00_07 §8.2)? Everything else must only reference it.
+1. **Pick the owner.** Which doc canonically owns this fact (09_05 §2)? Everything else must only reference it.
 2. **Write a pure function** in `lib/docs_linter.rb` — `module_function`, takes `text` (or `basename, text`), returns an array of human-readable violation strings. No Rails, no I/O.
 3. **Keep false positives near zero** (heuristic linters are noisy):
    - Unicode-letter boundaries `(?<!\p{L})…(?![\p{L}])` so `звільнило`/`зарезервовано:` don't match a `вільн`/`резерв` rule.
@@ -76,14 +76,14 @@ This is the point: the skill stays small, but it lets you turn **any** newly-fou
    - **Exempt the owner doc** — it's *allowed* to state the fact.
 4. **Unit-test it** in `spec/lib/docs_linter_spec.rb`: a positive (catches the real drift), a clean pass, and the near-misses that must *not* trip. Run `bin/rspec spec/lib/docs_linter_spec.rb`.
 5. **Wire it into** `lib/tasks/docs.rake` `check_refs`: accumulate hits, print a report block, push a label into `failed` (advisory while you clean the existing drift → flip to **HARD** once it's at 0).
-6. **Record it** in the `00_07 §8.3` guard table and the campaign memory — **not in this skill**. (For an *unambiguous* retired string with no legit current use, skip the bespoke linter: add it to `DocsLinter::DEPRECATED_TERMS` — the general "any retired token's return is blocked" net.)
+6. **Record it** in the `09_05 §3` guard table and the campaign memory — **not in this skill**. (For an *unambiguous* retired string with no legit current use, skip the bespoke linter: add it to `DocsLinter::DEPRECATED_TERMS` — the general "any retired token's return is blocked" net.)
 
-> When the **standard itself** changes (skeleton, home registry), edit `00_07 §8` (the home) — this skill's pointers stay valid by design.
+> When the **standard itself** changes (skeleton, home registry), edit `09_05` (the home) — this skill's pointers stay valid by design.
 
 ### Worked example (a real loop, 2026-05-30)
 
 ```
-HUNT     FW.2 claimed RTC_BKP_DR15, but 03_02/00_08/03_03 still read
+HUNT     FW.2 claimed RTC_BKP_DR15, but 03_02/09_06/03_03 still read
          "DR15 наразі резерв". Owner of register allocation = 03_01 §2.
 AUTOMATE DocsLinter.rtc_register_allocation_drift(basename, text):
          match (?<![A-Za-z])DR(\d{1,2})\b near an availability word,
@@ -97,15 +97,15 @@ FIX      Reworded the 3 stale lines → "зайнято FW.2"; gate flipped HARD
 
 ### Worked example #2 — module restructure (2026-05-30)
 
-A z-divergence wording fix in 00_01 §6.5 snowballed into extracting two
-oversized, scattered topics into their own canon pages: slashing (00_01 §6,
+A z-divergence wording fix in 07_01 §6.5 snowballed into extracting two
+oversized, scattered topics into their own canon pages: slashing (07_01 §6,
 ~half the vision page) → `05_05`, governance (05_03 §749, ~156 lines) → `05_06`.
-Repeatable shape (now canon in `00_07 §8.4`):
+Repeatable shape (now canon in `09_05 §4`):
 
 ```
 MIGRATE-FIRST  fill new home with FULL substance + verify present, THEN cut source
 STUB+POINTER   source keeps a thin vision/ref-stub → new home; mechanics reference
-SWEEP ANCHORED re-point §X refs anchored on a token (e.g. "00_01") so other docs'
+SWEEP ANCHORED re-point §X refs anchored on a token (e.g. "07_01") so other docs'
                internal §X (01_01/02_03/04_04 each have their own §6.x!) survive;
                Ruby script-FILE, dry-run + presence-check, never inline -e
 AUTOMATE       turn the manual owner-violation hunt into a guard —
@@ -119,7 +119,7 @@ GATE per-phase docs:check_refs + tracker:check + zero-loss set-diff + wiki dry-r
 
 ```
 - [ ] bin/rails docs:check_refs           → green
-- [ ] bin/rails tracker:check             → green (if 00_08 touched)
+- [ ] bin/rails tracker:check             → green (if 09_06 touched)
 - [ ] bin/rails docs:toc                  → run if headings changed, then check_refs green
 - [ ] linter/ToC specs green              → if lib/docs_*.rb touched
 - [ ] fact edited ONLY at its home (§8.2); mirrors labelled
@@ -147,4 +147,4 @@ GATE per-phase docs:check_refs + tracker:check + zero-loss set-diff + wiki dry-r
 
 ## Keep this skill bounded
 
-This file is the **method**. It must not accumulate: the *standard* → `00_07 §8`; *state / backlog* → memory; a *new guard's definition* → `lib/docs_linter.rb` + `00_07 §8.3`. If you're tempted to add a fact here, it belongs in one of those homes — that discipline is the very thing this skill enforces.
+This file is the **method**. It must not accumulate: the *standard* → `09_05`; *state / backlog* → memory; a *new guard's definition* → `lib/docs_linter.rb` + `09_05 §3`. If you're tempted to add a fact here, it belongs in one of those homes — that discipline is the very thing this skill enforces.
