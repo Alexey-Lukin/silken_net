@@ -165,5 +165,61 @@ RSpec.describe Contracts::Show do
         expect(html).to include("Smart Contract Data")
       end
     end
+
+    context "with populated cancellation values [coverage]" do
+      let(:contract) do
+        c = mock_contract(cancellation_terms: { "present" => true })
+        c.early_exit_fee_percent = 15
+        c.burn_accrued_points = true
+        c.min_days_before_exit = 30
+        c
+      end
+      let(:html) { render_component(contract: contract, history: []) }
+
+      it "renders the early exit fee, burn flag and minimum days" do
+        expect(html).to include(">15%<")
+        expect(html).to include(">Yes<")
+        expect(html).to include(">30<")
+      end
+    end
+  end
+
+  describe "backing asset alert states [coverage]" do
+    it "flags vitality in red when cluster health is below 70%" do
+      contract = mock_contract(cluster: mock_cluster(health_index: 0.5))
+      html = render_component(contract: contract, history: [])
+      expect(html).to include(">50%<")
+      expect(html).to include("text-red-500")
+      expect(html).to include("animate-pulse")
+    end
+
+    it "renders a DANGER threat status when the cluster has active threats" do
+      contract = mock_contract(cluster: mock_cluster(active_threats: true))
+      html = render_component(contract: contract, history: [])
+      expect(html).to include("DANGER")
+    end
+
+    it "treats a nil health_index as zero" do
+      contract = mock_contract(cluster: mock_cluster(health_index: nil))
+      html = render_component(contract: contract, history: [])
+      expect(html).to include(">0%<")
+    end
+  end
+
+  describe "emission ledger pending block [coverage]" do
+    it "shows the pending-block placeholder when a tx has no hash yet" do
+      tx = mock_blockchain_tx(tx_hash: nil)
+      html = render_component(contract: mock_contract, history: [ tx ])
+      expect(html).to include("PENDING_BLOCK")
+    end
+  end
+
+  describe "hero with missing optional fields [coverage / defensive]" do
+    it "renders the hero when organization and contract dates are nil" do
+      contract = mock_contract(start_date: nil, end_date: nil)
+      contract.organization = nil
+      html = render_component(contract: contract, history: [])
+      expect(html).to include("Contract Identity")
+    end
   end
 end

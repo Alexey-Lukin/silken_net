@@ -43,4 +43,51 @@ RSpec.describe Codex::Citations::Pill, type: :view_component do
     html = render_pill(citation: citation)
     expect(html).to include("focus-visible:ring-2")
   end
+
+  describe "title fallback [coverage]" do
+    it "uses the node slug as the label when title_en is blank" do
+      allow(node).to receive(:title_en).and_return("")
+      html = render_pill(citation: citation)
+      expect(html).to include(">mafusail<")
+    end
+  end
+
+  describe "archetype suffix [coverage]" do
+    it "omits the archetype chip when archetype_key is blank" do
+      allow(node).to receive(:archetype_key).and_return(nil)
+      html = render_pill(citation: citation)
+      # `tracking-tighter` is unique to the archetype span; its absence
+      # proves the `archetype_key.present?` else-branch was taken.
+      expect(html).not_to include("tracking-tighter")
+    end
+  end
+
+  describe "without a note [coverage]" do
+    before { citation.note = nil }
+
+    it "builds an aria label without the trailing note clause" do
+      html = render_pill(citation: citation)
+      expect(html).to match(/aria-label="Codex citation: Mafusail \(Test Realm\)"/)
+    end
+
+    it "uses the bare title as the hover title attribute" do
+      html = render_pill(citation: citation)
+      expect(html).to include('title="Mafusail"')
+    end
+  end
+
+  describe "realm-less node [coverage / defensive]" do
+    before { allow(node).to receive(:realm).and_return(nil) }
+
+    it "falls back to the neutral accent border and default glyph" do
+      html = render_pill(citation: citation)
+      expect(html).to include("border-l-gaia-border")
+      expect(html).to include("○") # Codex::Realm::DEFAULT_DISPLAY_GLYPH
+    end
+
+    it "marks the realm as unknown in the aria label" do
+      html = render_pill(citation: citation)
+      expect(html).to match(/aria-label="[^"]*unknown realm/)
+    end
+  end
 end

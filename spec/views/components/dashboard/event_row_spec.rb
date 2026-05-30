@@ -104,4 +104,73 @@ RSpec.describe Dashboard::EventRow do
       expect(html).to include("gap-4")
     end
   end
+
+  describe "EwsAlert with no cluster [coverage]" do
+    let(:event) do
+      alert = EwsAlert.allocate
+      alert.define_singleton_method(:alert_type) { "Seismic" }
+      alert.define_singleton_method(:cluster) { nil }
+      alert.define_singleton_method(:created_at) { 1.minute.ago }
+      alert
+    end
+
+    it "falls back to the Unknown cluster label" do
+      expect(render_component(event: event)).to include("Unknown")
+    end
+  end
+
+  describe "BlockchainTransaction routed through Etherisc [coverage]" do
+    def etherisc_tx(to_address:)
+      pi = ParametricInsurance.allocate
+      pi.define_singleton_method(:uses_etherisc?) { true }
+      tx = BlockchainTransaction.allocate
+      tx.define_singleton_method(:amount) { "12.50" }
+      tx.define_singleton_method(:to_address) { to_address }
+      tx.define_singleton_method(:sourceable) { pi }
+      tx.define_singleton_method(:created_at) { 1.minute.ago }
+      tx
+    end
+
+    it "renders an Etherisc DIP claim with a truncated address" do
+      html = render_component(event: etherisc_tx(to_address: "0x1234567890abcdef1234"))
+      expect(html).to include("Etherisc DIP claim")
+      expect(html).to include("0x1234…1234")
+    end
+
+    it "labels the destination as Pool when the address is blank" do
+      html = render_component(event: etherisc_tx(to_address: nil))
+      expect(html).to include("Pool")
+    end
+  end
+
+  describe "BlockchainTransaction mint with no wallet [coverage]" do
+    let(:event) do
+      tx = BlockchainTransaction.allocate
+      tx.define_singleton_method(:amount) { "0.001" }
+      tx.define_singleton_method(:wallet) { nil }
+      tx.define_singleton_method(:sourceable) { nil }
+      tx.define_singleton_method(:created_at) { 1.minute.ago }
+      tx
+    end
+
+    it "falls back to the System mint target" do
+      html = render_component(event: event)
+      expect(html).to include("Minted")
+      expect(html).to include("→ System")
+    end
+  end
+
+  describe "MaintenanceRecord with no user or action [coverage]" do
+    let(:event) do
+      record = MaintenanceRecord.allocate
+      record.define_singleton_method(:action_type) { nil }
+      record.define_singleton_method(:user) { nil }
+      record.define_singleton_method(:created_at) { 1.minute.ago }
+      record
+    end
+
+    it "renders the maintenance summary with the System fallback user" do
+      expect(render_component(event: event)).to include("by System")
+    end
+  end
 end
