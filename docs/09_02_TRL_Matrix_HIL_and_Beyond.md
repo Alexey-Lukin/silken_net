@@ -1,8 +1,8 @@
-# 09_02: Strategic Roadmap, TRL Matrix and HIL Simulators
+# 09_02: TRL Matrix, HIL & Beyond-TRL-9
 
 ## 🎯 Мета
 
-Визначити життєвий цикл компонентів Gaia 2.0 та стратегічні етапи масштабування проєкту. Цей документ перетворює технічну складність на послідовний графік досягнення рівнів технологічної готовності (TRL) та бізнес-метрик, **і одночасно усуває проблему TRL-Lock** через концепцію Hardware-in-the-Loop (HIL) симуляторів — програмні домени продовжують рухатись до TRL 8-9 паралельно фізичним відставанням металу/хімії.
+Канонічний дім **per-module TRL-матриці** (§1) та довгострокової R&D-агенди за межами TRL 9 (§7). Фіксує принцип **TRL-Layered-Independence** і HIL-симулятори — **програмні еквіваленти фізичного навантаження**, що дозволяють софт-доменам незалежно досягати свого *per-domain* TRL. ⚠️ HIL **НЕ «знімає» System-TRL-Lock** (той лишається обмеженим найнижчим модулем критичного шляху) — він лише декаплить per-domain прогрес. Стратегічна дорожня карта (фази масштабування) — у [`07_01`](07_01_Vision_Mission_and_Roadmap).
 
 ---
 
@@ -29,10 +29,8 @@
 
 <!-- TOC:AUTO:START -->
 - [1. Матриця готовності Silken Net (The TRL Matrix)](#-1-матриця-готовності-silken-net-the-trl-matrix)
-- [2. Стратегічні фази масштабування (The Roadmap)](#-2-стратегічні-фази-масштабування-the-roadmap)
 - [3. Принцип "TRL-Lock" → "TRL-Layered Independence"](#-3-принцип-trl-lock--trl-layered-independence)
 - [4. HIL Simulators — Програмне розблокування Software TRL](#-4-hil-simulators--програмне-розблокування-software-trl)
-- [5. Поточний фокус (Cycle Focus)](#-5-поточний-фокус-cycle-focus)
 - [7. Beyond TRL 9 — Planetary Intelligence Gaps (Long-Horizon R&D Agenda)](#-7-beyond-trl-9--planetary-intelligence-gaps-long-horizon-rd-agenda)
 <!-- TOC:AUTO:END -->
 
@@ -67,31 +65,6 @@
 | 08 University R&D | 2 | 6 | 5-сторонній партнерський фреймворк (ChNU + ChDTU + ChIPB + ChMA + СЄУ) — UNI.4-14 |
 | 09 Project Management | 7 | 9 | OPS.3 R&D portfolio, OPS.4 semester sync |
 | 10 Security | 7 | 9 | SEC.9 master key, ✅ SEC.11 Lorenz seed provenance, Multisig, RDP, Factory (Rails web layer ✅ S6.18) |
-
----
-
-## 🗺️ 2. Стратегічні фази масштабування (The Roadmap)
-
-### 🌿 Фаза 1: The Heartbeat (2024-2025) — "Доказ життя"
-- **Ціль:** Довести неможливість фальсифікації біологічних даних.
-- **Ключові задачі:**
-    - Інтеграція **peaq DID** для ідентифікації кожного дерева.
-    - Налаштування **IoTeX W3bstream** для генерації ZK-доказів гомеостазу.
-    - Перший "зелений" мінтинг SCC для одного пілотного кластера.
-
-### 🌲 Фаза 2: The Forest Mesh (2025-2026) — "Автономність"
-- **Ціль:** Розгортання децентралізованої інфраструктури.
-- **Ключові задачі:**
-    - Масовий друк титанових анкерів (Batch Production в Україні).
-    - Деплой бекенду на **Akash Network** для цензуростійкості.
-    - Запуск публічного дашборду на **The Graph** для глобального аудиту вуглецю.
-
-### 🌎 Фаза 3: The Sovereign State (2026+) — "Економіка"
-- **Ціль:** Nature-as-a-Service (NaaS) як глобальний фінансовий стандарт.
-- **Ключові задачі:**
-    - Впровадження автоматичного страхування (Parametric Insurance) через смарт-контракти.
-    - Щотижнева фіналізація стану лісів у **Ethereum L1 Mainnet**.
-    - Інтеграція з **KlimaDAO** для автоматичного спалювання активів корпораціями.
 
 ---
 
@@ -153,15 +126,6 @@
 
 ---
 
-## 📅 5. Поточний фокус (Cycle Focus)
-
-Поточний 6-тижневий цикл (Shape Up, [`09_03`](09_03_Shape_Up_Operations_and_RnD_Clusters)) зосереджений на:
-
-- **EBFC (Module 01) TRL 4 → 6** — Stages 1-3 закрити (5 SLA-макетів → 10 Ti-monets → 3-5 повноцінних SLM+HIP анкерів).
-- **ZK-Pipeline (Module 05) TRL 7 → 8** — IoTeX → Chainlink → Polygon Mainnet smoke з реальним LINK token balance.
-- **HIL Queen Simulator (Module 03/04) TRL 0 → 5** — реалізація `HilQueenSimulator` для розблокування Queen failover testing без живого STM32WLE5JC.
-
----
 
 ## 🌌 7. Beyond TRL 9 — Planetary Intelligence Gaps (Long-Horizon R&D Agenda)
 
