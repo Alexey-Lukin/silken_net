@@ -1173,7 +1173,7 @@ if (days_until_token_expiry() < 7) {
    → Повторювати перед закінченням терміну дії.
 
 3. [Регулярно] CoAP PUT → порт 5683 (основний канал uplink)
-   → 21-байтовий зашифрований AES-256-CBC батч від кожного Soldier → Queen → бекенд.
+   → AES-256-CBC-зашифрований CoAP-батч від Queen (агреговані записи Soldier'ів; самі LoRa-фрейми Soldier→Queen — 21-байт AES-128-ECB) → бекенд.
 
    [Fallback] POST /api/v1/gateways/:id/telemetry
    → Base64-encoded бінарний батч у тілі запиту (якщо CoAP/UDP недоступний).
