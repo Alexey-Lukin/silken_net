@@ -172,4 +172,31 @@ module DocsLinter
       "label `#{label.strip[0, 48]}` → href #{target_id}_… (label leads with #{label_id}, not #{target_id})"
     end
   end
+
+  # [SSOT anti-drift] §-section label drift (ADVISORY). Extracted from the inline
+  # docs.rake scan (2026-05-30) so it is unit-tested like every other guard. A
+  # cross-ref `[`NN_NN §Ref`](NN_NN_Name)` whose visible label cites a section
+  # §Ref must have a matching heading in the TARGET doc — catches a section that
+  # was renumbered/removed (e.g. 08_02 §1.3 after the registry collapsed its
+  # per-publication sub-sections into institution-level §1A/§1B/§2..§5). The
+  # canonical ref format (00_06 §1) is `[`NN_NN §X`](NN_NN_DocName)` with §X a
+  # REAL section number; a descriptive §-word (e.g. §Web3CircuitBreaker) is
+  # non-standard and STAYS flagged so the data gets normalized — the guard stays
+  # strict, the refs get standardized (not the other way round). `headings` maps
+  # doc-id → its downcased heading lines (so a key's presence ≡ target exists; a
+  # missing target is the dangling guard's job, not this one). Refs < 2 chars
+  # (bare "§5") and labels citing no §Ref are skipped. Pure: no I/O.
+  SECTION_REF_RE = /§\s*([0-9A-Za-zА-Яа-яІіЇїЄє.\-]+)/
+
+  def section_label_drift(text, headings)
+    text.scan(/\[([^\]]*)\]\((\d\d_\d\d_[A-Za-z0-9_]+)(?:#[^)]*)?\)/).filter_map do |label, target|
+      next unless headings.key?(target) # target doc absent → dangling guard handles it
+
+      ref = label[SECTION_REF_RE, 1]
+      next unless ref && ref.length >= 2
+      next if headings[target].include?(ref.downcase)
+
+      "label `§#{ref}` → #{target} (no heading contains '#{ref}')"
+    end
+  end
 end

@@ -195,4 +195,40 @@ RSpec.describe DocsLinter do
       expect(described_class.link_label_target_mismatch("[реліз 2026_05 deep-dive](00_01_Vision_Mission_and_Roadmap)")).to be_empty
     end
   end
+
+  describe ".section_label_drift" do
+    let(:headings) do
+      { "08_02_Academic_Institutions_Registry" => "## 1. чну\n### 1a. наукові школи\n### 1b. фотіус\n## 2. чдту" }
+    end
+
+    it "flags a §-label whose section is absent from the target headings" do
+      md = "координація — [`08_02 §1.3`](08_02_Academic_Institutions_Registry)"
+      expect(described_class.section_label_drift(md, headings))
+        .to contain_exactly(a_string_matching(/§1\.3.*no heading contains '1\.3'/))
+    end
+
+    it "passes a numbered §-label that matches a heading (§1A → '1a')" do
+      expect(described_class.section_label_drift(
+        "[`08_02 §1A`](08_02_Academic_Institutions_Registry)", headings)).to be_empty
+    end
+
+    it "skips a bare single-char ref and a label citing no section" do
+      expect(described_class.section_label_drift(
+        "[`08_02 §2`](08_02_Academic_Institutions_Registry)", headings)).to be_empty
+      expect(described_class.section_label_drift(
+        "[Реєстр ВНЗ](08_02_Academic_Institutions_Registry)", headings)).to be_empty
+    end
+
+    it "stays STRICT: a descriptive §-word label is flagged (normalize the ref, not the guard)" do
+      h = { "04_02_Business_Logic_and_Services" => "## 5. верифікація та ідентичність" }
+      expect(described_class.section_label_drift(
+        "[`04_02 §Web3CircuitBreaker`](04_02_Business_Logic_and_Services)", h))
+        .to contain_exactly(a_string_matching(/Web3CircuitBreaker/))
+    end
+
+    it "leaves an absent target doc to the dangling guard (not flagged here)" do
+      expect(described_class.section_label_drift(
+        "[`99_99 §1.3`](99_99_Missing_Doc)", headings)).to be_empty
+    end
+  end
 end

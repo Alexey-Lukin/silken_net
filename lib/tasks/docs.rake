@@ -46,19 +46,14 @@ namespace :docs do
       base = File.basename(f, ".md")
       text = File.read(f)
 
-      # Markdown links to local NN_NN docs: [label](NN_NN_Name) | (NN_NN_Name#anchor)
-      text.scan(/\[([^\]]*)\]\((\d\d_\d\d_[A-Za-z0-9_]+)(?:#[^)]*)?\)/) do |label, target|
+      # [dangling] every markdown link to a local NN_NN doc must resolve to a file.
+      text.scan(/\[([^\]]*)\]\((\d\d_\d\d_[A-Za-z0-9_]+)(?:#[^)]*)?\)/) do |_label, target|
         dangling << "#{base} → `#{target}` (doc not found)" unless existing.include?(target)
-
-        # If the visible label cites `§Ref`, verify Ref appears in a target heading.
-        next unless existing.include?(target)
-        ref = label[/§\s*([0-9A-Za-zА-Яа-яІіЇїЄє.\-]+)/, 1]
-        next unless ref && ref.length >= 2
-
-        unless headings[target].include?(ref.downcase)
-          suspect << "#{base}: label `§#{ref}` → #{target} (no heading contains '#{ref}')"
-        end
       end
+
+      # [§-label drift] advisory — a label's `§Ref` must name a real heading in the
+      # target (tested pure fn; canonical ref format → 00_06 §1, kept strict).
+      suspect.concat(DocsLinter.section_label_drift(text, headings).map { |h| "#{base}: #{h}" })
 
       # [TRL presence] a doc with a ✅ Статус section must declare its TRL there.
       lines = text.lines
