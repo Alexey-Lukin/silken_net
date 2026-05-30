@@ -1,4 +1,4 @@
-# 00_02: Resilience and Failover Policy
+# 06_08: Resilience and Failover Policy
 
 ## 🎯 Мета
 

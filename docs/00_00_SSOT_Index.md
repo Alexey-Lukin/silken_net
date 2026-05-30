@@ -17,7 +17,6 @@
 _Top-down конституція системи: 8-рівнева кіберфізична архітектура, повний 12-крокового Proof-of-Growth конвеєр та політика resilience/failover. Методологія/стратегія винесені у Tier II (09/07)._
 
 - [00\_01\_System\_Architecture\_and\_12\_Chain\_Pipeline](00_01_System_Architecture_and_12_Chain_Pipeline) (8 рівнів кіберфізики + повний 12-крокової конвеєр Proof-of-Growth)
-- [00\_02\_Resilience\_and\_Failover\_Policy](00_02_Resilience_and_Failover_Policy) (Queen failover 4 рівні + Per-Chain Fallback Matrix для Web3-ланок)
 
 ## 🌱 Модуль 01: Біомеханіка та Хімія (The Anchor)
 
@@ -82,6 +81,7 @@ _Деплой, моніторинг, секрети та децентраліз�
 - [06\_05\_Puma\_Configuration](06_05_Puma_Configuration) (Puma 8 IO-bound pool + кластерні хуки + runbook'и)
 - [06\_06\_Disaster\_Recovery\_and\_Backup](06_06_Disaster_Recovery_and_Backup) (Cloud SQL PITR/HA + restore-runbook'и + RTO/RPO + master-key backup)
 - [06\_07\_CICD\_and\_Runbook\_Index](06_07_CICD_and_Runbook_Index) (CI/CD workflows + єдиний operations runbook-індекс)
+- [06\_08\_Resilience\_and\_Failover\_Policy](06_08_Resilience_and_Failover_Policy) (Queen failover 4 рівні + Per-Chain Fallback Matrix для Web3-ланок — runtime resilience)
 
 ---
 

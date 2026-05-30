@@ -872,7 +872,7 @@ any ──report_fault──► faulty
 | Поле | Тип | Опис |
 |------|-----|------|
 | `balance` | decimal | Основний баланс growth_points (≥ 0) |
-| `locked_balance` | decimal | Заморожені points (в процесі емісії). **Подвійне призначення:** (1) lock під час `lock_and_mint!` між Polygon-mint dispatch і `confirmed` AASM; (2) **finality-lag lock** — коли SCC вже мінтовано на Polygon, але тижневий L1 anchor (`EthereumAnchor`, крок #12) ще не зафіксував state root. У випадку Polygon reorg або catastrophic sidechain failure до anchor — токени технічно повертаються у `locked_balance` через `escalate_to_review`. Це запобігає double-spend сценарію, описаному в [`00_02 §2.2 Manual review terminal state`](00_02_Resilience_and_Failover_Policy). |
+| `locked_balance` | decimal | Заморожені points (в процесі емісії). **Подвійне призначення:** (1) lock під час `lock_and_mint!` між Polygon-mint dispatch і `confirmed` AASM; (2) **finality-lag lock** — коли SCC вже мінтовано на Polygon, але тижневий L1 anchor (`EthereumAnchor`, крок #12) ще не зафіксував state root. У випадку Polygon reorg або catastrophic sidechain failure до anchor — токени технічно повертаються у `locked_balance` через `escalate_to_review`. Це запобігає double-spend сценарію, описаному в [`06_08 §2.2 Manual review terminal state`](06_08_Resilience_and_Failover_Policy). |
 | `esg_retired_balance` | decimal | Списані балансом ESG-retired |
 | `toucan_bridged_balance` | decimal | Bridged через Toucan Protocol |
 | `crypto_public_address` | string | Polygon/Ethereum-адреса гаманця (EIP-55) |

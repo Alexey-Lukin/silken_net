@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Зафіксувати 8-рівневу кіберфізичну архітектуру екосистеми Gaia 2.0 (Silken Net) та повний 12-крокового конвеєр Proof of Growth — від біохімічної реакції в дереві до криптографічної фіналізації в Ethereum L1. Цей документ є базовою конституцією для маршрутизації даних, але не містить політику резервування — для неї див. [`00_02_Resilience_and_Failover_Policy`](00_02_Resilience_and_Failover_Policy).
+Зафіксувати 8-рівневу кіберфізичну архітектуру екосистеми Gaia 2.0 (Silken Net) та повний 12-крокового конвеєр Proof of Growth — від біохімічної реакції в дереві до криптографічної фіналізації в Ethereum L1. Цей документ є базовою конституцією для маршрутизації даних, але не містить політику резервування — для неї див. [`06_08_Resilience_and_Failover_Policy`](06_08_Resilience_and_Failover_Policy).
 
 ---
 
@@ -18,7 +18,7 @@
 | Ресурс | Опис |
 |--------|------|
 | [07_01_Vision_Mission_and_Roadmap](07_01_Vision_Mission_and_Roadmap) | Бізнес-візія та slashing |
-| [00_02_Resilience_and_Failover_Policy](00_02_Resilience_and_Failover_Policy) | Failover та Web3 fallback |
+| [06_08_Resilience_and_Failover_Policy](06_08_Resilience_and_Failover_Policy) | Failover та Web3 fallback |
 | [01_01_Coaxial_Gyroid_Topology_and_PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Біомеханіка та тризонний анкер |
 | [02_01_Hardware_Architecture_and_BOM](02_01_Hardware_Architecture_and_BOM) | Апаратура та BOM |
 | [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Прошивка та Edge AI |
@@ -68,7 +68,7 @@
 - **Протокол:** LoRa mesh 868 МГц (custom TTL-based, DEFAULT_TTL=3). Binary payload 21 bytes (4 DID + 1 RSSI + 16 encrypted).
 - **Топологія:** Directed Mesh (Солдати передають пакети через сусідів).
 - **Шлюз (Королева):** Агрегує пакети та відправляє їх у хмару (опціонально через Starlink Direct-to-Cell).
-- **Резерв:** Helium Network (HNT) як fallback при втраті Queen — будь-який роутер Helium у радіусі 15 км ловить пакет ([деталі → 02_05](02_05_Queen_Hardware_and_Starlink), політика — [`00_02 §Queen Failover`](00_02_Resilience_and_Failover_Policy)).
+- **Резерв:** Helium Network (HNT) як fallback при втраті Queen — будь-який роутер Helium у радіусі 15 км ловить пакет ([деталі → 02_05](02_05_Queen_Hardware_and_Starlink), політика — [`06_08 §Queen Failover`](06_08_Resilience_and_Failover_Policy)).
 
 #### Проблема Рандеву (Rendezvous Problem)
 
@@ -214,7 +214,7 @@ Gaia 2.0 підхід:      2 байти lambda → описує стан всь
                          не "кладе" сусідні кластери
 ```
 
-**Queen-to-Queen Backhaul Mesh:** Королеви з'єднані між собою через LoRa SF12. Якщо одна Queen втрачає Starlink → передає дані сусідній Queen через LoRa-магістраль. Деталі — [`00_02 §Queen Failover`](00_02_Resilience_and_Failover_Policy).
+**Queen-to-Queen Backhaul Mesh:** Королеви з'єднані між собою через LoRa SF12. Якщо одна Queen втрачає Starlink → передає дані сусідній Queen через LoRa-магістраль. Деталі — [`06_08 §Queen Failover`](06_08_Resilience_and_Failover_Policy).
 
 ### Energy-Aware Routing
 
@@ -242,7 +242,7 @@ Route metric = f(hop_count, remaining_energy, bio_potential)
 
 Цей розділ описує повний життєвий цикл одного "серцебиття" через кіберфізичний стан Silken Net — від моменту, коли дерево "дихає", до миті, коли його внесок закарбовується в Ethereum назавжди.
 
-**12 кроків. 12 мереж. Одна жива система.** Резервування для кожної ланки — [`00_02 §Web3 Chain Fallback`](00_02_Resilience_and_Failover_Policy).
+**12 кроків. 12 мереж. Одна жива система.** Резервування для кожної ланки — [`06_08 §Web3 Chain Fallback`](06_08_Resilience_and_Failover_Policy).
 
 ---
 

@@ -9,7 +9,7 @@ module Hil
   # = ===================================================================
   #
   # Source: docs/09_02_TRL_Matrix_HIL_and_Beyond §4.2 +
-  # docs/00_02_Resilience_and_Failover_Policy §1.3.
+  # docs/06_08_Resilience_and_Failover_Policy §1.3.
   #
   # Generates Queen Sentinel telemetry (DID = 0x00000000) without a live
   # STM32WLE5JC, so Queen failover & resilience tests can run against the

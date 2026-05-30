@@ -260,7 +260,7 @@ kamal deploy
 **Архітектура Системи (Модуль 00)**
 - [`00_00`](docs/00_00_SSOT_Index.md) — єдине джерело істини (SSOT), головний реєстр
 - [`00_01`](docs/00_01_System_Architecture_and_12_Chain_Pipeline.md) — 8-рівнева кіберфізична архітектура + 12-крокової конвеєр
-- [`00_02`](docs/00_02_Resilience_and_Failover_Policy.md) — Queen failover + Per-Chain Fallback Matrix
+- [`06_08`](docs/06_08_Resilience_and_Failover_Policy.md) — Queen failover + Per-Chain Fallback Matrix
 
 **Біомеханіка та Хімія (Модуль 01)**
 - [`01_01`](docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md) — 3-складовий Ti-6Al-4V анкер

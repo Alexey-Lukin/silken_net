@@ -23,7 +23,7 @@
 | `terraform/main.tf` | GCS state backend (`silken-net-terraform-state`) |
 | [06_01_Deployment_Kamal_Terraform](06_01_Deployment_Kamal_Terraform) | `terraform apply`, Ingress Anchor, deploy-flow |
 | [06_04_Secrets_Checklist](06_04_Secrets_Checklist) | master-ключі, ротація (§5.2), revocation (§5.4) |
-| [00_02_Resilience_and_Failover_Policy](00_02_Resilience_and_Failover_Policy) | runtime failover (не backup) |
+| [06_08_Resilience_and_Failover_Policy](06_08_Resilience_and_Failover_Policy) | runtime failover (не backup) |
 | [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | DR.1 (drill + master-key backup), S5.6 |
 
 ## 📑 Зміст
