@@ -253,7 +253,7 @@ static inline void _mock_error_handler_reset(void) { _mock_error_handler_called 
 
 /* ── [SEC.11 / FW.30] Flash Lorenz Seed Region Mock ───────────────── */
 /*
- * Simulates the Protected Flash Sector at FLASH_SEED_ADDR (FLASH_KEY_ADDR + 36).
+ * Simulates the Protected Flash Sector at FLASH_SEED_ADDR (FLASH_KEY_ADDR + 20, post-ARCH.42 AES-128).
  * Layout: [magic:4][seed[0]:4][seed[1]:4]...[seed[7]:4] = 9 × uint32_t = 36 bytes.
  */
 #define MOCK_FLASH_SEED_REGION_WORDS 9  /* 1 magic + 8 seed words */
