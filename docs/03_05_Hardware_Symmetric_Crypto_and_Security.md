@@ -195,7 +195,7 @@ hcryp.Init.Algorithm = CRYP_AES_ECB;          // ECB transitional — TARGET: CR
 **Header (cleartext, AAD-authenticated):**
 
 - **DID (4B):** Незмінений — Queen-side filter та lookup ключа. Передається як AAD у CCM, тому MIC покриває і його (підміна DID → MIC fail).
-- **Frame Counter (4B BE):** monotonic uint32 у `RTC_BKP_DR15` (єдиний вільний слот — DR2 ❌ зайнято `has_mesh_relay` за SSOT 03_01 §2; doc-fix 2026-05-24). Cold-boot магічний маркер `FW2_FC_MAGIC = 0x46434E54` ("FCNT") у packing `[FW2_FC_MAGIC:8 | frame_counter:24]` — magic у high 8 бітах захищає від невалідного DR15 після VBAT loss (similar pattern до LORENZ_STATE_MAGIC у DR19). 24-bit FC дає **~16.7M значень** — за бюджету 1 TX/година × 8760 год/рік × 25 років = ~219 тис. TX/пристрій життєвий цикл = `18 bit` зайнято, **запас 6 bit ≈ 64× longevity margin** (компроміс: уживаємо magic-byte для cold-boot detection vs full 32-bit FC). Інкрементується перед кожним TX. Cold-boot після VBAT-loss (DR15 magic не збігається) → reseed з HRNG (range `0x000001..0xFFFFFE`, без обнулення/overflow boundaries). Backend per-DID Redis SETNX 25h-window достатньо переживає однопроцесорний reboot — HRNG-reseed дає probabilistically-unique nonce проти живих кеш-ключів попереднього втілення (`1 - 1/2^24 ≈ 99.999994%` no collision). **Реклама `panic_frame_counter` із DR0[31:16] звільняється** разом з активацією FW2_CCM (`#define FW2_CCM_ENABLED 1`) — CCM FC одночасно служить anti-replay для всіх пакетів (включно з panic), що закриває SEC.10 firmware-сторону автоматично.
+- **Frame Counter (4B BE):** monotonic uint32 у `RTC_BKP_DR15` (єдиний вільний слот — DR2 ❌ зайнято `has_mesh_relay` за SSOT 03_01 §2; doc-fix 2026-05-24). Cold-boot магічний маркер `FW2_FC_MAGIC = 0x46434E54` ("FCNT") у packing `[FW2_FC_MAGIC:8 | frame_counter:24]` — magic у high 8 бітах захищає від невалідного DR15 після VBAT loss (similar pattern до LORENZ_STATE_MAGIC у DR19). 24-bit FC дає **~16.7M значень** — за бюджету 1 TX/година × 8760 год/рік × 25 років = ~219 тис. TX/пристрій життєвий цикл = `18 bit` зайнято, **запас 6 bit ≈ 64× longevity margin** (компроміс: уживаємо magic-byte для cold-boot detection vs full 32-bit FC). Інкрементується перед кожним TX. Cold-boot після VBAT-loss (DR15 magic не збігається) → reseed з HRNG (range `0x000001..0xFFFFFE`, без обнулення/overflow boundaries). Backend per-DID Redis SETNX 25h-window дедуплікує replay у вікні. **Чесна оцінка nonce-унікальності (імовірнісна, НЕ абсолютна) + повна cold-boot reseed-політика — у 📐 КАНОНІЧНОМУ ДЖЕРЕЛІ нижче** (не дублюємо тут). **Реклама `panic_frame_counter` із DR0[31:16] звільняється** разом з активацією FW2_CCM (`#define FW2_CCM_ENABLED 1`) — CCM FC одночасно служить anti-replay для всіх пакетів (включно з panic), що закриває SEC.10 firmware-сторону автоматично.
 
 **MIC (8B = 64-bit MAC) — обґрунтування розширення з 4B:**
 
@@ -205,18 +205,27 @@ CCM специфікація (NIST SP 800-38C) дозволяє `t ∈ {4, 6, 8,
 
 Зайняття 4 додаткових байтів **звільняється** від видалення «Зарезервовано» поля (попередня чорнетка) — total залишається 24B без перевитрат.
 
-**Nonce конструкція (CCM B0 block):**
+**Nonce конструкція (CCM nonce, 12 байт):**
 
 ```
-nonce[12] = DID[0..3] || FrameCounter[0..3] || flag_byte || zero_pad[1..3]
+nonce[12] = DID[0..3] || FrameCounter[0..3] || 0x00 × 4
             ↑              ↑
             из header      monotonic per-DID
 
-Унікальність: pair (key_128, nonce) гарантовано унікальний:
-  - Per-device LoRa key (FW.1 HKDF "silken-aes-128-lora-key") — DID константа,
-    FrameCounter monotonic → кожна (key, nonce) пара унікальна за конструкцією.
-  - DID розрізняє пристрої, FrameCounter monotonic per-device → перетин ймовірний 0.
 ```
+
+**Унікальність (key_128, nonce) — імовірнісна, НЕ абсолютна — 📐 КАНОНІЧНЕ ДЖЕРЕЛО (FW.2 FC/nonce policy):**
+
+> Єдине авторитетне місце для Frame-Counter lifecycle + nonce-унікальності. Решта місць лише **посилаються** сюди: `03_01 §2` (RTC-мапа, DR15), `firmware/common/lora_ccm.h` (байт-формат), `firmware/soldier/main.c::Load_Frame_Counter` (reseed), `00_08 FW.2`.
+
+- **Зберігання + інкремент:** FC — 24-bit у `RTC_BKP_DR15`, упакований `[FW2_FC_MAGIC:8 | frame_counter:24]` (magic `0x46` ловить невалідний DR15 після VBAT-loss). Інкремент перед кожним TX; wrap `0xFFFFFF → 1` (skip 0 = «треба reseed»). ~16.7M значень ≫ ~219 тис. TX за 25-річний lifecycle. FC персиститься у DR15 **перед** TX (reboot між Save і TX просуває лічильник, а не повторює).
+- **Нормальна робота:** per-device LoRa key (FW.1 HKDF) константний + FC monotonic-incrementing → кожна (key, nonce) пара унікальна **за конструкцією**.
+- **Cold-boot (VBAT loss):** DR15 magic втрачено → FC reseed **uniform-random з HRNG**. Monotonic-across-boot джерела в цей момент **немає**: RTC-календар і `soldier_unix_ts` обидва на дефолтах (wall-clock дає лише FW.20 beacon, якого ще нема — той самий стан, що Lorenz cold-start, §3.4в); Flash-write небезпечний при низькому пост-drain заряді; ATECC свідомо не будимо (§3.7). Тому uniform-random — **прагматичний TRL-6 вибір**, а не недогляд.
+- **Залишковий ризик / severity:** повтор раніше-використаного FC з тим самим персистентним ключем ≈ `N/2²⁴` на cold-boot (N = FC, спожиті до drain). **Severity: MEDIUM** — CTR-reuse дає лише витік `P1⊕P2` двох 8-байтних низькоентропійних сенсорних payload'ів (**не** компрометація ключа; forge все одно потребує per-device key). Cold-boot'и рідкісні (drain ≈ сезонний).
+- **Reseed entropy:** тільки HRNG з **retry ×3** — слабкого `HAL_GetTick` fallback **немає** (на cold-boot tick малий+передбачуваний → кластеризується між cold-boot'ами того ж пристрою). Last-resort при мертвому HRNG — `tree_did ^ tick` (DID ламає крос-девайс кластеризацію). SEC.10 panic-counter (`main.c` DR0[31:16]) — **той самий** reseed-патерн + те саме hardening при активації FW.2.
+- **TRL-7 robust path (deferred):** монотонний лічильник, що переживає повну втрату живлення → безумовна унікальність. Варіанти: energy-gated Flash high-water (запис лише на cold-boot, коли Vcap відновився) АБО ATECC608B monotonic counter (разом з ATECC-role рішенням, §3.7). Трекінг → `00_08 FW.2`.
+
+> ⚠️ **DR15 resource-conflict (виявлено 2026-05-30, потребує резолюції):** FW.2 FC **володіє** `RTC_BKP_DR15` (реалізовано — `lora_ccm.h` + `firmware/soldier/main.c`). Але старіші доки (`00_08` FW.20-S2 рядок, `03_02 §5а`) досі звуть DR15 «наразі резерв» під FW.20-S2 anti-storm dedup-bitmap (ARCH.28). Усі 20 RTC backup-регістрів (DR0–DR19) зайняті (`03_01 §2`) — двом фічам одного вільного слота не вистачить. **Запропонована резолюція:** FW.2 тримає DR15 (вже в коді); anti-storm bitmap переходить на Flash-KV store (ARCH.28, `03_01 §2.3`). Потребує підтвердження + правки стале-формулювань у `00_08`/`03_02`.
 
 **Конфігурація `hcryp` для CCM (AES-128):**
 

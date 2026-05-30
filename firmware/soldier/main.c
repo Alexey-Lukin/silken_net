@@ -2414,11 +2414,25 @@ static uint32_t Load_Frame_Counter(void)
     uint32_t packed = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR15);
     uint32_t fc = Unpack_FW2_Frame_Counter(packed);
     if (fc == 0) {
-        // Magic mismatch (cold boot, VBAT loss). Reseed from HRNG.
+        // Холодний старт після втрати VBAT: вічна пам'ять стерта, магія DR15
+        // згасла. Монотонного джерела, що пережило б повну смерть живлення, тут
+        // немає (RTC-календар і soldier_unix_ts обидва на дефолтах — час дає лише
+        // beacon Королеви, якого ще не було; запис у Flash небезпечний при кволому
+        // пост-drain заряді; ATECC свідомо не будимо) → пересіваємо рівномірно-
+        // випадковим зерном. Канон політики + чесна оцінка залишкового ризику
+        // (MEDIUM): docs/03_05 (КАНОНІЧНЕ ДЖЕРЕЛО — FW.2 FC/nonce).
+        // HRNG з трьома спробами; кволого HAL_GetTick fallback НЕМАЄ — на холодному
+        // старті tick дрібний і вгадуваний, кластеризується між cold-boot'ами того
+        // ж вузла (саме там і причаївся б повтор nonce).
         uint32_t hrng_word = 0;
-        if (HAL_RNG_GenerateRandomNumber(&hrng, &hrng_word) != HAL_OK) {
-            hrng_word = HAL_GetTick(); // last-resort fallback (degraded entropy)
+        for (int i = 0; i < 3 && hrng_word == 0; i++) {
+            if (HAL_RNG_GenerateRandomNumber(&hrng, &hrng_word) != HAL_OK) hrng_word = 0;
         }
+        // Остання межа, лише якщо HRNG зовсім мертвий: підмішуємо per-device DID,
+        // щоб зерно різнилося між вузлами (ламає крос-девайс кластеризацію);
+        // залишковий ризик повтору приймаємо свідомо (див. SSOT). Безумовну
+        // унікальність дасть монотонний лічильник — це задача TRL-7.
+        if (hrng_word == 0) hrng_word = tree_did ^ HAL_GetTick();
         fc = Reseed_FW2_Frame_Counter(hrng_word);
         HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR15, Pack_FW2_Frame_Counter(fc));
     }

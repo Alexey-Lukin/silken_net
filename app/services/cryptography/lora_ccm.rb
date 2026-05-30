@@ -19,9 +19,11 @@ require "openssl"
 #
 #   nonce = DID || FrameCounter || 0x00 × 4
 #
-# Per-(key, DID) the FrameCounter is monotonic in firmware (`RTC_BKP_DR2`),
-# so each (key, nonce) pair is globally unique — the only constraint CCM
-# requires for confidentiality.
+# Per-(key, DID) the FrameCounter is monotonic in firmware (`RTC_BKP_DR15`),
+# so each (key, nonce) pair is unique under normal operation — the constraint
+# CCM requires for confidentiality. (Cold boot after VBAT loss HRNG-reseeds the
+# FC, making uniqueness probabilistic then — ~1/2**24 reuse risk per drain; see
+# docs/03_05 §3.2 nonce note + 00_08 FW.2 for the monotonic-counter hardening.)
 #
 # Backend never holds firmware's CCM B0 block directly — OpenSSL builds it
 # internally from `iv` (nonce), `auth_tag_len`, and `ccm_data_len`.

@@ -74,7 +74,7 @@
 - `UNI.13`/`UNI.14` **P0** — верифікувати посади науковців ЧМА і СЄУ (офіційні сайти)
 
 ### 🔗 Заблоковано (чекає іншого)
-- `FW.2` **P0** — AES-128-CCM (backend-parser ✅; firmware emit + `CRYP_AES_CCM` verify → STM32 bench). Закриває ECB→CCM, MIC, `FW.23` OTA auth, `SEC.10` panic auth, `FW.29`
+- `FW.2` **P0** — AES-128-CCM (backend-parser ✅; firmware emit + `CRYP_AES_CCM` verify → STM32 bench). Закриває ECB→CCM, MIC, `SEC.10` panic auth, `FW.29`. FC/nonce/cold-boot SSOT → `03_05` (📐 КАНОНІЧНЕ ДЖЕРЕЛО). NB: `FW.23` OTA auth — окремий HMAC-механізм, уже закрито (§3.4б); FW.2 його **не** закриває
 - Multi-signal slashing de-risk (`00_01 §6.6`) — код ✅: усі 3 прямі сигнали в `InsightGeneratorService`-евристиці (VPD-gate + sap-term + acoustic/cavitation-term; inert, ENV-calibration-gated; sap+acoustic через max() не суму). Активація → ground-truth калібрування ваг (`08_02 §4`) + ML-retrain (vpd-фіча) + firmware VPD (`HW.32`). Багатше on-device acoustic-джерело → TinyML unblock (`Run_Inference` закоментована, §03)
 - SLASH-1 deeper (B/insurance auto-route, A/B/C cause_classification, cause-driven pf uplift) → DAO/founder
 
@@ -178,7 +178,7 @@
 
 #### FW.2 — AES-128-ECB → AES-128-CCM (24B packet) [post-ARCH.42]
 - **P0** · 🤖 · → `03_05 §3.2`
-- ✅ дизайн 24B AES-128-CCM + backend парсер + firmware freeze-contract emit/decrypt + 14 host-тестів (byte-parity `Cryptography::LoraCcm`); FC у RTC DR15. Закриває ECB→CCM/MIC/replay (BLOCKER-2/3); узгоджено з ATECC608B Slot 0. · [ ] 🤖 верифікувати `CRYP_AES_CCM` на STM32WLE5JC REVB (RM0461 §27.4, bench) → flip `FW2_CCM_ENABLED`/`TELEMETRY_CCM_ENABLED` — **ЄДИНИЙ HW-залежний пункт**
+- ✅ дизайн 24B AES-128-CCM + backend парсер + firmware freeze-contract emit/decrypt + host-тести (golden-vector parity з `Cryptography::LoraCcm`/OpenSSL — складання+tamper-семантика, **не** залізна крипта); FC у RTC DR15. **Канонічна FC/nonce/cold-boot політика — `03_05` (📐 КАНОНІЧНЕ ДЖЕРЕЛО), єдине місце.** Cold-boot nonce-унікальність імовірнісна (MEDIUM, ~N/2²⁴); reseed = HRNG retry×3 (кволий tick-fallback прибрано 2026-05-30). Закриває ECB→CCM/MIC/replay (BLOCKER-2/3) + SEC.10 panic + FW.29; узгоджено з ATECC608B Slot 0. · [ ] 🤖 верифікувати `CRYP_AES_CCM` на STM32WLE5JC REVB (RM0461 §27.4, bench) → flip `FW2_CCM_ENABLED`/`TELEMETRY_CCM_ENABLED` — **ЄДИНИЙ HW-залежний пункт** · [ ] 🔗 TRL-7: monotonic FC-counter (Flash high-water / ATECC) для безумовної nonce-унікальності · [ ] ⚠️ DR15 resource-conflict з FW.20-S2 anti-storm bitmap — резолюція у `03_05`
 
 #### FW.3 — Queen AT Command Blocking (~25 сек)
 - **P1** · 🟡 · → `03_02`
