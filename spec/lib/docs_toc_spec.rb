@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require "rails_helper"
-require Rails.root.join("lib/docs_toc")
+require "spec_helper"
+require_relative "../../lib/docs_toc"
 
 # [SSOT anti-drift] Unit coverage for the auto-ToC engine (rake docs:toc +
 # docs:check_refs ToC-sync gate). Pure functions over fixture strings.

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require "rails_helper"
-require Rails.root.join("lib/docs_linter")
+require "spec_helper"
+require_relative "../../lib/docs_linter"
 
 # [SSOT anti-drift] Unit coverage for the structural doc-linter (rake
 # docs:check_refs). Pure functions over fixture strings — no DB, no file I/O.

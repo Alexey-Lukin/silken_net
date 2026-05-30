@@ -112,7 +112,7 @@ module DocsLinter
   # deprecated-token → replacement hint. Use only for UNAMBIGUOUS retired strings
   # (no legit current/historical use), else this false-positives.
   DEPRECATED_TERMS = {
-    "silkennet-v1-aes256" => 'use "silken-aes-128-lora-key" / "silken-aes-256-device-key" (ARCH.42 256→128 HKDF info)',
+    "silkennet-v1-aes256" => 'use "silken-aes-128-lora-key" / "silken-aes-256-device-key" (ARCH.42 256→128 HKDF info)'
   }.freeze
 
   def deprecated_terms(text)

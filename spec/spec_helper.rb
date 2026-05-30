@@ -35,7 +35,9 @@ SimpleCov.start "rails" do
   # Feature-тести запускаються окремим CI job і мають свій скоуп.
   # Мінімальний кавередж застосовується тільки до unit/integration спеків.
   # Виміряне покриття (з урахуванням Phlex-компонентів): line 99.08%, branch 90.83%
-  if ENV["FEATURE_TEST"]
+  # COVERAGE=0 — повне відключення гейту для pure-unit прогонів (напр. docs.yml
+  # ганяє лише 2 файли спеків лінтерів → загальне покриття ≈0, гейт хибно впав би).
+  if ENV["FEATURE_TEST"] || ENV["COVERAGE"] == "0"
     minimum_coverage line: 0, branch: 0
   else
     minimum_coverage line: 96, branch: 85
@@ -46,8 +48,9 @@ end
 # Per-group coverage tripwire. SimpleCov ships with a global `minimum_coverage`
 # гейтом, але без per-group — отже падіння покриття у Services/Workers може
 # схуднути нижче критичного рівня, доки глобальний середній лишається ≈99%.
-# Гейт відключаємо для feature-test run (там покриття вимірюється окремо).
-unless ENV["FEATURE_TEST"]
+# Гейт відключаємо для feature-test run (там покриття вимірюється окремо)
+# та для pure-unit прогонів з COVERAGE=0 (subset спеків лінтерів у docs.yml).
+unless ENV["FEATURE_TEST"] || ENV["COVERAGE"] == "0"
   SimpleCov.at_exit do
     SimpleCov.result.format!
 

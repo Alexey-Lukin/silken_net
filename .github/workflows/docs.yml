@@ -65,4 +65,6 @@ jobs:
         run: bin/rails docs:check_refs
 
       - name: Unit-test the doc linters (engine + ToC)
-        run: bin/rspec spec/lib/docs_linter_spec.rb spec/lib/docs_toc_spec.rb
+        # Pure-function specs (spec_helper, no Rails/DB). COVERAGE=0 skips the
+        # whole-suite minimum_coverage gate — a 2-file subset measures ≈0% overall.
+        run: COVERAGE=0 bin/rspec spec/lib/docs_linter_spec.rb spec/lib/docs_toc_spec.rb
