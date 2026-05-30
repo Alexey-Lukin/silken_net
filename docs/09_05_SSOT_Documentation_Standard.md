@@ -93,6 +93,7 @@
 | ToC sync | docs з `TOC:AUTO` маркерами — зміст збігається з h2-заголовками | `bin/rails docs:check_refs` (HARD; writer `docs:toc`; engine `lib/docs_toc.rb`) |
 | **RTC reg-map drift** | register availability (`DRn free/reserve`) живе лише в owner `03_01 §2`; інші доки не дублюють (зловив stale «DR15 резерв» у 03_02/09_06/03_03) | `bin/rails docs:check_refs` (HARD 2026-05-30; `lib/docs_linter.rb`) |
 | **Lorenz-formula drift** | β-assignment (`beta = 8.0/3.0`) живе лише в owner `03_04 §4.1`; інші доки реферять, не re-declare (зловив stale σ/ρ/β у 05_01/00_01 при 05/07-реструктуризації) | `bin/rails docs:check_refs` (HARD 2026-05-30; `lib/docs_linter.rb`) |
+| **link label↔href mismatch** | doc-link, де visible label веде з одним `NN_NN`, а href резолвиться на ІНШИЙ доку — renamed-doc residue, який dangling-check НЕ ловить (href валідний). Зловив 09_01 §3 (текст «09_05» → файл 09_04) + 03_02 (текст «07_01» → 00_01) після two-tier renumber | `bin/rails docs:check_refs` (HARD 2026-05-30; `lib/docs_linter.rb`) |
 | TRL range-consistency | _(roadmap)_ per-doc member-TRL у межах діапазону модуля `09_02 §1` | — |
 
 **Правило при зміні факту:** правити лише у home (§2) → рефи лишаються чинними; будь-який новий NN_NN-док/реф — `docs:check_refs` має лишатись зеленим перед merge.

@@ -170,4 +170,29 @@ RSpec.describe DocsLinter do
       expect(described_class::DEPRECATED_TERMS).not_to be_empty
     end
   end
+
+  describe ".link_label_target_mismatch" do
+    it "flags a label leading with a different doc-ID than the href resolves to" do
+      hits = described_class.link_label_target_mismatch("див. [`09_05 §2/§4`](09_04_GitHub_Projects_and_IaC_Automation)")
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("09_05").and include("09_04")
+    end
+
+    it "passes when the label leads with the same doc it links to (ref form + full-name form)" do
+      expect(described_class.link_label_target_mismatch("[`05_05 §7-8`](05_05_Slashing_and_Risk_Policy)")).to be_empty
+      expect(described_class.link_label_target_mismatch("[05_05_Slashing_and_Risk_Policy](05_05_Slashing_and_Risk_Policy)")).to be_empty
+    end
+
+    it "ignores a label with no doc-ID token (plain prose link text)" do
+      expect(described_class.link_label_target_mismatch("[Insurance Layer mechanics](07_02_Nature_as_a_Service_Contracts)")).to be_empty
+    end
+
+    it "keys on the LEAD doc-ID only — a later secondary mention is not flagged" do
+      expect(described_class.link_label_target_mismatch("[`03_04 §4.1` (див. також 05_05)](03_04_mruby_Lorenz_Attractor)")).to be_empty
+    end
+
+    it "does not match a long number that merely contains an NN_NN substring" do
+      expect(described_class.link_label_target_mismatch("[реліз 2026_05 deep-dive](07_01_Vision_Mission_and_Roadmap)")).to be_empty
+    end
+  end
 end

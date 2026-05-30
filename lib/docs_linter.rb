@@ -149,4 +149,27 @@ module DocsLinter
       "deprecated term `#{term}` present → #{hint}" if text.include?(term)
     end
   end
+
+  # [SSOT anti-drift] Link label ↔ href doc mismatch (HARD). A cross-ref written
+  # `[`NN_NN §X`](NN_NN_Name)` must point at the SAME doc its visible label cites.
+  # When the label LEADS with one NN_NN but the href resolves to a different doc,
+  # the link silently lies — exactly how 09_01 §3 read "09_05 §2/§4" yet linked the
+  # 09_04 file (a renamed-doc residue `docs:check_refs` could not catch, because the
+  # href still resolves to a real file). Heuristic: compare the label's FIRST doc-ID
+  # token to the href's NN_NN; flag a mismatch. A label with no NN_NN, or whose
+  # leading NN_NN equals the target, is fine — later "(див. також NN_NN)" secondary
+  # mentions are ignored (only the lead token is authoritative). The NN_NN pattern is
+  # digit-bounded so a long number ("2026_05") never matches. Returns
+  # ["label `09_05 …` → href 09_04_… (label leads with 09_05, not 09_04)", …].
+  LABEL_DOC_RE = /(?<!\d)\d\d_\d\d(?!\d)/
+
+  def link_label_target_mismatch(text)
+    text.scan(/\[([^\]]*)\]\((\d\d_\d\d)_[A-Za-z0-9_]+(?:#[^)]*)?\)/).filter_map do |label, target_id|
+      label_id = label[LABEL_DOC_RE]
+      next unless label_id           # label cites no doc-ID → nothing to verify
+      next if label_id == target_id  # label leads with the doc it links to → ok
+
+      "label `#{label.strip[0, 48]}` → href #{target_id}_… (label leads with #{label_id}, not #{target_id})"
+    end
+  end
 end

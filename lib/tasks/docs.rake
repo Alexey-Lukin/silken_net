@@ -40,6 +40,7 @@ namespace :docs do
     rtc_drift   = []  # hard: RTC register availability claimed outside 03_01 owner
     lorenz_drift = [] # hard: Lorenz β formula re-stated outside 03_04 owner
     deprecated  = []  # hard: retired SSOT term reappeared (DocsLinter::DEPRECATED_TERMS)
+    label_drift = []  # hard: link label leads with a different NN_NN than its href resolves to
 
     files.each do |f|
       base = File.basename(f, ".md")
@@ -75,6 +76,7 @@ namespace :docs do
       rtc_drift.concat(DocsLinter.rtc_register_allocation_drift(base, text).map { |h| "#{base}: #{h}" })
       lorenz_drift.concat(DocsLinter.lorenz_formula_drift(base, text).map { |h| "#{base}: #{h}" })
       deprecated.concat(DocsLinter.deprecated_terms(text).map { |h| "#{base}: #{h}" })
+      label_drift.concat(DocsLinter.link_label_target_mismatch(text).map { |h| "#{base}: #{h}" })
     end
 
     # [TRL single-value] HARD — 09_02 §1 per-module matrix cells single 1-9.
@@ -158,6 +160,12 @@ namespace :docs do
       puts "  DEPRECATED TERMS (#{deprecated.size}) — retired SSOT tokens (DocsLinter::DEPRECATED_TERMS):"
       deprecated.sort.each { |d| puts "    ✗ #{d}" }
     end
+    if label_drift.empty?
+      puts "  link label↔href: every doc-link label leads with the doc it points to ✓"
+    else
+      puts "  LINK LABEL↔HREF MISMATCH (#{label_drift.size}) — label cites a different doc than its href:"
+      label_drift.sort.each { |d| puts "    ✗ #{d}" }
+    end
 
     failed = []
     failed << "dangling doc links" unless dangling.empty?
@@ -169,6 +177,7 @@ namespace :docs do
     failed << "RTC register-map drift (availability claimed outside 03_01)" unless rtc_drift.empty?
     failed << "Lorenz-formula drift (β re-stated outside 03_04 §4.1)" unless lorenz_drift.empty?
     failed << "deprecated SSOT terms present" unless deprecated.empty?
+    failed << "link label↔href mismatches" unless label_drift.empty?
     abort("docs:check_refs FAILED — #{failed.join(', ')}") unless failed.empty?
   end
 
