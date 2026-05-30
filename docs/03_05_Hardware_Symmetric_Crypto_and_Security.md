@@ -87,7 +87,7 @@
 
 ### Hardcoded AES-256 Key — Firmware CLOSED (FW.1, 2026-05-02)
 
-**Статус:** ✅ Firmware ЗАКРИТО (FW.1, 2026-05-02). `Load_AES_Key()` зчитує per-device HKDF-derived ключ з Protected Flash Sector (`FLASH_KEY_ADDR`, magic `"KEYS"`). Hardcoded ідентичний ключ видалено. Factory Flashing Pipeline (SEC.3) та RDP Level 2 activation (SEC.2) — залишаються.
+**Статус:** ✅ Firmware ЗАКРИТО (FW.1, 2026-05-02). `Load_AES_Key()` зчитує per-device HKDF-derived ключ з Protected Flash Sector (`FLASH_KEY_ADDR`, magic `"KEYL"`). Hardcoded ідентичний ключ видалено. Factory Flashing Pipeline (SEC.3) та RDP Level 2 activation (SEC.2) — залишаються.
 
 **Файли (historical pre-FW.1):** `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82`
 
@@ -106,7 +106,7 @@ uint32_t aes_key[8] = {0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX,
 **Виконані дії (FW.1, 2026-05-02):**
 
 - ✅ `HKDF(PROVISIONING_MASTER_KEY, device_uid, "silken-aes-128-lora-key")` → Protected Flash (`FLASH_KEY_ADDR`) — per-device unique key.
-- ✅ `Load_AES_Key()` + magic `"KEYS"` guard — boot відмовляє без provisioning (infinite reset loop; тест: `test_aes_key_load_fail_no_magic`).
+- ✅ `Load_AES_Key()` + magic `"KEYL"` guard — boot відмовляє без provisioning (infinite reset loop; тест: `test_aes_key_load_fail_no_magic`).
 - ✅ Per-device ізоляція: злам одного Soldier не розкриває ключі сусідів.
 - ✅ `Security::WeakKeyDetector` + boot-time guard (§3.1а, SEC.9) — FIPS-197 test vector не може потрапити в production.
 
@@ -635,7 +635,7 @@ CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<IDEMPOTENCY_TOKEN>
 | Параметр | LoRa-ключ (Soldier + Queen) | CoAP-ключ (Queen only) |
 |----------|------------------------------|------------------------|
 | **Тип зберігання** | Protected Flash Sector, magic `"KEYL"` = `0x4B45594C` | Protected Flash Sector (окремий slot), magic `"KEYC"` = `0x4B455943` |
-| **Адреса** | `FLASH_LORA_KEY_ADDR` | `FLASH_COAP_KEY_ADDR` (тільки Queen) |
+| **Адреса** | `FLASH_KEY_ADDR` | `FLASH_COAP_KEY_ADDR` (тільки Queen) |
 | **Розмір** | **128 біт (16 байт, 4 × uint32_t)** — ARCH.42 | 256 біт (32 байти, 8 × uint32_t) |
 | **Захист** | RDP Level 1 (виробництво) / RDP Level 2 (необоротний final lock) — див. §3.3 | Те саме |
 | **Ротація** | Hash Ratchet KDF — див. [FW.17 у 00_07](00_07_Action_Plan_Tracker) (placeholder, P3) | Те саме |
@@ -651,11 +651,11 @@ uint32_t coap_key[8] = {0};   // 32 bytes — CoAP AES-256 (тільки Queen)
 #endif
 
 // У main() перед MX_CRYP_Init():
-Load_AES_Key();  // reads from FLASH_LORA_KEY_ADDR, validates magic "KEYL",
+Load_AES_Key();  // reads from FLASH_KEY_ADDR, validates magic "KEYL",
                  // populates aes_key[4] in RAM; on Queen also loads FLASH_COAP_KEY_ADDR → coap_key[8]
 ```
 
-> 🚫 **Архітектурний baseline:** "ідентичний на ВСІХ вузлах" — **історична форма §Hardcoded AES Key**, закрита FW.1. Цей блок документа явно зберігає згадку як warning для аудиторів, що інспектують стару прошивку до FW.1. При відсутності magic `"KEYS"` у Flash (raw чіп з фабрики) — `Load_AES_Key()` відмовляє у boot і enter'ить infinite reset loop (захист від випуску партії без provisioning). Цей invariant перевіряється у `firmware/test/test_soldier_logic.c::test_aes_key_load_fail_no_magic`.
+> 🚫 **Архітектурний baseline:** "ідентичний на ВСІХ вузлах" — **історична форма §Hardcoded AES Key**, закрита FW.1. Цей блок документа явно зберігає згадку як warning для аудиторів, що інспектують стару прошивку до FW.1. При відсутності magic `"KEYL"` у Flash (raw чіп з фабрики) — `Load_AES_Key()` відмовляє у boot і enter'ить infinite reset loop (захист від випуску партії без provisioning). Цей invariant перевіряється у `firmware/test/test_soldier_logic.c::test_aes_key_load_fail_no_magic`.
 
 > ⚠️ **Audit-trail (історичний §Hardcoded AES Key):** До FW.1 перші 4 слова ключа збігалися зі стандартним тестовим ключем AES-128 з FIPS-197 (Appendix B). Поточна верифікація — `Security::WeakKeyDetector` (§3.1а нижче) + boot-time HKDF derivation гарантують, що цей вектор більше **не може потрапити** у production. Якщо інженер бачить hardcoded `0xXXXXXXXX` константи у будь-якій робочій копії — це означає, що FW.1 patch був відкочений; **stop and escalate**.
 
@@ -927,7 +927,7 @@ STEP 2: Factory Flashing (конвеєр на заводі)
 
   d) Заводський стенд записує унікальний ключ (Гілка A — Protected Flash):
      STM32CubeProgrammer --write-option-bytes key_address=0x0803E000 key=<hex>
-     # 0x0803E000 = FLASH_LORA_KEY_ADDR (Protected Flash Sector, perma-protected)
+     # 0x0803E000 = FLASH_KEY_ADDR (Protected Flash Sector, perma-protected)
      # АБО ATECC608B Slot 0 (Гілка B після ARCH.42 — Secure Element §3.7)
 
   e) Lock:
@@ -941,7 +941,7 @@ STEP 3: Runtime — Soldier читає свій LoRa AES-128 ключ
 firmware/soldier/main.c (післі ARCH.42):
   // Boot-time RAM mirror (заповнюється з Flash через Load_AES_Key()):
   uint32_t aes_key[4] = {0};   // 16 bytes — LoRa AES-128
-  // FLASH_LORA_KEY_ADDR layout: [magic "KEYL":4][aes_key:16] = 20 bytes total
+  // FLASH_KEY_ADDR layout: [magic "KEYL":4][aes_key:16] = 20 bytes total
   // При ініціалізації:
   Load_AES_Key();              // populates aes_key[4] from Protected Flash
   MX_CRYP_Init();              // hcryp.Init.KeySize = CRYP_KEYSIZE_128B; hcryp.Init.pKey = aes_key;
@@ -1010,25 +1010,25 @@ end
 // firmware/soldier/main.c — post-ARCH.42 (4 words замість 8):
 
 // Flash Protected Key Sector (0x0803E000 — 4 KB, protected via WRPROT option bytes)
-#define FLASH_LORA_KEY_ADDR   0x0803E000UL
-#define FLASH_LORA_KEY_WORDS  4                // 4 × uint32_t = 16 bytes (AES-128)
+#define FLASH_KEY_ADDR   0x0803E000UL
+#define FLASH_KEY_WORDS  4                // 4 × uint32_t = 16 bytes (AES-128)
 #define FLASH_KEY_MAGIC       0x4B45594CUL     // "KEYL" — LoRa key
 
-uint32_t aes_key[FLASH_LORA_KEY_WORDS] = {0};
+uint32_t aes_key[FLASH_KEY_WORDS] = {0};
 
 void Load_AES_Key(void)
 {
-    const uint32_t *flash_ptr = (const uint32_t *)FLASH_LORA_KEY_ADDR;
+    const uint32_t *flash_ptr = (const uint32_t *)FLASH_KEY_ADDR;
     // 1. Magic check (захист від unprovisioned chip)
     if (flash_ptr[0] != FLASH_KEY_MAGIC) {
         Error_Handler();   // infinite reset loop (захист від випуску партії без provisioning)
     }
     // 2. Non-zero check
     uint32_t key_sum = 0;
-    for (int i = 0; i < FLASH_LORA_KEY_WORDS; i++) key_sum |= flash_ptr[1 + i];
+    for (int i = 0; i < FLASH_KEY_WORDS; i++) key_sum |= flash_ptr[1 + i];
     if (key_sum == 0) { Error_Handler(); }
     // 3. Copy into RAM mirror
-    for (int i = 0; i < FLASH_LORA_KEY_WORDS; i++) {
+    for (int i = 0; i < FLASH_KEY_WORDS; i++) {
         aes_key[i] = flash_ptr[1 + i];
     }
 }
@@ -1045,9 +1045,9 @@ K_seed зберігається одразу після AES ключа у тій
 
 // Flash layout (post-ARCH.42 — AES-128 LoRa key only):
 //   [KEY_MAGIC:4][AES_KEY:16] | [SEED_MAGIC:4][K_SEED:32]
-//   ^FLASH_LORA_KEY_ADDR        ^FLASH_SEED_ADDR
+//   ^FLASH_KEY_ADDR        ^FLASH_SEED_ADDR
 // (Gateway-only Queen також має окрему пару [COAP_MAGIC:4][COAP_KEY:32] у наступному slot)
-#define FLASH_SEED_ADDR   (FLASH_LORA_KEY_ADDR + 20)  // 0x0803E014 (4 magic + 16 key = 20)
+#define FLASH_SEED_ADDR   (FLASH_KEY_ADDR + 20)  // 0x0803E014 (4 magic + 16 key = 20)
 #define FLASH_SEED_WORDS  8                        // 8 × uint32_t = 32 bytes
 #define FLASH_SEED_MAGIC  0x4C534544UL             // "LSED" — Lorenz Seed
 
@@ -1080,8 +1080,8 @@ void Load_Lorenz_Seed(void)
 
 ```c
 // Flash layout (post-ARCH.42): [LORA_KEY_MAGIC:4][AES_KEY:16] | [SEED_MAGIC:4][K_SEED:32] | [ROLE:4]
-//   ^FLASH_LORA_KEY_ADDR (0x0803E000)  ^FLASH_SEED_ADDR (+20 = 0x0803E014)  ^FLASH_ROLE_ADDR (+56 = 0x0803E038)
-#define FLASH_ROLE_ADDR        (FLASH_LORA_KEY_ADDR + 56)   // 0x0803E038 (20 + 4 magic + 32 seed = 56)
+//   ^FLASH_KEY_ADDR (0x0803E000)  ^FLASH_SEED_ADDR (+20 = 0x0803E014)  ^FLASH_ROLE_ADDR (+56 = 0x0803E038)
+#define FLASH_ROLE_ADDR        (FLASH_KEY_ADDR + 56)   // 0x0803E038 (20 + 4 magic + 32 seed = 56)
 #define ROLE_SOLDIER_MAGIC     0x534F4C44UL            // "SOLD"
 #define ROLE_PROVISIONER_MAGIC 0x50524F56UL            // "PROV"
 #define ROLE_SOLDIER           0
