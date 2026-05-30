@@ -389,7 +389,7 @@ end
 
 ## 🌡️ 4. Логіка Гомеостазу: Z → growth_points
 
-> **⚠️ [Lorenz de-risk, 2026-05-29]** Мапінг **Z → bio_status / growth_points нижче — недоведена гіпотеза**, не встановлений факт. Межі (`CRITICAL_Z_MIN/MAX`, `OPTIMAL_Z_TARGET`) обґрунтовані теоретично, але потребують ground-truth ([`08_02 §4`](08_02_Cybernetic_and_Mathematical_Validation)). Політика: фінансовий slashing **ніколи** не спирається лише на Z — Z є одним із сигналів `stress_index` поряд із прямими (sap_flow / VPD / acoustic). Lorenz-**DCI** (anti-fraud, device-Z vs server-Z) валідний **незалежно** від результату валідації. Деталі — [`05_05 §7`](05_05_Slashing_and_Risk_Policy).
+> **⚠️ [Lorenz de-risk, 2026-05-29]** Мапінг **Z → bio_status / growth_points нижче — недоведена гіпотеза**, не встановлений факт. Межі (`CRITICAL_Z_MIN/MAX`, `OPTIMAL_Z_TARGET`) обґрунтовані теоретично, але потребують ground-truth ([`05_05 §8`](05_05_Slashing_and_Risk_Policy)). Політика: фінансовий slashing **ніколи** не спирається лише на Z — Z є одним із сигналів `stress_index` поряд із прямими (sap_flow / VPD / acoustic). Lorenz-**DCI** (anti-fraud, device-Z vs server-Z) валідний **незалежно** від результату валідації. Деталі — [`05_05 §7`](05_05_Slashing_and_Risk_Policy).
 
 ### 4.1 Межі Стабільності та Їх Фізична Інтерпретація
 

@@ -538,7 +538,7 @@ end
 
 ## 🔄 Потік Мінтингу (Поточний Стан)
 
-> **⚠️ [Lorenz de-risk]** Перший крок потоку (`Lorenz Z-value → growth_points`) спирається на **недоведену гіпотезу** «Z = здоров'я» ([`08_02 §4`](08_02_Cybernetic_and_Mathematical_Validation)). Slashing/мінтинг-рішення вимагають ≥1 прямого сигналу (sap_flow / VPD / acoustic), не лише Z ([`05_05 §7`](05_05_Slashing_and_Risk_Policy)). Lorenz-DCI (anti-fraud) валідний незалежно.
+> **⚠️ [Lorenz de-risk]** Перший крок потоку (`Lorenz Z-value → growth_points`) спирається на **недоведену гіпотезу** «Z = здоров'я» ([`05_05 §8`](05_05_Slashing_and_Risk_Policy)). Slashing/мінтинг-рішення вимагають ≥1 прямого сигналу (sap_flow / VPD / acoustic), не лише Z ([`05_05 §7`](05_05_Slashing_and_Risk_Policy)). Lorenz-DCI (anti-fraud) валідний незалежно.
 
 ```
 Telemetry → Lorenz Z-value → growth_points++

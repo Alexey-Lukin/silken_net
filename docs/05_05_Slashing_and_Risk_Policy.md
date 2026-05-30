@@ -26,7 +26,7 @@
 | [05_06_Governance_and_DAO](05_06_Governance_and_DAO) | DAO peer-review (категорія C): `SilkenGovernor`/`SilkenTimelock`/quorum |
 | [07_02_Nature_as_a_Service_Contracts](07_02_Nature_as_a_Service_Contracts) | Insurance Layer mechanics (Etherisc, два режими); NaaS breach terms; SFC voting after slash |
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | `BlockchainBurningService`, `ContractHealthCheckService`, `InsightGeneratorService#stress_index`; divergence registry §11 |
-| [08_02_Cybernetic_and_Mathematical_Validation](08_02_Cybernetic_and_Mathematical_Validation) | Ground-truth калібрування Z↔health (де-ризик гіпотези) |
+| [08_02_Cybernetic_and_Mathematical_Validation](08_02_Cybernetic_and_Mathematical_Validation) | Партнерський ростер ФОТІУС/ЧНУ + академічний вихід для ground-truth протоколу (сам протокол — §8) |
 | [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | **Відкрите** (SSOT): SLASH-1 cause-gate, BIZ.13 operator-bond |
 
 ## 📑 Зміст
@@ -39,6 +39,7 @@
 - [5. Indeterminate (категорія C) — DAO Peer Review](#5-indeterminate-категорія-c--dao-peer-review)
 - [6. Anti-fraud cross-checks](#6-anti-fraud-cross-checks)
 - [7. Multi-signal slashing — Лоренц ≠ єдина правда](#7-multi-signal-slashing--лоренц--єдина-правда-lorenz-de-risk)
+- [8. Ground-Truth Validation Protocol — Z↔health](#-8-ground-truth-validation-protocol--zhealth-lorenz-de-risk)
 <!-- TOC:AUTO:END -->
 
 ---
@@ -151,14 +152,33 @@ ForceMajeure event → InsurancePayoutWorker
 
 ## 7. Multi-signal slashing — Лоренц ≠ єдина правда [Lorenz de-risk]
 
-**Принцип:** фінансовий slashing **ніколи** не спирається лише на Z-Лоренца. Роль Лоренца подвійна й обмежена: (1) **DCI / anti-fraud** (`check_z_divergence!` — device-Z vs server-Z, §6); (2) **один із кількох** stress-features. Мапінг «Z → здоров'я дерева» сам по собі — **недоведена гіпотеза** (потребує ground-truth — [`08_02` Lorenz↔health protocol](08_02_Cybernetic_and_Mathematical_Validation)).
+**Принцип:** фінансовий slashing **ніколи** не спирається лише на Z-Лоренца. Роль Лоренца подвійна й обмежена: (1) **DCI / anti-fraud** (`check_z_divergence!` — device-Z vs server-Z, §6); (2) **один із кількох** stress-features. Мапінг «Z → здоров'я дерева» сам по собі — **недоведена гіпотеза** (потребує ground-truth — протокол **§8** нижче).
 
 **Стан (verified):**
 - Драйвер slashing — `stress_index` (`ContractHealthCheckService`: tree ≥0.83 / cluster >20% дерев ≥1.0).
 - `stress_index` (`InsightGeneratorService#calculate_stress_index`) — **мульти-сигнальний ML** на `[temp, vcap, Z, sap_deviation, acoustic]`. Z = 1 з 5; `sap_flow` (прямий фізіологічний) — окрема ознака. ✅ Архітектурно вже не «ставка лише на Z».
-- ✅ **GAP closed (heuristic):** heuristic-fallback (`calculate_stress_index_heuristic`, активний доки ML-модель не натренована) тепер вмонтовує обидва прямі сигнали: **sap** (`sap_stress_contribution`, signed below-baseline) + **acoustic/cavitation** (`acoustic_stress_contribution`, count подій) — обидва **inert доки калібрування не задасть** ENV (`STRESS_SAP_*` / `STRESS_ACOUSTIC_*`); кожен обмежений так, що **корелює, але не слешить сам** (status-0 ≈0.2 ≪ 0.83), а sap+acoustic беруться через **max(), не суму** (correlated drought — SLASH-SAFETY §6). Лишилось: **on-device TinyML-класифікація** (`Run_Inference` — firmware) + ground-truth калібрування порогів (`08_06 Завдання В` / `08_02 §4`). Деталі реалізації — [`04_02`](04_02_Business_Logic_and_Services).
+- ✅ **GAP closed (heuristic):** heuristic-fallback (`calculate_stress_index_heuristic`, активний доки ML-модель не натренована) тепер вмонтовує обидва прямі сигнали: **sap** (`sap_stress_contribution`, signed below-baseline) + **acoustic/cavitation** (`acoustic_stress_contribution`, count подій) — обидва **inert доки калібрування не задасть** ENV (`STRESS_SAP_*` / `STRESS_ACOUSTIC_*`); кожен обмежений так, що **корелює, але не слешить сам** (status-0 ≈0.2 ≪ 0.83), а sap+acoustic беруться через **max(), не суму** (correlated drought — SLASH-SAFETY §6). Лишилось: **on-device TinyML-класифікація** (`Run_Inference` — firmware) + ground-truth калібрування порогів (протокол **§8**; lab-партнер `08_06 Завдання В`). Деталі реалізації — [`04_02`](04_02_Business_Logic_and_Services).
 - ML-модель потребує **ground-truth калібрування** перед mainnet slashing.
 
 **Інваріант:** доки Z↔health не підтверджено емпірично, slashing вимагає підтвердження **≥1 прямим вимірним сигналом** (sap_flow / chainsaw-acoustic / dClimate), не лише Z/device-status.
 
 **Прямі сигнали (corroboration set):** `sap_flow`/`delta_t` (метаболізм), chainsaw-acoustic (TinyML), dClimate (супутник), і **VPD з BME280** [ADR `02_01 §3.4`] (t°+RH): прямий фізіологічний confounder, що відрізняє падіння сокоруху через погоду (дощ/туман, RH≈100%) від хвороби. VPD — апаратне втілення цього інваріанта: вбиває False Slashing біля джерела. ⚠️ VPD живе на slashing/confounder-шарі, **НЕ** в Lorenz-Z (DCI-guard, `03_04`). Разом з «correlated comms-loss guard» (§6) це формує повний принцип: **не штрафувати за недоведений Z, за погоду, ані за втрату зв'язку** — лише за прямо підтверджену халатність.
+
+## 🔬 8. Ground-Truth Validation Protocol — Z↔health [Lorenz de-risk]
+
+**Проблема:** ланцюг Z-атрактор → `stress_index` → slashing **елегантний, але емпірично недоведений** (§7). Потрібен ground-truth, щоб (а) підтвердити/спростувати предиктивність Z, (б) калібрувати ML-`stress_index`, (в) безпечно виставити slashing-пороги (§3). Це закриває найбільший науковий ризик проєкту: без цього доказу bio-частина стоїть на гіпотезі.
+
+**Дизайн** (польова валідація — ЧНУ біо-хаб + Data Science Карапетян + лабораторія Гусака; партнерський ростер і академічний вихід → [`08_02`](08_02_Cybernetic_and_Mathematical_Validation)):
+- **Когорта:** 20–30 дерев (Черкаський бір), SilkenNet-анкер + **незалежний ground-truth**: еталонний sap-flow сенсор (незалежний від EBFC `delta_t`), дендрометр (приріст), періодичний NDVI/leaf-area, експертний бал стану + події смертності/хвороби.
+- **Тривалість:** ≥1 вегетаційний сезон (захопити стрес-події: посуха, шкідники).
+- **Збір:** щоденні `stress_index` + компоненти (`Z`, `sap_flow`, `acoustic`, `temp`, `vcap`, **`RH`/`VPD`** [BME280, [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)]), `growth_points`, ground-truth.
+- **Аналіз** (backend-харнес `SilkenNet::LorenzValidationService` — ✅ реалізовано, `app/services/silken_net/`, RSpec-покрито):
+  1. Кореляція `stress_index` ↔ ground-truth decline (Spearman ρ).
+  2. **Incremental value Z:** чи додає Z предиктивність ПОНАД прямі сигнали (sap_flow)? Якщо ні → демоут Z до **DCI-only**.
+  3. Agreement device `bio_status` (Z-derived) vs експертний бал (Cohen's κ).
+  4. ROC детекції стресу + false-positive rate (slashing-safety).
+  5. **VPD-confounder:** частка sap_flow-drops, пояснених погодою (high VPD) vs хворобою — валідує False-Slashing guard (§6, BME280 `02_01 §3.4`).
+- **Критерії приймання (proposed):** ρ(`stress_index`, decline) ≥ 0.6; Z дає incremental ΔAUC > 0.05 над sap_flow-baseline (інакше Z = лише DCI); FPR < 5% на операційному порозі.
+- **Вихід:** калібровані ваги ML-`stress_index` + heuristic + slashing-пороги (DAO-tunable — [`09_06` BIZ.4](09_06_Action_Plan_Tracker)); рішення про роль Z (predictive vs DCI-only).
+
+> **DCI лишається валідним незалежно.** Навіть якщо валідація демоутить Z до **DCI-only** (anti-fraud, §6), fraud-детекція не страждає — Лоренц-DCI не залежить від доведеності гіпотези «Z = здоров'я».

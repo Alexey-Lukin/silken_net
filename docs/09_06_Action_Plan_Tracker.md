@@ -75,7 +75,7 @@
 
 ### 🔗 Заблоковано (чекає іншого)
 - `FW.2` **P0** — AES-128-CCM (backend-parser ✅; firmware emit + `CRYP_AES_CCM` verify → STM32 bench). Закриває ECB→CCM, MIC, `SEC.10` panic auth, `FW.29`. FC/nonce/cold-boot SSOT → `03_05` (📐 КАНОНІЧНЕ ДЖЕРЕЛО). NB: `FW.23` OTA auth — окремий HMAC-механізм, уже закрито (§3.4б); FW.2 його **не** закриває
-- Multi-signal slashing de-risk (`05_05 §7`) — код ✅: усі 3 прямі сигнали в `InsightGeneratorService`-евристиці (VPD-gate + sap-term + acoustic/cavitation-term; inert, ENV-calibration-gated; sap+acoustic через max() не суму). Активація → ground-truth калібрування ваг (`08_02 §4`) + ML-retrain (vpd-фіча) + firmware VPD (`HW.32`). Багатше on-device acoustic-джерело → TinyML unblock (`Run_Inference` закоментована, §03)
+- Multi-signal slashing de-risk (`05_05 §7`) — код ✅: усі 3 прямі сигнали в `InsightGeneratorService`-евристиці (VPD-gate + sap-term + acoustic/cavitation-term; inert, ENV-calibration-gated; sap+acoustic через max() не суму). Активація → ground-truth калібрування ваг (`05_05 §8`) + ML-retrain (vpd-фіча) + firmware VPD (`HW.32`). Багатше on-device acoustic-джерело → TinyML unblock (`Run_Inference` закоментована, §03)
 - SLASH-1 deeper (B/insurance auto-route, A/B/C cause_classification, cause-driven pf uplift) → DAO/founder
 
 ---
@@ -268,7 +268,7 @@
 
 #### HW.32 — BME280 environmental sensing + VPD confounder [ADR `02_01 §3.4`]
 - **P1** · 🤖+👤 · → `02_01 §3.4`, `07_03 §1.3`
-- BME280 (t°/RH/тиск, I2C за TPS22860) → VPD confounder (False-Slashing kill, `05_05 §6/§7`) + клімат-оракул (`07_02`). DCI-guard: VPD НЕ в Lorenz-Z. ✅ docs (02_01/07_01/08_02/07_03/02_03/07_02) + `03_01` SENSE+packet (byte 14 VPD-індекс) + TelemetryLog cols (structure.sql, recreate+seed). · [x] 🤖 VPD-gate + sap-term реалізовано (inert, ENV-calibration-gated; `04_02` / `05_05 §7`; активація `08_02 §4`) · [ ] 👤 bench (I2C bring-up, gate-timing, VPD-калібрування) + PTFE-мембрана механіка (`02_02`)
+- BME280 (t°/RH/тиск, I2C за TPS22860) → VPD confounder (False-Slashing kill, `05_05 §6/§7`) + клімат-оракул (`07_02`). DCI-guard: VPD НЕ в Lorenz-Z. ✅ docs (02_01/07_01/08_02/07_03/02_03/07_02) + `03_01` SENSE+packet (byte 14 VPD-індекс) + TelemetryLog cols (structure.sql, recreate+seed). · [x] 🤖 VPD-gate + sap-term реалізовано (inert, ENV-calibration-gated; `04_02` / `05_05 §7`; активація `05_05 §8`) · [ ] 👤 bench (I2C bring-up, gate-timing, VPD-калібрування) + PTFE-мембрана механіка (`02_02`)
 
 #### HW.1 — nTop model → SLM+HIP factory (Anode Zone 1)
 - **P0** · 👤 · → `01_01`, `01_02 §1.7` · ✅ ліцензія отримана

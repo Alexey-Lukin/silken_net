@@ -1995,19 +1995,6 @@ Gaia 2.0 як офіційний полігон → студенти напря�
 
 ## 🔬 4. Валідація гіпотези «Лоренц Z ↔ здоров'я» (Ground-Truth Protocol) [Lorenz de-risk]
 
-**Проблема:** ланцюг Z-атрактора → `stress_index` → slashing **елегантний, але емпірично недоведений**. Потрібен ground-truth, щоб (а) підтвердити/спростувати предиктивність Z, (б) калібрувати ML-`stress_index`, (в) безпечно виставити slashing-пороги. Cross-ref [`05_05 §7`](05_05_Slashing_and_Risk_Policy).
+> **Протокол перенесено (Stage B, 2026-05-30) → канонічний дім slashing/risk [`05_05 §8`](05_05_Slashing_and_Risk_Policy).** Повна механіка (когорта 20–30 дерев, незалежний ground-truth, 5 аналізів, критерії приймання, `SilkenNet::LorenzValidationService`) живе там — одна-річ-один-дім (вихід протоколу = калібрування slashing-порогів). Тут лишається **партнерський контекст ФОТІУС/ЧНУ**.
 
-**Дизайн (ЧНУ — UNI.9 Карапетян Data Science + UNI.5 Гусак + bio-hub UNI.13a):**
-- **Когорта:** 20–30 дерев (Черкаський бір), SilkenNet-анкер + **незалежний ground-truth**: еталонний sap-flow сенсор (незалежний від EBFC `delta_t`), дендрометр (приріст), періодичний NDVI/leaf-area, експертний бал стану + події смертності/хвороби.
-- **Тривалість:** ≥1 вегетаційний сезон (захопити стрес-події: посуха, шкідники).
-- **Збір:** щоденні `stress_index` + компоненти (`Z`, `sap_flow`, `acoustic`, `temp`, `vcap`, **`RH`/`VPD`** (BME280, `02_01 §3.4`)), `growth_points`, ground-truth.
-- **Аналіз** (backend-харнес `SilkenNet::LorenzValidationService` — ✅ реалізовано, `app/services/silken_net/`, 12 specs):
-  1. Кореляція `stress_index` ↔ ground-truth decline (Spearman ρ).
-  2. **Incremental value Z:** чи додає Z предиктивність ПОНАД прямі сигнали (sap_flow)? Якщо ні → демоут Z до **DCI-only**.
-  3. Agreement device bio_status (Z-derived) vs експертний бал (Cohen's κ).
-  4. ROC детекції стресу + false-positive rate (slashing-safety).
-  5. **VPD-confounder:** частка sap_flow-drops, пояснених погодою (high VPD) vs хворобою — валідує False-Slashing guard (`05_05 §6`, BME280 `02_01 §3.4`).
-- **Критерії приймання (proposed):** ρ(stress_index, decline) ≥ 0.6; Z дає incremental ΔAUC > 0.05 над sap_flow-baseline (інакше Z = лише DCI); FPR < 5% на операційному порозі.
-- **Вихід:** калібровані ваги ML-`stress_index` + heuristic + slashing-пороги (DAO-tunable, BIZ.4); рішення про роль Z (predictive vs DCI-only).
-
-> Це закриває найбільший науковий ризик проєкту: без цього доказу bio-частина стоїть на гіпотезі. Лоренц-DCI (anti-fraud) лишається валідним **незалежно** від результату — навіть якщо Z демоутиться до DCI-only, fraud-детекція не страждає.
+**Роль ФОТІУС/ЧНУ у протоколі:** польова когорта Черкаського бору + незалежний ground-truth (sap-flow, дендрометр, NDVI, експертний бал стану/смертності) — **ЧНУ біо-хаб** (UNI.13a) + **Data Science Карапетян** ([`08_04 §1.1`](08_04_CHDTU_Data_Science_Collaboration), UNI.9) + **лабораторія Гусака** (UNI.5). Deliverable для академпартнерів — калібрування предиктивності Z + slashing-порогів (вихід → [`05_05 §8`](05_05_Slashing_and_Risk_Policy)) + спільна Q1-стаття ([`08_03`](08_03_Joint_Publications_and_IP_Strategy)).

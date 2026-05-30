@@ -67,6 +67,7 @@
 | Carbon (2000 SCC = 1 tCO₂) | `05_03` + `07_02 §3` (business view) |
 | Financial constants (business) | `07_02 §3` (з рефами на 05_03/07_01) |
 | Slashing penalty formula | `05_05 §3` ↔ `BlockchainBurningService` |
+| Lorenz Z↔health ground-truth / de-risk протокол | `05_05 §8` (калібрує пороги §3/§7; партнерський ростер ФОТІУС/ЧНУ → `08_02`) |
 | Governance / DAO params (Governor, Timelock, ProtocolParameters) | `05_06` |
 | Secrets inventory | `06_04` (canonical = `config/deploy.yml env.secret`) |
 | Prometheus metric registry | `06_03 §2.8` (regen з `SilkenNet::Metrics::REGISTRY`) |
