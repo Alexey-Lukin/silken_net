@@ -1,0 +1,68 @@
+# Docs CI — SSOT structural gates for documentation-only changes.
+#
+# Split out of ci.yml so a docs-only push/PR skips the heavy code CI (RSpec,
+# CodeQL, Brakeman, firmware host-tests, i18n parity) — those are `paths-ignore`d
+# in ci.yml. This job runs ONLY the SSOT gates that DO matter for docs:
+#   - tracker:check    (00_08 DRY: duplicate IDs, meta-line, canon-ref resolution)
+#   - docs:check_refs  (anti-drift: dangling links, TRL, ToC sync, conformance,
+#                       RTC register-map drift — lib/docs_linter.rb)
+#
+# Triggers on the docs themselves + the linter engine/specs (so changing a lint
+# rule re-validates the corpus). A mixed docs+code push runs both ci.yml and
+# this — harmless (the gate is cheap, file-I/O only).
+#
+# ⚠️ Branch-protection note: if ci.yml jobs are *required* status checks, a
+# docs-only PR will show them as skipped — mark this `docs_check` job required
+# instead (or use "skipped = success") so docs PRs can still merge.
+name: Docs CI
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - '**.md'
+      - 'lib/docs_linter.rb'
+      - 'lib/docs_toc.rb'
+      - 'lib/tasks/docs.rake'
+      - 'lib/tracker/**'
+      - 'lib/tasks/tracker.rake'
+      - 'spec/lib/docs_linter_spec.rb'
+      - 'spec/lib/docs_toc_spec.rb'
+      - '.github/workflows/docs.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'docs/**'
+      - '**.md'
+      - 'lib/docs_linter.rb'
+      - 'lib/docs_toc.rb'
+      - 'lib/tasks/docs.rake'
+      - 'lib/tracker/**'
+      - 'lib/tasks/tracker.rake'
+      - 'spec/lib/docs_linter_spec.rb'
+      - 'spec/lib/docs_toc_spec.rb'
+
+permissions:
+  contents: read
+
+jobs:
+  docs_check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Lint 00_08 tracker (DRY — duplicate IDs, meta-line, canon-ref resolution)
+        run: bin/rails tracker:check
+
+      - name: Lint docs cross-references (SSOT anti-drift — links, TRL, ToC, RTC reg-map)
+        run: bin/rails docs:check_refs
+
+      - name: Unit-test the doc linters (engine + ToC)
+        run: bin/rspec spec/lib/docs_linter_spec.rb spec/lib/docs_toc_spec.rb

@@ -4,9 +4,18 @@ permissions:
   contents: read
 
 on:
+  # Docs-only changes are validated by docs.yml (the SSOT gates) — skip the
+  # heavy code CI here (RSpec, CodeQL, Brakeman, firmware, i18n) to save Actions
+  # minutes. A mixed code+docs push still matches and runs everything.
   pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   push:
     branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
 
 jobs:
   firmware_test:
