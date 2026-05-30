@@ -329,6 +329,8 @@ it "test that status works" do
 
 ## B.1 RSpec Coverage Matrix
 
+> **Конвенція:** покриття фіксується статусом (🟢/✅) + нотатками про охоплені кейси, **без** лічильників кількості прикладів/тестів — такі числа дрейфують з кожним доданим прикладом і їх неможливо тримати в правильному стані. Числові значення лишаємо лише структурні/порогові (напр. «min 8 examples», «ratio ≥ 1.5×», пороги SimpleCov).
+
 ### B.1.1 Models
 
 | Модель | Спека | Покриття | Примітки |
@@ -436,64 +438,64 @@ it "test that status works" do
 Усі Pundit policies покриті. Покриття: 🟢 Повне.
 
 **Codex base (нове):**
-- `Codex::ApplicationPolicy` (8) — read-all default для будь-якого autenticated, anonymous deny на index?/show?, `create?/update?/destroy?` deny-by-default для всіх ролей включно з super_admin (потребує opt-in від subclass), `Scope#resolve` повертає `scope.all` без неявного фільтра, наслідує `::ApplicationPolicy::Scope` initializer
-- `Codex::RealmPolicy` (5) — read auth-only, `Scope#resolve` ховає `is_active = false` realm'и в т.ч. від super_admin (no admin escape hatch у Phase 1), writes inherited deny defaults
-- `Codex::CitationPolicy` (10) — read auth-only / anonymous deny, `create?` обмежений forester+ (operational-tier guard, investor deny), `update?/destroy?` owner-within-24h grace OR admin+ override (стара цитата без admin → deny, чужа цитата без admin → deny, admin bypass на foreign + post-grace), документує: anonymous user не повинен досягати policy в production (controller `:authenticate_user!` короткозамикає 401)
+- `Codex::ApplicationPolicy` — read-all default для будь-якого autenticated, anonymous deny на index?/show?, `create?/update?/destroy?` deny-by-default для всіх ролей включно з super_admin (потребує opt-in від subclass), `Scope#resolve` повертає `scope.all` без неявного фільтра, наслідує `::ApplicationPolicy::Scope` initializer
+- `Codex::RealmPolicy` — read auth-only, `Scope#resolve` ховає `is_active = false` realm'и в т.ч. від super_admin (no admin escape hatch у Phase 1), writes inherited deny defaults
+- `Codex::CitationPolicy` — read auth-only / anonymous deny, `create?` обмежений forester+ (operational-tier guard, investor deny), `update?/destroy?` owner-within-24h grace OR admin+ override (стара цитата без admin → deny, чужа цитата без admin → deny, admin bypass на foreign + post-grace), документує: anonymous user не повинен досягати policy в production (controller `:authenticate_user!` короткозамикає 401)
 
 **Codex Phase 1 (нове):** `Codex::NodePolicy` — index?/show? для будь-якого автентифікованого, anonymous deny, write-операції тільки для super_admin, `Scope#resolve` приховує чернетки (`published_at IS NULL`) для не-super_admin.
 
 **Codex Phase 2 (нове):**
-- `Codex::CommentPolicy` (8) — index/show only for auth, hidden ховається від не-admin, create для всіх auth, update/destroy для автора в межах EDIT_GRACE або admin+, hide? тільки admin+, Scope ховає hidden від non-admin
-- `Codex::AttunementPolicy` (4) — read для auth, write own-only, anonymous deny на create
+- `Codex::CommentPolicy` — index/show only for auth, hidden ховається від не-admin, create для всіх auth, update/destroy для автора в межах EDIT_GRACE або admin+, hide? тільки admin+, Scope ховає hidden від non-admin
+- `Codex::AttunementPolicy` — read для auth, write own-only, anonymous deny на create
 
 **Codex Phase 3 (нове):** `Codex::FractionPolicy` — index/show/create для будь-якого автентифікованого, anonymous deny, update/destroy own-only. Cooldown business-rule НЕ в policy (живе в `FractionChangeService`).
 
 **Codex Phase 4 (нове):** `Codex::MatchPolicy` — index/create для будь-якого autenticated; anonymous deny на index/create; show only on own record; Scope ховає чужі матчі та returns none для anonymous. Throttling — Rack::Attack, не policy.
 
 **Codex Phase 5 (нове):**
-- `Codex::DiscoveryPolicy` (4) — index? auth-only, show? own-only, create?/manual? admin+ only, Scope returns own collection / none для anonymous
-- `Codex::DiscoveryRulePolicy` (16, parameterised) — usual / admin / super_admin × index/show/create/update/destroy → 403 для non-admin, 200 для admin+, Scope returns all для admin / none для non-admin / none для anonymous
+- `Codex::DiscoveryPolicy` — index? auth-only, show? own-only, create?/manual? admin+ only, Scope returns own collection / none для anonymous
+- `Codex::DiscoveryRulePolicy` — usual / admin / super_admin × index/show/create/update/destroy → 403 для non-admin, 200 для admin+, Scope returns all для admin / none для non-admin / none для anonymous
 
 ### B.1.6 Views
 
 Усі Phlex-компоненти покриті згідно з Частиною A цього документа.
 
 **Codex Atlas page-level components (нове):**
-- `Codex::RealmTabs` (11) — `aria-label="Codex realm filter"` `<nav>` shell, `All`-tab count = sum(nodes_counts.values), per-realm tabs link to `api_v1_codex_nodes_path(realm: slug)`, active-state `aria-current="page"` + `border-gaia-primary`/`text-gaia-primary` token swap, default counts to `0` для realm'ів відсутніх у `nodes_counts`, empty-realm collection renders just `All`-tab, design system compliance (no `bg-white`/`text-gray-*`), `focus-visible:ring-2 focus-visible:ring-gaia-primary` on every anchor (a11y)
-- `Codex::Index` (8) — header (`Lore Layer` eyebrow + `Codex of Archetypes` heading + `<n> archetypes catalogued` from `pagy.count`), EmptyState branch ("Codex is silent…", grid suppressed), populated grid (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4` + one `Codex::NodeCard` per node), RealmTabs sub-component wired with both realms + active slug, `realm_counts` fallback to `Codex::Node.group(:codex_realm_id).count` when `nodes_counts: nil`, design-system tokens compliance (`border-gaia-border`)
-- `Codex::Show` (14) — hero (codex_uid eyebrow, bilingual title `title_uk`/`title_en`, `subtitle_en` opt-out when blank, `realm.name_en` watermark), three-column lore (`Context`/`Cyber Meaning`/`Lore` headings only when `*_md` present, transforms via `Codex::MarkdownRenderer` → `<strong>` + `rel="noopener noreferrer"`), aside metadata panel (`Realm`/`Archetype`/`Geo Region`/`Discovered`/`Cited By`/`Attunement`/`Elo` rows + em-dash коли `geo_region` blank), external_refs list (`<a target="_blank" rel="noopener noreferrer">` per ref, label-or-URL fallback, block hidden when array empty), `Codex::Attunements::Toggle` wiring (`Attune` ↔ `Attuned` label switch driven by `current_user_attuned`, `attunement_count` round-trip), gaia-* tokens compliance (`border-gaia-border`, `bg-gaia-surface`, no raw `bg-white`)
+- `Codex::RealmTabs` — `aria-label="Codex realm filter"` `<nav>` shell, `All`-tab count = sum(nodes_counts.values), per-realm tabs link to `api_v1_codex_nodes_path(realm: slug)`, active-state `aria-current="page"` + `border-gaia-primary`/`text-gaia-primary` token swap, default counts to `0` для realm'ів відсутніх у `nodes_counts`, empty-realm collection renders just `All`-tab, design system compliance (no `bg-white`/`text-gray-*`), `focus-visible:ring-2 focus-visible:ring-gaia-primary` on every anchor (a11y)
+- `Codex::Index` — header (`Lore Layer` eyebrow + `Codex of Archetypes` heading + `<n> archetypes catalogued` from `pagy.count`), EmptyState branch ("Codex is silent…", grid suppressed), populated grid (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4` + one `Codex::NodeCard` per node), RealmTabs sub-component wired with both realms + active slug, `realm_counts` fallback to `Codex::Node.group(:codex_realm_id).count` when `nodes_counts: nil`, design-system tokens compliance (`border-gaia-border`)
+- `Codex::Show` — hero (codex_uid eyebrow, bilingual title `title_uk`/`title_en`, `subtitle_en` opt-out when blank, `realm.name_en` watermark), three-column lore (`Context`/`Cyber Meaning`/`Lore` headings only when `*_md` present, transforms via `Codex::MarkdownRenderer` → `<strong>` + `rel="noopener noreferrer"`), aside metadata panel (`Realm`/`Archetype`/`Geo Region`/`Discovered`/`Cited By`/`Attunement`/`Elo` rows + em-dash коли `geo_region` blank), external_refs list (`<a target="_blank" rel="noopener noreferrer">` per ref, label-or-URL fallback, block hidden when array empty), `Codex::Attunements::Toggle` wiring (`Attune` ↔ `Attuned` label switch driven by `current_user_attuned`, `attunement_count` round-trip), gaia-* tokens compliance (`border-gaia-border`, `bg-gaia-surface`, no raw `bg-white`)
 
 **Codex Phase 1 (нове):** `Codex::NodeCard` — bilingual title rendering, codex_uid + realm pill + lifecycle badge (status-* token), slug-based href, footer (Elo + geo_region), edge cases (placeholder glyph коли `cover_image` не attached, `—` коли `geo_region` blank, suppress subtitle), design system compliance (no raw `bg-white`/`text-gray-*`, custom text-scale `mini`/`tiny`/`micro`, `focus-visible:ring-2`).
 
 **Codex Phase 2 (нове):**
-- `Codex::Attunements::Toggle` (8) — DOM id `codex_node_<id>_attunement_count`, "Attune"/"Attuned" label switch + POST/DELETE method override, Stimulus `codex--attune` data values, success token коли attuned, focus-visible accessibility, no raw `bg-white`/`text-gray-*`
-- `Codex::Comments::Thread` (6) — DOM id `codex_node_<id>_comments` (broadcast target), empty-state copy, composer renders only коли current_user present, Stimulus controller wiring, gaia-* tokens
-- `Codex::Comments::Item` (5) — DOM id `codex_comment_<id>`, sanitised markdown render, ISO timestamp, hidden-state notice (без body), gaia-* tokens
+- `Codex::Attunements::Toggle` — DOM id `codex_node_<id>_attunement_count`, "Attune"/"Attuned" label switch + POST/DELETE method override, Stimulus `codex--attune` data values, success token коли attuned, focus-visible accessibility, no raw `bg-white`/`text-gray-*`
+- `Codex::Comments::Thread` — DOM id `codex_node_<id>_comments` (broadcast target), empty-state copy, composer renders only коли current_user present, Stimulus controller wiring, gaia-* tokens
+- `Codex::Comments::Item` — DOM id `codex_comment_<id>`, sanitised markdown render, ISO timestamp, hidden-state notice (без body), gaia-* tokens
 
 **Codex Phase 3 (нове):**
-- `Codex::Fractions::Card` (3) — empty-state CTA коли fraction nil, filled state з archetype + Since-date + "Change" + Cooldown pill, gaia-* tokens compliance (no `bg-white`/`text-gray-*`)
-- `Codex::Fractions::Picker` (6) — header/realm-tabs/grid render, active realm highlight (`bg-gaia-primary`), Current marker для own fraction, disable-button + "Locked" коли cooldown active на іншому node, empty-state для пустого realm, tokens compliance
+- `Codex::Fractions::Card` — empty-state CTA коли fraction nil, filled state з archetype + Since-date + "Change" + Cooldown pill, gaia-* tokens compliance (no `bg-white`/`text-gray-*`)
+- `Codex::Fractions::Picker` — header/realm-tabs/grid render, active realm highlight (`bg-gaia-primary`), Current marker для own fraction, disable-button + "Locked" коли cooldown active на іншому node, empty-state для пустого realm, tokens compliance
 
 **Codex Phase 4 (нове):**
-- `Codex::Battle::Arena` (4) — frame render з двома cards + VS divider + hidden seed inputs + Elo & match counters, error-state pill коли service signals "not enough nodes" (без winner_slug форм), gaia-* tokens compliance, Stimulus `codex--battle` controller + `card`/`form`/`skip` targets wired
-- `Codex::Leaderboard::Table` (3) — header + Top-N caption + ordered rows ("Apex" before "Mid"), empty-state copy ("No ranked nodes yet."), gaia-* tokens compliance
+- `Codex::Battle::Arena` — frame render з двома cards + VS divider + hidden seed inputs + Elo & match counters, error-state pill коли service signals "not enough nodes" (без winner_slug форм), gaia-* tokens compliance, Stimulus `codex--battle` controller + `card`/`form`/`skip` targets wired
+- `Codex::Leaderboard::Table` — header + Top-N caption + ordered rows ("Apex" before "Mid"), empty-state copy ("No ranked nodes yet."), gaia-* tokens compliance
 
 **Codex Phase 5 (нове):**
-- `Codex::Discoveries::Toast` (3) — title + archetype_key + trigger label dispatch + `data-controller="codex--reveal"` data-attribute + slug-based href + `HH:MM UTC` formatted unlocked_at; gaia-* tokens compliance (no `bg-white`/`text-gray-*`); each trigger_type → label mapping (Observed/Battle/Pact/Streak/Oracle/Granted)
-- `Codex::Discoveries::List` (3) — empty-state copy ("Nothing unlocked yet — observe a tree, vote in the Arena, choose a fraction") + `Unlocked: 0` counter, populated grid renders title/archetype/trigger_type per discovery card + `Unlocked: 2` counter, gaia-* tokens compliance
+- `Codex::Discoveries::Toast` — title + archetype_key + trigger label dispatch + `data-controller="codex--reveal"` data-attribute + slug-based href + `HH:MM UTC` formatted unlocked_at; gaia-* tokens compliance (no `bg-white`/`text-gray-*`); each trigger_type → label mapping (Observed/Battle/Pact/Streak/Oracle/Granted)
+- `Codex::Discoveries::List` — empty-state copy ("Nothing unlocked yet — observe a tree, vote in the Arena, choose a fraction") + `Unlocked: 0` counter, populated grid renders title/archetype/trigger_type per discovery card + `Unlocked: 2` counter, gaia-* tokens compliance
 
 **Codex Phase 6 (нове):**
-- `Codex::Citation` (+5) — `for_target` polymorphic scope, `bulk_for(targets)` N+1-free Hash[[type, id]], `within_edit_grace?` 24 h boundary (nil-safe), User has_many :codex_citations restrict_with_error
-- `Codex::CitationBlueprint` (2) — denormalised node_slug/title_en/archetype_key, defensive nil-safe коли `citation.node` зник
-- `Codex::Admin::NodePolicy` (10) — index/show admin+ allow / forester+investor deny, update? admin+ allow, create?/destroy? super_admin only (admin denied), Scope returns all для admin / none для investor/forester/anonymous
-- `Api::V1::Codex::Citations` (8) — unauthenticated 401, investor 403, forester+ 201 з broadcast `codex_citations:Tree:<id>` + counter increment, replay 200 з cached payload, Idempotency-Key 400, bogus citable_type 400, DB-UNIQUE 422, DELETE own ≤24h 204 + broadcast op:remove, non-author forester 403, admin+ bypass past grace
-- `Api::V1::Codex::Admin::Nodes` (7) — forester GET 403, admin GET 200 list, admin PATCH 200 update, invalid lifecycle 422 (Rails 8 enum ArgumentError rescued), forester PATCH 403, plain admin POST 403 (super_admin only), super_admin POST 201 з seed_origin: dao_proposal, plain admin DELETE 403
-- `Codex::Citations::Pill` (5) — slug-href anchor + title + archetype glyph, aria-label з note, defensive nil-node noop, gaia-* tokens (no `bg-white`/`text-gray-*`), focus-visible:ring-2
-- `Codex::Citations::Strip` (3) — empty-state copy + DOM id `codex_citations_<type>_<id>`, populated render Pills with slug-href, gaia-* tokens compliance
-- `Codex::DiscoveryEngine` (+4) — `acoustic_class_count` inert when no organization_id, `cluster_visited` inert when params['cluster_name'] missing, `firmware_version_seen` inert when no firmware row matches version, replaced "unknown condition_type" gate з "inert below-threshold" + ADAPTERS-stubbed missing-adapter path
-- `Codex::EloRecomputeWorker` (+3) — Phase 6 cross-domain probe enqueues match_milestone з most-recent Match resolved by left/right id, no-op коли немає Match, swallows Redis::CannotConnectError (Elo update is the contract)
-- `Codex::FractionChangeService` (+3) — Phase 6 fraction_choice probe on initial pick (previous_node_id: nil), carries previous_node_id on re-pick, swallows Redis::CannotConnectError
-- `Api::V1::Codex::Attunements` (+1) — Phase 6 attunement_streak probe enqueued alongside AttunementBroadcastWorker
+- `Codex::Citation` — `for_target` polymorphic scope, `bulk_for(targets)` N+1-free Hash[[type, id]], `within_edit_grace?` 24 h boundary (nil-safe), User has_many :codex_citations restrict_with_error
+- `Codex::CitationBlueprint` — denormalised node_slug/title_en/archetype_key, defensive nil-safe коли `citation.node` зник
+- `Codex::Admin::NodePolicy` — index/show admin+ allow / forester+investor deny, update? admin+ allow, create?/destroy? super_admin only (admin denied), Scope returns all для admin / none для investor/forester/anonymous
+- `Api::V1::Codex::Citations` — unauthenticated 401, investor 403, forester+ 201 з broadcast `codex_citations:Tree:<id>` + counter increment, replay 200 з cached payload, Idempotency-Key 400, bogus citable_type 400, DB-UNIQUE 422, DELETE own ≤24h 204 + broadcast op:remove, non-author forester 403, admin+ bypass past grace
+- `Api::V1::Codex::Admin::Nodes` — forester GET 403, admin GET 200 list, admin PATCH 200 update, invalid lifecycle 422 (Rails 8 enum ArgumentError rescued), forester PATCH 403, plain admin POST 403 (super_admin only), super_admin POST 201 з seed_origin: dao_proposal, plain admin DELETE 403
+- `Codex::Citations::Pill` — slug-href anchor + title + archetype glyph, aria-label з note, defensive nil-node noop, gaia-* tokens (no `bg-white`/`text-gray-*`), focus-visible:ring-2
+- `Codex::Citations::Strip` — empty-state copy + DOM id `codex_citations_<type>_<id>`, populated render Pills with slug-href, gaia-* tokens compliance
+- `Codex::DiscoveryEngine` — `acoustic_class_count` inert when no organization_id, `cluster_visited` inert when params['cluster_name'] missing, `firmware_version_seen` inert when no firmware row matches version, replaced "unknown condition_type" gate з "inert below-threshold" + ADAPTERS-stubbed missing-adapter path
+- `Codex::EloRecomputeWorker` — Phase 6 cross-domain probe enqueues match_milestone з most-recent Match resolved by left/right id, no-op коли немає Match, swallows Redis::CannotConnectError (Elo update is the contract)
+- `Codex::FractionChangeService` — Phase 6 fraction_choice probe on initial pick (previous_node_id: nil), carries previous_node_id on re-pick, swallows Redis::CannotConnectError
+- `Api::V1::Codex::Attunements` — Phase 6 attunement_streak probe enqueued alongside AttunementBroadcastWorker
 
 ### B.1.7 Integration Tests
 
@@ -647,14 +649,14 @@ it "test that status works" do
 
 ## B.3 Solidity Test Coverage (Foundry)
 
-| Контракт | Тестів | Покриття | Примітки |
-|----------|--------|----------|----------|
-| SilkenCarbonCoin (SCC) | 45 | 🟢 Повне | mint, batchMint, slash, pause bypass, MAX_SUPPLY |
-| SilkenForestCoin (SFC) | 45 | 🟢 Повне | ERC20Votes, auto-delegation, nonces override |
-| StateRootAnchor | 25 | 🟢 Повне | MIN_ANCHOR_INTERVAL, fuzz tests |
-| ProtocolParameters | 20+ | 🟢 Повне | Governance parameter store |
-| SilkenGovernor | 20+ | 🟢 Повне | Proposal lifecycle |
-| SilkenTimelock | 20+ | 🟢 Повне | Delay enforcement |
+| Контракт | Покриття | Примітки |
+|----------|----------|----------|
+| SilkenCarbonCoin (SCC) | 🟢 Повне | mint, batchMint, slash, pause bypass, MAX_SUPPLY |
+| SilkenForestCoin (SFC) | 🟢 Повне | ERC20Votes, auto-delegation, nonces override |
+| StateRootAnchor | 🟢 Повне | MIN_ANCHOR_INTERVAL, fuzz tests |
+| ProtocolParameters | 🟢 Повне | Governance parameter store |
+| SilkenGovernor | 🟢 Повне | Proposal lifecycle |
+| SilkenTimelock | 🟢 Повне | Delay enforcement |
 
 ---
 
