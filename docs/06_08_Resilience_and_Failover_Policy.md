@@ -21,7 +21,7 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [00_01_System_Architecture_and_12_Chain_Pipeline](00_01_System_Architecture_and_12_Chain_Pipeline) | 8-рівнева архітектура + 12-chain конвеєр |
+| [00_00_SSOT_Index](00_00_SSOT_Index) | Системна карта (8 рівнів) + 12-chain → 05_02 |
 | [02_05_Queen_Hardware_and_Starlink](02_05_Queen_Hardware_and_Starlink) | Hardware Queen + Q2Q mesh + Helium fallback |
 | [03_02_Queen_Gateway_Firmware](03_02_Queen_Gateway_Firmware) | Прошивка Queen (CoAP retry, CIFO) |
 | [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Мультичейн архітектура |
@@ -175,7 +175,7 @@ end
 | Queen-to-Queen Backhaul Mesh | Concept у [`02_05 §Q2Q`](02_05_Queen_Hardware_and_Starlink) | 🟡 Concept, planned Phase 2 |
 | Helium fallback emit (Queen-side LoRaWAN) | Queen firmware `queen_helium_lorawan_uplink()` | 🟡 ARCH.34 planned (Soldier-side `helium_compat_emit` відкинуто — Soldier не несе LoRaWAN MAC stack) |
 | Ingress Proxy (CoAP buffer) | INF.4 / INF.6 | 🟡 Planned (P1) |
-| Conductor L2 cluster heads (formerly "Sergeant") | [`00_01 §Fractal Stack`](00_01_System_Architecture_and_12_Chain_Pipeline) | 🟡 Concept (HW.27, TRL 1) |
+| Conductor L2 cluster heads (formerly "Sergeant") | [`09_02 §8.1`](09_02_TRL_Matrix_HIL_and_Beyond) | 🟡 Concept (HW.27, TRL 1) |
 
 ---
 

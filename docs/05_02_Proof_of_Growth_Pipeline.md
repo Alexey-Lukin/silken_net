@@ -469,6 +469,8 @@ EdgeCache forest_cache[CACHE_MAX_ENTRIES]; // 50 слотів
 **Queen Sentinel:** `DID == 0x00000000` → власна телеметрія Королеви →
 `GatewayTelemetryWorker` (не TelemetryLog).
 
+> **🔐 Шарувате (layered) шифрування, НЕ повторне:** два AES-шари захищають різні скоупи — немає double-encryption чи MITM. **Внутрішній (E2EE):** Soldier шифрує 16-байтовий sensor-блок своїм per-device **AES-128** (LoRa-ключ). **Зовнішній (транспорт):** Queen додає **AES-256-CBC** як обгортку CoAP-батча (Queen→Rails). CIFO-дедуплікація потребує лише **cleartext DID** (перші 4 байти), не вмісту. ⚠️ **Zero-Trust відкрите:** поточний `EdgeCache` тримає *розшифрований* inner-payload (Queen декодує внутрішній блок) — чи Queen взагалі має його торкатись, це питання відкладеного AES-пасу **FW.2** (AES-128-CCM + MIC); деталі crypto — [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security).
+
 #### CoAP Batch Flush
 
 ```
@@ -587,6 +589,50 @@ ChainlinkDispatchWorker.perform_async(telemetry_log_id, created_at_iso)
 ```
 
 **Ідемпотентність:** `return if log.verified_by_iotex?` в воркері.
+
+---
+
+### 🔬 E.60 — Merkle CID-witness: bidirectional integrity bridge Polygon ↔ Filecoin (пропозиція)
+
+> **Статус:** design-пропозиція (revised), **ще не в коді** — потребує нового сервісу `Filecoin::CidGenerator` (наразі в `app/services/filecoin/` лише `archive_service.rb` + `verification_service.rb`). Розширює Крок B (IoTeX W3bstream witness) і змикає його з кроком архівації Filecoin (`05_01 §Рівень 1`). Трекер: [E.60 → 09_06](09_06_Action_Plan_Tracker).
+
+**Проблема (data-integrity gap):** Раніше Filecoin/IPFS pin відбувався **після** мінту в Polygon — блокчейн-транзакція не мала криптографічного зв'язку з архівом. Зловмисник міг ex-post підмінити archive у Pinata (новий CID), і ніхто би не помітив, що SCC-token посилається на інший набір даних.
+
+> **⚠️ Чому batch-CID НЕ може бути witness для per-device ZK-proof:** W3bstream доводить ZK-факт для **окремого** пристрою (`device_uid`, його Z). Якщо witness — це CID цілого batch (з `telemetry_log_ids` багатьох дерев), то: (а) CID змінюється, щойно в batch потрапляє будь-який інший лог; (б) per-device proof з batch-CID не доводить криптографічно, що payload **саме цього** дерева включений в архів — лише що пристрій «знав» CID.
+
+**Рішення — Merkle-дерево:** листя = індивідуальні per-tree payload'и; корінь `archive_root` = те, що пінить Filecoin; кожне дерево несе **Merkle inclusion proof** свого листа в корінь:
+
+```ruby
+# Iotex::W3bstreamVerificationService — пропозиція E.60 (revised)
+# 1) Per-tree leaf — детермінований CID індивідуального payload
+leaf_payload = {
+  telemetry_log_id: log.id,
+  device_uid: tree.device_uid,
+  z_value: log.z_value,
+  bio_status: log.bio_status,
+  created_at: log.created_at
+}.to_json
+leaf_cid = Filecoin::CidGenerator.cidv1(leaf_payload)   # multihash sha256 → base32
+
+# 2) Batch Merkle Root над листям усіх дерев батча
+leaves       = batch.map { |l| Filecoin::CidGenerator.cidv1(leaf_for(l)) }
+archive_root = MerkleTree.root(leaves)                   # = archive_cid (batch-level)
+inclusion    = MerkleTree.proof(leaves, index_of(log))   # шлях листа → корінь
+
+# 3) Per-device witness доводить включення СВОГО листа у спільний корінь
+zk_witness = {
+  device_uid:     tree.device_uid,
+  attractor_z:    server_z_value,
+  lambda_exp:     lyapunov_exponent,
+  leaf_cid:       leaf_cid,
+  merkle_proof:   inclusion,
+  archive_root:   archive_root   # ← стабільний корінь батча
+}
+proof = Iotex.generate_zk_proof(zk_witness)
+log.update!(zk_proof_ref: proof.id, archive_cid: archive_root, merkle_leaf: leaf_cid)
+```
+
+На **Кроці E** (Polygon mint) `archive_root` передається у `mint()` як `bytes32` metadata. На кроці архівації (`FilecoinArchiveWorker`) пінить масив листя — обчислений Merkle Root має збігатися з `archive_root`, інакше worker fail-fast і запис іде в `manual_review`. Кожне дерево лишається незалежно верифіковним через `merkle_proof` (O(log n)); додавання інших логів змінює лише корінь — усі proof'и одного батча посилаються на той самий `archive_root`. Це форсує **bidirectional integrity** між Polygon SCC і Filecoin archive **на рівні окремого дерева**. (Узгоджується з batch-Merkle підходом тижневого state-root — [`05_04 §Merkle Tree`](05_04_Ethereum_L1_State_Anchor).)
 
 ---
 

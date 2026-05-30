@@ -18,7 +18,7 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [00_01_System_Architecture_and_12_Chain_Pipeline](00_01_System_Architecture_and_12_Chain_Pipeline) | 8-рівнева архітектура та 12-chain конвеєр |
+| [00_00_SSOT_Index](00_00_SSOT_Index) | Системна карта (8 рівнів кіберфізики); 12-chain конвеєр → 05_02 |
 | [06_08_Resilience_and_Failover_Policy](06_08_Resilience_and_Failover_Policy) | Резервування, failover, Web3 fallback (Slashing/Insurance при недоступності мостів) |
 | [09_02_TRL_Matrix_HIL_and_Beyond](09_02_TRL_Matrix_HIL_and_Beyond) | TRL-матриця + HIL + дорожня карта |
 | [01_01_Coaxial_Gyroid_Topology_and_PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Тризонний анкер (Pivot v3) |

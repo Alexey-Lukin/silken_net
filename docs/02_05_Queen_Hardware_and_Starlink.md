@@ -92,6 +92,8 @@ STM32WLE5JC ─[UART1 AT]─▶ SIM7070G (Київстар SIM)
 - Зайди на [Starlink Availability Map](https://www.starlink.com/map) → фільтр "Direct to Cell"
 - Або запитай Київстар: чи активовано DTC для корпоративних SIM у зоні Черкаський бір / Канівські гори
 
+> **⚠️ Транспортна надійність через D2C (2026-05-28):** Direct-to-Cell працює за LTE-протоколами (SMS + базовий 4G) через жорсткий **Carrier-NAT**, який може блокувати вхідний UDP (а CoAP — UDP) або змінювати порти. Тому **чистий CoAP/UDP ненадійний** на D2C; архітектура має передбачати фолбек **CoAP-over-TCP** ([RFC 8323](https://www.rfc-editor.org/rfc/rfc8323)) або **MQTT-SN**, а Ingress Proxy ([`06_01`](06_01_Deployment_Kamal_Terraform)) — толерувати високий jitter / packet loss супутникового LTE. HIL `realistic_mode` ([`09_02 §4.2`](09_02_TRL_Matrix_HIL_and_Beyond)) моделює саме ці умови.
+
 #### Що залишається відкритим
 
 Для ультра-віддалених локацій (Амазонія, Тайга, Африка) де DTC може бути недоступний або потрібна більша пропускна здатність — Starlink Mini (фізичний термінал) залишається Phase 3.
@@ -282,7 +284,7 @@ EdgeCache forest_cache[50]; // 50 × 22 байти = 1.1 KB
 
 **Flush trigger:** кожні 3600 сек (+0–60 сек HRNG jitter) АБО при заповненні ≥ 45/50 слотів.
 
-⚠️ **Capacity math (2026):** 50 слотів × 1 пакет/Soldier/год × 100 Soldiers/Queen ⇒ переповнення за **30 хв** при втраті Starlink. На верхньому краю scaling roadmap (`00_01 §3`, 200 Soldiers/Queen) — переповнення за **15 хв**. Це **критичний gap**, який маскувався тестами в стенді з <50 Soldiers.
+⚠️ **Capacity math (2026):** 50 слотів × 1 пакет/Soldier/год × 100 Soldiers/Queen ⇒ переповнення за **30 хв** при втраті Starlink. На верхньому краю scaling roadmap (`09_02 §8.1`, 200 Soldiers/Queen) — переповнення за **15 хв**. Це **критичний gap**, який маскувався тестами в стенді з <50 Soldiers.
 
 **Flash Ring Buffer — Overflow Tier (ARCH.35):**
 ```c

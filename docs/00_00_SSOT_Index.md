@@ -12,11 +12,62 @@
 
 # 🏛️ Tier I — Система (The Blueprint)
 
-## 📐 Модуль 00: Архітектура Системи (The Constitution)
+## 🗺️ Системна Карта: 8 Рівнів Кіберфізики (The Constitution)
 
-_Top-down конституція системи: 8-рівнева кіберфізична архітектура, повний 12-крокового Proof-of-Growth конвеєр та політика resilience/failover. Методологія/стратегія винесені у Tier II (09/07)._
+_Top-down конституція системи: дані течуть знизу вгору — від біохімії дерева до фіналізації в Ethereum L1. Кожен рівень розгортається у профільному модулі Tier I (01–06). Повний **12-крокового Proof-of-Growth конвеєр** — канонічно [`05_02`](05_02_Proof_of_Growth_Pipeline) (операційний потік) + [`05_01 §1–2`](05_01_Multichain_Architecture) (ролі 12 мереж); політика resilience/failover — [`06_08`](06_08_Resilience_and_Failover_Policy). Методологія/стратегія — Tier II (07/09)._
 
-- [00\_01\_System\_Architecture\_and\_12\_Chain\_Pipeline](00_01_System_Architecture_and_12_Chain_Pipeline) (8 рівнів кіберфізики + повний 12-крокової конвеєр Proof-of-Growth)
+| Рівень | Сутність | Канон |
+|--------|----------|-------|
+| **1. Біофізика (The Root)** | Тризонний коаксіальний анкер Ti-6Al-4V + EBFC Gen 2.0 (dgrFAD-GDH анод + Laccase/ZIF катод, цвітеріонна мембрана) → >500 mV прямо з метаболізму дерева, без зовнішніх дротів | [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK) · [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) · [`01_04`](01_04_CODIT_and_Xylemointegration) |
+| **2. Апаратура (The Capsule)** | Герметична капсула, blind-mate Pogo Pins до анкера, BQ25570 MPPT + іоністор 0.47F/5.5V, п'єзо-тригер пробудження | [`02_01`](02_01_Hardware_Architecture_and_BOM) · [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) · [`02_03`](02_03_BQ25570_MPPT_Nano_Power) |
+| **3. Прошивка / Edge AI (The Brain)** | STM32WLE5JC, STOP2 RTC-only **300 nA**, DMA-мікрофон, TinyML (тиша/вітер/пилка), mruby Lorenz-атрактор, апаратний AES-128 (LoRa) / AES-256-CBC (CoAP) | [`03_01`](03_01_Firmware_Lifecycle_and_DMA) · [`03_03`](03_03_TinyML_Acoustic_Inference) · [`03_04`](03_04_mruby_Lorenz_Attractor) · [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security) |
+| **4. Мережа (The Veins)** | LoRa mesh 868 МГц (custom TTL-based); Queen-шлюз агрегує пакети → CoAP у хмару (опц. Starlink D2C); Helium як fallback при втраті Queen | [`02_05`](02_05_Queen_Hardware_and_Starlink) · [`03_02`](03_02_Queen_Gateway_Firmware) · failover [`06_08`](06_08_Resilience_and_Failover_Policy) |
+| **5. Серверне ядро (The Engine)** | Rails 8.1 Omakase + PostgreSQL + Sidekiq: декодування L3, REST API, бізнес-логіка NaaS-контрактів | Модуль 04 ([`04_01`](04_01_Data_Models_and_Entities) · [`04_02`](04_02_Business_Logic_and_Services)) |
+| **6. Верифікація (The Truth)** | peaq Machine DID (паспорт дерева) + IoTeX W3bstream ZK-proofs (real-silicon + гомеостаз Лоренца) + Streamr/Filecoin | [`05_01`](05_01_Multichain_Architecture) · [`05_02`](05_02_Proof_of_Growth_Pipeline) |
+| **7. Фінанси (The Ledger)** | Polygon EVM — mint SCC/SFC; Chainlink DON oracle; Solana/Celo мікро-рейки; KlimaDAO ESG retirement; Polygon Hadron KYC (ERC-3643) | [`05_01`](05_01_Multichain_Architecture) · [`05_03`](05_03_Tokenomics_SCC_and_SFC) |
+| **7.5 Governance (The Parliament)** | On-chain: `SilkenGovernor` + `SilkenTimelock` (48h) + `ProtocolParameters` (registry параметрів), Flash-Loan-захист | [`05_06`](05_06_Governance_and_DAO) |
+| **8. Фіналізація (The Anchor)** | Ethereum L1 — щотижневий SHA-256 state root усієї економіки (rollup-стиль гарантія від збоїв сайдчейнів) | [`05_04`](05_04_Ethereum_L1_State_Anchor) |
+
+### 🌐 Топологія Мережі (High-Level)
+
+```
+Soldier (Tree)         Soldier (Tree)         Soldier (Tree)
+      │ LoRa                │ LoRa mesh            │ LoRa
+      ▼                     ▼                      ▼
+   Queen (Gateway) ◄──── Mesh Relay ────► Queen (Gateway)
+      │ LTE/Starlink                          │ LTE/Starlink
+      ▼                                       ▼
+   ┌──────────────────────────────────────────────┐
+   │  Rails Backend (Akash Network / GCP)          │
+   │  CoAP Listener + Sidekiq                       │
+   │                                                │
+   │  ┌── Verification ─────────────────────────┐  │
+   │  │ peaq DID → IoTeX ZK-proof → Chainlink   │  │
+   │  └─────────────────────────────────────────┘  │
+   │                                                │
+   │  ┌── Data Streams ─────────────────────────┐  │
+   │  │ Streamr (P2P real-time forest pulse)     │  │
+   │  └─────────────────────────────────────────┘  │
+   └──────────────────┬───────────────────────────┘
+                      │ Multi-RPC
+       ┌──────────────┼──────────────────────────┐
+       ▼              ▼                          ▼
+   ┌────────┐   ┌──────────┐            ┌──────────┐
+   │Polygon │   │  Solana  │            │   Celo   │
+   │SCC/SFC │   │  micro-  │            │  cUSD    │
+   │Hadron  │   │  rewards │            │  ReFi    │
+   │Chainlnk│   └──────────┘            └──────────┘
+   └───┬────┘
+       │
+   ┌───┴────────────────────────────────────────────┐
+   │  The Graph (subgraph indexing)                  │
+   │  KlimaDAO (ESG carbon retirement)              │
+   │  Filecoin/IPFS (immutable archive)             │
+   │  Ethereum L1 (weekly state root finality)      │
+   └────────────────────────────────────────────────┘
+```
+
+> **📐 Модуль 00 → Foundation.** Технічна архітектура тепер живе в цій системній карті (вище). Сам Модуль 00 ре-деривується у **Фундамент (Візія + Метод)** у межах поточної таксономічної реструктуризації — сторінки Vision + методологія приземляться сюди наступною фазою.
 
 ## 🌱 Модуль 01: Біомеханіка та Хімія (The Anchor)
 

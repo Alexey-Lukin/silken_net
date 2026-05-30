@@ -32,6 +32,7 @@
 - [3. Принцип "TRL-Lock" → "TRL-Layered Independence"](#-3-принцип-trl-lock--trl-layered-independence)
 - [4. HIL Simulators — Програмне розблокування Software TRL](#-4-hil-simulators--програмне-розблокування-software-trl)
 - [7. Beyond TRL 9 — Planetary Intelligence Gaps (Long-Horizon R&D Agenda)](#-7-beyond-trl-9--planetary-intelligence-gaps-long-horizon-rd-agenda)
+- [8. Фрактальна Мережева Топологія — Planetary Network Scaling](#-8-фрактальна-мережева-топологія--planetary-network-scaling)
 <!-- TOC:AUTO:END -->
 
 ---
@@ -105,7 +106,7 @@
 | `HilLorenzGenerator` | mruby Lorenz curves з різних tree species, environmental conditions (temp, vibration), faulty/normal patterns | `lib/hil/lorenz_generator.rb` (планований) | TinyML training data + Rails Attractor validation |
 | `HilAttackerScenarios` | Bit-flip attacks, replay attacks, hardware tamper detection, dual-computation divergence > 30% | RSpec scenarios у `spec/integration/security/` (частково існує) | Anti-fraud cross-checks ([`05_05 §6`](05_05_Slashing_and_Risk_Policy)) |
 
-> **⚠️ Реалістичний профіль навантаження vs DDoS (корекція 2026-05-28):** батч «кожні 3–8 сек» суперечить буферу CIFO ([`06_08 §1.2`](06_08_Resilience_and_Failover_Policy): flush на 45 записів **або** раз на годину) — для цього Soldier мав би передавати кілька разів на хвилину, що неможливо за енергобюджетом. Тобто 3–8 сек = `load_test_mode` (стрес черг/пропускної здатності), а НЕ реальний IoT-профіль. **`realistic_mode`** (потрібно додати) має відтворювати фізичну Queen: рідкі об'ємні батчі раз на ~годину, + мережеві умови **Starlink Direct-to-Cell**: Carrier-NAT, можливе блокування вхідного UDP (CoAP), зміна портів, високий jitter / packet loss супутникового LTE. Це тестує дефіцит з'єднань, тайм-аути long-poll та розриви TCP-сесій — справжні відмови, яких load-test не ловить. Транспортний фолбек (CoAP-over-TCP / MQTT-SN) — див. [`00_01`](00_01_System_Architecture_and_12_Chain_Pipeline) + Ingress Proxy [`06_01`](06_01_Deployment_Kamal_Terraform).
+> **⚠️ Реалістичний профіль навантаження vs DDoS (корекція 2026-05-28):** батч «кожні 3–8 сек» суперечить буферу CIFO ([`06_08 §1.2`](06_08_Resilience_and_Failover_Policy): flush на 45 записів **або** раз на годину) — для цього Soldier мав би передавати кілька разів на хвилину, що неможливо за енергобюджетом. Тобто 3–8 сек = `load_test_mode` (стрес черг/пропускної здатності), а НЕ реальний IoT-профіль. **`realistic_mode`** (потрібно додати) має відтворювати фізичну Queen: рідкі об'ємні батчі раз на ~годину, + мережеві умови **Starlink Direct-to-Cell**: Carrier-NAT, можливе блокування вхідного UDP (CoAP), зміна портів, високий jitter / packet loss супутникового LTE. Це тестує дефіцит з'єднань, тайм-аути long-poll та розриви TCP-сесій — справжні відмови, яких load-test не ловить. Транспортний фолбек (CoAP-over-TCP / MQTT-SN) — див. [`02_05`](02_05_Queen_Hardware_and_Starlink) + Ingress Proxy [`06_01`](06_01_Deployment_Kamal_Terraform).
 
 ### 4.3 TRL Промоція через HIL
 
@@ -197,7 +198,7 @@
 > | Рівень | Що відбувається | Hardware envelope |
 > |--------|----------------|-------------------|
 > | **L1 Soldier** | Inference-only: запуск **попередньо скомпільованого** mruby bytecode (Lorenz constants, fitness evaluation, threshold lookup). Періодична відправка `lambda_exponent` + 1-bit stigmergic сигналу. | STM32WLE5JC + 0.47F, +1.4 мДж/год headroom |
-> | **L2 Conductor** *(Hub Tree, formerly "Sergeant")* | Кластерний агрегатор: збирає 50-200 Soldiers lambda-stream, обчислює **локальний GA** на (σ, ρ, β) для свого кластера, відправляє candidate sets до Queen. Динамічно обирається на основі `vcap` та якості зв'язку. | Solar + LiFePO4 (TBD spec, `00_01 §3` L2 placeholder) |
+> | **L2 Conductor** *(Hub Tree, formerly "Sergeant")* | Кластерний агрегатор: збирає 50-200 Soldiers lambda-stream, обчислює **локальний GA** на (σ, ρ, β) для свого кластера, відправляє candidate sets до Queen. Динамічно обирається на основі `vcap` та якості зв'язку. | Solar + LiFePO4 (TBD spec, §8.1 L2 placeholder) |
 > | **L3 Queen** *(Mother Tree)* | Агрегатор розподіленого навчання: для Lorenz — обмін **оцінками параметрів σ/ρ/β** (distributed parameter estimation, PSO/GA); для TinyML — справжній Federated Learning (агрегація градієнтів / ретренінг → `.tflite` OTA), privacy-preserving. Компілює mruby contracts, broadcast'ить chunked OTA. | 20Ah LiFePO4 + Solar + LTE backbone (`02_05`) |
 >
 > Q-learning, GA-evolution, online TinyML training **відбуваються на L2/L3 з обмеженням енергії на 4-5 порядків легшим**, ніж у Soldier. До Soldier приходить **готовий compiled bytecode через OTA** (магік `0x45544952 "RITE"` у `MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000`, `03_02`). Це усуває "self-training on edge" парадокс і зберігає SRL roadmap реалістичним.
@@ -290,3 +291,99 @@ SRL:Deployed ━━━ Verified, formal, planetary-scale autopoiesis ← Silken 
 - **Gap #2 (Self-Evolving):** firmware extension у [`03_03 §Y`](03_03_TinyML_Acoustic_Inference) (TinyML online learning) + [`03_04 §Z`](03_04_mruby_Lorenz_Attractor) (mruby GA); безпекова валідація у [`05_03 §SCC Anti-Adversarial`](05_03_Tokenomics_SCC_and_SFC)
 - **Gap #3 (Cross-Biome):** parametric CAD у [`01_01 §6`](01_01_Coaxial_Gyroid_Topology_and_PEEK) (Stages 2+ extended до 5 biomes); R&D у [`08_01 §1.3`](08_01_University_R_and_D_Protocols) (Спрягайло + НАН України канал)
 - **Gap #4 (Apex Predator):** розширення Slashing v2 у [`05_05 §6`](05_05_Slashing_and_Risk_Policy) + [`05_06 §5`](05_06_Governance_and_DAO) + Chainlink hardening у [`05_02`](05_02_Proof_of_Growth_Pipeline)
+
+---
+
+## 🌐 8. Фрактальна Мережева Топологія — Planetary Network Scaling
+
+> Поточна плоска LoRa-меш архітектура задихнеться від колізій та затримок вже на кількох тисячах вузлів. Для мільйонів дерев необхідна **фрактальна топологія**. Це мережевий (routing/topology) аналог §7 — там йшлося про *колективний інтелект*, тут — про *фізичне масштабування мережі*. Hardware/compute-envelope трьох рівнів (L1/L2/L3) описаний у [§7.2](#-72-gap-2--self-evolving-behaviour-on-device-edge-ai) (таблиця делегування інтелекту); нижче — їхня **мережева роль і маршрутизація**.
+
+### 8.1. Трьохрівнева ієрархія вузлів (The Fractal Stack)
+
+> **🌳 Біонічний rename (2026-05-22):** Рівень L2 перейменовано з "Sergeant/Сержант" на **"Conductor/Провідник"** (історично "Hub Tree" — найстаріше домінуюче дерево локального кластера). Це відображає природну Scale-Free Network лісу та акцентує **передачу енергії та інформації**, а не військову ієрархію. Технічна структура (3-рівнева топологія, TDMA, CAD Preamble) залишається без змін.
+
+```
+L3: Queen Gateways (Mother Tree — Супер-вузли)
+    LoRa SF12 + Starlink/LTE backbone
+    ├── Inter-cluster relay (Queen ↔ Queen Backhaul Mesh)
+    └── Cloud uplink (CoAP → Rails)
+         │
+L2: Conductor Nodes (Провідник — Hub Tree, Cluster Head) [МАЙБУТНЄ]
+    Сильне зріле дерево в центрі взводу; високий потенціал EBFC + LiFePO4
+    ├── Агрегує 50–200 Солдатів у "Звіт про стан кластера"
+    ├── Замість 100 пакетів → 1 стиснений summary
+    └── Динамічно обирається на основі `vcap` та якості зв'язку
+         │
+L1: Soldier Nodes (Regular Tree — Листя) — поточна архітектура
+    STM32WLE5JC + EBFC (0.47F), STOP2 (300 nA)
+    └── Передає стиснутий стан (lambda-exponent) найближчому Провіднику
+```
+
+**Ключова зміна:** Солдати більше не спілкуються з усім світом — лише з найближчим Провідником. Зменшення радіочастотних колізій на порядки.
+
+> **Передумова для L2 Conductor:** Рівень Провідників потребує вирішеної Проблеми Рандеву між Солдатом і Провідником. Провідник не може бути always-on (як Queen) — його живлення обмежене, хоча й більше ніж у Солдата. Рішення: TDMA Синхронні Вікна ([ARCH.26](09_06_Action_Plan_Tracker)) + CAD Preamble Detection. Деталі Рандеву — [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA).
+
+### 8.2. H-LDSE — Ієрархічний Протокол Маршрутизації
+
+Еволюція поточного LDSE-меш для мільйонної мережі:
+
+| Механізм | Поточний LDSE | H-LDSE |
+|----------|--------------|--------|
+| Таблиця маршрутизації | Всі сусіди (OOM при >1000 вузлів) | Лише 2–3 хопи (локальна адресація) |
+| Адресація | DID-based | Геохешинг (ID = координати) |
+| Пошук шляху | TTL broadcast | Градієнтний потік до найближчої Queen |
+| Частотні рівні | Один канал | Spatial Multiplexing (L1 → канал A, L2 → канал B) |
+
+**Геохешинг:** Кожен супер-кластер отримує ID на основі координат. Пакет не шукає маршрут — він тече в бік зменшення градієнта до найближчої Королеви. Усуває broadcast storm.
+
+> **⚠️ Розмежування рівнів (2026-05-28): геохешинг — це здатність L2 Conductor, НЕ L1 Soldier.** Поточна прошивка ([`03_01`](03_01_Firmware_Lifecycle_and_DMA), [`08_02`](08_02_Cybernetic_and_Mathematical_Validation)) — наївний **TTL-flood relay** (PANIC_TTL=5, DEFAULT_TTL=3) без маршрутизації. Градієнтний геохешинг вимагає, щоб вузол оперував координатами та сусідським градієнтом — це покладається на **L2 Conductor** (має RTC, більший енергобюджет, відомі координати). **L1 Soldiers залишаються TTL-flood вузлами**, які просто «кричать» у радіусі свого найближчого L2 Conductor (відповідно до фрактальної ієрархії вище). H-LDSE — це цільова еволюція рівня L2, а не зміна поведінки L1.
+
+**Spatial Multiplexing:** L1 та L2 працюють на різних частотних підканалах 868 MHz ISM — усуває міжрівневі колізії (inter-tier interference).
+
+### 8.3. Edge Data Fusion — Стиснення Інформації
+
+Замість передачі повних координат атрактора Лоренца, вузол передає лише **lambda-exponent** (показник хаотичності Ляпунова):
+
+```
+Поточний підхід:      16 байт payload → Z-координата Лоренца
+Gaia 2.0 підхід:      2 байти lambda → описує стан всього дерева
+```
+
+> **Що зберігається:** lambda-exponent (показник Ляпунова) відображає ступінь хаотичності атрактора — достатньо для визначення "норма / стрес / аномалія". **Що втрачається:** абсолютні координати (X, Y, Z) — їх відновлення неможливе без повного ряду. Коли lambda перевищує поріг аномалії (`|λ| > λ_threshold`), Солдат автоматично переходить у режим повного стрімінгу з 16-байт payload — втрата інформації повністю усувається при критичних подіях.
+
+**Event-Triggered Reporting:** "Тиша означає здоров'я":
+- Стабільний атрактор → heartbeat раз на добу (1 пакет/24 год)
+- Атрактор "зривається" (пожежа / посуха) → безперервний стрімінг (~1 пакет/хв)
+
+Скорочення трафіку в нормальному режимі в ~24× при збереженні повної чутливості до аномалій.
+
+### 8.4. Network Sharding — Ізоляція Секторів
+
+```
+[Нормальний режим]      Cluster A ←→ Cluster B ←→ Cluster C
+
+[Аномалія в Cluster B]  Cluster A | [B isolated] | Cluster C
+                                    ↑
+                         Вирубка / пожежа → шторм тривожних пакетів
+                         не "кладе" сусідні кластери
+```
+
+**Queen-to-Queen Backhaul Mesh:** Королеви з'єднані між собою через LoRa SF12. Якщо одна Queen втрачає Starlink → передає дані сусідній Queen через LoRa-магістраль. Деталі — [`06_08 §Queen Failover`](06_08_Resilience_and_Failover_Policy).
+
+### 8.5. Energy-Aware Routing
+
+Маршрутизація будується не за найкоротшим шляхом, а за **найбільш енергонадлишковим**:
+
+```
+Route metric = f(hop_count, remaining_energy, bio_potential)
+```
+
+Пакет іде через дерево з найкращим сокорухом (найбільшим біопотенціалом сьогодні) → автоматичне балансування навантаження + екологічна маршрутизація.
+
+### 8.6. Вимоги до Rails Backend (Gaia 2.0 Scale)
+
+| Компонент | Поточний стан | Gaia 2.0 вимога |
+|-----------|--------------|----------------|
+| Вхідний шар | CoAP прямо в Rails | Ingress Proxy (Rust/Go) → Kafka/Pub-Sub → Rails consumers |
+| БД читання | Primary + Query | Read-Only Replicas для всіх аналітичних запитів та Oracle |
+| TinyML навчання | Централізоване | Federated Learning: навчання на кластерах → OTA-оновлення через `OtaPackagerService` (делегування — §7.2) |
