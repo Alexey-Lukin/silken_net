@@ -520,6 +520,40 @@ RSpec.describe Solana::MintingService do
     end
   end
 
+  describe "RPC nil-response + oracle-balance guards [coverage]" do
+    let(:service) { described_class.new(create(:telemetry_log, :verified_telemetry, tree: tree)) }
+
+    it "raises when getLatestBlockhash returns a nil response body" do
+      allow(service).to receive(:execute_rpc_call).and_return(nil)
+      expect { service.send(:fetch_latest_blockhash, "url") }
+        .to raise_error(RuntimeError, /Failed to fetch blockhash/)
+    end
+
+    it "raises when getTokenAccountsByOwner returns a nil response body" do
+      allow(service).to receive(:execute_rpc_call).and_return(nil)
+      expect { service.send(:resolve_dest_token_account, "url", "owner", "mint") }
+        .to raise_error(RuntimeError, /No USDC token account found/)
+    end
+
+    it "raises an unknown-error when sendTransaction returns a nil response body" do
+      allow(service).to receive(:execute_rpc_call).and_return(nil)
+      expect { service.send(:broadcast_signed_transaction, "url", "sig", "msg") }
+        .to raise_error(RuntimeError, /Unknown Solana RPC error/)
+    end
+
+    it "treats a nil getBalance response as zero and raises low-balance" do
+      allow(service).to receive(:execute_rpc_call).and_return(nil)
+      expect { service.send(:verify_oracle_balance!, "url", "pubkey") }
+        .to raise_error(RuntimeError, /низький баланс/)
+    end
+
+    it "raises when the oracle balance is below the configured minimum" do
+      allow(service).to receive(:execute_rpc_call).and_return({ "result" => { "value" => 1_000 } })
+      expect { service.send(:verify_oracle_balance!, "url", "pubkey") }
+        .to raise_error(RuntimeError, /низький баланс/)
+    end
+  end
+
   private
 
   def stub_solana_rpc_success
