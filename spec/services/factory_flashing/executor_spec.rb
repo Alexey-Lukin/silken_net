@@ -65,4 +65,66 @@ RSpec.describe FactoryFlashing::Executor do
       expect(executor.results.size).to eq(2)
     end
   end
+
+  # The run/execute specs above stub .programmer_available?; these exercise the
+  # real pure-Ruby PATH probe so its branches (nil/empty, explicit path, PATH
+  # search, PATHEXT) are covered without shelling out.
+  describe ".programmer_available?" do
+    it "returns false for a nil binary name" do
+      expect(described_class.programmer_available?(nil)).to be(false)
+    end
+
+    it "returns false for an empty binary name" do
+      expect(described_class.programmer_available?("")).to be(false)
+    end
+
+    context "with an explicit path (contains a separator)" do
+      it "returns true for an existing executable file" do
+        expect(described_class.programmer_available?("/bin/sh")).to be(true)
+      end
+
+      it "returns false when the path does not exist" do
+        expect(described_class.programmer_available?("/nonexistent/dir/stm32prog")).to be(false)
+      end
+    end
+
+    context "with a bare name (PATH search)" do
+      it "returns true when the binary resolves on PATH" do
+        original_path = ENV["PATH"]
+        begin
+          Dir.mktmpdir do |dir|
+            exe = File.join(dir, "stm32prog")
+            File.write(exe, "#!/bin/sh\n")
+            File.chmod(0o755, exe)
+            ENV["PATH"] = dir
+            expect(described_class.programmer_available?("stm32prog")).to be(true)
+          end
+        ensure
+          ENV["PATH"] = original_path
+        end
+      end
+
+      it "returns false when no PATH entry contains the binary" do
+        expect(described_class.programmer_available?("nonexistent-stm32-binary-xyz")).to be(false)
+      end
+
+      it "honours PATHEXT extensions when set (Windows-style probing)" do
+        original_path = ENV["PATH"]
+        original_pathext = ENV["PATHEXT"]
+        begin
+          Dir.mktmpdir do |dir|
+            exe = File.join(dir, "stm32prog.EXE")
+            File.write(exe, "#!/bin/sh\n")
+            File.chmod(0o755, exe)
+            ENV["PATH"] = dir
+            ENV["PATHEXT"] = ".EXE"
+            expect(described_class.programmer_available?("stm32prog")).to be(true)
+          end
+        ensure
+          ENV["PATH"] = original_path
+          ENV["PATHEXT"] = original_pathext
+        end
+      end
+    end
+  end
 end
