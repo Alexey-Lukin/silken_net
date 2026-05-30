@@ -5,6 +5,8 @@
 2. `docs/00_00_...` -> `docs/08_07_...` (всі файли, не лише заголовки)
 3. `README.md`
 
+> **Робота над SSOT-документами** (`docs/NN_NN_*.md`) — редагування канону, полювання на SSOT-drift, додавання doc-лінтерів, публікація на Wiki — веди через скіл **`ssot-maintenance`** (операційний playbook: `docs:check_refs` / `docs:toc` / `tracker:check` / `wiki:sync`). Сам стандарт живе в `00_04` + `00_07 §8`, стан — у пам'яті; скіл їх не дублює. Він спроєктований авто-спрацьовувати за описом — ця згадка лише підстраховка.
+
 ---
 
 ## 1. Що таке SilkenNet
@@ -292,7 +294,7 @@ Solana: Ed25519 підпис, SPL Token Transfer, ATA резолюція чер�
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **silken_net** (11354 symbols, 20287 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **silken_net** (11450 symbols, 20345 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
