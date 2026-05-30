@@ -428,6 +428,7 @@ echo "Stub shape for cluster C: First Akash production deploy" > docs/shaping/ak
 | Carbon (2000 SCC = 1 tCO₂) | `05_03` + `07_01 §3` (business view) |
 | Financial constants (business) | `07_01 §3` (з рефами на 05_03/00_01) |
 | Slashing penalty formula | `05_05 §3` ↔ `BlockchainBurningService` |
+| Governance / DAO params (Governor, Timelock, ProtocolParameters) | `05_06` |
 | Secrets inventory | `06_04` (canonical = `config/deploy.yml env.secret`) |
 | Prometheus metric registry | `06_03 §2.8` (regen з `SilkenNet::Metrics::REGISTRY`) |
 | DR / backup posture | `06_06` (config SSOT = `terraform/database.tf`) |

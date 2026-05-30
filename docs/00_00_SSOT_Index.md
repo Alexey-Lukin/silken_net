@@ -69,9 +69,10 @@ _12-chain DePIN стек, Proof of Growth pipeline, токеноміка SCC/SFC
 
 - [05\_01\_Multichain\_Architecture](05_01_Multichain_Architecture) (12 мереж: peaq + IoTeX + Chainlink + Polygon + Solana + Celo + KlimaDAO + ...)
 - [05\_02\_Proof\_of\_Growth\_Pipeline](05_02_Proof_of_Growth_Pipeline) (Повний uplink → oracle → mint flow + Dynamic Tax)
-- [05\_03\_Tokenomics\_SCC\_and\_SFC](05_03_Tokenomics_SCC_and_SFC) (SCC ERC-20 + SFC governance + slash() механіка + Dynamic Tax)
+- [05\_03\_Tokenomics\_SCC\_and\_SFC](05_03_Tokenomics_SCC_and_SFC) (SCC ERC-20 + SFC токени + Dynamic Tax)
 - [05\_04\_Ethereum\_L1\_State\_Anchor](05_04_Ethereum_L1_State_Anchor) (Щотижневий SHA-256 state root в Ethereum mainnet)
 - [05\_05\_Slashing\_and\_Risk\_Policy](05_05_Slashing_and_Risk_Policy) (Політика штрафів: negligence/force-majeure/indeterminate + формула + insurance + anti-fraud + multi-signal de-risk)
+- [05\_06\_Governance\_and\_DAO](05_06_Governance_and_DAO) (On-chain governance: SilkenGovernor/Timelock/ProtocolParameters + Flash-Loan-захист + Apex Predator + governance-aware backend)
 
 ## 🚀 Модуль 06: DevOps та Інфраструктура (The Matrix)
 

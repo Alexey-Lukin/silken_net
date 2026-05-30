@@ -852,7 +852,7 @@ OtaPackagerService → 512-byte chunks → OtaTransmissionWorker → Queen → S
 > - **Edge Reinforcement Learning:** tabular Q-learning з 12-state × 4-action lookup для прийняття рішень (sleep_extend / normal / sample_extra / emergency_tx); reward = days-to-next-VBAT_OK. State buffer у RTC backup registers DR20-DR31.
 > - **Координація з mruby evolutionary algorithms у `03_04`** — спільна `device-side learning loop` між TinyML (perception) і Lorenz contract (decision).
 >
-> **Безпекова прірва:** self-evolution + Web3-economic rewards = attack surface для adversarial reward poisoning. Mitigation — Apex Predator Defense (`05_03` + `00_06 §7.4`).
+> **Безпекова прірва:** self-evolution + Web3-economic rewards = attack surface для adversarial reward poisoning. Mitigation — Apex Predator Defense (`05_06 §5` + `00_06 §7.4`).
 >
 > **Деталі повної R&D-програми:** [`00_06 §7.2`](00_06_Strategic_Roadmap_and_HIL_Simulators) — Self-Evolving Behaviour Gap.
 

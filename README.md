@@ -301,6 +301,7 @@ kamal deploy
 - [`05_03`](docs/05_03_Tokenomics_SCC_and_SFC.md) — токеноміка SCC/SFC
 - [`05_04`](docs/05_04_Ethereum_L1_State_Anchor.md) — щотижнева фіналізація в Ethereum L1
 - [`05_05`](docs/05_05_Slashing_and_Risk_Policy.md) — політика штрафів і ризиків (negligence/force-majeure + формула + insurance + anti-fraud + multi-signal de-risk)
+- [`05_06`](docs/05_06_Governance_and_DAO.md) — on-chain governance (SilkenGovernor + Timelock + ProtocolParameters + Flash-Loan-захист + Apex Predator)
 
 **Розгортання та Інфраструктура (Модуль 06)**
 - [`06_01`](docs/06_01_Deployment_Kamal_Terraform.md) — Kamal + Terraform (GCP) + Web3 ENV

@@ -22,7 +22,8 @@
 |--------|------|
 | [00_01_Vision_Market_and_Slashing_Policy](00_01_Vision_Market_and_Slashing_Policy) | Vision-рівень: місія, NaaS, філософія negligence-vs-force-majeure |
 | [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Anti-fraud DCI (`SEC.11`, `check_z_divergence!`); `stress_index` pipeline |
-| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | `slash()` контракт; Dynamic Tax (insurance-pool funding); `ProtocolParameters` (GAMMA, PENALTY_FACTOR_MAX); §Governance DAO — peer-review кат. C (`SilkenGovernor`/`SilkenTimelock`/quorum; → `05_06` у Фазі 2) |
+| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | `slash()` контракт; Dynamic Tax (insurance-pool funding); `ProtocolParameters` (GAMMA, PENALTY_FACTOR_MAX) |
+| [05_06_Governance_and_DAO](05_06_Governance_and_DAO) | DAO peer-review (категорія C): `SilkenGovernor`/`SilkenTimelock`/quorum |
 | [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | Insurance Layer mechanics (Etherisc, два режими); NaaS breach terms; SFC voting after slash |
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | `BlockchainBurningService`, `ContractHealthCheckService`, `InsightGeneratorService#stress_index`; divergence registry §11 |
 | [08_02_Cybernetic_and_Mathematical_Validation](08_02_Cybernetic_and_Mathematical_Validation) | Ground-truth калібрування Z↔health (де-ризик гіпотези) |
@@ -119,7 +120,7 @@ ForceMajeure event → InsurancePayoutWorker
 ## 5. Indeterminate (категорія C) — DAO Peer Review
 
 - Кошти заморожені у `wallet.locked_balance`.
-- DAO ставить пропозицію `Codex(): cluster_X_event_Y → upgrade_to(A | B)` через `SilkenGovernor` (механіка governance — [`05_03 §Governance DAO`](05_03_Tokenomics_SCC_and_SFC); → `05_06` у Фазі 2).
+- DAO ставить пропозицію `Codex(): cluster_X_event_Y → upgrade_to(A | B)` через `SilkenGovernor` (механіка governance — [`05_06 Governance & DAO`](05_06_Governance_and_DAO)).
 - Quorum: 4% SFC voting power (стандарт `GovernorVotesQuorumFraction`), затримка 48 годин у `SilkenTimelock`.
 - Після затвердження пропозиції — застосовується відповідна реакція (slash або insurance payout).
 - **Якщо DAO не голосує протягом 30 днів — кошти ЗАЛИШАЮТЬСЯ замороженими**, статус кластера → `Field Audit Required`. Розморозка/виплата відбувається ЛИШЕ за підтвердженими даними (фізична інспекція рейнджером або підтверджена телеметрія після відновлення зв'язку).

@@ -93,7 +93,7 @@ DYNAMIC_TAX_RATE = BigDecimal("0.02")           # 2% від емісії → DAO
 INSURANCE_POOL_THRESHOLD = 100_000               # SCC; якщо pool < поріг — Tax ON
 INSURANCE_POOL_THRESHOLD_WEI = INSURANCE_POOL_THRESHOLD * 10**18
 
-# contracts/ProtocolParameters.sol — on-chain параметри (governance-controlled, 05_03 §Governance)
+# contracts/ProtocolParameters.sol — on-chain параметри (governance-controlled, 05_06 §Governance)
 # KEY_EMISSION_THRESHOLD     — скільки growth_points = 1 SCC (default: 10,000)
 # KEY_DYNAMIC_TAX_RATE       — ставка Dynamic Tax (default: 2%, 18 decimals)
 # KEY_INSURANCE_POOL_THRESHOLD — поріг Insurance Pool (default: 100,000 SCC)
@@ -103,7 +103,7 @@ INSURANCE_POOL_THRESHOLD_WEI = INSURANCE_POOL_THRESHOLD * 10**18
 # contracts/SilkenCarbonCoin.sol — MAX_SUPPLY = 1,000,000,000 SCC (1B)
 # contracts/SilkenForestCoin.sol — MAX_SUPPLY = 100,000,000 SFC (100M)
 
-# SilkenGovernor.sol (05_01 §6 Governance DAO):
+# SilkenGovernor.sol (05_06 Governance DAO):
 #   votingDelay = 43200 blocks (~1 день Polygon)
 #   votingPeriod = 302400 blocks (~7 днів)
 #   proposalThreshold = 100 SFC

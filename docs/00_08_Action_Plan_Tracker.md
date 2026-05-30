@@ -971,12 +971,12 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | S6.12 | TokenomicsEvaluator oracle-guards audit (KYC all-paths) | `04_02`, `05_02` |
 | OPS.7 | Sync labels.yml + Projects V2 ↔ 00_07 §4 | `00_07 §4.3/§4.4` |
 | OPS.8 | TreeFamily seed drift vs Lorenz SSOT fix | `03_04 §4.1`, `04_01` |
-| BIZ.4 | DAO Governance (SilkenGovernor + Timelock) | `05_03`, `07_01` |
+| BIZ.4 | DAO Governance (SilkenGovernor + Timelock) | `05_06`, `07_01` |
 | PUMA-RACK-1 | Idempotency write off response path (`rack.response_finished`) | `06_05 §7` |
 | TRL Матриця | Per-module TRL (мігровано з 00_08) | `00_06 §1` |
 | E.8 / DIFF.7 | SNR tiebreaker у Queen CIFO eviction | `03_02`, `04_06` |
 | E.28 | Kamal `pre-build` hook idempotency audit | `06_01` |
-| E.35 | Flash-loan defense (SilkenGovernor governance params) | `05_03` |
+| E.35 | Flash-loan defense (SilkenGovernor governance params) | `05_06` |
 | E.42 | TelemetryLog cleanup `dispatched` guard | `04_02` |
 | E.47 | Solana RPC production guard (raise on missing ENV) | `05_01` |
 | E.49 | Celo RPC fallback cascade (ResilientClient) | `04_02`, `05_01` |
