@@ -30,7 +30,6 @@
 | [06_04_Secrets_Checklist](06_04_Secrets_Checklist) | секрети — SSOT |
 | [06_06_Disaster_Recovery_and_Backup](06_06_Disaster_Recovery_and_Backup) | backup / restore / RTO·RPO |
 | [06_07_CICD_and_Runbook_Index](06_07_CICD_and_Runbook_Index) | CI/CD pipeline + runbook index |
-| [`docs/DEPLOYMENT.md`](../DEPLOYMENT.md) | детальна операційна документація |
 | [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | S1.1, S1.5, INF.3/4/6, S5.6 |
 
 ## 📑 Зміст
