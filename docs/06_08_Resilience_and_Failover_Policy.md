@@ -69,7 +69,7 @@
 
 Soldier'и **не знають**, що "їх" Queen впала. Вони продовжують TX. Але mesh-relay алгоритм (DEFAULT_TTL=3) природно прокидує пакет до сусідньої Queen, якщо вона у радіусі. Конкретно:
 
-- Soldier емітує payload з `last_rssi_to_queen` у Header byte.
+- Soldier емітує свій стандартний payload (DID + сенсори + TTL) — жодного `last_rssi_to_queen` Soldier **НЕ** передає (firmware: байт 4 = Vcap, [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)); RSSI вимірює Queen при RX і додає його у Queen→backend 21-байт-фрейм ([`03_01 §8`](03_01_Firmware_Lifecycle_and_DMA)).
 - Сусідній Soldier (Phase 4.5 RX window) ловить, помічає чужий пакет — якщо TTL > 0, релєює.
 - Через 1–3 хопи пакет дотягується до сусідньої Queen у іншому кластері.
 - Queen "B" — **"тупа труба" (dumb pipe):** вона НЕ читає і НЕ може прочитати, чий це пакет. Будь-яка Queen, що зловила валідний LoRa-фрейм Silken Net (за magic-байтом), просто загортає сирий зашифрований payload у CoAP і шле на бекенд. Бекенд розшифровує AES-блок, читає `DID` і визначає: «Soldier з кластера A передав через Queen B». Атрибуцію «через яку Queen» дає `queen_uid`, який Queen B ставить на **власну CoAP-обгортку** (вона знає свій UID), а НЕ читає з payload Солдата.
