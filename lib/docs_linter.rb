@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# [SSOT anti-drift] Pure-function structural lints for docs/*.md (09_05).
+# [SSOT anti-drift] Pure-function structural lints for docs/*.md (00_06).
 # No Rails, no file I/O — each method takes file *text* and returns an array of
 # human-readable violation strings, so it is unit-tested
 # (spec/lib/docs_linter_spec.rb) and reused from lib/tasks/docs.rake
@@ -8,9 +8,9 @@
 module DocsLinter
   module_function
 
-  # TRL matrix single-value (HARD; scope: 09_02 §1 canonical matrix).
+  # TRL matrix single-value (HARD; scope: 00_03 §1 canonical matrix).
   # Per-module cells must be a single integer 1-9, never a range ("5-6"/"8-9")
-  # — 09_04 §1.1: Current TRL is single-select. Only rows whose first cell is
+  # — 00_05 §1.1: Current TRL is single-select. Only rows whose first cell is
   # "NN <module>" are inspected; NASA-scale *stage* rows start "**TRL 5-6**" and
   # are skipped. Returns ["06 DevOps → TRL cell '5-6' ...", ...].
   def trl_matrix_range_violations(text)
@@ -23,14 +23,14 @@ module DocsLinter
     end
   end
 
-  # Blockers live in 09_06, not canon (decided 2026-05-29). Canon docs must not
+  # Blockers live in 00_07, not canon (decided 2026-05-29). Canon docs must not
   # host a blocker SECTION — neither open ("🛑 Блокери", "🛑 Відкриті Блокери")
   # nor a resolved-archive ("✅ Архів", "✅ Закриті Блокери (PR #…)"). ALL blockers
-  # (open + closed) live in 09_06 (open → §module, closed → §🗄️ Архів); canon keeps
+  # (open + closed) live in 00_07 (open → §module, closed → §🗄️ Архів); canon keeps
   # the design/constraint as body prose. Heuristic: a `## ` heading bearing a status
   # emoji (🛑/✅/🟢/🟡/🔴) together with a blocker/archive word. Returns the offending
   # headings. Lines inside ``` fenced blocks are skipped, so a skeleton *example*
-  # (e.g. 09_05 §1) is not a false positive. (Caller exempts 09_06.)
+  # (e.g. 00_06 §1) is not a false positive. (Caller exempts 00_07.)
   STATUS_EMOJI = "🛑✅🟢🟡🔴"
 
   def canon_blocker_sections(text)
@@ -49,11 +49,11 @@ module DocsLinter
   end
 
   # [SSOT standard conformance] Each canon doc must carry the standard skeleton
-  # (09_05): a ✅ Статус, a top 🔗 Cross-references, and an auto-ToC (TOC:AUTO
-  # markers). Exempt: 00_00 (SSOT index), 09_06 (tracker / blocker home), and
+  # (00_06): a ✅ Статус, a top 🔗 Cross-references, and an auto-ToC (TOC:AUTO
+  # markers). Exempt: 00_00 (SSOT index), 00_07 (tracker / blocker home), and
   # legacy appendix files (02_06 / *_appendix_*). Caller passes basename (sans .md)
   # + text; returns the missing element names so a CI gate keeps the tree from regressing.
-  CONFORMANCE_EXEMPT = /\A00_00_|\A09_06_|\A02_06_|_appendix_/
+  CONFORMANCE_EXEMPT = /\A00_00_|\A00_07_|\A02_06_|_appendix_/
 
   def conformance_violations(basename, text)
     return [] unless basename.match?(/\A\d\d_\d\d_/)
@@ -70,7 +70,7 @@ module DocsLinter
   # resource whose allocation map lives canonically in 03_01 §2. A register's
   # *availability* ("free"/"reserve"/"вільн"/"резерв"/"spare"/"vacant") is owned
   # by that map — when any OTHER doc restates it, it drifts (exactly how
-  # "DR15 наразі резерв" survived in 03_02/09_06 after FW.2 claimed DR15 in
+  # "DR15 наразі резерв" survived in 03_02/00_07 after FW.2 claimed DR15 in
   # 03_01). Other docs may freely REFERENCE a register ("FC у DR15", "DR15
   # зайнято FW.2") — only *availability* claims are flagged. Bit-field "reserved"
   # (e.g. "reserved:8", "зарезервовано:") is excluded (those are reserved BITS,
@@ -153,14 +153,14 @@ module DocsLinter
   # [SSOT anti-drift] Link label ↔ href doc mismatch (HARD). A cross-ref written
   # `[`NN_NN §X`](NN_NN_Name)` must point at the SAME doc its visible label cites.
   # When the label LEADS with one NN_NN but the href resolves to a different doc,
-  # the link silently lies — exactly how 09_01 §3 read "09_05 §2/§4" yet linked the
-  # 09_04 file (a renamed-doc residue `docs:check_refs` could not catch, because the
+  # the link silently lies — exactly how 00_02 §3 read "00_06 §2/§4" yet linked the
+  # 00_05 file (a renamed-doc residue `docs:check_refs` could not catch, because the
   # href still resolves to a real file). Heuristic: compare the label's FIRST doc-ID
   # token to the href's NN_NN; flag a mismatch. A label with no NN_NN, or whose
   # leading NN_NN equals the target, is fine — later "(див. також NN_NN)" secondary
   # mentions are ignored (only the lead token is authoritative). The NN_NN pattern is
   # digit-bounded so a long number ("2026_05") never matches. Returns
-  # ["label `09_05 …` → href 09_04_… (label leads with 09_05, not 09_04)", …].
+  # ["label `00_06 …` → href 00_05_… (label leads with 00_06, not 00_05)", …].
   LABEL_DOC_RE = /(?<!\d)\d\d_\d\d(?!\d)/
 
   def link_label_target_mismatch(text)

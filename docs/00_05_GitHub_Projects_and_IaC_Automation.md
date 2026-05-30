@@ -1,11 +1,11 @@
-# 09_04: GitHub Projects and IaC Automation
+# 00_05: GitHub Projects and IaC Automation
 
 ## 🎯 Мета
 
 Звести когнітивне навантаження на Архітектора до нуля шляхом автоматизації рутинних процесів через **Infrastructure-as-Code**. Labels, fields, workflows та routing — все живе у репозиторії як `.yml` файли, а не як ручні чек-листи. SSOT — лише `.github/labels.yml`, `.github/labeler.yml`, `.github/workflows/*.yml` та цей документ.
 
 Ключові компоненти автоматизації:
-- **TRL Auto-Advancement:** Автоматична синхронізація рівнів зрілості технологій при завершенні циклів (Shape Up, [`09_03`](09_03_Shape_Up_Operations_and_RnD_Clusters)).
+- **TRL Auto-Advancement:** Автоматична синхронізація рівнів зрілості технологій при завершенні циклів (Shape Up, [`00_04`](00_04_Shape_Up_Operations_and_RnD_Clusters)).
 - **SSOT Integrity Guard:** Жорстка прив'язка коду до архітектурної документації (Wiki).
 - **Parallel Workload Matrix:** Візуальний поділ потоків між фізичними (Лабораторія / Завод) та цифровими (ШІ) агентами.
 - **Labels-as-Code:** `.github/labels.yml` + GitHub Actions workflow синхронізує лейбли при кожному push.
@@ -14,7 +14,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 7 — CI/CD пайплайн TRL Auto-Advancement на стадії впровадження. Відкриті: `trl_sync.yml` TRL-gate + `labeler.yml` apply (OPS.*) → [`09_06`](09_06_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 7 — CI/CD пайплайн TRL Auto-Advancement на стадії впровадження. Відкриті: `trl_sync.yml` TRL-gate + `labeler.yml` apply (OPS.*) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -22,12 +22,12 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [09_01_AI_Native_Engineering_and_TRL](09_01_AI_Native_Engineering_and_TRL) | AI-Native методологія (philosophy) |
-| [09_03_Shape_Up_Operations_and_RnD_Clusters](09_03_Shape_Up_Operations_and_RnD_Clusters) | Shape Up operations; §5.2 Betting Table, §6 Academic Semester |
-| [09_02_TRL_Matrix_HIL_and_Beyond](09_02_TRL_Matrix_HIL_and_Beyond) | Стратегічна дорожня карта + TRL-матриця |
+| [00_02_AI_Native_Engineering_and_TRL](00_02_AI_Native_Engineering_and_TRL) | AI-Native методологія (philosophy) |
+| [00_04_Shape_Up_Operations_and_RnD_Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) | Shape Up operations; §5.2 Betting Table, §6 Academic Semester |
+| [00_03_TRL_Matrix_HIL_and_Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | Стратегічна дорожня карта + TRL-матриця |
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | §13b Drift Register (живиться результатами SSOT Integrity Guard) |
 | [06_01_Deployment_Kamal_Terraform](06_01_Deployment_Kamal_Terraform) | Kamal / Terraform CI integration |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | Open backlog (OPS.3 / OPS.4 + trl_sync/labeler) |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | Open backlog (OPS.3 / OPS.4 + trl_sync/labeler) |
 
 ## 📑 Зміст
 
@@ -48,9 +48,9 @@
 
 | Поле | Тип | Опис / Функція |
 | :--- | :--- | :--- |
-| **Current TRL** | Single Select | Поточний рівень (**1-9**, NASA/ISO 16290 — лише технологічна готовність) згідно з [`09_01 §1`](09_01_AI_Native_Engineering_and_TRL). Головна колонка на дошці "Матриця TRL". |
+| **Current TRL** | Single Select | Поточний рівень (**1-9**, NASA/ISO 16290 — лише технологічна готовність) згідно з [`00_02 §1`](00_02_AI_Native_Engineering_and_TRL). Головна колонка на дошці "Матриця TRL". |
 | **Target TRL** | Single Select | Цільовий рівень (**1-9**) для поточного циклу. TRL НЕ розширюється до «10-12» (це нестандартно). |
-| **Readiness Horizon** | Single Select | Beyond-TRL-9 R&D-епіки ([`09_01 §1`](09_01_AI_Native_Engineering_and_TRL), [`09_02 §7`](09_02_TRL_Matrix_HIL_and_Beyond)): **SRL** (System Readiness — forest-level emergence, edge self-evolution, cross-biome generalization, AI-adversarial security) стадії `SRL:Concept` / `SRL:Pilot` / `SRL:Deployed`, та **MRL** (Manufacturing Readiness, `MRL:8/9/10` — серійний друк 5 SKU). |
+| **Readiness Horizon** | Single Select | Beyond-TRL-9 R&D-епіки ([`00_02 §1`](00_02_AI_Native_Engineering_and_TRL), [`00_03 §7`](00_03_TRL_Matrix_HIL_and_Beyond)): **SRL** (System Readiness — forest-level emergence, edge self-evolution, cross-biome generalization, AI-adversarial security) стадії `SRL:Concept` / `SRL:Pilot` / `SRL:Deployed`, та **MRL** (Manufacturing Readiness, `MRL:8/9/10` — серійний друк 5 SKU). |
 | **Assigned Agent** | Single Select | Виконавець: `Architect`, `AI Agent`, `Lab (ChNU)`, `Factory`, `nTop Expert`. |
 | **Module** | Single Select | Компонент екосистеми (наприклад, `04: Server Core`). Формує Swimlanes. |
 | **Appetite** | Single Select | `Small Batch` (1-2w) або `Big Bet` (6w) згідно з методологією Shape Up. |
@@ -70,9 +70,9 @@ PROJECT_ID="PVT_xxxx"  # отримати через `gh project list --owner Al
 
 # Single-select option sets (SSOT — синхронізувати з §1.1 та lib/github_bootstrap.rb)
 TRL_OPTIONS=(TRL:1 TRL:2 TRL:3 TRL:4 TRL:5 TRL:6 TRL:7 TRL:8 TRL:9)
-# ↑ Шкала 1-9 (NASA/ISO 16290). TRL НЕ розширюється до 10-12 (09_01 §1).
+# ↑ Шкала 1-9 (NASA/ISO 16290). TRL НЕ розширюється до 10-12 (00_02 §1).
 READINESS_HORIZON_OPTIONS=(SRL:Concept SRL:Pilot SRL:Deployed MRL:8 MRL:9 MRL:10)
-# ↑ Beyond TRL 9 = окремий вимір SRL/MRL (09_01 §1, 09_02 §7), не "TRL 10-12".
+# ↑ Beyond TRL 9 = окремий вимір SRL/MRL (00_02 §1, 00_03 §7), не "TRL 10-12".
 
 for FIELD in "Current TRL" "Target TRL" "Readiness Horizon" "Assigned Agent" "Module" "Appetite" "R&D Cluster" "Shape Up Stage" "Cycle" "Academic Semester"; do
   echo "Ensuring field: $FIELD"
@@ -89,7 +89,7 @@ done
 
 | Workflow | Файл | Тригер | Статус |
 |----------|------|--------|--------|
-| TRL Auto-Advancement | `.github/workflows/trl_sync.yml` | `issues: [closed]` | 🟡 Workflow існує (OPS.1); **TRL-gate (≥5 → Architect approval) ще не імплементовано** — чекає `PROJECT_PAT` + gate (09_06) |
+| TRL Auto-Advancement | `.github/workflows/trl_sync.yml` | `issues: [closed]` | 🟡 Workflow існує (OPS.1); **TRL-gate (≥5 → Architect approval) ще не імплементовано** — чекає `PROJECT_PAT` + gate (00_07) |
 | Labels Sync (IaC) | `.github/workflows/labels_sync.yml` | `push` на `.github/labels.yml` | ✅ Реалізовано |
 | PR Auto-Labeler | `.github/workflows/labeler.yml` | `pull_request` | ✅ Реалізовано |
 | SSOT Integrity Guard | `.github/workflows/ssot_guard.yml` | `pull_request` | ✅ Реалізовано (OPS.2; semantic `type:*` bypass — §2.3) |
@@ -104,10 +104,10 @@ done
 
 - **Тригер:** `issues: types: [closed]`
 - **Умова:** Завдання закрите (Done).
-- **Дія (TRL-stratified gate):** скрипт зчитує `Target TRL` закритого Issue. **`Target TRL ≤ 4`** → авто-перезапис `Current TRL` (картка «перелітає» у нову колонку), бо рев'ю TRL 1-4 делеговане лідам + CI ([`09_03 §3`](09_03_Shape_Up_Operations_and_RnD_Clusters)). **`Target TRL ≥ 5`** → скрипт **НЕ** рухає `Current TRL`, а ставить статус **`Pending Architect Approval`** + коментує issue; реальне просування відбувається лише за наявності лейбла `architect-approved` (його ставить виключно Архітектор). Це поважає обов'язкові TRL-гейти 4→5 / 6→7 / 8→9 (Architect/DAO approval, [`09_03 §3`](09_03_Shape_Up_Operations_and_RnD_Clusters), [`09_01 §5`](09_01_AI_Native_Engineering_and_TRL)). Додатково: рахує `completion_semester` з `closed_at` (UTC) → поле `Academic Semester`.
+- **Дія (TRL-stratified gate):** скрипт зчитує `Target TRL` закритого Issue. **`Target TRL ≤ 4`** → авто-перезапис `Current TRL` (картка «перелітає» у нову колонку), бо рев'ю TRL 1-4 делеговане лідам + CI ([`00_04 §3`](00_04_Shape_Up_Operations_and_RnD_Clusters)). **`Target TRL ≥ 5`** → скрипт **НЕ** рухає `Current TRL`, а ставить статус **`Pending Architect Approval`** + коментує issue; реальне просування відбувається лише за наявності лейбла `architect-approved` (його ставить виключно Архітектор). Це поважає обов'язкові TRL-гейти 4→5 / 6→7 / 8→9 (Architect/DAO approval, [`00_04 §3`](00_04_Shape_Up_Operations_and_RnD_Clusters), [`00_02 §5`](00_02_AI_Native_Engineering_and_TRL)). Додатково: рахує `completion_semester` з `closed_at` (UTC) → поле `Academic Semester`.
 - **Авторизація:** Здійснюється через спеціальний токен Архітектора (`secrets.PROJECT_PAT`).
 
-> **Чому gate, а не безумовний авто-рух (корекція 2026-05-28):** інакше будь-який «Close Issue» (розробник або AI-агент) підняв би технологію до TRL 9, обійшовши обов'язкові Architect/DAO-гейти — і TRL-метрика з інструмента оцінки зрілості виродилась би у звичайний task-tracker. Авто-рух лишається лише для TRL 1-4 (рев'ю там і так делеговане); TRL ≥5 завжди проходить людський gate. **Поточний `trl_sync.yml` рухає картку беззумовно — TRL-gate ще не імплементовано (tracked у `09_06`).**
+> **Чому gate, а не безумовний авто-рух (корекція 2026-05-28):** інакше будь-який «Close Issue» (розробник або AI-агент) підняв би технологію до TRL 9, обійшовши обов'язкові Architect/DAO-гейти — і TRL-метрика з інструмента оцінки зрілості виродилась би у звичайний task-tracker. Авто-рух лишається лише для TRL 1-4 (рев'ю там і так делеговане); TRL ≥5 завжди проходить людський gate. **Поточний `trl_sync.yml` рухає картку беззумовно — TRL-gate ще не імплементовано (tracked у `00_07`).**
 
 ```yaml
 # .github/workflows/trl_sync.yml — skeleton
@@ -246,7 +246,7 @@ jobs:
 
 Routes PRs автоматично у відповідні кластери на основі шляхів файлів.
 
-> **⚠️ Конфіг — `actions/labeler@v6` синтаксис, overlap усунено (корекція 2026-05-28):** (1) попередній `- any: [...]` формат був v4 і не парситься на v6; (2) широкий `app/**` кластера C **поглинав** спеціалізовані піддерева B (`iotex`, `attractor*`, `seed_derivation*`) і D (`hadron_*`) → PR отримував ДВА primary-cluster labels, ламаючи взаємовиключність (§4.1). Тепер C явно виключає їх (`!`-глоби) → специфічний кластер виграє над загальним. (3) `chainlink_router_version*` прибрано з primary-B (це Router-ABI **failover**, інфраструктура — `06_08`, а не математика/ZK) → лишається primary-C через `app/**` + secondary `cluster-ref:B`, як інші web3-сервіси. PR, що чіпає одночасно різні top-level дерева (напр. `app/` + `contracts/`) — справді cross-cluster, резолвиться вручну (`cluster:cross-cluster`, §4.1). Застосування цих правок у реальному `.github/labeler.yml` — tracked у `09_06`.
+> **⚠️ Конфіг — `actions/labeler@v6` синтаксис, overlap усунено (корекція 2026-05-28):** (1) попередній `- any: [...]` формат був v4 і не парситься на v6; (2) широкий `app/**` кластера C **поглинав** спеціалізовані піддерева B (`iotex`, `attractor*`, `seed_derivation*`) і D (`hadron_*`) → PR отримував ДВА primary-cluster labels, ламаючи взаємовиключність (§4.1). Тепер C явно виключає їх (`!`-глоби) → специфічний кластер виграє над загальним. (3) `chainlink_router_version*` прибрано з primary-B (це Router-ABI **failover**, інфраструктура — `06_08`, а не математика/ZK) → лишається primary-C через `app/**` + secondary `cluster-ref:B`, як інші web3-сервіси. PR, що чіпає одночасно різні top-level дерева (напр. `app/` + `contracts/`) — справді cross-cluster, резолвиться вручну (`cluster:cross-cluster`, §4.1). Застосування цих правок у реальному `.github/labeler.yml` — tracked у `00_07`.
 
 ```yaml
 # .github/labeler.yml — config (actions/labeler@v6 syntax: changed-files / *-glob-to-*-file)
@@ -348,9 +348,9 @@ jobs:
 
 ### 4.4 Cross-cuts (наявні)
 
-- `priority:P0` / `P1` / `P2` / `P3` (`09_06`)
+- `priority:P0` / `P1` / `P2` / `P3` (`00_07`)
 - `complexity:XS/S/M/L/XL`
-- `agent:ai` / `agent:human` / `agent:ops` / `agent:hybrid` _(назви labels без emoji у [`.github/labels.yml`](../.github/labels.yml); emoji `🤖 / 👤 / 🔧 / 🔗` використовуються лише як **візуальні маркери у `09_06`** для swimlane-навігації)_
+- `agent:ai` / `agent:human` / `agent:ops` / `agent:hybrid` _(назви labels без emoji у [`.github/labels.yml`](../.github/labels.yml); emoji `🤖 / 👤 / 🔧 / 🔗` використовуються лише як **візуальні маркери у `00_07`** для swimlane-навігації)_
 - `module:00-codex` / `module:01-anchor` / `module:02-capsule` / `module:03-firmware` / `module:04-server-core` / `module:05-ledger` / `module:06-matrix` / `module:07-naas` / `module:08-academic`
 - `type:chore` / `type:deps` / `type:perf` / `type:test` — **SSOT Guard auto-bypass**; `type:refactor` / `type:bugfix` — класифікація **без** bypass (вимагають docs-update або Drift Register, див. §2.3)
 

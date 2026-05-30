@@ -12,7 +12,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — модель інтегрована, DMA налаштовано, DSP Path B зафіксовано; `Run_Inference()` закоментована (stub fallback). Відкриті: Run_Inference + model.h + Tensor Arena (`FW.4`), confidence threshold (`FW.18`) → [`09_06 §03`](09_06_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 6 — модель інтегрована, DMA налаштовано, DSP Path B зафіксовано; `Run_Inference()` закоментована (stub fallback). Відкриті: Run_Inference + model.h + Tensor Arena (`FW.4`), confidence threshold (`FW.18`) → [`00_07 §03`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -27,7 +27,7 @@
 | [04_01_Data_Models_and_Entities](04_01_Data_Models_and_Entities) | `TelemetryLog.acoustic_events` |
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | `TelemetryUnpackerService`, `EwsAlertCreatorService` |
 | `firmware/soldier/main.c` · `silken_net_audio_model.h` (TBD) · `_stub.h` | Phase 1.5 + ISR; реальна модель TBD ML-партнером; IP-friendly stub |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.4 Run_Inference/model.h/Tensor-Arena, FW.18 threshold, FW.25 DSP Path B |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.4 Run_Inference/model.h/Tensor-Arena, FW.18 threshold, FW.25 DSP Path B |
 
 ## 📑 Зміст
 
@@ -649,7 +649,7 @@ TinyML-результат безпосередньо впливає на Lorenz 
 | 8 | Confidence threshold конфігурується (не хардкод) | ✅ FW.18: dual-threshold у RTC DR13/DR14 + 19 host-tests + Soldier OTA CMD dispatcher `0x9D` (`CMD_SET_AUDIO_THRESHOLDS`) з 7 host-tests |
 | 9 | DSP preprocessing задокументовано (чи є FFT в моделі) | 🟡 Відкрито |
 | 10 | `acoustic_events` overflow захист реалізовано | ✅ Реалізовано (FW.22: `uint8_t` + saturating increment) |
-| 11 | План 5-го класу «Fauna Activity» (§10, Mongabay pivot) задокументовано | ✅ Реалізовано (цей doc §10 + cross-ref до 08_01/08_02/08_03/09_06) |
+| 11 | План 5-го класу «Fauna Activity» (§10, Mongabay pivot) задокументовано | ✅ Реалізовано (цей doc §10 + cross-ref до 08_01/08_02/08_03/00_07) |
 
 ---
 
@@ -745,7 +745,7 @@ RWA market: інвестор бачить не лише CO₂, а й функц�
 | GA-оптимізація 5-class моделі та confidence thresholds для dawn/dusk | Любченко (ЧНУ ФОТІУС) | [`08_02` §1.8](08_02_Cybernetic_and_Mathematical_Validation) | Akash GPU кластер, фітнес-функція з ground truth |
 | Macro-Micro verification (NDVI Sentinel-2 ↔ TinyML soundscape) | Бушин (ЧНУ ФОТІУС, CNN) | [`08_02` §1.5](08_02_Cybernetic_and_Mathematical_Validation) | Pipeline злиття супутника + TinyML; AiInsight#biodiversity_trend |
 | Статистика розподілів `fauna_activity_index` між ділянками | Карапетян (ЧДТУ Data Science) | [`08_04` §1.1](08_04_CHDTU_Data_Science_Collaboration) | R-аналіз, ANOVA dawn/dusk peak amplitude між ландшафтами |
-| Грантовий вектор Horizon Europe CLUSTER 6 (Biodiversity Monitoring) | СЄУ + усі академічні партнери | [`09_06` BIZ section](09_06_Action_Plan_Tracker), [`08_03` Стаття 24a/34](08_03_Joint_Publications_and_IP_Strategy) | Заявка з акцентом на acoustic D-MRV |
+| Грантовий вектор Horizon Europe CLUSTER 6 (Biodiversity Monitoring) | СЄУ + усі академічні партнери | [`00_07` BIZ section](00_07_Action_Plan_Tracker), [`08_03` Стаття 24a/34](08_03_Joint_Publications_and_IP_Strategy) | Заявка з акцентом на acoustic D-MRV |
 
 ### 10.6 Дорожня карта (TRL крок за кроком)
 
@@ -852,9 +852,9 @@ OtaPackagerService → 512-byte chunks → OtaTransmissionWorker → Queen → S
 > - **Edge Reinforcement Learning:** tabular Q-learning з 12-state × 4-action lookup для прийняття рішень (sleep_extend / normal / sample_extra / emergency_tx); reward = days-to-next-VBAT_OK. State buffer у RTC backup registers DR20-DR31.
 > - **Координація з mruby evolutionary algorithms у `03_04`** — спільна `device-side learning loop` між TinyML (perception) і Lorenz contract (decision).
 >
-> **Безпекова прірва:** self-evolution + Web3-economic rewards = attack surface для adversarial reward poisoning. Mitigation — Apex Predator Defense (`05_06 §5` + `09_02 §7.4`).
+> **Безпекова прірва:** self-evolution + Web3-economic rewards = attack surface для adversarial reward poisoning. Mitigation — Apex Predator Defense (`05_06 §5` + `00_03 §7.4`).
 >
-> **Деталі повної R&D-програми:** [`09_02 §7.2`](09_02_TRL_Matrix_HIL_and_Beyond) — Self-Evolving Behaviour Gap.
+> **Деталі повної R&D-програми:** [`00_03 §7.2`](00_03_TRL_Matrix_HIL_and_Beyond) — Self-Evolving Behaviour Gap.
 
 ---
 

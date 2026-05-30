@@ -1,16 +1,16 @@
 # frozen_string_literal: true
 
-# [09_06 DRY tooling — #1 auto-dashboard + #3 format contract]
+# [00_07 DRY tooling — #1 auto-dashboard + #3 format contract]
 #
 # Parses the undone-task registry (§-module + 🔀 cross-cutting sections) of
-# docs/09_06_Action_Plan_Tracker.md and regenerates the 🚦 Dashboard between the
+# docs/00_07_Action_Plan_Tracker.md and regenerates the 🚦 Dashboard between the
 # AUTO markers, so the executor-grouped index can never drift from the registry
 # — the "one fact, one place" principle made mechanical (user, 2026-05-29).
 #
 # Pure Ruby (no Rails) — runnable from a rake task or CI without booting the app.
 module Tracker
   class Dashboard
-    DEFAULT_PATH = File.expand_path("../../docs/09_06_Action_Plan_Tracker.md", __dir__)
+    DEFAULT_PATH = File.expand_path("../../docs/00_07_Action_Plan_Tracker.md", __dir__)
     DOCS_DIR = File.expand_path("../../docs", __dir__)
     START_MARK = "<!-- DASHBOARD:AUTO:START -->"
     END_MARK   = "<!-- DASHBOARD:AUTO:END -->"

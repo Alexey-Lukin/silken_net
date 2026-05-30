@@ -10,7 +10,7 @@
 
 - **Поточний TRL:** TRL 4 — заявки подано до 7 екосистем; чекаємо відповідей
 - **Готові артефакти:** Технічна документація Wiki, BOM, демо Attractor, збірна інструкція.
-- **Відкрите:** відповіді від 7 грантових екосистем (waiting) → [`09_06`](09_06_Action_Plan_Tracker) (BIZ.12, UNI.1/UNI.8).
+- **Відкрите:** відповіді від 7 грантових екосистем (waiting) → [`00_07`](00_07_Action_Plan_Tracker) (BIZ.12, UNI.1/UNI.8).
 
 ---
 
@@ -23,7 +23,7 @@
 | [07_03_Unit_Economics_and_BOM](07_03_Unit_Economics_and_BOM) | Unit economics для заявок |
 | [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | академічні гранти |
 | [08_07_SEU_Economics_and_Legal_Integration](08_07_SEU_Economics_and_Legal_Integration) | консорціум (Horizon Europe) |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | BIZ.12, UNI.1/UNI.8 |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | BIZ.12, UNI.1/UNI.8 |
 
 ## 📑 Зміст
 

@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 8 — governance pipeline повністю реалізований (`SilkenGovernor.sol` + `SilkenTimelock.sol` + `ProtocolParameters.sol` + `Governance::ParameterSyncWorker` + `SystemParameter` model, RSpec-покрито). Mainnet-активація DAO + multisig council → [09_06](09_06_Action_Plan_Tracker) (BIZ.*).
+- **Поточний TRL:** TRL 8 — governance pipeline повністю реалізований (`SilkenGovernor.sol` + `SilkenTimelock.sol` + `ProtocolParameters.sol` + `Governance::ParameterSyncWorker` + `SystemParameter` model, RSpec-покрито). Mainnet-активація DAO + multisig council → [00_07](00_07_Action_Plan_Tracker) (BIZ.*).
 - **Реактивний захист (TRL 9-ready):** Snapshot Voting + Timelock 48h + Quorum 4% + Voting Delay — Flash-Loan attack закрито.
 - **Проактивний захист (Beyond TRL 9):** Apex Predator Defense — R&D-напрям, не блокує поточний TRL.
 
@@ -22,9 +22,9 @@
 | [05_05_Slashing_and_Risk_Policy](05_05_Slashing_and_Risk_Policy) | Slashing DAO peer-review (категорія C) користується цим governance |
 | [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz σ/ρ/β — governance-керовані параметри (per-climate-zone) |
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | `SystemParameter` model, `Governance::ParameterSyncWorker` |
-| [09_02_TRL_Matrix_HIL_and_Beyond](09_02_TRL_Matrix_HIL_and_Beyond) | Apex Predator Defense R&D-програма (§7.4) |
+| [00_03_TRL_Matrix_HIL_and_Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | Apex Predator Defense R&D-програма (§7.4) |
 | [07_02_Nature_as_a_Service_Contracts](07_02_Nature_as_a_Service_Contracts) | DAO Agreement (тип контракту §1.3) |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | **Відкрите** (SSOT): mainnet DAO activation, BIZ.* governance backlog |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкрите** (SSOT): mainnet DAO activation, BIZ.* governance backlog |
 
 ## 📑 Зміст
 
@@ -153,7 +153,7 @@ contract SilkenGovernor is Governor, GovernorSettings, GovernorCountingSimple,
 >
 > **Філософська позиція:** SCC — це **критична інфраструктура планетарного клімату**. Стандарт безпеки має бути **на рівні national-grid SCADA**, а не «не гірше за DeFi 2020–2024».
 >
-> **Деталі повної R&D-програми:** [`09_02 §7.4`](09_02_TRL_Matrix_HIL_and_Beyond) — Apex Predator Defense Gap. Партнери: Аблязов Д. (СЄУ, правова рамка), Карапетян (ChDTU, статистика fraud detection), Ярмілко (firmware PQC integration).
+> **Деталі повної R&D-програми:** [`00_03 §7.4`](00_03_TRL_Matrix_HIL_and_Beyond) — Apex Predator Defense Gap. Партнери: Аблязов Д. (СЄУ, правова рамка), Карапетян (ChDTU, статистика fraud detection), Ярмілко (firmware PQC integration).
 
 ## 6. Bonding Curves — Динамічне Ціноутворення (Перспектива TRL 9+)
 

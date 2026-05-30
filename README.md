@@ -63,7 +63,7 @@ Slashing: лише за доведену халатність (cause-gate A/B/C;
 
 ## 🌐 Social API Registry (Зовнішні Стейкхолдери)
 
-Окрім академічного консорціуму ([`08_01`](docs/08_01_University_R_and_D_Protocols.md)–[`08_07`](docs/08_07_SEU_Economics_and_Legal_Integration.md)), проєкт залежить від зовнішніх **non-operational** стейкхолдерів: B2G-гейткіпери (лісівник Дзюбенко, природоохоронець Сегеда), B2B-клієнти (CBAM-офсет для "Азоту", лісосмуги агросектора), метрологія (Чорней — сертифікація SCC) та культурний шар (16 митців національного/локального рівня для Genesis NFT + Data Sonification). Жоден із записів не блокує merge — це outreach pool, що активується за TRL-тригерами. Принцип Zero-Trust: матриця інтерфейсів `(API In, API Out, SSOT-link, Status)` замість сюжетів. Деталі: [`docs/07_05_External_Stakeholders_Registry.md`](docs/07_05_External_Stakeholders_Registry.md) (Cultural Layer) + [`docs/07_05_External_Stakeholders_Registry.md`](docs/07_05_External_Stakeholders_Registry.md) (B2G/B2B Matrix). Outreach tasks: [`docs/09_06`](docs/09_06_Action_Plan_Tracker.md) § STK.1–STK.10.
+Окрім академічного консорціуму ([`08_01`](docs/08_01_University_R_and_D_Protocols.md)–[`08_07`](docs/08_07_SEU_Economics_and_Legal_Integration.md)), проєкт залежить від зовнішніх **non-operational** стейкхолдерів: B2G-гейткіпери (лісівник Дзюбенко, природоохоронець Сегеда), B2B-клієнти (CBAM-офсет для "Азоту", лісосмуги агросектора), метрологія (Чорней — сертифікація SCC) та культурний шар (16 митців національного/локального рівня для Genesis NFT + Data Sonification). Жоден із записів не блокує merge — це outreach pool, що активується за TRL-тригерами. Принцип Zero-Trust: матриця інтерфейсів `(API In, API Out, SSOT-link, Status)` замість сюжетів. Деталі: [`docs/07_05_External_Stakeholders_Registry.md`](docs/07_05_External_Stakeholders_Registry.md) (Cultural Layer) + [`docs/07_05_External_Stakeholders_Registry.md`](docs/07_05_External_Stakeholders_Registry.md) (B2G/B2B Matrix). Outreach tasks: [`docs/00_07`](docs/00_07_Action_Plan_Tracker.md) § STK.1–STK.10.
 
 ---
 
@@ -255,12 +255,17 @@ kamal deploy
 
 Детальна документація в директорії [`docs/`](docs/):
 
-### 🏛️ Tier I — Система (00–06)
+### 🧭 Модуль 00 — Фундамент (Foundation: Візія + Метод — read-first)
+- [`00_00`](docs/00_00_SSOT_Index.md) — SSOT index + системна карта (8 рівнів кіберфізики) + reading order
+- [`00_01`](docs/00_01_Vision_Mission_and_Roadmap.md) — візія, місія, дорожня карта, NaaS, Proof-of-Growth (Slashing → [`05_05`](docs/05_05_Slashing_and_Risk_Policy.md))
+- [`00_02`](docs/00_02_AI_Native_Engineering_and_TRL.md) — AI-Native філософія: NASA TRL, Intent-First, Wiki-First, Validation Gate
+- [`00_03`](docs/00_03_TRL_Matrix_HIL_and_Beyond.md) — per-module TRL-матриця + per-domain TRL + HIL + Beyond-TRL-9
+- [`00_04`](docs/00_04_Shape_Up_Operations_and_RnD_Clusters.md) — Shape Up 6+2 цикли, 4 R&D кластери, Betting Table, Async-Review
+- [`00_05`](docs/00_05_GitHub_Projects_and_IaC_Automation.md) — Projects V2 + Labels-as-Code + GitHub Actions workflows
+- [`00_06`](docs/00_06_SSOT_Documentation_Standard.md) — стандарт канон-доків (skeleton + home-registry + drift-tooling + restructure-метод)
+- [`00_07`](docs/00_07_Action_Plan_Tracker.md) — 🔴 живий трекер незавершених задач (DOC/SW/SEC/ARCH/UNI аудит)
 
-**Архітектура Системи (Модуль 00)**
-- [`00_00`](docs/00_00_SSOT_Index.md) — єдине джерело істини (SSOT), головний реєстр
-- [`00_01`](docs/00_01_System_Architecture_and_12_Chain_Pipeline.md) — 8-рівнева кіберфізична архітектура + 12-крокової конвеєр
-- [`06_08`](docs/06_08_Resilience_and_Failover_Policy.md) — Queen failover + Per-Chain Fallback Matrix
+### 🏛️ Tier I — Система (01–06)
 
 **Біомеханіка та Хімія (Модуль 01)**
 - [`01_01`](docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md) — 3-складовий Ti-6Al-4V анкер
@@ -304,11 +309,13 @@ kamal deploy
 - [`06_03`](docs/06_03_Prometheus_Observability.md) — Prometheus + Grafana + Sentry
 - [`06_04`](docs/06_04_Secrets_Checklist.md) — інвентаризація секретів (GitHub Secrets, Kamal, Akash, Terraform)
 - [`06_05`](docs/06_05_Puma_Configuration.md) — Puma 8: IO-bound thread pool, shutdown debug, кластерні хуки
+- [`06_06`](docs/06_06_Disaster_Recovery_and_Backup.md) — Disaster Recovery + backup posture + RTO/RPO + restore-runbooks
+- [`06_07`](docs/06_07_CICD_and_Runbook_Index.md) — CI/CD workflows + єдиний operations runbook-індекс
+- [`06_08`](docs/06_08_Resilience_and_Failover_Policy.md) — Queen failover 4 рівні + Per-Chain Fallback Matrix
 
-### 🌿 Tier II — Програма (07–09)
+### 🌿 Tier II — Програма (07–08)
 
-**Стратегія та Економіка (Модуль 07)**
-- [`07_01`](docs/07_01_Vision_Mission_and_Roadmap.md) — візія, місія, дорожня карта, NaaS, Proof-of-Growth (Slashing → [`05_05`](docs/05_05_Slashing_and_Risk_Policy.md))
+**Стратегія та Економіка (Модуль 07)** — ⏳ _візія/дорожня карта → Фундамент [`00_01`](docs/00_01_Vision_Mission_and_Roadmap.md); зсув `07_0x` та перейменування на «Economics & Funding» — P3_
 - [`07_02`](docs/07_02_Nature_as_a_Service_Contracts.md) — NaaS контракти та страхування
 - [`07_03`](docs/07_03_Unit_Economics_and_BOM.md) — юніт-економіка та ROI через SCC
 - [`07_04`](docs/07_04_Grant_Applications_Tracker.md) — трекер грантових заявок
@@ -323,13 +330,7 @@ kamal deploy
 - [`08_06`](docs/08_06_CHMA_Biomedical_Integration.md) — ЧМА: біомедична валідація EBFC, токсикологія Ti-6Al-4V, ксилемоінтеграція
 - [`08_07`](docs/08_07_SEU_Economics_and_Legal_Integration.md) — СЄУ: макроекономіка NaaS, RWA-легалізація, промисловий дизайн PEEK-радому
 
-**Методологія та Governance (Модуль 09)**
-- [`09_01`](docs/09_01_AI_Native_Engineering_and_TRL.md) — AI-Native філософія: NASA TRL, Intent-First, Wiki-First, Validation Gate
-- [`09_02`](docs/09_02_TRL_Matrix_HIL_and_Beyond.md) — per-module TRL-матриця + per-domain TRL + HIL + Beyond-TRL-9
-- [`09_03`](docs/09_03_Shape_Up_Operations_and_RnD_Clusters.md) — Shape Up 6+2 цикли, 4 R&D кластери, Betting Table, Async-Review
-- [`09_04`](docs/09_04_GitHub_Projects_and_IaC_Automation.md) — Projects V2 + Labels-as-Code + GitHub Actions workflows
-- [`09_05`](docs/09_05_SSOT_Documentation_Standard.md) — стандарт канон-доків (skeleton + home-registry + drift-tooling + restructure-метод)
-- [`09_06`](docs/09_06_Action_Plan_Tracker.md) — 🔴 живий трекер незавершених задач (DOC/SW/SEC/ARCH/UNI аудит)
+> _Методологія/процес (колишній Модуль 09) ре-деривовано у **Модуль 00 — Фундамент** (00_02–00_07, вгорі)._
 
 ---
 

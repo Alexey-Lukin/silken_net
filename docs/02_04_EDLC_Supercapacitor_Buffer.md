@@ -18,7 +18,7 @@
 | [02_03_BQ25570_MPPT_Nano_Power](02_03_BQ25570_MPPT_Nano_Power) | Живлення (MPPT, VBAT пороги, cold-start) |
 | [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | Математика: δt заряду як вхід Лоренца |
 | [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Прошивка Солдата (FW.10 cold-TX guard, Phase 4) |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | Трекер (TEG / series-stack winter-energy R&D) |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | Трекер (TEG / series-stack winter-energy R&D) |
 
 ## 📑 Зміст
 

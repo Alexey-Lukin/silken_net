@@ -28,7 +28,7 @@
   - **Tier 2-3 (Infrastructure / B2B):** до моменту першої SCC-емісії
     в production ([`05_02`](05_02_Proof_of_Growth_Pipeline)).
 - **Власник:** TBD (CEO / Head of Partnerships).
-- **Outreach tracker:** [`09_06`](09_06_Action_Plan_Tracker) § External Stakeholders.
+- **Outreach tracker:** [`00_07`](00_07_Action_Plan_Tracker) § External Stakeholders.
 
 ---
 
@@ -47,7 +47,7 @@
 | [08_07_SEU_Economics_and_Legal_Integration](08_07_SEU_Economics_and_Legal_Integration) | §1.3 Аблязов — legal wrapper |
 | `08_03` / `08_04` / `08_06` | глибокі академ./stakeholder профілі (SSOT — тут лише cross-link) |
 | `02_05` / `03_04` | LoRa висотні точки / Lorenz stress-аналіз |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | § External Stakeholders (UNI.x, BIZ.x) |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | § External Stakeholders (UNI.x, BIZ.x) |
 
 ## 📑 Зміст
 
@@ -848,7 +848,7 @@ Europe). Не зараз — але треба зафіксувати, доки 
   пензля. Для пітча китайським/південно-східноазіатським інвесторам —
   абсолютний резонанс.
 - **SSOT-мапінг:** [`03_04`](03_04_mruby_Lorenz_Attractor),
-  [`09_01`](09_01_AI_Native_Engineering_and_TRL) (Wu-Wei filosophy).
+  [`00_02`](00_02_AI_Native_Engineering_and_TRL) (Wu-Wei filosophy).
 - **Status:** 🔵 Identified.
 
 #### B8. Віктор Ковтун — Слобожанський пейзаж як baseline

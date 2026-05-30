@@ -9,7 +9,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 6 — workflows активні; production+canopy deploy налаштовані; частина gates ще не `required` (INF.6, OPS.2).
-- **Відкрите:** required-check прогалини (coap_smoke INF.6, ssot_guard OPS.2) → [`09_06`](09_06_Action_Plan_Tracker).
+- **Відкрите:** required-check прогалини (coap_smoke INF.6, ssot_guard OPS.2) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -23,8 +23,8 @@
 | [06_04_Secrets_Checklist](06_04_Secrets_Checklist) | secrets/revocation |
 | [06_05_Puma_Configuration](06_05_Puma_Configuration) | Puma runbooks |
 | [06_06_Disaster_Recovery_and_Backup](06_06_Disaster_Recovery_and_Backup) | DR runbooks |
-| [09_04_GitHub_Projects_and_IaC_Automation](09_04_GitHub_Projects_and_IaC_Automation) | TRL/Projects automation |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | INF.6, OPS.1/OPS.2 |
+| [00_05_GitHub_Projects_and_IaC_Automation](00_05_GitHub_Projects_and_IaC_Automation) | TRL/Projects automation |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | INF.6, OPS.1/OPS.2 |
 
 ## 📑 Зміст
 
@@ -57,7 +57,7 @@
 ### Repo / Project governance
 | Workflow | Trigger | Призначення |
 |---|---|---|
-| `trl_sync.yml` | `issues` | GraphQL Projects v2 — TRL-stamping (OPS.1; `09_04`) |
+| `trl_sync.yml` | `issues` | GraphQL Projects v2 — TRL-stamping (OPS.1; `00_05`) |
 | `labeler.yml` | `pull_request_target` | Auto-label PR за шляхами |
 | `labels_sync.yml` | push `.github/labels.yml` + dispatch | Labels-as-IaC sync |
 

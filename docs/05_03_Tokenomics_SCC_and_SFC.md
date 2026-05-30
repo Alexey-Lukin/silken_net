@@ -15,7 +15,7 @@
 - **Зовнішній аудит (19 findings):** ✅ Аналіз 19 знахідок: 9 виправлено on-chain (slash bypass pause, admin protection, auto-delegate, batch size 100, anchor interval, locked pragma, mint dedup, rootHistory, timestamp NatSpec), 10 задокументовано як operational/by-design
 - **Backend інтеграція:** ✅ `BlockchainMintingService` + `BlockchainBurningService`
 - **The Graph subgraph:** ✅ `TokenSlashed` виправлено, `PremiumPaid` додано, `treeDidHash` (bytes32) додано. ✅ SFC: `ForestMintEvent` + `GovernanceSlashEvent` + handlers додано (Sprint 3, S3.5). ⚠️ SFC contract address — placeholder до Mainnet deploy.
-- **Відкрите:** SFC contract address placeholder до Mainnet deploy; зовнішній аудит execution → [`09_06`](09_06_Action_Plan_Tracker).
+- **Відкрите:** SFC contract address placeholder до Mainnet deploy; зовнішній аудит execution → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -26,7 +26,7 @@
 | [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Мультичейн (Polygon у стеку) |
 | [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Pipeline (мінтинг-тригер) |
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | `BlockchainMinting`/`BlockchainBurning` сервіси |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | Open backlog (Mainnet deploy, audit) |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | Open backlog (Mainnet deploy, audit) |
 
 ## 📑 Зміст
 

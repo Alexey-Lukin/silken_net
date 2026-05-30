@@ -14,7 +14,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 4 — макетна плата CJMCU-25570 тестована, архітектурний пів'от зафіксовано. Відкриті: резисторна мережа (HW.7), MPPT 65% коефіцієнт (HW.13), cold-start R_int (§1.5) → [`09_06`](09_06_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 4 — макетна плата CJMCU-25570 тестована, архітектурний пів'от зафіксовано. Відкриті: резисторна мережа (HW.7), MPPT 65% коефіцієнт (HW.13), cold-start R_int (§1.5) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -27,7 +27,7 @@
 | [02_04_EDLC_Supercapacitor_Buffer](02_04_EDLC_Supercapacitor_Buffer) | Буфер (0.47F, VBAT_OV/UV пороги) |
 | [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Споживач (STM32, VBAT_OK wake) |
 | [02_06_Legacy_Breadboard_Appendix](02_06_Legacy_Breadboard_Appendix) | Legacy LTC3108 breadboard прототип |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.7 resistors, HW.13 MPPT/R_int |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.7 resistors, HW.13 MPPT/R_int |
 
 ## 📑 Зміст
 
@@ -119,7 +119,7 @@ Tree EBFC (>500mV)
 
 ### 1.5. Cold-Start під Навантаженням: Ризик R_int EBFC (та мітигація)
 
-> Перенесено з колишнього BLOCKER-3 (трекінг — [`09_06 HW.13`](09_06_Action_Plan_Tracker)). Видалення LTC3108 (вище) спирається на V_OC ≥ 500 мВ — але cold-start charge pump BQ25570 тягне ≥ 15 µA, і під навантаженням V просідає за R_int.
+> Перенесено з колишнього BLOCKER-3 (трекінг — [`00_07 HW.13`](00_07_Action_Plan_Tracker)). Видалення LTC3108 (вище) спирається на V_OC ≥ 500 мВ — але cold-start charge pump BQ25570 тягне ≥ 15 µA, і під навантаженням V просідає за R_int.
 
 EBFC має значний внутрішній опір (dgrFAD-GDH on Ti gyroid Gen 2.0 у синтетичному соку: R_int ≈ 5–20 кΩ). V_drop = I_load × R_int:
 

@@ -7,7 +7,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 4 — TRL 3→4 gate PASSED (2026-05-25), EBFC in-silico pipeline L1-L4 validated; xylem sap sweep: enzyme stable across 6 species (pH 4.2-5.8). Відкриті: resin-barrier + Flush Mount drilling (HW.6), No-EtO sterilization (HW.22), польові випробування → [`09_06`](09_06_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 4 — TRL 3→4 gate PASSED (2026-05-25), EBFC in-silico pipeline L1-L4 validated; xylem sap sweep: enzyme stable across 6 species (pH 4.2-5.8). Відкриті: resin-barrier + Flush Mount drilling (HW.6), No-EtO sterilization (HW.22), польові випробування → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -18,7 +18,7 @@
 | [01_01_Coaxial_Gyroid_Topology_and_PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Геометрія пор + тризонна архітектура |
 | [01_02_Ti_6Al_4V_Metallurgy_and_DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Металургія та покриття (self-healing zone-restriction) |
 | [01_03_EBFC_Enzymatic_Bio_Fuel_Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC ферменти (катод anti-flooding → §5 PTFE-GDL) |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.6 resin/Flush-Mount drilling, HW.22 No-EtO sterilization |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.6 resin/Flush-Mount drilling, HW.22 No-EtO sterilization |
 
 ## 📑 Зміст
 

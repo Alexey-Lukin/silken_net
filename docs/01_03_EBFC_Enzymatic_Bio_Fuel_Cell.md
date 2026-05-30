@@ -7,7 +7,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 3 baseline (2026-05-24); **TRL 3→4 gate PASSED** (2026-05-25) — всі 4 рівні in-silico Zero-Lab pipeline дали позитивний результат. Очікується in vitro Ti-coin валідація (Stage 2). Відкриті: enzyme expression + ZIF/membrane synthesis (HW.5/HW.6), in vitro Ti-coin (HW.24) → [`09_06`](09_06_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 3 baseline (2026-05-24); **TRL 3→4 gate PASSED** (2026-05-25) — всі 4 рівні in-silico Zero-Lab pipeline дали позитивний результат. Очікується in vitro Ti-coin валідація (Stage 2). Відкриті: enzyme expression + ZIF/membrane synthesis (HW.5/HW.6), in vitro Ti-coin (HW.24) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -21,7 +21,7 @@
 | [02_03_BQ25570_MPPT_Nano_Power](02_03_BQ25570_MPPT_Nano_Power) | Електричний приймач (MPPT boost) |
 | [02_04_EDLC_Supercapacitor_Buffer](02_04_EDLC_Supercapacitor_Buffer) | Буфер енергії (EDLC 0.47F) |
 | [08_06_CHMA_Biomedical_Integration](08_06_CHMA_Biomedical_Integration) | Біохімічна валідація ферментів (ЧМА) |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.5 enzyme/ZIF stack, HW.6 membrane/resin barrier, HW.24 Ti-coin |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.5 enzyme/ZIF stack, HW.6 membrane/resin barrier, HW.24 Ti-coin |
 
 ## 📑 Зміст
 

@@ -18,7 +18,7 @@
 
 - **Поточний TRL:** TRL 6 — апаратне шифрування налаштовано; host-based тести проходять
 - **Архітектурне рішення ARCH.42 (2026-05-23):** Варіант B — LoRa-канал переведено на **AES-128-CCM** (constraint ATECC608B); CoAP-магістраль залишається на **AES-256-CBC**. Глобальний SSOT-патч виконано.
-- **Відкрите:** ECB→AES-128-CCM (FW.2), MAC/MIC, ротація ключів → [`09_06`](09_06_Action_Plan_Tracker) (SEC.*).
+- **Відкрите:** ECB→AES-128-CCM (FW.2), MAC/MIC, ротація ключів → [`00_07`](00_07_Action_Plan_Tracker) (SEC.*).
 
 ---
 
@@ -34,12 +34,12 @@
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | TelemetryUnpacker, ActuatorCommandWorker |
 | [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Pipeline (decrypt стадія) |
 | [02_05_Queen_Hardware_and_Starlink](02_05_Queen_Hardware_and_Starlink) | Апаратний контекст Queen |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | SEC.* (ECB→CCM, MAC, key rotation) |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | SEC.* (ECB→CCM, MAC, key rotation) |
 
 ## 📑 Зміст
 
 <!-- TOC:AUTO:START -->
-- [Відкриті безпекові питання та аналіз загроз (open → 09_06)](#-відкриті-безпекові-питання-та-аналіз-загроз-open--09_06)
+- [Відкриті безпекові питання та аналіз загроз (open → 00_07)](#-відкриті-безпекові-питання-та-аналіз-загроз-open--00_07)
 - [1. Ініціалізація Крипто-Модуля (MX_CRYP_Init)](#-1-ініціалізація-крипто-модуля-mx_cryp_init)
 - [2. Структура Зашифрованих Пакетів (Payload Structure)](#-2-структура-зашифрованих-пакетів-payload-structure)
 - [3. Управління Ключами (Key Management)](#-3-управління-ключами-key-management)
@@ -81,9 +81,9 @@
 
 ---
 
-## 🚧 Відкриті безпекові питання та аналіз загроз (open → 09_06)
+## 🚧 Відкриті безпекові питання та аналіз загроз (open → 00_07)
 
-> Статуси трекаються в [`09_06`](09_06_Action_Plan_Tracker) (SEC.*); нижче — канонічний аналіз загроз + рішення.
+> Статуси трекаються в [`00_07`](00_07_Action_Plan_Tracker) (SEC.*); нижче — канонічний аналіз загроз + рішення.
 
 ### Hardcoded AES-256 Key — Firmware CLOSED (FW.1, 2026-05-02)
 
@@ -216,16 +216,16 @@ nonce[12] = DID[0..3] || FrameCounter[0..3] || 0x00 × 4
 
 **Унікальність (key_128, nonce) — імовірнісна, НЕ абсолютна — 📐 КАНОНІЧНЕ ДЖЕРЕЛО (FW.2 FC/nonce policy):**
 
-> Єдине авторитетне місце для Frame-Counter lifecycle + nonce-унікальності. Решта місць лише **посилаються** сюди: `03_01 §2` (RTC-мапа, DR15), `firmware/common/lora_ccm.h` (байт-формат), `firmware/soldier/main.c::Load_Frame_Counter` (reseed), `09_06 FW.2`.
+> Єдине авторитетне місце для Frame-Counter lifecycle + nonce-унікальності. Решта місць лише **посилаються** сюди: `03_01 §2` (RTC-мапа, DR15), `firmware/common/lora_ccm.h` (байт-формат), `firmware/soldier/main.c::Load_Frame_Counter` (reseed), `00_07 FW.2`.
 
 - **Зберігання + інкремент:** FC — 24-bit у `RTC_BKP_DR15`, упакований `[FW2_FC_MAGIC:8 | frame_counter:24]` (magic `0x46` ловить невалідний DR15 після VBAT-loss). Інкремент перед кожним TX; wrap `0xFFFFFF → 1` (skip 0 = «треба reseed»). ~16.7M значень ≫ ~219 тис. TX за 25-річний lifecycle. FC персиститься у DR15 **перед** TX (reboot між Save і TX просуває лічильник, а не повторює).
 - **Нормальна робота:** per-device LoRa key (FW.1 HKDF) константний + FC monotonic-incrementing → кожна (key, nonce) пара унікальна **за конструкцією**.
 - **Cold-boot (VBAT loss):** DR15 magic втрачено → FC reseed **uniform-random з HRNG**. Monotonic-across-boot джерела в цей момент **немає**: RTC-календар і `soldier_unix_ts` обидва на дефолтах (wall-clock дає лише FW.20 beacon, якого ще нема — той самий стан, що Lorenz cold-start, §3.4в); Flash-write небезпечний при низькому пост-drain заряді; ATECC свідомо не будимо (§3.7). Тому uniform-random — **прагматичний TRL-6 вибір**, а не недогляд.
 - **Залишковий ризик / severity:** повтор раніше-використаного FC з тим самим персистентним ключем ≈ `N/2²⁴` на cold-boot (N = FC, спожиті до drain). **Severity: MEDIUM** — CTR-reuse дає лише витік `P1⊕P2` двох 8-байтних низькоентропійних сенсорних payload'ів (**не** компрометація ключа; forge все одно потребує per-device key). Cold-boot'и рідкісні (drain ≈ сезонний).
 - **Reseed entropy:** тільки HRNG з **retry ×3** — слабкого `HAL_GetTick` fallback **немає** (на cold-boot tick малий+передбачуваний → кластеризується між cold-boot'ами того ж пристрою). Last-resort при мертвому HRNG — `tree_did ^ tick` (DID ламає крос-девайс кластеризацію). SEC.10 panic-counter (`main.c` DR0[31:16]) — **той самий** reseed-патерн + те саме hardening при активації FW.2.
-- **TRL-7 robust path (deferred):** монотонний лічильник, що переживає повну втрату живлення → безумовна унікальність. Варіанти: energy-gated Flash high-water (запис лише на cold-boot, коли Vcap відновився) АБО ATECC608B monotonic counter (разом з ATECC-role рішенням, §3.7). Трекінг → `09_06 FW.2`.
+- **TRL-7 robust path (deferred):** монотонний лічильник, що переживає повну втрату живлення → безумовна унікальність. Варіанти: energy-gated Flash high-water (запис лише на cold-boot, коли Vcap відновився) АБО ATECC608B monotonic counter (разом з ATECC-role рішенням, §3.7). Трекінг → `00_07 FW.2`.
 
-> ✅ **DR15 resource-conflict — ВИРІШЕНО (2026-05-30):** FW.2 FC **володіє** `RTC_BKP_DR15` (реалізовано — `lora_ccm.h` + `firmware/soldier/main.c`; канонічно у `03_01 §2`). FW.20-S2 anti-storm dedup-bitmap (ARCH.28) переходить на **Flash-KV store** (`03_01 §2.3`), бо всі 20 RTC backup-регістрів (DR0–DR19) зайняті. Стале-формулювання «DR15 наразі резерв» у `09_06`/`03_02` виправлено на цей вердикт.
+> ✅ **DR15 resource-conflict — ВИРІШЕНО (2026-05-30):** FW.2 FC **володіє** `RTC_BKP_DR15` (реалізовано — `lora_ccm.h` + `firmware/soldier/main.c`; канонічно у `03_01 §2`). FW.20-S2 anti-storm dedup-bitmap (ARCH.28) переходить на **Flash-KV store** (`03_01 §2.3`), бо всі 20 RTC backup-регістрів (DR0–DR19) зайняті. Стале-формулювання «DR15 наразі резерв» у `00_07`/`03_02` виправлено на цей вердикт.
 
 **Конфігурація `hcryp` для CCM (AES-128):**
 
@@ -638,7 +638,7 @@ CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<IDEMPOTENCY_TOKEN>
 | **Адреса** | `FLASH_LORA_KEY_ADDR` | `FLASH_COAP_KEY_ADDR` (тільки Queen) |
 | **Розмір** | **128 біт (16 байт, 4 × uint32_t)** — ARCH.42 | 256 біт (32 байти, 8 × uint32_t) |
 | **Захист** | RDP Level 1 (виробництво) / RDP Level 2 (необоротний final lock) — див. §3.3 | Те саме |
-| **Ротація** | Hash Ratchet KDF — див. [FW.17 у 09_06](09_06_Action_Plan_Tracker) (placeholder, P3) | Те саме |
+| **Ротація** | Hash Ratchet KDF — див. [FW.17 у 00_07](00_07_Action_Plan_Tracker) (placeholder, P3) | Те саме |
 | **Унікальність** | **Унікальний per-device** через HKDF(`PROVISIONING_MASTER_KEY`, salt=`device_uid`, info=`"silken-aes-128-lora-key"`) | HKDF(`PROVISIONING_MASTER_KEY`, salt=`device_uid`, info=`"silken-aes-256-device-key"`) |
 | **Завантаження у RAM** | `Load_AES_Key()` на boot → `aes_key[4]` (LoRa-режим) | `Load_AES_Key()` на boot → `coap_key[8]` (динамічне MX_CRYP re-init для CoAP) |
 
@@ -855,13 +855,13 @@ Device Memory → Option Bytes → Read Out Protection → RDP: Level 1 (або 
 - Гілка A → B: можлива (re-flash MCU + добавити ATECC до PCBA = новий PCB revision)
 - Гілка B → A: **неможлива** (ATECC config zone locked permanently — board залишається B forever)
 
-> **Cross-ref:** §3.4а HKDF derivation (детальна криптографія), §3.6 RDP Level 2 procedure (irreversible lock checklist), §3.7 ATECC608B integration assessment (slot mapping, alternatives, BOM impact), [09_06 SEC.3](09_06_Action_Plan_Tracker), [09_06 SEC.6](09_06_Action_Plan_Tracker), [09_06 FW.1](09_06_Action_Plan_Tracker).
+> **Cross-ref:** §3.4а HKDF derivation (детальна криптографія), §3.6 RDP Level 2 procedure (irreversible lock checklist), §3.7 ATECC608B integration assessment (slot mapping, alternatives, BOM impact), [00_07 SEC.3](00_07_Action_Plan_Tracker), [00_07 SEC.6](00_07_Action_Plan_Tracker), [00_07 FW.1](00_07_Action_Plan_Tracker).
 
 ---
 
 ### 3.4а HKDF Key Derivation Protocol Design 🤖
 
-> **Cross-ref:** [09_06 FW.1](09_06_Action_Plan_Tracker) — дизайн завершено ✅
+> **Cross-ref:** [00_07 FW.1](00_07_Action_Plan_Tracker) — дизайн завершено ✅
 
 **Мета:** замінити один hardcoded ключ на МЕРЕЖУ унікальних ключів, де кожен пристрій має свій, а компрометація одного не розкриває решту. Весь дизайн базується на HKDF (RFC 5869) — стандартному HMAC-based Key Derivation Function.
 
@@ -1135,7 +1135,7 @@ STM32CubeProgrammer → Option Bytes → Write Protection:
 
 ### 3.4в Lorenz K_seed Derivation (SEC.11) 🤖
 
-> **Cross-ref:** [09_06 SEC.11](09_06_Action_Plan_Tracker) — ✅ DONE 2026-05-02 (hard cutover, pre-prod)
+> **Cross-ref:** [00_07 SEC.11](00_07_Action_Plan_Tracker) — ✅ DONE 2026-05-02 (hard cutover, pre-prod)
 
 **Мета:** криптографічно стійкий механізм виведення початкової точки `(x₀, y₀, z₀)` атрактора Лоренца для кожного Soldier-вузла. Замінює попередній підхід "raw DID як seed", який мав фундаментальні безпекові вади і робив `check_z_divergence!` категоричним замість числового. Деталі — у [03_04 §2.1 + §3 Крок 1](03_04_mruby_Lorenz_Attractor); тут — лише cryptographic protocol layer.
 
@@ -1265,7 +1265,7 @@ log.update!(lorenz_state_x: x_f, lorenz_state_y: y_f, lorenz_state_z: z_f,
 **Залишковий TODO (не блокує цикл):** реальна mbedTLS HMAC-SHA256 деривація на STM32 HASH-peripheral у Soldier (`Phase 4.5 OTA assembly` має `TODO: Compute expected HMAC via mbedTLS` — потребує лабораторної ARM-збірки з mbedTLS link integration; до того гейт-логіка перевірена host-tests, runtime call вимкнений у бойовій збірці. Аналог FW.30 cold-start mbedTLS placeholder.).
 
 
-> **Cross-ref:** [09_06 FW.23](09_06_Action_Plan_Tracker) — дизайн завершено ✅
+> **Cross-ref:** [00_07 FW.23](00_07_Action_Plan_Tracker) — дизайн завершено ✅
 > **Залежність:** Реалізація staging'ується після FW.1 (per-device HKDF) — потребує спільної master-secret інфраструктури.
 
 **Мета:** усунути BLOCKER §6 «Queen → Soldier (OTA LoRa) — MAC/MIC відсутній». Зловмисник у радіусі Queen може:
@@ -1475,7 +1475,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 
 > ⚠️ **Internal Admin Tool — поза публічним REST API.** Цей розділ описує **окремий канал** доставки ключів від Rails Backend до програматора (SWD/JTAG). Він НЕ є описом `POST /api/v1/provisioning/register` (реєстрація після деплою, Zero-Trust, без ключа у відповіді — `04_03 §5.2` залишається незмінним). Threat model нижче розроблений з нуля з урахуванням фізичного доступу на заводі.
 
-**Cross-ref:** [SEC.3 у 09_06](09_06_Action_Plan_Tracker) | §3.4 (pipeline design) | §3.4а (HKDF derivation) | §3.6 (RDP Level 2) | §3.7 (ATECC608B) | SEC.1 (Gnosis Safe multisig) | SEC.2 (RDP activation) | SEC.6 (Secure Element) | SEC.9 (WeakKeyDetector)
+**Cross-ref:** [SEC.3 у 00_07](00_07_Action_Plan_Tracker) | §3.4 (pipeline design) | §3.4а (HKDF derivation) | §3.6 (RDP Level 2) | §3.7 (ATECC608B) | SEC.1 (Gnosis Safe multisig) | SEC.2 (RDP activation) | SEC.6 (Secure Element) | SEC.9 (WeakKeyDetector)
 
 ---
 
@@ -1653,7 +1653,7 @@ MaintenanceRecord.create!(
 
 ---
 
-> **Cross-ref:** §3.4 (pipeline design Гілка A + B), §3.4а (HKDF derivation), §3.6 (RDP Level 2 — необоротна процедура), §3.7 (ATECC608B slot mapping), [09_06 SEC.3](09_06_Action_Plan_Tracker), [09_06 SEC.1](09_06_Action_Plan_Tracker) (Gnosis Safe multisig для admin role).
+> **Cross-ref:** §3.4 (pipeline design Гілка A + B), §3.4а (HKDF derivation), §3.6 (RDP Level 2 — необоротна процедура), §3.7 (ATECC608B slot mapping), [00_07 SEC.3](00_07_Action_Plan_Tracker), [00_07 SEC.1](00_07_Action_Plan_Tracker) (Gnosis Safe multisig для admin role).
 
 ---
 
@@ -1688,7 +1688,7 @@ MaintenanceRecord.create!(
 
 ### 3.6 Процедура активації RDP Level 2 (необоротна) 🤖
 
-**Cross-ref:** [09_06 SEC.2](09_06_Action_Plan_Tracker), §3.3 «Апаратний Захист Flash».
+**Cross-ref:** [00_07 SEC.2](00_07_Action_Plan_Tracker), §3.3 «Апаратний Захист Flash».
 
 > ⚠️ **Активація RDP Level 2 — одностороння, незворотна дія.** Після `Apply` чіп фізично втрачає SWD інтерфейс назавжди. Цю процедуру виконують **тільки** після того, як OTA-пайплайн повністю верифікований у полі.
 
@@ -1746,13 +1746,13 @@ STM32_Programmer_CLI -c port=SWD -ob RDP=0xCC
 | Field pilot (пілотний ліс) | Level 1 | 100–500 | Field sanity, OTA verification, recovery still possible |
 | Mass production batch | Level 2 | 10,000+ | **Тільки** після ≥3 місяців stable OTA на Level-1 партії |
 
-**Документ-tracker:** після кожного batch активації — оновити `docs/09_06` SEC.2 (👤 — secrets / process).
+**Документ-tracker:** після кожного batch активації — оновити `docs/00_07` SEC.2 (👤 — secrets / process).
 
 ---
 
 ### 3.7 ATECC608B Secure Element — інтеграція (ARCH.42 ✅ resolved)
 
-**Cross-ref:** [09_06 SEC.6](09_06_Action_Plan_Tracker), [09_06 ARCH.42](09_06_Action_Plan_Tracker) — **✅ DECIDED 2026-05-23 (Варіант B)**, §3.2 «Secure Element після ARCH.42».
+**Cross-ref:** [00_07 SEC.6](00_07_Action_Plan_Tracker), [00_07 ARCH.42](00_07_Action_Plan_Tracker) — **✅ DECIDED 2026-05-23 (Варіант B)**, §3.2 «Secure Element після ARCH.42».
 
 > ✅ **ARCH.42 RESOLVED (2026-05-23) — Варіант B обрано:** Мережа Gaia 2.0 переходить на **AES-128** для LoRa-каналу (Soldier ↔ Queen + OTA broadcast). ATECC608B Microchip залишається canonical SE — апаратний AES-engine SE підтримує лише 128-бітні ключі (datasheet DS40002239, §6.2), і це повністю узгоджено з новим LoRa-стеком (FW.2 24-byte AES-128-CCM packet). CoAP-магістраль (Queen ↔ Rails) залишається на AES-256-CBC — її ключ зберігається у Queen Protected Flash (не у SE), тому AES-128 SE-constraint не діє. Глобальний SSOT-патч виконано: `CRYP_KEYSIZE_256B → CRYP_KEYSIZE_128B` (LoRa MX_CRYP_Init), `HardwareKey.aes_key_hex` conditional length (Tree=32 hex, Gateway=64 hex), HKDF output 16 байт через info `"silken-aes-128-lora-key"`.
 >
@@ -2091,7 +2091,7 @@ HAL_CRYP_Init(&hcryp);
 
 ## 🛡️ 10. PQC Migration Roadmap (TRL-Stratified Post-Quantum Layering)
 
-> **Cross-ref:** [ARCH.42](09_06_Action_Plan_Tracker) (ARCH-decision цього документа), [FW.17](09_06_Action_Plan_Tracker) (Hash Ratchet KDF — Perfect Forward Secrecy bridge), [05_01 Multichain Architecture](05_01_Multichain_Architecture) (peaq DID + IoTeX W3bstream рівні), [INF.4](09_06_Action_Plan_Tracker) (Cloudflare TLS termination), `manifest.md` §3 (Cryptographic Integrity).
+> **Cross-ref:** [ARCH.42](00_07_Action_Plan_Tracker) (ARCH-decision цього документа), [FW.17](00_07_Action_Plan_Tracker) (Hash Ratchet KDF — Perfect Forward Secrecy bridge), [05_01 Multichain Architecture](05_01_Multichain_Architecture) (peaq DID + IoTeX W3bstream рівні), [INF.4](00_07_Action_Plan_Tracker) (Cloudflare TLS termination), `manifest.md` §3 (Cryptographic Integrity).
 
 ### 11.1 Чому це **не** аварійне питання, але **обов'язково** має план
 
@@ -2156,11 +2156,11 @@ HAL_CRYP_Init(&hcryp);
 
 | Питання | Документ |
 |---------|----------|
-| Чому AES-128 LoRa достатньо на 25-річний горизонт | Цей §11 + ARCH.42 у `09_06` |
+| Чому AES-128 LoRa достатньо на 25-річний горизонт | Цей §11 + ARCH.42 у `00_07` |
 | Як Cloudflare hybrid Kyber+X25519 інтегровано | `06_02 INF.4` (Akash TLS strategy) |
-| Hash Ratchet KDF дизайн | `[FW.17]` у `09_06` (placeholder, P3) |
+| Hash Ratchet KDF дизайн | `[FW.17]` у `00_07` (placeholder, P3) |
 | peaq DID міграція на Substrate-PQC | `05_01 Multichain Architecture` §peaq |
-| OTA HMAC-SHA256 dual-gate | §3.4б цього файла + `[FW.23]` у `09_06` |
+| OTA HMAC-SHA256 dual-gate | §3.4б цього файла + `[FW.23]` у `00_07` |
 | Chainlink HMAC vs ECDSA migration | `04_02 ChainlinkOracleService` (delegated до Chainlink DON) |
 
 ### 11.5 Висновок

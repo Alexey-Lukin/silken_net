@@ -13,7 +13,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 4 — інфраструктурний код існує, реальний деплой не проводився
-- **Відкрите:** deploy-readiness (Ingress IP, GitHub Secrets, Akash SDL secrets) → [`09_06`](09_06_Action_Plan_Tracker) (S1.1, INF.3/4/6, S5.6).
+- **Відкрите:** deploy-readiness (Ingress IP, GitHub Secrets, Akash SDL secrets) → [`00_07`](00_07_Action_Plan_Tracker) (S1.1, INF.3/4/6, S5.6).
 
 ---
 
@@ -30,7 +30,7 @@
 | [06_04_Secrets_Checklist](06_04_Secrets_Checklist) | секрети — SSOT |
 | [06_06_Disaster_Recovery_and_Backup](06_06_Disaster_Recovery_and_Backup) | backup / restore / RTO·RPO |
 | [06_07_CICD_and_Runbook_Index](06_07_CICD_and_Runbook_Index) | CI/CD pipeline + runbook index |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | S1.1, S1.5, INF.3/4/6, S5.6 |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | S1.1, S1.5, INF.3/4/6, S5.6 |
 
 ## 📑 Зміст
 

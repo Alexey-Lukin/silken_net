@@ -11,7 +11,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 — Пайплайн повністю імплементовано.
-- **Відкрите:** прямих блокерів немає (пайплайн імплементовано); залежні інтеграції (Hadron/Chainlink hybrid) трекаються в [`09_06`](09_06_Action_Plan_Tracker).
+- **Відкрите:** прямих блокерів немає (пайплайн імплементовано); залежні інтеграції (Hadron/Chainlink hybrid) трекаються в [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -24,7 +24,7 @@
 | [04_01_Data_Models_and_Entities](04_01_Data_Models_and_Entities) | Моделі (TelemetryLog, Wallet, BlockchainTransaction) |
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Сервіси (Unpacker, Verification, Minting) |
 | [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz SSOT (константи, DCI parity) |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | Open backlog |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | Open backlog |
 
 ## 📑 Зміст
 
@@ -275,7 +275,7 @@ end
 
 #### 🤖 FW.8 — OTA Sync для Per-Species Lorenz Thresholds (Дизайн)
 
-> **Cross-ref:** [09_06 FW.8](09_06_Action_Plan_Tracker) — дизайн завершено ✅
+> **Cross-ref:** [00_07 FW.8](00_07_Action_Plan_Tracker) — дизайн завершено ✅
 
 **Проблема:** `CRITICAL_Z_MIN`, `CRITICAL_Z_MAX`, `OPTIMAL_Z_TARGET` hardcoded у Flash. Сосна (*Pinus sylvestris*) і дуб (*Quercus robur*) мають різний діапазон нормальної конвективної активності — один пороговий набір дає хибні anomaly alerts для одного виду при нормальному стані іншого.
 
@@ -594,7 +594,7 @@ ChainlinkDispatchWorker.perform_async(telemetry_log_id, created_at_iso)
 
 ### 🔬 E.60 — Merkle CID-witness: bidirectional integrity bridge Polygon ↔ Filecoin (пропозиція)
 
-> **Статус:** design-пропозиція (revised), **ще не в коді** — потребує нового сервісу `Filecoin::CidGenerator` (наразі в `app/services/filecoin/` лише `archive_service.rb` + `verification_service.rb`). Розширює Крок B (IoTeX W3bstream witness) і змикає його з кроком архівації Filecoin (`05_01 §Рівень 1`). Трекер: [E.60 → 09_06](09_06_Action_Plan_Tracker).
+> **Статус:** design-пропозиція (revised), **ще не в коді** — потребує нового сервісу `Filecoin::CidGenerator` (наразі в `app/services/filecoin/` лише `archive_service.rb` + `verification_service.rb`). Розширює Крок B (IoTeX W3bstream witness) і змикає його з кроком архівації Filecoin (`05_01 §Рівень 1`). Трекер: [E.60 → 00_07](00_07_Action_Plan_Tracker).
 
 **Проблема (data-integrity gap):** Раніше Filecoin/IPFS pin відбувався **після** мінту в Polygon — блокчейн-транзакція не мала криптографічного зв'язку з архівом. Зловмисник міг ex-post підмінити archive у Pinata (новий CID), і ніхто би не помітив, що SCC-token посилається на інший набір даних.
 
@@ -923,7 +923,7 @@ blockchain_transactions
 
 ## 🔬 SEC.11 — Lorenz Seed Provenance & Dual Computation Integrity
 
-> **Cross-ref:** дизайн і threat model — [03_05 §3.4в](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-); сервіс — [04_02 `SilkenNet::SeedDerivation`](04_02_Business_Logic_and_Services#silkennetseedderivation-); poetics — [03_04 §2.1, §3 Крок 1](03_04_mruby_Lorenz_Attractor); SEC.11 в трекері — [09_06 SEC.11](09_06_Action_Plan_Tracker).
+> **Cross-ref:** дизайн і threat model — [03_05 §3.4в](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-); сервіс — [04_02 `SilkenNet::SeedDerivation`](04_02_Business_Logic_and_Services#silkennetseedderivation-); poetics — [03_04 §2.1, §3 Крок 1](03_04_mruby_Lorenz_Attractor); SEC.11 в трекері — [00_07 SEC.11](00_07_Action_Plan_Tracker).
 
 ### Чому це частина Proof of Growth, а не суто security task
 

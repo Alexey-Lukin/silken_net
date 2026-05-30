@@ -8,7 +8,7 @@ module Hil
   # 🏰 HilQueenSimulator — Queen Gateway HIL Digital Twin
   # = ===================================================================
   #
-  # Source: docs/09_02_TRL_Matrix_HIL_and_Beyond §4.2 +
+  # Source: docs/00_03_TRL_Matrix_HIL_and_Beyond §4.2 +
   # docs/06_08_Resilience_and_Failover_Policy §1.3.
   #
   # Generates Queen Sentinel telemetry (DID = 0x00000000) without a live

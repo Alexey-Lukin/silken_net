@@ -10,14 +10,14 @@
 #   HARD  (gates CI): every doc with a `## ✅ Статус` section declares a TRL there
 #                     (Поточний TRL / Conceptual (TRL …)) — catches the 06_04-class
 #                     "Статус without a readiness level" gap. All 50 docs pass today.
-#   HARD  (gates CI): the 09_02 §1 per-module TRL matrix has single-value cells
-#                     (1-9), never a range — 09_04 §1.1 Current TRL is single-select.
+#   HARD  (gates CI): the 00_03 §1 per-module TRL matrix has single-value cells
+#                     (1-9), never a range — 00_05 §1.1 Current TRL is single-select.
 #   HARD  (gates CI): no canon doc hosts a blocker section (🛑/✅ + Блокери/Архів) —
-#                     ALL blockers live in 09_06 (sweep complete 2026-05-30); open ones
-#                     are reframed in-doc to non-blocker headings + a → 09_06 pointer.
+#                     ALL blockers live in 00_07 (sweep complete 2026-05-30); open ones
+#                     are reframed in-doc to non-blocker headings + a → 00_07 pointer.
 #   HARD  (gates CI): every canon NN_NN doc carries the standard skeleton — ✅ Статус
-#                     + top 🔗 Cross-references + auto-ToC (09_05). Exempt: 00_00
-#                     (index), 09_06 (tracker / blocker home), *_appendix_*.
+#                     + top 🔗 Cross-references + auto-ToC (00_06). Exempt: 00_00
+#                     (index), 00_07 (tracker / blocker home), *_appendix_*.
 # Pure file I/O, no Rails boot needed. Engines: lib/docs_linter.rb + lib/docs_toc.rb (unit-tested).
 require_relative "../docs_linter"
 require_relative "../docs_toc"
@@ -72,20 +72,20 @@ namespace :docs do
 
       # [RTC reg-map drift] register availability is SSOT-owned by 03_01 §2; any
       # other doc asserting "DRn free/reserve" drifts (caught the stale
-      # "DR15 наразі резерв" in 03_02/09_06/03_03 after FW.2 claimed DR15).
+      # "DR15 наразі резерв" in 03_02/00_07/03_03 after FW.2 claimed DR15).
       rtc_drift.concat(DocsLinter.rtc_register_allocation_drift(base, text).map { |h| "#{base}: #{h}" })
       lorenz_drift.concat(DocsLinter.lorenz_formula_drift(base, text).map { |h| "#{base}: #{h}" })
       deprecated.concat(DocsLinter.deprecated_terms(text).map { |h| "#{base}: #{h}" })
       label_drift.concat(DocsLinter.link_label_target_mismatch(text).map { |h| "#{base}: #{h}" })
     end
 
-    # [TRL single-value] HARD — 09_02 §1 per-module matrix cells single 1-9.
-    matrix     = File.join(DOCS_DIR, "09_02_TRL_Matrix_HIL_and_Beyond.md")
+    # [TRL single-value] HARD — 00_03 §1 per-module matrix cells single 1-9.
+    matrix     = File.join(DOCS_DIR, "00_03_TRL_Matrix_HIL_and_Beyond.md")
     trl_ranges = File.exist?(matrix) ? DocsLinter.trl_matrix_range_violations(File.read(matrix)) : []
 
-    # [Blockers → 09_06] ADVISORY (→ HARD once the sweep removes them all). Canon
-    # docs must not host a 🛑/✅-archive blocker section; 09_06 is the tracker — exempt.
-    blocker_sections = files.reject { |f| File.basename(f).start_with?("09_06") }
+    # [Blockers → 00_07] ADVISORY (→ HARD once the sweep removes them all). Canon
+    # docs must not host a 🛑/✅-archive blocker section; 00_07 is the tracker — exempt.
+    blocker_sections = files.reject { |f| File.basename(f).start_with?("00_07") }
                             .flat_map { |f| DocsLinter.canon_blocker_sections(File.read(f)).map { |h| "#{File.basename(f, '.md')}: #{h}" } }
 
     # [ToC sync] HARD — docs with TOC:AUTO markers must match current headings
@@ -119,15 +119,15 @@ namespace :docs do
       trl_missing.sort.uniq.each { |d| puts "    ✗ #{d}" }
     end
     if trl_ranges.empty?
-      puts "  TRL single-value: 09_02 §1 matrix cells all single 1-9 ✓"
+      puts "  TRL single-value: 00_03 §1 matrix cells all single 1-9 ✓"
     else
-      puts "  TRL RANGE in 09_02 §1 matrix (#{trl_ranges.size}):"
+      puts "  TRL RANGE in 00_03 §1 matrix (#{trl_ranges.size}):"
       trl_ranges.each { |r| puts "    ✗ #{r}" }
     end
     if blocker_sections.empty?
-      puts "  blockers→09_06:  no canon doc hosts a 🛑/✅-archive blocker section ✓"
+      puts "  blockers→00_07:  no canon doc hosts a 🛑/✅-archive blocker section ✓"
     else
-      puts "  ⚠️ canon docs still hosting blocker sections (#{blocker_sections.size}) — advisory, migrate to 09_06:"
+      puts "  ⚠️ canon docs still hosting blocker sections (#{blocker_sections.size}) — advisory, migrate to 00_07:"
       blocker_sections.sort.each { |b| puts "    · #{b}" }
     end
     if toc_drift.empty?
@@ -170,9 +170,9 @@ namespace :docs do
     failed = []
     failed << "dangling doc links" unless dangling.empty?
     failed << "✅ Статус docs without a TRL" unless trl_missing.empty?
-    failed << "TRL ranges in 09_02 §1 matrix" unless trl_ranges.empty?
+    failed << "TRL ranges in 00_03 §1 matrix" unless trl_ranges.empty?
     failed << "ToC drift (run docs:toc)" unless toc_drift.empty?
-    failed << "canon docs hosting blocker sections (→ 09_06)" unless blocker_sections.empty?
+    failed << "canon docs hosting blocker sections (→ 00_07)" unless blocker_sections.empty?
     failed << "docs missing the standard skeleton" unless conformance.empty?
     failed << "RTC register-map drift (availability claimed outside 03_01)" unless rtc_drift.empty?
     failed << "Lorenz-formula drift (β re-stated outside 03_04 §4.1)" unless lorenz_drift.empty?

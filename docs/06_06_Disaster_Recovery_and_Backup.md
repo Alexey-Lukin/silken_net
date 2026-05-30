@@ -11,7 +11,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 5 — backup-конфіг IaC присутній і ввімкнений (Cloud SQL PITR + REGIONAL HA + deletion_protection), але restore-runbook'и не проганялися в drill, master-key backup — операційна задача.
-- **Відкрите:** DR drill + master-key backup (ще не проганялися) → [`09_06`](09_06_Action_Plan_Tracker) (DR.1, S5.6).
+- **Відкрите:** DR drill + master-key backup (ще не проганялися) → [`00_07`](00_07_Action_Plan_Tracker) (DR.1, S5.6).
 
 ---
 
@@ -24,12 +24,12 @@
 | [06_01_Deployment_Kamal_Terraform](06_01_Deployment_Kamal_Terraform) | `terraform apply`, Ingress Anchor, deploy-flow |
 | [06_04_Secrets_Checklist](06_04_Secrets_Checklist) | master-ключі, ротація (§5.2), revocation (§5.4) |
 | [06_08_Resilience_and_Failover_Policy](06_08_Resilience_and_Failover_Policy) | runtime failover (не backup) |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | DR.1 (drill + master-key backup), S5.6 |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | DR.1 (drill + master-key backup), S5.6 |
 
 ## 📑 Зміст
 
 <!-- TOC:AUTO:START -->
-- [Gaps (→ 09_06)](#-gaps--09_06)
+- [Gaps (→ 00_07)](#-gaps--00_07)
 - [1. Інвентар: що захищаємо](#1-інвентар-що-захищаємо)
 - [2. Cloud SQL — backup + HA (фактична конфігурація)](#2-cloud-sql--backup--ha-фактична-конфігурація)
 - [3. RTO / RPO targets](#3-rto--rpo-targets)
@@ -40,7 +40,7 @@
 
 ---
 
-## 🛑 Gaps (→ 09_06)
+## 🛑 Gaps (→ 00_07)
 
 - 🔴 **DR-drill не проводився** — restore-runbook'и (§5) не верифіковані на реальному відновленні. `DR.1`.
 - 🟡 **Master-key backup — операційна задача** — `RAILS_MASTER_KEY` / `PROVISIONING_MASTER_KEY` незамінні; процедура зберігання у vault не виконана (§4). `DR.1`.

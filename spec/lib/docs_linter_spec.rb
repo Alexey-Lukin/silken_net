@@ -56,7 +56,7 @@ RSpec.describe DocsLinter do
     end
 
     it "does not flag body prose that merely mentions a blocker/constraint" do
-      md = "## 🔐 1. Crypto\nLoRa uses AES-128-ECB (transitional, no MAC) — see 09_06 §03.\n"
+      md = "## 🔐 1. Crypto\nLoRa uses AES-128-ECB (transitional, no MAC) — see 00_07 §03.\n"
       expect(described_class.canon_blocker_sections(md)).to be_empty
     end
 
@@ -81,7 +81,7 @@ RSpec.describe DocsLinter do
     it "exempts the index, the tracker, and appendix docs" do
       bare = "## 🎯 Мета\n"
       expect(described_class.conformance_violations("00_00_SSOT_Index", bare)).to be_empty
-      expect(described_class.conformance_violations("09_06_Action_Plan_Tracker", bare)).to be_empty
+      expect(described_class.conformance_violations("00_07_Action_Plan_Tracker", bare)).to be_empty
       expect(described_class.conformance_violations("02_06_Legacy_Breadboard_Appendix", bare)).to be_empty
     end
 
@@ -116,7 +116,7 @@ RSpec.describe DocsLinter do
 
     it "does not match 'звільнило' (freed elsewhere) or 'reserved:' bit-fields" do
       expect(described_class.rtc_register_allocation_drift(
-        "09_06_Tracker", "RTC DR10+DR12 (звільнило DR11 під слот)\n")).to be_empty
+        "00_07_Tracker", "RTC DR10+DR12 (звільнило DR11 під слот)\n")).to be_empty
       expect(described_class.rtc_register_allocation_drift(
         "03_03_TinyML", "DR0 = [panic:16 | reserved:8 | acoustic:8]\n")).to be_empty
     end
@@ -173,9 +173,9 @@ RSpec.describe DocsLinter do
 
   describe ".link_label_target_mismatch" do
     it "flags a label leading with a different doc-ID than the href resolves to" do
-      hits = described_class.link_label_target_mismatch("див. [`09_05 §2/§4`](09_04_GitHub_Projects_and_IaC_Automation)")
+      hits = described_class.link_label_target_mismatch("див. [`00_06 §2/§4`](00_05_GitHub_Projects_and_IaC_Automation)")
       expect(hits.size).to eq(1)
-      expect(hits.first).to include("09_05").and include("09_04")
+      expect(hits.first).to include("00_06").and include("00_05")
     end
 
     it "passes when the label leads with the same doc it links to (ref form + full-name form)" do
@@ -192,7 +192,7 @@ RSpec.describe DocsLinter do
     end
 
     it "does not match a long number that merely contains an NN_NN substring" do
-      expect(described_class.link_label_target_mismatch("[реліз 2026_05 deep-dive](07_01_Vision_Mission_and_Roadmap)")).to be_empty
+      expect(described_class.link_label_target_mismatch("[реліз 2026_05 deep-dive](00_01_Vision_Mission_and_Roadmap)")).to be_empty
     end
   end
 end

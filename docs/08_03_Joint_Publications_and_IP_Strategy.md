@@ -12,7 +12,7 @@
 
 - **Поточний TRL:** TRL 3 baseline; **TRL 3→4 gate PASSED** (2026-05-25) — Zero-Lab in-silico pipeline L1-L4 ✅
 - **Стратегічна цінність:** Наукові публікації ЧНУ + ЧДТУ (3 кафедри) + ЧІПБ + ЧМА + СЄУ = легітимізація технології + Hardware Proof для seed-раунду + Data Science валідація + RF-верифікація + акустична валідація + пожежна безпека та параметричне страхування + біохімічна валідація EBFC та токсикологія + макроекономічна валідація токеноміки та правова архітектура RWA
-- **Відкрите:** спільні публікації + patent filing (потребує MoU) → [`09_06`](09_06_Action_Plan_Tracker) (UNI.*).
+- **Відкрите:** спільні публікації + patent filing (потребує MoU) → [`00_07`](00_07_Action_Plan_Tracker) (UNI.*).
 
 ---
 
@@ -28,7 +28,7 @@
 | [08_07_SEU_Economics_and_Legal_Integration](08_07_SEU_Economics_and_Legal_Integration) | СЄУ (токеноміка, RWA-legal) |
 | [07_03_Unit_Economics_and_BOM](07_03_Unit_Economics_and_BOM) | Юніт-економіка |
 | [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | UNI.* |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | UNI.* |
 
 ## 📑 Зміст
 
@@ -52,7 +52,7 @@
 
 ## 🚧 Відкриті передумови та статус
 
-> Статуси трекаються в [`09_06`](09_06_Action_Plan_Tracker) (UNI.*); нижче — контекст партнерства.
+> Статуси трекаються в [`00_07`](00_07_Action_Plan_Tracker) (UNI.*); нижче — контекст партнерства.
 
 - **Лабораторні дані відсутні** — перша публікація можлива лише після протоколів з 08_01
 - **Авторський колектив не сформований** — потрібні конкретні викладачі ЧНУ
@@ -603,7 +603,7 @@ _«Дослідження акустичних властивостей пори
 - [`08_02` §1.5 Macro-Micro Verification](08_02_Cybernetic_and_Mathematical_Validation) — Бушин CNN + fauna feature
 - [`08_02` §1.8 NSGA-II GA](08_02_Cybernetic_and_Mathematical_Validation) — Любченко 5-class оптимізація
 - [`08_04` §1.3 Завдання В](08_04_CHDTU_Data_Science_Collaboration) — ПМКТ калібрувальний датасет
-- [`09_06 UNI.11`](09_06_Action_Plan_Tracker) — операційний tracker
+- [`00_07 UNI.11`](00_07_Action_Plan_Tracker) — операційний tracker
 
 **Грантовий вектор:** Стаття 24a є **науковим обґрунтуванням** заявки на **Horizon Europe CLUSTER 6 — Food, Bioeconomy, Natural Resources, Agriculture and Environment**, тематика _Biodiversity Monitoring_ (бюджет одного гранту 2–6 М€). Submission прив'язана до моменту, коли стаття приймається до Q1-журналу — це переводить заявку з категорії «концепт» у категорію «published research» (вирішальна різниця для Horizon evaluators).
 

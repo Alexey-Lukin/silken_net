@@ -13,7 +13,7 @@
 - **Конфігураційний SSOT:** `config/puma.rb`
 - **Runtime-архітектура:** `Thruster (HTTP/2, TLS) → Puma (clustered, preload_app!) → Rails 8.1`
 - **Puma middleware:** `MarkWeb3RequestsAsIoBound` (`app/middleware/mark_web3_requests_as_io_bound.rb`)
-- **Відкрите:** production verification (живий деплой) → [`09_06`](09_06_Action_Plan_Tracker).
+- **Відкрите:** production verification (живий деплой) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -29,7 +29,7 @@
 | [06_02_Akash_Network_Integration](06_02_Akash_Network_Integration) | `WEB_CONCURRENCY=4` у Akash SDL |
 | [06_03_Prometheus_Observability](06_03_Prometheus_Observability) | `/metrics` endpoint |
 | [04_03_REST_API_v1_Reference](04_03_REST_API_v1_Reference) | Список IO-bound endpoints |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | production verification |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | production verification |
 
 ## 📑 Зміст
 
@@ -129,7 +129,7 @@ end
 env["rack.response_finished"] << -> { Rails.cache.write(cache_key, response_body, expires_in: 24.hours) }
 ```
 
-Кеш пишеться **після** flush відповіді клієнту → зменшує p50 latency на ~1-2 мс. TTL та логіка незмінні; spec coverage оновлено. *(Мігровано з `09_06 PUMA-RACK-1` 2026-05-28.)*
+Кеш пишеться **після** flush відповіді клієнту → зменшує p50 latency на ~1-2 мс. TTL та логіка незмінні; spec coverage оновлено. *(Мігровано з `00_07 PUMA-RACK-1` 2026-05-28.)*
 
 > **Майбутнє (planetary scale):** при > 1M actuator-команд/добу — переглянути на користь batched cache writes.
 

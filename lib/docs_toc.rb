@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # [SSOT anti-drift] Auto-generated per-doc Table of Contents for docs/*.md
-# (09_05). The GitHub *Wiki* has no automatic outline, so each canon doc needs
+# (00_06). The GitHub *Wiki* has no automatic outline, so each canon doc needs
 # an in-file ToC — but a hand-maintained list drifts (the same trap as volatile
 # counts), so it is GENERATED from the doc's own `## ` headings between
 # `<!-- TOC:AUTO:START -->` / `<!-- TOC:AUTO:END -->` markers and CI-verified in

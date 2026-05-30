@@ -16,7 +16,7 @@
 - **Ключовий Півот (v4 — EBFC Gen 2.0 baseline, 2026-05-22):** Біохімічний стек переписаний. Анод — одношаровий **dgrFAD-GDH + Os** (deglycosylated FAD-залежна глюкозодегідрогеназа) у захисній **Genipin-Chitosan-CNC** матриці з **Nafion-g-PSBMA** цвітеріонною мембраною; катод — гібрид **Laccase + ZIF-nanozyme** (nCoCuCeZIF/Lac). Очікуваний термін служби 20–25 років. Gen 1.0 (GOx+CAT+глутаральдегід+PEG) виключена як нежиттєздатна (`01_03`).
 - **Антенна Підсистема (v2):** Відмова від зовнішніх U.FL-кабелів та 4 голок-електродів. Прийнято рішення: керамічна SMD-антена 868 МГц + PEEK-радом (детально в розділі 5).
 - **Повна вартість вузла:** ~$32–$35 / шт (при 10k+), з урахуванням анкера + PEEK + герметизації. Детально → `07_03_Unit_Economics_and_BOM`.
-- **Відкриті:** conformal coating Parylene C (HW.11), EBFC >5.5V overcharge protection (HW.12/HW.7) → [`09_06`](09_06_Action_Plan_Tracker).
+- **Відкриті:** conformal coating Parylene C (HW.11), EBFC >5.5V overcharge protection (HW.12/HW.7) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -31,7 +31,7 @@
 | [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Фази прошивки (STOP2, TX, TinyML) + енергоспоживання |
 | [01_03_EBFC_Enzymatic_Bio_Fuel_Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | Хімія EBFC, V-I крива, >500 мВ |
 | [07_03_Unit_Economics_and_BOM](07_03_Unit_Economics_and_BOM) | CAPEX/OPEX, ROI, Supply Chain Ukraine |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.7 VBAT_OV, HW.11 Parylene, HW.12 overvoltage |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.7 VBAT_OV, HW.11 Parylene, HW.12 overvoltage |
 
 ## 📑 Зміст
 

@@ -1,8 +1,8 @@
-# 09_02: TRL Matrix, HIL & Beyond-TRL-9
+# 00_03: TRL Matrix, HIL & Beyond-TRL-9
 
 ## 🎯 Мета
 
-Канонічний дім **per-module TRL-матриці** (§1) та довгострокової R&D-агенди за межами TRL 9 (§7). Фіксує принцип **TRL-Layered-Independence** і HIL-симулятори — **програмні еквіваленти фізичного навантаження**, що дозволяють софт-доменам незалежно досягати свого *per-domain* TRL. ⚠️ HIL **НЕ «знімає» System-TRL-Lock** (той лишається обмеженим найнижчим модулем критичного шляху) — він лише декаплить per-domain прогрес. Стратегічна дорожня карта (фази масштабування) — у [`07_01`](07_01_Vision_Mission_and_Roadmap).
+Канонічний дім **per-module TRL-матриці** (§1) та довгострокової R&D-агенди за межами TRL 9 (§7). Фіксує принцип **TRL-Layered-Independence** і HIL-симулятори — **програмні еквіваленти фізичного навантаження**, що дозволяють софт-доменам незалежно досягати свого *per-domain* TRL. ⚠️ HIL **НЕ «знімає» System-TRL-Lock** (той лишається обмеженим найнижчим модулем критичного шляху) — він лише декаплить per-domain прогрес. Стратегічна дорожня карта (фази масштабування) — у [`00_01`](00_01_Vision_Mission_and_Roadmap).
 
 ---
 
@@ -17,13 +17,13 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [07_01_Vision_Mission_and_Roadmap](07_01_Vision_Mission_and_Roadmap) | Бізнес-візія та slashing |
-| [09_01_AI_Native_Engineering_and_TRL](09_01_AI_Native_Engineering_and_TRL) | AI-Native TRL philosophy (метрика прогресу) |
-| [09_03_Shape_Up_Operations_and_RnD_Clusters](09_03_Shape_Up_Operations_and_RnD_Clusters) | Shape Up operations; §Async-Review TRL Gates |
-| [09_04_GitHub_Projects_and_IaC_Automation](09_04_GitHub_Projects_and_IaC_Automation) | TRL Auto-Advancement (HIL → Projects V2 cards) |
+| [00_01_Vision_Mission_and_Roadmap](00_01_Vision_Mission_and_Roadmap) | Бізнес-візія та slashing |
+| [00_02_AI_Native_Engineering_and_TRL](00_02_AI_Native_Engineering_and_TRL) | AI-Native TRL philosophy (метрика прогресу) |
+| [00_04_Shape_Up_Operations_and_RnD_Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) | Shape Up operations; §Async-Review TRL Gates |
+| [00_05_GitHub_Projects_and_IaC_Automation](00_05_GitHub_Projects_and_IaC_Automation) | TRL Auto-Advancement (HIL → Projects V2 cards) |
 | [04_06_Testing_Guide_and_Coverage](04_06_Testing_Guide_and_Coverage) | §B Coverage Matrix — HIL → RSpec/Firmware/Foundry coverage |
 | [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | Фізичні валідаційні протоколи ВНЗ (TRL 1-4) |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): Module 01 chemistry (HW.*), 06 DevOps deploy, 08 UNI.* |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): Module 01 chemistry (HW.*), 06 DevOps deploy, 08 UNI.* |
 
 ## 📑 Зміст
 
@@ -51,11 +51,11 @@
 
 ### Per-module TRL (канонічне джерело)
 
-> SSOT для per-domain TRL. **System TRL = найнижчий модуль критичного шляху (00–07 build-path)** — наразі 4 (модулі 00/01/02 — hardware-критичні). Модулі 08 (R&D-партнерства), 09 (PM-процес), 10 (Security-hardening) — це org/process/безпекова зрілість, яка трекається окремо і **не гейтить** System TRL (інакше System=2 за рахунок ранніх ВНЗ-партнерств, що хибно). Оновлюється при кожному cool-down. *(Мігровано з `09_06 §TRL Матриця` 2026-05-28 — канон тут.)*
+> SSOT для per-domain TRL. **System TRL = найнижчий модуль критичного шляху (01–07 build-path)** — наразі 4 (модулі 01/02 — hardware-критичні). **Foundation (00)** = візія/метод (зрілі, TRL 9 — поза критичним шляхом, не гейтить). Модулі 08 (R&D-партнерства), 09 (PM-процес), 10 (Security-hardening) — це org/process/безпекова зрілість, яка трекається окремо і **не гейтить** System TRL (інакше System=2 за рахунок ранніх ВНЗ-партнерств, що хибно). Оновлюється при кожному cool-down. *(Мігровано з `00_07 §TRL Матриця` 2026-05-28 — канон тут.)*
 
 | Модуль | TRL | Цільовий | Головний блокер |
 |--------|-----|----------|-----------------|
-| 00 System Architecture | 4 | 9 | Module 01 chemistry |
+| 00 Foundation (Vision + Method) | 9 | 9 | — (методологія/візія зрілі) |
 | 01 Materials & EBFC | 4 | 6 | Lab tests (ЧНУ) |
 | 02 Hardware & BOM | 4 | 6 | BQ25570, PCB, Pogo, PEEK |
 | 03 Firmware | 6 | 8 | AES key, TinyML, AT blocking |
@@ -77,8 +77,8 @@
 
 ### Нова формулювання (Concurrent + HIL):
 
-1. **System TRL** залишається обмеженим найнижчим модулем **критичного шляху** (00–07; §1-note) — це чесна метрика для grant заявок та regulator-комунікації ("система готова до пілоту тоді й тільки тоді, коли всі шари готові").
-2. **Per-domain TRL** є **незалежним** і відстежується в `docs/09_02 §TRL Matrix` per-module. Software може бути TRL 8 коли Hardware TRL 4.
+1. **System TRL** залишається обмеженим найнижчим модулем **критичного шляху** (01–07; §1-note) — це чесна метрика для grant заявок та regulator-комунікації ("система готова до пілоту тоді й тільки тоді, коли всі шари готові").
+2. **Per-domain TRL** є **незалежним** і відстежується в `docs/00_03 §TRL Matrix` per-module. Software може бути TRL 8 коли Hardware TRL 4.
 3. **HIL Simulators** (Hardware-in-the-Loop) — програмні генератори, які імітують поведінку реального hardware, дозволяють software-домену пройти TRL 5-8 без живої EBFC/анкера.
 
 ---
@@ -134,9 +134,9 @@
 >
 > Цей розділ фіксує **4 архітектурні прогалини**, які стоять між поточною архітектурою та справжнім "planetary intelligence". Це **не блокери** для TRL 9 (комерційний продукт можливий і без них), але це **дослідницький горизонт за межами TRL 9** — наукова програма на 5–15 років, яка перетворить Silken Net з IoT-системи в самоорганізовану кібер-екосистему.
 >
-> **⚠️ Метрика (2026-05-28): «TRL 10-12» — НЕ використовується.** TRL стандартизовано на 1-9 (NASA / ISO 16290) і вимірює лише технологічну готовність. Зрілість за межами TRL 9 трекається окремими шкалами ([`09_01 §1`](09_01_AI_Native_Engineering_and_TRL)): **SRL (System Readiness Level)** — системна/інтеграційна зрілість, стадії `Concept → Pilot → Deployed`; **MRL (Manufacturing Readiness Level, 8-10)** — серійне виробництво (5 SKU). Нижче «TRL шлях» кожної прогалини переформульовано як **SRL-шлях**.
+> **⚠️ Метрика (2026-05-28): «TRL 10-12» — НЕ використовується.** TRL стандартизовано на 1-9 (NASA / ISO 16290) і вимірює лише технологічну готовність. Зрілість за межами TRL 9 трекається окремими шкалами ([`00_02 §1`](00_02_AI_Native_Engineering_and_TRL)): **SRL (System Readiness Level)** — системна/інтеграційна зрілість, стадії `Concept → Pilot → Deployed`; **MRL (Manufacturing Readiness Level, 8-10)** — серійне виробництво (5 SKU). Нижче «TRL шлях» кожної прогалини переформульовано як **SRL-шлях**.
 >
-> **Не плутати з блокерами в `09_06`:** там — конкретні інженерні задачі з measurable outcomes. Тут — стратегічні R&D-вектори, які потребують академічної колаборації (Q1 публікації) та можуть стати темою PhD-дисертацій під школами Кирилюка (синергетика) + Мінаєва (квантова хімія) + Порубльова (FOTIUS кібернетика).
+> **Не плутати з блокерами в `00_07`:** там — конкретні інженерні задачі з measurable outcomes. Тут — стратегічні R&D-вектори, які потребують академічної колаборації (Q1 публікації) та можуть стати темою PhD-дисертацій під школами Кирилюка (синергетика) + Мінаєва (квантова хімія) + Порубльова (FOTIUS кібернетика).
 
 ### 7.1. Gap #1 — Forest-Level Emergence (Колективний Гомеостаз)
 
@@ -321,7 +321,7 @@ L1: Soldier Nodes (Regular Tree — Листя) — поточна архіте�
 
 **Ключова зміна:** Солдати більше не спілкуються з усім світом — лише з найближчим Провідником. Зменшення радіочастотних колізій на порядки.
 
-> **Передумова для L2 Conductor:** Рівень Провідників потребує вирішеної Проблеми Рандеву між Солдатом і Провідником. Провідник не може бути always-on (як Queen) — його живлення обмежене, хоча й більше ніж у Солдата. Рішення: TDMA Синхронні Вікна ([ARCH.26](09_06_Action_Plan_Tracker)) + CAD Preamble Detection. Деталі Рандеву — [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA).
+> **Передумова для L2 Conductor:** Рівень Провідників потребує вирішеної Проблеми Рандеву між Солдатом і Провідником. Провідник не може бути always-on (як Queen) — його живлення обмежене, хоча й більше ніж у Солдата. Рішення: TDMA Синхронні Вікна ([ARCH.26](00_07_Action_Plan_Tracker)) + CAD Preamble Detection. Деталі Рандеву — [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA).
 
 ### 8.2. H-LDSE — Ієрархічний Протокол Маршрутизації
 

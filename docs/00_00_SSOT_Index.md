@@ -6,15 +6,17 @@
 
 Система побудована за принципами **Zero-Trust** та **Нульового Лагу**. Будь-який код, згенерований ШІ, або фізичний прототип, створений підрядником, повинен суворо відповідати документації на цих сторінках.
 
-> **Структура SSOT — дворівнева.** **Tier I (Система)** — інженерний канон того, *ЩО* ми будуємо: архітектура + вертикальний стек шарів (01 анкер → 06 інфраструктура). **Tier II (Програма)** — *ЯК і НАВІЩО*: стратегія/економіка, академічні партнерства, методологія/governance довкола системи. Стандарт самих доків — [`09_05`](09_05_SSOT_Documentation_Standard).
+> **Структура SSOT — тришарова.** **Модуль 00 — Фундамент** (read-first мета-лінза): *НАВІЩО* (візія/місія/дорожня карта) та *ЯК* (методологія, TRL, governance процесу) ми будуємо — плюс конституція всієї системи (карта нижче). **Tier I (Система, 01–06)** — інженерний канон того, *ЩО* ми будуємо: вертикальний стек шарів (01 анкер у дереві → 06 інфраструктура). **Tier II (Програма, 07–08)** — стратегія/економіка та академічні партнерства довкола системи. Стандарт самих доків — [`00_06`](00_06_SSOT_Documentation_Standard).
 
 ---
 
-# 🏛️ Tier I — Система (The Blueprint)
+# 🧭 Модуль 00 — Фундамент (Foundation: Візія + Метод)
+
+_Read-first мета-лінза проєкту: **НАВІЩО** (візія, місія, дорожня карта) і **ЯК** (методологія AI-Native, NASA TRL, Shape Up, governance процесу, стандарт SSOT-доків) ми будуємо — плюс **конституція всієї системи** (карта 8 рівнів нижче). Деталі кожного рівня розкриваються у профільних модулях Tier I (01–06)._
 
 ## 🗺️ Системна Карта: 8 Рівнів Кіберфізики (The Constitution)
 
-_Top-down конституція системи: дані течуть знизу вгору — від біохімії дерева до фіналізації в Ethereum L1. Кожен рівень розгортається у профільному модулі Tier I (01–06). Повний **12-крокового Proof-of-Growth конвеєр** — канонічно [`05_02`](05_02_Proof_of_Growth_Pipeline) (операційний потік) + [`05_01 §1–2`](05_01_Multichain_Architecture) (ролі 12 мереж); політика resilience/failover — [`06_08`](06_08_Resilience_and_Failover_Policy). Методологія/стратегія — Tier II (07/09)._
+_Top-down конституція системи: дані течуть знизу вгору — від біохімії дерева до фіналізації в Ethereum L1. Кожен рівень розгортається у профільному модулі Tier I (01–06). Повний **12-крокового Proof-of-Growth конвеєр** — канонічно [`05_02`](05_02_Proof_of_Growth_Pipeline) (операційний потік) + [`05_01 §1–2`](05_01_Multichain_Architecture) (ролі 12 мереж); політика resilience/failover — [`06_08`](06_08_Resilience_and_Failover_Policy). Методологія/процес — цей Модуль 00 (Фундамент, сторінки нижче); стратегія/економіка — Tier II (07)._
 
 | Рівень | Сутність | Канон |
 |--------|----------|-------|
@@ -67,7 +69,21 @@ Soldier (Tree)         Soldier (Tree)         Soldier (Tree)
    └────────────────────────────────────────────────┘
 ```
 
-> **📐 Модуль 00 → Foundation.** Технічна архітектура тепер живе в цій системній карті (вище). Сам Модуль 00 ре-деривується у **Фундамент (Візія + Метод)** у межах поточної таксономічної реструктуризації — сторінки Vision + методологія приземляться сюди наступною фазою.
+### 📚 Сторінки Фундаменту (Read-First)
+
+- [00\_01\_Vision\_Mission\_and\_Roadmap](00_01_Vision_Mission_and_Roadmap) (Місія, проблема VCM, науковий підхід, NaaS, дорожня карта, Proof-of-Growth; філософія Slashing → 05_05)
+- [00\_02\_AI\_Native\_Engineering\_and\_TRL](00_02_AI_Native_Engineering_and_TRL) (Філософія: NASA TRL, Intent-First, Wiki-First, AI Pipeline + Validation Gate)
+- [00\_03\_TRL\_Matrix\_HIL\_and\_Beyond](00_03_TRL_Matrix_HIL_and_Beyond) (Канон per-module TRL-матриці + per-domain TRL + HIL-симулятори + Beyond-TRL-9 агенда)
+- [00\_04\_Shape\_Up\_Operations\_and\_RnD\_Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) (Операційний template: 6+2 цикли, 4 R&D кластери, Betting Table, Async-Review)
+- [00\_05\_GitHub\_Projects\_and\_IaC\_Automation](00_05_GitHub_Projects_and_IaC_Automation) (Projects V2 fields + Labels-as-Code + GitHub Actions workflows)
+- [00\_06\_SSOT\_Documentation\_Standard](00_06_SSOT_Documentation_Standard) (Стандарт канон-доків: skeleton + home-registry + drift-tooling + restructure-метод)
+- [00\_07\_Action\_Plan\_Tracker](00_07_Action_Plan_Tracker) (🔴 Живий документ — аудит блокерів, план дій, Sprint tracking)
+
+---
+
+# 🏛️ Tier I — Система (The Blueprint)
+
+_Інженерний канон того, **ЩО** ми будуємо — вертикальний стек шарів від анкера в живому дереві (01) до децентралізованої інфраструктури (06). Кожен модуль розкриває свій рівень системної карти (вище)._
 
 ## 🌱 Модуль 01: Біомеханіка та Хімія (The Anchor)
 
@@ -140,9 +156,9 @@ _Деплой, моніторинг, секрети та децентраліз�
 
 ## 💰 Модуль 07: Стратегія та Економіка (Strategy & Economics)
 
-_Візія/місія/дорожня карта, NaaS-контракти, юніт-економіка, гранти та зовнішні стейкхолдери (B2G/B2B + культурний шар)._
+_NaaS-контракти, юніт-економіка, гранти та зовнішні стейкхолдери (B2G/B2B + культурний шар). Візія/місія/дорожня карта тепер у Фундаменті — [`00_01`](00_01_Vision_Mission_and_Roadmap)._
 
-- [07\_01\_Vision\_Mission\_and\_Roadmap](07_01_Vision_Mission_and_Roadmap) (Місія, проблема VCM, науковий підхід, NaaS, дорожня карта, Proof-of-Growth; філософія Slashing → 05_05)
+> ⏳ **Реструктуризація триває (Taxonomy v3):** слот `07_01` звільнено (візія → `00_01`); зсув `07_02→07_01` тощо та перейменування модуля на «Economics & Funding» — наступна фаза (P3).
 - [07\_02\_Nature\_as\_a\_Service\_Contracts](07_02_Nature_as_a_Service_Contracts) (NaaS контракти + параметричне страхування + фінансові константи)
 - [07\_03\_Unit\_Economics\_and\_BOM](07_03_Unit_Economics_and_BOM) (Юніт-економіка + ROI через SCC + Supply Chain Ukraine)
 - [07\_04\_Grant\_Applications\_Tracker](07_04_Grant_Applications_Tracker) (Трекер грантових заявок — Horizon Europe, Verra, Gold Standard)
@@ -159,14 +175,4 @@ _Партнерства ВНЗ (ЧНУ ФОТІУС, ЧДТУ, ЧІПБ, ЧМА,
 - [08\_05\_CHIPB\_Fire\_Safety\_Integration](08_05_CHIPB_Fire_Safety_Integration) (ЧІПБ: пожежна безпека + параметричне страхування + SOP)
 - [08\_06\_CHMA\_Biomedical\_Integration](08_06_CHMA_Biomedical_Integration) (ЧМА: біохімія EBFC, токсикологія Ti, ксилемоінтеграція)
 - [08\_07\_SEU\_Economics\_and\_Legal\_Integration](08_07_SEU_Economics_and_Legal_Integration) (СЄУ: токеноміка NaaS + RWA-легалізація + промисловий дизайн)
-
-## ⚙️ Модуль 09: Методологія та Governance (Methodology & Governance)
-
-_Як ми будуємо: AI-Native/TRL філософія, Shape Up операції, GitHub IaC, стандарт SSOT-доків та живий backlog задач._
-
-- [09\_01\_AI\_Native\_Engineering\_and\_TRL](09_01_AI_Native_Engineering_and_TRL) (Філософія: NASA TRL метрика, Intent-First, Wiki-First, AI Pipeline + Validation Gate)
-- [09\_02\_TRL\_Matrix\_HIL\_and\_Beyond](09_02_TRL_Matrix_HIL_and_Beyond) (Канон per-module TRL-матриці + per-domain TRL + HIL-симулятори + Beyond-TRL-9 агенда)
-- [09\_03\_Shape\_Up\_Operations\_and\_RnD\_Clusters](09_03_Shape_Up_Operations_and_RnD_Clusters) (Операційний template: 6+2 цикли, 4 R&D кластери, Betting Table, Async-Review)
-- [09\_04\_GitHub\_Projects\_and\_IaC\_Automation](09_04_GitHub_Projects_and_IaC_Automation) (Projects V2 fields + Labels-as-Code + GitHub Actions workflows)
-- [09\_05\_SSOT\_Documentation\_Standard](09_05_SSOT_Documentation_Standard) (Стандарт канон-доків: skeleton + home-registry + drift-tooling + restructure-метод)
-- [09\_06\_Action\_Plan\_Tracker](09_06_Action_Plan_Tracker) (🔴 Живий документ — аудит блокерів, план дій, Sprint tracking)
+> _Колишній Модуль 09 (Методологія та Governance) ре-деривовано у **Модуль 00 — Фундамент** (Taxonomy v3): сторінки 00_02–00_07 угорі._

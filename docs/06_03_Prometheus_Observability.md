@@ -19,7 +19,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 6 — бібліотеки встановлені, кастомні метрики реалізовані та інструментовані (повний реєстр + кількість — §2.8), структуровані JSON-логи активні; Grafana Alloy sidecar налаштований для scrape + remote_write до Grafana Cloud (Grafana Cloud SaaS, OBS.1); TRL 7 підтверджується після першого реального деплою з метриками в Grafana Cloud
-- **Відкрите:** перший деплой з метриками в Grafana Cloud (TRL 6→7); dashboard import → [`09_06`](09_06_Action_Plan_Tracker) (OBS.1, S2.2/S2.3).
+- **Відкрите:** перший деплой з метриками в Grafana Cloud (TRL 6→7); dashboard import → [`00_07`](00_07_Action_Plan_Tracker) (OBS.1, S2.2/S2.3).
 
 ---
 
@@ -30,7 +30,7 @@
 | [06_01_Deployment_Kamal_Terraform](06_01_Deployment_Kamal_Terraform) | Розгортання (Kamal/Terraform) |
 | [06_02_Akash_Network_Integration](06_02_Akash_Network_Integration) | Akash SDL (`alloy` сервіс) |
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (інструментовані метрики) |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | OBS.1 (Grafana Cloud), S2.2/S2.3 |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | OBS.1 (Grafana Cloud), S2.2/S2.3 |
 
 ## 📑 Зміст
 

@@ -9,7 +9,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 — Фази 1–7 повністю реалізовані та живуть у коді.
-- **Відкрите:** Phase 6+ deferred робота (§3) → [`09_06`](09_06_Action_Plan_Tracker).
+- **Відкрите:** Phase 6+ deferred робота (§3) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -21,7 +21,7 @@
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Сервіси / воркери (Codex-підрозділи) |
 | [04_03_REST_API_v1_Reference](04_03_REST_API_v1_Reference) | REST API `/api/v1/codex/*` (§4) |
 | [04_04_Phlex_UI_and_Tailwind](04_04_Phlex_UI_and_Tailwind) | Phlex-компоненти (§6.4, §8.1) |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | Open backlog (Phase 6+ deferred) |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | Open backlog (Phase 6+ deferred) |
 
 > **Примітка (Phase 8 — Stimulus-аудит + баг-фікси + REST/CoC рефактор):** Фази 1–7 — **DONE**, живуть у коді.
 > SSOT реалізації переніс у канонічні docs:

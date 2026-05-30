@@ -15,7 +15,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 6 — апаратна архітектура заморожена, BOM синхронізовано, ціни підтверджено локальними DMLS-виробниками
-- **Відкрите:** ціновий моніторинг BOM (DMLS, EBFC) при масштабуванні → [`09_06`](09_06_Action_Plan_Tracker).
+- **Відкрите:** ціновий моніторинг BOM (DMLS, EBFC) при масштабуванні → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -27,7 +27,7 @@
 | [02_05_Queen_Hardware_and_Starlink](02_05_Queen_Hardware_and_Starlink) | Шлюз Королева (Queen BOM) |
 | [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (revenue side) |
 | [07_02_Nature_as_a_Service_Contracts](07_02_Nature_as_a_Service_Contracts) | NaaS контракти (pricing) |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | Open backlog |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | Open backlog |
 
 ## 📑 Зміст
 
@@ -151,7 +151,7 @@
 
 #### 🤖 4а. Queen BOM — Phase 3 (Starlink Mini) — HW.14
 
-> **Cross-ref:** [09_06 HW.14](09_06_Action_Plan_Tracker) — оновлення Unit Economics ✅
+> **Cross-ref:** [00_07 HW.14](00_07_Action_Plan_Tracker) — оновлення Unit Economics ✅
 
 **Phase 3** застосовується для ультра-віддалених локацій (Амазонія, Тайга, Африка) де Starlink DTC (Phase 2.5) недоступний або потрібна вища пропускна здатність. Конфігурація використовує фізичний Starlink Mini термінал (20–40 Вт) з ESP32-S3 або SIM8200G-M2 co-processor.
 
@@ -194,7 +194,7 @@
 
 #### 🤖 5а. Phase 3 (Starlink Mini) Cluster Economics — HW.14
 
-> **Cross-ref:** [09_06 HW.14](09_06_Action_Plan_Tracker), `02_05` §4 Power Tree, BLOCKER-2.
+> **Cross-ref:** [00_07 HW.14](00_07_Action_Plan_Tracker), `02_05` §4 Power Tree, BLOCKER-2.
 
 Для ультра-віддалених локацій де LTE-M / Starlink DTC недоступний (Phase 3):
 

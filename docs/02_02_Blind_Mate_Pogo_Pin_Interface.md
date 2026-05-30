@@ -17,7 +17,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 4 — концепт коаксіального сліпого з'єднання затверджений; допуски, покриття та параметри ущільнення фіналізуються. Відкриті: pogo spec finalization (HW.8: gold-plating, spring force, bayonet, Z-stack §3.3), conformal coating (HW.11) → [`09_06`](09_06_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 4 — концепт коаксіального сліпого з'єднання затверджений; допуски, покриття та параметри ущільнення фіналізуються. Відкриті: pogo spec finalization (HW.8: gold-plating, spring force, bayonet, Z-stack §3.3), conformal coating (HW.11) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -29,7 +29,7 @@
 | [01_03_EBFC_Enzymatic_Bio_Fuel_Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC: V-I крива (cold-start навантаження) |
 | [02_01_Hardware_Architecture_and_BOM](02_01_Hardware_Architecture_and_BOM) | Апаратна архітектура капсули; Parylene C conformal |
 | [02_03_BQ25570_MPPT_Nano_Power](02_03_BQ25570_MPPT_Nano_Power) | MPPT; cold-start loop (R_interface вплив, §5) |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.8 pogo (7 sub), HW.11 Parylene, HW.30 B2B, HW.31 piezo |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.8 pogo (7 sub), HW.11 Parylene, HW.30 B2B, HW.31 piezo |
 
 ## 📑 Зміст
 
@@ -221,7 +221,7 @@ Ti (анкер) → Copper (пін)          ← різниця > 0.5 В → к�
 
 ### 3.3. Z-axis Tolerance Stack-Up (O-ring ↔ Pogo Pins) — обов'язковий 1D-розрахунок
 
-> Перенесено з колишнього BLOCKER-6 (трекінг — [`09_06 HW.8`](09_06_Action_Plan_Tracker)). Без 1D stack-up аналізу — гарантований брак ~10–30% капсул.
+> Перенесено з колишнього BLOCKER-6 (трекінг — [`00_07 HW.8`](00_07_Action_Plan_Tracker)). Без 1D stack-up аналізу — гарантований брак ~10–30% капсул.
 
 У замкненому байонеті (Радом ↔ Zone 3 катод) дві пружинні системи стискаються одночасно й послідовно по Z-осі: хід Pogo Pins (1.52 mm travel + ≥0.5 mm preload) і компресія O-ring (CS 1.78 mm, 15–25%).
 

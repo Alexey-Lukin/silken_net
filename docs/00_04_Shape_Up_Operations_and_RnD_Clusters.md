@@ -1,11 +1,11 @@
-# 09_03: Shape Up Operations and R&D Clusters
+# 00_04: Shape Up Operations and R&D Clusters
 
 ## 🎯 Мета
 
 Зафіксувати операційну механіку методології AI-Native Concurrent Engineering: 6+2-тижневий цикл Shape Up, 4 R&D кластери, Betting Table процедура, async-review для нижчих TRL (щоб Архітектор не був bottleneck'ом), Triple Stream та інтеграція з академічним календарем партнерських ВНЗ.
 
-> Філософська основа (NASA TRL, Intent-First, Wiki-First) — [`09_01_AI_Native_Engineering_and_TRL`](09_01_AI_Native_Engineering_and_TRL).
-> Інструментарій (GitHub Projects V2 fields, labels, workflows) — [`09_04_GitHub_Projects_and_IaC_Automation`](09_04_GitHub_Projects_and_IaC_Automation).
+> Філософська основа (NASA TRL, Intent-First, Wiki-First) — [`00_02_AI_Native_Engineering_and_TRL`](00_02_AI_Native_Engineering_and_TRL).
+> Інструментарій (GitHub Projects V2 fields, labels, workflows) — [`00_05_GitHub_Projects_and_IaC_Automation`](00_05_GitHub_Projects_and_IaC_Automation).
 
 ---
 
@@ -13,7 +13,7 @@
 
 - **Поточний TRL:** TRL 8 — методологія інтегрована в операційні процеси, інструментарій MCP налаштований.
 - **Контекст:** Синхронізація двох потоків: **Атоми** (Hardware: лабораторія ЧНУ, заводи DMLS) та **Байти** (Software: Rails, прошивка, смарт-контракти).
-- **Стоячі ризики (мітиговані):** Context Drift → автоматизований SSOT Integrity Guard ([`09_04`](09_04_GitHub_Projects_and_IaC_Automation)); Hardware lead-times → HIL-симулятори ([`09_02`](09_02_TRL_Matrix_HIL_and_Beyond)).
+- **Стоячі ризики (мітиговані):** Context Drift → автоматизований SSOT Integrity Guard ([`00_05`](00_05_GitHub_Projects_and_IaC_Automation)); Hardware lead-times → HIL-симулятори ([`00_03`](00_03_TRL_Matrix_HIL_and_Beyond)).
 
 ---
 
@@ -21,10 +21,10 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [09_01_AI_Native_Engineering_and_TRL](09_01_AI_Native_Engineering_and_TRL) | Концептуальна основа: NASA TRL, AI pipeline, Triple Stream, Wiki-First |
-| [09_02_TRL_Matrix_HIL_and_Beyond](09_02_TRL_Matrix_HIL_and_Beyond) | TRL-матриця + HIL (decoupling software TRL від hardware) |
-| [09_04_GitHub_Projects_and_IaC_Automation](09_04_GitHub_Projects_and_IaC_Automation) | Projects V2 fields, labels-as-code, cluster routing |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | Open backlog (OPS.3 / OPS.4 + Convolution Method context) |
+| [00_02_AI_Native_Engineering_and_TRL](00_02_AI_Native_Engineering_and_TRL) | Концептуальна основа: NASA TRL, AI pipeline, Triple Stream, Wiki-First |
+| [00_03_TRL_Matrix_HIL_and_Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | TRL-матриця + HIL (decoupling software TRL від hardware) |
+| [00_05_GitHub_Projects_and_IaC_Automation](00_05_GitHub_Projects_and_IaC_Automation) | Projects V2 fields, labels-as-code, cluster routing |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | Open backlog (OPS.3 / OPS.4 + Convolution Method context) |
 | [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | Стратегічні підстави для multi-cluster R&D (§1.1-1.3) |
 
 ## 📑 Зміст
@@ -74,7 +74,7 @@ Week 7-8 (Cool-down, 2 тижні) — рефакторинг, SSOT-аудит, 
 | **C — Scaling / Cloud** | Software stack, infrastructure, performance | Rails core (`04_02`), multi-chain web3 (12 chains), Akash deploy (`06_02`), Prometheus/Grafana, Sidekiq queues, Solid Cable, Phlex UI | Architect + AI agents (Copilot, Cursor), **ЧНУ ФОТІУС** (Супруненко — Rails PN-верифікація, Ярмілко — firmware/crypto, Косенюк — RF/FEC, Бушин — CNN/Web-DB `08_02`), **ЧДТУ ФЕТР** (Гончаров — RF-лабораторія `08_04`) |
 | **D — Compliance / Legal** | Юриспруденція, регуляторика, IP, B2B, операційні SOP | Polygon Hadron (ERC-3643), MSA з СЄУ, Verra / Gold Standard методологія, GDPR / ESG звітність, patent portfolio, аварійні SOP | **СЄУ** (Аблязов — право, Чудаєва/Ус — економіка, Гедз — D-MRV аудит `08_07`), **ЧІПБ** (пожежна безпека, SOP, параметричне страхування `08_05`), **ЧНУ ФОТІУС** (Осауленко — R&D-портфель `08_02`) |
 
-> **Принцип взаємовиключності:** кожна задача має **рівно один primary cluster label** (`cluster:A-hardware` / `cluster:B-verification` / `cluster:C-scaling` / `cluster:D-compliance`). Cross-cluster задачі мають **secondary label** (`cluster-ref:X`). Primary cluster визначає, хто веде задачу на betting table; secondary — кого консультують у RACI-режимі. Повна label-таксономія + YAML SSOT — у [`09_04 §Labels`](09_04_GitHub_Projects_and_IaC_Automation).
+> **Принцип взаємовиключності:** кожна задача має **рівно один primary cluster label** (`cluster:A-hardware` / `cluster:B-verification` / `cluster:C-scaling` / `cluster:D-compliance`). Cross-cluster задачі мають **secondary label** (`cluster-ref:X`). Primary cluster визначає, хто веде задачу на betting table; secondary — кого консультують у RACI-режимі. Повна label-таксономія + YAML SSOT — у [`00_05 §Labels`](00_05_GitHub_Projects_and_IaC_Automation).
 
 ---
 
@@ -95,17 +95,17 @@ Week 7-8 (Cool-down, 2 тижні) — рефакторинг, SSOT-аудит, 
 | **TRL 9** (Operational) | Multi-sig + DAO Timelock (48h) + Slither/Foundry green. | Always + production sign-off. |
 
 **TRL Gate Events** (єдині точки, де Архітектор **гарантовано** втручається):
-- 4 → 5: перехід з лабораторії до pilot (потребує HIL-валідації, `09_02`).
+- 4 → 5: перехід з лабораторії до pilot (потребує HIL-валідації, `00_03`).
 - 6 → 7: перехід до canopy environment (real LoRa mesh, real CoAP intake).
 - 8 → 9: **зняття «тренувальних коліс»** — передача повного управління контрактами від Multi-sig (`Gnosis Safe`) до децентралізованого DAO (`SilkenGovernor` + Timelock) + зняття штучних лімітів емісії, при доведеній стабільній роботі на масштабі (мільйони вузлів без втручання).
 
-  > **⚠️ Корекція (2026-05-28):** мінтинг SCC — **НЕ перемикач**, який Архітектор вмикає на TRL 9. Він керується децентралізованим оракулом (Chainlink) + Guard Clauses (`verified_by_iotex` + `oracle_status_fulfilled` + `hadron_kyc`, [`05_02`](05_02_Proof_of_Growth_Pipeline)/[`07_01 §5`](07_01_Vision_Mission_and_Roadmap)). На TRL 7-8 система **вже** в mainnet — з малим лімітом емісії та multi-sig на DAO-скарбниці. TRL 9 = **масштаб + децентралізація**, а не «deploy».
+  > **⚠️ Корекція (2026-05-28):** мінтинг SCC — **НЕ перемикач**, який Архітектор вмикає на TRL 9. Він керується децентралізованим оракулом (Chainlink) + Guard Clauses (`verified_by_iotex` + `oracle_status_fulfilled` + `hadron_kyc`, [`05_02`](05_02_Proof_of_Growth_Pipeline)/[`00_01 §5`](00_01_Vision_Mission_and_Roadmap)). На TRL 7-8 система **вже** в mainnet — з малим лімітом емісії та multi-sig на DAO-скарбниці. TRL 9 = **масштаб + децентралізація**, а не «deploy».
 
 ---
 
 ## 🤝 4. Triple Stream & AI Handoff
 
-Розробка відбувається синхронно у трьох вимірах (детально — у [`09_01 §Triple Stream`](09_01_AI_Native_Engineering_and_TRL)):
+Розробка відбувається синхронно у трьох вимірах (детально — у [`00_02 §Triple Stream`](00_02_AI_Native_Engineering_and_TRL)):
 
 1. **Hardware Stream (Atoms)** — рев'ю кластера A.
 2. **Logic Stream (Bytes)** — рев'ю кластера C + cross-ref B для Solidity / ZK.
@@ -125,7 +125,7 @@ Week 7-8 (Cool-down, 2 тижні) — рефакторинг, SSOT-аудит, 
 # Shape: <назва Big Bet> [cluster A/B/C/D]
 
 ## Problem (1-2 параграфи)
-Конкретна болячка з даних: метрика, інцидент, або blocker (з `docs/09_06`).
+Конкретна болячка з даних: метрика, інцидент, або blocker (з `docs/00_07`).
 Що НЕ є проблемою — щоб уникнути scope creep.
 
 ## Appetite (Small Batch 1-2w / Big Bet 6w)
@@ -157,7 +157,7 @@ Betting Table — у Week 0 кожного 8-тижневого циклу. **А
 **Pre-bet checklist (👤 Architect, за тиждень до Betting Table):**
 
 - [ ] Список усіх відкритих `shaping/*.md` зведено у короткий бриф (одна сторінка на bet).
-- [ ] Поточний `docs/09_06_Action_Plan_Tracker` оновлено: P0/P1 не закриті задачі винесені у обов'язкові nominees.
+- [ ] Поточний `docs/00_07_Action_Plan_Tracker` оновлено: P0/P1 не закриті задачі винесені у обов'язкові nominees.
 - [ ] TRL-матриця у Projects V2 переглянута на наявність stuck cards (закрита без advance — flag).
 - [ ] Bandwidth check кожного кластера: hours-per-week × cycle weeks мінус известні відсутності (захисти, конференції).
 
@@ -175,7 +175,7 @@ Betting Table — у Week 0 кожного 8-тижневого циклу. **А
 |------|-----|----------|----------|
 | 4. Відкриті конфлікти / rabbit holes | ~45 хв | Усі | Notes у shaping doc під "Rabbit holes" |
 | 5. Drop / Park / Bet рішення | ~30 хв | Architect (final say) | Updated Projects V2 cards |
-| 6. Кодифікація рішень | ~15 хв | AI-agent | PR з оновленим `docs/09_06` + `docs/09_03` milestone link |
+| 6. Кодифікація рішень | ~15 хв | AI-agent | PR з оновленим `docs/00_07` + `docs/00_04` milestone link |
 
 **Рішення для кожного shape:**
 - **Bet** — потрапляє в цикл, прив'язується до кластера + `Cycle YYYY.QN` milestone.
@@ -194,7 +194,7 @@ Cool-down — це **дихальний простір** (Shape Up: unstructured
 
 **Обов'язково (system viability):**
 - [ ] **SSOT drift audit** для змінених модулів циклу: code-vs-doc diff проти `docs/04_02` §13b (Drift Register), `docs/04_03`, `docs/05_02`, `docs/06_02`.
-- [ ] Закриті cycle issues анотувати TRL advancement (через `trl_sync.yml` — авто, див. `09_04`); update `docs/09_02` (фактичні TRL зрушення).
+- [ ] Закриті cycle issues анотувати TRL advancement (через `trl_sync.yml` — авто, див. `00_05`); update `docs/00_03` (фактичні TRL зрушення).
 
 **Опціонально (на розсуд команди, НЕ мандат):**
 - [ ] Bug-bash дрібних некритичних багів — скільки команда захоче, без квоти днів.

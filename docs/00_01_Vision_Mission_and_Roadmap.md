@@ -1,14 +1,14 @@
-# 07_01: Vision, Mission & Roadmap
+# 00_01: Vision, Mission & Roadmap
 
 ## 🎯 Мета
 
-Зафіксувати **візію-рівень** проєкту: глобальну місію, проблему ринку добровільних вуглецевих кредитів (VCM), науковий підхід, бізнес-модель Nature-as-a-Service (NaaS), дорожню карту масштабування та консенсус Proof-of-Growth. Це **дім дорожньої карти** (§4); per-domain TRL-матриця та HIL — у [`09_02`](09_02_TRL_Matrix_HIL_and_Beyond). Філософія Slashing — стисло (negligence vs force-majeure); повний канон політики → [`05_05`](05_05_Slashing_and_Risk_Policy).
+Зафіксувати **візію-рівень** проєкту: глобальну місію, проблему ринку добровільних вуглецевих кредитів (VCM), науковий підхід, бізнес-модель Nature-as-a-Service (NaaS), дорожню карту масштабування та консенсус Proof-of-Growth. Це **дім дорожньої карти** (§4); per-domain TRL-матриця та HIL — у [`00_03`](00_03_TRL_Matrix_HIL_and_Beyond). Філософія Slashing — стисло (negligence vs force-majeure); повний канон політики → [`05_05`](05_05_Slashing_and_Risk_Policy).
 
 ---
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 9 — Бізнес-візія та фази масштабування затверджені. Відкриті: SLASH-1 cause-gate, BIZ.* DAO governance → [09_06](09_06_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 9 — Бізнес-візія та фази масштабування затверджені. Відкриті: SLASH-1 cause-gate, BIZ.* DAO governance → [00_07](00_07_Action_Plan_Tracker).
 - **Pivot v3 (тризонний анкер):** Стара моноліт-«Матрьошка» переписана на тризонну архітектуру (анод-гіроїд у заболоні + PEEK-терморозрив + катодний фланець на межі кори/повітря) — деталі [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK). Усуває тепловий міст крізь титан, кисневе голодування катода і неможливий моноліт-друк Ti+PEEK.
 - **Slashing v2 (травень 2026):** Жорстке "burn-on-degradation" правило з попередньої редакції замінено на **двокатегорійну модель** — окремо для людської недбалості та окремо для форс-мажору (див. §6).
 
@@ -20,13 +20,13 @@
 |--------|------|
 | [00_00_SSOT_Index](00_00_SSOT_Index) | Системна карта (8 рівнів кіберфізики); 12-chain конвеєр → 05_02 |
 | [06_08_Resilience_and_Failover_Policy](06_08_Resilience_and_Failover_Policy) | Резервування, failover, Web3 fallback (Slashing/Insurance при недоступності мостів) |
-| [09_02_TRL_Matrix_HIL_and_Beyond](09_02_TRL_Matrix_HIL_and_Beyond) | TRL-матриця + HIL + дорожня карта |
+| [00_03_TRL_Matrix_HIL_and_Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | TRL-матриця + HIL + дорожня карта |
 | [01_01_Coaxial_Gyroid_Topology_and_PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Тризонний анкер (Pivot v3) |
 | [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Мультичейн архітектура |
 | [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка SCC/SFC; §Slashing — `ProtocolParameters` (GAMMA, PENALTY_FACTOR_MAX, penalty_factor_base) |
 | [07_02_Nature_as_a_Service_Contracts](07_02_Nature_as_a_Service_Contracts) | NaaS-контракти; §Insurance Pool & Etherisc — параметри страхування |
 | [07_03_Unit_Economics_and_BOM](07_03_Unit_Economics_and_BOM) | Юніт-економіка та BOM |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | **Відкриті бізнес-блокери** (SSOT): SLASH-1, BIZ.* DAO governance backlog |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті бізнес-блокери** (SSOT): SLASH-1, BIZ.* DAO governance backlog |
 
 ## 📑 Зміст
 
@@ -75,7 +75,7 @@
 
 ## 🚀 4. Дорожня Карта Масштабування (High-Level Roadmap)
 
-> Детальна TRL Matrix і per-domain HIL-симулятори описані в [`09_02_TRL_Matrix_HIL_and_Beyond`](09_02_TRL_Matrix_HIL_and_Beyond).
+> Детальна TRL Matrix і per-domain HIL-симулятори описані в [`00_03_TRL_Matrix_HIL_and_Beyond`](00_03_TRL_Matrix_HIL_and_Beyond).
 
 ### Phase 1: The First Breath (2025-2026) — R&D та Валідація
 
@@ -118,7 +118,7 @@
 
 Slashing у Gaia 2.0 — це **покарання за халатність/зловмисність, а не за стихію**: якщо ліс згорів від блискавки, спалювати токени інвестора = карати жертву. Тому причини деградації діляться на **A. Negligence** (slashing активний), **B. Force Majeure** (страхування, без burn) і **C. Indeterminate** (заморозка + DAO peer-review). Фінансовий вирок **ніколи** не спирається лише на Z-Лоренца — потрібен ≥1 прямий некорельований сигнал.
 
-> Повна політика — категоризація A/B/C, прогресивна формула (`damage_ratio^GAMMA`), operator-bond, insurance, anti-fraud cross-checks і multi-signal de-risk — живе в [`05_05 Slashing & Risk Policy`](05_05_Slashing_and_Risk_Policy). Відкриті бізнес-пункти (SLASH-1, BIZ.13) — [`09_06`](09_06_Action_Plan_Tracker).
+> Повна політика — категоризація A/B/C, прогресивна формула (`damage_ratio^GAMMA`), operator-bond, insurance, anti-fraud cross-checks і multi-signal de-risk — живе в [`05_05 Slashing & Risk Policy`](05_05_Slashing_and_Risk_Policy). Відкриті бізнес-пункти (SLASH-1, BIZ.13) — [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 

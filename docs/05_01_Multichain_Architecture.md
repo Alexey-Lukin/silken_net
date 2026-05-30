@@ -9,7 +9,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 — Мультичейн архітектура повністю спроєктована. Структурний скелет усіх 12 мереж присутній у кодбейсі. Всі сервіси мають RSpec-покриття.
-- **Відкрите:** dClimate mock→real API (E.7), Production credentials (S3.2), chain-outage DR (§8) → [`09_06`](09_06_Action_Plan_Tracker).
+- **Відкрите:** dClimate mock→real API (E.7), Production credentials (S3.2), chain-outage DR (§8) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -21,7 +21,7 @@
 | [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (SCC/SFC контракти) |
 | [05_04_Ethereum_L1_State_Anchor](05_04_Ethereum_L1_State_Anchor) | Ethereum L1 фіналізація (state root) |
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Chain-сервіси (`Blockchain::Orchestrator`) |
-| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | Open backlog (E.7 dClimate, S3.2, DR) |
+| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | Open backlog (E.7 dClimate, S3.2, DR) |
 
 ## 📑 Зміст
 
