@@ -37,6 +37,7 @@ namespace :docs do
     dangling    = []  # hard: link target doc missing
     suspect     = []  # soft: §-section label not found in target headings
     trl_missing = []  # hard: ## ✅ Статус section without a TRL declaration
+    rtc_drift   = []  # hard: RTC register availability claimed outside 03_01 owner
 
     files.each do |f|
       base = File.basename(f, ".md")
@@ -65,6 +66,11 @@ namespace :docs do
         section = (ei ? rest[0...ei] : rest).join
         trl_missing << base unless section =~ /Поточний TRL|TRL\s*\d|Conceptual\s*\(TRL/
       end
+
+      # [RTC reg-map drift] register availability is SSOT-owned by 03_01 §2; any
+      # other doc asserting "DRn free/reserve" drifts (caught the stale
+      # "DR15 наразі резерв" in 03_02/00_08/03_03 after FW.2 claimed DR15).
+      rtc_drift.concat(DocsLinter.rtc_register_allocation_drift(base, text).map { |h| "#{base}: #{h}" })
     end
 
     # [TRL single-value] HARD — 00_06 §1 per-module matrix cells single 1-9.
@@ -130,6 +136,12 @@ namespace :docs do
       puts "  STANDARD non-conformance (#{conformance.size}):"
       conformance.sort.each { |c| puts "    ✗ #{c}" }
     end
+    if rtc_drift.empty?
+      puts "  RTC reg-map:    no out-of-owner DRn availability claims ✓"
+    else
+      puts "  RTC-MAP DRIFT (#{rtc_drift.size}) — register availability is owned by 03_01 §2:"
+      rtc_drift.sort.each { |d| puts "    ✗ #{d}" }
+    end
 
     failed = []
     failed << "dangling doc links" unless dangling.empty?
@@ -138,6 +150,7 @@ namespace :docs do
     failed << "ToC drift (run docs:toc)" unless toc_drift.empty?
     failed << "canon docs hosting blocker sections (→ 00_08)" unless blocker_sections.empty?
     failed << "docs missing the standard skeleton" unless conformance.empty?
+    failed << "RTC register-map drift (availability claimed outside 03_01)" unless rtc_drift.empty?
     abort("docs:check_refs FAILED — #{failed.join(', ')}") unless failed.empty?
   end
 

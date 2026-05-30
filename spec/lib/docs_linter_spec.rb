@@ -89,4 +89,43 @@ RSpec.describe DocsLinter do
       expect(described_class.conformance_violations("README", "x")).to be_empty
     end
   end
+
+  describe ".rtc_register_allocation_drift" do
+    it "flags a non-owner doc claiming a register is in reserve/free" do
+      hits = described_class.rtc_register_allocation_drift(
+        "03_02_Queen", "anti-storm bitmap — DR15 наразі резерв (ARCH.28)\n")
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("DR15")
+    end
+
+    it "catches the RTC_BKP_DRn form (leading underscore blocks plain word-boundary)" do
+      expect(described_class.rtc_register_allocation_drift(
+        "03_03_TinyML", "RTC_BKP_DR15 вільний слот для майбутньої фічі\n").size).to eq(1)
+    end
+
+    it "exempts the owner docs (03_01 RTC map + 03_05 FC/nonce SSOT)" do
+      claim = "вільний лише DR15\n"
+      expect(described_class.rtc_register_allocation_drift("03_01_Firmware_Lifecycle_and_DMA", claim)).to be_empty
+      expect(described_class.rtc_register_allocation_drift("03_05_Hardware_Crypto", claim)).to be_empty
+    end
+
+    it "ignores a plain reference with no availability word" do
+      expect(described_class.rtc_register_allocation_drift(
+        "03_02_Queen", "Frame Counter живе у RTC_BKP_DR15 (зайнято FW.2)\n")).to be_empty
+    end
+
+    it "does not match 'звільнило' (freed elsewhere) or 'reserved:' bit-fields" do
+      expect(described_class.rtc_register_allocation_drift(
+        "00_08_Tracker", "RTC DR10+DR12 (звільнило DR11 під слот)\n")).to be_empty
+      expect(described_class.rtc_register_allocation_drift(
+        "03_03_TinyML", "DR0 = [panic:16 | reserved:8 | acoustic:8]\n")).to be_empty
+    end
+
+    it "skips table rows and fenced code" do
+      expect(described_class.rtc_register_allocation_drift(
+        "04_06_Testing", "| DR15 | резерв | spare |\n")).to be_empty
+      expect(described_class.rtc_register_allocation_drift(
+        "04_06_Testing", "```\nDR15 вільний\n```\n")).to be_empty
+    end
+  end
 end

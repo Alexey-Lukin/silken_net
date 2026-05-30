@@ -65,4 +65,44 @@ module DocsLinter
     miss << "📑 auto-ToC markers" unless text.include?("<!-- TOC:AUTO:START -->")
     miss
   end
+
+  # [SSOT anti-drift] RTC backup registers (DR0–DR19) are a finite, SSOT-owned
+  # resource whose allocation map lives canonically in 03_01 §2. A register's
+  # *availability* ("free"/"reserve"/"вільн"/"резерв"/"spare"/"vacant") is owned
+  # by that map — when any OTHER doc restates it, it drifts (exactly how
+  # "DR15 наразі резерв" survived in 03_02/00_08 after FW.2 claimed DR15 in
+  # 03_01). Other docs may freely REFERENCE a register ("FC у DR15", "DR15
+  # зайнято FW.2") — only *availability* claims are flagged. Bit-field "reserved"
+  # (e.g. "reserved:8", "зарезервовано:") is excluded (those are reserved BITS,
+  # not a spare register). Advisory: caller passes basename + text, skips the
+  # owner (03_01); returns ["DR15 — availability claim …", …]. Lines inside
+  # ``` fences are skipped.
+  # Exempt the SSOT docs that legitimately describe register allocation:
+  # 03_01 (the canonical RTC map) and 03_05 (the FW.2 FC/nonce policy, which
+  # owns the DR15 narrative + cross-refs 03_01). Every other doc must only
+  # *reference* a register, never assert its availability.
+  RTC_OWNER_DOC = /\A03_01_|\A03_05_/
+  # Whole-register availability words at a Unicode-letter boundary, so
+  # "звільнило"/"зарезервовано:"/"резервних" do NOT match (those are "freed a
+  # different reg" / bit-field / "no reserves left"); only standalone
+  # вільн*/резерв/free/reserve(-for) — the real "this register is spare" claim.
+  RTC_AVAIL_RE = /(?<!\p{L})(вільн|spare|vacant|вакант|free\b|reserve(?!d?:)|резерв(?![\p{L}:]))/i
+
+  def rtc_register_allocation_drift(basename, text)
+    return [] if basename.match?(RTC_OWNER_DOC)
+
+    in_fence = false
+    text.each_line.filter_map do |line|
+      in_fence = !in_fence if line.start_with?("```")
+      next if in_fence
+      next if line.lstrip.start_with?("|") # skip tables (coverage matrices etc.)
+
+      # Match bare DRn, `DRn`, and RTC_BKP_DRn (the leading "_" blocks \b).
+      dr = line[/(?<![A-Za-z])DR(\d{1,2})\b/, 1]
+      next unless dr && dr.to_i.between?(0, 19)
+      next unless line.match?(RTC_AVAIL_RE)
+
+      "DR#{dr} availability claim outside owner (03_01 RTC map) → #{line.strip[0, 110]}"
+    end
+  end
 end
