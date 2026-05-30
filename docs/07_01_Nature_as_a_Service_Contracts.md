@@ -23,7 +23,7 @@
 | [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | SCC/SFC + фінансові константи (home) |
 | [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof of Growth (мінтинг-тригер) |
 | [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Юніт-економіка, BOM |
-| [08_07_SEU_Economics_and_Legal_Integration](08_07_SEU_Economics_and_Legal_Integration) | MSA / KYC legal (Аблязов) |
+| [08_02_Academic_Institutions_Registry](08_02_Academic_Institutions_Registry) | MSA / KYC legal (Аблязов) |
 | [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | BIZ.1/2/3/4/6/9/11/13/14, UNI.8 |
 
 ## 📑 Зміст
@@ -314,7 +314,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 - **Service Level Agreement (SLA)** — параметри якості: час реакції на інциденти, uptime гарантії, умови відшкодування при недоступності системи.
 - **Subscription Order Form** — документ на конкретний `NaasContract` (кластер, тривалість, `total_funding`, `cancellation_terms`).
 
-**Дія:** Залучення юридичного консультанта (бажано з досвідом Web3 / ReFi) для підготовки шаблонів. **Академічний шлях вирішення:** СЄУ (Аблязов Денис Едуардович, к.ю.н., доцент кафедри публічного та приватного права) — розробка шаблонів MSA, Term Sheet та Carbon Credit Purchase Agreement згідно з MiCA та українським законодавством. Детально: [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration) §1.3.
+**Дія:** Залучення юридичного консультанта (бажано з досвідом Web3 / ReFi) для підготовки шаблонів. **Академічний шлях вирішення:** СЄУ (Аблязов Денис Едуардович, к.ю.н., доцент кафедри публічного та приватного права) — розробка шаблонів MSA, Term Sheet та Carbon Credit Purchase Agreement згідно з MiCA та українським законодавством. Детально: [`08_02_Academic_Institutions_Registry`](08_02_Academic_Institutions_Registry) §1.3.
 
 ---
 
@@ -343,7 +343,7 @@ Polygon Hadron Identity Platform надає технічну верифікац�
 - Яка юрисдикція? (ЄС — AMLD5, США — BSA, міжнародні — FATF)
 - Скільки коштує ліцензія на надання таких послуг?
 
-**Дія:** Консультація з compliance-спеціалістом та вибір KYC-провайдера (Sumsub, Veriff, або Polygon Hadron). **Академічний шлях вирішення:** СЄУ (Аблязов Денис Едуардович) — юридична рамка KYC/AML для B2B клієнтів у контексті ERC-3643 та AMLD5/FATF регулювань; СЄУ (Ус Галина Олександрівна) — бухгалтерська класифікація KYC витрат та compliance-процесів у корпоративному обліку. Детально: [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration) §1.3.
+**Дія:** Консультація з compliance-спеціалістом та вибір KYC-провайдера (Sumsub, Veriff, або Polygon Hadron). **Академічний шлях вирішення:** СЄУ (Аблязов Денис Едуардович) — юридична рамка KYC/AML для B2B клієнтів у контексті ERC-3643 та AMLD5/FATF регулювань; СЄУ (Ус Галина Олександрівна) — бухгалтерська класифікація KYC витрат та compliance-процесів у корпоративному обліку. Детально: [`08_02_Academic_Institutions_Registry`](08_02_Academic_Institutions_Registry) §1.3.
 
 ---
 
@@ -375,8 +375,8 @@ SilkenForestCoin має `ERC20Votes` (checkpoint-based voting power), але:
 **Дія:** Пілотна реєстрація однієї лісової ділянки через Polygon Hadron з юридичним супроводом.
 
 > 📋 **Юридичний супровід — рекомендована послідовність:**
-> 1. **UA-юрисдикція:** Кафедра Інтелектуальної Власності та Цивільно-Правових Дисциплін ЧНУ — меморандум "Юридична допустимість токенізації UA-лісу через ERC-3643" (cross-ref [`08_03 §2.1.2`](08_03_Joint_Publications_and_IP_Strategy)). Перевіряє сумісність з Лісовим Кодексом України та Законом «Про природно-заповідний фонд».
-> 2. **EU/MiCA:** Аблязов Д.Е. (СЄУ) — Стаття 32 у [`08_03 §1F`](08_03_Joint_Publications_and_IP_Strategy), правова рамка ERC-3643 / MiCA для лісових RWA.
+> 1. **UA-юрисдикція:** Кафедра Інтелектуальної Власності та Цивільно-Правових Дисциплін ЧНУ — меморандум "Юридична допустимість токенізації UA-лісу через ERC-3643" (cross-ref [`08_01 §2.1.2`](08_01_Joint_Publications_and_IP_Strategy)). Перевіряє сумісність з Лісовим Кодексом України та Законом «Про природно-заповідний фонд».
+> 2. **EU/MiCA:** Аблязов Д.Е. (СЄУ) — Стаття 32 у [`08_01 §1F`](08_01_Joint_Publications_and_IP_Strategy), правова рамка ERC-3643 / MiCA для лісових RWA.
 > 3. **Пілотна реєстрація:** одна ділянка Черкаського бору / ПЗФ за двостороннім меморандумом ЧНУ + СЄУ.
 
 ---

@@ -20,7 +20,7 @@
 | [01_04_CODIT_and_Xylemointegration](01_04_CODIT_and_Xylemointegration) | Ксилемна реакція дерева; §4 PTFE-GDL (катод anti-flooding) |
 | [02_03_BQ25570_MPPT_Nano_Power](02_03_BQ25570_MPPT_Nano_Power) | Електричний приймач (MPPT boost) |
 | [02_04_EDLC_Supercapacitor_Buffer](02_04_EDLC_Supercapacitor_Buffer) | Буфер енергії (EDLC 0.47F) |
-| [08_06_CHMA_Biomedical_Integration](08_06_CHMA_Biomedical_Integration) | Біохімічна валідація ферментів (ЧМА) |
+| [08_02_Academic_Institutions_Registry](08_02_Academic_Institutions_Registry) | Біохімічна валідація ферментів (ЧМА) |
 | [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.5 enzyme/ZIF stack, HW.6 membrane/resin barrier, HW.24 Ti-coin |
 
 ## 📑 Зміст
@@ -366,7 +366,7 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 - **GPU на macOS arm64:** локально доступні платформи OpenMM — `Reference`, `CPU`, `OpenCL` (legacy Apple GPU backend, deprecated Apple-ом але ще працює — verified 2026-05-24 на M-серії: forces within tolerance). `CUDA` — Nvidia only. Tobто **локальний Mac = розробка скриптів + sanity runs (≤ 1 нс)**, production runs (10–100 нс) → GCP L4 / AWS A10G/H100.
 - **Локальна інфраструктура in-silico стеку:** код у `tools/in_silico/scripts/`, conda env spec у `tools/in_silico/environment.yml`, SSOT артефакти (PDB, AF3 output, results) у `docs/protocols/ebfc/in_silico/`. Quickstart — `tools/in_silico/README.md`.
 
-**Зв'язок з ЧНУ Мінаєв ([`08_01 §1.1`](08_01_University_R_and_D_Protocols)):** Школа Мінаєва історично використовує DFT-софт (Gaussian, ORCA). Перехід на PySCF дає (a) повну Python-keros інтеграцію з нашим AI-pipeline, (b) open source (без ліцензій), (c) GPU-acceleration. Спільна Q1-стаття: *"In Silico Design of Long-Lived Enzymatic Bio-Fuel Cells for Tree-Integrated Energy Harvesting"*.
+**Зв'язок з ЧНУ Мінаєв ([`08_02 §1`](08_02_Academic_Institutions_Registry)):** Школа Мінаєва історично використовує DFT-софт (Gaussian, ORCA). Перехід на PySCF дає (a) повну Python-keros інтеграцію з нашим AI-pipeline, (b) open source (без ліцензій), (c) GPU-acceleration. Спільна Q1-стаття: *"In Silico Design of Long-Lived Enzymatic Bio-Fuel Cells for Tree-Integrated Energy Harvesting"*.
 
 > **Філософія Zero-Lab:** Сучасна deep-tech фармакологія (Insilico Medicine, Recursion, Schrödinger) вже не починає з пробірок — вони починають з симуляцій і верифікують у CRO лише фінальний "рецепт". Silken Net наслідує цю парадигму для біоелектрохімії — **математично доведена молекула** перед механічним синтезом.
 
@@ -375,14 +375,14 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 > Біоелектрохімічна функціоналізація — найдорожчий і найризикованіший крок виробництва анкера. Тому повний MET-/DET-стек спочатку валідується на **плоских Ti-«монетах»** (Stage 2 з [`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK)), а не одразу на повноцінних гіроїдних анкерах.
 
 **Що тестується на монетах (Gen 2.0 — пріоритет):**
-- **dgrFAD-GDH + Os анод (одношаровий)** → циклічна вольтамперометрія (CV) у синтетичному ксилемному соку *Pinus sylvestris* (pH 4.5–5.5, [`08_01 §1.3`](08_01_University_R_and_D_Protocols)). Метрики: j_max (мкА/см²), k_s, n_e, 30-day stability.
+- **dgrFAD-GDH + Os анод (одношаровий)** → циклічна вольтамперометрія (CV) у синтетичному ксилемному соку *Pinus sylvestris* (pH 4.5–5.5, [`08_02 §1`](08_02_Academic_Institutions_Registry)). Метрики: j_max (мкА/см²), k_s, n_e, 30-day stability.
 - **nCoCuCeZIF/Lac катод** → CV у симульованому катодному середовищі (pH 4.5, експозиція повітрям + 0.25 М NaCl для chloride-tolerance тесту).
 - **Geniпin-chitosan-CNC матриця** → mechanical testing на циклічне навантаження (тигмоморфогенез simulation, ±5% strain @ 0.1 Гц, 10,000 циклів).
 - **Nafion-g-PSBMA мембрана** → protein adsorption assay з суспензією абієтинової кислоти (10 мг/мл у симульованому ксилемному соку), 7 днів експозиції. UCST behavior — тест при -10°C → +25°C цикл.
 - **EIS** — імпедансна спектроскопія для опору границі фермент↔метал.
 - **ICP-MS** після тривалої експозиції — перевірка вимивання Os, металів ZIF.
 
-**Гейт TRL 4 → TRL 5:** Стабільні мілівольти/мікроампери протягом **≥ 30 днів** на монетах. Деталі координації з лабораторіями ЧНУ — [`08_01 §2`](08_01_University_R_and_D_Protocols).
+**Гейт TRL 4 → TRL 5:** Стабільні мілівольти/мікроампери протягом **≥ 30 днів** на монетах. Деталі координації з лабораторіями ЧНУ — [`08_02 §2`](08_02_Academic_Institutions_Registry).
 
 ### 3.6. Історична секція (відкинуті підходи Gen 1.0)
 
@@ -552,11 +552,11 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 | «Целюлозний п'єзо — додаткове джерело живлення» | Power density ~pW/cm² на 6 порядків нижча за EBFC (~µW/cm²) | ❌ Не плануємо як harvesting source |
 | «Анкер в зоні постійних п'єзоелектричних бур» | Анкер фізично присутній у заболоні, але **не задіяний електрично** | ⚠️ Не для енергетики, але **потенційно для калібрування акустичного TinyML** |
 
-**Можливий R&D напрямок (joint з ЧДТУ ПМКТ):** Кафедра Прикладної Механіки + Комп'ютерних Технологій ЧДТУ (проф. Базіло К.В., проф. Бондаренко М.О.) вже задіяна як власник п'єзо-експертизи та EIS-стенду ([`08_04 §1.3`](08_04_CHDTU_Data_Science_Collaboration)).
+**Можливий R&D напрямок (joint з ЧДТУ ПМКТ):** Кафедра Прикладної Механіки + Комп'ютерних Технологій ЧДТУ (проф. Базіло К.В., проф. Бондаренко М.О.) вже задіяна як власник п'єзо-експертизи та EIS-стенду ([`08_02 §2`](08_02_Academic_Institutions_Registry)).
 
 **Cross-references:**
-- ЧДТУ ПМКТ співпраця → [`08_04_CHDTU_Data_Science_Collaboration §1.3`](08_04_CHDTU_Data_Science_Collaboration)
-- Joint publication tracker → [`08_03_Joint_Publications_and_IP_Strategy`](08_03_Joint_Publications_and_IP_Strategy) Стаття 24
+- ЧДТУ ПМКТ співпраця → [`08_02_Academic_Institutions_Registry §1.3`](08_02_Academic_Institutions_Registry)
+- Joint publication tracker → [`08_01_Joint_Publications_and_IP_Strategy`](08_01_Joint_Publications_and_IP_Strategy) Стаття 24
 - Lorenz-attractor input vector → [`03_04_mruby_Lorenz_Attractor`](03_04_mruby_Lorenz_Attractor)
 
 **Статус:** Research thread, **не входить** у поточний BOM, scope або critical path.

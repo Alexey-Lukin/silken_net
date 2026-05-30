@@ -63,7 +63,7 @@ Slashing: лише за доведену халатність (cause-gate A/B/C;
 
 ## 🌐 Social API Registry (Зовнішні Стейкхолдери)
 
-Окрім академічного консорціуму ([`08_01`](docs/08_01_University_R_and_D_Protocols.md)–[`08_07`](docs/08_07_SEU_Economics_and_Legal_Integration.md)), проєкт залежить від зовнішніх **non-operational** стейкхолдерів: B2G-гейткіпери (лісівник Дзюбенко, природоохоронець Сегеда), B2B-клієнти (CBAM-офсет для "Азоту", лісосмуги агросектора), метрологія (Чорней — сертифікація SCC) та культурний шар (16 митців національного/локального рівня для Genesis NFT + Data Sonification). Жоден із записів не блокує merge — це outreach pool, що активується за TRL-тригерами. Принцип Zero-Trust: матриця інтерфейсів `(API In, API Out, SSOT-link, Status)` замість сюжетів. Деталі: [`docs/07_05_External_Stakeholders_Registry.md`](docs/07_05_External_Stakeholders_Registry.md) (Cultural Layer) + [`docs/07_05_External_Stakeholders_Registry.md`](docs/07_05_External_Stakeholders_Registry.md) (B2G/B2B Matrix). Outreach tasks: [`docs/00_07`](docs/00_07_Action_Plan_Tracker.md) § STK.1–STK.10.
+Окрім академічного консорціуму ([`08_01`](docs/08_01_Joint_Publications_and_IP_Strategy.md)–[`08_03`](docs/08_03_External_Stakeholders_Registry.md)), проєкт залежить від зовнішніх **non-operational** стейкхолдерів: B2G-гейткіпери (лісівник Дзюбенко, природоохоронець Сегеда), B2B-клієнти (CBAM-офсет для "Азоту", лісосмуги агросектора), метрологія (Чорней — сертифікація SCC) та культурний шар (16 митців національного/локального рівня для Genesis NFT + Data Sonification). Жоден із записів не блокує merge — це outreach pool, що активується за TRL-тригерами. Принцип Zero-Trust: матриця інтерфейсів `(API In, API Out, SSOT-link, Status)` замість сюжетів. Деталі: [`docs/08_03_External_Stakeholders_Registry.md`](docs/08_03_External_Stakeholders_Registry.md) (B2G/B2B Matrix + Cultural Layer). Outreach tasks: [`docs/00_07`](docs/00_07_Action_Plan_Tracker.md) § STK.1–STK.10.
 
 ---
 
@@ -315,20 +315,15 @@ kamal deploy
 
 ### 🌿 Tier II — Програма (07–08)
 
-**Економіка та Фінансування / Economics & Funding (Модуль 07)** — ⏳ _External Stakeholders (`07_05`) → `08_03` (Partnerships) — P4; звідси тимчасовий розрив на `07_04`_
+**Економіка та Фінансування / Economics & Funding (Модуль 07)**
 - [`07_01`](docs/07_01_Nature_as_a_Service_Contracts.md) — NaaS контракти та страхування
 - [`07_02`](docs/07_02_Unit_Economics_and_BOM.md) — юніт-економіка та ROI через SCC
 - [`07_03`](docs/07_03_Grant_Applications_Tracker.md) — трекер грантових заявок
-- [`07_05`](docs/07_05_External_Stakeholders_Registry.md) — External Stakeholders Registry (B2G/B2B + культурний шар; non-hot-path outreach pool)
 
-**Наука та R&D (Модуль 08)**
-- [`08_01`](docs/08_01_University_R_and_D_Protocols.md) — партнерство з ЧНУ
-- [`08_02`](docs/08_02_Cybernetic_and_Mathematical_Validation.md) — кіберфізична валідація ФОТІУС
-- [`08_03`](docs/08_03_Joint_Publications_and_IP_Strategy.md) — спільні публікації та стратегія IP
-- [`08_04`](docs/08_04_CHDTU_Data_Science_Collaboration.md) — ЧДТУ: Data Science, математична статистика, RF-верифікація, акустичний стенд
-- [`08_05`](docs/08_05_CHIPB_Fire_Safety_Integration.md) — ЧІПБ: пожежна безпека, параметричне страхування, SOP
-- [`08_06`](docs/08_06_CHMA_Biomedical_Integration.md) — ЧМА: біомедична валідація EBFC, токсикологія Ti-6Al-4V, ксилемоінтеграція
-- [`08_07`](docs/08_07_SEU_Economics_and_Legal_Integration.md) — СЄУ: макроекономіка NaaS, RWA-легалізація, промисловий дизайн PEEK-радому
+**Академічна Інтеграція / Academic & Partnerships (Модуль 08)** — 5 ВНЗ під рамкою MOIC
+- [`08_01`](docs/08_01_Joint_Publications_and_IP_Strategy.md) — MOIC + спільні публікації (Статті 1–35) + стратегія IP
+- [`08_02`](docs/08_02_Academic_Institutions_Registry.md) — Реєстр Академічних Інституцій (ЧНУ+ФОТІУС/ЧДТУ/ЧІПБ/ЧМА/СЄУ: хто → що валідує → канон-дім)
+- [`08_03`](docs/08_03_External_Stakeholders_Registry.md) — External Stakeholders (B2G/B2B + культурний шар; non-hot-path outreach pool)
 
 > _Методологія/процес (колишній Модуль 09) ре-деривовано у **Модуль 00 — Фундамент** (00_02–00_07, вгорі)._
 

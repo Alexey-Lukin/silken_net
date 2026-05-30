@@ -28,7 +28,7 @@
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | TelemetryUnpacker, SeedDerivation, DCI check |
 | [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Dual Computation Integrity (Z крос-верифікація) |
 | [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | CRITICAL_Z_MIN/MAX → slashing |
-| [08_02_Cybernetic_and_Mathematical_Validation](08_02_Cybernetic_and_Mathematical_Validation) | Матем. верифікація числової стабільності |
+| [08_02_Academic_Institutions_Registry](08_02_Academic_Institutions_Registry) | Матем. верифікація числової стабільності |
 | `firmware/bio_contracts/bio_contract.rb` · `app/services/silken_net/attractor.rb` · `seed_derivation.rb` | mruby + Rails-дзеркало (Float parity); SEC.11 entry-point |
 | [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.31 numeric-DCI flip (deferred); FW.45 fixed-point hardening |
 

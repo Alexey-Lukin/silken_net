@@ -21,8 +21,8 @@
 | [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Мультичейн (EF/IoTeX grant теми) |
 | [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | NaaS value-prop |
 | [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Unit economics для заявок |
-| [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | академічні гранти |
-| [08_07_SEU_Economics_and_Legal_Integration](08_07_SEU_Economics_and_Legal_Integration) | консорціум (Horizon Europe) |
+| [08_02_Academic_Institutions_Registry](08_02_Academic_Institutions_Registry) | академічні гранти |
+| [08_02_Academic_Institutions_Registry](08_02_Academic_Institutions_Registry) | консорціум (Horizon Europe) |
 | [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | BIZ.12, UNI.1/UNI.8 |
 
 ## 📑 Зміст
@@ -220,7 +220,7 @@ Q4 2026:   Seed-раунд (climate/deeptech фонди)
 | **Вимоги до консорціуму** | Мін. 3 країни ЄС; Ukraine є асоційованою країною (partial eligibility) |
 | **Статус** | Не подано — потребує підготовки |
 | **Академічний лідер консорціуму** | **СЄУ (Аблязова Наталія Рауфівна)** — координація, управління консорціумом, Triple Helix модель (ЧНУ/ЧДТУ/СЄУ + ActiveBridge + лісові господарства) |
-| **Парасоль ЧНУ (інституційний)** | **В.о. ректора Кирилюк Є.М.** (директор ННІ економіки і права) — підпис парасольового MoU ЧНУ↔Silken Net, ко-PI WP-Bioeconomy; **проректор з науки Спрягайло О.В.** — ко-PI WP-Biodiversity, регіональний contact з Черкаською ОДА, ПЗФ-сумісність pilot'у. Деталі: [`08_01` §1.3, §1.4 та блок «🔗 Перехресна синергія»](08_01_University_R_and_D_Protocols), [`08_03` §1G](08_03_Joint_Publications_and_IP_Strategy). |
+| **Парасоль ЧНУ (інституційний)** | **В.о. ректора Кирилюк Є.М.** (директор ННІ економіки і права) — підпис парасольового MoU ЧНУ↔Silken Net, ко-PI WP-Bioeconomy; **проректор з науки Спрягайло О.В.** — ко-PI WP-Biodiversity, регіональний contact з Черкаською ОДА, ПЗФ-сумісність pilot'у. Деталі: [`08_02` §1.3, §1.4 та блок «🔗 Перехресна синергія»](08_02_Academic_Institutions_Registry), [`08_01` §1G](08_01_Joint_Publications_and_IP_Strategy). |
 
 **Структура консорціуму для Horizon Europe:**
 
@@ -252,7 +252,7 @@ WP9 Exploitation & IPR            → ActiveBridge + Silken Net
 
 **Тема заявки:** _"Trustless D-MRV: IoTeX W3bstream ZK-proofs for biological homeostasis verification on STM32WLE5JC edge devices"_ — пов'язано з `IotexVerificationWorker`, `Iotex::W3bstreamVerificationService` та `05_02_Proof_of_Growth_Pipeline`.
 
-> **Детально про консорціум та грантову стратегію:** [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration) §1.4 (Аблязова Н.).
+> **Детально про консорціум та грантову стратегію:** [`08_02_Academic_Institutions_Registry`](08_02_Academic_Institutions_Registry) §1.4 (Аблязова Н.).
 
 ## 🗺️ 9. Грантова Дипломатія (Cross-chain Grant Strategy)
 

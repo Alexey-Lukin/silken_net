@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Зберігати **ТІЛЬКИ незавершене** — кожен пункт як **тонкий вказівник**: `ID · пріоритет · виконавець` + 1 рядок + **→ канон-реф**. Повний опис «як має бути» живе в каноні (`00_00`→`08_07`), описаний **в одному місці**; 00_07 на нього посилається, **не дублює**.
+Зберігати **ТІЛЬКИ незавершене** — кожен пункт як **тонкий вказівник**: `ID · пріоритет · виконавець` + 1 рядок + **→ канон-реф**. Повний опис «як має бути» живе в каноні (`00_00`→`08_02 §5`), описаний **в одному місці**; 00_07 на нього посилається, **не дублює**.
 
 **Правило одного місця (DRY):** редагуєш канон → онови залежні пункти 00_07 (за рефами); закрив пункт → онови канон + познач тут (✅ → **§🗄️ Архів**, вказівник ID→канон). Так апдейт робиться в одному місці, а референси ведуть, де ще синхронізувати.
 
@@ -362,10 +362,10 @@
 - [ ] 👤 Hydrophobic/hydrophilic gradient test (PTFE знизу, гідрофільний верх) — додано в `01_04` §3.4
 - [ ] 👤 Thermal installation test: T° нагріву (150-200°C), час витримки — додано в `01_04` §3.5 (резервний метод, тільки для нефункціоналізованих анкерів)
 - [ ] 👤 FEM-моделювання теплового поля в Ti-6Al-4V анкері (λ = 6.7 W/m·K)
-- [ ] 👤 **Біоміметичні покриття проти CODIT** (`01_04` §4): Zn-HAp + хітозан композит на периферійних стінках пор — лабораторний синтез та in vitro тест адгезії клітин паренхіми Pinus sylvestris (запит до біо-хабу ЧНУ, [`08_01`](08_01_University_R_and_D_Protocols))
+- [ ] 👤 **Біоміметичні покриття проти CODIT** (`01_04` §4): Zn-HAp + хітозан композит на периферійних стінках пор — лабораторний синтез та in vitro тест адгезії клітин паренхіми Pinus sylvestris (запит до біо-хабу ЧНУ, [`08_02`](08_02_Academic_Institutions_Registry))
 - [ ] 👤 **PEDOT:PSS гідрогель інтерфейс** (`01_02` §1a.2, `01_04` §4.1): тонкий шар (10–50 µm) на стінках периферійних пор для модульного буферу Ti↔калюс — верифікація провідності EBFC після нанесення
 - [ ] 👤 **Лігнін-покриття** (`01_04` §4.1): «свій» полімер для дерева — тест зменшення каскаду CODIT Wall 4
-- [ ] 🔗 **SA reservoir — НЕ інтегрувати без верифікації** (`01_04` §4.2 caveat #2): чи не маскує екзогенна саліцилова кислота природний сигнал стресу, який вимірює Lorenz attractor (запит до біо-хабу, [`08_01`](08_01_University_R_and_D_Protocols))
+- [ ] 🔗 **SA reservoir — НЕ інтегрувати без верифікації** (`01_04` §4.2 caveat #2): чи не маскує екзогенна саліцилова кислота природний сигнал стресу, який вимірює Lorenz attractor (запит до біо-хабу, [`08_02`](08_02_Academic_Institutions_Registry))
 
 #### HW.7 — BQ25570 resistors verification
 - **P1** · 👤 · → `02_03`
@@ -525,7 +525,7 @@
 - **P0** · 👤 · → `01_01 §6.1 BLOCKER-2`
 - **Опис:** Тризонний анкер — складна збірка. Передчасний перехід на DMLS-партію 100 шт. без верифікації базових принципів був методологічною помилкою. Цей блокер фіксує гейт: 100 анкерів замовляємо **тільки** після проходження двох попередніх етапів.
 - [ ] 👤 **Stage 1 — SLA макети (5 шт):** друк прозорого фотополімеру (Form 3 або SLA-сервіс) для перевірки form & fit, ергономіки, Flush Mount step drilling, допусків press-fit «пластик-в-пластик»
-- [ ] 👤 **Stage 2 — Ti-coins (~15 шт, ⌀10–15 мм або 10×10×1 мм):** SLM-друк + EAAE (з обов'язковим dehydrogenation bake `01_02 §1.3 Крок 5b`) → **Gen 2.0 анодний стек** (одношаровий dgrFAD-GDH + Os polymer в geniпin-chitosan-CNC матриці поверх fMWCNT, `01_03 §2.1`) + **Gen 2.0 катодний стек** (Laccase + nCoCuCeZIF nanozyme гібрид DET, `01_03 §2.2`) + **Nafion-g-PSBMA анти-resin coating** → in vitro CV/EIS у синтетичному ксилемному соку (рецептура від біо-хабу ЧНУ, [`08_01`](08_01_University_R_and_D_Protocols)). 30-day stability gate. Chloride tolerance test (0.25 М NaCl). UCST winter-lock тест (-10°C → +25°C цикл). 💡 **Electrode-дизайн:** замовити з «вушком» (отвір/виступ на краю) для кріплення потенціостат-кліпси без пошкодження активної площі (A_electrode = 2 см²). In-silico predictions для порівняння — `40_validate_vs_experiment.py` готовий. (`01_03 §3.7`)
+- [ ] 👤 **Stage 2 — Ti-coins (~15 шт, ⌀10–15 мм або 10×10×1 мм):** SLM-друк + EAAE (з обов'язковим dehydrogenation bake `01_02 §1.3 Крок 5b`) → **Gen 2.0 анодний стек** (одношаровий dgrFAD-GDH + Os polymer в geniпin-chitosan-CNC матриці поверх fMWCNT, `01_03 §2.1`) + **Gen 2.0 катодний стек** (Laccase + nCoCuCeZIF nanozyme гібрид DET, `01_03 §2.2`) + **Nafion-g-PSBMA анти-resin coating** → in vitro CV/EIS у синтетичному ксилемному соку (рецептура від біо-хабу ЧНУ, [`08_02`](08_02_Academic_Institutions_Registry)). 30-day stability gate. Chloride tolerance test (0.25 М NaCl). UCST winter-lock тест (-10°C → +25°C цикл). 💡 **Electrode-дизайн:** замовити з «вушком» (отвір/виступ на краю) для кріплення потенціостат-кліпси без пошкодження активної площі (A_electrode = 2 см²). In-silico predictions для порівняння — `40_validate_vs_experiment.py` готовий. (`01_03 §3.7`)
 - [ ] 👤 **Stage 3 — Full anchor (3–5 шт):** SLM+HIP анодних секцій, CNC PEEK-втулок, SLM/EBM катодних фланців, повний press-fit + EBFC у синтетичному соку
 - [ ] 👤 **Stage 4 — Партія 100 шт:** після підтвердження Stage 3 — оптове замовлення для польових випробувань
 
@@ -641,6 +641,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | DOC.9 | Documentation `02_03` §9.3 raніше використовувала 15 mA/50 ms для LoRa TX. Виправлено на 120 mA/100 ms (~39 мДж) per SX1262 datasheet. Firmware energy accounting **не верифіковано незалежно** | `02_03`, `firmware/soldier/main.c` | Лабораторне вимірювання поточного TX (HW.x) + cross-ref у `02_03` після верифікації | ⏸️ Заблоковано лаб-стендом |
 | DOC.10 | Реструктуризація 05/07 (Фаза 3) — відкладені misplacement-рішення: `07_01 §11` Investor Q&A (pitch/diligence — дім 00_01 vs новий pitch-doc неоднозначний); `07_03 §5` Anchor Assembly + `§6` Virtual Prototyping (operational/field-ops дім, наразі grant-bootstrap контекст — не чистий misplacement) | `07_01`, `07_03` | Призначити operational/pitch-дім + перенести (рішення founder) | 🟡 Deferred |
 | DOC.11 | Реструктуризація 05/07 (Фази 1-2, 2026-05-30): slashing `00_01 §6` → `05_05`; governance `05_03 §749-905` → `05_06` — нові канон-доми; cross-refs re-pointed; `00_06 §2` / `00_00` / README синхронізовано (навігація: `00_01 §6` stub + `05_03 §Governance` stub) | `05_05`, `05_06`, `00_01`, `05_03` | — (виконано) | ✅ Done |
+| DOC.12 | Taxonomy v3 P4 (2026-05-30): дисолюція Module 08 (7→3 доки). `08_03 Joint Pubs/IP`→**`08_01`**; `08_02 Cyber/Math`+`08_01 University`+`08_04-07`→**new `08_02` Academic Institutions Registry** (5 ВНЗ — relationship-шар; інженерна субстанція реферить Tier I 01–06, zero-loss verified); `07_05 External`→**`08_03`**. ~260 inbound refs swept; genuinely-novel mesh-математика → Open Research `06_08` (percolation/Markov). `00_00`/README/CLAUDE/`ssot-maintenance` skill синхронізовано | `08_01`, `08_02`, `08_03`, `06_08` | — (виконано) | ✅ Done |
 
 #### DOC.2 — Canon↔canon de-dup (SSOT single-home) [#4, 2026-05-29]
 - **P2** · 🤖 · → `00_00`
@@ -706,7 +707,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - ✅ 2000 SCC = 1 tCO₂ (0.5 кг/SCC), carbon coefficient per-species. · [ ] 👤 сертифікація методології (Verra/Gold Standard, Post-TRL 7 → BIZ.9)
 
 #### BIZ.2 — B2B MSA (Master Service Agreement)
-- **P1** · 👤 · → `07_01`, `08_07 §1.3`
+- **P1** · 👤 · → `07_01`, `08_02 §5`
 - Партнер: СЄУ (Аблязов Д.Е., к.ю.н.). · [ ] 👤 юр-консультація (MiCA/ERC-3643/RWA) → MSA template (Term Sheet + Carbon Credit Purchase Agreement) → review практикуючим юристом
 
 #### BIZ.3 — B2C ToS / Privacy Policy
@@ -730,7 +731,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - Конвертація SCC utility-token → сертифіковані kg CO₂ для institutional buyers потребує independent methodology audit (Verra/Gold Standard/Puro.earth). · [ ] 👤 engagement methodologist (~$50-100k) → PDD у Verra · [ ] 🔗 залежить від HW.3 (Arrhenius) + UNI.6/UNI.7 (DFT+diffusion)
 
 #### BIZ.10 — Multi-party IP Contract + NDA framework
-- **P1** · 👤 · → `08_03`, `08_05-07`
+- **P1** · 👤 · → `08_03`, `08_02 §3-07`
 - 5-сторонній фреймворк (ChNU+ChDTU+ChIPB+ChMA+СЄУ+SilkenNet): bilateral NDA, IP-договір спільного авторства, патентні права, royalty. · [ ] 👤 патентний повірений (UA+EU) → bilateral NDA × 5 (паралельно UNI.4-14) → Master IP Framework Agreement · [ ] 🔗 після UNI.1/8/9/12/13
 
 #### BIZ.11 — RWA pilot реєстрація лісової ділянки через Polygon Hadron
@@ -776,15 +777,15 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - Моделювання Kirkendall на Ti-6Al-4V/xylem + Arrhenius 12-тижн (школа Гусака, diffusion-controlled corrosion). Ціль: Q1 *Corrosion Science*; 20+ years claim. Залежить HW.3. · [ ] 👤 зустріч + спільний експеримент HW.3 + co-authored paper
 
 #### UNI.9 — ChDTU Карапетян: Data Science колаборація
-- **P1** · 👤 · → `08_04 §1.1`
+- **P1** · 👤 · → `08_02 §2`
 - ChDTU R-кластер для ML; А.Р. Карапетян — статистика телеметрії (anomaly/fraud), магістерські. · [ ] 👤 зустріч (ChDTU rectorat) + кафедральна тема «Statistics of Bio-IoT Telemetry» + 2-3 магістерські (2026-2027) · [ ] 🤖 SLA R-кластеру (тренування `silken_forest.marshal`, post-TRL 7)
 
 #### UNI.10 — ChDTU Гончаров (ФЕТР): RF верифікація + EMC pre-compliance
-- **P1** · 👤 · → `08_04 §1.2`
+- **P1** · 👤 · → `08_02 §2`
 - А.А. Гончаров (ФЕТР): VNA + анехоїчна камера для (a) SMD-антена під PEEK (HW.17), (b) Link Budget у лісі (SF7-9, 50-250м), (c) EMC pre-compliance CE/FCC (E.11). · [ ] 👤 зустріч + RF-лаб access + VNA-вимір PEEK-кришки (1.5/2.0/2.5мм) + Link Budget field test · [ ] 🔗 залежить HW.9 + HW.17
 
 #### UNI.11 — ChDTU Базіло+Бондаренко (ПМКТ): акустична валідація фононної лінзи
-- **P2** (P1 для Mongabay) · 👤 · → `08_04 §1.3`, `03_03 §10`
+- **P2** (P1 для Mongabay) · 👤 · → `08_02 §2`, `03_03 §10`
 - ПМКТ (п'єзоелектрика + акуст. метаматеріали): EIS п'єзодиска 25-150кГц (cavitation) + верифікація гіроїдного phonon lens. Ціль: Q1 *IEEE TBME*. 🌿 Mongabay: + dawn/dusk Cherkasy Soundscape Library для 5-class TinyML «Fauna» (`08_03 §24a`). · [ ] 👤 зустріч Базіло+Бондаренко + EIS-протокол + acoustic стенд (HW.1) · [ ] 🌿 dawn/dusk recordings з UNI.13a (Спрягайло-Гаврилюк): AudioMoth, 4 сезони, ≥30хв dawn+dusk/ділянку, labeled таксони
 
 #### 🌿 UNI.13a — ChNU Біо-хаб (Спрягайло+Гаврилюк): Acoustic Biodiversity Baseline (Mongabay)
@@ -792,19 +793,19 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - Delgado et al. (Nicoya, 119 ділянок, 16k год; Mongabay 2026): dawn/dusk fauna-піки = маркер біорізноманіття (NDVI бачить покрив, не функцію). UA-аналог: **Cherkasy Soundscape Library** (4 сезони, з ЧДТУ ПМКТ UNI.11) → ground truth для 5-class TinyML (FW.4-EXT) + Q1 (Стаття 24a). · [ ] 👤 зустріч Спрягайло (проректор) + Гаврилюк (ННІ природничих) + студенти-біологи + joint methodology workshop (з ЧДТУ ПМКТ) + expedition runs (4 ділянки × 4 сезони × dawn/dusk ≈ 32 записи) · [ ] 🔗 manual labeling (комахи/птахи/амфібії 0-63) → GA-оптимізація Любченко (UNI.6/E.52-EXT) + cross-val 10-річні дані (Спрягайло) + Horizon CL6 grant (BIZ.12)
 
 #### UNI.12 — ChIPB-NUTSU: пожежна безпека + параметричне страхування
-- **P1** · 👤 · → `08_05`
+- **P1** · 👤 · → `08_02 §3`
 - ChIPB + НУЦЗУ: (1) валідація тригерів параметричного страхування (FRP/confidence з dClimate), (2) SOP для 7 EwsAlert-типів (drought/insect/vandalism/fire/seismic/fault/entropy), (3) ДСНС API. · [ ] 👤 cold contact ректорат + презентація fire-safety stack + joint SOP workshop (ARCH.31) · [ ] 🔗 залежить UNI.14 (СЄУ legal) для structuring страхування
 
 #### UNI.13 — ChMA: біохімія EBFC + токсикологія
-- **P2** · 👤 · → `08_06`
+- **P2** · 👤 · → `08_02 §4`
 - ChMA: (1) валідація dgrFAD-GDH + Laccase/ZIF-nanozyme при pH 4.5-5.5 (`01_03`), (2) токсикологія Ti/Al/V іонів, (3) геніпін cross-linking біосумісність (vs глутаральдегід). ⚠️ посади не верифіковані. · [ ] 👤 СПОЧАТКУ verify посади (сайт ChMA) → cold contact ректор → joint biochemistry protocol EBFC Gen 2.0 (HW.5)
 
 #### UNI.14 — СЄУ: токеноміка RWA + правова архітектура
-- **P1** · 👤 · → `08_07`
+- **P1** · 👤 · → `08_02 §5`
 - Розширення UNI.8. СЄУ: (1) MSA/Term Sheet (Аблязов Д., к.ю.н.), (2) KYC/AML юросіб (Hadron), (3) DAO як юрособа (cooperative/Swiss Verein), (4) ESG Accounting (Ус Г.О.). ⚠️ 7 посад потребують verify. · [ ] 👤 зустріч Чудаєва (ректор)/Аблязова Н. (UNI.8) + verify 7 посад + MoU + workshop Аблязов (MSA) + workshop Ус (ESG framework)
 
 #### UNI.8 — Перший контакт з ректоратом СЄУ (legacy ID — see UNI.14)
-- **P0** · 👤 · → `08_07`
+- **P0** · 👤 · → `08_02 §5`
 - Блокує Economic Whitepaper, Legal Framework, NaaS шаблони (`07_01` BLOCKER-1/3). · [ ] 👤 зустріч Чудаєва/Аблязова Н. + verify 7 посад + MoU СЄУ↔SilkenNet + workshops Аблязов (MSA) + Ус (ESG)
 
 #### UNI.15 — ЧНУ TISC engagement (патентний захист анкера + торгові марки)
@@ -816,53 +817,53 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - Кафедра ІВ ЧНУ — точковий UA-юрисдикційний review (СЄУ §1F = макро): (1) RWA ERC-3643 vs Лісовий Кодекс/ПЗФ, (2) SCC/SFC за ЗУ «Про віртуальні активи» 2022 + MiCA 2024, (3) NaaS у UA Civil Code, (4) авторське право на `bio_contract.rb`/`Attractor`. Ціль: 2 меморандуми. · [ ] 👤 контакт зав. кафедри + workshop з Аблязовим (UA×MiCA) + меморандум RWA (розблок `07_01` BLOCKER-6) + меморандум SCC-класифікація + sui generis NaaS review
 
 #### UNI.17 — ChDTU Хоменко (Кафедра металорізальних верстатів): прецизійна механіка + DMLS post-processing
-- **P2** · 👤 · → `08_04 §1.4`
-- Хоменко (Заслужений винахідник, 80+ патентів): прецизійна обробка + різьба анкера для живої деревини (`01_01`/`01_02`/`02_02`, deinstall `08_05 §1.5 Несен`) + патентний аудит. · [ ] 👤 контакт (ChDTU rectorat) + патентний аудит (UNI.15) + прототип різальної геометрії в ЧДТУ machine shop
+- **P2** · 👤 · → `08_02 §2`
+- Хоменко (Заслужений винахідник, 80+ патентів): прецизійна обробка + різьба анкера для живої деревини (`01_01`/`01_02`/`02_02`, deinstall `08_02 §3 Несен`) + патентний аудит. · [ ] 👤 контакт (ChDTU rectorat) + патентний аудит (UNI.15) + прототип різальної геометрії в ЧДТУ machine shop
 
 ---
 
 ## §07 · External Stakeholders (B2G/B2B/Cultural — non-academic outreach)
 
-> **Поточний стан:** Зовнішні залежності виокремлені в [`07_05`](07_05_External_Stakeholders_Registry) (Cultural Layer) та [`07_05`](07_05_External_Stakeholders_Registry) (B2G/B2B Matrix). Це не операційні залежності hot-path — це outreach pool, що активується за TRL-тригерами у відповідних модулях. Імена нижче — публічна інформація; контакти живуть у gitignored CRM.
+> **Поточний стан:** Зовнішні залежності виокремлені в [`08_03`](08_03_External_Stakeholders_Registry) (Cultural Layer) та [`08_03`](08_03_External_Stakeholders_Registry) (B2G/B2B Matrix). Це не операційні залежності hot-path — це outreach pool, що активується за TRL-тригерами у відповідних модулях. Імена нижче — публічна інформація; контакти живуть у gitignored CRM.
 
 #### STK.1 — Tier 1 B2G: Дзюбенко (ДП "Ліси України") — легальний доступ до Черкаського бору
-- **P1** · 👤 · → `07_05 §2.1`
-- Trigger: TRL 5 у `01_01`. Заслужений лісівник + д.е.н. + проф. ЧДТУ; підпис → експериментальний полігон у держлісі (канал через `08_04` ЧДТУ MoU). · [ ] 👤 verify title/contact (ChDTU rector) → first-meeting brief (NaaS+ESG/FSC) → Pilot Site MoU → координація з UNI.6 (Спрягайло) ПЗФ
+- **P1** · 👤 · → `08_03 §2.1`
+- Trigger: TRL 5 у `01_01`. Заслужений лісівник + д.е.н. + проф. ЧДТУ; підпис → експериментальний полігон у держлісі (канал через `08_02 §2` ЧДТУ MoU). · [ ] 👤 verify title/contact (ChDTU rector) → first-meeting brief (NaaS+ESG/FSC) → Pilot Site MoU → координація з UNI.6 (Спрягайло) ПЗФ
 
 #### STK.2 — Tier 1 B2G: Сегеда (ДП "Смілянське ЛГ") — еко-аудит + Геронимівка
-- **P1** · 👤 · → `07_05 §2.2`
+- **P1** · 👤 · → `08_03 §2.2`
 - Trigger: після STK.1. Заслужений природоохоронець у Геронимівці (центр Genesis-кластера); еко-аудит + розширення в Смілянщину. · [ ] 👤 first-contact (cross-link UNI.6 Спрягайло ПЗФ) → біосумісність (LoRaWAN+CODIT) → DAO advisory (PoG oracle validation)
 
 #### STK.3 — Tier 1 B2G: Заслужений юрист — Legal Wrapper для SCC
-- **P1** · 🔗 · → `07_05 §2.4`
+- **P1** · 🔗 · → `08_03 §2.4`
 - 🔗 блок: UNI.16 (Кафедра ІВ ЧНУ) + UNI.14 (СЄУ Аблязов). Перекласифікація анкера "втручання"→"науково-вимірювальний прилад" до прокуратури; кандидати через ННІ права ЧНУ (Кирилюк, `08_01 §1.4`). · [ ] 👤 identify candidate (Кирилюк+Аблязов) → узгодити legal opinion з UNI.16
 
 #### STK.4 — Tier 1 B2G: Землевпорядник (TBD) — RWA кадастр oracle
-- **P2** · 👤 · → `07_05 §2.3`
+- **P2** · 👤 · → `08_03 §2.3`
 - Trigger: TRL 6 у `05_02`. Сервітут під Queen-щоглу + кадастровий oracle; ім'я не верифіковане (Сіроштан — перевірити). · [ ] 👤 identify candidate (cross-ref Аблязов UNI.14)
 
 #### STK.5 — Tier 3 Certification: Чорней (ДП "Черкасистандартметрологія") — SCC certification
-- **P1** · 👤 · → `07_05 §4.1`
+- **P1** · 👤 · → `08_03 §4.1`
 - Trigger: TRL 6 у `05_02`; критичний gate для CBAM-статусу SCC. Сертифікація Soldier як ЗВТ + дрейф-компенсація + audit похибки D-MRV (інакше SCC = "цифри з інтернету"). · [ ] 👤 verify Chorney status → first-meeting (SCC↔ДСТУ↔BIPM/OIML) → ЗВТ registration roadmap
 
 #### STK.6 — Tier 4 B2B: ПрАТ "Азот" — CBAM offset + хімічний scale-up
-- **P2** · 👤 · → `07_05 §5.2`
-- Trigger: TRL 7 у `05_02` (live SCC mint). Першочерговий B2B SCC-клієнт (CBAM offset) + канал на scale-up осмієвих полімерів EBFC (І. Кухоль, О. Хуторний). · [ ] 👤 ESG officer cold-contact → CBAM model (`07_02`) → EBFC scale-up feasibility (`08_06`)
+- **P2** · 👤 · → `08_03 §5.2`
+- Trigger: TRL 7 у `05_02` (live SCC mint). Першочерговий B2B SCC-клієнт (CBAM offset) + канал на scale-up осмієвих полімерів EBFC (І. Кухоль, О. Хуторний). · [ ] 👤 ESG officer cold-contact → CBAM model (`07_02`) → EBFC scale-up feasibility (`08_02 §4`)
 
 #### STK.7 — Tier 5 Social Inclusion: Кучер (соц. сфера) — Horizon Europe Cluster 4/6
-- **P2** · 👤 · → `07_05 §6.1`
+- **P2** · 👤 · → `08_03 §6.1`
 - Trigger: перед великим Horizon-грантом (`07_03`). Соц. інклюзія для grant-пріоритету + кадровий резерв + Eco-Therapy 4.0 для ветеранів. · [ ] 👤 first-contact (обласна рада) → Eco-Therapy concept (deferred — потребує mobile UI `04_04`)
 
 #### STK.8 — Cultural Tier A (Cherkasy 8 artists): pre-Genesis NFT outreach
-- **P3** · 👤 · → `07_05 §2.1`
-- Trigger: TRL 7 у `05_02` + Genesis onchain. 8 черкаських митців (Бабак, Теліженко, Афонін, Бондар, Іщенко, Олексенко, Касьян, Гладько); канал через А2 Теліженко (`08_07 §1.7`). · [ ] 👤 pre-screen (life status+active) → через А2 collective probe → Name&Likeness Release (UNI.14 Аблязов)
+- **P3** · 👤 · → `08_03 §2.1`
+- Trigger: TRL 7 у `05_02` + Genesis onchain. 8 черкаських митців (Бабак, Теліженко, Афонін, Бондар, Іщенко, Олексенко, Касьян, Гладько); канал через А2 Теліженко (`08_02 §5`). · [ ] 👤 pre-screen (life status+active) → через А2 collective probe → Name&Likeness Release (UNI.14 Аблязов)
 
 #### STK.9 — Cultural Tier B (National 8 artists): pre-launch outreach
-- **P3** · 👤 · → `07_05 §2.2`
+- **P3** · 👤 · → `08_03 §2.2`
 - Trigger: TRL 8 у `05_03`. 8 національних митців (Марчук, Чебаник, Микита, Сидоренко, Медвідь, Гуменюк, Гуйда, Ковтун) — старша когорта, зафіксувати window; hand-off PR-агентству. · [ ] 👤 verify life/health × 8 → gallery/agent кожному → pitch package (brief+animation)
 
 #### STK.10 — Cultural Tier C (Media): Калініченко / Душок (ТРК Ільдана) — PR shield
-- **P2** · 👤 · → `07_05 §2.3`
+- **P2** · 👤 · → `08_03 §2.3`
 - Trigger: перед першою публічною інсталяцією. Превентивний інфо-фон проти екопанік («чіпують дерева»); Калініченко — викладач ЧНУ, міст із `08_01`. · [ ] 👤 через ЧНУ rectorat (Кирилюк `08_01 §1.4`) перший контакт → документальний міні-сюжет про DMLS-друк (post-prototype)
 
 ---
@@ -906,12 +907,12 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | E.51 | **Monte Carlo TTL-flood симуляція** для обґрунтування `PANIC_TTL=5` та `DEFAULT_TTL=3`: цільовий P_delivery ≥ 0.99 при 20-30% одночасних відмов вузлів. Виходи: math-обґрунтування для seed deck | `08_02` §1.2 (Vector 2) | Post-TRL 6 (Порубльов, ЧНУ) |
 | E.52 | **GA-оптимізація ваг `silken_forest.marshal`** ML моделі на Akash GPU кластері — генетичний алгоритм для `InsightGeneratorService` stress_index класифікації | `08_02` §1.6 (Любченко) | Post-TRL 7 |
 | E.53 | **VNA-вимір SMD-антени під PEEK радомом** — VSWR <1.5 на 868 МГц для 3-5 варіантів товщини PEEK (1.5/2.0/2.5 мм) у вологому/сухому стані + **3D Keep-Out з Ti-фланцем нижче** (Z-clearance 5/8/12 мм, з/без overhang за периметр Ti). Лабораторна задача (cross-ref UNI.10 ChDTU Гончаров, нова вимога `02_01 §5.3` revised) | `08_02` §1.3 + `02_01` | P1, blocked by HW.17 + UNI.10 |
-| E.54 | **SOP документи для 7 типів EwsAlert** — стандартизовані інструкції UA+EN: severe_drought, insect_epidemic, vandalism_breach, fire_detected, seismic_anomaly, system_fault, entropy_anomaly. Інтеграція як inline UI у Phlex (cross-ref ARCH.31) | `08_05` | P1, joint with ChIPB-NUTSU (UNI.12) |
-| E.55 | **Multi-party NDA + IP framework** для 5-сторонньої академічної співпраці (ChNU + ChDTU + ChIPB + ChMA + СЄУ + Silken Net) — base-line для всіх UNI.x публікацій | `08_03`, `08_05`, `08_06`, `08_07` | P1, cross-ref BIZ.10 |
+| E.54 | **SOP документи для 7 типів EwsAlert** — стандартизовані інструкції UA+EN: severe_drought, insect_epidemic, vandalism_breach, fire_detected, seismic_anomaly, system_fault, entropy_anomaly. Інтеграція як inline UI у Phlex (cross-ref ARCH.31) | `08_02 §3` | P1, joint with ChIPB-NUTSU (UNI.12) |
+| E.55 | **Multi-party NDA + IP framework** для 5-сторонньої академічної співпраці (ChNU + ChDTU + ChIPB + ChMA + СЄУ + Silken Net) — base-line для всіх UNI.x публікацій | `08_03`, `08_02 §3`, `08_02 §4`, `08_02 §5` | P1, cross-ref BIZ.10 |
 | E.56 | **DSP preprocessing для TinyML** — невідомо чи модель очікує raw time-domain чи MFCC. Якщо MFCC → +5-15 KB Flash + 40 µs CPU (CMSIS-DSP) | `03_03` BLOCKER-5 | P1, cross-ref FW.25 |
 | E.57 | **TENSOR_ARENA_SIZE budget verification** — ніколи не виміряно через `arm-none-eabi-size`. Ризик stack overflow якщо > 46 KB | `03_03` BLOCKER-3 | P1, cross-ref FW.26 |
 | E.58 | **Lorenz state continuity** після brownout: документація specifies повний (x,y,z) save в RTC Backup, але недостатня формалізація first-boot vs continuation logic. Магічний marker `LZST` (0x4C5A5354) реалізовано — потребує канонічної таблиці RTC layout | `03_04`, `03_01` | P2, cross-ref DOC.3, DOC.4 |
-| 🌿 E.59 | **Mongabay biodiversity pivot — acoustic D-MRV** — стратегічний pivot Silken Net від карбонового MRV до повноцінного D-MRV біорізноманіття після Delgado et al. (Nicoya Peninsula, 119 ділянок, 16 000 год аудіо; *Mongabay News*, травень 2026). Включає: (1) FW.4-EXT 5-class TinyML модель з класом `fauna_activity`; (2) FW.25 DSP MFCC з P1→P0; (3) UNI.11+UNI.13a Cherkasy Soundscape Library (ЧДТУ ПМКТ + ЧНУ Біо-хаб); (4) 08_02 §1.5 Macro-Micro verification (Бушин CNN + fauna feature); (5) 08_02 §1.8 NSGA-II multi-objective GA (Любченко); (6) 08_03 Стаття 24a co-authored Q1 publication; (7) Horizon Europe CLUSTER 6 (Biodiversity Monitoring) grant vector; (8) AiInsight#biodiversity_trend → ForestNFT metadata "biodiversity_score"; (9) ринкова диференціація — defensible moat проти Pachama/Sylvera/NCX (тільки Silken Net має micro-acoustic verification layer) | `03_03` §10 + `08_01` §1.3+§2 + `08_02` §1.5+§1.8 + `08_03` Стаття 24a | **P1 strategic** — координує FW.4-EXT, FW.25, UNI.11, UNI.13a |
+| 🌿 E.59 | **Mongabay biodiversity pivot — acoustic D-MRV** — стратегічний pivot Silken Net від карбонового MRV до повноцінного D-MRV біорізноманіття після Delgado et al. (Nicoya Peninsula, 119 ділянок, 16 000 год аудіо; *Mongabay News*, травень 2026). Включає: (1) FW.4-EXT 5-class TinyML модель з класом `fauna_activity`; (2) FW.25 DSP MFCC з P1→P0; (3) UNI.11+UNI.13a Cherkasy Soundscape Library (ЧДТУ ПМКТ + ЧНУ Біо-хаб); (4) 08_02 §1 Macro-Micro verification (Бушин CNN + fauna feature); (5) 08_02 §1 NSGA-II multi-objective GA (Любченко); (6) 08_03 Стаття 24a co-authored Q1 publication; (7) Horizon Europe CLUSTER 6 (Biodiversity Monitoring) grant vector; (8) AiInsight#biodiversity_trend → ForestNFT metadata "biodiversity_score"; (9) ринкова диференціація — defensible moat проти Pachama/Sylvera/NCX (тільки Silken Net має micro-acoustic verification layer) | `03_03` §10 + `08_01` §1.3+§2 + `08_02` §1.5+§1.8 + `08_03` Стаття 24a | **P1 strategic** — координує FW.4-EXT, FW.25, UNI.11, UNI.13a |
 | E.60 | **CID witness у IoTeX ZK-proof** — bidirectional integrity bridge Polygon ↔ Filecoin. Раніше Filecoin pin (крок #11) йшов **після** мінту Polygon (крок #8), створюючи gap: зловмисник міг ex-post підмінити archive у Pinata. Виправлення: `archive_cid_preimage` детерміністично обчислюється з batch payload через `Filecoin::CidGenerator.cidv1()` ще на кроці #5 (IoTeX W3bstream) і включається у ZK-witness. Polygon `mint()` отримує `archive_cid` як `bytes32` metadata. `FilecoinArchiveWorker` fail-fast якщо Pinata-CID не збігається з очікуваним → `manual_review`. | `05_02 §E.60` | P1, новий `Filecoin::CidGenerator` service |
 | E.61 | **Solana micro-rewards batch payouts** — поточний `SolanaMicroRewardWorker` робить окрему транзакцію на кожен fulfilled telemetry (10,000 + growth_points*100 lamports = 0.01–0.016 USDC), де gas-fee на одну Solana tx (~0.000005 SOL ≈ 0.0007 USD) може зрівнятись із самою винагородою при низьких growth_points. Рішення: акумулювати fulfilled-винагороди в Kredis (`solana_pending_payouts:<wallet_id>`) до досягнення порогу 0.10–1.00 USDC (`SOLANA_BATCH_THRESHOLD_USDC` ENV), потім один `transferChecked()` ATA → ATA batch. Cron `SolanaBatchPayoutWorker` (every 1h) дренує накопичені. Backward-compat: при `SOLANA_BATCH_THRESHOLD_USDC=0` — поведінка як зараз (per-event). | `04_02 §Solana` + `05_01` | P1, economic correctness fix |
 | ARCH.34 | **Queen-side LoRaWAN Helium Fallback** — переніс Helium fallback з Soldier (фундаментально несумісно з flash/RAM/topology STM32WLE5JC) на Queen. Queen інтегрує LoRaMac-node (Semtech BSD-3) stack + персистентний OTAA join state (DevEUI/AppEUI/AppKey у Queen Flash) + FCntUp counter survive reboot. Aggregated lambda-summary 11 байт (ARCH.22) пакується у LoRaWAN frame і доставляється через будь-який Helium hotspot у радіусі ~15 км → Helium LNS → HTTP Integration webhook → Rails `POST /api/v1/telemetry/helium`. Активація: own Starlink/LTE-M down + Q2Q backhaul недоступний + buffer fill > 50%. Soldier-side `helium_compat_emit()` (попередній план) **відкинуто**. | `06_08 §1.2 L3` + `02_05 §6.1` | P2, blocker для повної resilience policy (без нього L3 fallback архітектурно неможливий) |
@@ -949,7 +950,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | ARCH.26 | **Синхронні Вікна (TDMA) та CAD Preamble Detection — вирішення Проблеми Рандеву для mesh relay.** Поточна архітектура: Queen always-on (`Radio.Rx(LORA_RX_INFINITE)`), Soldier має лише 600 мс post-TX RX window — mesh relay між Солдатами стохастичний і ненадійний за межами прямої видимості Queen. **Три рівні рішення:** (L1) Queen always-on ✅ реалізовано; (L2) TDMA Sync Windows — Queen транслює beacon з точним часом (NTP через LTE), Солдати синхронізують RTC, кожні 15 хвилин координоване 2-секундне RX-вікно для mesh relay. Залежить від FW.20 (LoRa Time Sync); (L3) CAD — SX1262 `Radio.StartCad()` дозволяє wake на ~2 мс/секунду для детекції LoRa-преамбули без повного RX. Критично для PANIC mode: Солдат при chainsaw detection посилає довгу преамбулу (~1 сек), сусідні Провідники ловлять через CAD навіть між TDMA-вікнами. **Firmware зміни:** Soldier: CAD periodic wakeup (LPTIM або RTC sub-second alarm), beacon RX handler, RTC sync logic. Queen: beacon TX (periodic broadcast з UTC timestamp + network schedule). **Енергобюджет:** CAD wake 1/сек × 2 мс × 4.5 мА = ~9 µA середнє — допустимо для Провідників (дерева з високим vcap), неприйнятно для слабких Солдатів. Рольова диференціація: Солдат (TX-only, глухий) vs Провідник (TX+CAD, еліта з надлишком енергії). | `00_01`, `03_01`, `03_02` | Post-TRL 6 (Firmware + Queen beacon) |
 | ARCH.29 | **RTOS Deadlock-Free верифікація через Petri Nets** — формальна PN-модель firmware tasks (Sensing/Compute/TX/OTA/WDT) на Soldier + reachability graph аналіз для доведення відсутності circular wait. Відрізняється від ARCH.20 (Petri Net Rails моноліт) тим що моделює embedded RTOS scheduling | `08_02` §1.2 (Ярмілко) | Post-TRL 6 (R&D — Ярмілко, ЧНУ) |
 | ARCH.30 | **Parallel CFD gyroid simulation на Akash GPU** — domain decomposition алгоритм для 3D TPMS-симуляцій на heterogeneous GPU вузлах Akash. Скорочує CFD lead-time з ~2 годин до real-time валідації геометрії перед DMLS order. Cross-ref ARCH.25 (gyroid validation scripts) | `08_02` §1.4 (Онищенко) | Post-TRL 7 (методологія + Akash GPU integration) |
-| ARCH.31 | **SOP-в-Phlex inline UI для EwsAlert** — інтеграція 7 SOP документів (drought/epidemic/vandalism/fire/seismic/fault/entropy) як inline-інструкцій, що показуються при кліку на EwsAlert у дашборді. UX: forester отримує немедіане runbook замість пошуку у документах | `08_05` + `04_02` | Post-TRL 6, cross-ref E.54 + UNI.12 |
+| ARCH.31 | **SOP-в-Phlex inline UI для EwsAlert** — інтеграція 7 SOP документів (drought/epidemic/vandalism/fire/seismic/fault/entropy) як inline-інструкцій, що показуються при кліку на EwsAlert у дашборді. UX: forester отримує немедіане runbook замість пошуку у документах | `08_02 §3` + `04_02` | Post-TRL 6, cross-ref E.54 + UNI.12 |
 | ARCH.32 | **Shape Up 6-week cycle Petri Net formalization** — формальна верифікація фази Shape Up (betting table → build → cool-down) щоб довести: будь-яка фіча може бути завершена у межах cycle constraints. Цільова стаття Q1 *IEEE Transactions on Software Engineering* | `08_02`, `00_04` | Post-TRL 7 (методологія + R&D, Супруненко ЧНУ) |
 | ARCH.33 | **ECDH P-256 key exchange як альтернатива HKDF-only provisioning** — мерехтливий розгляд: замість per-device HKDF (FW.1) використати ECDH у factory або field provisioning. Plus: Perfect Forward Secrecy без shared master key. Minus: Curve25519/P-256 потребує ~512 байт SRAM + 50 мс CPU на handshake | `08_02` §1.1 (Vector 2, Ярмілко), `03_05` | Research alternative (узгодити з FW.17 Hash Ratchet) |
 

@@ -22,7 +22,7 @@
 | [00_04_Shape_Up_Operations_and_RnD_Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) | Shape Up operations; §Async-Review TRL Gates |
 | [00_05_GitHub_Projects_and_IaC_Automation](00_05_GitHub_Projects_and_IaC_Automation) | TRL Auto-Advancement (HIL → Projects V2 cards) |
 | [04_06_Testing_Guide_and_Coverage](04_06_Testing_Guide_and_Coverage) | §B Coverage Matrix — HIL → RSpec/Firmware/Foundry coverage |
-| [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | Фізичні валідаційні протоколи ВНЗ (TRL 1-4) |
+| [08_02_Academic_Institutions_Registry](08_02_Academic_Institutions_Registry) | Фізичні валідаційні протоколи ВНЗ (TRL 1-4) |
 | [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): Module 01 chemistry (HW.*), 06 DevOps deploy, 08 UNI.* |
 
 ## 📑 Зміст
@@ -151,7 +151,7 @@
 
 | Підхід | Принцип | Потенційний партнер ЧНУ/СЄУ |
 |---|---|---|
-| **Розподілене навчання між Queens (дві РІЗНІ математики — не плутати):** | (a) **Lorenz σ/ρ/β** — це ODE-система **без ваг**, її не тренують backprop'ом → **Distributed Parameter Estimation** (PSO/GA на Queen знаходить оптимальні σ,ρ,β для локального кластера; Queens обмінюються *оцінками параметрів*, не градієнтами). (b) **TinyML акустика** — ось тут справжній **Federated Learning** доречний: агрегація градієнтів мікро-моделей (коли HW дозволить on-device training) АБО ретренінг класифікатора на Queen + компіляція `.tflite` → OTA. Privacy-preserving (не сирі дані). | Любченко GA/NSGA-II (`08_02`); Карапетян статистика (`08_04`) |
+| **Розподілене навчання між Queens (дві РІЗНІ математики — не плутати):** | (a) **Lorenz σ/ρ/β** — це ODE-система **без ваг**, її не тренують backprop'ом → **Distributed Parameter Estimation** (PSO/GA на Queen знаходить оптимальні σ,ρ,β для локального кластера; Queens обмінюються *оцінками параметрів*, не градієнтами). (b) **TinyML акустика** — ось тут справжній **Federated Learning** доречний: агрегація градієнтів мікро-моделей (коли HW дозволить on-device training) АБО ретренінг класифікатора на Queen + компіляція `.tflite` → OTA. Privacy-preserving (не сирі дані). | Любченко GA/NSGA-II (`08_02`); Карапетян статистика (`08_02 §2`) |
 | **Stigmergic Communication (L2/L3-опосередкована, НЕ P2P)** | Soldier емітує 1-bit стрес-сигнал («я в червоному Z-bucket», ~110 ms LoRa TX) → **L3 Queen** (always-on) акумулює його як «феромонний слід» → команда «підняти sampling rate» доставляється сусідам у їхнє наступне заплановане RX-вікно (CAD / TDMA / OTA-downlink). Прямого peer-RX немає (фізика — у ⚠️ нижче) | Порубльов кібернетика (`08_02`); mruby VM mod (`03_04`) |
 | **Chimera States у network of attractors** | Математична теорія Куромото (Kuramoto-Battogtokh 2002): network coupled Lorenz oscillators утворює **частково синхронізовані, частково хаотичні patterns** — це саме структура здорового лісу (homeostasis-coupled domains across disturbance gradients) | Кирилюк синергетика економічних систем (`08_01 §1.4`); Гусак нелінійна динаміка (`08_01 §1.2`) |
 | **Forest-Wide Lorenz Coupling** | Розширення `bio_contract.rb`: вхідні параметри атрактора містять не лише власні `delta_t/temp/acoustic`, а й aggregated neighbor signals (median Z у кластері за останню годину) | Розширення `03_04 §X.Y` (новий розділ після TRL 9) |
@@ -252,10 +252,10 @@
 
 | Підхід | Принцип | Реалізація |
 |---|---|---|
-| **Proactive Anomaly Detection (Federated)** | Замість per-tree fraud detection — **cluster-level statistical fingerprints**. Якщо 100 дерев одного кластера раптом починають видавати «too perfect» Z-curves (lower variance than possible), це → suspicious | ML-сервіс у Rails + GA-оптимізація Любченка (`08_02`); запит до Карапетяна (статистика, `08_04`) |
+| **Proactive Anomaly Detection (Federated)** | Замість per-tree fraud detection — **cluster-level statistical fingerprints**. Якщо 100 дерев одного кластера раптом починають видавати «too perfect» Z-curves (lower variance than possible), це → suspicious | ML-сервіс у Rails + GA-оптимізація Любченка (`08_02`); запит до Карапетяна (статистика, `08_02 §2`) |
 | **Adversarial Telemetry Generators (Red Team)** | Внутрішня команда генерує **GAN-вироблені синтетичні telemetry, які намагаються пройти Dual Computation** → знаходить вразливості до того, як їх знайде зовнішній attacker | Регулярні Red Team Exercises як частина CI/CD (`04_06 §B`); Q1 paper "Adversarial robustness of bio-token mints" |
 | **Decoy DID Tripwire (backend, НЕ on-chain honeypot)** | ⚠️ Виправлено: on-chain honeypot не працює — стейт контракту публічний, а навіть «реальне-але-заблоковане» дерево видає себе **відсутністю mint-подій** (атакер аналізує on-chain патерн і обходить). Тому — **бекенд-tripwire**: набір **decoy DID**, яких немає як реальних анкерів, у серверному watchlist (НЕ публікуються, НЕ on-chain). **Будь-яка телеметрія/mint-спроба від decoy DID = доведена підробка** (жоден реальний Soldier його не має) → instant alert + slashing + 12-chain rotation. Додатково: **Shadow Trees** — синтетичні фейкові дані у *публічному дашборді* (information warfare: торговий бот, що будує атаку на shadow-даних, руйнує свою стратегію). | Backend watchlist decoy DIDs + `TelemetryUnpackerService` tripwire (НЕ on-chain flag) |
-| **Quantum-Resistant Oracle Migration** | Сучасні ECDSA-підписи (Chainlink) вразливі до post-quantum cryptanalysis (~2030+). Перехід на **NIST PQC standards** (Kyber/Dilithium) у Web3 stack | Координовано з Аблязовим Д. (СЄУ, `08_07`) для правової рамки + Ярмілко (`08_02`) для firmware integration |
+| **Quantum-Resistant Oracle Migration** | Сучасні ECDSA-підписи (Chainlink) вразливі до post-quantum cryptanalysis (~2030+). Перехід на **NIST PQC standards** (Kyber/Dilithium) у Web3 stack | Координовано з Аблязовим Д. (СЄУ, `08_02 §5`) для правової рамки + Ярмілко (`08_02`) для firmware integration |
 | **Apex Predator AI Sentinel** | Окремий ML-сервіс, який моніторить весь стек 24/7 в режимі **«hunting for hunters»** — шукає координовані patterns між: trading volume на SCC DEXs + telemetry anomalies + oracle response patterns. Це **проактивний counter-AI** проти adversarial AI | Roadmap `SRL:Pilot`+; вимагає budget на dedicated AI/ML engineer; партнерство з академічними лабораторіями з ML security |
 
 **Філософська позиція:** Silken Net — це **критична інфраструктура планетарного клімату**. Тому стандарт безпеки має бути не «не гірше за DeFi», а **на рівні national-grid SCADA**: continuous threat hunting, mandatory bug bounty, formal verification critical path.
@@ -283,13 +283,13 @@ SRL:Deployed ━━━ Verified, formal, planetary-scale autopoiesis ← Silken 
              (+ MRL:8-10 — серійне виробництво 5 SKU per biome)
 ```
 
-Це **15-річний горизонт** (2026–2040+) — за ним вже сяє візія Гедз+Чудаєвої (`08_07`): D-MRV як база для **global climate governance protocol**, на рівні WTO або ISO.
+Це **15-річний горизонт** (2026–2040+) — за ним вже сяє візія Гедз+Чудаєвої (`08_02 §5`): D-MRV як база для **global climate governance protocol**, на рівні WTO або ISO.
 
 ### 7.7. Cross-references та де ще згадано
 
-- **Gap #1 (Forest Emergence):** деталі у [`03_04 §X.Y`](03_04_mruby_Lorenz_Attractor) (новий розділ — TBD); координація з [`08_02 §Підгрупа Б`](08_02_Cybernetic_and_Mathematical_Validation) (Порубльов кібернетика) та [`08_01 §1.4`](08_01_University_R_and_D_Protocols) (Кирилюк синергетика)
+- **Gap #1 (Forest Emergence):** деталі у [`03_04 §X.Y`](03_04_mruby_Lorenz_Attractor) (новий розділ — TBD); координація з [`08_02 §1`](08_02_Academic_Institutions_Registry) (Порубльов кібернетика) та [`08_02 §1`](08_02_Academic_Institutions_Registry) (Кирилюк синергетика)
 - **Gap #2 (Self-Evolving):** firmware extension у [`03_03 §Y`](03_03_TinyML_Acoustic_Inference) (TinyML online learning) + [`03_04 §Z`](03_04_mruby_Lorenz_Attractor) (mruby GA); безпекова валідація у [`05_03 §SCC Anti-Adversarial`](05_03_Tokenomics_SCC_and_SFC)
-- **Gap #3 (Cross-Biome):** parametric CAD у [`01_01 §6`](01_01_Coaxial_Gyroid_Topology_and_PEEK) (Stages 2+ extended до 5 biomes); R&D у [`08_01 §1.3`](08_01_University_R_and_D_Protocols) (Спрягайло + НАН України канал)
+- **Gap #3 (Cross-Biome):** parametric CAD у [`01_01 §6`](01_01_Coaxial_Gyroid_Topology_and_PEEK) (Stages 2+ extended до 5 biomes); R&D у [`08_02 §1`](08_02_Academic_Institutions_Registry) (Спрягайло + НАН України канал)
 - **Gap #4 (Apex Predator):** розширення Slashing v2 у [`05_05 §6`](05_05_Slashing_and_Risk_Policy) + [`05_06 §5`](05_06_Governance_and_DAO) + Chainlink hardening у [`05_02`](05_02_Proof_of_Growth_Pipeline)
 
 ---
@@ -336,7 +336,7 @@ L1: Soldier Nodes (Regular Tree — Листя) — поточна архіте�
 
 **Геохешинг:** Кожен супер-кластер отримує ID на основі координат. Пакет не шукає маршрут — він тече в бік зменшення градієнта до найближчої Королеви. Усуває broadcast storm.
 
-> **⚠️ Розмежування рівнів (2026-05-28): геохешинг — це здатність L2 Conductor, НЕ L1 Soldier.** Поточна прошивка ([`03_01`](03_01_Firmware_Lifecycle_and_DMA), [`08_02`](08_02_Cybernetic_and_Mathematical_Validation)) — наївний **TTL-flood relay** (PANIC_TTL=5, DEFAULT_TTL=3) без маршрутизації. Градієнтний геохешинг вимагає, щоб вузол оперував координатами та сусідським градієнтом — це покладається на **L2 Conductor** (має RTC, більший енергобюджет, відомі координати). **L1 Soldiers залишаються TTL-flood вузлами**, які просто «кричать» у радіусі свого найближчого L2 Conductor (відповідно до фрактальної ієрархії вище). H-LDSE — це цільова еволюція рівня L2, а не зміна поведінки L1.
+> **⚠️ Розмежування рівнів (2026-05-28): геохешинг — це здатність L2 Conductor, НЕ L1 Soldier.** Поточна прошивка ([`03_01`](03_01_Firmware_Lifecycle_and_DMA), [`08_02`](08_02_Academic_Institutions_Registry)) — наївний **TTL-flood relay** (PANIC_TTL=5, DEFAULT_TTL=3) без маршрутизації. Градієнтний геохешинг вимагає, щоб вузол оперував координатами та сусідським градієнтом — це покладається на **L2 Conductor** (має RTC, більший енергобюджет, відомі координати). **L1 Soldiers залишаються TTL-flood вузлами**, які просто «кричать» у радіусі свого найближчого L2 Conductor (відповідно до фрактальної ієрархії вище). H-LDSE — це цільова еволюція рівня L2, а не зміна поведінки L1.
 
 **Spatial Multiplexing:** L1 та L2 працюють на різних частотних підканалах 868 MHz ISM — усуває міжрівневі колізії (inter-tier interference).
 

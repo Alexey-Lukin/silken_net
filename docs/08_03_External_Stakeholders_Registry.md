@@ -1,4 +1,4 @@
-# 07_05: External Stakeholders Registry — B2G/B2B & Cultural Layer
+# 08_03: External Stakeholders Registry — B2G/B2B & Cultural Layer
 
 ## 🎯 Мета
 
@@ -42,10 +42,7 @@
 | [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | B2B/B2C контракти, SLA (§2) |
 | [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Unit economics за tier |
 | [07_03_Grant_Applications_Tracker](07_03_Grant_Applications_Tracker) | Horizon Europe pipeline |
-| [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | §1.4 Кирилюк — ректорський парасоль |
-| [08_05_CHIPB_Fire_Safety_Integration](08_05_CHIPB_Fire_Safety_Integration) | ДСНС partner cluster |
-| [08_07_SEU_Economics_and_Legal_Integration](08_07_SEU_Economics_and_Legal_Integration) | §1.3 Аблязов — legal wrapper |
-| `08_03` / `08_04` / `08_06` | глибокі академ./stakeholder профілі (SSOT — тут лише cross-link) |
+| [08_02_Academic_Institutions_Registry](08_02_Academic_Institutions_Registry) | Академічні партнери: §1A Кирилюк (ректор-парасоль) · §3 ЧІПБ/ДСНС · §5 СЄУ Аблязов (legal) |
 | `02_05` / `03_04` | LoRa висотні точки / Lorenz stress-аналіз |
 | [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | § External Stakeholders (UNI.x, BIZ.x) |
 
@@ -81,7 +78,7 @@
    `downlink`/`web3_critical` чергах.
 2. **Жодних усних домовленостей:** будь-яка повідомленість сторонньому
    стейкхолдеру про "ми будемо…" має бути попередньо підписана
-   [`08_07 §1.3 Аблязов`](08_07_SEU_Economics_and_Legal_Integration) як
+   [`08_02 §5 Аблязов`](08_02_Academic_Institutions_Registry) як
    legal exposure.
 3. **B2G ризики — окремий threat-model:** доступ держслужбовців у
    `data/exports` обмежується контрактом про не-розкриття; жоден B2G
@@ -123,7 +120,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
 - **Науковий ступінь:** Доктор економічних наук.
 - **Академічна афіліація:** Професор кафедри лісового господарства та
   раціонального природокористування **ЧДТУ** (за сумісництвом — тобто
-  органічно вписаний у консорціум [`08_04`](08_04_CHDTU_Data_Science_Collaboration)).
+  органічно вписаний у консорціум [`08_02 §2`](08_02_Academic_Institutions_Registry)).
 - **API In (для Silken Net):**
   - Договір про створення експериментального наукового полігону на базі
     лісгоспу — обхід багаторічної бюрократії з оформленням анкерів.
@@ -137,7 +134,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
   - ESG/FSC-сертифікат для експорту української деревини в ЄС.
 - **SSOT-мапінг:** [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK) (legal
   install), [`05_03`](05_03_Tokenomics_SCC_and_SFC) (DP "Ліси" як SCC-holder),
-  [`08_04`](08_04_CHDTU_Data_Science_Collaboration) (cross-ref CHDTU).
+  [`08_02 §2`](08_02_Academic_Institutions_Registry) (cross-ref CHDTU).
 - **Status:** 🔵 Identified (highest-priority B2G contact).
 
 ### 2.2. Юрій Юрійович Сегеда — Природоохоронець + Геронимівка
@@ -160,7 +157,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
   - Predictive fire prevention через `delta_t` критичного водного стресу.
   - Двері до європейського еко-фінансування для лісгоспу.
 - **SSOT-мапінг:** [`01_04`](01_04_CODIT_and_Xylemointegration), [`05_02`](05_02_Proof_of_Growth_Pipeline)
-  (oracle validation), [`08_05`](08_05_CHIPB_Fire_Safety_Integration)
+  (oracle validation), [`08_02 §3`](08_02_Academic_Institutions_Registry)
   (fire-safety overlap).
 - **Status:** 🔵 Identified (highest-priority B2G contact #2).
 
@@ -171,7 +168,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
   у Черкаській області, головні землевпорядники районів, директори
   землеоціночних бюро. **Конкретне ім'я наразі не верифіковано** (Сіроштан
   згадана в попередніх нотатках із застереженням про складну кар'єрну
-  історію — потребує перевірки через [`08_07 §1.3 Аблязов`](08_07_SEU_Economics_and_Legal_Integration)).
+  історію — потребує перевірки через [`08_02 §5 Аблязов`](08_02_Academic_Institutions_Registry)).
 - **API In:**
   - Сервітут / мікро-договір оренди (1×1 м) під Queen-щоглу — щоб через
     рік прокуратура не змусила демонтаж.
@@ -192,9 +189,9 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
 - **Звання:** Заслужений юрист України.
 - **Кандидати:** Колишні судді апеляційних судів, екскерівники обласної
   юстиції, топ-адвокати, професура **ННІ економіки і права ЧНУ** —
-  доступ через [`08_01 §1.4 Кирилюк`](08_01_University_R_and_D_Protocols)
+  доступ через [`08_02 §1 Кирилюк`](08_02_Academic_Institutions_Registry)
   (директор ННІ + в.о. ректора). Тут резонує також з
-  [`08_07 §1.3 Аблязов Денис`](08_07_SEU_Economics_and_Legal_Integration)
+  [`08_02 §5 Аблязов Денис`](08_02_Academic_Institutions_Registry)
   — він закриває RWA-правову архітектуру.
 - **API In:**
   - **Лісовий кодекс компатибільність:** перекласифікація Soldier-анкера
@@ -209,8 +206,8 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
   - "Блакитний океан" Cyber-Ecological Law: піонер у Web3/Eco-Law
     в Україні.
   - Високомаржинальний B2B-консалтинг (CBAM, ESG-арбітраж).
-- **SSOT-мапінг:** [`08_03`](08_03_Joint_Publications_and_IP_Strategy)
-  (IP strategy), [`08_07 §1.3`](08_07_SEU_Economics_and_Legal_Integration)
+- **SSOT-мапінг:** [`08_01`](08_01_Joint_Publications_and_IP_Strategy)
+  (IP strategy), [`08_02 §5`](08_02_Academic_Institutions_Registry)
   (RWA legal architecture).
 - **Status:** 🟡 Outreach (через СЄУ — Аблязов уже залучений).
 
@@ -218,20 +215,20 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
 
 ## 3. Tier 2 — Infrastructure & Field Operations
 
-### 3.1. ДСНС / Цивільний захист — крос-ref [`08_05`](08_05_CHIPB_Fire_Safety_Integration)
+### 3.1. ДСНС / Цивільний захист — крос-ref [`08_02 §3`](08_02_Academic_Institutions_Registry)
 
 - **Звання:** Заслужений працівник цивільного захисту України.
 - **Інституційний якор:** ЧІПБ ім. Героїв Чорнобиля + ДСНС обласна
   служба. Партнер уже залучений через 5 окремих контактів у
-  [`08_05`](08_05_CHIPB_Fire_Safety_Integration) (§1.1 Биченко, §1.2 Ротар,
+  [`08_02 §3`](08_02_Academic_Institutions_Registry) (§1.1 Биченко, §1.2 Ротар,
   §1.3 Куліца, §1.4 Зобенко, §1.5 Несен).
-- **Нове API (понад уже описане в 08_05):**
+- **Нове API (понад уже описане в 08_02 §3):**
   - Доступ до тренувальних полігонів ЧІПБ для контрольованих вогневих
     випробувань Queen-капсули.
   - Державна сертифікація алгоритмів виявлення температурних аномалій
     як офіційного протоколу реагування → переводить Silken Net у
     "систему держрівня".
-- **SSOT-мапінг:** [`08_05`](08_05_CHIPB_Fire_Safety_Integration) (primary),
+- **SSOT-мапінг:** [`08_02 §3`](08_02_Academic_Institutions_Registry) (primary),
   [`03_03`](03_03_TinyML_Acoustic_Inference) (chainsaw + thermal),
   [`07_01`](07_01_Nature_as_a_Service_Contracts) (parametric insurance trigger).
 - **Status:** 🟢 Engaged (через ЧІПБ — Несен Іван активний).
@@ -299,7 +296,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
   - Field Kit hardening для інженерів Silken Net: швидке розгортання в
     лісі без доріг, у дощ/холод; протокол евакуації при аваріях.
   - Знання географії бездоріжжя Черкащини на рівні навігатора.
-- **SSOT-мапінг:** [`08_05`](08_05_CHIPB_Fire_Safety_Integration) (Field Ops),
+- **SSOT-мапінг:** [`08_02 §3`](08_02_Academic_Institutions_Registry) (Field Ops),
   [`02_05`](02_05_Queen_Hardware_and_Starlink) (Queen deployment).
 - **Status:** 🔵 Identified.
 
@@ -364,7 +361,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
   Олексій Хуторний (старший апаратник абсорбції).
 - **API In:**
   - **Масштабування хімії:** перенос синтезу осмієвого полімеру/EBFC
-    каталізаторів з лабораторного об'єму ([`08_06`](08_06_CHMA_Biomedical_Integration))
+    каталізаторів з лабораторного об'єму ([`08_02 §4`](08_02_Academic_Institutions_Registry))
     в промислові реактори. Зараз — критичний gap між R&D і виробництвом.
   - Прискорене старіння Ti-6Al-4V у промислових хімічних камерах
     ("Азот" має камери з NH₃/HNO₃ під тиском — ідеально для
@@ -387,7 +384,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
 - **Звання:** Заслужений працівник туризму України (TBD).
 - **API In:**
   - **Розгортання B2C-каналу через турфірми:** туристи на екостежках
-    мінтять NFT конкретного 100-річного дуба (cross-ref [`07_05`](07_05_External_Stakeholders_Registry)
+    мінтять NFT конкретного 100-річного дуба (cross-ref [`08_03`](08_03_External_Stakeholders_Registry)
     Genesis NFT).
   - "Амбасадори безпеки" — гіди пояснюють групам, що Queen-шлюзи це
     не "вишки 5G", антивандальний щит.
@@ -478,7 +475,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
   - Новий сенс і соціальна адаптація — престижна "зелена" робота.
 - **SSOT-мапінг:** [`07_03`](07_03_Grant_Applications_Tracker) (Just Transition
   Fund), [`03_03`](03_03_TinyML_Acoustic_Inference) (subterranean variant
-  — deferred), [`08_05`](08_05_CHIPB_Fire_Safety_Integration) (peat fire
+  — deferred), [`08_02 §3`](08_02_Academic_Institutions_Registry) (peat fire
   early warning).
 - **Status:** ⚪ Conceptual (high social-PR value, no individual contact yet).
 
@@ -497,7 +494,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
 - **API Out:**
   - Онлайн-дашборд мікроклімату бору для прокладання кардіо-маршрутів.
 - **SSOT-мапінг:** [`05_03`](05_03_Tokenomics_SCC_and_SFC) (DAO fundraising
-  events), [`08_01`](08_01_University_R_and_D_Protocols) (ЧНУ alumni channel).
+  events), [`08_02`](08_02_Academic_Institutions_Registry) (ЧНУ alumni channel).
 - **Status:** 🔵 Identified.
 
 ---
@@ -509,7 +506,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
 - **Звання:** Заслужений працівник фармації України.
 - **Контекст:** Лише якщо валідуватиметься self-healing мікрокапсула
   з 8-гідроксихіноліном для CODIT-захисту ([`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS),
-  [`08_06 §1.5 Глущенко`](08_06_CHMA_Biomedical_Integration)). 8-HQ
+  [`08_02 §4 Глущенко`](08_02_Academic_Institutions_Registry)). 8-HQ
   має виділятися 5 років без вимивання — задача фармакокінетики.
 - **Status:** ⚪ Conceptual — активувати після первинних результатів
   Глущенка в ЧМА.
@@ -519,9 +516,9 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
 - Можливі точки дотику: DMLS post-processing, hydrogen embrittlement
   тести, рекультивація кар'єрів як SCC-mint sources.
 - **Status:** ⚪ Conceptual — переважно покривається існуючими школами
-  Мінаєва ([`08_01 §1.1`](08_01_University_R_and_D_Protocols)) та Гусака
-  ([`08_01 §1.2`](08_01_University_R_and_D_Protocols)) + ЧДТУ Базіло/Бондаренко
-  ([`08_04 §1.3`](08_04_CHDTU_Data_Science_Collaboration)).
+  Мінаєва ([`08_02 §1`](08_02_Academic_Institutions_Registry)) та Гусака
+  ([`08_02 §1`](08_02_Academic_Institutions_Registry)) + ЧДТУ Базіло/Бондаренко
+  ([`08_02 §2`](08_02_Academic_Institutions_Registry)).
 
 ### 7.3. Машинобудівник (НВК "Фотоприлад", "Темп") — Серійне виробництво
 
@@ -535,8 +532,8 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
   банківської справи НБУ, екон. доктор наук); Олександр Черевко (Заслужений
   економіст, екс-голова ОДА).
 - **Status:** ⚪ Conceptual — переважно покривається активним партнером
-  Кирилюком ([`08_01 §1.4`](08_01_University_R_and_D_Protocols)) як директором
-  ННІ економіки і права ЧНУ та СЄУ-командою Чудаєвої/Ус ([`08_07 §1.1-1.2`](08_07_SEU_Economics_and_Legal_Integration)).
+  Кирилюком ([`08_02 §1`](08_02_Academic_Institutions_Registry)) як директором
+  ННІ економіки і права ЧНУ та СЄУ-командою Чудаєвої/Ус ([`08_02 §5-1.2`](08_02_Academic_Institutions_Registry)).
   Залишається advisory pool, без active outreach.
 
 ---
@@ -569,7 +566,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
    [`04_05 §2`](04_05_Codex_Lore_Module).
 2. **NFT/RWA — тільки після MoU:** будь-який Genesis NFT з прив'язкою
    до конкретного митця вимагає підписаного угоди про використання імені
-   (`Name & Likeness Release`) — це підлягає [`08_07 §1.3 Аблязов`](08_07_SEU_Economics_and_Legal_Integration)
+   (`Name & Likeness Release`) — це підлягає [`08_02 §5 Аблязов`](08_02_Academic_Institutions_Registry)
    до затвердження.
 3. **Codex Realm `mythos` — не "автобіографія":** статті в `codex_nodes`,
    що цитують зовнішніх осіб, мають проходити через `Codex::MarkdownRenderer`
@@ -632,7 +629,7 @@ PEEK-куполів, антивандальної біомімікрії.
 - **SSOT-мапінг:** [`04_04`](04_04_Phlex_UI_and_Tailwind) (Phlex UI motifs),
   [`02_05`](02_05_Queen_Hardware_and_Starlink) (Queen radome graphics).
 - **Cross-link:** вже зафіксована як **активний UX-партнер** у
-  [`08_07 §1.7`](08_07_SEU_Economics_and_Legal_Integration). Active outreach
+  [`08_02 §5`](08_02_Academic_Institutions_Registry). Active outreach
   ведеться через СЄУ-MoU; запис тут — для координації Genesis NFT треку.
 - **Status:** 🟡 Outreach (через СЄУ).
 
@@ -703,7 +700,7 @@ PEEK-куполів, антивандальної біомімікрії.
   портрети конкретних анкерованих дерев — це паралельно навчальний процес
   та інформаційний шум навколо проєкту. Plus: канал для рекрутингу
   cross-faculty (мистецтво × CS) у Silken Net програми стипендій.
-- **SSOT-мапінг:** [`08_01`](08_01_University_R_and_D_Protocols) (ЧНУ cross-fac),
+- **SSOT-мапінг:** [`08_02`](08_02_Academic_Institutions_Registry) (ЧНУ cross-fac),
   [`04_04`](04_04_Phlex_UI_and_Tailwind).
 - **Status:** 🔵 Identified.
 
@@ -875,10 +872,10 @@ Europe). Не зараз — але треба зафіксувати, доки 
 |---|---|---|---|---|---|---|
 | C1 | Ольга Мартинова | Заслужений майстер народної творчості; голова Черкаського осередку НСМНМ України | Незалежний | **Антивандальна біомімікрія Queen-капсули** — текстура кори/смоли для маскування корпусу; семантика "Дерева Життя" для community-acceptance pitch | [`02_05`](02_05_Queen_Hardware_and_Starlink) (Queen radome), [`07_01`](07_01_Nature_as_a_Service_Contracts) (community engagement) | 🔵 Identified |
 | C2 | Михайло Калініченко | Заслужений журналіст; кпн; колишній керівник ТРК "Рось"; ген. директор ТРК "Ільдана"; викладач ЧНУ | ТРК "Ільдана" + ЧНУ | Документальний фільм про проєкт; превентивний інформаційний фон проти екопанік | PR layer для [`07_01`](07_01_Nature_as_a_Service_Contracts) | 🔵 Identified |
-| C3 | Валентина Душок (Рабцун) | Заслужений журналіст; директорка ТРК "Ільдана"; зв'язки в ОДА | ТРК "Ільдана" | Регіональне інфо-лобі; вихід на ОДА (вже зв'язаний канал зі Спрягайлом — [`08_01 §1.3`](08_01_University_R_and_D_Protocols)) | [`07_03`](07_03_Grant_Applications_Tracker) (державні гранти) | 🔵 Identified |
+| C3 | Валентина Душок (Рабцун) | Заслужений журналіст; директорка ТРК "Ільдана"; зв'язки в ОДА | ТРК "Ільдана" | Регіональне інфо-лобі; вихід на ОДА (вже зв'язаний канал зі Спрягайлом — [`08_02 §1`](08_02_Academic_Institutions_Registry)) | [`07_03`](07_03_Grant_Applications_Tracker) (державні гранти) | 🔵 Identified |
 | C4 | Леонід Трофименко | Заслужений діяч мистецтв; диригент Черкаського академічного симфонічного оркестру | Черкаська обласна філармонія | Data Sonification партитура для пітч-відео (TRL 8+) | Defer — потрібен live stream даних з Genesis cluster | ⚪ Deferred |
 | C5 | Олександр Дяченко | Заслужений діяч мистецтв; симфонічна/хорова музика | Незалежний | Альтернативний канал для Sonification | Defer | ⚪ Deferred |
-| C6 | Василь Мельниченко | Заслужений працівник культури; кпн з історії; проф. ЧДТУ; багаторічний очільник Черкаського осередку Спілки краєзнавців | ЧДТУ (вже партнерський університет — [`08_04`](08_04_CHDTU_Data_Science_Collaboration)) | Історико-культурний контекст RWA-токенів (Холодноярські Master Nodes, скіфські городища); вибір висот для Queen-шлюзів на основі історичних оглядових точок | [`05_03 §RWA`](05_03_Tokenomics_SCC_and_SFC), [`02_05`](02_05_Queen_Hardware_and_Starlink) | 🔵 Identified |
+| C6 | Василь Мельниченко | Заслужений працівник культури; кпн з історії; проф. ЧДТУ; багаторічний очільник Черкаського осередку Спілки краєзнавців | ЧДТУ (вже партнерський університет — [`08_02 §2`](08_02_Academic_Institutions_Registry)) | Історико-культурний контекст RWA-токенів (Холодноярські Master Nodes, скіфські городища); вибір висот для Queen-шлюзів на основі історичних оглядових точок | [`05_03 §RWA`](05_03_Tokenomics_SCC_and_SFC), [`02_05`](02_05_Queen_Hardware_and_Starlink) | 🔵 Identified |
 
 ---
 
@@ -896,7 +893,7 @@ Europe). Не зараз — але треба зафіксувати, доки 
 - Royalty split: 70 % митцю / 30 % SilkenNet DAO; вкладено у виробництво
   наступних 1000 STM32 плат.
 - Юридична оболонка: `Name & Likeness Release` через
-  [`08_07 §1.3 Аблязов`](08_07_SEU_Economics_and_Legal_Integration).
+  [`08_02 §5 Аблязов`](08_02_Academic_Institutions_Registry).
 
 **Чого тут немає (intentional):**
 - Конкретні smart-contract адреси (не задеплоєно).
@@ -913,13 +910,13 @@ Europe). Не зараз — але треба зафіксувати, доки 
 **Mapping spec (рамка):**
 - Z-value атрактора Лоренца ([`03_04`](03_04_mruby_Lorenz_Attractor)) → гармонія
   (мінор при `z < 2.0` stress; мажор при `z ∈ optimal range`).
-- `delta_t` ([`08_01 §1.3`](08_01_University_R_and_D_Protocols)) → темп.
+- `delta_t` ([`08_02 §1`](08_02_Academic_Institutions_Registry)) → темп.
 - `acoustic_events` (TinyML, [`03_03`](03_03_TinyML_Acoustic_Inference)) → перкусія.
 - Cluster-level агрегація → багатоголосся.
 
 **Виконавець:** Черкаський академічний симфонічний оркестр (Tier C4/C5).
 Спільна заявка до УКФ або Ukrainian Cultural Foundation на стику
-art × science (`08_07` cross-ref для grant-pipeline).
+art × science (`08_02 §5` cross-ref для grant-pipeline).
 
 ---
 

@@ -156,23 +156,17 @@ _Деплой, моніторинг, секрети та децентраліз�
 
 ## 💰 Модуль 07: Економіка та Фінансування (Economics & Funding)
 
-_NaaS-контракти, юніт-економіка, гранти та зовнішні стейкхолдери (B2G/B2B + культурний шар). Візія/місія/дорожня карта тепер у Фундаменті — [`00_01`](00_01_Vision_Mission_and_Roadmap)._
+_NaaS-контракти, юніт-економіка та гранти. Зовнішні стейкхолдери (B2G/B2B + культурний шар) переїхали у Модуль 08 ([`08_03`](08_03_External_Stakeholders_Registry)). Візія/місія/дорожня карта — у Фундаменті [`00_01`](00_01_Vision_Mission_and_Roadmap)._
 
-> ⏳ _External Stakeholders (`07_05`) → `08_03` (Partnerships) — наступна фаза (P4); звідси тимчасовий розрив на `07_04`._
 - [07\_01\_Nature\_as\_a\_Service\_Contracts](07_01_Nature_as_a_Service_Contracts) (NaaS контракти + параметричне страхування + фінансові константи)
 - [07\_02\_Unit\_Economics\_and\_BOM](07_02_Unit_Economics_and_BOM) (Юніт-економіка + ROI через SCC + Supply Chain Ukraine)
 - [07\_03\_Grant\_Applications\_Tracker](07_03_Grant_Applications_Tracker) (Трекер грантових заявок — Horizon Europe, Verra, Gold Standard)
-- [07\_05\_External\_Stakeholders\_Registry](07_05_External_Stakeholders_Registry) (Social API Registry: B2G/B2B + культурний шар — лісники, ДСНС, митці, журналісти; non-hot-path)
 
 ## 🔬 Модуль 08: Академічна Інтеграція (Academic & Partnerships)
 
-_Партнерства ВНЗ (ЧНУ ФОТІУС, ЧДТУ, ЧІПБ, ЧМА, СЄУ) під рамкою MOIC: MoU, спільні публікації, IP-стратегія. (Доменна R&D-субстанція дисолюється у профільні модулі — Stage B.)_
+_Партнерства ВНЗ (ЧНУ+ФОТІУС, ЧДТУ, ЧІПБ, ЧМА, СЄУ) під рамкою MOIC: MoU, спільні публікації, IP-стратегія. Інженерна R&D-субстанція реферить канон Tier I (01–06), не дублює._
 
-- [08\_01\_University\_R\_and\_D\_Protocols](08_01_University_R_and_D_Protocols) (ЧНУ: chemistry & physics протоколи — Hard Science Layer)
-- [08\_02\_Cybernetic\_and\_Mathematical\_Validation](08_02_Cybernetic_and_Mathematical_Validation) (ФОТІУС: кібернетична/математична валідація, GA/NSGA-II оптимізація)
-- [08\_03\_Joint\_Publications\_and\_IP\_Strategy](08_03_Joint_Publications_and_IP_Strategy) (MOIC-рамка + спільні публікації + патентна стратегія)
-- [08\_04\_CHDTU\_Data\_Science\_Collaboration](08_04_CHDTU_Data_Science_Collaboration) (ЧДТУ: Data Science, математична статистика, RF-верифікація, акустичний стенд)
-- [08\_05\_CHIPB\_Fire\_Safety\_Integration](08_05_CHIPB_Fire_Safety_Integration) (ЧІПБ: пожежна безпека + параметричне страхування + SOP)
-- [08\_06\_CHMA\_Biomedical\_Integration](08_06_CHMA_Biomedical_Integration) (ЧМА: біохімія EBFC, токсикологія Ti, ксилемоінтеграція)
-- [08\_07\_SEU\_Economics\_and\_Legal\_Integration](08_07_SEU_Economics_and_Legal_Integration) (СЄУ: токеноміка NaaS + RWA-легалізація + промисловий дизайн)
+- [08\_01\_Joint\_Publications\_and\_IP\_Strategy](08_01_Joint_Publications_and_IP_Strategy) (MOIC-рамка + спільні публікації (Статті 1–35) + патентна стратегія/IP)
+- [08\_02\_Academic\_Institutions\_Registry](08_02_Academic_Institutions_Registry) (Реєстр 5 ВНЗ: хто/кафедра → що валідує [канон-дім] → публікація)
+- [08\_03\_External\_Stakeholders\_Registry](08_03_External_Stakeholders_Registry) (Social API Registry: B2G/B2B + культурний шар — лісники, ДСНС, митці; non-hot-path)
 > _Колишній Модуль 09 (Методологія та Governance) ре-деривовано у **Модуль 00 — Фундамент** (Taxonomy v3): сторінки 00_02–00_07 угорі._

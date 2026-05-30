@@ -25,7 +25,7 @@
 | [00_03_TRL_Matrix_HIL_and_Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | TRL-матриця + HIL (decoupling software TRL від hardware) |
 | [00_05_GitHub_Projects_and_IaC_Automation](00_05_GitHub_Projects_and_IaC_Automation) | Projects V2 fields, labels-as-code, cluster routing |
 | [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | Open backlog (OPS.3 / OPS.4 + Convolution Method context) |
-| [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | Стратегічні підстави для multi-cluster R&D (§1.1-1.3) |
+| [08_02_Academic_Institutions_Registry](08_02_Academic_Institutions_Registry) | Стратегічні підстави для multi-cluster R&D (§1.1-1.3) |
 
 ## 📑 Зміст
 
@@ -69,10 +69,10 @@ Week 7-8 (Cool-down, 2 тижні) — рефакторинг, SSOT-аудит, 
 
 | Кластер | Сфера відповідальності | Типові epic-домени | Базова команда |
 |---------|-------------------------|---------------------|-----------------|
-| **A — Hardware / EBFC** | Атоми, фізика, матеріали, біопаливний елемент, гідрогелі | EBFC catalyst R&D, Ti-6Al-4V DMLS, EDLC supercap MPPT, friction-fit pull-out, біосумісність, BIO.* sterilization | **ЧНУ** (Мінаєв — квант. хімія `08_01`, Гусак — металургія/FEA, Біо-Хаб Спрягайло), **ЧМА** (біохімія EBFC, токсикологія `08_06`), **ЧДТУ ПМКТ** (Базіло/Бондаренко — акустика `08_04`), **СЄУ** (Денисенко — промдизайн радому `08_07`) |
-| **B — Verification / Math** | Докази, математика, верифікація, ZK | Lorenz attractor params, IoTeX W3bstream, peaq DID schemes, Chainlink Functions, dual-computation integrity, Solidity governance | **ЧНУ ФОТІУС** (Порубльов — дискр. математика, Онищенко — стох. оптимізація, Любченко — Master of Logic/GA `08_02`), **ЧДТУ** (Карапетян — Data Science/статистика `08_04`), AI agents (theorem proving) |
-| **C — Scaling / Cloud** | Software stack, infrastructure, performance | Rails core (`04_02`), multi-chain web3 (12 chains), Akash deploy (`06_02`), Prometheus/Grafana, Sidekiq queues, Solid Cable, Phlex UI | Architect + AI agents (Copilot, Cursor), **ЧНУ ФОТІУС** (Супруненко — Rails PN-верифікація, Ярмілко — firmware/crypto, Косенюк — RF/FEC, Бушин — CNN/Web-DB `08_02`), **ЧДТУ ФЕТР** (Гончаров — RF-лабораторія `08_04`) |
-| **D — Compliance / Legal** | Юриспруденція, регуляторика, IP, B2B, операційні SOP | Polygon Hadron (ERC-3643), MSA з СЄУ, Verra / Gold Standard методологія, GDPR / ESG звітність, patent portfolio, аварійні SOP | **СЄУ** (Аблязов — право, Чудаєва/Ус — економіка, Гедз — D-MRV аудит `08_07`), **ЧІПБ** (пожежна безпека, SOP, параметричне страхування `08_05`), **ЧНУ ФОТІУС** (Осауленко — R&D-портфель `08_02`) |
+| **A — Hardware / EBFC** | Атоми, фізика, матеріали, біопаливний елемент, гідрогелі | EBFC catalyst R&D, Ti-6Al-4V DMLS, EDLC supercap MPPT, friction-fit pull-out, біосумісність, BIO.* sterilization | **ЧНУ** (Мінаєв — квант. хімія `08_01`, Гусак — металургія/FEA, Біо-Хаб Спрягайло), **ЧМА** (біохімія EBFC, токсикологія `08_02 §4`), **ЧДТУ ПМКТ** (Базіло/Бондаренко — акустика `08_02 §2`), **СЄУ** (Денисенко — промдизайн радому `08_02 §5`) |
+| **B — Verification / Math** | Докази, математика, верифікація, ZK | Lorenz attractor params, IoTeX W3bstream, peaq DID schemes, Chainlink Functions, dual-computation integrity, Solidity governance | **ЧНУ ФОТІУС** (Порубльов — дискр. математика, Онищенко — стох. оптимізація, Любченко — Master of Logic/GA `08_02`), **ЧДТУ** (Карапетян — Data Science/статистика `08_02 §2`), AI agents (theorem proving) |
+| **C — Scaling / Cloud** | Software stack, infrastructure, performance | Rails core (`04_02`), multi-chain web3 (12 chains), Akash deploy (`06_02`), Prometheus/Grafana, Sidekiq queues, Solid Cable, Phlex UI | Architect + AI agents (Copilot, Cursor), **ЧНУ ФОТІУС** (Супруненко — Rails PN-верифікація, Ярмілко — firmware/crypto, Косенюк — RF/FEC, Бушин — CNN/Web-DB `08_02`), **ЧДТУ ФЕТР** (Гончаров — RF-лабораторія `08_02 §2`) |
+| **D — Compliance / Legal** | Юриспруденція, регуляторика, IP, B2B, операційні SOP | Polygon Hadron (ERC-3643), MSA з СЄУ, Verra / Gold Standard методологія, GDPR / ESG звітність, patent portfolio, аварійні SOP | **СЄУ** (Аблязов — право, Чудаєва/Ус — економіка, Гедз — D-MRV аудит `08_02 §5`), **ЧІПБ** (пожежна безпека, SOP, параметричне страхування `08_02 §3`), **ЧНУ ФОТІУС** (Осауленко — R&D-портфель `08_02`) |
 
 > **Принцип взаємовиключності:** кожна задача має **рівно один primary cluster label** (`cluster:A-hardware` / `cluster:B-verification` / `cluster:C-scaling` / `cluster:D-compliance`). Cross-cluster задачі мають **secondary label** (`cluster-ref:X`). Primary cluster визначає, хто веде задачу на betting table; secondary — кого консультують у RACI-режимі. Повна label-таксономія + YAML SSOT — у [`00_05 §Labels`](00_05_GitHub_Projects_and_IaC_Automation).
 
