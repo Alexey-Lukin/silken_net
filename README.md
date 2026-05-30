@@ -255,16 +255,12 @@ kamal deploy
 
 Детальна документація в директорії [`docs/`](docs/):
 
-**Архітектура, Стратегія та Операції (Модуль 00)**
+### 🏛️ Tier I — Система (00–06)
+
+**Архітектура Системи (Модуль 00)**
 - [`00_00`](docs/00_00_SSOT_Index.md) — єдине джерело істини (SSOT), головний реєстр
-- [`07_01`](docs/07_01_Vision_Mission_and_Roadmap.md) — місія, проблема VCM, NaaS (філософія Slashing → [`05_05`](docs/05_05_Slashing_and_Risk_Policy.md))
 - [`00_01`](docs/00_01_System_Architecture_and_12_Chain_Pipeline.md) — 8-рівнева кіберфізична архітектура + 12-крокової конвеєр
 - [`00_02`](docs/00_02_Resilience_and_Failover_Policy.md) — Queen failover + Per-Chain Fallback Matrix
-- [`09_01`](docs/09_01_AI_Native_Engineering_and_TRL.md) — AI-Native філософія: TRL метрика, Intent-First, Wiki-First
-- [`09_03`](docs/09_03_Shape_Up_Operations_and_RnD_Clusters.md) — Shape Up 6+2 цикли, 4 R&D кластери, Betting Table, Async-Review
-- [`09_02`](docs/09_02_TRL_Matrix_HIL_and_Beyond.md) — TRL Matrix + HIL-симулятори (per-domain TRL)
-- [`09_04`](docs/09_04_GitHub_Projects_and_IaC_Automation.md) — Projects V2 + Labels-as-Code + GitHub Actions workflows
-- [`09_06`](docs/09_06_Action_Plan_Tracker.md) — 🔴 живий трекер незавершених задач (DOC/SW/SEC/ARCH/UNI аудит)
 
 **Біомеханіка та Хімія (Модуль 01)**
 - [`01_01`](docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md) — 3-складовий Ti-6Al-4V анкер
@@ -287,16 +283,15 @@ kamal deploy
 - [`03_05`](docs/03_05_Hardware_Symmetric_Crypto_and_Security.md) — апаратне симетричне шифрування (LoRa AES-128-CCM, CoAP AES-256-CBC) та PQC migration roadmap
 
 **Серверне Ядро (Модуль 04)**
-- [`04_01`](docs/04_01_Data_Models_and_Entities.md) — 26 ActiveRecord моделей, PostgreSQL схема
-- [`04_02`](docs/04_02_Business_Logic_and_Services.md) — 29+ сервісів та 31 воркер
-- [`04_03`](docs/04_03_REST_API_v1_Reference.md) — 82 REST API ендпоінти
+- [`04_01`](docs/04_01_Data_Models_and_Entities.md) — ActiveRecord моделі, PostgreSQL схема, partitioning
+- [`04_02`](docs/04_02_Business_Logic_and_Services.md) — Service Objects + Sidekiq воркери, Web3CircuitBreaker
+- [`04_03`](docs/04_03_REST_API_v1_Reference.md) — REST API v1 (Pagy, Idempotency-Key, RBAC)
 - [`04_04`](docs/04_04_Phlex_UI_and_Tailwind.md) — дизайн-система Phlex + Tailwind
-- [`04_05`](docs/04_05_Codex_Lore_Module.md) — Codex / Lore-шар (read-only Atlas з 79 архетипів: екосистеми, унікальні дерева, біо/інженерні протоколи, міфо-фреймворки)
-- [`04_06`](docs/04_06_Testing_Guide_and_Coverage.md) — 30 RSpec best practices + повна Coverage Matrix (RSpec / Firmware C / Foundry Solidity)
-- [`07_05`](docs/07_05_External_Stakeholders_Registry.md) — Cultural Layer Social API Registry (16 митців + folk master + журналісти + диригенти; Genesis NFT + Data Sonification deferred)
+- [`04_05`](docs/04_05_Codex_Lore_Module.md) — Codex — опціональний read-only наративний шар над телеметрією (ADR-зафіксований, поза hot-path)
+- [`04_06`](docs/04_06_Testing_Guide_and_Coverage.md) — Testing guide + Coverage Matrix (RSpec / Firmware C / Foundry Solidity)
 
 **Web3 та Економіка (Модуль 05)**
-- [`05_01`](docs/05_01_Multichain_Architecture.md) — 12-chain DePIN стек
+- [`05_01`](docs/05_01_Multichain_Architecture.md) — Core DePIN (peaq/IoTeX/Chainlink/Polygon) + Expansion ecosystem
 - [`05_02`](docs/05_02_Proof_of_Growth_Pipeline.md) — повний пайплайн Proof of Growth
 - [`05_03`](docs/05_03_Tokenomics_SCC_and_SFC.md) — токеноміка SCC/SFC
 - [`05_04`](docs/05_04_Ethereum_L1_State_Anchor.md) — щотижнева фіналізація в Ethereum L1
@@ -310,22 +305,31 @@ kamal deploy
 - [`06_04`](docs/06_04_Secrets_Checklist.md) — інвентаризація секретів (GitHub Secrets, Kamal, Akash, Terraform)
 - [`06_05`](docs/06_05_Puma_Configuration.md) — Puma 8: IO-bound thread pool, shutdown debug, кластерні хуки
 
-**Бізнес та Фінанси (Модуль 07)**
+### 🌿 Tier II — Програма (07–09)
+
+**Стратегія та Економіка (Модуль 07)**
+- [`07_01`](docs/07_01_Vision_Mission_and_Roadmap.md) — візія, місія, дорожня карта, NaaS, Proof-of-Growth (Slashing → [`05_05`](docs/05_05_Slashing_and_Risk_Policy.md))
 - [`07_02`](docs/07_02_Nature_as_a_Service_Contracts.md) — NaaS контракти та страхування
 - [`07_03`](docs/07_03_Unit_Economics_and_BOM.md) — юніт-економіка та ROI через SCC
 - [`07_04`](docs/07_04_Grant_Applications_Tracker.md) — трекер грантових заявок
-- [`07_05`](docs/07_05_External_Stakeholders_Registry.md) — B2G/B2B Social API Registry (лісівник Дзюбенко + природоохоронець Сегеда + ДСНС + B2B-клієнти; 6-tier outreach pool)
+- [`07_05`](docs/07_05_External_Stakeholders_Registry.md) — External Stakeholders Registry (B2G/B2B + культурний шар; non-hot-path outreach pool)
 
 **Наука та R&D (Модуль 08)**
 - [`08_01`](docs/08_01_University_R_and_D_Protocols.md) — партнерство з ЧНУ
 - [`08_02`](docs/08_02_Cybernetic_and_Mathematical_Validation.md) — кіберфізична валідація ФОТІУС
 - [`08_03`](docs/08_03_Joint_Publications_and_IP_Strategy.md) — спільні публікації та стратегія IP
-- [`08_04`](docs/08_04_CHDTU_Data_Science_Collaboration.md) — ЧДТУ: Data Science, статистика та оптимізація
+- [`08_04`](docs/08_04_CHDTU_Data_Science_Collaboration.md) — ЧДТУ: Data Science, математична статистика, RF-верифікація, акустичний стенд
 - [`08_05`](docs/08_05_CHIPB_Fire_Safety_Integration.md) — ЧІПБ: пожежна безпека, параметричне страхування, SOP
 - [`08_06`](docs/08_06_CHMA_Biomedical_Integration.md) — ЧМА: біомедична валідація EBFC, токсикологія Ti-6Al-4V, ксилемоінтеграція
 - [`08_07`](docs/08_07_SEU_Economics_and_Legal_Integration.md) — СЄУ: макроекономіка NaaS, RWA-легалізація, промисловий дизайн PEEK-радому
 
-> **Модуль 09 (Управління)** та **Модуль 10 (Тестування)** консолідовані у Модуль 00 (`09_01`/`09_03`/`09_02`/`09_04`/`09_06`) та Модуль 04 (`04_06`) відповідно.
+**Методологія та Governance (Модуль 09)**
+- [`09_01`](docs/09_01_AI_Native_Engineering_and_TRL.md) — AI-Native філософія: NASA TRL, Intent-First, Wiki-First, Validation Gate
+- [`09_02`](docs/09_02_TRL_Matrix_HIL_and_Beyond.md) — per-module TRL-матриця + per-domain TRL + HIL + Beyond-TRL-9
+- [`09_03`](docs/09_03_Shape_Up_Operations_and_RnD_Clusters.md) — Shape Up 6+2 цикли, 4 R&D кластери, Betting Table, Async-Review
+- [`09_04`](docs/09_04_GitHub_Projects_and_IaC_Automation.md) — Projects V2 + Labels-as-Code + GitHub Actions workflows
+- [`09_05`](docs/09_05_SSOT_Documentation_Standard.md) — стандарт канон-доків (skeleton + home-registry + drift-tooling + restructure-метод)
+- [`09_06`](docs/09_06_Action_Plan_Tracker.md) — 🔴 живий трекер незавершених задач (DOC/SW/SEC/ARCH/UNI аудит)
 
 ---
 
