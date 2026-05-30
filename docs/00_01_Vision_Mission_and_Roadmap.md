@@ -24,8 +24,8 @@
 | [01_01_Coaxial_Gyroid_Topology_and_PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Тризонний анкер (Pivot v3) |
 | [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Мультичейн архітектура |
 | [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка SCC/SFC; §Slashing — `ProtocolParameters` (GAMMA, PENALTY_FACTOR_MAX, penalty_factor_base) |
-| [07_02_Nature_as_a_Service_Contracts](07_02_Nature_as_a_Service_Contracts) | NaaS-контракти; §Insurance Pool & Etherisc — параметри страхування |
-| [07_03_Unit_Economics_and_BOM](07_03_Unit_Economics_and_BOM) | Юніт-економіка та BOM |
+| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | NaaS-контракти; §Insurance Pool & Etherisc — параметри страхування |
+| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Юніт-економіка та BOM |
 | [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті бізнес-блокери** (SSOT): SLASH-1, BIZ.* DAO governance backlog |
 
 ## 📑 Зміст
@@ -105,7 +105,7 @@
 
 1. **Організації фінансують лісові кластери** через NaaS-контракти (`NaasContract`).
 2. **Дерева заробляють growth points** через верифікований біологічний гомеостаз.
-3. **Points конвертуються в SCC токени** на Polygon (10,000 points = 1 SCC). Кожен SCC підкріплений верифікованим поглинанням CO₂ — on-chain конверсія `ProtocolParameters.sol#sccPerTonneCo2()` (**2000 SCC = 1 верифікована тонна CO₂**, [`07_03`](07_03_Unit_Economics_and_BOM)). Ринкова ціна SCC визначається ліквідністю DEX та вуглецевими оракулами — у маніфесті фіатні суми НЕ фіксуються (вони застаріли б при русі ринку $10↔$100/т і виглядали б маніпулятивно).
+3. **Points конвертуються в SCC токени** на Polygon (10,000 points = 1 SCC). Кожен SCC підкріплений верифікованим поглинанням CO₂ — on-chain конверсія `ProtocolParameters.sol#sccPerTonneCo2()` (**2000 SCC = 1 верифікована тонна CO₂**, [`07_02`](07_02_Unit_Economics_and_BOM)). Ринкова ціна SCC визначається ліквідністю DEX та вуглецевими оракулами — у маніфесті фіатні суми НЕ фіксуються (вони застаріли б при русі ринку $10↔$100/т і виглядали б маніпулятивно).
 4. **Інвестори отримують токени** пропорційно до результатів кластера.
 5. **Деградація кластера** запускає **двокатегорійну реакцію** (див. §6): або slashing, або страхове відшкодування.
 6. **Параметричне страхування** забезпечує автоматичні виплати при катастрофічних подіях, що виходять за рамки операторського контролю (форс-мажор).

@@ -28,7 +28,7 @@
 | Ресурс | Зв'язок |
 |---|---|
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Alert/Emergency сервіси, dClimate Cosmic Eye |
-| [07_02_Nature_as_a_Service_Contracts](07_02_Nature_as_a_Service_Contracts) | Параметричне страхування, slashing |
+| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | Параметричне страхування, slashing |
 | [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Oracle consensus |
 | [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | SlashingProtocol |
 | [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | ЧНУ протоколи (Хімія/Фізика/Біоценологія) |

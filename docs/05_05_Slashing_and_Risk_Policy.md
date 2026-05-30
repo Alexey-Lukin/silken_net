@@ -2,9 +2,9 @@
 
 ## 🎯 Мета
 
-Канонічний дім **політики Slashing & Risk**: класифікація причини деградації (**халатність** vs **форс-мажор** vs **невизначеність**), прогресивна формула штрафу (категорія A), параметричне страхування (категорія B), DAO peer-review (категорія C), anti-fraud cross-checks і multi-signal de-risk-інваріант. Документ описує **політику й принципи**; механіка реалізації живе у своїх домах і **реферується** звідси: контрактна — `05_03`, pipeline-детекція — `05_02`/`04_02`, страхування — `07_02`, governance — `05_06`.
+Канонічний дім **політики Slashing & Risk**: класифікація причини деградації (**халатність** vs **форс-мажор** vs **невизначеність**), прогресивна формула штрафу (категорія A), параметричне страхування (категорія B), DAO peer-review (категорія C), anti-fraud cross-checks і multi-signal de-risk-інваріант. Документ описує **політику й принципи**; механіка реалізації живе у своїх домах і **реферується** звідси: контрактна — `05_03`, pipeline-детекція — `05_02`/`04_02`, страхування — `07_01`, governance — `05_06`.
 
-> **Чому окремий документ.** Slashing — це **risk/penalty-шар**, концептуально окремий від emission-токеноміки (`05_03`). До 2026-05-30 політика жила в `00_01 §6` (візійна сторінка) і була розпорошена по `05_03`/`07_02`/`05_02`/`04_02` з прихованими дублями. Консолідовано сюди як один SSOT-дім (`00_06 §2`).
+> **Чому окремий документ.** Slashing — це **risk/penalty-шар**, концептуально окремий від emission-токеноміки (`05_03`). До 2026-05-30 політика жила в `00_01 §6` (візійна сторінка) і була розпорошена по `05_03`/`07_01`/`05_02`/`04_02` з прихованими дублями. Консолідовано сюди як один SSOT-дім (`00_06 §2`).
 
 ---
 
@@ -24,7 +24,7 @@
 | [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Anti-fraud DCI (`SEC.11`, `check_z_divergence!`); `stress_index` pipeline |
 | [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | `slash()` контракт; Dynamic Tax (insurance-pool funding); `ProtocolParameters` (GAMMA, PENALTY_FACTOR_MAX) |
 | [05_06_Governance_and_DAO](05_06_Governance_and_DAO) | DAO peer-review (категорія C): `SilkenGovernor`/`SilkenTimelock`/quorum |
-| [07_02_Nature_as_a_Service_Contracts](07_02_Nature_as_a_Service_Contracts) | Insurance Layer mechanics (Etherisc, два режими); NaaS breach terms; SFC voting after slash |
+| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | Insurance Layer mechanics (Etherisc, два режими); NaaS breach terms; SFC voting after slash |
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | `BlockchainBurningService`, `ContractHealthCheckService`, `InsightGeneratorService#stress_index`; divergence registry §11 |
 | [08_02_Cybernetic_and_Mathematical_Validation](08_02_Cybernetic_and_Mathematical_Validation) | Партнерський ростер ФОТІУС/ЧНУ + академічний вихід для ground-truth протоколу (сам протокол — §8) |
 | [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкрите** (SSOT): SLASH-1 cause-gate, BIZ.13 operator-bond |
@@ -116,7 +116,7 @@ ForceMajeure event → InsurancePayoutWorker
 
 - Параметричні тригери: `dClimate.fire_detected ≥ FRP 10MW`, `dClimate.drought_index ≥ severe`, `NOAA earthquake ≥ M6 within 10km`.
 - Cap: `insurance_pool` ≥ 100,000 SCC підтримується через **Dynamic Tax** (2% від кожного `batchMint`, якщо pool < threshold) — механіка [`05_03 §Dynamic Tax`](05_03_Tokenomics_SCC_and_SFC).
-- Mechanics виплати (Internal mode vs Etherisc Oracle mode, guard clauses, `ParametricInsurance`) — дім [`07_02 §7 Insurance Layer`](07_02_Nature_as_a_Service_Contracts).
+- Mechanics виплати (Internal mode vs Etherisc Oracle mode, guard clauses, `ParametricInsurance`) — дім [`07_01 §7 Insurance Layer`](07_01_Nature_as_a_Service_Contracts).
 
 ## 5. Indeterminate (категорія C) — DAO Peer Review
 

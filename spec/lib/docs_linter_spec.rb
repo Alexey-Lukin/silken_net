@@ -184,7 +184,7 @@ RSpec.describe DocsLinter do
     end
 
     it "ignores a label with no doc-ID token (plain prose link text)" do
-      expect(described_class.link_label_target_mismatch("[Insurance Layer mechanics](07_02_Nature_as_a_Service_Contracts)")).to be_empty
+      expect(described_class.link_label_target_mismatch("[Insurance Layer mechanics](07_01_Nature_as_a_Service_Contracts)")).to be_empty
     end
 
     it "keys on the LEAD doc-ID only — a later secondary mention is not flagged" do

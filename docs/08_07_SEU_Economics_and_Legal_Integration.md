@@ -6,13 +6,13 @@
 
 1. **Макроекономічна валідація токеноміки NaaS** — наукове обґрунтування дефляційної природи SCC-емісії через Proof of Growth; аудит `DYNAMIC_TAX_RATE`, `INSURANCE_POOL_THRESHOLD` та `ProtocolParameters.sol` на відповідність класичним макроекономічним моделям
 2. **Unit-економіка та ESG-облік** — побудова бухгалтерського фреймворку для корпоративних інвесторів, що купують SCC для ESG-звітності; інтеграція `esg_retired_balance` (KlimaDAO retirement), мікро-нагород Solana/Celo та Dynamic Tax 2% у стандартну фінансову звітність
-3. **Правова архітектура RWA-токенізації** — юридичне оформлення токенізації лісових ділянок через Polygon Hadron (ERC-3643) згідно з українським та міжнародним законодавством (MiCA); закриття BLOCKER-1 (`07_02`: відсутні KYC/Legal Templates)
+3. **Правова архітектура RWA-токенізації** — юридичне оформлення токенізації лісових ділянок через Polygon Hadron (ERC-3643) згідно з українським та міжнародним законодавством (MiCA); закриття BLOCKER-1 (`07_01`: відсутні KYC/Legal Templates)
 4. **Промисловий дизайн PEEK-радому та біомімікрія** — розробка зовнішньої форми антивандальної капсули (Деталь 4, IP67 з conformal Parylene C) для мімікрування під кору дерева **з обов'язковим виступом ≥ 3 мм + super-hydrophobic coating як anti-overgrowth shield** (`01_04 §5.5`); оптимізація ергономіки **польової інсталяції** (заводський press-fit з barbs виконує завод, не forester)
 5. **UX/візуалізація даних для B2B-інтерфейсу** — трансформація кіберпанк-естетики Phlex UI у преміальний інвесторський дашборд; композиційне кодування фінансових звітів (`financial_summary`, `carbon_absorption`) для корпоративних ESG-аудиторів
 
 СЄУ — приватний університет у Черкасах, що поєднує **економічні науки**, **юриспруденцію** та **дизайн**. П'ять попередніх академічних партнерів (ЧНУ — фізико-хімічна верифікація хардверу; ЧНУ ФОТІУС — кіберфізична валідація firmware/backend; ЧДТУ — Data Science, RF-верифікація, акустика; ЧІПБ — пожежна безпека, параметричне страхування, SOP; ЧМА — біохімія EBFC, токсикологія металів) покривають повний цикл від анкера до блокчейну, але **жоден з них не має компетенції в макроекономічній теорії токеноміки, корпоративному ESG-обліку, правовій архітектурі RWA та промисловому дизайні**. СЄУ закриває цю критичну прогалину — перетворює "діючий технічний прототип" у "юридично та економічно обґрунтований продукт для інституційних інвесторів".
 
-> **Контекст:** Silken Net має діючий технічний стек (TRL 8 backend, TRL 9 смарт-контракти), але BLOCKER-1 [`07_02`](07_02_Nature_as_a_Service_Contracts) — відсутні юридичні шаблони NaaS-контрактів (Term Sheet, MSA). BLOCKER [`07_02` §4](07_02_Nature_as_a_Service_Contracts) — немає ESG Accounting Framework для корпоративних клієнтів. Без цих артефактів інституційні інвестори не можуть юридично підписати контракт і бухгалтерськи відобразити купівлю SCC. СЄУ як університет з профільною економіко-юридичною експертизою закриває обидва блокери.
+> **Контекст:** Silken Net має діючий технічний стек (TRL 8 backend, TRL 9 смарт-контракти), але BLOCKER-1 [`07_01`](07_01_Nature_as_a_Service_Contracts) — відсутні юридичні шаблони NaaS-контрактів (Term Sheet, MSA). BLOCKER [`07_01` §4](07_01_Nature_as_a_Service_Contracts) — немає ESG Accounting Framework для корпоративних клієнтів. Без цих артефактів інституційні інвестори не можуть юридично підписати контракт і бухгалтерськи відобразити купівлю SCC. СЄУ як університет з профільною економіко-юридичною експертизою закриває обидва блокери.
 
 ---
 
@@ -28,9 +28,9 @@
 
 | Ресурс | Зв'язок |
 |---|---|
-| [07_02_Nature_as_a_Service_Contracts](07_02_Nature_as_a_Service_Contracts) | NaaS контракти, юридичні шаблони |
-| [07_03_Unit_Economics_and_BOM](07_03_Unit_Economics_and_BOM) | Юніт-економіка та BOM |
-| [07_04_Grant_Applications_Tracker](07_04_Grant_Applications_Tracker) | Гранти (Horizon Europe, EF) |
+| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | NaaS контракти, юридичні шаблони |
+| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Юніт-економіка та BOM |
+| [07_03_Grant_Applications_Tracker](07_03_Grant_Applications_Tracker) | Гранти (Horizon Europe, EF) |
 | [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка SCC/SFC |
 | [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof of Growth |
 | [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Мультичейн (Hadron, Solana, Celo, Klima) |
@@ -231,7 +231,7 @@ validates :toucan_bridged_balance, numericality: { greater_than_or_equal_to: 0 }
   4. Податкова класифікація на рівні SPV: SCC як utility token у ЄС,
      USDC/cUSD як operational inflow, Dynamic Tax як cost of goods
   5. Результат: SPV Accounting Framework + клієнтський Proof-of-Retirement шаблон
-     (додаток до NaaS Term Sheet, 07_02 BLOCKER-1)
+     (додаток до NaaS Term Sheet, 07_01 BLOCKER-1)
 
 Примітка: крипто-нативні інвестори (DAO, ReFi-фонди, KlimaDAO-учасники) МОЖУТЬ
   тримати SCC напряму у власному гаманці (поточна wallet/hadron_kyc архітектура).
@@ -242,11 +242,11 @@ validates :toucan_bridged_balance, numericality: { greater_than_or_equal_to: 0 }
 **Завдання Б: ROI-модель для unit-економіки кластера**
 
 ```
-Контекст: docs/07_03 фіксує BOM ($37-$46/Soldier, $234-$280/Queen),
+Контекст: docs/07_02 фіксує BOM ($37-$46/Soldier, $234-$280/Queen),
   але фінансова модель окупності потребує академічної валідації.
 
 Завдання:
-  1. Рецензія ROI-моделі 07_03 з позиції корпоративних фінансів
+  1. Рецензія ROI-моделі 07_02 з позиції корпоративних фінансів
   2. Sensitivity analysis: при яких carbon_price модель окупна за 3/5/10 років?
   3. Порівняння з конкурентами (Pachama, Dendra, Open Forest Protocol)
   4. Рекомендації щодо ціноутворення NaaS-підписки
@@ -268,7 +268,7 @@ Silken Net токенізує лісові ділянки як Real World Assets
 - [`05_01`](05_01_Multichain_Architecture) §7 (Polygon Hadron) — два потоки: `verify_investor!` (KYC) та `register_asset!` (RWA); `WEB3_STRICT_MODE` поведінка
 - [`05_01`](05_01_Multichain_Architecture) §6 (Polygon Primary EVM) — Guard Clauses (verified_by_iotex + oracle_status + hadron_kyc), Governance DAO pipeline
 - [`05_03`](05_03_Tokenomics_SCC_and_SFC) §Ієрархія Ролей — MINTER_ROLE, SLASHER_ROLE, DEFAULT_ADMIN_ROLE та їх розділення
-- [`07_02`](07_02_Nature_as_a_Service_Contracts) §1.1 (B2B Corporate) — KYC/KYB через Hadron, INSURANCE_PREMIUM_RATE 5%
+- [`07_01`](07_01_Nature_as_a_Service_Contracts) §1.1 (B2B Corporate) — KYC/KYB через Hadron, INSURANCE_PREMIUM_RATE 5%
 
 **Поточний стан у кодбейсі:**
 class HadronComplianceService
@@ -283,7 +283,7 @@ end
 
 # app/models/naas_contract.rb — NaaS контракт (AASM: draft → active → fulfilled/breached/cancelled)
 # INSURANCE_PREMIUM_RATE = BigDecimal("0.05")  # 5% від total_funding → Insurance Pool
-# BLOCKER-1 (07_02): KYC/Legal Templates — ВІДСУТНІ
+# BLOCKER-1 (07_01): KYC/Legal Templates — ВІДСУТНІ
 
 # db/structure.sql — стовпець hadron_kyc_status
 # hadron_kyc_status character varying DEFAULT 'pending'::character varying
@@ -321,7 +321,7 @@ end
            (UBO), джерело коштів, корпоративна AML-перевірка
      - Для B2B NaaS (корпоративний клієнт) KYC недостатній — потрібен жорсткий
        KYB. Hadron виконує перевірку; легітимність дає Rulebook + Identity Issuer.
-  4. Шаблони юридичних документів (→ закриття BLOCKER-1 у 07_02):
+  4. Шаблони юридичних документів (→ закриття BLOCKER-1 у 07_01):
      - NaaS Term Sheet (корпоративна підписка)
      - Master Service Agreement (MSA)
      - Carbon Credit Purchase Agreement
@@ -353,7 +353,7 @@ end
 
 **Точка перетину зі Silken Net:**
 
-Silken Net має 6 університетських партнерів (ЧНУ, ФОТІУС, ЧДТУ, ЧІПБ, ЧМА, СЄУ), технологічного партнера (ActiveBridge) та мережу з 7 Web3-грантів ([`07_04`](07_04_Grant_Applications_Tracker)). Для переходу від TRL 3-4 до TRL 7-8 потрібне **структуроване консорціумне управління** та **грантове фінансування**. Існуюча модель "Потрійної Спіралі" (наука + бізнес + держава) описана в [`08_02` §23](08_02_Cybernetic_and_Mathematical_Validation), але не формалізована юридично.
+Silken Net має 6 університетських партнерів (ЧНУ, ФОТІУС, ЧДТУ, ЧІПБ, ЧМА, СЄУ), технологічного партнера (ActiveBridge) та мережу з 7 Web3-грантів ([`07_03`](07_03_Grant_Applications_Tracker)). Для переходу від TRL 3-4 до TRL 7-8 потрібне **структуроване консорціумне управління** та **грантове фінансування**. Існуюча модель "Потрійної Спіралі" (наука + бізнес + держава) описана в [`08_02` §23](08_02_Cybernetic_and_Mathematical_Validation), але не формалізована юридично.
 
 **Конкретний R&D-запит:**
 
@@ -384,7 +384,7 @@ Silken Net має 6 університетських партнерів (ЧНУ,
 **Завдання Б: Грантова стратегія Horizon Europe**
 
 ```
-Контекст: 07_04 фіксує 7 Web3-грантів (peaq, IoTeX, Chainlink, Filecoin,
+Контекст: 07_03 фіксує 7 Web3-грантів (peaq, IoTeX, Chainlink, Filecoin,
   Giveth, Solana, Polygon). Але відсутні заявки на:
   - Horizon Europe CLUSTER 6 (Climate, Energy, Mobility)
   - Horizon Europe EIC Pathfinder / Accelerator
@@ -728,11 +728,11 @@ app/views/components/
 | **Магістерська** | "Макроекономічне моделювання токеноміки Nature-as-a-Service" | Чудаєва | `ProtocolParameters.sol`, `BlockchainMintingService` |
 | **Магістерська** | "ESG Accounting Framework для блокчейн-верифікованих вуглецевих кредитів" | Ус | `KlimaDao::RetirementService`, `esg_retired_balance` |
 | **Магістерська** | "Правові аспекти токенізації Real World Assets у контексті MiCA" | Аблязов Д. | `HadronComplianceService`, NaaS Term Sheet |
-| **Магістерська** | "Управління мультидисциплінарними консорціумами за моделлю Потрійної Спіралі" | Аблязова Н. | `07_04`, Horizon Europe заявка |
+| **Магістерська** | "Управління мультидисциплінарними консорціумами за моделлю Потрійної Спіралі" | Аблязова Н. | `07_03`, Horizon Europe заявка |
 | **Бакалаврська** | "Промисловий дизайн антивандальної капсули для лісового IoT" | Денисенко | `01_01` Деталь 4, PEEK-радом |
 | **Бакалаврська** | "UX-дизайн B2B дашборду для ESG-інвесторів" | Теліженко | Phlex components, `04_04` |
 | **Бакалаврська** | "Аудит методології D-MRV: мапінг delta_t на Verra VM0003/VM0047 (ISO 14064-2/-3 backbone)" | Гедз | `05_02`, Proof of Growth Pipeline |
-| **Курсова** | "Sensitivity analysis юніт-економіки IoT-кластера" | Ус | `07_03`, BOM |
+| **Курсова** | "Sensitivity analysis юніт-економіки IoT-кластера" | Ус | `07_02`, BOM |
 | **Курсова** | "Порівняльний аналіз SCC та Verra VCU" | Чудаєва | `05_03`, Tokenomics |
 
 ---
@@ -774,7 +774,7 @@ Voluntary Carbon Market = $2B (2023) → $50B (2030, McKinsey)
 
 Silken Net = Digital MRV (Measurement, Reporting, Verification):
   → Інструментуємо РЕПРЕЗЕНТАТИВНІ КЛАСТЕРИ, а не кожне дерево лісу:
-    1 кластер (MVFC ≈ 100 вузлів + 1 Queen, ~$5,100, 07_03) на репрезентативну
+    1 кластер (MVFC ≈ 100 вузлів + 1 Queen, ~$5,100, 07_02) на репрезентативну
     ділянку/гектар. Щільні per-tree дані кластера = ground truth, що КАЛІБРУЄ
     супутникову екстраполяцію (CNN + NDVI, Бушин 08_02) на решту насадження.
   → CAPEX масштабується з кількістю гектарів/кластерів, а НЕ з кількістю дерев
@@ -787,7 +787,7 @@ Silken Net = Digital MRV (Measurement, Reporting, Verification):
 > **Note для економіста (anti-«перегрів»):** на питання «скільки коштує
 > моніторинг 1M дерев?» відповідь — НЕ «1M датчиків × $50». Silken Net застосовує
 > macro-micro модель: інструментована вибірка кластерів + супутникова
-> екстраполяція (08_02). Юніт-економіка рахується на кластер/гектар (07_03),
+> екстраполяція (08_02). Юніт-економіка рахується на кластер/гектар (07_02),
 > що робить CAPEX керованим і фінансову модель реалістичною.
 
 **Блок 2 — Що побудовано (1 хв):**
@@ -821,7 +821,7 @@ Silken Net = Digital MRV (Measurement, Reporting, Verification):
    → MiCA compliance для SCC-токена (ЄС регулятор)
    → ERC-3643 (Polygon Hadron) — KYC/AML framework
    → NaaS контракти: Term Sheet + MSA шаблони
-   → Результат: Legal Framework — закриває BLOCKER-1 з 07_02
+   → Результат: Legal Framework — закриває BLOCKER-1 з 07_01
 
 4. ПРОМИСЛОВИЙ ДИЗАЙН (Денисенко, Теліженко)
    → PEEK-радом: біомімікрія під кору дерева (IP68)

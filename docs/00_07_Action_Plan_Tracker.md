@@ -267,8 +267,8 @@
 > ⚠️ Потребують фізичної роботи в лабораторії та/або з підрядниками.
 
 #### HW.32 — BME280 environmental sensing + VPD confounder [ADR `02_01 §3.4`]
-- **P1** · 🤖+👤 · → `02_01 §3.4`, `07_03 §1.3`
-- BME280 (t°/RH/тиск, I2C за TPS22860) → VPD confounder (False-Slashing kill, `05_05 §6/§7`) + клімат-оракул (`07_02`). DCI-guard: VPD НЕ в Lorenz-Z. ✅ docs (02_01/00_01/08_02/07_03/02_03/07_02) + `03_01` SENSE+packet (byte 14 VPD-індекс) + TelemetryLog cols (structure.sql, recreate+seed). · [x] 🤖 VPD-gate + sap-term реалізовано (inert, ENV-calibration-gated; `04_02` / `05_05 §7`; активація `05_05 §8`) · [ ] 👤 bench (I2C bring-up, gate-timing, VPD-калібрування) + PTFE-мембрана механіка (`02_02`)
+- **P1** · 🤖+👤 · → `02_01 §3.4`, `07_02 §1.3`
+- BME280 (t°/RH/тиск, I2C за TPS22860) → VPD confounder (False-Slashing kill, `05_05 §6/§7`) + клімат-оракул (`07_01`). DCI-guard: VPD НЕ в Lorenz-Z. ✅ docs (02_01/00_01/08_02/07_02/02_03/07_01) + `03_01` SENSE+packet (byte 14 VPD-індекс) + TelemetryLog cols (structure.sql, recreate+seed). · [x] 🤖 VPD-gate + sap-term реалізовано (inert, ENV-calibration-gated; `04_02` / `05_05 §7`; активація `05_05 §8`) · [ ] 👤 bench (I2C bring-up, gate-timing, VPD-калібрування) + PTFE-мембрана механіка (`02_02`)
 
 #### HW.1 — nTop model → SLM+HIP factory (Anode Zone 1)
 - **P0** · 👤 · → `01_01`, `01_02 §1.7` · ✅ ліцензія отримана
@@ -568,13 +568,13 @@
 - **P2** · 👤 · → `01_04 §5.5`
 - **Опис:** Поправка Фази 4 ксилемоінтеграції — анкер **НЕ повинен** повністю поглинатися стовбуром. Лише Zone 1 (анод) інтегрується; Zone 3 (катод) має залишатися постійно експонованим атмосфері для ORR (Laccase + AuNPs + O₂). Без shield через 3–5+ років нова кора накриває PTFE-GDL → дифузія O₂ зупиняється → EBFC мертва за 2–3 додаткових роки.
 - **Три захисти (complementary):** (A) виступаючий PEEK Radome conus ≥ 3 мм + R заокруглення ≥ 5 мм; (B) super-hydrophobic fluoropolymer coating (CA > 150°, Fluoropel PFC-1601V); (C) periodic forester maintenance every 5–7 років (мікрорізець для зчищення приростаючої тканини).
-- **Cross-ref:** Інтегровано у HW.17 (PEEK radome prototype) + OPEX додано у `07_03`
-- **Блокує:** 20-річний термін служби EBFC, OPEX-розрахунок (`07_03`)
+- **Cross-ref:** Інтегровано у HW.17 (PEEK radome prototype) + OPEX додано у `07_02`
+- **Блокує:** 20-річний термін служби EBFC, OPEX-розрахунок (`07_02`)
 - [ ] 👤 Update PEEK Radome CAD з виступаючим конусом — у HW.17
 - [ ] 👤 Закупка/тест super-hydrophobic coating (Fluoropel PFC-1601V або аналог)
 - [ ] 👤 Field protocol для forester visit: процедура зачистки приростаючої тканини без traumatic surgery
 - [ ] 👤 12-місячний польовий тест на тестовому дереві (Черкаський бір)
-- [ ] 👤 Update `07_03` OPEX: 1 visit / 5–7 років × $20/visit = ~$3–4/рік/анкер (форестер у Черкаському борі)
+- [ ] 👤 Update `07_02` OPEX: 1 visit / 5–7 років × $20/visit = ~$3–4/рік/анкер (форестер у Черкаському борі)
 
 #### HW.29 — Board-to-Board Connector pair: Power Deck ↔ RF Deck (NEW 2026-05-16)
 - **P1** · 👤 · → `02_01 §3.1`, `§5.3`
@@ -639,7 +639,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 |----|----------------|-------------------|-----|--------|
 | DOC.1 | Документація AES master key суперечлива: `03_05` лінія 531-537 каже «навмисно не публікується», а лінія 538 натякає що перші 4 слова збігаються з FIPS-197 Appendix B test vector. Скоординувати після SEC.9 (заміна seed key) | `03_05`, `firmware/soldier/main.c:66-67` | Після SEC.9 видалити test-vector згадку, оновити обидва параграфи | ⏸️ Заблоковано SEC.9 |
 | DOC.9 | Documentation `02_03` §9.3 raніше використовувала 15 mA/50 ms для LoRa TX. Виправлено на 120 mA/100 ms (~39 мДж) per SX1262 datasheet. Firmware energy accounting **не верифіковано незалежно** | `02_03`, `firmware/soldier/main.c` | Лабораторне вимірювання поточного TX (HW.x) + cross-ref у `02_03` після верифікації | ⏸️ Заблоковано лаб-стендом |
-| DOC.10 | Реструктуризація 05/07 (Фаза 3) — відкладені misplacement-рішення: `07_02 §11` Investor Q&A (pitch/diligence — дім 00_01 vs новий pitch-doc неоднозначний); `07_04 §5` Anchor Assembly + `§6` Virtual Prototyping (operational/field-ops дім, наразі grant-bootstrap контекст — не чистий misplacement) | `07_02`, `07_04` | Призначити operational/pitch-дім + перенести (рішення founder) | 🟡 Deferred |
+| DOC.10 | Реструктуризація 05/07 (Фаза 3) — відкладені misplacement-рішення: `07_01 §11` Investor Q&A (pitch/diligence — дім 00_01 vs новий pitch-doc неоднозначний); `07_03 §5` Anchor Assembly + `§6` Virtual Prototyping (operational/field-ops дім, наразі grant-bootstrap контекст — не чистий misplacement) | `07_01`, `07_03` | Призначити operational/pitch-дім + перенести (рішення founder) | 🟡 Deferred |
 | DOC.11 | Реструктуризація 05/07 (Фази 1-2, 2026-05-30): slashing `00_01 §6` → `05_05`; governance `05_03 §749-905` → `05_06` — нові канон-доми; cross-refs re-pointed; `00_06 §2` / `00_00` / README синхронізовано (навігація: `00_01 §6` stub + `05_03 §Governance` stub) | `05_05`, `05_06`, `00_01`, `05_03` | — (виконано) | ✅ Done |
 
 #### DOC.2 — Canon↔canon de-dup (SSOT single-home) [#4, 2026-05-29]
@@ -650,12 +650,12 @@ DOC.9 — потребує лабораторного вимірювання TX-
 |---|---|---|
 | AES-режими per-channel (ECB→CCM / CBC 256) | `03_05 §3.7` | ~20 доків (00_01/03_01/03_02/04_02/04_03/05_01/05_02 + 08_xx) — **найбільший дубль** |
 | Lorenz константи (Z 2.0/45.0/29.0 · σ10 ρ28 β8÷3 · dt0.01 · 250 iter) | `03_04 §4.1` | ✅ **05_02 «Фаза 2» зроблено** (повна ре-декларація → SSOT-ref, 2026-05-29). Решта легітимні (НЕ дубль): 04_01 self-labeled mirror Rails-конст., 03_01 firmware-doc контекст, 04_02 service-impl, 08_xx академ. верифікація |
-| Tokenomics rate 10 000 GP = 1 SCC | `05_03` | 05_01/07_02/07_03/03_03 |
-| Carbon 2000 SCC = 1 tCO₂ (0.5 кг) | `05_03` + `07_02` коеф. | 00_01/07_02/07_03 |
-| Slashing пороги stress 0.83 / slash 0.20 | `05_05 §3` + `04_02` (ContractHealthCheckService) | 05_03/07_02 |
+| Tokenomics rate 10 000 GP = 1 SCC | `05_03` | 05_01/07_01/07_02/03_03 |
+| Carbon 2000 SCC = 1 tCO₂ (0.5 кг) | `05_03` + `07_01` коеф. | 00_01/07_01/07_02 |
+| Slashing пороги stress 0.83 / slash 0.20 | `05_05 §3` + `04_02` (ContractHealthCheckService) | 05_03/07_01 |
 | Insurance pool 100 000 SCC | `05_05 §4` + `05_03` (Dynamic Tax) | 04_02/05_03 |
 | delta_t baseline 60 с | `03_04` (BASELINE_DELTA_T_S) | 03_01/04_02/05_02/01_03 |
-| Gyroid пористість 65% (60-70%) | `01_01` | 01_02/02_01/07_03 + 08_xx |
+| Gyroid пористість 65% (60-70%) | `01_01` | 01_02/02_01/07_02 + 08_xx |
 
 - [x] 🤖 Замінити справжні ПОВНІ re-statements значення на 1-рядковий ref на home (значення — лише в home). **Зроблено:** ✅ Lorenz (05_02) — єдина справжня повна ре-декларація; решта = легітимний контекст (див. аудит нижче).
 - [ ] 🤖 Розширити `tracker:check` на канон↔канон: детект hardcoded-значень поза home-доком (stretch — складно без AST доків; ⚠️ ризик false-positive на колізіях чисел, див. нижче).
@@ -694,7 +694,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - ✅ `lib/github_bootstrap.rb` (`FIELDS` SSOT 11 полів, idempotent GraphQL diff, rake `github:bootstrap`, 16 specs). · [ ] 👤 запустити `bin/bootstrap_github.sh` проти живого Projects V2 при setup/fork
 
 #### OPS.5 — EU DMLS quotes від 2-3 backup підрядників
-- **P1** · 👤 · → `07_03 §8.1.1`
+- **P1** · 👤 · → `07_02 §8.1.1`
 - BIZ.6 ✅ ідентифікував 4 EU кандидати (3D Lab PL, Materialise BE, Sauber/Lithoz, TRUMPF). · [ ] 👤 quotes у 3D Lab PL + Materialise BE → порівняльна таблиця → LoI/Frame Agreement з top vendor
 
 ---
@@ -702,15 +702,15 @@ DOC.9 — потребує лабораторного вимірювання TX-
 ## §07 · Юридичні / Бізнес
 
 #### BIZ.1 — 1 SCC = ? kg CO₂
-- **P2** · 👤 · → `07_02`, `05_03`
+- **P2** · 👤 · → `07_01`, `05_03`
 - ✅ 2000 SCC = 1 tCO₂ (0.5 кг/SCC), carbon coefficient per-species. · [ ] 👤 сертифікація методології (Verra/Gold Standard, Post-TRL 7 → BIZ.9)
 
 #### BIZ.2 — B2B MSA (Master Service Agreement)
-- **P1** · 👤 · → `07_02`, `08_07 §1.3`
+- **P1** · 👤 · → `07_01`, `08_07 §1.3`
 - Партнер: СЄУ (Аблязов Д.Е., к.ю.н.). · [ ] 👤 юр-консультація (MiCA/ERC-3643/RWA) → MSA template (Term Sheet + Carbon Credit Purchase Agreement) → review практикуючим юристом
 
 #### BIZ.3 — B2C ToS / Privacy Policy
-- **P2** · 👤 · → `07_02`
+- **P2** · 👤 · → `07_01`
 - [ ] 👤 ToS draft + Privacy Policy (GDPR) + Cookie Policy
 
 #### BIZ.5 — Patent application
@@ -718,15 +718,15 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - [ ] 👤 engagement з патентним адвокатом → патентна заявка на дизайн анкера
 
 #### BIZ.6 — Supply chain war-zone risk mitigation
-- **P1** · 👤 · → `07_03 §8.1.1`
+- **P1** · 👤 · → `07_02 §8.1.1`
 - ✅ Contingency Plan EU Backup DMLS Hubs (4 кандидати; triggers; +~20% payback) — UA-підрядники у зоні бойових дій. · [ ] 👤 отримати quotes для порівняння (→ OPS.5/BIZ.8)
 
 #### BIZ.8 — EU DMLS Frame Agreement (extension of BIZ.6)
-- **P1** · 👤 · → `07_03 §8.1.1`
+- **P1** · 👤 · → `07_02 §8.1.1`
 - [ ] 👤 NDA+RFQ зі 3D Lab PL → sample part order (10 шт) quality benchmark → Frame Agreement (+20% premium, 30-day activation)
 
 #### BIZ.9 — Незалежний carbon credit методолог (Verra/Gold Standard)
-- **P2** · 👤 · → `07_02 §3`, `07_03 §7.3`
+- **P2** · 👤 · → `07_01 §3`, `07_02 §7.3`
 - Конвертація SCC utility-token → сертифіковані kg CO₂ для institutional buyers потребує independent methodology audit (Verra/Gold Standard/Puro.earth). · [ ] 👤 engagement methodologist (~$50-100k) → PDD у Verra · [ ] 🔗 залежить від HW.3 (Arrhenius) + UNI.6/UNI.7 (DFT+diffusion)
 
 #### BIZ.10 — Multi-party IP Contract + NDA framework
@@ -734,7 +734,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - 5-сторонній фреймворк (ChNU+ChDTU+ChIPB+ChMA+СЄУ+SilkenNet): bilateral NDA, IP-договір спільного авторства, патентні права, royalty. · [ ] 👤 патентний повірений (UA+EU) → bilateral NDA × 5 (паралельно UNI.4-14) → Master IP Framework Agreement · [ ] 🔗 після UNI.1/8/9/12/13
 
 #### BIZ.11 — RWA pilot реєстрація лісової ділянки через Polygon Hadron
-- **P2** · 👤+🤖 · → `07_02 §BLOCKER-6`
+- **P2** · 👤+🤖 · → `07_01 §BLOCKER-6`
 - Hadron (ERC-3643) RWA-pilot: 1 ділянка з кадастром + biomass appraisal (LIDAR+ground) + Hadron compliance. · [ ] 👤 партнер-лісокористувач (post-war/Carpathian) + кадастр/biomass appraisal · [ ] 🤖 `Hadron::TokenizeForestPlotService` + KYC flow spec · [ ] 🔗 після BIZ.2 (MSA)
 
 #### 🌿 BIZ.12 — Horizon Europe CLUSTER 6 заявка (Biodiversity Monitoring, Mongabay pivot)
@@ -745,8 +745,8 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - **P2** · 👤+🤖 · → `05_05 §3.1`, `05_03 §Slashing`, `04_02 §1.2`
 - Кат-A slash зрізає інвесторський `locked_balance`, хоча недбалість — провина оператора (principal-agent). ✅ decision memo → рекомендація **hybrid operator-bond**. · [ ] 👤 DAO confirm: hybrid vs investor-slash vs pure operator-bond · [ ] 🤖 якщо operator-bond — `OperatorBond` + `ProtocolParameters` + контракт + синх `05_05 §3`/`05_03`/`04_02`
 
-#### BIZ.14 — SFC Vote-Escrow during breach→slash lag (07_02 BLOCKER-7 residual)
-- **P3** · 🔗 · → `07_02 §8`
+#### BIZ.14 — SFC Vote-Escrow during breach→slash lag (07_01 BLOCKER-7 residual)
+- **P3** · 🔗 · → `07_01 §8`
 - ✅ Core закрито: `SilkenForestCoin.slash()` (SLASHER_ROLE) зменшує voting power при slashing → атака «купити SFC + навмисне порушення NaaS» неможлива. 🟡 Residual: ~1–5 хв lag (`web3_critical` черга) між SCC-slash і SFC-slash — у вікні учасник технічно ще може проголосувати. · [ ] 🔗 Vote-Escrow (veToken) при `breached`-контрактах — опціонально, gated на повний DAO governance launch (BIZ.4)
 
 ---
@@ -805,7 +805,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 
 #### UNI.8 — Перший контакт з ректоратом СЄУ (legacy ID — see UNI.14)
 - **P0** · 👤 · → `08_07`
-- Блокує Economic Whitepaper, Legal Framework, NaaS шаблони (`07_02` BLOCKER-1/3). · [ ] 👤 зустріч Чудаєва/Аблязова Н. + verify 7 посад + MoU СЄУ↔SilkenNet + workshops Аблязов (MSA) + Ус (ESG)
+- Блокує Economic Whitepaper, Legal Framework, NaaS шаблони (`07_01` BLOCKER-1/3). · [ ] 👤 зустріч Чудаєва/Аблязова Н. + verify 7 посад + MoU СЄУ↔SilkenNet + workshops Аблязов (MSA) + Ус (ESG)
 
 #### UNI.15 — ЧНУ TISC engagement (патентний захист анкера + торгові марки)
 - **P1** · 👤+🤖 · → `08_03 §2.1.1` · 🔗 UNI.1 (MoU)
@@ -813,7 +813,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 
 #### UNI.16 — ЧНУ Кафедра ІВ engagement (юридична експертиза RWA + токеноміки)
 - **P1** · 👤 · → `08_03 §2.1.2` · 🔗 UNI.1 (MoU)
-- Кафедра ІВ ЧНУ — точковий UA-юрисдикційний review (СЄУ §1F = макро): (1) RWA ERC-3643 vs Лісовий Кодекс/ПЗФ, (2) SCC/SFC за ЗУ «Про віртуальні активи» 2022 + MiCA 2024, (3) NaaS у UA Civil Code, (4) авторське право на `bio_contract.rb`/`Attractor`. Ціль: 2 меморандуми. · [ ] 👤 контакт зав. кафедри + workshop з Аблязовим (UA×MiCA) + меморандум RWA (розблок `07_02` BLOCKER-6) + меморандум SCC-класифікація + sui generis NaaS review
+- Кафедра ІВ ЧНУ — точковий UA-юрисдикційний review (СЄУ §1F = макро): (1) RWA ERC-3643 vs Лісовий Кодекс/ПЗФ, (2) SCC/SFC за ЗУ «Про віртуальні активи» 2022 + MiCA 2024, (3) NaaS у UA Civil Code, (4) авторське право на `bio_contract.rb`/`Attractor`. Ціль: 2 меморандуми. · [ ] 👤 контакт зав. кафедри + workshop з Аблязовим (UA×MiCA) + меморандум RWA (розблок `07_01` BLOCKER-6) + меморандум SCC-класифікація + sui generis NaaS review
 
 #### UNI.17 — ChDTU Хоменко (Кафедра металорізальних верстатів): прецизійна механіка + DMLS post-processing
 - **P2** · 👤 · → `08_04 §1.4`
@@ -847,11 +847,11 @@ DOC.9 — потребує лабораторного вимірювання TX-
 
 #### STK.6 — Tier 4 B2B: ПрАТ "Азот" — CBAM offset + хімічний scale-up
 - **P2** · 👤 · → `07_05 §5.2`
-- Trigger: TRL 7 у `05_02` (live SCC mint). Першочерговий B2B SCC-клієнт (CBAM offset) + канал на scale-up осмієвих полімерів EBFC (І. Кухоль, О. Хуторний). · [ ] 👤 ESG officer cold-contact → CBAM model (`07_03`) → EBFC scale-up feasibility (`08_06`)
+- Trigger: TRL 7 у `05_02` (live SCC mint). Першочерговий B2B SCC-клієнт (CBAM offset) + канал на scale-up осмієвих полімерів EBFC (І. Кухоль, О. Хуторний). · [ ] 👤 ESG officer cold-contact → CBAM model (`07_02`) → EBFC scale-up feasibility (`08_06`)
 
 #### STK.7 — Tier 5 Social Inclusion: Кучер (соц. сфера) — Horizon Europe Cluster 4/6
 - **P2** · 👤 · → `07_05 §6.1`
-- Trigger: перед великим Horizon-грантом (`07_04`). Соц. інклюзія для grant-пріоритету + кадровий резерв + Eco-Therapy 4.0 для ветеранів. · [ ] 👤 first-contact (обласна рада) → Eco-Therapy concept (deferred — потребує mobile UI `04_04`)
+- Trigger: перед великим Horizon-грантом (`07_03`). Соц. інклюзія для grant-пріоритету + кадровий резерв + Eco-Therapy 4.0 для ветеранів. · [ ] 👤 first-contact (обласна рада) → Eco-Therapy concept (deferred — потребує mobile UI `04_04`)
 
 #### STK.8 — Cultural Tier A (Cherkasy 8 artists): pre-Genesis NFT outreach
 - **P3** · 👤 · → `07_05 §2.1`
@@ -871,7 +871,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 
 | # | Знахідка | Джерело | Примітка |
 |---|----------|---------|----------|
-| E.3 | Breadboard video відсутнє (для грантів) | `07_04` | Зняти відео |
+| E.3 | Breadboard video відсутнє (для грантів) | `07_03` | Зняти відео |
 | E.4 | Helium Network fallback — concept є, реалізації немає | `02_05` | Дизайн + реалізація |
 | E.5 | CoAP listener Ruby — масштабується до ~10k вузлів | `06_01` | Series D: Rust/Go proxy |
 | E.7 | dClimate mock mode — потрібна реальна інтеграція для Production | `05_01` | Пов'язано з S3.2 |
@@ -973,7 +973,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | S6.12 | TokenomicsEvaluator oracle-guards audit (KYC all-paths) | `04_02`, `05_02` |
 | OPS.7 | Sync labels.yml + Projects V2 ↔ 00_05 §4 | `00_05 §4.3/§4.4` |
 | OPS.8 | TreeFamily seed drift vs Lorenz SSOT fix | `03_04 §4.1`, `04_01` |
-| BIZ.4 | DAO Governance (SilkenGovernor + Timelock) | `05_06`, `07_02` |
+| BIZ.4 | DAO Governance (SilkenGovernor + Timelock) | `05_06`, `07_01` |
 | PUMA-RACK-1 | Idempotency write off response path (`rack.response_finished`) | `06_05 §7` |
 | TRL Матриця | Per-module TRL (мігровано з 00_07) | `00_03 §1` |
 | E.8 / DIFF.7 | SNR tiebreaker у Queen CIFO eviction | `03_02`, `04_06` |

@@ -30,7 +30,7 @@
 | [03_02_Queen_Gateway_Firmware](03_02_Queen_Gateway_Firmware) | Прошивка Королеви (CIFO, OTA, AT) |
 | [03_05_Hardware_Symmetric_Crypto_and_Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Аудит безпеки (ECB/CBC, ключі) |
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (gateway telemetry) |
-| [07_03_Unit_Economics_and_BOM](07_03_Unit_Economics_and_BOM) | Вартість розгортання |
+| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Вартість розгортання |
 | [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | HW.14/15/18 (energy, BMS, thermal) |
 
 ## 📑 Зміст
@@ -175,7 +175,7 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 - Або скоротити Starlink duty cycle до 1 хв/годину → ~9 Вт·год/добу (профіцит ✅)
 - Або встановити 100W сонячну панель
 
-**Блокує:** Лише Phase 3. Розрахунок Unit Economics (07_03).
+**Блокує:** Лише Phase 3. Розрахунок Unit Economics (07_02).
 
 ---
 

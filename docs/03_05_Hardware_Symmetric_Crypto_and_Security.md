@@ -849,7 +849,7 @@ Device Memory → Option Bytes → Read Out Protection → RDP: Level 1 (або 
 - Ключ ніколи не існує в коді репозиторію — лише в Rails Vault (`HardwareKey`, encrypted at rest)
 - Якщо Backend-side master key компрометовано → перевипуск всіх ключів через field re-flash (Гілка A) або re-provisioning + ATECC re-lock через RMA (Гілка B, болючіше)
 
-**Для поточного прототипу (TRL 6):** Гілка A з protected Flash sector. Гілка B активується перед першим mass production batch (рішення прив'язане до BOM freeze, cross-ref `07_03` §8.1).
+**Для поточного прототипу (TRL 6):** Гілка A з protected Flash sector. Гілка B активується перед першим mass production batch (рішення прив'язане до BOM freeze, cross-ref `07_02` §8.1).
 
 **Зворотність:**
 - Гілка A → B: можлива (re-flash MCU + добавити ATECC до PCBA = новий PCB revision)
@@ -1649,7 +1649,7 @@ MaintenanceRecord.create!(
 - AuditLog chain-hash + MaintenanceRecord :installation
 - RDP Level 1 відразу після Flash write
 
-**Перехід на Гілка B** активується перед першим mass production batch (рішення прив'язане до BOM freeze — cross-ref `07_03 §8.1`, SEC.6, ARCH.42).
+**Перехід на Гілка B** активується перед першим mass production batch (рішення прив'язане до BOM freeze — cross-ref `07_02 §8.1`, SEC.6, ARCH.42).
 
 ---
 

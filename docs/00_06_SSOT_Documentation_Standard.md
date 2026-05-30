@@ -64,8 +64,8 @@
 | AES per-channel modes | `03_05 §3.7` |
 | Lorenz константи | `03_04 §4.1` |
 | Tokenomics rate / slashing thresholds / insurance pool | `05_03` · `05_05 §3/§4` |
-| Carbon (2000 SCC = 1 tCO₂) | `05_03` + `07_02 §3` (business view) |
-| Financial constants (business) | `07_02 §3` (з рефами на 05_03/00_01) |
+| Carbon (2000 SCC = 1 tCO₂) | `05_03` + `07_01 §3` (business view) |
+| Financial constants (business) | `07_01 §3` (з рефами на 05_03/00_01) |
 | Slashing penalty formula | `05_05 §3` ↔ `BlockchainBurningService` |
 | Lorenz Z↔health ground-truth / de-risk протокол | `05_05 §8` (калібрує пороги §3/§7; партнерський ростер ФОТІУС/ЧНУ → `08_02`) |
 | Governance / DAO params (Governor, Timelock, ProtocolParameters) | `05_06` |

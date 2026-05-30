@@ -9,7 +9,7 @@
    лісах України (Лісовий кодекс, ПЗФ, кадастр).
 2. **B2B-продажу** SCC/SFC ([`05_03`](05_03_Tokenomics_SCC_and_SFC)),
    параметричного страхування та підписки на API-доступ
-   ([`07_02`](07_02_Nature_as_a_Service_Contracts), [`07_03`](07_03_Unit_Economics_and_BOM)).
+   ([`07_01`](07_01_Nature_as_a_Service_Contracts), [`07_02`](07_02_Unit_Economics_and_BOM)).
 3. **Польових операцій** — масштабне розгортання тисяч анкерів силами
    мобілізованої команди (логістика, безпека, перекваліфікація).
 4. **Сертифікації та метрології** як юридичної основи токенізації.
@@ -39,9 +39,9 @@
 | [04_04_Phlex_UI_and_Tailwind](04_04_Phlex_UI_and_Tailwind) | Design tokens, типографіка (Частина B — Культурний шар) |
 | [04_05_Codex_Lore_Module](04_05_Codex_Lore_Module) | Codex Lore — наративний субстрат (Частина B) |
 | [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка, CBAM offset |
-| [07_02_Nature_as_a_Service_Contracts](07_02_Nature_as_a_Service_Contracts) | B2B/B2C контракти, SLA (§2) |
-| [07_03_Unit_Economics_and_BOM](07_03_Unit_Economics_and_BOM) | Unit economics за tier |
-| [07_04_Grant_Applications_Tracker](07_04_Grant_Applications_Tracker) | Horizon Europe pipeline |
+| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | B2B/B2C контракти, SLA (§2) |
+| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Unit economics за tier |
+| [07_03_Grant_Applications_Tracker](07_03_Grant_Applications_Tracker) | Horizon Europe pipeline |
 | [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | §1.4 Кирилюк — ректорський парасоль |
 | [08_05_CHIPB_Fire_Safety_Integration](08_05_CHIPB_Fire_Safety_Integration) | ДСНС partner cluster |
 | [08_07_SEU_Economics_and_Legal_Integration](08_07_SEU_Economics_and_Legal_Integration) | §1.3 Аблязов — legal wrapper |
@@ -184,7 +184,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
   - Дані як доказ у земельних/екологічних судах (незаконна вирубка,
     підпал).
 - **SSOT-мапінг:** [`05_02`](05_02_Proof_of_Growth_Pipeline) (RWA oracle),
-  [`07_02`](07_02_Nature_as_a_Service_Contracts) (Land contracts).
+  [`07_01`](07_01_Nature_as_a_Service_Contracts) (Land contracts).
 - **Status:** ⚪ Conceptual — потрібна верифікація імені перед outreach.
 
 ### 2.4. Юридична броня — Legal Wrapper для SCC (TBD)
@@ -233,7 +233,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
     "систему держрівня".
 - **SSOT-мапінг:** [`08_05`](08_05_CHIPB_Fire_Safety_Integration) (primary),
   [`03_03`](03_03_TinyML_Acoustic_Inference) (chainsaw + thermal),
-  [`07_02`](07_02_Nature_as_a_Service_Contracts) (parametric insurance trigger).
+  [`07_01`](07_01_Nature_as_a_Service_Contracts) (parametric insurance trigger).
 - **Status:** 🟢 Engaged (через ЧІПБ — Несен Іван активний).
 
 ### 3.2. Енергетика (ПАТ "Черкасиобленерго" + Укрзалізниця ЛЕП) — ЛЕП-моніторинг
@@ -250,7 +250,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
     [`03_04`](03_04_mruby_Lorenz_Attractor)). Замість гектарних вирубок
     — точкове видалення. Економія мільйонів грн + еко-PR.
 - **SSOT-мапінг:** [`02_05`](02_05_Queen_Hardware_and_Starlink) (LoRa
-  висотні точки), [`07_02 §2 SLA`](07_02_Nature_as_a_Service_Contracts) (B2B
+  висотні точки), [`07_01 §2 SLA`](07_01_Nature_as_a_Service_Contracts) (B2B
   subscription).
 - **Status:** ⚪ Conceptual.
 
@@ -271,7 +271,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
   - "Zero Carbon Logistics" статус через купівлю SCC.
   - Захист берегозахисних лісосмуг Дніпра (для річкового порту).
 - **SSOT-мапінг:** [`02_05`](02_05_Queen_Hardware_and_Starlink) (mobile gateway
-  variant), [`07_02`](07_02_Nature_as_a_Service_Contracts) (SLA tier).
+  variant), [`07_01`](07_01_Nature_as_a_Service_Contracts) (SLA tier).
 - **Status:** ⚪ Conceptual.
 
 ### 3.4. Комунальні служби (КП "Дирекція парків", "Укртелеком") — Urban Forestry
@@ -286,7 +286,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
     predictive аналітика аварійних стовбурів.
   - Оптимізація міського поливу за `delta_t` гідратації ксилеми →
     економія води/електроенергії для бюджету міста.
-- **SSOT-мапінг:** [`07_02`](07_02_Nature_as_a_Service_Contracts) (Urban
+- **SSOT-мапінг:** [`07_01`](07_01_Nature_as_a_Service_Contracts) (Urban
   Forestry tier), [`05_02`](05_02_Proof_of_Growth_Pipeline) (municipal
   RWA).
 - **Status:** ⚪ Conceptual (Urban Forestry deferred → post-Genesis-cluster).
@@ -353,7 +353,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
   - Сертифікат біорізноманіття (Z-value oracle) → дешевші кредити в
     європейських банках.
   - Власна емісія SCC з своїх лісосмуг.
-- **SSOT-мапінг:** [`07_02`](07_02_Nature_as_a_Service_Contracts) (Agro tier),
+- **SSOT-мапінг:** [`07_01`](07_01_Nature_as_a_Service_Contracts) (Agro tier),
   [`05_03`](05_03_Tokenomics_SCC_and_SFC) (Agro-mint sub-DAO).
 - **Status:** ⚪ Conceptual.
 
@@ -397,7 +397,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
   - "Carbon Neutral Resort" сертифікація для готелів Соснівки.
   - SLA на безпеку рекреаційних зон.
 - **SSOT-мапінг:** [`05_03`](05_03_Tokenomics_SCC_and_SFC) (B2C mint),
-  [`07_02`](07_02_Nature_as_a_Service_Contracts) (Resort tier).
+  [`07_01`](07_01_Nature_as_a_Service_Contracts) (Resort tier).
 - **Status:** ⚪ Conceptual.
 
 ### 5.4. Архітектори та забудовники — Urban Smart City
@@ -410,7 +410,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
   - **ESG-преміум для ЖК-проєктів:** LEED/BREEAM сертифікати через
     підключення дерев на території до Silken Net.
   - Параметричне страхування крупномірних насаджень (NaaS).
-- **SSOT-мапінг:** [`07_02`](07_02_Nature_as_a_Service_Contracts) (Urban tier),
+- **SSOT-мапінг:** [`07_01`](07_01_Nature_as_a_Service_Contracts) (Urban tier),
   [`02_05`](02_05_Queen_Hardware_and_Starlink) (urban radome).
 - **Status:** ⚪ Conceptual (Urban tier deferred).
 
@@ -428,7 +428,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
   - **EU Deforestation Regulation compliance:** доказ моніторингу лісів
     у супровідних документах експорту м'яса/птиці.
 - **SSOT-мапінг:** [`03_03`](03_03_TinyML_Acoustic_Inference) (multi-class
-  extension), [`07_02`](07_02_Nature_as_a_Service_Contracts) (Agro biosafety).
+  extension), [`07_01`](07_01_Nature_as_a_Service_Contracts) (Agro biosafety).
 - **Status:** ⚪ Conceptual.
 
 ---
@@ -455,7 +455,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
     дерева → бачить "пульс" (`delta_t`) → синхронізація з природними
     ритмами. Перший у світі інструмент цифрової лісотерапії.
   - "Green Collar Jobs" — престижні робочі місця для людей після криз.
-- **SSOT-мапінг:** [`07_04`](07_04_Grant_Applications_Tracker) (Horizon Europe
+- **SSOT-мапінг:** [`07_03`](07_03_Grant_Applications_Tracker) (Horizon Europe
   Cluster 4 — Inclusiveness; Cluster 6 — Bioeconomy), [`04_04`](04_04_Phlex_UI_and_Tailwind)
   (mobile Eco-Therapy module — deferred).
 - **Status:** 🔵 Identified.
@@ -476,7 +476,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
     variant для раннього виявлення торф'яних пожеж.
 - **API Out:**
   - Новий сенс і соціальна адаптація — престижна "зелена" робота.
-- **SSOT-мапінг:** [`07_04`](07_04_Grant_Applications_Tracker) (Just Transition
+- **SSOT-мапінг:** [`07_03`](07_03_Grant_Applications_Tracker) (Just Transition
   Fund), [`03_03`](03_03_TinyML_Acoustic_Inference) (subterranean variant
   — deferred), [`08_05`](08_05_CHIPB_Fire_Safety_Integration) (peat fire
   early warning).
@@ -674,7 +674,7 @@ PEEK-куполів, антивандальної біомімікрії.
   потребує візуального + аудіо еталону `IDLE State` для документації та
   пітч-матеріалів. Пейзажі Іщенка — готовий референс гармонійного стану
   лісу (нульова entropy, з якою порівнюються аномалії).
-- **SSOT-мапінг:** [`07_02`](07_02_Nature_as_a_Service_Contracts) (NaaS pitch),
+- **SSOT-мапінг:** [`07_01`](07_01_Nature_as_a_Service_Contracts) (NaaS pitch),
   [`03_03`](03_03_TinyML_Acoustic_Inference).
 - **Status:** 🔵 Identified.
 
@@ -719,7 +719,7 @@ PEEK-куполів, антивандальної біомімікрії.
   у Черкаському борі (Proof of Growth). Кошти йдуть і на ЗСУ, і на наступну
   партію STM32 плат — два соціальні фронти одночасно.
 - **SSOT-мапінг:** [`05_03`](05_03_Tokenomics_SCC_and_SFC) (charity-mint),
-  [`07_04`](07_04_Grant_Applications_Tracker).
+  [`07_03`](07_03_Grant_Applications_Tracker).
 - **Status:** 🔵 Identified.
 
 ### 2.2. Tier B — National Visual Identity (PR-валюта)
@@ -780,7 +780,7 @@ Europe). Не зараз — але треба зафіксувати, доки 
   співіснують у глибокому історичному зв'язку. TinyML chainsaw-detection
   ([`03_03`](03_03_TinyML_Acoustic_Inference)) буквально захищатиме те,
   що він малював усе життя.
-- **SSOT-мапінг:** [`07_02`](07_02_Nature_as_a_Service_Contracts) (regional
+- **SSOT-мапінг:** [`07_01`](07_01_Nature_as_a_Service_Contracts) (regional
   expansion to Carpathians), [`03_03`](03_03_TinyML_Acoustic_Inference).
 - **Status:** 🔵 Identified (high seniority → priority outreach window).
 
@@ -866,16 +866,16 @@ Europe). Не зараз — але треба зафіксувати, доки 
   Готовий набір ілюстрацій для розділу "How the forest should look"
   у whitepaper.
 - **SSOT-мапінг:** [`03_03`](03_03_TinyML_Acoustic_Inference) (IDLE baseline),
-  [`07_02`](07_02_Nature_as_a_Service_Contracts) (pitch deck visuals).
+  [`07_01`](07_01_Nature_as_a_Service_Contracts) (pitch deck visuals).
 - **Status:** 🔵 Identified (verify life status before formal outreach).
 
 ### 2.3. Tier C — Народна творчість, медіа, звук
 
 | # | Особа | Звання / Роль | Афіліація | API In | SSOT-мапінг | Status |
 |---|---|---|---|---|---|---|
-| C1 | Ольга Мартинова | Заслужений майстер народної творчості; голова Черкаського осередку НСМНМ України | Незалежний | **Антивандальна біомімікрія Queen-капсули** — текстура кори/смоли для маскування корпусу; семантика "Дерева Життя" для community-acceptance pitch | [`02_05`](02_05_Queen_Hardware_and_Starlink) (Queen radome), [`07_02`](07_02_Nature_as_a_Service_Contracts) (community engagement) | 🔵 Identified |
-| C2 | Михайло Калініченко | Заслужений журналіст; кпн; колишній керівник ТРК "Рось"; ген. директор ТРК "Ільдана"; викладач ЧНУ | ТРК "Ільдана" + ЧНУ | Документальний фільм про проєкт; превентивний інформаційний фон проти екопанік | PR layer для [`07_02`](07_02_Nature_as_a_Service_Contracts) | 🔵 Identified |
-| C3 | Валентина Душок (Рабцун) | Заслужений журналіст; директорка ТРК "Ільдана"; зв'язки в ОДА | ТРК "Ільдана" | Регіональне інфо-лобі; вихід на ОДА (вже зв'язаний канал зі Спрягайлом — [`08_01 §1.3`](08_01_University_R_and_D_Protocols)) | [`07_04`](07_04_Grant_Applications_Tracker) (державні гранти) | 🔵 Identified |
+| C1 | Ольга Мартинова | Заслужений майстер народної творчості; голова Черкаського осередку НСМНМ України | Незалежний | **Антивандальна біомімікрія Queen-капсули** — текстура кори/смоли для маскування корпусу; семантика "Дерева Життя" для community-acceptance pitch | [`02_05`](02_05_Queen_Hardware_and_Starlink) (Queen radome), [`07_01`](07_01_Nature_as_a_Service_Contracts) (community engagement) | 🔵 Identified |
+| C2 | Михайло Калініченко | Заслужений журналіст; кпн; колишній керівник ТРК "Рось"; ген. директор ТРК "Ільдана"; викладач ЧНУ | ТРК "Ільдана" + ЧНУ | Документальний фільм про проєкт; превентивний інформаційний фон проти екопанік | PR layer для [`07_01`](07_01_Nature_as_a_Service_Contracts) | 🔵 Identified |
+| C3 | Валентина Душок (Рабцун) | Заслужений журналіст; директорка ТРК "Ільдана"; зв'язки в ОДА | ТРК "Ільдана" | Регіональне інфо-лобі; вихід на ОДА (вже зв'язаний канал зі Спрягайлом — [`08_01 §1.3`](08_01_University_R_and_D_Protocols)) | [`07_03`](07_03_Grant_Applications_Tracker) (державні гранти) | 🔵 Identified |
 | C4 | Леонід Трофименко | Заслужений діяч мистецтв; диригент Черкаського академічного симфонічного оркестру | Черкаська обласна філармонія | Data Sonification партитура для пітч-відео (TRL 8+) | Defer — потрібен live stream даних з Genesis cluster | ⚪ Deferred |
 | C5 | Олександр Дяченко | Заслужений діяч мистецтв; симфонічна/хорова музика | Незалежний | Альтернативний канал для Sonification | Defer | ⚪ Deferred |
 | C6 | Василь Мельниченко | Заслужений працівник культури; кпн з історії; проф. ЧДТУ; багаторічний очільник Черкаського осередку Спілки краєзнавців | ЧДТУ (вже партнерський університет — [`08_04`](08_04_CHDTU_Data_Science_Collaboration)) | Історико-культурний контекст RWA-токенів (Холодноярські Master Nodes, скіфські городища); вибір висот для Queen-шлюзів на основі історичних оглядових точок | [`05_03 §RWA`](05_03_Tokenomics_SCC_and_SFC), [`02_05`](02_05_Queen_Hardware_and_Starlink) | 🔵 Identified |

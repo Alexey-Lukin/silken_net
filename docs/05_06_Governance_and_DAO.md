@@ -23,7 +23,7 @@
 | [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz σ/ρ/β — governance-керовані параметри (per-climate-zone) |
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | `SystemParameter` model, `Governance::ParameterSyncWorker` |
 | [00_03_TRL_Matrix_HIL_and_Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | Apex Predator Defense R&D-програма (§7.4) |
-| [07_02_Nature_as_a_Service_Contracts](07_02_Nature_as_a_Service_Contracts) | DAO Agreement (тип контракту §1.3) |
+| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | DAO Agreement (тип контракту §1.3) |
 | [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкрите** (SSOT): mainnet DAO activation, BIZ.* governance backlog |
 
 ## 📑 Зміст

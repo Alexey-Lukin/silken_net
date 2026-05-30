@@ -1,4 +1,4 @@
-# 07_04: Трекер Грантових Заявок (Стратегічне Фінансування)
+# 07_03: Трекер Грантових Заявок (Стратегічне Фінансування)
 
 ## 🎯 Мета
 
@@ -19,8 +19,8 @@
 | Ресурс | Зв'язок |
 |---|---|
 | [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Мультичейн (EF/IoTeX grant теми) |
-| [07_02_Nature_as_a_Service_Contracts](07_02_Nature_as_a_Service_Contracts) | NaaS value-prop |
-| [07_03_Unit_Economics_and_BOM](07_03_Unit_Economics_and_BOM) | Unit economics для заявок |
+| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | NaaS value-prop |
+| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Unit economics для заявок |
 | [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | академічні гранти |
 | [08_07_SEU_Economics_and_Legal_Integration](08_07_SEU_Economics_and_Legal_Integration) | консорціум (Horizon Europe) |
 | [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | BIZ.12, UNI.1/UNI.8 |
@@ -104,7 +104,7 @@
 | **GitHub Repository** (відкритий код контрактів та сервісів) | ✅ Готово | github.com/Alexey-Lukin/silken_net |
 | **Technical Wiki** (архітектурна документація) | ✅ Готово | wiki цього репозиторію |
 | **Demo** (Lorenz Attractor візуалізація) | ✅ Готово | згідно Wiki 03_04 |
-| **BOM & Unit Economics** | ✅ Готово | wiki 07_03 |
+| **BOM & Unit Economics** | ✅ Готово | wiki 07_02 |
 | **Assembly Instructions** (інструкція монтажу анкера) | ✅ Написано | нижче в цьому документі |
 | **R&D Protocol** (університетська верифікація) | 🟡 Формується | wiki 08_01 |
 | **Breadboard Video** (демо енергетичного каскаду) | 🔴 Потрібно записати | — |

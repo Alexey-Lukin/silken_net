@@ -315,10 +315,10 @@ kamal deploy
 
 ### 🌿 Tier II — Програма (07–08)
 
-**Стратегія та Економіка (Модуль 07)** — ⏳ _візія/дорожня карта → Фундамент [`00_01`](docs/00_01_Vision_Mission_and_Roadmap.md); зсув `07_0x` та перейменування на «Economics & Funding» — P3_
-- [`07_02`](docs/07_02_Nature_as_a_Service_Contracts.md) — NaaS контракти та страхування
-- [`07_03`](docs/07_03_Unit_Economics_and_BOM.md) — юніт-економіка та ROI через SCC
-- [`07_04`](docs/07_04_Grant_Applications_Tracker.md) — трекер грантових заявок
+**Економіка та Фінансування / Economics & Funding (Модуль 07)** — ⏳ _External Stakeholders (`07_05`) → `08_03` (Partnerships) — P4; звідси тимчасовий розрив на `07_04`_
+- [`07_01`](docs/07_01_Nature_as_a_Service_Contracts.md) — NaaS контракти та страхування
+- [`07_02`](docs/07_02_Unit_Economics_and_BOM.md) — юніт-економіка та ROI через SCC
+- [`07_03`](docs/07_03_Grant_Applications_Tracker.md) — трекер грантових заявок
 - [`07_05`](docs/07_05_External_Stakeholders_Registry.md) — External Stakeholders Registry (B2G/B2B + культурний шар; non-hot-path outreach pool)
 
 **Наука та R&D (Модуль 08)**

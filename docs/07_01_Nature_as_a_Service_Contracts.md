@@ -1,4 +1,4 @@
-# 07_02: Контракти Nature-as-a-Service (Юридичний та Бізнес-Шар)
+# 07_01: Контракти Nature-as-a-Service (Юридичний та Бізнес-Шар)
 
 ## 🎯 Мета
 
@@ -22,7 +22,7 @@
 | `app/models/naas_contract.rb` | NaasContract lifecycle (AASM) — SSOT коду |
 | [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | SCC/SFC + фінансові константи (home) |
 | [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof of Growth (мінтинг-тригер) |
-| [07_03_Unit_Economics_and_BOM](07_03_Unit_Economics_and_BOM) | Юніт-економіка, BOM |
+| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Юніт-економіка, BOM |
 | [08_07_SEU_Economics_and_Legal_Integration](08_07_SEU_Economics_and_Legal_Integration) | MSA / KYC legal (Аблязов) |
 | [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | BIZ.1/2/3/4/6/9/11/13/14, UNI.8 |
 
@@ -406,10 +406,10 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 ## 🔗 9. Міжланцюгові Залежності (Cross-Module Dependencies)
 
 ```
-[05_03 Tokenomics] ──── СИНХРОНІЗОВАНО ────► [07_02 NaaS Contracts]
-[07_02 NaaS Contracts] ──── БЛОКУЄ ────► [07_03 Unit Economics & BOM]
-[07_02 NaaS Contracts] ──── БЛОКУЄ ────► B2B Sales (onboarding)
-[05_02 Proof of Growth] ──── ЗАБЕЗПЕЧУЄ ────► [07_02 NaaS Contracts]
+[05_03 Tokenomics] ──── СИНХРОНІЗОВАНО ────► [07_01 NaaS Contracts]
+[07_01 NaaS Contracts] ──── БЛОКУЄ ────► [07_02 Unit Economics & BOM]
+[07_01 NaaS Contracts] ──── БЛОКУЄ ────► B2B Sales (onboarding)
+[05_02 Proof of Growth] ──── ЗАБЕЗПЕЧУЄ ────► [07_01 NaaS Contracts]
 ```
 
 ---
