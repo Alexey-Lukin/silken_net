@@ -36,6 +36,7 @@
 - [6. Інструменти для Паралельної Розробки (Virtual Prototyping)](#-6-інструменти-для-паралельної-розробки-virtual-prototyping)
 - [7. Дорожня Карта Фінансування (Funding Roadmap)](#-7-дорожня-карта-фінансування-funding-roadmap)
 - [8. Академічні Гранти (Horizon Europe & Ethereum Foundation)](#-8-академічні-гранти-horizon-europe--ethereum-foundation)
+- [9. Грантова Дипломатія (Cross-chain Grant Strategy)](#-9-грантова-дипломатія-cross-chain-grant-strategy)
 <!-- TOC:AUTO:END -->
 
 ---
@@ -252,3 +253,40 @@ WP9 Exploitation & IPR            → ActiveBridge + Silken Net
 **Тема заявки:** _"Trustless D-MRV: IoTeX W3bstream ZK-proofs for biological homeostasis verification on STM32WLE5JC edge devices"_ — пов'язано з `IotexVerificationWorker`, `Iotex::W3bstreamVerificationService` та `05_02_Proof_of_Growth_Pipeline`.
 
 > **Детально про консорціум та грантову стратегію:** [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration) §1.4 (Аблязова Н.).
+
+## 🗺️ 9. Грантова Дипломатія (Cross-chain Grant Strategy)
+
+> **Нотатка інтегрована (2026-03-25).** Стратегічний протокол подачі грантових заявок: кому, про кого і як розповідати для максимального результату на технічних дзвінках (Technical Due Diligence).
+
+### Загальне Позиціонування
+
+SilkenNet = **Modular DePIN Stack** (агностична інфраструктура). Не "кидаємо" одну мережу заради іншої — кожна вирішує свій шар. Це усуває звинувачення в "зраді" і позиціонує як **Системного Архітектора**, а не "шукача грантів".
+
+> Відповідь на питання "Чому ви подалися до конкурентів?":
+> *"SilkenNet — це інфраструктурний проєкт планетарного масштабу. Ми збираємо найкращий технологічний стек у світі: хтось вирішує швидкість транзакцій, хтось — ідентичність машин, хтось — вічне зберігання даних."*
+
+---
+
+### Шпаргалка по Аудиторії
+
+| Грантодавець | Наш Статус для Них | Про кого КАЗАТИ | Про кого МОВЧАТИ |
+|---|---|---|---|
+| **Solana Foundation** | "High-Speed DePIN Execution Layer" | Chainlink (оракули), IoTeX (верифікація заліза) | peaq, Ethereum (конкуренти за "найкращу мережу") |
+| **peaq / IoTeX** | "Machine Economy / DePIN Infrastructure" | Один про одного, Filecoin (зберігання біо-даних) | Solana як "основний дім" (вони хочуть власні L2) |
+| **Chainlink** | "Cross-chain Oracle Consumer" | ВСІХ — Chainlink "Швейцарія", їм вигідне охоплення всіх мереж | — (немає ворогів) |
+| **Ethereum Foundation (ESP)** | "Public Good / ReFi" | Filecoin, Chainlink, ReFi-спільнота | Solana "вона краща" — EF цінує ідеологію, а не швидкість |
+| **Climate.biz / KlimaDAO** | "ReFi Natural Capital Protocol" | IoTeX (trustless hardware data), Filecoin (незмінний аудит) | Фінансові спекуляції, "швидкі гроші" |
+| **Filecoin / Protocol Labs** | "DePIN Data Archive (Hardware-to-IPFS)" | Ethereum, IoTeX | Суто фінансові проєкти без реальних даних |
+| **Polygon / Hadron** | "RWA Natural Capital (ERC-3643)" | IoTeX ZK-proof, Chainlink oracle | — |
+
+---
+
+### Elevator Pitch по Аудиторії (Дипломатична версія)
+
+| Кому | Ключова фраза |
+|---|---|
+| **Solana** | *"Solana — наш Execution Layer для Proof of Growth мікроплатежів. Chainlink доставляє ZK-дані з IoTeX в наші Solana смарт-контракти."* |
+| **peaq / IoTeX** | *"Кожне дерево отримує peaq Machine DID при провізіонінгу. IoTeX W3bstream верифікує кожен пакет телеметрії. Filecoin архівує всі дані назавжди."* |
+| **Chainlink** | *"Ми розгортаємося на Solana, Polygon та Ethereum одночасно. Chainlink Functions — наш єдиний trusted міст між IoTeX ZK-proof і смарт-контрактами на всіх мережах."* |
+| **Ethereum Foundation** | *"SilkenNet — Public Good планетарного масштабу. Щотижневий SHA-256 State Root anchoring на Ethereum L1 гарантує незмінність даних про ліс на десятки років."* |
+| **Filecoin / Protocol Labs** | *"Кожен день AuditLogWorker архівує терабайти біо-телеметрії в IPFS/Filecoin. Через 10 років будь-який аудитор може перевірити кожну секунду життя кожного дерева."* |
