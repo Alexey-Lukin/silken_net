@@ -1,4 +1,4 @@
-# 00_03: Resilience and Failover Policy
+# 00_02: Resilience and Failover Policy
 
 ## 🎯 Мета
 
@@ -13,7 +13,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — політика затверджена, **6 з 10 Implementation Anchors ✅ Реалізовано** (Web3CircuitBreaker, Multi-RPC fallback, Queen self-telemetry, CoAP retry, Chainlink router probe, Manual review terminal state — див. §3). Залишаються 🟡 (→ [`00_08`](00_08_Action_Plan_Tracker)): Queen-to-Queen Backhaul Mesh + Flash overflow tier (ARCH.35), Helium Queen-side LoRaWAN (ARCH.34), TDMA/CAD sync (ARCH.26), Ingress Proxy (INF.4/INF.6), Conductor L2 (ARCH.1, formerly "Sergeant"). Production-rollout — Phase 2 (`00_06`).
+- **Поточний TRL:** TRL 6 — політика затверджена, **6 з 10 Implementation Anchors ✅ Реалізовано** (Web3CircuitBreaker, Multi-RPC fallback, Queen self-telemetry, CoAP retry, Chainlink router probe, Manual review terminal state — див. §3). Залишаються 🟡 (→ [`09_06`](09_06_Action_Plan_Tracker)): Queen-to-Queen Backhaul Mesh + Flash overflow tier (ARCH.35), Helium Queen-side LoRaWAN (ARCH.34), TDMA/CAD sync (ARCH.26), Ingress Proxy (INF.4/INF.6), Conductor L2 (ARCH.1, formerly "Sergeant"). Production-rollout — Phase 2 (`09_02`).
 
 ---
 
@@ -21,7 +21,7 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [00_02_System_Architecture_and_12_Chain_Pipeline](00_02_System_Architecture_and_12_Chain_Pipeline) | 8-рівнева архітектура + 12-chain конвеєр |
+| [00_01_System_Architecture_and_12_Chain_Pipeline](00_01_System_Architecture_and_12_Chain_Pipeline) | 8-рівнева архітектура + 12-chain конвеєр |
 | [02_05_Queen_Hardware_and_Starlink](02_05_Queen_Hardware_and_Starlink) | Hardware Queen + Q2Q mesh + Helium fallback |
 | [03_02_Queen_Gateway_Firmware](03_02_Queen_Gateway_Firmware) | Прошивка Queen (CoAP retry, CIFO) |
 | [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Мультичейн архітектура |
@@ -29,7 +29,7 @@
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | `Web3CircuitBreaker` concern; §13b Drift Register (E.49 Celo cascade, S6.15 router probe) |
 | [06_02_Akash_Network_Integration](06_02_Akash_Network_Integration) | Multi-provider SDL, fallback GCP/Kamal |
 | [06_03_Prometheus_Observability](06_03_Prometheus_Observability) | Метрики Resilience SLO |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): ARCH.26 TDMA/CAD, ARCH.34 Helium, ARCH.35 Flash, INF.4/INF.6 Ingress, ARCH.1 Conductor L2 |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): ARCH.26 TDMA/CAD, ARCH.34 Helium, ARCH.35 Flash, INF.4/INF.6 Ingress, ARCH.1 Conductor L2 |
 
 ## 📑 Зміст
 
@@ -167,7 +167,7 @@ end
 | Концепція | Файл / Сервіс | Статус |
 |-----------|---------------|--------|
 | Web3 circuit breaker | `app/workers/concerns/web3_circuit_breaker.rb` (`04_02 §Web3CircuitBreaker`) | ✅ Реалізовано (320L+ spec) |
-| Multi-RPC fallback (Polygon, Solana, Celo) | `RPC_FALLBACK_ENV_KEYS` constants | ✅ Реалізовано (E.49 in `00_08`) |
+| Multi-RPC fallback (Polygon, Solana, Celo) | `RPC_FALLBACK_ENV_KEYS` constants | ✅ Реалізовано (E.49 in `09_06`) |
 | Queen self-telemetry (`DID == 0x00000000`) | `GatewayTelemetryWorker` + `Gateway.mark_seen!` | ✅ Реалізовано |
 | CoAP retry constants on Queen | `firmware/queen/main.c` + 4 host tests (FW.9) | ✅ Реалізовано |
 | Chainlink router version probe | `Web3::ChainlinkRouterVersion` [S6.15] | ✅ Реалізовано (17 examples spec) |
@@ -175,7 +175,7 @@ end
 | Queen-to-Queen Backhaul Mesh | Concept у [`02_05 §Q2Q`](02_05_Queen_Hardware_and_Starlink) | 🟡 Concept, planned Phase 2 |
 | Helium fallback emit (Queen-side LoRaWAN) | Queen firmware `queen_helium_lorawan_uplink()` | 🟡 ARCH.34 planned (Soldier-side `helium_compat_emit` відкинуто — Soldier не несе LoRaWAN MAC stack) |
 | Ingress Proxy (CoAP buffer) | INF.4 / INF.6 | 🟡 Planned (P1) |
-| Conductor L2 cluster heads (formerly "Sergeant") | [`00_02 §Fractal Stack`](00_02_System_Architecture_and_12_Chain_Pipeline) | 🟡 Concept (HW.27, TRL 1) |
+| Conductor L2 cluster heads (formerly "Sergeant") | [`00_01 §Fractal Stack`](00_01_System_Architecture_and_12_Chain_Pipeline) | 🟡 Concept (HW.27, TRL 1) |
 
 ---
 

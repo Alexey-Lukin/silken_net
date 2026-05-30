@@ -1,10 +1,10 @@
-# 00_04: AI-Native Engineering and TRL (Philosophy)
+# 09_01: AI-Native Engineering and TRL (Philosophy)
 
 ## 🎯 Мета
 
-Зафіксувати **філософський каркас** методології Gaia 2.0: NASA TRL як єдину метрику прогресу, Intent-First Development, Wiki-First протокол та принцип розділення SSOT від виконання. Операційні деталі (Shape Up cycle template, кластери, betting table) винесені до [`00_05_Shape_Up_Operations_and_RnD_Clusters`](00_05_Shape_Up_Operations_and_RnD_Clusters) — у цьому документі залишається тільки те, що залишається стабільним між операційними змінами.
+Зафіксувати **філософський каркас** методології Gaia 2.0: NASA TRL як єдину метрику прогресу, Intent-First Development, Wiki-First протокол та принцип розділення SSOT від виконання. Операційні деталі (Shape Up cycle template, кластери, betting table) винесені до [`09_03_Shape_Up_Operations_and_RnD_Clusters`](09_03_Shape_Up_Operations_and_RnD_Clusters) — у цьому документі залишається тільки те, що залишається стабільним між операційними змінами.
 
-> **Що цей документ НЕ містить:** конкретні таблиці кластерів, Betting Table процедуру, GitHub label conventions, академічний календар. Це все живе в [`00_05`](00_05_Shape_Up_Operations_and_RnD_Clusters) та [`00_07`](00_07_GitHub_Projects_and_IaC_Automation).
+> **Що цей документ НЕ містить:** конкретні таблиці кластерів, Betting Table процедуру, GitHub label conventions, академічний календар. Це все живе в [`09_03`](09_03_Shape_Up_Operations_and_RnD_Clusters) та [`09_04`](09_04_GitHub_Projects_and_IaC_Automation).
 
 ---
 
@@ -19,11 +19,11 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [00_05_Shape_Up_Operations_and_RnD_Clusters](00_05_Shape_Up_Operations_and_RnD_Clusters) | Операційна реалізація: Shape Up 6+2, R&D кластери, Betting Table |
-| [00_06_Strategic_Roadmap_and_HIL_Simulators](00_06_Strategic_Roadmap_and_HIL_Simulators) | TRL-матриця + per-domain TRL + HIL |
-| [00_07_GitHub_Projects_and_IaC_Automation](00_07_GitHub_Projects_and_IaC_Automation) | Projects V2 fields, labels-as-code, workflows |
+| [09_03_Shape_Up_Operations_and_RnD_Clusters](09_03_Shape_Up_Operations_and_RnD_Clusters) | Операційна реалізація: Shape Up 6+2, R&D кластери, Betting Table |
+| [09_02_TRL_Matrix_HIL_and_Beyond](09_02_TRL_Matrix_HIL_and_Beyond) | TRL-матриця + per-domain TRL + HIL |
+| [09_04_GitHub_Projects_and_IaC_Automation](09_04_GitHub_Projects_and_IaC_Automation) | Projects V2 fields, labels-as-code, workflows |
 | [04_05_Codex_Lore_Module](04_05_Codex_Lore_Module) | Codex (read-only Atlas) застосовує ці ж AI-Native принципи |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | Поточний backlog задач (SSOT) |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | Поточний backlog задач (SSOT) |
 
 ## 📑 Зміст
 
@@ -48,15 +48,15 @@
 - **Beyond TRL 9 (Planetary Intelligence, vision) — НЕ «TRL 10-12»:** Шкала NASA/ISO 16290 закінчується на **TRL 9** і вимірює виключно **готовність самої технології**. Технологія на TRL 9 не стає «технічно готовішою» від друку 1 млн анкерів замість 100 — масштаб, cross-biome адаптація та forest-level emergence є **системною та виробничою** зрілістю, а не технологічною. Тому ми НЕ вигадуємо «TRL 10-12» (це виглядало б некомпетентно перед Horizon Europe / ESA, які суворо дотримуються 1-9), а використовуємо профільні шкали:
   - **SRL (System Readiness Level)** — інтеграційна/системна зрілість: cross-biome generalization, forest-level emergence, edge self-evolution, AI-adversarial security.
   - **MRL (Manufacturing Readiness Level, 1-10)** — виробнича зрілість: серійний друк 5 SKU, заводське штампування.
-  - Деталі — [`00_06 §7`](00_06_Strategic_Roadmap_and_HIL_Simulators) Beyond TRL 9 — Planetary Intelligence Gaps.
+  - Деталі — [`09_02 §7`](09_02_TRL_Matrix_HIL_and_Beyond) Beyond TRL 9 — Planetary Intelligence Gaps.
 
-  > **✅ Cross-doc sync (2026-05-28, виконано):** Легасі-позначки «TRL 10-12» мігровано на `SRL:*` / `MRL:*` у [`00_06 §7`](00_06_Strategic_Roadmap_and_HIL_Simulators), label-whitelist/Projects-схемі [`00_07 §1.1`](00_07_GitHub_Projects_and_IaC_Automation), `lib/github_bootstrap.rb` (`TRL_OPTIONS=(1..9)` + нове поле `Readiness Horizon`) та споживачах (00_08, 01_01, 03_03, 03_04, 05_03). 👤 Залишилось: перезапустити `rake github:project_fields`, щоб додати поле `Readiness Horizon` на live-дошку (issues з TRL:10-12 не існує, тож re-tag не потрібен).
+  > **✅ Cross-doc sync (2026-05-28, виконано):** Легасі-позначки «TRL 10-12» мігровано на `SRL:*` / `MRL:*` у [`09_02 §7`](09_02_TRL_Matrix_HIL_and_Beyond), label-whitelist/Projects-схемі [`09_04 §1.1`](09_04_GitHub_Projects_and_IaC_Automation), `lib/github_bootstrap.rb` (`TRL_OPTIONS=(1..9)` + нове поле `Readiness Horizon`) та споживачах (09_06, 01_01, 03_03, 03_04, 05_03). 👤 Залишилось: перезапустити `rake github:project_fields`, щоб додати поле `Readiness Horizon` на live-дошку (issues з TRL:10-12 не існує, тож re-tag не потрібен).
 
 ### Суть паралельного інжинірингу
 
 Поки Модуль 01 (Хімія) знаходиться на TRL 3 (у лабораторії), Модуль 04 (Rails) може бути на TRL 8, готуючись приймати дані. Ми не чекаємо один одного.
 
-> **Як ми не потрапляємо у TRL-Lock:** загальний "system TRL" обмежений найнижчим модулем, але **per-domain TRL** є незалежним. Програмні домени продовжують рухатись до TRL 8-9 через HIL-симулятори (Hardware-in-the-Loop), що імітують Soldier/Queen для backend, smart-контрактів та dashboards. Деталі — [`00_06 §HIL Simulators`](00_06_Strategic_Roadmap_and_HIL_Simulators).
+> **Як ми не потрапляємо у TRL-Lock:** загальний "system TRL" обмежений найнижчим модулем, але **per-domain TRL** є незалежним. Програмні домени продовжують рухатись до TRL 8-9 через HIL-симулятори (Hardware-in-the-Loop), що імітують Soldier/Queen для backend, smart-контрактів та dashboards. Деталі — [`09_02 §HIL Simulators`](09_02_TRL_Matrix_HIL_and_Beyond).
 
 ---
 
@@ -78,7 +78,7 @@
 4. **Виконання (Cursor / Copilot / Завод):**
    - *Для коду:* Архітектор відкриває Cursor (IDE), згодовує йому сторінку з Wiki і каже: "Напиши контролер за цією специфікацією". Жорстка специфікація **різко знижує** галюцинації, але код усе одно проходить тести/рев'ю (специфікація ≠ гарантія коректності реалізації).
    - *Для заліза:* Архітектор відправляє сторінку з Wiki на завод для друку металу.
-5. **Рев'ю (The Architect — *з делегуванням*):** Архітектор перевіряє результат і піднімає рівень TRL. Для нижчих TRL (1-4) рев'ю **делегується** лідам кластерів та CI/CD-перевіркам — Архітектор втручається тільки на TRL Gates (перехід ≥5). Це усуває bottleneck "all-roads-lead-to-Architect" (див. [`00_05 §3 Async-Review Policy`](00_05_Shape_Up_Operations_and_RnD_Clusters)).
+5. **Рев'ю (The Architect — *з делегуванням*):** Архітектор перевіряє результат і піднімає рівень TRL. Для нижчих TRL (1-4) рев'ю **делегується** лідам кластерів та CI/CD-перевіркам — Архітектор втручається тільки на TRL Gates (перехід ≥5). Це усуває bottleneck "all-roads-lead-to-Architect" (див. [`09_03 §3 Async-Review Policy`](09_03_Shape_Up_Operations_and_RnD_Clusters)).
 
 ---
 
@@ -89,7 +89,7 @@ AI-агенти розглядаються як автономні інжене�
 - **Intent-First Development:** Перехід від написання коду до формування наміру. Код є лише похідним результатом якісно описаної специфікації в Wiki.
 - **Context Anchoring:** Перед початком сесії AI-агент (Cursor / Windsurf / Claude Code) зобов'язаний проіндексувати відповідні сторінки Wiki через MCP для запобігання галюцинаціям.
 - **Agent Handoff Protocol:** Ланцюжок передачі — Архітектор (Візія) → LLM (Shaping / гіпотеза) → **🚦 Validation Gate** (скрипти / домен-експерт) → Wiki (SSOT, лише валідоване) → Cursor / Copilot (Імплементація) → Лабораторія ЧНУ (Фізична валідація).
-- **SSOT One-Home (одна річ — один дім):** кожен факт має **ОДИН** канонічний дім; решта доків **реферять**, не дублюють (інакше — тихий SSOT-дрейф). Коли тема переростає свій док, її **виносять у власну канон-сторінку** (migrate-first, zero content-loss), а не плодять копії. Реєстр домів + restructure-метод — [`00_07 §8.2/§8.4`](00_07_GitHub_Projects_and_IaC_Automation); drift-лінтери (`docs:check_refs`) ловлять re-statement автоматично ([`00_07 §8.3`](00_07_GitHub_Projects_and_IaC_Automation)).
+- **SSOT One-Home (одна річ — один дім):** кожен факт має **ОДИН** канонічний дім; решта доків **реферять**, не дублюють (інакше — тихий SSOT-дрейф). Коли тема переростає свій док, її **виносять у власну канон-сторінку** (migrate-first, zero content-loss), а не плодять копії. Реєстр домів + restructure-метод — [`09_05 §2/§8.4`](09_04_GitHub_Projects_and_IaC_Automation); drift-лінтери (`docs:check_refs`) ловлять re-statement автоматично ([`09_05 §3`](09_04_GitHub_Projects_and_IaC_Automation)).
 
 ---
 
@@ -101,7 +101,7 @@ AI-агенти розглядаються як автономні інжене�
 2. **Logic Stream (Bytes):** Розробка Rails-сервісів, Edge AI моделей та логіки Атрактора Лоренца.
 3. **Verification Stream (Proofs):** Генерація ZK-доказів (IoTeX), налаштування DID (peaq) та оракулів (Chainlink).
 
-> **Декаплінг через HIL:** Logic Stream і Verification Stream **не блокуються** Hardware Stream завдяки HIL-симуляторам ([`00_06 §HIL`](00_06_Strategic_Roadmap_and_HIL_Simulators)). Це підкреслює, що "Concurrent" у назві методології означає реальну паралельність, а не Waterfall з косметичними рев'ю.
+> **Декаплінг через HIL:** Logic Stream і Verification Stream **не блокуються** Hardware Stream завдяки HIL-симуляторам ([`09_02 §HIL`](09_02_TRL_Matrix_HIL_and_Beyond)). Це підкреслює, що "Concurrent" у назві методології означає реальну паралельність, а не Waterfall з косметичними рев'ю.
 
 ### 4a. In Silico як HIL-аналог для Hardware Stream (Zero-Lab підхід)
 

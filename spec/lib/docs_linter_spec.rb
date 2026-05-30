@@ -56,7 +56,7 @@ RSpec.describe DocsLinter do
     end
 
     it "does not flag body prose that merely mentions a blocker/constraint" do
-      md = "## 🔐 1. Crypto\nLoRa uses AES-128-ECB (transitional, no MAC) — see 00_08 §03.\n"
+      md = "## 🔐 1. Crypto\nLoRa uses AES-128-ECB (transitional, no MAC) — see 09_06 §03.\n"
       expect(described_class.canon_blocker_sections(md)).to be_empty
     end
 
@@ -81,8 +81,8 @@ RSpec.describe DocsLinter do
     it "exempts the index, the tracker, and appendix docs" do
       bare = "## 🎯 Мета\n"
       expect(described_class.conformance_violations("00_00_SSOT_Index", bare)).to be_empty
-      expect(described_class.conformance_violations("00_08_Action_Plan_Tracker", bare)).to be_empty
-      expect(described_class.conformance_violations("02_03_appendix_legacy_breadboard", bare)).to be_empty
+      expect(described_class.conformance_violations("09_06_Action_Plan_Tracker", bare)).to be_empty
+      expect(described_class.conformance_violations("02_06_Legacy_Breadboard_Appendix", bare)).to be_empty
     end
 
     it "ignores non-canon filenames (README, etc.)" do
@@ -116,7 +116,7 @@ RSpec.describe DocsLinter do
 
     it "does not match 'звільнило' (freed elsewhere) or 'reserved:' bit-fields" do
       expect(described_class.rtc_register_allocation_drift(
-        "00_08_Tracker", "RTC DR10+DR12 (звільнило DR11 під слот)\n")).to be_empty
+        "09_06_Tracker", "RTC DR10+DR12 (звільнило DR11 під слот)\n")).to be_empty
       expect(described_class.rtc_register_allocation_drift(
         "03_03_TinyML", "DR0 = [panic:16 | reserved:8 | acoustic:8]\n")).to be_empty
     end
@@ -144,7 +144,7 @@ RSpec.describe DocsLinter do
 
     it "skips inline mentions, firmware-file refs and table rows (only β assignments flag)" do
       expect(described_class.lorenz_formula_drift(
-        "00_02_Arch", "рахує ідентично firmware mruby (8.0/3.0)\n"
+        "00_01_Arch", "рахує ідентично firmware mruby (8.0/3.0)\n"
       )).to be_empty
       expect(described_class.lorenz_formula_drift(
         "05_02_Pipeline", "`firmware/bio_contracts/bio_contract.rb` — BASE_BETA = 8.0 / 3.0\n"

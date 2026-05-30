@@ -8,8 +8,8 @@ require "shellwords"
 # 🛠 GithubBootstrap — IaC for GitHub Projects V2 + Milestones
 # = =====================================================================
 #
-# Source SSOT: docs/00_07_GitHub_Projects_and_IaC_Automation.md §1.1 + §6.
-# Tracker entry: docs/00_08_Action_Plan_Tracker.md → OPS.6.
+# Source SSOT: docs/09_04_GitHub_Projects_and_IaC_Automation.md §1.1 + §6.
+# Tracker entry: docs/09_06_Action_Plan_Tracker.md → OPS.6.
 #
 # The `gh` CLI does not yet support `gh project field create` for all
 # field types we need (especially single-select with many options), so
@@ -24,7 +24,7 @@ require "shellwords"
 # out to this module so tests can mock the `gh` executor.
 #
 # The single source of truth for field schemas lives here in `FIELDS`;
-# update docs/00_07 §1.1 in lockstep when adding a field.
+# update docs/09_04 §1.1 in lockstep when adding a field.
 # = =====================================================================
 module GithubBootstrap
   module_function
@@ -38,7 +38,7 @@ module GithubBootstrap
   # is tracked as a separate dimension: SRL (System Readiness — emergence,
   # self-evolution, cross-biome, AI-security) staged Concept→Pilot→Deployed,
   # and MRL (Manufacturing Readiness, 8-10 — 5-SKU mass production).
-  # See 00_04 §1 / 00_06 §7.
+  # See 09_01 §1 / 09_02 §7.
   READINESS_HORIZON_OPTIONS = %w[
     SRL:Concept SRL:Pilot SRL:Deployed MRL:8 MRL:9 MRL:10
   ].freeze
@@ -115,7 +115,7 @@ module GithubBootstrap
   end
 
   # Create a milestone on the repo if it does not exist (matched by
-  # title). REST endpoint per `docs/00_07 §6` step 3. Returns
+  # title). REST endpoint per `docs/09_04 §6` step 3. Returns
   # `:created` / `:exists`.
   def ensure_milestone(owner:, repo:, title:, description: nil, executor: method(:default_executor))
     listing, status = executor.call([
@@ -135,7 +135,7 @@ module GithubBootstrap
     :created
   end
 
-  # Whole orchestration as described in docs/00_07 §6.
+  # Whole orchestration as described in docs/09_04 §6.
   # Returns a Hash summarising actions for logger / test assertions.
   def bootstrap(owner:, repo:, project_number:, cycle_title:, cycle_description: nil,
                 executor: method(:default_executor))

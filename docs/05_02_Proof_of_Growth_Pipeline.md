@@ -11,7 +11,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 — Пайплайн повністю імплементовано.
-- **Відкрите:** прямих блокерів немає (пайплайн імплементовано); залежні інтеграції (Hadron/Chainlink hybrid) трекаються в [`00_08`](00_08_Action_Plan_Tracker).
+- **Відкрите:** прямих блокерів немає (пайплайн імплементовано); залежні інтеграції (Hadron/Chainlink hybrid) трекаються в [`09_06`](09_06_Action_Plan_Tracker).
 
 ---
 
@@ -24,7 +24,7 @@
 | [04_01_Data_Models_and_Entities](04_01_Data_Models_and_Entities) | Моделі (TelemetryLog, Wallet, BlockchainTransaction) |
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Сервіси (Unpacker, Verification, Minting) |
 | [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz SSOT (константи, DCI parity) |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | Open backlog |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | Open backlog |
 
 ## 📑 Зміст
 
@@ -275,7 +275,7 @@ end
 
 #### 🤖 FW.8 — OTA Sync для Per-Species Lorenz Thresholds (Дизайн)
 
-> **Cross-ref:** [00_08 FW.8](00_08_Action_Plan_Tracker) — дизайн завершено ✅
+> **Cross-ref:** [09_06 FW.8](09_06_Action_Plan_Tracker) — дизайн завершено ✅
 
 **Проблема:** `CRITICAL_Z_MIN`, `CRITICAL_Z_MAX`, `OPTIMAL_Z_TARGET` hardcoded у Flash. Сосна (*Pinus sylvestris*) і дуб (*Quercus robur*) мають різний діапазон нормальної конвективної активності — один пороговий набір дає хибні anomaly alerts для одного виду при нормальному стані іншого.
 
@@ -877,7 +877,7 @@ blockchain_transactions
 
 ## 🔬 SEC.11 — Lorenz Seed Provenance & Dual Computation Integrity
 
-> **Cross-ref:** дизайн і threat model — [03_05 §3.4в](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-); сервіс — [04_02 `SilkenNet::SeedDerivation`](04_02_Business_Logic_and_Services#silkennetseedderivation-); poetics — [03_04 §2.1, §3 Крок 1](03_04_mruby_Lorenz_Attractor); SEC.11 в трекері — [00_08 SEC.11](00_08_Action_Plan_Tracker).
+> **Cross-ref:** дизайн і threat model — [03_05 §3.4в](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-); сервіс — [04_02 `SilkenNet::SeedDerivation`](04_02_Business_Logic_and_Services#silkennetseedderivation-); poetics — [03_04 §2.1, §3 Крок 1](03_04_mruby_Lorenz_Attractor); SEC.11 в трекері — [09_06 SEC.11](09_06_Action_Plan_Tracker).
 
 ### Чому це частина Proof of Growth, а не суто security task
 

@@ -12,7 +12,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — модель інтегрована, DMA налаштовано, DSP Path B зафіксовано; `Run_Inference()` закоментована (stub fallback). Відкриті: Run_Inference + model.h + Tensor Arena (`FW.4`), confidence threshold (`FW.18`) → [`00_08 §03`](00_08_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 6 — модель інтегрована, DMA налаштовано, DSP Path B зафіксовано; `Run_Inference()` закоментована (stub fallback). Відкриті: Run_Inference + model.h + Tensor Arena (`FW.4`), confidence threshold (`FW.18`) → [`09_06 §03`](09_06_Action_Plan_Tracker).
 
 ---
 
@@ -27,7 +27,7 @@
 | [04_01_Data_Models_and_Entities](04_01_Data_Models_and_Entities) | `TelemetryLog.acoustic_events` |
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | `TelemetryUnpackerService`, `EwsAlertCreatorService` |
 | `firmware/soldier/main.c` · `silken_net_audio_model.h` (TBD) · `_stub.h` | Phase 1.5 + ISR; реальна модель TBD ML-партнером; IP-friendly stub |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.4 Run_Inference/model.h/Tensor-Arena, FW.18 threshold, FW.25 DSP Path B |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.4 Run_Inference/model.h/Tensor-Arena, FW.18 threshold, FW.25 DSP Path B |
 
 ## 📑 Зміст
 
@@ -649,7 +649,7 @@ TinyML-результат безпосередньо впливає на Lorenz 
 | 8 | Confidence threshold конфігурується (не хардкод) | ✅ FW.18: dual-threshold у RTC DR13/DR14 + 19 host-tests + Soldier OTA CMD dispatcher `0x9D` (`CMD_SET_AUDIO_THRESHOLDS`) з 7 host-tests |
 | 9 | DSP preprocessing задокументовано (чи є FFT в моделі) | 🟡 Відкрито |
 | 10 | `acoustic_events` overflow захист реалізовано | ✅ Реалізовано (FW.22: `uint8_t` + saturating increment) |
-| 11 | План 5-го класу «Fauna Activity» (§10, Mongabay pivot) задокументовано | ✅ Реалізовано (цей doc §10 + cross-ref до 08_01/08_02/08_03/00_08) |
+| 11 | План 5-го класу «Fauna Activity» (§10, Mongabay pivot) задокументовано | ✅ Реалізовано (цей doc §10 + cross-ref до 08_01/08_02/08_03/09_06) |
 
 ---
 
@@ -679,7 +679,7 @@ TinyML-результат безпосередньо впливає на Lorenz 
 | Тригер | П'єзо-EXTI на вібрацію | Класи 0–3 — як зараз; для класу 4 — **щогодинні «акустичні семплінги»** (без вібраційного тригера) на світанку (солар-час+0..2 год) та сутінках (солар-час−2..0 год) |
 | Бюджет TX | 1 байт `acoustic_events` (saturating uint8) | Без змін у packet layout; «Fauna Activity Index» транслюється через **той самий байт** у режимі fauna-семплінгу (не змішується з кавітацією — режим маркується через окремий біт у Status Byte або через циркадне вікно на backend) |
 
-> ⚠️ **Constraint — SRAM2 wipe vs. accumulator (audit-fix, ARCH.40):** Архітектура енергозбереження Soldier'а v3 ([03_01 §1 + 00_02](03_01_Firmware_Lifecycle_and_DMA)) використовує STOP2 RTC-only з `PWR_CR1_RRSTP=1` для досягнення 300 нА deep-sleep. Це **повністю стирає SRAM2** при кожному переході в STOP2. Проміжна matrix-statistic (`mean+std` 156 MFCC-векторів) у RAM не переживе сну. RTC Backup Domain не врятує: усі 20 backup-регістрів зайняті (останній, DR15, пішов під FW.2 CCM FC — `03_01 §2`), та й один uint32 фізично не вмістив би float-матрицю. **Висновок:** fauna-сесія мусить виконуватись **монолітно за один цикл активного пробудження**: 156 циклів TIM2+DMA послідовно один за одним у межах однієї main-loop ітерації, проміжна статистика тримається в RAM, і STOP2 викликається лише після того, як фінальний `fauna_activity_index` згорнуто в один байт. Декомпозиція на «спав → 32 мс → MFCC → знов сон» — заборонена.
+> ⚠️ **Constraint — SRAM2 wipe vs. accumulator (audit-fix, ARCH.40):** Архітектура енергозбереження Soldier'а v3 ([03_01 §1 + 00_01](03_01_Firmware_Lifecycle_and_DMA)) використовує STOP2 RTC-only з `PWR_CR1_RRSTP=1` для досягнення 300 нА deep-sleep. Це **повністю стирає SRAM2** при кожному переході в STOP2. Проміжна matrix-statistic (`mean+std` 156 MFCC-векторів) у RAM не переживе сну. RTC Backup Domain не врятує: усі 20 backup-регістрів зайняті (останній, DR15, пішов під FW.2 CCM FC — `03_01 §2`), та й один uint32 фізично не вмістив би float-матрицю. **Висновок:** fauna-сесія мусить виконуватись **монолітно за один цикл активного пробудження**: 156 циклів TIM2+DMA послідовно один за одним у межах однієї main-loop ітерації, проміжна статистика тримається в RAM, і STOP2 викликається лише після того, як фінальний `fauna_activity_index` згорнуто в один байт. Декомпозиція на «спав → 32 мс → MFCC → знов сон» — заборонена.
 
 ### 10.3 Енергетичний бюджет
 
@@ -745,7 +745,7 @@ RWA market: інвестор бачить не лише CO₂, а й функц�
 | GA-оптимізація 5-class моделі та confidence thresholds для dawn/dusk | Любченко (ЧНУ ФОТІУС) | [`08_02` §1.8](08_02_Cybernetic_and_Mathematical_Validation) | Akash GPU кластер, фітнес-функція з ground truth |
 | Macro-Micro verification (NDVI Sentinel-2 ↔ TinyML soundscape) | Бушин (ЧНУ ФОТІУС, CNN) | [`08_02` §1.5](08_02_Cybernetic_and_Mathematical_Validation) | Pipeline злиття супутника + TinyML; AiInsight#biodiversity_trend |
 | Статистика розподілів `fauna_activity_index` між ділянками | Карапетян (ЧДТУ Data Science) | [`08_04` §1.1](08_04_CHDTU_Data_Science_Collaboration) | R-аналіз, ANOVA dawn/dusk peak amplitude між ландшафтами |
-| Грантовий вектор Horizon Europe CLUSTER 6 (Biodiversity Monitoring) | СЄУ + усі академічні партнери | [`00_08` BIZ section](00_08_Action_Plan_Tracker), [`08_03` Стаття 24a/34](08_03_Joint_Publications_and_IP_Strategy) | Заявка з акцентом на acoustic D-MRV |
+| Грантовий вектор Horizon Europe CLUSTER 6 (Biodiversity Monitoring) | СЄУ + усі академічні партнери | [`09_06` BIZ section](09_06_Action_Plan_Tracker), [`08_03` Стаття 24a/34](08_03_Joint_Publications_and_IP_Strategy) | Заявка з акцентом на acoustic D-MRV |
 
 ### 10.6 Дорожня карта (TRL крок за кроком)
 
@@ -852,9 +852,9 @@ OtaPackagerService → 512-byte chunks → OtaTransmissionWorker → Queen → S
 > - **Edge Reinforcement Learning:** tabular Q-learning з 12-state × 4-action lookup для прийняття рішень (sleep_extend / normal / sample_extra / emergency_tx); reward = days-to-next-VBAT_OK. State buffer у RTC backup registers DR20-DR31.
 > - **Координація з mruby evolutionary algorithms у `03_04`** — спільна `device-side learning loop` між TinyML (perception) і Lorenz contract (decision).
 >
-> **Безпекова прірва:** self-evolution + Web3-economic rewards = attack surface для adversarial reward poisoning. Mitigation — Apex Predator Defense (`05_06 §5` + `00_06 §7.4`).
+> **Безпекова прірва:** self-evolution + Web3-economic rewards = attack surface для adversarial reward poisoning. Mitigation — Apex Predator Defense (`05_06 §5` + `09_02 §7.4`).
 >
-> **Деталі повної R&D-програми:** [`00_06 §7.2`](00_06_Strategic_Roadmap_and_HIL_Simulators) — Self-Evolving Behaviour Gap.
+> **Деталі повної R&D-програми:** [`09_02 §7.2`](09_02_TRL_Matrix_HIL_and_Beyond) — Self-Evolving Behaviour Gap.
 
 ---
 

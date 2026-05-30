@@ -1,4 +1,4 @@
-# 07_01: Контракти Nature-as-a-Service (Юридичний та Бізнес-Шар)
+# 07_02: Контракти Nature-as-a-Service (Юридичний та Бізнес-Шар)
 
 ## 🎯 Мета
 
@@ -11,7 +11,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 5 — бізнес-логіка зафіксована в SSOT; юридичні документи відсутні
-- **Відкрите:** юридичні/compliance артефакти (MSA, KYC/AML, DAO governance, RWA реєстрація) → [`00_08`](00_08_Action_Plan_Tracker) (BIZ.*).
+- **Відкрите:** юридичні/compliance артефакти (MSA, KYC/AML, DAO governance, RWA реєстрація) → [`09_06`](09_06_Action_Plan_Tracker) (BIZ.*).
 
 ---
 
@@ -22,9 +22,9 @@
 | `app/models/naas_contract.rb` | NaasContract lifecycle (AASM) — SSOT коду |
 | [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | SCC/SFC + фінансові константи (home) |
 | [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof of Growth (мінтинг-тригер) |
-| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Юніт-економіка, BOM |
+| [07_03_Unit_Economics_and_BOM](07_03_Unit_Economics_and_BOM) | Юніт-економіка, BOM |
 | [08_07_SEU_Economics_and_Legal_Integration](08_07_SEU_Economics_and_Legal_Integration) | MSA / KYC legal (Аблязов) |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | BIZ.1/2/3/4/6/9/11/13/14, UNI.8 |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | BIZ.1/2/3/4/6/9/11/13/14, UNI.8 |
 
 ## 📑 Зміст
 
@@ -36,7 +36,7 @@
 - [5. Структура Даних (Data Model)](#-5-структура-даних-data-model)
 - [6. Ієрархія Ролей та Доступу](#-6-ієрархія-ролей-та-доступу)
 - [7. Параметричне Страхування (Insurance Layer)](#-7-параметричне-страхування-insurance-layer)
-- [8. Юридичні та бізнес-передумови (open → 00_08)](#-8-юридичні-та-бізнес-передумови-open--00_08)
+- [8. Юридичні та бізнес-передумови (open → 09_06)](#-8-юридичні-та-бізнес-передумови-open--09_06)
 - [9. Міжланцюгові Залежності (Cross-Module Dependencies)](#-9-міжланцюгові-залежності-cross-module-dependencies)
 - [10. API Endpoints (Contracts Registry)](#-10-api-endpoints-contracts-registry)
 - [11. Технічна Перевірка Due Diligence (Investor Q&A)](#-11-технічна-перевірка-due-diligence-investor-qa)
@@ -298,9 +298,9 @@ NaasContract (status: cancelled, cancelled_at: now)
 
 ---
 
-## ⚖️ 8. Юридичні та бізнес-передумови (open → 00_08)
+## ⚖️ 8. Юридичні та бізнес-передумови (open → 09_06)
 
-> Специфікація потрібних юридичних / compliance-артефактів для B2B/B2C запуску. Статуси трекаються в [`00_08`](00_08_Action_Plan_Tracker) (BIZ.*).
+> Специфікація потрібних юридичних / compliance-артефактів для B2B/B2C запуску. Статуси трекаються в [`09_06`](09_06_Action_Plan_Tracker) (BIZ.*).
 
 ---
 
@@ -406,10 +406,10 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 ## 🔗 9. Міжланцюгові Залежності (Cross-Module Dependencies)
 
 ```
-[05_03 Tokenomics] ──── СИНХРОНІЗОВАНО ────► [07_01 NaaS Contracts]
-[07_01 NaaS Contracts] ──── БЛОКУЄ ────► [07_02 Unit Economics & BOM]
-[07_01 NaaS Contracts] ──── БЛОКУЄ ────► B2B Sales (onboarding)
-[05_02 Proof of Growth] ──── ЗАБЕЗПЕЧУЄ ────► [07_01 NaaS Contracts]
+[05_03 Tokenomics] ──── СИНХРОНІЗОВАНО ────► [07_02 NaaS Contracts]
+[07_02 NaaS Contracts] ──── БЛОКУЄ ────► [07_03 Unit Economics & BOM]
+[07_02 NaaS Contracts] ──── БЛОКУЄ ────► B2B Sales (onboarding)
+[05_02 Proof of Growth] ──── ЗАБЕЗПЕЧУЄ ────► [07_02 NaaS Contracts]
 ```
 
 ---

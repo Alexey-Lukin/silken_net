@@ -10,13 +10,13 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — Апаратна архітектура заморожена, BOM синхронізовано, ціни підтверджено локальними DMLS-виробниками (→ `07_02_Unit_Economics_and_BOM`).
+- **Поточний TRL:** TRL 6 — Апаратна архітектура заморожена, BOM синхронізовано, ціни підтверджено локальними DMLS-виробниками (→ `07_03_Unit_Economics_and_BOM`).
 - **Ключовий Півот (v2):** Каскад LTC3108 та трансформатор 1:100 **повністю видалено**. EBFC генерує >500 мВ — вище порогу "холодного старту" BQ25570 (330 мВ). Скорочення BOM: −2 компоненти, −40% площі плати, +η загального ланцюга живлення.
 - **Ключовий Півот (v3 — тризонний анкер):** Стара «Матрьошка» (моноліт 120 мм з катодом у глибині стовбура) замінена на **тризонний коаксіальний анкер** (`01_01` §1): Zone 1 (анод-гіроїд 30–50 мм у заболоні) + Zone 2 (PEEK-терморозрив 40–60 мм) + Zone 3 (катодний фланець на межі кори/повітря з PTFE-GDL мембраною). Усуває три ранні ризики: (a) тепловий міст крізь титан → некроз камбію взимку; (b) кисневе голодування катода в глибині стовбура; (c) неможливий моноліт-друк Ti+PEEK в одному DMLS-циклі.
 - **Ключовий Півот (v4 — EBFC Gen 2.0 baseline, 2026-05-22):** Біохімічний стек переписаний. Анод — одношаровий **dgrFAD-GDH + Os** (deglycosylated FAD-залежна глюкозодегідрогеназа) у захисній **Genipin-Chitosan-CNC** матриці з **Nafion-g-PSBMA** цвітеріонною мембраною; катод — гібрид **Laccase + ZIF-nanozyme** (nCoCuCeZIF/Lac). Очікуваний термін служби 20–25 років. Gen 1.0 (GOx+CAT+глутаральдегід+PEG) виключена як нежиттєздатна (`01_03`).
 - **Антенна Підсистема (v2):** Відмова від зовнішніх U.FL-кабелів та 4 голок-електродів. Прийнято рішення: керамічна SMD-антена 868 МГц + PEEK-радом (детально в розділі 5).
-- **Повна вартість вузла:** ~$32–$35 / шт (при 10k+), з урахуванням анкера + PEEK + герметизації. Детально → `07_02_Unit_Economics_and_BOM`.
-- **Відкриті:** conformal coating Parylene C (HW.11), EBFC >5.5V overcharge protection (HW.12/HW.7) → [`00_08`](00_08_Action_Plan_Tracker).
+- **Повна вартість вузла:** ~$32–$35 / шт (при 10k+), з урахуванням анкера + PEEK + герметизації. Детально → `07_03_Unit_Economics_and_BOM`.
+- **Відкриті:** conformal coating Parylene C (HW.11), EBFC >5.5V overcharge protection (HW.12/HW.7) → [`09_06`](09_06_Action_Plan_Tracker).
 
 ---
 
@@ -30,8 +30,8 @@
 | [02_04_EDLC_Supercapacitor_Buffer](02_04_EDLC_Supercapacitor_Buffer) | Ємність, ESR, циклічна деградація іоністора |
 | [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Фази прошивки (STOP2, TX, TinyML) + енергоспоживання |
 | [01_03_EBFC_Enzymatic_Bio_Fuel_Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | Хімія EBFC, V-I крива, >500 мВ |
-| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | CAPEX/OPEX, ROI, Supply Chain Ukraine |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.7 VBAT_OV, HW.11 Parylene, HW.12 overvoltage |
+| [07_03_Unit_Economics_and_BOM](07_03_Unit_Economics_and_BOM) | CAPEX/OPEX, ROI, Supply Chain Ukraine |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.7 VBAT_OV, HW.11 Parylene, HW.12 overvoltage |
 
 ## 📑 Зміст
 
@@ -156,7 +156,7 @@ STM32WLE5JC
 
 ### 3.1. Критичні Компоненти
 
-> Ціни наведено для партії **10,000+ шт**. Повна вартість вузла включає анкер, PEEK та герметизацію. Детальний розподіл по підсистемах → `07_02_Unit_Economics_and_BOM`.
+> Ціни наведено для партії **10,000+ шт**. Повна вартість вузла включає анкер, PEEK та герметизацію. Детальний розподіл по підсистемах → `07_03_Unit_Economics_and_BOM`.
 
 **Electronics BOM (RF Deck + Power Deck):**
 
@@ -561,7 +561,7 @@ STM32WLE5JC
 
 **Production breadboard wiring** і протокол першого холодного старту з реальним EBFC — `02_03 §10`.
 
-**Legacy LTC3108-based educational stand** (44 мВ симулятор + Coilcraft xfmr + Meissner oscillator) для студентських робіт ЧНУ — `02_03_appendix_legacy_breadboard`.
+**Legacy LTC3108-based educational stand** (44 мВ симулятор + Coilcraft xfmr + Meissner oscillator) для студентських робіт ЧНУ — `02_06_Legacy_Breadboard_Appendix`.
 
 **SWD/UART debug-підключення** ST-LINK-V3MINIE та FT232RL до LoRa-E5 — `03_01_Firmware_Lifecycle_and_DMA` §"Фізичне Підключення Апаратного Відладчика".
 

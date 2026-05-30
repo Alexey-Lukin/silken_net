@@ -12,7 +12,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 4 — специфікація матеріалу затверджена; тестова партія готова до замовлення. Відкриті: dual-roughness spec→завод (HW.2), accelerated aging + V-release Zone 1 (HW.3, §2.5), self-healing coating (HW.4), HIP postprocess (HW.23) → [`00_08`](00_08_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 4 — специфікація матеріалу затверджена; тестова партія готова до замовлення. Відкриті: dual-roughness spec→завод (HW.2), accelerated aging + V-release Zone 1 (HW.3, §2.5), self-healing coating (HW.4), HIP postprocess (HW.23) → [`09_06`](09_06_Action_Plan_Tracker).
 
 ---
 
@@ -24,7 +24,7 @@
 | [01_03_EBFC_Enzymatic_Bio_Fuel_Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC: ферменти на поверхні анкера |
 | [01_04_CODIT_and_Xylemointegration](01_04_CODIT_and_Xylemointegration) | CODIT: біологічна реакція дерева, GDL/PTFE |
 | [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | R&D протоколи ЧНУ (Ti-coin, синтетичний ксилемний сік) |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.2 roughness, HW.3 aging/V-release, HW.4 self-healing, HW.23 HIP |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.2 roughness, HW.3 aging/V-release, HW.4 self-healing, HW.23 HIP |
 
 ## 📑 Зміст
 
@@ -410,7 +410,7 @@ Arrhenius scaling: t_lab = t_field × exp(−Ea/k × (1/T_field − 1/T_lab))
 > - **(b) Ензимна матриця як бар'єр/хелатор:** хітозан — хелатор важких металів; Genipin-Chitosan-CNC + Nafion-g-PSBMA на Zone 1 можуть зв'язувати/блокувати дифузію V. Тест — ЧМА (Суховой): V-release крізь функціоналізовану vs голу поверхню.
 > - **(c)** ZnO-Ta + 8-HQ — лише на неактивних поверхнях (Zone 3 сорочка, торці PEEK); Zone 1 не розв'язують.
 >
-> **Статус:** V-safety Zone 1 = відкрите питання → in-vitro перевірка матричного бар'єру (b) ± опція V-free сплав (a). Трекінг — [`00_08 HW.3`](00_08_Action_Plan_Tracker).
+> **Статус:** V-safety Zone 1 = відкрите питання → in-vitro перевірка матричного бар'єру (b) ± опція V-free сплав (a). Трекінг — [`09_06 HW.3`](09_06_Action_Plan_Tracker).
 
 ---
 
@@ -547,7 +547,7 @@ nTop — провідний інструмент для генерації мі�
 
 **Наступний крок:** Передати STL з nTop на завод разом із специфікацією дворівневої шорсткості (розділ 1).
 
-**🟡 Архітектурне обмеження nTop:** GUI-only workflow → **AI-агенти сліпі у візуальних інтерфейсах** (Claude/Copilot/Cursor не можуть "клікати" по нодах). Це блокер для AI-Native Engineering принципу (`00_04 §2`). Параметричні моделі зберігаються у бінарних `.ntop` файлах — **не Git-friendly**, без зрозумілого diff'у, без code review. Для масової вибірки per-species геометрій (5 SKU: pine/oak/broadleaf/mangrove/tropical — `00_06 §7.3`) потрібна Code-as-CAD парадигма.
+**🟡 Архітектурне обмеження nTop:** GUI-only workflow → **AI-агенти сліпі у візуальних інтерфейсах** (Claude/Copilot/Cursor не можуть "клікати" по нодах). Це блокер для AI-Native Engineering принципу (`09_01 §2`). Параметричні моделі зберігаються у бінарних `.ntop` файлах — **не Git-friendly**, без зрозумілого diff'у, без code review. Для масової вибірки per-species геометрій (5 SKU: pine/oak/broadleaf/mangrove/tropical — `09_02 §7.3`) потрібна Code-as-CAD парадигма.
 
 ### PicoGK + C# — Code-as-CAD Alternative (паралельний R&D track)
 
@@ -637,12 +637,12 @@ public class Zone1Anode
 - Q1 2026: Setup C# проєкту + PicoGK build з GitHub (1 тиждень)
 - Q1 2026: Генерація Stage 1 SLA-моделі через PicoGK (паралельно з nTop reference)
 - Q2 2026: Якщо PicoGK генерує валідні STL без topology errors → **migration plan з nTop**
-- Q2 2026: Per-species CEM (5 SKU pine/oak/broadleaf/mangrove/tropical) → доводить переваги code-as-CAD для cross-biome roadmap (`00_06 §7.3`)
+- Q2 2026: Per-species CEM (5 SKU pine/oak/broadleaf/mangrove/tropical) → доводить переваги code-as-CAD для cross-biome roadmap (`09_02 §7.3`)
 
 **Cross-references:**
-- AI-Native Engineering philosophy → [`00_04 §4a`](00_04_AI_Native_Engineering_and_TRL) (In Silico для Hardware Stream)
+- AI-Native Engineering philosophy → [`09_01 §4a`](09_01_AI_Native_Engineering_and_TRL) (In Silico для Hardware Stream)
 - TPMS геометрія анкера → [`01_01 §3`](01_01_Coaxial_Gyroid_Topology_and_PEEK) (поточна nTop-based)
-- Cross-biome generalization → [`00_06 §7.3`](00_06_Strategic_Roadmap_and_HIL_Simulators)
+- Cross-biome generalization → [`09_02 §7.3`](09_02_TRL_Matrix_HIL_and_Beyond)
 - Noyron AI (LEAP 71 closed, для довідки) — пропрієтарний layer над PicoGK
 
 ### Перша Партія — 100 одиниць (Київ / Дніпро)

@@ -22,7 +22,7 @@
 | [04_01_Data_Models_and_Entities](04_01_Data_Models_and_Entities) | Схема БД (моделі) |
 | [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Прошивка (CoAP uplink, gateway telemetry) |
 | [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (wallet/mint ендпоінти) |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | Open backlog (API-related) |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | Open backlog (API-related) |
 
 ## 📑 Зміст
 

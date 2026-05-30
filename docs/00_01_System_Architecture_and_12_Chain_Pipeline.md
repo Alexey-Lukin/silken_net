@@ -1,14 +1,14 @@
-# 00_02: System Architecture and 12-Chain Pipeline
+# 00_01: System Architecture and 12-Chain Pipeline
 
 ## 🎯 Мета
 
-Зафіксувати 8-рівневу кіберфізичну архітектуру екосистеми Gaia 2.0 (Silken Net) та повний 12-крокового конвеєр Proof of Growth — від біохімічної реакції в дереві до криптографічної фіналізації в Ethereum L1. Цей документ є базовою конституцією для маршрутизації даних, але не містить політику резервування — для неї див. [`00_03_Resilience_and_Failover_Policy`](00_03_Resilience_and_Failover_Policy).
+Зафіксувати 8-рівневу кіберфізичну архітектуру екосистеми Gaia 2.0 (Silken Net) та повний 12-крокового конвеєр Proof of Growth — від біохімічної реакції в дереві до криптографічної фіналізації в Ethereum L1. Цей документ є базовою конституцією для маршрутизації даних, але не містить політику резервування — для неї див. [`00_02_Resilience_and_Failover_Policy`](00_02_Resilience_and_Failover_Policy).
 
 ---
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 4 — Архітектура затверджена, інтеграційні компоненти тестуються локально (EBFC TRL 3→4 PASSED 2026-05-25 через Zero-Lab in-silico pipeline; програмні домени рухаються паралельно через HIL-симулятори, [`00_06`](00_06_Strategic_Roadmap_and_HIL_Simulators)). Відкрите System-gating (Module 01 chemistry, FW.2) → [00_08](00_08_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 4 — Архітектура затверджена, інтеграційні компоненти тестуються локально (EBFC TRL 3→4 PASSED 2026-05-25 через Zero-Lab in-silico pipeline; програмні домени рухаються паралельно через HIL-симулятори, [`09_02`](09_02_TRL_Matrix_HIL_and_Beyond)). Відкрите System-gating (Module 01 chemistry, FW.2) → [09_06](09_06_Action_Plan_Tracker).
 - **Оновлення:** Проведено півот апаратної частини. Повністю видалено рівень електрокінетики (Streaming Potential / LTC3108). Затверджено нову біохімічну базу (EBFC).
 
 ---
@@ -17,16 +17,16 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [00_01_Vision_Market_and_Slashing_Policy](00_01_Vision_Market_and_Slashing_Policy) | Бізнес-візія та slashing |
-| [00_03_Resilience_and_Failover_Policy](00_03_Resilience_and_Failover_Policy) | Failover та Web3 fallback |
+| [07_01_Vision_Mission_and_Roadmap](07_01_Vision_Mission_and_Roadmap) | Бізнес-візія та slashing |
+| [00_02_Resilience_and_Failover_Policy](00_02_Resilience_and_Failover_Policy) | Failover та Web3 fallback |
 | [01_01_Coaxial_Gyroid_Topology_and_PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Біомеханіка та тризонний анкер |
 | [02_01_Hardware_Architecture_and_BOM](02_01_Hardware_Architecture_and_BOM) | Апаратура та BOM |
 | [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Прошивка та Edge AI |
 | [04_01_Data_Models_and_Entities](04_01_Data_Models_and_Entities) | Backend та моделі даних |
 | [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Web3 мультичейн |
 | [06_01_Deployment_Kamal_Terraform](06_01_Deployment_Kamal_Terraform) | DevOps та деплой |
-| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | Бізнес-контракти NaaS |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): System TRL gated by Module 01 chemistry (HW.*) + firmware (FW.2); софт розв'язано через HIL (`00_06`) |
+| [07_02_Nature_as_a_Service_Contracts](07_02_Nature_as_a_Service_Contracts) | Бізнес-контракти NaaS |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): System TRL gated by Module 01 chemistry (HW.*) + firmware (FW.2); софт розв'язано через HIL (`09_02`) |
 
 ## 📑 Зміст
 
@@ -68,7 +68,7 @@
 - **Протокол:** LoRa mesh 868 МГц (custom TTL-based, DEFAULT_TTL=3). Binary payload 21 bytes (4 DID + 1 RSSI + 16 encrypted).
 - **Топологія:** Directed Mesh (Солдати передають пакети через сусідів).
 - **Шлюз (Королева):** Агрегує пакети та відправляє їх у хмару (опціонально через Starlink Direct-to-Cell).
-- **Резерв:** Helium Network (HNT) як fallback при втраті Queen — будь-який роутер Helium у радіусі 15 км ловить пакет ([деталі → 02_05](02_05_Queen_Hardware_and_Starlink), політика — [`00_03 §Queen Failover`](00_03_Resilience_and_Failover_Policy)).
+- **Резерв:** Helium Network (HNT) як fallback при втраті Queen — будь-який роутер Helium у радіусі 15 км ловить пакет ([деталі → 02_05](02_05_Queen_Hardware_and_Starlink), політика — [`00_02 §Queen Failover`](00_02_Resilience_and_Failover_Policy)).
 
 #### Проблема Рандеву (Rendezvous Problem)
 
@@ -79,10 +79,10 @@
 | Рівень | Механізм | Статус |
 |--------|----------|--------|
 | **L1: Зона Королеви** | Queen `Radio.Rx(LORA_RX_INFINITE)` — ніколи не спить, приймач SX1262 завжди активний. Живиться від сонячної панелі/акумулятора. Будь-який Солдат у радіусі 150–200 м може передати в будь-яку секунду — Королева завжди зловить. | ✅ Реалізовано |
-| **L2: Синхронні Вікна (TDMA)** | Координоване пробудження вузлів за RTC-розкладом. Queen beacon → Time Sync → спільне "Вікно Зв'язку" кожні 15 хвилин (2 секунди RX). Усуває необхідність постійного прослуховування. | ❌ Не реалізовано ([ARCH.26](00_08_Action_Plan_Tracker)) |
-| **L3: CAD (Channel Activity Detection)** | Апаратна фіча SX1262: вузол робить короткий CAD-«нюх» ефіру на наявність LoRa-преамбули. **Cadence — НЕ «кожну секунду»** (див. ⚠️ нижче): CAD прив'язаний до TDMA-вікон L2 або грубого інтервалу. PANIC mode (chainsaw) ініціюється **відправником** через extended-preamble (preamble sampling), а не постійним прослуховуванням приймача. | ❌ Не реалізовано ([ARCH.26](00_08_Action_Plan_Tracker)) |
+| **L2: Синхронні Вікна (TDMA)** | Координоване пробудження вузлів за RTC-розкладом. Queen beacon → Time Sync → спільне "Вікно Зв'язку" кожні 15 хвилин (2 секунди RX). Усуває необхідність постійного прослуховування. | ❌ Не реалізовано ([ARCH.26](09_06_Action_Plan_Tracker)) |
+| **L3: CAD (Channel Activity Detection)** | Апаратна фіча SX1262: вузол робить короткий CAD-«нюх» ефіру на наявність LoRa-преамбули. **Cadence — НЕ «кожну секунду»** (див. ⚠️ нижче): CAD прив'язаний до TDMA-вікон L2 або грубого інтервалу. PANIC mode (chainsaw) ініціюється **відправником** через extended-preamble (preamble sampling), а не постійним прослуховуванням приймача. | ❌ Не реалізовано ([ARCH.26](09_06_Action_Plan_Tracker)) |
 
-> **⚠️ Енергетична корекція CAD (2026-05-28):** Попереднє «прокидатися ~2 мс кожну секунду, ~0.0001% заряду» **недооцінювало вартість** і енергетично нежиттєздатне для µW-вузла на EBFC. Реальний цикл — це не лише радіо: wake MCU зі STOP2 → init SPI → конфіг SX1262 на CAD → очікування результату → знову сон. Активна фаза ≈ кілька мс при ~5 мА (MCU+SX1262), тобто десятки–сотні µJ **на один цикл**. ×86,400 циклів/добу → одиниці джоулів/добу, що **багатократно перевищує** і добовий харвест EBFC, і запас EDLC (½·0.47F·3.3² ≈ 2.56 J). Тому CAD НЕ можна робити щосекунди. Правильно: CAD **у синхронних TDMA-вікнах** (L2, кожні ~15 хв) або з грубим інтервалом; для миттєвого PANIC — **відправник** подовжує преамбулу довше за період сну приймача (LoRa preamble sampling), і низько-duty-cycle CAD-приймач її зловить. Енергобюджет CAD переглянути окремо ([ARCH.26](00_08_Action_Plan_Tracker)).
+> **⚠️ Енергетична корекція CAD (2026-05-28):** Попереднє «прокидатися ~2 мс кожну секунду, ~0.0001% заряду» **недооцінювало вартість** і енергетично нежиттєздатне для µW-вузла на EBFC. Реальний цикл — це не лише радіо: wake MCU зі STOP2 → init SPI → конфіг SX1262 на CAD → очікування результату → знову сон. Активна фаза ≈ кілька мс при ~5 мА (MCU+SX1262), тобто десятки–сотні µJ **на один цикл**. ×86,400 циклів/добу → одиниці джоулів/добу, що **багатократно перевищує** і добовий харвест EBFC, і запас EDLC (½·0.47F·3.3² ≈ 2.56 J). Тому CAD НЕ можна робити щосекунди. Правильно: CAD **у синхронних TDMA-вікнах** (L2, кожні ~15 хв) або з грубим інтервалом; для миттєвого PANIC — **відправник** подовжує преамбулу довше за період сну приймача (LoRa preamble sampling), і низько-duty-cycle CAD-приймач її зловить. Енергобюджет CAD переглянути окремо ([ARCH.26](09_06_Action_Plan_Tracker)).
 
 **Поточний mesh relay (Soldier↔Soldier)** працює стохастично: Солдат А TX → якщо Солдат Б випадково слухає ефір у своїх 600 мс RX-вікна (Phase 4.5) → пакет ретранслюється. Без TDMA/CAD mesh relay **ненадійний** за межами прямої видимості Королеви.
 
@@ -214,7 +214,7 @@ Gaia 2.0 підхід:      2 байти lambda → описує стан всь
                          не "кладе" сусідні кластери
 ```
 
-**Queen-to-Queen Backhaul Mesh:** Королеви з'єднані між собою через LoRa SF12. Якщо одна Queen втрачає Starlink → передає дані сусідній Queen через LoRa-магістраль. Деталі — [`00_03 §Queen Failover`](00_03_Resilience_and_Failover_Policy).
+**Queen-to-Queen Backhaul Mesh:** Королеви з'єднані між собою через LoRa SF12. Якщо одна Queen втрачає Starlink → передає дані сусідній Queen через LoRa-магістраль. Деталі — [`00_02 §Queen Failover`](00_02_Resilience_and_Failover_Policy).
 
 ### Energy-Aware Routing
 
@@ -242,7 +242,7 @@ Route metric = f(hop_count, remaining_energy, bio_potential)
 
 Цей розділ описує повний життєвий цикл одного "серцебиття" через кіберфізичний стан Silken Net — від моменту, коли дерево "дихає", до миті, коли його внесок закарбовується в Ethereum назавжди.
 
-**12 кроків. 12 мереж. Одна жива система.** Резервування для кожної ланки — [`00_03 §Web3 Chain Fallback`](00_03_Resilience_and_Failover_Policy).
+**12 кроків. 12 мереж. Одна жива система.** Резервування для кожної ланки — [`00_02 §Web3 Chain Fallback`](00_02_Resilience_and_Failover_Policy).
 
 ---
 
@@ -274,7 +274,7 @@ Z-значення — проксі "конвективної інтенсивн
 
 Queen-шлюз (STM32 + SIM7070G) збирає LoRa-пакети від до 50 Soldiers, дедуплікує їх за **незашифрованим DID-заголовком** через алгоритм CIFO, загортає батч у CoAP та застосовує AES-256-CBC як **транспортний** шар поверх стільникового/Starlink-каналу.
 
-> **⚠️ Транспорт через Starlink Direct-to-Cell (2026-05-28):** D2C працює за LTE-протоколами (SMS + базовий 4G) через жорсткий **Carrier-NAT**, який може блокувати вхідний UDP (а CoAP — UDP) або змінювати порти. Тому **чистий CoAP/UDP ненадійний** на D2C; архітектура має передбачати фолбек **CoAP-over-TCP** (RFC 8323) або **MQTT-SN**, а Ingress Proxy ([`06_01`](06_01_Deployment_Kamal_Terraform)) — толерувати високий jitter / packet loss супутникового LTE. HIL `realistic_mode` ([`00_06 §4.2`](00_06_Strategic_Roadmap_and_HIL_Simulators)) моделює ці умови.
+> **⚠️ Транспорт через Starlink Direct-to-Cell (2026-05-28):** D2C працює за LTE-протоколами (SMS + базовий 4G) через жорсткий **Carrier-NAT**, який може блокувати вхідний UDP (а CoAP — UDP) або змінювати порти. Тому **чистий CoAP/UDP ненадійний** на D2C; архітектура має передбачати фолбек **CoAP-over-TCP** (RFC 8323) або **MQTT-SN**, а Ingress Proxy ([`06_01`](06_01_Deployment_Kamal_Terraform)) — толерувати високий jitter / packet loss супутникового LTE. HIL `realistic_mode` ([`09_02 §4.2`](09_02_TRL_Matrix_HIL_and_Beyond)) моделює ці умови.
 
 > **🔐 Уточнення (2026-05-28): це ВКЛАДЕНЕ (layered) шифрування, НЕ повторне.** Два AES-шари захищають різні скоупи, тож тут немає «подвійного шифрування того ж plaintext» чи MITM:
 > - **Внутрішній (E2EE по payload):** Soldier шифрує 16-байтовий сенсорний блок своїм **per-device AES-128** ключем (LoRa). Цей блок лишається зашифрованим **до бекенду** — backend `TelemetryUnpackerService` розгортає внутрішні AES-128 записи per-Soldier ключем (див. [`05_02`](05_02_Proof_of_Growth_Pipeline) §Pipeline B).

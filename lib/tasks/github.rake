@@ -3,8 +3,8 @@
 # = =====================================================================
 # 🛠 github:* — IaC entry-points for Projects V2 + milestone bootstrap
 # = =====================================================================
-# Source: docs/00_07_GitHub_Projects_and_IaC_Automation.md §1.2 + §6.
-# Tracker: docs/00_08_Action_Plan_Tracker.md → OPS.6.
+# Source: docs/09_04_GitHub_Projects_and_IaC_Automation.md §1.2 + §6.
+# Tracker: docs/09_06_Action_Plan_Tracker.md → OPS.6.
 #
 # All tasks require:
 #   * `gh` CLI installed and authenticated (`gh auth status`)

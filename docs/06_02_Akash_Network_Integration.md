@@ -14,7 +14,7 @@
 
 - **Поточний TRL:** TRL 5 — SDL повністю конфігурований (`web` + `job` + `alloy`), DB+Redis connectivity вирішені (Cloud SQL Auth Proxy + Upstash TLS), GHCR mirror активний; жоден реальний деплой на Akash Mainnet ще не проведений (TRL 6 — після першого успішного деплою).
 - **Конфігуровано:** Cloud SQL Auth Proxy, Upstash Redis (TLS), Solid Cable (multi-replica ActionCable), GHCR mirror, Ingress Anchor, Rails security hardening (`force_ssl`/HSTS/CSP).
-- **Відкрите:** SDL secrets, TLS термінація, GCS state bucket, перший Mainnet деплой → [`00_08`](00_08_Action_Plan_Tracker) (S4.3, INF.4, S6.1).
+- **Відкрите:** SDL secrets, TLS термінація, GCS state bucket, перший Mainnet деплой → [`09_06`](09_06_Action_Plan_Tracker) (S4.3, INF.4, S6.1).
 
 ---
 
@@ -30,7 +30,7 @@
 | [06_04_Secrets_Checklist](06_04_Secrets_Checklist) | SDL secrets — SSOT |
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (що деплоїться) |
 | [06_07_CICD_and_Runbook_Index](06_07_CICD_and_Runbook_Index) | mirror-ghcr, deploy pipeline |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | S4.3, INF.4, S6.1 |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | S4.3, INF.4, S6.1 |
 
 ## 📑 Зміст
 
@@ -50,7 +50,7 @@
 
 ## ⚙️ Відкриті передумови деплою та Runbooks
 
-> Відкриті передумови першого деплою + операційні runbooks. Статуси трекаються в [`00_08`](00_08_Action_Plan_Tracker) (S4.3, INF.4, S6.1).
+> Відкриті передумови першого деплою + операційні runbooks. Статуси трекаються в [`09_06`](09_06_Action_Plan_Tracker) (S4.3, INF.4, S6.1).
 
 ### Секрети SDL не заповнені — Rails не стартує + Web3 воркери у DeadSet
 
@@ -187,7 +187,7 @@ SDL визначає порти `80`, `443` та `5683`. Порт `443` прис
 
 > **Архітектурне рішення (рекомендоване):** **Cloudflare Proxy для HTTPS + direct UDP для CoAP**. Cloudflare DOES NOT proxy UDP у безкоштовному/Pro тарифах — для CoAP/UDP:5683 потрібен **окремий шлях через Ingress Anchor (статичний GCP IP)**, який і так уже існує в архітектурі. Akash hostname operator + Let's Encrypt — fallback варіант, якщо Cloudflare недоступний для проекту (санкції, gov-policy).
 >
-> Cross-ref: 00_08 INF.4 (P1), INF.6 (CoAP Proxy verification).
+> Cross-ref: 09_06 INF.4 (P1), INF.6 (CoAP Proxy verification).
 
 ##### Опція A (рекомендована): Cloudflare Proxy для HTTPS + Direct UDP для CoAP
 
@@ -307,10 +307,10 @@ coap-client -m get coap://$INGRESS_IP:5683/health -v 6
 
 ##### Cross-ref
 
-- [00_08 INF.4](00_08_Action_Plan_Tracker) — оригінальна задача.
-- [00_08 INF.6](00_08_Action_Plan_Tracker) — CoAP Proxy verification (Ingress Anchor лежить у тій же площині, бо CoAP UDP не йде через Cloudflare).
+- [09_06 INF.4](09_06_Action_Plan_Tracker) — оригінальна задача.
+- [09_06 INF.6](09_06_Action_Plan_Tracker) — CoAP Proxy verification (Ingress Anchor лежить у тій же площині, бо CoAP UDP не йде через Cloudflare).
 - [06_01](06_01_Deployment_Kamal_Terraform) — Ingress Anchor (e2-micro, статичний IP, HAProxy).
-- [00_08 DOC.5](00_08_Action_Plan_Tracker) — `DISABLE_SSL` ENV documented як небезпечний override.
+- [09_06 DOC.5](09_06_Action_Plan_Tracker) — `DISABLE_SSL` ENV documented як небезпечний override.
 
 ---
 

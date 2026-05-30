@@ -12,14 +12,14 @@
 
 _Бізнес-візія, кіберфізична архітектура, політики resilience, операційна система проєкту (Shape Up + TRL + GitHub IaC) та живий backlog задач._
 
-- [00\_01\_Vision\_Market\_and\_Slashing\_Policy](00_01_Vision_Market_and_Slashing_Policy) (Місія, проблема VCM, NaaS, Slashing v2 — negligence vs force-majeure)
-- [00\_02\_System\_Architecture\_and\_12\_Chain\_Pipeline](00_02_System_Architecture_and_12_Chain_Pipeline) (8 рівнів кіберфізики + повний 12-крокової конвеєр Proof-of-Growth)
-- [00\_03\_Resilience\_and\_Failover\_Policy](00_03_Resilience_and_Failover_Policy) (Queen failover 4 рівні + Per-Chain Fallback Matrix для 12 ланок Web3)
-- [00\_04\_AI\_Native\_Engineering\_and\_TRL](00_04_AI_Native_Engineering_and_TRL) (Філософія: TRL метрика, Intent-First, Wiki-First, AI Pipeline)
-- [00\_05\_Shape\_Up\_Operations\_and\_RnD\_Clusters](00_05_Shape_Up_Operations_and_RnD_Clusters) (Операційний template: 6+2 цикли, 4 R&D кластери, Betting Table, Async-Review)
-- [00\_06\_Strategic\_Roadmap\_and\_HIL\_Simulators](00_06_Strategic_Roadmap_and_HIL_Simulators) (TRL Matrix + per-domain TRL + HIL-симулятори, які знімають TRL-Lock)
-- [00\_07\_GitHub\_Projects\_and\_IaC\_Automation](00_07_GitHub_Projects_and_IaC_Automation) (Projects V2 fields + Labels-as-Code + GitHub Actions workflows)
-- [00\_08\_Action\_Plan\_Tracker](00_08_Action_Plan_Tracker) (🔴 Живий документ — аудит блокерів, план дій, Sprint tracking)
+- [07\_01\_Vision\_Mission\_and\_Roadmap](07_01_Vision_Mission_and_Roadmap) (Місія, проблема VCM, NaaS; філософія Slashing → 05_05)
+- [00\_01\_System\_Architecture\_and\_12\_Chain\_Pipeline](00_01_System_Architecture_and_12_Chain_Pipeline) (8 рівнів кіберфізики + повний 12-крокової конвеєр Proof-of-Growth)
+- [00\_02\_Resilience\_and\_Failover\_Policy](00_02_Resilience_and_Failover_Policy) (Queen failover 4 рівні + Per-Chain Fallback Matrix для 12 ланок Web3)
+- [09\_01\_AI\_Native\_Engineering\_and\_TRL](09_01_AI_Native_Engineering_and_TRL) (Філософія: TRL метрика, Intent-First, Wiki-First, AI Pipeline)
+- [09\_03\_Shape\_Up\_Operations\_and\_RnD\_Clusters](09_03_Shape_Up_Operations_and_RnD_Clusters) (Операційний template: 6+2 цикли, 4 R&D кластери, Betting Table, Async-Review)
+- [09\_02\_TRL\_Matrix\_HIL\_and\_Beyond](09_02_TRL_Matrix_HIL_and_Beyond) (TRL Matrix + per-domain TRL + HIL-симулятори, які знімають TRL-Lock)
+- [09\_04\_GitHub\_Projects\_and\_IaC\_Automation](09_04_GitHub_Projects_and_IaC_Automation) (Projects V2 fields + Labels-as-Code + GitHub Actions workflows)
+- [09\_06\_Action\_Plan\_Tracker](09_06_Action_Plan_Tracker) (🔴 Живий документ — аудит блокерів, план дій, Sprint tracking)
 
 ## 🌱 Модуль 01: Біомеханіка та Хімія (The Anchor)
 
@@ -37,7 +37,7 @@ _Електроніка Soldier/Queen, енергетичні буфери, ме
 - [02\_01\_Hardware\_Architecture\_and\_BOM](02_01_Hardware_Architecture_and_BOM) (BOM капсули Солдата + ASCII power tree)
 - [02\_02\_Blind\_Mate\_Pogo\_Pin\_Interface](02_02_Blind_Mate_Pogo_Pin_Interface) (Сліпий магнітний конектор Pogo-Pin до коаксіального анкера)
 - [02\_03\_BQ25570\_MPPT\_Nano\_Power](02_03_BQ25570_MPPT_Nano_Power) (BQ25570 MPPT нано-потужність + пряме живлення від EBFC)
-- [02\_03\_appendix\_legacy\_breadboard](02_03_appendix_legacy_breadboard) (Додаток: legacy breadboard configurations для архіву)
+- [02\_06\_Legacy\_Breadboard\_Appendix](02_06_Legacy_Breadboard_Appendix) (Додаток: legacy breadboard configurations для архіву)
 - [02\_04\_EDLC\_Supercapacitor\_Buffer](02_04_EDLC_Supercapacitor_Buffer) (Іоністор 0.47Ф / 5.5В)
 - [02\_05\_Queen\_Hardware\_and\_Starlink](02_05_Queen_Hardware_and_Starlink) (Шлюз Королева + SIM7070G + Starlink Direct-to-Cell)
 
@@ -61,7 +61,7 @@ _Rails 8.1 Omakase, моделі, бізнес-логіка, REST API, Phlex UI 
 - [04\_04\_Phlex\_UI\_and\_Tailwind](04_04_Phlex_UI_and_Tailwind) (Phlex компоненти + Tailwind 4 + gaia design tokens)
 - [04\_05\_Codex\_Lore\_Module](04_05_Codex_Lore_Module) (Lore Layer Codex: 4 Realm × 79 Nodes, Fractions, Battle, Discovery)
 - [04\_06\_Testing\_Guide\_and\_Coverage](04_06_Testing_Guide_and_Coverage) (30 RSpec best practices + повна Coverage Matrix: RSpec/Firmware C/Foundry Solidity)
-- [04\_07\_Cultural\_Layer\_External\_Stakeholders](04_07_Cultural_Layer_External_Stakeholders) (Social API Registry: 16 митців + folk master + журналісти + диригенти; Genesis NFT + Data Sonification — deferred)
+- [07\_05\_External\_Stakeholders\_Registry](07_05_External_Stakeholders_Registry) (Social API Registry: 16 митців + folk master + журналісти + диригенти; Genesis NFT + Data Sonification — deferred)
 
 ## ⛓️ Модуль 05: Web3 та Економіка (The Ledger)
 
@@ -90,10 +90,10 @@ _Деплой, моніторинг, секрети та децентраліз�
 
 _Юриспруденція, юніт-економіка та портфель грантових заявок._
 
-- [07\_01\_Nature\_as\_a\_Service\_Contracts](07_01_Nature_as_a_Service_Contracts) (NaaS контракти + параметричне страхування)
-- [07\_02\_Unit\_Economics\_and\_BOM](07_02_Unit_Economics_and_BOM) (Юніт-економіка + ROI через SCC)
-- [07\_03\_Grant\_Applications\_Tracker](07_03_Grant_Applications_Tracker) (Трекер грантових заявок — Horizon Europe, Verra, Gold Standard)
-- [07\_04\_B2G\_External\_Stakeholders](07_04_B2G_External_Stakeholders) (Social API Registry: лісівник Дзюбенко + природоохоронець Сегеда + ДСНС + B2B-клієнти; 6-tier outreach pool)
+- [07\_02\_Nature\_as\_a\_Service\_Contracts](07_02_Nature_as_a_Service_Contracts) (NaaS контракти + параметричне страхування)
+- [07\_03\_Unit\_Economics\_and\_BOM](07_03_Unit_Economics_and_BOM) (Юніт-економіка + ROI через SCC)
+- [07\_04\_Grant\_Applications\_Tracker](07_04_Grant_Applications_Tracker) (Трекер грантових заявок — Horizon Europe, Verra, Gold Standard)
+- [07\_05\_External\_Stakeholders\_Registry](07_05_External_Stakeholders_Registry) (Social API Registry: лісівник Дзюбенко + природоохоронець Сегеда + ДСНС + B2B-клієнти; 6-tier outreach pool)
 
 ## 🔬 Модуль 08: Академічна Інтеграція (University Research Hub)
 

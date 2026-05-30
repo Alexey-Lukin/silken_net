@@ -19,7 +19,7 @@
 
 - **Поточний TRL:** TRL 3 — контакти ідентифіковані, формальну співпрацю не розпочато
 - **Стратегічний пріоритет:** P1 — без валідації тригерів параметричне страхування юридично необґрунтоване; без SOP алерти EWS не конвертуються в реальне реагування
-- **Відкрите:** валідація тригерів страхування + SOP для EWS-алертів (ДСНС) → [`00_08`](00_08_Action_Plan_Tracker) (UNI.*, ARCH.31).
+- **Відкрите:** валідація тригерів страхування + SOP для EWS-алертів (ДСНС) → [`09_06`](09_06_Action_Plan_Tracker) (UNI.*, ARCH.31).
 
 ---
 
@@ -28,7 +28,7 @@
 | Ресурс | Зв'язок |
 |---|---|
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Alert/Emergency сервіси, dClimate Cosmic Eye |
-| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | Параметричне страхування, slashing |
+| [07_02_Nature_as_a_Service_Contracts](07_02_Nature_as_a_Service_Contracts) | Параметричне страхування, slashing |
 | [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Oracle consensus |
 | [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | SlashingProtocol |
 | [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | ЧНУ протоколи (Хімія/Фізика/Біоценологія) |
@@ -37,7 +37,7 @@
 | [08_04_CHDTU_Data_Science_Collaboration](08_04_CHDTU_Data_Science_Collaboration) | Актуарна аналітика, anomaly detection |
 | [08_06_CHMA_Biomedical_Integration](08_06_CHMA_Biomedical_Integration) | ЧМА (біохімія EBFC) |
 | [08_07_SEU_Economics_and_Legal_Integration](08_07_SEU_Economics_and_Legal_Integration) | СЄУ (токеноміка, RWA-legal) |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | UNI.*, ARCH.31 |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | UNI.*, ARCH.31 |
 
 ## 📑 Зміст
 
@@ -57,7 +57,7 @@
 
 ## 🚧 Відкриті передумови та статус
 
-> Статуси трекаються в [`00_08`](00_08_Action_Plan_Tracker) (UNI.*); нижче — контекст партнерства.
+> Статуси трекаються в [`09_06`](09_06_Action_Plan_Tracker) (UNI.*); нижче — контекст партнерства.
 
 - **Формальна зустріч з керівництвом ЧІПБ** — узгодження формату партнерства (міжкафедральна тема, спільні публікації, SOP-розробка)
 - **Уточнення посад та наукових профілів** — верифікація поточних посад та наукових інтересів ідентифікованих дослідників (дані потребують підтвердження через офіційний сайт ЧІПБ / НУЦЗУ)

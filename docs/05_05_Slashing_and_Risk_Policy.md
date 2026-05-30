@@ -2,15 +2,15 @@
 
 ## 🎯 Мета
 
-Канонічний дім **політики Slashing & Risk**: класифікація причини деградації (**халатність** vs **форс-мажор** vs **невизначеність**), прогресивна формула штрафу (категорія A), параметричне страхування (категорія B), DAO peer-review (категорія C), anti-fraud cross-checks і multi-signal de-risk-інваріант. Документ описує **політику й принципи**; механіка реалізації живе у своїх домах і **реферується** звідси: контрактна — `05_03`, pipeline-детекція — `05_02`/`04_02`, страхування — `07_01`, governance — `05_06`.
+Канонічний дім **політики Slashing & Risk**: класифікація причини деградації (**халатність** vs **форс-мажор** vs **невизначеність**), прогресивна формула штрафу (категорія A), параметричне страхування (категорія B), DAO peer-review (категорія C), anti-fraud cross-checks і multi-signal de-risk-інваріант. Документ описує **політику й принципи**; механіка реалізації живе у своїх домах і **реферується** звідси: контрактна — `05_03`, pipeline-детекція — `05_02`/`04_02`, страхування — `07_02`, governance — `05_06`.
 
-> **Чому окремий документ.** Slashing — це **risk/penalty-шар**, концептуально окремий від emission-токеноміки (`05_03`). До 2026-05-30 політика жила в `00_01 §6` (візійна сторінка) і була розпорошена по `05_03`/`07_01`/`05_02`/`04_02` з прихованими дублями. Консолідовано сюди як один SSOT-дім (`00_07 §8.2`).
+> **Чому окремий документ.** Slashing — це **risk/penalty-шар**, концептуально окремий від emission-токеноміки (`05_03`). До 2026-05-30 політика жила в `07_01 §6` (візійна сторінка) і була розпорошена по `05_03`/`07_02`/`05_02`/`04_02` з прихованими дублями. Консолідовано сюди як один SSOT-дім (`09_05 §2`).
 
 ---
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 8 — політика затверджена; backend-механіка реалізована частково (convex-формула `BlockchainBurningService#calculate_slash_ratio` + blackout-routing `ContractHealthCheckService#flag_data_blackout!`, RSpec-покрито). **Відкрите:** formal `cause_classification` A/B/C-gate (SLASH-1), operator-bond (BIZ.13), DAO-confirm перед mainnet → [00_08](00_08_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 8 — політика затверджена; backend-механіка реалізована частково (convex-формула `BlockchainBurningService#calculate_slash_ratio` + blackout-routing `ContractHealthCheckService#flag_data_blackout!`, RSpec-покрито). **Відкрите:** formal `cause_classification` A/B/C-gate (SLASH-1), operator-bond (BIZ.13), DAO-confirm перед mainnet → [09_06](09_06_Action_Plan_Tracker).
 - **Slashing v2:** жорстке "burn-on-degradation" замінено двокатегорійною моделлю (негілентність / форс-мажор) + safety-default (невизначеність) — травень 2026.
 - **De-risk інваріант:** фінансовий slashing **ніколи** не спирається лише на Z-Лоренца — потрібен ≥1 прямий некорельований сигнал (sap_flow / VPD / acoustic).
 
@@ -20,14 +20,14 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [00_01_Vision_Market_and_Slashing_Policy](00_01_Vision_Market_and_Slashing_Policy) | Vision-рівень: місія, NaaS, філософія negligence-vs-force-majeure |
+| [07_01_Vision_Mission_and_Roadmap](07_01_Vision_Mission_and_Roadmap) | Vision-рівень: місія, NaaS, філософія negligence-vs-force-majeure |
 | [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Anti-fraud DCI (`SEC.11`, `check_z_divergence!`); `stress_index` pipeline |
 | [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | `slash()` контракт; Dynamic Tax (insurance-pool funding); `ProtocolParameters` (GAMMA, PENALTY_FACTOR_MAX) |
 | [05_06_Governance_and_DAO](05_06_Governance_and_DAO) | DAO peer-review (категорія C): `SilkenGovernor`/`SilkenTimelock`/quorum |
-| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | Insurance Layer mechanics (Etherisc, два режими); NaaS breach terms; SFC voting after slash |
+| [07_02_Nature_as_a_Service_Contracts](07_02_Nature_as_a_Service_Contracts) | Insurance Layer mechanics (Etherisc, два режими); NaaS breach terms; SFC voting after slash |
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | `BlockchainBurningService`, `ContractHealthCheckService`, `InsightGeneratorService#stress_index`; divergence registry §11 |
 | [08_02_Cybernetic_and_Mathematical_Validation](08_02_Cybernetic_and_Mathematical_Validation) | Ground-truth калібрування Z↔health (де-ризик гіпотези) |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | **Відкрите** (SSOT): SLASH-1 cause-gate, BIZ.13 operator-bond |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | **Відкрите** (SSOT): SLASH-1 cause-gate, BIZ.13 operator-bond |
 
 ## 📑 Зміст
 
@@ -102,7 +102,7 @@ PENALTY_FACTOR_MAX = 2.0   # стеля застосовується до МНО
 - **Капітальний барʼєр (post-war UA foresters):** bond фінансується з накопичених PoPhW-винагород (E.20 Forester Guild) — *earned-bond*, не upfront; добра історія → менший bond (reputation-scaled).
 - **Sybil:** KYC-gated (Hadron) + per-operator + geo-staking.
 
-**🤖 Реалізація після DAO-confirm:** `OperatorBond` модель + `ProtocolParameters` (bond_size, bond_first) + `BlockchainBurningService` (слеш bond перед `locked_balance` для A) + контракт-escrow. Tracked → [`00_08` BIZ.13/SLASH-1](00_08_Action_Plan_Tracker).
+**🤖 Реалізація після DAO-confirm:** `OperatorBond` модель + `ProtocolParameters` (bond_size, bond_first) + `BlockchainBurningService` (слеш bond перед `locked_balance` для A) + контракт-escrow. Tracked → [`09_06` BIZ.13/SLASH-1](09_06_Action_Plan_Tracker).
 
 ## 4. Insurance Payout (тільки для категорії B)
 
@@ -115,7 +115,7 @@ ForceMajeure event → InsurancePayoutWorker
 
 - Параметричні тригери: `dClimate.fire_detected ≥ FRP 10MW`, `dClimate.drought_index ≥ severe`, `NOAA earthquake ≥ M6 within 10km`.
 - Cap: `insurance_pool` ≥ 100,000 SCC підтримується через **Dynamic Tax** (2% від кожного `batchMint`, якщо pool < threshold) — механіка [`05_03 §Dynamic Tax`](05_03_Tokenomics_SCC_and_SFC).
-- Mechanics виплати (Internal mode vs Etherisc Oracle mode, guard clauses, `ParametricInsurance`) — дім [`07_01 §7 Insurance Layer`](07_01_Nature_as_a_Service_Contracts).
+- Mechanics виплати (Internal mode vs Etherisc Oracle mode, guard clauses, `ParametricInsurance`) — дім [`07_02 §7 Insurance Layer`](07_02_Nature_as_a_Service_Contracts).
 
 ## 5. Indeterminate (категорія C) — DAO Peer Review
 
@@ -147,7 +147,7 @@ ForceMajeure event → InsurancePayoutWorker
 - **Streamr P2P broadcast gap** довше 24 год без MaintenanceRecord — посилення penalty_factor на +0.25.
 - **Correlated comms-loss guard [SLASH-SAFETY].** Сигнали втрати зв'язку **не є незалежними** і не повинні складатися: «немає ack» (+0.5), «Streamr gap» (+0.25) та «daily_insights порожні» мають **один root-cause** — недоступність вузла/шлюзу. **Одночасна втрата даних по ВСЬОМУ кластеру** (усі дерева «згасли» разом) — це сигнатура **відмови шлюзу / Starlink-блекауту** (force-majeure → B/insurance або C/peer-review), а НЕ per-tree недбалість (A). Класифікувати масовий blackout як A = карати лісника за збитий машиною / вкрадений шлюз. Той самий де-ризик-принцип, що VPD-confounder (`02_01 §3.4`) і Lorenz (§7): незворотний фінансовий вирок вимагає **прямого, некорельованого** підтвердження халатності.
 
-  > **🟡 Code↔doc divergence (формула + blackout закрито):** (1) ✅ `BlockchainBurningService` палить за **§3 convex-кривою** `clamp(damage_ratio^GAMMA × min(pf, PENALTY_FACTOR_MAX), 0, 1)` (`#calculate_slash_ratio`; GAMMA=1.3/PF_MAX=2.0 DAO-governed через `SystemParameter` ← `ProtocolParameters.sol`), а **не лінійно**; (2) ✅ blackout більше НЕ палить — `ContractHealthCheckService#flag_data_blackout!` (cluster-wide empty → Field Audit, force-majeure, no burn). **Лишилось (🟡 → DAO/founder):** формальний `cause_classification` A/B/C-термін у коді ще відсутній + cause-driven `penalty_factor` uplift (Streamr gap/repeat) + signal de-correlation. → tracked: [`00_08` SLASH-1](00_08_Action_Plan_Tracker); реєстр divergence — [`04_02 §11`](04_02_Business_Logic_and_Services).
+  > **🟡 Code↔doc divergence (формула + blackout закрито):** (1) ✅ `BlockchainBurningService` палить за **§3 convex-кривою** `clamp(damage_ratio^GAMMA × min(pf, PENALTY_FACTOR_MAX), 0, 1)` (`#calculate_slash_ratio`; GAMMA=1.3/PF_MAX=2.0 DAO-governed через `SystemParameter` ← `ProtocolParameters.sol`), а **не лінійно**; (2) ✅ blackout більше НЕ палить — `ContractHealthCheckService#flag_data_blackout!` (cluster-wide empty → Field Audit, force-majeure, no burn). **Лишилось (🟡 → DAO/founder):** формальний `cause_classification` A/B/C-термін у коді ще відсутній + cause-driven `penalty_factor` uplift (Streamr gap/repeat) + signal de-correlation. → tracked: [`09_06` SLASH-1](09_06_Action_Plan_Tracker); реєстр divergence — [`04_02 §11`](04_02_Business_Logic_and_Services).
 
 ## 7. Multi-signal slashing — Лоренц ≠ єдина правда [Lorenz de-risk]
 

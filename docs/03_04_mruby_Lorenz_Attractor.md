@@ -14,7 +14,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — Lorenz атрактор bitwise-identical firmware↔backend (FW.7 Float parity, 50k fuzz); SEC.11 seed provenance закрито. Канонічний дім Lorenz-констант (§1.2). Відкрите: numeric DCI ε flip (`FW.31`, deferred) → [`00_08`](00_08_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 6 — Lorenz атрактор bitwise-identical firmware↔backend (FW.7 Float parity, 50k fuzz); SEC.11 seed provenance закрито. Канонічний дім Lorenz-констант (§1.2). Відкрите: numeric DCI ε flip (`FW.31`, deferred) → [`09_06`](09_06_Action_Plan_Tracker).
 
 ---
 
@@ -30,7 +30,7 @@
 | [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | CRITICAL_Z_MIN/MAX → slashing |
 | [08_02_Cybernetic_and_Mathematical_Validation](08_02_Cybernetic_and_Mathematical_Validation) | Матем. верифікація числової стабільності |
 | `firmware/bio_contracts/bio_contract.rb` · `app/services/silken_net/attractor.rb` · `seed_derivation.rb` | mruby + Rails-дзеркало (Float parity); SEC.11 entry-point |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.31 numeric-DCI flip (deferred); FW.45 fixed-point hardening |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.31 numeric-DCI flip (deferred); FW.45 fixed-point hardening |
 
 ## 📑 Зміст
 
@@ -88,7 +88,7 @@ dz/dt = x · y - β · z
 >
 > Третій рівень hardening — **fixed-point Q-формат:** вхідні дані × 10⁶, всі арифметичні операції у `int64_t`/Ruby `Integer` (немає overflow до 2⁶³ ≈ 9.2·10¹⁸). Тоді результат **бітово ідентичний на будь-якому процесорі**, від AVR до zkVM.
 >
-> Ціна: повне переписування `firmware/bio_contracts/bio_contract.rb`, `app/services/silken_net/attractor.rb`, всіх 50k parity-тестів, плюс ручне керування overflow (квадрати/добутки потрібно зрізати до Q-формату на кожному кроці Ейлера). Робота S→L залежно від обсягу регресії. Цінність — лише при переході до ZK-proof Lorenz (Risc Zero / SP1) або при підтримці радикально іншої HW-цілі (RV32E без FPU, тощо). До цього моменту Float-парність достатня. Зафіксовано як `[FW.45] Integer-Math Lorenz hardening — deferred until ZK-circuit milestone` у `docs/00_08_Action_Plan_Tracker`.
+> Ціна: повне переписування `firmware/bio_contracts/bio_contract.rb`, `app/services/silken_net/attractor.rb`, всіх 50k parity-тестів, плюс ручне керування overflow (квадрати/добутки потрібно зрізати до Q-формату на кожному кроці Ейлера). Робота S→L залежно від обсягу регресії. Цінність — лише при переході до ZK-proof Lorenz (Risc Zero / SP1) або при підтримці радикально іншої HW-цілі (RV32E без FPU, тощо). До цього моменту Float-парність достатня. Зафіксовано як `[FW.45] Integer-Math Lorenz hardening — deferred until ZK-circuit milestone` у `docs/09_06_Action_Plan_Tracker`.
 
 ### 1.3 Класичний Атрактор Лоренца (Метелик)
 
@@ -116,7 +116,7 @@ C₂ = (-√(β(ρ-1)), -√(β(ρ-1)), ρ-1) = (-8.485, -8.485, 27.0)
 > | `DR19 == 0x4C5A5354` AND `isfinite(x,y,z)` | RTC DR16-DR18 (warm restart, FW.6) | **Continuation:** продовження безперервної траєкторії після STOP2 wake-up. |
 > | `DR19 ≠ 0x4C5A5354` OR `!isfinite(x,y,z)` | `(x₀,y₀,z₀) = unpack_signed_unit_floats(HMAC-SHA256(K_seed, "init\|" \|\| epoch_day_be)[0..23])` | **Cold start (rare):** після VBAT loss. K_seed зберігається у Flash (Soldier) і `hardware_keys.lorenz_seed_hex` (backend), деривується при provisioning через `HKDF-SHA256(PROVISIONING_MASTER_KEY, salt="silken-lorenz-v1", info="silken-lorenz-seed\|<DID>", len=32)`. Daily epoch_day rotation дає forward secrecy ≤ 24 год. |
 >
-> **Чому K_seed замість chaos_seed/DID:** `chaos_seed` (HRNG) недетермінований — backend не зміг би відтворити Z. DID-as-seed (`SilkenNet::Attractor.calculate_z(did, …)`) був public-input → атакер з open-source формулою Лоренца передбачає очікуваний Z для будь-якого дерева. K_seed — **private**, ніколи не залишає пристрій/сервер у відкритому вигляді (HKDF деривується незалежно з `PROVISIONING_MASTER_KEY`). Закриває чотири фундаментальні вади (sniff/correlation/identifier-as-key/forward-secrecy) — див. SEC.11 у `docs/00_08_Action_Plan_Tracker`.
+> **Чому K_seed замість chaos_seed/DID:** `chaos_seed` (HRNG) недетермінований — backend не зміг би відтворити Z. DID-as-seed (`SilkenNet::Attractor.calculate_z(did, …)`) був public-input → атакер з open-source формулою Лоренца передбачає очікуваний Z для будь-якого дерева. K_seed — **private**, ніколи не залишає пристрій/сервер у відкритому вигляді (HKDF деривується незалежно з `PROVISIONING_MASTER_KEY`). Закриває чотири фундаментальні вади (sniff/correlation/identifier-as-key/forward-secrecy) — див. SEC.11 у `docs/09_06_Action_Plan_Tracker`.
 >
 > **[FW.5]** `delta_t_s` та `vcap_mv` визначають β-пертурбацію в обох гілках. Default-значення (`BASELINE_DELTA_T_S=60`, `NOMINAL_VCAP_MV=3300`) роблять β=BASE_BETA при відсутності фізичного сигналу.
 >
@@ -133,7 +133,7 @@ C₂ = (-√(β(ρ-1)), -√(β(ρ-1)), ρ-1) = (-8.485, -8.485, 27.0)
 > 2. **Soldier-side explicit signal** — забронювати 1 біт у Status Byte (наразі лише `[PanicFlag:1 | Status:2 | GrowthPoints:5]` — все зайнято) АБО у Pad (наразі firmware_version_id у байтах 0..1 + panic_counter у байтах 2..3 — все зайнято) під `time_uncertain_flag`. Це wire-format change → blocked by наступним packet revision. Простіше: при cold-boot Soldier інкрементує спеціальне значення в `acoustic_events` (наприклад, `0xFE` — щоб не сплутати з `255 = saturated`) як sentinel; backend трактує як «time uncertain». Не ламає wire-format, але вимагає координованого rollout firmware.
 > 3. **Architectural альтернатива — defer first uplink** — Soldier при cold-boot не відсилає uplink до отримання `CMD_TIME_SYNC` beacon (max 10 хв grace, `TIME_SYNC_COLD_BOOT_GRACE_MS`). Просто, але ламає OTA Reflex Shot первинний trigger (Queen чекає uplink Soldier'а щоб надіслати OTA). Можна обійти: Soldier у grace-вікні шле **спрощений «hello» пакет** без Lorenz state, тільки DID + Vcap + `TIME_REQ` маркер.
 >
-> Найдешевший плановий шлях для TRL 7 — варіант 1 (server-side fallback) + опційно варіант 2 (sentinel у acoustic_events). Tracker: див. **ARCH.41** у [00_08](00_08_Action_Plan_Tracker).
+> Найдешевший плановий шлях для TRL 7 — варіант 1 (server-side fallback) + опційно варіант 2 (sentinel у acoustic_events). Tracker: див. **ARCH.41** у [09_06](09_06_Action_Plan_Tracker).
 
 ```
 firmware/soldier/main.c — ФАЗА 1 (SENSE + State Restore)
@@ -692,13 +692,13 @@ if (mrb) {
 >
 > **Партнери:** Кирилюк (синергетика економічних систем, `08_01 §1.4`), Гусак (нелінійна динаміка, `08_01 §1.2`), Порубльов (кібернетика FOTIUS, `08_02`).
 >
-> **Деталі повної R&D-програми:** [`00_06 §7.1`](00_06_Strategic_Roadmap_and_HIL_Simulators) — Forest-Level Emergence Gap.
+> **Деталі повної R&D-програми:** [`09_02 §7.1`](09_02_TRL_Matrix_HIL_and_Beyond) — Forest-Level Emergence Gap.
 
 ---
 
 ## ⚠️ 7. Відомі Обмеження та Deferred-Фічі
 
-### 7.1 Numeric Tolerance Band — DCI ε (deferred, code-staged; `00_08 FW.31`)
+### 7.1 Numeric Tolerance Band — DCI ε (deferred, code-staged; `09_06 FW.31`)
 
 
 **Контекст:** SEC.11 закрив BLOCKER-2 і відкрив технічну можливість використовувати **числовий** DCI-перевірний крок (`|server_z − device_z| < ε`) замість суто **категоричного** enum-match'у. Числова перевірка значно потужніша: дозволяє ловити replay-атаки з правильним StatusByte, але неправильною Z-magnitude (наприклад, attacker викликав легітимний enum через clamp-логіку, але справжня траєкторія розійшлася). Категорична перевірка пропускає такі сценарії.
@@ -724,7 +724,7 @@ Numeric branch виконується **лише** коли `attributes[:device_
 
 **Lab measurement protocol (pre-flip gate):**
 
-Потрібно фактично виміряти ARM↔x86 IEEE-754 drift на цільовому залізі, перш ніж довірити numeric ε фінансовим рішенням (slashing, mint). Емпірика [FW.7](../00_08_Action_Plan_Tracker.md) дала `< 1e-12` теоретично — але без instrumented testing цифру не можна "закладати в конституцію".
+Потрібно фактично виміряти ARM↔x86 IEEE-754 drift на цільовому залізі, перш ніж довірити numeric ε фінансовим рішенням (slashing, mint). Емпірика [FW.7](../09_06_Action_Plan_Tracker.md) дала `< 1e-12` теоретично — але без instrumented testing цифру не можна "закладати в конституцію".
 
 | Крок | Дія | Артефакт |
 |------|-----|----------|
@@ -769,7 +769,7 @@ kamal env push --secret GAIA_DCI_NUMERIC_TOLERANCE=false
 5. malformed `GAIA_DCI_NUMERIC_EPSILON="abc"` → graceful fallback + warn
 6. `device_z` missing → numeric branch skipped (Gate D guard)
 
-**Cross-ref:** [00_08 FW.31](00_08_Action_Plan_Tracker), [03_05 §3.2 BLOCKER-2 FW.2 CCM wire format](03_05_Hardware_Symmetric_Crypto_and_Security), [04_02 TelemetryUnpackerService](04_02_Business_Logic_and_Services), [06_03 Prometheus](06_03_Prometheus_Observability) (після Gate D — додати `silkennet_dci_numeric_rejections_total`).
+**Cross-ref:** [09_06 FW.31](09_06_Action_Plan_Tracker), [03_05 §3.2 BLOCKER-2 FW.2 CCM wire format](03_05_Hardware_Symmetric_Crypto_and_Security), [04_02 TelemetryUnpackerService](04_02_Business_Logic_and_Services), [06_03 Prometheus](06_03_Prometheus_Observability) (після Gate D — додати `silkennet_dci_numeric_rejections_total`).
 
 ---
 

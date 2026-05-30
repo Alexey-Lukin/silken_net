@@ -1,4 +1,4 @@
-# 04_07: Cultural Layer — External Stakeholders (Зовнішні Транслятори)
+# 07_05: Cultural Layer — External Stakeholders (Зовнішні Транслятори)
 
 ## 🎯 Мета
 
@@ -22,7 +22,7 @@ SCC/SFC ([`05_03`](05_03_Tokenomics_SCC_and_SFC)).
   → запуск Genesis NFT треку; TRL 7 у Модулі 04 (Codex Lore live) → залучення
   митців до візуальних артефактів.
 - **Власник:** TBD (CEO / Head of Partnerships, не CTO).
-- **Outreach tracker:** [`00_08`](00_08_Action_Plan_Tracker) § External Stakeholders.
+- **Outreach tracker:** [`09_06`](09_06_Action_Plan_Tracker) § External Stakeholders.
 
 ---
 
@@ -34,9 +34,9 @@ SCC/SFC ([`05_03`](05_03_Tokenomics_SCC_and_SFC)).
 | [04_05_Codex_Lore_Module](04_05_Codex_Lore_Module) | Lore Layer, ADR-CDX-1…7 |
 | [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Genesis cluster pipeline |
 | [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | SCC + майбутня Genesis NFT емісія |
-| [07_04_B2G_External_Stakeholders](07_04_B2G_External_Stakeholders) | B2G/B2B зовнішні (Social API Registry) |
+| [07_05_External_Stakeholders_Registry](07_05_External_Stakeholders_Registry) | B2G/B2B зовнішні (Social API Registry) |
 | [08_07_SEU_Economics_and_Legal_Integration](08_07_SEU_Economics_and_Legal_Integration) | §1.7 Теліженко — UX партнерство (MoU) |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | § External Stakeholders — outreach tracker |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | § External Stakeholders — outreach tracker |
 
 ## 📑 Зміст
 
@@ -166,7 +166,7 @@ PEEK-куполів, антивандальної біомімікрії.
   потребує візуального + аудіо еталону `IDLE State` для документації та
   пітч-матеріалів. Пейзажі Іщенка — готовий референс гармонійного стану
   лісу (нульова entropy, з якою порівнюються аномалії).
-- **SSOT-мапінг:** [`07_01`](07_01_Nature_as_a_Service_Contracts) (NaaS pitch),
+- **SSOT-мапінг:** [`07_02`](07_02_Nature_as_a_Service_Contracts) (NaaS pitch),
   [`03_03`](03_03_TinyML_Acoustic_Inference).
 - **Status:** 🔵 Identified.
 
@@ -211,7 +211,7 @@ PEEK-куполів, антивандальної біомімікрії.
   у Черкаському борі (Proof of Growth). Кошти йдуть і на ЗСУ, і на наступну
   партію STM32 плат — два соціальні фронти одночасно.
 - **SSOT-мапінг:** [`05_03`](05_03_Tokenomics_SCC_and_SFC) (charity-mint),
-  [`07_03`](07_03_Grant_Applications_Tracker).
+  [`07_04`](07_04_Grant_Applications_Tracker).
 - **Status:** 🔵 Identified.
 
 ### 2.2. Tier B — National Visual Identity (PR-валюта)
@@ -272,7 +272,7 @@ Europe). Не зараз — але треба зафіксувати, доки 
   співіснують у глибокому історичному зв'язку. TinyML chainsaw-detection
   ([`03_03`](03_03_TinyML_Acoustic_Inference)) буквально захищатиме те,
   що він малював усе життя.
-- **SSOT-мапінг:** [`07_01`](07_01_Nature_as_a_Service_Contracts) (regional
+- **SSOT-мапінг:** [`07_02`](07_02_Nature_as_a_Service_Contracts) (regional
   expansion to Carpathians), [`03_03`](03_03_TinyML_Acoustic_Inference).
 - **Status:** 🔵 Identified (high seniority → priority outreach window).
 
@@ -340,7 +340,7 @@ Europe). Не зараз — але треба зафіксувати, доки 
   пензля. Для пітча китайським/південно-східноазіатським інвесторам —
   абсолютний резонанс.
 - **SSOT-мапінг:** [`03_04`](03_04_mruby_Lorenz_Attractor),
-  [`00_04`](00_04_AI_Native_Engineering_and_TRL) (Wu-Wei filosophy).
+  [`09_01`](09_01_AI_Native_Engineering_and_TRL) (Wu-Wei filosophy).
 - **Status:** 🔵 Identified.
 
 #### B8. Віктор Ковтун — Слобожанський пейзаж як baseline
@@ -358,16 +358,16 @@ Europe). Не зараз — але треба зафіксувати, доки 
   Готовий набір ілюстрацій для розділу "How the forest should look"
   у whitepaper.
 - **SSOT-мапінг:** [`03_03`](03_03_TinyML_Acoustic_Inference) (IDLE baseline),
-  [`07_01`](07_01_Nature_as_a_Service_Contracts) (pitch deck visuals).
+  [`07_02`](07_02_Nature_as_a_Service_Contracts) (pitch deck visuals).
 - **Status:** 🔵 Identified (verify life status before formal outreach).
 
 ### 2.3. Tier C — Народна творчість, медіа, звук
 
 | # | Особа | Звання / Роль | Афіліація | API In | SSOT-мапінг | Status |
 |---|---|---|---|---|---|---|
-| C1 | Ольга Мартинова | Заслужений майстер народної творчості; голова Черкаського осередку НСМНМ України | Незалежний | **Антивандальна біомімікрія Queen-капсули** — текстура кори/смоли для маскування корпусу; семантика "Дерева Життя" для community-acceptance pitch | [`02_05`](02_05_Queen_Hardware_and_Starlink) (Queen radome), [`07_01`](07_01_Nature_as_a_Service_Contracts) (community engagement) | 🔵 Identified |
-| C2 | Михайло Калініченко | Заслужений журналіст; кпн; колишній керівник ТРК "Рось"; ген. директор ТРК "Ільдана"; викладач ЧНУ | ТРК "Ільдана" + ЧНУ | Документальний фільм про проєкт; превентивний інформаційний фон проти екопанік | PR layer для [`07_01`](07_01_Nature_as_a_Service_Contracts) | 🔵 Identified |
-| C3 | Валентина Душок (Рабцун) | Заслужений журналіст; директорка ТРК "Ільдана"; зв'язки в ОДА | ТРК "Ільдана" | Регіональне інфо-лобі; вихід на ОДА (вже зв'язаний канал зі Спрягайлом — [`08_01 §1.3`](08_01_University_R_and_D_Protocols)) | [`07_03`](07_03_Grant_Applications_Tracker) (державні гранти) | 🔵 Identified |
+| C1 | Ольга Мартинова | Заслужений майстер народної творчості; голова Черкаського осередку НСМНМ України | Незалежний | **Антивандальна біомімікрія Queen-капсули** — текстура кори/смоли для маскування корпусу; семантика "Дерева Життя" для community-acceptance pitch | [`02_05`](02_05_Queen_Hardware_and_Starlink) (Queen radome), [`07_02`](07_02_Nature_as_a_Service_Contracts) (community engagement) | 🔵 Identified |
+| C2 | Михайло Калініченко | Заслужений журналіст; кпн; колишній керівник ТРК "Рось"; ген. директор ТРК "Ільдана"; викладач ЧНУ | ТРК "Ільдана" + ЧНУ | Документальний фільм про проєкт; превентивний інформаційний фон проти екопанік | PR layer для [`07_02`](07_02_Nature_as_a_Service_Contracts) | 🔵 Identified |
+| C3 | Валентина Душок (Рабцун) | Заслужений журналіст; директорка ТРК "Ільдана"; зв'язки в ОДА | ТРК "Ільдана" | Регіональне інфо-лобі; вихід на ОДА (вже зв'язаний канал зі Спрягайлом — [`08_01 §1.3`](08_01_University_R_and_D_Protocols)) | [`07_04`](07_04_Grant_Applications_Tracker) (державні гранти) | 🔵 Identified |
 | C4 | Леонід Трофименко | Заслужений діяч мистецтв; диригент Черкаського академічного симфонічного оркестру | Черкаська обласна філармонія | Data Sonification партитура для пітч-відео (TRL 8+) | Defer — потрібен live stream даних з Genesis cluster | ⚪ Deferred |
 | C5 | Олександр Дяченко | Заслужений діяч мистецтв; симфонічна/хорова музика | Незалежний | Альтернативний канал для Sonification | Defer | ⚪ Deferred |
 | C6 | Василь Мельниченко | Заслужений працівник культури; кпн з історії; проф. ЧДТУ; багаторічний очільник Черкаського осередку Спілки краєзнавців | ЧДТУ (вже партнерський університет — [`08_04`](08_04_CHDTU_Data_Science_Collaboration)) | Історико-культурний контекст RWA-токенів (Холодноярські Master Nodes, скіфські городища); вибір висот для Queen-шлюзів на основі історичних оглядових точок | [`05_03 §RWA`](05_03_Tokenomics_SCC_and_SFC), [`02_05`](02_05_Queen_Hardware_and_Starlink) | 🔵 Identified |

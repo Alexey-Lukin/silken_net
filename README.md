@@ -63,7 +63,7 @@ Slashing: лише за доведену халатність (cause-gate A/B/C;
 
 ## 🌐 Social API Registry (Зовнішні Стейкхолдери)
 
-Окрім академічного консорціуму ([`08_01`](docs/08_01_University_R_and_D_Protocols.md)–[`08_07`](docs/08_07_SEU_Economics_and_Legal_Integration.md)), проєкт залежить від зовнішніх **non-operational** стейкхолдерів: B2G-гейткіпери (лісівник Дзюбенко, природоохоронець Сегеда), B2B-клієнти (CBAM-офсет для "Азоту", лісосмуги агросектора), метрологія (Чорней — сертифікація SCC) та культурний шар (16 митців національного/локального рівня для Genesis NFT + Data Sonification). Жоден із записів не блокує merge — це outreach pool, що активується за TRL-тригерами. Принцип Zero-Trust: матриця інтерфейсів `(API In, API Out, SSOT-link, Status)` замість сюжетів. Деталі: [`docs/04_07_Cultural_Layer_External_Stakeholders.md`](docs/04_07_Cultural_Layer_External_Stakeholders.md) (Cultural Layer) + [`docs/07_04_B2G_External_Stakeholders.md`](docs/07_04_B2G_External_Stakeholders.md) (B2G/B2B Matrix). Outreach tasks: [`docs/00_08`](docs/00_08_Action_Plan_Tracker.md) § STK.1–STK.10.
+Окрім академічного консорціуму ([`08_01`](docs/08_01_University_R_and_D_Protocols.md)–[`08_07`](docs/08_07_SEU_Economics_and_Legal_Integration.md)), проєкт залежить від зовнішніх **non-operational** стейкхолдерів: B2G-гейткіпери (лісівник Дзюбенко, природоохоронець Сегеда), B2B-клієнти (CBAM-офсет для "Азоту", лісосмуги агросектора), метрологія (Чорней — сертифікація SCC) та культурний шар (16 митців національного/локального рівня для Genesis NFT + Data Sonification). Жоден із записів не блокує merge — це outreach pool, що активується за TRL-тригерами. Принцип Zero-Trust: матриця інтерфейсів `(API In, API Out, SSOT-link, Status)` замість сюжетів. Деталі: [`docs/07_05_External_Stakeholders_Registry.md`](docs/07_05_External_Stakeholders_Registry.md) (Cultural Layer) + [`docs/07_05_External_Stakeholders_Registry.md`](docs/07_05_External_Stakeholders_Registry.md) (B2G/B2B Matrix). Outreach tasks: [`docs/09_06`](docs/09_06_Action_Plan_Tracker.md) § STK.1–STK.10.
 
 ---
 
@@ -257,14 +257,14 @@ kamal deploy
 
 **Архітектура, Стратегія та Операції (Модуль 00)**
 - [`00_00`](docs/00_00_SSOT_Index.md) — єдине джерело істини (SSOT), головний реєстр
-- [`00_01`](docs/00_01_Vision_Market_and_Slashing_Policy.md) — місія, проблема VCM, NaaS (філософія Slashing → [`05_05`](docs/05_05_Slashing_and_Risk_Policy.md))
-- [`00_02`](docs/00_02_System_Architecture_and_12_Chain_Pipeline.md) — 8-рівнева кіберфізична архітектура + 12-крокової конвеєр
-- [`00_03`](docs/00_03_Resilience_and_Failover_Policy.md) — Queen failover + Per-Chain Fallback Matrix
-- [`00_04`](docs/00_04_AI_Native_Engineering_and_TRL.md) — AI-Native філософія: TRL метрика, Intent-First, Wiki-First
-- [`00_05`](docs/00_05_Shape_Up_Operations_and_RnD_Clusters.md) — Shape Up 6+2 цикли, 4 R&D кластери, Betting Table, Async-Review
-- [`00_06`](docs/00_06_Strategic_Roadmap_and_HIL_Simulators.md) — TRL Matrix + HIL-симулятори (per-domain TRL)
-- [`00_07`](docs/00_07_GitHub_Projects_and_IaC_Automation.md) — Projects V2 + Labels-as-Code + GitHub Actions workflows
-- [`00_08`](docs/00_08_Action_Plan_Tracker.md) — 🔴 живий трекер незавершених задач (DOC/SW/SEC/ARCH/UNI аудит)
+- [`07_01`](docs/07_01_Vision_Mission_and_Roadmap.md) — місія, проблема VCM, NaaS (філософія Slashing → [`05_05`](docs/05_05_Slashing_and_Risk_Policy.md))
+- [`00_01`](docs/00_01_System_Architecture_and_12_Chain_Pipeline.md) — 8-рівнева кіберфізична архітектура + 12-крокової конвеєр
+- [`00_02`](docs/00_02_Resilience_and_Failover_Policy.md) — Queen failover + Per-Chain Fallback Matrix
+- [`09_01`](docs/09_01_AI_Native_Engineering_and_TRL.md) — AI-Native філософія: TRL метрика, Intent-First, Wiki-First
+- [`09_03`](docs/09_03_Shape_Up_Operations_and_RnD_Clusters.md) — Shape Up 6+2 цикли, 4 R&D кластери, Betting Table, Async-Review
+- [`09_02`](docs/09_02_TRL_Matrix_HIL_and_Beyond.md) — TRL Matrix + HIL-симулятори (per-domain TRL)
+- [`09_04`](docs/09_04_GitHub_Projects_and_IaC_Automation.md) — Projects V2 + Labels-as-Code + GitHub Actions workflows
+- [`09_06`](docs/09_06_Action_Plan_Tracker.md) — 🔴 живий трекер незавершених задач (DOC/SW/SEC/ARCH/UNI аудит)
 
 **Біомеханіка та Хімія (Модуль 01)**
 - [`01_01`](docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md) — 3-складовий Ti-6Al-4V анкер
@@ -293,7 +293,7 @@ kamal deploy
 - [`04_04`](docs/04_04_Phlex_UI_and_Tailwind.md) — дизайн-система Phlex + Tailwind
 - [`04_05`](docs/04_05_Codex_Lore_Module.md) — Codex / Lore-шар (read-only Atlas з 79 архетипів: екосистеми, унікальні дерева, біо/інженерні протоколи, міфо-фреймворки)
 - [`04_06`](docs/04_06_Testing_Guide_and_Coverage.md) — 30 RSpec best practices + повна Coverage Matrix (RSpec / Firmware C / Foundry Solidity)
-- [`04_07`](docs/04_07_Cultural_Layer_External_Stakeholders.md) — Cultural Layer Social API Registry (16 митців + folk master + журналісти + диригенти; Genesis NFT + Data Sonification deferred)
+- [`07_05`](docs/07_05_External_Stakeholders_Registry.md) — Cultural Layer Social API Registry (16 митців + folk master + журналісти + диригенти; Genesis NFT + Data Sonification deferred)
 
 **Web3 та Економіка (Модуль 05)**
 - [`05_01`](docs/05_01_Multichain_Architecture.md) — 12-chain DePIN стек
@@ -311,10 +311,10 @@ kamal deploy
 - [`06_05`](docs/06_05_Puma_Configuration.md) — Puma 8: IO-bound thread pool, shutdown debug, кластерні хуки
 
 **Бізнес та Фінанси (Модуль 07)**
-- [`07_01`](docs/07_01_Nature_as_a_Service_Contracts.md) — NaaS контракти та страхування
-- [`07_02`](docs/07_02_Unit_Economics_and_BOM.md) — юніт-економіка та ROI через SCC
-- [`07_03`](docs/07_03_Grant_Applications_Tracker.md) — трекер грантових заявок
-- [`07_04`](docs/07_04_B2G_External_Stakeholders.md) — B2G/B2B Social API Registry (лісівник Дзюбенко + природоохоронець Сегеда + ДСНС + B2B-клієнти; 6-tier outreach pool)
+- [`07_02`](docs/07_02_Nature_as_a_Service_Contracts.md) — NaaS контракти та страхування
+- [`07_03`](docs/07_03_Unit_Economics_and_BOM.md) — юніт-економіка та ROI через SCC
+- [`07_04`](docs/07_04_Grant_Applications_Tracker.md) — трекер грантових заявок
+- [`07_05`](docs/07_05_External_Stakeholders_Registry.md) — B2G/B2B Social API Registry (лісівник Дзюбенко + природоохоронець Сегеда + ДСНС + B2B-клієнти; 6-tier outreach pool)
 
 **Наука та R&D (Модуль 08)**
 - [`08_01`](docs/08_01_University_R_and_D_Protocols.md) — партнерство з ЧНУ
@@ -325,7 +325,7 @@ kamal deploy
 - [`08_06`](docs/08_06_CHMA_Biomedical_Integration.md) — ЧМА: біомедична валідація EBFC, токсикологія Ti-6Al-4V, ксилемоінтеграція
 - [`08_07`](docs/08_07_SEU_Economics_and_Legal_Integration.md) — СЄУ: макроекономіка NaaS, RWA-легалізація, промисловий дизайн PEEK-радому
 
-> **Модуль 09 (Управління)** та **Модуль 10 (Тестування)** консолідовані у Модуль 00 (`00_04`/`00_05`/`00_06`/`00_07`/`00_08`) та Модуль 04 (`04_06`) відповідно.
+> **Модуль 09 (Управління)** та **Модуль 10 (Тестування)** консолідовані у Модуль 00 (`09_01`/`09_03`/`09_02`/`09_04`/`09_06`) та Модуль 04 (`04_06`) відповідно.
 
 ---
 

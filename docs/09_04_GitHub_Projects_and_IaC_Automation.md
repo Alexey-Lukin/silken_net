@@ -1,11 +1,11 @@
-# 00_07: GitHub Projects and IaC Automation
+# 09_04: GitHub Projects and IaC Automation
 
 ## 🎯 Мета
 
 Звести когнітивне навантаження на Архітектора до нуля шляхом автоматизації рутинних процесів через **Infrastructure-as-Code**. Labels, fields, workflows та routing — все живе у репозиторії як `.yml` файли, а не як ручні чек-листи. SSOT — лише `.github/labels.yml`, `.github/labeler.yml`, `.github/workflows/*.yml` та цей документ.
 
 Ключові компоненти автоматизації:
-- **TRL Auto-Advancement:** Автоматична синхронізація рівнів зрілості технологій при завершенні циклів (Shape Up, [`00_05`](00_05_Shape_Up_Operations_and_RnD_Clusters)).
+- **TRL Auto-Advancement:** Автоматична синхронізація рівнів зрілості технологій при завершенні циклів (Shape Up, [`09_03`](09_03_Shape_Up_Operations_and_RnD_Clusters)).
 - **SSOT Integrity Guard:** Жорстка прив'язка коду до архітектурної документації (Wiki).
 - **Parallel Workload Matrix:** Візуальний поділ потоків між фізичними (Лабораторія / Завод) та цифровими (ШІ) агентами.
 - **Labels-as-Code:** `.github/labels.yml` + GitHub Actions workflow синхронізує лейбли при кожному push.
@@ -14,7 +14,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 7 — CI/CD пайплайн TRL Auto-Advancement на стадії впровадження. Відкриті: `trl_sync.yml` TRL-gate + `labeler.yml` apply (OPS.*) → [`00_08`](00_08_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 7 — CI/CD пайплайн TRL Auto-Advancement на стадії впровадження. Відкриті: `trl_sync.yml` TRL-gate + `labeler.yml` apply (OPS.*) → [`09_06`](09_06_Action_Plan_Tracker).
 
 ---
 
@@ -22,12 +22,12 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [00_04_AI_Native_Engineering_and_TRL](00_04_AI_Native_Engineering_and_TRL) | AI-Native методологія (philosophy) |
-| [00_05_Shape_Up_Operations_and_RnD_Clusters](00_05_Shape_Up_Operations_and_RnD_Clusters) | Shape Up operations; §5.2 Betting Table, §6 Academic Semester |
-| [00_06_Strategic_Roadmap_and_HIL_Simulators](00_06_Strategic_Roadmap_and_HIL_Simulators) | Стратегічна дорожня карта + TRL-матриця |
+| [09_01_AI_Native_Engineering_and_TRL](09_01_AI_Native_Engineering_and_TRL) | AI-Native методологія (philosophy) |
+| [09_03_Shape_Up_Operations_and_RnD_Clusters](09_03_Shape_Up_Operations_and_RnD_Clusters) | Shape Up operations; §5.2 Betting Table, §6 Academic Semester |
+| [09_02_TRL_Matrix_HIL_and_Beyond](09_02_TRL_Matrix_HIL_and_Beyond) | Стратегічна дорожня карта + TRL-матриця |
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | §13b Drift Register (живиться результатами SSOT Integrity Guard) |
 | [06_01_Deployment_Kamal_Terraform](06_01_Deployment_Kamal_Terraform) | Kamal / Terraform CI integration |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | Open backlog (OPS.3 / OPS.4 + trl_sync/labeler) |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | Open backlog (OPS.3 / OPS.4 + trl_sync/labeler) |
 
 ## 📑 Зміст
 
@@ -49,9 +49,9 @@
 
 | Поле | Тип | Опис / Функція |
 | :--- | :--- | :--- |
-| **Current TRL** | Single Select | Поточний рівень (**1-9**, NASA/ISO 16290 — лише технологічна готовність) згідно з [`00_04 §1`](00_04_AI_Native_Engineering_and_TRL). Головна колонка на дошці "Матриця TRL". |
+| **Current TRL** | Single Select | Поточний рівень (**1-9**, NASA/ISO 16290 — лише технологічна готовність) згідно з [`09_01 §1`](09_01_AI_Native_Engineering_and_TRL). Головна колонка на дошці "Матриця TRL". |
 | **Target TRL** | Single Select | Цільовий рівень (**1-9**) для поточного циклу. TRL НЕ розширюється до «10-12» (це нестандартно). |
-| **Readiness Horizon** | Single Select | Beyond-TRL-9 R&D-епіки ([`00_04 §1`](00_04_AI_Native_Engineering_and_TRL), [`00_06 §7`](00_06_Strategic_Roadmap_and_HIL_Simulators)): **SRL** (System Readiness — forest-level emergence, edge self-evolution, cross-biome generalization, AI-adversarial security) стадії `SRL:Concept` / `SRL:Pilot` / `SRL:Deployed`, та **MRL** (Manufacturing Readiness, `MRL:8/9/10` — серійний друк 5 SKU). |
+| **Readiness Horizon** | Single Select | Beyond-TRL-9 R&D-епіки ([`09_01 §1`](09_01_AI_Native_Engineering_and_TRL), [`09_02 §7`](09_02_TRL_Matrix_HIL_and_Beyond)): **SRL** (System Readiness — forest-level emergence, edge self-evolution, cross-biome generalization, AI-adversarial security) стадії `SRL:Concept` / `SRL:Pilot` / `SRL:Deployed`, та **MRL** (Manufacturing Readiness, `MRL:8/9/10` — серійний друк 5 SKU). |
 | **Assigned Agent** | Single Select | Виконавець: `Architect`, `AI Agent`, `Lab (ChNU)`, `Factory`, `nTop Expert`. |
 | **Module** | Single Select | Компонент екосистеми (наприклад, `04: Server Core`). Формує Swimlanes. |
 | **Appetite** | Single Select | `Small Batch` (1-2w) або `Big Bet` (6w) згідно з методологією Shape Up. |
@@ -71,9 +71,9 @@ PROJECT_ID="PVT_xxxx"  # отримати через `gh project list --owner Al
 
 # Single-select option sets (SSOT — синхронізувати з §1.1 та lib/github_bootstrap.rb)
 TRL_OPTIONS=(TRL:1 TRL:2 TRL:3 TRL:4 TRL:5 TRL:6 TRL:7 TRL:8 TRL:9)
-# ↑ Шкала 1-9 (NASA/ISO 16290). TRL НЕ розширюється до 10-12 (00_04 §1).
+# ↑ Шкала 1-9 (NASA/ISO 16290). TRL НЕ розширюється до 10-12 (09_01 §1).
 READINESS_HORIZON_OPTIONS=(SRL:Concept SRL:Pilot SRL:Deployed MRL:8 MRL:9 MRL:10)
-# ↑ Beyond TRL 9 = окремий вимір SRL/MRL (00_04 §1, 00_06 §7), не "TRL 10-12".
+# ↑ Beyond TRL 9 = окремий вимір SRL/MRL (09_01 §1, 09_02 §7), не "TRL 10-12".
 
 for FIELD in "Current TRL" "Target TRL" "Readiness Horizon" "Assigned Agent" "Module" "Appetite" "R&D Cluster" "Shape Up Stage" "Cycle" "Academic Semester"; do
   echo "Ensuring field: $FIELD"
@@ -90,7 +90,7 @@ done
 
 | Workflow | Файл | Тригер | Статус |
 |----------|------|--------|--------|
-| TRL Auto-Advancement | `.github/workflows/trl_sync.yml` | `issues: [closed]` | 🟡 Workflow існує (OPS.1); **TRL-gate (≥5 → Architect approval) ще не імплементовано** — чекає `PROJECT_PAT` + gate (00_08) |
+| TRL Auto-Advancement | `.github/workflows/trl_sync.yml` | `issues: [closed]` | 🟡 Workflow існує (OPS.1); **TRL-gate (≥5 → Architect approval) ще не імплементовано** — чекає `PROJECT_PAT` + gate (09_06) |
 | Labels Sync (IaC) | `.github/workflows/labels_sync.yml` | `push` на `.github/labels.yml` | ✅ Реалізовано |
 | PR Auto-Labeler | `.github/workflows/labeler.yml` | `pull_request` | ✅ Реалізовано |
 | SSOT Integrity Guard | `.github/workflows/ssot_guard.yml` | `pull_request` | ✅ Реалізовано (OPS.2; semantic `type:*` bypass — §2.3) |
@@ -105,10 +105,10 @@ done
 
 - **Тригер:** `issues: types: [closed]`
 - **Умова:** Завдання закрите (Done).
-- **Дія (TRL-stratified gate):** скрипт зчитує `Target TRL` закритого Issue. **`Target TRL ≤ 4`** → авто-перезапис `Current TRL` (картка «перелітає» у нову колонку), бо рев'ю TRL 1-4 делеговане лідам + CI ([`00_05 §3`](00_05_Shape_Up_Operations_and_RnD_Clusters)). **`Target TRL ≥ 5`** → скрипт **НЕ** рухає `Current TRL`, а ставить статус **`Pending Architect Approval`** + коментує issue; реальне просування відбувається лише за наявності лейбла `architect-approved` (його ставить виключно Архітектор). Це поважає обов'язкові TRL-гейти 4→5 / 6→7 / 8→9 (Architect/DAO approval, [`00_05 §3`](00_05_Shape_Up_Operations_and_RnD_Clusters), [`00_04 §5`](00_04_AI_Native_Engineering_and_TRL)). Додатково: рахує `completion_semester` з `closed_at` (UTC) → поле `Academic Semester`.
+- **Дія (TRL-stratified gate):** скрипт зчитує `Target TRL` закритого Issue. **`Target TRL ≤ 4`** → авто-перезапис `Current TRL` (картка «перелітає» у нову колонку), бо рев'ю TRL 1-4 делеговане лідам + CI ([`09_03 §3`](09_03_Shape_Up_Operations_and_RnD_Clusters)). **`Target TRL ≥ 5`** → скрипт **НЕ** рухає `Current TRL`, а ставить статус **`Pending Architect Approval`** + коментує issue; реальне просування відбувається лише за наявності лейбла `architect-approved` (його ставить виключно Архітектор). Це поважає обов'язкові TRL-гейти 4→5 / 6→7 / 8→9 (Architect/DAO approval, [`09_03 §3`](09_03_Shape_Up_Operations_and_RnD_Clusters), [`09_01 §5`](09_01_AI_Native_Engineering_and_TRL)). Додатково: рахує `completion_semester` з `closed_at` (UTC) → поле `Academic Semester`.
 - **Авторизація:** Здійснюється через спеціальний токен Архітектора (`secrets.PROJECT_PAT`).
 
-> **Чому gate, а не безумовний авто-рух (корекція 2026-05-28):** інакше будь-який «Close Issue» (розробник або AI-агент) підняв би технологію до TRL 9, обійшовши обов'язкові Architect/DAO-гейти — і TRL-метрика з інструмента оцінки зрілості виродилась би у звичайний task-tracker. Авто-рух лишається лише для TRL 1-4 (рев'ю там і так делеговане); TRL ≥5 завжди проходить людський gate. **Поточний `trl_sync.yml` рухає картку беззумовно — TRL-gate ще не імплементовано (tracked у `00_08`).**
+> **Чому gate, а не безумовний авто-рух (корекція 2026-05-28):** інакше будь-який «Close Issue» (розробник або AI-агент) підняв би технологію до TRL 9, обійшовши обов'язкові Architect/DAO-гейти — і TRL-метрика з інструмента оцінки зрілості виродилась би у звичайний task-tracker. Авто-рух лишається лише для TRL 1-4 (рев'ю там і так делеговане); TRL ≥5 завжди проходить людський gate. **Поточний `trl_sync.yml` рухає картку беззумовно — TRL-gate ще не імплементовано (tracked у `09_06`).**
 
 ```yaml
 # .github/workflows/trl_sync.yml — skeleton
@@ -247,7 +247,7 @@ jobs:
 
 Routes PRs автоматично у відповідні кластери на основі шляхів файлів.
 
-> **⚠️ Конфіг — `actions/labeler@v6` синтаксис, overlap усунено (корекція 2026-05-28):** (1) попередній `- any: [...]` формат був v4 і не парситься на v6; (2) широкий `app/**` кластера C **поглинав** спеціалізовані піддерева B (`iotex`, `attractor*`, `seed_derivation*`) і D (`hadron_*`) → PR отримував ДВА primary-cluster labels, ламаючи взаємовиключність (§4.1). Тепер C явно виключає їх (`!`-глоби) → специфічний кластер виграє над загальним. (3) `chainlink_router_version*` прибрано з primary-B (це Router-ABI **failover**, інфраструктура — `00_03`, а не математика/ZK) → лишається primary-C через `app/**` + secondary `cluster-ref:B`, як інші web3-сервіси. PR, що чіпає одночасно різні top-level дерева (напр. `app/` + `contracts/`) — справді cross-cluster, резолвиться вручну (`cluster:cross-cluster`, §4.1). Застосування цих правок у реальному `.github/labeler.yml` — tracked у `00_08`.
+> **⚠️ Конфіг — `actions/labeler@v6` синтаксис, overlap усунено (корекція 2026-05-28):** (1) попередній `- any: [...]` формат був v4 і не парситься на v6; (2) широкий `app/**` кластера C **поглинав** спеціалізовані піддерева B (`iotex`, `attractor*`, `seed_derivation*`) і D (`hadron_*`) → PR отримував ДВА primary-cluster labels, ламаючи взаємовиключність (§4.1). Тепер C явно виключає їх (`!`-глоби) → специфічний кластер виграє над загальним. (3) `chainlink_router_version*` прибрано з primary-B (це Router-ABI **failover**, інфраструктура — `00_02`, а не математика/ZK) → лишається primary-C через `app/**` + secondary `cluster-ref:B`, як інші web3-сервіси. PR, що чіпає одночасно різні top-level дерева (напр. `app/` + `contracts/`) — справді cross-cluster, резолвиться вручну (`cluster:cross-cluster`, §4.1). Застосування цих правок у реальному `.github/labeler.yml` — tracked у `09_06`.
 
 ```yaml
 # .github/labeler.yml — config (actions/labeler@v6 syntax: changed-files / *-glob-to-*-file)
@@ -349,9 +349,9 @@ jobs:
 
 ### 4.4 Cross-cuts (наявні)
 
-- `priority:P0` / `P1` / `P2` / `P3` (`00_08`)
+- `priority:P0` / `P1` / `P2` / `P3` (`09_06`)
 - `complexity:XS/S/M/L/XL`
-- `agent:ai` / `agent:human` / `agent:ops` / `agent:hybrid` _(назви labels без emoji у [`.github/labels.yml`](../.github/labels.yml); emoji `🤖 / 👤 / 🔧 / 🔗` використовуються лише як **візуальні маркери у `00_08`** для swimlane-навігації)_
+- `agent:ai` / `agent:human` / `agent:ops` / `agent:hybrid` _(назви labels без emoji у [`.github/labels.yml`](../.github/labels.yml); emoji `🤖 / 👤 / 🔧 / 🔗` використовуються лише як **візуальні маркери у `09_06`** для swimlane-навігації)_
 - `module:00-codex` / `module:01-anchor` / `module:02-capsule` / `module:03-firmware` / `module:04-server-core` / `module:05-ledger` / `module:06-matrix` / `module:07-naas` / `module:08-academic`
 - `type:chore` / `type:deps` / `type:perf` / `type:test` — **SSOT Guard auto-bypass**; `type:refactor` / `type:bugfix` — класифікація **без** bypass (вимагають docs-update або Drift Register, див. §2.3)
 
@@ -402,15 +402,15 @@ echo "Stub shape for cluster C: First Akash production deploy" > docs/shaping/ak
 ```
 # NN_MM: Title
 ## 🎯 Мета
-## ✅ Статус            — власний (member) TRL доку + rationale; агрегат-матриця лише в 00_06 §1; +1 рядок «відкриті → 00_08 §NN»
-## 🔗 Cross-references  — ОДИН раз, угорі зразу під Статус: sibling-доки + ключові файли + 00_08-link
+## ✅ Статус            — власний (member) TRL доку + rationale; агрегат-матриця лише в 09_02 §1; +1 рядок «відкриті → 09_06 §NN»
+## 🔗 Cross-references  — ОДИН раз, угорі зразу під Статус: sibling-доки + ключові файли + 09_06-link
 ## 📑 Зміст             — авто-ToC між <!-- TOC:AUTO --> маркерами (h2 контенту); regen `bin/rails docs:toc`
 ## <Content>           — інженерна суть; поточні обмеження документуються прозою тут
 ```
 
-- **Блокери — НЕ в каноні (рішення 2026-05-29).** Канон-док **не тримає** секцій `🛑 Блокери` чи `✅ Архів вирішених блокерів`. **Усі** блокери — і відкриті, і закриті — живуть **тільки в `00_08`** (відкриті → §модуль-реєстр як тонкі вказівники → канон; закриті → `00_08 §🗄️ Архів`). Канон описує дизайн і **відоме обмеження прозою в body** («як воно є»); чому member-TRL не вищий — 1 рядок у Статус із рефом `→ 00_08 §NN`. `docs:check_refs` ловить будь-яку лишкову блокер-секцію (§8.3).
-- **Cross-references — угорі, DRY.** ОДНА секція зразу під Статус: sibling-доки + ключові файли + `00_08`-link (канонічний дім блокерів). Прибрано дубль: окремий список «Пов'язані модулі» в Статус та окрема References-секція внизу більше НЕ використовуються — це й була основна дуплікація.
-- **Статус — lean (рішення 2026-05-29).** Лише member-TRL + rationale (+ «відкриті → `00_08 §NN`»). БЕЗ build-state таблиць «Компонент | Стан» — стан компонентів живе в body + code-рефах Cross-references (інакше дубль body/00_08 → drift).
+- **Блокери — НЕ в каноні (рішення 2026-05-29).** Канон-док **не тримає** секцій `🛑 Блокери` чи `✅ Архів вирішених блокерів`. **Усі** блокери — і відкриті, і закриті — живуть **тільки в `09_06`** (відкриті → §модуль-реєстр як тонкі вказівники → канон; закриті → `09_06 §🗄️ Архів`). Канон описує дизайн і **відоме обмеження прозою в body** («як воно є»); чому member-TRL не вищий — 1 рядок у Статус із рефом `→ 09_06 §NN`. `docs:check_refs` ловить будь-яку лишкову блокер-секцію (§8.3).
+- **Cross-references — угорі, DRY.** ОДНА секція зразу під Статус: sibling-доки + ключові файли + `09_06`-link (канонічний дім блокерів). Прибрано дубль: окремий список «Пов'язані модулі» в Статус та окрема References-секція внизу більше НЕ використовуються — це й була основна дуплікація.
+- **Статус — lean (рішення 2026-05-29).** Лише member-TRL + rationale (+ «відкриті → `09_06 §NN`»). БЕЗ build-state таблиць «Компонент | Стан» — стан компонентів живе в body + code-рефах Cross-references (інакше дубль body/09_06 → drift).
 - **Без волатильних лічильників (рішення 2026-05-29).** Не хардкодити в прозі к-сть тестів / рядків коду — дрейфують на кожен коміт (у 03_01 знайдено `264` vs `511` vs `83/105` в одному доку). Рефати на джерело (`make -C firmware/test`, suite) або генерувати (як метрики `06_03 §2.8`). Spec/wire-константи (21-байт фрейм, DR0..DR19, 0.47F) — design-факти, лишаються.
 - **Зміст — авто (рішення 2026-05-29).** `## 📑 Зміст` зразу під Cross-references; тіло між `<!-- TOC:AUTO:START/END -->` ГЕНЕРУЄТЬСЯ з h2-заголовків (`bin/rails docs:toc`), `docs:check_refs` падає при дрейфі. Потрібен бо Wiki не має авто-outline; ручний список заборонено (дрейф). Анкори = GitHub-слаги (`lib/docs_toc.rb`).
 - **File Map** — опційно; згортається у Cross-references.
@@ -421,12 +421,12 @@ echo "Stub shape for cluster C: First Akash production deploy" > docs/shaping/ak
 
 | Факт | SSOT home |
 |---|---|
-| Per-module TRL матриця | `00_06 §1` (агрегат-дім). Модульний док = власний member-TRL у Статус (це джерело, не дубль); заборонено відтворювати всю матрицю поза §1 |
+| Per-module TRL матриця | `09_02 §1` (агрегат-дім). Модульний док = власний member-TRL у Статус (це джерело, не дубль); заборонено відтворювати всю матрицю поза §1 |
 | AES per-channel modes | `03_05 §3.7` |
 | Lorenz константи | `03_04 §4.1` |
 | Tokenomics rate / slashing thresholds / insurance pool | `05_03` · `05_05 §3/§4` |
-| Carbon (2000 SCC = 1 tCO₂) | `05_03` + `07_01 §3` (business view) |
-| Financial constants (business) | `07_01 §3` (з рефами на 05_03/00_01) |
+| Carbon (2000 SCC = 1 tCO₂) | `05_03` + `07_02 §3` (business view) |
+| Financial constants (business) | `07_02 §3` (з рефами на 05_03/07_01) |
 | Slashing penalty formula | `05_05 §3` ↔ `BlockchainBurningService` |
 | Governance / DAO params (Governor, Timelock, ProtocolParameters) | `05_06` |
 | Secrets inventory | `06_04` (canonical = `config/deploy.yml env.secret`) |
@@ -434,24 +434,24 @@ echo "Stub shape for cluster C: First Akash production deploy" > docs/shaping/ak
 | DR / backup posture | `06_06` (config SSOT = `terraform/database.tf`) |
 | CI/CD workflows + runbook index | `06_07` |
 
-> Повний канон↔канон дубль-аудит — `00_08 DOC.2`.
+> Повний канон↔канон дубль-аудит — `09_06 DOC.2`.
 
 ### 8.3 Drift-prevention tooling (CI-enforced)
 
 | Guard | Що ловить | Команда / місце |
 |---|---|---|
 | `docs:check_refs` | dangling `NN_NN` doc-links (hard) + §-section label drift (advisory) | `bin/rails docs:check_refs` (ci.yml + docs.yml) |
-| `tracker:check` | 00_08: dup-IDs, meta-line conformance, canon-ref resolution | `bin/rails tracker:check` (ci.yml + docs.yml) |
+| `tracker:check` | 09_06: dup-IDs, meta-line conformance, canon-ref resolution | `bin/rails tracker:check` (ci.yml + docs.yml) |
 | `ssot_guard.yml` | protected code змінено → docs мусять оновитись | CI PR gate (§2.3) |
 | regen-from-code | enumerable lists (метрики) генеруються з SSOT, не вручну | `06_03 §2.8` regen cmd |
 | TRL presence | кожен док з `## ✅ Статус` декларує TRL (ловить 06_04-клас gap) | `bin/rails docs:check_refs` (hard) |
-| TRL single-value | `00_06 §1` matrix-клітинки — одинарне 1-9, без діапазонів (§1.1) | `bin/rails docs:check_refs` (hard; `lib/docs_linter.rb`) |
-| blocker-hygiene | канон-док не тримає `🛑 Блокери`/`✅ Архів` секцій — блокери лише в `00_08` (§8.1) | `bin/rails docs:check_refs` (**HARD** — sweep завершено 2026-05-30) |
+| TRL single-value | `09_02 §1` matrix-клітинки — одинарне 1-9, без діапазонів (§1.1) | `bin/rails docs:check_refs` (hard; `lib/docs_linter.rb`) |
+| blocker-hygiene | канон-док не тримає `🛑 Блокери`/`✅ Архів` секцій — блокери лише в `09_06` (§8.1) | `bin/rails docs:check_refs` (**HARD** — sweep завершено 2026-05-30) |
 | standard-conformance | кожен NN_NN-канон несе ✅ Статус + top 🔗 Cross-references + auto-ToC | `bin/rails docs:check_refs` (HARD; `lib/docs_linter.rb`) |
 | ToC sync | docs з `TOC:AUTO` маркерами — зміст збігається з h2-заголовками | `bin/rails docs:check_refs` (HARD; writer `docs:toc`; engine `lib/docs_toc.rb`) |
-| **RTC reg-map drift** | register availability (`DRn free/reserve`) живе лише в owner `03_01 §2`; інші доки не дублюють (зловив stale «DR15 резерв» у 03_02/00_08/03_03) | `bin/rails docs:check_refs` (HARD 2026-05-30; `lib/docs_linter.rb`) |
-| **Lorenz-formula drift** | β-assignment (`beta = 8.0/3.0`) живе лише в owner `03_04 §4.1`; інші доки реферять, не re-declare (зловив stale σ/ρ/β у 05_01/00_02 при 05/07-реструктуризації) | `bin/rails docs:check_refs` (HARD 2026-05-30; `lib/docs_linter.rb`) |
-| TRL range-consistency | _(roadmap)_ per-doc member-TRL у межах діапазону модуля `00_06 §1` | — |
+| **RTC reg-map drift** | register availability (`DRn free/reserve`) живе лише в owner `03_01 §2`; інші доки не дублюють (зловив stale «DR15 резерв» у 03_02/09_06/03_03) | `bin/rails docs:check_refs` (HARD 2026-05-30; `lib/docs_linter.rb`) |
+| **Lorenz-formula drift** | β-assignment (`beta = 8.0/3.0`) живе лише в owner `03_04 §4.1`; інші доки реферять, не re-declare (зловив stale σ/ρ/β у 05_01/00_01 при 05/07-реструктуризації) | `bin/rails docs:check_refs` (HARD 2026-05-30; `lib/docs_linter.rb`) |
+| TRL range-consistency | _(roadmap)_ per-doc member-TRL у межах діапазону модуля `09_02 §1` | — |
 
 **Правило при зміні факту:** правити лише у home (§8.2) → рефи лишаються чинними; будь-який новий NN_NN-док/реф — `docs:check_refs` має лишатись зеленим перед merge.
 
@@ -459,10 +459,10 @@ echo "Stub shape for cluster C: First Akash production deploy" > docs/shaping/ak
 
 ### 8.4 Module-restructure / extract-to-new-page
 
-Коли SSOT-факт переростає свій док (тема ≈ пів-сторінки + розпорошена дублями по сусідах), її виносять у **власну канон-сторінку** — НЕ ламаючи модульну вісь (перейменування файлу = масові биті cross-ref). Метод (verified 05/07-реструктуризацією 2026-05-30: slashing `00_01 §6` → `05_05`, governance `05_03 §749` → `05_06`):
+Коли SSOT-факт переростає свій док (тема ≈ пів-сторінки + розпорошена дублями по сусідах), її виносять у **власну канон-сторінку** — НЕ ламаючи модульну вісь (перейменування файлу = масові биті cross-ref). Метод (verified 05/07-реструктуризацією 2026-05-30: slashing `07_01 §6` → `05_05`, governance `05_03 §749` → `05_06`):
 
 1. **Migrate-first:** наповнити новий дім ПОВНОЮ субстанцією + verify present ПЕРШ ніж різати джерело (zero-loss).
 2. **Stub + pointer:** джерело лишає тонкий vision/ref-stub `→ новий_дім`; механіка реферить існуючі доми, не дублює.
-3. **Cross-ref sweep, anchored:** масовий re-point `NN_NN §X` → новий дім, **прив'язаний до якоря** (напр. лише рядки з «00_01»), щоб не зачепити однойменні внутрішні §X інших доків. Ruby-скрипт-**файл** (не inline `-e`) з dry-run + presence-check.
-4. **Реєстр + індекс:** оновити `§8.2` home-registry, `00_00` reading-order, README; archival-pointer у `00_08` (DOC-row).
+3. **Cross-ref sweep, anchored:** масовий re-point `NN_NN §X` → новий дім, **прив'язаний до якоря** (напр. лише рядки з «07_01»), щоб не зачепити однойменні внутрішні §X інших доків. Ruby-скрипт-**файл** (не inline `-e`) з dry-run + presence-check.
+4. **Реєстр + індекс:** оновити `§8.2` home-registry, `00_00` reading-order, README; archival-pointer у `09_06` (DOC-row).
 5. **Per-фаза gate:** `docs:check_refs` + `tracker:check` зелені; zero-loss set-diff (referrers before/after = 0 lost); `wiki:sync` dry-run.

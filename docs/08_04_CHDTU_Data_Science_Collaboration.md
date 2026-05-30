@@ -20,7 +20,7 @@
 
 - **Поточний TRL:** TRL 3 — контакт встановлений, формальну співпрацю не розпочато
 - **Стратегічний пріоритет:** P1 — математична статистика та Data Science критичні для верифікації Proof of Growth pipeline та масштабування на мільйони дерев
-- **Відкрите:** формальна співпраця ЧДТУ (Data Science, actuarial) — не розпочато → [`00_08`](00_08_Action_Plan_Tracker) (UNI.*).
+- **Відкрите:** формальна співпраця ЧДТУ (Data Science, actuarial) — не розпочато → [`09_06`](09_06_Action_Plan_Tracker) (UNI.*).
 
 ---
 
@@ -32,7 +32,7 @@
 | [08_02_Cybernetic_and_Mathematical_Validation](08_02_Cybernetic_and_Mathematical_Validation) | Кібернетична валідація ФОТІУС |
 | [08_03_Joint_Publications_and_IP_Strategy](08_03_Joint_Publications_and_IP_Strategy) | Спільні публікації та IP |
 | [08_06_CHMA_Biomedical_Integration](08_06_CHMA_Biomedical_Integration) | Біомедична інтеграція ЧМА |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | UNI.* |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | UNI.* |
 
 ## 📑 Зміст
 
@@ -53,7 +53,7 @@
 
 ## 🚧 Відкриті передумови та статус
 
-> Статуси трекаються в [`00_08`](00_08_Action_Plan_Tracker) (UNI.*); нижче — контекст партнерства.
+> Статуси трекаються в [`09_06`](09_06_Action_Plan_Tracker) (UNI.*); нижче — контекст партнерства.
 
 - **Формальна зустріч із Карапетян А.Р.** — узгодження формату партнерства (кафедральна тема, студентські роботи, спільні публікації)
 - **Формальна зустріч із Гончаровим А. (Декан ФЕТР)** — узгодження RF-аудиту SMD-антени під PEEK-радомом та EMC-тестування у лабораторіях ФЕТР
@@ -290,11 +290,11 @@ Silken Net використовує **LoRa 868 МГц** у найскладні�
 **Cross-ref:** [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK) (geometry),
 [`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) (post-processing),
 [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) (installation tooling),
-[`07_04 §7.3`](07_04_B2G_External_Stakeholders) (Машинобудівник — серійне
+[`07_05 §7.3`](07_05_External_Stakeholders_Registry) (Машинобудівник — серійне
 масштабування), [`08_05 §1.5 Несен`](08_05_CHIPB_Fire_Safety_Integration)
 (deinstall кооперація).
 
-**Status:** 🔵 Identified — outreach у [`00_08`](00_08_Action_Plan_Tracker)
+**Status:** 🔵 Identified — outreach у [`09_06`](09_06_Action_Plan_Tracker)
 як UNI-track ЧДТУ.
 
 ---
@@ -844,7 +844,7 @@ end
 
 3. **Quarterly Sync:** Щоквартальна зустріч Архітектор + Карапетян (ЧДТУ) + Гончаров (ЧДТУ ФЕТР) + Базіло (ЧДТУ ПМКТ) + Онищенко/Супруненко (ФОТІУС) для синхронізації результатів та планування спільних публікацій.
 
-4. **Git-based Collaboration:** ЧДТУ R-скрипти → `lib/analytics/r/`, ФОТІУС Python/C → `lib/analytics/python/`, ФЕТР RF-вимірювальні дані (S11, path loss, EMC) → `lib/measurements/rf/`, ПМКТ акустичні калібрувальні дані → `lib/datasets/acoustic_training/`. Всі інтегруються через CI/CD ([`00_07`](00_07_GitHub_Projects_and_IaC_Automation)).
+4. **Git-based Collaboration:** ЧДТУ R-скрипти → `lib/analytics/r/`, ФОТІУС Python/C → `lib/analytics/python/`, ФЕТР RF-вимірювальні дані (S11, path loss, EMC) → `lib/measurements/rf/`, ПМКТ акустичні калібрувальні дані → `lib/datasets/acoustic_training/`. Всі інтегруються через CI/CD ([`09_04`](09_04_GitHub_Projects_and_IaC_Automation)).
 
 5. **Потрійна Спіраль 2.0:** Модель Осауленка (08_02 §1.7) розширюється з ЧНУ → ЧНУ + ЧДТУ як наукова вершина спіралі. Три кафедри ЧДТУ + ЧНУ ФОТІУС = ширша академічна база для грантових заявок (Horizon Europe, NFDI).
 

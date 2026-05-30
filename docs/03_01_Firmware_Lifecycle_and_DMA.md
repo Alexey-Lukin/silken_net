@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — увесь C-код Soldier+Queen реалізований, host-based тести зелені (`make -C firmware/test`). Відкриті обмеження (чому не вище): async UART DMA flush (`FW.3` AT-blind), key-rotation (`FW.17`), RDP-2 (`SEC.2`) — реєстр у [`00_08 §03`](00_08_Action_Plan_Tracker)
+- **Поточний TRL:** TRL 6 — увесь C-код Soldier+Queen реалізований, host-based тести зелені (`make -C firmware/test`). Відкриті обмеження (чому не вище): async UART DMA flush (`FW.3` AT-blind), key-rotation (`FW.17`), RDP-2 (`SEC.2`) — реєстр у [`09_06 §03`](09_06_Action_Plan_Tracker)
 
 ---
 
@@ -23,7 +23,7 @@
 | [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | Математика Атрактора Лоренца |
 | [03_05_Hardware_Symmetric_Crypto_and_Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Шифрування, ключі, RDP |
 | [02_04_EDLC_Supercapacitor_Buffer](02_04_EDLC_Supercapacitor_Buffer) | EBFC та іоністор 0.47F |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | **Відкриті блокери модуля 03** (SSOT): `FW.3` AT-blind, `FW.17` key-rotation, `SEC.2` RDP-2, `SEC.3` factory |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | **Відкриті блокери модуля 03** (SSOT): `FW.3` AT-blind, `FW.17` key-rotation, `SEC.2` RDP-2, `SEC.3` factory |
 
 ---
 
@@ -312,7 +312,7 @@ if (climate_due) {
 }
 ```
 
-> **VPD (Vapor Pressure Deficit)** обчислюється на вузлі з t°+RH і пакується **1 байтом** (Phase 2, байт 14) як **прямий confounder сокоруху** — backend використовує його, щоб не штрафувати за погоду (False-Slashing guard, `05_05 §6/§7`). Сирі RH/тиск (для NaaS клімат-оракула, `07_01`) — у періодичному **climate frame** (FW.2 24B CCM extended payload; транзитний 16B-кадр місця не має). Тригер climate frame: кожні N uplink'ів або значна Δтиску (раннє попередження про шторм). Енергія: за TPS22860-гейтом ≈8нА avg (`02_01 §3.4`, `02_03 §9.6`). 🚨 **DCI-guard:** BME280-дані (VPD/RH/тиск) **НЕ** входять у входи Атрактора Лоренца (ті — temp/acoustic/delta_t/vcap, FW.5) → firmware↔backend bit-identity не зачіпається.
+> **VPD (Vapor Pressure Deficit)** обчислюється на вузлі з t°+RH і пакується **1 байтом** (Phase 2, байт 14) як **прямий confounder сокоруху** — backend використовує його, щоб не штрафувати за погоду (False-Slashing guard, `05_05 §6/§7`). Сирі RH/тиск (для NaaS клімат-оракула, `07_02`) — у періодичному **climate frame** (FW.2 24B CCM extended payload; транзитний 16B-кадр місця не має). Тригер climate frame: кожні N uplink'ів або значна Δтиску (раннє попередження про шторм). Енергія: за TPS22860-гейтом ≈8нА avg (`02_01 §3.4`, `02_03 §9.6`). 🚨 **DCI-guard:** BME280-дані (VPD/RH/тиск) **НЕ** входять у входи Атрактора Лоренца (ті — temp/acoustic/delta_t/vcap, FW.5) → firmware↔backend bit-identity не зачіпається.
 
 **RSSI (Канал 5 — Zero-Energy Фенологія):**
 
@@ -496,7 +496,7 @@ Radio.Send(encrypted_payload, 16);
 | Екстремальний холод + battery | -40 | 5500 | ❌ | `test_tx_defer_extreme_cold_high_vcap_battery_backed` (✨ 2026-05-03) |
 | Warm -5°C + low vcap | -5 | 1000 | ❌ | `test_tx_defer_warm_minus5_low_vcap` (✨ 2026-05-03) |
 
-> **Cross-ref:** `00_08 FW.10` — закрито через цю секцію.
+> **Cross-ref:** `09_06 FW.10` — закрито через цю секцію.
 
 ---
 
@@ -548,8 +548,8 @@ _rx_payload[0] == OTA_MARKER (0x99)
 | Рівень | Механізм | Статус | Задача |
 |--------|----------|--------|--------|
 | L1: Зона Королеви | `Radio.Rx(LORA_RX_INFINITE)` — Queen завжди слухає | ✅ Реалізовано | — |
-| L2: Синхронні Вікна (TDMA) | RTC-координоване пробудження: кожні N хвилин, ~2 сек RX. Queen beacon → Time Sync → спільний розклад | ❌ Не реалізовано | [ARCH.26](00_08_Action_Plan_Tracker), [FW.20](00_08_Action_Plan_Tracker) |
-| L3: CAD Preamble Detection | SX1262 `Radio.StartCad()`: wake кожну секунду на ~2 мс, "нюхає" LoRa-преамбулу. Для PANIC mode (chainsaw) | ❌ Не реалізовано | [ARCH.26](00_08_Action_Plan_Tracker) |
+| L2: Синхронні Вікна (TDMA) | RTC-координоване пробудження: кожні N хвилин, ~2 сек RX. Queen beacon → Time Sync → спільний розклад | ❌ Не реалізовано | [ARCH.26](09_06_Action_Plan_Tracker), [FW.20](09_06_Action_Plan_Tracker) |
+| L3: CAD Preamble Detection | SX1262 `Radio.StartCad()`: wake кожну секунду на ~2 мс, "нюхає" LoRa-преамбулу. Для PANIC mode (chainsaw) | ❌ Не реалізовано | [ARCH.26](09_06_Action_Plan_Tracker) |
 
 ---
 
@@ -657,7 +657,7 @@ Fallback на `ROLE_SOLDIER` безпечний — переважна біль�
 
 **Тести.** 5 host-тестів (`test_arch27_*` у `firmware/test/test_soldier_logic.c`): `"SOLD"` / `"PROV"` / unprovisioned `0xFFFFFFFF` / zero / corrupted magic → коректний fallback.
 
-**Cross-ref:** ARCH.26 (`00_01`; §1.9 RX-вікно), [SEC.11] K_seed Flash layout, §2.1 (чому роль у Flash, не RTC).
+**Cross-ref:** ARCH.26 (`07_01`; §1.9 RX-вікно), [SEC.11] K_seed Flash layout, §2.1 (чому роль у Flash, не RTC).
 
 ---
 
@@ -665,7 +665,7 @@ Fallback на `ROLE_SOLDIER` безпечний — переважна біль�
 
 > **SSOT (єдина точка істини):** ця таблиця — **єдине** канонічне джерело розкладки RTC Backup Domain Soldier'а. Будь-яка зміна (додавання нового поля, перепакування біт-полів, новий магічний маркер) **повинна** починатися з оновлення цієї таблиці. Документація `03_04` (Lorenz state), `03_03` (TinyML EMA) та firmware-код посилаються на цю таблицю, а не дублюють її.
 
-> **Політика розширення (cross-ref [ARCH.28](00_08_Action_Plan_Tracker)):** STM32WLE5 має лише 20 backup регістрів (DR0..DR19). Після [FW.18] вільний залишився **лише DR15**. Перед додаванням нової фічі: (1) огляд цієї таблиці на конфлікти, (2) ASCII bit-field діаграма для будь-якого packed-регістру, (3) новий магічний маркер у §2.1, (4) обов'язковий `isfinite()`/magic check при відновленні.
+> **Політика розширення (cross-ref [ARCH.28](09_06_Action_Plan_Tracker)):** STM32WLE5 має лише 20 backup регістрів (DR0..DR19). Після [FW.18] вільний залишився **лише DR15**. Перед додаванням нової фічі: (1) огляд цієї таблиці на конфлікти, (2) ASCII bit-field діаграма для будь-якого packed-регістру, (3) новий магічний маркер у §2.1, (4) обов'язковий `isfinite()`/magic check при відновленні.
 
 RTC Backup Domain не скидається при STOP2 та більшості реботів (окрім повного знеструмлення або `HAL_RTCEx_BKUPWrite` з нулями).
 
@@ -737,7 +737,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 4. **Magic marker policy.** Якщо `0` — валідне значення поля (як `(0.0, 0.0, 0.0)` для Lorenz state), то ОБОВ'ЯЗКОВО потрібен окремий 32-бітний marker у сусідньому регістрі АБО 8-бітний sentinel у packed-регістрі. Маркер додати у §2.1. Якщо `0` валідно інтерпретується як «cold-boot default» (як `tinyml_warning_threshold == 0.0f` → fallback `TINYML_DEFAULT_WARNING`), маркер не потрібен — достатньо range-check.
 5. **Restore guard.** При читанні з RTC ПЕРЕД використанням — `isfinite()` для float, magic-check для structured fields, range-validation для цілочисельних. Захищає від bit-flip у backup domain (рідкісне, але документоване ST явище у high-radiation environments).
 6. **Host-test bank.** Кожна нова фіча, що торкається RTC, повинна мати ≥3 host-тести: (a) cold-boot fallback, (b) warm-boot roundtrip, (c) corruption/bit-flip відкочується на default. Приклади: `test_arch21_pvd_*`, `test_sec10_dr0_*`.
-7. **Doc update.** Оновити §2 канонічну таблицю + §2.1 magic markers + cross-link з 00_08 (відповідний ID).
+7. **Doc update.** Оновити §2 канонічну таблицю + §2.1 magic markers + cross-link з 09_06 (відповідний ID).
 
 **Якщо DR15 виявиться зайнятий:** перейти до §2.3 — Flash-based KV store як overflow strategy.
 
@@ -772,7 +772,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 > **Чому НЕ застосовуємо зараз:** заміна 15 викликів торкається hot path (Phase 5 STOP2-write і ARCH.21 PVD callback) — кожне торкання потребує перевірки усіх 5 host-тестів `test_arch21_pvd_*` + 13 `test_sec10_*` + усього існуючого test-bank. Користь — лише консистентність + опційне трасування. ROI на TRL-6 негативний; повернутися до цього при рефакторингу під RTOS (ARCH.29) або при першому реальному debug-сесії з польового пристрою.
 
-> **Cross-link:** `00_08 ARCH.28` — RTC Backup Domain allocation policy.
+> **Cross-link:** `09_06 ARCH.28` — RTC Backup Domain allocation policy.
 
 ---
 
@@ -1020,7 +1020,7 @@ HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
 |----------|--------|-----|
 | `OnRxDone(payload, size, rssi, snr)` | LoRa RX (рівно 16 байт) | RSSI clamp → `LoRa_Rx_Ring_Push` (FIFO 15-slot, FW.3) → лічильник `lora_rx_drops` при переповненні |
 
-Queen не має PVD, EXTI, DMA або IWDG ISR. Мінімальний ISR-footprint + **single-producer ring buffer** дозволяють Queen залишатися "завжди активною" без race conditions і без втрати голосів рою під час 25-секундного CoAP-flush'у (FW.3 — part-1 закрито; повна async UART DMA flush відкрита → `00_08 §03`).
+Queen не має PVD, EXTI, DMA або IWDG ISR. Мінімальний ISR-footprint + **single-producer ring buffer** дозволяють Queen залишатися "завжди активною" без race conditions і без втрати голосів рою під час 25-секундного CoAP-flush'у (FW.3 — part-1 закрито; повна async UART DMA flush відкрита → `09_06 §03`).
 
 ---
 
@@ -1383,7 +1383,7 @@ make -C firmware/test clean   # Remove test_queen, test_soldier binaries
 
 ## 📈 13. EMA (Exponential Moving Average) на Soldier — FW.21 🤖
 
-> **Cross-ref:** [00_08 FW.21](00_08_Action_Plan_Tracker) — ✅ реалізовано (`firmware/soldier/main.c` + тести у `firmware/test/test_soldier_logic.c`)
+> **Cross-ref:** [09_06 FW.21](09_06_Action_Plan_Tracker) — ✅ реалізовано (`firmware/soldier/main.c` + тести у `firmware/test/test_soldier_logic.c`)
 
 ### 13.1 Мета та контекст
 

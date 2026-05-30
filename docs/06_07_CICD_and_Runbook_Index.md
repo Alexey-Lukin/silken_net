@@ -9,7 +9,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 6 — workflows активні; production+canopy deploy налаштовані; частина gates ще не `required` (INF.6, OPS.2).
-- **Відкрите:** required-check прогалини (coap_smoke INF.6, ssot_guard OPS.2) → [`00_08`](00_08_Action_Plan_Tracker).
+- **Відкрите:** required-check прогалини (coap_smoke INF.6, ssot_guard OPS.2) → [`09_06`](09_06_Action_Plan_Tracker).
 
 ---
 
@@ -23,8 +23,8 @@
 | [06_04_Secrets_Checklist](06_04_Secrets_Checklist) | secrets/revocation |
 | [06_05_Puma_Configuration](06_05_Puma_Configuration) | Puma runbooks |
 | [06_06_Disaster_Recovery_and_Backup](06_06_Disaster_Recovery_and_Backup) | DR runbooks |
-| [00_07_GitHub_Projects_and_IaC_Automation](00_07_GitHub_Projects_and_IaC_Automation) | TRL/Projects automation |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | INF.6, OPS.1/OPS.2 |
+| [09_04_GitHub_Projects_and_IaC_Automation](09_04_GitHub_Projects_and_IaC_Automation) | TRL/Projects automation |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | INF.6, OPS.1/OPS.2 |
 
 ## 📑 Зміст
 
@@ -57,7 +57,7 @@
 ### Repo / Project governance
 | Workflow | Trigger | Призначення |
 |---|---|---|
-| `trl_sync.yml` | `issues` | GraphQL Projects v2 — TRL-stamping (OPS.1; `00_07`) |
+| `trl_sync.yml` | `issues` | GraphQL Projects v2 — TRL-stamping (OPS.1; `09_04`) |
 | `labeler.yml` | `pull_request_target` | Auto-label PR за шляхами |
 | `labels_sync.yml` | push `.github/labels.yml` + dispatch | Labels-as-IaC sync |
 
@@ -86,5 +86,5 @@ release published ─→ deploy-production.yml (verify-secrets → terraform →
 | **Emergency:** `peaq_signing_key` compromise/revocation | [`06_04 §5.4`](06_04_Secrets_Checklist) |
 | Puma: SIGPWR backtrace dump, IPv6 listen verify | [`06_05 §Runbooks`](06_05_Puma_Configuration) |
 | **DR:** Cloud SQL PITR restore, TF-state rollback, region rebuild | [`06_06 §5`](06_06_Disaster_Recovery_and_Backup) |
-| Runtime failover (circuit breakers, comms-loss) | [`00_03`](00_03_Resilience_and_Failover_Policy) |
+| Runtime failover (circuit breakers, comms-loss) | [`00_02`](00_02_Resilience_and_Failover_Policy) |
 | `config.alloy` validation (local) | [`06_03 §2.9`](06_03_Prometheus_Observability) + `alloy_config_validate` CI |

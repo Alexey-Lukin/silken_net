@@ -1,4 +1,4 @@
-# 07_04: B2G / B2B External Stakeholders — Social API Registry
+# 07_05: B2G / B2B External Stakeholders — Social API Registry
 
 ## 🎯 Мета
 
@@ -9,7 +9,7 @@
    лісах України (Лісовий кодекс, ПЗФ, кадастр).
 2. **B2B-продажу** SCC/SFC ([`05_03`](05_03_Tokenomics_SCC_and_SFC)),
    параметричного страхування та підписки на API-доступ
-   ([`07_01`](07_01_Nature_as_a_Service_Contracts), [`07_02`](07_02_Unit_Economics_and_BOM)).
+   ([`07_02`](07_02_Nature_as_a_Service_Contracts), [`07_03`](07_03_Unit_Economics_and_BOM)).
 3. **Польових операцій** — масштабне розгортання тисяч анкерів силами
    мобілізованої команди (логістика, безпека, перекваліфікація).
 4. **Сертифікації та метрології** як юридичної основи токенізації.
@@ -29,7 +29,7 @@
   - **Tier 2-3 (Infrastructure / B2B):** до моменту першої SCC-емісії
     в production ([`05_02`](05_02_Proof_of_Growth_Pipeline)).
 - **Власник:** TBD (CEO / Head of Partnerships).
-- **Outreach tracker:** [`00_08`](00_08_Action_Plan_Tracker) § External Stakeholders.
+- **Outreach tracker:** [`09_06`](09_06_Action_Plan_Tracker) § External Stakeholders.
 
 ---
 
@@ -37,17 +37,17 @@
 
 | Ресурс | Зв'язок |
 |---|---|
-| [04_07_Cultural_Layer_External_Stakeholders](04_07_Cultural_Layer_External_Stakeholders) | Cultural Layer (разом — Social API Registry) |
+| [07_05_External_Stakeholders_Registry](07_05_External_Stakeholders_Registry) | Cultural Layer (разом — Social API Registry) |
 | [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка, CBAM offset |
-| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | B2B/B2C контракти, SLA (§2) |
-| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Unit economics за tier |
-| [07_03_Grant_Applications_Tracker](07_03_Grant_Applications_Tracker) | Horizon Europe pipeline |
+| [07_02_Nature_as_a_Service_Contracts](07_02_Nature_as_a_Service_Contracts) | B2B/B2C контракти, SLA (§2) |
+| [07_03_Unit_Economics_and_BOM](07_03_Unit_Economics_and_BOM) | Unit economics за tier |
+| [07_04_Grant_Applications_Tracker](07_04_Grant_Applications_Tracker) | Horizon Europe pipeline |
 | [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | §1.4 Кирилюк — ректорський парасоль |
 | [08_05_CHIPB_Fire_Safety_Integration](08_05_CHIPB_Fire_Safety_Integration) | ДСНС partner cluster |
 | [08_07_SEU_Economics_and_Legal_Integration](08_07_SEU_Economics_and_Legal_Integration) | §1.3 Аблязов — legal wrapper |
 | `08_03` / `08_04` / `08_06` | глибокі академ./stakeholder профілі (SSOT — тут лише cross-link) |
 | `02_05` / `03_04` | LoRa висотні точки / Lorenz stress-аналіз |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | § External Stakeholders (UNI.x, BIZ.x) |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | § External Stakeholders (UNI.x, BIZ.x) |
 
 ## 📑 Зміст
 
@@ -177,7 +177,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
   - Дані як доказ у земельних/екологічних судах (незаконна вирубка,
     підпал).
 - **SSOT-мапінг:** [`05_02`](05_02_Proof_of_Growth_Pipeline) (RWA oracle),
-  [`07_01`](07_01_Nature_as_a_Service_Contracts) (Land contracts).
+  [`07_02`](07_02_Nature_as_a_Service_Contracts) (Land contracts).
 - **Status:** ⚪ Conceptual — потрібна верифікація імені перед outreach.
 
 ### 2.4. Юридична броня — Legal Wrapper для SCC (TBD)
@@ -226,7 +226,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
     "систему держрівня".
 - **SSOT-мапінг:** [`08_05`](08_05_CHIPB_Fire_Safety_Integration) (primary),
   [`03_03`](03_03_TinyML_Acoustic_Inference) (chainsaw + thermal),
-  [`07_01`](07_01_Nature_as_a_Service_Contracts) (parametric insurance trigger).
+  [`07_02`](07_02_Nature_as_a_Service_Contracts) (parametric insurance trigger).
 - **Status:** 🟢 Engaged (через ЧІПБ — Несен Іван активний).
 
 ### 3.2. Енергетика (ПАТ "Черкасиобленерго" + Укрзалізниця ЛЕП) — ЛЕП-моніторинг
@@ -243,7 +243,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
     [`03_04`](03_04_mruby_Lorenz_Attractor)). Замість гектарних вирубок
     — точкове видалення. Економія мільйонів грн + еко-PR.
 - **SSOT-мапінг:** [`02_05`](02_05_Queen_Hardware_and_Starlink) (LoRa
-  висотні точки), [`07_01 §2 SLA`](07_01_Nature_as_a_Service_Contracts) (B2B
+  висотні точки), [`07_02 §2 SLA`](07_02_Nature_as_a_Service_Contracts) (B2B
   subscription).
 - **Status:** ⚪ Conceptual.
 
@@ -264,7 +264,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
   - "Zero Carbon Logistics" статус через купівлю SCC.
   - Захист берегозахисних лісосмуг Дніпра (для річкового порту).
 - **SSOT-мапінг:** [`02_05`](02_05_Queen_Hardware_and_Starlink) (mobile gateway
-  variant), [`07_01`](07_01_Nature_as_a_Service_Contracts) (SLA tier).
+  variant), [`07_02`](07_02_Nature_as_a_Service_Contracts) (SLA tier).
 - **Status:** ⚪ Conceptual.
 
 ### 3.4. Комунальні служби (КП "Дирекція парків", "Укртелеком") — Urban Forestry
@@ -279,7 +279,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
     predictive аналітика аварійних стовбурів.
   - Оптимізація міського поливу за `delta_t` гідратації ксилеми →
     економія води/електроенергії для бюджету міста.
-- **SSOT-мапінг:** [`07_01`](07_01_Nature_as_a_Service_Contracts) (Urban
+- **SSOT-мапінг:** [`07_02`](07_02_Nature_as_a_Service_Contracts) (Urban
   Forestry tier), [`05_02`](05_02_Proof_of_Growth_Pipeline) (municipal
   RWA).
 - **Status:** ⚪ Conceptual (Urban Forestry deferred → post-Genesis-cluster).
@@ -346,7 +346,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
   - Сертифікат біорізноманіття (Z-value oracle) → дешевші кредити в
     європейських банках.
   - Власна емісія SCC з своїх лісосмуг.
-- **SSOT-мапінг:** [`07_01`](07_01_Nature_as_a_Service_Contracts) (Agro tier),
+- **SSOT-мапінг:** [`07_02`](07_02_Nature_as_a_Service_Contracts) (Agro tier),
   [`05_03`](05_03_Tokenomics_SCC_and_SFC) (Agro-mint sub-DAO).
 - **Status:** ⚪ Conceptual.
 
@@ -380,7 +380,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
 - **Звання:** Заслужений працівник туризму України (TBD).
 - **API In:**
   - **Розгортання B2C-каналу через турфірми:** туристи на екостежках
-    мінтять NFT конкретного 100-річного дуба (cross-ref [`04_07`](04_07_Cultural_Layer_External_Stakeholders)
+    мінтять NFT конкретного 100-річного дуба (cross-ref [`07_05`](07_05_External_Stakeholders_Registry)
     Genesis NFT).
   - "Амбасадори безпеки" — гіди пояснюють групам, що Queen-шлюзи це
     не "вишки 5G", антивандальний щит.
@@ -390,7 +390,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
   - "Carbon Neutral Resort" сертифікація для готелів Соснівки.
   - SLA на безпеку рекреаційних зон.
 - **SSOT-мапінг:** [`05_03`](05_03_Tokenomics_SCC_and_SFC) (B2C mint),
-  [`07_01`](07_01_Nature_as_a_Service_Contracts) (Resort tier).
+  [`07_02`](07_02_Nature_as_a_Service_Contracts) (Resort tier).
 - **Status:** ⚪ Conceptual.
 
 ### 5.4. Архітектори та забудовники — Urban Smart City
@@ -403,7 +403,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
   - **ESG-преміум для ЖК-проєктів:** LEED/BREEAM сертифікати через
     підключення дерев на території до Silken Net.
   - Параметричне страхування крупномірних насаджень (NaaS).
-- **SSOT-мапінг:** [`07_01`](07_01_Nature_as_a_Service_Contracts) (Urban tier),
+- **SSOT-мапінг:** [`07_02`](07_02_Nature_as_a_Service_Contracts) (Urban tier),
   [`02_05`](02_05_Queen_Hardware_and_Starlink) (urban radome).
 - **Status:** ⚪ Conceptual (Urban tier deferred).
 
@@ -421,7 +421,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
   - **EU Deforestation Regulation compliance:** доказ моніторингу лісів
     у супровідних документах експорту м'яса/птиці.
 - **SSOT-мапінг:** [`03_03`](03_03_TinyML_Acoustic_Inference) (multi-class
-  extension), [`07_01`](07_01_Nature_as_a_Service_Contracts) (Agro biosafety).
+  extension), [`07_02`](07_02_Nature_as_a_Service_Contracts) (Agro biosafety).
 - **Status:** ⚪ Conceptual.
 
 ---
@@ -448,7 +448,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
     дерева → бачить "пульс" (`delta_t`) → синхронізація з природними
     ритмами. Перший у світі інструмент цифрової лісотерапії.
   - "Green Collar Jobs" — престижні робочі місця для людей після криз.
-- **SSOT-мапінг:** [`07_03`](07_03_Grant_Applications_Tracker) (Horizon Europe
+- **SSOT-мапінг:** [`07_04`](07_04_Grant_Applications_Tracker) (Horizon Europe
   Cluster 4 — Inclusiveness; Cluster 6 — Bioeconomy), [`04_04`](04_04_Phlex_UI_and_Tailwind)
   (mobile Eco-Therapy module — deferred).
 - **Status:** 🔵 Identified.
@@ -469,7 +469,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
     variant для раннього виявлення торф'яних пожеж.
 - **API Out:**
   - Новий сенс і соціальна адаптація — престижна "зелена" робота.
-- **SSOT-мапінг:** [`07_03`](07_03_Grant_Applications_Tracker) (Just Transition
+- **SSOT-мапінг:** [`07_04`](07_04_Grant_Applications_Tracker) (Just Transition
   Fund), [`03_03`](03_03_TinyML_Acoustic_Inference) (subterranean variant
   — deferred), [`08_05`](08_05_CHIPB_Fire_Safety_Integration) (peat fire
   early warning).

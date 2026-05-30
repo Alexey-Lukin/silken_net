@@ -10,7 +10,7 @@
 
 - **Поточний TRL:** TRL 8 — Механізм якорування повністю імплементовано.
 - **Цільовий TRL:** TRL 9 — Production-ready з повним gas management та аудит-трейлом у БД.
-- **Відкрите:** Production gas-management tuning + Mainnet contract deploy → [`00_08`](00_08_Action_Plan_Tracker).
+- **Відкрите:** Production gas-management tuning + Mainnet contract deploy → [`09_06`](09_06_Action_Plan_Tracker).
 
 ---
 
@@ -21,7 +21,7 @@
 | [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Мультичейн (L1 у стеку фіналізації) |
 | [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Pipeline (джерело state даних) |
 | [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (total_scc/total_sfc у root) |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | Open backlog (Mainnet deploy, gas) |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | Open backlog (Mainnet deploy, gas) |
 
 ## 📑 Зміст
 

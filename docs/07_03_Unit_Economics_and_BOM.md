@@ -1,4 +1,4 @@
-# 07_02: Юніт-Економіка та BOM (Перелік Матеріалів)
+# 07_03: Юніт-Економіка та BOM (Перелік Матеріалів)
 
 ## 🎯 Мета
 
@@ -15,7 +15,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 6 — апаратна архітектура заморожена, BOM синхронізовано, ціни підтверджено локальними DMLS-виробниками
-- **Відкрите:** ціновий моніторинг BOM (DMLS, EBFC) при масштабуванні → [`00_08`](00_08_Action_Plan_Tracker).
+- **Відкрите:** ціновий моніторинг BOM (DMLS, EBFC) при масштабуванні → [`09_06`](09_06_Action_Plan_Tracker).
 
 ---
 
@@ -26,8 +26,8 @@
 | [02_01_Hardware_Architecture_and_BOM](02_01_Hardware_Architecture_and_BOM) | Апаратна архітектура (BOM source) |
 | [02_05_Queen_Hardware_and_Starlink](02_05_Queen_Hardware_and_Starlink) | Шлюз Королева (Queen BOM) |
 | [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (revenue side) |
-| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | NaaS контракти (pricing) |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | Open backlog |
+| [07_02_Nature_as_a_Service_Contracts](07_02_Nature_as_a_Service_Contracts) | NaaS контракти (pricing) |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | Open backlog |
 
 ## 📑 Зміст
 
@@ -101,7 +101,7 @@
 | 9 | Buffer cap VOUT | 47 µF / **25V X7R 1210** (Murata GRM32E70J476ME20), **НЕ 6.3V** — `02_03 §6.1` | ~$0.18 |
 | — | **Electronics TOTAL** | | **~$11.33** |
 | — | _LTC3108 + Coilcraft xfmr 1:100 (DNP footprint)_ | _Cold-start fallback, не populated за замовчуванням — `02_03 BLOCKER-3`. PCB pads ~$0._ | _$0 / +$1.20 якщо populated після lab R_int test_ |
-| — | _BME280 + TPS22860 gate + PTFE vent (climate add-on)_ | _t°/RH/тиск → VPD confounder (False-Slashing kill, `05_05 §6/§7`) + клімат-оракул NaaS (`07_01`); ADR `02_01 §3.4`, pending bench._ | _+$2.60 якщо populated_ |
+| — | _BME280 + TPS22860 gate + PTFE vent (climate add-on)_ | _t°/RH/тиск → VPD confounder (False-Slashing kill, `05_05 §6/§7`) + клімат-оракул NaaS (`07_02`); ADR `02_01 §3.4`, pending bench._ | _+$2.60 якщо populated_ |
 
 > **Climate add-on (BME280, ADR `02_01 §3.4`):** +$2.60/вузол якщо populated — **НЕ** входить у baseline Electronics TOTAL ($11.33) ані CAPEX §1.2, доки ADR не закрито bench'ем. Перетворює вузол на кліматичний (VPD-confounder + NaaS клімат-оракул) — підвищує цінність D-MRV-даних для агро/страхового ринку.
 
@@ -151,7 +151,7 @@
 
 #### 🤖 4а. Queen BOM — Phase 3 (Starlink Mini) — HW.14
 
-> **Cross-ref:** [00_08 HW.14](00_08_Action_Plan_Tracker) — оновлення Unit Economics ✅
+> **Cross-ref:** [09_06 HW.14](09_06_Action_Plan_Tracker) — оновлення Unit Economics ✅
 
 **Phase 3** застосовується для ультра-віддалених локацій (Амазонія, Тайга, Африка) де Starlink DTC (Phase 2.5) недоступний або потрібна вища пропускна здатність. Конфігурація використовує фізичний Starlink Mini термінал (20–40 Вт) з ESP32-S3 або SIM8200G-M2 co-processor.
 
@@ -194,7 +194,7 @@
 
 #### 🤖 5а. Phase 3 (Starlink Mini) Cluster Economics — HW.14
 
-> **Cross-ref:** [00_08 HW.14](00_08_Action_Plan_Tracker), `02_05` §4 Power Tree, BLOCKER-2.
+> **Cross-ref:** [09_06 HW.14](09_06_Action_Plan_Tracker), `02_05` §4 Power Tree, BLOCKER-2.
 
 Для ультра-віддалених локацій де LTE-M / Starlink DTC недоступний (Phase 3):
 
@@ -260,7 +260,7 @@
 
 Система генерує цінність через емісію токенів **SCC (Silken Carbon/Condition Coin)**, які підтверджують гомеостаз дерева (Proof of Growth) та поглинання CO₂ (→ `05_03_Tokenomics_SCC_and_SFC`).
 
-> **⚠️ ВИПРАВЛЕННЯ (DOC.33 — аудит 2026-04-23):** Попередня версія документа помилково вказувала "1 SCC/дерево/добу". Правильна модель узгоджена з `07_01` §2.3 та `05_03` Tokenomics: **10,000 growth_points = 1 SCC, середня генерація ~1 SCC/тиждень/дерево** (при 24 пакетах/добу × ~60 GP/пакет у гомеостазі).
+> **⚠️ ВИПРАВЛЕННЯ (DOC.33 — аудит 2026-04-23):** Попередня версія документа помилково вказувала "1 SCC/дерево/добу". Правильна модель узгоджена з `07_02` §2.3 та `05_03` Tokenomics: **10,000 growth_points = 1 SCC, середня генерація ~1 SCC/тиждень/дерево** (при 24 пакетах/добу × ~60 GP/пакет у гомеостазі).
 
 ### 7.1. Механізм накопичення growth_points та CO₂ еквівалент
 
@@ -278,7 +278,7 @@
 | 1 дерево / рік (52 SCC) | **~26 кг CO₂** |
 | Кластер 100 дерев / рік (≈5,200 SCC) | **~2.6 tCO₂** |
 
-> **CO₂ еквівалент [BIZ.1]:** `2000 SCC = 1 тонна поглиненого CO₂`. **SSOT:** `05_03` + `07_01 §3` (on-chain `ProtocolParameters.sol#sccPerTonneCo2()` + `SystemParameter(:scc_per_tonne_co2)`) — значення в таблиці вище **дзеркало SSOT**, при зміні правити там, не тут. Детально: `07_01` BLOCKER-4 (закрито).
+> **CO₂ еквівалент [BIZ.1]:** `2000 SCC = 1 тонна поглиненого CO₂`. **SSOT:** `05_03` + `07_02 §3` (on-chain `ProtocolParameters.sol#sccPerTonneCo2()` + `SystemParameter(:scc_per_tonne_co2)`) — значення в таблиці вище **дзеркало SSOT**, при зміні правити там, не тут. Детально: `07_02` BLOCKER-4 (закрито).
 
 > Детально про Lorenz attractor та формулу growth_points: `03_04_mruby_Lorenz_Attractor` та `05_02_Proof_of_Growth_Pipeline`.
 
@@ -468,4 +468,4 @@ PCBA + Збірка (Черкаси — SVS-ARTA)
 | `02_04_EDLC_Supercapacitor_Buffer` | Розрахунки іоністора 0.47 F |
 | `02_05_Queen_Hardware_and_Starlink` | Queen CAPEX та Starlink Mother Gateway |
 | `05_03_Tokenomics_SCC_and_SFC` | Механізм мінтингу SCC, Proof of Growth (10k growth_points = 1 SCC) |
-| `07_01_Nature_as_a_Service_Contracts` | Юридична модель NaaS |
+| `07_02_Nature_as_a_Service_Contracts` | Юридична модель NaaS |

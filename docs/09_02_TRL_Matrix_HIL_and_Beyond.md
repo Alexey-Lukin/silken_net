@@ -1,4 +1,4 @@
-# 00_06: Strategic Roadmap, TRL Matrix and HIL Simulators
+# 09_02: Strategic Roadmap, TRL Matrix and HIL Simulators
 
 ## 🎯 Мета
 
@@ -17,13 +17,13 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [00_01_Vision_Market_and_Slashing_Policy](00_01_Vision_Market_and_Slashing_Policy) | Бізнес-візія та slashing |
-| [00_04_AI_Native_Engineering_and_TRL](00_04_AI_Native_Engineering_and_TRL) | AI-Native TRL philosophy (метрика прогресу) |
-| [00_05_Shape_Up_Operations_and_RnD_Clusters](00_05_Shape_Up_Operations_and_RnD_Clusters) | Shape Up operations; §Async-Review TRL Gates |
-| [00_07_GitHub_Projects_and_IaC_Automation](00_07_GitHub_Projects_and_IaC_Automation) | TRL Auto-Advancement (HIL → Projects V2 cards) |
+| [07_01_Vision_Mission_and_Roadmap](07_01_Vision_Mission_and_Roadmap) | Бізнес-візія та slashing |
+| [09_01_AI_Native_Engineering_and_TRL](09_01_AI_Native_Engineering_and_TRL) | AI-Native TRL philosophy (метрика прогресу) |
+| [09_03_Shape_Up_Operations_and_RnD_Clusters](09_03_Shape_Up_Operations_and_RnD_Clusters) | Shape Up operations; §Async-Review TRL Gates |
+| [09_04_GitHub_Projects_and_IaC_Automation](09_04_GitHub_Projects_and_IaC_Automation) | TRL Auto-Advancement (HIL → Projects V2 cards) |
 | [04_06_Testing_Guide_and_Coverage](04_06_Testing_Guide_and_Coverage) | §B Coverage Matrix — HIL → RSpec/Firmware/Foundry coverage |
 | [08_01_University_R_and_D_Protocols](08_01_University_R_and_D_Protocols) | Фізичні валідаційні протоколи ВНЗ (TRL 1-4) |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): Module 01 chemistry (HW.*), 06 DevOps deploy, 08 UNI.* |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): Module 01 chemistry (HW.*), 06 DevOps deploy, 08 UNI.* |
 
 ## 📑 Зміст
 
@@ -52,7 +52,7 @@
 
 ### Per-module TRL (канонічне джерело)
 
-> SSOT для per-domain TRL. **System TRL = найнижчий модуль критичного шляху (00–07 build-path)** — наразі 4 (модулі 00/01/02 — hardware-критичні). Модулі 08 (R&D-партнерства), 09 (PM-процес), 10 (Security-hardening) — це org/process/безпекова зрілість, яка трекається окремо і **не гейтить** System TRL (інакше System=2 за рахунок ранніх ВНЗ-партнерств, що хибно). Оновлюється при кожному cool-down. *(Мігровано з `00_08 §TRL Матриця` 2026-05-28 — канон тут.)*
+> SSOT для per-domain TRL. **System TRL = найнижчий модуль критичного шляху (00–07 build-path)** — наразі 4 (модулі 00/01/02 — hardware-критичні). Модулі 08 (R&D-партнерства), 09 (PM-процес), 10 (Security-hardening) — це org/process/безпекова зрілість, яка трекається окремо і **не гейтить** System TRL (інакше System=2 за рахунок ранніх ВНЗ-партнерств, що хибно). Оновлюється при кожному cool-down. *(Мігровано з `09_06 §TRL Матриця` 2026-05-28 — канон тут.)*
 
 | Модуль | TRL | Цільовий | Головний блокер |
 |--------|-----|----------|-----------------|
@@ -104,7 +104,7 @@
 ### Нова формулювання (Concurrent + HIL):
 
 1. **System TRL** залишається обмеженим найнижчим модулем **критичного шляху** (00–07; §1-note) — це чесна метрика для grant заявок та regulator-комунікації ("система готова до пілоту тоді й тільки тоді, коли всі шари готові").
-2. **Per-domain TRL** є **незалежним** і відстежується в `docs/00_06 §TRL Matrix` per-module. Software може бути TRL 8 коли Hardware TRL 4.
+2. **Per-domain TRL** є **незалежним** і відстежується в `docs/09_02 §TRL Matrix` per-module. Software може бути TRL 8 коли Hardware TRL 4.
 3. **HIL Simulators** (Hardware-in-the-Loop) — програмні генератори, які імітують поведінку реального hardware, дозволяють software-домену пройти TRL 5-8 без живої EBFC/анкера.
 
 ---
@@ -127,12 +127,12 @@
 | Симулятор | Імітує | Файл | Замінює реальний компонент для |
 |-----------|--------|------|-------------------------------|
 | `bin/forest_simulator` | Емулює **Queen→Backend CoAP-батчі** (AES-256-**CBC**) з телеметрією Soldier'ів, full Lorenz attractor curves. ⚠️ Це Queen-рівень: per-Soldier LoRa-хоп — на залізі **AES-128** (ECB→CCM, `03_05`), а до бекенду доходить CoAP-батч (AES-256-CBC). **Два режими (див. ⚠️ нижче):** `load_test_mode` (батч кожні 3–8 сек — стрес черг) та `realistic_mode` (CIFO-точний: рідкі об'ємні батчі ~раз на годину/45 записів + packet loss + jitter мобільної мережі) | `bin/forest_simulator` (load_test існує; realistic_mode — TODO) | Локальна розробка Rails + sidekiq + Web3 pipeline |
-| `HilQueenSimulator` | Queen self-telemetry (`DID == 0x00000000`), CIFO flush, Starlink/LTE timing | новий: `lib/hil/queen_simulator.rb` (планований) | Test Queen failover ([`00_03 §Queen Failover`](00_03_Resilience_and_Failover_Policy)) |
+| `HilQueenSimulator` | Queen self-telemetry (`DID == 0x00000000`), CIFO flush, Starlink/LTE timing | новий: `lib/hil/queen_simulator.rb` (планований) | Test Queen failover ([`00_02 §Queen Failover`](00_02_Resilience_and_Failover_Policy)) |
 | `HilWebPipelineSimulator` | peaq → IoTeX → Chainlink → Polygon → KlimaDAO → Filecoin → L1 — 12-chain mock з deterministic responses. ⚠️ Це **логіко-рівневий** інструмент (TRL 5-6): валідує pipeline-логіку та guard clauses, але **НЕ** Web3 реального світу (gas spikes, RPC 429/rate-limit, orphaned blocks, nonce collisions, Chainlink DON latency). НЕ є достатнім для TRL 7-8 — див. §4.3. | `WEB3_STRICT_MODE=false` + stub services у `app/services/web3/*_stub.rb` | Логіка pipeline + unit/integration (TRL 5-6) |
 | `HilLorenzGenerator` | mruby Lorenz curves з різних tree species, environmental conditions (temp, vibration), faulty/normal patterns | `lib/hil/lorenz_generator.rb` (планований) | TinyML training data + Rails Attractor validation |
 | `HilAttackerScenarios` | Bit-flip attacks, replay attacks, hardware tamper detection, dual-computation divergence > 30% | RSpec scenarios у `spec/integration/security/` (частково існує) | Anti-fraud cross-checks ([`05_05 §6`](05_05_Slashing_and_Risk_Policy)) |
 
-> **⚠️ Реалістичний профіль навантаження vs DDoS (корекція 2026-05-28):** батч «кожні 3–8 сек» суперечить буферу CIFO ([`00_03 §1.2`](00_03_Resilience_and_Failover_Policy): flush на 45 записів **або** раз на годину) — для цього Soldier мав би передавати кілька разів на хвилину, що неможливо за енергобюджетом. Тобто 3–8 сек = `load_test_mode` (стрес черг/пропускної здатності), а НЕ реальний IoT-профіль. **`realistic_mode`** (потрібно додати) має відтворювати фізичну Queen: рідкі об'ємні батчі раз на ~годину, + мережеві умови **Starlink Direct-to-Cell**: Carrier-NAT, можливе блокування вхідного UDP (CoAP), зміна портів, високий jitter / packet loss супутникового LTE. Це тестує дефіцит з'єднань, тайм-аути long-poll та розриви TCP-сесій — справжні відмови, яких load-test не ловить. Транспортний фолбек (CoAP-over-TCP / MQTT-SN) — див. [`00_02`](00_02_System_Architecture_and_12_Chain_Pipeline) + Ingress Proxy [`06_01`](06_01_Deployment_Kamal_Terraform).
+> **⚠️ Реалістичний профіль навантаження vs DDoS (корекція 2026-05-28):** батч «кожні 3–8 сек» суперечить буферу CIFO ([`00_02 §1.2`](00_02_Resilience_and_Failover_Policy): flush на 45 записів **або** раз на годину) — для цього Soldier мав би передавати кілька разів на хвилину, що неможливо за енергобюджетом. Тобто 3–8 сек = `load_test_mode` (стрес черг/пропускної здатності), а НЕ реальний IoT-профіль. **`realistic_mode`** (потрібно додати) має відтворювати фізичну Queen: рідкі об'ємні батчі раз на ~годину, + мережеві умови **Starlink Direct-to-Cell**: Carrier-NAT, можливе блокування вхідного UDP (CoAP), зміна портів, високий jitter / packet loss супутникового LTE. Це тестує дефіцит з'єднань, тайм-аути long-poll та розриви TCP-сесій — справжні відмови, яких load-test не ловить. Транспортний фолбек (CoAP-over-TCP / MQTT-SN) — див. [`00_01`](00_01_System_Architecture_and_12_Chain_Pipeline) + Ingress Proxy [`06_01`](06_01_Deployment_Kamal_Terraform).
 
 ### 4.3 TRL Промоція через HIL
 
@@ -155,7 +155,7 @@
 
 ## 📅 5. Поточний фокус (Cycle Focus)
 
-Поточний 6-тижневий цикл (Shape Up, [`00_05`](00_05_Shape_Up_Operations_and_RnD_Clusters)) зосереджений на:
+Поточний 6-тижневий цикл (Shape Up, [`09_03`](09_03_Shape_Up_Operations_and_RnD_Clusters)) зосереджений на:
 
 - **EBFC (Module 01) TRL 4 → 6** — Stages 1-3 закрити (5 SLA-макетів → 10 Ti-monets → 3-5 повноцінних SLM+HIP анкерів).
 - **ZK-Pipeline (Module 05) TRL 7 → 8** — IoTeX → Chainlink → Polygon Mainnet smoke з реальним LINK token balance.
@@ -169,9 +169,9 @@
 >
 > Цей розділ фіксує **4 архітектурні прогалини**, які стоять між поточною архітектурою та справжнім "planetary intelligence". Це **не блокери** для TRL 9 (комерційний продукт можливий і без них), але це **дослідницький горизонт за межами TRL 9** — наукова програма на 5–15 років, яка перетворить Silken Net з IoT-системи в самоорганізовану кібер-екосистему.
 >
-> **⚠️ Метрика (2026-05-28): «TRL 10-12» — НЕ використовується.** TRL стандартизовано на 1-9 (NASA / ISO 16290) і вимірює лише технологічну готовність. Зрілість за межами TRL 9 трекається окремими шкалами ([`00_04 §1`](00_04_AI_Native_Engineering_and_TRL)): **SRL (System Readiness Level)** — системна/інтеграційна зрілість, стадії `Concept → Pilot → Deployed`; **MRL (Manufacturing Readiness Level, 8-10)** — серійне виробництво (5 SKU). Нижче «TRL шлях» кожної прогалини переформульовано як **SRL-шлях**.
+> **⚠️ Метрика (2026-05-28): «TRL 10-12» — НЕ використовується.** TRL стандартизовано на 1-9 (NASA / ISO 16290) і вимірює лише технологічну готовність. Зрілість за межами TRL 9 трекається окремими шкалами ([`09_01 §1`](09_01_AI_Native_Engineering_and_TRL)): **SRL (System Readiness Level)** — системна/інтеграційна зрілість, стадії `Concept → Pilot → Deployed`; **MRL (Manufacturing Readiness Level, 8-10)** — серійне виробництво (5 SKU). Нижче «TRL шлях» кожної прогалини переформульовано як **SRL-шлях**.
 >
-> **Не плутати з блокерами в `00_08`:** там — конкретні інженерні задачі з measurable outcomes. Тут — стратегічні R&D-вектори, які потребують академічної колаборації (Q1 публікації) та можуть стати темою PhD-дисертацій під школами Кирилюка (синергетика) + Мінаєва (квантова хімія) + Порубльова (FOTIUS кібернетика).
+> **Не плутати з блокерами в `09_06`:** там — конкретні інженерні задачі з measurable outcomes. Тут — стратегічні R&D-вектори, які потребують академічної колаборації (Q1 публікації) та можуть стати темою PhD-дисертацій під школами Кирилюка (синергетика) + Мінаєва (квантова хімія) + Порубльова (FOTIUS кібернетика).
 
 ### 7.1. Gap #1 — Forest-Level Emergence (Колективний Гомеостаз)
 
@@ -233,7 +233,7 @@
 > | Рівень | Що відбувається | Hardware envelope |
 > |--------|----------------|-------------------|
 > | **L1 Soldier** | Inference-only: запуск **попередньо скомпільованого** mruby bytecode (Lorenz constants, fitness evaluation, threshold lookup). Періодична відправка `lambda_exponent` + 1-bit stigmergic сигналу. | STM32WLE5JC + 0.47F, +1.4 мДж/год headroom |
-> | **L2 Conductor** *(Hub Tree, formerly "Sergeant")* | Кластерний агрегатор: збирає 50-200 Soldiers lambda-stream, обчислює **локальний GA** на (σ, ρ, β) для свого кластера, відправляє candidate sets до Queen. Динамічно обирається на основі `vcap` та якості зв'язку. | Solar + LiFePO4 (TBD spec, `00_02 §3` L2 placeholder) |
+> | **L2 Conductor** *(Hub Tree, formerly "Sergeant")* | Кластерний агрегатор: збирає 50-200 Soldiers lambda-stream, обчислює **локальний GA** на (σ, ρ, β) для свого кластера, відправляє candidate sets до Queen. Динамічно обирається на основі `vcap` та якості зв'язку. | Solar + LiFePO4 (TBD spec, `00_01 §3` L2 placeholder) |
 > | **L3 Queen** *(Mother Tree)* | Агрегатор розподіленого навчання: для Lorenz — обмін **оцінками параметрів σ/ρ/β** (distributed parameter estimation, PSO/GA); для TinyML — справжній Federated Learning (агрегація градієнтів / ретренінг → `.tflite` OTA), privacy-preserving. Компілює mruby contracts, broadcast'ить chunked OTA. | 20Ah LiFePO4 + Solar + LTE backbone (`02_05`) |
 >
 > Q-learning, GA-evolution, online TinyML training **відбуваються на L2/L3 з обмеженням енергії на 4-5 порядків легшим**, ніж у Soldier. До Soldier приходить **готовий compiled bytecode через OTA** (магік `0x45544952 "RITE"` у `MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000`, `03_02`). Це усуває "self-training on edge" парадокс і зберігає SRL roadmap реалістичним.

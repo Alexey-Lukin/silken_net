@@ -17,7 +17,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 5 — Схеми/прототипи існують, прошивка готова; Phase 2.5 Starlink DTC підтверджено через Київстар
-- **Відкрите:** зимовий енергодефіцит, SIM7070G BMS/decoupling, теплове управління IP67 → [`00_08`](00_08_Action_Plan_Tracker) (HW.14/15/18).
+- **Відкрите:** зимовий енергодефіцит, SIM7070G BMS/decoupling, теплове управління IP67 → [`09_06`](09_06_Action_Plan_Tracker) (HW.14/15/18).
 
 ---
 
@@ -30,13 +30,13 @@
 | [03_02_Queen_Gateway_Firmware](03_02_Queen_Gateway_Firmware) | Прошивка Королеви (CIFO, OTA, AT) |
 | [03_05_Hardware_Symmetric_Crypto_and_Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Аудит безпеки (ECB/CBC, ключі) |
 | [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (gateway telemetry) |
-| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Вартість розгортання |
-| [00_08_Action_Plan_Tracker](00_08_Action_Plan_Tracker) | HW.14/15/18 (energy, BMS, thermal) |
+| [07_03_Unit_Economics_and_BOM](07_03_Unit_Economics_and_BOM) | Вартість розгортання |
+| [09_06_Action_Plan_Tracker](09_06_Action_Plan_Tracker) | HW.14/15/18 (energy, BMS, thermal) |
 
 ## 📑 Зміст
 
 <!-- TOC:AUTO:START -->
-- [Відкриті апаратні питання (open → 00_08)](#-відкриті-апаратні-питання-open--00_08)
+- [Відкриті апаратні питання (open → 09_06)](#-відкриті-апаратні-питання-open--09_06)
 - [2. Детальна Архітектура Підключень](#-2-детальна-архітектура-підключень)
 - [3. Power Tree (Дерево Живлення)](#-3-power-tree-дерево-живлення)
 - [4. Енергетичний Бюджет](#-4-енергетичний-бюджет)
@@ -49,9 +49,9 @@
 
 ---
 
-## 🚧 Відкриті апаратні питання (open → 00_08)
+## 🚧 Відкриті апаратні питання (open → 09_06)
 
-> Статуси трекаються в [`00_08`](00_08_Action_Plan_Tracker) (HW.14/15/18).
+> Статуси трекаються в [`09_06`](09_06_Action_Plan_Tracker) (HW.14/15/18).
 
 ### Starlink DTC (Phase 2.5) vs Starlink Mini
 
@@ -173,7 +173,7 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 - Або скоротити Starlink duty cycle до 1 хв/годину → ~9 Вт·год/добу (профіцит ✅)
 - Або встановити 100W сонячну панель
 
-**Блокує:** Лише Phase 3. Розрахунок Unit Economics (07_02).
+**Блокує:** Лише Phase 3. Розрахунок Unit Economics (07_03).
 
 ---
 
@@ -250,7 +250,7 @@ SIM7070G у режимі LTE-M TX може споживати імпульсно
 
 **Блокує:** Сертифікація для зимового деплою.
 
-> **Cross-ref:** [00_08 HW.16](00_08_Action_Plan_Tracker) — checklist синхронізовано.
+> **Cross-ref:** [09_06 HW.16](09_06_Action_Plan_Tracker) — checklist синхронізовано.
 
 ---
 
@@ -282,7 +282,7 @@ EdgeCache forest_cache[50]; // 50 × 22 байти = 1.1 KB
 
 **Flush trigger:** кожні 3600 сек (+0–60 сек HRNG jitter) АБО при заповненні ≥ 45/50 слотів.
 
-⚠️ **Capacity math (2026):** 50 слотів × 1 пакет/Soldier/год × 100 Soldiers/Queen ⇒ переповнення за **30 хв** при втраті Starlink. На верхньому краю scaling roadmap (`00_02 §3`, 200 Soldiers/Queen) — переповнення за **15 хв**. Це **критичний gap**, який маскувався тестами в стенді з <50 Soldiers.
+⚠️ **Capacity math (2026):** 50 слотів × 1 пакет/Soldier/год × 100 Soldiers/Queen ⇒ переповнення за **30 хв** при втраті Starlink. На верхньому краю scaling roadmap (`00_01 §3`, 200 Soldiers/Queen) — переповнення за **15 хв**. Це **критичний gap**, який маскувався тестами в стенді з <50 Soldiers.
 
 **Flash Ring Buffer — Overflow Tier (ARCH.35):**
 ```c
@@ -475,7 +475,7 @@ Starlink Mini — компактний термінал LEO-супутника �
 
 ## 🌡️ 4а. Тепловий бюджет IP67 корпусу 🤖
 
-**Cross-ref:** [00_08 HW.16](00_08_Action_Plan_Tracker), §Теплове управління IP67 вище.
+**Cross-ref:** [09_06 HW.16](09_06_Action_Plan_Tracker), §Теплове управління IP67 вище.
 
 **Мета:** перевірити, що температура всередині корпусу не виходить за робочі діапазони компонентів при найгіршому сценарії: T_зовн = +40°C, прямі сонячні промені, штиль.
 
