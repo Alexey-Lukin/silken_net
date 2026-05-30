@@ -129,6 +129,32 @@ RSpec.describe DocsLinter do
     end
   end
 
+  describe ".lorenz_formula_drift" do
+    it "flags the β literal `8.0 / 3.0` re-stated outside the owner" do
+      hits = described_class.lorenz_formula_drift("05_01_Multichain", "beta  = 8.0 / 3.0\n")
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("03_04 §4.1")
+    end
+
+    it "exempts the owner docs (03_04 Lorenz + 03_01 firmware-lifecycle)" do
+      code = "BASE_BETA = 8.0 / 3.0\n"
+      expect(described_class.lorenz_formula_drift("03_04_mruby_Lorenz_Attractor", code)).to be_empty
+      expect(described_class.lorenz_formula_drift("03_01_Firmware_Lifecycle_and_DMA", code)).to be_empty
+    end
+
+    it "skips inline mentions, firmware-file refs and table rows (only β assignments flag)" do
+      expect(described_class.lorenz_formula_drift(
+        "00_02_Arch", "рахує ідентично firmware mruby (8.0/3.0)\n"
+      )).to be_empty
+      expect(described_class.lorenz_formula_drift(
+        "05_02_Pipeline", "`firmware/bio_contracts/bio_contract.rb` — BASE_BETA = 8.0 / 3.0\n"
+      )).to be_empty
+      expect(described_class.lorenz_formula_drift(
+        "05_06_Governance", "| `BETA = 8.0/3.0` | `Attractor` | Lorenz |\n"
+      )).to be_empty
+    end
+  end
+
   describe ".deprecated_terms" do
     it "flags a retired token and gives the replacement hint" do
       hits = described_class.deprecated_terms("derive via HKDF info silkennet-v1-aes256 here")

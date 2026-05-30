@@ -55,7 +55,7 @@ All via binstubs — **`bin/rails` / `bin/rspec`**, never `bundle exec` (`[[feed
 
 | Command | Does | Engine |
 |---|---|---|
-| `bin/rails docs:check_refs` | The omnibus gate: dangling `NN_NN` links (HARD) · §-label drift (advisory) · TRL presence (HARD) · TRL single-value (HARD) · blocker-hygiene (HARD) · standard-conformance (HARD) · ToC sync (HARD) · RTC reg-map drift (HARD) · deprecated terms (HARD). | `lib/docs_linter.rb`, `lib/docs_toc.rb` |
+| `bin/rails docs:check_refs` | The omnibus gate: dangling `NN_NN` links (HARD) · §-label drift (advisory) · TRL presence (HARD) · TRL single-value (HARD) · blocker-hygiene (HARD) · standard-conformance (HARD) · ToC sync (HARD) · RTC reg-map drift (HARD) · Lorenz-formula drift (HARD) · deprecated terms (HARD). | `lib/docs_linter.rb`, `lib/docs_toc.rb` |
 | `bin/rails docs:toc` | Regenerate the `📑 Зміст` auto-ToC between `<!-- TOC:AUTO:START/END -->` from current `## ` headings (curated `— descriptions` preserved). Run after changing headings. | `lib/docs_toc.rb` |
 | `bin/rails tracker:check` | 00_08 DRY: duplicate IDs, meta-line conformance, canon-ref resolution. | `lib/tracker/dashboard.rb` |
 | `bin/rails wiki:sync` | **Dry-run** (default): clone wiki, transform links + carry images, show `--stat` diff + unresolved links. Publishes nothing. | `lib/wiki_link_normalizer.rb` |
@@ -93,6 +93,24 @@ FIX      Reworded the 3 stale lines → "зайнято FW.2"; gate flipped HARD
          Later, the stale HKDF string "silkennet-v1-aes256" was an
          UNAMBIGUOUS retired token → added to DEPRECATED_TERMS instead
          of a bespoke linter. Both now green; drift can't return.
+```
+
+### Worked example #2 — module restructure (2026-05-30)
+
+A z-divergence wording fix in 00_01 §6.5 snowballed into extracting two
+oversized, scattered topics into their own canon pages: slashing (00_01 §6,
+~half the vision page) → `05_05`, governance (05_03 §749, ~156 lines) → `05_06`.
+Repeatable shape (now canon in `00_07 §8.4`):
+
+```
+MIGRATE-FIRST  fill new home with FULL substance + verify present, THEN cut source
+STUB+POINTER   source keeps a thin vision/ref-stub → new home; mechanics reference
+SWEEP ANCHORED re-point §X refs anchored on a token (e.g. "00_01") so other docs'
+               internal §X (01_01/02_03/04_04 each have their own §6.x!) survive;
+               Ruby script-FILE, dry-run + presence-check, never inline -e
+AUTOMATE       turn the manual owner-violation hunt into a guard —
+               DocsLinter.lorenz_formula_drift (β assignment outside 03_04)
+GATE per-phase docs:check_refs + tracker:check + zero-loss set-diff + wiki dry-run
 ```
 
 ## Checklists

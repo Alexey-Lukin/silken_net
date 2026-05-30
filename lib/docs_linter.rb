@@ -106,6 +106,35 @@ module DocsLinter
     end
   end
 
+  # [SSOT anti-drift] Lorenz constants (σ=10 / ρ=28 / β=8÷3, dt, iterations) are
+  # SSOT-owned by 03_04 §4.1 (firmware↔backend mirror). Re-declaring the formula
+  # values elsewhere drifts — exactly how 05_01 §2 + 00_02 §5 carried a stale
+  # σ/ρ/β code block until the 2026-05-30 05/07 restructure. Other docs must
+  # REFERENCE 03_04 §4.1, never re-state. Heuristic: a β *assignment*
+  # (`beta = 8.0 / 3.0` / `BASE_BETA = …`) is the unique Lorenz re-declaration
+  # signature — an inline mention ("…(8.0/3.0, parity-tested)") inside DCI prose
+  # is NOT a re-declaration and is not flagged. Flag the assignment outside the
+  # owner UNLESS the line is a labelled mirror ("дзеркало"/"SSOT"/"не дублю"/
+  # cites 03_04) or a firmware-file content reference (`firmware/…`, which shows
+  # the firmware-side value). Tables (illustrative governance "hardcoded-
+  # constants" rows) and the firmware-lifecycle doc 03_01 (legit firmware-side
+  # BASE_BETA) are exempt. Owner-only-vocabulary, same shape as RTC drift.
+  LORENZ_OWNER_DOC = /\A03_04_|\A03_01_/
+  LORENZ_BETA_RE = %r{(?:base_)?beta\s*=\s*\(?\s*8\.0\s*/\s*3\.0}i
+  LORENZ_MIRROR_RE = %r{дзеркало|SSOT|не дублю|03_04|firmware/}i
+
+  def lorenz_formula_drift(basename, text)
+    return [] if basename.match?(LORENZ_OWNER_DOC)
+
+    text.each_line.filter_map do |line|
+      next if line.lstrip.start_with?("|") # skip tables (illustrative rows)
+      next unless line.match?(LORENZ_BETA_RE)
+      next if line.match?(LORENZ_MIRROR_RE)
+
+      "Lorenz β `8.0/3.0` re-stated outside owner (03_04 §4.1) → #{line.strip[0, 100]}"
+    end
+  end
+
   # [SSOT anti-drift] Deprecated-term registry. Tokens retired SSOT-wide must
   # not reappear in any canon doc; as each drift is fixed, the old form is added
   # here so CI blocks its return (the general "scripts catch drift" net). Keyed

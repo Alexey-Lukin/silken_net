@@ -38,6 +38,7 @@ namespace :docs do
     suspect     = []  # soft: §-section label not found in target headings
     trl_missing = []  # hard: ## ✅ Статус section without a TRL declaration
     rtc_drift   = []  # hard: RTC register availability claimed outside 03_01 owner
+    lorenz_drift = [] # hard: Lorenz β formula re-stated outside 03_04 owner
     deprecated  = []  # hard: retired SSOT term reappeared (DocsLinter::DEPRECATED_TERMS)
 
     files.each do |f|
@@ -72,6 +73,7 @@ namespace :docs do
       # other doc asserting "DRn free/reserve" drifts (caught the stale
       # "DR15 наразі резерв" in 03_02/00_08/03_03 after FW.2 claimed DR15).
       rtc_drift.concat(DocsLinter.rtc_register_allocation_drift(base, text).map { |h| "#{base}: #{h}" })
+      lorenz_drift.concat(DocsLinter.lorenz_formula_drift(base, text).map { |h| "#{base}: #{h}" })
       deprecated.concat(DocsLinter.deprecated_terms(text).map { |h| "#{base}: #{h}" })
     end
 
@@ -144,6 +146,12 @@ namespace :docs do
       puts "  RTC-MAP DRIFT (#{rtc_drift.size}) — register availability is owned by 03_01 §2:"
       rtc_drift.sort.each { |d| puts "    ✗ #{d}" }
     end
+    if lorenz_drift.empty?
+      puts "  Lorenz formula: no β `8.0/3.0` re-stated outside owner (03_04 §4.1) ✓"
+    else
+      puts "  LORENZ-FORMULA DRIFT (#{lorenz_drift.size}) — σ/ρ/β values are owned by 03_04 §4.1:"
+      lorenz_drift.sort.each { |d| puts "    ✗ #{d}" }
+    end
     if deprecated.empty?
       puts "  deprecated terms: no retired SSOT tokens present ✓"
     else
@@ -159,6 +167,7 @@ namespace :docs do
     failed << "canon docs hosting blocker sections (→ 00_08)" unless blocker_sections.empty?
     failed << "docs missing the standard skeleton" unless conformance.empty?
     failed << "RTC register-map drift (availability claimed outside 03_01)" unless rtc_drift.empty?
+    failed << "Lorenz-formula drift (β re-stated outside 03_04 §4.1)" unless lorenz_drift.empty?
     failed << "deprecated SSOT terms present" unless deprecated.empty?
     abort("docs:check_refs FAILED — #{failed.join(', ')}") unless failed.empty?
   end

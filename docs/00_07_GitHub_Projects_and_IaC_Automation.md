@@ -450,8 +450,19 @@ echo "Stub shape for cluster C: First Akash production deploy" > docs/shaping/ak
 | standard-conformance | кожен NN_NN-канон несе ✅ Статус + top 🔗 Cross-references + auto-ToC | `bin/rails docs:check_refs` (HARD; `lib/docs_linter.rb`) |
 | ToC sync | docs з `TOC:AUTO` маркерами — зміст збігається з h2-заголовками | `bin/rails docs:check_refs` (HARD; writer `docs:toc`; engine `lib/docs_toc.rb`) |
 | **RTC reg-map drift** | register availability (`DRn free/reserve`) живе лише в owner `03_01 §2`; інші доки не дублюють (зловив stale «DR15 резерв» у 03_02/00_08/03_03) | `bin/rails docs:check_refs` (HARD 2026-05-30; `lib/docs_linter.rb`) |
+| **Lorenz-formula drift** | β-assignment (`beta = 8.0/3.0`) живе лише в owner `03_04 §4.1`; інші доки реферять, не re-declare (зловив stale σ/ρ/β у 05_01/00_02 при 05/07-реструктуризації) | `bin/rails docs:check_refs` (HARD 2026-05-30; `lib/docs_linter.rb`) |
 | TRL range-consistency | _(roadmap)_ per-doc member-TRL у межах діапазону модуля `00_06 §1` | — |
 
 **Правило при зміні факту:** правити лише у home (§8.2) → рефи лишаються чинними; будь-який новий NN_NN-док/реф — `docs:check_refs` має лишатись зеленим перед merge.
 
 **Публікація канону на Wiki:** `bin/rails wiki:sync` (dry-run за замовч.; `PUSH=1` публікує) дзеркалить `docs/NN_NN_*.md` → GitHub Wiki — нормалізує лінки (canon → bare wiki-link; non-doc repo-файли → absolute `blob/main` URL) + переносить зображення. **Ручний** запуск (рішення власника — НЕ on-merge); engine `lib/wiki_link_normalizer.rb` (unit-tested). Деталі — `lib/tasks/wiki.rake`.
+
+### 8.4 Module-restructure / extract-to-new-page
+
+Коли SSOT-факт переростає свій док (тема ≈ пів-сторінки + розпорошена дублями по сусідах), її виносять у **власну канон-сторінку** — НЕ ламаючи модульну вісь (перейменування файлу = масові биті cross-ref). Метод (verified 05/07-реструктуризацією 2026-05-30: slashing `00_01 §6` → `05_05`, governance `05_03 §749` → `05_06`):
+
+1. **Migrate-first:** наповнити новий дім ПОВНОЮ субстанцією + verify present ПЕРШ ніж різати джерело (zero-loss).
+2. **Stub + pointer:** джерело лишає тонкий vision/ref-stub `→ новий_дім`; механіка реферить існуючі доми, не дублює.
+3. **Cross-ref sweep, anchored:** масовий re-point `NN_NN §X` → новий дім, **прив'язаний до якоря** (напр. лише рядки з «00_01»), щоб не зачепити однойменні внутрішні §X інших доків. Ruby-скрипт-**файл** (не inline `-e`) з dry-run + presence-check.
+4. **Реєстр + індекс:** оновити `§8.2` home-registry, `00_00` reading-order, README; archival-pointer у `00_08` (DOC-row).
+5. **Per-фаза gate:** `docs:check_refs` + `tracker:check` зелені; zero-loss set-diff (referrers before/after = 0 lost); `wiki:sync` dry-run.
