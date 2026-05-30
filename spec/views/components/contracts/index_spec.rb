@@ -147,4 +147,17 @@ RSpec.describe Contracts::Index do
       expect(html).to be_present
     end
   end
+
+  describe "contract row with missing optional fields [coverage]" do
+    it "renders em-dash org, unassigned cluster and blank dates" do
+      contract = mock_contract
+      contract.organization = nil
+      contract.cluster = nil
+      contract.start_date = nil
+      contract.end_date = nil
+      html = render_component(contracts: [ contract ], stats: mock_stats, pagy: mock_pagy(last: 1))
+      expect(html).to include("—")          # organization&.name || "—"
+      expect(html).to include("UNASSIGNED")  # cluster&.name || unassigned
+    end
+  end
 end

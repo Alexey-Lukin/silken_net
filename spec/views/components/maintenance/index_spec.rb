@@ -151,4 +151,22 @@ RSpec.describe Maintenance::Index do
       expect(html).to include("No interventions recorded")
     end
   end
+
+  describe "action badge fallback [coverage]" do
+    it "uses the gray fallback color for an unknown action_type" do
+      html = render_component(records: [ mock_record(action_type: "calibration") ], pagy: mock_pagy)
+      expect(html).to include("text-gray-500")
+    end
+  end
+
+  describe "row with missing user, maintainable and timestamp [coverage]" do
+    it "renders gracefully when those fields are nil" do
+      rec = mock_record(performed_at: nil)
+      rec.user = nil
+      rec.maintainable = nil
+      html = render_component(records: [ rec ], pagy: mock_pagy)
+      expect(html).to include("Tree //") # maintainable_type still renders
+      expect(html).to include("—")        # maintainable&.display_identifier || "—"
+    end
+  end
 end

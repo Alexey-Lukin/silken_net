@@ -108,4 +108,18 @@ RSpec.describe Gateways::Index do
       expect(rendered).to include("SNET-Q-002")
     end
   end
+
+  describe "gateway with no cluster, telemetry or recent contact [coverage]" do
+    it "renders unassigned/zero/silent fallbacks and a stale LED" do
+      gw = mock_gateway
+      gw.cluster = nil
+      gw.latest_gateway_telemetry_log = nil
+      gw.last_seen_at = nil
+      rendered = render_component(gateways: [ gw ], pagy: mock_pagy(count: 1, last: 1), online_count: 0)
+      expect(rendered).to include("UNASSIGNED") # cluster&.name || unassigned
+      expect(rendered).to include("SILENT")     # last_seen_at&.strftime || silent
+      expect(rendered).to include("0%")         # latest_log&.signal_quality_percentage || 0
+      expect(rendered).to include("bg-red-900") # last_seen_at nil → stale LED branch
+    end
+  end
 end

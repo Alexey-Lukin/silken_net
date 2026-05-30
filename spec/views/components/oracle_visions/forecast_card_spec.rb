@@ -113,4 +113,19 @@ RSpec.describe OracleVisions::ForecastCard do
       expect(html).to include("#ef4444")
     end
   end
+
+  describe "missing prediction_data [coverage]" do
+    it "falls back to the default yield impact and emerald color" do
+      insight = OpenStruct.new(
+        insight_type: "drought",
+        probability_score: 50,
+        target_date: Time.utc(2025, 8, 15, 12, 0, 0),
+        summary: "No structured prediction payload.",
+        prediction_data: nil
+      )
+      html = render_component(insight: insight)
+      expect(html).to include("-0.04%")           # yield_impact_default (dig → nil)
+      expect(html).to include("text-emerald-500") # nil.to_f < 0 == false → emerald
+    end
+  end
 end
