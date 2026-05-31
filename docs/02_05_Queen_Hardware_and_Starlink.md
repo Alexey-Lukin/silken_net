@@ -289,25 +289,36 @@ EdgeCache forest_cache[50]; // 50 × 22 байти = 1.1 KB
 **Flash Ring Buffer — Overflow Tier (ARCH.35):**
 ```c
 // firmware/queen/flash_buffer.c — пропозиція ARCH.35
-// W25Q32 SPI NOR Flash (4 MB) → 4096 sectors × 1 KB = ~190k слотів × 21 байт
-// Ring buffer: write_ptr / read_ptr в RTC backup registers (DR20-DR21)
+// W25Q32 SPI NOR: 4 MB = 1024 sectors × 4 KB; page-program 256 B, але erase —
+// ТІЛЬКИ цілим сектором 4 KB (NOR не вміє 0→1 без erase). Тому ring — ПО СЕКТОРАХ,
+// а не по довільних 21-байт offset'ах: 21-байт слоти пакуються послідовно у сектор
+// (~195 слотів/сектор) → ~199k слотів. Покажчики (write_sector, read_sector,
+// slot_in_sector) у RTC backup DR20-DR21.
+#define SLOTS_PER_SECTOR  (4096 / 21)   // 195
+#define N_SECTORS         1024
 
 void cifo_overflow_to_flash(EdgeCache* slot) {
-    w25q32_write_page(write_ptr, slot, 21);
-    write_ptr = (write_ptr + 21) % FLASH_BUFFER_SIZE;
-    if (write_ptr == read_ptr) read_ptr = (read_ptr + 21) % FLASH_BUFFER_SIZE; // FIFO drop oldest
+    if (slot_in_sector == 0) {                                  // починаємо новий сектор
+        if ((write_sector + 1) % N_SECTORS == read_sector)
+            read_sector = (read_sector + 1) % N_SECTORS;        // ring повний → FIFO-drop найстарішого СЕКТОРА
+        w25q32_erase_sector(write_sector);                      // обов'язковий erase ПЕРЕД програмуванням
+    }
+    w25q32_program(write_sector, slot_in_sector * 21, slot, 21);
+    if (++slot_in_sector >= SLOTS_PER_SECTOR) { slot_in_sector = 0; write_sector = (write_sector + 1) % N_SECTORS; }
 }
 
-void cifo_drain_from_flash(void) {
-    while (read_ptr != write_ptr && uplink_available()) {
-        w25q32_read_page(read_ptr, &slot, 21);
-        if (coap_send(&slot) == OK) read_ptr = (read_ptr + 21) % FLASH_BUFFER_SIZE;
-        else break;
+void cifo_drain_from_flash(void) {                              // FIFO: найстаріший сектор першим
+    while (read_sector != write_sector && uplink_available()) {
+        for (int i = 0; i < SLOTS_PER_SECTOR; i++) {
+            w25q32_read(read_sector, i * 21, &slot, 21);
+            if (coap_send(&slot) != OK) return;                 // стоп без втрати прогресу
+        }
+        read_sector = (read_sector + 1) % N_SECTORS;            // сектор повністю злито (стертя — при наступному обороті)
     }
 }
 ```
 
-**Енерго-бюджет flash write:** W25Q32 page write ~10 мА × 0.7 мс/page = 7 µA·s. При середньому 100 overflow-events/добу на Queen — ~700 µA·s/добу, що нижче добового нойзу LiFePO4 12V/20Ah (~3.2 Вт·год/добу phase 2.5, див. §1.2 §Зимовий енергодефіцит). **Не змінює зимовий енергобюджет.**
+**Енерго-бюджет flash write:** W25Q32 page write ~10 мА × 0.7 мс/page = 7 µA·s; sector erase (4 KB) ~15 мА × ~45 мс ≈ 675 µA·s, але амортизовано раз на ~195 слотів. При середньому 100 overflow-events/добу на Queen — одиниці mA·s/добу, що значно нижче добового нойзу LiFePO4 12V/20Ah (~3.2 Вт·год/добу phase 2.5, див. §1.2 §Зимовий енергодефіцит). **Не змінює зимовий енергобюджет.**
 
 ---
 
