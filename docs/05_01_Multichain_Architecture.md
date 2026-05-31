@@ -325,6 +325,8 @@ type PremiumPaidEvent @entity { ... }
 
 **Мікро-винагорода:** Base reward + bonus per growth\_point, конвертовано в lamports → USDC
 
+> **⚠️ Scale (нот.4):** поточно — окрема Solana tx на КОЖЕН fulfilled telemetry; на planetary-scale (мільйони verified-подій/добу) fees зрівнюються з винагородою + RPC-навантаження. **Fix трекається — [`00_07 E.61`](00_07_Action_Plan_Tracker):** batch payouts (акумуляція в Kredis до порогу `SOLANA_BATCH_THRESHOLD_USDC` → один `transferChecked` ATA→ATA, cron `SolanaBatchPayoutWorker`); backward-compat при threshold=0.
+
 Solana `Solana::MintingService` використовує `sendTransaction` з Ed25519-підписом. ATA отримувача резолюється динамічно через `getTokenAccountsByOwner`.
 
 #### 9. Celo (ReFi Community Rewards)

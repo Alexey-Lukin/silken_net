@@ -633,6 +633,8 @@ FilecoinArchiveWorker → IPFS/Filecoin permanent record
 **Мережа:** `polygon-amoy`
 **Адреса контракту:** `0x0000000000000000000000000000000000000000` (TODO: замінити після деплою)
 
+> **⚠️ The Graph = off-chain analytics, НЕ realtime (нот.2).** Subgraph має **eventual consistency** (indexing-lag секунди–хвилини, більше при reorg на Polygon). UI-баланс гаманця читається з **Rails DB** (`Wallets::BalanceFrame` Phlex Turbo Frame — [`04_03 §5`](04_03_REST_API_v1_Reference)), а **не** з subgraph — тому indexing-lag НЕ спричиняє «застарілий баланс → повторний mint». Subgraph живить лише протокольну статистику (`ProtocolFinancials`), не user-facing баланс.
+
 ```yaml
 # subgraph/subgraph.yaml — поточний стан eventHandlers:
 

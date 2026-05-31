@@ -207,6 +207,8 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 
 ---
 
+> **⚠️ Позиція Streamr (нот.3): broadcast РАНО, але вже після crypto-perimeter.** `StreamrBroadcastWorker` (вище, перед Крок A/B) транслює пакет **до** oracle-фіналізації (IoTeX ZK / Chainlink), але **після** per-packet integrity perimeter — AES-256-CBC decrypt CoAP-батч + AES-128-ECB decrypt per-record + `valid_sensor_data?` (§«TokenomicsEvaluatorWorker bypass»). Тобто Streamr = **live forest pulse** (crypto-authentic, не oracle-final), а не фінансова істина. Inject сміття у публічний feed потребує валідного **per-device LoRa-ключа** (raw CoAP без ключа відсікається на decrypt) → amplification-ризик = підмножина AES-key-compromise (mitigated FW.1/FW.2/FW.17). Streamr — спостерігач, не gate.
+
 ## Детальний Опис Кожного Кроку
 
 ### Firmware: Солдат (STM32WLE5JC)
