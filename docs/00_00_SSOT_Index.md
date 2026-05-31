@@ -170,4 +170,3 @@ _Партнерства ВНЗ (ЧНУ+ФОТІУС, ЧДТУ, ЧІПБ, ЧМА,
 - [08\_01\_Joint\_Publications\_and\_IP\_Strategy](08_01_Joint_Publications_and_IP_Strategy) (MOIC-рамка + спільні публікації (Статті 1–35) + патентна стратегія/IP)
 - [08\_02\_Academic\_Institutions\_Registry](08_02_Academic_Institutions_Registry) (Реєстр 5 ВНЗ: хто/кафедра → що валідує [канон-дім] → публікація)
 - [08\_03\_External\_Stakeholders\_Registry](08_03_External_Stakeholders_Registry) (Social API Registry: B2G/B2B + культурний шар — лісники, ДСНС, митці; non-hot-path)
-> _Колишній Модуль 09 (Методологія та Governance) ре-деривовано у **Модуль 00 — Фундамент** (Taxonomy v3): сторінки 00_02–00_07 угорі._
