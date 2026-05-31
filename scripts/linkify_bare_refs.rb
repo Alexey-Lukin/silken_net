@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
+
 #
 # scripts/linkify_bare_refs.rb — convert bare code-span doc refs → canonical links.
 #
@@ -51,7 +52,7 @@ end
 # re-appended OUTSIDE the link so punctuation is preserved, label stays clean.
 def split_dots(token)
   clean = token.sub(/\.+\z/, "")
-  [clean, token[clean.length..]]
+  [ clean, token[clean.length..] ]
 end
 
 changes  = Hash.new { |h, k| h[k] = [] }
@@ -80,7 +81,7 @@ docs.each do |f|
         dangling << "#{base} L#{ln}: #{orig} (no docs/#{id}_*.md)"
         next orig
       end
-      clean, tail = token ? split_dots(token) : [nil, ""]
+      clean, tail = token ? split_dots(token) : [ nil, "" ]
       repl =
         if clean && fold?(full, clean)
           "[`#{id} §#{clean}`](#{full})#{tail}"
@@ -90,7 +91,7 @@ docs.each do |f|
         else
           "[`#{id}`](#{full})"
         end
-      changes[base] << [ln, orig, repl]
+      changes[base] << [ ln, orig, repl ]
       repl
     end
   end

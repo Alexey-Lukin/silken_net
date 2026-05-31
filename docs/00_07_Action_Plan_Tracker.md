@@ -170,6 +170,10 @@
 - **P1** · 👤 · → `06_05`
 - Puma 8 bind `[::]:3000` dual-stack; Thruster → `127.0.0.1:3000`. · [ ] 👤 після canopy deploy: `ss -tlnp\|grep 3000` (`tcp6 [::]:3000`) + `curl` v4/v6 `/up` → задокументувати у `06_05`
 
+#### TEST.1 — RSpec coverage → 99% (line + branch)
+- **P2** · 🤖 · → `04_06 §B.1`
+- Baseline (full `bin/rspec`, 0 fail): line 97.78% / branch 90.25%. Phlex-view wins вичерпані; залишок = сервіси з crypto/blockchain-моками (telemetry_unpacker / blockchain_minting / solana / factory_flashing / insight_generator) — методологія `04_06 §B.5` (кожен Web3-svc ≥1.5× spec-ratio), по-сесійно. Пріоритет — реальні logic-гілки (status / empty-state / guard / error-path), НЕ defensive `&.`-nil. · [ ] 🤖 top-gap сервіси per-session · [ ] 🤖 gap-parser ПІСЛЯ повного `bin/rspec` (subset тригерить SimpleCov-артефакт, `04_06 §B.4`)
+
 ## §03 · Firmware
 
 #### FW.1 — Hardcoded AES-256 Key
@@ -630,6 +634,10 @@
 - **P2** · 🤖 · → `06_04 §5.4`
 - ✅ закрито (2026-05-29): колонка `trees.peaq_did_compromised` (structure.sql) + skip-guard у `BlockchainMintingService` (пропускає flagged-дерева, не валить батч) + spec (minting 72 ex green). Runbook `06_04 §5.4` тепер робочий.
 
+#### SEC.14 — ATECC608B role-split re-examination (ARCH.42 honesty)
+- **P2** · 🤖 · → `03_05 §3.7`
+- `03_05 §3.7` Гілка B робить per-packet `atcab_aes_encrypt()` (ATECC AES щопакета). Питання: краще built-in STM32WLE5JC radio-AES для streaming payload + ATECC лише provisioning (ECDH keygen + master/identity + attestation)? Energy-аргумент перевірено = завищений (ATECC ≈70µJ/пакет ≈ 0.06% TX-енергії, НЕ supercap-killer); реальний trade-off = session-key tamper-resistance (Variant B: ключ не лишає ASIC → forces per-packet) vs latency (1.5ms I²C vs ~10µs) / idiom (built-in → session-key у RDP-Flash). ATECC-agnostic щодо FW.2 nonce-fix. · [ ] 🤖 re-examine ARCH.42 з role-split опцією явно + чесно подати trade-off у `03_05 §3.7` (зараз лише «0.1% acceptable») · [ ] 🤖 cross-check `02_01 §2` power-budget + `03_01` wake-energy
+
 ## 🔀 Cross-cutting · Doc-drift (DOC) — синх з `04_02 §11` divergence registry
 
 Потребують узгодження між docs, firmware та backend. **Не блокери виконання, але блокери для аудиту і онбордингу.**
@@ -643,6 +651,10 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | DOC.10 | Реструктуризація 05/07 (Фаза 3) — відкладені misplacement-рішення: `07_01 §11` Investor Q&A (pitch/diligence — дім 00_01 vs новий pitch-doc неоднозначний); `07_03 §5` Anchor Assembly + `§6` Virtual Prototyping (operational/field-ops дім, наразі grant-bootstrap контекст — не чистий misplacement) | `07_01`, `07_03` | Призначити operational/pitch-дім + перенести (рішення founder) | 🟡 Deferred |
 | DOC.11 | Реструктуризація 05/07 (Фази 1-2, 2026-05-30): slashing `00_01 §6` → `05_05`; governance `05_03 §749-905` → `05_06` — нові канон-доми; cross-refs re-pointed; `00_06 §2` / `00_00` / README синхронізовано (навігація: `00_01 §6` stub + `05_03 §Governance` stub) | `05_05`, `05_06`, `00_01`, `05_03` | — (виконано) | ✅ Done |
 | DOC.12 | Taxonomy v3 P4 (2026-05-30): дисолюція Module 08 (7→3 доки). `08_03 Joint Pubs/IP`→**`08_01`**; `08_02 Cyber/Math`+`08_01 University`+`08_04-07`→**new `08_02` Academic Institutions Registry** (5 ВНЗ — relationship-шар; інженерна субстанція реферить Tier I 01–06, zero-loss verified); `07_05 External`→**`08_03`**. ~260 inbound refs swept; genuinely-novel mesh-математика → Open Research `06_08` (percolation/Markov). `00_00`/README/CLAUDE/`ssot-maintenance` skill синхронізовано | `08_01`, `08_02`, `08_03`, `06_08` | — (виконано) | ✅ Done |
+
+#### DOC.12 — SSOT 360 round 3: ref-graph analyzer + value-consistency hunt
+- **P2** · 🤖 · → `00_06 §3`
+- 360 round 2 ✅ (commits 977de1f+e21e49f, wiki 50p): thread A whole-doc refs→links + `bare_doc_ref` HARD guard; thread B 03_02 fence-bug + `DocsToc.FRONT` engine-bug (6 dropped ToC sections) + wrong doc-ids + stale §s; thread C `tracker:check` §-validation + 12 stale §BLOCKER-N refs. · [ ] 🤖 `docs:graph` аналізатор — orphan-сторінки / in-out-degree / asymmetry / cross-doc §-валідація всюди (власний ref-граф; GitNexus нашу NN_NN-конвенцію графом не моделює, тюнити нема чим) · [ ] 🤖 value-consistency hunt (20% slashing-поріг дім [`05_05 §3`](05_05_Slashing_and_Risk_Policy)? · 300nA/15µW/TRL-числа · intra-doc §-рефи) · [ ] 🤖 verify 3 lower-confidence tracker мапінги (FW.18b→[`03_03 §5`](03_03_TinyML_Acoustic_Inference), HW.11→[`02_01`](02_01_Hardware_Architecture_and_BOM), HW.12→[`02_03 §4`](02_03_BQ25570_MPPT_Nano_Power))
 
 #### DOC.2 — Canon↔canon de-dup (SSOT single-home) [#4, 2026-05-29]
 - **P2** · 🤖 · → `00_00`
