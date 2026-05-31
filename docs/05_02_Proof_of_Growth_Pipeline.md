@@ -317,7 +317,7 @@ OTA Batch Downlink Format (розширений):
 
 > ⚠️ **DEPRECATED — DR20-DR23 не існують на STM32WLE5JC.**
 > STM32WLE5JC має лише 20 RTC Backup Register'ів: **DR0..DR19**. Канонічна
-> SSOT-таблиця в `03_01 §2` показує, що всі 20 регістрів зайняті (DR0-2:
+> SSOT-таблиця в [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA) показує, що всі 20 регістрів зайняті (DR0-2:
 > acoustic/wakeup/relay; DR3-6: mesh payload; DR7: DID; DR8/9/11: anti-pingpong;
 > DR10/12: EMA; DR13/14: TinyML thresholds; DR16-19: Lorenz state; DR15: 4-байтний
 > резерв — недостатньо для 8-байтного body порогів).
@@ -596,7 +596,7 @@ ChainlinkDispatchWorker.perform_async(telemetry_log_id, created_at_iso)
 
 ### 🔬 E.60 — Merkle CID-witness: bidirectional integrity bridge Polygon ↔ Filecoin (пропозиція)
 
-> **Статус:** design-пропозиція (revised), **ще не в коді** — потребує нового сервісу `Filecoin::CidGenerator` (наразі в `app/services/filecoin/` лише `archive_service.rb` + `verification_service.rb`). Розширює Крок B (IoTeX W3bstream witness) і змикає його з кроком архівації Filecoin (`05_01 §Рівень 1`). Трекер: [E.60 → 00_07](00_07_Action_Plan_Tracker).
+> **Статус:** design-пропозиція (revised), **ще не в коді** — потребує нового сервісу `Filecoin::CidGenerator` (наразі в `app/services/filecoin/` лише `archive_service.rb` + `verification_service.rb`). Розширює Крок B (IoTeX W3bstream witness) і змикає його з кроком архівації Filecoin ([`05_01 §Рівень 1`](05_01_Multichain_Architecture)). Трекер: [E.60 → 00_07](00_07_Action_Plan_Tracker).
 
 **Проблема (data-integrity gap):** Раніше Filecoin/IPFS pin відбувався **після** мінту в Polygon — блокчейн-транзакція не мала криптографічного зв'язку з архівом. Зловмисник міг ex-post підмінити archive у Pinata (новий CID), і ніхто би не помітив, що SCC-token посилається на інший набір даних.
 
@@ -802,7 +802,7 @@ total = base + bonus    # max: 10_000 + 62×100 = 16_200 lamports = 0.0162 USDC
 
 ## Усі Шляхи до `Wallet#lock_and_mint!` (Guard Inventory) [DOC.7]
 
-> **Контекст:** `Wallet#lock_and_mint!(points, threshold, token_type)` — атомарна операція з `pessimistic_lock`, що конвертує `growth_points` у SCC (10 000 = 1 SCC). У системі **п'ять окремих шляхів** її викликають, кожен зі своїм guard chain. Раніше зв'язок між цими шляхами був розкиданий між `04_02 §4.2.2` (oracle path) та різними воркерами (tokenomics path). Ця секція — єдина точка істини; будь-який новий шлях повинен бути доданий сюди.
+> **Контекст:** `Wallet#lock_and_mint!(points, threshold, token_type)` — атомарна операція з `pessimistic_lock`, що конвертує `growth_points` у SCC (курс — [`05_03`](05_03_Tokenomics_SCC_and_SFC)). У системі **п'ять окремих шляхів** її викликають, кожен зі своїм guard chain. Раніше зв'язок між цими шляхами був розкиданий між [`04_02 §4`](04_02_Business_Logic_and_Services) (oracle path) та різними воркерами (tokenomics path). Ця секція — єдина точка істини; будь-який новий шлях повинен бути доданий сюди.
 
 ```
                                 ┌─────────────────────────────────────┐

@@ -107,8 +107,8 @@ AI-агенти розглядаються як автономні інжене�
 
 Hardware Stream історично був "повільним" потоком (друк металу → лабораторія → in vitro → польові тести). Це **усувається** через два паралельні Code-as-Engineering трекі:
 
-**Трек A — Code-as-Chemistry** (`01_03 §3.4`): AlphaFold 3 + OpenMM + PySCF + scipy/numpy для EBFC ферментів та матриці. **TRL 3→4 gate PASSED (2026-05-25)** — повний статус і числа: [`PIPELINE_STATUS.md`](../protocols/ebfc/in_silico/PIPELINE_STATUS.md).
-**Трек B — Code-as-CAD** (`01_02 §6 PicoGK`): code-native гіроїдна топологія через SDF/вокселі (PicoGK, C#); промислова TPMS-генерація доступна headless через **nTop Automate** (API/CLI), без GUI-кліків.
+**Трек A — Code-as-Chemistry** ([`01_03 §3.4`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)): AlphaFold 3 + OpenMM + PySCF + scipy/numpy для EBFC ферментів та матриці. **TRL 3→4 gate PASSED (2026-05-25)** — повний статус і числа: [`PIPELINE_STATUS.md`](../protocols/ebfc/in_silico/PIPELINE_STATUS.md).
+**Трек B — Code-as-CAD** ([`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)): code-native гіроїдна топологія через SDF/вокселі (PicoGK, C#); промислова TPMS-генерація доступна headless через **nTop Automate** (API/CLI), без GUI-кліків.
 
 > **⚠️ «Трек C — Code-as-Mechanics» ВИДАЛЕНО (2026-05-28):** важка механіка полімерів (в'язкопружність PEEK, Prony series, термонапруження Ti+PEEK, 20-річний creep) канонічно закріплена за **лабораторією Гусака (ЧНУ) на ANSYS LS-DYNA** ([`01_01 §4.3`](01_01_Coaxial_Gyroid_Topology_and_PEEK), [`08_02`](08_02_Academic_Institutions_Registry), [`08_01 §1F`](08_01_Joint_Publications_and_IP_Strategy)). Паралельний AI-трек на CalculiX дав би **другий, неузгоджений** результат і знецінив би роботу професорів. In-silico конвеєр Архітектора покриває лише **Хімію** (PySCF/OpenMM), **Геометрію** (CAD-as-code) та **Кінетику** (scipy) — FEA/creep лишається аутсорсною R&D-функцією ЧНУ.
 
@@ -129,7 +129,7 @@ Hardware Stream історично був "повільним" потоком (�
 | Molecular Dynamics | VMD, NAMD GUI | **OpenMM** (Python) — справжній стандарт |
 | Кінетика | (Custom GUIs) | **scipy/numpy** analytical models (Cantera not needed for MM+Arrhenius) |
 
-**Ефект:** Module 01 (Hardware) **досяг TRL 4** (Zero-Lab gate PASSED 2026-05-25) **до** першого Ti-monet чи DMLS-партії. R&D-бюджет на хімію падає у 5–10 разів, на CAD-варіанти — у 10–20 разів (per-species 5 SKU генеруються за хвилини, не місяці). ЧНУ Мінаєв (`08_01 §1.1`) переходить з Gaussian/ORCA на PySCF для повної Python-керос інтеграції з Silken Net AI-pipeline.
+**Ефект:** Module 01 (Hardware) **досяг TRL 4** (Zero-Lab gate PASSED 2026-05-25) **до** першого Ti-monet чи DMLS-партії. R&D-бюджет на хімію падає у 5–10 разів, на CAD-варіанти — у 10–20 разів (per-species 5 SKU генеруються за хвилини, не місяці). ЧНУ Мінаєв ([`08_01 §1`](08_01_Joint_Publications_and_IP_Strategy), Стаття 1) переходить з Gaussian/ORCA на PySCF для повної Python-керос інтеграції з Silken Net AI-pipeline.
 
 ---
 

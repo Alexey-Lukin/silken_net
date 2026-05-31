@@ -155,6 +155,42 @@ RSpec.describe DocsLinter do
     end
   end
 
+  describe ".tokenomics_rate_drift" do
+    it "flags the mint rate re-stated outside the home" do
+      hits = described_class.tokenomics_rate_drift("05_06_Governance", "фіксований курс 10,000 growth_points = 1 SCC.\n")
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("mint rate")
+    end
+
+    it "flags the carbon rate re-stated outside the home" do
+      hits = described_class.tokenomics_rate_drift("00_01_Vision", "Кожен SCC: 2000 SCC = 1 tCO₂ еквівалент.\n")
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("carbon rate")
+    end
+
+    it "exempts the homes, the labelled-mirror calc, the tracker and the manifesto" do
+      mint = "курс 10,000 growth_points = 1 SCC\n"
+      carbon = "2000 SCC = 1 tCO₂\n"
+      expect(described_class.tokenomics_rate_drift("05_03_Tokenomics_SCC_and_SFC", mint)).to be_empty
+      expect(described_class.tokenomics_rate_drift("07_01_Nature_as_a_Service_Contracts", mint)).to be_empty
+      expect(described_class.tokenomics_rate_drift("07_02_Unit_Economics_and_BOM", carbon)).to be_empty
+      expect(described_class.tokenomics_rate_drift("00_07_Action_Plan_Tracker", carbon)).to be_empty
+      expect(described_class.tokenomics_rate_drift("manifest", mint)).to be_empty
+    end
+
+    it "does not flag a line that references the home or is a labelled mirror" do
+      expect(described_class.tokenomics_rate_drift(
+        "07_02_Unit_Economics", "значення — дзеркало SSOT: 2000 SCC = 1 tCO₂, правити в 05_03\n")).to be_empty
+      expect(described_class.tokenomics_rate_drift(
+        "05_02_Pipeline", "конвертує growth_points у SCC (курс — [`05_03`](05_03_Tokenomics_SCC_and_SFC))\n")).to be_empty
+    end
+
+    it "does not false-positive on the unrelated wei fact (1 SCC = 10^18 wei)" do
+      expect(described_class.tokenomics_rate_drift(
+        "04_01_Data_Models", "| `amount` | `uint256` | Кількість у wei (1 SCC = 10^18 wei) |\n")).to be_empty
+    end
+  end
+
   describe ".deprecated_terms" do
     it "flags a retired token and gives the replacement hint" do
       hits = described_class.deprecated_terms("derive via HKDF info silkennet-v1-aes256 here")
@@ -229,6 +265,47 @@ RSpec.describe DocsLinter do
     it "leaves an absent target doc to the dangling guard (not flagged here)" do
       expect(described_class.section_label_drift(
         "[`99_99 §1.3`](99_99_Missing_Doc)", headings)).to be_empty
+    end
+  end
+
+  describe ".bare_section_ref" do
+    it "flags a bare code-span `NN_NN §X` ref that is not wrapped in a link" do
+      hits = described_class.bare_section_ref(
+        "02_01_Hardware", "Баланс позитивний у Сценарії C (`02_03 §9.6`).\n")
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("02_03 §9.6")
+    end
+
+    it "passes a properly-linked ref (label preceded by '[')" do
+      expect(described_class.bare_section_ref(
+        "02_01_Hardware", "див. [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)\n")).to be_empty
+    end
+
+    it "skips meta-syntactic placeholders (§NN / §X.Y / §x), flags real alphanumeric refs (§1A)" do
+      ph = "форма `03_04 §X.Y`; `00_07 §NN` placeholder; приклад `02_01 §x`\n"
+      expect(described_class.bare_section_ref("00_03_TRL", ph)).to be_empty
+      hits = described_class.bare_section_ref("08_01_Pubs", "ЧНУ Hard-Science — `08_02 §1A`\n")
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("08_02 §1A")
+    end
+
+    it "skips fenced code but does NOT skip table rows (cells carry real refs)" do
+      expect(described_class.bare_section_ref(
+        "02_01_Hardware", "```\nсм `02_03 §9.6`\n```\n")).to be_empty
+      expect(described_class.bare_section_ref(
+        "02_01_Hardware", "| 9 | Buffer | НЕ 6.3V (`02_03 §6.1` derating) | $0.18 |\n").size).to eq(1)
+    end
+
+    it "flags every bare ref on a line (multiple per line)" do
+      expect(described_class.bare_section_ref(
+        "05_05_Slashing", "інваріант `02_01 §3.4` + сестра `02_04 §4.2`\n").size).to eq(2)
+    end
+
+    it "exempts the index, the standard-owner, the tracker, and appendix docs" do
+      expect(described_class.bare_section_ref("00_00_SSOT_Index", "`05_05 §3`\n")).to be_empty
+      expect(described_class.bare_section_ref("00_06_SSOT_Documentation_Standard", "| AES | `03_05 §3.7` |\n")).to be_empty
+      expect(described_class.bare_section_ref("00_07_Action_Plan_Tracker", "- **P0** · → `05_05 §3`\n")).to be_empty
+      expect(described_class.bare_section_ref("02_06_Legacy_Breadboard_Appendix", "`02_03 §9`\n")).to be_empty
     end
   end
 

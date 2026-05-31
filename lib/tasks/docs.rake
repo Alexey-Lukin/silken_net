@@ -42,6 +42,8 @@ namespace :docs do
     deprecated  = []  # hard: retired SSOT term reappeared (DocsLinter::DEPRECATED_TERMS)
     label_drift = []  # hard: link label leads with a different NN_NN than its href resolves to
     magic_drift = []  # soft: magic-marker hex ≠ BE/LE ASCII of its quoted name
+    bare_refs   = []  # hard: bare code-span `NN_NN §X` ref that should be a full link
+    rate_drift  = []  # hard: tokenomics/carbon rate value re-stated outside its One-Home (05_03/07_01)
 
     files.each do |f|
       base = File.basename(f, ".md")
@@ -74,6 +76,8 @@ namespace :docs do
       deprecated.concat(DocsLinter.deprecated_terms(text).map { |h| "#{base}: #{h}" })
       label_drift.concat(DocsLinter.link_label_target_mismatch(text).map { |h| "#{base}: #{h}" })
       magic_drift.concat(DocsLinter.magic_marker_hex_drift(text).map { |h| "#{base}: #{h}" })
+      bare_refs.concat(DocsLinter.bare_section_ref(base, text).map { |h| "#{base}: #{h}" })
+      rate_drift.concat(DocsLinter.tokenomics_rate_drift(base, text).map { |h| "#{base}: #{h}" })
     end
 
     # [TRL single-value] HARD — 00_03 §1 per-module matrix cells single 1-9.
@@ -112,6 +116,20 @@ namespace :docs do
     unless magic_drift.empty?
       puts "  ⚠️ magic-marker hex ≠ BE/LE ASCII of its name (#{magic_drift.uniq.size}) — advisory:"
       magic_drift.sort.uniq.first(40).each { |s| puts "    · #{s}" }
+    end
+    if bare_refs.empty?
+      puts "  bare §-refs:    no bare code-span `NN_NN §X` outside owner docs (all linked) ✓"
+    else
+      by_doc = bare_refs.group_by { |s| s[/\A\d\d_\d\d/] }.transform_values(&:size).sort_by { |d, n| [ -n, d ] }
+      puts "  ✗ bare code-span `NN_NN §X` refs — must be `[`…`](Doc)` links (#{bare_refs.size}) — HARD:"
+      puts "      per-doc: " + by_doc.map { |d, n| "#{d}:#{n}" }.join("  ")
+      bare_refs.sort.first(50).each { |s| puts "    · #{s}" }
+    end
+    if rate_drift.empty?
+      puts "  rate One-Home: no tokenomics/carbon rate value restated outside 05_03/07_01 ✓"
+    else
+      puts "  RATE DRIFT (#{rate_drift.size}) — mint/carbon rate value belongs only in 05_03 / 07_01 §3:"
+      rate_drift.sort.each { |d| puts "    ✗ #{d}" }
     end
     if trl_missing.empty?
       puts "  TRL presence:   every ✅ Статус doc declares a TRL ✓"
@@ -178,6 +196,8 @@ namespace :docs do
     failed << "RTC register-map drift (availability claimed outside 03_01)" unless rtc_drift.empty?
     failed << "Lorenz-formula drift (β re-stated outside 03_04 §4.1)" unless lorenz_drift.empty?
     failed << "deprecated SSOT terms present" unless deprecated.empty?
+    failed << "tokenomics/carbon rate restated outside One-Home (05_03/07_01)" unless rate_drift.empty?
+    failed << "bare code-span `NN_NN §X` refs (should be `[`…`](Doc)` links)" unless bare_refs.empty?
     failed << "link label↔href mismatches" unless label_drift.empty?
     abort("docs:check_refs FAILED — #{failed.join(', ')}") unless failed.empty?
   end

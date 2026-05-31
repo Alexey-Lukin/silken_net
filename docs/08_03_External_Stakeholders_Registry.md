@@ -917,7 +917,7 @@ Europe). Не зараз — але треба зафіксувати, доки 
 
 **Виконавець:** Черкаський академічний симфонічний оркестр (Tier C4/C5).
 Спільна заявка до УКФ або Ukrainian Cultural Foundation на стику
-art × science (`08_02 §5` cross-ref для grant-pipeline).
+art × science ([`08_02 §5`](08_02_Academic_Institutions_Registry) cross-ref для grant-pipeline).
 
 ---
 

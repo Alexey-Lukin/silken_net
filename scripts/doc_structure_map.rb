@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
+
 #
 # scripts/doc_structure_map.rb — структурна мапа канону SilkenNet.
 #
@@ -62,10 +63,10 @@ files.each do |path|
 
   if mod != prev_mod
     tier = case mod
-           when "00" then "Фундамент (read-first)"
-           when "01", "02", "03", "04", "05", "06" then "Tier I — інженерний канон"
-           else "Tier II — екосистема/стейкхолдери"
-           end
+    when "00" then "Фундамент (read-first)"
+    when "01", "02", "03", "04", "05", "06" then "Tier I — інженерний канон"
+    else "Tier II — екосистема/стейкхолдери"
+    end
     puts "\n══════════ Модуль #{mod} · #{tier} ══════════"
     prev_mod = mod
   end

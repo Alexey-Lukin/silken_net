@@ -49,7 +49,7 @@
 
 ### Per-module TRL (канонічне джерело)
 
-> SSOT для per-domain TRL. **System TRL = найнижчий модуль критичного шляху (01–07 build-path)** — наразі 4 (модулі 01/02 — hardware-критичні). **Foundation (00)** = візія/метод (зрілі, TRL 9 — поза критичним шляхом, не гейтить). Модулі 08 (R&D-партнерства), 09 (PM-процес), 10 (Security-hardening) — це org/process/безпекова зрілість, яка трекається окремо і **не гейтить** System TRL (інакше System=2 за рахунок ранніх ВНЗ-партнерств, що хибно). Оновлюється при кожному cool-down. *(Мігровано з `00_07 §TRL Матриця` 2026-05-28 — канон тут.)*
+> SSOT для per-domain TRL. **System TRL = найнижчий модуль критичного шляху (01–07 build-path)** — наразі 4 (модулі 01/02 — hardware-критичні). **Foundation (00)** = візія/метод (зрілі, TRL 9 — поза критичним шляхом, не гейтить). Модулі 08 (R&D-партнерства), 09 (PM-процес), 10 (Security-hardening) — це org/process/безпекова зрілість, яка трекається окремо і **не гейтить** System TRL (інакше System=2 за рахунок ранніх ВНЗ-партнерств, що хибно). Оновлюється при кожному cool-down. *(Мігровано з [`00_07`](00_07_Action_Plan_Tracker) 2026-05-28 — канон тут.)*
 
 | Модуль | TRL | Цільовий | Головний блокер |
 |--------|-----|----------|-----------------|
@@ -87,7 +87,7 @@
 
 Поточна політика блокувала весь TRL модулів 04 (Rails) і 05 (Web3) на TRL 4-5, попри те, що:
 
-- `BlockchainMintingService` має 1092-рядкову spec з повним покриттям (`04_06 §B.1.2`).
+- `BlockchainMintingService` має 1092-рядкову spec з повним покриттям ([`04_06 §B.1.2`](04_06_Testing_Guide_and_Coverage)).
 - `TelemetryUnpackerService` 560+ рядків spec; CoAP Encryption concern, Web3CircuitBreaker concern.
 - Solidity contracts: 171 тест Foundry + Slither static analysis.
 - 31 Sidekiq worker, 9-рівнева черга з суворим пріоритетом.

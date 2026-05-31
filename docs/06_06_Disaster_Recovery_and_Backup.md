@@ -104,7 +104,7 @@
 - **`RAILS_MASTER_KEY`** → `config/credentials.yml.enc` (усі Web3-ключі, HMAC-секрети) стає нечитабельним. Recovery: НЕМАЄ — лише повна ротація всіх credentials + re-encrypt.
 - **`PROVISIONING_MASTER_KEY`** → HKDF-корінь per-device AES. Втрата: вже прошиті Soldier/Queen працюють (ключі у Flash), але **нове provisioning неможливе** і backend не деривує ключі для replay-перевірки нових пристроїв.
 
-**Процедура (👤, DR.1):** обидва ключі — у password manager / Vault (offline-копія в сейфі для founder-level). Ротація — `06_04 §5.2`.
+**Процедура (👤, DR.1):** обидва ключі — у password manager / Vault (offline-копія в сейфі для founder-level). Ротація — [`06_04 §5.2`](06_04_Secrets_Checklist).
 
 ---
 

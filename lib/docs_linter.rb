@@ -135,6 +135,35 @@ module DocsLinter
     end
   end
 
+  # [SSOT anti-drift] Tokenomics / carbon RATE One-Home (HARD after the 2026-05-31
+  # dedup). The mint rate (`10,000 growth_points = 1 SCC`) and carbon rate
+  # (`2000 SCC = 1 tCO₂`) are governance-CHANGEABLE parameters (05_06), so they get
+  # ONE home: 05_03 (technical) + 07_01 §3 (business view). Re-stating the VALUE
+  # elsewhere drifts the instant governance re-prices — exactly the silent dup found
+  # across 8 docs (00_01/04_01/05_01/05_02/05_06/07_01 body/03_03). Other docs must
+  # REFERENCE the home, never restate the number. Exempt: 05_03 + 07_01 (homes),
+  # 07_02 (a labelled "дзеркало SSOT" ROI calc), 00_07 (tracker archive), manifest
+  # (the standalone manifesto). A line that itself references the home or is a
+  # labelled mirror is not flagged — same shape as lorenz_formula_drift.
+  RATE_OWNER_DOC     = /\A05_03_|\A07_01_|\A07_02_|\A00_07_|\Amanifest/
+  TOKENOMICS_RATE_RE = /10[ .,]?000[^\n]{0,30}=\s*1\s*SCC/i
+  CARBON_RATE_RE     = /2[ .,]?000\s*SCC\s*=\s*1\s*[тt]/i
+  RATE_MIRROR_RE     = /дзеркал|mirror|05_03|07_01|ProtocolParameters|SystemParameter/i
+
+  def tokenomics_rate_drift(basename, text)
+    return [] if basename.match?(RATE_OWNER_DOC)
+
+    text.each_line.filter_map do |line|
+      next if line.match?(RATE_MIRROR_RE)
+
+      if line.match?(TOKENOMICS_RATE_RE)
+        "mint rate `10,000 gp = 1 SCC` re-stated outside home (05_03 / 07_01 §3) → #{line.strip[0, 90]}"
+      elsif line.match?(CARBON_RATE_RE)
+        "carbon rate `2000 SCC = 1 tCO₂` re-stated outside home (05_03 / 07_01 §3) → #{line.strip[0, 90]}"
+      end
+    end
+  end
+
   # [SSOT anti-drift] Deprecated-term registry. Tokens retired SSOT-wide must
   # not reappear in any canon doc; as each drift is fixed, the old form is added
   # here so CI blocks its return (the general "scripts catch drift" net). Keyed
@@ -197,6 +226,43 @@ module DocsLinter
       next if headings[target].include?(ref.downcase)
 
       "label `§#{ref}` → #{target} (no heading contains '#{ref}')"
+    end
+  end
+
+  # [SSOT anti-drift] Bare section-ref FORMAT guard (ADVISORY → HARD). The
+  # canonical cross-ref form (00_06 §1) is the full link `[`NN_NN §X`](DocName)`;
+  # a *bare* code-span `NN_NN §X` (not wrapped in a link) is both non-standard AND
+  # a blind spot — section_label_drift only validates LINKED refs, so a bare `§7.2`
+  # that goes stale is never caught. This flags bare code-span refs so they get
+  # standardized into links (after which section_label_drift covers their §X).
+  # FP-controlled heuristic: a code span whose content STARTS with a doc-id and
+  # carries a `§`, NOT preceded by `[` (so a real link's `[`label`]` is excluded).
+  # Skips ``` fences. Skips meta-syntactic PLACEHOLDERS (`§NN`/`§N`/`§X`/`§X.Y`/
+  # `§x`/`§NN_NN` — illustrative format examples, not refs; their §-token is only
+  # [nxy._]). Tables are NOT skipped (unlike the value-drift guards: a table cell
+  # legitimately carries a real ref to standardize). Owner/index docs are exempt:
+  # 00_00 (index — already all-links), 00_06 (DEFINES the ref FORMAT; its §2/§3
+  # registry tables are the bare-by-design home registry), 00_07 (tracker — terse
+  # pointers by design, §-resolution is tracker:check's job), legacy appendix.
+  # Caller passes basename (sans .md) + text; returns ["bare ref `05_05 §3` …", …].
+  BARE_REF_EXEMPT = /\A00_00_|\A00_06_|\A00_07_|\A02_06_|_appendix_/
+  BARE_SECTION_REF_RE = /(?<!\[)`(\d\d_\d\d[^`]*§[^`]*)`/
+  PLACEHOLDER_SECTION_RE = /\A[nxy._]+\z/i
+
+  def bare_section_ref(basename, text)
+    return [] if basename.match?(BARE_REF_EXEMPT)
+
+    in_fence = false
+    text.each_line.flat_map do |line|
+      in_fence = !in_fence if line.start_with?("```")
+      next [] if in_fence
+
+      line.scan(BARE_SECTION_REF_RE).filter_map do |(content)|
+        token = content[/§\s*([^\s]+)/, 1]
+        next if token && token.match?(PLACEHOLDER_SECTION_RE)
+
+        "bare ref `#{content.strip}` (should be `[`…`](DocName)`) → #{line.strip[0, 90]}"
+      end
     end
   end
 

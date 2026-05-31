@@ -681,7 +681,7 @@ TinyML-результат безпосередньо впливає на Lorenz 
 | Тригер | П'єзо-EXTI на вібрацію | Класи 0–3 — як зараз; для класу 4 — **щогодинні «акустичні семплінги»** (без вібраційного тригера) на світанку (солар-час+0..2 год) та сутінках (солар-час−2..0 год) |
 | Бюджет TX | 1 байт `acoustic_events` (saturating uint8) | Без змін у packet layout; «Fauna Activity Index» транслюється через **той самий байт** у режимі fauna-семплінгу (не змішується з кавітацією — режим маркується через окремий біт у Status Byte або через циркадне вікно на backend) |
 
-> ⚠️ **Constraint — SRAM2 wipe vs. accumulator (audit-fix, ARCH.40):** Архітектура енергозбереження Soldier'а v3 ([03_01 §1](03_01_Firmware_Lifecycle_and_DMA)) використовує STOP2 RTC-only з `PWR_CR1_RRSTP=1` для досягнення 300 нА deep-sleep. Це **повністю стирає SRAM2** при кожному переході в STOP2. Проміжна matrix-statistic (`mean+std` 156 MFCC-векторів) у RAM не переживе сну. RTC Backup Domain не врятує: усі 20 backup-регістрів зайняті (останній, DR15, пішов під FW.2 CCM FC — `03_01 §2`), та й один uint32 фізично не вмістив би float-матрицю. **Висновок:** fauna-сесія мусить виконуватись **монолітно за один цикл активного пробудження**: 156 циклів TIM2+DMA послідовно один за одним у межах однієї main-loop ітерації, проміжна статистика тримається в RAM, і STOP2 викликається лише після того, як фінальний `fauna_activity_index` згорнуто в один байт. Декомпозиція на «спав → 32 мс → MFCC → знов сон» — заборонена.
+> ⚠️ **Constraint — SRAM2 wipe vs. accumulator (audit-fix, ARCH.40):** Архітектура енергозбереження Soldier'а v3 ([03_01 §1](03_01_Firmware_Lifecycle_and_DMA)) використовує STOP2 RTC-only з `PWR_CR1_RRSTP=1` для досягнення 300 нА deep-sleep. Це **повністю стирає SRAM2** при кожному переході в STOP2. Проміжна matrix-statistic (`mean+std` 156 MFCC-векторів) у RAM не переживе сну. RTC Backup Domain не врятує: усі 20 backup-регістрів зайняті (останній, DR15, пішов під FW.2 CCM FC — [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)), та й один uint32 фізично не вмістив би float-матрицю. **Висновок:** fauna-сесія мусить виконуватись **монолітно за один цикл активного пробудження**: 156 циклів TIM2+DMA послідовно один за одним у межах однієї main-loop ітерації, проміжна статистика тримається в RAM, і STOP2 викликається лише після того, як фінальний `fauna_activity_index` згорнуто в один байт. Декомпозиція на «спав → 32 мс → MFCC → знов сон» — заборонена.
 
 ### 10.3 Енергетичний бюджет
 
@@ -784,7 +784,7 @@ TRL 8 → 9  (production biodiversity D-MRV):
 Стаття Delgado підкреслює, що ліс — це **процес, а не об'єкт**. Це ідеально резонує з трьома ядрами Silken Net:
 
 - **Lorenz Attractor** ([`03_04`](03_04_mruby_Lorenz_Attractor)) — теж описує процес (динаміку гомеостазу), а не статичний стан. Біорізноманіття стає третім вхідним сигналом до атрактора (поряд з temp і acoustic_events) — або новим параметром β-пертурбації (FW.5 cycle 2).
-- **Proof of Growth** vs `forest cover` — токен SCC мінтиться не за наявність дерева, а за **сталий процес зростання** (10 000 growth_points = 1 SCC). Біорізноманіттєвий шар робить це доведення планетарним.
+- **Proof of Growth** vs `forest cover` — токен SCC мінтиться не за наявність дерева, а за **сталий процес зростання** (курс емісії — [`05_03`](05_03_Tokenomics_SCC_and_SFC)). Біорізноманіттєвий шар робить це доведення планетарним.
 - **Forester Guild (Proof-of-Physical-Work, E.20)** — наземні рейнджери теж дають дані про функцію, не про покрив. TinyML soundscape = **автоматизована заміна** суб'єктивному human report.
 
 > **Pitch для інвестора (короткий):** «Супутник бачить піксель. Ми чуємо ліс. PES Коста-Ріки 30 років мав цю проблему — Silken Net вирішує її TinyML-датчиком на дереві.»
@@ -854,7 +854,7 @@ OtaPackagerService → 512-byte chunks → OtaTransmissionWorker → Queen → S
 > - **Edge Reinforcement Learning:** tabular Q-learning з 12-state × 4-action lookup для прийняття рішень (sleep_extend / normal / sample_extra / emergency_tx); reward = days-to-next-VBAT_OK. State buffer у RTC backup registers DR20-DR31.
 > - **Координація з mruby evolutionary algorithms у `03_04`** — спільна `device-side learning loop` між TinyML (perception) і Lorenz contract (decision).
 >
-> **Безпекова прірва:** self-evolution + Web3-economic rewards = attack surface для adversarial reward poisoning. Mitigation — Apex Predator Defense (`05_06 §5` + [`00_08 §1.4`](00_08_Beyond_TRL9_Planetary_Roadmap)).
+> **Безпекова прірва:** self-evolution + Web3-economic rewards = attack surface для adversarial reward poisoning. Mitigation — Apex Predator Defense ([`05_06 §5`](05_06_Governance_and_DAO) + [`00_08 §1.4`](00_08_Beyond_TRL9_Planetary_Roadmap)).
 >
 > **Деталі повної R&D-програми:** [`00_08 §1.2`](00_08_Beyond_TRL9_Planetary_Roadmap) — Self-Evolving Behaviour Gap.
 

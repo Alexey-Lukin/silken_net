@@ -57,7 +57,7 @@
 | **Призначення** | Повноцінна C/C++ IDE для STM32WLE5JC (ARM Cortex-M4 + SX1262 LoRa) |
 | **Включає** | STM32CubeMX — графічний конфігуратор GPIO, тактових дерев, периферії |
 | **Порт** | Налаштування GPIO pinout (PA9/PA10 UART, ADC, TIM2 DMA, RNG, CRYP) до отримання плат |
-| **Clock Tree** | Конфігурація HSE/LSE для STOP2 ultra-low-power режиму (цільове: 300 nA RTC-only — `02_03 §9.6`; на TRL 6 baseline: 2.1 µA з SRAM2 retention) |
+| **Clock Tree** | Конфігурація HSE/LSE для STOP2 ultra-low-power режиму (цільове: 300 nA RTC-only — [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power); на TRL 6 baseline: 2.1 µA з SRAM2 retention) |
 | **HAL drivers** | Auto-генерація ініціалізаційного коду для I2C/SPI/ADC/UART/RTC/CRYP |
 | **Debugger** | Інтеграція з ST-LINK-V3MINIE: breakpoints, live variable watch, SWO trace |
 | **Збірка** | GCC ARM Embedded toolchain (вбудований у CubeIDE); той самий компілятор що й для host-тестів |
@@ -300,7 +300,7 @@ HAL_RNG_GenerateRandomNumber(&hrng, &chaos_seed);
 
 Апаратний генератор випадкових чисел на основі теплового шуму кристала. **[SEC.11 / FW.30]** `chaos_seed` більше НЕ використовується для Атрактора Лоренца — початковий стан `(x₀,y₀,z₀)` деривується з per-device K_seed (Flash `FLASH_SEED_ADDR`) через HKDF/HMAC. `chaos_seed` залишається для mesh anti-pingpong, TX jitter та CoAP nonce.
 
-**BME280 (мікроклімат — HW.32, ADR `02_01 §3.4`):**
+**BME280 (мікроклімат — HW.32, ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)):**
 ```c
 // Гейтований TPS22860: GPIO ON → settle → forced-mode read → GPIO OFF (idle ~10 нА).
 // Клімат змінюється повільно → опитування раз на N пробуджень (climate_due), не щоцикл.
@@ -312,7 +312,7 @@ if (climate_due) {
 }
 ```
 
-> **VPD (Vapor Pressure Deficit)** обчислюється на вузлі з t°+RH і пакується **1 байтом** (Phase 2, байт 14) як **прямий confounder сокоруху** — backend використовує його, щоб не штрафувати за погоду (False-Slashing guard, `05_05 §6/§7`). Сирі RH/тиск (для NaaS клімат-оракула, `07_01`) — у періодичному **climate frame** (FW.2 24B CCM extended payload; транзитний 16B-кадр місця не має). Тригер climate frame: кожні N uplink'ів або значна Δтиску (раннє попередження про шторм). Енергія: за TPS22860-гейтом ≈8нА avg (`02_01 §3.4`, `02_03 §9.6`). 🚨 **DCI-guard:** BME280-дані (VPD/RH/тиск) **НЕ** входять у входи Атрактора Лоренца (ті — temp/acoustic/delta_t/vcap, FW.5) → firmware↔backend bit-identity не зачіпається.
+> **VPD (Vapor Pressure Deficit)** обчислюється на вузлі з t°+RH і пакується **1 байтом** (Phase 2, байт 14) як **прямий confounder сокоруху** — backend використовує його, щоб не штрафувати за погоду (False-Slashing guard, [`05_05`](05_05_Slashing_and_Risk_Policy) §6/§7). Сирі RH/тиск (для NaaS клімат-оракула, `07_01`) — у періодичному **climate frame** (FW.2 24B CCM extended payload; транзитний 16B-кадр місця не має). Тригер climate frame: кожні N uplink'ів або значна Δтиску (раннє попередження про шторм). Енергія: за TPS22860-гейтом ≈8нА avg ([`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM), [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)). 🚨 **DCI-guard:** BME280-дані (VPD/RH/тиск) **НЕ** входять у входи Атрактора Лоренца (ті — temp/acoustic/delta_t/vcap, FW.5) → firmware↔backend bit-identity не зачіпається.
 
 **RSSI (Канал 5 — Zero-Energy Фенологія):**
 
@@ -601,7 +601,7 @@ on_lora_rx(payload, did_from_packet):
 
 ### 1.10 Phase 5: STOP2 Deep Sleep (target: 300 nA RTC-only)
 
-> **⚠️ Power optimization target:** Раніше документ декларував STOP2 sleep current **2.1 µA**. Перерахунок енергобалансу (`02_03 §9.5`) показав, що при 2.1 µA система йде у мінус навіть з TX @ +14 dBm SF9. **Цільове значення для виходу у позитивний баланс — STOP2 у RTC-only mode (300 nA)** — `02_03 §9.6` Сценарій C. Це досягається відключенням SRAM2 retention (`PWR.CR1 RRSTP=1`) і збереженням стану ТІЛЬКИ у RTC Backup registers (20 × uint32). Реалізація — наступний firmware-цикл.
+> **⚠️ Power optimization target:** Раніше документ декларував STOP2 sleep current **2.1 µA**. Перерахунок енергобалансу ([`02_03 §9.5`](02_03_BQ25570_MPPT_Nano_Power)) показав, що при 2.1 µA система йде у мінус навіть з TX @ +14 dBm SF9. **Цільове значення для виходу у позитивний баланс — STOP2 у RTC-only mode (300 nA)** — [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power) Сценарій C. Це досягається відключенням SRAM2 retention (`PWR.CR1 RRSTP=1`) і збереженням стану ТІЛЬКИ у RTC Backup registers (20 × uint32). Реалізація — наступний firmware-цикл.
 
 ```c
 // 1. Зберігаємо стан у RTC Backup Domain (20 регістрів — повне розкладання §2)
@@ -1022,7 +1022,7 @@ HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
 |----------|--------|-----|
 | `OnRxDone(payload, size, rssi, snr)` | LoRa RX (рівно 16 байт) | RSSI clamp → `LoRa_Rx_Ring_Push` (FIFO 15-slot, FW.3) → лічильник `lora_rx_drops` при переповненні |
 
-Queen не має PVD, EXTI, DMA або IWDG ISR. Мінімальний ISR-footprint + **single-producer ring buffer** дозволяють Queen залишатися "завжди активною" без race conditions і без втрати голосів рою під час 25-секундного CoAP-flush'у (FW.3 — part-1 закрито; повна async UART DMA flush відкрита → `00_07 §03`).
+Queen не має PVD, EXTI, DMA або IWDG ISR. Мінімальний ISR-footprint + **single-producer ring buffer** дозволяють Queen залишатися "завжди активною" без race conditions і без втрати голосів рою під час 25-секундного CoAP-flush'у (FW.3 — part-1 закрито; повна async UART DMA flush відкрита → [`00_07 §03`](00_07_Action_Plan_Tracker)).
 
 ---
 

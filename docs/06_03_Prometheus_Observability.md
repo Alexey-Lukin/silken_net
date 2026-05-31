@@ -399,7 +399,7 @@ bin/rails runner 'SilkenNet::Metrics::REGISTRY.metrics.sort_by{|m|[m.type.to_s,m
 
 | # | Покращення | Чому | Пріоритет |
 |---|------------|------|-----------|
-| 1 | ✅ **CI-валідація `config.alloy`** (2026-05-29) — CI job `alloy_config_validate` (`grafana/alloy fmt`, parse-check) | Раніше **ніщо** не лінтило River-конфіг; parse-error = crash-loop alloy-sidecar у проді (`06_02 §debug`). Гейт ловить це до деплою | ✅ DONE |
+| 1 | ✅ **CI-валідація `config.alloy`** (2026-05-29) — CI job `alloy_config_validate` (`grafana/alloy fmt`, parse-check) | Раніше **ніщо** не лінтило River-конфіг; parse-error = crash-loop alloy-sidecar у проді ([`06_02`](06_02_Akash_Network_Integration)). Гейт ловить це до деплою | ✅ DONE |
 | 2 | **`queue_config` + явний WAL** на `remote_write` | Default WAL ~2h буферить аутейдж; tune `capacity`/`max_shards`/`batch_send_deadline` під реальний об'єм для backpressure | MED |
 | 3 | ✅ **Process/runtime метрики** (2026-05-29) — 9 gauges (RSS · GC count/major/heap_live · ruby_threads · Puma running/max/pool_capacity/backlog), sampled on-scrape (`sample_process_runtime!`) + 13 specs | Закрило сліпоту до memory leak / GC pause / thread saturation. Pure stdlib (GC.stat / Thread / /proc / Puma.stats) | ✅ DONE |
 | 4 | **Cardinality budget** | `cluster_id` (entropy) + потенційні per-DID labels → high cardinality на планетарному масштабі (Grafana Cloud біллить за active series / DPM). Визначити бюджет + drop/relabel | MED |

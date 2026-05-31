@@ -76,7 +76,7 @@
 | **Анкер Zone 1 + Zone 3 (Anode + Cathode)** | Ti-6Al-4V Grade 5. SLM+HIP друк (Zone 1) + SLM/EBM (Zone 3). Маса ~9 г сумарно (пористість гіроїда 65%). Включає Hard Gold pogo-площадку та PTFE-GDL катодну мембрану. | $20.00–$25.00 |
 | **Анкер Zone 2 (PEEK-терморозрив)** | Medical Grade PEEK. ЧПУ-фрезерування з annealing 200–250°C, допуски H7/s6. Press-fit з Zone 1 і Zone 3. | $3.00 |
 | **Радом (PCBA housing)** | Medical Grade PEEK купол ∅20–30 мм, термолиття. O-ring EPDM. IP68. Окрема деталь, **НЕ Zone 2**. | $2.50 |
-| **Power Deck (PCBA)** | BQ25570 (MPPT) + EDLC Supercapacitor 0.47 F + Pogo Pins + 47µF/25V/X7R/1210 buffer cap (`02_03 §6.1`) + **LTC3108 DNP footprint** для cold-start fallback (`02_03 BLOCKER-3`) + пасивна обв'язка 0402. | $6.35 |
+| **Power Deck (PCBA)** | BQ25570 (MPPT) + EDLC Supercapacitor 0.47 F + Pogo Pins + 47µF/25V/X7R/1210 buffer cap ([`02_03 §6.1`](02_03_BQ25570_MPPT_Nano_Power)) + **LTC3108 DNP footprint** для cold-start fallback (`02_03 BLOCKER-3`) + пасивна обв'язка 0402. | $6.35 |
 | **RF Deck (PCBA)** | STM32WLE5JC (LoRa SoC) + Ceramic SMD Antenna 868 МГц + TCXO (±1 ppm). | $5.80 |
 | **Біоелектрохімічна функціоналізація (Gen 2.0)** | fMWCNT + Os redox polymer + **dgrFAD-GDH** (Zone 1); fMWCNT + **Laccase/nCoCuCeZIF nanozyme** гібрид (Zone 3); **Genipin-Chitosan-CNC** захисна матриця; **Nafion-g-PSBMA** цвітеріонна мембрана (SI-ATRP). Деталі — [`01_03 §5`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell). | $15.00–$24.50 (1K шт) / $5–$8 (50K+ шт) |
 | **Стерилізація (no EtO)** | Гамма-опромінення Co-60 25 кГр в запакованому стані, або UV-C + 70% EtOH. Деталі — [`01_04 §6`](01_04_CODIT_and_Xylemointegration). | $0.50–$1.00 |
@@ -96,12 +96,12 @@
 | 6 | PCB | FR4, 4 шари, 1.6 мм (Power Deck + RF Deck) | ~$0.65 |
 | 7 | Пасивні | 0402/0603 резистори, конденсатори X5R/C0G | ~$0.20 |
 | 8 | Pogo Pins | Mill-Max 0906 Series (2 шт, spring-loaded) | ~$0.40 |
-| 9 | Buffer cap VOUT | 47 µF / **25V X7R 1210** (Murata GRM32E70J476ME20), **НЕ 6.3V** — `02_03 §6.1` | ~$0.18 |
+| 9 | Buffer cap VOUT | 47 µF / **25V X7R 1210** (Murata GRM32E70J476ME20), **НЕ 6.3V** — [`02_03 §6.1`](02_03_BQ25570_MPPT_Nano_Power) | ~$0.18 |
 | — | **Electronics TOTAL** | | **~$11.33** |
 | — | _LTC3108 + Coilcraft xfmr 1:100 (DNP footprint)_ | _Cold-start fallback, не populated за замовчуванням — `02_03 BLOCKER-3`. PCB pads ~$0._ | _$0 / +$1.20 якщо populated після lab R_int test_ |
-| — | _BME280 + TPS22860 gate + PTFE vent (climate add-on)_ | _t°/RH/тиск → VPD confounder (False-Slashing kill, `05_05 §6/§7`) + клімат-оракул NaaS (`07_01`); ADR `02_01 §3.4`, pending bench._ | _+$2.60 якщо populated_ |
+| — | _BME280 + TPS22860 gate + PTFE vent (climate add-on)_ | _t°/RH/тиск → VPD confounder (False-Slashing kill, [`05_05`](05_05_Slashing_and_Risk_Policy) §6/§7) + клімат-оракул NaaS (`07_01`); ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM), pending bench._ | _+$2.60 якщо populated_ |
 
-> **Climate add-on (BME280, ADR `02_01 §3.4`):** +$2.60/вузол якщо populated — **НЕ** входить у baseline Electronics TOTAL ($11.33) ані CAPEX §1.2, доки ADR не закрито bench'ем. Перетворює вузол на кліматичний (VPD-confounder + NaaS клімат-оракул) — підвищує цінність D-MRV-даних для агро/страхового ринку.
+> **Climate add-on (BME280, ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)):** +$2.60/вузол якщо populated — **НЕ** входить у baseline Electronics TOTAL ($11.33) ані CAPEX §1.2, доки ADR не закрито bench'ем. Перетворює вузол на кліматичний (VPD-confounder + NaaS клімат-оракул) — підвищує цінність D-MRV-даних для агро/страхового ринку.
 
 ---
 
@@ -276,7 +276,7 @@
 | 1 дерево / рік (52 SCC) | **~26 кг CO₂** |
 | Кластер 100 дерев / рік (≈5,200 SCC) | **~2.6 tCO₂** |
 
-> **CO₂ еквівалент [BIZ.1]:** `2000 SCC = 1 тонна поглиненого CO₂`. **SSOT:** `05_03` + `07_01 §3` (on-chain `ProtocolParameters.sol#sccPerTonneCo2()` + `SystemParameter(:scc_per_tonne_co2)`) — значення в таблиці вище **дзеркало SSOT**, при зміні правити там, не тут. Детально: `07_01` BLOCKER-4 (закрито).
+> **CO₂ еквівалент [BIZ.1]:** `2000 SCC = 1 тонна поглиненого CO₂`. **SSOT:** `05_03` + [`07_01 §3`](07_01_Nature_as_a_Service_Contracts) (on-chain `ProtocolParameters.sol#sccPerTonneCo2()` + `SystemParameter(:scc_per_tonne_co2)`) — значення в таблиці вище **дзеркало SSOT**, при зміні правити там, не тут. Детально: `07_01` BLOCKER-4 (закрито).
 
 > Детально про Lorenz attractor та формулу growth_points: `03_04_mruby_Lorenz_Attractor` та `05_02_Proof_of_Growth_Pipeline`.
 

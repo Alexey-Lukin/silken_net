@@ -216,7 +216,7 @@ nonce[12] = DID[0..3] || FrameCounter[0..3] || 0x00 × 4
 
 **Унікальність (key_128, nonce) — імовірнісна, НЕ абсолютна — 📐 КАНОНІЧНЕ ДЖЕРЕЛО (FW.2 FC/nonce policy):**
 
-> Єдине авторитетне місце для Frame-Counter lifecycle + nonce-унікальності. Решта місць лише **посилаються** сюди: `03_01 §2` (RTC-мапа, DR15), `firmware/common/lora_ccm.h` (байт-формат), `firmware/soldier/main.c::Load_Frame_Counter` (reseed), `00_07 FW.2`.
+> Єдине авторитетне місце для Frame-Counter lifecycle + nonce-унікальності. Решта місць лише **посилаються** сюди: [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA) (RTC-мапа, DR15), `firmware/common/lora_ccm.h` (байт-формат), `firmware/soldier/main.c::Load_Frame_Counter` (reseed), `00_07 FW.2`.
 
 - **Зберігання + інкремент:** FC — 24-bit у `RTC_BKP_DR15`, упакований `[FW2_FC_MAGIC:8 | frame_counter:24]` (magic `0x46` ловить невалідний DR15 після VBAT-loss). Інкремент перед кожним TX; wrap `0xFFFFFF → 1` (skip 0 = «треба reseed»). ~16.7M значень ≫ ~219 тис. TX за 25-річний lifecycle. FC персиститься у DR15 **перед** TX (reboot між Save і TX просуває лічильник, а не повторює).
 - **Нормальна робота:** per-device LoRa key (FW.1 HKDF) константний + FC monotonic-incrementing → кожна (key, nonce) пара унікальна **за конструкцією**.
@@ -225,7 +225,7 @@ nonce[12] = DID[0..3] || FrameCounter[0..3] || 0x00 × 4
 - **Reseed entropy:** тільки HRNG з **retry ×3** — слабкого `HAL_GetTick` fallback **немає** (на cold-boot tick малий+передбачуваний → кластеризується між cold-boot'ами того ж пристрою). Last-resort при мертвому HRNG — `tree_did ^ tick` (DID ламає крос-девайс кластеризацію). SEC.10 panic-counter (`main.c` DR0[31:16]) — **той самий** reseed-патерн + те саме hardening при активації FW.2.
 - **TRL-7 robust path (deferred):** монотонний лічильник, що переживає повну втрату живлення → безумовна унікальність. Варіанти: energy-gated Flash high-water (запис лише на cold-boot, коли Vcap відновився) АБО ATECC608B monotonic counter (разом з ATECC-role рішенням, §3.7). Трекінг → `00_07 FW.2`.
 
-> ✅ **DR15 resource-conflict — ВИРІШЕНО (2026-05-30):** FW.2 FC **володіє** `RTC_BKP_DR15` (реалізовано — `lora_ccm.h` + `firmware/soldier/main.c`; канонічно у `03_01 §2`). FW.20-S2 anti-storm dedup-bitmap (ARCH.28) переходить на **Flash-KV store** (`03_01 §2.3`), бо всі 20 RTC backup-регістрів (DR0–DR19) зайняті. Стале-формулювання «DR15 наразі резерв» у `00_07`/`03_02` виправлено на цей вердикт.
+> ✅ **DR15 resource-conflict — ВИРІШЕНО (2026-05-30):** FW.2 FC **володіє** `RTC_BKP_DR15` (реалізовано — `lora_ccm.h` + `firmware/soldier/main.c`; канонічно у [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)). FW.20-S2 anti-storm dedup-bitmap (ARCH.28) переходить на **Flash-KV store** ([`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)), бо всі 20 RTC backup-регістрів (DR0–DR19) зайняті. Стале-формулювання «DR15 наразі резерв» у `00_07`/`03_02` виправлено на цей вердикт.
 
 **Конфігурація `hcryp` для CCM (AES-128):**
 
@@ -1473,7 +1473,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 
 ### 3.4г Factory Flashing Operations Security 🤖 (SEC.3, 2026-05-17)
 
-> ⚠️ **Internal Admin Tool — поза публічним REST API.** Цей розділ описує **окремий канал** доставки ключів від Rails Backend до програматора (SWD/JTAG). Він НЕ є описом `POST /api/v1/provisioning/register` (реєстрація після деплою, Zero-Trust, без ключа у відповіді — `04_03 §5.2` залишається незмінним). Threat model нижче розроблений з нуля з урахуванням фізичного доступу на заводі.
+> ⚠️ **Internal Admin Tool — поза публічним REST API.** Цей розділ описує **окремий канал** доставки ключів від Rails Backend до програматора (SWD/JTAG). Він НЕ є описом `POST /api/v1/provisioning/register` (реєстрація після деплою, Zero-Trust, без ключа у відповіді — [`04_03 §5.2`](04_03_REST_API_v1_Reference) залишається незмінним). Threat model нижче розроблений з нуля з урахуванням фізичного доступу на заводі.
 
 **Cross-ref:** [SEC.3 у 00_07](00_07_Action_Plan_Tracker) | §3.4 (pipeline design) | §3.4а (HKDF derivation) | §3.6 (RDP Level 2) | §3.7 (ATECC608B) | SEC.1 (Gnosis Safe multisig) | SEC.2 (RDP activation) | SEC.6 (Secure Element) | SEC.9 (WeakKeyDetector)
 
@@ -1649,7 +1649,7 @@ MaintenanceRecord.create!(
 - AuditLog chain-hash + MaintenanceRecord :installation
 - RDP Level 1 відразу після Flash write
 
-**Перехід на Гілка B** активується перед першим mass production batch (рішення прив'язане до BOM freeze — cross-ref `07_02 §8.1`, SEC.6, ARCH.42).
+**Перехід на Гілка B** активується перед першим mass production batch (рішення прив'язане до BOM freeze — cross-ref [`07_02 §8.1`](07_02_Unit_Economics_and_BOM), SEC.6, ARCH.42).
 
 ---
 

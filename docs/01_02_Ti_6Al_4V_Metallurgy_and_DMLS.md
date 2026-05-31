@@ -181,7 +181,7 @@
             і блокуватиме EBFC-провідність. Деталі — §3.6.
 ```
 
-> 🔴 **КРИТИЧНИЙ ПОРЯДОК ВИРОБНИЦТВА (інакше — зварені ферменти):** Гаряча press-fit-збірка (Ti+PEEK+Ti, PEEK ~150°C, `01_01 §3`) **миттєво денатурує** будь-які ферменти. Тому послідовність **жорстко**: **(1)** SLM-друк + HIP → **(2)** збірка "голого" анкера (гаряча press-fit Ti↔PEEK↔Ti) → **(3)** EAAE-травлення (§1.3) → **(4)** dehydrogenation bake (Крок 5b) → **(5) ЛИШЕ ПОТІМ, на холодному металі** — біохімічна функціоналізація (dgrFAD-GDH/Os + Genipin-Chitosan-CNC + Nafion-g-PSBMA + Laccase/ZIF — це робить ЧМА/Бушуєва, `01_03 §2.1`, `08_02 §4`). Жодного нагріву >40°C після кроку (5).
+> 🔴 **КРИТИЧНИЙ ПОРЯДОК ВИРОБНИЦТВА (інакше — зварені ферменти):** Гаряча press-fit-збірка (Ti+PEEK+Ti, PEEK ~150°C, [`01_01 §3`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) **миттєво денатурує** будь-які ферменти. Тому послідовність **жорстко**: **(1)** SLM-друк + HIP → **(2)** збірка "голого" анкера (гаряча press-fit Ti↔PEEK↔Ti) → **(3)** EAAE-травлення (§1.3) → **(4)** dehydrogenation bake (Крок 5b) → **(5) ЛИШЕ ПОТІМ, на холодному металі** — біохімічна функціоналізація (dgrFAD-GDH/Os + Genipin-Chitosan-CNC + Nafion-g-PSBMA + Laccase/ZIF — це робить ЧМА/Бушуєва, [`01_03 §2.1`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell), [`08_02 §4`](08_02_Academic_Institutions_Registry)). Жодного нагріву >40°C після кроку (5).
 
 ### 1.3a. Failure Modes, Виключені з Протоколу
 
@@ -547,7 +547,7 @@ nTop — провідний інструмент для генерації мі�
 
 **Наступний крок:** Передати STL з nTop на завод разом із специфікацією дворівневої шорсткості (розділ 1).
 
-**🟡 Архітектурне обмеження nTop:** GUI-only workflow → **AI-агенти сліпі у візуальних інтерфейсах** (Claude/Copilot/Cursor не можуть "клікати" по нодах). Це блокер для AI-Native Engineering принципу (`00_02 §2`). Параметричні моделі зберігаються у бінарних `.ntop` файлах — **не Git-friendly**, без зрозумілого diff'у, без code review. Для масової вибірки per-species геометрій (5 SKU: pine/oak/broadleaf/mangrove/tropical — [`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)) потрібна Code-as-CAD парадигма.
+**🟡 Архітектурне обмеження nTop:** GUI-only workflow → **AI-агенти сліпі у візуальних інтерфейсах** (Claude/Copilot/Cursor не можуть "клікати" по нодах). Це блокер для AI-Native Engineering принципу ([`00_02 §2`](00_02_AI_Native_Engineering_and_TRL)). Параметричні моделі зберігаються у бінарних `.ntop` файлах — **не Git-friendly**, без зрозумілого diff'у, без code review. Для масової вибірки per-species геометрій (5 SKU: pine/oak/broadleaf/mangrove/tropical — [`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)) потрібна Code-as-CAD парадигма.
 
 ### PicoGK + C# — Code-as-CAD Alternative (паралельний R&D track)
 

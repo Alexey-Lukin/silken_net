@@ -146,11 +146,11 @@ Gaia 2.0 / Silken Net об'єднує сім академічних та інд�
 | Розділ | Роль у MOIC | Як читати |
 |--------|--------------|------------|
 | `08_01` (цей документ) | MOIC head: концепція кластера + план публікацій (Ст. 1–35) + IP framework | SSOT публікаційного плану та IP |
-| `08_02 §1` | ЧНУ — Hard Science (§1A: фізика/хімія/біологія) + ФОТІУС (§1B: формальна верифікація, mruby Lorenz, Petri Nets) | Лабораторні протоколи + матем. основа Статей 1–10, 15, 22, 34 |
-| `08_02 §2` | Data / RF / Acoustics ortho-niche (ЧДТУ) | 3 кафедри ЧДТУ |
-| `08_02 §3` | Regulated Safety ortho-niche (ЧІПБ) | Інтеграція з ДСНС, fire model, SOP |
-| `08_02 §4` | Biomedical ortho-niche (ЧМА) | EBFC біохімія, токсикологія, ксилемоінтеграція |
-| `08_02 §5` | Business Layer + Consortium Governance (СЄУ) | Triple Helix формалізація, Horizon-заявки |
+| [`08_02 §1`](08_02_Academic_Institutions_Registry) | ЧНУ — Hard Science (§1A: фізика/хімія/біологія) + ФОТІУС (§1B: формальна верифікація, mruby Lorenz, Petri Nets) | Лабораторні протоколи + матем. основа Статей 1–10, 15, 22, 34 |
+| [`08_02 §2`](08_02_Academic_Institutions_Registry) | Data / RF / Acoustics ortho-niche (ЧДТУ) | 3 кафедри ЧДТУ |
+| [`08_02 §3`](08_02_Academic_Institutions_Registry) | Regulated Safety ortho-niche (ЧІПБ) | Інтеграція з ДСНС, fire model, SOP |
+| [`08_02 §4`](08_02_Academic_Institutions_Registry) | Biomedical ortho-niche (ЧМА) | EBFC біохімія, токсикологія, ксилемоінтеграція |
+| [`08_02 §5`](08_02_Academic_Institutions_Registry) | Business Layer + Consortium Governance (СЄУ) | Triple Helix формалізація, Horizon-заявки |
 | `08_03` | External Stakeholders (B2G/B2B + культурний шар) | Не академічні партнери — поза MOIC core |
 
 > **Операційне правило:** при підготовці будь-якої зовнішньої комунікації (pitch deck, grant proposal, академічний візит) спочатку звіряти позиціонування з §0 цього документа, потім — з відповідним доменним 08_0X, і тільки потім — з конкретним розділом-§1A…§1G нижче.
@@ -762,10 +762,10 @@ _«Дослідження акустичних властивостей пори
 
 | Автор | Внесок |
 |-------|--------|
-| **Денисенко Ю.М.** (СЄУ) | 3D CAD-модель PEEK-радому з текстурою кори Pinus sylvestris, **виступаючий "дзвін" ≥ 3 мм + R заокруглення ≥ 5 мм** як anti-overgrowth shield (`01_04 §5.5`), stress concentration analysis, FDM-прототип |
+| **Денисенко Ю.М.** (СЄУ) | 3D CAD-модель PEEK-радому з текстурою кори Pinus sylvestris, **виступаючий "дзвін" ≥ 3 мм + R заокруглення ≥ 5 мм** як anti-overgrowth shield ([`01_04 §5.5`](01_04_CODIT_and_Xylemointegration)), stress concentration analysis, FDM-прототип |
 | **Теліженко О.В.** (СЄУ) | Кольорове/композиційне кодування, візуалізація для pitch deck, **selection super-hydrophobic coating** (Fluoropel PFC-1601V або еквівалент, CA > 150°) для запобігання адгезії клітин калюсу до катода |
-| **Гусак А.М.** (ЧНУ) | FEM-моделювання stress-strain текстурованої поверхні PEEK + **PEEK creep simulation** (ANSYS LS-DYNA Prony series, 10-y cyclic ±35°C) для confirm-ня необхідності annular barbs mechanical lock у пресsfit з Ti-зонами (`01_01 §4.3`) |
-| Архітектор (Silken Net) | 01_01 Деталь 4 (PEEK радом, тепер з anti-overgrowth shield), 02_01 §5 (SMD антена, **3D Keep-Out ≥ 8 мм Z-clearance** revised + PCB overhang за периметр Ti), IP67 з conformal Parylene C (НЕ повне Sylgard-potting через TinyML акустику, `02_02 §3.4`) |
+| **Гусак А.М.** (ЧНУ) | FEM-моделювання stress-strain текстурованої поверхні PEEK + **PEEK creep simulation** (ANSYS LS-DYNA Prony series, 10-y cyclic ±35°C) для confirm-ня необхідності annular barbs mechanical lock у пресsfit з Ti-зонами ([`01_01 §4.3`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) |
+| Архітектор (Silken Net) | 01_01 Деталь 4 (PEEK радом, тепер з anti-overgrowth shield), 02_01 §5 (SMD антена, **3D Keep-Out ≥ 8 мм Z-clearance** revised + PCB overhang за периметр Ti), IP67 з conformal Parylene C (НЕ повне Sylgard-potting через TinyML акустику, [`02_02 §3.4`](02_02_Blind_Mate_Pogo_Pin_Interface)) |
 
 **Тип зв'язку:** Послідовний — ЧНУ (Гусак): матеріалознавчі обмеження + PEEK creep simulation → СЄУ (Денисенко): дизайн у межах обмежень + anti-overgrowth geometry → СЄУ (Теліженко): візуалізація + surface treatment selection
 
@@ -970,7 +970,7 @@ _(Спільна тема ННІ природничих та аграрних н
 
 ### 2.1.2. Кафедра Інтелектуальної Власності та Цивільно-Правових Дисциплін ЧНУ
 
-**Чим корисна для Silken Net:** Юридична експертиза двох критичних SilkenNet-доменів, для яких **СЄУ §1F та `08_02 §5`** дають макро-економічний/regulatory shape, але **точкова юридична верифікація** потрібна на рівні UA-юрисдикції.
+**Чим корисна для Silken Net:** Юридична експертиза двох критичних SilkenNet-доменів, для яких **СЄУ §1F та [`08_02 §5`](08_02_Academic_Institutions_Registry)** дають макро-економічний/regulatory shape, але **точкова юридична верифікація** потрібна на рівні UA-юрисдикції.
 
 | Експертиза кафедри | Конкретне завдання Silken Net | Cross-ref |
 |---------------------|-------------------------------|-----------|

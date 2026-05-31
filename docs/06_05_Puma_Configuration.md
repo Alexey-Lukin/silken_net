@@ -93,7 +93,7 @@ shutdown_debug on_force: true
 
 **Worker timeout:** Web3 RPC (Alchemy, Infura, Polygon) може зависнути на секунди. 60s — достатньо для легітимних довгих операцій (batch telemetry insert, Lorenz), але жорстко вбиває справді завислих workers.
 
-**`shutdown_debug on_force: true`:** дамп backtraces ВСІХ threads виключно при forced shutdown (SIGKILL після `worker_timeout`) — не при graceful Kamal phased restart. Без `on_force:` дамп спамив би кожен деплой. Backtraces потрапляють у GCP Cloud Logging як structured JSON з `sentry_trace_id` для cross-reference у Sentry UI (`06_03 §3.3`).
+**`shutdown_debug on_force: true`:** дамп backtraces ВСІХ threads виключно при forced shutdown (SIGKILL після `worker_timeout`) — не при graceful Kamal phased restart. Без `on_force:` дамп спамив би кожен деплой. Backtraces потрапляють у GCP Cloud Logging як structured JSON з `sentry_trace_id` для cross-reference у Sentry UI ([`06_03 §3.3`](06_03_Prometheus_Observability)).
 
 ### 5. Port
 

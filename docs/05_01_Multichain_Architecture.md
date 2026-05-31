@@ -503,7 +503,7 @@ HadronAssetRegistrationWorker → Polygon::HadronComplianceService → hadron_ky
 
 ### Крок 7: Емісія (Polygon Mint)
 
-SCC мінтинг ініціюється двома незалежними шляхами — в обох випадках народжується 1 SCC за кожні 10,000 growth_points. Детально: [`05_02 §DOC.7`](05_02_Proof_of_Growth_Pipeline).
+SCC мінтинг ініціюється двома незалежними шляхами — в обох випадках за фіксованим курсом емісії ([`05_03`](05_03_Tokenomics_SCC_and_SFC)). Детально: [`05_02 §DOC.7`](05_02_Proof_of_Growth_Pipeline).
 
 **Шлях A — Oracle-driven (ініціюється `OracleCallbacksController`):**
 

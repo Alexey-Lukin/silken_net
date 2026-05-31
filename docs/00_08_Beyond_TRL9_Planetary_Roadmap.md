@@ -58,16 +58,16 @@
 
 | Підхід | Принцип | Потенційний партнер ЧНУ/СЄУ |
 |---|---|---|
-| **Розподілене навчання між Queens (дві РІЗНІ математики — не плутати):** | (a) **Lorenz σ/ρ/β** — це ODE-система **без ваг**, її не тренують backprop'ом → **Distributed Parameter Estimation** (PSO/GA на Queen знаходить оптимальні σ,ρ,β для локального кластера; Queens обмінюються *оцінками параметрів*, не градієнтами). (b) **TinyML акустика** — ось тут справжній **Federated Learning** доречний: агрегація градієнтів мікро-моделей (коли HW дозволить on-device training) АБО ретренінг класифікатора на Queen + компіляція `.tflite` → OTA. Privacy-preserving (не сирі дані). | Любченко GA/NSGA-II (`08_02`); Карапетян статистика (`08_02 §2`) |
+| **Розподілене навчання між Queens (дві РІЗНІ математики — не плутати):** | (a) **Lorenz σ/ρ/β** — це ODE-система **без ваг**, її не тренують backprop'ом → **Distributed Parameter Estimation** (PSO/GA на Queen знаходить оптимальні σ,ρ,β для локального кластера; Queens обмінюються *оцінками параметрів*, не градієнтами). (b) **TinyML акустика** — ось тут справжній **Federated Learning** доречний: агрегація градієнтів мікро-моделей (коли HW дозволить on-device training) АБО ретренінг класифікатора на Queen + компіляція `.tflite` → OTA. Privacy-preserving (не сирі дані). | Любченко GA/NSGA-II (`08_02`); Карапетян статистика ([`08_02 §2`](08_02_Academic_Institutions_Registry)) |
 | **Stigmergic Communication (L2/L3-опосередкована, НЕ P2P)** | Soldier емітує 1-bit стрес-сигнал («я в червоному Z-bucket», ~110 ms LoRa TX) → **L3 Queen** (always-on) акумулює його як «феромонний слід» → команда «підняти sampling rate» доставляється сусідам у їхнє наступне заплановане RX-вікно (CAD / TDMA / OTA-downlink). Прямого peer-RX немає (фізика — у ⚠️ нижче) | Порубльов кібернетика (`08_02`); mruby VM mod (`03_04`) |
-| **Chimera States у network of attractors** | Математична теорія Куромото (Kuramoto-Battogtokh 2002): network coupled Lorenz oscillators утворює **частково синхронізовані, частково хаотичні patterns** — це саме структура здорового лісу (homeostasis-coupled domains across disturbance gradients) | Кирилюк синергетика економічних систем (`08_01 §1.4`); Гусак нелінійна динаміка (`08_01 §1.2`) |
+| **Chimera States у network of attractors** | Математична теорія Куромото (Kuramoto-Battogtokh 2002): network coupled Lorenz oscillators утворює **частково синхронізовані, частково хаотичні patterns** — це саме структура здорового лісу (homeostasis-coupled domains across disturbance gradients) | Кирилюк синергетика економічних систем ([`08_02 §1A`](08_02_Academic_Institutions_Registry)); Гусак нелінійна динаміка ([`08_02 §1A`](08_02_Academic_Institutions_Registry)) |
 | **Forest-Wide Lorenz Coupling** | Розширення `bio_contract.rb`: вхідні параметри атрактора містять не лише власні `delta_t/temp/acoustic`, а й aggregated neighbor signals (median Z у кластері за останню годину) | Розширення `03_04 §X.Y` (новий розділ після TRL 9) |
 
 > **⚠️ Stigmergy маршрутизується через L2/L3, не P2P (корекція 2026-05-28):** рядок «Stigmergic Communication» вище описує лише *емісію* 1-bit сигналу (дешево: ~110 ms LoRa TX @ +14 dBm). **Зворотний шлях** («сусіди підвищують sampling rate») НЕ може бути peer-to-peer broadcast: Soldier перебуває у STOP2 ~99.9% часу (`03_01` / `08_02`), радіо SX1262 вимкнене — він фізично не «чує» сусіда, а continuous-RX вичерпав би 0.47F supercap за хвилини. Тому: Soldier-емітент → сигнал ловить **always-on L2 Conductor / L3 Queen** і акумулює як «феромонний слід» → команда «підняти sampling rate» доставляється сусідам лише у їхнє наступне заплановане RX-вікно (CAD-пінг / TDMA-слот / OTA-downlink, `03_02`). Це не послаблення ідеї, а **точніша** stigmergy: мурахи теж не передають сигнал напряму, а лишають слід у середовищі — роль персистентного середовища тут грає Queen.
 
 **SRL шлях:** `SRL:Concept` (concept formulated) → `SRL:Pilot` (Q1 publication "Chimera states in tree-borne IoT sensors of Cherkasy Pine Forest") → `SRL:Deployed` (opt-in firmware extension у кластерах ≥ 100 дерев).
 
-> ⚠️ **Ієрархічне делегування інтелекту (Compute Budget Constraint).** L1 Soldier (STM32WLE5JC + 0.47F supercap, енергобаланс `02_03 §9.6 Сценарій C` = +1.4 мДж/год запасу) **фізично не може** тренувати моделі або агрегувати градієнти — будь-який Federated Learning epoch, обчислення Chimera coupling або forest-wide attractor inversion утримуватиме MCU в active-режимі (≥12 mA × ≥секунди) і **гарантовано виведе supercap у brownout** ще до завершення першої епохи. Тому:
+> ⚠️ **Ієрархічне делегування інтелекту (Compute Budget Constraint).** L1 Soldier (STM32WLE5JC + 0.47F supercap, енергобаланс [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power) Сценарій C = +1.4 мДж/год запасу) **фізично не може** тренувати моделі або агрегувати градієнти — будь-який Federated Learning epoch, обчислення Chimera coupling або forest-wide attractor inversion утримуватиме MCU в active-режимі (≥12 mA × ≥секунди) і **гарантовано виведе supercap у brownout** ще до завершення першої епохи. Тому:
 >
 > - **L1 Soldiers (STM32 + 0.47F):** залишаються наївними виконавцями (Inference only). Емітують 1-bit stigmergic сигнали (рядок «Stigmergic Communication» — це **єдина дешева опція** на L1, ~110 ms LoRa TX @ +14 dBm).
 > - **L2 Conductors / L3 Queens (LiFePO4 + Solar):** тут відбуваються Federated Learning, Chimera coupling math та network-level Lorenz координація. Queen має 20Ah батарею і Cortex-M4 + LTE backbone — обчислювально на 4-5 порядків багатший за Soldier.
@@ -96,7 +96,7 @@
 
 > ⚠️ **Compute Budget Paradox — L1 не "self-evolves" фізично.** Стовпчик «Виклики на STM32WLE5JC» вище **не** є інженерним планом запуску GA/RL/online-backprop на Soldier — це інвентаризація причин, **чому це неможливо** у поточному hardware envelope:
 >
-> - **mini-GA (4 candidate sets × multi-epoch fitness):** кожна fitness-епоха = повний цикл sense+Lorenz+TX (≈58 мДж/cycle, `02_03 §9.4`). 10 generations/тиждень × 4 candidates × 58 мДж = **2.3 Дж/тиждень додатково** при загальному робочому вікні supercap **3.87 Дж** (`02_03 §2`). → Перевищує бюджет у 4-6× після врахування sleep drain.
+> - **mini-GA (4 candidate sets × multi-epoch fitness):** кожна fitness-епоха = повний цикл sense+Lorenz+TX (≈58 мДж/cycle, [`02_03 §9.4`](02_03_BQ25570_MPPT_Nano_Power)). 10 generations/тиждень × 4 candidates × 58 мДж = **2.3 Дж/тиждень додатково** при загальному робочому вікні supercap **3.87 Дж** ([`02_04 §1`](02_04_EDLC_Supercapacitor_Buffer)). → Перевищує бюджет у 4-6× після врахування sleep drain.
 > - **Tabular Q-learning (12-state × 4-action):** сам lookup дешевий, але **reward сигнал = "days-to-next-VBAT_OK"** вимагає тижневих епізодів — ε-greedy exploration з 0.1 ймовірністю "sample_extra" з'їсть весь energy headroom Сценарію C (+1.4 мДж/год).
 > - **TinyML on-device incremental learning:** full backprop на Cortex-M4 без AI-accelerator потребує seconds × 12 mA, що **гарантовано brownout**.
 >
@@ -116,9 +116,9 @@
 
 **Поточний стан:** Архітектура жорстко заточена під **Pinus sylvestris** Черкаського бору:
 - Хімія EBFC (`01_03`): Gen 2.0 baseline — dgrFAD-GDH + Laccase/ZIF-nanozyme + Genipin-Chitosan-CNC + Nafion-g-PSBMA — оптимізовані під pH 4.5–5.5 (хвойні)
-- Геометрія анкера (`01_01 §5.5`): пори 100–500 µm — оптимум для трахеїд 20–50 µm
+- Геометрія анкера ([`01_01 §5.5`](01_01_Coaxial_Gyroid_Topology_and_PEEK)): пори 100–500 µm — оптимум для трахеїд 20–50 µm
 - Lorenz-константи (`03_04`): σ=10, ρ=28, β=8/3, OPTIMAL_Z=29 — калібровано на pine baseline
-- Хірургічний протокол (`01_04 §3`): Flush Mount + microfrezing для м'якої soft-wood сосни
+- Хірургічний протокол ([`01_04 §3`](01_04_CODIT_and_Xylemointegration)): Flush Mount + microfrezing для м'якої soft-wood сосни
 
 **Чому це обмежує:**
 - Дуб (*Quercus*) — пори 200–400 µm (кільцепориста) → потрібна інша геометрія гіроїда
@@ -131,13 +131,13 @@
 
 | Шар | Що треба узагальнити | Як |
 |---|---|---|
-| **Hardware (BOM)** | 5 SKU замість 1: pine, oak, broadleaf, mangrove, tropical-hardwood — різна геометрія гіроїда, ферменти, anchor довжина | Параметрична CAD-модель у nTop (vs static). Stage 2 Ti-coin тести (`01_01 §6.1`) на 5 синтетичних соках |
+| **Hardware (BOM)** | 5 SKU замість 1: pine, oak, broadleaf, mangrove, tropical-hardwood — різна геометрія гіроїда, ферменти, anchor довжина | Параметрична CAD-модель у nTop (vs static). Stage 2 Ti-coin тести ([`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) на 5 синтетичних соках |
 | **Firmware (Lorenz constants)** | `bio_contract.rb` приймає species_id → calibrated (σ, ρ, β) з flash table 16 × 24 bytes | OTA bytecode update із species-specific table; species_id зашитий у DID на provisioning |
 | **Backend (Validation)** | `SilkenNet::Attractor` має model registry per-species; oracle dispatch validates against correct baseline | `MODEL_REGISTRY = { pine: '...', oak: '...' }` + migration `add_species to trees` |
 | **DAO Governance** | Кожен new biome потребує community vote (SFC) + lab validation slot перш ніж SCC можуть мінтитись з нього | Розширення Slashing v2 на biome-specific stress detection thresholds |
 
 **Партнерські школи:**
-- Спрягайло (`08_01 §1.3`) — extension до інших порід ЧНУ Botanical Hub
+- Спрягайло ([`08_02 §1A`](08_02_Academic_Institutions_Registry)) — extension до інших порід ЧНУ Botanical Hub
 - НАН України через школу НБС Гришка (intro Спрягайла, кандидатська 2013) — broadleaf і fruit tree calibration
 - Future: international university partnerships (Brazil INPA для tropical, Australia CSIRO для eucalyptus, ASEAN MUSE для mangrove)
 
@@ -145,7 +145,7 @@
 
 ### 1.4. Gap #4 — Apex Predator Defense (Proactive AI-Adversarial Security)
 
-**Поточний стан:** DAO governance існує (SFC, `05_03`), Slashing v2 реактивний (`05_05 §6`), 12-chain pipeline має cross-validation (`05_02`). Але:
+**Поточний стан:** DAO governance існує (SFC, `05_03`), Slashing v2 реактивний ([`05_05 §6`](05_05_Slashing_and_Risk_Policy)), 12-chain pipeline має cross-validation (`05_02`). Але:
 - **Немає proactive захисту від AI-driven economic attack** — coordinated manipulation SCC market через synthetic telemetry patterns
 - **Oracle attack surface** — Chainlink DON має finite operator count; targeted bribe + adversarial generation може зсунути medianer
 - **Slashing — реактивний**: чекає, поки факт зловживання stane on-chain, тоді штрафує. До цього моменту attacker вже випередив 1000× ROI на dump SCC
@@ -159,10 +159,10 @@
 
 | Підхід | Принцип | Реалізація |
 |---|---|---|
-| **Proactive Anomaly Detection (Federated)** | Замість per-tree fraud detection — **cluster-level statistical fingerprints**. Якщо 100 дерев одного кластера раптом починають видавати «too perfect» Z-curves (lower variance than possible), це → suspicious | ML-сервіс у Rails + GA-оптимізація Любченка (`08_02`); запит до Карапетяна (статистика, `08_02 §2`) |
-| **Adversarial Telemetry Generators (Red Team)** | Внутрішня команда генерує **GAN-вироблені синтетичні telemetry, які намагаються пройти Dual Computation** → знаходить вразливості до того, як їх знайде зовнішній attacker | Регулярні Red Team Exercises як частина CI/CD (`04_06 §B`); Q1 paper "Adversarial robustness of bio-token mints" |
+| **Proactive Anomaly Detection (Federated)** | Замість per-tree fraud detection — **cluster-level statistical fingerprints**. Якщо 100 дерев одного кластера раптом починають видавати «too perfect» Z-curves (lower variance than possible), це → suspicious | ML-сервіс у Rails + GA-оптимізація Любченка (`08_02`); запит до Карапетяна (статистика, [`08_02 §2`](08_02_Academic_Institutions_Registry)) |
+| **Adversarial Telemetry Generators (Red Team)** | Внутрішня команда генерує **GAN-вироблені синтетичні telemetry, які намагаються пройти Dual Computation** → знаходить вразливості до того, як їх знайде зовнішній attacker | Регулярні Red Team Exercises як частина CI/CD ([`04_06 §B`](04_06_Testing_Guide_and_Coverage)); Q1 paper "Adversarial robustness of bio-token mints" |
 | **Decoy DID Tripwire (backend, НЕ on-chain honeypot)** | ⚠️ Виправлено: on-chain honeypot не працює — стейт контракту публічний, а навіть «реальне-але-заблоковане» дерево видає себе **відсутністю mint-подій** (атакер аналізує on-chain патерн і обходить). Тому — **бекенд-tripwire**: набір **decoy DID**, яких немає як реальних анкерів, у серверному watchlist (НЕ публікуються, НЕ on-chain). **Будь-яка телеметрія/mint-спроба від decoy DID = доведена підробка** (жоден реальний Soldier його не має) → instant alert + slashing + 12-chain rotation. Додатково: **Shadow Trees** — синтетичні фейкові дані у *публічному дашборді* (information warfare: торговий бот, що будує атаку на shadow-даних, руйнує свою стратегію). | Backend watchlist decoy DIDs + `TelemetryUnpackerService` tripwire (НЕ on-chain flag) |
-| **Quantum-Resistant Oracle Migration** | Сучасні ECDSA-підписи (Chainlink) вразливі до post-quantum cryptanalysis (~2030+). Перехід на **NIST PQC standards** (Kyber/Dilithium) у Web3 stack | Координовано з Аблязовим Д. (СЄУ, `08_02 §5`) для правової рамки + Ярмілко (`08_02`) для firmware integration |
+| **Quantum-Resistant Oracle Migration** | Сучасні ECDSA-підписи (Chainlink) вразливі до post-quantum cryptanalysis (~2030+). Перехід на **NIST PQC standards** (Kyber/Dilithium) у Web3 stack | Координовано з Аблязовим Д. (СЄУ, [`08_02 §5`](08_02_Academic_Institutions_Registry)) для правової рамки + Ярмілко (`08_02`) для firmware integration |
 | **Apex Predator AI Sentinel** | Окремий ML-сервіс, який моніторить весь стек 24/7 в режимі **«hunting for hunters»** — шукає координовані patterns між: trading volume на SCC DEXs + telemetry anomalies + oracle response patterns. Це **проактивний counter-AI** проти adversarial AI | Roadmap `SRL:Pilot`+; вимагає budget на dedicated AI/ML engineer; партнерство з академічними лабораторіями з ML security |
 
 **Філософська позиція:** Silken Net — це **критична інфраструктура планетарного клімату**. Тому стандарт безпеки має бути не «не гірше за DeFi», а **на рівні national-grid SCADA**: continuous threat hunting, mandatory bug bounty, formal verification critical path.
@@ -190,7 +190,7 @@ SRL:Deployed ━━━ Verified, formal, planetary-scale autopoiesis ← Silken 
              (+ MRL:8-10 — серійне виробництво 5 SKU per biome)
 ```
 
-Це **15-річний горизонт** (2026–2040+) — за ним вже сяє візія Гедз+Чудаєвої (`08_02 §5`): D-MRV як база для **global climate governance protocol**, на рівні WTO або ISO.
+Це **15-річний горизонт** (2026–2040+) — за ним вже сяє візія Гедз+Чудаєвої ([`08_02 §5`](08_02_Academic_Institutions_Registry)): D-MRV як база для **global climate governance protocol**, на рівні WTO або ISO.
 
 ### 1.7. Cross-references та де ще згадано
 
