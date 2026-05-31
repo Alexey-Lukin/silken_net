@@ -114,10 +114,6 @@
 - **P0** · 👤 · → `06_03`
 - ✅ 13 alert rules IaC (5P0/5P1/3P2) → `deploy/grafana/alerts/` + counter `silkennet_telemetry_acoustic_overflow_total`. · [ ] 👤 замінити `${DATASOURCE_UID}` + notification channel (Slack/Email/PagerDuty)
 
-#### S2.5 — PartitionMaintenanceWorker failure alert (silent monthly PG-crash guard)
-- **P1** · 🤖 · → `06_03 §2.8`
-- ✅ закрито (2026-05-29): rescue воркера інкрементить counter `silkennet_partition_maintenance_failures_total` (рек. `sidekiq_jobs_failed_total` НЕ емітиться) + Sentry; P0 alert `sn-alert-partition-maintenance-failed` (`increase[24h]>0`) у `deploy/grafana/alerts/`; spec. Захист від `no partition of relation` крах 1-го числа для 4 RANGE-таблиць.
-
 #### S3.2 — dClimate Real API verification
 - **P1** · 👤 · → `05_01`
 - ✅ `Dclimate::VerificationService` (NASA FIRMS, FRP≥10MW, cloud fallback). · [ ] 👤 верифікувати з реальним API key у staging + e2e `DclimateVerificationWorker`
@@ -630,10 +626,6 @@
 - **P2** · 🔗 · → `03_05 §HRNG Fallback`
 - ✅ (2026-05-29) fallback IV → pure `coap_iv.h#coap_fallback_iv_word` (uid×device + `queen_unix_ts`×reboot + `coap_flush_seq`×flush) + 4 host-тести → **reuse закрито** по всіх осях. 🟡 Residual: IV передбачуваний на fallback — **low-severity** (CoAP-батч без chosen-plaintext вектора). · [ ] 🔗 повна unpredictability = key-derived IV `E_key(counter)` (AES-engine + SEC.8 restore) — bench-gated
 
-#### SEC.13 — peaq_did_compromised guard (revocation-runbook gap)
-- **P2** · 🤖 · → `06_04 §5.4`
-- ✅ закрито (2026-05-29): колонка `trees.peaq_did_compromised` (structure.sql) + skip-guard у `BlockchainMintingService` (пропускає flagged-дерева, не валить батч) + spec (minting 72 ex green). Runbook `06_04 §5.4` тепер робочий.
-
 #### SEC.14 — ATECC608B role-split re-examination (ARCH.42 honesty)
 - **P2** · 🤖 · → `03_05 §3.7`
 - `03_05 §3.7` Гілка B робить per-packet `atcab_aes_encrypt()` (ATECC AES щопакета). Питання: краще built-in STM32WLE5JC radio-AES для streaming payload + ATECC лише provisioning (ECDH keygen + master/identity + attestation)? Energy-аргумент перевірено = завищений (ATECC ≈70µJ/пакет ≈ 0.06% TX-енергії, НЕ supercap-killer); реальний trade-off = session-key tamper-resistance (Variant B: ключ не лишає ASIC → forces per-packet) vs latency (1.5ms I²C vs ~10µs) / idiom (built-in → session-key у RDP-Flash). ATECC-agnostic щодо FW.2 nonce-fix. · [ ] 🤖 re-examine ARCH.42 з role-split опцією явно + чесно подати trade-off у `03_05 §3.7` (зараз лише «0.1% acceptable») · [ ] 🤖 cross-check `02_01 §2` power-budget + `03_01` wake-energy
@@ -641,6 +633,8 @@
 ## 🔀 Cross-cutting · Doc-drift (DOC) — синх з `04_02 §11` divergence registry
 
 Потребують узгодження між docs, firmware та backend. **Не блокери виконання, але блокери для аудиту і онбордингу.**
+
+> ⚠️ **DOC-ID namespace collision (виявлено 2026-06-01, потребує рішення founder):** ця DOC-таблиця і divergence-registry [`04_02 §11`](04_02_Business_Logic_and_Services) ділять префікс `DOC.N`, але з РІЗНИМИ значеннями: `DOC.10` тут = 05/07 deferred-misplacement, у `04_02 §11` = Sidekiq-Pro shims; `DOC.11` тут = 05/07 restructure (✅), у `04_02 §11` = PartitionMaintenanceWorker; `04_04 §3.6` має ще свій `[DOC.11]` (Tailwind cheatsheet). Header «синх з 04_02 §11» вводить в оману — це **різні реєстри**. Доки namespace не розв'язано (злити в один АБО префіксувати, напр. `DOC-T.N` tracker / `DOC-R.N` 04_02-registry), DOC.10/DOC.11 тут **НЕ архівувати** (ID-плутанина при крос-реф). Тому цього pass'у заархівовано лише однозначні `####`-пункти без колізії (S2.5/SEC.13/DOC.13 → §🗄️ Архів).
 
 DOC.9 — потребує лабораторного вимірювання TX-струму
 
@@ -651,12 +645,6 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | DOC.10 | Реструктуризація 05/07 (Фаза 3) — відкладені misplacement-рішення: `07_01 §11` Investor Q&A (pitch/diligence — дім 00_01 vs новий pitch-doc неоднозначний); `07_03 §5` Anchor Assembly + `§6` Virtual Prototyping (operational/field-ops дім, наразі grant-bootstrap контекст — не чистий misplacement) | `07_01`, `07_03` | Призначити operational/pitch-дім + перенести (рішення founder) | 🟡 Deferred |
 | DOC.11 | Реструктуризація 05/07 (Фази 1-2, 2026-05-30): slashing `00_01 §6` → `05_05`; governance `05_03 §749-905` → `05_06` — нові канон-доми; cross-refs re-pointed; `00_06 §2` / `00_00` / README синхронізовано (навігація: `00_01 §6` stub + `05_03 §Governance` stub) | `05_05`, `05_06`, `00_01`, `05_03` | — (виконано) | ✅ Done |
 | DOC.12 | Taxonomy v3 P4 (2026-05-30): дисолюція Module 08 (7→3 доки). `08_03 Joint Pubs/IP`→**`08_01`**; `08_02 Cyber/Math`+`08_01 University`+`08_04-07`→**new `08_02` Academic Institutions Registry** (5 ВНЗ — relationship-шар; інженерна субстанція реферить Tier I 01–06, zero-loss verified); `07_05 External`→**`08_03`**. ~260 inbound refs swept; genuinely-novel mesh-математика → Open Research `06_08` (percolation/Markov). `00_00`/README/CLAUDE/`ssot-maintenance` skill синхронізовано | `08_01`, `08_02`, `08_03`, `06_08` | — (виконано) | ✅ Done |
-
-#### DOC.13 — SSOT 360 rounds 3–4: ref-graph analyzer + anchor HARD-gate + drift-hunt
-- **P2** · 🤖 · → `00_06 §3`
-- **Rounds 1–2 ✅** (історія консолідована в пам'яті `project_ssot_campaign_history`): thread A whole-doc refs→links + `bare_doc_ref` HARD; thread B fence/ToC engine-bugs; thread C `tracker:check` §-validation + 12 stale §BLOCKER-N.
-- **Round 3 ✅ (2026-05-31):** `docs:graph` ref-граф (`lib/docs_graph.rb` + `rake docs:graph` + spec; 50 nodes, 0 orphans, #anchor + §-ref валідація — on-demand) → [`00_06 §3`](00_06_SSOT_Documentation_Standard); value-consistency hunt (slash/300nA/15µW/member-TRL — 0 drift); 3 home-мапінги (FW.18b/HW.11/HW.12) verified.
-- **Round 4 ✅ (2026-05-31):** усі 6 backlog-пунктів закрито: · [x] 🤖 **#7 dangling-anchor (×2)** — `08_01:129/407` уже repoint'нуто на [`08_02 §2 ЧДТУ`](08_02_Academic_Institutions_Registry#-2-чдту--черкаський-державний-технологічний-університет) (резолвиться) · [x] 🤖 **02_06 dead-end** → bottom Cross-References + top-ref конвертовано в лінки (backlink на [`02_03`](02_03_BQ25570_MPPT_Nano_Power); стале `§BLOCKER-3`→`§1.5`); `docs:graph` 0 dead-ends · [x] 🤖 **03_05 renumber** — підрозділи `11.x`→`10.x` під H2 «10. PQC» + усі `§11`→`§10` рефи (03_05/08_01/CLAUDE.md) · [x] 🤖 **anchor-check → HARD-gate** у `docs:check_refs` (`DocsGraph.dangling_anchors`; `docs:graph` лишається on-demand для orphan/dead-end/degree) → [`00_06 §3`](00_06_SSOT_Documentation_Standard) · [x] 🤖 **00_03 §1 clarify** — примітка «рядок = агрегат (min) member-TRL під-доків; під-док може бути вищим» (HW=4 vs capsule — не drift) · [x] 🤖 **DOC-ID dedupe** — цей `#### DOC.12`→`DOC.13` (колізія з table-row DOC.12=Taxonomy-P4); `tracker:check` dup-guard розширено на table-row IDs (`Dashboard.table_row_ids`).
 
 #### DOC.2 — Canon↔canon de-dup (SSOT single-home) [#4, 2026-05-29]
 - **P2** · 🤖 · → `00_00`
@@ -1008,6 +996,9 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | ARCH.21 | Brownout PVD → Lorenz state save в RTC | `03_01`, `08_02` |
 | ARCH.28 | RTC Backup Domain allocation policy | `03_01 §2` |
 | ARCH.27 | Node-role flag (Soldier/Provisioner, Flash magic) | `03_01 §1.11` |
+| S2.5 | PartitionMaintenanceWorker failure alert (counter + Sentry rescue + Grafana P0) | `06_03 §2.8` |
+| SEC.13 | peaq_did_compromised mint-skip guard + emergency revocation runbook | `06_04 §5.4` |
+| DOC.13 | SSOT 360 R3–R4: docs:graph ref-graph + #anchor HARD-gate + dup-guard table-rows | `00_06 §3` |
 
 ---
 
