@@ -104,6 +104,7 @@
 | **bare doc-id → link** | сиблінг bare-§ для **whole-doc** рефів: code-span `NN_NN` / `docs/NN_NN` / `NN_NN_FullName` **без** § поза лінком має бути повним лінком (канонічна форма — §1), не lone code-span (клікабельність + один формат). Ловить лише id, що резолвиться в поточний док (retired-`04_07` лишається прозою); skip fences + спани в лінках. Закрив 213-реф thread-A sweep (`scripts/linkify_bare_refs.rb`). Exempt 00_00/00_06/00_07/02_06/manifest | `bin/rails docs:check_refs` (HARD 2026-05-31; `lib/docs_linter.rb`) |
 | **tokenomics/carbon rate One-Home** | mint-курс + carbon-курс — governance-змінні **параметри** → значення живе лише в home (`05_03` + business-view `07_01 §3`); re-statement деінде = silent drift при re-price (зловив дубль у 8 доках). Exempt homes + labeled-mirror `07_02` + manifest + 00_07 | `bin/rails docs:check_refs` (HARD 2026-05-31; `lib/docs_linter.rb`) |
 | TRL range-consistency | _(roadmap)_ per-doc member-TRL у межах діапазону модуля `00_03 §1` | — |
+| **ref-graph audit** | _(on-demand, НЕ CI-gate)_ orphan/dead-end сторінки · in/out-degree skew · one-way (asymmetric) sibling-лінки · комплексна `#anchor` + linked-`§X` валідація — власний ref-граф канону (GitNexus моделює код, не NN_NN-конвенцію). Доповнює per-line гейти графовим виглядом | `bin/rails docs:graph` (`lib/docs_graph.rb`; spec `spec/lib/docs_graph_spec.rb`) |
 
 **Правило при зміні факту:** правити лише у home (§2) → рефи лишаються чинними; будь-який новий NN_NN-док/реф — `docs:check_refs` має лишатись зеленим перед merge.
 

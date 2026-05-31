@@ -926,7 +926,7 @@ blockchain_transactions
 
 ## 🔬 SEC.11 — Lorenz Seed Provenance & Dual Computation Integrity
 
-> **Cross-ref:** дизайн і threat model — [03_05 §3.4в](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-); сервіс — [04_02 `SilkenNet::SeedDerivation`](04_02_Business_Logic_and_Services#silkennetseedderivation-); poetics — [03_04 §2.1, §3 Крок 1](03_04_mruby_Lorenz_Attractor); SEC.11 в трекері — [00_07 SEC.11](00_07_Action_Plan_Tracker).
+> **Cross-ref:** дизайн і threat model — [03_05 §3.4в](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-); сервіс — [04_02 `SilkenNet::SeedDerivation`](04_02_Business_Logic_and_Services#silkennetseedderivation--sec11); poetics — [03_04 §2.1, §3 Крок 1](03_04_mruby_Lorenz_Attractor); SEC.11 в трекері — [00_07 SEC.11](00_07_Action_Plan_Tracker).
 
 ### Чому це частина Proof of Growth, а не суто security task
 

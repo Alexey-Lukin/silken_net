@@ -58,9 +58,10 @@ All via binstubs — **`bin/rails` / `bin/rspec`**, never `bundle exec` (`[[feed
 | `bin/rails docs:check_refs` | The omnibus gate: dangling `NN_NN` links (HARD) · §-label drift (advisory) · TRL presence (HARD) · TRL single-value (HARD) · blocker-hygiene (HARD) · standard-conformance (HARD) · ToC sync (HARD) · RTC reg-map drift (HARD) · Lorenz-formula drift (HARD) · deprecated terms (HARD). | `lib/docs_linter.rb`, `lib/docs_toc.rb` |
 | `bin/rails docs:toc` | Regenerate the `📑 Зміст` auto-ToC between `<!-- TOC:AUTO:START/END -->` from current `## ` headings (curated `— descriptions` preserved). Run after changing headings. | `lib/docs_toc.rb` |
 | `bin/rails tracker:check` | 00_07 DRY: duplicate IDs, meta-line conformance, canon-ref resolution. | `lib/tracker/dashboard.rb` |
+| `bin/rails docs:graph` | _(on-demand audit, NOT a CI gate)_ ref-graph view: orphan / dead-end pages, in/out-degree skew, one-way sibling links, comprehensive `#anchor` + linked-`§X` resolution. The graph lens the per-line gates can't give (GitNexus models code, not `NN_NN` links). | `lib/docs_graph.rb` |
 | `bin/rails wiki:sync` | **Dry-run** (default): clone wiki, transform links + carry images, show `--stat` diff + unresolved links. Publishes nothing. | `lib/wiki_link_normalizer.rb` |
 | `bin/rails wiki:sync PUSH=1` | Commit + push the canon `NN_NN` pages to the GitHub wiki (SSH to `*.wiki.git`). | ↑ |
-| `COVERAGE=0 bin/rspec spec/lib/docs_linter_spec.rb spec/lib/docs_toc_spec.rb` | Unit-test the linter/ToC engines (pure functions — `spec_helper`, **no Rails/DB**; `COVERAGE=0` skips the whole-suite coverage gate on a subset run). | — |
+| `COVERAGE=0 bin/rspec spec/lib/docs_linter_spec.rb spec/lib/docs_toc_spec.rb spec/lib/docs_graph_spec.rb` | Unit-test the linter / ToC / ref-graph engines (pure functions — `spec_helper`, **no Rails/DB**; `COVERAGE=0` skips the whole-suite coverage gate on a subset run). | — |
 
 CI: `docs.yml` runs the gates on doc/lib changes; `ci.yml` runs them on code changes (it `paths-ignore`s `**.md`/`docs/**`). Together every change-type is gated.
 

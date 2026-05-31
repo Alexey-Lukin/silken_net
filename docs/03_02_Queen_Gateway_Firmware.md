@@ -763,7 +763,7 @@ Soldier — gossip-uplift (3-hop reach)
 
 ### 5а.3 Опкод-карта (SSOT)
 
-> **Канонічна таблиця опкодів LoRa/CoAP** живе в [`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA#-45а-downlink-opcode-map). Узагальнено для Time Sync контексту:
+> **Канонічна таблиця опкодів LoRa/CoAP** живе в [`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA#45а-downlink-opcode-map--canonical-ssot-doc4). Узагальнено для Time Sync контексту:
 
 | Опкод | Призначення | Канал | Магія | Статус |
 |-------|------------|-------|-------|--------|

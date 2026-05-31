@@ -43,8 +43,12 @@ files.each do |path|
   crossrefs = 0
   content_secs = []
   cur = nil
+  in_fence = false
 
   lines.each do |l|
+    in_fence = !in_fence if l.start_with?("```")
+    next if in_fence  # skip ## inside ``` fences (skeleton/template examples ≠ real sections)
+
     if l.start_with?("## ")
       cur = l.sub(/^##\s+/, "").strip
       content_secs << cur unless cur =~ SKELETON
