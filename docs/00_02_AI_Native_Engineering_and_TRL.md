@@ -48,9 +48,9 @@
 - **Beyond TRL 9 (Planetary Intelligence, vision) — НЕ «TRL 10-12»:** Шкала NASA/ISO 16290 закінчується на **TRL 9** і вимірює виключно **готовність самої технології**. Технологія на TRL 9 не стає «технічно готовішою» від друку 1 млн анкерів замість 100 — масштаб, cross-biome адаптація та forest-level emergence є **системною та виробничою** зрілістю, а не технологічною. Тому ми НЕ вигадуємо «TRL 10-12» (це виглядало б некомпетентно перед Horizon Europe / ESA, які суворо дотримуються 1-9), а використовуємо профільні шкали:
   - **SRL (System Readiness Level)** — інтеграційна/системна зрілість: cross-biome generalization, forest-level emergence, edge self-evolution, AI-adversarial security.
   - **MRL (Manufacturing Readiness Level, 1-10)** — виробнича зрілість: серійний друк 5 SKU, заводське штампування.
-  - Деталі — [`00_03 §7`](00_03_TRL_Matrix_HIL_and_Beyond) Beyond TRL 9 — Planetary Intelligence Gaps.
+  - Деталі — [`00_08 §1`](00_08_Beyond_TRL9_Planetary_Roadmap) Beyond TRL 9 — Planetary Intelligence Gaps.
 
-  > **✅ Cross-doc sync (2026-05-28, виконано):** Легасі-позначки «TRL 10-12» мігровано на `SRL:*` / `MRL:*` у [`00_03 §7`](00_03_TRL_Matrix_HIL_and_Beyond), label-whitelist/Projects-схемі [`00_05 §1.1`](00_05_GitHub_Projects_and_IaC_Automation), `lib/github_bootstrap.rb` (`TRL_OPTIONS=(1..9)` + нове поле `Readiness Horizon`) та споживачах (00_07, 01_01, 03_03, 03_04, 05_03). 👤 Залишилось: перезапустити `rake github:project_fields`, щоб додати поле `Readiness Horizon` на live-дошку (issues з TRL:10-12 не існує, тож re-tag не потрібен).
+  > **✅ Cross-doc sync (2026-05-28, виконано):** Легасі-позначки «TRL 10-12» мігровано на `SRL:*` / `MRL:*` у [`00_08 §1`](00_08_Beyond_TRL9_Planetary_Roadmap), label-whitelist/Projects-схемі [`00_05 §1.1`](00_05_GitHub_Projects_and_IaC_Automation), `lib/github_bootstrap.rb` (`TRL_OPTIONS=(1..9)` + нове поле `Readiness Horizon`) та споживачах (00_07, 01_01, 03_03, 03_04, 05_03). 👤 Залишилось: перезапустити `rake github:project_fields`, щоб додати поле `Readiness Horizon` на live-дошку (issues з TRL:10-12 не існує, тож re-tag не потрібен).
 
 ### Суть паралельного інжинірингу
 

@@ -177,7 +177,7 @@ end
 | Queen-to-Queen Backhaul Mesh | Concept у [`02_05`](02_05_Queen_Hardware_and_Starlink) | 🟡 Concept, planned Phase 2 |
 | Helium fallback emit (Queen-side LoRaWAN) | Queen firmware `queen_helium_lorawan_uplink()` | 🟡 ARCH.34 planned (Soldier-side `helium_compat_emit` відкинуто — Soldier не несе LoRaWAN MAC stack) |
 | Ingress Proxy (CoAP buffer) | INF.4 / INF.6 | 🟡 Planned (P1) |
-| Conductor L2 cluster heads (formerly "Sergeant") | [`00_03 §8.1`](00_03_TRL_Matrix_HIL_and_Beyond) | 🟡 Concept (HW.27, TRL 1) |
+| Conductor L2 cluster heads (formerly "Sergeant") | [`00_08 §2.1`](00_08_Beyond_TRL9_Planetary_Roadmap) | 🟡 Concept (HW.27, TRL 1) |
 
 ---
 

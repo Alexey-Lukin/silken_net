@@ -547,7 +547,7 @@ nTop — провідний інструмент для генерації мі�
 
 **Наступний крок:** Передати STL з nTop на завод разом із специфікацією дворівневої шорсткості (розділ 1).
 
-**🟡 Архітектурне обмеження nTop:** GUI-only workflow → **AI-агенти сліпі у візуальних інтерфейсах** (Claude/Copilot/Cursor не можуть "клікати" по нодах). Це блокер для AI-Native Engineering принципу (`00_02 §2`). Параметричні моделі зберігаються у бінарних `.ntop` файлах — **не Git-friendly**, без зрозумілого diff'у, без code review. Для масової вибірки per-species геометрій (5 SKU: pine/oak/broadleaf/mangrove/tropical — `00_03 §7.3`) потрібна Code-as-CAD парадигма.
+**🟡 Архітектурне обмеження nTop:** GUI-only workflow → **AI-агенти сліпі у візуальних інтерфейсах** (Claude/Copilot/Cursor не можуть "клікати" по нодах). Це блокер для AI-Native Engineering принципу (`00_02 §2`). Параметричні моделі зберігаються у бінарних `.ntop` файлах — **не Git-friendly**, без зрозумілого diff'у, без code review. Для масової вибірки per-species геометрій (5 SKU: pine/oak/broadleaf/mangrove/tropical — [`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)) потрібна Code-as-CAD парадигма.
 
 ### PicoGK + C# — Code-as-CAD Alternative (паралельний R&D track)
 
@@ -637,12 +637,12 @@ public class Zone1Anode
 - Q1 2026: Setup C# проєкту + PicoGK build з GitHub (1 тиждень)
 - Q1 2026: Генерація Stage 1 SLA-моделі через PicoGK (паралельно з nTop reference)
 - Q2 2026: Якщо PicoGK генерує валідні STL без topology errors → **migration plan з nTop**
-- Q2 2026: Per-species CEM (5 SKU pine/oak/broadleaf/mangrove/tropical) → доводить переваги code-as-CAD для cross-biome roadmap (`00_03 §7.3`)
+- Q2 2026: Per-species CEM (5 SKU pine/oak/broadleaf/mangrove/tropical) → доводить переваги code-as-CAD для cross-biome roadmap ([`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap))
 
 **Cross-references:**
 - AI-Native Engineering philosophy → [`00_02 §4a`](00_02_AI_Native_Engineering_and_TRL) (In Silico для Hardware Stream)
 - TPMS геометрія анкера → [`01_01 §3`](01_01_Coaxial_Gyroid_Topology_and_PEEK) (поточна nTop-based)
-- Cross-biome generalization → [`00_03 §7.3`](00_03_TRL_Matrix_HIL_and_Beyond)
+- Cross-biome generalization → [`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)
 - Noyron AI (LEAP 71 closed, для довідки) — пропрієтарний layer над PicoGK
 
 ### Перша Партія — 100 одиниць (Київ / Дніпро)

@@ -62,6 +62,7 @@
 | Факт | SSOT home |
 |---|---|
 | Per-module TRL матриця | `00_03 §1` (агрегат-дім). Модульний док = власний member-TRL у Статус (це джерело, не дубль); заборонено відтворювати всю матрицю поза §1 |
+| Beyond-TRL-9 / SRL-MRL R&D-агенда (Planetary Intelligence gaps + фрактальне масштабування) | `00_08` |
 | AES per-channel modes | `03_05 §3.7` |
 | Lorenz константи | `03_04 §4.1` |
 | Tokenomics rate / slashing thresholds / insurance pool | `05_03` · `05_05 §3/§4` |

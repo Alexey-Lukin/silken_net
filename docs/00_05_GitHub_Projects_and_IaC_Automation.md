@@ -50,7 +50,7 @@
 | :--- | :--- | :--- |
 | **Current TRL** | Single Select | Поточний рівень (**1-9**, NASA/ISO 16290 — лише технологічна готовність) згідно з [`00_02 §1`](00_02_AI_Native_Engineering_and_TRL). Головна колонка на дошці "Матриця TRL". |
 | **Target TRL** | Single Select | Цільовий рівень (**1-9**) для поточного циклу. TRL НЕ розширюється до «10-12» (це нестандартно). |
-| **Readiness Horizon** | Single Select | Beyond-TRL-9 R&D-епіки ([`00_02 §1`](00_02_AI_Native_Engineering_and_TRL), [`00_03 §7`](00_03_TRL_Matrix_HIL_and_Beyond)): **SRL** (System Readiness — forest-level emergence, edge self-evolution, cross-biome generalization, AI-adversarial security) стадії `SRL:Concept` / `SRL:Pilot` / `SRL:Deployed`, та **MRL** (Manufacturing Readiness, `MRL:8/9/10` — серійний друк 5 SKU). |
+| **Readiness Horizon** | Single Select | Beyond-TRL-9 R&D-епіки ([`00_02 §1`](00_02_AI_Native_Engineering_and_TRL), [`00_08 §1`](00_08_Beyond_TRL9_Planetary_Roadmap)): **SRL** (System Readiness — forest-level emergence, edge self-evolution, cross-biome generalization, AI-adversarial security) стадії `SRL:Concept` / `SRL:Pilot` / `SRL:Deployed`, та **MRL** (Manufacturing Readiness, `MRL:8/9/10` — серійний друк 5 SKU). |
 | **Assigned Agent** | Single Select | Виконавець: `Architect`, `AI Agent`, `Lab (ChNU)`, `Factory`, `nTop Expert`. |
 | **Module** | Single Select | Компонент екосистеми (наприклад, `04: Server Core`). Формує Swimlanes. |
 | **Appetite** | Single Select | `Small Batch` (1-2w) або `Big Bet` (6w) згідно з методологією Shape Up. |
@@ -72,7 +72,7 @@ PROJECT_ID="PVT_xxxx"  # отримати через `gh project list --owner Al
 TRL_OPTIONS=(TRL:1 TRL:2 TRL:3 TRL:4 TRL:5 TRL:6 TRL:7 TRL:8 TRL:9)
 # ↑ Шкала 1-9 (NASA/ISO 16290). TRL НЕ розширюється до 10-12 (00_02 §1).
 READINESS_HORIZON_OPTIONS=(SRL:Concept SRL:Pilot SRL:Deployed MRL:8 MRL:9 MRL:10)
-# ↑ Beyond TRL 9 = окремий вимір SRL/MRL (00_02 §1, 00_03 §7), не "TRL 10-12".
+# ↑ Beyond TRL 9 = окремий вимір SRL/MRL (00_02 §1, 00_08 §1), не "TRL 10-12".
 
 for FIELD in "Current TRL" "Target TRL" "Readiness Horizon" "Assigned Agent" "Module" "Appetite" "R&D Cluster" "Shape Up Stage" "Cycle" "Academic Semester"; do
   echo "Ensuring field: $FIELD"

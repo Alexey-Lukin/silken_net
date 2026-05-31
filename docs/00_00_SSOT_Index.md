@@ -73,11 +73,12 @@ Soldier (Tree)         Soldier (Tree)         Soldier (Tree)
 
 - [00\_01\_Vision\_Mission\_and\_Roadmap](00_01_Vision_Mission_and_Roadmap) (Місія, проблема VCM, науковий підхід, NaaS, дорожня карта, Proof-of-Growth; філософія Slashing → 05_05)
 - [00\_02\_AI\_Native\_Engineering\_and\_TRL](00_02_AI_Native_Engineering_and_TRL) (Філософія: NASA TRL, Intent-First, Wiki-First, AI Pipeline + Validation Gate)
-- [00\_03\_TRL\_Matrix\_HIL\_and\_Beyond](00_03_TRL_Matrix_HIL_and_Beyond) (Канон per-module TRL-матриці + per-domain TRL + HIL-симулятори + Beyond-TRL-9 агенда)
+- [00\_03\_TRL\_Matrix\_HIL\_and\_Beyond](00_03_TRL_Matrix_HIL_and_Beyond) (Канон per-module TRL-матриці + per-domain TRL + HIL-симулятори; Beyond-TRL-9 агенда винесена → 00_08)
 - [00\_04\_Shape\_Up\_Operations\_and\_RnD\_Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) (Операційний template: 6+2 цикли, 4 R&D кластери, Betting Table, Async-Review)
 - [00\_05\_GitHub\_Projects\_and\_IaC\_Automation](00_05_GitHub_Projects_and_IaC_Automation) (Projects V2 fields + Labels-as-Code + GitHub Actions workflows)
 - [00\_06\_SSOT\_Documentation\_Standard](00_06_SSOT_Documentation_Standard) (Стандарт канон-доків: skeleton + home-registry + drift-tooling + restructure-метод)
 - [00\_07\_Action\_Plan\_Tracker](00_07_Action_Plan_Tracker) (🔴 Живий документ — аудит блокерів, план дій, Sprint tracking)
+- [00\_08\_Beyond\_TRL9\_Planetary\_Roadmap](00_08_Beyond_TRL9_Planetary_Roadmap) (Beyond TRL 9: 4 Planetary-Intelligence прогалини + фрактальна мережева топологія — far-horizon R&D 2026–2040+)
 
 ---
 

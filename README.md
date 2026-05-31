@@ -259,11 +259,12 @@ kamal deploy
 - [`00_00`](docs/00_00_SSOT_Index.md) — SSOT index + системна карта (8 рівнів кіберфізики) + reading order
 - [`00_01`](docs/00_01_Vision_Mission_and_Roadmap.md) — візія, місія, дорожня карта, NaaS, Proof-of-Growth (Slashing → [`05_05`](docs/05_05_Slashing_and_Risk_Policy.md))
 - [`00_02`](docs/00_02_AI_Native_Engineering_and_TRL.md) — AI-Native філософія: NASA TRL, Intent-First, Wiki-First, Validation Gate
-- [`00_03`](docs/00_03_TRL_Matrix_HIL_and_Beyond.md) — per-module TRL-матриця + per-domain TRL + HIL + Beyond-TRL-9
+- [`00_03`](docs/00_03_TRL_Matrix_HIL_and_Beyond.md) — per-module TRL-матриця + per-domain TRL + HIL-симулятори (Beyond-TRL-9 → `00_08`)
 - [`00_04`](docs/00_04_Shape_Up_Operations_and_RnD_Clusters.md) — Shape Up 6+2 цикли, 4 R&D кластери, Betting Table, Async-Review
 - [`00_05`](docs/00_05_GitHub_Projects_and_IaC_Automation.md) — Projects V2 + Labels-as-Code + GitHub Actions workflows
 - [`00_06`](docs/00_06_SSOT_Documentation_Standard.md) — стандарт канон-доків (skeleton + home-registry + drift-tooling + restructure-метод)
 - [`00_07`](docs/00_07_Action_Plan_Tracker.md) — 🔴 живий трекер незавершених задач (DOC/SW/SEC/ARCH/UNI аудит)
+- [`00_08`](docs/00_08_Beyond_TRL9_Planetary_Roadmap.md) — Beyond TRL 9: Planetary Intelligence Gaps + фрактальна мережева топологія (far-horizon R&D 2026–2040+)
 
 ### 🏛️ Tier I — Система (01–06)
 

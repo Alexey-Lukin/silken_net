@@ -153,7 +153,7 @@ contract SilkenGovernor is Governor, GovernorSettings, GovernorCountingSimple,
 >
 > **Філософська позиція:** SCC — це **критична інфраструктура планетарного клімату**. Стандарт безпеки має бути **на рівні national-grid SCADA**, а не «не гірше за DeFi 2020–2024».
 >
-> **Деталі повної R&D-програми:** [`00_03 §7.4`](00_03_TRL_Matrix_HIL_and_Beyond) — Apex Predator Defense Gap. Партнери: Аблязов Д. (СЄУ, правова рамка), Карапетян (ChDTU, статистика fraud detection), Ярмілко (firmware PQC integration).
+> **Деталі повної R&D-програми:** [`00_08 §1.4`](00_08_Beyond_TRL9_Planetary_Roadmap) — Apex Predator Defense Gap. Партнери: Аблязов Д. (СЄУ, правова рамка), Карапетян (ChDTU, статистика fraud detection), Ярмілко (firmware PQC integration).
 
 ## 6. Bonding Curves — Динамічне Ціноутворення (Перспектива TRL 9+)
 
