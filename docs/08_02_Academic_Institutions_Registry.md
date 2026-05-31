@@ -86,7 +86,7 @@
 | д.т.н. **Осауленко І.А.** | управління R&D-портфелем | Кластеризація R&D-портфеля ([`00_04`](00_04_Shape_Up_Operations_and_RnD_Clusters)); Потрійна спіраль Smart Forest; Data Mining Edge AI | Ст. 9 |
 | ст.викл. **Любченко К.М.** | нейромережі, GA, Master of Logic | GA-оптимізація backend ML (`InsightGeneratorService`, [`04_02`](04_02_Business_Logic_and_Services), Open Research); NSGA-II TinyML ([`03_03`](03_03_TinyML_Acoustic_Inference)); КНФ/ДНФ верифікація контрактів ([`05_02`](05_02_Proof_of_Growth_Pipeline)) | Ст. 10/17 |
 
-> **План публікацій ЧНУ:** [`08_01 §1`](08_01_Joint_Publications_and_IP_Strategy) (Hard Science + ФОТІУС, Ст. 1–10) · [`08_01 §1C`](08_01_Joint_Publications_and_IP_Strategy) (ФОТІУС × ЧДТУ, Ст. 15–24) · [`08_01 §1G`](08_01_Joint_Publications_and_IP_Strategy) (ректорат ННІ, Ст. 34–35).
+> **План публікацій ЧНУ:** [`08_01 §1`](08_01_Joint_Publications_and_IP_Strategy) (Hard Science + ФОТІУС) · [`08_01 §1C`](08_01_Joint_Publications_and_IP_Strategy) (ФОТІУС × ЧДТУ синергія) · [`08_01 §1G`](08_01_Joint_Publications_and_IP_Strategy) (ректорат ННІ — біоекономіка/синергетика).
 
 ---
 
@@ -117,7 +117,7 @@ B2G-міст до ДСНС + наукове обґрунтування пара�
 | **Зобенко Н.** | актуарій | Актуарне обґрунтування blockchain-оракулів параметр. страхування → [`07_01 §7`](07_01_Nature_as_a_Service_Contracts), [`05_05`](05_05_Slashing_and_Risk_Policy) | Ст. 25 |
 | **Несен І.** | інжиніринг | Нетравматична заміна/деінсталяція капсули (динамометр) → [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface), [`01_04`](01_04_CODIT_and_Xylemointegration) | — |
 
-> **План публікацій ЧІПБ:** [`08_01 §1D`](08_01_Joint_Publications_and_IP_Strategy) (Ст. 25–27 — параметричне страхування, ДСНС SOP, fire model).
+> **План публікацій ЧІПБ:** [`08_01 §1D`](08_01_Joint_Publications_and_IP_Strategy) (параметричне страхування, ДСНС SOP, fire model).
 
 ---
 
@@ -133,7 +133,7 @@ B2G-міст до ДСНС + наукове обґрунтування пара�
 | **Суховой Г.** | токсикологія | Токсикологія Ti-6Al-4V (V/Al release у ксилему) → [`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 29 |
 | **Глущенко О.** | покриття | Self-healing 8-HQ мікрокапсули — **already-canon** → [`01_02 §3`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Ст. 29 |
 
-> **План публікацій ЧМА:** [`08_01 §1E`](08_01_Joint_Publications_and_IP_Strategy) (Ст. 28–30 — біохімія EBFC, токсикологія Ti, ксилемоінтеграція).
+> **План публікацій ЧМА:** [`08_01 §1E`](08_01_Joint_Publications_and_IP_Strategy) (біохімія EBFC, токсикологія Ti, ксилемоінтеграція).
 
 ---
 
@@ -150,7 +150,7 @@ B2G-міст до ДСНС + наукове обґрунтування пара�
 | **Гедз М.Й.** | аудит D-MRV | Методологічний аудит pipeline (IoTeX→Chainlink→mint, DCI) → [`05_02`](05_02_Proof_of_Growth_Pipeline) | — |
 | **Денисенко Ю.М.** | промисловий дизайн | Біомімікрічний антивандальний PEEK-радом капсули → [`02_01`](02_01_Hardware_Architecture_and_BOM), [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) | Ст. 33 |
 
-> **План публікацій СЄУ:** [`08_01 §1F`](08_01_Joint_Publications_and_IP_Strategy) (Ст. 31–33 — токеноміка, RWA-право, промдизайн).
+> **План публікацій СЄУ:** [`08_01 §1F`](08_01_Joint_Publications_and_IP_Strategy) (токеноміка, RWA-право, промдизайн).
 | **Теліженко О.В.** | UX | B2B data-viz / audience-aware UI → [`04_04`](04_04_Phlex_UI_and_Tailwind) | 08_03 |
 
 ---
