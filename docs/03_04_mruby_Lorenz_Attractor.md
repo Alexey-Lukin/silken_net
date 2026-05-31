@@ -88,7 +88,7 @@ dz/dt = x · y - β · z
 >
 > Третій рівень hardening — **fixed-point Q-формат:** вхідні дані × 10⁶, всі арифметичні операції у `int64_t`/Ruby `Integer` (немає overflow до 2⁶³ ≈ 9.2·10¹⁸). Тоді результат **бітово ідентичний на будь-якому процесорі**, від AVR до zkVM.
 >
-> Ціна: повне переписування `firmware/bio_contracts/bio_contract.rb`, `app/services/silken_net/attractor.rb`, всіх 50k parity-тестів, плюс ручне керування overflow (квадрати/добутки потрібно зрізати до Q-формату на кожному кроці Ейлера). Робота S→L залежно від обсягу регресії. Цінність — лише при переході до ZK-proof Lorenz (Risc Zero / SP1) або при підтримці радикально іншої HW-цілі (RV32E без FPU, тощо). До цього моменту Float-парність достатня. Зафіксовано як `[FW.45] Integer-Math Lorenz hardening — deferred until ZK-circuit milestone` у `docs/00_07_Action_Plan_Tracker`.
+> Ціна: повне переписування `firmware/bio_contracts/bio_contract.rb`, `app/services/silken_net/attractor.rb`, всіх 50k parity-тестів, плюс ручне керування overflow (квадрати/добутки потрібно зрізати до Q-формату на кожному кроці Ейлера). Робота S→L залежно від обсягу регресії. Цінність — лише при переході до ZK-proof Lorenz (Risc Zero / SP1) або при підтримці радикально іншої HW-цілі (RV32E без FPU, тощо). До цього моменту Float-парність достатня. Зафіксовано як `[FW.45] Integer-Math Lorenz hardening — deferred until ZK-circuit milestone` у [`00_07`](00_07_Action_Plan_Tracker).
 
 ### 1.3 Класичний Атрактор Лоренца (Метелик)
 
@@ -116,7 +116,7 @@ C₂ = (-√(β(ρ-1)), -√(β(ρ-1)), ρ-1) = (-8.485, -8.485, 27.0)
 > | `DR19 == 0x4C5A5354` AND `isfinite(x,y,z)` | RTC DR16-DR18 (warm restart, FW.6) | **Continuation:** продовження безперервної траєкторії після STOP2 wake-up. |
 > | `DR19 ≠ 0x4C5A5354` OR `!isfinite(x,y,z)` | `(x₀,y₀,z₀) = unpack_signed_unit_floats(HMAC-SHA256(K_seed, "init\|" \|\| epoch_day_be)[0..23])` | **Cold start (rare):** після VBAT loss. K_seed зберігається у Flash (Soldier) і `hardware_keys.lorenz_seed_hex` (backend), деривується при provisioning через `HKDF-SHA256(PROVISIONING_MASTER_KEY, salt="silken-lorenz-v1", info="silken-lorenz-seed\|<DID>", len=32)`. Daily epoch_day rotation дає forward secrecy ≤ 24 год. |
 >
-> **Чому K_seed замість chaos_seed/DID:** `chaos_seed` (HRNG) недетермінований — backend не зміг би відтворити Z. DID-as-seed (`SilkenNet::Attractor.calculate_z(did, …)`) був public-input → атакер з open-source формулою Лоренца передбачає очікуваний Z для будь-якого дерева. K_seed — **private**, ніколи не залишає пристрій/сервер у відкритому вигляді (HKDF деривується незалежно з `PROVISIONING_MASTER_KEY`). Закриває чотири фундаментальні вади (sniff/correlation/identifier-as-key/forward-secrecy) — див. SEC.11 у `docs/00_07_Action_Plan_Tracker`.
+> **Чому K_seed замість chaos_seed/DID:** `chaos_seed` (HRNG) недетермінований — backend не зміг би відтворити Z. DID-as-seed (`SilkenNet::Attractor.calculate_z(did, …)`) був public-input → атакер з open-source формулою Лоренца передбачає очікуваний Z для будь-якого дерева. K_seed — **private**, ніколи не залишає пристрій/сервер у відкритому вигляді (HKDF деривується незалежно з `PROVISIONING_MASTER_KEY`). Закриває чотири фундаментальні вади (sniff/correlation/identifier-as-key/forward-secrecy) — див. SEC.11 у [`00_07`](00_07_Action_Plan_Tracker).
 >
 > **[FW.5]** `delta_t_s` та `vcap_mv` визначають β-пертурбацію в обох гілках. Default-значення (`BASELINE_DELTA_T_S=60`, `NOMINAL_VCAP_MV=3300`) роблять β=BASE_BETA при відсутності фізичного сигналу.
 >
@@ -690,7 +690,7 @@ if (mrb) {
 >
 > **Майбутній напрям (Beyond TRL 9 / SRL roadmap) — Chimera States у network of coupled attractors:** розширити `bio_contract.rb` так, щоб входи атрактора містили **aggregated neighbor signals** (median Z у кластері за останню годину, отриманий через stigmergic LoRa-broadcast). Це дає математично описуваний колективний гомеостаз — теорія Куромото-Баттогтох (2002) **chimera states** передбачає, що такі мережі утворюють частково синхронізовані, частково хаотичні patterns, які точно віддзеркалюють реальну структуру здорового лісу.
 >
-> **Партнери:** Кирилюк (синергетика економічних систем, [`08_02 §1A`](08_02_Academic_Institutions_Registry)), Гусак (нелінійна динаміка, [`08_02 §1A`](08_02_Academic_Institutions_Registry)), Порубльов (кібернетика FOTIUS, `08_02`).
+> **Партнери:** Кирилюк (синергетика економічних систем, [`08_02 §1A`](08_02_Academic_Institutions_Registry)), Гусак (нелінійна динаміка, [`08_02 §1A`](08_02_Academic_Institutions_Registry)), Порубльов (кібернетика FOTIUS, [`08_02`](08_02_Academic_Institutions_Registry)).
 >
 > **Деталі повної R&D-програми:** [`00_08 §1.1`](00_08_Beyond_TRL9_Planetary_Roadmap) — Forest-Level Emergence Gap.
 

@@ -309,6 +309,43 @@ RSpec.describe DocsLinter do
     end
   end
 
+  describe ".bare_doc_ref" do
+    let(:ids) { %w[02_03 05_05 06_07 07_02].to_set }
+
+    it "flags a bare code-span doc-id not wrapped in a link" do
+      hits = described_class.bare_doc_ref("02_01_Hardware", "деталі — `06_07`.\n", ids)
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("06_07")
+    end
+
+    it "flags docs/-prefixed and full-filename code-spans" do
+      expect(described_class.bare_doc_ref("02_01_Hardware", "(`docs/06_07`)\n", ids).size).to eq(1)
+      expect(described_class.bare_doc_ref("02_01_Hardware", "(`07_02_Unit_Economics_and_BOM`)\n", ids).size).to eq(1)
+    end
+
+    it "passes a linked ref and a §-ref (bare_section_ref's domain, has no match here)" do
+      expect(described_class.bare_doc_ref(
+        "02_01_Hardware", "див. [`06_07`](06_07_CICD_and_Runbook_Index)\n", ids)).to be_empty
+      expect(described_class.bare_doc_ref("02_01_Hardware", "див. `02_03 §9.6`\n", ids)).to be_empty
+    end
+
+    it "does NOT flag a retired/unknown doc-id (not in valid_ids → stays prose)" do
+      expect(described_class.bare_doc_ref(
+        "08_03_Stakeholders", "колишнього `04_07` при реструктуризації\n", ids)).to be_empty
+    end
+
+    it "skips fenced code" do
+      expect(described_class.bare_doc_ref("02_01_Hardware", "```\nсм `06_07`\n```\n", ids)).to be_empty
+    end
+
+    it "exempts index / standard-owner / tracker / appendix / manifesto" do
+      %w[00_00_SSOT_Index 00_06_SSOT_Documentation_Standard 00_07_Action_Plan_Tracker
+         02_06_Legacy_Breadboard_Appendix manifest].each do |b|
+        expect(described_class.bare_doc_ref(b, "`06_07`\n", ids)).to be_empty
+      end
+    end
+  end
+
   describe ".magic_marker_hex_drift" do
     it "passes little-endian (RITE=0x45544952) and big-endian (LZST=0x4C5A5354) markers" do
       md = %(magic "RITE" = 0x45544952\nRTC magic `LZST` = 0x4C5A5354 (FW.6)\n)

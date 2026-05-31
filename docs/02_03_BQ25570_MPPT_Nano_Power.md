@@ -631,7 +631,7 @@ H = 38.25 / (81 − 15.04) = 0.58 години = 35 хв
 
 **Затверджено для v3:**
 1. **TX power +14 dBm @ SF9** замість +22 dBm @ SF7 (Сценарій C). Залежить від реального link budget Queen↔Soldier — потребує польового тесту на полігоні (запит до `02_02 / 10_xx`).
-2. **STM32WLE5JC STOP2 RTC-only mode** — sleep current 300 nA замість 1.07 µA (firmware change у `03_01_Firmware_Lifecycle_and_DMA`).
+2. **STM32WLE5JC STOP2 RTC-only mode** — sleep current 300 nA замість 1.07 µA (firmware change у [`03_01`](03_01_Firmware_Lifecycle_and_DMA)).
 3. **Buffer cap §6:** 47µF 25V X7R 1210 (Конфігурація B) — достатньо для +14 dBm pulse.
 4. **Цільовий цикл:** 1 TX / 1.5–2 години — `mruby BioContract` адаптивно подовжує інтервал у зимовий період.
 
@@ -642,7 +642,7 @@ H = 38.25 / (81 − 15.04) = 0.58 години = 35 хв
 > E_gen_winter = 5 × 3600 × 0.65 (η_boost lower at lower I_IN) = 11.7 мДж/год
 > Sleep тільки: 15.04 мДж/год → НЕГАТИВ навіть без TX
 > ```
-> → Зимовий режим: повне відключення MCU sleep current через PFET cut-off, TX лише при VSTOR ≥ 5.0V (накопичення кілька днів). Деталі — ARCH.8 "мовчання = здоров'я" та `02_05_Queen_Hardware_and_Starlink` HW.14.
+> → Зимовий режим: повне відключення MCU sleep current через PFET cut-off, TX лише при VSTOR ≥ 5.0V (накопичення кілька днів). Деталі — ARCH.8 "мовчання = здоров'я" та [`02_05`](02_05_Queen_Hardware_and_Starlink) HW.14.
 
 ### 9.9. Fauna Acoustic Overlay (ARCH.39 — поза baseline TX-циклом)
 
@@ -742,5 +742,5 @@ EBFC (Ti-6Al-4V anchor)  >500 мВ
 
 **Документація:**
 - [ ] Оновити цей документ з верифікованими значеннями
-- [ ] Оновити BOM `02_01_Hardware_Architecture_and_BOM` (TX power, sleep current, cap spec)
-- [ ] Оновити firmware `03_01_Firmware_Lifecycle_and_DMA` (STOP2 RTC-only flag)
+- [ ] Оновити BOM [`02_01`](02_01_Hardware_Architecture_and_BOM) (TX power, sleep current, cap spec)
+- [ ] Оновити firmware [`03_01`](03_01_Firmware_Lifecycle_and_DMA) (STOP2 RTC-only flag)

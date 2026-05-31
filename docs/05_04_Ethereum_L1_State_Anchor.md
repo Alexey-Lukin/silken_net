@@ -27,6 +27,7 @@
 
 <!-- TOC:AUTO:START -->
 - [Огляд](#-огляд)
+- [Статус Імплементації](#-статус-імплементації)
 - [1. Cron-Розклад (The Ethereum Seal)](#1-cron-розклад-the-ethereum-seal)
 - [2. Sidekiq Worker](#2-sidekiq-worker)
 - [3. Алгоритм Формування state_root](#3-алгоритм-формування-state_root)

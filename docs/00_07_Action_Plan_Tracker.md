@@ -115,7 +115,7 @@
 - ✅ 13 alert rules IaC (5P0/5P1/3P2) → `deploy/grafana/alerts/` + counter `silkennet_telemetry_acoustic_overflow_total`. · [ ] 👤 замінити `${DATASOURCE_UID}` + notification channel (Slack/Email/PagerDuty)
 
 #### S2.5 — PartitionMaintenanceWorker failure alert (silent monthly PG-crash guard)
-- **P1** · 🤖 · → `06_03 §BLOCKER-5`
+- **P1** · 🤖 · → `06_03 §2.8`
 - ✅ закрито (2026-05-29): rescue воркера інкрементить counter `silkennet_partition_maintenance_failures_total` (рек. `sidekiq_jobs_failed_total` НЕ емітиться) + Sentry; P0 alert `sn-alert-partition-maintenance-failed` (`increase[24h]>0`) у `deploy/grafana/alerts/`; spec. Захист від `no partition of relation` крах 1-го числа для 4 RANGE-таблиць.
 
 #### S3.2 — dClimate Real API verification
@@ -189,7 +189,7 @@
 - Compilation unblocked (stub fallback); реальна модель + uncomment лишаються. Блокує acoustic detection (chainsaw/cavitation/wind) + Mongabay pivot. · [ ] 👤 тренування Path B log-mel 5-class (Бушин/Любченко) → `silken_net_audio_model.h` (заміна stub через `__has_include`) · [ ] 🔗 verify Tensor Arena (`arm-none-eabi-size`) + uncomment `main.c:1422` + golden-vector тести · [ ] 🌿 FW.4-EXT (post-TRL 7): 5-й клас `fauna_activity` dawn/dusk (`03_03 §10`), залежить від UNI.11+UNI.13a; альт. ACI descriptor
 
 #### FW.18b — OTA threshold invalid counter (production-visibility)
-- **P2** · 🔗 · → `03_03 §FW.18`
+- **P2** · 🔗 · → `03_03 §5`
 - ✅ saturating counter `tinyml_threshold_invalid_count` (відкидає NaN/out-of-range/інверсію OTA payload) + 7 host-тестів. · [ ] 🔗 wiring до LoRa packet (перерозподіл бітів) · [ ] 🔗 backend Prometheus `tinyml_threshold_invalid_total{soldier_did}` + Grafana
 
 #### FW.7 — Float vs BigDecimal divergence (TRL 6 mitigation)
@@ -201,7 +201,7 @@
 - ✅ Rails + firmware-парсер `Soldier_Handle_CMD_SET_THRESHOLDS` (freeze-contract, `FW8_PARSER_ENABLED 0`) + 12 host-тестів (firmware 2.0/45.0 vs backend per-species `TreeFamily`). · [ ] 🟡 deferred TRL-7: активувати `FW8_PARSER_ENABLED 1` після FW.21 звільнить RTC register
 
 #### FW.17 — Key rotation mechanism (Hash Ratchet KDF)
-- **P2** · 🔗 · → `03_05 §Ротація ключів`
+- **P2** · 🔗 · → `03_05 §3`
 - Після FW.1. Статичний ключ при Factory Flashing → немає rotation без re-flash (GDPR/ISO 27001/NIST SP 800-57). Рішення: Hash Ratchet KDF (`CMD:ROTATE_KEY` → `K_current`→`K_next` AES-KDF, PFS). · [ ] 🔗 дизайн протоколу + CoAP command + cluster ACK + Flash/RTC storage + ECDH alt
 
 #### FW.19 — Float32 vs Float64 mruby compile flags
@@ -217,7 +217,7 @@
 - ✅ `EmaState` + 4 функції (`EMA_Update`/`Get_DeltaT_Sec`/`Get_Vcap_Mv`/`Is_Warmed_Up`) + RTC DR10+DR12 (звільнено DR11) + 102 host-тести (EMA на MCU зменшує LoRa-трафік). · [ ] 👤 інтегрувати з Kalman filter design (E.10 — Косенук)
 
 #### FW.22 — acoustic_events payload overflow (uint16 → uint8 truncation)
-- **P2** · 🔗 · → `03_03 §BLOCKER-7`
+- **P2** · 🔗 · → `03_03 §7.1`
 - ✅ тип `uint8_t` + saturating increment (cap 255) + backend overflow-warning + Prometheus counter + 8 тестів. · [ ] 🔗 АБО 2 байти в payload (перепакування — FW.2 CCM)
 
 #### FW.23 — OTA firmware broadcast: ECB без автентифікації
@@ -229,7 +229,7 @@
 - Choice gate закрито: **Path B (log-mel + 2D-CNN)** baseline (Path A провалює fauna layered soundscape; Path C +5-10KB arena на 64KB SRAM; ESC-консенсус log-mel — Salamon&Bello/BirdNET; CMSIS-DSP вже в стеку; Mongabay → fauna-ready). Owner: Бушин/Любченко (ML) + Ярмілко (CMSIS-DSP). · [ ] 👤 ML-партнер підтверджує log-mel контракт `03_03 §3.4` (16k/n_fft=512/40 mel/HTK/ln+1e-6) · [ ] 🤖 `Compute_LogMel` (`arm_rfft_fast_f32` + HTK mel-bank sparse + `arm_vlog_f32`, **НЕ** `arm_mfcc_f32`) + golden-vector тести (tol 1e-3) · [ ] 🤖 verify TENSOR_ARENA (~15-30KB, FW.26) + inference тести · [ ] 🌿 UNI.11+UNI.13a dataset dawn/dusk · [ ] 🤖 fallback Path C (TFLM) — потребує re-verify arena
 
 #### FW.26 — TENSOR_ARENA_SIZE ніколи не верифіковано
-- **P1** · 🤖 · → `03_03 §BLOCKER-3`, `04_06`
+- **P1** · 🤖 · → `03_03 §4.3`, `04_06`
 - ✅ CI gate `make size-check` (host `.bss+.data`<51200B; soldier 2.5K/queen 12.4K). Точний arena невідомий (~8-16KB оцінка); >46KB → stack overflow при Lorenz (250 ітер). · [ ] 🤖 `arm-none-eabi-size` після моделі (FW.4) → виміряти `.bss+.data` · [ ] 🤖 якщо >46KB — INT8 quantization/prune
 
 #### FW.27 — OTA broadcast: відсутня RX-верифікація Soldier
@@ -394,7 +394,7 @@
 - [ ] 👤 RF Keep-Out Zone verification
 
 #### HW.11 — Conformal Coating (REVISED 2026-05-16: Sylgard відхилено через TinyML)
-- **P1** · 👤 · → `02_01 §BLOCKER-1`, `02_02 §3.4`
+- **P1** · 👤 · → `02_01`, `02_02 §3.4`
 - **Опис:** Раніше планувався full-potting Sylgard 184 (Shore A < 50 проти crack кварцу при -20°C). Архітектурна рецензія виявила **критичний конфлікт**: Sylgard 184 — відомий **акустичний демпфер** (3-bands attenuation 15–25 dB @ 16 kHz), який глушить п'єзодиск Soldier для TinyML-детекції бензопили та кавітації ксилеми (`03_03`).
 - **Нове рішення (v3):** **Parylene C 10 µm (CVD)** для серійного виробництва — конформне покриття всіх SMD-компонентів та припою через CVD-деposition; selective masking п'єзодиска (відкрита поверхня або тонка PDMS ≤ 10 µm); внутрішній об'єм капсули — повітря (опційно desiccant). Для прототипів TRL 4–5 — acrylic conformal (Humiseal 1A33) easily reworkable. ✅ Acoustically transparent, ✅ IP67 з O-ring.
 - **Блокує:** Hardware freeze, IP67 certification, TinyML функціональність
@@ -404,14 +404,14 @@
 - [ ] 👤 Верифікувати з кварцовим резонатором при -20°C / +60°C (Parylene Shore D ~50, м'якший за air-gap воду)
 
 #### HW.12 — EBFC upper voltage limit >5.5V protection
-- **P1** · 👤 · → `02_01 §BLOCKER-2`
+- **P1** · 👤 · → `02_03 §4`
 - **Опис:** При тривалій інсоляції EBFC може генерувати напругу >5.5V → overcharge supercap → деградація/вибух
 - **Блокує:** Hardware safety, TRL 5
 - [ ] 👤 Верифікувати BQ25570 OV protection threshold (VBAT_OV = 5.5V, див. HW.7)
 - [ ] 👤 Додати TVS-діод або зенерівський обмежувач як backup
 
 #### HW.13 — MPPT coefficient verification for EBFC
-- **P1** · 👤 · → `02_03 §BLOCKER-2`
+- **P1** · 👤 · → `02_03 §4`
 - **Опис:** Поточний MPPT = 50% VOC (R_OC1=R_OC2=10MΩ) — **занадто низько для EBFC**. EBFC (GOx/Laccase) має специфічну поляризаційну криву (Міхаеліс-Ментен + Тафель), MPP лежить у діапазоні 60-70% VOC. При 50% — зона масо-транспортних обмежень ферменту
 - **Рекомендація (REVISED 2026-05-16 — TI convention):** Почати з 65%, з іменуванням за TI BQ25570 datasheet SLUSBH2G §8.2.3.2: **R_OC1 = 10.0 MΩ** (нижнє плече, VOC_SAMP → GND), **R_OC2 = 5.36 MΩ** (верхнє плече, VSTOR → VOC_SAMP). Формула: V_MPP / V_OC = R_OC1 / (R_OC1 + R_OC2). ⚠️ Не плутати позначення — якщо запаяти за зворотньою конвенцією, фракція стане 35% замість 65% → знекровлення ферменту.
 - **Блокує:** Max EBFC power, optimal charge speed
@@ -585,7 +585,7 @@
 - [ ] 👤 Pre-fabrication sanity check vs `HW.8 BLOCKER-6` (B2B stack height впливає на Z-tolerance envelope)
 
 #### HW.30 — SMD Piezo + Acoustic Pad (Zero-Touch Wake) (NEW 2026-05-16)
-- **P2** · 👤 · → `02_01 §6.2`
+- **P2** · 👤 · → `02_01 §6`
 - **Опис:** Раніше — клеєний ZP-3/ZP-5 ∅27 мм через-отворний з дротами до GPIO. **Порушення Zero-Touch §5.2:** клеєння + дроти ≠ робот pick-and-place. Pogo Pins вже зайняті VIN_DC+GND.
 - **Нове рішення:** SMD-piezo (Murata 7BB-15-6L0 / TDK B-Series / Mallory MSR205P) на нижній стороні Power Deck + Bergquist Sil-Pad 1500ST (0.5–1.0 мм, Z_acoustic ≈ 1.5 МRayl ~ Ti) як coupling до Ti Zone 3. Сигнал через B2B (HW.29) до RF Deck → BAT54S → EXTI GPIO. Усе SMD; робот installs everything.
 - [ ] 👤 Вибрати SMD-piezo з 3 кандидатів (Murata/TDK/Mallory), компроміс sensitivity vs пасивний voltage swing на резонансі ~4 кГц
@@ -736,7 +736,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - 5-сторонній фреймворк (ChNU+ChDTU+ChIPB+ChMA+СЄУ+SilkenNet): bilateral NDA, IP-договір спільного авторства, патентні права, royalty. · [ ] 👤 патентний повірений (UA+EU) → bilateral NDA × 5 (паралельно UNI.4-14) → Master IP Framework Agreement · [ ] 🔗 після UNI.1/8/9/12/13
 
 #### BIZ.11 — RWA pilot реєстрація лісової ділянки через Polygon Hadron
-- **P2** · 👤+🤖 · → `07_01 §BLOCKER-6`
+- **P2** · 👤+🤖 · → `07_01 §8`
 - Hadron (ERC-3643) RWA-pilot: 1 ділянка з кадастром + biomass appraisal (LIDAR+ground) + Hadron compliance. · [ ] 👤 партнер-лісокористувач (post-war/Carpathian) + кадастр/biomass appraisal · [ ] 🤖 `Hadron::TokenizeForestPlotService` + KYC flow spec · [ ] 🔗 після BIZ.2 (MSA)
 
 #### 🌿 BIZ.12 — Horizon Europe CLUSTER 6 заявка (Biodiversity Monitoring, Mongabay pivot)
@@ -814,11 +814,11 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - Блокує Economic Whitepaper, Legal Framework, NaaS шаблони (`07_01` BLOCKER-1/3). · [ ] 👤 зустріч Чудаєва/Аблязова Н. + verify 7 посад + MoU СЄУ↔SilkenNet + workshops Аблязов (MSA) + Ус (ESG)
 
 #### UNI.15 — ЧНУ TISC engagement (патентний захист анкера + торгові марки)
-- **P1** · 👤+🤖 · → `08_03 §2.1.1` · 🔗 UNI.1 (MoU)
+- **P1** · 👤+🤖 · → `08_01 §2.1` · 🔗 UNI.1 (MoU)
 - TISC ЧНУ (WIPO/УкрНОІВІ) замість комерц. бюро (~$3-8k): prior art search (гіроїд Ti-6Al-4V+PEEK у Espacenet/PATENTSCOPE), UA→PCT→EU/US консультації, ТМ (SilkenNet™/Gaia 2.0™/SCC™), ~5-10k UAH. Подачу робить патентний повірений (TISC порадить кандидата). · [ ] 🤖 зібрати prior-art query-set (коаксіальний гіроїд, EBFC mediator, LoRa mesh) · [ ] 👤 контакт TISC (Спрягайло) + auxiliary MoU + prior art search + знайти повіреного + UA utility model → PCT (12міс, post-TRL 6)
 
 #### UNI.16 — ЧНУ Кафедра ІВ engagement (юридична експертиза RWA + токеноміки)
-- **P1** · 👤 · → `08_03 §2.1.2` · 🔗 UNI.1 (MoU)
+- **P1** · 👤 · → `08_01 §2.1` · 🔗 UNI.1 (MoU)
 - Кафедра ІВ ЧНУ — точковий UA-юрисдикційний review (СЄУ §1F = макро): (1) RWA ERC-3643 vs Лісовий Кодекс/ПЗФ, (2) SCC/SFC за ЗУ «Про віртуальні активи» 2022 + MiCA 2024, (3) NaaS у UA Civil Code, (4) авторське право на `bio_contract.rb`/`Attractor`. Ціль: 2 меморандуми. · [ ] 👤 контакт зав. кафедри + workshop з Аблязовим (UA×MiCA) + меморандум RWA (розблок `07_01` BLOCKER-6) + меморандум SCC-класифікація + sui generis NaaS review
 
 #### UNI.17 — ChDTU Хоменко (Кафедра металорізальних верстатів): прецизійна механіка + DMLS post-processing

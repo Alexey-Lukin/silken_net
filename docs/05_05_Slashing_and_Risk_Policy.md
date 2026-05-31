@@ -2,9 +2,9 @@
 
 ## 🎯 Мета
 
-Канонічний дім **політики Slashing & Risk**: класифікація причини деградації (**халатність** vs **форс-мажор** vs **невизначеність**), прогресивна формула штрафу (категорія A), параметричне страхування (категорія B), DAO peer-review (категорія C), anti-fraud cross-checks і multi-signal de-risk-інваріант. Документ описує **політику й принципи**; механіка реалізації живе у своїх домах і **реферується** звідси: контрактна — `05_03`, pipeline-детекція — `05_02`/`04_02`, страхування — `07_01`, governance — `05_06`.
+Канонічний дім **політики Slashing & Risk**: класифікація причини деградації (**халатність** vs **форс-мажор** vs **невизначеність**), прогресивна формула штрафу (категорія A), параметричне страхування (категорія B), DAO peer-review (категорія C), anti-fraud cross-checks і multi-signal de-risk-інваріант. Документ описує **політику й принципи**; механіка реалізації живе у своїх домах і **реферується** звідси: контрактна — [`05_03`](05_03_Tokenomics_SCC_and_SFC), pipeline-детекція — [`05_02`](05_02_Proof_of_Growth_Pipeline)/[`04_02`](04_02_Business_Logic_and_Services), страхування — [`07_01`](07_01_Nature_as_a_Service_Contracts), governance — [`05_06`](05_06_Governance_and_DAO).
 
-> **Чому окремий документ.** Slashing — це **risk/penalty-шар**, концептуально окремий від emission-токеноміки (`05_03`). До 2026-05-30 політика жила в [`00_01 §6`](00_01_Vision_Mission_and_Roadmap) (візійна сторінка) і була розпорошена по `05_03`/`07_01`/`05_02`/`04_02` з прихованими дублями. Консолідовано сюди як один SSOT-дім ([`00_06 §2`](00_06_SSOT_Documentation_Standard)).
+> **Чому окремий документ.** Slashing — це **risk/penalty-шар**, концептуально окремий від emission-токеноміки ([`05_03`](05_03_Tokenomics_SCC_and_SFC)). До 2026-05-30 політика жила в [`00_01 §6`](00_01_Vision_Mission_and_Roadmap) (візійна сторінка) і була розпорошена по [`05_03`](05_03_Tokenomics_SCC_and_SFC)/[`07_01`](07_01_Nature_as_a_Service_Contracts)/[`05_02`](05_02_Proof_of_Growth_Pipeline)/[`04_02`](04_02_Business_Logic_and_Services) з прихованими дублями. Консолідовано сюди як один SSOT-дім ([`00_06 §2`](00_06_SSOT_Documentation_Standard)).
 
 ---
 
@@ -164,7 +164,7 @@ ForceMajeure event → InsurancePayoutWorker
 
 **Інваріант:** доки Z↔health не підтверджено емпірично, slashing вимагає підтвердження **≥1 прямим вимірним сигналом** (sap_flow / chainsaw-acoustic / dClimate), не лише Z/device-status.
 
-**Прямі сигнали (corroboration set):** `sap_flow`/`delta_t` (метаболізм), chainsaw-acoustic (TinyML), dClimate (супутник), і **VPD з BME280** [ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)] (t°+RH): прямий фізіологічний confounder, що відрізняє падіння сокоруху через погоду (дощ/туман, RH≈100%) від хвороби. VPD — апаратне втілення цього інваріанта: вбиває False Slashing біля джерела. ⚠️ VPD живе на slashing/confounder-шарі, **НЕ** в Lorenz-Z (DCI-guard, `03_04`). Разом з «correlated comms-loss guard» (§6) це формує повний принцип: **не штрафувати за недоведений Z, за погоду, ані за втрату зв'язку** — лише за прямо підтверджену халатність.
+**Прямі сигнали (corroboration set):** `sap_flow`/`delta_t` (метаболізм), chainsaw-acoustic (TinyML), dClimate (супутник), і **VPD з BME280** [ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)] (t°+RH): прямий фізіологічний confounder, що відрізняє падіння сокоруху через погоду (дощ/туман, RH≈100%) від хвороби. VPD — апаратне втілення цього інваріанта: вбиває False Slashing біля джерела. ⚠️ VPD живе на slashing/confounder-шарі, **НЕ** в Lorenz-Z (DCI-guard, [`03_04`](03_04_mruby_Lorenz_Attractor)). Разом з «correlated comms-loss guard» (§6) це формує повний принцип: **не штрафувати за недоведений Z, за погоду, ані за втрату зв'язку** — лише за прямо підтверджену халатність.
 
 ## 🔬 8. Ground-Truth Validation Protocol — Z↔health [Lorenz de-risk]
 

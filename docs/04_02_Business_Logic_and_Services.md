@@ -121,7 +121,7 @@
 | **Зовнішні виклики** | `AlertDispatchService.create_fraud_alert!` |
 | **Вихід** | `{ processed_count: Integer, date: Date }`. Створює `AiInsight` per tree та per cluster. |
 
-> **🌫️ VPD weather-confounder gate [✅ implemented · inert/calibration-pending — HW.32]:** Щоб не штрафувати за погоду (де-ризик [`05_05`](05_05_Slashing_and_Risk_Policy) §6/§7), `stress_index` дисконтується, коли низький `sap_flow` пояснюється **погодою**, а не хворобою: насичене повітря (дощ/туман → **низький VPD**) дає нульову транспіраційну тягу → сік природно падає на здоровому дереві. ✅ **Реалізовано** (`InsightGeneratorService`, наразі інертний no-op + 10 specs): після `calculate_stress_index` викликається `apply_weather_confounder(stress_index, avg_vpd, sap_deviation)` — **discount-only** (ніколи не підвищує stress; fraud=1.0 не чіпається), inert коли `avg_vpd` nil **АБО** калібрування відсутнє. `avg_vpd` плюмиться через `prefetch_tree_stats` (`AVG(vpd)`) і пишеться у `reasoning`. Калібрування — ТІЛЬКИ через ENV `VPD_CONFOUNDER_LOW_KPA` + `VPD_CONFOUNDER_MAX_DISCOUNT` (default unset → no-op; **жодного вгаданого kPa-порогу в slashing-шляху**). **Три залежності перед активацією (свідомо НЕ хардкодимо вгадані пороги у slashing — це суперечило б де-ризику):** (1) ML-модель `silken_forest.marshal` не має VPD-фічі → **retrain** з `[temp, vcap, Z, sap_dev, acoustic, vpd]` (heuristic-only до того); (2) ✅ `calculate_stress_index_heuristic` тепер **вмонтовує sap + acoustic/cavitation** (`sap_stress_contribution` + `acoustic_stress_contribution`, ENV-calibration-gated, беруться через max() не суму — [`05_05 §7`](05_05_Slashing_and_Risk_Policy)) — лишається ground-truth калібрування ваг; (3) пороги «низький VPD» (kPa) + величина знижки — з **ground-truth калібрування** [`05_05 §8`](05_05_Slashing_and_Risk_Policy). Firmware VPD — `HW.32`/`03_01` (ще не шле → `vpd` nil → gate inert). **Активувати лише після (firmware VPD + ML-retrain + калібрування).**
+> **🌫️ VPD weather-confounder gate [✅ implemented · inert/calibration-pending — HW.32]:** Щоб не штрафувати за погоду (де-ризик [`05_05`](05_05_Slashing_and_Risk_Policy) §6/§7), `stress_index` дисконтується, коли низький `sap_flow` пояснюється **погодою**, а не хворобою: насичене повітря (дощ/туман → **низький VPD**) дає нульову транспіраційну тягу → сік природно падає на здоровому дереві. ✅ **Реалізовано** (`InsightGeneratorService`, наразі інертний no-op + 10 specs): після `calculate_stress_index` викликається `apply_weather_confounder(stress_index, avg_vpd, sap_deviation)` — **discount-only** (ніколи не підвищує stress; fraud=1.0 не чіпається), inert коли `avg_vpd` nil **АБО** калібрування відсутнє. `avg_vpd` плюмиться через `prefetch_tree_stats` (`AVG(vpd)`) і пишеться у `reasoning`. Калібрування — ТІЛЬКИ через ENV `VPD_CONFOUNDER_LOW_KPA` + `VPD_CONFOUNDER_MAX_DISCOUNT` (default unset → no-op; **жодного вгаданого kPa-порогу в slashing-шляху**). **Три залежності перед активацією (свідомо НЕ хардкодимо вгадані пороги у slashing — це суперечило б де-ризику):** (1) ML-модель `silken_forest.marshal` не має VPD-фічі → **retrain** з `[temp, vcap, Z, sap_dev, acoustic, vpd]` (heuristic-only до того); (2) ✅ `calculate_stress_index_heuristic` тепер **вмонтовує sap + acoustic/cavitation** (`sap_stress_contribution` + `acoustic_stress_contribution`, ENV-calibration-gated, беруться через max() не суму — [`05_05 §7`](05_05_Slashing_and_Risk_Policy)) — лишається ground-truth калібрування ваг; (3) пороги «низький VPD» (kPa) + величина знижки — з **ground-truth калібрування** [`05_05 §8`](05_05_Slashing_and_Risk_Policy). Firmware VPD — `HW.32`/[`03_01`](03_01_Firmware_Lifecycle_and_DMA) (ще не шле → `vpd` nil → gate inert). **Активувати лише після (firmware VPD + ML-retrain + калібрування).**
 
 ### `SilkenNet::Attractor`
 
@@ -313,7 +313,7 @@
 |--------|----------|
 | Планова ротація | Кожні **90 днів** |
 | Зміна персоналу | Негайно (при звільненні/зміні ролі інженера з доступом до credentials) |
-| Підозра на компрометацію | Негайно (див. Emergency Revocation Runbook у `06_04_Secrets_Checklist` §5.4) |
+| Підозра на компрометацію | Негайно (див. Emergency Revocation Runbook у [`06_04 §5.4`](06_04_Secrets_Checklist)) |
 
 **4. Credentials Layout (після ротації)**
 
@@ -324,7 +324,7 @@ peaq_signing_key_previous: "old_key_hex_64_chars"  # видалити через
 peaq_node_url: "https://peaq-node.example.com"
 ```
 
-> **Зв'язок:** Emergency Revocation Runbook → `docs/06_04_Secrets_Checklist` §5.4
+> **Зв'язок:** Emergency Revocation Runbook → [`06_04 §5.4`](06_04_Secrets_Checklist)
 
 ### `Chainlink::OracleDispatchService`
 
@@ -600,7 +600,7 @@ peaq_node_url: "https://peaq-node.example.com"
 
 ## 📖 10b. Codex (Lore Layer) Сервіси
 
-Сервіси Lore-шару Gaia 2.0. Повна специфікація: **`docs/04_05_Codex_Lore_Module`**.
+Сервіси Lore-шару Gaia 2.0. Повна специфікація: **[`04_05`](04_05_Codex_Lore_Module)**.
 
 ### `Codex::NodeImportService`
 
@@ -1508,15 +1508,15 @@ Financial action
 ## 🧭 13b. SSOT Drift Register (Doc ↔ Code Sync)
 
 > **Принцип:** Цей документ — SSOT. Тобто:
-> - якщо **код випередив документ** — оновлюємо документ (тут, у `04_02`) щоб реальність відображалася;
-> - якщо **документ випередив код** — створюємо/оновлюємо запис у `docs/00_07_Action_Plan_Tracker` як невиконану задачу;
-> - якщо **нема ні там, ні там** — приймаємо рішення (потрібне → реєструємо в `00_07`; не потрібне → видаляємо плани з `04_02`).
+> - якщо **код випередив документ** — оновлюємо документ (тут, у [`04_02`](04_02_Business_Logic_and_Services)) щоб реальність відображалася;
+> - якщо **документ випередив код** — створюємо/оновлюємо запис у [`00_07`](00_07_Action_Plan_Tracker) як невиконану задачу;
+> - якщо **нема ні там, ні там** — приймаємо рішення (потрібне → реєструємо в [`00_07`](00_07_Action_Plan_Tracker); не потрібне → видаляємо плани з [`04_02`](04_02_Business_Logic_and_Services)).
 >
-> Цей реєстр фіксує **відомі divergence-точки** та їх статус. Періодичний аудит — кожен Cool-down цикл Shape Up (`00_04`).
+> Цей реєстр фіксує **відомі divergence-точки** та їх статус. Періодичний аудит — кожен Cool-down цикл Shape Up ([`00_04`](00_04_Shape_Up_Operations_and_RnD_Clusters)).
 
 | Дата | Зона | Тип drift | Що зроблено | Cross-ref |
 |------|------|-----------|-------------|-----------|
-| 2026-05-12 | `Security::WeakKeyDetector` + `master_key_strength_check.rb` initializer | Code ahead of doc (були в `00_07`/`03_05`, але §8 04_02 їх не описувала) | Додано в §8 (renamed → "Hardware, IoT & Security") | [SEC.9](00_07_Action_Plan_Tracker), [03_05 §3.1а](03_05_Hardware_Symmetric_Crypto_and_Security) |
+| 2026-05-12 | `Security::WeakKeyDetector` + `master_key_strength_check.rb` initializer | Code ahead of doc (були в [`00_07`](00_07_Action_Plan_Tracker)/[`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security), але §8 04_02 їх не описувала) | Додано в §8 (renamed → "Hardware, IoT & Security") | [SEC.9](00_07_Action_Plan_Tracker), [03_05 §3.1а](03_05_Hardware_Symmetric_Crypto_and_Security) |
 | 2026-05-12 | `Celo::CommunityRewardService` RPC fallback cascade | Code matched doc (E.49 синхронно виконано: код + 04_02 + .env.example + 00_07) | `RPC_FALLBACK_ENV_KEYS` додано, External API row оновлено | [E.49](00_07_Action_Plan_Tracker) |
 | 2026-05-12 | `MintingRollbackService` (Celo branch) | Code bug + doc gap (fallback указував на polygon-rpc.com для Celo TX) | Виправлено per-chain dispatch; doc оновлено | [E.49](00_07_Action_Plan_Tracker) |
 | 2026-05-12 | `MintBatchCollectorWorker` секція | Doc misplacement (queue `web3` був у "💤 Web3 Low") | Перенесено у "🌐 Web3 — Стандартні Мультичейн" | §11 |
@@ -1527,7 +1527,7 @@ Financial action
 | 2026-05-18 | `PartitionMaintenanceWorker::PARTITIONED_TABLES` | Code ahead of doc: код тримає 4 RANGE-таблиці (включно з `codex_matches` Phase 4), doc перераховував 3. | §11 оновлено: `codex_matches` додано до списку; згадано Sentry rescue. | §11 PartitionMaintenanceWorker (узгоджено з DOC.11) |
 | 2026-05-18 | `OtaTransmissionWorker` cluster_id forwarding | **Code bug + doc drift — FW.23 HMAC trailer був ВИМКНЕНИЙ у проді.** Doc обіцяв `OtaPackagerService.prepare(firmware, cluster_id: cluster.id)`, але worker викликав `prepare(firmware_obj, chunk_size: CHUNK_SIZE)` без `cluster_id:`, тож `hmac_enabled?` повертав false → жодного `0x9B` трейлеру → Soldier dual-gate не мав HMAC печатки для верифікації → tampered/replayed OTA байткод проходив. `total_chunks` зчитувався з `manifest[:total_chunks]` (bytecode-only) замість `total_packages` (bytecode + 3 trailer), тож при міграції на signed-stream шлюз би переходив у `:idle` на 3 чанки раніше HMAC seal'у. | Worker передає `cluster_id: gateway.cluster_id` (NOT NULL у схемі) + читає `total_packages \|\| total_chunks`; spec має 2 нові examples у `describe "[FW.23] HMAC trailer cluster_id forwarding"`; doc оновлено. | `app/workers/ota_transmission_worker.rb`; `spec/workers/ota_transmission_worker_spec.rb`; §11 OtaTransmissionWorker |
 | 2026-05-18 | `ClusterHealthCheckWorker` double-trigger → подвійна cUSD виплата | **Code bug** — `config/sidekiq.yml` має `cluster_health_arbitration` cron на 02:00 UTC, і ТА сама job ставиться через `InsightBatchCallbacks#on_success` після 01:00 батчу. Worker (`recalculate_health_index!`) ідемпотентний, але `CeloRewardWorker.perform_async(cluster_id, date)` без guard'у; `Celo::CommunityRewardService.reward_community!` тримав лише `Kredis.lock(lock:web3:oracle:<address>)` — це серіалізує усі Celo TX'и, не дедуплікує `(cluster, date)`. Здоровий кластер отримував 10 cUSD на день замість 5. | Додано `reward_already_sent?` guard у `Celo::CommunityRewardService` — перевіряє `BlockchainTransaction.where(sourceable: cluster, token_type: :cusd, status: [:sent, :confirmed, :processing], created_at: target_date.beginning_of_day...+1.day).exists?`; failed/manual_review TX'и НЕ блокують admin retry. Spec має 2 нові examples (skip on existing, retry on failed). Doc для `ClusterHealthCheckWorker` оновлено — обидва тригери задокументовані з посиланням на guard. | §11 `ClusterHealthCheckWorker`; `app/services/celo/community_reward_service.rb`; `spec/services/celo/community_reward_service_spec.rb` |
-| 2026-05-29 | `ContractHealthCheckService` / `BlockchainBurningService` slashing path | **Doc-ahead + financial-safety — формула + blackout закрито 2026-05-29.** [`05_05 §3`](05_05_Slashing_and_Risk_Policy) специфікує convex-формулу `damage_ratio^1.3 × min(penalty_factor,2.0)` + `cause_classification` gate. Стан коду: (1) `cause_classification` A/B/C-термін ще відсутній (🟡 open); (2) ✅ `BlockchainBurningService` тепер палить за **§3 convex-кривою** (`#calculate_slash_ratio`; GAMMA/PF_MAX через `SystemParameter`, clamp 0..1, 8 specs) — **не лінійно**; (3) ✅ `ContractHealthCheckService#flag_data_blackout!` — cluster-wide empty → Field Audit (force-majeure), no burn (10 specs). | **Частково закрито** (convex-формула + blackout-routing). Лишається: formal A/B/C `cause_classification` + cause-driven `penalty_factor` uplift → DAO/founder-go (незворотна фін. логіка). Принцип: [`05_05`](05_05_Slashing_and_Risk_Policy) §6/§7. tracked: `00_07` SLASH-1. | [`05_05`](05_05_Slashing_and_Risk_Policy) §3/§6; `00_07` SLASH-1; `contract_health_check_service.rb`, `blockchain_burning_service.rb` |
+| 2026-05-29 | `ContractHealthCheckService` / `BlockchainBurningService` slashing path | **Doc-ahead + financial-safety — формула + blackout закрито 2026-05-29.** [`05_05 §3`](05_05_Slashing_and_Risk_Policy) специфікує convex-формулу `damage_ratio^1.3 × min(penalty_factor,2.0)` + `cause_classification` gate. Стан коду: (1) `cause_classification` A/B/C-термін ще відсутній (🟡 open); (2) ✅ `BlockchainBurningService` тепер палить за **§3 convex-кривою** (`#calculate_slash_ratio`; GAMMA/PF_MAX через `SystemParameter`, clamp 0..1, 8 specs) — **не лінійно**; (3) ✅ `ContractHealthCheckService#flag_data_blackout!` — cluster-wide empty → Field Audit (force-majeure), no burn (10 specs). | **Частково закрито** (convex-формула + blackout-routing). Лишається: formal A/B/C `cause_classification` + cause-driven `penalty_factor` uplift → DAO/founder-go (незворотна фін. логіка). Принцип: [`05_05`](05_05_Slashing_and_Risk_Policy) §6/§7. tracked: [`00_07`](00_07_Action_Plan_Tracker) SLASH-1. | [`05_05`](05_05_Slashing_and_Risk_Policy) §3/§6; [`00_07`](00_07_Action_Plan_Tracker) SLASH-1; `contract_health_check_service.rb`, `blockchain_burning_service.rb` |
 | — (відкрите) | `ClusterEntropyAnalyzerWorker` cron | Doc-only feature: §11 каже "Sidekiq cron, щогодини", але у `config/sidekiq.yml` запису немає, і жоден інший шлях не викликає воркер (єдина згадка поза тестами — коментар у `prometheus.rb`). Без cron `silkennet_cluster_entropy_score` gauge ніколи не оновлюється → entropy_anomaly алерти не спрацьовують. | Не виправлено цією зміною: воркер приймає `cluster_id` — для cron потрібен окремий orchestrator-воркер що проходить `Cluster.find_each` і фан-аутить через `perform_async`. Залишається на reviewer'а як окремий PR. | §11 `ClusterEntropyAnalyzerWorker` |
 | — (відкрите) | `InsurancePayoutWorker` сweep cron | Doc-only feature: §11 каже "cron при triggered insurances", але у `config/sidekiq.yml` запису немає. Якщо `Dclimate::VerificationService` enqueue впав, або всі 10 retry вичерпались, страховка лишається у `:triggered` назавжди — кошти у DAO Treasury не доходять до постраждалої організації. | Не виправлено цією зміною: треба окремий sweep-worker, що бере `ParametricInsurance.status_triggered` і робить `perform_async(id)`. Залишається на reviewer'а як окремий PR. | §11 `InsurancePayoutWorker` |
 | — (відкрите) | Forester Guild / Cross-Registry / Federated Learning | Doc-only "Planned" — в коді **відсутні**; статус нормальний (Post-TRL 6/7) | Зберігати як design RFC; не маркувати code drift | §"Planned" |
@@ -1535,10 +1535,10 @@ Financial action
 ### Як додавати нові записи
 
 1. Виявили divergence (наприклад, нову константу, новий guard clause, новий ENV у коді який не описаний тут) — додайте рядок у таблицю з датою.
-2. Якщо drift вимагає коду — заведіть запис у `docs/00_07` з тим самим UID (`E.NN` / `SEC.NN` / `S6.NN`) і посиланням сюди.
+2. Якщо drift вимагає коду — заведіть запис у [`00_07`](00_07_Action_Plan_Tracker) з тим самим UID (`E.NN` / `SEC.NN` / `S6.NN`) і посиланням сюди.
 3. Drift register **не замінює** оновлення відповідної секції — обидва місця мають бути синхронізовані.
 
-> **Anti-pattern:** "Тимчасово впишу у 04_02, а виправлю код пізніше". Якщо завдання потребує > 1 PR — заведіть `00_07` запис, не блюрте тут.
+> **Anti-pattern:** "Тимчасово впишу у 04_02, а виправлю код пізніше". Якщо завдання потребує > 1 PR — заведіть [`00_07`](00_07_Action_Plan_Tracker) запис, не блюрте тут.
 
 ---
 
@@ -1889,7 +1889,7 @@ $$\begin{cases} \dot{x} = \sigma(y - x) \\ \dot{y} = x(\rho - z) - y \\ \dot{z} 
 
 ### Принципи Безпеки
 
-1. **Zero-Trust:** Кожен пакет шифрується hardware-bound AES ключем у `HardwareKey` (LoRa AES-128 для Tree↔Queen, CoAP AES-256 для Queen↔Rails — domain separation §3.4а у `03_05`).
+1. **Zero-Trust:** Кожен пакет шифрується hardware-bound AES ключем у `HardwareKey` (LoRa AES-128 для Tree↔Queen, CoAP AES-256 для Queen↔Rails — domain separation §3.4а у [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security)).
 2. **Idempotency:** Всі фінансові воркери мають захист від повторного виконання (status guards / pessimistic lock).
 3. **Resilience:** Система підтримує 10+ ретраїв для Web3 операцій та 3–5 для апаратних команд.
 4. **Float Determinism:** Розрахунки Атрактора виконуються з Float (IEEE 754 double) ідентично firmware mruby для Dual Computation Integrity (BigDecimal вилучено — давав розбіжність Z після 250 ітерацій хаотичної системи).

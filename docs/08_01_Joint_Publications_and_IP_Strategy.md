@@ -145,13 +145,13 @@ Gaia 2.0 / Silken Net об'єднує сім академічних та інд�
 
 | Розділ | Роль у MOIC | Як читати |
 |--------|--------------|------------|
-| `08_01` (цей документ) | MOIC head: концепція кластера + план публікацій (Ст. 1–35) + IP framework | SSOT публікаційного плану та IP |
+| [`08_01`](08_01_Joint_Publications_and_IP_Strategy) (цей документ) | MOIC head: концепція кластера + план публікацій (Ст. 1–35) + IP framework | SSOT публікаційного плану та IP |
 | [`08_02 §1`](08_02_Academic_Institutions_Registry) | ЧНУ — Hard Science (§1A: фізика/хімія/біологія) + ФОТІУС (§1B: формальна верифікація, mruby Lorenz, Petri Nets) | Лабораторні протоколи + матем. основа Статей 1–10, 15, 22, 34 |
 | [`08_02 §2`](08_02_Academic_Institutions_Registry) | Data / RF / Acoustics ortho-niche (ЧДТУ) | 3 кафедри ЧДТУ |
 | [`08_02 §3`](08_02_Academic_Institutions_Registry) | Regulated Safety ortho-niche (ЧІПБ) | Інтеграція з ДСНС, fire model, SOP |
 | [`08_02 §4`](08_02_Academic_Institutions_Registry) | Biomedical ortho-niche (ЧМА) | EBFC біохімія, токсикологія, ксилемоінтеграція |
 | [`08_02 §5`](08_02_Academic_Institutions_Registry) | Business Layer + Consortium Governance (СЄУ) | Triple Helix формалізація, Horizon-заявки |
-| `08_03` | External Stakeholders (B2G/B2B + культурний шар) | Не академічні партнери — поза MOIC core |
+| [`08_03`](08_03_External_Stakeholders_Registry) | External Stakeholders (B2G/B2B + культурний шар) | Не академічні партнери — поза MOIC core |
 
 > **Операційне правило:** при підготовці будь-якої зовнішньої комунікації (pitch deck, grant proposal, академічний візит) спочатку звіряти позиціонування з §0 цього документа, потім — з відповідним доменним 08_0X, і тільки потім — з конкретним розділом-§1A…§1G нижче.
 
@@ -297,7 +297,7 @@ _(Запропонована тема; студент визначається �
 
 | Автор | Внесок |
 |-------|--------|
-| **Косенюк Г.В.** | VSWR/КСВ оптимізація SMD-антени під PEEK-радомом (окрема деталь IoT-капсули, ∅20–30 мм, **не плутати з PEEK-втулкою Zone 2** тризонного анкера); 3D-діаграма спрямованості з Ti-анкером (Zone 1 + Zone 3 фланець) як Ground Plane; Link Budget LoRa у лісі (SF=7–9 балансування, → `02_01` §5.3); Reed-Solomon FEC для 21-байтового пакету; Kalman/EMA фільтри для delta\_t Edge AI; CE/FCC compliance roadmap |
+| **Косенюк Г.В.** | VSWR/КСВ оптимізація SMD-антени під PEEK-радомом (окрема деталь IoT-капсули, ∅20–30 мм, **не плутати з PEEK-втулкою Zone 2** тризонного анкера); 3D-діаграма спрямованості з Ti-анкером (Zone 1 + Zone 3 фланець) як Ground Plane; Link Budget LoRa у лісі (SF=7–9 балансування, → [`02_01 §5.3`](02_01_Hardware_Architecture_and_BOM)); Reed-Solomon FEC для 21-байтового пакету; Kalman/EMA фільтри для delta\_t Edge AI; CE/FCC compliance roadmap |
 | **Ярмілко А.В.** | Lightweight cryptography integration (post-ARCH.42 Variant B, 2026-05-23): **AES-128-ECB → AES-128-CCM для LoRa Soldier→Queen** (узгоджено з ATECC608B Secure Element), AES-256-CBC для CoAP batch Queen→Rails, HAL\_CRYP; firmware архітектура SPI/DMA для фільтрованих сигналів. Постквантова roadmap: [03_05 §11](03_05_Hardware_Symmetric_Crypto_and_Security#-11-pqc-migration-roadmap-trl-stratified-post-quantum-layering) |
 | Архітектор (Silken Net) | EBFC Gen 2.0 джерело живлення (>500 мВ, <500 мкВт; **одношарова dgrFAD-GDH+Os у Genipin-Chitosan-CNC матриці з Nafion-g-PSBMA цвітеріонною мембраною** + Laccase/ZIF-nanozyme DET — деталі [`01_03 §2.1`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) Gen 2.0 rewrite), STM32WLE5JC RF-конфігурація, 21-байтовий пакет, IP68 механічна специфікація (PEEK Crown капсули — окрема деталь, не Zone 2 анкера; з anti-overgrowth shield + 3D RF Keep-Out ≥ 8mm Z-clearance проти Ti-фланця) |
 
@@ -596,8 +596,8 @@ _«Дослідження акустичних властивостей пори
 **Тип зв'язку:** Багатошарова паралель з фінальним синтезом — ЧНУ біо-хаб (ground truth) + ЧДТУ ПМКТ (hardware acoustic) працюють паралельно з ЧНУ ФОТІУС (CNN + GA) + ЧДТУ Карапетян (статистика); архітектор інтегрує firmware і backend; усі шари сходяться на одному датасеті ("Cherkasy Soundscape Library") та одній публікації.
 
 **Cross-references:**
-- [`03_03` §10 Mongabay Pivot](03_03_TinyML_Acoustic_Inference) — повна архітектура 5-class TinyML
-- [`08_02` §2 Acoustic Biodiversity Baseline](08_02_Academic_Institutions_Registry) — польова методологія
+- [`03_03 §10`](03_03_TinyML_Acoustic_Inference) Mongabay Pivot — повна архітектура 5-class TinyML
+- [`08_02 §2`](08_02_Academic_Institutions_Registry) Acoustic Biodiversity Baseline — польова методологія
 - [`08_02 §1B` Macro-Micro Verification](08_02_Academic_Institutions_Registry) — Бушин CNN + fauna feature
 - [`08_02 §1B` NSGA-II GA](08_02_Academic_Institutions_Registry) — Любченко 5-class оптимізація
 - [`08_02 §2` Завдання В](08_02_Academic_Institutions_Registry) — ПМКТ калібрувальний датасет
@@ -859,7 +859,7 @@ _(ННІ економіки і права; запропонована тема; 
 - Стаття 31 (Чудаєва, макроекономіка SCC) — макро-доповнення
 - Стаття 32 (Аблязов Д., ERC-3643) — правовий контекст
 - Стаття 24a (Mongabay-pivot, Спрягайло) — біорізноманіттєва верифікація
-- [`07_01`](07_01_Nature_as_a_Service_Contracts), [`05_03`](05_03_Tokenomics_SCC_and_SFC), [`05_01` §7](05_01_Multichain_Architecture) — технічна архітектура
+- [`07_01`](07_01_Nature_as_a_Service_Contracts), [`05_03`](05_03_Tokenomics_SCC_and_SFC), [`05_01 §7`](05_01_Multichain_Architecture) — технічна архітектура
 
 **Грантовий вектор:** Стаття 35 є **обов'язковим preprint-додатком** до заявки **Horizon Europe Cluster 6 — Food, Bioeconomy, Natural Resources, Agriculture and Environment** (тематика _Bioeconomy / Forest-based Value Chains_, бюджет 4–6 М€). У парі зі Статтею 24a (Cluster 6 Biodiversity Monitoring) утворює **twin-pack публікаційну основу** для одного консорціумного гранту під двома UA-co-PI: **Кирилюк (WP-Bioeconomy) і Спрягайло (WP-Biodiversity)**.
 

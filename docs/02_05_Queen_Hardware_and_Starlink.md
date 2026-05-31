@@ -116,7 +116,7 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 
 **Необхідна дія (Phase 3):**
 - Прийняти архітектурне рішення: ESP32-S3 або SIM8200G-M2
-- Описати рішення в `03_02_Queen_Gateway_Firmware` та оновити апаратну схему
+- Описати рішення в [`03_02`](03_02_Queen_Gateway_Firmware) та оновити апаратну схему
 - Прошивку для co-processor додати в `firmware/` перед Phase 3 деплоєм
 
 **Блокує:** Лише Phase 3 (Planetary Scale). Phase 1 та Phase 2.5 — не блоковані.
@@ -138,7 +138,7 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 
 **SIM8200G-M2 виправданий ЛИШЕ** якщо Phase 3 переосмислити як «5G-where-available як другий backhaul» (суперечить ultra-remote премісі). Інакше — ESP32-S3.
 
-**Після confirm:** оновити схему + `03_02` (firmware-контракт co-proc) + `firmware/esp32_coproc/` (UART-AT + WiFi-STA + lwIP).
+**Після confirm:** оновити схему + [`03_02`](03_02_Queen_Gateway_Firmware) (firmware-контракт co-proc) + `firmware/esp32_coproc/` (UART-AT + WiFi-STA + lwIP).
 
 ---
 
@@ -185,7 +185,7 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 
 | Джерело | Модель модему |
 |---------|--------------|
-| Wiki `02_05` (до аудиту) | **SIM7000G** |
+| Wiki [`02_05`](02_05_Queen_Hardware_and_Starlink) (до аудиту) | **SIM7000G** |
 | `firmware/queen/main.c:53` (коментар) | **SIM7070G** |
 | `firmware/queen/main.c:206` AT-команди | `AT+CNMP=38` (LTE-M-специфічна, SIM7070G) |
 

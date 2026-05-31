@@ -36,6 +36,14 @@
 - [2. CIFO EdgeCache (Алгоритм дедуплікації та кешування)](#-2-cifo-edgecache-алгоритм-дедуплікації-та-кешування)
 - [3. Flush: Бінарна Упаковка та AES-CBC](#-3-flush-бінарна-упаковка-та-aes-cbc)
 - [4. SIM7070G Модем: Життєвий Цикл та AT-Команди](#-4-sim7070g-модем-життєвий-цикл-та-at-команди)
+- [5. OTA Broadcast (Reflex Shot — LoRa Downlink до Солдатів)](#-5-ota-broadcast-reflex-shot--lora-downlink-до-солдатів)
+- [5а. Time Sync (FW.20, FW.20-S2) — Канонічний хаб](#-5а-time-sync-fw20-fw20-s2--канонічний-хаб)
+- [6. Actuator Command Dedup (Idempotency Ring Buffer)](#-6-actuator-command-dedup-idempotency-ring-buffer)
+- [7. Queen Health Sentinel (DID = 0x00000000)](#-7-queen-health-sentinel-did--0x00000000)
+- [8. Шифрування: Режими та Переходи](#-8-шифрування-режими-та-переходи)
+- [9. RAM Бюджет Королеви](#-9-ram-бюджет-королеви)
+- [10. HAL Периферія Королеви](#-10-hal-периферія-королеви)
+- [11. Тестове Покриття (Host-Based, x86)](#-11-тестове-покриття-host-based-x86)
 <!-- TOC:AUTO:END -->
 
 ---
@@ -378,6 +386,7 @@ static uint8_t SIM7070_SendATCommand_WithResponse(const char* command, uint32_t 
     }
     return 0;
 }
+```
 
 **Відповіді SIM7070G, що парсяться (FW.9):**
 - `OK` — команда прийнята → `SIM7070_SendATCommand_WithResponse` повертає `1`
@@ -706,13 +715,13 @@ if (decrypted_lora_buffer[0] == REREQUEST_MARKER) {
 | HMAC trailer state cross-cycle | `test_hmac_trailer_state_survives_simulated_stop2_between_segments` | bitmask `ota_hmac_segments_received` OR-агрегується через STOP2 між сегментами 1/3/2 |
 | HMAC trailer idempotent overwrite | `test_hmac_trailer_duplicate_segment_overwrites_idempotently` | Дубль того самого сегменту не корумпує `received_hmac_tag[]` |
 
-> **Cross-ref:** `00_07 FW.27` — повний контекст; `04_06 §2.1` — тест-список.
+> **Cross-ref:** [`00_07`](00_07_Action_Plan_Tracker) FW.27 — повний контекст; [`04_06 §B.2`](04_06_Testing_Guide_and_Coverage) — тест-список.
 
 ---
 
 ## 📡 5а. Time Sync (FW.20, FW.20-S2) — Канонічний хаб
 
-> **SSOT для Time Sync:** ця секція — єдина точка розкладки часо-синхронізаційного протоколу між Rails ↔ Queen ↔ Soldier. Усі деталі реалізації, статуси чек-боксів і регресійні тести зведені тут; `00_07 FW.20` / `FW.20-S2` тримає лише посилання сюди.
+> **SSOT для Time Sync:** ця секція — єдина точка розкладки часо-синхронізаційного протоколу між Rails ↔ Queen ↔ Soldier. Усі деталі реалізації, статуси чек-боксів і регресійні тести зведені тут; [`00_07`](00_07_Action_Plan_Tracker) FW.20 / FW.20-S2 тримає лише посилання сюди.
 
 ### 5а.1 Архітектура (3 рівні reach)
 
@@ -803,12 +812,12 @@ Soldier — gossip-uplift (3-hop reach)
 
 ### 5а.6 Що ще лежить як freeze-contract (deferred TRL-7)
 
-- **Anti-storm dedup bitmap** для повного активного mesh-relay'у — у Flash-KV store (DR15 зайнято FW.2 CCM Frame Counter, `03_01 §2`; cross-ref [`03_01 §2.3 ARCH.28`](03_01_Firmware_Lifecycle_and_DMA#23-overflow-strategy-flash-based-kv-store-arch28))
+- **Anti-storm dedup bitmap** для повного активного mesh-relay'у — у Flash-KV store (DR15 зайнято FW.2 CCM Frame Counter, [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA); cross-ref [`03_01 §2.3 ARCH.28`](03_01_Firmware_Lifecycle_and_DMA#23-overflow-strategy-flash-based-kv-store-arch28))
 - **Queen beacon TTL≥2** (зараз hardcoded TTL=1 у `BEACON_BYTE9_AUTHORITATIVE = 0x81`; перемикається коли реалізуємо anti-storm)
 - **Hot-path виклик** `Soldier_Pack_Gossip_Ts_Byte` у Phase 2 normal-telemetry pack + RX-обробник для прийому
 - **Drift compensation** при ΔT = ±60°C lab-вимірювання (потребує термокамери, відсутня @ TRL-6)
 
-> **Закриття 00_07:** після цього хабу записи `FW.20`, `FW.20-S2 (1/5..5/5)` у `00_07 §Firmware` шорткозамкнено — лишилося лише посилання сюди для аудиту прогресу.
+> **Закриття 00_07:** після цього хабу записи `FW.20`, `FW.20-S2 (1/5..5/5)` у [`00_07 §03`](00_07_Action_Plan_Tracker#03--firmware) шорткозамкнено — лишилося лише посилання сюди для аудиту прогресу.
 
 ---
 
@@ -970,7 +979,7 @@ Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пак
 
 **Примітка:** Queen **не має** ADC, TIM, RTC — на відміну від Soldier. HRNG та IWDG ініціалізуються при старті. HRNG де-ініціалізується "on-demand" (Wu-Wei підхід — нульове споживання між використаннями). `hspi1` ініціалізується тільки в момент drain CIFO→Flash (overflow event) і де-ініціалізується одразу після — енерго-нейтральний підхід (W25Q32JV power-down 1 µA, page write ~10 мА × 0.7 мс).
 
-> **Compile-time guard:** при відсутності `hspi1` у `main.h` (CubeMX) функції `w25q32_*` повертають `STATUS_NOT_AVAILABLE`, CIFO залишається в RAM-only режимі, але система не падає. Це SSOT-bridge між картою периферії (`03_02 §10`) та overflow-логікою (`02_05 §2.1 Flash Ring Buffer`).
+> **Compile-time guard:** при відсутності `hspi1` у `main.h` (CubeMX) функції `w25q32_*` повертають `STATUS_NOT_AVAILABLE`, CIFO залишається в RAM-only режимі, але система не падає. Це SSOT-bridge між картою периферії ([`03_02 §10`](03_02_Queen_Gateway_Firmware)) та overflow-логікою ([`02_05 §2.1`](02_05_Queen_Hardware_and_Starlink) Flash Ring Buffer).
 
 ---
 

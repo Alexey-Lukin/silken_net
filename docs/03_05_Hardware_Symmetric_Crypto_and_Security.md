@@ -1,6 +1,6 @@
 # 03_05: Апаратне симетричне шифрування та Безпека (Криптографія Пакетів)
 
-> 📜 **Архітектурна нота (2026-05-23):** Документ перейменовано з `03_05_Hardware_AES256_and_Security` після прийняття **ARCH.42 Варіант B**. Силова частина криптостеку розділена на дві категорії:
+> 📜 **Архітектурна нота (2026-05-23):** Документ перейменовано з [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security) після прийняття **ARCH.42 Варіант B**. Силова частина криптостеку розділена на дві категорії:
 > 1. **LoRa-канал (Soldier ↔ Queen + OTA broadcast):** AES-128-CCM (constraint Microchip ATECC608B — апаратний AES-engine SE підтримує лише 128-бітні ключі)
 > 2. **CoAP-магістраль (Queen ↔ Rails) + AR-Encryption у Postgres:** AES-256-CBC / AES-256-GCM (без апаратного SE-constraint; ключ Queen зберігається у Protected Flash MCU)
 >
@@ -225,7 +225,7 @@ nonce[12] = DID[0..3] || FrameCounter[0..3] || 0x00 × 4
 - **Reseed entropy:** тільки HRNG з **retry ×3** — слабкого `HAL_GetTick` fallback **немає** (на cold-boot tick малий+передбачуваний → кластеризується між cold-boot'ами того ж пристрою). Last-resort при мертвому HRNG — `tree_did ^ tick` (DID ламає крос-девайс кластеризацію). SEC.10 panic-counter (`main.c` DR0[31:16]) — **той самий** reseed-патерн + те саме hardening при активації FW.2.
 - **TRL-7 robust path (deferred):** монотонний лічильник, що переживає повну втрату живлення → безумовна унікальність. Варіанти: energy-gated Flash high-water (запис лише на cold-boot, коли Vcap відновився) АБО ATECC608B monotonic counter (разом з ATECC-role рішенням, §3.7). Трекінг → `00_07 FW.2`.
 
-> ✅ **DR15 resource-conflict — ВИРІШЕНО (2026-05-30):** FW.2 FC **володіє** `RTC_BKP_DR15` (реалізовано — `lora_ccm.h` + `firmware/soldier/main.c`; канонічно у [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)). FW.20-S2 anti-storm dedup-bitmap (ARCH.28) переходить на **Flash-KV store** ([`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)), бо всі 20 RTC backup-регістрів (DR0–DR19) зайняті. Стале-формулювання «DR15 наразі резерв» у `00_07`/`03_02` виправлено на цей вердикт.
+> ✅ **DR15 resource-conflict — ВИРІШЕНО (2026-05-30):** FW.2 FC **володіє** `RTC_BKP_DR15` (реалізовано — `lora_ccm.h` + `firmware/soldier/main.c`; канонічно у [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)). FW.20-S2 anti-storm dedup-bitmap (ARCH.28) переходить на **Flash-KV store** ([`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)), бо всі 20 RTC backup-регістрів (DR0–DR19) зайняті. Стале-формулювання «DR15 наразі резерв» у [`00_07`](00_07_Action_Plan_Tracker)/[`03_02`](03_02_Queen_Gateway_Firmware) виправлено на цей вердикт.
 
 **Конфігурація `hcryp` для CCM (AES-128):**
 
@@ -693,7 +693,7 @@ Load_AES_Key();  // reads from FLASH_KEY_ADDR, validates magic "KEYL",
      puts "OK"
    ' < /path/to/new_key.txt
    ```
-3. Записати у Bitwarden / 1Password / Kamal secrets / Akash SDL (див. `docs/06_04`).
+3. Записати у Bitwarden / 1Password / Kamal secrets / Akash SDL (див. [`06_04`](06_04_Secrets_Checklist)).
 4. Re-deploy — initializer перезапустить guard з боку production.
 
 **Сервіс автоматично запускається при кожному production boot — будь-яка ротація, яка пройшла повз runbook, буде заблокована до старту HTTP сервера.** Це й закриває SEC.9 line 668 🤖.
@@ -849,7 +849,7 @@ Device Memory → Option Bytes → Read Out Protection → RDP: Level 1 (або 
 - Ключ ніколи не існує в коді репозиторію — лише в Rails Vault (`HardwareKey`, encrypted at rest)
 - Якщо Backend-side master key компрометовано → перевипуск всіх ключів через field re-flash (Гілка A) або re-provisioning + ATECC re-lock через RMA (Гілка B, болючіше)
 
-**Для поточного прототипу (TRL 6):** Гілка A з protected Flash sector. Гілка B активується перед першим mass production batch (рішення прив'язане до BOM freeze, cross-ref `07_02` §8.1).
+**Для поточного прототипу (TRL 6):** Гілка A з protected Flash sector. Гілка B активується перед першим mass production batch (рішення прив'язане до BOM freeze, cross-ref [`07_02 §8.1`](07_02_Unit_Economics_and_BOM)).
 
 **Зворотність:**
 - Гілка A → B: можлива (re-flash MCU + добавити ATECC до PCBA = новий PCB revision)
@@ -1699,7 +1699,7 @@ MaintenanceRecord.create!(
 - [ ] OTA rollback тестований: якщо новий bytecode falls back до embedded `lorenz_bytecode[]` при corrupt magic.
 - [ ] Provisioning HKDF flow завершено (§Hardcoded AES Key mitigation): унікальний `aes_key` записано в protected sector, master_key генерується HRNG (не FIPS-197 test vector).
 - [ ] FW.2 (CCM) integrated: інакше після RDP-2 вже не можна «полагодити» AES-ECB вразливість через SWD reflash.
-- [ ] Watchdog (IWDG) тестовано: якщо firmware зависає, IWDG перезавантажує MCU без SWD (§ECB Restoration Race в `02_05` ✅).
+- [ ] Watchdog (IWDG) тестовано: якщо firmware зависає, IWDG перезавантажує MCU без SWD (§ECB Restoration Race в [`02_05`](02_05_Queen_Hardware_and_Starlink) ✅).
 - [ ] Final firmware version task-snapshot задокументовано у `RELEASE_VERSION` ENV (Sentry release tracking) та git tag `vX.Y.Z`.
 - [ ] Spare batch (≥10 одиниць) залишено на RDP Level 1 для in-field troubleshooting (RDP-1 дозволяє стирати+перепрошивати, але не зчитувати → ключ безпечний).
 
@@ -1746,7 +1746,7 @@ STM32_Programmer_CLI -c port=SWD -ob RDP=0xCC
 | Field pilot (пілотний ліс) | Level 1 | 100–500 | Field sanity, OTA verification, recovery still possible |
 | Mass production batch | Level 2 | 10,000+ | **Тільки** після ≥3 місяців stable OTA на Level-1 партії |
 
-**Документ-tracker:** після кожного batch активації — оновити `docs/00_07` SEC.2 (👤 — secrets / process).
+**Документ-tracker:** після кожного batch активації — оновити [`00_07`](00_07_Action_Plan_Tracker) SEC.2 (👤 — secrets / process).
 
 ---
 
@@ -1867,7 +1867,7 @@ atca_status_t status = atcab_aes_encrypt(
 | **OPTIGA Trust M** | Infineon | TPM 2.0 features, X.509 PKI heavy | Overkill для нашого use case |
 | **NXP A71CH** | NXP | EOL announced 2024 | ❌ Не використовувати |
 
-**Рекомендація:** ATECC608B або STSAFE-A110. Final pick — після завершення KiCad layout (HW.9) і перевірки I²C bus utilization (вже використовується для DS18B20 в `02_05` §4а?). STSAFE-A110 має невелику перевагу через native CubeMX-інтеграцію — економить ~3 дні firmware-розробки.
+**Рекомендація:** ATECC608B або STSAFE-A110. Final pick — після завершення KiCad layout (HW.9) і перевірки I²C bus utilization (вже використовується для DS18B20 в [`02_05 §4а`](02_05_Queen_Hardware_and_Starlink)?). STSAFE-A110 має невелику перевагу через native CubeMX-інтеграцію — економить ~3 дні firmware-розробки.
 
 **Factory Flashing impact (cross-ref §3.4):**
 
@@ -2138,7 +2138,7 @@ HAL_CRYP_Init(&hcryp);
 
 | Зміна | Як зробимо |
 |-------|------------|
-| **Заміна STM32WLE5JC на STM32 серії з апаратним Kyber** | Нова revision PCB Soldier; завдяки Blind-Mate `02_02` ліснику достатньо replace PEEK-капсулу — титановий анкер у заболоні залишається у дереві |
+| **Заміна STM32WLE5JC на STM32 серії з апаратним Kyber** | Нова revision PCB Soldier; завдяки Blind-Mate [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) ліснику достатньо replace PEEK-капсулу — титановий анкер у заболоні залишається у дереві |
 | **AES-128 LoRa → AES-256 + post-Grover margin через SE upgrade** | Заміна ATECC608B на NXP SE050 (AES-128/192/256 hardware) — описано як future hedge у §3.7 |
 | **OTA HMAC-SHA256 → LMS/XMSS (stateful hash-based signature)** | NIST SP 800-208 стандарт; для billion-tree fleet — wholesale upgrade через factory re-flash під час planned maintenance windows |
 | **peaq DID Ed25519 → ML-DSA (Dilithium)** | peaq Substrate-нативний; ми оновлюємо лише `Peaq::DidRegistryService` RPC bibilio через Gemfile bump |
@@ -2147,7 +2147,7 @@ HAL_CRYP_Init(&hcryp);
 
 | Технологія | Перевага | Чому не зараз |
 |------------|----------|----------------|
-| **Arithmetic Coding** (Shannon-optimal compression) | Стискання payload з 21B → ~14B (34% airtime saving) | Потребує big-integer math на кожен біт → з'їдає більше мікроамперів CPU ніж економить на LoRa TX. Bit-flip в ефірі руйнує весь пакет (no FEC). Наш bit-packing у `03_01` ефективніший за енергією. |
+| **Arithmetic Coding** (Shannon-optimal compression) | Стискання payload з 21B → ~14B (34% airtime saving) | Потребує big-integer math на кожен біт → з'їдає більше мікроамперів CPU ніж економить на LoRa TX. Bit-flip в ефірі руйнує весь пакет (no FEC). Наш bit-packing у [`03_01`](03_01_Firmware_Lifecycle_and_DMA) ефективніший за енергією. |
 | **ASCON** (NIST Lightweight Crypto winner 2023) | Швидший за програмний AES на 8/32-bit MCU | STM32WLE5JC має **апаратний** AES (0 CPU cycles) — ASCON у софті повільніший за наш HW-AES. ASCON стане конкурентним лише коли silicon-вендори додадуть apparatне acceleration. |
 | **Dilithium-2 signature** (PQC) | Квантова невідрікальність на per-packet рівні | Підпис 2420 байт vs наш 24-byte LoRa packet → fundamental fit problem. Якщо рамку розширити — duty cycle EU868 (1%) порушиться на 2 порядки. |
 | **Kyber-768 KEM** (PQC key encapsulation) | Постквантовий ephemeral key exchange | Публічний ключ 1184 байти, ciphertext 1088 байт — LoRa SF10 payload max ~255 байт. Технологічно несумісно з constrained radio link. |
@@ -2156,11 +2156,11 @@ HAL_CRYP_Init(&hcryp);
 
 | Питання | Документ |
 |---------|----------|
-| Чому AES-128 LoRa достатньо на 25-річний горизонт | Цей §11 + ARCH.42 у `00_07` |
+| Чому AES-128 LoRa достатньо на 25-річний горизонт | Цей §11 + ARCH.42 у [`00_07`](00_07_Action_Plan_Tracker) |
 | Як Cloudflare hybrid Kyber+X25519 інтегровано | `06_02 INF.4` (Akash TLS strategy) |
-| Hash Ratchet KDF дизайн | `[FW.17]` у `00_07` (placeholder, P3) |
+| Hash Ratchet KDF дизайн | `[FW.17]` у [`00_07`](00_07_Action_Plan_Tracker) (placeholder, P3) |
 | peaq DID міграція на Substrate-PQC | `05_01 Multichain Architecture` §peaq |
-| OTA HMAC-SHA256 dual-gate | §3.4б цього файла + `[FW.23]` у `00_07` |
+| OTA HMAC-SHA256 dual-gate | §3.4б цього файла + `[FW.23]` у [`00_07`](00_07_Action_Plan_Tracker) |
 | Chainlink HMAC vs ECDSA migration | `04_02 ChainlinkOracleService` (delegated до Chainlink DON) |
 
 ### 11.5 Висновок

@@ -35,6 +35,7 @@
 ## 📑 Зміст
 
 <!-- TOC:AUTO:START -->
+- [Статус Імплементації](#-статус-імплементації)
 - [Частина I: APM — Sentry Error Tracking](#-частина-i-apm--sentry-error-tracking)
 - [Частина II: Time-Series — Prometheus Metrics](#-частина-ii-time-series--prometheus-metrics)
 - [Частина III: Logs — GCP Cloud Logging](#-частина-iii-logs--gcp-cloud-logging)
@@ -389,7 +390,7 @@ bin/rails runner 'SilkenNet::Metrics::REGISTRY.metrics.sort_by{|m|[m.type.to_s,m
 Аудит чинного стеку (Grafana Alloy → Grafana Cloud) на production-grade зрілість. Архітектура **достатня** (WAL-буферизація, Basic Auth, всі 9 черг, 32 метрики), але до «industrial» бракувало атрибуції та захисних гейтів.
 
 **✅ Зроблено зараз (`config.alloy`):**
-- **`external_labels`** на `remote_write` — `service` / `source` / `env` (з `RAILS_ENV`) / `release` (з `RELEASE_VERSION`). Без них серії з prod/canopy **та** з різних Akash-провайдерів (multi-provider failover, `06_02`) зливаються в Grafana Cloud — неможливо скоупити дашборди/алерти за середовищем чи провайдером, ні відстежити регресію за релізом (корелює з Sentry `release`).
+- **`external_labels`** на `remote_write` — `service` / `source` / `env` (з `RAILS_ENV`) / `release` (з `RELEASE_VERSION`). Без них серії з prod/canopy **та** з різних Akash-провайдерів (multi-provider failover, [`06_02`](06_02_Akash_Network_Integration)) зливаються в Grafana Cloud — неможливо скоупити дашборди/алерти за середовищем чи провайдером, ні відстежити регресію за релізом (корелює з Sentry `release`).
 - **`scrape_timeout = 10s`** явно (< 15s interval).
 - Header-коментар більше не дублює реєстр метрик — реф на §2.8 (DRY).
 - **CI-gate `alloy_config_validate`** (`.github/workflows/ci.yml`) — `grafana/alloy fmt` парсить `config.alloy` на кожен PR/push (env-незалежно); River parse-error = **red CI замість crash-loop sidecar** на Akash-деплої.

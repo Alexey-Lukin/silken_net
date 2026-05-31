@@ -57,7 +57,7 @@
 ### Repo / Project governance
 | Workflow | Trigger | Призначення |
 |---|---|---|
-| `trl_sync.yml` | `issues` | GraphQL Projects v2 — TRL-stamping (OPS.1; `00_05`) |
+| `trl_sync.yml` | `issues` | GraphQL Projects v2 — TRL-stamping (OPS.1; [`00_05`](00_05_GitHub_Projects_and_IaC_Automation)) |
 | `labeler.yml` | `pull_request_target` | Auto-label PR за шляхами |
 | `labels_sync.yml` | push `.github/labels.yml` + dispatch | Labels-as-IaC sync |
 

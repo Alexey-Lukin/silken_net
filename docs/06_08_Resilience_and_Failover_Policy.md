@@ -7,13 +7,13 @@
 1. **Queen Gateway як Single Point of Failure** — фізичний шлюз між LoRa-мережею Солдатів і Akash/Rails.
 2. **12-ланковий Web3-конвеєр як Lego Tower of Doom** — будь-яка зовнішня мережа (IoTeX, Streamr, Chainlink, Hadron, KlimaDAO, ...) може mute/cap/break.
 
-Документ описує `Fallback / Retry / Buffer policy` для кожної ланки та механізм продовжувати Proof-of-Growth (`docs/05_02`) навіть при тимчасовій відсутності окремих мостів.
+Документ описує `Fallback / Retry / Buffer policy` для кожної ланки та механізм продовжувати Proof-of-Growth ([`05_02`](05_02_Proof_of_Growth_Pipeline)) навіть при тимчасовій відсутності окремих мостів.
 
 ---
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — політика затверджена, **6 з 10 Implementation Anchors ✅ Реалізовано** (Web3CircuitBreaker, Multi-RPC fallback, Queen self-telemetry, CoAP retry, Chainlink router probe, Manual review terminal state — див. §3). Залишаються 🟡 (→ [`00_07`](00_07_Action_Plan_Tracker)): Queen-to-Queen Backhaul Mesh + Flash overflow tier (ARCH.35), Helium Queen-side LoRaWAN (ARCH.34), TDMA/CAD sync (ARCH.26), Ingress Proxy (INF.4/INF.6), Conductor L2 (ARCH.1, formerly "Sergeant"). Production-rollout — Phase 2 (`00_03`).
+- **Поточний TRL:** TRL 6 — політика затверджена, **6 з 10 Implementation Anchors ✅ Реалізовано** (Web3CircuitBreaker, Multi-RPC fallback, Queen self-telemetry, CoAP retry, Chainlink router probe, Manual review terminal state — див. §3). Залишаються 🟡 (→ [`00_07`](00_07_Action_Plan_Tracker)): Queen-to-Queen Backhaul Mesh + Flash overflow tier (ARCH.35), Helium Queen-side LoRaWAN (ARCH.34), TDMA/CAD sync (ARCH.26), Ingress Proxy (INF.4/INF.6), Conductor L2 (ARCH.1, formerly "Sergeant"). Production-rollout — Phase 2 ([`00_03`](00_03_TRL_Matrix_HIL_and_Beyond)).
 
 ---
 
@@ -100,13 +100,13 @@ Soldier'и **не знають**, що "їх" Queen впала. Вони про�
 
 | Крок | Залежна ланка | Тип ризику | Fallback | Що блокує далі |
 |------|---------------|------------|----------|----------------|
-| 2. Akash hosting | Akash | Provider eviction, oracle price spike, no bidders | Multi-provider deployment (`deploy.yaml` SDL з multiple providers); fallback на GCP via Kamal (`docs/06_01`) — `kamal redeploy --hosts canopy` **+ перемкнути upstream Ingress Anchor** (HAProxy/socat Akash→GCP, [`06_02`](06_02_Akash_Network_Integration) розділ «Ingress Anchor»). **Queens НЕ потрапляють у «чорну діру»:** CoAP йде на *статичний IP Ingress Anchor* (e2-micro), а не на Akash прямо → endpoint Королев незмінний, перемикається лише backend за Anchor'ом (інакше — OTA `CMD_SET_BACKEND` як крайній засіб, `06_02`). | Цілий backend (всі 12 наступних кроків) — тому Akash redundancy P0. |
+| 2. Akash hosting | Akash | Provider eviction, oracle price spike, no bidders | Multi-provider deployment (`deploy.yaml` SDL з multiple providers); fallback на GCP via Kamal ([`06_01`](06_01_Deployment_Kamal_Terraform)) — `kamal redeploy --hosts canopy` **+ перемкнути upstream Ingress Anchor** (HAProxy/socat Akash→GCP, [`06_02`](06_02_Akash_Network_Integration) розділ «Ingress Anchor»). **Queens НЕ потрапляють у «чорну діру»:** CoAP йде на *статичний IP Ingress Anchor* (e2-micro), а не на Akash прямо → endpoint Королев незмінний, перемикається лише backend за Anchor'ом (інакше — OTA `CMD_SET_BACKEND` як крайній засіб, [`06_02`](06_02_Akash_Network_Integration)). | Цілий backend (всі 12 наступних кроків) — тому Akash redundancy P0. |
 | 3. Streamr P2P | Streamr Network | Streamr API rate-limit / outage | Non-blocking publish (`StreamrBroadcastWorker`, `queue: low`, retry: 3). При остаточному фейлі — payload потрапляє в `streamr_undelivered` Kredis list (TTL 24 год). Власний P2P через ActionCable websockets залишається активним. | Нічого. Streamr — спостерігач, не gate. |
 | 4. peaq DID | peaq Network | peaq RPC down, registration revert | `PeaqRegistrationWorker` retry 5×; якщо все ще fail — `tree.peaq_did` залишається `nil`, telemetry **буферизується** у `TelemetryLog` (`oracle_status_pending`), мінтинг НЕ відбувається. Коли peaq оживає — `PeaqRegistrationWorker` дореєстровує DID, далі `IotexBackfillWorker` дозаганяє верифікацію → мінт. Після 7 днів простою — alert "peaq_long_outage" P1. **`did:local:fallback` ВИДАЛЕНО** (див. ⚠️ нижче). | Кроки 5–8 (IoTeX, Chainlink, mint). Solana/Celo не блокуються (вони можуть працювати з DID або з tree_uid напряму). |
 | 5. IoTeX W3bstream | IoTeX | API zaspamlena, ZK-proof generation failed | `IotexVerificationWorker` retry 5×; стан `verified_by_iotex` залишається `false` → `MintCarbonCoinWorker` пропускає згідно guard clause. **Buffer:** telemetry зберігається в `TelemetryLog`, перезапускається кроком `IotexBackfillWorker` (cron `0 */2 * * *`) — пробує всі `verified_by_iotex: false AND created_at > 7d ago` повторно. | Крок 6 (Chainlink). |
 | 6. Chainlink Functions | Chainlink DON | LINK token balance низький, gas spike, router contract version mismatch | `Web3::ChainlinkRouterVersion` runtime-probe + graceful fallback (`Chainlink::OracleDispatchService` [S6.15] вже реалізований); `WEB3_STRICT_MODE=false` локально → stub mode для тестів. Якщо LINK low — `Treasury::MonitorService` шле P1 alert "topup_LINK_oracle". | Кроки 8 (Polygon mint). Solana/Celo не блокуються — вони не йдуть через Chainlink. |
 | 7. Solana micro-rewards | Solana | RPC eviction, ATA missing, low SOL у gas wallet | Multi-RPC fallback (з `.env.example`: `SOLANA_RPC_URL` + `SOLANA_RPC_URL_FALLBACK_1..3`). Якщо все fail → `SolanaMicroRewardWorker` move до `manual_review`; Celo продовжує самостійно. | Нічого (Solana — самодостатня rail). |
-| 7. Celo ReFi | Celo | Forno RPC down, низький cUSD balance | Multi-RPC fallback (`docs/04_02` §13b Drift Register, E.49 implementation `RPC_FALLBACK_ENV_KEYS`). Якщо forno + community RPCs all down → `CeloRewardWorker` запит резервується у `celo_pending_payouts` (Kredis list), drain коли RPC живий. | Нічого (Celo — самодостатня rail). |
+| 7. Celo ReFi | Celo | Forno RPC down, низький cUSD balance | Multi-RPC fallback ([`04_02 §13b`](04_02_Business_Logic_and_Services) Drift Register, E.49 implementation `RPC_FALLBACK_ENV_KEYS`). Якщо forno + community RPCs all down → `CeloRewardWorker` запит резервується у `celo_pending_payouts` (Kredis list), drain коли RPC живий. | Нічого (Celo — самодостатня rail). |
 | 8. Polygon + Hadron | Polygon EVM + Hadron compliance | Polygon RPC saturated, Hadron KYC service down | Polygon multi-RPC (Alchemy + Infura + own node); Hadron — якщо `hadron_kyc_status` cached `approved` для wallet → continue (cache TTL 24 год). Якщо cache miss + Hadron down → `MintCarbonCoinWorker.retry` (5×), потім `manual_review`. | Крок 9 (The Graph) — оскільки graph індексує Polygon events. |
 | 9. The Graph | The Graph hosted service | Subgraph health degraded, indexing lag >1 година | Read-side тільки. Якщо subgraph lag → dashboard показує `last_indexed_block` warning, але mint flow не блокується. Альтернативи: own subgraph node (Akash deployment, P2) або direct Polygon RPC `eth_getLogs` (`TheGraph::QueryService` уже має fallback path). | Нічого (read-side). |
 | 10. KlimaDAO | Polygon (KlimaDAO contracts) | Contract paused, approve revert | `KlimaRetirementWorker` retry 3× → `manual_review`. Параметризується через `ProtocolParameters.klima_retirement_enabled` (DAO-toggle). | Нічого (retirement — окрема rail, не блокує emission). |
@@ -168,8 +168,8 @@ end
 
 | Концепція | Файл / Сервіс | Статус |
 |-----------|---------------|--------|
-| Web3 circuit breaker | `app/workers/concerns/web3_circuit_breaker.rb` (`04_02`) | ✅ Реалізовано (320L+ spec) |
-| Multi-RPC fallback (Polygon, Solana, Celo) | `RPC_FALLBACK_ENV_KEYS` constants | ✅ Реалізовано (E.49 in `00_07`) |
+| Web3 circuit breaker | `app/workers/concerns/web3_circuit_breaker.rb` ([`04_02`](04_02_Business_Logic_and_Services)) | ✅ Реалізовано (320L+ spec) |
+| Multi-RPC fallback (Polygon, Solana, Celo) | `RPC_FALLBACK_ENV_KEYS` constants | ✅ Реалізовано (E.49 in [`00_07`](00_07_Action_Plan_Tracker)) |
 | Queen self-telemetry (`DID == 0x00000000`) | `GatewayTelemetryWorker` + `Gateway.mark_seen!` | ✅ Реалізовано |
 | CoAP retry constants on Queen | `firmware/queen/main.c` + 4 host tests (FW.9) | ✅ Реалізовано |
 | Chainlink router version probe | `Web3::ChainlinkRouterVersion` [S6.15] | ✅ Реалізовано (17 examples spec) |

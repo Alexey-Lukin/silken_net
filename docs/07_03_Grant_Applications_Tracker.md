@@ -199,7 +199,7 @@ Q4 2026:   Seed-раунд (climate/deeptech фонди)
 | **Вимоги до консорціуму** | Мін. 3 країни ЄС; Ukraine є асоційованою країною (partial eligibility) |
 | **Статус** | Не подано — потребує підготовки |
 | **Академічний лідер консорціуму** | **СЄУ (Аблязова Наталія Рауфівна)** — координація, управління консорціумом, Triple Helix модель (ЧНУ/ЧДТУ/СЄУ + ActiveBridge + лісові господарства) |
-| **Парасоль ЧНУ (інституційний)** | **В.о. ректора Кирилюк Є.М.** (директор ННІ економіки і права) — підпис парасольового MoU ЧНУ↔Silken Net, ко-PI WP-Bioeconomy; **проректор з науки Спрягайло О.В.** — ко-PI WP-Biodiversity, регіональний contact з Черкаською ОДА, ПЗФ-сумісність pilot'у. Деталі: [`08_02 §1A`](08_02_Academic_Institutions_Registry), [`08_01` §1G](08_01_Joint_Publications_and_IP_Strategy). |
+| **Парасоль ЧНУ (інституційний)** | **В.о. ректора Кирилюк Є.М.** (директор ННІ економіки і права) — підпис парасольового MoU ЧНУ↔Silken Net, ко-PI WP-Bioeconomy; **проректор з науки Спрягайло О.В.** — ко-PI WP-Biodiversity, регіональний contact з Черкаською ОДА, ПЗФ-сумісність pilot'у. Деталі: [`08_02 §1A`](08_02_Academic_Institutions_Registry), [`08_01 §1G`](08_01_Joint_Publications_and_IP_Strategy). |
 
 **Структура консорціуму для Horizon Europe:**
 
@@ -215,7 +215,7 @@ WP8 Biodiversity Baseline (Cluster 6) → ЧНУ біо-хаб (Спрягайл
 WP9 Exploitation & IPR            → ActiveBridge + Silken Net
 ```
 
-> **Twin-pack publication backbone (cross-ref `08_03` §1G):** Стаття 34 (Кирилюк ↔ Lorenz синергетика) обґрунтовує WP7; Стаття 35 (Кирилюк ↔ Спрягайло біоекономіка) і Стаття 24a (Спрягайло ↔ Mongabay) — WP8. Подання до журналу Q1 за 2–3 місяці до Horizon-deadline переводить заявку з категорії «концепт» у «published research» (вирішальне для evaluators).
+> **Twin-pack publication backbone (cross-ref [`08_01 §1G`](08_01_Joint_Publications_and_IP_Strategy)):** Стаття 34 (Кирилюк ↔ Lorenz синергетика) обґрунтовує WP7; Стаття 35 (Кирилюк ↔ Спрягайло біоекономіка) і Стаття 24a (Спрягайло ↔ Mongabay) — WP8. Подання до журналу Q1 за 2–3 місяці до Horizon-deadline переводить заявку з категорії «концепт» у «published research» (вирішальне для evaluators).
 
 **Зв'язок з кодбейсом:** Horizon Europe вимагає Open Science — `StateRootAnchor.sol` (публічна верифікація), Filecoin-архів телеметрії, The Graph subgraph (публічний доступ до даних).
 
@@ -229,7 +229,7 @@ WP9 Exploitation & IPR            → ActiveBridge + Silken Net
 | **Статус** | Не подано |
 | **Академічний лідер** | **СЄУ (Аблязова Н.) + ЧНУ ФОТІУС (Осауленко)** |
 
-**Тема заявки:** _"Trustless D-MRV: IoTeX W3bstream ZK-proofs for biological homeostasis verification on STM32WLE5JC edge devices"_ — пов'язано з `IotexVerificationWorker`, `Iotex::W3bstreamVerificationService` та `05_02_Proof_of_Growth_Pipeline`.
+**Тема заявки:** _"Trustless D-MRV: IoTeX W3bstream ZK-proofs for biological homeostasis verification on STM32WLE5JC edge devices"_ — пов'язано з `IotexVerificationWorker`, `Iotex::W3bstreamVerificationService` та [`05_02`](05_02_Proof_of_Growth_Pipeline).
 
 > **Детально про консорціум та грантову стратегію:** [`08_02 §5`](08_02_Academic_Institutions_Registry) (Аблязова Н.).
 

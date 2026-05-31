@@ -326,7 +326,7 @@ backend "gcs" {
 }
 ```
 
-Цей bucket має існувати **до** першого `terraform init`. Terraform не може його створити автоматично. Деталі вирішення — в `06_01` BLOCKER-2.
+Цей bucket має існувати **до** першого `terraform init`. Terraform не може його створити автоматично. Деталі вирішення — в [`06_01`](06_01_Deployment_Kamal_Terraform) BLOCKER-2.
 
 ---
 

@@ -118,6 +118,31 @@ module Tracker
       end
     end
 
+    # --- §-section validation [#2b, thread C]: a canon-ref `NN_NN §X` whose §X names a
+    # section must resolve to a heading in the TARGET doc — catches a tracker pointer left
+    # dangling after the section was renamed/removed (the §BLOCKER-N refs orphaned by the
+    # blockers→00_07 sweep). Mirrors DocsLinter.section_label_drift: tokens <2 chars (bare
+    # §3 — resolve trivially) and meta placeholders (§NN/§N/§X) are skipped. ---
+    SECTION_TOKEN = /§\s*([0-9A-Za-zА-Яа-яІіЇїЄє.\-]+)/
+
+    def self.section_dangling_refs(items, docs_dir = DOCS_DIR)
+      heads = Dir.glob(File.join(docs_dir, "*.md")).each_with_object({}) do |f, h|
+        id = File.basename(f, ".md")[0, 5]
+        h[id] = File.readlines(f).grep(/^\#{1,6}\s/).join("\n").downcase if id =~ /\A\d\d_\d\d/
+      end
+      items.filter_map do |it|
+        next unless it.canon
+
+        id = it.canon[/\A\d\d_\d\d/]
+        next unless id && heads[id]
+
+        bad = it.canon.scan(SECTION_TOKEN).flatten
+                      .reject { |t| t.length < 2 || t.match?(/\A[nxNX]+\z/) }
+                      .reject { |t| heads[id].include?(t.downcase) }
+        "#{it.id}: `#{it.canon}` → §#{bad.join(', §')} absent in #{id}" unless bad.empty?
+      end
+    end
+
     # --- regenerate the AUTO block in place ---
     def self.regenerate(path = DEFAULT_PATH)
       md = File.read(path)

@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Єдиний SSOT-checklist усіх секретів, необхідних для роботи системи в Canopy (staging) та Production. Документ закриває **S1.1 (BLOCKER-3 у `06_01`)** — "GitHub Secrets заповнення" — частину 🤖.
+Єдиний SSOT-checklist усіх секретів, необхідних для роботи системи в Canopy (staging) та Production. Документ закриває **S1.1 (BLOCKER-3 у [`06_01`](06_01_Deployment_Kamal_Terraform))** — "GitHub Secrets заповнення" — частину 🤖.
 
 > **Принцип:** Секрет = **будь-яке значення, втрата якого означає можливість компрометації або знищення системи**: приватні ключі, паролі БД, master keys, API tokens, RPC credentials. Реальні значення **ніколи** не комітяться в git та не зберігаються у цьому документі.
 
@@ -87,7 +87,7 @@
 - [ ] `DATABASE_URL` — те саме значення що й GitHub Secret
 - [ ] `REDIS_URL` — те саме значення
 - [ ] `KREDIS_REDIS_URL` — Redis DB 1 (Kredis locks для Web3 nonce)
-- [ ] `SENTRY_DSN` — Sentry project DSN. Без цього Sentry **інертний** — production помилки не репортуються (BLOCKER у `00_07`). Отримати: Sentry → Project Settings → Client Keys (DSN).
+- [ ] `SENTRY_DSN` — Sentry project DSN. Без цього Sentry **інертний** — production помилки не репортуються (BLOCKER у [`00_07`](00_07_Action_Plan_Tracker)). Отримати: Sentry → Project Settings → Client Keys (DSN).
 - [ ] `PROVISIONING_MASTER_KEY` — HKDF master key для per-device AES key derivation. Генерувати: `ruby -e "require 'securerandom'; puts SecureRandom.hex(32)"`. ⚠️ **Production guard:** provisioning endpoint **MUST** raise/refuse при відсутності ENV у production (`Rails.env.production?`) — будь-який fallback на raw AES key є **критичною security regression** і допустимий ТІЛЬКИ у TRL4 lab mode (`RAILS_ENV=development|test`). Recommended controller-level guard: `raise "PROVISIONING_MASTER_KEY required in production" if Rails.env.production? && ENV["PROVISIONING_MASTER_KEY"].blank?`
 - [ ] `CHAINLINK_FUNCTIONS_ROUTER` — адреса Chainlink Functions Router contract на Polygon
 - [ ] `CHAINLINK_SUBSCRIPTION_ID` — ID Chainlink Functions subscription (з https://functions.chain.link)
@@ -104,7 +104,7 @@
 - [ ] `ALCHEMY_POLYGON_RPC_URL` — Alchemy/Infura RPC для Polygon (Primary). `Web3::ResilientClient` підтримує fallback cascade — також встанови `ALCHEMY_POLYGON_RPC_URL_FALLBACK_*` за потреби.
 - [ ] `ALCHEMY_ETHEREUM_RPC_URL` — Alchemy RPC для Ethereum L1
 - [ ] `CELO_RPC_URL` — Celo RPC endpoint (без значення — `Forno`-public; для production — Infura/Alchemy)
-- [ ] `SOLANA_RPC_URL` — Solana RPC. ⚠️ **БЕЗ цього ENV дефолт = Solana Devnet** — мікро-винагороди USDC підуть на тестову мережу (`E.47` у `00_07`)! Mainnet: Helius/QuickNode.
+- [ ] `SOLANA_RPC_URL` — Solana RPC. ⚠️ **БЕЗ цього ENV дефолт = Solana Devnet** — мікро-винагороди USDC підуть на тестову мережу (`E.47` у [`00_07`](00_07_Action_Plan_Tracker))! Mainnet: Helius/QuickNode.
 - [ ] `CARBON_COIN_CONTRACT_ADDRESS` — адреса SCC контракту після deploy
 - [ ] `KLIMA_RETIREMENT_CONTRACT` — адреса KlimaDAO Retirement Aggregator
 - [ ] `SOLANA_USDC_MINT_ADDRESS` — SPL Token mint USDC (mainnet: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`)
@@ -119,7 +119,7 @@
 
 ## 3. Akash SDL (`deploy/akash/deploy.yaml` + `deploy.yaml.tpl`)
 
-> **Статус:** SDL містить `REQUIRED_SECRET_NOT_SET` плейсхолдери для критичних змінних (BLOCKER-5 у `06_01`, BLOCKER-3 у `06_02`).
+> **Статус:** SDL містить `REQUIRED_SECRET_NOT_SET` плейсхолдери для критичних змінних (BLOCKER-5 у [`06_01`](06_01_Deployment_Kamal_Terraform), BLOCKER-3 у [`06_02`](06_02_Akash_Network_Integration)).
 >
 > **Рекомендований workflow:** використовувати `deploy/akash/deploy.yaml.tpl` Terraform-шаблон — секрети підставляються автоматично з `terraform.tfvars`.
 >
@@ -257,7 +257,7 @@
 
 ### 5.1. Перед першим деплоєм Production
 
-1. [ ] 👤 Створити GCS bucket для Terraform state (S5.6 в `00_07`): `gsutil mb -l europe-west1 gs://<project>-terraform-state`. Включити versioning: `gsutil versioning set on gs://<project>-terraform-state`.
+1. [ ] 👤 Створити GCS bucket для Terraform state (S5.6 в [`00_07`](00_07_Action_Plan_Tracker)): `gsutil mb -l europe-west1 gs://<project>-terraform-state`. Включити versioning: `gsutil versioning set on gs://<project>-terraform-state`.
 2. [ ] 👤 Створити `terraform/terraform.tfvars` з §4
 3. [ ] 👤 Виконати `terraform init && terraform apply`
 4. [ ] 👤 Заповнити GitHub Secrets з §1
@@ -273,7 +273,7 @@
 - **Sentry DSN**: rotate у Sentry UI → оновити `SENTRY_DSN` → redeploy.
 - **Chainlink HMAC**: координовано з backend deploy (зміна на льоту викличе rejected callbacks).
 - **Oracle/Anchor private keys**: deploy новий гаманець → revoke старий → перевести залишок газу → redeploy.
-- **peaq_signing_key** (Ed25519 DID signing): планова ротація кожні 90 днів або при зміні персоналу. Dual-Key Grace Period 72 години (див. §5.4 нижче та `04_02_Business_Logic_and_Services` §S6.14).
+- **peaq_signing_key** (Ed25519 DID signing): планова ротація кожні 90 днів або при зміні персоналу. Dual-Key Grace Period 72 години (див. §5.4 нижче та [`04_02 §S6.14`](04_02_Business_Logic_and_Services)).
 
 ### 5.3. Аудит виконання
 
@@ -402,11 +402,11 @@ bin/rails runner "
    - Corrective actions
 
 3. **Превентивні заходи:**
-   - Увімкнути scheduled rotation (кожні 90 днів) — `04_02` §S6.14
+   - Увімкнути scheduled rotation (кожні 90 днів) — [`04_02 §S6.14`](04_02_Business_Logic_and_Services)
    - Налаштувати alerting на аномальні provisioning патерни
    - Розглянути HSM/Vault для зберігання signing keys замість Rails credentials
 
-> **Зв'язок:** Key Rotation Policy → `docs/04_02_Business_Logic_and_Services` §S6.14
+> **Зв'язок:** Key Rotation Policy → [`04_02 §S6.14`](04_02_Business_Logic_and_Services)
 
 ---
 
@@ -414,8 +414,8 @@ bin/rails runner "
 
 | Документ | Зв'язок |
 |---|---|
-| `06_01_Deployment_Kamal_Terraform` | Вихідний BLOCKER-3 |
-| `06_02_Akash_Network_Integration` | BLOCKER-5 (REQUIRED_SECRET_NOT_SET) |
-| `06_03_Prometheus_Observability` | `SENTRY_DSN`, Grafana Cloud tokens |
-| `05_01_Multichain_Architecture` | Web3 ENV variables (§5) |
-| `00_07_Action_Plan_Tracker` | S1.1, S4.3, S5.2, S5.6 |
+| [`06_01`](06_01_Deployment_Kamal_Terraform) | Вихідний BLOCKER-3 |
+| [`06_02`](06_02_Akash_Network_Integration) | BLOCKER-5 (REQUIRED_SECRET_NOT_SET) |
+| [`06_03`](06_03_Prometheus_Observability) | `SENTRY_DSN`, Grafana Cloud tokens |
+| [`05_01`](05_01_Multichain_Architecture) | Web3 ENV variables (§5) |
+| [`00_07`](00_07_Action_Plan_Tracker) | S1.1, S4.3, S5.2, S5.6 |

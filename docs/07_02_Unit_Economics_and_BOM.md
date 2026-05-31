@@ -58,8 +58,8 @@
 | **Energy Harvesting** | BQ25570 (MPPT Nano-Power) | Прямий запуск від EBFC >500 мВ (LTC3108 видалено). |
 | **Накопичувач енергії** | Supercapacitor 0.47 F / 5.5 В | До 500,000 циклів заряду/розряду. |
 | **MCU & Radio** | STM32WLE5JC (LoRa-E5) | ARM Cortex-M4, LoRa 868 МГц (custom mesh), Edge AI (TinyML). |
-| **Антена** | Ceramic SMD Antenna 868 МГц (LTCC) | Пайка роботом, Keep-Out Zone ≥3 мм. Альтернатива: Ignion Virtual Antenna™. Детально → `02_01` §5. |
-| **Корпус / Радом** | PEEK Medical Grade (IP68) — окрема деталь IoT-капсули, **НЕ Zone 2** | Радіопрозорий купол (∅20–30 мм), різьба/байонет до катодного фланця Zone 3, O-ring EPDM. Захист від вандалізму та вологи. Детально → `02_01` §5.2. |
+| **Антена** | Ceramic SMD Antenna 868 МГц (LTCC) | Пайка роботом, Keep-Out Zone ≥3 мм. Альтернатива: Ignion Virtual Antenna™. Детально → [`02_01 §5`](02_01_Hardware_Architecture_and_BOM). |
+| **Корпус / Радом** | PEEK Medical Grade (IP68) — окрема деталь IoT-капсули, **НЕ Zone 2** | Радіопрозорий купол (∅20–30 мм), різьба/байонет до катодного фланця Zone 3, O-ring EPDM. Захист від вандалізму та вологи. Детально → [`02_01 §5.2`](02_01_Hardware_Architecture_and_BOM). |
 
 > **Архітектурна зміна (Pivot v2):** 4 титанові голки-електроди (система Кельвіна) та каскад LTC3108 + трансформатор 1:100 **повністю видалено**. Замінено на коаксіальну «Матрьошку» з EBFC, що напряму живить BQ25570 без проміжного підсилення.
 
@@ -99,7 +99,7 @@
 | 9 | Buffer cap VOUT | 47 µF / **25V X7R 1210** (Murata GRM32E70J476ME20), **НЕ 6.3V** — [`02_03 §6.1`](02_03_BQ25570_MPPT_Nano_Power) | ~$0.18 |
 | — | **Electronics TOTAL** | | **~$11.33** |
 | — | _LTC3108 + Coilcraft xfmr 1:100 (DNP footprint)_ | _Cold-start fallback, не populated за замовчуванням — `02_03 BLOCKER-3`. PCB pads ~$0._ | _$0 / +$1.20 якщо populated після lab R_int test_ |
-| — | _BME280 + TPS22860 gate + PTFE vent (climate add-on)_ | _t°/RH/тиск → VPD confounder (False-Slashing kill, [`05_05`](05_05_Slashing_and_Risk_Policy) §6/§7) + клімат-оракул NaaS (`07_01`); ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM), pending bench._ | _+$2.60 якщо populated_ |
+| — | _BME280 + TPS22860 gate + PTFE vent (climate add-on)_ | _t°/RH/тиск → VPD confounder (False-Slashing kill, [`05_05`](05_05_Slashing_and_Risk_Policy) §6/§7) + клімат-оракул NaaS ([`07_01`](07_01_Nature_as_a_Service_Contracts)); ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM), pending bench._ | _+$2.60 якщо populated_ |
 
 > **Climate add-on (BME280, ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)):** +$2.60/вузол якщо populated — **НЕ** входить у baseline Electronics TOTAL ($11.33) ані CAPEX §1.2, доки ADR не закрито bench'ем. Перетворює вузол на кліматичний (VPD-confounder + NaaS клімат-оракул) — підвищує цінність D-MRV-даних для агро/страхового ринку.
 
@@ -136,7 +136,7 @@
 
 ## 📡 4. CAPEX: Специфікація шлюзу "Queen" (BOM)
 
-Шлюз агрегує дані по LoRa mesh і відправляє їх у хмару/блокчейн. Супутниковий бекхол (Starlink) винесено в окремий "Mother Gateway" (→ `02_05`), тому стандартна Queen використовує енергоефективний **LTE-M / NB-IoT**.
+Шлюз агрегує дані по LoRa mesh і відправляє їх у хмару/блокчейн. Супутниковий бекхол (Starlink) винесено в окремий "Mother Gateway" (→ [`02_05`](02_05_Queen_Hardware_and_Starlink)), тому стандартна Queen використовує енергоефективний **LTE-M / NB-IoT**.
 
 | # | Підсистема | Компоненти / Технологія | Вартість ($) |
 |---|---|---|---|
@@ -192,7 +192,7 @@
 
 #### 🤖 5а. Phase 3 (Starlink Mini) Cluster Economics — HW.14
 
-> **Cross-ref:** [00_07 HW.14](00_07_Action_Plan_Tracker), `02_05` §4 Power Tree, BLOCKER-2.
+> **Cross-ref:** [00_07 HW.14](00_07_Action_Plan_Tracker), [`02_05 §4`](02_05_Queen_Hardware_and_Starlink) Power Tree, BLOCKER-2.
 
 Для ультра-віддалених локацій де LTE-M / Starlink DTC недоступний (Phase 3):
 
@@ -256,9 +256,9 @@
 
 ## 💎 7. Фінансова модель: ROI та Токеноміка
 
-Система генерує цінність через емісію токенів **SCC (Silken Carbon/Condition Coin)**, які підтверджують гомеостаз дерева (Proof of Growth) та поглинання CO₂ (→ `05_03_Tokenomics_SCC_and_SFC`).
+Система генерує цінність через емісію токенів **SCC (Silken Carbon/Condition Coin)**, які підтверджують гомеостаз дерева (Proof of Growth) та поглинання CO₂ (→ [`05_03`](05_03_Tokenomics_SCC_and_SFC)).
 
-> **⚠️ ВИПРАВЛЕННЯ (DOC.33 — аудит 2026-04-23):** Попередня версія документа помилково вказувала "1 SCC/дерево/добу". Правильна модель узгоджена з `07_01` §2.3 та `05_03` Tokenomics: **10,000 growth_points = 1 SCC, середня генерація ~1 SCC/тиждень/дерево** (при 24 пакетах/добу × ~60 GP/пакет у гомеостазі).
+> **⚠️ ВИПРАВЛЕННЯ (DOC.33 — аудит 2026-04-23):** Попередня версія документа помилково вказувала "1 SCC/дерево/добу". Правильна модель узгоджена з [`07_01`](07_01_Nature_as_a_Service_Contracts) §2.3 та [`05_03`](05_03_Tokenomics_SCC_and_SFC) Tokenomics: **10,000 growth_points = 1 SCC, середня генерація ~1 SCC/тиждень/дерево** (при 24 пакетах/добу × ~60 GP/пакет у гомеостазі).
 
 ### 7.1. Механізм накопичення growth_points та CO₂ еквівалент
 
@@ -276,9 +276,9 @@
 | 1 дерево / рік (52 SCC) | **~26 кг CO₂** |
 | Кластер 100 дерев / рік (≈5,200 SCC) | **~2.6 tCO₂** |
 
-> **CO₂ еквівалент [BIZ.1]:** `2000 SCC = 1 тонна поглиненого CO₂`. **SSOT:** `05_03` + [`07_01 §3`](07_01_Nature_as_a_Service_Contracts) (on-chain `ProtocolParameters.sol#sccPerTonneCo2()` + `SystemParameter(:scc_per_tonne_co2)`) — значення в таблиці вище **дзеркало SSOT**, при зміні правити там, не тут. Детально: `07_01` BLOCKER-4 (закрито).
+> **CO₂ еквівалент [BIZ.1]:** `2000 SCC = 1 тонна поглиненого CO₂`. **SSOT:** [`05_03`](05_03_Tokenomics_SCC_and_SFC) + [`07_01 §3`](07_01_Nature_as_a_Service_Contracts) (on-chain `ProtocolParameters.sol#sccPerTonneCo2()` + `SystemParameter(:scc_per_tonne_co2)`) — значення в таблиці вище **дзеркало SSOT**, при зміні правити там, не тут. Детально: [`07_01`](07_01_Nature_as_a_Service_Contracts) BLOCKER-4 (закрито).
 
-> Детально про Lorenz attractor та формулу growth_points: `03_04_mruby_Lorenz_Attractor` та `05_02_Proof_of_Growth_Pipeline`.
+> Детально про Lorenz attractor та формулу growth_points: [`03_04`](03_04_mruby_Lorenz_Attractor) та [`05_02`](05_02_Proof_of_Growth_Pipeline).
 
 ### 7.2. Розрахунок ROI
 
@@ -460,10 +460,10 @@ PCBA + Збірка (Черкаси — SVS-ARTA)
 
 | Документ | Зв'язок |
 |---|---|
-| `02_01_Hardware_Architecture_and_BOM` | Детальний технічний BOM + RF & Antenna Subsystem (EDR-02-01-RF) |
-| `02_02_Blind_Mate_Pogo_Pin_Interface` | Механіка Pogo Pin з'єднання анкер ↔ PCBA |
-| `02_03_BQ25570_MPPT_Nano_Power` | Розрахунки MPPT і живлення від EBFC |
-| `02_04_EDLC_Supercapacitor_Buffer` | Розрахунки іоністора 0.47 F |
-| `02_05_Queen_Hardware_and_Starlink` | Queen CAPEX та Starlink Mother Gateway |
-| `05_03_Tokenomics_SCC_and_SFC` | Механізм мінтингу SCC, Proof of Growth (10k growth_points = 1 SCC) |
-| `07_01_Nature_as_a_Service_Contracts` | Юридична модель NaaS |
+| [`02_01`](02_01_Hardware_Architecture_and_BOM) | Детальний технічний BOM + RF & Antenna Subsystem (EDR-02-01-RF) |
+| [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) | Механіка Pogo Pin з'єднання анкер ↔ PCBA |
+| [`02_03`](02_03_BQ25570_MPPT_Nano_Power) | Розрахунки MPPT і живлення від EBFC |
+| [`02_04`](02_04_EDLC_Supercapacitor_Buffer) | Розрахунки іоністора 0.47 F |
+| [`02_05`](02_05_Queen_Hardware_and_Starlink) | Queen CAPEX та Starlink Mother Gateway |
+| [`05_03`](05_03_Tokenomics_SCC_and_SFC) | Механізм мінтингу SCC, Proof of Growth (10k growth_points = 1 SCC) |
+| [`07_01`](07_01_Nature_as_a_Service_Contracts) | Юридична модель NaaS |

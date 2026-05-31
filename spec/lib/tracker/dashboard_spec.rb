@@ -56,4 +56,17 @@ RSpec.describe Tracker::Dashboard do
   it "does not flag a canon ref that resolves to a real doc" do
     expect(described_class.dangling_refs(items)).not_to include(a_string_matching(/FW\.99/))
   end
+
+  it "flags a canon §-ref whose section is absent in the (real) target doc (#2b)" do
+    md = <<~MD
+      ## §03 · Firmware
+      #### FW.96 — stale section ref
+      - **P0** · 🤖 · → `03_05 §9.9`
+      #### FW.95 — valid section ref
+      - **P0** · 🤖 · → `03_05 §3.2`
+    MD
+    res = described_class.section_dangling_refs(described_class.parse(md))
+    expect(res).to include(a_string_matching(/FW\.96.*§9\.9 absent in 03_05/))
+    expect(res).not_to include(a_string_matching(/FW\.95/))
+  end
 end

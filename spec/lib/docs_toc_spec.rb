@@ -40,6 +40,20 @@ RSpec.describe DocsToc do
       MD
       expect(described_class.content_headings(md)).to eq([ "🛠️ 1. Tools", "🔐 2. Crypto" ])
     end
+
+    it "keeps a content heading that merely CONTAINS a front word (exact-match front-matter)" do
+      md = <<~MD
+        ## ✅ Статус
+        ## 🏭 8. Статус Виробництва та Прототипування
+        ## 📈 4. Зв'язок Метаболізму з Атрактором
+        ## 📋 Статус Імплементації
+      MD
+      expect(described_class.content_headings(md)).to eq([
+        "🏭 8. Статус Виробництва та Прототипування",
+        "📈 4. Зв'язок Метаболізму з Атрактором",
+        "📋 Статус Імплементації"
+      ])
+    end
   end
 
   describe ".regen" do

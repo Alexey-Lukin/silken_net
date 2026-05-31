@@ -42,7 +42,7 @@
 | Рівень | Етап | Технічний критерій (Evidence) | Лабораторія / Хаб |
 |:---|:---|:---|:---|
 | **TRL 1-2** | Ідея / Принцип | Математичне обґрунтування EBFC та Атрактора Лоренца. | ЧНУ (Хімія/Фізика) |
-| **TRL 3-4** | Proof of Concept | Валідація EBFC Gen 2.0 **>500 мВ** (OCV ~600 мВ > BQ25570 Cold-Start 330 мВ; `01_03`) → 3.3V boost та перша транзакція в Sandbox. *(«44 мВ» — застаріла гіпотеза streaming-potential/п'єзо, відкинута з Gen 2.0.)* | ЧНУ (ФОТІУС) |
+| **TRL 3-4** | Proof of Concept | Валідація EBFC Gen 2.0 **>500 мВ** (OCV ~600 мВ > BQ25570 Cold-Start 330 мВ; [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)) → 3.3V boost та перша транзакція в Sandbox. *(«44 мВ» — застаріла гіпотеза streaming-potential/п'єзо, відкинута з Gen 2.0.)* | ЧНУ (ФОТІУС) |
 | **TRL 5-6** | Прототипування | Робота кластера "Солдат-Королева" в Черкаському борі (30 днів). | Silken Lab |
 | **TRL 7-8** | Кваліфікація | Повна інтеграція: DID → ZK-Proof → Chainlink → Polygon. | Production (Canopy) |
 | **TRL 9** | Експлуатація | Стабільний мінтинг SCC на мільйонах вузлів, фіналізація в L1. | Global Mainnet |
@@ -98,7 +98,7 @@
 
 | Симулятор | Імітує | Файл | Замінює реальний компонент для |
 |-----------|--------|------|-------------------------------|
-| `bin/forest_simulator` | Емулює **Queen→Backend CoAP-батчі** (AES-256-**CBC**) з телеметрією Soldier'ів, full Lorenz attractor curves. ⚠️ Це Queen-рівень: per-Soldier LoRa-хоп — на залізі **AES-128** (ECB→CCM, `03_05`), а до бекенду доходить CoAP-батч (AES-256-CBC). **Два режими (див. ⚠️ нижче):** `load_test_mode` (батч кожні 3–8 сек — стрес черг) та `realistic_mode` (CIFO-точний: рідкі об'ємні батчі ~раз на годину/45 записів + packet loss + jitter мобільної мережі) | `bin/forest_simulator` (load_test існує; realistic_mode — TODO) | Локальна розробка Rails + sidekiq + Web3 pipeline |
+| `bin/forest_simulator` | Емулює **Queen→Backend CoAP-батчі** (AES-256-**CBC**) з телеметрією Soldier'ів, full Lorenz attractor curves. ⚠️ Це Queen-рівень: per-Soldier LoRa-хоп — на залізі **AES-128** (ECB→CCM, [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security)), а до бекенду доходить CoAP-батч (AES-256-CBC). **Два режими (див. ⚠️ нижче):** `load_test_mode` (батч кожні 3–8 сек — стрес черг) та `realistic_mode` (CIFO-точний: рідкі об'ємні батчі ~раз на годину/45 записів + packet loss + jitter мобільної мережі) | `bin/forest_simulator` (load_test існує; realistic_mode — TODO) | Локальна розробка Rails + sidekiq + Web3 pipeline |
 | `HilQueenSimulator` | Queen self-telemetry (`DID == 0x00000000`), CIFO flush, Starlink/LTE timing | новий: `lib/hil/queen_simulator.rb` (планований) | Test Queen failover ([`06_08 §Queen Failover`](06_08_Resilience_and_Failover_Policy)) |
 | `HilWebPipelineSimulator` | peaq → IoTeX → Chainlink → Polygon → KlimaDAO → Filecoin → L1 — 12-chain mock з deterministic responses. ⚠️ Це **логіко-рівневий** інструмент (TRL 5-6): валідує pipeline-логіку та guard clauses, але **НЕ** Web3 реального світу (gas spikes, RPC 429/rate-limit, orphaned blocks, nonce collisions, Chainlink DON latency). НЕ є достатнім для TRL 7-8 — див. §3.3. | `WEB3_STRICT_MODE=false` + stub services у `app/services/web3/*_stub.rb` | Логіка pipeline + unit/integration (TRL 5-6) |
 | `HilLorenzGenerator` | mruby Lorenz curves з різних tree species, environmental conditions (temp, vibration), faulty/normal patterns | `lib/hil/lorenz_generator.rb` (планований) | TinyML training data + Rails Attractor validation |

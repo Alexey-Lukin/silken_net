@@ -13,8 +13,12 @@ module DocsToc
   START_MARK = "<!-- TOC:AUTO:START -->"
   END_MARK   = "<!-- TOC:AUTO:END -->"
   HEADING    = "## 📑 Зміст"
-  # Front-matter headings excluded from the ToC (the ToC maps the *content*).
-  FRONT = /Мета|Статус|Cross-references|Зміст/
+  # Front-matter headings excluded from the ToC (the ToC maps the *content*). Matched
+  # EXACTLY after the leading emoji: a CONTENT heading that merely *contains* a front
+  # word — "8. Статус Виробництва", "4. Зв'язок Метаболізму", "Статус Імплементації" —
+  # must stay in the ToC (substring-matching here silently dropped 6 such sections).
+  FRONT_WORDS = %w[Мета Статус Cross-references Зміст].freeze
+  FRONT_STRIP = /\A[\p{S}\p{Cf}\p{Mn}\p{Me}\u{FE0F}\s]+/u
 
   # GitHub heading-anchor slug — validated against real repo anchors. Lowercase;
   # drop emoji / punctuation / em-dash (keep letters, digits, `_`, `-`, space);
@@ -46,7 +50,7 @@ module DocsToc
       next unless line.start_with?("## ")
 
       heading = line.sub(/\A##\s/, "").rstrip
-      heading unless heading.match?(FRONT)
+      heading unless FRONT_WORDS.include?(heading.sub(FRONT_STRIP, ""))
     end
   end
 

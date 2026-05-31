@@ -88,7 +88,7 @@
 | Guard | Що ловить | Команда / місце |
 |---|---|---|
 | `docs:check_refs` | dangling `NN_NN` doc-links (hard) + §-section label drift (advisory) | `bin/rails docs:check_refs` (ci.yml + docs.yml) |
-| `tracker:check` | 00_07: dup-IDs, meta-line conformance, canon-ref resolution | `bin/rails tracker:check` (ci.yml + docs.yml) |
+| `tracker:check` | 00_07: dup-IDs, meta-line conformance, canon-ref resolution + **§-section resolution** (a `NN_NN §X` pointer's §X must be a real heading — зловив 12 stale `§BLOCKER-N`/wrong-doc-id рефів, осиротілих blockers→00_07 sweep'ом; thread C 2026-05-31) | `bin/rails tracker:check` (ci.yml + docs.yml) |
 | `ssot_guard.yml` | protected code змінено → docs мусять оновитись | CI PR gate (00_05 §2.3) |
 | regen-from-code | enumerable lists (метрики) генеруються з SSOT, не вручну | `06_03 §2.8` regen cmd |
 | TRL presence | кожен док з `## ✅ Статус` декларує TRL (ловить 06_04-клас gap) | `bin/rails docs:check_refs` (hard) |
@@ -101,6 +101,7 @@
 | **link label↔href mismatch** | doc-link, де visible label веде з одним `NN_NN`, а href резолвиться на ІНШИЙ доку — renamed-doc residue, який dangling-check НЕ ловить (href валідний). Зловив 00_02 §3 (текст «00_06» → файл 00_05) + residue в 03_02 після renumber'у візії-доку (visible label-ID ≠ href-ID) | `bin/rails docs:check_refs` (HARD 2026-05-30; `lib/docs_linter.rb`) |
 | **magic-marker hex** | _(advisory)_ визначення 4-байтного ASCII-маркера (`"LZST" = 0xNNNN`) має дорівнювати BE/LE byte-packing власного імені — self-validating, без таблиці (firmware змішує endianness: `RITE`=LE, `LZST`=BE); ловить typo'd/stale magic-value (клас 9cb1d86). Hex-посилання за значенням (без сусіднього імені) не чіпається | `bin/rails docs:check_refs` (advisory 2026-05-30; `lib/docs_linter.rb`) |
 | **bare §-ref → link** | code-span `NN_NN §X` поза markdown-лінком — non-standard + blind spot (`section_label_drift` валідує лише лінковані рефи). Стандартизувати у повний лінк (канонічна форма — §1). Exempt 00_00/00_06/00_07/02_06; skip fences + meta-плейсхолдери (`§NN`/`§X.Y`) | `bin/rails docs:check_refs` (HARD 2026-05-31; `lib/docs_linter.rb`) |
+| **bare doc-id → link** | сиблінг bare-§ для **whole-doc** рефів: code-span `NN_NN` / `docs/NN_NN` / `NN_NN_FullName` **без** § поза лінком має бути `[`NN_NN`](DocName)` (клікабельність + один формат). Ловить лише id, що резолвиться в поточний док (retired-`04_07` лишається прозою); skip fences + спани в лінках. Закрив 213-реф thread-A sweep (`scripts/linkify_bare_refs.rb`). Exempt 00_00/00_06/00_07/02_06/manifest | `bin/rails docs:check_refs` (HARD 2026-05-31; `lib/docs_linter.rb`) |
 | **tokenomics/carbon rate One-Home** | mint-курс + carbon-курс — governance-змінні **параметри** → значення живе лише в home (`05_03` + business-view `07_01 §3`); re-statement деінде = silent drift при re-price (зловив дубль у 8 доках). Exempt homes + labeled-mirror `07_02` + manifest + 00_07 | `bin/rails docs:check_refs` (HARD 2026-05-31; `lib/docs_linter.rb`) |
 | TRL range-consistency | _(roadmap)_ per-doc member-TRL у межах діапазону модуля `00_03 §1` | — |
 

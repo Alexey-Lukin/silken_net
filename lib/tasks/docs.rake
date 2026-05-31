@@ -30,6 +30,7 @@ namespace :docs do
   task :check_refs do
     files = Dir[File.join(DOCS_DIR, "*.md")]
     existing = files.map { |f| File.basename(f, ".md") }.to_set
+    valid_ids = existing.filter_map { |b| b[/\A\d\d_\d\d/] }.to_set  # NN_NN of every current doc
     headings = files.to_h do |f|
       [ File.basename(f, ".md"), File.readlines(f).grep(/^\#{1,6}\s/).join("\n").downcase ]
     end
@@ -44,6 +45,7 @@ namespace :docs do
     magic_drift = []  # soft: magic-marker hex ≠ BE/LE ASCII of its quoted name
     bare_refs   = []  # hard: bare code-span `NN_NN §X` ref that should be a full link
     rate_drift  = []  # hard: tokenomics/carbon rate value re-stated outside its One-Home (05_03/07_01)
+    bare_doc    = []  # hard: bare code-span `NN_NN` doc-id (no §) that should be a full link
 
     files.each do |f|
       base = File.basename(f, ".md")
@@ -78,6 +80,7 @@ namespace :docs do
       magic_drift.concat(DocsLinter.magic_marker_hex_drift(text).map { |h| "#{base}: #{h}" })
       bare_refs.concat(DocsLinter.bare_section_ref(base, text).map { |h| "#{base}: #{h}" })
       rate_drift.concat(DocsLinter.tokenomics_rate_drift(base, text).map { |h| "#{base}: #{h}" })
+      bare_doc.concat(DocsLinter.bare_doc_ref(base, text, valid_ids).map { |h| "#{base}: #{h}" })
     end
 
     # [TRL single-value] HARD — 00_03 §1 per-module matrix cells single 1-9.
@@ -124,6 +127,14 @@ namespace :docs do
       puts "  ✗ bare code-span `NN_NN §X` refs — must be `[`…`](Doc)` links (#{bare_refs.size}) — HARD:"
       puts "      per-doc: " + by_doc.map { |d, n| "#{d}:#{n}" }.join("  ")
       bare_refs.sort.first(50).each { |s| puts "    · #{s}" }
+    end
+    if bare_doc.empty?
+      puts "  bare doc-ids:   no bare code-span `NN_NN` doc-id outside owner docs (all linked) ✓"
+    else
+      by_doc = bare_doc.group_by { |s| s[/\A\d\d_\d\d/] }.transform_values(&:size).sort_by { |d, n| [ -n, d ] }
+      puts "  ✗ bare code-span `NN_NN` doc-ids — must be `[`…`](Doc)` links (#{bare_doc.size}) — HARD:"
+      puts "      per-doc: " + by_doc.map { |d, n| "#{d}:#{n}" }.join("  ")
+      bare_doc.sort.first(50).each { |s| puts "    · #{s}" }
     end
     if rate_drift.empty?
       puts "  rate One-Home: no tokenomics/carbon rate value restated outside 05_03/07_01 ✓"
@@ -198,6 +209,7 @@ namespace :docs do
     failed << "deprecated SSOT terms present" unless deprecated.empty?
     failed << "tokenomics/carbon rate restated outside One-Home (05_03/07_01)" unless rate_drift.empty?
     failed << "bare code-span `NN_NN §X` refs (should be `[`…`](Doc)` links)" unless bare_refs.empty?
+    failed << "bare code-span `NN_NN` doc-ids (should be `[`…`](Doc)` links)" unless bare_doc.empty?
     failed << "link label↔href mismatches" unless label_drift.empty?
     abort("docs:check_refs FAILED — #{failed.join(', ')}") unless failed.empty?
   end

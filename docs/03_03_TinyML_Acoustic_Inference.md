@@ -741,9 +741,9 @@ RWA market: інвестор бачить не лише CO₂, а й функц�
 
 | Залежність | Партнер | Документ | Що потрібно |
 |------------|---------|----------|-------------|
-| FW.4 (`Run_Inference()`) розкоментувати, додати модель | ML-партнер (Бушин/Любченко ЧНУ або ChDTU) | `03_03` §1, [`08_02 §1B`](08_02_Academic_Institutions_Registry) | Натренована TFLite модель з 5 класами (INT8) |
+| FW.4 (`Run_Inference()`) розкоментувати, додати модель | ML-партнер (Бушин/Любченко ЧНУ або ChDTU) | [`03_03 §1`](03_03_TinyML_Acoustic_Inference), [`08_02 §1B`](08_02_Academic_Institutions_Registry) | Натренована TFLite модель з 5 класами (INT8) |
 | FW.25 (DSP-шлях choice gate) — переведено P1→P0 | **Primary owner: Бушин або Любченко (ЧНУ ФОТІУС, ML)** — рішення про шлях A/B/C (§3.2 Decision Matrix). **Secondary: Ярмілко (ЧНУ ФОТІУС, SPI/DMA)** — integration consultant після вибору шляху, якщо обрано Path B з CMSIS-DSP | [`08_02 §1B`](08_02_Academic_Institutions_Registry) | (1) Узгодити шлях A/B/C; (2) Path A: збільшити INT8 модель; Path B: CMSIS-DSP `arm_rfft_fast_f32` + custom Mel-bank + `arm_vlog_f32` (НЕ повний MFCC); Path C: TFLM `signal::microfrontend` op; (3) tensor_arena recheck per path |
-| Калібрувальний датасет з dawn/dusk записами Черкаського бору | Базіло + Бондаренко (ЧДТУ ПМКТ) + Спрягайло/Гаврилюк (ЧНУ Біо-хаб) | [`08_02 §2` Завдання В](08_02_Academic_Institutions_Registry), [`08_02` §2 Homeostasis Baseline](08_02_Academic_Institutions_Registry) | Польові аудіозаписи на світанку/в сутінках на ділянках різного типу (захищений бір, регенерація, монокультура), мінімум 4 сезони |
+| Калібрувальний датасет з dawn/dusk записами Черкаського бору | Базіло + Бондаренко (ЧДТУ ПМКТ) + Спрягайло/Гаврилюк (ЧНУ Біо-хаб) | [`08_02 §2`](08_02_Academic_Institutions_Registry) Завдання В, [`08_02 §2`](08_02_Academic_Institutions_Registry) Homeostasis Baseline | Польові аудіозаписи на світанку/в сутінках на ділянках різного типу (захищений бір, регенерація, монокультура), мінімум 4 сезони |
 | GA-оптимізація 5-class моделі та confidence thresholds для dawn/dusk | Любченко (ЧНУ ФОТІУС) | [`08_02 §1B`](08_02_Academic_Institutions_Registry) | Akash GPU кластер, фітнес-функція з ground truth |
 | Macro-Micro verification (NDVI Sentinel-2 ↔ TinyML soundscape) | Бушин (ЧНУ ФОТІУС, CNN) | [`08_02 §1B`](08_02_Academic_Institutions_Registry) | Pipeline злиття супутника + TinyML; AiInsight#biodiversity_trend |
 | Статистика розподілів `fauna_activity_index` між ділянками | Карапетян (ЧДТУ Data Science) | [`08_02 §2`](08_02_Academic_Institutions_Registry) | R-аналіз, ANOVA dawn/dusk peak amplitude між ландшафтами |
@@ -852,7 +852,7 @@ OtaPackagerService → 512-byte chunks → OtaTransmissionWorker → Queen → S
 > **Майбутній напрям (Beyond TRL 9 / SRL roadmap) — Edge AI Self-Evolution:**
 > - **On-device class-incremental learning:** додавання нових акустичних патернів (нові інвазивні комахи у Черкаському борі, нові типи браконьєрської техніки) без необхідності retraining у cloud. Обмежено 1–4 incremental classes на STM32WLE5JC; для повного on-device backprop потрібен AI-coprocessor (Syntiant NDP120 / Maxim MAX78000) у v3 hardware.
 > - **Edge Reinforcement Learning:** tabular Q-learning з 12-state × 4-action lookup для прийняття рішень (sleep_extend / normal / sample_extra / emergency_tx); reward = days-to-next-VBAT_OK. State buffer у RTC backup registers DR20-DR31.
-> - **Координація з mruby evolutionary algorithms у `03_04`** — спільна `device-side learning loop` між TinyML (perception) і Lorenz contract (decision).
+> - **Координація з mruby evolutionary algorithms у [`03_04`](03_04_mruby_Lorenz_Attractor)** — спільна `device-side learning loop` між TinyML (perception) і Lorenz contract (decision).
 >
 > **Безпекова прірва:** self-evolution + Web3-economic rewards = attack surface для adversarial reward poisoning. Mitigation — Apex Predator Defense ([`05_06 §5`](05_06_Governance_and_DAO) + [`00_08 §1.4`](00_08_Beyond_TRL9_Planetary_Roadmap)).
 >

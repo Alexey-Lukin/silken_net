@@ -3,6 +3,8 @@
 # [00_07 DRY tooling] `rake tracker:check` — lints docs/00_07_Action_Plan_Tracker.md:
 #   - duplicate task IDs (caught the HW.20 BME280↔Buffer-Cap collision, 2026-05-29)
 #   - #3 conformance: every open #### item has a priority + a → canon-ref meta-line
+#   - §-section resolution: a `NN_NN §X` canon-ref's §X must be a real heading in the
+#     target (caught 12 stale §BLOCKER-N / wrong-doc-id refs orphaned by blockers→00_07)
 # Engine: lib/tracker/dashboard.rb (pure Ruby; the 🚦 Dashboard stays human-curated,
 # so drift/regenerate are intentionally not wired — this is a guard, not an overwriter).
 require_relative "../tracker/dashboard"
@@ -14,6 +16,7 @@ namespace :tracker do
     dups     = items.map(&:id).tally.select { |_, v| v > 1 }
     issues   = Tracker::Dashboard.issues(items)
     dangling = Tracker::Dashboard.dangling_refs(items)
+    sect     = Tracker::Dashboard.section_dangling_refs(items)
 
     puts "00_07 lint — #{items.size} #### items (#{Tracker::Dashboard.open_items(items).size} actionable)"
     puts "  duplicate IDs:    #{dups.empty? ? 'none ✓' : dups.inspect}"
@@ -29,6 +32,12 @@ namespace :tracker do
       puts "  dangling canon refs (#{dangling.size}):"
       dangling.each { |d| puts "    - #{d}" }
     end
-    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any?
+    if sect.empty?
+      puts "  canon §-sections: every `NN_NN §X` ref resolves to a heading ✓"
+    else
+      puts "  stale canon §-refs (#{sect.size}) — § X absent in target (renamed/removed section):"
+      sect.each { |s| puts "    - #{s}" }
+    end
+    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any?
   end
 end

@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Канонічний дім **on-chain governance**: як SFC-голдери змінюють протокольні параметри (Lorenz σ/ρ/β, slashing-пороги, tokenomics-курс) через DAO замість хардкоду + redeploy/reflash. Описує `SilkenGovernor` / `SilkenTimelock` / `ProtocolParameters`, Flash-Loan-захист, governance-aware backend (`SystemParameter` / `ParameterSyncWorker`) та проактивну оборону (Apex Predator, beyond TRL 9). Виокремлено з `05_03` (емісія токенів) — це **законодавча гілка**, концептуально окрема від token-spec.
+Канонічний дім **on-chain governance**: як SFC-голдери змінюють протокольні параметри (Lorenz σ/ρ/β, slashing-пороги, tokenomics-курс) через DAO замість хардкоду + redeploy/reflash. Описує `SilkenGovernor` / `SilkenTimelock` / `ProtocolParameters`, Flash-Loan-захист, governance-aware backend (`SystemParameter` / `ParameterSyncWorker`) та проактивну оборону (Apex Predator, beyond TRL 9). Виокремлено з [`05_03`](05_03_Tokenomics_SCC_and_SFC) (емісія токенів) — це **законодавча гілка**, концептуально окрема від token-spec.
 
 ---
 
@@ -147,7 +147,7 @@ contract SilkenGovernor is Governor, GovernorSettings, GovernorCountingSimple,
 > **Майбутній напрям (Beyond TRL 9 / SRL roadmap) — Proactive AI Sentinel:**
 > - **Cluster-level statistical fingerprints:** замість per-tree fraud detection — federated anomaly detection. Якщо 100 дерев кластера раптом видають «too perfect» Z-curves (lower variance than physically possible) → suspicious activity flag.
 > - **Honeypot Trees:** 1 з кожних 100 — honeypot (справжній анкер, але SCC-emission заблокований). Будь-яка mint-спроба = доведена адресна атака → instant slashing + 12-chain rotation.
-> - **Red Team Adversarial Telemetry Generators:** GAN-вироблені синтетичні patterns як частина CI/CD (`04_06`) — знаходимо вразливості до того, як їх знайде зовнішній attacker.
+> - **Red Team Adversarial Telemetry Generators:** GAN-вироблені синтетичні patterns як частина CI/CD ([`04_06`](04_06_Testing_Guide_and_Coverage)) — знаходимо вразливості до того, як їх знайде зовнішній attacker.
 > - **Quantum-Resistant Oracle Migration:** перехід Chainlink + всього 12-chain stack на NIST PQC standards (Kyber/Dilithium) до 2030+.
 > - **AI Sentinel Service:** окремий ML-сервіс 24/7 у режимі "hunting for hunters" — корелює trading volume на SCC DEXs з telemetry-аномаліями та oracle response patterns.
 >

@@ -58,7 +58,7 @@
 | **`RAILS_MASTER_KEY`** (`config/master.key`) | git-ignored + vault | ручний (password manager) | 🔴 **Незамінний** — `credentials.yml.enc` без нього не розшифрувати |
 | **`PROVISIONING_MASTER_KEY`** | secrets store | ручний | 🔴 **Незамінний** — без нього не деривувати нові per-device ключі (вже прошиті пристрої працюють; нове provisioning — ні) |
 | **On-chain state** (SCC/SFC баланси, slashing, anchors) | Polygon / Ethereum L1 | сам блокчейн = immutable backup | 🟢 N/A — мережа є джерелом правди |
-| Oracle/anchor private keys, contract addresses | secrets (`06_04`) | ручний | 🟡 Високо — redeployable, але disruptive (revoke+redeploy) |
+| Oracle/anchor private keys, contract addresses | secrets ([`06_04`](06_04_Secrets_Checklist)) | ручний | 🟡 Високо — redeployable, але disruptive (revoke+redeploy) |
 | **Redis** (Sidekiq queue, Kredis locks, Rack::Attack) | Upstash (managed) | managed durability; **app-tolerant** | 🟢 Низько — jobs re-enqueue, locks re-acquire, rate-limit лічильники не критичні |
 | Schema | `db/structure.sql` (git) | git | 🟢 Низько — у репозиторії |
 
@@ -130,7 +130,7 @@ gsutil cp gs://silken-net-terraform-state/default.tfstate#<GEN> \
 ### 5.3 Region loss (full rebuild)
 1. `terraform apply` у новому регіоні (`var.region`) — підніме Cloud SQL + Ingress Anchor.
 2. Restore Cloud SQL з backup у новий регіон (`gcloud sql backups restore`).
-3. Відновити секрети (`06_04`) + master-ключі (§4) у CI/Akash SDL.
+3. Відновити секрети ([`06_04`](06_04_Secrets_Checklist)) + master-ключі (§4) у CI/Akash SDL.
 4. `kamal deploy` (production) / Akash redeploy.
 5. Backend re-індексує on-chain стан (баланси самовідновлюються з Polygon).
 6. Оновити DNS A-запис → новий `ingress_ip`.

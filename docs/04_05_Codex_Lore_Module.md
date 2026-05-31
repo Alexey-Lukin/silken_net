@@ -28,10 +28,10 @@
 >
 > | Аспект | Канонічний документ |
 > |---|---|
-> | DB-таблиці / моделі / enum'и / партиціювання | `04_01_Data_Models_and_Entities` § 7b |
-> | Сервіси / воркери / призначення черг Sidekiq | `04_02_Business_Logic_and_Services` (підрозділи Codex) |
-> | REST API `/api/v1/codex/*` (≈ 25 маршрутів) | `04_03_REST_API_v1_Reference` § 4 (рядки #86–#109) |
-> | Phlex-компоненти / дизайн-токени / ActionCable-канали | `04_04_Phlex_UI_and_Tailwind` § 6.4 + § 8.1 |
+> | DB-таблиці / моделі / enum'и / партиціювання | [`04_01 §7b`](04_01_Data_Models_and_Entities) |
+> | Сервіси / воркери / призначення черг Sidekiq | [`04_02`](04_02_Business_Logic_and_Services) (підрозділи Codex) |
+> | REST API `/api/v1/codex/*` (≈ 25 маршрутів) | [`04_03 §4`](04_03_REST_API_v1_Reference) (рядки #86–#109) |
+> | Phlex-компоненти / дизайн-токени / ActionCable-канали | [`04_04 §6.4`](04_04_Phlex_UI_and_Tailwind) + § 8.1 |
 > | Seed-дані | `db/seeds/codex/*.rb` + `lib/seeds/codex/*.yml` |
 >
 > Тут залишається **тільки** те, чого *ще немає* в коді: філософія дизайну
@@ -125,7 +125,7 @@ archetype_key` замість наслідування. Додавання 5-г�
 `codex_nodes` обмежено ~10K рядків (DAO governance) → без партицій.
 `codex_matches` партиціюється RANGE по `created_at` (Battle Arena — write-heavy
 поверхня, очікується 100M+ рядків). `PartitionMaintenanceWorker` відповідає
-за щомісячні партиції — див. `04_02` § DOC.11.
+за щомісячні партиції — див. [`04_02`](04_02_Business_Logic_and_Services) § DOC.11.
 
 ### ADR-CDX-7 — Discovery gated by presence, fail-open
 
@@ -178,8 +178,8 @@ O(active_users), не O(all_users).
 
 - [x] Додано **"Lore Layer (Codex)"** one-liner до `README.md` (під
   Proof of Growth Pipeline, з прямим лінком на цей документ).
-- [x] Оновлено `docs/00_00_SSOT_Index` — Модуль 04 тепер містить
-  явне посилання на `04_05_Codex_Lore_Module`. Sidebar GitHub Wiki
+- [x] Оновлено [`00_00`](00_00_SSOT_Index) — Модуль 04 тепер містить
+  явне посилання на [`04_05`](04_05_Codex_Lore_Module). Sidebar GitHub Wiki
   оновлюється з тієї ж SSOT-сторінки.
 
 ### 3.3 Sidekiq Pro (cross-cuts весь проєкт)
@@ -194,7 +194,7 @@ Codex використовує `Sidekiq::Batch` callbacks там, де сьог�
 `TokenomicsEvaluatorWorker`, `Sidekiq::Limiter` для web3-RPC, `expires_in:`
 TTL у hot-path uplink). Це проєктне рішення, не бюджетне:
 ліцензія `sidekiq-pro` додається у Gemfile + `BUNDLE_GEMS__CONTRIBSYS__COM`
-як частина production hardening (повний чекліст у `04_02` § DOC.10:
+як частина production hardening (повний чекліст у [`04_02`](04_02_Business_Logic_and_Services) § DOC.10:
 розщеплення на 4 процеси, `super_fetch`, `reliable_push`, Redis pool +5).
 Codex-фази не блокують це — просто отримають `on(:success)` коли він
 з'явиться. Multi-step Battle settlement (наступна ітерація Codex поза
@@ -206,7 +206,7 @@ TRL 8) **буде** вимагати справжнього Batch callback — �
 - **Federated Codex** — інші гільдії лісників можуть підключати свої Realm'и
   через підписані маніфести (peaq DID-based attestation).
 - **Культурний state-root anchor** — включити топ-100 найбільш цитованих nodes
-  у тижневий Ethereum L1 anchor (`05_04`), даючи Codex on-chain finality.
+  у тижневий Ethereum L1 anchor ([`05_04`](05_04_Ethereum_L1_State_Anchor)), даючи Codex on-chain finality.
   Відкладено за межі TRL 8.
 
 ---
@@ -236,8 +236,8 @@ TRL 8) **буде** вимагати справжнього Batch callback — �
 | 7 — PR cleanup pass | ✅ done | migration squash, N+1 fix, citation `polymorphic_type_for` |
 | 8 — Stimulus-аудит + баг-фікси | ✅ done | EloMath `\|\|`, Redis GETDEL, PII, TOCTOU fraction, nil-safe audit |
 | 8a — REST/CoC рефактор | ✅ done | `BattleController` → `MatchesController#new/#create`; `destroy_me` → `destroy`; `me` → `index`/`show`; Phlex `Codex::Battle::Arena` UI-назва лишилась |
-| 8b — Onboarding wizard + Wiki/README | ✅ done | First-login банер у `DashboardLayout`, Lore Layer one-liner у `README.md`, `04_05` посилання у `00_00_SSOT_Index` (Модуль 04) |
+| 8b — Onboarding wizard + Wiki/README | ✅ done | First-login банер у `DashboardLayout`, Lore Layer one-liner у `README.md`, [`04_05`](04_05_Codex_Lore_Module) посилання у [`00_00`](00_00_SSOT_Index) (Модуль 04) |
 
 > Історія посесійних ADR-нотаток для Phases 1–6 зберігається в git log
-> `docs/04_05_Codex_Lore_Module` (`git log -p --follow`) та в merged PR.
+> [`04_05`](04_05_Codex_Lore_Module) (`git log -p --follow`) та в merged PR.
 > Дублювати тут — означає дублювати `04_01..04_04`.

@@ -266,6 +266,37 @@ module DocsLinter
     end
   end
 
+  # [SSOT anti-drift] Bare DOC-ID format guard (HARD). Sibling of bare_section_ref:
+  # that one flags a bare `NN_NN §X` (carries a section); THIS one flags a bare
+  # code-span `NN_NN` / `docs/NN_NN` / `NN_NN_FullName` carrying NO section — the
+  # whole-doc reference form. Canon (00_06 §1): a doc ref is the link
+  # `[`NN_NN`](DocName)`, never a lone code-span (non-clickable + a blind spot).
+  # Caught the 213-ref thread-A sweep (2026-05-31, scripts/linkify_bare_refs.rb).
+  # Only ids that RESOLVE to a current doc (valid_ids) are flagged, so a *retired*-doc
+  # mention (the historical `04_07`, merged into 08_03) is NOT a live ref and stays
+  # prose. Skips spans already in a link (preceded by '['), ``` fences. Same exempt
+  # set as bare_section_ref + manifest — index / standard-owner / tracker / appendix /
+  # manifesto keep their bare-by-design refs. Caller passes basename + text + the Set
+  # of valid NN_NN ids. Pure: no I/O.
+  BARE_DOC_EXEMPT = /\A00_00_|\A00_06_|\A00_07_|\A02_06_|_appendix_|\Amanifest/
+  BARE_DOC_REF_RE = /(?<!\[)`(?:docs\/)?(\d\d_\d\d)(?:_[A-Za-z0-9_]+)?`/
+
+  def bare_doc_ref(basename, text, valid_ids)
+    return [] if basename.match?(BARE_DOC_EXEMPT)
+
+    in_fence = false
+    text.each_line.flat_map do |line|
+      in_fence = !in_fence if line.start_with?("```")
+      next [] if in_fence
+
+      line.scan(BARE_DOC_REF_RE).filter_map do |(id)|
+        next unless valid_ids.include?(id)
+
+        "bare doc-ref `#{id}` (should be `[`#{id}`](DocName)`) → #{line.strip[0, 90]}"
+      end
+    end
+  end
+
   # [SSOT anti-drift] Magic-marker hex self-consistency (ADVISORY). Firmware uses
   # 4-byte ASCII magic markers ("RITE"/"LZST"/"KEYL"/"LSED"/"KEYC"/"QUID"…) whose
   # uint32 literal is the byte-packing of the four characters — but the codebase

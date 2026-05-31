@@ -44,7 +44,7 @@
 | [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Unit economics за tier |
 | [07_03_Grant_Applications_Tracker](07_03_Grant_Applications_Tracker) | Horizon Europe pipeline |
 | [08_02_Academic_Institutions_Registry](08_02_Academic_Institutions_Registry) | Академічні партнери: §1A Кирилюк (ректор-парасоль) · §3 ЧІПБ/ДСНС · §5 СЄУ Аблязов (legal) |
-| `02_05` / `03_04` | LoRa висотні точки / Lorenz stress-аналіз |
+| [`02_05`](02_05_Queen_Hardware_and_Starlink) / [`03_04`](03_04_mruby_Lorenz_Attractor) | LoRa висотні точки / Lorenz stress-аналіз |
 | [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | § External Stakeholders (UNI.x, BIZ.x) |
 
 ## 📑 Зміст

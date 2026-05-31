@@ -69,10 +69,10 @@ Week 7-8 (Cool-down, 2 тижні) — рефакторинг, SSOT-аудит, 
 
 | Кластер | Сфера відповідальності | Типові epic-домени | Базова команда |
 |---------|-------------------------|---------------------|-----------------|
-| **A — Hardware / EBFC** | Атоми, фізика, матеріали, біопаливний елемент, гідрогелі | EBFC catalyst R&D, Ti-6Al-4V DMLS, EDLC supercap MPPT, friction-fit pull-out, біосумісність, BIO.* sterilization | **ЧНУ** (Мінаєв — квант. хімія `08_01`, Гусак — металургія/FEA, Біо-Хаб Спрягайло), **ЧМА** (біохімія EBFC, токсикологія [`08_02 §4`](08_02_Academic_Institutions_Registry)), **ЧДТУ ПМКТ** (Базіло/Бондаренко — акустика [`08_02 §2`](08_02_Academic_Institutions_Registry)), **СЄУ** (Денисенко — промдизайн радому [`08_02 §5`](08_02_Academic_Institutions_Registry)) |
-| **B — Verification / Math** | Докази, математика, верифікація, ZK | Lorenz attractor params, IoTeX W3bstream, peaq DID schemes, Chainlink Functions, dual-computation integrity, Solidity governance | **ЧНУ ФОТІУС** (Порубльов — дискр. математика, Онищенко — стох. оптимізація, Любченко — Master of Logic/GA `08_02`), **ЧДТУ** (Карапетян — Data Science/статистика [`08_02 §2`](08_02_Academic_Institutions_Registry)), AI agents (theorem proving) |
-| **C — Scaling / Cloud** | Software stack, infrastructure, performance | Rails core (`04_02`), multi-chain web3 (12 chains), Akash deploy (`06_02`), Prometheus/Grafana, Sidekiq queues, Solid Cable, Phlex UI | Architect + AI agents (Copilot, Cursor), **ЧНУ ФОТІУС** (Супруненко — Rails PN-верифікація, Ярмілко — firmware/crypto, Косенюк — RF/FEC, Бушин — CNN/Web-DB `08_02`), **ЧДТУ ФЕТР** (Гончаров — RF-лабораторія [`08_02 §2`](08_02_Academic_Institutions_Registry)) |
-| **D — Compliance / Legal** | Юриспруденція, регуляторика, IP, B2B, операційні SOP | Polygon Hadron (ERC-3643), MSA з СЄУ, Verra / Gold Standard методологія, GDPR / ESG звітність, patent portfolio, аварійні SOP | **СЄУ** (Аблязов — право, Чудаєва/Ус — економіка, Гедз — D-MRV аудит [`08_02 §5`](08_02_Academic_Institutions_Registry)), **ЧІПБ** (пожежна безпека, SOP, параметричне страхування [`08_02 §3`](08_02_Academic_Institutions_Registry)), **ЧНУ ФОТІУС** (Осауленко — R&D-портфель `08_02`) |
+| **A — Hardware / EBFC** | Атоми, фізика, матеріали, біопаливний елемент, гідрогелі | EBFC catalyst R&D, Ti-6Al-4V DMLS, EDLC supercap MPPT, friction-fit pull-out, біосумісність, BIO.* sterilization | **ЧНУ** (Мінаєв — квант. хімія [`08_01`](08_01_Joint_Publications_and_IP_Strategy), Гусак — металургія/FEA, Біо-Хаб Спрягайло), **ЧМА** (біохімія EBFC, токсикологія [`08_02 §4`](08_02_Academic_Institutions_Registry)), **ЧДТУ ПМКТ** (Базіло/Бондаренко — акустика [`08_02 §2`](08_02_Academic_Institutions_Registry)), **СЄУ** (Денисенко — промдизайн радому [`08_02 §5`](08_02_Academic_Institutions_Registry)) |
+| **B — Verification / Math** | Докази, математика, верифікація, ZK | Lorenz attractor params, IoTeX W3bstream, peaq DID schemes, Chainlink Functions, dual-computation integrity, Solidity governance | **ЧНУ ФОТІУС** (Порубльов — дискр. математика, Онищенко — стох. оптимізація, Любченко — Master of Logic/GA [`08_02`](08_02_Academic_Institutions_Registry)), **ЧДТУ** (Карапетян — Data Science/статистика [`08_02 §2`](08_02_Academic_Institutions_Registry)), AI agents (theorem proving) |
+| **C — Scaling / Cloud** | Software stack, infrastructure, performance | Rails core ([`04_02`](04_02_Business_Logic_and_Services)), multi-chain web3 (12 chains), Akash deploy ([`06_02`](06_02_Akash_Network_Integration)), Prometheus/Grafana, Sidekiq queues, Solid Cable, Phlex UI | Architect + AI agents (Copilot, Cursor), **ЧНУ ФОТІУС** (Супруненко — Rails PN-верифікація, Ярмілко — firmware/crypto, Косенюк — RF/FEC, Бушин — CNN/Web-DB [`08_02`](08_02_Academic_Institutions_Registry)), **ЧДТУ ФЕТР** (Гончаров — RF-лабораторія [`08_02 §2`](08_02_Academic_Institutions_Registry)) |
+| **D — Compliance / Legal** | Юриспруденція, регуляторика, IP, B2B, операційні SOP | Polygon Hadron (ERC-3643), MSA з СЄУ, Verra / Gold Standard методологія, GDPR / ESG звітність, patent portfolio, аварійні SOP | **СЄУ** (Аблязов — право, Чудаєва/Ус — економіка, Гедз — D-MRV аудит [`08_02 §5`](08_02_Academic_Institutions_Registry)), **ЧІПБ** (пожежна безпека, SOP, параметричне страхування [`08_02 §3`](08_02_Academic_Institutions_Registry)), **ЧНУ ФОТІУС** (Осауленко — R&D-портфель [`08_02`](08_02_Academic_Institutions_Registry)) |
 
 > **Принцип взаємовиключності:** кожна задача має **рівно один primary cluster label** (`cluster:A-hardware` / `cluster:B-verification` / `cluster:C-scaling` / `cluster:D-compliance`). Cross-cluster задачі мають **secondary label** (`cluster-ref:X`). Primary cluster визначає, хто веде задачу на betting table; secondary — кого консультують у RACI-режимі. Повна label-таксономія + YAML SSOT — у [`00_05 §Labels`](00_05_GitHub_Projects_and_IaC_Automation).
 
@@ -95,7 +95,7 @@ Week 7-8 (Cool-down, 2 тижні) — рефакторинг, SSOT-аудит, 
 | **TRL 9** (Operational) | Multi-sig + DAO Timelock (48h) + Slither/Foundry green. | Always + production sign-off. |
 
 **TRL Gate Events** (єдині точки, де Архітектор **гарантовано** втручається):
-- 4 → 5: перехід з лабораторії до pilot (потребує HIL-валідації, `00_03`).
+- 4 → 5: перехід з лабораторії до pilot (потребує HIL-валідації, [`00_03`](00_03_TRL_Matrix_HIL_and_Beyond)).
 - 6 → 7: перехід до canopy environment (real LoRa mesh, real CoAP intake).
 - 8 → 9: **зняття «тренувальних коліс»** — передача повного управління контрактами від Multi-sig (`Gnosis Safe`) до децентралізованого DAO (`SilkenGovernor` + Timelock) + зняття штучних лімітів емісії, при доведеній стабільній роботі на масштабі (мільйони вузлів без втручання).
 
@@ -157,7 +157,7 @@ Betting Table — у Week 0 кожного 8-тижневого циклу. **А
 **Pre-bet checklist (👤 Architect, за тиждень до Betting Table):**
 
 - [ ] Список усіх відкритих `shaping/*.md` зведено у короткий бриф (одна сторінка на bet).
-- [ ] Поточний `docs/00_07_Action_Plan_Tracker` оновлено: P0/P1 не закриті задачі винесені у обов'язкові nominees.
+- [ ] Поточний [`00_07`](00_07_Action_Plan_Tracker) оновлено: P0/P1 не закриті задачі винесені у обов'язкові nominees.
 - [ ] TRL-матриця у Projects V2 переглянута на наявність stuck cards (закрита без advance — flag).
 - [ ] Bandwidth check кожного кластера: hours-per-week × cycle weeks мінус известні відсутності (захисти, конференції).
 
@@ -175,7 +175,7 @@ Betting Table — у Week 0 кожного 8-тижневого циклу. **А
 |------|-----|----------|----------|
 | 4. Відкриті конфлікти / rabbit holes | ~45 хв | Усі | Notes у shaping doc під "Rabbit holes" |
 | 5. Drop / Park / Bet рішення | ~30 хв | Architect (final say) | Updated Projects V2 cards |
-| 6. Кодифікація рішень | ~15 хв | AI-agent | PR з оновленим `docs/00_07` + `docs/00_04` milestone link |
+| 6. Кодифікація рішень | ~15 хв | AI-agent | PR з оновленим [`00_07`](00_07_Action_Plan_Tracker) + [`00_04`](00_04_Shape_Up_Operations_and_RnD_Clusters) milestone link |
 
 **Рішення для кожного shape:**
 - **Bet** — потрапляє в цикл, прив'язується до кластера + `Cycle YYYY.QN` milestone.
@@ -193,8 +193,8 @@ Betting Table — у Week 0 кожного 8-тижневого циклу. **А
 Cool-down — це **дихальний простір** (Shape Up: unstructured time), а НЕ ще один спринт. Якщо набити його обов'язковим bug-bash + refactor + документуванням, після 6 тижнів Big Bets це дає миттєвий burnout. Тому жорстко-обов'язкові — лише пункти, що підтримують **життєздатність системи**; решта — на розсуд команди.
 
 **Обов'язково (system viability):**
-- [ ] **SSOT drift audit** для змінених модулів циклу: code-vs-doc diff проти `docs/04_02` §13b (Drift Register), `docs/04_03`, `docs/05_02`, `docs/06_02`.
-- [ ] Закриті cycle issues анотувати TRL advancement (через `trl_sync.yml` — авто, див. `00_05`); update `docs/00_03` (фактичні TRL зрушення).
+- [ ] **SSOT drift audit** для змінених модулів циклу: code-vs-doc diff проти [`04_02 §13b`](04_02_Business_Logic_and_Services) (Drift Register), [`04_03`](04_03_REST_API_v1_Reference), [`05_02`](05_02_Proof_of_Growth_Pipeline), [`06_02`](06_02_Akash_Network_Integration).
+- [ ] Закриті cycle issues анотувати TRL advancement (через `trl_sync.yml` — авто, див. [`00_05`](00_05_GitHub_Projects_and_IaC_Automation)); update [`00_03`](00_03_TRL_Matrix_HIL_and_Beyond) (фактичні TRL зрушення).
 
 **Опціонально (на розсуд команди, НЕ мандат):**
 - [ ] Bug-bash дрібних некритичних багів — скільки команда захоче, без квоти днів.
@@ -227,7 +227,7 @@ TRL-матриця крокує "квартально-функціональни
 | TRL 4-5 (lab validation) | Fall (вересень — січень) | Лабораторні протоколи, перший draft публікації | UNI.1 (декан Онищенко) + UNI.4 (школа Мінаєва) + UNI.5 (школа Гусака) |
 | TRL 5-6 (relevant environment) | Spring (лютий — травень) | Магістерські та дипломні **захисти у червні** | UNI.13 / UNI.14 верифікація науковців |
 | TRL 6-7 (pilot deploy) | Літня перерва + Fall | Pilot installation, conference paper draft | UNI.8 СЄУ MSA |
-| TRL 7-8 (operational) | Spring | Peer-reviewed публікація | UNI.* IP strategy (`08_03`) |
+| TRL 7-8 (operational) | Spring | Peer-reviewed публікація | UNI.* IP strategy ([`08_03`](08_03_External_Stakeholders_Registry)) |
 
 > Фінальні захисти у червні — **hard deadline** для TRL freeze поточного циклу. Будь-яка картка з `Target TRL ≥ 6` повинна бути закрита **до 15 червня**, інакше прив'язка зсувається у `Fall {Y}-{Y+1}`.
 
