@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 8 — governance pipeline повністю реалізований (`SilkenGovernor.sol` + `SilkenTimelock.sol` + `ProtocolParameters.sol` + `Governance::ParameterSyncWorker` + `SystemParameter` model, RSpec-покрито). Mainnet-активація DAO + multisig council → [00_07](00_07_Action_Plan_Tracker) (BIZ.*).
+- **Поточний TRL:** TRL 8 — governance pipeline повністю реалізований (`SilkenGovernor.sol` + `SilkenTimelock.sol` + `ProtocolParameters.sol` + `Governance::ParameterSyncWorker` + `SystemParameter` model, RSpec-покрито). Mainnet-активація DAO + multisig council → [`00_07`](00_07_Action_Plan_Tracker) (BIZ.*).
 - **Реактивний захист (TRL 9-ready):** Snapshot Voting + Timelock 48h + Quorum 4% + Voting Delay — Flash-Loan attack закрито.
 - **Проактивний захист (Beyond TRL 9):** Apex Predator Defense — R&D-напрям, не блокує поточний TRL.
 
@@ -18,13 +18,13 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | SFC `ERC20Votes`/`ERC20Permit` база; SCC/SFC контракти |
-| [05_05_Slashing_and_Risk_Policy](05_05_Slashing_and_Risk_Policy) | Slashing DAO peer-review (категорія C) користується цим governance |
-| [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz σ/ρ/β — governance-керовані параметри (per-climate-zone) |
-| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | `SystemParameter` model, `Governance::ParameterSyncWorker` |
-| [00_03_TRL_Matrix_HIL_and_Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | Apex Predator Defense R&D-програма (§7.4) |
-| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | DAO Agreement (тип контракту §1.3) |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкрите** (SSOT): mainnet DAO activation, BIZ.* governance backlog |
+| [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | SFC `ERC20Votes`/`ERC20Permit` база; SCC/SFC контракти |
+| [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) | Slashing DAO peer-review (категорія C) користується цим governance |
+| [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz σ/ρ/β — governance-керовані параметри (per-climate-zone) |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `SystemParameter` model, `Governance::ParameterSyncWorker` |
+| [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | Apex Predator Defense R&D-програма (§7.4) |
+| [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) | DAO Agreement (тип контракту §1.3) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкрите** (SSOT): mainnet DAO activation, BIZ.* governance backlog |
 
 ## 📑 Зміст
 

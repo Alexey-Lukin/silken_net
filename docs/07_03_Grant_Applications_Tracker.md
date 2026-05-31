@@ -18,12 +18,12 @@
 
 | Ресурс | Зв'язок |
 |---|---|
-| [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Мультичейн (EF/IoTeX grant теми) |
-| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | NaaS value-prop |
-| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Unit economics для заявок |
-| [08_02_Academic_Institutions_Registry](08_02_Academic_Institutions_Registry) | академічні гранти |
-| [08_02_Academic_Institutions_Registry](08_02_Academic_Institutions_Registry) | консорціум (Horizon Europe) |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | BIZ.12, UNI.1/UNI.8 |
+| [`05_01` — Multichain Architecture](05_01_Multichain_Architecture) | Мультичейн (EF/IoTeX grant теми) |
+| [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) | NaaS value-prop |
+| [`07_02` — Unit Economics and BOM](07_02_Unit_Economics_and_BOM) | Unit economics для заявок |
+| [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | академічні гранти |
+| [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | консорціум (Horizon Europe) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | BIZ.12, UNI.1/UNI.8 |
 
 ## 📑 Зміст
 

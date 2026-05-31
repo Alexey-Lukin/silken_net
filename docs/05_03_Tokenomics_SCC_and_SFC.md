@@ -23,10 +23,10 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Мультичейн (Polygon у стеку) |
-| [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Pipeline (мінтинг-тригер) |
-| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | `BlockchainMinting`/`BlockchainBurning` сервіси |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | Open backlog (Mainnet deploy, audit) |
+| [`05_01` — Multichain Architecture](05_01_Multichain_Architecture) | Мультичейн (Polygon у стеку) |
+| [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Pipeline (мінтинг-тригер) |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `BlockchainMinting`/`BlockchainBurning` сервіси |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (Mainnet deploy, audit) |
 
 ## 📑 Зміст
 
@@ -750,7 +750,7 @@ contracts/foundry.toml               # ✅ Foundry config: solc 0.8.28, EVM canc
 
 ## 🗳️ Governance DAO (Законодавча Гілка Влади) → 05_06
 
-On-chain governance (SFC-голосування за протокольні параметри: Lorenz σ/ρ/β, slashing-пороги, tokenomics-курс) виокремлено у власний дім — [`05_06 Governance & DAO`](05_06_Governance_and_DAO). Там: `SilkenGovernor` / `SilkenTimelock` / `ProtocolParameters`, Flash-Loan-захист, Apex Predator Defense, governance-aware backend (`SystemParameter` / `Governance::ParameterSyncWorker`). База — SFC `ERC20Votes` (§SFC — Ролі вище).
+On-chain governance (SFC-голосування за протокольні параметри: Lorenz σ/ρ/β, slashing-пороги, tokenomics-курс) виокремлено у власний дім — [`05_06` — Governance & DAO](05_06_Governance_and_DAO). Там: `SilkenGovernor` / `SilkenTimelock` / `ProtocolParameters`, Flash-Loan-захист, Apex Predator Defense, governance-aware backend (`SystemParameter` / `Governance::ParameterSyncWorker`). База — SFC `ERC20Votes` (§SFC — Ролі вище).
 
 ## 🔍 Smart Contract Audit Roadmap
 

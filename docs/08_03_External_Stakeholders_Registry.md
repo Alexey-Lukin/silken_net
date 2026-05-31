@@ -37,15 +37,15 @@
 
 | Ресурс | Зв'язок |
 |---|---|
-| [04_04_Phlex_UI_and_Tailwind](04_04_Phlex_UI_and_Tailwind) | Design tokens, типографіка (Частина B — Культурний шар) |
-| [04_05_Codex_Lore_Module](04_05_Codex_Lore_Module) | Codex Lore — наративний субстрат (Частина B) |
-| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка, CBAM offset |
-| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | B2B/B2C контракти, SLA (§2) |
-| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Unit economics за tier |
-| [07_03_Grant_Applications_Tracker](07_03_Grant_Applications_Tracker) | Horizon Europe pipeline |
-| [08_02_Academic_Institutions_Registry](08_02_Academic_Institutions_Registry) | Академічні партнери: §1A Кирилюк (ректор-парасоль) · §3 ЧІПБ/ДСНС · §5 СЄУ Аблязов (legal) |
+| [`04_04` — Phlex UI and Tailwind](04_04_Phlex_UI_and_Tailwind) | Design tokens, типографіка (Частина B — Культурний шар) |
+| [`04_05` — Codex Lore Module](04_05_Codex_Lore_Module) | Codex Lore — наративний субстрат (Частина B) |
+| [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка, CBAM offset |
+| [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) | B2B/B2C контракти, SLA (§2) |
+| [`07_02` — Unit Economics and BOM](07_02_Unit_Economics_and_BOM) | Unit economics за tier |
+| [`07_03` — Grant Applications Tracker](07_03_Grant_Applications_Tracker) | Horizon Europe pipeline |
+| [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | Академічні партнери: §1A Кирилюк (ректор-парасоль) · §3 ЧІПБ/ДСНС · §5 СЄУ Аблязов (legal) |
 | [`02_05`](02_05_Queen_Hardware_and_Starlink) / [`03_04`](03_04_mruby_Lorenz_Attractor) | LoRa висотні точки / Lorenz stress-аналіз |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | § External Stakeholders (UNI.x, BIZ.x) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | § External Stakeholders (UNI.x, BIZ.x) |
 
 ## 📑 Зміст
 

@@ -7,6 +7,8 @@
 #   - #3 conformance: every open #### item has a priority + a → canon-ref meta-line
 #   - §-section resolution: a `NN_NN §X` canon-ref's §X must be a real heading in the
 #     target (caught 12 stale §BLOCKER-N / wrong-doc-id refs orphaned by blockers→00_07)
+#   - section↔canon-home: a #### under `## §NN` must canon-ref module NN (canon-mirror;
+#     killed the §06-deploy-under-§04 "DevOps" drift, 2026-06-01)
 # Engine: lib/tracker/dashboard.rb (pure Ruby; the 🚦 Dashboard stays human-curated,
 # so drift/regenerate are intentionally not wired — this is a guard, not an overwriter).
 require_relative "../tracker/dashboard"
@@ -22,6 +24,7 @@ namespace :tracker do
     issues   = Tracker::Dashboard.issues(items)
     dangling = Tracker::Dashboard.dangling_refs(items)
     sect     = Tracker::Dashboard.section_dangling_refs(items)
+    home     = Tracker::Dashboard.section_home_violations(items)
 
     puts "00_07 lint — #{items.size} #### items (#{Tracker::Dashboard.open_items(items).size} actionable)"
     puts "  duplicate IDs:    #{dups.empty? ? 'none ✓' : dups.inspect}"
@@ -43,6 +46,12 @@ namespace :tracker do
       puts "  stale canon §-refs (#{sect.size}) — § X absent in target (renamed/removed section):"
       sect.each { |s| puts "    - #{s}" }
     end
-    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any?
+    if home.empty?
+      puts "  section-home:     every #### under §NN canon-refs module NN ✓"
+    else
+      puts "  section↔home mismatches (#{home.size}) — item canon-ref ≠ its §NN section module:"
+      home.each { |h| puts "    - #{h}" }
+    end
+    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || home.any?
   end
 end

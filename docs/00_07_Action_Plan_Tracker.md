@@ -6,7 +6,7 @@
 
 **Правило одного місця (DRY):** редагуєш канон → онови залежні пункти 00_07 (за рефами); закрив пункт → онови канон + познач тут (✅ → **§🗄️ Архів**, вказівник ID→канон). Так апдейт робиться в одному місці, а референси ведуть, де ще синхронізувати.
 
-**Структура:** **🚦 Dashboard** (що робити зараз, за виконавцем) → **§00–§08 модуль-секції** (реєстр незробленого, дзеркалить канон) → **🔀 Cross-cutting** / **📌 Backlog** → **🗄️ Архів**. Документ — живий операційний інструмент.
+**Структура:** **🚦 Dashboard** (що робити зараз, за виконавцем) → **§00–§08 модуль-секції** (реєстр незробленого; **номер секції = канон-модуль першого рефа** — enforced `tracker:check` section-home guard) → **🔀 Cross-cutting** / **📌 Backlog** → **🗄️ Архів**. Документ — живий операційний інструмент.
 
 ---
 
@@ -21,16 +21,16 @@
 
 <!-- TOC:AUTO:START -->
 - [Dashboard — що робити зараз (за виконавцем)](#-dashboard--що-робити-зараз-за-виконавцем)
-- [§04 · Backend / API / UI / DevOps](#04--backend--api--ui--devops)
-- [§03 · Firmware](#03--firmware)
-- [Cross-cutting · Architecture & SSOT-drift (2026-05-16 cross-doc audit)](#-cross-cutting--architecture--ssot-drift-2026-05-16-cross-doc-audit)
+- [§00 · Process / IaC / SSOT-tooling](#00--process--iac--ssot-tooling)
 - [§01–§02 · Hardware & Lab](#0102--hardware--lab)
+- [§03 · Firmware](#03--firmware)
 - [§03/§05 · Безпека (Edge crypto + Web3)](#0305--безпека-edge-crypto--web3)
-- [Cross-cutting · Doc-drift (DOC) — синх з divergence registry](#-cross-cutting--doc-drift-doc--синх-з-04_02-11-divergence-registry)
-- [§06 · Deploy / Observability / Ops (OPS)](#06--deploy--observability--ops-ops)
+- [§04 · Backend / API / UI](#04--backend--api--ui)
+- [§05 · Web3 / Економіка / Slashing](#05--web3--економіка--slashing)
+- [§06 · Deploy / Observability / Secrets / Ops](#06--deploy--observability--secrets--ops)
 - [§07 · Юридичні / Бізнес](#07--юридичні--бізнес)
-- [§08 · Академічні блокери (5 установ)](#08--академічні-блокери-5-установ)
-- [§07 · External Stakeholders (B2G/B2B/Cultural — non-academic outreach)](#07--external-stakeholders-b2gb2bcultural--non-academic-outreach)
+- [§08 · Академічна інтеграція + External Stakeholders](#08--академічна-інтеграція--external-stakeholders)
+- [Cross-cutting · Doc-drift (DOC) — синх з divergence registry](#-cross-cutting--doc-drift-doc--синх-з-04_02-11-divergence-registry)
 - [Backlog · Додаткові знахідки (не блокери)](#-backlog--додаткові-знахідки-не-блокери)
 - [Backlog · Архітектурні пропозиції (довгострокові)](#-backlog--архітектурні-пропозиції-довгострокові)
 - [Архів закритих пунктів (мігровано в канон)](#-архів-закритих-пунктів-мігровано-в-канон)
@@ -78,189 +78,29 @@
 - Multi-signal slashing de-risk (`05_05 §7`) — код ✅: усі 3 прямі сигнали в `InsightGeneratorService`-евристиці (VPD-gate + sap-term + acoustic/cavitation-term; inert, ENV-calibration-gated; sap+acoustic через max() не суму). Активація → ground-truth калібрування ваг (`05_05 §8`) + ML-retrain (vpd-фіча) + firmware VPD (`HW.32`). Багатше on-device acoustic-джерело → TinyML unblock (`Run_Inference` закоментована, §03)
 - SLASH-1 deeper (B/insurance auto-route, A/B/C cause_classification, cause-driven pf uplift) → DAO/founder
 
----
+## §00 · Process / IaC / SSOT-tooling
 
-## §04 · Backend / API / UI / DevOps
+> Process-automation, Projects-V2/IaC та SSOT-tooling — канон `00_04`/`00_05`. Оперативний індекс P0/P1 — у 🚦 Dashboard.
 
-> 📍 **Навігація:** містить також **§06-canon deploy/observability** пункти (історичне «DevOps»-групування): `S1.1/S1.5`, `S2.1–S2.5`, `INF.3/4/6`, `S4.3`, `S5.2/5.6`, `S6.14`, `PUMA-IPV6-1`. Кожен має правильний `→ canon`-реф на `06_0x`; фізичне перенесення у §06 свідомо відкладене (zero-loss). Реєстр — у §06 нижче.
+#### OPS.1 — TRL Auto-Advancement GitHub Action
+- **P1** · 👤 · → `00_05`
+- ✅ `trl_sync.yml` (GraphQL Projects v2, TRL≥5 gate). · [ ] 👤 створити `PROJECT_PAT` (project:write) + тест з issues
 
-> **Складність:** XS < 1 год · S = 1–4 год · M = 4–8 год · L = 1–3 дні
+#### OPS.2 — SSOT Integrity Guard
+- **P1** · 👤 · → `00_05`
+- ✅ `ssot_guard.yml` (app/models·firmware·contracts·services; `type:*` bypass). · [ ] 👤 зробити required check на `main`
 
-#### SLASH-1 — Slashing cause_classification gate (financial-safety) 🔴
-- **P0** · 🤖+👤 · → `05_05 §3/§6` (divergence `04_02 §11`)
-- ✅ (2026-05-29) blackout → Field Audit, НЕ burn: `ContractHealthCheckService#flag_data_blackout!` (cluster-wide empty → `system_fault` alert, contract :active, no burn; 10 specs). · [ ] 🤖 de-correlate penalty signals (no-ack +0.5 / Streamr-gap +0.25 спільний root-cause) · [x] 🤖 penalty-формула §3 `damage_ratio^GAMMA × min(pf,2.0)` у `BlockchainBurningService` (✅ `#calculate_slash_ratio`, GAMMA/PF_MAX через `SystemParameter`, 8 specs) · [ ] 👤 DAO/founder-confirm перед mainnet (BIZ.13 operator-bond, `05_05 §3.1`)
+#### OPS.3 — R&D Portfolio Management: Shape Up + cluster routing
+- **P1** · 👤 · → `00_04 §5`, `00_05 §6`
+- ✅ Shape Up template + Projects V2 kanban-mapping (R&D Cluster/Stage/Cycle + auto-routing; 4 кластери A/B/C/D). · [ ] 👤 перший betting cycle після UNI.1/UNI.8
 
-#### S1.1 — GitHub Secrets заповнення
-- **P0** · 👤 · → `06_04`
-- ✅ checklist + інвентаризація 4 місць секретів. · [ ] 👤 заповнити GitHub repository secrets (12 крит.: `GCP_SA_KEY`, `DATABASE_PASSWORD`, `SSH_PRIVATE_KEY`…) → верифікувати CI
+#### OPS.4 — GitHub Projects V2: семестрова синхронізація з ChNU/ChDTU
+- **P2** · 👤 · → `00_05 §5`
+- ✅ семестр-мапінг (Fall/Spring + TRL milestones + 15.VI; `trl_sync.yml` стемпить `Academic Semester`). · [ ] 👤 узгодити календар з ФОТІУС (UNI.2) + створити `Academic Semester` single-select field у Projects V2
 
-#### S1.5 — Kamal IP placeholders
-- **P2** · 👤 · → `06_01`
-- `192.168.0.1` / `<CANOPY_SERVER_IP>` плейсхолдери в Kamal config. · [ ] 👤 підставити реальні IP після `terraform apply` → верифікувати deploy
-
-#### S2.1 — Верифікація метрик після deploy
-- **P0** · 👤 · → `06_03`
-- `/metrics` (реєстр — `06_03 §2.8`) + Alloy sidecar → Grafana Cloud налаштовано. · [ ] 👤 верифікувати збір метрик після першого Akash deploy
-
-#### S2.4 — Observability industrial-grade hardening
-- **P1** · 🤖+👤 · → `06_03 §2.9`
-- ✅ `external_labels` (env/service/source/release) у `config.alloy` — атрибуція prod/canopy + Akash multi-provider. · [x] 🤖 CI-валідація `config.alloy` ✅ (`grafana/alloy fmt`, CI job `alloy_config_validate`) · [x] 🤖 process/runtime метрики ✅ (9 gauges: RSS/GC/threads/Puma; `sample_process_runtime!` + sample_connection_pool! wired; 13 specs) · [ ] 🤖 `queue_config`/WAL tune + cardinality budget · [ ] 👤 `up`-scrape alert + SLO/error-budget
-
-#### S2.2 — Grafana Cloud dashboards
-- **P0** · 👤 · → `06_03`
-- ✅ dashboard IaC (5 секцій, 15 панелів) → `deploy/grafana/`. · [ ] 👤 імпортувати у Grafana Cloud (інструкції `deploy/grafana/README.md`)
-
-#### S2.3 — Grafana Cloud alerting rules
-- **P0** · 👤 · → `06_03`
-- ✅ 13 alert rules IaC (5P0/5P1/3P2) → `deploy/grafana/alerts/` + counter `silkennet_telemetry_acoustic_overflow_total`. · [ ] 👤 замінити `${DATASOURCE_UID}` + notification channel (Slack/Email/PagerDuty)
-
-#### S3.2 — dClimate Real API verification
-- **P1** · 👤 · → `05_01`
-- ✅ `Dclimate::VerificationService` (NASA FIRMS, FRP≥10MW, cloud fallback). · [ ] 👤 верифікувати з реальним API key у staging + e2e `DclimateVerificationWorker`
-
-#### S3.5 — Subgraph contract address
-- **P2** · 👤 · → `05_03`
-- SFC events (ForestMinted, GovernanceSlashed) у subgraph; адреса = placeholder. · [ ] 👤 замінити `0x0000…` на реальну SFC-адресу у `subgraph.yaml` (після контракт-деплою)
-
-#### INF.3 — TLS termination
-- **P2** · 👤 · → `06_02 §TLS термінація`
-- SDL відкриває 80/443/CoAP-UDP 5683, але TLS termination не налаштовано (browsers block WS HTTPS→HTTP). · [ ] 👤 налаштувати TLS (Akash ingress або Cloudflare)
-
-#### INF.6 — CoAP UDP smoke test через Ingress Anchor (post-deploy gate)
-- **P1** · 🤖+👤 · → `06_01 §6`, `06_02`, `06_08 §1.2`
-- ✅ workflow `coap_smoke.yml` (`workflow_call` від `deploy.yml`) — 🟡 ще не required gate. Без UDP-smoke silent UDP failure не помітний (Queen→Ingress Anchor→Akash→CoAP). · [ ] 👤 активувати як required post-deploy gate (`needs: coap-smoke`) · [ ] 👤 перший boundary smoke з Queen/`bin/forest_simulator`
-
-#### INF.4 — Akash TLS strategy decision: hostname operator vs Cloudflare
-- **P1** · 👤+🤖 · → `06_02 §TLS термінація`
-- ✅ runbook: Опція A (Cloudflare HTTPS + direct UDP CoAP) рекоменд. + pre-flight + fallback B. Cloudflare НЕ proxies UDP → CoAP потребує direct ingress. · [ ] 👤 прийняти рішення (рекоменд. A) · [ ] 🤖 якщо Akash hostname — automation у `terraform/`
-
-#### S4.3 — Akash SDL secrets
-- **P3** · 👤 · → `06_02`
-- `REQUIRED_SECRET_NOT_SET` для 4 крит. змінних. · [ ] 👤 заповнити в `deploy/akash/deploy.yaml` → верифікувати startup
-
-#### S5.2 — RELEASE_VERSION ENV для Sentry
-- **P2** · 👤 · → `06_03`
-- ✅ `RELEASE_VERSION` у deploy configs. · [ ] 👤 верифікувати Sentry release tracking
-
-#### S5.6 — GCS bucket для Terraform state (chicken-and-egg)
-- **P3** · 👤 · → `06_02 §GCS bucket`
-- GCS bucket для remote TF state — вручну перед `terraform init`. · [ ] 👤 `gsutil mb` → верифікувати `terraform init`
-
-#### S6.1 — Redis SPOF для M2M автентифікації
-- **P1** · 👤 · → `04_03`
-- ✅ graceful degradation (Redis down → DB-backed nonce, TTL 10хв) + тести. · [ ] 👤 верифікувати Upstash multi-zone replication у production
-
-#### S6.10 — MaintenanceRecord — лише лог
-- **P3** · 🔗 · → `04_02 §Forester Guild`
-- ✅ архітектурний дизайн task-assignment (bounty, scoring, `FOR UPDATE NOWAIT`, GPS/EXIF/IPFS→USDC, anti-Sybil). · [ ] 🔗 зв'язати з Forester Guild PoPhW (E.20)
-
-#### S6.14 — peaq_signing_key: відсутня rotation policy
-- **P2** · 👤 · → `04_02 §S6.14`, `06_04 §5.4`
-- ✅ rotation policy (dual-key 72h, 90д) + emergency revocation runbook. · [ ] 👤 vault-store production `peaq_signing_key`
-
-#### S6.18 — Rails web security hardening (§8 audit)
-- **P1** · 👤 · → `06_04 §2.1`
-- ✅ production.rb (force_ssl/HSTS/hosts) + CSP (report-only) + security_headers.rb + session_store. · [ ] 👤 `RAILS_ALLOWED_HOSTS` у Kamal/Akash перед prod · [ ] 👤 після 1-2 тиж CSP-репортів → `CSP_ENFORCE=true`
-
-#### PUMA-IPV6-1 — Верифікація IPv6 bind після першого Kamal-деплою
-- **P1** · 👤 · → `06_05`
-- Puma 8 bind `[::]:3000` dual-stack; Thruster → `127.0.0.1:3000`. · [ ] 👤 після canopy deploy: `ss -tlnp\|grep 3000` (`tcp6 [::]:3000`) + `curl` v4/v6 `/up` → задокументувати у `06_05`
-
-#### TEST.1 — RSpec coverage → 99% (line + branch)
-- **P2** · 🤖 · → `04_06 §B.1`
-- Baseline (full `bin/rspec`, 0 fail): line 97.78% / branch 90.25%. Phlex-view wins вичерпані; залишок = сервіси з crypto/blockchain-моками (telemetry_unpacker / blockchain_minting / solana / factory_flashing / insight_generator) — методологія `04_06 §B.5` (кожен Web3-svc ≥1.5× spec-ratio), по-сесійно. Пріоритет — реальні logic-гілки (status / empty-state / guard / error-path), НЕ defensive `&.`-nil. · [ ] 🤖 top-gap сервіси per-session · [ ] 🤖 gap-parser ПІСЛЯ повного `bin/rspec` (subset тригерить SimpleCov-артефакт, `04_06 §B.4`)
-
-## §03 · Firmware
-
-#### FW.1 — Hardcoded AES-256 Key
-- **P0** · 👤 · → `03_05`, `03_01`
-- ✅ per-device HKDF provisioning + Factory Flashing (раніше: один ключ на всіх → компрометація мережі). · [ ] 👤 RDP Level 2 activation як final step (bench)
-
-#### FW.2 — AES-128-ECB → AES-128-CCM (24B packet) [post-ARCH.42]
-- **P0** · 🤖 · → `03_05 §3.2`
-- ✅ дизайн 24B AES-128-CCM + backend парсер + firmware freeze-contract emit/decrypt + host-тести (golden-vector parity з `Cryptography::LoraCcm`/OpenSSL — складання+tamper-семантика, **не** залізна крипта); FC у RTC DR15. **Канонічна FC/nonce/cold-boot політика — `03_05` (📐 КАНОНІЧНЕ ДЖЕРЕЛО), єдине місце.** Cold-boot nonce-унікальність імовірнісна (MEDIUM, ~N/2²⁴); reseed = HRNG retry×3 (кволий tick-fallback прибрано 2026-05-30). Закриває ECB→CCM/MIC/replay (BLOCKER-2/3) + SEC.10 panic + FW.29; узгоджено з ATECC608B Slot 0. · [ ] 🤖 верифікувати `CRYP_AES_CCM` на STM32WLE5JC REVB (RM0461 §27.4, bench) → flip `FW2_CCM_ENABLED`/`TELEMETRY_CCM_ENABLED` — **ЄДИНИЙ HW-залежний пункт** · [ ] 🔗 TRL-7: monotonic FC-counter (Flash high-water / ATECC) для безумовної nonce-унікальності · [x] ✅ DR15 resource-conflict вирішено (2026-05-30): FW.2 тримає DR15, FW.20-S2 bitmap → Flash-KV (`03_01 §2.3`)
-
-#### FW.3 — Queen AT Command Blocking (~25 сек)
-- **P1** · 🟡 · → `03_02`
-- ✅ ring buffer + drain-loop закрив single-packet overwrite/emergency loss (Queen сліпа під час CoAP flush). · [ ] 🟡 переписати `Flush_Cache_To_Rails()` на UART DMA interrupt-driven — deferred (HW bench)
-
-#### FW.4 — TinyML `Run_Inference()` — compilation unblocked, inference TBD
-- **P0** · 👤+🔗 · → `03_03`
-- Compilation unblocked (stub fallback); реальна модель + uncomment лишаються. Блокує acoustic detection (chainsaw/cavitation/wind) + Mongabay pivot. · [ ] 👤 тренування Path B log-mel 5-class (Бушин/Любченко) → `silken_net_audio_model.h` (заміна stub через `__has_include`) · [ ] 🔗 verify Tensor Arena (`arm-none-eabi-size`) + uncomment `main.c:1422` + golden-vector тести · [ ] 🌿 FW.4-EXT (post-TRL 7): 5-й клас `fauna_activity` dawn/dusk (`03_03 §10`), залежить від UNI.11+UNI.13a; альт. ACI descriptor
-
-#### FW.18b — OTA threshold invalid counter (production-visibility)
-- **P2** · 🔗 · → `03_03 §5`
-- ✅ saturating counter `tinyml_threshold_invalid_count` (відкидає NaN/out-of-range/інверсію OTA payload) + 7 host-тестів. · [ ] 🔗 wiring до LoRa packet (перерозподіл бітів) · [ ] 🔗 backend Prometheus `tinyml_threshold_invalid_total{soldier_did}` + Grafana
-
-#### FW.7 — Float vs BigDecimal divergence (TRL 6 mitigation)
-- **P1** · 👤 · → `03_04 §5`
-- ✅ backend `Attractor` BigDecimal→Float (IEEE 754, ідентично firmware → DCI однакові Z). ⚠️ ARM↔x86 Float drift лишається; категоричний tolerance band компенсує для TRL 6, строгий consensus → `ARCH.18`. · [ ] 👤 верифікувати `MRB_USE_FLOAT` при lab-тесті
-
-#### FW.8 — CRITICAL_Z_MIN/MAX hardcoded
-- **P1** · 🟡 · → `03_01 §2`, `04_01`, `04_02`
-- ✅ Rails + firmware-парсер `Soldier_Handle_CMD_SET_THRESHOLDS` (freeze-contract, `FW8_PARSER_ENABLED 0`) + 12 host-тестів (firmware 2.0/45.0 vs backend per-species `TreeFamily`). · [ ] 🟡 deferred TRL-7: активувати `FW8_PARSER_ENABLED 1` після FW.21 звільнить RTC register
-
-#### FW.17 — Key rotation mechanism (Hash Ratchet KDF)
-- **P2** · 🔗 · → `03_05 §3`
-- Після FW.1. Статичний ключ при Factory Flashing → немає rotation без re-flash (GDPR/ISO 27001/NIST SP 800-57). Рішення: Hash Ratchet KDF (`CMD:ROTATE_KEY` → `K_current`→`K_next` AES-KDF, PFS). · [ ] 🔗 дизайн протоколу + CoAP command + cluster ACK + Flash/RTC storage + ECDH alt
-
-#### FW.19 — Float32 vs Float64 mruby compile flags
-- **P2** · 👤 · → `03_04 §5`
-- ✅ tolerance band «by design» (категорична `check_z_divergence!`); compile-flag verify — lab. mruby без `MRB_USE_FLOAT`=double, з=float32; ±5-10 units на Z → bio_status зсув. · [ ] 👤 верифікувати `MRB_USE_FLOAT` (Makefile/mrbconf.h) при lab-тесті
-
-#### FW.20 + FW.20-S2 — Time Sync (Rails ↔ Queen ↔ Soldier)
-- **P2** · 👤+🟡 · → `03_02 §5а` (канон-хаб)
-- TRL-6 P2 (`Derive_Cold_Start_State` ±12год толер.); TRL-7 блокер (ARCH.26 TDMA, HMAC nonce, fire ±1с). ✅ FW.20 1-hop Done; FW.20-S2 4/5 Done. · [ ] 👤 lab drift-test ΔT=±60°C (термокамера, TRL-7) · [ ] 🟡 (4/5) anti-storm dedup bitmap → Flash-KV store (DR15 зайнято FW.2 CCM FC; `03_01 §2.3 ARCH.28`). Cross-ref: ARCH.26, FW.30, SEC.10/FW.29
-
-#### FW.21 — Edge data aggregation (RAM-aware Soldier)
-- **P2** · 👤 · → `03_01 §2`, `08_02`
-- ✅ `EmaState` + 4 функції (`EMA_Update`/`Get_DeltaT_Sec`/`Get_Vcap_Mv`/`Is_Warmed_Up`) + RTC DR10+DR12 (звільнено DR11) + 102 host-тести (EMA на MCU зменшує LoRa-трафік). · [ ] 👤 інтегрувати з Kalman filter design (E.10 — Косенук)
-
-#### FW.22 — acoustic_events payload overflow (uint16 → uint8 truncation)
-- **P2** · 🔗 · → `03_03 §7.1`
-- ✅ тип `uint8_t` + saturating increment (cap 255) + backend overflow-warning + Prometheus counter + 8 тестів. · [ ] 🔗 АБО 2 байти в payload (перепакування — FW.2 CCM)
-
-#### FW.23 — OTA firmware broadcast: ECB без автентифікації
-- **P1** · 🟡 · → `03_05 §3.4б`
-- ✅ HMAC-SHA256 OTA auth: `OtaHmacKeyService` (HKDF `silken-ota-hmac-v1`) + `OtaPackagerService` (`[0x9B]` trailer) + Queen relay + Soldier dual-gate (magic `RITE` + constant-time HMAC) + 30 RSpec/17 host. · [ ] 🟡 mbedTLS HMAC compute на STM32 HASH (lab, analog FW.30)
-
-#### FW.25 — TinyML DSP-path: Path B (log-mel) SELECTED [DECISION 2026-05-22]
-- **P0** · 👤+🤖 · → `03_03 §3.2/§3.4`
-- Choice gate закрито: **Path B (log-mel + 2D-CNN)** baseline (Path A провалює fauna layered soundscape; Path C +5-10KB arena на 64KB SRAM; ESC-консенсус log-mel — Salamon&Bello/BirdNET; CMSIS-DSP вже в стеку; Mongabay → fauna-ready). Owner: Бушин/Любченко (ML) + Ярмілко (CMSIS-DSP). · [ ] 👤 ML-партнер підтверджує log-mel контракт `03_03 §3.4` (16k/n_fft=512/40 mel/HTK/ln+1e-6) · [ ] 🤖 `Compute_LogMel` (`arm_rfft_fast_f32` + HTK mel-bank sparse + `arm_vlog_f32`, **НЕ** `arm_mfcc_f32`) + golden-vector тести (tol 1e-3) · [ ] 🤖 verify TENSOR_ARENA (~15-30KB, FW.26) + inference тести · [ ] 🌿 UNI.11+UNI.13a dataset dawn/dusk · [ ] 🤖 fallback Path C (TFLM) — потребує re-verify arena
-
-#### FW.26 — TENSOR_ARENA_SIZE ніколи не верифіковано
-- **P1** · 🤖 · → `03_03 §4.3`, `04_06`
-- ✅ CI gate `make size-check` (host `.bss+.data`<51200B; soldier 2.5K/queen 12.4K). Точний arena невідомий (~8-16KB оцінка); >46KB → stack overflow при Lorenz (250 ітер). · [ ] 🤖 `arm-none-eabi-size` після моделі (FW.4) → виміряти `.bss+.data` · [ ] 🤖 якщо >46KB — INT8 quantization/prune
-
-#### FW.27 — OTA broadcast: відсутня RX-верифікація Soldier
-- **P2** · 🔗 · → `03_02 §5`
-- ✅ Дизайн B (Magic Re-Request): Soldier bitmap uplink `[0x55]` → Queen targeted re-broadcast (60-90% economy) + 22 host-тести (Soldier у STOP2 пропускає chunk). Дизайн A (ACK-aggregation) — з ARCH.26. · [ ] 🔗 Дизайн A залежить від ARCH.26 (TDMA RX-вікно); B незалежний
-
-#### FW.30 — SEC.11 C-bridge gap: `main.c` mruby виклик не оновлено
-- **P1** · 🔗 · → `03_04`
-- ✅ warm/cold paths → єдиний 7-arg `calculate_state`; `Load_Lorenz_Seed()` (K_seed Flash, magic `LSED`) + `Derive_Cold_Start_State()` (placeholder hash, TODO mbedTLS lab) + 11 host-тестів. (SEC.11 cutover зламав стару C-bridge сигнатуру → `BIO_STATUS_VM_ERROR`; новий bytecode не OTA-деплоївся до фіксу.) · [ ] 🔗 після FW.30 — FW.5 B+ (EMA delta_t/vcap як args[5..6]) незалежний
-
-#### FW.31 — DCI: числовий tolerance band у `check_z_divergence!` (feature-flag flip)
-- **P2** · 👤+🤖 · → `03_04 §7.1`
-- Після SEC.11 byte-identical `(x₀,y₀,z₀)` + ідентична Float math (drift ARM↔x86 <1e-12). check лишається категоричним; числовий `|Δz|<ε` (ε=0.001) готовий до flip → числовий fraud-detect (replay з правильним status, неправильним Z magnitude). · [ ] 👤 lab: однакові тест-вектори STM32 vs x86, `|Δz|` distribution (N=10k) · [ ] 🤖 оновити `03_04 §BLOCKER-2` з drift+ε (lab-blocked: STM32WLE5JC REVB; ε=0.001 default)
-
-#### FW.42 — Vcap guard для fauna acoustic sampling (brownout protection)
-- **P1** · 🔗 · → `03_03 §10.3`
-- ✅ `Fauna_Should_Sample(vcap_mv)` (≥FAUNA_VCAP_MIN_MV інакше skip + counter `fauna_skipped_low_vcap`) + 8 host-тестів. Fauna-сесія ~78.3мДж (×20 audit-fix); при V_cap≈3.5V просадка ~37мВ → concurrent TX = brownout. · [ ] 🔗 активація: виклик у fauna-pathway після FW.4 uncomment · [ ] 🤖 Prometheus "fauna skip rate" — після FW.4
-
-## 🔀 Cross-cutting · Architecture & SSOT-drift (2026-05-16 cross-doc audit)
-
-> Знахідки з рев'ю модулів 00_, 01_, 02_, 03_, 03_05 (інженерний аудит, 2026-05-16). Слоти ARCH.39–ARCH.42 зарезервовано під цей патч-комплект.
-
-#### ARCH.40 — Fauna 5-сек вікно: монолітне awake-обчислення (SRAM2 wipe)
-- **P1** · 🔗 · → `03_03 §10.2`
-- ✅ Doc-fix вкочено: fauna-сесія монолітна за 1 awake (SRAM2 wipe не зберігає float[156][N_mfcc] між STOP2; DR15 не вміщає).
-- [ ] 🔗 при FW.4 fauna-pivot — unit-тест `test_fauna_sampling_no_stop2_in_session()`
-
-#### ARCH.41 — Cold-start Time Paradox (DCI)
-- **P2** · 🔗 · → `03_04 §2.1`
-- VBAT loss → RTC `epoch_day` розходиться з сервером (cold-derive ≈10951 vs chained ≈20585) → категоричний DCI false-positive до `CMD_TIME_SYNC`. **Mitigation A** (server-side: 3 epoch_day кандидати → `time_unsynced_fallback`, не падати DCI) ✅ реалізовано → `04_02` (`try_time_sync_recovery`).
-- [ ] 🔗 (B/C) після стабілізації A, координований firmware rollout: **B** Soldier sentinel `acoustic_events=0xFE` на cold-boot; **C** defer-first-uplink grace «hello» (DID+Vcap+TIME_REQ, без Lorenz state)
+#### OPS.6 — Bootstrap scripts для GitHub Projects V2 + IaC initial sync
+- **P2** · 👤 · → `00_05 §1.2/§6`
+- ✅ `lib/github_bootstrap.rb` (`FIELDS` SSOT 11 полів, idempotent GraphQL diff, rake `github:bootstrap`, 16 specs). · [ ] 👤 запустити `bin/bootstrap_github.sh` проти живого Projects V2 при setup/fork
 
 ## §01–§02 · Hardware & Lab
 
@@ -594,7 +434,93 @@
 - [ ] 👤 **Interrupt-storm mitigation** (нот.5): амплітудний поріг — hardware comparator/RC АБО software fast-amplitude gate, щоб вітер/дощ/гойдання гілок НЕ будили повний аудіо-цикл → drain-захист 0.47 F supercap (поточно лише `BAT54S` voltage-clamp, без порогу; `03_03 §1.2`)
 - [ ] 👤 Lifecycle test: Sil-Pad creep під 30-40% compression × 20 років (Arrhenius accelerated)
 
----
+## §03 · Firmware
+
+#### FW.1 — Hardcoded AES-256 Key
+- **P0** · 👤 · → `03_05`, `03_01`
+- ✅ per-device HKDF provisioning + Factory Flashing (раніше: один ключ на всіх → компрометація мережі). · [ ] 👤 RDP Level 2 activation як final step (bench)
+
+#### FW.2 — AES-128-ECB → AES-128-CCM (24B packet) [post-ARCH.42]
+- **P0** · 🤖 · → `03_05 §3.2`
+- ✅ дизайн 24B AES-128-CCM + backend парсер + firmware freeze-contract emit/decrypt + host-тести (golden-vector parity з `Cryptography::LoraCcm`/OpenSSL — складання+tamper-семантика, **не** залізна крипта); FC у RTC DR15. **Канонічна FC/nonce/cold-boot політика — `03_05` (📐 КАНОНІЧНЕ ДЖЕРЕЛО), єдине місце.** Cold-boot nonce-унікальність імовірнісна (MEDIUM, ~N/2²⁴); reseed = HRNG retry×3 (кволий tick-fallback прибрано 2026-05-30). Закриває ECB→CCM/MIC/replay (BLOCKER-2/3) + SEC.10 panic + FW.29; узгоджено з ATECC608B Slot 0. · [ ] 🤖 верифікувати `CRYP_AES_CCM` на STM32WLE5JC REVB (RM0461 §27.4, bench) → flip `FW2_CCM_ENABLED`/`TELEMETRY_CCM_ENABLED` — **ЄДИНИЙ HW-залежний пункт** · [ ] 🔗 TRL-7: monotonic FC-counter (Flash high-water / ATECC) для безумовної nonce-унікальності · [x] ✅ DR15 resource-conflict вирішено (2026-05-30): FW.2 тримає DR15, FW.20-S2 bitmap → Flash-KV (`03_01 §2.3`)
+
+#### FW.3 — Queen AT Command Blocking (~25 сек)
+- **P1** · 🟡 · → `03_02`
+- ✅ ring buffer + drain-loop закрив single-packet overwrite/emergency loss (Queen сліпа під час CoAP flush). · [ ] 🟡 переписати `Flush_Cache_To_Rails()` на UART DMA interrupt-driven — deferred (HW bench)
+
+#### FW.4 — TinyML `Run_Inference()` — compilation unblocked, inference TBD
+- **P0** · 👤+🔗 · → `03_03`
+- Compilation unblocked (stub fallback); реальна модель + uncomment лишаються. Блокує acoustic detection (chainsaw/cavitation/wind) + Mongabay pivot. · [ ] 👤 тренування Path B log-mel 5-class (Бушин/Любченко) → `silken_net_audio_model.h` (заміна stub через `__has_include`) · [ ] 🔗 verify Tensor Arena (`arm-none-eabi-size`) + uncomment `main.c:1422` + golden-vector тести · [ ] 🌿 FW.4-EXT (post-TRL 7): 5-й клас `fauna_activity` dawn/dusk (`03_03 §10`), залежить від UNI.11+UNI.13a; альт. ACI descriptor
+
+#### FW.18b — OTA threshold invalid counter (production-visibility)
+- **P2** · 🔗 · → `03_03 §5`
+- ✅ saturating counter `tinyml_threshold_invalid_count` (відкидає NaN/out-of-range/інверсію OTA payload) + 7 host-тестів. · [ ] 🔗 wiring до LoRa packet (перерозподіл бітів) · [ ] 🔗 backend Prometheus `tinyml_threshold_invalid_total{soldier_did}` + Grafana
+
+#### FW.7 — Float vs BigDecimal divergence (TRL 6 mitigation)
+- **P1** · 👤 · → `03_04 §5`
+- ✅ backend `Attractor` BigDecimal→Float (IEEE 754, ідентично firmware → DCI однакові Z). ⚠️ ARM↔x86 Float drift лишається; категоричний tolerance band компенсує для TRL 6, строгий consensus → `ARCH.18`. · [ ] 👤 верифікувати `MRB_USE_FLOAT` при lab-тесті
+
+#### FW.8 — CRITICAL_Z_MIN/MAX hardcoded
+- **P1** · 🟡 · → `03_01 §2`, `04_01`, `04_02`
+- ✅ Rails + firmware-парсер `Soldier_Handle_CMD_SET_THRESHOLDS` (freeze-contract, `FW8_PARSER_ENABLED 0`) + 12 host-тестів (firmware 2.0/45.0 vs backend per-species `TreeFamily`). · [ ] 🟡 deferred TRL-7: активувати `FW8_PARSER_ENABLED 1` після FW.21 звільнить RTC register
+
+#### FW.17 — Key rotation mechanism (Hash Ratchet KDF)
+- **P2** · 🔗 · → `03_05 §3`
+- Після FW.1. Статичний ключ при Factory Flashing → немає rotation без re-flash (GDPR/ISO 27001/NIST SP 800-57). Рішення: Hash Ratchet KDF (`CMD:ROTATE_KEY` → `K_current`→`K_next` AES-KDF, PFS). · [ ] 🔗 дизайн протоколу + CoAP command + cluster ACK + Flash/RTC storage + ECDH alt
+
+#### FW.19 — Float32 vs Float64 mruby compile flags
+- **P2** · 👤 · → `03_04 §5`
+- ✅ tolerance band «by design» (категорична `check_z_divergence!`); compile-flag verify — lab. mruby без `MRB_USE_FLOAT`=double, з=float32; ±5-10 units на Z → bio_status зсув. · [ ] 👤 верифікувати `MRB_USE_FLOAT` (Makefile/mrbconf.h) при lab-тесті
+
+#### FW.20 + FW.20-S2 — Time Sync (Rails ↔ Queen ↔ Soldier)
+- **P2** · 👤+🟡 · → `03_02 §5а` (канон-хаб)
+- TRL-6 P2 (`Derive_Cold_Start_State` ±12год толер.); TRL-7 блокер (ARCH.26 TDMA, HMAC nonce, fire ±1с). ✅ FW.20 1-hop Done; FW.20-S2 4/5 Done. · [ ] 👤 lab drift-test ΔT=±60°C (термокамера, TRL-7) · [ ] 🟡 (4/5) anti-storm dedup bitmap → Flash-KV store (DR15 зайнято FW.2 CCM FC; `03_01 §2.3 ARCH.28`). Cross-ref: ARCH.26, FW.30, SEC.10/FW.29
+
+#### FW.21 — Edge data aggregation (RAM-aware Soldier)
+- **P2** · 👤 · → `03_01 §2`, `08_02`
+- ✅ `EmaState` + 4 функції (`EMA_Update`/`Get_DeltaT_Sec`/`Get_Vcap_Mv`/`Is_Warmed_Up`) + RTC DR10+DR12 (звільнено DR11) + 102 host-тести (EMA на MCU зменшує LoRa-трафік). · [ ] 👤 інтегрувати з Kalman filter design (E.10 — Косенук)
+
+#### FW.22 — acoustic_events payload overflow (uint16 → uint8 truncation)
+- **P2** · 🔗 · → `03_03 §7.1`
+- ✅ тип `uint8_t` + saturating increment (cap 255) + backend overflow-warning + Prometheus counter + 8 тестів. · [ ] 🔗 АБО 2 байти в payload (перепакування — FW.2 CCM)
+
+#### FW.23 — OTA firmware broadcast: ECB без автентифікації
+- **P1** · 🟡 · → `03_05 §3.4б`
+- ✅ HMAC-SHA256 OTA auth: `OtaHmacKeyService` (HKDF `silken-ota-hmac-v1`) + `OtaPackagerService` (`[0x9B]` trailer) + Queen relay + Soldier dual-gate (magic `RITE` + constant-time HMAC) + 30 RSpec/17 host. · [ ] 🟡 mbedTLS HMAC compute на STM32 HASH (lab, analog FW.30)
+
+#### FW.25 — TinyML DSP-path: Path B (log-mel) SELECTED [DECISION 2026-05-22]
+- **P0** · 👤+🤖 · → `03_03 §3.2/§3.4`
+- Choice gate закрито: **Path B (log-mel + 2D-CNN)** baseline (Path A провалює fauna layered soundscape; Path C +5-10KB arena на 64KB SRAM; ESC-консенсус log-mel — Salamon&Bello/BirdNET; CMSIS-DSP вже в стеку; Mongabay → fauna-ready). Owner: Бушин/Любченко (ML) + Ярмілко (CMSIS-DSP). · [ ] 👤 ML-партнер підтверджує log-mel контракт `03_03 §3.4` (16k/n_fft=512/40 mel/HTK/ln+1e-6) · [ ] 🤖 `Compute_LogMel` (`arm_rfft_fast_f32` + HTK mel-bank sparse + `arm_vlog_f32`, **НЕ** `arm_mfcc_f32`) + golden-vector тести (tol 1e-3) · [ ] 🤖 verify TENSOR_ARENA (~15-30KB, FW.26) + inference тести · [ ] 🌿 UNI.11+UNI.13a dataset dawn/dusk · [ ] 🤖 fallback Path C (TFLM) — потребує re-verify arena
+
+#### FW.26 — TENSOR_ARENA_SIZE ніколи не верифіковано
+- **P1** · 🤖 · → `03_03 §4.3`, `04_06`
+- ✅ CI gate `make size-check` (host `.bss+.data`<51200B; soldier 2.5K/queen 12.4K). Точний arena невідомий (~8-16KB оцінка); >46KB → stack overflow при Lorenz (250 ітер). · [ ] 🤖 `arm-none-eabi-size` після моделі (FW.4) → виміряти `.bss+.data` · [ ] 🤖 якщо >46KB — INT8 quantization/prune
+
+#### FW.27 — OTA broadcast: відсутня RX-верифікація Soldier
+- **P2** · 🔗 · → `03_02 §5`
+- ✅ Дизайн B (Magic Re-Request): Soldier bitmap uplink `[0x55]` → Queen targeted re-broadcast (60-90% economy) + 22 host-тести (Soldier у STOP2 пропускає chunk). Дизайн A (ACK-aggregation) — з ARCH.26. · [ ] 🔗 Дизайн A залежить від ARCH.26 (TDMA RX-вікно); B незалежний
+
+#### FW.30 — SEC.11 C-bridge gap: `main.c` mruby виклик не оновлено
+- **P1** · 🔗 · → `03_04`
+- ✅ warm/cold paths → єдиний 7-arg `calculate_state`; `Load_Lorenz_Seed()` (K_seed Flash, magic `LSED`) + `Derive_Cold_Start_State()` (placeholder hash, TODO mbedTLS lab) + 11 host-тестів. (SEC.11 cutover зламав стару C-bridge сигнатуру → `BIO_STATUS_VM_ERROR`; новий bytecode не OTA-деплоївся до фіксу.) · [ ] 🔗 після FW.30 — FW.5 B+ (EMA delta_t/vcap як args[5..6]) незалежний
+
+#### FW.31 — DCI: числовий tolerance band у `check_z_divergence!` (feature-flag flip)
+- **P2** · 👤+🤖 · → `03_04 §7.1`
+- Після SEC.11 byte-identical `(x₀,y₀,z₀)` + ідентична Float math (drift ARM↔x86 <1e-12). check лишається категоричним; числовий `|Δz|<ε` (ε=0.001) готовий до flip → числовий fraud-detect (replay з правильним status, неправильним Z magnitude). · [ ] 👤 lab: однакові тест-вектори STM32 vs x86, `|Δz|` distribution (N=10k) · [ ] 🤖 оновити `03_04 §BLOCKER-2` з drift+ε (lab-blocked: STM32WLE5JC REVB; ε=0.001 default)
+
+#### FW.42 — Vcap guard для fauna acoustic sampling (brownout protection)
+- **P1** · 🔗 · → `03_03 §10.3`
+- ✅ `Fauna_Should_Sample(vcap_mv)` (≥FAUNA_VCAP_MIN_MV інакше skip + counter `fauna_skipped_low_vcap`) + 8 host-тестів. Fauna-сесія ~78.3мДж (×20 audit-fix); при V_cap≈3.5V просадка ~37мВ → concurrent TX = brownout. · [ ] 🔗 активація: виклик у fauna-pathway після FW.4 uncomment · [ ] 🤖 Prometheus "fauna skip rate" — після FW.4
+
+#### ARCH.40 — Fauna 5-сек вікно: монолітне awake-обчислення (SRAM2 wipe)
+- **P1** · 🔗 · → `03_03 §10.2`
+- ✅ Doc-fix вкочено: fauna-сесія монолітна за 1 awake (SRAM2 wipe не зберігає float[156][N_mfcc] між STOP2; DR15 не вміщає).
+- [ ] 🔗 при FW.4 fauna-pivot — unit-тест `test_fauna_sampling_no_stop2_in_session()`
+
+#### ARCH.41 — Cold-start Time Paradox (DCI)
+- **P2** · 🔗 · → `03_04 §2.1`
+- VBAT loss → RTC `epoch_day` розходиться з сервером (cold-derive ≈10951 vs chained ≈20585) → категоричний DCI false-positive до `CMD_TIME_SYNC`. **Mitigation A** (server-side: 3 epoch_day кандидати → `time_unsynced_fallback`, не падати DCI) ✅ реалізовано → `04_02` (`try_time_sync_recovery`).
+- [ ] 🔗 (B/C) після стабілізації A, координований firmware rollout: **B** Soldier sentinel `acoustic_events=0xFE` на cold-boot; **C** defer-first-uplink grace «hello» (DID+Vcap+TIME_REQ, без Lorenz state)
 
 ## §03/§05 · Безпека (Edge crypto + Web3)
 
@@ -630,80 +556,113 @@
 - **P2** · 🤖 · → `03_05 §3.7`
 - `03_05 §3.7` Гілка B робить per-packet `atcab_aes_encrypt()` (ATECC AES щопакета). Питання: краще built-in STM32WLE5JC radio-AES для streaming payload + ATECC лише provisioning (ECDH keygen + master/identity + attestation)? Energy-аргумент перевірено = завищений (ATECC ≈70µJ/пакет ≈ 0.06% TX-енергії, НЕ supercap-killer); реальний trade-off = session-key tamper-resistance (Variant B: ключ не лишає ASIC → forces per-packet) vs latency (1.5ms I²C vs ~10µs) / idiom (built-in → session-key у RDP-Flash). ATECC-agnostic щодо FW.2 nonce-fix. · [ ] 🤖 re-examine ARCH.42 з role-split опцією явно + чесно подати trade-off у `03_05 §3.7` (зараз лише «0.1% acceptable») · [ ] 🤖 cross-check `02_01 §2` power-budget + `03_01` wake-energy
 
-## 🔀 Cross-cutting · Doc-drift (DOC) — синх з `04_02 §11` divergence registry
+## §04 · Backend / API / UI
 
-Потребують узгодження між docs, firmware та backend. **Не блокери виконання, але блокери для аудиту і онбордингу.**
+> **Складність:** XS < 1 год · S = 1–4 год · M = 4–8 год · L = 1–3 дні
 
-> ⚠️ **DOC-ID namespace collision (виявлено 2026-06-01, потребує рішення founder):** ця DOC-таблиця і divergence-registry [`04_02 §11`](04_02_Business_Logic_and_Services) ділять префікс `DOC.N`, але з РІЗНИМИ значеннями: `DOC.10` тут = 05/07 deferred-misplacement, у `04_02 §11` = Sidekiq-Pro shims; `DOC.11` тут = 05/07 restructure (✅), у `04_02 §11` = PartitionMaintenanceWorker; `04_04 §3.6` має ще свій `[DOC.11]` (Tailwind cheatsheet). Header «синх з 04_02 §11» вводить в оману — це **різні реєстри**. Доки namespace не розв'язано (злити в один АБО префіксувати, напр. `DOC-T.N` tracker / `DOC-R.N` 04_02-registry), DOC.10/DOC.11 тут **НЕ архівувати** (ID-плутанина при крос-реф). Тому цього pass'у заархівовано лише однозначні `####`-пункти без колізії (S2.5/SEC.13/DOC.13 → §🗄️ Архів).
+#### S6.1 — Redis SPOF для M2M автентифікації
+- **P1** · 👤 · → `04_03`
+- ✅ graceful degradation (Redis down → DB-backed nonce, TTL 10хв) + тести. · [ ] 👤 верифікувати Upstash multi-zone replication у production
 
-DOC.9 — потребує лабораторного вимірювання TX-струму
+#### S6.10 — MaintenanceRecord — лише лог
+- **P3** · 🔗 · → `04_02 §Forester Guild`
+- ✅ архітектурний дизайн task-assignment (bounty, scoring, `FOR UPDATE NOWAIT`, GPS/EXIF/IPFS→USDC, anti-Sybil). · [ ] 🔗 зв'язати з Forester Guild PoPhW (E.20)
 
-| ID | Невідповідність | Документи / Файли | Дія | Статус |
-|----|----------------|-------------------|-----|--------|
-| DOC.1 | Документація AES master key суперечлива: `03_05` лінія 531-537 каже «навмисно не публікується», а лінія 538 натякає що перші 4 слова збігаються з FIPS-197 Appendix B test vector. Скоординувати після SEC.9 (заміна seed key) | `03_05`, `firmware/soldier/main.c:66-67` | Після SEC.9 видалити test-vector згадку, оновити обидва параграфи | ⏸️ Заблоковано SEC.9 |
-| DOC.9 | Documentation `02_03` §9.3 raніше використовувала 15 mA/50 ms для LoRa TX. Виправлено на 120 mA/100 ms (~39 мДж) per SX1262 datasheet. Firmware energy accounting **не верифіковано незалежно** | `02_03`, `firmware/soldier/main.c` | Лабораторне вимірювання поточного TX (HW.x) + cross-ref у `02_03` після верифікації | ⏸️ Заблоковано лаб-стендом |
-| DOC.10 | Реструктуризація 05/07 (Фаза 3) — відкладені misplacement-рішення: `07_01 §11` Investor Q&A (pitch/diligence — дім 00_01 vs новий pitch-doc неоднозначний); `07_03 §5` Anchor Assembly + `§6` Virtual Prototyping (operational/field-ops дім, наразі grant-bootstrap контекст — не чистий misplacement) | `07_01`, `07_03` | Призначити operational/pitch-дім + перенести (рішення founder) | 🟡 Deferred |
-| DOC.11 | Реструктуризація 05/07 (Фази 1-2, 2026-05-30): slashing `00_01 §6` → `05_05`; governance `05_03 §749-905` → `05_06` — нові канон-доми; cross-refs re-pointed; `00_06 §2` / `00_00` / README синхронізовано (навігація: `00_01 §6` stub + `05_03 §Governance` stub) | `05_05`, `05_06`, `00_01`, `05_03` | — (виконано) | ✅ Done |
-| DOC.12 | Taxonomy v3 P4 (2026-05-30): дисолюція Module 08 (7→3 доки). `08_03 Joint Pubs/IP`→**`08_01`**; `08_02 Cyber/Math`+`08_01 University`+`08_04-07`→**new `08_02` Academic Institutions Registry** (5 ВНЗ — relationship-шар; інженерна субстанція реферить Tier I 01–06, zero-loss verified); `07_05 External`→**`08_03`**. ~260 inbound refs swept; genuinely-novel mesh-математика → Open Research `06_08` (percolation/Markov). `00_00`/README/CLAUDE/`ssot-maintenance` skill синхронізовано | `08_01`, `08_02`, `08_03`, `06_08` | — (виконано) | ✅ Done |
+#### S6.14 — peaq_signing_key: відсутня rotation policy
+- **P2** · 👤 · → `04_02 §S6.14`, `06_04 §5.4`
+- ✅ rotation policy (dual-key 72h, 90д) + emergency revocation runbook. · [ ] 👤 vault-store production `peaq_signing_key`
 
-#### DOC.2 — Canon↔canon de-dup (SSOT single-home) [#4, 2026-05-29]
-- **P2** · 🤖 · → `00_00`
-- Реструктуризація 00_07 (#4) виявила факти, дубльовані у багатьох канон-доках — порушення «одна річ — одне місце». Призначити ОДИН дім + замінити решту на 1-рядковий ref (значення лишається ТІЛЬКИ в home):
+#### TEST.1 — RSpec coverage → 99% (line + branch)
+- **P2** · 🤖 · → `04_06 §B.1`
+- Baseline (full `bin/rspec`, 0 fail): line 97.78% / branch 90.25%. Phlex-view wins вичерпані; залишок = сервіси з crypto/blockchain-моками (telemetry_unpacker / blockchain_minting / solana / factory_flashing / insight_generator) — методологія `04_06 §B.5` (кожен Web3-svc ≥1.5× spec-ratio), по-сесійно. Пріоритет — реальні logic-гілки (status / empty-state / guard / error-path), НЕ defensive `&.`-nil. · [ ] 🤖 top-gap сервіси per-session · [ ] 🤖 gap-parser ПІСЛЯ повного `bin/rspec` (subset тригерить SimpleCov-артефакт, `04_06 §B.4`)
 
-| Факт | Канон-дім | Дублюється у (→ має рефати дім) |
-|---|---|---|
-| AES-режими per-channel (ECB→CCM / CBC 256) | `03_05 §3.7` | ~20 доків (00_01/03_01/03_02/04_02/04_03/05_01/05_02 + 08_xx) — **найбільший дубль** |
-| Lorenz константи (Z 2.0/45.0/29.0 · σ10 ρ28 β8÷3 · dt0.01 · 250 iter) | `03_04 §4.1` | ✅ **05_02 «Фаза 2» зроблено** (повна ре-декларація → SSOT-ref, 2026-05-29). Решта легітимні (НЕ дубль): 04_01 self-labeled mirror Rails-конст., 03_01 firmware-doc контекст, 04_02 service-impl, 08_xx академ. верифікація |
-| Tokenomics rate 10 000 GP = 1 SCC | `05_03` | 05_01/07_01/07_02/03_03 |
-| Carbon 2000 SCC = 1 tCO₂ (0.5 кг) | `05_03` + `07_01` коеф. | 00_01/07_01/07_02 |
-| Slashing пороги stress 0.83 / slash 0.20 | `05_05 §3` + `04_02` (ContractHealthCheckService) | 05_03/07_01 |
-| Insurance pool 100 000 SCC | `05_05 §4` + `05_03` (Dynamic Tax) | 04_02/05_03 |
-| delta_t baseline 60 с | `03_04` (BASELINE_DELTA_T_S) | 03_01/04_02/05_02/01_03 |
-| Gyroid пористість 65% (60-70%) | `01_01` | 01_02/02_01/07_02 + 08_xx |
+## §05 · Web3 / Економіка / Slashing
 
-- [x] 🤖 Замінити справжні ПОВНІ re-statements значення на 1-рядковий ref на home (значення — лише в home). **Зроблено:** ✅ Lorenz (05_02) — єдина справжня повна ре-декларація; решта = легітимний контекст (див. аудит нижче).
-- [ ] 🤖 Розширити `tracker:check` на канон↔канон: детект hardcoded-значень поза home-доком (stretch — складно без AST доків; ⚠️ ризик false-positive на колізіях чисел, див. нижче).
-- 📌 08_xx-академічні згадки часто легітимний контекст (не чистий дубль) — рефати, але не видаляти контекст.
-- ✅ **Lorenz-pilot (2026-05-29):** аудит «14 доків» → справжню ПОВНУ ре-декларацію канон-блоку мала ЛИШЕ `05_02 «Фаза 2»` → SSOT-ref `03_04 §4.1` (11 значень верифіковано present у home ПЕРЕД стрипом, 0 loss; метод-логіка лишена). Решта — self-labeled mirror (`04_01`) / firmware-контекст (`03_01`) / service-impl (`04_02`) / академ. верифікація (`08_xx`) — НЕ чіпати.
-- ✅ **Повний аудит DOC.2 (2026-05-29) — де-дуп завершено:** після Lorenz **driftable ПОВНИХ ре-декларацій більше не виявлено**. AES = контекстні згадки в кожному домен-доці (не відтворення per-channel таблиці) — home `03_05 §3.7`, не чіпати. Slashing-формула — поза home не ре-декларується. Tokenomics / carbon / insurance / gyroid — контекстні згадки одного значення (не spec-блок). ⚠️ **Blind value-de-dup НЕБЕЗПЕЧНИЙ:** `02_03 "65%"` = MPPT-фракція VOC (BQ25570 R_OC divider), а НЕ gyroid-пористість — **колізія чисел**; масовий ref за значенням зіпсував би непов'язаний power-electronics факт. **Висновок:** високоцінний/безпечний де-дуп закрито; решта — легітимний контекст, рефати лише по-кейсу за явним запитом + per-fact верифікацією.
+> Мультичейн, oracle/chain-конфіг та slashing-механіка — канон `05_xx`.
 
----
+#### SLASH-1 — Slashing cause_classification gate (financial-safety) 🔴
+- **P0** · 🤖+👤 · → `05_05 §3/§6` (divergence `04_02 §11`)
+- ✅ (2026-05-29) blackout → Field Audit, НЕ burn: `ContractHealthCheckService#flag_data_blackout!` (cluster-wide empty → `system_fault` alert, contract :active, no burn; 10 specs). · [ ] 🤖 de-correlate penalty signals (no-ack +0.5 / Streamr-gap +0.25 спільний root-cause) · [x] 🤖 penalty-формула §3 `damage_ratio^GAMMA × min(pf,2.0)` у `BlockchainBurningService` (✅ `#calculate_slash_ratio`, GAMMA/PF_MAX через `SystemParameter`, 8 specs) · [ ] 👤 DAO/founder-confirm перед mainnet (BIZ.13 operator-bond, `05_05 §3.1`)
 
-## §06 · Deploy / Observability / Ops (OPS)
+#### S3.2 — dClimate Real API verification
+- **P1** · 👤 · → `05_01`
+- ✅ `Dclimate::VerificationService` (NASA FIRMS, FRP≥10MW, cloud fallback). · [ ] 👤 верифікувати з реальним API key у staging + e2e `DclimateVerificationWorker`
 
-> 📍 **§06-canon пункти, наразі бакетовані під §04** (deploy/observability, історичне «DevOps»): `S1.1/S1.5`→`06_01/04` · `S2.1–S2.5`→`06_03` · `INF.3/4/6`→`06_01/02` · `S4.3`→`06_02` · `S5.2/5.6`→`06_01/03` · `S6.14`→`06_04` · `PUMA-IPV6-1`→`06_05`. Нижче — §06-native (DR/OPS).
+#### S3.5 — Subgraph contract address
+- **P2** · 👤 · → `05_03`
+- SFC events (ForestMinted, GovernanceSlashed) у subgraph; адреса = placeholder. · [ ] 👤 замінити `0x0000…` на реальну SFC-адресу у `subgraph.yaml` (після контракт-деплою)
+
+#### BIZ.13 — Slashing principal-agent: investor capital vs operator-bond
+- **P2** · 👤+🤖 · → `05_05 §3.1`, `05_03 §Slashing`, `04_02 §1.2`
+- Кат-A slash зрізає інвесторський `locked_balance`, хоча недбалість — провина оператора (principal-agent). ✅ decision memo → рекомендація **hybrid operator-bond**. · [ ] 👤 DAO confirm: hybrid vs investor-slash vs pure operator-bond · [ ] 🤖 якщо operator-bond — `OperatorBond` + `ProtocolParameters` + контракт + синх `05_05 §3`/`05_03`/`04_02`
+
+## §06 · Deploy / Observability / Secrets / Ops
+
+> Деплой, спостережуваність, секрети, DR — канон `06_xx`. (Частина цих пунктів раніше сиділа під §04 «DevOps»; тепер кожен у власному §06-домі.)
+
+#### S1.1 — GitHub Secrets заповнення
+- **P0** · 👤 · → `06_04`
+- ✅ checklist + інвентаризація 4 місць секретів. · [ ] 👤 заповнити GitHub repository secrets (12 крит.: `GCP_SA_KEY`, `DATABASE_PASSWORD`, `SSH_PRIVATE_KEY`…) → верифікувати CI
+
+#### S1.5 — Kamal IP placeholders
+- **P2** · 👤 · → `06_01`
+- `192.168.0.1` / `<CANOPY_SERVER_IP>` плейсхолдери в Kamal config. · [ ] 👤 підставити реальні IP після `terraform apply` → верифікувати deploy
+
+#### S2.1 — Верифікація метрик після deploy
+- **P0** · 👤 · → `06_03`
+- `/metrics` (реєстр — `06_03 §2.8`) + Alloy sidecar → Grafana Cloud налаштовано. · [ ] 👤 верифікувати збір метрик після першого Akash deploy
+
+#### S2.4 — Observability industrial-grade hardening
+- **P1** · 🤖+👤 · → `06_03 §2.9`
+- ✅ `external_labels` (env/service/source/release) у `config.alloy` — атрибуція prod/canopy + Akash multi-provider. · [x] 🤖 CI-валідація `config.alloy` ✅ (`grafana/alloy fmt`, CI job `alloy_config_validate`) · [x] 🤖 process/runtime метрики ✅ (9 gauges: RSS/GC/threads/Puma; `sample_process_runtime!` + sample_connection_pool! wired; 13 specs) · [ ] 🤖 `queue_config`/WAL tune + cardinality budget · [ ] 👤 `up`-scrape alert + SLO/error-budget
+
+#### S2.2 — Grafana Cloud dashboards
+- **P0** · 👤 · → `06_03`
+- ✅ dashboard IaC (5 секцій, 15 панелів) → `deploy/grafana/`. · [ ] 👤 імпортувати у Grafana Cloud (інструкції `deploy/grafana/README.md`)
+
+#### S2.3 — Grafana Cloud alerting rules
+- **P0** · 👤 · → `06_03`
+- ✅ 13 alert rules IaC (5P0/5P1/3P2) → `deploy/grafana/alerts/` + counter `silkennet_telemetry_acoustic_overflow_total`. · [ ] 👤 замінити `${DATASOURCE_UID}` + notification channel (Slack/Email/PagerDuty)
+
+#### INF.3 — TLS termination
+- **P2** · 👤 · → `06_02 §TLS термінація`
+- SDL відкриває 80/443/CoAP-UDP 5683, але TLS termination не налаштовано (browsers block WS HTTPS→HTTP). · [ ] 👤 налаштувати TLS (Akash ingress або Cloudflare)
+
+#### INF.6 — CoAP UDP smoke test через Ingress Anchor (post-deploy gate)
+- **P1** · 🤖+👤 · → `06_01 §6`, `06_02`, `06_08 §1.2`
+- ✅ workflow `coap_smoke.yml` (`workflow_call` від `deploy.yml`) — 🟡 ще не required gate. Без UDP-smoke silent UDP failure не помітний (Queen→Ingress Anchor→Akash→CoAP). · [ ] 👤 активувати як required post-deploy gate (`needs: coap-smoke`) · [ ] 👤 перший boundary smoke з Queen/`bin/forest_simulator`
+
+#### INF.4 — Akash TLS strategy decision: hostname operator vs Cloudflare
+- **P1** · 👤+🤖 · → `06_02 §TLS термінація`
+- ✅ runbook: Опція A (Cloudflare HTTPS + direct UDP CoAP) рекоменд. + pre-flight + fallback B. Cloudflare НЕ proxies UDP → CoAP потребує direct ingress. · [ ] 👤 прийняти рішення (рекоменд. A) · [ ] 🤖 якщо Akash hostname — automation у `terraform/`
+
+#### S4.3 — Akash SDL secrets
+- **P3** · 👤 · → `06_02`
+- `REQUIRED_SECRET_NOT_SET` для 4 крит. змінних. · [ ] 👤 заповнити в `deploy/akash/deploy.yaml` → верифікувати startup
+
+#### S5.2 — RELEASE_VERSION ENV для Sentry
+- **P2** · 👤 · → `06_03`
+- ✅ `RELEASE_VERSION` у deploy configs. · [ ] 👤 верифікувати Sentry release tracking
+
+#### S5.6 — GCS bucket для Terraform state (chicken-and-egg)
+- **P3** · 👤 · → `06_02 §GCS bucket`
+- GCS bucket для remote TF state — вручну перед `terraform init`. · [ ] 👤 `gsutil mb` → верифікувати `terraform init`
+
+#### S6.18 — Rails web security hardening (§8 audit)
+- **P1** · 👤 · → `06_04 §2.1`
+- ✅ production.rb (force_ssl/HSTS/hosts) + CSP (report-only) + security_headers.rb + session_store. · [ ] 👤 `RAILS_ALLOWED_HOSTS` у Kamal/Akash перед prod · [ ] 👤 після 1-2 тиж CSP-репортів → `CSP_ENFORCE=true`
+
+#### PUMA-IPV6-1 — Верифікація IPv6 bind після першого Kamal-деплою
+- **P1** · 👤 · → `06_05`
+- Puma 8 bind `[::]:3000` dual-stack; Thruster → `127.0.0.1:3000`. · [ ] 👤 після canopy deploy: `ss -tlnp\|grep 3000` (`tcp6 [::]:3000`) + `curl` v4/v6 `/up` → задокументувати у `06_05`
 
 #### DR.1 — Disaster Recovery drill + master-key backup
 - **P1** · 👤 · → `06_06`
 - ✅ DR-постуру задокументовано (`06_06`): Cloud SQL PITR + REGIONAL HA + 30×daily + restore-runbook'и + RTO/RPO. · [ ] 👤 quarterly DR-drill (PITR-clone + TF-state rollback на staging, зафіксувати факт. RTO/RPO vs цілі) · [ ] 👤 master-ключі (`RAILS_MASTER_KEY`/`PROVISIONING_MASTER_KEY`) → vault + offline-копія (незамінні, поза backup)
 
-#### OPS.1 — TRL Auto-Advancement GitHub Action
-- **P1** · 👤 · → `00_05`
-- ✅ `trl_sync.yml` (GraphQL Projects v2, TRL≥5 gate). · [ ] 👤 створити `PROJECT_PAT` (project:write) + тест з issues
-
-#### OPS.2 — SSOT Integrity Guard
-- **P1** · 👤 · → `00_05`
-- ✅ `ssot_guard.yml` (app/models·firmware·contracts·services; `type:*` bypass). · [ ] 👤 зробити required check на `main`
-
-#### OPS.3 — R&D Portfolio Management: Shape Up + cluster routing
-- **P1** · 👤 · → `00_04 §5`, `00_05 §6`
-- ✅ Shape Up template + Projects V2 kanban-mapping (R&D Cluster/Stage/Cycle + auto-routing; 4 кластери A/B/C/D). · [ ] 👤 перший betting cycle після UNI.1/UNI.8
-
-#### OPS.4 — GitHub Projects V2: семестрова синхронізація з ChNU/ChDTU
-- **P2** · 👤 · → `00_05 §5`
-- ✅ семестр-мапінг (Fall/Spring + TRL milestones + 15.VI; `trl_sync.yml` стемпить `Academic Semester`). · [ ] 👤 узгодити календар з ФОТІУС (UNI.2) + створити `Academic Semester` single-select field у Projects V2
-
-#### OPS.6 — Bootstrap scripts для GitHub Projects V2 + IaC initial sync
-- **P2** · 👤 · → `00_05 §1.2/§6`
-- ✅ `lib/github_bootstrap.rb` (`FIELDS` SSOT 11 полів, idempotent GraphQL diff, rake `github:bootstrap`, 16 specs). · [ ] 👤 запустити `bin/bootstrap_github.sh` проти живого Projects V2 при setup/fork
-
-#### OPS.5 — EU DMLS quotes від 2-3 backup підрядників
-- **P1** · 👤 · → `07_02 §8.1.1`
-- BIZ.6 ✅ ідентифікував 4 EU кандидати (3D Lab PL, Materialise BE, Sauber/Lithoz, TRUMPF). · [ ] 👤 quotes у 3D Lab PL + Materialise BE → порівняльна таблиця → LoI/Frame Agreement з top vendor
-
----
-
 ## §07 · Юридичні / Бізнес
+
+> Юридично-бізнесовий work-stream — канон `07_xx`. NB: пов'язані BIZ-айтеми за канон-домом живуть у `§05` (BIZ.13 slashing) та `§08` (BIZ.5/10 IP, BIZ.12 Horizon-biodiv).
 
 #### BIZ.1 — 1 SCC = ? kg CO₂
 - **P2** · 👤 · → `07_01`, `05_03`
@@ -717,10 +676,6 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - **P2** · 👤 · → `07_01`
 - [ ] 👤 ToS draft + Privacy Policy (GDPR) + Cookie Policy
 
-#### BIZ.5 — Patent application
-- **P1** · 👤 · → `08_03`
-- [ ] 👤 engagement з патентним адвокатом → патентна заявка на дизайн анкера
-
 #### BIZ.6 — Supply chain war-zone risk mitigation
 - **P1** · 👤 · → `07_02 §8.1.1`
 - ✅ Contingency Plan EU Backup DMLS Hubs (4 кандидати; triggers; +~20% payback) — UA-підрядники у зоні бойових дій. · [ ] 👤 отримати quotes для порівняння (→ OPS.5/BIZ.8)
@@ -733,21 +688,9 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - **P2** · 👤 · → `07_01 §3`, `07_02 §7.3`
 - Конвертація SCC utility-token → сертифіковані kg CO₂ для institutional buyers потребує independent methodology audit (Verra/Gold Standard/Puro.earth). · [ ] 👤 engagement methodologist (~$50-100k) → PDD у Verra · [ ] 🔗 залежить від HW.3 (Arrhenius) + UNI.6/UNI.7 (DFT+diffusion)
 
-#### BIZ.10 — Multi-party IP Contract + NDA framework
-- **P1** · 👤 · → `08_03`, `08_02 §3-07`
-- 5-сторонній фреймворк (ChNU+ChDTU+ChIPB+ChMA+СЄУ+SilkenNet): bilateral NDA, IP-договір спільного авторства, патентні права, royalty. · [ ] 👤 патентний повірений (UA+EU) → bilateral NDA × 5 (паралельно UNI.4-14) → Master IP Framework Agreement · [ ] 🔗 після UNI.1/8/9/12/13
-
 #### BIZ.11 — RWA pilot реєстрація лісової ділянки через Polygon Hadron
 - **P2** · 👤+🤖 · → `07_01 §8`
 - Hadron (ERC-3643) RWA-pilot: 1 ділянка з кадастром + biomass appraisal (LIDAR+ground) + Hadron compliance. · [ ] 👤 партнер-лісокористувач (post-war/Carpathian) + кадастр/biomass appraisal · [ ] 🤖 `Hadron::TokenizeForestPlotService` + KYC flow spec · [ ] 🔗 після BIZ.2 (MSA)
-
-#### 🌿 BIZ.12 — Horizon Europe CLUSTER 6 заявка (Biodiversity Monitoring, Mongabay pivot)
-- **P1** · 👤 · → `08_03 §24a`, `03_03 §10`
-- Horizon CL6 Biodiversity Monitoring (2-6 М€, 36-48 міс); SilkenNet = єдиний планетарний D-MRV з micro-acoustic біорізноманіттям. Submission прив'язати до acceptance Статті 24a → "published research". · [ ] 👤 identify call (HORIZON-CL6-*-BIODIV) → consortium (SilkenNet coord + ЧНУ/ЧДТУ/біо-хаб + 1-2 EU: Linköping/CSIC) → submit при acceptance 24a · [ ] 🔗 E.59/FW.4-EXT (5-class TinyML) + UNI.13a (Soundscape Library)
-
-#### BIZ.13 — Slashing principal-agent: investor capital vs operator-bond
-- **P2** · 👤+🤖 · → `05_05 §3.1`, `05_03 §Slashing`, `04_02 §1.2`
-- Кат-A slash зрізає інвесторський `locked_balance`, хоча недбалість — провина оператора (principal-agent). ✅ decision memo → рекомендація **hybrid operator-bond**. · [ ] 👤 DAO confirm: hybrid vs investor-slash vs pure operator-bond · [ ] 🤖 якщо operator-bond — `OperatorBond` + `ProtocolParameters` + контракт + синх `05_05 §3`/`05_03`/`04_02`
 
 #### BIZ.14 — SFC Vote-Escrow during breach→slash lag (07_01 BLOCKER-7 residual)
 - **P3** · 🔗 · → `07_01 §8`
@@ -757,9 +700,11 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - **P2** · 👤 · → `07_01 §8`
 - Корпорації з ESG-зобов'язаннями не триматимуть крипту/ключі заради ретайрменту — потрібен SPV-міст: фіат → SPV купує+ретайрить SCC → сертифікат офсету (CBAM/ISO 14064). Поточний `KlimaRetirementWorker` припускає, що клієнт уже on-chain власник SCC (нот.19). · [ ] 👤 юрисдикція SPV + ліцензія на вуглецеві активи + кастодіан крипти (СЄУ Аблязов Д., RWA/MiCA — `08_02 §5`) · [ ] 👤 бухгалтерська класифікація + сертифікат-флоу (СЄУ Ус Г.)
 
----
+#### OPS.5 — EU DMLS quotes від 2-3 backup підрядників
+- **P1** · 👤 · → `07_02 §8.1.1`
+- BIZ.6 ✅ ідентифікував 4 EU кандидати (3D Lab PL, Materialise BE, Sauber/Lithoz, TRUMPF). · [ ] 👤 quotes у 3D Lab PL + Materialise BE → порівняльна таблиця → LoI/Frame Agreement з top vendor
 
-## §08 · Академічні блокери (5 установ)
+## §08 · Академічна інтеграція + External Stakeholders
 
 > **Поточний стан:** Партнерство з 5+ академічними установами — ChNU (фізико-хімія + ФОТІУС), ChDTU (Data Science + RF + акустика), ChIPB-NUTSU (пожежна безпека), ChMA (біохімія + токсикологія), СЄУ (правова + економічна архітектура). UNI.1-3, UNI.8 — раніше ідентифіковані; нижче — розширення на всі 5 установ.
 
@@ -793,10 +738,10 @@ DOC.9 — потребує лабораторного вимірювання TX-
 
 #### UNI.11 — ChDTU Базіло+Бондаренко (ПМКТ): акустична валідація фононної лінзи
 - **P2** (P1 для Mongabay) · 👤 · → `08_02 §2`, `03_03 §10`
-- ПМКТ (п'єзоелектрика + акуст. метаматеріали): EIS п'єзодиска 25-150кГц (cavitation) + верифікація гіроїдного phonon lens. Ціль: Q1 *IEEE TBME*. 🌿 Mongabay: + dawn/dusk Cherkasy Soundscape Library для 5-class TinyML «Fauna» (`08_03 §24a`). · [ ] 👤 зустріч Базіло+Бондаренко + EIS-протокол + acoustic стенд (HW.1) · [ ] 🌿 dawn/dusk recordings з UNI.13a (Спрягайло-Гаврилюк): AudioMoth, 4 сезони, ≥30хв dawn+dusk/ділянку, labeled таксони
+- ПМКТ (п'єзоелектрика + акуст. метаматеріали): EIS п'єзодиска 25-150кГц (cavitation) + верифікація гіроїдного phonon lens. Ціль: Q1 *IEEE TBME*. 🌿 Mongabay: + dawn/dusk Cherkasy Soundscape Library для 5-class TinyML «Fauna» (`08_01 §24a`). · [ ] 👤 зустріч Базіло+Бондаренко + EIS-протокол + acoustic стенд (HW.1) · [ ] 🌿 dawn/dusk recordings з UNI.13a (Спрягайло-Гаврилюк): AudioMoth, 4 сезони, ≥30хв dawn+dusk/ділянку, labeled таксони
 
 #### 🌿 UNI.13a — ChNU Біо-хаб (Спрягайло+Гаврилюк): Acoustic Biodiversity Baseline (Mongabay)
-- **P1** · 👤 · → `08_01 §1.3/§2`, `08_03 §24a`
+- **P1** · 👤 · → `08_01 §1.3/§2`, `08_01 §24a`
 - Delgado et al. (Nicoya, 119 ділянок, 16k год; Mongabay 2026): dawn/dusk fauna-піки = маркер біорізноманіття (NDVI бачить покрив, не функцію). UA-аналог: **Cherkasy Soundscape Library** (4 сезони, з ЧДТУ ПМКТ UNI.11) → ground truth для 5-class TinyML (FW.4-EXT) + Q1 (Стаття 24a). · [ ] 👤 зустріч Спрягайло (проректор) + Гаврилюк (ННІ природничих) + студенти-біологи + joint methodology workshop (з ЧДТУ ПМКТ) + expedition runs (4 ділянки × 4 сезони × dawn/dusk ≈ 32 записи) · [ ] 🔗 manual labeling (комахи/птахи/амфібії 0-63) → GA-оптимізація Любченко (UNI.6/E.52-EXT) + cross-val 10-річні дані (Спрягайло) + Horizon CL6 grant (BIZ.12)
 
 #### UNI.12 — ChIPB-NUTSU: пожежна безпека + параметричне страхування
@@ -827,9 +772,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - **P2** · 👤 · → `08_02 §2`
 - Хоменко (Заслужений винахідник, 80+ патентів): прецизійна обробка + різьба анкера для живої деревини (`01_01`/`01_02`/`02_02`, deinstall `08_02 §3 Несен`) + патентний аудит. · [ ] 👤 контакт (ChDTU rectorat) + патентний аудит (UNI.15) + прототип різальної геометрії в ЧДТУ machine shop
 
----
-
-## §07 · External Stakeholders (B2G/B2B/Cultural — non-academic outreach)
+### 🌐 External Stakeholders (B2G / B2B / Cultural — non-academic outreach)
 
 > **Поточний стан:** Зовнішні залежності виокремлені в [`08_03`](08_03_External_Stakeholders_Registry) (Cultural Layer) та [`08_03`](08_03_External_Stakeholders_Registry) (B2G/B2B Matrix). Це не операційні залежності hot-path — це outreach pool, що активується за TRL-тригерами у відповідних модулях. Імена нижче — публічна інформація; контакти живуть у gitignored CRM.
 
@@ -873,7 +816,56 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - **P2** · 👤 · → `08_03 §2.3`
 - Trigger: перед першою публічною інсталяцією. Превентивний інфо-фон проти екопанік («чіпують дерева»); Калініченко — викладач ЧНУ, міст із `08_01`. · [ ] 👤 через ЧНУ rectorat (Кирилюк `08_01 §1.4`) перший контакт → документальний міні-сюжет про DMLS-друк (post-prototype)
 
----
+### ⚖️ IP / Grants (BIZ — канон-дім Модуль 08)
+
+#### BIZ.5 — Patent application
+- **P1** · 👤 · → `08_03`
+- [ ] 👤 engagement з патентним адвокатом → патентна заявка на дизайн анкера
+
+#### BIZ.10 — Multi-party IP Contract + NDA framework
+- **P1** · 👤 · → `08_03`, `08_02 §3-07`
+- 5-сторонній фреймворк (ChNU+ChDTU+ChIPB+ChMA+СЄУ+SilkenNet): bilateral NDA, IP-договір спільного авторства, патентні права, royalty. · [ ] 👤 патентний повірений (UA+EU) → bilateral NDA × 5 (паралельно UNI.4-14) → Master IP Framework Agreement · [ ] 🔗 після UNI.1/8/9/12/13
+
+#### 🌿 BIZ.12 — Horizon Europe CLUSTER 6 заявка (Biodiversity Monitoring, Mongabay pivot)
+- **P1** · 👤 · → `08_01 §24a`, `03_03 §10`
+- Horizon CL6 Biodiversity Monitoring (2-6 М€, 36-48 міс); SilkenNet = єдиний планетарний D-MRV з micro-acoustic біорізноманіттям. Submission прив'язати до acceptance Статті 24a → "published research". · [ ] 👤 identify call (HORIZON-CL6-*-BIODIV) → consortium (SilkenNet coord + ЧНУ/ЧДТУ/біо-хаб + 1-2 EU: Linköping/CSIC) → submit при acceptance 24a · [ ] 🔗 E.59/FW.4-EXT (5-class TinyML) + UNI.13a (Soundscape Library)
+
+## 🔀 Cross-cutting · Doc-drift (DOC) — синх з `04_02 §11` divergence registry
+
+Потребують узгодження між docs, firmware та backend. **Не блокери виконання, але блокери для аудиту і онбордингу.**
+
+> ⚠️ **DOC-ID namespace collision (виявлено 2026-06-01, потребує рішення founder):** ця DOC-таблиця і divergence-registry [`04_02 §11`](04_02_Business_Logic_and_Services) ділять префікс `DOC.N`, але з РІЗНИМИ значеннями: `DOC.10` тут = 05/07 deferred-misplacement, у `04_02 §11` = Sidekiq-Pro shims; `DOC.11` тут = 05/07 restructure (✅), у `04_02 §11` = PartitionMaintenanceWorker; `04_04 §3.6` має ще свій `[DOC.11]` (Tailwind cheatsheet). Header «синх з 04_02 §11» вводить в оману — це **різні реєстри**. Доки namespace не розв'язано (злити в один АБО префіксувати, напр. `DOC-T.N` tracker / `DOC-R.N` 04_02-registry), DOC.10/DOC.11 тут **НЕ архівувати** (ID-плутанина при крос-реф). Тому цього pass'у заархівовано лише однозначні `####`-пункти без колізії (S2.5/SEC.13/DOC.13 → §🗄️ Архів).
+
+DOC.9 — потребує лабораторного вимірювання TX-струму
+
+| ID | Невідповідність | Документи / Файли | Дія | Статус |
+|----|----------------|-------------------|-----|--------|
+| DOC.1 | Документація AES master key суперечлива: `03_05` лінія 531-537 каже «навмисно не публікується», а лінія 538 натякає що перші 4 слова збігаються з FIPS-197 Appendix B test vector. Скоординувати після SEC.9 (заміна seed key) | `03_05`, `firmware/soldier/main.c:66-67` | Після SEC.9 видалити test-vector згадку, оновити обидва параграфи | ⏸️ Заблоковано SEC.9 |
+| DOC.9 | Documentation `02_03` §9.3 raніше використовувала 15 mA/50 ms для LoRa TX. Виправлено на 120 mA/100 ms (~39 мДж) per SX1262 datasheet. Firmware energy accounting **не верифіковано незалежно** | `02_03`, `firmware/soldier/main.c` | Лабораторне вимірювання поточного TX (HW.x) + cross-ref у `02_03` після верифікації | ⏸️ Заблоковано лаб-стендом |
+| DOC.10 | Реструктуризація 05/07 (Фаза 3) — відкладені misplacement-рішення: `07_01 §11` Investor Q&A (pitch/diligence — дім 00_01 vs новий pitch-doc неоднозначний); `07_03 §5` Anchor Assembly + `§6` Virtual Prototyping (operational/field-ops дім, наразі grant-bootstrap контекст — не чистий misplacement) | `07_01`, `07_03` | Призначити operational/pitch-дім + перенести (рішення founder) | 🟡 Deferred |
+| DOC.11 | Реструктуризація 05/07 (Фази 1-2, 2026-05-30): slashing `00_01 §6` → `05_05`; governance `05_03 §749-905` → `05_06` — нові канон-доми; cross-refs re-pointed; `00_06 §2` / `00_00` / README синхронізовано (навігація: `00_01 §6` stub + `05_03 §Governance` stub) | `05_05`, `05_06`, `00_01`, `05_03` | — (виконано) | ✅ Done |
+| DOC.12 | Taxonomy v3 P4 (2026-05-30): дисолюція Module 08 (7→3 доки). `08_03 Joint Pubs/IP`→**`08_01`**; `08_02 Cyber/Math`+`08_01 University`+`08_04-07`→**new `08_02` Academic Institutions Registry** (5 ВНЗ — relationship-шар; інженерна субстанція реферить Tier I 01–06, zero-loss verified); `07_05 External`→**`08_03`**. ~260 inbound refs swept; genuinely-novel mesh-математика → Open Research `06_08` (percolation/Markov). `00_00`/README/CLAUDE/`ssot-maintenance` skill синхронізовано | `08_01`, `08_02`, `08_03`, `06_08` | — (виконано) | ✅ Done |
+
+#### DOC.2 — Canon↔canon de-dup (SSOT single-home) [#4, 2026-05-29]
+- **P2** · 🤖 · → `00_00`
+- Реструктуризація 00_07 (#4) виявила факти, дубльовані у багатьох канон-доках — порушення «одна річ — одне місце». Призначити ОДИН дім + замінити решту на 1-рядковий ref (значення лишається ТІЛЬКИ в home):
+
+| Факт | Канон-дім | Дублюється у (→ має рефати дім) |
+|---|---|---|
+| AES-режими per-channel (ECB→CCM / CBC 256) | `03_05 §3.7` | ~20 доків (00_01/03_01/03_02/04_02/04_03/05_01/05_02 + 08_xx) — **найбільший дубль** |
+| Lorenz константи (Z 2.0/45.0/29.0 · σ10 ρ28 β8÷3 · dt0.01 · 250 iter) | `03_04 §4.1` | ✅ **05_02 «Фаза 2» зроблено** (повна ре-декларація → SSOT-ref, 2026-05-29). Решта легітимні (НЕ дубль): 04_01 self-labeled mirror Rails-конст., 03_01 firmware-doc контекст, 04_02 service-impl, 08_xx академ. верифікація |
+| Tokenomics rate 10 000 GP = 1 SCC | `05_03` | 05_01/07_01/07_02/03_03 |
+| Carbon 2000 SCC = 1 tCO₂ (0.5 кг) | `05_03` + `07_01` коеф. | 00_01/07_01/07_02 |
+| Slashing пороги stress 0.83 / slash 0.20 | `05_05 §3` + `04_02` (ContractHealthCheckService) | 05_03/07_01 |
+| Insurance pool 100 000 SCC | `05_05 §4` + `05_03` (Dynamic Tax) | 04_02/05_03 |
+| delta_t baseline 60 с | `03_04` (BASELINE_DELTA_T_S) | 03_01/04_02/05_02/01_03 |
+| Gyroid пористість 65% (60-70%) | `01_01` | 01_02/02_01/07_02 + 08_xx |
+
+- [x] 🤖 Замінити справжні ПОВНІ re-statements значення на 1-рядковий ref на home (значення — лише в home). **Зроблено:** ✅ Lorenz (05_02) — єдина справжня повна ре-декларація; решта = легітимний контекст (див. аудит нижче).
+- [ ] 🤖 Розширити `tracker:check` на канон↔канон: детект hardcoded-значень поза home-доком (stretch — складно без AST доків; ⚠️ ризик false-positive на колізіях чисел, див. нижче).
+- 📌 08_xx-академічні згадки часто легітимний контекст (не чистий дубль) — рефати, але не видаляти контекст.
+- ✅ **Lorenz-pilot (2026-05-29):** аудит «14 доків» → справжню ПОВНУ ре-декларацію канон-блоку мала ЛИШЕ `05_02 «Фаза 2»` → SSOT-ref `03_04 §4.1` (11 значень верифіковано present у home ПЕРЕД стрипом, 0 loss; метод-логіка лишена). Решта — self-labeled mirror (`04_01`) / firmware-контекст (`03_01`) / service-impl (`04_02`) / академ. верифікація (`08_xx`) — НЕ чіпати.
+- ✅ **Повний аудит DOC.2 (2026-05-29) — де-дуп завершено:** після Lorenz **driftable ПОВНИХ ре-декларацій більше не виявлено**. AES = контекстні згадки в кожному домен-доці (не відтворення per-channel таблиці) — home `03_05 §3.7`, не чіпати. Slashing-формула — поза home не ре-декларується. Tokenomics / carbon / insurance / gyroid — контекстні згадки одного значення (не spec-блок). ⚠️ **Blind value-de-dup НЕБЕЗПЕЧНИЙ:** `02_03 "65%"` = MPPT-фракція VOC (BQ25570 R_OC divider), а НЕ gyroid-пористість — **колізія чисел**; масовий ref за значенням зіпсував би непов'язаний power-electronics факт. **Висновок:** високоцінний/безпечний де-дуп закрито; решта — легітимний контекст, рефати лише по-кейсу за явним запитом + per-fact верифікацією.
 
 ## 📌 Backlog · Додаткові знахідки (не блокери)
 
@@ -919,15 +911,13 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | E.56 | **DSP preprocessing для TinyML** — невідомо чи модель очікує raw time-domain чи MFCC. Якщо MFCC → +5-15 KB Flash + 40 µs CPU (CMSIS-DSP) | `03_03` BLOCKER-5 | P1, cross-ref FW.25 |
 | E.57 | **TENSOR_ARENA_SIZE budget verification** — ніколи не виміряно через `arm-none-eabi-size`. Ризик stack overflow якщо > 46 KB | `03_03` BLOCKER-3 | P1, cross-ref FW.26 |
 | E.58 | **Lorenz state continuity** після brownout: документація specifies повний (x,y,z) save в RTC Backup, але недостатня формалізація first-boot vs continuation logic. Магічний marker `LZST` (0x4C5A5354) реалізовано — потребує канонічної таблиці RTC layout | `03_04`, `03_01` | P2, cross-ref DOC.3, DOC.4 |
-| 🌿 E.59 | **Mongabay biodiversity pivot — acoustic D-MRV** — стратегічний pivot Silken Net від карбонового MRV до повноцінного D-MRV біорізноманіття після Delgado et al. (Nicoya Peninsula, 119 ділянок, 16 000 год аудіо; *Mongabay News*, травень 2026). Включає: (1) FW.4-EXT 5-class TinyML модель з класом `fauna_activity`; (2) FW.25 DSP MFCC з P1→P0; (3) UNI.11+UNI.13a Cherkasy Soundscape Library (ЧДТУ ПМКТ + ЧНУ Біо-хаб); (4) 08_02 §1 Macro-Micro verification (Бушин CNN + fauna feature); (5) 08_02 §1 NSGA-II multi-objective GA (Любченко); (6) 08_03 Стаття 24a co-authored Q1 publication; (7) Horizon Europe CLUSTER 6 (Biodiversity Monitoring) grant vector; (8) AiInsight#biodiversity_trend → ForestNFT metadata "biodiversity_score"; (9) ринкова диференціація — defensible moat проти Pachama/Sylvera/NCX (тільки Silken Net має micro-acoustic verification layer) | `03_03` §10 + `08_01` §1.3+§2 + `08_02` §1.5+§1.8 + `08_03` Стаття 24a | **P1 strategic** — координує FW.4-EXT, FW.25, UNI.11, UNI.13a |
+| 🌿 E.59 | **Mongabay biodiversity pivot — acoustic D-MRV** — стратегічний pivot Silken Net від карбонового MRV до повноцінного D-MRV біорізноманіття після Delgado et al. (Nicoya Peninsula, 119 ділянок, 16 000 год аудіо; *Mongabay News*, травень 2026). Включає: (1) FW.4-EXT 5-class TinyML модель з класом `fauna_activity`; (2) FW.25 DSP MFCC з P1→P0; (3) UNI.11+UNI.13a Cherkasy Soundscape Library (ЧДТУ ПМКТ + ЧНУ Біо-хаб); (4) 08_02 §1 Macro-Micro verification (Бушин CNN + fauna feature); (5) 08_02 §1 NSGA-II multi-objective GA (Любченко); (6) 08_01 Стаття 24a co-authored Q1 publication; (7) Horizon Europe CLUSTER 6 (Biodiversity Monitoring) grant vector; (8) AiInsight#biodiversity_trend → ForestNFT metadata "biodiversity_score"; (9) ринкова диференціація — defensible moat проти Pachama/Sylvera/NCX (тільки Silken Net має micro-acoustic verification layer) | `03_03` §10 + `08_01` §1.3+§2 + `08_02` §1.5+§1.8 + `08_01` Стаття 24a | **P1 strategic** — координує FW.4-EXT, FW.25, UNI.11, UNI.13a |
 | E.60 | **CID witness у IoTeX ZK-proof** — bidirectional integrity bridge Polygon ↔ Filecoin. Раніше Filecoin pin (крок #11) йшов **після** мінту Polygon (крок #8), створюючи gap: зловмисник міг ex-post підмінити archive у Pinata. Виправлення: `archive_cid_preimage` детерміністично обчислюється з batch payload через `Filecoin::CidGenerator.cidv1()` ще на кроці #5 (IoTeX W3bstream) і включається у ZK-witness. Polygon `mint()` отримує `archive_cid` як `bytes32` metadata. `FilecoinArchiveWorker` fail-fast якщо Pinata-CID не збігається з очікуваним → `manual_review`. | `05_02 §E.60` | P1, новий `Filecoin::CidGenerator` service |
 | E.61 | **Solana micro-rewards batch payouts** — поточний `SolanaMicroRewardWorker` робить окрему транзакцію на кожен fulfilled telemetry (10,000 + growth_points*100 lamports = 0.01–0.016 USDC), де gas-fee на одну Solana tx (~0.000005 SOL ≈ 0.0007 USD) може зрівнятись із самою винагородою при низьких growth_points. Рішення: акумулювати fulfilled-винагороди в Kredis (`solana_pending_payouts:<wallet_id>`) до досягнення порогу 0.10–1.00 USDC (`SOLANA_BATCH_THRESHOLD_USDC` ENV), потім один `transferChecked()` ATA → ATA batch. Cron `SolanaBatchPayoutWorker` (every 1h) дренує накопичені. Backward-compat: при `SOLANA_BATCH_THRESHOLD_USDC=0` — поведінка як зараз (per-event). | `04_02 §Solana` + `05_01` | P1, economic correctness fix |
 | ARCH.34 | **Queen-side LoRaWAN Helium Fallback** — переніс Helium fallback з Soldier (фундаментально несумісно з flash/RAM/topology STM32WLE5JC) на Queen. Queen інтегрує LoRaMac-node (Semtech BSD-3) stack + персистентний OTAA join state (DevEUI/AppEUI/AppKey у Queen Flash) + FCntUp counter survive reboot. Aggregated lambda-summary 11 байт (ARCH.22) пакується у LoRaWAN frame і доставляється через будь-який Helium hotspot у радіусі ~15 км → Helium LNS → HTTP Integration webhook → Rails `POST /api/v1/telemetry/helium`. Активація: own Starlink/LTE-M down + Q2Q backhaul недоступний + buffer fill > 50%. Soldier-side `helium_compat_emit()` (попередній план) **відкинуто**. | `06_08 §1.2 L3` + `02_05 §6.1` | P2, blocker для повної resilience policy (без нього L3 fallback архітектурно неможливий) |
 | ARCH.35 | **Queen Flash Ring Buffer (W25Q32 overflow tier)** — поточний CIFO 50-slot RAM cache переповнюється за ~30 хв при 100 Soldiers/Queen × 1 пакет/год (на 200 Soldiers/Queen — за 15 хв). Додати SPI NOR Flash чип Winbond W25Q32JV (~$0.50, 4 MB, SOIC-8) до Queen BOM як overflow tier. **Sector-based ring (нот.7):** NOR стирається ТІЛЬКИ цілим 4 KB сектором, тому ring обертається по секторах, не по 21-байт offset'ах — ~195 слотів×21 байт/сектор ≈ 199k слотів ≈ ~7 діб при 100 Soldiers/год; покажчики `write_sector`/`read_sector`/`slot_in_sector` у RTC DR20-DR21; erase-before-program; псевдокод [`02_05 §2.1`](02_05_Queen_Hardware_and_Starlink). Drain order: спочатку Flash (FIFO), потім RAM. Енерго-impact: одиниці mA·s/добу (page write + амортизований sector erase). | `06_08 §1.2 L1` + `02_05 §2.1` + `02_05 §BOM` | P1, blocker для resilience policy на верхньому краю scaling |
 | HW.31 | **Queen Antenna Split (REVISED 2026-05-16)** — раніше BOM Queen позиція 11 була «868/LTE-M dual-band SMA», що шкодить покриттю на 868 МГц (high VSWR на вузькому ISM). Розділено на: **поз. 11** = wideband LTE-M/NB-IoT cellular (700-2700 МГц, покриває Kyivstar B1/B3/B7/B8/B20), опційно LTE+GNSS combo для SIM7070G PPS time sync; **поз. 12** = LoRa 868 МГц **tuned** 5 dBi fiberglass omni (Mobilemark OD8-868, Taoglas ALL.4101). Окремі RF-порти SX1262 vs SIM7070G — жодного combining. | `02_05 §7 BOM` | P0, blocked by 02_05 BOM freeze; вплив: ~5 dBi gain regain on LoRa link to Soldiers |
 | ✅ OPS.5 | **Projects V2 TRL field schema — 1-9 + SRL/MRL (СУПЕРСЕДЕД 2026-05-28)** — ~~раніше TRL розширювали до 1-12~~. **Корекція (2026-05-28, методологічна):** «TRL 10-12» нестандартні (NASA/ISO 16290 = 1-9); відкинуто. Тепер `lib/github_bootstrap.rb` має `TRL_OPTIONS = (1..9)` + нове поле **Readiness Horizon** (`READINESS_HORIZON_OPTIONS = SRL:Concept/Pilot/Deployed + MRL:8/9/10`) для Beyond-TRL-9 R&D (00_02 §1, 00_08 §1). `bin/setup_github_project.sh` — thin wrapper над `rake github:project_fields` (споживає `GithubBootstrap::FIELDS`, SSOT). 18 RSpec прикладів. 👤 **Залишилось:** перезапустити bootstrap, щоб додати поле `Readiness Horizon` на live-дошку (TRL:10-12 опцій ніхто не використовував, тож re-tag не потрібен; залишкові невживані опції 10-12 видалити вручну в UI за бажанням). | `00_05 §1.1` + `00_02 §1` + [`00_08 §1`](00_08_Beyond_TRL9_Planetary_Roadmap) + `lib/github_bootstrap.rb` | ✅ Schema у коді (2026-05-28); 👤 bootstrap-run на live-дошці |
-
----
 
 ## 📌 Backlog · Архітектурні пропозиції (довгострокові)
 
@@ -960,8 +950,6 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | ARCH.31 | **SOP-в-Phlex inline UI для EwsAlert** — інтеграція 7 SOP документів (drought/epidemic/vandalism/fire/seismic/fault/entropy) як inline-інструкцій, що показуються при кліку на EwsAlert у дашборді. UX: forester отримує немедіане runbook замість пошуку у документах | `08_02 §3` + `04_02` | Post-TRL 6, cross-ref E.54 + UNI.12 |
 | ARCH.32 | **Shape Up 6-week cycle Petri Net formalization** — формальна верифікація фази Shape Up (betting table → build → cool-down) щоб довести: будь-яка фіча може бути завершена у межах cycle constraints. Цільова стаття Q1 *IEEE Transactions on Software Engineering* | `08_02`, `00_04` | Post-TRL 7 (методологія + R&D, Супруненко ЧНУ) |
 | ARCH.33 | **ECDH P-256 key exchange як альтернатива HKDF-only provisioning** — мерехтливий розгляд: замість per-device HKDF (FW.1) використати ECDH у factory або field provisioning. Plus: Perfect Forward Secrecy без shared master key. Minus: Curve25519/P-256 потребує ~512 байт SRAM + 50 мс CPU на handshake | `08_02` §1.1 (Vector 2, Ярмілко), `03_05` | Research alternative (узгодити з FW.17 Hash Ratchet) |
-
----
 
 ## 🗄️ Архів закритих пунктів (мігровано в канон)
 
@@ -1007,3 +995,4 @@ DOC.9 — потребує лабораторного вимірювання TX-
 > 2. Змінити `[ ]` → `[x]` для виконаних підзадач
 > 3. Для нових знахідок — додавати у відповідну секцію + посилання на джерело docs
 > 4. Раз на квартал — повний docs audit з оновленням «Top-Critical Path» секції зверху
+

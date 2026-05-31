@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 8 — стандарт впроваджено та **CI-enforced** (`docs:check_refs` + `tracker:check` як HARD-гейти у `docs.yml`/`ci.yml`). Відкриті — TRL range-consistency guard (roadmap) → [00_07](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 8 — стандарт впроваджено та **CI-enforced** (`docs:check_refs` + `tracker:check` як HARD-гейти у `docs.yml`/`ci.yml`). Відкриті — TRL range-consistency guard (roadmap) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -16,12 +16,12 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [00_05_GitHub_Projects_and_IaC_Automation](00_05_GitHub_Projects_and_IaC_Automation) | Workflows, що ганяють ці гейти (`docs.yml`, `ssot_guard.yml`); Projects/Labels SSOT |
-| [00_02_AI_Native_Engineering_and_TRL](00_02_AI_Native_Engineering_and_TRL) | AI-Native філософія + Wiki-First (no code until spec approved) |
-| [00_03_TRL_Matrix_HIL_and_Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | Per-module TRL matrix — канон-дім (§2 registry посилається сюди) |
+| [`00_05` — GitHub Projects and IaC Automation](00_05_GitHub_Projects_and_IaC_Automation) | Workflows, що ганяють ці гейти (`docs.yml`, `ssot_guard.yml`); Projects/Labels SSOT |
+| [`00_02` — AI Native Engineering and TRL](00_02_AI_Native_Engineering_and_TRL) | AI-Native філософія + Wiki-First (no code until spec approved) |
+| [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | Per-module TRL matrix — канон-дім (§2 registry посилається сюди) |
 | `lib/docs_linter.rb` · `lib/docs_toc.rb` · `lib/tasks/docs.rake` · `lib/wiki_link_normalizer.rb` | Engine'и drift-tooling (§3) — pure-функції, unit-tested |
-| [00_00_SSOT_Index](00_00_SSOT_Index) | Reading-order + повний реєстр сторінок |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | Канонічний дім блокерів (§1) + open backlog |
+| [`00_00` — SSOT Index](00_00_SSOT_Index) | Reading-order + повний реєстр сторінок |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Канонічний дім блокерів (§1) + open backlog |
 
 ## 📑 Зміст
 
@@ -47,7 +47,7 @@
 
 - **Блокери — НЕ в каноні (рішення 2026-05-29).** Канон-док **не тримає** секцій `🛑 Блокери` чи `✅ Архів вирішених блокерів`. **Усі** блокери — і відкриті, і закриті — живуть **тільки в `00_07`** (відкриті → §модуль-реєстр як тонкі вказівники → канон; закриті → `00_07 §🗄️ Архів`). Канон описує дизайн і **відоме обмеження прозою в body** («як воно є»); чому member-TRL не вищий — 1 рядок у Статус із рефом `→ 00_07 §NN`. `docs:check_refs` ловить будь-яку лишкову блокер-секцію (§3).
 - **Cross-references — угорі, DRY.** ОДНА секція зразу під Статус: sibling-доки + ключові файли + `00_07`-link (канонічний дім блокерів). Прибрано дубль: окремий список «Пов'язані модулі» в Статус та окрема References-секція внизу більше НЕ використовуються — це й була основна дуплікація.
-- **Крос-рефи — один стандартний формат (рішення 2026-05-30).** Інлайн-посилання на канон: видима мітка веде з тим самим `NN_NN`, що й ціль href, а `§X` — **реальний номер секції** (`§4.1`, `§1A`, `§6.3`), НЕ описове слово. Приклад секції — `` [`05_05 §3`](05_05_Slashing_and_Risk_Policy) ``; на весь док — `` [`05_05`](05_05_Slashing_and_Risk_Policy) `` без `§`. Описовий контекст (назва концепту/концерну, напр. «Web3CircuitBreaker», «Q2Q Mesh») — у прозі ПОРУЧ, не в `§`-слоті. `docs:check_refs` (§3) флагає і §-мітку без відповідного заголовка в цілі, і label↔href-розбіжність: **стандартизуй реф, а не послаблюй гейт** (один формат < багато форматів + боротьба з лінтером).
+- **Крос-рефи — один стандартний формат (рішення 2026-05-30).** Інлайн-посилання на канон: видима мітка веде з тим самим `NN_NN`, що й ціль href, а `§X` — **реальний номер секції** (`§4.1`, `§1A`, `§6.3`), НЕ описове слово. **Мітка ЗАВЖДИ веде з code-span `` `NN_NN` ``** — це ЄДИНИЙ дозволений діалект (HARD-enforced 2026-06-01), у трьох формах: `` [`05_05`](05_05_Slashing_and_Risk_Policy) `` (на весь док) · `` [`05_05 §3`](05_05_Slashing_and_Risk_Policy) `` (секція, `§X` = реальний номер) · `` [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) `` (directory-рядок: title ПОЗА code-span). Заборонено plain `[05_05 …](Doc)`, escaped `[05\_05\_…](Doc)`, full-name-in-codespan `` [`05_05_Full_Name`](Doc) `` — це той самий реф у другому написанні. Описовий контекст (назва концепту, напр. «Web3CircuitBreaker») — у прозі/після em-dash ПОРУЧ, не в `§`-слоті й не всередині code-span. Prose-фразовий лінк (мітка без doc-id, напр. «[живе тут](Doc)») — легітимний. `docs:check_refs` (§3) флагає §-мітку без заголовка, label↔href-розбіжність і не-code-span мітку: **стандартизуй реф, а не послаблюй гейт** (один формат < багато форматів). Bulk-нормалізація — `scripts/normalize_crossrefs.rb`; таксономія/аудит — `scripts/crossref_audit.rb`.
 - **Статус — lean (рішення 2026-05-29).** Лише member-TRL + rationale (+ «відкриті → `00_07 §NN`»). БЕЗ build-state таблиць «Компонент | Стан» — стан компонентів живе в body + code-рефах Cross-references (інакше дубль body/00_07 → drift).
 - **Без волатильних лічильників (рішення 2026-05-29).** Не хардкодити в прозі к-сть тестів / рядків коду — дрейфують на кожен коміт (у 03_01 знайдено `264` vs `511` vs `83/105` в одному доку). Рефати на джерело (`make -C firmware/test`, suite) або генерувати (як метрики `06_03 §2.8`). Spec/wire-константи (21-байт фрейм, DR0..DR19, 0.47F) — design-факти, лишаються.
 - **Зміст — авто (рішення 2026-05-29).** `## 📑 Зміст` зразу під Cross-references; тіло між `<!-- TOC:AUTO:START/END -->` ГЕНЕРУЄТЬСЯ з h2-заголовків (`bin/rails docs:toc`), `docs:check_refs` падає при дрейфі. Потрібен бо Wiki не має авто-outline; ручний список заборонено (дрейф). Анкори = GitHub-слаги (`lib/docs_toc.rb`).
@@ -88,7 +88,8 @@
 | Guard | Що ловить | Команда / місце |
 |---|---|---|
 | `docs:check_refs` | dangling `NN_NN` doc-links (hard) + §-section label drift (advisory) | `bin/rails docs:check_refs` (ci.yml + docs.yml) |
-| `tracker:check` | 00_07: dup-IDs (across **#### headings AND registry table-row IDs** — закрив DOC.12 #### ↔ table-row blind-spot, 2026-06-01), meta-line conformance, canon-ref resolution + **§-section resolution** (a `NN_NN §X` pointer's §X must be a real heading — зловив 12 stale `§BLOCKER-N`/wrong-doc-id рефів, осиротілих blockers→00_07 sweep'ом; thread C 2026-05-31) | `bin/rails tracker:check` (ci.yml + docs.yml) |
+| `tracker:check` | 00_07: dup-IDs (across **#### headings AND registry table-row IDs** — закрив DOC.12 #### ↔ table-row blind-spot, 2026-06-01), meta-line conformance, canon-ref resolution + **§-section resolution** (a `NN_NN §X` pointer's §X must be a real heading — зловив 12 stale `§BLOCKER-N`/wrong-doc-id рефів, осиротілих blockers→00_07 sweep'ом; thread C 2026-05-31). Parser tolerant до emoji-префікса в `#### 🌿 ID` (раніше UNI.13a/BIZ.12 були невидимі усім чекам) | `bin/rails tracker:check` (ci.yml + docs.yml) |
+| **section↔canon-home** | 00_07 canon-mirror One-Home: кожен `#### ` під `## §NN` має canon-ref модуля NN (`§03/§05` / `§01–§02` декларують multi-module set у заголовку; 🔀/📌/🗄️ exempt). Закрив «§06-deploy-під-§04-DevOps» drift (15 S*/INF* айтемів ховалися під §04 за nav-нотатками) при canon-mirror реструктуризації 00_07 (2026-06-01) | `bin/rails tracker:check` (HARD; `lib/tracker/dashboard.rb`) |
 | `ssot_guard.yml` | protected code змінено → docs мусять оновитись | CI PR gate (00_05 §2.3) |
 | regen-from-code | enumerable lists (метрики) генеруються з SSOT, не вручну | `06_03 §2.8` regen cmd |
 | TRL presence | кожен док з `## ✅ Статус` декларує TRL (ловить 06_04-клас gap) | `bin/rails docs:check_refs` (hard) |
@@ -98,6 +99,7 @@
 | ToC sync | docs з `TOC:AUTO` маркерами — зміст збігається з h2-заголовками | `bin/rails docs:check_refs` (HARD; writer `docs:toc`; engine `lib/docs_toc.rb`) |
 | **RTC reg-map drift** | register availability (`DRn free/reserve`) живе лише в owner `03_01 §2`; інші доки не дублюють (зловив stale «DR15 резерв» у 03_02/00_07/03_03) | `bin/rails docs:check_refs` (HARD 2026-05-30; `lib/docs_linter.rb`) |
 | **Lorenz-formula drift** | β-assignment (`beta = 8.0/3.0`) живе лише в owner `03_04 §4.1`; інші доки реферять, не re-declare (зловив stale σ/ρ/β у 05_01 + старому tech-00_01, розчиненому в P1b, при 05/07-реструктуризації) | `bin/rails docs:check_refs` (HARD 2026-05-30; `lib/docs_linter.rb`) |
+| **cross-ref label single-form** | КОЖНА мітка doc-id-лінка має вести з code-span `` `NN_NN` `` — один дозволений діалект (`` [`NN_NN`](Doc) ``, `` [`NN_NN §X`](Doc) ``, `` [`NN_NN` — Title](Doc) ``). Plain `[NN_NN …](Doc)`, escaped `[NN\_NN\_…](Doc)`, full-name-in-codespan `[`NN_NN_Full`](Doc)` = той самий реф у 2-му написанні → flagged. Prose-фраза без doc-id лишається. Звело 445 лінків у 50 доках (`scripts/normalize_crossrefs.rb`); таксономія — `scripts/crossref_audit.rb` | `bin/rails docs:check_refs` (HARD 2026-06-01; `lib/docs_linter.rb`) |
 | **link label↔href mismatch** | doc-link, де visible label веде з одним `NN_NN`, а href резолвиться на ІНШИЙ доку — renamed-doc residue, який dangling-check НЕ ловить (href валідний). Зловив 00_02 §3 (текст «00_06» → файл 00_05) + residue в 03_02 після renumber'у візії-доку (visible label-ID ≠ href-ID) | `bin/rails docs:check_refs` (HARD 2026-05-30; `lib/docs_linter.rb`) |
 | **magic-marker hex** | _(advisory)_ визначення 4-байтного ASCII-маркера (`"LZST" = 0xNNNN`) має дорівнювати BE/LE byte-packing власного імені — self-validating, без таблиці (firmware змішує endianness: `RITE`=LE, `LZST`=BE); ловить typo'd/stale magic-value (клас 9cb1d86). Hex-посилання за значенням (без сусіднього імені) не чіпається | `bin/rails docs:check_refs` (advisory 2026-05-30; `lib/docs_linter.rb`) |
 | **bare §-ref → link** | code-span `NN_NN §X` поза markdown-лінком — non-standard + blind spot (`section_label_drift` валідує лише лінковані рефи). Стандартизувати у повний лінк (канонічна форма — §1). Exempt 00_00/00_06/00_07/02_06; skip fences + meta-плейсхолдери (`§NN`/`§X.Y`) | `bin/rails docs:check_refs` (HARD 2026-05-31; `lib/docs_linter.rb`) |

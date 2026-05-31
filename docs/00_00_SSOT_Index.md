@@ -71,14 +71,14 @@ Soldier (Tree)         Soldier (Tree)         Soldier (Tree)
 
 ### 📚 Сторінки Фундаменту (Read-First)
 
-- [00\_01\_Vision\_Mission\_and\_Roadmap](00_01_Vision_Mission_and_Roadmap) (Місія, проблема VCM, науковий підхід, NaaS, дорожня карта, Proof-of-Growth; філософія Slashing → 05_05)
-- [00\_02\_AI\_Native\_Engineering\_and\_TRL](00_02_AI_Native_Engineering_and_TRL) (Філософія: NASA TRL, Intent-First, Wiki-First, AI Pipeline + Validation Gate)
-- [00\_03\_TRL\_Matrix\_HIL\_and\_Beyond](00_03_TRL_Matrix_HIL_and_Beyond) (Канон per-module TRL-матриці + per-domain TRL + HIL-симулятори; Beyond-TRL-9 агенда винесена → 00_08)
-- [00\_04\_Shape\_Up\_Operations\_and\_RnD\_Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) (Операційний template: 6+2 цикли, 4 R&D кластери, Betting Table, Async-Review)
-- [00\_05\_GitHub\_Projects\_and\_IaC\_Automation](00_05_GitHub_Projects_and_IaC_Automation) (Projects V2 fields + Labels-as-Code + GitHub Actions workflows)
-- [00\_06\_SSOT\_Documentation\_Standard](00_06_SSOT_Documentation_Standard) (Стандарт канон-доків: skeleton + home-registry + drift-tooling + restructure-метод)
-- [00\_07\_Action\_Plan\_Tracker](00_07_Action_Plan_Tracker) (🔴 Живий документ — аудит блокерів, план дій, Sprint tracking)
-- [00\_08\_Beyond\_TRL9\_Planetary\_Roadmap](00_08_Beyond_TRL9_Planetary_Roadmap) (Beyond TRL 9: 4 Planetary-Intelligence прогалини + фрактальна мережева топологія — far-horizon R&D 2026–2040+)
+- [`00_01` — Vision Mission and Roadmap](00_01_Vision_Mission_and_Roadmap) (Місія, проблема VCM, науковий підхід, NaaS, дорожня карта, Proof-of-Growth; філософія Slashing → 05_05)
+- [`00_02` — AI Native Engineering and TRL](00_02_AI_Native_Engineering_and_TRL) (Філософія: NASA TRL, Intent-First, Wiki-First, AI Pipeline + Validation Gate)
+- [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) (Канон per-module TRL-матриці + per-domain TRL + HIL-симулятори; Beyond-TRL-9 агенда винесена → 00_08)
+- [`00_04` — Shape Up Operations and RnD Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) (Операційний template: 6+2 цикли, 4 R&D кластери, Betting Table, Async-Review)
+- [`00_05` — GitHub Projects and IaC Automation](00_05_GitHub_Projects_and_IaC_Automation) (Projects V2 fields + Labels-as-Code + GitHub Actions workflows)
+- [`00_06` — SSOT Documentation Standard](00_06_SSOT_Documentation_Standard) (Стандарт канон-доків: skeleton + home-registry + drift-tooling + restructure-метод)
+- [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) (🔴 Живий документ — аудит блокерів, план дій, Sprint tracking)
+- [`00_08` — Beyond TRL9 Planetary Roadmap](00_08_Beyond_TRL9_Planetary_Roadmap) (Beyond TRL 9: 4 Planetary-Intelligence прогалини + фрактальна мережева топологія — far-horizon R&D 2026–2040+)
 
 ---
 
@@ -90,66 +90,66 @@ _Інженерний канон того, **ЩО** ми будуємо — ве
 
 _Все, що фізично інтегрується в живе дерево — тризонний коаксіальний анкер, EBFC та ксилемоінтеграція._
 
-- [01\_01\_Coaxial\_Gyroid\_Topology\_and\_PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) (3-зонний дизайн анкера: Ti-гіроїд + PEEK-терморозрив + катодний фланець)
-- [01\_02\_Ti\_6Al\_4V\_Metallurgy\_and\_DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) (DMLS друк металу + HIP + відпал)
-- [01\_03\_EBFC\_Enzymatic\_Bio\_Fuel\_Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) (EBFC Gen 2.0: dgrFAD-GDH анод + Laccase/ZIF катод + цвітеріонна мембрана — >500 mV, 20–25 років)
-- [01\_04\_CODIT\_and\_Xylemointegration](01_04_CODIT_and_Xylemointegration) (Біологічна реакція дерева на імплантат + anti-overgrowth shield катода)
+- [`01_01` — Coaxial Gyroid Topology and PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) (3-зонний дизайн анкера: Ti-гіроїд + PEEK-терморозрив + катодний фланець)
+- [`01_02` — Ti 6Al 4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) (DMLS друк металу + HIP + відпал)
+- [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) (EBFC Gen 2.0: dgrFAD-GDH анод + Laccase/ZIF катод + цвітеріонна мембрана — >500 mV, 20–25 років)
+- [`01_04` — CODIT and Xylemointegration](01_04_CODIT_and_Xylemointegration) (Біологічна реакція дерева на імплантат + anti-overgrowth shield катода)
 
 ## ⚡ Модуль 02: Апаратне Забезпечення (The Capsule)
 
 _Електроніка Soldier/Queen, енергетичні буфери, механіка blind-mate підключення та опціональна Starlink-uplink._
 
-- [02\_01\_Hardware\_Architecture\_and\_BOM](02_01_Hardware_Architecture_and_BOM) (BOM капсули Солдата + ASCII power tree)
-- [02\_02\_Blind\_Mate\_Pogo\_Pin\_Interface](02_02_Blind_Mate_Pogo_Pin_Interface) (Сліпий магнітний конектор Pogo-Pin до коаксіального анкера)
-- [02\_03\_BQ25570\_MPPT\_Nano\_Power](02_03_BQ25570_MPPT_Nano_Power) (BQ25570 MPPT нано-потужність + пряме живлення від EBFC)
-- [02\_04\_EDLC\_Supercapacitor\_Buffer](02_04_EDLC_Supercapacitor_Buffer) (Іоністор 0.47Ф / 5.5В)
-- [02\_05\_Queen\_Hardware\_and\_Starlink](02_05_Queen_Hardware_and_Starlink) (Шлюз Королева + SIM7070G + Starlink Direct-to-Cell)
-- [02\_06\_Legacy\_Breadboard\_Appendix](02_06_Legacy_Breadboard_Appendix) (📦 Архів: legacy LTC3108 breadboard-прототип — НЕ виробнича архітектура)
+- [`02_01` — Hardware Architecture and BOM](02_01_Hardware_Architecture_and_BOM) (BOM капсули Солдата + ASCII power tree)
+- [`02_02` — Blind Mate Pogo Pin Interface](02_02_Blind_Mate_Pogo_Pin_Interface) (Сліпий магнітний конектор Pogo-Pin до коаксіального анкера)
+- [`02_03` — BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power) (BQ25570 MPPT нано-потужність + пряме живлення від EBFC)
+- [`02_04` — EDLC Supercapacitor Buffer](02_04_EDLC_Supercapacitor_Buffer) (Іоністор 0.47Ф / 5.5В)
+- [`02_05` — Queen Hardware and Starlink](02_05_Queen_Hardware_and_Starlink) (Шлюз Королева + SIM7070G + Starlink Direct-to-Cell)
+- [`02_06` — Legacy Breadboard Appendix](02_06_Legacy_Breadboard_Appendix) (📦 Архів: legacy LTC3108 breadboard-прототип — НЕ виробнича архітектура)
 
 ## 🧠 Модуль 03: Прошивка та Edge AI (The Brain)
 
 _Логіка STM32WLE5JC: STOP2 / DMA / TinyML / mruby Lorenz / апаратний AES — Soldier і Queen firmware._
 
-- [03\_01\_Firmware\_Lifecycle\_and\_DMA](03_01_Firmware_Lifecycle_and_DMA) (Soldier цикл Phase 0-5, Watchdog, STOP2, RX-вікно, RTC reg-map)
-- [03\_02\_Queen\_Gateway\_Firmware](03_02_Queen_Gateway_Firmware) (Queen LoRa RX → CIFO → CoAP flush)
-- [03\_03\_TinyML\_Acoustic\_Inference](03_03_TinyML_Acoustic_Inference) (CMSIS-NN: класифікація пилки/кавітації/тиші)
-- [03\_04\_mruby\_Lorenz\_Attractor](03_04_mruby_Lorenz_Attractor) (mruby VM атрактор хаосу — гомеостаз дерева; канон Lorenz-констант)
-- [03\_05\_Hardware\_Symmetric\_Crypto\_and\_Security](03_05_Hardware_Symmetric_Crypto_and_Security) (LoRa AES-128-CCM + CoAP AES-256-CBC + ATECC608B + Flash Key + RDP + PQC roadmap)
+- [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) (Soldier цикл Phase 0-5, Watchdog, STOP2, RX-вікно, RTC reg-map)
+- [`03_02` — Queen Gateway Firmware](03_02_Queen_Gateway_Firmware) (Queen LoRa RX → CIFO → CoAP flush)
+- [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) (CMSIS-NN: класифікація пилки/кавітації/тиші)
+- [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) (mruby VM атрактор хаосу — гомеостаз дерева; канон Lorenz-констант)
+- [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) (LoRa AES-128-CCM + CoAP AES-256-CBC + ATECC608B + Flash Key + RDP + PQC roadmap)
 
 ## 🗄️ Модуль 04: Серверне Ядро (Web2 Backend)
 
 _Rails 8.1 Omakase: моделі даних, бізнес-логіка, REST API, Phlex UI та тестова матриця._
 
-- [04\_01\_Data\_Models\_and\_Entities](04_01_Data_Models_and_Entities) (ActiveRecord моделі, PostgreSQL-схема, RANGE-partitioning)
-- [04\_02\_Business\_Logic\_and\_Services](04_02_Business_Logic_and_Services) (Service Objects + Sidekiq воркери, Web3CircuitBreaker, Drift Register)
-- [04\_03\_REST\_API\_v1\_Reference](04_03_REST_API_v1_Reference) (REST API v1, Pagy, Idempotency-Key, RBAC)
-- [04\_04\_Phlex\_UI\_and\_Tailwind](04_04_Phlex_UI_and_Tailwind) (Phlex компоненти + Tailwind 4 + gaia design tokens + i18n)
-- [04\_05\_Codex\_Lore\_Module](04_05_Codex_Lore_Module) (Codex — read-only наративний шар над телеметрією; ADR-зафіксований, поза hot-path)
-- [04\_06\_Testing\_Guide\_and\_Coverage](04_06_Testing_Guide_and_Coverage) (RSpec best practices + Coverage Matrix: RSpec/Firmware C/Foundry Solidity)
+- [`04_01` — Data Models and Entities](04_01_Data_Models_and_Entities) (ActiveRecord моделі, PostgreSQL-схема, RANGE-partitioning)
+- [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) (Service Objects + Sidekiq воркери, Web3CircuitBreaker, Drift Register)
+- [`04_03` — REST API v1 Reference](04_03_REST_API_v1_Reference) (REST API v1, Pagy, Idempotency-Key, RBAC)
+- [`04_04` — Phlex UI and Tailwind](04_04_Phlex_UI_and_Tailwind) (Phlex компоненти + Tailwind 4 + gaia design tokens + i18n)
+- [`04_05` — Codex Lore Module](04_05_Codex_Lore_Module) (Codex — read-only наративний шар над телеметрією; ADR-зафіксований, поза hot-path)
+- [`04_06` — Testing Guide and Coverage](04_06_Testing_Guide_and_Coverage) (RSpec best practices + Coverage Matrix: RSpec/Firmware C/Foundry Solidity)
 
 ## ⛓️ Модуль 05: Web3 та Економіка (The Ledger)
 
 _DePIN-стек, Proof of Growth pipeline, токеноміка SCC/SFC, slashing/governance та фіналізація в Ethereum L1._
 
-- [05\_01\_Multichain\_Architecture](05_01_Multichain_Architecture) (**Core DePIN**: peaq + IoTeX + Chainlink + Polygon + **Filecoin** — audit-critical immutable archive [нот.18: НЕ optional як Solana/Celo; E.60 planned → `archive_root` стає ZK-witness, тоді формально Core] · **Expansion** [optional]: Solana / Celo / KlimaDAO)
-- [05\_02\_Proof\_of\_Growth\_Pipeline](05_02_Proof_of_Growth_Pipeline) (Повний uplink → oracle → mint flow + Dynamic Tax)
-- [05\_03\_Tokenomics\_SCC\_and\_SFC](05_03_Tokenomics_SCC_and_SFC) (SCC ERC-20 + SFC governance-токен + Dynamic Tax)
-- [05\_04\_Ethereum\_L1\_State\_Anchor](05_04_Ethereum_L1_State_Anchor) (Щотижневий SHA-256 state root в Ethereum mainnet)
-- [05\_05\_Slashing\_and\_Risk\_Policy](05_05_Slashing_and_Risk_Policy) (Політика штрафів: negligence/force-majeure/indeterminate + формула + insurance + anti-fraud)
-- [05\_06\_Governance\_and\_DAO](05_06_Governance_and_DAO) (On-chain governance: SilkenGovernor/Timelock/ProtocolParameters + Flash-Loan-захист)
+- [`05_01` — Multichain Architecture](05_01_Multichain_Architecture) (**Core DePIN**: peaq + IoTeX + Chainlink + Polygon + **Filecoin** — audit-critical immutable archive [нот.18: НЕ optional як Solana/Celo; E.60 planned → `archive_root` стає ZK-witness, тоді формально Core] · **Expansion** [optional]: Solana / Celo / KlimaDAO)
+- [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) (Повний uplink → oracle → mint flow + Dynamic Tax)
+- [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) (SCC ERC-20 + SFC governance-токен + Dynamic Tax)
+- [`05_04` — Ethereum L1 State Anchor](05_04_Ethereum_L1_State_Anchor) (Щотижневий SHA-256 state root в Ethereum mainnet)
+- [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) (Політика штрафів: negligence/force-majeure/indeterminate + формула + insurance + anti-fraud)
+- [`05_06` — Governance and DAO](05_06_Governance_and_DAO) (On-chain governance: SilkenGovernor/Timelock/ProtocolParameters + Flash-Loan-захист)
 
 ## 🚀 Модуль 06: DevOps та Інфраструктура (The Matrix)
 
 _Деплой, моніторинг, секрети та децентралізовані обчислення (Akash + GCP failover)._
 
-- [06\_01\_Deployment\_Kamal\_Terraform](06_01_Deployment_Kamal_Terraform) (Kamal + Terraform GCP, Canopy vs Production)
-- [06\_02\_Akash\_Network\_Integration](06_02_Akash_Network_Integration) (SDL 2.0 манифест + multi-provider failover)
-- [06\_03\_Prometheus\_Observability](06_03_Prometheus_Observability) (Grafana Alloy → Grafana Cloud + Alerting)
-- [06\_04\_Secrets\_Checklist](06_04_Secrets_Checklist) (Інвентаризація секретів: GitHub Secrets, Kamal, Akash, Terraform)
-- [06\_05\_Puma\_Configuration](06_05_Puma_Configuration) (Puma 8 IO-bound pool + кластерні хуки + runbook'и)
-- [06\_06\_Disaster\_Recovery\_and\_Backup](06_06_Disaster_Recovery_and_Backup) (Cloud SQL PITR/HA + restore-runbook'и + RTO/RPO + master-key backup)
-- [06\_07\_CICD\_and\_Runbook\_Index](06_07_CICD_and_Runbook_Index) (CI/CD workflows + єдиний operations runbook-індекс)
-- [06\_08\_Resilience\_and\_Failover\_Policy](06_08_Resilience_and_Failover_Policy) (Queen failover 4 рівні + Per-Chain Fallback Matrix для Web3-ланок — runtime resilience)
+- [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) (Kamal + Terraform GCP, Canopy vs Production)
+- [`06_02` — Akash Network Integration](06_02_Akash_Network_Integration) (SDL 2.0 манифест + multi-provider failover)
+- [`06_03` — Prometheus Observability](06_03_Prometheus_Observability) (Grafana Alloy → Grafana Cloud + Alerting)
+- [`06_04` — Secrets Checklist](06_04_Secrets_Checklist) (Інвентаризація секретів: GitHub Secrets, Kamal, Akash, Terraform)
+- [`06_05` — Puma Configuration](06_05_Puma_Configuration) (Puma 8 IO-bound pool + кластерні хуки + runbook'и)
+- [`06_06` — Disaster Recovery and Backup](06_06_Disaster_Recovery_and_Backup) (Cloud SQL PITR/HA + restore-runbook'и + RTO/RPO + master-key backup)
+- [`06_07` — CICD and Runbook Index](06_07_CICD_and_Runbook_Index) (CI/CD workflows + єдиний operations runbook-індекс)
+- [`06_08` — Resilience and Failover Policy](06_08_Resilience_and_Failover_Policy) (Queen failover 4 рівні + Per-Chain Fallback Matrix для Web3-ланок — runtime resilience)
 
 ---
 
@@ -159,14 +159,14 @@ _Деплой, моніторинг, секрети та децентраліз�
 
 _NaaS-контракти, юніт-економіка та гранти. Зовнішні стейкхолдери (B2G/B2B + культурний шар) переїхали у Модуль 08 ([`08_03`](08_03_External_Stakeholders_Registry)). Візія/місія/дорожня карта — у Фундаменті [`00_01`](00_01_Vision_Mission_and_Roadmap)._
 
-- [07\_01\_Nature\_as\_a\_Service\_Contracts](07_01_Nature_as_a_Service_Contracts) (NaaS контракти + параметричне страхування + фінансові константи)
-- [07\_02\_Unit\_Economics\_and\_BOM](07_02_Unit_Economics_and_BOM) (Юніт-економіка + ROI через SCC + Supply Chain Ukraine)
-- [07\_03\_Grant\_Applications\_Tracker](07_03_Grant_Applications_Tracker) (Трекер грантових заявок — Horizon Europe, Verra, Gold Standard)
+- [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) (NaaS контракти + параметричне страхування + фінансові константи)
+- [`07_02` — Unit Economics and BOM](07_02_Unit_Economics_and_BOM) (Юніт-економіка + ROI через SCC + Supply Chain Ukraine)
+- [`07_03` — Grant Applications Tracker](07_03_Grant_Applications_Tracker) (Трекер грантових заявок — Horizon Europe, Verra, Gold Standard)
 
 ## 🔬 Модуль 08: Академічна Інтеграція (Academic & Partnerships)
 
 _Партнерства ВНЗ (ЧНУ+ФОТІУС, ЧДТУ, ЧІПБ, ЧМА, СЄУ) під рамкою MOIC: MoU, спільні публікації, IP-стратегія. Інженерна R&D-субстанція реферить канон Tier I (01–06), не дублює._
 
-- [08\_01\_Joint\_Publications\_and\_IP\_Strategy](08_01_Joint_Publications_and_IP_Strategy) (MOIC-рамка + спільні публікації (Статті 1–35) + патентна стратегія/IP)
-- [08\_02\_Academic\_Institutions\_Registry](08_02_Academic_Institutions_Registry) (Реєстр 5 ВНЗ: хто/кафедра → що валідує [канон-дім] → публікація)
-- [08\_03\_External\_Stakeholders\_Registry](08_03_External_Stakeholders_Registry) (Social API Registry: B2G/B2B + культурний шар — лісники, ДСНС, митці; non-hot-path)
+- [`08_01` — Joint Publications and IP Strategy](08_01_Joint_Publications_and_IP_Strategy) (MOIC-рамка + спільні публікації (Статті 1–35) + патентна стратегія/IP)
+- [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) (Реєстр 5 ВНЗ: хто/кафедра → що валідує [канон-дім] → публікація)
+- [`08_03` — External Stakeholders Registry](08_03_External_Stakeholders_Registry) (Social API Registry: B2G/B2B + культурний шар — лісники, ДСНС, митці; non-hot-path)

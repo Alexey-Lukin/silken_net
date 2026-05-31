@@ -20,12 +20,12 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Soldier lifecycle, binary packet, DID provisioning, RTC map |
-| [02_05_Queen_Hardware_and_Starlink](02_05_Queen_Hardware_and_Starlink) | Hardware Queen, SIM7070G, Starlink/Helium |
-| [03_05_Hardware_Symmetric_Crypto_and_Security](03_05_Hardware_Symmetric_Crypto_and_Security) | AES режими, ключі (§3.1), HRNG IV |
-| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | `UnpackTelemetryWorker` (батч [IV:16][CBC ciphertext]) |
-| [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Втрата пакетів Queen → ZK-proof/мінтинг |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.3 AT-blind async-DMA, FW.27 OTA ACK-agg |
+| [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | Soldier lifecycle, binary packet, DID provisioning, RTC map |
+| [`02_05` — Queen Hardware and Starlink](02_05_Queen_Hardware_and_Starlink) | Hardware Queen, SIM7070G, Starlink/Helium |
+| [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | AES режими, ключі (§3.1), HRNG IV |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `UnpackTelemetryWorker` (батч [IV:16][CBC ciphertext]) |
+| [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Втрата пакетів Queen → ZK-proof/мінтинг |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.3 AT-blind async-DMA, FW.27 OTA ACK-agg |
 
 ## 📑 Зміст
 
@@ -135,7 +135,7 @@
 
 ## 📡 1. LoRa Reception та ISR
 
-> **Роль у вирішенні Проблеми Рандеву:** Королева є **єдиним always-on listener** у мережі. Її SX1262 завжди в `Radio.Rx(LORA_RX_INFINITE)` — нескінченний таймаут прийому. Це вирішує фундаментальну Проблему Рандеву (Rendezvous Problem) для всіх вузлів у прямій видимості (150–200 м): Солдат може "вистрілити" пакетом у будь-яку мілісекунду — Королева завжди зловить. Це можливо завдяки зовнішньому живленню (сонячна панель / акумулятор), на відміну від Солдатів з EBFC біобатарейкою. Для вузлів за межами прямої видимості Queen потрібні Синхронні Вікна (TDMA) та CAD — нереалізовані механізми рівнів L2/L3 ([ARCH.26](00_07_Action_Plan_Tracker), [деталі → 03_01 §1.9](03_01_Firmware_Lifecycle_and_DMA)).
+> **Роль у вирішенні Проблеми Рандеву:** Королева є **єдиним always-on listener** у мережі. Її SX1262 завжди в `Radio.Rx(LORA_RX_INFINITE)` — нескінченний таймаут прийому. Це вирішує фундаментальну Проблему Рандеву (Rendezvous Problem) для всіх вузлів у прямій видимості (150–200 м): Солдат може "вистрілити" пакетом у будь-яку мілісекунду — Королева завжди зловить. Це можливо завдяки зовнішньому живленню (сонячна панель / акумулятор), на відміну від Солдатів з EBFC біобатарейкою. Для вузлів за межами прямої видимості Queen потрібні Синхронні Вікна (TDMA) та CAD — нереалізовані механізми рівнів L2/L3 ([ARCH.26](00_07_Action_Plan_Tracker), [`03_01` — деталі → 03 01 §1.9](03_01_Firmware_Lifecycle_and_DMA)).
 
 ### OnRxDone (Апаратне переривання)
 
@@ -975,7 +975,7 @@ Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пак
 | `hcryp` | AES | ECB для LoRa, CBC для CoAP батчів та команд |
 | `hrng` | RNG | HRNG для CBC IV та Thundering Herd jitter |
 | `hiwdg` | IWDG | Апаратний Watchdog (~26.6 с timeout, auto-reset при зависанні) |
-| `hspi1` | SPI1 | Зовнішня NOR Flash **Winbond W25Q32JV** (4 MB) — Overflow Tier CIFO ([ARCH.35](00_07_Action_Plan_Tracker), [BOM поз. 16 → 02_05 §BOM](02_05_Queen_Hardware_and_Starlink)). Піни: `PB3=SCK`, `PB4=MISO`, `PB5=MOSI`, `PA4=CS` (GPIO software-driven). Driver (**planned, ARCH.35 — ще не реалізовано**): `firmware/queen/flash_buffer.c` (`w25q32_write_page` / `w25q32_read` / `w25q32_erase_sector`; **sector-based** ring — NOR стирається цілим 4 KB сектором, деталі та псевдокод у [`02_05 §2.1`](02_05_Queen_Hardware_and_Starlink)). |
+| `hspi1` | SPI1 | Зовнішня NOR Flash **Winbond W25Q32JV** (4 MB) — Overflow Tier CIFO ([ARCH.35](00_07_Action_Plan_Tracker), [`02_05` — BOM поз. 16 → 02 05 §BOM](02_05_Queen_Hardware_and_Starlink)). Піни: `PB3=SCK`, `PB4=MISO`, `PB5=MOSI`, `PA4=CS` (GPIO software-driven). Driver (**planned, ARCH.35 — ще не реалізовано**): `firmware/queen/flash_buffer.c` (`w25q32_write_page` / `w25q32_read` / `w25q32_erase_sector`; **sector-based** ring — NOR стирається цілим 4 KB сектором, деталі та псевдокод у [`02_05 §2.1`](02_05_Queen_Hardware_and_Starlink)). |
 
 **Примітка:** Queen **не має** ADC, TIM, RTC — на відміну від Soldier. HRNG та IWDG ініціалізуються при старті. HRNG де-ініціалізується "on-demand" (Wu-Wei підхід — нульове споживання між використаннями). `hspi1` ініціалізується тільки в момент drain CIFO→Flash (overflow event) і де-ініціалізується одразу після — енерго-нейтральний підхід (W25Q32JV power-down 1 µA, page write ~10 мА × 0.7 мс).
 

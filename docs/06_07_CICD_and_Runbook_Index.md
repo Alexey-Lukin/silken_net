@@ -18,13 +18,13 @@
 | Ресурс | Зв'язок |
 |---|---|
 | `.github/workflows/*.yml` | workflows (SSOT — фактична конфігурація) |
-| [06_01_Deployment_Kamal_Terraform](06_01_Deployment_Kamal_Terraform) | deploy-flow, Kamal/Terraform |
-| [06_02_Akash_Network_Integration](06_02_Akash_Network_Integration) | Akash deploy |
-| [06_04_Secrets_Checklist](06_04_Secrets_Checklist) | secrets/revocation |
-| [06_05_Puma_Configuration](06_05_Puma_Configuration) | Puma runbooks |
-| [06_06_Disaster_Recovery_and_Backup](06_06_Disaster_Recovery_and_Backup) | DR runbooks |
-| [00_05_GitHub_Projects_and_IaC_Automation](00_05_GitHub_Projects_and_IaC_Automation) | TRL/Projects automation |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | INF.6, OPS.1/OPS.2 |
+| [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) | deploy-flow, Kamal/Terraform |
+| [`06_02` — Akash Network Integration](06_02_Akash_Network_Integration) | Akash deploy |
+| [`06_04` — Secrets Checklist](06_04_Secrets_Checklist) | secrets/revocation |
+| [`06_05` — Puma Configuration](06_05_Puma_Configuration) | Puma runbooks |
+| [`06_06` — Disaster Recovery and Backup](06_06_Disaster_Recovery_and_Backup) | DR runbooks |
+| [`00_05` — GitHub Projects and IaC Automation](00_05_GitHub_Projects_and_IaC_Automation) | TRL/Projects automation |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | INF.6, OPS.1/OPS.2 |
 
 ## 📑 Зміст
 

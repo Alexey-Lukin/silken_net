@@ -25,12 +25,12 @@
 | `deploy/akash/deploy.yaml` · `deploy.yaml.tpl` | SDL: `web` + `job` + `alloy` сервіси |
 | `deploy/akash/config.alloy` | Grafana Alloy scrape + remote_write |
 | `terraform/akash/` | SDL templating + Akash CLI provisioner |
-| [06_01_Deployment_Kamal_Terraform](06_01_Deployment_Kamal_Terraform) | GCP/Kamal, Ingress Anchor |
-| [06_03_Prometheus_Observability](06_03_Prometheus_Observability) | Alloy → Grafana Cloud |
-| [06_04_Secrets_Checklist](06_04_Secrets_Checklist) | SDL secrets — SSOT |
-| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (що деплоїться) |
-| [06_07_CICD_and_Runbook_Index](06_07_CICD_and_Runbook_Index) | mirror-ghcr, deploy pipeline |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | S4.3, INF.4, S6.1 |
+| [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) | GCP/Kamal, Ingress Anchor |
+| [`06_03` — Prometheus Observability](06_03_Prometheus_Observability) | Alloy → Grafana Cloud |
+| [`06_04` — Secrets Checklist](06_04_Secrets_Checklist) | SDL secrets — SSOT |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (що деплоїться) |
+| [`06_07` — CICD and Runbook Index](06_07_CICD_and_Runbook_Index) | mirror-ghcr, deploy pipeline |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | S4.3, INF.4, S6.1 |
 
 ## 📑 Зміст
 
@@ -307,10 +307,10 @@ coap-client -m get coap://$INGRESS_IP:5683/health -v 6
 
 ##### Cross-ref
 
-- [00_07 INF.4](00_07_Action_Plan_Tracker) — оригінальна задача.
-- [00_07 INF.6](00_07_Action_Plan_Tracker) — CoAP Proxy verification (Ingress Anchor лежить у тій же площині, бо CoAP UDP не йде через Cloudflare).
-- [06_01](06_01_Deployment_Kamal_Terraform) — Ingress Anchor (e2-micro, статичний IP, HAProxy).
-- [00_07 DOC.5](00_07_Action_Plan_Tracker) — `DISABLE_SSL` ENV documented як небезпечний override.
+- [`00_07` — INF.4](00_07_Action_Plan_Tracker) — оригінальна задача.
+- [`00_07` — INF.6](00_07_Action_Plan_Tracker) — CoAP Proxy verification (Ingress Anchor лежить у тій же площині, бо CoAP UDP не йде через Cloudflare).
+- [`06_01`](06_01_Deployment_Kamal_Terraform) — Ingress Anchor (e2-micro, статичний IP, HAProxy).
+- [`00_07` — DOC.5](00_07_Action_Plan_Tracker) — `DISABLE_SSL` ENV documented як небезпечний override.
 
 ---
 

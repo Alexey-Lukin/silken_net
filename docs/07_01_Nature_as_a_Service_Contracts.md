@@ -20,11 +20,11 @@
 | Ресурс | Зв'язок |
 |---|---|
 | `app/models/naas_contract.rb` | NaasContract lifecycle (AASM) — SSOT коду |
-| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | SCC/SFC + фінансові константи (home) |
-| [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof of Growth (мінтинг-тригер) |
-| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Юніт-економіка, BOM |
-| [08_02_Academic_Institutions_Registry](08_02_Academic_Institutions_Registry) | MSA / KYC legal (Аблязов) |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | BIZ.1/2/3/4/6/9/11/13/14, UNI.8 |
+| [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | SCC/SFC + фінансові константи (home) |
+| [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof of Growth (мінтинг-тригер) |
+| [`07_02` — Unit Economics and BOM](07_02_Unit_Economics_and_BOM) | Юніт-економіка, BOM |
+| [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | MSA / KYC legal (Аблязов) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | BIZ.1/2/3/4/6/9/11/13/14, UNI.8 |
 
 ## 📑 Зміст
 
@@ -314,7 +314,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 - **Service Level Agreement (SLA)** — параметри якості: час реакції на інциденти, uptime гарантії, умови відшкодування при недоступності системи.
 - **Subscription Order Form** — документ на конкретний `NaasContract` (кластер, тривалість, `total_funding`, `cancellation_terms`).
 
-**Дія:** Залучення юридичного консультанта (бажано з досвідом Web3 / ReFi) для підготовки шаблонів. **Академічний шлях вирішення:** СЄУ (Аблязов Денис Едуардович, к.ю.н., доцент кафедри публічного та приватного права) — розробка шаблонів MSA, Term Sheet та Carbon Credit Purchase Agreement згідно з MiCA та українським законодавством. Детально: [`08_02_Academic_Institutions_Registry`](08_02_Academic_Institutions_Registry) §1.3.
+**Дія:** Залучення юридичного консультанта (бажано з досвідом Web3 / ReFi) для підготовки шаблонів. **Академічний шлях вирішення:** СЄУ (Аблязов Денис Едуардович, к.ю.н., доцент кафедри публічного та приватного права) — розробка шаблонів MSA, Term Sheet та Carbon Credit Purchase Agreement згідно з MiCA та українським законодавством. Детально: [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) §1.3.
 
 ---
 
@@ -343,7 +343,7 @@ Polygon Hadron Identity Platform надає технічну верифікац�
 - Яка юрисдикція? (ЄС — AMLD5, США — BSA, міжнародні — FATF)
 - Скільки коштує ліцензія на надання таких послуг?
 
-**Дія:** Консультація з compliance-спеціалістом та вибір KYC-провайдера (Sumsub, Veriff, або Polygon Hadron). **Академічний шлях вирішення:** СЄУ (Аблязов Денис Едуардович) — юридична рамка KYC/AML для B2B клієнтів у контексті ERC-3643 та AMLD5/FATF регулювань; СЄУ (Ус Галина Олександрівна) — бухгалтерська класифікація KYC витрат та compliance-процесів у корпоративному обліку. Детально: [`08_02_Academic_Institutions_Registry`](08_02_Academic_Institutions_Registry) §1.3.
+**Дія:** Консультація з compliance-спеціалістом та вибір KYC-провайдера (Sumsub, Veriff, або Polygon Hadron). **Академічний шлях вирішення:** СЄУ (Аблязов Денис Едуардович) — юридична рамка KYC/AML для B2B клієнтів у контексті ERC-3643 та AMLD5/FATF регулювань; СЄУ (Ус Галина Олександрівна) — бухгалтерська класифікація KYC витрат та compliance-процесів у корпоративному обліку. Детально: [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) §1.3.
 
 ---
 
@@ -357,7 +357,7 @@ Polygon Hadron Identity Platform надає технічну верифікац�
 - Bridge фіат → купівля SCC → `esg_retired_balance` (незворотно) → сертифікат.
 - Audit-trail ретайрменту (Filecoin immutable archive — нот.18) для регуляторного звіту.
 
-**Дія:** юридична рамка SPV — СЄУ (Аблязов Д., RWA/MiCA) + бухгалтерія — СЄУ (Ус Г.). Cross-ref [`08_02_Academic_Institutions_Registry`](08_02_Academic_Institutions_Registry) §5.
+**Дія:** юридична рамка SPV — СЄУ (Аблязов Д., RWA/MiCA) + бухгалтерія — СЄУ (Ус Г.). Cross-ref [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) §5.
 
 ---
 
@@ -448,7 +448,7 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 
 **Q1: "44 мВ від дерева — це рівень шуму. Як MCU Cortex-M4 взагалі запуститься від такого?"**
 
-> **A:** MCU не живиться безпосередньо від 44 мВ. Застосовується двоступеневий PMIC-каскад: LTC3108 (порогова напруга старту: 20 мВ) як trickle charger повільно накопичує енергію в іоністорі (0.47F). STM32WLE5JC перебуває в STOP2 (2.1 мкА) 99.9% часу. Пробудження: зчитування сенсорів → обчислення mruby Lorenz → AES-128 шифрування → 21-байтна LoRa TX → назад у STOP2. Після архітектурного пів'оту: повноцінний EBFC Gen 2.0 на dgrFAD-GDH / Laccase+ZIF-nanozyme генерує **>500 мВ** (вище порогу Cold-Start BQ25570 330 мВ) — LTC3108 більше не потрібен у виробничій версії. Детальніше: [02_03_BQ25570_MPPT_Nano_Power](02_03_BQ25570_MPPT_Nano_Power).
+> **A:** MCU не живиться безпосередньо від 44 мВ. Застосовується двоступеневий PMIC-каскад: LTC3108 (порогова напруга старту: 20 мВ) як trickle charger повільно накопичує енергію в іоністорі (0.47F). STM32WLE5JC перебуває в STOP2 (2.1 мкА) 99.9% часу. Пробудження: зчитування сенсорів → обчислення mruby Lorenz → AES-128 шифрування → 21-байтна LoRa TX → назад у STOP2. Після архітектурного пів'оту: повноцінний EBFC Gen 2.0 на dgrFAD-GDH / Laccase+ZIF-nanozyme генерує **>500 мВ** (вище порогу Cold-Start BQ25570 330 мВ) — LTC3108 більше не потрібен у виробничій версії. Детальніше: [`02_03` — BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power).
 
 **Q1 (EN): "44mV is essentially noise floor. How do you ensure cold start?"**
 
@@ -458,7 +458,7 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 
 **Q2: "Дерево з часом обросте навколо титанового анкера (CODIT). Як зміниться імпеданс і що з цим робити?"**
 
-> **A:** Ми використовуємо цю реакцію на нашу користь. Анкер має форму **гіроїду (TPMS Gyroid)** — пориста бімімікрична структура, що дозволяє тканинам ксилеми проростати крізь нього, а не навколо. Замість ізоляції відбувається **біо-інтеграція**: анкер стає частиною судинної системи дерева. Прошивка використовує EIS (Electrical Impedance Spectroscopy) для постійної калібровки базової лінії. Зміна імпедансу — це **сигнал динаміки росту біомаси**, а не баг. Детальніше: [01_01_Coaxial_Gyroid_Topology_and_PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK).
+> **A:** Ми використовуємо цю реакцію на нашу користь. Анкер має форму **гіроїду (TPMS Gyroid)** — пориста бімімікрична структура, що дозволяє тканинам ксилеми проростати крізь нього, а не навколо. Замість ізоляції відбувається **біо-інтеграція**: анкер стає частиною судинної системи дерева. Прошивка використовує EIS (Electrical Impedance Spectroscopy) для постійної калібровки базової лінії. Зміна імпедансу — це **сигнал динаміки росту біомаси**, а не баг. Детальніше: [`01_01` — Coaxial Gyroid Topology and PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK).
 
 **Q2 (EN): "Won't the tree encapsulate the anchor (CODIT) and break electrical contact?"**
 
@@ -470,7 +470,7 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 
 **Q3: "10,000 дерев у лісі — як ви уникаєте шторму колізій пакетів LoRa?"**
 
-> **A:** Directed Mesh + рандомізований Jitter. Soldier-вузли використовують апаратний HRNG (`HAL_RNG_GenerateRandomNumber`) для рандомізованої затримки 0-500 мс перед TX — Collision Avoidance без централізованого координатора. Ієрархічна сегментація: кожен Queen Gateway обслуговує 500-1000 Soldiers. Динамічний Spreading Factor (SF7-SF12) оптимізує Time-on-Air. Пакети стиснені до **21 байт**. Детальніше: [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA).
+> **A:** Directed Mesh + рандомізований Jitter. Soldier-вузли використовують апаратний HRNG (`HAL_RNG_GenerateRandomNumber`) для рандомізованої затримки 0-500 мс перед TX — Collision Avoidance без централізованого координатора. Ієрархічна сегментація: кожен Queen Gateway обслуговує 500-1000 Soldiers. Динамічний Spreading Factor (SF7-SF12) оптимізує Time-on-Air. Пакети стиснені до **21 байт**. Детальніше: [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA).
 
 **Q3 (EN): "LoRa-Mesh at 100M trees? How do you prevent collision storm?"**
 
@@ -480,7 +480,7 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 
 **Q4: "Edge AI (TinyML) потребує постійно увімкненого мікрофона — іоністор сяде за годину."**
 
-> **A:** Мікрофон не активний 24/7. Застосовується **пасивний п'єзодиск** як hardware wake-up source з нульовим споживанням. П'єзо спрацьовує на апаратне переривання `GPIO_EXTI0` (PA0) тільки при перевищенні порогового рівня вібрації. Тільки тоді CPU виходить зі сну, TIM2 + DMA наповнює аудіо-буфер 512 семплів (CPU знову засинає в SLEEP-режимі), після чого 50 мс inference через CMSIS-NN. Standby струм: **2.1 мкА**. Детальніше: [03_01_Firmware_Lifecycle_and_DMA § Phase 1.5](03_01_Firmware_Lifecycle_and_DMA).
+> **A:** Мікрофон не активний 24/7. Застосовується **пасивний п'єзодиск** як hardware wake-up source з нульовим споживанням. П'єзо спрацьовує на апаратне переривання `GPIO_EXTI0` (PA0) тільки при перевищенні порогового рівня вібрації. Тільки тоді CPU виходить зі сну, TIM2 + DMA наповнює аудіо-буфер 512 семплів (CPU знову засинає в SLEEP-режимі), після чого 50 мс inference через CMSIS-NN. Standby струм: **2.1 мкА**. Детальніше: [`03_01` — Firmware Lifecycle and DMA § Phase 1.5](03_01_Firmware_Lifecycle_and_DMA).
 
 ---
 
@@ -488,7 +488,7 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 
 **Q5: "Мільйон дерев + транзакції в блокчейн = колапс мережі та астрономічні gas fees."**
 
-> **A:** Дерева не пишуть у блокчейн напряму. Телеметрія (UDP/CoAP) агрегується на Rails backend. IoTeX W3bstream виступає як офчейн-обчислювач: збирає мільйони точок даних → розраховує атрактор Лоренца → формує єдиний ZK-proof (або Merkle Root). **Один** криптографічний доказ раз на добу записується в L1 смарт-контракт. Batch mint до 200 дерев в одній транзакції (`batchMint()`). Архітектура масштабується на трильйон дерев. Детальніше: [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline).
+> **A:** Дерева не пишуть у блокчейн напряму. Телеметрія (UDP/CoAP) агрегується на Rails backend. IoTeX W3bstream виступає як офчейн-обчислювач: збирає мільйони точок даних → розраховує атрактор Лоренца → формує єдиний ZK-proof (або Merkle Root). **Один** криптографічний доказ раз на добу записується в L1 смарт-контракт. Batch mint до 200 дерев в одній транзакції (`batchMint()`). Архітектура масштабується на трильйон дерев. Детальніше: [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline).
 
 **Q5 (EN): "1M trees → blockchain → you'll crash any network and go bankrupt on gas fees."**
 
@@ -498,7 +498,7 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 
 **Q6 (Найважливіше): "The Oracle Exploit. Що заважає підключити анкер до батарейки AA і генерувати фейковий Proof of Growth?"**
 
-> **A:** Алгоритм консенсусу (Lorenz Attractor) шукає **хаос, властивий біології**. Батарейка AA дає **мертву лінійну напругу** — атрактор миттєво розпізнає це як аномалію (статус=2, `growth_points=0`). Живе дерево має мікрофлуктуації напруги з фотосинтезом, добовими циклами, рухом соку — унікальна хаотична "fingerprint". Другий рівень захисту: **просторова крос-верифікація** — якщо вузол звітує про ріст біомаси, що суттєво відхиляється від сусідів при однакових кліматичних умовах, `InsightGeneratorService` позначає вузол як fraud і Slashing спалює токени порушника. Детальніше: [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor), [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline).
+> **A:** Алгоритм консенсусу (Lorenz Attractor) шукає **хаос, властивий біології**. Батарейка AA дає **мертву лінійну напругу** — атрактор миттєво розпізнає це як аномалію (статус=2, `growth_points=0`). Живе дерево має мікрофлуктуації напруги з фотосинтезом, добовими циклами, рухом соку — унікальна хаотична "fingerprint". Другий рівень захисту: **просторова крос-верифікація** — якщо вузол звітує про ріст біомаси, що суттєво відхиляється від сусідів при однакових кліматичних умовах, `InsightGeneratorService` позначає вузол як fraud і Slashing спалює токени порушника. Детальніше: [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor), [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline).
 
 **Q6 (EN): "What prevents a forester from connecting the anchor to a AA battery in a garage and minting fake tokens?"**
 
@@ -514,11 +514,11 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 
 **Q8: "Навіщо власний токен SCC? Чому не USDC?"**
 
-> **A:** USDC представляє **минулу цінність** (фіат). SCC представляє **майбутній ріст біомаси**. Критична відмінність: токенізація дозволяє алгоритмічно застосовувати **Slashing** — спалення токенів при порушенні NaaS (якщо >20% дерев кластера у стресі). Ви не можете алгоритмічно спалити чужий USDC без централізованого контролю. SCC + Slashing = trustless accountability для учасників екосистеми. Детальніше: [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC).
+> **A:** USDC представляє **минулу цінність** (фіат). SCC представляє **майбутній ріст біомаси**. Критична відмінність: токенізація дозволяє алгоритмічно застосовувати **Slashing** — спалення токенів при порушенні NaaS (якщо >20% дерев кластера у стресі). Ви не можете алгоритмічно спалити чужий USDC без централізованого контролю. SCC + Slashing = trustless accountability для учасників екосистеми. Детальніше: [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC).
 
 **Q9: "Ліс — агресивне середовище. Який очікуваний Churn Rate обладнання?"**
 
-> **A:** Система проєктується з очікуванням відмови **10-15% вузлів**. Метрика — не "здоров'я одного дерева", а **"здоров'я кластера"**. Directed Mesh автоматично переналаштовує маршрутизацію (Self-healing) при втраті вузла — TTL-based multi-hop routing. Атрактор Лоренца оцінює гомеостаз лісу в цілому, ігноруючи поодинокі втрати. Параметричний страховий пул покриває критичні події (пожежа, посуха) — `ParametricInsurance`. Детальніше: [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA).
+> **A:** Система проєктується з очікуванням відмови **10-15% вузлів**. Метрика — не "здоров'я одного дерева", а **"здоров'я кластера"**. Directed Mesh автоматично переналаштовує маршрутизацію (Self-healing) при втраті вузла — TTL-based multi-hop routing. Атрактор Лоренца оцінює гомеостаз лісу в цілому, ігноруючи поодинокі втрати. Параметричний страховий пул покриває критичні події (пожежа, посуха) — `ParametricInsurance`. Детальніше: [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA).
 
 **Q10: "Якщо гроші гранту закінчаться — ви залежите від підрядника?"**
 

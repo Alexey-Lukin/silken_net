@@ -18,11 +18,11 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [04_01_Data_Models_and_Entities](04_01_Data_Models_and_Entities) | Моделі (дані для компонентів) |
-| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (сервіси) |
-| [04_03_REST_API_v1_Reference](04_03_REST_API_v1_Reference) | REST API (Turbo Frame ендпоінти) |
-| [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Прошивка (OTA progress streams) |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | Open backlog (UI verification, i18n) |
+| [`04_01` — Data Models and Entities](04_01_Data_Models_and_Entities) | Моделі (дані для компонентів) |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (сервіси) |
+| [`04_03` — REST API v1 Reference](04_03_REST_API_v1_Reference) | REST API (Turbo Frame ендпоінти) |
+| [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | Прошивка (OTA progress streams) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (UI verification, i18n) |
 
 ## 📑 Зміст
 

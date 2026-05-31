@@ -24,14 +24,14 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [01_01_Coaxial_Gyroid_Topology_and_PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Гіроїдний анкер + PEEK (65% пористість, площа EBFC) |
-| [02_02_Blind_Mate_Pogo_Pin_Interface](02_02_Blind_Mate_Pogo_Pin_Interface) | Сліпе з'єднання анкер↔капсула; §3.4 Parylene C conformal |
-| [02_03_BQ25570_MPPT_Nano_Power](02_03_BQ25570_MPPT_Nano_Power) | MPPT, резисторна мережа порогів (VBAT_OV) |
-| [02_04_EDLC_Supercapacitor_Buffer](02_04_EDLC_Supercapacitor_Buffer) | Ємність, ESR, циклічна деградація іоністора |
-| [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Фази прошивки (STOP2, TX, TinyML) + енергоспоживання |
-| [01_03_EBFC_Enzymatic_Bio_Fuel_Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | Хімія EBFC, V-I крива, >500 мВ |
-| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | CAPEX/OPEX, ROI, Supply Chain Ukraine |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.7 VBAT_OV, HW.11 Parylene, HW.12 overvoltage |
+| [`01_01` — Coaxial Gyroid Topology and PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Гіроїдний анкер + PEEK (65% пористість, площа EBFC) |
+| [`02_02` — Blind Mate Pogo Pin Interface](02_02_Blind_Mate_Pogo_Pin_Interface) | Сліпе з'єднання анкер↔капсула; §3.4 Parylene C conformal |
+| [`02_03` — BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power) | MPPT, резисторна мережа порогів (VBAT_OV) |
+| [`02_04` — EDLC Supercapacitor Buffer](02_04_EDLC_Supercapacitor_Buffer) | Ємність, ESR, циклічна деградація іоністора |
+| [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | Фази прошивки (STOP2, TX, TinyML) + енергоспоживання |
+| [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | Хімія EBFC, V-I крива, >500 мВ |
+| [`07_02` — Unit Economics and BOM](07_02_Unit_Economics_and_BOM) | CAPEX/OPEX, ROI, Supply Chain Ukraine |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.7 VBAT_OV, HW.11 Parylene, HW.12 overvoltage |
 
 ## 📑 Зміст
 

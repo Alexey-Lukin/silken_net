@@ -21,15 +21,15 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [00_00_SSOT_Index](00_00_SSOT_Index) | Системна карта (8 рівнів) + 12-chain → 05_02 |
-| [02_05_Queen_Hardware_and_Starlink](02_05_Queen_Hardware_and_Starlink) | Hardware Queen + Q2Q mesh + Helium fallback |
-| [03_02_Queen_Gateway_Firmware](03_02_Queen_Gateway_Firmware) | Прошивка Queen (CoAP retry, CIFO) |
-| [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Мультичейн архітектура |
-| [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof-of-Growth pipeline; §Dynamic Tax — `insurance_pool` fallback economics |
-| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | `Web3CircuitBreaker` concern; §13b Drift Register (E.49 Celo cascade, S6.15 router probe) |
-| [06_02_Akash_Network_Integration](06_02_Akash_Network_Integration) | Multi-provider SDL, fallback GCP/Kamal |
-| [06_03_Prometheus_Observability](06_03_Prometheus_Observability) | Метрики Resilience SLO |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): ARCH.26 TDMA/CAD, ARCH.34 Helium, ARCH.35 Flash, INF.4/INF.6 Ingress, ARCH.1 Conductor L2 |
+| [`00_00` — SSOT Index](00_00_SSOT_Index) | Системна карта (8 рівнів) + 12-chain → 05_02 |
+| [`02_05` — Queen Hardware and Starlink](02_05_Queen_Hardware_and_Starlink) | Hardware Queen + Q2Q mesh + Helium fallback |
+| [`03_02` — Queen Gateway Firmware](03_02_Queen_Gateway_Firmware) | Прошивка Queen (CoAP retry, CIFO) |
+| [`05_01` — Multichain Architecture](05_01_Multichain_Architecture) | Мультичейн архітектура |
+| [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof-of-Growth pipeline; §Dynamic Tax — `insurance_pool` fallback economics |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `Web3CircuitBreaker` concern; §13b Drift Register (E.49 Celo cascade, S6.15 router probe) |
+| [`06_02` — Akash Network Integration](06_02_Akash_Network_Integration) | Multi-provider SDL, fallback GCP/Kamal |
+| [`06_03` — Prometheus Observability](06_03_Prometheus_Observability) | Метрики Resilience SLO |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): ARCH.26 TDMA/CAD, ARCH.34 Helium, ARCH.35 Flash, INF.4/INF.6 Ingress, ARCH.1 Conductor L2 |
 
 ## 📑 Зміст
 

@@ -17,11 +17,11 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof of Growth (consensus, верифікація) |
-| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (SCC/SFC контракти) |
-| [05_04_Ethereum_L1_State_Anchor](05_04_Ethereum_L1_State_Anchor) | Ethereum L1 фіналізація (state root) |
-| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Chain-сервіси (`Blockchain::Orchestrator`) |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | Open backlog (E.7 dClimate, S3.2, DR) |
+| [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof of Growth (consensus, верифікація) |
+| [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (SCC/SFC контракти) |
+| [`05_04` — Ethereum L1 State Anchor](05_04_Ethereum_L1_State_Anchor) | Ethereum L1 фіналізація (state root) |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Chain-сервіси (`Blockchain::Orchestrator`) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (E.7 dClimate, S3.2, DR) |
 
 ## 📑 Зміст
 
@@ -325,7 +325,7 @@ type PremiumPaidEvent @entity { ... }
 
 **Мікро-винагорода:** Base reward + bonus per growth\_point, конвертовано в lamports → USDC
 
-> **⚠️ Scale (нот.4):** поточно — окрема Solana tx на КОЖЕН fulfilled telemetry; на planetary-scale (мільйони verified-подій/добу) fees зрівнюються з винагородою + RPC-навантаження. **Fix трекається — [`00_07 E.61`](00_07_Action_Plan_Tracker):** batch payouts (акумуляція в Kredis до порогу `SOLANA_BATCH_THRESHOLD_USDC` → один `transferChecked` ATA→ATA, cron `SolanaBatchPayoutWorker`); backward-compat при threshold=0.
+> **⚠️ Scale (нот.4):** поточно — окрема Solana tx на КОЖЕН fulfilled telemetry; на planetary-scale (мільйони verified-подій/добу) fees зрівнюються з винагородою + RPC-навантаження. **Fix трекається — [`00_07` — E.61](00_07_Action_Plan_Tracker):** batch payouts (акумуляція в Kredis до порогу `SOLANA_BATCH_THRESHOLD_USDC` → один `transferChecked` ATA→ATA, cron `SolanaBatchPayoutWorker`); backward-compat при threshold=0.
 
 Solana `Solana::MintingService` використовує `sendTransaction` з Ed25519-підписом. ATA отримувача резолюється динамічно через `getTokenAccountsByOwner`.
 
@@ -730,7 +730,7 @@ state_root = Digest::SHA256.hexdigest("#{total_scc}|#{total_sfc}|#{active_tree_c
 
 1. **TelemetryLog `verified_by_iotex: false`** залишається unverified.
 2. **ChainlinkDispatchWorker не запускається** (раннє виходить через `return unless log.verified_by_iotex?`) — Oracle-driven гілка Path 1 [DOC.7] зупиняється на початку pipeline, до того як `MintCarbonCoinWorker.perform_async(log.id_value, ...)` (oracle callback) встигне поставитись у чергу. Це **бажана поведінка**: краще нульова емісія, ніж unverified мінтинг.
-3. **Tokenomics-flow Path 2 продовжує працювати** (`TokenomicsEvaluatorWorker` → `EvaluateTreeBatchWorker` → `Wallet#lock_and_mint!` → `BlockchainMintingService.call(batch, telemetry_log: nil)`) — для цього шляху guards `verified_by_iotex?` / `oracle_status_fulfilled?` **свідомо пропускаються** (per-packet integrity perimeter забезпечується AES-256-CBC decrypt + `valid_sensor_data?` у `TelemetryUnpackerService`, а **єдиний обов'язковий guard** — `hadron_kyc_status == "approved"`). Cross-ref: [`05_02 §Усі Шляхи до lock_and_mint! [DOC.7]`](05_02_Proof_of_Growth_Pipeline) + [`04_02 BlockchainMintingService`](04_02_Business_Logic_and_Services).
+3. **Tokenomics-flow Path 2 продовжує працювати** (`TokenomicsEvaluatorWorker` → `EvaluateTreeBatchWorker` → `Wallet#lock_and_mint!` → `BlockchainMintingService.call(batch, telemetry_log: nil)`) — для цього шляху guards `verified_by_iotex?` / `oracle_status_fulfilled?` **свідомо пропускаються** (per-packet integrity perimeter забезпечується AES-256-CBC decrypt + `valid_sensor_data?` у `TelemetryUnpackerService`, а **єдиний обов'язковий guard** — `hadron_kyc_status == "approved"`). Cross-ref: [`05_02 §Усі Шляхи до lock_and_mint! [DOC.7]`](05_02_Proof_of_Growth_Pipeline) + [`04_02` — BlockchainMintingService](04_02_Business_Logic_and_Services).
 4. **Multi-day outage policy:** для збереження user trust розглянути **temporary reduced minting** через альтернативну верифікацію (наприклад, server-side attestation + Forester Guild Proof-of-Physical-Work, E.20). Реалізація — post-TRL 7.
 
 ### 8.5. Important Tier: Solana, Hadron, peaq

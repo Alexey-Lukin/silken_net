@@ -15,10 +15,10 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [01_01_Coaxial_Gyroid_Topology_and_PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Геометрія пор + тризонна архітектура |
-| [01_02_Ti_6Al_4V_Metallurgy_and_DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Металургія та покриття (self-healing zone-restriction) |
-| [01_03_EBFC_Enzymatic_Bio_Fuel_Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC ферменти (катод anti-flooding → §5 PTFE-GDL) |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.6 resin/Flush-Mount drilling, HW.22 No-EtO sterilization |
+| [`01_01` — Coaxial Gyroid Topology and PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Геометрія пор + тризонна архітектура |
+| [`01_02` — Ti 6Al 4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Металургія та покриття (self-healing zone-restriction) |
+| [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC ферменти (катод anti-flooding → §5 PTFE-GDL) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.6 resin/Flush-Mount drilling, HW.22 No-EtO sterilization |
 
 ## 📑 Зміст
 
@@ -309,7 +309,7 @@
 > ⚠️ **Обмеження органічного покриття (важливо):** super-hydrophobic fluoropolymer (Fluoropel) **деградує під UV за 1–2 роки**, а в лісі дзвін засипається пилом/пилком/послідом → живильний субстрат для моху/лишайника/калюсу. Тобто пасивна "гладкість" сама по собі довго не протримається.
 >
 > 🛡️ **Довговічна альтернатива — мідь (Cu) у матеріалі дзвона/покритті:** іони Cu мають доведений десятиліттями антифулінговий + фунгіцидний ефект (marine paints), не залежний від UV. Cu-сплав (бронза/латунь) на ЗОВНІШНІЙ поверхні дзвона (вище кори, не в контакті з соком) зупиняє ріст рослинних/грибкових тканин надійніше за органіку.
-> ⚠️ **Caveat — фітотоксичність Cu:** Cu²⁺ токсичний для рослин; дзвін над корою, але дощовий змив тече по стовбуру/у ґрунт. Потрібна **токсикологічна перевірка ЧМА** (контрольоване вивільнення, чи не шкодить камбію/ґрунту) — той самий принцип обережності, що й для V у [`01_02 BLOCKER-1`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS). Низько-емісійний Cu-сплав + maintenance (C) — компроміс.
+> ⚠️ **Caveat — фітотоксичність Cu:** Cu²⁺ токсичний для рослин; дзвін над корою, але дощовий змив тече по стовбуру/у ґрунт. Потрібна **токсикологічна перевірка ЧМА** (контрольоване вивільнення, чи не шкодить камбію/ґрунту) — той самий принцип обережності, що й для V у [`01_02` — BLOCKER-1](01_02_Ti_6Al_4V_Metallurgy_and_DMLS). Низько-емісійний Cu-сплав + maintenance (C) — компроміс.
 
 #### C. Periodic Maintenance Window (administrative backup)
 

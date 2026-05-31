@@ -20,14 +20,14 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Soldier lifecycle, DMA audio (Phase 1.5), DR13/14 thresholds |
-| [03_02_Queen_Gateway_Firmware](03_02_Queen_Gateway_Firmware) | Queen (EwsAlert relay) |
-| [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | `acoustic_events` → атрактор Лоренца |
-| [03_05_Hardware_Symmetric_Crypto_and_Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Шифрування panic-пакетів EwsAlert |
-| [04_01_Data_Models_and_Entities](04_01_Data_Models_and_Entities) | `TelemetryLog.acoustic_events` |
-| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | `TelemetryUnpackerService`, `EwsAlertCreatorService` |
+| [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | Soldier lifecycle, DMA audio (Phase 1.5), DR13/14 thresholds |
+| [`03_02` — Queen Gateway Firmware](03_02_Queen_Gateway_Firmware) | Queen (EwsAlert relay) |
+| [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | `acoustic_events` → атрактор Лоренца |
+| [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Шифрування panic-пакетів EwsAlert |
+| [`04_01` — Data Models and Entities](04_01_Data_Models_and_Entities) | `TelemetryLog.acoustic_events` |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `TelemetryUnpackerService`, `EwsAlertCreatorService` |
 | `firmware/soldier/main.c` · `silken_net_audio_model.h` (TBD) · `_stub.h` | Phase 1.5 + ISR; реальна модель TBD ML-партнером; IP-friendly stub |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.4 Run_Inference/model.h/Tensor-Arena, FW.18 threshold, FW.25 DSP Path B |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.4 Run_Inference/model.h/Tensor-Arena, FW.18 threshold, FW.25 DSP Path B |
 
 ## 📑 Зміст
 
@@ -681,7 +681,7 @@ TinyML-результат безпосередньо впливає на Lorenz 
 | Тригер | П'єзо-EXTI на вібрацію | Класи 0–3 — як зараз; для класу 4 — **щогодинні «акустичні семплінги»** (без вібраційного тригера) на світанку (солар-час+0..2 год) та сутінках (солар-час−2..0 год) |
 | Бюджет TX | 1 байт `acoustic_events` (saturating uint8) | Без змін у packet layout; «Fauna Activity Index» транслюється через **той самий байт** у режимі fauna-семплінгу (не змішується з кавітацією — режим маркується через окремий біт у Status Byte або через циркадне вікно на backend) |
 
-> ⚠️ **Constraint — SRAM2 wipe vs. accumulator (audit-fix, ARCH.40):** Архітектура енергозбереження Soldier'а v3 ([03_01 §1](03_01_Firmware_Lifecycle_and_DMA)) використовує STOP2 RTC-only з `PWR_CR1_RRSTP=1` для досягнення 300 нА deep-sleep. Це **повністю стирає SRAM2** при кожному переході в STOP2. Проміжна matrix-statistic (`mean+std` 156 MFCC-векторів) у RAM не переживе сну. RTC Backup Domain не врятує: усі 20 backup-регістрів зайняті (останній, DR15, пішов під FW.2 CCM FC — [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)), та й один uint32 фізично не вмістив би float-матрицю. **Висновок:** fauna-сесія мусить виконуватись **монолітно за один цикл активного пробудження**: 156 циклів TIM2+DMA послідовно один за одним у межах однієї main-loop ітерації, проміжна статистика тримається в RAM, і STOP2 викликається лише після того, як фінальний `fauna_activity_index` згорнуто в один байт. Декомпозиція на «спав → 32 мс → MFCC → знов сон» — заборонена.
+> ⚠️ **Constraint — SRAM2 wipe vs. accumulator (audit-fix, ARCH.40):** Архітектура енергозбереження Soldier'а v3 ([`03_01 §1`](03_01_Firmware_Lifecycle_and_DMA)) використовує STOP2 RTC-only з `PWR_CR1_RRSTP=1` для досягнення 300 нА deep-sleep. Це **повністю стирає SRAM2** при кожному переході в STOP2. Проміжна matrix-statistic (`mean+std` 156 MFCC-векторів) у RAM не переживе сну. RTC Backup Domain не врятує: усі 20 backup-регістрів зайняті (останній, DR15, пішов під FW.2 CCM FC — [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)), та й один uint32 фізично не вмістив би float-матрицю. **Висновок:** fauna-сесія мусить виконуватись **монолітно за один цикл активного пробудження**: 156 циклів TIM2+DMA послідовно один за одним у межах однієї main-loop ітерації, проміжна статистика тримається в RAM, і STOP2 викликається лише після того, як фінальний `fauna_activity_index` згорнуто в один байт. Декомпозиція на «спав → 32 мс → MFCC → знов сон» — заборонена.
 
 ### 10.3 Енергетичний бюджет
 
@@ -717,7 +717,7 @@ TinyML-результат безпосередньо впливає на Lorenz 
 
 Це захищає систему від brownout під час циркадного вікна, коли EBFC ще не повністю зарядив EDLC після нічної просадки, **а також зберігає базову функціональність security/physiology навіть у низько-енергетичних умовах** (наприклад, тривала хмарна погода в Carpathian winter).
 
-> 🔗 **Cross-ref [02_03 §9.6 Сценарій C](02_03_BQ25570_MPPT_Nano_Power#-9-розрахунок-енергетичного-балансу-з-урахуванням-ккд):** математичні константи sensitivity-моделі EDLC потребують узгодження з 78.3 мДж/сесію, дворівневим V_cap-порогом (4.5 V / 4.0 V / 3.5 V) та маркерами `fauna_skipped_low_vcap` після злиття цього патчу.
+> 🔗 **Cross-ref [`02_03 §9.6` Сценарій C](02_03_BQ25570_MPPT_Nano_Power#-9-розрахунок-енергетичного-балансу-з-урахуванням-ккд):** математичні константи sensitivity-моделі EDLC потребують узгодження з 78.3 мДж/сесію, дворівневим V_cap-порогом (4.5 V / 4.0 V / 3.5 V) та маркерами `fauna_skipped_low_vcap` після злиття цього патчу.
 
 ### 10.4 Маппінг на Backend та Web3
 

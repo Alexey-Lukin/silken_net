@@ -17,13 +17,13 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [00_01_Vision_Mission_and_Roadmap](00_01_Vision_Mission_and_Roadmap) | Бізнес-візія та slashing |
-| [00_02_AI_Native_Engineering_and_TRL](00_02_AI_Native_Engineering_and_TRL) | AI-Native TRL philosophy (метрика прогресу) |
-| [00_04_Shape_Up_Operations_and_RnD_Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) | Shape Up operations; §Async-Review TRL Gates |
-| [00_05_GitHub_Projects_and_IaC_Automation](00_05_GitHub_Projects_and_IaC_Automation) | TRL Auto-Advancement (HIL → Projects V2 cards) |
-| [04_06_Testing_Guide_and_Coverage](04_06_Testing_Guide_and_Coverage) | §B Coverage Matrix — HIL → RSpec/Firmware/Foundry coverage |
-| [08_02_Academic_Institutions_Registry](08_02_Academic_Institutions_Registry) | Фізичні валідаційні протоколи ВНЗ (TRL 1-4) |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): Module 01 chemistry (HW.*), 06 DevOps deploy, 08 UNI.* |
+| [`00_01` — Vision Mission and Roadmap](00_01_Vision_Mission_and_Roadmap) | Бізнес-візія та slashing |
+| [`00_02` — AI Native Engineering and TRL](00_02_AI_Native_Engineering_and_TRL) | AI-Native TRL philosophy (метрика прогресу) |
+| [`00_04` — Shape Up Operations and RnD Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) | Shape Up operations; §Async-Review TRL Gates |
+| [`00_05` — GitHub Projects and IaC Automation](00_05_GitHub_Projects_and_IaC_Automation) | TRL Auto-Advancement (HIL → Projects V2 cards) |
+| [`04_06` — Testing Guide and Coverage](04_06_Testing_Guide_and_Coverage) | §B Coverage Matrix — HIL → RSpec/Firmware/Foundry coverage |
+| [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | Фізичні валідаційні протоколи ВНЗ (TRL 1-4) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): Module 01 chemistry (HW.*), 06 DevOps deploy, 08 UNI.* |
 
 ## 📑 Зміст
 

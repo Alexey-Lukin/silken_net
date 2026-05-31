@@ -4,8 +4,8 @@
 
 Зафіксувати операційну механіку методології AI-Native Concurrent Engineering: 6+2-тижневий цикл Shape Up, 4 R&D кластери, Betting Table процедура, async-review для нижчих TRL (щоб Архітектор не був bottleneck'ом), Triple Stream та інтеграція з академічним календарем партнерських ВНЗ.
 
-> Філософська основа (NASA TRL, Intent-First, Wiki-First) — [`00_02_AI_Native_Engineering_and_TRL`](00_02_AI_Native_Engineering_and_TRL).
-> Інструментарій (GitHub Projects V2 fields, labels, workflows) — [`00_05_GitHub_Projects_and_IaC_Automation`](00_05_GitHub_Projects_and_IaC_Automation).
+> Філософська основа (NASA TRL, Intent-First, Wiki-First) — [`00_02` — AI Native Engineering and TRL](00_02_AI_Native_Engineering_and_TRL).
+> Інструментарій (GitHub Projects V2 fields, labels, workflows) — [`00_05` — GitHub Projects and IaC Automation](00_05_GitHub_Projects_and_IaC_Automation).
 
 ---
 
@@ -21,11 +21,11 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [00_02_AI_Native_Engineering_and_TRL](00_02_AI_Native_Engineering_and_TRL) | Концептуальна основа: NASA TRL, AI pipeline, Triple Stream, Wiki-First |
-| [00_03_TRL_Matrix_HIL_and_Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | TRL-матриця + HIL (decoupling software TRL від hardware) |
-| [00_05_GitHub_Projects_and_IaC_Automation](00_05_GitHub_Projects_and_IaC_Automation) | Projects V2 fields, labels-as-code, cluster routing |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | Open backlog (OPS.3 / OPS.4 + Convolution Method context) |
-| [08_02_Academic_Institutions_Registry](08_02_Academic_Institutions_Registry) | Стратегічні підстави для multi-cluster R&D (§1.1-1.3) |
+| [`00_02` — AI Native Engineering and TRL](00_02_AI_Native_Engineering_and_TRL) | Концептуальна основа: NASA TRL, AI pipeline, Triple Stream, Wiki-First |
+| [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | TRL-матриця + HIL (decoupling software TRL від hardware) |
+| [`00_05` — GitHub Projects and IaC Automation](00_05_GitHub_Projects_and_IaC_Automation) | Projects V2 fields, labels-as-code, cluster routing |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (OPS.3 / OPS.4 + Convolution Method context) |
+| [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | Стратегічні підстави для multi-cluster R&D (§1.1-1.3) |
 
 ## 📑 Зміст
 

@@ -15,13 +15,13 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [01_01_Coaxial_Gyroid_Topology_and_PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Геометрія гіроїда (носій ферментів) |
-| [01_02_Ti_6Al_4V_Metallurgy_and_DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Фізичний носій Ti-6Al-4V, поверхня (EAAE) |
-| [01_04_CODIT_and_Xylemointegration](01_04_CODIT_and_Xylemointegration) | Ксилемна реакція дерева; §4 PTFE-GDL (катод anti-flooding) |
-| [02_03_BQ25570_MPPT_Nano_Power](02_03_BQ25570_MPPT_Nano_Power) | Електричний приймач (MPPT boost) |
-| [02_04_EDLC_Supercapacitor_Buffer](02_04_EDLC_Supercapacitor_Buffer) | Буфер енергії (EDLC 0.47F) |
-| [08_02_Academic_Institutions_Registry](08_02_Academic_Institutions_Registry) | Біохімічна валідація ферментів (ЧМА) |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.5 enzyme/ZIF stack, HW.6 membrane/resin barrier, HW.24 Ti-coin |
+| [`01_01` — Coaxial Gyroid Topology and PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Геометрія гіроїда (носій ферментів) |
+| [`01_02` — Ti 6Al 4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Фізичний носій Ti-6Al-4V, поверхня (EAAE) |
+| [`01_04` — CODIT and Xylemointegration](01_04_CODIT_and_Xylemointegration) | Ксилемна реакція дерева; §4 PTFE-GDL (катод anti-flooding) |
+| [`02_03` — BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power) | Електричний приймач (MPPT boost) |
+| [`02_04` — EDLC Supercapacitor Buffer](02_04_EDLC_Supercapacitor_Buffer) | Буфер енергії (EDLC 0.47F) |
+| [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | Біохімічна валідація ферментів (ЧМА) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.5 enzyme/ZIF stack, HW.6 membrane/resin barrier, HW.24 Ti-coin |
 
 ## 📑 Зміст
 
@@ -532,8 +532,8 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 - Інтегральна добавка: ~0.5–2 мВт·год/добу
 
 **Cross-references:**
-- Електрична інтеграція: [`02_03_BQ25570_MPPT_Nano_Power`](02_03_BQ25570_MPPT_Nano_Power)
-- Тепловий бюджет: [`02_05_Queen_Hardware_and_Starlink`](02_05_Queen_Hardware_and_Starlink) (HW.14)
+- Електрична інтеграція: [`02_03` — BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power)
+- Тепловий бюджет: [`02_05` — Queen Hardware and Starlink](02_05_Queen_Hardware_and_Starlink) (HW.14)
 
 **Статус:** Future R&D. TEG не входить у поточний BOM Soldier-вузла (TRL 4–5). Розглядається як опція для Phase 2.5+ (TRL 7+) для усунення зимового енергодефіциту.
 
@@ -557,8 +557,8 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 
 **Cross-references:**
 - ЧДТУ ПМКТ співпраця → [`08_02 §2`](08_02_Academic_Institutions_Registry)
-- Joint publication tracker → [`08_01_Joint_Publications_and_IP_Strategy`](08_01_Joint_Publications_and_IP_Strategy) Стаття 24
-- Lorenz-attractor input vector → [`03_04_mruby_Lorenz_Attractor`](03_04_mruby_Lorenz_Attractor)
+- Joint publication tracker → [`08_01` — Joint Publications and IP Strategy](08_01_Joint_Publications_and_IP_Strategy) Стаття 24
+- Lorenz-attractor input vector → [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor)
 
 **Статус:** Research thread, **не входить** у поточний BOM, scope або critical path.
 

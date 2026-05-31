@@ -27,10 +27,10 @@
 
 | Ресурс | Зв'язок |
 |---|---|
-| [06_01_Deployment_Kamal_Terraform](06_01_Deployment_Kamal_Terraform) | Розгортання (Kamal/Terraform) |
-| [06_02_Akash_Network_Integration](06_02_Akash_Network_Integration) | Akash SDL (`alloy` сервіс) |
-| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (інструментовані метрики) |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | OBS.1 (Grafana Cloud), S2.2/S2.3 |
+| [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) | Розгортання (Kamal/Terraform) |
+| [`06_02` — Akash Network Integration](06_02_Akash_Network_Integration) | Akash SDL (`alloy` сервіс) |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (інструментовані метрики) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | OBS.1 (Grafana Cloud), S2.2/S2.3 |
 
 ## 📑 Зміст
 

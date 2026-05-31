@@ -97,4 +97,45 @@ RSpec.describe Tracker::Dashboard do
       expect(ids.tally.select { |_, v| v > 1 }).to eq("DOC.12" => 2)
     end
   end
+
+  # [emoji-prefix blind spot, 2026-06-01] `#### 🌿 UNI.13a — …` was silently dropped
+  # by the `[A-Z]`-anchored match, hiding UNI.13a / BIZ.12 from every tracker check.
+  it "parses a #### item behind a leading emoji prefix" do
+    md = <<~MD
+      ## §08 · Академічна інтеграція
+      #### 🌿 UNI.13a — emoji-prefixed item
+      - **P1** · 👤 · → `08_01 §1.3`
+    MD
+    expect(described_class.parse(md).map(&:id)).to contain_exactly("UNI.13a")
+  end
+
+  # [section↔canon-home guard, 2026-06-01] One-Home for the tracker: a #### under
+  # `## §NN` must canon-ref module NN (a `§03/§05` header declares a multi-module set).
+  describe ".section_home_violations" do
+    let(:md) do
+      <<~MD
+        ## §06 · Deploy / Observability / Secrets / Ops
+        #### S1.1 — секрети (module 06 — OK)
+        - **P0** · 👤 · → `06_04`
+        #### MISPLACED.1 — backend item wrongly bucketed under §06
+        - **P1** · 🤖 · → `04_02 §3`
+        ## §03/§05 · Безпека (Edge crypto + Web3)
+        #### SEC.1 — web3 admin (module 05 — OK under multi-module §03/§05)
+        - **P0** · 👤 · → `05_03`
+        ## 🔀 Cross-cutting · Doc-drift (DOC)
+        #### DOC.9 — cross-cutting (module-agnostic — exempt)
+        - **P2** · 🤖 · → `04_02`
+      MD
+    end
+
+    let(:violations) { described_class.section_home_violations(described_class.parse(md)) }
+
+    it "flags an item whose canon module ≠ its §NN section module" do
+      expect(violations).to contain_exactly(a_string_matching(/MISPLACED\.1.*module 04.*§06/))
+    end
+
+    it "passes a multi-module header (§05 item under §03/§05) and exempts 🔀 cross-cutting" do
+      expect(violations).not_to include(a_string_matching(/SEC\.1|S1\.1|DOC\.9/))
+    end
+  end
 end

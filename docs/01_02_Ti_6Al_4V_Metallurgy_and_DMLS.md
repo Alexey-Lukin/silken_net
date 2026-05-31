@@ -20,11 +20,11 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [01_01_Coaxial_Gyroid_Topology_and_PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Геометрія анкера (TPMS-гіроїд, PEEK, press-fit) |
-| [01_03_EBFC_Enzymatic_Bio_Fuel_Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC: ферменти на поверхні анкера |
-| [01_04_CODIT_and_Xylemointegration](01_04_CODIT_and_Xylemointegration) | CODIT: біологічна реакція дерева, GDL/PTFE |
-| [08_02_Academic_Institutions_Registry](08_02_Academic_Institutions_Registry) | R&D протоколи ЧНУ (Ti-coin, синтетичний ксилемний сік) |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.2 roughness, HW.3 aging/V-release, HW.4 self-healing, HW.23 HIP |
+| [`01_01` — Coaxial Gyroid Topology and PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Геометрія анкера (TPMS-гіроїд, PEEK, press-fit) |
+| [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC: ферменти на поверхні анкера |
+| [`01_04` — CODIT and Xylemointegration](01_04_CODIT_and_Xylemointegration) | CODIT: біологічна реакція дерева, GDL/PTFE |
+| [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | R&D протоколи ЧНУ (Ti-coin, синтетичний ксилемний сік) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.2 roughness, HW.3 aging/V-release, HW.4 self-healing, HW.23 HIP |
 
 ## 📑 Зміст
 
@@ -411,7 +411,7 @@ Arrhenius scaling: t_lab = t_field × exp(−Ea/k × (1/T_field − 1/T_lab))
 > - **(b) Ензимна матриця як бар'єр/хелатор:** хітозан — хелатор важких металів; Genipin-Chitosan-CNC + Nafion-g-PSBMA на Zone 1 можуть зв'язувати/блокувати дифузію V. Тест — ЧМА (Суховой): V-release крізь функціоналізовану vs голу поверхню.
 > - **(c)** ZnO-Ta + 8-HQ — лише на неактивних поверхнях (Zone 3 сорочка, торці PEEK); Zone 1 не розв'язують.
 >
-> **Статус:** V-safety Zone 1 = відкрите питання → in-vitro перевірка матричного бар'єру (b) ± опція V-free сплав (a). Трекінг — [`00_07 HW.3`](00_07_Action_Plan_Tracker).
+> **Статус:** V-safety Zone 1 = відкрите питання → in-vitro перевірка матричного бар'єру (b) ± опція V-free сплав (a). Трекінг — [`00_07` — HW.3](00_07_Action_Plan_Tracker).
 
 ---
 

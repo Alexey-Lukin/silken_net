@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Зафіксувати **філософський каркас** методології Gaia 2.0: NASA TRL як єдину метрику прогресу, Intent-First Development, Wiki-First протокол та принцип розділення SSOT від виконання. Операційні деталі (Shape Up cycle template, кластери, betting table) винесені до [`00_04_Shape_Up_Operations_and_RnD_Clusters`](00_04_Shape_Up_Operations_and_RnD_Clusters) — у цьому документі залишається тільки те, що залишається стабільним між операційними змінами.
+Зафіксувати **філософський каркас** методології Gaia 2.0: NASA TRL як єдину метрику прогресу, Intent-First Development, Wiki-First протокол та принцип розділення SSOT від виконання. Операційні деталі (Shape Up cycle template, кластери, betting table) винесені до [`00_04` — Shape Up Operations and RnD Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) — у цьому документі залишається тільки те, що залишається стабільним між операційними змінами.
 
 > **Що цей документ НЕ містить:** конкретні таблиці кластерів, Betting Table процедуру, GitHub label conventions, академічний календар. Це все живе в [`00_04`](00_04_Shape_Up_Operations_and_RnD_Clusters) та [`00_05`](00_05_GitHub_Projects_and_IaC_Automation).
 
@@ -19,11 +19,11 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [00_04_Shape_Up_Operations_and_RnD_Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) | Операційна реалізація: Shape Up 6+2, R&D кластери, Betting Table |
-| [00_03_TRL_Matrix_HIL_and_Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | TRL-матриця + per-domain TRL + HIL |
-| [00_05_GitHub_Projects_and_IaC_Automation](00_05_GitHub_Projects_and_IaC_Automation) | Projects V2 fields, labels-as-code, workflows |
-| [04_05_Codex_Lore_Module](04_05_Codex_Lore_Module) | Codex (read-only Atlas) застосовує ці ж AI-Native принципи |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | Поточний backlog задач (SSOT) |
+| [`00_04` — Shape Up Operations and RnD Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) | Операційна реалізація: Shape Up 6+2, R&D кластери, Betting Table |
+| [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | TRL-матриця + per-domain TRL + HIL |
+| [`00_05` — GitHub Projects and IaC Automation](00_05_GitHub_Projects_and_IaC_Automation) | Projects V2 fields, labels-as-code, workflows |
+| [`04_05` — Codex Lore Module](04_05_Codex_Lore_Module) | Codex (read-only Atlas) застосовує ці ж AI-Native принципи |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Поточний backlog задач (SSOT) |
 
 ## 📑 Зміст
 

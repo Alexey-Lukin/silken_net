@@ -22,11 +22,11 @@
 
 | Ресурс | Зв'язок |
 |---|---|
-| [08_02_Academic_Institutions_Registry](08_02_Academic_Institutions_Registry) | Реєстр 5 ВНЗ-партнерів (хто / що валідує) — автори цих публікацій |
-| [08_03_External_Stakeholders_Registry](08_03_External_Stakeholders_Registry) | Зовнішні B2G/B2B + культурний шар |
-| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Юніт-економіка |
-| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | UNI.* |
+| [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | Реєстр 5 ВНЗ-партнерів (хто / що валідує) — автори цих публікацій |
+| [`08_03` — External Stakeholders Registry](08_03_External_Stakeholders_Registry) | Зовнішні B2G/B2B + культурний шар |
+| [`07_02` — Unit Economics and BOM](07_02_Unit_Economics_and_BOM) | Юніт-економіка |
+| [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | UNI.* |
 
 ## 📑 Зміст
 
@@ -298,7 +298,7 @@ _(Запропонована тема; студент визначається �
 | Автор | Внесок |
 |-------|--------|
 | **Косенюк Г.В.** | VSWR/КСВ оптимізація SMD-антени під PEEK-радомом (окрема деталь IoT-капсули, ∅20–30 мм, **не плутати з PEEK-втулкою Zone 2** тризонного анкера); 3D-діаграма спрямованості з Ti-анкером (Zone 1 + Zone 3 фланець) як Ground Plane; Link Budget LoRa у лісі (SF=7–9 балансування, → [`02_01 §5.3`](02_01_Hardware_Architecture_and_BOM)); Reed-Solomon FEC для 21-байтового пакету; Kalman/EMA фільтри для delta\_t Edge AI; CE/FCC compliance roadmap |
-| **Ярмілко А.В.** | Lightweight cryptography integration (post-ARCH.42 Variant B, 2026-05-23): **AES-128-ECB → AES-128-CCM для LoRa Soldier→Queen** (узгоджено з ATECC608B Secure Element), AES-256-CBC для CoAP batch Queen→Rails, HAL\_CRYP; firmware архітектура SPI/DMA для фільтрованих сигналів. Постквантова roadmap: [03_05 §10](03_05_Hardware_Symmetric_Crypto_and_Security#-10-pqc-migration-roadmap-trl-stratified-post-quantum-layering) |
+| **Ярмілко А.В.** | Lightweight cryptography integration (post-ARCH.42 Variant B, 2026-05-23): **AES-128-ECB → AES-128-CCM для LoRa Soldier→Queen** (узгоджено з ATECC608B Secure Element), AES-256-CBC для CoAP batch Queen→Rails, HAL\_CRYP; firmware архітектура SPI/DMA для фільтрованих сигналів. Постквантова roadmap: [`03_05 §10`](03_05_Hardware_Symmetric_Crypto_and_Security#-10-pqc-migration-roadmap-trl-stratified-post-quantum-layering) |
 | Архітектор (Silken Net) | EBFC Gen 2.0 джерело живлення (>500 мВ, <500 мкВт; **одношарова dgrFAD-GDH+Os у Genipin-Chitosan-CNC матриці з Nafion-g-PSBMA цвітеріонною мембраною** + Laccase/ZIF-nanozyme DET — деталі [`01_03 §2.1`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) Gen 2.0 rewrite), STM32WLE5JC RF-конфігурація, 21-байтовий пакет, IP68 механічна специфікація (PEEK Crown капсули — окрема деталь, не Zone 2 анкера; з anti-overgrowth shield + 3D RF Keep-Out ≥ 8mm Z-clearance проти Ti-фланця) |
 
 **Магістерська робота (Науковий керівник — Косенюк):**
@@ -601,7 +601,7 @@ _«Дослідження акустичних властивостей пори
 - [`08_02 §1B` Macro-Micro Verification](08_02_Academic_Institutions_Registry) — Бушин CNN + fauna feature
 - [`08_02 §1B` NSGA-II GA](08_02_Academic_Institutions_Registry) — Любченко 5-class оптимізація
 - [`08_02 §2` Завдання В](08_02_Academic_Institutions_Registry) — ПМКТ калібрувальний датасет
-- [`00_07 UNI.11`](00_07_Action_Plan_Tracker) — операційний tracker
+- [`00_07` — UNI.11](00_07_Action_Plan_Tracker) — операційний tracker
 
 **Грантовий вектор:** Стаття 24a є **науковим обґрунтуванням** заявки на **Horizon Europe CLUSTER 6 — Food, Bioeconomy, Natural Resources, Agriculture and Environment**, тематика _Biodiversity Monitoring_ (бюджет одного гранту 2–6 М€). Submission прив'язана до моменту, коли стаття приймається до Q1-журналу — це переводить заявку з категорії «концепт» у категорію «published research» (вирішальна різниця для Horizon evaluators).
 
@@ -615,7 +615,7 @@ _«Дослідження акустичних властивостей пори
 
 ## 📊 1D. Публікації ЧІПБ (Пожежна Безпека, Параметричне Страхування та SOP)
 
-> **Контекст:** ЧІПБ забезпечує академічну експертизу у валідації тригерів параметричного страхування, розробці SOP для фізичного реагування, предиктивному моделюванні пожеж та актуарному обґрунтуванні блокчейн-оракулів. Повний реєстр задач — у [`08_02_Academic_Institutions_Registry`](08_02_Academic_Institutions_Registry).
+> **Контекст:** ЧІПБ забезпечує академічну експертизу у валідації тригерів параметричного страхування, розробці SOP для фізичного реагування, предиктивному моделюванні пожеж та актуарному обґрунтуванні блокчейн-оракулів. Повний реєстр задач — у [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry).
 
 ### Стаття 25: Наукове Обґрунтування Тригерів Параметричного Страхування для IoT-Лісових Мереж
 
@@ -666,7 +666,7 @@ _«Дослідження акустичних властивостей пори
 
 ## 🧬 1E. Публікації ЧМА (Біохімія EBFC, Токсикологія, Ксилемоінтеграція)
 
-> **Контекст:** ЧМА (Черкаська медична академія) забезпечує біохімічну валідацію EBFC-ферментів, токсикологічну оцінку вивільнення іонів V/Al з Ti-6Al-4V, медичну аналогію ксилемоінтеграції та фармацевтичну хімію self-healing покриттів. Повний реєстр задач — у [`08_02_Academic_Institutions_Registry`](08_02_Academic_Institutions_Registry).
+> **Контекст:** ЧМА (Черкаська медична академія) забезпечує біохімічну валідацію EBFC-ферментів, токсикологічну оцінку вивільнення іонів V/Al з Ti-6Al-4V, медичну аналогію ксилемоінтеграції та фармацевтичну хімію self-healing покриттів. Повний реєстр задач — у [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry).
 
 ### Стаття 28: Біохімічна Валідація Enzymatic Bio-Fuel Cell для Дерево-Живленого IoT
 
@@ -722,7 +722,7 @@ _«Дослідження акустичних властивостей пори
 
 ## 💼 1F. Публікації СЄУ (Токеноміка, Право, Промисловий Дизайн)
 
-> **Контекст:** СЄУ (Східноєвропейський університет ім. Рауфа Аблязова) забезпечує академічну експертизу в макроекономічній валідації токеноміки NaaS, правовій архітектурі RWA-токенізації (Polygon Hadron / MiCA), аудиті методології D-MRV, промисловому дизайні PEEK-радому та UX/візуалізації даних для B2B-інвесторів. Повний реєстр задач — у [`08_02_Academic_Institutions_Registry`](08_02_Academic_Institutions_Registry).
+> **Контекст:** СЄУ (Східноєвропейський університет ім. Рауфа Аблязова) забезпечує академічну експертизу в макроекономічній валідації токеноміки NaaS, правовій архітектурі RWA-токенізації (Polygon Hadron / MiCA), аудиті методології D-MRV, промисловому дизайні PEEK-радому та UX/візуалізації даних для B2B-інвесторів. Повний реєстр задач — у [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry).
 
 ### Стаття 31: Макроекономічне Обґрунтування Proof of Growth Токеноміки
 
@@ -974,9 +974,9 @@ _(Спільна тема ННІ природничих та аграрних н
 
 | Експертиза кафедри | Конкретне завдання Silken Net | Cross-ref |
 |---------------------|-------------------------------|-----------|
-| Правова архітектура **RWA-токенізації** (Real-World Assets) під українським законодавством | Як зареєструвати лісову ділянку (державний ПЗФ або приватне лісокористування) як `hadron_asset_id` для ERC-3643 без конфлікту з Лісовим Кодексом України та Законом «Про природно-заповідний фонд»? | [`07_01 BLOCKER-6`](07_01_Nature_as_a_Service_Contracts) (RWA реєстрація-process не відпрацьований) |
-| Юридична експертиза **токеноміки** (SCC/SFC) на відповідність UA-режиму віртуальних активів (Закон «Про віртуальні активи» 2022 + MiCA-imports 2024) | Чи є SCC utility token чи security token? Які KYC-вимоги до wallet holders для UA-резидентів? Як корелює `dynamic_tax` з UA tax law? | [`05_03 Tokenomics`](05_03_Tokenomics_SCC_and_SFC), [`08_02 §5` СЄУ Аблязов Д.] |
-| Цивільно-правові аспекти **NaaS-контрактів** (Nature-as-a-Service) | Юридична природа NaaS-контракту: чи це договір про надання послуг, чи новий sui generis вид? Як корелює `parametric_insurance` з UA Civil Code? | [`07_01 NaaS Contracts`](07_01_Nature_as_a_Service_Contracts) |
+| Правова архітектура **RWA-токенізації** (Real-World Assets) під українським законодавством | Як зареєструвати лісову ділянку (державний ПЗФ або приватне лісокористування) як `hadron_asset_id` для ERC-3643 без конфлікту з Лісовим Кодексом України та Законом «Про природно-заповідний фонд»? | [`07_01` — BLOCKER-6](07_01_Nature_as_a_Service_Contracts) (RWA реєстрація-process не відпрацьований) |
+| Юридична експертиза **токеноміки** (SCC/SFC) на відповідність UA-режиму віртуальних активів (Закон «Про віртуальні активи» 2022 + MiCA-imports 2024) | Чи є SCC utility token чи security token? Які KYC-вимоги до wallet holders для UA-резидентів? Як корелює `dynamic_tax` з UA tax law? | [`05_03` — Tokenomics](05_03_Tokenomics_SCC_and_SFC), [`08_02 §5` СЄУ Аблязов Д.] |
+| Цивільно-правові аспекти **NaaS-контрактів** (Nature-as-a-Service) | Юридична природа NaaS-контракту: чи це договір про надання послуг, чи новий sui generis вид? Як корелює `parametric_insurance` з UA Civil Code? | [`07_01` — NaaS Contracts](07_01_Nature_as_a_Service_Contracts) |
 | Авторське право на **алгоритм Lorenz Attractor** та архітектурні рішення | Forensic-rigor на захист `bio_contract.rb`, `app/services/silken_net/attractor.rb` як комп'ютерної програми (Об'єкт авторського права) у UA-режимі | §2 "Власність Silken Net" |
 
 ### 2.1.3. Операційна Послідовність Engagement
@@ -986,7 +986,7 @@ _(Спільна тема ННІ природничих та аграрних н
 | 1 | Перший контакт з директором TISC ЧНУ (через ректорат, проректора з науки Спрягайло — §1G) | 👤 Архітектор + Кирилюк Є.М. | Підписана auxiliary MoU про послуги TISC у рамках парасольового MoU ЧНУ↔Silken Net | [§1G](#-1g-публікації-ректорату-чну--нні-економіки-і-права-біоекономіка-та-синергетика) |
 | 2 | Prior art search для коаксіального гіроїдного анкера (Ti-6Al-4V + PEEK термо-розрив + EBFC) | 🤖 TISC + 👤 R&D Cluster A | Звіт TISC (UA + EN) з novelty / inventive step / industrial applicability висновком | [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK), [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) |
 | 3 | Підготовка патентної заявки (utility model UA) | 👤 Патентний повірений + TISC | Подана заявка УкрНОІВІ; пріоритетна дата | Блок 🛑 "Патентна заявка на дизайн анкера" |
-| 4 | Юридичний review RWA-архітектури (Кафедра ІВ) | 👤 Кафедра ІВ + Аблязов Д.Е. (СЄУ) | Меморандум "Юридична допустимість токенізації UA-лісу через ERC-3643" | [`07_01 BLOCKER-6`](07_01_Nature_as_a_Service_Contracts), [`08_02 §5`](08_02_Academic_Institutions_Registry) |
+| 4 | Юридичний review RWA-архітектури (Кафедра ІВ) | 👤 Кафедра ІВ + Аблязов Д.Е. (СЄУ) | Меморандум "Юридична допустимість токенізації UA-лісу через ERC-3643" | [`07_01` — BLOCKER-6](07_01_Nature_as_a_Service_Contracts), [`08_02 §5`](08_02_Academic_Institutions_Registry) |
 | 5 | Юридичний review токеноміки SCC/SFC (Кафедра ІВ) | 👤 Кафедра ІВ + Чудаєва (СЄУ) | Меморандум "Класифікація SCC за Законом про віртуальні активи; compliance roadmap" | [`05_03`](05_03_Tokenomics_SCC_and_SFC) |
 | 6 | PCT-розширення (через 12 місяців після UA-пріоритету) | 👤 Архітектор + патентний повірений + TISC | PCT-заявка для EU/US/JP markets | Phase 2 (post-TRL 6) |
 

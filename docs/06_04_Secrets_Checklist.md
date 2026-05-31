@@ -26,10 +26,10 @@
 
 | Ресурс | Зв'язок |
 |---|---|
-| [06_01_Deployment_Kamal_Terraform](06_01_Deployment_Kamal_Terraform) | Деплой (Kamal/Terraform secrets) |
-| [06_02_Akash_Network_Integration](06_02_Akash_Network_Integration) | Akash SDL secrets (§Секрети SDL) |
-| [06_03_Prometheus_Observability](06_03_Prometheus_Observability) | Grafana Cloud + Sentry DSN |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | S1.1, S4.3, S5.6 |
+| [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) | Деплой (Kamal/Terraform secrets) |
+| [`06_02` — Akash Network Integration](06_02_Akash_Network_Integration) | Akash SDL secrets (§Секрети SDL) |
+| [`06_03` — Prometheus Observability](06_03_Prometheus_Observability) | Grafana Cloud + Sentry DSN |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | S1.1, S4.3, S5.6 |
 
 ## 📑 Зміст
 

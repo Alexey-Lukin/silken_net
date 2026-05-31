@@ -10,7 +10,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 8 — політика затверджена; backend-механіка реалізована частково (convex-формула `BlockchainBurningService#calculate_slash_ratio` + blackout-routing `ContractHealthCheckService#flag_data_blackout!`, RSpec-покрито). **Відкрите:** formal `cause_classification` A/B/C-gate (SLASH-1), operator-bond (BIZ.13), DAO-confirm перед mainnet → [00_07](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 8 — політика затверджена; backend-механіка реалізована частково (convex-формула `BlockchainBurningService#calculate_slash_ratio` + blackout-routing `ContractHealthCheckService#flag_data_blackout!`, RSpec-покрито). **Відкрите:** formal `cause_classification` A/B/C-gate (SLASH-1), operator-bond (BIZ.13), DAO-confirm перед mainnet → [`00_07`](00_07_Action_Plan_Tracker).
 - **Slashing v2:** жорстке "burn-on-degradation" замінено двокатегорійною моделлю (негілентність / форс-мажор) + safety-default (невизначеність) — травень 2026.
 - **De-risk інваріант:** фінансовий slashing **ніколи** не спирається лише на Z-Лоренца — потрібен ≥1 прямий некорельований сигнал (sap_flow / VPD / acoustic).
 
@@ -20,14 +20,14 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [00_01_Vision_Mission_and_Roadmap](00_01_Vision_Mission_and_Roadmap) | Vision-рівень: місія, NaaS, філософія negligence-vs-force-majeure |
-| [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Anti-fraud DCI (`SEC.11`, `check_z_divergence!`); `stress_index` pipeline |
-| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | `slash()` контракт; Dynamic Tax (insurance-pool funding); `ProtocolParameters` (GAMMA, PENALTY_FACTOR_MAX) |
-| [05_06_Governance_and_DAO](05_06_Governance_and_DAO) | DAO peer-review (категорія C): `SilkenGovernor`/`SilkenTimelock`/quorum |
-| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | Insurance Layer mechanics (Etherisc, два режими); NaaS breach terms; SFC voting after slash |
-| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | `BlockchainBurningService`, `ContractHealthCheckService`, `InsightGeneratorService#stress_index`; divergence registry §11 |
-| [08_02_Academic_Institutions_Registry](08_02_Academic_Institutions_Registry) | Партнерський ростер ФОТІУС/ЧНУ + академічний вихід для ground-truth протоколу (сам протокол — §8) |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкрите** (SSOT): SLASH-1 cause-gate, BIZ.13 operator-bond |
+| [`00_01` — Vision Mission and Roadmap](00_01_Vision_Mission_and_Roadmap) | Vision-рівень: місія, NaaS, філософія negligence-vs-force-majeure |
+| [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Anti-fraud DCI (`SEC.11`, `check_z_divergence!`); `stress_index` pipeline |
+| [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | `slash()` контракт; Dynamic Tax (insurance-pool funding); `ProtocolParameters` (GAMMA, PENALTY_FACTOR_MAX) |
+| [`05_06` — Governance and DAO](05_06_Governance_and_DAO) | DAO peer-review (категорія C): `SilkenGovernor`/`SilkenTimelock`/quorum |
+| [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) | Insurance Layer mechanics (Etherisc, два режими); NaaS breach terms; SFC voting after slash |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `BlockchainBurningService`, `ContractHealthCheckService`, `InsightGeneratorService#stress_index`; divergence registry §11 |
+| [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | Партнерський ростер ФОТІУС/ЧНУ + академічний вихід для ground-truth протоколу (сам протокол — §8) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкрите** (SSOT): SLASH-1 cause-gate, BIZ.13 operator-bond |
 
 ## 📑 Зміст
 
@@ -121,7 +121,7 @@ ForceMajeure event → InsurancePayoutWorker
 ## 5. Indeterminate (категорія C) — DAO Peer Review
 
 - Кошти заморожені у `wallet.locked_balance`.
-- DAO ставить пропозицію `Codex(): cluster_X_event_Y → upgrade_to(A | B)` через `SilkenGovernor` (механіка governance — [`05_06 Governance & DAO`](05_06_Governance_and_DAO)).
+- DAO ставить пропозицію `Codex(): cluster_X_event_Y → upgrade_to(A | B)` через `SilkenGovernor` (механіка governance — [`05_06` — Governance & DAO](05_06_Governance_and_DAO)).
 - Quorum: 4% SFC voting power (стандарт `GovernorVotesQuorumFraction`), затримка 48 годин у `SilkenTimelock`.
 - Після затвердження пропозиції — застосовується відповідна реакція (slash або insurance payout).
 - **Якщо DAO не голосує протягом 30 днів — кошти ЗАЛИШАЮТЬСЯ замороженими**, статус кластера → `Field Audit Required`. Розморозка/виплата відбувається ЛИШЕ за підтвердженими даними (фізична інспекція рейнджером або підтверджена телеметрія після відновлення зв'язку).
@@ -164,7 +164,7 @@ ForceMajeure event → InsurancePayoutWorker
 
 **Інваріант:** доки Z↔health не підтверджено емпірично, slashing вимагає підтвердження **≥1 прямим вимірним сигналом** (sap_flow / chainsaw-acoustic / dClimate), не лише Z/device-status.
 
-**Прямі сигнали (corroboration set):** `sap_flow`/`delta_t` (метаболізм), chainsaw-acoustic (TinyML), dClimate (супутник), і **VPD з BME280** [ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)] (t°+RH): прямий фізіологічний confounder, що відрізняє падіння сокоруху через погоду (дощ/туман, RH≈100%) від хвороби. VPD — апаратне втілення цього інваріанта: вбиває False Slashing біля джерела. ⚠️ VPD живе на slashing/confounder-шарі, **НЕ** в Lorenz-Z (DCI-guard, [`03_04`](03_04_mruby_Lorenz_Attractor)). Разом з «correlated comms-loss guard» (§6) це формує повний принцип: **не штрафувати за недоведений Z, за погоду, ані за втрату зв'язку** — лише за прямо підтверджену халатність.
+**Прямі сигнали (corroboration set):** `sap_flow`/`delta_t` (метаболізм), chainsaw-acoustic (TinyML), dClimate (супутник), і **VPD з BME280** [`02_01` — ADR [02 01 §3.4](02_01_Hardware_Architecture_and_BOM)] (t°+RH): прямий фізіологічний confounder, що відрізняє падіння сокоруху через погоду (дощ/туман, RH≈100%) від хвороби. VPD — апаратне втілення цього інваріанта: вбиває False Slashing біля джерела. ⚠️ VPD живе на slashing/confounder-шарі, **НЕ** в Lorenz-Z (DCI-guard, [`03_04`](03_04_mruby_Lorenz_Attractor)). Разом з «correlated comms-loss guard» (§6) це формує повний принцип: **не штрафувати за недоведений Z, за погоду, ані за втрату зв'язку** — лише за прямо підтверджену халатність.
 
 ## 🔬 8. Ground-Truth Validation Protocol — Z↔health [Lorenz de-risk]
 
@@ -173,7 +173,7 @@ ForceMajeure event → InsurancePayoutWorker
 **Дизайн** (польова валідація — ЧНУ біо-хаб + Data Science Карапетян + лабораторія Гусака; партнерський ростер і академічний вихід → [`08_02`](08_02_Academic_Institutions_Registry)):
 - **Когорта:** 20–30 дерев (Черкаський бір), SilkenNet-анкер + **незалежний ground-truth**: еталонний sap-flow сенсор (незалежний від EBFC `delta_t`), дендрометр (приріст), періодичний NDVI/leaf-area, експертний бал стану + події смертності/хвороби.
 - **Тривалість:** ≥1 вегетаційний сезон (захопити стрес-події: посуха, шкідники).
-- **Збір:** щоденні `stress_index` + компоненти (`Z`, `sap_flow`, `acoustic`, `temp`, `vcap`, **`RH`/`VPD`** [BME280, [[`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)](02_01_Hardware_Architecture_and_BOM)]), `growth_points`, ground-truth.
+- **Збір:** щоденні `stress_index` + компоненти (`Z`, `sap_flow`, `acoustic`, `temp`, `vcap`, **`RH`/`VPD`** [`02_01` — BME280, [[02 01 §3.4](02_01_Hardware_Architecture_and_BOM)](02_01_Hardware_Architecture_and_BOM)]), `growth_points`, ground-truth.
 - **Аналіз** (backend-харнес `SilkenNet::LorenzValidationService` — ✅ реалізовано, `app/services/silken_net/`, RSpec-покрито):
   1. Кореляція `stress_index` ↔ ground-truth decline (Spearman ρ).
   2. **Incremental value Z:** чи додає Z предиктивність ПОНАД прямі сигнали (sap_flow)? Якщо ні → демоут Z до **DCI-only**.

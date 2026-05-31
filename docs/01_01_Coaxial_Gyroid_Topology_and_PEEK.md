@@ -20,12 +20,12 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [01_02_Ti_6Al_4V_Metallurgy_and_DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Металургія Ti-6Al-4V, DMLS/SLM+HIP |
-| [01_03_EBFC_Enzymatic_Bio_Fuel_Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC біопаливний елемент |
-| [01_04_CODIT_and_Xylemointegration](01_04_CODIT_and_Xylemointegration) | CODIT та хірургічне встановлення |
-| [02_02_Blind_Mate_Pogo_Pin_Interface](02_02_Blind_Mate_Pogo_Pin_Interface) | Pogo Pin інтерфейс (сліпе сполучення) |
-| [08_02_Academic_Institutions_Registry](08_02_Academic_Institutions_Registry) | Ti-coin протокол + синтетичний ксилемний сік (Мінаєв/Гусак, §2) |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.3 FEA/aging, HW.24 staged validation, HW.26 PEEK mechanical-lock |
+| [`01_02` — Ti 6Al 4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Металургія Ti-6Al-4V, DMLS/SLM+HIP |
+| [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC біопаливний елемент |
+| [`01_04` — CODIT and Xylemointegration](01_04_CODIT_and_Xylemointegration) | CODIT та хірургічне встановлення |
+| [`02_02` — Blind Mate Pogo Pin Interface](02_02_Blind_Mate_Pogo_Pin_Interface) | Pogo Pin інтерфейс (сліпе сполучення) |
+| [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | Ti-coin протокол + синтетичний ксилемний сік (Мінаєв/Гусак, §2) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.3 FEA/aging, HW.24 staged validation, HW.26 PEEK mechanical-lock |
 
 ## 📑 Зміст
 
@@ -93,7 +93,7 @@
 
 ## 🎯 2. Інтерфейс Pogo Pin (Сліпе Сполучення)
 
-Верхня площина катодного фланця — площадка для **Blind Mate магнітного конектора Pogo Pin**, який під'єднує електронну капсулу до анкера. Детальна специфікація конектора — [`02_02_Blind_Mate_Pogo_Pin_Interface`](02_02_Blind_Mate_Pogo_Pin_Interface) (5 блокерів) та [`00_07 HW.8`](00_07_Action_Plan_Tracker). Ключові вимоги, що мають бути виконані на стороні анкера:
+Верхня площина катодного фланця — площадка для **Blind Mate магнітного конектора Pogo Pin**, який під'єднує електронну капсулу до анкера. Детальна специфікація конектора — [`02_02` — Blind Mate Pogo Pin Interface](02_02_Blind_Mate_Pogo_Pin_Interface) (5 блокерів) та [`00_07` — HW.8](00_07_Action_Plan_Tracker). Ключові вимоги, що мають бути виконані на стороні анкера:
 
 1. **Центральна площадка (GND, мінус):** Виводиться з провідної шини, що проходить крізь PEEK-втулку і з'єднана з анодним валом. Контактує з центральним Pogo Pin.
 2. **Ізолююче кільце:** PEEK-поверхня (видимий торець Zone 2) між мінусовою центральною площадкою і плюсовим зовнішнім кільцем.
@@ -292,7 +292,7 @@ TPMS-гіроїд із періодичними каналами діє як **�
 | Макрошум (вітер, скрип) | < 1 кГц | Довжина хвилі >> розмір пор → деструктивна інтерференція → шум гаситься |
 | Кавітація ксилеми | 15–20+ кГц | Довжина хвилі ≈ розмір пор → хвилевід → фокусується на п'єзосенсор ZP-3 |
 
-Фільтрація — на рівні геометрії титану, до електроніки. Деталі — [`03_03_TinyML_Acoustic_Inference`](03_03_TinyML_Acoustic_Inference).
+Фільтрація — на рівні геометрії титану, до електроніки. Деталі — [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference).
 
 ### 5.5. Орієнтація Пор та Анатомія Ксилеми
 

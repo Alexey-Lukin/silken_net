@@ -19,12 +19,12 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Мультичейн (12-chain топологія) |
-| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (мінтинг SCC/SFC) |
-| [04_01_Data_Models_and_Entities](04_01_Data_Models_and_Entities) | Моделі (TelemetryLog, Wallet, BlockchainTransaction) |
-| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Сервіси (Unpacker, Verification, Minting) |
-| [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz SSOT (константи, DCI parity) |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | Open backlog |
+| [`05_01` — Multichain Architecture](05_01_Multichain_Architecture) | Мультичейн (12-chain топологія) |
+| [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (мінтинг SCC/SFC) |
+| [`04_01` — Data Models and Entities](04_01_Data_Models_and_Entities) | Моделі (TelemetryLog, Wallet, BlockchainTransaction) |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Сервіси (Unpacker, Verification, Minting) |
+| [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz SSOT (константи, DCI parity) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog |
 
 ## 📑 Зміст
 
@@ -225,7 +225,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 | `acoustic_events` | DMA 16 кГц → TinyML CMSIS-NN | uint8 (0–255) |
 | `delta_t_seconds` | `HAL_GetTick() - last_wakeup_timestamp` | uint32 (EBFC метаболізм) |
 
-> **[SEC.11]** `chaos_seed = HAL_RNG_GenerateRandomNumber()` як вхід Лоренца — **видалено** (hard cutover). Початкова точка `(x₀, y₀, z₀)` тепер деривується з per-device `K_seed` (Flash) через `HMAC-SHA256(K_seed, "init|" || epoch_day_be)` лише при cold-start після VBAT loss; у норму FW.6 RTC continuation (DR16-DR18 magic `"LZST"`) пропускає re-init. HRNG залишається лише для AES IV jitter, mesh anti-pingpong та CoAP nonce. Деталі — [03_05 §3.4в](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-).
+> **[SEC.11]** `chaos_seed = HAL_RNG_GenerateRandomNumber()` як вхід Лоренца — **видалено** (hard cutover). Початкова точка `(x₀, y₀, z₀)` тепер деривується з per-device `K_seed` (Flash) через `HMAC-SHA256(K_seed, "init|" || epoch_day_be)` лише при cold-start після VBAT loss; у норму FW.6 RTC continuation (DR16-DR18 magic `"LZST"`) пропускає re-init. HRNG залишається лише для AES IV jitter, mesh anti-pingpong та CoAP nonce. Деталі — [`03_05 §3.4в`](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-).
 
 **TinyML класи** (`silken_net_audio_model.h`): 0=Тиша, 1=Вітер, 2=Кавітація, 3=Пилка.
 
@@ -278,7 +278,7 @@ end
 
 #### 🤖 FW.8 — OTA Sync для Per-Species Lorenz Thresholds (Дизайн)
 
-> **Cross-ref:** [00_07 FW.8](00_07_Action_Plan_Tracker) — дизайн завершено ✅
+> **Cross-ref:** [`00_07` — FW.8](00_07_Action_Plan_Tracker) — дизайн завершено ✅
 
 **Проблема:** `CRITICAL_Z_MIN`, `CRITICAL_Z_MAX`, `OPTIMAL_Z_TARGET` hardcoded у Flash. Сосна (*Pinus sylvestris*) і дуб (*Quercus robur*) мають різний діапазон нормальної конвективної активності — один пороговий набір дає хибні anomaly alerts для одного виду при нормальному стані іншого.
 
@@ -597,7 +597,7 @@ ChainlinkDispatchWorker.perform_async(telemetry_log_id, created_at_iso)
 
 ### 🔬 E.60 — Merkle CID-witness: bidirectional integrity bridge Polygon ↔ Filecoin (пропозиція)
 
-> **Статус:** design-пропозиція (revised), **ще не в коді** — потребує нового сервісу `Filecoin::CidGenerator` (наразі в `app/services/filecoin/` лише `archive_service.rb` + `verification_service.rb`). Розширює Крок B (IoTeX W3bstream witness) і змикає його з кроком архівації Filecoin ([`05_01 §Рівень 1`](05_01_Multichain_Architecture)). Трекер: [E.60 → 00_07](00_07_Action_Plan_Tracker).
+> **Статус:** design-пропозиція (revised), **ще не в коді** — потребує нового сервісу `Filecoin::CidGenerator` (наразі в `app/services/filecoin/` лише `archive_service.rb` + `verification_service.rb`). Розширює Крок B (IoTeX W3bstream witness) і змикає його з кроком архівації Filecoin ([`05_01 §Рівень 1`](05_01_Multichain_Architecture)). Трекер: [`00_07` — E.60 → 00 07](00_07_Action_Plan_Tracker).
 
 **Проблема (data-integrity gap):** Раніше Filecoin/IPFS pin відбувався **після** мінту в Polygon — блокчейн-транзакція не мала криптографічного зв'язку з архівом. Зловмисник міг ex-post підмінити archive у Pinata (новий CID), і ніхто би не помітив, що SCC-token посилається на інший набір даних.
 
@@ -926,7 +926,7 @@ blockchain_transactions
 
 ## 🔬 SEC.11 — Lorenz Seed Provenance & Dual Computation Integrity
 
-> **Cross-ref:** дизайн і threat model — [03_05 §3.4в](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-); сервіс — [04_02 `SilkenNet::SeedDerivation`](04_02_Business_Logic_and_Services#silkennetseedderivation--sec11); poetics — [03_04 §2.1, §3 Крок 1](03_04_mruby_Lorenz_Attractor); SEC.11 в трекері — [00_07 SEC.11](00_07_Action_Plan_Tracker).
+> **Cross-ref:** дизайн і threat model — [`03_05 §3.4в`](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-); сервіс — [`04_02` — SilkenNet::SeedDerivation](04_02_Business_Logic_and_Services#silkennetseedderivation--sec11); poetics — [`03_04 §2.1` , §3 Крок 1](03_04_mruby_Lorenz_Attractor); SEC.11 в трекері — [`00_07` — SEC.11](00_07_Action_Plan_Tracker).
 
 ### Чому це частина Proof of Growth, а не суто security task
 

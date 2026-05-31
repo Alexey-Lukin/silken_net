@@ -21,10 +21,10 @@
 |---|---|
 | `terraform/database.tf` | Cloud SQL backup + REGIONAL HA + read replica (SSOT) |
 | `terraform/main.tf` | GCS state backend (`silken-net-terraform-state`) |
-| [06_01_Deployment_Kamal_Terraform](06_01_Deployment_Kamal_Terraform) | `terraform apply`, Ingress Anchor, deploy-flow |
-| [06_04_Secrets_Checklist](06_04_Secrets_Checklist) | master-ключі, ротація (§5.2), revocation (§5.4) |
-| [06_08_Resilience_and_Failover_Policy](06_08_Resilience_and_Failover_Policy) | runtime failover (не backup) |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | DR.1 (drill + master-key backup), S5.6 |
+| [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) | `terraform apply`, Ingress Anchor, deploy-flow |
+| [`06_04` — Secrets Checklist](06_04_Secrets_Checklist) | master-ключі, ротація (§5.2), revocation (§5.4) |
+| [`06_08` — Resilience and Failover Policy](06_08_Resilience_and_Failover_Policy) | runtime failover (не backup) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | DR.1 (drill + master-key backup), S5.6 |
 
 ## 📑 Зміст
 

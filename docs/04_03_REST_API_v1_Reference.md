@@ -18,11 +18,11 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (сервіси за ендпоінтами) |
-| [04_01_Data_Models_and_Entities](04_01_Data_Models_and_Entities) | Схема БД (моделі) |
-| [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Прошивка (CoAP uplink, gateway telemetry) |
-| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (wallet/mint ендпоінти) |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | Open backlog (API-related) |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (сервіси за ендпоінтами) |
+| [`04_01` — Data Models and Entities](04_01_Data_Models_and_Entities) | Схема БД (моделі) |
+| [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | Прошивка (CoAP uplink, gateway telemetry) |
+| [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (wallet/mint ендпоінти) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (API-related) |
 
 ## 📑 Зміст
 
@@ -444,7 +444,7 @@ POST /api/v1/auth/m2m_token
 }
 ```
 
-> **Zero-Trust: жодних секретів у відповіді.** Бекенд та прошивка незалежно деривують однаковий 32-байтний AES-ключ через `HKDF-SHA256(ikm: PROVISIONING_MASTER_KEY, salt: device_uid, info: "silken-aes-256-device-key")` (cross-ref: [03_05 §3.4а](03_05_Hardware_Symmetric_Crypto_and_Security#34а-hkdf-key-derivation-protocol-design-)) **та** 32-байтний `K_seed` для атрактора Лоренца через `HKDF-SHA256(ikm: PROVISIONING_MASTER_KEY, salt: "silken-lorenz-v1", info: "silken-lorenz-seed|<DID>")` ([SEC.11], cross-ref: [03_05 §3.4в](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-)). Обидва секрети зберігаються в `HardwareKey` (AR Encryption non-deterministic) і **ніколи не передаються** через HTTP/мережу. `PROVISIONING_MASTER_KEY` повинен бути встановлений у ENV — інакше endpoint повертає `503 Service Unavailable` (no fallback). Прошивка отримує обидва секрети під час physical Factory Flashing через окремий захищений канал (UART/JTAG, поза цим API).
+> **Zero-Trust: жодних секретів у відповіді.** Бекенд та прошивка незалежно деривують однаковий 32-байтний AES-ключ через `HKDF-SHA256(ikm: PROVISIONING_MASTER_KEY, salt: device_uid, info: "silken-aes-256-device-key")` (cross-ref: [`03_05 §3.4а`](03_05_Hardware_Symmetric_Crypto_and_Security#34а-hkdf-key-derivation-protocol-design-)) **та** 32-байтний `K_seed` для атрактора Лоренца через `HKDF-SHA256(ikm: PROVISIONING_MASTER_KEY, salt: "silken-lorenz-v1", info: "silken-lorenz-seed|<DID>")` ([SEC.11], cross-ref: [`03_05 §3.4в`](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-)). Обидва секрети зберігаються в `HardwareKey` (AR Encryption non-deterministic) і **ніколи не передаються** через HTTP/мережу. `PROVISIONING_MASTER_KEY` повинен бути встановлений у ENV — інакше endpoint повертає `503 Service Unavailable` (no fallback). Прошивка отримує обидва секрети під час physical Factory Flashing через окремий захищений канал (UART/JTAG, поза цим API).
 
 **Conflict Response `409 Conflict`:**
 

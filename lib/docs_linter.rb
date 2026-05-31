@@ -297,6 +297,32 @@ module DocsLinter
     end
   end
 
+  # [SSOT anti-drift] Cross-ref label single-form (HARD). Every link to a canon doc
+  # must lead with a CODE-SPAN doc-id — the one sanctioned dialect (00_06 §1):
+  #   [`NN_NN`](Doc)  ·  [`NN_NN §X`](Doc)  ·  [`NN_NN` — Title](Doc)
+  # A plain [NN_NN …](Doc), escaped [NN\_NN\_…](Doc), or full-name-in-codespan
+  # [`NN_NN_Full_Name`](Doc) is the SAME ref in a second spelling → flagged (caught
+  # 445 such across 50 docs, unified 2026-06-01 via scripts/normalize_crossrefs.rb).
+  # A pure prose-phrase label (no doc-id token at all) is a legit descriptive link →
+  # left alone. Skips fenced code. Pure: no I/O.
+  CANON_LINK_RE = /\[([^\]]*)\]\((\d\d_\d\d)_[A-Za-z0-9_]+(?:#[^)]*)?\)/
+
+  def crossref_label_form(text)
+    in_fence = false
+    text.each_line.flat_map do |line|
+      in_fence = !in_fence if line.start_with?("```")
+      next [] if in_fence
+
+      line.scan(CANON_LINK_RE).filter_map do |label, id|
+        l = label.strip
+        next if l =~ /\A`#{id}(\s+§[^`]*)?`/                     # canonical: code-span leads with id (+ opt §)
+        next if l !~ /#{id}/ && l !~ /#{id[0, 2]}\\_#{id[3, 2]}/ # prose-phrase (no doc-id) → legit
+
+        "label `#{l[0, 44]}` → #{id}_… (doc-id link must lead with code-span `#{id}`)"
+      end
+    end
+  end
+
   # [SSOT anti-drift] Magic-marker hex self-consistency (ADVISORY). Firmware uses
   # 4-byte ASCII magic markers ("RITE"/"LZST"/"KEYL"/"LSED"/"KEYC"/"QUID"…) whose
   # uint32 literal is the byte-packing of the four characters — but the codebase

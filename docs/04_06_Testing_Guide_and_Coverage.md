@@ -21,10 +21,10 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [04_04_Phlex_UI_and_Tailwind](04_04_Phlex_UI_and_Tailwind) | Phlex UI (Частина A — view-component best practices) |
-| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Сервіси (Частина B — service coverage) |
-| [04_01_Data_Models_and_Entities](04_01_Data_Models_and_Entities) | Моделі (B.1.1 model coverage) |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | Open backlog (coverage gaps, §B.4) |
+| [`04_04` — Phlex UI and Tailwind](04_04_Phlex_UI_and_Tailwind) | Phlex UI (Частина A — view-component best practices) |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Сервіси (Частина B — service coverage) |
+| [`04_01` — Data Models and Entities](04_01_Data_Models_and_Entities) | Моделі (B.1.1 model coverage) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (coverage gaps, §B.4) |
 
 ## 📑 Зміст
 

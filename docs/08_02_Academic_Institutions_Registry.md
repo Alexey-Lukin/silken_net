@@ -18,17 +18,17 @@
 
 | Ресурс | Зв'язок |
 |---|---|
-| [08_01_Joint_Publications_and_IP_Strategy](08_01_Joint_Publications_and_IP_Strategy) | MOIC-концепція (§0), план публікацій (Статті 1–35), IP-рамка — **голова кластера** |
-| [08_03_External_Stakeholders_Registry](08_03_External_Stakeholders_Registry) | Зовнішні B2G/B2B + культурний шар (не академічні) |
-| [01_03_EBFC_Enzymatic_Bio_Fuel_Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC — валідують ЧНУ Мінаєв (DFT) + ЧМА Бушуєва (ензими) |
-| [01_02_Ti_6Al_4V_Metallurgy_and_DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Ti-довговічність/Kirkendall — ЧНУ Гусак + ЧМА Суховой (токсикологія) |
-| [03_03_TinyML_Acoustic_Inference](03_03_TinyML_Acoustic_Inference) | §10 Soundscape — ЧДТУ ПМКТ (датасет) + ЧНУ Бушин (CNN-NDVI) |
-| [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz — ФОТІУС Порубльов (точність §7) + ЧДТУ Карапетян (RQA) |
-| [05_05_Slashing_and_Risk_Policy](05_05_Slashing_and_Risk_Policy) | §8 Ground-Truth Z↔health протокол (партнерський ростер — §6 нижче) |
-| [06_08_Resilience_and_Failover_Policy](06_08_Resilience_and_Failover_Policy) | Mesh percolation/Markov (ФОТІУС Порубльов/Онищенко, Open Research) |
-| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Backend ML/DS — ФОТІУС Любченко + ЧДТУ Карапетян |
-| [07_01_Nature_as_a_Service_Contracts](07_01_Nature_as_a_Service_Contracts) | NaaS/страхування — Кирилюк/Зобенко/Аблязов |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | UNI.* outreach-трекер |
+| [`08_01` — Joint Publications and IP Strategy](08_01_Joint_Publications_and_IP_Strategy) | MOIC-концепція (§0), план публікацій (Статті 1–35), IP-рамка — **голова кластера** |
+| [`08_03` — External Stakeholders Registry](08_03_External_Stakeholders_Registry) | Зовнішні B2G/B2B + культурний шар (не академічні) |
+| [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC — валідують ЧНУ Мінаєв (DFT) + ЧМА Бушуєва (ензими) |
+| [`01_02` — Ti 6Al 4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Ti-довговічність/Kirkendall — ЧНУ Гусак + ЧМА Суховой (токсикологія) |
+| [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) | §10 Soundscape — ЧДТУ ПМКТ (датасет) + ЧНУ Бушин (CNN-NDVI) |
+| [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz — ФОТІУС Порубльов (точність §7) + ЧДТУ Карапетян (RQA) |
+| [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) | §8 Ground-Truth Z↔health протокол (партнерський ростер — §6 нижче) |
+| [`06_08` — Resilience and Failover Policy](06_08_Resilience_and_Failover_Policy) | Mesh percolation/Markov (ФОТІУС Порубльов/Онищенко, Open Research) |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Backend ML/DS — ФОТІУС Любченко + ЧДТУ Карапетян |
+| [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) | NaaS/страхування — Кирилюк/Зобенко/Аблязов |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | UNI.* outreach-трекер |
 
 ## 📑 Зміст
 

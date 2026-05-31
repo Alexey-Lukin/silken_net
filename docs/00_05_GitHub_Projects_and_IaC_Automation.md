@@ -22,12 +22,12 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [00_02_AI_Native_Engineering_and_TRL](00_02_AI_Native_Engineering_and_TRL) | AI-Native методологія (philosophy) |
-| [00_04_Shape_Up_Operations_and_RnD_Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) | Shape Up operations; §5.2 Betting Table, §6 Academic Semester |
-| [00_03_TRL_Matrix_HIL_and_Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | Стратегічна дорожня карта + TRL-матриця |
-| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | §13b Drift Register (живиться результатами SSOT Integrity Guard) |
-| [06_01_Deployment_Kamal_Terraform](06_01_Deployment_Kamal_Terraform) | Kamal / Terraform CI integration |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | Open backlog (OPS.3 / OPS.4 + trl_sync/labeler) |
+| [`00_02` — AI Native Engineering and TRL](00_02_AI_Native_Engineering_and_TRL) | AI-Native методологія (philosophy) |
+| [`00_04` — Shape Up Operations and RnD Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) | Shape Up operations; §5.2 Betting Table, §6 Academic Semester |
+| [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | Стратегічна дорожня карта + TRL-матриця |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | §13b Drift Register (живиться результатами SSOT Integrity Guard) |
+| [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) | Kamal / Terraform CI integration |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (OPS.3 / OPS.4 + trl_sync/labeler) |
 
 ## 📑 Зміст
 

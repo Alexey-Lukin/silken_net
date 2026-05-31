@@ -24,13 +24,13 @@
 | `config/deploy.yml` · `config/deploy.canopy.yml` | Kamal (production / canopy) |
 | `terraform/` · `terraform/akash/` | IaC: Cloud SQL, Ingress Anchor, Akash |
 | `.github/workflows/deploy.yml` · `deploy-production.yml` | Canopy / Production CI/CD (деталі — [`06_07`](06_07_CICD_and_Runbook_Index)) |
-| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Backend (що деплоїться) |
-| [06_02_Akash_Network_Integration](06_02_Akash_Network_Integration) | Akash SDL, ENV, TLS |
-| [06_03_Prometheus_Observability](06_03_Prometheus_Observability) | Observability |
-| [06_04_Secrets_Checklist](06_04_Secrets_Checklist) | секрети — SSOT |
-| [06_06_Disaster_Recovery_and_Backup](06_06_Disaster_Recovery_and_Backup) | backup / restore / RTO·RPO |
-| [06_07_CICD_and_Runbook_Index](06_07_CICD_and_Runbook_Index) | CI/CD pipeline + runbook index |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | S1.1, S1.5, INF.3/4/6, S5.6 |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Backend (що деплоїться) |
+| [`06_02` — Akash Network Integration](06_02_Akash_Network_Integration) | Akash SDL, ENV, TLS |
+| [`06_03` — Prometheus Observability](06_03_Prometheus_Observability) | Observability |
+| [`06_04` — Secrets Checklist](06_04_Secrets_Checklist) | секрети — SSOT |
+| [`06_06` — Disaster Recovery and Backup](06_06_Disaster_Recovery_and_Backup) | backup / restore / RTO·RPO |
+| [`06_07` — CICD and Runbook Index](06_07_CICD_and_Runbook_Index) | CI/CD pipeline + runbook index |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | S1.1, S1.5, INF.3/4/6, S5.6 |
 
 ## 📑 Зміст
 

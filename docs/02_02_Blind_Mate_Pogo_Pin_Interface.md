@@ -25,11 +25,11 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [01_01_Coaxial_Gyroid_Topology_and_PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Геометрія анкера (Zone 3 pogo-площадка, press-fit) |
-| [01_03_EBFC_Enzymatic_Bio_Fuel_Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC: V-I крива (cold-start навантаження) |
-| [02_01_Hardware_Architecture_and_BOM](02_01_Hardware_Architecture_and_BOM) | Апаратна архітектура капсули; Parylene C conformal |
-| [02_03_BQ25570_MPPT_Nano_Power](02_03_BQ25570_MPPT_Nano_Power) | MPPT; cold-start loop (R_interface вплив, §5) |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.8 pogo (7 sub), HW.11 Parylene, HW.30 B2B, HW.31 piezo |
+| [`01_01` — Coaxial Gyroid Topology and PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Геометрія анкера (Zone 3 pogo-площадка, press-fit) |
+| [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC: V-I крива (cold-start навантаження) |
+| [`02_01` — Hardware Architecture and BOM](02_01_Hardware_Architecture_and_BOM) | Апаратна архітектура капсули; Parylene C conformal |
+| [`02_03` — BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power) | MPPT; cold-start loop (R_interface вплив, §5) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.8 pogo (7 sub), HW.11 Parylene, HW.30 B2B, HW.31 piezo |
 
 ## 📑 Зміст
 
@@ -221,7 +221,7 @@ Ti (анкер) → Copper (пін)          ← різниця > 0.5 В → к�
 
 ### 3.3. Z-axis Tolerance Stack-Up (O-ring ↔ Pogo Pins) — обов'язковий 1D-розрахунок
 
-> Перенесено з колишнього BLOCKER-6 (трекінг — [`00_07 HW.8`](00_07_Action_Plan_Tracker)). Без 1D stack-up аналізу — гарантований брак ~10–30% капсул.
+> Перенесено з колишнього BLOCKER-6 (трекінг — [`00_07` — HW.8](00_07_Action_Plan_Tracker)). Без 1D stack-up аналізу — гарантований брак ~10–30% капсул.
 
 У замкненому байонеті (Радом ↔ Zone 3 катод) дві пружинні системи стискаються одночасно й послідовно по Z-осі: хід Pogo Pins (1.52 mm travel + ≥0.5 mm preload) і компресія O-ring (CS 1.78 mm, 15–25%).
 
@@ -368,7 +368,7 @@ R_interface < 50 мОм + 1 мОм + 50 мОм + 1 мОм ≈ 102 мОм (гір
 | Захист від зворотної полярності | **Виключно механічний (Poka-yoke):** коаксіальна геометрія §3.2 (центральний пін → GND, зовнішній ring-pin → VIN_DC) фізично виключає реверс ±, бо обидва піни мають різний діаметр посадки. Додатково — асиметричний направляючий штифт або D-зріз на PEEK-ізоляторі унеможливлює встановлення капсули перевернутою на 180°. **Серійний діод (TVS/Schottky) на VIN_DC заборонено** — див. cross-ref `02_03 BLOCKER-3` нижче. |
 | Goldfingers (контактні поверхні) | ENIG (Electroless Nickel Immersion Gold) мін. 0.05 µm Au |
 
-> 🚫 **Anti-Footgun (Cold-Start Killer):** Будь-який послідовний діод на лінії VIN_DC — заборонений. EBFC видає 500–800 мВ V_OC, а BQ25570 потребує **≥ 330 мВ** для запуску холодного старту ([02_03 §3.1](02_03_BQ25570_MPPT_Nano_Power#31-cold-start-circuit-система-холодного-старту)). Навіть «найкращий» Schottky-діод (BAT54S) при cold-start струмі charge pump 15 µA має V_f ≈ 150–250 мВ → ефективна напруга на BQ25570 = 500 − 200 = **300 мВ < 330 мВ** → система ніколи не запуститься. P-канальний MOSFET у режимі ідеального діода також не годиться: при < 1 V на вході затвор не відкривається (V_GS_th ≈ 1.5–2 V). У нано-енергетичному домені (< 1 V) **електричний реверс-захист фізично неможливий** — захист має бути виключно механічним (Poka-yoke геометрія + асиметричний ключ). Аналогічний BAT54S у [`02_01 §3`](02_01_Hardware_Architecture_and_BOM) (BOM, поз. 6) — це **інший** компонент: він стоїть на 3.3 V GPIO лінії як Schottky-clamp для п'єзо-сплесків, *після* BQ25570, не на VIN_DC.
+> 🚫 **Anti-Footgun (Cold-Start Killer):** Будь-який послідовний діод на лінії VIN_DC — заборонений. EBFC видає 500–800 мВ V_OC, а BQ25570 потребує **≥ 330 мВ** для запуску холодного старту ([`02_03 §3.1`](02_03_BQ25570_MPPT_Nano_Power#31-cold-start-circuit-система-холодного-старту)). Навіть «найкращий» Schottky-діод (BAT54S) при cold-start струмі charge pump 15 µA має V_f ≈ 150–250 мВ → ефективна напруга на BQ25570 = 500 − 200 = **300 мВ < 330 мВ** → система ніколи не запуститься. P-канальний MOSFET у режимі ідеального діода також не годиться: при < 1 V на вході затвор не відкривається (V_GS_th ≈ 1.5–2 V). У нано-енергетичному домені (< 1 V) **електричний реверс-захист фізично неможливий** — захист має бути виключно механічним (Poka-yoke геометрія + асиметричний ключ). Аналогічний BAT54S у [`02_01 §3`](02_01_Hardware_Architecture_and_BOM) (BOM, поз. 6) — це **інший** компонент: він стоїть на 3.3 V GPIO лінії як Schottky-clamp для п'єзо-сплесків, *після* BQ25570, не на VIN_DC.
 
 ---
 

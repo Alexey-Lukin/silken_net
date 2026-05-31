@@ -25,13 +25,13 @@
 
 | Ресурс | Зв'язок |
 |---|---|
-| [02_03_BQ25570_MPPT_Nano_Power](02_03_BQ25570_MPPT_Nano_Power) | MPPT (живлення, cold-start) |
-| [02_04_EDLC_Supercapacitor_Buffer](02_04_EDLC_Supercapacitor_Buffer) | Суперконденсатор-буфер |
-| [03_02_Queen_Gateway_Firmware](03_02_Queen_Gateway_Firmware) | Прошивка Королеви (CIFO, OTA, AT) |
-| [03_05_Hardware_Symmetric_Crypto_and_Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Аудит безпеки (ECB/CBC, ключі) |
-| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (gateway telemetry) |
-| [07_02_Unit_Economics_and_BOM](07_02_Unit_Economics_and_BOM) | Вартість розгортання |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | HW.14/15/18 (energy, BMS, thermal) |
+| [`02_03` — BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power) | MPPT (живлення, cold-start) |
+| [`02_04` — EDLC Supercapacitor Buffer](02_04_EDLC_Supercapacitor_Buffer) | Суперконденсатор-буфер |
+| [`03_02` — Queen Gateway Firmware](03_02_Queen_Gateway_Firmware) | Прошивка Королеви (CIFO, OTA, AT) |
+| [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Аудит безпеки (ECB/CBC, ключі) |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (gateway telemetry) |
+| [`07_02` — Unit Economics and BOM](07_02_Unit_Economics_and_BOM) | Вартість розгортання |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | HW.14/15/18 (energy, BMS, thermal) |
 
 ## 📑 Зміст
 
@@ -252,7 +252,7 @@ SIM7070G у режимі LTE-M TX може споживати імпульсно
 
 **Блокує:** Сертифікація для зимового деплою.
 
-> **Cross-ref:** [00_07 HW.16](00_07_Action_Plan_Tracker) — checklist синхронізовано.
+> **Cross-ref:** [`00_07` — HW.16](00_07_Action_Plan_Tracker) — checklist синхронізовано.
 
 ---
 
@@ -488,7 +488,7 @@ Starlink Mini — компактний термінал LEO-супутника �
 
 ## 🌡️ 4а. Тепловий бюджет IP67 корпусу 🤖
 
-**Cross-ref:** [00_07 HW.16](00_07_Action_Plan_Tracker), §Теплове управління IP67 вище.
+**Cross-ref:** [`00_07` — HW.16](00_07_Action_Plan_Tracker), §Теплове управління IP67 вище.
 
 **Мета:** перевірити, що температура всередині корпусу не виходить за робочі діапазони компонентів при найгіршому сценарії: T_зовн = +40°C, прямі сонячні промені, штиль.
 

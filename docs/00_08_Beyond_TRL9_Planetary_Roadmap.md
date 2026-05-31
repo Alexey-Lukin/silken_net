@@ -16,15 +16,15 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [00_03_TRL_Matrix_HIL_and_Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | Жива TRL-матриця (§1) + TRL-Layered-Independence (§2) + HIL (§3) — поточний стан/метод |
-| [00_01_Vision_Mission_and_Roadmap](00_01_Vision_Mission_and_Roadmap) | Near-term roadmap (§4, фази 2025–2030); ця сторінка — far-horizon продовження |
-| [00_02_AI_Native_Engineering_and_TRL](00_02_AI_Native_Engineering_and_TRL) | SRL/MRL шкали зрілості за межами TRL-9 |
-| [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | §6.3 Forest-Level Lorenz Coupling (Gap #1 firmware-бік) |
-| [03_03_TinyML_Acoustic_Inference](03_03_TinyML_Acoustic_Inference) | On-Device Learning / Edge RL (Gap #2 firmware-бік) |
-| [01_01_Coaxial_Gyroid_Topology_and_PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Cross-biome 5 SKU (Gap #3 hardware-бік) |
-| [05_06_Governance_and_DAO](05_06_Governance_and_DAO) | Apex Predator Defense §5 (Gap #4 governance-бік) |
-| [06_08_Resilience_and_Failover_Policy](06_08_Resilience_and_Failover_Policy) | Queen failover / Q2Q backhaul — мережева реалізація §2 |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | ARCH.1/6/7/10/22 — інженерні backlog-вектори цієї агенди |
+| [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | Жива TRL-матриця (§1) + TRL-Layered-Independence (§2) + HIL (§3) — поточний стан/метод |
+| [`00_01` — Vision Mission and Roadmap](00_01_Vision_Mission_and_Roadmap) | Near-term roadmap (§4, фази 2025–2030); ця сторінка — far-horizon продовження |
+| [`00_02` — AI Native Engineering and TRL](00_02_AI_Native_Engineering_and_TRL) | SRL/MRL шкали зрілості за межами TRL-9 |
+| [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | §6.3 Forest-Level Lorenz Coupling (Gap #1 firmware-бік) |
+| [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) | On-Device Learning / Edge RL (Gap #2 firmware-бік) |
+| [`01_01` — Coaxial Gyroid Topology and PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Cross-biome 5 SKU (Gap #3 hardware-бік) |
+| [`05_06` — Governance and DAO](05_06_Governance_and_DAO) | Apex Predator Defense §5 (Gap #4 governance-бік) |
+| [`06_08` — Resilience and Failover Policy](06_08_Resilience_and_Failover_Policy) | Queen failover / Q2Q backhaul — мережева реалізація §2 |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | ARCH.1/6/7/10/22 — інженерні backlog-вектори цієї агенди |
 
 ## 📑 Зміст
 

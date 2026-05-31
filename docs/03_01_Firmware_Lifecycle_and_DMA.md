@@ -18,12 +18,12 @@
 |--------|------|
 | `firmware/soldier/main.c` · `firmware/queen/main.c` · `firmware/bio_contracts/bio_contract.rb` | Джерела: C-код Soldier/Queen + mruby bio-contract |
 | `firmware/test/` | Host-based x86 тести (`make -C firmware/test`) |
-| [03_02_Queen_Gateway_Firmware](03_02_Queen_Gateway_Firmware) | Queen: LoRa RX, CIFO, SIM7070G modem |
-| [03_03_TinyML_Acoustic_Inference](03_03_TinyML_Acoustic_Inference) | TinyML класифікатор звуку |
-| [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | Математика Атрактора Лоренца |
-| [03_05_Hardware_Symmetric_Crypto_and_Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Шифрування, ключі, RDP |
-| [02_04_EDLC_Supercapacitor_Buffer](02_04_EDLC_Supercapacitor_Buffer) | EBFC та іоністор 0.47F |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери модуля 03** (SSOT): `FW.3` AT-blind, `FW.17` key-rotation, `SEC.2` RDP-2, `SEC.3` factory |
+| [`03_02` — Queen Gateway Firmware](03_02_Queen_Gateway_Firmware) | Queen: LoRa RX, CIFO, SIM7070G modem |
+| [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) | TinyML класифікатор звуку |
+| [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | Математика Атрактора Лоренца |
+| [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Шифрування, ключі, RDP |
+| [`02_04` — EDLC Supercapacitor Buffer](02_04_EDLC_Supercapacitor_Buffer) | EBFC та іоністор 0.47F |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери модуля 03** (SSOT): `FW.3` AT-blind, `FW.17` key-rotation, `SEC.2` RDP-2, `SEC.3` factory |
 
 ---
 
@@ -706,7 +706,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 | Магічний маркер | Значення (hex) | ASCII | Регістр-прапор | Захищає блок | Документ |
 |-----------------|----------------|-------|----------------|--------------|----------|
-| `LORENZ_STATE_MAGIC` | `0x4C5A5354` | `"LZST"` | `DR19` | `DR16/DR17/DR18` (lorenz_x/y/z) | [03_04 §2.1](03_04_mruby_Lorenz_Attractor#21-звідки-беруться-вхідні-параметри) |
+| `LORENZ_STATE_MAGIC` | `0x4C5A5354` | `"LZST"` | `DR19` | `DR16/DR17/DR18` (lorenz_x/y/z) | [`03_04 §2.1`](03_04_mruby_Lorenz_Attractor#21-звідки-беруться-вхідні-параметри) |
 | `EMA_VALID_FLAG` (8 біт у DR12) | `0xA5` (high byte) | — | `DR12[31:24]` | `DR10` (ema_delta_t), `DR12[15:0]` (ema_vcap_x10) | [§13.3](#133-persistence--rtc-backup-registers-dr10--dr12-packed) |
 | `tree_did != 0` | будь-яке non-zero | — | `DR7` (self) | `DR7` (захист від перезапису DID при OTA) | [§7](#-7-did-generation-народження) |
 
@@ -900,12 +900,12 @@ Chunk-розмір для LoRa OTA: **11 байт** корисного коду 
 
 | Опкод | Назва | Напрямок | Лінк | Документ | Статус |
 |-------|-------|----------|------|----------|--------|
-| `0x55` | OTA_REQ_MARKER (Magic Re-Request) | Soldier→Queen | LoRa **uplink** | [03_02 §5.X.3](03_02_Queen_Gateway_Firmware) | ✅ FW.27-B (2026-05-02) |
+| `0x55` | OTA_REQ_MARKER (Magic Re-Request) | Soldier→Queen | LoRa **uplink** | [`03_02 §5.X.3`](03_02_Queen_Gateway_Firmware) | ✅ FW.27-B (2026-05-02) |
 | `0x99` | OTA_MARKER (bytecode chunks) | Rails→Queen→Soldier | CoAP/LoRa | §4.4 + 03_02 §5 | ✅ |
-| `0x9A` | CMD_SET_THRESHOLDS (Lorenz Z per-tree) | Rails→Queen→Soldier | CoAP/LoRa | [05_02 §4а.1](05_02_Proof_of_Growth_Pipeline) | 🟡 FW.8 (Queen-side; Soldier dispatcher TBD) |
-| `0x9B` | CMD_HMAC_TRAILER (OTA HMAC-SHA256 печатка) | Rails→Queen→Soldier | CoAP/LoRa | [03_05 §3.4б](03_05_Hardware_Symmetric_Crypto_and_Security) | ✅ FW.23 (2026-05-02) |
+| `0x9A` | CMD_SET_THRESHOLDS (Lorenz Z per-tree) | Rails→Queen→Soldier | CoAP/LoRa | [`05_02 §4а.1`](05_02_Proof_of_Growth_Pipeline) | 🟡 FW.8 (Queen-side; Soldier dispatcher TBD) |
+| `0x9B` | CMD_HMAC_TRAILER (OTA HMAC-SHA256 печатка) | Rails→Queen→Soldier | CoAP/LoRa | [`03_05 §3.4б`](03_05_Hardware_Symmetric_Crypto_and_Security) | ✅ FW.23 (2026-05-02) |
 | `0x9C` | CMD_TIME_SYNC (envelope) | Rails→Queen | CoAP | §11 (FW.20) | ✅ FW.20 |
-| `0x9D` | CMD_SET_AUDIO_THRESHOLDS (TinyML per-Soldier) | Rails→Queen→Soldier | CoAP/LoRa | [03_03 BLOCKER-6](03_03_TinyML_Acoustic_Inference) | ✅ FW.18 (2026-05-02) |
+| `0x9D` | CMD_SET_AUDIO_THRESHOLDS (TinyML per-Soldier) | Rails→Queen→Soldier | CoAP/LoRa | [`03_03` — BLOCKER-6](03_03_TinyML_Acoustic_Inference) | ✅ FW.18 (2026-05-02) |
 | `0x9E` | _reserved_ | — | — | — | вільний |
 | `0x9F` | _reserved_ | — | — | — | вільний |
 
@@ -1385,7 +1385,7 @@ make -C firmware/test clean   # Remove test_queen, test_soldier binaries
 
 ## 📈 13. EMA (Exponential Moving Average) на Soldier — FW.21 🤖
 
-> **Cross-ref:** [00_07 FW.21](00_07_Action_Plan_Tracker) — ✅ реалізовано (`firmware/soldier/main.c` + тести у `firmware/test/test_soldier_logic.c`)
+> **Cross-ref:** [`00_07` — FW.21](00_07_Action_Plan_Tracker) — ✅ реалізовано (`firmware/soldier/main.c` + тести у `firmware/test/test_soldier_logic.c`)
 
 ### 13.1 Мета та контекст
 

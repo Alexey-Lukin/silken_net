@@ -380,4 +380,36 @@ RSpec.describe DocsLinter do
       expect(described_class.magic_marker_hex_drift("magic float value 0x4188EE90 here\n")).to be_empty
     end
   end
+
+  # [cross-ref single-form, 2026-06-01] One sanctioned dialect: every doc-id link
+  # label must lead with a code-span `NN_NN` (+ optional §X, + optional — Title).
+  describe ".crossref_label_form" do
+    it "accepts the three canonical code-span forms" do
+      ok = <<~MD
+        whole-doc [`05_05`](05_05_Slashing_and_Risk_Policy)
+        section   [`05_05 §3`](05_05_Slashing_and_Risk_Policy)
+        directory [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy)
+      MD
+      expect(described_class.crossref_label_form(ok)).to be_empty
+    end
+
+    it "flags plain, escaped and full-name-in-codespan dialects" do
+      bad = <<~MD
+        plain     [05_05 §3](05_05_Slashing_and_Risk_Policy)
+        escaped   [05\\_05\\_Slashing\\_and\\_Risk\\_Policy](05_05_Slashing_and_Risk_Policy)
+        fullname  [`05_05_Slashing_and_Risk_Policy`](05_05_Slashing_and_Risk_Policy)
+      MD
+      expect(described_class.crossref_label_form(bad).size).to eq(3)
+    end
+
+    it "leaves a pure prose-phrase label (no doc-id) alone" do
+      expect(described_class.crossref_label_form(
+        "повна політика [живе тут](05_05_Slashing_and_Risk_Policy)\n")).to be_empty
+    end
+
+    it "skips fenced code blocks" do
+      expect(described_class.crossref_label_form(
+        "```\n[05_05 §3](05_05_Slashing_and_Risk_Policy)\n```\n")).to be_empty
+    end
+  end
 end

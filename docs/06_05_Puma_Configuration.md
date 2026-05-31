@@ -25,11 +25,11 @@
 | `app/middleware/mark_web3_requests_as_io_bound.rb` | IO-bound middleware |
 | `Dockerfile` | `LD_PRELOAD=libjemalloc2.so`, `CMD: thrust ./bin/rails server` |
 | `config/application.rb` | Реєстрація middleware (після `PrometheusCollector`) |
-| [06_01_Deployment_Kamal_Terraform](06_01_Deployment_Kamal_Terraform) | Kamal phased restart, `WEB_CONCURRENCY` |
-| [06_02_Akash_Network_Integration](06_02_Akash_Network_Integration) | `WEB_CONCURRENCY=4` у Akash SDL |
-| [06_03_Prometheus_Observability](06_03_Prometheus_Observability) | `/metrics` endpoint |
-| [04_03_REST_API_v1_Reference](04_03_REST_API_v1_Reference) | Список IO-bound endpoints |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | production verification |
+| [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) | Kamal phased restart, `WEB_CONCURRENCY` |
+| [`06_02` — Akash Network Integration](06_02_Akash_Network_Integration) | `WEB_CONCURRENCY=4` у Akash SDL |
+| [`06_03` — Prometheus Observability](06_03_Prometheus_Observability) | `/metrics` endpoint |
+| [`04_03` — REST API v1 Reference](04_03_REST_API_v1_Reference) | Список IO-bound endpoints |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | production verification |
 
 ## 📑 Зміст
 

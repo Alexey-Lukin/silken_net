@@ -18,10 +18,10 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [05_01_Multichain_Architecture](05_01_Multichain_Architecture) | Мультичейн (L1 у стеку фіналізації) |
-| [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Pipeline (джерело state даних) |
-| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (total_scc/total_sfc у root) |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | Open backlog (Mainnet deploy, gas) |
+| [`05_01` — Multichain Architecture](05_01_Multichain_Architecture) | Мультичейн (L1 у стеку фіналізації) |
+| [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Pipeline (джерело state даних) |
+| [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (total_scc/total_sfc у root) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (Mainnet deploy, gas) |
 
 ## 📑 Зміст
 

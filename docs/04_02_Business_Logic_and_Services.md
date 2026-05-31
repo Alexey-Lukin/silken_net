@@ -18,10 +18,10 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [04_01_Data_Models_and_Entities](04_01_Data_Models_and_Entities) | Схема БД (моделі під сервісами) |
-| [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof-of-Growth пайплайн (порядок сервісів) |
-| [03_05_Hardware_Symmetric_Crypto_and_Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Апаратне шифрування, HKDF ключі |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | Open backlog (Drift Register, Planned services) |
+| [`04_01` — Data Models and Entities](04_01_Data_Models_and_Entities) | Схема БД (моделі під сервісами) |
+| [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof-of-Growth пайплайн (порядок сервісів) |
+| [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Апаратне шифрування, HKDF ключі |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (Drift Register, Planned services) |
 
 ### Конвенція впорядкування розділів
 
@@ -145,7 +145,7 @@
 | **Алгоритм та парність** | OpenSSL HKDF-SHA256 (RFC 5869) + HMAC-SHA256. Host-parity test `firmware/test/test_seed_derivation.c` валідує OpenSSL ↔ mbedTLS байт-ідентичність на детермінованих векторах + 100-case fuzz. Backend ↔ firmware деривують `(x₀, y₀, z₀)` byte-identical для тієї самої пари `(K_seed, epoch_day)`. |
 | **Викликається з** | `HardwareKeyService#provision` (provisioning), `TelemetryUnpackerService` (cold-start dispatch) |
 | **Зовнішні виклики** | `OpenSSL::KDF.hkdf`, `OpenSSL::HMAC.digest("SHA256", …)` |
-| **Безпека** | `K_seed` ніколи не залишає Ruby-процес у відкритому вигляді (in-process derivation з `ENV["PROVISIONING_MASTER_KEY"]`). DID використовується лише як `info`-string у HKDF (namespace separator) — криптографічно безпечно. Cross-ref: [03_05 §3.4в Lorenz K_seed Derivation](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-), [03_04 §3 Крок 1](03_04_mruby_Lorenz_Attractor#крок-1-походження-початкових-координат-x₀-y₀-z₀-sec11). |
+| **Безпека** | `K_seed` ніколи не залишає Ruby-процес у відкритому вигляді (in-process derivation з `ENV["PROVISIONING_MASTER_KEY"]`). DID використовується лише як `info`-string у HKDF (namespace separator) — криптографічно безпечно. Cross-ref: [`03_05 §3.4в` Lorenz K_seed Derivation](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-), [`03_04 §3` Крок 1](03_04_mruby_Lorenz_Attractor#крок-1-походження-початкових-координат-x₀-y₀-z₀-sec11). |
 
 ### `SilkenNet::GeoUtils`
 
@@ -407,7 +407,7 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Зовнішні виклики** | `OpenSSL::KDF.hkdf` |
 | **Публічні методи** | `.fetch_for(cluster_id) → String` (64-символьний HEX, upper); `.fetch_binary_for(cluster_id) → String` (32 binary bytes) — для прямого `OpenSSL::HMAC.digest` |
 | **Вихід** | 64-символьний HEX або 32-байтна binary-string. |
-| **Cross-ref** | [03_05 §3.4б](03_05_Hardware_Symmetric_Crypto_and_Security) — повний протокол OTA HMAC dual-gate. |
+| **Cross-ref** | [`03_05 §3.4б`](03_05_Hardware_Symmetric_Crypto_and_Security) — повний протокол OTA HMAC dual-gate. |
 
 ### `OtaPackagerService`
 
@@ -419,7 +419,7 @@ peaq_node_url: "https://peaq-node.example.com"
 | **[FW.8] `build_threshold_config_block(tree)`** | Клас-метод. Будує `CMD_SET_THRESHOLDS` (0x9A) OTA Config Block для передачі per-species Lorenz порогів на Soldier без перекомпіляції. Читає `tree.effective_lorenz_thresholds` → упаковує у 10-байтовий payload: `[z_min×100:int16_le][z_max×100:int16_le][z_opt×100:int16_le][species_id:uint8][config_version:uint8][crc16:uint16_le]`. Prefixed: `[CMD_SET_THRESHOLDS:1][len:uint16_le][payload]`. |
 | **[FW.23] `compute_hmac_tag(bytecode, version_id, lora_total_chunks, cluster_id:)`** | Клас-метод. Обчислює HMAC-SHA256 по `bytecode \|\| version_id_be(4) \|\| lora_total_chunks_be(2)`. Anti-replay: `version_id` прив'язує тег до конкретної ревізії. Anti-truncation: `lora_total_chunks` в тезі — скидання будь-якого trailing-чанку детектується як HMAC mismatch на Soldier. Повертає 32-byte binary digest. |
 | **[FW.23] `build_hmac_trailer_chunks(hmac_tag, lora_total_chunks)`** | Клас-метод. Розбиває 32-байтний тег на 3 LoRa-форматованих 16-байтових блоки: `[0x9B][seg_idx:2 BE][lora_total:2 BE][hmac_seg:11]`. Сегмент 3 має 10 реальних байт + 1 NUL PAD. Queen relay-ює їх stateless; Soldier збирає через `Parse_HMAC_Trailer_Chunk`. |
-| **OTA Command Constants (SSOT)** | `CMD_OTA_BYTECODE=0x99` (mruby chunks), `CMD_SET_THRESHOLDS=0x9A` (FW.8 Lorenz Z), `CMD_HMAC_TRAILER=0x9B` (FW.23 OTA HMAC печатка), `CMD_TIME_SYNC=0x9C` (FW.20 RTC correction), `CMD_SET_AUDIO_THRESHOLDS=0x9D` (FW.18 TinyML confidence thresholds). Повна карта опкодів: [03_01 §4.5а](03_01_Firmware_Lifecycle_and_DMA). |
+| **OTA Command Constants (SSOT)** | `CMD_OTA_BYTECODE=0x99` (mruby chunks), `CMD_SET_THRESHOLDS=0x9A` (FW.8 Lorenz Z), `CMD_HMAC_TRAILER=0x9B` (FW.23 OTA HMAC печатка), `CMD_TIME_SYNC=0x9C` (FW.20 RTC correction), `CMD_SET_AUDIO_THRESHOLDS=0x9D` (FW.18 TinyML confidence thresholds). Повна карта опкодів: [`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA). |
 | **HMAC Constants** | `HMAC_TAG_BYTES=32`, `HMAC_TRAILER_SEGMENTS=3`, `HMAC_SEG_BYTES=11`, `HMAC_TRAILER_BLOCK=16` |
 | **Вихід (без cluster_id)** | `{ manifest: { version, total_size, checksum, sha256, total_chunks }, packages: Enumerator<16-byte blocks> }` |
 | **Вихід (з cluster_id)** | `{ manifest: { version, total_size, checksum, sha256, total_chunks, lora_total_chunks, total_packages, hmac_signed: true, hmac_cluster_id }, packages: Enumerator<bytecode_chunks + 3 trailer_chunks> }` — `total_packages = total_chunks + 3`; `OtaTransmissionWorker` ітерує по `packages` без змін у логіці pacing. |
@@ -435,7 +435,7 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Публічні методи** | `.detect(value, hint:) → nil \| String` (повертає reason-string з опц. префіксом hint, якщо знайдено патерн); `.weak?(value, hint:) → Boolean` |
 | **Тест coverage** | `spec/services/security/weak_key_detector_spec.rb` — 30+ examples, fuzz через RFC vectors, edge-cases для round-trip base64 та bytestring-encoding |
 | **Інвокери** | `config/initializers/master_key_strength_check.rb` (boot-time guard, див. нижче) |
-| **Cross-ref** | [03_05 §3.1а](03_05_Hardware_Symmetric_Crypto_and_Security), [00_07 SEC.9](00_07_Action_Plan_Tracker). Закриває оригінальний BLOCKER (firmware AES key перших 16 байт співпадали з FIPS-197 Appendix B). |
+| **Cross-ref** | [`03_05 §3.1а`](03_05_Hardware_Symmetric_Crypto_and_Security), [`00_07` — SEC.9](00_07_Action_Plan_Tracker). Закриває оригінальний BLOCKER (firmware AES key перших 16 байт співпадали з FIPS-197 Appendix B). |
 
 #### Boot-time master key guard (initializer)
 
@@ -819,7 +819,7 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 
 > **Примітка:** Sidekiq `:strict: true` дренує черги послідовно згори-донизу. Числа — порядок дренування, не ваги.
 
-> ⚠️ **DOC.8 — Cleanup constraint (TelemetryLog):** Будь-який cleanup-воркер на `telemetry_logs` **зобов'язаний** виключати `oracle_status = 'dispatched'`. Ці записи знаходяться в open Chainlink-callback flight; їх видалення зламає `OracleCallbacksController` (RecordNotFound + 5 retry без мінтингу). Канонічне виконання — `InsightGeneratorService.cleanup_old_logs!` (тригериться з `InsightBatchCallbacks` після успішного денного циклу). Не реалізуйте паралельні cleanup-job'и — викликайте сервіс. Cross-ref: [04_01 TelemetryLog model warning](04_01_Data_Models_and_Entities#telemetrylog--сирий-пакет-телеметрії).
+> ⚠️ **DOC.8 — Cleanup constraint (TelemetryLog):** Будь-який cleanup-воркер на `telemetry_logs` **зобов'язаний** виключати `oracle_status = 'dispatched'`. Ці записи знаходяться в open Chainlink-callback flight; їх видалення зламає `OracleCallbacksController` (RecordNotFound + 5 retry без мінтингу). Канонічне виконання — `InsightGeneratorService.cleanup_old_logs!` (тригериться з `InsightBatchCallbacks` після успішного денного циклу). Не реалізуйте паралельні cleanup-job'и — викликайте сервіс. Cross-ref: [`04_01` — TelemetryLog model warning](04_01_Data_Models_and_Entities#telemetrylog--сирий-пакет-телеметрії).
 
 > ⚠️ **DOC.10 — Sidekiq Pro shims active (Phase 7 deferred upgrade):** Кодова база викликає `Sidekiq::Batch`, `Sidekiq::Limiter`, `expires_in:`, але ліцензований гем `sidekiq-pro` поки що **не в Gemfile**. `config/initializers/sidekiq_pro.rb` надає no-op shim-и щоб тести й dev-середовище не падали — у production це означає що `on(:success)` колбеки **не спрацьовують**, rate-limiter `web3_rpc 50/sec` **не діє**, а `expires_in: 5.minutes` на uplink-задачах **не TTL-ить** stale jobs. Перед billion-tree запуском треба:
 > 1. Додати `gem "sidekiq-pro", "~> 8.1"` (потребує license token у `BUNDLE_GEMS__CONTRIBSYS__COM`).
@@ -1516,7 +1516,7 @@ Financial action
 
 | Дата | Зона | Тип drift | Що зроблено | Cross-ref |
 |------|------|-----------|-------------|-----------|
-| 2026-05-12 | `Security::WeakKeyDetector` + `master_key_strength_check.rb` initializer | Code ahead of doc (були в [`00_07`](00_07_Action_Plan_Tracker)/[`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security), але §8 04_02 їх не описувала) | Додано в §8 (renamed → "Hardware, IoT & Security") | [SEC.9](00_07_Action_Plan_Tracker), [03_05 §3.1а](03_05_Hardware_Symmetric_Crypto_and_Security) |
+| 2026-05-12 | `Security::WeakKeyDetector` + `master_key_strength_check.rb` initializer | Code ahead of doc (були в [`00_07`](00_07_Action_Plan_Tracker)/[`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security), але §8 04_02 їх не описувала) | Додано в §8 (renamed → "Hardware, IoT & Security") | [SEC.9](00_07_Action_Plan_Tracker), [`03_05 §3.1а`](03_05_Hardware_Symmetric_Crypto_and_Security) |
 | 2026-05-12 | `Celo::CommunityRewardService` RPC fallback cascade | Code matched doc (E.49 синхронно виконано: код + 04_02 + .env.example + 00_07) | `RPC_FALLBACK_ENV_KEYS` додано, External API row оновлено | [E.49](00_07_Action_Plan_Tracker) |
 | 2026-05-12 | `MintingRollbackService` (Celo branch) | Code bug + doc gap (fallback указував на polygon-rpc.com для Celo TX) | Виправлено per-chain dispatch; doc оновлено | [E.49](00_07_Action_Plan_Tracker) |
 | 2026-05-12 | `MintBatchCollectorWorker` секція | Doc misplacement (queue `web3` був у "💤 Web3 Low") | Перенесено у "🌐 Web3 — Стандартні Мультичейн" | §11 |
@@ -1599,7 +1599,7 @@ FilecoinArchiveWorker → immutable proof archive
 
 ### Архітектурний дизайн: Task Assignment Algorithm 🤖 (S6.10)
 
-> **Cross-ref:** [00_07 S6.10](00_07_Action_Plan_Tracker), [00_07 E.20](00_07_Action_Plan_Tracker), [00_07 E.34](00_07_Action_Plan_Tracker) (dClimate fallback → Forester Guild).
+> **Cross-ref:** [`00_07` — S6.10](00_07_Action_Plan_Tracker), [`00_07` — E.20](00_07_Action_Plan_Tracker), [`00_07` — E.34](00_07_Action_Plan_Tracker) (dClimate fallback → Forester Guild).
 
 Workflow вище показує **створення** bounty та **claim**, але **алгоритм матчингу ranger↔bounty** і пріоритезація не визначені. Без цього система деградує до first-come-first-served race (далекий ranger може вкрасти bounty у локального) або silent expiry (життєво-критична `EwsAlert :critical` залишається без виконавця, бо нікому не повідомили). Цей розділ закриває S6.10.
 

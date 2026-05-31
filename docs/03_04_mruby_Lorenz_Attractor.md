@@ -22,15 +22,15 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) | Soldier lifecycle; RTC DR16-18 Lorenz state (FW.6) |
-| [03_03_TinyML_Acoustic_Inference](03_03_TinyML_Acoustic_Inference) | `acoustic_events` → σ-пертурбація |
-| [03_05_Hardware_Symmetric_Crypto_and_Security](03_05_Hardware_Symmetric_Crypto_and_Security) | §3.4в K_seed derivation (SEC.11, HKDF/HMAC) |
-| [04_02_Business_Logic_and_Services](04_02_Business_Logic_and_Services) | TelemetryUnpacker, SeedDerivation, DCI check |
-| [05_02_Proof_of_Growth_Pipeline](05_02_Proof_of_Growth_Pipeline) | Dual Computation Integrity (Z крос-верифікація) |
-| [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) | CRITICAL_Z_MIN/MAX → slashing |
-| [08_02_Academic_Institutions_Registry](08_02_Academic_Institutions_Registry) | Матем. верифікація числової стабільності |
+| [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | Soldier lifecycle; RTC DR16-18 Lorenz state (FW.6) |
+| [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) | `acoustic_events` → σ-пертурбація |
+| [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | §3.4в K_seed derivation (SEC.11, HKDF/HMAC) |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | TelemetryUnpacker, SeedDerivation, DCI check |
+| [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Dual Computation Integrity (Z крос-верифікація) |
+| [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | CRITICAL_Z_MIN/MAX → slashing |
+| [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | Матем. верифікація числової стабільності |
 | `firmware/bio_contracts/bio_contract.rb` · `app/services/silken_net/attractor.rb` · `seed_derivation.rb` | mruby + Rails-дзеркало (Float parity); SEC.11 entry-point |
-| [00_07_Action_Plan_Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.31 numeric-DCI flip (deferred); FW.45 fixed-point hardening |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.31 numeric-DCI flip (deferred); FW.45 fixed-point hardening |
 
 ## 📑 Зміст
 
@@ -109,7 +109,7 @@ C₂ = (-√(β(ρ-1)), -√(β(ρ-1)), ρ-1) = (-8.485, -8.485, 27.0)
 
 > **First-Boot vs Continuation — канонічна логіка [DOC.4] [SEC.11 hard cutover]**
 >
-> Bio-Contract має **єдину точку входу** після SEC.11 cutover. C-сторона завжди викликає `BioContract.calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)`. Розкладка регістрів та магічний маркер `LZST = 0x4C5A5354` — у [03_01 §2 + §2.1 (Canonical SSOT)](03_01_Firmware_Lifecycle_and_DMA#-2-soldier-rtc-backup-register-map-dr0dr19--canonical-ssot-doc3); тут описано лише **звідки беруться `(x_prev, y_prev, z_prev)`**:
+> Bio-Contract має **єдину точку входу** після SEC.11 cutover. C-сторона завжди викликає `BioContract.calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)`. Розкладка регістрів та магічний маркер `LZST = 0x4C5A5354` — у [`03_01 §2 + §2.1` (Canonical SSOT)](03_01_Firmware_Lifecycle_and_DMA#-2-soldier-rtc-backup-register-map-dr0dr19--canonical-ssot-doc3); тут описано лише **звідки беруться `(x_prev, y_prev, z_prev)`**:
 >
 > | Умова | Джерело `(x_prev, y_prev, z_prev)` | Призначення |
 > |-------|------------------------------------|-------------|
@@ -133,7 +133,7 @@ C₂ = (-√(β(ρ-1)), -√(β(ρ-1)), ρ-1) = (-8.485, -8.485, 27.0)
 > 2. **Soldier-side explicit signal** — забронювати 1 біт у Status Byte (наразі лише `[PanicFlag:1 | Status:2 | GrowthPoints:5]` — все зайнято) АБО у Pad (наразі firmware_version_id у байтах 0..1 + panic_counter у байтах 2..3 — все зайнято) під `time_uncertain_flag`. Це wire-format change → blocked by наступним packet revision. Простіше: при cold-boot Soldier інкрементує спеціальне значення в `acoustic_events` (наприклад, `0xFE` — щоб не сплутати з `255 = saturated`) як sentinel; backend трактує як «time uncertain». Не ламає wire-format, але вимагає координованого rollout firmware.
 > 3. **Architectural альтернатива — defer first uplink** — Soldier при cold-boot не відсилає uplink до отримання `CMD_TIME_SYNC` beacon (max 10 хв grace, `TIME_SYNC_COLD_BOOT_GRACE_MS`). Просто, але ламає OTA Reflex Shot первинний trigger (Queen чекає uplink Soldier'а щоб надіслати OTA). Можна обійти: Soldier у grace-вікні шле **спрощений «hello» пакет** без Lorenz state, тільки DID + Vcap + `TIME_REQ` маркер.
 >
-> Найдешевший плановий шлях для TRL 7 — варіант 1 (server-side fallback) + опційно варіант 2 (sentinel у acoustic_events). Tracker: див. **ARCH.41** у [00_07](00_07_Action_Plan_Tracker).
+> Найдешевший плановий шлях для TRL 7 — варіант 1 (server-side fallback) + опційно варіант 2 (sentinel у acoustic_events). Tracker: див. **ARCH.41** у [`00_07`](00_07_Action_Plan_Tracker).
 
 ```
 firmware/soldier/main.c — ФАЗА 1 (SENSE + State Restore)
@@ -769,7 +769,7 @@ kamal env push --secret GAIA_DCI_NUMERIC_TOLERANCE=false
 5. malformed `GAIA_DCI_NUMERIC_EPSILON="abc"` → graceful fallback + warn
 6. `device_z` missing → numeric branch skipped (Gate D guard)
 
-**Cross-ref:** [00_07 FW.31](00_07_Action_Plan_Tracker), [03_05 §3.2 BLOCKER-2 FW.2 CCM wire format](03_05_Hardware_Symmetric_Crypto_and_Security), [04_02 TelemetryUnpackerService](04_02_Business_Logic_and_Services), [06_03 Prometheus](06_03_Prometheus_Observability) (після Gate D — додати `silkennet_dci_numeric_rejections_total`).
+**Cross-ref:** [`00_07` — FW.31](00_07_Action_Plan_Tracker), [`03_05 §3.2` BLOCKER-2 FW.2 CCM wire format](03_05_Hardware_Symmetric_Crypto_and_Security), [`04_02` — TelemetryUnpackerService](04_02_Business_Logic_and_Services), [`06_03` — Prometheus](06_03_Prometheus_Observability) (після Gate D — додати `silkennet_dci_numeric_rejections_total`).
 
 ---
 

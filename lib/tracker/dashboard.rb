@@ -28,26 +28,35 @@ module Tracker
       blocked: "🔗 Заблоковано (чекає іншого)"
     }.freeze
 
-    Item = Struct.new(:id, :title, :priority, :executors, :canon, keyword_init: true)
+    Item = Struct.new(:id, :title, :priority, :executors, :canon, :section_modules, keyword_init: true)
+
+    # `## §NN`-section module set: `§01–§02`→["01","02"], `§03/§05`→["03","05"].
+    SECTION_NUMS = /§\s*(\d{2})/
+    # #### heading ID — tolerates a leading emoji/✅ run (`#### 🌿 UNI.13a — …`),
+    # which a bare `[A-Z]`-anchored match silently dropped (UNI.13a / BIZ.12).
+    ITEM_HEAD = /^####\s+(?:[✅\p{So}\p{Sk}\u{FE0F}]+\s+)*([A-Z][A-Za-z0-9]*[.\-][0-9A-Za-z.\-]+)\s+[—-]\s+(.+?)\s*$/
 
     # --- parse markdown → [Item] ---
     def self.parse(markdown)
       items = []
       current = nil
       in_registry = false
+      section_modules = nil
 
       markdown.each_line do |line|
         if line.start_with?("## ")
           items << current if current
           current = nil
           in_registry = line.match?(REGISTRY_SECTION) && !line.match?(SKIP_SECTION)
+          # only `## §NN` headers carry a module set; `## 🔀` cross-cutting → nil (exempt)
+          section_modules = line.start_with?("## §") ? line.scan(SECTION_NUMS).flatten : nil
           next
         end
         next unless in_registry
 
-        if (m = line.match(/^####\s+(?:✅\s+)?([A-Z][A-Za-z0-9]*[.\-][0-9A-Za-z.\-]+)\s+[—-]\s+(.+?)\s*$/))
+        if (m = line.match(ITEM_HEAD))
           items << current if current
-          current = Item.new(id: m[1], title: m[2].sub(/\s*✅\s*\z/, ""), executors: [])
+          current = Item.new(id: m[1], title: m[2].sub(/\s*✅\s*\z/, ""), executors: [], section_modules: section_modules)
         elsif current
           if (pr = line[/\*\*(P[0-3])\*\*/, 1])
             current.priority ||= pr
@@ -162,6 +171,24 @@ module Tracker
                       .reject { |t| t.length < 2 || t.match?(/\A[nxNX]+\z/) }
                       .reject { |t| heads[id].include?(t.downcase) }
         "#{it.id}: `#{it.canon}` → §#{bad.join(', §')} absent in #{id}" unless bad.empty?
+      end
+    end
+
+    # --- section↔canon-home guard: One-Home for the tracker itself ---
+    # A `#### ` item under a `## §NN` registry section must canon-ref module NN — a
+    # `§03/§05` or `§01–§02` header declares a multi-module set, any of which is OK.
+    # Catches the drift that once buried §06 deploy items (S*/INF*) under §04 "DevOps"
+    # behind apologetic nav-notes. 🔀 cross-cutting / 📌 backlog / 🗄️ archive sections
+    # are module-agnostic (section_modules nil/empty) → exempt. (canon-mirror, 00_06 §4)
+    def self.section_home_violations(items)
+      items.filter_map do |it|
+        next if it.section_modules.nil? || it.section_modules.empty?
+        next unless it.canon
+
+        mod = it.canon[/\A(\d\d)_/, 1]
+        next unless mod
+
+        "#{it.id}: → `#{it.canon}` (module #{mod}) sits under §#{it.section_modules.join('/')}" unless it.section_modules.include?(mod)
       end
     end
 
