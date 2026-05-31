@@ -303,7 +303,7 @@ void cifo_overflow_to_flash(EdgeCache* slot) {
             read_sector = (read_sector + 1) % N_SECTORS;        // ring повний → FIFO-drop найстарішого СЕКТОРА
         w25q32_erase_sector(write_sector);                      // обов'язковий erase ПЕРЕД програмуванням
     }
-    w25q32_program(write_sector, slot_in_sector * 21, slot, 21);
+    w25q32_write_page(write_sector, slot_in_sector * 21, slot, 21);
     if (++slot_in_sector >= SLOTS_PER_SECTOR) { slot_in_sector = 0; write_sector = (write_sector + 1) % N_SECTORS; }
 }
 

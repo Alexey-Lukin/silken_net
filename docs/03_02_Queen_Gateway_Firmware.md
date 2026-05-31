@@ -966,7 +966,7 @@ Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пак
 | `hcryp` | AES | ECB для LoRa, CBC для CoAP батчів та команд |
 | `hrng` | RNG | HRNG для CBC IV та Thundering Herd jitter |
 | `hiwdg` | IWDG | Апаратний Watchdog (~26.6 с timeout, auto-reset при зависанні) |
-| `hspi1` | SPI1 | Зовнішня NOR Flash **Winbond W25Q32JV** (4 MB) — Overflow Tier CIFO ([ARCH.35](00_07_Action_Plan_Tracker), [BOM поз. 16 → 02_05 §BOM](02_05_Queen_Hardware_and_Starlink)). Піни: `PB3=SCK`, `PB4=MISO`, `PB5=MOSI`, `PA4=CS` (GPIO software-driven). Driver: `firmware/queen/flash_buffer.c` (`w25q32_write_page`, `w25q32_read_sector`, `w25q32_erase_sector`). |
+| `hspi1` | SPI1 | Зовнішня NOR Flash **Winbond W25Q32JV** (4 MB) — Overflow Tier CIFO ([ARCH.35](00_07_Action_Plan_Tracker), [BOM поз. 16 → 02_05 §BOM](02_05_Queen_Hardware_and_Starlink)). Піни: `PB3=SCK`, `PB4=MISO`, `PB5=MOSI`, `PA4=CS` (GPIO software-driven). Driver (**planned, ARCH.35 — ще не реалізовано**): `firmware/queen/flash_buffer.c` (`w25q32_write_page` / `w25q32_read` / `w25q32_erase_sector`; **sector-based** ring — NOR стирається цілим 4 KB сектором, деталі та псевдокод у [`02_05 §2.1`](02_05_Queen_Hardware_and_Starlink)). |
 
 **Примітка:** Queen **не має** ADC, TIM, RTC — на відміну від Soldier. HRNG та IWDG ініціалізуються при старті. HRNG де-ініціалізується "on-demand" (Wu-Wei підхід — нульове споживання між використаннями). `hspi1` ініціалізується тільки в момент drain CIFO→Flash (overflow event) і де-ініціалізується одразу після — енерго-нейтральний підхід (W25Q32JV power-down 1 µA, page write ~10 мА × 0.7 мс).
 
