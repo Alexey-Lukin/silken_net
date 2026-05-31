@@ -121,15 +121,24 @@ module DocsGraph
   # at the top of the page; the linked-§ drift guard never sees it. `anchors` is
   # id → anchor_set(text). Returns [{from:, to:, anchor:}], sorted. Cross-doc
   # links to an absent target are left to the dangling-link guard (skipped here).
+  # Lines inside ``` fences are skipped, so a markdown EXAMPLE of an anchor link
+  # (`[text](#some-anchor)`) in a fenced code block is not a false positive — this
+  # matters now that the check is a HARD CI gate (docs:check_refs), not just an audit.
   ANCHOR_LINK_RE = /\]\((\d\d_\d\d_[A-Za-z0-9_]+)?#([^)\s]+)\)/
 
   def dangling_anchors(docs, anchors)
     docs.flat_map do |id, text|
-      text.scan(ANCHOR_LINK_RE).filter_map do |target_file, frag|
-        target = target_file ? target_file[/\A\d\d_\d\d/] : id
-        next unless anchors.key?(target) # unknown target → dangling-link guard's job
+      in_fence = false
+      text.each_line.flat_map do |line|
+        in_fence = !in_fence if line.start_with?("```")
+        next [] if in_fence
 
-        { from: id, to: target, anchor: frag } unless anchors[target].include?(frag)
+        line.scan(ANCHOR_LINK_RE).filter_map do |target_file, frag|
+          target = target_file ? target_file[/\A\d\d_\d\d/] : id
+          next unless anchors.key?(target) # unknown target → dangling-link guard's job
+
+          { from: id, to: target, anchor: frag } unless anchors[target].include?(frag)
+        end
       end
     end.sort_by { |h| [ h[:from], h[:to], h[:anchor] ] }
   end

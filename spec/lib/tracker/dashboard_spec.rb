@@ -69,4 +69,32 @@ RSpec.describe Tracker::Dashboard do
     expect(res).to include(a_string_matching(/FW\.96.*§9\.9 absent in 03_05/))
     expect(res).not_to include(a_string_matching(/FW\.95/))
   end
+
+  # [dup-guard blind-spot fix, 2026-06-01] An ID used as BOTH a registry table row
+  # AND a #### heading (the DOC.12 ↔ DOC.13 collision) escaped the heading-only
+  # tally. table_row_ids surfaces first-cell IDs so the caller can merge them.
+  describe ".table_row_ids" do
+    let(:md) do
+      <<~MD
+        ## 🔀 Cross-cutting · Doc-drift (DOC)
+        | ID | Невідповідність | Дія | Статус |
+        |----|-----------------|-----|--------|
+        | DOC.12 | Taxonomy P4 | — | ✅ Done |
+        | DOC.10 | deferred decision | — | 🟡 |
+        #### DOC.12 — round item that collides with the table row above
+        - **P2** · 🤖 · → `00_06 §3`
+        ## 🗄️ Архів закритих пунктів
+        | ARCH.1 | non-registry section — must be skipped | — | ✅ |
+      MD
+    end
+
+    it "extracts first-cell IDs from registry table rows (skips header/separator + Архів)" do
+      expect(described_class.table_row_ids(md)).to contain_exactly("DOC.12", "DOC.10")
+    end
+
+    it "lets the dup tally catch a table-row ↔ #### heading ID collision" do
+      ids = described_class.parse(md).map(&:id) + described_class.table_row_ids(md)
+      expect(ids.tally.select { |_, v| v > 1 }).to eq("DOC.12" => 2)
+    end
+  end
 end

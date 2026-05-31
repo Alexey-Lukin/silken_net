@@ -104,5 +104,13 @@ RSpec.describe DocsGraph do
       result = described_class.dangling_anchors(adocs, anchors)
       expect(result.map { |h| h[:anchor] }).to contain_exactly("ghost") # #real-heading + #owner-sec resolve
     end
+
+    it "skips anchor-link examples inside ``` fences (HARD-gate FP guard)" do
+      fenced = {
+        "01_01" => "## Real Heading\n```md\nexample: [x](#never-real-anchor)\n```\nprose [y](#real-heading)\n"
+      }
+      asets = fenced.transform_values { |t| described_class.anchor_set(t) }
+      expect(described_class.dangling_anchors(fenced, asets)).to be_empty
+    end
   end
 end

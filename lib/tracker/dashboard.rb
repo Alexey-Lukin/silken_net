@@ -66,6 +66,28 @@ module Tracker
       items
     end
 
+    # --- registry table-row IDs (dup-guard blind-spot fix, 2026-06-01) ---
+    # The dup-guard tallies #### heading IDs only; an ID used as BOTH a table-row
+    # (e.g. `| DOC.12 | … |` in the DOC-drift registry) AND a #### heading slipped
+    # through silently (the DOC.12 ↔ DOC.13 collision). This returns the first-cell
+    # ID token of every table row inside the §/🔀 registry sections so the caller
+    # can merge them into the dup tally. Same ID shape as `parse`; header/separator
+    # rows (no ID in the first cell) and **bold** wrappers are handled.
+    TABLE_ID_RE = /\A\|\s*\*{0,2}([A-Z][A-Za-z0-9]*[.\-][0-9A-Za-z.\-]+)\*{0,2}\s*\|/
+
+    def self.table_row_ids(markdown)
+      in_registry = false
+      markdown.each_line.filter_map do |line|
+        if line.start_with?("## ")
+          in_registry = line.match?(REGISTRY_SECTION) && !line.match?(SKIP_SECTION)
+          next
+        end
+        next unless in_registry
+
+        line.match(TABLE_ID_RE)&.captures&.first
+      end
+    end
+
     # Open = has ≥1 unchecked bullet with a known executor.
     def self.open_items(items) = items.select { |it| it.executors.any? }
 

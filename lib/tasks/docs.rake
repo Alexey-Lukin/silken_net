@@ -18,9 +18,17 @@
 #   HARD  (gates CI): every canon NN_NN doc carries the standard skeleton — ✅ Статус
 #                     + top 🔗 Cross-references + auto-ToC (00_06). Exempt: 00_00
 #                     (index), 00_07 (tracker / blocker home), *_appendix_*.
-# Pure file I/O, no Rails boot needed. Engines: lib/docs_linter.rb + lib/docs_toc.rb (unit-tested).
+#   HARD  (gates CI): every `#anchor` fragment in a doc-link (intra-doc `](#frag)`
+#                     and cross-doc `](NN_NN_Name#frag)`) resolves to a real heading
+#                     slug in the target — a stale anchor silently drops the reader
+#                     at page-top and the §-label guard never sees it. Graduated
+#                     from the on-demand docs:graph audit (00_06 §3) once all anchors
+#                     were clean. The graph keeps the orphan/dead-end/degree lens.
+# Pure file I/O, no Rails boot needed. Engines: lib/docs_linter.rb + lib/docs_toc.rb
+# + lib/docs_graph.rb (anchor resolution) — all unit-tested.
 require_relative "../docs_linter"
 require_relative "../docs_toc"
+require_relative "../docs_graph"
 
 namespace :docs do
   DOCS_DIR = File.expand_path("../../docs", __dir__)
@@ -46,10 +54,14 @@ namespace :docs do
     bare_refs   = []  # hard: bare code-span `NN_NN §X` ref that should be a full link
     rate_drift  = []  # hard: tokenomics/carbon rate value re-stated outside its One-Home (05_03/07_01)
     bare_doc    = []  # hard: bare code-span `NN_NN` doc-id (no §) that should be a full link
+    graph_docs  = {}  # id "NN_NN" → text, for the #anchor-resolution gate (DocsGraph)
 
     files.each do |f|
       base = File.basename(f, ".md")
       text = File.read(f)
+      if (gid = base[/\A\d\d_\d\d/])
+        graph_docs[gid] = text
+      end
 
       # [dangling] every markdown link to a local NN_NN doc must resolve to a file.
       text.scan(/\[([^\]]*)\]\((\d\d_\d\d_[A-Za-z0-9_]+)(?:#[^)]*)?\)/) do |_label, target|
@@ -104,6 +116,12 @@ namespace :docs do
       v = DocsLinter.conformance_violations(File.basename(f, ".md"), File.read(f))
       v.empty? ? [] : [ "#{File.basename(f, '.md')}: missing #{v.join(', ')}" ]
     end
+
+    # [#anchor resolution] HARD — every link #fragment resolves to a heading slug
+    # in its target (DocsGraph engine, mirrors docs:graph). Cross-doc links to an
+    # absent target are left to the dangling guard above.
+    anchor_sets      = graph_docs.transform_values { |t| DocsGraph.anchor_set(t) }
+    dangling_anchors = DocsGraph.dangling_anchors(graph_docs, anchor_sets)
 
     puts "docs:check_refs — #{files.size} docs scanned"
     if dangling.empty?
@@ -172,6 +190,12 @@ namespace :docs do
       puts "  STANDARD non-conformance (#{conformance.size}):"
       conformance.sort.each { |c| puts "    ✗ #{c}" }
     end
+    if dangling_anchors.empty?
+      puts "  #anchors:       every doc-link #fragment resolves to a heading slug ✓"
+    else
+      puts "  DANGLING #anchors (#{dangling_anchors.size}) — fragment has no matching heading slug:"
+      dangling_anchors.each { |h| puts "    ✗ #{h[:from]} → #{h[:to]}##{h[:anchor]}" }
+    end
     if rtc_drift.empty?
       puts "  RTC reg-map:    no out-of-owner DRn availability claims ✓"
     else
@@ -211,6 +235,7 @@ namespace :docs do
     failed << "bare code-span `NN_NN §X` refs (should be `[`…`](Doc)` links)" unless bare_refs.empty?
     failed << "bare code-span `NN_NN` doc-ids (should be `[`…`](Doc)` links)" unless bare_doc.empty?
     failed << "link label↔href mismatches" unless label_drift.empty?
+    failed << "dangling #anchors (fragment ≠ heading slug)" unless dangling_anchors.empty?
     abort("docs:check_refs FAILED — #{failed.join(', ')}") unless failed.empty?
   end
 

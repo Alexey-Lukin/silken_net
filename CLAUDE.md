@@ -95,7 +95,7 @@ Ruby unpack: `"N n c C n C C a4"`.
 | Queen -> Rails (CoAP batch) | AES-256-CBC | 256 bit | HRNG |
 | Rails -> Queen (downlink) | AES-256-CBC | 256 bit | з payload |
 
-**BLOCKER (LoRa channel)**: ECB без MAC/IV -> вразливість replay attack, bit-flip, chosen plaintext. Закривається переходом на **AES-128-CCM** (FW.2; апаратно `CRYP_AES_CCM` у HAL — потребує STM32 bench для верифікації). PQC roadmap — `docs/03_05 §11`.
+**BLOCKER (LoRa channel)**: ECB без MAC/IV -> вразливість replay attack, bit-flip, chosen plaintext. Закривається переходом на **AES-128-CCM** (FW.2; апаратно `CRYP_AES_CCM` у HAL — потребує STM32 bench для верифікації). PQC roadmap — `docs/03_05 §10`.
 
 ---
 
