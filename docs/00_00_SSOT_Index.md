@@ -131,7 +131,7 @@ _Rails 8.1 Omakase: моделі даних, бізнес-логіка, REST API
 
 _DePIN-стек, Proof of Growth pipeline, токеноміка SCC/SFC, slashing/governance та фіналізація в Ethereum L1._
 
-- [05\_01\_Multichain\_Architecture](05_01_Multichain_Architecture) (**Core DePIN**: peaq + IoTeX + Chainlink + Polygon · **Expansion**: Solana / Celo / KlimaDAO / Filecoin)
+- [05\_01\_Multichain\_Architecture](05_01_Multichain_Architecture) (**Core DePIN**: peaq + IoTeX + Chainlink + Polygon + **Filecoin** — audit-critical immutable archive [нот.18: НЕ optional як Solana/Celo; E.60 planned → `archive_root` стає ZK-witness, тоді формально Core] · **Expansion** [optional]: Solana / Celo / KlimaDAO)
 - [05\_02\_Proof\_of\_Growth\_Pipeline](05_02_Proof_of_Growth_Pipeline) (Повний uplink → oracle → mint flow + Dynamic Tax)
 - [05\_03\_Tokenomics\_SCC\_and\_SFC](05_03_Tokenomics_SCC_and_SFC) (SCC ERC-20 + SFC governance-токен + Dynamic Tax)
 - [05\_04\_Ethereum\_L1\_State\_Anchor](05_04_Ethereum_L1_State_Anchor) (Щотижневий SHA-256 state root в Ethereum mainnet)
