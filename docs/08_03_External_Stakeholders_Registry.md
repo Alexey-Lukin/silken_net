@@ -22,6 +22,7 @@
 
 - **Поточний TRL:** Conceptual (TRL 1) — outreach pool без активних
   контрактів. Лише іменовані особи з верифікованою публічною посадою.
+- ⚠️ **Критичність ≠ TRL-готовність.** Усі записи — outreach (TRL 1), але **вага різна**: **Частина A · Tier 1 (Legal & Land Shield, §2)** — це **critical-path gate** (без цих підписів неможливо легально розгорнути жоден анкер у держлісі → блокує весь deployment, попри «TRL-1 outreach»); **Частина B (Культурний шар, §9-15)** — **deferred** (NFT/sonification/mythos активуються після TRL 7-8, поза critical-path). Тобто «TRL-1» тут **не** означає «низький пріоритет» для Tier-1 Legal.
 - **Trigger для активації:**
   - **Tier 1 (Legal & Land Shield):** до моменту першого live анкера в
     державному лісі (зараз — TRL 4-5 у [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK)).
