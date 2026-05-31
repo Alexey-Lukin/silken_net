@@ -1044,7 +1044,7 @@ K_seed зберігається одразу після AES ключа у тій
 // firmware/soldier/main.c — [SEC.11 / FW.30]:
 
 // Flash layout (post-ARCH.42 — AES-128 LoRa key only):
-//   [KEY_MAGIC:4][AES_KEY:16] | [SEED_MAGIC:4][K_SEED:32]
+//   [LORA_KEY_MAGIC:4][AES_KEY:16] | [SEED_MAGIC:4][K_SEED:32]
 //   ^FLASH_KEY_ADDR        ^FLASH_SEED_ADDR
 // (Gateway-only Queen також має окрему пару [COAP_MAGIC:4][COAP_KEY:32] у наступному slot)
 #define FLASH_SEED_ADDR   (FLASH_KEY_ADDR + 20)  // 0x0803E014 (4 magic + 16 key = 20)
