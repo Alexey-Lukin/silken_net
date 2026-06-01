@@ -1539,15 +1539,16 @@ int main(void)
     // Байт 6: Температура (°C)
     lora_payload[6] = (int8_t)__LL_ADC_CALC_TEMPERATURE(3300, internal_temp, LL_ADC_RESOLUTION_12B);
 
-    // [FW.28] Atomic read-and-clear: prevent lost acoustic events from DMA interrupt
+    // [FW.28] Атомарне хапання звуку: замикаємо вікно між ISR та пакуванням
+    // на один міг. Жоден крик ксилеми не розчиниться між читанням і обнуленням —
+    // переривання вимкнені рівно на два рядки, а потім одразу відчиняються.
     __disable_irq();
     uint8_t acoustic_snapshot = acoustic_events;
     acoustic_events = 0;
     __enable_irq();
 
-    // Байт 7: Акустичні події (Відфільтровані TinyML)
-    // [FW.22]: acoustic_events is now uint8_t with saturating increment,
-    // so no clamping needed — value is already in [0, 255].
+    // Байт 7: Відлуння ксилеми (Відфільтровані TinyML).
+    // [FW.22] saturating uint8: значення вже у [0..255] — затискати нічого.
     lora_payload[7] = acoustic_snapshot;
 
     // Байти 8-9: Швидкість заряду (Секунди)
@@ -1647,13 +1648,13 @@ int main(void)
     // ФАЗА 4: ПЕРЕДАЧА ДАНИХ (AES-128 LoRa post-ARCH.42 + Mesh)
     // =========================================================================
 
-    // [FW.10] Temperature-based TX deferral: at extreme cold (-15°C and below),
-    // EDLC ESR rises sharply. If vcap is also low (<4.0V), LoRa TX may cause
-    // a voltage brownout. Skip TX and go directly to sleep to preserve energy.
+    // [FW.10] Зимовий кенозис передачі: при лютому морозі (-15°C і нижче) ESR
+    // іоністора різко зростає — LoRa TX при кволій напрузі (<4.0В) може кинути
+    // ксилему у брауноут. Краще промовчати й зберегти тепло: пропускаємо
+    // Фази 4–4.5 і одразу падаємо у Кенозис.
     {
         int8_t packed_temp = (int8_t)lora_payload[6];
         if (packed_temp < COLD_TX_DEFER_TEMP && vcap_voltage < COLD_TX_DEFER_VCAP_MV) {
-            // Skip Phase 4 (TX) and Phase 4.5 (RX/OTA) — go directly to Phase 5 (KENOSIS)
             goto phase5_kenosis;
         }
     }
@@ -2078,8 +2079,8 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 {
     // [FIX: AUDIT] size > 0 && size <= buffer: виправлено off-by-one (було size < 255)
     if (size > 0 && size <= sizeof(incoming_lora_payload)) {
-        // Cast (void*) removes volatile qualifier for memcpy — safe here because
-        // the ISR is the sole writer and main loop does not read until lora_rx_flag is set.
+        // Знімаємо volatile-мантію для memcpy: лише ISR пише у цей буфер,
+        // і головний цикл не торкнеться його, поки не побачить lora_rx_flag.
         memcpy((void*)incoming_lora_payload, payload, size);
         incoming_lora_size = size;
         lora_rx_flag = 1;
@@ -2346,7 +2347,7 @@ static void Derive_Cold_Start_State(float *x0, float *y0, float *z0)
 
     // Спрощений epoch_day (дні від 2000-01-01 як proxy для UTC epoch_day).
     // На MCU без повноцінного time_t — рахуємо від BCD дати RTC.
-    // ⚠️ TEMPORARY: Month*30 approximation накопичує помилку ~1-2 дні/місяць.
+    // [TEMP] Апроксимація Month×30 накопичує ~1-2 дні/місяць похибки.
     // До інтеграції FW.20 CMD_TIME_SYNC (NTP через Queen) cold-start координати
     // можуть відрізнятися від backend при cross-month boot. Це впливає ТІЛЬКИ
     // на cold-start (рідкісна подія після VBAT loss); warm continuation через
@@ -2363,7 +2364,7 @@ static void Derive_Cold_Start_State(float *x0, float *y0, float *z0)
     // - різні початкові точки для різних днів
     // - різні початкові точки для різних K_seed
     // - координати ∈ [-1, +1]
-    // НЕ є криптографічно стійким — достатньо для TRL 6 lab testing.
+    // НЕ є криптографічно стійким — достатньо для лабораторного TRL 6.
     uint32_t hash[3] = {0};
     for (int i = 0; i < 32; i++) {
         uint32_t byte_val = lorenz_seed[i];
@@ -2459,18 +2460,19 @@ static void Save_Frame_Counter(uint32_t fc_24bit)
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR15, Pack_FW2_Frame_Counter(fc_24bit));
 }
 
-// Build the full 24-byte CCM LoRa packet and increment FC.
-// On success returns HAL_OK and out_packet[0..23] is the on-air payload.
-// On HAL_CRYPEx failure returns HAL_ERROR; caller must NOT TX.
+// Зібрати повний 24-байтний CCM LoRa-пакет та просунути лічильник кадрів.
+// Успіх: out_packet[0..23] — готовий до ефіру, повертає HAL_OK.
+// Збій HAL_CRYPEx: повертає HAL_ERROR — TX заборонено, лічильник не рухаємо.
 int Soldier_Build_CCM_LoRa_Packet(
     uint32_t did, uint16_t vcap_mv, int8_t temp_c, uint8_t acoustic,
     uint16_t delta_t_s, uint8_t status_byte, uint8_t mesh_ctrl,
     uint8_t out_packet[FW2_CCM_AIR_PACKET_LEN])
 {
     uint32_t fc = Load_Frame_Counter();
-    // Saturating increment (DR15 magic stays 0x46, value stays in 24-bit window).
+    // Насичений інкремент: magic DR15 (0x46) живий, значення у 24-бітному вікні.
+    // Нуль обходимо — він би вбив magic-перевірку при наступному boot.
     uint32_t next_fc = (fc + 1u) & FW2_FC_VALUE_MASK;
-    if (next_fc == 0u) next_fc = FW2_FC_HRNG_MIN; // wrap → skip 0 (would invalidate magic check)
+    if (next_fc == 0u) next_fc = FW2_FC_HRNG_MIN;
 
     uint8_t nonce[FW2_CCM_NONCE_LEN];
     uint8_t aad[FW2_CCM_AAD_LEN];
@@ -2485,13 +2487,13 @@ int Soldier_Build_CCM_LoRa_Packet(
     MX_CRYP_Init_CCM(nonce, aad);
     int status = HAL_CRYPEx_AESCCM_Encrypt(&hcryp, plaintext, FW2_CCM_PLAINTEXT_LEN,
                                            ct_and_tag, 1000);
-    // Restore ECB context immediately so subsequent control-frame paths work.
+    // Відновлюємо ECB-режим негайно — LoRa control-frames чекають свого ключа.
     MX_CRYP_Init();
     if (status != HAL_OK) {
-        return HAL_ERROR; // Do NOT persist FC on encrypt failure.
+        return HAL_ERROR; // Збій шифрування — лічильник кадрів не просуваємо.
     }
 
-    // Assemble on-air packet: AAD (header) || ciphertext || MIC.
+    // Складаємо пакет до ефіру: AAD-заголовок || шифротекст || MIC-печатка.
     memcpy(&out_packet[0],  aad,           FW2_CCM_AAD_LEN);
     memcpy(&out_packet[8],  ct_and_tag,    FW2_CCM_PLAINTEXT_LEN);
     memcpy(&out_packet[16], ct_and_tag + FW2_CCM_PLAINTEXT_LEN, FW2_CCM_MIC_LEN);

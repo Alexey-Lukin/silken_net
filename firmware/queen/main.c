@@ -1098,7 +1098,7 @@ void Flush_Cache_To_Rails(void)
 
         HAL_IWDG_Refresh(&hiwdg);
 
-        // Close CoAP session
+        // Закриваємо CoAP-сесію — модем відпускає з'єднання.
         SIM7070_SendATCommand("AT+CCOAPDEL=0\r\n", 500);
     }
 
@@ -1433,9 +1433,9 @@ static void MX_CRYP_Init(void)
 // ============================================================================
 // [FW.2 / ARCH.42 Variant B] AES-128-CCM 24-byte LoRa packet — freeze-contract
 // ============================================================================
-// Queen decrypt path. Symmetric до Soldier `Soldier_Build_CCM_LoRa_Packet`.
-// Gated `#define FW2_CCM_ENABLED 0` до hardware bench для `CRYP_AES_CCM` HAL
-// верифікації. Host-тести у `firmware/test/test_ccm.c` верифікують через
+// Шлях розшифровування Королеви — дзеркало `Soldier_Build_CCM_LoRa_Packet`.
+// Замкнено (`#define FW2_CCM_ENABLED 0`) до bench-атестації `CRYP_AES_CCM` HAL
+// на кремнії. Host-тести у `firmware/test/test_ccm.c` верифікують через
 // mock HAL CCM (libcrypto-backed).
 //
 // SSOT для packet layout та packing helpers — `firmware/common/lora_ccm.h`.
@@ -1456,16 +1456,15 @@ static void MX_CRYP_Init_CCM_Decrypt(uint8_t *nonce_12b, uint8_t *aad_8b)
     HAL_CRYP_Init(&hcryp);
 }
 
-// Parse a 24-byte CCM LoRa packet. On success returns HAL_OK and fills:
-//   *out_did, *out_fc            — from AAD
-//   out_sensor[8]                — decrypted sensor payload
-// On MIC failure, malformed input, or HAL error returns HAL_ERROR and
-// caller MUST drop the packet (do not relay, do not forward to backend).
+// Розшифрувати 24-байтний CCM LoRa-пакет від Солдата. Повертає HAL_OK і заповнює:
+//   *out_did, *out_fc           — з відкритого AAD (перші 8 байт пакета)
+//   out_sensor[8]               — розшифрований сенсорний payload
+// Якщо MIC не б'ється, формат кривий або HAL захрип — повертає HAL_ERROR;
+// ловець зобов'язаний дропнути пакет: ні ретрансляції, ні бекенду.
 //
-// FC monotonic enforcement is NOT done here — keep that policy on Rails
+// Монотонність FC тут НЕ перевіряється — ця варта стоїть на Rails
 // (`Cryptography::LoraCcm` + Redis SETNX per-DID). Queen-side dedup
-// could be added in a follow-up using `recent_mesh_dids` if needed for
-// mesh storms.
+// через `recent_mesh_dids` — майбутня ітерація при LoRa-штормах.
 int Queen_Parse_CCM_LoRa_Packet(const uint8_t in_packet[FW2_CCM_AIR_PACKET_LEN],
                                 uint32_t *out_did, uint32_t *out_fc,
                                 uint8_t out_sensor[FW2_CCM_PLAINTEXT_LEN])
@@ -1484,14 +1483,14 @@ int Queen_Parse_CCM_LoRa_Packet(const uint8_t in_packet[FW2_CCM_AIR_PACKET_LEN],
     Build_CCM_Nonce(did, fc, nonce);
     Build_CCM_AAD(did, fc, aad);
 
-    // HAL_CRYPEx_AESCCM_Decrypt expects single input buffer = ciphertext || tag.
+    // HAL_CRYPEx_AESCCM_Decrypt потребує одного буфера: шифротекст || MIC-тег.
     uint8_t ct_and_tag[FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN];
     memcpy(ct_and_tag, &in_packet[8], FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN);
 
     MX_CRYP_Init_CCM_Decrypt(nonce, aad);
     int status = HAL_CRYPEx_AESCCM_Decrypt(&hcryp, ct_and_tag, FW2_CCM_PLAINTEXT_LEN,
                                            out_sensor, 1000);
-    MX_CRYP_Init(); // Restore LoRa ECB context for control frame relay.
+    MX_CRYP_Init(); // Повертаємо ECB-режим: LoRa control-frames чекають свого ключа.
 
     if (status != HAL_OK) return HAL_ERROR;
 
@@ -1504,9 +1503,10 @@ int Queen_Parse_CCM_LoRa_Packet(const uint8_t in_packet[FW2_CCM_AIR_PACKET_LEN],
 // =========================================================================
 // [PLAN 2.6] INDEPENDENT WATCHDOG (IWDG) — AUTO-RECOVERY FROM HANG
 // =========================================================================
-// Without IWDG, Queen hangs forever on HardFault or SIM7070G AT-command blocking.
-// Soldier already has IWDG (~26 sec recovery). This brings Queen to parity.
-// Timeout formula: (Reload × Prescaler) / LSI_freq = (3328 × 256) / 32000 ≈ 26.6 seconds.
+// Без Сторожового Пса Королева може зависнути назавжди при HardFault або
+// глухому AT-діалозі з SIM7070G. Солдат вже давно під охороною (~26 с);
+// тепер і Королева отримує рівноцінного варту.
+// Формула таймауту: (Reload × Prescaler) / LSI = (3328 × 256) / 32000 ≈ 26.6 с.
 static void MX_IWDG_Init(void)
 {
   hiwdg.Instance = IWDG;
