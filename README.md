@@ -294,7 +294,7 @@ kamal deploy
 - [`04_03`](docs/04_03_REST_API_v1_Reference.md) — REST API v1 (Pagy, Idempotency-Key, RBAC)
 - [`04_04`](docs/04_04_Phlex_UI_and_Tailwind.md) — дизайн-система Phlex + Tailwind
 - [`04_05`](docs/04_05_Codex_Lore_Module.md) — Codex — опціональний read-only наративний шар над телеметрією (ADR-зафіксований, поза hot-path)
-- [`04_06`](docs/04_06_Testing_Guide_and_Coverage.md) — Testing guide + Coverage Matrix (RSpec / Firmware C / Foundry Solidity)
+- [`04_06`](docs/04_06_Testing_Guide_and_Coverage.md) — Testing guide (RSpec/Phlex best practices) + Gap Analysis (known limitations + recommendations)
 
 **Web3 та Економіка (Модуль 05)**
 - [`05_01`](docs/05_01_Multichain_Architecture.md) — Core DePIN (peaq/IoTeX/Chainlink/Polygon) + Expansion ecosystem

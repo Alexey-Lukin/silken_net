@@ -67,6 +67,15 @@ RSpec.describe Api::V1::LocalesController, type: :request do
     # cookie behaviour we already cover above. We additionally assert the
     # default-locale wiring directly from configuration to avoid coupling
     # to other controllers' rendering paths.
+    let(:test_stub_class) do
+      base = Class.new do
+        attr_accessor :params, :cookies, :request
+        define_singleton_method(:before_action) { |*| } # stub out controller DSL
+      end
+      base.send(:include, LocaleSettable)
+      base
+    end
+
     it "ships with :en as the application default locale" do
       expect(I18n.default_locale).to eq(:en)
     end
@@ -79,6 +88,31 @@ RSpec.describe Api::V1::LocalesController, type: :request do
       cookies[:locale] = "uk"
       post "/api/v1/locale", params: { locale: "en" }
       expect(cookies[:locale]).to eq("en")
+    end
+
+
+    it "uses request#preferred_language when available and produces a known locale" do
+      stub_request = Object.new
+      stub_request.define_singleton_method(:preferred_language) { |_avail| "uk" }
+
+      instance = test_stub_class.new
+      instance.params = {}
+      instance.cookies = {}
+      instance.request = stub_request
+
+      expect(instance.send(:resolve_locale)).to eq(:uk)
+    end
+
+    it "swallows StandardError from preferred_language and falls back to the default" do
+      stub_request = Object.new
+      stub_request.define_singleton_method(:preferred_language) { |_avail| raise StandardError, "bad header" }
+
+      instance = test_stub_class.new
+      instance.params = {}
+      instance.cookies = {}
+      instance.request = stub_request
+
+      expect(instance.send(:resolve_locale)).to eq(I18n.default_locale)
     end
   end
 end

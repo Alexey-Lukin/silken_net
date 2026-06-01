@@ -75,6 +75,14 @@ RSpec.describe "Api::V1::Codex::Admin::Nodes", type: :request do
       expect(node.reload.external_refs).to eq(refs)
     end
 
+    it "passes a non-array external_refs through (validator rejects with 422)" do
+      patch "/api/v1/codex/admin/nodes/#{node.slug}",
+            params: { node: { external_refs: "not-an-array" } },
+            headers: headers, as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["errors"]).to be_an(Array).and(be_present)
+    end
+
     it "is forbidden for foresters" do
       bad = forester.generate_token_for(:api_access)
       patch "/api/v1/codex/admin/nodes/#{node.slug}",

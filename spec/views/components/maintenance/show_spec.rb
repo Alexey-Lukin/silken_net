@@ -281,7 +281,7 @@ RSpec.describe Maintenance::Show do
     end
   end
 
-  describe "GPS drift — close range (< 50 m) [coverage]" do
+  describe "GPS drift — close range (< 50 m)" do
     let(:tree_with_coords) do
       t = mock_maintainable
       t.define_singleton_method(:latitude) { 49.4285 }
@@ -297,7 +297,7 @@ RSpec.describe Maintenance::Show do
     end
   end
 
-  describe "GPS drift-check guards [coverage]" do
+  describe "GPS drift-check guards" do
     it "skips the drift calc when the maintainable is not a Tree" do
       expect(SilkenNet::GeoUtils).not_to receive(:haversine_distance_m)
       gw = mock_maintainable
@@ -315,11 +315,48 @@ RSpec.describe Maintenance::Show do
     end
   end
 
-  describe "action badge fallback [coverage]" do
+  describe "action badge fallback" do
     it "uses the gray default color for an unknown action_type" do
       rec = mock_record(action_type: "calibration")
       html = render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
       expect(html).to include("border-gray-600 text-gray-600")
+    end
+  end
+
+  describe "nil-safe rendering of optional fields" do
+    it "renders the metadata panel when user, maintainable, performed_at and timestamps are nil" do
+      rec = mock_record(
+        performed_at: nil, user: nil, maintainable: nil,
+        created_at: nil, updated_at: nil
+      )
+      # Override the let(:user) fallback inside mock_record by giving an explicit nil sentinel.
+      rec.user = nil
+      rec.maintainable = nil
+
+      out = render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
+      expect(out).to include("Record // #7")
+      expect(out).to include("—") # display_identifier fallback for nil maintainable
+    end
+
+    it "renders the EWS alert metadata row when ews_alert_id is present" do
+      rec = mock_record(ews_alert_id: 99)
+      out = render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
+      expect(out).to include("#99")
+    end
+  end
+
+  describe "GPS drift check" do
+    it "skips the drift comparison when the maintainable Tree has no coordinates" do
+      tree = OpenStruct.new(latitude: nil, longitude: nil, did: "SNET-NOCOORD")
+      tree.define_singleton_method(:display_identifier) { did }
+      rec = mock_record(
+        latitude: 49.0, longitude: 32.0,
+        maintainable_type: "Tree", maintainable: tree
+      )
+
+      out = render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
+      # The drift row should be absent (no "drift" copy rendered).
+      expect(out).not_to match(/drift_m|drift\s*[:=]/i)
     end
   end
 end

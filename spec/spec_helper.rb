@@ -40,7 +40,7 @@ SimpleCov.start "rails" do
   if ENV["FEATURE_TEST"] || ENV["COVERAGE"] == "0"
     minimum_coverage line: 0, branch: 0
   else
-    minimum_coverage line: 96, branch: 85
+    minimum_coverage line: 97, branch: 90
   end
   minimum_coverage_by_file 0
 end
@@ -59,9 +59,9 @@ unless ENV["FEATURE_TEST"] || ENV["COVERAGE"] == "0"
     # CI run measures actual numbers. The tripwire still catches large
     # regressions (e.g. an accidentally-deleted spec dropping a group ≥10%).
     minimums = {
-      "Services" => 90.0,
-      "Workers"  => 85.0,
-      "Models"   => 90.0
+      "Services" => 91.0,
+      "Workers"  => 91.0,
+      "Models"   => 91.0
     }
 
     failures = SimpleCov.result.groups.filter_map do |name, files|

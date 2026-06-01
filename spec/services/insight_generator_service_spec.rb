@@ -458,6 +458,16 @@ RSpec.describe InsightGeneratorService, type: :service do
       ENV.delete("VPD_CONFOUNDER_MAX_DISCOUNT")
     end
 
+    # asymmetric branch: low set but discount missing → guard still fires
+    it "returns nil when only low_kpa is set (discount missing/zero)" do
+      ENV["VPD_CONFOUNDER_LOW_KPA"] = "0.5"
+      ENV.delete("VPD_CONFOUNDER_MAX_DISCOUNT")
+      expect(service.send(:vpd_confounder_calibration)).to be_nil
+    ensure
+      ENV.delete("VPD_CONFOUNDER_LOW_KPA")
+      ENV.delete("VPD_CONFOUNDER_MAX_DISCOUNT")
+    end
+
     it "clamps max_discount to 1.0" do
       ENV["VPD_CONFOUNDER_LOW_KPA"] = "0.5"
       ENV["VPD_CONFOUNDER_MAX_DISCOUNT"] = "1.5"
@@ -523,6 +533,16 @@ RSpec.describe InsightGeneratorService, type: :service do
       ENV["STRESS_SAP_LOW_THRESHOLD"] = "0.3"
       ENV["STRESS_SAP_WEIGHT"] = "0.2"
       expect(service.send(:sap_stress_calibration)).to eq({ threshold: 0.3, weight: 0.2 })
+    ensure
+      ENV.delete("STRESS_SAP_LOW_THRESHOLD")
+      ENV.delete("STRESS_SAP_WEIGHT")
+    end
+
+    # asymmetric branch
+    it "returns nil when only threshold is set (weight ENV missing)" do
+      ENV["STRESS_SAP_LOW_THRESHOLD"] = "0.3"
+      ENV.delete("STRESS_SAP_WEIGHT")
+      expect(service.send(:sap_stress_calibration)).to be_nil
     ensure
       ENV.delete("STRESS_SAP_LOW_THRESHOLD")
       ENV.delete("STRESS_SAP_WEIGHT")
@@ -907,6 +927,104 @@ RSpec.describe InsightGeneratorService, type: :service do
       described_class.cleanup_old_logs!
 
       expect(TelemetryLog.where(id: recent_log.id)).to exist
+    end
+  end
+
+  # GenerateClusterInsightWorker path. Distinct from #perform because batch mode
+  # is invoked with pre-computed cluster_ids and re-fetches baselines.
+  describe "#process_cluster_batch" do
+    let(:service) { described_class.new(date) }
+
+    it "skips clusters whose baseline is missing" do
+      empty_cluster = create(:cluster) # no telemetry → no baseline row
+      expect {
+        service.process_cluster_batch([ empty_cluster.id ])
+      }.not_to(change(AiInsight, :count))
+    end
+
+    it "skips trees whose stats_map entry is nil and counts only generated trees" do
+      tree_with_logs    = create(:tree, cluster: cluster, status: :active)
+      tree_without_logs = create(:tree, cluster: cluster, status: :active)
+
+      # Two telemetry rows establish a non-degenerate cluster baseline.
+      [ tree_with_logs, tree ].each do |t|
+        create(:telemetry_log, tree: t,
+          temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5, sap_flow: 100.0,
+          acoustic_events: 1, growth_points: 10,
+          bio_status: :homeostasis, metabolism_s: 1000,
+          created_at: date.beginning_of_day + 12.hours)
+      end
+
+      processed = service.process_cluster_batch([ cluster.id ])
+
+      expect(processed).to eq(2)
+      expect(AiInsight.where(analyzable: tree_without_logs, target_date: date)).to be_empty
+      expect(AiInsight.where(analyzable: tree_with_logs, target_date: date)).to exist
+    end
+
+    it "does not count trees whose generate_for_tree returns false (avg_temp nil)" do
+      # AVG(temperature_c) is NULL when every row's temperature_c is NULL.
+      # That yields stats present but stats.avg_temp == nil → generate_for_tree
+      # returns false → @processed_count stays put.
+      tree_no_temp = create(:tree, cluster: cluster, status: :active)
+      [ tree, tree_no_temp ].each do |t|
+        create(:telemetry_log, tree: t,
+          temperature_c: nil, voltage_mv: 3500, z_value: 0.5, sap_flow: 100.0,
+          acoustic_events: 1, growth_points: 0,
+          bio_status: :homeostasis, metabolism_s: 1000,
+          created_at: date.beginning_of_day + 12.hours)
+      end
+
+      processed = service.process_cluster_batch([ cluster.id ])
+      expect(processed).to eq(0)
+    end
+  end
+
+  # ===========================================================================
+  # sap_stress_calibration / acoustic_stress_calibration ENV-applied
+  # ===========================================================================
+  describe "#sap_stress_calibration — clamp" do
+    let(:service) { described_class.new }
+
+    it "clamps weight to 0.99 ceiling when ENV exceeds it" do
+      ENV["STRESS_SAP_LOW_THRESHOLD"] = "0.3"
+      ENV["STRESS_SAP_WEIGHT"] = "1.5"
+      expect(service.send(:sap_stress_calibration)).to eq({ threshold: 0.3, weight: 0.99 })
+    ensure
+      ENV.delete("STRESS_SAP_LOW_THRESHOLD")
+      ENV.delete("STRESS_SAP_WEIGHT")
+    end
+  end
+
+  describe "#acoustic_stress_calibration — ENV-applied" do
+    let(:service) { described_class.new }
+
+    it "returns config when both ENV thresholds are set" do
+      ENV["STRESS_ACOUSTIC_THRESHOLD"] = "50"
+      ENV["STRESS_ACOUSTIC_WEIGHT"] = "0.2"
+      expect(service.send(:acoustic_stress_calibration)).to eq({ threshold: 50, weight: 0.2 })
+    ensure
+      ENV.delete("STRESS_ACOUSTIC_THRESHOLD")
+      ENV.delete("STRESS_ACOUSTIC_WEIGHT")
+    end
+
+    it "clamps weight to 0.99 ceiling when ENV exceeds it" do
+      ENV["STRESS_ACOUSTIC_THRESHOLD"] = "50"
+      ENV["STRESS_ACOUSTIC_WEIGHT"] = "2.0"
+      expect(service.send(:acoustic_stress_calibration)[:weight]).to eq(0.99)
+    ensure
+      ENV.delete("STRESS_ACOUSTIC_THRESHOLD")
+      ENV.delete("STRESS_ACOUSTIC_WEIGHT")
+    end
+
+    # asymmetric branch
+    it "returns nil when only threshold is set (weight ENV missing)" do
+      ENV["STRESS_ACOUSTIC_THRESHOLD"] = "50"
+      ENV.delete("STRESS_ACOUSTIC_WEIGHT")
+      expect(service.send(:acoustic_stress_calibration)).to be_nil
+    ensure
+      ENV.delete("STRESS_ACOUSTIC_THRESHOLD")
+      ENV.delete("STRESS_ACOUSTIC_WEIGHT")
     end
   end
 end

@@ -21,7 +21,7 @@
 | [`00_02` — AI Native Engineering and TRL](00_02_AI_Native_Engineering_and_TRL) | AI-Native TRL philosophy (метрика прогресу) |
 | [`00_04` — Shape Up Operations and RnD Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) | Shape Up operations; §Async-Review TRL Gates |
 | [`00_05` — GitHub Projects and IaC Automation](00_05_GitHub_Projects_and_IaC_Automation) | TRL Auto-Advancement (HIL → Projects V2 cards) |
-| [`04_06` — Testing Guide and Coverage](04_06_Testing_Guide_and_Coverage) | §B Coverage Matrix — HIL → RSpec/Firmware/Foundry coverage |
+| [`04_06` — Testing Guide and Coverage](04_06_Testing_Guide_and_Coverage) | §B Gap Analysis — відомі обмеження тестів + відкриті ризики |
 | [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | Фізичні валідаційні протоколи ВНЗ (TRL 1-4) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): Module 01 chemistry (HW.*), 06 DevOps deploy, 08 UNI.* |
 
@@ -87,14 +87,7 @@
 
 ### 3.1 Чому це критично
 
-Поточна політика блокувала весь TRL модулів 04 (Rails) і 05 (Web3) на TRL 4-5, попри те, що:
-
-- `BlockchainMintingService` має 1092-рядкову spec з повним покриттям ([`04_06 §B.1.2`](04_06_Testing_Guide_and_Coverage)).
-- `TelemetryUnpackerService` 560+ рядків spec; CoAP Encryption concern, Web3CircuitBreaker concern.
-- Solidity contracts: 171 тест Foundry + Slither static analysis.
-- 31 Sidekiq worker, 9-рівнева черга з суворим пріоритетом.
-
-Усе це **готове до production**. Без HIL — заблоковане TRL 4 формальністю.
+Поточна політика блокувала весь TRL модулів 04 (Rails) і 05 (Web3) на TRL 4-5, попри їхню зрілість і **готовність до production**. Без HIL ці модулі лишаються заблокованими на TRL 4 суто формальністю.
 
 ### 3.2 HIL-симулятори в SilkenNet
 

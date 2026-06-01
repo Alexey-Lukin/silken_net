@@ -574,7 +574,7 @@
 
 #### TEST.1 — RSpec coverage → 99% (line + branch)
 - **P2** · 🤖 · → `04_06 §B.1`
-- Baseline (full `bin/rspec`, 0 fail): line 97.78% / branch 90.25%. Phlex-view wins вичерпані; залишок = сервіси з crypto/blockchain-моками (telemetry_unpacker / blockchain_minting / solana / factory_flashing / insight_generator) — методологія `04_06 §B.5` (кожен Web3-svc ≥1.5× spec-ratio), по-сесійно. Пріоритет — реальні logic-гілки (status / empty-state / guard / error-path), НЕ defensive `&.`-nil. · [ ] 🤖 top-gap сервіси per-session · [ ] 🤖 gap-parser ПІСЛЯ повного `bin/rspec` (subset тригерить SimpleCov-артефакт, `04_06 §B.4`)
+- Baseline (full `bin/rspec`, 6705 examples, 0 fail): line **97.05%** / branch **91.36%**. App/lib залишок — переважно 1-line edge defaults у Phlex-індексах та сервісах (по `&.`-nil та fragment-cache блоках), плюс dev-tools `lib/tracker/dashboard.rb` (27L), `lib/hil/lorenz_generator.rb` (3L), `lib/github_bootstrap.rb` (3L). Найбільш «реальні» logic-гілки що лишаються: `app/views/layouts/dashboard_layout.rb` (2L), `app/workers/governance/parameter_sync_worker.rb` (1L), `app/services/dclimate/verification_service.rb` (1L), `app/services/codex/markdown_renderer.rb` (1L). Методологія `04_06 §B.2`. Пріоритет — реальні logic-гілки (status / empty-state / guard / error-path), НЕ defensive `&.`-nil. · [ ] 🤖 top-gap per-session (next: `dashboard_layout` + `parameter_sync_worker` + `dclimate/verification_service` як batch — мікс view + worker + service, по 1-2 logic-гілці кожен) · [ ] 🤖 gap-parser ПІСЛЯ повного `bin/rspec` (subset тригерить SimpleCov-артефакт, `04_06 §B.2`)
 
 ## §05 · Web3 / Економіка / Slashing
 

@@ -3,14 +3,9 @@
 require "rails_helper"
 
 RSpec.describe TelemetryUnpackerService, type: :service do
-  # Builds a valid 21-byte binary chunk: [DID:4][RSSI:1][Payload:16]
-  def build_chunk(did_hex, rssi, voltage, temp, acoustic, metabolism, status_byte, ttl)
-    did_int = did_hex.to_i(16)
-    header = [ did_int ].pack("N")
-    rssi_byte = [ -rssi ].pack("C")
-    payload = [ did_int, voltage, temp, acoustic, metabolism, status_byte, ttl, "\x00\x00\x00\x00" ].pack("N n c C n C C a4")
-    header + rssi_byte + payload
-  end
+  # build_chunk / build_chunk_with_params / build_panic_chunk /
+  # build_ccm_chunk live in spec/support/telemetry_chunk_helper.rb
+  # — auto-included for any spec whose path matches *telemetry*.
 
   let(:did_hex) { "0000ABCD" }
   let(:extracted_did) { format("SNET-%08X", did_hex.to_i(16)) }
@@ -190,21 +185,8 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     let(:cluster) { create(:cluster, organization: organization) }
     let(:gateway) { create(:gateway, :online, cluster: cluster) }
 
-    # Keyword-argument variant of build_chunk for coverage enhancement tests.
-    # [FW.29-PACK] status_byte input is treated as a literal wire value
-    # (PanicFlag:1 | Status:2 | GrowthPoints:5). The previous implementation
-    # re-mangled it (`(status_byte << 6) | growth_points`) which made no
-    # semantic sense; tests that depended on that quirk pass `status_byte: 0`.
-    def build_chunk_with_params(did_hex:, rssi: 65, voltage: 4200, temp: 22, acoustic: 5, metabolism: 120, status_byte: 0, ttl: 5, firmware_id: 0)
-      did_int = did_hex.to_i(16)
-      did_bytes = [ did_int ].pack("N")
-      rssi_byte = [ rssi ].pack("C")
-
-      pad = [ firmware_id ].pack("n") + "\x00\x00"
-
-      payload = [ did_int, voltage, temp, acoustic, metabolism, status_byte, ttl ].pack("N n c C n C C") + pad
-      did_bytes + rssi_byte + payload
-    end
+    # build_chunk_with_params is provided by TelemetryChunkHelper
+    # (spec/support/telemetry_chunk_helper.rb).
 
     before do
       allow(GatewayTelemetryWorker).to receive(:perform_async)
@@ -960,17 +942,8 @@ RSpec.describe TelemetryUnpackerService, type: :service do
   # панічного каналу — Redis SETNX по nonce-ключу; replay повторює тот
   # самий counter, ми його рубаємо у логах ДО створення TelemetryLog.
   describe "panic frame counter anti-replay [SEC.10]" do
-    # Helper: 21-byte chunk з panic flag (bit 7 у status_byte) і counter
-    # у байтах 14..15 (= bytes 2..3 of 4-byte PAD a4).
-    def build_panic_chunk(did_hex, panic_counter, firmware_id: 0)
-      did_int = did_hex.to_i(16)
-      header = [ did_int ].pack("N")
-      rssi_byte = [ 70 ].pack("C")  # rssi inverted, -70 result
-      pad = [ firmware_id, panic_counter ].pack("n n")  # 4 bytes: fw_id BE + counter BE
-      payload = [ did_int, 3500, 25, 0xFF, 100,
-                  TelemetryUnpackerService::PANIC_FLAG_BIT, 5, pad ].pack("N n c C n C C a4")
-      header + rssi_byte + payload
-    end
+    # build_panic_chunk is provided by TelemetryChunkHelper
+    # (spec/support/telemetry_chunk_helper.rb).
 
     before do
       Rails.cache.clear
@@ -1138,19 +1111,12 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
     after { ENV.delete("TELEMETRY_CCM_ENABLED") }
 
-    # Helper: build a valid CCM 25-byte chunk by encrypting fresh sensor
-    # bytes with the tree's LoRa AES-128 key — exact contract Soldier
-    # firmware will produce via HAL_CRYPEx_AESCCM_Encrypt.
-    def build_ccm_chunk(rssi:, vcap:, temp:, acoustic:, dt:, status:, ttl:, fw_nibble: 0, fc: 1,
-                        did_hex_arg: did_hex, key: lora_key_bin)
-      did_int    = did_hex_arg.to_i(16)
-      did_bytes  = [ did_int ].pack("N")
-      mesh_ctrl  = ((ttl & 0x0F) << 4) | (fw_nibble & 0x0F)
-      plaintext  = [ vcap, temp, acoustic, dt, status, mesh_ctrl ].pack("n c C n C C")
-      ct, mic = Cryptography::LoraCcm.encrypt(
-        key: key, did_bytes: did_bytes, frame_counter: fc, plaintext: plaintext
-      )
-      did_bytes + [ -rssi ].pack("C") + [ fc ].pack("N") + ct + mic
+    # Thin wrapper around TelemetryChunkHelper#build_ccm_chunk that
+    # fills in the two values shared across every example in this block
+    # (`did_hex` and the tree's LoRa AES-128 key) — keeps the call-site
+    # ergonomics from when this helper lived inline.
+    def build_ccm_chunk(did_hex_arg: did_hex, key: lora_key_bin, **kwargs)
+      super(did_hex: did_hex_arg, key: key, **kwargs)
     end
 
     it "decrypts a 25-byte CCM chunk and creates a telemetry log" do
@@ -1261,6 +1227,165 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       ecb_chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
       expect { described_class.call(ecb_chunk) }.to change(TelemetryLog, :count).by(1)
       expect(SilkenNet::Metrics::TELEMETRY_CCM_DECRYPT_OK_TOTAL).not_to have_received(:increment)
+    end
+
+    # ------------------------------------------------------------------
+    # Coverage gaps for the CCM uplink guards.
+    # Every branch below corresponds to a real-logic guard (unknown
+    # device, missing/invalid key, gateway routing, fw nibble, acoustic
+    # overflow, broad rescue) — NOT defensive `&.`-nil padding.
+    # ------------------------------------------------------------------
+
+    it "drops the chunk and flags fraud when the DID is not in the trees cache" do
+      allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+      allow(Rails.logger).to receive(:warn)
+
+      unknown_did_hex = "DEADC0DE"
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fc: 11,
+                              did_hex_arg: unknown_did_hex)
+
+      expect { described_class.call(chunk) }.not_to change(TelemetryLog, :count)
+      expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment).once
+      expect(SilkenNet::Metrics::TELEMETRY_CCM_DECRYPT_OK_TOTAL).not_to have_received(:increment)
+      expect(Rails.logger).to have_received(:warn)
+        .with(a_string_matching(/\[CCM Uplink\] DID SNET-DEADC0DE не знайдено/))
+    end
+
+    it "drops the chunk when the tree has no HardwareKey row at all" do
+      # Covers the `&.` else branch on `tree.hardware_key&.binary_key`
+      # — the cache LEFT-JOINs HardwareKey, so a tree may exist without
+      # a provisioned key (de-provisioned device / registration glitch).
+      allow(Rails.logger).to receive(:warn)
+      # Encrypt with a throwaway key so the chunk is well-formed; service
+      # rejects it before attempting decrypt anyway.
+      throwaway_key = "\x00".b * 16
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fc: 12, key: throwaway_key)
+      hardware_key.destroy!
+
+      expect { described_class.call(chunk) }.not_to change(TelemetryLog, :count)
+      expect(SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL).to have_received(:increment).once
+      expect(Rails.logger).to have_received(:warn)
+        .with(a_string_matching(/\[CCM\] DID .+ missing\/invalid LoRa AES-128 key.*got nil/))
+    end
+
+    it "drops the chunk when the LoRa AES key has the wrong byte size" do
+      allow(Rails.logger).to receive(:warn)
+      # 24-byte blob fails the AES-128 size guard without changing the
+      # DB-level validation on aes_key_hex (which would reject the raw
+      # update). Stubbing keeps the path strictly about the in-memory
+      # size check the service performs after key load.
+      allow_any_instance_of(HardwareKey).to receive(:binary_key).and_return("A" * 24)
+
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fc: 13)
+
+      expect { described_class.call(chunk) }.not_to change(TelemetryLog, :count)
+      expect(SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL).to have_received(:increment).once
+      expect(Rails.logger).to have_received(:warn)
+        .with(a_string_matching(/missing\/invalid LoRa AES-128 key \(expected 16 bytes, got 24\)/))
+    end
+
+    it "records gateway uid when the CCM packet is routed via a known gateway" do
+      gateway = create(:gateway)
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fc: 14)
+
+      expect { described_class.call(chunk, gateway.id) }.to change(TelemetryLog, :count).by(1)
+      expect(TelemetryLog.last.queen_uid).to eq(gateway.uid)
+    end
+
+    it "stores the firmware version nibble when fw_nibble is positive" do
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fw_nibble: 7, fc: 15)
+
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      expect(TelemetryLog.last.firmware_version_id).to eq(7)
+    end
+
+    it "leaves firmware_version_id nil when fw_nibble is zero" do
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fw_nibble: 0, fc: 16)
+
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      expect(TelemetryLog.last.firmware_version_id).to be_nil
+    end
+
+    it "increments the acoustic overflow metric when acoustic == 255 on the CCM path" do
+      allow(SilkenNet::Metrics::TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL).to receive(:increment)
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 255,
+                              dt: 100, status: 0, ttl: 3, fc: 17)
+
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      expect(SilkenNet::Metrics::TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL).to have_received(:increment).once
+    end
+
+    it "logs and swallows a StandardError raised inside commit_telemetry on the CCM path" do
+      allow(Rails.logger).to receive(:error)
+      allow_any_instance_of(described_class).to receive(:commit_telemetry)
+        .and_raise(StandardError, "boom in commit")
+
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fc: 18)
+
+      expect { described_class.call(chunk) }.not_to raise_error
+      expect(Rails.logger).to have_received(:error)
+        .with(a_string_matching(/\[CCM Telemetry Error\] DID .+: boom in commit/))
+    end
+
+    it "re-raises MissingLorenzSeedError raised on the CCM path so the worker can retry" do
+      allow_any_instance_of(described_class).to receive(:compute_server_z)
+        .and_raise(TelemetryUnpackerService::MissingLorenzSeedError, "no seed")
+
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fc: 19)
+
+      expect { described_class.call(chunk) }
+        .to raise_error(TelemetryUnpackerService::MissingLorenzSeedError)
+    end
+  end
+
+  # commit_telemetry has three guard branches around wallet credit and one
+  # around the Codex Discovery hook that the existing happy-path specs
+  # never exercise. They are real-logic edges (zero-credit species,
+  # family-less tree, Codex constant absent), not `&.` defensive nil.
+  describe "commit_telemetry credit guards" do
+    let(:chunk) { build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3) }
+
+    it "does not credit the wallet when growth_points is zero" do
+      # status_byte=0 → wire growth_points nibble=0 → stored gp=0.
+      expect(tree.wallet).not_to receive(:credit!)
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      expect(TelemetryLog.last.growth_points).to eq(0)
+    end
+
+    it "credits the raw growth_points when the tree has no tree_family" do
+      # tree_family#weighted_growth_points returns nil via stub → || growth_points fallback.
+      allow_any_instance_of(Tree).to receive(:tree_family).and_return(nil)
+      gp_chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 10, 3) # wire nibble=10 → gp=20
+
+      expect { described_class.call(gp_chunk) }.to change { tree.wallet.reload.balance }.by(20)
+    end
+
+    it "skips wallet.credit! when carbon coefficient rounds weighted_points to zero" do
+      # coefficient 0.001 × growth_points 2 = 0.002 → round(2) = 0.0 → not positive.
+      tiny = create(:tree_family, carbon_sequestration_coefficient: 0.001)
+      tree.update!(tree_family: tiny)
+      tiny_chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 1, 3) # wire nibble=1 → gp=2
+
+      expect(tree.wallet).not_to receive(:credit!)
+      expect { described_class.call(tiny_chunk) }.to change(TelemetryLog, :count).by(1)
+    end
+  end
+
+  describe "Codex Discovery hook constant-guard" do
+    it "is a no-op when Codex::PresenceTracker is not loaded" do
+      hide_const("Codex::PresenceTracker")
+      expect(::Codex::DiscoveryProbeWorker).not_to receive(:perform_async)
+
+      chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
     end
   end
 end

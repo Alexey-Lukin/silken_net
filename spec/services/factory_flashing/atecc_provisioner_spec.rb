@@ -95,5 +95,19 @@ RSpec.describe FactoryFlashing::AteccProvisioner do
         )
       }.to raise_error(described_class::InputError, /Slot 2 cert DER/)
     end
+
+    it "rejects wrong-sized ecc_priv_hex (Slot 1 must be 32B/64hex)" do
+      expect {
+        described_class.new(
+          session: session, aes_key_hex: aes_key_hex, ota_hmac_hex: ota_hmac_hex, ecc_priv_hex: "F" * 32
+        )
+      }.to raise_error(described_class::InputError, /Slot 1 ECC priv/)
+    end
+
+    it "rejects non-hex K_ota (Slot 3 must be hexadecimal)" do
+      expect {
+        described_class.new(session: session, aes_key_hex: aes_key_hex, ota_hmac_hex: "Z" * 64)
+      }.to raise_error(described_class::InputError, /K_ota must be hexadecimal/)
+    end
   end
 end

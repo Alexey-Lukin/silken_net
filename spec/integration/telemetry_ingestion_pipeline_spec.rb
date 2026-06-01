@@ -39,15 +39,9 @@ RSpec.describe "Telemetry ingestion pipeline end-to-end" do
         .and_return([ 25.0, 0.1, 0.2, 0.3 ])
     end
 
-    # Helper: build a 21-byte telemetry chunk [DID:4][RSSI:1][Payload:16]
-    # Payload uses PAYLOAD_FORMAT: "N n c C n C C a4"
-    def build_chunk(did_hex, rssi, vcap_mv, temp_c, acoustic, metabolism, status_byte, ttl, pad = "\x00\x00\x00\x00")
-      did_int = did_hex.to_i(16)
-      header = [ did_int ].pack("N")
-      rssi_byte = [ -rssi ].pack("C")
-      payload = [ did_int, vcap_mv, temp_c, acoustic, metabolism, status_byte, ttl, pad ].pack("N n c C n C C a4")
-      header + rssi_byte + payload
-    end
+    # build_chunk lives in spec/support/telemetry_chunk_helper.rb —
+    # auto-included by file_path match. The positional signature is
+    # identical (8 args + optional `pad`).
 
     it "creates telemetry log, updates voltage, and credits wallet" do
       # status_byte: lower 6 bits = growth_points (10), upper 2 bits = bio_status (0 = homeostasis)

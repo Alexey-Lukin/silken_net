@@ -44,7 +44,7 @@ RSpec.describe Codex::Citations::Pill, type: :view_component do
     expect(html).to include("focus-visible:ring-2")
   end
 
-  describe "title fallback [coverage]" do
+  describe "title fallback" do
     it "uses the node slug as the label when title_en is blank" do
       allow(node).to receive(:title_en).and_return("")
       html = render_pill(citation: citation)
@@ -52,7 +52,7 @@ RSpec.describe Codex::Citations::Pill, type: :view_component do
     end
   end
 
-  describe "archetype suffix [coverage]" do
+  describe "archetype suffix" do
     it "omits the archetype chip when archetype_key is blank" do
       allow(node).to receive(:archetype_key).and_return(nil)
       html = render_pill(citation: citation)
@@ -62,7 +62,7 @@ RSpec.describe Codex::Citations::Pill, type: :view_component do
     end
   end
 
-  describe "without a note [coverage]" do
+  describe "without a note" do
     before { citation.note = nil }
 
     it "builds an aria label without the trailing note clause" do

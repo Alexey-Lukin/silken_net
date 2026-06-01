@@ -364,5 +364,37 @@ RSpec.describe Trees::Show do
       # Header still renders; bars simply absent — no crash
       expect(rendered).to include("Impedance Flux")
     end
+
+    it "treats baseline_impedance == 0 as not-positive and skips bars (no division by zero)" do
+      t = mock_tree(baseline_impedance: 0)
+      rendered = render_component(tree: t, latest_log: latest_log,
+                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
+      expect(rendered).to include("Impedance Flux")
+      expect(rendered).not_to include("Infinity%")
+    end
+
+    it "falls back to 'Unknown' family when tree.tree_family is nil entirely" do
+      t = mock_tree(family_name: "ignored")
+      t.tree_family = nil
+      rendered = render_component(tree: t, latest_log: latest_log,
+                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
+      expect(rendered).to include("Unknown")
+    end
+  end
+
+  describe "Codex citation strip" do
+    it "renders the strip when citations exist for the tree" do
+      tree = mock_tree
+      citation = instance_double(::Codex::Citation, node: nil, id: 21)
+      relation = double("relation")
+      allow(::Codex::Citation).to receive(:for_target).with(tree).and_return(relation)
+      allow(relation).to receive(:includes).with(node: :realm).and_return(relation)
+      allow(relation).to receive(:limit).with(20).and_return([ citation ])
+      allow(relation).to receive(:empty?).and_return(false)
+
+      out = render_component(tree: tree, latest_log: latest_log,
+                             recent_logs: recent_logs, maintenance_history: maintenance_history)
+      expect(out).to include('class="mt-3"')
+    end
   end
 end

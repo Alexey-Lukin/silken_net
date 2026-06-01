@@ -520,7 +520,7 @@ RSpec.describe Solana::MintingService do
     end
   end
 
-  describe "RPC nil-response + oracle-balance guards [coverage]" do
+  describe "RPC nil-response + oracle-balance guards" do
     let(:service) { described_class.new(create(:telemetry_log, :verified_telemetry, tree: tree)) }
 
     it "raises when getLatestBlockhash returns a nil response body" do

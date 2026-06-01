@@ -109,7 +109,7 @@ RSpec.describe Gateways::Index do
     end
   end
 
-  describe "gateway with no cluster, telemetry or recent contact [coverage]" do
+  describe "gateway with no cluster, telemetry or recent contact" do
     it "renders unassigned/zero/silent fallbacks and a stale LED" do
       gw = mock_gateway
       gw.cluster = nil

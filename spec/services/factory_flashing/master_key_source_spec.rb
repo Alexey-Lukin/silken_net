@@ -49,4 +49,12 @@ RSpec.describe FactoryFlashing::MasterKeySource do
       expect(described_class.default).to be_a(FactoryFlashing::MasterKeySource::EnvAdapter)
     end
   end
+
+  # abstract Base raises NotImplementedError
+  describe FactoryFlashing::MasterKeySource::Base do
+    it "raises NotImplementedError to enforce adapter contract" do
+      expect { described_class.new.fetch_master_key }
+        .to raise_error(NotImplementedError, /must implement #fetch_master_key/)
+    end
+  end
 end

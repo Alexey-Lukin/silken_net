@@ -127,5 +127,17 @@ RSpec.describe FactoryFlashing::CommandBuilder do
       builder = described_class.new(session: session, device: gateway, aes_key_hex: aes_lora_hex)
       expect { builder.commands }.to raise_error(ArgumentError, /AES-256/)
     end
+
+    it "rejects non-hex lorenz_seed_hex (64 chars but with Z's)" do
+      expect {
+        described_class.new(session: session, device: tree, aes_key_hex: aes_lora_hex, lorenz_seed_hex: "Z" * 64)
+      }.to raise_error(ArgumentError, /lorenz_seed_hex must be hexadecimal/)
+    end
+
+    it "raises on unknown gilka value at #commands" do
+      session.gilka = "C"
+      builder = described_class.new(session: session, device: tree, aes_key_hex: aes_lora_hex, lorenz_seed_hex: k_seed_hex)
+      expect { builder.commands }.to raise_error(ArgumentError, /Unknown gilka/)
+    end
   end
 end

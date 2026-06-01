@@ -80,4 +80,26 @@ RSpec.describe Alerts::Index do
       expect(html).to include("page=")
     end
   end
+
+  describe "Codex citation bulk lookup" do
+    it "skips the bulk Codex query when the alerts array is empty" do
+      # Forces the `if defined?(::Codex::Citation) && @alerts.any?` guard to fall
+      # through to the empty-hash branch — Codex must not be queried at all.
+      expect(::Codex::Citation).not_to receive(:bulk_for)
+
+      out = render_component(alerts: [], pagy: mock_pagy(count: 0), organization: org)
+      expect(out).to include('id="alerts_list"')
+    end
+
+    it "passes per-row citations through when bulk_for returns matches" do
+      alert = mock_alert(id: 7, severity: "critical")
+      citation = instance_double(::Codex::Citation, node: nil, id: 99)
+      key = [ "EwsAlert", 7 ]
+      allow(::Codex::Citation).to receive(:polymorphic_type_for).with(alert).and_return("EwsAlert")
+      allow(::Codex::Citation).to receive(:bulk_for).with([ alert ]).and_return(key => [ citation ])
+
+      out = render_component(alerts: [ alert ], pagy: mock_pagy(count: 1), organization: org)
+      expect(out).to include('id="alerts_list"')
+    end
+  end
 end

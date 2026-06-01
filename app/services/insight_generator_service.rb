@@ -38,20 +38,7 @@ class InsightGeneratorService < ApplicationService
 
       unless processed_cluster_ids.empty?
         Cluster.where(id: processed_cluster_ids).find_each do |cluster|
-          cluster_baseline = @baselines_map[cluster.id]
-
-          # ⚡ [ANTI-N+1]: Агрегуємо статистику для ВСІХ дерев кластера одним SQL-запитом
-          tree_stats_map = prefetch_tree_stats(cluster)
-
-          # Перевіряємо кожне дерево в кластері на відповідність базлайну
-          cluster.trees.find_each do |tree|
-            stats = tree_stats_map[tree.id]
-            next unless stats
-
-            if generate_for_tree(tree, cluster_baseline, stats)
-              @processed_count += 1
-            end
-          end
+          process_cluster_trees(cluster, @baselines_map[cluster.id])
         end
 
         # 3. АГРЕГАЦІЯ КЛАСТЕРІВ — тільки для кластерів з даними (без повторної ітерації)
@@ -97,15 +84,7 @@ class InsightGeneratorService < ApplicationService
       AiInsight.where(analyzable_type: "Cluster", analyzable_id: cluster.id,
                       insight_type: :daily_health_summary, target_date: @date).delete_all
 
-      tree_stats_map = prefetch_tree_stats(cluster)
-
-      cluster.trees.find_each do |tree|
-        stats = tree_stats_map[tree.id]
-        next unless stats
-
-        @processed_count += 1 if generate_for_tree(tree, cluster_baseline, stats)
-      end
-
+      process_cluster_trees(cluster, cluster_baseline)
       aggregate_cluster!(cluster)
     end
 
@@ -168,6 +147,20 @@ class InsightGeneratorService < ApplicationService
                 ).each_with_object({}) do |row, hash|
                   hash[row.tree_id] = row
                 end
+  end
+
+  # ⚡ [ANTI-N+1]: Агрегуємо статистику для ВСІХ дерев кластера одним SQL-запитом,
+  # потім ітеруємо дерева й генеруємо tree-level інсайти. Спільний хот-патч для
+  # синхронного #perform та батчевого #process_cluster_batch (DRY).
+  def process_cluster_trees(cluster, cluster_baseline)
+    tree_stats_map = prefetch_tree_stats(cluster)
+
+    cluster.trees.find_each do |tree|
+      stats = tree_stats_map[tree.id]
+      next unless stats
+
+      @processed_count += 1 if generate_for_tree(tree, cluster_baseline, stats)
+    end
   end
 
   def generate_for_tree(tree, baseline, stats)

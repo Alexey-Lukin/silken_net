@@ -227,6 +227,30 @@ RSpec.describe Ethereum::StateAnchorService do
       expect(EthereumAnchor.last).to be_status_pending
     end
 
+    it "re-raises the Timeout when generate_state_root fails before the anchor row is created" do
+      service = described_class.new
+      allow(service).to receive(:generate_state_root).and_raise(Net::OpenTimeout, "DB unreachable")
+
+      before_count = EthereumAnchor.count
+      expect {
+        service.anchor_to_l1!
+      }.to raise_error(RuntimeError, /Ethereum L1 Timeout/)
+
+      expect(EthereumAnchor.count).to eq(before_count)
+    end
+
+    it "re-raises the Connection Error when generate_state_root fails before the anchor row is created" do
+      service = described_class.new
+      allow(service).to receive(:generate_state_root).and_raise(IOError, "broken pipe")
+
+      before_count = EthereumAnchor.count
+      expect {
+        service.anchor_to_l1!
+      }.to raise_error(RuntimeError, /Ethereum L1 Connection Error/)
+
+      expect(EthereumAnchor.count).to eq(before_count)
+    end
+
     it "logs successful anchoring" do
       allow(mock_client).to receive(:transact).and_return("0x" + "bb" * 32)
 

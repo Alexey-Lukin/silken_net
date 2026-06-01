@@ -148,7 +148,7 @@ RSpec.describe Contracts::Index do
     end
   end
 
-  describe "contract row with missing optional fields [coverage]" do
+  describe "contract row with missing optional fields" do
     it "renders em-dash org, unassigned cluster and blank dates" do
       contract = mock_contract
       contract.organization = nil

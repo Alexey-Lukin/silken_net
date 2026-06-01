@@ -122,7 +122,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
       expect(response).to have_http_status(:forbidden)
     end
 
-    it "returns 404 for a cluster from another organization (B-4 IDOR fix)" do
+    it "returns 404 for a cluster from another organization" do
       other_org = create(:organization)
       other_cluster = create(:cluster, organization: other_org)
 

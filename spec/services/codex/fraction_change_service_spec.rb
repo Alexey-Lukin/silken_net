@@ -100,4 +100,62 @@ RSpec.describe Codex::FractionChangeService, type: :service do
       expect(result.success?).to be true
     end
   end
+
+  describe "guard rails" do
+    it "returns invalid result when user is nil" do
+      result = described_class.call(user: nil, node: node)
+      expect(result.success?).to be(false)
+      expect(result.errors).to include("user is required")
+    end
+
+    it "returns invalid result when node is nil" do
+      result = described_class.call(user: user, node: nil)
+      expect(result.success?).to be(false)
+      expect(result.errors).to include("node is required")
+    end
+  end
+
+  describe "post-lock cooldown race" do
+    it "re-checks cooldown inside the transaction and aborts when another writer just landed" do
+      now = Time.current
+      Codex::Fraction.create!(
+        user: user, codex_node_id: other_node.id, archetype_key: "mesh_sharding",
+        house_color_token: realm.accent_token, last_changed_at: now - 6.hours, chosen_at: now - 6.hours
+      )
+
+      call_count = 0
+      allow_any_instance_of(Codex::Fraction).to receive(:cooldown_active?) do |_inst, _t|
+        call_count += 1
+        call_count >= 2 # first check (outside tx) → false, post-lock check → true
+      end
+
+      result = described_class.new(user: user, node: node, now: now).call
+      expect(result.success?).to be(false)
+      expect(result.errors).to include("cooldown_active")
+    end
+  end
+
+  describe "save! failure (ActiveRecord::RecordInvalid)" do
+    it "returns a failure Result with model error messages" do
+      allow_any_instance_of(Codex::Fraction).to receive(:save!).and_wrap_original do |_m, *|
+        record = Codex::Fraction.new
+        record.errors.add(:base, "simulated validation failure")
+        raise ActiveRecord::RecordInvalid.new(record)
+      end
+
+      result = described_class.call(user: user, node: node)
+      expect(result.success?).to be(false)
+      expect(result.errors).to include("simulated validation failure")
+    end
+  end
+
+  describe "enqueue_audit failure is swallowed" do
+    it "still returns success when the audit worker enqueue raises" do
+      allow(Codex::FractionAuditWorker).to receive(:perform_async).and_raise(StandardError, "redis down")
+
+      result = described_class.call(user: user, node: node)
+      expect(result.success?).to be(true)
+      expect(result.fraction).to be_persisted
+    end
+  end
 end

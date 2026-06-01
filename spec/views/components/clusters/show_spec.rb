@@ -199,4 +199,37 @@ RSpec.describe Clusters::Show do
       expect(html).to include("bg-emerald-500")
     end
   end
+
+  describe "initialize guard" do
+    it "raises ArgumentError when cluster does not respond to :name" do
+      bad = Object.new
+      expect {
+        described_class.new(cluster: bad, gateways: [], recent_alerts: [])
+      }.to raise_error(ArgumentError, /cluster must respond to :name/)
+    end
+  end
+
+  describe "gateway row last_seen_at fallback" do
+    it "renders a dash when a gateway has no last_seen_at timestamp" do
+      gw = OpenStruct.new(uid: "QUEEN-NIL", state: "active", latitude: 0, longitude: 0, last_seen_at: nil)
+      out = render_component(cluster: cluster, gateways: [ gw ], recent_alerts: [])
+      expect(out).to include("QUEEN-NIL")
+      expect(out).to include("—")
+    end
+  end
+
+  describe "Codex citation strip" do
+    it "renders the strip when citations exist for the cluster" do
+      citation = instance_double(::Codex::Citation, node: nil, id: 11)
+      relation = double("relation")
+      allow(::Codex::Citation).to receive(:for_target).with(cluster).and_return(relation)
+      allow(relation).to receive(:includes).with(node: :realm).and_return(relation)
+      allow(relation).to receive(:limit).with(20).and_return([ citation ])
+      allow(relation).to receive(:empty?).and_return(false)
+
+      out = render_component(cluster: cluster, gateways: [], recent_alerts: [])
+      # The wrapper div for the strip ships with `mt-3`; happy-path tests skip it.
+      expect(out).to include('class="mt-3"')
+    end
+  end
 end

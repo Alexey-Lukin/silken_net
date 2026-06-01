@@ -108,4 +108,53 @@ RSpec.describe FactoryFlashing::Session do
       expect(outcome.to_h.values.compact.to_s).not_to include("master")
     end
   end
+
+  describe "Гілка B + Gateway device — ATCA provisioning skipped" do
+    let(:gateway) { create(:gateway) }
+    let!(:session) do
+      make_session(gilka: "B", device_uid: gateway.uid, atecc_serial_hex: "0123456789ABCDEF01")
+    end
+
+    it "completes without running AteccProvisioner (gateway has no ATCA chip)" do
+      expect(FactoryFlashing::AteccProvisioner).not_to receive(:new)
+      outcome = described_class.run(
+        session: session, executor: executor, master_key_source: master_key_source
+      )
+      expect(session.reload).to be_completed
+      expect(outcome.atecc_transcript).to be_nil
+    end
+  end
+
+  describe "capture_failure edges" do
+    let!(:session) { make_session(gilka: "A") }
+
+    def build_service(src = master_key_source)
+      described_class.new(session: session, device: nil, executor: executor, master_key_source: src)
+    end
+
+    it "does not re-fail an already-failed session (idempotent)" do
+      session.update!(state: "supervisor_approved")
+      session.fail_with!("prior reason")
+      expect(session.reload).to be_failed
+
+      service = build_service
+      # Direct invocation — preflight would otherwise block a failed row.
+      expect {
+        service.send(:capture_failure, StandardError.new("late boom"))
+      }.not_to(change { session.reload.error_message })
+    end
+
+    it "logs (does not re-raise) when persisting the failure itself raises" do
+      service = build_service
+      allow(session).to receive(:may_fail_with?).and_return(true)
+      allow(session).to receive(:fail_with!).and_raise(ActiveRecord::StatementInvalid, "db down")
+      service.instance_variable_set(:@session, session)
+
+      expect(Rails.logger).to receive(:error).with(a_string_matching(/Could not record session failure.*db down/))
+
+      expect {
+        service.send(:capture_failure, StandardError.new("boom"))
+      }.not_to raise_error
+    end
+  end
 end

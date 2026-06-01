@@ -195,6 +195,15 @@ RSpec.describe Web3::ResilientClient do
       expect(health.size).to eq(2)
       expect(health.first).to include(:provider, :failures, :circuit_open, :available)
     end
+
+    it "falls back to truncated URL when mask_url hits an unparseable provider URL" do
+      bad_url = "ht tp://malformed url with spaces and more chars beyond thirty"
+      allow(Eth::Client).to receive(:create).with(bad_url).and_return(primary_eth_client)
+      bad_client = described_class.new([ bad_url ])
+
+      health = bad_client.provider_health
+      expect(health.first[:provider]).to eq(bad_url.first(30))
+    end
   end
 
   describe "#respond_to_missing?" do

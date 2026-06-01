@@ -51,6 +51,14 @@ RSpec.describe SilkenNet::LorenzValidationService do
     it "returns 1.0 for a single shared label (degenerate, no chance to disagree)" do
       expect(described_class.cohens_kappa(%i[x x], %i[x x])).to eq(1.0)
     end
+
+    it "returns 0.0 for empty rater arrays" do
+      expect(described_class.cohens_kappa([], [])).to eq(0.0)
+    end
+
+    it "returns 0.0 when rater sizes mismatch (refuses to compute)" do
+      expect(described_class.cohens_kappa([ :a, :b ], [ :a ])).to eq(0.0)
+    end
   end
 
   describe ".binary_metrics" do
@@ -62,6 +70,13 @@ RSpec.describe SilkenNet::LorenzValidationService do
       expect(m).to include(tp: 1, fp: 2, tn: 1, fn: 1)
       expect(m[:fpr]).to be_within(1e-4).of(2.0 / 3.0) # fp / (fp + tn) — slashing safety
       expect(m[:tpr]).to be_within(1e-4).of(0.5)        # tp / (tp + fn)
+    end
+
+    it "returns 0.0 rates when the denominator is zero (all-negative or all-positive ground truth)" do
+      m = described_class.binary_metrics([ true, false ], [ false, false ])
+      expect(m[:tpr]).to eq(0.0)
+      m2 = described_class.binary_metrics([ true, false ], [ true, true ])
+      expect(m2[:fpr]).to eq(0.0)
     end
   end
 
@@ -86,6 +101,20 @@ RSpec.describe SilkenNet::LorenzValidationService do
 
       expect(r).to have_key(:z_incremental_over_sap)
       expect(r[:z_incremental_over_sap]).to be <= 0.0
+    end
+
+    it "omits the z_vs_sap block for samples that carry only stress_index" do
+      samples = [ { stress_index: 0.1, ground_truth_decline: 1 } ]
+      r = described_class.report(samples)
+
+      expect(r).not_to have_key(:spearman_z_vs_decline)
+      expect(r).not_to have_key(:z_incremental_over_sap)
+    end
+
+    it "omits the z_vs_sap block for empty samples (safe-navigation on first)" do
+      r = described_class.report([])
+      expect(r[:n]).to eq(0)
+      expect(r).not_to have_key(:spearman_z_vs_decline)
     end
   end
 end

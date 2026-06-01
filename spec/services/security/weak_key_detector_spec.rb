@@ -97,6 +97,13 @@ RSpec.describe Security::WeakKeyDetector do
         expect(described_class.detect("<your-master-key>")).to include("placeholder")
       end
 
+      it "flags a generic <…> template even when no needle substring matches" do
+        # Falls through PLACEHOLDER_NEEDLES (no "your-master", "tmp-key", etc.)
+        # and is caught by the angle-bracket fallback at the end of match_placeholder.
+        result = described_class.detect("<aes-prod-32B-fillme>")
+        expect(result).to include("<…> placeholder")
+      end
+
       it "flags the test-suite fixture used by spec/rails_helper.rb" do
         expect(described_class.detect("silken-net-test-master-key-32b!!"))
           .to include("placeholder")

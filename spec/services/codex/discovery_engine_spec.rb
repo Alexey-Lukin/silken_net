@@ -62,7 +62,7 @@ RSpec.describe Codex::DiscoveryEngine, type: :service do
   end
 
   describe "inert rule (below threshold) → no-op" do
-    # Phase 6 — every condition_type now has an adapter, so the
+    # every condition_type now has an adapter, so the
     # historical "unknown condition" guard is exercised by stubbing
     # the ADAPTERS hash. The adapter still skips rules whose Node is
     # already unlocked (covered above) and whose count is below the
@@ -274,6 +274,52 @@ RSpec.describe Codex::DiscoveryEngine, type: :service do
   describe "guard rails" do
     it "returns [] for an unsaved user" do
       expect(described_class.evaluate(user: User.new, trigger_type: :match_milestone)).to eq([])
+    end
+
+    it "returns [] for a nil user (safe-navigation guard)" do
+      expect(described_class.evaluate(user: nil, trigger_type: :match_milestone)).to eq([])
+    end
+  end
+
+  # Org-scoped adapters must return false when the user has no organization —
+  # otherwise a personal account could unlock org-tier discoveries by accident.
+  describe "organization_id-blank guard rails" do
+    let(:user_no_org) { create(:user, organization: nil) }
+
+    {
+      tree_observation_minutes: { "window_days" => 30, "effective_period_minutes" => 5 },
+      oracle_dispatched:        {},
+      acoustic_class_count:     { "min_events" => 20 },
+      cluster_visited:          { "cluster_name" => "Whatever" },
+      firmware_version_seen:    { "version" => "1.2.3" }
+    }.each do |condition_type, params|
+      it "#{condition_type} returns false when user has no organization" do
+        create(:codex_discovery_rule,
+          node: node, condition_type: condition_type, threshold_value: 1, params: params)
+        expect(
+          described_class.evaluate(user: user_no_org, trigger_type: :match_milestone)
+        ).to eq([])
+      end
+    end
+  end
+
+  describe "match_count with unknown realm_slug" do
+    let(:realm) { create(:codex_realm) }
+    let(:left)  { create(:codex_node, realm: realm) }
+    let(:right) { create(:codex_node, realm: realm) }
+
+    it "ignores the realm filter when the slug doesn't match any realm" do
+      rule = create(:codex_discovery_rule,
+        node: node, condition_type: :match_count, threshold_value: 1,
+        params: { "realm_slug" => "no_such_realm" })
+      2.times { create(:codex_match, user: user, realm: realm, left: left, right: right) }
+
+      # Realm lookup returns nil → scope filter skipped → global match count
+      # still satisfies threshold and unlocks the node.
+      expect(
+        described_class.evaluate(user: user, trigger_type: :match_milestone)
+      ).to contain_exactly(node)
+      expect(rule.reload.params["realm_slug"]).to eq("no_such_realm")
     end
   end
 end

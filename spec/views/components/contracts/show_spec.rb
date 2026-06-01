@@ -166,7 +166,7 @@ RSpec.describe Contracts::Show do
       end
     end
 
-    context "with populated cancellation values [coverage]" do
+    context "with populated cancellation values" do
       let(:contract) do
         c = mock_contract(cancellation_terms: { "present" => true })
         c.early_exit_fee_percent = 15
@@ -184,7 +184,7 @@ RSpec.describe Contracts::Show do
     end
   end
 
-  describe "backing asset alert states [coverage]" do
+  describe "backing asset alert states" do
     it "flags vitality in red when cluster health is below 70%" do
       contract = mock_contract(cluster: mock_cluster(health_index: 0.5))
       html = render_component(contract: contract, history: [])
@@ -206,7 +206,7 @@ RSpec.describe Contracts::Show do
     end
   end
 
-  describe "emission ledger pending block [coverage]" do
+  describe "emission ledger pending block" do
     it "shows the pending-block placeholder when a tx has no hash yet" do
       tx = mock_blockchain_tx(tx_hash: nil)
       html = render_component(contract: mock_contract, history: [ tx ])

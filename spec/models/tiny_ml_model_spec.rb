@@ -504,5 +504,28 @@ RSpec.describe TinyMlModel, type: :model do
         expect(model.false_positive_rate).to be_nil
       end
     end
+
+    describe "#threshold" do
+      it "returns nil and swallows ArgumentError when metadata threshold is unparseable" do
+        model = build(:tiny_ml_model, metadata: { "threshold" => "not-a-number" })
+        expect(model.threshold).to be_nil
+      end
+    end
+
+    describe "#accuracy / #error_rate read API" do
+      it "returns Float when the underlying column is set" do
+        model = create(:tiny_ml_model, total_predictions: 4, confirmed_predictions: 3)
+        model.recalculate_drift_metrics!
+
+        expect(model.accuracy).to eq(0.75)
+        expect(model.error_rate).to eq(0.25)
+      end
+
+      it "returns nil when the underlying column is nil (safe-navigation)" do
+        model = build(:tiny_ml_model, true_positive_rate: nil, false_positive_rate: nil)
+        expect(model.accuracy).to be_nil
+        expect(model.error_rate).to be_nil
+      end
+    end
   end
 end

@@ -35,6 +35,20 @@ RSpec.describe Polygon::HadronComplianceService do
       end
     end
 
+    context "when WEB3_STRICT_MODE=true without API key" do
+      before do
+        allow(Rails.application.credentials).to receive(:hadron_api_key).and_return(nil)
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with("WEB3_STRICT_MODE").and_return("true")
+      end
+
+      it "raises ComplianceError instead of running the simulator" do
+        expect {
+          described_class.new.verify_investor!(wallet)
+        }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /WEB3_STRICT_MODE=true/)
+      end
+    end
+
     context "when Hadron API returns approved" do
       before do
         allow(Rails.application.credentials).to receive(:hadron_api_key).and_return("test-hadron-key")
@@ -106,6 +120,20 @@ RSpec.describe Polygon::HadronComplianceService do
 
         expect(asset_id).to start_with("HADRON-RWA-#{naas_contract.id}-")
         expect(naas_contract.reload.hadron_asset_id).to eq(asset_id)
+      end
+    end
+
+    context "when WEB3_STRICT_MODE=true without API key" do
+      before do
+        allow(Rails.application.credentials).to receive(:hadron_api_key).and_return(nil)
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with("WEB3_STRICT_MODE").and_return("true")
+      end
+
+      it "raises ComplianceError instead of running the simulator" do
+        expect {
+          described_class.new.register_asset!(naas_contract)
+        }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /WEB3_STRICT_MODE=true/)
       end
     end
 

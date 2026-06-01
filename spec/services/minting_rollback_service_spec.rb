@@ -521,4 +521,78 @@ RSpec.describe MintingRollbackService do
       expect(Web3::RpcConnectionPool).to have_received(:client_for).with("CELO_RPC_URL", anything)
     end
   end
+
+  describe "resolve_transactions guards" do
+    it "returns nil when telemetry_log's tree has no wallet" do
+      orphan_tree = create(:tree)
+      orphan_tree.wallet.destroy!
+      orphan_log = create(:telemetry_log, :verified_telemetry, tree: orphan_tree)
+
+      expect {
+        described_class.call(telemetry_log_id: orphan_log.id, created_at_iso: orphan_log.created_at.iso8601)
+      }.not_to(change(BlockchainTransaction, :count))
+    end
+  end
+
+  describe "receipt without status key (non-empty hash)" do
+    it "treats a non-empty receipt that lacks 'status' as pending → manual_review" do
+      wallet.update!(balance: 20_000, locked_balance: 10_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :sent,
+                  tx_hash: "0x" + SecureRandom.hex(32), locked_points: 10_000)
+
+      mock_client = instance_double(Eth::Client)
+      allow(Web3::RpcConnectionPool).to receive(:client_for).and_return(mock_client)
+      # Receipt is present (not nil, not empty) but the "status" key is absent —
+      # exercises the elsif status.nil? branch deliberately.
+      allow(mock_client).to receive(:eth_get_transaction_receipt)
+        .and_return({ "blockNumber" => "0x123", "transactionHash" => tx.tx_hash })
+
+      described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
+
+      expect(tx.reload.status).to eq("manual_review")
+    end
+  end
+
+  describe "Solana parsed_body nil safe-navigation" do
+    let!(:telemetry_log) { create(:telemetry_log, :verified_telemetry, tree: tree) }
+    let(:solana_address) { "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM" }
+
+    before { ENV["SOLANA_RPC_URL"] ||= "https://api.devnet.solana.com" }
+
+    it "treats Solana RPC nil parsed_body as pending → manual_review" do
+      wallet.update!(balance: 20_000, locked_balance: 10_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :sent,
+                  tx_hash: "5xyz" + SecureRandom.hex(30), locked_points: 10_000,
+                  blockchain_network: "solana", to_address: solana_address)
+
+      # Response whose parsed_body is nil (e.g. blank body / non-JSON) — safe-nav
+      # on .dig must skip and return :pending.
+      nil_body_response = instance_double(Web3::HttpClient::Response, parsed_body: nil)
+      allow(Web3::HttpClient).to receive(:post).and_return(nil_body_response)
+
+      described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
+
+      expect(tx.reload.status).to eq("manual_review")
+    end
+  end
+
+  describe "perform_safe_rollback with detached tree / no broadcast_update" do
+    it "falls back to 'N/A' tree DID when wallet.tree is nil" do
+      wallet.update!(balance: 20_000, locked_balance: 10_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
+                  tx_hash: nil, locked_points: 10_000)
+
+      # Simulate a wallet whose underlying tree has gone (soft-deleted / missing).
+      # Production Wallet has no #broadcast_update method, so the rollback's
+      # `respond_to?(:broadcast_update)` guard naturally exercises its `else`
+      # branch here as well.
+      allow_any_instance_of(Wallet).to receive(:tree).and_return(nil)
+
+      described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
+
+      tx.reload
+      expect(tx.status).to eq("failed")
+      expect(tx.notes).to include("DID: N/A")
+    end
+  end
 end

@@ -83,5 +83,31 @@ RSpec.describe "Api::V1::Codex::Comments", type: :request do
       expect(response).to have_http_status(:created)
       expect(response.parsed_body.dig("data", "parent_id")).to eq(parent.id)
     end
+
+    it "allows HTML writes without an Idempotency-Key (skips idempotency cache)" do
+      allow(ActionCable.server).to receive(:broadcast)
+      html_headers = { "Authorization" => "Bearer #{token}" }
+
+      expect {
+        post "/api/v1/codex/nodes/#{node.slug}/comments",
+             params: { comment: { body_md: "html post" } },
+             headers: html_headers
+      }.to change { node.reload.comments_count }.by(1)
+
+      expect(response).to redirect_to(api_v1_codex_node_path(node.slug))
+    end
+
+    it "swallows broadcast errors so the comment still saves" do
+      allow(ActionCable.server).to receive(:broadcast).and_raise(StandardError, "boom")
+      expect(Rails.logger).to receive(:error).with(/CommentsController#broadcast/).at_least(:once)
+
+      expect {
+        post "/api/v1/codex/nodes/#{node.slug}/comments",
+             params: { comment: { body_md: "survive" } },
+             headers: headers, as: :json
+      }.to change { node.reload.comments_count }.by(1)
+
+      expect(response).to have_http_status(:created)
+    end
   end
 end

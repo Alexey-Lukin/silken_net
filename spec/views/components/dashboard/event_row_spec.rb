@@ -105,7 +105,7 @@ RSpec.describe Dashboard::EventRow do
     end
   end
 
-  describe "EwsAlert with no cluster [coverage]" do
+  describe "EwsAlert with no cluster" do
     let(:event) do
       alert = EwsAlert.allocate
       alert.define_singleton_method(:alert_type) { "Seismic" }
@@ -119,7 +119,7 @@ RSpec.describe Dashboard::EventRow do
     end
   end
 
-  describe "BlockchainTransaction routed through Etherisc [coverage]" do
+  describe "BlockchainTransaction routed through Etherisc" do
     def etherisc_tx(to_address:)
       pi = ParametricInsurance.allocate
       pi.define_singleton_method(:uses_etherisc?) { true }
@@ -143,7 +143,7 @@ RSpec.describe Dashboard::EventRow do
     end
   end
 
-  describe "BlockchainTransaction mint with no wallet [coverage]" do
+  describe "BlockchainTransaction mint with no wallet" do
     let(:event) do
       tx = BlockchainTransaction.allocate
       tx.define_singleton_method(:amount) { "0.001" }
@@ -160,7 +160,7 @@ RSpec.describe Dashboard::EventRow do
     end
   end
 
-  describe "MaintenanceRecord with no user or action [coverage]" do
+  describe "MaintenanceRecord with no user or action" do
     let(:event) do
       record = MaintenanceRecord.allocate
       record.define_singleton_method(:action_type) { nil }

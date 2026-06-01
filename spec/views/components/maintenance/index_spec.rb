@@ -152,14 +152,14 @@ RSpec.describe Maintenance::Index do
     end
   end
 
-  describe "action badge fallback [coverage]" do
+  describe "action badge fallback" do
     it "uses the gray fallback color for an unknown action_type" do
       html = render_component(records: [ mock_record(action_type: "calibration") ], pagy: mock_pagy)
       expect(html).to include("text-gray-500")
     end
   end
 
-  describe "row with missing user, maintainable and timestamp [coverage]" do
+  describe "row with missing user, maintainable and timestamp" do
     it "renders gracefully when those fields are nil" do
       rec = mock_record(performed_at: nil)
       rec.user = nil

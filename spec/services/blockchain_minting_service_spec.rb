@@ -1260,4 +1260,223 @@ end
       expect(lock_released).to be true
     end
   end
+
+  # --------------------------------------------------------------------
+  # Coverage gaps for guard clauses,
+  # binary-search edges, and finalize_sent_transaction telemetry write.
+  # Each example targets a real-logic branch (guard / fallback / write),
+  # NOT defensive `&.`-nil padding.
+  # --------------------------------------------------------------------
+
+  describe "missing-wallet guard (SEC.13 prerequisite)" do
+    # belongs_to :wallet is `optional: true` — slashing audit-tx for a
+    # cluster-wide kill is allowed to land without a wallet (see model
+    # comment). Such tx must NOT reach the contract — the guard at L97
+    # raises before any RPC call.
+    let(:tree) { create(:tree) }
+    let(:wallet) do
+      tree.wallet.tap { |w| w.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved") }
+    end
+    let!(:tx) do
+      wallet.blockchain_transactions.create!(
+        amount: 100, token_type: :carbon_coin, status: :pending,
+        to_address: wallet.crypto_public_address, locked_points: 1000
+      )
+    end
+
+    it "raises Compliance Breach when tx.wallet is nil" do
+      allow_any_instance_of(BlockchainTransaction).to receive(:wallet).and_return(nil)
+      expect { described_class.call(tx.id) }
+        .to raise_error(RuntimeError, /Compliance Breach: Missing wallet for TX/)
+    end
+  end
+
+  describe "SEC.13 compromised-tree handling — edge cases" do
+    let(:tree) { create(:tree) }
+    let(:wallet) do
+      tree.wallet.tap { |w| w.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved") }
+    end
+    let!(:tx) do
+      wallet.blockchain_transactions.create!(
+        amount: 100, token_type: :carbon_coin, status: :pending,
+        to_address: wallet.crypto_public_address, locked_points: 1000
+      )
+    end
+
+    it "returns early without RPC when every tx in the batch is peaq_did_compromised" do
+      allow_any_instance_of(Tree).to receive(:peaq_did_compromised?).and_return(true)
+      allow(Rails.logger).to receive(:warn)
+
+      expect(mock_client).not_to receive(:transact)
+      expect { described_class.call(tx.id) }.not_to raise_error
+
+      expect(tx.reload.status).to eq("processing").or eq("pending")
+      expect(Rails.logger).to have_received(:warn)
+        .with(a_string_matching(/\[SEC\.13\] Mint skipped for 1 peaq_did_compromised tree/))
+    end
+
+    it "skips the peaq compromise filter for org-level tx (wallet without tree)" do
+      # Covers the `wallet&.tree&.peaq_did_compromised?` chained-nav
+      # ELSE: wallet exists but has no tree → tx is NOT classified as
+      # compromised and minting proceeds normally.
+      allow_any_instance_of(Wallet).to receive(:tree).and_return(nil)
+
+      expect { described_class.call(tx.id) }.not_to raise_error
+      expect(tx.reload.status).to eq("sent")
+    end
+
+    it "filters compromised txs out of the batch but mints the rest" do
+      # Partial-compromise: after deleting compromised entries, @wallet_mapping
+      # is non-empty — service must keep going and mint surviving txs.
+      good_tree = create(:tree)
+      good_wallet = good_tree.wallet.tap do |w|
+        w.update!(crypto_public_address: "0x" + "c" * 40, hadron_kyc_status: "approved")
+      end
+      good_tx = good_wallet.blockchain_transactions.create!(
+        amount: 100, token_type: :carbon_coin, status: :pending,
+        to_address: good_wallet.crypto_public_address, locked_points: 1000
+      )
+
+      # Only `tree` (the compromised one) returns true.
+      allow_any_instance_of(Tree).to receive(:peaq_did_compromised?) do |t|
+        t.id == tree.id
+      end
+
+      described_class.call_batch([ tx.id, good_tx.id ])
+
+      expect(tx.reload.status).not_to eq("sent")
+      expect(good_tx.reload.status).to eq("sent")
+    end
+  end
+
+  describe "send_clean_batch — size==1 short-circuit" do
+    # When binary-search isolates a single clean tx, send_clean_batch
+    # delegates to mint_individual instead of issuing a 1-element
+    # batchMint (gas waste). Covers L383-384.
+    let(:service) { described_class.new([ -1 ]) }
+    let(:tree) { create(:tree) }
+    let(:wallet) do
+      tree.wallet.tap { |w| w.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved") }
+    end
+    let!(:tx) do
+      wallet.blockchain_transactions.create!(
+        amount: 100, token_type: :carbon_coin, status: :pending,
+        to_address: wallet.crypto_public_address, locked_points: 1000
+      )
+    end
+
+    it "delegates to mint_individual when there is exactly one clean tx" do
+      expect(service).to receive(:mint_individual)
+        .with(mock_client, mock_contract, mock_key, "carbon_coin", tx).once
+      expect(mock_client).not_to receive(:transact)
+
+      service.send(:send_clean_batch, mock_client, mock_contract, mock_key, "carbon_coin", [ tx ])
+    end
+
+    it "is a no-op for an empty txs array (defensive recursion guard)" do
+      expect(mock_client).not_to receive(:transact)
+      expect { service.send(:send_clean_batch, mock_client, mock_contract, mock_key, "carbon_coin", []) }
+        .not_to raise_error
+    end
+  end
+
+  describe "process_half — empty half guard" do
+    # binary search splits an odd-sized array → one half can land empty
+    # at recursive boundaries; process_half must short-circuit.
+    let(:service) { described_class.new([ -1 ]) }
+
+    it "returns immediately when half_txs is empty" do
+      expect(service).not_to receive(:batch_dry_run_reverts?)
+      service.send(:process_half, mock_client, mock_contract, mock_key, "carbon_coin", [],
+                   [], [], depth: 0, original_batch_size: 6)
+    end
+  end
+
+  describe "binary search >30% poisoned fallback" do
+    # When the first split surfaces more than POISONED_RATIO_THRESHOLD
+    # of the original batch as poisoned, the algorithm gives up and
+    # routes the remainder straight to individual mints. Covers L317-321.
+    let(:trees) { Array.new(8) { create(:tree) } }
+    let(:wallets) do
+      trees.each_with_index.map do |t, i|
+        t.wallet.tap do |w|
+          # 0x + 40 hex chars; use lower-nibble of index so all 8 wallets
+          # produce valid addresses (a..h would fall outside 0-9a-f).
+          w.update!(crypto_public_address: "0x" + i.to_s(16) * 40, hadron_kyc_status: "approved")
+        end
+      end
+    end
+    let!(:transactions) do
+      wallets.map do |w|
+        w.blockchain_transactions.create!(
+          amount: 100, token_type: :carbon_coin, status: :pending,
+          to_address: w.crypto_public_address, blockchain_network: "evm", locked_points: 1000
+        )
+      end
+    end
+
+    it "fallbacks to individual mints when poisoned ratio exceeds 30%" do
+      # batchMint dry-run always reverts → drives binary search down to
+      # MIN_BINARY_SEARCH_SIZE bottoms, accumulating poisoned > 30%.
+      allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything)
+        .and_raise(StandardError, "execution reverted: contract error")
+      allow(mock_client).to receive(:call).with(anything, "balanceOf", anything).and_return(0)
+      allow(Rails.logger).to receive(:warn)
+
+      mint_calls = []
+      allow(mock_client).to receive(:transact) do |_c, method, *_args, **_opts|
+        mint_calls << method
+        "0x" + "f" * 64
+      end
+
+      described_class.call_batch(transactions.map(&:id))
+
+      expect(mint_calls).to all(eq("mint"))
+      expect(Rails.logger).to have_received(:warn)
+        .with(a_string_matching(/\[Web3\] Binary search: >30% poisoned/)).at_least(:once)
+    end
+  end
+
+  describe "finalize_sent_transaction — telemetry_log audit trail" do
+    # When a poisoned record gets recovered through mint_individual
+    # (not the inline batch path), finalize_sent_transaction is the
+    # only place that writes chainlink_request_id / zk_proof_ref.
+    let(:service) { described_class.new([ -1 ], telemetry_log: log) }
+    let(:tree) { create(:tree) }
+    let(:wallet) do
+      tree.wallet.tap { |w| w.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved") }
+    end
+    let!(:tx) do
+      wallet.blockchain_transactions.create!(
+        amount: 100, token_type: :carbon_coin, status: :pending,
+        to_address: wallet.crypto_public_address, locked_points: 1000
+      )
+    end
+    let(:log) do
+      create(:telemetry_log,
+        tree: tree, verified_by_iotex: true, oracle_status: "fulfilled",
+        chainlink_request_id: "chainlink-finalize-1", zk_proof_ref: "zk-finalize-1"
+      )
+    end
+
+    it "persists chainlink_request_id and zk_proof_ref via finalize_sent_transaction" do
+      service.send(:finalize_sent_transaction, tx, fake_tx_hash, "carbon_coin")
+
+      tx.reload
+      expect(tx.status).to eq("sent")
+      expect(tx.tx_hash).to eq(fake_tx_hash)
+      expect(tx.chainlink_request_id).to eq("chainlink-finalize-1")
+      expect(tx.zk_proof_ref).to eq("zk-finalize-1")
+    end
+
+    it "leaves chainlink fields nil when no telemetry_log was attached" do
+      bare = described_class.new([ -1 ])
+      bare.send(:finalize_sent_transaction, tx, fake_tx_hash, "carbon_coin")
+
+      tx.reload
+      expect(tx.status).to eq("sent")
+      expect(tx.chainlink_request_id).to be_nil
+      expect(tx.zk_proof_ref).to be_nil
+    end
+  end
 end
