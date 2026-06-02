@@ -830,7 +830,7 @@ Device Memory → Option Bytes → Read Out Protection → RDP: Level 1 (або 
 
 **Latency impact (Гілка B vs A):** ATECC608B AES-ECB ~1.5 мс/блок vs MCU HAL_CRYP ~10 µs. Для одного 16/24-байтного LoRa пакета — нехтовно. Для CBC batch 50 × 16 байт = 800 байт — додаткові ~75 мс на flush (CoAP flush триває кілька секунд у будь-якому разі).
 
-**Power impact (Гілка B):** ATECC active 14 мА × 1.5 мс = 70 мкДж/пакет → ~0.1% до енергобюджету Soldier. ATECC sleep 150 нА — нехтовно.
+**Power impact (Гілка B):** ATECC active 14 мА × 1.5 мс = 70 мкДж/пакет → ~0.1% до енергобюджету Soldier. ATECC sleep 150 нА — нехтовно. ⚠️ Енергія тут **мала, але не вирішальна**: чи робить ATECC AES щопакета, чи лише provisioning (а streaming AES — на вбудованому radio-AES STM32) — окрема вісь компромісу (tamper-resistance LoRa-ключа ⟷ latency/ідіом), повний розбір — §3.7 (SEC.14).
 
 **Cost impact (Гілка B):** +$0.60/unit (ATECC608B 10k MOQ) або +$0.85/unit (STSAFE-A110). Cross-ref §7.2 unit economics.
 
@@ -1842,21 +1842,42 @@ atca_status_t status = atcab_aes_encrypt(
     plaintext,
     ciphertext
 );
-// Затримка: ~1.5 мс per block (vs ~10 µs HAL_CRYP) — прийнятно для 16-байтних LoRa пакетів
+// Затримка: ~1.5 мс per block (vs ~10 µs HAL_CRYP). MCU лишається awake весь I²C-раунд.
+// Чи прийнятно — залежить від ролі SE (per-packet vs provisioning-only), див. trade-off нижче
 ```
 
-**Latency impact:** ATECC608B AES-ECB ~1.5 мс/блок vs ~10 µs MCU HAL_CRYP. Для одного 16-байтного LoRa пакету — нехтовно. Для CBC batch (50 × 16 байт = 800 байт) — додаткові ~75 мс на flush — **прийнятно** (CoAP flush триває кілька сек у будь-якому разі).
+**Latency impact:** ATECC608B AES-ECB ~1.5 мс/блок vs ~10 µs MCU HAL_CRYP. За **енергією** на один 16-байтний LoRa пакет — нехтовно (числа нижче), але це тримає MCU awake ~1.5 мс/пакет замість ~10 µs — одна з осей trade-off «per-packet vs provisioning-only» (підрозділ нижче). Для CBC batch (50 × 16 байт = 800 байт) — додаткові ~75 мс на flush — прийнятно (CoAP flush триває кілька сек у будь-якому разі).
 
-**Power impact:**
+**Power impact** (перевірено — НЕ блокер, але й **не** вирішальний аргумент):
 - Active (1.5 мс): 14 мА × 3.3V = 46 мВт. На 1 LoRa пакет → ~70 мкДж.
 - Sleep: 150 нА (нехтовно у бюджеті Soldier `E_sleep ≈ 1.5 мкА`)
-- За 1 хв (1 wakeup) → +0.1% до total energy budget. ✅
+- Контекст величини: ~70 мкДж ≈ 0.2% енергії самого LoRa-TX (~39 мДж, [`02_03`](02_03_BQ25570_MPPT_Nano_Power)) і десяті частки % повного wake-budget; проти 0.47 F EDLC (≈7 Дж) — це не «вбивця іоністора». Енергія SE per-packet **мала** — і саме тому вона **не** головний критерій вибору ролі (див. підрозділ нижче).
 
 **Footprint (PCB):**
 - UDFN-8: 2×3 мм
 - SOIC-8: 4×5 мм
 - I²C: 2 GPIO (PB6/PB7) + 2 pull-ups (4.7 kΩ × 2)
 - Загалом: ~3% PCB area для Soldier (KiCad layout у HW.9)
+
+**Роль SE у LoRa-крипті: per-packet AES vs provisioning-only — відкритий trade-off [SEC.14]**
+
+> Це уточнення *всередині* Варіанту B, **не** перегляд ARCH.42. ARCH.42 зафіксував *AES-128-ключ у ATECC608B Slot 0*; відкритим лишається інше питання — *хто виконує шифрування кожного пакета*: сам SE щопакета, чи вбудований radio-AES STM32 з ключем у RDP-Flash.
+
+Решта §3.7 (API sketch, latency/power) неявно припускає **per-packet ATECC AES** (`atcab_aes_encrypt()` на кожен LoRa-кадр). Це не єдиний шлях, і попередня подача «1.5 мс нехтовно / +0.1% ✅» приховувала справжню вісь. Енергія тут — хибний слід (вона мала з обох боків). Реальна вісь:
+
+| | **Варіант B (поточний неявний): per-packet ATECC AES** | **Role-split: built-in AES + ATECC provisioning-only** |
+|---|---|---|
+| LoRa session-ключ живе | у ATECC Slot 0, **ніколи не залишає кремній SE** | у STM32 RDP-Flash (рівень захисту Гілки A для *цього* ключа) |
+| Шифрування пакета | `atcab_aes_encrypt()` через I²C, ~1.5 мс, MCU awake весь раунд | вбудований radio-AES STM32WLE5JC, ~10 µs, inline |
+| Роль ATECC | весь streaming AES **+** identity/attestation | **лише provisioning**: ECDH keygen, master/identity (Slot 1), device cert (Slot 2), OTA HMAC key (Slot 3), ECDSA-підпис DID |
+| Сильна сторона | LoRa-ключ DPA/EM-стійкий *by design* | SoC-AES створений саме для inline-LoRa; менше I²C failure-modes; latency ~10 µs |
+| Ціна | +1.5 мс MCU-awake/пакет на вузлі, що спить 99% часу; +1 шина, що може відмовити | LoRa session-ключ не захищений на рівні SE (master/identity лишаються в ATECC) |
+
+**Чому role-split легітимний:** уся цінність ATECC — «ключ не залишає ASIC», що *змушує* робити AES всередині SE. Якщо натомість прийняти, що LoRa session-ключ живе у RDP-Flash (Гілка-A рівень для одного цього ключа), то вбудований AES STM32 — швидший та ідіоматичний (radio-integrated CRYP саме для inline-LoRa), а ATECC робить те, у чому незамінний: асиметрику + tamper-resistant identity + provisioning. Per-device HKDF (§3.4а) гарантує: екстракція LoRa-ключа з одного вузла **не** компрометує мережу.
+
+**Чому per-packet (Варіант B) теж defensible:** для urban / high-value розгортань, де фізичний доступ до вузла ймовірний, tamper-resistance *самого LoRa-ключа* може бути вартий 1.5 мс. Це рішення про threat model, а не технічна необхідність.
+
+**Статус:** обидва шляхи сумісні з ARCH.42 (AES-128 SE-constraint). Вибір — при bench eval + BOM freeze (дорожня карта нижче), з **явним** вибором осі вище, а не за замовчуванням «0.1% acceptable». Cross-ref [`00_07` — SEC.14](00_07_Action_Plan_Tracker).
 
 **Альтернативи:**
 
@@ -1892,6 +1913,8 @@ atca_status_t status = atcab_aes_encrypt(
 **Дорожня карта:**
 
 - [ ] 🤖 (наступний цикл) Завершити оцінку: ATECC608B vs STSAFE-A110 матриця, узгоджена з KiCad floorplan
+- [x] 🤖 (SEC.14) Перефреймувати latency/power → чесний trade-off «per-packet AES vs provisioning-only» — ✅ Виконано (підрозділ вище): енерго-аргумент перевірено = малий, але не вирішальний; справжня вісь = tamper-resistance LoRa-ключа ⟷ latency/ідіом; role-split альтернатива подана
+- [ ] 👤/🤖 (SEC.14) Обрати роль SE — per-packet ATECC AES (Варіант B) vs built-in AES + ATECC provisioning-only — за віссю trade-off вище, при bench eval + BOM freeze (не за замовчуванням)
 - [x] 🤖 Update §3.4 Factory Flashing pipeline з SE-варіантом — ✅ Виконано: §3.4 розділено на Гілку A (Protected Flash, TRL 6/7) та Гілку B (ATECC608B/STSAFE-A110, mass production > 10k); додано двошаровий defense-in-depth (data zone lock + RDP), latency/power/cost impact, criteria для вибору гілки, та irreversibility note (B → A неможливо)
 - [ ] 🤖 Інтеграція з Backend `Provisioning::HardwareKeyService` (генерація ECC keypair + cert)
 - [ ] 🤖 Firmware HAL: drop-in replacement `Crypto_AES_Encrypt_Block()` що внутрішньо викликає ATECC або HAL_CRYP залежно від `#define USE_SECURE_ELEMENT`
