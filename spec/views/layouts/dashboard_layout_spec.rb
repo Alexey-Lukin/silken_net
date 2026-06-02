@@ -160,4 +160,31 @@ RSpec.describe DashboardLayout do
       expect(html).to include(">7<")
     end
   end
+
+  # render_codex_onboarding_wizard is a non-blocking lore layer (ADR-CDX-4/7
+  # fail-open). These cover the two guard/rescue paths that the happy-path
+  # specs never reach: Codex module absent, and a wizard render hiccup.
+  describe "codex onboarding wizard (fail-open lore layer)" do
+    it "skips the wizard when Codex::Fraction is not defined" do
+      hide_const("Codex::Fraction")
+      user = mock_user
+      user.organization_id = 42
+      # defined?(::Codex::Fraction) is now false → early return; dashboard still renders.
+      html = render_layout(user: user, content: content_stub)
+      expect(html).to include("Layout Content Rendered")
+    end
+
+    it "fails open — logs and still renders the dashboard when the wizard raises" do
+      user = mock_user
+      user.organization_id = 42
+      user.codex_fraction = nil
+      allow(Codex::Fractions::OnboardingWizard).to receive(:new).and_raise(StandardError, "wizard boom")
+      allow(Rails.logger).to receive(:warn)
+
+      html = render_layout(user: user, content: content_stub)
+
+      expect(Rails.logger).to have_received(:warn).with(/\[CodexOnboardingWizard\] render skipped.*wizard boom/)
+      expect(html).to include("Layout Content Rendered")
+    end
+  end
 end

@@ -426,6 +426,18 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
     end
   end
 
+  describe "#system_bot" do
+    let(:worker) { described_class.new }
+
+    # User.oracle_executioner uses find_by (returns nil, never raises) today, but
+    # system_bot guards against RecordNotFound so a future find_by! / lookup change
+    # degrades gracefully (updated_by: nil) instead of crashing the daily sync.
+    it "returns nil when oracle_executioner raises RecordNotFound (fail-safe)" do
+      allow(User).to receive(:oracle_executioner).and_raise(ActiveRecord::RecordNotFound)
+      expect(worker.send(:system_bot)).to be_nil
+    end
+  end
+
   # ─── Helpers ──────────────────────────────────────────────────────
 
   private

@@ -361,6 +361,12 @@ RSpec.describe Dclimate::VerificationService, type: :service do
       ref = service.send(:generate_dclimate_ref)
       expect(ref).to match(/\Adclimate:firms:UNKNOWN:\d{8}T\d{6}Z:[a-f0-9]{16}\z/)
     end
+
+    it "uses UNKNOWN when satellite_metadata is nil (safe-nav fallback)" do
+      service.instance_variable_set(:@satellite_metadata, nil)
+      ref = service.send(:generate_dclimate_ref)
+      expect(ref).to match(/\Adclimate:firms:UNKNOWN:\d{8}T\d{6}Z:[a-f0-9]{16}\z/)
+    end
   end
 
   describe "#parse_confidence" do
@@ -406,6 +412,17 @@ RSpec.describe Dclimate::VerificationService, type: :service do
         expect { service.send(:trigger_slashing) }.not_to raise_error
         expect(BurnCarbonTokensWorker).not_to have_received(:perform_async)
       end
+    end
+  end
+
+  describe "#extract_entries" do
+    let(:alert) { create(:ews_alert, :fire, cluster: cluster, tree: tree) }
+    let(:service) { described_class.new(alert) }
+
+    # Covers the fallback when the API payload has neither a "data" array nor a
+    # GeoJSON "features" array — interpret_fire_data then treats it as no-pass.
+    it "returns [] when neither data nor features is an array" do
+      expect(service.send(:extract_entries, { "foo" => "bar" })).to eq([])
     end
   end
 end
