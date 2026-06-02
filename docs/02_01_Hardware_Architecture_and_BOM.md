@@ -167,7 +167,7 @@ STM32WLE5JC
 | 2 | **PMIC** | Texas Instruments BQ25570RGRR | MPPT + Boost + Buck; живлення від EBFC | ~$2.80 |
 | 3 | **Supercapacitor** | Eaton HV0H474AEJ-R або KEMET FG0H474ZF (0.47 F / 5.5 В, Radial) | Енергетичний буфер | ~$1.10 |
 | 4 | **Ceramic SMD Antenna** | Yageo ANT1608LLC00R2400A, Taoglas FXP73 або Ignion NN02-310 (868 МГц, SMD) | RF-випромінювання | ~$0.35 |
-| 5 | **П'єзоелемент (SMD)** | Murata 7BB-15-6L0 (∅15 мм, SMD flex-tab) АБО TDK B-Series piezo bender АБО Mallory MSR205P (PCB-mount). Раніше згаданий ZP-3/ZP-5 ∅27 мм через-отворний — **виключено** (несумісно з Zero-Touch §6.2). Монтується на **нижню сторону Power Deck** + Bergquist Sil-Pad 1500ST (0.5–1.0 мм) як acoustic coupling до Ti Zone 3. | Пасивний акустичний тригер (пилка, вогонь, кавітація) | ~$0.20 (piezo) + ~$0.10 (pad) |
+| 5 | **П'єзоелемент (SMD)** | Murata 7BB-15-6L0 (∅15 мм, SMD flex-tab) АБО TDK B-Series piezo bender АБО Mallory MSR205P (PCB-mount). Раніше згаданий ∅27 мм через-отворний п'єзодиск — **виключено** (несумісно з Zero-Touch §6.2). Монтується на **нижню сторону Power Deck** + Bergquist Sil-Pad 1500ST (0.5–1.0 мм) як acoustic coupling до Ti Zone 3. | Пасивний акустичний тригер (пилка, вогонь, кавітація) | ~$0.20 (piezo) + ~$0.10 (pad) |
 | 6 | **Schottky Clamp** | BAT54S (Dual Schottky, SOT-23) | Захист GPIO від п'єзо-сплесків (0–3.3 В) | ~$0.05 |
 | 7 | **Pogo Pins** | Mill-Max 0906 Series (2 шт, spring-loaded) | Сліпе з'єднання до коаксіального анкера | ~$0.40 |
 | 8 | **PCB** | FR4, 4 шари, 1.6 мм, HASL/ENIG | Power Deck + RF Deck (2-поверховий дизайн) | ~$0.65 |
@@ -487,7 +487,7 @@ STM32WLE5JC
 
 2. **Акустика без живлення (Zero-Power Wake) — SMD-piezo + acoustic pad (REVISED 2026-05-16):**
 
-   > 🔴 **Раніше:** «П'єзодиск ZP-3/ZP-5 **приклеєний** до металевого дна капсули, з дротами до GPIO». Це **порушує Zero-Touch Assembly (§5.2 крок 1-4):** клеєння + два дроти ≠ робот pick-and-place; Pogo Pins (BOM поз. 7) **повністю зайняті** VIN_DC + GND і не можуть нести piezo-сигнал; ZP-3/ZP-5 не виготовляються у SMD-форматі.
+   > 🔴 **Раніше:** «П'єзодиск ∅27 мм через-отворний **приклеєний** до металевого дна капсули, з дротами до GPIO». Це **порушує Zero-Touch Assembly (§5.2 крок 1-4):** клеєння + два дроти ≠ робот pick-and-place; Pogo Pins (BOM поз. 7) **повністю зайняті** VIN_DC + GND і не можуть нести piezo-сигнал; через-отворні диски такого типу не виготовляються у SMD-форматі.
 
    **Правильна архітектура (Zero-Touch-сумісна):**
    - **П'єзоелемент** — SMD-варіант: Murata 7BB-15-6L0 (∅15 мм, SMD-pads через flex-tab) АБО TDK B-Series piezo bender SMD АБО PCB-mount piezo buzzer (Mallory MSR205P), використаний як **пасивний sensor**. Робот pick-and-place встановлює його на **нижню сторону Power Deck**.

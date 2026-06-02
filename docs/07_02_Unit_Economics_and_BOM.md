@@ -92,16 +92,16 @@
 | 2 | PMIC | TI BQ25570RGRR | ~$2.80 |
 | 3 | Supercapacitor | Eaton HV0H474AEJ-R (0.47 F / 5.5 В) | ~$1.10 |
 | 4 | Ceramic Antenna | Yageo ANT1608LLC00R2400A, Taoglas FXP73 або Ignion NN02-310 (868 МГц, LTCC/Virtual, SMD) | ~$0.35 |
-| 5 | П'єзоелемент | ZP-3 / ZP-5 (∅27 мм, пасивний тригер) | ~$0.15 |
+| 5 | П'єзоелемент (SMD) | Murata 7BB-15-6L0 / TDK B-Series + acoustic pad (∅15 мм, пасивний тригер) — канон [`02_01 §3`](02_01_Hardware_Architecture_and_BOM) | ~$0.30 |
 | 6 | PCB | FR4, 4 шари, 1.6 мм (Power Deck + RF Deck) | ~$0.65 |
 | 7 | Пасивні | 0402/0603 резистори, конденсатори X5R/C0G | ~$0.20 |
 | 8 | Pogo Pins | Mill-Max 0906 Series (2 шт, spring-loaded) | ~$0.40 |
 | 9 | Buffer cap VOUT | 47 µF / **25V X7R 1210** (Murata GRM32E70J476ME20), **НЕ 6.3V** — [`02_03 §6.1`](02_03_BQ25570_MPPT_Nano_Power) | ~$0.18 |
-| — | **Electronics TOTAL** | | **~$11.33** |
+| — | **Electronics TOTAL** | | **~$11.48** |
 | — | _LTC3108 + Coilcraft xfmr 1:100 (DNP footprint)_ | _Cold-start fallback, не populated за замовчуванням — `02_03 BLOCKER-3`. PCB pads ~$0._ | _$0 / +$1.20 якщо populated після lab R_int test_ |
 | — | _BME280 + TPS22860 gate + PTFE vent (climate add-on)_ | _t°/RH/тиск → VPD confounder (False-Slashing kill, [`05_05`](05_05_Slashing_and_Risk_Policy) §6/§7) + клімат-оракул NaaS ([`07_01`](07_01_Nature_as_a_Service_Contracts)); ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM), pending bench._ | _+$2.60 якщо populated_ |
 
-> **Climate add-on (BME280, ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)):** +$2.60/вузол якщо populated — **НЕ** входить у baseline Electronics TOTAL ($11.33) ані CAPEX §1.2, доки ADR не закрито bench'ем. Перетворює вузол на кліматичний (VPD-confounder + NaaS клімат-оракул) — підвищує цінність D-MRV-даних для агро/страхового ринку.
+> **Climate add-on (BME280, ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)):** +$2.60/вузол якщо populated — **НЕ** входить у baseline Electronics TOTAL ($11.48) ані CAPEX §1.2, доки ADR не закрито bench'ем. Перетворює вузол на кліматичний (VPD-confounder + NaaS клімат-оракул) — підвищує цінність D-MRV-даних для агро/страхового ринку.
 
 ---
 

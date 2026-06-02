@@ -164,16 +164,28 @@ module DocsLinter
     end
   end
 
-  # [SSOT anti-drift] Deprecated-term registry. Tokens retired SSOT-wide must
-  # not reappear in any canon doc; as each drift is fixed, the old form is added
-  # here so CI blocks its return (the general "scripts catch drift" net). Keyed
-  # deprecated-token → replacement hint. Use only for UNAMBIGUOUS retired strings
-  # (no legit current/historical use), else this false-positives.
+  # [SSOT anti-drift] Deprecated-term registry (HARD) — the enforcement arm of
+  # Ruthless Pruning (00_06 §4). Tokens retired SSOT-wide must not reappear in the
+  # ACTIVE canon; as each drift is fixed, the old form is added here so CI blocks its
+  # return (the general "scripts catch drift" net). Keyed retired-token → replacement
+  # hint. Use ONLY for UNAMBIGUOUS retired strings with no legit current use: a retired
+  # part number (ZP-3/ZP-5 ∅27mm through-hole piezo → SMD Murata/TDK, 02_01 §3)
+  # qualifies; a token still alive somewhere does NOT — LTC3108 survives as a DNP
+  # cold-start fallback, so it is deliberately absent. Substring match → keep tokens
+  # specific. Meta/legacy docs are EXEMPT (they legitimately NAME retired things):
+  # 02_06 (legacy-appendix home), 00_06 (this standard cites them as examples),
+  # 00_07 (tracker may reference an old baseline in a "migrate-from" note).
   DEPRECATED_TERMS = {
-    "silkennet-v1-aes256" => 'use "silken-aes-128-lora-key" / "silken-aes-256-device-key" (ARCH.42 256→128 HKDF info)'
+    "silkennet-v1-aes256" => 'use "silken-aes-128-lora-key" / "silken-aes-256-device-key" (ARCH.42 256→128 HKDF info)',
+    "ZP-3" => "retired ∅27mm through-hole piezo SKU → SMD piezo (Murata 7BB-15-6L0 / TDK B-Series), canon 02_01 §3",
+    "ZP-5" => "retired ∅27mm through-hole piezo SKU → SMD piezo (Murata 7BB-15-6L0 / TDK B-Series), canon 02_01 §3"
   }.freeze
 
-  def deprecated_terms(text)
+  DEPRECATED_EXEMPT = %w[02_06 00_06 00_07].freeze
+
+  def deprecated_terms(basename, text)
+    return [] if DEPRECATED_EXEMPT.any? { |prefix| basename.start_with?(prefix) }
+
     DEPRECATED_TERMS.filter_map do |term, hint|
       "deprecated term `#{term}` present → #{hint}" if text.include?(term)
     end

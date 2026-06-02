@@ -1,0 +1,13 @@
+# .aiignore — files excluded from AI-agent context.
+# Rule home: docs/00_06 §4 (Ruthless Pruning).
+#
+# Legacy / superseded material is kept ONLY for historical or educational
+# reference. Excluding it from AI context stops LLM agents from "resurrecting"
+# dead concepts (e.g. the LTC3108 → Meissner breadboard cascade, the 44 mV
+# streaming-potential simulator). SSOT for the CURRENT architecture lives in the
+# active docs/NN_NN_*.md tree — see docs/00_00 for the reading order.
+#
+# NB: this convention is honoured by Cursor (.cursorignore) and similar agents;
+# it is advisory for tools without native support.
+
+docs/02_06_Legacy_Breadboard_Appendix.md

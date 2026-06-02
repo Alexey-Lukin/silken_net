@@ -193,13 +193,28 @@ RSpec.describe DocsLinter do
 
   describe ".deprecated_terms" do
     it "flags a retired token and gives the replacement hint" do
-      hits = described_class.deprecated_terms("derive via HKDF info silkennet-v1-aes256 here")
+      hits = described_class.deprecated_terms("03_05", "derive via HKDF info silkennet-v1-aes256 here")
       expect(hits.size).to eq(1)
       expect(hits.first).to include("silken-aes-128-lora-key")
     end
 
+    it "flags a retired part number (ZP-3/ZP-5) in active canon" do
+      expect(described_class.deprecated_terms("02_01", "use ZP-3 disc")).not_to be_empty
+      expect(described_class.deprecated_terms("07_02", "ZP-5 piezo")).not_to be_empty
+    end
+
+    it "exempts the legacy-appendix + meta docs (they may name retired things)" do
+      expect(described_class.deprecated_terms("02_06", "legacy ZP-3 + silkennet-v1-aes256")).to be_empty
+      expect(described_class.deprecated_terms("00_06", "example token ZP-3")).to be_empty
+      expect(described_class.deprecated_terms("00_07", "migrate-from ZP-3 baseline")).to be_empty
+    end
+
+    it "does NOT flag a token that is still alive (LTC3108 survives as a DNP fallback)" do
+      expect(described_class.deprecated_terms("02_03", "LTC3108 DNP cold-start fallback")).to be_empty
+    end
+
     it "is clean when only current tokens are present" do
-      expect(described_class.deprecated_terms("HKDF info silken-aes-128-lora-key")).to be_empty
+      expect(described_class.deprecated_terms("03_05", "HKDF info silken-aes-128-lora-key")).to be_empty
     end
 
     it "exposes a non-empty registry of retired tokens" do
