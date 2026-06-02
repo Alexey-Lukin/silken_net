@@ -7,7 +7,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 3 baseline (2026-05-24); **TRL 3→4 gate PASSED** (2026-05-25) — всі 4 рівні in-silico Zero-Lab pipeline дали позитивний результат. Очікується in vitro Ti-coin валідація (Stage 2). Відкриті: enzyme expression + ZIF/membrane synthesis (HW.5/HW.6), in vitro Ti-coin (HW.24) → [`00_07`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 3 (2026-05-24) — **in-silico Zero-Lab pipeline L1-L4 ✅ завершено** (2026-05-25; аналітичний PoC). За NASA/ISO in-silico = TRL 3; фізичний **TRL 4 gated на in-vitro Ti-coin** (Stage 2, pending) — канон [`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond). Відкриті: enzyme expression + ZIF/membrane synthesis (HW.5/HW.6), in vitro Ti-coin (HW.24) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -358,7 +358,7 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 4. ✅ L3 pass (B3LYP + ωB97X + ΔSCF + tunneling, 2026-05-27). Best estimate: B3LYP corrected **Δε ≈ -0.07 eV** (0.21 eV from exp.). Adiabatic ΔSCF ωB97X: +0.884 eV. **PCET-валідація (script 32):** thermodynamic proton reference дав E°(FAD/FADH₂) = **-158 mV** vs NHE — в межах **50 mV** від експериментального free-flavin. Це **ізолює** залишковий ~1 eV uphill каскаду суто до обмеження implicit-solvent (диференціальна сольватація PCM), а не до хімії — тобто "PCM solvation limit" є **доведеним фактом**, не відмовкою (cascade PCET reframing, script 33, downhill НЕ дає → теж PCM, не proton coupling). **Tunneling pathway** (script 28, Beratan-Onuchic): FAD→ALA260→THR259→THR287, β·d=2.05 — tunneling feasible. **L3b cathode DET ✅ COMPLETE** (3/3 pairs): Cu-Co k_ET=2.34×10¹⁰, Co-Ce k_ET=1.1×10⁸, Ce-gr k_ET=3.07×10¹¹. Total k_DET=1.09×10⁸ s⁻¹ (10⁵× above turnover). Деталі → [`L3_quantum_chemistry.md`](protocols/ebfc/in_silico/L3_quantum_chemistry.md)
 5. ✅ L4 (2026-05-25): Michaelis-Menten + Arrhenius + BQ25570 boost → **delta_t validated**. Healthy tree (10 mM, 25°C): 35.7 s < 60s baseline; stressed (5 mM, 5°C): 190 s > 60s. EBFC discriminates health → Lorenz attractor receives meaningful β-perturbation. Скрипт: `30_kinetics_delta_t.py`. Diffusion NOT rate-limiting (j_diff >> j_kinetic).
 
-**Гейт TRL 3 → 4 (Zero-Lab):** ✅ **PASSED** (2026-05-25). Усі 4 рівні дали позитивний результат. Zero-Lab computational proof завершено — EBFC Gen 2.0 доведено in silico на всіх рівнях (структура → стабільність → редокс-потенціал → кінетика). Наступний крок — замовлення Ti-monet у CRO (Stage 2).
+**Вихід з TRL 3 (Zero-Lab in-silico):** ✅ **завершено** (2026-05-25). Усі 4 рівні дали позитивний результат — Zero-Lab computational proof завершено: EBFC Gen 2.0 доведено in silico на всіх рівнях (структура → стабільність → редокс-потенціал → кінетика). ⚠️ Це **TRL 3** (за NASA in-silico ≠ TRL 4); фізичний **TRL 4** = Ti-monet у CRO (Stage 2). Наступний крок — замовлення Ti-monet.
 
 **Інфраструктура:**
 - **Локально:** Workstation з NVIDIA RTX 4090 (24 GB VRAM) або RTX 5090 (32 GB VRAM) — повний робочий стек за $5–10K hardware (GPU + CPU + 64–128 GB RAM + NVMe storage для PDB-датасетів). Достатньо для більшості L1–L4 розрахунків.
@@ -402,9 +402,9 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 
 ---
 
-### 3.7. План Закупівлі та Контрактації Компонентів (TRL 4 → 5 Execution)
+### 3.7. План Закупівлі та Контрактації Компонентів (TRL 3 → 5 Execution)
 
-> **Контекст:** in-silico Zero-Lab завершено (L1–L4 ✅). Усе, що лишилось до гейту TRL 5, — **мокра хімія**: дістати 4 матеріали (фермент, мембрана, зшивач, каталізатор) + 1 підкладку (Ti-монети), нанести стек і виміряти на потенціостаті. Цей розділ — execution-roadmap з повними specification sheets, постачальниками, lead-time та non-obvious bottleneck'ами для кожного компонента. Тести, які проти них валідуються, — §3.5; критерій гейту — стабільні мВ/мкА ≥ 30 днів.
+> **Контекст:** in-silico Zero-Lab (= TRL 3) завершено (L1–L4 ✅). Усе, що лишилось до фізичних гейтів **TRL 4** (перший потенціостат-замір на Ti-coin) → **TRL 5** (стабільність ≥ 30 днів), — **мокра хімія**: дістати 4 матеріали (фермент, мембрана, зшивач, каталізатор) + 1 підкладку (Ti-монети), нанести стек і виміряти на потенціостаті. Цей розділ — execution-roadmap з повними specification sheets, постачальниками, lead-time та non-obvious bottleneck'ами для кожного компонента. Тести, які проти них валідуються, — §3.5; критерій гейту — стабільні мВ/мкА ≥ 30 днів.
 
 | # | Компонент | Тип закупівлі | Постачання | Lead time | Done-критерій |
 |---|-----------|---------------|-----------|-----------|---------------|

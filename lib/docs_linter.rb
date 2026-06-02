@@ -351,4 +351,27 @@ module DocsLinter
       end
     end
   end
+
+  # [SSOT anti-drift] External doc-path references (HARD). `docs:check_refs` validates
+  # links INSIDE docs/, but repo files OUTSIDE docs/ — `.github/` (workflows + configs +
+  # copilot/labels) and root README/CLAUDE/AGENTS — also reference canon docs by path.
+  # A renamed/renumbered doc leaves those stale and the in-docs gate never sees them
+  # (exactly how `docs/00_07_GitHub_Projects_and_IaC_Automation` (→ 00_05) and
+  # `docs/08_07_SEU_…` (→ 08_03) rotted unnoticed — a `.github/`/root blind spot). Flags
+  # any `docs/NN_NN_Name` path whose EXACT basename is not a current doc (catches a
+  # wrong-number AND a wrong-name residue). `existing` = Set of current doc basenames
+  # (sans .md). The trailing `.md` is naturally excluded — `.` ends the char class. A
+  # bare `docs/NN_NN` (no `_Name`) is skipped: ambiguous module ref, not a file path.
+  # Pure: caller passes path + text + existing.
+  EXTERNAL_DOC_PATH_RE = %r{docs/(\d\d_\d\d_[A-Za-z0-9_]+)}
+
+  def external_doc_path_drift(path, text, existing)
+    text.each_line.flat_map do |line|
+      line.scan(EXTERNAL_DOC_PATH_RE).filter_map do |(base)|
+        next if existing.include?(base)
+
+        "#{path}: stale doc path `docs/#{base}` (no current doc)"
+      end
+    end
+  end
 end

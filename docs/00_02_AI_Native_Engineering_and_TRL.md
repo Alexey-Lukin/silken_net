@@ -11,7 +11,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 9 — філософія імплементована та використовується як ядро проєкту.
-- **Головне правило:** Ніхто (ні людина, ні ШІ) не пише код і не паяє плати, доки Специфікація не затверджена у цій Wiki.
+- **Головне правило:** Ніхто (ні людина, ні ШІ) не пише **продакшн-код** і не паяє плати, доки Специфікація не затверджена у цій Wiki. **Виняток — 🚦 Validation Gate (§2 крок 2):** одноразовий **R&D-код** (Jupyter-ноутбуки, PySCF/scipy/OpenMM-скрипти) пишеться автономними агентами *до* SSOT — це і є інструмент, яким гіпотеза валідується й стає каноном. R&D-sandbox ≠ продакшн: перше дозволено до спеки (інакше Gate неможливо пройти), друге — ні.
 
 ---
 
@@ -89,7 +89,7 @@ AI-агенти розглядаються як автономні інжене�
 - **Intent-First Development:** Перехід від написання коду до формування наміру. Код є лише похідним результатом якісно описаної специфікації в Wiki.
 - **Context Anchoring:** Перед початком сесії AI-агент (Cursor / Windsurf / Claude Code) зобов'язаний проіндексувати відповідні сторінки Wiki через MCP для запобігання галюцинаціям.
 - **Agent Handoff Protocol:** Ланцюжок передачі — Архітектор (Візія) → LLM (Shaping / гіпотеза) → **🚦 Validation Gate** (скрипти / домен-експерт) → Wiki (SSOT, лише валідоване) → Cursor / Copilot (Імплементація) → Лабораторія ЧНУ (Фізична валідація).
-- **SSOT One-Home (одна річ — один дім):** кожен факт має **ОДИН** канонічний дім; решта доків **реферять**, не дублюють (інакше — тихий SSOT-дрейф). Коли тема переростає свій док, її **виносять у власну канон-сторінку** (migrate-first, zero content-loss), а не плодять копії. Реєстр домів + restructure-метод — [`00_06 §2/§4`](00_06_SSOT_Documentation_Standard); drift-лінтери (`docs:check_refs`) ловлять re-statement автоматично ([`00_06 §3`](00_06_SSOT_Documentation_Standard)).
+- **SSOT One-Home (одна річ — один дім):** кожен факт має **ОДИН** канонічний дім; решта доків **реферять**, не дублюють (інакше — тихий SSOT-дрейф). Коли тема переростає свій док, її **виносять у власну канон-сторінку** (migrate-first, zero content-loss); а спростовану/застарілу після піву гіпотезу **видаляють** (Ruthless Pruning — Git тримає історію), а не «мігрують про всяк випадок» у wiki-звалище ([`00_06 §4`](00_06_SSOT_Documentation_Standard)). Реєстр домів + restructure/prune-метод — [`00_06 §2/§4`](00_06_SSOT_Documentation_Standard). drift-лінтери (`docs:check_refs`) автоматично ловлять re-statement **конкретних owned-значень** (Lorenz β, RTC-реєстри, mint/carbon-курс — owner-only vocabulary), але **НЕ** загальне семантичне дублювання (той самий факт іншими словами) — воно лишається ручним SSOT-аудитом Архітектора у cool-down ([`00_06 §3`](00_06_SSOT_Documentation_Standard)).
 
 ---
 
@@ -108,7 +108,7 @@ AI-агенти розглядаються як автономні інжене�
 Hardware Stream історично був "повільним" потоком (друк металу → лабораторія → in vitro → польові тести). Це **усувається** через два паралельні Code-as-Engineering трекі:
 
 **Трек A — Code-as-Chemistry** ([`01_03 §3.4`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)): AlphaFold 3 + OpenMM + PySCF + scipy/numpy для EBFC ферментів та матриці. **TRL 3→4 gate PASSED (2026-05-25)** — повний статус і числа: [`PIPELINE_STATUS.md`](../protocols/ebfc/in_silico/PIPELINE_STATUS.md).
-**Трек B — Code-as-CAD** ([`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)): code-native гіроїдна топологія через SDF/вокселі (PicoGK, C#); промислова TPMS-генерація доступна headless через **nTop Automate** (API/CLI), без GUI-кліків.
+**Трек B — Code-as-CAD** ([`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)): тут **дві різні ролі**, які не можна плутати. **PicoGK (C#)** — справжній *CAD-as-code*: SDF/воксельне ядро, де AI-агент генерує геометрію (новий тип гіроїда) **з нуля** кодом. **nTop Automate** (CLI/API) — це НЕ авторинг геометрії кодом, а **headless parameter-sweep** уже створеного в GUI `.ntop`-воркфлоу: AI варіює вхідні змінні (товщина стінки, період комірки → 5 SKU за хвилини), але **базовий шаблон спершу «наклацує» GUI-інженер**. Підсумок: from-scratch generation = PicoGK; автоматизована параметризація готового шаблону = nTop Automate.
 
 > **⚠️ «Трек C — Code-as-Mechanics» ВИДАЛЕНО (2026-05-28):** важка механіка полімерів (в'язкопружність PEEK, Prony series, термонапруження Ti+PEEK, 20-річний creep) канонічно закріплена за **лабораторією Гусака (ЧНУ) на ANSYS LS-DYNA** ([`01_01 §4.3`](01_01_Coaxial_Gyroid_Topology_and_PEEK), [`08_02`](08_02_Academic_Institutions_Registry), [`08_01 §1F`](08_01_Joint_Publications_and_IP_Strategy)). Паралельний AI-трек на CalculiX дав би **другий, неузгоджений** результат і знецінив би роботу професорів. In-silico конвеєр Архітектора покриває лише **Хімію** (PySCF/OpenMM), **Геометрію** (CAD-as-code) та **Кінетику** (scipy) — FEA/creep лишається аутсорсною R&D-функцією ЧНУ.
 
@@ -117,19 +117,19 @@ Hardware Stream історично був "повільним" потоком (�
 | Симулюємо Soldier/Queen без фізичного MCU | Симулюємо EBFC без фізичних ферментів + анкер без DMLS-партії |
 | Прискорює backend/contracts до TRL 8 | Прискорює Module 01 (Chemistry + CAD) до TRL 4 |
 | Python/Ruby тести | Python (AlphaFold 3, OpenMM, PySCF, scipy) + C# (PicoGK) |
-| Cursor/Copilot пишуть тести | AI-clones пишуть симуляційні скрипти + CAD-як-код |
+| Cursor/Copilot пишуть тести | AI пишуть симуляційні скрипти + from-scratch CAD-as-code (**PicoGK**); **nTop Automate** лише параметризує готовий GUI-шаблон |
 
 **Архітектурний принцип — НЕ «відмова від GUI-інструментів», а headless/API-driven доступ:** проблема не в тому, що nTop/ANSYS погані (nTop — найпотужніший рушій TPMS у світі), а в тому, що AI-агент не клікає по GUI. Рішення — **керувати тими ж індустріальними гігантами через їхні офіційні Python/CLI API**, а не переписувати CAD на C# «бо так зручніше LLM»:
 
 | Категорія | GUI-режим (для людини) | Code/API-driven (для AI-агентів) |
 |---|---|---|
 | Chemistry | Gaussian / ORCA (workflow GUI) | **PySCF** (Python) — справжній стандарт |
-| CAD parametric / TPMS | nTop Workbench, SolidWorks | **nTop Automate** (Python/CLI API) + **PicoGK** (C#, code-native) |
+| CAD parametric / TPMS | nTop Workbench, SolidWorks | **PicoGK** (C#, from-scratch code-native) + **nTop Automate** (CLI parameter-sweep готового `.ntop`-шаблону) |
 | FEA mechanical | ANSYS Workbench | **PyAnsys / PyMAPDL / PyDPF** (headless ANSYS — у Гусака, ЧНУ) |
 | Molecular Dynamics | VMD, NAMD GUI | **OpenMM** (Python) — справжній стандарт |
 | Кінетика | (Custom GUIs) | **scipy/numpy** analytical models (Cantera not needed for MM+Arrhenius) |
 
-**Ефект:** Module 01 (Hardware) **досяг TRL 4** (Zero-Lab gate PASSED 2026-05-25) **до** першого Ti-monet чи DMLS-партії. R&D-бюджет на хімію падає у 5–10 разів, на CAD-варіанти — у 10–20 разів (per-species 5 SKU генеруються за хвилини, не місяці). ЧНУ Мінаєв ([`08_01 §1`](08_01_Joint_Publications_and_IP_Strategy), Стаття 1) переходить з Gaussian/ORCA на PySCF для повної Python-керос інтеграції з Silken Net AI-pipeline.
+**Ефект:** In-Silico конвеєр дозволяє ідеально відшліфувати **TRL 3** (аналітичний/математичний PoC) і підготувати бездоганну хімічну/CAD-базу **перед** дорогим переходом на **TRL 4** (фізична лабораторія: перші Ti-coin + DMLS-партія — Stage 2, ще не закрито). ⚠️ За строгим NASA / ISO 16290 in-silico ≠ TRL 4 (той вимагає breadboard/component validation **у залізі**) — тому Zero-Lab «gate PASSED» означає «**TRL 3 повністю валідовано + GO-рішення фінансувати TRL 4**», а НЕ «ми вже на TRL 4» (та сама ригористика, що й «без TRL 10-12», §1). R&D-бюджет на хімію падає у 5–10 разів, на CAD-варіанти — у 10–20 разів (per-species 5 SKU генеруються за хвилини, не місяці). Канон per-module TRL — [`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond). ЧНУ Мінаєв ([`08_01 §1`](08_01_Joint_Publications_and_IP_Strategy), Стаття 1) переходить з Gaussian/ORCA на PySCF для повної Python-інтеграції з Silken Net AI-pipeline.
 
 ---
 

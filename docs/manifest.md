@@ -141,7 +141,7 @@ We are not announcing a finished product. We are announcing an architecture in w
 - **Backend (Rails 8.1, Sidekiq, 12-chain orchestration, dual-token contracts):** TRL 8. Production-grade, RSpec-covered, externally audited contracts on Polygon.
 - **Firmware (STM32WLE5JC Soldier, mruby Lorenz Bio-Contract, LoRa mesh, Queen gateway):** TRL 6. Running on hardware, parity-verified server-side, with named open blockers — AES-CCM migration, TinyML inference call-site, OTA-deployable acoustic model.
 - **Hardware capsule, BQ25570 MPPT power chain, EDLC buffer:** TRL 6. Specified, prototyped, and pre-flight checklists drafted.
-- **Tri-zone coaxial anchor and Gen-2.0 EBFC enzymatic stack:** TRL 4. Zero-Lab in-silico pipeline (L1-L4) PASSED 2026-05-25 — validated protein architecture, matrix stability (6 tree species), electron cascade, and kinetics entirely in silico. Next: in-vitro titanium-coin biochemistry in synthetic xylem sap, then full SLM-printed anchors.
+- **Tri-zone coaxial anchor and Gen-2.0 EBFC enzymatic stack:** TRL 3. Zero-Lab in-silico pipeline (L1-L4) PASSED 2026-05-25 — validated protein architecture, matrix stability (6 tree species), electron cascade, and kinetics entirely in silico (analytical PoC; per NASA/ISO 16290 in-silico = TRL 3). Next (physical TRL 4): in-vitro titanium-coin biochemistry in synthetic xylem sap, then full SLM-printed anchors.
 
 We name this matrix on purpose. Anyone proposing to issue tokenized claims on real-world biology owes that level of transparency to anyone considering holding those tokens.
 

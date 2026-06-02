@@ -412,4 +412,24 @@ RSpec.describe DocsLinter do
         "```\n[05_05 §3](05_05_Slashing_and_Risk_Policy)\n```\n")).to be_empty
     end
   end
+
+  describe ".external_doc_path_drift" do
+    let(:existing) { %w[00_05_GitHub_Projects_and_IaC_Automation 08_03_External_Stakeholders_Registry] }
+
+    it "flags a docs/NN_NN path whose basename is not a current doc" do
+      txt = "# Ref: docs/00_07_GitHub_Projects_and_IaC_Automation.md §2.6\n"
+      expect(described_class.external_doc_path_drift(".github/labeler.yml", txt, existing))
+        .to contain_exactly(a_string_matching(%r{stale doc path `docs/00_07_GitHub_Projects_and_IaC_Automation`}))
+    end
+
+    it "passes a path that resolves to a current doc (with or without .md)" do
+      txt = "see docs/00_05_GitHub_Projects_and_IaC_Automation.md and docs/08_03_External_Stakeholders_Registry\n"
+      expect(described_class.external_doc_path_drift("README.md", txt, existing)).to be_empty
+    end
+
+    it "skips non-NN_NN subpaths (docs/protocols/…) and bare module refs (docs/00_07)" do
+      txt = "docs/protocols/ebfc/in_silico/SUMMARY.md plus a bare docs/00_07 mention\n"
+      expect(described_class.external_doc_path_drift("x.md", txt, existing)).to be_empty
+    end
+  end
 end

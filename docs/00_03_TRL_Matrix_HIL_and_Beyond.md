@@ -8,8 +8,8 @@
 
 ## ✅ Статус
 
-- **Поточний TRL (System):** TRL 4 — EBFC TRL 3→4 PASSED (Zero-Lab 2026-05-25). Програмні домени TRL 6-9.
-- **Per-domain TRL (декаплінг):** суть зняття TRL-Lock — програмні домени (Rails, Web3, Firmware, Security) рухаються до TRL 8–9 незалежно від фізичного відставання металу/хімії (anchor/EBFC **TRL 4**, Zero-Lab L1-L4 PASSED 2026-05-25; in vitro Stages 1-3 ще не закриті). **Канонічні per-module числа — `§1 Per-module TRL` нижче (єдиний дім; тут свідомо НЕ дублюються, щоб уникнути drift).** Оновлюється при кожному cool-down.
+- **Поточний TRL (System):** TRL 3 — anchor/EBFC на TRL 3 (Zero-Lab **in-silico** L1-L4 завершено 2026-05-25 = аналітичний PoC; фізичний TRL 4 = breadboard Ti-coin in-vitro, Stage 2 — ще не закрито). Програмні домени TRL 6-9 (декаплінг через HIL, §3).
+- **Per-domain TRL (декаплінг):** суть зняття TRL-Lock — програмні домени (Rails, Web3, Firmware, Security) рухаються до TRL 8–9 незалежно від фізичного відставання металу/хімії (anchor/EBFC **TRL 3** — Zero-Lab L1-L4 in-silico завершено 2026-05-25; фізичний TRL 4 = in-vitro Ti-coin, Stages 1-3 ще не закрито). За строгим NASA / ISO 16290 in-silico = TRL 3 (analytical PoC), TRL 4 = breadboard/component validation **у залізі** — тому «Zero-Lab gate PASSED» = «TRL 3 валідовано + GO на TRL 4», не «на TRL 4». **Канонічні per-module числа — `§1 Per-module TRL` нижче (єдиний дім; тут свідомо НЕ дублюються, щоб уникнути drift).** Оновлюється при кожному cool-down.
 
 ---
 
@@ -42,24 +42,24 @@
 | Рівень | Етап | Технічний критерій (Evidence) | Лабораторія / Хаб |
 |:---|:---|:---|:---|
 | **TRL 1-2** | Ідея / Принцип | Математичне обґрунтування EBFC та Атрактора Лоренца. | ЧНУ (Хімія/Фізика) |
-| **TRL 3-4** | Proof of Concept | Валідація EBFC Gen 2.0 **>500 мВ** (OCV ~600 мВ > BQ25570 Cold-Start 330 мВ; [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)) → 3.3V boost та перша транзакція в Sandbox. *(«44 мВ» — застаріла гіпотеза streaming-potential/п'єзо, відкинута з Gen 2.0.)* | ЧНУ (ФОТІУС) |
+| **TRL 3-4** | Proof of Concept | **TRL 3 (in-silico, ✅ 2026-05-25):** валідація EBFC Gen 2.0 **>500 мВ** (OCV ~600 мВ > BQ25570 Cold-Start 330 мВ; [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)) — хімія/CAD/кінетика. **TRL 4 (фізичний breadboard, pending):** перший Ti-coin заряджає реальний BQ25570 → 3.3V boost + транзакція в Sandbox (Stage 2). *(«44 мВ» — застаріла гіпотеза streaming-potential/п'єзо, відкинута з Gen 2.0.)* | ЧНУ (ФОТІУС) |
 | **TRL 5-6** | Прототипування | Робота кластера "Солдат-Королева" в Черкаському борі (30 днів). | Silken Lab |
 | **TRL 7-8** | Кваліфікація | Повна інтеграція: DID → ZK-Proof → Chainlink → Polygon. | Production (Canopy) |
-| **TRL 9** | Експлуатація | Стабільний мінтинг SCC на мільйонах вузлів, фіналізація в L1. | Global Mainnet |
+| **TRL 9** | Експлуатація | Стабільна безперебійна комерційна робота повноцінного лісового кластера (**Operational Canopy**, 1000+ дерев) у mainnet + фіналізація в L1. *(Масштаб до мільйонів вузлів = SRL/виробнича зрілість, НЕ TRL — [`00_08`](00_08_Beyond_TRL9_Planetary_Roadmap).)* | Operational Canopy → Global Mainnet |
 
 ### Per-module TRL (канонічне джерело)
 
-> SSOT для per-domain TRL. **System TRL = найнижчий модуль критичного шляху (01–07 build-path)** — наразі 4 (модулі 01/02 — hardware-критичні). **Foundation (00)** = візія/метод (зрілі, TRL 9 — поза критичним шляхом, не гейтить). Модулі 08 (R&D-партнерства), 09 (PM-процес), 10 (Security-hardening) — це org/process/безпекова зрілість, яка трекається окремо і **не гейтить** System TRL (інакше System=2 за рахунок ранніх ВНЗ-партнерств, що хибно). Оновлюється при кожному cool-down. *(Мігровано з [`00_07`](00_07_Action_Plan_Tracker) 2026-05-28 — канон тут.)*
+> SSOT для per-domain TRL. **System TRL = найнижчий модуль критичного шляху (01–07 build-path)** — наразі **3** (модуль 01 anchor/EBFC на TRL 3: Zero-Lab in-silico завершено, фізичний Ti-coin in-vitro pending; модуль 02 на TRL 4 — реальний breadboard CJMCU-25570 + EDLC). **Foundation (00)** = візія/метод (зрілі, TRL 9 — поза критичним шляхом, не гейтить). Модулі 08 (R&D-партнерства), 09 (PM-процес), 10 (Security-hardening) — це org/process/безпекова зрілість, яка трекається окремо і **не гейтить** System TRL (інакше System=2 за рахунок ранніх ВНЗ-партнерств, що хибно). Оновлюється при кожному cool-down. *(Мігровано з [`00_07`](00_07_Action_Plan_Tracker) 2026-05-28 — канон тут.)*
 
 | Модуль | TRL | Цільовий | Головний блокер |
 |--------|-----|----------|-----------------|
 | 00 Foundation (Vision + Method) | 9 | 9 | — (методологія/візія зрілі) |
-| 01 Materials & EBFC | 4 | 6 | Lab tests (ЧНУ) |
+| 01 Materials & EBFC | 3 | 6 | Фізичний Ti-coin in-vitro (Zero-Lab in-silico ✅; physical TRL 4 pending — ЧНУ) |
 | 02 Hardware & BOM | 4 | 6 | BQ25570, PCB, Pogo, PEEK |
 | 03 Firmware | 6 | 8 | AES key, TinyML, AT blocking |
 | 04 Backend Rails | 8 | 9 | RSpec тести |
 | 05 Web3 Pipeline | 8 | 9 | SFC address |
-| 06 DevOps | 5 | 9 | production deploy не проведено (06_01=4 outlier); Docker registry, TLS |
+| 06 DevOps | 5 | 9 | перший реальний Akash deploy не проведено (06_02; GHCR mirror + Upstash TLS вже ✅); GCP/Kamal = fallback (06_01=4, не на критичному шляху) |
 | 07 Business | 5 | 8 | CO₂ methodology, MSA, ToS |
 | 08 University R&D | 2 | 6 | 5-сторонній партнерський фреймворк (ChNU + ChDTU + ChIPB + ChMA + СЄУ) — UNI.4-14 |
 | 09 Project Management | 7 | 9 | OPS.3 R&D portfolio, OPS.4 semester sync |
@@ -89,13 +89,15 @@
 
 Поточна політика блокувала весь TRL модулів 04 (Rails) і 05 (Web3) на TRL 4-5, попри їхню зрілість і **готовність до production**. Без HIL ці модулі лишаються заблокованими на TRL 4 суто формальністю.
 
-### 3.2 HIL-симулятори в SilkenNet
+### 3.2 HIL / SIL-симулятори в SilkenNet
+
+> **HIL vs SIL (термінологічна чистота):** *Hardware-in-the-Loop* імітує **залізо/фізику** (MCU, LoRa-мережа, EBFC-крива) — `forest_simulator`, `HilQueenSimulator`, `HilLorenzGenerator`. *Software-in-the-Loop* стабить **програмний API** (стаб-сервіси без реального заліза) — це **Web3 SIL** нижче, який раніше помилково звався «HilWebPipelineSimulator». Розрізнення важливе: SIL валідує лише логіку (TRL 5-6), HIL відтворює фізичне навантаження.
 
 | Симулятор | Імітує | Файл | Замінює реальний компонент для |
 |-----------|--------|------|-------------------------------|
 | `bin/forest_simulator` | Емулює **Queen→Backend CoAP-батчі** (AES-256-**CBC**) з телеметрією Soldier'ів, full Lorenz attractor curves. ⚠️ Це Queen-рівень: per-Soldier LoRa-хоп — на залізі **AES-128** (ECB→CCM, [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security)), а до бекенду доходить CoAP-батч (AES-256-CBC). **Два режими (див. ⚠️ нижче):** `load_test_mode` (батч кожні 3–8 сек — стрес черг) та `realistic_mode` (CIFO-точний: рідкі об'ємні батчі ~раз на годину/45 записів + packet loss + jitter мобільної мережі) | `bin/forest_simulator` (load_test існує; realistic_mode — TODO) | Локальна розробка Rails + sidekiq + Web3 pipeline |
-| `HilQueenSimulator` | Queen self-telemetry (`DID == 0x00000000`), CIFO flush, Starlink/LTE timing | новий: `lib/hil/queen_simulator.rb` (планований) | Test Queen failover ([`06_08 §Queen Failover`](06_08_Resilience_and_Failover_Policy)) |
-| `HilWebPipelineSimulator` | peaq → IoTeX → Chainlink → Polygon → KlimaDAO → Filecoin → L1 — 12-chain mock з deterministic responses. ⚠️ Це **логіко-рівневий** інструмент (TRL 5-6): валідує pipeline-логіку та guard clauses, але **НЕ** Web3 реального світу (gas spikes, RPC 429/rate-limit, orphaned blocks, nonce collisions, Chainlink DON latency). НЕ є достатнім для TRL 7-8 — див. §3.3. | `WEB3_STRICT_MODE=false` + stub services у `app/services/web3/*_stub.rb` | Логіка pipeline + unit/integration (TRL 5-6) |
+| `HilQueenSimulator` | **CoAP→Backend рівень**: Queen self-telemetry (`DID == 0x00000000`), CIFO-буфер flush, Starlink/LTE timing + мережеві відмови (timeout/розрив сесії). ⚠️ **НЕ** симулює LoRa-бік: Q2Q backhaul mesh та реакцію Soldier'ів на падіння Queen (це фізичний радіо-шар — потребує плат або окремого радіо-симулятора). | новий: `lib/hil/queen_simulator.rb` (планований) | Test Queen failover на рівні CoAP-intake ([`06_08 §1`](06_08_Resilience_and_Failover_Policy)) |
+| **Web3 SIL — Stub Env** *(SIL, не HIL)* | peaq → IoTeX → Chainlink → Polygon → KlimaDAO → Filecoin → L1 — 12-chain mock з deterministic responses. ⚠️ **Software-in-the-Loop**, а не Hardware-in-the-Loop: стабить програмний API (web3-сервіси), не симулює залізо/фізику — тому **SIL**. Валідує pipeline-логіку та guard clauses (TRL 5-6), але **НЕ** Web3 реального світу (gas spikes, RPC 429/rate-limit, orphaned blocks, nonce collisions, Chainlink DON latency). НЕ достатній для TRL 7-8 — див. §3.3. | `WEB3_STRICT_MODE=false` + stub services у `app/services/web3/*_stub.rb` | Логіка pipeline + unit/integration (TRL 5-6) |
 | `HilLorenzGenerator` | mruby Lorenz curves з різних tree species, environmental conditions (temp, vibration), faulty/normal patterns | `lib/hil/lorenz_generator.rb` (планований) | TinyML training data + Rails Attractor validation |
 | `HilAttackerScenarios` | Bit-flip attacks, replay attacks, hardware tamper detection, dual-computation divergence > 30% | RSpec scenarios у `spec/integration/security/` (частково існує) | Anti-fraud cross-checks ([`05_05 §6`](05_05_Slashing_and_Risk_Policy)) |
 
@@ -112,12 +114,12 @@
 | Software TRL 7 (Operational prototype) | ~pilot 100 дерев | Все HIL + chaos engineering + **реальний testnet pipeline ОБОВ'ЯЗКОВИЙ** (Polygon Amoy + Solana Devnet + Ethereum Sepolia) з реальними RPC-вузлами | 🟡 Частково (chaos engineering exists; testnet pipeline — TODO) |
 | Software TRL 8 (Production-validated) | ~1000+ дерев у полі | **HIL відтворює 1000+ віртуальних дерев** + **повний testnet stress** (Amoy/Devnet/Sepolia: gas spikes, RPC 429, nonce collisions, DON latency, orphaned blocks) + Slither high-severity = 0 + multi-sig deployment dry-run. Mainnet — лише TRL 9. | 🟡 Контракти TRL 9-ready (Foundry/Slither); backend↔chain integration потребує testnet-стресу |
 
-> **⚠️ Два рівні Web3-тестування (корекція 2026-05-28):** детермінований mock (`HilWebPipelineSimulator`) НЕ може давати Software TRL 8 — він валідує лише логіку (TRL 5-6). Реальні відмови Web3 (gas spikes, RPC rate-limit/429, orphaned blocks, nonce collisions, Chainlink DON latency) ловляться **тільки на справжніх testnet'ах**. Тому: **TRL 5-6** → deterministic mock; **TRL 7-8** → обов'язковий **Testnet Pipeline** (Polygon Amoy + Solana Devnet + Ethereum Sepolia, реальні RPC); **TRL 9** → mainnet. Без testnet-стресу вихід у mainnet після моків гарантує падіння бекенду у перші години.
+> **⚠️ Два рівні Web3-тестування (корекція 2026-05-28):** детермінований **Web3 SIL** (stub env, §3.2) НЕ може давати Software TRL 8 — він валідує лише логіку (TRL 5-6). Реальні відмови Web3 (gas spikes, RPC rate-limit/429, orphaned blocks, nonce collisions, Chainlink DON latency) ловляться **тільки на справжніх testnet'ах**. Тому: **TRL 5-6** → deterministic mock; **TRL 7-8** → обов'язковий **Testnet Pipeline** (Polygon Amoy + Solana Devnet + Ethereum Sepolia, реальні RPC); **TRL 9** → mainnet. Без testnet-стресу вихід у mainnet після моків гарантує падіння бекенду у перші години.
 
 ### 3.4 Прозорість
 
-> HIL-симулятори **не приховують** фізичне відставання — `docs/README.md` Current Stat показує **System TRL** (4) поряд із **per-domain TRL** (Rails 8, Solidity 9, EBFC 4). Це чесніше, ніж блокувати Software на TRL 4 формальністю TRL-Lock.
+> HIL-симулятори **не приховують** фізичне відставання — `README.md` Current Stat показує **System TRL** (3) поряд із **per-domain TRL** (Rails 8, Solidity 9, anchor/EBFC 3). Це чесніше, ніж блокувати Software на TRL 3 формальністю TRL-Lock.
 
 ---
 
-> **🌌 Beyond TRL 9 — винесено у власний дім.** Далекогоризонтна R&D-агенда — 4 Planetary-Intelligence прогалини (колективний гомеостаз, self-evolving edge AI, cross-biome, apex-predator security) + фрактальна мережева топологія (L1/L2/L3, H-LDSE, Edge Data Fusion), горизонт 2026–2040+ — тепер канонічно живе в [`00_08`](00_08_Beyond_TRL9_Planetary_Roadmap). Тут лишаються **жива TRL-матриця** (§1) + **метод** (TRL-Layered-Independence §2, HIL-симулятори §3).
+> **🌌 Beyond TRL 9 — винесено у власний дім.** Далекогоризонтна R&D-агенда — 4 Planetary-Intelligence прогалини (колективний гомеостаз, self-evolving edge AI, cross-biome, auto-immune sentinel security) + фрактальна мережева топологія (L1/L2/L3, H-LDSE, Edge Data Fusion), горизонт 2026–2040+ — тепер канонічно живе в [`00_08`](00_08_Beyond_TRL9_Planetary_Roadmap). Тут лишаються **жива TRL-матриця** (§1) + **метод** (TRL-Layered-Independence §2, HIL-симулятори §3).

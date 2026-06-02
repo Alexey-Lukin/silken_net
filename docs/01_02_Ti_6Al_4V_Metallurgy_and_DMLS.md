@@ -12,7 +12,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 4 — специфікація матеріалу затверджена; тестова партія готова до замовлення. Відкриті: dual-roughness spec→завод (HW.2), accelerated aging + V-release Zone 1 (HW.3, §2.5), self-healing coating (HW.4), HIP postprocess (HW.23) → [`00_07`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 3 — специфікація матеріалу + build-orientation/in-silico затверджені; **фізичної DMLS-партії ще немає** (тестова партія готова до замовлення) → фізичний TRL 4 = перша надрукована партія + металографічні проби. Канон [`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond). Відкриті: dual-roughness spec→завод (HW.2), accelerated aging + V-release Zone 1 (HW.3, §2.5), self-healing coating (HW.4), HIP postprocess (HW.23) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 

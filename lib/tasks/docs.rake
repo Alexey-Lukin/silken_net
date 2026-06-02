@@ -97,6 +97,20 @@ namespace :docs do
       xref_form.concat(DocsLinter.crossref_label_form(text).map { |h| "#{base}: #{h}" })
     end
 
+    # [external doc-path drift] HARD — non-docs repo files (.github/**, root *.md)
+    # reference canon docs by path too; a renamed/renumbered doc leaves THEM stale and
+    # the in-docs gates never see it (the .github blind spot that hid 00_07→00_05 +
+    # 08_07→08_03). Validate every `docs/NN_NN_Name` resolves to a current doc.
+    root_dir = File.expand_path("..", DOCS_DIR)
+    external_files = Dir[File.join(root_dir, ".github", "**", "*")].select { |p| File.file?(p) } +
+                     Dir[File.join(root_dir, "*.md")]
+    ext_drift = external_files.flat_map do |f|
+      rel = f.delete_prefix("#{root_dir}/")
+      DocsLinter.external_doc_path_drift(rel, File.read(f), existing)
+    rescue ArgumentError
+      [] # skip non-UTF-8 / binary files
+    end
+
     # [TRL single-value] HARD — 00_03 §1 per-module matrix cells single 1-9.
     matrix     = File.join(DOCS_DIR, "00_03_TRL_Matrix_HIL_and_Beyond.md")
     trl_ranges = File.exist?(matrix) ? DocsLinter.trl_matrix_range_violations(File.read(matrix)) : []
@@ -228,6 +242,12 @@ namespace :docs do
       puts "  XREF FORM (#{xref_form.size}) — doc-id link label not in code-span form (run scripts/normalize_crossrefs.rb):"
       xref_form.sort.first(40).each { |d| puts "    ✗ #{d}" }
     end
+    if ext_drift.empty?
+      puts "  external refs:  every docs/NN_NN path in .github/ + root *.md resolves ✓"
+    else
+      puts "  EXTERNAL DOC-PATH DRIFT (#{ext_drift.size}) — stale docs/NN_NN ref outside docs/ (.github / root md):"
+      ext_drift.sort.each { |d| puts "    ✗ #{d}" }
+    end
 
     failed = []
     failed << "dangling doc links" unless dangling.empty?
@@ -245,6 +265,7 @@ namespace :docs do
     failed << "link label↔href mismatches" unless label_drift.empty?
     failed << "doc-id link labels not in code-span form (00_06 §1)" unless xref_form.empty?
     failed << "dangling #anchors (fragment ≠ heading slug)" unless dangling_anchors.empty?
+    failed << "stale external docs/NN_NN refs (.github / root *.md)" unless ext_drift.empty?
     abort("docs:check_refs FAILED — #{failed.join(', ')}") unless failed.empty?
   end
 

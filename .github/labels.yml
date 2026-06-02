@@ -1,6 +1,6 @@
 # SSOT for repository labels — Labels-as-Code.
 # Synced by .github/workflows/labels_sync.yml (uses EndBug/label-sync@v2 with delete-other-labels: true).
-# Doc reference: docs/00_07_GitHub_Projects_and_IaC_Automation.md §4 Label Conventions.
+# Doc reference: docs/00_05_GitHub_Projects_and_IaC_Automation.md §4 Label Conventions.
 
 # ─────────────────────────────────────────────────────────────────────────
 # Cluster routing (primary, mutually exclusive)
@@ -123,7 +123,7 @@
 
 # ─────────────────────────────────────────────────────────────────────────
 # Change type (SSOT Guard bypass whitelist)
-# Doc reference: docs/00_07_GitHub_Projects_and_IaC_Automation.md §2.3.
+# Doc reference: docs/00_05_GitHub_Projects_and_IaC_Automation.md §2.3.
 # A PR with ANY of these labels skips the SSOT Guard documentation check —
 # the label is a force-function: the author must classify the change as
 # genuinely non-architectural. Generic skip-label was rejected (00_07 §2.3

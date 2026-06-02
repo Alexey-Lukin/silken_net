@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Канонічний дім **on-chain governance**: як SFC-голдери змінюють протокольні параметри (Lorenz σ/ρ/β, slashing-пороги, tokenomics-курс) через DAO замість хардкоду + redeploy/reflash. Описує `SilkenGovernor` / `SilkenTimelock` / `ProtocolParameters`, Flash-Loan-захист, governance-aware backend (`SystemParameter` / `ParameterSyncWorker`) та проактивну оборону (Apex Predator, beyond TRL 9). Виокремлено з [`05_03`](05_03_Tokenomics_SCC_and_SFC) (емісія токенів) — це **законодавча гілка**, концептуально окрема від token-spec.
+Канонічний дім **on-chain governance**: як SFC-голдери змінюють протокольні параметри (Lorenz σ/ρ/β, slashing-пороги, tokenomics-курс) через DAO замість хардкоду + redeploy/reflash. Описує `SilkenGovernor` / `SilkenTimelock` / `ProtocolParameters`, Flash-Loan-захист, governance-aware backend (`SystemParameter` / `ParameterSyncWorker`) та проактивну оборону (Auto-Immune Sentinel, beyond TRL 9). Виокремлено з [`05_03`](05_03_Tokenomics_SCC_and_SFC) (емісія токенів) — це **законодавча гілка**, концептуально окрема від token-spec.
 
 ---
 
@@ -10,7 +10,7 @@
 
 - **Поточний TRL:** TRL 8 — governance pipeline повністю реалізований (`SilkenGovernor.sol` + `SilkenTimelock.sol` + `ProtocolParameters.sol` + `Governance::ParameterSyncWorker` + `SystemParameter` model, RSpec-покрито). Mainnet-активація DAO + multisig council → [`00_07`](00_07_Action_Plan_Tracker) (BIZ.*).
 - **Реактивний захист (TRL 9-ready):** Snapshot Voting + Timelock 48h + Quorum 4% + Voting Delay — Flash-Loan attack закрито.
-- **Проактивний захист (Beyond TRL 9):** Apex Predator Defense — R&D-напрям, не блокує поточний TRL.
+- **Проактивний захист (Beyond TRL 9):** Auto-Immune Sentinel — R&D-напрям, не блокує поточний TRL.
 
 ---
 
@@ -22,7 +22,7 @@
 | [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) | Slashing DAO peer-review (категорія C) користується цим governance |
 | [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz σ/ρ/β — governance-керовані параметри (per-climate-zone) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `SystemParameter` model, `Governance::ParameterSyncWorker` |
-| [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | Apex Predator Defense R&D-програма (§7.4) |
+| [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | TRL-матриця + beyond-TRL-9 контекст для §5 (Auto-Immune Sentinel R&D) |
 | [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) | DAO Agreement (тип контракту §1.3) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкрите** (SSOT): mainnet DAO activation, BIZ.* governance backlog |
 
@@ -33,7 +33,7 @@
 - [2. Рішення — Governance DAO](#2-рішення--governance-dao)
 - [3. Пріоритет та Залежності](#3-пріоритет-та-залежності)
 - [4. ⚠️ Flash Loan Attack Vector (Критичний)](#4--flash-loan-attack-vector-критичний)
-- [5. Beyond TRL 9: Apex Predator Defense — Проактивний Захист від AI-Driven Economic Attack](#5-beyond-trl-9-apex-predator-defense--проактивний-захист-від-ai-driven-economic-attack)
+- [5. Beyond TRL 9: Auto-Immune Sentinel — Проактивний Захист від AI-Driven Economic Attack](#5-beyond-trl-9-auto-immune-sentinel--проактивний-захист-від-ai-driven-economic-attack)
 - [6. Bonding Curves — Динамічне Ціноутворення (Перспектива TRL 9+)](#6-bonding-curves--динамічне-ціноутворення-перспектива-trl-9)
 - [7. Governance-Aware Backend (✅ Реалізовано)](#7-governance-aware-backend--реалізовано)
 <!-- TOC:AUTO:END -->
@@ -140,20 +140,20 @@ contract SilkenGovernor is Governor, GovernorSettings, GovernorCountingSimple,
 
 > **✅ Реалізовано:** SFC має `ERC20Votes` з auto-delegation — checkpoint система працює. Governor + Timelock контракти реалізовано.
 
-## 5. Beyond TRL 9: Apex Predator Defense — Проактивний Захист від AI-Driven Economic Attack
+## 5. Beyond TRL 9: Auto-Immune Sentinel — Проактивний Захист від AI-Driven Economic Attack
 
 > **Контекст:** Поточні захисти (Snapshot Voting, Timelock, Quorum, Flash Loan defense) — **реактивні** і **достатні для TRL 9**. Але як тільки SCC market cap перевищить ~$100M, система стане апетитною ціллю для **AI-driven trading bots** і **adversarial ML attacks** (синтетичні telemetry-патерни, які проходять Dual Computation Integrity).
 >
 > **Майбутній напрям (Beyond TRL 9 / SRL roadmap) — Proactive AI Sentinel:**
 > - **Cluster-level statistical fingerprints:** замість per-tree fraud detection — federated anomaly detection. Якщо 100 дерев кластера раптом видають «too perfect» Z-curves (lower variance than physically possible) → suspicious activity flag.
-> - **Honeypot Trees:** 1 з кожних 100 — honeypot (справжній анкер, але SCC-emission заблокований). Будь-яка mint-спроба = доведена адресна атака → instant slashing + 12-chain rotation.
+> - **Decoy DID Tripwire (backend, НЕ on-chain honeypot):** набір decoy DID у серверному watchlist (не on-chain — публічний стейт контракту видав би «заблоковане» дерево відсутністю mint-подій, і атакер обійшов би). Будь-яка телеметрія/mint-спроба від decoy DID = доведена підробка → instant slashing + 12-chain rotation. Канон — [`00_08 §1.4`](00_08_Beyond_TRL9_Planetary_Roadmap).
 > - **Red Team Adversarial Telemetry Generators:** GAN-вироблені синтетичні patterns як частина CI/CD ([`04_06`](04_06_Testing_Guide_and_Coverage)) — знаходимо вразливості до того, як їх знайде зовнішній attacker.
-> - **Quantum-Resistant Oracle Migration:** перехід Chainlink + всього 12-chain stack на NIST PQC standards (Kyber/Dilithium) до 2030+.
+> - **Quantum-Resistant Oracle Migration:** перехід Chainlink + 12-chain stack (асиметричні підписи ECDSA/Ed25519) на NIST PQC до 2030+; симетричний LoRa/CoAP-трафік (AES) уже PQ-стійкий. Канон — [`03_05 §10`](03_05_Hardware_Symmetric_Crypto_and_Security).
 > - **AI Sentinel Service:** окремий ML-сервіс 24/7 у режимі "hunting for hunters" — корелює trading volume на SCC DEXs з telemetry-аномаліями та oracle response patterns.
 >
 > **Філософська позиція:** SCC — це **критична інфраструктура планетарного клімату**. Стандарт безпеки має бути **на рівні national-grid SCADA**, а не «не гірше за DeFi 2020–2024».
 >
-> **Деталі повної R&D-програми:** [`00_08 §1.4`](00_08_Beyond_TRL9_Planetary_Roadmap) — Apex Predator Defense Gap. Партнери: Аблязов Д. (СЄУ, правова рамка), Карапетян (ChDTU, статистика fraud detection), Ярмілко (firmware PQC integration).
+> **Деталі повної R&D-програми:** [`00_08 §1.4`](00_08_Beyond_TRL9_Planetary_Roadmap) — Auto-Immune Sentinel Gap. Партнери: Аблязов Д. (СЄУ, правова рамка), Карапетян (ChDTU, статистика fraud detection), Ярмілко (**лише асиметричний provisioning-PQC**: Ed25519+Dilithium-2, [`03_05 §10`](03_05_Hardware_Symmetric_Crypto_and_Security)).
 
 ## 6. Bonding Curves — Динамічне Ціноутворення (Перспектива TRL 9+)
 

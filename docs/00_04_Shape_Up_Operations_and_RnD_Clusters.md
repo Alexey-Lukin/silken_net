@@ -51,11 +51,11 @@ Gaia 2.0 відмовляється від класичного Agile на ко�
 ### 1.1 Build Cycle (6 тижнів): структура
 
 ```
-Week 0 (Betting Table — async pre-read ≥3 дні + синхронний колл ≤1.5 год) — рішення які Big Bets входять у цикл
-Week 1-2 (Discovery) — shaping documents до "fat marker sketch" рівня
-Week 3-4 (Build) — основна імплементація, перші demo
-Week 5    (Hill chart) — кожна Big Bet проходить middle line; ризики уточнюються
-Week 6    (Closing) — feature freeze, integration testing, doc оновлення
+Week 0   (Betting Table — async pre-read ≥3 дні + синхронний колл ≤1.5 год) — рішення які Big Bets входять у цикл
+Week 1-2 (Uphill / Discovery) — зняття невизначеності: spike ризикованих частин, shaping unknowns → конкретний підхід
+Week 3   (Hill crossing) — кожна Big Bet перетинає middle line (figured-out → doing); невирішені ризики ескалюються ТУТ, а не на тижні 5
+Week 4-5 (Downhill / Build) — основна імплементація + інтеграція, перші demo
+Week 6   (Closing) — feature freeze, integration testing, doc оновлення
 Week 7-8 (Cool-down, 2 тижні) — рефакторинг, SSOT-аудит, наступний betting prep
 ```
 
@@ -69,9 +69,9 @@ Week 7-8 (Cool-down, 2 тижні) — рефакторинг, SSOT-аудит, 
 
 | Кластер | Сфера відповідальності | Типові epic-домени | Базова команда |
 |---------|-------------------------|---------------------|-----------------|
-| **A — Hardware / EBFC** | Атоми, фізика, матеріали, біопаливний елемент, гідрогелі | EBFC catalyst R&D, Ti-6Al-4V DMLS, EDLC supercap MPPT, friction-fit pull-out, біосумісність, BIO.* sterilization | **ЧНУ** (Мінаєв — квант. хімія [`08_01`](08_01_Joint_Publications_and_IP_Strategy), Гусак — металургія/FEA, Біо-Хаб Спрягайло), **ЧМА** (біохімія EBFC, токсикологія [`08_02 §4`](08_02_Academic_Institutions_Registry)), **ЧДТУ ПМКТ** (Базіло/Бондаренко — акустика [`08_02 §2`](08_02_Academic_Institutions_Registry)), **СЄУ** (Денисенко — промдизайн радому [`08_02 §5`](08_02_Academic_Institutions_Registry)) |
+| **A — Hardware / EBFC** | Атоми, фізика, матеріали, біопаливний елемент, гідрогелі | EBFC catalyst R&D, Ti-6Al-4V DMLS, EDLC supercap MPPT, friction-fit pull-out, біосумісність, BIO.* sterilization, **RF/antenna фізика** (impedance, VNA S11, link budget, проникнення крізь PEEK/Ti) | **ЧНУ** (Мінаєв — квант. хімія [`08_01`](08_01_Joint_Publications_and_IP_Strategy), Гусак — металургія/FEA, Біо-Хаб Спрягайло), **ЧМА** (біохімія EBFC, токсикологія [`08_02 §4`](08_02_Academic_Institutions_Registry)), **ЧДТУ ПМКТ** (Базіло/Бондаренко — акустика [`08_02 §2`](08_02_Academic_Institutions_Registry)), **ЧДТУ ФЕТР** (Гончаров — RF-лабораторія: VNA/EMC/натурний Link Budget [`02_01 §5`](02_01_Hardware_Architecture_and_BOM)), **ЧНУ ФОТІУС** (Косенюк — RF impedance/ground-plane [`02_01 §5`](02_01_Hardware_Architecture_and_BOM)), **СЄУ** (Денисенко — промдизайн радому [`08_02 §5`](08_02_Academic_Institutions_Registry)) |
 | **B — Verification / Math** | Докази, математика, верифікація, ZK | Lorenz attractor params, IoTeX W3bstream, peaq DID schemes, Chainlink Functions, dual-computation integrity, Solidity governance | **ЧНУ ФОТІУС** (Порубльов — дискр. математика, Онищенко — стох. оптимізація, Любченко — Master of Logic/GA [`08_02`](08_02_Academic_Institutions_Registry)), **ЧДТУ** (Карапетян — Data Science/статистика [`08_02 §2`](08_02_Academic_Institutions_Registry)), AI agents (theorem proving) |
-| **C — Scaling / Cloud** | Software stack, infrastructure, performance | Rails core ([`04_02`](04_02_Business_Logic_and_Services)), multi-chain web3 (12 chains), Akash deploy ([`06_02`](06_02_Akash_Network_Integration)), Prometheus/Grafana, Sidekiq queues, Solid Cable, Phlex UI | Architect + AI agents (Copilot, Cursor), **ЧНУ ФОТІУС** (Супруненко — Rails PN-верифікація, Ярмілко — firmware/crypto, Косенюк — RF/FEC, Бушин — CNN/Web-DB [`08_02`](08_02_Academic_Institutions_Registry)), **ЧДТУ ФЕТР** (Гончаров — RF-лабораторія [`08_02 §2`](08_02_Academic_Institutions_Registry)) |
+| **C — Scaling / Cloud** | Software stack, infrastructure, performance | Rails core ([`04_02`](04_02_Business_Logic_and_Services)), multi-chain web3 (12 chains), Akash deploy ([`06_02`](06_02_Akash_Network_Integration)), Prometheus/Grafana, Sidekiq queues, Solid Cable, Phlex UI | Architect + AI agents (Copilot, Cursor), **ЧНУ ФОТІУС** (Супруненко — Rails PN-верифікація, Ярмілко — firmware/crypto, Косенюк — **FEC + hash-захист потоків** [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security) [алгоритмічна частина; RF-залізо → кластер A], Бушин — CNN/Web-DB [`08_02`](08_02_Academic_Institutions_Registry)) |
 | **D — Compliance / Legal** | Юриспруденція, регуляторика, IP, B2B, операційні SOP | Polygon Hadron (ERC-3643), MSA з СЄУ, Verra / Gold Standard методологія, GDPR / ESG звітність, patent portfolio, аварійні SOP | **СЄУ** (Аблязов — право, Чудаєва/Ус — економіка, Гедз — D-MRV аудит [`08_02 §5`](08_02_Academic_Institutions_Registry)), **ЧІПБ** (пожежна безпека, SOP, параметричне страхування [`08_02 §3`](08_02_Academic_Institutions_Registry)), **ЧНУ ФОТІУС** (Осауленко — R&D-портфель [`08_02`](08_02_Academic_Institutions_Registry)) |
 
 > **Принцип взаємовиключності:** кожна задача має **рівно один primary cluster label** (`cluster:A-hardware` / `cluster:B-verification` / `cluster:C-scaling` / `cluster:D-compliance`). Cross-cluster задачі мають **secondary label** (`cluster-ref:X`). Primary cluster визначає, хто веде задачу на betting table; secondary — кого консультують у RACI-режимі. Повна label-таксономія + YAML SSOT — у [`00_05 §Labels`](00_05_GitHub_Projects_and_IaC_Automation).
@@ -88,18 +88,18 @@ Week 7-8 (Cool-down, 2 тижні) — рефакторинг, SSOT-аудит, 
 
 | TRL | Хто рев'ює | Тригер на втручання Архітектора |
 |-----|------------|----------------------------------|
-| **TRL 1-2** (Idea / Principle) | Лід кластера (внутрішній R&D-інженер Silken Net — див. ⚠️ вище) на основі підписаного лаб-звіту від науковців + AI agent self-check | Тільки на запит ліда: коли потрібна "epoch-defining" архітектурна декларація. |
-| **TRL 3-4** (PoC / Breadboard) | Лід кластера + Required CI checks: `rubocop`, `rspec`, `brakeman`, `bundler-audit`, host-firmware tests, `solidity_audit.yml` (Foundry + Slither). | Тільки на TRL Gate (перехід з 4 → 5). |
+| **TRL 1-2** (Idea / Principle) | Лід кластера (внутрішній R&D-інженер Silken Net — див. ⚠️ вище) на основі підписаного **In-Silico звіту / математичної моделі / whitepaper** (фізичних лаб-звітів на TRL 1-2 ще НЕ існує — за NASA лаб-валідація стартує з TRL 3) + AI agent self-check | Тільки на запит ліда: коли потрібна "epoch-defining" архітектурна декларація. |
+| **TRL 3-4** (PoC / Breadboard) | Лід кластера + Required CI checks: `rubocop`, `rspec`, `brakeman`, `bundler-audit`, host-firmware tests, `solidity_audit.yml` (Foundry + Slither). Для Atoms **підписаний фізичний лаб-звіт (in-vitro) = hard-тригер гейту 3→4** (in-silico сам по собі дає лише TRL 3, [`00_02 §5`](00_02_AI_Native_Engineering_and_TRL)). | Тільки на TRL Gate (перехід з 4 → 5). |
 | **TRL 5-6** (Prototype / Pilot) | Лід кластера + Architect approval **required** + повний `SSOT Integrity Guard`. | Always. |
 | **TRL 7-8** (Field / Qualification) | Architect + DAO governance proposal (`SilkenGovernor.sol`) + Quality Gate (Codex ADR-CDX-1..7). | Always + multisig (`Gnosis Safe`). |
-| **TRL 9** (Operational) | Multi-sig + DAO Timelock (48h) + Slither/Foundry green. | Always + production sign-off. |
+| **TRL 9** (Operational) | **SFC-голдери через DAO-vote**, на основі незалежного аудиторського звіту (ISO / D-MRV-аудит — Гедз, [`08_02 §5`](08_02_Academic_Institutions_Registry)). *Інструмент* переходу (НЕ суб'єкт рев'ю): Multi-sig + DAO Timelock 48h; Slither/Foundry — CI-гейти етапу коду, а не TRL-9-рев'ю. | Always + production sign-off. |
 
 **TRL Gate Events** (єдині точки, де Архітектор **гарантовано** втручається):
 - 4 → 5: перехід з лабораторії до pilot (потребує HIL-валідації, [`00_03`](00_03_TRL_Matrix_HIL_and_Beyond)).
 - 6 → 7: перехід до canopy environment (real LoRa mesh, real CoAP intake).
-- 8 → 9: **зняття «тренувальних коліс»** — передача повного управління контрактами від Multi-sig (`Gnosis Safe`) до децентралізованого DAO (`SilkenGovernor` + Timelock) + зняття штучних лімітів емісії, при доведеній стабільній роботі на масштабі (мільйони вузлів без втручання).
+- 8 → 9: **зняття «тренувальних коліс»** — передача повного управління контрактами від Multi-sig (`Gnosis Safe`) до децентралізованого DAO (`SilkenGovernor` + Timelock) + зняття штучних лімітів емісії, при **доведеній стабільній безперебійній роботі повноцінного комерційного кластера (Operational Canopy, 1000+ дерев) без втручання**. *(Масштаб до мільйонів вузлів = SRL/виробнича зрілість поза TRL — [`00_08`](00_08_Beyond_TRL9_Planetary_Roadmap).)*
 
-  > **⚠️ Корекція (2026-05-28):** мінтинг SCC — **НЕ перемикач**, який Архітектор вмикає на TRL 9. Він керується децентралізованим оракулом (Chainlink) + Guard Clauses (`verified_by_iotex` + `oracle_status_fulfilled` + `hadron_kyc`, [`05_02`](05_02_Proof_of_Growth_Pipeline)/[`00_01 §5`](00_01_Vision_Mission_and_Roadmap)). На TRL 7-8 система **вже** в mainnet — з малим лімітом емісії та multi-sig на DAO-скарбниці. TRL 9 = **масштаб + децентралізація**, а не «deploy».
+  > **⚠️ Корекція (2026-05-28):** мінтинг SCC — **НЕ перемикач**, який Архітектор вмикає на TRL 9. Він керується децентралізованим оракулом (Chainlink) + Guard Clauses (`verified_by_iotex` + `oracle_status_fulfilled` + `hadron_kyc`, [`05_02`](05_02_Proof_of_Growth_Pipeline)/[`00_01 §5`](00_01_Vision_Mission_and_Roadmap)). На TRL 7-8 система **вже** в mainnet — з малим лімітом емісії та multi-sig на DAO-скарбниці. TRL 9 = **доведена стабільна комерційна робота (Operational Canopy) + децентралізація**, а не «deploy» і не «мільйони вузлів» (масштаб = SRL, [`00_08`](00_08_Beyond_TRL9_Planetary_Roadmap)).
 
 ---
 
@@ -221,6 +221,8 @@ TRL-матриця крокує "квартально-функціональни
 | 1 липня — 31 серпня | Літня перерва | приклеюється до наступного `Fall {Y}-{Y+1}` |
 
 ### 6.3 Мапінг TRL milestones ↔ семестр
+
+> **⚠️ Scope (інакше календар анулює HIL-декаплінг):** ця таблиця застосовується ВИКЛЮЧНО до **Кластера A (Hardware)** та лаб-залежної частини **D (Compliance / lab-testing)** — deliverable'ів, фізично прив'язаних до університетських лабораторій і червневих захистів. **Кластери B (Verification) та C (Scaling/Cloud)** рухаються на HIL-симуляціях + AI-агентах ([`00_03 §3`](00_03_TRL_Matrix_HIL_and_Beyond)) **асинхронно** і НЕ обмежені академічним семестром — інакше це повернуло б TRL-Lock, який HIL саме й знімає (бекенд може досягти TRL 8 у листопаді, не чекаючи весняного захисту).
 
 | TRL | Очікуваний семестр | Академічний deliverable | Прив'язка |
 | :--- | :--- | :--- | :--- |

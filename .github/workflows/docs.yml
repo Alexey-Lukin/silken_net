@@ -1,19 +1,22 @@
-# Docs CI — SSOT structural gates for documentation-only changes.
+# Docs CI — the SINGLE home for the SSOT structural gates. (2026-06-02: the duplicate
+# `docs:check_refs`/`tracker:check` steps were removed from ci.yml's i18n_check, so a
+# mixed code+docs PR no longer double-runs them.) ci.yml `paths-ignore`s **.md/docs/**
+# and owns only code concerns; this workflow owns the doc gates:
+#   - tracker:check    (00_07 DRY: duplicate IDs, meta-line, canon-ref + §-resolution)
+#   - docs:check_refs  (anti-drift: dangling links, TRL, ToC sync, conformance, RTC/
+#                       Lorenz/rate One-Home, #anchors, xref-form, EXTERNAL doc-path —
+#                       lib/docs_linter.rb)
 #
-# Split out of ci.yml so a docs-only push/PR skips the heavy code CI (RSpec,
-# CodeQL, Brakeman, firmware host-tests, i18n parity) — those are `paths-ignore`d
-# in ci.yml. This job runs ONLY the SSOT gates that DO matter for docs:
-#   - tracker:check    (00_08 DRY: duplicate IDs, meta-line, canon-ref resolution)
-#   - docs:check_refs  (anti-drift: dangling links, TRL, ToC sync, conformance,
-#                       RTC register-map drift — lib/docs_linter.rb)
+# Triggers on the docs + the linter engine/specs (so a rule change re-validates the
+# corpus) + `.github/**` — the external-doc-path guard scans .github/ + root *.md for
+# stale `docs/NN_NN` refs, so it MUST run when those change. Root *.md (README/CLAUDE/
+# AGENTS) is covered by `**.md`.
 #
-# Triggers on the docs themselves + the linter engine/specs (so changing a lint
-# rule re-validates the corpus). A mixed docs+code push runs both ci.yml and
-# this — harmless (the gate is cheap, file-I/O only).
+# Local fast path (no Rails boot, ~0.3s, no bundle needed): `ruby scripts/docs_check.rb`.
 #
-# ⚠️ Branch-protection note: if ci.yml jobs are *required* status checks, a
-# docs-only PR will show them as skipped — mark this `docs_check` job required
-# instead (or use "skipped = success") so docs PRs can still merge.
+# ⚠️ Branch-protection: `main` is currently UNPROTECTED (no required checks). When it
+# is enabled, mark `docs_check` required — a docs-only PR skips ci.yml (paths-ignore),
+# so ci jobs alone would never gate docs.
 name: Docs CI
 
 on:
@@ -28,7 +31,7 @@ on:
       - 'lib/tasks/tracker.rake'
       - 'spec/lib/docs_linter_spec.rb'
       - 'spec/lib/docs_toc_spec.rb'
-      - '.github/workflows/docs.yml'
+      - '.github/**'
   push:
     branches: [ main ]
     paths:
@@ -41,6 +44,7 @@ on:
       - 'lib/tasks/tracker.rake'
       - 'spec/lib/docs_linter_spec.rb'
       - 'spec/lib/docs_toc_spec.rb'
+      - '.github/**'
 
 permissions:
   contents: read

@@ -150,12 +150,8 @@ jobs:
             echo "::error::Some locale files are not normalized. Run \`bundle exec i18n-tasks normalize\`."
             exit 1
           fi
-
-      - name: Lint 00_08 tracker (DRY — duplicate IDs, meta-line conformance, canon-ref resolution)
-        run: bin/rails tracker:check
-
-      - name: Lint docs cross-references (SSOT anti-drift — every NN_NN doc link resolves)
-        run: bin/rails docs:check_refs
+      # NB: docs SSOT gates (docs:check_refs + tracker:check) live SOLELY in docs.yml
+      # (2026-06-02) — removed from here to stop the mixed code+docs double-run.
 
   alloy_config_validate:
     # [OBS hardening, 06_03 §2.9] Parse-validate the Grafana Alloy River config so a

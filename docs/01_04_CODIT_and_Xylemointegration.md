@@ -7,7 +7,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 4 — TRL 3→4 gate PASSED (2026-05-25), EBFC in-silico pipeline L1-L4 validated; xylem sap sweep: enzyme stable across 6 species (pH 4.2-5.8). Відкриті: resin-barrier + Flush Mount drilling (HW.6), No-EtO sterilization (HW.22), польові випробування → [`00_07`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 3 — in-silico pipeline L1-L4 ✅ (аналітичний PoC); xylem sap sweep: enzyme stable across 6 species (pH 4.2-5.8). Фізичний **TRL 4 = in-vitro Ti-coin** (Stage 2, pending) — канон [`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond). Відкриті: resin-barrier + Flush Mount drilling (HW.6), No-EtO sterilization (HW.22), польові випробування → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 

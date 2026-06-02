@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Канонічний дім **far-horizon R&D-агенди за межами TRL 9** (горизонт 2026–2040+): чотири Planetary-Intelligence прогалини (колективний гомеостаз, self-evolving edge AI, cross-biome генералізація, apex-predator безпека) + **фрактальна мережева топологія** (L1/L2/L3, H-LDSE, Edge Data Fusion, energy-aware routing) для масштабування до мільйонів вузлів. Це SRL/MRL-сходи, що перетворюють Silken Net з D-MRV-інструменту на планетарну нервову систему. Виокремлено з [`00_03`](00_03_TRL_Matrix_HIL_and_Beyond) (де лишається жива TRL-матриця + HIL), щоб стабільна 15-річна візія не ділила файл із щотижнево-оновлюваним станом готовності.
+Канонічний дім **far-horizon R&D-агенди за межами TRL 9** (горизонт 2026–2040+): чотири Planetary-Intelligence прогалини (колективний гомеостаз, self-evolving edge AI, cross-biome генералізація, auto-immune sentinel безпека) + **фрактальна мережева топологія** (L1/L2/L3, H-LDSE, Edge Data Fusion, energy-aware routing) для масштабування до мільйонів вузлів. Це SRL/MRL-сходи, що перетворюють Silken Net з D-MRV-інструменту на планетарну нервову систему. Виокремлено з [`00_03`](00_03_TRL_Matrix_HIL_and_Beyond) (де лишається жива TRL-матриця + HIL), щоб стабільна 15-річна візія не ділила файл із щотижнево-оновлюваним станом готовності.
 
 ---
 
@@ -22,7 +22,7 @@
 | [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | §6.3 Forest-Level Lorenz Coupling (Gap #1 firmware-бік) |
 | [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) | On-Device Learning / Edge RL (Gap #2 firmware-бік) |
 | [`01_01` — Coaxial Gyroid Topology and PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Cross-biome 5 SKU (Gap #3 hardware-бік) |
-| [`05_06` — Governance and DAO](05_06_Governance_and_DAO) | Apex Predator Defense §5 (Gap #4 governance-бік) |
+| [`05_06` — Governance and DAO](05_06_Governance_and_DAO) | Auto-Immune Sentinel §5 (Gap #4 governance-бік) |
 | [`06_08` — Resilience and Failover Policy](06_08_Resilience_and_Failover_Policy) | Queen failover / Q2Q backhaul — мережева реалізація §2 |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | ARCH.1/6/7/10/22 — інженерні backlog-вектори цієї агенди |
 
@@ -58,12 +58,14 @@
 
 | Підхід | Принцип | Потенційний партнер ЧНУ/СЄУ |
 |---|---|---|
-| **Розподілене навчання між Queens (дві РІЗНІ математики — не плутати):** | (a) **Lorenz σ/ρ/β** — це ODE-система **без ваг**, її не тренують backprop'ом → **Distributed Parameter Estimation** (PSO/GA на Queen знаходить оптимальні σ,ρ,β для локального кластера; Queens обмінюються *оцінками параметрів*, не градієнтами). (b) **TinyML акустика** — ось тут справжній **Federated Learning** доречний: агрегація градієнтів мікро-моделей (коли HW дозволить on-device training) АБО ретренінг класифікатора на Queen + компіляція `.tflite` → OTA. Privacy-preserving (не сирі дані). | Любченко GA/NSGA-II ([`08_02`](08_02_Academic_Institutions_Registry)); Карапетян статистика ([`08_02 §2`](08_02_Academic_Institutions_Registry)) |
+| **Розподілене навчання між Queens (дві РІЗНІ математики — не плутати):** | (a) **Lorenz σ/ρ/β** — це ODE-система **без ваг**, її не тренують backprop'ом → **Distributed Parameter Estimation** (PSO/GA на Queen знаходить оптимальні σ,ρ,β для локального кластера; Queens обмінюються *оцінками параметрів*, не градієнтами). (b) **TinyML акустика** — тут доречне навчання, але точна назва залежить від рівня. **Cluster-level Edge Retraining** (Queen ретренить класифікатор на даних свого кластера + компілює `.tflite` → OTA) — це **НЕ** Federated Learning, а локальний batch-training на edge-сервері (Soldier фізично не рахує градієнти, §1.2). **Справжній FL** можливий лише як обмін *оновленнями моделі* Queen↔Rails (не сирими даними) — і лише якщо так структуровано. Мотив — **не privacy** (у дерев немає GDPR-даних; бекенду навпаки потрібні сирі семпли кавітації/пилки для глобальної моделі), а **економія airtime/енергії** (не гнати все аудіо в хмару) + стійкість. | Любченко GA/NSGA-II ([`08_02`](08_02_Academic_Institutions_Registry)); Карапетян статистика ([`08_02 §2`](08_02_Academic_Institutions_Registry)) |
 | **Stigmergic Communication (L2/L3-опосередкована, НЕ P2P)** | Soldier емітує 1-bit стрес-сигнал («я в червоному Z-bucket», ~110 ms LoRa TX) → **L3 Queen** (always-on) акумулює його як «феромонний слід» → команда «підняти sampling rate» доставляється сусідам у їхнє наступне заплановане RX-вікно (CAD / TDMA / OTA-downlink). Прямого peer-RX немає (фізика — у ⚠️ нижче) | Порубльов кібернетика ([`08_02`](08_02_Academic_Institutions_Registry)); mruby VM mod ([`03_04`](03_04_mruby_Lorenz_Attractor)) |
 | **Chimera States у network of attractors** | Математична теорія Куромото (Kuramoto-Battogtokh 2002): network coupled Lorenz oscillators утворює **частково синхронізовані, частково хаотичні patterns** — це саме структура здорового лісу (homeostasis-coupled domains across disturbance gradients) | Кирилюк синергетика економічних систем ([`08_02 §1A`](08_02_Academic_Institutions_Registry)); Гусак нелінійна динаміка ([`08_02 §1A`](08_02_Academic_Institutions_Registry)) |
 | **Forest-Wide Lorenz Coupling** | Розширення `bio_contract.rb`: вхідні параметри атрактора містять не лише власні `delta_t/temp/acoustic`, а й aggregated neighbor signals (median Z у кластері за останню годину) | Розширення `03_04 §X.Y` (новий розділ після TRL 9) |
 
 > **⚠️ Stigmergy маршрутизується через L2/L3, не P2P (корекція 2026-05-28):** рядок «Stigmergic Communication» вище описує лише *емісію* 1-bit сигналу (дешево: ~110 ms LoRa TX @ +14 dBm). **Зворотний шлях** («сусіди підвищують sampling rate») НЕ може бути peer-to-peer broadcast: Soldier перебуває у STOP2 ~99.9% часу ([`03_01`](03_01_Firmware_Lifecycle_and_DMA) / [`08_02`](08_02_Academic_Institutions_Registry)), радіо SX1262 вимкнене — він фізично не «чує» сусіда, а continuous-RX вичерпав би 0.47F supercap за хвилини. Тому: Soldier-емітент → сигнал ловить **always-on L2 Conductor / L3 Queen** і акумулює як «феромонний слід» → команда «підняти sampling rate» доставляється сусідам лише у їхнє наступне заплановане RX-вікно (CAD-пінг / TDMA-слот / OTA-downlink, [`03_02`](03_02_Queen_Gateway_Firmware)). Це не послаблення ідеї, а **точніша** stigmergy: мурахи теж не передають сигнал напряму, а лишають слід у середовищі — роль персистентного середовища тут грає Queen.
+>
+> **⚠️ Швидко vs повільно (інакше лісоруб випередить сигнал):** next-RX-window-латентність (≈15 хв) прийнятна лише для **повільних** процесів (посуха, хвороба, кліматичний тренд) — там «феромонний слід» Queen встигає. Для **швидких** загроз (бензопила, пожежа) 15 хв = вже спиляне сусіднє дерево. Тут зворотний шлях НЕ через розклад, а через **emergency extended-preamble wake-up**: вузол-детектор (або Queen) подовжує LoRa-преамбулу довше за період сну приймачів, і low-duty-cycle CAD-приймачі гарантовано ловлять її під час свого мс-«нюху» ефіру → асинхронне масове пробудження кластера (справжній «нервовий імпульс»). Механізм — канон у [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA) (Emergency TX / preamble sampling) + [`03_02 §5`](03_02_Queen_Gateway_Firmware). Тобто stigmergy (повільний слід) і preamble-wake (швидкий імпульс) — **дві окремі доставки**, не одна.
 
 **SRL шлях:** `SRL:Concept` (concept formulated) → `SRL:Pilot` (Q1 publication "Chimera states in tree-borne IoT sensors of Cherkasy Pine Forest") → `SRL:Deployed` (opt-in firmware extension у кластерах ≥ 100 дерев).
 
@@ -92,7 +94,7 @@
 | **Адаптивна модифікація `bio_contract.rb`** | Не тільки параметри, але й **сама структура** атрактора може evolve: спершу Lorenz, потім Lorenz-96 (більша dim для дерев у кластерах), потім кастомні мутації через genetic programming | Безпекова перевірка: будь-яка self-modified contract має слотом для cryptographic anchor — інакше зловмисник може injection через RL reward poisoning |
 | **TinyML Online Learning** | Поточний CMSIS-NN модель ([`03_03`](03_03_TinyML_Acoustic_Inference)) — frozen після training. Розширення: on-device class incremental learning з новими акустичними патернами (типу «нової інвазивної комахи у Черкаському борі») без необхідності retraining у cloud | На STM32WLE5JC можливо лише з 1–4 class incremental memory; full on-device backprop недосяжний — потрібен AI-чип coprocessor (Syntiant NDP120 або Maxim MAX78000) у v3 hardware |
 
-**Безпекова прірва:** Self-evolution + Web3-economic incentives = **attack surface для adversarial evolution**. Зловмисник може спровокувати «вигідну для нього» мутацію через підставні sensor patterns. Mitigation — `1.4 Apex Predator Defense`.
+**Безпекова прірва:** Self-evolution + Web3-economic incentives = **attack surface для adversarial evolution**. Зловмисник може спровокувати «вигідну для нього» мутацію через підставні sensor patterns. Mitigation — `1.4 Auto-Immune Sentinel`.
 
 > ⚠️ **Compute Budget Paradox — L1 не "self-evolves" фізично.** Стовпчик «Виклики на STM32WLE5JC» вище **не** є інженерним планом запуску GA/RL/online-backprop на Soldier — це інвентаризація причин, **чому це неможливо** у поточному hardware envelope:
 >
@@ -106,7 +108,7 @@
 > |--------|----------------|-------------------|
 > | **L1 Soldier** | Inference-only: запуск **попередньо скомпільованого** mruby bytecode (Lorenz constants, fitness evaluation, threshold lookup). Періодична відправка `lambda_exponent` + 1-bit stigmergic сигналу. | STM32WLE5JC + 0.47F, +1.4 мДж/год headroom |
 > | **L2 Conductor** *(Hub Tree, formerly "Sergeant")* | Кластерний агрегатор: збирає 50-200 Soldiers lambda-stream, обчислює **локальний GA** на (σ, ρ, β) для свого кластера, відправляє candidate sets до Queen. Динамічно обирається на основі `vcap` та якості зв'язку. | Solar + LiFePO4 (TBD spec, §2.1 L2 placeholder) |
-> | **L3 Queen** *(Mother Tree)* | Агрегатор розподіленого навчання: для Lorenz — обмін **оцінками параметрів σ/ρ/β** (distributed parameter estimation, PSO/GA); для TinyML — справжній Federated Learning (агрегація градієнтів / ретренінг → `.tflite` OTA), privacy-preserving. Компілює mruby contracts, broadcast'ить chunked OTA. | 20Ah LiFePO4 + Solar + LTE backbone ([`02_05`](02_05_Queen_Hardware_and_Starlink)) |
+> | **L3 Queen** *(Mother Tree)* | Агрегатор розподіленого навчання: для Lorenz — обмін **оцінками параметрів σ/ρ/β** (distributed parameter estimation, PSO/GA); для TinyML — **Cluster-level Edge Retraining** (ретренінг на даних кластера → `.tflite` OTA); *справжній* FL лише як Queen↔Rails обмін оновленнями моделі. Мотив — airtime/енергія, не privacy (дерева не мають GDPR-даних). Компілює mruby contracts, broadcast'ить chunked OTA. | 20Ah LiFePO4 + Solar + LTE backbone ([`02_05`](02_05_Queen_Hardware_and_Starlink)) |
 >
 > Q-learning, GA-evolution, online TinyML training **відбуваються на L2/L3 з обмеженням енергії на 4-5 порядків легшим**, ніж у Soldier. До Soldier приходить **готовий compiled bytecode через OTA** (магік `0x45544952 "RITE"` у `MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000`, [`03_02`](03_02_Queen_Gateway_Firmware)). Це усуває "self-training on edge" парадокс і зберігає SRL roadmap реалістичним.
 
@@ -143,7 +145,7 @@
 
 **SRL/MRL шлях:** `SRL:Concept` (multi-species PoC у 3 lab settings) → `SRL:Pilot` + `MRL:8` (deployed pilots у 3 biomes одночасно, мала серія 5 SKU) → `SRL:Deployed` + `MRL:10` (open framework + повносерійне виробництво per-biome SKU).
 
-### 1.4. Gap #4 — Apex Predator Defense (Proactive AI-Adversarial Security)
+### 1.4. Gap #4 — Auto-Immune Sentinel (Proactive AI-Adversarial Security)
 
 **Поточний стан:** DAO governance існує (SFC, [`05_03`](05_03_Tokenomics_SCC_and_SFC)), Slashing v2 реактивний ([`05_05 §6`](05_05_Slashing_and_Risk_Policy)), 12-chain pipeline має cross-validation ([`05_02`](05_02_Proof_of_Growth_Pipeline)). Але:
 - **Немає proactive захисту від AI-driven economic attack** — coordinated manipulation SCC market через synthetic telemetry patterns
@@ -153,7 +155,7 @@
 **Чому це принципово важливо:**
 - Як тільки SCC market cap перевищить ~$100M (TRL 9 milestone), система стане **апетитною ціллю для AI-driven trading bots**
 - Майбутні Generative AI зможуть синтезувати telemetry-патерни, які проходять **всі поточні fraud detection** (Dual Computation Integrity, oracle validation) — adversarial ML attacks
-- **Без apex predator defense Silken Net підданий тій самій долі, що й DeFi 2020–2024** (flash loan attacks, oracle manipulation, rug pulls) — але з фізичним лісом як collateral damage
+- **Без auto-immune sentinel Silken Net підданий тій самій долі, що й DeFi 2020–2024** (flash loan attacks, oracle manipulation, rug pulls) — але з фізичним лісом як collateral damage
 
 **Технічні вектори вирішення:**
 
@@ -162,8 +164,8 @@
 | **Proactive Anomaly Detection (Federated)** | Замість per-tree fraud detection — **cluster-level statistical fingerprints**. Якщо 100 дерев одного кластера раптом починають видавати «too perfect» Z-curves (lower variance than possible), це → suspicious | ML-сервіс у Rails + GA-оптимізація Любченка ([`08_02`](08_02_Academic_Institutions_Registry)); запит до Карапетяна (статистика, [`08_02 §2`](08_02_Academic_Institutions_Registry)) |
 | **Adversarial Telemetry Generators (Red Team)** | Внутрішня команда генерує **GAN-вироблені синтетичні telemetry, які намагаються пройти Dual Computation** → знаходить вразливості до того, як їх знайде зовнішній attacker | Регулярні Red Team Exercises як частина CI/CD ([`04_06 §B`](04_06_Testing_Guide_and_Coverage)); Q1 paper "Adversarial robustness of bio-token mints" |
 | **Decoy DID Tripwire (backend, НЕ on-chain honeypot)** | ⚠️ Виправлено: on-chain honeypot не працює — стейт контракту публічний, а навіть «реальне-але-заблоковане» дерево видає себе **відсутністю mint-подій** (атакер аналізує on-chain патерн і обходить). Тому — **бекенд-tripwire**: набір **decoy DID**, яких немає як реальних анкерів, у серверному watchlist (НЕ публікуються, НЕ on-chain). **Будь-яка телеметрія/mint-спроба від decoy DID = доведена підробка** (жоден реальний Soldier його не має) → instant alert + slashing + 12-chain rotation. Додатково: **Shadow Trees** — синтетичні фейкові дані у *публічному дашборді* (information warfare: торговий бот, що будує атаку на shadow-даних, руйнує свою стратегію). | Backend watchlist decoy DIDs + `TelemetryUnpackerService` tripwire (НЕ on-chain flag) |
-| **Quantum-Resistant Oracle Migration** | Сучасні ECDSA-підписи (Chainlink) вразливі до post-quantum cryptanalysis (~2030+). Перехід на **NIST PQC standards** (Kyber/Dilithium) у Web3 stack | Координовано з Аблязовим Д. (СЄУ, [`08_02 §5`](08_02_Academic_Institutions_Registry)) для правової рамки + Ярмілко ([`08_02`](08_02_Academic_Institutions_Registry)) для firmware integration |
-| **Apex Predator AI Sentinel** | Окремий ML-сервіс, який моніторить весь стек 24/7 в режимі **«hunting for hunters»** — шукає координовані patterns між: trading volume на SCC DEXs + telemetry anomalies + oracle response patterns. Це **проактивний counter-AI** проти adversarial AI | Roadmap `SRL:Pilot`+; вимагає budget на dedicated AI/ML engineer; партнерство з академічними лабораторіями з ML security |
+| **Quantum-Resistant Oracle Migration** | ⚠️ PQC — це **асиметрична** проблема (Shor): вразливі ECDSA (Chainlink/Polygon/ETH), Ed25519 (peaq DID), ECDH-provisioning. **Симетричний LoRa/CoAP-трафік (AES-128/256) уже квантово-стійкий** (Grover лише √-ослаблення: AES-256 = 2¹²⁸) — на Soldier PQC-коду НЕ пишемо (Dilithium 2420 B не вміщається у 24B-пакет). Канон-дім — [`03_05 §10`](03_05_Hardware_Symmetric_Crypto_and_Security) (TRL-stratified roadmap). | Аблязов Д. (СЄУ, [`08_02 §5`](08_02_Academic_Institutions_Registry)) — правова рамка; Ярмілко ([`08_02`](08_02_Academic_Institutions_Registry)) — **лише асиметричний provisioning/identity шар** (Ed25519 + Dilithium-2 dual-sign, [`03_05 §10`](03_05_Hardware_Symmetric_Crypto_and_Security)), НЕ симетричний payload-crypto |
+| **Auto-Immune Sentinel** | Окремий ML-сервіс, який моніторить весь стек 24/7 в режимі **«hunting for hunters»** — шукає координовані patterns між: trading volume на SCC DEXs + telemetry anomalies + oracle response patterns. Це **проактивний counter-AI** проти adversarial AI | Roadmap `SRL:Pilot`+; вимагає budget на dedicated AI/ML engineer; партнерство з академічними лабораторіями з ML security |
 
 **Філософська позиція:** Silken Net — це **критична інфраструктура планетарного клімату**. Тому стандарт безпеки має бути не «не гірше за DeFi», а **на рівні national-grid SCADA**: continuous threat hunting, mandatory bug bounty, formal verification critical path.
 
@@ -176,7 +178,7 @@
 | 1 | Forest-Level Emergence | Ізольовані Lorenz | Chimera states у network of attractors | Кирилюк, Гусак, Любченко | 2–3 (Synergetics + Network Science) |
 | 2 | Self-Evolving Behaviour | Top-down OTA only | On-device edge GA + RL | Порубльов, Ярмілко | 2 (Edge AI + Evolutionary Comp.) |
 | 3 | Cross-Biome Generalization | Pine-only | 5+ biomes, community-driven onboarding | Спрягайло + INPA/CSIRO/MUSE | 3–5 (per biome) |
-| 4 | Apex Predator Defense | Reactive Slashing | Proactive AI Sentinel + PQC | Аблязов Д., Карапетян, ML-security partners | 2 (Adversarial ML + Web3 Security) |
+| 4 | Auto-Immune Sentinel | Reactive Slashing | Proactive AI Sentinel + PQC | Аблязов Д., Карапетян, ML-security partners | 2 (Adversarial ML + Web3 Security) |
 
 ### 1.6. Як це впливає на TRL ladder
 
@@ -197,7 +199,7 @@ SRL:Deployed ━━━ Verified, formal, planetary-scale autopoiesis ← Silken 
 - **Gap #1 (Forest Emergence):** деталі у [`03_04 §6.3`](03_04_mruby_Lorenz_Attractor); координація з [`08_02 §1B`](08_02_Academic_Institutions_Registry) (Порубльов кібернетика) та [`08_02 §1A`](08_02_Academic_Institutions_Registry) (Кирилюк синергетика)
 - **Gap #2 (Self-Evolving):** firmware extension у [`03_03 §Y`](03_03_TinyML_Acoustic_Inference) (TinyML online learning) + [`03_04 §Z`](03_04_mruby_Lorenz_Attractor) (mruby GA); безпекова валідація у [`05_03 §SCC Anti-Adversarial`](05_03_Tokenomics_SCC_and_SFC)
 - **Gap #3 (Cross-Biome):** parametric CAD у [`01_01 §6`](01_01_Coaxial_Gyroid_Topology_and_PEEK) (Stages 2+ extended до 5 biomes); R&D у [`08_02 §1`](08_02_Academic_Institutions_Registry) (Спрягайло + НАН України канал)
-- **Gap #4 (Apex Predator):** розширення Slashing v2 у [`05_05 §6`](05_05_Slashing_and_Risk_Policy) + [`05_06 §5`](05_06_Governance_and_DAO) + Chainlink hardening у [`05_02`](05_02_Proof_of_Growth_Pipeline)
+- **Gap #4 (Auto-Immune Sentinel):** розширення Slashing v2 у [`05_05 §6`](05_05_Slashing_and_Risk_Policy) + [`05_06 §5`](05_06_Governance_and_DAO) + Chainlink hardening у [`05_02`](05_02_Proof_of_Growth_Pipeline)
 
 ---
 
@@ -279,15 +281,16 @@ Gaia 2.0 підхід:      2 байти lambda → описує стан всь
 
 **Queen-to-Queen Backhaul Mesh:** Королеви з'єднані між собою через LoRa SF12. Якщо одна Queen втрачає Starlink → передає дані сусідній Queen через LoRa-магістраль. Деталі — [`06_08 §Queen Failover`](06_08_Resilience_and_Failover_Policy).
 
-### 2.5. Energy-Aware Routing
+### 2.5. Energy-Aware Routing (Load-Balanced)
 
-Маршрутизація будується не за найкоротшим шляхом, а за **найбільш енергонадлишковим**:
+Маршрутизація будується не за найкоротшим шляхом, а за **наявним енергозапасом**, з **вирівнюванням** навантаження по кластеру:
 
 ```
-Route metric = f(hop_count, remaining_energy, bio_potential)
+Route metric   = f(hop_count, vcap_headroom)        # НЕ bio_potential!
+relay_eligible = vcap_mv > VCAP_SAFE_THRESHOLD       # інакше Mesh Relay Off
 ```
 
-Пакет іде через дерево з найкращим сокорухом (найбільшим біопотенціалом сьогодні) → автоматичне балансування навантаження + екологічна маршрутизація.
+> **⚠️ Чому НЕ «найбільший біопотенціал» (попередня версія карала б успіх):** гнати трафік через найздоровіше дерево = покласти на нього 90% ретрансляції → виснаження іоністора → воно не встигає слати **власну** телеметрію → його Z-атрактор «падає» → система хибно класифікує здорове дерево як хворе. Подвійна вада: (1) **observer-effect** — мережеве навантаження спотворює сам сигнал, який система міряє (`bio_potential` — це **вимірюване**, а не ресурс маршрутизації); (2) позитивний зворотний зв'язок убиває найкращі вузли. **Правильно:** метрика залежить лише від **`vcap_headroom`** (доступна енергія, не здоров'я); дерево нижче `VCAP_SAFE_THRESHOLD` **відмовляється** бути реле (Mesh Relay Off), поки не відновить заряд — навіть якщо воно супер-здорове. Балансування **вирівнює** Vcap по кластеру, а не шукає «найбагатшого». Здоров'я дерева не перетворює його на раба мережі.
 
 ### 2.6. Вимоги до Rails Backend (Gaia 2.0 Scale)
 
@@ -295,4 +298,4 @@ Route metric = f(hop_count, remaining_energy, bio_potential)
 |-----------|--------------|----------------|
 | Вхідний шар | CoAP прямо в Rails | Ingress Proxy (Rust/Go) → Kafka/Pub-Sub → Rails consumers |
 | БД читання | Primary + Query | Read-Only Replicas для всіх аналітичних запитів та Oracle |
-| TinyML навчання | Централізоване | Federated Learning: навчання на кластерах → OTA-оновлення через `OtaPackagerService` (делегування — §1.2) |
+| TinyML навчання | Централізоване | **Cluster-level Edge Retraining** (на кластерах → OTA через `OtaPackagerService`); справжній FL лише як Queen↔Rails обмін оновленнями (делегування — §1.2) |

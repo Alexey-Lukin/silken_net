@@ -302,7 +302,7 @@ kamal deploy
 - [`05_03`](docs/05_03_Tokenomics_SCC_and_SFC.md) — токеноміка SCC/SFC
 - [`05_04`](docs/05_04_Ethereum_L1_State_Anchor.md) — щотижнева фіналізація в Ethereum L1
 - [`05_05`](docs/05_05_Slashing_and_Risk_Policy.md) — політика штрафів і ризиків (negligence/force-majeure + формула + insurance + anti-fraud + multi-signal de-risk)
-- [`05_06`](docs/05_06_Governance_and_DAO.md) — on-chain governance (SilkenGovernor + Timelock + ProtocolParameters + Flash-Loan-захист + Apex Predator)
+- [`05_06`](docs/05_06_Governance_and_DAO.md) — on-chain governance (SilkenGovernor + Timelock + ProtocolParameters + Flash-Loan-захист + Auto-Immune Sentinel)
 
 **Розгортання та Інфраструктура (Модуль 06)**
 - [`06_01`](docs/06_01_Deployment_Kamal_Terraform.md) — Kamal + Terraform (GCP) + Web3 ENV
@@ -342,8 +342,8 @@ kamal deploy
 | Прошивка Солдата (C + mruby + TinyML) | 6 | Host-based тести проходять |
 | Прошивка Королеви (C + SIM7070G) | 6 | Host-based тести проходять |
 | Апаратна капсула (BOM, MPPT) | 6 | Архітектура заморожена |
-| Ti-6Al-4V гіроїдний анкер | 4 | nTop ліцензія, Lamé press-fit validated (safety 9.9×) |
-| EBFC Gen 2.0 (dgrFAD-GDH + Laccase/ZIF) | 4 | **Zero-Lab L1-L4 PASSED** (in-silico; see `docs/protocols/ebfc/in_silico/SUMMARY.md`) |
+| Ti-6Al-4V гіроїдний анкер | 3 | In-silico: nTop + Lamé press-fit validated (safety 9.9×); фізична DMLS-партія = TRL 4 |
+| EBFC Gen 2.0 (dgrFAD-GDH + Laccase/ZIF) | 3 | **Zero-Lab L1-L4 PASSED** (in-silico = TRL 3; physical TRL 4 = in-vitro Ti-coin; see `docs/protocols/ebfc/in_silico/SUMMARY.md`) |
 | Академічна мережа (ЧНУ/ФОТІУС/ЧДТУ/ЧІПБ/ЧМА/СЄУ) | 3 | 6 університетів, 35+ публікацій Q1 pipeline |
 | Розгортання GCP + Kamal | 4 | Код існує, деплой не проводився |
 

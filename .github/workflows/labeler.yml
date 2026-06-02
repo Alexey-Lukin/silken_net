@@ -2,7 +2,7 @@
 #
 # Applies cluster + module labels to pull requests based on changed file paths.
 # Config: .github/labeler.yml
-# Doc reference: docs/00_07_GitHub_Projects_and_IaC_Automation.md §2.6.
+# Doc reference: docs/00_05_GitHub_Projects_and_IaC_Automation.md §2.6.
 
 name: PR Auto-Labeler
 

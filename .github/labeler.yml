@@ -1,5 +1,5 @@
 # PR Auto-Labeler config (actions/labeler@v6).
-# Drives cluster routing per docs/00_07_GitHub_Projects_and_IaC_Automation.md §2.6.
+# Drives cluster routing per docs/00_05_GitHub_Projects_and_IaC_Automation.md §2.6.
 
 "cluster:A-hardware":
   - changed-files:

@@ -4,7 +4,7 @@
 # `.github/labels.yml`. delete-other-labels is FALSE (OPS.9) so ephemeral bot
 # labels (Dependabot/Snyk/Renovate) and GitHub defaults are NOT wiped on sync.
 #
-# Doc reference: docs/00_07_GitHub_Projects_and_IaC_Automation.md §2.5.
+# Doc reference: docs/00_05_GitHub_Projects_and_IaC_Automation.md §2.5.
 
 name: Labels Sync (IaC)
 

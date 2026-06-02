@@ -55,7 +55,7 @@
 | **Module** | Single Select | Компонент екосистеми (наприклад, `04: Server Core`). Формує Swimlanes. |
 | **Appetite** | Single Select | `Small Batch` (1-2w) або `Big Bet` (6w) згідно з методологією Shape Up. |
 | **SSOT Link** | URL | Пряме посилання на сторінку Wiki або звіт (Лабораторна валідація). |
-| **R&D Cluster** | Single Select | Primary кластер відповідальності: `A — Hardware/EBFC`, `B — Verification/Math`, `C — Scaling/Cloud`, `D — Compliance/Legal`, `Cross-cluster` |
+| **R&D Cluster** | Single Select | Primary кластер відповідальності — **рівно ОДИН** (accountability): `A — Hardware/EBFC`, `B — Verification/Math`, `C — Scaling/Cloud`, `D — Compliance/Legal`. *(«Cross-cluster» прибрано як resting-стан поля — крос-кластерність виражають secondary-лейбли `cluster-ref:*` (§4.2); драйвер завжди один, [`00_04 §2`](00_04_Shape_Up_Operations_and_RnD_Clusters).)* |
 | **Shape Up Stage** | Single Select | Стадія всередині 8-тижневого циклу: `Shaping`, `Bet (active)`, `Building`, `Hill (uphill)`, `Hill (downhill)`, `Park`, `Drop`, `Done` |
 | **Cycle** | Single Select | Cycle milestone (формат `YYYY.QN`): `Cycle 2026.Q2`, `Cycle 2026.Q3`, … |
 | **Academic Semester** | Single Select | Прив'язка до семестру партнерських ВНЗ: `Fall 2025-2026`, `Spring 2025-2026`, `Fall 2026-2027`, … |
@@ -105,7 +105,7 @@ done
 - **Тригер:** `issues: types: [closed]`
 - **Умова:** Завдання закрите (Done).
 - **Дія (TRL-stratified gate):** скрипт зчитує `Target TRL` закритого Issue. **`Target TRL ≤ 4`** → авто-перезапис `Current TRL` (картка «перелітає» у нову колонку), бо рев'ю TRL 1-4 делеговане лідам + CI ([`00_04 §3`](00_04_Shape_Up_Operations_and_RnD_Clusters)). **`Target TRL ≥ 5`** → скрипт **НЕ** рухає `Current TRL`, а ставить статус **`Pending Architect Approval`** + коментує issue; реальне просування відбувається лише за наявності лейбла `architect-approved` (його ставить виключно Архітектор). Це поважає обов'язкові TRL-гейти 4→5 / 6→7 / 8→9 (Architect/DAO approval, [`00_04 §3`](00_04_Shape_Up_Operations_and_RnD_Clusters), [`00_02 §5`](00_02_AI_Native_Engineering_and_TRL)). Додатково: рахує `completion_semester` з `closed_at` (UTC) → поле `Academic Semester`.
-- **Авторизація:** Здійснюється через спеціальний токен Архітектора (`secrets.PROJECT_PAT`).
+- **Авторизація:** наразі `secrets.PROJECT_PAT` (PAT Архітектора). ⚠️ **Рекомендація безпеки:** мігрувати на **GitHub App installation token** (fine-grained, авто-ротація, short-lived) — PAT прив'язаний до акаунта, надто широкий, протермінується й тихо ламає пайплайн. **Важливо:** дефолтний `secrets.GITHUB_TOKEN` тут НЕ підходить — він **не має доступу до Projects V2** (а permission `repository-projects` покриває лише *classic* projects, не V2). Тож єдина безпечна заміна PAT для Projects V2 — **GitHub App token**. Tracked → [`00_07`](00_07_Action_Plan_Tracker).
 
 > **Чому gate, а не безумовний авто-рух (корекція 2026-05-28):** інакше будь-який «Close Issue» (розробник або AI-агент) підняв би технологію до TRL 9, обійшовши обов'язкові Architect/DAO-гейти — і TRL-метрика з інструмента оцінки зрілості виродилась би у звичайний task-tracker. Авто-рух лишається лише для TRL 1-4 (рев'ю там і так делеговане); TRL ≥5 завжди проходить людський gate. **Поточний `trl_sync.yml` рухає картку беззумовно — TRL-gate ще не імплементовано (tracked у [`00_07`](00_07_Action_Plan_Tracker)).**
 
@@ -122,7 +122,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Advance TRL on Project V2
         env:
-          GH_TOKEN: ${{ secrets.PROJECT_PAT }}
+          GH_TOKEN: ${{ secrets.PROJECT_PAT }}   # ⚠️ мігрувати → GitHub App token (GITHUB_TOKEN не вміє Projects V2). Див. §2.2.
           PROJECT_NUMBER: 1
           OWNER: Alexey-Lukin
         run: bin/ci/trl_sync.rb ${{ github.event.issue.number }}
@@ -287,16 +287,23 @@ Routes PRs автоматично у відповідні кластери на 
 ```
 
 ```yaml
-# .github/workflows/labeler.yml
+# .github/workflows/labeler.yml  (відображає реальний файл)
 name: PR Auto-Labeler
-on: [pull_request]
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
 jobs:
   label:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
-      - uses: actions/labeler@v5
+      - uses: actions/labeler@v6          # v6 — той самий schema (changed-files / *-glob-to-*-file), що й .github/labeler.yml
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+          configuration-path: .github/labeler.yml
+          sync-labels: true
 ```
 
 ---
@@ -323,7 +330,7 @@ jobs:
 | `cluster:B-verification` | `#4ECDC4` (teal) | Primary кластер — Verification/Math |
 | `cluster:C-scaling` | `#3D5A80` (blue) | Primary кластер — Scaling/Cloud |
 | `cluster:D-compliance` | `#7209B7` (purple) | Primary кластер — Compliance/Legal |
-| `cluster:cross-cluster` | `#F1E05A` (yellow) | 5-та опція Projects V2 для задач, що **архітектурно не належать** одному кластеру (наприклад, MOIC governance, cross-cluster refactors). Має наступним кроком резолвитись у конкретний primary — або документуватися як свідомо cross-cluster |
+| `cluster:cross-cluster` | `#F1E05A` (yellow) | **Транзитний triage-маркер** (НЕ resting-стан, НЕ власник): auto-labeler ставить його, коли PR чіпає кілька top-level дерев і не може однозначно обрати primary (§2.6). **Зобов'язаний** до Betting Table резолвитись у **рівно один** `cluster:*` (драйвер) + будь-яку к-сть `cluster-ref:*` (консультанти) — завдання не може лишатися «нічиїм» (100% accountability, [`00_04 §2`](00_04_Shape_Up_Operations_and_RnD_Clusters)). |
 
 ### 4.2 Cluster cross-reference (secondary, optional)
 
