@@ -118,7 +118,7 @@
 
 **Публікація канону на Wiki:** `bin/rails wiki:sync` (dry-run за замовч.; `PUSH=1` публікує) дзеркалить `docs/NN_NN_*.md` → GitHub Wiki — нормалізує лінки (canon → bare wiki-link; non-doc repo-файли → absolute `blob/main` URL) + переносить зображення. **Ручний** запуск (рішення власника — НЕ on-merge); engine `lib/wiki_link_normalizer.rb` (unit-tested). Деталі — `lib/tasks/wiki.rake`.
 
-> **Wiki — генерований артефакт, one-way (docs/ → Wiki), НЕ редагується вручну.** SSOT живе ТІЛЬКИ в `docs/`; правка через web-інтерфейс Wiki буде затерта наступним sync (тож drift «хтось поправив у Wiki, і воно не повернулось» не виникає — Wiki не є джерелом). Нормалізатор **обов'язковий**: сирий `git push --mirror` зламав би всі canon-лінки (`[`05_05`](05_05_…)` → bare wiki-page), repo-file-посилання та зображення — саме тому існує `wiki_link_normalizer.rb`, а не голий mirror. Тобто це НЕ «подвійне життя SSOT», а детермінована one-way генерація (як збірка сайту з джерела).
+> **Wiki — генерований артефакт, one-way (docs/ → Wiki), НЕ редагується вручну.** SSOT живе ТІЛЬКИ в `docs/`; правка через web-інтерфейс Wiki буде затерта наступним sync (тож drift «хтось поправив у Wiki, і воно не повернулось» не виникає — Wiki не є джерелом). Нормалізатор **обов'язковий**: сирий `git push --mirror` зламав би всі canon-лінки (напр. [`05_05`](05_05_Slashing_and_Risk_Policy) у Wiki має стати bare-сторінкою), repo-file-посилання та зображення — саме тому існує `wiki_link_normalizer.rb`, а не голий mirror. Тобто це НЕ «подвійне життя SSOT», а детермінована one-way генерація (як збірка сайту з джерела).
 
 ---
 
