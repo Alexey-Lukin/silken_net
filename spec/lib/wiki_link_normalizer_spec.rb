@@ -121,6 +121,24 @@ RSpec.describe WikiLinkNormalizer do
     end
   end
 
+  describe "inline code spans are left untouched" do
+    it "does not rewrite or flag links that sit inside `inline code` (00_06 cross-ref examples)" do
+      md = "Prose [a](04_06_Testing_Guide_and_Coverage.md), but `[b](Doc)` and ``[`c`](Doc)`` are examples."
+      res = normalizer.call(md)
+      expect(res.body).to include("[a](04_06_Testing_Guide_and_Coverage)") # real link rewritten
+      expect(res.body).to include("`[b](Doc)`")    # single-backtick span: verbatim
+      expect(res.body).to include("``[`c`](Doc)``") # double-backtick span: verbatim
+      expect(res.unresolved).to be_empty            # example links never reported
+    end
+
+    it "still rewrites a real link whose LABEL contains inline code (canonical [`NN`](t) form)" do
+      # R5 single-form: backticks wrap only the label, the `](target)` is a live
+      # link and MUST be rewritten — it is NOT a whole-link-in-code-span example.
+      md = "Canonical [`04_06`](04_06_Testing_Guide_and_Coverage.md) ref."
+      expect(body_of(md)).to eq("Canonical [`04_06`](04_06_Testing_Guide_and_Coverage) ref.")
+    end
+  end
+
   describe "de-duplication" do
     it "reports each carried image and unresolved link once" do
       md = "![x](images/marchuk_trees.png) ![x](images/marchuk_trees.png) [d](../DEPLOYMENT.md) [d](../DEPLOYMENT.md)"

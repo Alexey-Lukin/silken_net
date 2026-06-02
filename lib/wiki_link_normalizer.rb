@@ -23,14 +23,19 @@ require "set"
 #   * link to any other existing repo file                → absolute github.com blob URL
 #   * anything unresolved                                 → untouched + recorded warning
 #
-# Links inside fenced ``` / ~~~ code blocks are left untouched (so example code
-# that merely looks like a link is not rewritten).
+# Links inside fenced ``` / ~~~ code blocks AND inline `code` spans are left
+# untouched (so example code that merely looks like a link — e.g. the cross-ref
+# format examples in 00_06 — is not rewritten or reported as unresolved).
 class WikiLinkNormalizer
   Result = Struct.new(:body, :images, :unresolved, keyword_init: true)
 
   # Matches inline links/images: `[text](target)` and `![alt](target)`, with an
   # optional Markdown title (`(target "title")`). Targets contain no spaces.
   LINK_RE = /(!?)\[([^\]]*)\]\(\s*([^)\s]+)(?:\s+"[^"]*")?\s*\)/
+
+  # Inline code span: a run of N backticks … the next run of exactly N backticks
+  # (so ``[`05_05`](Doc)`` and `[a](b)` examples are recognised as code, not links).
+  INLINE_CODE_RE = /(`+).*?\1/
 
   # @param canon_slugs [Enumerable<String>] doc filenames without the ".md"
   # @param repo        [String] "owner/name"
@@ -56,12 +61,7 @@ class WikiLinkNormalizer
       elsif fenced
         out << line
       else
-        out << line.gsub(LINK_RE) do
-          bang = Regexp.last_match(1)
-          text = Regexp.last_match(2)
-          raw  = Regexp.last_match(3)
-          "#{bang}[#{text}](#{rewrite(bang, raw, images, unresolved)})"
-        end
+        out << rewrite_outside_code_spans(line, images, unresolved)
       end
     end
 
@@ -69,6 +69,36 @@ class WikiLinkNormalizer
   end
 
   private
+
+  # Rewrite links only in the parts of a line OUTSIDE inline code spans; the
+  # spans themselves are copied verbatim (GitHub never renders a link inside
+  # `code`, so example links must not be rewritten or flagged unresolved).
+  def rewrite_outside_code_spans(line, images, unresolved)
+    spans = code_span_ranges(line)
+    line.gsub(LINK_RE) do
+      m = Regexp.last_match
+      # Skip a link ONLY when the WHOLE `[..](..)` sits inside one inline code
+      # span (a verbatim example). A link whose LABEL merely contains inline
+      # code — e.g. [`05_05`](target), the canonical cross-ref form — is a real
+      # link (its `](target)` is outside any span) and must still be rewritten.
+      if spans.any? { |r| r.cover?(m.begin(0)) && r.cover?(m.end(0) - 1) }
+        m[0]
+      else
+        "#{m[1]}[#{m[2]}](#{rewrite(m[1], m[3], images, unresolved)})"
+      end
+    end
+  end
+
+  # Char ranges of inline code spans (a run of N backticks … the next run of N).
+  def code_span_ranges(line)
+    ranges = []
+    pos = 0
+    while (m = INLINE_CODE_RE.match(line, pos))
+      ranges << (m.begin(0)...m.end(0))
+      pos = m.end(0)
+    end
+    ranges
+  end
 
   def rewrite(bang, raw, images, unresolved)
     return raw if raw.match?(%r{\A(?:https?:|mailto:|#)})
