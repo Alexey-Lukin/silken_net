@@ -280,4 +280,26 @@ RSpec.describe Web3::ResilientClient do
       client.eth_block_number
     end
   end
+
+  describe "#classify_error (private)" do
+    it "labels an error that is neither retriable nor rate-limited as unknown" do
+      # record_failure only fires for retriable / rate-limited errors, so the
+      # "unknown" arm is unreachable through the public cascade — exercise it
+      # directly to lock in the Prometheus error_type label contract.
+      expect(client.send(:classify_error, StandardError.new("boom"))).to eq("unknown")
+    end
+  end
+
+  describe "#provider_available? (private)" do
+    it "treats a circuit-open provider with no opened_at timestamp as available" do
+      # Defensive guard: @failure_counts and @circuit_opened_at are always
+      # set/cleared together, so this inconsistent state cannot arise through the
+      # public API. The guard prevents a `Time.current - nil` crash should that
+      # invariant ever break — exercise it directly.
+      client.instance_variable_set(:@failure_counts, Hash.new(0).merge(primary_url => described_class::MAX_FAILURES))
+      client.instance_variable_set(:@circuit_opened_at, {})
+
+      expect(client.send(:provider_available?, primary_url)).to be true
+    end
+  end
 end

@@ -44,6 +44,16 @@ RSpec.describe TelemetryLog, type: :model do
       log = build(:telemetry_log, :optimal, z_value: 1.5)
       expect(log).not_to be_optimal
     end
+
+    it "returns false when the log is not in homeostasis" do
+      log = build(:telemetry_log, :optimal, bio_status: :stress)
+      expect(log).not_to be_optimal
+    end
+
+    it "returns false when z_value is absent" do
+      log = build(:telemetry_log, :optimal, z_value: nil)
+      expect(log).not_to be_optimal
+    end
   end
 
   describe "#critical?" do

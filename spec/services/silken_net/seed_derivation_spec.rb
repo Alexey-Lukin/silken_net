@@ -128,4 +128,11 @@ RSpec.describe SilkenNet::SeedDerivation do
       expect(described_class.current_epoch_day(t)).to eq(t.to_i / 86_400)
     end
   end
+
+  describe ".initial_state argument validation" do
+    it "raises ArgumentError when seed_bytes is nil" do
+      expect { described_class.initial_state(nil) }
+        .to raise_error(ArgumentError, /seed_bytes must be 32 bytes/)
+    end
+  end
 end

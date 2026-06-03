@@ -169,5 +169,12 @@ RSpec.describe Hil::QueenSimulator do
         expect(job["args"].last["temperature_c"]).to eq(72)
       end
     end
+
+    it "sleeps between ticks when interval is positive" do
+      paced = described_class.new(gateway, mode: :direct, rng: Random.new(99))
+      allow(paced).to receive(:sleep)
+      paced.run!(count: 2, interval: 0.5)
+      expect(paced).to have_received(:sleep).with(0.5).once
+    end
   end
 end

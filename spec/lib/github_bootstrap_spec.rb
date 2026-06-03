@@ -232,4 +232,12 @@ RSpec.describe GithubBootstrap do
       expect(text).to eq(1)
     end
   end
+
+  describe ".create_field! with an unsupported type" do
+    it "raises a GithubBootstrap::Error" do
+      expect {
+        described_class.create_field!(project_id: "P_1", field: { type: :bogus, name: "X" }, executor: ->(_argv) { [ "{}", 0 ] })
+      }.to raise_error(GithubBootstrap::Error, /Unsupported field type/)
+    end
+  end
 end

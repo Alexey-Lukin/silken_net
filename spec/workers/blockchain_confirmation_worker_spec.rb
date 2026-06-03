@@ -38,6 +38,19 @@ RSpec.describe BlockchainConfirmationWorker, type: :worker do
         expect(transaction.reload.status).to eq("confirmed")
         expect(tx2.reload.status).to eq("confirmed")
       end
+
+      it "parses hex blockNumber and gasUsed when the receipt includes them" do
+        allow(client_double).to receive(:eth_get_transaction_receipt).and_return(
+          { "result" => { "status" => "0x1", "blockNumber" => "0x10", "gasUsed" => "0x5208" } }
+        )
+
+        described_class.new.perform(tx_hash)
+
+        transaction.reload
+        expect(transaction.status).to eq("confirmed")
+        expect(transaction.block_number).to eq(16)
+        expect(transaction.gas_used).to eq(21_000)
+      end
     end
 
     context "when receipt shows revert" do

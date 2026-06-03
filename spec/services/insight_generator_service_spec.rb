@@ -402,6 +402,12 @@ RSpec.describe InsightGeneratorService, type: :service do
       result = service.send(:generate_for_tree, tree, { sap: 1.0, temp: 25.0, z: 0.5 }, stats)
       expect(result).to be false
     end
+
+    it "returns false when stats itself is nil (safe-navigation guard)" do
+      service = described_class.new
+      result = service.send(:generate_for_tree, tree, { sap: 1.0, temp: 25.0, z: 0.5 }, nil)
+      expect(result).to be false
+    end
   end
 
   # [VPD weather-confounder gate — 00_01 §6.5/§6.6] Discount-only, inert until

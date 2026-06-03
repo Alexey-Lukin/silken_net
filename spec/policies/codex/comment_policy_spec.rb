@@ -82,5 +82,11 @@ RSpec.describe Codex::CommentPolicy do
       scoped = described_class::Scope.new(admin, Codex::Comment.all).resolve
       expect(scoped).to include(visible, hidden)
     end
+
+    it "returns only visible comments for an anonymous scope" do
+      scoped = described_class::Scope.new(nil, Codex::Comment.all).resolve
+      expect(scoped).to include(visible)
+      expect(scoped).not_to include(hidden)
+    end
   end
 end

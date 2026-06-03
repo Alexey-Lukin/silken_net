@@ -50,7 +50,8 @@ class OtaPackagerService
     z_max   = (thresholds[:max]     * 100).round.to_i
     z_opt   = (thresholds[:optimal] * 100).round.to_i
 
-    species_id = SPECIES_ID_MAP[tree.tree_family&.scientific_name] || DEFAULT_SPECIES_ID
+    # tree_family — required belongs_to; unmapped scientific_name → DEFAULT
+    species_id = SPECIES_ID_MAP[tree.tree_family.scientific_name] || DEFAULT_SPECIES_ID
     version    = (config_version & 0xFF)
 
     body = [ z_min, z_max, z_opt, species_id, version ].pack("s<s<s<CC")

@@ -118,7 +118,7 @@ class EwsAlert < ApplicationRecord
   # nil-safe: cluster — optional (одиноке дерево / тестова інсталяція). Без
   # `cluster&.geo_center` друга гілка крашне NoMethodError при cluster == nil.
   def coordinates
-    if tree&.latitude.present? && tree&.longitude.present?
+    if tree&.latitude.present? && tree.longitude.present?
       [ tree.latitude, tree.longitude ]
     elsif (center = cluster&.geo_center)
       [ center[:lat], center[:lng] ]

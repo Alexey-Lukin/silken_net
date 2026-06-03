@@ -69,10 +69,9 @@ module Web3
         end
       end
 
-      # Всі провайдери зафейлили — кидаємо останню помилку
-      raise last_error if last_error
-
-      raise "All RPC providers unavailable"
+      # available_urls ніколи не порожній → якщо цикл не повернув, кожен провайдер
+      # зафейлив і last_error встановлено.
+      raise last_error
     end
 
     def respond_to_missing?(method_name, include_private = false)

@@ -26,9 +26,11 @@ seed = "0x47616961322e300000000000000000000000000000000000000000000000dead"
 runs = 128
 depth = 64
 
-# CI profile: faster builds, reduced fuzz for speed
+# CI profile: reduced fuzz for speed. Optimizer stays ON — disabling it makes
+# OZ's P256.sol fail to compile (stack too deep).
 [profile.ci]
-optimizer = false
+optimizer = true
+optimizer_runs = 200
 fuzz.runs = 256
 
 # Production deployment: max optimisation for gas efficiency on-chain

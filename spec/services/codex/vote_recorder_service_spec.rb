@@ -123,5 +123,24 @@ RSpec.describe Codex::VoteRecorderService, type: :service do
       expect(result.match.winner_node_id).to eq(right.id)
       expect(result.match.elo_delta_right).to be > 0
     end
+
+    it "records a skip match when winner_slug is nil without an explicit skip flag" do
+      seed = issue_pair_seed
+      result = described_class.call(user: user, pair_seed: seed, winner_slug: nil)
+
+      expect(result.success?).to be(true)
+      expect(result.match.winner_node_id).to be_nil
+      expect(result.match.elo_delta_left).to eq(0)
+      expect(result.match.elo_delta_right).to eq(0)
+    end
+  end
+
+  describe "guard clauses" do
+    it "returns failure when the user is nil" do
+      result = described_class.call(user: nil, pair_seed: "any-seed")
+
+      expect(result.success?).to be(false)
+      expect(result.error).to eq("user is required")
+    end
   end
 end

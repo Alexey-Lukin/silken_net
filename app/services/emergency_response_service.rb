@@ -56,7 +56,7 @@ class EmergencyResponseService
     # [FIX-2]: Масове створення команд одним INSERT замість N окремих
     now = Time.current
     # 📈 Денормалізація: organization_id для broadcast без N+1
-    org_id = alert.cluster&.organization_id
+    org_id = alert.cluster.organization_id
     attrs = ordered_actuators.map do |actuator|
       chunks.map do |chunk_duration|
         {
@@ -102,7 +102,8 @@ class EmergencyResponseService
   # Сортуємо актуатори за відстанню їхнього шлюзу до дерева-джерела тривоги
   private_class_method def self.prioritize_by_proximity(actuators, alert)
     tree = alert.tree
-    return actuators unless tree&.latitude.present? && tree&.longitude.present?
+    # latitude-перевірка вже гарантує tree non-nil (short-circuit) → longitude без &.
+    return actuators unless tree&.latitude.present? && tree.longitude.present?
 
     actuators.order(
       Arel.sql(

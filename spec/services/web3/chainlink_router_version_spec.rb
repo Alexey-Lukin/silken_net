@@ -44,6 +44,16 @@ RSpec.describe Web3::ChainlinkRouterVersion do
         described_class.abi_for(:v42)
       }.to raise_error(described_class::UnsupportedVersionError)
     end
+
+    it "raises MissingAbiError when a registered version has a blank ABI" do
+      stub_const(
+        "Web3::ChainlinkRouterVersion::REGISTRY",
+        described_class::REGISTRY.merge(v_blank: { signature: "x()", selector: "0x00000000", abi: [] })
+      )
+      expect {
+        described_class.abi_for(:v_blank)
+      }.to raise_error(described_class::MissingAbiError, /v_blank/)
+    end
   end
 
   describe ".selector_for" do
@@ -70,6 +80,14 @@ RSpec.describe Web3::ChainlinkRouterVersion do
 
     it "returns nil for an unregistered version" do
       expect(described_class.fallback_for(:v_unknown)).to be_nil
+    end
+
+    it "returns the previous registered version when a newer one is active" do
+      # Forward-looking: simulate a future v2 registration so the dispatcher's
+      # graceful-retry fallback chain (active → previous) is exercised before
+      # v2 actually ships.
+      stub_const("Web3::ChainlinkRouterVersion::VERSION_ORDER", %i[v1 v2])
+      expect(described_class.fallback_for(:v2)).to eq(:v1)
     end
   end
 

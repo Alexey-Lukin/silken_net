@@ -95,4 +95,20 @@ RSpec.describe Codex::PairSelectorService, type: :service do
       expect(result.pair_seed).to match(/\A[0-9a-f]{64}\z/)
     end
   end
+
+  describe "guard clauses" do
+    it "returns invalid when the user is nil" do
+      result = described_class.call(user: nil)
+
+      expect(result.success?).to be(false)
+      expect(result.error).to eq("user is required")
+    end
+
+    it "returns invalid when the user is not persisted" do
+      result = described_class.call(user: User.new)
+
+      expect(result.success?).to be(false)
+      expect(result.error).to eq("user is required")
+    end
+  end
 end

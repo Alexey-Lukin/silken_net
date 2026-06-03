@@ -64,10 +64,7 @@ module Security
     def detect(value, hint: nil)
       return nil if value.nil?
 
-      candidates = candidate_byte_strings(value)
-      return nil if candidates.empty?
-
-      candidates.each do |bytes|
+      candidate_byte_strings(value).each do |bytes|
         %i[match_known_vector match_degenerate match_placeholder].each do |checker|
           reason = send(checker, bytes)
           return decorate(reason, hint) if reason
@@ -93,17 +90,14 @@ module Security
       # non-UTF-8 raw bytes (e.g. `\xFF * 32`) don't blow up `String#match?`.
       stripped = raw.sub(/\A0[xX]/, "")
       if stripped.bytesize >= 2 && stripped.bytesize.even? && stripped.match?(/\A[0-9A-Fa-f]+\z/)
-        decoded = [ stripped ].pack("H*")
-        out << decoded unless decoded == raw
+        out << [ stripped ].pack("H*")
       end
 
-      # Base64 interpretation — only if it round-trips losslessly. This
-      # rejects ordinary passphrases that happen to use a-z0-9 only.
+      # Base64 — strict_decode64 accepts only canonical base64, so a successful
+      # decode already round-trips losslessly; non-base64 raises ArgumentError.
       if raw.bytesize >= 4 && raw.match?(%r{\A[A-Za-z0-9+/=]+\z})
         begin
-          decoded = Base64.strict_decode64(raw)
-          encoded_back = Base64.strict_encode64(decoded)
-          out << decoded if encoded_back == raw && !out.include?(decoded)
+          out << Base64.strict_decode64(raw)
         rescue ArgumentError
           # not base64 — ignore
         end

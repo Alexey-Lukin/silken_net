@@ -20,6 +20,18 @@ SimpleCov.start "rails" do
   add_filter "/firmware/"
   add_filter "/lib/daemons/"
 
+  # lib/tasks/*.rake — Rake tasks are ops/SSOT orchestration, not the running
+  # production app. Their real logic is extracted into lib/*.rb engines
+  # (DocsLinter, DocsToc, DocsGraph, WikiLinkNormalizer, …) which ARE unit-tested
+  # to 100%; the rake wrappers are file iteration + human-readable `puts` report
+  # blocks + abort() gates. Those tasks ARE exercised — `rake docs:check_refs`,
+  # `docs:toc`, `tracker:check` run in docs.yml / ssot_guard.yml CI — just not
+  # under the RSpec coverage instrument. Counting their unmeasured `puts` lines
+  # diluted the production-code gate (they were ~373 LOC / 155 branches of the
+  # uncovered total). Same rationale as the /firmware/ and /lib/daemons/ filters
+  # above. See 04_06 §B.3 for the coverage-scope policy.
+  add_filter "/lib/tasks/"
+
   # Boilerplate Rails-файли без бізнес-логіки
   add_filter "app/jobs/application_job.rb"
   add_filter "app/helpers/application_helper.rb"
@@ -34,13 +46,14 @@ SimpleCov.start "rails" do
 
   # Feature-тести запускаються окремим CI job і мають свій скоуп.
   # Мінімальний кавередж застосовується тільки до unit/integration спеків.
-  # Виміряне покриття (з урахуванням Phlex-компонентів): line 99.08%, branch 90.83%
+  # Гейт тримається нижче фактичного покриття — лишає маржу під seed-залежний
+  # флак (кілька рядків/гілок плавають між прогонами) + майбутній churn.
   # COVERAGE=0 — повне відключення гейту для pure-unit прогонів (напр. docs.yml
-  # ганяє лише 2 файли спеків лінтерів → загальне покриття ≈0, гейт хибно впав би).
+  # ганяє лише файли спеків лінтерів → загальне покриття ≈0, гейт хибно впав би).
   if ENV["FEATURE_TEST"] || ENV["COVERAGE"] == "0"
     minimum_coverage line: 0, branch: 0
   else
-    minimum_coverage line: 97, branch: 90
+    minimum_coverage line: 99, branch: 95
   end
   minimum_coverage_by_file 0
 end
@@ -54,14 +67,13 @@ unless ENV["FEATURE_TEST"] || ENV["COVERAGE"] == "0"
   SimpleCov.at_exit do
     SimpleCov.result.format!
 
-    # Conservative thresholds — global coverage is ~99% (.last_run.json),
-    # but per-group baselines aren't pinned. Bump these up after a stable
-    # CI run measures actual numbers. The tripwire still catches large
-    # regressions (e.g. an accidentally-deleted spec dropping a group ≥10%).
+    # Per-group line floors, kept below actual coverage so normal churn
+    # doesn't trip them while a large regression (e.g. an accidentally
+    # deleted spec dropping a whole group) still does.
     minimums = {
-      "Services" => 91.0,
-      "Workers"  => 91.0,
-      "Models"   => 91.0
+      "Services" => 95.0,
+      "Workers"  => 95.0,
+      "Models"   => 95.0
     }
 
     failures = SimpleCov.result.groups.filter_map do |name, files|

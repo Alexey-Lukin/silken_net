@@ -204,4 +204,21 @@ RSpec.describe Hil::LorenzGenerator do
       expect { described_class.new }.not_to raise_error
     end
   end
+
+  describe "#in_band? (private band classifier)" do
+    subject(:generator) { described_class.new(seed_hex: seed_hex, rng: Random.new(8)) }
+
+    it "classifies z below the min threshold as stress" do
+      expect(generator.send(:in_band?, 1.0, :stress)).to be(true)
+    end
+
+    it "classifies z above the max threshold as anomaly" do
+      expect(generator.send(:in_band?, 99.0, :anomaly)).to be(true)
+    end
+
+    it "raises for an unknown state" do
+      expect { generator.send(:in_band?, 10.0, :bogus) }
+        .to raise_error(ArgumentError, /no Z band defined/)
+    end
+  end
 end

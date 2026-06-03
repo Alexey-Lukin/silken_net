@@ -40,6 +40,8 @@
 - [A.9 Checklist для code review](#a9-checklist-для-code-review)
 - [B.1 Відомі обмеження та відкриті ризики](#b1-відомі-обмеження-та-відкриті-ризики)
 - [B.2 Рекомендації для нових фіч](#b2-рекомендації-для-нових-фіч)
+- [B.3 Скоуп покриття та гейт](#b3-скоуп-покриття-та-гейт)
+- [B.4 Пошук і тріаж прогалин](#b4-пошук-і-тріаж-прогалин)
 <!-- TOC:AUTO:END -->
 
 ---
@@ -359,4 +361,38 @@ it "test that status works" do
 4. **Phlex компоненти** — слідувати Частині A цього документа (min 8 examples).
 5. **Firmware** — кожна нова функція потребує host-based test у `firmware/test/`.
 6. **Solidity** — naming: `test_` (happy), `testRevert_` (error), `testFuzz_` (fuzz).
-7. **Per-group SimpleCov tripwire** — окрім глобального гейту (line ≥ 97 %, branch ≥ 90 %), `spec/spec_helper.rb` `SimpleCov.at_exit` падає, якщо покриття групи `Services` / `Models` / `Workers` < 91 %. Пороги консервативні (фактично заміряно line ≈ 99 %); ціль — ловити випадкове видалення спек у hot path-ах. Підняти пороги до фактичного рівня — окремий PR після стабільного CI run.
+7. **Per-group SimpleCov tripwire** — окрім глобального гейту, `spec/spec_helper.rb` `SimpleCov.at_exit` падає, якщо line-покриття групи `Services` / `Models` / `Workers` опускається нижче порога. Глобальні та per-group пороги живуть **тільки** у `spec/spec_helper.rb` (їхній єдиний дім — точні числа тут не дублюються, [`00_06 §1`](00_06_SSOT_Documentation_Standard)). Мета — ловити випадкове видалення спек у hot path-ах. Скоуп і політику гейту описує §B.3.
+
+---
+
+## B.3 Скоуп покриття та гейт
+
+**Що міряється.** Гейт покриває **продакшн-застосунок** (`app/`) + допоміжні lib-движки, які він або специ вантажать (`lib/docs_*.rb`, `lib/wiki_link_normalizer.rb`, `lib/coap_client.rb`, `lib/tracker/`, `lib/hil/`, `lib/github_bootstrap.rb`). Пороги line/branch + per-group tripwire живуть **тільки** в `spec/spec_helper.rb` — точні числа сюди не копіюються (volatile, [`00_06 §1`](00_06_SSOT_Documentation_Standard)).
+
+**Що відфільтровано — і чому.** `SimpleCov` фільтрує `/spec/`, `/config/`, `/db/`, `/vendor/`, `/firmware/`, `/lib/daemons/` та **`/lib/tasks/`**. Rake-таски — це ops/SSOT-оркестрація (file I/O + `puts`-звіти + `abort`-гейти), не running-застосунок; їхня **логіка винесена** в lib-движки зі 100% покриттям (`DocsLinter`, `DocsToc`, `DocsGraph` …), а самі таски ганяються в `docs.yml`/`ssot_guard.yml`, не в unit-сюїті. Рахувати їхні незаміряні `puts`-рядки = розводнити продакшн-гейт. Той самий принцип, що й фільтр `/firmware/` (host-mock'и): міряємо там, де факт «чи працює код» справді встановлюється (One-Home, [`00_06 §2`](00_06_SSOT_Documentation_Standard)).
+
+**Зняття гейту.** `FEATURE_TEST=1` та `COVERAGE=0` повністю вимикають гейт (feature-специ міряються окремим CI-job'ом; `docs.yml` ганяє лише лінтер-специ → загальне покриття ≈0, гейт хибно впав би).
+
+---
+
+## B.4 Пошук і тріаж прогалин
+
+**Знайти** — після ПОВНОГО `bin/rspec` (цілісний `coverage/.resultset.json`; subset-прогон переписує його частково й тригерить per-group tripwire-артефакт — не реальний fail):
+
+```ruby
+require "json"
+cov = JSON.parse(File.read("coverage/.resultset.json")).values.first["coverage"]
+cov.filter_map { |p, d|
+  next unless p =~ %r{/(app|lib)/}
+  t = h = 0
+  (d["branches"] || {}).each { |_, s| s.each { |_, n| t += 1; h += 1 if n.to_i > 0 } }
+  t > h ? [ t - h, p.sub(%r{.*/(app|lib)/}, '\1/') ] : nil
+}.sort_by { |r| -r[0] }.first(25).each { |u, f| printf "-%3d %s\n", u, f }
+```
+
+**Тріаж — НЕ покривати сліпо.** Для кожної непокритої гілки:
+
+- **Реальна логіка** (status / empty-state / guard / error-path) → написати тест.
+- **Мертвий захисний `&.`** (receiver — обов'язковий `belongs_to`, гарантовано non-nil, або short-circuit'нутий другим операндом `&&`) → спростити `&.`→`.`; гілка зникає, тест не потрібен.
+- **Недосяжний defensive guard** (інваріант, якого клас сам не порушує; `defined?(Const)` за завжди-завантаженого модуля) → лишити; крихкий white-box-тест заради % суперечить §A.16–17. Forward-looking-гілку (ще-не-зареєстрована версія тощо) можна чесно покрити `stub_const`.
+- **Баг біля непокритого коду** → виправити + тест, або занести в [`00_07`](00_07_Action_Plan_Tracker).

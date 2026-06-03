@@ -83,6 +83,16 @@ RSpec.describe EmergencyResponseService do
     end
   end
 
+  describe "alert without a cluster" do
+    it "returns early and dispatches nothing when the alert has no cluster" do
+      alert_no_cluster = instance_double(EwsAlert, cluster: nil)
+
+      expect {
+        expect(described_class.call(alert_no_cluster)).to be_nil
+      }.not_to change(ActuatorCommand, :count)
+    end
+  end
+
   describe "bulk insert (N+1 fix)" do
     let(:alert) { create(:ews_alert, :drought, cluster: cluster, tree: tree) }
 

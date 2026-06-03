@@ -26,6 +26,11 @@ RSpec.describe Codex::AttunementPolicy do
     expect(described_class.new(other_user, own)).not_to be_update
   end
 
+  it "denies destroy/update for anonymous users" do
+    expect(described_class.new(nil, own)).not_to be_destroy
+    expect(described_class.new(nil, own)).not_to be_update
+  end
+
   it "Scope#resolve returns the full collection" do
     create(:codex_attunement, user: user, node: node)
     create(:codex_attunement, user: other_user, node: node)

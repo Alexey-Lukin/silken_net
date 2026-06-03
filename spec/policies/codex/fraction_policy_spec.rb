@@ -28,5 +28,17 @@ RSpec.describe Codex::FractionPolicy, type: :policy do
       expect(described_class.new(user, other_fraction).update?).to be(false)
       expect(described_class.new(user, other_fraction).destroy?).to be(false)
     end
+
+    it "denies update/destroy for anonymous users" do
+      expect(described_class.new(nil, fraction).update?).to be(false)
+      expect(described_class.new(nil, fraction).destroy?).to be(false)
+    end
+  end
+
+  describe "Scope#resolve" do
+    it "returns the unscoped collection" do
+      fraction
+      expect(described_class::Scope.new(user, Codex::Fraction.all).resolve).to include(fraction)
+    end
   end
 end
