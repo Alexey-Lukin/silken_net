@@ -56,6 +56,7 @@ namespace :docs do
     bare_doc    = []  # hard: bare code-span `NN_NN` doc-id (no §) that should be a full link
     xref_form   = []  # hard: doc-id link label not in the single code-span form (00_06 §1)
     graph_docs  = {}  # id "NN_NN" → text, for the #anchor-resolution gate (DocsGraph)
+    doc_trls    = {}  # basename → member-TRL int (from ✅ Статус), for the 00_03 §1 band guard
 
     files.each do |f|
       base = File.basename(f, ".md")
@@ -81,6 +82,9 @@ namespace :docs do
         ei = rest.index { |l| l =~ /^\#{2}\s/ }
         section = (ei ? rest[0...ei] : rest).join
         trl_missing << base unless section =~ /Поточний TRL|TRL\s*\d|Conceptual\s*\(TRL/
+        if (mt = section[/Поточний TRL[^\n]*?TRL\s*(\d)/, 1] || section[/Conceptual\s*\(TRL\s*(\d)/, 1] || section[/TRL\s*(\d)/, 1])
+          doc_trls[base] = mt.to_i
+        end
       end
 
       # [RTC reg-map drift] register availability is SSOT-owned by 03_01 §2; any
@@ -112,8 +116,12 @@ namespace :docs do
     end
 
     # [TRL single-value] HARD — 00_03 §1 per-module matrix cells single 1-9.
-    matrix     = File.join(DOCS_DIR, "00_03_TRL_Matrix_HIL_and_Beyond.md")
-    trl_ranges = File.exist?(matrix) ? DocsLinter.trl_matrix_range_violations(File.read(matrix)) : []
+    # [TRL range-consistency] HARD — a doc's member-TRL stays inside its module band
+    # (00_03 §1): band well-formed + row ≤ max member + member ≤ target (see linter).
+    matrix      = File.join(DOCS_DIR, "00_03_TRL_Matrix_HIL_and_Beyond.md")
+    matrix_text = File.exist?(matrix) ? File.read(matrix) : nil
+    trl_ranges  = matrix_text ? DocsLinter.trl_matrix_range_violations(matrix_text) : []
+    trl_band    = matrix_text ? DocsLinter.trl_range_consistency(matrix_text, doc_trls) : []
 
     # [Blockers → 00_07] ADVISORY (→ HARD once the sweep removes them all). Canon
     # docs must not host a 🛑/✅-archive blocker section; 00_07 is the tracker — exempt.
@@ -188,6 +196,12 @@ namespace :docs do
       puts "  TRL RANGE in 00_03 §1 matrix (#{trl_ranges.size}):"
       trl_ranges.each { |r| puts "    ✗ #{r}" }
     end
+    if trl_band.empty?
+      puts "  TRL band:       every doc member-TRL within its 00_03 §1 module band ✓"
+    else
+      puts "  TRL BAND INCONSISTENCY (#{trl_band.size}) — doc TRL vs 00_03 §1 per-module band:"
+      trl_band.sort.each { |r| puts "    ✗ #{r}" }
+    end
     if blocker_sections.empty?
       puts "  blockers→00_07:  no canon doc hosts a 🛑/✅-archive blocker section ✓"
     else
@@ -253,6 +267,7 @@ namespace :docs do
     failed << "dangling doc links" unless dangling.empty?
     failed << "✅ Статус docs without a TRL" unless trl_missing.empty?
     failed << "TRL ranges in 00_03 §1 matrix" unless trl_ranges.empty?
+    failed << "TRL band inconsistency (doc TRL vs 00_03 §1 module band)" unless trl_band.empty?
     failed << "ToC drift (run docs:toc)" unless toc_drift.empty?
     failed << "canon docs hosting blocker sections (→ 00_07)" unless blocker_sections.empty?
     failed << "docs missing the standard skeleton" unless conformance.empty?

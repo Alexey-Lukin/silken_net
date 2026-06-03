@@ -23,6 +23,49 @@ module DocsLinter
     end
   end
 
+  # [SSOT anti-drift] TRL range-consistency (HARD; owner 00_03 §1). The per-module
+  # TRL band lives in the "Per-module TRL" table (module → current | target). That
+  # row is the MINIMUM member-TRL of a module's *critical-path* sub-docs — so a
+  # sub-doc may legitimately sit ABOVE the row (it is the source; the row takes the
+  # min) and an off-critical-path sub-doc may sit BELOW it (06_01=4 vs row 5; 00_03's
+  # Статус reports the *System* TRL 3, not its own maturity). That makes the LOWER
+  # bound exception-ridden — "critical-path membership" is not machine-derivable from
+  # the files — so this guard checks only the bounds with NO legitimate exception:
+  #   (a) band well-formed — each row's current ≤ target;
+  #   (b) row not inflated — a module's current ≤ the MAX member-TRL of its NN_xx docs
+  #       (the row is a min; it may never sit above EVERY member);
+  #   (c) doc ceiling     — a sub-doc's member-TRL ≤ its module's target (a doc cannot
+  #       declare itself more ready than its own module's goal → inflated claim or a
+  #       stale target governance forgot to raise).
+  # The caller passes the 00_03 matrix text + {basename => member_TRL int} and gets
+  # ready, self-prefixed strings (mixed module- and doc-scoped, like the sibling). Rows
+  # are detected exactly as trl_matrix_range_violations (first cell "NN <name>"), so the
+  # NASA-stage table ("**TRL n-m**") is never parsed. Pure: no I/O.
+  TRL_BAND_ROW_RE = /\A\|\s*(\d{2})\s+[^|]*\|\s*(\d)\s*\|\s*(\d)\s*\|/
+
+  def trl_range_consistency(matrix_text, doc_trls)
+    bands = {}
+    matrix_text.each_line do |line|
+      m = line.match(TRL_BAND_ROW_RE)
+      bands[m[1]] = [ m[2].to_i, m[3].to_i ] if m
+    end
+    return [] if bands.empty?
+
+    members = doc_trls.group_by { |base, _| base[0, 2] }.transform_values { |pairs| pairs.map(&:last) }
+
+    out = []
+    bands.each do |mod, (cur, tgt)|
+      out << "00_03 §1: module #{mod} current TRL #{cur} > target #{tgt} (band inverted)" if cur > tgt
+      max = members[mod]&.max
+      out << "00_03 §1: module #{mod} current TRL #{cur} > its highest sub-doc member-TRL #{max} (row is a min, never above every member)" if max && cur > max
+    end
+    doc_trls.each do |base, trl|
+      tgt = bands[base[0, 2]]&.last
+      out << "#{base}: member-TRL #{trl} > module #{base[0, 2]} target #{tgt} (00_03 §1 — inflated claim or stale target)" if tgt && trl > tgt
+    end
+    out
+  end
+
   # Blockers live in 00_07, not canon (decided 2026-05-29). Canon docs must not
   # host a blocker SECTION — neither open ("🛑 Блокери", "🛑 Відкриті Блокери")
   # nor a resolved-archive ("✅ Архів", "✅ Закриті Блокери (PR #…)"). ALL blockers

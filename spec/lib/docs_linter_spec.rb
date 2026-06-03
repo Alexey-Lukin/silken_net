@@ -33,6 +33,49 @@ RSpec.describe DocsLinter do
     end
   end
 
+  describe ".trl_range_consistency" do
+    let(:matrix) do
+      <<~MD
+        | **TRL 5-6** | Прототипування | Lab |
+        | Модуль | TRL | Цільовий | Блокер |
+        |--------|-----|----------|--------|
+        | 01 Materials & EBFC | 3 | 6 | Ti-coin |
+        | 03 Firmware | 6 | 8 | AES |
+        | 06 DevOps | 5 | 9 | deploy |
+      MD
+    end
+
+    it "passes when every doc member-TRL sits within its module band" do
+      trls = { "01_01_Anchor" => 3, "03_01_Firmware" => 6, "06_02_Akash" => 5 }
+      expect(described_class.trl_range_consistency(matrix, trls)).to be_empty
+    end
+
+    it "allows a sub-doc ABOVE its row (row = min) and BELOW it (off-critical-path) — no lower bound" do
+      trls = { "03_05_Crypto" => 6, "06_01_Kamal" => 4, "06_03_Prom" => 6 }
+      expect(described_class.trl_range_consistency(matrix, trls)).to be_empty
+    end
+
+    it "flags a doc claiming a member-TRL above its module target (ceiling)" do
+      hits = described_class.trl_range_consistency(matrix, { "01_03_EBFC" => 7 })
+      expect(hits).to contain_exactly(a_string_matching(/01_03_EBFC.*member-TRL 7 > module 01 target 6/))
+    end
+
+    it "flags a matrix row whose current exceeds its target (band inverted)" do
+      expect(described_class.trl_range_consistency("| 04 Backend | 9 | 8 | x |\n", {}))
+        .to contain_exactly(a_string_matching(/module 04 current TRL 9 > target 8/))
+    end
+
+    it "flags a row sitting above EVERY one of its sub-docs (inflated aggregate)" do
+      hits = described_class.trl_range_consistency(matrix, { "06_01_Kamal" => 4, "06_06_DR" => 4 })
+      expect(hits).to contain_exactly(a_string_matching(/module 06 current TRL 5 > its highest sub-doc member-TRL 4/))
+    end
+
+    it "ignores the NASA-stage table rows ('**TRL n-m**', not 'NN ...') and module-less docs" do
+      expect(described_class.trl_range_consistency("| **TRL 7-8** | Кваліфікація | Prod |\n", {})).to be_empty
+      expect(described_class.trl_range_consistency(matrix, { "99_99_Ghost" => 9 })).to be_empty
+    end
+  end
+
   describe ".canon_blocker_sections" do
     it "flags a '## 🛑 Блокери' section heading" do
       md = "## 🎯 Мета\n## 🛑 Блокери\n### 🟡 BLOCKER-2: AT blocking\n"
