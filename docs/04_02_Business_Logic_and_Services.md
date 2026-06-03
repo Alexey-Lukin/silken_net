@@ -470,9 +470,19 @@ peaq_node_url: "https://peaq-node.example.com"
 |---|---|
 | **Файл** | `app/services/solana/minting_service.rb` |
 | **Вхід** | `telemetry_log` (TelemetryLog AR instance) |
-| **Що робить** | USDC мікро-винагороди на Solana. **[MAINNET READY]** Guard: `verified_by_iotex?` + `oracle_status_fulfilled?` (enum method). **[BLOCKER-1]** `verify_oracle_balance!` — перевіряє баланс SOL оракула через `getBalance` RPC; raises при `< MIN_ORACLE_BALANCE_LAMPORTS` (0.05 SOL = 50M lamports). Розраховує `reward_lamports = 10_000 + (growth_points × 100)`, де `growth_points` — stored value [FW.29-PACK] 0..62 (wire 5-bit × 2 backend upscale). Діапазон: 10_000–16_200 lamports (0.01–0.0162 USDC). 4-крокова транзакція: `getLatestBlockhash` → бінарний SPL Token Transfer Message (compact-u16 + account keys + Ed25519-header) → Ed25519 підпис через `Ed25519Crypto::SigningService` (hex-keypair з `SOLANA_WALLET_KEYPAIR`) → `sendTransaction` (base64). ATA отримувача резолюється динамічно через `getTokenAccountsByOwner` RPC. `SOLANA_WALLET_KEYPAIR` (mandatory), `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS` — обов'язкові ENV. |
+| **Що робить** | USDC мікро-винагороди на Solana. **[MAINNET READY]** Guard: `verified_by_iotex?` + `oracle_status_fulfilled?` (enum method). **[BLOCKER-1]** `verify_oracle_balance!` — перевіряє баланс SOL оракула через `getBalance` RPC; raises при `< MIN_ORACLE_BALANCE_LAMPORTS` (0.05 SOL = 50M lamports). Розраховує `reward_lamports = 10_000 + (growth_points × 100)`, де `growth_points` — stored value [FW.29-PACK] 0..62 (wire 5-bit × 2 backend upscale). Діапазон: 10_000–16_200 lamports (0.01–0.0162 USDC). 4-крокова транзакція: `getLatestBlockhash` → бінарний SPL Token Transfer Message (compact-u16 + account keys + Ed25519-header) → Ed25519 підпис через `Ed25519Crypto::SigningService` (hex-keypair з `SOLANA_WALLET_KEYPAIR`) → `sendTransaction` (base64). ATA отримувача резолюється динамічно через `getTokenAccountsByOwner` RPC. `SOLANA_WALLET_KEYPAIR` (mandatory), `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS` — обов'язкові ENV. **[E.61] Batch-режим:** при ненульовому `solana_batch_threshold_usdc` (SystemParameter) `mint_micro_reward!` лише акумулює винагороду per-wallet у Kredis (виплату робить `Solana::BatchPayoutService`); `batch_payout!` шле один `transferChecked` (idx 12, валідує mint+decimals). Поріг 0 → per-event (backward-compat). Scale-обґрунтування — [`05_01 §8`](05_01_Multichain_Architecture). |
 | **Зовнішні виклики** | `Web3::HttpClient.post` → Solana RPC JSON API (`getLatestBlockhash`, `getTokenAccountsByOwner`, `sendTransaction`) |
 | **Вихід** | `tx_signature` (String). Створює `BlockchainTransaction` зі статусом `:sent` (очікує `BlockchainConfirmationWorker`). |
+
+### `Solana::BatchPayoutService` [E.61]
+
+| | |
+|---|---|
+| **Файл** | `app/services/solana/batch_payout_service.rb` |
+| **Вхід** | — (cron-driven через `SolanaBatchPayoutWorker`) |
+| **Що робить** | Gas Optimizer для Solana мікро-винагород. Обходить акумульовані в Kredis гаманці (`solana_pending_payouts:<wallet_id>`) і виплачує тих, чия сума перетнула `solana_batch_threshold_usdc`, одним `transferChecked` ATA→ATA через `Solana::MintingService#batch_payout!`. Per-wallet `Kredis.lock` + decrement-not-clear (concurrent incrby не губиться); ізоляція збоїв per-wallet; залишок зниклого гаманця скидається. Поріг 0 → no-op (власник виплат — per-event шлях). Scale-обґрунтування — [`05_01 §8`](05_01_Multichain_Architecture). |
+| **Зовнішні виклики** | `Solana::MintingService#batch_payout!` → Solana RPC (`transferChecked`) |
+| **Вихід** | — (side-effect: `BlockchainTransaction` `:sent` + Kredis decrement) |
 
 ### `Celo::CommunityRewardService`
 
@@ -1199,6 +1209,17 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Тригер** | `OracleCallbacksController#create` (Chainlink DON fulfillment callback, при `oracle_status == "fulfilled"`) |
 | **Вхід** | `telemetry_log_id`, `created_at_iso` (опціонально) |
 | **Сервіси** | `Solana::MintingService.new(log).mint_micro_reward!` |
+
+#### `SolanaBatchPayoutWorker` [E.61]
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `web3` |
+| **Retry** | 3 |
+| **Includes** | `Web3CircuitBreaker` — `with_circuit_breaker("solana_spl")`; `lock: :until_executed` |
+| **Тригер** | Sidekiq cron `20 * * * *` (щогодини) |
+| **Вхід** | — |
+| **Сервіси** | `Solana::BatchPayoutService.call` → виплата накопиченого (поріг `solana_batch_threshold_usdc` > 0) |
 
 #### `PuroEarthPassportWorker`
 

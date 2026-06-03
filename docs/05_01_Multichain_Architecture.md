@@ -312,7 +312,7 @@ type PremiumPaidEvent @entity { ... }
 | Параметр | Значення |
 |----------|----------|
 | **Сервіс** | `Solana::MintingService` |
-| **Воркер** | `SolanaMicroRewardWorker` |
+| **Воркер** | `SolanaMicroRewardWorker` (per-event) · `SolanaBatchPayoutWorker` (batch payout [E.61]) |
 | **Черга** | `web3` (пріоритет 7) |
 | **Retry** | 3 |
 | **ENV** | `SOLANA_RPC_URL` (default: Devnet), `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_MINT_AUTHORITY_PUBKEY`, `SOLANA_USDC_MINT_ADDRESS`, `SOLANA_WALLET_KEYPAIR` |
@@ -325,7 +325,7 @@ type PremiumPaidEvent @entity { ... }
 
 **Мікро-винагорода:** Base reward + bonus per growth\_point, конвертовано в lamports → USDC
 
-> **⚠️ Scale (нот.4):** поточно — окрема Solana tx на КОЖЕН fulfilled telemetry; на planetary-scale (мільйони verified-подій/добу) fees зрівнюються з винагородою + RPC-навантаження. **Fix трекається — [`00_07` — E.61](00_07_Action_Plan_Tracker):** batch payouts (акумуляція в Kredis до порогу `SOLANA_BATCH_THRESHOLD_USDC` → один `transferChecked` ATA→ATA, cron `SolanaBatchPayoutWorker`); backward-compat при threshold=0.
+> **⚠️ Scale (нот.4):** per-event Solana tx на КОЖЕН fulfilled telemetry на planetary-scale (мільйони verified-подій/добу) зрівнює fees з винагородою + RPC-навантаження. **Закрито batch payouts [E.61]:** при ненульовому порозі `solana_batch_threshold_usdc` (governance-aware `SystemParameter`, в USDC) `SolanaMicroRewardWorker` акумулює винагороду per-wallet у Kredis замість окремої tx; годинний `SolanaBatchPayoutWorker` (`Solana::BatchPayoutService`) виплачує накопичене одним `transferChecked` ATA→ATA, щойно сума перетне поріг (decrement-not-clear проти гонок). **Backward-compat:** поріг 0 → миттєва per-event виплата (поведінка за замовчуванням).
 
 Solana `Solana::MintingService` використовує `sendTransaction` з Ed25519-підписом. ATA отримувача резолюється динамічно через `getTokenAccountsByOwner`.
 
@@ -658,6 +658,7 @@ state_root = Digest::SHA256.hexdigest("#{total_scc}|#{total_sfc}|#{active_tree_c
 | 12 | Ethereum L1 | Finality | `EthereumAnchorWorker` | `web3_low` | 3 | `0 3 * * 1` |
 | 13 | Cross-chain | Treasury | `TreasuryMonitorWorker` | `web3_low` | 3 | `*/15 * * * *` |
 | 14 | Polygon | Gas Optimization | `MintBatchCollectorWorker` | `web3` | 3 | `*/5 * * * *` |
+| 14b | Solana | Gas Optimization | `SolanaBatchPayoutWorker` [E.61] | `web3` | 3 | `20 * * * *` |
 
 ---
 

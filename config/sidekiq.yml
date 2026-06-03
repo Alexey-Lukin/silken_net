@@ -94,6 +94,14 @@
       cron: '*/5 * * * *' # Кожні 5 хвилин
       class: MintBatchCollectorWorker
 
+    # --- ЦИКЛ SOLANA BATCH (The Micro-Reward Aggregator) [E.61] ---
+    # Виплачує акумульовані Solana мікро-винагороди одним TransferChecked на
+    # гаманець (коли поріг > 0; інакше воркер — no-op). Зміщено від :00-піку
+    # (tokenomics + mint_batch). Обґрунтування + поріг — канон 05_01 §8.
+    solana_batch_payout:
+      cron: '20 * * * *' # Щогодини о :20
+      class: SolanaBatchPayoutWorker
+
     # --- ЦИКЛ GOVERNANCE (The DAO Sync) ---
     # Синхронізує on-chain параметри протоколу (ProtocolParameters.sol)
     # з локальною SystemParameter моделлю. 1×/день о 03:30 UTC.

@@ -369,12 +369,8 @@ RSpec.describe Solana::MintingService do
     end
 
     context "when record_transaction! wallet is nil" do
-      it "does not create a transaction when wallet returns nil" do
-        log = create(:telemetry_log, :verified_telemetry, tree: tree, growth_points: 10)
-        wallet.update!(solana_public_address: recipient_solana_address)
-
-        service = described_class.new(log)
-        allow(tree).to receive(:wallet).and_return(nil)
+      it "does not create a transaction when wallet is nil" do
+        service = described_class.new(nil, wallet: nil)
 
         result = service.send(:record_transaction!, "recipient", 10_000, "sig")
         expect(result).to be_nil
@@ -551,6 +547,109 @@ RSpec.describe Solana::MintingService do
       allow(service).to receive(:execute_rpc_call).and_return({ "result" => { "value" => 1_000 } })
       expect { service.send(:verify_oracle_balance!, "url", "pubkey") }
         .to raise_error(RuntimeError, /низький баланс/)
+    end
+  end
+
+  describe "batch mode [E.61]" do
+    let(:log) do
+      create(:telemetry_log, :verified_telemetry, tree: tree, growth_points: 50)
+    end
+
+    before do
+      wallet.update!(solana_public_address: recipient_solana_address)
+      allow(SystemParameter).to receive(:current).and_call_original
+      allow(SystemParameter).to receive(:current)
+        .with(:solana_batch_threshold_usdc, default: 0).and_return(0.10)
+    end
+
+    it "accumulates the reward in Kredis instead of sending a transaction" do
+      expect {
+        result = described_class.new(log).mint_micro_reward!
+        expect(result).to be_nil
+      }.not_to change(BlockchainTransaction, :count)
+
+      expect(Web3::HttpClient).not_to have_received(:post)
+    end
+
+    it "stores the reward lamports, event count and wallet in the pending Kredis keys" do
+      described_class.new(log).mint_micro_reward!
+
+      # growth_points 50 → 10_000 base + 50×100 bonus
+      expect(Kredis.counter("solana_pending_payouts:#{wallet.id}").value.to_i).to eq(15_000)
+      expect(Kredis.counter("solana_pending_payout_count:#{wallet.id}").value.to_i).to eq(1)
+      expect(Kredis.set(described_class::PENDING_PAYOUT_WALLETS_KEY).members).to include(wallet.id.to_s)
+    end
+
+    it "accumulates across multiple events" do
+      2.times { described_class.new(log).mint_micro_reward! }
+
+      expect(Kredis.counter("solana_pending_payouts:#{wallet.id}").value.to_i).to eq(30_000)
+      expect(Kredis.counter("solana_pending_payout_count:#{wallet.id}").value.to_i).to eq(2)
+    end
+
+    it "falls back to per-event payout when threshold is zero (backward-compat)" do
+      allow(SystemParameter).to receive(:current)
+        .with(:solana_batch_threshold_usdc, default: 0).and_return(0)
+
+      expect {
+        described_class.new(log).mint_micro_reward!
+      }.to change(BlockchainTransaction, :count).by(1)
+    end
+  end
+
+  describe "#batch_payout! [E.61]" do
+    before { wallet.update!(solana_public_address: recipient_solana_address) }
+
+    it "sends one TransferChecked and records an aggregated audit transaction" do
+      result = nil
+      expect {
+        result = described_class.new(nil, wallet: wallet).batch_payout!(25_000, 3)
+      }.to change(BlockchainTransaction, :count).by(1)
+
+      tx = BlockchainTransaction.last
+      expect(tx.blockchain_network).to eq("solana")
+      expect(tx.amount).to eq(0.025)
+      expect(tx.to_address).to eq(recipient_solana_address)
+      expect(tx.status).to eq("sent")
+      expect(tx.notes).to include("batch", "3 подій")
+      expect(result).to eq("5UfDuX7hXbLMKnPRqHxJgpPh6W9y3m4Nk7v2zKQ1YdCE")
+    end
+
+    it "raises without a wallet" do
+      expect { described_class.new(nil).batch_payout!(10_000, 1) }
+        .to raise_error(RuntimeError, /потребує wallet/)
+    end
+
+    it "returns nil for a zero amount" do
+      expect(described_class.new(nil, wallet: wallet).batch_payout!(0, 0)).to be_nil
+    end
+  end
+
+  describe "#build_spl_transfer_checked_message [E.61]" do
+    let(:service) { described_class.new(create(:telemetry_log, :verified_telemetry, tree: tree)) }
+
+    it "serializes a TransferChecked instruction (golden-vector structure)" do
+      message = service.send(:build_spl_transfer_checked_message,
+        fee_payer: fee_payer_pubkey,
+        source_token_account: fee_payer_token_account,
+        dest_token_account: dest_token_account,
+        usdc_mint: usdc_mint_address,
+        recent_blockhash: "EkSnNWid2cvwEVnVx9aBqawnmiCNiDgp3gUdkDPTKN1N",
+        amount_lamports: 20_000
+      )
+
+      expect(message.encoding).to eq(Encoding::BINARY)
+      # Header: 1 signer, 0 readonly-signed, 2 readonly-unsigned (mint + token program)
+      expect(message.bytes[0..2]).to eq([ 1, 0, 2 ])
+      # num_accounts = 5: fee_payer, source, dest, mint, token program
+      expect(message.bytes[3]).to eq(5)
+
+      # Instruction begins after header(3) + count(1) + 5×32 keys + blockhash(32) + num_ix(1)
+      ix = 3 + 1 + (5 * 32) + 32 + 1
+      expect(message.bytes[ix]).to eq(4)                  # program_id_index → SPL Token Program
+      expect(message.bytes[ix + 2, 4]).to eq([ 1, 3, 2, 0 ]) # source, mint, dest, authority
+      expect(message.bytes[ix + 7]).to eq(12)             # TransferChecked instruction index
+      expect(message.bytes[ix + 16]).to eq(6)             # USDC decimals
     end
   end
 

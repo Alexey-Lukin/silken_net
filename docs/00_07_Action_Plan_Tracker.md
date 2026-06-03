@@ -605,10 +605,6 @@
 - **P1** · 🤖 · → `05_02 §E.60`
 - ✅ (2026-06-03) `Filecoin::CidGenerator` (детермін. CIDv1 raw+sha2-256→base32, golden-vector) + content-CID guard у потоці архівації AuditLog: `ArchiveService` вбудовує самоописовий `content_cid`, `VerificationService` fail-fast при розбіжності (локально vs віддалено) → детект ex-post swap. Закриває archive-swap gap для audit-архіву. · [ ] 🤖 follow-on: per-tree Merkle-witness для телеметрія-батчу (leaf_cid→`archive_root`→`mint(bytes32)`) — потребує `MerkleTree` + колонок на партиційованому `TelemetryLog` (міграція) + Solidity; worker-guard з `manual_review` саме в цьому батч-потоці. Канон `05_02 §E.60`
 
-#### E.61 — Solana micro-rewards batch payouts (economic correctness)
-- **P1** · 🤖 · → `05_01 §1`, `04_02 §Solana`
-- Per-event Solana tx (~0.0007 USD gas) зрівнюється з винагородою при низьких growth_points. Акумуляція у Kredis (`solana_pending_payouts:<wallet_id>`) до `SOLANA_BATCH_THRESHOLD_USDC` (0.10–1.00) → один `transferChecked` ATA→ATA; cron `SolanaBatchPayoutWorker` (1h). Backward-compat threshold=0 → per-event. Канон-rationale `05_01 §1` (⚠️ Scale, нот.4). · [ ] 🤖 `SolanaBatchPayoutWorker` + Kredis accumulation + ENV
-
 ## §06 · Deploy / Observability / Secrets / Ops
 
 > Деплой, спостережуваність, секрети, DR — канон `06_xx`. (Частина цих пунктів раніше сиділа під §04 «DevOps»; тепер кожен у власному §06-домі.)
@@ -1003,6 +999,7 @@
 | E.45 | SCC/SFC subgraph zero-address fail-fast guard (`subgraph/validate_addresses.sh`); real-address swap → S3.5 | `05_03` |
 | E.58 | Lorenz state continuity (RTC DR16-19 layout + first-boot/continuation; verified vs firmware; DR15 swept → FW.2) | `03_01 §2`, `03_04 §2.1` |
 | OPS.5 | Projects V2 TRL field schema (1-9 + Readiness Horizon SRL/MRL; `lib/github_bootstrap.rb`); live-board bootstrap-run → OPS.6 | `00_05 §1.1` |
+| E.61 | Solana micro-rewards batch payouts (Kredis-акумуляція → `transferChecked`, годинний cron, поріг-gated) | `05_01 §8`, `04_02 §10` |
 
 ---
 

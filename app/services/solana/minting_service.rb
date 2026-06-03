@@ -41,9 +41,22 @@ module Solana
     # [E.51] Default value — fallback if SystemParameter not seeded yet.
     DEFAULT_MIN_ORACLE_BALANCE_SOL = 0.05
 
-    def initialize(telemetry_log)
+    # [E.61] TransferChecked валідує mint+decimals on-chain (захист від
+    # wrong-mint/wrong-decimals), на відміну від «сліпого» Transfer.
+    USDC_DECIMALS = 6
+    SPL_TRANSFER_CHECKED_INSTRUCTION_INDEX = 12
+
+    # [E.61] Kredis-дім акумульованих batch-виплат (Gas Optimizer).
+    # Множина гаманців з ненульовим залишком — cron обходить лише її.
+    PENDING_PAYOUT_WALLETS_KEY = "solana_pending_payout_wallets"
+
+    # [E.61] Сервіс працює у двох режимах:
+    #   • per-event  — initialize(telemetry_log): миттєва мікро-винагорода;
+    #   • batch      — initialize(nil, wallet:): cron-виплата акумульованої суми.
+    def initialize(telemetry_log = nil, wallet: nil)
       @telemetry_log = telemetry_log
-      @tree = telemetry_log.tree
+      @tree = telemetry_log&.tree
+      @wallet = wallet || @tree&.wallet
     end
 
     # Головний метод — виконує мікро-виплату на гаманець власника дерева
@@ -56,6 +69,12 @@ module Solana
       recipient_address = resolve_recipient_address
       raise "🛑 [Solana] Missing Solana address for micro-payment (Tree or Organization)" if recipient_address.blank?
 
+      # [E.61] Batch-режим: при ненульовому порозі акумулюємо винагороду в Kredis
+      # замість окремої tx — per-event газ зрівнюється з винагородою при низьких
+      # growth_points. SolanaBatchPayoutWorker виплатить суму, коли вона перетне
+      # поріг. Backward-compat: поріг 0 → миттєва виплата (як було).
+      return accumulate_pending_payout!(reward_lamports) if batch_threshold_lamports.positive?
+
       # Формуємо, підписуємо та відправляємо реальну Solana-транзакцію
       tx_signature = send_transfer_request(recipient_address, reward_lamports)
 
@@ -63,6 +82,23 @@ module Solana
       record_transaction!(recipient_address, reward_lamports, tx_signature)
 
       Rails.logger.info "🌊 [Solana] Мікро-винагорода #{format_usdc(reward_lamports)} USDC → #{recipient_address} (TelemetryLog ##{@telemetry_log.id_value})"
+
+      tx_signature
+    end
+
+    # [E.61] Виплата акумульованої суми одним TransferChecked (cron-driven).
+    # Викликається з Solana::BatchPayoutService під per-wallet Kredis-локом.
+    def batch_payout!(amount_lamports, event_count)
+      raise "🛑 [Solana] batch_payout! потребує wallet" if @wallet.nil?
+      return if amount_lamports.to_i.zero?
+
+      recipient_address = resolve_recipient_address
+      raise "🛑 [Solana] Missing Solana address for batch payout (Wallet ##{@wallet.id})" if recipient_address.blank?
+
+      tx_signature = send_transfer_checked_request(recipient_address, amount_lamports)
+      record_batch_transaction!(recipient_address, amount_lamports, event_count, tx_signature)
+
+      Rails.logger.info "🌊 [Solana] Batch-виплата #{format_usdc(amount_lamports)} USDC → #{recipient_address} (#{event_count} подій, Wallet ##{@wallet.id})"
 
       tx_signature
     end
@@ -97,18 +133,29 @@ module Solana
     # Пріоритет адреси: Solana-адреса дерева → Організації
     # Solana-адреси зберігаються у полі solana_public_address (Base58, 32-44 символи)
     def resolve_recipient_address
-      wallet = @tree.wallet
+      wallet = @wallet
       return nil unless wallet
 
       wallet.solana_public_address.presence ||
         wallet.organization&.solana_public_address.presence
     end
 
+    # Per-event шлях — «сліпий» SPL Transfer (idx 3). Backward-compat.
+    def send_transfer_request(recipient, amount_lamports)
+      dispatch_transfer(recipient, amount_lamports, checked: false)
+    end
+
+    # [E.61] Batch шлях — SPL TransferChecked (idx 12): валідує mint+decimals on-chain.
+    def send_transfer_checked_request(recipient, amount_lamports)
+      dispatch_transfer(recipient, amount_lamports, checked: true)
+    end
+
     # =========================================================================
     # PRODUCTION TRANSACTION FLOW (getLatestBlockhash → build → sign → send)
     # =========================================================================
     # Формує бінарну Solana-транзакцію, підписує Ed25519 і відправляє через sendTransaction.
-    def send_transfer_request(recipient, amount_lamports)
+    # `checked:` обирає інструкцію — спільний транспорт, різниться лише серіалізація (Крок 2).
+    def dispatch_transfer(recipient, amount_lamports, checked:)
       if ENV["SOLANA_RPC_URL"].blank? && Rails.env.production?
         raise "🛑 [Solana] SOLANA_RPC_URL is required in production — refusing Devnet fallback"
       end
@@ -122,7 +169,7 @@ module Solana
       fee_payer = ENV.fetch("SOLANA_FEE_PAYER_PUBKEY") { raise "🛑 [Solana] SOLANA_FEE_PAYER_PUBKEY is required" }
 
       # [BLOCKER-1 FIX]: Guard clause — перевірка балансу оракула перед відправкою транзакції.
-      # Аналог BlockchainMintingService: raise if balance < 0.05 SOL.
+      # Аналог BlockchainMintingService.
       verify_oracle_balance!(rpc_url, fee_payer)
 
       source_token_account = ENV.fetch("SOLANA_FEE_PAYER_TOKEN_ACCOUNT") { raise "🛑 [Solana] SOLANA_FEE_PAYER_TOKEN_ACCOUNT is required" }
@@ -136,10 +183,18 @@ module Solana
       recent_blockhash = fetch_latest_blockhash(rpc_url)
 
       # Крок 2: Побудова бінарного повідомлення транзакції (Solana Message Format)
-      message_bytes = build_spl_transfer_message(
-        fee_payer:, source_token_account:, dest_token_account:,
-        recent_blockhash:, amount_lamports:
-      )
+      message_bytes =
+        if checked
+          build_spl_transfer_checked_message(
+            fee_payer:, source_token_account:, dest_token_account:,
+            usdc_mint:, recent_blockhash:, amount_lamports:
+          )
+        else
+          build_spl_transfer_message(
+            fee_payer:, source_token_account:, dest_token_account:,
+            recent_blockhash:, amount_lamports:
+          )
+        end
 
       # Крок 3: [MAINNET READY: Ed25519 SIGNED]
       # Підпис Message bytes приватним ключем Treasury-гаманця DAO.
@@ -253,6 +308,58 @@ module Solana
     end
 
     # =========================================================================
+    # [E.61] BINARY SERIALIZATION: SPL TransferChecked
+    # =========================================================================
+    # На відміну від Transfer, TransferChecked несе mint-акаунт і decimals, тож
+    # SPL-рантайм валідує їх on-chain (захист від wrong-mint/wrong-decimals).
+    # Розкладка акаунтів/інструкції — нижче у коді.
+    def build_spl_transfer_checked_message(fee_payer:, source_token_account:, dest_token_account:,
+                                           usdc_mint:, recent_blockhash:, amount_lamports:)
+      fee_payer_bytes = decode_base58(fee_payer)
+      source_ata_bytes = decode_base58(source_token_account)
+      dest_ata_bytes = decode_base58(dest_token_account)
+      mint_bytes = decode_base58(usdc_mint)
+      token_program_bytes = decode_base58(SPL_TOKEN_PROGRAM_ID)
+      blockhash_bytes = decode_base58(recent_blockhash)
+
+      # Header: 1 signer (fee_payer=authority), 0 readonly-signed, 2 readonly-unsigned (mint + token program)
+      header = [ 1, 0, 2 ].pack("C3")
+
+      account_keys = [
+        fee_payer_bytes,        # index 0: signer, writable (fee payer + authority)
+        source_ata_bytes,       # index 1: writable (source token account)
+        dest_ata_bytes,         # index 2: writable (destination token account)
+        mint_bytes,             # index 3: readonly (mint — валідується on-chain)
+        token_program_bytes     # index 4: readonly (SPL Token Program)
+      ]
+      num_accounts = encode_compact_u16(account_keys.length)
+
+      # TransferChecked instruction data: [instruction_index(u8), amount(u64 LE), decimals(u8)]
+      instruction_data = [ SPL_TRANSFER_CHECKED_INSTRUCTION_INDEX ].pack("C") +
+                          [ amount_lamports ].pack("Q<") +
+                          [ USDC_DECIMALS ].pack("C")
+
+      # Instruction: program_id_index=4, account_indices=[1,3,2,0], data=instruction_data
+      instruction = String.new(encoding: Encoding::BINARY)
+      instruction << [ 4 ].pack("C")                              # program_id_index (SPL Token Program)
+      instruction << encode_compact_u16(4)                         # num accounts
+      instruction << [ 1, 3, 2, 0 ].pack("C4")                    # account indices: source, mint, dest, authority
+      instruction << encode_compact_u16(instruction_data.bytesize) # data length
+      instruction << instruction_data                              # instruction data
+
+      # Збираємо повідомлення
+      message = String.new(encoding: Encoding::BINARY)
+      message << header
+      message << num_accounts
+      account_keys.each { |key| message << key }
+      message << blockhash_bytes
+      message << encode_compact_u16(1)  # num_instructions = 1
+      message << instruction
+
+      message
+    end
+
+    # =========================================================================
     # [MAINNET READY: Ed25519 SIGNED]
     # =========================================================================
     # Підпис бінарного повідомлення транзакції через Ed25519Crypto::SigningService.
@@ -323,7 +430,7 @@ module Solana
     # Статус :sent — транзакцію відправлено в мережу, очікує підтвердження блоку.
     # BlockchainConfirmationWorker підтвердить/відхилить пізніше.
     def record_transaction!(recipient, amount_lamports, tx_signature)
-      wallet = @tree.wallet
+      wallet = @wallet
       return unless wallet
 
       wallet.blockchain_transactions.create!(
@@ -413,6 +520,43 @@ module Solana
       else
         [ (value & 0x7F) | 0x80, ((value >> 7) & 0x7F) | 0x80, value >> 14 ].pack("CCC")
       end
+    end
+
+    # =========================================================================
+    # [E.61] BATCH ACCUMULATION (Gas Optimizer)
+    # =========================================================================
+    # Поріг батчингу у lamports; governance-aware через SystemParameter.
+    # 0 → batch вимкнено (per-event). Значення/обґрунтування — канон 05_01 §8.
+    def batch_threshold_lamports
+      usdc = SystemParameter.current(:solana_batch_threshold_usdc, default: 0).to_f
+      (usdc * 1_000_000).to_i
+    end
+
+    # Акумулює винагороду per-wallet у Kredis; виплату зробить SolanaBatchPayoutWorker,
+    # коли сума перетне поріг. Лічильник подій — для аудит-нотатки агрегованої tx.
+    def accumulate_pending_payout!(reward_lamports)
+      wallet_id = @wallet.id
+      Kredis.counter("solana_pending_payouts:#{wallet_id}").increment(by: reward_lamports)
+      Kredis.counter("solana_pending_payout_count:#{wallet_id}").increment
+      Kredis.set(PENDING_PAYOUT_WALLETS_KEY).add(wallet_id.to_s)
+
+      Rails.logger.info "🌊 [Solana] Акумульовано #{format_usdc(reward_lamports)} USDC для Wallet ##{wallet_id} (batch-режим)"
+      nil
+    end
+
+    # Аудит-запис агрегованої batch-виплати (статус :sent — очікує підтвердження блоку).
+    def record_batch_transaction!(recipient, amount_lamports, event_count, tx_signature)
+      return unless @wallet
+
+      @wallet.blockchain_transactions.create!(
+        amount: format_usdc(amount_lamports).to_f,
+        token_type: :carbon_coin,
+        status: :sent,
+        to_address: recipient,
+        tx_hash: tx_signature,
+        blockchain_network: "solana",
+        notes: "Solana batch micro-reward: #{format_usdc(amount_lamports)} USDC (#{event_count} подій акумульовано) [E.61]"
+      )
     end
   end
 end
