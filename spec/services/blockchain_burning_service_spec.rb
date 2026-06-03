@@ -197,6 +197,101 @@ RSpec.describe BlockchainBurningService do
     end
   end
 
+  describe "#combine_penalty_factor (SLASH-1 de-correlation §6, pure)" do
+    subject(:service) { described_class.new(organization.id, naas_contract.id) }
+
+    def combine(no_ack: false, streamr_gap: false, no_maintenance: false)
+      service.send(:combine_penalty_factor,
+                   no_ack: no_ack, streamr_gap: streamr_gap, no_maintenance: no_maintenance)
+    end
+
+    it "is the negligence baseline when no signal fires" do
+      expect(combine).to eq(1.0)
+    end
+
+    it "applies the no-ack uplift" do
+      expect(combine(no_ack: true)).to eq(1.5)
+    end
+
+    it "applies the Streamr-gap uplift" do
+      expect(combine(streamr_gap: true)).to eq(1.25)
+    end
+
+    # ── THE SLASH-SAFETY invariant (§6): correlated comms-loss MUST NOT sum ──
+    it "DE-CORRELATES correlated comms-loss: no-ack + Streamr gap → max (1.5), NOT sum (1.75)" do
+      penalty_factor = combine(no_ack: true, streamr_gap: true)
+      expect(penalty_factor).to eq(1.5)      # 1.0 + max(0.5, 0.25)
+      expect(penalty_factor).not_to eq(1.75) # the double-count we are preventing
+    end
+
+    it "stacks INDEPENDENT physical negligence on top of the comms-loss max" do
+      # 1.0 + max(0.5, 0.25) + 0.5 = 2.0
+      expect(combine(no_ack: true, streamr_gap: true, no_maintenance: true)).to eq(2.0)
+    end
+
+    it "feeds the multiplier into the slash curve, capped at PENALTY_FACTOR_MAX" do
+      penalty_factor = combine(no_ack: true, no_maintenance: true) # 2.0 = PENALTY_FACTOR_MAX
+      expect(service.send(:calculate_slash_ratio, 0.5, penalty_factor))
+        .to be_within(1e-9).of((0.5**1.3) * 2.0)
+    end
+  end
+
+  describe "#calculate_penalty_factor (SLASH-1 activation gate §3)" do
+    subject(:service) { described_class.new(organization.id, naas_contract.id) }
+
+    context "when the activation gate is off (default — DAO-confirm pending, 05_05 §3)" do
+      it "returns the negligence baseline" do
+        expect(service.send(:calculate_penalty_factor))
+          .to eq(described_class::DEFAULT_PENALTY_FACTOR)
+      end
+
+      it "stays inert even when a real cause signal is present" do
+        create(:ews_alert, cluster: cluster, severity: :critical,
+                           alert_type: :vandalism_breach, status: :active)
+        expect(service.send(:calculate_penalty_factor)).to eq(1.0)
+      end
+    end
+
+    context "when DAO-enabled via SystemParameter" do
+      before do
+        allow(SystemParameter).to receive(:current).and_call_original
+        allow(SystemParameter).to receive(:current)
+          .with(:slash_cause_uplift_enabled, default: false).and_return(true)
+      end
+
+      it "is the baseline when no signal fires" do
+        expect(service.send(:calculate_penalty_factor)).to eq(1.0)
+      end
+
+      it "sources no-ack from an active critical EwsAlert and applies the uplift" do
+        create(:ews_alert, cluster: cluster, severity: :critical,
+                           alert_type: :vandalism_breach, status: :active)
+        expect(service.send(:calculate_penalty_factor)).to eq(1.5)
+      end
+    end
+
+    context "when sourcing signals from real records" do
+      it "does not flag no-ack once the critical alert is resolved (acknowledged)" do
+        create(:ews_alert, cluster: cluster, severity: :critical,
+                           alert_type: :vandalism_breach, status: :resolved)
+        expect(service.send(:comms_no_ack?)).to be(false)
+      end
+
+      it "flags physical negligence: aged critical alert with no MaintenanceRecord" do
+        create(:ews_alert, cluster: cluster, severity: :critical,
+                           alert_type: :vandalism_breach, status: :active, created_at: 1.hour.ago)
+        expect(service.send(:critical_unmaintained?)).to be(true)
+      end
+
+      it "clears physical negligence once a MaintenanceRecord exists for the alert" do
+        alert = create(:ews_alert, cluster: cluster, severity: :critical,
+                                   alert_type: :vandalism_breach, status: :active, created_at: 1.hour.ago)
+        create(:maintenance_record, ews_alert: alert)
+        expect(service.send(:critical_unmaintained?)).to be(false)
+      end
+    end
+  end
+
   describe "calculate_damage_ratio edge cases" do
     context "when burn_amount is zero due to very small damage_ratio" do
       it "returns early without calling blockchain" do

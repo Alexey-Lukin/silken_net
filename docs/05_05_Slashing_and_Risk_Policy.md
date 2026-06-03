@@ -10,7 +10,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 8 — політика затверджена; backend-механіка реалізована частково (convex-формула `BlockchainBurningService#calculate_slash_ratio` + blackout-routing `ContractHealthCheckService#flag_data_blackout!`, RSpec-покрито). **Відкрите:** formal `cause_classification` A/B/C-gate (SLASH-1), operator-bond (BIZ.13), DAO-confirm перед mainnet → [`00_07`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 8 — політика затверджена; backend-механіка реалізована частково (convex-формула `BlockchainBurningService#calculate_slash_ratio` + blackout-routing `ContractHealthCheckService#flag_data_blackout!` + cause-driven `penalty_factor` de-correlation `#calculate_penalty_factor` (INERT за gate), RSpec-покрито). **Відкрите:** formal `cause_classification` A/B/C-gate (SLASH-1), operator-bond (BIZ.13), DAO-confirm перед mainnet → [`00_07`](00_07_Action_Plan_Tracker).
 - **Slashing v2:** жорстке "burn-on-degradation" замінено двокатегорійною моделлю (негілентність / форс-мажор) + safety-default (невизначеність) — травень 2026.
 - **De-risk інваріант:** фінансовий slashing **ніколи** не спирається лише на Z-Лоренца — потрібен ≥1 прямий некорельований сигнал (sap_flow / VPD / acoustic).
 
@@ -70,8 +70,8 @@ damage_ratio       = (stressed_trees + dead_trees) / total_trees_in_cluster   �
 GAMMA              = 1.3   # прогресивна (опукла) крива: м'яко на дрібних помилках,
                           # без мертвої зони, монотонно → 1.0 при повній загибелі
 penalty_factor     = 1.0  (negligence baseline)
-                   + 0.5  (EwsAlert severity=critical 30+ хв без MaintenanceRecord)
-                   + 0.5  (AuditLog: відсутність acknowledged alert'ів)
+                   + max(no_ack: 0.5, streamr_gap: 0.25)   # comms-correlated → max(), НЕ сума (§6)
+                   + 0.5  (critical EwsAlert без MaintenanceRecord — фізична халатність, independent)
 PENALTY_FACTOR_MAX = 2.0   # стеля застосовується до МНОЖНИКА (penalty_factor),
                           # а НЕ до фінального slash_ratio (DAO-governed)
 # max_slash_ratio ВИДАЛЕНО — стеля на фінальному результаті і була джерелом мертвої зони
@@ -85,6 +85,8 @@ PENALTY_FACTOR_MAX = 2.0   # стеля застосовується до МНО
 Монотонність гарантована: більше шкоди → завжди більший slash, аж до 100%. **Логістична крива тут гірша** за опуклу степеневу — логіста сатурує нижче 1.0 (асимптота), тобто повертає м'яку стелю, і має зайві параметри (k, d₀). Точне калібрування `GAMMA` / `PENALTY_FACTOR_MAX` — DAO-governed через `ProtocolParameters` ([`05_03 §Slashing`](05_03_Tokenomics_SCC_and_SFC)).
 
 > Реалізація: `BlockchainBurningService#calculate_slash_ratio` (див. [`04_02 §BlockchainBurningService`](04_02_Business_Logic_and_Services)) перевіряє `cause_classification` перед викликом `slash()` на SCC-контракті ([`05_03`](05_03_Tokenomics_SCC_and_SFC)). Якщо `cause_classification != "A_negligence"` — burn skipped, тільки `freeze_balance!`.
+
+> **De-correlation [SLASH-SAFETY §6].** `no_ack` і `streamr_gap` **корельовані** (спільний root-cause «вузол offline») → комбінуються через **`max()`, не суму** (інакше один gateway-outage карається багаторазово); `no_maintenance` — незалежний фізичний сигнал → **additive**. Комбінатор — `BlockchainBurningService#calculate_penalty_factor`, **INERT** за `SystemParameter :slash_cause_uplift_enabled` (default off) доки DAO/founder не активує перед mainnet — структурно готовий, живу фінансову поведінку не змінює (як inert sap/acoustic у §7).
 
 ### 3.1 Principal-Agent resolution [BIZ.13] — рекомендація: hybrid operator-bond
 
@@ -150,7 +152,7 @@ ForceMajeure event → InsurancePayoutWorker
 - **Streamr P2P broadcast gap** довше 24 год без MaintenanceRecord — посилення penalty_factor на +0.25. **⚠️ Тільки tree-side (нот.12):** застосовується ЛИШЕ коли gap корелює з втратою tree-side зв'язку (LoRa/CoAP теж мовчать). **Backend-side збій Streamr-API** (дані дійшли до Rails, але `StreamrBroadcastWorker` не зміг ре-броадкаст → `streamr_undelivered` Kredis) — **НЕ** вина дерева → **0 penalty**. Streamr — публічний спостерігач (нот.3), доступність його API не є сигналом здоров'я дерева.
 - **Correlated comms-loss guard [SLASH-SAFETY].** Сигнали втрати зв'язку **не є незалежними** і не повинні складатися: «немає ack» (+0.5), «Streamr gap» (+0.25) та «daily_insights порожні» мають **один root-cause** — недоступність вузла/шлюзу. **Одночасна втрата даних по ВСЬОМУ кластеру** (усі дерева «згасли» разом) — це сигнатура **відмови шлюзу / Starlink-блекауту** (force-majeure → B/insurance або C/peer-review), а НЕ per-tree недбалість (A). Класифікувати масовий blackout як A = карати лісника за збитий машиною / вкрадений шлюз. Той самий де-ризик-принцип, що VPD-confounder ([`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)) і Lorenz (§7): незворотний фінансовий вирок вимагає **прямого, некорельованого** підтвердження халатності.
 
-  > **🟡 Code↔doc divergence (формула + blackout закрито):** (1) ✅ `BlockchainBurningService` палить за **§3 convex-кривою** `clamp(damage_ratio^GAMMA × min(pf, PENALTY_FACTOR_MAX), 0, 1)` (`#calculate_slash_ratio`; GAMMA=1.3/PF_MAX=2.0 DAO-governed через `SystemParameter` ← `ProtocolParameters.sol`), а **не лінійно**; (2) ✅ blackout більше НЕ палить — `ContractHealthCheckService#flag_data_blackout!` (cluster-wide empty → Field Audit, force-majeure, no burn). **Лишилось (🟡 → DAO/founder):** формальний `cause_classification` A/B/C-термін у коді ще відсутній + cause-driven `penalty_factor` uplift (Streamr gap/repeat) + signal de-correlation. → tracked: [`00_07` SLASH-1](00_07_Action_Plan_Tracker); реєстр divergence — [`04_02 §11`](04_02_Business_Logic_and_Services).
+  > **🟡 Code↔doc divergence (формула + blackout + de-correlation закрито):** (1) ✅ `BlockchainBurningService` палить за **§3 convex-кривою** `clamp(damage_ratio^GAMMA × min(pf, PENALTY_FACTOR_MAX), 0, 1)` (`#calculate_slash_ratio`; GAMMA=1.3/PF_MAX=2.0 DAO-governed через `SystemParameter` ← `ProtocolParameters.sol`), а **не лінійно**; (2) ✅ blackout більше НЕ палить — `ContractHealthCheckService#flag_data_blackout!` (cluster-wide empty → Field Audit, force-majeure, no burn); (3) ✅ cause-driven `penalty_factor` uplift із comms-loss **de-correlation** — `#calculate_penalty_factor` (no-ack/Streamr через `max()`, no-maintenance additive), **INERT** за `SystemParameter :slash_cause_uplift_enabled` до DAO-confirm. **Лишилось (🟡 → DAO/founder):** формальний `cause_classification` A/B/C-термін у коді + активація uplift перед mainnet + repeat-offence вага + tree-side `streamr_undelivered` сигнал-джерело (наразі guarded hook → 0). → tracked: [`00_07` SLASH-1](00_07_Action_Plan_Tracker); реєстр divergence — [`04_02 §11`](04_02_Business_Logic_and_Services).
 
 ## 7. Multi-signal slashing — Лоренц ≠ єдина правда [Lorenz de-risk]
 

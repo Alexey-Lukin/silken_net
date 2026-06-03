@@ -13,7 +13,16 @@ class BlockchainBurningService < ApplicationService
   # [§6.2 Slashing curve — DAO-governed via SystemParameter ← ProtocolParameters.sol (05_03)]
   DEFAULT_SLASH_GAMMA = 1.3          # convex progressive curve (no dead-zone)
   DEFAULT_PENALTY_FACTOR_MAX = 2.0   # ceiling on the penalty MULTIPLIER (not final slash_ratio)
-  DEFAULT_PENALTY_FACTOR = 1.0       # negligence baseline; cause-driven uplift = separate SLASH-1 task
+  DEFAULT_PENALTY_FACTOR = 1.0       # negligence baseline (no cause-driven uplift)
+
+  # [SLASH-1 §3/§6] Ваги cause-driven penalty_factor uplift (дзеркало канону 05_05 §3 —
+  # правити ТАМ). Comms-correlated сигнали (no-ack, Streamr gap) мають ОДИН root-cause
+  # «вузол/шлюз offline» → комбінуються через max(), НЕ суму (SLASH-SAFETY §6, як sap+acoustic
+  # max() у §7); фізична халатність — незалежна → additive. Promotable до SystemParameter коли
+  # DAO калібрує (як GAMMA/PF_MAX). Комбінатор — #calculate_penalty_factor.
+  PF_NO_ACK         = 0.5   # comms-correlated: непідтверджений critical EwsAlert (no ack)
+  PF_STREAMR_GAP    = 0.25  # comms-correlated: tree-side Streamr gap (guarded hook)
+  PF_NO_MAINTENANCE = 0.5   # independent: critical EwsAlert без MaintenanceRecord
 
   def initialize(organization_id, naas_contract_id, source_tree: nil)
     @organization = Organization.find(organization_id)
@@ -53,7 +62,7 @@ class BlockchainBurningService < ApplicationService
     # [§6.2] Progressive convex slash curve (damage_ratio^GAMMA × min(pf, MAX)),
     # NOT the old linear total × damage_ratio. See #calculate_slash_ratio.
     damage_ratio = calculate_damage_ratio
-    slash_ratio  = calculate_slash_ratio(damage_ratio)
+    slash_ratio  = calculate_slash_ratio(damage_ratio, calculate_penalty_factor)
     burn_amount  = (total_minted_amount * slash_ratio).ceil
 
     return if burn_amount.zero?
@@ -173,14 +182,72 @@ class BlockchainBurningService < ApplicationService
   # a small loss is punished gently (d=0.10 → ~5%) so an investor isn't wiped out over a
   # minor incident, yet full negligent loss reaches 100% (d=1.0, pf=1.0 → 1.0) — the
   # "no dead-zone" property (the old min(…, 0.40) ceiling that flat-lined 40%→100% damage
-  # is removed). penalty_factor baseline 1.0 (negligence); cause-driven uplift (Streamr
-  # gap, repeat offence) + signal de-correlation is a separate SLASH-1 sub-task.
+  # is removed). penalty_factor — baseline; cause-driven uplift із comms-loss DE-correlation
+  # будує #calculate_penalty_factor (SLASH-1 §6, INERT за SystemParameter до DAO-confirm).
   # GAMMA + PENALTY_FACTOR_MAX are DAO-governed (SystemParameter ← ProtocolParameters.sol).
   def calculate_slash_ratio(damage_ratio, penalty_factor = DEFAULT_PENALTY_FACTOR)
     return 0.0 if damage_ratio <= 0.0
 
     effective_pf = [ penalty_factor, penalty_factor_max ].min
     ((damage_ratio**slash_gamma) * effective_pf).clamp(0.0, 1.0)
+  end
+
+  # [SLASH-1 §3/§6] Cause-driven penalty_factor (gated). INERT за замовчуванням
+  # (gate :slash_cause_uplift_enabled, default false → baseline, без зміни живої поведінки);
+  # активація — DAO/founder перед mainnet (05_05 §3). Сорсить сигнали → #combine_penalty_factor.
+  def calculate_penalty_factor
+    return DEFAULT_PENALTY_FACTOR unless cause_uplift_enabled?
+
+    combine_penalty_factor(
+      no_ack:         comms_no_ack?,
+      streamr_gap:    streamr_gap?,
+      no_maintenance: critical_unmaintained?
+    )
+  end
+
+  # Pure de-correlation combiner (SLASH-SAFETY §6). no-ack і Streamr gap корельовані (спільний
+  # root-cause «вузол offline») → max(), НЕ сума (інакше один outage карається багаторазово —
+  # збитий/вкрадений шлюз); фізична халатність незалежна → additive. Виокремлено від сорсингу,
+  # щоб інваріант був явним і тестувався прямо. Cluster-wide blackout відведено раніше (ContractHealthCheckService).
+  def combine_penalty_factor(no_ack:, streamr_gap:, no_maintenance:)
+    comms_loss  = [ no_ack ? PF_NO_ACK : 0.0, streamr_gap ? PF_STREAMR_GAP : 0.0 ].max
+    independent = no_maintenance ? PF_NO_MAINTENANCE : 0.0
+
+    DEFAULT_PENALTY_FACTOR + comms_loss + independent
+  end
+
+  # DAO/founder activation gate (05_05 §3). Default OFF → uplift inert до mainnet-confirm.
+  # `defined?`-memo (не ||=), бо легітимне значення — false.
+  def cause_uplift_enabled?
+    return @cause_uplift_enabled if defined?(@cause_uplift_enabled)
+
+    @cause_uplift_enabled = ActiveModel::Type::Boolean.new.cast(
+      SystemParameter.current(:slash_cause_uplift_enabled, default: false)
+    )
+  end
+
+  # [comms-correlated] «No ack»: критичний EwsAlert лишається непідтвердженим (status_active —
+  # scope `critical` = severity_critical.unresolved).
+  def comms_no_ack?
+    @cluster.ews_alerts.critical.exists?
+  end
+
+  # [comms-correlated] Tree-side Streamr broadcast gap (05_05 §6 нот.12 — ЛИШЕ tree-side;
+  # backend-side збій Streamr-API не штрафується: доступність публічного спостерігача ≠ здоров'я
+  # дерева). Guarded hook: сигнал ще не реалізовано → contributes 0; max()-структура вже коректна.
+  def streamr_gap?
+    false
+  end
+
+  # [independent] Фізична халатність: критичний EwsAlert без жодного MaintenanceRecord по спливу
+  # вікна реакції (оператора алертнули, але він не виїхав). Незалежний від comms-loss → additive.
+  def critical_unmaintained?
+    stale_critical = @cluster.ews_alerts.severity_critical.where(created_at: ..30.minutes.ago)
+    return false unless stale_critical.exists?
+
+    stale_critical.where.not(
+      id: MaintenanceRecord.where.not(ews_alert_id: nil).select(:ews_alert_id)
+    ).exists?
   end
 
   # DAO-governed slash curve exponent (SystemParameter ← on-chain ProtocolParameters.sol).

@@ -13,6 +13,7 @@ description: "Navigation + gotchas for 12-chain Web3 pipeline. Read SSOT docs fi
 | `docs/05_01_Multichain_Architecture.md` | DePIN core/expansion stack, multichain rails, Solana, WEB3_STRICT_MODE (§10) |
 | `docs/05_02_Proof_of_Growth_Pipeline.md` | Minting sequence, oracle callbacks, Dynamic Tax |
 | `docs/05_03_Tokenomics_SCC_and_SFC.md` | Solidity contracts (SCC ERC-20, SFC), roles, batchMint |
+| `docs/05_05_Slashing_and_Risk_Policy.md` | Slashing/risk: cause A/B/C, convex penalty formula + `penalty_factor` de-correlation, insurance |
 | `docs/05_06_Governance_and_DAO.md` | DAO Treasury, SilkenGovernor / Timelock, ProtocolParameters |
 | `docs/03_05_Hardware_Symmetric_Crypto_and_Security.md` | Edge AES key management / HKDF; AES channel table (§6) |
 
@@ -25,6 +26,7 @@ description: "Navigation + gotchas for 12-chain Web3 pipeline. Read SSOT docs fi
 5. **Solana reward formula** — `10,000 + growth_points * 100` lamports. ATA resolved via `getTokenAccountsByOwner`. Ed25519 signing (not secp256k1).
 6. **Partition-aware BlockchainTransaction** — RANGE partitioned. Use `find_with_partition_pruning(id, created_at)`.
 7. **Solana batch payouts [E.61]** — when `solana_batch_threshold_usdc` (SystemParameter) > 0, `SolanaMicroRewardWorker` accumulates rewards per-wallet in Kredis instead of sending per-event; hourly `SolanaBatchPayoutWorker` pays the lot via `transferChecked`. Threshold 0 → per-event (default). Rationale: `docs/05_01 §8`.
+8. **Slashing penalty de-correlation [SLASH-1 §6]** — cause-driven `penalty_factor` uplift in `BlockchainBurningService#calculate_penalty_factor` combines *correlated* comms-loss signals (no-ack, Streamr gap — shared "node offline" root-cause) via `max()`, NOT sum (summing double-counts one outage). Independent physical negligence (unmaintained critical alert) is additive. **INERT by default** behind `SystemParameter :slash_cause_uplift_enabled` (off until DAO-confirm) — don't expect live uplift. Cluster-wide blackout is diverted to Field Audit (`ContractHealthCheckService#flag_data_blackout!`), never burned. Canon: `docs/05_05 §3/§6`.
 
 ## Common Tasks
 
