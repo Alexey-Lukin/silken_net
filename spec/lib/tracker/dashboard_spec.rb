@@ -98,6 +98,46 @@ RSpec.describe Tracker::Dashboard do
     end
   end
 
+  # [inbound 00_07 item-ref resolution, 2026-06-03] Other docs reference a tracker
+  # item as `[`00_07` — <ID>](00_07_…)`; nothing validated <ID> existed, so
+  # `06_02 → 00_07 DOC.5` rotted silently. all_item_ids spans ALL sections (incl.
+  # 📌/🗄️, unlike parse/table_row_ids); the ref-ID requires a `.`/`-` so a
+  # directory-title link is not a false positive.
+  describe ".all_item_ids + .inbound_ref_violations" do
+    it "collects #### + table-row IDs across ALL sections (incl. 🗄️ Архів, unlike parse)" do
+      md = <<~MD
+        ## §03 · Firmware
+        #### FW.1 — item
+        - **P0** · 🤖 · → `03_05`
+        ## 📌 Backlog
+        | E.60 | backlog finding | note |
+        ## 🗄️ Архів
+        #### DOC-T.13 — archived item
+        - **P0** · 🤖 · → `00_06`
+      MD
+      expect(described_class.all_item_ids(md)).to include("FW.1", "E.60", "DOC-T.13")
+    end
+
+    it "captures an em-dash ID ref but NOT a directory-title link (FP guard)" do
+      expect("див. [`00_07` — DOC.5](00_07_Action_Plan_Tracker)".scan(described_class::INBOUND_REF_RE).flatten)
+        .to eq([ "DOC.5" ])
+      expect("[`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker)".scan(described_class::INBOUND_REF_RE).flatten)
+        .to be_empty
+    end
+
+    it "flags an inbound ref to a non-existent 00_07 item, passes a real one" do
+      require "tmpdir"
+      Dir.mktmpdir do |dir|
+        File.write(File.join(dir, "00_07_Action_Plan_Tracker.md"),
+                   "## §03 · Firmware\n#### FW.1 — real item\n- **P0** · 🤖 · → `03_05`\n")
+        File.write(File.join(dir, "06_99_Sample.md"),
+                   "ok [`00_07` — FW.1](00_07_Action_Plan_Tracker); bad [`00_07` — DOC.5](00_07_Action_Plan_Tracker)\n")
+        expect(described_class.inbound_ref_violations(dir))
+          .to contain_exactly(a_string_matching(/06_99_Sample → `00_07 — DOC\.5`/))
+      end
+    end
+  end
+
   # [emoji-prefix blind spot, 2026-06-01] `#### 🌿 UNI.13a — …` was silently dropped
   # by the `[A-Z]`-anchored match, hiding UNI.13a / BIZ.12 from every tracker check.
   it "parses a #### item behind a leading emoji prefix" do

@@ -310,7 +310,7 @@ coap-client -m get coap://$INGRESS_IP:5683/health -v 6
 - [`00_07` — INF.4](00_07_Action_Plan_Tracker) — оригінальна задача.
 - [`00_07` — INF.6](00_07_Action_Plan_Tracker) — CoAP Proxy verification (Ingress Anchor лежить у тій же площині, бо CoAP UDP не йде через Cloudflare).
 - [`06_01`](06_01_Deployment_Kamal_Terraform) — Ingress Anchor (e2-micro, статичний IP, HAProxy).
-- [`00_07` — DOC.5](00_07_Action_Plan_Tracker) — `DISABLE_SSL` ENV documented як небезпечний override.
+- [`06_04`](06_04_Secrets_Checklist) — `DISABLE_SSL` ENV (небезпечний override; canonical secrets-home + [`06_01`](06_01_Deployment_Kamal_Terraform) env-table).
 
 ---
 

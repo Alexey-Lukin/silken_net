@@ -77,8 +77,8 @@ module Tracker
 
     # --- registry table-row IDs (dup-guard blind-spot fix, 2026-06-01) ---
     # The dup-guard tallies #### heading IDs only; an ID used as BOTH a table-row
-    # (e.g. `| DOC.12 | … |` in the DOC-drift registry) AND a #### heading slipped
-    # through silently (the DOC.12 ↔ DOC.13 collision). This returns the first-cell
+    # (e.g. `| DOC-T.12 | … |` in the DOC-drift registry) AND a #### heading slipped
+    # through silently (the DOC-T.12 ↔ DOC-T.13 collision). This returns the first-cell
     # ID token of every table row inside the §/🔀 registry sections so the caller
     # can merge them into the dup tally. Same ID shape as `parse`; header/separator
     # rows (no ID in the first cell) and **bold** wrappers are handled.
@@ -94,6 +94,38 @@ module Tracker
         next unless in_registry
 
         line.match(TABLE_ID_RE)&.captures&.first
+      end
+    end
+
+    # --- inbound 00_07 item-ref resolution (2026-06-03) ---
+    # Other docs reference a tracker item as `[`00_07` — <ID>](00_07_…)`. Nothing
+    # validated that <ID> is REAL, so `06_02 → 00_07 DOC.5` rotted silently after the
+    # item was renamed/removed (the dangling-inbound-ref blind spot the DOC.N namespace
+    # work surfaced). `all_item_ids` collects EVERY 00_07 item ID — all #### headings +
+    # all table-row first-cells, across ALL sections incl. 📌 Backlog / 🗄️ Архів (NOT
+    # section-filtered like parse/table_row_ids, since inbound refs point into those too).
+    # `inbound_ref_violations` flags any em-dash ref to a non-existent ID. The captured ID
+    # REQUIRES a `.`/`-` separator (`INF.4`, `DOC-T.5`) so a directory-title link
+    # (`[`00_07` — Action Plan Tracker](…)`) is NOT a false positive. Pure (caller passes docs_dir).
+    ANY_ITEM_HEAD  = /^####\s+(?:[✅\p{So}\p{Sk}\u{FE0F}]+\s+)*([A-Z][A-Za-z0-9]*[.\-][0-9A-Za-z.\-]+)/
+    INBOUND_REF_RE = /\[`00_07`\s*[—-]\s*([A-Z][A-Za-z0-9]*[.\-][0-9A-Za-z.\-]+)\]\(00_07/
+
+    def self.all_item_ids(markdown)
+      markdown.each_line.filter_map { |l| (l.match(ANY_ITEM_HEAD) || l.match(TABLE_ID_RE))&.captures&.first }
+    end
+
+    def self.inbound_ref_violations(docs_dir = DOCS_DIR)
+      tracker = File.join(docs_dir, "00_07_Action_Plan_Tracker.md")
+      return [] unless File.exist?(tracker)
+
+      valid = all_item_ids(File.read(tracker))
+      Dir.glob(File.join(docs_dir, "*.md")).sort.flat_map do |f|
+        base = File.basename(f, ".md")
+        next [] if base.start_with?("00_07")
+
+        File.read(f).scan(INBOUND_REF_RE).flatten.filter_map do |id|
+          "#{base} → `00_07 — #{id}` (no such 00_07 item)" unless valid.include?(id)
+        end
       end
     end
 

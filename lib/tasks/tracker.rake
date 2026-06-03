@@ -3,7 +3,7 @@
 # [00_07 DRY tooling] `rake tracker:check` — lints docs/00_07_Action_Plan_Tracker.md:
 #   - duplicate task IDs across BOTH #### headings AND registry table-row IDs
 #     (caught the HW.20 BME280↔Buffer-Cap collision 2026-05-29; the table-row span
-#     closes the DOC.12 #### ↔ table-row blind spot 2026-06-01)
+#     closes the DOC-T.12 #### ↔ table-row blind spot 2026-06-01)
 #   - #3 conformance: every open #### item has a priority + a → canon-ref meta-line
 #   - §-section resolution: a `NN_NN §X` canon-ref's §X must be a real heading in the
 #     target (caught 12 stale §BLOCKER-N / wrong-doc-id refs orphaned by blockers→00_07)
@@ -19,12 +19,13 @@ namespace :tracker do
     md       = File.read(Tracker::Dashboard::DEFAULT_PATH)
     items    = Tracker::Dashboard.parse(md)
     # dup tally spans BOTH #### heading IDs and registry table-row IDs, so an ID
-    # split across a table row + a #### heading (the DOC.12 collision) is caught.
+    # split across a table row + a #### heading (the DOC-T.12 collision) is caught.
     dups     = (items.map(&:id) + Tracker::Dashboard.table_row_ids(md)).tally.select { |_, v| v > 1 }
     issues   = Tracker::Dashboard.issues(items)
     dangling = Tracker::Dashboard.dangling_refs(items)
     sect     = Tracker::Dashboard.section_dangling_refs(items)
     home     = Tracker::Dashboard.section_home_violations(items)
+    inbound  = Tracker::Dashboard.inbound_ref_violations
 
     puts "00_07 lint — #{items.size} #### items (#{Tracker::Dashboard.open_items(items).size} actionable)"
     puts "  duplicate IDs:    #{dups.empty? ? 'none ✓' : dups.inspect}"
@@ -52,6 +53,12 @@ namespace :tracker do
       puts "  section↔home mismatches (#{home.size}) — item canon-ref ≠ its §NN section module:"
       home.each { |h| puts "    - #{h}" }
     end
-    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || home.any?
+    if inbound.empty?
+      puts "  inbound refs:     every `00_07 — ID` ref resolves to a real item ✓"
+    else
+      puts "  dangling inbound 00_07 item-refs (#{inbound.size}) — ref to a non-existent tracker ID:"
+      inbound.each { |i| puts "    - #{i}" }
+    end
+    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || home.any? || inbound.any?
   end
 end

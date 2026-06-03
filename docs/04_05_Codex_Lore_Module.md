@@ -125,7 +125,7 @@ archetype_key` замість наслідування. Додавання 5-г�
 `codex_nodes` обмежено ~10K рядків (DAO governance) → без партицій.
 `codex_matches` партиціюється RANGE по `created_at` (Battle Arena — write-heavy
 поверхня, очікується 100M+ рядків). `PartitionMaintenanceWorker` відповідає
-за щомісячні партиції — див. [`04_02`](04_02_Business_Logic_and_Services) § DOC.11.
+за щомісячні партиції — див. [`04_02`](04_02_Business_Logic_and_Services) § DOC-R.11.
 
 ### ADR-CDX-7 — Discovery gated by presence, fail-open
 
@@ -194,7 +194,7 @@ Codex використовує `Sidekiq::Batch` callbacks там, де сьог�
 `TokenomicsEvaluatorWorker`, `Sidekiq::Limiter` для web3-RPC, `expires_in:`
 TTL у hot-path uplink). Це проєктне рішення, не бюджетне:
 ліцензія `sidekiq-pro` додається у Gemfile + `BUNDLE_GEMS__CONTRIBSYS__COM`
-як частина production hardening (повний чекліст у [`04_02`](04_02_Business_Logic_and_Services) § DOC.10:
+як частина production hardening (повний чекліст у [`04_02`](04_02_Business_Logic_and_Services) § DOC-R.10:
 розщеплення на 4 процеси, `super_fetch`, `reliable_push`, Redis pool +5).
 Codex-фази не блокують це — просто отримають `on(:success)` коли він
 з'явиться. Multi-step Battle settlement (наступна ітерація Codex поза

@@ -87,7 +87,7 @@
 | `telemetry_logs` | RANGE by month | Мільйони рядків/місяць від Солдатів |
 | `gateway_telemetry_logs` | RANGE by month | Тисячі рядків/місяць від Королев |
 | `blockchain_transactions` | RANGE by month | ≈ 12B рядків/рік при 1B дерев × щомісячний SCC мінтинг; composite PK `(id, created_at)` |
-| `codex_matches` | RANGE by month | Codex Battle Arena (Phase 4) — 100M+ duel-рядків очікувано на масштабі. Додано в `PartitionMaintenanceWorker.PARTITIONED_TABLES` (див. [`04_02 §11`](04_02_Business_Logic_and_Services) DOC.11) |
+| `codex_matches` | RANGE by month | Codex Battle Arena (Phase 4) — 100M+ duel-рядків очікувано на масштабі. Додано в `PartitionMaintenanceWorker.PARTITIONED_TABLES` (див. [`04_02 §11`](04_02_Business_Logic_and_Services) DOC-R.11) |
 
 Поточні партиції: для трьох core-таблиць — `y2026m01` → `y2026m06` + `_default`. Для `codex_matches` (Phase 4) — `y2026m04` → `y2026m09` (запущена пізніше) + `_default`.
 

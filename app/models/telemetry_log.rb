@@ -42,7 +42,7 @@ class TelemetryLog < ApplicationRecord
   # Індекс: index_telemetry_logs_on_tree_id_and_created_at
   scope :recent, -> { order(created_at: :desc) }
 
-  # [DOC.9 FIX]: Partition-aware lookup for RANGE-partitioned telemetry_logs.
+  # Partition-aware lookup for RANGE-partitioned telemetry_logs.
   # Workers pass created_at_iso to enable PostgreSQL to scan only the relevant
   # partition (O(log N)) instead of all partitions (O(P×log N)).
   def self.find_with_partition_pruning(id, created_at = nil)

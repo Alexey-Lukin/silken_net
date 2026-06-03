@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 8 — стандарт впроваджено та **CI-enforced** (`docs:check_refs` + `tracker:check` як HARD-гейти у `docs.yml`/`ci.yml`). Відкриті — TRL range-consistency guard (roadmap) → [`00_07`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 8 — стандарт впроваджено та **CI-enforced** (`docs:check_refs` + `tracker:check` як HARD-гейти у `docs.yml` — єдиний дім, §3). Усі roadmap-гейти §3 реалізовані (останній — TRL range-consistency, 2026-06-03); magic-marker/ref-graph лишаються advisory/on-demand **за дизайном**, не як борг.
 
 ---
 
@@ -79,7 +79,7 @@
 | MOIC-концепція кластера + план публікацій (Ст. 1–35) + IP-рамка | `08_01` (cluster head) |
 | Зовнішні стейкхолдери (B2G/B2B + культурний шар) | `08_03` (External Stakeholders Registry) |
 
-> Повний канон↔канон дубль-аудит — `00_07 DOC.2`.
+> Повний канон↔канон дубль-аудит — `00_07 DOC-T.2`.
 
 ---
 
@@ -88,8 +88,9 @@
 | Guard | Що ловить | Команда / місце |
 |---|---|---|
 | `docs:check_refs` | dangling `NN_NN` doc-links (hard) + §-section label drift (advisory) | `bin/rails docs:check_refs` (ci.yml + docs.yml) |
-| `tracker:check` | 00_07: dup-IDs (across **#### headings AND registry table-row IDs** — закрив DOC.12 #### ↔ table-row blind-spot, 2026-06-01), meta-line conformance, canon-ref resolution + **§-section resolution** (a `NN_NN §X` pointer's §X must be a real heading — зловив 12 stale `§BLOCKER-N`/wrong-doc-id рефів, осиротілих blockers→00_07 sweep'ом; thread C 2026-05-31). Parser tolerant до emoji-префікса в `#### 🌿 ID` (раніше UNI.13a/BIZ.12 були невидимі усім чекам) | `bin/rails tracker:check` (ci.yml + docs.yml) |
+| `tracker:check` | 00_07: dup-IDs (across **#### headings AND registry table-row IDs** — закрив DOC-T.12 #### ↔ table-row blind-spot, 2026-06-01), meta-line conformance, canon-ref resolution + **§-section resolution** (a `NN_NN §X` pointer's §X must be a real heading — зловив 12 stale `§BLOCKER-N`/wrong-doc-id рефів, осиротілих blockers→00_07 sweep'ом; thread C 2026-05-31). Parser tolerant до emoji-префікса в `#### 🌿 ID` (раніше UNI.13a/BIZ.12 були невидимі усім чекам) | `bin/rails tracker:check` (ci.yml + docs.yml) |
 | **section↔canon-home** | 00_07 canon-mirror One-Home: кожен `#### ` під `## §NN` має canon-ref модуля NN (`§03/§05` / `§01–§02` декларують multi-module set у заголовку; 🔀/📌/🗄️ exempt). Закрив «§06-deploy-під-§04-DevOps» drift (15 S*/INF* айтемів ховалися під §04 за nav-нотатками) при canon-mirror реструктуризації 00_07 (2026-06-01) | `bin/rails tracker:check` (HARD; `lib/tracker/dashboard.rb`) |
+| **inbound 00_07 item-ref** | reference з ІНШОГО доку `[`00_07` — <ID>](00_07_…)` має резолвитись у реальний item (всі `####` + table-row IDs, **усі секції** вкл. 📌/🗄️ — `all_item_ids`). `tracker:check` раніше валідував лише ВЛАСНІ рефи 00_07, не inbound → renamed/removed item тихо протухав (зловив dangling `06_02 → 00_07 DOC.5`, оголений DOC.N-namespace роботою). ID вимагає `.`/`-` сепаратора → directory-title лінк (`00_07 — Action Plan Tracker`) не FP | `bin/rails tracker:check` (HARD 2026-06-03; `lib/tracker/dashboard.rb`) |
 | `ssot_guard.yml` | protected code змінено → docs мусять оновитись | CI PR gate (00_05 §2.3) |
 | regen-from-code | enumerable lists (метрики) генеруються з SSOT, не вручну | `06_03 §2.8` regen cmd |
 | TRL presence | кожен док з `## ✅ Статус` декларує TRL (ловить 06_04-клас gap) | `bin/rails docs:check_refs` (hard) |
@@ -108,7 +109,7 @@
 | **#anchor resolution** | кожен `#anchor`-фрагмент у doc-лінку (intra-doc — фрагмент до власного заголовка; cross-doc — `NN_NN_Name#fragment`) резолвиться в реальний heading-слаг цілі — стале посилання тихо кидає читача на верх сторінки, а §-label-гейт його не бачить. Випущено з on-demand `docs:graph` у HARD-gate (2026-06-01), коли всі anchors стали чистими; engine той самий (`DocsGraph.dangling_anchors`, тепер fence-aware) | `bin/rails docs:check_refs` (HARD 2026-06-01; `lib/docs_graph.rb`) |
 | **external doc-path** | репо-файли ПОЗА `docs/` (`.github/` workflows+configs+copilot/labels, root `README`/`CLAUDE`/`AGENTS`) реферять канон-доки шляхом теж; renamed/renumbered док лишає їх stale, а in-docs гейт цього **не бачить** (blind spot, що ховав `docs/00_07_GitHub_Projects…`→00_05 + `docs/08_07_SEU…`→08_03). Флагає будь-який `docs/NN_NN_Name`, чий точний basename ≠ поточний док | `bin/rails docs:check_refs` (HARD 2026-06-02; `lib/docs_linter.rb`) |
 | **deprecated terms (Ruthless Pruning)** | ретирований SSOT-токен не сміє повертатись в **активний** канон — enforcement-рука Ruthless Pruning (§4). Лише **однозначно** мертві рядки: HKDF `silkennet-v1-aes256`; партномер `ZP-3`/`ZP-5` (∅27 мм через-отв. п'єзо → SMD, `02_01 §3`). Ще-живий токен НЕ додається (LTC3108 виживає як DNP fallback → не guard-иться). Exempt: 02_06 (legacy-дім) · 00_06 (цитує приклади) · 00_07 (tracker) | `bin/rails docs:check_refs` (HARD 2026-06-02; `lib/docs_linter.rb`) |
-| TRL range-consistency | _(roadmap)_ per-doc member-TRL у межах діапазону модуля `00_03 §1` | — |
+| **TRL range-consistency** | per-doc member-TRL у межах **band** модуля (`00_03 §1`): (a) рядок well-formed (current ≤ target) + (b) рядок ≤ max member-TRL під-доків (рядок = min, не вище за КОЖНОГО члена) + (c) member ≤ target модуля. Перевіряє лише **верхні** межі — нижня має легітимні винятки (рядок = min критичного шляху → під-док буває нижче: 06_01 off-path, 00_03 Статус звітує System-TRL). Owner-only-vocabulary, як інші value-гейти | `bin/rails docs:check_refs` (HARD 2026-06-03; `lib/docs_linter.rb`) |
 | **ref-graph audit** | _(on-demand, НЕ CI-gate)_ orphan/dead-end сторінки · in/out-degree skew · one-way (asymmetric) sibling-лінки · linked-`§X` валідація — власний ref-граф канону (GitNexus моделює код, не NN_NN-конвенцію). `#anchor`-резолюція звідси випущена у HARD-gate (рядок вище); граф лишає графовий вигляд, якого per-line гейти не дають | `bin/rails docs:graph` (`lib/docs_graph.rb`; spec `spec/lib/docs_graph_spec.rb`) |
 
 **Правило при зміні факту:** правити лише у home (§2) → рефи лишаються чинними; будь-який новий NN_NN-док/реф — `docs:check_refs` має лишатись зеленим перед merge.

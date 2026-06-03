@@ -107,7 +107,7 @@ C₂ = (-√(β(ρ-1)), -√(β(ρ-1)), ρ-1) = (-8.485, -8.485, 27.0)
 
 ### 2.1 Звідки Беруться Вхідні Параметри
 
-> **First-Boot vs Continuation — канонічна логіка [DOC.4] [SEC.11 hard cutover]**
+> **First-Boot vs Continuation — канонічна логіка [SEC.11 hard cutover]**
 >
 > Bio-Contract має **єдину точку входу** після SEC.11 cutover. C-сторона завжди викликає `BioContract.calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)`. Розкладка регістрів та магічний маркер `LZST = 0x4C5A5354` — у [`03_01 §2 + §2.1` (Canonical SSOT)](03_01_Firmware_Lifecycle_and_DMA#-2-soldier-rtc-backup-register-map-dr0dr19--canonical-ssot-doc3); тут описано лише **звідки беруться `(x_prev, y_prev, z_prev)`**:
 >
