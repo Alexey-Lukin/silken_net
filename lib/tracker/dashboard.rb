@@ -85,7 +85,9 @@ module Tracker
     # A leading emoji/✅ run is tolerated (`| ✅ OPS.5 |`, `| 🌿 E.59 |`) — the same
     # blind spot that once hid `#### 🌿 UNI.13a`; without it a status-prefixed backlog
     # row was invisible to BOTH the dup tally and inbound-ref resolution (2026-06-03).
-    TABLE_ID_RE = /\A\|\s*(?:[✅\p{So}\p{Sk}\u{FE0F}]+\s*)*\*{0,2}([A-Z][A-Za-z0-9]*[.\-][0-9A-Za-z.\-]+)\*{0,2}\s*\|/
+    # Лідерний emoji/✅-run — єдиний лінійний char-class (НЕ вкладений `(?:[…]+\s*)*`,
+    # чий опційний роздільник давав exponential backtracking / ReDoS).
+    TABLE_ID_RE = /\A\|[\s✅\p{So}\p{Sk}\u{FE0F}]*\*{0,2}([A-Z][A-Za-z0-9]*[.\-][0-9A-Za-z.\-]+)\*{0,2}\s*\|/
 
     def self.table_row_ids(markdown)
       in_registry = false
