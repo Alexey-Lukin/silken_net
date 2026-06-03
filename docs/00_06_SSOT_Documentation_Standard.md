@@ -63,7 +63,7 @@
 |---|---|
 | Per-module TRL матриця | `00_03 §1` (агрегат-дім). Модульний док = власний member-TRL у Статус (це джерело, не дубль); заборонено відтворювати всю матрицю поза §1 |
 | Beyond-TRL-9 / SRL-MRL R&D-агенда (Planetary Intelligence gaps + фрактальне масштабування) | `00_08` |
-| AES per-channel modes | `03_05 §3.7` |
+| AES per-channel modes | `03_05 §6` (зведена channel-таблиця) + `§3.7` (ключі/ARCH.42). Firmware-доки `03_01 §9` / `03_02 §8` реферять цю таблицю, не дублюють (DOC-T.14) |
 | Lorenz константи | `03_04 §4.1` |
 | Tokenomics rate / slashing thresholds / insurance pool | `05_03` · `05_05 §3/§4` |
 | Carbon (2000 SCC = 1 tCO₂) | `05_03` + `07_01 §3` (business view) |
@@ -78,6 +78,7 @@
 | Академічний ростер (5 ВНЗ: партнер → що валідує → канон-дім) | `08_02` (Academic Institutions Registry; §1 ЧНУ [§1A Hard Science + §1B ФОТІУС], §2 ЧДТУ, §3 ЧІПБ, §4 ЧМА, §5 СЄУ) |
 | MOIC-концепція кластера + план публікацій (Ст. 1–35) + IP-рамка | `08_01` (cluster head) |
 | Зовнішні стейкхолдери (B2G/B2B + культурний шар) | `08_03` (External Stakeholders Registry) |
+| Firmware internals split | **Soldier** RAM/tests/lifecycle + RTC reg-map → `03_01`; **Queen** deep-dive (RAM `§9` · HAL `§10` · host-tests `§11` · `#define` `§0`) → `03_02`. Кожен реферить інший, не дублює (DOC-T.14) |
 
 > Повний канон↔канон дубль-аудит — `00_07 DOC-T.2`.
 

@@ -35,7 +35,7 @@
 - [2. Soldier RTC Backup Register Map (DR0..DR19) — Canonical SSOT](#-2-soldier-rtc-backup-register-map-dr0dr19--canonical-ssot-doc3)
 - [3. Soldier RAM Budget (~5 KB з 64 KB SRAM)](#-3-soldier-ram-budget-5-kb-з-64-kb-sram)
 - [4. Queen — Архітектура Шлюзу-Агрегатора](#-4-queen--архітектура-шлюзу-агрегатора)
-- [5. Queen RAM Budget (~3.7 KB з 64 KB SRAM)](#-5-queen-ram-budget-37-kb-з-64-kb-sram)
+- [5. Queen RAM Budget](#-5-queen-ram-budget)
 - [6. ISR Map (Апаратні Рефлекси)](#-6-isr-map-апаратні-рефлекси)
 - [7. DID Generation (Народження)](#-7-did-generation-народження)
 - [8. Binary Packet Format (Зовнішній фрейм, 21 байт)](#-8-binary-packet-format-зовнішній-фрейм-21-байт)
@@ -946,21 +946,9 @@ Cmd_Dedup_Check(hash):
 
 ---
 
-## 💾 5. Queen RAM Budget (~3.7 KB з 64 KB SRAM)
+## 💾 5. Queen RAM Budget
 
-| Змінна | Тип | Розмір | Призначення |
-|--------|-----|--------|-------------|
-| `aes_key[4]` | `uint32_t` | 16 B | AES-128 LoRa ключ (per-Soldier через HKDF, у CIFO key-cache) [post-ARCH.42] |
-| `coap_key[8]` | `uint32_t` | 32 B | AES-256 CoAP ключ Queen (для batch flush до Rails) — окремий MX_CRYP re-init |
-| `forest_cache[50]` | `EdgeCache` | 1150 B | CIFO кеш (50 × 23 байт) |
-| `binary_batch_buffer[2048]` | `uint8_t` | 2048 B | CoAP batch buffer |
-| `at_tx_buffer[256]` | `char` | 256 B | AT-команди для SIM7070G |
-| `cmd_dedup_ring[16]` | `uint32_t` | 64 B | Idempotency hash ring |
-| `cmd_decrypt_buf[544]` | `uint8_t` | 544 B | Decrypt buffer (CMD + OTA) |
-| `pending_ota_bytecode[8192]` | `uint8_t` | 8192 B | OTA assembly RAM |
-| **Всього** | | **~12 KB** | |
-
-> ⚠️ `pending_ota_bytecode[8192]` — найбільший буфер. При одночасному OTA та активному LoRa-трафіку пікове споживання RAM ~12 KB (з 64 KB доступних). Залишок (~52 KB) — стек, HAL структури, LoRa driver.
+Повний бюджет RAM Королеви — канон [`03_02 §9`](03_02_Queen_Gateway_Firmware) (з усіма FW.3/E.8-буферами: `lora_rx_ring`, `encrypted_batch_buffer`, OTA-скаляри). 03_01 — дім лише **Soldier** RAM (§3); Queen-таблиця тут раніше тихо розійшлась із домом (stale pre-FW.3 буфери, неузгоджений підсумок) → зведено до рефа.
 
 ---
 
@@ -1077,12 +1065,7 @@ Queen загортає кожен Soldier-пакет у 21-байтний outer 
 
 ## 🔒 9. Encryption Architecture
 
-| Шлях | Алгоритм | Режим | IV/Nonce |
-|------|-----------|-------|----|
-| Soldier ↔ Queen (LoRa) [post-ARCH.42] | **AES-128** | ECB [transitional] → CCM [FW.2] | N/A (ECB) / CCM B0 nonce (FW.2 — DID:4 + FrameCounter:4) |
-| Queen → Soldier (OTA reflex) [post-ARCH.42] | **AES-128** | ECB | N/A |
-| Queen → Rails (CoAP batch) | AES-256 | CBC | HRNG-generated (prepended до ciphertext) |
-| Rails → Queen (CoAP commands) | AES-256 | CBC | Prepended у CoAP payload |
+Soldier↔Queen LoRa = **AES-128** (ECB transitional → CCM FW.2), Queen↔Rails CoAP = **AES-256-CBC** [post-ARCH.42]. Повна per-channel таблиця (напрямки · режими · IV/nonce) — канон [`03_05 §6`](03_05_Hardware_Symmetric_Crypto_and_Security). Нижче — firmware-специфічні impl-патерни цього вузла (їхній дім — тут).
 
 **ECB Restoration — критичний паттерн:**
 Функції `Flush_Cache_To_Rails()` та `Handle_CoAP_Command()` перемикають `hcryp` на CBC для роботи з server-bound трафіком. Після завершення **обов'язково** відновлюють ECB:
@@ -1135,20 +1118,7 @@ make -C firmware/test encryption  # AES encryption
 
 ### Тести Queen
 
-| Модуль | Тести | Що покривається |
-|--------|-------|-----------------|
-| DJB2 Hash | 7 | Детермінізм, відомі значення (`djb2("a")=0x2B606`), NUL handling, UUID format |
-| Dedup Ring | 7 | New/duplicate, ring wrap, eviction, stress 100 |
-| CIFO Cache | 13 | Insert, dedup, priority eviction (всі 4 статуси), fallback, edge RSSI, UID=0 |
-| Batch Packing | 8 | 21-байтний формат, ендіанність, RSSI -128, round-trip, cache clear |
-| OTA Chunk Builder | 6 | First/last chunk, reassembly, out-of-range index |
-| OTA Assembly CoAP | 12 | Single/multi-chunk, full 512-chunk, bounds overflow, invalid marker, zero total, duplicate dedup, bitmap reset, size tracking, out-of-order |
-| RSSI Clamp | 8 | Normal, edge ±128, overflow proof, int16→int8 truncation demo |
-| Queen Health | 7 | DID=0 sentinel, uptime packing, cache integration, dedup, batch |
-| ECB Restoration | 3 | CRYP mode state після CBC→ECB переходу (Flush та Handle_CoAP) |
-| HRNG IV Generation | 5 | Words filled, 16-byte size, RNG instance set, power management (DeInit), not tick-based |
-| CBC Command Decryption | 3 | ECB restored after CMD decrypt, CBC during decrypt, both transitions in sequence |
-| **CoAP Retry (FW.9)** | **4** | **`COAP_MAX_RETRIES=3` константа, `COAP_BASE_TIMEOUT_MS=2000`, `COAP_SEND_TIMEOUT_MS=5000`, `UART_RX_BUF_SIZE=128`** |
+Повна Queen host-test-matrix (вкл. FW.1 Flash-key / FW.20 / FW.20-S2 / FW.27-B) — канон [`03_02 §11`](03_02_Queen_Gateway_Firmware). Дублювати тут означало drift (ця копія відставала від дому).
 
 ### Тести Soldier
 

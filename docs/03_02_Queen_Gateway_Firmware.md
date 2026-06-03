@@ -899,12 +899,7 @@ Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пак
 
 ## 🔐 8. Шифрування: Режими та Переходи
 
-| Шлях | Алгоритм | Режим | IV/Nonce |
-|------|----------|-------|----|
-| Soldier → Queen (LoRa RX) [post-ARCH.42] | **AES-128** | ECB [transitional] → CCM [FW.2] | N/A (ECB) / CCM B0 nonce (FW.2) |
-| Queen → Rails (CoAP batch) | AES-256 | CBC | HRNG (prepended до ciphertext) |
-| Rails → Queen (CoAP command) | AES-256 | CBC | Витягується з payload[0..15] |
-| Queen → Soldier (OTA LoRa) [post-ARCH.42] | **AES-128** | ECB | N/A |
+Per-channel режими (LoRa **AES-128** ECB→CCM · CoAP **AES-256-CBC**) — канон [`03_05 §6`](03_05_Hardware_Symmetric_Crypto_and_Security). Нижче — Queen-специфічний flow перемикання CRYP-режиму (його дім — тут).
 
 ### Критичний Transition Diagram
 
