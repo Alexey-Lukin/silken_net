@@ -218,7 +218,7 @@ float ml_confidence = 0.0;        // Рівень впевненості мод�
 // 03_03 BLOCKER-6.
 //
 // SSOT для розташування RTC регістрів: 03_01 §2 (Soldier RTC Backup Map).
-// DR13/DR14 — частина «реєрву DR13..DR15», виділеного після FW.21 fallback.
+// DR13/DR14 тримають ці два пороги TinyML; повна розкладка — там, не дублюємо.
 #define TINYML_DEFAULT_WARNING       0.60f
 #define TINYML_DEFAULT_CRITICAL      0.85f
 #define TINYML_THRESHOLD_MIN_VALID   0.01f
@@ -369,11 +369,10 @@ volatile uint32_t soldier_unix_ts_local_tick = 0;
 // config_block` — теж лише class method, у production-pipeline нікуди
 // не передається.
 //
-// ПРИЧИНА defer: STM32WLE5JC має лише 20 RTC Backup Register'ів (DR0..DR19),
-// вони повністю зайняті: DR0-2 (acoustic/wakeup/relay), DR3-6 (mesh payload),
-// DR7 (DID), DR8/9/11 (anti-pingpong), DR10/12 (EMA), DR13/14 (TinyML),
-// DR16-19 (Lorenz state). Єдиний вільний DR15 (4 байти) — недостатньо для
-// 8-байтного body порогів. SSOT: 03_01 §2 (Canonical Backup Map).
+// ПРИЧИНА defer: усі 20 RTC Backup Register'и (DR0..DR19) зайняті — після
+// FW.2 freeze-contract навіть DR15 пішов під CCM Frame Counter; вільного слоту
+// немає, а 8-байтний body порогів нікуди покласти без Flash-KV. Повна розкладка
+// — SSOT 03_01 §2 (Canonical Backup Map), тут НЕ дублюємо.
 //
 // Альтернативи відкинуто:
 //   • Flash sector — 2 KB на 8 байт, wear ~10k erase × at-most-daily re-send
@@ -383,10 +382,9 @@ volatile uint32_t soldier_unix_ts_local_tick = 0;
 //   • RAM-only з re-send щодня × 100k дерев = ~5% всього NB-IoT downlink
 //     заради no-op feature. Чесніше відкласти.
 //
-// ВІДНОВЛЕННЯ: коли FW.21 EMA-рефакторинг звільнить хоча б 1 регістр (можливо
-// при щільнішій упаковці DR8/9/11 anti-pingpong), FW.8 повертається з
-// RTC-персистенс (8 байт body → 2 регістри) — `#define FW8_PARSER_ENABLED 1`,
-// додати boot-restore + KENOSIS-write блок.
+// ВІДНОВЛЕННЯ: вільних RTC-регістрів не лишилось (DR15 → FW.2), тож FW.8
+// повертається через Flash-KV overflow (03_01 §2.3), а не звільнений регістр —
+// `#define FW8_PARSER_ENABLED 1` + boot-restore з Flash + KENOSIS-write блок.
 #define FW8_PARSER_ENABLED                0  // 🟡 Deferred TRL-7 (див. блок вище)
 #define CMD_SET_THRESHOLDS_MARKER         0x9A
 #define CMD_THRESHOLDS_HEADER_SIZE        3   // [маркер:1][len_le:2]
@@ -589,7 +587,7 @@ static void Build_Time_Sync_Request_Payload(uint8_t* out, uint32_t did,
 // функція callable та повністю host-tested, але до RX-гілки головного циклу
 // НЕ вшита. Активація потребує (a) Королева почне слати TTL≥2 у beacon (зараз
 // TTL=1 — design choice до приходу повного mesh-relay), (b) anti-storm
-// dedup-bitmap у вільному RTC-регістрі (DR15 заповниться при наступній фічі,
+// dedup-bitmap у Flash-KV (DR15 зайнято FW.2, усі RTC-регістри повні —
 // див. 03_01 §2.3 overflow strategy). Сторожовий пес часу (drift-monitor)
 // зараз закриває розрив для не-PROV Солдатів через панічний sync request.
 //
@@ -1255,7 +1253,7 @@ int main(void)
   }
 
   // Відновлюємо пам'ять останніх почутих DID з вічних регістрів
-  // [FW.21] 3 слоти: DR8, DR9, DR11. DR10/DR12 — EMA, DR13..DR15 — резерв.
+  // [FW.21] 3 слоти: DR8, DR9, DR11 (DR10/DR12 — EMA). Повна розкладка — 03_01 §2.
   recent_mesh_dids[0] = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR8);
   recent_mesh_dids[1] = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR9);
   recent_mesh_dids[2] = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR11);
@@ -2016,7 +2014,7 @@ int main(void)
     }
 
     // Зберігаємо кеш DID-ів у вічну пам'ять перед сном
-    // [FW.21] 3 слоти (DR8, DR9, DR11); DR10 + DR12 — EMA, DR13..DR15 — резерв
+    // [FW.21] 3 слоти (DR8, DR9, DR11); DR10/DR12 — EMA. Повна розкладка — 03_01 §2
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR8, recent_mesh_dids[0]);
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR9, recent_mesh_dids[1]);
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR11, recent_mesh_dids[2]);
