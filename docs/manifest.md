@@ -75,7 +75,7 @@ The Z-coordinate of the final point classifies the tree into one of three homeos
 | Z range | Status | growth_points |
 |---|---|---|
 | Z < 2 | stress | 1 |
-| 2 ≤ Z ≤ 45 | homeostasis | `clamp(50 − |Z − 29|, 10, 63)` |
+| 2 ≤ Z ≤ 45 | homeostasis | `clamp(50 − |Z − 29|, 10, 62)` |
 | Z > 45 | anomaly | 0 |
 
 The choice of a deterministic chaotic system is not aesthetic. It is the **smallest mathematical object whose output is highly sensitive to physiological inputs yet computationally tractable on a sub-mW microcontroller**, and whose trajectory between cycles can be **continued losslessly** through STOP2 sleep via three RTC backup registers. Server-side, the same `SilkenNet::Attractor` mirror computes Z in IEEE-754 float — bit-identical to firmware across 50,000 random parity tests. Initial state on cold start is derived from a per-device `K_seed` via HKDF + HMAC-SHA256, eliminating the "identifier-as-key" antipattern; warm continuation reads `(x, y, z)` from the previous packet's persisted tail.

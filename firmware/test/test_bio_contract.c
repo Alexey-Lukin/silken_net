@@ -377,33 +377,33 @@ static void test_status_anomaly_growth_points_is_0(void) {
 }
 
 static void test_homeostasis_optimal_z(void) {
-    /* z_val == OPTIMAL_Z_TARGET → deviation=0 → reward=50, clamped to [10,63] */
+    /* [FW.29-PACK] z_val == OPTIMAL_Z_TARGET → deviation=0 → reward=50 → wire = reward/2 clamped to [5,31] = 25 */
     double z_val = OPTIMAL_Z_TARGET;
     double deviation = fabs(OPTIMAL_Z_TARGET - z_val);
     int reward = 50 - (int)round(deviation);
-    int gp = clamp_i(reward, 10, 63);
-    ASSERT(gp == 50,
-           "test_homeostasis_optimal_z_gives_50_points");
+    int gp = clamp_i(reward / 2, 5, 31);
+    ASSERT(gp == 25,
+           "test_homeostasis_optimal_z_gives_25_wire_points");
 }
 
 static void test_homeostasis_edge_z_min(void) {
-    /* z_val == CRITICAL_Z_MIN → deviation = |29-2| = 27 → reward=23, clamped to [10,63] */
+    /* [FW.29-PACK] z_val == CRITICAL_Z_MIN → deviation = |29-2| = 27 → reward=23 → wire = reward/2 clamped to [5,31] = 11 */
     double z_val = CRITICAL_Z_MIN;
     double deviation = fabs(OPTIMAL_Z_TARGET - z_val);
     int reward = 50 - (int)round(deviation);
-    int gp = clamp_i(reward, 10, 63);
-    ASSERT(gp == 23,
-           "test_homeostasis_z_min_edge_gives_23_points");
+    int gp = clamp_i(reward / 2, 5, 31);
+    ASSERT(gp == 11,
+           "test_homeostasis_z_min_edge_gives_11_wire_points");
 }
 
 static void test_homeostasis_edge_z_max(void) {
-    /* z_val == CRITICAL_Z_MAX → deviation = |29-45| = 16 → reward=34, clamped to [10,63] */
+    /* [FW.29-PACK] z_val == CRITICAL_Z_MAX → deviation = |29-45| = 16 → reward=34 → wire = reward/2 clamped to [5,31] = 17 */
     double z_val = CRITICAL_Z_MAX;
     double deviation = fabs(OPTIMAL_Z_TARGET - z_val);
     int reward = 50 - (int)round(deviation);
-    int gp = clamp_i(reward, 10, 63);
-    ASSERT(gp == 34,
-           "test_homeostasis_z_max_edge_gives_34_points");
+    int gp = clamp_i(reward / 2, 5, 31);
+    ASSERT(gp == 17,
+           "test_homeostasis_z_max_edge_gives_17_wire_points");
 }
 
 /* ════════════════════════════════════════════════════════════════════

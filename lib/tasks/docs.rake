@@ -48,6 +48,7 @@ namespace :docs do
     trl_missing = []  # hard: ## ✅ Статус section without a TRL declaration
     rtc_drift   = []  # hard: RTC register availability claimed outside 03_01 owner
     lorenz_drift = [] # hard: Lorenz β formula re-stated outside 03_04 owner
+    gp_clamp     = [] # hard: retired growth_points clamp `(…,10,63)` (pre-FW.29-PACK)
     deprecated  = []  # hard: retired SSOT term reappeared (DocsLinter::DEPRECATED_TERMS)
     label_drift = []  # hard: link label leads with a different NN_NN than its href resolves to
     magic_drift = []  # soft: magic-marker hex ≠ BE/LE ASCII of its quoted name
@@ -92,6 +93,7 @@ namespace :docs do
       # "DR15 наразі резерв" in 03_02/00_07/03_03 after FW.2 claimed DR15).
       rtc_drift.concat(DocsLinter.rtc_register_allocation_drift(base, text).map { |h| "#{base}: #{h}" })
       lorenz_drift.concat(DocsLinter.lorenz_formula_drift(base, text).map { |h| "#{base}: #{h}" })
+      gp_clamp.concat(DocsLinter.growth_points_clamp_drift(base, text).map { |h| "#{base}: #{h}" })
       deprecated.concat(DocsLinter.deprecated_terms(base, text).map { |h| "#{base}: #{h}" })
       label_drift.concat(DocsLinter.link_label_target_mismatch(text).map { |h| "#{base}: #{h}" })
       magic_drift.concat(DocsLinter.magic_marker_hex_drift(text).map { |h| "#{base}: #{h}" })
@@ -238,6 +240,12 @@ namespace :docs do
       puts "  LORENZ-FORMULA DRIFT (#{lorenz_drift.size}) — σ/ρ/β values are owned by 03_04 §4.1:"
       lorenz_drift.sort.each { |d| puts "    ✗ #{d}" }
     end
+    if gp_clamp.empty?
+      puts "  growth_points:  no retired `clamp(…,10,63)` wire range outside owner (03_04 §4.3) ✓"
+    else
+      puts "  GROWTH_POINTS CLAMP DRIFT (#{gp_clamp.size}) — FW.29-PACK wire is `(reward / 2).clamp(5, 31)` (03_04 §4.3):"
+      gp_clamp.sort.each { |d| puts "    ✗ #{d}" }
+    end
     if deprecated.empty?
       puts "  deprecated terms: no retired SSOT tokens present ✓"
     else
@@ -273,6 +281,7 @@ namespace :docs do
     failed << "docs missing the standard skeleton" unless conformance.empty?
     failed << "RTC register-map drift (availability claimed outside 03_01)" unless rtc_drift.empty?
     failed << "Lorenz-formula drift (β re-stated outside 03_04 §4.1)" unless lorenz_drift.empty?
+    failed << "retired growth_points clamp `(…,10,63)` (FW.29-PACK → 03_04 §4.3)" unless gp_clamp.empty?
     failed << "deprecated SSOT terms present" unless deprecated.empty?
     failed << "tokenomics/carbon rate restated outside One-Home (05_03/07_01)" unless rate_drift.empty?
     failed << "bare code-span `NN_NN §X` refs (should be `[`…`](Doc)` links)" unless bare_refs.empty?

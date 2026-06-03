@@ -198,6 +198,32 @@ RSpec.describe DocsLinter do
     end
   end
 
+  describe ".growth_points_clamp_drift" do
+    it "flags the retired `clamp(reward, 10, 63)` wire range outside the owner" do
+      hits = described_class.growth_points_clamp_drift("05_02_Pipeline", "growth_points = clamp(reward, 10, 63)\n")
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("5, 31")
+    end
+
+    it "flags the retired clamp even inside a table cell (the real manifest:78 drift)" do
+      row = "| 2 ≤ Z ≤ 45 | homeostasis | `clamp(50 − |Z − 29|, 10, 63)` |\n"
+      expect(described_class.growth_points_clamp_drift("manifest", row)).not_to be_empty
+    end
+
+    it "exempts the owner docs (03_04 §4.3 + firmware-lifecycle 03_01) and the standard/tracker" do
+      old = "`(reward / 2).clamp(5, 31)` замість `clamp(reward, 10, 63)`\n"
+      expect(described_class.growth_points_clamp_drift("03_04_mruby_Lorenz_Attractor", old)).to be_empty
+      expect(described_class.growth_points_clamp_drift("03_01_Firmware_Lifecycle_and_DMA", old)).to be_empty
+      expect(described_class.growth_points_clamp_drift("00_06_SSOT_Documentation_Standard", old)).to be_empty
+      expect(described_class.growth_points_clamp_drift("00_07_Action_Plan_Tracker", old)).to be_empty
+    end
+
+    it "does NOT flag the current FW.29-PACK form `(reward / 2).clamp(5, 31)` / stored 10, 62" do
+      expect(described_class.growth_points_clamp_drift("05_02_Pipeline", "growth_points = (reward / 2).clamp(5, 31)\n")).to be_empty
+      expect(described_class.growth_points_clamp_drift("manifest", "`clamp(50 − |Z − 29|, 10, 62)`\n")).to be_empty
+    end
+  end
+
   describe ".tokenomics_rate_drift" do
     it "flags the mint rate re-stated outside the home" do
       hits = described_class.tokenomics_rate_drift("05_06_Governance", "фіксований курс 10,000 growth_points = 1 SCC.\n")

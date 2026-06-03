@@ -178,6 +178,32 @@ module DocsLinter
     end
   end
 
+  # [SSOT anti-drift] Retired growth_points wire-range clamp (HARD). The pre-FW.29-PACK
+  # reward clamp `clamp(reward, 10, 63)` (6-bit wire field) was superseded by the 5-bit
+  # `(reward / 2).clamp(5, 31)` (backend ×2 → stored 0..62). That formula is owned by
+  # 03_04 §4.3 and mirrored in firmware (`bio_contract.rb`) + backend
+  # (`TelemetryUnpackerService`). It is the token-MINTING reward, so a stale copy
+  # silently misstates emission — yet it was invisible to every existing guard (the
+  # Lorenz guard only knows β; the rate guard EXEMPTS manifest). The retired `10, 63`
+  # clamp lingered undetected in CLAUDE.md (fixed R8) AND manifest.md (R9) before this
+  # net existed. Signature: a `clamp(… 10, 63 …)` call — unique to the old wire range;
+  # the current `5, 31` form never matches. NOT table-skipped (unlike lorenz): the real
+  # drift lived in a manifest table cell. Owner 03_04 + firmware-lifecycle 03_01 + the
+  # standard doc 00_06 (cites it as an example) + 00_07 (tracker migrate-from) are
+  # exempt — same shape as lorenz_formula_drift / deprecated_terms.
+  GP_CLAMP_OWNER_DOC  = /\A03_04_|\A03_01_|\A00_06_|\A00_07_/
+  GP_CLAMP_RETIRED_RE = /clamp\([^)\n]*\b10\s*,\s*63\b/
+
+  def growth_points_clamp_drift(basename, text)
+    return [] if basename.match?(GP_CLAMP_OWNER_DOC)
+
+    text.each_line.filter_map do |line|
+      next unless line.match?(GP_CLAMP_RETIRED_RE)
+
+      "retired growth_points clamp `(…, 10, 63)` — FW.29-PACK wire is `(reward / 2).clamp(5, 31)` (03_04 §4.3) → #{line.strip[0, 100]}"
+    end
+  end
+
   # [SSOT anti-drift] Tokenomics / carbon RATE One-Home (HARD after the 2026-05-31
   # dedup). The mint rate (`10,000 growth_points = 1 SCC`) and carbon rate
   # (`2000 SCC = 1 tCO₂`) are governance-CHANGEABLE parameters (05_06), so they get
