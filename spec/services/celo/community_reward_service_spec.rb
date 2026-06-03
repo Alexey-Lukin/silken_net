@@ -120,6 +120,28 @@ RSpec.describe Celo::CommunityRewardService do
       end
     end
 
+    context "when the oracle CELO balance is below the gas floor" do
+      let!(:insight) do
+        create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
+               target_date: target_date, stress_index: 0.05, fraud_detected: false)
+      end
+
+      before do
+        mock_client = instance_double(Eth::Client)
+        allow(Eth::Client).to receive(:create).and_return(mock_client)
+        allow(Eth::Key).to receive(:new).and_return(instance_double(Eth::Key, address: "0x" + "aa" * 20))
+        allow(Eth::Contract).to receive(:from_abi).and_return(double("Contract"))
+        allow(mock_client).to receive(:get_balance).and_return((0.01 * 10**18).to_i)
+        allow(Kredis).to receive(:lock).and_yield
+      end
+
+      it "raises the low-balance guard before transacting" do
+        expect {
+          described_class.new(cluster, target_date).reward_community!
+        }.to raise_error(/Критично низький баланс/)
+      end
+    end
+
     context "without AiInsight for target_date" do
       it "returns nil without creating a transaction" do
         expect {
@@ -379,6 +401,13 @@ RSpec.describe Celo::CommunityRewardService do
       ensure
         Web3::RpcConnectionPool.reset!
       end
+    end
+  end
+
+  describe "#reward_already_sent? window computation" do
+    it "handles a non-Date (Time) target_date without raising (else branch)" do
+      service = described_class.new(cluster, Time.current)
+      expect(service.send(:reward_already_sent?)).to be(false)
     end
   end
 end

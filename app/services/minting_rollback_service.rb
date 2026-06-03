@@ -45,7 +45,9 @@ class MintingRollbackService < ApplicationService
     log = find_telemetry_log
     return unless log
 
-    wallet = log.tree&.wallet
+    # log.tree non-nil: belongs_to :tree (required) + Tree dependent: :delete_all
+    # видаляє логи разом із деревом, тож orphaned-log не існує (мертвий `&.` прибрано).
+    wallet = log.tree.wallet
     return unless wallet
 
     wallet.blockchain_transactions.where(status: [ :pending, :processing, :sent ])

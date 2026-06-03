@@ -53,6 +53,10 @@ RSpec.describe Codex::Citation do
       cit = create(:codex_citation, node: node, created_by_user: user, citable_type: "Tree", citable_id: 42)
       expect(described_class.where(citable_type: "Tree", citable_id: 42)).to include(cit)
     end
+
+    it "returns none for an untyped target (anonymous class → nil polymorphic type)" do
+      expect(described_class.for_target(Class.new.new)).to be_empty
+    end
   end
 
   describe ".bulk_for (Phase 6)" do
@@ -70,6 +74,10 @@ RSpec.describe Codex::Citation do
     it "returns an empty hash for blank input" do
       expect(described_class.bulk_for(nil)).to eq({})
       expect(described_class.bulk_for([])).to eq({})
+    end
+
+    it "skips untyped targets (anonymous class → nil polymorphic type)" do
+      expect(described_class.bulk_for([ Class.new.new ])).to eq({})
     end
   end
 

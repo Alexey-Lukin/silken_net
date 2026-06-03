@@ -64,8 +64,10 @@ class InsurancePayoutWorker
     # загартованому BlockchainMintingService для підпису та відправки в Polygon.
     # [ETHERISC DIP]: Якщо страховка прив'язана до Etherisc policy, система
     # працює як Oracle — тригерить зовнішній USDC payout замість внутрішнього мінтингу.
-    # [P1 FIX]: При recovery — знаходимо orphaned pending TX якщо insurance вже :paid
-    tx ||= insurance.blockchain_transaction if insurance.status_paid?
+    # [P1 FIX]: при recovery insurance вже :paid → підхоплюємо orphaned pending TX.
+    # (`if status_paid?` прибрано — AASM має лише triggered→paid, тож після transaction-блоку
+    # статус ЗАВЖДИ :paid; умова була завжди-true → мертва гілка.)
+    tx ||= insurance.blockchain_transaction
 
     if tx
       broadcast_insurance_update(insurance, tx)

@@ -379,6 +379,26 @@ end
       result = service.send(:identifier_for, tx)
       expect(result).to eq("ORG_#{wallet.organization_id}")
     end
+
+    it "returns bare ORG_ for carbon_coin when the tx has no wallet at all" do
+      tx = create(:tree).wallet.blockchain_transactions.create!(
+        amount: 100, token_type: :carbon_coin, status: :pending,
+        to_address: "0x" + "b" * 40, locked_points: 1000
+      )
+      allow(tx).to receive(:wallet).and_return(nil)
+
+      expect(service.send(:identifier_for, tx)).to eq("ORG_")
+    end
+
+    it "returns CLUSTER_GLOBAL for forest_coin when the tx has no wallet at all" do
+      tx = create(:tree).wallet.blockchain_transactions.create!(
+        amount: 100, token_type: :forest_coin, status: :pending,
+        to_address: "0x" + "b" * 40, locked_points: 1000
+      )
+      allow(tx).to receive(:wallet).and_return(nil)
+
+      expect(service.send(:identifier_for, tx)).to eq("CLUSTER_GLOBAL")
+    end
   end
 
   describe "trustless verification (guard clauses)" do

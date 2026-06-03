@@ -51,6 +51,16 @@ RSpec.describe Codex::Match, type: :model do
       expect(m).not_to be_valid
       expect(m.errors[:codex_realm_id]).to include("must match the pair realm")
     end
+
+    it "skips the pair-shape validations when a node is absent (guard early-returns)" do
+      m = build(:codex_match, realm: realm, left: left, right: right, winner_node_id: nil)
+      m.right_node = nil
+      m.right_node_id = nil
+
+      expect(m).not_to be_valid # belongs_to :right_node is required
+      expect(m.errors[:right_node_id]).not_to include("must differ from left_node_id")
+      expect(m.errors[:right_node_id]).not_to include("must share the same realm as left_node")
+    end
   end
 
   describe "scopes" do
@@ -75,6 +85,10 @@ RSpec.describe Codex::Match, type: :model do
       _other = create(:codex_match, user: user, realm: other_realm,
                                     left: other_left, right: other_right)
       expect(described_class.for_realm(realm.id).count).to eq(2)
+    end
+
+    it "for_realm without a realm_id is a no-op (blank guard → unscoped)" do
+      expect(described_class.for_realm(nil).count).to eq(described_class.count)
     end
   end
 end

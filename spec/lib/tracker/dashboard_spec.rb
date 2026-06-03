@@ -264,6 +264,33 @@ RSpec.describe Tracker::Dashboard do
     end
   end
 
+  describe "guard branches (absent / malformed canon)" do
+    it ".dangling_refs skips an item whose canon has no NN_NN prefix" do
+      items = [ described_class::Item.new(id: "X.1", canon: "not-a-doc-id") ]
+      expect(described_class.dangling_refs(items)).to be_empty
+    end
+
+    it ".section_dangling_refs skips a canon-less item and one with an unknown doc-id" do
+      items = [
+        described_class::Item.new(id: "X.2", canon: nil),
+        described_class::Item.new(id: "X.3", canon: "99_99 §3")
+      ]
+      expect(described_class.section_dangling_refs(items)).to be_empty
+    end
+
+    it ".section_home_violations skips items without canon or without a module prefix" do
+      items = [
+        described_class::Item.new(id: "X.4", canon: nil, section_modules: [ "05" ]),
+        described_class::Item.new(id: "X.5", canon: "no-module", section_modules: [ "05" ])
+      ]
+      expect(described_class.section_home_violations(items)).to be_empty
+    end
+
+    it ".inbound_ref_violations returns [] when the tracker file is absent" do
+      expect(described_class.inbound_ref_violations("/no/such/tracker/dir")).to eq([])
+    end
+  end
+
   describe ".regenerate" do
     it "rewrites the AUTO block in place from the registry" do
       require "tempfile"

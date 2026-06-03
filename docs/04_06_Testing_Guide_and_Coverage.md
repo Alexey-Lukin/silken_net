@@ -42,6 +42,7 @@
 - [B.2 Рекомендації для нових фіч](#b2-рекомендації-для-нових-фіч)
 - [B.3 Скоуп покриття та гейт](#b3-скоуп-покриття-та-гейт)
 - [B.4 Пошук і тріаж прогалин](#b4-пошук-і-тріаж-прогалин)
+- [B.5 Worked triage examples](#b5-worked-triage-examples)
 <!-- TOC:AUTO:END -->
 
 ---
@@ -362,6 +363,7 @@ it "test that status works" do
 5. **Firmware** — кожна нова функція потребує host-based test у `firmware/test/`.
 6. **Solidity** — naming: `test_` (happy), `testRevert_` (error), `testFuzz_` (fuzz).
 7. **Per-group SimpleCov tripwire** — окрім глобального гейту, `spec/spec_helper.rb` `SimpleCov.at_exit` падає, якщо line-покриття групи `Services` / `Models` / `Workers` опускається нижче порога. Глобальні та per-group пороги живуть **тільки** у `spec/spec_helper.rb` (їхній єдиний дім — точні числа тут не дублюються, [`00_06 §1`](00_06_SSOT_Documentation_Standard)). Мета — ловити випадкове видалення спек у hot path-ах. Скоуп і політику гейту описує §B.3.
+8. **Нова непокрита гілка** — спершу спитай: вона *dead* (недосяжна за інваріантом / валідацією / типом) чи *real*? **Dead → прибрати (рефактор)** краще, ніж тестувати — зменшує знаменник і прибирає cruft. Real → тест. Defensive-leave — лише з інлайн-обґрунтуванням ЧОМУ (тріаж + матриця §B.4).
 
 ---
 
@@ -372,6 +374,8 @@ it "test that status works" do
 **Що відфільтровано — і чому.** `SimpleCov` фільтрує `/spec/`, `/config/`, `/db/`, `/vendor/`, `/firmware/`, `/lib/daemons/` та **`/lib/tasks/`**. Rake-таски — це ops/SSOT-оркестрація (file I/O + `puts`-звіти + `abort`-гейти), не running-застосунок; їхня **логіка винесена** в lib-движки зі 100% покриттям (`DocsLinter`, `DocsToc`, `DocsGraph` …), а самі таски ганяються в `docs.yml`/`ssot_guard.yml`, не в unit-сюїті. Рахувати їхні незаміряні `puts`-рядки = розводнити продакшн-гейт. Той самий принцип, що й фільтр `/firmware/` (host-mock'и): міряємо там, де факт «чи працює код» справді встановлюється (One-Home, [`00_06 §2`](00_06_SSOT_Documentation_Standard)).
 
 **Зняття гейту.** `FEATURE_TEST=1` та `COVERAGE=0` повністю вимикають гейт (feature-специ міряються окремим CI-job'ом; `docs.yml` ганяє лише лінтер-специ → загальне покриття ≈0, гейт хибно впав би).
+
+> **Sweep = момент для security-лінтерів.** Gap-парсинг водить по рідко-виконуваних шляхах (guard / `&.` / regex) — там же часто сидять security-знахідки. Цей цикл закрив CodeQL-**ReDoS** у `lib/tracker/dashboard.rb` (вкладений `(?:[…]+\s*)*` з опційним роздільником → exponential backtracking), помічений саме під час coverage-sweep. Тож прогнати CodeQL / `bin/brakeman` на файлах, які чіпаєш у sweep, — дешева суміжна вигода.
 
 ---
 
@@ -390,9 +394,43 @@ cov.filter_map { |p, d|
 }.sort_by { |r| -r[0] }.first(25).each { |u, f| printf "-%3d %s\n", u, f }
 ```
 
-**Тріаж — НЕ покривати сліпо.** Для кожної непокритої гілки:
+**Тріаж — НЕ покривати сліпо. Недосяжна гілка = мертвий код → спершу спитай: рефакторити геть чи лишити (і ЧОМУ).**
 
 - **Реальна логіка** (status / empty-state / guard / error-path) → написати тест.
-- **Мертвий захисний `&.`** (receiver — обов'язковий `belongs_to`, гарантовано non-nil, або short-circuit'нутий другим операндом `&&`) → спростити `&.`→`.`; гілка зникає, тест не потрібен.
-- **Недосяжний defensive guard** (інваріант, якого клас сам не порушує; `defined?(Const)` за завжди-завантаженого модуля) → лишити; крихкий white-box-тест заради % суперечить §A.16–17. Forward-looking-гілку (ще-не-зареєстрована версія тощо) можна чесно покрити `stub_const`.
+- **Справді мертве → РЕФАКТОРИТИ гілку** (прибрати, а не «лишати заради %»):
+  - **Мертвий `&.`**: receiver short-circuit'нутий другим операндом `&&`, або літерал/константа → `&.`→`.`. ⚠️ обов'язковий `belongs_to` ≠ гарантований non-nil на READ — `dependent: :nullify` зануляє FK, і тоді `parent.child` читається nil (це захист нульованого FK, **НЕ** мертвий `&.`).
+  - **Завжди-true модифікатор-`if`**, чию умову робить істинною інваріант методу (напр. `… if x.status_paid?` після `return unless triggered || paid` + AASM, де `triggered` йде ЛИШЕ в `paid`) → прибрати надлишковий `if` (якщо це не послаблює safety-guard нижче).
+- **Не мертве, лише не-в-тесті:**
+  - **Env-conditional** `defined?(Const)`, де `Const` — dev/test-only gem (`group :development, :test`): else — це **прод-шлях** (не мертвий). Покрити `hide_const`, АБО лишити + 1 рядок чому, якщо це ламає глобальну інтеграцію гему в харнесі (напр. `Prosopite` RSpec-хуки).
+  - **Forward-looking** (ще-не-зареєстрована версія тощо) → чесно покрити `stub_const`.
+- **Defensive, що ЛИШАЄМО — обов'язково задокументувати інлайн ЧОМУ:**
+  - **Model-validation-dead**: гілка guard-ить стан, заборонений валідаціями самої моделі (`if tx.tx_hash.present?`-else, коли `:sent`-tx завжди має hash) → справжній guard — валідація; гілку лишити.
+  - **Financial-safety-defensive**: недосяжний за поточним інваріантом, але захищає від МАЙБУТНЬОЇ зміни стейт-машини (напр. мінтинг лише для `:paid`) → прибирання послабило б захист; крихкий white-box-тест заради % суперечить §A.16–17.
 - **Баг біля непокритого коду** → виправити + тест, або занести в [`00_07`](00_07_Action_Plan_Tracker).
+
+**Швидка матриця dead-vs-leave (довідник):**
+
+| Гілка | Вердикт | Чому |
+|-------|---------|------|
+| always-true умова (інваріант / AASM) | **refactor** | прибрати надлишковий `if` — behavior-preserving |
+| dead `&.` (receiver non-nil: `&&`-short-circuit / `dependent: :delete_all` / літерал) | **refactor** | `&.`→`.` |
+| exhaustive `case` implicit-else (`i%3 ∈ {0,1,2}`) | **leave** | нема чого прибирати; явний `else` = новий dead-код |
+| model-validation-dead (`if x.present?`-else, коли валідація гарантує present) | **leave** | справжній guard — валідація |
+| financial-safety-defensive (dead за інваріантом, але захищає від зміни стейт-машини) | **leave + ЧОМУ** | прибирання послабить захист |
+| env-conditional `defined?(dev/test-gem)` | **cover** (`hide_const`) / leave якщо ламає харнес | else = прод-шлях |
+| nullify-FK `parent.child` (`dependent: :nullify`) | **cover / leave** | child реально nil після видалення батька |
+
+> **Gotcha (parser vs verify).** Гап-парсер вище читає resultset лише після **повного** прогону; verify-субсети (`COVERAGE=0 bin/rspec <file>`) **перезаписують** `coverage/.resultset.json` частково → повторний парс покаже сміття. Цикл: правки → субсет-verify (швидко) → **повний** прогін перед наступним парсом.
+
+---
+
+## B.5 Worked triage examples
+
+Конкретні рішення sweep'у — як читати «недосяжне» правильно (мапінг на матрицю §B.4):
+
+- **`insurance #perform if status_paid?` → REFACTOR.** AASM має лише `triggered→paid`, тож після transaction-блоку статус завжди `:paid` → умова завжди-true; `tx ||=` сам short-circuit'ить → прибрання behavior-preserving (−1 гілка зі знаменника).
+- **`minting_rollback log.tree&.wallet` → REFACTOR.** `Tree dependent: :delete_all` видаляє логи разом із деревом → orphaned-log не існує → `tree` non-nil → `&.` мертвий. **NB:** якби стояв `:nullify` — `&.` був би real (лишити). **Завжди перевіряй `dependent:` перед тим, як назвати `&.` мертвим.**
+- **`attractor case i % 3` → LEAVE.** `i` — loop-індекс, `i % 3 ∈ {0,1,2}` завжди; implicit-else недосяжний математично. Додати явний `else` = ДОПИСАТИ dead-код заради лічильника.
+- **`insurance tx.tx_hash.present?`-else → LEAVE.** `:sent`-tx завжди має hash (валідація моделі; `update!(status: :sent, tx_hash: nil)` падає — доведено тестом, що НЕ проходить). Справжній guard — валідація, не цей `if`.
+- **`audit_log defined?(Prosopite)`-else → LEAVE некритим.** Prosopite — у `group :development, :test`, тож else — це прод-шлях (не мертвий); але `hide_const("Prosopite")` ламає глобальні Prosopite-RSpec-хуки (доведено фейлом `create`). Прод-only + не cleanly-testable → лишити з цим рядком-обґрунтуванням.
+- **`codex/citation for_target(anon)` → COVER (без стабів).** `polymorphic_type_for` повертає nil для анонімного класу (`Class.new.new` → `klass.name` nil) — чистий реальний вхід для nil-type guard.

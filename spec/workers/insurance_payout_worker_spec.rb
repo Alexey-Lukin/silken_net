@@ -310,6 +310,38 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
           expect(BlockchainConfirmationWorker).to have_received(:perform_in).with(30.seconds, fake_tx_hash)
         end
       end
+
+      context "when the associated tx is already sent (idempotency guard, §P1)" do
+        let!(:sent_tx) do
+          etherisc_insurance.update!(status: :paid, paid_at: Time.current)
+          create(:blockchain_transaction,
+                 wallet: wallet,
+                 amount: etherisc_insurance.payout_amount,
+                 token_type: :carbon_coin,
+                 to_address: organization.crypto_public_address,
+                 status: :sent,
+                 tx_hash: fake_tx_hash,
+                 notes: "Страхове відшкодування ##{etherisc_insurance.id}.")
+        end
+
+        before do
+          allow(ParametricInsurance).to receive(:includes).and_return(ParametricInsurance)
+          allow(ParametricInsurance).to receive(:find_by).with(id: etherisc_insurance.id).and_return(etherisc_insurance)
+          allow(etherisc_insurance).to receive_messages(blockchain_transaction: sent_tx, uses_etherisc?: true, cluster: cluster)
+        end
+
+        it "does not re-submit the Etherisc claim" do
+          described_class.new.perform(etherisc_insurance.id)
+
+          expect(Etherisc::ClaimService).not_to have_received(:new)
+        end
+
+        it "still enqueues confirmation for the existing tx_hash" do
+          described_class.new.perform(etherisc_insurance.id)
+
+          expect(BlockchainConfirmationWorker).to have_received(:perform_in).with(30.seconds, fake_tx_hash)
+        end
+      end
     end
   end
 end

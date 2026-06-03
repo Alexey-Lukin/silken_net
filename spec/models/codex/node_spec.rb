@@ -85,6 +85,18 @@ RSpec.describe Codex::Node do
       expect(described_class.for_realm(eco_realm)).to contain_exactly(thriving, extinct)
     end
 
+    it ".for_realm with nil returns all (case when-nil branch)" do
+      expect(described_class.for_realm(nil).count).to eq(described_class.count)
+    end
+
+    it ".for_realm with a blank slug returns all (slug.blank? guard)" do
+      expect(described_class.for_realm("").count).to eq(described_class.count)
+    end
+
+    it ".for_realm with an unsupported argument type returns none (case else)" do
+      expect(described_class.for_realm(42)).to be_empty
+    end
+
     it ".by_lifecycle filters by status string" do
       expect(described_class.by_lifecycle("thriving")).to include(thriving)
       expect(described_class.by_lifecycle("thriving")).not_to include(extinct)

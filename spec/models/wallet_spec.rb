@@ -225,6 +225,15 @@ RSpec.describe Wallet, type: :model do
       }.to raise_error(RuntimeError, /Недостатньо доступних коштів для Toucan Bridge/)
     end
 
+    it "raises when neither the wallet nor its organization has a crypto address" do
+      addressless = create(:wallet, crypto_public_address: nil, organization: nil)
+      addressless.update!(balance: 5000)
+
+      expect {
+        addressless.lock_for_toucan_bridge!(100)
+      }.to raise_error(RuntimeError, /Відсутня крипто-адреса для Toucan Bridge/)
+    end
+
     it "raises when no crypto address is available" do
       wallet.update!(crypto_public_address: nil)
       organization.update_column(:crypto_public_address, nil)
