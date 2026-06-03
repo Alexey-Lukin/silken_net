@@ -1,96 +1,64 @@
 ---
 name: codex
-description: "Skill for the Codex area of silken_net. 99 symbols across 40 files."
+description: "Use when working on the Codex Lore Layer of silken_net (app/**/codex/**, codex_* tables) — the gamified read-only narrative layer over telemetry (Realms/Nodes/Citations, Battle Arena Elo, Discovery, Fractions). Routes to the canon docs and the load-bearing ADR invariants."
 ---
 
-# Codex
+# Codex (Lore Layer)
 
-99 symbols | 40 files | Cohesion: 79%
+Read-only наративний шар над операційною телеметрією (Tree → Cluster → Alert →
+Wallet): архетипи (Realms × Nodes), поліморфні `Codex::Citation`, Battle Arena
+(Elo), Discovery, Fractions. Гейміфікація, що **ніколи не торкається гарячого
+шляху телеметрії дерева**.
 
-## When to Use
+## Канон — читати ПЕРЕД зміною `codex_*`
 
-- Working with code in `app/`
-- Understanding how create, destroy, render_validation work
-- Modifying codex-related functionality
+SSOT One-Home: цей skill лише **маршрутизує**; факти живуть у `docs/`. Не дублюй
+сюди значення/сигнатури і **не хардкодь `file:line`** — воно дрейфує (стале вже за
+комітом). Посилайся на стабільні якорі: канон-§ + імена символів.
 
-## Key Files
+| Що треба | Канон-дім |
+|---|---|
+| **Чому** так — філософія + 10 ADR (CDX-1…10) | `docs/04_05_Codex_Lore_Module.md` ← read-first |
+| Моделі / таблиці / enum / партиціювання | `04_01 §7b` |
+| Сервіси / воркери / призначення черг | `04_02 §10b` (+ DOC-R.10/DOC-R.11) |
+| REST `/api/v1/codex/*` | `04_03 §4` |
+| Phlex-компоненти / токени / Turbo-ActionCable | `04_04 §6.4`, §8.1 |
+| Seed-корпус (4 Realm + Node) | `db/seeds/codex/` (`realms.yml` · `discovery_rules.yml` · `nodes/`) |
 
-| File | Symbols |
-|------|---------|
-| `app/services/codex/pair_selector_service.rb` | call, pick_anchor, pick_opponent, sign_pair, store_seed (+2) |
-| `app/controllers/api/v1/codex/citations_controller.rb` | destroy, broadcast_citation_removed, create, resolve_target!, cache_idempotent_response (+1) |
-| `app/views/components/codex/node_card.rb` | render_cover, glyph_for_realm, view_template, render_realm_pill, render_lifecycle_badge (+1) |
-| `app/services/codex/fraction_change_service.rb` | call, invalid, cooldown_blocked, enqueue_audit, enqueue_discovery_probe |
-| `app/services/codex/presence_tracker.rb` | touch, leave, observers_for_tree, observed?, key_for |
-| `app/controllers/api/v1/codex/attunements_controller.rb` | create, destroy, render_validation, enqueue_discovery_probe |
-| `app/services/codex/vote_recorder_service.rb` | call, resolve_winner, compute_deltas, failure |
-| `app/controllers/api/v1/codex/leaderboard_controller.rb` | index, resolve_realm, clamp_limit, serialize |
-| `app/views/components/codex/show.rb` | view_template, render_hero, render_lore_columns, render_meta_panel |
-| `app/workers/codex/elo_recompute_worker.rb` | perform, bump, probe_for_match_milestone |
+## Несучі інваріанти (ADR — `04_05 §2`)
 
-## Entry Points
+Будь-хто, хто чіпає `codex_*`, МУСИТЬ це знати:
 
-Start here when exploring this area:
+- **Hot-path-free (ADR-CDX-4):** жоден Codex-воркер не в `uplink/alerts/critical/downlink/web3_critical`; лише `default`/`low`. Гейміфікація не голодує телеметрію.
+- **Realms = дані, не код (ADR-CDX-2):** 5-й Realm — DAO INSERT, не деплой. Без STI.
+- **Discovery fail-open (ADR-CDX-7):** збій enqueue probe НЕ відкочує user-facing операцію. Presence-gated (Redis TTL 10 хв) → O(active_users), не O(all_users).
+- **Markdown-санітизація (ADR-CDX-5):** через `Codex::MarkdownRenderer` allow-list; сирий HTML ніколи в DOM.
+- **Citation allow-list (ADR-CDX-9):** `citable_type` лише через `CITABLE_CLASS_MAP` — без `constantize` з params (object-injection guard).
+- **Stimulus-мінімалізм (ADR-CDX-8):** рівно 2 контролери (`codex--reveal`, `codex--comment`); решта — Turbo Stream broadcast / нативний `data-turbo-confirm`.
+- **N+1:** citation-strip завжди через `Codex::Citation.bulk_for(targets)`.
+- **Партиціювання (ADR-CDX-6):** лише `codex_matches` (RANGE/місяць, write-heavy); `codex_nodes` ~10K → без партицій.
+- **bigint PK + `codex_uid` (ADR-CDX-1):** `CDX-XXX-####` — людино-читабельний, НЕ PK.
+- **Двомовність без гему (ADR-CDX-3):** `*_uk` / `*_en` нативні колонки.
+- **Sidekiq Pro shim OK (ADR-CDX-10):** усі 4 воркери fire-and-forget → Codex не залежить від `on(:success)` Batch і мерджиться незалежно від Pro-hardening (`04_02` DOC-R.10). Перша фіча, що це зламає — multi-step Battle settlement.
 
-- **`create`** (Method) — `app/controllers/api/v1/codex/attunements_controller.rb:14`
-- **`destroy`** (Method) — `app/controllers/api/v1/codex/attunements_controller.rb:41`
-- **`render_validation`** (Method) — `app/controllers/api/v1/codex/attunements_controller.rb:68`
-- **`enqueue_discovery_probe`** (Method) — `app/controllers/api/v1/codex/attunements_controller.rb:77`
-- **`simulate`** (Method) — `app/controllers/api/v1/oracle_visions_controller.rb:54`
+## Карта коду
 
-## Key Symbols
+| Шар | Шлях |
+|---|---|
+| Namespace + моделі | `app/models/codex.rb` · `app/models/codex/` (Realm, Node, Citation, Comment, Attunement, Fraction, Match, Discovery, DiscoveryRule) |
+| Контролери | `app/controllers/api/v1/codex/` (+ `admin/`) |
+| Сервіси | `app/services/codex/` (DiscoveryEngine, EloMath, PairSelector, VoteRecorder, FractionChange, PresenceTracker, MarkdownRenderer, NodeImport, DiscoveryRuleImport) |
+| Воркери | `app/workers/codex/` (AttunementBroadcast, DiscoveryProbe, EloRecompute, FractionAudit) |
+| Phlex | `app/views/components/codex/` |
+| Policies (Pundit) | `app/policies/codex/` |
+| Blueprints | `app/blueprints/codex/` |
+| Stimulus | `app/javascript/controllers/codex/` (reveal, comment) |
+| Seeds / rake | `db/seeds/codex/` · `lib/tasks/codex.rake` |
 
-| Symbol | Type | File | Line |
-|--------|------|------|------|
-| `create` | Method | `app/controllers/api/v1/codex/attunements_controller.rb` | 14 |
-| `destroy` | Method | `app/controllers/api/v1/codex/attunements_controller.rb` | 41 |
-| `render_validation` | Method | `app/controllers/api/v1/codex/attunements_controller.rb` | 68 |
-| `enqueue_discovery_probe` | Method | `app/controllers/api/v1/codex/attunements_controller.rb` | 77 |
-| `simulate` | Method | `app/controllers/api/v1/oracle_visions_controller.rb` | 54 |
-| `perform` | Method | `app/workers/codex/elo_recompute_worker.rb` | 21 |
-| `bump` | Method | `app/workers/codex/elo_recompute_worker.rb` | 32 |
-| `probe_for_match_milestone` | Method | `app/workers/codex/elo_recompute_worker.rb` | 51 |
-| `perform_async` | Method | `spec/requests/api/v1/oracle_visions_controller_spec.rb` | 138 |
-| `destroy` | Method | `app/controllers/api/v1/codex/citations_controller.rb` | 61 |
-| `broadcast_citation_removed` | Method | `app/controllers/api/v1/codex/citations_controller.rb` | 157 |
-| `create` | Method | `app/controllers/api/v1/codex/comments_controller.rb` | 14 |
-| `cache_idempotent_response` | Method | `app/controllers/api/v1/codex/comments_controller.rb` | 71 |
-| `broadcast_comment` | Method | `app/controllers/api/v1/codex/comments_controller.rb` | 79 |
-| `perform` | Method | `app/workers/codex/attunement_broadcast_worker.rb` | 19 |
-| `perform` | Method | `app/workers/codex/discovery_probe_worker.rb` | 29 |
-| `create_discovery!` | Method | `app/workers/codex/discovery_probe_worker.rb` | 48 |
-| `broadcast` | Method | `app/workers/codex/discovery_probe_worker.rb` | 70 |
-| `show` | Method | `app/controllers/api/v1/codex/nodes_controller.rb` | 47 |
-| `chronicle` | Method | `app/controllers/api/v1/trees_controller.rb` | 72 |
+## Робочі правила
 
-## Execution Flows
-
-| Flow | Type | Steps |
-|------|------|-------|
-| `Index → Inline` | cross_community | 6 |
-| `Chronicle → Inline` | cross_community | 6 |
-| `View_template → Cache_key_for` | cross_community | 6 |
-| `View_template → Typed_value` | cross_community | 6 |
-| `View_template → Inline` | cross_community | 6 |
-| `View_template → Map` | cross_community | 6 |
-| `Index → Map` | cross_community | 5 |
-| `Chronicle → Map` | cross_community | 5 |
-| `View_template → Inline` | cross_community | 5 |
-| `View_template → Map` | cross_community | 5 |
-
-## Connected Areas
-
-| Area | Connections |
-|------|-------------|
-| Previews | 9 calls |
-| Maintenance | 7 calls |
-| Models | 6 calls |
-| V1 | 4 calls |
-| Fractions | 3 calls |
-| Citations | 1 calls |
-
-## How to Explore
-
-1. `gitnexus_context({name: "create"})` — see callers and callees
-2. `gitnexus_query({query: "codex"})` — find related execution flows
-3. Read key files listed above for implementation details
+1. **Docs-first.** Прочитай `04_05` (саме *чому*) перед зміною схеми чи призначення черги — ADR несучі.
+2. **Торкаєш код → онови його канон-дім** (`04_01`–`04_04`), НЕ `04_05`. `04_05` тримає лише філософію + ADR; **нова несуча зміна → новий `ADR-CDX-N`** там, не прозовий патч у тілі.
+3. **GitNexus impact перед редагуванням символу** (правило CLAUDE.md). Дослідження: `gitnexus_query({query: "codex"})` → flow'и; `gitnexus_context({name: "<Symbol>"})` → caller/callee. Це дає актуальні локації — на відміну від хардкодженого `file:line`.
+4. **Новий сервіс/воркер/компонент** → онови покриття `04_06` + відповідний `04_0x`-дім.
+5. SSOT-правки веди скілом `ssot-maintenance` (гейти `docs:check_refs` + `tracker:check`).
