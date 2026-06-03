@@ -54,12 +54,13 @@
 
 **Перед Web3 mainnet:**
 - `S1.1` **P0** — GitHub Secrets (`DATABASE_PASSWORD`, `GCP_SA_KEY`, `SSH_PRIVATE_KEY`, …)
-- `E.45`/`S3.5` **P0** — реальна адреса SCC/SFC у `subgraph.yaml`
+- `S3.5` **P1** — реальна SCC/SFC адреса у `subgraph.yaml` (zero-addr guard ✅ E.45; gated: post contract-deploy)
 - `E.47` **P0** — `SOLANA_RPC_URL` mainnet (інакше Devnet за замовчуванням)
 - `INF.4`+`INF.6` **P1** — TLS termination + CoAP Proxy verification (Akash ingress)
 - `S2.1`+`S2.2`+`S2.3` **P0** (ops) — Grafana Cloud dashboards & alerts після першого `/metrics`
 
 **Hardware TRL 4→6 (лаб/підрядники):**
+- `HW.31` **P0** — Queen antenna split (868 LoRa tuned ≠ dual-band); блокує BOM Королеви
 - `HW.24` **P0** — staged validation gate (SLA→Ti-coin→full anchor); блокує 100 шт DMLS
 - `HW.23` **P0** — HIP postprocess spec для SLM anode; блокує перший SLM-замовлення
 - `HW.22` **P1** — sterilization protocol (no EtO); блокує Stage 4 польові
@@ -434,6 +435,10 @@
 - [ ] 👤 **Interrupt-storm mitigation** (нот.5): амплітудний поріг — hardware comparator/RC АБО software fast-amplitude gate, щоб вітер/дощ/гойдання гілок НЕ будили повний аудіо-цикл → drain-захист 0.47 F supercap (поточно лише `BAT54S` voltage-clamp, без порогу; `03_03 §1.2`)
 - [ ] 👤 Lifecycle test: Sil-Pad creep під 30-40% compression × 20 років (Arrhenius accelerated)
 
+#### HW.31 — Queen Antenna Split (868 LoRa tuned ≠ dual-band)
+- **P0** · 👤 · → `02_05 §7`
+- ✅ Рознесено в каноні: поз.11 wideband LTE-M/NB-IoT (700–2700 МГц, Kyivstar B1/B3/B7/B8/B20, опц. LTE+GNSS combo) · поз.12 LoRa 868 **tuned** 5 dBi fiberglass omni (OD8-868/ALL.4101) — окремі RF-порти SX1262 vs SIM7070G; dual-band SMA відхилено (VSWR>2.5 @868 → −3-5 дБ EIRP). · [ ] 👤 freeze поз.11/12 у BOM Королеви при 02_05 BOM freeze
+
 ## §03 · Firmware
 
 #### FW.1 — Hardcoded AES-256 Key
@@ -589,12 +594,20 @@
 - ✅ `Dclimate::VerificationService` (NASA FIRMS, FRP≥10MW, cloud fallback). · [ ] 👤 верифікувати з реальним API key у staging + e2e `DclimateVerificationWorker`
 
 #### S3.5 — Subgraph contract address
-- **P2** · 👤 · → `05_03`
-- SFC events (ForestMinted, GovernanceSlashed) у subgraph; адреса = placeholder. · [ ] 👤 замінити `0x0000…` на реальну SFC-адресу у `subgraph.yaml` (після контракт-деплою)
+- **P1** · 👤 · → `05_03`
+- SFC events (ForestMinted, GovernanceSlashed) у subgraph; адреса = placeholder. Zero-address fail-fast guard `subgraph/validate_addresses.sh` ✅ (раніше E.45). · [ ] 👤 замінити `0x0000…` на реальну SFC-адресу у `subgraph.yaml` (після контракт-деплою)
 
 #### BIZ.13 — Slashing principal-agent: investor capital vs operator-bond
 - **P2** · 👤+🤖 · → `05_05 §3.1`, `05_03 §Slashing`, `04_02 §1.2`
 - Кат-A slash зрізає інвесторський `locked_balance`, хоча недбалість — провина оператора (principal-agent). ✅ decision memo → рекомендація **hybrid operator-bond**. · [ ] 👤 DAO confirm: hybrid vs investor-slash vs pure operator-bond · [ ] 🤖 якщо operator-bond — `OperatorBond` + `ProtocolParameters` + контракт + синх `05_05 §3`/`05_03`/`04_02`
+
+#### E.60 — Merkle CID-witness: Polygon ↔ Filecoin integrity bridge
+- **P1** · 🤖 · → `05_02 §E.60`
+- `archive_cid` детерміністично з batch payload (`Filecoin::CidGenerator.cidv1`) на кроці IoTeX W3bstream → у ZK-witness; Polygon `mint()` отримує як `bytes32`; `FilecoinArchiveWorker` fail-fast при CID-mismatch → `manual_review`. Закриває ex-post archive-swap gap (pin ішов після mint). Канон `05_02 §E.60` (design-пропозиція, ще не в коді). · [ ] 🤖 новий `Filecoin::CidGenerator` + worker CID-guard
+
+#### E.61 — Solana micro-rewards batch payouts (economic correctness)
+- **P1** · 🤖 · → `05_01 §1`, `04_02 §Solana`
+- Per-event Solana tx (~0.0007 USD gas) зрівнюється з винагородою при низьких growth_points. Акумуляція у Kredis (`solana_pending_payouts:<wallet_id>`) до `SOLANA_BATCH_THRESHOLD_USDC` (0.10–1.00) → один `transferChecked` ATA→ATA; cron `SolanaBatchPayoutWorker` (1h). Backward-compat threshold=0 → per-event. Канон-rationale `05_01 §1` (⚠️ Scale, нот.4). · [ ] 🤖 `SolanaBatchPayoutWorker` + Kredis accumulation + ENV
 
 ## §06 · Deploy / Observability / Secrets / Ops
 
@@ -660,6 +673,14 @@
 - **P1** · 👤 · → `06_06`
 - ✅ DR-постуру задокументовано (`06_06`): Cloud SQL PITR + REGIONAL HA + 30×daily + restore-runbook'и + RTO/RPO. · [ ] 👤 quarterly DR-drill (PITR-clone + TF-state rollback на staging, зафіксувати факт. RTO/RPO vs цілі) · [ ] 👤 master-ключі (`RAILS_MASTER_KEY`/`PROVISIONING_MASTER_KEY`) → vault + offline-копія (незамінні, поза backup)
 
+#### ARCH.35 — Queen Flash Ring Buffer (W25Q32 overflow tier)
+- **P1** · 🔗 · → `06_08 §1.2`, `02_05 §2.1`
+- CIFO 50-slot RAM cache переповнюється ~30 хв @100 Soldiers/Queen → SPI NOR W25Q32JV (4 МБ, ~$0.50, SOIC-8) як overflow tier; sector-based ring (~199k слотів ≈ 7 діб); pointers RTC DR20-21; drain Flash-first→RAM. Implementation Anchor resilience-policy на верхньому краю scaling. · [ ] 🔗 firmware ring-buffer + W25Q32 у Queen BOM (`02_05 §2.1`/§BOM)
+
+#### ARCH.34 — Queen-side LoRaWAN Helium SOS fallback
+- **P2** · 🔗 · → `06_08 §1.2`, `02_05 §6.1`
+- Helium fallback перенесено Soldier→Queen (STM32WLE5JC flash/RAM/topology несумісний). Queen: LoRaMac-node stack + OTAA join state + FCntUp persist; SOS-маяк ~12 байт (НЕ телеметрія кластера — SF12 EU868 ~51B cap) → Helium hotspot → LNS → Rails `POST /telemetry/helium`. Soldier лишається raw LoRa P2P AES-128. Implementation Anchor L3; без нього L3 fallback архітектурно неможливий. · [ ] 🔗 Queen `queen_helium_lorawan_uplink()`
+
 ## §07 · Юридичні / Бізнес
 
 > Юридично-бізнесовий work-stream — канон `07_xx`. NB: пов'язані BIZ-айтеми за канон-домом живуть у `§05` (BIZ.13 slashing) та `§08` (BIZ.5/10 IP, BIZ.12 Horizon-biodiv).
@@ -678,11 +699,11 @@
 
 #### BIZ.6 — Supply chain war-zone risk mitigation
 - **P1** · 👤 · → `07_02 §8.1.1`
-- ✅ Contingency Plan EU Backup DMLS Hubs (4 кандидати; triggers; +~20% payback) — UA-підрядники у зоні бойових дій. · [ ] 👤 отримати quotes для порівняння (→ OPS.5/BIZ.8)
+- ✅ Contingency Plan EU Backup DMLS Hubs (4 кандидати; triggers; +~20% payback) — UA-підрядники у зоні бойових дій. · [ ] 👤 отримати quotes для порівняння (→ BIZ.8)
 
-#### BIZ.8 — EU DMLS Frame Agreement (extension of BIZ.6)
+#### BIZ.8 — EU DMLS quotes → Frame Agreement (procurement track, extends BIZ.6)
 - **P1** · 👤 · → `07_02 §8.1.1`
-- [ ] 👤 NDA+RFQ зі 3D Lab PL → sample part order (10 шт) quality benchmark → Frame Agreement (+20% premium, 30-day activation)
+- BIZ.6 ✅ ідентифікував 4 EU кандидати (3D Lab PL, Materialise BE, Sauber/Lithoz, TRUMPF). · [ ] 👤 quotes у 3D Lab PL + Materialise BE → порівняльна таблиця (раніше OPS.5) · [ ] 👤 NDA+RFQ зі 3D Lab PL → sample part order (10 шт) quality benchmark → Frame Agreement (+20% premium, 30-day activation)
 
 #### BIZ.9 — Незалежний carbon credit методолог (Verra/Gold Standard)
 - **P2** · 👤 · → `07_01 §3`, `07_02 §7.3`
@@ -699,10 +720,6 @@
 #### BIZ.15 — B2B Fiat-to-Retirement SPV (corporate carbon on-ramp)
 - **P2** · 👤 · → `07_01 §8`
 - Корпорації з ESG-зобов'язаннями не триматимуть крипту/ключі заради ретайрменту — потрібен SPV-міст: фіат → SPV купує+ретайрить SCC → сертифікат офсету (CBAM/ISO 14064). Поточний `KlimaRetirementWorker` припускає, що клієнт уже on-chain власник SCC (нот.19). · [ ] 👤 юрисдикція SPV + ліцензія на вуглецеві активи + кастодіан крипти (СЄУ Аблязов Д., RWA/MiCA — `08_02 §5`) · [ ] 👤 бухгалтерська класифікація + сертифікат-флоу (СЄУ Ус Г.)
-
-#### OPS.5 — EU DMLS quotes від 2-3 backup підрядників
-- **P1** · 👤 · → `07_02 §8.1.1`
-- BIZ.6 ✅ ідентифікував 4 EU кандидати (3D Lab PL, Materialise BE, Sauber/Lithoz, TRUMPF). · [ ] 👤 quotes у 3D Lab PL + Materialise BE → порівняльна таблиця → LoI/Frame Agreement з top vendor
 
 ## §08 · Академічна інтеграція + External Stakeholders
 
@@ -848,6 +865,7 @@
 | DOC-T.10 | Реструктуризація 05/07 (Фаза 3) — відкладені misplacement-рішення: `07_01 §11` Investor Q&A (pitch/diligence — дім 00_01 vs новий pitch-doc неоднозначний); `07_03 §5` Anchor Assembly + `§6` Virtual Prototyping (operational/field-ops дім, наразі grant-bootstrap контекст — не чистий misplacement) | `07_01`, `07_03` | Призначити operational/pitch-дім + перенести (рішення founder) | 🟡 Deferred |
 | DOC-T.11 | Реструктуризація 05/07 (Фази 1-2, 2026-05-30): slashing `00_01 §6` → `05_05`; governance `05_03 §749-905` → `05_06` — нові канон-доми; cross-refs re-pointed; `00_06 §2` / `00_00` / README синхронізовано (навігація: `00_01 §6` stub + `05_03 §Governance` stub) | `05_05`, `05_06`, `00_01`, `05_03` | — (виконано) | ✅ Done |
 | DOC-T.12 | Taxonomy v3 P4 (2026-05-30): дисолюція Module 08 (7→3 доки). `08_03 Joint Pubs/IP`→**`08_01`**; `08_02 Cyber/Math`+`08_01 University`+`08_04-07`→**new `08_02` Academic Institutions Registry** (5 ВНЗ — relationship-шар; інженерна субстанція реферить Tier I 01–06, zero-loss verified); `07_05 External`→**`08_03`**. ~260 inbound refs swept; genuinely-novel mesh-математика → Open Research `06_08` (percolation/Markov). `00_00`/README/CLAUDE/`ssot-maintenance` skill синхронізовано | `08_01`, `08_02`, `08_03`, `06_08` | — (виконано) | ✅ Done |
+| DOC-T.14 | **03_01 ↔ 03_02 semantic overlap** (виявлено `content_dup_audit.rb --near`, ≥88%): Queen RAM-budget, host-test-coverage матриця, per-channel AES-таблиця й CoAP-константи дубльовані в обох firmware-доках (03_01 = Soldier+Queen overview, 03_02 = Queen deep-dive). Не value-drift (лінтери мовчать) — структурний дубль. AES per-channel home вже = `03_05 §3.7`; firmware test-matrix home-кандидат = `04_06` | `03_01`, `03_02`, `03_05 §3.7`, `04_06` | One-Home: Queen-деталі → 03_02 (дім), AES → ref `03_05 §3.7`, test-matrix → ref `04_06`; 03_01 лишає thin Queen-overview + ref. Migrate-first | 🟡 Deferred (рішення founder: overview-vs-deepdive поділ навмисний? якщо так — лишити, але AES-таблицю звести до ref) |
 
 #### DOC-T.2 — Canon↔canon de-dup (SSOT single-home) [#4, 2026-05-29]
 - **P2** · 🤖 · → `00_00`
@@ -903,7 +921,6 @@
 | E.40 | **Ignion Virtual Antenna™:** NN02-310 як альтернатива Yageo/Taoglas 868 МГц | `02_01` §5 | Evaluation kit + VSWR тест |
 | DIFF.1 | `Wallet#lock_and_mint!` threshold = runtime param (не hardcoded) | `04_02` | Informational, no action |
 | E.41 | **Fire events delayed 48h** via dClimate satellite obscuration — **⚠️ life-safety risk**. Mitigation: Forester Guild as Fallback Oracle (E.20) + immediate local broadcast via panic TX (не чекати satellite clearance при chainsaw detection). **Пріоритет: P1** (не відкладати на Post-TRL 6) | `04_02`, `05_01` | P1: interim emergency fallback |
-| ✅ E.45 | **SCC/SFC contract addresses** = `0x0000...0` в subgraph.yaml — блокує deploy subgraph на testnet/mainnet. **Статус (2026-05-17):** додано `subgraph/validate_addresses.sh` — fail-fast скрипт, який перевіряє відсутність нульових адрес перед `graph deploy`. Запускати: `./subgraph/validate_addresses.sh && graph deploy`. Адреси залишаються `0x0000...0` до деплою контрактів через Foundry (instructed в subgraph.yaml comments). | `05_03` | ✅ Guard-скрипт додано; адреси = placeholder до контрактного деплою (S3.5) |
 | E.48 | **The Graph subgraph на testnet `polygon-amoy`** — потребує mainnet deploy перед production | `05_01` | Post mainnet deploy |
 | E.50 | **Edge fuzzy_distance dedup function** на STM32WLE5JC: <1 мс CPU, <128 байт RAM, ціль — 30-40% TX зниження за рахунок suppression near-duplicate пакетів | `08_02` §1.3 (Vector 1, Ярмілко) | Post-TRL 7 (R&D — Ярмілко) |
 | E.51 | **Monte Carlo TTL-flood симуляція** для обґрунтування `PANIC_TTL=5` та `DEFAULT_TTL=3`: цільовий P_delivery ≥ 0.99 при 20-30% одночасних відмов вузлів. Виходи: math-обґрунтування для seed deck | `08_02` §1.2 (Vector 2) | Post-TRL 6 (Порубльов, ЧНУ) |
@@ -913,14 +930,7 @@
 | E.55 | **Multi-party NDA + IP framework** для 5-сторонньої академічної співпраці (ChNU + ChDTU + ChIPB + ChMA + СЄУ + Silken Net) — base-line для всіх UNI.x публікацій | `08_03`, `08_02 §3`, `08_02 §4`, `08_02 §5` | P1, cross-ref BIZ.10 |
 | E.56 | **DSP preprocessing для TinyML** — невідомо чи модель очікує raw time-domain чи MFCC. Якщо MFCC → +5-15 KB Flash + 40 µs CPU (CMSIS-DSP) | `03_03` BLOCKER-5 | P1, cross-ref FW.25 |
 | E.57 | **TENSOR_ARENA_SIZE budget verification** — ніколи не виміряно через `arm-none-eabi-size`. Ризик stack overflow якщо > 46 KB | `03_03` BLOCKER-3 | P1, cross-ref FW.26 |
-| ✅ E.58 | **Lorenz state continuity** — RESOLVED (2026-06-03, verified vs firmware). Формалізація вже була повна: RTC layout [DOC.3] (`03_01 §2` + §2.1 magic markers, вкл. `LZST`=`0x4C5A5354` → DR19 guard для DR16-18 x/y/z); first-boot vs continuation (`03_01 §2`-note + `03_04 §2.1`: `DR19==LZST && isfinite`→continuation, інакше cold-start від K_seed) — **байт-точно до boot-логіки `firmware/soldier/main.c`**. Цього pass'у: звів DR15 free-vs-reserved drift у `03_01 §2` (DR15 → FW.2 freeze-contract; 4 prose + 6 firmware-коментарів). `[DOC.4]` колізію вирішено (first-boot блок роз-тегнуто; `[DOC.4]` тепер однозначно = Downlink Opcode Map) → DOC-namespace нотатка вище | `03_01 §2`, `03_04 §2.1` | ✅ deliverables існували; verified + DR15 swept + DOC.4 розведено |
 | 🌿 E.59 | **Mongabay biodiversity pivot — acoustic D-MRV** — стратегічний pivot Silken Net від карбонового MRV до повноцінного D-MRV біорізноманіття після Delgado et al. (Nicoya Peninsula, 119 ділянок, 16 000 год аудіо; *Mongabay News*, травень 2026). Включає: (1) FW.4-EXT 5-class TinyML модель з класом `fauna_activity`; (2) FW.25 DSP MFCC з P1→P0; (3) UNI.11+UNI.13a Cherkasy Soundscape Library (ЧДТУ ПМКТ + ЧНУ Біо-хаб); (4) 08_02 §1 Macro-Micro verification (Бушин CNN + fauna feature); (5) 08_02 §1 NSGA-II multi-objective GA (Любченко); (6) 08_01 Стаття 24a co-authored Q1 publication; (7) Horizon Europe CLUSTER 6 (Biodiversity Monitoring) grant vector; (8) AiInsight#biodiversity_trend → ForestNFT metadata "biodiversity_score"; (9) ринкова диференціація — defensible moat проти Pachama/Sylvera/NCX (тільки Silken Net має micro-acoustic verification layer) | `03_03` §10 + `08_01` §1.3+§2 + `08_02` §1.5+§1.8 + `08_01` Стаття 24a | **P1 strategic** — координує FW.4-EXT, FW.25, UNI.11, UNI.13a |
-| E.60 | **CID witness у IoTeX ZK-proof** — bidirectional integrity bridge Polygon ↔ Filecoin. Раніше Filecoin pin (крок #11) йшов **після** мінту Polygon (крок #8), створюючи gap: зловмисник міг ex-post підмінити archive у Pinata. Виправлення: `archive_cid_preimage` детерміністично обчислюється з batch payload через `Filecoin::CidGenerator.cidv1()` ще на кроці #5 (IoTeX W3bstream) і включається у ZK-witness. Polygon `mint()` отримує `archive_cid` як `bytes32` metadata. `FilecoinArchiveWorker` fail-fast якщо Pinata-CID не збігається з очікуваним → `manual_review`. | `05_02 §E.60` | P1, новий `Filecoin::CidGenerator` service |
-| E.61 | **Solana micro-rewards batch payouts** — поточний `SolanaMicroRewardWorker` робить окрему транзакцію на кожен fulfilled telemetry (10,000 + growth_points*100 lamports = 0.01–0.016 USDC), де gas-fee на одну Solana tx (~0.000005 SOL ≈ 0.0007 USD) може зрівнятись із самою винагородою при низьких growth_points. Рішення: акумулювати fulfilled-винагороди в Kredis (`solana_pending_payouts:<wallet_id>`) до досягнення порогу 0.10–1.00 USDC (`SOLANA_BATCH_THRESHOLD_USDC` ENV), потім один `transferChecked()` ATA → ATA batch. Cron `SolanaBatchPayoutWorker` (every 1h) дренує накопичені. Backward-compat: при `SOLANA_BATCH_THRESHOLD_USDC=0` — поведінка як зараз (per-event). | `04_02 §Solana` + `05_01` | P1, economic correctness fix |
-| ARCH.34 | **Queen-side LoRaWAN Helium Fallback** — переніс Helium fallback з Soldier (фундаментально несумісно з flash/RAM/topology STM32WLE5JC) на Queen. Queen інтегрує LoRaMac-node (Semtech BSD-3) stack + персистентний OTAA join state (DevEUI/AppEUI/AppKey у Queen Flash) + FCntUp counter survive reboot. Aggregated lambda-summary 11 байт (ARCH.22) пакується у LoRaWAN frame і доставляється через будь-який Helium hotspot у радіусі ~15 км → Helium LNS → HTTP Integration webhook → Rails `POST /api/v1/telemetry/helium`. Активація: own Starlink/LTE-M down + Q2Q backhaul недоступний + buffer fill > 50%. Soldier-side `helium_compat_emit()` (попередній план) **відкинуто**. | `06_08 §1.2 L3` + `02_05 §6.1` | P2, blocker для повної resilience policy (без нього L3 fallback архітектурно неможливий) |
-| ARCH.35 | **Queen Flash Ring Buffer (W25Q32 overflow tier)** — поточний CIFO 50-slot RAM cache переповнюється за ~30 хв при 100 Soldiers/Queen × 1 пакет/год (на 200 Soldiers/Queen — за 15 хв). Додати SPI NOR Flash чип Winbond W25Q32JV (~$0.50, 4 MB, SOIC-8) до Queen BOM як overflow tier. **Sector-based ring (нот.7):** NOR стирається ТІЛЬКИ цілим 4 KB сектором, тому ring обертається по секторах, не по 21-байт offset'ах — ~195 слотів×21 байт/сектор ≈ 199k слотів ≈ ~7 діб при 100 Soldiers/год; покажчики `write_sector`/`read_sector`/`slot_in_sector` у RTC DR20-DR21; erase-before-program; псевдокод [`02_05 §2.1`](02_05_Queen_Hardware_and_Starlink). Drain order: спочатку Flash (FIFO), потім RAM. Енерго-impact: одиниці mA·s/добу (page write + амортизований sector erase). | `06_08 §1.2 L1` + `02_05 §2.1` + `02_05 §BOM` | P1, blocker для resilience policy на верхньому краю scaling |
-| HW.31 | **Queen Antenna Split (REVISED 2026-05-16)** — раніше BOM Queen позиція 11 була «868/LTE-M dual-band SMA», що шкодить покриттю на 868 МГц (high VSWR на вузькому ISM). Розділено на: **поз. 11** = wideband LTE-M/NB-IoT cellular (700-2700 МГц, покриває Kyivstar B1/B3/B7/B8/B20), опційно LTE+GNSS combo для SIM7070G PPS time sync; **поз. 12** = LoRa 868 МГц **tuned** 5 dBi fiberglass omni (Mobilemark OD8-868, Taoglas ALL.4101). Окремі RF-порти SX1262 vs SIM7070G — жодного combining. | `02_05 §7 BOM` | P0, blocked by 02_05 BOM freeze; вплив: ~5 dBi gain regain on LoRa link to Soldiers |
-| ✅ OPS.5 | **Projects V2 TRL field schema — 1-9 + SRL/MRL (СУПЕРСЕДЕД 2026-05-28)** — ~~раніше TRL розширювали до 1-12~~. **Корекція (2026-05-28, методологічна):** «TRL 10-12» нестандартні (NASA/ISO 16290 = 1-9); відкинуто. Тепер `lib/github_bootstrap.rb` має `TRL_OPTIONS = (1..9)` + нове поле **Readiness Horizon** (`READINESS_HORIZON_OPTIONS = SRL:Concept/Pilot/Deployed + MRL:8/9/10`) для Beyond-TRL-9 R&D (00_02 §1, 00_08 §1). `bin/setup_github_project.sh` — thin wrapper над `rake github:project_fields` (споживає `GithubBootstrap::FIELDS`, SSOT). 18 RSpec прикладів. 👤 **Залишилось:** перезапустити bootstrap, щоб додати поле `Readiness Horizon` на live-дошку (TRL:10-12 опцій ніхто не використовував, тож re-tag не потрібен; залишкові невживані опції 10-12 видалити вручну в UI за бажанням). | `00_05 §1.1` + `00_02 §1` + [`00_08 §1`](00_08_Beyond_TRL9_Planetary_Roadmap) + `lib/github_bootstrap.rb` | ✅ Schema у коді (2026-05-28); 👤 bootstrap-run на live-дошці |
 
 ## 📌 Backlog · Архітектурні пропозиції (довгострокові)
 
@@ -990,6 +1000,9 @@
 | S2.5 | PartitionMaintenanceWorker failure alert (counter + Sentry rescue + Grafana P0) | `06_03 §2.8` |
 | SEC.13 | peaq_did_compromised mint-skip guard + emergency revocation runbook | `06_04 §5.4` |
 | DOC-T.13 | SSOT 360 R3–R4: docs:graph ref-graph + #anchor HARD-gate + dup-guard table-rows | `00_06 §3` |
+| E.45 | SCC/SFC subgraph zero-address fail-fast guard (`subgraph/validate_addresses.sh`); real-address swap → S3.5 | `05_03` |
+| E.58 | Lorenz state continuity (RTC DR16-19 layout + first-boot/continuation; verified vs firmware; DR15 swept → FW.2) | `03_01 §2`, `03_04 §2.1` |
+| OPS.5 | Projects V2 TRL field schema (1-9 + Readiness Horizon SRL/MRL; `lib/github_bootstrap.rb`); live-board bootstrap-run → OPS.6 | `00_05 §1.1` |
 
 ---
 

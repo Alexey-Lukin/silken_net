@@ -82,7 +82,10 @@ module Tracker
     # ID token of every table row inside the §/🔀 registry sections so the caller
     # can merge them into the dup tally. Same ID shape as `parse`; header/separator
     # rows (no ID in the first cell) and **bold** wrappers are handled.
-    TABLE_ID_RE = /\A\|\s*\*{0,2}([A-Z][A-Za-z0-9]*[.\-][0-9A-Za-z.\-]+)\*{0,2}\s*\|/
+    # A leading emoji/✅ run is tolerated (`| ✅ OPS.5 |`, `| 🌿 E.59 |`) — the same
+    # blind spot that once hid `#### 🌿 UNI.13a`; without it a status-prefixed backlog
+    # row was invisible to BOTH the dup tally and inbound-ref resolution (2026-06-03).
+    TABLE_ID_RE = /\A\|\s*(?:[✅\p{So}\p{Sk}\u{FE0F}]+\s*)*\*{0,2}([A-Z][A-Za-z0-9]*[.\-][0-9A-Za-z.\-]+)\*{0,2}\s*\|/
 
     def self.table_row_ids(markdown)
       in_registry = false
@@ -113,6 +116,15 @@ module Tracker
     def self.all_item_ids(markdown)
       markdown.each_line.filter_map { |l| (l.match(ANY_ITEM_HEAD) || l.match(TABLE_ID_RE))&.captures&.first }
     end
+
+    # --- global ID uniqueness (dup-guard scope widened 2026-06-03) ---
+    # Every tracker item ID must be unique across the WHOLE file. The earlier tally
+    # spanned only the §/🔀 registry sections (parse + table_row_ids), so a 📌 Backlog
+    # or 🗄️ Архів row could silently reuse an active ID — exactly the `OPS.5` collision
+    # (`#### OPS.5` §07 ↔ `| ✅ OPS.5 |` backlog) that slipped through. Reuses
+    # `all_item_ids` (whole-file span, the same source the inbound-ref guard trusts),
+    # so "what IDs exist" has one definition. Returns the >1 tally (id => count).
+    def self.duplicate_ids(markdown) = all_item_ids(markdown).tally.select { |_, count| count > 1 }
 
     def self.inbound_ref_violations(docs_dir = DOCS_DIR)
       tracker = File.join(docs_dir, "00_07_Action_Plan_Tracker.md")

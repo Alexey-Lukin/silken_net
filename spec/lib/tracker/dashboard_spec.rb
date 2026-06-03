@@ -96,6 +96,40 @@ RSpec.describe Tracker::Dashboard do
       ids = described_class.parse(md).map(&:id) + described_class.table_row_ids(md)
       expect(ids.tally.select { |_, v| v > 1 }).to eq("DOC.12" => 2)
     end
+
+    it "extracts a first-cell ID behind a leading ✅/emoji status prefix" do
+      md = "## 🔀 Cross-cutting\n| ✅ OPS.5 | done | — | ✅ |\n| 🌿 E.59 | finding | — | 🌿 |\n"
+      expect(described_class.table_row_ids(md)).to contain_exactly("OPS.5", "E.59")
+    end
+  end
+
+  # [dup-guard scope widened, 2026-06-03] An ID reused by a 📌 Backlog / 🗄️ Архів row
+  # (skipped by the registry-only tally) escaped silently — the `OPS.5` §07-heading ↔
+  # 📌-backlog-row collision. duplicate_ids spans the whole file via all_item_ids.
+  describe ".duplicate_ids" do
+    it "catches an active #### heading ↔ 📌 Backlog table-row ID reuse (the OPS.5 class)" do
+      md = <<~MD
+        ## §07 · Юридичні / Бізнес
+        #### OPS.5 — active procurement item
+        - **P1** · 👤 · → `07_02 §8.1.1`
+        ## 📌 Backlog · Додаткові знахідки
+        | ✅ OPS.5 | a different, done item reusing the ID | note |
+      MD
+      expect(described_class.duplicate_ids(md)).to eq("OPS.5" => 2)
+    end
+
+    it "passes when every ID is unique across registry + backlog + archive" do
+      md = <<~MD
+        ## §03 · Firmware
+        #### FW.1 — item
+        - **P0** · 🤖 · → `03_05`
+        ## 📌 Backlog
+        | ✅ E.58 | done finding | note |
+        ## 🗄️ Архів
+        | OPS.5 | archived item keeping its origin ID | `00_05 §1.1` |
+      MD
+      expect(described_class.duplicate_ids(md)).to be_empty
+    end
   end
 
   # [inbound 00_07 item-ref resolution, 2026-06-03] Other docs reference a tracker

@@ -597,7 +597,7 @@ ChainlinkDispatchWorker.perform_async(telemetry_log_id, created_at_iso)
 
 ### 🔬 E.60 — Merkle CID-witness: bidirectional integrity bridge Polygon ↔ Filecoin (пропозиція)
 
-> **Статус:** design-пропозиція (revised), **ще не в коді** — потребує нового сервісу `Filecoin::CidGenerator` (наразі в `app/services/filecoin/` лише `archive_service.rb` + `verification_service.rb`). Розширює Крок B (IoTeX W3bstream witness) і змикає його з кроком архівації Filecoin ([`05_01 §Рівень 1`](05_01_Multichain_Architecture)). Трекер: [`00_07` — E.60 → 00 07](00_07_Action_Plan_Tracker).
+> **Статус:** design-пропозиція (revised), **ще не в коді** — потребує нового сервісу `Filecoin::CidGenerator` (наразі в `app/services/filecoin/` лише `archive_service.rb` + `verification_service.rb`). Розширює Крок B (IoTeX W3bstream witness) і змикає його з кроком архівації Filecoin ([`05_01 §Рівень 1`](05_01_Multichain_Architecture)). Трекер: [`00_07` — E.60](00_07_Action_Plan_Tracker).
 
 **Проблема (data-integrity gap):** Раніше Filecoin/IPFS pin відбувався **після** мінту в Polygon — блокчейн-транзакція не мала криптографічного зв'язку з архівом. Зловмисник міг ex-post підмінити archive у Pinata (новий CID), і ніхто би не помітив, що SCC-token посилається на інший набір даних.
 
