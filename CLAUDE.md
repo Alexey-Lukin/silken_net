@@ -38,12 +38,12 @@ make -C firmware/test
 ## 3. Апаратна архітектура
 
 ### Soldier (STM32WLE5JC)
-**Файл**: `firmware/soldier/main.c` (771 рядків C)
+**Файл**: `firmware/soldier/main.c`
 
 Цикл пробудження (STOP2 -> active -> STOP2):
 1. **SENSE**: ADC читає Vcap (uint16 мВ), internal temp (int8 °C). DMA 16 кГц -> 512 ADC samples для TinyML.
 2. **TinyML**: CMSIS-NN акустичний inference (4 класи: silence/wind/cavitation/chainsaw). **BLOCKER: `Run_Inference()` закоментована** (main.c:413). `silken_net_audio_model.h` відсутній.
-3. **mruby BioContract** (`firmware/bio_contracts/bio_contract.rb`): Lorenz attractor 250 ітерацій (Euler, **Float** — не BigDecimal!). Входи: `chaos_seed` (HRNG), `temp`, `acoustic`. Виходи: `z_val` -> `status` + `growth_points`. Пакує в 1 байт: `[status:2|growth_points:6]`.
+3. **mruby BioContract** (`firmware/bio_contracts/bio_contract.rb`): Lorenz attractor 250 ітерацій (Euler, **Float** — не BigDecimal!). Входи: `(x_prev,y_prev,z_prev)` (RTC continuation, інакше SEC.11 K_seed cold-start), `temp`, `acoustic`, `delta_t_s`, `vcap_mv`. Виходи: `z_val` -> `status` + `growth_points`. Пакує у StatusByte (байт 10): `[PanicFlag:1|status:2|growth_points:5]` (FW.29-PACK; до FW.29 — `status:2|growth_points:6`).
 
    Firmware Lorenz константи:
    ```ruby
@@ -56,9 +56,10 @@ make -C firmware/test
    # CRITICAL_Z_MIN=2.0, CRITICAL_Z_MAX=45.0, OPTIMAL_Z_TARGET=29.0
    if z_val < 2.0  then status=1, growth_points=1   # stress
    elsif z_val > 45.0 then status=2, growth_points=0  # anomaly
-   else  status=0; growth_points = clamp(50 - deviation.to_i, 10, 63)  # homeostasis
+   else  status=0; growth_points = ((50 - deviation.round) / 2).clamp(5, 31)  # homeostasis (FW.29-PACK: 5-bit wire, backend ×2 upscale)
    end
-   payload_byte = (status << 6) | growth_points  # C entry: calculate_state → uint8_t
+   # StatusByte байт 10: [PanicFlag:1(bit7) | status:2 | growth_points:5]; status 0-3 (3=tamper); PanicFlag — C-side
+   payload_byte = (status << 5) | growth_points  # C entry: calculate_state → uint8_t
    ```
    **Важливо [FIX FW.7]:** Backend переведено з BigDecimal на **Float (IEEE 754 double)** — ідентично firmware mruby. Раніше `("8.0".to_d / "3.0".to_d).round(18)` давав інший результат після 250 ітерацій; зараз обидві сторони використовують `8.0/3.0` → `2.6666666666666665` і Z **бітово ідентичний** (верифіковано 50,000 random parity-тестами). Майбутній hardening через integer/fixed-point Q-format — `[FW.45]`, deferred до ZK-circuit milestone (див. `docs/03_04_mruby_Lorenz_Attractor.md`).
 
@@ -74,7 +75,7 @@ make -C firmware/test
 Ruby unpack: `"N n c C n C C a4"`.
 
 ### Queen (STM32WLE5JC + SIM7070G)
-**Файл**: `firmware/queen/main.c` (550 рядків C)
+**Файл**: `firmware/queen/main.c`
 
 - LoRa RX -> **AES-128-ECB** decrypt (per-Soldier 128-bit key) -> CIFO EdgeCache (50 slots, дедуплікація за DID).
 - **Queen Sentinel:** `DID == 0x00000000` → власна телеметрія Королеви → `GatewayTelemetryWorker` (не `TelemetryLog`).
