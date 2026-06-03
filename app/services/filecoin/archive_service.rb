@@ -20,6 +20,34 @@ module Filecoin
     OPEN_TIMEOUT  = 15  # секунд на встановлення з'єднання
     READ_TIMEOUT  = 30  # секунд на очікування відповіді
 
+    # Стабільні поля, над якими рахується детермінований content-CID (E.60).
+    # БЕЗ `archived_at` (час пінінгу) і `metadata`/`telemetry_summary` (можуть
+    # легітимно змінитись) — інакше CID був би невідтворюваний при верифікації.
+    CONTENT_DIGEST_KEYS = %w[
+      audit_log_id organization_id action chain_hash auditable_type auditable_id created_at
+    ].freeze
+
+    # Стабільний підпис аудит-запису — спільне джерело для пінінгу і верифікації
+    # (один опис полів, нуль drift між archive і verify).
+    def self.content_attrs(audit_log)
+      {
+        audit_log_id:    audit_log.id,
+        organization_id: audit_log.organization_id,
+        action:          audit_log.action,
+        chain_hash:      audit_log.chain_hash,
+        auditable_type:  audit_log.auditable_type,
+        auditable_id:    audit_log.auditable_id,
+        created_at:      audit_log.created_at&.iso8601
+      }
+    end
+
+    # Детермінований CIDv1 над стабільним підписом (`05_02 §E.60`). Приймає
+    # будь-який hash (символьні чи рядкові ключі) — зрізає лише CONTENT_DIGEST_KEYS.
+    def self.content_cid(source)
+      digest = source.transform_keys(&:to_s).slice(*CONTENT_DIGEST_KEYS)
+      Filecoin::CidGenerator.cidv1(digest)
+    end
+
     def initialize(audit_log)
       @audit_log = audit_log
     end
@@ -41,21 +69,19 @@ module Filecoin
 
     private
 
-    # Формує JSON payload з даними аудит-логу та добовими зведеннями телеметрії
+    # Формує JSON payload з даними аудит-логу та добовими зведеннями телеметрії.
+    # У вміст вбудовується самоописовий `content_cid` (E.60): верифікатор згодом
+    # перерахує CID і виявить ex-post підміну архіву (`05_02 §E.60`).
     def build_payload
+      content = self.class.content_attrs(@audit_log).merge(
+        metadata: @audit_log.metadata,
+        telemetry_summary: build_telemetry_summary,
+        archived_at: Time.current.iso8601
+      )
+      content[:content_cid] = self.class.content_cid(content)
+
       {
-        pinataContent: {
-          audit_log_id: @audit_log.id,
-          organization_id: @audit_log.organization_id,
-          action: @audit_log.action,
-          chain_hash: @audit_log.chain_hash,
-          metadata: @audit_log.metadata,
-          auditable_type: @audit_log.auditable_type,
-          auditable_id: @audit_log.auditable_id,
-          telemetry_summary: build_telemetry_summary,
-          created_at: @audit_log.created_at&.iso8601,
-          archived_at: Time.current.iso8601
-        },
+        pinataContent: content,
         pinataMetadata: {
           name: "silkennet-audit-#{@audit_log.id}",
           keyvalues: {

@@ -603,7 +603,7 @@
 
 #### E.60 — Merkle CID-witness: Polygon ↔ Filecoin integrity bridge
 - **P1** · 🤖 · → `05_02 §E.60`
-- `archive_cid` детерміністично з batch payload (`Filecoin::CidGenerator.cidv1`) на кроці IoTeX W3bstream → у ZK-witness; Polygon `mint()` отримує як `bytes32`; `FilecoinArchiveWorker` fail-fast при CID-mismatch → `manual_review`. Закриває ex-post archive-swap gap (pin ішов після mint). Канон `05_02 §E.60` (design-пропозиція, ще не в коді). · [ ] 🤖 новий `Filecoin::CidGenerator` + worker CID-guard
+- ✅ (2026-06-03) `Filecoin::CidGenerator` (детермін. CIDv1 raw+sha2-256→base32, golden-vector) + content-CID guard у потоці архівації AuditLog: `ArchiveService` вбудовує самоописовий `content_cid`, `VerificationService` fail-fast при розбіжності (локально vs віддалено) → детект ex-post swap. Закриває archive-swap gap для audit-архіву. · [ ] 🤖 follow-on: per-tree Merkle-witness для телеметрія-батчу (leaf_cid→`archive_root`→`mint(bytes32)`) — потребує `MerkleTree` + колонок на партиційованому `TelemetryLog` (міграція) + Solidity; worker-guard з `manual_review` саме в цьому батч-потоці. Канон `05_02 §E.60`
 
 #### E.61 — Solana micro-rewards batch payouts (economic correctness)
 - **P1** · 🤖 · → `05_01 §1`, `04_02 §Solana`

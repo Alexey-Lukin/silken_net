@@ -20,16 +20,39 @@ module Filecoin
       @audit_log = audit_log
     end
 
-    # Перевіряє, що CID існує і chain_hash на IPFS збігається з локальним
+    # Перевіряє цілісність архіву: (1) E.60 content-CID guard — детектує ex-post
+    # підміну вмісту; (2) chain_hash збіг із локальним записом.
     def verify!
       cid = @audit_log.ipfs_cid
       raise "🛑 [Filecoin] AuditLog ##{@audit_log.id} has no IPFS CID" if cid.blank?
 
       remote_data = fetch_from_ipfs(cid)
+
+      swap = detect_content_swap(remote_data)
+      return swap if swap
+
       compare_chain_hash(remote_data)
     end
 
     private
+
+    # E.60 CID-witness guard (`05_02 §E.60`): незалежно перераховуємо детермінований
+    # content-CID із віддаленого вмісту та з локального запису. Будь-яка розбіжність
+    # (підмінений вміст або підроблений вбудований CID) → fail-fast.
+    # Legacy-архіви без вбудованого `content_cid` пропускаємо (лишається chain_hash).
+    def detect_content_swap(remote_data)
+      claimed = remote_data["content_cid"]
+      return nil if claimed.blank?
+
+      recomputed = Filecoin::ArchiveService.content_cid(remote_data)
+      expected   = Filecoin::ArchiveService.content_cid(Filecoin::ArchiveService.content_attrs(@audit_log))
+      return nil if claimed == recomputed && recomputed == expected
+
+      Rails.logger.warn "🛑 [Filecoin] CID MISMATCH (ex-post swap?) AuditLog ##{@audit_log.id}: " \
+                        "claimed=#{claimed}, recomputed=#{recomputed}, expected=#{expected}"
+      { verified: false, reason: "cid_mismatch", cid: @audit_log.ipfs_cid,
+        claimed_cid: claimed, recomputed_cid: recomputed, expected_cid: expected }
+    end
 
     # Завантажує JSON-дані з IPFS Gateway за CID
     def fetch_from_ipfs(cid)

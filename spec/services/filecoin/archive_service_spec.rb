@@ -42,6 +42,22 @@ RSpec.describe Filecoin::ArchiveService do
         expect(content[:metadata]).to eq("field" => "critical_z", "old_value" => 100, "new_value" => 200)
       end
 
+      it "embeds a deterministic content_cid witness in the payload (E.60)" do
+        expected_body = nil
+        allow(Web3::HttpClient).to receive(:post) do |_url, **kwargs|
+          expected_body = kwargs[:body]
+          Web3::HttpClient::Response.new({ "IpfsHash" => "QmTestCid12345" }.to_json)
+        end
+
+        described_class.new(audit_log).archive!
+
+        content = expected_body[:pinataContent]
+        expect(content[:content_cid]).to start_with("bafkrei")
+        expect(content[:content_cid]).to eq(
+          described_class.content_cid(described_class.content_attrs(audit_log))
+        )
+      end
+
       it "includes telemetry_summary key in the payload" do
         expected_body = nil
         allow(Web3::HttpClient).to receive(:post) do |_url, **kwargs|

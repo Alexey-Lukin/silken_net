@@ -37,6 +37,40 @@ RSpec.describe Filecoin::VerificationService do
       end
     end
 
+    context "with the E.60 content-CID guard" do
+      it "passes when the embedded content_cid is consistent with content and local record" do
+        stub_ipfs_gateway_with_witness(audit_log)
+
+        result = described_class.new(audit_log).verify!
+
+        expect(result[:verified]).to be true
+      end
+
+      it "flags a self-inconsistent archive (embedded CID ≠ its own content)" do
+        attrs = Filecoin::ArchiveService.content_attrs(audit_log)
+        forged = JSON.parse(attrs.merge(content_cid: Filecoin::CidGenerator.cidv1("not-the-real-content")).to_json)
+        allow(Web3::HttpClient).to receive(:get).and_return(Web3::HttpClient::Response.new(forged.to_json))
+
+        result = described_class.new(audit_log).verify!
+
+        expect(result[:verified]).to be false
+        expect(result[:reason]).to eq("cid_mismatch")
+      end
+
+      it "flags a consistent-but-swapped archive (re-pinned different data, local mismatch)" do
+        swapped = Filecoin::ArchiveService.content_attrs(audit_log).merge(action: "tampered_action")
+        cid = Filecoin::ArchiveService.content_cid(swapped)
+        remote = JSON.parse(swapped.merge(content_cid: cid).to_json)
+        allow(Web3::HttpClient).to receive(:get).and_return(Web3::HttpClient::Response.new(remote.to_json))
+
+        result = described_class.new(audit_log).verify!
+
+        expect(result[:verified]).to be false
+        expect(result[:reason]).to eq("cid_mismatch")
+        expect(result[:recomputed_cid]).to eq(cid)
+      end
+    end
+
     context "when audit log has no CID" do
       it "raises an error" do
         audit_log.update_column(:ipfs_cid, nil)
@@ -92,5 +126,13 @@ RSpec.describe Filecoin::VerificationService do
   def stub_ipfs_gateway_failure
     allow(Web3::HttpClient).to receive(:get)
       .and_raise(Web3::HttpClient::RequestError.new("Filecoin API returned 404: Not Found"))
+  end
+
+  # Віддалений вміст, як його запінив би ArchiveService: стабільні поля +
+  # коректний самоописовий content_cid (string keys — як parsed_body шлюзу).
+  def stub_ipfs_gateway_with_witness(log)
+    attrs = Filecoin::ArchiveService.content_attrs(log)
+    remote = JSON.parse(attrs.merge(content_cid: Filecoin::ArchiveService.content_cid(attrs)).to_json)
+    allow(Web3::HttpClient).to receive(:get).and_return(Web3::HttpClient::Response.new(remote.to_json))
   end
 end
