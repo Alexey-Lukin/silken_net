@@ -7,7 +7,7 @@ require "base64"
 #
 # Background
 # ----------
-# SEC.9 (`docs/00_08_Action_Plan_Tracker.md`, `docs/03_05_Hardware_AES256_and_Security.md` §3.1)
+# SEC.9 (`docs/00_07_Action_Plan_Tracker.md`, `docs/03_05_Hardware_Symmetric_Crypto_and_Security.md` §3.1)
 # documents that the historical hardcoded firmware AES key happened to share
 # its first 16 bytes with the FIPS-197 Appendix B AES-128 test vector. The
 # reaction documented in the tracker — "verify the NEW master key is not any

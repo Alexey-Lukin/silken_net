@@ -29,6 +29,7 @@ namespace :tracker do
     sect     = Tracker::Dashboard.section_dangling_refs(items)
     home     = Tracker::Dashboard.section_home_violations(items)
     inbound  = Tracker::Dashboard.inbound_ref_violations
+    prose    = Tracker::Dashboard.inbound_prose_ref_violations
 
     puts "00_07 lint — #{items.size} #### items (#{Tracker::Dashboard.open_items(items).size} actionable)"
     puts "  duplicate IDs:    #{dups.empty? ? 'none ✓' : dups.inspect}"
@@ -62,6 +63,12 @@ namespace :tracker do
       puts "  dangling inbound 00_07 item-refs (#{inbound.size}) — ref to a non-existent tracker ID:"
       inbound.each { |i| puts "    - #{i}" }
     end
-    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || home.any? || inbound.any?
+    if prose.empty?
+      puts "  prose ID-refs:    every `→ 00_07 (ID, …)` prose ref resolves to a real item ✓"
+    else
+      puts "  dangling prose 00_07 ID-refs (#{prose.size}) — ID cited after a 00_07 link is not a real item:"
+      prose.each { |p| puts "    - #{p}" }
+    end
+    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || home.any? || inbound.any? || prose.any?
   end
 end

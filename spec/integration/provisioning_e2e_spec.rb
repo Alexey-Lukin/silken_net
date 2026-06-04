@@ -9,7 +9,7 @@ require "rails_helper"
 # stubbing `HardwareKeyService` (unlike the controller request spec, which
 # mocks `.provision`). Goal: prove that the API contract documented in
 # `docs/04_03_REST_API_v1_Reference.md` §POST /api/v1/provisioning/register
-# and the HKDF design in `docs/03_05_Hardware_AES256_and_Security.md` §3.4а
+# and the HKDF design in `docs/03_05_Hardware_Symmetric_Crypto_and_Security.md` §3.4а
 # hold true end-to-end across controller → service → AR Encryption → DB.
 #
 # Specifically verifies:

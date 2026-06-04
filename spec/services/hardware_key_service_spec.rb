@@ -6,7 +6,7 @@ RSpec.describe HardwareKeyService, type: :service do
   let(:tree_family) { create(:tree_family) }
   let(:cluster) { create(:cluster) }
   let(:tree) { create(:tree, cluster: cluster, tree_family: tree_family) }
-  # Post-ARCH.42 (2026-05-23): Tree-shaped HardwareKey має 32 hex (16-byte AES-128 LoRa key).
+  # Post-ARCH.42: Tree-shaped HardwareKey має 32 hex (16-byte AES-128 LoRa key).
   let(:original_key) { SecureRandom.hex(16).upcase }
 
   before do

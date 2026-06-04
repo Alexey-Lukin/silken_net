@@ -25,7 +25,7 @@ class BioContractFirmware < ApplicationRecord
   #
   # Поки FK активно не використовується — асоціація закоментована (silent
   # dead code = grep noise + ризик "хтось напише код проти неіснуючої колонки").
-  # Запис у `docs/00_08_Action_Plan_Tracker` (E.62) тримає намір видимим.
+  # Запис у `docs/00_07_Action_Plan_Tracker` (E.62) тримає намір видимим.
   # has_many :clusters, foreign_key: :active_firmware_id
 
   # Специфікація породи (прошивка для Дуба != прошивка для Сосни)

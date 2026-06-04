@@ -277,7 +277,7 @@ RSpec.describe Trees::Show do
     end
 
     it "displays cipher suite info" do
-      # Post-ARCH.42 (2026-05-23): Tree LoRa channel — AES-128-ECB (locale label).
+      # Post-ARCH.42: Tree LoRa channel — AES-128-ECB (locale label).
       expect(html).to include("AES-128-ECB")
     end
 

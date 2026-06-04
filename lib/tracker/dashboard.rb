@@ -143,6 +143,43 @@ module Tracker
       end
     end
 
+    # --- prose ID-list refs after a 00_07 link (2026-06-03) ---
+    # Beyond the `[`00_07` — ID]` directory form, Status lines cite tracker IDs in PROSE
+    # right after a 00_07 link: `→ [`00_07`](00_07_…) (S4.3, INF.4, S5.6)`. Nothing
+    # validated those, so a WRONG id (`S6.1` Redis where the GCS-bucket `S5.6` was meant)
+    # and a ref to a NON-EXISTENT item (`OBS.1` before it had a row) rotted silently — the
+    # em-dash inbound gate never saw them. Captures the paren list right after a 00_07 link,
+    # extracts full ID tokens (letter-prefix + `.`/`-` + digit; a `X.*` wildcard lacks a
+    # digit → skipped naturally), expands `/`-digit families (`INF.3/4/6`), flags any not a
+    # real item. Token-shape filtered so prose words / `§X` aren't FPs. Pure (caller passes dir).
+    PROSE_LIST_AFTER_LINK = /\]\(00_07_Action_Plan_Tracker[^)]*\)\s*\(([^)]+)\)/
+    PROSE_ID_TOKEN        = %r{[A-Z][A-Z0-9]*(?:-[A-Z]+)?[.\-]\d+[A-Za-z]*(?:/\d+)*}
+
+    def self.expand_prose_ids(list)
+      list.scan(PROSE_ID_TOKEN).flat_map do |tok|
+        segs   = tok.split("/")
+        prefix = segs.first[/\A[A-Z][A-Z0-9]*(?:-[A-Z]+)?[.\-]/]
+        segs.map { |s| s.match?(/\A\d/) ? "#{prefix}#{s}" : s }
+      end
+    end
+
+    def self.inbound_prose_ref_violations(docs_dir = DOCS_DIR)
+      tracker = File.join(docs_dir, "00_07_Action_Plan_Tracker.md")
+      return [] unless File.exist?(tracker)
+
+      valid = all_item_ids(File.read(tracker))
+      Dir.glob(File.join(docs_dir, "*.md")).sort.flat_map do |f|
+        base = File.basename(f, ".md")
+        next [] if base.start_with?("00_07")
+
+        File.read(f).scan(PROSE_LIST_AFTER_LINK).flatten.flat_map do |list|
+          expand_prose_ids(list).filter_map do |id|
+            "#{base} → `00_07 (#{id})` (no such 00_07 item)" unless valid.include?(id)
+          end
+        end
+      end
+    end
+
     # Open = has ≥1 unchecked bullet with a known executor.
     def self.open_items(items) = items.select { |it| it.executors.any? }
 

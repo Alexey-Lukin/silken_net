@@ -213,7 +213,7 @@ RSpec.describe Iotex::W3bstreamVerificationService, type: :service do
 
     context "when HardwareKey is present (Ed25519 signature path) [BLOCKER-06]" do
       let(:hardware_key) do
-        # Post-ARCH.42 (2026-05-23): Tree LoRa AES-128 = 16 bytes / 32 hex.
+        # Post-ARCH.42: Tree LoRa AES-128 = 16 bytes / 32 hex.
         create(:hardware_key, device_uid: tree.did,
                               aes_key_hex: SecureRandom.hex(16).upcase,
                               lorenz_seed_hex: SecureRandom.hex(32).upcase)
@@ -236,7 +236,7 @@ RSpec.describe Iotex::W3bstreamVerificationService, type: :service do
           response
         end
 
-        # Post-ARCH.42 (2026-05-23): Ed25519 seed більше не співпадає з AES key.
+        # Post-ARCH.42: Ed25519 seed більше не співпадає з AES key.
         # Окремо derive'ується через HKDF info "silken-ed25519-iotex-v1" (32 bytes).
         # Це усуває key-reuse antipattern: AES key (LoRa AES-128 = 16 bytes) НЕ
         # підходить як Ed25519 seed (потребує рівно 32 bytes).

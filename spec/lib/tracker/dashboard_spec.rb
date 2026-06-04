@@ -172,6 +172,31 @@ RSpec.describe Tracker::Dashboard do
     end
   end
 
+  # [prose ID-ref guard, 2026-06-03] Status lines cite IDs in prose after a 00_07 link
+  # (`→ 00_07 (S4.3, INF.4, S6.1)`); a wrong/missing id (S6.1 Redis vs S5.6 GCS; OBS.1
+  # before it had a row) was invisible to the em-dash gate. Wildcards/slash-families handled.
+  describe ".inbound_prose_ref_violations + .expand_prose_ids" do
+    it "expands slash-digit families, splits full-ID slashes, skips X.* wildcards" do
+      expect(described_class.expand_prose_ids("S4.3, INF.3/4/6, UNI.*"))
+        .to contain_exactly("S4.3", "INF.3", "INF.4", "INF.6")
+      expect(described_class.expand_prose_ids("HW.14/15/18, S2.2/S2.3"))
+        .to contain_exactly("HW.14", "HW.15", "HW.18", "S2.2", "S2.3")
+    end
+
+    it "flags a wrong/missing prose ID after a 00_07 link, passes real ones" do
+      require "tmpdir"
+      Dir.mktmpdir do |dir|
+        File.write(File.join(dir, "00_07_Action_Plan_Tracker.md"),
+                   "## §06 · Ops\n#### S5.6 — real item\n- **P0** · 👤 · → `06_02`\n")
+        File.write(File.join(dir, "06_99_Sample.md"),
+                   "ok → [`00_07`](00_07_Action_Plan_Tracker) (S5.6); bad → " \
+                   "[`00_07`](00_07_Action_Plan_Tracker) (S6.1, OBS.1)\n")
+        expect(described_class.inbound_prose_ref_violations(dir))
+          .to contain_exactly(a_string_matching(/S6\.1/), a_string_matching(/OBS\.1/))
+      end
+    end
+  end
+
   # [emoji-prefix blind spot, 2026-06-01] `#### 🌿 UNI.13a — …` was silently dropped
   # by the `[A-Z]`-anchored match, hiding UNI.13a / BIZ.12 from every tracker check.
   it "parses a #### item behind a leading emoji prefix" do

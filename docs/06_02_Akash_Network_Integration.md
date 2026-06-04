@@ -14,7 +14,7 @@
 
 - **Поточний TRL:** TRL 5 — SDL повністю конфігурований (`web` + `job` + `alloy`), DB+Redis connectivity вирішені (Cloud SQL Auth Proxy + Upstash TLS), GHCR mirror активний; жоден реальний деплой на Akash Mainnet ще не проведений (TRL 6 — після першого успішного деплою).
 - **Конфігуровано:** Cloud SQL Auth Proxy, Upstash Redis (TLS), Solid Cable (multi-replica ActionCable), GHCR mirror, Ingress Anchor, Rails security hardening (`force_ssl`/HSTS/CSP).
-- **Відкрите:** SDL secrets, TLS термінація, GCS state bucket, перший Mainnet деплой → [`00_07`](00_07_Action_Plan_Tracker) (S4.3, INF.4, S6.1).
+- **Відкрите:** SDL secrets, TLS термінація, GCS state bucket, перший Mainnet деплой → [`00_07`](00_07_Action_Plan_Tracker) (S4.3, INF.4, S5.6).
 
 ---
 
@@ -30,7 +30,7 @@
 | [`06_04` — Secrets Checklist](06_04_Secrets_Checklist) | SDL secrets — SSOT |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (що деплоїться) |
 | [`06_07` — CICD and Runbook Index](06_07_CICD_and_Runbook_Index) | mirror-ghcr, deploy pipeline |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | S4.3, INF.4, S6.1 |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | S4.3, INF.4, S5.6 |
 
 ## 📑 Зміст
 
@@ -50,7 +50,7 @@
 
 ## ⚙️ Відкриті передумови деплою та Runbooks
 
-> Відкриті передумови першого деплою + операційні runbooks. Статуси трекаються в [`00_07`](00_07_Action_Plan_Tracker) (S4.3, INF.4, S6.1).
+> Відкриті передумови першого деплою + операційні runbooks. Статуси трекаються в [`00_07`](00_07_Action_Plan_Tracker) (S4.3, INF.4, S5.6).
 
 ### Секрети SDL не заповнені — Rails не стартує + Web3 воркери у DeadSet
 

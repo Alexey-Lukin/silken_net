@@ -27,7 +27,7 @@ RSpec.describe "Telemetry ingestion pipeline end-to-end" do
       # TelemetryUnpackerService — every tree gets one at provisioning.
       tree.create_hardware_key!(
         device_uid: tree.did,
-        # Post-ARCH.42 (2026-05-23): Tree LoRa AES-128 key = 16 bytes / 32 hex chars.
+        # Post-ARCH.42: Tree LoRa AES-128 key = 16 bytes / 32 hex chars.
         # Gateway-shape (64 hex) залишається для Queen HardwareKey rows.
         aes_key_hex: SecureRandom.hex(16).upcase,
         lorenz_seed_hex: SecureRandom.hex(32).upcase

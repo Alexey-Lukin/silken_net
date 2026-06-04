@@ -434,11 +434,13 @@ module DocsLinter
   end
 
   # [SSOT anti-drift] External doc-path references (HARD). `docs:check_refs` validates
-  # links INSIDE docs/, but repo files OUTSIDE docs/ — `.github/` (workflows + configs +
-  # copilot/labels) and root README/CLAUDE/AGENTS — also reference canon docs by path.
-  # A renamed/renumbered doc leaves those stale and the in-docs gate never sees them
-  # (exactly how `docs/00_07_GitHub_Projects_and_IaC_Automation` (→ 00_05) and
-  # `docs/08_07_SEU_…` (→ 08_03) rotted unnoticed — a `.github/`/root blind spot). Flags
+  # links INSIDE docs/, but repo files OUTSIDE docs/ — `.github/`, root README/CLAUDE/
+  # AGENTS, AND source trees (bin/lib/app/firmware/contracts/spec code comments) — also
+  # reference canon docs by path. A renamed/renumbered doc leaves those stale and the
+  # in-docs gate never sees them (exactly how `docs/00_07_GitHub_Projects_and_IaC_Automation`
+  # (→ 00_05), `docs/08_07_SEU_…` (→ 08_03) and source `docs/00_08_Action_Plan_Tracker`
+  # (→ 00_07) rotted unnoticed — the `.github`/root/source blind spot). The linter + its
+  # spec are exempt (they cite stale paths as examples). Flags
   # any `docs/NN_NN_Name` path whose EXACT basename is not a current doc (catches a
   # wrong-number AND a wrong-name residue). `existing` = Set of current doc basenames
   # (sans .md). The trailing `.md` is naturally excluded — `.` ends the char class. A

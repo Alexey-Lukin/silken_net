@@ -57,7 +57,7 @@ module SilkenNet
               "PROVISIONING_MASTER_KEY ENV is required. Without it backend " \
               "would generate K_seed values that do NOT match firmware HKDF " \
               "derivation, breaking Dual Computation Integrity. " \
-              "See SEC.11 in docs/00_08_Action_Plan_Tracker.md."
+              "See SEC.11 in docs/00_07_Action_Plan_Tracker.md."
       end
 
       derived = OpenSSL::KDF.hkdf(

@@ -13,7 +13,7 @@
 #
 #   2. `component_class` — shorthand for `described_class`.
 #
-#   3. `mock_pagy(...)` — standard Pagy double used across ~20 specs.
+#   3. `mock_pagy(...)` — standard Pagy double for paginated component specs.
 #
 #   4. `mock_model(klass, id:, **attrs)` — builds an OpenStruct that
 #      quacks like an ActiveRecord model (model_name, to_key, to_param).

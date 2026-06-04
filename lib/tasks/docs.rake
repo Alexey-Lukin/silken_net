@@ -103,13 +103,23 @@ namespace :docs do
       xref_form.concat(DocsLinter.crossref_label_form(text).map { |h| "#{base}: #{h}" })
     end
 
-    # [external doc-path drift] HARD — non-docs repo files (.github/**, root *.md)
-    # reference canon docs by path too; a renamed/renumbered doc leaves THEM stale and
-    # the in-docs gates never see it (the .github blind spot that hid 00_07→00_05 +
-    # 08_07→08_03). Validate every `docs/NN_NN_Name` resolves to a current doc.
+    # [external doc-path drift] HARD — non-docs repo files (.github/**, root *.md, source
+    # trees) reference canon docs by path too; a renamed/renumbered doc leaves THEM stale
+    # and the in-docs gates never see it (the .github + bin/app/spec blind spot that hid
+    # 00_07→00_05 + 08_07→08_03 + 00_08→00_07 + 03_05-rename). Validate every
+    # `docs/NN_NN_Name` resolves to a current doc.
     root_dir = File.expand_path("..", DOCS_DIR)
-    external_files = Dir[File.join(root_dir, ".github", "**", "*")].select { |p| File.file?(p) } +
-                     Dir[File.join(root_dir, "*.md")]
+    # Scope: .github/** + root *.md + source trees (code comments reference canon docs by
+    # path too and rot on a renumber — the bin/app/spec blind spot that hid 00_08→00_07 +
+    # 03_05-rename residue). Text source extensions only (skips contracts/out JSON +
+    # binaries). Exempt the linter + its spec: they cite stale paths as deliberate examples.
+    ext_exempt = %w[lib/docs_linter.rb spec/lib/docs_linter_spec.rb].freeze
+    source_glob = File.join(root_dir, "{bin,lib,app,firmware,contracts,spec,scripts,tools}",
+                            "**", "*.{rb,sh,c,h,sol,py,rake,erb}")
+    external_files = (Dir[File.join(root_dir, ".github", "**", "*")].select { |p| File.file?(p) } +
+                      Dir[File.join(root_dir, "*.md")] +
+                      Dir[source_glob].select { |p| File.file?(p) })
+                     .reject { |f| ext_exempt.include?(f.delete_prefix("#{root_dir}/")) }
     ext_drift = external_files.flat_map do |f|
       rel = f.delete_prefix("#{root_dir}/")
       DocsLinter.external_doc_path_drift(rel, File.read(f), existing)
@@ -265,9 +275,9 @@ namespace :docs do
       xref_form.sort.first(40).each { |d| puts "    ✗ #{d}" }
     end
     if ext_drift.empty?
-      puts "  external refs:  every docs/NN_NN path in .github/ + root *.md resolves ✓"
+      puts "  external refs:  every docs/NN_NN path in .github/ + root *.md + source trees resolves ✓"
     else
-      puts "  EXTERNAL DOC-PATH DRIFT (#{ext_drift.size}) — stale docs/NN_NN ref outside docs/ (.github / root md):"
+      puts "  EXTERNAL DOC-PATH DRIFT (#{ext_drift.size}) — stale docs/NN_NN ref outside docs/ (.github / root md / source):"
       ext_drift.sort.each { |d| puts "    ✗ #{d}" }
     end
 
@@ -289,7 +299,7 @@ namespace :docs do
     failed << "link label↔href mismatches" unless label_drift.empty?
     failed << "doc-id link labels not in code-span form (00_06 §1)" unless xref_form.empty?
     failed << "dangling #anchors (fragment ≠ heading slug)" unless dangling_anchors.empty?
-    failed << "stale external docs/NN_NN refs (.github / root *.md)" unless ext_drift.empty?
+    failed << "stale external docs/NN_NN refs (.github / root *.md / source)" unless ext_drift.empty?
     abort("docs:check_refs FAILED — #{failed.join(', ')}") unless failed.empty?
   end
 

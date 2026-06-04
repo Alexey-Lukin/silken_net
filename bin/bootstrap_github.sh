@@ -2,8 +2,8 @@
 # = =====================================================================
 # 🛠 bootstrap_github.sh — full IaC bootstrap for the silken_net repo
 # = =====================================================================
-# Source: docs/00_07_GitHub_Projects_and_IaC_Automation.md §6.
-# Tracker: docs/00_08_Action_Plan_Tracker.md → OPS.6.
+# Source: docs/00_05_GitHub_Projects_and_IaC_Automation.md §6.
+# Tracker: docs/00_07_Action_Plan_Tracker.md → OPS.6.
 #
 # Orchestrates the four steps documented in §6:
 #

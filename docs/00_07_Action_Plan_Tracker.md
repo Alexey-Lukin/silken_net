@@ -55,7 +55,7 @@
 **Перед Web3 mainnet:**
 - `S1.1` **P0** — GitHub Secrets (`DATABASE_PASSWORD`, `GCP_SA_KEY`, `SSH_PRIVATE_KEY`, …)
 - `S3.5` **P1** — реальна SCC/SFC адреса у `subgraph.yaml` (zero-addr guard ✅ E.45; gated: post contract-deploy)
-- `E.47` **P0** — `SOLANA_RPC_URL` mainnet (інакше Devnet за замовчуванням)
+- `SOLANA_RPC_URL` mainnet **P0** — інакше USDC на Devnet; provision secret → `06_04` (refuse-to-boot guard ✅ E.47)
 - `INF.4`+`INF.6` **P1** — TLS termination + CoAP Proxy verification (Akash ingress)
 - `S2.1`+`S2.2`+`S2.3` **P0** (ops) — Grafana Cloud dashboards & alerts після першого `/metrics`
 
@@ -85,7 +85,7 @@
 
 #### OPS.1 — TRL Auto-Advancement GitHub Action
 - **P1** · 👤 · → `00_05`
-- ✅ `trl_sync.yml` (GraphQL Projects v2, TRL≥5 gate). · [ ] 👤 створити `PROJECT_PAT` (project:write) + тест з issues
+- ✅ `trl_sync.yml` (GraphQL Projects v2, TRL≥5 architect-approval gate — OPS.9). · [ ] 👤 створити `PROJECT_PAT` (project:write) + тест з issues · [ ] 👤 (security) мігрувати `PROJECT_PAT` → GitHub App installation token (`GITHUB_TOKEN` не вміє Projects V2; `00_05 §2.2`)
 
 #### OPS.2 — SSOT Integrity Guard
 - **P1** · 👤 · → `00_05`
@@ -579,7 +579,7 @@
 
 #### TEST.1 — Test coverage: RSpec gate raised; Solidity/firmware tracked
 - **P2** · 🤖 · → `04_06 §B.1`
-- Скоуп + політику гейту описує `04_06 §B.3`; gap-recipe + тріаж — `04_06 §B.4`. Пороги живуть тільки в `spec/spec_helper.rb`. · [x] 🤖 (2026-06-02) **RSpec**: відфільтровано `/lib/tasks/` (ops-оркестрація; логіка в lib-движках на 100%), піднято гейт (line/branch + per-group tripwire), великий branch+line-push із тріажем `04_06 §B.4` — мертві `&.`→`.`, реальні guard/empty-state/error/anonymous-policy тести, `stub_const` для forward-looking-гілок, прибрано dead-code (`weak_key_detector`/`resilient_client`/`emergency_response`/`tracker/dashboard`/`chainlink_router_version`/policies/`hil/*` тощо). · [ ] 🤖 RSpec залишок — branch-хвіст звужується партіями (2026-06-03 Batch 2+4: codex/match+node scope+guard-edges, celo low-balance-raise + Time-window, insurance Etherisc-idempotency, codex/citation nil-type, dashboard parser-guards, blockchain_minting wallet-nil identifier, wallet toucan-no-address) + **2 dead-branch рефактори** (insurance redundant `if status_paid?` за AASM triggered→paid; rollback dead `log.tree&.` за Tree `dependent: :delete_all`) + **ReDoS-fix** `TABLE_ID_RE` (CodeQL: вкладений `(?:[…]+\s*)*` → лінійний клас). Решта домінована **defensive** (Phlex-views `&.current_user`, env/load `defined?(...)`, model-validation-dead, exhaustive-case) → лишається за §B.4 (fragile white-box заради % = анти-§A.16–17). Таксономія dead→refactor vs defensive→leave+чому + decision-матриця + worked-examples — `04_06 §B.4/§B.5`. · [ ] 🤖 **Solidity** (`contracts/`): line/func високі, forge-тести зелені; forge branch% низький — переважно forge-артефакт (рахує кожен `require` + OZ-inherited; revert-шляхи покриті `testRevert_*`); `[profile.ci]` пофікшено (optimizer був off → не компілювалось на OZ P256). Глибший branch-targeting pass deferred. · [ ] 🤖 **Firmware** (`firmware/test/`): host-тести зелені (`make -C firmware/test`); НЕ gcov-інструментовано; mock AES/TinyML/DMA — inherent host-обмеження (`04_06 §B.1.1`). · [ ] 🤖 test-файли: чистка коментарів (no drift-prone numbers, minimal). · [ ] 🤖 seed-флак: кілька line/branch плавають між прогонами (гейт має маржу); точний hunt = diff двох fixed-seed прогонів.
+- Скоуп + політику гейту описує `04_06 §B.3`; gap-recipe + тріаж — `04_06 §B.4`. Пороги живуть тільки в `spec/spec_helper.rb`. · [x] 🤖 (2026-06-02) **RSpec**: відфільтровано `/lib/tasks/` (ops-оркестрація; логіка в lib-движках на 100%), піднято гейт (line/branch + per-group tripwire), великий branch+line-push із тріажем `04_06 §B.4` — мертві `&.`→`.`, реальні guard/empty-state/error/anonymous-policy тести, `stub_const` для forward-looking-гілок, прибрано dead-code (`weak_key_detector`/`resilient_client`/`emergency_response`/`tracker/dashboard`/`chainlink_router_version`/policies/`hil/*` тощо). · [ ] 🤖 RSpec залишок — branch-хвіст звужується партіями (2026-06-03 Batch 2+4: codex/match+node scope+guard-edges, celo low-balance-raise + Time-window, insurance Etherisc-idempotency, codex/citation nil-type, dashboard parser-guards, blockchain_minting wallet-nil identifier, wallet toucan-no-address) + **2 dead-branch рефактори** (insurance redundant `if status_paid?` за AASM triggered→paid; rollback dead `log.tree&.` за Tree `dependent: :delete_all`) + **ReDoS-fix** `TABLE_ID_RE` (CodeQL: вкладений `(?:[…]+\s*)*` → лінійний клас). Решта домінована **defensive** (Phlex-views `&.current_user`, env/load `defined?(...)`, model-validation-dead, exhaustive-case) → лишається за §B.4 (fragile white-box заради % = анти-§A.16–17). Таксономія dead→refactor vs defensive→leave+чому + decision-матриця + worked-examples — `04_06 §B.4/§B.5`. · [ ] 🤖 **Solidity** (`contracts/`): line/func високі, forge-тести зелені; forge branch% низький — переважно forge-артефакт (рахує кожен `require` + OZ-inherited; revert-шляхи покриті `testRevert_*`); `[profile.ci]` пофікшено (optimizer був off → не компілювалось на OZ P256). Глибший branch-targeting pass deferred. · [ ] 🤖 **Firmware** (`firmware/test/`): host-тести зелені (`make -C firmware/test`); НЕ gcov-інструментовано; mock AES/TinyML/DMA — inherent host-обмеження (`04_06 §B.1.1`). · [x] 🤖 (2026-06-03) test-файли: коментарі аудитовано (всі spec/) — здорові (ID-refs + WHY + wire-layout; 0 dead-code / реальних TODO); виправлено count `~20 specs` + trimmed changelog-дати `ARCH.42 (date)`. · [ ] 🤖 seed-флак: кілька line/branch плавають між прогонами (гейт має маржу); точний hunt = diff двох fixed-seed прогонів.
 
 ## §05 · Web3 / Економіка / Slashing
 
@@ -974,15 +974,11 @@
 | FW.18 | TinyML confidence threshold (RTC DR13/14 dual-zone) | `03_03`, `03_01 §2`, `04_06` |
 | FW.29 | Panic vs saturated acoustic disambiguation (PANIC_FLAG_BIT) | `03_03 §5.3` |
 | FW.29-PACK | StatusByte layout collision fix (5-bit growth_points) | `03_01 §11.5`, `03_04 §4.3-5.2`, `05_02` |
-| FW.43 | 03_05 §3.1 SSOT drift fix (post-FW.1 hardcoded-key ghost) | `03_05 §3.1/§3.4г` |
 | S6.12 | TokenomicsEvaluator oracle-guards audit (KYC all-paths) | `04_02`, `05_02` |
-| OPS.7 | Sync labels.yml + Projects V2 ↔ 00_05 §4 | `00_05 §4.3/§4.4` |
-| OPS.8 | TreeFamily seed drift vs Lorenz SSOT fix | `03_04 §4.1`, `04_01` |
 | BIZ.4 | DAO Governance (SilkenGovernor + Timelock) | `05_06`, `07_01` |
 | PUMA-RACK-1 | Idempotency write off response path (`rack.response_finished`) | `06_05 §7` |
 | TRL Матриця | Per-module TRL (мігровано з 00_07) | `00_03 §1` |
 | E.8 / DIFF.7 | SNR tiebreaker у Queen CIFO eviction | `03_02`, `04_06` |
-| E.28 | Kamal `pre-build` hook idempotency audit | `06_01` |
 | E.35 | Flash-loan defense (SilkenGovernor governance params) | `05_06` |
 | E.42 | TelemetryLog cleanup `dispatched` guard | `04_02` |
 | E.47 | Solana RPC production guard (raise on missing ENV) | `05_01` |
@@ -994,10 +990,10 @@
 | ARCH.28 | RTC Backup Domain allocation policy | `03_01 §2` |
 | ARCH.27 | Node-role flag (Soldier/Provisioner, Flash magic) | `03_01 §1.11` |
 | S2.5 | PartitionMaintenanceWorker failure alert (counter + Sentry rescue + Grafana P0) | `06_03 §2.8` |
+| OBS.1 | Observability: Grafana Alloy → Grafana Cloud SaaS (self-hosted Prometheus не потрібен) | `06_03` |
 | SEC.13 | peaq_did_compromised mint-skip guard + emergency revocation runbook | `06_04 §5.4` |
 | DOC-T.13 | SSOT 360 R3–R4: docs:graph ref-graph + #anchor HARD-gate + dup-guard table-rows | `00_06 §3` |
 | E.45 | SCC/SFC subgraph zero-address fail-fast guard (`subgraph/validate_addresses.sh`); real-address swap → S3.5 | `05_03` |
-| E.58 | Lorenz state continuity (RTC DR16-19 layout + first-boot/continuation; verified vs firmware; DR15 swept → FW.2) | `03_01 §2`, `03_04 §2.1` |
 | OPS.5 | Projects V2 TRL field schema (1-9 + Readiness Horizon SRL/MRL; `lib/github_bootstrap.rb`); live-board bootstrap-run → OPS.6 | `00_05 §1.1` |
 | E.61 | Solana micro-rewards batch payouts (Kredis-акумуляція → `transferChecked`, годинний cron, поріг-gated) | `05_01 §8`, `04_02 §10` |
 

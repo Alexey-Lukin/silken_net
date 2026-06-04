@@ -14,7 +14,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 7 — CI/CD пайплайн TRL Auto-Advancement на стадії впровадження. Відкриті: `trl_sync.yml` TRL-gate + `labeler.yml` apply (OPS.*) → [`00_07`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 7 — CI/CD пайплайн TRL Auto-Advancement на стадії впровадження. Відкриті: `PROJECT_PAT` provision + GitHub App-token міграція, `ssot_guard` required-check (OPS.*) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -62,10 +62,10 @@
 
 ### 1.2 Створення полів через GitHub CLI (IaC)
 
-> Замість ручного клікання у Projects V2 UI, поля створюються скриптом `bin/setup_github_project.sh` (планований). Поточний gh CLI не підтримує `project add-field` повністю — workaround через GraphQL.
+> Замість ручного клікання у Projects V2 UI, поля створюються скриптом `bin/setup_github_project.sh` (тонка обгортка над `rake github:project_fields`; схема полів — SSOT у `lib/github_bootstrap.rb`). Поточний gh CLI не підтримує `project add-field` повністю — workaround через GraphQL.
 
 ```bash
-# bin/setup_github_project.sh — заплановано як частина IaC bootstrap
+# bin/setup_github_project.sh — обгортка над `rake github:project_fields` (схема полів — lib/github_bootstrap.rb)
 PROJECT_ID="PVT_xxxx"  # отримати через `gh project list --owner Alexey-Lukin --format json`
 
 # Single-select option sets (SSOT — синхронізувати з §1.1 та lib/github_bootstrap.rb)
@@ -89,7 +89,7 @@ done
 
 | Workflow | Файл | Тригер | Статус |
 |----------|------|--------|--------|
-| TRL Auto-Advancement | `.github/workflows/trl_sync.yml` | `issues: [closed]` | 🟡 Workflow існує (OPS.1); **TRL-gate (≥5 → Architect approval) ще не імплементовано** — чекає `PROJECT_PAT` + gate (00_07) |
+| TRL Auto-Advancement | `.github/workflows/trl_sync.yml` | `issues: [closed]` | ✅ Workflow + TRL≥5 architect-approval gate реалізовані (OPS.1/OPS.9); чекає `PROJECT_PAT` provision (OPS.1, 00_07) |
 | Labels Sync (IaC) | `.github/workflows/labels_sync.yml` | `push` на `.github/labels.yml` | ✅ Реалізовано |
 | PR Auto-Labeler | `.github/workflows/labeler.yml` | `pull_request` | ✅ Реалізовано |
 | SSOT Integrity Guard | `.github/workflows/ssot_guard.yml` | `pull_request` | ✅ Реалізовано (OPS.2; semantic `type:*` bypass — §2.3) |
@@ -107,11 +107,11 @@ done
 - **Дія (TRL-stratified gate):** скрипт зчитує `Target TRL` закритого Issue. **`Target TRL ≤ 4`** → авто-перезапис `Current TRL` (картка «перелітає» у нову колонку), бо рев'ю TRL 1-4 делеговане лідам + CI ([`00_04 §3`](00_04_Shape_Up_Operations_and_RnD_Clusters)). **`Target TRL ≥ 5`** → скрипт **НЕ** рухає `Current TRL`, а ставить статус **`Pending Architect Approval`** + коментує issue; реальне просування відбувається лише за наявності лейбла `architect-approved` (його ставить виключно Архітектор). Це поважає обов'язкові TRL-гейти 4→5 / 6→7 / 8→9 (Architect/DAO approval, [`00_04 §3`](00_04_Shape_Up_Operations_and_RnD_Clusters), [`00_02 §5`](00_02_AI_Native_Engineering_and_TRL)). Додатково: рахує `completion_semester` з `closed_at` (UTC) → поле `Academic Semester`.
 - **Авторизація:** наразі `secrets.PROJECT_PAT` (PAT Архітектора). ⚠️ **Рекомендація безпеки:** мігрувати на **GitHub App installation token** (fine-grained, авто-ротація, short-lived) — PAT прив'язаний до акаунта, надто широкий, протермінується й тихо ламає пайплайн. **Важливо:** дефолтний `secrets.GITHUB_TOKEN` тут НЕ підходить — він **не має доступу до Projects V2** (а permission `repository-projects` покриває лише *classic* projects, не V2). Тож єдина безпечна заміна PAT для Projects V2 — **GitHub App token**. Tracked → [`00_07`](00_07_Action_Plan_Tracker).
 
-> **Чому gate, а не безумовний авто-рух (корекція 2026-05-28):** інакше будь-який «Close Issue» (розробник або AI-агент) підняв би технологію до TRL 9, обійшовши обов'язкові Architect/DAO-гейти — і TRL-метрика з інструмента оцінки зрілості виродилась би у звичайний task-tracker. Авто-рух лишається лише для TRL 1-4 (рев'ю там і так делеговане); TRL ≥5 завжди проходить людський gate. **Поточний `trl_sync.yml` рухає картку беззумовно — TRL-gate ще не імплементовано (tracked у [`00_07`](00_07_Action_Plan_Tracker)).**
+> **Чому gate, а не безумовний авто-рух (корекція 2026-05-28):** інакше будь-який «Close Issue» (розробник або AI-агент) підняв би технологію до TRL 9, обійшовши обов'язкові Architect/DAO-гейти — і TRL-метрика з інструмента оцінки зрілості виродилась би у звичайний task-tracker. Авто-рух лишається лише для TRL 1-4 (рев'ю там і так делеговане); TRL ≥5 завжди проходить людський gate. **`trl_sync.yml` реалізує цей gate (OPS.9): для Target TRL ≥5 без лейбла `architect-approved` `Current TRL` НЕ рухається. Workflow активується по provision `PROJECT_PAT` (OPS.1 → [`00_07`](00_07_Action_Plan_Tracker)).**
 
 ```yaml
-# .github/workflows/trl_sync.yml — skeleton
-name: TRL Auto-Advancement
+# .github/workflows/trl_sync.yml — skeleton (повна логіка inline у файлі)
+name: TRL Sync
 on:
   issues:
     types: [closed]
@@ -119,13 +119,13 @@ jobs:
   sync_trl:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Advance TRL on Project V2
-        env:
-          GH_TOKEN: ${{ secrets.PROJECT_PAT }}   # ⚠️ мігрувати → GitHub App token (GITHUB_TOKEN не вміє Projects V2). Див. §2.2.
-          PROJECT_NUMBER: 1
-          OWNER: Alexey-Lukin
-        run: bin/ci/trl_sync.rb ${{ github.event.issue.number }}
+      - uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.PROJECT_PAT }}   # ⚠️ мігрувати → GitHub App token (GITHUB_TOKEN не вміє Projects V2). Див. §2.2.
+          script: |
+            # 1. resolve Project V2 + поля   2. знайти item для issue
+            # 3. Target TRL ≥5 без лейбла `architect-approved` → Current TRL НЕ рухається (OPS.9 gate)
+            # 4. copy Target TRL → Current TRL   5. (OPS.4) stamp Academic Semester
 ```
 
 ### 2.3 Протокол "SSOT Integrity Guard" (`ssot_guard.yml`)
@@ -377,7 +377,7 @@ jobs:
 > Раніше тут був ручний 7-point checklist ("👤 Створити single-select field …"). Замість цього — single script + автоматизовані workflows.
 
 ```bash
-# bin/bootstrap_github.sh — заплановано
+# bin/bootstrap_github.sh — реалізовано (idempotent; `rake github:bootstrap`)
 set -euo pipefail
 
 # 1. Створити лейбли з .github/labels.yml
