@@ -79,6 +79,7 @@
 | MOIC-концепція кластера + план публікацій (Ст. 1–35) + IP-рамка | `08_01` (cluster head) |
 | Зовнішні стейкхолдери (B2G/B2B + культурний шар) | `08_03` (External Stakeholders Registry) |
 | Firmware internals split | **Soldier** RAM/tests/lifecycle + RTC reg-map → `03_01`; **Queen** deep-dive (RAM `§9` · HAL `§10` · host-tests `§11` · `#define` `§0`) → `03_02`. Кожен реферить інший, не дублює (DOC-T.14) |
+| Queen cluster capacity (Soldiers/Queen) | `02_05 §2.1` (capacity-math: baseline ~100, roadmap-стеля ~200; CIFO overflow). Business/FAQ-view `07_01` реферить, не дублює |
 | Log-mel feature contract (FW.25) | `03_03 §3.4` (owner). Дзеркала: `firmware/common/logmel_contract.h` + `silken_ml.dsp.contract` (`tools/ml`); звірка через stamped `contract_hash` + `emit_c --check`. Таблиці генерує `silken_ml.codegen` |
 | Lorenz mruby bytecode (FW.46) | джерело `firmware/bio_contracts/bio_contract.rb` (логіка — owner `03_04`); generated mirror `firmware/common/lorenz_bytecode.h` (mrbc); звірка — `tools/firmware/check_bytecode.py` (light sha-stamp) + `gen_bytecode.sh --check` (deep regen) |
 | Firmware ARM build / toolchain pin / mruby build_config (FW.46) | `03_01 §12.4` (CMake + `firmware/cmake/arm-none-eabi.cmake` + `firmware/mruby/build_config.rb`; pinned submodules у `firmware/extern/`). Гейт — `ci.yml › firmware_arm_build` |

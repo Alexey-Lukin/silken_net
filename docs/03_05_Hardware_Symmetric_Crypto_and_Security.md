@@ -115,7 +115,7 @@ uint32_t aes_key[8] = {0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX,
 - [x] SEC.3: Factory Flashing Pipeline tool (✅ 2026-05-24, dry-run mode; реалізація, integration тест, threat model → §3.4г). Hardware-gated: real `STM32_Programmer_CLI` subprocess + live `cryptoauthlib` I²C — deferred до HW bench
 - [ ] SEC.2: RDP Level 2 activation (необоротний final lock перед field deployment)
 
-> **⚠️ ОПЕРАЦІЙНИЙ РИЗИК (Pre-Flight Checklist):** При кожному циклі прошивки — верифікувати що firmware binary отримує ключ з vault (не хардкоджений placeholder). Симптом помилки: Queen бачить щойно декриптований Soldier-пакет як хаотичний сміттєвий масив, ліс мовчазний, жодних помилок у Rails. Причина — ключ не синхронізований між Soldier і Queen Flash секторами.
+> **⚠️ ОПЕРАЦІЙНИЙ РИЗИК (Pre-Flight Checklist):** При кожному циклі прошивки — верифікувати що firmware binary отримує ключ з vault (не хардкоджений placeholder). Симптом помилки: Queen бачить щойно декриптований Soldier-пакет як хаотичний сміттєвий масив, ліс мовчазний, жодних помилок у Rails. Причина — ключ не синхронізований між Soldier і Queen Flash секторами. **Той самий «сміттєвий» ефект фундаментальний і для inter-Soldier mesh-релею за per-device ключів** (сусід не має ключа відправника) — opaque-релей вимагає cleartext address-шару або shared mesh-key → [`00_07` — ARCH.43](00_07_Action_Plan_Tracker).
 
 ---
 

@@ -1927,7 +1927,7 @@ int main(void)
                         }
 
                         // Логіка Checkerboard (Захист від пінг-понгу)
-                        // [FW.21] Перевіряємо всі 2 слоти кешу пліток
+                        // [FW.21] Перевіряємо всі 3 слоти кешу пліток
                         uint8_t is_known_did = 0;
                         for(int i = 0; i < MESH_DID_CACHE_SIZE; i++) {
                             if (recent_mesh_dids[i] == incoming_did) {

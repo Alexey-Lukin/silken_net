@@ -470,11 +470,11 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 
 **Q3: "10,000 дерев у лісі — як ви уникаєте шторму колізій пакетів LoRa?"**
 
-> **A:** Directed Mesh + рандомізований Jitter. Soldier-вузли використовують апаратний HRNG (`HAL_RNG_GenerateRandomNumber`) для рандомізованої затримки 0-500 мс перед TX — Collision Avoidance без централізованого координатора. Ієрархічна сегментація: кожен Queen Gateway обслуговує 500-1000 Soldiers. Динамічний Spreading Factor (SF7-SF12) оптимізує Time-on-Air. Пакети стиснені до **21 байт**. Детальніше: [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA).
+> **A:** Directed Mesh + рандомізований Jitter. Soldier-вузли використовують апаратний HRNG (`HAL_RNG_GenerateRandomNumber`) для рандомізованої затримки 0-500 мс перед TX — Collision Avoidance без централізованого координатора. Ієрархічна сегментація: кожен Queen Gateway обслуговує кластер Солдатів (baseline ~100, roadmap-стеля ~200/Queen — capacity-math у [`02_05 §2.1`](02_05_Queen_Hardware_and_Starlink)); масштаб = більше Queen-шлюзів, а не глибший mesh. Динамічний Spreading Factor (SF7-SF12) оптимізує Time-on-Air. Пакети стиснені до **21 байт**. Детальніше: [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA).
 
 **Q3 (EN): "LoRa-Mesh at 100M trees? How do you prevent collision storm?"**
 
-> **A:** Hierarchical segmentation. Soldiers communicate only with their cluster's Queen Gateway (500–1000 nodes/cluster). HRNG-based jitter (0-500ms). Dynamic SF7-SF12 allocation. 21-byte packets minimizing Time-on-Air. Scale = more Queen Gateways with independent Starlink/LTE backhaul — no single global collision domain.
+> **A:** Hierarchical segmentation. Soldiers communicate only with their cluster's Queen Gateway (~100 baseline, ~200 roadmap ceiling — see [`02_05 §2.1`](02_05_Queen_Hardware_and_Starlink)). HRNG-based jitter (0-500ms). Dynamic SF7-SF12 allocation. 21-byte packets minimizing Time-on-Air. Scale = more Queen Gateways with independent Starlink/LTE backhaul — no single global collision domain.
 
 ---
 
