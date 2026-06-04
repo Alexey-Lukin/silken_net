@@ -11,6 +11,19 @@
 # symbols (~85%). gitnexus already auto-ignores `third_party`/`3rdparty`; our
 # vendored submodules just live under `extern/`, which it doesn't recognize.
 #
-# Apply with a re-index:  gitnexus analyze --force --skip-agents-md
+# Apply with a re-index:  gitnexus analyze --force --no-stats
 
+# --- Vendored upstream firmware submodules (mruby + CMSIS-DSP + CMSIS_6) ---
+# ~85% of all symbols (60,925 of ~72,000) before this line.
 firmware/extern/
+
+# --- Top-level SSOT canon markdown (the docs/NN_NN_*.md set): NOT code, ~2.8k
+# inert "Section" nodes with no code edges. They have their own tooling
+# (scripts/doc_structure_map.rb, docs:graph, docs:check_refs, ssot-maintenance,
+# wiki:sync). NB the `*.md` glob anchors to top-level only — it deliberately
+# KEEPS docs/protocols/** (real code like deglycosylate.rb + AF3/ligand data +
+# the L1-L4 narrative), which a blanket `docs/` would have wrongly dropped. ---
+docs/*.md
+
+# --- Static assets / error pages (not source). ---
+public/
