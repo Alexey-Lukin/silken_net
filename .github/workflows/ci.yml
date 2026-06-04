@@ -83,14 +83,18 @@ jobs:
           submodules: recursive
 
       - name: Install ARM toolchain, CMake, Ruby
-        # gcc-arm-none-eabi ships arm-none-eabi-{gcc,size}; rake+ruby build mruby
-        # (which ships y.tab.c + bundles lrama → no bison needed). Toolchain
-        # version is apt's (unpinned) — bytecode determinism rides on the pinned
-        # mruby submodule, not gcc (logmel .o size is reported, not gated).
+        # apt's gcc-arm-none-eabi is ONLY the compiler — the newlib C/C++ headers
+        # (string.h, stdint.h, …) ship separately as libnewlib-arm-none-eabi +
+        # libstdc++-arm-none-eabi-newlib; without them CMSIS-DSP/logmel/mruby fail
+        # with "string.h: No such file" (the pinned ARM tarball used locally
+        # bundles newlib, so this only bites the apt path). rake+ruby build mruby
+        # (ships y.tab.c + bundles lrama → no bison). Toolchain version is apt's
+        # (unpinned) — bytecode determinism rides on the pinned mruby submodule.
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            gcc-arm-none-eabi cmake ninja-build ruby rake
+            gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib \
+            cmake ninja-build ruby rake
 
       - name: '[FW.46] Bytecode mirror == bio_contract.rb (deep mrbc regen-diff)'
         run: tools/firmware/gen_bytecode.sh --check
