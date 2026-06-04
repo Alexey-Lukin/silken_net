@@ -85,18 +85,24 @@ The cache file is committed (small, deterministic). MD trajectories under
 
 ## CI gate
 
-`.github/workflows/in_silico_smoke.yml` runs `01_smoke_test_water_box.py` on
-every PR that touches `tools/in_silico/**` or `docs/protocols/ebfc/in_silico/**`,
-with `SILKEN_FORCE_PLATFORM=CPU` so the run is deterministic on hosted
-runners. The conda env is cached by `mamba-org/setup-micromamba@v2` (keyed
-on `environment.yml`), so cold runs take ~10 min, cached runs ~3 min.
+`.github/workflows/in_silico_smoke.yml` has two jobs, both triggered only on PRs
+touching `tools/in_silico/**` or `docs/protocols/ebfc/in_silico/**`:
 
-> ⚠️ **Known CI fragility:** `environment.yml` uses `>=` version specifiers,
-> so the solver picks the latest compatible build each cold run. A breaking
-> release of a transitive conda-forge dep can fail CI on code nobody touched.
-> Hardening path (recommended follow-up): generate a `conda-lock.yml`
-> (`conda-lock -f environment.yml`) pinning exact versions + hashes, and
-> point CI at the lock file for 100% reproducible environments.
+- **`lock_sync`** — fail-fast: `conda-lock.yml` must still match `environment.yml`
+  (`conda-lock --check-input-hash` + `git diff`). Edit `environment.yml` without
+  regenerating the lock and this job fails (see *Adding a new dependency* below).
+- **`smoke`** — runs `01_smoke_test_water_box.py` with `SILKEN_FORCE_PLATFORM=CPU`
+  (deterministic on hosted runners), in the env built from the **pinned**
+  `conda-lock.yml`. Cached by `mamba-org/setup-micromamba@v3` keyed on the lock
+  hash, so cold runs take ~10 min, cached runs ~3 min.
+
+> **Why the lock (resolved 2026-06-04):** `environment.yml` uses `>=` specifiers,
+> so a bare `conda env create` picks the latest compatible build each solve — a
+> breaking transitive conda-forge release could red CI on code nobody touched and,
+> worse, silently shift the numbers behind a TRL-evidence run. The committed
+> `conda-lock.yml` pins exact versions + hashes per platform (`linux-64` +
+> `osx-arm64`) → bit-reproducible envs. Repo-wide pin-policy home:
+> [`docs/03_01_Firmware_Lifecycle_and_DMA.md §12.5`](../../docs/03_01_Firmware_Lifecycle_and_DMA.md).
 
 ## L1 protein structure (AlphaFold 3)
 
@@ -152,6 +158,22 @@ conda activate silken_md
 python -m openmm.testInstallation
 ```
 
+## Reproducible install (pinned lock)
+
+`conda env create -f environment.yml` (above) re-solves and grabs the latest
+compatible builds — fine for day-to-day dev. For the **exact** env CI uses and
+that produced the L1–L4 numbers, install from the committed `conda-lock.yml`
+instead. Needs `conda-lock` once (`pipx install conda-lock`, or
+`conda install -n base -c conda-forge conda-lock`):
+
+```bash
+conda-lock install -n silken_md tools/in_silico/conda-lock.yml
+```
+
+`environment.yml` stays the human-editable source; `conda-lock.yml` is the
+generated pinned artifact (versions + hashes, `linux-64` + `osx-arm64`). Pin
+rationale: `docs/03_01 §12.5`.
+
 ## Daily use
 
 ```bash
@@ -190,8 +212,15 @@ trajectories at once) per `docs/01_03 §3.4`:
 ## Adding a new dependency
 
 1. Edit `environment.yml`, append under `dependencies:`.
-2. `conda env update -f tools/in_silico/environment.yml --prune`
-3. Commit the change to `environment.yml`.
+2. Regenerate the lock (re-solves both platforms):
+   ```bash
+   conda-lock lock -f tools/in_silico/environment.yml \
+     --lockfile tools/in_silico/conda-lock.yml -p linux-64 -p osx-arm64
+   ```
+3. Sync your local env to the new lock:
+   `conda-lock install -n silken_md tools/in_silico/conda-lock.yml`.
+4. Commit **both** `environment.yml` and `conda-lock.yml` (the `lock_sync` CI job
+   fails if they drift apart).
 
 Never `pip install` directly into the env without recording it in
 `environment.yml` — that breaks reproducibility for the rest of the team

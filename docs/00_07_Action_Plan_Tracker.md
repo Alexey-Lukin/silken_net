@@ -43,7 +43,7 @@
 > Сортовано за **виконавцем**, потім пріоритетом. Повний опис кожного пункту — у §модулі нижче (**one place**); тут — тонкий індекс. Легенда: 🤖 AI-doable · 👤 власник · 🔗 заблоковано.
 
 ### 🤖 Machine-doable зараз (AI, non-gated)
-> Основна 🤖-робота цієї сесії (Lorenz де-ризик, BME280 SSOT-інтеграція, SLASH-1 blackout-fix, climate-схема) — закрита. Залишок 🤖 переважно **gated** (ML-retrain, ground-truth калібрування, STM32 bench) → див. 🔗. Незаблокований 🤖-backlog ітемізується у §модулях (P2 ре-бакетинг).
+> Великі незаблоковані 🤖-стріми поетапно закриваються (SSOT-кампанія; firmware build/dependency-hardening — FW.46 ARM build + FW.47 pin-policy + `in_silico` conda-lock). Залишок 🤖 переважно **gated** (ML-retrain, ground-truth калібрування, STM32 bench) → див. 🔗. Незаблокований 🤖-backlog ітемізується у §модулях (P2 ре-бакетинг).
 
 ### 👤 На тобі (власник)
 
@@ -533,7 +533,7 @@
 
 #### FW.47 — Repo-wide vendor-via-submodule audit (dependency hygiene)
 - **P2** · 🤖+👤 · → `03_01 §12.5`
-- FW.46 завендорив CMSIS-DSP/CMSIS_6/mruby як pinned submodules; FW.47 — аудит решти vendor-поверхні + єдина pin-політика ([`03_01 §12.5`](03_01_Firmware_Lifecycle_and_DMA)). · [x] 🤖 інвентар + pin-стратегія ✅ (2026-06-04 — повний інвентар: firmware-native + OpenSSL host-dep + contracts; конвенція `extern/<dep>`@tag) · [x] 👤 рішення per-dep ✅ (FW.47, 2026-06-04): contracts=**npm-keep** (`npm ci`+committed lock відтворювано); firmware-native=**submodule@tag**-конвенція; toolchain-pin=**far-future**. Фізичний вендоринг milestone-gated: mbedTLS → [`00_07` — FW.30](00_07_Action_Plan_Tracker), STM32 HAL → [`00_07` — FW.46](00_07_Action_Plan_Tracker) (`-DSILKEN_WITH_HAL=ON`), CMSIS-NN → [`00_07` — FW.4](00_07_Action_Plan_Tracker)
+- FW.46 завендорив CMSIS-DSP/CMSIS_6/mruby як pinned submodules; FW.47 — аудит решти vendor-поверхні + єдина pin-політика ([`03_01 §12.5`](03_01_Firmware_Lifecycle_and_DMA)). · [x] 🤖 інвентар + pin-стратегія ✅ (2026-06-04 — повний інвентар: firmware-native + OpenSSL host-dep + contracts; конвенція `extern/<dep>`@tag) · [x] 👤 рішення per-dep ✅ (FW.47, 2026-06-04): contracts=**npm-keep** (`npm ci`+committed lock відтворювано); firmware-native=**submodule@tag**-конвенція; toolchain-pin=**far-future**. Фізичний вендоринг milestone-gated: mbedTLS → [`00_07` — FW.30](00_07_Action_Plan_Tracker), STM32 HAL → [`00_07` — FW.46](00_07_Action_Plan_Tracker) (`-DSILKEN_WITH_HAL=ON`), CMSIS-NN → [`00_07` — FW.4](00_07_Action_Plan_Tracker) · [x] 🤖 Python conda envs ✅ (2026-06-04): `in_silico` запінено committed `conda-lock.yml` (multi-platform versions+hashes) + CI job `lock_sync` гейтить lock↔`environment.yml` (`--check-input-hash`); `ml` свідомо deferred (parity-self-guards)
 
 ## §03/§05 · Безпека (Edge crypto + Web3)
 

@@ -1416,6 +1416,8 @@ tools/firmware/run_bytecode_vm.sh                 # minimal VM runs the bytecode
 
 **Contracts (Solidity):** OZ + forge-std → npm + committed `package-lock.json`; CI = `npm ci` (пінить точно, не SemVer-range) → відтворювано. Лишаємо npm — міграція на `forge install`-submodules нічого не дає для reproducibility (FW.47-рішення). Backend/frontend — bundler (`Gemfile.lock`) + importmap, lockfile-managed.
 
+**Python scientific envs (conda):** `tools/in_silico` (`silken_md`: OpenMM/RDKit/OpenFF/PySCF) і `tools/ml` (`silken_ml`: librosa/scikit-learn). `environment.yml` — human-editable джерело, але `>=`-діапазони → fresh-solve бере найновіший сумісний білд → числа TRL-доказового пайплайну можуть тихо зсунутися між прогонами. **`in_silico` запінено** committed `conda-lock.yml` (точні версії+хеші, `linux-64`+`osx-arm64`); CI ставить env з lock, окремий job `lock_sync` гейтить lock↔`environment.yml` (`conda-lock --check-input-hash`). **`ml` свідомо НЕ пінимо** — його gate само-перевірний (librosa ≡ stdlib parity 1e-6 + `emit_c --check`), version-drift ловиться парністю → lock дав би менше за вартість підтримки. Регенерація — `tools/in_silico/README.md`.
+
 ---
 
 ## 📈 13. EMA (Exponential Moving Average) на Soldier — FW.21 🤖

@@ -1,6 +1,6 @@
 ---
 name: in-silico
-description: "Navigation + gotchas for EBFC in-silico pipeline (27 scripts, L1-L4). Read SSOT docs first."
+description: "Navigation + gotchas for EBFC in-silico pipeline (L1-L4 MD+DFT). Read SSOT docs first."
 ---
 
 # In-Silico Pipeline (EBFC Gen 2.0 Zero-Lab Proof)
@@ -17,12 +17,12 @@ description: "Navigation + gotchas for EBFC in-silico pipeline (27 scripts, L1-L
 | `docs/08_01_University_R_and_D_Protocols.md` | Мінаєв collaboration, xylem sap protocols |
 | `docs/08_03_Joint_Publications_and_IP_Strategy.md` | Publication plan, Стаття 28 baseline |
 | `docs/08_06_CHMA_Biomedical_Integration.md` | ЧМА collaboration, Бушуєва EIS predictions |
-| `docs/00_08_Action_Plan_Tracker.md` | HW.5.IS section — operational task status |
+| `docs/00_07_Action_Plan_Tracker.md` | HW.5.IS section — operational task status |
 | `tools/in_silico/README.md` | Setup, quickstart, GPU notes, GAFF explanation |
 
-**After completing ANY task in this pipeline — update ALL 8 docs above.**
+**After completing ANY task in this pipeline — update ALL the SSOT docs above.**
 
-## Script Dependency Graph (27 scripts)
+## Script Dependency Graph
 
 ```
 Parameterization (CPU, ~minutes):
@@ -97,6 +97,6 @@ Residual ~0.9 eV gap = PCM solvation limit (not chemistry error).
 
 - **Adding a ligand**: script 0N (parameterize) → add to gaff_cache → SDF to ligands/ → add test → rerun downstream MD
 - **Changing a constant**: `lib/constants.py` ONLY → check which cached JSON uses it
-- **After any change**: `pytest tools/in_silico/tests/` (68 tests) → commit → update all 8 SSOT docs above
+- **After any change**: `pytest tools/in_silico/tests/` → commit → update all the SSOT docs above
 - **New DFT script**: import from `lib.constants` + `lib.utils` + `lib.dft_utils`. Use `level_shift=0.3` for UKS. No density_fit for heavy metals.
 - **New MD script**: import from `lib.constants` + `lib.geometry` + `lib.utils`. Use 10K pre-relaxation + 10K ramp step + `maxIterations=10000`.

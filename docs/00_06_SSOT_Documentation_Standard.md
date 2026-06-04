@@ -82,6 +82,7 @@
 | Log-mel feature contract (FW.25) | `03_03 §3.4` (owner). Дзеркала: `firmware/common/logmel_contract.h` + `silken_ml.dsp.contract` (`tools/ml`); звірка через stamped `contract_hash` + `emit_c --check`. Таблиці генерує `silken_ml.codegen` |
 | Lorenz mruby bytecode (FW.46) | джерело `firmware/bio_contracts/bio_contract.rb` (логіка — owner `03_04`); generated mirror `firmware/common/lorenz_bytecode.h` (mrbc); звірка — `tools/firmware/check_bytecode.py` (light sha-stamp) + `gen_bytecode.sh --check` (deep regen) |
 | Firmware ARM build / toolchain pin / mruby build_config (FW.46) | `03_01 §12.4` (CMake + `firmware/cmake/arm-none-eabi.cmake` + `firmware/mruby/build_config.rb`; pinned submodules у `firmware/extern/`). Гейт — `ci.yml › firmware_arm_build` |
+| Vendor / dependency pin-policy (FW.47) | `03_01 §12.5` — repo-wide external-dep pinning: firmware-native `extern/<dep>`@tag · contracts npm+lock · Python conda (`in_silico` → committed `conda-lock.yml`, гейт `lock_sync`; `ml` deferred — parity-self-guards). Інші доки реферять, не дублюють рішення |
 
 > Повний канон↔канон дубль-аудит — `00_07 DOC-T.2`.
 
