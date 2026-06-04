@@ -448,11 +448,11 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 
 **Q1: "44 мВ від дерева — це рівень шуму. Як MCU Cortex-M4 взагалі запуститься від такого?"**
 
-> **A:** MCU не живиться безпосередньо від 44 мВ. Застосовується двоступеневий PMIC-каскад: LTC3108 (порогова напруга старту: 20 мВ) як trickle charger повільно накопичує енергію в іоністорі (0.47F). STM32WLE5JC перебуває в STOP2 (2.1 мкА) 99.9% часу. Пробудження: зчитування сенсорів → обчислення mruby Lorenz → AES-128 шифрування → 21-байтна LoRa TX → назад у STOP2. Після архітектурного пів'оту: повноцінний EBFC Gen 2.0 на dgrFAD-GDH / Laccase+ZIF-nanozyme генерує **>500 мВ** (вище порогу Cold-Start BQ25570 330 мВ) — LTC3108 більше не потрібен у виробничій версії. Детальніше: [`02_03` — BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power).
+> **A:** MCU не живиться безпосередньо від 44 мВ. Застосовується двоступеневий PMIC-каскад: LTC3108 (порогова напруга старту: 20 мВ) як trickle charger повільно накопичує енергію в іоністорі (0.47F). STM32WLE5JC перебуває в STOP2 (2.1 мкА — baseline TRL 6; ціль 300 nA RTC-only, [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)) 99.9% часу. Пробудження: зчитування сенсорів → обчислення mruby Lorenz → AES-128 шифрування → 21-байтна LoRa TX → назад у STOP2. Після архітектурного пів'оту: повноцінний EBFC Gen 2.0 на dgrFAD-GDH / Laccase+ZIF-nanozyme генерує **>500 мВ** (вище порогу Cold-Start BQ25570 330 мВ) — LTC3108 більше не потрібен у виробничій версії. Детальніше: [`02_03` — BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power).
 
 **Q1 (EN): "44mV is essentially noise floor. How do you ensure cold start?"**
 
-> **A:** Dual-stage PMIC cascade. LTC3108 starts from 20mV via Meissner oscillator (1:100 transformer Coilcraft LPR6235, 330pF resonant cap) → charges 0.47F supercapacitor. BQ25570 with MPPT takes over at >330mV threshold. Production EBFC Gen 2.0 (dgrFAD-GDH + Laccase/ZIF-nanozyme on Ti-6Al-4V gyroid, 20–25 year lifespan) generates >500mV → LTC3108 removed post-pivot. Operate in duty-cycled burst: Accumulate → Compute → Transmit → Deep Sleep (2.1 µA).
+> **A:** Dual-stage PMIC cascade. LTC3108 starts from 20mV via Meissner oscillator (1:100 transformer Coilcraft LPR6235, 330pF resonant cap) → charges 0.47F supercapacitor. BQ25570 with MPPT takes over at >330mV threshold. Production EBFC Gen 2.0 (dgrFAD-GDH + Laccase/ZIF-nanozyme on Ti-6Al-4V gyroid, 20–25 year lifespan) generates >500mV → LTC3108 removed post-pivot. Operate in duty-cycled burst: Accumulate → Compute → Transmit → Deep Sleep (2.1 µA TRL-6 baseline; 300 nA RTC-only target — [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)).
 
 ---
 
@@ -480,7 +480,7 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 
 **Q4: "Edge AI (TinyML) потребує постійно увімкненого мікрофона — іоністор сяде за годину."**
 
-> **A:** Мікрофон не активний 24/7. Застосовується **пасивний п'єзодиск** як hardware wake-up source з нульовим споживанням. П'єзо спрацьовує на апаратне переривання `GPIO_EXTI0` (PA0) тільки при перевищенні порогового рівня вібрації. Тільки тоді CPU виходить зі сну, TIM2 + DMA наповнює аудіо-буфер 512 семплів (CPU знову засинає в SLEEP-режимі), після чого 50 мс inference через CMSIS-NN. Standby струм: **2.1 мкА**. Детальніше: [`03_01` — Firmware Lifecycle and DMA § Phase 1.5](03_01_Firmware_Lifecycle_and_DMA).
+> **A:** Мікрофон не активний 24/7. Застосовується **пасивний п'єзодиск** як hardware wake-up source з нульовим споживанням. П'єзо спрацьовує на апаратне переривання `GPIO_EXTI0` (PA0) тільки при перевищенні порогового рівня вібрації. Тільки тоді CPU виходить зі сну, TIM2 + DMA наповнює аудіо-буфер 512 семплів (CPU знову засинає в SLEEP-режимі), після чого 50 мс inference через CMSIS-NN. Standby струм: **2.1 мкА** (baseline TRL 6; ціль 300 nA RTC-only — [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)). Детальніше: [`03_01` — Firmware Lifecycle and DMA § Phase 1.5](03_01_Firmware_Lifecycle_and_DMA).
 
 ---
 
