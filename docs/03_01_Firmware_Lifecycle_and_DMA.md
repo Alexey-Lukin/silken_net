@@ -1396,6 +1396,26 @@ tools/firmware/run_bytecode_vm.sh                 # minimal VM runs the bytecode
 
 **Scope-межа:** §12.4 крос-компілює owned-код і вимірює його розмір. Soldier/Queen `.elf` (`main.c`/`queen/main.c`) залежать від `main.h`/`radio.h` (CubeMX-HAL, поза репо) → лінкуються лише за `-DSILKEN_WITH_HAL=ON` після вендорингу CubeMX-проєкту (👤). Тоді `firmware/scripts/check_ram_budget.sh` дає істинний повний [`00_07` — FW.26](00_07_Action_Plan_Tracker) розмір. C-API mruby для `main.c` у HAL-фазі: `mrb_alloca→mrb_temp_alloc`, `mruby/ext/io.h→mruby/io.h` (4.0.0 renames).
 
+### 12.5 Vendor / dependency pin-policy (FW.47)
+
+**Дім pin-політики зовнішніх залежностей.** FW.46 завендорив CMSIS-DSP/CMSIS_6/mruby як pinned submodules (§12.4); FW.47 — аудит решти vendor-поверхні + єдина політика, щоб «assumed / вставлене вручну» не протікало в білд.
+
+**Конвенція:** кожна firmware-native залежність → **pinned git-submodule `firmware/extern/<dep>` на release-tag** (як §12.4). CubeMX-glue (`*_hal_msp.c`, `main.h`/`radio.h`-config) лишається owned in-repo — submodule тягне лише upstream-драйвери.
+
+| Залежність | Роль | Статус | Pin-план |
+|---|---|---|---|
+| CMSIS-DSP · CMSIS_6 · mruby | logmel FFT · Core · bio-contract VM | ✅ завендорено (§12.4) | submodule@tag |
+| OpenSSL | host-тест crypto (AES/HKDF/HMAC) | system host-dep; НЕ target | host-build, не вендориться |
+| mbedTLS | target HMAC-SHA256 / HKDF | 🔴 лише `TODO(FW.30-mbedtls)`, не залінковано | `extern/mbedtls`@tag — [`00_07` — FW.30](00_07_Action_Plan_Tracker) |
+| STM32 HAL + CMSIS-Device-WL | HAL · SUBGHZ/SX1262-радіо · CRYP | 🔴 assumed (CubeMX, поза репо); host = `hal_mock.h` | STM32CubeWL@tag — `-DSILKEN_WITH_HAL=ON` |
+| CMSIS-NN | TinyML `Run_Inference` | 🔴 ще нема згадок (модель відсутня) | `extern/CMSIS-NN`@tag — [`00_07` — FW.4](00_07_Action_Plan_Tracker) |
+
+> SX1262-радіо = HAL SUBGHZ-периферія (`SUBGHZ_HandleTypeDef`), не окремий Semtech-драйвер → у HAL-submodule, не окрема залежність.
+
+**Toolchain (окрема вісь):** ARM GCC + newlib у CI = apt (unpinned); bytecode-детермінізм рідить на pinned mruby submodule, не на toolchain. Pin через ARM-tarball (як локально) — far-future build-attestation ([`00_07` — FW.46](00_07_Action_Plan_Tracker)).
+
+**Contracts (Solidity):** OZ + forge-std → npm + committed `package-lock.json`; CI = `npm ci` (пінить точно, не SemVer-range) → відтворювано. Лишаємо npm — міграція на `forge install`-submodules нічого не дає для reproducibility (FW.47-рішення). Backend/frontend — bundler (`Gemfile.lock`) + importmap, lockfile-managed.
+
 ---
 
 ## 📈 13. EMA (Exponential Moving Average) на Soldier — FW.21 🤖
