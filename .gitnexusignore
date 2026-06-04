@@ -1,0 +1,16 @@
+# GitNexus code-graph excludes — gitignore syntax, honored by `gitnexus analyze`
+# (config/ignore-service.js: .gitignore + .gitnexusignore + a hardcoded vendor
+# list that already covers node_modules/vendor/third_party/dist/build/bin…).
+#
+# These paths stay TRACKED in git (FW.47 pins them as submodules) — we only keep
+# upstream / vendored code out of the *code-intelligence* graph, so impact
+# analysis, search and the AGENTS/CLAUDE symbol count reflect OUR code, not
+# mruby/CMSIS internals.  Pin-policy: docs/03_01 §12.5.
+#
+# Measured before this exclude: firmware/extern/ = 60,925 of ~72,000 indexed
+# symbols (~85%). gitnexus already auto-ignores `third_party`/`3rdparty`; our
+# vendored submodules just live under `extern/`, which it doesn't recognize.
+#
+# Apply with a re-index:  gitnexus analyze --force --skip-agents-md
+
+firmware/extern/
