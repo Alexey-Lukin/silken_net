@@ -1372,8 +1372,8 @@ tools/firmware/
 Детальні recipe (env, локальний прогін, регенерація) — скіл `ml-engineering`. Локально:
 
 ```bash
-cmake -B firmware/build -S firmware --toolchain firmware/cmake/arm-none-eabi.cmake \
-  -DCMSISCORE=$PWD/firmware/extern/CMSIS_6/CMSIS/Core
+cmake -B firmware/build -S firmware --toolchain $PWD/firmware/cmake/arm-none-eabi.cmake \
+  -DCMSISCORE=$PWD/firmware/extern/CMSIS_6/CMSIS/Core   # toolchain path must be absolute
 cmake --build firmware/build --target size        # arm-none-eabi-size logmel.o
 tools/firmware/gen_bytecode.sh --check            # bytecode mirror == bio_contract.rb
 tools/firmware/run_bytecode_vm.sh                 # minimal VM runs the bytecode

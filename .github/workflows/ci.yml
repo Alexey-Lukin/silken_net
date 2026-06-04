@@ -101,7 +101,7 @@ jobs:
       - name: '[FW.46] Cross-compile owned code (logmel.c) + arm-none-eabi-size'
         run: |
           cmake -B firmware/build -S firmware -G Ninja \
-            -DCMAKE_TOOLCHAIN_FILE=firmware/cmake/arm-none-eabi.cmake \
+            -DCMAKE_TOOLCHAIN_FILE="$PWD/firmware/cmake/arm-none-eabi.cmake" \
             -DCMSISCORE="$PWD/firmware/extern/CMSIS_6/CMSIS/Core"
           cmake --build firmware/build --target size
 

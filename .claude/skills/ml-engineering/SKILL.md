@@ -61,7 +61,7 @@ first. **No ARM toolchain in this env by default** — pin Arm GNU 13.2.Rel1
 
 | Want | Run | Needs |
 |---|---|---|
-| cross-compile owned code (logmel.c) + `arm-none-eabi-size` | `cmake -B firmware/build -S firmware --toolchain firmware/cmake/arm-none-eabi.cmake -DCMSISCORE=$PWD/firmware/extern/CMSIS_6/CMSIS/Core && cmake --build firmware/build --target size` | arm-gcc, cmake |
+| cross-compile owned code (logmel.c) + `arm-none-eabi-size` | `cmake -B firmware/build -S firmware --toolchain $PWD/firmware/cmake/arm-none-eabi.cmake -DCMSISCORE=$PWD/firmware/extern/CMSIS_6/CMSIS/Core && cmake --build firmware/build --target size` (toolchain path **must be absolute** — cmake resolves it vs the build dir) | arm-gcc, cmake |
 | regenerate the bytecode mirror after editing `bio_contract.rb` | `tools/firmware/gen_bytecode.sh` then commit `firmware/common/lorenz_bytecode.h` | ruby+rake (builds host mrbc) |
 | bytecode mirror == source (light / deep) | `python3 tools/firmware/check_bytecode.py` / `tools/firmware/gen_bytecode.sh --check` | stdlib / +mrbc |
 | minimal VM runs the committed bytecode | `tools/firmware/run_bytecode_vm.sh` | host cc + ruby |

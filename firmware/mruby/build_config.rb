@@ -62,8 +62,8 @@ if ENV['SILKEN_ARM_BUILD'] == '1'
 
     cpu   = %w[-mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb]
     flags = cpu + %w[-Os -ffunction-sections -fdata-sections]
-    conf.cc.flags  = [flags]
-    conf.cxx.flags = [flags]
+    conf.cc.flags  = [ flags ]
+    conf.cxx.flags = [ flags ]
 
     SILKEN_MIN_GEMS.call(conf)
   end
