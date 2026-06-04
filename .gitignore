@@ -75,6 +75,7 @@ firmware/test/test_queen
 firmware/test/test_soldier
 firmware/test/test_bio_contract
 firmware/test/test_tinyml
+firmware/test/test_logmel
 firmware/test/test_encryption
 
 # Subgraph build artifacts (The Graph)

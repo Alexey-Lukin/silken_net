@@ -1,0 +1,37 @@
+# macOS / IDE
+.DS_Store
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+build/
+dist/
+
+# Conda / virtual envs (multi-GB, machine-specific — NEVER commit)
+env/
+.env/
+venv/
+.venv/
+
+# Datasets — large audio; tracked by a committed manifest (checksums), not git
+data/raw/
+data/processed/
+*.wav
+*.flac
+*.ogg
+*.npz
+
+# Trained model artifacts — binary; the registry tracks provenance, not git
+*.tflite
+*.h5
+*.keras
+*.pkl
+models/registry/
+
+# NB: the generated firmware headers (firmware/common/logmel_*.h) ARE committed —
+# they are the golden source the C consumes — and live OUTSIDE this dir.

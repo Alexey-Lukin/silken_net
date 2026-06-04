@@ -1,0 +1,52 @@
+name: ML smoke (log-mel parity)
+
+permissions:
+  contents: read
+
+# Path-filtered so the conda env install only triggers on PRs that touch the ML
+# stack. Everything else uses the lighter `ci.yml` firmware job (which checks the
+# committed tables with pure stdlib — no conda). Pattern mirrors
+# `in_silico_smoke.yml`. This job is where the HEAVY librosa ≡ stdlib parity lives.
+on:
+  pull_request:
+    paths:
+      - 'tools/ml/**'
+      - 'firmware/common/logmel_*.h'
+      - '.github/workflows/ml_smoke.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'tools/ml/**'
+      - 'firmware/common/logmel_*.h'
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up silken_ml conda env (cached)
+        # micromamba caches the whole env keyed on environment.yml hash, so reruns
+        # reuse it in ~30 s instead of resolving + downloading each time.
+        uses: mamba-org/setup-micromamba@v3
+        with:
+          environment-file: tools/ml/environment.yml
+          environment-name: silken_ml
+          cache-environment: true
+          cache-downloads: true
+          init-shell: bash
+
+      - name: Install silken_ml (editable)
+        shell: bash -el {0}
+        run: pip install -e tools/ml
+
+      - name: Pytest — incl. librosa ≡ stdlib parity (tol 1e-6)
+        shell: bash -el {0}
+        run: pytest tools/ml/tests -q
+
+      - name: Firmware tables match the contract (canonical regen)
+        shell: bash -el {0}
+        run: python -m silken_ml.codegen.emit_c --check

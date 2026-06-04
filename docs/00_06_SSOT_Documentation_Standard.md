@@ -79,6 +79,7 @@
 | MOIC-концепція кластера + план публікацій (Ст. 1–35) + IP-рамка | `08_01` (cluster head) |
 | Зовнішні стейкхолдери (B2G/B2B + культурний шар) | `08_03` (External Stakeholders Registry) |
 | Firmware internals split | **Soldier** RAM/tests/lifecycle + RTC reg-map → `03_01`; **Queen** deep-dive (RAM `§9` · HAL `§10` · host-tests `§11` · `#define` `§0`) → `03_02`. Кожен реферить інший, не дублює (DOC-T.14) |
+| Log-mel feature contract (FW.25) | `03_03 §3.4` (owner). Дзеркала: `firmware/common/logmel_contract.h` + `silken_ml.dsp.contract` (`tools/ml`); звірка через stamped `contract_hash` + `emit_c --check`. Таблиці генерує `silken_ml.codegen` |
 
 > Повний канон↔канон дубль-аудит — `00_07 DOC-T.2`.
 
@@ -114,6 +115,7 @@
 | **deprecated terms (Ruthless Pruning)** | ретирований SSOT-токен не сміє повертатись в **активний** канон — enforcement-рука Ruthless Pruning (§4). Лише **однозначно** мертві рядки: HKDF `silkennet-v1-aes256`; партномер `ZP-3`/`ZP-5` (∅27 мм через-отв. п'єзо → SMD, `02_01 §3`). Ще-живий токен НЕ додається (LTC3108 виживає як DNP fallback → не guard-иться). Exempt: 02_06 (legacy-дім) · 00_06 (цитує приклади) · 00_07 (tracker) | `bin/rails docs:check_refs` (HARD 2026-06-02; `lib/docs_linter.rb`) |
 | **TRL range-consistency** | per-doc member-TRL у межах **band** модуля (`00_03 §1`): (a) рядок well-formed (current ≤ target) + (b) рядок ≤ max member-TRL під-доків (рядок = min, не вище за КОЖНОГО члена) + (c) member ≤ target модуля. Перевіряє лише **верхні** межі — нижня має легітимні винятки (рядок = min критичного шляху → під-док буває нижче: 06_01 off-path, 00_03 Статус звітує System-TRL). Owner-only-vocabulary, як інші value-гейти | `bin/rails docs:check_refs` (HARD 2026-06-03; `lib/docs_linter.rb`) |
 | **ref-graph audit** | _(on-demand, НЕ CI-gate)_ orphan/dead-end сторінки · in/out-degree skew · one-way (asymmetric) sibling-лінки · linked-`§X` валідація — власний ref-граф канону (GitNexus моделює код, не NN_NN-конвенцію). `#anchor`-резолюція звідси випущена у HARD-gate (рядок вище); граф лишає графовий вигляд, якого per-line гейти не дають | `bin/rails docs:graph` (`lib/docs_graph.rb`; spec `spec/lib/docs_graph_spec.rb`) |
+| **log-mel contract** (FW.25) | §3.4 значення == C-дзеркало `logmel_contract.h` == python `contract.py` через stamped `contract_hash`; committed `firmware/common/logmel_*.h` == canonical regen — ловить тиху правку будь-якої сторони (значення-as-bytes, не проза) | `check_firmware_tables.py` (ci.yml, stdlib) + `emit_c --check` (ml_smoke.yml) |
 
 **Правило при зміні факту:** правити лише у home (§2) → рефи лишаються чинними; будь-який новий NN_NN-док/реф — `docs:check_refs` має лишатись зеленим перед merge.
 

@@ -627,7 +627,7 @@ H = 38.25 / (81 − 15.04) = 0.58 години = 35 хв
 Енергобаланс §9.4–9.7 рахує **лише** baseline TX-цикл (sense → Lorenz → 1 TX). Fauna-акустичні сесії (TinyML biodiversity inference, [`03_03 §10.3`](03_03_TinyML_Acoustic_Inference) / ARCH.39) — **окрема активність поверх** нього:
 
 ```
-E_fauna_session ≈ 78.3 мДж     (~12 мА × 1.56 с active CPU: 156 MFCC+inference вікон, через η_buck)
+E_fauna_session ≈ 78.3 мДж     (~12 мА × 1.56 с active CPU: 156 log-mel+inference вікон, через η_buck)
 E_fauna_daily   ≈ 156.6 мДж/добу (~2 сесії/добу) — × 20 від застарілої оцінки 3.3 мДж/добу
 ```
 

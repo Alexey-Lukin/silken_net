@@ -1,0 +1,28 @@
+# Conda environment for the SilkenNet ML toolkit (`silken_ml`).
+#
+# Mirrors the `tools/in_silico/environment.yml` pattern (conda-forge, pinned,
+# pytest). This is the FULL/heavy path — the canonical librosa log-mel oracle +
+# classical-ML + dataset I/O. The fast path (pure-stdlib oracle + C codegen +
+# firmware host-tests) needs NONE of this; see tools/ml/README.md.
+#
+#   micromamba create -f tools/ml/environment.yml   # or: mamba env create -f …
+#   micromamba activate silken_ml
+#   pip install -e tools/ml
+name: silken_ml
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  # --- DSP + canonical log-mel oracle (parity vs pure-stdlib, tol 1e-6) ---
+  - numpy>=1.26
+  - scipy>=1.12
+  - librosa>=0.10        # pulls soundfile (audio I/O) transitively
+  # --- classical ML (dataset eval / future backend-RF parity) ---
+  - scikit-learn>=1.4
+  - matplotlib>=3.8
+  # --- testing ---
+  - pytest>=7.0
+  - pytest-cov>=4.0
+  - pip
+  # NB: TensorFlow / tflite-runtime are DEFERRED until the training + INT8-export
+  # module lands (keeps this env lean). See README "Deferred stack".

@@ -82,7 +82,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║  [STM32WLE5JC SOLDIER]                                               ║
 ║   ФАЗА 1: SENSE                                                      ║
 ║     ADC → Vcap (мВ), Temp (°C), IWDG heartbeat                      ║
-║     DMA 16kHz → raw_audio_buffer[512] → TinyML inference             ║
+║     DMA 16kHz → raw_audio[512] → log-mel[40] → inference             ║
 ║     delta_t_seconds = tick - last_wakeup_timestamp (метаболізм EBFC) ║
 ║                                                                      ║
 ║   ФАЗА 2: mruby BioContract (on-device Lorenz) [SEC.11 + FW.6]      ║

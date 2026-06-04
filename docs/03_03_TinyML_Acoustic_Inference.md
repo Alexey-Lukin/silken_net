@@ -335,7 +335,8 @@ PVD safety, з запасом). Path B має найменшу sum, але рі�
 |----------|----------|---------------------------|
 | Sample rate | **16 000 Hz** | TIM2 метроном (§2.1) |
 | Frame / `n_fft` | **512** (= 32 ms) | один DMA-блок = один FFT-кадр (§2.2) |
-| Window | **Hann**, `win_length=512` | стандарт для спектрограм; `arm_mult_f32` |
+| Window | **Hann — periodic** (`fftbins=True`, знаменник `N=512`), `win_length=512` | librosa-default; ⚠️ **НЕ `arm_hanning_f32`** (symmetric, знаменник `N−1`) — розійдеться на краях кадру > 1e-3; вшити precomputed periodic-table |
+| DC-removal | **− mean кожного кадру** (перед вікном) | audio нормалізоване в `[0,1)` (велика DC ≈0.5); `melspectrogram(y=audio,…)` цього НЕ робить → обов'язково на ОБОХ сторонах |
 | `hop_length` | **512** (без overlap) | 5 с / 32 мс = **156 кадрів** — точно збігається з монолітним fauna-вікном (§10.2 / ARCH.40); overlap зламав би 156-кадровий Welford |
 | `n_mels` | **40** | = `MODEL_INPUT_SIZE` (stub); ESC-стандарт |
 | `fmin` / `fmax` | **50 Hz / 8000 Hz** | fmax = Nyquist@16k; покриває комах 4–8 кГц, птахів 1–6, амфібій 0.5–3 (§10) |
@@ -356,28 +357,36 @@ PVD safety, з запасом). Path B має найменшу sum, але рі�
 void Compute_LogMel(const float audio[512], float out_mel[40]);
 ```
 
-Пайплайн: DC-remove (− mean) → Hann → **RFFT 512→257** (`arm_rfft_fast_f32` на ARM; портативний radix-2 для host-тестів) → power `re²+im²` (257 bins) → **mel-bank 40×257** (precomputed трикутні, HTK, sparse-triplet для Flash) → `ln(·+1e-6)`. Mel-матриця генерується офлайн (скрипт нижче) і вшивається як `const`.
+Пайплайн: **DC-remove (− mean per-frame)** → **periodic Hann** (precomputed table) → **RFFT 512→257** (`arm_rfft_fast_f32` на ARM; портативний radix-2 для host-тестів) → power `re²+im²` (257 bins, **без `1/N`**) → **mel-bank 40×257** (precomputed трикутні, HTK, `norm=None`, sparse-triplet для Flash) → `ln(·+1e-6)`. Вихід `out_mel[0..39]` — low→high mel. Таблиці (periodic-Hann, mel-bank, golden-vectors) генеруються офлайн з `silken_ml.codegen` ([`tools/ml`](https://github.com/Alexey-Lukin/silken_net/blob/main/tools/ml)) і вшиваються як `const` у `firmware/common/logmel_*.h`.
 
-#### Reference (ML-партнер тренує на ЦЬОМУ)
+#### Reference (канонічний оракул — `silken_ml.dsp`)
+
+> ⚠️ **DC-removal паритет:** firmware `Compute_LogMel` прибирає DC **кожного кадру**, а `librosa.feature.melspectrogram(y=audio,…)` — **ні**. Оскільки audio нормалізоване в `[0,1)` (DC ≈ 0.5), пряме `melspectrogram` РОЗІЙДЕТЬСЯ з MCU у нижніх mel-смугах (DC після Hann тече в bins 0–3) — на порядки понад tol 1e-3. Тому фреймуємо вручну й віднімаємо mean кожного кадру:
 
 ```python
 import librosa, numpy as np
 SR, N_FFT, HOP, N_MELS, FMIN, FMAX = 16000, 512, 512, 40, 50, 8000
-mel = librosa.feature.melspectrogram(
-    y=audio, sr=SR, n_fft=N_FFT, hop_length=HOP, win_length=N_FFT,
-    window="hann", n_mels=N_MELS, fmin=FMIN, fmax=FMAX,
-    power=2.0, htk=True, norm=None)            # htk=True + norm=None ⇔ MCU mel-bank
-logmel = np.log(mel + 1e-6).astype(np.float32)  # натуральний log, floor 1e-6
-# logmel.shape == (40, n_frames); один стовпець [40] = вхід Run_Inference
+
+mel_fb = librosa.filters.mel(sr=SR, n_fft=N_FFT, n_mels=N_MELS,
+                             fmin=FMIN, fmax=FMAX, htk=True, norm=None)   # [40, 257]
+win = librosa.filters.get_window("hann", N_FFT, fftbins=True)            # PERIODIC (denom N)
+
+frames = librosa.util.frame(audio, frame_length=N_FFT, hop_length=HOP)   # [512, n]
+frames = frames - frames.mean(axis=0, keepdims=True)                     # ← DC-remove per-frame
+power  = np.abs(np.fft.rfft(frames * win[:, None], axis=0)) ** 2         # [257, n], re²+im²
+logmel = np.log(mel_fb @ power + 1e-6).astype(np.float32)                # [40, n]
+# один стовпець logmel[:, k] = [40] = вхід Run_Inference (Path B); = байт-у-байт Compute_LogMel
 ```
 
-Той самий скрипт генерує mel-фільтробанк для вшивання у firmware:
-`librosa.filters.mel(sr=SR, n_fft=N_FFT, n_mels=N_MELS, fmin=FMIN, fmax=FMAX, htk=True, norm=None)` → `float[40][257]` (sparse triplet).
+Те саме `mel_fb` вшивається у firmware як sparse triplet. **Канонічний оракул** — `silken_ml.dsp.logmel_librosa` (training-side) ≡ `silken_ml.dsp.logmel_stdlib` (pure-stdlib, без numpy — швидкий локальний + golden-gen), parity tol 1e-6. ML-партнера нема → контракт self-owned; майбутній партнер тренує на ЦЬОМУ самому контракті (крос-чек, не гейт).
 
-#### Розблокування після confirm
-1. ML-партнер підтверджує/коригує таблицю (особливо `fmin/fmax`, HTK vs Slaney, log-type).
-2. Firmware: `Compute_LogMel` (`arm_rfft_fast_f32` + вшитий mel-bank) + golden-vector host-тести (numpy reference ↔ C, tolerance 1e-3).
-3. Розкоментувати `Run_Inference` call-site (`main.c:1422`) + виміряти Tensor Arena (BLOCKER-3).
+#### Статус реалізації (self-owned)
+
+Контракт — **наш канон end-to-end** (ML-партнера нема); верифікується локально без librosa на швидкому шляху.
+
+1. **Оракул + golden-gen** — `silken_ml.dsp` ([`tools/ml`](https://github.com/Alexey-Lukin/silken_net/blob/main/tools/ml)): librosa (training) ≡ pure-stdlib (швидкий, без numpy), parity tol 1e-6 у `ml_smoke.yml`.
+2. **Firmware** — `Compute_LogMel` ([`firmware/common/logmel.c`](https://github.com/Alexey-Lukin/silken_net/blob/main/firmware/common/logmel.c); host radix-2 / ARM `arm_rfft_fast_f32`) + golden-vector host-тести ([`firmware/test/test_logmel.c`](https://github.com/Alexey-Lukin/silken_net/blob/main/firmware/test/test_logmel.c), tol 1e-3). Таблиці Hann/mel-bank/golden — `silken_ml.codegen` → `firmware/common/logmel_*.h`.
+3. [ ] Розкоментувати `Run_Inference` call-site (Phase 1.5 у `main.c`, наразі закоментований) + виміряти Tensor Arena — після реальної моделі (`FW.4`, потребує `silken_net_audio_model.h`).
 
 ---
 
@@ -412,16 +421,18 @@ uint8_t ml_event_id = 0;  // Результат: 0-Тиша, 1-Вітер, 2-К�
 
 | Параметр | Типова оцінка | Примітка |
 |----------|---------------|---------|
-| Tensor Arena Size | **8–16 KB** | Для CNN 1D або MobileNetV1 tiny (INT8) |
+| Tensor Arena Size | **~16 KB** | Path B 2D-CNN на log-mel (INT8); §3.2 діапазон ~15–30 KB |
 | Model Size (Flash) | **32–64 KB** | INT8 квантована модель |
-| Input tensor | `float32[512]` або `int8[512]` | Залежить від квантизації |
-| Output tensor | `float32[4]` або `int8[4]` | Softmax ймовірності 4 класів |
-| Тип моделі (очікуваний) | CNN 1D + Softmax | Стандарт для keyword spotting |
+| Input tensor | `float32[40]` (Path B log-mel) | 1 кадр 40 mel-смуг від `Compute_LogMel` (§3.4); INT8 → `int8[40]`. (Path A 1D-raw `[512]` — superseded) |
+| Output tensor | `float32[5]` або `int8[5]` | Softmax 5 класів (0–3 + fauna §10) |
+| Тип моделі (очікуваний) | 2D-CNN на log-mel + Softmax (**Path B**, §3.2 DECISION) | Path A 1D-raw — superseded |
 
-**Очікувана архітектура (для 32ms, 16kHz, 4 класи, time-domain вхід):**
+**Очікувана архітектура (Path B — log-mel вхід; точна топологія — за тренуванням):**
 ```
-Input(512) → Conv1D(32, k=3) → MaxPool → Conv1D(64, k=3) → GlobalAvgPool → Dense(4) → Softmax
+per-frame:   Input(40 log-mel) → [Conv/Dense над mel-смугами] → Dense(N_class) → Softmax
+fauna (§10): Input(mean‖std log-mel) → … → Dense(5) → Softmax
 ```
+> Path A (1D time-domain `Input(512)→Conv1D…→Dense(4)`) — **superseded** рішенням §3.2; лишається лише як 4-class raw-MVP fallback, якщо ML-партнер недоступний.
 
 ### 4.4 Сигнатура функції інференсу (очікувана)
 
@@ -430,13 +441,13 @@ Input(512) → Conv1D(32, k=3) → MaxPool → Conv1D(64, k=3) → GlobalAvgPool
 // Очікувана сигнатура:
 uint8_t Run_Inference(float* input_buffer, float* confidence);
 
-// Виклик у main.c (закоментований — BLOCKER-1):
-// ml_event_id = Run_Inference(audio_buffer, &ml_confidence);
+// Виклик у main.c (Phase 1.5, закоментований — BLOCKER-1):
+// ml_event_id = Run_Inference(out_mel, &ml_confidence);  // Path B: 40 log-mel від Compute_LogMel
 ```
 
 | Параметр | Тип | Зміст |
 |----------|-----|-------|
-| `input_buffer` | `float*` | 512 нормалізованих семплів [0.0, 1.0] |
+| `input_buffer` | `float*` | **40 log-mel ознак** (Path B) від `Compute_LogMel` (§3.4); сирі [0,1)-семпли більше НЕ вхід моделі |
 | `confidence` | `float*` | Ймовірність найбільш впевненого класу [0.0, 1.0] |
 | Повернене значення | `uint8_t` | Class ID: 0=Silence, 1=Wind, 2=Cavitation, 3=Chainsaw |
 
@@ -449,7 +460,7 @@ uint8_t Run_Inference(float* input_buffer, float* confidence);
 | Conv1D шар 2 (оцінка) | ~3–8 мс |
 | Dense + Softmax | ~0.5 мс |
 | **Загальний Inference Latency** | **~8–24 мс** |
-| **З DSP (FFT + MFCC)** | **~12–28 мс** |
+| **З DSP (FFT + log-mel, `Compute_LogMel`)** | **~12–28 мс** |
 
 ---
 
@@ -577,7 +588,7 @@ void Trigger_Emergency_LoRa_TX(void)
 > ⚠️ Точний розмір Tensor Arena невідомий. Потрібна верифікація через `arm-none-eabi-size`.
 
 > 🌿 **`fauna_feature_accumulator` (audit-fix, ARCH.40 / §10.2 / FW.25 path-dependent):** Welford running `mean+M2` для агрегації 156 feature-векторів у межах **одного** awake-циклу (5 с моноліт — STOP2 wipe'не SRAM2, тому декомпозиція "сон-між-вікнами" заборонена). **Розмір залежить від обраного DSP-шляху (§3.2 Decision Matrix):**
-> - **Path B (log-mel, default-рекомендація)** при `N_mel = 13`: `mean[13] = 52 B` + `M2[13] = 52 B` + `count (uint32) = 4 B` + `inference_input[mean‖std][26] = 104 B` ≈ **212 B**, округлено до **~256 B** з запасом на FFT scratch buffer.
+> - **Path B (log-mel, default-рекомендація)** при `N_mel = 13` (⚠️ **орієнтовна reduced-dim лише для fauna-агрегату** — НЕ per-frame контракт, той = **40** mel, §3.4; фінальний fauna `N_features` open, п.3 нижче): `mean[13] = 52 B` + `M2[13] = 52 B` + `count (uint32) = 4 B` + `inference_input[mean‖std][26] = 104 B` ≈ **212 B**, округлено до **~256 B** з запасом на FFT scratch buffer.
 > - **Path C (TFLM frontend)** при `N_features = 40` mel bins: `mean[40] = 160 B` + `M2[40] = 160 B` + `count = 4 B` + `inference_input[80] = 320 B` ≈ **644 B**, округлено до **~768 B**.
 > - **Path A (raw window memory)**: ширша статистика на time-domain envelope (`mean+std+kurtosis+RMS+ZCR`), ~**2 KB** з повним 512-семпловим reference window для cross-correlation.
 >

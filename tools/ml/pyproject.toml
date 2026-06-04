@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "silken-ml"
+version = "0.1.0"
+description = "SilkenNet ML engineering toolkit — edge-TinyML DSP / training / export + golden-vector parity"
+requires-python = ">=3.10"
+# Runtime deps are intentionally EMPTY: the pure-stdlib log-mel oracle + the C
+# codegen need nothing but the standard library, so the fast firmware/CI path
+# installs nothing. The canonical librosa oracle + training stack live in
+# `environment.yml` (conda) and are pulled via the [oracle]/[train] extras.
+dependencies = []
+
+[project.optional-dependencies]
+oracle = ["numpy>=1.26", "librosa>=0.10"]      # canonical DSP oracle + parity
+test = ["pytest>=7", "pytest-cov>=4"]
+
+[project.scripts]
+silken-ml-gen-logmel = "silken_ml.codegen.emit_c:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+filterwarnings = ["error::DeprecationWarning"]

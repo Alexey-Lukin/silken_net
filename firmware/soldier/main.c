@@ -1477,8 +1477,14 @@ int main(void)
                 audio_buffer[i] = (float)raw_audio_buffer[i] / 4095.0f; // Нормалізація 0.0 - 1.0
             }
 
-            // 5. Запускаємо "Свідомість" (Шаховий розтин звуку)
-            // ml_event_id = Run_Inference(audio_buffer, &ml_confidence);
+            // 5. Запускаємо "Свідомість" (Шаховий розтин звуку) — Path B (FW.25, 03_03 §3.4).
+            //    Сирий кадр → 40 log-mel ознак → інференс. Compute_LogMel
+            //    (firmware/common/logmel.c) готовий і host-тестований; Run_Inference
+            //    лишається закоментованим, доки нема моделі (BLOCKER-1, FW.4).
+            //    Розкоментувати разом із #include "../common/logmel.h", коли модель приземлиться:
+            // float logmel_features[LOGMEL_N_MELS];
+            // Compute_LogMel(audio_buffer, logmel_features);
+            // ml_event_id = Run_Inference(logmel_features, &ml_confidence);
 
             // [FW.18] Dual-Threshold Decision Logic (заміна hardcoded 0.80).
             // Пороги завантажуються з RTC DR13/DR14 на boot з валідацією

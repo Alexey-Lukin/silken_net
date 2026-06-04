@@ -19,9 +19,9 @@ BINDIR   = .
 OPENSSL_CFLAGS = $(shell pkg-config --cflags openssl 2>/dev/null)
 OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
-.PHONY: all queen soldier bio_contract tinyml encryption seed_derivation ccm selftest size-check clean
+.PHONY: all queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest size-check clean
 
-all: queen soldier bio_contract tinyml encryption seed_derivation ccm selftest
+all: queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -34,6 +34,9 @@ bio_contract: $(BINDIR)/test_bio_contract
 
 tinyml: $(BINDIR)/test_tinyml
 	@./$(BINDIR)/test_tinyml
+
+logmel: $(BINDIR)/test_logmel
+	@./$(BINDIR)/test_logmel
 
 encryption: $(BINDIR)/test_encryption
 	@./$(BINDIR)/test_encryption
@@ -59,6 +62,13 @@ $(BINDIR)/test_bio_contract: test_bio_contract.c
 $(BINDIR)/test_tinyml: test_tinyml_pipeline.c hal_mock.h
 	$(CC) $(CFLAGS) -o $@ test_tinyml_pipeline.c -lm
 
+# [FW.25] Compute_LogMel parity vs silken_ml golden vectors (docs/03_03 §3.4).
+# Generated tables come from `python -m silken_ml.codegen.emit_c` (committed).
+$(BINDIR)/test_logmel: test_logmel.c ../common/logmel.c ../common/logmel.h \
+                       ../common/logmel_contract.h ../common/logmel_hann_table.h \
+                       ../common/logmel_mel_bank.h ../common/logmel_golden_vectors.h
+	$(CC) $(CFLAGS) -I../common -o $@ test_logmel.c ../common/logmel.c -lm
+
 $(BINDIR)/test_encryption: test_encryption.c hal_mock.h ../queen/coap_iv.h
 	$(CC) $(CFLAGS) $(OPENSSL_CFLAGS) -o $@ test_encryption.c $(OPENSSL_LIBS)
 
@@ -79,8 +89,8 @@ $(BINDIR)/test_ccm_selftest: test_ccm_selftest.c hal_mock.h ../common/lora_ccm.h
 
 clean:
 	rm -f $(BINDIR)/test_queen $(BINDIR)/test_soldier $(BINDIR)/test_bio_contract \
-	      $(BINDIR)/test_tinyml $(BINDIR)/test_encryption $(BINDIR)/test_seed_derivation \
-	      $(BINDIR)/test_ccm $(BINDIR)/test_ccm_selftest
+	      $(BINDIR)/test_tinyml $(BINDIR)/test_logmel $(BINDIR)/test_encryption \
+	      $(BINDIR)/test_seed_derivation $(BINDIR)/test_ccm $(BINDIR)/test_ccm_selftest
 
 # [FW.26] CI gate — Static RAM budget check (.bss + .data ≤ 50 KB).
 #

@@ -26,6 +26,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: '[FW.25] Log-mel tables match the contract (stdlib, no conda)'
+        # Drift gate: the committed firmware/common/logmel_*.h must equal a fresh
+        # regen from the contract (docs/03_03 §3.4). Pure-stdlib — no conda here;
+        # the heavy librosa≡stdlib parity runs in ml_smoke.yml.
+        run: python3 tools/ml/scripts/check_firmware_tables.py
+
       - name: Run firmware host-based tests
         run: make -C firmware/test
 

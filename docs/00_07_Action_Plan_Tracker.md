@@ -455,7 +455,7 @@
 
 #### FW.4 — TinyML `Run_Inference()` — compilation unblocked, inference TBD
 - **P0** · 👤+🔗 · → `03_03`
-- Compilation unblocked (stub fallback); реальна модель + uncomment лишаються. Блокує acoustic detection (chainsaw/cavitation/wind) + Mongabay pivot. · [ ] 👤 тренування Path B log-mel 5-class (Бушин/Любченко) → `silken_net_audio_model.h` (заміна stub через `__has_include`) · [ ] 🔗 verify Tensor Arena (`arm-none-eabi-size`) + uncomment `main.c:1422` + golden-vector тести · [ ] 🌿 FW.4-EXT (post-TRL 7): 5-й клас `fauna_activity` dawn/dusk (`03_03 §10`), залежить від UNI.11+UNI.13a; альт. ACI descriptor
+- Compilation unblocked (stub fallback); реальна модель + uncomment лишаються. Блокує acoustic detection (chainsaw/cavitation/wind) + Mongabay pivot. · [ ] 👤 тренування Path B log-mel 5-class (Бушин/Любченко) → `silken_net_audio_model.h` (заміна stub через `__has_include`) · [ ] 🔗 verify Tensor Arena (`arm-none-eabi-size`) + uncomment Run_Inference call-site (Phase 1.5) + wire `firmware/common/logmel.c` у ARM-build (`LOGMEL_USE_CMSIS` + CMSIS-DSP link; Flash +~7KB tables; ⚠️ ARM-стек ~7KB/4 буфери → bench stack-high-water vs 16KB arena+mruby, або reuse-buffers) — після моделі (DSP golden-vector тести → FW.25, One-Home) · [ ] 🌿 FW.4-EXT (post-TRL 7): 5-й клас `fauna_activity` dawn/dusk (`03_03 §10`), залежить від UNI.11+UNI.13a; альт. ACI descriptor
 
 #### FW.18b — OTA threshold invalid counter (production-visibility)
 - **P2** · 🔗 · → `03_03 §5`
@@ -495,7 +495,7 @@
 
 #### FW.25 — TinyML DSP-path: Path B (log-mel) SELECTED [DECISION 2026-05-22]
 - **P0** · 👤+🤖 · → `03_03 §3.2/§3.4`
-- Choice gate закрито: **Path B (log-mel + 2D-CNN)** baseline (Path A провалює fauna layered soundscape; Path C +5-10KB arena на 64KB SRAM; ESC-консенсус log-mel — Salamon&Bello/BirdNET; CMSIS-DSP вже в стеку; Mongabay → fauna-ready). Owner: Бушин/Любченко (ML) + Ярмілко (CMSIS-DSP). · [ ] 👤 ML-партнер підтверджує log-mel контракт `03_03 §3.4` (16k/n_fft=512/40 mel/HTK/ln+1e-6) · [ ] 🤖 `Compute_LogMel` (`arm_rfft_fast_f32` + HTK mel-bank sparse + `arm_vlog_f32`, **НЕ** `arm_mfcc_f32`) + golden-vector тести (tol 1e-3) · [ ] 🤖 verify TENSOR_ARENA (~15-30KB, FW.26) + inference тести · [ ] 🌿 UNI.11+UNI.13a dataset dawn/dusk · [ ] 🤖 fallback Path C (TFLM) — потребує re-verify arena
+- Choice gate закрито: **Path B (log-mel + 2D-CNN)** baseline (Path A провалює fauna layered soundscape; Path C +5-10KB arena на 64KB SRAM; ESC-консенсус log-mel — Salamon&Bello/BirdNET; CMSIS-DSP вже в стеку; Mongabay → fauna-ready). Контракт §3.4 **self-owned** (ML-партнера нема) + локально верифікований. · [x] 🤖 ✅ §3.4 виправлено (latent DC-removal + periodic-Hann баги) + `silken_ml` оракул (librosa ≡ pure-stdlib, parity 1e-6) — `tools/ml` · [x] 🤖 ✅ `Compute_LogMel` (`firmware/common/logmel.c`; host radix-2 / ARM `arm_rfft_fast_f32`, **НЕ** `arm_mfcc_f32`) + golden-vector host-тести (`test_logmel.c`, tol 1e-3, 6/6) + auto-gen таблиці (`silken_ml.codegen`) · [ ] 👤 ML-партнер тренує на §3.4 (крос-чек, не гейт) · [ ] 🔗 verify TENSOR_ARENA (~15-30KB, FW.26) + inference тести — після моделі · [ ] 🌿 UNI.11+UNI.13a dataset dawn/dusk · [ ] 🤖 fallback Path C (TFLM) — потребує re-verify arena
 
 #### FW.26 — TENSOR_ARENA_SIZE ніколи не верифіковано
 - **P1** · 🤖 · → `03_03 §4.3`, `04_06`
@@ -519,13 +519,17 @@
 
 #### ARCH.40 — Fauna 5-сек вікно: монолітне awake-обчислення (SRAM2 wipe)
 - **P1** · 🔗 · → `03_03 §10.2`
-- ✅ Doc-fix вкочено: fauna-сесія монолітна за 1 awake (SRAM2 wipe не зберігає float[156][N_mfcc] між STOP2; DR15 не вміщає).
+- ✅ Doc-fix вкочено: fauna-сесія монолітна за 1 awake (SRAM2 wipe не зберігає float[156][N_mel] між STOP2; DR15 не вміщає).
 - [ ] 🔗 при FW.4 fauna-pivot — unit-тест `test_fauna_sampling_no_stop2_in_session()`
 
 #### ARCH.41 — Cold-start Time Paradox (DCI)
 - **P2** · 🔗 · → `03_04 §2.1`
 - VBAT loss → RTC `epoch_day` розходиться з сервером (cold-derive ≈10951 vs chained ≈20585) → категоричний DCI false-positive до `CMD_TIME_SYNC`. **Mitigation A** (server-side: 3 epoch_day кандидати → `time_unsynced_fallback`, не падати DCI) ✅ реалізовано → `04_02` (`try_time_sync_recovery`).
 - [ ] 🔗 (B/C) після стабілізації A, координований firmware rollout: **B** Soldier sentinel `acoustic_events=0xFE` на cold-boot; **C** defer-first-uplink grace «hello» (DID+Vcap+TIME_REQ, без Lorenz state)
+
+#### FW.46 — Enterprise-grade ARM firmware build (committed, reproducible, CI cross-compile)
+- **P1** · 🤖+👤 · → `03_01`
+- **Gap:** закомічченого ARM-build нема — лише host-тести (`firmware/test/Makefile`); Soldier/Queen `.elf`/`.bin` збираються зовні (CubeIDE, поза репо) → не відтворювано і не CI-gated. **Scope:** committed `Makefile`/CMake (`arm-none-eabi-gcc`) для Soldier+Queen, що лінкує `main.c` + `firmware/common/*.c` (вкл. `logmel.c` під `LOGMEL_USE_CMSIS`) + **mruby bytecode** (крок `mrbc`: `bio_contract.rb` → `lorenz_bytecode[]`) + CMSIS-DSP/NN + STM32 HAL. · [ ] 🤖 build (Makefile/CMake) + pinned toolchain + CI cross-compile job (ci.yml вже ставить `binutils-arm-none-eabi`) · [ ] 🤖 flip FW.26 size-check host-placeholder → real `arm-none-eabi-size` на `.elf` (`.bss+.data` SRAM + `.text` Flash budget) · [ ] 🤖 enable `LOGMEL_USE_CMSIS` + host↔target `arm_rfft_fast_f32` packing-parity harness · [ ] 👤 STM32 HAL/CMSIS vendoring (submodule vs vendored) + bench flash-verify + reproducible-build attestation. Cross-ref: FW.4 (logmel wiring + стек), FW.26 (size gate), FW.19 (`MRB_USE_FLOAT` Makefile), SEC.3 (factory-flashing потребує `.bin`).
 
 ## §03/§05 · Безпека (Edge crypto + Web3)
 
@@ -924,9 +928,7 @@
 | E.53 | **VNA-вимір SMD-антени під PEEK радомом** — VSWR <1.5 на 868 МГц для 3-5 варіантів товщини PEEK (1.5/2.0/2.5 мм) у вологому/сухому стані + **3D Keep-Out з Ti-фланцем нижче** (Z-clearance 5/8/12 мм, з/без overhang за периметр Ti). Лабораторна задача (cross-ref UNI.10 ChDTU Гончаров, нова вимога `02_01 §5.3` revised) | `08_02` §1.3 + `02_01` | P1, blocked by HW.17 + UNI.10 |
 | E.54 | **SOP документи для 7 типів EwsAlert** — стандартизовані інструкції UA+EN: severe_drought, insect_epidemic, vandalism_breach, fire_detected, seismic_anomaly, system_fault, entropy_anomaly. Інтеграція як inline UI у Phlex (cross-ref ARCH.31) | `08_02 §3` | P1, joint with ChIPB-NUTSU (UNI.12) |
 | E.55 | **Multi-party NDA + IP framework** для 5-сторонньої академічної співпраці (ChNU + ChDTU + ChIPB + ChMA + СЄУ + Silken Net) — base-line для всіх UNI.x публікацій | `08_03`, `08_02 §3`, `08_02 §4`, `08_02 §5` | P1, cross-ref BIZ.10 |
-| E.56 | **DSP preprocessing для TinyML** — невідомо чи модель очікує raw time-domain чи MFCC. Якщо MFCC → +5-15 KB Flash + 40 µs CPU (CMSIS-DSP) | `03_03` BLOCKER-5 | P1, cross-ref FW.25 |
-| E.57 | **TENSOR_ARENA_SIZE budget verification** — ніколи не виміряно через `arm-none-eabi-size`. Ризик stack overflow якщо > 46 KB | `03_03` BLOCKER-3 | P1, cross-ref FW.26 |
-| 🌿 E.59 | **Mongabay biodiversity pivot — acoustic D-MRV** — стратегічний pivot Silken Net від карбонового MRV до повноцінного D-MRV біорізноманіття після Delgado et al. (Nicoya Peninsula, 119 ділянок, 16 000 год аудіо; *Mongabay News*, травень 2026). Включає: (1) FW.4-EXT 5-class TinyML модель з класом `fauna_activity`; (2) FW.25 DSP MFCC з P1→P0; (3) UNI.11+UNI.13a Cherkasy Soundscape Library (ЧДТУ ПМКТ + ЧНУ Біо-хаб); (4) 08_02 §1 Macro-Micro verification (Бушин CNN + fauna feature); (5) 08_02 §1 NSGA-II multi-objective GA (Любченко); (6) 08_01 Стаття 24a co-authored Q1 publication; (7) Horizon Europe CLUSTER 6 (Biodiversity Monitoring) grant vector; (8) AiInsight#biodiversity_trend → ForestNFT metadata "biodiversity_score"; (9) ринкова диференціація — defensible moat проти Pachama/Sylvera/NCX (тільки Silken Net має micro-acoustic verification layer) | `03_03` §10 + `08_01` §1.3+§2 + `08_02` §1.5+§1.8 + `08_01` Стаття 24a | **P1 strategic** — координує FW.4-EXT, FW.25, UNI.11, UNI.13a |
+| 🌿 E.59 | **Mongabay biodiversity pivot — acoustic D-MRV** — стратегічний pivot Silken Net від карбонового MRV до повноцінного D-MRV біорізноманіття після Delgado et al. (Nicoya Peninsula, 119 ділянок, 16 000 год аудіо; *Mongabay News*, травень 2026). Включає: (1) FW.4-EXT 5-class TinyML модель з класом `fauna_activity`; (2) FW.25 DSP log-mel з P1→P0; (3) UNI.11+UNI.13a Cherkasy Soundscape Library (ЧДТУ ПМКТ + ЧНУ Біо-хаб); (4) 08_02 §1 Macro-Micro verification (Бушин CNN + fauna feature); (5) 08_02 §1 NSGA-II multi-objective GA (Любченко); (6) 08_01 Стаття 24a co-authored Q1 publication; (7) Horizon Europe CLUSTER 6 (Biodiversity Monitoring) grant vector; (8) AiInsight#biodiversity_trend → ForestNFT metadata "biodiversity_score"; (9) ринкова диференціація — defensible moat проти Pachama/Sylvera/NCX (тільки Silken Net має micro-acoustic verification layer) | `03_03` §10 + `08_01` §1.3+§2 + `08_02` §1.5+§1.8 + `08_01` Стаття 24a | **P1 strategic** — координує FW.4-EXT, FW.25, UNI.11, UNI.13a |
 
 ## 📌 Backlog · Архітектурні пропозиції (довгострокові)
 
@@ -996,6 +998,8 @@
 | E.45 | SCC/SFC subgraph zero-address fail-fast guard (`subgraph/validate_addresses.sh`); real-address swap → S3.5 | `05_03` |
 | OPS.5 | Projects V2 TRL field schema (1-9 + Readiness Horizon SRL/MRL; `lib/github_bootstrap.rb`); live-board bootstrap-run → OPS.6 | `00_05 §1.1` |
 | E.61 | Solana micro-rewards batch payouts (Kredis-акумуляція → `transferChecked`, годинний cron, поріг-gated) | `05_01 §8`, `04_02 §10` |
+| E.56 | DSP preprocessing для TinyML — RESOLVED: Path B log-mel (НЕ raw/MFCC); front-end `Compute_LogMel` | `03_03 §3.2/§3.4` |
+| E.57 | TENSOR_ARENA budget — **дубль, не окремий трек** (НЕ resolved): робота й мітигація живуть в активному FW.26 | `03_03 §4.3` (active FW.26) |
 
 ---
 

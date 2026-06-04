@@ -22,7 +22,7 @@
  * @note    `Run_Inference()` is declared here but **not defined**. The real
  *          model.h ships an inline definition that consumes the TFLite Micro
  *          interpreter. Until that arrives, callers must guard the call site
- *          (currently commented at `main.c:1422`).
+ *          (currently commented at the Phase 1.5 call-site in main.c).
  ******************************************************************************
  */
 #ifndef SILKEN_NET_AUDIO_MODEL_STUB_H
@@ -74,7 +74,7 @@
  * @return  Class ID in [0, NUM_CLASSES). See ML_CLASS_* macros above.
  *
  * @note    Stub provides declaration only. Without the real model header
- *          the symbol is unresolved — keep the call site at `main.c:1422`
+ *          the symbol is unresolved — keep the Phase 1.5 call-site in main.c
  *          commented out until BLOCKER-1 is closed.
  */
 uint8_t Run_Inference(const float* buffer, float* confidence);
