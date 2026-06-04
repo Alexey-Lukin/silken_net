@@ -5,6 +5,9 @@
 // Runs inside the Akash `alloy` sidecar. Scrapes the Rails `/metrics` endpoint
 // (web service) every 15s and pushes to Grafana Cloud via Prometheus remote_write.
 //
+// Pipeline:  prometheus.scrape ─▶ prometheus.relabel (cardinality budget) ─▶
+//            prometheus.remote_write (queue_config + WAL) ─▶ Grafana Cloud
+//
 // Environment variables (injected via Akash SDL):
 //   PROMETHEUS_AUTH_USER / PROMETHEUS_AUTH_PASSWORD — Basic Auth for /metrics
 //   GRAFANA_REMOTE_WRITE_URL / _USERNAME / _TOKEN   — Grafana Cloud remote_write
@@ -13,6 +16,8 @@
 //
 // Metric registry SSOT (names, types, count) — docs/06_03 §2.8. Deliberately NOT
 // restated here (avoids doc-drift); this agent scrapes whatever /metrics exposes.
+// Industrial-hardening rationale (external_labels / queue_config / WAL /
+// cardinality budget) — docs/06_03 §2.9.
 //
 // ⚠️ Validate after edits before deploy (no local linter in this repo):
 //   docker run --rm -v "$PWD/deploy/akash:/c" grafana/alloy:latest fmt /c/config.alloy
@@ -28,6 +33,28 @@ prometheus.scrape "silken_net_scraper" {
   basic_auth {
     username = sys.env("PROMETHEUS_AUTH_USER")
     password = sys.env("PROMETHEUS_AUTH_PASSWORD")
+  }
+
+  // Route through the cardinality budget before remote_write (06_03 §2.9 #4).
+  forward_to = [prometheus.relabel.cardinality_budget.receiver]
+}
+
+prometheus.relabel "cardinality_budget" {
+  // [Industrial-grade, 06_03 §2.9 #4] Cardinality budget — enforce the
+  // "no per-identity labels" design at the write boundary. The registry
+  // (06_03 §2.8) is intentionally bounded: every label is low-cardinality
+  // (network / queue / reason / status / database …) except `cluster_id`
+  // (per-forest entropy) — the single legitimate growth axis, kept as-is.
+  //
+  // Grafana Cloud bills by active series / DPM, so a per-device or per-tx
+  // label would explode cost the moment it shipped. `labeldrop` strips any
+  // such label BEFORE remote_write, so an accidental future `labels: [:did]`
+  // can never silently blow the budget — the metric still flows, minus the
+  // offending label. No such label exists today (zero current effect); this
+  // is a standing guardrail, not a migration.
+  rule {
+    action = "labeldrop"
+    regex  = "did|tree_id|peaq_did|wallet_address|tx_hash"
   }
 
   forward_to = [prometheus.remote_write.grafanacloud.receiver]
@@ -52,10 +79,29 @@ prometheus.remote_write "grafanacloud" {
       username = sys.env("GRAFANA_REMOTE_WRITE_USERNAME")
       password = sys.env("GRAFANA_REMOTE_WRITE_TOKEN")
     }
+
+    // [Industrial-grade, 06_03 §2.9 #2] queue_config — bound the remote_write
+    // shard fan-out and batch sizing. Under a Grafana Cloud slowdown the queue
+    // scales shards (1→50) and applies backpressure instead of growing memory
+    // unbounded; capacity caps in-flight samples per shard. Tuned for the
+    // current low metric volume — revisit once fleet scale is known.
+    queue_config {
+      capacity             = 10000
+      max_samples_per_send = 2000
+      min_shards           = 1
+      max_shards           = 50
+      batch_send_deadline  = "5s"
+    }
   }
 
-  // NB: Alloy keeps an on-disk WAL (~2h) by default, so a transient Grafana Cloud
-  // outage does not lose samples. Explicit queue_config tuning (capacity / shards /
-  // batch_send_deadline) is recommended once metric volume is known — see the
-  // industrial-hardening roadmap in docs/06_03 (validate with `alloy fmt` first).
+  // [Industrial-grade, 06_03 §2.9 #2] Explicit WAL — make the on-disk buffer
+  // window explicit (was relying on the ~2h default). A transient Grafana Cloud
+  // outage is replayed from the WAL with no sample loss; truncated every 2h to
+  // bound disk. Values mirror Alloy defaults — explicit so they are tunable and
+  // self-documenting, not behaviour changes.
+  wal {
+    truncate_frequency = "2h"
+    min_keepalive_time = "5m"
+    max_keepalive_time = "8h"
+  }
 }

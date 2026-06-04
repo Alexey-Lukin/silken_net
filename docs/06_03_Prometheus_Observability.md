@@ -387,13 +387,15 @@ bin/rails runner 'SilkenNet::Metrics::REGISTRY.metrics.sort_by{|m|[m.type.to_s,m
 
 ### 2.9 Industrial-Grade Hardening (аналіз 2026-05-29)
 
-Аудит чинного стеку (Grafana Alloy → Grafana Cloud) на production-grade зрілість. Архітектура **достатня** (WAL-буферизація, Basic Auth, всі 9 черг, 32 метрики), але до «industrial» бракувало атрибуції та захисних гейтів.
+Аудит чинного стеку (Grafana Alloy → Grafana Cloud) на production-grade зрілість. Архітектура **достатня** (WAL-буферизація, Basic Auth, всі 9 черг + повний реєстр §2.8); бракувало лише атрибуції та захисних гейтів — закрито нижче (`external_labels`, `queue_config`+explicit WAL, cardinality budget, CI-валідація, runtime-метрики).
 
 **✅ Зроблено зараз (`config.alloy`):**
 - **`external_labels`** на `remote_write` — `service` / `source` / `env` (з `RAILS_ENV`) / `release` (з `RELEASE_VERSION`). Без них серії з prod/canopy **та** з різних Akash-провайдерів (multi-provider failover, [`06_02`](06_02_Akash_Network_Integration)) зливаються в Grafana Cloud — неможливо скоупити дашборди/алерти за середовищем чи провайдером, ні відстежити регресію за релізом (корелює з Sentry `release`).
 - **`scrape_timeout = 10s`** явно (< 15s interval).
 - Header-коментар більше не дублює реєстр метрик — реф на §2.8 (DRY).
 - **CI-gate `alloy_config_validate`** (`.github/workflows/ci.yml`) — `grafana/alloy fmt` парсить `config.alloy` на кожен PR/push (env-незалежно); River parse-error = **red CI замість crash-loop sidecar** на Akash-деплої.
+- **`queue_config` + явний `wal`** на `remote_write` (`config.alloy`) — shard fan-out `1→50` + batch-sizing дають backpressure при сповільненні Grafana Cloud замість необмеженого росту пам'яті; WAL-вікно (~2h truncate) тепер явне й тюнабельне. Конкретні значення — у `config.alloy` (SSOT), тут не дублюються (drift).
+- **Cardinality budget** (`config.alloy`, `prometheus.relabel`) — `labeldrop` per-identity міток (`did`/`tree_id`/`peaq_did`/`wallet_address`/`tx_hash`) перед `remote_write`. Реєстр (§2.8) свідомо bounded — єдина growth-вісь `cluster_id` (per-forest entropy) **лишається** легітимною; guard не дає випадковій майбутній per-DID мітці тихо підірвати active-series біллінг (Grafana Cloud біллить за series/DPM). Нульовий ефект сьогодні (таких міток нема) — стоячий запобіжник на write-boundary.
 - **Process/runtime метрики** (`prometheus.rb` §2.9, 9 gauges) — Ruby VM/GC/RSS/Puma-threads, `sample_process_runtime!` на кожен scrape. **Bonus fix:** `sample_connection_pool!` тепер ВИКЛИКАЄТЬСЯ у `PrometheusCollector` (раніше визначений, але ніде не звався → DB-pool gauges були завжди 0/stale).
 
 **🟡 Рекомендований роадмеп (потребує валідації/ops, поза цим коммітом):**
@@ -401,22 +403,14 @@ bin/rails runner 'SilkenNet::Metrics::REGISTRY.metrics.sort_by{|m|[m.type.to_s,m
 | # | Покращення | Чому | Пріоритет |
 |---|------------|------|-----------|
 | 1 | ✅ **CI-валідація `config.alloy`** (2026-05-29) — CI job `alloy_config_validate` (`grafana/alloy fmt`, parse-check) | Раніше **ніщо** не лінтило River-конфіг; parse-error = crash-loop alloy-sidecar у проді ([`06_02`](06_02_Akash_Network_Integration)). Гейт ловить це до деплою | ✅ DONE |
-| 2 | **`queue_config` + явний WAL** на `remote_write` | Default WAL ~2h буферить аутейдж; tune `capacity`/`max_shards`/`batch_send_deadline` під реальний об'єм для backpressure | MED |
+| 2 | ✅ **`queue_config` + явний WAL** (2026-06-04) на `remote_write` (`config.alloy`) | Default WAL ~2h буферить аутейдж; `capacity`/`max_shards` (1→50)/`batch_send_deadline` дають backpressure замість необмеженого росту пам'яті; WAL-вікно явне | ✅ DONE |
 | 3 | ✅ **Process/runtime метрики** (2026-05-29) — 9 gauges (RSS · GC count/major/heap_live · ruby_threads · Puma running/max/pool_capacity/backlog), sampled on-scrape (`sample_process_runtime!`) + 13 specs | Закрило сліпоту до memory leak / GC pause / thread saturation. Pure stdlib (GC.stat / Thread / /proc / Puma.stats) | ✅ DONE |
-| 4 | **Cardinality budget** | `cluster_id` (entropy) + потенційні per-DID labels → high cardinality на планетарному масштабі (Grafana Cloud біллить за active series / DPM). Визначити бюджет + drop/relabel | MED |
+| 4 | ✅ **Cardinality budget** (2026-06-04) — `prometheus.relabel` `labeldrop` per-identity (`config.alloy`) | `cluster_id` (entropy) лишається (легітимна growth-вісь); per-DID labels (`did`/`tree_id`/`peaq_did`/`wallet_address`/`tx_hash`) дропаються до remote_write, щоб майбутня випадкова мітка не підірвала active-series біллінг (Grafana Cloud біллить за series / DPM) | ✅ DONE |
 | 5 | **`up` scrape-health alert** | `prometheus.scrape` авто-емітить `up{job="silken_net_scraper"}`; алерт на `==0` = web/alloy впав → метрики «осліпли» | ops |
 | 6 | **SLO + error-budget** (ingest availability, mint/slash success) | Зараз лише ad-hoc alert rules; SLO дають об'єктивний reliability-таргет | ops |
 | 7 | Dashboards + alerts **import** у Grafana Cloud (IaC у `deploy/grafana/`) | S2.2/S2.3 — IaC готовий, лишається 👤 import | ops |
 
-**Запропонований snippet для #2 (додати в `endpoint`, після `alloy fmt`-валідації):**
-```alloy
-queue_config {
-  capacity             = 10000
-  max_samples_per_send = 2000
-  max_shards           = 50
-  batch_send_deadline  = "5s"
-}
-```
+**#2 + #4 — імплементовано (2026-06-04) у `deploy/akash/config.alloy`:** pipeline `prometheus.scrape → prometheus.relabel.cardinality_budget → prometheus.remote_write` (queue_config + явний WAL). Значення живуть у `config.alloy` (SSOT) — тут не дублюються, щоб уникнути drift; rationale — рядки #2/#4 вище. Валідація: CI job `alloy_config_validate` (`grafana/alloy fmt`).
 
 ---
 
