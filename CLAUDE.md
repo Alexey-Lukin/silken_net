@@ -41,8 +41,8 @@ make -C firmware/test
 **Файл**: `firmware/soldier/main.c`
 
 Цикл пробудження (STOP2 -> active -> STOP2):
-1. **SENSE**: ADC читає Vcap (uint16 мВ), internal temp (int8 °C). DMA 16 кГц -> 512 ADC samples для TinyML.
-2. **TinyML**: CMSIS-NN акустичний inference (4 класи: silence/wind/cavitation/chainsaw). **BLOCKER: `Run_Inference()` закоментована** (main.c:413). `silken_net_audio_model.h` відсутній.
+1. **SENSE**: ADC читає Vcap (uint16 мВ), internal temp (int8 °C). DMA 16 кГц -> 512 ADC samples -> `Compute_LogMel` -> 40 log-mel ознак (Path B, FW.25).
+2. **TinyML**: log-mel фронтенд `Compute_LogMel` ✅ (FW.25 — `firmware/common/logmel.c` + `tools/ml` `silken_ml`, golden-vector parity) -> CMSIS-NN inference (4 класи: silence/wind/cavitation/chainsaw). **BLOCKER: `Run_Inference()` + `silken_net_audio_model.h` відсутні** (модель; call-site закоментований Phase 1.5).
 3. **mruby BioContract** (`firmware/bio_contracts/bio_contract.rb`): Lorenz attractor 250 ітерацій (Euler, **Float** — не BigDecimal!). Входи: `(x_prev,y_prev,z_prev)` (RTC continuation, інакше SEC.11 K_seed cold-start), `temp`, `acoustic`, `delta_t_s`, `vcap_mv`. Виходи: `z_val` -> `status` + `growth_points`. Пакує у StatusByte (байт 10): `[PanicFlag:1|status:2|growth_points:5]` (FW.29-PACK; до FW.29 — `status:2|growth_points:6`).
 
    Firmware Lorenz константи:
@@ -279,7 +279,7 @@ Solana: Ed25519 підпис, SPL Token Transfer, ATA резолюція чер�
 | HW-AES-KEY | `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82` | ✅ Firmware CLOSED (FW.1, 2026-05-02): `Load_AES_Key()` + per-device HKDF + Protected Flash. SEC.3 Factory Flashing Pipeline tool — ✅ Rake CLI dry-run (2026-05-24, `app/services/factory_flashing/*`, threat model: `03_05 §3.4г`). 👤 Залишається: real `STM32_Programmer_CLI` execution на bench + RDP Level 2 (SEC.2) |
 | ARCH.42 LoRa AES-size | `firmware/soldier/main.c` MX_CRYP_Init, `firmware/queen/main.c` MX_CRYP_Init | ✅ DECIDED 2026-05-23 (Variant B = AES-128 LoRa + ATECC608B SE). LoRa channel: `CRYP_KEYSIZE_128B`, `aes_key[4]`; CoAP канал залишається AES-256. Деталі — `docs/03_05 §3.7` |
 | AES-ECB | `firmware/soldier/main.c` (MX_CRYP_Init) | 🟡 Transitional AES-128-ECB після ARCH.42; повне закриття через FW.2 (AES-128-CCM, 24B packet, 8B MIC, Frame Counter). Hardware bench needed для `CRYP_AES_CCM` HAL верифікації |
-| TINYML-COMMENT | `firmware/soldier/main.c:413` | `Run_Inference()` закоментована; model header відсутній |
+| TINYML-COMMENT | `firmware/soldier/main.c` (Phase 1.5) | log-mel фронтенд `Compute_LogMel` ✅ (FW.25); `Run_Inference()` + model header відсутні (чекає моделі) |
 | LORENZ-INPUTS | `firmware/bio_contracts/bio_contract.rb` | ✅ Виправлено (FW.5 B+, 2026-05-02): `delta_t_s`/`vcap_mv` передаються як β-пертурбація через `BETA_DELTA_T_COEFF`/`BETA_VCAP_COEFF`; EMA-згладжені значення з firmware. 500-case parity fuzz — 0 mismatches |
 | LORENZ-STATE | firmware | ✅ Виправлено: Стан (x,y,z) зберігається в RTC DR16-DR18 + magic marker `0x4C5A5354` (`"LZST"` = "Lorenz State"). Підтверджено в `firmware/soldier/main.c:239-249,746-749` |
 | OPTIMAL-Z | `bio_contract.rb:99` | ✅ Виправлено (2026-05-17): `OPTIMAL_Z_TARGET = 29.0` — коментар та константа узгоджені. Обґрунтування: +2 зміщення від z_eq=27.0 для кращої розрізненності класів. Задокументовано у `docs/03_04 §BLOCKER` |

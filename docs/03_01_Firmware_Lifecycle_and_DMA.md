@@ -346,9 +346,11 @@ HAL_ADC_Stop_DMA() + HAL_TIM_Base_Stop()
        ↓
 Normalization: raw_audio_buffer[i] / 4095.0f → audio_buffer[i]
        ↓
+Compute_LogMel(audio_buffer) → 40 log-mel ознак   [Path B log-mel — FW.25, 03_03 §3.4]
+       ↓
 TinyML Inference → ml_event_id + ml_confidence
        ↓
-if (ml_confidence > 0.80):
+if (ml_confidence ≥ critical_threshold):   # FW.18 dual-zone (warn 0.60 / crit 0.85) — повна логіка 03_03 §5
   ml_event_id == 2 → acoustic_events++ (кавітація ксилеми)
   ml_event_id == 3 → Trigger_Emergency_LoRa_TX() (бензопила/вандалізм)
 ```
