@@ -6,6 +6,10 @@ plugins:
 
 AllCops:
   NewCops: enable
+  # Сторонній вендорнутий код (git-сабмодулі: mruby, CMSIS-DSP, CMSIS_6) —
+  # не наш стиль, не лінтимо. RuboCop ігнорує vendor/ за замовчуванням, але не firmware/extern.
+  Exclude:
+    - "firmware/extern/**/*"
 
 Bundler/OrderedGems:
   Enabled: true
