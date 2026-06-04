@@ -499,7 +499,7 @@
 
 #### FW.26 — TENSOR_ARENA_SIZE ніколи не верифіковано
 - **P1** · 🤖 · → `03_03 §4.3`, `04_06`
-- ✅ CI gate `make size-check` (host `.bss+.data`<51200B; soldier 2.5K/queen 12.4K). Точний arena невідомий (~8-16KB оцінка); >46KB → stack overflow при Lorenz (250 ітер). · [ ] 🤖 `arm-none-eabi-size` після моделі (FW.4) → виміряти `.bss+.data` · [ ] 🤖 якщо >46KB — INT8 quantization/prune
+- ✅ CI gate `make size-check` (host `.bss+.data`<51200B; soldier 2.5K/queen 12.4K). Точний arena невідомий (~16KB оцінка, Path B §3.2 range ~15-30KB); >46KB → stack overflow при Lorenz (250 ітер). · [ ] 🤖 `arm-none-eabi-size` після моделі (FW.4) → виміряти `.bss+.data` · [ ] 🤖 якщо >46KB — INT8 quantization/prune
 
 #### FW.27 — OTA broadcast: відсутня RX-верифікація Soldier
 - **P2** · 🔗 · → `03_02 §5`
