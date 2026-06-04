@@ -61,7 +61,7 @@ make -C firmware/test
    # StatusByte байт 10: [PanicFlag:1(bit7) | status:2 | growth_points:5]; status 0-3 (3=tamper); PanicFlag — C-side
    payload_byte = (status << 5) | growth_points  # C entry: calculate_state → uint8_t
    ```
-   **Важливо [FIX FW.7]:** Backend переведено з BigDecimal на **Float (IEEE 754 double)** — ідентично firmware mruby. Раніше `("8.0".to_d / "3.0".to_d).round(18)` давав інший результат після 250 ітерацій; зараз обидві сторони використовують `8.0/3.0` → `2.6666666666666665` і Z **бітово ідентичний** (верифіковано 50,000 random parity-тестами). Майбутній hardening через integer/fixed-point Q-format — `[FW.45]`, deferred до ZK-circuit milestone (див. `docs/03_04_mruby_Lorenz_Attractor.md`).
+   **Важливо [FIX FW.7]:** Backend переведено з BigDecimal на **Float (IEEE 754 double)** — ідентично firmware mruby. Раніше `("8.0".to_d / "3.0".to_d).round(18)` давав інший результат після 250 ітерацій; зараз обидві сторони використовують `8.0/3.0` → `2.6666666666666665`. Z: **категорично** ідентичний (status/growth_points/payload_byte — бітово), raw Z — у межах numeric-tolerance (реальний mruby 4.0.0 VM ↔ CRuby ~1e-14, хаотична ULP-амплітудизація; FW.31 ε=0.001 band; перша VM-перевірка + деталі — `docs/03_04`). Майбутній hardening через integer/fixed-point Q-format — `[FW.45]`, deferred до ZK-circuit milestone (див. `docs/03_04_mruby_Lorenz_Attractor.md`).
 
 4. **PACK**: 16-байтний payload (FW.2 target: 8-byte sensor payload у 24B AES-128-CCM frame).
 5. **ENCRYPT**: **AES-128-ECB** transitional (апаратний CRYP модуль, без IV) — ARCH.42 Variant B з 2026-05-23. 1 блок = 1 AES operation. Target FW.2: AES-128-CCM з 8-byte MIC + Frame Counter.
@@ -168,7 +168,7 @@ D. Minting (BlockchainMintingService):
    Dynamic Tax: 2% до DAO_TREASURY якщо insurance_pool < 100,000 SCC
 ```
 
-**Dual Computation Integrity**: SilkenNet::Attractor (**Float, IEEE 754 double** — бітово ідентично firmware mruby після [FIX FW.7], НЕ BigDecimal; див. §3) розраховує Z server-side. Divergence > 30% між device Z і server Z -> fraud flag.
+**Dual Computation Integrity**: SilkenNet::Attractor (**Float, IEEE 754 double** — категорично ідентично firmware mruby (raw Z у межах tolerance ~1e-14) після [FIX FW.7], НЕ BigDecimal; див. §3) розраховує Z server-side. Divergence > 30% між device Z і server Z -> fraud flag.
 
 ---
 

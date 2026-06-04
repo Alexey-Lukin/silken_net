@@ -1,0 +1,18 @@
+# [FW.46] ARM build artifacts — generated, NOT committed.
+# build dirs: firmware/build (ARM), firmware/build-host (host parity)
+build*/
+# clangd index cache
+.cache/
+*.elf
+*.bin
+*.hex
+*.map
+compile_commands.json
+# mruby build lock (generated next to build_config.rb)
+*.lock
+
+# Locally-downloaded Arm GNU toolchain (if not installed system-wide).
+.toolchain/
+
+# NB: firmware/common/lorenz_bytecode.h and logmel_*.h are GENERATED but
+# COMMITTED mirrors (drift-gated) — they are intentionally NOT ignored.

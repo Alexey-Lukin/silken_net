@@ -32,6 +32,12 @@ jobs:
         # the heavy librosa≡stdlib parity runs in ml_smoke.yml.
         run: python3 tools/ml/scripts/check_firmware_tables.py
 
+      - name: '[FW.46] Bytecode mirror stamp matches bio_contract.rb (stdlib)'
+        # Light drift gate: sha256(bio_contract.rb) == the stamp inside the
+        # committed lorenz_bytecode.h. No mruby build — the deep mrbc regen-diff
+        # runs in the firmware_arm_build job. docs/03_01 §12.4.
+        run: python3 tools/firmware/check_bytecode.py
+
       - name: Run firmware host-based tests
         run: make -C firmware/test
 
@@ -59,6 +65,59 @@ jobs:
 
       - name: Run RAM budget check
         run: firmware/scripts/check_ram_budget.sh
+
+  firmware_arm_build:
+    # [FW.46] Reproducible ARM cross-compile of the owned firmware code + the
+    # mruby bytecode pipeline (docs/03_01 §12.4). Compiles logmel.c for
+    # Cortex-M4 against vendored CMSIS-DSP, regenerates + diffs the committed
+    # bytecode via the pinned mrbc, runs it in a minimal mruby VM, and checks
+    # the CMSIS RFFT packing on the host. This is the first time main-line
+    # firmware C is actually cross-compiled in CI.
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Install ARM toolchain, CMake, Ruby
+        # gcc-arm-none-eabi ships arm-none-eabi-{gcc,size}; rake+ruby build mruby
+        # (which ships y.tab.c + bundles lrama → no bison needed). Toolchain
+        # version is apt's (unpinned) — bytecode determinism rides on the pinned
+        # mruby submodule, not gcc (logmel .o size is reported, not gated).
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gcc-arm-none-eabi cmake ninja-build ruby rake
+
+      - name: '[FW.46] Bytecode mirror == bio_contract.rb (deep mrbc regen-diff)'
+        run: tools/firmware/gen_bytecode.sh --check
+
+      - name: '[FW.46] Minimal mruby VM runs the committed bytecode'
+        run: tools/firmware/run_bytecode_vm.sh
+
+      - name: '[FW.46] Cross-compile owned code (logmel.c) + arm-none-eabi-size'
+        run: |
+          cmake -B firmware/build -S firmware -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE=firmware/cmake/arm-none-eabi.cmake \
+            -DCMSISCORE="$PWD/firmware/extern/CMSIS_6/CMSIS/Core"
+          cmake --build firmware/build --target size
+
+      - name: '[FW.46] Cross-compile mruby (minimal gembox, double) + footprint'
+        run: |
+          cd firmware/extern/mruby
+          SILKEN_ARM_BUILD=1 MRUBY_CONFIG="$GITHUB_WORKSPACE/firmware/mruby/build_config.rb" rake -j2
+          arm-none-eabi-size -t build/arm-none-eabi/lib/libmruby_core.a | tail -1
+
+      - name: '[FW.46] Host CMSIS log-mel packing-parity (no board)'
+        run: |
+          cmake -B firmware/build-host -S firmware -G Ninja \
+            -DSILKEN_HOST_PARITY=ON -DHOST=ON \
+            -DCMSISCORE="$PWD/firmware/extern/CMSIS_6/CMSIS/Core"
+          cmake --build firmware/build-host --target test_logmel_cmsis
+          ctest --test-dir firmware/build-host --output-on-failure
 
   scan_ruby:
     runs-on: ubuntu-latest

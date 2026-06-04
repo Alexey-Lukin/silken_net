@@ -1,0 +1,9 @@
+[submodule "firmware/extern/CMSIS-DSP"]
+	path = firmware/extern/CMSIS-DSP
+	url = https://github.com/ARM-software/CMSIS-DSP
+[submodule "firmware/extern/mruby"]
+	path = firmware/extern/mruby
+	url = https://github.com/mruby/mruby
+[submodule "firmware/extern/CMSIS_6"]
+	path = firmware/extern/CMSIS_6
+	url = https://github.com/ARM-software/CMSIS_6

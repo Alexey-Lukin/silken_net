@@ -14,7 +14,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — Lorenz атрактор bitwise-identical firmware↔backend (FW.7 Float parity, 50k fuzz); SEC.11 seed provenance закрито. Канонічний дім Lorenz-констант (§1.2). Відкрите: numeric DCI ε flip (`FW.31`, deferred) → [`00_07`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 6 — Lorenz атрактор: **категорично** ідентичний firmware↔backend (status/growth_points, FW.7 Float math), raw Z у межах numeric-tolerance (~1e-14 реальний mruby-VM↔CRuby, §5; FW.46); SEC.11 seed provenance закрито. Канонічний дім Lorenz-констант (§1.2). Відкрите: numeric DCI ε flip (`FW.31`, deferred) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -79,7 +79,9 @@ dz/dt = x · y - β · z
 | `DT` | Δt | `0.01` (Float) | `0.01` (Float) | Крок інтегрування методу Ейлера |
 | `ITERATIONS` | N | `250` | `250` | Кількість ітерацій симуляції |
 
-> **[FIX FW.7]:** Backend переведено з BigDecimal на Float (IEEE 754 double) — ідентично firmware mruby. BigDecimal давав інші результати після 250 ітерацій через `round(18)` на кожному кроці. Тепер firmware та backend дають **100% ідентичні** Z-значення при однакових входах (верифіковано на 50,000 випадкових тестах).
+> **[FIX FW.7]:** Backend переведено з BigDecimal на Float (IEEE 754 double) — та сама математика, що firmware mruby (ті ж константи й операції). BigDecimal давав інші результати після 250 ітерацій через `round(18)` на кожному кроці.
+>
+> **Точність parity (уточнено FW.46, 2026-06-04 — перший реальний прогін mruby-VM):** firmware та backend дають **категорично ідентичний** вихід — `status`/`growth_points`/`payload_byte` бітово збігаються (перевірено реальним mruby 4.0.0 VM через `tools/firmware/run_bytecode_vm.sh`, що ганяє committed `lorenz_bytecode`). **Raw Z** реального mruby-VM розходиться з CRuby на **~1e-14** (хаотична амплітудизація last-ULP арифметичної різниці за ~2.5 ляпуновських часи) — у межах numeric-DCI band (`FW.31` ε=0.001) та canon ARM↔x86 drift `<1e-12` (§SEC.11 нижче). Раніше «bit-identical / 50k» стосувалося Ruby/C-мірор рівня (`firmware/test/test_bio_contract.c` реімплементує логіку в C), а не самого mruby-VM. Бітову інваріантність на **будь-якому** процесорі дає лише fixed-point Q-формат (§нижче, `FW.45`).
 
 > **[Майбутнє hardening — Integer/Fixed-Point Math, не реалізовано]** Float-парність вирішує bit-identity для пари x86-64 ↔ ARM Cortex-M4 з FPU (обидві архітектури — IEEE 754 binary64). Вона **НЕ гарантує** парності для:
 > (a) MCU без FPU (емуляція через soft-float дає той самий двійковий результат у переважній більшості випадків, але не завжди для денормалізованих);

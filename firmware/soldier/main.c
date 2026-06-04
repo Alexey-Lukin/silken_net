@@ -1119,13 +1119,10 @@ static uint8_t Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS(const uint8_t* frame,
 }
 
 // === 2. РУДА СВІДОМОСТІ (Байт-код mruby) ===
-// Скомпільований скрипт Атрактора Лоренца.
-// Цей масив генерується на Mac командою mrbc.
-const uint8_t lorenz_bytecode[] = {
-  0x52, 0x49, 0x54, 0x45, 0x30, 0x33, 0x30, 0x30, 0x00, 0x00,
-  // ... тут лежать реальні hex-коди вашого Ruby-скрипта ...
-  0x00, 0x00, 0x00, 0x01
-};
+// Скомпільований скрипт Атрактора Лоренца (`bio_contracts/bio_contract.rb`).
+// [FW.46] Викарбуваний mrbc у build-час → committed-дзеркало `lorenz_bytecode[]`,
+// drift-gated. Регенерація: tools/firmware/gen_bytecode.sh · гейт: check_bytecode.py
+#include "../common/lorenz_bytecode.h"
 
 /* USER CODE END PV */
 

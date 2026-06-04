@@ -463,7 +463,7 @@
 
 #### FW.7 — Float vs BigDecimal divergence (TRL 6 mitigation)
 - **P1** · 👤 · → `03_04 §5`
-- ✅ backend `Attractor` BigDecimal→Float (IEEE 754, ідентично firmware → DCI однакові Z). ⚠️ ARM↔x86 Float drift лишається; категоричний tolerance band компенсує для TRL 6, строгий consensus → `ARCH.18`. · [ ] 👤 верифікувати `MRB_USE_FLOAT` при lab-тесті
+- ✅ backend `Attractor` BigDecimal→Float (IEEE 754 — DCI **категорично** однакові Z; raw drift ~1e-14 реальний mruby-VM↔CRuby, FW.46). ⚠️ ARM↔x86 Float drift лишається; категоричний tolerance band компенсує для TRL 6, строгий consensus → `ARCH.18`. · [ ] 👤 bench-verify (flag `MRB_USE_FLOAT32`=double вже пінено `build_config.rb` — FW.19/FW.46)
 
 #### FW.8 — CRITICAL_Z_MIN/MAX hardcoded
 - **P1** · 🟡 · → `03_01 §2`, `04_01`, `04_02`
@@ -474,8 +474,8 @@
 - Після FW.1. Статичний ключ при Factory Flashing → немає rotation без re-flash (GDPR/ISO 27001/NIST SP 800-57). Рішення: Hash Ratchet KDF (`CMD:ROTATE_KEY` → `K_current`→`K_next` AES-KDF, PFS). · [ ] 🔗 дизайн протоколу + CoAP command + cluster ACK + Flash/RTC storage + ECDH alt
 
 #### FW.19 — Float32 vs Float64 mruby compile flags
-- **P2** · 👤 · → `03_04 §5`
-- ✅ tolerance band «by design» (категорична `check_z_divergence!`); compile-flag verify — lab. mruby без `MRB_USE_FLOAT`=double, з=float32; ±5-10 units на Z → bio_status зсув. · [ ] 👤 верифікувати `MRB_USE_FLOAT` (Makefile/mrbconf.h) при lab-тесті
+- **P2** · 🤖+👤 · → `03_04 §5`
+- ✅ tolerance band «by design» (категорична `check_z_divergence!`). **Флаг — `MRB_USE_FLOAT32`** (перейменовано з `MRB_USE_FLOAT` у mruby ≥3.0; стара назва мертва — verified `doc/mruby4.0.md`). Без нього = double (потрібно), з ним = float32 → ±5-10 units на Z → bio_status зсув. · [x] 🤖 (FW.46) `firmware/mruby/build_config.rb` пінить double (НЕ ставить `MRB_USE_FLOAT32`) + boxing-інваріант (НЕ вмикати WORD/NAN boxing на 32-bit) — `03_01 §12.4` · [ ] 👤 bench-verify на STM32WLE5JC REVB
 
 #### FW.20 + FW.20-S2 — Time Sync (Rails ↔ Queen ↔ Soldier)
 - **P2** · 👤+🟡 · → `03_02 §5а` (канон-хаб)
@@ -499,7 +499,7 @@
 
 #### FW.26 — TENSOR_ARENA_SIZE ніколи не верифіковано
 - **P1** · 🤖 · → `03_03 §4.3`, `04_06`
-- ✅ CI gate `make size-check` (host `.bss+.data`<51200B; soldier 2.5K/queen 12.4K). Точний arena невідомий (~16KB оцінка, Path B §3.2 range ~15-30KB); >46KB → stack overflow при Lorenz (250 ітер). · [ ] 🤖 `arm-none-eabi-size` після моделі (FW.4) → виміряти `.bss+.data` · [ ] 🤖 якщо >46KB — INT8 quantization/prune
+- ✅ CI gate `make size-check` (host `.bss+.data`<51200B; soldier 2.5K/queen 12.4K). **FW.46:** real `arm-none-eabi-size` активний для owned-коду (logmel ~6.3KB; mruby ~117KB Flash / 0 static RAM — `03_01 §12.4`); повний `.elf` size (з tensor arena) — після HAL-vendoring + моделі. Точний arena невідомий (~16KB оцінка, Path B §3.2 ~15-30KB); >46KB → stack overflow при Lorenz. · [ ] 🤖 повний `.elf` `.bss+.data` після FW.4 модель + `-DSILKEN_WITH_HAL=ON` · [ ] 🤖 якщо >46KB — INT8 quantization/prune
 
 #### FW.27 — OTA broadcast: відсутня RX-верифікація Soldier
 - **P2** · 🔗 · → `03_02 §5`
@@ -528,8 +528,12 @@
 - [ ] 🔗 (B/C) після стабілізації A, координований firmware rollout: **B** Soldier sentinel `acoustic_events=0xFE` на cold-boot; **C** defer-first-uplink grace «hello» (DID+Vcap+TIME_REQ, без Lorenz state)
 
 #### FW.46 — Enterprise-grade ARM firmware build (committed, reproducible, CI cross-compile)
-- **P1** · 🤖+👤 · → `03_01`
-- **Gap:** закомічченого ARM-build нема — лише host-тести (`firmware/test/Makefile`); Soldier/Queen `.elf`/`.bin` збираються зовні (CubeIDE, поза репо) → не відтворювано і не CI-gated. **Scope:** committed `Makefile`/CMake (`arm-none-eabi-gcc`) для Soldier+Queen, що лінкує `main.c` + `firmware/common/*.c` (вкл. `logmel.c` під `LOGMEL_USE_CMSIS`) + **mruby bytecode** (крок `mrbc`: `bio_contract.rb` → `lorenz_bytecode[]`) + CMSIS-DSP/NN + STM32 HAL. · [ ] 🤖 build (Makefile/CMake) + pinned toolchain + CI cross-compile job (ci.yml вже ставить `binutils-arm-none-eabi`) · [ ] 🤖 flip FW.26 size-check host-placeholder → real `arm-none-eabi-size` на `.elf` (`.bss+.data` SRAM + `.text` Flash budget) · [ ] 🤖 enable `LOGMEL_USE_CMSIS` + host↔target `arm_rfft_fast_f32` packing-parity harness · [ ] 👤 STM32 HAL/CMSIS vendoring (submodule vs vendored) + bench flash-verify + reproducible-build attestation. Cross-ref: FW.4 (logmel wiring + стек), FW.26 (size gate), FW.19 (`MRB_USE_FLOAT` Makefile), SEC.3 (factory-flashing потребує `.bin`).
+- **P1** · 🤖+👤 · → `03_01 §12.4`
+- **Owned-code foundation ✅ (2026-06-04):** відтворюваний CMake-крос-компайл того, що ми володіємо, + CI gate `firmware_arm_build` (перша реальна крос-компіляція main-line firmware C). Повний HAL-`.elf` — окремий 👤-крок (CubeMX поза репо). · [x] 🤖 CMake + `cmake/arm-none-eabi.cmake` (Cortex-M4F, pinned Arm GNU 13.2.Rel1) + pinned submodules CMSIS-DSP/CMSIS_6/mruby (`firmware/extern/`) · [x] 🤖 `logmel.c` крос-компілюється під ARM (`LOGMEL_USE_CMSIS` + CMSIS-DSP), real `arm-none-eabi-size` ~6.3KB · [x] 🤖 **mrbc bytecode** (`bio_contract.rb` → `lorenz_bytecode.h` — був placeholder-stub!) + drift-gate (light `check_bytecode.py` + deep `gen_bytecode.sh --check`) + minimal-VM harness (`run_bytecode_vm.sh` ганяє реальний байткод) · [x] 🤖 host↔target `arm_rfft_fast_f32` packing-parity (`test_logmel_cmsis`, worst Δ 7.6e-6) · [x] 🤖 mruby minimal gembox (double, NO_BOXING) крос-зібрано — ~117KB Flash / 0 RAM (`03_01 §12.4`) · [ ] 👤 STM32 HAL vendoring (CubeMX export) → `-DSILKEN_WITH_HAL=ON` → повний Soldier/Queen `.elf` + bench flash-verify · [ ] 🤖 flip FW.26 на повний `.elf` після HAL · [ ] 👤 verify `firmware_arm_build` зелений на першому push (CI-only-validated: локально нема apt/fresh-submodule-checkout — структурна впевненість + CI-команди прогнані локально з pinned toolchain) · [ ] 🤖 (optional hardening) пін toolchain у CI через ARM-tarball замість apt (reproducible-build attestation — far-future, `00_08`). Cross-ref: FW.4 (logmel wiring), FW.26 (size), FW.19 (mruby double), FW.47 (submodule audit), SEC.3 (`.bin`).
+
+#### FW.47 — Repo-wide vendor-via-submodule audit (dependency hygiene)
+- **P2** · 🤖+👤 · → `03_01 §12.4`
+- FW.46 завендорив CMSIS-DSP/CMSIS_6/mruby як pinned submodules. Пройтись по решті зовнішніх залежностей, що зараз припущені або вставлені вручну: **mbedTLS** (firmware AES/HKDF/HMAC — `03_05`), **Foundry** `forge-std`/OpenZeppelin (`contracts/`), **STM32 HAL/CMSIS-Device** (HAL-фаза FW.46). · [ ] 🤖 інвентаризувати + запропонувати pin-стратегію (submodule vs vendored per-dep) · [ ] 👤 рішення per-dep
 
 ## §03/§05 · Безпека (Edge crypto + Web3)
 

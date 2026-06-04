@@ -19,6 +19,7 @@ on-device features, proven, not hoped.**
 | `tools/ml/README.md` | Package layout, the three-impl parity diagram, the local-verify recipes, the deferred stack. |
 | `docs/00_06 §2` | Canonical-home registry — the contract's home + its C/python mirrors + drift guard. |
 | `docs/00_02` | Validation Gate — LLM proposes a *hypothesis*; no code until the spec is approved. |
+| `docs/03_01 §12.4` | **Firmware ARM cross-compile build** (FW.46) — CMake, pinned submodules (`firmware/extern/`), mrbc bytecode, toolchain pin, footprint, mruby `double`/NO_BOXING/minimal-gembox invariants. |
 
 **State** (what's built / next) lives in memory, not here: `[[project_e61_done_next_machine_doable]]`, plus `[[feedback_no_volatile_counts]]`, `[[feedback_c_comments_ukrainian]]`.
 
@@ -49,7 +50,29 @@ on-device features, proven, not hoped.**
 
 Set up the heavy env once: `mamba env create -f tools/ml/environment.yml && mamba run -n silken_ml pip install -e tools/ml`.
 
-**CI:** `ci.yml › firmware_test` is light (gcc + the stdlib table check — no conda); `ml_smoke.yml` is heavy/path-filtered (micromamba-cached: pytest + the librosa parity gate + `emit_c --check`).
+**CI:** `ci.yml › firmware_test` is light (gcc + the stdlib table check + the bytecode stamp check — no conda); `ci.yml › firmware_arm_build` is the heavy ARM gate (toolchain + submodules: cross-compile + bytecode regen-diff + VM harness + FFT parity); `ml_smoke.yml` is heavy/path-filtered (micromamba-cached: pytest + the librosa parity gate + `emit_c --check`).
+
+## ARM cross-compile + bytecode (FW.46)
+
+Firmware build canon — `docs/03_01 §12.4` (CMake, pinned submodules, toolchain
+pin, footprint, mruby invariants). `git submodule update --init --recursive`
+first. **No ARM toolchain in this env by default** — pin Arm GNU 13.2.Rel1
+(ARM tarball or apt `gcc-arm-none-eabi`); CI installs it. Operational recipes:
+
+| Want | Run | Needs |
+|---|---|---|
+| cross-compile owned code (logmel.c) + `arm-none-eabi-size` | `cmake -B firmware/build -S firmware --toolchain firmware/cmake/arm-none-eabi.cmake -DCMSISCORE=$PWD/firmware/extern/CMSIS_6/CMSIS/Core && cmake --build firmware/build --target size` | arm-gcc, cmake |
+| regenerate the bytecode mirror after editing `bio_contract.rb` | `tools/firmware/gen_bytecode.sh` then commit `firmware/common/lorenz_bytecode.h` | ruby+rake (builds host mrbc) |
+| bytecode mirror == source (light / deep) | `python3 tools/firmware/check_bytecode.py` / `tools/firmware/gen_bytecode.sh --check` | stdlib / +mrbc |
+| minimal VM runs the committed bytecode | `tools/firmware/run_bytecode_vm.sh` | host cc + ruby |
+| CMSIS RFFT packing == goldens (host, no board) | `cmake -B firmware/build-host -S firmware -DSILKEN_HOST_PARITY=ON -DHOST=ON -DCMSISCORE=… && ctest --test-dir firmware/build-host` | host cc, cmake |
+
+**mruby gotchas** (canon `03_01 §12.4` + `doc/mruby4.0.md`): float flag is
+`MRB_USE_FLOAT32` (renamed from `MRB_USE_FLOAT`); never enable WORD/NAN boxing
+on 32-bit (no inline float → heap-thrash); minimal gembox = core +
+`mruby-compar-ext` only. The committed bytecode was a placeholder stub before
+FW.46 — `gen_bytecode.sh` produces the real compiled `bio_contract.rb`. Editing
+a log-mel param OR the bytecode logic touches the contract dance AND these gates.
 
 ## Changing the contract (the One-Home dance)
 

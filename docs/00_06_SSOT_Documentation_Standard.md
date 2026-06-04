@@ -80,6 +80,8 @@
 | Зовнішні стейкхолдери (B2G/B2B + культурний шар) | `08_03` (External Stakeholders Registry) |
 | Firmware internals split | **Soldier** RAM/tests/lifecycle + RTC reg-map → `03_01`; **Queen** deep-dive (RAM `§9` · HAL `§10` · host-tests `§11` · `#define` `§0`) → `03_02`. Кожен реферить інший, не дублює (DOC-T.14) |
 | Log-mel feature contract (FW.25) | `03_03 §3.4` (owner). Дзеркала: `firmware/common/logmel_contract.h` + `silken_ml.dsp.contract` (`tools/ml`); звірка через stamped `contract_hash` + `emit_c --check`. Таблиці генерує `silken_ml.codegen` |
+| Lorenz mruby bytecode (FW.46) | джерело `firmware/bio_contracts/bio_contract.rb` (логіка — owner `03_04`); generated mirror `firmware/common/lorenz_bytecode.h` (mrbc); звірка — `tools/firmware/check_bytecode.py` (light sha-stamp) + `gen_bytecode.sh --check` (deep regen) |
+| Firmware ARM build / toolchain pin / mruby build_config (FW.46) | `03_01 §12.4` (CMake + `firmware/cmake/arm-none-eabi.cmake` + `firmware/mruby/build_config.rb`; pinned submodules у `firmware/extern/`). Гейт — `ci.yml › firmware_arm_build` |
 
 > Повний канон↔канон дубль-аудит — `00_07 DOC-T.2`.
 
@@ -116,6 +118,7 @@
 | **TRL range-consistency** | per-doc member-TRL у межах **band** модуля (`00_03 §1`): (a) рядок well-formed (current ≤ target) + (b) рядок ≤ max member-TRL під-доків (рядок = min, не вище за КОЖНОГО члена) + (c) member ≤ target модуля. Перевіряє лише **верхні** межі — нижня має легітимні винятки (рядок = min критичного шляху → під-док буває нижче: 06_01 off-path, 00_03 Статус звітує System-TRL). Owner-only-vocabulary, як інші value-гейти | `bin/rails docs:check_refs` (HARD 2026-06-03; `lib/docs_linter.rb`) |
 | **ref-graph audit** | _(on-demand, НЕ CI-gate)_ orphan/dead-end сторінки · in/out-degree skew · one-way (asymmetric) sibling-лінки · linked-`§X` валідація — власний ref-граф канону (GitNexus моделює код, не NN_NN-конвенцію). `#anchor`-резолюція звідси випущена у HARD-gate (рядок вище); граф лишає графовий вигляд, якого per-line гейти не дають | `bin/rails docs:graph` (`lib/docs_graph.rb`; spec `spec/lib/docs_graph_spec.rb`) |
 | **log-mel contract** (FW.25) | §3.4 значення == C-дзеркало `logmel_contract.h` == python `contract.py` через stamped `contract_hash`; committed `firmware/common/logmel_*.h` == canonical regen — ловить тиху правку будь-якої сторони (значення-as-bytes, не проза) | `check_firmware_tables.py` (ci.yml, stdlib) + `emit_c --check` (ml_smoke.yml) |
+| **mruby bytecode drift** (FW.46) | committed `firmware/common/lorenz_bytecode.h` мусить відповідати `bio_contract.rb`: light — sha256-stamp джерела в заголовку (stdlib, без mrbc); deep — mrbc-regen + diff (pinned mruby submodule) | `tools/firmware/check_bytecode.py` (ci.yml `firmware_test`) + `gen_bytecode.sh --check` (ci.yml `firmware_arm_build`) |
 
 **Правило при зміні факту:** правити лише у home (§2) → рефи лишаються чинними; будь-який новий NN_NN-док/реф — `docs:check_refs` має лишатись зеленим перед merge.
 

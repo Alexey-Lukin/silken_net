@@ -1,0 +1,14 @@
+# [FW.46] clangd: resolve firmware C against the HOST build's compile DB.
+#
+# The ARM cross build (firmware/build/, CMAKE_EXPORT_COMPILE_COMMANDS) compiles
+# for bare-metal Cortex-M4, so its compile_commands.json makes clangd flag host
+# system headers (stdio.h, math.h) as "not found" on otherwise host-compilable
+# files (firmware/test/*.c, firmware/common/logmel.c). Point clangd at the host
+# parity build instead; if it isn't built yet, clangd falls back to host
+# heuristics (also correct for these files).
+#
+# NB: firmware/soldier/main.c + queen/main.c still show main.h / radio.h /
+# mruby/*.h unresolved — those are CubeMX/submodule-generated and only present
+# in the full HAL build (docs/03_01 §12.4), not in the host DB. Expected.
+CompileFlags:
+  CompilationDatabase: build-host

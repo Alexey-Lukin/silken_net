@@ -1146,8 +1146,8 @@ make -C firmware/test encryption  # AES encryption
 
 ## 🌿 11. Bio-Contract Specification (`firmware/bio_contracts/bio_contract.rb`)
 
-Цей файл є мостом між C-ядром та математикою Атрактора Лоренца. Компілюється командою `mrbc` у байт-код, який:
-- Вбудовується у `lorenz_bytecode[]` при першій компіляції firmware
+Цей файл є мостом між C-ядром та математикою Атрактора Лоренца. Компілюється `mrbc` у байт-код (committed mirror `firmware/common/lorenz_bytecode.h`, генерує `tools/firmware/gen_bytecode.sh`, drift-gated — §12.4), який:
+- Вбудовується у `lorenz_bytecode[]` через `#include` (FW.46; раніше — manual paste, був placeholder-stub)
 - Або оновлюється через OTA → Flash-сектор `0x0803F000`
 
 ### 11.1 Структура модуля
@@ -1352,6 +1352,49 @@ make -C firmware/test queen   # Queen tests only
 make -C firmware/test soldier # Soldier tests only
 make -C firmware/test clean   # Remove test_queen, test_soldier binaries
 ```
+
+### 12.4 ARM cross-compile build (FW.46)
+
+**Дім build-системи прошивки.** До FW.46 закомічченого ARM-build не було — `.elf` збирались зовні (CubeIDE), не відтворювано й не CI-gated. Тепер відтворюваний CMake-крос-компайл того, що ми **володіємо**, живе в репо й гейтиться в CI (`ci.yml › firmware_arm_build`). Повний HAL-лінкований `.elf` — наступний крок (👤, [`00_07` — FW.46](00_07_Action_Plan_Tracker)).
+
+```
+firmware/
+  CMakeLists.txt              — owned-код (logmel.c) + CMSIS-DSP + size + guarded HAL
+  cmake/arm-none-eabi.cmake   — toolchain-file (Cortex-M4F; pin Arm GNU 13.2.Rel1)
+  mruby/build_config.rb       — mruby builds (host mrbc / host-min / arm minimal)
+  extern/                     — pinned submodules: CMSIS-DSP · CMSIS_6 (Core) · mruby
+tools/firmware/
+  gen_bytecode.sh             — mrbc: bio_contract.rb → lorenz_bytecode.h (+ --check drift)
+  check_bytecode.py           — light stdlib stamp-gate (CI firmware_test)
+  run_bytecode_vm.sh          — minimal-VM harness: ганяє committed bytecode (mrb_load_irep)
+```
+
+Детальні recipe (env, локальний прогін, регенерація) — скіл `ml-engineering`. Локально:
+
+```bash
+cmake -B firmware/build -S firmware --toolchain firmware/cmake/arm-none-eabi.cmake \
+  -DCMSISCORE=$PWD/firmware/extern/CMSIS_6/CMSIS/Core
+cmake --build firmware/build --target size        # arm-none-eabi-size logmel.o
+tools/firmware/gen_bytecode.sh --check            # bytecode mirror == bio_contract.rb
+tools/firmware/run_bytecode_vm.sh                 # minimal VM runs the bytecode
+```
+
+**Виміряний footprint** (вперше — ARM-build раніше не існувало):
+
+| Артефакт | Flash (.text) | Static RAM |
+|---|---|---|
+| mruby core (bytecode-only, `libmruby_core.a`) | ~117 KB | 0 — mruby 4.0.0 ROM-таблиці у `.rodata` |
+| logmel.c (наш DSP, `LOGMEL_USE_CMSIS`) | ~6.3 KB | 28 B |
+| lorenz_bytecode (mrbc) | ~2.5 KB | 0 |
+
+> mruby ≈ 46% від 256 KB Flash — інherentна ціна за **OTA-оновлюваний bio-contract** (байткод OTA'ється без reflash). Тримати в бюджеті при HAL-інтеграції (+ CMSIS-NN модель, [`00_07` — FW.4](00_07_Action_Plan_Tracker)).
+
+**mruby build-інваріанти** (verified проти `doc/mruby4.0.md`; джерело — `build_config.rb`):
+- **double, не float32:** НЕ ставимо `MRB_USE_FLOAT32` (флаг перейменовано з `MRB_USE_FLOAT` у mruby ≥3.0 — [`00_07` — FW.19](00_07_Action_Plan_Tracker)) → `mrb_float` = double, потрібно для DCI numeric parity ([`03_04 §5`](03_04_mruby_Lorenz_Attractor)).
+- **NO_BOXING (default):** НЕ вмикати `MRB_WORD_BOXING`/`MRB_NAN_BOXING` на 32-bit — там нема inline-float, кожен double йшов би в heap → GC-thrash на крихітному heap.
+- **minimal gembox:** core + лише `mruby-compar-ext` (для `clamp`); core дає `abs`/`round`/`times`. `default-no-stdio` (~254 KB) не влазить у Flash.
+
+**Scope-межа:** §12.4 крос-компілює owned-код і вимірює його розмір. Soldier/Queen `.elf` (`main.c`/`queen/main.c`) залежать від `main.h`/`radio.h` (CubeMX-HAL, поза репо) → лінкуються лише за `-DSILKEN_WITH_HAL=ON` після вендорингу CubeMX-проєкту (👤). Тоді `firmware/scripts/check_ram_budget.sh` дає істинний повний [`00_07` — FW.26](00_07_Action_Plan_Tracker) розмір. C-API mruby для `main.c` у HAL-фазі: `mrb_alloca→mrb_temp_alloc`, `mruby/ext/io.h→mruby/io.h` (4.0.0 renames).
 
 ---
 

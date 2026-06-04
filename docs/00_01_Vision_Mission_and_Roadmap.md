@@ -130,5 +130,5 @@ Slashing у Gaia 2.0 — це **покарання за халатність/з�
 
 - Кожен SCC токен підкріплений сенсорно-верифікованим фотосинтезом та поглинанням вуглецю.
 - On-device обчислення (mruby) запобігає підробці на рівні заліза.
-- Server-side верифікація (Ruby Float64, IEEE 754 — бітово ідентично firmware після [FW.7]) забезпечує redundant integrity checking.
+- Server-side верифікація (Ruby Float64, IEEE 754 — **категорично** ідентично firmware після [FW.7], raw Z у межах numeric-tolerance ~1e-14) забезпечує redundant integrity checking.
 - Slashing protocol (§6) гарантує економічні наслідки за деградацію через халатність, **не караючи** інвесторів за форс-мажор.
