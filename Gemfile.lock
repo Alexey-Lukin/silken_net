@@ -305,7 +305,7 @@ GEM
       rdoc (>= 4.0.0)
       reline (>= 0.4.2)
     jmespath (1.6.2)
-    json (2.19.5)
+    json (2.19.8)
     jwt (3.2.0)
       base64
     kamal (2.11.0)
@@ -664,15 +664,15 @@ GEM
       ffi-compiler (>= 1.0, < 2.0)
       rake (~> 13)
     securerandom (0.4.1)
-    sentry-rails (6.5.0)
+    sentry-rails (6.6.0)
       railties (>= 5.2.0)
-      sentry-ruby (~> 6.5.0)
-    sentry-ruby (6.5.0)
+      sentry-ruby (~> 6.6.0)
+    sentry-ruby (6.6.0)
       bigdecimal
       concurrent-ruby (~> 1.0, >= 1.0.2)
       logger
-    sentry-sidekiq (6.5.0)
-      sentry-ruby (~> 6.5.0)
+    sentry-sidekiq (6.6.0)
+      sentry-ruby (~> 6.6.0)
       sidekiq (>= 5.0)
     sidekiq (8.1.6)
       connection_pool (>= 3.0.0)
@@ -835,7 +835,7 @@ DEPENDENCIES
   rumale
   sentry-rails (~> 6.5)
   sentry-ruby (~> 6.5)
-  sentry-sidekiq (~> 6.5)
+  sentry-sidekiq (~> 6.6)
   sidekiq
   sidekiq-scheduler
   simplecov
