@@ -87,14 +87,16 @@ Bridge:
 
 ## Cascade Verdict Summary
 
-| Method | ΔG/e⁻ (eV) | vs Exp (-0.14) | Use for |
-|--------|-----------|----------------|---------|
-| B3LYP Koopmans (corrected) | -0.07 | 0.21 eV | **Best estimate** |
-| ΔSCF ωB97X (adiabatic) | +0.884 | 1.02 eV | Independent validation |
-| ΔSCF ωB97X (vertical) | +0.998 | 1.14 eV | Baseline |
-| Koopmans ωB97X | +5.884 | 6.02 eV | **Never use** (RSH artifact) |
+Verified cascade = **+466 mV / −0.47 eV downhill** (E°(Os +200) − E°(FAD-GDH −266 mV SHE), Sygmund & Ludwig 2022). Raw DFT is uphill in every method (numbers → SUMMARY / L3):
 
-Residual ~0.9 eV gap = PCM solvation limit (not chemistry error).
+| Method | ΔG/e⁻ (eV) | vs verified −0.47 | Use for |
+|--------|-----------|----------------|---------|
+| ΔSCF ωB97X (adiabatic) | +0.884 | 1.35 eV | raw DFT (uphill) |
+| ΔSCF ωB97X (vertical) | +0.998 | 1.47 eV | baseline |
+| Koopmans ωB97X | +5.884 | 6.35 eV | **never use** (RSH artifact) |
+| B3LYP Koopmans «corrected» −0.07 | −0.07 | withdrawn | tuned to the wrong −0.14 (+60 mV FAD) — do NOT cite |
+
+~1.3 eV gap = mediator **speciation** (chloro→aqua +0.51) + **PCM differential solvation** (+0.20/3 H₂O → full shell), decomposed by ② (script 34); [Os(H₂O)₆] benchmark +0.98 eV. Rigorous closure = QM/MM (Мінаєв).
 
 ## When Modifying
 

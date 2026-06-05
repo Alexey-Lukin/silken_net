@@ -168,7 +168,7 @@ Gaia 2.0 / Silken Net об'єднує сім академічних та інд�
 
 ### Стаття 1: Електрон-трансферна енергетика EBFC Gen 2.0 (квантова хімія, Пріоритет: Перша)
 
-> ⚠️ **Переформульовано (2026-06-05) — чесна рамка замість overclaim.** Стара назва *"Quantum-Chemical **Validation**…"* суперечила власним результатам L3: сирий обчислювальний вердикт каскаду FADH₂→Os — **uphill у кожному методі** (B3LYP Koopmans −0.91 eV; ωB97X ΔSCF adiabatic +0.88 eV), а «downhill» виходить лише через bias-корекцію (*fortuitous error cancellation*) + **експериментальне** значення (Cosnier 1999). Тобто обчислення не «валідує» — воно експонує межу методу; «validation» = reviewer-landmine. Переорієнтовано на **механізм + межі методу** (повний аудит — `docs/protocols/ebfc/in_silico/L3_quantum_chemistry.md`). _Історія:_ під Gen 2.0 переписано 2026-05-28 зі старої Gen 1.0 «Streaming Potential» (відкинута); ICP-MS Ti/Al/V → Стаття 2.
+> ⚠️ **Переформульовано (2026-06-05) — чесна рамка замість overclaim.** Стара назва *"Quantum-Chemical **Validation**…"* суперечила власним результатам L3: сирий обчислювальний вердикт каскаду FADH₂→Os — **uphill у кожному методі** (B3LYP Koopmans −0.91 eV; ωB97X ΔSCF adiabatic +0.88 eV), а downhill — це **верифіковані E°s** (+466 мВ: Os +200 − FAD-GDH −266 мВ SHE, Sygmund & Ludwig 2022); стара «−0.07 ≈ −0.14 (Cosnier)» bias-корекція стояла на хибному +60 мВ FAD і **withdrawn**. Тобто обчислення не «валідує» — воно експонує межу методу; «validation» = reviewer-landmine. Переорієнтовано на **механізм + межі методу** (повний аудит — `docs/protocols/ebfc/in_silico/L3_quantum_chemistry.md`). _Історія:_ під Gen 2.0 переписано 2026-05-28 зі старої Gen 1.0 «Streaming Potential» (відкинута); ICP-MS Ti/Al/V → Стаття 2.
 
 **Назва (EN):** _"Computational Electron-Transfer Energetics of a FAD–Osmium Enzymatic Biofuel Cell: PCET Redox Potentials, ZIF-Nanozyme Direct Electron Transfer, and the Limits of Implicit-Solvation DFT"_
 
@@ -690,7 +690,7 @@ _«Дослідження акустичних властивостей пори
 
 **Тип зв'язку:** Комплементарний — ЧНУ: теоретична модель (DFT), ЧМА: in vitro валідація, Silken Net: системні вимоги
 
-> **In-silico baseline для Статті 28:** Zero-Lab L1-L4 PASSED (2026-05-25). Публікаційні headline-claims: L1 **d_FAD=15.998 Å** (MET viable); L3 cascade B3LYP corrected **-0.07 eV** + adiabatic ΔSCF +0.884 eV (ωB97X); L3b **k_DET=1.09×10⁸ s⁻¹**; L4 delta_t=36s. **Повні поточні числа та статус — канонічний [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) + [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md)** (тут не дублюємо, щоб уникнути розсинхрону).
+> **In-silico baseline для Статті 28:** Zero-Lab L1-L4 PASSED (2026-05-25). Публікаційні headline-claims: L1 **d_FAD=15.998 Å** (MET viable); L3 cascade **verified +466 мВ / −0.47 eV downhill** (E°s; raw DFT uphill = method limit decomposed by ②); L3b **k_DET=1.09×10⁸ s⁻¹**; L4 delta_t=36s. **Повні поточні числа та статус — канонічний [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) + [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md)** (тут не дублюємо, щоб уникнути розсинхрону).
 
 ---
 

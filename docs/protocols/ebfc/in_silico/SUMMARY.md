@@ -15,7 +15,7 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 |-------|----------|--------|---------|
 | **L1** | Does deglycosylated FAD-GDH fold correctly? | AlphaFold 3 | ✅ d_FAD = 15.998 Å < tunneling 18-20 Å |
 | **L2** | Does the full matrix denature the protein? | OpenMM MD (481k atoms) | ✅ RMSD 1.22 Å (100ps), Rg stable at 10ns |
-| **L3** | Does electron cascade FAD→Os flow downhill? | PySCF DFT (54 atoms) | ✅ Bias-corrected Δε ≈ -0.07 eV (within 0.14 eV of exp.) |
+| **L3** | Does electron cascade FAD→Os flow downhill? | PySCF DFT (54 atoms) | ✅ Downhill (verified +466 mV); raw DFT uphill = method limit, decomposed by ② |
 | **L3b** | Is DET through ZIF nanozyme fast enough? | PySCF ΔSCF | ✅ 3/3 hops → total k_DET = 1.09×10⁸ s⁻¹ (10⁵× above turnover) |
 | **L4** | Does BASELINE_DELTA_T_S = 60s make physical sense? | Analytical MM+Arrhenius | ✅ Healthy 36s / Stressed 190s |
 
@@ -143,12 +143,11 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 | ε_HOMO(FADH₂) | -5.137 eV |
 | ε_LUMO(Os(III)) | -4.228 eV |
 | Raw Δε | -0.909 eV (UPHILL) |
-| B3LYP FADH₂ HOMO correction | +0.64 eV |
-| Geometry optimization estimate | +0.2 eV |
-| **Bias-corrected Δε** | **≈ -0.07 eV** |
-| Experimental (Cosnier 1999) | +0.14 eV |
+| **Verified driving force** | **+466 mV / −0.47 eV (downhill)** |
+| ↳ E°(Os +200) − E°(FAD-GDH −266 mV SHE) | Sygmund & Ludwig 2022 |
+| Gap raw-DFT ↔ verified | ~1.3 eV → ② decomposes (speciation +0.51, solvation +0.20) |
 
-**Conclusion:** Raw verdict UPHILL is an artifact of B3LYP systematic bias. Bias-corrected result within 0.14 eV of experiment. Patent claim confirmed by three independent sources (experiment + DFT NH₃ + DFT full bpy).
+**Conclusion:** Raw DFT verdict UPHILL is a **method limit** (mediator speciation + PCM differential solvation), decomposed by ② (§"Cluster-Continuum Micro-Solvation"). The cascade is **experimentally downhill** (+466 mV, verified E°s). The earlier «bias-corrected Δε ≈ −0.07 eV reproduces exp −0.14» was fortuitous cancellation tuned to a mis-valued (+60 mV) FAD potential — **withdrawn**; Cosnier 1999's +140 mV pertains to glucose-oxidase, not GcGDH.
 
 ### Publication-grade: ωB97X/def2-TZVP (✅ Complete, 2026-05-27)
 
@@ -160,15 +159,15 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 
 **All methods comparison:**
 
-| Method | ΔG/e⁻ (eV) | vs Exp. |
+| Method | ΔG/e⁻ (eV) | vs Exp.* |
 |--------|-----------|---------|
 | Koopmans ωB97X | +5.884 | RSH artifact |
-| ΔSCF ωB97X (vertical) | +0.998 | 1.14 eV |
-| **ΔSCF ωB97X (adiabatic)** | **+0.884** | **1.02 eV** (PCM solvation limit) |
-| **B3LYP corrected** | **-0.07** | **0.21 eV ← best** |
-| Experiment | -0.14 | ref |
+| ΔSCF ωB97X (vertical) | +0.998 | 1.47 eV |
+| **ΔSCF ωB97X (adiabatic)** | **+0.884** | **1.35 eV** |
+| B3LYP corrected (−0.07) | −0.07 | withdrawn (tuned to wrong −0.14) |
+| **Experiment (verified E°s)** | **−0.47** | ref |
 
-Residual 0.9 eV gap in ΔSCF = PCM underestimates charged species solvation.
+*vs the verified −0.47 eV (E°(Os) − E°(FAD-GDH −266 mV SHE); the old −0.14 was a +60 mV FAD artifact). Residual ~1.3 eV gap = mediator speciation + PCM differential solvation, decomposed by ② (§"Cluster-Continuum Micro-Solvation").
 
 ### Mediator Structure–Property Series (① — script 21e, 2026-06-05)
 
@@ -359,7 +358,7 @@ Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
 | ~~L3/L2 MD→DFT ensemble (script 27)~~ | CPU | ✅ DONE — FAD HOMO -5.589 ± 0.058 eV across 5 snapshots, thermally robust |
 | ~~L3 Nelsen λ (script 29)~~ | CPU | ❌ CLOSED — work done, result is a documented negative (FADH₂•⁺ geometry pathological in implicit solvent, both methods). Literature λ=0.7-0.8 eV retained |
 | ~~L3 PCET proton reference (script 32)~~ | — | ✅ E°(FAD/FADH₂)=−158 mV @pH7, Δ50 mV vs free-flavin exp — implicit solvent valid |
-| ~~L3 PCET cascade (script 33)~~ | CPU | ✅ DONE (geom-opt): PCET cost +5.87 eV → cascade +1.48 eV, does NOT flip downhill. ~1 eV gap = PCM solvation limit. Exp −0.14 + B3LYP-corr −0.07 authoritative |
+| ~~L3 PCET cascade (script 33)~~ | CPU | ✅ DONE (geom-opt): PCET cost +5.87 eV → cascade +1.48 eV, does NOT flip downhill. Gap = method limit (speciation + PCM), decomposed by ②. Verified cascade +466 mV / −0.47 eV authoritative |
 
 > Full dependency graph and operational status → [`PIPELINE_STATUS.md`](PIPELINE_STATUS.md)
 
