@@ -1,6 +1,6 @@
 # In-Silico Pipeline — Operational Status & Dependencies
 
-> **Last updated:** 2026-05-28 13:30 EEST
+> **Last updated:** 2026-06-05 (② micro-solvation, script 34)
 > **TRL 3→4 Gate:** ✅ PASSED (2026-05-25)
 
 ---
@@ -42,6 +42,7 @@
 | 31 | `eis_impedance_model` | Rct=130Ω, Rs=100Ω | `kinetics/eis_model.json` |
 | 32 | `pcet_redox_potential` | E°(FAD/FADH₂) **-158 mV** (Δ50 mV vs free-flavin exp) — PCET valid w/ implicit solvent | `dft/pcet_redox_potential.json` |
 | 33 | `pcet_cascade_semiquinone` | PCET cost +5.87 eV → cascade +1.48 eV, **does NOT flip downhill** (~1 eV = PCM solvation limit) | `dft/pcet_cascade.json` |
+| 34 | `dft_microsolvation` | **② cluster-continuum**: [Os(H₂O)₆] n6→n18 **+0.98 eV** (benchmark), Cl⁻-solvation **+0.20 eV** (3 H₂O), aqua speciation **+0.51 eV** → cascade gap = decomposed method limit | `dft/microsolvation.json` |
 | 40 | `validate_vs_experiment` | predictions ready for Ti-coin CV/EIS | `kinetics/validation_report.json` |
 | 50 | `thermal_stress_lame` | safety 9.9× at -30°C; press-fit P_c 34.7→22.6 MPa (stress relaxation, not creep); O-ring seals, barbs axial-only | `kinetics/thermal_stress_lame.json` |
 | 51 | `gusak_degradation_model` | Arrhenius + Kirkendall V=1.12 µg/cm²/yr + H7/s6 | `kinetics/gusak_degradation.json` |

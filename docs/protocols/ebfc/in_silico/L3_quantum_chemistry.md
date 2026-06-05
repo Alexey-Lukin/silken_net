@@ -215,6 +215,34 @@ to the deprotonated product. This makes the FAD/FADH₂ PCET (FAD + 2H⁺ + 2e�
 
 ---
 
+## E. Cluster-Continuum Micro-Solvation & Speciation (② — script 34, 2026-06-05)
+
+Directly tests the "residual ~1 eV gap = PCM differential solvation" hypothesis
+(§D) by adding explicit waters / correcting the Os speciation on the charge-changing
+Os(III/II) couple. Since script 32 reproduces E°(FAD/FADH₂) within 50 mV, the flavin
+solvation is sound — the gap lives on the Os couple, the textbook group-8 octahedral
+PCM failure (Ru(H₂O)₆ ~1 V error, JPCC 10.1021/jp406772u). Full numbers →
+[`SUMMARY.md`](SUMMARY.md); the picture:
+
+1. **Benchmark validated** — [Os(H₂O)₆]³⁺/²⁺ inner→two-shell (n6→n18) shift is
+   **+0.98 eV**, reproducing the known ~1 V group-8 continuum error (2nd-shell
+   H-bond directionality a continuum cannot model).
+2. **Explicit Cl⁻ solvation** — 3 waters H-bonded to the chloride close +0.20 eV of
+   the cascade gap (~0.067 eV/water, monotonic) → full closure needs the whole 2nd
+   shell (QM/MM regime).
+3. **Speciation dominates** — replacing Cl⁻ by an aqua ligand (the form Caveat 5
+   argues the experiment actually measures) closes **+0.51 eV** — over half the gap;
+   the weak H₂O donor leaves Os(III) a much stronger oxidant. The aqua couple is
+   +2/+3, so it inherits the larger group-8 PCM bias — its absolute value is itself
+   implicit-limited (same direction as Caveat 6, ionic strength).
+
+**Conclusion:** the cascade gap decomposes into *speciation* (~0.5 eV) + *explicit
+solvation* (~0.2 eV / partial shell) — both computed from first principles, both
+~0.5 eV-scale — confirming it is a **method limit, not a chemistry failure**. The
+chloro-implicit model (§B / ①) is the worst case; the rigorous path is QM/MM with the
+correct aqua/bis-imidazole species (школа Мінаєва). This turns the "PCM limit" from
+an assertion into a quantified, decomposed result — the methodological core of Стаття 1.
+
 ## Future work (Gen 2.5+ refinements)
 
 | Покращення | Cost | Очікуваний імпакт |
@@ -225,7 +253,7 @@ to the deprotonated product. This makes the FAD/FADH₂ PCET (FAD + 2H⁺ + 2e�
 | **Nelsen 4-point λ** | 2 geom opts + 4 SPs | **Script 29 ❌ CLOSED — Physical Limitation** (2026-05-28). Attempted twice: (a) composite ωB97X//B3LYP (41.5h), (b) consistent B3LYP/def2-SVP + density-seeded cross-SPs. **Both give E(neutral@R_cation) ≈ −867 Ha, +5.9–6.3 Ha (+160 eV) above diagonal** — not an SCF/basis artifact but a real chemistry failure: the uncompensated **FADH₂•⁺ radical cation geometry is pathological in implicit solvent** (no explicit water / no PCET to relieve charge → ring distorts/fragments during geom-opt), so the neutral closed-shell at that geometry is meaningless. 4-point λ for proton-active flavins requires QM/MM (explicit water) or a deprotonated (PCET) reference. **Literature λ = 0.7–0.8 eV retained** (gold standard for flavin cofactors, Bhattacharyya et al.) — L4 Marcus rates already use it. *Same root cause as the +0.998 eV cascade artifact → fixed via PCET (script 33).* |
 | **ΔSCF redox potentials** з RRHO thermal corrections | ~2× за SP | Direct E° prediction vs NHE/SHE, не Koopmans approximation |
 | **TD-DFT excited states** для Os complex | ~5× за GS | Підтверджує MLCT character + Marcus reorganization energy |
-| **Explicit water shells + ONIOM/EFP** | ~10× за PCM | Realistic xylem solvent environment |
+| **Explicit water shells + ONIOM/EFP** | ~10× за PCM | **Script 34 ② ✅ (cluster-continuum, §E)**: benchmark +0.98 eV, speciation +0.51 eV, Cl⁻-solvation +0.20 eV → gap = decomposed method limit (→ SUMMARY). Full QM/MM = школа Мінаєва |
 | **CDFT (Constrained DFT)** для hopping integrals | ~5× за SP | Marcus β coefficient (~1.1 Å⁻¹ assumed in L1) — direct calc |
 | **MCPB.py-параметризований Os complex** + L2 MD | weeks | Mechanical Os-polymer surface coverage on protein (Gen 2.5+, не критичний path) |
 

@@ -39,7 +39,10 @@ L3 DFT anode (CPU):
   21b (Os B3LYP) ─┼── 22 (cascade verdict) ← rerun after 21d
   21d (Os ωB97X) ──┘
   28 (tunneling pathway) ← PDB only, no DFT deps
-  29 (Nelsen λ) ← standalone
+  29 (Nelsen λ) ← standalone (closed: flavin•⁺ pathological → re-apply to metal hops = ③)
+  21e (Os mediator Hammett series ①) ← 21b geometry
+  32 (PCET E°) → 33 (PCET cascade) ← lumiflavin
+  34 (micro-solvation ② cluster-continuum) ← 21b geom + hexaaqua + aqua speciation
 
 L3b DFT cathode (CPU):
   23 (ZIF clusters) → 24 (hopping integrals, 3 pairs)
@@ -72,6 +75,7 @@ Bridge:
 - **Spin parity** — odd electrons → odd spin (2S). Auto-detect: `spin = mol.nelectron % 2` as fallback.
 - **PCET with H₃O⁺/PCM** — PCM oversolvates small ions (H₃O⁺ by ~7 eV). Don't use for proton transfer corrections. Need explicit water for meaningful PCET.
 - **FAD in MD topology** — GAFF renames FAD to "UNK", all atoms have "x" suffix. 86 atoms total, 53 heavy. Full FAD has odd electron count — set charge=1 for even.
+- **Os mediator speciation matters (② / script 34)** — chloro vs aqua vs bis-imidazole shifts E°(Os III/II) by ~0.5 eV (cascade Δ −0.91 chloro → −0.40 aqua); the experiment (+200 mV) + real Os-PVI polymer likely measure the **aqua / bis-Im** form, not the chloro complex. The aqua couple is +2/+3 → larger group-8 PCM differential-solvation bias (benchmark [Os(H₂O)₆] n6→n18 +0.98 eV). Decompose the cascade gap into speciation + solvation; don't lump it. No `density_fit` for Os, `level_shift=0.3` for the Os(III) UKS doublet.
 
 ## MD Gotchas (Hard-Won Lessons)
 

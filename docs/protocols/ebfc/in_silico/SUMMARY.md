@@ -190,6 +190,58 @@ Residual 0.9 eV gap in ΔSCF = PCM underestimates charged species solvation.
 
 **Honest:** raw B3LYP-Koopmans cascade stays slightly uphill even for NO₂ (−0.23 eV) — same ~1 eV PCM differential-solvation bias (→ ② micro-solvation); the *trend/design rule* is the robust, transferable result. Numbers: `dft/os_mediator_series.json`.
 
+### Cluster-Continuum Micro-Solvation & Speciation (② — script 34, 2026-06-05)
+
+Tests whether the raw cascade ~1 eV gap (above) is the implicit-solvation (PCM)
+limit, by adding explicit waters / correcting speciation on the charge-changing
+**Os(III/II)** couple (the flavin couple is already within 50 mV of exp — script
+32 — so it is not the culprit). B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM vertical ΔSCF;
+ΔE_red(III→II)=E(OsII)−E(OsIII); cascade Δ = HOMO(FADH₂ −5.137)−LUMO(OsIII). All
+⟨S²⟩≈0.754 (clean doublets). Numbers: `dft/microsolvation.json`.
+
+**(a) Group-8 PCM benchmark — [Os(H₂O)₆]³⁺/²⁺** (validates the protocol against the
+known ~1 V error for Fe/Ru/Os octahedra, JPCC 10.1021/jp406772u):
+
+| shell | ΔE_red (eV) | implied E° vs SHE* |
+|---|---|---|
+| n=6 (inner only) | −4.946 | ≈ +0.67 V |
+| n=18 (+2nd shell, 55 atoms) | −3.964 | ≈ −0.32 V |
+
+2nd-shell shift = **+0.982 eV ≈ the literature ~1 V group-8 PCM error** (2nd-shell
+H-bond directionality a continuum cannot model). *Absolute E° indicative only
+(electronic-E proxy, |SHE_abs| ±0.15 V); the **shift** is the robust result. Exp
+[Os(H₂O)₆] ≈ −0.73 V (polarographic) — n=6 over-estimates, n=18 closer.
+
+**(b) Mediator Cl⁻ explicit solvation — cis-[Os(bpy)₂(1-MeIm)Cl]⁺/²⁺ + k·H₂O on Cl⁻**
+(k=0 reproduces ① / 21b exactly: −4.530 / −0.908):
+
+| k·H₂O(Cl⁻) | cascade Δ (eV) | gap closed vs k0 |
+|---|---|---|
+| 0 | −0.908 | — |
+| 1 | −0.845 | +0.064 |
+| 2 | −0.772 | +0.136 |
+| 3 | −0.702 | **+0.203** |
+
+~0.067 eV/water, monotonic → 3 waters close ~22 % of the gap; full closure (≈ the
+full 2nd shell) is the QM/MM regime.
+
+**(c) Speciation — aqua form cis-[Os(bpy)₂(1-MeIm)(H₂O)]²⁺/³⁺** (the real Os-PVI
+mediator + the cited exp E° ≈ +200 mV are likely the aqua / bis-imidazole form, NOT
+the chloro complex — aquation caveat in [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md)):
+cascade Δ = **−0.398 eV = +0.510 eV more favorable than the chloro model (k0)**
+(Os III LUMO −4.229 → −4.739; weak H₂O donor vs π-donor Cl⁻ → stronger oxidant /
+better acceptor). Caveat: the aqua couple is **+2/+3** → carries the larger group-8
+PCM bias (benchmark a), so its absolute value is itself implicit-solvation-limited.
+
+**Verdict:** the ~1 eV cascade gap **decomposes** into **speciation** (chloro→aqua
++0.51 eV) + **explicit solvation** (+0.20 eV / 3 Cl⁻-waters, trending to the full
+shell) — both ~0.5 eV-scale, both computed from first principles. The chloro-implicit
+model (①) is the worst case; the correct active species + an explicit shell move the
+cascade toward experiment. Rigorous closure = QM/MM with the aqua/bis-Im species
+(школа Мінаєва). Confirms the gap is a **method limit (speciation + PCM differential
+solvation), not a chemistry failure** — strengthens, with computed numbers, the
+"limits of implicit-solvation DFT" thesis of Стаття 1.
+
 ### Electron Tunneling Pathway (script 28, Beratan-Onuchic)
 
 FAD:C5B → FAD:O4B → FAD:C4A → FAD:N1A → **ALA261** → **THR260** → **THR283** → **THR288** (surface)
