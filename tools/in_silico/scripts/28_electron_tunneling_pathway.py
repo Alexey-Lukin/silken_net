@@ -57,7 +57,7 @@ def build_contact_graph(traj) -> nx.Graph:
 
     for atom in top.atoms:
         G.add_node(atom.index, name=atom.name, resname=atom.residue.name,
-                   resid=atom.residue.index, element=atom.element.symbol,
+                   resid=atom.residue.resSeq, element=atom.element.symbol,  # resSeq = PDB numbering, not 0-based MDTraj index (#3)
                    pos=coords[atom.index])
 
     n = top.n_atoms

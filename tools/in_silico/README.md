@@ -41,7 +41,7 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 23 | `23_build_zif_clusters.py` | L3b: bimetallic ZIF cluster models for DET hopping pathway | < 1 s |
 | 24 | `24_dft_hopping_integrals.py` | L3b DFT: ΔSCF hopping integrals (Marcus ET rates through ZIF) | ~3-4 h |
 | 27 | `27_md_dft_ensemble.py` | L3/L2 bridge: FAD HOMO from 5 MD snapshots (✅ -5.589 ± 0.058 eV, thermally robust) | ~30 min |
-| 28 | `28_electron_tunneling_pathway.py` | L3: Beratan-Onuchic electron tunneling pathway (✅ FAD→THR287, β·d=2.05) | < 1 s |
+| 28 | `28_electron_tunneling_pathway.py` | L3: Beratan-Onuchic electron tunneling pathway (✅ FAD→THR288, β·d=2.05) | < 1 s |
 | 29 | `29_dft_reorganization_energy.py` | L3: Nelsen 4-point λ_inner (B3LYP/def2-SVP, seeded cross-SPs) | ~1-2 h |
 | 32 | `32_pcet_redox_potential.py` | L3: PCET E°(FAD/FADH₂) via thermodynamic proton reference (✅ −158 mV @ pH7, Δ50 mV vs exp) | < 1 s |
 | 30 | `30_kinetics_delta_t.py` | L4: EBFC kinetics → delta_t(glucose, temp) for Lorenz attractor | ~1 s |

@@ -170,9 +170,29 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 
 Residual 0.9 eV gap in ΔSCF = PCM underestimates charged species solvation.
 
+### Mediator Structure–Property Series (① — script 21e, 2026-06-05)
+
+7× cis-[Os(4,4'-X-bpy)₂(1-MeIm)Cl]⁺/²⁺ at **constant charge**, B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM vertical ΔSCF — isolates the 4,4'-substituent electronic effect. The H (bpy) point reproduces script 21b (Δ=0.000 eV). cascade Δ = ε_HOMO(FADH₂, −5.137) − ε_LUMO(Os III).
+
+| 4,4'-X | σ_para | ΔE_red(III→II) eV | Os(III) LUMO eV | cascade Δ eV |
+|---|---|---|---|---|
+| NMe₂ | −0.83 | −3.910 | −3.636 | −1.501 |
+| NH₂ | −0.66 | −3.905 | −3.637 | −1.500 |
+| OMe | −0.27 | −4.286 | −4.002 | −1.136 |
+| Me | −0.17 | −4.381 | −4.086 | −1.051 |
+| H | 0.00 | −4.530 | −4.228 | −0.909 |
+| COOH | +0.45 | −4.936 | −4.595 | −0.542 |
+| NO₂ | +0.78 | −5.262 | −4.905 | **−0.232** |
+
+**Design rule (✅ monotonic):** electron-withdrawing 4,4'-bpy improves FADH₂→Os alignment — cascade Δ rises monotonically −1.50 (NMe₂) → −0.23 eV (NO₂); **NO₂ is the best-aligned mediator**. Predictive handle; rationalizes the experimental drive to higher-potential Os polymers.
+
+**E° LFER:** ΔE_red linear in σ over OMe→NO₂ (slope ≈ −0.93 eV/σ) with **donor-saturation at NMe₂/NH₂** (plateau ~−3.91 eV, σ_para⁻ regime) — strict E°-monotonicity breaks only at that 4-meV pair (expected resonance saturation, not error).
+
+**Honest:** raw B3LYP-Koopmans cascade stays slightly uphill even for NO₂ (−0.23 eV) — same ~1 eV PCM differential-solvation bias (→ ② micro-solvation); the *trend/design rule* is the robust, transferable result. Numbers: `dft/os_mediator_series.json`.
+
 ### Electron Tunneling Pathway (script 28, Beratan-Onuchic)
 
-FAD:C5B → FAD:O4B → FAD:C4A → FAD:N1A → **ALA260** → **THR259** → **THR282** → **THR287** (surface)
+FAD:C5B → FAD:O4B → FAD:C4A → FAD:N1A → **ALA261** → **THR260** → **THR283** → **THR288** (surface)
 - 10 atoms, through-bond path 23.7 Å, β·d = 2.05
 - Os mediator at surface can reach FAD via this covalent/H-bond pathway
 
@@ -280,7 +300,7 @@ Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
 | ~~L2 PVI coverage (script 15)~~ | GPU | ✅ DONE (RMSD 1.10 Å, brush safe) |
 | ~~L2 strain cycling (script 16)~~ | GPU | ✅ DONE (pseudoplastic) |
 | ~~L3 ωB97X/def2-TZVP (script 21d)~~ | CPU | ✅ DONE (adiabatic ΔSCF +0.884 eV) |
-| ~~L3 tunneling pathway (script 28)~~ | CPU | ✅ DONE (FAD→THR287, β·d=2.05) |
+| ~~L3 tunneling pathway (script 28)~~ | CPU | ✅ DONE (FAD→THR288, β·d=2.05) |
 | ~~L3b all 3 pairs (script 24)~~ | CPU | ✅ DONE (k_DET=1.09×10⁸) |
 | ~~HW.3.IS thermal stress (script 50)~~ | CPU | ✅ DONE (safety 9.9×) |
 | ~~HW.3 Гусак models (script 51)~~ | CPU | ✅ DONE (Arrhenius, Kirkendall, H7/s6) |
@@ -296,8 +316,8 @@ Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
 ## Cross-References
 
 - EBFC architecture → `docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md`
-- Action plan tracker → `docs/00_08_Action_Plan_Tracker.md`
+- Action plan tracker → `docs/00_07_Action_Plan_Tracker.md`
 - L1 protein details → `docs/protocols/ebfc/in_silico/L1_protein_architecture.md`
 - L3 DFT details → `docs/protocols/ebfc/in_silico/L3_quantum_chemistry.md`
-- University R&D → `docs/08_01_University_R_and_D_Protocols.md`
-- Publication strategy → `docs/08_03_Joint_Publications_and_IP_Strategy.md`
+- Academic R&D partners → `docs/08_02_Academic_Institutions_Registry.md`
+- Publication strategy → `docs/08_01_Joint_Publications_and_IP_Strategy.md`

@@ -114,7 +114,7 @@ def main() -> int:
             pass  # electron/spin mismatch OK — we just test basis existence
 
     results = {
-        "method": f"ΔSCF {XC_FUNCTIONAL.upper()}/{BASIS_LIGHT}+SDD(metals)",
+        "method": f"ΔSCF {XC_FUNCTIONAL.upper()}/{BASIS_LIGHT}+lanl2dz(Cu,Co)+stuttgart_rsc(Ce)",
         "lambda_reorg_eV": LAMBDA_REORG,
         "temperature_K": TEMP,
         "pairs": [],

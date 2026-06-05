@@ -36,7 +36,7 @@
 | 23 | `build_zif_clusters` | 3 ZIF cluster XYZ | `ligands/` |
 | 24 | `dft_hopping_integrals` | **3/3 pairs ✅** → total **k_DET=1.09×10⁸ s⁻¹** | `dft/zif_hopping.json` |
 | 27 | `md_dft_ensemble` | FAD HOMO **-5.589 ± 0.058 eV** (thermally robust, σ≪0.3) | `dft/md_dft_ensemble.json` |
-| 28 | `electron_tunneling_pathway` | Beratan-Onuchic FAD→THR287, **β·d=2.05** (feasible) | `dft/tunneling_pathway.json` |
+| 28 | `electron_tunneling_pathway` | Beratan-Onuchic FAD→THR288, **β·d=2.05** (feasible) | `dft/tunneling_pathway.json` |
 | 30 | `kinetics_delta_t` | delta_t = 36s healthy / 190s stressed | `kinetics/delta_t_lookup.json` |
 | 30b | `kinetics_monte_carlo` | 90% CI: 14–120s | `kinetics/monte_carlo.json` |
 | 31 | `eis_impedance_model` | Rct=130Ω, Rs=100Ω | `kinetics/eis_model.json` |
@@ -161,7 +161,7 @@ Validation:
 |----------|---------------|
 | [`SUMMARY.md`](SUMMARY.md) | All L1-L4 results in one page |
 | [`01_03 §3.4`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) | Pipeline spec + TRL gate |
-| [`00_08 HW.5.IS`](../../../00_08_Action_Plan_Tracker.md) | Operational tracker |
+| [`00_07`](../../../00_07_Action_Plan_Tracker.md) | Operational tracker |
 | [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md) | DFT details + L3b |
 | [`L1_protein_architecture.md`](L1_protein_architecture.md) | AlphaFold 3 results |
-| [`08_01 §Xylem-Sim`](../../../08_01_University_R_and_D_Protocols.md) | Synthetic sap protocol |
+| [`08_02`](../../../08_02_Academic_Institutions_Registry.md) | Synthetic sap protocol (bio hub) |

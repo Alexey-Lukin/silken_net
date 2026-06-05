@@ -1,0 +1,366 @@
+{
+  "method": "B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM(water) vertical \u0394SCF",
+  "model": "cis-[Os(4,4'-X-bpy)2(1-MeIm)Cl]^+/2+ \u2014 constant charge; E\u00b0 + cascade vs Hammett \u03c3_para",
+  "complexes": [
+    {
+      "name": "nme2",
+      "sigma_para": -0.83,
+      "desc": "4,4'-bis(dimethylamino) (strong donor)",
+      "geometry": {
+        "n_atoms": 86,
+        "min_contact_A": 1.081,
+        "min_pair": "C#75-H#82",
+        "os_coord_distances_A": [
+          2.097,
+          2.097,
+          2.097,
+          2.097,
+          2.1,
+          2.38
+        ]
+      },
+      "os2": {
+        "label": "Os(II) nme2",
+        "charge": 1,
+        "spin": 0,
+        "n_atoms": 86,
+        "n_electrons": 336,
+        "converged": true,
+        "wall_seconds": 796.7,
+        "E_total_Ha": -2343.4663286661635,
+        "HOMO_Ha": -0.15524937569230643,
+        "LUMO_Ha": -0.061426550743881946,
+        "HOMO_eV": -4.2245507264118505,
+        "LUMO_eV": -1.671501598050553,
+        "gap_eV": 2.5530491283612977
+      },
+      "os3": {
+        "label": "Os(III) nme2",
+        "charge": 2,
+        "spin": 1,
+        "n_atoms": 86,
+        "n_electrons": 335,
+        "converged": true,
+        "wall_seconds": 1459.0,
+        "E_total_Ha": -2343.3226538447543,
+        "HOMO_Ha": -0.20372454173119706,
+        "LUMO_Ha": -0.13361026183345315,
+        "HOMO_eV": -5.543627192834504,
+        "LUMO_eV": -3.6357204411776824,
+        "gap_eV": 1.9079067516568213
+      },
+      "dE_red_eV": -3.9095910591877114,
+      "converged": true,
+      "cascade_delta_eV": -1.5013
+    },
+    {
+      "name": "nh2",
+      "sigma_para": -0.66,
+      "desc": "4,4'-diamino (donor)",
+      "geometry": {
+        "n_atoms": 62,
+        "min_contact_A": 1.01,
+        "min_pair": "N#1-H#16",
+        "os_coord_distances_A": [
+          2.098,
+          2.098,
+          2.098,
+          2.098,
+          2.1,
+          2.38
+        ]
+      },
+      "os2": {
+        "label": "Os(II) nh2",
+        "charge": 1,
+        "spin": 0,
+        "n_atoms": 62,
+        "n_electrons": 272,
+        "converged": true,
+        "wall_seconds": 434.2,
+        "E_total_Ha": -2029.0289884742951,
+        "HOMO_Ha": -0.15491939327014298,
+        "LUMO_Ha": -0.06173294629404984,
+        "HOMO_eV": -4.215571447267974,
+        "LUMO_eV": -1.6798390457102235,
+        "gap_eV": 2.535732401557751
+      },
+      "os3": {
+        "label": "Os(III) nh2",
+        "charge": 2,
+        "spin": 1,
+        "n_atoms": 62,
+        "n_electrons": 271,
+        "converged": true,
+        "wall_seconds": 797.6,
+        "E_total_Ha": -2028.8854764024236,
+        "HOMO_Ha": -0.20748340313756494,
+        "LUMO_Ha": -0.13366708122456472,
+        "HOMO_eV": -5.645911022408318,
+        "LUMO_eV": -3.637266575575481,
+        "gap_eV": 2.008644446832837
+      },
+      "dE_red_eV": -3.9051624186588794,
+      "converged": true,
+      "cascade_delta_eV": -1.4997
+    },
+    {
+      "name": "ome",
+      "sigma_para": -0.27,
+      "desc": "4,4'-dimethoxy (donor)",
+      "geometry": {
+        "n_atoms": 70,
+        "min_contact_A": 1.081,
+        "min_pair": "C#59-H#66",
+        "os_coord_distances_A": [
+          2.097,
+          2.097,
+          2.097,
+          2.097,
+          2.1,
+          2.38
+        ]
+      },
+      "os2": {
+        "label": "Os(II) ome",
+        "charge": 1,
+        "spin": 0,
+        "n_atoms": 70,
+        "n_electrons": 304,
+        "converged": true,
+        "wall_seconds": 546.0,
+        "E_total_Ha": -2265.6775493168634,
+        "HOMO_Ha": -0.16960841100560162,
+        "LUMO_Ha": -0.07381914982697647,
+        "HOMO_eV": -4.615279982441708,
+        "LUMO_eV": -2.008721398292315,
+        "gap_eV": 2.6065585841493926
+      },
+      "os3": {
+        "label": "Os(III) ome",
+        "charge": 2,
+        "spin": 1,
+        "n_atoms": 70,
+        "n_electrons": 303,
+        "converged": true,
+        "wall_seconds": 961.3,
+        "E_total_Ha": -2265.5200327943667,
+        "HOMO_Ha": -0.2238208292522627,
+        "LUMO_Ha": -0.14705418500851297,
+        "HOMO_eV": -6.09047503468065,
+        "LUMO_eV": -4.001548227355625,
+        "gap_eV": 2.0889268073250253
+      },
+      "dE_red_eV": -4.286242933783513,
+      "converged": true,
+      "cascade_delta_eV": -1.1355
+    },
+    {
+      "name": "dmbpy",
+      "sigma_para": -0.17,
+      "desc": "4,4'-dimethyl (donor)",
+      "geometry": {
+        "n_atoms": 66,
+        "min_contact_A": 1.081,
+        "min_pair": "C#55-H#62",
+        "os_coord_distances_A": [
+          2.099,
+          2.099,
+          2.099,
+          2.099,
+          2.1,
+          2.38
+        ]
+      },
+      "os2": {
+        "label": "Os(II) dmbpy",
+        "charge": 1,
+        "spin": 0,
+        "n_atoms": 66,
+        "n_electrons": 272,
+        "converged": true,
+        "wall_seconds": 467.2,
+        "E_total_Ha": -1964.8520605282356,
+        "HOMO_Ha": -0.1736130169655828,
+        "LUMO_Ha": -0.07433319944675655,
+        "HOMO_eV": -4.724250861981741,
+        "LUMO_eV": -2.022709401045754,
+        "gap_eV": 2.701541460935987
+      },
+      "os3": {
+        "label": "Os(III) dmbpy",
+        "charge": 2,
+        "spin": 1,
+        "n_atoms": 66,
+        "n_electrons": 271,
+        "converged": true,
+        "wall_seconds": 749.2,
+        "E_total_Ha": -1964.691069120925,
+        "HOMO_Ha": -0.22818352395891864,
+        "LUMO_Ha": -0.15014168226755728,
+        "HOMO_eV": -6.209190005416792,
+        "LUMO_eV": -4.085563307804908,
+        "gap_eV": 2.123626697611883
+      },
+      "dE_red_eV": -4.380799366613249,
+      "converged": true,
+      "cascade_delta_eV": -1.0514
+    },
+    {
+      "name": "bpy",
+      "sigma_para": 0.0,
+      "desc": "parent (reproduces 21b \u2014 validator)",
+      "geometry": {
+        "n_atoms": 54,
+        "min_contact_A": 1.081,
+        "min_pair": "C#43-H#50",
+        "os_coord_distances_A": [
+          2.099,
+          2.099,
+          2.099,
+          2.099,
+          2.1,
+          2.38
+        ]
+      },
+      "os2": {
+        "label": "Os(II) bpy",
+        "charge": 1,
+        "spin": 0,
+        "n_atoms": 54,
+        "n_electrons": 240,
+        "converged": true,
+        "wall_seconds": 316.8,
+        "E_total_Ha": -1807.5760892762223,
+        "HOMO_Ha": -0.17914699763380762,
+        "LUMO_Ha": -0.07922878588624405,
+        "HOMO_eV": -4.874838147422637,
+        "LUMO_eV": -2.1559250945512693,
+        "gap_eV": 2.718913052871368
+      },
+      "os3": {
+        "label": "Os(III) bpy",
+        "charge": 2,
+        "spin": 1,
+        "n_atoms": 54,
+        "n_electrons": 239,
+        "converged": true,
+        "wall_seconds": 568.7,
+        "E_total_Ha": -1807.4096275118468,
+        "HOMO_Ha": -0.23368937172593152,
+        "LUMO_Ha": -0.1553659265656549,
+        "HOMO_eV": -6.3590117556165895,
+        "LUMO_eV": -4.227722237243843,
+        "gap_eV": 2.1312895183727463
+      },
+      "dE_red_eV": -4.529655365611094,
+      "converged": true,
+      "cascade_delta_eV": -0.9093
+    },
+    {
+      "name": "dcbpy",
+      "sigma_para": 0.45,
+      "desc": "4,4'-dicarboxy (acceptor)",
+      "geometry": {
+        "n_atoms": 66,
+        "min_contact_A": 0.98,
+        "min_pair": "O#14-H#23",
+        "os_coord_distances_A": [
+          2.095,
+          2.095,
+          2.095,
+          2.095,
+          2.1,
+          2.38
+        ]
+      },
+      "os2": {
+        "label": "Os(II) dcbpy",
+        "charge": 1,
+        "spin": 0,
+        "n_atoms": 66,
+        "n_electrons": 328,
+        "converged": true,
+        "wall_seconds": 534.2,
+        "E_total_Ha": -2561.862218741875,
+        "HOMO_Ha": -0.19615976527613238,
+        "LUMO_Ha": -0.10503898914363284,
+        "HOMO_eV": -5.337779138851183,
+        "LUMO_eV": -2.8582565044755333,
+        "gap_eV": 2.4795226343756496
+      },
+      "os3": {
+        "label": "Os(III) dcbpy",
+        "charge": 2,
+        "spin": 1,
+        "n_atoms": 66,
+        "n_electrons": 327,
+        "converged": true,
+        "wall_seconds": 920.4,
+        "E_total_Ha": -2561.6808115333624,
+        "HOMO_Ha": -0.24472329837219714,
+        "LUMO_Ha": -0.1688500004011374,
+        "HOMO_eV": -6.659260195398023,
+        "LUMO_eV": -4.5946425785505784,
+        "gap_eV": 2.064617616847444
+      },
+      "dE_red_eV": -4.9363416186431115,
+      "converged": true,
+      "cascade_delta_eV": -0.5424
+    },
+    {
+      "name": "no2",
+      "sigma_para": 0.78,
+      "desc": "4,4'-dinitro (strong acceptor)",
+      "geometry": {
+        "n_atoms": 62,
+        "min_contact_A": 1.081,
+        "min_pair": "C#51-H#58",
+        "os_coord_distances_A": [
+          2.091,
+          2.091,
+          2.091,
+          2.091,
+          2.1,
+          2.38
+        ]
+      },
+      "os2": {
+        "label": "Os(II) no2",
+        "charge": 1,
+        "spin": 0,
+        "n_atoms": 62,
+        "n_electrons": 328,
+        "converged": true,
+        "wall_seconds": 532.5,
+        "E_total_Ha": -2625.550105700503,
+        "HOMO_Ha": -0.20956789488352848,
+        "LUMO_Ha": -0.13117218643783912,
+        "HOMO_eV": -5.702632932434305,
+        "LUMO_eV": -3.569377029890789,
+        "gap_eV": 2.1332559025435165
+      },
+      "os3": {
+        "label": "Os(III) no2",
+        "charge": 2,
+        "spin": 1,
+        "n_atoms": 62,
+        "n_electrons": 327,
+        "converged": true,
+        "wall_seconds": 1185.2,
+        "E_total_Ha": -2625.356732349189,
+        "HOMO_Ha": -0.2538014423068887,
+        "LUMO_Ha": -0.18026106444749881,
+        "HOMO_eV": -6.906289076401588,
+        "LUMO_eV": -4.905153449793826,
+        "gap_eV": 2.001135626607763
+      },
+      "dE_red_eV": -5.261956952292413,
+      "converged": true,
+      "cascade_delta_eV": -0.2319
+    }
+  ],
+  "monotonic_with_sigma": false,
+  "cascade_monotonic": true,
+  "best_cascade_mediator": "no2"
+}

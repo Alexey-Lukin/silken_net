@@ -20,9 +20,11 @@ For each redox form (oxidized FAD and 2e-/2H+-reduced FADH₂):
   2. Single-point DFT at B3LYP/6-31G(d) in PCM water (ε = 78.3553).
   3. Report HOMO / LUMO energies and total electronic energy.
 
-Then estimate the apparent redox potential vs. NHE from the ΔE between
-oxidized and reduced forms — a sanity check against the experimental
-+60 mV value cited in `docs/01_03 §2.1`.
+Report the electronic ΔE between oxidized and reduced forms (sign sanity-check
+only). The actual redox potential vs NHE is computed in script 32 (thermodynamic
+proton reference) and compared to the experimental free-flavin value (−208 mV vs
+NHE). NB: protein-bound GcGDH FAD = −266 mV vs SHE (verified) — NOT the +60 mV
+once cited in the canon (that was conflated with the Os mediator potential).
 
 Why B3LYP/6-31G(d) and not ωB97X-D/def2-TZVP
 --------------------------------------------

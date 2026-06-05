@@ -300,4 +300,4 @@ Scripts: `23_build_zif_clusters.py` (geometry), `24_dft_hopping_integrals.py` (�
 - L1 protein architecture → [`L1_protein_architecture.md`](L1_protein_architecture.md)
 - Pipeline operational status → [`PIPELINE_STATUS.md`](PIPELINE_STATUS.md)
 - All results summary → [`SUMMARY.md`](SUMMARY.md)
-- Patent claim Gen 2.0 → [`08_03_Joint_Publications_and_IP_Strategy`](../../../08_03_Joint_Publications_and_IP_Strategy.md)
+- Patent claim Gen 2.0 / embargo → [`08_01 §2`](../../../08_01_Joint_Publications_and_IP_Strategy.md)

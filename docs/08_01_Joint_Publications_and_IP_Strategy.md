@@ -166,23 +166,31 @@ Gaia 2.0 / Silken Net об'єднує сім академічних та інд�
 > 2. **Publication Embargo** (§2) поширюється і на студентські роботи, що розкривають фізичну архітектуру анкера/EBFC — до patent priority date.
 > 3. **Прив'язка до Завдань:** теми ЧДТУ краще формулювати через 7 формалізованих «Завдань А–Ж» з [`08_02 §2`](08_02_Academic_Institutions_Registry), а не через дрібні номери задач — читабельніше для ректорату (напр. *«Прогнозування засухи…» — Завдання А: Аналіз біотелеметрії*).
 
-### Стаття 1: Квантова хімія EBFC Gen 2.0 (Пріоритет: Перша)
+### Стаття 1: Електрон-трансферна енергетика EBFC Gen 2.0 (квантова хімія, Пріоритет: Перша)
 
-> ⚠️ **Переписано під Gen 2.0 (2026-05-28):** стара назва ("Streaming Potential at Titanium-Xylem Interfaces") описувала відкинуту Gen 1.0 концепцію (струм нібито генерує сам титан у кислоті). Насправді струм генерує **EBFC** (FAD-GDH→Os→cathode DET), що й доведено нашим in-silico L3. ICP-MS Ti/Al/V перенесено до Статті 2 (парафія Гусака/ЧМА, не квантових хіміків).
+> ⚠️ **Переформульовано (2026-06-05) — чесна рамка замість overclaim.** Стара назва *"Quantum-Chemical **Validation**…"* суперечила власним результатам L3: сирий обчислювальний вердикт каскаду FADH₂→Os — **uphill у кожному методі** (B3LYP Koopmans −0.91 eV; ωB97X ΔSCF adiabatic +0.88 eV), а «downhill» виходить лише через bias-корекцію (*fortuitous error cancellation*) + **експериментальне** значення (Cosnier 1999). Тобто обчислення не «валідує» — воно експонує межу методу; «validation» = reviewer-landmine. Переорієнтовано на **механізм + межі методу** (повний аудит — `docs/protocols/ebfc/in_silico/L3_quantum_chemistry.md`). _Історія:_ під Gen 2.0 переписано 2026-05-28 зі старої Gen 1.0 «Streaming Potential» (відкинута); ICP-MS Ti/Al/V → Стаття 2.
 
-**Назва (EN):** _"Quantum-Chemical Validation of a Gen 2.0 Enzymatic Biofuel Cell: PCET Mechanisms of the FAD Cofactor and Direct-Electron-Transfer Tunneling through ZIF Nanozymes"_
+**Назва (EN):** _"Computational Electron-Transfer Energetics of a FAD–Osmium Enzymatic Biofuel Cell: PCET Redox Potentials, ZIF-Nanozyme Direct Electron Transfer, and the Limits of Implicit-Solvation DFT"_
 
-**Журнали-цілі:** *Journal of Power Sources* (Q1), *Bioelectrochemistry* (Q1), *Electrochimica Acta* (Q1)
+**Тип:** суто обчислювальна (quantum-chemistry) стаття — фізичний експеримент (Ti-coin CV/EIS) попереду (Stage 2) → ставка на **механістичну + методологічну** новизну, не на «валідацію».
+
+**Журнали-цілі:** *J. Phys. Chem. B* (ACS, **primary** — enzyme catalysis + computational scope, прямий mediator-design прецедент) · *Phys. Chem. Chem. Phys.* (RSC, **fallback** — дім школи Мінаєва, OA-waiver для ЧНУ) · *Bioelectrochemistry* (Elsevier, applied-backup). НЕ *J. Power Sources* / *Electrochimica Acta* — comp-only поза їх scope без експерименту.
 
 **Авторський колектив:**
-- Школа Мінаєва (ЧНУ) — QM/MM з явною водою (доповнює наш ωB97X ΔSCF)
-- Архітектор (Silken Net) — in-silico L3 baseline (PySCF), дизайн каскаду
+- Архітектор (Silken Net) — in-silico baseline (PySCF DFT/ΔSCF, AF3, tunneling), дизайн каскаду, draft. **Пишеться зараз** на готових результатах.
+- Школа Мінаєва (ЧНУ) — explicit-water QM/MM (§3.4 upgrade): закриває ~1 eV PCM differential-solvation межу, яку ми локалізували. **Секція додається перед сабмітом** (gated на колаборацію).
 
-**Ключові результати для публікації (з вже виконаного L3 + внеску Мінаєва):**
-- Marcus-каскад FADH₂→Os: B3LYP-corrected Δε ≈ −0.07 eV; ωB97X adiabatic ΔSCF +0.884 eV
-- **PCET** механізм FAD-кофактора (thermodynamic proton reference, E°(FAD/FADH₂)=−158 mV, в межах 50 mV від експ — script 32)
-- **DET-тунелювання** через ZIF-нанозим (Beratan-Onuchic, β·d=2.05; k_DET=1.09×10⁸ s⁻¹)
-- **Вплив диференціальної сольватації (PCM vs explicit-water QM/MM)** на термодинаміку каскаду — ключовий внесок Мінаєва (долає ~1 eV PCM-межу, яку ми локалізували)
+**Foreground (сильні, чисті результати — обличчя статті):**
+- **PCET редокс-потенціал FAD** — proton thermodynamic reference відтворює E°(FAD/FADH₂) у межах ~50 mV від експ. free-flavin (значення → `SUMMARY.md`, script 32).
+- **DET через ZIF-нанозим** — Beratan-Onuchic + ΔSCF hopping: ~5 порядків над enzymatic turnover → катод не лімітує (scripts 23/24).
+- **Геометрія + through-bond tunneling pathway** анода — глибина залягання FAD < tunneling-межі (L1 + script 28).
+- **Термічна робастність** frontier-орбіталі FAD (MD→DFT ensemble, script 27).
+
+**Чесний методологічний внесок (це новизна, не діра):** каскадна термодинаміка FADH₂→Os сира uphill у всіх методах → характеризуємо ~1 eV **implicit-solvation (PCM) межу** (scripts 29/33 — чисті «negative results» про межі PCM); explicit-water QM/MM (Мінаєв) її закриває. Визнаний жанр (пор. JCTC implicit-solvent redox-benchmarks).
+
+**Scope:** L1 (відстань/шлях) + L3 (анод) + L3b (катод DET) + сольватаційна методологія. L2 (MD-стабільність) → Стаття 2; L4 (delta_t/EIS) → Стаття 3 + predictions для майбутнього Ti-coin експерименту.
+
+**SSOT/IP:** числа — дім `docs/protocols/ebfc/in_silico/SUMMARY.md` (стаття реферить, не дублює); сабміт **тримати** до patent priority (ембарго §2).
 
 ---
 

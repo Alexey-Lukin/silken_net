@@ -47,6 +47,52 @@ def cascade_verdict(homo_donor_eV: float, lumo_acceptor_eV: float) -> dict:
     }
 
 
+def dft_singlepoint(atoms, charge: int, spin: int, label: str = "",
+                    xc: str = "b3lyp", with_pcm: bool = True,
+                    conv_tol: float = 1e-6, max_cycle: int = 400,
+                    level_shift_open: float = 0.0) -> dict:
+    """B3LYP single-point on a metal complex (RKS closed / UKS open) + C-PCM water.
+
+    Shared SSOT runner for the L3 Os scripts (21b / 21e series). `atoms` is a list
+    of (symbol, xyz-array). `level_shift_open` is OFF by default (0.0) to match the
+    validated 21b behaviour and keep reported virtual-orbital energies physical —
+    PySCF's level_shift adds a constant to virtual MO energies, so an enabled shift
+    biases the reported LUMO (E_total stays shift-invariant). Enable it only where
+    SCF oscillates (in-silico skill gotcha #5: UKS on Co/Ce) and then read E_total,
+    not LUMO. No `density_fit` (gotcha #4: heavy-metal aux basis is slower).
+    Returns E_total (Ha) + frontier energies (eV).
+    """
+    import time
+    from pyscf import dft, gto, solvent
+    from .constants import BASIS_LIGHT, BASIS_OS, ECP_OS, SOLVENT_EPS_WATER
+
+    atoms_pyscf = [(s, (float(p[0]), float(p[1]), float(p[2]))) for s, p in atoms]
+    mol = gto.M(atom=atoms_pyscf,
+                basis={"Os": BASIS_OS, "default": BASIS_LIGHT}, ecp={"Os": ECP_OS},
+                charge=charge, spin=spin, unit="Angstrom")
+    mf = dft.RKS(mol) if spin == 0 else dft.UKS(mol)
+    mf.xc = xc
+    if spin != 0 and level_shift_open:
+        mf.level_shift = level_shift_open
+    if with_pcm:
+        mf = solvent.PCM(mf)
+        mf.with_solvent.eps = SOLVENT_EPS_WATER
+        mf.with_solvent.method = "C-PCM"
+    mf.conv_tol = conv_tol
+    mf.max_cycle = max_cycle
+
+    t0 = time.time()
+    e_total = mf.kernel()
+    dt = time.time() - t0
+    homo_ha, lumo_ha = extract_frontier(mf, mol)
+    return {
+        "label": label, "charge": charge, "spin": spin,
+        "n_atoms": int(mol.natm), "n_electrons": int(mol.nelectron),
+        "converged": bool(mf.converged), "wall_seconds": round(dt, 1),
+        "E_total_Ha": float(e_total), **frontier_to_ev(homo_ha, lumo_ha),
+    }
+
+
 def marcus_rate(t_ij_eV: float, lambda_reorg: float = 0.7,
                 dG: float = 0.0, temp_K: float = 298.15) -> float:
     """Marcus electron transfer rate constant (s⁻¹).

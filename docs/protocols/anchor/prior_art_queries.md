@@ -1,7 +1,7 @@
 # Prior Art Search Query Set for TISC ЧНУ
 
 > **Purpose:** Pre-prepared patent search queries for TISC (Technology and Innovation Support Center) at ЧНУ. To be used during WIPO PATENTSCOPE / Espacenet prior art search **before filing**.
-> **Cross-ref:** [`08_03 §2.1`](../../08_03_Joint_Publications_and_IP_Strategy.md) — TISC engagement plan
+> **Cross-ref:** [`08_01 §2.1`](../../08_01_Joint_Publications_and_IP_Strategy.md) — TISC engagement plan
 
 ---
 
@@ -74,6 +74,12 @@ This is a **patentability / novelty** search, not a Freedom-to-Operate search. T
 - H01M 8/16 — Biochemical/biofuel cells
 - C12N 9/04 — Oxidoreductases (dehydrogenases)
 - ~~C12Q 1/004~~ — *too narrow; kept only as secondary*
+
+> 🔎 **Known prior art to expect (2026-06 literature scan — pre-empt these):** the EBFC component chemistry is **heavily published**, so Query Set 2 *will* hit — frame novelty accordingly:
+> - **Os-mediated FAD-GDH is established** (Degani & Heller 1989 →): Os redox polymers wired to *the same GcGDH* across **+15…+489 mV vs NHE**, optimum ≈ **+309 mV** (Mano/Heller school). → the FADH₂→Os cascade and its potential-tuning are **prior art**; tuning the Os potential to the enzyme is additionally *obvious* via Lever's additive E_L scheme (Inorg. Chem. 1990). **Do not claim the cascade or mediator-potential tuning per se.**
+> - **ZIF laccase-mimic cathodes are published** (Cu/Zn-ZIF; Cu-doped ZIF-67 for ORR, incl. O₂-binding DFT). → the laccase/ZIF cathode concept is **prior art**.
+> - **Where novelty survives:** the *integrated Gen 2.0 architecture as a whole* — coaxial **gyroid Ti-6Al-4V ↔ xylem** interface hosting the EBFC + dgrFAD-GDH/Os-PVI-in-genipin-chitosan-CNC + Nafion-g-PSBMA + **Cu-Co-Ce trimetallic** ZIF cathode — and the **synergy** (EBFC is *simultaneously* power source and zero-noise homeostasis sensor; gyroid does xylem-integration + isoelastic matching + the metal↔xylem EBFC interface). Frame claims on the synergy, not the parts.
+> - **Embargo coupling:** the planned Стаття 1 (comp-only) still discloses the cascade/PCET mechanism → it must be **filed before journal submission** ([`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md)).
 
 ---
 

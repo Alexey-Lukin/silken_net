@@ -103,7 +103,7 @@ distance #1:FAD@N5 #1:90@OH
 | Залишок | pLDDT | Інтерпретація |
 |---|---|---|
 | **Tyr90 (точка виходу для d_FAD)** | **98.71** | Дуже жорсткий (≫ 80) → координати надійні, **не** гнучка петля → 15.998 Å стабільна |
-| res 287 (Gly у цій нумерації) | 93.56 | Жорсткий. ⚠️ Script 28 називає exit-residue «THR287» — ймовірний зсув нумерації (deglycosylated seq) або інша індексація; узгодити при фіналізації статті |
+| **THR288 (tunneling exit, script 28)** | **95.57** | Жорсткий (≫ 80). ✅ Розв'язано (#3): script 28 рапортував 0-based MDTraj index («THR287»), що = PDB **resSeq 288** (THR); тепер емітить resSeq. Весь шлях жорсткий: ALA261=98.53, THR260=98.12, THR283=97.22, THR288=95.57 |
 
 ## 5. Фізичне обґрунтування MET (Mediated Electron Transfer)
 
@@ -115,7 +115,7 @@ distance #1:FAD@N5 #1:90@OH
 |---|---|---|
 | Глибина залягання N5 (Евклід) | **15.998 Å** | Геометричний bound — товщина Os-шару, НЕ маршрут тунелювання |
 | Радіус ефективного quantum tunneling для Os-polymer | ≈ 18–20 Å | Літературна межа для bipyridyl-Os mediators |
-| **Through-bond tunneling pathway (script 28, Beratan-Onuchic)** | **FAD→…→THR287, β·d = 2.05** | **Справжній доказ MET** — граф ковалентних/H-зв'язків, не пряма лінія |
+| **Through-bond tunneling pathway (script 28, Beratan-Onuchic)** | **FAD→…→THR288, β·d = 2.05** | **Справжній доказ MET** — граф ковалентних/H-зв'язків, не пряма лінія |
 | Жорсткість точки виходу (Tyr90 pLDDT) | **98.71** | Не гнучка петля → відстань не «стрибає» 15→25 Å |
 | Необхідність руйнування глобули | **Ні** | Os-центри підходять через native conformation |
 | Необхідність проміжних медіаторів | **Ні** | One-step MET достатній |
@@ -165,6 +165,6 @@ distance #1:FAD@N5 #1:90@OH
 - Архітектура Gen 2.0 EBFC анода → [`01_03 §1 Анод`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)
 - 4-рівневий in-silico pipeline → [`01_03 §3.4`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)
 - TRL-гейт біохімії → [`01_03 §3.5`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)
-- Action Plan tracker → [`00_08 HW.5.IS`](../../../00_08_Action_Plan_Tracker.md)
-- Joint Q1-publication scope → [`08_03 Стаття 28`](../../../08_03_Joint_Publications_and_IP_Strategy.md)
+- Action Plan tracker → [`00_07`](../../../00_07_Action_Plan_Tracker.md)
+- Joint Q1-publication scope → [`08_01 Стаття 1`](../../../08_01_Joint_Publications_and_IP_Strategy.md)
 - Майбутні R&D напрямки → [`01_03 §3.1, §3.2`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)

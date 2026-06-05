@@ -7,12 +7,12 @@
   "coupling_penalty": 7.8,
   "effective_beta_d": 2.054,
   "residue_pathway": [
-    "FAD600",
-    "ALA260",
-    "THR259",
-    "THR282",
-    "THR287"
+    "FAD1",
+    "ALA261",
+    "THR260",
+    "THR283",
+    "THR288"
   ],
-  "source": "FAD600",
-  "target": "THR287"
+  "source": "FAD1",
+  "target": "THR288"
 }

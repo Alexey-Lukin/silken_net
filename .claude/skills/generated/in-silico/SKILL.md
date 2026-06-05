@@ -14,9 +14,8 @@ description: "Navigation + gotchas for EBFC in-silico pipeline (L1-L4 MD+DFT). R
 | `docs/protocols/ebfc/in_silico/SUMMARY.md` | All L1-L4 results in one page |
 | `docs/protocols/ebfc/in_silico/L3_quantum_chemistry.md` | DFT details, cascade methods comparison, ΔSCF, L3b cathode |
 | `docs/protocols/ebfc/in_silico/L1_protein_architecture.md` | AlphaFold 3 results, d_FAD distance |
-| `docs/08_01_University_R_and_D_Protocols.md` | Мінаєв collaboration, xylem sap protocols |
-| `docs/08_03_Joint_Publications_and_IP_Strategy.md` | Publication plan, Стаття 28 baseline |
-| `docs/08_06_CHMA_Biomedical_Integration.md` | ЧМА collaboration, Бушуєва EIS predictions |
+| `docs/08_02_Academic_Institutions_Registry.md` | Мінаєв (DFT) + ЧМА Бушуєва (enzymes/EIS) validation; xylem sap (bio hub) |
+| `docs/08_01_Joint_Publications_and_IP_Strategy.md` | Publication plan — Стаття 1 (honest reframe 2026-06-05) |
 | `docs/00_07_Action_Plan_Tracker.md` | HW.5.IS section — operational task status |
 | `tools/in_silico/README.md` | Setup, quickstart, GPU notes, GAFF explanation |
 
