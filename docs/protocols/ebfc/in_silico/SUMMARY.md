@@ -171,7 +171,7 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 
 ### Mediator Structure–Property Series (① — script 21e, 2026-06-05)
 
-7× cis-[Os(4,4'-X-bpy)₂(1-MeIm)Cl]⁺/²⁺ at **constant charge**, B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM vertical ΔSCF — isolates the 4,4'-substituent electronic effect. The H (bpy) point reproduces script 21b (Δ=0.000 eV). cascade Δ = ε_HOMO(FADH₂, −5.137) − ε_LUMO(Os III).
+9× cis-[Os(4,4'-X-bpy)₂(1-MeIm)Cl]⁺/²⁺ at **constant charge**, B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM vertical ΔSCF — isolates the 4,4'-substituent electronic effect. The H (bpy) point reproduces script 21b (Δ=0.000 eV). cascade Δ = ε_HOMO(FADH₂, −5.137) − ε_LUMO(Os III).
 
 | 4,4'-X | σ_para | ΔE_red(III→II) eV | Os(III) LUMO eV | cascade Δ eV |
 |---|---|---|---|---|
@@ -181,9 +181,11 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 | Me | −0.17 | −4.381 | −4.086 | −1.051 |
 | H | 0.00 | −4.530 | −4.228 | −0.909 |
 | COOH | +0.45 | −4.936 | −4.595 | −0.542 |
-| NO₂ | +0.78 | −5.262 | −4.905 | **−0.232** |
+| **CF₃** (inert) | +0.54 | −4.957 | −4.635 | −0.502 |
+| NO₂ (unstable) | +0.78 | −5.262 | −4.905 | −0.232 |
+| **SO₂CF₃** (inert) | +0.96 | −5.256 | −4.910 | **−0.227** |
 
-**Design rule (✅ monotonic):** electron-withdrawing 4,4'-bpy improves FADH₂→Os alignment — cascade Δ rises monotonically −1.50 (NMe₂) → −0.23 eV (NO₂); **NO₂ is the best-aligned mediator**. Predictive handle; rationalizes the experimental drive to higher-potential Os polymers.
+**Design rule (✅ cascade monotonic with σ):** electron-withdrawing 4,4'-bpy improves FADH₂→Os alignment — cascade Δ rises −1.50 (NMe₂) → −0.23 eV. **Realistic optimum = SO₂CF₃** (σ 0.96, cascade −0.227 ≈ NO₂'s −0.232) — same alignment but **electrochemically inert**, whereas NO₂ degrades (NO₂→NHOH→NH₂ on Os cycling at pH 4.5) → would relax the cascade to the donor-saturated −1.5 worst case (note #23). CF₃ (−0.502) = milder inert option. *Caveat:* max cascade-Δ ≠ optimal EBFC mediator — higher E°(Os) lowers OCV → optimum balances driving-force vs cell-voltage (exp Os opt ~+309 mV).
 
 **E° LFER:** ΔE_red linear in σ over OMe→NO₂ (slope ≈ −0.93 eV/σ) with **donor-saturation at NMe₂/NH₂** (plateau ~−3.91 eV, σ_para⁻ regime) — strict E°-monotonicity breaks only at that 4-meV pair (expected resonance saturation, not error).
 

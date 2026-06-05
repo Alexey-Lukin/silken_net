@@ -358,9 +358,111 @@
       "dE_red_eV": -5.261956952292413,
       "converged": true,
       "cascade_delta_eV": -0.2319
+    },
+    {
+      "name": "cf3",
+      "sigma_para": 0.54,
+      "desc": "4,4'-bis(CF\u2083) (inert acceptor \u2014 note #23)",
+      "geometry": {
+        "n_atoms": 66,
+        "min_contact_A": 1.081,
+        "min_pair": "C#55-H#62",
+        "os_coord_distances_A": [
+          2.097,
+          2.097,
+          2.097,
+          2.097,
+          2.1,
+          2.38
+        ]
+      },
+      "os2": {
+        "label": "Os(II) cf3",
+        "charge": 1,
+        "spin": 0,
+        "n_atoms": 66,
+        "n_electrons": 368,
+        "converged": true,
+        "wall_seconds": 611.9,
+        "E_total_Ha": -3155.6933320355365,
+        "HOMO_Ha": -0.19600856465103905,
+        "LUMO_Ha": -0.10019321383973262,
+        "HOMO_eV": -5.333664760241134,
+        "LUMO_eV": -2.7263962410198346,
+        "gap_eV": 2.6072685192212988
+      },
+      "os3": {
+        "label": "Os(III) cf3",
+        "charge": 2,
+        "spin": 1,
+        "n_atoms": 66,
+        "n_electrons": 367,
+        "converged": true,
+        "wall_seconds": 1019.2,
+        "E_total_Ha": -3155.511172075998,
+        "HOMO_Ha": -0.24690108489010132,
+        "LUMO_Ha": -0.17032136896091465,
+        "HOMO_eV": -6.7185207854980185,
+        "LUMO_eV": -4.63468055674088,
+        "gap_eV": 2.083840228757138
+      },
+      "dE_red_eV": -4.956825017560955,
+      "converged": true,
+      "cascade_delta_eV": -0.5023
+    },
+    {
+      "name": "so2cf3",
+      "sigma_para": 0.96,
+      "desc": "4,4'-bis(triflyl SO\u2082CF\u2083) (inert strong acceptor \u2014 note #23)",
+      "geometry": {
+        "n_atoms": 78,
+        "min_contact_A": 1.081,
+        "min_pair": "C#67-H#74",
+        "os_coord_distances_A": [
+          2.094,
+          2.094,
+          2.094,
+          2.094,
+          2.1,
+          2.38
+        ]
+      },
+      "os2": {
+        "label": "Os(II) so2cf3",
+        "charge": 1,
+        "spin": 0,
+        "n_atoms": 78,
+        "n_electrons": 496,
+        "converged": true,
+        "wall_seconds": 1022.1,
+        "E_total_Ha": -5349.823905871421,
+        "HOMO_Ha": -0.20807401481459406,
+        "LUMO_Ha": -0.11714809912572512,
+        "HOMO_eV": -5.661982384873348,
+        "LUMO_eV": -3.187762173293395,
+        "gap_eV": 2.474220211579953
+      },
+      "os3": {
+        "label": "Os(III) so2cf3",
+        "charge": 2,
+        "spin": 1,
+        "n_atoms": 78,
+        "n_electrons": 495,
+        "converged": true,
+        "wall_seconds": 1330.7,
+        "E_total_Ha": -5349.630759900469,
+        "HOMO_Ha": -0.2552672875009527,
+        "LUMO_Ha": -0.18044492455497865,
+        "HOMO_eV": -6.946176756154088,
+        "LUMO_eV": -4.9101565381936885,
+        "gap_eV": 2.0360202179603997
+      },
+      "dE_red_eV": -5.2557696174359645,
+      "converged": true,
+      "cascade_delta_eV": -0.2269
     }
   ],
   "monotonic_with_sigma": false,
   "cascade_monotonic": true,
-  "best_cascade_mediator": "no2"
+  "best_cascade_mediator": "so2cf3"
 }

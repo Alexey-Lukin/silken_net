@@ -44,6 +44,11 @@ SERIES = [
     ("bpy", BPY_SMILES, 0.00, "parent (reproduces 21b)"),
     ("dcbpy", DCBPY_SMILES, 0.45, "4,4'-dicarboxy (acceptor)"),
     ("no2", "O=[N+]([O-])c1ccnc(-c2cc([N+](=O)[O-])ccn2)c1", 0.78, "4,4'-dinitro (strong acceptor)"),
+    # note #23: NO₂ is electrochemically UNSTABLE (reduces NO₂→NHOH→NH₂ on Os cycling at
+    # pH 4.5 → degrades to the donor-saturated WORST cascade). Inert high-σ acceptors that
+    # give the same LUMO lowering without degrading over 20 yr:
+    ("cf3", "FC(F)(F)c1ccnc(-c2cc(C(F)(F)F)ccn2)c1", 0.54, "4,4'-bis(CF₃) (inert acceptor — note #23)"),
+    ("so2cf3", "O=S(=O)(C(F)(F)F)c1ccnc(-c2cc(S(=O)(=O)C(F)(F)F)ccn2)c1", 0.96, "4,4'-bis(triflyl SO₂CF₃) (inert strong acceptor — note #23)"),
 ]
 
 REF_21B = {"os2_HOMO": -4.875, "os2_LUMO": -2.156, "os3_HOMO": -6.359, "os3_LUMO": -4.228}

@@ -187,9 +187,47 @@
 - [ ] 👤 UCST winter-lock тест PSBMA: -10°C → +25°C цикл, регідратація мембрани — `01_03` §2.1 Шар 5
 
 ##### Підблокер HW.5.IS — In Silico Stage 0 (Zero-Lab) — `01_03 §3.4`
-> **Стратегія:** Computational reverse engineering хімії ДО першого Ti-monet. AlphaFold 3 + OpenMM + PySCF + scipy/numpy повністю Python-кервані → інтеграція з AI-clones. **Zero-Lab in-silico (= TRL 3) ✅ завершено (2026-05-25); фізичний TRL 4 = Ti-monet in-vitro (pending).** Зараз: publication-grade ωB97X ⏳ + xylem sap sweep ⏳.
+> **Стратегія:** Computational reverse engineering хімії ДО першого Ti-monet. AlphaFold 3 + OpenMM + PySCF + scipy/numpy повністю Python-кервані → інтеграція з AI-clones. **Zero-Lab in-silico (= TRL 3) ✅ завершено (2026-05-25); фізичний TRL 4 = Ti-monet in-vitro (pending).** Q1-paper program (Стаття 1): ① Hammett mediator ✅, ② micro-solvation+speciation ✅, ④ FAD-GDH E° fix (+60→−266 мВ) ✅, ③ cathode λ/coupling ⏳ (Ru-fix validated: λ=0.78 vs Co ~3 eV). Then chemistry-notes backlog (↓) → draft.
 - [ ] 👤 **Інфраструктура:** workstation NVIDIA RTX 4090 ($5–10K) АБО AWS p5.2xlarge / GCP g2-standard-12 ($2–5/год)
 - [ ] 👤 **Joint Q1-publication з ЧНУ Мінаєвим:** "In Silico Design of Long-Lived Enzymatic Bio-Fuel Cells for Tree-Integrated Energy Harvesting" — `08_03` Стаття 28
+
+###### 🧪 Chemistry-improvement notes — founder batch (2026-06-05), triaged + prioritized
+> 31 ideas verified/researched multi-angle (full per-note verdicts → memory `project_ebfc_q1_paper_program`). Work P0→P2 in order; ⚠️ = corrected/weak (kept as honest record). On action, doc the *why* (lean, no water) at the canon home.
+
+**P0 — in-pipeline (paper chemistry, doing now):**
+- [x] note 29 — Ru-λ ✅ DONE = 0.78 eV (vs Co 3.1–3.4) → cathode-fix quantitatively validated
+- [ ] note 23 — CF₃/SO₂CF₃ mediator ⏳ running (NO₂ electrochem-unstable→degrades to worst donor; inert high-σ EWG fixes ①)
+- [x] note 10 — Lys→Arg genipin-shield ✅ validated (LYS109/LYS262 near e-exit → mutate in production gene)
+- [ ] note 20/26 — bis-imidazole Os [Os(bpy)₂(MeIm)₂]²⁺/³⁺ (PVI-realistic speciation; extend script 34)
+- [ ] note 21 — FADH•-λ: rescue script 29 via neutral semiquinone (honest anode λ vs lit 0.7)
+- [ ] note 16 — dynamic-tunneling ensemble: run script 28 over MD snapshots → ⟨k_ET⟩
+- [ ] cathode finalize — Ce-λ + re-run script 24 (fixed geom + computed λ) → update k_DET canon
+
+**P1 — strong near-term (Gen 2.1 / check / decide):**
+- [ ] note 11 — aggregation check (Aggrescan3D / hydrophobic-SASA at 11 N→Q sites): manufacturability, L2 can't see it
+- [ ] note 22 + 5 — COSMO-RS + ML-potentials (MACE): ②-gap closers cheaper than QM/MM (new-dep decision)
+- [ ] note 14 — FO-DFT coupling: in-house t_ij rigor (full CDFT needs PyCDFT = capstone)
+- [ ] note 6 + 31 — enzyme-free cathode / conductive-MOF (Ni₃HITP₂): removes 20yr enzyme-risk (acid-stable variant needed)
+- [ ] note 8 + 2 — V-chelation layer-4 (catechol/dopamine-chitosan OR phytic-acid IP6): cheaper than Ti-6Al-7Nb switch
+- [ ] note 25 — hygroscopic IL in matrix: drought/embolism dry-out protection (proton-conducting, non-leaching)
+- [ ] note 4 — Winter-Lock UCST 5°C→~0°C (acrylamide comonomer): wider harvest window (not below 0 = freeze risk)
+
+**P2 — strategic / longer / architecture:**
+- [ ] note 1 — metal-free organic mediator (TEMPO/phenothiazine): Os ESG/tox de-risk; big pivot (invalidates Os-specific ①②④)
+- [ ] note 3 — FAD-GDH@ZIF-8 anode encapsulation: thermostab (⚠️ glucose>3.4Å pore→needs defects; MET-access tension)
+- [ ] note 13 — rigid spacer (oligoproline/OPE) vs PVI entropy: anode (redox-polymer network partly compensates)
+- [ ] note 15 — Ru/Ni-dope Co-Ce coupling: subsumed by note 29 (full Co→Ru does λ+coupling cleaner)
+- [ ] note 9 — aromatic hopping chain (Trp/Tyr): anode not rate-limiting + aromatic-radical 20yr damage risk; low
+- [ ] note 7 — de novo enzyme (RFdiffusion/ProteinMPNN): Gen 3.0 moonshot (stable scaffold ≠ active enzyme)
+
+**Separate work-streams (NOT chemistry-paper):**
+- [ ] note 18 — cryoprotectant false-positive → firmware bio_contract.rb T-correction (LOW severity: glucose-specificity already protects vs raffinose spike)
+- [ ] note 27 — Belleville washers vs frost-wedging → hardware retention (seal = O-ring primary; spring keeps preload)
+- [ ] note 19 — biological gasket (callus/auxin) → hardware/bio seal (⚠️ may occlude air-cathode; CODIT wall-off risk)
+
+**⚠️ Corrected-out (honest record, not pursued as written):**
+- note 28 — epitaxial pre-stress: mechanism confused (uniform strain doesn't change Δq→λ); kernel = framework-rigidity/spin-state, soft-ZIF impractical
+- note 30 — acid-ΔG booster: limited lever (59 mV/pH) + misses Marcus inverted-region (more ΔG ≠ always faster)
 
 #### HW.6 — Resin barrier + Flush Mount Installation
 - **P1** · 👤 · → `01_04 §3`

@@ -49,7 +49,7 @@ def cascade_verdict(homo_donor_eV: float, lumo_acceptor_eV: float) -> dict:
 
 def dft_singlepoint(atoms, charge: int, spin: int, label: str = "",
                     xc: str = "b3lyp", with_pcm: bool = True,
-                    conv_tol: float = 1e-6, max_cycle: int = 400,
+                    conv_tol: float = 1e-6, max_cycle: int = 100,
                     level_shift_open: float = 0.0) -> dict:
     """B3LYP single-point on a metal complex (RKS closed / UKS open) + C-PCM water.
 
@@ -83,6 +83,14 @@ def dft_singlepoint(atoms, charge: int, spin: int, label: str = "",
 
     t0 = time.time()
     e_total = mf.kernel()
+    if not mf.converged:
+        # SOSCF (Newton) rescue for oscillating open-shell SCF (e.g. CF₃/SO₂CF₃
+        # Os(III) UKS at level_shift=0). Converges the hard case WITHOUT a level
+        # shift, so the reported LUMO stays physical (unlike level_shift, which
+        # biases virtual MO energies — matters because 21e's cascade Δ reads LUMO).
+        mf = mf.newton()
+        mf.max_cycle = 100
+        e_total = mf.kernel()
     dt = time.time() - t0
     homo_ha, lumo_ha = extract_frontier(mf, mol)
     return {
