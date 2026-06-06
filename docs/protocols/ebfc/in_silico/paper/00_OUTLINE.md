@@ -47,7 +47,7 @@ problem (autonomous EBFC sensing; ET is the bottleneck) → gap (field models EB
 > are **not** cache-derivable → separate visualisation pass.
 
 - **Fig 1** (graphical abstract): the anode→Os→cathode cascade overlaid on the 3-zone gyroid anchor (metal↔xylem interface). [new art] — ⏳ **pending** (illustration)
-- **Fig 2**: AF3 structure + FAD depth + Beratan-Onuchic tunneling path (resSeq labels). — 🟡 **DRAFT built** (`fig2_structure_path.png`, 2D PCA projection via 60_paper_figures, d_FAD 16 Å asserted); publication cartoon → PyMOL on `dgrGcGDH_AF3.pdb`; β·d *data* → Fig S1
+- **Fig 2**: AF3 structure + FAD depth + Beratan-Onuchic tunneling path (resSeq labels). — ✅ **PyMOL cartoon built** (`fig2_structure_path_pymol.png` via `fig2_pymol_cartoon.py`, `pymol_tmp` env); 2D-PCA DRAFT (`fig2_structure_path.png`, via 60, d_FAD 16 Å asserted) kept too — founder picks the final / GUI-polish (label de-overlap); β·d *data* → Fig S1
 - **Fig 3**: (a) MO/Marcus cascade diagram + PCET E°; (b) **① LFER** — E°(Os) & cascade-Δ vs Hammett σ (the design-rule plot). — ✅ **built** (`fig3_cascade_lfer.png`)
 - **Fig 4**: ZIF Cu-Co-Ce hops + k_ET ladder (with computed λ, ③). — ✅ **built** (`fig4_cathode_det.png`)
 - **Fig 5** (methods centerpiece): PCM vs cluster-continuum solvation closing the cascade gap (②). — ✅ **built** (`fig5_solvation_pcm.png`)
