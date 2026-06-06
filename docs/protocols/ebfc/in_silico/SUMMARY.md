@@ -329,6 +329,14 @@ The geometry fix shrank Cu-Co t_ij **25×** → **Cu-Co is the bottleneck**, not
 | Time constant τ | 13 ms | — |
 | Warburg region | < 12 Hz | — |
 
+The 130 Ω Rct above is the **anode** charge-transfer (enzyme→Os, from j_max; script 31). The
+**cathode** DET Rct is *not* a single value — script 31b (Laviron, surface-confined) gives a band
+**~0.002–230 Ω** across the borderline k_DET (λ/coupling-sensitive) × the unknown site coverage Γ
+(×10⁵ spread): the cathode arc can be negligible (fast/dense) or comparable to the anode (slow/sparse),
+so it **cannot be predicted a priori** — the robust statement stays the **kinetic competition**
+k_DET ~ turnover (§Cathode), with the measured Ti-coin cathode EIS the decisive test. INDICATIVE
+(`kinetics/cathode_det_rct.json`).
+
 ---
 
 ## HW.3.IS — Mechanical Integrity

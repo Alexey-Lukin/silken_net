@@ -34,8 +34,10 @@ The inner-sphere reorganisation energy of the first anode oxidation was likewise
 The naïve FADH₂/FADH₂•⁺ radical-cation is geometrically pathological in continuum solvent (it
 fragments on relaxation); the physically correct, pH-7 first electron transfer is the deprotonated
 **FADH⁻ → FADH• + e⁻** couple, whose Nelsen four-point analysis gives an inner-sphere **λ_i = 0.39 eV**.
-With the Marcus outer-sphere term this is consistent with the literature flavin value (0.7–0.8 eV) —
-now from first principles.
+Adding a Marcus two-sphere outer-sphere term brings the total to ~0.7–0.8 eV (computed λ_total
+0.76–0.86 eV for a charge-delocalised, buried cofactor); this continuum estimate is, however,
+radius- and dielectric-dominated, so we adopt the literature value in the rate calculations and use the
+two-sphere result only to confirm that it is physically reasonable.
 
 ## 3.3 A structure–activity rule for the osmium mediator
 
@@ -83,8 +85,12 @@ DFT-relaxed geometry — these flat-PES metal clusters resist geometry optimisat
 did), so t_ij is geometry-bounded. And the single-hop bottleneck is a conservative estimate: the ZIF is
 a wide-gap insulator, so charge transport proceeds by the discrete Marcus hops we model rather than band
 conduction, and the 3D framework presents parallel instances of the bottleneck hop — genuine band-like
-transport would require a conductive MOF (one of the levers above). The cathode EIS of the forthcoming
-Ti-coin experiment is the decisive empirical test.
+transport would require a conductive MOF (one of the levers above). A predicted cathode
+charge-transfer resistance is correspondingly uncertain: with the borderline DET rate and the unknown
+nanozyme site coverage, a surface-confined (Laviron) estimate spans ~0.002–230 Ω — the cathode arc could
+be negligible or comparable to the anode's, so it cannot be fixed a priori, and the kinetic competition
+(rather than a single R_ct) is the robust description. The cathode EIS of the forthcoming Ti-coin
+experiment is the decisive empirical test.
 
 ## 3.5 The cascade and the limits of implicit solvation
 

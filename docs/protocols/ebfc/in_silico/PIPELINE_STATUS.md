@@ -53,6 +53,8 @@
 | 50 | `thermal_stress_lame` | safety 9.9× at -30°C; press-fit P_c 34.7→22.6 MPa (stress relaxation, not creep); O-ring seals, barbs axial-only | `kinetics/thermal_stress_lame.json` |
 | 51 | `gusak_degradation_model` | Arrhenius + Kirkendall V=1.12 µg/cm²/yr + H7/s6 | `kinetics/gusak_degradation.json` |
 | 60 | `paper_figures` | Стаття 1 figures Fig 3 (cascade+LFER) / 4 (cathode DET) / 5 (solvation) + S1 (β·d) — cache-only renderer, every headline number asserted vs SUMMARY at build | `paper/figures/*.png` |
+| 29c | `outer_sphere_lambda` | anode outer-sphere λ_o (Marcus two-sphere, analytical) → total anode λ 0.76–0.86 eV phys-end (confirms lit 0.7–0.8); radius/ε-DOMINATED → INDICATIVE | `dft/outer_sphere_lambda.json` |
+| 31b | `cathode_det_rct` | ③ cathode DET R_ct band ~0.002–230 Ω (borderline k_DET × unknown Γ, ×10⁵) → kinetic competition, not a fixed Rct; INDICATIVE | `kinetics/cathode_det_rct.json` |
 
 ### ❌ Terminated / Closed
 

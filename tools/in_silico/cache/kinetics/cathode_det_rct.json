@@ -1,0 +1,110 @@
+{
+  "method": "Laviron surface-confined R_ct = RT/(n\u00b2F\u00b2\u00b7A\u00b7k_DET\u00b7\u0393); k_DET from canon cache; INDICATIVE",
+  "caveat": "borderline k_DET (\u03bb/coupling-sensitive) \u00d7 unknown \u0393 \u2192 a BAND, not a fixed Rct (00_07): the cathode is a kinetic competition, not a clean Rct",
+  "n_electrons": 1,
+  "A_cm2": 2.0,
+  "turnover_s": 1000.0,
+  "k_scenarios_s": {
+    "lit-\u03bb borderline (\u00d71.4)": 1384.558249437856,
+    "FO-DFT low (\u00d70.6)": 590.0,
+    "FO-DFT mid (\u00d725)": 25165.0,
+    "FO-DFT high (\u00d7730)": 731510.0
+  },
+  "gamma_grid_mol_cm2": {
+    "sparse 1e-12": 1e-12,
+    "monolayer 1e-11": 1e-11,
+    "dense 1e-10": 1e-10
+  },
+  "anode_rct_ohm_context": 130.0,
+  "grid": [
+    {
+      "k_label": "lit-\u03bb borderline (\u00d71.4)",
+      "k_det_s": 1384.558249437856,
+      "gamma_label": "sparse 1e-12",
+      "gamma_mol_cm2": 1e-12,
+      "rct_ohm": 96.16237310781405
+    },
+    {
+      "k_label": "lit-\u03bb borderline (\u00d71.4)",
+      "k_det_s": 1384.558249437856,
+      "gamma_label": "monolayer 1e-11",
+      "gamma_mol_cm2": 1e-11,
+      "rct_ohm": 9.616237310781404
+    },
+    {
+      "k_label": "lit-\u03bb borderline (\u00d71.4)",
+      "k_det_s": 1384.558249437856,
+      "gamma_label": "dense 1e-10",
+      "gamma_mol_cm2": 1e-10,
+      "rct_ohm": 0.9616237310781405
+    },
+    {
+      "k_label": "FO-DFT low (\u00d70.6)",
+      "k_det_s": 590.0,
+      "gamma_label": "sparse 1e-12",
+      "gamma_mol_cm2": 1e-12,
+      "rct_ohm": 225.66509656261863
+    },
+    {
+      "k_label": "FO-DFT low (\u00d70.6)",
+      "k_det_s": 590.0,
+      "gamma_label": "monolayer 1e-11",
+      "gamma_mol_cm2": 1e-11,
+      "rct_ohm": 22.566509656261864
+    },
+    {
+      "k_label": "FO-DFT low (\u00d70.6)",
+      "k_det_s": 590.0,
+      "gamma_label": "dense 1e-10",
+      "gamma_mol_cm2": 1e-10,
+      "rct_ohm": 2.2566509656261857
+    },
+    {
+      "k_label": "FO-DFT mid (\u00d725)",
+      "k_det_s": 25165.0,
+      "gamma_label": "sparse 1e-12",
+      "gamma_mol_cm2": 1e-12,
+      "rct_ohm": 5.290777149689846
+    },
+    {
+      "k_label": "FO-DFT mid (\u00d725)",
+      "k_det_s": 25165.0,
+      "gamma_label": "monolayer 1e-11",
+      "gamma_mol_cm2": 1e-11,
+      "rct_ohm": 0.5290777149689846
+    },
+    {
+      "k_label": "FO-DFT mid (\u00d725)",
+      "k_det_s": 25165.0,
+      "gamma_label": "dense 1e-10",
+      "gamma_mol_cm2": 1e-10,
+      "rct_ohm": 0.05290777149689846
+    },
+    {
+      "k_label": "FO-DFT high (\u00d7730)",
+      "k_det_s": 731510.0,
+      "gamma_label": "sparse 1e-12",
+      "gamma_mol_cm2": 1e-12,
+      "rct_ohm": 0.18201037165854872
+    },
+    {
+      "k_label": "FO-DFT high (\u00d7730)",
+      "k_det_s": 731510.0,
+      "gamma_label": "monolayer 1e-11",
+      "gamma_mol_cm2": 1e-11,
+      "rct_ohm": 0.018201037165854875
+    },
+    {
+      "k_label": "FO-DFT high (\u00d7730)",
+      "k_det_s": 731510.0,
+      "gamma_label": "dense 1e-10",
+      "gamma_mol_cm2": 1e-10,
+      "rct_ohm": 0.0018201037165854873
+    }
+  ],
+  "rct_band_ohm": [
+    0.0018201037165854873,
+    225.66509656261863
+  ],
+  "verdict": "the cathode DET R_ct is NOT a single value \u2014 it spans 0.0018\u20132.3e+02 \u03a9 across the borderline k_DET (\u03bb/coupling-sensitive) AND the unknown coverage \u0393. It can be negligible (fast/dense) or comparable to the anode arc (~130 \u03a9, slow/sparse). \u2192 an EIS cathode arc cannot be predicted a priori; the robust statement stays the KINETIC COMPETITION k_DET ~ turnover (SUMMARY \u00a7Cathode). The decisive test is the measured Ti-coin cathode EIS."
+}

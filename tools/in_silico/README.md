@@ -54,6 +54,7 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 28b | `28b_tunneling_ensemble.py` | L3 (CHEM.16): Beratan-Onuchic over the MD ensemble → β·d distribution + conformational gating (image_molecules PBC unwrap) | ~few min |
 | 29 | `29_dft_reorganization_energy.py` | L3: Nelsen λ for FADH₂/FADH₂•⁺ — radical-cation pathological in PCM (superseded by 29b) | ~1-2 h |
 | 29b | `29b_dft_semiquinone_lambda.py` | L3: Nelsen λ for the FADH⁻/FADH• anode couple (rescues 29 → inner-sphere λ_i 0.39 eV) | ~1-2 h |
+| 29c | `29c_outer_sphere_lambda.py` | L3: outer-sphere λ_o (Marcus two-sphere, analytical) → total anode λ; radius/ε-dominated → INDICATIVE | ~1 s |
 | 32 | `32_pcet_redox_potential.py` | L3: PCET E°(FAD/FADH₂) via thermodynamic proton reference | < 1 s |
 | 33 | `33_pcet_cascade_semiquinone.py` | L3: PCET-corrected cascade via neutral semiquinone (does not flip downhill → confirms PCM method-limit) | < 1 s |
 | 34 | `34_dft_microsolvation.py` | L3 ②: cluster-continuum micro-solvation + speciation (chloro/aqua/bis-Im + [Os(H₂O)₆] benchmark) → decompose the PCM cascade gap | ~hours |
@@ -62,6 +63,7 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 30 | `30_kinetics_delta_t.py` | L4: EBFC kinetics → delta_t(glucose, temp) for Lorenz attractor | ~1 s |
 | 30b | `30b_kinetics_monte_carlo.py` | L4b: Monte Carlo uncertainty (10k samples) → 90% CI for delta_t | ~1 s |
 | 31 | `31_eis_impedance_model.py` | L4c: EIS Randles circuit → Nyquist/Bode predictions for Ti-coin tests | ~1 s |
+| 31b | `31b_cathode_det_rct.py` | L4c ③: cathode DET R_ct band (borderline k_DET × unknown Γ) → kinetic competition, not a fixed Rct; INDICATIVE | ~1 s |
 | 40 | `40_validate_vs_experiment.py` | Ti-coin Stage 2: compare in-silico predictions vs experimental CV/EIS | ~1 s |
 | 50 | `50_thermal_stress_lame.py` | HW.3 anchor: Lamé thermal stress + Findley creep | ~1 s |
 | 51 | `51_gusak_degradation_model.py` | HW.3 anchor: Arrhenius aging + Kirkendall V diffusion + H7/s6 window | ~1 s |
