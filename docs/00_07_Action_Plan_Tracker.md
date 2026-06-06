@@ -571,7 +571,7 @@
 
 #### ARCH.41 — Cold-start Time Paradox (DCI)
 - **P2** · 🔗 · → `03_04 §2.1`
-- VBAT loss → RTC `epoch_day` розходиться з сервером (cold-derive ≈10951 vs chained ≈20585) → категоричний DCI false-positive до `CMD_TIME_SYNC`. **Mitigation A** (server-side: 3 epoch_day кандидати → `time_unsynced_fallback`, не падати DCI) ✅ реалізовано → `04_02` (`try_time_sync_recovery`).
+- VBAT loss → RTC `epoch_day` розходиться з сервером (cold-derive 10957 = RTC-default 2000-01-01 vs chained ≈20585) → категоричний DCI false-positive до `CMD_TIME_SYNC`. **Mitigation A** (server-side: 3 epoch_day кандидати → `time_unsynced_fallback`, не падати DCI) ✅ реалізовано → `04_02` (`try_time_sync_recovery`). **AUDIT-2026-06-06:** firmware-деривація тепер повний HMAC-parity з backend (`lorenz_seed.h`, FW.30 закрито) + кандидат виправлено 10951→10957 (стара цифра була артефактом leap-less формули).
 - [ ] 🔗 (B/C) після стабілізації A, координований firmware rollout: **B** Soldier sentinel `acoustic_events=0xFE` на cold-boot; **C** defer-first-uplink grace «hello» (DID+Vcap+TIME_REQ, без Lorenz state)
 
 #### FW.46 — Enterprise-grade ARM firmware build (committed, reproducible, CI cross-compile)
@@ -585,6 +585,26 @@
 #### FW.48 — cppcheck static-analysis gate (enterprise "ruff/rubocop for C")
 - **P2** · 🤖 · → `03_01 §12.6`
 - ✅ (2026-06-06) cppcheck-гейт owned firmware C (`soldier`+`queen`+`common`) — job `firmware_lint` (apt cppcheck, ubuntu-24.04) + єдиний runner `firmware/scripts/cppcheck.sh` (DRY: CI=локаль) + кастомна Cortex-M4 платформа (`char` unsigned). Gating `warning,performance,portability,style` exhaustive. · [x] 🤖 інфра (platform/runner/документовані suppressions) + real-фікси (мертва гілка `(5+uid_len)>2048`, const-correctness, variable-scope) + обґрунтовані inline-suppress (radio RxDone, HAL weak-symbol callback) → gate green + host-тести 0-fail · [x] 🤖 verify `firmware_lint` зелений ✅ (CI run 27070579139 на push cea7e89 — job `firmware_lint` success) · [x] 🤖 `firmware/test/` досліджено → свідомо НЕ гейтимо (знахідки = const-шум на тест-локалах + навмисні boundary/clamp/overflow-патерни, 0 реальних багів) · [ ] 🤖 (optional, deferred) MISRA-as-gate (apt-addon). Cross-ref: FW.46, `03_01 §12.6`.
+
+#### FW.49 — Tick-time ≠ wall-time у STOP2: системна семантика таймерів Soldier
+- **P0** · 👤🤖 · → [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)
+- **AUDIT-2026-06-06:** `HAL_GetTick` (SysTick) заморожений у STOP2 (`HAL_SuspendTick`+WFI), але ВСЯ часова семантика Soldier стоїть на ньому: (а) `delta_t_seconds` (DR1) — ПЕРВИННИЙ біосигнал метаболізму (вхід β-пертурбації → growth_points → токеноміка) міряє лише active-час (~секунди), не wall-інтервал між пробудженнями (L4 in-silico очікує 36–190 с фізичного інтервалу заряду); (б) FW.27-B re-request «5 хв тиші» = ~500 wake-циклів; (в) FW.20-S2 drift-watchdog 12 год / cooldown 1 год / grace 10 хв — фактично ніколи не спрацюють; (г) beacon drift-компенсація `(tick_now−tick_sync)` занижена. Host-тести сліпі (mock tick монотонний). Wake-source циклу (RTC wakeup timer? VBAT_OK EXTI?) ніде в repo не визначений — `MX_RTC_Init` живе лише у майбутньому CubeMX-проєкті.
+- [ ] 👤 рішення wake-source (RTC wakeup vs VBAT_OK EXTI) — визначає механіку фікса · [ ] 🤖 `Wall_Seconds_Now()` на RTC-календарі (LSE йде у STOP2) + міграція delta_t/re-request/drift-таймерів + host-тести з «стрибаючим» mock-часом · [ ] 👤 bench-верифікація delta_t проти реального інтервалу заряду EDLC
+
+#### FW.50 — Vcap ADC: raw counts використовуються як мВ (без конверсії)
+- **P0** · 👤🤖 · → [`03_01 §3`](03_01_Firmware_Lifecycle_and_DMA)
+- **AUDIT-2026-06-06:** `vcap_voltage = HAL_ADC_GetValue()` (канал VREFINT) — сирий 12-bit відлік (~1500) скрізь трактується як мВ: пакування байтів 4-5, пороги `VCAP_LISTEN_THRESHOLD=2800`/`COLD_TX_DEFER=4000`/`FAUNA=4500` мВ, EMA, `vcap_mv` у mruby. На залізі RX-вікно (>2800) не відкриється ніколи, β-пертурбація з фейкових значень. Плюс: VREFINT міряє VDDA (за buck'ом — константа), НЕ Vcap EDLC; для Vcap потрібен дільник на окремий ADC-канал (hardware, `02_01`/`02_03`).
+- [ ] 👤 схемна вилка: дільник Vcap→ADC pin (узгодити з `02_03` BQ25570) · [ ] 🤖 pure-helper `Adc_Raw_To_Mv()` (VREFINT-калібрування з factory cal @0x1FFF75AA + divider math) + host-тести · [ ] 👤 bench-калібрування
+
+#### FW.51 — Queen: телеметрія-батч губиться при провалі CoAP-send
+- **P2** · 🤖 · → [`03_02 §6`](03_02_Queen_Gateway_Firmware)
+- **AUDIT-2026-06-06:** `Flush_Cache_To_Rails` звільняє CIFO-слоти (`is_active=0, cache_count=0`) ПІД ЧАС пакування — до підтвердження send. Усі 3 retry впали (LTE-діра) → година телеметрії лісу зникає мовчки. Фікс host-testable: звільняти слоти лише після `send_success`, інакше лишити кеш на наступну спробу (увага: новіші пакети тим часом оновлюють слоти — узгодити з дедуплікацією).
+- [ ] 🤖 deferred-clear + host-тест «fail→retry-наступним-циклом без втрати»
+
+#### FW.52 — OTA throughput by-design: 1 RX-пакет/пробудження + give-up без печатки
+- **P2** · 👤 · → [`03_02 §5`](03_02_Queen_Gateway_Firmware)
+- **AUDIT-2026-06-06 (design-спостереження):** (а) Soldier RX-вікно обробляє МАКСИМУМ один пакет за wake-цикл (усі сценарії → `break`) — OTA на 1024B = ~98 чанків ≈ 98 пробуджень; (б) Queen гасить `ota_is_active=0`, якщо тіло відлунало до прибуття HMAC-печатки (CoAP-порядок не гарантує) — а re-request обслуговується лише при `ota_is_active==1` → мертвий OTA до повторного Rails-push; (в) Soldier шле re-request лише раз на «5 хв» tick-часу (див. FW.49). Разом: дні-тижні на один OTA. Можливо acceptable (energy-first), але рішення має бути СВІДОМИМ.
+- [ ] 👤 рішення: прийняти повільний OTA як design або 🤖 re-arm RX у межах вікна при активній OTA-збірці (енергогейт vcap) + Queen: тримати `ota_is_active` до печатки/таймаута
 
 ## §03/§05 · Безпека (Edge crypto + Web3)
 
@@ -619,6 +639,11 @@
 #### SEC.14 — ATECC608B role-split re-examination (ARCH.42 honesty)
 - **P2** · 🤖+👤 · → `03_05 §3.7`
 - ✅ (2026-06-02) Чесний trade-off поданий у `03_05 §3.7` (новий підрозділ «Роль SE: per-packet AES vs provisioning-only») + §3.4 Гілка B вказівник. Перефреймовано «0.1% acceptable» → справжня вісь: tamper-resistance LoRa session-ключа (Варіант B: ключ не лишає ASIC → forces per-packet) ⟷ latency/ідіом (built-in radio-AES STM32 ~10µs + session-key у RDP-Flash, ATECC provisioning-only). Energy-аргумент перевірено = малий (≈70µJ/пакет ≈ 0.2% LoRa-TX ~39мДж per `02_03` / десяті % wake-budget vs 0.47F EDLC ≈7Дж), тому **НЕ вирішальний**. Уточнення всередині Варіанту B, **не** перегляд ARCH.42; ATECC-agnostic щодо FW.2 nonce-fix. · [x] 🤖 re-examine + чесно подати trade-off у `03_05 §3.7` ✅ · [ ] 👤/🤖 обрати роль SE (per-packet vs provisioning-only) при bench eval + BOM freeze — рішення про threat model, не технічна необхідність · [ ] 🤖 (optional) cross-check `02_01 §2` power-budget + `03_01` wake-energy для точної % величини
+
+#### SEC.15 — IWDG у STOP2: option byte `IWDG_STOP` обов'язковий при factory flashing
+- **P1** · 👤 · → [`03_05 §3.4г`](03_05_Hardware_Symmetric_Crypto_and_Security)
+- **AUDIT-2026-06-06:** IWDG (LSI) за замовчуванням НЕ зупиняється у STOP2; max timeout ~32.7 с (LSI 32k / presc 256 / reload 4095). Будь-який сон довший ≈26-32 с → IWDG-reset посеред STOP2 → втрата SRAM (mruby VM, ota_buffer, warning_counter) кожен цикл + марнування енергії на повний reboot. Лік — option byte **IWDG_STOP=0** (freeze у Stop) при заводській прошивці; у repo/SEC.3 pipeline це ніде не зафіксовано. Дотично: PVD-кома (`HAL_PWR_PVDCallback`) теж спить у STOP2 — без замороженого IWDG «кома» не довша за watchdog-період; а після PVD-wake можливий `HAL_Delay`-hang (tick suspended) → IWDG-reset як фактичний механізм відновлення — задокументувати як свідомий шлях.
+- [ ] 👤 додати `IWDG_STOP` (+ узгодити `IWDG_STDBY`) у SEC.3 factory flashing option-bytes чеклист поруч із RDP (SEC.2) · [ ] 👤 bench-верифікація: сон 1 год без spurious reset
 
 ## §04 · Backend / API / UI
 

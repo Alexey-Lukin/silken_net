@@ -152,7 +152,7 @@ A. Provisioning: POST /provisioning/register
 
 B. Uplink: CoAP PUT UDP:5683
    -> UnpackTelemetryWorker (queue: uplink #1)
-   -> TelemetryUnpackerService: AES-256-CBC decrypt CoAP batch (Gateway key) → unwrap to inner AES-128-ECB records (per-Soldier LoRa key), 21-byte decode, Lorenz server-side
+   -> TelemetryUnpackerService: AES-256-CBC decrypt CoAP batch (Gateway key) → inner 21-byte records приходять ПЛЕЙНТЕКСТОМ (Queen вже зняв LoRa AES-128-ECB), 21-byte decode, Lorenz server-side. (Per-Soldier LoRa-ключ реальний лише у FW.2 CCM-шляху `process_ccm_chunk`, де DID/FC — cleartext AAD; в ECB-транзиті кластер де-факто на спільному ключі — chicken-and-egg, 03_05 §ECB)
    -> IotexVerificationWorker (queue: web3_critical #6)
    -> Iotex::W3bstreamVerificationService: POST /verify
    -> log.update!(verified_by_iotex: true, zk_proof_ref: ...)

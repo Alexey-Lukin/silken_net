@@ -273,6 +273,8 @@ last_wakeup_timestamp = current_time;
 
 `delta_t_seconds` — час між пробудженнями в секундах. Відображає швидкість заряду EDLC суперконденсатора (іоністора). Чим швидше заряд → тим активніший фотосинтез → тим здоровіше дерево. Це є первинний біофізичний сигнал для Атрактора Лоренца.
 
+> **🔴 [AUDIT-2026-06-06] tick ≠ wall-time у STOP2 — структурний дефект виміру.** `HAL_GetTick()` (SysTick) **заморожений** під час `HAL_PWREx_EnterSTOP2Mode` (`HAL_SuspendTick`+WFI). Тож `delta_t_seconds` тут міряє лише **active-час** циклу (~секунди обчислень), а НЕ wall-інтервал між пробудженнями, який і є фізичним часом заряду EDLC (L4-модель вище очікує 36–190 с). Цей дефект ділять усі tick-таймери Soldier (FW.27-B re-request, FW.20-S2 drift/cooldown/grace, beacon drift-comp). Канон-фікс і трекінг — [`00_07` — FW.49](00_07_Action_Plan_Tracker) (`Wall_Seconds_Now()` на RTC-календарі/LSE). Host-тести цього не ловлять — mock-tick монотонний. **Wake-source циклу** (RTC wakeup timer vs VBAT_OK EXTI) ще не визначений у repo — `MX_RTC_Init` живе у майбутньому CubeMX-проєкті.
+
 > **In-silico L4 validation (2026-05-25):** Michaelis-Menten + Arrhenius модель підтверджує `BASELINE_DELTA_T_S=60` фізично обґрунтованим. Очікувані значення: здорове дерево (10 мМ глюкози, 25°C) → delta_t ≈ 36 с; стресоване (5 мМ, 5°C) → ≈ 190 с; Monte Carlo 90% CI для healthy: 14–120 с. Деталі → [`01_03 §3.4 L4`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell), [`in_silico/SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md).
 
 **АЦП (два окремих цикли Start/Poll/Stop):**
@@ -292,6 +294,8 @@ HAL_ADC_Stop(&hadc);
 ```
 
 > ⚠️ **Чому два окремих цикли?** STM32 ADC з подвійним каналом (температура + VREFINT) вимагає перемикання між каналами. Роздвоєний Start/Stop запобігає deadlock при прочитанні VREFINT одразу після температурного каналу.
+
+> **🔴 [AUDIT-2026-06-06] `vcap_voltage` — сирий ADC-відлік, не мВ.** `HAL_ADC_GetValue()` повертає 12-bit count (0..4095), а код скрізь трактує його ЯК мілівольти: пакування байтів 4-5, пороги `VCAP_LISTEN_THRESHOLD=2800` / `COLD_TX_DEFER_VCAP_MV=4000` / `FAUNA_VCAP_MIN_MV=4500`, EMA, `vcap_mv` у mruby. На реальному залізі raw VREFINT ≈ 1500 → RX-вікно (>2800) не відкриється ніколи, а β-пертурбація рахується з фейкових величин. Додатково: VREFINT міряє **VDDA** (за buck-регулятором — майже константа), а НЕ напругу EDLC-іоністора; для Vcap потрібен резистивний дільник на окремий ADC-канал. Канон-фікс і трекінг — [`00_07` — FW.50](00_07_Action_Plan_Tracker) (helper `Adc_Raw_To_Mv()` з factory VREFINT-калібруванням + схемний дільник, узгодити з [`02_03`](02_03_BQ25570_MPPT_Nano_Power)).
 
 **HRNG (Chaos Seed):**
 ```c
