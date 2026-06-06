@@ -137,11 +137,23 @@ RSpec.describe "OTA firmware deployment flow" do
       expect(trailer.map { |p| p[1..2].unpack1("n") }).to eq([ 1, 2, 3 ])
     end
 
+    # [FIX AUDIT-2026-06-06] LoRa-шар тепер несе WIRE-потік: padded bytecode +
+    # CRC32-хвіст (вирівняний на LORA_MTU, бо Soldier рахує байти як 11×chunks).
+    # HMAC хешує padded stream БЕЗ CRC32 — дзеркало Soldier dual-gate
+    # (ota_buffer[0..data_len) після зрізання CRC).
+    def lora_padded_payload(raw)
+      pad_len = (OtaPackagerService::LORA_MTU -
+                 ((raw.bytesize + OtaPackagerService::LORA_CRC32_BYTES) %
+                  OtaPackagerService::LORA_MTU)) % OtaPackagerService::LORA_MTU
+      raw.b + ("\x00".b * pad_len)
+    end
+
     it "manifest exposes lora_total_chunks for Queen→Soldier cross-check" do
       manifest = OtaPackagerService.prepare(firmware, chunk_size: 512, cluster_id: cluster_id).fetch(:manifest)
       # Soldier sees this `total_chunks` in 0x99 LoRa header → must match HMAC binding
-      expected_lora_total = (firmware.binary_payload.bytesize + OtaPackagerService::LORA_MTU - 1) / OtaPackagerService::LORA_MTU
-      expect(manifest[:lora_total_chunks]).to eq(expected_lora_total)
+      wire_size = lora_padded_payload(firmware.binary_payload).bytesize +
+                  OtaPackagerService::LORA_CRC32_BYTES
+      expect(manifest[:lora_total_chunks]).to eq(wire_size / OtaPackagerService::LORA_MTU)
       expect(manifest[:hmac_signed]).to be true
     end
 
@@ -154,7 +166,7 @@ RSpec.describe "OTA firmware deployment flow" do
       reconstructed = trailer[0][5..15] + trailer[1][5..15] + trailer[2][5..14]
 
       expected = OtaPackagerService.compute_hmac_tag(
-        firmware.binary_payload,
+        lora_padded_payload(firmware.binary_payload),
         firmware.id,
         manifest[:lora_total_chunks],
         cluster_id: cluster_id

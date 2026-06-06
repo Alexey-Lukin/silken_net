@@ -19,6 +19,8 @@
 #include "radio.h"
 // [HRNG-IV] Pure, host-testable CoAP-batch fallback-IV derivation (coap_fallback_iv_word)
 #include "coap_iv.h"
+// [AUDIT-2026-06-06] CRC16-CCITT One-Home — перевірка CoAP-OTA чанків від Rails
+#include "../common/silken_crc.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -29,13 +31,18 @@
 /* USER CODE BEGIN PD */
 // OTA Downlink Constants (CoAP → Queen RAM assembly)
 #define OTA_MARKER            0x99   // Маркер OTA-пакета (перший байт)
-#define OTA_HEADER_SIZE       5      // [0x99][index:2][total:2]
-#define OTA_CRC_SIZE          2      // CRC16-CCITT в кінці чанка
-#define OTA_OVERHEAD          (OTA_HEADER_SIZE + OTA_CRC_SIZE)  // 7 байт
+#define OTA_HEADER_SIZE       5      // LoRa-шар (Queen→Soldier): [0x99][index:2][total:2]
+#define OTA_CRC_SIZE          2      // CRC16-CCITT в кінці CoAP-чанка
 #define AES_BLOCK_SIZE        16     // AES block size (128-bit fixed; рівне для AES-128 і AES-256)
 #define MAX_OTA_CHUNK_PAYLOAD 512    // Максимальний розмір байткоду в одному CoAP-чанку
-#define OTA_FULL_CHUNK_THRESH (MAX_OTA_CHUNK_PAYLOAD + OTA_CRC_SIZE) // 514: поріг повного чанка
-#define MIN_OTA_ALIGNED       (AES_BLOCK_SIZE + OTA_OVERHEAD)        // 23: мінімальний aligned
+// [FIX AUDIT-2026-06-06] CoAP-шар (Rails→Queen) отримав явний len:
+//   [0x99][index:2 BE][total:2 BE][len:2 BE][bytecode:len][crc16:2 BE]
+// Стара довжино-вгадувальна формула (inner_aligned - 16 - 7) при zero-padding
+// 0..15 байт СИСТЕМАТИЧНО обрізала 1..16 байт кожного чанка (повний 512B →
+// 500B) — збірка була зламана by construction. Явний len + CRC16-перевірка
+// (раніше CRC16 від бекенду взагалі ігнорувався!) закривають клас помилок.
+#define OTA_COAP_HEADER_SIZE  7      // [0x99][index:2][total:2][len:2]
+#define OTA_COAP_MIN_FRAME    (OTA_COAP_HEADER_SIZE + 1 + OTA_CRC_SIZE)  // 10
 
 // [FW.23] HMAC-трейлер OTA — backend пакує 32-байтну печатку HMAC-SHA256
 // у 3× 16-байтні LoRa-чанки з маркером 0x9B. Королева — лише гонець:
@@ -1280,18 +1287,22 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         // ── Гілка OTA Downlink: збирання прошивки від Rails у RAM ─────
         // Архітектурний міст: Backend CoAP downlink → pending_ota_bytecode[] → LoRa broadcast
         //
-        // Формат дешифрованого пакета (after FW.20 envelope strip):
-        //   [0x99][chunk_index:2 BE][total_chunks:2 BE][bytecode:≤512][CRC:2]
+        // [FIX AUDIT-2026-06-06] Формат дешифрованого пакета (after FW.20 envelope strip):
+        //   [0x99][chunk_index:2 BE][total_chunks:2 BE][len:2 BE][bytecode:len][crc16:2 BE]
+        // Явний len замість вгадування довжини з CBC zero-padding (стара формула
+        // обрізала 1..16 байт КОЖНОГО чанка), CRC16 від бекенду тепер
+        // ПЕРЕВІРЯЄТЬСЯ (раніше — німо ігнорувався).
         //
         // Після збирання всіх чанків — встановлюємо ota_is_active = 1,
         // і головний цикл автоматично починає LoRa-бродкаст на Солдатів.
 
-        // [MISRA C] Мінімальна довжина: 1 маркер + 2 index + 2 total + 1 байт коду = 6
-        if (inner_aligned < 6) return;
+        // [MISRA C] Мінімальна довжина: header(7) + 1 байт коду + crc16(2) = 10
+        if (inner_aligned < OTA_COAP_MIN_FRAME) return;
 
-        // Витягуємо chunk_index та total_chunks (big-endian)
+        // Витягуємо chunk_index, total_chunks, payload_len (big-endian)
         uint16_t chunk_index  = ((uint16_t)inner_payload[1] << 8) | inner_payload[2];
         uint16_t total_chunks = ((uint16_t)inner_payload[3] << 8) | inner_payload[4];
+        uint16_t payload_len  = ((uint16_t)inner_payload[5] << 8) | inner_payload[6];
 
         // [MISRA C] Захист від невалідних заголовків
         if (total_chunks == 0) return;
@@ -1299,20 +1310,20 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         // [FIX: AUDIT] Захист від chunk_index >= OTA_MAX_CHUNKS (переповнення bitmap)
         if (chunk_index >= OTA_MAX_CHUNKS) return;
 
-        // [MISRA C] Захист від overflow при малому aligned (underflow на uint16_t)
-        // MIN_OTA_ALIGNED = AES_BLOCK_SIZE (16) + OTA_HEADER_SIZE (5) + OTA_CRC_SIZE (2) = 23
-        if (inner_aligned < MIN_OTA_ALIGNED) return;
+        // Брехливий або порожній len: межі диктує бекендів MAX_OTA_CHUNK_PAYLOAD,
+        // а повний кадр (header + len + crc) мусить вміститись у дешифроване.
+        if (payload_len == 0 || payload_len > MAX_OTA_CHUNK_PAYLOAD) return;
+        uint32_t frame_len = (uint32_t)OTA_COAP_HEADER_SIZE + payload_len + OTA_CRC_SIZE;
+        if (frame_len > inner_aligned) return;
 
-        // Розрахунок довжини чистого байткоду (без заголовка, CRC, AES-padding):
-        // inner_aligned — повна довжина розшифрованих даних (вирівняна по AES-блоку).
-        // Останній AES-блок може бути padding → гарантована корисна довжина = inner_aligned - AES_BLOCK_SIZE.
-        // Backend пакує до MAX_OTA_CHUNK_PAYLOAD байт коду + OTA_CRC_SIZE у чанк.
-        // Якщо guaranteed >= OTA_FULL_CHUNK_THRESH → повний чанк, payload = MAX_OTA_CHUNK_PAYLOAD.
-        // Інакше → неповний/останній чанк: payload = guaranteed - OTA_OVERHEAD.
-        uint16_t guaranteed = inner_aligned - AES_BLOCK_SIZE;
-        uint16_t payload_len = (guaranteed >= OTA_FULL_CHUNK_THRESH)
-                             ? MAX_OTA_CHUNK_PAYLOAD
-                             : (guaranteed - OTA_OVERHEAD);
+        // CRC16-CCITT над header+bytecode проти хвостових 2 байтів (BE) —
+        // дзеркало OtaPackagerService.crc16_ccitt. Біт, що збрехав у LTE/Starlink
+        // транзиті, вмирає тут, а не у Flash Солдата.
+        uint16_t expected_crc = Silken_Crc16_Ccitt(inner_payload,
+                                                   (uint16_t)(OTA_COAP_HEADER_SIZE + payload_len));
+        uint16_t received_crc = ((uint16_t)inner_payload[OTA_COAP_HEADER_SIZE + payload_len] << 8)
+                              | inner_payload[OTA_COAP_HEADER_SIZE + payload_len + 1];
+        if (expected_crc != received_crc) return;
 
         // Обчислюємо зсув у RAM-буфері
         uint32_t offset = (uint32_t)chunk_index * (uint32_t)MAX_OTA_CHUNK_PAYLOAD;
@@ -1337,7 +1348,7 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         }
 
         // Копіюємо байткод у відповідну позицію RAM-буфера
-        memcpy(pending_ota_bytecode + offset, &inner_payload[OTA_HEADER_SIZE], payload_len);
+        memcpy(pending_ota_bytecode + offset, &inner_payload[OTA_COAP_HEADER_SIZE], payload_len);
 
         // Оновлюємо стан збирання
         ota_total_expected_chunks = total_chunks;

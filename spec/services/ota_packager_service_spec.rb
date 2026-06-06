@@ -45,20 +45,24 @@ RSpec.describe OtaPackagerService do
         expect(packages.size).to eq(1)
       end
 
-      it "package has 5-byte header (marker + 16-bit index + 16-bit total)" do
+      it "package has 7-byte header (marker + index + total + explicit len, all 16-bit BE)" do
+        # [FIX AUDIT-2026-06-06] len-поле додано: Queen більше не вгадує довжину
+        # з CBC zero-padding (стара формула обрізала 1..16 байт кожного чанка).
         package = described_class.prepare(firmware)[:packages].first
-        marker, index, total = package[0..4].unpack("Cnn")
+        marker, index, total, len = package[0..6].unpack("Cnnn")
 
         expect(marker).to eq(0x99)
         expect(index).to eq(0)
         expect(total).to eq(1)
+        # wire = payload(3) + zero-pad(4) + CRC32(4) = 11 (LoRa-MTU aligned)
+        expect(len).to eq(11)
       end
 
       it "appends 2-byte CRC16 at the end" do
         package = described_class.prepare(firmware)[:packages].first
 
-        # 5 header + 3 data + 2 CRC = 10
-        expect(package.bytesize).to eq(10)
+        # 7 header + 11 wire data + 2 CRC = 20
+        expect(package.bytesize).to eq(20)
       end
 
       it "CRC16 validates package integrity" do
@@ -75,7 +79,7 @@ RSpec.describe OtaPackagerService do
     end
 
     context "with payload exceeding 255 chunks (16-bit overflow protection)" do
-      # 256KB payload with 512-byte chunks = 512 chunks (exceeds uint8 max of 255)
+      # 256KB payload + LoRa pad/CRC32 wire-trailer → 513 CoAP chunks of 512
       let(:payload) { "\xFF" * (256 * 1024) }
 
       it "correctly encodes chunk index > 255" do
@@ -84,14 +88,14 @@ RSpec.describe OtaPackagerService do
         _, index, total = chunk_300[0..4].unpack("Cnn")
 
         expect(index).to eq(300)
-        expect(total).to eq(512)
+        expect(total).to eq(513)
       end
 
       it "correctly encodes total > 255" do
         package = described_class.prepare(firmware)[:packages].first
         _, _, total = package[0..4].unpack("Cnn")
 
-        expect(total).to eq(512)
+        expect(total).to eq(513)
       end
 
       it "manifest total_chunks matches actual package count" do
@@ -114,12 +118,13 @@ RSpec.describe OtaPackagerService do
         expect(result[:manifest][:total_chunks]).to eq(3)
       end
 
-      it "last chunk contains remaining bytes" do
+      it "last chunk contains remaining wire bytes" do
         packages = described_class.prepare(firmware, chunk_size: 512)[:packages].to_a
         last_package = packages.last
 
-        # 5 header + 1 byte remaining + 2 CRC = 8
-        expect(last_package.bytesize).to eq(8)
+        # wire = 1025 + pad(5) + CRC32(4) = 1034 → 512 + 512 + 10;
+        # last: 7 header + 10 wire + 2 CRC = 19
+        expect(last_package.bytesize).to eq(19)
       end
     end
 
@@ -143,14 +148,14 @@ RSpec.describe OtaPackagerService do
     end
 
     context "with LoRa MTU (11-byte chunks)" do
-      let(:payload) { "\xAA" * 33 } # 33 bytes / 11 = 3 chunks
+      let(:payload) { "\xAA" * 33 } # wire = 33 + pad(7) + CRC32(4) = 44 → 4 chunks
 
       it "produces correct number of chunks for LoRa" do
         result = described_class.prepare(firmware, chunk_size: described_class::LORA_MTU)
         packages = result[:packages].to_a
 
-        expect(packages.size).to eq(3)
-        expect(result[:manifest][:total_chunks]).to eq(3)
+        expect(packages.size).to eq(4)
+        expect(result[:manifest][:total_chunks]).to eq(4)
       end
 
       it "each LoRa chunk has correct header with 0x99 marker" do
@@ -159,7 +164,7 @@ RSpec.describe OtaPackagerService do
           marker, index, total = pkg[0..4].unpack("Cnn")
           expect(marker).to eq(0x99)
           expect(index).to eq(i)
-          expect(total).to eq(3)
+          expect(total).to eq(4)
         end
       end
     end
@@ -172,26 +177,63 @@ RSpec.describe OtaPackagerService do
         expect(packages.size).to eq(1)
       end
 
-      it "package contains 5 header + 1 data + 2 CRC = 8 bytes" do
+      it "package contains 7 header + 11 wire bytes + 2 CRC = 20 bytes" do
+        # wire = 1 + pad(6) + CRC32(4) = 11
         package = described_class.prepare(firmware)[:packages].first
-        expect(package.bytesize).to eq(8)
+        expect(package.bytesize).to eq(20)
       end
     end
 
     context "with exact block-size payload (512 bytes)" do
       let(:payload) { "\xBB" * 512 }
 
-      it "produces exactly one chunk" do
+      it "splits wire stream (payload + pad + CRC32) into two chunks" do
+        # wire = 512 + pad(1) + CRC32(4) = 517 → 512 + 5
         result = described_class.prepare(firmware, chunk_size: 512)
         packages = result[:packages].to_a
-        expect(packages.size).to eq(1)
-        expect(result[:manifest][:total_chunks]).to eq(1)
+        expect(packages.size).to eq(2)
+        expect(result[:manifest][:total_chunks]).to eq(2)
       end
 
-      it "chunk data section is exactly 512 bytes" do
+      it "first chunk carries a FULL 512-byte data section with explicit len" do
+        # [FIX AUDIT-2026-06-06] Регресія старого бага: повний чанк мусить
+        # нести рівно 512 байт і чесний len — Queen раніше обрізала його до 500.
         package = described_class.prepare(firmware, chunk_size: 512)[:packages].first
-        # 5 header + 512 data + 2 CRC = 519
-        expect(package.bytesize).to eq(519)
+        len = package[5..6].unpack1("n")
+        expect(len).to eq(512)
+        # 7 header + 512 data + 2 CRC = 521
+        expect(package.bytesize).to eq(521)
+      end
+    end
+
+    # [FIX AUDIT-2026-06-06] Wire-потік LoRa-шару: Soldier рахує отримане як
+    # 11 × chunks, тож CRC32 мусить лягати РІВНО в кінець останнього 11-байт
+    # чанка. Інваріанти нижче — крос-шаровий контракт із firmware
+    # (test_soldier_logic.c OTA_Verify_CRC + queen broadcast math).
+    describe "wire payload invariants (LoRa CRC32 trailer)" do
+      [ 1, 3, 7, 11, 33, 512, 1025 ].each do |size|
+        context "with #{size}-byte payload" do
+          let(:payload) { "\xC3".b * size }
+
+          it "reassembled wire stream is LoRa-MTU aligned and CRC32-terminated" do
+            packages = described_class.prepare(firmware, chunk_size: 512)[:packages].to_a
+
+            wire = packages.map { |pkg|
+              len = pkg[5..6].unpack1("n")
+              pkg[7, len]
+            }.join.b
+
+            expect(wire.bytesize % described_class::LORA_MTU).to eq(0)
+
+            data = wire[0..-5]
+            crc  = wire[-4..].unpack1("N")
+            expect(crc).to eq(Zlib.crc32(data))
+
+            # Оригінальний bytecode лежить префіксом; pad — нулі
+            expect(data[0, size]).to eq(payload)
+            expect(data[size..]).to match(/\A\x00*\z/n)
+          end
+        end
       end
     end
 
@@ -376,7 +418,7 @@ RSpec.describe OtaPackagerService do
 
       it "exposes lora_total_chunks for cross-check with bytecode 0x99 header" do
         manifest = described_class.prepare(hmac_firmware, chunk_size: 512, cluster_id: cluster_id).fetch(:manifest)
-        expected_lora_total = (60 + 10) / 11  # ceil(60/11) = 6
+        expected_lora_total = (60 + 2 + 4) / 11  # wire = 60 + pad(2) + CRC32(4) = 66 → 6
         expect(manifest[:lora_total_chunks]).to eq(expected_lora_total)
       end
 

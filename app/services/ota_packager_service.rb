@@ -123,11 +123,26 @@ class OtaPackagerService
     chunks
   end
 
+  # [FIX AUDIT-2026-06-06] LoRa MTU alignment + CRC32 trailer.
+  # Soldier verifies the ASSEMBLED stream: its trailing 4 bytes must be the
+  # big-endian CRC32 (ISO 3309 == Zlib.crc32) of everything before them —
+  # this service previously never appended it, so every OTA died at the
+  # Soldier's integrity gate. Soldier counts received bytes as 11 × chunks
+  # (fixed LoRa MTU), so the CRC32 must land EXACTLY at the end of the final
+  # 11-byte chunk: zero-pad the bytecode until (padded + 4) % 11 == 0.
+  # Trailing zero-pad is harmless to the RITE loader (irep carries its own
+  # length) and is covered by both CRC32 and the FW.23 HMAC tag.
+  LORA_CRC32_BYTES = 4
+
   def initialize(firmware, chunk_size, cluster_id: nil)
     @firmware = firmware
     @chunk_size = chunk_size
     @payload = firmware.binary_payload
     @cluster_id = cluster_id
+
+    pad_len = (LORA_MTU - ((@payload.bytesize + LORA_CRC32_BYTES) % LORA_MTU)) % LORA_MTU
+    @padded_payload = @payload.b + ("\x00".b * pad_len)
+    @wire_payload   = @padded_payload + [ Zlib.crc32(@padded_payload) ].pack("N")
   end
 
   def prepare
@@ -139,9 +154,11 @@ class OtaPackagerService
 
   private
 
-  # Маніфест для перевірки всієї прошивки після збірки на пристрої
+  # Маніфест для перевірки всієї прошивки після збірки на пристрої.
+  # total_chunks / lora_total_chunks рахуються від WIRE-потоку
+  # (padded bytecode + CRC32), бо саме його чанкують CoAP та LoRa шари.
   def generate_manifest
-    total_bytecode_chunks = (@payload.bytesize.to_f / @chunk_size).ceil
+    total_bytecode_chunks = (@wire_payload.bytesize.to_f / @chunk_size).ceil
     base = {
       version: @firmware.version,
       total_size: @payload.bytesize,
@@ -163,19 +180,23 @@ class OtaPackagerService
   end
 
   def generate_packages
-    total = (@payload.bytesize.to_f / @chunk_size).ceil
-    payload_bytes = @payload.b
+    total = (@wire_payload.bytesize.to_f / @chunk_size).ceil
+    payload_bytes = @wire_payload
 
     bytecode_chunks = Enumerator.new do |yielder|
       payload_bytes.scan(/.{1,#{@chunk_size}}/m).each_with_index do |chunk, index|
-        # Формуємо заголовок загартованого пакета (16-bit index/total для підтримки >255 чанків)
+        # [FIX AUDIT-2026-06-06] Заголовок несе ЯВНИЙ len (uint16 BE):
+        # Queen більше не вгадує довжину з CBC zero-padding (стара формула
+        # обрізала 1..16 байт кожного чанка). Дзеркало парсера —
+        # firmware/queen/main.c Handle_CoAP_Command (0x99 branch).
         header = [
           CMD_OTA_BYTECODE, # OTA Marker (0x99)
           index,            # Chunk Index   (uint16 big-endian)
-          total             # Total Chunks  (uint16 big-endian)
-        ].pack("Cnn")
+          total,            # Total Chunks  (uint16 big-endian)
+          chunk.bytesize    # Payload Len   (uint16 big-endian)
+        ].pack("Cnnn")
 
-        # Додаємо CRC16 для кожного чанка для Zero-Lag валідації на рівні заліза
+        # CRC16 над header+chunk — Queen тепер ПЕРЕВІРЯЄ його перед збіркою
         package_payload = header + chunk
         crc = self.class.crc16_ccitt(package_payload)
         yielder.yield(package_payload + [ crc ].pack("n"))
@@ -198,13 +219,19 @@ class OtaPackagerService
     @cluster_id.present?
   end
 
+  # [FIX AUDIT-2026-06-06] LoRa-чанки рахуються від WIRE-потоку (padded +
+  # CRC32) — він за конструкцією кратний LORA_MTU, тож ділення точне. Саме
+  # це число Queen виводить з pending_ota_size і Soldier тримає як
+  # ota_total_chunks (cross-check у re-request + HMAC binding).
   def lora_total_chunks
-    @lora_total_chunks ||= ((@payload.bytesize + LORA_MTU - 1) / LORA_MTU)
+    @lora_total_chunks ||= (@wire_payload.bytesize / LORA_MTU)
   end
 
   def hmac_trailer_chunks
+    # HMAC над padded bytecode (БЕЗ CRC32-хвоста) — дзеркало Soldier
+    # dual-gate, який хешує ota_buffer[0..data_len) після зрізання CRC.
     tag = self.class.compute_hmac_tag(
-      @payload,
+      @padded_payload,
       @firmware.id,
       lora_total_chunks,
       cluster_id: @cluster_id

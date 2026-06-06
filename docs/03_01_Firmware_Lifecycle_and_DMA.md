@@ -518,10 +518,13 @@ AES-128-ECB Decrypt → decrypted_rx_payload [post-ARCH.42][]
 _rx_payload[0] == OTA_MARKER (0x99)
   → Валідація мінімального розміру (>= 6 байт)
   → chunk_idx, total_chunks (big-endian)
+  → total-mismatch streak (3 поспіль чужих total → wipe мертвої кампанії) [AUDIT-2026-06-06]
   → Bounds check: offset + chunk_size <= 1024
   → Dedup check: ota_chunk_received[chunk_idx]
   → memcpy → ota_buffer[]
-  → Якщо всі чанки → CRC32 verify → Write to Flash → NVIC_SystemReset()
+  → Якщо всі чанки → CRC32 verify (хвіст wire-потоку: OtaPackagerService
+    паддить bytecode до (len+4) % 11 == 0 і додає CRC32 BE — §4.6)
+    → Write to Flash → NVIC_SystemReset()
 
 Сценарій Б: incoming_lora_size == 16 (Mesh Relay)
   → TTL > 0?
@@ -920,18 +923,28 @@ Chunk-розмір для LoRa OTA: **11 байт** корисного коду 
 Queen отримує великі OTA-пакети від Rails через CoAP (`Handle_CoAP_Command`):
 
 ```
-Rail CoAP PUT: [IV:16][CBC_encrypted: [0x99][chunk_idx:2][total:2][bytecode:≤512][CRC:2]]
+Rail CoAP PUT: [IV:16][CBC_encrypted: [0x99][chunk_idx:2 BE][total:2 BE][len:2 BE][bytecode:len][crc16:2 BE]]
        ↓
 Handle_CoAP_Command():
   AES-256-CBC Decrypt (з IV з перших 16 байт; CRYP_KEYSIZE_256B + coap_key)
   Restore ECB+128B mode (CRYP_KEYSIZE_128B + LoRa aes_key) — SEC.8
   OTA_MARKER detected (0x99):
-    chunk_index, total_chunks (big-endian)
-    Bitmap dedup: ota_chunk_bitmap
+    chunk_index, total_chunks, len (big-endian)
+    CRC16-CCITT verify над header+bytecode (common/silken_crc.h ↔ OtaPackagerService.crc16_ccitt)
+    Bitmap dedup: ota_chunk_bitmap (+ idle-стан → pending_ota_size = 0: нова кампанія)
     memcpy → pending_ota_bytecode[chunk_index * 512]
     ota_chunks_received++
     if all received → ota_is_active = 1 → LoRa broadcast starts
 ```
+
+> **[FIX AUDIT-2026-06-06] Явний `len` + CRC16-перевірка.** Стара схема вгадувала
+> довжину чанка з CBC zero-padding (формула `aligned−16−7`) і при паддінгу 0..15
+> байт **систематично обрізала 1..16 байт кожного чанка** (повний 512B → 500B);
+> CRC16 від бекенду не перевірявся взагалі. Деталі парсера — [`03_02 §5`](03_02_Queen_Gateway_Firmware).
+> Сам потік, що його чанкують CoAP/LoRa-шари, тепер **wire-потік**: `bytecode +
+> zero-pad + CRC32(4B BE)`, вирівняний на LoRa MTU 11 — щоб CRC32 лягав рівно в
+> кінець останнього LoRa-чанка (Soldier рахує отримане як `11 × chunks`).
+> Будує `OtaPackagerService` (дзеркальні специфікації — `spec/services/ota_packager_service_spec.rb`).
 
 ### 4.7 Actuator Command Dedup (Idempotency)
 

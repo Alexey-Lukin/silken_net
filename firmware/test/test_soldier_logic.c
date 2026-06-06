@@ -2359,19 +2359,12 @@ TEST(test_beacon_rx_does_not_collide_with_ota) {
 #define S_CMD_THRESHOLDS_PAYLOAD_LEN 10
 #define S_CMD_THRESHOLDS_BODY_SIZE   8
 
-/* Soldier CRC-16/CCITT-FALSE (poly 0x1021, init 0xFFFF). Reference impl —
- * the firmware version lives in soldier/main.c and must agree byte-for-byte. */
+/* CRC-16/CCITT-FALSE — One-Home: common/silken_crc.h (той самий код, що
+ * компілюється у soldier/main.c і queen/main.c) [AUDIT-2026-06-06]. */
+#include "../common/silken_crc.h"
 static uint16_t soldier_crc16_ccitt(const uint8_t* data, uint16_t len)
 {
-    uint16_t crc = 0xFFFFu;
-    for (uint16_t i = 0; i < len; i++) {
-        crc ^= ((uint16_t)data[i]) << 8;
-        for (uint8_t b = 0; b < 8; b++) {
-            crc = (crc & 0x8000u) ? (uint16_t)((crc << 1) ^ 0x1021u)
-                                  : (uint16_t)(crc << 1);
-        }
-    }
-    return crc;
+    return Silken_Crc16_Ccitt(data, len);
 }
 
 /* Compose a backend-style frame: [0x9A][len_le=10][body:8][crc_le:2]. */

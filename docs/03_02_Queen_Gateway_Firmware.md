@@ -460,31 +460,41 @@ Rails → CoAP → Handle_CoAP_Command(payload, len):
   if cmd_decrypt_buf starts "CMD:" → actuator command (секція 6)
   if cmd_decrypt_buf[0] == 0x99   → OTA downlink chunk
 
-─── OTA Chunk Processing ─────────────────────────────────────────────────
-Guard 1: if (aligned < 6) → return  [MISRA: мін. 1 маркер + 2 idx + 2 total + 1 байт коду]
+─── OTA Chunk Processing — [FIX AUDIT-2026-06-06] явний len + CRC16 ──────
+Wire (після зняття envelope): [0x99][idx:2 BE][total:2 BE][len:2 BE][bytecode:len][crc16:2 BE]
+// Стара схема ВГАДУВАЛА довжину з CBC zero-padding (формула aligned−16−7) і
+// при паддінгу 0..15 систематично обрізала 1..16 байт КОЖНОГО чанка
+// (повний 512B → 500B). CRC16 від бекенду не перевірявся. Збірка була
+// зламана by construction — явний len + CRC16 закривають клас помилок.
+
+Guard 1: if (aligned < OTA_COAP_MIN_FRAME=10) → return  [header 7 + 1 байт + crc 2]
 
 Витягуємо:
   chunk_index  = (cmd_decrypt_buf[1] << 8) | cmd_decrypt_buf[2]  (big-endian)
   total_chunks = (cmd_decrypt_buf[3] << 8) | cmd_decrypt_buf[4]  (big-endian)
+  payload_len  = (cmd_decrypt_buf[5] << 8) | cmd_decrypt_buf[6]  (big-endian)
   ota_total_expected_chunks = total_chunks  ← оновлюється з кожним чанком
 
 Guard 2: if (total_chunks == 0) → return  [invalid header]
 Guard 3: if (chunk_index >= OTA_MAX_CHUNKS=16) → return  [bitmap overflow]
-Guard 4: if (aligned < MIN_OTA_ALIGNED=23) → return  [MISRA: 16 AES + 7 overhead]
+Guard 4: if (payload_len == 0 OR payload_len > MAX_OTA_CHUNK_PAYLOAD=512) → return
+Guard 5: if (OTA_COAP_HEADER_SIZE + payload_len + OTA_CRC_SIZE > aligned) → return
+         [len бреше за межі дешифрованого]
 
-─── payload_len calculation (ключова формула) ──────────────────────────
-  guaranteed = aligned - AES_BLOCK_SIZE(16)
-  // guaranteed = корисні байти мінус можливий AES-padding (останній блок)
-
-  if (guaranteed >= OTA_FULL_CHUNK_THRESH=514):
-    payload_len = MAX_OTA_CHUNK_PAYLOAD = 512  ← повний чанк
-  else:
-    payload_len = guaranteed - OTA_OVERHEAD(7) ← останній/неповний чанк
-    // OTA_OVERHEAD = OTA_HEADER_SIZE(5) + OTA_CRC_SIZE(2)
+─── CRC16-CCITT verification (нове — біт-фліп LTE/Starlink вмирає тут) ──
+  expected_crc = Silken_Crc16_Ccitt(frame, 7 + payload_len)   ← common/silken_crc.h
+  received_crc = (frame[7+len] << 8) | frame[7+len+1]          ← big-endian хвіст
+  if (expected_crc != received_crc) → return
+  // Дзеркало OtaPackagerService.crc16_ccitt — байт-у-байт
 
   offset = (uint32_t)chunk_index * MAX_OTA_CHUNK_PAYLOAD  (0, 512, 1024, ...)
 
-Guard 5: if (offset + payload_len > sizeof(pending_ota_bytecode)=8192) → return
+Guard 6: if (offset + payload_len > sizeof(pending_ota_bytecode)=8192) → return
+
+─── Нова кампанія (idle-стан) ────────────────────────────────────────────
+  if (ota_chunk_bitmap == 0 && ota_chunks_received == 0):
+    pending_ota_size = 0   ← [AUDIT-2026-06-06] менша нова прошивка не
+                              успадковує хвости старої (анти-«химера»)
 
 ─── Dedup via bitmap ─────────────────────────────────────────────────────
   chunk_bit = 1U << chunk_index
@@ -492,7 +502,7 @@ Guard 5: if (offset + payload_len > sizeof(pending_ota_bytecode)=8192) → retur
   ota_chunk_bitmap |= chunk_bit               (маркуємо як отриманий)
 
 ─── Зберігаємо в RAM-буфер ───────────────────────────────────────────────
-  memcpy(pending_ota_bytecode + offset, &cmd_decrypt_buf[OTA_HEADER_SIZE=5], payload_len)
+  memcpy(pending_ota_bytecode + offset, &cmd_decrypt_buf[OTA_COAP_HEADER_SIZE=7], payload_len)
   ota_chunks_received++
 
   // Відстежуємо реальний розмір зібраного байткоду:
@@ -514,15 +524,14 @@ Guard 5: if (offset + payload_len > sizeof(pending_ota_bytecode)=8192) → retur
 | Константа | Значення | Розрахунок | Опис |
 |-----------|----------|------------|------|
 | `OTA_MARKER` | `0x99` | — | Маркер OTA-пакета (перший байт) |
-| `OTA_HEADER_SIZE` | 5 | `1+2+2` | Маркер + index:2 + total:2 |
-| `OTA_CRC_SIZE` | 2 | — | CRC16-CCITT в кінці чанка |
-| `OTA_OVERHEAD` | 7 | `5+2` | Header + CRC (мінімум для розрахунку payload) |
+| `OTA_HEADER_SIZE` | 5 | `1+2+2` | **LoRa-шар** (Queen→Soldier): маркер + index:2 + total:2 |
+| `OTA_COAP_HEADER_SIZE` | 7 | `1+2+2+2` | **CoAP-шар** (Rails→Queen): + явний len:2 BE [AUDIT-2026-06-06] |
+| `OTA_CRC_SIZE` | 2 | — | CRC16-CCITT в кінці CoAP-чанка (тепер перевіряється) |
+| `OTA_COAP_MIN_FRAME` | 10 | `7+1+2` | Мінімальний валідний CoAP-кадр |
 | `AES_BLOCK_SIZE` | 16 | — | Розмір AES-блоку |
 | `MAX_OTA_CHUNK_PAYLOAD` | 512 | — | Макс. байткод в одному CoAP-чанку |
-| `OTA_FULL_CHUNK_THRESH` | 514 | `512+2` | Поріг повного чанка (payload + CRC) |
-| `MIN_OTA_ALIGNED` | 23 | `16+7` | Мінімум для OTA: AES block + overhead |
 | `OTA_MAX_CHUNKS` | 16 | `8192/512` | Макс. CoAP-чанків (bitmap обмеження) |
-| `pending_ota_bytecode` | 8192 B | — | RAM-буфер збірки прошивки |
+| `pending_ota_bytecode` | 8192 B | — | RAM-буфер збірки прошивки (wire-потік: bytecode+pad+CRC32) |
 
 ---
 

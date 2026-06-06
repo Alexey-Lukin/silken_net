@@ -417,20 +417,9 @@ int16_t lorenz_z_opt_x100      = LORENZ_DEFAULT_Z_OPT_X100;
 uint8_t lorenz_species_id      = 0xFF;  // unmapped (OtaPackagerService::DEFAULT_SPECIES_ID)
 uint8_t lorenz_config_version  = 0;     // 0 = firmware-baked defaults
 
-// CRC-16/CCITT-FALSE (поліном 0x1021, init 0xFFFF). Дзеркало
-// OtaPackagerService.crc16_ccitt — байт-ідентично для будь-якого input.
-static uint16_t Soldier_CRC16_CCITT(const uint8_t* data, uint16_t len)
-{
-    uint16_t crc = 0xFFFFu;
-    for (uint16_t i = 0; i < len; i++) {
-        crc ^= ((uint16_t)data[i]) << 8;
-        for (uint8_t b = 0; b < 8; b++) {
-            crc = (crc & 0x8000u) ? (uint16_t)((crc << 1) ^ 0x1021u)
-                                   : (uint16_t)(crc << 1);
-        }
-    }
-    return crc;
-}
+// CRC-16/CCITT-FALSE — One-Home у common/silken_crc.h [AUDIT-2026-06-06]
+// (спільний з Queen та host-тестами; дзеркало OtaPackagerService.crc16_ccitt).
+#include "../common/silken_crc.h"
 
 // Опрацювати фрейм CMD_SET_THRESHOLDS, що прийшов через LoRa-broadcast.
 // Повертає: 1 = прийнято й застосовано, 0 = відкинуто (поганий len/CRC/межі).
@@ -450,7 +439,7 @@ static uint8_t Soldier_Handle_CMD_SET_THRESHOLDS(const uint8_t* frame,
     const uint8_t* body = frame + CMD_THRESHOLDS_HEADER_SIZE;
 
     // Перевіряємо CRC16 по 8-байтному body ПЕРЕД хвостовим CRC
-    uint16_t expected_crc = Soldier_CRC16_CCITT(body, CMD_THRESHOLDS_BODY_SIZE);
+    uint16_t expected_crc = Silken_Crc16_Ccitt(body, CMD_THRESHOLDS_BODY_SIZE);
     uint16_t received_crc = (uint16_t)body[CMD_THRESHOLDS_BODY_SIZE]
                           | ((uint16_t)body[CMD_THRESHOLDS_BODY_SIZE + 1] << 8);
     if (expected_crc != received_crc)                      return 0;
@@ -1111,7 +1100,7 @@ static uint8_t Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS(const uint8_t* frame,
     const uint8_t* body = frame + CMD_AUDIO_THRESHOLDS_HEADER_SIZE;
 
     // CRC16 over 5-byte body
-    uint16_t expected_crc = Soldier_CRC16_CCITT(body, CMD_AUDIO_THRESHOLDS_BODY_SIZE);
+    uint16_t expected_crc = Silken_Crc16_Ccitt(body, CMD_AUDIO_THRESHOLDS_BODY_SIZE);
     uint16_t received_crc = (uint16_t)body[CMD_AUDIO_THRESHOLDS_BODY_SIZE]
                           | ((uint16_t)body[CMD_AUDIO_THRESHOLDS_BODY_SIZE + 1] << 8);
     if (expected_crc != received_crc)                                      return 0;

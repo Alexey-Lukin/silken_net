@@ -265,26 +265,47 @@ static uint8_t Build_OTA_Chunk(uint16_t chunk_idx, uint8_t* ota_chunk)
 }
 
 /* OTA assembly — extracted from Handle_CoAP_Command OTA downlink branch.
- * Simulates receiving a decrypted OTA chunk and assembling it into RAM.
- * Returns 1 on success, 0 on bounds/validation failure.
- * When all chunks received: sets ota_is_active = 1 (via output param). */
+ * [FIX AUDIT-2026-06-06] Wire-формат CoAP-чанка отримав ЯВНИЙ len + CRC16:
+ *   [0x99][index:2 BE][total:2 BE][len:2 BE][bytecode:len][crc16:2 BE]
+ * Стара формула payload_len = (aligned-16-7) при zero-padding 0..15 СИСТЕМАТИЧНО
+ * обрізала 1..16 байт (повний 512B чанк → 500B), а CRC16 від бекенду взагалі
+ * не перевірявся. Дзеркало queen/main.c; CRC16 — спільний common/silken_crc.h.
+ * Returns 1 on success, 0 on bounds/validation/CRC failure, 2 — дублікат. */
+#include "../common/silken_crc.h"
+
+#define OTA_COAP_HEADER_SIZE  7
+#define OTA_CRC_SIZE          2
+#define OTA_COAP_MIN_FRAME    (OTA_COAP_HEADER_SIZE + 1 + OTA_CRC_SIZE)  /* 10 */
+#define MAX_OTA_CHUNK_PAYLOAD 512
+
 static uint8_t ota_is_active_flag = 0;
 static uint16_t current_ota_chunk_idx_test = 0;
 
 static uint8_t Assemble_OTA_Chunk(uint8_t* decrypted, uint16_t aligned)
 {
-    if (aligned < 6) return 0;
     if (decrypted[0] != 0x99) return 0;
+    if (aligned < OTA_COAP_MIN_FRAME) return 0;
 
     uint16_t chunk_index  = ((uint16_t)decrypted[1] << 8) | decrypted[2];
     uint16_t total_chunks = ((uint16_t)decrypted[3] << 8) | decrypted[4];
+    uint16_t payload_len  = ((uint16_t)decrypted[5] << 8) | decrypted[6];
 
     if (total_chunks == 0) return 0;
     /* [FIX: AUDIT] Захист від chunk_index >= OTA_MAX_CHUNKS */
     if (chunk_index >= OTA_MAX_CHUNKS) return 0;
-    if (aligned < 23) return 0;
 
-    uint16_t payload_len = (aligned - 16 >= 514) ? 512 : (aligned - 16 - 7);
+    /* Брехливий/порожній len: межі + повний кадр у дешифрованому */
+    if (payload_len == 0 || payload_len > MAX_OTA_CHUNK_PAYLOAD) return 0;
+    uint32_t frame_len = (uint32_t)OTA_COAP_HEADER_SIZE + payload_len + OTA_CRC_SIZE;
+    if (frame_len > aligned) return 0;
+
+    /* CRC16-CCITT над header+bytecode проти хвостових 2 байтів (BE) */
+    uint16_t expected_crc = Silken_Crc16_Ccitt(decrypted,
+                                               (uint16_t)(OTA_COAP_HEADER_SIZE + payload_len));
+    uint16_t received_crc = ((uint16_t)decrypted[OTA_COAP_HEADER_SIZE + payload_len] << 8)
+                          | decrypted[OTA_COAP_HEADER_SIZE + payload_len + 1];
+    if (expected_crc != received_crc) return 0;
+
     uint32_t offset = (uint32_t)chunk_index * 512U;
 
     if (offset + payload_len > sizeof(pending_ota_bytecode)) return 0;
@@ -302,7 +323,7 @@ static uint8_t Assemble_OTA_Chunk(uint8_t* decrypted, uint16_t aligned)
         return 2; /* Дублікат — ігноруємо */
     }
 
-    memcpy(pending_ota_bytecode + offset, &decrypted[5], payload_len);
+    memcpy(pending_ota_bytecode + offset, &decrypted[OTA_COAP_HEADER_SIZE], payload_len);
 
     ota_total_expected_chunks = total_chunks;
     ota_chunk_bitmap |= chunk_bit;
@@ -320,6 +341,27 @@ static uint8_t Assemble_OTA_Chunk(uint8_t* decrypted, uint16_t aligned)
         ota_is_active_flag = 1;
     }
     return 1;
+}
+
+/* Збирає валідний CoAP-OTA кадр (дзеркало OtaPackagerService.generate_packages):
+ * header + payload + CRC16. Повертає frame_len (без CBC-паддінгу — тести
+ * самі обирають aligned ≥ frame_len, імітуючи zero-pad дешифрованого). */
+static uint16_t Build_CoAP_OTA_Frame(uint16_t idx, uint16_t total,
+                                     const uint8_t* payload, uint16_t len,
+                                     uint8_t* out, uint16_t out_cap)
+{
+    uint16_t frame_len = (uint16_t)(OTA_COAP_HEADER_SIZE + len + OTA_CRC_SIZE);
+    if (frame_len > out_cap) return 0;
+    memset(out, 0, out_cap);
+    out[0] = 0x99;
+    out[1] = (uint8_t)(idx >> 8);   out[2] = (uint8_t)(idx & 0xFF);
+    out[3] = (uint8_t)(total >> 8); out[4] = (uint8_t)(total & 0xFF);
+    out[5] = (uint8_t)(len >> 8);   out[6] = (uint8_t)(len & 0xFF);
+    if (payload != NULL && len > 0) memcpy(&out[OTA_COAP_HEADER_SIZE], payload, len);
+    uint16_t crc = Silken_Crc16_Ccitt(out, (uint16_t)(OTA_COAP_HEADER_SIZE + len));
+    out[OTA_COAP_HEADER_SIZE + len]     = (uint8_t)(crc >> 8);
+    out[OTA_COAP_HEADER_SIZE + len + 1] = (uint8_t)(crc & 0xFF);
+    return frame_len;
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -1091,46 +1133,41 @@ TEST(test_ota_reassemble_all) {
  * ════════════════════════════════════════════════════════════════════ */
 
 TEST(test_ota_assembly_single_chunk) {
-    /* Single-chunk OTA: marker + index(0) + total(1) + 10 bytes payload */
+    /* Single-chunk OTA: явний len=10, payload A0..A9, CRC16 валідний */
     ota_assembly_reset();
     ota_is_active_flag = 0;
+    uint8_t data[10];
+    for (uint8_t i = 0; i < 10; i++) data[i] = (uint8_t)(0xA0 + i);
+
     uint8_t pkt[32];
-    memset(pkt, 0, sizeof(pkt));
-    pkt[0] = 0x99;             /* marker */
-    pkt[1] = 0x00; pkt[2] = 0x00;  /* chunk_index = 0 */
-    pkt[3] = 0x00; pkt[4] = 0x01;  /* total_chunks = 1 */
-    for (uint8_t i = 0; i < 10; i++) pkt[5 + i] = (uint8_t)(0xA0 + i);
-    /* aligned = 32 (2 AES blocks). payload_len = 32 - 16 - 7 = 9 */
+    uint16_t frame = Build_CoAP_OTA_Frame(0, 1, data, 10, pkt, sizeof(pkt));
+    ASSERT_TRUE(frame == 19);  /* 7 + 10 + 2 */
+    /* aligned = 32 (2 AES blocks, zero-pad хвіст) — len-поле каже правду */
     ASSERT_EQ(Assemble_OTA_Chunk(pkt, 32), 1);
-    ASSERT_EQ(pending_ota_size, 9);
+    ASSERT_EQ(pending_ota_size, 10);
     ASSERT_EQ(pending_ota_bytecode[0], 0xA0);
-    ASSERT_EQ(pending_ota_bytecode[8], 0xA8);
+    ASSERT_EQ(pending_ota_bytecode[9], 0xA9);
     /* All chunks received → broadcast activated */
     ASSERT_EQ(ota_is_active_flag, 1);
 }
 
 TEST(test_ota_assembly_two_chunks) {
-    /* Two-chunk OTA: each chunk has aligned=48 → payload_len = 48-16-7 = 25 */
+    /* Two-chunk OTA: по 25 байт, len явний */
     ota_assembly_reset();
     ota_is_active_flag = 0;
+    uint8_t data[25];
     uint8_t pkt[48];
-    memset(pkt, 0, sizeof(pkt));
 
     /* Chunk 0 */
-    pkt[0] = 0x99;
-    pkt[1] = 0x00; pkt[2] = 0x00;  /* index = 0 */
-    pkt[3] = 0x00; pkt[4] = 0x02;  /* total = 2 */
-    for (uint8_t i = 0; i < 25; i++) pkt[5 + i] = (uint8_t)(0x10 + i);
+    for (uint8_t i = 0; i < 25; i++) data[i] = (uint8_t)(0x10 + i);
+    ASSERT_TRUE(Build_CoAP_OTA_Frame(0, 2, data, 25, pkt, sizeof(pkt)) == 34);
     ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 1);
     ASSERT_EQ(ota_is_active_flag, 0);  /* Not all chunks yet */
     ASSERT_EQ(ota_chunks_received, 1);
 
     /* Chunk 1 → offset = 1 * 512 = 512 */
-    memset(pkt, 0, sizeof(pkt));
-    pkt[0] = 0x99;
-    pkt[1] = 0x00; pkt[2] = 0x01;  /* index = 1 */
-    pkt[3] = 0x00; pkt[4] = 0x02;  /* total = 2 */
-    for (uint8_t i = 0; i < 25; i++) pkt[5 + i] = (uint8_t)(0x50 + i);
+    for (uint8_t i = 0; i < 25; i++) data[i] = (uint8_t)(0x50 + i);
+    ASSERT_TRUE(Build_CoAP_OTA_Frame(1, 2, data, 25, pkt, sizeof(pkt)) == 34);
     ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 1);
     /* All chunks received → broadcast activated */
     ASSERT_EQ(ota_is_active_flag, 1);
@@ -1140,19 +1177,21 @@ TEST(test_ota_assembly_two_chunks) {
 }
 
 TEST(test_ota_assembly_full_512_chunk) {
-    /* Full 512-byte chunk: aligned = 544 → (544 - 16 = 528) >= 514 → payload = 512 */
+    /* [РЕГРЕСІЯ старого бага] Повний 512-байтний чанк: стара формула
+     * (aligned-16-7) обрізала його до 500 байт. Тепер len каже 512 — і всі
+     * 512 лягають у RAM. frame = 7+512+2 = 521 → CBC-pad до 528. */
     ota_assembly_reset();
     ota_is_active_flag = 0;
-    uint8_t pkt[544];
-    memset(pkt, 0, sizeof(pkt));
-    pkt[0] = 0x99;
-    pkt[1] = 0x00; pkt[2] = 0x00;  /* index = 0 */
-    pkt[3] = 0x00; pkt[4] = 0x01;  /* total = 1 */
-    for (uint16_t i = 0; i < 512; i++) pkt[5 + i] = (uint8_t)(i & 0xFF);
-    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 544), 1);
+    static uint8_t data[512];
+    for (uint16_t i = 0; i < 512; i++) data[i] = (uint8_t)(i & 0xFF);
+
+    static uint8_t pkt[528];
+    ASSERT_TRUE(Build_CoAP_OTA_Frame(0, 1, data, 512, pkt, sizeof(pkt)) == 521);
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 528), 1);
     ASSERT_EQ(pending_ota_size, 512);
     ASSERT_EQ(pending_ota_bytecode[0], 0x00);
     ASSERT_EQ(pending_ota_bytecode[255], 0xFF);
+    ASSERT_EQ(pending_ota_bytecode[500], (uint8_t)(500 & 0xFF));  /* Не обрізано на 500! */
     ASSERT_EQ(pending_ota_bytecode[511], 0xFF);
     ASSERT_EQ(ota_is_active_flag, 1);
 }
@@ -1160,12 +1199,40 @@ TEST(test_ota_assembly_full_512_chunk) {
 TEST(test_ota_assembly_bounds_overflow) {
     /* chunk_index too large → offset + payload would exceed 8192 buffer */
     ota_assembly_reset();
+    uint8_t data[4] = {1, 2, 3, 4};
     uint8_t pkt[48];
-    memset(pkt, 0, sizeof(pkt));
-    pkt[0] = 0x99;
-    pkt[1] = 0x00; pkt[2] = 0x10;  /* index = 16 → offset = 16*512 = 8192 */
-    pkt[3] = 0x00; pkt[4] = 0x20;  /* total = 32 */
+    Build_CoAP_OTA_Frame(16, 32, data, 4, pkt, sizeof(pkt));  /* idx=16 → offset 8192 */
     ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 0);  /* Must reject: overflow */
+}
+
+/* [FIX AUDIT-2026-06-06] CRC16 від бекенду тепер ПЕРЕВІРЯЄТЬСЯ: біт, що
+ * збрехав у LTE/Starlink транзиті, вмирає на Королеві, не у Flash Солдата. */
+TEST(test_ota_assembly_crc16_mismatch_rejected) {
+    ota_assembly_reset();
+    uint8_t data[10];
+    for (uint8_t i = 0; i < 10; i++) data[i] = (uint8_t)(0xA0 + i);
+    uint8_t pkt[32];
+    Build_CoAP_OTA_Frame(0, 1, data, 10, pkt, sizeof(pkt));
+
+    pkt[8] ^= 0xFF;  /* Біт-фліп у payload після підрахунку CRC */
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 32), 0);
+    ASSERT_EQ(ota_chunks_received, 0);
+    ASSERT_EQ(pending_ota_size, 0);
+}
+
+/* len бреше за межі дешифрованого кадру → відмова до будь-якого копіювання */
+TEST(test_ota_assembly_lying_len_rejected) {
+    ota_assembly_reset();
+    uint8_t data[10];
+    for (uint8_t i = 0; i < 10; i++) data[i] = (uint8_t)(0xB0 + i);
+    uint8_t pkt[32];
+    Build_CoAP_OTA_Frame(0, 1, data, 10, pkt, sizeof(pkt));
+
+    pkt[5] = 0x00; pkt[6] = 100;  /* len=100, але aligned лише 32 */
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 32), 0);
+
+    pkt[5] = 0x00; pkt[6] = 0;    /* len=0 — порожній чанк заборонено */
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 32), 0);
 }
 
 TEST(test_ota_assembly_invalid_marker) {
@@ -1193,36 +1260,44 @@ TEST(test_ota_assembly_too_small_aligned) {
     ASSERT_EQ(Assemble_OTA_Chunk(pkt, 5), 0);  /* aligned < 6 → reject */
 }
 
-TEST(test_ota_assembly_aligned_below_23) {
-    /* aligned >= 6 but < 23: passes first check but fails second MISRA check */
+TEST(test_ota_assembly_below_min_frame) {
+    /* aligned < OTA_COAP_MIN_FRAME (10): header+1байт+crc не вміщується */
     ota_assembly_reset();
-    uint8_t pkt[22];
+    uint8_t pkt[9];
     memset(pkt, 0, sizeof(pkt));
     pkt[0] = 0x99;
-    pkt[3] = 0x00; pkt[4] = 0x01;
-    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 22), 0);  /* aligned < 23 → reject */
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 9), 0);  /* aligned < 10 → reject */
+}
+
+TEST(test_ota_assembly_zero_pad_tail_ignored) {
+    /* CBC zero-pad хвіст після кадру не псує payload: len-поле — істина.
+     * frame 7+5+2 = 14 → у дешифрованому aligned=16 лежать 2 нульові байти. */
+    ota_assembly_reset();
+    ota_is_active_flag = 0;
+    uint8_t data[5] = {0xDE, 0xAD, 0xBE, 0xEF, 0x42};
+    uint8_t pkt[16];
+    ASSERT_TRUE(Build_CoAP_OTA_Frame(0, 1, data, 5, pkt, sizeof(pkt)) == 14);
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 16), 1);
+    ASSERT_EQ(pending_ota_size, 5);            /* РІВНО len, без хвостів */
+    ASSERT_EQ(pending_ota_bytecode[4], 0x42);
 }
 
 TEST(test_ota_assembly_size_tracking) {
     /* Verify pending_ota_size tracks the maximum written position */
     ota_assembly_reset();
     ota_is_active_flag = 0;
+    uint8_t data[25];
     uint8_t pkt[48];
 
     /* Chunk 1 arrives first (out of order), offset = 512 */
-    memset(pkt, 0, sizeof(pkt));
-    pkt[0] = 0x99;
-    pkt[1] = 0x00; pkt[2] = 0x01;  /* index = 1 */
-    pkt[3] = 0x00; pkt[4] = 0x02;  /* total = 2 */
+    for (uint8_t i = 0; i < 25; i++) data[i] = (uint8_t)(0x10 + i);
+    Build_CoAP_OTA_Frame(1, 2, data, 25, pkt, sizeof(pkt));
     ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 1);
     /* offset=512, payload_len=25 → pending_ota_size = 537 */
     ASSERT_EQ(pending_ota_size, 537);
 
     /* Chunk 0 arrives second, offset = 0 */
-    memset(pkt, 0, sizeof(pkt));
-    pkt[0] = 0x99;
-    pkt[1] = 0x00; pkt[2] = 0x00;  /* index = 0 */
-    pkt[3] = 0x00; pkt[4] = 0x02;  /* total = 2 */
+    Build_CoAP_OTA_Frame(0, 2, data, 25, pkt, sizeof(pkt));
     ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 1);
     /* offset=0, payload_len=25 → 25 < 537, so pending_ota_size stays 537 */
     ASSERT_EQ(pending_ota_size, 537);
@@ -1236,21 +1311,20 @@ TEST(test_ota_assembly_size_tracking) {
 TEST(test_ota_assembly_new_campaign_resets_stale_size) {
     ota_assembly_reset();
     ota_is_active_flag = 0;
+    uint8_t data[25];
+    for (uint8_t i = 0; i < 25; i++) data[i] = (uint8_t)(0x10 + i);
     uint8_t pkt[48];
 
     /* Кампанія A: 2 чанки → pending_ota_size = 537 (бачимо з size_tracking) */
-    memset(pkt, 0, sizeof(pkt));
-    pkt[0] = 0x99; pkt[1] = 0; pkt[2] = 1; pkt[3] = 0; pkt[4] = 2;
+    Build_CoAP_OTA_Frame(1, 2, data, 25, pkt, sizeof(pkt));
     ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 1);
-    memset(pkt, 0, sizeof(pkt));
-    pkt[0] = 0x99; pkt[1] = 0; pkt[2] = 0; pkt[3] = 0; pkt[4] = 2;
+    Build_CoAP_OTA_Frame(0, 2, data, 25, pkt, sizeof(pkt));
     ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 1);
     ASSERT_EQ(pending_ota_size, 537);
     ASSERT_EQ(ota_is_active_flag, 1);    /* Збірка A завершена, bitmap очищено */
 
     /* Кампанія B: один малий чанк → розмір НЕ успадковує 537 */
-    memset(pkt, 0, sizeof(pkt));
-    pkt[0] = 0x99; pkt[1] = 0; pkt[2] = 0; pkt[3] = 0; pkt[4] = 1;
+    Build_CoAP_OTA_Frame(0, 1, data, 25, pkt, sizeof(pkt));
     ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 1);
     ASSERT_EQ(pending_ota_size, 25);     /* Свіжий розмір кампанії B, не 537 */
 }
@@ -1261,14 +1335,12 @@ TEST(test_ota_assembly_duplicate_chunk_ignored) {
      * → premature activation з неповними даними (chunk 1 missing). */
     ota_assembly_reset();
     ota_is_active_flag = 0;
+    uint8_t data[10];
     uint8_t pkt[48];
 
     /* Chunk 0 — перший раз */
-    memset(pkt, 0, sizeof(pkt));
-    pkt[0] = 0x99;
-    pkt[1] = 0x00; pkt[2] = 0x00;  /* index = 0 */
-    pkt[3] = 0x00; pkt[4] = 0x02;  /* total = 2 */
-    for (uint8_t i = 0; i < 10; i++) pkt[5 + i] = (uint8_t)(0xA0 + i);
+    for (uint8_t i = 0; i < 10; i++) data[i] = (uint8_t)(0xA0 + i);
+    Build_CoAP_OTA_Frame(0, 2, data, 10, pkt, sizeof(pkt));
     ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 1);
     ASSERT_EQ(ota_chunks_received, 1);
     ASSERT_EQ(ota_is_active_flag, 0);
@@ -1279,11 +1351,8 @@ TEST(test_ota_assembly_duplicate_chunk_ignored) {
     ASSERT_EQ(ota_is_active_flag, 0);   /* Premature activation prevented */
 
     /* Chunk 1 — нормальний */
-    memset(pkt, 0, sizeof(pkt));
-    pkt[0] = 0x99;
-    pkt[1] = 0x00; pkt[2] = 0x01;  /* index = 1 */
-    pkt[3] = 0x00; pkt[4] = 0x02;  /* total = 2 */
-    for (uint8_t i = 0; i < 10; i++) pkt[5 + i] = (uint8_t)(0xB0 + i);
+    for (uint8_t i = 0; i < 10; i++) data[i] = (uint8_t)(0xB0 + i);
+    Build_CoAP_OTA_Frame(1, 2, data, 10, pkt, sizeof(pkt));
     ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 1);
     ASSERT_EQ(ota_is_active_flag, 1);   /* Now truly all chunks received */
 }
@@ -1303,11 +1372,9 @@ TEST(test_ota_assembly_bitmap_reset_after_complete) {
     /* After successful assembly, bitmap must be reset for next OTA cycle */
     ota_assembly_reset();
     ota_is_active_flag = 0;
+    uint8_t data[4] = {0xCA, 0xFE, 0xBA, 0xBE};
     uint8_t pkt[32];
-    memset(pkt, 0, sizeof(pkt));
-    pkt[0] = 0x99;
-    pkt[1] = 0x00; pkt[2] = 0x00;  /* index = 0 */
-    pkt[3] = 0x00; pkt[4] = 0x01;  /* total = 1 */
+    Build_CoAP_OTA_Frame(0, 1, data, 4, pkt, sizeof(pkt));
     ASSERT_EQ(Assemble_OTA_Chunk(pkt, 32), 1);
     ASSERT_EQ(ota_is_active_flag, 1);
     /* Bitmap should be reset */
@@ -2440,7 +2507,10 @@ int main(void)
     RUN(test_ota_assembly_invalid_marker);
     RUN(test_ota_assembly_zero_total_chunks);
     RUN(test_ota_assembly_too_small_aligned);
-    RUN(test_ota_assembly_aligned_below_23);
+    RUN(test_ota_assembly_below_min_frame);
+    RUN(test_ota_assembly_crc16_mismatch_rejected);
+    RUN(test_ota_assembly_lying_len_rejected);
+    RUN(test_ota_assembly_zero_pad_tail_ignored);
     RUN(test_ota_assembly_size_tracking);
     RUN(test_ota_assembly_duplicate_chunk_ignored);
     RUN(test_ota_assembly_chunk_index_above_max);
