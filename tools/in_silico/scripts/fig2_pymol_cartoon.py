@@ -52,9 +52,12 @@ for rs in PATH_RESI:
 cmd.hide("labels", "path_*")          # keep the dashes, drop the distance numbers
 cmd.color("red", "path_*")
 cmd.set("dash_width", 4)
-cmd.set("label_size", 14)
+cmd.set("label_size", 15)
 cmd.set("label_color", "black")
 cmd.set("label_outline_color", "white")
+cmd.set("label_position", (0, 2.2, 2.5))   # lift labels off the backbone (260/261 & 283/288 are adjacent → collide on-spot)
+cmd.set("label_connector", 1)              # leader line from label back to its Cα
+cmd.set("label_connector_width", 1)
 
 # orient on the active-site region, slight tilt for depth, render high-res
 focus = f"resn FAD or ({sel_path})"
@@ -64,6 +67,6 @@ cmd.turn("x", -10)
 cmd.zoom(focus, 9)
 cmd.set("ray_opaque_background", 0)
 cmd.set("antialias", 2)
-cmd.ray(1600, 1200)
+cmd.ray(2000, 1500)
 cmd.png(str(OUT), dpi=300)
 print(f"  wrote {OUT.relative_to(REPO_ROOT)}")
