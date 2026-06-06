@@ -106,3 +106,9 @@ coverage/
 /firmware/test/test_ccm
 /firmware/test/test_ccm_selftest
 .claude/scheduled_tasks.lock
+
+# Python tooling artifacts (tools/** — pytest, compileall, ruff)
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/

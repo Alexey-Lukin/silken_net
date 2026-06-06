@@ -75,6 +75,8 @@ silken-ml-gen-logmel --check   # canonical regen idempotence
   host test) + `check_firmware_tables.py` (stdlib, no conda).
 - **`ml_smoke.yml`** (heavy, path-filtered `tools/ml/**`, micromamba-cached):
   `pytest` + the librosa≡stdlib parity gate + `emit_c --check`.
+- **`ci.yml › python_lint`** (light): `ruff check .` — style/bug lint for all
+  `tools/**` Python (config: root `ruff.toml`; `pip install ruff`, no conda).
 
 ## Deferred stack (not installed yet, by design)
 

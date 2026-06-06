@@ -204,6 +204,17 @@ conda activate silken_md
 python tools/in_silico/scripts/<script>.py
 ```
 
+## Linting (`ruff`)
+
+Python style/bug linter — аналог RuboCop для Ruby-боку. Конфіг: root `ruff.toml`
+(спільний з `tools/ml/`). Standalone, conda не потрібна. CI-гейт: `ci.yml › python_lint`.
+
+```bash
+pip install ruff       # one-time
+ruff check .           # лінт
+ruff check . --fix     # + безпечні авто-фікси
+```
+
 ## Python version policy
 
 Pinned to **Python 3.12** in `environment.yml`. This is the highest version

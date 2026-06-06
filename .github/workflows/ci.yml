@@ -182,6 +182,27 @@ jobs:
       - name: Lint code for consistent style
         run: bin/rubocop -f github
 
+  python_lint:
+    # Ruff-лінт для Python-тулінгу (tools/**) — аналог job `lint` (RuboCop) для Ruby.
+    # Standalone, без conda: ruff — самодостатній бінарник. Конфіг — root ruff.toml
+    # (RUF001-3 off = кирилиця house-style; E501 off = паритет з omakase).
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install ruff (pinned for reproducibility)
+        run: pip install ruff==0.15.16
+
+      - name: Lint Python tooling (tools/**)
+        run: ruff check . --output-format=github
+
   i18n_check:
     runs-on: ubuntu-latest
     timeout-minutes: 5
