@@ -113,7 +113,7 @@ accompanying version-pinned scripts.
 **EBFC field & challenges**
 - Pak, J. et al. *Adv. Funct. Mater.* **2025**. doi:10.1002/adfm.202415933
 - Implantable EBFCs (review). *Biosensors* **2025**, *15*, 218. doi:10.3390/bios15040218
-- Kundu, … *Fuel Cells* **2026**. [DOI: verify]
+- Kundu, D. et al. From fundamentals to applications: a comprehensive review of enzymatic biofuel cells. *Fuel Cells* **2026**. doi:10.1002/fuce.70081
 - Tackling the Challenges of Enzymatic (Bio)Fuel Cells. *Chem. Rev.* **2019**. doi:10.1021/acs.chemrev.9b00115
 - Mano, N.; de Poulpiquet, A. O₂ reduction in enzymatic biofuel cells. *Chem. Rev.* **2018**, *118*, 2392. doi:10.1021/acs.chemrev.7b00220
 
@@ -141,7 +141,7 @@ accompanying version-pinned scripts.
 - Combined QM/MM simulations of one- and two-electron reduction potentials of flavin cofactor in water, medium-chain acyl-CoA dehydrogenase, and cholesterol oxidase. **2007**. PMC4480342 (PMID 17567113) [author + locator: verify] <!-- scaffold мав "2015"; PMID date = 2007 -->
 - Protein-electrostatics tuning of flavin. *Chem. Sci.* **2025**. doi:10.1039/d5sc02960k
 - Cluster vs QM/MM for protein redox. *J. Chem. Theory Comput.* doi:10.1021/acs.jctc.5c01656
-- Laccase / CueO active-site cluster model. *Front. Chem.* [DOI: verify]
+- Jiang, Q. et al. Feasible cluster model method for simulating the redox potentials of laccase CueO and its variant. *Front. Bioeng. Biotechnol.* **2022**, *10*, 957694. doi:10.3389/fbioe.2022.957694
 
 **ZIF laccase-mimic cathode**
 - Cu/Zn-ZIF ORR nanozyme. [DOI: verify]
