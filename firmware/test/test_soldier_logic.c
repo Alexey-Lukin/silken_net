@@ -280,6 +280,11 @@ static uint16_t ota_total_chunks = 0;
 static uint16_t ota_chunks_received = 0;
 static uint8_t  ota_chunk_received[OTA_CHUNK_MAP_SIZE];
 
+/* [FIX AUDIT-2026-06-06] Campaign-change deadlock guard (mirrors soldier/main.c):
+ * a dead half-assembled campaign must not block a live one forever. */
+#define OTA_MISMATCH_RESET_THRESHOLD 3
+static uint8_t ota_total_mismatch_streak = 0;
+
 static void OTA_Init(void)
 {
     memset(ota_buffer, 0, sizeof(ota_buffer));
@@ -287,6 +292,7 @@ static void OTA_Init(void)
     ota_bytes_received = 0;
     ota_total_chunks = 0;
     ota_chunks_received = 0;
+    ota_total_mismatch_streak = 0;
 }
 
 /* CRC32 (ISO 3309 / ITU-T V.42) — software implementation for OTA integrity.
@@ -311,6 +317,7 @@ static uint32_t CRC32_Calculate(const uint8_t* data, uint16_t length)
  *  1 = duplicate chunk (ignored)
  *  2 = out-of-bounds (buffer overflow protection)
  *  3 = all chunks complete (ready for flash)
+ *  4 = campaign change detected — stale assembly state wiped [FIX AUDIT-2026-06-06]
  *
  * [FIX: AUDIT] Added bounds checks for chunk_idx, offset, and chunk_size. */
 static uint8_t OTA_Process_Chunk(const uint8_t* decrypted, uint16_t payload_size)
@@ -327,8 +334,22 @@ static uint8_t OTA_Process_Chunk(const uint8_t* decrypted, uint16_t payload_size
     /* [FIX: AUDIT] Bounds: chunk_idx must fit in dedup bitmap */
     if (chunk_idx >= OTA_CHUNK_MAP_SIZE) return 2;
 
-    /* [FIX: AUDIT] Prevent ota_total_chunks from being set to wildly different values */
-    if (ota_total_chunks != 0 && total_chunks != ota_total_chunks) return 2;
+    /* [FIX: AUDIT] Prevent ota_total_chunks from being set to wildly different values.
+     * [FIX AUDIT-2026-06-06] ...but a dead campaign must not block a live one:
+     * N consecutive foreign totals → wipe the stale half-assembly (mirrors main.c). */
+    if (ota_total_chunks != 0 && total_chunks != ota_total_chunks) {
+        if (++ota_total_mismatch_streak >= OTA_MISMATCH_RESET_THRESHOLD) {
+            memset(ota_buffer, 0, sizeof(ota_buffer));
+            memset(ota_chunk_received, 0, sizeof(ota_chunk_received));
+            ota_bytes_received = 0;
+            ota_total_chunks = 0;
+            ota_chunks_received = 0;
+            ota_total_mismatch_streak = 0;
+            return 4;
+        }
+        return 2;
+    }
+    ota_total_mismatch_streak = 0;
     ota_total_chunks = total_chunks;
 
     /* [FIX: AUDIT] Duplicate detection */
@@ -725,6 +746,58 @@ TEST(test_ota_total_chunks_mismatch) {
     ASSERT_EQ(OTA_Process_Chunk(pkt2, 6), 2); /* Mismatch */
 }
 
+/* [FIX AUDIT-2026-06-06] Campaign-change deadlock: стара недозібрана кампанія
+ * (total=2) не сміє блокувати нову (total=5) довіку. N поспіль чужих total →
+ * жертовний reset; наступні чанки нової кампанії приймаються з чистого стану. */
+TEST(test_ota_campaign_change_resets_after_streak) {
+    OTA_Init();
+    uint8_t old_pkt[16] = {0x99, 0x00, 0x00, 0x00, 0x02, 0xAA, 0,0,0,0,0,0,0,0,0,0};
+    ASSERT_EQ(OTA_Process_Chunk(old_pkt, 6), 0);       /* Стара кампанія, чанк 0 з 2 */
+
+    uint8_t new_pkt[16] = {0x99, 0x00, 0x00, 0x00, 0x05, 0xBB, 0,0,0,0,0,0,0,0,0,0};
+    ASSERT_EQ(OTA_Process_Chunk(new_pkt, 6), 2);       /* mismatch #1 — ще терпимо */
+    ASSERT_EQ(OTA_Process_Chunk(new_pkt, 6), 2);       /* mismatch #2 */
+    ASSERT_EQ(OTA_Process_Chunk(new_pkt, 6), 4);       /* mismatch #3 → wipe */
+    ASSERT_EQ(ota_total_chunks, 0);                    /* Стан стерто */
+    ASSERT_EQ(ota_chunks_received, 0);
+
+    ASSERT_EQ(OTA_Process_Chunk(new_pkt, 6), 0);       /* Нова кампанія прийнята */
+    ASSERT_EQ(ota_total_chunks, 5);
+    ASSERT_EQ(ota_buffer[0], 0xBB);
+}
+
+/* [FIX AUDIT-2026-06-06] Накопичений streak гаситься валідним чанком своєї
+ * кампанії — поодинокі чужі пакети (sусідній кластер, ефірне сміття) не
+ * повинні зрештою стерти живу збірку. */
+TEST(test_ota_mismatch_streak_clears_on_valid_chunk) {
+    OTA_Init();
+    uint8_t own0[16]    = {0x99, 0x00, 0x00, 0x00, 0x03, 0xAA, 0,0,0,0,0,0,0,0,0,0};
+    uint8_t own1[16]    = {0x99, 0x00, 0x01, 0x00, 0x03, 0xCC, 0,0,0,0,0,0,0,0,0,0};
+    uint8_t foreign[16] = {0x99, 0x00, 0x00, 0x00, 0x07, 0xBB, 0,0,0,0,0,0,0,0,0,0};
+
+    ASSERT_EQ(OTA_Process_Chunk(own0, 6), 0);
+    ASSERT_EQ(OTA_Process_Chunk(foreign, 6), 2);   /* streak = 1 */
+    ASSERT_EQ(OTA_Process_Chunk(foreign, 6), 2);   /* streak = 2 */
+    ASSERT_EQ(OTA_Process_Chunk(own1, 6), 0);      /* свій чанк → streak = 0 */
+    ASSERT_EQ(OTA_Process_Chunk(foreign, 6), 2);   /* знову 1, НЕ 3 → без wipe */
+    ASSERT_EQ(ota_total_chunks, 3);                /* Жива кампанія неторкана */
+    ASSERT_EQ(ota_chunks_received, 2);
+}
+
+/* [FIX AUDIT-2026-06-06] VM_ERROR wire-контракт: 0x60 = [panic:0|status:tamper|gp:0].
+ * Старий 0xFF після FW.29-маски (&0x7F) ставав tamper + gp=31 → бекенд ×2
+ * карбував 62 бали за КОЖЕН error-пакет. Пінуємо нову семантику. */
+TEST(test_vm_error_wire_byte_is_tamper_with_zero_growth) {
+    uint8_t vm_error_byte = 0x60;                  /* BIO_STATUS_VM_ERROR (main.c) */
+    uint8_t masked = vm_error_byte & 0x7F;         /* FW.29: &= ~PANIC_FLAG_BIT */
+    ASSERT_EQ(masked, 0x60);                       /* Маска не спотворює мітку */
+
+    uint8_t status_out, gp_out;
+    Unpack_BioContract(masked, &status_out, &gp_out);
+    ASSERT_EQ(status_out, 3);                      /* tamper_detected */
+    ASSERT_EQ(gp_out, 0);                          /* Жодної емісії за помилку VM */
+}
+
 /* ─── [FW.27 follow-up edge cases, 2026-05-03] ─────────────────────────
  * Сторожовий пес OTA-збірки повинен витримати реальні шуми ефіру:
  *   (a) Дублікат з ІНШИМ payload — anti-tamper guard. Зловмисник
@@ -937,17 +1010,10 @@ TEST(test_bio_unpack_roundtrip) {
     }
 }
 
-TEST(test_bio_byte_0xFF_means_vm_error) {
-    /* [FW.29-PACK] BIO_STATUS_VM_ERROR = 0xFF. У normal payload firmware
-     * виконує `lora_payload[10] &= ~PANIC_FLAG_BIT` → 0x7F. Backend декодує
-     * 0x7F: status = (0x7F >> 5) & 0x03 = 3 (tamper) ✓; gp = 0x7F & 0x1F = 31 ✓.
-     * До FW.29-PACK старе декодування `>> 6` давало status=1 (stress) — silent
-     * tamper demotion на crashed mruby VM. */
-    uint8_t s, g;
-    Unpack_BioContract(0xFF & 0x7F, &s, &g);  /* simulate firmware mask */
-    ASSERT_EQ(s, 3);   /* status=3 = tamper */
-    ASSERT_EQ(g, 31);  /* growth_points=31 (max 5-bit) */
-}
+/* test_bio_byte_0xFF_means_vm_error ВИДАЛЕНО [FIX AUDIT-2026-06-06]: він пінував
+ * БАГ — 0xFF після маски ставав tamper + gp=31 (бекенд ×2 = 62 бали за error-
+ * пакет). Новий контракт (BIO_STATUS_VM_ERROR = 0x60, tamper + gp=0) пінується
+ * у test_vm_error_wire_byte_is_tamper_with_zero_growth. */
 
 TEST(test_bio_anomaly_survives_panic_mask) {
     /* [FW.29-PACK regression]: Pack_BioContract(2, 0) = 0x40 (bit 7 = 0).
@@ -4246,6 +4312,9 @@ int main(void)
     RUN(test_ota_chunk_idx_exceeds_bitmap);
     RUN(test_ota_too_small_packet);
     RUN(test_ota_total_chunks_mismatch);
+    RUN(test_ota_campaign_change_resets_after_streak);
+    RUN(test_ota_mismatch_streak_clears_on_valid_chunk);
+    RUN(test_vm_error_wire_byte_is_tamper_with_zero_growth);
     RUN(test_ota_duplicate_with_different_payload_preserves_original);
     RUN(test_ota_stop2_simulation_chunks_arrive_out_of_order);
     RUN(test_ota_stop2_simulation_duplicate_after_sleep_still_rejected);
@@ -4268,7 +4337,6 @@ int main(void)
     RUN(test_bio_pack_clamp_status);
     RUN(test_bio_pack_clamp_growth);
     RUN(test_bio_unpack_roundtrip);
-    RUN(test_bio_byte_0xFF_means_vm_error);
     RUN(test_bio_anomaly_survives_panic_mask);  /* [FW.29-PACK] regression guard */
 
     printf("\n  Panic Payload:\n");

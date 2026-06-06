@@ -289,6 +289,13 @@ static uint8_t Assemble_OTA_Chunk(uint8_t* decrypted, uint16_t aligned)
 
     if (offset + payload_len > sizeof(pending_ota_bytecode)) return 0;
 
+    /* [FIX AUDIT-2026-06-06] Світанок нової кампанії: idle-стан збирання
+     * (порожній bitmap) → pending_ota_size починає з нуля, інакше менша
+     * нова прошивка успадковує хвости старої (mirrors queen/main.c). */
+    if (ota_chunk_bitmap == 0 && ota_chunks_received == 0) {
+        pending_ota_size = 0;
+    }
+
     /* [FIX: AUDIT] Дедуплікація OTA-чанків через бітову карту */
     uint16_t chunk_bit = (uint16_t)(1U << chunk_index);
     if (ota_chunk_bitmap & chunk_bit) {
@@ -1220,6 +1227,32 @@ TEST(test_ota_assembly_size_tracking) {
     /* offset=0, payload_len=25 → 25 < 537, so pending_ota_size stays 537 */
     ASSERT_EQ(pending_ota_size, 537);
     ASSERT_EQ(ota_is_active_flag, 1);  /* All chunks received */
+}
+
+/* [FIX AUDIT-2026-06-06] Stale pending_ota_size між кампаніями: після повної
+ * збірки великої прошивки наступна МЕНША кампанія мусить почати розмір з нуля.
+ * Раніше max-трек `if (offset+len > pending_ota_size)` тримав старий більший
+ * розмір → total_chunks для broadcast рахувався від химери зі старих хвостів. */
+TEST(test_ota_assembly_new_campaign_resets_stale_size) {
+    ota_assembly_reset();
+    ota_is_active_flag = 0;
+    uint8_t pkt[48];
+
+    /* Кампанія A: 2 чанки → pending_ota_size = 537 (бачимо з size_tracking) */
+    memset(pkt, 0, sizeof(pkt));
+    pkt[0] = 0x99; pkt[1] = 0; pkt[2] = 1; pkt[3] = 0; pkt[4] = 2;
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 1);
+    memset(pkt, 0, sizeof(pkt));
+    pkt[0] = 0x99; pkt[1] = 0; pkt[2] = 0; pkt[3] = 0; pkt[4] = 2;
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 1);
+    ASSERT_EQ(pending_ota_size, 537);
+    ASSERT_EQ(ota_is_active_flag, 1);    /* Збірка A завершена, bitmap очищено */
+
+    /* Кампанія B: один малий чанк → розмір НЕ успадковує 537 */
+    memset(pkt, 0, sizeof(pkt));
+    pkt[0] = 0x99; pkt[1] = 0; pkt[2] = 0; pkt[3] = 0; pkt[4] = 1;
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 1);
+    ASSERT_EQ(pending_ota_size, 25);     /* Свіжий розмір кампанії B, не 537 */
 }
 
 TEST(test_ota_assembly_duplicate_chunk_ignored) {
@@ -2402,6 +2435,7 @@ int main(void)
     RUN(test_ota_assembly_single_chunk);
     RUN(test_ota_assembly_two_chunks);
     RUN(test_ota_assembly_full_512_chunk);
+    RUN(test_ota_assembly_new_campaign_resets_stale_size);
     RUN(test_ota_assembly_bounds_overflow);
     RUN(test_ota_assembly_invalid_marker);
     RUN(test_ota_assembly_zero_total_chunks);

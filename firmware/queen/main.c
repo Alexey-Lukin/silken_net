@@ -1320,6 +1320,15 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         // [MISRA C] Перевірка меж буфера: запобігаємо переповненню від зловмисних пакетів
         if (offset + payload_len > sizeof(pending_ota_bytecode)) return;
 
+        // [FIX AUDIT-2026-06-06] Світанок нової кампанії: pending_ota_size
+        // раніше лише ріс (max-трек) і переживав попередню прошивку — менша
+        // нова збірка успадковувала б хвости старої, total_chunks рахувався б
+        // від химери, і Солдати діставали б зіпсуте слово (вічний CRC-fail).
+        // Idle-стан збирання (порожній bitmap) → розмір починає життя з нуля.
+        if (ota_chunk_bitmap == 0 && ota_chunks_received == 0) {
+            pending_ota_size = 0;
+        }
+
         // [FIX: AUDIT CRITICAL] Дедуплікація OTA-чанків.
         uint16_t chunk_bit = (uint16_t)(1U << chunk_index);
         if (ota_chunk_bitmap & chunk_bit) {

@@ -883,7 +883,41 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         described_class.call(chunk)
         log = TelemetryLog.last
         expect(log.bio_status).to eq("tamper_detected")
-        expect(log.growth_points).to eq(62)  # (0x7F & 0x1F) * 2 = 31 * 2
+        # [FIX AUDIT-2026-06-06] Emission gate: tamper не карбує — раніше
+        # legacy VM_ERROR (0xFF→0x7F) приносив (0x7F & 0x1F) * 2 = 62 бали
+        # за КОЖЕН error-пакет. Тепер gp = 0 для anomaly/tamper.
+        expect(log.growth_points).to eq(0)
+      end
+
+      # [FIX AUDIT-2026-06-06] Emission eligibility gate — канон 04_01/05_02:
+      # емісія лише для homeostasis/stress; anomaly зупиняє, tamper'у не віримо.
+      describe "emission eligibility gate (anomaly/tamper → growth_points 0)" do
+        it "zeroes growth_points for anomaly even when wire gp bits are non-zero (bit-flip defense)" do
+          # status_byte = 0b010_01010 = anomaly(2) + wire gp=10 (зловмисний/бітфліп)
+          chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0b010_01010, 3)
+          described_class.call(chunk)
+          log = TelemetryLog.last
+          expect(log.bio_status).to eq("anomaly")
+          expect(log.growth_points).to eq(0)
+        end
+
+        it "zeroes growth_points for firmware VM_ERROR wire byte 0x60 (tamper, gp=0)" do
+          # Новий firmware BIO_STATUS_VM_ERROR = 0x60: [0|11|00000]
+          chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0x60, 3)
+          described_class.call(chunk)
+          log = TelemetryLog.last
+          expect(log.bio_status).to eq("tamper_detected")
+          expect(log.growth_points).to eq(0)
+        end
+
+        it "keeps stress emission intact (wire gp=1 → stored 2)" do
+          # stress видає мінімальну емісію виживання — гейт її НЕ зрізає
+          chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0b001_00001, 3)
+          described_class.call(chunk)
+          log = TelemetryLog.last
+          expect(log.bio_status).to eq("stress")
+          expect(log.growth_points).to eq(2)
+        end
       end
     end
   end

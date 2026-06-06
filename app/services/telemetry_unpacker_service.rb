@@ -160,6 +160,8 @@ class TelemetryUnpackerService < ApplicationService
       end
     end
 
+    bio_status = interpret_status((status_byte >> 5) & 0x03) # bits 6..5 — статус (FW.29-PACK)
+
     log_attributes = {
       queen_uid: @gateway&.uid,
       rssi: actual_rssi,
@@ -173,10 +175,10 @@ class TelemetryUnpackerService < ApplicationService
       # legacy 0..63). Так зберігається tokenomic invariant
       # (`Wallet#lock_and_mint!` поріг 10000 SCC), а wire-байт виправлено
       # під дизайн з docs/03_01 §1.6 і docs/03_05 §FW.2.
-      growth_points: (status_byte & 0x1F) * 2,
+      growth_points: emission_eligible_growth_points(status_byte, bio_status),
       mesh_ttl: parsed_data[6],
       firmware_version_id: (firmware_id.positive? ? firmware_id : nil),
-      bio_status: interpret_status((status_byte >> 5) & 0x03) # bits 6..5 — статус (FW.29-PACK)
+      bio_status: bio_status
     }
 
     # [FW.22] Firmware saturates acoustic_events at 255 (uint16 → uint8 clamped).
@@ -304,6 +306,7 @@ class TelemetryUnpackerService < ApplicationService
     # check_firmware_mismatch! comparison on the CCM path.
     mesh_ttl     = (mesh_ctrl >> 4) & 0x0F
     fw_nibble    = mesh_ctrl & 0x0F
+    bio_status   = interpret_status((status_byte >> 5) & 0x03)
 
     log_attributes = {
       queen_uid: @gateway&.uid,
@@ -312,10 +315,10 @@ class TelemetryUnpackerService < ApplicationService
       temperature_c: calibration.normalize_temperature(temp_c),
       acoustic_events: acoustic,
       metabolism_s: delta_t_s,
-      growth_points: (status_byte & 0x1F) * 2,
+      growth_points: emission_eligible_growth_points(status_byte, bio_status),
       mesh_ttl: mesh_ttl,
       firmware_version_id: (fw_nibble.positive? ? fw_nibble : nil),
-      bio_status: interpret_status((status_byte >> 5) & 0x03)
+      bio_status: bio_status
     }
 
     if acoustic == 255
@@ -436,6 +439,21 @@ class TelemetryUnpackerService < ApplicationService
     when 2 then :anomaly
     when 3 then :tamper_detected
     end
+  end
+
+  # [FIX AUDIT-2026-06-06] Емісія дозволена лише для homeostasis/stress —
+  # канон 04_01/05_02: anomaly зупиняє емісію, tamper їй не довіряє.
+  # Захист від wire-байтів, де status=anomaly/tamper приходить із ненульовими
+  # gp-бітами: бітфліп у ECB-блоці або firmware VM_ERROR. Старий VM_ERROR
+  # (0xFF→0x7F після FW.29-маски) декодувався як tamper + gp=31 → ×2 = 62
+  # бали за кожен error-пакет. Firmware-сторона виправлена (VM_ERROR=0x60,
+  # gp=0); цей гейт — defense-in-depth для старих прошивок і бітфліпів.
+  EMISSION_ELIGIBLE_STATUSES = %i[homeostasis stress].freeze
+
+  def emission_eligible_growth_points(status_byte, bio_status)
+    return 0 unless EMISSION_ELIGIBLE_STATUSES.include?(bio_status)
+
+    (status_byte & 0x1F) * 2
   end
 
   # [DUAL COMPUTATION INTEGRITY] [SEC.11] Both server and device now

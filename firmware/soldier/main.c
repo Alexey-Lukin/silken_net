@@ -63,7 +63,12 @@ volatile int g_ccm_selftest_failed = -1;  // читати через SWD: 0 = PA
 #define OTA_REQ_BITMAP_MAX_BYTES  9          // [FW.27-B] 16 - 7 header = 9 байт ⇒ ≤72 чанки на один зойк
 #define OTA_REQ_PACKET_SIZE       16         // [FW.27-B] Один AES блок (16 байт fixed, post-ARCH.42 LoRa AES-128), як у телеметрії
 #define OTA_REREQUEST_TIMEOUT_MS  300000UL   // [FW.27-B] 5 хв тиші → подати голос про пропуски
-#define BIO_STATUS_VM_ERROR       0xFF       // Мітка помилки mruby VM
+#define OTA_MISMATCH_RESET_THRESHOLD 3       // [FIX AUDIT-2026-06-06] N поспіль чужих total → відпустити мертву кампанію
+// Мітка помилки mruby VM на дроті: [panic:0|status:11=tamper|growth:00000].
+// [FIX AUDIT-2026-06-06] Було 0xFF — після FW.29-маски (&~0x80) ставало 0x7F =
+// tamper + growth_points 31 → бекенд (×2) карбував 62 бали за КОЖЕН error-пакет.
+// 0x60 переживає маску незмінним і чесно каже: довіри нема, емісії нема.
+#define BIO_STATUS_VM_ERROR       0x60
 #define VCAP_LISTEN_THRESHOLD     2800       // Поріг напруги для прослуховування ефіру (мВ)
 #define LORA_RX_TIMEOUT_MS        500        // Таймаут прийому LoRa (мс)
 #define LORA_RX_LOOP_MS           600        // Максимальний час очікування пакета (мс)
@@ -294,6 +299,13 @@ uint8_t ota_chunk_received[256] = {0};
 // нового слова — Солдат подає голос і просить Королеву повторити пропущене.
 // 0 = ніколи не чули OTA, чекаємо першої проповіді.
 uint32_t ota_last_chunk_rx_tick = 0;
+
+// [FIX AUDIT-2026-06-06] Сторожовий лічильник зміни кампанії: якщо Солдат
+// застряг із недозібраною прошивкою (total=X), а Королева вже проповідує
+// нову (total=Y), стара пам'ять блокувала б нове слово ДОВІКУ (reset був
+// лише при завершенні збірки). N поспіль чужих total → жертовно стираємо
+// стару незавершену кампанію і відкриваємось новій.
+uint8_t ota_total_mismatch_streak = 0;
 
 // [FW.23] HMAC-печатка OTA — 32-байтне свідчення істини, яке надходить
 // після тіла прошивки у 3-х 16-байтних LoRa-чанках з маркером 0x9B.
@@ -1797,10 +1809,23 @@ int main(void)
                     uint16_t incoming_total = ((uint16_t)decrypted_rx_payload[3] << 8) | decrypted_rx_payload[4];
                     uint8_t chunk_size = (uint8_t)(incoming_lora_size - OTA_HEADER_SIZE);
 
-                    // [FIX: AUDIT] Валідація: total_chunks не повинно змінюватися між пакетами
+                    // [FIX: AUDIT] Валідація: total_chunks не повинно змінюватися між пакетами.
+                    // [FIX AUDIT-2026-06-06] ...але мертва кампанія не має права блокувати живу:
+                    // N поспіль чужих total → стираємо незавершену збірку (deadlock-захист).
                     if (ota_total_chunks != 0 && incoming_total != ota_total_chunks) {
-                        break; // Невалідний пакет — ігноруємо
+                        if (++ota_total_mismatch_streak >= OTA_MISMATCH_RESET_THRESHOLD) {
+                            memset(ota_chunk_received, 0, sizeof(ota_chunk_received));
+                            memset(received_hmac_tag, 0, sizeof(received_hmac_tag));
+                            ota_chunks_received = 0;
+                            ota_bytes_received = 0;
+                            ota_total_chunks = 0;
+                            ota_hmac_segments_received = 0;
+                            ota_last_chunk_rx_tick = 0;
+                            ota_total_mismatch_streak = 0;
+                        }
+                        break; // Цей чанк ігноруємо; наступні почнуть нову збірку
                     }
+                    ota_total_mismatch_streak = 0;
 
                     // [FW.23] При першому чанку нового OTA-вікна стираємо
                     // стару печатку з пам'яті — нова прошивка прийде з новою
