@@ -208,7 +208,7 @@ module Tracker
 
     # Scanned for CHEM.N refs: the canon docs (incl. the in_silico protocol subdir) AND the
     # in_silico scripts (founder: the refs leaked into CODE too). 00_07 is the definer → skipped.
-    CHEM_SCAN_GLOBS = ["docs/**/*.md", "tools/in_silico/scripts/*.py"].freeze
+    CHEM_SCAN_GLOBS = [ "docs/**/*.md", "tools/in_silico/scripts/*.py" ].freeze
 
     def self.chem_note_ref_violations(docs_dir = DOCS_DIR)
       tracker = File.join(docs_dir, "00_07_Action_Plan_Tracker.md")
