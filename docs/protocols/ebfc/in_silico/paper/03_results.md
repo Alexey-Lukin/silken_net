@@ -18,14 +18,14 @@ transfer the architecture requires. The exit residues are well-ordered in the pr
 so the path is a structural feature, not a disordered artefact. Replayed over a 15-frame
 molecular-dynamics ensemble the decay is essentially unchanged (β·d = 2.02 ± 0.13; conformational-gating
 factor 1.03×), confirming that the single-structure pathway is representative of the thermal ensemble
-rather than a fortuitous static geometry. The deglycosylated production variant (eleven N→Q
+rather than a fortuitous static geometry (Fig S1). The deglycosylated production variant (eleven N→Q
 substitutions) preserves this geometry.
 
 ## 3.2 Anode PCET: the FAD redox potential
 
 Treating the FAD/FADH₂ couple with a thermodynamic proton reference (rather than an explicit, and in
 implicit solvent grossly over-stabilised, hydronium ion) recovers **E°(FAD/FADH₂) = −158 mV vs NHE** —
-within ~50 mV of the experimental free-flavin value. This is the paper's clean positive result: a
+within ~50 mV of the experimental free-flavin value (Fig 3a). This is the paper's clean positive result: a
 proton-coupled redox potential of a biological cofactor, reproduced by implicit-solvation DFT once the
 proton is handled correctly. It also isolates the cascade discrepancy discussed in §3.5 to the
 mediator side of the chain, not the flavin.
@@ -41,7 +41,7 @@ now from first principles.
 
 Varying the 4,4′-bipyridine substituents across the experimental potential range gives a clean **Hammett
 linear free-energy relationship**: the Os(III/II) reduction energy is linear in σ_para with slope
-≈ **−0.93 eV per σ unit**, triangulated against the additive Lever E_L scheme and the measured series.
+≈ **−0.93 eV per σ unit** (Fig 3b), triangulated against the additive Lever E_L scheme and the measured series.
 Electron-withdrawing substituents raise E°(Os) and improve the FADH₂→Os cascade alignment, giving a
 predictive design handle rather than a one-off optimisation.
 
@@ -58,7 +58,7 @@ optimum (~+309 mV) balances driving force against overpotential.
 Inter-metal couplings in the bimetallic Cu–Co–Ce nanozyme were obtained from charge-localised ΔSCF on
 clash-free cluster geometries (a bridging imidazole that had collided with the second metal was
 deprotonated to the imidazolate, restoring physical coordination). With reorganisation energies
-computed by the two-sphere Nelsen method rather than assumed, the **Cu–Co hop is the bottleneck**, and
+computed by the two-sphere Nelsen method rather than assumed, the **Cu–Co hop is the bottleneck** (Fig 4a), and
 its rate sits at **~enzymatic turnover** — a margin of order ×1–30, not the orders of magnitude an
 earlier (geometry- and λ-) artefact had suggested.
 
@@ -71,7 +71,7 @@ excluding the earlier orders-of-magnitude margin.
 
 This is a finding, not a failure, and we present it with its sensitivity. The rate depends
 exponentially on λ: at the literature first-row values the Cu–Co hop is borderline (≈ ×1.4 over
-turnover); B3LYP over-estimates the first-row λ (the Co couple by ≈ 2×, a spin-crossover artefact),
+turnover, Fig 4b); B3LYP over-estimates the first-row λ (the Co couple by ≈ 2×, a spin-crossover artefact),
 which would push it lower; and a low-λ metal removes the limitation entirely — replacing Co by **Ru**
 (computed λ 0.78 eV vs Co ≈ 3 eV) restores a ~×31 margin. The honest reading is a borderline,
 possibly co-limiting cathode whose three design levers — a low-λ metal, conductive-MOF band transport,
@@ -96,7 +96,7 @@ energy are distinct quantities, so their signs are not directly comparable; both
 "wrong" way against experiment.) The ~1.3 eV discrepancy between the ΔSCF free energy and the verified
 value is the paper's methodological core, and we decompose rather than excuse it.
 
-Two computed contributions account for it. **Mediator speciation** — the cited experimental potential
+Two computed contributions account for it (Fig 5). **Mediator speciation** — the cited experimental potential
 and the real Os–PVI polymer correspond to the aqua or bis-imidazole complex, not the chloro model used
 to define the cascade — shifts the redox energy by **+0.51 eV (aqua)** and **+0.30 eV (bis-imidazole)**;
 the stronger σ-donor imidazole lowers E°(Os) relative to the weakly-donating aqua ligand, reproducing
@@ -124,3 +124,59 @@ to His/Glu protonation, is reserved for the explicit-solvent QM/MM capstone.
 Across a molecular-dynamics ensemble the FAD frontier orbital is thermally stable (HOMO −5.59 ± 0.06 eV,
 σ ≪ 0.3 eV), so the single-geometry redox energetics above are representative of the room-temperature
 ensemble rather than of one fortuitous snapshot.
+
+---
+
+## Figures
+
+> Data-driven figures are generated deterministically from the cached DFT results by
+> [`tools/in_silico/scripts/60_paper_figures.py`](../../../../tools/in_silico/scripts/60_paper_figures.py)
+> (reads `cache/dft/*.json` only — no DFT recompute; every headline number is asserted against
+> [`SUMMARY.md`](../SUMMARY.md) at build time). Re-run: `mamba run -n silken_md python tools/in_silico/scripts/60_paper_figures.py`.
+> **Still pending (not cache-derivable → molecular-visualisation / illustration pass):** **Fig 1**
+> graphical abstract (cascade over the 3-zone gyroid anchor — new art) and **Fig 2** (AF3 structure +
+> Beratan–Onuchic tunnelling path render from `dgrGcGDH_AF3.pdb`, e.g. PyMOL); the Fig 2 β·d *data* is
+> in Fig S1.
+
+![Figure 3](figures/fig3_cascade_lfer.png)
+
+**Figure 3. Anode→mediator electron-transfer energetics.** *(a)* Frontier-orbital cascade for the
+rate-determining FADH₂→Os(III) step (B3LYP/6-31G(d)+LANL2DZ(Os)/C-PCM). The raw frontier-orbital offset
+is uphill (Δε = −0.909 eV) and the adiabatic ΔSCF free energy is +0.88 eV, whereas the experimentally
+anchored driving force is downhill (+466 mV / −0.47 eV, from E°(Os) +200 mV and the bound
+E°(FAD-GDH) −266 mV vs SHE); the raw inversion is the PCM/speciation artefact decomposed in Fig 5. The
+proton-referenced flavin potential, E°(FAD/FADH₂) = −158 mV vs SHE at pH 7, lies within 50 mV of
+experiment (−208 mV). *(b)* Hammett structure–activity relationship for cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺
+at constant charge: ΔE_red(III→II) is linear in σ_para (slope −0.92 eV/σ, r² = 1.00; fit over the
+OMe→NO₂ regime), with donor-resonance saturation at NMe₂/NH₂. Electron-withdrawing substituents raise the
+cascade driving force; the realistic optimum is the electrochemically inert SO₂CF₃ (NO₂ degrades on
+cycling).
+
+![Figure 4](figures/fig4_cathode_det.png)
+
+**Figure 4. Direct electron transfer through the bimetallic Cu–Co–Ce ZIF cathode.** *(a)* Inter-metal
+electronic couplings |t_ij| (log scale) from charge-localised ΔSCF on clash-free cluster geometries; the
+Cu–Co hop is the bottleneck, confirmed by a two-state FO-DFT Mulliken–Hush diabatisation (0.0055 eV,
+~4× the crude ΔSCF value). *(b)* Marcus k_DET margin of the Cu–Co bottleneck relative to enzymatic
+turnover (10³ s⁻¹, dashed) across reorganisation-energy scenarios; at literature first-row λ the margin is
+borderline (×1.4). The FO-DFT range (×0.6–732 across the ΔG sign, ×25 at ΔG = 0) brackets the rigorous
+result; the earlier ×10⁵ margin (broken geometry + assumed λ = 0.7 eV — "canon λ=0.7") is withdrawn. A
+low-λ metal (Co→Ru, computed λ 0.78 eV) restores a ~×31 margin.
+
+![Figure 5](figures/fig5_solvation_pcm.png)
+
+**Figure 5. The ~1 eV cascade gap decomposes into computed speciation and solvation contributions** (the
+"limits of implicit solvation" result). *(a)* Adding explicit waters to the chloride ligand of the
+mediator monotonically reduces the cascade gap (0.069 eV/water; three waters close ~22%). *(b)* Speciation
+accounts for the larger part: the active aqua and bis-imidazole forms shift the cascade by +0.51 and
++0.30 eV vs the chloro model (B3LYP cascade-Δ), an ordering reproduced at the range-separated ωB97X
+functional (|Δ(ΔE_red)| 0.43 / 0.27 eV) — so the effect is not a B3LYP artefact. The [Os(H₂O)₆]³⁺/²⁺
+benchmark recovers the known ~1 V group-8 implicit-solvation error on adding the second hydration shell
+(+0.98 eV).
+
+![Figure S1](figures/figS1_betad_ensemble.png)
+
+**Figure S1. Thermal robustness of the tunnelling pathway.** The Beratan–Onuchic decay β·d from the
+single AlphaFold-3 snapshot (2.05) agrees with the molecular-dynamics ensemble mean (2.02 ± 0.13, n = 15
+frames); the conformational-gating factor is a modest ×1.03, so the static-structure pathway is
+representative of the thermal ensemble (supports §3.1; the Fig 2 structural render is the companion).

@@ -41,12 +41,18 @@ problem (autonomous EBFC sensing; ET is the bottleneck) → gap (field models EB
 
 ## 4. Figure & table plan
 
-- **Fig 1** (graphical abstract): the anode→Os→cathode cascade overlaid on the 3-zone gyroid anchor (metal↔xylem interface). [new art]
-- **Fig 2**: AF3 structure + FAD depth + Beratan-Onuchic tunneling path (resSeq labels).
-- **Fig 3**: (a) MO/Marcus cascade diagram + PCET E°; (b) **① LFER** — E°(Os) & cascade-Δ vs Hammett σ (the design-rule plot).
-- **Fig 4**: ZIF Cu-Co-Ce hops + k_ET ladder (with computed λ, ③).
-- **Fig 5** (methods centerpiece): PCM vs cluster-continuum solvation closing the cascade gap (②).
-- **Tables**: T1 levels of theory · T2 cascade energetics (all methods) · T3 DET hops + λ · T4 mediator series E°/cascade-Δ vs σ.
+> Data figures are built by [`tools/in_silico/scripts/60_paper_figures.py`](../../../../tools/in_silico/scripts/60_paper_figures.py)
+> (cache-only, no DFT recompute; every headline number asserted vs SUMMARY at build time) → `paper/figures/`.
+> Captions drafted in [`03_results.md §Figures`](03_results.md). The two molecular/art figures (Fig 1, Fig 2)
+> are **not** cache-derivable → separate visualisation pass.
+
+- **Fig 1** (graphical abstract): the anode→Os→cathode cascade overlaid on the 3-zone gyroid anchor (metal↔xylem interface). [new art] — ⏳ **pending** (illustration)
+- **Fig 2**: AF3 structure + FAD depth + Beratan-Onuchic tunneling path (resSeq labels). — ⏳ **pending** (molecular render, e.g. PyMOL on `dgrGcGDH_AF3.pdb`); the β·d *data* is **✅ Fig S1**
+- **Fig 3**: (a) MO/Marcus cascade diagram + PCET E°; (b) **① LFER** — E°(Os) & cascade-Δ vs Hammett σ (the design-rule plot). — ✅ **built** (`fig3_cascade_lfer.png`)
+- **Fig 4**: ZIF Cu-Co-Ce hops + k_ET ladder (with computed λ, ③). — ✅ **built** (`fig4_cathode_det.png`)
+- **Fig 5** (methods centerpiece): PCM vs cluster-continuum solvation closing the cascade gap (②). — ✅ **built** (`fig5_solvation_pcm.png`)
+- **Fig S1** (SI): tunnelling β·d, static AF3 vs MD-ensemble — thermal robustness. — ✅ **built** (`figS1_betad_ensemble.png`)
+- **Tables**: T1 levels of theory · T2 cascade energetics (all methods) · T3 DET hops + λ · T4 mediator series E°/cascade-Δ vs σ. — ⏳ pending (tabulate from SUMMARY/cache)
 
 ## 5. Scope boundary
 

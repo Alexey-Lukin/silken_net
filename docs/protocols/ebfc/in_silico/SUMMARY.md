@@ -363,6 +363,7 @@ The geometry fix shrank Cu-Co t_ij **25×** → **Cu-Co is the bottleneck**, not
 | DFT results | `tools/in_silico/cache/dft/` |
 | Kinetics results | `tools/in_silico/cache/kinetics/` |
 | MD trajectories | `tools/in_silico/cache/runs/` (gitignored) |
+| Paper figures | `scripts/60_paper_figures.py` (cache-only, canon-asserted) → `paper/figures/` (Fig 3/4/5 + S1; Fig 1/2 = molecular/art, pending) |
 | Conda environment | `tools/in_silico/environment.yml` (silken_md) |
 | CI gate | `.github/workflows/in_silico_smoke.yml` |
 
