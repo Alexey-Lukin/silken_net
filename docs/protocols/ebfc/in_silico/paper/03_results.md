@@ -76,8 +76,15 @@ which would push it lower; and a low-λ metal removes the limitation entirely �
 (computed λ 0.78 eV vs Co ≈ 3 eV) restores a ~×31 margin. The honest reading is a borderline,
 possibly co-limiting cathode whose three design levers — a low-λ metal, conductive-MOF band transport,
 or an acid-stable enzyme-free single-atom catalyst — are set out and ranked by their viability at the
-acidic Zone 3 (pH ≈ 4.5). The cathode EIS of the forthcoming Ti-coin experiment is the decisive
-empirical test.
+acidic Zone 3 (pH ≈ 4.5).
+
+Two model caveats frame this. The coupling is computed on a clash-corrected programmatic cluster, not a
+DFT-relaxed geometry — these flat-PES metal clusters resist geometry optimisation (as the osmium complex
+did), so t_ij is geometry-bounded. And the single-hop bottleneck is a conservative estimate: the ZIF is
+a wide-gap insulator, so charge transport proceeds by the discrete Marcus hops we model rather than band
+conduction, and the 3D framework presents parallel instances of the bottleneck hop — genuine band-like
+transport would require a conductive MOF (one of the levers above). The cathode EIS of the forthcoming
+Ti-coin experiment is the decisive empirical test.
 
 ## 3.5 The cascade and the limits of implicit solvation
 

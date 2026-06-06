@@ -205,7 +205,7 @@
 
 **P1/P2 — Gen 2.1+ candidates (verified, deferred):**
 - [ ] CHEM.11 — aggregation: 4 SASA hotspots ✅ (`L1` §2); next = polar-mut neighbor-SASA
-- [ ] CHEM.14 — FO-DFT t_ij rigor: 🤖 in-house, no dep → next ③-coupling step
+- [x] CHEM.14 — FO-DFT t_ij rigor ✅ (24b→25): two-state Mulliken-Hush t_ij(Cu-Co) 0.00546 eV (~4× crude) + 0.18 eV site-gap → borderline **robust to coupling method**, ×10⁵ excluded → `SUMMARY` §Cathode
 - [ ] CHEM.22 + CHEM.5 — COSMO-RS/MACE: ⚠️ NOT ②-closers (charged-couple / sampling-only) → QM/MM stays
 - [x] CHEM.6 + CHEM.31 — enzyme-free / cMOF cathode levers (acid-pH ranked) → `01_03 §3.2`
 - [ ] CHEM.8 + CHEM.2 — V-chelation: catechol safer than IP6 → Gen 2.1+ (`01_02`)
@@ -223,9 +223,9 @@
 
 ###### 🔬 In-silico pipeline — open computes (script audit 2026-06-06; detail → `PIPELINE_STATUS`)
 > All ~37 `tools/in_silico/scripts/` audited — almost all ✅ (cached). Open work captured here so we never re-audit; closed/superseded = 21 · 21c · 29 (honest limitations-points, not work).
-- [ ] 🔧 🤖 **Active re-run chain:** 24b FO-DFT coupling (CHEM.14, prepped+validated) → **re-run 25** → ③ k_DET rigor (runs once ωB97X frees the CPU)
-- [ ] ⏳ 🤖 **Running / done:** 34b ωB97X ②-speciation robustness (running) · 28b dynamic-tunnelling ensemble ✅ DONE (CHEM.16, β·d 2.02±0.13 thermally robust; image_molecules PBC fix)
-- [ ] ✨ 🤖 **Refinements (optional, per-script additional analysis):** outer-sphere λ_o (29b → total anode λ) · aqua/bis-Im × substituents + ωB97X for the series (21e) · real ΔG in k_ET (25, currently 0) · Cu/Ce λ refinement (35; B3LYP over-estimates Co spin-crossover) · Os-complex MD ensemble (27, not just FAD) · full hydration shell + COSMO-RS/MACE probe (34) · k_cat sensitivity (30/30b) · ③-borderline R_ct in EIS (31). ⚠️ **λ_o is radius-sensitive · EIS-③ R_ct is Γ(coverage)-sensitive → indicative only, not clean computes** (verified 2026-06-06: borderline k_DET vs turnover is a kinetic competition, NOT a fixed R_ct)
+- [x] ✅ 🤖 **Re-run chain DONE:** 24b FO-DFT (CHEM.14) → 25 → ③ k_DET rigor — borderline **robust to coupling method** (t_ij 0.00546 ~4× crude + 0.18 eV site-gap; old ×10⁵ excluded) → `SUMMARY` §Cathode / `PIPELINE` 24b
+- [x] ✅ 🤖 **②/tunnelling robustness DONE:** 34b ωB97X ②-speciation (functional-robust: aqua>bis-Im>chloro reproduced) → `SUMMARY` §Cluster-Continuum · 28b dynamic-tunnelling ensemble (CHEM.16, β·d 2.02±0.13; image_molecules PBC)
+- [ ] ✨ 🤖 **Refinements (optional, per-script additional analysis):** outer-sphere λ_o (29b → total anode λ) · aqua/bis-Im × substituents + ωB97X for the series (21e) · real ΔG in k_ET (25 — FO-DFT scenario now uses the 0.18 eV site-gap; lit/computed-λ rows still ΔG=0) · Cu/Ce λ refinement (35; B3LYP over-estimates Co spin-crossover) · Os-complex MD ensemble (27, not just FAD) · full hydration shell + COSMO-RS/MACE probe (34) · k_cat sensitivity (30/30b) · ③-borderline R_ct in EIS (31). ⚠️ **λ_o is radius-sensitive · EIS-③ R_ct is Γ(coverage)-sensitive → indicative only, not clean computes** (verified 2026-06-06: borderline k_DET vs turnover is a kinetic competition, NOT a fixed R_ct)
 - [ ] 🏔️ 🔗 **Capstones (Мінаєв):** ④ protein QM-cluster E° (extend 32) · CDFT coupling (> 24b, needs PyCDFT) · QM/MM explicit-water cascade
 - [ ] ⏸️ **Deferred → Стаття 2/3 / on-data:** 11 (20–50 ns MD, reviewer-grade equilibration) · 13 (D_eff model; L4 already uses lit 2e-6) · 16 (PE-drift 1%, bigger box) · 40 re-run vs Ti-coin CV/EIS when in-vitro data lands (40 already has a docstring — the audit's "missing" was a grep-filter artifact)
 
@@ -442,6 +442,7 @@
 - [ ] 👤 Перевірити наявність вакуумної печі 200–300°C у заводу-кандидата (або стороннього subcontractor)
 - [ ] 👤 LECO RH404 hot extraction analysis на тестовому купоні з кожної партії
 - [ ] 👤 Втомне тестування Ti-coin Stage 2 (HW.24) — порівняння з/без dehydrogenation bake для підтвердження ефекту
+- [ ] 👤 Ti-coin Stage 2 — замовити пару **bare + ZIF-coated** (chem-note triage 2026-06-06): порівняння деградації струму ізолює ZIF enzyme-stabilization → готовий «ZIF nanozyme as enzyme stabilizer» результат (→ Стаття 2 stability; доповнює, не заміняє, in-silico ET-механізм Стаття 1)
 
 #### HW.28 — Anti-Overgrowth Shield для Zone 3 (NEW 2026-05-16)
 - **P2** · 👤 · → `01_04 §5.5`
