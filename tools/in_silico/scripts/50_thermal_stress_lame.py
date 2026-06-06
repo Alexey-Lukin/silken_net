@@ -28,12 +28,13 @@ import sys
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, KINETICS_DIR
+from lib.constants import KINETICS_DIR, REPO_ROOT
 from lib.utils import banner
 
 OUT_DIR = KINETICS_DIR
@@ -156,7 +157,7 @@ def main() -> int:
     print(f"  At ΔT={dT_cold:.0f} K, outer r={R_OUTER*1e3:.0f} mm:")
     print(f"    interference loss = r·(α_PEEK−α_Ti)·|ΔT| = {loss*1e6:.1f} µm")
     print(f"    effective interference = {DELTA_INTERFERENCE*1e6:.0f} − {loss*1e6:.1f} = {delta_eff*1e6:.1f} µm")
-    print(f"  Inner interface TIGHTENS in cold (PEEK grips Ti shaft); OUTER is the weak link.")
+    print("  Inner interface TIGHTENS in cold (PEEK grips Ti shaft); OUTER is the weak link.")
     cold_ok = delta_eff > 0
     print(f"  {'✅ outer interface survives winter' if cold_ok else '❌ outer interface opens in winter'} "
           f"({delta_eff*1e6:.0f} µm residual)")
@@ -166,16 +167,15 @@ def main() -> int:
     print(f"  Stress relaxation: P_c {p0/1e6:.1f} → {pc_20:.1f} MPa over 20yr (NOT zero — semicrystalline floor)")
     print(f"  Winter outer interface: {delta_eff*1e6:.0f} µm residual interference (survives)")
     print(f"  Sealing: residual P_c {pc_20:.1f} MPa > sap {P_SAP_MPa} MPa, BUT primary hermetic seal = elastomer O-ring")
-    print(f"           (FKM/EPDM, rubber-elastic → immune to PEEK relaxation). Barbs/retaining ring")
-    print(f"           handle AXIAL pull-out + anti-rotation ONLY (they do NOT seal).")
-    print(f"  ✅ Ti↔PEEK press-fit survives 20+ years; PEEK = structural isolator + backup P_c")
+    print("           (FKM/EPDM, rubber-elastic → immune to PEEK relaxation). Barbs/retaining ring")
+    print("           handle AXIAL pull-out + anti-rotation ONLY (they do NOT seal).")
+    print("  ✅ Ti↔PEEK press-fit survives 20+ years; PEEK = structural isolator + backup P_c")
 
     # Plot
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+    _fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
     temps = [r["T_C"] for r in results]
     sigma_t = [r["sigma_t_MPa"] for r in results]
-    safety = [r["safety_factor"] for r in results]
 
     ax1.plot(temps, sigma_t, "b-", linewidth=2)
     ax1.axhline(y=SIGMA_YIELD_PEEK/1e6, color="r", linestyle="--", label=f"PEEK yield ({SIGMA_YIELD_PEEK/1e6:.0f} MPa)")

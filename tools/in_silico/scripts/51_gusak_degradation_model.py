@@ -19,7 +19,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, KINETICS_DIR
+from lib.constants import KINETICS_DIR, REPO_ROOT
 from lib.utils import banner
 
 OUT_JSON = KINETICS_DIR / "gusak_degradation.json"
@@ -168,9 +168,9 @@ def press_fit_window():
         }
 
     print()
-    print(f"  ⚠️ At -30°C effective interference increases → higher hoop stress")
-    print(f"  ⚠️ At +40°C effective interference decreases → risk of loosening")
-    print(f"  ✅ H7/s6 safe across -30 to +40°C range")
+    print("  ⚠️ At -30°C effective interference increases → higher hoop stress")
+    print("  ⚠️ At +40°C effective interference decreases → risk of loosening")
+    print("  ✅ H7/s6 safe across -30 to +40°C range")
 
     return results
 

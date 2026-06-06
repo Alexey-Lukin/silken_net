@@ -28,7 +28,7 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, LIGANDS_DIR
+from lib.constants import LIGANDS_DIR, REPO_ROOT
 from lib.utils import banner
 
 LIGANDS_DIR.mkdir(parents=True, exist_ok=True)
@@ -107,7 +107,7 @@ def build_bimetallic_cluster(
     label: str,
 ) -> list[tuple[str, np.ndarray]]:
     """Build M1(Im)₂ -- Im_bridge -- M2(Im)₂ cluster."""
-    im, n3, nh = build_meimidazole()
+    im, n3, _nh = build_meimidazole()
 
     m1_pos = np.array([-ZIF_NODE_DIST / 2, 0.0, 0.0])
     m2_pos = np.array([+ZIF_NODE_DIST / 2, 0.0, 0.0])
@@ -118,10 +118,8 @@ def build_bimetallic_cluster(
     all_atoms.append((metal1, m1_pos))
     all_atoms.append((metal2, m2_pos))
 
-    # Bridging imidazolate: N3 → M1, NH → M2
+    # Bridging imidazolate: N3 → M1 (place_ligand_at orients the NH end toward M2 via bridge_dir)
     bridge_n3_pos = m1_pos + r1 * bridge_dir
-    bridge_nh_pos = m2_pos - r2 * bridge_dir
-    bridge_mid = (bridge_n3_pos + bridge_nh_pos) / 2
     bridge = place_ligand_at(im, n3, bridge_n3_pos, bridge_dir)
     all_atoms += bridge
 
@@ -147,7 +145,7 @@ def build_bimetallic_cluster(
 
 def build_ce_graphene_cluster() -> list[tuple[str, np.ndarray]]:
     """Build Ce(Im)₂ + coronene (MWCNT proxy) cluster."""
-    im, n3, nh = build_meimidazole()
+    im, n3, _nh = build_meimidazole()
 
     ce_pos = np.array([0.0, 0.0, 3.5])  # Ce 3.5 Å above graphene plane
     all_atoms: list[tuple[str, np.ndarray]] = [("Ce", ce_pos)]

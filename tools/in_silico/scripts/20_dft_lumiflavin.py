@@ -60,12 +60,14 @@ from rdkit.Chem import AllChem
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
-    REPO_ROOT, LIGANDS_DIR, DFT_CACHE, KINETICS_DIR, HARTREE_TO_EV,
-    BASIS_LIGHT, SOLVENT_EPS_WATER,
+    BASIS_LIGHT,
+    DFT_CACHE,
+    HARTREE_TO_EV,
+    LIGANDS_DIR,
+    REPO_ROOT,
+    SOLVENT_EPS_WATER,
 )
 from lib.utils import banner
-
-
 
 # Lumiflavin (7,8,10-trimethylisoalloxazine), neutral oxidized form.
 # PubChem CID 1549108. The N1 and N5 positions are sp2 and unprotonated.

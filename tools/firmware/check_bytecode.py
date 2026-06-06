@@ -14,7 +14,6 @@ The DEEP regenerate-and-diff check (needs the pinned mruby/mrbc) lives in
 """
 import hashlib
 import re
-import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]

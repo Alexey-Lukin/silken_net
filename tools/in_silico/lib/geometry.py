@@ -4,7 +4,7 @@ from __future__ import annotations
 import numpy as np
 import openmm
 from openmm import Vec3
-from openmm.unit import nanometer, kilojoule_per_mole
+from openmm.unit import kilojoule_per_mole, nanometer
 
 
 def positions_to_nm_array(positions) -> np.ndarray:

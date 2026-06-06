@@ -14,7 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from silken_ml.codegen import emit_c  # noqa: E402
+from silken_ml.codegen import emit_c
 
 if __name__ == "__main__":
     raise SystemExit(emit_c.main(["--check"]))

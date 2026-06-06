@@ -38,12 +38,10 @@ from datetime import datetime
 from pathlib import Path
 
 import numpy as np
-import openmm
 from openff.toolkit import Molecule
 from openmm import (
     LangevinMiddleIntegrator,
     MonteCarloBarostat,
-    Vec3,
 )
 from openmm.app import (
     PME,
@@ -59,7 +57,6 @@ from openmm.unit import (
     atmosphere,
     femtosecond,
     kelvin,
-    kilojoule_per_mole,
     molar,
     nanometer,
     picosecond,
@@ -69,14 +66,25 @@ from pdbfixer import PDBFixer
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
-    REPO_ROOT, AF3_PDB, LIGANDS_DIR, CACHE_FILE, RUNS_DIR, KINETICS_DIR,
-    PRESSURE_ATM, WATER_PADDING_NM, TIMESTEP_FS,
-    EQUIL_NVT_PS, EQUIL_NPT_PS,
-    N_GENIPIN, N_CHITOSAN, N_CELLOBIOSE, GAFF_VERSION,
+    AF3_PDB,
+    CACHE_FILE,
+    EQUIL_NPT_PS,
+    EQUIL_NVT_PS,
+    GAFF_VERSION,
+    KINETICS_DIR,
+    LIGANDS_DIR,
+    N_CELLOBIOSE,
+    N_CHITOSAN,
+    N_GENIPIN,
+    PRESSURE_ATM,
+    REPO_ROOT,
+    RUNS_DIR,
+    TIMESTEP_FS,
+    WATER_PADDING_NM,
 )
-from lib.geometry import positions_to_nm_array, place_on_sphere, restraint_protein_heavy_atoms
-from lib.utils import banner, ps_to_steps, pick_platform
-from lib.xylem_sap import SAP_PROFILES, get_sap_profile
+from lib.geometry import place_on_sphere, positions_to_nm_array, restraint_protein_heavy_atoms
+from lib.utils import banner, pick_platform, ps_to_steps
+from lib.xylem_sap import get_sap_profile
 
 FAD_SDF = LIGANDS_DIR / "FAD.sdf"
 GENIPIN_SDF = LIGANDS_DIR / "genipin.sdf"
@@ -180,7 +188,7 @@ def run_single_sap(species: str, platform) -> dict:
 
     # NVT
     ramp_step = 10
-    restraint = restraint_protein_heavy_atoms(system, modeller.positions, modeller.topology, k=10.0)
+    restraint_protein_heavy_atoms(system, modeller.positions, modeller.topology, k=10.0)
     sim.context.reinitialize(preserveState=True)
     sim.context.setVelocitiesToTemperature(50 * kelvin)
     steps_per_ramp = ps_to_steps(EQUIL_NVT_PS) // ((TEMPERATURE_K - 50) // ramp_step)
@@ -240,10 +248,7 @@ def main() -> int:
             sys.exit(f"Missing: {p}. Run scripts 02-05 first.")
 
     species_env = os.environ.get("SILKEN_SAP_SPECIES")
-    if species_env:
-        species_list = [s.strip() for s in species_env.split(",")]
-    else:
-        species_list = DEFAULT_SPECIES
+    species_list = [s.strip() for s in species_env.split(",")] if species_env else DEFAULT_SPECIES
 
     banner(f"L2 xylem sap sweep — {len(species_list)} species")
     platform = pick_platform()

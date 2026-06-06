@@ -20,7 +20,6 @@ from __future__ import annotations
 import json
 import os
 import sys
-import time
 from datetime import datetime
 from pathlib import Path
 
@@ -37,7 +36,6 @@ from openmm.app import (
     HBonds,
     Modeller,
     Simulation,
-    StateDataReporter,
 )
 from openmm.unit import (
     atmosphere,
@@ -51,12 +49,20 @@ from openmmforcefields.generators import GAFFTemplateGenerator
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
-    REPO_ROOT, LIGANDS_DIR, CACHE_FILE, RUNS_DIR, KINETICS_DIR,
-    PRESSURE_ATM, TIMESTEP_FS, GAFF_VERSION,
-    N_GENIPIN, N_CHITOSAN, N_CELLOBIOSE,
+    CACHE_FILE,
+    GAFF_VERSION,
+    KINETICS_DIR,
+    LIGANDS_DIR,
+    N_CELLOBIOSE,
+    N_CHITOSAN,
+    N_GENIPIN,
+    PRESSURE_ATM,
+    REPO_ROOT,
+    RUNS_DIR,
+    TIMESTEP_FS,
 )
-from lib.geometry import positions_to_nm_array, place_on_sphere
-from lib.utils import banner, ps_to_steps, pick_platform
+from lib.geometry import positions_to_nm_array
+from lib.utils import banner, pick_platform, ps_to_steps
 
 TEMPERATURE_K = 298
 N_CYCLES = int(os.environ.get("SILKEN_STRAIN_CYCLES", "10"))
@@ -107,7 +113,7 @@ def main() -> int:
     box_size = 4.0  # nm
 
     def add_molecules(mol, n, name):
-        for i in range(n):
+        for _i in range(n):
             top = mol.to_topology().to_openmm()
             if not mol.conformers:
                 mol.generate_conformers(n_conformers=1)

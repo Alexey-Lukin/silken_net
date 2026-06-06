@@ -19,7 +19,6 @@ distances) so the *caller* prints/validates — the lib stays I/O-free.
 """
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -125,15 +124,21 @@ def _align_bpy(bpy, n1, n2, target_n1, target_n2, os_pos):
     s_mid = (s_n1 + s_n2) / 2
     t_mid = (target_n1 + target_n2) / 2
 
-    s_e1 = s_n2 - s_n1; s_e1 /= np.linalg.norm(s_e1)
-    s_e3 = _plane_normal(bpy); s_e3 -= s_e3.dot(s_e1) * s_e1; s_e3 /= np.linalg.norm(s_e3)
+    s_e1 = s_n2 - s_n1
+    s_e1 /= np.linalg.norm(s_e1)
+    s_e3 = _plane_normal(bpy)
+    s_e3 -= s_e3.dot(s_e1) * s_e1
+    s_e3 /= np.linalg.norm(s_e3)
     s_e2 = np.cross(s_e3, s_e1)
     bulk = np.mean([p for _, p in bpy], axis=0) - s_mid
     if bulk.dot(s_e2) < 0:
         s_e2, s_e3 = -s_e2, -s_e3
 
-    t_e1 = target_n2 - target_n1; t_e1 /= np.linalg.norm(t_e1)
-    t_e2 = t_mid - os_pos; t_e2 -= t_e2.dot(t_e1) * t_e1; t_e2 /= np.linalg.norm(t_e2)
+    t_e1 = target_n2 - target_n1
+    t_e1 /= np.linalg.norm(t_e1)
+    t_e2 = t_mid - os_pos
+    t_e2 -= t_e2.dot(t_e1) * t_e1
+    t_e2 /= np.linalg.norm(t_e2)
     t_e3 = np.cross(t_e1, t_e2)
 
     R = np.column_stack([t_e1, t_e2, t_e3]) @ np.column_stack([s_e1, s_e2, s_e3]).T
@@ -158,12 +163,14 @@ def _align_monodentate(mol_atoms, coord, target_pos, outward_dir, plane_hint, tw
     s_anchor = mol_atoms[coord][1]
     s_dir = np.mean([p for _, p in mol_atoms], axis=0) - s_anchor
     s_dir /= np.linalg.norm(s_dir)
-    s_normal = _plane_normal(mol_atoms); s_normal -= s_normal.dot(s_dir) * s_dir
+    s_normal = _plane_normal(mol_atoms)
+    s_normal -= s_normal.dot(s_dir) * s_dir
     s_normal /= np.linalg.norm(s_normal)
     s_perp = np.cross(s_normal, s_dir)
 
     t_dir = outward_dir / np.linalg.norm(outward_dir)
-    t_normal = plane_hint - plane_hint.dot(t_dir) * t_dir; t_normal /= np.linalg.norm(t_normal)
+    t_normal = plane_hint - plane_hint.dot(t_dir) * t_dir
+    t_normal /= np.linalg.norm(t_normal)
     t_perp = np.cross(t_normal, t_dir)
 
     R = np.column_stack([t_dir, t_perp, t_normal]) @ np.column_stack([s_dir, s_perp, s_normal]).T
@@ -194,25 +201,29 @@ def build_os_complex(bpy_smiles: str = BPY_SMILES, axial=DEFAULT_AXIAL,
     bpy, n1, n2 = build_chelate(bpy_smiles)
 
     # ── bpy1 chelate (xz plane) ──
-    mid1 = np.array([-1.0, 0.0, 1.0]); mid1 /= np.linalg.norm(mid1)
-    perp1 = np.cross(np.array([0.0, 1.0, 0.0]), mid1); perp1 /= np.linalg.norm(perp1)
+    mid1 = np.array([-1.0, 0.0, 1.0])
+    mid1 /= np.linalg.norm(mid1)
+    perp1 = np.cross(np.array([0.0, 1.0, 0.0]), mid1)
+    perp1 /= np.linalg.norm(perp1)
     tn1_1 = os_pos + OS_N_BPY * (np.cos(half) * mid1 + np.sin(half) * perp1)
     tn2_1 = os_pos + OS_N_BPY * (np.cos(half) * mid1 - np.sin(half) * perp1)
     bpy1 = _align_bpy(bpy, n1, n2, tn1_1, tn2_1, os_pos)
 
     # ── bpy2 chelate (yz plane) ──
-    mid2 = np.array([0.0, -1.0, -1.0]); mid2 /= np.linalg.norm(mid2)
-    perp2 = np.cross(np.array([1.0, 0.0, 0.0]), mid2); perp2 /= np.linalg.norm(perp2)
+    mid2 = np.array([0.0, -1.0, -1.0])
+    mid2 /= np.linalg.norm(mid2)
+    perp2 = np.cross(np.array([1.0, 0.0, 0.0]), mid2)
+    perp2 /= np.linalg.norm(perp2)
     tn1_2 = os_pos + OS_N_BPY * (np.cos(half) * mid2 + np.sin(half) * perp2)
     tn2_2 = os_pos + OS_N_BPY * (np.cos(half) * mid2 - np.sin(half) * perp2)
     bpy2 = _align_bpy(bpy, n1, n2, tn1_2, tn2_2, os_pos)
 
-    all_atoms = [("Os", os_pos)] + bpy1 + bpy2
+    all_atoms = [("Os", os_pos), *bpy1, *bpy2]
     block_id = [-1] + [0] * len(bpy1) + [1] * len(bpy2)   # -1 = metal (skip in clash)
     slot_dirs = (np.array([0.0, 1.0, 0.0]), np.array([1.0, 0.0, 0.0]))   # +y, +x
     plane_hints = (np.array([0.0, 0.0, 1.0]), np.array([0.0, 0.0, 1.0]))
 
-    for k, (spec, sdir, phint, tw) in enumerate(zip(axial, slot_dirs, plane_hints, axial_twists)):
+    for k, (spec, sdir, phint, tw) in enumerate(zip(axial, slot_dirs, plane_hints, axial_twists, strict=False)):
         if spec[0] == "cl":
             all_atoms.append(("Cl", os_pos + OS_CL * sdir))
             block_id.append(2 + k)

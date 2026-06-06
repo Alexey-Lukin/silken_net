@@ -16,7 +16,7 @@ these same goldens at tol 1e-3.
 from __future__ import annotations
 
 import math
-from functools import lru_cache
+from functools import cache
 
 from .contract import CONTRACT, LogMelContract
 
@@ -30,7 +30,7 @@ def mel_to_hz_htk(m: float) -> float:
     return 700.0 * (10.0 ** (m / 2595.0) - 1.0)
 
 
-@lru_cache(maxsize=None)
+@cache
 def mel_filterbank(c: LogMelContract = CONTRACT) -> tuple[tuple[float, ...], ...]:
     """``n_mels × n_bins`` triangular HTK filter bank, ``norm=None``.
 
@@ -55,13 +55,13 @@ def mel_filterbank(c: LogMelContract = CONTRACT) -> tuple[tuple[float, ...], ...
     return tuple(fb)
 
 
-@lru_cache(maxsize=None)
+@cache
 def periodic_hann(n: int) -> tuple[float, ...]:
     """Periodic Hann (``fftbins=True``): ``0.5 - 0.5*cos(2πk/N)``, denom N."""
     return tuple(0.5 - 0.5 * math.cos(2.0 * math.pi * k / n) for k in range(n))
 
 
-@lru_cache(maxsize=None)
+@cache
 def _twiddle(n: int) -> tuple[tuple[tuple[float, float], ...], ...]:
     """Precomputed ``(cos, sin)`` for the naive RFFT — ``[n_bins][n]``."""
     nb = n // 2 + 1

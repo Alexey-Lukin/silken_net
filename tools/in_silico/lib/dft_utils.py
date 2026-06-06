@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import numpy as np
+
 from .constants import HARTREE_TO_EV
 
 
@@ -63,7 +64,9 @@ def dft_singlepoint(atoms, charge: int, spin: int, label: str = "",
     Returns E_total (Ha) + frontier energies (eV).
     """
     import time
+
     from pyscf import dft, gto, solvent
+
     from .constants import BASIS_LIGHT, BASIS_OS, ECP_OS, SOLVENT_EPS_WATER
 
     atoms_pyscf = [(s, (float(p[0]), float(p[1]), float(p[2]))) for s, p in atoms]

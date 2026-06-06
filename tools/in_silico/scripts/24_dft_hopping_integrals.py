@@ -24,18 +24,22 @@ Expected wall time: ~3-4 hours CPU (3 pairs × ~1 hour each).
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
 from pathlib import Path
-
-import os
 
 import numpy as np
 from pyscf import dft, gto
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
-    REPO_ROOT, LIGANDS_DIR, DFT_CACHE, HARTREE_TO_EV, BASIS_LIGHT, TEMPERATURE_K,
+    BASIS_LIGHT,
+    DFT_CACHE,
+    HARTREE_TO_EV,
+    LIGANDS_DIR,
+    REPO_ROOT,
+    TEMPERATURE_K,
 )
 from lib.utils import banner
 
@@ -222,7 +226,7 @@ def main() -> int:
     k_values = [p["k_ET_per_s"] for p in results["pairs"]]
     labels = [p["label"] for p in results["pairs"]]
 
-    for lab, k in zip(labels, k_values):
+    for lab, k in zip(labels, k_values, strict=False):
         print(f"  {lab}: k = {k:.2e} s⁻¹")
 
     if all(k > 0 for k in k_values):

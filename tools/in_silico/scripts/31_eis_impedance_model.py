@@ -39,8 +39,15 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
-    KINETICS_DIR, F_CONST, R_GAS, TEMPERATURE_K,
-    N_ELECTRONS, J_MAX_25C, A_ELECTRODE, D_EFF_GLUCOSE,
+    A_ELECTRODE,
+    D_EFF_GLUCOSE,
+    F_CONST,
+    J_MAX_25C,
+    KINETICS_DIR,
+    N_ELECTRONS,
+    R_GAS,
+    REPO_ROOT,
+    TEMPERATURE_K,
 )
 from lib.utils import banner
 
@@ -99,7 +106,7 @@ def main() -> int:
     rct = compute_rct()
     sigma = compute_warburg_sigma()
 
-    print(f"  Parameters:")
+    print("  Parameters:")
     print(f"    Rs  = {R_S:.0f} Ω (solution)")
     print(f"    Rct = {rct:.0f} Ω (charge transfer)")
     print(f"    Cdl = {CDL*1e6:.0f} µF/cm²")
@@ -195,7 +202,7 @@ def main() -> int:
     print(f"  High-freq intercept (Rs): ~{R_S:.0f} Ω")
     print(f"  Time constant τ = Rct×Cdl×A: {rct * CDL * A_ELECTRODE * 1e3:.1f} ms")
     print(f"  Warburg region: below ~{1.0/(2*np.pi*rct*CDL*A_ELECTRODE):.1f} Hz")
-    print(f"  ✅ These predictions can be compared with CV/EIS data from Ti-coin tests")
+    print("  ✅ These predictions can be compared with CV/EIS data from Ti-coin tests")
 
     banner("✅ EIS model complete")
     return 0

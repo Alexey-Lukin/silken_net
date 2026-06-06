@@ -34,13 +34,13 @@ import time
 from pathlib import Path
 
 import openmm
-from openmm import LangevinMiddleIntegrator, Platform
-from openmm.app import PME, ForceField, HBonds, Modeller, PDBFile, Simulation
+from openmm import LangevinMiddleIntegrator
+from openmm.app import PME, ForceField, HBonds, Modeller, Simulation
 from openmm.unit import femtosecond, kelvin, kilojoule_per_mole, molar, nanometer, picosecond
 from pdbfixer import PDBFixer
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, AF3_PDB, PH, IONIC_STRENGTH, TIMESTEP_FS
+from lib.constants import AF3_PDB, IONIC_STRENGTH, PH, REPO_ROOT, TIMESTEP_FS
 from lib.utils import banner, pick_platform
 
 INPUT_PDB = AF3_PDB
@@ -121,7 +121,7 @@ def main() -> int:
     if e1 >= e0:
         sys.exit(f"FAIL: minimisation did not reduce PE: {e0:.2f} → {e1:.2f}")
     if e1 > 0:
-        print(f"  ⚠️  PE still positive (large system on CPU may need more iterations — OK for smoke test)")
+        print("  ⚠️  PE still positive (large system on CPU may need more iterations — OK for smoke test)")
 
     # ---------- 5. Short MD ----------
     banner(f"Running {MD_STEPS} MD steps ({MD_STEPS * TIMESTEP_FS / 1000:.1f} ps @ {TIMESTEP_FS} fs)")

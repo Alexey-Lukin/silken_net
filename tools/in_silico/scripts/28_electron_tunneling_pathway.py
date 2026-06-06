@@ -33,7 +33,7 @@ except ImportError:
     sys.exit("mdtraj required (already in silken_md env)")
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, DFT_CACHE
+from lib.constants import DFT_CACHE, REPO_ROOT
 from lib.utils import banner
 
 AF3_PDB = REPO_ROOT / "docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb"
@@ -113,7 +113,7 @@ def find_surface_atoms(G, coords, percentile=90) -> list[int]:
     centroid = positions.mean(axis=0)
     distances = np.linalg.norm(positions - centroid, axis=1)
     threshold = np.percentile(distances, percentile)
-    return [a for a, d in zip(protein_atoms, distances) if d >= threshold]
+    return [a for a, d in zip(protein_atoms, distances, strict=False) if d >= threshold]
 
 
 def main() -> int:
@@ -142,7 +142,6 @@ def main() -> int:
     banner("Finding optimal tunneling pathway (Dijkstra)")
     best_path = None
     best_cost = float("inf")
-    best_target = None
 
     for source in fad_atoms[:5]:
         try:
@@ -153,7 +152,6 @@ def main() -> int:
             if target in lengths and lengths[target] < best_cost:
                 best_cost = lengths[target]
                 best_path = paths[target]
-                best_target = target
 
     if best_path is None:
         print("  ⚠️ No pathway found")
@@ -171,7 +169,7 @@ def main() -> int:
     print(f"  Coupling penalty: {best_cost:.4f}")
     print(f"  Effective β·d: {np.log(best_cost):.2f}")
 
-    print(f"\n  Pathway:")
+    print("\n  Pathway:")
     residues_in_path = []
     for i, atom_idx in enumerate(best_path):
         d = G.nodes[atom_idx]

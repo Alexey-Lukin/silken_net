@@ -32,7 +32,7 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, DFT_CACHE, HARTREE_TO_EV
+from lib.constants import DFT_CACHE, HARTREE_TO_EV, REPO_ROOT
 from lib.utils import banner
 
 LUMIFLAVIN_RED = "CC1=CC2=C(C=C1C)N(C)C3=NC(=O)NC(=O)C3N2"
@@ -165,7 +165,7 @@ def main() -> int:
     print(f"  λ₁ = E(n@Rc) - E(n@Rn) = {lambda_1:.6f} Ha = {lambda_1*HARTREE_TO_EV:.4f} eV")
     print(f"  λ₂ = E(c@Rn) - E(c@Rc) = {lambda_2:.6f} Ha = {lambda_2*HARTREE_TO_EV:.4f} eV")
     print(f"  λ_inner = λ₁ + λ₂       = {lambda_inner:.6f} Ha = {lambda_inner*HARTREE_TO_EV:.4f} eV")
-    print(f"  Literature λ (assumed):    0.7000 eV")
+    print("  Literature λ (assumed):    0.7000 eV")
     print(f"  Difference:                {lambda_inner*HARTREE_TO_EV - 0.7:+.4f} eV")
 
     lam_eV = lambda_inner * HARTREE_TO_EV

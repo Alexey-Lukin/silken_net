@@ -40,13 +40,11 @@ from datetime import datetime
 from pathlib import Path
 
 import numpy as np
-import openmm
 from openff.toolkit import Molecule
 from openmm import (
     LangevinMiddleIntegrator,
     MonteCarloBarostat,
     Platform,
-    Vec3,
 )
 from openmm.app import (
     PME,
@@ -62,7 +60,6 @@ from openmm.unit import (
     atmosphere,
     femtosecond,
     kelvin,
-    kilojoule_per_mole,
     molar,
     nanometer,
     picosecond,
@@ -72,13 +69,25 @@ from pdbfixer import PDBFixer
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
-    REPO_ROOT, AF3_PDB, LIGANDS_DIR, CACHE_FILE, RUNS_DIR,
-    PH, PRESSURE_ATM, IONIC_STRENGTH, WATER_PADDING_NM, TIMESTEP_FS,
-    EQUIL_NVT_PS, EQUIL_NPT_PS,
-    N_GENIPIN, N_CHITOSAN, N_CELLOBIOSE, GAFF_VERSION,
+    AF3_PDB,
+    CACHE_FILE,
+    EQUIL_NPT_PS,
+    EQUIL_NVT_PS,
+    GAFF_VERSION,
+    IONIC_STRENGTH,
+    LIGANDS_DIR,
+    N_CELLOBIOSE,
+    N_CHITOSAN,
+    N_GENIPIN,
+    PH,
+    PRESSURE_ATM,
+    REPO_ROOT,
+    RUNS_DIR,
+    TIMESTEP_FS,
+    WATER_PADDING_NM,
 )
-from lib.geometry import positions_to_nm_array, place_on_sphere, restraint_protein_heavy_atoms
-from lib.utils import banner, ps_to_steps, pick_platform
+from lib.geometry import place_on_sphere, positions_to_nm_array, restraint_protein_heavy_atoms
+from lib.utils import banner, pick_platform, ps_to_steps
 
 FAD_SDF = LIGANDS_DIR / "FAD.sdf"
 GENIPIN_SDF = LIGANDS_DIR / "genipin.sdf"
@@ -169,7 +178,7 @@ def run_single_temperature(temp_k: int, platform: Platform) -> dict:
 
     # NVT with restraints — heat to target T
     ramp_step = 10
-    restraint = restraint_protein_heavy_atoms(system, modeller.positions, modeller.topology, k=10.0)
+    restraint_protein_heavy_atoms(system, modeller.positions, modeller.topology, k=10.0)
     sim.context.reinitialize(preserveState=True)
     start_t = min(50, temp_k)
     sim.context.setVelocitiesToTemperature(start_t * kelvin)
@@ -232,10 +241,7 @@ def main() -> int:
             sys.exit(f"Missing prerequisite: {p}\nRun scripts 02-05 first.")
 
     temps_env = os.environ.get("SILKEN_SWEEP_TEMPS")
-    if temps_env:
-        temps = [int(t) for t in temps_env.split(",")]
-    else:
-        temps = DEFAULT_TEMPS_K
+    temps = [int(t) for t in temps_env.split(",")] if temps_env else DEFAULT_TEMPS_K
 
     banner(f"L2 temperature sweep — {len(temps)} temperatures: {temps}")
     platform = pick_platform()
@@ -270,7 +276,7 @@ def main() -> int:
         v = "STABLE" if r["stable"] else "UNSTABLE"
         if not r["stable"]:
             all_stable = False
-        print(f"  {int(round(r['temp_C'])):>5d}°C  {r['rmsd_mean_A']:>9.3f} Å  {r['rmsd_max_A']:>8.3f} Å  {v:>10s}")
+        print(f"  {round(r['temp_C']):>5d}°C  {r['rmsd_mean_A']:>9.3f} Å  {r['rmsd_max_A']:>8.3f} Å  {v:>10s}")
 
     overall = "✅ All temperatures STABLE" if all_stable else "⚠️ Some temperatures UNSTABLE"
     print(f"\n  {overall}")

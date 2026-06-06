@@ -32,8 +32,14 @@ from pyscf.geomopt import geometric_solver
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
-    LIGANDS_DIR, DFT_CACHE, HARTREE_TO_EV, BOHR_TO_ANG,
-    BASIS_LIGHT, BASIS_OS, ECP_OS, SOLVENT_EPS_WATER,
+    BASIS_LIGHT,
+    BASIS_OS,
+    DFT_CACHE,
+    ECP_OS,
+    HARTREE_TO_EV,
+    LIGANDS_DIR,
+    REPO_ROOT,
+    SOLVENT_EPS_WATER,
 )
 from lib.utils import banner
 
@@ -141,7 +147,7 @@ def main() -> int:
     os_n_after = os_n_distances(opt_atoms)
     print(f"  Os-N distances (after opt):  {[f'{d:.3f}' for d in sorted(os_n_after)[:6]]}")
     if any(d < 1.5 or d > 3.0 for d in os_n_after[:6]):
-        print(f"  ⚠️  WARNING: Unusual Os-N distances — geometry may be a local minimum")
+        print("  ⚠️  WARNING: Unusual Os-N distances — geometry may be a local minimum")
 
     write_xyz(opt_atoms, OUTPUT_XYZ, "cis-[Os(bpy)2(1-MeIm)Cl] — B3LYP/6-31G(d)+LANL2DZ geom opt")
     print(f"  Wrote {OUTPUT_XYZ.relative_to(REPO_ROOT)}")

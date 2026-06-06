@@ -37,7 +37,7 @@ from pyscf import dft
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
-from lib.constants import REPO_ROOT, LIGANDS_DIR, DFT_CACHE, HARTREE_TO_EV, TEMPERATURE_K
+from lib.constants import DFT_CACHE, HARTREE_TO_EV, LIGANDS_DIR, REPO_ROOT, TEMPERATURE_K
 from lib.utils import banner
 
 # Reuse script 24's exact functions (digit-leading module name → importlib).
@@ -127,7 +127,7 @@ def main() -> int:
         "caveat": "fixed-geom t_ij isolates 4d-diffuseness (controls distance); real Ru-N longer → upper bound on the pure-diffuseness gain",
         "turnover_s": TURNOVER, "lambda_hop_eV": lam_hop, "pairs": [],
     }
-    for xyz, m1, m2, label, charge, spin in PAIRS:
+    for xyz, _m1, m2, label, charge, spin in PAIRS:
         path = LIGANDS_DIR / xyz
         if not path.exists():
             sys.exit(f"missing {path} — build cu_ru_zif.xyz first")

@@ -22,8 +22,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import DFT_CACHE, HARTREE_TO_EV, REPO_ROOT
-from lib.os_geometry import build_os_complex, MEIM_SMILES, WATER_SMILES
 from lib.dft_utils import dft_singlepoint
+from lib.os_geometry import MEIM_SMILES, WATER_SMILES, build_os_complex
 from lib.utils import banner
 
 OUT = DFT_CACHE / "wb97x_speciation.json"

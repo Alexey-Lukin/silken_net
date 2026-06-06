@@ -57,14 +57,11 @@ from datetime import datetime
 from pathlib import Path
 
 import numpy as np
-import openmm
 from openff.toolkit import Molecule
 from openmm import (
     LangevinMiddleIntegrator,
     MonteCarloBarostat,
-    Platform,
     Vec3,
-    XmlSerializer,
 )
 from openmm.app import (
     PME,
@@ -90,12 +87,23 @@ from pdbfixer import PDBFixer
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
-    REPO_ROOT, AF3_PDB, LIGANDS_DIR, CACHE_FILE, RUNS_DIR,
-    PH, IONIC_STRENGTH, PRESSURE_ATM, WATER_PADDING_NM, TIMESTEP_FS,
-    EQUIL_NVT_PS, EQUIL_NPT_PS, N_GENIPIN, GAFF_VERSION,
+    AF3_PDB,
+    CACHE_FILE,
+    EQUIL_NPT_PS,
+    EQUIL_NVT_PS,
+    GAFF_VERSION,
+    IONIC_STRENGTH,
+    LIGANDS_DIR,
+    N_GENIPIN,
+    PH,
+    PRESSURE_ATM,
+    REPO_ROOT,
+    RUNS_DIR,
+    TIMESTEP_FS,
+    WATER_PADDING_NM,
 )
 from lib.geometry import positions_to_nm_array, restraint_protein_heavy_atoms
-from lib.utils import banner, ps_to_steps, pick_platform
+from lib.utils import banner, pick_platform, ps_to_steps
 
 FAD_SDF = LIGANDS_DIR / "FAD.sdf"
 GENIPIN_SDF = LIGANDS_DIR / "genipin.sdf"
@@ -223,7 +231,7 @@ def main() -> int:
     # ---------- 8. NVT equilibration with protein-heavy-atom restraints ----------
     ramp_step = 10
     banner(f"NVT equilibration: heating 100→298 K over {EQUIL_NVT_PS} ps (protein heavy atoms restrained)")
-    restraint = restraint_protein_heavy_atoms(system, modeller.positions, modeller.topology, k=10.0)
+    restraint_protein_heavy_atoms(system, modeller.positions, modeller.topology, k=10.0)
     sim.context.reinitialize(preserveState=True)
     sim.context.setVelocitiesToTemperature(100 * kelvin)
     steps_per_ramp = ps_to_steps(EQUIL_NVT_PS) // ((TEMPERATURE_K - 100) // ramp_step)

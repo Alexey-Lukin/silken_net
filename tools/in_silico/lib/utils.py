@@ -15,7 +15,7 @@ def banner(msg: str) -> None:
 
 def ps_to_steps(ps: float, timestep_fs: float = 2.0) -> int:
     """Convert picoseconds to integration steps."""
-    return int(round(ps * 1000.0 / timestep_fs))
+    return round(ps * 1000.0 / timestep_fs)
 
 
 def pick_platform() -> Platform:

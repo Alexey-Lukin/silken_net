@@ -34,13 +34,17 @@ import sys
 import time
 from pathlib import Path
 
-import numpy as np
 from pyscf import dft, gto, solvent
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
-    REPO_ROOT, LIGANDS_DIR, DFT_CACHE, HARTREE_TO_EV,
-    BASIS_OS, ECP_OS, SOLVENT_EPS_WATER,
+    BASIS_OS,
+    DFT_CACHE,
+    ECP_OS,
+    HARTREE_TO_EV,
+    LIGANDS_DIR,
+    REPO_ROOT,
+    SOLVENT_EPS_WATER,
 )
 from lib.utils import banner
 
@@ -125,7 +129,7 @@ def main() -> int:
     atoms = read_xyz(INPUT_XYZ)
     banner(f"Publication-grade DFT: {XC_FUNCTIONAL.upper()}/{BASIS_LIGHT}")
     print(f"  Loaded {len(atoms)} atoms from {INPUT_XYZ.name}")
-    print(f"  This is ~3-5× slower than B3LYP/6-31G(d)")
+    print("  This is ~3-5× slower than B3LYP/6-31G(d)")
 
     results = {
         "method": f"{XC_FUNCTIONAL.upper()}/{BASIS_OS}(Os)+{BASIS_LIGHT}(others)+PCM(water,C-PCM)",

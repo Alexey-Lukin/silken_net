@@ -14,9 +14,9 @@ import pytest
 pytest.importorskip("numpy")
 pytest.importorskip("librosa")
 
-from silken_ml.dsp import logmel_librosa as Lib  # noqa: E402
-from silken_ml.dsp import logmel_stdlib as S  # noqa: E402
-from silken_ml.dsp.contract import CONTRACT  # noqa: E402
+from silken_ml.dsp import logmel_librosa as Lib
+from silken_ml.dsp import logmel_stdlib as S
+from silken_ml.dsp.contract import CONTRACT
 
 TOL = 1e-6
 

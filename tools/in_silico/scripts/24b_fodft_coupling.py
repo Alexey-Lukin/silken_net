@@ -32,10 +32,10 @@ import time
 from pathlib import Path
 
 import numpy as np
-from pyscf import dft, gto, lo
+from pyscf import dft, gto
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, LIGANDS_DIR, DFT_CACHE, HARTREE_TO_EV, BASIS_LIGHT
+from lib.constants import BASIS_LIGHT, DFT_CACHE, HARTREE_TO_EV, LIGANDS_DIR, REPO_ROOT
 from lib.utils import banner
 
 OUT = DFT_CACHE / "fodft_coupling.json"
@@ -74,7 +74,8 @@ def main() -> int:
         sys.exit(f"Missing {XYZ}. Run script 23 first.")
     atoms = read_xyz(XYZ)
 
-    basis = dict(BASIS_METALS); basis["default"] = BASIS_LIGHT
+    basis = dict(BASIS_METALS)
+    basis["default"] = BASIS_LIGHT
     mol = gto.M(atom=atoms, basis=basis, ecp=dict(ECP_METALS),
                 charge=CHARGE, spin=SPIN, unit="Angstrom")
     cu_idx = [i for i, a in enumerate(atoms) if a[0] == "Cu"]
@@ -89,14 +90,14 @@ def main() -> int:
     mf.verbose = 0
     e_scf = mf.kernel()
     if not mf.converged:
-        mf = mf.newton(); mf.max_cycle = 100; e_scf = mf.kernel()
+        mf = mf.newton()
+        mf.max_cycle = 100
+        e_scf = mf.kernel()
     print(f"  dimer SCF: E={e_scf:.6f} Ha, converged={mf.converged}")
 
     S = mf.get_ovlp()
-    fock = mf.get_fock()                            # (2, nao, nao) for UKS
     # work in the alpha channel (the open-shell / hole-transfer channel)
     C, eps = mf.mo_coeff[0], mf.mo_energy[0]
-    F = fock[0]
     nocc = int((mf.mo_occ[0] > 0).sum())
 
     # frontier window around the SOMO/HOMO; pick the 2 MOs with the most Cu+Co metal weight

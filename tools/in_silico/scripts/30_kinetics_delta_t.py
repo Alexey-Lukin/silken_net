@@ -39,10 +39,22 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
-    KINETICS_DIR, F_CONST, R_GAS, N_ELECTRONS,
-    J_MAX_25C, KM_GLUCOSE, EA_ENZYME, TEMPERATURE_K,
-    V_OP, A_ELECTRODE, ETA_BQ, E_CYCLE,
-    D_EFF_GLUCOSE, DELTA_MEMBRANE, BASELINE_DELTA_T_S,
+    A_ELECTRODE,
+    BASELINE_DELTA_T_S,
+    D_EFF_GLUCOSE,
+    DELTA_MEMBRANE,
+    E_CYCLE,
+    EA_ENZYME,
+    ETA_BQ,
+    F_CONST,
+    J_MAX_25C,
+    KINETICS_DIR,
+    KM_GLUCOSE,
+    N_ELECTRONS,
+    R_GAS,
+    REPO_ROOT,
+    TEMPERATURE_K,
+    V_OP,
 )
 
 T_REF = TEMPERATURE_K
@@ -144,7 +156,6 @@ def main() -> int:
 
     # ── 4. Sensitivity analysis ──
     banner("Sensitivity analysis (delta_t at 10 mM, 25°C)")
-    dt_base = delta_t(10, 25)
     sensitivities = {}
 
     for param, values, label in [
@@ -251,12 +262,12 @@ def main() -> int:
     dt_stress = delta_t(5, 5)
     verdict_ok = dt_healthy < BASELINE_DELTA_T_S and dt_stress > BASELINE_DELTA_T_S
     if verdict_ok:
-        print(f"  ✅ BASELINE VALIDATED")
+        print("  ✅ BASELINE VALIDATED")
         print(f"     Healthy tree (10 mM, 25°C): delta_t = {dt_healthy:.1f}s < 60s → β increases")
         print(f"     Stressed tree (5 mM, 5°C):  delta_t = {dt_stress:.1f}s > 60s → β at baseline")
-        print(f"     EBFC discriminates healthy vs stressed → Lorenz attractor receives meaningful signal")
+        print("     EBFC discriminates healthy vs stressed → Lorenz attractor receives meaningful signal")
     else:
-        print(f"  ⚠️  Model needs parameter adjustment")
+        print("  ⚠️  Model needs parameter adjustment")
         print(f"     dt_healthy={dt_healthy:.1f}s, dt_stress={dt_stress:.1f}s")
 
     banner("✅ L4 complete — EBFC kinetics validated against firmware BASELINE_DELTA_T_S = 60s")

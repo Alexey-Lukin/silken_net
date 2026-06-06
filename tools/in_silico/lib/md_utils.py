@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 
-from .constants import RUNS_DIR, AF3_PDB, LIGANDS_DIR, CACHE_FILE
+from .constants import RUNS_DIR
 
 
 def create_run_dir(prefix: str = "") -> tuple[str, Path]:
@@ -36,7 +37,6 @@ def prepare_protein(pdb_path: Path | str, ph: float = 4.5):
 
 def rmsd_vs_frame0(traj) -> np.ndarray:
     """Compute backbone RMSD vs first frame using mdtraj."""
-    import mdtraj as md
 
     backbone = traj.topology.select("backbone")
     traj.superpose(traj, frame=0, atom_indices=backbone)

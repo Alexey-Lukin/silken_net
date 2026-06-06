@@ -18,8 +18,8 @@ from .contract import CONTRACT, LogMelContract
 
 def _require_librosa():
     try:
-        import librosa  # noqa: F401
-        import numpy as np  # noqa: F401
+        import librosa
+        import numpy as np
     except ImportError as exc:  # pragma: no cover - exercised only without the extra
         raise ImportError(
             "logmel_librosa needs the [oracle] extra (numpy + librosa). "

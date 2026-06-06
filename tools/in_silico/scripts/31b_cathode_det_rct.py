@@ -26,7 +26,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, KINETICS_DIR, DFT_CACHE, F_CONST, R_GAS, TEMPERATURE_K, A_ELECTRODE
+from lib.constants import A_ELECTRODE, DFT_CACHE, F_CONST, KINETICS_DIR, R_GAS, REPO_ROOT, TEMPERATURE_K
 from lib.utils import banner
 
 N_E = 1            # single-electron DET hop
@@ -72,7 +72,8 @@ def main() -> int:
         row = []
         for gname, gamma in GAMMA_GRID.items():
             r = rct(k, gamma)
-            row.append(r); all_rct.append(r)
+            row.append(r)
+            all_rct.append(r)
             grid.append({"k_label": kname, "k_det_s": k, "gamma_label": gname, "gamma_mol_cm2": gamma, "rct_ohm": r})
         print(f"  {kname:>26} {k:>12.0f} " + " ".join(f"{v:>14.3g}" for v in row))
 

@@ -53,9 +53,9 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import DFT_CACHE, LIGANDS_DIR, REPO_ROOT, HARTREE_TO_EV
-from lib.os_geometry import build_os_complex, write_xyz
+from lib.constants import DFT_CACHE, HARTREE_TO_EV, LIGANDS_DIR, REPO_ROOT
 from lib.dft_utils import dft_singlepoint
+from lib.os_geometry import build_os_complex, write_xyz
 from lib.utils import banner
 
 OUT = DFT_CACHE / "microsolvation.json"

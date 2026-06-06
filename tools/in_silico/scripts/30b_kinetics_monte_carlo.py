@@ -23,14 +23,20 @@ import sys
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
-    KINETICS_DIR, R_GAS, F_CONST, TEMPERATURE_K,
-    N_ELECTRONS, V_OP, ETA_BQ, BASELINE_DELTA_T_S,
+    BASELINE_DELTA_T_S,
+    ETA_BQ,
+    KINETICS_DIR,
+    R_GAS,
+    REPO_ROOT,
+    TEMPERATURE_K,
+    V_OP,
 )
 from lib.utils import banner
 

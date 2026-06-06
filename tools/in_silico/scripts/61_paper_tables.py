@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, DFT_CACHE, PAPER_DIR
+from lib.constants import DFT_CACHE, PAPER_DIR, REPO_ROOT
 
 # Canon values that live in SUMMARY prose (not a single cache field) — kept here as
 # explicit constants WITH a source note, and cross-checked against cache where one exists.

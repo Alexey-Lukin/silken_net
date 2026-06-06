@@ -26,8 +26,8 @@ import struct
 import sys
 from pathlib import Path
 
-from ..dsp.contract import CONTRACT, contract_hash
 from ..dsp import logmel_stdlib as L
+from ..dsp.contract import CONTRACT, contract_hash
 
 _GENERATED_BY = "tools/ml/src/silken_ml/codegen/emit_c.py"
 
@@ -85,7 +85,7 @@ def gen_mel_bank() -> str:
     out.append("/* HTK mel bank (norm=None), sparse triplet: out_mel[m] += w * power[k]. */\n")
     out.append(f"#define LOGMEL_MEL_NNZ {len(triplets)}\n\n")
     out.append("typedef struct { uint8_t m; uint16_t k; float w; } logmel_mel_triplet_t;\n\n")
-    out.append(f"static const logmel_mel_triplet_t LOGMEL_MEL_BANK[LOGMEL_MEL_NNZ] = {{\n")
+    out.append("static const logmel_mel_triplet_t LOGMEL_MEL_BANK[LOGMEL_MEL_NNZ] = {\n")
     for (m, k, w) in triplets:
         out.append(f"    {{ {m:2d}, {k:3d}, {c_float(w)} }},\n")
     out.append("};\n\n#endif /* LOGMEL_MEL_BANK_H */\n")

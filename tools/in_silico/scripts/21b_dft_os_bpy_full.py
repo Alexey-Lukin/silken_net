@@ -47,11 +47,16 @@ from rdkit.Chem import AllChem
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
-    REPO_ROOT, LIGANDS_DIR, DFT_CACHE, KINETICS_DIR, HARTREE_TO_EV,
-    BASIS_LIGHT, BASIS_OS, ECP_OS, SOLVENT_EPS_WATER,
+    BASIS_LIGHT,
+    BASIS_OS,
+    DFT_CACHE,
+    ECP_OS,
+    HARTREE_TO_EV,
+    LIGANDS_DIR,
+    REPO_ROOT,
+    SOLVENT_EPS_WATER,
 )
 from lib.utils import banner
-
 
 # ── Bond lengths (Å) from crystallographic data of Os-bpy complexes ──
 OS_N_BPY = 2.06

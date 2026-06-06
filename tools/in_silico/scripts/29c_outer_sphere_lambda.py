@@ -26,7 +26,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, DFT_CACHE
+from lib.constants import DFT_CACHE, REPO_ROOT
 from lib.utils import banner
 
 E2_4PIEPS0 = 14.399645          # eV·Å — e²/(4πε₀)

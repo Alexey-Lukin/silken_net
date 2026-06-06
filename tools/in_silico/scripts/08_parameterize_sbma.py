@@ -32,7 +32,7 @@ from openmm.app import ForceField
 from openmmforcefields.generators import GAFFTemplateGenerator
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, LIGANDS_DIR, CACHE_FILE, GAFF_VERSION
+from lib.constants import CACHE_FILE, GAFF_VERSION, LIGANDS_DIR, REPO_ROOT
 from lib.utils import banner
 
 LIGANDS_DIR.mkdir(parents=True, exist_ok=True)
@@ -49,14 +49,14 @@ OUT_SDF = LIGANDS_DIR / "sbma_monomer.sdf"
 def main() -> int:
     banner("Building SBMA monomer from SMILES")
     print(f"  SMILES: {SBMA_SMILES}")
-    print(f"  CAS: 3637-26-1")
+    print("  CAS: 3637-26-1")
     mol = Molecule.from_smiles(SBMA_SMILES)
     mol.name = "SBM"
     mol.generate_conformers(n_conformers=1)
     print(f"  Heavy atoms: {sum(1 for a in mol.atoms if a.atomic_number > 1)}")
     print(f"  Total atoms: {mol.n_atoms} | bonds: {mol.n_bonds}")
     print(f"  Total charge: {mol.total_charge}")
-    print(f"  Net zwitterionic: N+ and SO₃⁻ cancel out")
+    print("  Net zwitterionic: N+ and SO₃⁻ cancel out")
 
     mol.to_file(str(OUT_SDF), file_format="sdf")
     print(f"  Wrote {OUT_SDF.relative_to(REPO_ROOT)}")

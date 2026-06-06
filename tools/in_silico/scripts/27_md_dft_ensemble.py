@@ -19,7 +19,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, DFT_CACHE, HARTREE_TO_EV
+from lib.constants import DFT_CACHE, HARTREE_TO_EV, REPO_ROOT
 from lib.utils import banner
 
 RUNS_DIR = REPO_ROOT / "tools/in_silico/cache/runs"

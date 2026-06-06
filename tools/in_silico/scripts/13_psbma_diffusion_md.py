@@ -46,13 +46,12 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+import matplotlib
 import numpy as np
-import openmm
 from openff.toolkit import Molecule
 from openmm import (
     LangevinMiddleIntegrator,
     MonteCarloBarostat,
-    Platform,
     Vec3,
 )
 from openmm.app import (
@@ -64,31 +63,33 @@ from openmm.app import (
     PDBFile,
     Simulation,
     StateDataReporter,
-    Topology,
 )
 from openmm.unit import (
     atmosphere,
     femtosecond,
     kelvin,
-    kilojoule_per_mole,
     molar,
     nanometer,
     picosecond,
 )
 from openmmforcefields.generators import GAFFTemplateGenerator
-import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from rdkit import Chem
-from rdkit.Chem import AllChem
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
-    REPO_ROOT, LIGANDS_DIR, CACHE_FILE, RUNS_DIR, KINETICS_DIR,
-    PRESSURE_ATM, TIMESTEP_FS, GAFF_VERSION,
+    CACHE_FILE,
+    GAFF_VERSION,
+    KINETICS_DIR,
+    LIGANDS_DIR,
+    PRESSURE_ATM,
+    REPO_ROOT,
+    RUNS_DIR,
+    TIMESTEP_FS,
 )
 from lib.geometry import positions_to_nm_array
-from lib.utils import banner, ps_to_steps, pick_platform
+from lib.utils import banner, pick_platform, ps_to_steps
 
 SBMA_SDF = LIGANDS_DIR / "sbma_monomer.sdf"
 OUT_DIR = KINETICS_DIR
@@ -155,7 +156,7 @@ def main() -> int:
     rng = np.random.default_rng(42)
 
     # Place remaining SBMA monomers in a slab centered at z=0
-    for i in range(1, N_SBMA):
+    for _i in range(1, N_SBMA):
         x = rng.uniform(-2.0, 2.0)
         y = rng.uniform(-2.0, 2.0)
         z = rng.uniform(-SLAB_THICKNESS_NM / 2, SLAB_THICKNESS_NM / 2)
@@ -318,8 +319,8 @@ def main() -> int:
     print(f"  Glucose probes tracked: {n_glc}")
     print(f"  MSD slope: {slope_nm2_per_ns:.4f} nm²/ns")
     print(f"  D_eff = {d_cm2_per_s:.2e} cm²/s")
-    print(f"  Literature D (chitosan hydrogel): ~2e-6 cm²/s")
-    print(f"  Literature D (pure water): ~6.7e-6 cm²/s")
+    print("  Literature D (chitosan hydrogel): ~2e-6 cm²/s")
+    print("  Literature D (pure water): ~6.7e-6 cm²/s")
 
     # Compare with L4 assumption
     d_ratio = d_cm2_per_s / 2e-6 if d_cm2_per_s > 0 else 0

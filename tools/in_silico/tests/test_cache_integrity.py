@@ -146,8 +146,13 @@ def test_constants_importable():
     import sys
     sys.path.insert(0, str(REPO / "tools/in_silico"))
     from lib.constants import (
-        GAFF_VERSION, F_CONST, R_GAS, HARTREE_TO_EV,
-        BASELINE_DELTA_T_S, J_MAX_25C, KM_GLUCOSE,
+        BASELINE_DELTA_T_S,
+        F_CONST,
+        GAFF_VERSION,
+        HARTREE_TO_EV,
+        J_MAX_25C,
+        KM_GLUCOSE,
+        R_GAS,
     )
     assert GAFF_VERSION == "gaff-2.11"
     assert abs(F_CONST - 96485.33) < 1
@@ -268,7 +273,7 @@ def test_constants_match_kinetics_output():
     """Verify constants.py values are used in kinetics output."""
     import sys
     sys.path.insert(0, str(REPO / "tools/in_silico"))
-    from lib.constants import J_MAX_25C, KM_GLUCOSE, BASELINE_DELTA_T_S
+    from lib.constants import BASELINE_DELTA_T_S, J_MAX_25C, KM_GLUCOSE
 
     data = json.loads((KINETICS / "delta_t_lookup.json").read_text())
     assert data["parameters"]["j_max_25C_uA_cm2"] == J_MAX_25C * 1e6
@@ -306,8 +311,10 @@ def test_shared_lib_modules():
     import sys
     sys.path.insert(0, str(REPO / "tools/in_silico"))
     from lib.constants import REPO_ROOT
-    from lib.geometry import positions_to_nm_array, place_on_sphere, restraint_protein_heavy_atoms
-    from lib.utils import banner, ps_to_steps, pick_platform
+
+    # навмисний import-smoke: тест падає на ImportError, якщо lib/ не експортує символ
+    from lib.geometry import place_on_sphere, positions_to_nm_array, restraint_protein_heavy_atoms  # noqa: F401
+    from lib.utils import banner, pick_platform, ps_to_steps  # noqa: F401
     from lib.xylem_sap import SAP_PROFILES
     assert REPO_ROOT.exists()
     assert len(SAP_PROFILES) >= 6

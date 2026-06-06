@@ -33,7 +33,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, DFT_CACHE, HARTREE_TO_EV
+from lib.constants import DFT_CACHE, HARTREE_TO_EV, REPO_ROOT
 from lib.utils import banner
 
 KCAL_TO_EV = 0.0433641153
@@ -108,7 +108,7 @@ def main() -> int:
         "G_star_H_aq_eV": round(G_STAR_H_AQ_EV, 4),
         "SHE_abs_V": SHE_ABS_V,
         "E_abs_V": round(e_abs, 4),
-        "E_vs_SHE_mV": {k: v for k, v in results.items()},
+        "E_vs_SHE_mV": dict(results.items()),
         "exp_free_flavin_pH7_mV": EXP_FREE_FLAVIN_PH7_MV,
         "delta_vs_exp_pH7_mV": round(e_ph7 - EXP_FREE_FLAVIN_PH7_MV, 1),
         "valid_proton_reference": bool(verdict),

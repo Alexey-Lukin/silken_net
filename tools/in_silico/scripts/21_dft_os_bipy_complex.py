@@ -47,8 +47,14 @@ from pyscf import dft, gto, solvent
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
-    REPO_ROOT, LIGANDS_DIR, DFT_CACHE, HARTREE_TO_EV,
-    BASIS_LIGHT, BASIS_OS, ECP_OS, SOLVENT_EPS_WATER,
+    BASIS_LIGHT,
+    BASIS_OS,
+    DFT_CACHE,
+    ECP_OS,
+    HARTREE_TO_EV,
+    LIGANDS_DIR,
+    REPO_ROOT,
+    SOLVENT_EPS_WATER,
 )
 from lib.utils import banner
 
@@ -66,10 +72,7 @@ def build_nh3_at_position(n_pos: np.ndarray, os_pos: np.ndarray) -> list[tuple[s
     """NH₃ with N at `n_pos`; H atoms in a tetrahedral cone pointing away from Os."""
     out_dir = n_pos - os_pos
     out_dir /= np.linalg.norm(out_dir)
-    if abs(out_dir[2]) < 0.9:
-        local_x = np.array([0.0, 0.0, 1.0])
-    else:
-        local_x = np.array([1.0, 0.0, 0.0])
+    local_x = np.array([0.0, 0.0, 1.0]) if abs(out_dir[2]) < 0.9 else np.array([1.0, 0.0, 0.0])
     local_x = local_x - local_x.dot(out_dir) * out_dir
     local_x /= np.linalg.norm(local_x)
     local_y = np.cross(out_dir, local_x)

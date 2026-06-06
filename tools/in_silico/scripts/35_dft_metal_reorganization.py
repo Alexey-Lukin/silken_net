@@ -40,7 +40,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import DFT_CACHE, REPO_ROOT, HARTREE_TO_EV, BASIS_LIGHT, SOLVENT_EPS_WATER
+from lib.constants import BASIS_LIGHT, DFT_CACHE, HARTREE_TO_EV, REPO_ROOT, SOLVENT_EPS_WATER
 from lib.utils import banner
 
 OUT = DFT_CACHE / "metal_reorganization.json"
@@ -49,21 +49,21 @@ HOH = np.radians(104.52)
 
 # per-metal: basis/ecp, oxidised + reduced (charge, spin=2S, initial M–O Å), lit λ (eV, fallback)
 METALS = {
-    "cu": dict(sym="Cu", basis="lanl2dz", ecp="lanl2dz",
-               ox=dict(q=2, spin=1, d=2.00), red=dict(q=1, spin=0, d=2.15), lit=2.0),
-    "co": dict(sym="Co", basis="lanl2dz", ecp="lanl2dz",
-               ox=dict(q=3, spin=0, d=1.91), red=dict(q=2, spin=3, d=2.10), lit=1.3),
-    "ce": dict(sym="Ce", basis="stuttgart_rsc", ecp="stuttgart_rsc",
-               ox=dict(q=4, spin=0, d=2.32), red=dict(q=3, spin=1, d=2.52), lit=1.0),
+    "cu": {"sym": "Cu", "basis": "lanl2dz", "ecp": "lanl2dz",
+               "ox": {"q": 2, "spin": 1, "d": 2.00}, "red": {"q": 1, "spin": 0, "d": 2.15}, "lit": 2.0},
+    "co": {"sym": "Co", "basis": "lanl2dz", "ecp": "lanl2dz",
+               "ox": {"q": 3, "spin": 0, "d": 1.91}, "red": {"q": 2, "spin": 3, "d": 2.10}, "lit": 1.3},
+    "ce": {"sym": "Ce", "basis": "stuttgart_rsc", "ecp": "stuttgart_rsc",
+               "ox": {"q": 4, "spin": 0, "d": 2.32}, "red": {"q": 3, "spin": 1, "d": 2.52}, "lit": 1.0},
     # ZIF-N field control: [Co(NH₃)₆] vs aquo — does an N-donor field cut λ (smaller
     # bond change / Co²⁺ low-spin)? Co³⁺ LS / Co²⁺ HS (classic ammine couple); if even
     # this strong N-field keeps Co²⁺ HS → the large λ is real, not an aquo artifact.
-    "co_nh3": dict(sym="Co", basis="lanl2dz", ecp="lanl2dz", ligand="ammine",
-                   ox=dict(q=3, spin=0, d=1.97), red=dict(q=2, spin=3, d=2.12), lit=1.3),
+    "co_nh3": {"sym": "Co", "basis": "lanl2dz", "ecp": "lanl2dz", "ligand": "ammine",
+                   "ox": {"q": 3, "spin": 0, "d": 1.97}, "red": {"q": 2, "spin": 3, "d": 2.12}, "lit": 1.3},
     # CHEM.29: Ru(III/II) is low-spin in BOTH states (4d, strong field) → no spin
     # crossover → small bond change → small λ → fast hop. The cathode fix vs Co.
-    "ru": dict(sym="Ru", basis="lanl2dz", ecp="lanl2dz",
-               ox=dict(q=3, spin=1, d=2.03), red=dict(q=2, spin=0, d=2.12), lit=0.8),
+    "ru": {"sym": "Ru", "basis": "lanl2dz", "ecp": "lanl2dz",
+               "ox": {"q": 3, "spin": 1, "d": 2.03}, "red": {"q": 2, "spin": 0, "d": 2.12}, "lit": 0.8},
 }
 
 

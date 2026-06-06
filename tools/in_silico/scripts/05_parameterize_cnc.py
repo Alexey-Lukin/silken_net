@@ -29,7 +29,7 @@ from openmm.app import ForceField
 from openmmforcefields.generators import GAFFTemplateGenerator
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, LIGANDS_DIR, CACHE_FILE, GAFF_VERSION
+from lib.constants import CACHE_FILE, GAFF_VERSION, LIGANDS_DIR, REPO_ROOT
 from lib.utils import banner
 
 LIGANDS_DIR.mkdir(parents=True, exist_ok=True)

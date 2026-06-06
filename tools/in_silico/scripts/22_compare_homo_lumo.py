@@ -36,7 +36,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, LIGANDS_DIR, DFT_CACHE, KINETICS_DIR, HARTREE_TO_EV
+from lib.constants import DFT_CACHE, REPO_ROOT
+
 FLAV_JSON = DFT_CACHE / "lumiflavin.json"
 OS_JSON = DFT_CACHE / "os_complex.json"
 OUT_JSON = DFT_CACHE / "comparison.json"
@@ -105,16 +106,16 @@ def main() -> int:
     ]
     x_positions = np.arange(len(species))
     bar_width = 0.6
-    for i, (name, h, l, color) in enumerate(species):
+    for i, (name, h, lumo, color) in enumerate(species):
         ax.hlines(h, i - bar_width / 2, i + bar_width / 2, colors=color, linewidth=3, label=f"{name} HOMO" if i == 0 else None)
-        ax.hlines(l, i - bar_width / 2, i + bar_width / 2, colors=color, linewidth=3, linestyles="dashed")
+        ax.hlines(lumo, i - bar_width / 2, i + bar_width / 2, colors=color, linewidth=3, linestyles="dashed")
         ax.text(i, h - 0.1, f"{h:.2f}", ha="center", va="top", fontsize=8, color=color)
-        ax.text(i, l + 0.1, f"{l:.2f}", ha="center", va="bottom", fontsize=8, color=color)
+        ax.text(i, lumo + 0.1, f"{lumo:.2f}", ha="center", va="bottom", fontsize=8, color=color)
 
     # Arrow from FADH₂ HOMO to Os(III) LUMO (the electron-transfer event)
     ax.annotate(
         "", xy=(3, os3_lumo), xytext=(1, fadh2_homo),
-        arrowprops=dict(arrowstyle="->", color="purple", linewidth=2.5),
+        arrowprops={"arrowstyle": "->", "color": "purple", "linewidth": 2.5},
     )
     ax.text(2, (fadh2_homo + os3_lumo) / 2 + 0.2, "e⁻", ha="center", color="purple", fontsize=12, fontweight="bold")
 

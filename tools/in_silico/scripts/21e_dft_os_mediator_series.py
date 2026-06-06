@@ -28,9 +28,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import DFT_CACHE, LIGANDS_DIR, REPO_ROOT, HARTREE_TO_EV
-from lib.os_geometry import build_os_complex, write_xyz, BPY_SMILES, DMBPY_SMILES, DCBPY_SMILES
+from lib.constants import DFT_CACHE, HARTREE_TO_EV, LIGANDS_DIR, REPO_ROOT
 from lib.dft_utils import dft_singlepoint
+from lib.os_geometry import BPY_SMILES, DCBPY_SMILES, DMBPY_SMILES, build_os_complex, write_xyz
 from lib.utils import banner
 
 # 4,4'-X-2,2'-bipyridine series, ordered by Hammett σ_para (donor → acceptor).

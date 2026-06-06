@@ -108,7 +108,7 @@ def fig3() -> None:
     axa.text(1, os3_lumo - 0.07, "Os(III)\n(acceptor LUMO)", ha="center", va="top", fontsize=7.8)
     # electron-transfer arrow (uphill in raw frontier orbitals)
     axa.annotate("", xy=(1 - bw, os3_lumo), xytext=(bw, fadh2_homo),
-                 arrowprops=dict(arrowstyle="-|>", color=C["purple"], linewidth=2.2))
+                 arrowprops={"arrowstyle": "-|>", "color": C["purple"], "linewidth": 2.2})
     axa.text(0.5, (fadh2_homo + os3_lumo) / 2 + 0.04, "e⁻", ha="center", va="bottom",
              color=C["purple"], fontsize=12, fontweight="bold")
     axa.text(0.5, os3_lumo + 0.13, f"raw Δε = {raw_delta:+.3f} eV (uphill)", ha="center",
@@ -119,12 +119,12 @@ def fig3() -> None:
              "[E°(Os)+200 − E°(FAD-GDH)−266 mV vs SHE]\n"
              "raw −0.91 eV = PCM/speciation → Fig 5",
              transform=axa.transAxes, fontsize=6.4, va="top", ha="left",
-             bbox=dict(boxstyle="round,pad=0.35", fc="#eef6ff", ec=C["blue"], alpha=0.92))
+             bbox={"boxstyle": "round,pad=0.35", "fc": "#eef6ff", "ec": C["blue"], "alpha": 0.92})
     axa.text(0.98, 0.03,
              f"PCET E°(FAD/FADH₂) = {e_pcet_ph7:.0f} mV vs SHE @pH7\n"
              f"(exp −208; Δ{pcet['delta_vs_exp_pH7_mV']:.0f} mV → flavin clean in implicit DFT)",
              transform=axa.transAxes, fontsize=6.4, va="bottom", ha="right",
-             bbox=dict(boxstyle="round,pad=0.35", fc="#eefaf2", ec=C["green"], alpha=0.92))
+             bbox={"boxstyle": "round,pad=0.35", "fc": "#eefaf2", "ec": C["green"], "alpha": 0.92})
     axa.set_xlim(-0.55, 1.55)
     axa.set_ylim(-5.75, -3.55)
     axa.set_xticks([])
@@ -200,7 +200,6 @@ def fig4() -> None:
     t = ket["t_ij_eV"]
     fo = ket["fodft_cuco_rigor"]
     sc = ket["scenarios"]
-    turnover = ket["turnover_s"]
     _close(sc["literature λ"]["margin_vs_turnover"], 1.385, 0.05, "③ lit-λ margin")
     _close(fo["margin_vs_turnover_by_dG_sign"]["dG=0"], 25.165, 0.1, "③ FO-DFT margin")
     _close(fo["t_ij_eV"], 0.005462, 1e-4, "③ FO-DFT t_ij")
@@ -216,7 +215,7 @@ def fig4() -> None:
     ]
     xs = np.arange(len(bars))
     axa.bar(xs, [b[1] for b in bars], color=[b[2] for b in bars], width=0.62, zorder=3)
-    for x, (_, v, _c) in zip(xs, bars):
+    for x, (_, v, _c) in zip(xs, bars, strict=False):
         axa.text(x, v * 1.12, f"{v:.4f}", ha="center", va="bottom", fontsize=7)
     axa.set_yscale("log")
     axa.set_xticks(xs)
@@ -225,7 +224,7 @@ def fig4() -> None:
     axa.set_title("(a) ZIF Cu–Co–Ce coupling — Cu–Co is the bottleneck")
     axa.set_ylim(5e-4, 0.4)
     axa.annotate("rate-limiting hop", xy=(0.5, fo["t_ij_eV"]), xytext=(1.4, 0.05),
-                 fontsize=7, arrowprops=dict(arrowstyle="->", color="k", lw=0.8))
+                 fontsize=7, arrowprops={"arrowstyle": "->", "color": "k", "lw": 0.8})
 
     # ---- (b) k_DET margin vs turnover ----
     order = ["canon λ=0.7 (old assumption)", "literature λ", "computed λ (B3LYP, Co over-est)", "Ru-swap (Co→Ru, computed)"]
@@ -234,7 +233,7 @@ def fig4() -> None:
     cols = [C["grey"], C["orange"], C["grey"], C["green"]]
     xs = np.arange(len(order))
     axb.bar(xs, margins, color=cols, width=0.6, zorder=3)
-    for x, m in zip(xs, margins):
+    for x, m in zip(xs, margins, strict=False):
         axb.text(x, m * (1.4 if m >= 1 else 0.5), f"×{m:.3g}", ha="center",
                  va="bottom" if m >= 1 else "top", fontsize=7)
 
@@ -313,9 +312,9 @@ def fig5() -> None:
     w = 0.36
     axb.bar(xs - w / 2, b3, width=w, color=C["blue"], label="B3LYP |Δ cascade|", zorder=3)
     axb.bar(xs + w / 2, wbsh, width=w, color=C["sky"], label="ωB97X |Δ(ΔE_red)|", zorder=3)
-    for x, v in zip(xs - w / 2, b3):
+    for x, v in zip(xs - w / 2, b3, strict=False):
         axb.text(x, v + 0.012, f"{v:.2f}", ha="center", fontsize=6.8)
-    for x, v in zip(xs + w / 2, wbsh):
+    for x, v in zip(xs + w / 2, wbsh, strict=False):
         axb.text(x, v + 0.012, f"{v:.2f}", ha="center", fontsize=6.8)
 
     # group-8 PCM benchmark bar (separate category)
@@ -324,8 +323,8 @@ def fig5() -> None:
     axb.text(gx, grp8 + 0.012, f"{grp8:.2f}", ha="center", fontsize=6.8)
 
     axb.axhline(0, color="k", lw=0.6)
-    axb.set_xticks(list(xs) + [gx])
-    axb.set_xticklabels(species + ["group-8\nPCM error"])
+    axb.set_xticks([*list(xs), gx])
+    axb.set_xticklabels([*species, "group-8\nPCM error"])
     axb.set_ylabel("shift vs chloro / 2nd-shell shift (eV)")
     axb.set_title("(b) Speciation is functional-robust;\n[Os(H₂O)₆] recovers the ~1 V group-8 PCM error")
     axb.legend(loc="upper left", frameon=False)
@@ -347,6 +346,7 @@ def fig2() -> None:
     publication cartoon (that needs PyMOL/ChimeraX on `dgrGcGDH_AF3.pdb`); this
     conveys the §3.1 architecture (buried FAD, exit path, depth) from the real coords."""
     import mdtraj as md  # local import — only Fig 2 needs it
+
     from lib.constants import AF3_PDB
 
     tun = json.loads((DFT_CACHE / "tunneling_pathway.json").read_text())
@@ -376,7 +376,8 @@ def fig2() -> None:
     for rs, lab in path_res:
         sel = top.select(f"name CA and resSeq {rs}")
         if len(sel):
-            path_pts.append(xyz[sel[0]]); path_lbl.append(lab)
+            path_pts.append(xyz[sel[0]])
+            path_lbl.append(lab)
 
     fig, ax = plt.subplots(figsize=(6.6, 5.8))
     pc = proj(ca_xyz)
@@ -385,7 +386,7 @@ def fig2() -> None:
     ax.scatter(pf[:, 0], pf[:, 1], s=14, color=C["orange"], label="FAD cofactor", zorder=3)
     pp = proj(np.array(path_pts))
     ax.plot(pp[:, 0], pp[:, 1], "-o", color=C["red"], ms=5, lw=1.6, label="through-bond path", zorder=4)
-    for i, (lab, p) in enumerate(zip(path_lbl, pp)):   # label only the endpoints (intermediates cluster)
+    for i, (lab, p) in enumerate(zip(path_lbl, pp, strict=False)):   # label only the endpoints (intermediates cluster)
         if i in (0, len(pp) - 1):
             ax.annotate(lab, p, textcoords="offset points", xytext=(6, 5), fontsize=7,
                         color=C["red"], fontweight="bold")
@@ -398,7 +399,7 @@ def fig2() -> None:
     txt = (f"d_FAD (N5→Tyr90 OH) = {d_fad:.1f} Å  (< 18–20 Å tunnelling window)\n"
            f"through-bond path {tun['through_bond_path_A']:.1f} Å · β·d = {tun['effective_beta_d']:.2f}")
     ax.text(0.02, 0.02, txt, transform=ax.transAxes, fontsize=7, va="bottom",
-            bbox=dict(boxstyle="round,pad=0.4", fc="#f5f5f5", ec="#888888", alpha=0.95))
+            bbox={"boxstyle": "round,pad=0.4", "fc": "#f5f5f5", "ec": "#888888", "alpha": 0.95})
     ax.set_xlabel("PC1 (Å)")
     ax.set_ylabel("PC2 (Å)")
     ax.set_title("(DRAFT) AF3 structure + Beratan–Onuchic tunnelling path\n2D PCA projection — publication cartoon → PyMOL")

@@ -41,13 +41,13 @@ import time
 from pathlib import Path
 
 from openff.toolkit import Molecule
-from openmm.app import ForceField, PDBFile
+from openmm.app import ForceField
 from openmmforcefields.generators import GAFFTemplateGenerator
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, AF3_PDB, LIGANDS_DIR, CACHE_DIR, CACHE_FILE, GAFF_VERSION
+from lib.constants import AF3_PDB, CACHE_DIR, CACHE_FILE, GAFF_VERSION, LIGANDS_DIR, REPO_ROOT
 from lib.utils import banner
 
 LIGANDS_DIR.mkdir(parents=True, exist_ok=True)
@@ -67,9 +67,7 @@ def extract_fad_pdb_block(pdb_path: Path) -> str:
     keep_lines = []
     with pdb_path.open() as fh:
         for line in fh:
-            if line.startswith(("HETATM", "CONECT")) and " FAD " in line:
-                keep_lines.append(line)
-            elif line.startswith("HETATM") and line[17:20].strip() == "FAD":
+            if (line.startswith(("HETATM", "CONECT")) and " FAD " in line) or (line.startswith("HETATM") and line[17:20].strip() == "FAD"):
                 keep_lines.append(line)
     if not keep_lines:
         raise SystemExit(f"No FAD HETATM records found in {pdb_path}")

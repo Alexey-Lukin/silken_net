@@ -6,4 +6,4 @@ SSOT in ``docs/03_03 §3.4``). ``logmel_stdlib`` is the dependency-free oracle
 A parity test asserts the two are byte-equal (tol 1e-6).
 """
 
-from .contract import CONTRACT, LogMelContract, contract_hash  # noqa: F401
+from .contract import CONTRACT, LogMelContract, contract_hash

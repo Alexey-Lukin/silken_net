@@ -36,7 +36,7 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import REPO_ROOT, DFT_CACHE, HARTREE_TO_EV
+from lib.constants import DFT_CACHE, HARTREE_TO_EV, REPO_ROOT
 from lib.utils import banner
 
 LUMIFLAVIN_RED = "CC1=CC2=C(C=C1C)N(C)C3=NC(=O)NC(=O)C3N2"
@@ -157,7 +157,7 @@ def main() -> int:
     def opt_atoms(mol_opt):
         syms = [mol_opt.atom_symbol(i) for i in range(mol_opt.natm)]
         coords = mol_opt.atom_coords(unit="Angstrom")
-        return [(s, tuple(c)) for s, c in zip(syms, coords)]
+        return [(s, tuple(c)) for s, c in zip(syms, coords, strict=False)]
 
     red_opt_atoms = opt_atoms(mol_red_opt)
     rad_opt_atoms = opt_atoms(mol_rad_opt)
