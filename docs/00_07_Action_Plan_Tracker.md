@@ -201,7 +201,7 @@
 - [x] CHEM.20/26 — bis-Im speciation, cascade Δ −0.609 (aqua>bis-Im>chloro) → `SUMMARY` §Cluster-Continuum
 - [x] CHEM.21 — FADH•-λ rescue → inner-sphere λ_i 0.39 eV → [`L3`](protocols/ebfc/in_silico/L3_quantum_chemistry.md) Nelsen-λ
 - [x] cathode finalize — k_DET borderline (×1.4 lit-λ) → `SUMMARY` §Cathode
-- [ ] CHEM.16 — dynamic-tunneling ⟨k_ET⟩ ensemble: 🤖 sound · 🔗 BLOCKED (no MD DCD)
+- [ ] CHEM.16 — dynamic-tunneling ⟨k_ET⟩ ensemble: 🤖 sound + **DOABLE** (24 `production.dcd` in cache/runs/, script 27 already loads them) → run script 28 over MD snapshots → ⟨k_ET⟩
 
 **P1/P2 — Gen 2.1+ candidates (verified, deferred):**
 - [ ] CHEM.11 — aggregation: 4 SASA hotspots ✅ (`L1` §2); next = polar-mut neighbor-SASA
@@ -224,6 +224,14 @@
 **⚠️ Corrected-out / merged:**
 - CHEM.28 / CHEM.30 — epitaxial pre-stress (mechanism confused) / acid-ΔG (limited lever, misses Marcus-inverted)
 - CHEM.12 / CHEM.17 / CHEM.24 — ② done / dup of CHEM.23 / → `02_03 §1.5` (magnetic-CNT, hardware)
+
+###### 🔬 In-silico pipeline — open computes (script audit 2026-06-06; detail → `PIPELINE_STATUS`)
+> All ~37 `tools/in_silico/scripts/` audited — almost all ✅ (cached). Open work captured here so we never re-audit; closed/superseded = 21 · 21c · 29 (honest limitations-points, not work).
+- [ ] 🔧 🤖 **Active re-run chain:** 24b FO-DFT coupling (CHEM.14, prepped+validated) → **re-run 25** → ③ k_DET rigor (runs once ωB97X frees the CPU)
+- [ ] ⏳ 🤖 **Running:** 34b ωB97X ②-speciation robustness · 28b dynamic-tunnelling ensemble (CHEM.16, β·d conformational gating)
+- [ ] ✨ 🤖 **Refinements (optional, per-script additional analysis):** outer-sphere λ_o (29b → total anode λ) · aqua/bis-Im × substituents + ωB97X for the series (21e) · real ΔG in k_ET (25, currently 0) · Cu/Ce λ refinement (35; B3LYP over-estimates Co spin-crossover) · Os-complex MD ensemble (27, not just FAD) · full hydration shell + COSMO-RS/MACE probe (34) · k_cat sensitivity (30/30b) · ③-borderline R_ct in EIS (31)
+- [ ] 🏔️ 🔗 **Capstones (Мінаєв):** ④ protein QM-cluster E° (extend 32) · CDFT coupling (> 24b, needs PyCDFT) · QM/MM explicit-water cascade
+- [ ] ⏸️ **Deferred → Стаття 2/3 / on-data:** 11 (20–50 ns MD, reviewer-grade equilibration) · 13 (D_eff model; L4 already uses lit 2e-6) · 16 (PE-drift 1%, bigger box) · 40 add docstring + re-run vs Ti-coin CV/EIS when in-vitro data lands
 
 #### HW.6 — Resin barrier + Flush Mount Installation
 - **P1** · 👤 · → `01_04 §3`

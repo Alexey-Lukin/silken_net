@@ -1,0 +1,12 @@
+{
+  "method": "Beratan-Onuchic (script 28) replayed over MD-ensemble frames; KD-tree contact graph, Dijkstra FAD\u2192surface; k_ET \u221d exp(\u22122\u00b7\u03b2\u00b7d)",
+  "run": "20260525T192251_fullmatrix",
+  "n_frames": 1,
+  "beta_d_mean": 3.36,
+  "beta_d_std": 0.0,
+  "beta_d_min": 3.36,
+  "beta_d_max": 3.36,
+  "beta_d_single_snapshot_AF3": 2.05,
+  "conformational_gating_factor": 1.0,
+  "interpretation": "gating modest \u2192 single-snapshot \u03b2\u00b7d representative"
+}
