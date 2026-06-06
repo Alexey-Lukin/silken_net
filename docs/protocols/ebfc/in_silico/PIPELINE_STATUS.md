@@ -41,9 +41,11 @@
 | 27 | `md_dft_ensemble` | FAD HOMO **-5.589 ± 0.058 eV** (thermally robust, σ≪0.3) | `dft/md_dft_ensemble.json` |
 | 28 | `electron_tunneling_pathway` | Beratan-Onuchic FAD→THR288, **β·d=2.05** (feasible) | `dft/tunneling_pathway.json` |
 | 28b | `tunneling_ensemble` | **CHEM.16** Beratan-Onuchic over MD ensemble → β·d **2.02±0.13** (gating 1.03×, thermally robust; image_molecules PBC) | `dft/tunneling_ensemble.json` |
+| 29c | `outer_sphere_lambda` | anode outer-sphere λ_o (Marcus two-sphere, analytical) → total anode λ 0.76–0.86 eV phys-end (confirms lit 0.7–0.8); radius/ε-DOMINATED → INDICATIVE | `dft/outer_sphere_lambda.json` |
 | 30 | `kinetics_delta_t` | delta_t = 36s healthy / 190s stressed | `kinetics/delta_t_lookup.json` |
 | 30b | `kinetics_monte_carlo` | 90% CI: 14–120s | `kinetics/monte_carlo.json` |
 | 31 | `eis_impedance_model` | Rct=130Ω, Rs=100Ω | `kinetics/eis_model.json` |
+| 31b | `cathode_det_rct` | ③ cathode DET R_ct band ~0.002–230 Ω (borderline k_DET × unknown Γ, ×10⁵) → kinetic competition, not a fixed Rct; INDICATIVE | `kinetics/cathode_det_rct.json` |
 | 32 | `pcet_redox_potential` | E°(FAD/FADH₂) **-158 mV** (Δ50 mV vs free-flavin exp) — PCET valid w/ implicit solvent | `dft/pcet_redox_potential.json` |
 | 33 | `pcet_cascade_semiquinone` | PCET cost +5.87 eV → cascade +1.48 eV, **does NOT flip downhill** (~1 eV = PCM solvation limit) | `dft/pcet_cascade.json` |
 | 34 | `dft_microsolvation` | **② cluster-continuum**: [Os(H₂O)₆] n6→n18 **+0.98 eV** (benchmark), Cl⁻-solvation **+0.20 eV** (3 H₂O), speciation **aqua +0.51 / bis-Im +0.30 eV** → cascade gap = decomposed method limit | `dft/microsolvation.json` |
@@ -54,8 +56,6 @@
 | 51 | `gusak_degradation_model` | Arrhenius + Kirkendall V=1.12 µg/cm²/yr + H7/s6 | `kinetics/gusak_degradation.json` |
 | 60 | `paper_figures` | Стаття 1 figures Fig 3 (cascade+LFER) / 4 (cathode DET) / 5 (solvation) + S1 (β·d) — cache-only renderer, every headline number asserted vs SUMMARY at build | `paper/figures/*.png` |
 | 61 | `paper_tables` | Стаття 1 Tables T1–T4 (levels of theory / cascade all-methods / DET hops+λ / mediator series) — cache→markdown, canon-asserted | `paper/06_tables.md` |
-| 29c | `outer_sphere_lambda` | anode outer-sphere λ_o (Marcus two-sphere, analytical) → total anode λ 0.76–0.86 eV phys-end (confirms lit 0.7–0.8); radius/ε-DOMINATED → INDICATIVE | `dft/outer_sphere_lambda.json` |
-| 31b | `cathode_det_rct` | ③ cathode DET R_ct band ~0.002–230 Ω (borderline k_DET × unknown Γ, ×10⁵) → kinetic competition, not a fixed Rct; INDICATIVE | `kinetics/cathode_det_rct.json` |
 
 ### ❌ Terminated / Closed
 
