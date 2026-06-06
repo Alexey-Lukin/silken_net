@@ -119,10 +119,11 @@ accompanying version-pinned scripts.
 
 **Os-mediated FAD-GDH (experimental anchor)**
 - Degani, Y.; Heller, A. *J. Phys. Chem.* **1989**. [DOI: verify] <!-- ⚠️ конфлікт журнал/рік: JPC-стаття = 1987, 91, 1285 (doi:10.1021/j100290a001); 1989-а — це JACS 111, 2357 (redox polymers). Уточнити, який пейпер цитуємо -->
-- Heller, A.; Mano, N. Os redox polymers (wired enzymes). [DOI: verify]
+- Ohara, T. J.; Rajagopalan, R.; Heller, A. Glucose electrodes based on cross-linked [Os(bpy)₂Cl]⁺/²⁺ complexed poly(1-vinylimidazole) films. *Anal. Chem.* **1994**. doi:10.1021/ac00071a031
 - Mao, F.; Mano, N.; Heller, A. Long tethers binding redox centers to polymer backbones enhance electron transport in enzyme "wiring" hydrogels. *J. Am. Chem. Soc.* **2003**, *125*, 4951. doi:10.1021/ja029510e
-- Electron-Transfer Studies with FAD-GDH and Os polymers of different redox potentials. [DOI: verify]
+- Zafar, M. N.; Ludwig, R. et al. Characterization of different FAD-dependent glucose dehydrogenases for possible use in glucose-based biosensors and biofuel cells (j_max anchor). *Anal. Bioanal. Chem.* **2011**. doi:10.1007/s00216-011-5650-7
 - Schachinger, F.; Ma, S.; Ludwig, R. Redox potential of FAD-dependent glucose dehydrogenase. *Electrochem. Commun.* **2022**, *146*, 107405. doi:10.1016/j.elecom.2022.107405 <!-- ⚠️ scaffold мав "Sygmund, C.; Ludwig, R."; ця стаття дає E° = −265 mV (не −266) для GcGDH — звірити значення по всьому SSOT -->
+- Sygmund, C.; Ludwig, R. et al. Heterologous overexpression of *Glomerella cingulata* FAD-dependent glucose dehydrogenase in *E. coli* and *P. pastoris* (our GcGDH). *Microb. Cell Fact.* **2011**, *10*, 106. doi:10.1186/1475-2859-10-106
 
 **Mediator design precedent (genre)**
 - Model-driven redox-mediator design (GOx). *J. Phys. Chem. B* **2024**. doi:10.1021/acs.jpcb.3c03740
@@ -144,8 +145,9 @@ accompanying version-pinned scripts.
 - Jiang, Q. et al. Feasible cluster model method for simulating the redox potentials of laccase CueO and its variant. *Front. Bioeng. Biotechnol.* **2022**, *10*, 957694. doi:10.3389/fbioe.2022.957694
 
 **ZIF laccase-mimic cathode**
-- Cu/Zn-ZIF ORR nanozyme. [DOI: verify]
-- Cu-ZIF-67 ORR nanozyme. [DOI: verify]
+- Glucose/O₂ enzymatic biofuel cell with a laccase-mimicking nanozyme cathode for efficient O₂ reduction (onset 841 mV). *Anal. Chem.* doi:10.1021/acs.analchem.6c00462
+- Cu-doped ZIF-67 electrocatalyst for the oxygen reduction reaction. *J. Electrochem. Energy Convers. Storage* **2021**, *18*, 021001. doi:10.1115/1.4047331
+- Solomon, E. I. et al. Nature of the intermediate formed in the reduction of O₂ to H₂O at the trinuclear copper cluster active site in native laccase. *J. Am. Chem. Soc.* **2001**. doi:10.1021/ja0114052
 
 **Electron-transfer theory & methods (classics)**
 - Marcus, R. A.; Sutin, N. Electron transfers in chemistry and biology. *Biochim. Biophys. Acta* **1985**, *811*, 265. doi:10.1016/0304-4173(85)90014-X
