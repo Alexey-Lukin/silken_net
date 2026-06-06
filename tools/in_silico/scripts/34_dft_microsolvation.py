@@ -189,6 +189,28 @@ def stage_mediator(results, cache):
                  xyz=LIGANDS_DIR / f"os_bpy_meim_cl_{k}w.xyz" if k else None)
 
 
+def stage_bisim(results, cache):
+    """Bis-imidazole speciation: cis-[Os(bpy)₂(1-MeIm)₂]²⁺/³⁺ — Cl⁻ replaced by a 2nd
+    1-methylimidazole (notes #20/#26: in the PVI brush a 2nd imidazole from the chain
+    is the likely 6th ligand, not Cl⁻ or H₂O — the most PVI-realistic form). +2/+3
+    couple like aqua. Predicted: MeIm is a stronger σ-donor than H₂O → slightly LOWER
+    E° / worse acceptor than aqua, but better than chloro (anionic Cl removed). Settles
+    the note's direction-confusion (the note claimed stronger donor → better acceptor,
+    which is backwards)."""
+    from lib.os_geometry import MEIM_SMILES
+    banner("STAGE bisim — [Os(bpy)₂(1-MeIm)₂]²⁺/³⁺ (Cl⁻→2nd imidazole, PVI-realistic)")
+    axial = (("ligand", MEIM_SMILES, "N"), ("ligand", MEIM_SMILES, "N"))
+    atoms, info = build_os_complex(axial=axial)
+    print(f"  bis-Im complex: {info['n_atoms']} atoms, min {info['min_contact_A']} Å, "
+          f"Os-coord {info['os_coord_distances_A']}")
+    if info["min_contact_A"] < 0.95:
+        print(f"  ⚠️ SKIP bis-Im — the two cis 1-MeIm rings clash ({info['min_contact_A']} Å "
+              f"< 0.95); needs an os_geometry ring-rotation de-clash before DFT (00_07 note 20/26).")
+        return
+    run_pair(atoms, q_os2=2, q_os3=3, name="bisim_meim2",
+             results=results, cache=cache, xyz=LIGANDS_DIR / "os_bpy_meim2.xyz")
+
+
 def stage_aqua(results, cache):
     """Aquation speciation: cis-[Os(bpy)₂(1-MeIm)(H₂O)]²⁺/³⁺ — Cl⁻ replaced by a
     coordinated water (the inner-shell LIMIT of micro-solvation). L3 Caveat 5: the
@@ -248,6 +270,8 @@ def main(argv) -> int:
         stage_mediator(results, cache)
     if stage in ("aqua", "all"):
         stage_aqua(results, cache)
+    if stage == "bisim":  # explicit-only (geometry-gated, see stage_bisim); not in "all"
+        stage_bisim(results, cache)
     summarize(results)
     payload = {
         "method": "B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM vertical ΔSCF; cluster-continuum micro-solvation",
