@@ -196,12 +196,12 @@
 
 **P0 — in-pipeline (paper chemistry, doing now):**
 - [x] note 29 — Ru-λ ✅ DONE = 0.78 eV (vs Co 3.1–3.4) → cathode-fix quantitatively validated
-- [ ] note 23 — CF₃/SO₂CF₃ mediator ⏳ running (NO₂ electrochem-unstable→degrades to worst donor; inert high-σ EWG fixes ①)
+- [x] note 23 — CF₃/SO₂CF₃ ✅ DONE+committed `27ac763`: SO₂CF₃ (σ0.96) cascade −0.227 ≈ NO₂ −0.232 but INERT → realistic mediator optimum (① reframed)
 - [x] note 10 — Lys→Arg genipin-shield ✅ validated (LYS109/LYS262 near e-exit → mutate in production gene)
-- [ ] note 20/26 — bis-imidazole Os [Os(bpy)₂(MeIm)₂]²⁺/³⁺ (PVI-realistic speciation; extend script 34)
-- [ ] note 21 — FADH•-λ: rescue script 29 via neutral semiquinone (honest anode λ vs lit 0.7)
+- [ ] note 20/26 — bis-imidazole Os [Os(bpy)₂(MeIm)₂]²⁺/³⁺ (PVI-realistic speciation; script 34 `stage_bisim` READY, uncommitted) — ⚠️ DEFERRED: cis-MeIm H52-H63 clash 0.911 Å → needs os_geometry ring-rotation de-clash before DFT
+- [ ] note 21 — FADH•-λ: rescue script 29 via neutral semiquinone FADH• (remove one N–H → neutral doublet, avoids FADH₂•⁺ fragmentation) — ⚠️ DEFERRED: non-trivial PCET-λ chemistry; lit λ 0.7–0.8 fine meanwhile (anode not the bottleneck)
 - [ ] note 16 — dynamic-tunneling ensemble: run script 28 over MD snapshots → ⟨k_ET⟩
-- [ ] cathode finalize — Ce-λ + re-run script 24 (fixed geom + computed λ) → update k_DET canon
+- [x] cathode finalize ✅ DONE+committed `8d797ea`: Ce-λ=0.87 + geom-fixed t_ij (24) + script 25 → k_DET **BORDERLINE** (×1.4 lit-λ, not old ×10⁵); honest canon propagated
 
 **P1 — strong near-term (Gen 2.1 / check / decide):**
 - [ ] note 11 — aggregation: in-house SASA-proxy ✅ DONE → 4 hotspots (Gln71/200/258/405, L1 §2); remaining = Aggrescan3D + compensating polar muts (Asp/Ser) pre-CRO
