@@ -5,7 +5,7 @@
 # Parses the undone-task registry (§-module + 🔀 cross-cutting sections) of
 # docs/00_07_Action_Plan_Tracker.md and regenerates the 🚦 Dashboard between the
 # AUTO markers, so the executor-grouped index can never drift from the registry
-# — the "one fact, one place" principle made mechanical (user, 2026-05-29).
+# — the "one fact, one place" principle made mechanical (user).
 #
 # Pure Ruby (no Rails) — runnable from a rake task or CI without booting the app.
 module Tracker
@@ -75,7 +75,7 @@ module Tracker
       items
     end
 
-    # --- registry table-row IDs (dup-guard blind-spot fix, 2026-06-01) ---
+    # --- registry table-row IDs (dup-guard blind-spot fix) ---
     # The dup-guard tallies #### heading IDs only; an ID used as BOTH a table-row
     # (e.g. `| DOC-T.12 | … |` in the DOC-drift registry) AND a #### heading slipped
     # through silently (the DOC-T.12 ↔ DOC-T.13 collision). This returns the first-cell
@@ -84,7 +84,7 @@ module Tracker
     # rows (no ID in the first cell) and **bold** wrappers are handled.
     # A leading emoji/✅ run is tolerated (`| ✅ OPS.5 |`, `| 🌿 E.59 |`) — the same
     # blind spot that once hid `#### 🌿 UNI.13a`; without it a status-prefixed backlog
-    # row was invisible to BOTH the dup tally and inbound-ref resolution (2026-06-03).
+    # row was invisible to BOTH the dup tally and inbound-ref resolution.
     # Лідерний emoji/✅-run — єдиний лінійний char-class (НЕ вкладений `(?:[…]+\s*)*`,
     # чий опційний роздільник давав exponential backtracking / ReDoS).
     TABLE_ID_RE = /\A\|[\s✅\p{So}\p{Sk}\u{FE0F}]*\*{0,2}([A-Z][A-Za-z0-9]*[.\-][0-9A-Za-z.\-]+)\*{0,2}\s*\|/
@@ -102,7 +102,7 @@ module Tracker
       end
     end
 
-    # --- inbound 00_07 item-ref resolution (2026-06-03) ---
+    # --- inbound 00_07 item-ref resolution ---
     # Other docs reference a tracker item as `[`00_07` — <ID>](00_07_…)`. Nothing
     # validated that <ID> is REAL, so `06_02 → 00_07 DOC.5` rotted silently after the
     # item was renamed/removed (the dangling-inbound-ref blind spot the DOC.N namespace
@@ -119,7 +119,7 @@ module Tracker
       markdown.each_line.filter_map { |l| (l.match(ANY_ITEM_HEAD) || l.match(TABLE_ID_RE))&.captures&.first }
     end
 
-    # --- global ID uniqueness (dup-guard scope widened 2026-06-03) ---
+    # --- global ID uniqueness (dup-guard scope widened) ---
     # Every tracker item ID must be unique across the WHOLE file. The earlier tally
     # spanned only the §/🔀 registry sections (parse + table_row_ids), so a 📌 Backlog
     # or 🗄️ Архів row could silently reuse an active ID — exactly the `OPS.5` collision
@@ -143,7 +143,7 @@ module Tracker
       end
     end
 
-    # --- prose ID-list refs after a 00_07 link (2026-06-03) ---
+    # --- prose ID-list refs after a 00_07 link ---
     # Beyond the `[`00_07` — ID]` directory form, Status lines cite tracker IDs in PROSE
     # right after a 00_07 link: `→ [`00_07`](00_07_…) (S4.3, INF.4, S5.6)`. Nothing
     # validated those, so a WRONG id (`S6.1` Redis where the GCS-bucket `S5.6` was meant)
@@ -180,11 +180,11 @@ module Tracker
       end
     end
 
-    # --- CHEM.N in-silico chemistry-note refs (2026-06-06) ---
+    # --- CHEM.N in-silico chemistry-note refs ---
     # The HW.5.IS in-silico chemistry backlog is a bulleted, triaged list (not #### items),
     # so its 31 notes carry their own CHEM.N IDs (`- [ ] **CHEM.6** — …`), standardized from
     # the old ad-hoc `note N` so the refs are guardable like every other 00_07 ID (founder
-    # 2026-06-06: `note N` was unanchored + already restated across 01_03/SUMMARY/L1/scripts →
+    # `note N` was unanchored + already restated across 01_03/SUMMARY/L1/scripts →
     # a drift surface). `chem_note_ids` collects the defined set (the checkbox is optional, so
     # the corrected-out / separate-stream bullets count too); `chem_note_ref_violations` flags
     # any CHEM.N in ANOTHER doc (incl. the in_silico protocol subdir → `**/*.md`) that doesn't

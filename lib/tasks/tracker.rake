@@ -3,14 +3,14 @@
 # [00_07 DRY tooling] `rake tracker:check` — lints docs/00_07_Action_Plan_Tracker.md:
 #   - duplicate task IDs across the WHOLE file — every #### heading AND every table-row
 #     first-cell, in EVERY section incl. 📌 Backlog / 🗄️ Архів (caught the HW.20
-#     BME280↔Buffer-Cap collision 2026-05-29; the registry table-row span closed the
-#     DOC-T.12 #### ↔ table-row blind spot 2026-06-01; widened to global to catch the
-#     `OPS.5` §07-heading ↔ 📌-backlog-row collision 2026-06-03)
+#     BME280↔Buffer-Cap collision; the registry table-row span closed the
+#     DOC-T.12 #### ↔ table-row blind spot; widened to global to catch the
+#     `OPS.5` §07-heading ↔ 📌-backlog-row collision)
 #   - #3 conformance: every open #### item has a priority + a → canon-ref meta-line
 #   - §-section resolution: a `NN_NN §X` canon-ref's §X must be a real heading in the
 #     target (caught 12 stale §BLOCKER-N / wrong-doc-id refs orphaned by blockers→00_07)
 #   - section↔canon-home: a #### under `## §NN` must canon-ref module NN (canon-mirror;
-#     killed the §06-deploy-under-§04 "DevOps" drift, 2026-06-01)
+#     killed the §06-deploy-under-§04 "DevOps" drift)
 # Engine: lib/tracker/dashboard.rb (pure Ruby; the 🚦 Dashboard stays human-curated,
 # so drift/regenerate are intentionally not wired — this is a guard, not an overwriter).
 require_relative "../tracker/dashboard"
