@@ -14,9 +14,16 @@ MD trajectory (the same production.dcd script 27 uses) and report:
     (k_ET ∝ |H_DA|² ∝ exp(−2·(β·d)_eff)).
 
 Light (graph + Dijkstra, KD-tree neighbour search — NO DFT); safe alongside a DFT job.
-The FAD cofactor is the GAFF "UNK" residue in the MD topology (script 27 note); we
-identify it as the large non-standard residue and slice protein+FAD heavy atoms only
-(the tunnelling path runs through the protein, not the surrounding matrix/water).
+The FAD cofactor is the GAFF "UNK" residue in the MD topology (script 27 note); we identify it
+by its phosphorus (unique vs the matrix 'UNK' polymers), slice std-AA protein + FAD heavy atoms
+only (the path runs through the protein, not the matrix/water), and source from the
+isoalloxazine ring (N5 exit), not the ADP tail.
+
+⚠️ WIP / known limitation: the production.dcd is PBC-wrapped, so in most frames the protein is
+split across the periodic box → the contact graph disconnects (artificial >CONTACT_CUT gaps) →
+β·d = NaN. The ensemble is therefore PBC-limited (n=1 here) and INCONCLUSIVE until the trajectory
+is unwrapped (mdtraj make_molecules_whole / image_molecules, or a periodic neighbour search). The
+single-snapshot β·d = 2.05 (script 28, AF3) remains the §3.1 result; this is the ensemble scaffold.
 """
 from __future__ import annotations
 
@@ -48,6 +55,13 @@ COVALENT_CUT = 1.8
 HBOND_CUT = 3.5
 CONTACT_CUT = 6.0
 N_FRAMES = 15           # evenly-spaced snapshots from the strided trajectory
+
+STD_AA = {"ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "HID", "HIE",
+          "HIP", "ILE", "LEU", "LYS", "MET", "PHE", "PRO", "SER", "THR", "TRP", "TYR", "VAL"}
+# isoalloxazine ring atom-name prefixes (GAFF FAD 'UNK', from script 27) — the redox source,
+# excluding the ADP/ribitol tail so Dijkstra starts at the electron-exit (N5) end, not the phosphate.
+RING_PREFIXES = {"N5", "N6", "N7", "N8", "C9", "C10", "C11", "C12", "C13", "C14", "C15",
+                 "C16", "C17", "C18", "C19", "C20", "C21", "O7", "O8"}
 
 
 def find_run() -> Path | None:
@@ -98,14 +112,16 @@ def main() -> int:
     print(f"  run: {run.name}")
 
     top = md.load_topology(str(run / "system.pdb"))
-    fad_res = next((r for r in top.residues
-                    if r.n_atoms > 50 and r.name not in ("HOH", "WAT", "NA", "CL")), None)
+    # FAD = the residue carrying phosphorus (its diphosphate) — unique vs the matrix 'UNK' polymers.
+    # Earlier bug: mdtraj "protein" mis-includes those matrix 'UNK' residues → graph splits into a
+    # protein and a matrix component (>6 Å gaps) → no FAD→surface path → NaN. Use protein = std-AA only.
+    fad_res = next((r for r in top.residues if any(a.element.symbol == "P" for a in r.atoms)), None)
     if fad_res is None:
-        sys.exit("FAD (large non-standard residue) not found in topology")
-    fad_atoms_full = {a.index for a in fad_res.atoms if a.element.symbol != "H"}
-    prot_atoms_full = top.select("protein and element != H")
-    keep = sorted(set(prot_atoms_full) | fad_atoms_full)
-    print(f"  FAD residue '{fad_res.name}' ({fad_res.n_atoms} atoms); kept {len(keep)} heavy protein+FAD atoms")
+        sys.exit("FAD (P-containing residue) not found in topology")
+    fad_atoms_full = [a.index for a in fad_res.atoms if a.element.symbol != "H"]
+    prot_atoms_full = [a.index for a in top.atoms if a.residue.name in STD_AA and a.element.symbol != "H"]
+    keep = sorted(set(prot_atoms_full) | set(fad_atoms_full))
+    print(f"  FAD '{fad_res.name}' (P-residue, {fad_res.n_atoms} atoms); {len(prot_atoms_full)} std-AA protein heavy; kept {len(keep)}")
 
     traj = md.load(str(run / "production.dcd"), top=str(run / "system.pdb"), stride=100)
     traj = traj.atom_slice(keep)
@@ -113,8 +129,14 @@ def main() -> int:
     print(f"  trajectory {traj.n_frames} frames (stride 100) → analysing {len(frames)} snapshots")
 
     elements = [a.element.symbol for a in traj.topology.atoms]
-    fad_local = [i for i, a in enumerate(traj.topology.atoms) if a.residue.index == fad_res.index]
-    prot_local = np.array([i for i in range(traj.n_atoms) if i not in set(fad_local)])
+    # FAD in the SLICED topology (atom_slice re-indexes) = the P-containing residue; the tunnelling
+    # SOURCE is its isoalloxazine ring only (redox centre / N5 exit), not the ADP-phosphate tail.
+    sliced_fad = next(r for r in traj.topology.residues if any(a.element.symbol == "P" for a in r.atoms))
+    fad_local = [a.index for a in sliced_fad.atoms if a.name.rstrip("x") in RING_PREFIXES]
+    if len(fad_local) < 5:
+        fad_local = [a.index for a in sliced_fad.atoms if a.element.symbol != "H"]
+    prot_local = np.array([a.index for a in traj.topology.atoms if a.residue.index != sliced_fad.index])
+    print(f"  FAD ring source atoms: {len(fad_local)} · protein atoms: {len(prot_local)}")
 
     beta_ds = []
     for fr in frames:
@@ -128,30 +150,39 @@ def main() -> int:
         print(f"    frame {fr:4d}: β·d = {bd:.2f}")
 
     bd = np.array([x for x in beta_ds if np.isfinite(x)])
+    n_valid, n_total = int(bd.size), len(frames)
     if bd.size == 0:
-        sys.exit("no finite pathway found in any frame")
-    # gating: k ∝ exp(−2 β·d); enhancement of the ensemble rate over the mean-geometry rate
-    gating = float(np.mean(np.exp(-2.0 * (bd - bd.mean()))))
+        sys.exit("no finite pathway in any frame — production.dcd needs PBC-unwrapping (protein split across the box)")
+    # ⚠️ Most frames return NaN because the protein is wrapped across the periodic box → the contact
+    # graph splits into disconnected pieces (artificial >CONTACT_CUT gaps), not real physics. Until the
+    # trajectory is PBC-unwrapped (make_molecules_whole / image_molecules) the ensemble is inconclusive.
+    pbc_limited = n_valid < n_total / 2
+    gating = float(np.mean(np.exp(-2.0 * (bd - bd.mean())))) if n_valid > 1 else 1.0
 
     banner("Ensemble tunnelling result")
-    print(f"  β·d  mean={bd.mean():.2f}  std={bd.std():.2f}  min={bd.min():.2f}  max={bd.max():.2f}  (n={bd.size})")
+    flag = "  ⚠️ PBC-LIMITED — most frames' protein wrapped across the box; UNWRAP the trajectory + re-run" if pbc_limited else ""
+    print(f"  analysable frames: {n_valid}/{n_total}{flag}")
+    print(f"  β·d  mean={bd.mean():.2f}  std={bd.std():.2f}  min={bd.min():.2f}  max={bd.max():.2f}")
     print(f"  single-snapshot (script 28, AF3) = 2.05")
-    print(f"  conformational-gating factor ⟨k⟩/k(⟨β·d⟩) = {gating:.2f}×")
-    print(f"  → {'gating significant' if gating > 2 else 'path thermally robust (gating modest)'}")
+    if n_valid > 1:
+        print(f"  conformational-gating factor ⟨k⟩/k(⟨β·d⟩) = {gating:.2f}×")
+    verdict = ("⚠️ INCONCLUSIVE (n=1 after PBC losses; the one valid β·d≈AF3 hints robustness, not proof)"
+               if pbc_limited else ("gating significant" if gating > 2 else "path thermally robust (gating modest)"))
+    print(f"  → {verdict}")
 
     OUT.write_text(json.dumps({
         "method": "Beratan-Onuchic (script 28) replayed over MD-ensemble frames; KD-tree contact graph, "
-                  "Dijkstra FAD→surface; k_ET ∝ exp(−2·β·d)",
+                  "Dijkstra FAD-ring→surface; k_ET ∝ exp(−2·β·d)",
         "run": run.name,
-        "n_frames": int(bd.size),
+        "n_valid_frames": n_valid,
+        "n_total_frames": n_total,
+        "pbc_limited": bool(pbc_limited),
         "beta_d_mean": round(float(bd.mean()), 3),
         "beta_d_std": round(float(bd.std()), 3),
-        "beta_d_min": round(float(bd.min()), 3),
-        "beta_d_max": round(float(bd.max()), 3),
         "beta_d_single_snapshot_AF3": 2.05,
-        "conformational_gating_factor": round(gating, 3),
-        "interpretation": "gating modest → single-snapshot β·d representative"
-                          if gating <= 2 else "conformational gating significant",
+        "conformational_gating_factor": round(gating, 3) if n_valid > 1 else None,
+        "status": "WIP — needs PBC-unwrapping of production.dcd before the ensemble is meaningful",
+        "interpretation": verdict,
     }, indent=2))
     banner(f"✅ Saved {OUT.relative_to(REPO_ROOT)}")
     return 0

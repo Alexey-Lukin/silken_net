@@ -155,7 +155,7 @@ Validation:
 ### Future (publication-grade, needs external compute / collaboration):
 - QM/MM explicit-solvation shell (школа Мінаєв) — to resolve the ~1 eV PCM differential-solvation gap on the cascade + enable a true 4-point λ
 - **FO-DFT coupling (CHEM.14):** in-house upgrade of script-24's crude State-A/B t_ij to a fragment-orbital H_ab (dimer-Fock projection) for the Cu-Co cathode bottleneck — no new dependency; the next ③-coupling rigor step (full CDFT needs PyCDFT = capstone).
-- **Dynamic-tunneling ensemble (CHEM.16):** run script 28 over an MD-snapshot ensemble → ⟨k_ET⟩ (gated ET; the static-snapshot blind spot). Sound + **doable** — the `production.dcd` trajectories are in `cache/runs/` (script 27 already loads them); a light Beratan–Onuchic-over-snapshots analysis (no DFT).
+- **Dynamic-tunneling ensemble (CHEM.16):** Beratan–Onuchic pathway (script 28) over MD frames → β·d distribution + conformational gating. Scaffold built (**28b**); ⚠️ but the `production.dcd` is **PBC-wrapped** → in most frames the protein splits across the periodic box → disconnected contact graph (only 1/15 frames analysable). Needs trajectory unwrapping (mdtraj `make_molecules_whole` / a periodic neighbour search) before the ensemble is meaningful. The one valid frame gives β·d ≈ 2.05 = the AF3 single-snapshot (script 28), which stands as the §3.1 result.
 - **②-gap closers, COSMO-RS / MACE (CHEM.22/5):** verified **NOT** clean replacements for QM/MM on the charged Os(III/II) couple — openCOSMO-RS is neutral-molecule-validated (charged-metal blind spot); MACE-MP is a fixed-charge sampling MLIP, not a redox-ΔG method (it could only accelerate the sampling *within* a QM/MM). → don't add a dependency just for ②.
 
 ---
