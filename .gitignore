@@ -71,12 +71,9 @@ lib/assets/silken_forest.marshal
 lib/assets/silken_forest.marshal.sha256
 
 # Firmware test binaries (host-based, compiled with gcc)
-firmware/test/test_queen
-firmware/test/test_soldier
-firmware/test/test_bio_contract
-firmware/test/test_tinyml
-firmware/test/test_logmel
-firmware/test/test_encryption
+# Firmware host-test binaries — single canonical list lives below (the
+# "/firmware/test/*" block); this duplicate stripped 2026-06-06 to kill the
+# two-places-to-edit drift (it was already missing seed/ccm/sym binaries).
 
 # Subgraph build artifacts (The Graph)
 subgraph/build/
@@ -101,10 +98,12 @@ coverage/
 /firmware/test/test_soldier
 /firmware/test/test_bio_contract
 /firmware/test/test_tinyml
+/firmware/test/test_logmel
 /firmware/test/test_encryption
 /firmware/test/test_seed_derivation
 /firmware/test/test_ccm
 /firmware/test/test_ccm_selftest
+/firmware/test/test_sym_selftest
 .claude/scheduled_tasks.lock
 
 # Python tooling artifacts (tools/** — pytest, compileall, ruff)
