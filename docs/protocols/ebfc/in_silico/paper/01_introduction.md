@@ -115,14 +115,14 @@ accompanying version-pinned scripts.
 - Implantable EBFCs (review). *Biosensors* **2025**, *15*, 218. doi:10.3390/bios15040218
 - Kundu, … *Fuel Cells* **2026**. [DOI: verify]
 - Tackling the Challenges of Enzymatic (Bio)Fuel Cells. *Chem. Rev.* **2019**. doi:10.1021/acs.chemrev.9b00115
-- Mano, N.; de Poulpiquet, A. O₂ reduction in enzymatic biofuel cells. *Chem. Rev.* **2018**. [DOI: verify]
+- Mano, N.; de Poulpiquet, A. O₂ reduction in enzymatic biofuel cells. *Chem. Rev.* **2018**, *118*, 2392. doi:10.1021/acs.chemrev.7b00220
 
 **Os-mediated FAD-GDH (experimental anchor)**
-- Degani, Y.; Heller, A. *J. Phys. Chem.* **1989**. [DOI: verify]
+- Degani, Y.; Heller, A. *J. Phys. Chem.* **1989**. [DOI: verify] <!-- ⚠️ конфлікт журнал/рік: JPC-стаття = 1987, 91, 1285 (doi:10.1021/j100290a001); 1989-а — це JACS 111, 2357 (redox polymers). Уточнити, який пейпер цитуємо -->
 - Heller, A.; Mano, N. Os redox polymers (wired enzymes). [DOI: verify]
-- Mano, N.; Mao, F.; Heller, A. Os-polymer redox-potential series (+15…+489 mV). *J. Am. Chem. Soc.* **2003**. [DOI: verify]
+- Mao, F.; Mano, N.; Heller, A. Long tethers binding redox centers to polymer backbones enhance electron transport in enzyme "wiring" hydrogels. *J. Am. Chem. Soc.* **2003**, *125*, 4951. doi:10.1021/ja029510e
 - Electron-Transfer Studies with FAD-GDH and Os polymers of different redox potentials. [DOI: verify]
-- Sygmund, C.; Ludwig, R. Bound FAD-GDH E° = −266 mV vs SHE. **2022**. [DOI: verify]
+- Schachinger, F.; Ma, S.; Ludwig, R. Redox potential of FAD-dependent glucose dehydrogenase. *Electrochem. Commun.* **2022**, *146*, 107405. doi:10.1016/j.elecom.2022.107405 <!-- ⚠️ scaffold мав "Sygmund, C.; Ludwig, R."; ця стаття дає E° = −265 mV (не −266) для GcGDH — звірити значення по всьому SSOT -->
 
 **Mediator design precedent (genre)**
 - Model-driven redox-mediator design (GOx). *J. Phys. Chem. B* **2024**. doi:10.1021/acs.jpcb.3c03740
@@ -130,7 +130,7 @@ accompanying version-pinned scripts.
 **LFER / Lever electrochemical parametrization**
 - Lever, A. B. P. *Inorg. Chem.* **1990**, *29*, 1271. doi:10.1021/ic00331a030
 - DFT ↔ Lever ↔ Hammett correlation. *Inorg. Chem.* doi:10.1021/ic0105258
-- Hammett, L. P. The effect of structure on reactivity. **1937**. [DOI: verify]
+- Hammett, L. P. The effect of structure upon the reactions of organic compounds. Benzene derivatives. *J. Am. Chem. Soc.* **1937**, *59*, 96. doi:10.1021/ja01280a022
 
 **Implicit-solvation redox benchmarks (the methods lesson)**
 - Group-8 octahedral reduction potentials (PCM ~1 V error). *J. Phys. Chem. C*. doi:10.1021/jp406772u
@@ -138,7 +138,7 @@ accompanying version-pinned scripts.
 - Multistep explicit solvation of ions. *J. Chem. Theory Comput.* **2019**. doi:10.1021/acs.jctc.8b00982
 
 **Flavin redox & protein tuning**
-- QM/MM flavin reduction potentials. **2015**. PMC4480342 [first author: verify]
+- Combined QM/MM simulations of one- and two-electron reduction potentials of flavin cofactor in water, medium-chain acyl-CoA dehydrogenase, and cholesterol oxidase. **2007**. PMC4480342 (PMID 17567113) [author + locator: verify] <!-- scaffold мав "2015"; PMID date = 2007 -->
 - Protein-electrostatics tuning of flavin. *Chem. Sci.* **2025**. doi:10.1039/d5sc02960k
 - Cluster vs QM/MM for protein redox. *J. Chem. Theory Comput.* doi:10.1021/acs.jctc.5c01656
 - Laccase / CueO active-site cluster model. *Front. Chem.* [DOI: verify]
@@ -148,11 +148,11 @@ accompanying version-pinned scripts.
 - Cu-ZIF-67 ORR nanozyme. [DOI: verify]
 
 **Electron-transfer theory & methods (classics)**
-- Marcus, R. A.; Sutin, N. Electron transfers in chemistry and biology. *Biochim. Biophys. Acta* **1985**, *811*, 265. [DOI: verify]
-- Beratan, D. N.; Betts, J. N.; Onuchic, J. N. Protein electron-transfer pathways. *Science* **1991**. [DOI: verify]
-- Nelsen, S. F.; Blackstock, S. C.; Kim, Y. Estimation of inner-shell reorganization energies (four-point). *J. Am. Chem. Soc.* **1987**. [DOI: verify]
-- Isse, A. A.; Gennaro, A. Absolute potential of SHE / thermodynamic proton reference. *J. Phys. Chem. B* **2010**. [DOI: verify]
-- Abramson, J. et al. AlphaFold 3. *Nature* **2024**. doi:10.1038/s41586-024-07487-w [verify]
+- Marcus, R. A.; Sutin, N. Electron transfers in chemistry and biology. *Biochim. Biophys. Acta* **1985**, *811*, 265. doi:10.1016/0304-4173(85)90014-X
+- Beratan, D. N.; Betts, J. N.; Onuchic, J. N. Protein electron transfer rates set by the bridging secondary and tertiary structure. *Science* **1991**, *252*, 1285. doi:10.1126/science.1656523
+- Nelsen, S. F.; Blackstock, S. C.; Kim, Y. Estimation of inner shell Marcus terms for amino nitrogen compounds by molecular orbital calculations. *J. Am. Chem. Soc.* **1987**, *109*, 677. doi:10.1021/ja00237a007
+- Isse, A. A.; Gennaro, A. Absolute potential of the standard hydrogen electrode and the problem of interconversion of potentials in different solvents. *J. Phys. Chem. B* **2010**, *114*, 7894. doi:10.1021/jp100402x
+- Abramson, J. et al. Accurate structure prediction of biomolecular interactions with AlphaFold 3. *Nature* **2024**, *630*, 493. doi:10.1038/s41586-024-07487-w
 
 **DFT best-practice & reporting standard**
 - Bursch, M. et al. Best-practice DFT protocols. *Angew. Chem. Int. Ed.* **2022**. doi:10.1002/anie.202205735
