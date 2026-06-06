@@ -32,17 +32,22 @@
 | 20 | `dft_lumiflavin` | HOMO(FADH₂) = -5.14 eV | `dft/lumiflavin.json` |
 | 21b | `dft_os_bpy_full` | LUMO(Os III) = -4.23 eV (π-backbonding) | `dft/os_complex.json` |
 | 21d | `dft_os_bpy_wb97xd` | **Adiabatic ΔSCF +0.884 eV** (uphill — raw DFT; verified cascade +466 mV → SUMMARY) | `dft/os_complex_wb97xd.json` |
+| 21e | `dft_os_mediator_series` | **① Hammett LFER** slope ≈ −0.93 eV/σ; realistic optimum **SO₂CF₃** (cascade −0.227, inert) > NO₂ (degrades on cycling) | `dft/os_mediator_series.json` |
 | 22 | `compare_homo_lumo` | cascade Δε = -0.91 raw (uphill); verified −0.47 eV (→ SUMMARY) | `dft/comparison.json` |
 | 23 | `build_zif_clusters` | 3 ZIF cluster XYZ | `ligands/` |
 | 24 | `dft_hopping_integrals` | **3/3 pairs ✅** (geom-fixed) → k_DET **borderline** ×1–30 (λ-sensitive, scripts 25/35) | `dft/zif_hopping.json` |
+| 25 | `cathode_ket_lambda` | **③** Marcus k_DET vs **computed** λ → Cu-Co bottleneck borderline **×1.4** (lit-λ); Ru-swap restores **×31** | `dft/cathode_ket_lambda.json` |
 | 27 | `md_dft_ensemble` | FAD HOMO **-5.589 ± 0.058 eV** (thermally robust, σ≪0.3) | `dft/md_dft_ensemble.json` |
 | 28 | `electron_tunneling_pathway` | Beratan-Onuchic FAD→THR288, **β·d=2.05** (feasible) | `dft/tunneling_pathway.json` |
+| 28b | `tunneling_ensemble` | **CHEM.16** Beratan-Onuchic over MD ensemble → β·d **2.02±0.13** (gating 1.03×, thermally robust; image_molecules PBC) | `dft/tunneling_ensemble.json` |
 | 30 | `kinetics_delta_t` | delta_t = 36s healthy / 190s stressed | `kinetics/delta_t_lookup.json` |
 | 30b | `kinetics_monte_carlo` | 90% CI: 14–120s | `kinetics/monte_carlo.json` |
 | 31 | `eis_impedance_model` | Rct=130Ω, Rs=100Ω | `kinetics/eis_model.json` |
 | 32 | `pcet_redox_potential` | E°(FAD/FADH₂) **-158 mV** (Δ50 mV vs free-flavin exp) — PCET valid w/ implicit solvent | `dft/pcet_redox_potential.json` |
 | 33 | `pcet_cascade_semiquinone` | PCET cost +5.87 eV → cascade +1.48 eV, **does NOT flip downhill** (~1 eV = PCM solvation limit) | `dft/pcet_cascade.json` |
 | 34 | `dft_microsolvation` | **② cluster-continuum**: [Os(H₂O)₆] n6→n18 **+0.98 eV** (benchmark), Cl⁻-solvation **+0.20 eV** (3 H₂O), speciation **aqua +0.51 / bis-Im +0.30 eV** → cascade gap = decomposed method limit | `dft/microsolvation.json` |
+| 34b | `wb97x_speciation` | **② ωB97X cross-check**: speciation trend **functional-robust** (aqua > bis-Im > chloro; ΔE_red shifts −0.43/−0.27 eV vs B3LYP cascade-Δ +0.51/+0.30 — same ordering, different quantity) | `dft/wb97x_speciation.json` |
+| 35 | `dft_metal_reorganization` | **③** computed inner-sphere λ (Nelsen 4-pt): Ru **0.78**, Ce 0.87, Co 3.09 (B3LYP spin-crossover ~2× over-est) | `dft/metal_reorganization.json` |
 | 40 | `validate_vs_experiment` | predictions ready for Ti-coin CV/EIS | `kinetics/validation_report.json` |
 | 50 | `thermal_stress_lame` | safety 9.9× at -30°C; press-fit P_c 34.7→22.6 MPa (stress relaxation, not creep); O-ring seals, barbs axial-only | `kinetics/thermal_stress_lame.json` |
 | 51 | `gusak_degradation_model` | Arrhenius + Kirkendall V=1.12 µg/cm²/yr + H7/s6 | `kinetics/gusak_degradation.json` |

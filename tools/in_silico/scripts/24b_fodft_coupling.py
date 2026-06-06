@@ -108,10 +108,20 @@ def main() -> int:
     for k in (i, j):
         print(f"    MO {k}: ε={eps[k] * HARTREE_TO_EV:+.3f} eV  pop(Cu)={pop_cu[k]:.2f} pop(Co)={pop_co[k]:.2f}")
 
-    # localise the 2-orbital space → one orbital on Cu, one on Co
-    Cpair = C[:, [i, j]]
-    Cloc = lo.PM(mol, Cpair).kernel()
-    Floc = Cloc.T @ F @ Cloc                        # 2x2 Fock in the localised (diabatic) basis
+    # localise the 2-orbital space → one orbital on Cu, one on Co. lo.PM / lo.Boys crash here on a
+    # PySCF lib.einsum version bug, so do the 2×2 diabatisation by hand: diagonalise the Cu-projected
+    # population matrix in the {i,j} MO basis → rotation R that localises one orbital on Cu, the other
+    # off-Cu (= Co); H_ab = off-diagonal of the Fock in that basis (F is diagonal = ε in the MO basis,
+    # MOs orthonormal, so Floc = Rᵀ·diag(εᵢ,εⱼ)·R — Mulliken-Hush-style population diabatisation).
+    ao_atom = mol.ao_labels(fmt=None)
+    rows_cu = [a for a, lab in enumerate(ao_atom) if lab[0] in cu_idx]
+    SC = S @ C
+    mos = [i, j]
+    Pcu = np.array([[0.5 * sum(C[r, mos[x]] * SC[r, mos[y]] + C[r, mos[y]] * SC[r, mos[x]]
+                               for r in rows_cu) for y in range(2)] for x in range(2)])
+    _, R = np.linalg.eigh(Pcu)
+    Cloc = C[:, mos] @ R
+    Floc = R.T @ np.diag([eps[i], eps[j]]) @ R       # 2×2 Fock in the localised (diabatic) basis (Ha)
     t_ij = abs(Floc[0, 1]) * HARTREE_TO_EV
     dG_site = abs(Floc[0, 0] - Floc[1, 1]) * HARTREE_TO_EV
     p_cu_loc = mo_metal_pop(mol, Cloc, S, cu_idx)

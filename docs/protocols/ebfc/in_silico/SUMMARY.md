@@ -251,6 +251,12 @@ cascade toward experiment. Rigorous closure = QM/MM with the aqua/bis-Im species
 solvation), not a chemistry failure** — strengthens, with computed numbers, the
 "limits of implicit-solvation DFT" thesis of Стаття 1.
 
+**ωB97X cross-check (script 34b — functional-robustness):** the speciation trend is reproduced at a
+range-separated hybrid — ΔE_red shifts vs chloro **aqua −0.43 / bis-Im −0.27 eV** (same ordering
+aqua > bis-Im > chloro and |aqua| > |bis-Im| as the B3LYP cascade-Δ +0.51 / +0.30; sign differs only
+because ΔE_red ≠ cascade-Δ — same physics: aqua = strongest oxidant). → the speciation decomposition
+is **not a B3LYP artefact**.
+
 ### Electron Tunneling Pathway (script 28, Beratan-Onuchic)
 
 FAD:C5B → FAD:O4B → FAD:C4A → FAD:N1A → **ALA261** → **THR260** → **THR283** → **THR288** (surface)
@@ -277,7 +283,7 @@ The geometry fix shrank Cu-Co t_ij **25×** → **Cu-Co is the bottleneck**, not
 | λ scenario | bottleneck k(Cu-Co) | vs turnover (10³ s⁻¹) |
 |---|---|---|
 | canon λ=0.7 (old assumption) | 3.6×10⁷ | ×3.6×10⁴ |
-| **literature λ** (Cu 2.0 / Co 1.4 / Ce 0.87) | **1.4×10³** | **×1.4 — borderline** |
+| **literature λ** (Cu 2.0 / Co 1.4 / Ce 1.0) | **1.4×10³** | **×1.4 — borderline** |
 | computed λ (B3LYP, Co spin-crossover ~2× over-est) | 0.3 | ×3×10⁻⁴ |
 | Co→Ru swap (computed λ_Ru = 0.78) | 3.1×10⁴ | ×31 |
 
@@ -360,28 +366,9 @@ The geometry fix shrank Cu-Co t_ij **25×** → **Cu-Co is the bottleneck**, not
 
 ---
 
-## Milestone Tasks (all closed — nothing pending, CPU free)
+## Milestone Tasks — all closed (per-script status → PIPELINE_STATUS, One-Home)
 
-| Task | Type | Status |
-|------|------|--------|
-| ~~L2 10ns extended run~~ | GPU | ✅ DONE (RMSD 4.02 Å, Rg stable) |
-| ~~L2 rerun scripts 10-11~~ | GPU | ✅ DONE (1.20/1.22 Å correct genipin) |
-| ~~L2 temp sweep (script 12)~~ | GPU | ✅ DONE 4/4 temps (263K–313K all stable) |
-| ~~L2 PSBMA diffusion (script 13)~~ | GPU | ✅ DONE |
-| ~~L2 xylem sap sweep (script 14)~~ | GPU | ✅ DONE 6/6 species |
-| ~~L2 PVI coverage (script 15)~~ | GPU | ✅ DONE (RMSD 1.10 Å, brush safe) |
-| ~~L2 strain cycling (script 16)~~ | GPU | ✅ DONE (pseudoplastic) |
-| ~~L3 ωB97X/def2-TZVP (script 21d)~~ | CPU | ✅ DONE (adiabatic ΔSCF +0.884 eV) |
-| ~~L3 tunneling pathway (script 28)~~ | CPU | ✅ DONE (FAD→THR288, β·d=2.05) |
-| ~~L3b all 3 pairs (script 24)~~ | CPU | ✅ DONE — geom-fixed t_ij; k_DET borderline (×1–30, λ-sensitive, script 25) |
-| ~~HW.3.IS thermal stress (script 50)~~ | CPU | ✅ DONE (safety 9.9×) |
-| ~~HW.3 Гусак models (script 51)~~ | CPU | ✅ DONE (Arrhenius, Kirkendall, H7/s6) |
-| ~~L3/L2 MD→DFT ensemble (script 27)~~ | CPU | ✅ DONE — FAD HOMO -5.589 ± 0.058 eV across 5 snapshots, thermally robust |
-| L3 Nelsen λ (script 29 → 29b) | CPU | ✅ **RESCUED** — script-29 FADH₂•⁺ radical-cation pathological, but 29b (FADH⁻/FADH• couple, the pH-7 1st-ET) → inner-sphere λ_i = **0.39 eV**, total ~0.7-0.8 w/ outer-sphere ≈ lit (→ L3 Nelsen-λ row) |
-| ~~L3 PCET proton reference (script 32)~~ | — | ✅ E°(FAD/FADH₂)=−158 mV @pH7, Δ50 mV vs free-flavin exp — implicit solvent valid |
-| ~~L3 PCET cascade (script 33)~~ | CPU | ✅ DONE (geom-opt): PCET cost +5.87 eV → cascade +1.48 eV, does NOT flip downhill. Gap = method limit (speciation + PCM), decomposed by ②. Verified cascade +466 mV / −0.47 eV authoritative |
-
-> Full dependency graph and operational status → [`PIPELINE_STATUS.md`](PIPELINE_STATUS.md)
+> Every L1–L4 script is complete or closed. The **per-script status table** (results + caches + dependency graph) lives **only** in [`PIPELINE_STATUS.md`](PIPELINE_STATUS.md) — this results page no longer mirrors it (was a drift source: README inventory ↔ this status table ↔ PIPELINE). Nothing pending; FO-DFT (24b) running.
 
 ---
 

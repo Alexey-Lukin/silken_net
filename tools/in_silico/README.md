@@ -16,6 +16,11 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 
 ## Scripts in `scripts/` (ordered)
 
+> **Inventory only** (what each script does + cost). Per-script **status + result numbers** live in
+> [`SUMMARY.md`](../../docs/protocols/ebfc/in_silico/SUMMARY.md) (results) and
+> [`PIPELINE_STATUS.md`](../../docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md) (status) — this table
+> links there, it does **not** mirror the numbers (SSOT One-Home; the mirror was a drift source).
+
 | # | Script | What it does | Cost |
 |---|--------|--------------|------|
 | 01 | `01_smoke_test_water_box.py` | Engine sanity check — load protein, water box, 1000 steps | ~30 s |
@@ -30,29 +35,40 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 11 | `11_full_matrix_md.py` | L2-extended: protein + FAD + genipin + chitosan + CNC full matrix MD | varies |
 | 12 | `12_temperature_sweep_md.py` | L2: full matrix at -10, 5, 25, 40°C → RMSD(T) curve | ~2.5 h GPU |
 | 13 | `13_psbma_diffusion_md.py` | L2: glucose diffusion through SBMA slab → D_eff from MSD | ~1-2 h GPU |
-| 14 | `14_xylem_sap_sweep_md.py` | L2: enzyme stability across 6 tree species (✅ 6/6 stable, pH 4.2-5.8) | ~3-4 h GPU |
-| 15 | `15_pvi_coverage_md.py` | L2 Gen 2.5+: PVI backbone steric test (✅ RMSD 1.10 Å — brush safe) | ~1 h GPU |
-| 16 | `16_strain_cycling_md.py` | HW.3.IS: cyclic ±5% strain on matrix (✅ pseudoplastic) | ~30 min GPU |
+| 14 | `14_xylem_sap_sweep_md.py` | L2: enzyme stability across 6 tree species (pH 4.2-5.8) | ~3-4 h GPU |
+| 15 | `15_pvi_coverage_md.py` | L2 Gen 2.5+: PVI backbone steric (brush) test | ~1 h GPU |
+| 16 | `16_strain_cycling_md.py` | HW.3.IS: cyclic ±5% strain on the genipin-chitosan-CNC matrix | ~30 min GPU |
 | 20 | `20_dft_lumiflavin.py` | L3 DFT: FAD/FADH₂ frontier orbitals (B3LYP/6-31G(d)+PCM) | ~2 min |
 | 21 | `21_dft_os_bipy_complex.py` | L3 DFT: Os mediator — NH₃ surrogate (baseline, superseded by 21b) | ~30 s |
 | 21b | `21b_dft_os_bpy_full.py` | L3 DFT: Os mediator — full [Os(bpy)₂(1-MeIm)Cl] with π-backbonding | ~15-30 min |
-| 21c | `21c_dft_os_bpy_geomopt.py` | L3 DFT: Os mediator — geometry optimization via PySCF + geomeTRIC | ~6-12 h |
+| 21c | `21c_dft_os_bpy_geomopt.py` | L3 DFT: Os mediator — geometry optimization via PySCF + geomeTRIC (terminated — Cl flat PES) | ~6-12 h |
+| 21d | `21d_dft_os_bpy_wb97xd.py` | L3 DFT: publication-grade ωB97X/def2-TZVP Os complex (adiabatic ΔSCF cross-check) | ~hours |
+| 21e | `21e_dft_os_mediator_series.py` | L3 ①: Os 4,4'-substituent Hammett series (9× vertical ΔSCF) → LFER mediator design rule | ~30-60 min |
 | 22 | `22_compare_homo_lumo.py` | L3 aggregator: Marcus cascade diagram + verdict | ~1 s |
 | 23 | `23_build_zif_clusters.py` | L3b: bimetallic ZIF cluster models for DET hopping pathway | < 1 s |
-| 24 | `24_dft_hopping_integrals.py` | L3b DFT: ΔSCF hopping integrals (Marcus ET rates through ZIF) | ~3-4 h |
-| 27 | `27_md_dft_ensemble.py` | L3/L2 bridge: FAD HOMO from 5 MD snapshots (✅ -5.589 ± 0.058 eV, thermally robust) | ~30 min |
-| 28 | `28_electron_tunneling_pathway.py` | L3: Beratan-Onuchic electron tunneling pathway (✅ FAD→THR288, β·d=2.05) | < 1 s |
-| 29 | `29_dft_reorganization_energy.py` | L3: Nelsen 4-point λ_inner (B3LYP/def2-SVP, seeded cross-SPs) | ~1-2 h |
-| 32 | `32_pcet_redox_potential.py` | L3: PCET E°(FAD/FADH₂) via thermodynamic proton reference (✅ −158 mV @ pH7, Δ50 mV vs exp) | < 1 s |
+| 24 | `24_dft_hopping_integrals.py` | L3b DFT: ΔSCF hopping integrals, crude State-A/B (Marcus ET rates through ZIF) | ~3-4 h |
+| 24b | `24b_fodft_coupling.py` | L3b: FO-DFT two-state coupling t_ij for the Cu-Co hop (rigor upgrade of 24; loads zif_hopping cache for comparison) | ~hours |
+| 25 | `25_cathode_ket_lambda.py` | L3b ③: Marcus k_ET vs **computed** λ — honest borderline DET margin (reads 24 t_ij + 35 λ) | ~1 s |
+| 27 | `27_md_dft_ensemble.py` | L3/L2 bridge: FAD HOMO across 5 MD snapshots (thermal-robustness check) | ~30 min |
+| 28 | `28_electron_tunneling_pathway.py` | L3: Beratan-Onuchic tunneling pathway, single snapshot | < 1 s |
+| 28b | `28b_tunneling_ensemble.py` | L3 (CHEM.16): Beratan-Onuchic over the MD ensemble → β·d distribution + conformational gating (image_molecules PBC unwrap) | ~few min |
+| 29 | `29_dft_reorganization_energy.py` | L3: Nelsen λ for FADH₂/FADH₂•⁺ — radical-cation pathological in PCM (superseded by 29b) | ~1-2 h |
+| 29b | `29b_dft_semiquinone_lambda.py` | L3: Nelsen λ for the FADH⁻/FADH• anode couple (rescues 29 → inner-sphere λ_i 0.39 eV) | ~1-2 h |
+| 32 | `32_pcet_redox_potential.py` | L3: PCET E°(FAD/FADH₂) via thermodynamic proton reference | < 1 s |
+| 33 | `33_pcet_cascade_semiquinone.py` | L3: PCET-corrected cascade via neutral semiquinone (does not flip downhill → confirms PCM method-limit) | < 1 s |
+| 34 | `34_dft_microsolvation.py` | L3 ②: cluster-continuum micro-solvation + speciation (chloro/aqua/bis-Im + [Os(H₂O)₆] benchmark) → decompose the PCM cascade gap | ~hours |
+| 34b | `34b_wb97x_speciation.py` | L3: ωB97X ΔSCF cross-check of the ② speciation trend (functional-robustness) | ~hours |
+| 35 | `35_dft_metal_reorganization.py` | L3b ③: computed inner-sphere λ for the ZIF metal hops (Nelsen 4-point on [M(H₂O)₆]) | ~hours |
 | 30 | `30_kinetics_delta_t.py` | L4: EBFC kinetics → delta_t(glucose, temp) for Lorenz attractor | ~1 s |
 | 30b | `30b_kinetics_monte_carlo.py` | L4b: Monte Carlo uncertainty (10k samples) → 90% CI for delta_t | ~1 s |
 | 31 | `31_eis_impedance_model.py` | L4c: EIS Randles circuit → Nyquist/Bode predictions for Ti-coin tests | ~1 s |
 | 40 | `40_validate_vs_experiment.py` | Ti-coin Stage 2: compare in-silico predictions vs experimental CV/EIS | ~1 s |
-| 50 | `50_thermal_stress_lame.py` | HW.3 anchor: Lamé thermal stress + Findley creep (✅ safety 9.9×, 76 µm/20yr) | ~1 s |
+| 50 | `50_thermal_stress_lame.py` | HW.3 anchor: Lamé thermal stress + Findley creep | ~1 s |
 | 51 | `51_gusak_degradation_model.py` | HW.3 anchor: Arrhenius aging + Kirkendall V diffusion + H7/s6 window | ~1 s |
 
 Numeric prefixes encode the pipeline DAG and group: 02-08 prep (GAFF),
-10-16 L2 MD, 20-29 L3 DFT (23-24 L3b cathode DET; 27-29 advanced L3),
+10-16 L2 MD, 20-35 L3 DFT (23-25 + 24b L3b cathode DET; 27-35 advanced L3 —
+tunneling/λ/PCET/micro-solvation/speciation),
 30-31 L4 kinetics/EIS, 40 validation, 50-51 HW.3 anchor mechanics
 (analytical numpy — not part of the L1-L4 enzyme DAG). Rows are listed in
 execution order; 08-09 reserved for future ligands.
