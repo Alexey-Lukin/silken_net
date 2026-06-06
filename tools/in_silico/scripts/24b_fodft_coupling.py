@@ -42,7 +42,13 @@ XYZ = LIGANDS_DIR / "cu_co_zif.xyz"
 CHARGE, SPIN = 1, 2                       # clash-free Cu-Co cluster (script 23/24)
 BASIS_METALS = {"Cu": "lanl2dz", "Co": "lanl2dz"}
 ECP_METALS = {"Cu": "lanl2dz", "Co": "lanl2dz"}
-CRUDE_T_IJ_EV = 0.00128                   # script-24 State-A/B value, for comparison
+
+
+def crude_cu_co_t_ij() -> float:
+    """script-24's crude Cu-Co ΔSCF t_ij, read from its cache at runtime — drift-proof (mirrors the
+    SSOT `zif_hopping.json`, never a hardcoded copy that silently diverges if script 24 is re-run)."""
+    z = json.loads((DFT_CACHE / "zif_hopping.json").read_text())
+    return next(p["t_ij_eV"] for p in z["pairs"] if {p["metal1"], p["metal2"]} == {"Cu", "Co"})
 
 
 def read_xyz(path: Path):
@@ -114,7 +120,8 @@ def main() -> int:
     banner("FO-DFT coupling result")
     print(f"  localised orbital 0: pop(Cu)={p_cu_loc[0]:.2f} pop(Co)={p_co_loc[0]:.2f}")
     print(f"  localised orbital 1: pop(Cu)={p_cu_loc[1]:.2f} pop(Co)={p_co_loc[1]:.2f}")
-    print(f"  |t_ij| (FO-DFT)  = {t_ij:.5f} eV   (script-24 crude = {CRUDE_T_IJ_EV:.5f} eV)")
+    crude = crude_cu_co_t_ij()
+    print(f"  |t_ij| (FO-DFT)  = {t_ij:.5f} eV   (script-24 crude = {crude:.5f} eV, loaded from zif_hopping.json)")
     print(f"  site-energy gap  = {dG_site:.4f} eV   (≈ |ΔG| for the hop)")
     localised = (max(p_cu_loc[0], p_cu_loc[1]) > 0.3 and max(p_co_loc[0], p_co_loc[1]) > 0.3)
     physical = (1e-5 < t_ij < 1.0) and localised
@@ -126,7 +133,7 @@ def main() -> int:
                   "of the 2 metal-d frontier MOs, off-diagonal Fock = t_ij); B3LYP/6-31G(d)+LANL2DZ",
         "pair": "Cu-Co (rate-limiting hop)",
         "t_ij_eV": round(t_ij, 6),
-        "t_ij_crude_script24_eV": CRUDE_T_IJ_EV,
+        "t_ij_crude_script24_eV": round(crude, 6),
         "site_energy_gap_eV": round(dG_site, 4),
         "frontier_MOs": [int(i), int(j)],
         "localised": bool(localised),

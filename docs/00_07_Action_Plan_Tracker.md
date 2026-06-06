@@ -192,7 +192,7 @@
 - [ ] 👤 **Joint Q1-publication з ЧНУ Мінаєвим:** "In Silico Design of Long-Lived Enzymatic Bio-Fuel Cells for Tree-Integrated Energy Harvesting" — `08_03` Стаття 28
 
 ###### 🧪 Chemistry-improvement notes (CHEM.N) — founder batch 2026-06-05, triaged + verified
-> 31 ideas, all verified 2026-06-06. **Full verdicts documented in the SSOT canon (docs/):** anode candidates → `01_03 §3.1` · matrix candidates → `01_03 §3.3` · cathode levers → `01_03 §3.2` · in-silico method roadmap → `PIPELINE_STATUS` Future · aggregation → `L1 §2` · computed results → `SUMMARY`/`L3`. Thin pointers below. ⚠️ = corrected/weak.
+> 31 triaged + verified 2026-06-06; **5 corrected-out/merged Ruthless-Pruned** (00_06 §4 — refuted/dup/relocated; **git history**: CHEM.28 epitaxial-prestress · CHEM.30 acid-ΔG · CHEM.12 done-by-② · CHEM.17 dup-of-CHEM.23 · CHEM.24 magnetic-CNT→`02_03 §1.5`); 26 active below. **Full verdicts in the SSOT canon (docs/):** anode → `01_03 §3.1` · matrix → `01_03 §3.3` · cathode levers → `01_03 §3.2` · in-silico methods → `PIPELINE_STATUS` Future · aggregation → `L1 §2` · computed → `SUMMARY`/`L3`. Thin pointers below. ⚠️ = weak.
 
 **P0 — in-pipeline (paper computes, ✅ canonized):**
 - [x] CHEM.29 — Ru-λ 0.78 eV (cathode-fix) → [`SUMMARY`](protocols/ebfc/in_silico/SUMMARY.md) §Cathode
@@ -220,10 +220,6 @@
 
 **Separate streams (not chemistry-paper):**
 - [ ] CHEM.18 / CHEM.27 / CHEM.19 — cryoprotectant T-corr (firmware) / Belleville washers (hardware) / biological gasket (bio-seal) — tracked in their own modules
-
-**⚠️ Corrected-out / merged:**
-- CHEM.28 / CHEM.30 — epitaxial pre-stress (mechanism confused) / acid-ΔG (limited lever, misses Marcus-inverted)
-- CHEM.12 / CHEM.17 / CHEM.24 — ② done / dup of CHEM.23 / → `02_03 §1.5` (magnetic-CNT, hardware)
 
 ###### 🔬 In-silico pipeline — open computes (script audit 2026-06-06; detail → `PIPELINE_STATUS`)
 > All ~37 `tools/in_silico/scripts/` audited — almost all ✅ (cached). Open work captured here so we never re-audit; closed/superseded = 21 · 21c · 29 (honest limitations-points, not work).

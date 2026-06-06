@@ -175,8 +175,9 @@ def main() -> int:
     banner("Ensemble tunnelling result")
     flag = "  ⚠️ PBC-LIMITED — most frames' protein wrapped across the box; UNWRAP the trajectory + re-run" if pbc_limited else ""
     print(f"  analysable frames: {n_valid}/{n_total}{flag}")
+    single_bd = json.loads((DFT_CACHE / "tunneling_pathway.json").read_text()).get("effective_beta_d", float("nan"))
     print(f"  β·d  mean={bd.mean():.2f}  std={bd.std():.2f}  min={bd.min():.2f}  max={bd.max():.2f}")
-    print(f"  single-snapshot (script 28, AF3) = 2.05")
+    print(f"  single-snapshot (script 28, AF3, from tunneling_pathway.json) = {single_bd}")
     if n_valid > 1:
         print(f"  conformational-gating factor ⟨k⟩/k(⟨β·d⟩) = {gating:.2f}×")
     verdict = ("⚠️ INCONCLUSIVE (n=1 after PBC losses; the one valid β·d≈AF3 hints robustness, not proof)"
@@ -192,7 +193,7 @@ def main() -> int:
         "pbc_limited": bool(pbc_limited),
         "beta_d_mean": round(float(bd.mean()), 3),
         "beta_d_std": round(float(bd.std()), 3),
-        "beta_d_single_snapshot_AF3": 2.05,
+        "beta_d_single_snapshot_AF3": single_bd,
         "conformational_gating_factor": round(gating, 3) if n_valid > 1 else None,
         "status": "WIP — needs PBC-unwrapping of production.dcd before the ensemble is meaningful",
         "interpretation": verdict,
