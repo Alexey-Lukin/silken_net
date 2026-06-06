@@ -104,7 +104,7 @@ def main() -> int:
     print("\n  bottleneck hop = Cu-Co (smallest t_ij after the geometry fix).")
     print("  → the old ~10⁵× margin was a geometry+λ artifact; realistic λ leaves the")
     print("    cathode borderline (×1–30) — possibly co-limiting. Mitigation: low-λ metal")
-    print("    (Ru), conductive-MOF band transport (note 31), or enzyme-free SAC (note 6).")
+    print("    (Ru), conductive-MOF band transport (CHEM.31), or enzyme-free SAC (CHEM.6).")
     print("  saved → cache/dft/cathode_ket_lambda.json")
     return 0
 

@@ -4,6 +4,43 @@
   "limits": "vertical (no reorg relax); single shell not converged (n6 over / n18 under); LANL2DZ omits Os SOC",
   "results": [
     {
+      "name": "bisim_meim2",
+      "n_atoms": 65,
+      "os2": {
+        "label": "Os(II) bisim_meim2",
+        "charge": 2,
+        "spin": 0,
+        "n_atoms": 65,
+        "n_electrons": 266,
+        "converged": true,
+        "wall_seconds": 482.5,
+        "E_total_Ha": -1612.748823420714,
+        "HOMO_Ha": -0.18958507221053406,
+        "LUMO_Ha": -0.0844450080997198,
+        "HOMO_eV": -5.158872626394368,
+        "LUMO_eV": -2.2978657319470606,
+        "gap_eV": 2.8610068944473075
+      },
+      "os3": {
+        "label": "Os(III) bisim_meim2",
+        "charge": 3,
+        "spin": 1,
+        "n_atoms": 65,
+        "n_electrons": 265,
+        "converged": true,
+        "wall_seconds": 2082.2,
+        "E_total_Ha": -1612.5715309246543,
+        "HOMO_Ha": -0.24910958019340593,
+        "LUMO_Ha": -0.16641311032533418,
+        "HOMO_eV": -6.778617004218691,
+        "LUMO_eV": -4.528331421458882,
+        "gap_eV": 2.2502855827598087
+      },
+      "dE_red_eV": -4.8244,
+      "cascade_delta_eV": -0.6087,
+      "converged": true
+    },
+    {
       "name": "aqua_meim_h2o",
       "n_atoms": 56,
       "os2": {

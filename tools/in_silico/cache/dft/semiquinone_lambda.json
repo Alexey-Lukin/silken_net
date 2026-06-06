@@ -1,0 +1,16 @@
+{
+  "method": "Nelsen 4-point at B3LYP/def2-SVP + C-PCM, FADH\u2022/FADH\u207b couple (seeded cross-SPs); rescues script 29 (FADH\u2082\u2022\u207a radical-cation pathology)",
+  "couple": "FADH\u2022(neutral,doublet) / FADH\u207b(anion,singlet)",
+  "semiquinone_site": "N18",
+  "physically_reasonable": true,
+  "E_rad_at_Rrad_Ha": -872.0699820229438,
+  "E_an_at_Ran_Ha": -872.2015949181316,
+  "E_rad_at_Ran_Ha": -872.0618363144856,
+  "E_an_at_Rrad_Ha": -872.1954631688182,
+  "lambda_1_eV": 0.16685339893196413,
+  "lambda_2_eV": 0.22165601910293983,
+  "lambda_inner_eV": 0.38850941803490396,
+  "literature_lambda_total_eV": 0.7,
+  "note": "inner-sphere only; Marcus outer-sphere \u03bb_o adds on top \u2192 total comparable to the lit 0.7\u20130.8 eV used as the 24.marcus_rate fallback",
+  "wall_seconds": 3090.508414030075
+}

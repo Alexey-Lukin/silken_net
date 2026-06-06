@@ -234,10 +234,14 @@ PCM failure (Ru(H₂O)₆ ~1 V error, JPCC 10.1021/jp406772u). Full numbers →
 2. **Explicit Cl⁻ solvation** — 3 waters H-bonded to the chloride close +0.20 eV of
    the cascade gap (~0.067 eV/water, monotonic) → full closure needs the whole 2nd
    shell (QM/MM regime).
-3. **Speciation dominates** — replacing Cl⁻ by an aqua ligand (the form Caveat 5
-   argues the experiment actually measures) closes **+0.51 eV** — over half the gap;
-   the weak H₂O donor leaves Os(III) a much stronger oxidant. The aqua couple is
-   +2/+3, so it inherits the larger group-8 PCM bias — its absolute value is itself
+3. **Speciation dominates** — replacing Cl⁻ by the active 6th ligand closes most of
+   the gap: the **aqua** form (the species Caveat 5 argues the experiment measures)
+   **+0.51 eV** — over half the gap — and the PVI-realistic **bis-imidazole** form a
+   smaller **+0.30 eV** (both computed at the same vertical ΔSCF tier; values + ranking
+   aqua > bis-Im > chloro in [`SUMMARY.md`](SUMMARY.md) §"Cluster-Continuum
+   Micro-Solvation"). The weak H₂O donor leaves Os(III) the strongest oxidant; the
+   stronger σ-donor MeIm lowers E° (settles CHEM.20's reversed direction). These +2/+3
+   couples inherit the larger group-8 PCM bias — absolute values themselves
    implicit-limited (same direction as Caveat 6, ionic strength).
 
 **Conclusion:** the cascade gap decomposes into *speciation* (~0.5 eV) + *explicit
@@ -254,7 +258,7 @@ an assertion into a quantified, decomposed result — the methodological core of
 | **Повна geometric/pyberny opt** обох species | ~6-12 год CPU | Frontier orbital energies → точніше на ~0.1-0.3 eV |
 | **ωB97X + def2-TZVP** | ~27× довше за B3LYP/6-31G(d) для RKS | **Script 21d ✅ COMPLETE** (2026-05-27). Adiabatic ΔSCF: ΔG=+0.884 eV (PCM limit). |
 | **MD→DFT ensemble** | 5 SP on MD snapshots | **Script 27 ✅ DONE** (2026-05-28). FAD isoalloxazine HOMO = **-5.589 ± 0.058 eV** across 5 thermal snapshots → frontier orbital thermally robust (σ ≪ 0.3 eV). Confirms FAD→Os cascade stable against thermal fluctuation. Root-cause fix: heavy-atom-only fragment had dangling valences (no SCF); now includes distance-attached H + SOSCF fallback. |
-| **Nelsen 4-point λ** | 2 geom opts + 4 SPs | **Script 29 ❌ CLOSED — Physical Limitation** (2026-05-28). Attempted twice: (a) composite ωB97X//B3LYP (41.5h), (b) consistent B3LYP/def2-SVP + density-seeded cross-SPs. **Both give E(neutral@R_cation) ≈ −867 Ha, +5.9–6.3 Ha (+160 eV) above diagonal** — not an SCF/basis artifact but a real chemistry failure: the uncompensated **FADH₂•⁺ radical cation geometry is pathological in implicit solvent** (no explicit water / no PCET to relieve charge → ring distorts/fragments during geom-opt), so the neutral closed-shell at that geometry is meaningless. 4-point λ for proton-active flavins requires QM/MM (explicit water) or a deprotonated (PCET) reference. **Literature λ = 0.7–0.8 eV retained** (gold standard for flavin cofactors, Bhattacharyya et al.) — L4 Marcus rates already use it. *Same root cause as the +0.998 eV cascade artifact → fixed via PCET (script 33).* |
+| **Nelsen 4-point λ** | 2 geom opts + 4 SPs | **Script 29 (FADH₂/FADH₂•⁺) ❌ pathological** (2026-05-28): both methods give +160 eV cross-terms — the uncompensated **FADH₂•⁺ radical cation geometry is meaningless in implicit solvent** (ring distorts/fragments, no explicit water/PCET to relieve charge). **✅ RESCUED — script 29b (2026-06-06):** the physically-correct anode couple is the deprotonated **FADH⁻ → FADH• + e⁻** (pH 7, 1st ET) — both members stable + charge-delocalised, so the clean Nelsen 4-point gives **inner-sphere λ_i = 0.39 eV** (λ₁ 0.17 + λ₂ 0.22; site N18). Inner-sphere only; with the Marcus outer-sphere λ_o it totals ~0.7–0.8 eV — **consistent with the literature flavin value** (Bhattacharyya et al.) used in the L4 Marcus rates, now **from first principles** instead of assumed. Cache: `dft/semiquinone_lambda.json`. |
 | **ΔSCF redox potentials** з RRHO thermal corrections | ~2× за SP | Direct E° prediction vs NHE/SHE, не Koopmans approximation |
 | **TD-DFT excited states** для Os complex | ~5× за GS | Підтверджує MLCT character + Marcus reorganization energy |
 | **Explicit water shells + ONIOM/EFP** | ~10× за PCM | **Script 34 ② ✅ (cluster-continuum, §E)**: benchmark +0.98 eV, speciation +0.51 eV, Cl⁻-solvation +0.20 eV → gap = decomposed method limit (→ SUMMARY). Full QM/MM = школа Мінаєва |

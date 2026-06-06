@@ -190,8 +190,8 @@ def test_zif_hopping_all_pairs():
         pytest.skip("hopping not computed")
     data = json.loads(path.read_text())
     assert len(data["pairs"]) >= 2
-    assert "total" in data
-    assert data["total"]["k_DET"] > 1e6
+    assert "k_total_per_s" in data          # ③ rework renamed total → k_total_per_s
+    assert data["k_total_per_s"] > 1e6
 
 
 def test_md_dft_ensemble_thermally_robust():

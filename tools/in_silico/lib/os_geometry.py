@@ -140,8 +140,21 @@ def _align_bpy(bpy, n1, n2, target_n1, target_n2, os_pos):
     return [(sym, R @ (pos - s_mid) + t_mid) for sym, pos in bpy]
 
 
-def _align_monodentate(mol_atoms, coord, target_pos, outward_dir, plane_hint):
-    """Place a monodentate ligand with its donor atom at target, ring outward."""
+def _rotate_about_axis(point, axis, origin, angle_rad):
+    """Rodrigues rotation of a single point about `axis` through `origin`."""
+    k = axis / np.linalg.norm(axis)
+    v = point - origin
+    return (origin + v * np.cos(angle_rad)
+            + np.cross(k, v) * np.sin(angle_rad)
+            + k * k.dot(v) * (1.0 - np.cos(angle_rad)))
+
+
+def _align_monodentate(mol_atoms, coord, target_pos, outward_dir, plane_hint, twist_deg=0.0):
+    """Place a monodentate ligand with its donor atom at target, ring outward.
+
+    `twist_deg` rotates the placed ligand about its Os–donor bond axis — a real
+    low-barrier rotational DOF — used to twist two cis rings into a propeller when
+    they would otherwise clash co-planar (bis-Im, 00_07 note 20/26)."""
     s_anchor = mol_atoms[coord][1]
     s_dir = np.mean([p for _, p in mol_atoms], axis=0) - s_anchor
     s_dir /= np.linalg.norm(s_dir)
@@ -154,18 +167,26 @@ def _align_monodentate(mol_atoms, coord, target_pos, outward_dir, plane_hint):
     t_perp = np.cross(t_normal, t_dir)
 
     R = np.column_stack([t_dir, t_perp, t_normal]) @ np.column_stack([s_dir, s_perp, s_normal]).T
-    return [(sym, R @ (pos - s_anchor) + target_pos) for sym, pos in mol_atoms]
+    placed = [(sym, R @ (pos - s_anchor) + target_pos) for sym, pos in mol_atoms]
+    if twist_deg:
+        ang = np.radians(twist_deg)
+        placed = [(sym, _rotate_about_axis(p, t_dir, target_pos, ang)) for sym, p in placed]
+    return placed
 
 
 # Default axial set = 1-methylimidazole (+y) and chloride (+x) → reproduces 21b
 DEFAULT_AXIAL = (("ligand", MEIM_SMILES, "N"), ("cl",))
 
 
-def build_os_complex(bpy_smiles: str = BPY_SMILES, axial=DEFAULT_AXIAL):
+def build_os_complex(bpy_smiles: str = BPY_SMILES, axial=DEFAULT_AXIAL,
+                     axial_twists=(0.0, 0.0)):
     """Assemble cis-[Os(bpy)₂(A0)(A1)] octahedron.
 
     bpy1 in xz-plane, bpy2 in yz-plane; axial[0] along +y, axial[1] along +x.
     `axial` items: ("cl",) for chloride, or ("ligand", smiles, coord_elem).
+    `axial_twists` (deg) rotate each axial ligand about its Os–donor bond — leave
+    (0, 0) for the canonical placement (21b/① series/mediator/aqua all unchanged);
+    used only to propeller two cis rings apart (bis-Im, note 20/26).
     Returns (atoms, info) where info has n_atoms / min_contact_A / os_distances.
     """
     os_pos = np.zeros(3)
@@ -187,28 +208,38 @@ def build_os_complex(bpy_smiles: str = BPY_SMILES, axial=DEFAULT_AXIAL):
     bpy2 = _align_bpy(bpy, n1, n2, tn1_2, tn2_2, os_pos)
 
     all_atoms = [("Os", os_pos)] + bpy1 + bpy2
+    block_id = [-1] + [0] * len(bpy1) + [1] * len(bpy2)   # -1 = metal (skip in clash)
     slot_dirs = (np.array([0.0, 1.0, 0.0]), np.array([1.0, 0.0, 0.0]))   # +y, +x
     plane_hints = (np.array([0.0, 0.0, 1.0]), np.array([0.0, 0.0, 1.0]))
 
-    for spec, sdir, phint in zip(axial, slot_dirs, plane_hints):
+    for k, (spec, sdir, phint, tw) in enumerate(zip(axial, slot_dirs, plane_hints, axial_twists)):
         if spec[0] == "cl":
             all_atoms.append(("Cl", os_pos + OS_CL * sdir))
+            block_id.append(2 + k)
         else:
             _, smiles, coord_elem = spec
             lig, coord = build_monodentate(smiles, coord_elem)
             dist = OS_O_DONOR if coord_elem == "O" else OS_N_DONOR
-            placed = _align_monodentate(lig, coord, os_pos + dist * sdir, sdir, phint)
+            placed = _align_monodentate(lig, coord, os_pos + dist * sdir, sdir, phint,
+                                        twist_deg=tw)
             all_atoms.extend(placed)
+            block_id.extend([2 + k] * len(placed))
 
     # ── geometry diagnostics (caller prints) ──
+    # min_contact_A = closest atom pair *incl. bonds* (~1.08 C–H floor); a catastrophic-
+    # fusion sentinel. min_interlig_A = closest pair across DIFFERENT ligand blocks (metal
+    # excluded) = the true non-bonded steric clash (what gates a propeller de-clash).
     pos = np.array([p for _, p in all_atoms])
     n = len(pos)
     min_d, min_pair = 1e9, (0, 0)
+    min_il, min_il_pair = 1e9, (0, 0)
     for i in range(n):
         for j in range(i + 1, n):
             d = float(np.linalg.norm(pos[i] - pos[j]))
             if d < min_d:
                 min_d, min_pair = d, (i, j)
+            if block_id[i] >= 0 and block_id[j] >= 0 and block_id[i] != block_id[j] and d < min_il:
+                min_il, min_il_pair = d, (i, j)
     os_dists = sorted(float(np.linalg.norm(pos[k] - pos[0]))
                       for k in range(1, n)
                       if all_atoms[k][0] in ("N", "Cl", "O"))[:6]
@@ -216,6 +247,8 @@ def build_os_complex(bpy_smiles: str = BPY_SMILES, axial=DEFAULT_AXIAL):
         "n_atoms": n,
         "min_contact_A": round(min_d, 3),
         "min_pair": f"{all_atoms[min_pair[0]][0]}#{min_pair[0]}-{all_atoms[min_pair[1]][0]}#{min_pair[1]}",
+        "min_interlig_A": round(min_il, 3),
+        "min_interlig_pair": f"{all_atoms[min_il_pair[0]][0]}#{min_il_pair[0]}-{all_atoms[min_il_pair[1]][0]}#{min_il_pair[1]}",
         "os_coord_distances_A": [round(d, 3) for d in os_dists],
     }
     return all_atoms, info

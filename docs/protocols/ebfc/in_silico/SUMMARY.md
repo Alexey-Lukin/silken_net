@@ -185,7 +185,7 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 | NO₂ (unstable) | +0.78 | −5.262 | −4.905 | −0.232 |
 | **SO₂CF₃** (inert) | +0.96 | −5.256 | −4.910 | **−0.227** |
 
-**Design rule (✅ cascade monotonic with σ):** electron-withdrawing 4,4'-bpy improves FADH₂→Os alignment — cascade Δ rises −1.50 (NMe₂) → −0.23 eV. **Realistic optimum = SO₂CF₃** (σ 0.96, cascade −0.227 ≈ NO₂'s −0.232) — same alignment but **electrochemically inert**, whereas NO₂ degrades (NO₂→NHOH→NH₂ on Os cycling at pH 4.5) → would relax the cascade to the donor-saturated −1.5 worst case (note #23). CF₃ (−0.502) = milder inert option. *Caveat:* max cascade-Δ ≠ optimal EBFC mediator — higher E°(Os) lowers OCV → optimum balances driving-force vs cell-voltage (exp Os opt ~+309 mV).
+**Design rule (✅ cascade monotonic with σ):** electron-withdrawing 4,4'-bpy improves FADH₂→Os alignment — cascade Δ rises −1.50 (NMe₂) → −0.23 eV. **Realistic optimum = SO₂CF₃** (σ 0.96, cascade −0.227 ≈ NO₂'s −0.232) — same alignment but **electrochemically inert**, whereas NO₂ degrades (NO₂→NHOH→NH₂ on Os cycling at pH 4.5) → would relax the cascade to the donor-saturated −1.5 worst case (CHEM.23). CF₃ (−0.502) = milder inert option. *Caveat:* max cascade-Δ ≠ optimal EBFC mediator — higher E°(Os) lowers OCV → optimum balances driving-force vs cell-voltage (exp Os opt ~+309 mV).
 
 **E° LFER:** ΔE_red linear in σ over OMe→NO₂ (slope ≈ −0.93 eV/σ) with **donor-saturation at NMe₂/NH₂** (plateau ~−3.91 eV, σ_para⁻ regime) — strict E°-monotonicity breaks only at that 4-meV pair (expected resonance saturation, not error).
 
@@ -226,13 +226,21 @@ H-bond directionality a continuum cannot model). *Absolute E° indicative only
 ~0.067 eV/water, monotonic → 3 waters close ~22 % of the gap; full closure (≈ the
 full 2nd shell) is the QM/MM regime.
 
-**(c) Speciation — aqua form cis-[Os(bpy)₂(1-MeIm)(H₂O)]²⁺/³⁺** (the real Os-PVI
-mediator + the cited exp E° ≈ +200 mV are likely the aqua / bis-imidazole form, NOT
-the chloro complex — aquation caveat in [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md)):
-cascade Δ = **−0.398 eV = +0.510 eV more favorable than the chloro model (k0)**
-(Os III LUMO −4.229 → −4.739; weak H₂O donor vs π-donor Cl⁻ → stronger oxidant /
-better acceptor). Caveat: the aqua couple is **+2/+3** → carries the larger group-8
-PCM bias (benchmark a), so its absolute value is itself implicit-solvation-limited.
+**(c) Speciation** — the real Os-PVI mediator + the cited exp E° ≈ +200 mV are likely the
+**aqua or bis-imidazole** form, NOT the chloro complex (aquation caveat in
+[`L3_quantum_chemistry.md`](L3_quantum_chemistry.md)). **Both computed** (Cl⁻ → the active
+6th ligand, a +2/+3 couple):
+- **aqua** cis-[Os(bpy)₂(1-MeIm)(H₂O)]²⁺/³⁺ → cascade Δ **−0.398 eV = +0.510 eV vs the chloro
+  model (k0)** (Os III LUMO −4.229 → −4.739; weak H₂O donor → stronger oxidant).
+- **bis-Im** cis-[Os(bpy)₂(1-MeIm)₂]²⁺/³⁺ (PVI-realistic — a 2nd imidazole from the chain) →
+  cascade Δ **−0.609 eV = +0.299 eV vs k0** (Os III LUMO −4.229 → −4.528, ⟨S²⟩ 0.754).
+
+Ranking **aqua > bis-Im > chloro**: the stronger σ-donor MeIm stabilizes Os(III) *more* than
+H₂O → lower E° → a **worse** acceptor than aqua but better than chloro (settles CHEM.20's
+back-to-front "stronger donor = better acceptor"; matches the experimental Os-imidazole
+E°-lowering series, e.g. [Os(bpy)₃] +628 → [OsCl(Him)(dmbpy)₂] −6 mV). Caveat: these
+**+2/+3** couples carry the larger group-8 PCM bias (benchmark a) → absolute values are
+themselves implicit-solvation-limited.
 
 **Verdict:** the ~1 eV cascade gap **decomposes** into **speciation** (chloro→aqua
 +0.51 eV) + **explicit solvation** (+0.20 eV / 3 Cl⁻-waters, trending to the full
@@ -272,7 +280,7 @@ The geometry fix shrank Cu-Co t_ij **25×** → **Cu-Co is the bottleneck**, not
 | computed λ (B3LYP, Co spin-crossover ~2× over-est) | 0.3 | ×3×10⁻⁴ |
 | Co→Ru swap (computed λ_Ru = 0.78) | 3.1×10⁴ | ×31 |
 
-**Conclusion (revised, honest):** the old "k_DET = 1.09×10⁸, ×10⁵ above turnover, *not* rate-limiting" was a **double artifact** — a broken bridging geometry (clashing N–H) **and** an assumed λ = 0.7 eV. On the corrected geometry with realistic λ, the Cu-Co bottleneck sits at **~enzymatic turnover (×1–30)** → cathode DET is **borderline / possibly co-limiting**, not comfortably fast. B3LYP over-estimates the first-row λ (Co ≈ 2× lit), so the truth most likely tracks the literature-λ row (~×1.4); rigorous closure = CDFT coupling + experimental EIS. **Mitigation:** low-λ metal (Co→Ru, ×31), conductive-MOF band transport ([`01_03`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell) §3.2 / note 31), or enzyme-free SAC (note 6). Numbers: `dft/zif_hopping.json` + `dft/cathode_ket_lambda.json`.
+**Conclusion (revised, honest):** the old "k_DET = 1.09×10⁸, ×10⁵ above turnover, *not* rate-limiting" was a **double artifact** — a broken bridging geometry (clashing N–H) **and** an assumed λ = 0.7 eV. On the corrected geometry with realistic λ, the Cu-Co bottleneck sits at **~enzymatic turnover (×1–30)** → cathode DET is **borderline / possibly co-limiting**, not comfortably fast. B3LYP over-estimates the first-row λ (Co ≈ 2× lit), so the truth most likely tracks the literature-λ row (~×1.4); rigorous closure = CDFT coupling + experimental EIS. **Mitigation:** low-λ metal (Co→Ru, ×31), conductive-MOF band transport ([`01_03`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell) §3.2 / CHEM.31), or enzyme-free SAC (CHEM.6). Numbers: `dft/zif_hopping.json` + `dft/cathode_ket_lambda.json`.
 
 ---
 
@@ -368,7 +376,7 @@ The geometry fix shrank Cu-Co t_ij **25×** → **Cu-Co is the bottleneck**, not
 | ~~HW.3.IS thermal stress (script 50)~~ | CPU | ✅ DONE (safety 9.9×) |
 | ~~HW.3 Гусак models (script 51)~~ | CPU | ✅ DONE (Arrhenius, Kirkendall, H7/s6) |
 | ~~L3/L2 MD→DFT ensemble (script 27)~~ | CPU | ✅ DONE — FAD HOMO -5.589 ± 0.058 eV across 5 snapshots, thermally robust |
-| ~~L3 Nelsen λ (script 29)~~ | CPU | ❌ CLOSED — work done, result is a documented negative (FADH₂•⁺ geometry pathological in implicit solvent, both methods). Literature λ=0.7-0.8 eV retained |
+| L3 Nelsen λ (script 29 → 29b) | CPU | ✅ **RESCUED** — script-29 FADH₂•⁺ radical-cation pathological, but 29b (FADH⁻/FADH• couple, the pH-7 1st-ET) → inner-sphere λ_i = **0.39 eV**, total ~0.7-0.8 w/ outer-sphere ≈ lit (→ L3 Nelsen-λ row) |
 | ~~L3 PCET proton reference (script 32)~~ | — | ✅ E°(FAD/FADH₂)=−158 mV @pH7, Δ50 mV vs free-flavin exp — implicit solvent valid |
 | ~~L3 PCET cascade (script 33)~~ | CPU | ✅ DONE (geom-opt): PCET cost +5.87 eV → cascade +1.48 eV, does NOT flip downhill. Gap = method limit (speciation + PCM), decomposed by ②. Verified cascade +466 mV / −0.47 eV authoritative |
 

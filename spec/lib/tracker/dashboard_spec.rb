@@ -197,6 +197,45 @@ RSpec.describe Tracker::Dashboard do
     end
   end
 
+  # [CHEM.N in-silico note refs, 2026-06-06] The HW.5.IS chemistry backlog is a bulleted
+  # list; its 31 notes carry CHEM.N IDs (standardized from ad-hoc `note N`). chem_note_ids
+  # collects the def set (the leading ID-cluster before the em-dash → compound `+` & slash,
+  # checkbox optional); chem_note_ref_violations flags a CHEM.N in any doc/script that doesn't
+  # resolve. A CHEM ref in a DESCRIPTION (after the em-dash) is NOT mistaken for a def.
+  describe ".chem_note_ids + .chem_note_ref_violations" do
+    it "collects simple, compound (+), slash-pair and checkbox-less defs; ignores a description ref" do
+      md = <<~MD
+        - [ ] CHEM.6 — simple open note
+        - [x] CHEM.22 + CHEM.5 — compound (two ids in one bullet)
+        - [ ] CHEM.20/26 — slash-merged duplicate pair
+        - CHEM.28 — corrected-out, no checkbox
+        - [ ] CHEM.15 — subsumed by CHEM.29 (a ref in the DESCRIPTION, not a def)
+      MD
+      expect(described_class.chem_note_ids(md))
+        .to contain_exactly("CHEM.6", "CHEM.22", "CHEM.5", "CHEM.20", "CHEM.26", "CHEM.28", "CHEM.15")
+    end
+
+    it "expands a slash-family into each member" do
+      expect(described_class.expand_chem("CHEM.20/26")).to eq(%w[CHEM.20 CHEM.26])
+      expect(described_class.expand_chem("CHEM.6")).to eq(%w[CHEM.6])
+    end
+
+    it "flags a doc CHEM ref with no matching note, passes defined ones (skips 00_07 itself)" do
+      require "tmpdir"
+      require "fileutils"
+      Dir.mktmpdir do |root|
+        docs = File.join(root, "docs")
+        FileUtils.mkdir_p(docs)
+        File.write(File.join(docs, "00_07_Action_Plan_Tracker.md"),
+                   "- [ ] CHEM.6 — defined\n- [ ] CHEM.20/26 — slash pair\n")
+        File.write(File.join(docs, "01_99_Sample.md"),
+                   "ok (CHEM.6) and (CHEM.26); bad (CHEM.99)\n")
+        expect(described_class.chem_note_ref_violations(docs))
+          .to contain_exactly(a_string_matching(/01_99_Sample.*CHEM\.99/))
+      end
+    end
+  end
+
   # [emoji-prefix blind spot, 2026-06-01] `#### 🌿 UNI.13a — …` was silently dropped
   # by the `[A-Z]`-anchored match, hiding UNI.13a / BIZ.12 from every tracker check.
   it "parses a #### item behind a leading emoji prefix" do

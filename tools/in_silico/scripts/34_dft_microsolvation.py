@@ -191,7 +191,7 @@ def stage_mediator(results, cache):
 
 def stage_bisim(results, cache):
     """Bis-imidazole speciation: cis-[Os(bpy)₂(1-MeIm)₂]²⁺/³⁺ — Cl⁻ replaced by a 2nd
-    1-methylimidazole (notes #20/#26: in the PVI brush a 2nd imidazole from the chain
+    1-methylimidazole (CHEM.20/26: in the PVI brush a 2nd imidazole from the chain
     is the likely 6th ligand, not Cl⁻ or H₂O — the most PVI-realistic form). +2/+3
     couple like aqua. Predicted: MeIm is a stronger σ-donor than H₂O → slightly LOWER
     E° / worse acceptor than aqua, but better than chloro (anionic Cl removed). Settles
@@ -200,12 +200,18 @@ def stage_bisim(results, cache):
     from lib.os_geometry import MEIM_SMILES
     banner("STAGE bisim — [Os(bpy)₂(1-MeIm)₂]²⁺/³⁺ (Cl⁻→2nd imidazole, PVI-realistic)")
     axial = (("ligand", MEIM_SMILES, "N"), ("ligand", MEIM_SMILES, "N"))
-    atoms, info = build_os_complex(axial=axial)
-    print(f"  bis-Im complex: {info['n_atoms']} atoms, min {info['min_contact_A']} Å, "
-          f"Os-coord {info['os_coord_distances_A']}")
-    if info["min_contact_A"] < 0.95:
-        print(f"  ⚠️ SKIP bis-Im — the two cis 1-MeIm rings clash ({info['min_contact_A']} Å "
-              f"< 0.95); needs an os_geometry ring-rotation de-clash before DFT (00_07 note 20/26).")
+    # The two cis 1-MeIm rings place co-planar (both in the xy plane) and clash (H–H
+    # 0.91 Å). Twist each about its Os–N bond into a propeller; a 2D scan over the two
+    # twists maximises the min non-bonded inter-ligand contact at (45°, 30°) → 2.23 Å
+    # (ring–ring and ring–bpy both relieved). Rotation about the M–N bond is a real
+    # low-barrier DOF, so the vertical ΔSCF couple stays on the same programmatic tier
+    # as the chloro/aqua stages (apples-to-apples speciation).
+    atoms, info = build_os_complex(axial=axial, axial_twists=(45.0, 30.0))
+    print(f"  bis-Im complex: {info['n_atoms']} atoms, min-interlig {info['min_interlig_A']} Å "
+          f"({info['min_interlig_pair']}), Os-coord {info['os_coord_distances_A']}")
+    if info["min_interlig_A"] < 1.8:
+        print(f"  ⚠️ SKIP bis-Im — rings still clash ({info['min_interlig_A']} Å < 1.8 non-bonded); "
+              f"re-tune axial_twists (00_07 CHEM.20/26).")
         return
     run_pair(atoms, q_os2=2, q_os3=3, name="bisim_meim2",
              results=results, cache=cache, xyz=LIGANDS_DIR / "os_bpy_meim2.xyz")

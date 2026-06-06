@@ -60,7 +60,7 @@ METALS = {
     # this strong N-field keeps Co²⁺ HS → the large λ is real, not an aquo artifact.
     "co_nh3": dict(sym="Co", basis="lanl2dz", ecp="lanl2dz", ligand="ammine",
                    ox=dict(q=3, spin=0, d=1.97), red=dict(q=2, spin=3, d=2.12), lit=1.3),
-    # note #29: Ru(III/II) is low-spin in BOTH states (4d, strong field) → no spin
+    # CHEM.29: Ru(III/II) is low-spin in BOTH states (4d, strong field) → no spin
     # crossover → small bond change → small λ → fast hop. The cathode fix vs Co.
     "ru": dict(sym="Ru", basis="lanl2dz", ecp="lanl2dz",
                ox=dict(q=3, spin=1, d=2.03), red=dict(q=2, spin=0, d=2.12), lit=0.8),

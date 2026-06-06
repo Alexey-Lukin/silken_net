@@ -180,6 +180,51 @@ module Tracker
       end
     end
 
+    # --- CHEM.N in-silico chemistry-note refs (2026-06-06) ---
+    # The HW.5.IS in-silico chemistry backlog is a bulleted, triaged list (not #### items),
+    # so its 31 notes carry their own CHEM.N IDs (`- [ ] **CHEM.6** — …`), standardized from
+    # the old ad-hoc `note N` so the refs are guardable like every other 00_07 ID (founder
+    # 2026-06-06: `note N` was unanchored + already restated across 01_03/SUMMARY/L1/scripts →
+    # a drift surface). `chem_note_ids` collects the defined set (the checkbox is optional, so
+    # the corrected-out / separate-stream bullets count too); `chem_note_ref_violations` flags
+    # any CHEM.N in ANOTHER doc (incl. the in_silico protocol subdir → `**/*.md`) that doesn't
+    # resolve. Slash-families (`CHEM.20/26`) expand to each member.
+    CHEM_REF_RE  = /CHEM\.\d+(?:\/\d+)*/
+    CHEM_HEAD_RE = /^\s*[-*]\s*(?:\[[ xX]\]\s*)?(.+?)\s+—\s/   # bullet ID-cluster before the em-dash
+
+    def self.expand_chem(tok)
+      tok.split("/").map { |s| s.start_with?("CHEM.") ? s : "CHEM.#{s}" }
+    end
+
+    # IDs DEFINED in 00_07 = the leading ID-cluster of a backlog bullet (before the em-dash),
+    # so a compound `**CHEM.22** + **CHEM.5** —` yields BOTH, while a CHEM ref that appears in
+    # the DESCRIPTION (after the em-dash, e.g. "subsumed by CHEM.29") is NOT mistaken for a def.
+    def self.chem_note_ids(markdown)
+      markdown.each_line.flat_map do |l|
+        next [] unless (m = l.match(CHEM_HEAD_RE)) && m[1].include?("CHEM.")
+        m[1].scan(CHEM_REF_RE).flat_map { |t| expand_chem(t) }
+      end
+    end
+
+    # Scanned for CHEM.N refs: the canon docs (incl. the in_silico protocol subdir) AND the
+    # in_silico scripts (founder: the refs leaked into CODE too). 00_07 is the definer → skipped.
+    CHEM_SCAN_GLOBS = ["docs/**/*.md", "tools/in_silico/scripts/*.py"].freeze
+
+    def self.chem_note_ref_violations(docs_dir = DOCS_DIR)
+      tracker = File.join(docs_dir, "00_07_Action_Plan_Tracker.md")
+      return [] unless File.exist?(tracker)
+
+      root  = File.expand_path("..", docs_dir)   # repo root (docs/ parent)
+      valid = chem_note_ids(File.read(tracker))
+      CHEM_SCAN_GLOBS.flat_map { |g| Dir.glob(File.join(root, g)) }.sort.flat_map do |f|
+        next [] if File.basename(f).start_with?("00_07")
+
+        File.read(f).scan(CHEM_REF_RE).flat_map { |tok| expand_chem(tok) }.uniq.filter_map do |id|
+          "#{File.basename(f)} → #{id} (no such CHEM note)" unless valid.include?(id)
+        end
+      end
+    end
+
     # Open = has ≥1 unchecked bullet with a known executor.
     def self.open_items(items) = items.select { |it| it.executors.any? }
 

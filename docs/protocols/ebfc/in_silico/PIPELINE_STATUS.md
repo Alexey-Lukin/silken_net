@@ -42,7 +42,7 @@
 | 31 | `eis_impedance_model` | Rct=130Ω, Rs=100Ω | `kinetics/eis_model.json` |
 | 32 | `pcet_redox_potential` | E°(FAD/FADH₂) **-158 mV** (Δ50 mV vs free-flavin exp) — PCET valid w/ implicit solvent | `dft/pcet_redox_potential.json` |
 | 33 | `pcet_cascade_semiquinone` | PCET cost +5.87 eV → cascade +1.48 eV, **does NOT flip downhill** (~1 eV = PCM solvation limit) | `dft/pcet_cascade.json` |
-| 34 | `dft_microsolvation` | **② cluster-continuum**: [Os(H₂O)₆] n6→n18 **+0.98 eV** (benchmark), Cl⁻-solvation **+0.20 eV** (3 H₂O), aqua speciation **+0.51 eV** → cascade gap = decomposed method limit | `dft/microsolvation.json` |
+| 34 | `dft_microsolvation` | **② cluster-continuum**: [Os(H₂O)₆] n6→n18 **+0.98 eV** (benchmark), Cl⁻-solvation **+0.20 eV** (3 H₂O), speciation **aqua +0.51 / bis-Im +0.30 eV** → cascade gap = decomposed method limit | `dft/microsolvation.json` |
 | 40 | `validate_vs_experiment` | predictions ready for Ti-coin CV/EIS | `kinetics/validation_report.json` |
 | 50 | `thermal_stress_lame` | safety 9.9× at -30°C; press-fit P_c 34.7→22.6 MPa (stress relaxation, not creep); O-ring seals, barbs axial-only | `kinetics/thermal_stress_lame.json` |
 | 51 | `gusak_degradation_model` | Arrhenius + Kirkendall V=1.12 µg/cm²/yr + H7/s6 | `kinetics/gusak_degradation.json` |
@@ -53,7 +53,8 @@
 |---|--------|-----|------------|
 | 21 | `dft_os_bipy_complex` | NH₃ surrogate (no π-backbonding) | Superseded by 21b full bpy model |
 | 21c | `dft_os_bpy_geomopt` | Cl displacement never converges (flat PES) | Programmatic geometry (21b) sufficient — LUMO Δ<0.002 eV |
-| 29 | `dft_reorganization_energy` | λ: two methods both give E(n@R_cation) +160 eV — **FADH₂•⁺ radical-cation geometry pathological in implicit solvent** (needs QM/MM or PCET ref) | **Literature λ=0.7-0.8 eV retained** (flavin gold standard); clean "limitations of implicit solvation" point for the paper |
+| 29 | `dft_reorganization_energy` | λ: two methods both give E(n@R_cation) +160 eV — **FADH₂•⁺ radical-cation geometry pathological in implicit solvent** | **✅ RESCUED by 29b** (`semiquinone_lambda.json`): FADH⁻/FADH• couple → inner-sphere λ_i = **0.39 eV**, total ~0.7–0.8 w/ outer-sphere ≈ lit → L3 Nelsen-λ row |
+| 29b | `dft_semiquinone_lambda` | **anode inner-sphere λ from first principles** — FADH•/FADH⁻ Nelsen 4-point (rescues 29) → **λ_i = 0.39 eV** (λ₁ 0.17 + λ₂ 0.22, site N18) | `dft/semiquinone_lambda.json` |
 
 ---
 
@@ -115,7 +116,7 @@ Validation:
 | L4b Monte Carlo | ✅ Complete | — |
 | L4c EIS | ✅ Complete | — |
 
-**Verdict: ✅ Ready.** Q1 publication (школа Мінаєва): ωB97X/def2-TZVP adiabatic ΔSCF complete (B3LYP corrected -0.07 eV best estimate); L3b cathode complete (geom-fixed; k_DET borderline at realistic λ — a clean paper finding, motivates Ru/cMOF/enzyme-free); MD→DFT ensemble confirms thermal robustness; PCET via thermodynamic proton reference (script 32) validates the FAD/FADH₂ potential (within 50 mV of free-flavin). Closed limitations (both clean "limitations of implicit solvation" points for the paper): (a) Nelsen λ (script 29) — FADH₂•⁺ geometry pathological → literature λ=0.7-0.8 eV used; (b) PCET cascade reframing (script 33) does NOT flip the ΔSCF cascade downhill — the ~1.3 eV gap is mediator speciation + PCM differential-solvation (decomposed by ②, script 34), not proton coupling. **Authoritative cascade verdict = verified E°s (+466 mV / −0.47 eV downhill, Sygmund & Ludwig 2022); raw DFT uphill = quantified method limit (the «−0.07 ≈ −0.14» claim was withdrawn — built on a +60 mV FAD artifact).**
+**Verdict: ✅ Ready.** Q1 publication (школа Мінаєва): ωB97X/def2-TZVP adiabatic ΔSCF complete (B3LYP corrected -0.07 eV best estimate); L3b cathode complete (geom-fixed; k_DET borderline at realistic λ — a clean paper finding, motivates Ru/cMOF/enzyme-free); MD→DFT ensemble confirms thermal robustness; PCET via thermodynamic proton reference (script 32) validates the FAD/FADH₂ potential (within 50 mV of free-flavin). Closed limitations (both clean "limitations of implicit solvation" points for the paper): (a) Nelsen λ — script-29 (FADH₂•⁺) radical-cation pathological, **rescued by 29b** (FADH⁻/FADH• couple) → computed inner-sphere λ_i = **0.39 eV**, total ~0.7-0.8 w/ outer-sphere ≈ lit (→ L3 Nelsen-λ row); (b) PCET cascade reframing (script 33) does NOT flip the ΔSCF cascade downhill — the ~1.3 eV gap is mediator speciation + PCM differential-solvation (decomposed by ②, script 34), not proton coupling. **Authoritative cascade verdict = verified E°s (+466 mV / −0.47 eV downhill, Sygmund & Ludwig 2022); raw DFT uphill = quantified method limit (the «−0.07 ≈ −0.14» claim was withdrawn — built on a +60 mV FAD artifact).**
 
 ### ✅ Sufficient for Pitch / Investor Meeting?
 

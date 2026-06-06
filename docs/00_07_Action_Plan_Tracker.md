@@ -195,39 +195,42 @@
 > 31 ideas verified/researched multi-angle (full per-note verdicts → memory `project_ebfc_q1_paper_program`). Work P0→P2 in order; ⚠️ = corrected/weak (kept as honest record). On action, doc the *why* (lean, no water) at the canon home.
 
 **P0 — in-pipeline (paper chemistry, doing now):**
-- [x] note 29 — Ru-λ ✅ DONE = 0.78 eV (vs Co 3.1–3.4) → cathode-fix quantitatively validated
-- [x] note 23 — CF₃/SO₂CF₃ ✅ DONE+committed `27ac763`: SO₂CF₃ (σ0.96) cascade −0.227 ≈ NO₂ −0.232 but INERT → realistic mediator optimum (① reframed)
-- [x] note 10 — Lys→Arg genipin-shield ✅ validated (LYS109/LYS262 near e-exit → mutate in production gene)
-- [ ] note 20/26 — bis-imidazole Os [Os(bpy)₂(MeIm)₂]²⁺/³⁺ (PVI-realistic speciation; script 34 `stage_bisim` READY, uncommitted) — ⚠️ DEFERRED: cis-MeIm H52-H63 clash 0.911 Å → needs os_geometry ring-rotation de-clash before DFT
-- [ ] note 21 — FADH•-λ: rescue script 29 via neutral semiquinone FADH• (remove one N–H → neutral doublet, avoids FADH₂•⁺ fragmentation) — ⚠️ DEFERRED: non-trivial PCET-λ chemistry; lit λ 0.7–0.8 fine meanwhile (anode not the bottleneck)
-- [ ] note 16 — dynamic-tunneling ensemble: run script 28 over MD snapshots → ⟨k_ET⟩
+- [x] CHEM.29 — Ru-λ ✅ DONE = 0.78 eV (vs Co 3.1–3.4) → cathode-fix quantitatively validated
+- [x] CHEM.23 — CF₃/SO₂CF₃ ✅ DONE+committed `27ac763`: SO₂CF₃ (σ0.96) cascade −0.227 ≈ NO₂ −0.232 but INERT → realistic mediator optimum (① reframed)
+- [x] CHEM.10 — Lys→Arg genipin-shield ✅ validated (LYS109/LYS262 near e-exit → mutate in production gene)
+- [x] CHEM.20/26 — bis-imidazole Os [Os(bpy)₂(1-MeIm)₂]²⁺/³⁺ ✅ DONE: os_geometry twist-propeller de-clash (45°/30° → 2.23 Å min non-bonded, > chloro/aqua 2.05) → vertical ΔSCF cascade Δ **−0.609 eV (+0.30 vs chloro)**, ranks aqua > bis-Im > chloro (settles the direction-confusion) → [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) §Cluster-Continuum
+- [x] CHEM.21 — FADH•-λ ✅ DONE (script 29b): FADH⁻/FADH• couple (pH-7 1st-ET, avoids the FADH₂•⁺ pathology) → inner-sphere **λ_i = 0.39 eV** (total ~0.7–0.8 w/ outer-sphere ≈ lit) → first-principles anode λ → [`L3`](protocols/ebfc/in_silico/L3_quantum_chemistry.md) Nelsen-λ row
+- [ ] CHEM.16 — dynamic-tunneling ensemble: run script 28 over MD snapshots → ⟨k_ET⟩. ✅ **verified sound** (gated ET, ⟨exp−βd⟩ Jensen — the static-snapshot blind-spot is real; script-27 precedent) but ⚠️ **BLOCKED: no MD DCD trajectory in cache/runs** → needs an L2 MD run emitting DCD first
 - [x] cathode finalize ✅ DONE+committed `8d797ea`: Ce-λ=0.87 + geom-fixed t_ij (24) + script 25 → k_DET **BORDERLINE** (×1.4 lit-λ, not old ×10⁵); honest canon propagated
 
 **P1 — strong near-term (Gen 2.1 / check / decide):**
-- [ ] note 11 — aggregation: in-house SASA-proxy ✅ DONE → 4 hotspots (Gln71/200/258/405, L1 §2); remaining = Aggrescan3D + compensating polar muts (Asp/Ser) pre-CRO
-- [ ] note 22 + 5 — COSMO-RS + ML-potentials (MACE): ②-gap closers cheaper than QM/MM (new-dep decision)
-- [ ] note 14 — FO-DFT coupling: in-house t_ij rigor (full CDFT needs PyCDFT = capstone)
-- [ ] note 6 + 31 — enzyme-free cathode / conductive-MOF (Ni₃HITP₂): removes 20yr enzyme-risk (acid-stable variant needed)
-- [ ] note 8 + 2 — V-chelation layer-4 (catechol/dopamine-chitosan OR phytic-acid IP6): cheaper than Ti-6Al-7Nb switch
-- [ ] note 25 — hygroscopic IL in matrix: drought/embolism dry-out protection (proton-conducting, non-leaching)
-- [ ] note 4 — Winter-Lock UCST 5°C→~0°C (acrylamide comonomer): wider harvest window (not below 0 = freeze risk)
+- [ ] CHEM.11 — aggregation: in-house SASA-proxy ✅ DONE → 4 hotspots (Gln71/200/258/405, L1 §2); remaining = Aggrescan3D + compensating polar muts (Asp/Ser) pre-CRO. ✅ **logic verified 2026-06-06:** deglyc (N→Q) removes glycan shield → exposes hydrophobic patches → aggregation/inclusion-body risk (L2 single-mol MD can't see this — correct); fix = polar muts at the exposed-hydrophobic NEIGHBORS of each hotspot (not the polar Gln itself). Concrete next = per-hotspot neighbor-SASA → specific muts (light in-house, after FADH•-λ)
+- [ ] CHEM.22 + CHEM.5 — COSMO-RS + MACE for the ② gap — ⚠️ **premise over-optimistic (verified 2026-06-06):** the ② gap is the differential solvation of the **charged Os(III/II) +2/+3** couple. **openCOSMO-RS** (free, Python, TUHH-TVT) is validated for **neutral molecules** → charged transition-metal complexes are its blind spot (won't cleanly close the metal-couple gap; may help ligand/Cl⁻ solvation only). **MACE-MP-0** is a fixed-charge ground-state MLIP = explicit-water **sampling** accelerator, **not** a redox-ΔG method (can't model Os II↔III) + Os coverage unvalidated. Net: neither standalone-closes ②; rigorous closure stays **QM/MM (Мінаєв)**, with MACE an optional sampling accelerator *within* it. → don't add a dep just for ②
+- [ ] CHEM.14 — FO-DFT coupling: in-house t_ij rigor (full CDFT needs PyCDFT = capstone). ✅ **verified 2026-06-06:** framing correct — FO-DFT (fragment-orbital H_ab from the dimer Fock matrix) is the tractable in-house upgrade to script-24's crude State-A/B t_ij; CDFT (charge-constrained, more rigorous) needs PyCDFT (absent) = capstone. **Doable in-house, no new dep** → the next ③-coupling rigor step (after FADH•-λ)
+- [x] CHEM.6 + CHEM.31 — enzyme-free cathode / conductive-MOF ✅ design-rule documented `01_03 §3.2` (acid-pH ranked: Ru swap easiest · Fe–N–C SAC acid-viable ~0.86 V H₂SO₄ · Ni₃HITP₂ cMOF alkaline-demo'd, acid-stability unproven → farthest-TRL); implementation = Gen 2.1+ cathode arch
+- [ ] CHEM.8 + CHEM.2 — V-chelation layer-4 (catechol/dopamine OR phytic-acid IP6): cheaper than Ti-6Al-7Nb. ✅ **verified 2026-06-06:** catechol-V well-documented (V(IV/V)-catecholates, measured K) + dopamine gives TiO₂-adhesion → robust; **IP6-V plausible only for cationic vanadyl VO²⁺ (anionic IP6 may repel vanadate, undocumented for V)** → catechol the safer chelator. Gen 2.1+ candidate
+- [ ] CHEM.25 — hygroscopic IL: researched candidate **[Ch][DHP]** (choline dihydrogen phosphate) — trifunctional (H⁺-conductor · FAD-oxidase stabilizer, LOx survives 90°C · hygroscopic humectant vs xylem dry-out; non-leaching in chitosan/Nafion). **Tracked here, NOT yet in baseline §2.1 canon** — IL recurs across stack/BOM/procurement → drift surface; this is an unvalidated Gen 2.1+ selection (no in-silico backing yet, unlike the ③-backed cathode levers), so canonize only after validation
+- [ ] CHEM.4 — Winter-Lock UCST 5°C→~0°C (acrylamide comonomer): wider harvest window (not below 0 = freeze risk). ✅ **verified 2026-06-06:** direction correct — hydrophilic acrylamide comonomer disrupts PSBMA zwitterion association → lowers UCST. **Tradeoff:** lower UCST = active to lower T (wider harvest) BUT winter-lock engages later (less cold-protection); ~0–2 °C the Pinus sweet spot. Gen 2.1+ membrane tuning
 
 **P2 — strategic / longer / architecture:**
-- [ ] note 1 — metal-free organic mediator (TEMPO/phenothiazine): Os ESG/tox de-risk; big pivot (invalidates Os-specific ①②④)
-- [ ] note 3 — FAD-GDH@ZIF-8 anode encapsulation: thermostab (⚠️ glucose>3.4Å pore→needs defects; MET-access tension)
-- [ ] note 13 — rigid spacer (oligoproline/OPE) vs PVI entropy: anode (redox-polymer network partly compensates)
-- [ ] note 15 — Ru/Ni-dope Co-Ce coupling: subsumed by note 29 (full Co→Ru does λ+coupling cleaner)
-- [ ] note 9 — aromatic hopping chain (Trp/Tyr): anode not rate-limiting + aromatic-radical 20yr damage risk; low
-- [ ] note 7 — de novo enzyme (RFdiffusion/ProteinMPNN): Gen 3.0 moonshot (stable scaffold ≠ active enzyme)
+- [ ] CHEM.1 — metal-free organic mediator: Os ESG/tox de-risk; big pivot (invalidates Os-specific ①②④). ✅ **verified 2026-06-06:** viologen correctly excluded (E° −0.45 V < FAD −0.27 → can't accept e⁻); **TEMPO E° +0.745 V ≫ Os +0.2 → worse OCV** (cell-V drops with anode-mediator E°; lit: low-E° mediator wanted for BFC power) → **phenothiazine (tunable, lower E°) > TEMPO**. Chemistry sound; Gen 2.1+ strategic pivot
+- [ ] CHEM.3 — FAD-GDH@ZIF-8 anode encapsulation: thermostab (⚠️ glucose>3.4Å pore→needs defects; MET-access tension). ✅ **verified 2026-06-06:** caveat correct — ZIF-8 aperture **3.4 Å ≪ glucose ~7–8.6 Å** → no traversal of the pristine window (needs defect-engineering / linker flexibility / hierarchical pores) + Os-mediator must still reach FAD. Goal sound (thermostab), but substrate+mediator access must be solved → Gen 2.1+
+- [ ] CHEM.13 — rigid spacer (oligoproline/OPE) vs PVI entropy: anode (redox-polymer network partly compensates). ✅ **verified 2026-06-06:** sound premise (rigid spacer fixes D–A distance → removes the flexible-tether conformational-averaging penalty); oligoproline = documented ET wire but **β≈0.66 Å⁻¹ (steep); OPE β≈0.2 → OPE the better rigid wire**. Gen 2.1+ anode candidate
+- [ ] CHEM.15 — Ru/Ni-dope Co-Ce coupling: subsumed by CHEM.29 (full Co→Ru does λ+coupling cleaner)
+- [ ] CHEM.9 — aromatic hopping chain (Trp/Tyr): anode not rate-limiting + aromatic-radical 20yr damage risk; low. ✅ **verified 2026-06-06:** concept real (Gray/Winkler multistep tunneling through Trp/Tyr extends ET range) but correctly low-priority — anode ET fast (~10³ turnover, not rate-limiting) + Trp•/Tyr• = 20yr oxidative damage + active-site-mutation risk
+- [ ] CHEM.7 — de novo enzyme (RFdiffusion/ProteinMPNN): Gen 3.0 moonshot (stable scaffold ≠ active enzyme). ✅ **verified 2026-06-06:** assessment correct — stable SCAFFOLDS feasible (RFdiffusion/ProteinMPNN), but a catalytically-active de novo FAD-GDH (active-site geometry + dynamics + FAD chemistry) is research-hard → Gen 3.0; near-term natural stabilization (N→Q + CHEM.10 + CHEM.11) safer
 
 **Separate work-streams (NOT chemistry-paper):**
-- [ ] note 18 — cryoprotectant false-positive → firmware bio_contract.rb T-correction (LOW severity: glucose-specificity already protects vs raffinose spike)
-- [ ] note 27 — Belleville washers vs frost-wedging → hardware retention (seal = O-ring primary; spring keeps preload)
-- [ ] note 19 — biological gasket (callus/auxin) → hardware/bio seal (⚠️ may occlude air-cathode; CODIT wall-off risk)
+- [ ] CHEM.18 — cryoprotectant false-positive → firmware bio_contract.rb T-correction (LOW severity: glucose-specificity already protects vs raffinose spike)
+- [ ] CHEM.27 — Belleville washers vs frost-wedging → hardware retention (seal = O-ring primary; spring keeps preload)
+- [ ] CHEM.19 — biological gasket (callus/auxin) → hardware/bio seal (⚠️ may occlude air-cathode; CODIT wall-off risk)
 
 **⚠️ Corrected-out (honest record, not pursued as written):**
-- note 28 — epitaxial pre-stress: mechanism confused (uniform strain doesn't change Δq→λ); kernel = framework-rigidity/spin-state, soft-ZIF impractical
-- note 30 — acid-ΔG booster: limited lever (59 mV/pH) + misses Marcus inverted-region (more ΔG ≠ always faster)
+- CHEM.28 — epitaxial pre-stress: mechanism confused (uniform strain doesn't change Δq→λ); kernel = framework-rigidity/spin-state, soft-ZIF impractical
+- CHEM.30 — acid-ΔG booster: limited lever (59 mV/pH) + misses Marcus inverted-region (more ΔG ≠ always faster)
+
+**Merged / done / relocated (namespace complete 1–31, no open chemistry action):**
+- CHEM.12 / CHEM.17 / CHEM.24 — CHEM.12 = ② micro-solvation (DONE; founder's independent idea = our approach); CHEM.17 = duplicate of CHEM.23 (adds the SF₅ candidate); CHEM.24 → `02_03 §1.5` (magnetic-CNT alignment, hardware/cold-start stream, not the chemistry paper)
 
 #### HW.6 — Resin barrier + Flush Mount Installation
 - **P1** · 👤 · → `01_04 §3`
