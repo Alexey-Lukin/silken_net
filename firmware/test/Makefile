@@ -53,7 +53,7 @@ selftest: $(BINDIR)/test_ccm_selftest
 $(BINDIR)/test_queen: test_queen_logic.c hal_mock.h
 	$(CC) $(CFLAGS) -o $@ test_queen_logic.c
 
-$(BINDIR)/test_soldier: test_soldier_logic.c hal_mock.h
+$(BINDIR)/test_soldier: test_soldier_logic.c hal_mock.h ../common/lorenz_seed.h ../common/silken_sha256.h
 	$(CC) $(CFLAGS) -o $@ test_soldier_logic.c
 
 $(BINDIR)/test_bio_contract: test_bio_contract.c
@@ -76,7 +76,7 @@ $(BINDIR)/test_encryption: test_encryption.c hal_mock.h ../queen/coap_iv.h
 # libcrypto on host; firmware MCU side runs the same primitives via
 # mbedTLS (already linked for AES). Same standard primitives →
 # byte-identical (x0, y0, z0) for the same (K_seed, epoch_day) tuple.
-$(BINDIR)/test_seed_derivation: test_seed_derivation.c
+$(BINDIR)/test_seed_derivation: test_seed_derivation.c ../common/lorenz_seed.h ../common/silken_sha256.h
 	$(CC) $(CFLAGS) $(OPENSSL_CFLAGS) -o $@ test_seed_derivation.c $(OPENSSL_LIBS) -lm
 
 # [FW.2] AES-128-CCM packet roundtrip — links libcrypto for the mock HAL.

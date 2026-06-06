@@ -698,6 +698,15 @@ RSpec.describe TelemetryUnpackerService, type: :service do
           expect(captured).to include(described_class::FIRMWARE_RTC_DEFAULT_EPOCH_DAY)
         end
 
+        it "pins FIRMWARE_RTC_DEFAULT_EPOCH_DAY to the real 2000-01-01 epoch day" do
+          # [FIX AUDIT-2026-06-06] Was 10_951 (leap-less firmware approximation
+          # artifact); firmware now uses exact civil-days arithmetic
+          # (lorenz_seed.h Silken_Days_From_Civil → 10_957), and the recovery
+          # candidate must equal Time.utc(2000,1,1).to_i / 86_400.
+          expect(described_class::FIRMWARE_RTC_DEFAULT_EPOCH_DAY)
+            .to eq(Time.utc(2000, 1, 1).to_i / 86_400)
+        end
+
         it "short-circuits at the first matching candidate" do
           call_count = 0
           allow(SilkenNet::SeedDerivation).to receive(:initial_state).and_return([ 0.5, 0.5, 0.5 ])

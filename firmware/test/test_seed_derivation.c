@@ -38,6 +38,12 @@
 #define HKDF_INFO_PREFIX  "silken-lorenz-seed"
 #define HMAC_INFO_PREFIX  "init"
 
+/* [FIX AUDIT-2026-06-06] Firmware-сторона деривації: pure-C SHA-256/HMAC +
+ * civil-days (БЕЗ mbedTLS/OpenSSL) — той самий header, що компілюється у
+ * soldier/main.c. Цей файл доводить байт-parity проти OpenSSL-реалізації
+ * нижче (дзеркала backend SeedDerivation). */
+#include "../common/lorenz_seed.h"
+
 /* (2^64 - 1) / 2.0 — IEEE-754 double. Identical bits in Ruby and C. */
 static const double UINT64_HALF = 9223372036854775807.5;
 
@@ -265,6 +271,143 @@ static void test_initial_state_mixed_seed_known_shape(void) {
            "test_initial_state_mixed_seed_distinct_coords");
 }
 
+/* ========================================================================
+ * [FIX AUDIT-2026-06-06] Pure-C firmware crypto parity — silken_sha256.h /
+ * lorenz_seed.h проти OpenSSL та pinned FIPS/RFC векторів. Якщо firmware-
+ * реалізація розійдеться з backend хоч бітом — ці тести впадуть першими.
+ * ======================================================================== */
+
+static void test_silken_sha256_fips_kat(void) {
+    uint8_t d[32];
+
+    /* FIPS 180-4 "abc" */
+    Silken_Sha256((const uint8_t *)"abc", 3, d);
+    ASSERT(hex_eq(d, 32,
+        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"),
+        "test_silken_sha256_abc_matches_fips");
+
+    /* Порожнє повідомлення */
+    Silken_Sha256((const uint8_t *)"", 0, d);
+    ASSERT(hex_eq(d, 32,
+        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"),
+        "test_silken_sha256_empty_matches_fips");
+
+    /* Двоблокове повідомлення (56 байт — паддінг через межу блоку) */
+    const char *m2 = "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
+    Silken_Sha256((const uint8_t *)m2, strlen(m2), d);
+    ASSERT(hex_eq(d, 32,
+        "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1"),
+        "test_silken_sha256_two_block_matches_fips");
+}
+
+static void test_silken_sha256_streaming_equals_oneshot(void) {
+    /* 200-байтовий буфер, згодований по 1/7/33 байти, == one-shot. */
+    uint8_t msg[200];
+    for (size_t i = 0; i < sizeof msg; i++) msg[i] = (uint8_t)(i * 31u + 7u);
+
+    uint8_t d_once[32], d_stream[32];
+    Silken_Sha256(msg, sizeof msg, d_once);
+
+    SilkenSha256Ctx ctx;
+    Silken_Sha256_Init(&ctx);
+    size_t off = 0; size_t steps[] = {1, 7, 33, 64, 95};
+    for (int s = 0; s < 5 && off < sizeof msg; s++) {
+        size_t take = steps[s];
+        if (off + take > sizeof msg) take = sizeof msg - off;
+        Silken_Sha256_Update(&ctx, msg + off, take);
+        off += take;
+    }
+    Silken_Sha256_Update(&ctx, msg + off, sizeof msg - off);
+    Silken_Sha256_Final(&ctx, d_stream);
+
+    ASSERT(memcmp(d_once, d_stream, 32) == 0,
+           "test_silken_sha256_streaming_equals_oneshot");
+}
+
+static void test_silken_hmac_rfc4231_kat(void) {
+    uint8_t d[32];
+
+    /* RFC 4231 TC1: key = 0x0b × 20, data = "Hi There" */
+    uint8_t k1[20]; memset(k1, 0x0b, sizeof k1);
+    Silken_Hmac_Sha256(k1, sizeof k1, (const uint8_t *)"Hi There", 8, d);
+    ASSERT(hex_eq(d, 32,
+        "b0344c61d8db38535ca8afceaf0bf12b881dc200c9833da726e9376c2e32cff7"),
+        "test_silken_hmac_rfc4231_tc1");
+
+    /* RFC 4231 TC2: key = "Jefe" */
+    Silken_Hmac_Sha256((const uint8_t *)"Jefe", 4,
+        (const uint8_t *)"what do ya want for nothing?", 28, d);
+    ASSERT(hex_eq(d, 32,
+        "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843"),
+        "test_silken_hmac_rfc4231_tc2");
+
+    /* RFC 4231 TC6: key = 0xaa × 131 (> block) → K' = H(K) гілка */
+    uint8_t k6[131]; memset(k6, 0xaa, sizeof k6);
+    const char *m6 = "Test Using Larger Than Block-Size Key - Hash Key First";
+    Silken_Hmac_Sha256(k6, sizeof k6, (const uint8_t *)m6, strlen(m6), d);
+    ASSERT(hex_eq(d, 32,
+        "60e431591ee0b67f0d8a26aacbf5b77f8e0bc6213728c5140546040f0ee37f54"),
+        "test_silken_hmac_rfc4231_tc6_long_key");
+}
+
+static void test_silken_hmac_matches_openssl_random_vectors(void) {
+    /* Крос-перевірка проти OpenSSL на «живих» довжинах повідомлень. */
+    uint8_t key[SEED_BYTES];
+    for (int i = 0; i < SEED_BYTES; i++) key[i] = (uint8_t)(i * 13 + 1);
+
+    int all_match = 1;
+    for (size_t len = 0; len <= 130; len += 13) {
+        uint8_t msg[130];
+        for (size_t i = 0; i < len; i++) msg[i] = (uint8_t)(i ^ (len * 7));
+
+        uint8_t d_silken[32], d_openssl[32];
+        unsigned int dl = 32;
+        Silken_Hmac_Sha256(key, SEED_BYTES, msg, len, d_silken);
+        HMAC(EVP_sha256(), key, SEED_BYTES, msg, len, d_openssl, &dl);
+        if (memcmp(d_silken, d_openssl, 32) != 0) all_match = 0;
+    }
+    ASSERT(all_match, "test_silken_hmac_matches_openssl_0_to_130_bytes");
+}
+
+static void test_silken_initial_state_parity_with_openssl(void) {
+    /* Головний parity-доказ FW.30: firmware-деривація == backend-дзеркало
+     * (OpenSSL) для тих самих (K_seed, epoch_day) — біт-у-біт у double. */
+    uint8_t seed[SEED_BYTES];
+    for (int i = 0; i < SEED_BYTES; i++) seed[i] = (uint8_t)(i * 7 + 3);
+
+    const uint64_t epochs[] = {0, 1, 10957, 20210, 20610, 0xFFFFFFFFULL};
+    int all_match = 1;
+    for (int e = 0; e < 6; e++) {
+        double xo, yo, zo, xs, ys, zs;
+        initial_state(seed, epochs[e], &xo, &yo, &zo);             /* OpenSSL */
+        Silken_Derive_Initial_State(seed, epochs[e], &xs, &ys, &zs); /* firmware */
+        if (xo != xs || yo != ys || zo != zs) all_match = 0;
+    }
+    ASSERT(all_match, "test_silken_initial_state_bitexact_vs_openssl");
+
+    /* Зерно з заводського HKDF — повний шлях як у production */
+    uint8_t hkdf_seed[SEED_BYTES];
+    derive_k_seed("silken-net-test-master-key-32b!!", "SNET-AC0001AB", hkdf_seed);
+    double xo, yo, zo, xs, ys, zs;
+    initial_state(hkdf_seed, 20610, &xo, &yo, &zo);
+    Silken_Derive_Initial_State(hkdf_seed, 20610, &xs, &ys, &zs);
+    ASSERT(xo == xs && yo == ys && zo == zs,
+           "test_silken_initial_state_hkdf_seed_parity");
+}
+
+static void test_silken_signed_unit_float_parity(void) {
+    uint8_t all_zero[8] = {0};
+    uint8_t all_ff[8]; memset(all_ff, 0xFF, 8);
+    uint8_t mid[8] = {0x80, 0, 0, 0, 0, 0, 0, 0};
+
+    ASSERT(Silken_Signed_Unit_Float(all_zero) == signed_unit_float(all_zero),
+           "test_silken_unit_float_zero_parity");
+    ASSERT(Silken_Signed_Unit_Float(all_ff) == signed_unit_float(all_ff),
+           "test_silken_unit_float_max_parity");
+    ASSERT(Silken_Signed_Unit_Float(mid) == signed_unit_float(mid),
+           "test_silken_unit_float_mid_parity");
+}
+
 int main(void) {
     printf("\n🌱 SEED DERIVATION HOST-PARITY TESTS [SEC.11]\n");
     printf("════════════════════════════════════════════════════════════════════\n");
@@ -275,6 +418,14 @@ int main(void) {
     test_initial_state_determinism();
     test_signed_unit_float_endpoints();
     test_initial_state_mixed_seed_known_shape();
+
+    printf("  [FW.30 / AUDIT-2026-06-06] firmware pure-C crypto parity:\n");
+    test_silken_sha256_fips_kat();
+    test_silken_sha256_streaming_equals_oneshot();
+    test_silken_hmac_rfc4231_kat();
+    test_silken_hmac_matches_openssl_random_vectors();
+    test_silken_initial_state_parity_with_openssl();
+    test_silken_signed_unit_float_parity();
 
     printf("════════════════════════════════════════════════════════════════════\n");
     printf("Passed: %d   Failed: %d\n", tests_passed, tests_failed);

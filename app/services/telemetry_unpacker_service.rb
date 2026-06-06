@@ -46,10 +46,13 @@ class TelemetryUnpackerService < ApplicationService
 
   # [ARCH.41] Firmware RTC-default epoch_day after VBAT loss.
   # STM32WLE5JC RTC resets to 2000-01-01 00:00:00 UTC → day 10_957 since
-  # Unix epoch. Firmware initializes unix_ts = 946684800 (2000-01-01 UTC)
-  # which gives epoch_day = 946684800 / 86400 = 10951. We try this as one
-  # of three cold-start re-derivation candidates in the time-sync fallback.
-  FIRMWARE_RTC_DEFAULT_EPOCH_DAY = 10_951
+  # Unix epoch (946_684_800 / 86_400 = 10_957 exactly).
+  # [FIX AUDIT-2026-06-06] Was 10_951 — an artifact of the firmware's old
+  # leap-less approximation (Y*365 + M*30 + D). The firmware now derives
+  # epoch_day via exact civil-days arithmetic (firmware/common/lorenz_seed.h
+  # `Silken_Days_From_Civil`, host-test-pinned: 2000-01-01 → 10_957), so the
+  # recovery candidate must match the real value.
+  FIRMWARE_RTC_DEFAULT_EPOCH_DAY = 10_957
 
   # DID-сентинел: Королева передає власну телеметрію з DID = 0x00000000
   QUEEN_SENTINEL_DID = "0"

@@ -24,6 +24,9 @@ volatile int g_ccm_selftest_failed = -1;  // читати через SWD: 0 = PA
 #include <mruby/irep.h>
 #include <mruby/array.h>
 #include <math.h>     // [FW.6] isfinite() для валідації RTC Lorenz state
+// [SEC.11 / FW.30 / AUDIT-2026-06-06] Pure-C HMAC-SHA256 деривація cold-start
+// стану Лоренца — повний parity з backend SeedDerivation (без mbedTLS).
+#include "../common/lorenz_seed.h"
 
 // Підключаємо скомпільовану нейромережу TinyML.
 // Якщо реальної моделі ще немає (BLOCKER-1+2, docs/03_03), fallback на
@@ -112,7 +115,8 @@ volatile int g_ccm_selftest_failed = -1;  // читати через SWD: 0 = PA
 #define FLASH_SEED_ADDR           (FLASH_KEY_ADDR + 20)  // After LoRa key (4 magic + 16 key = 20 bytes)
 #define FLASH_SEED_WORDS          8             // 8 × uint32_t = 32 bytes
 #define FLASH_SEED_MAGIC          0x4C534544UL  // "LSED" — Lorenz Seed magic marker
-#define EPOCH_SECONDS             86400UL       // Seconds per day for epoch_day calculation
+// EPOCH_SECONDS видалено [AUDIT-2026-06-06]: epoch_day тепер рахує
+// lorenz_seed.h (SILKEN_EPOCH_SECONDS) — One-Home, без дубля константи.
 
 // [ARCH.27] Node Role Differentiation — плоть і кров mesh-розшарування.
 // Один і той самий бінарник прошивки тече венами Солдата та Провідника;
@@ -2354,63 +2358,51 @@ static void Load_Node_Role(void)
 }
 
 // [SEC.11 / FW.30] Деривація початкового стану Лоренца при cold-start.
-// Алгоритм (дзеркало SilkenNet::SeedDerivation.derive_initial_state):
-//   1. epoch_day = RTC_unix_time / 86400
-//   2. info = "init|" || epoch_day_be8
-//   3. digest = HMAC-SHA256(K_seed, info)
-//   4. (x₀,y₀,z₀) = signed_unit_float(digest[0..7], digest[8..15], digest[16..23])
+// [FIX AUDIT-2026-06-06] Knuth-hash плейсхолдер + approx_days (Y*365+M*30 —
+// без високосних) замінено повним контрактом SilkenNet::SeedDerivation:
+//   epoch_day → HMAC-SHA256(K_seed, "init|" || epoch_day_be8) → signed-unit-float.
+// Реалізація — pure-C silken_sha256.h / lorenz_seed.h, спільна з host-тестами;
+// parity проти OpenSSL доведено у test_seed_derivation.c. mbedTLS для FW.30
+// більше не потрібен (TODO закрито).
 //
-// На MCU це виконується через mbedTLS (mbedtls_md_hmac).
-// Для host-based тестів та до першого lab-тесту з mbedTLS — використовуємо
-// спрощену деривацію через апаратний HRNG XOR K_seed, яка гарантує:
-//   - детермінованість при однаковому K_seed + epoch_day
-//   - різні (x₀,y₀,z₀) при різних epoch_day
-//   - координати ∈ [-1, +1]
-// Повноцінний mbedTLS HMAC-SHA256 буде інтегрований при lab-тестуванні.
-//
-// TODO(FW.30-mbedtls): замінити на mbedtls_md_hmac(MBEDTLS_MD_SHA256, ...)
-// після верифікації на цільовому STM32WLE5JC.
+// epoch_day, пріоритетно:
+//   1. soldier_unix_ts — UTC від Queen-маяка (FW.20), drift-компенсований
+//      локальними тіками → збіг з backend-кандидатами today/yesterday (ARCH.41).
+//      Саме цей шлях обіцяв коментар біля soldier_unix_ts, але стара
+//      реалізація його ігнорувала.
+//   2. Фолбек до першого маяка: RTC-календар через days_from_civil (точна
+//      громадянська арифметика). RTC-default після VBAT-loss = 2000-01-01 →
+//      epoch_day 10957 — бекенд тримає його кандидатом
+//      FIRMWARE_RTC_DEFAULT_EPOCH_DAY у ARCH.41 time-sync recovery.
 static void Derive_Cold_Start_State(float *x0, float *y0, float *z0)
 {
-    // Отримуємо epoch_day з RTC
-    RTC_TimeTypeDef sTime = {0};
-    RTC_DateTypeDef sDate = {0};
-    HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-    HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+    uint64_t epoch_day;
 
-    // Спрощений epoch_day (дні від 2000-01-01 як proxy для UTC epoch_day).
-    // На MCU без повноцінного time_t — рахуємо від BCD дати RTC.
-    // [TEMP] Апроксимація Month×30 накопичує ~1-2 дні/місяць похибки.
-    // До інтеграції FW.20 CMD_TIME_SYNC (NTP через Queen) cold-start координати
-    // можуть відрізнятися від backend при cross-month boot. Це впливає ТІЛЬКИ
-    // на cold-start (рідкісна подія після VBAT loss); warm continuation через
-    // RTC DR16-DR18 не залежить від epoch_day.
-    uint32_t approx_days = (uint32_t)(sDate.Year + 2000 - 1970) * 365UL
-                         + (uint32_t)(sDate.Month - 1) * 30UL
-                         + (uint32_t)sDate.Date;
+    if (soldier_unix_ts != 0u) {
+        uint32_t now_ts = soldier_unix_ts +
+            ((HAL_GetTick() - soldier_unix_ts_local_tick) / 1000u);
+        epoch_day = Silken_Epoch_Day_From_Unix(now_ts);
+    } else {
+        RTC_TimeTypeDef sTime = {0};
+        RTC_DateTypeDef sDate = {0};
+        // GetDate ОБОВ'ЯЗКОВО після GetTime — HAL розкриває shadow-регістри парою.
+        HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+        HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
-    // Детерміністична деривація з K_seed + epoch_day.
-    // Використовуємо просте хешування (XOR fold + Knuth multiplicative hash)
-    // як placeholder для повноцінного HMAC-SHA256. Константи 2654435761,
-    // 2246822519, 3266489917 — Knuth's multiplicative hash primes (golden ratio
-    // approximations для 32-bit). Це забезпечує:
-    // - різні початкові точки для різних днів
-    // - різні початкові точки для різних K_seed
-    // - координати ∈ [-1, +1]
-    // НЕ є криптографічно стійким — достатньо для лабораторного TRL 6.
-    uint32_t hash[3] = {0};
-    for (int i = 0; i < 32; i++) {
-        uint32_t byte_val = lorenz_seed[i];
-        uint32_t mix = byte_val + (uint32_t)i + 1;
-        hash[0] ^= (mix << ((i * 7) % 24)) ^ (approx_days * (2654435761UL + (uint32_t)i));
-        hash[1] ^= (mix << ((i * 11) % 24)) ^ ((approx_days + 1) * (2246822519UL + (uint32_t)i));
-        hash[2] ^= (mix << ((i * 13) % 24)) ^ ((approx_days + 2) * (3266489917UL + (uint32_t)i));
+        int32_t days = Silken_Days_From_Civil((int32_t)sDate.Year + 2000,
+                                              (uint32_t)sDate.Month,
+                                              (uint32_t)sDate.Date);
+        epoch_day = (days > 0) ? (uint64_t)days : 0u;
     }
 
-    // Мапимо uint32 → [-1.0, +1.0] (signed unit float)
-    *x0 = ((float)(hash[0] % 2000000) / 1000000.0f) - 1.0f;
-    *y0 = ((float)(hash[1] % 2000000) / 1000000.0f) - 1.0f;
-    *z0 = ((float)(hash[2] % 2000000) / 1000000.0f) - 1.0f;
+    double dx = 0.0, dy = 0.0, dz = 0.0;
+    Silken_Derive_Initial_State(lorenz_seed, epoch_day, &dx, &dy, &dz);
+
+    // RTC Backup тримає float32 — звуження свідоме: біт-parity деривації
+    // живе на рівні double; downstream-толеранс — FW.31 / docs/03_04.
+    *x0 = (float)dx;
+    *y0 = (float)dy;
+    *z0 = (float)dz;
 }
 
 // Функція конфігурації апаратного AES (Створюється автоматично CubeMX)

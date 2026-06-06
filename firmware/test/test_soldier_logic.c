@@ -106,30 +106,42 @@ static void Load_Lorenz_Seed(void)
     lorenz_seed_valid = 1;
 }
 
-/* ---------- [SEC.11 / FW.30] Derive Cold-Start Lorenz State ---------- */
+/* ---------- [SEC.11 / FW.30] Derive Cold-Start Lorenz State ----------
+ * [FIX AUDIT-2026-06-06] Knuth-плейсхолдер замінено shared-header контрактом
+ * (HMAC-SHA256 + signed-unit-float + civil days) — той самий код, що й у
+ * production main.c. Parity vs OpenSSL — у test_seed_derivation.c. */
+#include "../common/lorenz_seed.h"
+
+/* [FW.20] Дзеркала RAM-глобалів main.c: UTC від Queen-маяка + tick синхронізації. */
+static volatile uint32_t soldier_unix_ts            = 0;
+static volatile uint32_t soldier_unix_ts_local_tick = 0;
+
 static void Derive_Cold_Start_State(float *x0, float *y0, float *z0)
 {
-    RTC_TimeTypeDef sTime = {0};
-    RTC_DateTypeDef sDate = {0};
-    HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-    HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+    uint64_t epoch_day;
 
-    uint32_t approx_days = (uint32_t)(sDate.Year + 2000 - 1970) * 365UL
-                         + (uint32_t)(sDate.Month - 1) * 30UL
-                         + (uint32_t)sDate.Date;
+    if (soldier_unix_ts != 0u) {
+        uint32_t now_ts = soldier_unix_ts +
+            ((HAL_GetTick() - soldier_unix_ts_local_tick) / 1000u);
+        epoch_day = Silken_Epoch_Day_From_Unix(now_ts);
+    } else {
+        RTC_TimeTypeDef sTime = {0};
+        RTC_DateTypeDef sDate = {0};
+        HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+        HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
-    uint32_t hash[3] = {0};
-    for (int i = 0; i < 32; i++) {
-        uint32_t byte_val = lorenz_seed[i];
-        uint32_t mix = byte_val + (uint32_t)i + 1;
-        hash[0] ^= (mix << ((i * 7) % 24)) ^ (approx_days * (2654435761UL + (uint32_t)i));
-        hash[1] ^= (mix << ((i * 11) % 24)) ^ ((approx_days + 1) * (2246822519UL + (uint32_t)i));
-        hash[2] ^= (mix << ((i * 13) % 24)) ^ ((approx_days + 2) * (3266489917UL + (uint32_t)i));
+        int32_t days = Silken_Days_From_Civil((int32_t)sDate.Year + 2000,
+                                              (uint32_t)sDate.Month,
+                                              (uint32_t)sDate.Date);
+        epoch_day = (days > 0) ? (uint64_t)days : 0u;
     }
 
-    *x0 = ((float)(hash[0] % 2000000) / 1000000.0f) - 1.0f;
-    *y0 = ((float)(hash[1] % 2000000) / 1000000.0f) - 1.0f;
-    *z0 = ((float)(hash[2] % 2000000) / 1000000.0f) - 1.0f;
+    double dx = 0.0, dy = 0.0, dz = 0.0;
+    Silken_Derive_Initial_State(lorenz_seed, epoch_day, &dx, &dy, &dz);
+
+    *x0 = (float)dx;
+    *y0 = (float)dy;
+    *z0 = (float)dz;
 }
 
 /* ---------- Payload packing (Phase 2) ---------- */
@@ -2156,6 +2168,52 @@ TEST(test_cold_start_state_changes_with_seed) {
     Derive_Cold_Start_State(&x2, &y2, &z2);
 
     ASSERT_TRUE(x1 != x2 || y1 != y2 || z1 != z2);
+}
+
+/* [FIX AUDIT-2026-06-06] Civil-days KAT: точна громадянська арифметика
+ * (з високосними) замість старого approx_days (Y*365+M*30). RTC-default
+ * 2000-01-01 → 10957 = бекендів FIRMWARE_RTC_DEFAULT_EPOCH_DAY (ARCH.41). */
+TEST(test_days_from_civil_known_dates) {
+    ASSERT_EQ(Silken_Days_From_Civil(1970, 1, 1), 0);
+    ASSERT_EQ(Silken_Days_From_Civil(2000, 1, 1), 10957);   /* RTC-default після VBAT loss */
+    ASSERT_EQ(Silken_Days_From_Civil(2024, 2, 29), 19782);  /* Високосний день існує */
+    ASSERT_EQ(Silken_Days_From_Civil(2026, 6, 6), 20610);   /* День цього аудиту */
+}
+
+TEST(test_epoch_day_from_unix_boundaries) {
+    ASSERT_EQ(Silken_Epoch_Day_From_Unix(0u), 0u);
+    ASSERT_EQ(Silken_Epoch_Day_From_Unix(946684800u), 10957u);  /* 2000-01-01 00:00:00 */
+    ASSERT_EQ(Silken_Epoch_Day_From_Unix(946771199u), 10957u);  /* 2000-01-01 23:59:59 */
+    ASSERT_EQ(Silken_Epoch_Day_From_Unix(946771200u), 10958u);  /* Північ наступного дня */
+}
+
+/* [FW.20 × FW.30] Beacon-пріоритет: коли Солдат чув Королеву, epoch_day
+ * походить з UTC (точний збіг з backend-кандидатами today/yesterday), а не
+ * з RTC-календаря. Старий код обіцяв це коментарем, але ігнорував unix_ts. */
+TEST(test_cold_start_prefers_beacon_unix_ts_over_rtc) {
+    _mock_flash_seed_reset();
+    _mock_flash_seed_provision(FLASH_SEED_MAGIC, _test_provisioned_seed);
+    Load_Lorenz_Seed();
+
+    /* RTC-фолбек (unix_ts = 0): мок-дата 2026-05-02 */
+    soldier_unix_ts = 0;
+    float xr, yr, zr;
+    Derive_Cold_Start_State(&xr, &yr, &zr);
+
+    /* Beacon-шлях: 2026-06-06 12:00:00 UTC = 20610-й день — інша епоха ніж RTC */
+    soldier_unix_ts            = 1780747200u;
+    soldier_unix_ts_local_tick = 0;
+    float xb, yb, zb;
+    Derive_Cold_Start_State(&xb, &yb, &zb);
+
+    ASSERT_TRUE(xb != xr || yb != yr || zb != zr);
+
+    /* Beacon-шлях має дорівнювати прямій деривації з epoch_day = ts/86400 */
+    double dx, dy, dz;
+    Silken_Derive_Initial_State(lorenz_seed, 1780747200u / 86400u, &dx, &dy, &dz);
+    ASSERT_TRUE(xb == (float)dx && yb == (float)dy && zb == (float)dz);
+
+    soldier_unix_ts = 0;  /* Не отруюємо наступні тести */
 }
 
 TEST(test_cbridge_unified_7arg_signature) {
@@ -4440,6 +4498,9 @@ int main(void)
     RUN(test_cold_start_state_deterministic);
     RUN(test_cold_start_state_changes_with_date);
     RUN(test_cold_start_state_changes_with_seed);
+    RUN(test_days_from_civil_known_dates);
+    RUN(test_epoch_day_from_unix_boundaries);
+    RUN(test_cold_start_prefers_beacon_unix_ts_over_rtc);
 
     printf("\n  C-Bridge 7-Arg Signature (FW.30):\n");
     RUN(test_cbridge_unified_7arg_signature);
