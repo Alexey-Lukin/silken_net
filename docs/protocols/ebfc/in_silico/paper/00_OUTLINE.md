@@ -52,7 +52,7 @@ problem (autonomous EBFC sensing; ET is the bottleneck) → gap (field models EB
 - **Fig 4**: ZIF Cu-Co-Ce hops + k_ET ladder (with computed λ, ③). — ✅ **built** (`fig4_cathode_det.png`)
 - **Fig 5** (methods centerpiece): PCM vs cluster-continuum solvation closing the cascade gap (②). — ✅ **built** (`fig5_solvation_pcm.png`)
 - **Fig S1** (SI): tunnelling β·d, static AF3 vs MD-ensemble — thermal robustness. — ✅ **built** (`figS1_betad_ensemble.png`)
-- **Tables**: T1 levels of theory · T2 cascade energetics (all methods) · T3 DET hops + λ · T4 mediator series E°/cascade-Δ vs σ. — ⏳ pending (tabulate from SUMMARY/cache)
+- **Tables**: T1 levels of theory · T2 cascade energetics (all methods) · T3 DET hops + λ · T4 mediator series E°/cascade-Δ vs σ. — ✅ **built** (`06_tables.md` via `61_paper_tables.py`, cache-only + canon-asserted)
 
 ## 5. Scope boundary
 

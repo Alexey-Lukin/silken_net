@@ -43,7 +43,7 @@ two-sphere result only to confirm that it is physically reasonable.
 
 Varying the 4,4′-bipyridine substituents across the experimental potential range gives a clean **Hammett
 linear free-energy relationship**: the Os(III/II) reduction energy is linear in σ_para with slope
-≈ **−0.93 eV per σ unit** (Fig 3b), triangulated against the additive Lever E_L scheme and the measured series.
+≈ **−0.93 eV per σ unit** (Fig 3b; Table 4), triangulated against the additive Lever E_L scheme and the measured series.
 Electron-withdrawing substituents raise E°(Os) and improve the FADH₂→Os cascade alignment, giving a
 predictive design handle rather than a one-off optimisation.
 
@@ -60,7 +60,7 @@ optimum (~+309 mV) balances driving force against overpotential.
 Inter-metal couplings in the bimetallic Cu–Co–Ce nanozyme were obtained from charge-localised ΔSCF on
 clash-free cluster geometries (a bridging imidazole that had collided with the second metal was
 deprotonated to the imidazolate, restoring physical coordination). With reorganisation energies
-computed by the two-sphere Nelsen method rather than assumed, the **Cu–Co hop is the bottleneck** (Fig 4a), and
+computed by the two-sphere Nelsen method rather than assumed, the **Cu–Co hop is the bottleneck** (Fig 4a; Table 3), and
 its rate sits at **~enzymatic turnover** — a margin of order ×1–30, not the orders of magnitude an
 earlier (geometry- and λ-) artefact had suggested.
 
@@ -94,7 +94,7 @@ experiment is the decisive empirical test.
 
 ## 3.5 The cascade and the limits of implicit solvation
 
-The raw computed cascade FADH₂→Os is **unfavourable in every method** — the frontier-orbital alignment
+The raw computed cascade FADH₂→Os is **unfavourable in every method** (Table 2) — the frontier-orbital alignment
 is inverted (a Koopmans HOMO−LUMO offset of −0.91 eV, the donor level *below* the acceptor) and the
 adiabatic ΔSCF free energy is uphill (+0.88 eV) — whereas the experimentally anchored driving force is
 **downhill** (+466 mV, −0.47 eV; from the verified E°s, §3.2 and §3.6). (The orbital offset and the free
@@ -132,6 +132,10 @@ Across a molecular-dynamics ensemble the FAD frontier orbital is thermally stabl
 ensemble rather than of one fortuitous snapshot.
 
 ---
+
+> **Tables T1–T4** (levels of theory · cascade energetics all-methods · DET hops+λ · mediator series)
+> are collected in [`06_tables.md`](06_tables.md), generated from the cache by
+> [`61_paper_tables.py`](../../../../tools/in_silico/scripts/61_paper_tables.py) (drift-safe, canon-asserted).
 
 ## Figures
 

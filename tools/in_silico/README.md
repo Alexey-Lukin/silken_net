@@ -68,14 +68,15 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 50 | `50_thermal_stress_lame.py` | HW.3 anchor: Lamé thermal stress + Findley creep | ~1 s |
 | 51 | `51_gusak_degradation_model.py` | HW.3 anchor: Arrhenius aging + Kirkendall V diffusion + H7/s6 window | ~1 s |
 | 60 | `60_paper_figures.py` | Стаття 1 publication figures from cache (Fig 3/4/5 + S1; canon-asserted, no DFT) → `paper/figures/` | ~3 s |
+| 61 | `61_paper_tables.py` | Стаття 1 Tables T1–T4 from cache (canon-asserted, no DFT) → `paper/06_tables.md` | ~1 s |
 
 Numeric prefixes encode the pipeline DAG and group: 02-08 prep (GAFF),
 10-16 L2 MD, 20-35 L3 DFT (23-25 + 24b L3b cathode DET; 27-35 advanced L3 —
 tunneling/λ/PCET/micro-solvation/speciation),
 30-31 L4 kinetics/EIS, 40 validation, 50-51 HW.3 anchor mechanics
-(analytical numpy — not part of the L1-L4 enzyme DAG), 60 paper figures
-(cache-only renderer). Rows are listed in execution order; 08-09 reserved
-for future ligands.
+(analytical numpy — not part of the L1-L4 enzyme DAG), 60-61 paper assets
+(figures + tables, cache-only renderers). Rows are listed in execution order;
+08-09 reserved for future ligands.
 
 ## Why the GAFF detour (script 02 + 03)?
 
