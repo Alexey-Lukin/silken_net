@@ -118,7 +118,7 @@ accompanying version-pinned scripts.
 - Mano, N.; de Poulpiquet, A. O₂ reduction in enzymatic biofuel cells. *Chem. Rev.* **2018**, *118*, 2392. doi:10.1021/acs.chemrev.7b00220
 
 **Os-mediated FAD-GDH (experimental anchor)**
-- Degani, Y.; Heller, A. *J. Phys. Chem.* **1989**. [DOI: verify] <!-- ⚠️ конфлікт журнал/рік: JPC-стаття = 1987, 91, 1285 (doi:10.1021/j100290a001); 1989-а — це JACS 111, 2357 (redox polymers). Уточнити, який пейпер цитуємо -->
+- Degani, Y.; Heller, A. Direct electrical communication between chemically modified enzymes and metal electrodes. 1. Electron transfer from glucose oxidase via covalently bound electron relays. *J. Phys. Chem.* **1987**, *91*, 1285. doi:10.1021/j100290a001
 - Ohara, T. J.; Rajagopalan, R.; Heller, A. Glucose electrodes based on cross-linked [Os(bpy)₂Cl]⁺/²⁺ complexed poly(1-vinylimidazole) films. *Anal. Chem.* **1994**. doi:10.1021/ac00071a031
 - Mao, F.; Mano, N.; Heller, A. Long tethers binding redox centers to polymer backbones enhance electron transport in enzyme "wiring" hydrogels. *J. Am. Chem. Soc.* **2003**, *125*, 4951. doi:10.1021/ja029510e
 - Zafar, M. N.; Ludwig, R. et al. Characterization of different FAD-dependent glucose dehydrogenases for possible use in glucose-based biosensors and biofuel cells (j_max anchor). *Anal. Bioanal. Chem.* **2011**. doi:10.1007/s00216-011-5650-7
@@ -139,7 +139,7 @@ accompanying version-pinned scripts.
 - Multistep explicit solvation of ions. *J. Chem. Theory Comput.* **2019**. doi:10.1021/acs.jctc.8b00982
 
 **Flavin redox & protein tuning**
-- Combined QM/MM simulations of one- and two-electron reduction potentials of flavin cofactor in water, medium-chain acyl-CoA dehydrogenase, and cholesterol oxidase. **2007**. PMC4480342 (PMID 17567113) [author + locator: verify] <!-- scaffold мав "2015"; PMID date = 2007 -->
+- Bhattacharyya, S.; Stankovich, M. T.; Truhlar, D. G.; Gao, J. Combined QM/MM simulations of one- and two-electron reduction potentials of flavin cofactor in water, MCAD, and cholesterol oxidase. *J. Phys. Chem. A* **2007**, *111*, 5729. PMC4480342
 - Protein-electrostatics tuning of flavin. *Chem. Sci.* **2025**. doi:10.1039/d5sc02960k
 - Cluster vs QM/MM for protein redox. *J. Chem. Theory Comput.* doi:10.1021/acs.jctc.5c01656
 - Jiang, Q. et al. Feasible cluster model method for simulating the redox potentials of laccase CueO and its variant. *Front. Bioeng. Biotechnol.* **2022**, *10*, 957694. doi:10.3389/fbioe.2022.957694
@@ -159,3 +159,13 @@ accompanying version-pinned scripts.
 **DFT best-practice & reporting standard**
 - Bursch, M. et al. Best-practice DFT protocols. *Angew. Chem. Int. Ed.* **2022**. doi:10.1002/anie.202205735
 - Boggs, J. E. Reporting electronic-structure calculations. *Pure Appl. Chem.* **1998**, *70*, 1015.
+
+**DFT functionals, basis sets & solvation (computational methods)**
+- Becke, A. D. Density-functional thermochemistry. III. The role of exact exchange (B3LYP). *J. Chem. Phys.* **1993**, *98*, 5648. doi:10.1063/1.464913
+- Lee, C.; Yang, W.; Parr, R. G. Development of the Colle–Salvetti correlation-energy formula into a functional of the electron density (LYP). *Phys. Rev. B* **1988**, *37*, 785. doi:10.1103/PhysRevB.37.785
+- Chai, J.-D.; Head-Gordon, M. Systematic optimization of long-range-corrected hybrid density functionals (ωB97X). *J. Chem. Phys.* **2008**, *128*, 084106. doi:10.1063/1.2834918
+- Hehre, W. J.; Ditchfield, R.; Pople, J. A. Self-consistent molecular-orbital methods. XII. Further extensions of Gaussian-type basis sets (6-31G*). *J. Chem. Phys.* **1972**, *56*, 2257. doi:10.1063/1.1677527
+- Weigend, F.; Ahlrichs, R. Balanced basis sets of split-valence, triple-zeta and quadruple-zeta valence quality for H to Rn (def2). *Phys. Chem. Chem. Phys.* **2005**, *7*, 3297. doi:10.1039/b508541a
+- Hay, P. J.; Wadt, W. R. Ab initio effective core potentials for molecular calculations (LANL2DZ). *J. Chem. Phys.* **1985**, *82*, 270. doi:10.1063/1.448799
+- Cossi, M.; Rega, N.; Scalmani, G.; Barone, V. Energies, structures and electronic properties of molecules in solution with the C-PCM solvation model. *J. Comput. Chem.* **2003**, *24*, 669. doi:10.1002/jcc.10189
+- Sun, Q. et al. Recent developments in the PySCF program package. *J. Chem. Phys.* **2020**, *153*, 024109. doi:10.1063/5.0006074
