@@ -187,9 +187,9 @@
 - [ ] 👤 UCST winter-lock тест PSBMA: -10°C → +25°C цикл, регідратація мембрани — `01_03` §2.1 Шар 5
 
 ##### Підблокер HW.5.IS — In Silico Stage 0 (Zero-Lab) — `01_03 §3.4`
-> **Стратегія:** Computational reverse engineering хімії ДО першого Ti-monet. AlphaFold 3 + OpenMM + PySCF + scipy/numpy повністю Python-кервані → інтеграція з AI-clones. **Zero-Lab in-silico (= TRL 3) ✅ завершено (2026-05-25); фізичний TRL 4 = Ti-monet in-vitro (pending).** Q1-paper program (Стаття 1): ① Hammett mediator ✅, ② micro-solvation+speciation ✅, ④ FAD-GDH E° fix (+60→−266 мВ) ✅, ③ cathode λ/coupling ⏳ (Ru-fix validated: λ=0.78 vs Co ~3 eV). Then chemistry-notes backlog (↓) → draft.
+> **Стратегія:** Computational reverse engineering хімії ДО першого Ti-monet. AlphaFold 3 + OpenMM + PySCF + scipy/numpy повністю Python-кервані → інтеграція з AI-clones. **Zero-Lab in-silico (= TRL 3) ✅ завершено (2026-05-25); фізичний TRL 4 = Ti-monet in-vitro (pending).** Q1-paper program (Стаття 1): ① Hammett mediator ✅, ② micro-solvation+speciation ✅, ④ FAD-GDH E° fix (+60→−265 мВ, Schachinger) ✅, ③ cathode λ/coupling ⏳ (Ru-fix validated: λ=0.78 vs Co ~3 eV). Then chemistry-notes backlog (↓) → draft.
 - [ ] 👤 **Інфраструктура:** workstation NVIDIA RTX 4090 ($5–10K) АБО AWS p5.2xlarge / GCP g2-standard-12 ($2–5/год)
-- [ ] 👤 **Joint Q1-publication з ЧНУ Мінаєвим:** "In Silico Design of Long-Lived Enzymatic Bio-Fuel Cells for Tree-Integrated Energy Harvesting" — `08_03` Стаття 28
+- [ ] 👤 **Joint Q1-publication з ЧНУ Мінаєвим:** "In Silico Design of Long-Lived Enzymatic Bio-Fuel Cells for Tree-Integrated Energy Harvesting" — `08_03` Стаття 28. **Текст draft-complete** (`paper/`: Methods/Results/Tables/Discussion/Abstract/Intro-40-refs/Fig2-cartoon, усі DOI ✅). Лишилось 👤: · [ ] 👤 **Fig 1** graphical-abstract (BioRender; code-schematic draft є) + **TOC-графіка** · [ ] 👤 фіналізувати cover letter (draft є) · [ ] 🛑 **сабміт ТІЛЬКИ після patent filing** (UNI.3 — embargo)
 
 ###### 🧪 Chemistry-improvement notes (CHEM.N) — founder batch 2026-06-05, triaged + verified
 > 31 triaged + verified 2026-06-06; **5 corrected-out/merged Ruthless-Pruned** (00_06 §4 — refuted/dup/relocated; **git history**: CHEM.28 epitaxial-prestress · CHEM.30 acid-ΔG · CHEM.12 done-by-② · CHEM.17 dup-of-CHEM.23 · CHEM.24 magnetic-CNT→`02_03 §1.5`); 26 active below. **+5 cathode/method notes 2026-06-06 → CHEM.32-36** (verified vs canon first: Co→Ru low-λ + cMOF already in `01_03 §3.2`; pH-protonation already in all MD scripts — batch ↓). **Full verdicts in the SSOT canon (docs/):** anode → `01_03 §3.1` · matrix → `01_03 §3.3` · cathode levers → `01_03 §3.2` · in-silico methods → `PIPELINE_STATUS` Future · aggregation → `L1 §2` · computed → `SUMMARY`/`L3`. Thin pointers below. ⚠️ = weak.
@@ -784,9 +784,9 @@
 - **P1** · 👤 · → `08_02`
 - [ ] 👤 8 зустрічей: Супруненко (PN-verification/Convolution) · Онищенко (stochastic B&B/Petri) · Ярмілко (Embedded/ECDH) · Порубльов (Discrete Math/reliability) · Косенюк (RF/FEC/compliance) · Бушин (CNN/BSP/DMLS) · Осауленко (portfolio) · Любченко (GA/NN)
 
-#### UNI.3 — IP договір з ЧНУ
-- **P1** · 👤 · → `08_03`
-- Блокує старт публікацій. · [ ] 👤 юр-оформлення IP-договору + підпис обома сторонами
+#### UNI.3 — IP договір з ЧНУ + patent filing (критичний шлях Статті 1)
+- **P0** · 👤 · → `08_03`, `08_01 §2.1`
+- 🛑 **Filing ПЕРЕД сабмітом Статті 1** (розкриває cascade/PCET механізм — embargo `08_01 §2`). Synergy-claims **draft готовий** ([`protocols/anchor/patent_claims_draft.md`](protocols/anchor/patent_claims_draft.md)) + пошукові запити ([`prior_art_queries.md`](protocols/anchor/prior_art_queries.md)). · [ ] 👤 юр-оформлення IP-договору ЧНУ + підпис · [ ] 👤 TISC ЧНУ: прогнати patentability-пошук (Sets 1-5; no-date/full-text/broad) · [ ] 👤 Кафедра ІВ: claims 1-9 → формальний UA/PCT формат · [ ] 👤 UkrNOIVI пріоритетна заявка → дата пріоритету (розблоковує сабміт)
 
 #### UNI.4 — ChNU школа Мінаєва: DFT-моделювання EBFC
 - **P1** · 👤 · → `08_01 §1.1`, `08_03 §1`
