@@ -32,6 +32,7 @@ namespace :tracker do
     prose    = Tracker::Dashboard.inbound_prose_ref_violations
     chem     = Tracker::Dashboard.chem_note_ref_violations
     chemdups = Tracker::Dashboard.chem_note_ids(md).tally.select { |_, c| c > 1 }
+    chemambig = Tracker::Dashboard.chem_ambiguous_token_lines(md)
 
     puts "00_07 lint — #{items.size} #### items (#{Tracker::Dashboard.open_items(items).size} actionable)"
     puts "  duplicate IDs:    #{dups.empty? ? 'none ✓' : dups.inspect}"
@@ -71,13 +72,14 @@ namespace :tracker do
       puts "  dangling prose 00_07 ID-refs (#{prose.size}) — ID cited after a 00_07 link is not a real item:"
       prose.each { |p| puts "    - #{p}" }
     end
-    if chem.empty? && chemdups.empty?
+    if chem.empty? && chemdups.empty? && chemambig.empty?
       puts "  CHEM.N notes:     every CHEM.N ref resolves to a defined in-silico note ✓"
     else
-      puts "  dangling CHEM.N refs (#{chem.size}) / dup defs (#{chemdups.size}) — in-silico note ref/ID drift:"
+      puts "  dangling CHEM.N refs (#{chem.size}) / dup defs (#{chemdups.size}) / ambiguous tokens (#{chemambig.size}) — in-silico note ref/ID drift:"
       chem.each { |c| puts "    - #{c}" }
       chemdups.each { |id, n| puts "    - #{id} defined #{n}× in 00_07" }
+      chemambig.each { |a| puts "    - #{a}" }
     end
-    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || home.any? || inbound.any? || prose.any? || chem.any? || chemdups.any?
+    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || home.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any?
   end
 end

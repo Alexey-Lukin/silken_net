@@ -197,11 +197,11 @@ RSpec.describe Tracker::Dashboard do
     end
   end
 
-  # [CHEM.N in-silico note refs, 2026-06-06] The HW.5.IS chemistry backlog is a bulleted
-  # list; its 31 notes carry CHEM.N IDs (standardized from ad-hoc `note N`). chem_note_ids
-  # collects the def set (the leading ID-cluster before the em-dash → compound `+` & slash,
-  # checkbox optional); chem_note_ref_violations flags a CHEM.N in any doc/script that doesn't
-  # resolve. A CHEM ref in a DESCRIPTION (after the em-dash) is NOT mistaken for a def.
+  # CHEM.N in-silico note refs: the HW.5.IS chemistry backlog is a bulleted list whose notes
+  # carry CHEM.N IDs (standardized from ad-hoc `note N`). chem_note_ids collects the def set
+  # (the leading ID-cluster before the em-dash → compound `+` & slash, checkbox optional);
+  # chem_note_ref_violations flags a CHEM.N in any doc/script that doesn't resolve. A CHEM ref
+  # in a DESCRIPTION (after the em-dash) is NOT mistaken for a def.
   describe ".chem_note_ids + .chem_note_ref_violations" do
     it "collects simple, compound (+), slash-pair and checkbox-less defs; ignores a description ref" do
       md = <<~MD
@@ -234,6 +234,21 @@ RSpec.describe Tracker::Dashboard do
           .to contain_exactly(a_string_matching(/01_99_Sample.*CHEM\.99/))
       end
     end
+
+  # A bare CHEM.N in a no-em-dash checkbox bullet is ambiguous (a whole-line dup-scan reads it
+  # as a phantom 2nd def); status bullets must reword. Em-dash defs/refs are unambiguous → skip.
+  describe ".chem_ambiguous_token_lines" do
+    it "flags a bare CHEM token in a no-em-dash checkbox bullet; ignores em-dash defs and CHEM-free bullets" do
+      md = <<~MD
+        - [x] ✅ Re-run DONE: 24b FO-DFT (CHEM.14) → 25 → done
+        - [x] CHEM.14 — FO-DFT t_ij rigor (real def, em-dash)
+        - [ ] CHEM.8 + CHEM.2 — compound def (em-dash)
+        - [ ] Capstones: protein QM-cluster (no CHEM token)
+      MD
+      expect(described_class.chem_ambiguous_token_lines(md))
+        .to contain_exactly(a_string_matching(/CHEM\.14.*no-em-dash/))
+    end
+  end
   end
 
   # [emoji-prefix blind spot, 2026-06-01] `#### 🌿 UNI.13a — …` was silently dropped

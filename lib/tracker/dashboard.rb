@@ -206,6 +206,23 @@ module Tracker
       end
     end
 
+    # Phantom-def hygiene: a bare CHEM.N token in a CHECKBOX bullet that has NO em-dash is
+    # ambiguous — `chem_note_ids` (em-dash-scoped) reads it as a ref, but a whole-line dup-scan
+    # reads it as a second *definition* (how a CHEM.14 dup slipped past the committed guard while
+    # a stricter local scan flagged it). Policy: a status/checkbox bullet must not carry a bare
+    # CHEM.N — reword, or make it a real `CHEM.N — …` def. Low-FP: only fires on no-em-dash
+    # checkbox bullets that mention a CHEM token (legit refs live after the em-dash in a def bullet).
+    CHECKBOX_RE = /^\s*[-*]\s*\[[ xX]\]/
+    def self.chem_ambiguous_token_lines(markdown)
+      markdown.each_line.filter_map do |l|
+        next unless l.match?(CHECKBOX_RE)
+        next if l.include?("—")   # em-dash present → def/ref position is unambiguous
+        ids = l.scan(CHEM_REF_RE).uniq
+        next if ids.empty?
+        "#{ids.join(', ')} — bare token in a no-em-dash checkbox bullet (reword): #{l.strip[0, 55]}…"
+      end
+    end
+
     # Scanned for CHEM.N refs: the canon docs (incl. the in_silico protocol subdir) AND the
     # in_silico scripts (founder: the refs leaked into CODE too). 00_07 is the definer → skipped.
     CHEM_SCAN_GLOBS = [ "docs/**/*.md", "tools/in_silico/scripts/*.py" ].freeze
