@@ -292,19 +292,19 @@ an assertion into a quantified, decomposed result — the methodological core of
 
 **Electron hopping pathway:** MWCNT ←t₃→ Ce ←t₂→ Co ←t₁→ Cu T1 (laccase)
 
-### Результати (partial, 2026-05-26)
+### Результати (geometry-corrected + computed λ, 2026-06-06)
 
-| Пара | Атомів | t_ij (eV) | k_ET (s⁻¹) | Статус |
-|------|--------|-----------|-------------|--------|
-| **Cu-Co** (T1↔ZIF node) | 62 | **0.0325** | **2.34×10¹⁰** | ✅ Completed |
-| **Co-Ce** (ZIF node↔vacancy) | 62 | **0.0022** | **1.10×10⁸** | ✅ Completed (2026-05-27) |
-| **Ce-graphene** (vacancy↔electrode) | 61 | **0.1177** | **3.07×10¹¹** | ✅ Completed (2026-05-27) |
+⚠️ The 2026-05-26/27 values were computed on a **broken bridging geometry** (script 23 left an imidazole N–H clashing into the 2nd metal at 0.97 Å). Re-run on the deprotonated, clash-free cluster (imidazolate bridge) changes the couplings materially:
 
-**Bottleneck hop (NOT a 1D series sum — rec. review):** the slowest hop is **Co-Ce, k = 1.10×10⁸ s⁻¹**. A series-resistance formula (`1/k_total = Σ1/kᵢ`) would apply only to a single 1D wire; ZIF is a **3D porous framework** with many parallel percolation paths, so the macroscopic charge-diffusion rate is bounded *below* by this bottleneck hop (the true 3D rate is ≥ this — series sum is a conservative lower bound; numerically it coincides here since Co-Ce dominates). Either way: **≥ 1.10×10⁸ s⁻¹ = 10⁵× faster** than enzymatic turnover (~10³ s⁻¹) → **cathode DET is NOT rate-limiting.**
+| Пара | t_ij (eV) fixed | (old, broken) | k_ET @λ=0.7 (s⁻¹) |
+|------|--------|--------|--------|
+| **Cu-Co** (T1↔ZIF node) | **0.00128** ← bottleneck | 0.0325 | 3.6×10⁷ |
+| **Co-Ce** (ZIF node↔vacancy) | 0.00687 | 0.0022 | 1.0×10⁹ |
+| **Ce-graphene** (vacancy↔electrode) | 0.1129 | 0.1177 | 2.8×10¹¹ |
 
-**Cu-Co verdict:** t_ij = 0.0325 eV → k_ET = 2.34×10¹⁰ s⁻¹ (λ=0.7 eV, ΔG=0, T=298K). Це **надзвичайно швидкий** DET — набагато швидше ніж enzymatic turnover (~10³ s⁻¹). DET через ZIF **не лімітує** катодний ORR.
+The fix shrank Cu-Co t_ij **25×** → **Cu-Co (not Co-Ce) is the bottleneck**. And the rate is exponentially sensitive to λ: at the **computed/literature** two-sphere λ (script 35: Co 3.1 / Ce 0.87 / Ru 0.78 eV; lit Cu ~2.0, Co ~1.4) the Cu-Co hop falls to **~enzymatic turnover (×1–30, not ×10⁵)** → **cathode DET is borderline / possibly co-limiting**, not comfortably fast. The honest k_DET-vs-λ scenarios + verdict + mitigation (low-λ Ru / conductive-MOF / enzyme-free SAC) live in [`SUMMARY.md`](SUMMARY.md) §Cathode (One-Home). Method caveat: B3LYP over-estimates the first-row λ (Co ≈ 2× lit); rigorous = CDFT coupling + experimental EIS.
 
-Scripts: `23_build_zif_clusters.py` (geometry), `24_dft_hopping_integrals.py` (ΔSCF + Marcus).
+Scripts: `23_build_zif_clusters.py` (geometry + deprotonation), `24_dft_hopping_integrals.py` (ΔSCF t_ij), `35_dft_metal_reorganization.py` (Nelsen λ), `25_cathode_ket_lambda.py` (k_DET vs λ).
 
 ---
 

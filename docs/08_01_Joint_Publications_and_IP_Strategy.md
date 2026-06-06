@@ -182,7 +182,7 @@ Gaia 2.0 / Silken Net об'єднує сім академічних та інд�
 
 **Foreground (сильні, чисті результати — обличчя статті):**
 - **PCET редокс-потенціал FAD** — proton thermodynamic reference відтворює E°(FAD/FADH₂) у межах ~50 mV від експ. free-flavin (значення → `SUMMARY.md`, script 32).
-- **DET через ZIF-нанозим** — Beratan-Onuchic + ΔSCF hopping: ~5 порядків над enzymatic turnover → катод не лімітує (scripts 23/24).
+- **DET через ZIF-нанозим** — ΔSCF hopping (geom-fixed) + computed Nelsen λ: a λ-sensitive cathode margin — **borderline** at realistic λ (Cu-Co ~turnover, не old ×10⁵) + a low-λ-metal (Ru) design rule (числа → `SUMMARY.md` §Cathode, scripts 23/24/25/35).
 - **Геометрія + through-bond tunneling pathway** анода — глибина залягання FAD < tunneling-межі (L1 + script 28).
 - **Термічна робастність** frontier-орбіталі FAD (MD→DFT ensemble, script 27).
 
@@ -690,7 +690,7 @@ _«Дослідження акустичних властивостей пори
 
 **Тип зв'язку:** Комплементарний — ЧНУ: теоретична модель (DFT), ЧМА: in vitro валідація, Silken Net: системні вимоги
 
-> **In-silico baseline для Статті 28:** Zero-Lab L1-L4 PASSED (2026-05-25). Публікаційні headline-claims: L1 **d_FAD=15.998 Å** (MET viable); L3 cascade **verified +466 мВ / −0.47 eV downhill** (E°s; raw DFT uphill = method limit decomposed by ②); L3b **k_DET=1.09×10⁸ s⁻¹**; L4 delta_t=36s. **Повні поточні числа та статус — канонічний [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) + [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md)** (тут не дублюємо, щоб уникнути розсинхрону).
+> **In-silico baseline для Статті 28:** Zero-Lab L1-L4 PASSED (2026-05-25). Публікаційні headline-claims: L1 **d_FAD=15.998 Å** (MET viable); L3 cascade **verified +466 мВ / −0.47 eV downhill** (E°s; raw DFT uphill = method limit decomposed by ②); L3b cathode DET **borderline** at realistic λ (geom-fixed; не old ×10⁵); L4 delta_t=36s. **Повні поточні числа та статус — канонічний [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) + [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md)** (тут не дублюємо, щоб уникнути розсинхрону).
 
 ---
 

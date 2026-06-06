@@ -177,6 +177,30 @@ def build_ce_graphene_cluster() -> list[tuple[str, np.ndarray]]:
     return all_atoms
 
 
+def deprotonate_metal_clashes(
+    atoms: list[tuple[str, np.ndarray]], threshold: float = 1.3,
+) -> tuple[list[tuple[str, np.ndarray]], int]:
+    """Remove H atoms sitting within `threshold` Å of a metal.
+
+    Root-cause fix (2026-06-05): the bridging 2-methylimidazole was placed by a
+    single-anchor rotation (N3→M1), which left its OTHER (N–H) nitrogen facing M2
+    with the H pointing straight INTO the metal (H···M ≈ 0.97 Å — physically
+    impossible). In a real ZIF the bridge is a **deprotonated imidazolate** that
+    coordinates both metals through its two ring N (no H on either). Dropping the
+    clashing H restores that: the bare N coordinates M2 cleanly. Each removed H is
+    a proton → the cluster charge drops by 1 per removal (caller updates charge).
+    Returns (cleaned_atoms, n_removed)."""
+    metals = [p for s, p in atoms if s in ("Cu", "Co", "Ce")]
+    cleaned: list[tuple[str, np.ndarray]] = []
+    removed = 0
+    for s, p in atoms:
+        if s == "H" and any(np.linalg.norm(p - m) < threshold for m in metals):
+            removed += 1
+            continue
+        cleaned.append((s, p))
+    return cleaned, removed
+
+
 def write_xyz(atoms: list[tuple[str, np.ndarray]], path: Path, comment: str) -> None:
     with path.open("w", encoding="utf-8") as fh:
         fh.write(f"{len(atoms)}\n{comment}\n")
@@ -204,6 +228,8 @@ def main() -> int:
 
     banner("1. Cu-Co cluster (T1 ↔ ZIF-67 node)")
     cu_co = build_bimetallic_cluster("Cu", BOND_CU_N, "Co", BOND_CO_N, "Cu-Co")
+    cu_co, nrem = deprotonate_metal_clashes(cu_co)
+    print(f"  imidazolate bridge: removed {nrem} metal-clashing H (cluster charge −{nrem})")
     check_distances(cu_co, "Cu-Co")
     p1 = LIGANDS_DIR / "cu_co_zif.xyz"
     write_xyz(cu_co, p1, "Cu(Im)2-Im-Co(Im)2 bimetallic ZIF cluster")
@@ -211,6 +237,8 @@ def main() -> int:
 
     banner("2. Co-Ce cluster (ZIF-67 node ↔ Ce vacancy)")
     co_ce = build_bimetallic_cluster("Co", BOND_CO_N, "Ce", BOND_CE_N, "Co-Ce")
+    co_ce, nrem = deprotonate_metal_clashes(co_ce)
+    print(f"  imidazolate bridge: removed {nrem} metal-clashing H (cluster charge −{nrem})")
     check_distances(co_ce, "Co-Ce")
     p2 = LIGANDS_DIR / "co_ce_zif.xyz"
     write_xyz(co_ce, p2, "Co(Im)2-Im-Ce(Im)2 bimetallic ZIF cluster")

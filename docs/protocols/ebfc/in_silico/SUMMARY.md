@@ -16,7 +16,7 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 | **L1** | Does deglycosylated FAD-GDH fold correctly? | AlphaFold 3 | ✅ d_FAD = 15.998 Å < tunneling 18-20 Å |
 | **L2** | Does the full matrix denature the protein? | OpenMM MD (481k atoms) | ✅ RMSD 1.22 Å (100ps), Rg stable at 10ns |
 | **L3** | Does electron cascade FAD→Os flow downhill? | PySCF DFT (54 atoms) | ✅ Downhill (verified +466 mV); raw DFT uphill = method limit, decomposed by ② |
-| **L3b** | Is DET through ZIF nanozyme fast enough? | PySCF ΔSCF | ✅ 3/3 hops → total k_DET = 1.09×10⁸ s⁻¹ (10⁵× above turnover) |
+| **L3b** | Is DET through ZIF nanozyme fast enough? | PySCF ΔSCF + Marcus | 🟡 borderline — geom-fixed t_ij + realistic λ → Cu-Co bottleneck ~turnover (×1–30), NOT the old ×10⁵ (see §Cathode) |
 | **L4** | Does BASELINE_DELTA_T_S = 60s make physical sense? | Analytical MM+Arrhenius | ✅ Healthy 36s / Stressed 190s |
 
 **Bottom line:** All computational checks pass. The design is ready for physical prototyping (Ti-coin Stage 2).
@@ -253,16 +253,26 @@ Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
 
 ### Cathode: DET Through ZIF Nanozyme
 
-**Method:** ΔSCF (UKS) for bimetallic ZIF clusters
+**Method:** ΔSCF (UKS, level_shift 0.3) energy-splitting for bimetallic ZIF clusters (script 24) on the **clash-free geometry** — script 23 deprotonated a bridging imidazole N–H that had collided with the 2nd metal at 0.97 Å (→ imidazolate bridge) — then Marcus k_ET with the **computed** two-sphere λ (script 35, Nelsen 4-point; λ_hop = (λᵢ+λⱼ)/2), not an assumed λ.
 
-| Hop | t_ij (eV) | k_ET (s⁻¹) | Status |
-|-----|-----------|-------------|--------|
-| Cu↔Co (T1↔ZIF node) | 0.0325 | 2.34×10¹⁰ | ✅ |
-| Co↔Ce (ZIF node↔vacancy) | 0.0022 | 1.10×10⁸ | ✅ |
-| Ce↔graphene (vacancy↔MWCNT) | 0.1177 | 3.07×10¹¹ | ✅ |
-| **Total (series)** | — | **1.09×10⁸** | rate-limited by Co-Ce |
+| Hop | t_ij (eV) — fixed geom | (old, broken geom) |
+|-----|-----------|--------|
+| Cu↔Co (T1↔ZIF node) | **0.00128** ← bottleneck | 0.0325 |
+| Co↔Ce (ZIF node↔vacancy) | 0.00687 | 0.0022 |
+| Ce↔graphene (vacancy↔MWCNT) | 0.1129 | 0.1177 |
 
-**Conclusion:** All 3 hops ✅. Bottleneck hop Co-Ce → total DET rate 1.09×10⁸ s⁻¹ — **10⁵× faster than enzymatic turnover** (~10³ s⁻¹). ZIF nanozyme cathode DET is NOT rate-limiting.
+The geometry fix shrank Cu-Co t_ij **25×** → **Cu-Co is the bottleneck**, not Co-Ce.
+
+**k_DET vs λ (script 25) — margin is λ-sensitive:**
+
+| λ scenario | bottleneck k(Cu-Co) | vs turnover (10³ s⁻¹) |
+|---|---|---|
+| canon λ=0.7 (old assumption) | 3.6×10⁷ | ×3.6×10⁴ |
+| **literature λ** (Cu 2.0 / Co 1.4 / Ce 0.87) | **1.4×10³** | **×1.4 — borderline** |
+| computed λ (B3LYP, Co spin-crossover ~2× over-est) | 0.3 | ×3×10⁻⁴ |
+| Co→Ru swap (computed λ_Ru = 0.78) | 3.1×10⁴ | ×31 |
+
+**Conclusion (revised, honest):** the old "k_DET = 1.09×10⁸, ×10⁵ above turnover, *not* rate-limiting" was a **double artifact** — a broken bridging geometry (clashing N–H) **and** an assumed λ = 0.7 eV. On the corrected geometry with realistic λ, the Cu-Co bottleneck sits at **~enzymatic turnover (×1–30)** → cathode DET is **borderline / possibly co-limiting**, not comfortably fast. B3LYP over-estimates the first-row λ (Co ≈ 2× lit), so the truth most likely tracks the literature-λ row (~×1.4); rigorous closure = CDFT coupling + experimental EIS. **Mitigation:** low-λ metal (Co→Ru, ×31), conductive-MOF band transport ([`01_03`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell) §3.2 / note 31), or enzyme-free SAC (note 6). Numbers: `dft/zif_hopping.json` + `dft/cathode_ket_lambda.json`.
 
 ---
 
@@ -354,7 +364,7 @@ Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
 | ~~L2 strain cycling (script 16)~~ | GPU | ✅ DONE (pseudoplastic) |
 | ~~L3 ωB97X/def2-TZVP (script 21d)~~ | CPU | ✅ DONE (adiabatic ΔSCF +0.884 eV) |
 | ~~L3 tunneling pathway (script 28)~~ | CPU | ✅ DONE (FAD→THR288, β·d=2.05) |
-| ~~L3b all 3 pairs (script 24)~~ | CPU | ✅ DONE (k_DET=1.09×10⁸) |
+| ~~L3b all 3 pairs (script 24)~~ | CPU | ✅ DONE — geom-fixed t_ij; k_DET borderline (×1–30, λ-sensitive, script 25) |
 | ~~HW.3.IS thermal stress (script 50)~~ | CPU | ✅ DONE (safety 9.9×) |
 | ~~HW.3 Гусак models (script 51)~~ | CPU | ✅ DONE (Arrhenius, Kirkendall, H7/s6) |
 | ~~L3/L2 MD→DFT ensemble (script 27)~~ | CPU | ✅ DONE — FAD HOMO -5.589 ± 0.058 eV across 5 snapshots, thermally robust |

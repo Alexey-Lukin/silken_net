@@ -1,55 +1,49 @@
 {
-  "method": "\u0394SCF B3LYP/6-31g(d)+SDD(metals)",
+  "method": "\u0394SCF B3LYP/6-31g(d)+lanl2dz(Cu,Co)+stuttgart_rsc(Ce)",
   "lambda_reorg_eV": 0.7,
   "temperature_K": 298.15,
   "pairs": [
     {
+      "label": "Cu-Co (T1\u2194ZIF node)",
+      "metal1": "Cu",
+      "metal2": "Co",
+      "n_atoms": 61,
+      "E_state_A_Ha": -1668.201509930112,
+      "E_state_B_Ha": -1668.2016040947897,
+      "converged_A": true,
+      "converged_B": true,
+      "delta_E_eV": 0.002562351414214749,
+      "t_ij_eV": 0.0012811757071073745,
+      "k_ET_per_s": 36296219.071182825
+    },
+    {
       "label": "Co-Ce (ZIF node\u2194vacancy)",
       "metal1": "Co",
       "metal2": "Ce",
-      "n_atoms": 62,
-      "E_state_A_Ha": -1946.6723229881654,
-      "E_state_B_Ha": -1946.6724866976665,
+      "n_atoms": 61,
+      "E_state_A_Ha": -1947.0569664754657,
+      "E_state_B_Ha": -1947.0564615413696,
       "converged_A": true,
       "converged_B": true,
-      "delta_E_eV": 0.004454762465657916,
-      "t_ij_eV": 0.002227381232828958,
-      "k_ET_per_s": 109706689.31335483
+      "delta_E_eV": 0.013739956719663588,
+      "t_ij_eV": 0.006869978359831794,
+      "k_ET_per_s": 1043649658.0347513
     },
     {
       "label": "Ce-graphene (vacancy\u2194electrode)",
       "metal1": "Ce",
       "metal2": "C",
       "n_atoms": 61,
-      "E_state_A_Ha": -1927.8725282012165,
-      "E_state_B_Ha": -1927.863874281472,
+      "E_state_A_Ha": -1927.872454157855,
+      "E_state_B_Ha": -1927.8641529849347,
       "converged_A": true,
       "converged_B": true,
-      "delta_E_eV": 0.23548515271139916,
-      "t_ij_eV": 0.11774257635569958,
-      "k_ET_per_s": 306556879052.5148
-    },
-    {
-      "label": "Ce-graphene (vacancy\u2194electrode)",
-      "file": "ce_graphene.xyz",
-      "metal_a": "Ce",
-      "metal_b": "C",
-      "charge": 1,
-      "spin": 1,
-      "E_A_Ha": -1927.872528,
-      "E_B_Ha": -1927.863874,
-      "t_ij_Ha": 0.0043270000001029985,
-      "t_ij_eV": 0.1177,
-      "k_ET": 307000000000.0
+      "delta_E_eV": 0.22588642262780417,
+      "t_ij_eV": 0.11294321131390209,
+      "k_ET_per_s": 282074781746.6864
     }
   ],
-  "k_total_per_s": 109667442.91925883,
-  "rate_limiting_step": "Co-Ce (ZIF node\u2194vacancy)",
-  "verdict": "\u2705 DET rate sufficient",
-  "total": {
-    "k_DET": 109446293.59192836,
-    "rate_limiting": "Co-Ce (ZIF node\u2194vacancy)",
-    "verdict": "DET rate sufficient \u2014 5 orders above enzymatic turnover",
-    "note": "Cu-Co from previous run (t_ij=0.0325 eV, k_ET=2.34e10)"
-  }
+  "k_total_per_s": 35071967.5135752,
+  "rate_limiting_step": "Cu-Co (T1\u2194ZIF node)",
+  "verdict": "\u2705 DET rate sufficient"
 }

@@ -41,9 +41,13 @@ from lib.utils import banner
 
 DFT_CACHE.mkdir(parents=True, exist_ok=True)
 
+# charges updated 2026-06-05: the bridging imidazole was deprotonated to a proper
+# imidazolate (script 23 fix — removed the N–H clashing into the 2nd metal), so the
+# bimetallic clusters lost one proton → charge −1 each (cu_co/co_ce +2→+1). spin
+# (electron-count parity) unchanged by deprotonation. ce_graphene has no bridge → unchanged.
 CLUSTERS = [
-    ("cu_co_zif.xyz", "Cu", "Co", "Cu-Co (T1↔ZIF node)", +2, 2),
-    ("co_ce_zif.xyz", "Co", "Ce", "Co-Ce (ZIF node↔vacancy)", +2, 3),
+    ("cu_co_zif.xyz", "Cu", "Co", "Cu-Co (T1↔ZIF node)", +1, 2),
+    ("co_ce_zif.xyz", "Co", "Ce", "Co-Ce (ZIF node↔vacancy)", +1, 3),
     ("ce_graphene.xyz", "Ce", "C", "Ce-graphene (vacancy↔electrode)", +1, 1),
 ]
 

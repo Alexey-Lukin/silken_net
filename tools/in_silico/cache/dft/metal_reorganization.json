@@ -1,0 +1,69 @@
+{
+  "method": "Nelsen 4-point inner-sphere \u03bb on [M(H\u2082O)\u2086]^q, B3LYP/6-31G(d)+lanl2dz/stuttgart_rsc+C-PCM",
+  "note": "two-sphere Marcus \u03bb_hop=(\u03bb_M1+\u03bb_M2)/2; aquo proxy for ZIF-N shell; lit fallback if unphysical; rigorous=CDFT capstone",
+  "hops": {
+    "Ce-graphene": 0.8684
+  },
+  "results": [
+    {
+      "name": "ce",
+      "metal": "Ce",
+      "couple": "4+/3+",
+      "lambda_1_eV": 0.2378,
+      "lambda_2_eV": 0.6306,
+      "lambda_computed_eV": 0.8684,
+      "lambda_lit_eV": 1.0,
+      "MO_ox_A": 2.489,
+      "MO_red_A": 2.694,
+      "opt_converged": true,
+      "physical": true,
+      "lambda_use_eV": 0.8684,
+      "wall_seconds": 3447.7
+    },
+    {
+      "name": "ru",
+      "metal": "Ru",
+      "couple": "3+/2+",
+      "lambda_1_eV": -0.2564,
+      "lambda_2_eV": 1.037,
+      "lambda_computed_eV": 0.7806,
+      "lambda_lit_eV": 0.8,
+      "MO_ox_A": 2.072,
+      "MO_red_A": 2.135,
+      "opt_converged": true,
+      "physical": true,
+      "lambda_use_eV": 0.7806,
+      "wall_seconds": 1010.4
+    },
+    {
+      "name": "co_nh3",
+      "metal": "Co",
+      "couple": "3+/2+",
+      "lambda_1_eV": 1.5853,
+      "lambda_2_eV": 1.5087,
+      "lambda_computed_eV": 3.094,
+      "lambda_lit_eV": 1.3,
+      "MO_ox_A": 1.986,
+      "MO_red_A": 2.213,
+      "opt_converged": true,
+      "physical": true,
+      "lambda_use_eV": 3.094,
+      "wall_seconds": 1144.1
+    },
+    {
+      "name": "co",
+      "metal": "Co",
+      "couple": "3+/2+",
+      "lambda_1_eV": 1.6781,
+      "lambda_2_eV": 1.7062,
+      "lambda_computed_eV": 3.3842,
+      "lambda_lit_eV": 1.3,
+      "MO_ox_A": 1.884,
+      "MO_red_A": 2.09,
+      "opt_converged": true,
+      "physical": true,
+      "lambda_use_eV": 3.3842,
+      "wall_seconds": 511.4
+    }
+  ]
+}
