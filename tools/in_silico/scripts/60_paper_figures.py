@@ -339,6 +339,79 @@ def fig5() -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Fig 2 — AF3 structure + Beratan–Onuchic tunnelling path (DRAFT: 2D PCA projection)
+# ─────────────────────────────────────────────────────────────────────────────
+def fig2() -> None:
+    """DRAFT structure figure from the AF3 PDB (mdtraj) — a 2D PCA projection of the
+    Cα envelope with the FAD cofactor and the through-bond tunnelling path. NOT a
+    publication cartoon (that needs PyMOL/ChimeraX on `dgrGcGDH_AF3.pdb`); this
+    conveys the §3.1 architecture (buried FAD, exit path, depth) from the real coords."""
+    import mdtraj as md  # local import — only Fig 2 needs it
+    from lib.constants import AF3_PDB
+
+    tun = json.loads((DFT_CACHE / "tunneling_pathway.json").read_text())
+    t = md.load(str(AF3_PDB))
+    top = t.topology
+    xyz = t.xyz[0] * 10.0  # nm → Å
+
+    ca = top.select("name CA")
+    ca_xyz = xyz[ca]
+    c = ca_xyz.mean(0)
+    _, _, Vt = np.linalg.svd(ca_xyz - c, full_matrices=False)   # PCA frame from Cα
+    Pm = Vt[:2].T
+
+    def proj(pts):
+        return (np.atleast_2d(pts) - c) @ Pm
+
+    fad_heavy = [i for i in top.select("resname FAD") if top.atom(i).element.symbol != "H"]
+    n5 = top.select("resname FAD and name N5")
+    tyr_oh = top.select("resSeq 90 and name OH")
+    d_fad = float(np.linalg.norm(xyz[n5[0]] - xyz[tyr_oh[0]])) if len(n5) and len(tyr_oh) else None
+    if d_fad:
+        _close(d_fad, 16.0, 0.5, "Fig2 d_FAD (N5→Tyr90 OH)")
+
+    # tunnelling path: FAD N5 → Ala261 → Thr260 → Thr283 → Thr288
+    path_res = [(261, "Ala261"), (260, "Thr260"), (283, "Thr283"), (288, "Thr288")]
+    path_pts, path_lbl = ([xyz[n5[0]]], ["FAD N5"]) if len(n5) else ([], [])
+    for rs, lab in path_res:
+        sel = top.select(f"name CA and resSeq {rs}")
+        if len(sel):
+            path_pts.append(xyz[sel[0]]); path_lbl.append(lab)
+
+    fig, ax = plt.subplots(figsize=(6.6, 5.8))
+    pc = proj(ca_xyz)
+    ax.scatter(pc[:, 0], pc[:, 1], s=4, color="#cfcfcf", alpha=0.5, label="protein Cα", zorder=1)
+    pf = proj(xyz[fad_heavy])
+    ax.scatter(pf[:, 0], pf[:, 1], s=14, color=C["orange"], label="FAD cofactor", zorder=3)
+    pp = proj(np.array(path_pts))
+    ax.plot(pp[:, 0], pp[:, 1], "-o", color=C["red"], ms=5, lw=1.6, label="through-bond path", zorder=4)
+    for i, (lab, p) in enumerate(zip(path_lbl, pp)):   # label only the endpoints (intermediates cluster)
+        if i in (0, len(pp) - 1):
+            ax.annotate(lab, p, textcoords="offset points", xytext=(6, 5), fontsize=7,
+                        color=C["red"], fontweight="bold")
+    if len(tyr_oh):
+        pe = proj(xyz[tyr_oh[0]])[0]
+        ax.scatter([pe[0]], [pe[1]], s=70, marker="*", color=C["green"], zorder=5, label="Tyr90 OH (surface)")
+        if len(n5):
+            pn = proj(xyz[n5[0]])[0]
+            ax.plot([pn[0], pe[0]], [pn[1], pe[1]], ":", color="k", lw=1.0, zorder=2)
+    txt = (f"d_FAD (N5→Tyr90 OH) = {d_fad:.1f} Å  (< 18–20 Å tunnelling window)\n"
+           f"through-bond path {tun['through_bond_path_A']:.1f} Å · β·d = {tun['effective_beta_d']:.2f}")
+    ax.text(0.02, 0.02, txt, transform=ax.transAxes, fontsize=7, va="bottom",
+            bbox=dict(boxstyle="round,pad=0.4", fc="#f5f5f5", ec="#888888", alpha=0.95))
+    ax.set_xlabel("PC1 (Å)")
+    ax.set_ylabel("PC2 (Å)")
+    ax.set_title("(DRAFT) AF3 structure + Beratan–Onuchic tunnelling path\n2D PCA projection — publication cartoon → PyMOL")
+    ax.legend(loc="upper right", fontsize=6.5, frameon=True, framealpha=0.9)
+    ax.set_aspect("equal")
+    fig.tight_layout()
+    out = PAPER_FIG_DIR / "fig2_structure_path.png"
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"  ✓ {out.relative_to(REPO_ROOT)}  (DRAFT, d_FAD {d_fad:.1f} Å)")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Fig S1 — tunneling β·d ensemble robustness (SI)
 # ─────────────────────────────────────────────────────────────────────────────
 def figS1() -> None:
@@ -369,6 +442,7 @@ def figS1() -> None:
 def main() -> int:
     PAPER_FIG_DIR.mkdir(parents=True, exist_ok=True)
     print("Building Стаття 1 figures from cache (no DFT) …")
+    fig2()
     fig3()
     fig4()
     fig5()
