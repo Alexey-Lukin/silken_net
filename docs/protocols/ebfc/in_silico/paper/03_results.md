@@ -75,7 +75,12 @@ This is a finding, not a failure, and we present it with its sensitivity. The ra
 exponentially on λ: at the literature first-row values the Cu–Co hop is borderline (≈ ×1.4 over
 turnover, Fig 4b); B3LYP over-estimates the first-row λ (the Co couple by ≈ 2×, a spin-crossover artefact),
 which would push it lower; and a low-λ metal removes the limitation entirely — replacing Co by **Ru**
-(computed λ 0.78 eV vs Co ≈ 3 eV) restores a ~×31 margin. The honest reading is a borderline,
+(computed λ 0.78 eV vs Co ≈ 3 eV) restores a ~×31 margin from the reorganisation energy alone. (We also
+probed whether Ru's diffuse 4d orbitals additionally raise the coupling: at the fixed cluster geometry
+both a crude ΔSCF and an FO-DFT diabatisation returned a large t_ij but failed their physicality check —
+the frontier orbitals localise entirely on Ru with no copper partner, so the minimal cluster cannot form
+a clean Cu↔Ru diabatic pair; that coupling advantage is therefore a hypothesis for constrained-DFT, not a
+result, and the Ru lever is justified here by λ alone.) The honest reading is a borderline,
 possibly co-limiting cathode whose three design levers — a low-λ metal, conductive-MOF band transport,
 or an acid-stable enzyme-free single-atom catalyst — are set out and ranked by their viability at the
 acidic Zone 3 (pH ≈ 4.5).

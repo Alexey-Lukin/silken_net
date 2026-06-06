@@ -37,6 +37,8 @@
 | 23 | `build_zif_clusters` | 3 ZIF cluster XYZ | `ligands/` |
 | 24 | `dft_hopping_integrals` | **3/3 pairs ✅** (geom-fixed) → k_DET **borderline** ×1–30 (λ-sensitive, scripts 25/35) | `dft/zif_hopping.json` |
 | 24b | `fodft_coupling` | **FO-DFT rigor** (CHEM.14): two-state Mulliken-Hush t_ij(Cu-Co) **0.00546 eV** (~4× crude) + 0.18 eV site-gap → margin ×0.6–730 (sign/λ-sensitive) → borderline **robust to coupling method**, ×10⁵ excluded | `dft/fodft_coupling.json` |
+| 24c | `cu_ru_coupling` | **CHEM.32** Cu-Ru crude ΔSCF (Co→Ru @identical geom; control Cu-Co=canon 0.00128 ✅) → t_ij 0.10 (×81) **but non-physical** (see 24d) | `dft/cu_ru_coupling.json` |
+| 24d | `cu_ru_fodft` | **CHEM.32** Cu-Ru FO-DFT → t_ij 0.105 **NON-PHYSICAL** (frontier MOs all-Ru, no Cu-d partner → no clean Cu↔Ru diabatic pair; Cu-d/Ru-d energy-mismatched). t_ij-boost UNvalidated → CDFT capstone; λ↓ benefit stands (CHEM.29) | `dft/cu_ru_fodft.json` |
 | 25 | `cathode_ket_lambda` | **③** Marcus k_DET vs **computed** λ → Cu-Co bottleneck borderline **×1.4** (lit-λ); Ru-swap restores **×31**; + FO-DFT margin band | `dft/cathode_ket_lambda.json` |
 | 27 | `md_dft_ensemble` | FAD HOMO **-5.589 ± 0.058 eV** (thermally robust, σ≪0.3) | `dft/md_dft_ensemble.json` |
 | 28 | `electron_tunneling_pathway` | Beratan-Onuchic FAD→THR288, **β·d=2.05** (feasible) | `dft/tunneling_pathway.json` |

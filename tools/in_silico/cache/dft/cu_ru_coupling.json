@@ -1,0 +1,43 @@
+{
+  "method": "\u0394SCF B3LYP/6-31g(d)+lanl2dz(Cu,Co,Ru); Co\u2192Ru @identical geom; \u03bb_hop=lit from cache",
+  "caveat": "fixed-geom t_ij isolates 4d-diffuseness (controls distance); real Ru-N longer \u2192 upper bound on the pure-diffuseness gain",
+  "turnover_s": 1000.0,
+  "lambda_hop_eV": {
+    "Cu-Co (control)": 1.7,
+    "Cu-Ru (CHEM.32)": 1.4
+  },
+  "pairs": [
+    {
+      "t_ij_eV": 0.0012811757566045978,
+      "spin": 2,
+      "E_A_Ha": -1668.201509930113,
+      "E_B_Ha": -1668.2016040947942,
+      "converged_A": true,
+      "converged_B": true,
+      "label": "Cu-Co (control)",
+      "metal_node": "Co",
+      "charge": 1,
+      "lambda_hop_eV": 1.7,
+      "k_ET_per_s": 1384.5583564205126,
+      "margin_vs_turnover": 1.3845583564205126
+    },
+    {
+      "t_ij_eV": 0.10390706723883972,
+      "spin": 1,
+      "E_A_Ha": -1616.9011709330507,
+      "E_B_Ha": -1616.8935339044701,
+      "converged_A": true,
+      "converged_B": true,
+      "label": "Cu-Ru (CHEM.32)",
+      "metal_node": "Ru",
+      "charge": 1,
+      "lambda_hop_eV": 1.4,
+      "k_ET_per_s": 185911764.4666913,
+      "margin_vs_turnover": 185911.7644666913
+    }
+  ],
+  "canon_cuco_t_ij_eV": 0.0012811757071073745,
+  "control_reproduces_canon": true,
+  "t_ij_ratio_Ru_over_Co": 81.10289841435704,
+  "k_ratio_Ru_over_Co": 134275.13806447815
+}

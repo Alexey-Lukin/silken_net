@@ -48,6 +48,8 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 23 | `23_build_zif_clusters.py` | L3b: bimetallic ZIF cluster models for DET hopping pathway | < 1 s |
 | 24 | `24_dft_hopping_integrals.py` | L3b DFT: ΔSCF hopping integrals, crude State-A/B (Marcus ET rates through ZIF) | ~3-4 h |
 | 24b | `24b_fodft_coupling.py` | L3b: FO-DFT two-state coupling t_ij for the Cu-Co hop (rigor upgrade of 24; loads zif_hopping cache for comparison) | ~hours |
+| 24c | `24c_cu_ru_coupling.py` | L3b CHEM.32: Cu-Ru crude ΔSCF (Co→Ru @identical geom) + Cu-Co control; t_ij non-physical (see 24d) | ~2 h |
+| 24d | `24d_fodft_cu_ru.py` | L3b CHEM.32: Cu-Ru FO-DFT diabatisation → t_ij NON-PHYSICAL (frontier all-Ru, no Cu-d partner); coupling-boost CDFT-pending | ~15 min |
 | 25 | `25_cathode_ket_lambda.py` | L3b ③: Marcus k_ET vs **computed** λ — honest borderline DET margin (reads 24 t_ij + 35 λ) | ~1 s |
 | 27 | `27_md_dft_ensemble.py` | L3/L2 bridge: FAD HOMO across 5 MD snapshots (thermal-robustness check) | ~30 min |
 | 28 | `28_electron_tunneling_pathway.py` | L3: Beratan-Onuchic tunneling pathway, single snapshot | < 1 s |

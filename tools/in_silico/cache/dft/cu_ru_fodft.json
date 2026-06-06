@@ -1,0 +1,15 @@
+{
+  "method": "FO-DFT two-state diabatisation (single UKS dimer SCF, manual 2\u00d72 Mulliken-Hush population diabatisation of the 2 metal-d frontier MOs, off-diagonal Fock = t_ij); B3LYP/6-31G(d)+LANL2DZ; Co\u2192Ru @identical geom",
+  "pair": "Cu-Ru (CHEM.32, Co\u2192Ru swap)",
+  "t_ij_eV": 0.105307,
+  "t_ij_crude_24c_eV": 0.103907,
+  "site_energy_gap_eV": 0.1279,
+  "frontier_MOs": [
+    123,
+    124
+  ],
+  "localised": false,
+  "physically_reasonable": false,
+  "caveat": "fixed-geom (Co\u2192Ru @identical coords) isolates 4d-diffuseness; real Ru-N longer \u2192 upper bound",
+  "wall_seconds": 1029.6
+}
