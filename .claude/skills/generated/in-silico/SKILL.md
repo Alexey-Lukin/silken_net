@@ -42,16 +42,18 @@ L3 DFT anode (CPU):
   29 (Nelsen λ) ← standalone (FADH₂•⁺ pathological → metal hops = ③) · 29b ← rescues 29 (FADH⁻/FADH• couple → anode inner-sphere λ_i 0.39 eV)
   21e (Os mediator Hammett series ①) ← 21b geometry
   32 (PCET E°) → 33 (PCET cascade) ← lumiflavin
-  34 (micro-solvation ② cluster-continuum) ← 21b geom + hexaaqua + aqua speciation
+  34 (micro-solvation ② cluster-continuum) ← 21b geom + hexaaqua + aqua/bis-Im speciation → 34b (ωB97X ΔSCF cross-check)
 
 L3b DFT cathode (CPU):
-  23 (ZIF clusters) → 24 (hopping integrals, 3 pairs)
+  23 (ZIF clusters) → 24 (hopping t_ij, 3 pairs) → 25 (k_ET vs λ ③) ← 35 (metal λ, Nelsen 4-pt)
+  24b (FO-DFT two-state coupling) = rigor upgrade of 24's crude t_ij → re-run 25 [CHEM.14, pending CPU]
 
 L4 Kinetics (CPU, seconds):
   30 (delta_t) → 30b (Monte Carlo) → 31 (EIS) → 40 (validation)
 
 Bridge:
-  27 (MD→DFT ensemble) ← 11 (DCD trajectory) + DFT
+  27 (MD→DFT ensemble, FAD HOMO) ← 11 (DCD trajectory) + DFT
+  28b (CHEM.16 tunneling ensemble ✅) ← 11 (DCD) + 28 (Beratan-Onuchic over frames) → β·d 2.02±0.13, thermally robust
 ```
 
 ## Critical Rules
@@ -84,6 +86,7 @@ Bridge:
 - **GAFF matching** — `GAFFTemplateGenerator` matches by graph structure. One `Molecule` per unique chemical species is enough.
 - **L2 10ns RMSD ~4 Å is normal** — AF3 structures relax 3-5 Å under AMBER ff14SB for large enzymes. Check **Rg** (radius of gyration) — if stable → protein folded, RMSD is just conformational relaxation. Full equilibration needs 20-50 ns.
 - **25GB DCD files** — use `stride=10` or `stride=100` when loading with mdtraj. Full load kills memory.
+- **PBC unwrap for ensemble graph analysis (CHEM.16 / 28b)** — a PBC-wrapped protein/cofactor splits a contact graph (artificial >cutoff gaps) → Dijkstra returns NaN. `make_molecules_whole()` makes each molecule whole but leaves a SEPARATE non-covalent cofactor (FAD) in a *different periodic image* → still disconnected (verified 1/15 frames). Use `traj.image_molecules(inplace=True)` (default anchor = largest molecule = protein) to co-locate everything into the protein's image (15/15 frames). Apply on the FULL topology, before `atom_slice`.
 
 ## Cascade Verdict Summary
 
