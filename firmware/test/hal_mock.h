@@ -155,7 +155,11 @@ static inline int HAL_ADC_Stop_DMA(ADC_HandleTypeDef *h) { (void)h; return HAL_O
 static inline int HAL_TIM_Base_Start(TIM_HandleTypeDef *h) { (void)h; return HAL_OK; }
 static inline int HAL_TIM_Base_Stop(TIM_HandleTypeDef *h) { (void)h; return HAL_OK; }
 
-/* AES encrypt/decrypt stubs: just copy data through (no actual crypto) */
+/* AES encrypt/decrypt stubs: just copy data through (no actual crypto).
+ * [AUDIT-2026-06-06] Гардовано: test_sym_selftest визначає HAL_MOCK_SYM_ENABLED
+ * і отримує OpenSSL-backed реалізацію (нижче, біля CCM-mock) — байтопотокова
+ * семантика = контракт бекенду. */
+#ifndef HAL_MOCK_SYM_ENABLED
 static inline int HAL_CRYP_Encrypt(CRYP_HandleTypeDef *h, uint32_t *in, uint16_t sz,
                                     uint32_t *out, uint32_t to) {
     (void)h; (void)to;
@@ -168,6 +172,7 @@ static inline int HAL_CRYP_Decrypt(CRYP_HandleTypeDef *h, uint32_t *in, uint16_t
     memcpy(out, in, sz * 4);
     return HAL_OK;
 }
+#endif /* !HAL_MOCK_SYM_ENABLED */
 
 static inline int HAL_UART_Transmit(UART_HandleTypeDef *h, uint8_t *d, uint16_t s, uint32_t t) {
     (void)h; (void)d; (void)s; (void)t; return HAL_OK;
@@ -389,5 +394,60 @@ static inline int HAL_CRYPEx_AESCCM_Decrypt(CRYP_HandleTypeDef *hcryp,
     return (ok && verify == 1) ? HAL_OK : HAL_ERROR;
 }
 #endif /* HAL_MOCK_CCM_ENABLED */
+
+/* ── [AUDIT-2026-06-06] OpenSSL-backed ECB/CBC mock ──────────────────────
+ * Дзеркало CCM-mock'а для ТРАНЗИТНИХ шляхів ARCH.42: рахує справжній AES
+ * через EVP з БАЙТОПОТОКОВОЮ семантикою (sz — у 32-бітних словах, як у
+ * STM32 HAL; bytes = sz*4). Це КОНТРАКТ, який бекенд (Ruby OpenSSL)
+ * очікує від кремнію — sym_selftest.h ганяє через нього NIST-вектори,
+ * верифікуючи власну логіку + вектори до bench-дня.
+ * Enable per-test: #define HAL_MOCK_SYM_ENABLED BEFORE including hal_mock.h
+ * (вимикає passthrough-пару вище). Потрібен libcrypto (як CCM-mock). */
+#ifdef HAL_MOCK_SYM_ENABLED
+#include <openssl/evp.h>
+
+static inline const EVP_CIPHER *_sym_mock_cipher(const CRYP_HandleTypeDef *h) {
+    if (h->Init.Algorithm == CRYP_AES_ECB && h->Init.KeySize == CRYP_KEYSIZE_128B)
+        return EVP_aes_128_ecb();
+    if (h->Init.Algorithm == CRYP_AES_CBC && h->Init.KeySize == CRYP_KEYSIZE_256B)
+        return EVP_aes_256_cbc();
+    if (h->Init.Algorithm == CRYP_AES_CBC && h->Init.KeySize == CRYP_KEYSIZE_128B)
+        return EVP_aes_128_cbc();
+    return NULL;
+}
+
+static inline int _sym_mock_run(CRYP_HandleTypeDef *h, int encrypt,
+                                uint32_t *in, uint16_t sz_words, uint32_t *out) {
+    const EVP_CIPHER *cipher = _sym_mock_cipher(h);
+    if (!cipher || !in || !out) return HAL_ERROR;
+
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) return HAL_ERROR;
+
+    int ok = EVP_CipherInit_ex(ctx, cipher, NULL,
+                               (const unsigned char *)h->Init.pKey,
+                               (const unsigned char *)h->Init.pInitVect,
+                               encrypt);
+    EVP_CIPHER_CTX_set_padding(ctx, 0);  /* firmware зеро-паддить сам */
+
+    int len = 0, final_len = 0;
+    ok &= EVP_CipherUpdate(ctx, (unsigned char *)out, &len,
+                           (const unsigned char *)in, (int)sz_words * 4);
+    ok &= EVP_CipherFinal_ex(ctx, (unsigned char *)out + len, &final_len);
+    EVP_CIPHER_CTX_free(ctx);
+    return ok ? HAL_OK : HAL_ERROR;
+}
+
+static inline int HAL_CRYP_Encrypt(CRYP_HandleTypeDef *h, uint32_t *in, uint16_t sz,
+                                    uint32_t *out, uint32_t to) {
+    (void)to;
+    return _sym_mock_run(h, 1, in, sz, out);
+}
+static inline int HAL_CRYP_Decrypt(CRYP_HandleTypeDef *h, uint32_t *in, uint16_t sz,
+                                    uint32_t *out, uint32_t to) {
+    (void)to;
+    return _sym_mock_run(h, 0, in, sz, out);
+}
+#endif /* HAL_MOCK_SYM_ENABLED */
 
 #endif /* HAL_MOCK_H */

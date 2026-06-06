@@ -19,7 +19,12 @@
 // (у бойовій прошивці вимкнено). Header-only, сам підтягує lora_ccm.h.
 #if defined(CCM_SELFTEST)
 #include "../common/ccm_selftest.h"
+// [AUDIT-2026-06-06] + POST транзитних шляхів ARCH.42 (ECB LoRa / CBC CoAP):
+// ловить DataType/endianness-клас (DATATYPE_32B word-swap), невидимий для
+// host-тестів і symmetric mesh-обміну, але фатальний для OpenSSL-бекенду.
+#include "../common/sym_selftest.h"
 volatile int g_ccm_selftest_failed = -1;  // читати через SWD: 0 = PASS (silicon == OpenSSL == backend)
+volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PASS (ECB-128 + CBC-256 KAT)
 #endif
 #include <mruby/irep.h>
 #include <mruby/array.h>
@@ -1198,6 +1203,12 @@ int main(void)
   // → дозволено flip FW2_CCM_ENABLED; >0 → HAL/endianness/errata → CCM не вмикати.
   // KAT-вектори: firmware/common/ccm_kat_vectors.h (єдине джерело, спільне з host).
   g_ccm_selftest_failed = Ccm_Run_Self_Test(&hcryp, NULL);
+  // [AUDIT-2026-06-06] POST транзитних шляхів: ECB-128 (LoRa) + CBC-256 (CoAP)
+  // проти NIST SP 800-38A. FAIL тут = DataType/endianness-конфіг CRYP видає
+  // НЕ-OpenSSL байти (DATATYPE_32B word-swap) → бекенд бачив би сміття;
+  // лік — CRYP_DATATYPE_8B. Після POST відновлюємо бойовий ECB-контекст.
+  g_sym_selftest_failed = Sym_Run_Self_Test(&hcryp, NULL);
+  MX_CRYP_Init();
 #endif
 
   /* USER CODE BEGIN 2 */
