@@ -1,5 +1,5 @@
 {
-  "method": "FO-DFT two-state diabatisation (single UKS dimer SCF, Pipek-Mezey localisation of the 2 metal-d frontier MOs, off-diagonal Fock = t_ij); B3LYP/6-31G(d)+LANL2DZ",
+  "method": "FO-DFT two-state diabatisation (single UKS dimer SCF, manual 2\u00d72 Mulliken-Hush population diabatisation of the 2 metal-d frontier MOs, off-diagonal Fock = t_ij); B3LYP/6-31G(d)+LANL2DZ",
   "pair": "Cu-Co (rate-limiting hop)",
   "t_ij_eV": 0.005462,
   "t_ij_crude_script24_eV": 0.001281,
@@ -10,5 +10,5 @@
   ],
   "localised": true,
   "physically_reasonable": true,
-  "wall_seconds": 577.8
+  "wall_seconds": 557.2
 }

@@ -36,7 +36,8 @@
 | 22 | `compare_homo_lumo` | cascade Δε = -0.91 raw (uphill); verified −0.47 eV (→ SUMMARY) | `dft/comparison.json` |
 | 23 | `build_zif_clusters` | 3 ZIF cluster XYZ | `ligands/` |
 | 24 | `dft_hopping_integrals` | **3/3 pairs ✅** (geom-fixed) → k_DET **borderline** ×1–30 (λ-sensitive, scripts 25/35) | `dft/zif_hopping.json` |
-| 25 | `cathode_ket_lambda` | **③** Marcus k_DET vs **computed** λ → Cu-Co bottleneck borderline **×1.4** (lit-λ); Ru-swap restores **×31** | `dft/cathode_ket_lambda.json` |
+| 24b | `fodft_coupling` | **FO-DFT rigor** (CHEM.14): two-state Mulliken-Hush t_ij(Cu-Co) **0.00546 eV** (~4× crude) + 0.18 eV site-gap → margin ×0.6–730 (sign/λ-sensitive) → borderline **robust to coupling method**, ×10⁵ excluded | `dft/fodft_coupling.json` |
+| 25 | `cathode_ket_lambda` | **③** Marcus k_DET vs **computed** λ → Cu-Co bottleneck borderline **×1.4** (lit-λ); Ru-swap restores **×31**; + FO-DFT margin band | `dft/cathode_ket_lambda.json` |
 | 27 | `md_dft_ensemble` | FAD HOMO **-5.589 ± 0.058 eV** (thermally robust, σ≪0.3) | `dft/md_dft_ensemble.json` |
 | 28 | `electron_tunneling_pathway` | Beratan-Onuchic FAD→THR288, **β·d=2.05** (feasible) | `dft/tunneling_pathway.json` |
 | 28b | `tunneling_ensemble` | **CHEM.16** Beratan-Onuchic over MD ensemble → β·d **2.02±0.13** (gating 1.03×, thermally robust; image_molecules PBC) | `dft/tunneling_ensemble.json` |

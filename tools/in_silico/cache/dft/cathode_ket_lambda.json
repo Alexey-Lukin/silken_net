@@ -74,5 +74,16 @@
       "bottleneck_s": 31169.858460925218,
       "margin_vs_turnover": 31.169858460925216
     }
+  },
+  "fodft_cuco_rigor": {
+    "t_ij_eV": 0.005462,
+    "t_ij_crude_eV": 0.001281,
+    "site_gap_eV": 0.183,
+    "lambda_hop_eV": 1.7,
+    "margin_vs_turnover_by_dG_sign": {
+      "dG=0": 25.165,
+      "dG=+gap": 0.59,
+      "dG=-gap": 731.51
+    }
   }
 }

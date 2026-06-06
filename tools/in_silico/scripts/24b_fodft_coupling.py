@@ -10,7 +10,8 @@ coupling by **two-state diabatisation**:
   1. one UKS dimer SCF on the clash-free Cu-Co cluster (script 23 geometry);
   2. pick the two frontier MOs (near the SOMO/HOMO) carrying the most Cu-d + Co-d
      character — the donor/acceptor pair (or their bonding/antibonding combination);
-  3. **localise** that 2-orbital space (Pipek-Mezey) → one orbital on Cu, one on Co;
+  3. **localise** that 2-orbital space (manual 2×2 Mulliken-Hush — diagonalise the Cu-projected
+     population matrix; lo.PM/lo.Boys crash on a PySCF lib.einsum bug) → one orbital on Cu, one on Co;
   4. H_ab (= t_ij) is the off-diagonal of the Fock matrix in that localised basis;
      the diagonals are the site energies (their difference is the driving-force ΔG).
 
@@ -139,8 +140,9 @@ def main() -> int:
     print(f"  → {'✅ physical coupling' if physical else '⚠️ inspect — non-localised or out-of-band'}")
 
     OUT.write_text(json.dumps({
-        "method": "FO-DFT two-state diabatisation (single UKS dimer SCF, Pipek-Mezey localisation "
-                  "of the 2 metal-d frontier MOs, off-diagonal Fock = t_ij); B3LYP/6-31G(d)+LANL2DZ",
+        "method": "FO-DFT two-state diabatisation (single UKS dimer SCF, manual 2×2 Mulliken-Hush "
+                  "population diabatisation of the 2 metal-d frontier MOs, off-diagonal Fock = t_ij); "
+                  "B3LYP/6-31G(d)+LANL2DZ",
         "pair": "Cu-Co (rate-limiting hop)",
         "t_ij_eV": round(t_ij, 6),
         "t_ij_crude_script24_eV": round(crude, 6),

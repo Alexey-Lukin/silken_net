@@ -62,6 +62,13 @@ computed by the two-sphere Nelsen method rather than assumed, the **Cu–Co hop 
 its rate sits at **~enzymatic turnover** — a margin of order ×1–30, not the orders of magnitude an
 earlier (geometry- and λ-) artefact had suggested.
 
+A two-state FO-DFT diabatisation (Mulliken–Hush localisation of the metal-d frontier pair) confirms the
+bottleneck is robust to the coupling method, not an artefact of the crude state-energy ΔSCF: it returns
+t_ij(Cu–Co) = 0.0055 eV — within a factor of four of the ΔSCF value, still in the meV regime — together
+with a 0.18 eV site-energy gap the crude treatment had assumed away. The resulting margin stays
+borderline and parameter-sensitive (spanning ×0.6 to ×730 across the gap sign, ×25 at zero), firmly
+excluding the earlier orders-of-magnitude margin.
+
 This is a finding, not a failure, and we present it with its sensitivity. The rate depends
 exponentially on λ: at the literature first-row values the Cu–Co hop is borderline (≈ ×1.4 over
 turnover); B3LYP over-estimates the first-row λ (the Co couple by ≈ 2×, a spin-crossover artefact),

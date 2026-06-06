@@ -100,6 +100,24 @@ def main() -> int:
         print(f"  {name:32s} {ks['Cu-Co']:10.2e} {ks['Co-Ce']:10.2e} {ks['Ce-C']:10.2e}"
               f" {bottleneck:11.2e} {'×'+format(margin, '.1e'):>12}")
 
+    # FO-DFT rigor (script 24b): the Cu-Co bottleneck with the two-state coupling t_ij + the computed
+    # site-energy gap, vs the crude ΔSCF t_ij. t_ij is ~4× crude (k ~18×), but the 0.18 eV site-gap
+    # swings the margin by its sign → the borderline/sensitive verdict is robust to the coupling
+    # method (not a crude-t_ij artifact); the old ~10⁵× is firmly excluded either way.
+    fo = json.loads((CACHE / "fodft_coupling.json").read_text())
+    t_fo, dg_fo = fo["t_ij_eV"], fo["site_energy_gap_eV"]
+    lam_lit = _two_sphere(LAMBDA_LIT["Cu"], LAMBDA_LIT["Co"])
+    fo_margin = {tag: marcus_rate(t_fo, lam_lit, dg) / TURNOVER_S
+                 for tag, dg in (("dG=0", 0.0), ("dG=+gap", dg_fo), ("dG=-gap", -dg_fo))}
+    out["fodft_cuco_rigor"] = {
+        "t_ij_eV": t_fo, "t_ij_crude_eV": fo["t_ij_crude_script24_eV"], "site_gap_eV": dg_fo,
+        "lambda_hop_eV": lam_lit,
+        "margin_vs_turnover_by_dG_sign": {k: round(v, 3) for k, v in fo_margin.items()}}
+    print(f"\n  FO-DFT rigor (Cu-Co t={t_fo:.5f} vs crude {fo['t_ij_crude_script24_eV']:.5f}, "
+          f"gap {dg_fo} eV) @ lit-λ {lam_lit}:")
+    for tag, m in fo_margin.items():
+        print(f"    {tag:9s} ×{m:.2g}")
+
     (CACHE / "cathode_ket_lambda.json").write_text(json.dumps(out, indent=2))
     print("\n  bottleneck hop = Cu-Co (smallest t_ij after the geometry fix).")
     print("  → the old ~10⁵× margin was a geometry+λ artifact; realistic λ leaves the")
