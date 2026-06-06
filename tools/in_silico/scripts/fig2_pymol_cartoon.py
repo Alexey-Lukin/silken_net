@@ -13,9 +13,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import AF3_PDB, PAPER_DIR, REPO_ROOT
-
 from pymol import cmd, util
+
+from lib.constants import AF3_PDB, PAPER_DIR, REPO_ROOT
 
 OUT = PAPER_DIR / "figures" / "fig2_structure_path_pymol.png"
 PATH_RESI = [261, 260, 283, 288]  # CA hops after FAD N5 (script 28 / OUTLINE §3.1)
