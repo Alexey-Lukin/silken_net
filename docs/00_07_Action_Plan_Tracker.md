@@ -204,7 +204,7 @@
 - [ ] cathode finalize — Ce-λ + re-run script 24 (fixed geom + computed λ) → update k_DET canon
 
 **P1 — strong near-term (Gen 2.1 / check / decide):**
-- [ ] note 11 — aggregation check (Aggrescan3D / hydrophobic-SASA at 11 N→Q sites): manufacturability, L2 can't see it
+- [ ] note 11 — aggregation: in-house SASA-proxy ✅ DONE → 4 hotspots (Gln71/200/258/405, L1 §2); remaining = Aggrescan3D + compensating polar muts (Asp/Ser) pre-CRO
 - [ ] note 22 + 5 — COSMO-RS + ML-potentials (MACE): ②-gap closers cheaper than QM/MM (new-dep decision)
 - [ ] note 14 — FO-DFT coupling: in-house t_ij rigor (full CDFT needs PyCDFT = capstone)
 - [ ] note 6 + 31 — enzyme-free cathode / conductive-MOF (Ni₃HITP₂): removes 20yr enzyme-risk (acid-stable variant needed)

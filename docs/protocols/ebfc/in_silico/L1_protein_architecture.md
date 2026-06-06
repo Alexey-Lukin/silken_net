@@ -57,6 +57,10 @@
 
 **Інваріант:** довжина = 600 aa (без змін; N → Q — point mutation).
 
+**In-silico follow-ups on the deglyc mutant (verified 2026-06-06; both tracked → [`00_07`](../../../00_07_Action_Plan_Tracker.md) HW.5.IS):**
+- **Aggregation (note 11):** the 11 removed glycans expose hydrophobic surface — an in-house hydrophobic-SASA proxy flags **4 aggregation-prone sites (Gln71, Gln200, Gln258, Gln405)**. Before CRO expression: Aggrescan3D + compensating surface-polar mutations (Asp/Ser) near them. Single-molecule L2 MD (§3) cannot see colloidal aggregation, so this is *not* covered by the folding check.
+- **Genipin-shield (note 10):** the layer-4 genipin cross-links Lys ε-NH₂; **Lys109 (6.9 Å from Tyr90) + Lys262 (7.4 Å from THR288)** sit at the electron exit (§5) → mutate **Lys109/Lys262 → Arg** (conservative; guanidinium ≈ inert to genipin) so a genipin knot cannot block Os-mediator docking.
+
 **Мутована послідовність (input для AlphaFold 3):**
 
 ```
