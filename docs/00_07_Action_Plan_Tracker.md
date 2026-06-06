@@ -229,9 +229,9 @@
 > All ~37 `tools/in_silico/scripts/` audited — almost all ✅ (cached). Open work captured here so we never re-audit; closed/superseded = 21 · 21c · 29 (honest limitations-points, not work).
 - [ ] 🔧 🤖 **Active re-run chain:** 24b FO-DFT coupling (CHEM.14, prepped+validated) → **re-run 25** → ③ k_DET rigor (runs once ωB97X frees the CPU)
 - [ ] ⏳ 🤖 **Running / done:** 34b ωB97X ②-speciation robustness (running) · 28b dynamic-tunnelling ensemble ✅ DONE (CHEM.16, β·d 2.02±0.13 thermally robust; image_molecules PBC fix)
-- [ ] ✨ 🤖 **Refinements (optional, per-script additional analysis):** outer-sphere λ_o (29b → total anode λ) · aqua/bis-Im × substituents + ωB97X for the series (21e) · real ΔG in k_ET (25, currently 0) · Cu/Ce λ refinement (35; B3LYP over-estimates Co spin-crossover) · Os-complex MD ensemble (27, not just FAD) · full hydration shell + COSMO-RS/MACE probe (34) · k_cat sensitivity (30/30b) · ③-borderline R_ct in EIS (31)
+- [ ] ✨ 🤖 **Refinements (optional, per-script additional analysis):** outer-sphere λ_o (29b → total anode λ) · aqua/bis-Im × substituents + ωB97X for the series (21e) · real ΔG in k_ET (25, currently 0) · Cu/Ce λ refinement (35; B3LYP over-estimates Co spin-crossover) · Os-complex MD ensemble (27, not just FAD) · full hydration shell + COSMO-RS/MACE probe (34) · k_cat sensitivity (30/30b) · ③-borderline R_ct in EIS (31). ⚠️ **λ_o is radius-sensitive · EIS-③ R_ct is Γ(coverage)-sensitive → indicative only, not clean computes** (verified 2026-06-06: borderline k_DET vs turnover is a kinetic competition, NOT a fixed R_ct)
 - [ ] 🏔️ 🔗 **Capstones (Мінаєв):** ④ protein QM-cluster E° (extend 32) · CDFT coupling (> 24b, needs PyCDFT) · QM/MM explicit-water cascade
-- [ ] ⏸️ **Deferred → Стаття 2/3 / on-data:** 11 (20–50 ns MD, reviewer-grade equilibration) · 13 (D_eff model; L4 already uses lit 2e-6) · 16 (PE-drift 1%, bigger box) · 40 add docstring + re-run vs Ti-coin CV/EIS when in-vitro data lands
+- [ ] ⏸️ **Deferred → Стаття 2/3 / on-data:** 11 (20–50 ns MD, reviewer-grade equilibration) · 13 (D_eff model; L4 already uses lit 2e-6) · 16 (PE-drift 1%, bigger box) · 40 re-run vs Ti-coin CV/EIS when in-vitro data lands (40 already has a docstring — the audit's "missing" was a grep-filter artifact)
 
 #### HW.6 — Resin barrier + Flush Mount Installation
 - **P1** · 👤 · → `01_04 §3`
