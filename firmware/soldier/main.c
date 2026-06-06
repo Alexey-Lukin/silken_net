@@ -1102,8 +1102,6 @@ static uint8_t Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS(const uint8_t* frame,
 
     int16_t warn_x100    = (int16_t)((uint16_t)body[0] | ((uint16_t)body[1] << 8));
     int16_t crit_x100    = (int16_t)((uint16_t)body[2] | ((uint16_t)body[3] << 8));
-    uint8_t version      = body[4];
-
     // Range invariants (decoded values × 100, тож range [1..99] = [0.01..0.99])
     if (warn_x100 < 1   || warn_x100 > 99)                                 return 0;
     if (crit_x100 < 1   || crit_x100 > 99)                                 return 0;
@@ -1114,7 +1112,7 @@ static uint8_t Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS(const uint8_t* frame,
     // TinyML_Apply_Thresholds робить додатковий sanitize (NaN/inversion → defaults)
     TinyML_Apply_Thresholds(warn_raw, crit_raw, warn_out, crit_out);
 
-    if (version_out) *version_out = version;
+    if (version_out) *version_out = body[4];  // config_version (байт 4 body)
     return 1;
 }
 
@@ -1361,7 +1359,7 @@ int main(void)
   Radio.SetChannel(868000000); // Налаштовуємо на 868 МГц
 
   // 5. Вибір контракту: Перевіряємо, чи є в Flash-пам'яті оновлений код
-  uint32_t* flash_check = (uint32_t*)MRUBY_CONTRACT_FLASH_ADDR;
+  const uint32_t* flash_check = (const uint32_t*)MRUBY_CONTRACT_FLASH_ADDR;
   if (*flash_check == 0x45544952) { // "RITE" у little-endian (ознака mruby байткоду)
       current_lorenz_bytecode = (uint8_t*)MRUBY_CONTRACT_FLASH_ADDR;
   } else {
@@ -1973,8 +1971,7 @@ int main(void)
             ota_last_chunk_rx_tick != 0 &&
             (HAL_GetTick() - ota_last_chunk_rx_tick) > OTA_REREQUEST_TIMEOUT_MS) {
 
-            uint8_t req_payload[OTA_REQ_PACKET_SIZE]    = {0};
-            uint8_t encrypted_req[OTA_REQ_PACKET_SIZE]  = {0};
+            uint8_t req_payload[OTA_REQ_PACKET_SIZE] = {0};
 
             uint8_t any_missing = Build_OTA_ReRequest_Payload(tree_did,
                                                                ota_total_chunks,
@@ -1982,6 +1979,7 @@ int main(void)
                                                                sizeof(ota_chunk_received),
                                                                req_payload);
             if (any_missing) {
+                uint8_t encrypted_req[OTA_REQ_PACKET_SIZE] = {0};
                 // Шифруємо запит (1 AES-128-ECB block = 16 байт = 4 слова, post-ARCH.42)
                 HAL_CRYP_Encrypt(&hcryp, (uint32_t*)req_payload, 4,
                                   (uint32_t*)encrypted_req, 1000);
@@ -2076,6 +2074,9 @@ int main(void)
 // =========================================================================
 // АПАРАТНИЙ РЕФЛЕКС РАДІО (Вуха Солдата)
 // =========================================================================
+// payload лишається не-const: сигнатуру диктує callback-контракт радіо
+// (Semtech RadioEvents_t.RxDone, uint8_t*) — const зламав би тип реєстрації.
+// cppcheck-suppress constParameterPointer
 void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 {
     // [FIX: AUDIT] size > 0 && size <= buffer: виправлено off-by-one (було size < 255)
@@ -2199,10 +2200,16 @@ void Trigger_Emergency_LoRa_TX(void)
 // =========================================================================
 // АПАРАТНИЙ РЕФЛЕКС DMA (Буфер звуку заповнено)
 // =========================================================================
+// Перекриття слабкого символа HAL: тип сигнатури фіксований прототипом
+// HAL_ADC_ConvCpltCallback (const зламав би це перекриття); параметр `hadc`
+// тінює глобальний CubeMX-handle і тут не використовується.
+// cppcheck-suppress constParameterPointer
+// cppcheck-suppress shadowVariable
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
     // Ця функція викликається апаратно, коли DMA запише 512-й байт.
     // Вона миттєво виводить процесор зі стану SLEEP для аналізу.
+    (void)hadc;
     audio_ready = 1;
 }
 

@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!--
+  cppcheck platform — STM32WLE5JC (Arm Cortex-M4F, AAPCS / arm-none-eabi EABI).
+
+  Why a custom platform instead of `unix32`: on Arm EABI `char` is UNSIGNED by
+  default (i386/unix32 is signed). Sign-of-char drives real findings (e.g. an
+  `int8_t temp` vs `char` byte compared/packed into a payload), so analysing the
+  firmware as signed-char would both miss and invent issues. Sizes below are the
+  ILP32 EABI set (long = 4, pointer = 4, wchar_t = 4, long double = double = 8).
+
+  SSOT for the MCU: docs/03_01 (Firmware Lifecycle). Used by firmware/scripts/cppcheck.sh.
+-->
+<platform>
+  <char_bit>8</char_bit>
+  <default-sign>unsigned</default-sign>
+  <sizeof>
+    <short>2</short>
+    <int>4</int>
+    <long>4</long>
+    <long-long>8</long-long>
+    <float>4</float>
+    <double>8</double>
+    <long-double>8</long-double>
+    <pointer>4</pointer>
+    <size_t>4</size_t>
+    <wchar_t>4</wchar_t>
+  </sizeof>
+</platform>

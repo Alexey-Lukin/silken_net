@@ -34,7 +34,10 @@ typedef void (*ccm_selftest_report_fn)(const char *name, int pass);
  * ciphertext+tag, (2) decrypt must recover plaintext, (3) a flipped MIC
  * bit MUST be rejected (HAL_ERROR). Returns 1 on full pass, else 0.
  * key/nonce are copied into word-aligned buffers (the STM32 CRYP HAL
- * consumes uint32_t* and we must not assume the const tables are aligned). */
+ * consumes uint32_t* and we must not assume the const tables are aligned).
+ * `hcryp` is an INJECTED handle (host harness passes a mock, target passes the
+ * global &hcryp) — it deliberately mirrors the HAL global name for readability. */
+// cppcheck-suppress shadowVariable
 static inline int Ccm_Kat_Run_One(CRYP_HandleTypeDef *hcryp,
                                   const uint8_t key[16], const uint8_t nonce[12],
                                   const uint8_t aad[8], const uint8_t pt[8],
@@ -81,7 +84,9 @@ static inline int Ccm_Kat_Run_One(CRYP_HandleTypeDef *hcryp,
 }
 
 /* POST: golden vector + all extras. Returns count of FAILED vectors
- * (0 = attestation OK → safe to flip FW2_CCM_ENABLED). */
+ * (0 = attestation OK → safe to flip FW2_CCM_ENABLED).
+ * `hcryp` injected (see Ccm_Kat_Run_One) — mirrors the HAL global name. */
+// cppcheck-suppress shadowVariable
 static inline int Ccm_Run_Self_Test(CRYP_HandleTypeDef *hcryp,
                                     ccm_selftest_report_fn report) {
     int failed = 0;

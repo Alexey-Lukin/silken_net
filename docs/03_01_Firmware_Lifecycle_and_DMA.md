@@ -1420,6 +1420,22 @@ tools/firmware/run_bytecode_vm.sh                 # minimal VM runs the bytecode
 
 **Python scientific envs (conda):** `tools/in_silico` (`silken_md`: OpenMM/RDKit/OpenFF/PySCF) і `tools/ml` (`silken_ml`: librosa/scikit-learn). `environment.yml` — human-editable джерело, але `>=`-діапазони → fresh-solve бере найновіший сумісний білд → числа TRL-доказового пайплайну можуть тихо зсунутися між прогонами. **`in_silico` запінено** committed `conda-lock.yml` (точні версії+хеші, `linux-64`+`osx-arm64`); CI ставить env з lock, окремий job `lock_sync` гейтить lock↔`environment.yml` (`conda-lock --check-input-hash`). **`ml` свідомо НЕ пінимо** — його gate само-перевірний (librosa ≡ stdlib parity 1e-6 + `emit_c --check`), version-drift ловиться парністю → lock дав би менше за вартість підтримки. Регенерація — `tools/in_silico/README.md`.
 
+### 12.6 Static-analysis gate — cppcheck (the "ruff/rubocop for C")
+
+**Дім cppcheck-гейту owned firmware C** (`soldier` + `queen` + `common`; vendored `extern/` + `.toolchain/` виключені). Аналог `lint` (RuboCop) / `python_lint` (ruff) — job `firmware_lint` у `.github/workflows/ci.yml`. cppcheck парсить джерела напряму (без крос-компіляції/HAL-хедерів) → ловить null-deref, buffer-overrun, uninit-read, знакові/цілочисельні сюрпризи й мертві умови ще до bench.
+
+**Єдиний вхід (DRY):** `firmware/scripts/cppcheck.sh` — той самий скрипт ганяють CI і розробник локально (`--deep` = `+ --inconclusive`; `--misra` = MISRA C:2012 advisory, non-gating, лише де є `misra.py`-addon — apt-build, не conda-forge).
+
+**Конфіг:**
+- **Кастомна Cortex-M4 платформа** `firmware/.cppcheck/stm32wle5.xml`: `char` **unsigned** (Arm EABI; `unix32` хибно дав би signed) → знак-залежні перевірки коректні; ILP32-розміри (long/pointer/wchar_t = 4).
+- **Gating-набір** `warning,performance,portability,style` на `--check-level=exhaustive`. cppcheck пінить ubuntu-24.04 (apt); локально — `conda create -n silken_lint -c conda-forge cppcheck`.
+
+**Suppressions — задокументовані false-positives нашої архітектури, не сховані баги:**
+- **Project-wide** (у runner): `missingInclude`/`missingIncludeSystem` (HAL/CMSIS/mruby-хедери лише в ARM-контексті); `staticFunction` (firmware = один TU `main.c`, host-тести компілюють **витягнуту** логіку → linkage-поради = шум; справжні мертві функції ловить рев'ю + ARM `-Wunused`).
+- **Inline** `// cppcheck-suppress` з причиною на місці: radio `OnRxDone` (= Semtech `RadioEvents_t.RxDone`, ABI-фіксована сигнатура) і HAL weak-symbol callback'и (`HAL_ADC_ConvCpltCallback`: `const`/перейменування зламали б перекриття слабкого символа).
+
+**Scope:** production-код (`firmware/test/` поки не лінтиться — host-scaffolding). Статус + залишок — [`00_07` — FW.48](00_07_Action_Plan_Tracker).
+
 ---
 
 ## 📈 13. EMA (Exponential Moving Average) на Soldier — FW.21 🤖

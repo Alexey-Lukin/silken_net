@@ -582,6 +582,10 @@
 - **P2** · 🤖+👤 · → `03_01 §12.5`
 - FW.46 завендорив CMSIS-DSP/CMSIS_6/mruby як pinned submodules; FW.47 — аудит решти vendor-поверхні + єдина pin-політика ([`03_01 §12.5`](03_01_Firmware_Lifecycle_and_DMA)). · [x] 🤖 інвентар + pin-стратегія ✅ (2026-06-04 — повний інвентар: firmware-native + OpenSSL host-dep + contracts; конвенція `extern/<dep>`@tag) · [x] 👤 рішення per-dep ✅ (FW.47, 2026-06-04): contracts=**npm-keep** (`npm ci`+committed lock відтворювано); firmware-native=**submodule@tag**-конвенція; toolchain-pin=**far-future**. Фізичний вендоринг milestone-gated: mbedTLS → [`00_07` — FW.30](00_07_Action_Plan_Tracker), STM32 HAL → [`00_07` — FW.46](00_07_Action_Plan_Tracker) (`-DSILKEN_WITH_HAL=ON`), CMSIS-NN → [`00_07` — FW.4](00_07_Action_Plan_Tracker) · [x] 🤖 Python conda envs ✅ (2026-06-04): `in_silico` запінено committed `conda-lock.yml` (multi-platform versions+hashes) + CI job `lock_sync` гейтить lock↔`environment.yml` (`--check-input-hash`); `ml` свідомо deferred (parity-self-guards)
 
+#### FW.48 — cppcheck static-analysis gate (enterprise "ruff/rubocop for C")
+- **P2** · 🤖 · → `03_01 §12.6`
+- ✅ (2026-06-06) cppcheck-гейт owned firmware C (`soldier`+`queen`+`common`) — job `firmware_lint` (apt cppcheck, ubuntu-24.04) + єдиний runner `firmware/scripts/cppcheck.sh` (DRY: CI=локаль) + кастомна Cortex-M4 платформа (`char` unsigned). Gating `warning,performance,portability,style` exhaustive. · [x] 🤖 інфра (platform/runner/документовані suppressions) + real-фікси (мертва гілка `(5+uid_len)>2048`, const-correctness, variable-scope) + обґрунтовані inline-suppress (radio RxDone, HAL weak-symbol callback) → gate green + host-тести 0-fail · [ ] 🤖 verify `firmware_lint` зелений у реальному CI-прогоні (як FW.46) · [ ] 🤖 (optional) розширити на `firmware/test/` + MISRA-as-gate. Cross-ref: FW.46, `03_01 §12.6`.
+
 ## §03/§05 · Безпека (Edge crypto + Web3)
 
 #### SEC.1 — Multisig Gnosis Safe для production admin role

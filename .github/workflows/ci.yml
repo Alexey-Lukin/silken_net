@@ -123,6 +123,29 @@ jobs:
           cmake --build firmware/build-host --target test_logmel_cmsis
           ctest --test-dir firmware/build-host --output-on-failure
 
+  firmware_lint:
+    # cppcheck static-analysis gate for the OWNED firmware C (soldier + queen +
+    # common) — the "ruff/rubocop for C". Analog of job `lint` (RuboCop) /
+    # `python_lint` (ruff). Standalone: cppcheck parses the sources directly, no
+    # cross-compile or HAL headers needed (vendored extern/ + .toolchain/ excluded).
+    # Single entry point firmware/scripts/cppcheck.sh — the same command devs run
+    # locally. cppcheck is pinned by the ubuntu-24.04 image (apt); the gating set
+    # is warning+performance+portability+style at --check-level=exhaustive on a
+    # custom Cortex-M4 platform (unsigned char). Justified false-positives are
+    # documented suppressions in the runner + inline `// cppcheck-suppress`.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install cppcheck (apt — version fixed by the ubuntu-24.04 image)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cppcheck
+
+      - name: cppcheck firmware (soldier + queen + common)
+        run: firmware/scripts/cppcheck.sh
+
   scan_ruby:
     runs-on: ubuntu-latest
 

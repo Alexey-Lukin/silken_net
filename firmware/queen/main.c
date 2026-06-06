@@ -191,9 +191,10 @@ static uint8_t Read_Queen_UID_From_Flash(void)
     const uint8_t* byte_ptr = (const uint8_t*)QUEEN_UID_FLASH_ADDR;
     uint8_t uid_len = byte_ptr[4];
 
-    // Validate uid_len is within safe bounds for both the destination buffer
-    // and the Flash provisioning region (2KB page = 2048 bytes, header = 5 bytes).
-    if (uid_len == 0 || uid_len >= QUEEN_UID_MAX_LEN || (5U + uid_len) > 2048U) {
+    // Валідація uid_len: ненульова і в межах буфера призначення. uid_len — uint8_t
+    // (≤255), а QUEEN_UID_MAX_LEN (32) ≪ 2 КБ Flash-сторінки, тож межа буфера
+    // зв'язує першою (попередня перевірка `(5+uid_len)>2048` була завжди-хибною).
+    if (uid_len == 0 || uid_len >= QUEEN_UID_MAX_LEN) {
         const uint32_t* hw_uid = (const uint32_t*)0x1FFF7590UL;
         snprintf(queen_uid, QUEEN_UID_MAX_LEN, "UNPROV-%08lX",
                  (unsigned long)hw_uid[2]);
@@ -397,7 +398,7 @@ static void MX_IWDG_Init(void); // [PLAN 2.6] Independent Watchdog — auto-reco
 /* USER CODE BEGIN PFP */
 // Функції-обгортки для роботи з модемом та транзитом
 void SIM7070_SendATCommand(char* command, uint32_t delay_ms);
-void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi, int8_t snr);
+void Process_And_Cache_Data(uint32_t uid, const uint8_t* payload, int8_t rssi, int8_t snr);
 void Flush_Cache_To_Rails(void);
 // [СИНХРОНІЗОВАНО з Rails]: Обробка вхідних CoAP-команд від сервера
 static uint32_t djb2_hash(const char* str, uint8_t len);
@@ -786,6 +787,9 @@ int main(void)
 // loop встигає обертати CIFO-кеш + CoAP-канал, переповнення фіксується
 // у лічильник (lora_rx_drops), а не мовчазним перезаписом. Так жоден
 // emergency-сигнал не зникає в кенозисі CoAP-flush'у.
+// payload не-const: сигнатуру диктує callback-контракт радіо
+// (Semtech RadioEvents_t.RxDone, uint8_t*) — const зламав би тип реєстрації.
+// cppcheck-suppress constParameterPointer
 void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 {
     // [E.8] SNR більше не відкидається — він плюметься у ринг і використовується
@@ -813,7 +817,7 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 // прийшов через інтерференцію → preferred for eviction. Це покращує якість
 // кешу під час grueling LoRa-collision storms (емерджентний rain-attenuation,
 // сусідні шлюзи на тому ж SF).
-void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi, int8_t snr)
+void Process_And_Cache_Data(uint32_t uid, const uint8_t* payload, int8_t rssi, int8_t snr)
 {
     // 1. ДЕДУПЛІКАЦІЯ: Шукаємо, чи є вже це дерево в кеші
     for(int i = 0; i < CACHE_MAX_ENTRIES; i++) {
@@ -1255,7 +1259,7 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         // ── Гілка актуаторних команд ──────────────────────────────────
 
         // 6. Знаходимо idempotency_token (після 3-ї ':' від позиції +4)
-        char* p = (char*)inner_payload + 4;
+        const char* p = (char*)inner_payload + 4;
         uint16_t scanned = 4;
         uint8_t colons = 0;
         while (scanned < inner_aligned && *p && colons < 3) {
