@@ -86,7 +86,9 @@ Two computed contributions account for it. **Mediator speciation** — the cited
 and the real Os–PVI polymer correspond to the aqua or bis-imidazole complex, not the chloro model used
 to define the cascade — shifts the redox energy by **+0.51 eV (aqua)** and **+0.30 eV (bis-imidazole)**;
 the stronger σ-donor imidazole lowers E°(Os) relative to the weakly-donating aqua ligand, reproducing
-the experimental ordering of osmium-imidazole potentials. **Differential solvation** of the
+the experimental ordering of osmium-imidazole potentials (this aqua > bis-Im > chloro ordering is
+reproduced at the range-separated ωB97X functional — a cross-check confirming the speciation effect is
+not a B3LYP artefact). **Differential solvation** of the
 charge-changing octahedral couple adds a further ~0.20 eV for three explicit chloride-shell waters and
 trends toward the full shell; benchmarked on [Os(H₂O)₆]³⁺/²⁺, where adding the second hydration shell
 shifts the potential by **+0.98 eV**, reproducing the known ~1 V group-8 implicit-solvation error. The

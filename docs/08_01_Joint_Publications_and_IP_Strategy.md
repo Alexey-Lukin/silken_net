@@ -170,7 +170,7 @@ Gaia 2.0 / Silken Net об'єднує сім академічних та інд�
 
 > ⚠️ **Переформульовано (2026-06-05) — чесна рамка замість overclaim.** Стара назва *"Quantum-Chemical **Validation**…"* суперечила власним результатам L3: сирий обчислювальний вердикт каскаду FADH₂→Os — **uphill у кожному методі** (B3LYP Koopmans −0.91 eV; ωB97X ΔSCF adiabatic +0.88 eV), а downhill — це **верифіковані E°s** (+466 мВ: Os +200 − FAD-GDH −266 мВ SHE, Sygmund & Ludwig 2022); стара «−0.07 ≈ −0.14 (Cosnier)» bias-корекція стояла на хибному +60 мВ FAD і **withdrawn**. Тобто обчислення не «валідує» — воно експонує межу методу; «validation» = reviewer-landmine. Переорієнтовано на **механізм + межі методу** (повний аудит — `docs/protocols/ebfc/in_silico/L3_quantum_chemistry.md`). _Історія:_ під Gen 2.0 переписано 2026-05-28 зі старої Gen 1.0 «Streaming Potential» (відкинута); ICP-MS Ti/Al/V → Стаття 2.
 
-**Назва (EN):** _"Computational Electron-Transfer Energetics of a FAD–Osmium Enzymatic Biofuel Cell: PCET Redox Potentials, ZIF-Nanozyme Direct Electron Transfer, and the Limits of Implicit-Solvation DFT"_
+**Назва (EN):** _"Computational Electron-Transfer Energetics of a FAD–Osmium Enzymatic Biofuel Cell: PCET Redox Potentials, Mediator Structure–Activity, ZIF-Nanozyme Direct Electron Transfer, and the Limits of Implicit-Solvation DFT"_
 
 **Тип:** суто обчислювальна (quantum-chemistry) стаття — фізичний експеримент (Ti-coin CV/EIS) попереду (Stage 2) → ставка на **механістичну + методологічну** новизну, не на «валідацію».
 
@@ -182,11 +182,12 @@ Gaia 2.0 / Silken Net об'єднує сім академічних та інд�
 
 **Foreground (сильні, чисті результати — обличчя статті):**
 - **PCET редокс-потенціал FAD** — proton thermodynamic reference відтворює E°(FAD/FADH₂) у межах ~50 mV від експ. free-flavin (значення → `SUMMARY.md`, script 32).
+- **Mediator structure–activity (Hammett LFER ①)** — E°(Os III/II) лінійний у σ_para (нахил ≈ −0.93 eV/σ) → **предиктивне правило дизайну** медіатора; реалістичний оптимум = інертний **SO₂CF₃** (NO₂ деградує на циклюванні). Триангульовано DFT↔Lever↔Hammett (числа → `SUMMARY.md` §Mediator, script 21e).
 - **DET через ZIF-нанозим** — ΔSCF hopping (geom-fixed) + computed Nelsen λ: a λ-sensitive cathode margin — **borderline** at realistic λ (Cu-Co ~turnover, не old ×10⁵) + a low-λ-metal (Ru) design rule (числа → `SUMMARY.md` §Cathode, scripts 23/24/25/35).
 - **Геометрія + through-bond tunneling pathway** анода — глибина залягання FAD < tunneling-межі (L1 + script 28).
 - **Термічна робастність** frontier-орбіталі FAD (MD→DFT ensemble, script 27).
 
-**Чесний методологічний внесок (це новизна, не діра):** каскадна термодинаміка FADH₂→Os сира uphill у всіх методах → характеризуємо ~1 eV **implicit-solvation (PCM) межу** (scripts 29/33 — чисті «negative results» про межі PCM); explicit-water QM/MM (Мінаєв) її закриває. Визнаний жанр (пор. JCTC implicit-solvent redox-benchmarks).
+**Чесний методологічний внесок (це новизна, не діра):** каскадна термодинаміка FADH₂→Os сира uphill у всіх методах → ~1 eV **implicit-solvation (PCM) межу декомпозовано ② (script 34)**: mediator speciation (chloro→aqua +0.51, bis-Im +0.30) + differential solvation (+0.20/3 H₂O; [Os(H₂O)₆] benchmark +0.98) — обидва computed, **functional-robust** (ωB97X cross-check, script 34b). Анодний λ — first-principles (29b: FADH⁻/FADH• couple → λ_i 0.39 eV, rescued the radical-cation-pathological script 29); PCET-каскад (script 33) не flip downhill → теж PCM-межа, не proton-coupling. explicit-water QM/MM (Мінаєв) закриває залишок. Визнаний жанр (пор. JCTC implicit-solvent redox-benchmarks).
 
 **Scope:** L1 (відстань/шлях) + L3 (анод) + L3b (катод DET) + сольватаційна методологія. L2 (MD-стабільність) → Стаття 2; L4 (delta_t/EIS) → Стаття 3 + predictions для майбутнього Ti-coin експерименту.
 

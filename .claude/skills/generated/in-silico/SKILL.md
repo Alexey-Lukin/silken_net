@@ -77,7 +77,8 @@ Bridge:
 - **Spin parity** — odd electrons → odd spin (2S). Auto-detect: `spin = mol.nelectron % 2` as fallback.
 - **PCET with H₃O⁺/PCM** — PCM oversolvates small ions (H₃O⁺ by ~7 eV). Don't use for proton transfer corrections. Need explicit water for meaningful PCET.
 - **FAD in MD topology** — GAFF renames FAD to "UNK", all atoms have "x" suffix. 86 atoms total, 53 heavy. Full FAD has odd electron count — set charge=1 for even.
-- **Os mediator speciation matters (② / script 34)** — chloro vs aqua vs bis-imidazole shifts E°(Os III/II) by ~0.5 eV (cascade Δ −0.91 chloro → −0.61 bis-Im → −0.40 aqua, all computed; stronger σ-donor → lower E° → worse acceptor); the experiment (+200 mV) + real Os-PVI polymer likely measure the **aqua / bis-Im** form, not the chloro complex. The aqua couple is +2/+3 → larger group-8 PCM differential-solvation bias (benchmark [Os(H₂O)₆] n6→n18 +0.98 eV). Decompose the cascade gap into speciation + solvation; don't lump it. No `density_fit` for Os, `level_shift=0.3` for the Os(III) UKS doublet.
+- **Os mediator speciation matters (② / script 34)** — chloro vs aqua vs bis-imidazole shifts E°(Os III/II) by ~0.5 eV (cascade Δ −0.91 chloro → −0.61 bis-Im → −0.40 aqua, all computed; stronger σ-donor → lower E° → worse acceptor); the experiment (+200 mV) + real Os-PVI polymer likely measure the **aqua / bis-Im** form, not the chloro complex. The aqua couple is +2/+3 → larger group-8 PCM differential-solvation bias (benchmark [Os(H₂O)₆] n6→n18 +0.98 eV). Decompose the cascade gap into speciation + solvation; don't lump it. No `density_fit` for Os, `level_shift=0.3` for the Os(III) UKS doublet. **Functional-robust** — ωB97X (34b) reproduces the aqua>bis-Im>chloro ordering.
+- **lo.PM / lo.Boys crash (PySCF `lib.einsum` version bug)** — `ValueError: not enough values to unpack (expected 4, got 3)` in `pipek.py`. For the 2-orbital FO-DFT localisation (24b) skip PySCF `lo` entirely: diagonalise the metal-projected 2×2 Mulliken population matrix in the {i,j} MO basis → rotation `R` → `H_ab` = off-diagonal of `Rᵀ·diag(εᵢ,εⱼ)·R` (Mulliken-Hush diabatisation, pure numpy; F is diagonal = ε in the orthonormal MO basis).
 
 ## MD Gotchas (Hard-Won Lessons)
 
@@ -106,5 +107,9 @@ Verified cascade = **+466 mV / −0.47 eV downhill** (E°(Os +200) − E°(FAD-G
 - **Adding a ligand**: script 0N (parameterize) → add to gaff_cache → SDF to ligands/ → add test → rerun downstream MD
 - **Changing a constant**: `lib/constants.py` ONLY → check which cached JSON uses it
 - **After any change**: `pytest tools/in_silico/tests/` → commit → update all the SSOT docs above
+- **Drift-proof comments/constants** — never hardcode a mirror of another script's result (crude t_ij, single-snapshot β·d, an E°); LOAD it from that script's cache JSON at runtime (24b/28b do this) so it can't silently diverge
+- **Verify a doc value against its cache** — the cache JSON is ground truth; any computed number in SUMMARY/PIPELINE/01_03 must match it (caught SUMMARY §Cathode "Ce 0.87" = the *computed* λ, lit = 1.0)
+- **Script-list One-Home** — README = inventory (what + cost) · SUMMARY = results · PIPELINE_STATUS = per-script status + volatile counts. Update the RIGHT one; never mirror numbers across them (a past drift source: README ↔ SUMMARY both listed scripts)
+- **Don't `git add -A` a still-warm background-compute output** — read + sanity-check it first (physical? expected range? n_valid? ≈ a reference?) before staging
 - **New DFT script**: import from `lib.constants` + `lib.utils` + `lib.dft_utils`. Use `level_shift=0.3` for UKS. No density_fit for heavy metals.
 - **New MD script**: import from `lib.constants` + `lib.geometry` + `lib.utils`. Use 10K pre-relaxation + 10K ramp step + `maxIterations=10000`.
