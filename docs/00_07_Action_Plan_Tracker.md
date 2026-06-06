@@ -201,7 +201,7 @@
 - [x] CHEM.20/26 — bis-Im speciation, cascade Δ −0.609 (aqua>bis-Im>chloro) → `SUMMARY` §Cluster-Continuum
 - [x] CHEM.21 — FADH•-λ rescue → inner-sphere λ_i 0.39 eV → [`L3`](protocols/ebfc/in_silico/L3_quantum_chemistry.md) Nelsen-λ
 - [x] cathode finalize — k_DET borderline (×1.4 lit-λ) → `SUMMARY` §Cathode
-- [ ] CHEM.16 — dynamic-tunneling ⟨k_ET⟩ ensemble: 🤖 scaffold ✅ (28b) but ⚠️ **PBC-limited**: production.dcd wrapped → most frames' protein splits the contact graph (1/15 valid; that frame β·d≈AF3 2.05). Needs trajectory unwrap (mdtraj `make_molecules_whole`) → re-run; single-snapshot 2.05 stands
+- [x] CHEM.16 — dynamic-tunneling ensemble ✅ (28b): MD-ensemble β·d = 2.02 ± 0.13 (15 frames) ≈ AF3 single-snapshot 2.05; conformational-gating 1.03× (modest) → tunnelling path **thermally robust** (validates the static §3.1). PBC fixed via mdtraj `image_molecules` (co-locates the separate FAD cofactor; `make_molecules_whole` alone insufficient) → `SUMMARY`/`L3`
 
 **P1/P2 — Gen 2.1+ candidates (verified, deferred):**
 - [ ] CHEM.11 — aggregation: 4 SASA hotspots ✅ (`L1` §2); next = polar-mut neighbor-SASA
@@ -228,7 +228,7 @@
 ###### 🔬 In-silico pipeline — open computes (script audit 2026-06-06; detail → `PIPELINE_STATUS`)
 > All ~37 `tools/in_silico/scripts/` audited — almost all ✅ (cached). Open work captured here so we never re-audit; closed/superseded = 21 · 21c · 29 (honest limitations-points, not work).
 - [ ] 🔧 🤖 **Active re-run chain:** 24b FO-DFT coupling (CHEM.14, prepped+validated) → **re-run 25** → ③ k_DET rigor (runs once ωB97X frees the CPU)
-- [ ] ⏳ 🤖 **Running / done:** 34b ωB97X ②-speciation robustness (running) · 28b ensemble scaffold ✅ but PBC-limited (CHEM.16, needs trajectory unwrap before meaningful)
+- [ ] ⏳ 🤖 **Running / done:** 34b ωB97X ②-speciation robustness (running) · 28b dynamic-tunnelling ensemble ✅ DONE (CHEM.16, β·d 2.02±0.13 thermally robust; image_molecules PBC fix)
 - [ ] ✨ 🤖 **Refinements (optional, per-script additional analysis):** outer-sphere λ_o (29b → total anode λ) · aqua/bis-Im × substituents + ωB97X for the series (21e) · real ΔG in k_ET (25, currently 0) · Cu/Ce λ refinement (35; B3LYP over-estimates Co spin-crossover) · Os-complex MD ensemble (27, not just FAD) · full hydration shell + COSMO-RS/MACE probe (34) · k_cat sensitivity (30/30b) · ③-borderline R_ct in EIS (31)
 - [ ] 🏔️ 🔗 **Capstones (Мінаєв):** ④ protein QM-cluster E° (extend 32) · CDFT coupling (> 24b, needs PyCDFT) · QM/MM explicit-water cascade
 - [ ] ⏸️ **Deferred → Стаття 2/3 / on-data:** 11 (20–50 ns MD, reviewer-grade equilibration) · 13 (D_eff model; L4 already uses lit 2e-6) · 16 (PE-drift 1%, bigger box) · 40 add docstring + re-run vs Ti-coin CV/EIS when in-vitro data lands

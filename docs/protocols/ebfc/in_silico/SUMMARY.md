@@ -256,6 +256,7 @@ solvation), not a chemistry failure** — strengthens, with computed numbers, th
 FAD:C5B → FAD:O4B → FAD:C4A → FAD:N1A → **ALA261** → **THR260** → **THR283** → **THR288** (surface)
 - 10 atoms, through-bond path 23.7 Å, β·d = 2.05
 - Os mediator at surface can reach FAD via this covalent/H-bond pathway
+- **MD-ensemble (script 28b, CHEM.16):** β·d = **2.02 ± 0.13** over 15 trajectory frames ≈ the single-snapshot 2.05; conformational-gating factor **1.03×** → the path is **thermally robust** (the static structure is ensemble-representative; no significant thermal gating). PBC handled by mdtraj `image_molecules` (co-locates the separate FAD cofactor; `make_molecules_whole` alone insufficient).
 
 Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
 

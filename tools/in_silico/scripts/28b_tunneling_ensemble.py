@@ -19,11 +19,12 @@ by its phosphorus (unique vs the matrix 'UNK' polymers), slice std-AA protein + 
 only (the path runs through the protein, not the matrix/water), and source from the
 isoalloxazine ring (N5 exit), not the ADP tail.
 
-⚠️ WIP / known limitation: the production.dcd is PBC-wrapped, so in most frames the protein is
-split across the periodic box → the contact graph disconnects (artificial >CONTACT_CUT gaps) →
-β·d = NaN. The ensemble is therefore PBC-limited (n=1 here) and INCONCLUSIVE until the trajectory
-is unwrapped (mdtraj make_molecules_whole / image_molecules, or a periodic neighbour search). The
-single-snapshot β·d = 2.05 (script 28, AF3) remains the §3.1 result; this is the ensemble scaffold.
+PBC handling (essential): production.dcd is wrapped, so molecules split across the box → a wrapped
+protein/FAD disconnects the contact graph → β·d = NaN. We call mdtraj **image_molecules** (anchor =
+largest molecule = protein), which BOTH makes the protein whole AND co-locates the FAD cofactor —
+a SEPARATE non-covalent molecule — into the protein's periodic image. `make_molecules_whole` alone
+is NOT sufficient: it makes each molecule whole but leaves the FAD in a different image → still
+disconnected (verified: 1/15 frames). With image_molecules all 15 frames are analysable.
 """
 from __future__ import annotations
 
@@ -124,6 +125,18 @@ def main() -> int:
     print(f"  FAD '{fad_res.name}' (P-residue, {fad_res.n_atoms} atoms); {len(prot_atoms_full)} std-AA protein heavy; kept {len(keep)}")
 
     traj = md.load(str(run / "production.dcd"), top=str(run / "system.pdb"), stride=100)
+    # PBC unwrap — stitch molecules split across the periodic box BEFORE slicing, while the FULL bond
+    # topology is available (a wrapped protein otherwise disconnects the contact graph → NaN). Done on
+    # the full topology so the bond walk is complete; the contact graph then uses plain Euclidean dist.
+    n_bonds = traj.topology.n_bonds
+    try:
+        # image_molecules (not just make_molecules_whole): also co-locates the FAD cofactor — a SEPARATE
+        # non-covalent molecule — into the protein's periodic image (anchor = largest molecule = protein).
+        # make_molecules_whole alone left the FAD whole but in a DIFFERENT image → still disconnected.
+        traj.image_molecules(inplace=True)
+        print(f"  PBC: image_molecules applied ({n_bonds} bonds; anchor = largest molecule = protein)")
+    except Exception as e:
+        print(f"  ⚠️ image_molecules failed ({e}); proceeding with wrapped coords")
     traj = traj.atom_slice(keep)
     frames = np.linspace(0, traj.n_frames - 1, min(N_FRAMES, traj.n_frames), dtype=int)
     print(f"  trajectory {traj.n_frames} frames (stride 100) → analysing {len(frames)} snapshots")
@@ -153,9 +166,9 @@ def main() -> int:
     n_valid, n_total = int(bd.size), len(frames)
     if bd.size == 0:
         sys.exit("no finite pathway in any frame — production.dcd needs PBC-unwrapping (protein split across the box)")
-    # ⚠️ Most frames return NaN because the protein is wrapped across the periodic box → the contact
-    # graph splits into disconnected pieces (artificial >CONTACT_CUT gaps), not real physics. Until the
-    # trajectory is PBC-unwrapped (make_molecules_whole / image_molecules) the ensemble is inconclusive.
+    # safety guard: with image_molecules (above) all frames should be analysable; a high NaN rate here
+    # would mean PBC handling failed (wrapped protein → disconnected graph), so flag it rather than
+    # silently averaging a single survivor.
     pbc_limited = n_valid < n_total / 2
     gating = float(np.mean(np.exp(-2.0 * (bd - bd.mean())))) if n_valid > 1 else 1.0
 
