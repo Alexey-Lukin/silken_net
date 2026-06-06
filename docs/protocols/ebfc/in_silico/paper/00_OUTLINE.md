@@ -46,7 +46,7 @@ problem (autonomous EBFC sensing; ET is the bottleneck) → gap (field models EB
 > Captions drafted in [`03_results.md §Figures`](03_results.md). The two molecular/art figures (Fig 1, Fig 2)
 > are **not** cache-derivable → separate visualisation pass.
 
-- **Fig 1** (graphical abstract): the anode→Os→cathode cascade overlaid on the 3-zone gyroid anchor (metal↔xylem interface). [new art] — ⏳ **pending** (illustration)
+- **Fig 1** (graphical abstract): the anode→Os→cathode cascade overlaid on the 3-zone gyroid anchor (metal↔xylem interface). — 🟡 **code-schematic DRAFT built** (`fig1_graphical_abstract_draft.png` via `fig1_graphical_abstract_draft.py`; layout + both synergies + canon numbers −265/+200/+465) → 👤 BioRender/Illustrator finalize (art); same schematic seeds the **TOC graphic**
 - **Fig 2**: AF3 structure + FAD depth + Beratan-Onuchic tunneling path (resSeq labels). — ✅ **PyMOL cartoon built** (`fig2_structure_path_pymol.png` via `fig2_pymol_cartoon.py`, `pymol_tmp` env); 2D-PCA DRAFT (`fig2_structure_path.png`, via 60, d_FAD 16 Å asserted) kept too — founder picks the final / GUI-polish (label de-overlap); β·d *data* → Fig S1
 - **Fig 3**: (a) MO/Marcus cascade diagram + PCET E°; (b) **① LFER** — E°(Os) & cascade-Δ vs Hammett σ (the design-rule plot). — ✅ **built** (`fig3_cascade_lfer.png`)
 - **Fig 4**: ZIF Cu-Co-Ce hops + k_ET ladder (with computed λ, ③). — ✅ **built** (`fig4_cathode_det.png`)
