@@ -15,7 +15,7 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 |-------|----------|--------|---------|
 | **L1** | Does deglycosylated FAD-GDH fold correctly? | AlphaFold 3 | ✅ d_FAD = 15.998 Å < tunneling 18-20 Å |
 | **L2** | Does the full matrix denature the protein? | OpenMM MD (481k atoms) | ✅ RMSD 1.22 Å (100ps), Rg stable at 10ns |
-| **L3** | Does electron cascade FAD→Os flow downhill? | PySCF DFT (54 atoms) | ✅ Downhill (verified +466 mV); raw DFT uphill = method limit, decomposed by ② |
+| **L3** | Does electron cascade FAD→Os flow downhill? | PySCF DFT (54 atoms) | ✅ Downhill (verified +465 mV); raw DFT uphill = method limit, decomposed by ② |
 | **L3b** | Is DET through ZIF nanozyme fast enough? | PySCF ΔSCF + Marcus | 🟡 borderline — geom-fixed t_ij + realistic λ → Cu-Co bottleneck ~turnover (×1–30), NOT the old ×10⁵ (see §Cathode) |
 | **L4** | Does BASELINE_DELTA_T_S = 60s make physical sense? | Analytical MM+Arrhenius | ✅ Healthy 36s / Stressed 190s |
 
@@ -143,11 +143,11 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 | ε_HOMO(FADH₂) | -5.137 eV |
 | ε_LUMO(Os(III)) | -4.228 eV |
 | Raw Δε | -0.909 eV (UPHILL) |
-| **Verified driving force** | **+466 mV / −0.47 eV (downhill)** |
-| ↳ E°(Os +200) − E°(FAD-GDH −266 mV SHE) | Sygmund & Ludwig 2022 |
+| **Verified driving force** | **+465 mV / −0.47 eV (downhill)** |
+| ↳ E°(Os +200) − E°(FAD-GDH −265 mV SHE) | Schachinger, Ma, Ludwig 2022 |
 | Gap raw-DFT ↔ verified | ~1.3 eV → ② decomposes (speciation +0.51, solvation +0.20) |
 
-**Conclusion:** Raw DFT verdict UPHILL is a **method limit** (mediator speciation + PCM differential solvation), decomposed by ② (§"Cluster-Continuum Micro-Solvation"). The cascade is **experimentally downhill** (+466 mV, verified E°s). The earlier «bias-corrected Δε ≈ −0.07 eV reproduces exp −0.14» was fortuitous cancellation tuned to a mis-valued (+60 mV) FAD potential — **withdrawn**; Cosnier 1999's +140 mV pertains to glucose-oxidase, not GcGDH.
+**Conclusion:** Raw DFT verdict UPHILL is a **method limit** (mediator speciation + PCM differential solvation), decomposed by ② (§"Cluster-Continuum Micro-Solvation"). The cascade is **experimentally downhill** (+465 mV, verified E°s). The earlier «bias-corrected Δε ≈ −0.07 eV reproduces exp −0.14» was fortuitous cancellation tuned to a mis-valued (+60 mV) FAD potential — **withdrawn**; Cosnier 1999's +140 mV pertains to glucose-oxidase, not GcGDH.
 
 ### Publication-grade: ωB97X/def2-TZVP (✅ Complete, 2026-05-27)
 
@@ -167,7 +167,7 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 | B3LYP corrected (−0.07) | −0.07 | withdrawn (tuned to wrong −0.14) |
 | **Experiment (verified E°s)** | **−0.47** | ref |
 
-*vs the verified −0.47 eV (E°(Os) − E°(FAD-GDH −266 mV SHE); the old −0.14 was a +60 mV FAD artifact). Residual ~1.3 eV gap = mediator speciation + PCM differential solvation, decomposed by ② (§"Cluster-Continuum Micro-Solvation").
+*vs the verified −0.47 eV (E°(Os) − E°(FAD-GDH −265 mV SHE); the old −0.14 was a +60 mV FAD artifact). Residual ~1.3 eV gap = mediator speciation + PCM differential solvation, decomposed by ② (§"Cluster-Continuum Micro-Solvation").
 
 ### Mediator Structure–Property Series (① — script 21e, 2026-06-05)
 

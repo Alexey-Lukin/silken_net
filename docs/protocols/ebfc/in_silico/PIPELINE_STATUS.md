@@ -31,7 +31,7 @@
 | 16 | `strain_cycling_md` | pseudoplastic (compress<stretch), PE drift 1.0% | `kinetics/strain_cycling.json` |
 | 20 | `dft_lumiflavin` | HOMO(FADH₂) = -5.14 eV | `dft/lumiflavin.json` |
 | 21b | `dft_os_bpy_full` | LUMO(Os III) = -4.23 eV (π-backbonding) | `dft/os_complex.json` |
-| 21d | `dft_os_bpy_wb97xd` | **Adiabatic ΔSCF +0.884 eV** (uphill — raw DFT; verified cascade +466 mV → SUMMARY) | `dft/os_complex_wb97xd.json` |
+| 21d | `dft_os_bpy_wb97xd` | **Adiabatic ΔSCF +0.884 eV** (uphill — raw DFT; verified cascade +465 mV → SUMMARY) | `dft/os_complex_wb97xd.json` |
 | 21e | `dft_os_mediator_series` | **① Hammett LFER** slope ≈ −0.93 eV/σ; realistic optimum **SO₂CF₃** (cascade −0.227, inert) > NO₂ (degrades on cycling) | `dft/os_mediator_series.json` |
 | 22 | `compare_homo_lumo` | cascade Δε = -0.91 raw (uphill); verified −0.47 eV (→ SUMMARY) | `dft/comparison.json` |
 | 23 | `build_zif_clusters` | 3 ZIF cluster XYZ | `ligands/` |
@@ -109,7 +109,7 @@ Validation:
 |----------|--------|----------|
 | Does the enzyme fold correctly? | ✅ YES | L1: d_FAD = 15.998 Å < tunneling 18-20 Å |
 | Does the matrix denature the protein? | ✅ NO (qualified) | L2 100ps: RMSD 1.11 Å. L2 10ns: RMSD 4.02 Å but **Rg stable** (-0.1%) → conformational relaxation from AF3, not denaturation. Needs 20-50 ns for full equilibration. |
-| Does the electron cascade flow? | ✅ YES (verified) | +466 mV / −0.47 eV downhill (verified E°s); raw DFT uphill = method limit (②) |
+| Does the electron cascade flow? | ✅ YES (verified) | +465 mV / −0.47 eV downhill (verified E°s); raw DFT uphill = method limit (②) |
 | Is cathode DET fast enough? | 🟡 BORDERLINE | L3b geom-fixed t_ij + realistic λ → Cu-Co bottleneck ~turnover (×1–30, NOT the old ×10⁵); SUMMARY §Cathode |
 | Is delta_t physically meaningful? | ✅ YES | L4: healthy 36s, stressed 190s, baseline 60s justified |
 | Can we predict EIS results? | ✅ YES | L4c: Rct=130Ω, Cdl=50µF/cm² |
@@ -128,14 +128,14 @@ Validation:
 | L4b Monte Carlo | ✅ Complete | — |
 | L4c EIS | ✅ Complete | — |
 
-**Verdict: ✅ Ready.** Q1 publication (школа Мінаєва): ωB97X/def2-TZVP adiabatic ΔSCF complete (B3LYP corrected -0.07 eV best estimate); L3b cathode complete (geom-fixed; k_DET borderline at realistic λ — a clean paper finding, motivates Ru/cMOF/enzyme-free); MD→DFT ensemble confirms thermal robustness; PCET via thermodynamic proton reference (script 32) validates the FAD/FADH₂ potential (within 50 mV of free-flavin). Closed limitations (both clean "limitations of implicit solvation" points for the paper): (a) Nelsen λ — script-29 (FADH₂•⁺) radical-cation pathological, **rescued by 29b** (FADH⁻/FADH• couple) → computed inner-sphere λ_i = **0.39 eV**, total ~0.7-0.8 w/ outer-sphere ≈ lit (→ L3 Nelsen-λ row); (b) PCET cascade reframing (script 33) does NOT flip the ΔSCF cascade downhill — the ~1.3 eV gap is mediator speciation + PCM differential-solvation (decomposed by ②, script 34), not proton coupling. **Authoritative cascade verdict = verified E°s (+466 mV / −0.47 eV downhill, Sygmund & Ludwig 2022); raw DFT uphill = quantified method limit (the «−0.07 ≈ −0.14» claim was withdrawn — built on a +60 mV FAD artifact).**
+**Verdict: ✅ Ready.** Q1 publication (школа Мінаєва): ωB97X/def2-TZVP adiabatic ΔSCF complete (B3LYP corrected -0.07 eV best estimate); L3b cathode complete (geom-fixed; k_DET borderline at realistic λ — a clean paper finding, motivates Ru/cMOF/enzyme-free); MD→DFT ensemble confirms thermal robustness; PCET via thermodynamic proton reference (script 32) validates the FAD/FADH₂ potential (within 50 mV of free-flavin). Closed limitations (both clean "limitations of implicit solvation" points for the paper): (a) Nelsen λ — script-29 (FADH₂•⁺) radical-cation pathological, **rescued by 29b** (FADH⁻/FADH• couple) → computed inner-sphere λ_i = **0.39 eV**, total ~0.7-0.8 w/ outer-sphere ≈ lit (→ L3 Nelsen-λ row); (b) PCET cascade reframing (script 33) does NOT flip the ΔSCF cascade downhill — the ~1.3 eV gap is mediator speciation + PCM differential-solvation (decomposed by ②, script 34), not proton coupling. **Authoritative cascade verdict = verified E°s (+465 mV / −0.47 eV downhill, Schachinger, Ma, Ludwig 2022); raw DFT uphill = quantified method limit (the «−0.07 ≈ −0.14» claim was withdrawn — built on a +60 mV FAD artifact).**
 
 ### ✅ Sufficient for Pitch / Investor Meeting?
 
 **Verdict: ✅ YES.** SUMMARY.md has all numbers. Key claims:
 - "EBFC Gen 2.0 validated in silico across 4 levels"
 - "BASELINE_DELTA_T_S = 60s physically justified (Monte Carlo 90% CI: 14-120s)"
-- "Electrode cascade E°(Os) − E°(FAD-GDH) = +466 mV (verified E°s, Sygmund & Ludwig 2022); raw DFT uphill = method limit decomposed by ②"
+- "Electrode cascade E°(Os) − E°(FAD-GDH) = +465 mV (verified E°s, Schachinger, Ma, Ludwig 2022); raw DFT uphill = method limit decomposed by ②"
 - "ZIF cathode DET computed at the electronic-structure level — borderline at realistic λ, with a clear low-λ-metal (Ru) / conductive-MOF improvement path"
 
 ### ✅ Sufficient for Мінаєв Meeting?
@@ -160,7 +160,7 @@ Validation:
 - ✅ ~~Temperature sweep (script 12)~~ — DONE 4/4 temps (263K-313K all stable, ≪3Å)
 - ✅ ~~PSBMA diffusion (script 13)~~ — DONE (model limitation noted)
 - ✅ ~~Xylem sap sweep (script 14)~~ — DONE 6/6 species (pH 4.2-5.8 all stable)
-- ✅ ~~ωB97X DFT (script 21d)~~ — DONE. Koopmans Δε=-5.88 eV (RSH artifact). Adiabatic ΔSCF +0.884 eV (uphill — raw DFT; verified cascade +466 mV → SUMMARY).
+- ✅ ~~ωB97X DFT (script 21d)~~ — DONE. Koopmans Δε=-5.88 eV (RSH artifact). Adiabatic ΔSCF +0.884 eV (uphill — raw DFT; verified cascade +465 mV → SUMMARY).
 - ✅ ~~L3b Co-Ce + Ce-graphene (script 24)~~ — DONE (geom-fixed t_ij; k_DET borderline ×1–30, scripts 24/25/35)
 - ✅ ~~PCET potential + cascade (scripts 32, 33)~~ — DONE (potential -158 mV valid; cascade does not flip — PCM limit)
 

@@ -115,8 +115,8 @@ def fig3() -> None:
              va="bottom", fontsize=7.3, color=C["purple"])
 
     axa.text(0.02, 0.97,
-             "Exp-anchored: +466 mV (−0.47 eV) downhill\n"
-             "[E°(Os)+200 − E°(FAD-GDH)−266 mV vs SHE]\n"
+             "Exp-anchored: +465 mV (−0.47 eV) downhill\n"
+             "[E°(Os)+200 − E°(FAD-GDH)−265 mV vs SHE]\n"
              "raw −0.91 eV = PCM/speciation → Fig 5",
              transform=axa.transAxes, fontsize=6.4, va="top", ha="left",
              bbox={"boxstyle": "round,pad=0.35", "fc": "#eef6ff", "ec": C["blue"], "alpha": 0.92})

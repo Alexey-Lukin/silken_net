@@ -24,7 +24,7 @@
 | B3LYP Koopmans «corrected» | -0.07 | — | **withdrawn** (tuned to the wrong −0.14) |
 | **Experiment (verified E°s)** | **-0.47** | **downhill** | reference |
 
-*The raw uphill ΔG is the implicit-solvation method limit (mediator speciation + PCM differential solvation, Fig 5 / ②); the verified +466 mV / −0.47 eV is E°(Os) +200 − E°(FAD-GDH) −266 mV vs SHE.*
+*The raw uphill ΔG is the implicit-solvation method limit (mediator speciation + PCM differential solvation, Fig 5 / ②); the verified +465 mV / −0.47 eV is E°(Os) +200 − E°(FAD-GDH) −265 mV vs SHE.*
 
 ## Table 3. Cathode DET hops, couplings and reorganisation energies
 

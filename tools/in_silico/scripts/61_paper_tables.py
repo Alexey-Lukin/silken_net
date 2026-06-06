@@ -20,7 +20,7 @@ from lib.constants import DFT_CACHE, PAPER_DIR, REPO_ROOT
 # Canon values that live in SUMMARY prose (not a single cache field) — kept here as
 # explicit constants WITH a source note, and cross-checked against cache where one exists.
 B3LYP_CORRECTED_WITHDRAWN = -0.07     # SUMMARY: tuned to the wrong −0.14 → withdrawn, do NOT cite
-EXP_VERIFIED_EV = -0.47              # E°(Os)+200 − E°(FAD-GDH)−266 mV SHE (Sygmund & Ludwig 2022)
+EXP_VERIFIED_EV = -0.47              # E°(Os)+200 − E°(FAD-GDH)−265 mV SHE (Schachinger, Ma, Ludwig 2022)
 
 
 def _load(name: str) -> dict:
@@ -84,8 +84,8 @@ def main() -> int:
     md.append(f"| B3LYP Koopmans «corrected» | {B3LYP_CORRECTED_WITHDRAWN:+.2f} | — | **withdrawn** (tuned to the wrong −0.14) |")
     md.append(f"| **Experiment (verified E°s)** | **{EXP_VERIFIED_EV:+.2f}** | **downhill** | reference |")
     md.append("\n*The raw uphill ΔG is the implicit-solvation method limit (mediator speciation + PCM "
-              "differential solvation, Fig 5 / ②); the verified +466 mV / −0.47 eV is E°(Os) +200 − "
-              "E°(FAD-GDH) −266 mV vs SHE.*\n")
+              "differential solvation, Fig 5 / ②); the verified +465 mV / −0.47 eV is E°(Os) +200 − "
+              "E°(FAD-GDH) −265 mV vs SHE.*\n")
 
     # ── Table 3 — DET hops + reorganization energies (cathode) ──
     p = {x["label"].split()[0]: x for x in zif["pairs"]}   # "Cu-Co"/"Co-Ce"/"Ce-graphene"
