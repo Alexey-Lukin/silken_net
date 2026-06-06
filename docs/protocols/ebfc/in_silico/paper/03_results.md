@@ -74,10 +74,13 @@ empirical test.
 
 ## 3.5 The cascade and the limits of implicit solvation
 
-The raw computed cascade FADH₂→Os is **uphill in every method** (Koopmans Δε −0.91 eV; adiabatic ΔSCF
-ωB97X +0.88 eV), whereas the experimentally anchored driving force is **downhill, +466 mV / −0.47 eV**
-(from the verified E°s, §3.2 and §3.6). The ~1.3 eV discrepancy is the paper's methodological core, and
-we decompose rather than excuse it.
+The raw computed cascade FADH₂→Os is **unfavourable in every method** — the frontier-orbital alignment
+is inverted (a Koopmans HOMO−LUMO offset of −0.91 eV, the donor level *below* the acceptor) and the
+adiabatic ΔSCF free energy is uphill (+0.88 eV) — whereas the experimentally anchored driving force is
+**downhill** (+466 mV, −0.47 eV; from the verified E°s, §3.2 and §3.6). (The orbital offset and the free
+energy are distinct quantities, so their signs are not directly comparable; both nonetheless point the
+"wrong" way against experiment.) The ~1.3 eV discrepancy between the ΔSCF free energy and the verified
+value is the paper's methodological core, and we decompose rather than excuse it.
 
 Two computed contributions account for it. **Mediator speciation** — the cited experimental potential
 and the real Os–PVI polymer correspond to the aqua or bis-imidazole complex, not the chloro model used
