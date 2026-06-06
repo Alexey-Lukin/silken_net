@@ -90,6 +90,14 @@ EIS predictions). No new information.
 
 ## 4. Mechanics
 
+> **Voice & register (set 2026-06-06, by the founder's delegation):** academic-formal but clear and
+> unfussy — the register of a rigorous methods paper, not a vision essay. Honest and precise: state what
+> the data shows, name limits plainly (the contribution *is* the honest decomposition). **Systems-clarity**
+> (the author's signature): present the EBFC as a chain (anode→mediator→cathode), each result a link, and
+> let the structure carry the argument. Drawn from the author's formal-physics register (the DM-EFT work)
+> + the SilkenNet systems-thinking + the honesty ethos — but the poetic "living-wood / archival-burden"
+> flavour of the *vision* documents stays OUT of journal prose. (Applied in [`03_results.md`](03_results.md).)
+
 - **Tense/voice:** past tense for what you did ("we computed"), present for established facts ("B3LYP
   over-stabilizes…"). First-person plural ("we") is standard and fine.
 - **Figures > prose** for results; each must stand alone (self-contained caption). Aim ~5 figures + ~4
