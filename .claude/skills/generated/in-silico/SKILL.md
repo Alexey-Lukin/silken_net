@@ -46,7 +46,7 @@ L3 DFT anode (CPU):
 
 L3b DFT cathode (CPU):
   23 (ZIF clusters) → 24 (hopping t_ij, 3 pairs) → 25 (k_ET vs λ ③) ← 35 (metal λ, Nelsen 4-pt)
-  24b (FO-DFT two-state coupling) = rigor upgrade of 24's crude t_ij → re-run 25 [CHEM.14, pending CPU]
+  24b (FO-DFT two-state coupling) = rigor upgrade of 24's crude t_ij → re-ran 25 [CHEM.14 ✅: t_ij 0.00546 eV + 0.18 eV site-gap → borderline robust to coupling, ×10⁵ excluded]
 
 L4 Kinetics (CPU, seconds):
   30 (delta_t) → 30b (Monte Carlo) → 31 (EIS) → 40 (validation)
@@ -91,7 +91,7 @@ Bridge:
 
 ## Cascade Verdict Summary
 
-Verified cascade = **+466 mV / −0.47 eV downhill** (E°(Os +200) − E°(FAD-GDH −266 mV SHE), Sygmund & Ludwig 2022). Raw DFT is uphill in every method (numbers → SUMMARY / L3):
+Verified cascade = **+465 mV / −0.47 eV downhill** (E°(Os +200) − E°(FAD-GDH −265 mV SHE), Schachinger, Ma & Ludwig 2022; numbers mirror SUMMARY — edit there). Raw DFT is uphill in every method (numbers → SUMMARY / L3):
 
 | Method | ΔG/e⁻ (eV) | vs verified −0.47 | Use for |
 |--------|-----------|----------------|---------|
