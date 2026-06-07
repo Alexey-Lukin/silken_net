@@ -120,7 +120,7 @@ C₂ = (-√(β(ρ-1)), -√(β(ρ-1)), ρ-1) = (-8.485, -8.485, 27.0)
 >
 > **Чому K_seed замість chaos_seed/DID:** `chaos_seed` (HRNG) недетермінований — backend не зміг би відтворити Z. DID-as-seed (`SilkenNet::Attractor.calculate_z(did, …)`) був public-input → атакер з open-source формулою Лоренца передбачає очікуваний Z для будь-якого дерева. K_seed — **private**, ніколи не залишає пристрій/сервер у відкритому вигляді (HKDF деривується незалежно з `PROVISIONING_MASTER_KEY`). Закриває чотири фундаментальні вади (sniff/correlation/identifier-as-key/forward-secrecy) — див. SEC.11 у [`00_07`](00_07_Action_Plan_Tracker).
 >
-> **[FW.5]** `delta_t_s` та `vcap_mv` визначають β-пертурбацію в обох гілках. Default-значення (`BASELINE_DELTA_T_S=60`, `NOMINAL_VCAP_MV=3300`) роблять β=BASE_BETA при відсутності фізичного сигналу.
+> **[FW.5]** `delta_t_s` та `vcap_mv` визначають β-пертурбацію в обох гілках. Default-значення (`BASELINE_DELTA_T_S=60`, `NOMINAL_VCAP_MV=3300`) роблять β=BASE_BETA при відсутності фізичного сигналу. ⚠️ **`BASELINE_DELTA_T_S=60` — calibration-pending:** L4-валідація 60с — оптимістичний (лаб-стеля) кут; польовий EBFC-derating може зсунути delta_t за 60с-clamp → калібрувати під зміряну медіану перезаряду ([`00_07` — E.63](00_07_Action_Plan_Tracker)).
 >
 > **Інваріант:** після кожного успішного циклу C-код **зобов'язаний** записати нові `(x, y, z)` у DR16/DR17/DR18 і встановити `DR19 = 0x4C5A5354`.
 

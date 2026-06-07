@@ -596,7 +596,7 @@
   - [ ] 🔗 **S2:** RTC-WUT-tick + Vcap-енергогейт → delta_t = справжній час перезаряду (чекає на резолюцію шкали ↓).
   - [ ] 🤖 **S3 docs:** One-Home wake-source (03_01 §1.10 = дім; `02_03 §7` / `02_04 §2` → референси) + ADR + фікс 3-стороннього протиріччя + поріг VBAT_OK (3.4 vs 4.5 В; «built-in 3%» vs програмований).
 - **👤 bench bring-up:** (1) LSE (кварц 32.768 кГц + load-caps + drive) у `SystemClock_Config` + `RCC_RTCCLKSOURCE_LSE`; (2) `MX_RTC_Init`: календар (async 127 / sync 255 → 1 Гц) + WUT + WUT-IRQ як STOP2-wake; (3) верифікувати `Wall_Seconds_Now` + реальний інтервал перезаряду EDLC.
-- **🔴 Відкрите (фізика — Мінаєв/bench):** шкала delta_t — L4/backend/HIL очікують **36-190 с** (BASELINE 60, β-clamp на 60 с), а [`02_03 §9.8`](02_03_BQ25570_MPPT_Nano_Power) енергобюджет дає **1.77 год** (P_gen=15µW). Якщо реальний перезаряд ~1.77 год — β-сигнал мертвий (усе клампиться) навіть після ідеального S1/S2; механізм живий лише при L4-потужності EBFC (сотні µW). Cross-ref: FW.50 (Vcap), FW.20 (beacon UTC), FW.27-B, FW.30 (cold-start epoch).
+- **🔴 Відкрите (фізика — Мінаєв/bench):** шкала delta_t — L4/backend/HIL очікують **36-190 с** (BASELINE 60, β-clamp на 60 с), а [`02_03 §9.8`](02_03_BQ25570_MPPT_Nano_Power) енергобюджет дає **1.77 год** (P_gen=15µW). Якщо реальний перезаряд ~1.77 год — β-сигнал мертвий (усе клампиться) навіть після ідеального S1/S2; механізм живий лише при L4-потужності EBFC (сотні µW). **Калібрування β під реальну шкалу — окремий блокер E.63.** Cross-ref: E.63, FW.50 (Vcap), FW.20 (beacon UTC), FW.27-B, FW.30 (cold-start epoch).
 
 #### FW.50 — Vcap ADC: raw counts використовуються як мВ (без конверсії)
 - **P0** · 👤🤖 · → [`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA)
@@ -703,6 +703,13 @@
 #### E.60 — Merkle CID-witness: Polygon ↔ Filecoin integrity bridge
 - **P1** · 🤖 · → `05_02 §E.60`
 - ✅ (2026-06-03) `Filecoin::CidGenerator` (детермін. CIDv1 raw+sha2-256→base32, golden-vector) + content-CID guard у потоці архівації AuditLog: `ArchiveService` вбудовує самоописовий `content_cid`, `VerificationService` fail-fast при розбіжності (локально vs віддалено) → детект ex-post swap. Закриває archive-swap gap для audit-архіву. · [ ] 🤖 follow-on: per-tree Merkle-witness для телеметрія-батчу (leaf_cid→`archive_root`→`mint(bytes32)`) — потребує `MerkleTree` + колонок на партиційованому `TelemetryLog` (міграція) + Solidity; worker-guard з `manual_review` саме в цьому батч-потоці. Канон `05_02 §E.60`
+
+#### E.63 — delta_t β-калібрування: BASELINE/COEFF під реальну шкалу перезаряду
+- **P1** · 👤+🤖 · → `05_02`
+- **Знахідка (FW.49 фізичний присуд):** L4 (`30_kinetics_delta_t.py`) валідує delta_t=36с лише в **оптимістичному куті** (j_max=494µА/см² лаб-стеля × A=2см² × E_cycle=5мДж → P_ebfc≈140µВт). β клампить `improvement = 60 − delta_t` на 0 → будь-яка delta_t > 60с не дає сигналу. Реалістично: `02_03` енергобюджет P_gen=15µВт (≈10× нижче — in-vivo derating) + E_cycle≈39мДж (повний TX) → delta_t 280-2600с → **β завжди клампиться → метаболічний сигнал мертвий** (навіть Scenario D 30µВт → ~167с). Хардкоднутий `BASELINE_DELTA_T_S=60` майже напевно надто оптимістичний для польового EBFC. Sensitivity: E_cycle≥10мДж АБО j_max≤300µА/см² → вже за clamp. Окремо від FW.49: той робить вимір правильним — це робить його осмисленим.
+- [ ] 👤 bench: реальна P_ebfc (V×j×A під навантаженням) — `HW.13` P-V крива + реальний E_cycle
+- [ ] 🤖 калібрування: `BASELINE_DELTA_T_S` = зміряна медіана перезаряду, `BETA_DELTA_T_COEFF` під діапазон → calibrated per-deployment/species, не хардкод (DCI: `bio_contract.rb` ↔ `SilkenNet::Attractor` синхронно — `03_04`)
+- [ ] 🤖 firmware-левер: мінімізувати E_cycle (Vcap-енергогейт FW.49-S2 → малий ΔE/цикл → delta_t у-смузі). Cross-ref: FW.49, FW.50, HW.13, `01_03` L4, `03_04` β-конст.
 
 ## §06 · Deploy / Observability / Secrets / Ops
 
