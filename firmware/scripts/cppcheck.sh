@@ -40,8 +40,9 @@ cd "$REPO_ROOT"
 CPPCHECK="${CPPCHECK:-cppcheck}"
 PLATFORM="firmware/.cppcheck/stm32wle5.xml"
 
-SOURCES=(firmware/soldier firmware/queen firmware/common)
-INCLUDES=(-I firmware/common -I firmware/soldier -I firmware/queen)
+# sim/ = owned bare-metal C QEMU-ноги (FW.55) — лінтиться нарівні з firmware.
+SOURCES=(firmware/soldier firmware/queen firmware/common firmware/sim)
+INCLUDES=(-I firmware/common -I firmware/soldier -I firmware/queen -I firmware/sim)
 
 EXTRA=()
 RUN_MISRA=0
@@ -69,7 +70,7 @@ ARGS=(
   "${INCLUDES[@]}"
 )
 
-echo "▶ $("$CPPCHECK" --version) — gating soldier + queen + common (Cortex-M4 platform)"
+echo "▶ $("$CPPCHECK" --version) — gating soldier + queen + common + sim (Cortex-M4 platform)"
 "$CPPCHECK" "${ARGS[@]}" "${SOURCES[@]}"
 echo "✅ cppcheck: firmware C clean (no findings at warning/performance/portability/style)"
 

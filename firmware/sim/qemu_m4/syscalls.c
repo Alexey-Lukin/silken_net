@@ -52,7 +52,7 @@ void *_sbrk(int incr)
 {
     static char *brk;
     if (!brk) brk = &end;
-    char *limit = (char *)((uintptr_t)&__stack_top__ - STACK_RESERVE);
+    const char *limit = (const char *)((uintptr_t)&__stack_top__ - STACK_RESERVE);
     if (brk + incr > limit) { errno = ENOMEM; return (void *)-1; }
     char *prev = brk;
     brk += incr;
@@ -64,9 +64,12 @@ void *_sbrk(int incr)
 void _exit(int code)
 {
     (void)code;
-    register uint32_t r0 __asm__("r0") = 0x18u;     /* ReportException  */
-    register uint32_t r1 __asm__("r1") = 0x20026u;  /* ApplicationExit  */
-    __asm__ volatile ("bkpt 0xAB" :: "r"(r0), "r"(r1) : "memory");
+    /* r0 = 0x18 ReportException, r1 = 0x20026 ApplicationExit */
+    __asm__ volatile (
+        "movs r0, #0x18      \n"
+        "ldr  r1, =0x20026   \n"
+        "bkpt 0xAB           \n"
+        ::: "r0", "r1", "memory");
     for (;;) { }
 }
 

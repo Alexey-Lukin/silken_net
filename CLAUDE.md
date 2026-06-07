@@ -252,6 +252,7 @@ uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5)
 - **Observability**: `/metrics` endpoint (custom business-метрики — реєстр + кількість SSOT: `06_03 §2.8`) скрейпиться **Grafana Alloy** sidecar (Akash SDL) → `remote_write` → **Grafana Cloud** (Prometheus storage + dashboards + alerting, SaaS). Self-hosted Prometheus НЕ потрібен (Rails на Akash, не GCP).
 - **Sentry** 6.5.0: налаштований; `SENTRY_DSN` у `.kamal/secrets` (значення задається при деплої).
 - **Pre-flight**: антена ПЕРЕД живленням на SX1262 (згорить без антени). Per-device унікальні AES ключі через HKDF (LoRa AES-128 для Tree+Queen LoRa-сесії, CoAP AES-256 для Queen↔Rails).
+- **Bench-день скриптовано**: `firmware/scripts/bench/RUNBOOK.md` — вичерпний клас C (те, що може відповісти лише кремній) + скрипти `--plan`/`--execute`; метод A/B/C — `docs/00_03 §3.5`; QEMU-M4 parity lane — `docs/03_01 §12.7`.
 
 ---
 

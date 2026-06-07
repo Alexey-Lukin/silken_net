@@ -490,11 +490,11 @@
 
 #### FW.1 — Hardcoded AES-256 Key
 - **P0** · 👤 · → `03_05`, `03_01`
-- ✅ per-device HKDF provisioning + Factory Flashing (раніше: один ключ на всіх → компрометація мережі). · [ ] 👤 RDP Level 2 activation як final step (bench)
+- ✅ per-device HKDF provisioning + Factory Flashing (раніше: один ключ на всіх → компрометація мережі). · [ ] 👤 RDP Level 2 activation як final step (bench — `firmware/scripts/bench/01_option_bytes.sh --rdp 2`, RUNBOOK §1.4)
 
 #### FW.2 — AES-128-ECB → AES-128-CCM (24B packet) [post-ARCH.42]
 - **P0** · 🤖 · → `03_05 §3.2`
-- ✅ дизайн 24B AES-128-CCM + backend парсер + firmware freeze-contract emit/decrypt + host-тести (golden-vector parity з `Cryptography::LoraCcm`/OpenSSL — складання+tamper-семантика, **не** залізна крипта); FC у RTC DR15. **Канонічна FC/nonce/cold-boot політика — `03_05` (📐 КАНОНІЧНЕ ДЖЕРЕЛО), єдине місце.** Cold-boot nonce-унікальність імовірнісна (MEDIUM, ~N/2²⁴); reseed = HRNG retry×3 (кволий tick-fallback прибрано 2026-05-30). Закриває ECB→CCM/MIC/replay (BLOCKER-2/3) + SEC.10 panic + FW.29; узгоджено з ATECC608B Slot 0. · [ ] 🤖 верифікувати `CRYP_AES_CCM` на STM32WLE5JC REVB (RM0461 §27.4, bench) → flip `FW2_CCM_ENABLED`/`TELEMETRY_CCM_ENABLED` — **ЄДИНИЙ HW-залежний пункт** · [ ] 🔗 TRL-7: monotonic FC-counter (Flash high-water / ATECC) для безумовної nonce-унікальності · [x] ✅ DR15 resource-conflict вирішено (2026-05-30): FW.2 тримає DR15, FW.20-S2 bitmap → Flash-KV (`03_01 §2.3`)
+- ✅ дизайн 24B AES-128-CCM + backend парсер + firmware freeze-contract emit/decrypt + host-тести (golden-vector parity з `Cryptography::LoraCcm`/OpenSSL — складання+tamper-семантика, **не** залізна крипта); FC у RTC DR15. **Канонічна FC/nonce/cold-boot політика — `03_05` (📐 КАНОНІЧНЕ ДЖЕРЕЛО), єдине місце.** Cold-boot nonce-унікальність імовірнісна (MEDIUM, ~N/2²⁴); reseed = HRNG retry×3 (кволий tick-fallback прибрано 2026-05-30). Закриває ECB→CCM/MIC/replay (BLOCKER-2/3) + SEC.10 panic + FW.29; узгоджено з ATECC608B Slot 0. · [ ] 🤖 верифікувати `CRYP_AES_CCM` на STM32WLE5JC REVB (RM0461 §27.4, bench — атестація скриптована: RUNBOOK §2 + `02_selftest_attest.py`, PASS = дозвіл flip) → flip `FW2_CCM_ENABLED`/`TELEMETRY_CCM_ENABLED` — **ЄДИНИЙ HW-залежний пункт** · [ ] 🔗 TRL-7: monotonic FC-counter (Flash high-water / ATECC) для безумовної nonce-унікальності · [x] ✅ DR15 resource-conflict вирішено (2026-05-30): FW.2 тримає DR15, FW.20-S2 bitmap → Flash-KV (`03_01 §2.3`)
 
 #### FW.3 — Queen AT Command Blocking
 - **P1** · 🟡 · → `03_02 §4`
@@ -526,7 +526,7 @@
 
 #### FW.20 + FW.20-S2 — Time Sync (Rails ↔ Queen ↔ Soldier)
 - **P2** · 👤+🟡 · → `03_02 §5а` (канон-хаб)
-- TRL-6 P2 (`Derive_Cold_Start_State` ±12год толер.); TRL-7 блокер (ARCH.26 TDMA, HMAC nonce, fire ±1с). ✅ FW.20 1-hop Done; FW.20-S2 4/5 Done. · [ ] 👤 lab drift-test ΔT=±60°C (термокамера, TRL-7) · [ ] 🟡 (4/5) anti-storm dedup bitmap → Flash-KV store (DR15 зайнято FW.2 CCM FC; `03_01 §2.3 ARCH.28`). ⚠️ drift 12год/cooldown 1год/grace 10хв + beacon drift-comp стоять на `HAL_GetTick` (заморожений у STOP2) → wall-clock міграція у FW.49 (S1-wiring). Cross-ref: ARCH.26, FW.30, FW.49, SEC.10/FW.29
+- TRL-6 P2 (`Derive_Cold_Start_State` ±12год толер.); TRL-7 блокер (ARCH.26 TDMA, HMAC nonce, fire ±1с). ✅ FW.20 1-hop Done; FW.20-S2 4/5 Done. · [ ] 👤 lab drift-test ΔT=±60°C (термокамера, TRL-7; скрипт готовий — `04_lse_drift.py`, RUNBOOK §4.3) · [ ] 🟡 (4/5) anti-storm dedup bitmap → Flash-KV store (DR15 зайнято FW.2 CCM FC; `03_01 §2.3 ARCH.28`). ⚠️ drift 12год/cooldown 1год/grace 10хв + beacon drift-comp стоять на `HAL_GetTick` (заморожений у STOP2) → wall-clock міграція у FW.49 (S1-wiring). Cross-ref: ARCH.26, FW.30, FW.49, SEC.10/FW.29
 
 #### FW.21 — Edge data aggregation (RAM-aware Soldier)
 - **P2** · 👤 · → `03_01 §2`, `08_02`
@@ -546,7 +546,7 @@
 
 #### FW.26 — TENSOR_ARENA_SIZE ніколи не верифіковано
 - **P1** · 🤖 · → `03_03 §4.3`, `04_06`
-- ✅ CI gate `make size-check` (host `.bss+.data`<51200B; soldier 2.5K/queen 12.4K). **FW.46:** real `arm-none-eabi-size` активний для owned-коду (logmel ~6.3KB; mruby ~117KB Flash / 0 static RAM — `03_01 §12.4`); повний `.elf` size (з tensor arena) — після HAL-vendoring + моделі. Точний arena невідомий (~16KB оцінка, Path B §3.2 ~15-30KB); >46KB → stack overflow при Lorenz. · [ ] 🤖 повний `.elf` `.bss+.data` після FW.4 модель + `-DSILKEN_WITH_HAL=ON` · [ ] 🤖 якщо >46KB — INT8 quantization/prune
+- ✅ CI gate `make size-check` (host `.bss+.data`<51200B; queen-статики зросли на ~1.9K після FW.56 `coap_pdu_buf` — дзеркало RAM-таблиці: `03_02 §9`). **FW.46:** real `arm-none-eabi-size` активний для owned-коду (logmel ~6.3KB; mruby ~117KB Flash / 0 static RAM — `03_01 §12.4`); повний `.elf` size (з tensor arena) — після HAL-vendoring + моделі. Точний arena невідомий (~16KB оцінка, Path B §3.2 ~15-30KB); >46KB → stack overflow при Lorenz. · [ ] 🤖 повний `.elf` `.bss+.data` після FW.4 модель + `-DSILKEN_WITH_HAL=ON` · [ ] 🤖 якщо >46KB — INT8 quantization/prune
 
 #### FW.27 — OTA broadcast: відсутня RX-верифікація Soldier
 - **P2** · 🔗 · → `03_02 §5`
@@ -576,7 +576,7 @@
 
 #### FW.46 — Enterprise-grade ARM firmware build (committed, reproducible, CI cross-compile)
 - **P1** · 🤖+👤 · → `03_01 §12.4`
-- **Owned-code foundation ✅ (2026-06-04):** відтворюваний CMake-крос-компайл того, що ми володіємо, + CI gate `firmware_arm_build` (перша реальна крос-компіляція main-line firmware C). Повний HAL-`.elf` — окремий 👤-крок (CubeMX поза репо). · [x] 🤖 CMake + `cmake/arm-none-eabi.cmake` (Cortex-M4F, pinned Arm GNU 13.2.Rel1) + pinned submodules CMSIS-DSP/CMSIS_6/mruby (`firmware/extern/`) · [x] 🤖 `logmel.c` крос-компілюється під ARM (`LOGMEL_USE_CMSIS` + CMSIS-DSP), real `arm-none-eabi-size` ~6.3KB · [x] 🤖 **mrbc bytecode** (`bio_contract.rb` → `lorenz_bytecode.h` — був placeholder-stub!) + drift-gate (light `check_bytecode.py` + deep `gen_bytecode.sh --check`) + minimal-VM harness (`run_bytecode_vm.sh` ганяє реальний байткод) · [x] 🤖 host↔target `arm_rfft_fast_f32` packing-parity (`test_logmel_cmsis`, worst Δ 7.6e-6) · [x] 🤖 mruby minimal gembox (double, NO_BOXING) крос-зібрано — ~117KB Flash / 0 RAM (`03_01 §12.4`) · [ ] 👤 STM32 HAL vendoring (CubeMX export) → `-DSILKEN_WITH_HAL=ON` → повний Soldier/Queen `.elf` + bench flash-verify · [ ] 🤖 flip FW.26 на повний `.elf` після HAL · [x] 🤖 verify `firmware_arm_build` зелений ✅ (2026-06-04, CI run 26948600632 — `firmware_arm_build` + `firmware_test` + `firmware_ram_budget` усі success на push ca90fa6; перший fresh-submodule-checkout прогін у CI підтвердив, що CI-only-validated концерн знято) · [ ] 🤖 (optional hardening) пін toolchain у CI через ARM-tarball замість apt (reproducible-build attestation — far-future, `00_08`). Cross-ref: FW.4 (logmel wiring), FW.26 (size), FW.19 (mruby double), FW.47 (submodule audit), SEC.3 (`.bin`).
+- **Owned-code foundation ✅ (2026-06-04):** відтворюваний CMake-крос-компайл того, що ми володіємо, + CI gate `firmware_arm_build` (перша реальна крос-компіляція main-line firmware C). Повний HAL-`.elf` — окремий 👤-крок (CubeMX поза репо). · [x] 🤖 CMake + `cmake/arm-none-eabi.cmake` (Cortex-M4F, pinned Arm GNU 13.2.Rel1) + pinned submodules CMSIS-DSP/CMSIS_6/mruby (`firmware/extern/`) · [x] 🤖 `logmel.c` крос-компілюється під ARM (`LOGMEL_USE_CMSIS` + CMSIS-DSP), real `arm-none-eabi-size` ~6.3KB · [x] 🤖 **mrbc bytecode** (`bio_contract.rb` → `lorenz_bytecode.h` — був placeholder-stub!) + drift-gate (light `check_bytecode.py` + deep `gen_bytecode.sh --check`) + minimal-VM harness (`run_bytecode_vm.sh` ганяє реальний байткод) · [x] 🤖 host↔target `arm_rfft_fast_f32` packing-parity (`test_logmel_cmsis`, worst Δ 7.6e-6) · [x] 🤖 mruby minimal gembox (double, NO_BOXING) крос-зібрано — ~117KB Flash / 0 RAM (`03_01 §12.4`) · [ ] 👤 STM32 HAL vendoring (CubeMX export) → `-DSILKEN_WITH_HAL=ON` → повний Soldier/Queen `.elf` + bench flash-verify · [ ] 🤖 flip FW.26 на повний `.elf` після HAL · [x] 🤖 verify `firmware_arm_build` зелений ✅ (2026-06-04, CI run 26948600632 — `firmware_arm_build` + `firmware_test` + `firmware_ram_budget` усі success на push ca90fa6; перший fresh-submodule-checkout прогін у CI підтвердив, що CI-only-validated концерн знято) · [ ] 🤖 (optional hardening) пін toolchain у CI через ARM-tarball замість apt (reproducible-build attestation — far-future, `00_08`). Cross-ref: FW.4 (logmel wiring), FW.26 (size), FW.19 (mruby double), FW.47 (submodule audit), SEC.3 (`.bin`), FW.55 (QEMU parity реюзає цей ARM-mruby).
 
 #### FW.47 — Repo-wide vendor-via-submodule audit (dependency hygiene)
 - **P2** · 🤖+👤 · → `03_01 §12.5`
@@ -584,7 +584,7 @@
 
 #### FW.48 — cppcheck static-analysis gate (enterprise "ruff/rubocop for C")
 - **P2** · 🤖 · → `03_01 §12.6`
-- ✅ (2026-06-06) cppcheck-гейт owned firmware C (`soldier`+`queen`+`common`) — job `firmware_lint` (apt cppcheck, ubuntu-24.04) + єдиний runner `firmware/scripts/cppcheck.sh` (DRY: CI=локаль) + кастомна Cortex-M4 платформа (`char` unsigned). Gating `warning,performance,portability,style` exhaustive. · [x] 🤖 інфра (platform/runner/документовані suppressions) + real-фікси (мертва гілка `(5+uid_len)>2048`, const-correctness, variable-scope) + обґрунтовані inline-suppress (radio RxDone, HAL weak-symbol callback) → gate green + host-тести 0-fail · [x] 🤖 verify `firmware_lint` зелений ✅ (CI run 27070579139 на push cea7e89 — job `firmware_lint` success) · [x] 🤖 `firmware/test/` досліджено → свідомо НЕ гейтимо (знахідки = const-шум на тест-локалах + навмисні boundary/clamp/overflow-патерни, 0 реальних багів) · [ ] 🤖 (optional, deferred) MISRA-as-gate (apt-addon). Cross-ref: FW.46, `03_01 §12.6`.
+- ✅ (2026-06-06) cppcheck-гейт owned firmware C (`soldier`+`queen`+`common`; **+`sim/` з 2026-06-07** — FW.55 bare-metal нога лінтиться нарівні) — job `firmware_lint` (apt cppcheck, ubuntu-24.04) + єдиний runner `firmware/scripts/cppcheck.sh` (DRY: CI=локаль) + кастомна Cortex-M4 платформа (`char` unsigned). Gating `warning,performance,portability,style` exhaustive. · [x] 🤖 інфра (platform/runner/документовані suppressions) + real-фікси (мертва гілка `(5+uid_len)>2048`, const-correctness, variable-scope) + обґрунтовані inline-suppress (radio RxDone, HAL weak-symbol callback) → gate green + host-тести 0-fail · [x] 🤖 verify `firmware_lint` зелений ✅ (CI run 27070579139 на push cea7e89 — job `firmware_lint` success) · [x] 🤖 `firmware/test/` досліджено → свідомо НЕ гейтимо (знахідки = const-шум на тест-локалах + навмисні boundary/clamp/overflow-патерни, 0 реальних багів) · [ ] 🤖 (optional, deferred) MISRA-as-gate (apt-addon). Cross-ref: FW.46, `03_01 §12.6`.
 
 #### FW.49 — Tick-time ≠ wall-time у STOP2: системна семантика таймерів Soldier
 - **P0** · 👤🤖 · → [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)
@@ -601,7 +601,7 @@
 #### FW.50 — Vcap ADC: raw counts використовуються як мВ (без конверсії)
 - **P0** · 👤🤖 · → [`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA)
 - **Знахідка:** `vcap_voltage = HAL_ADC_GetValue()` (канал VREFINT) — сирий 12-bit відлік (~1500) скрізь трактується як мВ: пакування байтів 4-5, пороги `VCAP_LISTEN_THRESHOLD=2800`/`COLD_TX_DEFER=4000`/`FAUNA=4500` мВ, EMA, `vcap_mv` у mruby. На залізі RX-вікно (>2800) не відкриється ніколи, β-пертурбація з фейкових значень. Плюс: VREFINT міряє VDDA (за buck'ом — константа), НЕ Vcap EDLC; для Vcap потрібен дільник на окремий ADC-канал (hardware, `02_01`/`02_03`).
-- [ ] 👤 схемна вилка: розводка Vcap на окремий ADC-пін (цільовий тракт BQ25570 VBAT_SEC — `02_01 §7.1`; OV/пороги — `02_03`) · [x] 🤖 pure-helper `Adc_Raw_To_Mv()` (VREFINT factory-cal @0x1FFF75AA + дільник-параметр, без запеченого номіналу) + host-тести — `firmware/common/adc_convert.h` (One-Home); жива розводка НЕ ввімкнена (чекає дільника+окремого каналу) · [ ] 👤 bench-калібрування
+- [ ] 👤 схемна вилка: розводка Vcap на окремий ADC-пін (цільовий тракт BQ25570 VBAT_SEC — `02_01 §7.1`; OV/пороги — `02_03`) · [x] 🤖 pure-helper `Adc_Raw_To_Mv()` (VREFINT factory-cal @0x1FFF75AA + дільник-параметр, без запеченого номіналу) + host-тести — `firmware/common/adc_convert.h` (One-Home); жива розводка НЕ ввімкнена (чекає дільника+окремого каналу) · [ ] 👤 bench-калібрування (DMM-точки vs `Adc_Raw_To_Mv` — RUNBOOK §3.4)
 
 #### FW.51 — Queen: телеметрія-батч губиться при провалі CoAP-send
 - **P2** · 🤖 · → [`03_02 §4`](03_02_Queen_Gateway_Firmware)
@@ -666,7 +666,7 @@
 #### SEC.15 — IWDG у STOP2: option byte `IWDG_STOP` обов'язковий при factory flashing
 - **P1** · 👤 · → [`03_05 §3.4г`](03_05_Hardware_Symmetric_Crypto_and_Security)
 - **Знахідка:** IWDG (LSI) за замовчуванням НЕ зупиняється у STOP2; max timeout ~32.7 с (LSI 32k / presc 256 / reload 4095). Будь-який сон довший ≈26-32 с → IWDG-reset посеред STOP2 → втрата SRAM (mruby VM, ota_buffer, warning_counter) кожен цикл + марнування енергії на повний reboot. Лік — option byte **IWDG_STOP=0** (freeze у Stop) при заводській прошивці; у repo/SEC.3 pipeline це ніде не зафіксовано. Дотично: PVD-кома (`HAL_PWR_PVDCallback`) теж спить у STOP2 — без замороженого IWDG «кома» не довша за watchdog-період; а після PVD-wake можливий `HAL_Delay`-hang (tick suspended) → IWDG-reset як фактичний механізм відновлення — задокументувати як свідомий шлях.
-- [ ] 👤 додати `IWDG_STOP` (+ узгодити `IWDG_STDBY`) у SEC.3 factory flashing option-bytes чеклист поруч із RDP (SEC.2) · [ ] 👤 bench-верифікація: сон 1 год без spurious reset
+- [x] 🤖 (2026-06-07) `IWDG_STOP=0` + `IWDG_STDBY=0` у скриптованому option-bytes чеклисті поруч із RDP — `firmware/scripts/bench/01_option_bytes.sh` + RUNBOOK §1.2 · [ ] 👤 застосувати на платі при factory flashing · [ ] 👤 bench-верифікація: сон 1 год без spurious reset (RUNBOOK §4.4)
 
 ## §04 · Backend / API / UI
 
@@ -715,7 +715,7 @@
 #### E.63 — delta_t β-калібрування: BASELINE/COEFF під реальну шкалу перезаряду
 - **P1** · 👤+🤖 · → `05_02`
 - **Знахідка (FW.49 фізичний присуд):** L4 (`30_kinetics_delta_t.py`) валідує delta_t=36с лише в **оптимістичному куті** (j_max=494µА/см² лаб-стеля × A=2см² × E_cycle=5мДж → P_ebfc≈140µВт). β клампить `improvement = 60 − delta_t` на 0 → будь-яка delta_t > 60с не дає сигналу. Реалістично: `02_03` енергобюджет P_gen=15µВт (≈10× нижче — in-vivo derating) + E_cycle≈39мДж (повний TX) → delta_t 280-2600с → **β завжди клампиться → метаболічний сигнал мертвий** (навіть Scenario D 30µВт → ~167с). Хардкоднутий `BASELINE_DELTA_T_S=60` майже напевно надто оптимістичний для польового EBFC. Sensitivity: E_cycle≥10мДж АБО j_max≤300µА/см² → вже за clamp. Окремо від FW.49: той робить вимір правильним — це робить його осмисленим.
-- [ ] 👤 bench: реальна P_ebfc (V×j×A під навантаженням) — `HW.13` P-V крива + реальний E_cycle
+- [ ] 👤 bench: реальна P_ebfc (V×j×A під навантаженням) — `HW.13` P-V крива + реальний E_cycle; вимір скриптовано: `03_power_profile.py --mode cycle|recharge` → CSV (RUNBOOK §3.2-3.3)
 - [ ] 🤖 калібрування: `BASELINE_DELTA_T_S` = зміряна медіана перезаряду, `BETA_DELTA_T_COEFF` під діапазон → calibrated per-deployment/species, не хардкод (DCI: `bio_contract.rb` ↔ `SilkenNet::Attractor` синхронно — `03_04`)
 - [ ] 🤖 firmware-левер: мінімізувати E_cycle (Vcap-енергогейт FW.49-S2 → малий ΔE/цикл → delta_t у-смузі). Cross-ref: FW.49, FW.50, HW.13, `01_03` L4, `03_04` β-конст.
 

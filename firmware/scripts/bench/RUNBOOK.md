@@ -72,6 +72,7 @@
 - **BME280** I2C bring-up + gate-timing (VPD).
 - **Flash-KV на кремнії:** `HAL_FLASH_*` glue + ECCD-політика читання + erase-час vs LoRa RX (`03_01 §2.3` bench-residual).
 - **`Write_OTA_Contract_To_Flash`** — реалізувати тіло (FW.52(г)) до будь-якого OTA-дня.
+- **BQ25570 VBAT_OV** резистори (HW, [`02_03`](../../../docs/02_03_BQ25570_MPPT_Nano_Power.md)): формулу можна звірити аналітично+Monte-Carlo до плати; на bench — DMM-замір порога OV проти 5.5 В EDLC-стелі.
 - **RF:** діаграма/дальність 868 МГц (HW.31 антени), mesh TTL у полі.
 - **П'єзо interrupt-storm поріг** (`03_03 §1.2`) — комп/RC-поріг рішення.
 

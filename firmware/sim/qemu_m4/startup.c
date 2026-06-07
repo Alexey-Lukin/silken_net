@@ -25,6 +25,7 @@ void Reset_Handler(void)
     SCB_CPACR |= (0xFu << 20);
     __asm__ volatile ("dsb; isb" ::: "memory");
 
+    // cppcheck-suppress comparePointers // лінкерні символи — межі ОДНОГО .bss
     for (uint32_t *p = &__bss_start__; p < &__bss_end__; p++) *p = 0u;
     exit(main());
 }
