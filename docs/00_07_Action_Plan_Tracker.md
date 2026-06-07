@@ -550,7 +550,7 @@
 
 #### FW.27 — OTA broadcast: відсутня RX-верифікація Soldier
 - **P2** · 🔗 · → `03_02 §5`
-- ✅ Дизайн B (Magic Re-Request): Soldier bitmap uplink `[0x55]` → Queen targeted re-broadcast (60-90% economy) + 22 host-тести (Soldier у STOP2 пропускає chunk). Дизайн A (ACK-aggregation) — з ARCH.26. · [ ] 🔗 Дизайн A залежить від ARCH.26 (TDMA RX-вікно); B незалежний · ⚠️ re-request «5 хв тиші» (`ota_last_chunk_rx_tick`) на `HAL_GetTick` (мертвий у STOP2 = ~500 wake-циклів) → wall-clock у FW.49
+- ✅ Дизайн B (Magic Re-Request): Soldier bitmap uplink `[0x55]` → Queen targeted re-broadcast (60-90% economy) + 22 host-тести (Soldier у STOP2 пропускає chunk). Дизайн A (ACK-aggregation) — з ARCH.26. · [ ] 🔗 Дизайн A залежить від ARCH.26 (TDMA RX-вікно); B незалежний · ⚠️ re-request «5 хв тиші» (`ota_last_chunk_rx_tick`) на `HAL_GetTick` (мертвий у STOP2 = ~500 wake-циклів) → wall-clock у FW.49 · [x] 🤖 (2026-06-07) anti-storm dedup bitmap має домівку: Flash-KV host-готовий (`03_01 §2.3`) — лишилось wiring bitmap→ключі
 
 #### FW.30 — SEC.11 C-bridge gap: `main.c` mruby виклик не оновлено
 - **P1** · 🔗 · → `03_04`
@@ -609,7 +609,7 @@
 
 #### FW.52 — OTA throughput by-design: 1 RX-пакет/пробудження + give-up без печатки
 - **P2** · 👤 · → [`03_02 §5`](03_02_Queen_Gateway_Firmware)
-- **Знахідка (design-спостереження):** (а) Soldier RX-вікно обробляє МАКСИМУМ один пакет за wake-цикл (усі сценарії → `break`) — OTA на 1024B = ~98 чанків ≈ 98 пробуджень; (б) Queen гасить `ota_is_active=0`, якщо тіло відлунало до прибуття HMAC-печатки (CoAP-порядок не гарантує) — а re-request обслуговується лише при `ota_is_active==1` → мертвий OTA до повторного Rails-push; (в) Soldier шле re-request лише раз на «5 хв» tick-часу (див. FW.49). Разом: дні-тижні на один OTA. Можливо acceptable (energy-first), але рішення має бути СВІДОМИМ.
+- **Знахідка (design-спостереження):** (а) Soldier RX-вікно обробляє МАКСИМУМ один пакет за wake-цикл (усі сценарії → `break`) — OTA на 1024B = ~98 чанків ≈ 98 пробуджень; (б) Queen гасить `ota_is_active=0`, якщо тіло відлунало до прибуття HMAC-печатки (CoAP-порядок не гарантує) — а re-request обслуговується лише при `ota_is_active==1` → мертвий OTA до повторного Rails-push; (в) Soldier шле re-request лише раз на «5 хв» tick-часу (див. FW.49); (г) **(2026-06-07)** `Write_OTA_Contract_To_Flash` — прототип (`soldier/main.c`) + виклик **без тіла** (лише hal_mock-стаб) → лінк упаде при HAL-фазі; реалізувати на flash-примітивах (еразе 126(-127) + dw-program, `03_01 §2.3` патерн). Разом: дні-тижні на один OTA. Можливо acceptable (energy-first), але рішення має бути СВІДОМИМ.
 - [ ] 👤 рішення: прийняти повільний OTA як design або 🤖 re-arm RX у межах вікна при активній OTA-збірці (енергогейт vcap) + Queen: тримати `ota_is_active` до печатки/таймаута
 
 #### FW.53 — OTA wire-contract integrity (CRC32-trailer + явний CoAP len + CRC16-verify)
@@ -619,7 +619,7 @@
 #### FW.54 — STOP2 RTC-only 300nA: SRAM2-off → RAM-стан мусить піти у Flash-KV
 - **P2** · 🤖+👤 · → [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)
 - **Знахідка (FW.49 нора):** цільовий 300nA-режим (`03_01 §1.10`, «наступний firmware-цикл») вимикає SRAM2 retention (`PWR.CR3 RRS=0`, −800nA) → стан переживає STOP2 ТІЛЬКИ в RTC Backup. Але RAM-глобали `soldier_unix_ts` + FW.49 boot/beacon/request wall-маркери (та EMA-runtime, ota_buffer) гинуть щоцикл → drift-watchdog/годинник/EMA ламаються у 300nA-режимі. DR0-DR19 повні (`03_01 §2`) → персист мусить іти у Flash-KV (`03_01 §2.3 ARCH.28` шлях A). Зчеплення: FW.49 ↔ FW.20-S2 ↔ FW.21.
-- [ ] 🤖 інвентар RAM-стану, що мусить пережити SRAM2-off · [ ] 👤 Flash-KV store (§2.3 шлях A) АБО свідомий trade-off SRAM2-retain (−800nA vs Flash-wear) · [ ] 👤 bench: вимір 300nA + persist-roundtrip
+- [x] 🤖 (2026-06-07) **Flash-KV store імплементовано host-first** (`03_01 §2.3` шлях A: `firmware/common/flash_kv.{h,c}` — ECC-атомарний dw-елемент, ping-pong FINI-останнім, power-cut тести `test_flash_kv.c`; сторінки 122-123, wear-бюджет зчеплено з E.63) — софт-половина FW.54 знята · [ ] 🤖 інвентар RAM-стану, що мусить пережити SRAM2-off → мапа key→поле · [ ] 👤 рішення: Flash-KV persist КОЖНОГО циклу vs SRAM2-retain (−800nA vs wear — числа у `03_01 §2.3`) · [ ] 👤 bench: HAL_FLASH glue + ECCD-політика + вимір 300nA + persist-roundtrip
 
 #### FW.55 — QEMU-M4 bit-parity lane: ARM↔x86 mruby double residual → CI
 - **P1** · 🤖 · → `03_01 §12`
