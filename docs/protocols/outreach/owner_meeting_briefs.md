@@ -1,90 +1,54 @@
 # Owner Meeting Briefs — ЧНУ (Онищенко / Кафедра ІВ)
 
-> **Що це:** робочі **one-pager'и підготовки до зустрічей** — щоб 👤 зайшов у розмову з готовим
-> контекстом, asks і mateріалами. Два пріоритетні контакти ЧНУ: декан ФОТІУС Онищенко (UNI.1) та
-> Кафедра ІВ (UNI.16 + patent rights UNI.3).
-> **Статус:** 🟡 робочий артефакт (не канон). Ролі/дати/треки — **дзеркало** `08_02` (ростер) + `00_07`
-> (UNI.*); правити у домі (One-Home, `00_06 §2`).
-> **Cross-ref:** [`08_02 §1B`](../../08_02_Academic_Institutions_Registry.md) (ФОТІУС-ростер — owner) ·
-> [`08_01 §1`](../../08_01_Joint_Publications_and_IP_Strategy.md) (план публікацій) ·
-> [`08_01 §2.1`](../../08_01_Joint_Publications_and_IP_Strategy.md) (TISC/Кафедра-ІВ engagement — owner) ·
-> [`00_07`](../../00_07_Action_Plan_Tracker.md) UNI.1/2/15/16 + UNI.3 ·
-> [`patent_filing_readiness.md`](../anchor/patent_filing_readiness.md) (для брифу Кафедри ІВ).
+> **Що це:** робочі **one-pager'и підготовки до зустрічей** — тонкий **meeting-prep шар**, що
+> **СКЛАДАЄ за посиланнями** розпорошений канон + додає лише **meeting-specific** (asks, framing,
+> наступний крок). **НЕ дублює** ростер/план — їх дім нижче.
+> **Статус:** 🟡 робочий артефакт (не канон).
+> 🛑 **One-Home (`00_06 §2`):** substance живе в каноні, цей бриф лише реферить —
+> ростер ФОТІУС → [`08_02 §1B`](../../08_02_Academic_Institutions_Registry.md) ·
+> план публікацій / Стаття 5 → [`08_01 §1`](../../08_01_Joint_Publications_and_IP_Strategy.md) ·
+> engagement TISC/Кафедра-ІВ (предметний перелік) → [`08_01 §2.1`](../../08_01_Joint_Publications_and_IP_Strategy.md) ·
+> дії → [`00_07`](../../00_07_Action_Plan_Tracker.md) UNI.1/2/15/16 + UNI.3 ·
+> patent → [`patent_filing_readiness.md`](../anchor/patent_filing_readiness.md).
 
 ---
 
-## Спільний контекст (обидві зустрічі)
+## Спільний контекст
 
-**Статус ЧНУ (дзеркало `08_02`):** ректорські зустрічі проведено (Кирилюк 6.05, Спрягайло 8.05.2026),
-**парасольовий MoU ще не підписаний**, очікується рішення. **Один підпис в.о. ректора Кирилюка
-розблоковує** ICP-MS/EIS/SEM-лабораторії + грантові заявки (`08_02 §1`). Обидві зустрічі нижче —
-**auxiliary** під цим MoU (UNI.15 TISC + UNI.16 Кафедра-ІВ обидва 🔗 UNI.1).
-
-**Перевага входу:** Архітектор — **випускник ФОТІУС 2011 (ПЗАС)** → теплий контакт, не cold-outreach.
+**Статус ЧНУ** (→ `08_02` Статус): ректорські зустрічі проведено, **парасольовий MoU ще не
+підписаний** — один підпис в.о. ректора Кирилюка розблоковує лабораторії + грантові заявки. Обидві
+зустрічі нижче — **auxiliary** під цим MoU (UNI.15 + UNI.16 обидва 🔗 UNI.1). **Перевага входу:**
+Архітектор — випускник ФОТІУС (`08_02 §1`), теплий контакт.
 
 ---
 
 ## Бриф 1 — Онищенко Б.О., декан ФОТІУС (UNI.1 · 🔴 P0)
 
-**Хто:** декан ФОТІУС; фах — **стохастична оптимізація, паралельні алгоритми** (`08_02 §1B`). Його
-власний валід-трек: Stochastic B&B mesh-надійність ([`06_08`](../../06_08_Resilience_and_Failover_Policy.md)),
-мінорантні методи on-MCU ([`03_03`](../../03_03_TinyML_Acoustic_Inference.md)), Petri+Akash
-([`06_02`](../../06_02_Akash_Network_Integration.md)) → **Стаття 5**.
-
-**Чому ця зустріч критична:** UNI.1 **блокує всю лаб-роботу, 10 публікацій і 11 магістерських** —
-це P0-гейт факультетського залучення. Онищенко — ворота до 8 викладачів ФОТІУС (UNI.2) і до
-«фабрики магістерських» (`08_01 §3`).
-
-**Що принести:**
-- Список **8 зустрічей ФОТІУС** (UNI.2): Супруненко (Petri-верифікація) · Ярмілко (Embedded/ECDH) ·
-  **Порубльов** (mesh percolation/Markov — `06_08` Open Research) · Косенюк (RF/FEC) · Бушин (CNN/DMLS) ·
-  Осауленко (portfolio) · Любченко (GA/NN backend-ML) · сам Онищенко (stochastic B&B).
-- Реєстр **магістерських тем** (Gaia 2.0 як полігон — `08_01 §3`).
-- Чернетку **Статті 5** (його трек) — як конкретний co-author hook.
-
-**Що просити (asks):**
-1. Підтримати/прискорити **парасольовий MoU** (Кирилюк) — він знімає лаб + гранти.
-2. Greenlight на **раунд зустрічей ФОТІУС** (UNI.2).
-3. Прийняти Gaia 2.0 як **офіційний полігон магістерських** факультету.
-4. Співавторство **Статті 5** (mesh-надійність).
-
-**Наступний крок:** 👤 призначити+провести зустріч (UNI.1) → розблоковує UNI.2 + публікації + теми.
+- **Хто / трек:** декан ФОТІУС; профіль + валід-трек + Стаття 5 — **owner [`08_02 §1B`](../../08_02_Academic_Institutions_Registry.md)** (не дублюю).
+- **Чому критично** (→ UNI.1): зустріч **блокує всю лаб-роботу + 10 публікацій + 11 магістерських**; Онищенко — ворота до раунду ФОТІУС і фабрики магістерських.
+- **Що принести** (усе за реф): ростер 8 викладачів ФОТІУС → [`08_02 §1B`](../../08_02_Academic_Institutions_Registry.md) + UNI.2 · магістерські теми → [`08_01 §3`](../../08_01_Joint_Publications_and_IP_Strategy.md) · чернетка Статті 5 → [`08_01 §1`](../../08_01_Joint_Publications_and_IP_Strategy.md).
+- **Asks (meeting-specific):** 1) прискорити **парасольовий MoU** (Кирилюк); 2) greenlight **раунд зустрічей ФОТІУС** (UNI.2); 3) Gaia 2.0 як **офіційний полігон магістерських**; 4) **співавторство Статті 5**.
+- **Next:** 👤 призначити+провести зустріч (UNI.1) → розблоковує UNI.2 + публікації + теми.
 
 ---
 
-## Бриф 2 — ЧНУ Кафедра ІВ та цивільно-правових дисциплін (UNI.16 + patent rights UNI.3 · P1, на критичному шляху патенту)
+## Бриф 2 — ЧНУ Кафедра ІВ (UNI.16 + patent rights UNI.3 · P1, на критичному шляху патенту)
 
-**Хто:** Кафедра інтелектуальної власності ЧНУ — **точковий UA-юрисдикційний** review (СЄУ §1F дає
-макро; тут — UA-юр-конкретика, `08_01 §2.1.2`).
-
-**Чому ця зустріч важлива:** окрім юр-review, кафедра тримає **patent IP rights split** (UNI.3) —
-а це **критичний шлях Статті 1** (embargo: filing перед сабмітом — [`patent_filing_readiness.md`](../anchor/patent_filing_readiness.md) §1).
-
-**Що принести:**
-- **Patent filing-readiness packet** ([`patent_filing_readiness.md`](../anchor/patent_filing_readiness.md)) — для рішення §6.4 (розподіл прав) + §6.6 (скелет TISC-MoU).
-- Канон токеноміки ([`05_03`](../../05_03_Tokenomics_SCC_and_SFC.md)) + NaaS ([`07_01`](../../07_01_Nature_as_a_Service_Contracts.md)) + `bio_contract.rb`/`Attractor` (об'єкт авт. права).
-
-**Що просити (asks) — ціль: 2 меморандуми + IP-рішення:**
-1. **Меморандум RWA:** ERC-3643 токенізація UA-лісу vs **Лісовий Кодекс / ПЗФ** → розблоковує
-   [`07_01`](../../07_01_Nature_as_a_Service_Contracts.md) BLOCKER-6.
-2. **Меморандум SCC/SFC:** класифікація за **ЗУ «Про віртуальні активи» 2022 + MiCA 2024** (utility vs
-   security; KYC для UA-резидентів; `dynamic_tax` × UA tax) — workshop з **Аблязовим** (UA×MiCA).
-3. **NaaS** як sui generis у UA Civil Code; **авторське право** на `bio_contract.rb`/`Attractor`.
-4. **Patent IP rights split** (UNI.3 · packet §6.4): joint ЧНУ vs 100% SilkenNet — **до подачі**;
-   координація з **TISC** (UNI.15) щодо auxiliary MoU + повіреного.
-
-**Наступний крок:** 👤 контакт зав. кафедри + workshop Аблязов → 2 меморандуми + rights-split рішення
-(розблоковує і `07_01` BLOCKER-6, і подачу патенту → Статтю 1).
+- **Хто / предмет:** Кафедра ІВ ЧНУ — точковий UA-юр-review; предметний перелік (RWA / SCC-SFC / NaaS / авт. право `bio_contract.rb`) — **owner [`08_01 §2.1.2`](../../08_01_Joint_Publications_and_IP_Strategy.md)** + UNI.16 (не дублюю).
+- **Чому важливо:** тримає **patent IP rights split** (UNI.3) = критичний шлях Статті 1 (embargo — [`patent_filing_readiness.md`](../anchor/patent_filing_readiness.md) §1).
+- **Що принести (meeting-specific):** **patent packet** [`patent_filing_readiness.md`](../anchor/patent_filing_readiness.md) — для рішення §6.4 (розподіл прав) + §6.6 (скелет TISC-MoU).
+- **Asks (meeting-specific):** ціль **2 меморандуми** (RWA → розблок [`07_01`](../../07_01_Nature_as_a_Service_Contracts.md) BLOCKER-6 · SCC-класифікація) + NaaS/copyright [перелік → `08_01 §2.1.2`] · **patent rights-split рішення** (packet §6.4, до подачі) + координація **TISC** (UNI.15) · workshop **Аблязов** (UA×MiCA).
+- **Next:** 👤 контакт зав. кафедри + workshop → меморандуми + rights-split (розблок `07_01` BLOCKER-6 і подачу патенту).
 
 ---
 
 ## Cross-references
 
-| Ресурс | Що бере |
+| Ресурс | Роль (owner / реф) |
 |---|---|
-| [`08_02 §1B`](../../08_02_Academic_Institutions_Registry.md) | **owner** ростера ФОТІУС (Онищенко роль/трек) |
-| [`08_01 §1`](../../08_01_Joint_Publications_and_IP_Strategy.md) | план публікацій ЧНУ (Статті) + фабрика магістерських (§3) |
-| [`08_01 §2.1`](../../08_01_Joint_Publications_and_IP_Strategy.md) | **owner** engagement-послідовності TISC + Кафедра-ІВ |
-| [`00_07`](../../00_07_Action_Plan_Tracker.md) | UNI.1 (Онищенко) · UNI.2 (8 викл.) · UNI.15 (TISC) · UNI.16 (Кафедра-ІВ) · UNI.3 (patent) |
-| [`patent_filing_readiness.md`](../anchor/patent_filing_readiness.md) | rights-split (§6.4) + TISC-MoU скелет (§6.6) для брифу 2 |
-| [`07_01`](../../07_01_Nature_as_a_Service_Contracts.md) · [`05_03`](../../05_03_Tokenomics_SCC_and_SFC.md) | RWA/NaaS + токеноміка — предмет меморандумів |
+| [`08_02 §1B`](../../08_02_Academic_Institutions_Registry.md) | **owner** ростера ФОТІУС (Онищенко + 8 викл.) — бриф реферить |
+| [`08_01 §1`](../../08_01_Joint_Publications_and_IP_Strategy.md) | **owner** плану публікацій (Стаття 5) + фабрики магістерських (§3) |
+| [`08_01 §2.1`](../../08_01_Joint_Publications_and_IP_Strategy.md) | **owner** engagement TISC + Кафедра-ІВ (предметний перелік) |
+| [`00_07`](../../00_07_Action_Plan_Tracker.md) | дії: UNI.1/2/15/16 + UNI.3 |
+| [`patent_filing_readiness.md`](../anchor/patent_filing_readiness.md) | rights-split (§6.4) + TISC-MoU скелет (§6.6) |
+| [`07_01`](../../07_01_Nature_as_a_Service_Contracts.md) | RWA/NaaS — предмет меморандумів |
