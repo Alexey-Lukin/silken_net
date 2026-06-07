@@ -641,7 +641,7 @@ __HAL_RCC_CRYP_CLK_ENABLE();
 HAL_CRYP_Init(&hcryp);
 ```
 
-**Trade-off RTC-only vs SRAM2 retention:** При SRAM2 OFF втрачається весь runtime-стан (mesh routing cache, EMA, OTA chunk buffer). Усе, що має пережити STOP2, **повинно бути у RTC Backup** (§2 канонічна таблиця DR0-DR19). Перевага: економія ~800 nA × 3.3V × 3600s × η_buck(0.5) = 19 мДж/год → дозволяє +1 TX cycle на 2 години.
+**Trade-off RTC-only vs SRAM2 retention:** При SRAM2 OFF втрачається лише runtime-стан у **SRAM** — НЕ те, що в RTC Backup Domain. Виживає увесь DR0..DR19 (mesh-кеш `recent_mesh_dids`, EMA, Lorenz-стан, TinyML-пороги — §2 канонічна таблиця). Втрачається: OTA-буфер збирання, RAM-only лічильники (`warning_counter` ескалації TinyML тощо), scratch RX/TX/audio. Повний інвентар трьох груп + key→поле map того, що рятувати — §2.3.1. Усе, що має пережити STOP2 і **не** влазить у RTC (повний), іде у Flash-KV (§2.3). Перевага: економія ~800 nA × 3.3V × 3600s × η_buck(0.5) = 19 мДж/год → дозволяє +1 TX cycle на 2 години.
 
 **Джерела пробудження (📐 КАНОН wake-source — FW.49):**
 - **RTC WUT** (періодичний fine-tick, LSE йде у STOP2) — ОСНОВНИЙ wake. Вузол прокидається за розкладом, перевіряє Vcap-енергогейт ([FW.50](00_07_Action_Plan_Tracker)) і робить повний sense→Lorenz→TX цикл лише при достатньому перезаряді; інакше — назад у STOP2. `delta_t` = wall-різниця між energy-sufficient циклами через `Wall_Seconds_Now()` (RTC-календар), а НЕ active-tick.
@@ -730,7 +730,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 ### 2.2 Procedure для додавання нової RTC Backup фічі [ARCH.28]
 
-> **Кенозис інженерії:** перш ніж претендувати на регістр — перевір, чи можна щільніше упакувати існуючий. STM32WLE5JC має ЛИШЕ 20 backup-регістрів (`DR0..DR19`); після `[FW.18]` + `[SEC.10]` + `[FW.2]` (DR15 → CCM Frame Counter, freeze-contract) **вільних регістрів не лишилось**. Реальні приклади того, як ми відмовилися від нового регістра на користь packing'у:
+> **Кенозис інженерії:** перш ніж претендувати на регістр — перевір, чи можна щільніше упакувати існуючий, або **звільнити** під-використаний/mis-allocated DR (§2.3.2 reclamation menu — ширина/частота-запису/durability-клас). STM32WLE5JC має ЛИШЕ 20 backup-регістрів (`DR0..DR19`); після `[FW.18]` + `[SEC.10]` + `[FW.2]` (DR15 → CCM Frame Counter, freeze-contract) **вільних регістрів не лишилось**. Реальні приклади того, як ми відмовилися від нового регістра на користь packing'у:
 >
 > - **`[SEC.10]` panic frame counter (uint16) → DR0[31:16]** — спакували поряд з `acoustic_events` у DR0[7:0]. Без packing'у пішов би DR15, і ми залишилися б без жодного резерву.
 > - **`[FW.21]` EMA `ema_vcap_x10` (max 55000 ≤ 2¹⁶) → DR12[15:0]** — спакували разом з `valid:8 | count:8`. Це звільнило DR11 під 3-й слот anti-pingpong (без packing'у `MESH_DID_CACHE_SIZE` упав би з 3 до 2).
@@ -759,7 +759,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 ### 2.3 Overflow strategy: Flash-based KV store [ARCH.28]
 
-> **DR15 вже зайнято (FW.2 CCM Frame Counter, freeze-contract):** наступна фіча, що потребує RTC-resident state з переживанням VBAT-loss, не отримає регістра. Нижче три шляхи; **шлях A — ✅ host-імплементовано (2026-06-07)**, бо на нього вже маршрутизовано три споживачі (FW.54 wall-маркери/EMA, FW.20-S2 bitmap, FW.49).
+> **DR15 вже зайнято (FW.2 CCM Frame Counter, freeze-contract):** наступна фіча, що потребує RTC-resident state з переживанням VBAT-loss, не отримає **нового** регістра — але спершу зваж **реклемацію** під-використаного/mis-allocated DR (**§2.3.2**: часто дешевше за Flash-wear). Якщо реклемація не підходить — нижче три Flash-шляхи; **шлях A — ✅ host-імплементовано (2026-06-07)**, бо на нього вже маршрутизовано три споживачі (FW.54 wall-маркери/EMA, FW.20-S2 bitmap, FW.49).
 
 > **✅ Шлях A — імплементація (host-first):** `firmware/common/flash_kv.{h,c}` + power-cut тести `firmware/test/test_flash_kv.c` (`make -C firmware/test flash_kv`). Дизайн AN4894-патерну під ECC WLE5: **елемент = один doubleword** `[value:32][key:8][flags:8][crc16:16]` (програмування dw атомарне щодо ECC → «порваного» запису не існує), append-only «останній виграє», дві сторінки ping-pong із заголовками `SKV1|seq` + `FINI|seq` — **FINI програмиться останнім**, тож power-cut посеред compact лишає стару сторінку авторитетною (інваріанти I1-I3 у `flash_kv.c`, кожен доведений fault-injection тестом). Compact пропускає erase уже-чистої цілі (wear ÷2 у steady-state). Залізні примітиви ізольовано у `FlashKvOps` — host підставляє RAM-мок, MCU підставить `HAL_FLASH_Program/Erase` при HAL-фазі.
 >
@@ -776,6 +776,59 @@ RTC Backup Domain не скидається при STOP2 та більшості
 | **C. Bit-перепакування** | Перейти на 16-бітні розрядні поля для тих uint32, що використовують реально <2¹⁶ діапазон (наприклад, `last_wakeup_timestamp` секунди від boot, рідко >18 год = 65 К секунд). | Нульова BOM-вартість, нульова latency. | Ризикує overflow'ом при патологічних сценаріях (вузол прокинувся у режимі OTA на >18 год, потрапив у IWDG storm, тощо). Складніше debug'ити. | Останній крок перед Flash-KV: коли packing може дати +1-2 регістри на дешеві поля. |
 
 **Рекомендований порядок при наступній витрати DR15:** (1) спершу аудит packing'у (§2.2 крок 2) → (2) шлях C якщо є кандидати → (3) шлях A для рідко-оновлюваних → (4) шлях B якщо ATECC608B вже на платі. Ніколи не дублювати дані між RTC і Flash «про всяк випадок» — це джерело розсинхронізації.
+
+#### 2.3.1 FW.54 RAM-state inventory — що пережити SRAM2-off (key→поле map)
+
+> **Передумова.** У цільовому RTC-only режимі (§1.10, 300 нА) **RTC Backup Domain (DR0..DR19) виживає** — це його суть. Втрачається лише runtime-стан у SRAM. Тому інвентар ділить увесь file-scope стан `firmware/soldier/main.c` на три групи; у Flash-KV їде **лише** група C (RTC повний — §2).
+
+**Група A — RTC-resident (вже безпечне, нічого не робимо).** Усе, що Phase 5 (Кенозис) пише у DR0..DR19: panic/acoustic, `last_wakeup_timestamp`, mesh-relay payload+flag, `recent_mesh_dids` (mesh-кеш!), EMA (`ema_*`), Lorenz `(x,y,z)`+magic, TinyML-пороги, `tree_did`, FW.2 Frame Counter. Точна розкладка — §2 (не дублюємо). Виживає у RTC-only без жодних змін.
+
+**Група B — ефемерне (per-wake, втрата НЕ важлива).** Scratch-буфери, що наповнюються щоциклу до використання й не несуть сенсу між пробудженнями: `raw_audio_buffer`/`audio_buffer` (DMA), `lora_payload`/`encrypted_payload` (TX), `incoming_lora_payload`/`decrypted_rx_payload` (RX), ISR-прапорці (`vibration_detected`, `audio_ready`, `lora_rx_flag`), `ml_event_id`/`ml_confidence`, `delta_t_seconds` (рахується щоциклу), `current_lorenz_bytecode` (вказівник, ставиться на boot), `g_node_role`/`lorenz_seed[]` (читаються з Protected Flash на boot — §1.11/SEC.11). Персистити нічого.
+
+**Група C — must-survive, але RAM-only → Flash-KV ключі.** Стан, що мусить нести значення **між** циклами, але якому нема місця у RTC (DR0..DR19 повні):
+
+| Ключ | Поле(я) | Пакування (u32) | Споживач | Статус |
+|------|---------|-----------------|----------|--------|
+| `0x01` WARN_ESC | `warning_counter` · `tinyml_threshold_invalid_count` · `fauna_skipped_low_vcap` | `[warn:8 \| inval:8 \| fauna:8 \| rsv:8]` | TinyML escalation (3× WARNING поспіль — [`03_03 §5`](03_03_TinyML_Acoustic_Inference)) + діагностика | **live** |
+| `0x02` SYNC_WALL | `last_sync_request` (wall-сек) | u32 | FW.20-S2 sync-cooldown | live (degradable) |
+| `0x03` OTA_SILENCE_WALL | `ota_last_chunk_rx` (wall-сек) | u32 | FW.27-B OTA re-request silence | live (лише під OTA) |
+| `0x10`–`0x11` FW8_ZCFG | `lorenz_z_{min,max,opt}_x100` · `species_id` · `config_version` | 2 dw | FW.8 per-tree Z-пороги | gated (`FW8_PARSER_ENABLED=0`) |
+| `0x12` FW8_AUDIO | audio config + version | u32 | FW.8 audio-пороги | gated |
+| `0x20…` S2_BITMAP | anti-storm dedup bitmap | multi-dw | FW.20-S2 mesh-relay | gated (повний mesh-relay) |
+
+> **Головний wall-маркер delta_t — НЕ Flash-KV ключ.** «Wall-секунди останнього energy-sufficient циклу» (база `Silken_Wall_Delta_Seconds`, `firmware/common/wall_time.h`) переселяє **семантику** `last_wakeup_timestamp` (DR1: tick-сек → wall-сек) — реюз наявного RTC-регістру, а не нова Flash-фіча. Тож FW.49 timebase **не** додає Flash-write/цикл; у Flash-KV їдуть лише вторинні маркери (`0x02`/`0x03`), що деградують м'яко (втрата → м'який re-ask після grace).
+
+**K (елементів/пробудження) + звірка wear-бюджету.** (Спершу: чи треба Flash для live-набору взагалі — **ні**, він вміщується у RTC-headroom, **§2.3.2**. Нижче — бюджет на випадок, якщо headroom свідомо лишають Lorenz/іншому стану й live-набір таки їде у Flash.) Live-набір групи C = {`0x01`, `0x02`, `0x03`}. Консервативно (snapshot-every-cycle = пишемо КОЖЕН live-ключ щоциклу) → **K=3 < K=4** припущення бюджету (вище). Реалістично (write-on-change — Flash-KV append-only «останній виграє») у steady-state змінюється лише `0x01`, і лише коли інференс зрушив лічильник → **K≈1**. Отже наведені у бюджеті ~2.6 роки (оптимістичний кут 36 с) / століття (realistic 1.77 год) — **безпечні нижні межі, не оптимістичні**. Якщо FW.8 + FW.20-S2 активуються разом і знадобиться snapshot-every-cycle, K зросте у бік ~6–8 → erase раз на ⌊254/K⌋ циклів; навіть тоді при realistic delta_t це десятиліття, лише оптимістичний 36-с кут наближається до бюджету → застосувати «розширити page-set» (вище).
+
+> **⚠️ OTA-буфер збирання — окремий випадок (НЕ Flash-KV).** Стан OTA (`ota_buffer` + `ota_chunk_received` + `received_hmac_tag` + лічильники чанків) — порядку КБ, і він **мусить** пережити STOP2, бо FW.27-B re-request добирає пропущені чанки **між** пробудженнями (Солдат у STOP2 пропускає частину broadcast — §4.6). Класти ~КБ у Flash-KV щоциклу = K у сотні dw → wear-смерть за дні: **неприйнятно**. Висновок для 👤-розвилки (persist-кожен-цикл vs SRAM2-retain): SRAM2-retain — рішення **per-mode, не глобальне**. Steady-state = RTC-only (300 нА); на час активної OTA-кампанії (рідко, хвилини-години) — тимчасово SRAM2 retention ON, потім назад у RTC-only. Це знімає і wear, і відмову «OTA ніколи не збереться під SRAM2-off».
+
+#### 2.3.2 RTC headroom — чи можна звільнити DR замість Flash (FW.54 reclamation)
+
+> **Виклик премісі.** §2/§2.2/§2.3 кажуть «20 регістрів зайнято → нова фіча у Flash». Це правда про **allocation**, але НЕ про **utilization**: кілька DR несуть жменю реальних біт у 32-бітному слоті, а один тримає write-once стан там, де він не потрібен. Перш ніж платити Flash-wear (§2.3) — є дешевший RTC-headroom. Реклемація розкладена по трьох осях.
+
+**Вісь 1 — ширина (під-використані біти).** Кілька слотів несуть <8 біт корисного:
+
+| DR | Реальні біти | Реклемація | Ціна |
+|----|--------------|------------|------|
+| `DR2` `has_mesh_relay` | **1** (прапорець 0/1) | → біт у вільному `DR0[15:8]` ⇒ **DR2 вільний** | нуль, mode-independent |
+| `DR14` `tinyml_critical` | ~7 (float ∈ [0.01,0.99]) | обидва пороги як 2× `uint8`-відсоток у `DR13[15:0]` ⇒ **DR14 вільний** | 1% гранулярність (нехтовна); freeze-contract правка |
+| `DR19` `LORENZ_STATE_MAGIC` | 32 (чистий маркер) | 7-біт sentinel у `DR0[15:9]` (як EMA `0xA5` у DR12) ⇒ **DR19 вільний** | слабша bit-flip-стійкість за 32-біт маркер |
+
+> `warning_counter` (головний live-споживач FW.54) ескалює на 3 і скидається ([`03_03 §5`](03_03_TinyML_Acoustic_Inference)) → реально **2 біти**, не 8. Він + `has_mesh_relay` (1 біт) сідають у вільний байт `DR0[15:8]` **без жодного нового регістру**.
+
+**Вісь 2 — частота запису (інверсія RTC↔Flash).** RTC backup безкоштовний щодо wear; Flash має wear + erase-блокує-шину. Оптимум: **write-ONCE → Flash** (нуль wear, ідеально), **часто-оновлюване → RTC**. Зараз **навпаки**:
+
+- `DR7` `tree_did` — **write-once identity** у дефіцитному wear-free RTC; а часто-оновлюваний FW.54-стан (§2.3) виштовхується у wear-prone Flash. Інверсія.
+- DID уже відомий провіженінгу: K_seed деривується **з DID** (`SilkenNet::SeedDerivation`, `info = "silken-lorenz-seed|<DID>"`; firmware-дзеркало — SEC.11 / §2) → щоб запекти K_seed у Protected Flash, host **мусить** знати DID на провіженінгу.
+- ⚠️ Поточний firmware натомість **самогенерує** DID з UID **⊕ true_random** (§7 НАРОДЖЕННЯ) і тримає лише в DR7. Наслідки: (1) DID **не VBAT-durable** → повний розряд EDLC (HW.14 зимовий дефіцит — а cold-start machinery саме й існує, бо VBAT-loss очікуваний) **сиротить identity/гаманець** новим random-DID; (2) DID **не відтворюваний** → провіженінг не може його передбачити, лише device-first (пристрій репортить → host деривує K_seed 2-м проходом).
+- **Реклемація:** DID → Protected Flash (поряд key/seed/role на `FLASH_KEY_ADDR`; write-once → нуль wear) **АБО** детермінований DID = f(UID) без random (відтворюваний з always-present UID `0x1FFF7590` → DR7 стає кешем, recompute на boot). Обидва шляхи: **DR7 вільний** + DID стає VBAT-durable. 👤 рішення: source-of-truth DID (UID-deterministic vs backend-assigned) обирає шлях — це **окремий correctness/hardening finding**, не лише register-free (трекер [`00_07`](00_07_Action_Plan_Tracker) FW.54).
+
+**Вісь 3 — durability-клас (transient operational).** RTC backup = VBAT-durable. Та частина стану потребує лише warm-STOP2-виживання, не VBAT-durability, і має прийнятну loss-on-power-cut семантику:
+
+- `DR3`–`DR6` mesh-relay payload + `DR8`/`DR9`/`DR11` anti-pingpong кеш — транзитний/операційний (чужий пакет у транзиті; recent-DID дедуп). Втрата на cold-path безпечна (мережа має TTL/retry). У RTC лише щоб пережити майбутній SRAM2-off.
+- **Реклемація (mode-coupled):** під per-mode SRAM2 (§2.3.1 OTA-висновок: SRAM2 ON у вузьких активних вікнах, RTC-only у steady-state) цей клас живе у SRAM → до **~8 регістрів** звільняється. Ціна: зчеплено з per-mode рішенням + втрата mesh-стану на холодних шляхах. `recent_mesh_dids` додатково стискається до 16-біт DID-хешів (3 у ~1.5 рег) ціною рідких хеш-колізій.
+
+**Синтез + bottom-line для FW.54.** Усі 20 *allocated*, але мапа mis-allocated по трьох осях. Дешева реклемація (Вісь 1: DR2 тривіально; `warning_counter` у `DR0[15:8]`) **повністю розміщує live-набір FW.54 у RTC — Flash-KV для нього НЕ потрібен**. Flash-KV (§2.3) лишається виправданим лише для (а) gated bulk (FW.8 config, FW.20-S2 bitmap) ЯКЩО активуються, і (б) **не** OTA-буфера (це per-mode SRAM2, §2.3.1). Найбільший одиничний чистий виграш — **Вісь 2 (DR7/DID)**, що заразом закриває latent identity-orphaning. Порядок при наступній витраті регістру (доповнює §2.3): **(0) реклемація DR — Вісь 1 → Вісь 2 → Вісь 3 перед будь-яким Flash**.
 
 ### 2.4 Helper macros sketch (RTC_BKUP_Read32 / Write32) [ARCH.28]
 

@@ -293,7 +293,8 @@ EdgeCache forest_cache[50]; // 50 × 22 байти = 1.1 KB
 // ТІЛЬКИ цілим сектором 4 KB (NOR не вміє 0→1 без erase). Тому ring — ПО СЕКТОРАХ,
 // а не по довільних 21-байт offset'ах: 21-байт слоти пакуються послідовно у сектор
 // (~195 слотів/сектор) → ~199k слотів. Покажчики (write_sector, read_sector,
-// slot_in_sector) у RTC backup DR20-DR21.
+// slot_in_sector) у вільних Queen RTC backup регістрах (DR0..DR19;
+// DR20+ не існують на WLE5 — лише 20 регістрів).
 #define SLOTS_PER_SECTOR  (4096 / 21)   // 195
 #define N_SECTORS         1024
 

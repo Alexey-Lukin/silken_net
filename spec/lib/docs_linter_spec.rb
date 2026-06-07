@@ -172,6 +172,38 @@ RSpec.describe DocsLinter do
     end
   end
 
+  describe ".rtc_register_out_of_range" do
+    it "flags a phantom DR>19 (the chip has only DR0..DR19)" do
+      hits = described_class.rtc_register_out_of_range("Q-table state buffer у RTC backup registers DR20-DR31.\n")
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("DR20")
+    end
+
+    it "catches the phantom inside a table row (sibling guard skips tables → blind spot)" do
+      expect(described_class.rtc_register_out_of_range(
+        "| Edge RL | episode memory | RTC backup registers DR20-DR31 буфер |\n").size).to eq(1)
+    end
+
+    it "catches the RTC_BKP_DRn form" do
+      expect(described_class.rtc_register_out_of_range("HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR24, z)\n").size).to eq(1)
+    end
+
+    it "does not flag a line that marks the registers dead" do
+      expect(described_class.rtc_register_out_of_range("⚠️ DEPRECATED — DR20-DR23 не існують\n")).to be_empty
+      expect(described_class.rtc_register_out_of_range("специфікація (DR24-DR26) фізично неможлива\n")).to be_empty
+      expect(described_class.rtc_register_out_of_range("`RTC_BKP_DR20..DR23` слід читати як Flash-KV\n")).to be_empty
+      expect(described_class.rtc_register_out_of_range("RTC budget — DR0..DR19 усі зайняті (новий DR20 нема куди)\n")).to be_empty
+    end
+
+    it "skips fenced code (deprecated example blocks live there)" do
+      expect(described_class.rtc_register_out_of_range("```\nRTC_BKP_DR20 — CRITICAL_Z_MIN\n```\n")).to be_empty
+    end
+
+    it "ignores valid DR0..DR19" do
+      expect(described_class.rtc_register_out_of_range("Lorenz state lives in DR16/DR17/DR18, magic DR19\n")).to be_empty
+    end
+  end
+
   describe ".lorenz_formula_drift" do
     it "flags the β literal `8.0 / 3.0` re-stated outside the owner" do
       hits = described_class.lorenz_formula_drift("05_01_Multichain", "beta  = 8.0 / 3.0\n")

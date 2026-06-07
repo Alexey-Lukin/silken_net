@@ -149,6 +149,34 @@ module DocsLinter
     end
   end
 
+  # [SSOT anti-drift] STM32WLE5JC physically has only 20 RTC backup registers
+  # (DR0..DR19 — canon 03_01 §2 / 05_02). DR20+ DO NOT EXIST on this silicon, yet
+  # future-feature notes asserted phantom DR20-DR31 (Edge-RL), DR20-DR21 (ARCH.35
+  # ring) and DR24-DR26 (old FW.8) as usable state buffers — a hardware
+  # impossibility the allocation-drift guard missed (that one skips tables + needs
+  # an availability word; this needs neither, and the two live phantoms sat in a
+  # table row + a blockquote). Flags any DRn with n>19 UNLESS the line marks it
+  # dead (DEPRECATED / не існу / фізично неможлив / not exist / слід читати / the
+  # DR0..DR19 boundary / лише 20). Skips fenced code (05_02 keeps a labelled
+  # deprecated DR20-DR23 example block). Applies to ALL docs incl. the owner —
+  # the chip has no DR20 for anyone.
+  RTC_PHANTOM_NEGATION = /DEPRECATED|не існу|фізично неможлив|not exist|слід читати|DR0\s*\.\.\s*DR19|лише 20/i
+
+  def rtc_register_out_of_range(text)
+    in_fence = false
+    text.each_line.filter_map do |line|
+      in_fence = !in_fence if line.start_with?("```")
+      next if in_fence
+      next if line.match?(RTC_PHANTOM_NEGATION)
+
+      phantom = line.scan(/(?<![A-Za-z])DR(\d{1,2})\b/).flatten.map(&:to_i).find { |n| n > 19 }
+      next unless phantom
+
+      "phantom RTC register DR#{phantom} — STM32WLE5JC has only DR0..DR19 " \
+        "(03_01 §2); route to Flash-KV/SRAM, not a non-existent register | #{line.strip[0, 100]}"
+    end
+  end
+
   # [SSOT anti-drift] Lorenz constants (σ=10 / ρ=28 / β=8÷3, dt, iterations) are
   # SSOT-owned by 03_04 §4.1 (firmware↔backend mirror). Re-declaring the formula
   # values elsewhere drifts — exactly how 05_01 §2 + 00_01 §5 carried a stale

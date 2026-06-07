@@ -47,6 +47,7 @@ namespace :docs do
     suspect     = []  # soft: §-section label not found in target headings
     trl_missing = []  # hard: ## ✅ Статус section without a TRL declaration
     rtc_drift   = []  # hard: RTC register availability claimed outside 03_01 owner
+    rtc_phantom = []  # hard: phantom RTC register DR>19 (chip has only DR0..DR19)
     lorenz_drift = [] # hard: Lorenz β formula re-stated outside 03_04 owner
     gp_clamp     = [] # hard: retired growth_points clamp `(…,10,63)` (pre-FW.29-PACK)
     deprecated  = []  # hard: retired SSOT term reappeared (DocsLinter::DEPRECATED_TERMS)
@@ -92,6 +93,9 @@ namespace :docs do
       # other doc asserting "DRn free/reserve" drifts (caught the stale
       # "DR15 наразі резерв" in 03_02/00_07/03_03 after FW.2 claimed DR15).
       rtc_drift.concat(DocsLinter.rtc_register_allocation_drift(base, text).map { |h| "#{base}: #{h}" })
+      # [RTC phantom register] STM32WLE5JC has only DR0..DR19; any DRn with n>19 is
+      # non-existent hardware (caught phantom DR20-DR31 Edge-RL + DR20-DR21 ring + DR24-DR26).
+      rtc_phantom.concat(DocsLinter.rtc_register_out_of_range(text).map { |h| "#{base}: #{h}" })
       lorenz_drift.concat(DocsLinter.lorenz_formula_drift(base, text).map { |h| "#{base}: #{h}" })
       gp_clamp.concat(DocsLinter.growth_points_clamp_drift(base, text).map { |h| "#{base}: #{h}" })
       deprecated.concat(DocsLinter.deprecated_terms(base, text).map { |h| "#{base}: #{h}" })
@@ -244,6 +248,12 @@ namespace :docs do
       puts "  RTC-MAP DRIFT (#{rtc_drift.size}) — register availability is owned by 03_01 §2:"
       rtc_drift.sort.each { |d| puts "    ✗ #{d}" }
     end
+    if rtc_phantom.empty?
+      puts "  RTC phantom:    no DR>19 (chip has only DR0..DR19) ✓"
+    else
+      puts "  RTC PHANTOM REGISTER (#{rtc_phantom.size}) — STM32WLE5JC has only DR0..DR19:"
+      rtc_phantom.sort.each { |d| puts "    ✗ #{d}" }
+    end
     if lorenz_drift.empty?
       puts "  Lorenz formula: no β `8.0/3.0` re-stated outside owner (03_04 §4.1) ✓"
     else
@@ -290,6 +300,7 @@ namespace :docs do
     failed << "canon docs hosting blocker sections (→ 00_07)" unless blocker_sections.empty?
     failed << "docs missing the standard skeleton" unless conformance.empty?
     failed << "RTC register-map drift (availability claimed outside 03_01)" unless rtc_drift.empty?
+    failed << "phantom RTC register DR>19 (STM32WLE5JC has only DR0..DR19)" unless rtc_phantom.empty?
     failed << "Lorenz-formula drift (β re-stated outside 03_04 §4.1)" unless lorenz_drift.empty?
     failed << "retired growth_points clamp `(…,10,63)` (FW.29-PACK → 03_04 §4.3)" unless gp_clamp.empty?
     failed << "deprecated SSOT terms present" unless deprecated.empty?

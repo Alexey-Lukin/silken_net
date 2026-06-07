@@ -401,7 +401,7 @@ def build_threshold_config_block(tree)
 end
 ```
 
-> **Статус [FW.8]:** ✅ Rails-сторона реалізована. Firmware C-side (обробник `CMD_SET_THRESHOLDS`, зберігання у RTC DR20-DR23) — TODO у наступному PR. До реалізації C-side, Soldier використовує хардкодовані значення `CRITICAL_Z_MIN=2.0`, `CRITICAL_Z_MAX=45.0`, `OPTIMAL_Z_TARGET=29.0`.
+> **Статус [FW.8]:** ✅ Rails-сторона реалізована. Firmware C-side (обробник `CMD_SET_THRESHOLDS`) — parser host-tested, але gated (`FW8_PARSER_ENABLED=0`, deferred TRL-7); персист порогів іде у Flash-KV ([`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)), НЕ у RTC — DR20-DR23 не існують (DEPRECATED-блок вище). До активації Soldier використовує хардкодовані значення `CRITICAL_Z_MIN=2.0`, `CRITICAL_Z_MAX=45.0`, `OPTIMAL_Z_TARGET=29.0`.
 
 ##### 4а.4 Per-Species Default Thresholds
 

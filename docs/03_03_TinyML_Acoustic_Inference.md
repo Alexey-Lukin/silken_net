@@ -862,7 +862,7 @@ OtaPackagerService → 512-byte chunks → OtaTransmissionWorker → Queen → S
 >
 > **Майбутній напрям (Beyond TRL 9 / SRL roadmap) — Edge AI Self-Evolution:**
 > - **On-device class-incremental learning:** додавання нових акустичних патернів (нові інвазивні комахи у Черкаському борі, нові типи браконьєрської техніки) без необхідності retraining у cloud. Обмежено 1–4 incremental classes на STM32WLE5JC; для повного on-device backprop потрібен AI-coprocessor (Syntiant NDP120 / Maxim MAX78000) у v3 hardware.
-> - **Edge Reinforcement Learning:** tabular Q-learning з 12-state × 4-action lookup для прийняття рішень (sleep_extend / normal / sample_extra / emergency_tx); reward = days-to-next-VBAT_OK. State buffer у RTC backup registers DR20-DR31.
+> - **Edge Reinforcement Learning:** tabular Q-learning з 12-state × 4-action lookup для прийняття рішень (sleep_extend / normal / sample_extra / emergency_tx); reward = days-to-next-VBAT_OK. State buffer — Flash-KV ([`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)) / SRAM (RTC DR0..DR19 повні, DR20+ не існують на WLE5 — [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)).
 > - **Координація з mruby evolutionary algorithms у [`03_04`](03_04_mruby_Lorenz_Attractor)** — спільна `device-side learning loop` між TinyML (perception) і Lorenz contract (decision).
 >
 > **Безпекова прірва:** self-evolution + Web3-economic rewards = attack surface для adversarial reward poisoning. Mitigation — Auto-Immune Sentinel ([`05_06 §5`](05_06_Governance_and_DAO) + [`00_08 §1.4`](00_08_Beyond_TRL9_Planetary_Roadmap)).
