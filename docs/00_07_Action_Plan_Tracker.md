@@ -597,9 +597,8 @@
 - [ ] 👤 схемна вилка: дільник Vcap→ADC pin (узгодити з `02_03` BQ25570) · [ ] 🤖 pure-helper `Adc_Raw_To_Mv()` (VREFINT-калібрування з factory cal @0x1FFF75AA + divider math) + host-тести · [ ] 👤 bench-калібрування
 
 #### FW.51 — Queen: телеметрія-батч губиться при провалі CoAP-send
-- **P2** · 🤖 · → [`03_02 §6`](03_02_Queen_Gateway_Firmware)
-- **Знахідка:** `Flush_Cache_To_Rails` звільняє CIFO-слоти (`is_active=0, cache_count=0`) ПІД ЧАС пакування — до підтвердження send. Усі 3 retry впали (LTE-діра) → година телеметрії лісу зникає мовчки. Фікс host-testable: звільняти слоти лише після `send_success`, інакше лишити кеш на наступну спробу (увага: новіші пакети тим часом оновлюють слоти — узгодити з дедуплікацією).
-- [ ] 🤖 deferred-clear + host-тест «fail→retry-наступним-циклом без втрати»
+- **P2** · 🤖 · → [`03_02 §4`](03_02_Queen_Gateway_Firmware)
+- ✅ `Flush_Cache_To_Rails` звільняв CIFO-слоти (`is_active=0, cache_count=0`) ПІД ЧАС пакування — до підтвердження send → провал усіх retry (LTE-діра) мовчки знищував годину телеметрії лісу. · [x] 🤖 deferred-clear: пакування лише рахує `packed_count`, слоти (лише запаковані) звільняються ЛИШЕ при `send_success`; при провалі кеш лишається → наступний flush повторює, дедуплікація оновлює ті самі DID найсвіжішими даними. Викликача не чіпано (energy-conservative: count-trigger і так повторює при повному кеші, low-occupancy чекає ≤1 год — без retry-шторму на мертвому LTE). · [x] 🤖 4 host-тести (fail→keep / success→clear / retry-no-loss / dedup-refresh) + канон `03_02 §3/§4` синхронізовано. Cross-ref: FW.9 (retry loop), FW.53 (OTA wire).
 
 #### FW.52 — OTA throughput by-design: 1 RX-пакет/пробудження + give-up без печатки
 - **P2** · 👤 · → [`03_02 §5`](03_02_Queen_Gateway_Firmware)

@@ -219,8 +219,12 @@ static void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi, 
     forest_cache[evict].snr  = snr;
 }
 
-/* Batch packing — matches Flush_Cache_To_Rails packing logic.
- * [FIX: AUDIT] Use (int16_t) cast for RSSI negation to avoid UB on -128. */
+/* Batch packing — mirrors the Flush_Cache_To_Rails packing step.
+ * [FIX: AUDIT] Use (int16_t) cast for RSSI negation to avoid UB on -128.
+ * [FW.51] Packing NO LONGER frees slots — the cache lifecycle (free on a
+ * confirmed send / retain on failure) lives in Flush_Cache_Sim below, mirroring
+ * the firmware where slots survive a failed CoAP flush so no telemetry is lost.
+ * Returns bytes packed (21 per record). */
 static uint16_t Pack_Cache_To_Batch(void)
 {
     uint16_t offset = 0;
@@ -235,11 +239,32 @@ static uint16_t Pack_Cache_To_Batch(void)
             binary_batch_buffer[offset++] = (uint8_t)(-(int16_t)forest_cache[i].rssi);
             memcpy(&binary_batch_buffer[offset], forest_cache[i].payload, 16);
             offset += 16;
-            forest_cache[i].is_active = 0;
         }
     }
-    cache_count = 0;
     return offset;
+}
+
+/* [FW.51] Full Flush_Cache_To_Rails cache lifecycle (host mirror): pack, then
+ * free ONLY the packed slots and ONLY when the CoAP send is confirmed (send_ok).
+ * On failure the cache is kept intact so the next flush retries — no silent loss
+ * of a forest-telemetry hour. Returns 1 if a batch was sent+cleared, 0 if kept
+ * (send failed) or there was nothing to send. */
+static uint8_t Flush_Cache_Sim(uint8_t send_ok)
+{
+    uint16_t offset = Pack_Cache_To_Batch();
+    uint8_t  packed_count = (uint8_t)(offset / 21);
+    if (packed_count == 0) return 0;   /* nothing to flush */
+    if (!send_ok)          return 0;   /* retry next cycle — cache kept */
+
+    uint8_t cleared = 0;
+    for (int i = 0; i < CACHE_MAX_ENTRIES && cleared < packed_count; i++) {
+        if (forest_cache[i].is_active) {
+            forest_cache[i].is_active = 0;
+            cleared++;
+        }
+    }
+    cache_count -= cleared;
+    return 1;
 }
 
 /* OTA chunk builder — extracted from queen main loop.
@@ -1026,10 +1051,11 @@ TEST(test_batch_50_entries) {
 }
 
 TEST(test_batch_clears_cache) {
+    /* [FW.51] A confirmed send frees the cache. */
     reset_cache();
     uint8_t p[16] = {0};
     Process_And_Cache_Data(1, p, -50, 0);
-    Pack_Cache_To_Batch();
+    Flush_Cache_Sim(1);
     ASSERT_EQ(cache_count, 0);
     ASSERT_EQ(forest_cache[0].is_active, 0);
 }
@@ -1061,12 +1087,98 @@ TEST(test_batch_payload_preserved) {
 }
 
 TEST(test_batch_reinsert_after_pack) {
+    /* [FW.51] After a successful flush frees the slot, a new packet refills it. */
     reset_cache();
     uint8_t p[16] = {0};
     Process_And_Cache_Data(1, p, -50, 0);
-    Pack_Cache_To_Batch();
+    Flush_Cache_Sim(1);
     Process_And_Cache_Data(2, p, -60, 0);
     ASSERT_EQ(cache_count, 1);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * 4b. [FW.51] FLUSH LIFECYCLE — no telemetry loss on CoAP send failure
+ *
+ * Before FW.51, Flush_Cache_To_Rails freed CIFO slots DURING packing — before
+ * the CoAP send was confirmed. If every retry failed (LTE hole), an hour of
+ * forest telemetry vanished silently. Now slots are freed only after a
+ * confirmed send; a failed flush keeps the cache for the next cycle, and
+ * dedup refreshes held entries so the retry carries the freshest reading.
+ * ════════════════════════════════════════════════════════════════════ */
+
+TEST(test_fw51_failed_send_keeps_cache) {
+    /* Send fails → every slot stays active, count intact, nothing lost. */
+    reset_cache();
+    uint8_t p[16] = {0};
+    for (uint32_t i = 0; i < 10; i++)
+        Process_And_Cache_Data(i + 1, p, -50, 0);
+
+    ASSERT_EQ(Flush_Cache_Sim(0), 0);   /* CoAP send failed → not flushed */
+    ASSERT_EQ(cache_count, 10);
+
+    int active = 0;
+    for (int i = 0; i < CACHE_MAX_ENTRIES; i++)
+        if (forest_cache[i].is_active) active++;
+    ASSERT_EQ(active, 10);
+}
+
+TEST(test_fw51_success_clears_cache) {
+    /* Send OK → packed slots freed, count zeroed. */
+    reset_cache();
+    uint8_t p[16] = {0};
+    for (uint32_t i = 0; i < 10; i++)
+        Process_And_Cache_Data(i + 1, p, -50, 0);
+
+    ASSERT_EQ(Flush_Cache_Sim(1), 1);
+    ASSERT_EQ(cache_count, 0);
+
+    int active = 0;
+    for (int i = 0; i < CACHE_MAX_ENTRIES; i++)
+        if (forest_cache[i].is_active) active++;
+    ASSERT_EQ(active, 0);
+}
+
+TEST(test_fw51_fail_then_retry_succeeds_no_loss) {
+    /* fail → cache kept → retry next cycle succeeds → all DIDs delivered. */
+    reset_cache();
+    uint8_t p[16] = {0};
+    for (uint32_t i = 0; i < 5; i++)
+        Process_And_Cache_Data(i + 1, p, -50, 0);
+
+    ASSERT_EQ(Flush_Cache_Sim(0), 0);   /* LTE hole */
+    ASSERT_EQ(cache_count, 5);
+
+    ASSERT_EQ(Flush_Cache_Sim(1), 1);   /* modem back → retry */
+    ASSERT_EQ(cache_count, 0);
+
+    /* The retried batch carried all 5 original DIDs (slots packed in order). */
+    for (uint32_t i = 0; i < 5; i++) {
+        uint32_t did = ((uint32_t)binary_batch_buffer[i*21]     << 24) |
+                       ((uint32_t)binary_batch_buffer[i*21 + 1] << 16) |
+                       ((uint32_t)binary_batch_buffer[i*21 + 2] << 8)  |
+                       (uint32_t)binary_batch_buffer[i*21 + 3];
+        ASSERT_EQ(did, i + 1);
+    }
+}
+
+TEST(test_fw51_fail_then_dedup_refreshes_then_success) {
+    /* While the cache is held after a failure, a fresh packet from a cached DID
+     * updates it in place (dedup) → the retry sends the FRESHEST reading. */
+    reset_cache();
+    uint8_t stale[16] = {0};   stale[7] = 11;
+    uint8_t fresh[16] = {0};   fresh[7] = 99;
+
+    Process_And_Cache_Data(0x42, stale, -50, 0);
+    ASSERT_EQ(Flush_Cache_Sim(0), 0);   /* send failed → cache held */
+    ASSERT_EQ(cache_count, 1);
+
+    Process_And_Cache_Data(0x42, fresh, -45, 0);  /* newer reading, same tree */
+    ASSERT_EQ(cache_count, 1);          /* dedup — still one slot */
+
+    ASSERT_EQ(Flush_Cache_Sim(1), 1);   /* retry succeeds */
+    ASSERT_EQ(cache_count, 0);
+    /* payload[7] lands at batch byte 5 (DID:4 + RSSI:1) + 7 = 12. */
+    ASSERT_EQ(binary_batch_buffer[12], 99);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -2489,6 +2601,11 @@ int main(void)
     RUN(test_batch_did_endian);
     RUN(test_batch_payload_preserved);
     RUN(test_batch_reinsert_after_pack);
+
+    RUN(test_fw51_failed_send_keeps_cache);
+    RUN(test_fw51_success_clears_cache);
+    RUN(test_fw51_fail_then_retry_succeeds_no_loss);
+    RUN(test_fw51_fail_then_dedup_refreshes_then_success);
 
     printf("\n  OTA Chunk Builder:\n");
     RUN(test_ota_chunk_first);

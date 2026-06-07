@@ -276,6 +276,8 @@ Buffer size: binary_batch_buffer[2048] — достатньо з запасом
 
 **RSSI інверсія:** `(uint8_t)(-(int16_t)rssi)` — `int16_t` cast запобігає UB при rssi == −128 (мінімум int8_t).
 
+**[FW.51] Lifecycle слотів:** пакування лише читає кеш — слоти звільняються не тут, а аж після підтвердженого `send_success` (§4 крок 5). Інакше провал CoAP знищив би вже зібрану, але ще не доставлену телеметрію.
+
 ### Крок 2: AES-256-CBC Encrypt
 
 ```
@@ -359,7 +361,9 @@ HAL_CRYP_Init(&hcryp);
 4. AT+CCOAPDEL=0\r\n  (HAL_Delay 500 ms)
    ↳ Закриваємо сесію, звільняємо ресурси модему
 
-5. При send_success=0 після 3 спроб — кеш очищується (дані втрачаються).
+5. [FW.51] Кеш звільняється ЛИШЕ при send_success. Якщо всі спроби впали —
+   слоти лишаються активними, наступний flush повторює відправку (дедуплікація
+   оновлює ті самі DID найсвіжішими даними). Телеметрія НЕ губиться.
 ```
 
 **Загальний час flush для 50 записів: ~25 секунд** (BLOCKER-2, залишається через blocking hex TX)
@@ -990,7 +994,7 @@ Per-channel режими (LoRa **AES-128** ECB→CCM · CoAP **AES-256-CBC**) �
 ## 🧪 11. Тестове Покриття (Host-Based, x86)
 
 ```bash
-make -C firmware/test queen    # 128 тестів, ~0.1 секунди
+make -C firmware/test queen    # 132 тести, ~0.1 секунди
 ```
 
 | Модуль | Тестів | Що покривається |
@@ -999,6 +1003,7 @@ make -C firmware/test queen    # 128 тестів, ~0.1 секунди
 | Command Dedup Ring | 7 | New/duplicate, ring wrap, eviction, stress 100 |
 | CIFO Cache | 13 | Insert, dedup, priority eviction (всі 4 bio_status), fallback, edge RSSI |
 | Batch Packing | 8 | 21-байтний формат, ендіанність, RSSI -128, round-trip |
+| **[FW.51] Flush Lifecycle** | **4** | fail→кеш збережено, success→очищено, retry без втрат, dedup-refresh найсвіжішого |
 | OTA Chunk Builder | 6 | First/last chunk, reassembly, out-of-range index |
 | OTA Assembly (CoAP→RAM) | 12 | Multi-chunk, duplicate ignore via bitmap, buffer overflow, invalid marker |
 | RSSI Clamp | 8 | Normal, edge values, overflow proof, int16→int8 truncation demo |
@@ -1013,7 +1018,7 @@ make -C firmware/test queen    # 128 тестів, ~0.1 секунди
 | **[FW.27-B] Magic Re-Request Handler** | **10** | Bitmap accept/dedup, total mismatch, no-active-OTA |
 | **[FW.23] HMAC Trailer Relay** | **4** | 3 segs storage, seg_idx>3 reject, marker mismatch |
 | **[FW.3] LoRa RX Ring Buffer** | **13** | FIFO семантика, capacity 15, переповнення → drop counter, RSSI clamp passthrough, 25-сек flush сценарій (30 ISR пакетів → 15 уцілілих + 15 видимих втрат) |
-| **Всього** | **128** | *(queen-specific: 128; раніше 113)* |
+| **Всього** | **132** | *(queen-specific: 132; раніше 128)* |
 
 **Не покрито host-тестами (потребує hardware-in-loop):**
 - AT command response parsing на реальному SIM7070G (boot-time CNMP/CPSMS/CEDRXS)

@@ -967,8 +967,13 @@ static uint8_t SIM7070_SendATCommand_WithResponse(const char* command, uint32_t 
 void Flush_Cache_To_Rails(void)
 {
     uint16_t offset = 0;
+    uint8_t  packed_count = 0;   // [FW.51] скільки слотів увійшло в цей батч
 
-    // Пакуємо весь кеш у щільний бінарний масив (21 байт на запис)
+    // Пакуємо весь кеш у щільний бінарний масив (21 байт на запис).
+    // [FW.51] Слоти тут НЕ звільняємо — лише рахуємо; кеш чистимо аж після
+    // підтвердженого send (наприкінці). Інакше провал CoAP (LTE-діра, retry
+    // вичерпано) мовчки знищив би вже-зібрану телеметрію лісу: слоти вільні,
+    // а дані ще нікуди не дійшли.
     for(int i = 0; i < CACHE_MAX_ENTRIES; i++) {
         if(forest_cache[i].is_active) {
             if ((offset + 21) > sizeof(binary_batch_buffer)) break;
@@ -987,11 +992,9 @@ void Flush_Cache_To_Rails(void)
             memcpy(&binary_batch_buffer[offset], forest_cache[i].payload, 16);
             offset += 16;
 
-            // Звільняємо слот
-            forest_cache[i].is_active = 0;
+            packed_count++;  // [FW.51] слот лишається активним до успіху send
         }
     }
-    cache_count = 0;
 
     if (offset == 0) return;
 
@@ -1118,6 +1121,23 @@ void Flush_Cache_To_Rails(void)
     // Якщо не повернути ECB, всі наступні HAL_CRYP_Decrypt() для LoRa-пакетів
     // від Солдатів будуть використовувати CBC замість ECB → сміття → втрата даних.
     Restore_ECB_Mode();
+
+    // [FW.51] Звільняємо кеш ЛИШЕ після підтвердженого send. Якщо всі retry
+    // впали — слоти лишаються активними, наступний флеш повторить спробу
+    // (дедуплікація Process_And_Cache_Data оновить ті самі DID найсвіжішими
+    // даними, тож лишок не застаріє). Чистимо лише запаковані слоти (перші
+    // packed_count активних): якщо пакування обірвалось по місткості буфера,
+    // решта мусить пережити флеш.
+    if (send_success) {
+        uint8_t cleared = 0;
+        for (int i = 0; i < CACHE_MAX_ENTRIES && cleared < packed_count; i++) {
+            if (forest_cache[i].is_active) {
+                forest_cache[i].is_active = 0;
+                cleared++;
+            }
+        }
+        cache_count -= cleared;
+    }
 }
 
 // =========================================================================
