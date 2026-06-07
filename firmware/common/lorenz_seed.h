@@ -65,6 +65,18 @@ static inline uint32_t Silken_Epoch_Day_From_Unix(uint32_t unix_ts)
     return unix_ts / SILKEN_EPOCH_SECONDS;
 }
 
+/* [FW.49] Громадянський RTC-календар (BIN-поля) → unix-секунди. RTC STM32 —
+ * 2000-based, тож year = RTC_DateTypeDef.Year + 2000. Дзеркалить
+ * Days_From_Civil; 2000-01-01 00:00:00 → 946684800. Дає free-running
+ * wall-clock (LSE йде у STOP2) для delta_t/drift без замороженого HAL_GetTick. */
+static inline uint32_t Silken_Unix_From_Calendar(int32_t year, uint32_t month, uint32_t day,
+                                                 uint32_t hh, uint32_t mm, uint32_t ss)
+{
+    int32_t days = Silken_Days_From_Civil(year, month, day);
+    if (days < 0) days = 0;
+    return (uint32_t)days * SILKEN_EPOCH_SECONDS + hh * 3600u + mm * 60u + ss;
+}
+
 /* Деривація (x₀, y₀, z₀) з K_seed + epoch_day — дзеркало
  * SilkenNet::SeedDerivation.initial_state. */
 static inline void Silken_Derive_Initial_State(const uint8_t seed[SILKEN_LORENZ_SEED_LEN],

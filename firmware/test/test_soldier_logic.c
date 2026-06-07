@@ -4374,6 +4374,74 @@ TEST(test_fw50_raw_count_is_not_mv) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * [FW.49] WALL-CLOCK delta/elapsed guards (common/wall_time.h)
+ *
+ * HAL_GetTick freezes in STOP2 → tick-deltas measured only active-time, which
+ * pinned delta_t near ~seconds → β-perturbation near max → every tree looked
+ * maximally healthy (over-mint). The fix reads a free-running RTC calendar as
+ * wall-seconds; these pure guards turn two wall reads into a safe delta_t
+ * (cold-start / backward / epoch-jump → baseline) and a safe elapsed duration.
+ * ════════════════════════════════════════════════════════════════════ */
+#include "../common/wall_time.h"
+
+#define TEST_WALL_BASELINE   60u
+#define TEST_WALL_MAX_PLAUS  86400u   /* 24h — beyond = clock-set/wrap */
+
+TEST(test_fw49_delta_cold_start_returns_baseline) {
+    /* last_wall==0 → no prior cycle → baseline, NOT a giant now-0 delta. */
+    ASSERT_EQ(Silken_Wall_Delta_Seconds(1700000000u, 0u, TEST_WALL_BASELINE, TEST_WALL_MAX_PLAUS), 60u);
+}
+
+TEST(test_fw49_delta_normal_interval) {
+    ASSERT_EQ(Silken_Wall_Delta_Seconds(5000u, 4900u, TEST_WALL_BASELINE, TEST_WALL_MAX_PLAUS), 100u);
+}
+
+TEST(test_fw49_delta_small_real_interval_passes) {
+    /* A genuine short wall-delta survives (e.g. vigorous recharge). The bug
+     * was reading active-time, NOT clamping small values — 2s wall is valid. */
+    ASSERT_EQ(Silken_Wall_Delta_Seconds(1002u, 1000u, TEST_WALL_BASELINE, TEST_WALL_MAX_PLAUS), 2u);
+}
+
+TEST(test_fw49_delta_backward_clock_returns_baseline) {
+    ASSERT_EQ(Silken_Wall_Delta_Seconds(4900u, 5000u, TEST_WALL_BASELINE, TEST_WALL_MAX_PLAUS), 60u);
+}
+
+TEST(test_fw49_delta_epoch_jump_returns_baseline) {
+    /* Calendar just set from beacon UTC (2000→2023): huge forward jump → baseline. */
+    ASSERT_EQ(Silken_Wall_Delta_Seconds(1700000000u, 946684800u, TEST_WALL_BASELINE, TEST_WALL_MAX_PLAUS), 60u);
+}
+
+TEST(test_fw49_delta_boundary_exact_max_passes) {
+    /* Exactly max_plausible is allowed; one more is a jump. */
+    ASSERT_EQ(Silken_Wall_Delta_Seconds(1000u + 86400u, 1000u, TEST_WALL_BASELINE, TEST_WALL_MAX_PLAUS), 86400u);
+    ASSERT_EQ(Silken_Wall_Delta_Seconds(1000u + 86401u, 1000u, TEST_WALL_BASELINE, TEST_WALL_MAX_PLAUS), 60u);
+}
+
+TEST(test_fw49_elapsed_never_set_returns_zero) {
+    ASSERT_EQ(Silken_Wall_Elapsed_Seconds(5000u, 0u), 0u);
+}
+
+TEST(test_fw49_elapsed_normal) {
+    ASSERT_EQ(Silken_Wall_Elapsed_Seconds(5000u, 1400u), 3600u);
+}
+
+TEST(test_fw49_elapsed_backward_clock_returns_zero) {
+    ASSERT_EQ(Silken_Wall_Elapsed_Seconds(1400u, 5000u), 0u);
+}
+
+TEST(test_fw49_unix_from_calendar_rtc_epoch) {
+    /* RTC default 2000-01-01 00:00:00 → 946684800 (free-running base). */
+    ASSERT_EQ(Silken_Unix_From_Calendar(2000, 1, 1, 0, 0, 0), 946684800u);
+}
+
+TEST(test_fw49_unix_from_calendar_known_date) {
+    /* 2024-01-01 00:00:00 UTC = 1704067200. */
+    ASSERT_EQ(Silken_Unix_From_Calendar(2024, 1, 1, 0, 0, 0), 1704067200u);
+    /* + 12:30:45 = +45045. */
+    ASSERT_EQ(Silken_Unix_From_Calendar(2024, 1, 1, 12, 30, 45), 1704112245u);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * ENTRY POINT
  * ════════════════════════════════════════════════════════════════════ */
 
@@ -4724,6 +4792,19 @@ int main(void)
     RUN(test_adc_raw_to_mv_divider_2to1);
     RUN(test_adc_raw_to_mv_div_by_zero_guard);
     RUN(test_fw50_raw_count_is_not_mv);
+
+    printf("\n  FW.49 wall-clock delta/elapsed guards:\n");
+    RUN(test_fw49_delta_cold_start_returns_baseline);
+    RUN(test_fw49_delta_normal_interval);
+    RUN(test_fw49_delta_small_real_interval_passes);
+    RUN(test_fw49_delta_backward_clock_returns_baseline);
+    RUN(test_fw49_delta_epoch_jump_returns_baseline);
+    RUN(test_fw49_delta_boundary_exact_max_passes);
+    RUN(test_fw49_elapsed_never_set_returns_zero);
+    RUN(test_fw49_elapsed_normal);
+    RUN(test_fw49_elapsed_backward_clock_returns_zero);
+    RUN(test_fw49_unix_from_calendar_rtc_epoch);
+    RUN(test_fw49_unix_from_calendar_known_date);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n\n", tests_passed, tests_failed);
