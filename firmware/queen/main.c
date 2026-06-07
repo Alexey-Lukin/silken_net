@@ -19,7 +19,7 @@
 #include "radio.h"
 // [HRNG-IV] Pure, host-testable CoAP-batch fallback-IV derivation (coap_fallback_iv_word)
 #include "coap_iv.h"
-// [AUDIT-2026-06-06] CRC16-CCITT One-Home — перевірка CoAP-OTA чанків від Rails
+// [FW.53] CRC16-CCITT One-Home — перевірка CoAP-OTA чанків від Rails
 #include "../common/silken_crc.h"
 /* USER CODE END Includes */
 
@@ -35,7 +35,7 @@
 #define OTA_CRC_SIZE          2      // CRC16-CCITT в кінці CoAP-чанка
 #define AES_BLOCK_SIZE        16     // AES block size (128-bit fixed; рівне для AES-128 і AES-256)
 #define MAX_OTA_CHUNK_PAYLOAD 512    // Максимальний розмір байткоду в одному CoAP-чанку
-// [FIX AUDIT-2026-06-06] CoAP-шар (Rails→Queen) отримав явний len:
+// [FW.53] CoAP-шар (Rails→Queen) отримав явний len:
 //   [0x99][index:2 BE][total:2 BE][len:2 BE][bytecode:len][crc16:2 BE]
 // Стара довжино-вгадувальна формула (inner_aligned - 16 - 7) при zero-padding
 // 0..15 байт СИСТЕМАТИЧНО обрізала 1..16 байт кожного чанка (повний 512B →
@@ -1287,7 +1287,7 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         // ── Гілка OTA Downlink: збирання прошивки від Rails у RAM ─────
         // Архітектурний міст: Backend CoAP downlink → pending_ota_bytecode[] → LoRa broadcast
         //
-        // [FIX AUDIT-2026-06-06] Формат дешифрованого пакета (after FW.20 envelope strip):
+        // [FW.53] Формат дешифрованого пакета (after FW.20 envelope strip):
         //   [0x99][chunk_index:2 BE][total_chunks:2 BE][len:2 BE][bytecode:len][crc16:2 BE]
         // Явний len замість вгадування довжини з CBC zero-padding (стара формула
         // обрізала 1..16 байт КОЖНОГО чанка), CRC16 від бекенду тепер
@@ -1331,7 +1331,7 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         // [MISRA C] Перевірка меж буфера: запобігаємо переповненню від зловмисних пакетів
         if (offset + payload_len > sizeof(pending_ota_bytecode)) return;
 
-        // [FIX AUDIT-2026-06-06] Світанок нової кампанії: pending_ota_size
+        // [FW.53] Світанок нової кампанії: pending_ota_size
         // раніше лише ріс (max-трек) і переживав попередню прошивку — менша
         // нова збірка успадковувала б хвости старої, total_chunks рахувався б
         // від химери, і Солдати діставали б зіпсуте слово (вічний CRC-fail).

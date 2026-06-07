@@ -1,7 +1,7 @@
 /*
  * test_sym_selftest.c — Host verification of the on-target ECB/CBC self-test.
  *
- * [AUDIT-2026-06-06] Builds `firmware/common/sym_selftest.h` against the
+ * [ARCH.42] Builds `firmware/common/sym_selftest.h` against the
  * OpenSSL-backed mock HAL (HAL_MOCK_SYM_ENABLED) and asserts the NIST
  * SP 800-38A KATs pass. This proves the self-test LOGIC + baked vectors, so
  * a bench FAIL on STM32WLE5JC unambiguously points at the CRYP config

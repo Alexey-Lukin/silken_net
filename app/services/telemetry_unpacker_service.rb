@@ -47,7 +47,7 @@ class TelemetryUnpackerService < ApplicationService
   # [ARCH.41] Firmware RTC-default epoch_day after VBAT loss.
   # STM32WLE5JC RTC resets to 2000-01-01 00:00:00 UTC → day 10_957 since
   # Unix epoch (946_684_800 / 86_400 = 10_957 exactly).
-  # [FIX AUDIT-2026-06-06] Was 10_951 — an artifact of the firmware's old
+  # [ARCH.41] Was 10_951 — an artifact of the firmware's old
   # leap-less approximation (Y*365 + M*30 + D). The firmware now derives
   # epoch_day via exact civil-days arithmetic (firmware/common/lorenz_seed.h
   # `Silken_Days_From_Civil`, host-test-pinned: 2000-01-01 → 10_957), so the
@@ -444,7 +444,7 @@ class TelemetryUnpackerService < ApplicationService
     end
   end
 
-  # [FIX AUDIT-2026-06-06] Емісія дозволена лише для homeostasis/stress —
+  # [FW.29] Емісія дозволена лише для homeostasis/stress —
   # канон 04_01/05_02: anomaly зупиняє емісію, tamper їй не довіряє.
   # Захист від wire-байтів, де status=anomaly/tamper приходить із ненульовими
   # gp-бітами: бітфліп у ECB-блоці або firmware VM_ERROR. Старий VM_ERROR

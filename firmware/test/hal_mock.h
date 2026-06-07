@@ -156,7 +156,7 @@ static inline int HAL_TIM_Base_Start(TIM_HandleTypeDef *h) { (void)h; return HAL
 static inline int HAL_TIM_Base_Stop(TIM_HandleTypeDef *h) { (void)h; return HAL_OK; }
 
 /* AES encrypt/decrypt stubs: just copy data through (no actual crypto).
- * [AUDIT-2026-06-06] Гардовано: test_sym_selftest визначає HAL_MOCK_SYM_ENABLED
+ * [ARCH.42] Гардовано: test_sym_selftest визначає HAL_MOCK_SYM_ENABLED
  * і отримує OpenSSL-backed реалізацію (нижче, біля CCM-mock) — байтопотокова
  * семантика = контракт бекенду. */
 #ifndef HAL_MOCK_SYM_ENABLED
@@ -395,7 +395,7 @@ static inline int HAL_CRYPEx_AESCCM_Decrypt(CRYP_HandleTypeDef *hcryp,
 }
 #endif /* HAL_MOCK_CCM_ENABLED */
 
-/* ── [AUDIT-2026-06-06] OpenSSL-backed ECB/CBC mock ──────────────────────
+/* ── [ARCH.42] OpenSSL-backed ECB/CBC mock ──────────────────────
  * Дзеркало CCM-mock'а для ТРАНЗИТНИХ шляхів ARCH.42: рахує справжній AES
  * через EVP з БАЙТОПОТОКОВОЮ семантикою (sz — у 32-бітних словах, як у
  * STM32 HAL; bytes = sz*4). Це КОНТРАКТ, який бекенд (Ruby OpenSSL)

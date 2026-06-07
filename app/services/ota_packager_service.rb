@@ -123,7 +123,7 @@ class OtaPackagerService
     chunks
   end
 
-  # [FIX AUDIT-2026-06-06] LoRa MTU alignment + CRC32 trailer.
+  # [FW.53] LoRa MTU alignment + CRC32 trailer.
   # Soldier verifies the ASSEMBLED stream: its trailing 4 bytes must be the
   # big-endian CRC32 (ISO 3309 == Zlib.crc32) of everything before them —
   # this service previously never appended it, so every OTA died at the
@@ -185,7 +185,7 @@ class OtaPackagerService
 
     bytecode_chunks = Enumerator.new do |yielder|
       payload_bytes.scan(/.{1,#{@chunk_size}}/m).each_with_index do |chunk, index|
-        # [FIX AUDIT-2026-06-06] Заголовок несе ЯВНИЙ len (uint16 BE):
+        # [FW.53] Заголовок несе ЯВНИЙ len (uint16 BE):
         # Queen більше не вгадує довжину з CBC zero-padding (стара формула
         # обрізала 1..16 байт кожного чанка). Дзеркало парсера —
         # firmware/queen/main.c Handle_CoAP_Command (0x99 branch).
@@ -219,7 +219,7 @@ class OtaPackagerService
     @cluster_id.present?
   end
 
-  # [FIX AUDIT-2026-06-06] LoRa-чанки рахуються від WIRE-потоку (padded +
+  # [FW.53] LoRa-чанки рахуються від WIRE-потоку (padded +
   # CRC32) — він за конструкцією кратний LORA_MTU, тож ділення точне. Саме
   # це число Queen виводить з pending_ota_size і Soldier тримає як
   # ota_total_chunks (cross-check у re-request + HMAC binding).

@@ -46,7 +46,7 @@ RSpec.describe OtaPackagerService do
       end
 
       it "package has 7-byte header (marker + index + total + explicit len, all 16-bit BE)" do
-        # [FIX AUDIT-2026-06-06] len-поле додано: Queen більше не вгадує довжину
+        # [FW.53] len-поле додано: Queen більше не вгадує довжину
         # з CBC zero-padding (стара формула обрізала 1..16 байт кожного чанка).
         package = described_class.prepare(firmware)[:packages].first
         marker, index, total, len = package[0..6].unpack("Cnnn")
@@ -196,7 +196,7 @@ RSpec.describe OtaPackagerService do
       end
 
       it "first chunk carries a FULL 512-byte data section with explicit len" do
-        # [FIX AUDIT-2026-06-06] Регресія старого бага: повний чанк мусить
+        # [FW.53] Регресія старого бага: повний чанк мусить
         # нести рівно 512 байт і чесний len — Queen раніше обрізала його до 500.
         package = described_class.prepare(firmware, chunk_size: 512)[:packages].first
         len = package[5..6].unpack1("n")
@@ -206,7 +206,7 @@ RSpec.describe OtaPackagerService do
       end
     end
 
-    # [FIX AUDIT-2026-06-06] Wire-потік LoRa-шару: Soldier рахує отримане як
+    # [FW.53] Wire-потік LoRa-шару: Soldier рахує отримане як
     # 11 × chunks, тож CRC32 мусить лягати РІВНО в кінець останнього 11-байт
     # чанка. Інваріанти нижче — крос-шаровий контракт із firmware
     # (test_soldier_logic.c OTA_Verify_CRC + queen broadcast math).

@@ -90,7 +90,7 @@ $(BINDIR)/test_ccm: test_ccm.c hal_mock.h ../common/lora_ccm.h ../common/ccm_kat
 $(BINDIR)/test_ccm_selftest: test_ccm_selftest.c hal_mock.h ../common/lora_ccm.h ../common/ccm_selftest.h ../common/ccm_kat_vectors.h
 	$(CC) $(CFLAGS) $(OPENSSL_CFLAGS) -o $@ test_ccm_selftest.c $(OPENSSL_LIBS)
 
-# [AUDIT-2026-06-06] On-target ECB/CBC self-test (ARCH.42 transitional paths) —
+# [ARCH.42] On-target ECB/CBC self-test (ARCH.42 transitional paths) —
 # host verification via OpenSSL mock (HAL_MOCK_SYM_ENABLED).
 $(BINDIR)/test_sym_selftest: test_sym_selftest.c hal_mock.h ../common/sym_selftest.h ../common/sym_kat_vectors.h
 	$(CC) $(CFLAGS) $(OPENSSL_CFLAGS) -o $@ test_sym_selftest.c $(OPENSSL_LIBS)

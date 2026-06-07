@@ -107,7 +107,7 @@ static void Load_Lorenz_Seed(void)
 }
 
 /* ---------- [SEC.11 / FW.30] Derive Cold-Start Lorenz State ----------
- * [FIX AUDIT-2026-06-06] Knuth-плейсхолдер замінено shared-header контрактом
+ * [FW.30] Knuth-плейсхолдер замінено shared-header контрактом
  * (HMAC-SHA256 + signed-unit-float + civil days) — той самий код, що й у
  * production main.c. Parity vs OpenSSL — у test_seed_derivation.c. */
 #include "../common/lorenz_seed.h"
@@ -292,7 +292,7 @@ static uint16_t ota_total_chunks = 0;
 static uint16_t ota_chunks_received = 0;
 static uint8_t  ota_chunk_received[OTA_CHUNK_MAP_SIZE];
 
-/* [FIX AUDIT-2026-06-06] Campaign-change deadlock guard (mirrors soldier/main.c):
+/* [FW.53] Campaign-change deadlock guard (mirrors soldier/main.c):
  * a dead half-assembled campaign must not block a live one forever. */
 #define OTA_MISMATCH_RESET_THRESHOLD 3
 static uint8_t ota_total_mismatch_streak = 0;
@@ -329,7 +329,7 @@ static uint32_t CRC32_Calculate(const uint8_t* data, uint16_t length)
  *  1 = duplicate chunk (ignored)
  *  2 = out-of-bounds (buffer overflow protection)
  *  3 = all chunks complete (ready for flash)
- *  4 = campaign change detected — stale assembly state wiped [FIX AUDIT-2026-06-06]
+ *  4 = campaign change detected — stale assembly state wiped [FW.53]
  *
  * [FIX: AUDIT] Added bounds checks for chunk_idx, offset, and chunk_size. */
 static uint8_t OTA_Process_Chunk(const uint8_t* decrypted, uint16_t payload_size)
@@ -347,7 +347,7 @@ static uint8_t OTA_Process_Chunk(const uint8_t* decrypted, uint16_t payload_size
     if (chunk_idx >= OTA_CHUNK_MAP_SIZE) return 2;
 
     /* [FIX: AUDIT] Prevent ota_total_chunks from being set to wildly different values.
-     * [FIX AUDIT-2026-06-06] ...but a dead campaign must not block a live one:
+     * [FW.53] ...but a dead campaign must not block a live one:
      * N consecutive foreign totals → wipe the stale half-assembly (mirrors main.c). */
     if (ota_total_chunks != 0 && total_chunks != ota_total_chunks) {
         if (++ota_total_mismatch_streak >= OTA_MISMATCH_RESET_THRESHOLD) {
@@ -758,7 +758,7 @@ TEST(test_ota_total_chunks_mismatch) {
     ASSERT_EQ(OTA_Process_Chunk(pkt2, 6), 2); /* Mismatch */
 }
 
-/* [FIX AUDIT-2026-06-06] Campaign-change deadlock: стара недозібрана кампанія
+/* [FW.53] Campaign-change deadlock: стара недозібрана кампанія
  * (total=2) не сміє блокувати нову (total=5) довіку. N поспіль чужих total →
  * жертовний reset; наступні чанки нової кампанії приймаються з чистого стану. */
 TEST(test_ota_campaign_change_resets_after_streak) {
@@ -778,7 +778,7 @@ TEST(test_ota_campaign_change_resets_after_streak) {
     ASSERT_EQ(ota_buffer[0], 0xBB);
 }
 
-/* [FIX AUDIT-2026-06-06] Накопичений streak гаситься валідним чанком своєї
+/* [FW.53] Накопичений streak гаситься валідним чанком своєї
  * кампанії — поодинокі чужі пакети (sусідній кластер, ефірне сміття) не
  * повинні зрештою стерти живу збірку. */
 TEST(test_ota_mismatch_streak_clears_on_valid_chunk) {
@@ -796,7 +796,7 @@ TEST(test_ota_mismatch_streak_clears_on_valid_chunk) {
     ASSERT_EQ(ota_chunks_received, 2);
 }
 
-/* [FIX AUDIT-2026-06-06] VM_ERROR wire-контракт: 0x60 = [panic:0|status:tamper|gp:0].
+/* [FW.29] VM_ERROR wire-контракт: 0x60 = [panic:0|status:tamper|gp:0].
  * Старий 0xFF після FW.29-маски (&0x7F) ставав tamper + gp=31 → бекенд ×2
  * карбував 62 бали за КОЖЕН error-пакет. Пінуємо нову семантику. */
 TEST(test_vm_error_wire_byte_is_tamper_with_zero_growth) {
@@ -1022,7 +1022,7 @@ TEST(test_bio_unpack_roundtrip) {
     }
 }
 
-/* test_bio_byte_0xFF_means_vm_error ВИДАЛЕНО [FIX AUDIT-2026-06-06]: він пінував
+/* test_bio_byte_0xFF_means_vm_error ВИДАЛЕНО [FW.29]: він пінував
  * БАГ — 0xFF після маски ставав tamper + gp=31 (бекенд ×2 = 62 бали за error-
  * пакет). Новий контракт (BIO_STATUS_VM_ERROR = 0x60, tamper + gp=0) пінується
  * у test_vm_error_wire_byte_is_tamper_with_zero_growth. */
@@ -2170,7 +2170,7 @@ TEST(test_cold_start_state_changes_with_seed) {
     ASSERT_TRUE(x1 != x2 || y1 != y2 || z1 != z2);
 }
 
-/* [FIX AUDIT-2026-06-06] Civil-days KAT: точна громадянська арифметика
+/* [FW.30] Civil-days KAT: точна громадянська арифметика
  * (з високосними) замість старого approx_days (Y*365+M*30). RTC-default
  * 2000-01-01 → 10957 = бекендів FIRMWARE_RTC_DEFAULT_EPOCH_DAY (ARCH.41). */
 TEST(test_days_from_civil_known_dates) {
@@ -2200,7 +2200,7 @@ TEST(test_cold_start_prefers_beacon_unix_ts_over_rtc) {
     float xr, yr, zr;
     Derive_Cold_Start_State(&xr, &yr, &zr);
 
-    /* Beacon-шлях: 2026-06-06 12:00:00 UTC = 20610-й день — інша епоха ніж RTC */
+    /* Beacon-шлях: UTC-секунди (epoch_day 20610) — інша епоха ніж RTC-fallback */
     soldier_unix_ts            = 1780747200u;
     soldier_unix_ts_local_tick = 0;
     float xb, yb, zb;
@@ -2360,7 +2360,7 @@ TEST(test_beacon_rx_does_not_collide_with_ota) {
 #define S_CMD_THRESHOLDS_BODY_SIZE   8
 
 /* CRC-16/CCITT-FALSE — One-Home: common/silken_crc.h (той самий код, що
- * компілюється у soldier/main.c і queen/main.c) [AUDIT-2026-06-06]. */
+ * компілюється у soldier/main.c і queen/main.c). [FW.53] */
 #include "../common/silken_crc.h"
 static uint16_t soldier_crc16_ccitt(const uint8_t* data, uint16_t len)
 {

@@ -1,7 +1,7 @@
 /*
  * sym_kat_vectors.h — NIST SP 800-38A Known-Answer вектори для ECB/CBC POST.
  *
- * [AUDIT-2026-06-06] Транзитні шляхи ARCH.42 (AES-128-ECB LoRa та AES-256-CBC
+ * [ARCH.42] Транзитні шляхи ARCH.42 (AES-128-ECB LoRa та AES-256-CBC
  * CoAP) досі не мали жодного KAT — а саме вони чутливі до DataType/endianness
  * конфігурації CRYP (CRYP_DATATYPE_32B + little-endian word-load дає
  * per-word byte-reversal відносно байтового потоку, який очікує OpenSSL на

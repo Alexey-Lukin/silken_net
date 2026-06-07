@@ -265,7 +265,7 @@ static uint8_t Build_OTA_Chunk(uint16_t chunk_idx, uint8_t* ota_chunk)
 }
 
 /* OTA assembly — extracted from Handle_CoAP_Command OTA downlink branch.
- * [FIX AUDIT-2026-06-06] Wire-формат CoAP-чанка отримав ЯВНИЙ len + CRC16:
+ * [FW.53] Wire-формат CoAP-чанка отримав ЯВНИЙ len + CRC16:
  *   [0x99][index:2 BE][total:2 BE][len:2 BE][bytecode:len][crc16:2 BE]
  * Стара формула payload_len = (aligned-16-7) при zero-padding 0..15 СИСТЕМАТИЧНО
  * обрізала 1..16 байт (повний 512B чанк → 500B), а CRC16 від бекенду взагалі
@@ -310,7 +310,7 @@ static uint8_t Assemble_OTA_Chunk(uint8_t* decrypted, uint16_t aligned)
 
     if (offset + payload_len > sizeof(pending_ota_bytecode)) return 0;
 
-    /* [FIX AUDIT-2026-06-06] Світанок нової кампанії: idle-стан збирання
+    /* [FW.53] Світанок нової кампанії: idle-стан збирання
      * (порожній bitmap) → pending_ota_size починає з нуля, інакше менша
      * нова прошивка успадковує хвости старої (mirrors queen/main.c). */
     if (ota_chunk_bitmap == 0 && ota_chunks_received == 0) {
@@ -1205,7 +1205,7 @@ TEST(test_ota_assembly_bounds_overflow) {
     ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 0);  /* Must reject: overflow */
 }
 
-/* [FIX AUDIT-2026-06-06] CRC16 від бекенду тепер ПЕРЕВІРЯЄТЬСЯ: біт, що
+/* [FW.53] CRC16 від бекенду тепер ПЕРЕВІРЯЄТЬСЯ: біт, що
  * збрехав у LTE/Starlink транзиті, вмирає на Королеві, не у Flash Солдата. */
 TEST(test_ota_assembly_crc16_mismatch_rejected) {
     ota_assembly_reset();
@@ -1304,7 +1304,7 @@ TEST(test_ota_assembly_size_tracking) {
     ASSERT_EQ(ota_is_active_flag, 1);  /* All chunks received */
 }
 
-/* [FIX AUDIT-2026-06-06] Stale pending_ota_size між кампаніями: після повної
+/* [FW.53] Stale pending_ota_size між кампаніями: після повної
  * збірки великої прошивки наступна МЕНША кампанія мусить почати розмір з нуля.
  * Раніше max-трек `if (offset+len > pending_ota_size)` тримав старий більший
  * розмір → total_chunks для broadcast рахувався від химери зі старих хвостів. */

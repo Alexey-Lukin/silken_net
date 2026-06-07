@@ -1,7 +1,7 @@
 /*
  * lorenz_seed.h — SEC.11 / FW.30 cold-start деривація стану Лоренца.
  *
- * [AUDIT-2026-06-06] Єдине джерело правди для firmware-сторони деривації —
+ * [FW.30] Єдине джерело правди для firmware-сторони деривації —
  * дзеркало app/services/silken_net/seed_derivation.rb БАЙТ-У-БАЙТ:
  *
  *   info   = "init|" || epoch_day_be8                  (13 байт)

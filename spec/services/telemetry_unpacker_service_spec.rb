@@ -699,7 +699,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         end
 
         it "pins FIRMWARE_RTC_DEFAULT_EPOCH_DAY to the real 2000-01-01 epoch day" do
-          # [FIX AUDIT-2026-06-06] Was 10_951 (leap-less firmware approximation
+          # [ARCH.41] Was 10_951 (leap-less firmware approximation
           # artifact); firmware now uses exact civil-days arithmetic
           # (lorenz_seed.h Silken_Days_From_Civil → 10_957), and the recovery
           # candidate must equal Time.utc(2000,1,1).to_i / 86_400.
@@ -892,13 +892,13 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         described_class.call(chunk)
         log = TelemetryLog.last
         expect(log.bio_status).to eq("tamper_detected")
-        # [FIX AUDIT-2026-06-06] Emission gate: tamper не карбує — раніше
+        # [FW.29] Emission gate: tamper не карбує — раніше
         # legacy VM_ERROR (0xFF→0x7F) приносив (0x7F & 0x1F) * 2 = 62 бали
         # за КОЖЕН error-пакет. Тепер gp = 0 для anomaly/tamper.
         expect(log.growth_points).to eq(0)
       end
 
-      # [FIX AUDIT-2026-06-06] Emission eligibility gate — канон 04_01/05_02:
+      # [FW.29] Emission eligibility gate — канон 04_01/05_02:
       # емісія лише для homeostasis/stress; anomaly зупиняє, tamper'у не віримо.
       describe "emission eligibility gate (anomaly/tamper → growth_points 0)" do
         it "zeroes growth_points for anomaly even when wire gp bits are non-zero (bit-flip defense)" do

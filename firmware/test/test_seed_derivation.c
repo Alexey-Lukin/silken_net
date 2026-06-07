@@ -38,7 +38,7 @@
 #define HKDF_INFO_PREFIX  "silken-lorenz-seed"
 #define HMAC_INFO_PREFIX  "init"
 
-/* [FIX AUDIT-2026-06-06] Firmware-сторона деривації: pure-C SHA-256/HMAC +
+/* [FW.30] Firmware-сторона деривації: pure-C SHA-256/HMAC +
  * civil-days (БЕЗ mbedTLS/OpenSSL) — той самий header, що компілюється у
  * soldier/main.c. Цей файл доводить байт-parity проти OpenSSL-реалізації
  * нижче (дзеркала backend SeedDerivation). */
@@ -272,7 +272,7 @@ static void test_initial_state_mixed_seed_known_shape(void) {
 }
 
 /* ========================================================================
- * [FIX AUDIT-2026-06-06] Pure-C firmware crypto parity — silken_sha256.h /
+ * [FW.30] Pure-C firmware crypto parity — silken_sha256.h /
  * lorenz_seed.h проти OpenSSL та pinned FIPS/RFC векторів. Якщо firmware-
  * реалізація розійдеться з backend хоч бітом — ці тести впадуть першими.
  * ======================================================================== */
@@ -419,7 +419,7 @@ int main(void) {
     test_signed_unit_float_endpoints();
     test_initial_state_mixed_seed_known_shape();
 
-    printf("  [FW.30 / AUDIT-2026-06-06] firmware pure-C crypto parity:\n");
+    printf("  [FW.30] firmware pure-C crypto parity:\n");
     test_silken_sha256_fips_kat();
     test_silken_sha256_streaming_equals_oneshot();
     test_silken_hmac_rfc4231_kat();

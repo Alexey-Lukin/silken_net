@@ -1,7 +1,7 @@
 /*
  * sym_selftest.h — On-target AES-128-ECB + AES-256-CBC Power-On Self-Test.
  *
- * [AUDIT-2026-06-06] Брат-близнюк ccm_selftest.h для ТРАНЗИТНИХ шляхів
+ * [ARCH.42] Брат-близнюк ccm_selftest.h для ТРАНЗИТНИХ шляхів
  * ARCH.42: LoRa AES-128-ECB (Soldier↔Queen) та CoAP AES-256-CBC
  * (Queen↔Rails). Визначає правильність як «байти HAL == байти OpenSSL»
  * (NIST SP 800-38A вектори) — саме це потрібно бекенду.

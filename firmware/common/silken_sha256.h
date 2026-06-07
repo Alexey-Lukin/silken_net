@@ -1,7 +1,7 @@
 /*
  * silken_sha256.h — Pure-C SHA-256 (FIPS 180-4) + HMAC-SHA256 (RFC 2104).
  *
- * [SEC.11 / FW.30, AUDIT-2026-06-06] Закриває TODO(FW.30-mbedtls): деривація
+ * [SEC.11 / FW.30] Закриває TODO(FW.30-mbedtls): деривація
  * cold-start стану Лоренца більше не чекає на mbedTLS-лінк — той самий
  * header-only код працює і на STM32WLE5JC (Cortex-M4), і в host-тестах.
  * Контракт = SilkenNet::SeedDerivation (OpenSSL): байт-у-байт ідентичний

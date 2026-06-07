@@ -137,7 +137,7 @@ RSpec.describe "OTA firmware deployment flow" do
       expect(trailer.map { |p| p[1..2].unpack1("n") }).to eq([ 1, 2, 3 ])
     end
 
-    # [FIX AUDIT-2026-06-06] LoRa-шар тепер несе WIRE-потік: padded bytecode +
+    # [FW.53] LoRa-шар тепер несе WIRE-потік: padded bytecode +
     # CRC32-хвіст (вирівняний на LORA_MTU, бо Soldier рахує байти як 11×chunks).
     # HMAC хешує padded stream БЕЗ CRC32 — дзеркало Soldier dual-gate
     # (ota_buffer[0..data_len) після зрізання CRC).

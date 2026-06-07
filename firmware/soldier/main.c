@@ -19,7 +19,7 @@
 // (у бойовій прошивці вимкнено). Header-only, сам підтягує lora_ccm.h.
 #if defined(CCM_SELFTEST)
 #include "../common/ccm_selftest.h"
-// [AUDIT-2026-06-06] + POST транзитних шляхів ARCH.42 (ECB LoRa / CBC CoAP):
+// [ARCH.42] + POST транзитних шляхів ARCH.42 (ECB LoRa / CBC CoAP):
 // ловить DataType/endianness-клас (DATATYPE_32B word-swap), невидимий для
 // host-тестів і symmetric mesh-обміну, але фатальний для OpenSSL-бекенду.
 #include "../common/sym_selftest.h"
@@ -29,7 +29,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #include <mruby/irep.h>
 #include <mruby/array.h>
 #include <math.h>     // [FW.6] isfinite() для валідації RTC Lorenz state
-// [SEC.11 / FW.30 / AUDIT-2026-06-06] Pure-C HMAC-SHA256 деривація cold-start
+// [SEC.11 / FW.30] Pure-C HMAC-SHA256 деривація cold-start
 // стану Лоренца — повний parity з backend SeedDerivation (без mbedTLS).
 #include "../common/lorenz_seed.h"
 
@@ -71,9 +71,9 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #define OTA_REQ_BITMAP_MAX_BYTES  9          // [FW.27-B] 16 - 7 header = 9 байт ⇒ ≤72 чанки на один зойк
 #define OTA_REQ_PACKET_SIZE       16         // [FW.27-B] Один AES блок (16 байт fixed, post-ARCH.42 LoRa AES-128), як у телеметрії
 #define OTA_REREQUEST_TIMEOUT_MS  300000UL   // [FW.27-B] 5 хв тиші → подати голос про пропуски
-#define OTA_MISMATCH_RESET_THRESHOLD 3       // [FIX AUDIT-2026-06-06] N поспіль чужих total → відпустити мертву кампанію
+#define OTA_MISMATCH_RESET_THRESHOLD 3       // [FW.53] N поспіль чужих total → відпустити мертву кампанію
 // Мітка помилки mruby VM на дроті: [panic:0|status:11=tamper|growth:00000].
-// [FIX AUDIT-2026-06-06] Було 0xFF — після FW.29-маски (&~0x80) ставало 0x7F =
+// [FW.29] Було 0xFF — після FW.29-маски (&~0x80) ставало 0x7F =
 // tamper + growth_points 31 → бекенд (×2) карбував 62 бали за КОЖЕН error-пакет.
 // 0x60 переживає маску незмінним і чесно каже: довіри нема, емісії нема.
 #define BIO_STATUS_VM_ERROR       0x60
@@ -120,7 +120,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #define FLASH_SEED_ADDR           (FLASH_KEY_ADDR + 20)  // After LoRa key (4 magic + 16 key = 20 bytes)
 #define FLASH_SEED_WORDS          8             // 8 × uint32_t = 32 bytes
 #define FLASH_SEED_MAGIC          0x4C534544UL  // "LSED" — Lorenz Seed magic marker
-// EPOCH_SECONDS видалено [AUDIT-2026-06-06]: epoch_day тепер рахує
+// EPOCH_SECONDS видалено [FW.30]: epoch_day тепер рахує
 // lorenz_seed.h (SILKEN_EPOCH_SECONDS) — One-Home, без дубля константи.
 
 // [ARCH.27] Node Role Differentiation — плоть і кров mesh-розшарування.
@@ -309,7 +309,7 @@ uint8_t ota_chunk_received[256] = {0};
 // 0 = ніколи не чули OTA, чекаємо першої проповіді.
 uint32_t ota_last_chunk_rx_tick = 0;
 
-// [FIX AUDIT-2026-06-06] Сторожовий лічильник зміни кампанії: якщо Солдат
+// [FW.53] Сторожовий лічильник зміни кампанії: якщо Солдат
 // застряг із недозібраною прошивкою (total=X), а Королева вже проповідує
 // нову (total=Y), стара пам'ять блокувала б нове слово ДОВІКУ (reset був
 // лише при завершенні збірки). N поспіль чужих total → жертовно стираємо
@@ -422,7 +422,7 @@ int16_t lorenz_z_opt_x100      = LORENZ_DEFAULT_Z_OPT_X100;
 uint8_t lorenz_species_id      = 0xFF;  // unmapped (OtaPackagerService::DEFAULT_SPECIES_ID)
 uint8_t lorenz_config_version  = 0;     // 0 = firmware-baked defaults
 
-// CRC-16/CCITT-FALSE — One-Home у common/silken_crc.h [AUDIT-2026-06-06]
+// CRC-16/CCITT-FALSE — One-Home у common/silken_crc.h [FW.53]
 // (спільний з Queen та host-тестами; дзеркало OtaPackagerService.crc16_ccitt).
 #include "../common/silken_crc.h"
 
@@ -1203,7 +1203,7 @@ int main(void)
   // → дозволено flip FW2_CCM_ENABLED; >0 → HAL/endianness/errata → CCM не вмикати.
   // KAT-вектори: firmware/common/ccm_kat_vectors.h (єдине джерело, спільне з host).
   g_ccm_selftest_failed = Ccm_Run_Self_Test(&hcryp, NULL);
-  // [AUDIT-2026-06-06] POST транзитних шляхів: ECB-128 (LoRa) + CBC-256 (CoAP)
+  // [ARCH.42] POST транзитних шляхів: ECB-128 (LoRa) + CBC-256 (CoAP)
   // проти NIST SP 800-38A. FAIL тут = DataType/endianness-конфіг CRYP видає
   // НЕ-OpenSSL байти (DATATYPE_32B word-swap) → бекенд бачив би сміття;
   // лік — CRYP_DATATYPE_8B. Після POST відновлюємо бойовий ECB-контекст.
@@ -1814,7 +1814,7 @@ int main(void)
                     uint8_t chunk_size = (uint8_t)(incoming_lora_size - OTA_HEADER_SIZE);
 
                     // [FIX: AUDIT] Валідація: total_chunks не повинно змінюватися між пакетами.
-                    // [FIX AUDIT-2026-06-06] ...але мертва кампанія не має права блокувати живу:
+                    // [FW.53] ...але мертва кампанія не має права блокувати живу:
                     // N поспіль чужих total → стираємо незавершену збірку (deadlock-захист).
                     if (ota_total_chunks != 0 && incoming_total != ota_total_chunks) {
                         if (++ota_total_mismatch_streak >= OTA_MISMATCH_RESET_THRESHOLD) {
@@ -2358,7 +2358,7 @@ static void Load_Node_Role(void)
 }
 
 // [SEC.11 / FW.30] Деривація початкового стану Лоренца при cold-start.
-// [FIX AUDIT-2026-06-06] Knuth-hash плейсхолдер + approx_days (Y*365+M*30 —
+// [FW.30] Knuth-hash плейсхолдер + approx_days (Y*365+M*30 —
 // без високосних) замінено повним контрактом SilkenNet::SeedDerivation:
 //   epoch_day → HMAC-SHA256(K_seed, "init|" || epoch_day_be8) → signed-unit-float.
 // Реалізація — pure-C silken_sha256.h / lorenz_seed.h, спільна з host-тестами;
