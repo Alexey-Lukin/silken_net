@@ -79,7 +79,7 @@
 | 1 | Delta T (Алгоритм Часу) | RTC | `Timers → RTC` | **Activate Clock Source** + **WakeUp** (STOP2 wake) |
 | 2 | Температура Кристала | ADC | `Analog → ADC` | **Temperature Sensor Channel** ✓ |
 | 3 | Голос Дерева / П'єзодиск | GPIO_EXTI | Клік на пін **PA0** → | **GPIO_EXTI0** (зовнішнє переривання) |
-| 4 | Глибина Резервуара (Vcap) | ADC | `Analog → ADC` | **Vrefint Channel** ✓ (одночасно з каналом 2) |
+| 4 | Глибина Резервуара (Vcap) | ADC | `Analog → ADC` | **Vrefint Channel** ✓ (одночасно з каналом 2; ⚠️ FW.50: міряє VDDA, не Vcap — потрібен окремий канал+дільник, §1.4) |
 | 5 | RSSI Біомаса / Фенологія | — | *Без конфігурації на вузлі* | Zero-Energy: вимірюється Queen на стороні Gateway |
 | 6 | Квантовий Шум (TRNG seed) | RNG | `Security → RNG` або `Computing → RNG` | **Activated** ✓ |
 
@@ -286,7 +286,7 @@ HAL_ADC_PollForConversion(&hadc, 10);
 internal_temp = HAL_ADC_GetValue(&hadc);
 HAL_ADC_Stop(&hadc);
 
-// Цикл 2: Напруга іоністора (канал VREFINT)
+// Цикл 2: сирий VREFINT-відлік (= опора VDDA, НЕ мВ Vcap — 🔴 FW.50 нижче)
 HAL_ADC_Start(&hadc);
 HAL_ADC_PollForConversion(&hadc, 10);
 vcap_voltage = HAL_ADC_GetValue(&hadc);
@@ -295,7 +295,7 @@ HAL_ADC_Stop(&hadc);
 
 > ⚠️ **Чому два окремих цикли?** STM32 ADC з подвійним каналом (температура + VREFINT) вимагає перемикання між каналами. Роздвоєний Start/Stop запобігає deadlock при прочитанні VREFINT одразу після температурного каналу.
 
-> **🔴 `vcap_voltage` — сирий ADC-відлік, не мВ.** `HAL_ADC_GetValue()` повертає 12-bit count (0..4095), а код скрізь трактує його ЯК мілівольти: пакування байтів 4-5, пороги `VCAP_LISTEN_THRESHOLD=2800` / `COLD_TX_DEFER_VCAP_MV=4000` / `FAUNA_VCAP_MIN_MV=4500`, EMA, `vcap_mv` у mruby. На реальному залізі raw VREFINT ≈ 1500 → RX-вікно (>2800) не відкриється ніколи, а β-пертурбація рахується з фейкових величин. Додатково: VREFINT міряє **VDDA** (за buck-регулятором — майже константа), а НЕ напругу EDLC-іоністора; для Vcap потрібен резистивний дільник на окремий ADC-канал. Канон-фікс і трекінг — [`00_07` — FW.50](00_07_Action_Plan_Tracker) (helper `Adc_Raw_To_Mv()` з factory VREFINT-калібруванням + схемний дільник, узгодити з [`02_03`](02_03_BQ25570_MPPT_Nano_Power)).
+> **🔴 `vcap_voltage` — сирий ADC-відлік, не мВ.** `HAL_ADC_GetValue()` повертає 12-bit count (0..4095), а код скрізь трактує його ЯК мілівольти: пакування байтів 4-5, пороги `VCAP_LISTEN_THRESHOLD=2800` / `COLD_TX_DEFER_VCAP_MV=4000` / `FAUNA_VCAP_MIN_MV=4500`, EMA, `vcap_mv` у mruby. На реальному залізі raw VREFINT ≈ 1500 → RX-вікно (>2800) не відкриється ніколи, а β-пертурбація рахується з фейкових величин. Додатково: VREFINT міряє **VDDA** (за buck-регулятором — майже константа), а НЕ напругу EDLC-іоністора; для Vcap потрібен окремий ADC-канал з дільником (цільовий тракт = BQ25570 VBAT_SEC, [`02_01 §7.1`](02_01_Hardware_Architecture_and_BOM)). Pure-helper `Adc_Raw_To_Mv()` з factory VREFINT-калібруванням ✅ реалізовано + host-тести (`firmware/common/adc_convert.h`, One-Home); жива розводка (окремий ADC-канал Vcap + резистивний дільник) лишається hardware-гейтом — трекінг [`00_07` — FW.50](00_07_Action_Plan_Tracker), номінали дільника узгодити з [`02_03`](02_03_BQ25570_MPPT_Nano_Power).
 
 **HRNG (Chaos Seed):**
 ```c
@@ -1157,6 +1157,7 @@ make -C firmware/test encryption  # AES encryption
 | Acoustic Saturating Increment (FW.22) | 6 | Нуль, нормальний приріст, 254→255, 255 залишається 255, насичення, atomic snapshot |
 | RSSI Clamping | 7 | Нормальні, edge ±128, overflow proof |
 | EMA Filter (FW.21) | 10 | Cold start, smoothing (α=0.2), convergence, noise rejection, warmup flag, count saturation, zero inputs, overflow max, RTC save/load, cold boot |
+| ADC→mV (FW.50) | 10 | VDDA recovery, pin voltage, 2:1 divider, div-by-zero guards, raw-count≠mV proof (helper `common/adc_convert.h`) |
 | [решта] | ~12 | Lorenz state + mesh + misc |
 
 > **Що НЕ покривається тестами:** STOP2 wakeup sequence, IWDG timeout, PVD voltage threshold, реальний Radio.Send/Rx, SIM7070G AT-команди. Ці компоненти потребують Hardware-in-the-Loop (HIL) тестування.

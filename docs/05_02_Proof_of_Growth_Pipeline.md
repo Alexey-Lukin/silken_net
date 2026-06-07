@@ -220,7 +220,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 
 | Сигнал | Джерело | Формат |
 |--------|---------|--------|
-| `vcap_voltage` | ADC → VREFINT канал | uint16 (мВ, 0–5000) |
+| `vcap_voltage` | ADC → VREFINT канал | uint16 (мВ, 0–5000; ⚠️ сирий до FW.50 — [`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA)) |
 | `internal_temp` | ADC → внутрішній датчик | int8 (°C, −45..90) |
 | `acoustic_events` | DMA 16 кГц → TinyML CMSIS-NN | uint8 (0–255) |
 | `delta_t_seconds` | `HAL_GetTick() - last_wakeup_timestamp` | uint32 (EBFC метаболізм) |

@@ -4313,6 +4313,67 @@ TEST(test_fw29_panic_does_not_corrupt_acoustic_saturation) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * [FW.50] ADC→mV conversion (VREFINT factory cal + resistor divider)
+ *
+ * Pure math from common/adc_convert.h (One-Home — same code the firmware
+ * compiles). Proves the conversion the live path still lacks: raw count
+ * (~1500) is NOT millivolts. Live wiring (separate Vcap ADC channel +
+ * divider) is hardware-gated; this locks the math down meanwhile.
+ * All values exact (no rounding) → ASSERT_EQ.
+ * ════════════════════════════════════════════════════════════════════ */
+#include "../common/adc_convert.h"
+
+TEST(test_adc_vdda_nominal) {
+    /* VREFINT reads its cal point → VDDA == 3.0 V cal reference. */
+    ASSERT_EQ(Adc_Vdda_Mv(1500, 1500), 3000);
+}
+
+TEST(test_adc_vdda_high_supply) {
+    /* Lower VREFINT_DATA ⇒ higher VDDA: 3000×1500/1200 = 3750 mV. */
+    ASSERT_EQ(Adc_Vdda_Mv(1200, 1500), 3750);
+}
+
+TEST(test_adc_vdda_div_by_zero_guard) {
+    ASSERT_EQ(Adc_Vdda_Mv(0, 1500), 0);   /* ADC fault → 0, no UB */
+}
+
+TEST(test_adc_pin_full_scale) {
+    ASSERT_EQ(Adc_Pin_Mv(4095, 3300), 3300);
+}
+
+TEST(test_adc_pin_two_thirds) {
+    /* 3000 × 2730/4095 = 2000 mV exactly. */
+    ASSERT_EQ(Adc_Pin_Mv(2730, 3000), 2000);
+}
+
+TEST(test_adc_pin_zero) {
+    ASSERT_EQ(Adc_Pin_Mv(0, 3300), 0);
+}
+
+TEST(test_adc_raw_to_mv_direct) {
+    /* div 1:1 (no divider) at full scale → VDDA. */
+    ASSERT_EQ(Adc_Raw_To_Mv(4095, 1500, 1500, 1, 1), 3000);
+}
+
+TEST(test_adc_raw_to_mv_divider_2to1) {
+    /* Vcap 4000 mV through a 2:1 divider → pin 2000 mV (adc 2730 @ VDDA 3000),
+     * scaled back ×2 → 4000 mV. */
+    ASSERT_EQ(Adc_Raw_To_Mv(2730, 1500, 1500, 2, 1), 4000);
+}
+
+TEST(test_adc_raw_to_mv_div_by_zero_guard) {
+    ASSERT_EQ(Adc_Raw_To_Mv(2048, 1500, 1500, 1, 0), 0);
+}
+
+TEST(test_fw50_raw_count_is_not_mv) {
+    /* The bug, concretely: the OLD code compared a raw VREFINT count to a
+     * 2800 mV threshold — never true; the same count is the 3.0 V cal point. */
+    uint16_t raw = 1500;
+    ASSERT_TRUE(raw < 2800);                  /* OLD: "vcap" < LISTEN → RX never opens */
+    ASSERT_EQ(Adc_Vdda_Mv(raw, 1500), 3000);  /* real VDDA is 3000 mV, not 1500 */
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * ENTRY POINT
  * ════════════════════════════════════════════════════════════════════ */
 
@@ -4651,6 +4712,18 @@ int main(void)
     printf("\n  FW.29 Follow-ups (StatusByte + panic boundary):\n");
     RUN(test_fw29_status_byte_panic_with_max_growth_points);
     RUN(test_fw29_panic_does_not_corrupt_acoustic_saturation);
+
+    printf("\n  FW.50 ADC→mV conversion (VREFINT cal + divider):\n");
+    RUN(test_adc_vdda_nominal);
+    RUN(test_adc_vdda_high_supply);
+    RUN(test_adc_vdda_div_by_zero_guard);
+    RUN(test_adc_pin_full_scale);
+    RUN(test_adc_pin_two_thirds);
+    RUN(test_adc_pin_zero);
+    RUN(test_adc_raw_to_mv_direct);
+    RUN(test_adc_raw_to_mv_divider_2to1);
+    RUN(test_adc_raw_to_mv_div_by_zero_guard);
+    RUN(test_fw50_raw_count_is_not_mv);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n\n", tests_passed, tests_failed);

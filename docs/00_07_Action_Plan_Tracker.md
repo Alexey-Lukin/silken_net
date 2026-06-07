@@ -592,9 +592,9 @@
 - [ ] 👤 рішення wake-source (RTC wakeup vs VBAT_OK EXTI) — визначає механіку фікса · [ ] 🤖 `Wall_Seconds_Now()` на RTC-календарі (LSE йде у STOP2) + міграція delta_t/re-request/drift-таймерів + host-тести з «стрибаючим» mock-часом · [ ] 👤 bench-верифікація delta_t проти реального інтервалу заряду EDLC
 
 #### FW.50 — Vcap ADC: raw counts використовуються як мВ (без конверсії)
-- **P0** · 👤🤖 · → [`03_01 §3`](03_01_Firmware_Lifecycle_and_DMA)
+- **P0** · 👤🤖 · → [`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA)
 - **Знахідка:** `vcap_voltage = HAL_ADC_GetValue()` (канал VREFINT) — сирий 12-bit відлік (~1500) скрізь трактується як мВ: пакування байтів 4-5, пороги `VCAP_LISTEN_THRESHOLD=2800`/`COLD_TX_DEFER=4000`/`FAUNA=4500` мВ, EMA, `vcap_mv` у mruby. На залізі RX-вікно (>2800) не відкриється ніколи, β-пертурбація з фейкових значень. Плюс: VREFINT міряє VDDA (за buck'ом — константа), НЕ Vcap EDLC; для Vcap потрібен дільник на окремий ADC-канал (hardware, `02_01`/`02_03`).
-- [ ] 👤 схемна вилка: дільник Vcap→ADC pin (узгодити з `02_03` BQ25570) · [ ] 🤖 pure-helper `Adc_Raw_To_Mv()` (VREFINT-калібрування з factory cal @0x1FFF75AA + divider math) + host-тести · [ ] 👤 bench-калібрування
+- [ ] 👤 схемна вилка: розводка Vcap на окремий ADC-пін (цільовий тракт BQ25570 VBAT_SEC — `02_01 §7.1`; OV/пороги — `02_03`) · [x] 🤖 pure-helper `Adc_Raw_To_Mv()` (VREFINT factory-cal @0x1FFF75AA + дільник-параметр, без запеченого номіналу) + host-тести — `firmware/common/adc_convert.h` (One-Home); жива розводка НЕ ввімкнена (чекає дільника+окремого каналу) · [ ] 👤 bench-калібрування
 
 #### FW.51 — Queen: телеметрія-батч губиться при провалі CoAP-send
 - **P2** · 🤖 · → [`03_02 §4`](03_02_Queen_Gateway_Firmware)

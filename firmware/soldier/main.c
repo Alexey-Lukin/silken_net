@@ -1426,7 +1426,10 @@ int main(void)
 
     HAL_ADC_Start(&hadc);
     if (HAL_ADC_PollForConversion(&hadc, 10) == HAL_OK) {
-        vcap_voltage = HAL_ADC_GetValue(&hadc); // Канал VREFINT (іоністор)
+        // [FW.50] Сирий VREFINT-відлік (= опора VDDA), НЕ мВ іоністора.
+        // Конверсія готова у common/adc_convert.h (Adc_Raw_To_Mv); жива
+        // розводка (окремий ADC-канал Vcap + дільник) — hardware-гейт 👤.
+        vcap_voltage = HAL_ADC_GetValue(&hadc);
     }
     HAL_ADC_Stop(&hadc);
 
