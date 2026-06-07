@@ -669,6 +669,20 @@
 - **Знахідка:** IWDG (LSI) за замовчуванням НЕ зупиняється у STOP2; max timeout ~32.7 с (LSI 32k / presc 256 / reload 4095). Будь-який сон довший ≈26-32 с → IWDG-reset посеред STOP2 → втрата SRAM (mruby VM, ota_buffer, warning_counter) кожен цикл + марнування енергії на повний reboot. Лік — option byte **IWDG_STOP=0** (freeze у Stop) при заводській прошивці; у repo/SEC.3 pipeline це ніде не зафіксовано. Дотично: PVD-кома (`HAL_PWR_PVDCallback`) теж спить у STOP2 — без замороженого IWDG «кома» не довша за watchdog-період; а після PVD-wake можливий `HAL_Delay`-hang (tick suspended) → IWDG-reset як фактичний механізм відновлення — задокументувати як свідомий шлях.
 - [x] 🤖 (2026-06-07) `IWDG_STOP=0` + `IWDG_STDBY=0` у скриптованому option-bytes чеклисті поруч із RDP — `firmware/scripts/bench/01_option_bytes.sh` + RUNBOOK §1.2 · [ ] 👤 застосувати на платі при factory flashing · [ ] 👤 bench-верифікація: сон 1 год без spurious reset (RUNBOOK §4.4)
 
+#### SE050-MIGRATION — ATECC608B → NXP SE050 + true-DePIN ladder (2026-06-07)
+- **P1** · 👤+🤖 · → [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)
+- **Рішення (founder):** trust-напрям = **true-DePIN** («голос дерева» — дерево підписує власні дані non-extractable Ed25519; ні backend, ні оператор не підробить). SE мусить вміти Ed25519 → **ATECC608B (P-256) → SE050** (суперсет: Ed25519/EdDSA + AES-128/256 + monotonic counters + secure storage). AES-128 LoRa СТОЇТЬ (ARCH.42; тепер свідомий вибір, не SE-constraint). Ladder: **L0 кастодіально (зараз) → L1 Queen-attest → L2 per-tree** (energy-gated). Канон-дім = `03_05 §3.7` ADR. Ціна (~$2.40-3.25 vs $0.85) — founder: не проблема.
+- [x] 🤖 (2026-06-07) **Канон-дім `03_05 §3.7`**: ADR SE050+ladder · heading/callout (реверс ATECC→SE050) · Slot-1 P-256→**Ed25519** (on-chip keygen) · Status/SEC.14 naming · **AES-128-rationale One-Home-колапс ×6** («SE max 128» → реф §3.7, бо SE050 вміє 256) · legacy-banner над ATECC integration-mechanics.
+- [ ] 🤖 **docs-дзеркала (name+ref):** `00_00` index · `03_01` (2×) · `08_01` · BOM `02_01` row 13 + `07_02` RF Deck → SE050 (cost ~$2.40-3.25). [частина цього заходу]
+- [ ] 🤖 **`03_05` deep mechanics → SE05x** (no-premature-canon: при eval-kit + datasheet-verify): candidate-table, `atcab_*`→`Se05x`/`sss` API-sketch, role-split table, latency/power/footprint, object-model замість 16 slots, on-chip Ed25519 keygen.
+- [ ] 🤖 **firmware** `soldier/queen main.c` коментарі ATECC→SE050 (name + One-Home ref) + RUNBOOK.
+- [ ] 🤖 **код:** `AteccProvisioner` → generic `SecureElementProvisioner` (+ SE050-нота, Slot-1 Ed25519; оновити session/spec/factory refs); SE05x emit-послідовність = bench-gated rewrite; DB-колонка `atecc_serial_hex` → `se_serial_hex` **міграція** (+ structure.sql) — Гілка-B ще не live → ризик-кероване відкладання.
+- [ ] 🤖 **honesty-pass** (true-DePIN наратив): `05_01` (DePIN-роль) / `04_02` (W3bstreamVerify card) / `05_03` (IoTeX row) / `06_08` — «доводить фізичний STM32» (кастодіально false) → розділити **pipeline-integrity (є)** vs **physical-origin** (L0 custodial-now / L2 device-bound-roadmap / ЗВТ-metrology). `04_02` ще й stale механізм (`binary_key`→`derive_iotex_seed`).
+- [ ] 👤 **SEC.6 hardware:** eval-kit order + datasheet-verify (SE050 Ed25519/EdDSA + monotonic counters + AES-128 + I²C) + SEC.14 role (per-packet vs prov-only) + mass-BOM populate.
+- [ ] 👤/🤖 **L1 Queen-attestation** (feasible interim): Queen підписує батчі (на LiFePO4, не energy-starved) → cryptographic gateway-origin.
+- [ ] 🔗 **L2 per-tree device-voice** (North-Star, energy-gated Scenario D / 2× anchor): on-chip Ed25519 keygen + device-keygen provisioning (не HKDF-only — ARCH.33) + Merkle-root signing (E.60) + signature-transmission (weekly ≈ 5 LoRa-frames). Post-anchor-TRL.
+- Cross-ref: SEC.6, SEC.14, ARCH.42, ARCH.43 (per-device-ізоляція post-FW.2), E.60 (Merkle), FW.2, FW.23, ARCH.33 (firmware-Ed25519 feasibility), STK.4 (ЗВТ), BIZ.13 (operator-bond).
+
 ## §04 · Backend / API / UI
 
 > **Складність:** XS < 1 год · S = 1–4 год · M = 4–8 год · L = 1–3 дні
@@ -1080,8 +1094,8 @@
 
 | ID | Пункт | Канон |
 |----|-------|-------|
-| ARCH.42 | ATECC608B AES-128 vs AES-256 — DECIDED (Variant B) | `03_05 §3.7` |
-| SEC.6 | ATECC608B SE — ✅ **soft-freeze RESOLVED 2026-06-07** (footprint-DNP зараз, populate post-FW.2 на mass; ADR `03_05 §3.7`; device-HW-Ed25519 НЕ потрібен → не SE050). 👤 residual: eval-kit order + mass-populate + SEC.14 role | `03_05 §3.7`, §3.4 |
+| ARCH.42 | AES-128 LoRa — DECIDED (Variant B); SE-частина ATECC→**SE050** (true-DePIN — SE050-MIGRATION) | `03_05 §3.7` |
+| SEC.6 | SE = **SE050** — ✅ RESOLVED 2026-06-07 (true-DePIN: голос дерева потребує non-extractable Ed25519 → SE050, не ATECC; soft-freeze DNP, populate post-FW.2). Деталі + усі residuals → SE050-MIGRATION | `03_05 §3.7`, §3.4 |
 | SEC.10 | Emergency-TX anti-replay frame counter (DR0 packing) | `03_02`, `03_01 §2` |
 | SEC.11 | Lorenz Seed Provenance (DCI hardening, K_seed HKDF) | `03_04`, `03_05 §3.4а`, `04_02`, `05_02` |
 | FW.5 | Lorenz β-пертурбація від delta_t/vcap (Variant B+) | `03_04`, `05_02` |

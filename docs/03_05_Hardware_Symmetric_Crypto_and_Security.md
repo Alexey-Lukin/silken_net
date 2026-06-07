@@ -1,7 +1,7 @@
 # 03_05: Апаратне симетричне шифрування та Безпека (Криптографія Пакетів)
 
 > 📜 **Архітектурна нота (2026-05-23):** Документ перейменовано з [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security) після прийняття **ARCH.42 Варіант B**. Силова частина криптостеку розділена на дві категорії:
-> 1. **LoRa-канал (Soldier ↔ Queen + OTA broadcast):** AES-128-CCM (constraint Microchip ATECC608B — апаратний AES-engine SE підтримує лише 128-бітні ключі)
+> 1. **LoRa-канал (Soldier ↔ Queen + OTA broadcast):** AES-128-CCM (ARCH.42 LoRa-вибір; SE = SE050 — §3.7)
 > 2. **CoAP-магістраль (Queen ↔ Rails) + AR-Encryption у Postgres:** AES-256-CBC / AES-256-GCM (без апаратного SE-constraint; ключ Queen зберігається у Protected Flash MCU)
 >
 > Постквантовий горизонт + ratchet-rotation описано у новому **§10 PQC Migration Roadmap**.
@@ -17,7 +17,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 6 — апаратне шифрування налаштовано; host-based тести проходять
-- **Архітектурне рішення ARCH.42 (2026-05-23):** Варіант B — LoRa-канал переведено на **AES-128-CCM** (constraint ATECC608B); CoAP-магістраль залишається на **AES-256-CBC**. Глобальний SSOT-патч виконано.
+- **Архітектурне рішення ARCH.42 (2026-05-23):** Варіант B — LoRa-канал переведено на **AES-128-CCM** (ARCH.42 LoRa-вибір; SE = SE050 — §3.7); CoAP-магістраль залишається на **AES-256-CBC**. Глобальний SSOT-патч виконано.
 - **Відкрите:** ECB→AES-128-CCM (FW.2), MAC/MIC, ротація ключів → [`00_07`](00_07_Action_Plan_Tracker) (SEC.*).
 
 ---
@@ -129,7 +129,7 @@ uint32_t aes_key[8] = {0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX,
 
 ```c
 // Soldier MX_CRYP_Init() — поточний стан (ARCH.42 transitional):
-hcryp.Init.KeySize   = CRYP_KEYSIZE_128B;     // ARCH.42 — даунгрейд з 256 → 128 (ATECC608B SE constraint)
+hcryp.Init.KeySize   = CRYP_KEYSIZE_128B;     // ARCH.42 — AES-128 LoRa (вибір; SE = SE050 — §3.7)
 hcryp.Init.Algorithm = CRYP_AES_ECB;          // ECB transitional — TARGET: CRYP_AES_CCM після FW.2
 
 // Queen MX_CRYP_Init() — поточний стан:
@@ -155,7 +155,7 @@ hcryp.Init.Algorithm = CRYP_AES_ECB;          // ECB transitional — TARGET: CR
 
 **Необхідна дія (рекомендоване рішення — AES-128-CCM, після ARCH.42 Варіант B):**
 
-Найефективніший шлях вирішення §ECB Mode та §MAC/MIC одночасно — перехід на **AES-128-CCM** (Counter with CBC-MAC), який **апаратно підтримується STM32WLE5JC** (`CRYP_AES_CCM` у HAL) та **повністю узгоджений з ATECC608B Secure Element** (AES-engine SE підтримує лише 128-бітні ключі). CCM надає конфіденційність + автентифікацію + захист від replay в одній операції. Силова margin: $2^{128}$ комбінацій — золотий стандарт LoRaWAN/Zigbee/Thread/BLE (індустріальне підтвердження "достатньо" для constrained IoT на 25-річний горизонт). Постквантовий розгляд — у §10.
+Найефективніший шлях вирішення §ECB Mode та §MAC/MIC одночасно — перехід на **AES-128-CCM** (Counter with CBC-MAC), який **апаратно підтримується STM32WLE5JC** (`CRYP_AES_CCM` у HAL) та узгоджений з SE = **SE050** (§3.7). CCM надає конфіденційність + автентифікацію + захист від replay в одній операції. Силова margin: $2^{128}$ комбінацій — золотий стандарт LoRaWAN/Zigbee/Thread/BLE (індустріальне підтвердження "достатньо" для constrained IoT на 25-річний горизонт). Постквантовий розгляд — у §10.
 
 **Нова структура 24-байтного LoRa-пакета (замість поточних 16-байтних) — фінальний дизайн 🤖 (FW.2, AES-128-CCM):**
 
@@ -232,7 +232,7 @@ nonce[12] = DID[0..3] || FrameCounter[0..3] || 0x00 × 4
 **Конфігурація `hcryp` для CCM (AES-128):**
 
 ```c
-hcryp.Init.KeySize      = CRYP_KEYSIZE_128B;   // ARCH.42 — ATECC608B SE constraint
+hcryp.Init.KeySize      = CRYP_KEYSIZE_128B;   // ARCH.42 — AES-128 LoRa (SE = SE050 — §3.7)
 hcryp.Init.pKey         = aes_key;             // uint32_t aes_key[4] (16 bytes, AES-128)
 hcryp.Init.Algorithm    = CRYP_AES_CCM;
 hcryp.Init.HeaderSize   = 8;                   // AAD = DID(4) + FC(4)
@@ -451,7 +451,7 @@ static void MX_CRYP_Init(void)
 {
   hcryp.Instance = AES;
   hcryp.Init.DataType    = CRYP_DATATYPE_32B;   // 32-бітний порядок слів
-  hcryp.Init.KeySize     = CRYP_KEYSIZE_128B;    // ARCH.42 (2026-05-23): даунгрейд 256→128 (ATECC608B SE constraint)
+  hcryp.Init.KeySize     = CRYP_KEYSIZE_128B;    // ARCH.42 (2026-05-23): AES-128 LoRa (SE = SE050 — §3.7)
   hcryp.Init.pKey        = aes_key;              // Per-device HKDF-derived LoRa key (RAM mirror, populated by Load_AES_Key() at boot — see §3.4а; uint32_t aes_key[4] = 16 bytes)
   hcryp.Init.Algorithm   = CRYP_AES_ECB;         // ECB transitional — TARGET: CRYP_AES_CCM після FW.2 24B-packet rollout
   HAL_CRYP_Init(&hcryp);
@@ -1754,36 +1754,34 @@ STM32_Programmer_CLI -c port=SWD -ob RDP=0xCC
 
 ---
 
-### 3.7 ATECC608B Secure Element — інтеграція (ARCH.42 ✅ resolved)
+### 3.7 Secure Element — NXP EdgeLock SE050 (ARCH.42 + SEC.6 + true-DePIN)
 
-**Cross-ref:** [`00_07` — SEC.6](00_07_Action_Plan_Tracker), [`00_07` — ARCH.42](00_07_Action_Plan_Tracker) — **✅ DECIDED 2026-05-23 (Варіант B)**, §3.2 «Secure Element після ARCH.42».
+**Cross-ref:** [`00_07` — SEC.6](00_07_Action_Plan_Tracker), [`00_07` — ARCH.42](00_07_Action_Plan_Tracker), [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker) — **SE = SE050 (RESOLVED 2026-06-07)**, §3.2 «Secure Element після ARCH.42».
 
-> ✅ **ARCH.42 RESOLVED (2026-05-23) — Варіант B обрано:** Мережа Gaia 2.0 переходить на **AES-128** для LoRa-каналу (Soldier ↔ Queen + OTA broadcast). ATECC608B Microchip залишається canonical SE — апаратний AES-engine SE підтримує лише 128-бітні ключі (datasheet DS40002239, §6.2), і це повністю узгоджено з новим LoRa-стеком (FW.2 24-byte AES-128-CCM packet). CoAP-магістраль (Queen ↔ Rails) залишається на AES-256-CBC — її ключ зберігається у Queen Protected Flash (не у SE), тому AES-128 SE-constraint не діє. Глобальний SSOT-патч виконано: `CRYP_KEYSIZE_256B → CRYP_KEYSIZE_128B` (LoRa MX_CRYP_Init), `HardwareKey.aes_key_hex` conditional length (Tree=32 hex, Gateway=64 hex), HKDF output 16 байт через info `"silken-aes-128-lora-key"`.
+> ✅ **SE = NXP EdgeLock SE050 (SEC.6 RESOLVED 2026-06-07; supersedes the 2026-05-23 ATECC608B pick):** коли SilkenNet зобов'язався дати деревам **власний криптографічний голос** (true-DePIN: дерево підписує свої дані ключем, що не покидає кремній і якого не підробить навіть оператор), SE-частина мусила вміти **non-extractable Ed25519** (крива peaq/Solana). **ATECC608B (P-256 only) цього не вміє** → SE = **SE050** (Ed25519/EdDSA + AES-128/256 + monotonic counters + secure storage — суперсет ATECC). Trust-напрям + ladder — у SEC.6 ADR нижче.
 >
-> **Альтернативи розглянуто та відхилено:**
+> **AES-128 для LoRa лишається — але це тепер ВИБІР, не constraint:** ATECC мав HW-максимум 128; SE050 вміє 128/256. Тримаємо **AES-128-CCM** свідомо — golden-standard constrained-IoT (LoRaWAN/Zigbee/Thread/BLE), сумісність з LoRaWAN-fallback (ARCH.34) і **freeze-contract FW.2** (24-byte CCM packet). CoAP-магістраль Queen↔Rails — AES-256-CBC (ключ у Queen Protected Flash, не в SE). **ARCH.42 AES-128-рішення СТОЇТЬ — змінилась лише SE-частина (ATECC→SE050).** Глобальний AES-128-патч (ARCH.42) чинний: `CRYP_KEYSIZE_128B`, `HardwareKey.aes_key_hex` (Tree=32 hex / Gateway=64 hex), HKDF info `"silken-aes-128-lora-key"`.
 >
-> | Шлях | Чому відхилено |
-> |------|----------------|
-> | **(A) Змінити SE на NXP EdgeLock SE050** (AES-128/192/256 у HW) | Ціна +$2.40/unit × мільйон вузлів = $2.4M переплати за 128 → 256 upgrade, який практично не змінює security margin для constrained IoT (LoRaWAN industry-standard = AES-128). Залишається як **future hedge** у §10 PQC roadmap — апгрейд до AES-256 + post-Grover margin при заміні PCB revision. |
-> | **(C) Гібрид: AES-256 у MCU SRAM + ATECC608B тільки ECC/HMAC** | Втрачаємо DPA/EM-захист саме для AES-LoRa ключа — він залишається у MCU SRAM під час `HAL_CRYP_Init()`. ATECC608B як "дорога флешка для асиметрики" — невиправдане ускладнення BOM. |
->
-> **Обґрунтування Варіанту B:**
-> 1. **AES-128 = золотий стандарт constrained IoT** — LoRaWAN, Helium, Sigfox, Zigbee, Thread, BLE усі нативно AES-128-CCM/CMAC. Bridging до LoRaWAN fallback (ARCH.34) спрощується.
-> 2. **DPA/EM-resistance збережено** — ключ ніколи не залишає кремній ATECC608B (Slot 0); шифрування виконується всередині SE; MCU отримує лише ciphertext.
-> 3. **BOM economy** — ATECC608B ~$0.85/unit @ 10k MOQ, vs SE050 ~$3.25/unit. На мільйон вузлів = $2.4M saved.
-> 4. **Quantum margin** — AES-128 під Grover'ом еквівалентний AES-64 = $2^{64}$ комбінацій; одного цього мало для довгого горизонту, але разом з **`[FW.17]` Hash Ratchet KDF** (key rotation кожні N днів → minimize accumulated ciphertext per key) + **§10 PQC bridge** через гібридний шар у Queen↔Rails — практично нездоланно на 25-річний горизонт.
+> **Чому НЕ ATECC (реверс рішення 2026-05-23):** ATECC обрали за ціною ($0.85 vs SE050 ~$2.40–3.25) під припущення **кастодіального** trust. True-DePIN перевертає логіку: ECDSA-рушій ATECC — **P-256 (secp256r1)**, не збігається з жодним ланцюгом (EVM=secp256k1, Solana/peaq=Ed25519) → не може тримати голос дерева. Ціна (founder: не проблема) поступається vision. **SE050 datasheet-verify** (Ed25519/EdDSA + monotonic counters + AES-128) → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker).
 
-> ✅ **SEC.6 RESOLVED (2026-06-07) — soft-freeze (design-in, DNP, populate post-FW.2 на mass):** ATECC608B заводиться як **footprint + I²C-розводка на PCB зараз, DNP** (do-not-populate) на пілоті — точно як LTC3108 ([`02_01`](02_01_Hardware_Architecture_and_BOM) BOM п.13). Пілот (≤100 / <10k) лишається на Гілці A (RDP L2) — канон-мінімум (§3.4г). Монтаж + config-lock — **на mass-production (>10k)**, коли (а) FW.2 CCM landed (cleartext DID addressing → per-device-ізоляція оживає; інакше кластер де-факто на спільному ключі — [`00_07` — ARCH.43](00_07_Action_Plan_Tracker)), (б) масштаб виправдав, (в) eval-kit зняв I²C/slot-lock невідомі.
+> ✅ **SEC.6 ADR (2026-06-07) — SE050 soft-freeze + true-DePIN ladder.**
 >
-> **Чому soft-freeze (не populate-now і не cost-cut):** вартість ($0.60–0.85 на $55–70 вузол ≈ 1.5%) — не аргумент. Вирішує **асиметрія необоротності**: B→A неможливо (config-lock назавжди), A→B = PCB-респін → найдорожча помилка = **не закласти footprint**. DNP комітить дешеву оборотну частину (footprint ≈ $0), відкладаючи дорогу необоротну (монтаж+lock).
+> **Soft-freeze:** SE050 footprint + I²C на PCB зараз, **DNP** (do-not-populate, як LTC3108 — [`02_01`](02_01_Hardware_Architecture_and_BOM) BOM п.13); populate на mass (>10k) post-FW.2. Пілот (≤100 / <10k) = Гілка A (RDP L2, канон-мінімум §3.4г). Асиметрія необоротності (B→A неможливо config-lock; A→B = PCB-респін) → закласти footprint = low-regret; **не** закласти = найдорожча помилка.
 >
-> **Межі очікувань — що ATECC дає / НЕ дає:** дає — AES-128 tamper-storage (Slot 0, ключ не покидає кремній) + **монотонні лічильники** (FW.2 cold-boot nonce + panic anti-replay) + anti-clone serial + SHA/HMAC OTA. **НЕ дає доказ фізичного походження даних** — його ECDSA-рушій **P-256 (secp256r1)** не збігається з жодним ланцюгом стека (EVM = secp256k1; Solana/peaq = Ed25519), тож для Web3-підпису непридатний. True device-origin = окремий шлях (E.60 Merkle + firmware-software Ed25519, Post-TRL 7), **не** SE.
+> **True-DePIN ladder («голос дерева» — секвенс за ЕНЕРГІЄЮ, не криптою):**
+> - **L0 (зараз):** ми говоримо ЗА дерево (кастодіально — backend HKDF-підпис). → чесно це позначити (honesty-pass).
+> - **L1 (feasible interim):** гай говорить через Королеву (Queen підписує батчі; Queen на LiFePO4, не energy-starved).
+> - **L2 (North-Star):** кожне дерево говорить саме (SE050 non-extractable Ed25519, щотижневий Merkle-корінь — E.60). Energy-gated: 1 LoRa-TX ≈ 39 мДж vs профіцит +33.6 мДж/добу (Scenario C) → **weekly влазить, daily потребує Scenario D / 2× anchor** ([`02_03 §9.7`](02_03_BQ25570_MPPT_Nano_Power)). Post-anchor-TRL.
 >
-> **Device-side Ed25519 — не потрібен у HW (тому SE050 не виправданий):** Soldier ніколи не підписує (LoRa-симетрика); Queen M2M-підпис рідкісний (раз/30 днів) → firmware-software ([`00_07` — ARCH.33](00_07_Action_Plan_Tracker): ~50 мс, ~512 B); peaq/Solana — Ed25519 custodial backend. SE050 лишається лише far-future PQC-hedge (§10, AES-256), не поточна потреба. Cross-ref [`00_07` — SEC.6](00_07_Action_Plan_Tracker), [`00_07` — FW.2](00_07_Action_Plan_Tracker).
+> **Що SE050 дає / межі:** дає **голос** (non-extractable Ed25519 = origin) + AES-128 tamper-storage (LoRa-ключ) + монотонні лічильники (FW.2 nonce + panic) + anti-clone serial + SHA/HMAC OTA. **НЕ замінює** ЗВТ-метрологію (точність/legal — STK.4) і operator-bond/slashing (економічний ризик — BIZ.13). Голос + точні «вуха» + skin-in-game = довірений RWA.
+>
+> **Усі залишкові кроки (docs/firmware/code/honesty/eval-kit/L1-L2) занесено в** [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker). Cross-ref [`00_07` — SEC.6](00_07_Action_Plan_Tracker), [`00_07` — ARCH.43](00_07_Action_Plan_Tracker), [`00_07` — E.60](00_07_Action_Plan_Tracker).
 
 **Контекст:** навіть з RDP Level 2, key extraction теоретично можливий через **side-channel attacks** (DPA, EM analysis) або **fault injection** (voltage/clock glitching). Для batches > 1000 одиниць — це attractive target. Виділений Secure Element зберігає ключ у tamper-resistant ASIC з вбудованим detection.
 
-**Кандидат: Microchip ATECC608B**
+> ⚠️ **Нижче (§3.7 integration detail) — ATECC-legacy (2026-05-23), залишене як патерн provisioning-послідовності + історичне порівняння.** SE = **SE050** (callout угорі, SEC.6 ADR). SE05x-конкретика — object-model замість 16 slots, `Se05x`/`sss` API замість `atcab_*`, on-chip Ed25519 keygen, latency/power/footprint — при eval-kit + datasheet-verify → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker).
+
+**Кандидат (legacy): Microchip ATECC608B**
 
 | Параметр | Значення |
 |----------|----------|
@@ -1826,7 +1824,7 @@ STM32_Programmer_CLI -c port=SWD -ob RDP=0xCC
 | Slot | Тип | Призначення | Read | Write |
 |------|-----|-------------|------|-------|
 | 0 | AES-128 key | LoRa Soldier↔Queen sym key | ❌ never | One-time (factory) |
-| 1 | ECC P-256 private | Device-attestation cert (P-256, mTLS / device→backend). **НЕ** peaq/Solana DID-підпис — ті Ed25519 (custodial backend або firmware-software; ADR угорі / §3.4) | ❌ never | One-time (factory) |
+| 1 | **Ed25519 private (SE050)** | **Голос дерева** — device-held non-extractable ключ, що підписує власну телеметрію (L2, Merkle-корінь — E.60); та сама крива покриває peaq/Solana DID-підпис. SE050 генерує keypair **на чипі**, експортує лише pubkey (backend не знає private → непідробно). Раніше P-256 (ATECC) — не міг (інша крива) | ❌ never | On-chip keygen (factory) |
 | 2 | Public key cert | X.509 device cert | ✅ open | Factory |
 | 3 | HMAC-SHA256 key | OTA image HMAC verification (FW.23) | ❌ never | One-time |
 | 4–15 | Reserved | Future use (key rotation, new chains) | — | — |
@@ -1889,7 +1887,7 @@ atca_status_t status = atcab_aes_encrypt(
 
 **Чому per-packet (Варіант B) теж defensible:** для urban / high-value розгортань, де фізичний доступ до вузла ймовірний, tamper-resistance *самого LoRa-ключа* може бути вартий 1.5 мс. Це рішення про threat model, а не технічна необхідність.
 
-**Статус:** SEC.6 (чи заводити SE взагалі) → **soft-freeze, RESOLVED 2026-06-07 — ADR угорі §3.7** (footprint-DNP зараз, populate post-FW.2 на mass). SEC.14 (роль *per-packet* vs *provisioning-only*) лишається **відкритим** — обидва шляхи сумісні з ARCH.42 (AES-128 SE-constraint); вибір при bench eval, з **явним** вибором осі вище, а не за замовчуванням «0.1% acceptable». Cross-ref [`00_07` — SEC.6](00_07_Action_Plan_Tracker), [`00_07` — SEC.14](00_07_Action_Plan_Tracker).
+**Статус:** SEC.6 (чи заводити SE + який) → **RESOLVED 2026-06-07: SE = SE050, soft-freeze + true-DePIN ladder (ADR угорі §3.7)**. SEC.14 (роль *per-packet* vs *provisioning-only*) лишається **відкритим** — обидва шляхи сумісні з ARCH.42 (AES-128 — тепер вибір, не SE-constraint: SE050 вміє 128/256); вибір при bench eval, з **явним** вибором осі. Cross-ref [`00_07` — SEC.6](00_07_Action_Plan_Tracker), [`00_07` — SEC.14](00_07_Action_Plan_Tracker), [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker).
 
 **Альтернативи:**
 
@@ -1926,7 +1924,7 @@ atca_status_t status = atcab_aes_encrypt(
 
 - [ ] 🤖 (наступний цикл) Завершити оцінку: ATECC608B vs STSAFE-A110 матриця, узгоджена з KiCad floorplan
 - [x] 🤖 (SEC.14) Перефреймувати latency/power → чесний trade-off «per-packet AES vs provisioning-only» — ✅ Виконано (підрозділ вище): енерго-аргумент перевірено = малий, але не вирішальний; справжня вісь = tamper-resistance LoRa-ключа ⟷ latency/ідіом; role-split альтернатива подана
-- [ ] 👤/🤖 (SEC.14) Обрати роль SE — per-packet ATECC AES (Варіант B) vs built-in AES + ATECC provisioning-only — за віссю trade-off вище, при bench eval + BOM freeze (не за замовчуванням)
+- [ ] 👤/🤖 (SEC.14) Обрати роль SE — per-packet SE050 AES (Варіант B) vs built-in AES + SE050 provisioning-only — за віссю trade-off вище, при bench eval + BOM freeze (не за замовчуванням)
 - [x] 🤖 Update §3.4 Factory Flashing pipeline з SE-варіантом — ✅ Виконано: §3.4 розділено на Гілку A (Protected Flash, TRL 6/7) та Гілку B (ATECC608B/STSAFE-A110, mass production > 10k); додано двошаровий defense-in-depth (data zone lock + RDP), latency/power/cost impact, criteria для вибору гілки, та irreversibility note (B → A неможливо)
 - [ ] 🤖 Інтеграція з Backend `Provisioning::HardwareKeyService` (генерація ECC keypair + cert)
 - [ ] 🤖 Firmware HAL: drop-in replacement `Crypto_AES_Encrypt_Block()` що внутрішньо викликає ATECC або HAL_CRYP залежно від `#define USE_SECURE_ELEMENT`
