@@ -2305,6 +2305,7 @@ CREATE TABLE public.trees (
     health_streak integer DEFAULT 0 NOT NULL,
     firmware_update_status integer DEFAULT 0 NOT NULL,
     peaq_did character varying,
+    peaq_did_compromised boolean DEFAULT false NOT NULL,
     latest_stress_index numeric(4,3) DEFAULT 0.0 NOT NULL
 );
 

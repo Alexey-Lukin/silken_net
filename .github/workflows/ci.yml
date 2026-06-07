@@ -26,6 +26,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: '[L1 QATT] Init monocypher submodule (attest host-tests)'
+        # Тільки monocypher — CMSIS/mruby цьому job не потрібні (вони живуть
+        # у firmware_arm_build з recursive checkout); тримаємо 5-хв бюджет.
+        run: git submodule update --init firmware/extern/monocypher
+
       - name: '[FW.25] Log-mel tables match the contract (stdlib, no conda)'
         # Drift gate: the committed firmware/common/logmel_*.h must equal a fresh
         # regen from the contract (docs/03_03 §3.4). Pure-stdlib — no conda here;
