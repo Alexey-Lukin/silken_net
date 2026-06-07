@@ -1768,10 +1768,7 @@ STM32_Programmer_CLI -c port=SWD -ob RDP=0xCC
 >
 > **Soft-freeze:** SE050 footprint + I²C на PCB зараз, **DNP** (do-not-populate, як LTC3108 — [`02_01`](02_01_Hardware_Architecture_and_BOM) BOM п.13); populate на mass (>10k) post-FW.2. Пілот (≤100 / <10k) = Гілка A (RDP L2, канон-мінімум §3.4г). Асиметрія необоротності (B→A неможливо config-lock; A→B = PCB-респін) → закласти footprint = low-regret; **не** закласти = найдорожча помилка.
 >
-> **True-DePIN ladder («голос дерева» — секвенс за ЕНЕРГІЄЮ, не криптою):**
-> - **L0 (зараз):** ми говоримо ЗА дерево (кастодіально — backend HKDF-підпис). → чесно це позначити (honesty-pass).
-> - **L1 (feasible interim):** гай говорить через Королеву (Queen підписує батчі; Queen на LiFePO4, не energy-starved).
-> - **L2 (North-Star):** кожне дерево говорить саме (SE050 non-extractable Ed25519, щотижневий Merkle-корінь — E.60). Energy-gated: 1 LoRa-TX ≈ 39 мДж vs профіцит +33.6 мДж/добу (Scenario C) → **weekly влазить, daily потребує Scenario D / 2× anchor** ([`02_03 §9.7`](02_03_BQ25570_MPPT_Nano_Power)). Post-anchor-TRL.
+> **True-DePIN ladder («голос дерева»):** L0 custodial → L1 Queen-attest → L2 per-tree (SE050 Ed25519 + Merkle, energy-gated). Повний ladder (рунги/гейти/статус/енергобюджет) — канон [`05_02` — Trust-origin ladder](05_02_Proof_of_Growth_Pipeline). §3.7 володіє лише SE/крипто-частиною (Slot-0 AES, Slot-1 Ed25519 keygen).
 >
 > **Що SE050 дає / межі:** дає **голос** (non-extractable Ed25519 = origin) + AES-128 tamper-storage (LoRa-ключ) + монотонні лічильники (FW.2 nonce + panic) + anti-clone serial + SHA/HMAC OTA. **НЕ замінює** ЗВТ-метрологію (точність/legal — STK.4) і operator-bond/slashing (економічний ризик — BIZ.13). Голос + точні «вуха» + skin-in-game = довірений RWA.
 >

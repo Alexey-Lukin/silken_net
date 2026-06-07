@@ -64,7 +64,8 @@
 | Per-module TRL матриця | `00_03 §1` (агрегат-дім). Модульний док = власний member-TRL у Статус (це джерело, не дубль); заборонено відтворювати всю матрицю поза §1 |
 | Beyond-TRL-9 / SRL-MRL R&D-агенда (Planetary Intelligence gaps + фрактальне масштабування) | `00_08` |
 | AES per-channel modes | `03_05 §6` (зведена channel-таблиця) + `§3.7` (ключі/ARCH.42). Firmware-доки `03_01 §9` / `03_02 §8` реферять цю таблицю, не дублюють (DOC-T.14) |
-| Secure Element part + device-identity trust ladder | `03_05 §3.7` (SE = **SE050**; true-DePIN L0→L1→L2; slot-map; AES-128 = вибір, не SE-constraint). Інші доки реферять цю SSOT, не дублюють ні назву частини, ні rationale (міграція — `00_07` SE050-MIGRATION) |
+| DePIN trust-origin ladder (L0→L1→L2) | `05_02` (Trust-origin ladder — рунги/гейти/статус; L2-механізм §E.60). SE/крипто-частина → `03_05 §3.7`. Інші доки реферять, не дублюють ladder |
+| Secure Element part (SE050) + slot-map | `03_05 §3.7` (SE = **SE050**; AES-128 = вибір, не SE-constraint; slot-map; ladder → `05_02`). Міграція — `00_07` SE050-MIGRATION |
 | Lorenz константи | `03_04 §4.1` |
 | Tokenomics rate / slashing thresholds / insurance pool | `05_03` · `05_05 §3/§4` |
 | Carbon (2000 SCC = 1 tCO₂) | `05_03` + `07_01 §3` (business view) |

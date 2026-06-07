@@ -595,6 +595,24 @@ ChainlinkDispatchWorker.perform_async(telemetry_log_id, created_at_iso)
 
 ---
 
+### Trust-origin ladder — L0 → L1 → L2 [📐 КАНОН trust-походження]
+
+> **One-Home:** це канонічний дім **trust-походження телеметрії** (наскільки криптографічно доведено, що дані прийшли від реального дерева). SE/крипто-частина (SE050, slot-map) — [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security); L2-механізм — §E.60 нижче; залишки/міграція — [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker). Інші доки реферять цю секцію, не дублюють ladder.
+
+**Чесна теза:** «дані з фізичного дерева» — це **мета (true-DePIN North-Star)**, а не сьогоднішній стан. Доказ-походження сходить трьома рунгами, і **зв'язуюче обмеження — ЕНЕРГІЯ, не крипта** (дерево має афордити передати підпис).
+
+| Рунг | Хто підписує | Що доводить | Чого НЕ доводить | Гейт | Статус |
+|------|--------------|-------------|------------------|------|--------|
+| **L0** custodial | backend (HKDF-derived seed — `w3bstream_verification_service`) | цілісність pipeline + прив'язка до on-chain peaq DID (master-backed) | фізичне походження (backend сам генерує підпис) | — | **зараз** |
+| **L1** Queen-attestation | Королева (Ed25519 — ідентичність уже в M2M-auth) | crypto gateway-origin: дані пройшли крізь **реальну** Королеву, не підроблені backend'ом / injection | per-tree authenticity (оператор контролює Королеву) | firmware Queen software-Ed25519 + backend-verify | **feasible interim** — не gated на анкер/енергію/SE (Queen на LiFePO4) |
+| **L2** per-tree device-voice | **дерево саме** (SE050 non-extractable Ed25519, щотижневий Merkle-корінь) | повне device-origin, **операторо-непідробне** («голос дерева») | — | анкер-TRL + енергія (1 TX ≈ 39 мДж vs +33.6 мДж/добу Scenario C → weekly влазить, daily = Scenario D / 2× anchor) + SE050 populate | **North-Star** (механізм = §E.60 + [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)) |
+
+> **Крипта доповнює, не замінює:** L0–L2 доводять, що голос **дерева** і **цілий**; але **ЗВТ-метрологія** (STK.4) доводить, що голос **точний** (legal/CBAM carbon), а **operator-bond + slashing** (BIZ.13) робить брехню **дорогою**. Трійця (origin + accuracy + skin-in-game) = довірений RWA. Жоден рунг ladder не знімає потреби у ЗВТ та економічному шарі.
+
+> **Чому енергія, а не крипта, — гейт L2:** 21-байтний LoRa-кадр не має місця на підпис (Ed25519 = 64 Б) → per-record device-підпис неможливий; рішення — періодичний **Merkle-корінь** (§E.60), що амортизує один підпис на багато записів. Cadence голосу = скільки енергії дерево зібрало (сильніше дерево говорить частіше).
+
+---
+
 ### 🔬 E.60 — Merkle CID-witness: bidirectional integrity bridge Polygon ↔ Filecoin (пропозиція)
 
 > **Статус:** частково реалізовано (2026-06-03). ✅ `Filecoin::CidGenerator` (детермінований CIDv1: codec raw + sha2-256 → base32 multibase, golden-vector проти `ipfs add --raw-leaves --cid-version 1`) + content-CID guard у потоці архівації AuditLog: `ArchiveService` вбудовує самоописовий `content_cid`, `VerificationService` незалежно перераховує його (локально vs віддалено) і fail-fast при розбіжності → детект ex-post підміни архіву. 🔗 **Залишок (follow-on):** per-tree Merkle-witness нижче (leaf_cid → `archive_root` → Polygon `mint(bytes32)`) для телеметрія-батчу — потребує `MerkleTree`, колонок `archive_cid`/`merkle_leaf` на партиційованому `TelemetryLog` (міграція) та Solidity `mint(bytes32)`; саме там worker-guard з `manual_review`. Розширює Крок B (IoTeX W3bstream witness) і змикає його з кроком архівації Filecoin ([`05_01 §Рівень 1`](05_01_Multichain_Architecture)). Трекер: [`00_07` — E.60](00_07_Action_Plan_Tracker).
