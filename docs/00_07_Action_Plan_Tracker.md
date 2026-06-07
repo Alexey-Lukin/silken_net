@@ -641,7 +641,7 @@
 
 #### SEC.3 — Factory Flashing pipeline
 - **P0** · 👤 · → `03_05 §3.4` (+ §3.4г threat model)
-- ✅ Гілка A+B Rake-tool: `provisioning_sessions` AASM + 2-Person Rule + `factory_flashing/*` + rake `factory:flash|approve|execute` (dry-run) + 63 specs. · [ ] 👤 real `STM32_Programmer_CLI` на bench (post-FW.2) · [ ] 👤 Bitwarden Secrets API live (`BitwardenAdapter` зараз `NotImplementedError`) · [ ] 🔗 real `cryptoauthlib` I²C — після SEC.6 ATECC608B PCBA
+- ✅ Гілка A+B Rake-tool: `provisioning_sessions` AASM + 2-Person Rule + `factory_flashing/*` + rake `factory:flash|approve|execute` (dry-run) + specs. ✅ (2026-06-07) **EXECUTE-шлях інтеграційно доведено шимом**: fake `STM32_Programmer_CLI` на PATH (сценарії ok/verify-fail/rdp-fail) → повна Session через РЕАЛЬНІ subprocess'и — capture stdout/stderr/exit, stop-on-fail порядок, AASM failed+transcript (`spec/services/factory_flashing/session_run_execute_path_spec.rb`); bench-residual звузився до фізичного SWD-флешу. · [ ] 👤 real `STM32_Programmer_CLI` на bench (post-FW.2) — runbook `firmware/scripts/bench/` · [ ] 👤 Bitwarden Secrets API live (`BitwardenAdapter` зараз `NotImplementedError`) · [ ] 🔗 real `cryptoauthlib` I²C — після SEC.6 ATECC608B PCBA
 
 #### SEC.4 — Reed Switch shipping mode (not in BOM)
 - **P2** · 👤 · → `03_05`
