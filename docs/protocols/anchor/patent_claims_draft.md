@@ -5,9 +5,10 @@
 > повірений + Кафедра ІВ ЧНУ. Тут — **технічний зміст claims + лінія захисту**, щоб не
 > починати з чистого аркуша.
 > **Призначення:** вхідний матеріал для TISC-пошуку + чернетка незалежних/залежних пунктів.
-> **Cross-ref:** [`prior_art_queries.md`](prior_art_queries.md) (пошукові запити + positioning) ·
+> **Cross-ref:** [`patent_filing_readiness.md`](patent_filing_readiness.md) (зведений packet: novelty-матриця claims↔prior-art + checklist подачі) ·
+> [`prior_art_queries.md`](prior_art_queries.md) (пошукові запити + positioning) ·
 > [`08_01 §2.1`](../../08_01_Joint_Publications_and_IP_Strategy.md) (TISC engagement) ·
-> [`01_03`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) (EBFC канон) · [`01_01`/`01_02`](../../01_01_Anchor_Geometry_and_Materials.md) (gyroid).
+> [`01_03`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) (EBFC канон) · [`01_01`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) (gyroid).
 > 🛑 **Filing PRECEDES journal submission** — Стаття 1 розкриває cascade/PCET механізм (08_01 §2).
 
 ---

@@ -1,7 +1,7 @@
 # Prior Art Search Query Set for TISC ЧНУ
 
 > **Purpose:** Pre-prepared patent search queries for TISC (Technology and Innovation Support Center) at ЧНУ. To be used during WIPO PATENTSCOPE / Espacenet prior art search **before filing**.
-> **Cross-ref:** [`08_01 §2.1`](../../08_01_Joint_Publications_and_IP_Strategy.md) — TISC engagement plan
+> **Cross-ref:** [`patent_filing_readiness.md`](patent_filing_readiness.md) (зведений filing-readiness packet: novelty-матриця + checklist) · [`patent_claims_draft.md`](patent_claims_draft.md) (claims + synergy-defence) · [`08_01 §2.1`](../../08_01_Joint_Publications_and_IP_Strategy.md) — TISC engagement plan
 
 ---
 

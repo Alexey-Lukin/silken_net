@@ -819,7 +819,7 @@
 
 #### UNI.3 — IP договір з ЧНУ + patent filing (критичний шлях Статті 1)
 - **P0** · 👤 · → `08_03`, `08_01 §2.1`
-- 🛑 **Filing ПЕРЕД сабмітом Статті 1** (розкриває cascade/PCET механізм — embargo `08_01 §2`). Synergy-claims **draft готовий** ([`protocols/anchor/patent_claims_draft.md`](protocols/anchor/patent_claims_draft.md)) + пошукові запити ([`prior_art_queries.md`](protocols/anchor/prior_art_queries.md)). · [ ] 👤 юр-оформлення IP-договору ЧНУ + підпис · [ ] 👤 TISC ЧНУ: прогнати patentability-пошук (Sets 1-5; no-date/full-text/broad) · [ ] 👤 Кафедра ІВ: claims 1-9 → формальний UA/PCT формат · [ ] 👤 UkrNOIVI пріоритетна заявка → дата пріоритету (розблоковує сабміт)
+- 🛑 **Filing ПЕРЕД сабмітом Статті 1** (розкриває cascade/PCET механізм — embargo `08_01 §2`). Synergy-claims **draft готовий** ([`protocols/anchor/patent_claims_draft.md`](protocols/anchor/patent_claims_draft.md)) + пошукові запити ([`prior_art_queries.md`](protocols/anchor/prior_art_queries.md)) → зведені у **filing-readiness packet** ([`patent_filing_readiness.md`](protocols/anchor/patent_filing_readiness.md): novelty-матриця claims↔prior-art + checklist подачі). · [ ] 👤 юр-оформлення IP-договору ЧНУ + підпис · [ ] 👤 TISC ЧНУ: прогнати patentability-пошук (Sets 1-5; no-date/full-text/broad) · [ ] 👤 Кафедра ІВ: claims 1-9 → формальний UA/PCT формат · [ ] 👤 UkrNOIVI пріоритетна заявка → дата пріоритету (розблоковує сабміт)
 
 #### UNI.4 — ChNU школа Мінаєва: DFT-моделювання EBFC
 - **P1** · 👤 · → `08_01 §1.1`, `08_03 §1`
