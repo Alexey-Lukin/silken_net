@@ -166,9 +166,9 @@ BQ25570 VBAT_OK ──▶ STM32 GPIO (EXTI або wake-up pin)
 | Іоністор розряджається | > 3.32V | HIGH | MCU продовжує роботу |
 | Іоністор критично сів | < 3.32V (~97% від 3.4V) | LOW → HIGH (гіст.) | MCU засинає (STOP2) |
 
-**Гістерезис** (~3%, вбудований в BQ25570) запобігає швидкому перемиканню при граничній напрузі ("дрижання" / chatter).
+**Гістерезис:** пороги VBAT_OK **програмовані** ROK-резисторами (VBAT_OK_PROG — спад; VBAT_OK_HYST — підйом, ≈ PROG + 100 мВ; TI SLUSBH2), а **не** «вбудовані 3%». Запобігають дрижанню (chatter) при граничній напрузі. Значення 3.4 / 3.32 В у таблиці — поточна **ціль дизайну** (фінал — bench).
 
-**У Firmware:** STM32 виходить з STOP2 після апаратного переривання на піні VBAT_OK (через HAL_PWR_EnableWakeUpPin або EXTI rising edge).
+**У Firmware:** VBAT_OK — апаратний buck/brownout-**гейт**, НЕ періодичний wake. Канон wake-source (RTC WUT + Vcap-енергогейт + RTC-календар timebase) — [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA) (FW.49): при буфері 4.39 Дж VBAT_OK залипає HIGH → rising-edge не дає heartbeat; cold-start після глибокого розряду = power-on-reset (нижче порогу MCU знеструмлений).
 
 ---
 

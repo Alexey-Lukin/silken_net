@@ -643,10 +643,13 @@ HAL_CRYP_Init(&hcryp);
 
 **Trade-off RTC-only vs SRAM2 retention:** При SRAM2 OFF втрачається весь runtime-стан (mesh routing cache, EMA, OTA chunk buffer). Усе, що має пережити STOP2, **повинно бути у RTC Backup** (§2 канонічна таблиця DR0-DR19). Перевага: економія ~800 nA × 3.3V × 3600s × η_buck(0.5) = 19 мДж/год → дозволяє +1 TX cycle на 2 години.
 
-**Джерела пробудження:**
-- RTC Alarm (основний — за розкладом заряду іоністора)
-- GPIO EXTI на GPIO_PIN_0 (п'єзодиск — вібрація/звук)
-- PVD Callback (напруга < 2.2V — аварійне відключення, не пробудження)
+**Джерела пробудження (📐 КАНОН wake-source — FW.49):**
+- **RTC WUT** (періодичний fine-tick, LSE йде у STOP2) — ОСНОВНИЙ wake. Вузол прокидається за розкладом, перевіряє Vcap-енергогейт ([FW.50](00_07_Action_Plan_Tracker)) і робить повний sense→Lorenz→TX цикл лише при достатньому перезаряді; інакше — назад у STOP2. `delta_t` = wall-різниця між energy-sufficient циклами через `Wall_Seconds_Now()` (RTC-календар), а НЕ active-tick.
+- **GPIO EXTI** на GPIO_PIN_0 (п'єзодиск — async chainsaw/panic).
+- **PVD Callback** (напруга < 2.2V — аварійне, не пробудження).
+- **VBAT_OK** ([`02_03 §7`](02_03_BQ25570_MPPT_Nano_Power)) — апаратний buck/brownout-**гейт** (нижче порогу MCU знеструмлений → recovery = power-on-reset), **НЕ** GPIO-EXTI wake: при буфері 4.39 Дж VBAT_OK залипає HIGH (нема періодичного edge), а cold-start = power-on робить EXTI надлишковим.
+
+> **ADR wake-source (FW.49, founder 2026-06-07):** RTC WUT + Vcap-енергогейт + RTC-календар як timebase — обрано замість (а) чистого RTC-розкладу (`delta_t`=константа → мертвий біосигнал) і (б) VBAT_OK-edge (залипання HIGH + квантований `delta_t` + потреба HW-траси VBAT_OK→EXTI). `delta_t` як час перезаряду = метаболізм живе через Vcap-гейт, вимірюється wall-time. Staged-план + bench bring-up (LSE/RTC clock-tree у repo відсутній) — [`00_07` FW.49](00_07_Action_Plan_Tracker).
 
 ---
 
