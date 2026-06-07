@@ -496,9 +496,9 @@
 - **P0** · 🤖 · → `03_05 §3.2`
 - ✅ дизайн 24B AES-128-CCM + backend парсер + firmware freeze-contract emit/decrypt + host-тести (golden-vector parity з `Cryptography::LoraCcm`/OpenSSL — складання+tamper-семантика, **не** залізна крипта); FC у RTC DR15. **Канонічна FC/nonce/cold-boot політика — `03_05` (📐 КАНОНІЧНЕ ДЖЕРЕЛО), єдине місце.** Cold-boot nonce-унікальність імовірнісна (MEDIUM, ~N/2²⁴); reseed = HRNG retry×3 (кволий tick-fallback прибрано 2026-05-30). Закриває ECB→CCM/MIC/replay (BLOCKER-2/3) + SEC.10 panic + FW.29; узгоджено з ATECC608B Slot 0. · [ ] 🤖 верифікувати `CRYP_AES_CCM` на STM32WLE5JC REVB (RM0461 §27.4, bench) → flip `FW2_CCM_ENABLED`/`TELEMETRY_CCM_ENABLED` — **ЄДИНИЙ HW-залежний пункт** · [ ] 🔗 TRL-7: monotonic FC-counter (Flash high-water / ATECC) для безумовної nonce-унікальності · [x] ✅ DR15 resource-conflict вирішено (2026-05-30): FW.2 тримає DR15, FW.20-S2 bitmap → Flash-KV (`03_01 §2.3`)
 
-#### FW.3 — Queen AT Command Blocking (~25 сек)
-- **P1** · 🟡 · → `03_02`
-- ✅ ring buffer + drain-loop закрив single-packet overwrite/emergency loss (Queen сліпа під час CoAP flush). · [ ] 🟡 переписати `Flush_Cache_To_Rails()` на UART DMA interrupt-driven — deferred (HW bench)
+#### FW.3 — Queen AT Command Blocking
+- **P1** · 🟡 · → `03_02 §4`
+- ✅ ring buffer + drain-loop закрив single-packet overwrite/emergency loss (Queen сліпа під час CoAP flush). ✅ (2026-06-07) **blind-вікно закрито архітектурно**: pure `at_engine.h` (байтовий токенайзер, early-exit на фіналі — обмін коштує реальну відповідь, не повний timeout) + `sim7070_coap.h` розмова + hex чанками замість побайтового TX (старі «~25 с» жили саме там); init теж response-driven (`ATE0`+транзакції). Host-тести на скриптованому модемі — `test_at_engine.c`; старі FW.9-дзеркала прибрано (урок R9). Wire-зміна граматики — FW.56. · [ ] 🟡 UART DMA interrupt-driven RX (зараз байтовий polling) — bench · [ ] 👤 bench: реальні таймінги SIM7070G
 
 #### FW.4 — TinyML `Run_Inference()` — compilation unblocked, inference TBD
 - **P0** · 👤+🔗 · → `03_03`
@@ -620,6 +620,10 @@
 - **P2** · 🤖+👤 · → [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)
 - **Знахідка (FW.49 нора):** цільовий 300nA-режим (`03_01 §1.10`, «наступний firmware-цикл») вимикає SRAM2 retention (`PWR.CR3 RRS=0`, −800nA) → стан переживає STOP2 ТІЛЬКИ в RTC Backup. Але RAM-глобали `soldier_unix_ts` + FW.49 boot/beacon/request wall-маркери (та EMA-runtime, ota_buffer) гинуть щоцикл → drift-watchdog/годинник/EMA ламаються у 300nA-режимі. DR0-DR19 повні (`03_01 §2`) → персист мусить іти у Flash-KV (`03_01 §2.3 ARCH.28` шлях A). Зчеплення: FW.49 ↔ FW.20-S2 ↔ FW.21.
 - [ ] 🤖 інвентар RAM-стану, що мусить пережити SRAM2-off · [ ] 👤 Flash-KV store (§2.3 шлях A) АБО свідомий trade-off SRAM2-retain (−800nA vs Flash-wear) · [ ] 👤 bench: вимір 300nA + persist-roundtrip
+
+#### FW.56 — Queen CoAP AT-граматика ≠ SIMCom: модем = UDP-труба, PDU будує хост
+- **P1** · 🤖+👤 · → `03_02 §4`
+- **Знахідка (sim-first, 2026-06-07):** граматика `CCOAPNEW="coap://…"` / `CCOAPSEND=<cid>,<method>,"<uri>",<len>,"<hex>"` у firmware **не існує** в сімействі SIMCom (офіційна CoAP App Note, звірено посторінково): реально `CCOAPNEW="<ip>",<port>,<cid>` → `+CCOAPNEW: <cid>`; `CCOAPSEND=<cid>,<len>,"<hex>"`, де hex — **сирий CoAP PDU** від хоста; відповідь сервера — URC `+CCOAPNMI: <cid>,<len>,"<hex>"`; доменів немає → потрібен `AT+CDNSGIP`. На bench це означало б «німий» модем невідомої причини. ✅ Закрито: `coap_pdu.h` (RFC 7252 CON-PUT builder + parser відповіді) + `sim7070_coap.h` (повна розмова, DNS-крок, hex чанками) + **FW.51 cache-clear ключується на доставку** (`+CCOAPNMI` клас 2.xx, наш MID), не транспортний OK; golden-вектор відповіді — дослівно з ноти (`60457233…` → ACK 2.05). Канон — `03_02 §4`. · [ ] 👤 bench: verbatim-звірка SIM7070-ноти V1.03 (PDF недоступний, 403) + реальні URC/таймінги · [ ] 🔗 e2e: Queen-PDU ↔ backend CoAP-intake (`coap_smoke.yml`) на staging
 
 ## §03/§05 · Безпека (Edge crypto + Web3)
 

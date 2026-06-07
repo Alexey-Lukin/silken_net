@@ -80,10 +80,10 @@ Ruby unpack: `"N n c C n C C a4"`.
 - LoRa RX -> **AES-128-ECB** decrypt (per-Soldier 128-bit key) -> CIFO EdgeCache (50 slots, дедуплікація за DID).
 - **Queen Sentinel:** `DID == 0x00000000` → власна телеметрія Королеви → `GatewayTelemetryWorker` (не `TelemetryLog`).
 - Flush trigger: >= 45 entries OR 1 година + HRNG jitter (0-60 сек).
-- Flush process: **AES-256-CBC** encrypt (CoAP key, окремий MX_CRYP re-init на `CRYP_KEYSIZE_256B`, HRNG IV) -> AT+CCOAPSEND -> CoAP PUT `/telemetry/batch/<QUEEN_UID>` -> SIM7070G.
-- **BLOCKER: ECB restore** після CBC flush — якщо не відновити (`CRYP_KEYSIZE_128B` + LoRa key), наступні LoRa decrypt ламаються.
+- Flush process: **AES-256-CBC** encrypt (CoAP key, окремий MX_CRYP re-init на `CRYP_KEYSIZE_256B`, HRNG IV) -> CoAP PDU будує **хост** (FW.56: SIMCom = UDP-труба) -> `AT+CCOAPSEND=<cid>,<len>,"<hex PDU>"` -> CoAP PUT `/telemetry/batch/<QUEEN_UID>` -> SIM7070G; доставка = URC `+CCOAPNMI` класу 2.xx.
+- **BLOCKER: ECB restore** після CBC flush — якщо не відновити (`CRYP_KEYSIZE_128B` + LoRa key), наступні LoRa decrypt ламаються. (FW.3: restore тепер одразу після encrypt, ДО модемної розмови.)
 - **BLOCKER: `QUEEN-001` hardcoded** UID -> неможливий уніфікований флешинг.
-- **BLOCKER: AT command blind delay ~25 sec** під час flush (немає парсингу відповіді модему).
+- ✅ AT blind delay закрито (FW.3/FW.56, 2026-06-07): `at_engine.h`/`coap_pdu.h`/`sim7070_coap.h` — байтовий токенайзер з early-exit, hex чанками; residual: UART DMA RX + verbatim-звірка SIM7070-ноти (bench). Канон: `03_02 §4`.
 - OTA downlink: CoAP -> RAM assembly (`pending_ota_bytecode[8192]`) -> reflex broadcast chunk by chunk (TTL).
   - Chunk format: `[0x99][index:2][total:2][bytecode:11]`, **AES-128-ECB** (LoRa key, як інші Soldier-frames), pacing 60ms між чанками. (Queen→Rails CoAP transport — AES-256-CBC; Queen→Soldier OTA reflex — AES-128.)
   - `MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000`. Magic check: `0x45544952 ("RITE")` → load OTA bytecode, else → load embedded `lorenz_bytecode[]`.
@@ -285,7 +285,7 @@ Solana: Ed25519 підпис, SPL Token Transfer, ATA резолюція чер�
 | OPTIMAL-Z | `bio_contract.rb:99` | ✅ Виправлено (2026-05-17): `OPTIMAL_Z_TARGET = 29.0` — коментар та константа узгоджені. Обґрунтування: +2 зміщення від z_eq=27.0 для кращої розрізненності класів. Задокументовано у `docs/03_04 §BLOCKER` |
 | QUEEN-UID | `firmware/queen/main.c` | ✅ Виправлено (PLAN 2.4): Flash-based UID з fallback |
 | QUEEN-OTA-LOOP | `firmware/queen/main.c` | ✅ Виправлено (PLAN 2.5): `ota_is_active` скидається після повного циклу |
-| QUEEN-AT-BLIND | `firmware/queen/main.c:542` | ~25 сек blind wait під час CoAP flush |
+| QUEEN-AT-BLIND | `firmware/queen/{at_engine,coap_pdu,sim7070_coap}.h` | ✅ Закрито архітектурно (FW.3/FW.56, 2026-06-07): early-exit токенайзер + host-built CoAP PDU + доставка по `+CCOAPNMI` 2.xx; host-тести `test_at_engine.c`. 👤 Residual: UART DMA RX + verbatim SIM7070-нота V1.03 на bench |
 | HRNG-IV-REUSE | `firmware/queen/coap_iv.h` | ✅ Harden (2026-05-29): fallback IV винесено у pure `coap_fallback_iv_word` (uid_hash×device + queen_unix_ts×reboot + coap_flush_seq×flush) + 4 host-тести → **reuse закрито** (унікальність across device/reboot/flush). 🟡 Residual: IV передбачуваний на fallback-шляху — **low-severity** (CoAP-батч без chosen-plaintext вектора; uniqueness = операційна вимога тут, `03_05 BLOCKER-4`); повна unpredictability = key-derived `E_key(ctr)`, bench-gated |
 | BQ25570-R | `docs/02_03` | VBAT_OV резистори не верифіковані |
 | PROMETHEUS | `deploy/akash/config.alloy` | ✅ Вирішено (OBS.1): Grafana Alloy → Grafana Cloud SaaS (remote_write); self-hosted не потрібен. Залишок 👤: import dashboards (S2.2) + verify post-deploy — `06_03` |

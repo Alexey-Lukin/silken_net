@@ -1801,60 +1801,9 @@ TEST(test_cmd_cbc_then_flush_cbc_both_restore) {
     ASSERT_NULL(test_cryp.Init.pInitVect);
 }
 
-/* ════════════════════════════════════════════════════════════════════
- * 10. CoAP RETRY LOGIC (FW.9)
- * ════════════════════════════════════════════════════════════════════ */
-
-#define COAP_MAX_RETRIES      3
-#define UART_RX_BUF_SIZE      128
-#define COAP_BASE_TIMEOUT_MS  2000
-#define COAP_SEND_TIMEOUT_MS  5000
-
-/* [FW.9] Verify AT response parser detects "OK" in modem response */
-static uint8_t test_parse_modem_response(const char* response)
-{
-    uint8_t buf[UART_RX_BUF_SIZE];
-    memset(buf, 0, sizeof(buf));
-    size_t len = strlen(response);
-    if (len >= UART_RX_BUF_SIZE) len = UART_RX_BUF_SIZE - 1;
-    memcpy(buf, response, len);
-
-    // Search for "OK"
-    for (uint8_t i = 0; i < UART_RX_BUF_SIZE - 1 && buf[i] != '\0'; i++) {
-        if (buf[i] == 'O' && buf[i+1] == 'K') return 1;
-    }
-    // Search for "ERROR"
-    for (uint8_t i = 0; i < UART_RX_BUF_SIZE - 5 && buf[i] != '\0'; i++) {
-        if (buf[i] == 'E' && buf[i+1] == 'R' &&
-            buf[i+2] == 'R' && buf[i+3] == 'O' &&
-            buf[i+4] == 'R') return 0;
-    }
-    return 0;
-}
-
-TEST(test_coap_retry_constants) {
-    ASSERT_EQ(COAP_MAX_RETRIES, 3);
-    ASSERT_EQ(UART_RX_BUF_SIZE, 128);
-    ASSERT_EQ(COAP_BASE_TIMEOUT_MS, 2000);
-    ASSERT_EQ(COAP_SEND_TIMEOUT_MS, 5000);
-}
-
-TEST(test_coap_response_parser_ok) {
-    ASSERT_TRUE(test_parse_modem_response("\r\nOK\r\n"));
-    ASSERT_TRUE(test_parse_modem_response("+CCOAPNEW: 0\r\nOK\r\n"));
-    ASSERT_TRUE(test_parse_modem_response("OK"));
-}
-
-TEST(test_coap_response_parser_error) {
-    ASSERT_FALSE(test_parse_modem_response("ERROR"));
-    ASSERT_FALSE(test_parse_modem_response("\r\nERROR\r\n"));
-    ASSERT_FALSE(test_parse_modem_response("+CME ERROR: 3\r\n"));
-}
-
-TEST(test_coap_response_parser_timeout) {
-    ASSERT_FALSE(test_parse_modem_response(""));
-    ASSERT_FALSE(test_parse_modem_response("\r\n"));
-}
+/* [FW.3] Старі FW.9-тести AT-парсера (дзеркало підстрокового пошуку "OK")
+ * прибрано разом із реалізацією: модемна розмова тепер — pure-хедери
+ * at_engine.h / coap_pdu.h / sim7070_coap.h, покриті test_at_engine.c. */
 
 /* ════════════════════════════════════════════════════════════════════
  * 10. [FW.1] FLASH-BASED AES KEY LOADING TESTS
@@ -2669,11 +2618,7 @@ int main(void)
     RUN(test_cmd_cbc_during_decrypt);
     RUN(test_cmd_cbc_then_flush_cbc_both_restore);
 
-    printf("\n  CoAP Retry Logic (FW.9):\n");
-    RUN(test_coap_retry_constants);
-    RUN(test_coap_response_parser_ok);
-    RUN(test_coap_response_parser_error);
-    RUN(test_coap_response_parser_timeout);
+    /* [FW.3] CoAP Retry Logic (FW.9) переїхав у test_at_engine.c */
 
     printf("\n  Flash-Based AES Key Loading (FW.1):\n");
     RUN(test_queen_load_key_provisioned_success);

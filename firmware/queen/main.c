@@ -21,6 +21,12 @@
 #include "coap_iv.h"
 // [FW.53] CRC16-CCITT One-Home — перевірка CoAP-OTA чанків від Rails
 #include "../common/silken_crc.h"
+// [FW.3] Байтовий AT-токенайзер + транзакції (pure, host-tested)
+#include "at_engine.h"
+// [FW.56] CoAP PDU будує хост: SIM7070G — UDP-труба, не CoAP-стек
+#include "coap_pdu.h"
+// [FW.3/FW.56] Повна CoAP-PUT розмова з модемом (pure-оркестратор)
+#include "sim7070_coap.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -79,13 +85,15 @@
 #define QUEEN_UID_MAX_LEN     32         // Max UID string length including null terminator
 #define QUEEN_UID_MAGIC       0x51554944UL // "QUID" — magic marker for provisioned UID
 
-// [PLAN 2.11] Starlink/LTE adaptive timeouts
-// Starlink DTC latency: 600–2400 ms (variable). LTE-M: 100–500 ms.
-// Fixed 1000 ms is insufficient for Starlink worst case.
-#define COAP_BASE_TIMEOUT_MS  2000       // Base timeout for CoAP session setup
-#define COAP_SEND_TIMEOUT_MS  5000       // Timeout for data send (includes Starlink worst case)
-#define COAP_MAX_RETRIES      3          // [FW.9] Maximum CoAP send retry attempts
-#define UART_RX_BUF_SIZE      128        // [FW.9] UART RX buffer for modem response parsing
+// [PLAN 2.11 → FW.3] Starlink/LTE таймінги. Starlink DTC RTT 600–2400 мс,
+// LTE-M 100–500 мс. Двигун (at_engine.h) — early-exit: латентність дорівнює
+// реальній відповіді, дедлайни лише страхують тишу.
+#define AT_INTERBYTE_TIMEOUT_MS  150     // [FW.3] пауза між байтами = «модем дослухав»
+#define AT_INIT_BUDGET_MS        2000    // [FW.3] бюджет на одну init-команду
+#define COAP_CONV_BUDGET_MS      15000   // [FW.3] повна розмова NEW→SEND→NMI→DEL (< вікно IWDG)
+#define COAP_MAX_RETRIES         3       // [FW.9] Maximum CoAP send retry attempts
+#define COAP_SERVER_HOST  "api.silkennet.com"  // [FW.56] CCOAPNEW хоче IP → CDNSGIP цього хоста
+#define COAP_SERVER_PORT  5683
 
 // [FW.20] Конверт CMD_TIME_SYNC (UTC-секунди від сервера як єдиного джерела істини).
 // Бекенд CoapEncryption.coap_encrypt обгортає КОЖЕН downlink у цей конверт,
@@ -251,7 +259,11 @@ uint8_t decrypted_payload[16];          // Розшифрований пакет
 volatile int8_t current_rssi = 0;       // RSSI поточного оброблюваного пакета (для downstream-кешу)
 volatile int8_t current_snr  = 0;       // [E.8] SNR поточного оброблюваного пакета (CIFO tiebreaker)
 
-char at_tx_buffer[256];                 // Буфер для формування AT-команд
+// [FW.3] Один AT-двигун на Королеву: токенайзер переживає транзакції, бо
+// URC (+CCOAPNMI, +CDNSGIP) вільні лунати і після фінала попередньої команди.
+static AtEngine at_engine_state;
+static char     coap_server_ip[16];     // [FW.56] CDNSGIP-кеш (CCOAPNEW хоче IP, не домен)
+static uint16_t coap_mid;               // [FW.56] CoAP Message-ID наших PUT'ів
 
 // === LoRa RX Ring Helpers ================================================
 // Single-producer (ISR) / single-consumer (main loop): кожен інлайн —
@@ -404,7 +416,7 @@ static void MX_IWDG_Init(void); // [PLAN 2.6] Independent Watchdog — auto-reco
 
 /* USER CODE BEGIN PFP */
 // Функції-обгортки для роботи з модемом та транзитом
-void SIM7070_SendATCommand(char* command, uint32_t delay_ms);
+static AtTxResult SIM7070_Transact(const char* command, uint32_t budget_ms);
 void Process_And_Cache_Data(uint32_t uid, const uint8_t* payload, int8_t rssi, int8_t snr);
 void Flush_Cache_To_Rails(void);
 // [СИНХРОНІЗОВАНО з Rails]: Обробка вхідних CoAP-команд від сервера
@@ -461,9 +473,13 @@ int main(void)
   memset(cmd_dedup_ring, 0, sizeof(cmd_dedup_ring));
 
   // 3. Ініціалізація модему SIM7070G
-  // Перевіряємо зв'язок та налаштовуємо режим (LTE-M / NB-IoT)
-  SIM7070_SendATCommand("AT\r\n", 500);
-  SIM7070_SendATCommand("AT+CNMP=38\r\n", 1000);
+  // [FW.3] Response-driven: кожна команда чекає фінал (OK/ERROR), а не сліпий
+  // delay. Провал не фатальний — модем міг ще прокидатись; flush-розмова
+  // повторить усе зі свіжим бюджетом. ATE0 глушить ехо (токенайзер його
+  // переживає, але ефір чистіший).
+  (void)SIM7070_Transact("ATE0\r\n", AT_INIT_BUDGET_MS);
+  (void)SIM7070_Transact("AT\r\n", AT_INIT_BUDGET_MS);
+  (void)SIM7070_Transact("AT+CNMP=38\r\n", AT_INIT_BUDGET_MS);
 
   // [HW.10] Power Saving Mode (PSM) + Extended DRX (eDRX) для NB-IoT/LTE-M.
   // Знижує idle-споживання з ~10 мкА (SIM7000G baseline) до ~3 мкА (SIM7070G PSM)
@@ -479,12 +495,12 @@ int main(void)
   //   Active="00000000" → 0 sec (no active window after RX → одразу в PSM)
   //     Per 3GPP §10.5.7.3 (T3324):
   //     bits 8-6 unit=000 (2s), bits 5-1 value=00000 → 0 × 2s = 0 sec
-  SIM7070_SendATCommand("AT+CPSMS=1,,,\"00100001\",\"00000000\"\r\n", 1000);
+  (void)SIM7070_Transact("AT+CPSMS=1,,,\"00100001\",\"00000000\"\r\n", AT_INIT_BUDGET_MS);
 
   // AT+CEDRXS=<mode>,<AcT>,<Requested_eDRX>:
   //   mode=1 → enable eDRX, AcT=5 → LTE Cat M1
   //   eDRX="0010" → 20.48 sec (paging window — короткий для downlink-сприйнятливості)
-  SIM7070_SendATCommand("AT+CEDRXS=1,5,\"0010\"\r\n", 1000);
+  (void)SIM7070_Transact("AT+CEDRXS=1,5,\"0010\"\r\n", AT_INIT_BUDGET_MS);
 
   // 4. Відкриваємо вуха: Королева переходить у режим безперервного слухання
   Radio.Rx(LORA_RX_INFINITE);
@@ -932,33 +948,40 @@ static void Restore_ECB_Mode(void)
     }
 }
 
-// [FW.9] UART RX buffer for modem response parsing
-static uint8_t uart_rx_buf[UART_RX_BUF_SIZE];
+// [FW.3] UART-клей під чистий AT-двигун (at_engine.h). Стара схема читала
+// 128 байт «до упору» — HAL_UART_Receive вертався лише по повному таймауту,
+// тож КОЖЕН обмін коштував увесь бюджет, а "OK" шукався підстрокою будь-де
+// (навіть усередині слова). Тепер: байт за байтом, early-exit на фіналі,
+// владар дедлайну — UartAtIo; сам протокол — pure-хедери, host-тестовані
+// на скриптованому модемі (firmware/test/test_at_engine.c).
+typedef struct { uint32_t deadline_tick; } UartAtIo;
 
-// [FW.9] Send AT command and wait for OK/ERROR response instead of blind delay.
-// Returns: 1 = OK received, 0 = ERROR or timeout
-static uint8_t SIM7070_SendATCommand_WithResponse(const char* command, uint32_t timeout_ms)
+// cppcheck-suppress constParameterCallback // сигнатура AtByteSource спільна: host-модем мутує свій io
+static int Uart_At_Source(void *io, uint8_t *b)
 {
-    memset(uart_rx_buf, 0, UART_RX_BUF_SIZE);
-    HAL_UART_Transmit(&huart1, (uint8_t*)command, strlen(command), 1000);
+    const UartAtIo *u = (const UartAtIo *)io;
+    if ((int32_t)(HAL_GetTick() - u->deadline_tick) >= 0) return 0;
+    return HAL_UART_Receive(&huart1, b, 1, AT_INTERBYTE_TIMEOUT_MS) == HAL_OK;
+}
 
-    // Read response with timeout
-    HAL_StatusTypeDef status = HAL_UART_Receive(&huart1, uart_rx_buf, UART_RX_BUF_SIZE - 1, timeout_ms);
+static int Uart_At_Sink(void *io, const uint8_t *bytes, uint16_t n)
+{
+    (void)io;
+    return HAL_UART_Transmit(&huart1, (uint8_t *)bytes, n, 1000) == HAL_OK;
+}
 
-    // Check for OK in response (even if timeout due to partial read)
-    if (status == HAL_OK || status == HAL_TIMEOUT) {
-        // Search for "OK" in received data
-        for (uint8_t i = 0; i < UART_RX_BUF_SIZE - 1 && uart_rx_buf[i] != '\0'; i++) {
-            if (uart_rx_buf[i] == 'O' && uart_rx_buf[i+1] == 'K') return 1;
-        }
-        // Search for "ERROR"
-        for (uint8_t i = 0; i < UART_RX_BUF_SIZE - 5 && uart_rx_buf[i] != '\0'; i++) {
-            if (uart_rx_buf[i] == 'E' && uart_rx_buf[i+1] == 'R' &&
-                uart_rx_buf[i+2] == 'R' && uart_rx_buf[i+3] == 'O' &&
-                uart_rx_buf[i+4] == 'R') return 0;
-        }
+// Команда → фінал (OK/ERROR/+CME) у межах бюджету. URC дорогою ігноруються —
+// для URC-розмов є Sim7070_Resolve_Host / Sim7070_Coap_Put.
+static AtTxResult SIM7070_Transact(const char* command, uint32_t budget_ms)
+{
+    UartAtIo io = { HAL_GetTick() + budget_ms };
+    At_Engine_Reset(&at_engine_state);
+    if (HAL_UART_Transmit(&huart1, (uint8_t*)command, strlen(command), 1000) != HAL_OK) {
+        return AT_TX_TIMEOUT;
     }
-    return 0; // Timeout without OK
+    AtTransact t;
+    At_Transact_Init(&t, NULL);
+    return At_Transact_Run(&at_engine_state, &t, Uart_At_Source, &io);
 }
 
 // =========================================================================
@@ -1060,67 +1083,44 @@ void Flush_Cache_To_Rails(void)
 
     uint16_t total_size = 16 + padded_size; // IV (16) + зашифровані дані
 
-    // [PLAN 2.11] CoAP send with adaptive timeouts for Starlink DTC.
-    // Starlink worst-case RTT: 600–2400 ms. Original 1000 ms CCOAPNEW + 2000 ms
-    // CCOAPSEND timeouts were insufficient → silent data loss.
-    // Increased to 2000 ms / 5000 ms to cover worst-case Starlink latency.
-    //
-    // TODO [PLAN 2.9]: Add retry with exponential backoff once interrupt-driven
-    // UART RX is implemented (AT-blind issue 2.3). Without UART response parsing
-    // we cannot detect send failure, so retry logic would be dead code.
+    // [FIX FW.16 → FW.3] CRYP назад у LoRa-ECB ОДРАЗУ після CBC-шифрування:
+    // модемна розмова попереду довга, а вікно чужого CRYP-режиму має бути
+    // нульовим — інакше наступні HAL_CRYP_Decrypt() LoRa-пакетів жували б CBC.
+    Restore_ECB_Mode();
 
-    // [FW.9] CoAP send with retry logic — parse modem response instead of blind delay
-    uint8_t send_success = 0;
-    for (uint8_t retry = 0; retry < COAP_MAX_RETRIES && !send_success; retry++) {
-        // Refresh watchdog before each attempt
-        HAL_IWDG_Refresh(&hiwdg);
-
-        // Open CoAP session
-        if (!SIM7070_SendATCommand_WithResponse("AT+CCOAPNEW=\"coap://api.silkennet.com:5683\"\r\n",
-                                                 COAP_BASE_TIMEOUT_MS)) {
-            continue; // Session open failed, retry
+    // [FW.56] SIM7070G — UDP-труба, не CoAP-стек: PDU (CON PUT
+    // /telemetry/batch/<uid> + батч) будуємо самі, модем шле його hex'ом.
+    // Доставка = відповідь сервера 2.xx у +CCOAPNMI з нашим MID — НЕ
+    // транспортний OK. Уся розмова — pure-оркестратор sim7070_coap.h,
+    // host-тестований на скриптованому модемі.
+    if (coap_server_ip[0] == '\0') {
+        // CCOAPNEW приймає IP → одна CDNSGIP-резолюція, кеш на життя boot'а.
+        UartAtIo dns_io = { HAL_GetTick() + COAP_CONV_BUDGET_MS };
+        Sim7070Io dns_m = { Uart_At_Source, Uart_At_Sink, &dns_io };
+        if (!Sim7070_Resolve_Host(&dns_m, &at_engine_state, COAP_SERVER_HOST,
+                                  coap_server_ip, sizeof coap_server_ip)) {
+            coap_server_ip[0] = '\0';
+            return; // [FW.51] слоти живі — наступний флеш повторить і DNS
         }
-
-        // Build and send hex-encoded batch
-        snprintf(at_tx_buffer, sizeof(at_tx_buffer),
-                 "AT+CCOAPSEND=0,2,\"telemetry/batch/%s\",%d,\"",
-                 queen_uid, total_size * 2);
-        HAL_UART_Transmit(&huart1, (uint8_t*)at_tx_buffer, strlen(at_tx_buffer), 100);
-
-        char hex_byte[3];
-        for (int i = 0; i < total_size; i++) {
-            snprintf(hex_byte, sizeof(hex_byte), "%02x", encrypted_batch_buffer[i]);
-            HAL_UART_Transmit(&huart1, (uint8_t*)hex_byte, 2, 10);
-        }
-        HAL_UART_Transmit(&huart1, (uint8_t*)"\"\r\n", 3, 100);
-
-        // Wait for modem send confirmation with response parsing
-        HAL_IWDG_Refresh(&hiwdg);
-
-        // Read modem response instead of blind HAL_Delay
-        memset(uart_rx_buf, 0, UART_RX_BUF_SIZE);
-        HAL_StatusTypeDef rx_status = HAL_UART_Receive(&huart1, uart_rx_buf, UART_RX_BUF_SIZE - 1, COAP_SEND_TIMEOUT_MS);
-
-        if (rx_status == HAL_OK || rx_status == HAL_TIMEOUT) {
-            for (uint8_t j = 0; j < UART_RX_BUF_SIZE - 1 && uart_rx_buf[j] != '\0'; j++) {
-                if (uart_rx_buf[j] == 'O' && uart_rx_buf[j+1] == 'K') {
-                    send_success = 1;
-                    break;
-                }
-            }
-        }
-
-        HAL_IWDG_Refresh(&hiwdg);
-
-        // Закриваємо CoAP-сесію — модем відпускає з'єднання.
-        SIM7070_SendATCommand("AT+CCOAPDEL=0\r\n", 500);
     }
 
-    // [FIX FW.16: ECB Restoration with error recovery]
-    // Flush_Cache_To_Rails() переключає CRYP на CBC для шифрування батча.
-    // Якщо не повернути ECB, всі наступні HAL_CRYP_Decrypt() для LoRa-пакетів
-    // від Солдатів будуть використовувати CBC замість ECB → сміття → втрата даних.
-    Restore_ECB_Mode();
+    static uint8_t coap_pdu_buf[sizeof(encrypted_batch_buffer) + 64];
+    coap_mid++;
+    uint16_t pdu_len = Coap_Build_Put(coap_pdu_buf, sizeof coap_pdu_buf, coap_mid,
+                                      "telemetry", "batch", queen_uid,
+                                      encrypted_batch_buffer, total_size);
+    if (pdu_len == 0u) return; // не зібрався PDU — слоти живі (FW.51)
+
+    uint8_t send_success = 0;
+    for (uint8_t retry = 0; retry < COAP_MAX_RETRIES && !send_success; retry++) {
+        // Розмова вкладається у COAP_CONV_BUDGET_MS < вікно IWDG — пес ситий.
+        HAL_IWDG_Refresh(&hiwdg);
+        UartAtIo io = { HAL_GetTick() + COAP_CONV_BUDGET_MS };
+        Sim7070Io m = { Uart_At_Source, Uart_At_Sink, &io };
+        send_success = (uint8_t)Sim7070_Coap_Put(&m, &at_engine_state,
+                                                 coap_server_ip, COAP_SERVER_PORT,
+                                                 coap_pdu_buf, pdu_len, coap_mid);
+    }
 
     // [FW.51] Звільняємо кеш ЛИШЕ після підтвердженого send. Якщо всі retry
     // впали — слоти лишаються активними, наступний флеш повторить спробу
@@ -1138,16 +1138,6 @@ void Flush_Cache_To_Rails(void)
         }
         cache_count -= cleared;
     }
-}
-
-// =========================================================================
-// ДРАЙВЕР СТІЛЬНИКОВОГО МОДЕМУ (SIM7070G)
-// =========================================================================
-// Проста обгортка для відправки AT-команд через UART
-void SIM7070_SendATCommand(char* command, uint32_t delay_ms)
-{
-    HAL_UART_Transmit(&huart1, (uint8_t*)command, strlen(command), 1000);
-    HAL_Delay(delay_ms); // Чекаємо на відповідь (OK)
 }
 
 // =========================================================================

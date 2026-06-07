@@ -116,7 +116,7 @@
 | `FLUSH_JITTER_MAX_MS` | `60 000` | main.c:41 | Макс. jitter (60 сек) |
 | `RNG_FALLBACK_XOR_MASK` | `0xA5A5A5A5UL` | main.c:42 | XOR-маска при відмові HRNG (jitter) |
 | `FLUSH_HEADROOM` | `5` | main.c:43 | Слоти до примусового flush |
-| `QUEEN_HEALTH_GP_MAX` | `63` | main.c:44 | Макс. growth_points для sentinel |
+| `QUEEN_HEALTH_GP_MAX` | `31` | main.c | Макс. growth_points для sentinel (5-біт wire — дзеркало [FW.29-PACK], дім формату — `03_01 §2`) |
 | `OTA_MAX_CHUNKS` | `16` | main.c:45 | Макс. CoAP-чанків (bitmap 16 біт) |
 | `CACHE_MAX_ENTRIES` | `50` | main.c:87 | Місткість CIFO EdgeCache |
 | `CMD_DEDUP_SIZE` | `16` | main.c:113 | Розмір кільцевого буфера dedup |
@@ -130,6 +130,14 @@
 | `MAX_OTA_CHUNK_PAYLOAD` | `512` | main.c:34 | Макс. байткод у CoAP-чанку |
 | `OTA_FULL_CHUNK_THRESH` | `514` | main.c:35 | `MAX_OTA_CHUNK_PAYLOAD + OTA_CRC_SIZE` |
 | `MIN_OTA_ALIGNED` | `23` | main.c:36 | `AES_BLOCK_SIZE + OTA_OVERHEAD` |
+| `AT_INTERBYTE_TIMEOUT_MS` | `150` | main.c | [FW.3] Пауза між байтами UART = «модем дослухав» |
+| `AT_INIT_BUDGET_MS` | `2000` | main.c | [FW.3] Бюджет однієї init-команди (ATE0/AT/CNMP/CPSMS/CEDRXS) |
+| `COAP_CONV_BUDGET_MS` | `15000` | main.c | [FW.3] Повна CoAP-розмова NEW→SEND→NMI→DEL (< вікно IWDG) |
+| `COAP_MAX_RETRIES` | `3` | main.c | [FW.9] Спроби доставки батча |
+| `COAP_SERVER_HOST` | `"api.silkennet.com"` | main.c | [FW.56] Хост для CDNSGIP (CCOAPNEW приймає лише IP) |
+| `COAP_SERVER_PORT` | `5683` | main.c | CoAP UDP-порт |
+| `AT_LINE_MAX` | `160` | at_engine.h | [FW.3] Стеля AT-лінії (довші — truncated, класифікація живе) |
+| `AT_HEX_CHUNK` | `32` | sim7070_coap.h | [FW.3] Байтів PDU на один UART TX (64 hex-символи) |
 
 ---
 
@@ -325,77 +333,91 @@ HAL_CRYP_Init(&hcryp);
 // Без цього — всі наступні LoRa decrypt дають сміття
 ```
 
+> **[FW.3] Порядок:** restore тепер стоїть **одразу після** `HAL_CRYP_Encrypt`,
+> ще до модемної розмови (§4) — вікно чужого CRYP-режиму нульове, скільки б
+> не тривали DNS/NEW/NMI.
+
 ---
 
 ## 📱 4. SIM7070G Модем: Життєвий Цикл та AT-Команди
 
-### Ініціалізація (один раз при старті)
+> **🔴 [FW.56] Знахідка pre-bench (2026-06-07): модем — UDP-труба, не CoAP-стек.**
+> Попередня версія цього розділу (і коду) використовувала граматику
+> `AT+CCOAPNEW="coap://host:port"` + `AT+CCOAPSEND=<cid>,<method>,"<uri>",<len>,"<hex>"` —
+> **такої граматики в сімействі SIMCom не існує**. Офіційна CoAP App Note
+> (сімейство SIM70xx; звірено посторінково з PDF) дає:
+> `AT+CCOAPNEW="<ip>",<port>,<cid>` → `+CCOAPNEW: <cid>` → `OK`;
+> `AT+CCOAPSEND=<cid>,<len>,"<hex>"`, де hex = **сирий CoAP PDU**, який будує
+> хост-MCU; відповідь сервера прилітає URC `+CCOAPNMI: <cid>,<len>,"<hex>"`
+> (теж сирий PDU). Доменів CCOAPNEW не приймає → потрібен крок `AT+CDNSGIP`.
+> **Bench-рядок:** verbatim-звірка SIM7070-ноти V1.03 (`firmware/scripts/bench/RUNBOOK.md`).
 
-| AT-команда | Затримка | Призначення |
-|------------|----------|-------------|
-| `AT\r\n` | 500 ms | Перевірка зв'язку з модемом |
-| `AT+CNMP=38\r\n` | 1000 ms | Режим LTE-M only (відключає NB-IoT) |
+### Архітектура (FW.3 + FW.56): три pure-шари + UART-клей
 
-### CoAP Flush Sequence (кожен flush, FW.9)
+| Шар | Файл | Відповідальність | Host-тести |
+|-----|------|------------------|------------|
+| Токенайзер | `firmware/queen/at_engine.h` | Байт→лінія→подія (`OK`/`ERROR`/`+CME ERROR: n`/URC), early-exit, транзакції, hex-кодек, парсери лапок | `firmware/test/test_at_engine.c` |
+| CoAP PDU | `firmware/queen/coap_pdu.h` | RFC 7252: CON PUT `/telemetry/batch/<uid>` builder + розбір відповіді (клас 2.xx, MID) | ↑ (golden-вектор — дослівно з SIMCom-ноти) |
+| Оркестратор | `firmware/queen/sim7070_coap.h` | `CDNSGIP → CCOAPNEW → CCOAPSEND(hex чанками) → +CCOAPNMI → CCOAPDEL` | ↑ (скриптований модем, повні розмови) |
+| UART-клей | `main.c` (`Uart_At_Source/Sink`, `SIM7070_Transact`) | HAL-байти + владар дедлайнів (`UartAtIo`) | компілюється cppcheck-гейтом |
+
+Латентність: токенайзер виходить на фіналі — обмін коштує реальний час
+відповіді модему, а не повний timeout (стара схема `HAL_UART_Receive(128B)`
+поверталась лише по таймауту → кожна команда «коштувала» весь бюджет).
+
+### Ініціалізація (один раз при старті, response-driven)
+
+| AT-команда | Бюджет | Призначення |
+|------------|--------|-------------|
+| `ATE0` | `AT_INIT_BUDGET_MS` | Вимкнути ехо (токенайзер його переживає, але ефір чистіший) |
+| `AT` | `AT_INIT_BUDGET_MS` | Перевірка зв'язку з модемом |
+| `AT+CNMP=38` | `AT_INIT_BUDGET_MS` | Режим LTE-M only (відключає NB-IoT) |
+| `AT+CPSMS=…` / `AT+CEDRXS=…` | `AT_INIT_BUDGET_MS` | PSM/eDRX (деталі 3GPP — коментарі в `main.c`) |
+
+Провал init не фатальний: модем міг ще прокидатись — flush-розмова повторить
+усе зі свіжим бюджетом.
+
+### CoAP Flush Sequence (кожен flush)
 
 ```
-[FW.9] Retry loop: до 3 спроб (COAP_MAX_RETRIES), перервати при send_success=1.
+0. [FW.16→FW.3] Restore_ECB_Mode() — ОДРАЗУ після CBC-encrypt батча,
+   ще ДО розмови з модемом: вікно чужого CRYP-режиму = нуль.
 
-1. SIM7070_SendATCommand_WithResponse("AT+CCOAPNEW=...", COAP_BASE_TIMEOUT_MS=2000 ms)
-   ↳ Читаємо відповідь: якщо "OK" → success; "ERROR" → continue retry
-   ↳ Відкриваємо CoAP сесію, session_id=0
+1. DNS (раз на boot): AT+CDNSGIP="api.silkennet.com"
+   ↳ URC +CDNSGIP: 1,"<host>","<ip>" (до АБО після OK — двигун ловить обидва
+     порядки) → кеш coap_server_ip. Фейл → return: слоти живі (FW.51),
+     наступний flush повторить і DNS.
 
-2. Формуємо та відправляємо AT+CCOAPSEND через UART (blocking):
-   a. Заголовок команди: snprintf → HAL_UART_Transmit(..., strlen, 100 ms)
-      "AT+CCOAPSEND=0,2,"telemetry/batch/<queen_uid>",<size*2>,\""
-   b. Hex payload: кожен байт окремо → HAL_UART_Transmit(2 байти ASCII, 10 ms)
-      Для 50 записів: total_size ≈ 1072 байт → 2144 ASCII → ~21.4 секунди
-   c. Закриваємо: HAL_UART_Transmit("\"\r\n", 3, 100 ms)
-   ↳ Method=2 (PUT), URI-Path визначає шлюз (вирішує Starlink NAT)
+2. PDU: Coap_Build_Put(CON PUT /telemetry/batch/<queen_uid>,
+                       payload = [IV:16][AES-256-CBC батч]) → coap_pdu_buf.
+   MID = ++coap_mid (анти-дублі на CoAP-сервері).
 
-3. HAL_UART_Receive(uart_rx_buf, UART_RX_BUF_SIZE=128, COAP_SEND_TIMEOUT_MS=5000 ms)
-   ↳ Шукаємо "OK" у відповіді: якщо знайдено → send_success=1
-   ↳ Якщо "ERROR" або timeout → continue до наступної retry-спроби
-   ↳ Збільшено з 2000→5000 ms для Starlink DTC worst-case latency (600–2400 ms RTT)
+3. Retry loop ≤ COAP_MAX_RETRIES, бюджет розмови COAP_CONV_BUDGET_MS (< IWDG):
+   a. AT+CCOAPNEW="<ip>",5683,0      → +CCOAPNEW: <cid> → OK (cid — від модема)
+   b. AT+CCOAPSEND=<cid>,<len_PDU>," + hex PDU чанками AT_HEX_CHUNK + "\r\n
+   c. фінал OK = «модем прийняв» (ще НЕ доставка)
+   d. URC +CCOAPNMI: <cid>,<n>,"<hex-PDU відповіді>" → Coap_Reply_Confirms:
+      валідний заголовок + клас 2.xx + (для ACK) наш MID → send_success=1
+   e. AT+CCOAPDEL=<cid> — best-effort прибирання сесії
 
-4. AT+CCOAPDEL=0\r\n  (HAL_Delay 500 ms)
-   ↳ Закриваємо сесію, звільняємо ресурси модему
-
-5. [FW.51] Кеш звільняється ЛИШЕ при send_success. Якщо всі спроби впали —
-   слоти лишаються активними, наступний flush повторює відправку (дедуплікація
-   оновлює ті самі DID найсвіжішими даними). Телеметрія НЕ губиться.
+4. [FW.51] Кеш звільняється ЛИШЕ при send_success (= підтверджена ДОСТАВКА,
+   не транспортний OK). Усі спроби впали → слоти живі, наступний flush
+   повторить; дедуплікація оновить ті самі DID найсвіжішим.
 ```
 
-**Загальний час flush для 50 записів: ~25 секунд** (BLOCKER-2, залишається через blocking hex TX)
+Час flush тепер домінується RTT мережі (NEW + NMI), а не UART: hex летить
+чанками по `AT_HEX_CHUNK`, не побайтово. Старий «~25 секунд blocking hex TX»
+закрито архітектурно.
 
-**Важливо про URI-Path:** `/telemetry/batch/<queen_uid>` використовується замість IP-адреси, що вирішує проблему Starlink NAT та динамічних адрес. Сервер знаходить шлюз за UID, а не за IP.
+**Важливо про URI-Path:** `/telemetry/batch/<queen_uid>` живе всередині
+PDU (опції Uri-Path) — сервер знаходить шлюз за UID, а не за IP (вирішує
+Starlink NAT та динамічні адреси).
 
-### Функції роботи з AT-командами (FW.9)
-
-```c
-// Проста відправка без читання відповіді (ініціалізація, CCOAPDEL)
-void SIM7070_SendATCommand(char* command, uint32_t delay_ms) {
-    HAL_UART_Transmit(&huart1, (uint8_t*)command, strlen(command), 1000);
-    HAL_Delay(delay_ms);
-}
-
-// [FW.9] Відправка з читанням та перевіркою відповіді (CCOAPNEW)
-static uint8_t SIM7070_SendATCommand_WithResponse(const char* command, uint32_t timeout_ms) {
-    memset(uart_rx_buf, 0, UART_RX_BUF_SIZE);
-    HAL_UART_Transmit(&huart1, (uint8_t*)command, strlen(command), 1000);
-    HAL_UART_Receive(&huart1, uart_rx_buf, UART_RX_BUF_SIZE - 1, timeout_ms);
-    // Шукаємо "OK" → повертаємо 1 (success) або 0 (failure/ERROR/timeout)
-    for (uint8_t i = 0; uart_rx_buf[i] != '\0'; i++) {
-        if (strncmp(&uart_rx_buf[i], "OK", 2) == 0) return 1;
-    }
-    return 0;
-}
-```
-
-**Відповіді SIM7070G, що парсяться (FW.9):**
-- `OK` — команда прийнята → `SIM7070_SendATCommand_WithResponse` повертає `1`
-- `ERROR` — помилка → retry
-- `+CCOAPSEND: 0,1` — CoAP ACK отримано (парсинг поки не реалізовано; достатньо `OK` від `AT+CCOAPNEW`)
+**Що лишається bench (HW-residual FW.3):**
+- verbatim-звірка граматики SIM7070-ноти V1.03 + реальні таймінги модему;
+- UART DMA interrupt-driven RX (зараз — байтовий polling із interbyte-timeout);
+- поведінка при реальних LTE-M/Starlink мережевих помилках (скриптовані
+  ERROR/+CME/тиша — покриті host).
 
 ---
 
@@ -959,7 +981,9 @@ Per-channel режими (LoRa **AES-128** ECB→CCM · CoAP **AES-256-CBC**) �
 | `binary_batch_buffer[2048]` | `uint8_t` | 2048 B | Бінарний буфер перед шифруванням |
 | `encrypted_batch_buffer[2064]` | `uint8_t static` | 2064 B | **static** (IV + зашифровані дані) |
 | `pending_ota_bytecode[8192]` | `uint8_t` | 8192 B | RAM-буфер збірки OTA від Rails |
-| `at_tx_buffer[256]` | `char` | 256 B | Формування AT-команд (`snprintf`) |
+| `at_engine_state` | `AtEngine` | ~168 B | [FW.3] AT-токенайзер (лінія `AT_LINE_MAX` + стан) |
+| `coap_pdu_buf[2128]` | `uint8_t static` | 2128 B | [FW.56] CoAP PDU (заголовок+Uri-Path+батч; static у `Flush_Cache_To_Rails`) |
+| `coap_server_ip[16]` | `char` | 16 B | [FW.56] CDNSGIP-кеш IP сервера (на boot) |
 | `cmd_dedup_ring[16]` | `uint32_t` | 64 B | DJB2 хеші idempotency токенів |
 | `cmd_decrypt_buf[544]` | `uint8_t` | 544 B | Decrypt buffer для CoAP команд/OTA |
 | `incoming_lora_payload` (видалено в FW.3) | — | 0 B | Замінено на `lora_rx_ring[16]` (288 B) |
@@ -994,37 +1018,41 @@ Per-channel режими (LoRa **AES-128** ECB→CCM · CoAP **AES-256-CBC**) �
 ## 🧪 11. Тестове Покриття (Host-Based, x86)
 
 ```bash
-make -C firmware/test queen    # 132 тести, ~0.1 секунди
+make -C firmware/test queen       # CIFO/OTA/beacon/key-loading suite
+make -C firmware/test at_engine   # [FW.3/FW.56] AT-двигун + CoAP PDU + розмова
 ```
 
-| Модуль | Тестів | Що покривається |
-|--------|--------|-----------------|
-| DJB2 Hash | 7 | Детермінізм, відомі значення, NUL-термінатор, UUID формат |
-| Command Dedup Ring | 7 | New/duplicate, ring wrap, eviction, stress 100 |
-| CIFO Cache | 13 | Insert, dedup, priority eviction (всі 4 bio_status), fallback, edge RSSI |
-| Batch Packing | 8 | 21-байтний формат, ендіанність, RSSI -128, round-trip |
-| **[FW.51] Flush Lifecycle** | **4** | fail→кеш збережено, success→очищено, retry без втрат, dedup-refresh найсвіжішого |
-| OTA Chunk Builder | 6 | First/last chunk, reassembly, out-of-range index |
-| OTA Assembly (CoAP→RAM) | 12 | Multi-chunk, duplicate ignore via bitmap, buffer overflow, invalid marker |
-| RSSI Clamp | 8 | Normal, edge values, overflow proof, int16→int8 truncation demo |
-| Queen Health Sentinel | 7 | DID=0, uptime packing, cache integration, dedup |
-| ECB Restoration | 3 | CRYP mode state після CBC→ECB transition |
-| HRNG IV Generation | 5 | All 4 words filled, 16-byte size, power mgmt deinit |
-| CBC Command Decrypt | 3 | ECB restored після CBC decrypt, sequence correctness |
-| **CoAP Retry (FW.9)** | **4** | **`COAP_MAX_RETRIES=3`, `COAP_BASE_TIMEOUT_MS=2000`, `COAP_SEND_TIMEOUT_MS=5000`, `UART_RX_BUF_SIZE=128`** |
-| **[FW.1] Flash Key Loading** | **8** | `Load_AES_Key()` magic check, key-not-provisioned → Error_Handler |
-| **[FW.20] Time Sync Envelope + Beacon** | **8** | CMD_TIME_SYNC strip, beacon plaintext layout, ts=0 guard |
-| **[FW.20-S2] Beacon Authoritativeness Flag** | **2** | byte 9 bit 7 (`BEACON_AUTH_FLAG=0x80`) — Королева транслює `byte9 = 0x81` (auth=1 \| TTL=1). Підготовчий патч до повного mesh-relay: relay-маяки від Провідників матимуть auth=0, Soldier-ам арбітруватиме authoritative першим. Layout `[0x9C][ts_be:4][reserved:0×4][AUTH_FLAG\|TTL][magic 'B'][padding:0×5]`. |
-| **[FW.27-B] Magic Re-Request Handler** | **10** | Bitmap accept/dedup, total mismatch, no-active-OTA |
-| **[FW.23] HMAC Trailer Relay** | **4** | 3 segs storage, seg_idx>3 reject, marker mismatch |
-| **[FW.3] LoRa RX Ring Buffer** | **13** | FIFO семантика, capacity 15, переповнення → drop counter, RSSI clamp passthrough, 25-сек flush сценарій (30 ISR пакетів → 15 уцілілих + 15 видимих втрат) |
-| **Всього** | **132** | *(queen-specific: 132; раніше 128)* |
+> Лічильники тестів тут не ведемо (drift) — істина = вивід `make`. Нижче —
+> покриті області та їхні нюанси.
 
-**Не покрито host-тестами (потребує hardware-in-loop):**
-- AT command response parsing на реальному SIM7070G (boot-time CNMP/CPSMS/CEDRXS)
-- CoAP retry logic при мережевих помилках LTE-M / Starlink DTC
-- ✅ Single-packet buffer overwrite — закрито host-тестами FW.3 (симуляція) + 25-сек flush scenario test
+| Модуль | Що покривається |
+|--------|-----------------|
+| DJB2 Hash | Детермінізм, відомі значення, NUL-термінатор, UUID формат |
+| Command Dedup Ring | New/duplicate, ring wrap, eviction, stress |
+| CIFO Cache | Insert, dedup, priority eviction (всі 4 bio_status), fallback, edge RSSI |
+| Batch Packing | 21-байтний формат, ендіанність, RSSI -128, round-trip |
+| **[FW.51] Flush Lifecycle** | fail→кеш збережено, success→очищено, retry без втрат, dedup-refresh найсвіжішого |
+| OTA Chunk Builder | First/last chunk, reassembly, out-of-range index |
+| OTA Assembly (CoAP→RAM) | Multi-chunk, duplicate ignore via bitmap, buffer overflow, invalid marker |
+| RSSI Clamp | Normal, edge values, overflow proof, int16→int8 truncation demo |
+| Queen Health Sentinel | DID=0, uptime packing, cache integration, dedup |
+| ECB Restoration | CRYP mode state після CBC→ECB transition |
+| HRNG IV Generation | All 4 words filled, 16-byte size, power mgmt deinit |
+| CBC Command Decrypt | ECB restored після CBC decrypt, sequence correctness |
+| **[FW.3] AT-токенайзер** (`test_at_engine.c`) | Фінали OK/ERROR/`+CME ERROR: n`, echo, порожні лінії, truncation довгих URC, анти-кейс «BROKEN» (підстроковий "OK" старої impl), транзакції: URC-до-OK і URC-після-OK, тиша→timeout, шумові лінії |
+| **[FW.56] CoAP PDU** (`test_at_engine.c`) | Golden-розкладка CON PUT (опції Uri-Path + extended-length для UID), розбір відповіді **дослівно з SIMCom-ноти** (`60457233…` → ACK 2.05 MID 0x7233), reject 4.xx/RST/чужий MID/куций PDU |
+| **[FW.3/FW.56] Повна розмова** (`test_at_engine.c`) | Скриптований SIM7070G: happy path (cid від модема, hex чанками), NEW-fail → SEND не летить, OK-без-NMI ≠ доставка, NMI 4.04 reject, fallback cid=0, lowercase hex, CDNSGIP (URC до/після OK, фейл → слоти живі) |
+| **[FW.3] LoRa RX Ring Buffer** | FIFO семантика, переповнення → drop counter, RSSI clamp passthrough, flush-вікно сценарій (ISR-пакети під час розмови з модемом) |
+| **[FW.1] Flash Key Loading** | `Load_AES_Key()` magic check, key-not-provisioned → Error_Handler |
+| **[FW.20] Time Sync Envelope + Beacon** | CMD_TIME_SYNC strip, beacon plaintext layout, ts=0 guard |
+| **[FW.20-S2] Beacon Authoritativeness Flag** | byte 9 bit 7 (`BEACON_AUTH_FLAG=0x80`) — Королева транслює `byte9 = 0x81` (auth=1 \| TTL=1). Relay-маяки Провідників матимуть auth=0. Layout `[0x9C][ts_be:4][reserved:0×4][AUTH_FLAG\|TTL][magic 'B'][padding:0×5]` |
+| **[FW.27-B] Magic Re-Request Handler** | Bitmap accept/dedup, total mismatch, no-active-OTA |
+| **[FW.23] HMAC Trailer Relay** | 3 segs storage, seg_idx>3 reject, marker mismatch |
+
+**Не покрито host-тестами (справжній HW-residual):**
+- verbatim-звірка граматики SIM7070-ноти V1.03 + реальні таймінги/URC реального модему (bench-runbook)
 - Повна async UART DMA flush — наступна ітерація FW.3 (вимагає DMA controller hardware)
+- Реальні LTE-M / Starlink DTC мережеві помилки (скриптовані ERROR/+CME/тиша — покриті)
 
 ---
 

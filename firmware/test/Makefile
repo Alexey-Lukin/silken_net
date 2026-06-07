@@ -19,9 +19,9 @@ BINDIR   = .
 OPENSSL_CFLAGS = $(shell pkg-config --cflags openssl 2>/dev/null)
 OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
-.PHONY: all queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest size-check clean
+.PHONY: all queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine size-check clean
 
-all: queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest
+all: queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -53,6 +53,9 @@ selftest: $(BINDIR)/test_ccm_selftest
 sym_selftest: $(BINDIR)/test_sym_selftest
 	@./$(BINDIR)/test_sym_selftest
 
+at_engine: $(BINDIR)/test_at_engine
+	@./$(BINDIR)/test_at_engine
+
 $(BINDIR)/test_queen: test_queen_logic.c hal_mock.h ../common/silken_crc.h
 	$(CC) $(CFLAGS) -o $@ test_queen_logic.c
 
@@ -74,6 +77,10 @@ $(BINDIR)/test_logmel: test_logmel.c ../common/logmel.c ../common/logmel.h \
 
 $(BINDIR)/test_encryption: test_encryption.c hal_mock.h ../queen/coap_iv.h
 	$(CC) $(CFLAGS) $(OPENSSL_CFLAGS) -o $@ test_encryption.c $(OPENSSL_LIBS)
+
+# [FW.3/FW.56] AT-токенайзер + CoAP PDU + SIM7070G розмова — pure, без OpenSSL.
+$(BINDIR)/test_at_engine: test_at_engine.c ../queen/at_engine.h ../queen/coap_pdu.h ../queen/sim7070_coap.h
+	$(CC) $(CFLAGS) -o $@ test_at_engine.c
 
 # [SEC.11] Host parity for SilkenNet::SeedDerivation. Uses OpenSSL
 # libcrypto on host; firmware MCU side runs the same primitives via
