@@ -526,7 +526,7 @@
 
 #### FW.20 + FW.20-S2 — Time Sync (Rails ↔ Queen ↔ Soldier)
 - **P2** · 👤+🟡 · → `03_02 §5а` (канон-хаб)
-- TRL-6 P2 (`Derive_Cold_Start_State` ±12год толер.); TRL-7 блокер (ARCH.26 TDMA, HMAC nonce, fire ±1с). ✅ FW.20 1-hop Done; FW.20-S2 4/5 Done. · [ ] 👤 lab drift-test ΔT=±60°C (термокамера, TRL-7) · [ ] 🟡 (4/5) anti-storm dedup bitmap → Flash-KV store (DR15 зайнято FW.2 CCM FC; `03_01 §2.3 ARCH.28`). Cross-ref: ARCH.26, FW.30, SEC.10/FW.29
+- TRL-6 P2 (`Derive_Cold_Start_State` ±12год толер.); TRL-7 блокер (ARCH.26 TDMA, HMAC nonce, fire ±1с). ✅ FW.20 1-hop Done; FW.20-S2 4/5 Done. · [ ] 👤 lab drift-test ΔT=±60°C (термокамера, TRL-7) · [ ] 🟡 (4/5) anti-storm dedup bitmap → Flash-KV store (DR15 зайнято FW.2 CCM FC; `03_01 §2.3 ARCH.28`). ⚠️ drift 12год/cooldown 1год/grace 10хв + beacon drift-comp стоять на `HAL_GetTick` (заморожений у STOP2) → wall-clock міграція у FW.49 (S1-wiring). Cross-ref: ARCH.26, FW.30, FW.49, SEC.10/FW.29
 
 #### FW.21 — Edge data aggregation (RAM-aware Soldier)
 - **P2** · 👤 · → `03_01 §2`, `08_02`
@@ -550,7 +550,7 @@
 
 #### FW.27 — OTA broadcast: відсутня RX-верифікація Soldier
 - **P2** · 🔗 · → `03_02 §5`
-- ✅ Дизайн B (Magic Re-Request): Soldier bitmap uplink `[0x55]` → Queen targeted re-broadcast (60-90% economy) + 22 host-тести (Soldier у STOP2 пропускає chunk). Дизайн A (ACK-aggregation) — з ARCH.26. · [ ] 🔗 Дизайн A залежить від ARCH.26 (TDMA RX-вікно); B незалежний
+- ✅ Дизайн B (Magic Re-Request): Soldier bitmap uplink `[0x55]` → Queen targeted re-broadcast (60-90% economy) + 22 host-тести (Soldier у STOP2 пропускає chunk). Дизайн A (ACK-aggregation) — з ARCH.26. · [ ] 🔗 Дизайн A залежить від ARCH.26 (TDMA RX-вікно); B незалежний · ⚠️ re-request «5 хв тиші» (`ota_last_chunk_rx_tick`) на `HAL_GetTick` (мертвий у STOP2 = ~500 wake-циклів) → wall-clock у FW.49
 
 #### FW.30 — SEC.11 C-bridge gap: `main.c` mruby виклик не оновлено
 - **P1** · 🔗 · → `03_04`
@@ -562,7 +562,7 @@
 
 #### FW.42 — Vcap guard для fauna acoustic sampling (brownout protection)
 - **P1** · 🔗 · → `03_03 §10.3`
-- ✅ `Fauna_Should_Sample(vcap_mv)` (≥FAUNA_VCAP_MIN_MV інакше skip + counter `fauna_skipped_low_vcap`) + 8 host-тестів. Fauna-сесія ~78.3мДж (×20 audit-fix); при V_cap≈3.5V просадка ~37мВ → concurrent TX = brownout. · [ ] 🔗 активація: виклик у fauna-pathway після FW.4 uncomment · [ ] 🤖 Prometheus "fauna skip rate" — після FW.4
+- ✅ `Fauna_Should_Sample(vcap_mv)` (≥FAUNA_VCAP_MIN_MV інакше skip + counter `fauna_skipped_low_vcap`) + 8 host-тестів. Fauna-сесія ~78.3мДж (×20 audit-fix); при V_cap≈3.5V просадка ~37мВ → concurrent TX = brownout. ⚠️ `vcap_mv` у guard — сирий ADC-відлік до розводки FW.50 (поріг `FAUNA_VCAP_MIN_MV=4500` мВ не спрацює на залізі до конверсії). · [ ] 🔗 активація: виклик у fauna-pathway після FW.4 uncomment · [ ] 🤖 Prometheus "fauna skip rate" — після FW.4
 
 #### ARCH.40 — Fauna 5-сек вікно: монолітне awake-обчислення (SRAM2 wipe)
 - **P1** · 🔗 · → `03_03 §10.2`
@@ -571,7 +571,7 @@
 
 #### ARCH.41 — Cold-start Time Paradox (DCI)
 - **P2** · 🔗 · → `03_04 §2.1`
-- VBAT loss → RTC `epoch_day` розходиться з сервером (cold-derive 10957 = RTC-default 2000-01-01 vs chained ≈20585) → категоричний DCI false-positive до `CMD_TIME_SYNC`. **Mitigation A** (server-side: 3 epoch_day кандидати → `time_unsynced_fallback`, не падати DCI) ✅ реалізовано → `04_02` (`try_time_sync_recovery`). **Знахідка:** firmware-деривація тепер повний HMAC-parity з backend (`lorenz_seed.h`, FW.30 закрито) + кандидат виправлено 10951→10957 (стара цифра була артефактом leap-less формули).
+- VBAT loss → RTC `epoch_day` розходиться з сервером (cold-derive 10957 = RTC-default 2000-01-01 vs chained ≈20585) → категоричний DCI false-positive до `CMD_TIME_SYNC`. **Mitigation A** (server-side: 3 epoch_day кандидати → `time_unsynced_fallback`, не падати DCI) ✅ реалізовано → `04_02` (`try_time_sync_recovery`). **Знахідка:** firmware-деривація тепер повний HMAC-parity з backend (`lorenz_seed.h`, FW.30 закрито) + кандидат виправлено 10951→10957 (стара цифра була артефактом leap-less формули). **Дотично FW.49:** поточний UTC (`soldier_unix_ts` + tick-offset) відстає на тривалість STOP2 → RTC-календар як timebase (FW.49) робить epoch_day/UTC коректним без tick-арифметики.
 - [ ] 🔗 (B/C) після стабілізації A, координований firmware rollout: **B** Soldier sentinel `acoustic_events=0xFE` на cold-boot; **C** defer-first-uplink grace «hello» (DID+Vcap+TIME_REQ, без Lorenz state)
 
 #### FW.46 — Enterprise-grade ARM firmware build (committed, reproducible, CI cross-compile)
@@ -615,6 +615,11 @@
 #### FW.53 — OTA wire-contract integrity (CRC32-trailer + явний CoAP len + CRC16-verify)
 - **P0** · 🤖 · → [`03_01 §4.6`](03_01_Firmware_Lifecycle_and_DMA)
 - ✅ OTA був зламаний end-to-end **двома** шарами: (1) бекенд НЕ додавав CRC32, який Soldier вимагає останніми 4 байтами зібраного перед Flash → кожен OTA гинув на integrity-gate; (2) Queen вгадувала довжину чанка з CBC zero-padding (формула `aligned−16−7`) → систематично обрізала 1..16 байт кожного чанка (повний 512B→500B), а CRC16 від бекенду не перевірявся. · [x] 🤖 `OtaPackagerService` будує wire-потік `bytecode + zero-pad + CRC32(BE)`, вирівняний на LoRa-MTU (Soldier рахує отримане як MTU×chunks → CRC32 лягає в кінець останнього чанка); HMAC над padded bytecode (дзеркало Soldier dual-gate) · [x] 🤖 CoAP-формат `[0x99][idx:2][total:2][len:2][bytecode:len][crc16:2]` + CRC16-verify (One-Home `firmware/common/silken_crc.h`, спільний Soldier/Queen/тести) · [x] 🤖 Soldier+Queen OTA campaign-change reset (мертва недозібрана кампанія більше не блокує живу) · [x] 🤖 host-тести (повний-512 не обрізано, CRC16-mismatch/lying-len reject) + rspec packager/integration. Cross-ref: FW.23 (HMAC trailer), FW.27-B (re-request), FW.52.
+
+#### FW.54 — STOP2 RTC-only 300nA: SRAM2-off → RAM-стан мусить піти у Flash-KV
+- **P2** · 🤖+👤 · → [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)
+- **Знахідка (FW.49 нора):** цільовий 300nA-режим (`03_01 §1.10`, «наступний firmware-цикл») вимикає SRAM2 retention (`PWR.CR3 RRS=0`, −800nA) → стан переживає STOP2 ТІЛЬКИ в RTC Backup. Але RAM-глобали `soldier_unix_ts` + FW.49 boot/beacon/request wall-маркери (та EMA-runtime, ota_buffer) гинуть щоцикл → drift-watchdog/годинник/EMA ламаються у 300nA-режимі. DR0-DR19 повні (`03_01 §2`) → персист мусить іти у Flash-KV (`03_01 §2.3 ARCH.28` шлях A). Зчеплення: FW.49 ↔ FW.20-S2 ↔ FW.21.
+- [ ] 🤖 інвентар RAM-стану, що мусить пережити SRAM2-off · [ ] 👤 Flash-KV store (§2.3 шлях A) АБО свідомий trade-off SRAM2-retain (−800nA vs Flash-wear) · [ ] 👤 bench: вимір 300nA + persist-roundtrip
 
 ## §03/§05 · Безпека (Edge crypto + Web3)
 
