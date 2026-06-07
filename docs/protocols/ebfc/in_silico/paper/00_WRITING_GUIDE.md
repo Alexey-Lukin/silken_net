@@ -114,12 +114,12 @@ EIS predictions). No new information.
 
 ```
 Methods → Results → Introduction → Discussion/Conclusions → Abstract + TOC + cover letter
-  → internal self-review (the checklist below) → 🛑 IP GATE → submit → peer review → revise
+  → internal self-review (the checklist below) → submit → peer review → revise
 ```
 
-- **🛑 IP gate (hard):** the patent is **not filed**. Draft freely, but **do not submit / preprint /
-  disclose** until the priority date (see [`08_01 §2`](../../../08_01_Joint_Publications_and_IP_Strategy.md)
-  and `protocols/anchor/prior_art_queries.md`). Disclosing the cascade/PCET design is patent-relevant.
+- **✅ IP posture — defensive publication:** no patent is filed (by design). The publication **IS** the
+  protection — it fixes prior art (see [`08_01 §2`](../../../08_01_Joint_Publications_and_IP_Strategy.md)
+  and `protocols/anchor/prior_art_landscape.md`). Submit freely; no gate.
 - **Authorship/CRediT:** agree this *before* drafting (OUTLINE §0): you (Conceptualization, Methodology,
   Software, Investigation, Writing-original) + школа Мінаєва (the QM/MM upgrade, Writing-review).
 - **Cover letter:** 1 paragraph — what's new, why JPCB, why now. Suggest 3–4 reviewers (not collaborators).

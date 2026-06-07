@@ -167,6 +167,6 @@ _NaaS-контракти, юніт-економіка та гранти. Зов�
 
 _Партнерства ВНЗ (ЧНУ+ФОТІУС, ЧДТУ, ЧІПБ, ЧМА, СЄУ) під рамкою MOIC: MoU, спільні публікації, IP-стратегія. Інженерна R&D-субстанція реферить канон Tier I (01–06), не дублює._
 
-- [`08_01` — Joint Publications and IP Strategy](08_01_Joint_Publications_and_IP_Strategy) (MOIC-рамка + спільні публікації (Статті 1–35) + патентна стратегія/IP)
+- [`08_01` — Joint Publications and IP Strategy](08_01_Joint_Publications_and_IP_Strategy) (MOIC-рамка + спільні публікації (Статті 1–35) + IP-постава: defensive publication + open-license)
 - [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) (Реєстр 5 ВНЗ: хто/кафедра → що валідує [канон-дім] → публікація)
 - [`08_03` — External Stakeholders Registry](08_03_External_Stakeholders_Registry) (Social API Registry: B2G/B2B + культурний шар — лісники, ДСНС, митці; non-hot-path)

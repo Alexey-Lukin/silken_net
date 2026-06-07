@@ -189,7 +189,7 @@
 ##### Підблокер HW.5.IS — In Silico Stage 0 (Zero-Lab) — `01_03 §3.4`
 > **Стратегія:** Computational reverse engineering хімії ДО першого Ti-monet. AlphaFold 3 + OpenMM + PySCF + scipy/numpy повністю Python-кервані → інтеграція з AI-clones. **Zero-Lab in-silico (= TRL 3) ✅ завершено (2026-05-25); фізичний TRL 4 = Ti-monet in-vitro (pending).** Q1-paper program (Стаття 1): ① Hammett mediator ✅, ② micro-solvation+speciation ✅, ④ FAD-GDH E° fix (+60→−265 мВ, Schachinger) ✅, ③ cathode λ/coupling ⏳ (Ru-fix validated: λ=0.78 vs Co ~3 eV). Then chemistry-notes backlog (↓) → draft.
 - [ ] 👤 **Інфраструктура:** workstation NVIDIA RTX 4090 ($5–10K) АБО AWS p5.2xlarge / GCP g2-standard-12 ($2–5/год)
-- [ ] 👤 **Joint Q1-publication з ЧНУ Мінаєвим:** "In Silico Design of Long-Lived Enzymatic Bio-Fuel Cells for Tree-Integrated Energy Harvesting" — `08_03` Стаття 28. **Текст draft-complete** (`paper/`: Methods/Results/Tables/Discussion/Abstract/Intro-40-refs/Fig2-cartoon, усі DOI ✅). Лишилось 👤: · [ ] 👤 **Fig 1** graphical-abstract (BioRender; code-schematic draft є) + **TOC-графіка** · [ ] 👤 фіналізувати cover letter (draft є) · [ ] 🛑 **сабміт ТІЛЬКИ після patent filing** (UNI.3 — embargo)
+- [ ] 👤 **Joint Q1-publication з ЧНУ Мінаєвим:** "In Silico Design of Long-Lived Enzymatic Bio-Fuel Cells for Tree-Integrated Energy Harvesting" — `08_03` Стаття 28. **Текст draft-complete** (`paper/`: Methods/Results/Tables/Discussion/Abstract/Intro-40-refs/Fig2-cartoon, усі DOI ✅). Лишилось 👤: · [ ] 👤 **Fig 1** graphical-abstract (BioRender; code-schematic draft є) + **TOC-графіка** · [ ] 👤 фіналізувати cover letter (draft є) · ✅ **сабміт-ready** — publish-to-protect (UNI.3; `08_01 §2`): публікація = prior-art захист, без патентного гейту
 
 ###### 🧪 Chemistry-improvement notes (CHEM.N) — founder batch 2026-06-05, triaged + verified
 > 31 triaged + verified 2026-06-06; **5 corrected-out/merged Ruthless-Pruned** (00_06 §4 — refuted/dup/relocated; **git history**: CHEM.28 epitaxial-prestress · CHEM.30 acid-ΔG · CHEM.12 done-by-② · CHEM.17 dup-of-CHEM.23 · CHEM.24 magnetic-CNT→`02_03 §1.5`); 26 active below. **+5 cathode/method notes 2026-06-06 → CHEM.32-36** (verified vs canon first: Co→Ru low-λ + cMOF already in `01_03 §3.2`; pH-protonation already in all MD scripts — batch ↓). **Full verdicts in the SSOT canon (docs/):** anode → `01_03 §3.1` · matrix → `01_03 §3.3` · cathode levers → `01_03 §3.2` · in-silico methods → `PIPELINE_STATUS` Future · aggregation → `L1 §2` · computed → `SUMMARY`/`L3`. Thin pointers below. ⚠️ = weak.
@@ -817,9 +817,9 @@
 - **P1** · 👤 · → `08_02`
 - [ ] 👤 8 зустрічей: Супруненко (PN-verification/Convolution) · Онищенко (stochastic B&B/Petri) · Ярмілко (Embedded/ECDH) · Порубльов (Discrete Math/reliability) · Косенюк (RF/FEC/compliance) · Бушин (CNN/BSP/DMLS) · Осауленко (portfolio) · Любченко (GA/NN)
 
-#### UNI.3 — IP договір з ЧНУ + patent filing (критичний шлях Статті 1)
-- **P0** · 👤 · → `08_03`, `08_01 §2.1`
-- 🛑 **Filing ПЕРЕД сабмітом Статті 1** (розкриває cascade/PCET механізм — embargo `08_01 §2`). Synergy-claims **draft готовий** ([`protocols/anchor/patent_claims_draft.md`](protocols/anchor/patent_claims_draft.md)) + пошукові запити ([`prior_art_queries.md`](protocols/anchor/prior_art_queries.md)) → зведені у **filing-readiness packet** ([`patent_filing_readiness.md`](protocols/anchor/patent_filing_readiness.md): novelty-матриця claims↔prior-art + checklist подачі). · [ ] 👤 юр-оформлення IP-договору ЧНУ + підпис · [ ] 👤 TISC ЧНУ: прогнати patentability-пошук (Sets 1-5; no-date/full-text/broad) · [ ] 👤 Кафедра ІВ: claims 1-9 → формальний UA/PCT формат · [ ] 👤 UkrNOIVI пріоритетна заявка → дата пріоритету (розблоковує сабміт)
+#### UNI.3 — Defensive-publication + open-license execution (IP-постава)
+- **P1** · 👤🤖 · → `08_01 §2`
+- ✅ Постава = **defensive-publication-first** (`08_01 §2`; патент НЕ подаємо). 🤖 Ліцензії застосовано (AGPL / CERN-OHL-S / CC-BY-SA + `/NOTICE`); disclosure готовий ([`defensive_disclosure.md`](protocols/anchor/defensive_disclosure.md)) + landscape ([`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)). **Стаття 1 розблокована** (publish-to-protect). Owner-дії: · [ ] 👤 TDCommons-постинг disclosure (prior-art якір) · [ ] 👤 trademark-заявка SilkenNet™/GaiaNexus™/SCC™ через TISC (UNI.15) · [ ] 👤 Кафедра-ІВ open-license + AF3 legal review (UNI.16)
 
 #### UNI.4 — ChNU школа Мінаєва: DFT-моделювання EBFC
 - **P1** · 👤 · → `08_01 §1.1`, `08_03 §1`
@@ -861,17 +861,17 @@
 - **P0** · 👤 · → `08_02 §5`
 - Блокує Economic Whitepaper, Legal Framework, NaaS шаблони (`07_01` BLOCKER-1/3). · [ ] 👤 зустріч Чудаєва/Аблязова Н. + verify 7 посад + MoU СЄУ↔SilkenNet + workshops Аблязов (MSA) + Ус (ESG)
 
-#### UNI.15 — ЧНУ TISC engagement (патентний захист анкера + торгові марки)
+#### UNI.15 — ЧНУ TISC engagement (prior-art landscape + trademark + open-license consult)
 - **P1** · 👤+🤖 · → `08_01 §2.1` · 🔗 UNI.1 (MoU)
-- TISC ЧНУ (WIPO/УкрНОІВІ) замість комерц. бюро (~$3-8k): prior art search (гіроїд Ti-6Al-4V+PEEK у Espacenet/PATENTSCOPE), UA→PCT→EU/US консультації, ТМ (SilkenNet™/Gaia 2.0™/SCC™), ~5-10k UAH. Подачу робить патентний повірений (TISC порадить кандидата). · [ ] 🤖 зібрати prior-art query-set (коаксіальний гіроїд, EBFC mediator, LoRa mesh) · [ ] 👤 контакт TISC (Спрягайло) + auxiliary MoU + prior art search + знайти повіреного + UA utility model → PCT (12міс, post-TRL 6)
+- TISC ЧНУ (WIPO/УкрНОІВІ): (1) **prior-art landscape** (новизна Статті 1 + анти-захоплення → [`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)), (2) **торгові марки** SilkenNet™/GaiaNexus™/SCC™ (~5-10k UAH; подача — повірений УкрНОІВІ), (3) open-license UA-сумісність consult. **Патент НЕ подаємо** (defensive publication, `08_01 §2`). · [x] 🤖 prior-art landscape готовий (query-sets + CPC) · [ ] 👤 контакт TISC (Спрягайло) + auxiliary MoU + trademark-заявка + open-license sanity
 
-#### UNI.16 — ЧНУ Кафедра ІВ engagement (юридична експертиза RWA + токеноміки)
+#### UNI.16 — ЧНУ Кафедра ІВ engagement (юр-експертиза RWA/токеноміки + open-license)
 - **P1** · 👤 · → `08_01 §2.1` · 🔗 UNI.1 (MoU)
-- Кафедра ІВ ЧНУ — точковий UA-юрисдикційний review (СЄУ §1F = макро): (1) RWA ERC-3643 vs Лісовий Кодекс/ПЗФ, (2) SCC/SFC за ЗУ «Про віртуальні активи» 2022 + MiCA 2024, (3) NaaS у UA Civil Code, (4) авторське право на `bio_contract.rb`/`Attractor`. Ціль: 2 меморандуми. · [ ] 👤 контакт зав. кафедри + workshop з Аблязовим (UA×MiCA) + меморандум RWA (розблок `07_01` BLOCKER-6) + меморандум SCC-класифікація + sui generis NaaS review
+- Кафедра ІВ ЧНУ — точковий UA-юрисдикційний review (СЄУ §1F = макро): (1) RWA ERC-3643 vs Лісовий Кодекс/ПЗФ, (2) SCC/SFC за ЗУ «Про віртуальні активи» 2022 + MiCA 2024, (3) NaaS у UA Civil Code, (4) авторське право `bio_contract.rb`/`Attractor` (як основа enforcement копілефту, не пропрієтарність), (5) **open-license review: AGPL/CERN-OHL-S/CC-BY-SA дійсність у UA + AF3 non-commercial × комерц-вимір**. Ціль: 2 меморандуми + license-sanity. · [ ] 👤 контакт зав. кафедри + workshop Аблязов (UA×MiCA) + меморандум RWA (розблок `07_01` BLOCKER-6) + меморандум SCC + open-license/AF3 review
 
 #### UNI.17 — ChDTU Хоменко (Кафедра металорізальних верстатів): прецизійна механіка + DMLS post-processing
 - **P2** · 👤 · → `08_02 §2`
-- Хоменко (Заслужений винахідник, 80+ патентів): прецизійна обробка + різьба анкера для живої деревини (`01_01`/`01_02`/`02_02`, deinstall `08_02 §3 Несен`) + патентний аудит. · [ ] 👤 контакт (ChDTU rectorat) + патентний аудит (UNI.15) + прототип різальної геометрії в ЧДТУ machine shop
+- Хоменко (Заслужений винахідник, 80+ патентів): прецизійна обробка + різьба анкера для живої деревини (`01_01`/`01_02`/`02_02`, deinstall `08_02 §3 Несен`). · [ ] 👤 контакт (ChDTU rectorat) + prior-art landscape consult (UNI.15) + прототип різальної геометрії в ЧДТУ machine shop
 
 ### 🌐 External Stakeholders (B2G / B2B / Cultural — non-academic outreach)
 
@@ -919,13 +919,13 @@
 
 ### ⚖️ IP / Grants (BIZ — канон-дім Модуль 08)
 
-#### BIZ.5 — Patent application
-- **P1** · 👤 · → `08_03`
-- [ ] 👤 engagement з патентним адвокатом → патентна заявка на дизайн анкера
+#### BIZ.5 — Patent application → ВІДХИЛЕНО (defensive publication, 2026-06-07)
+- **P1** · 👤 · → `08_01 §2`
+- 🗄️ Патентний шлях відхилено на користь **defensive-publication-first** (`08_01 §2`): публікуємо ядро як prior art (вільне для всіх + анти-захоплення), без патенту / повіреного / PCT. Виконання → UNI.3 + BIZ.10. _(колишній patent-шлях — git history.)_
 
-#### BIZ.10 — Multi-party IP Contract + NDA framework
+#### BIZ.10 — Multi-party co-authorship + open-license MoU framework
 - **P1** · 👤 · → `08_03`, `08_02 §3-07`
-- 5-сторонній фреймворк (ChNU+ChDTU+ChIPB+ChMA+СЄУ+SilkenNet): bilateral NDA, IP-договір спільного авторства, патентні права, royalty. · [ ] 👤 патентний повірений (UA+EU) → bilateral NDA × 5 (паралельно UNI.4-14) → Master IP Framework Agreement · [ ] 🔗 після UNI.1/8/9/12/13
+- 5-сторонній фреймворк (ChNU+ChDTU+ChIPB+ChMA+СЄУ+SilkenNet) **спрощено під open-поставою** (`08_01 §2`): tech відкрита всім → **немає патентних прав / royalty / tech-NDA до розподілу**; лишається **co-authorship + open-license acknowledgment** (AGPL/CERN-OHL-S/CC-BY-SA) + NDA **лише** для нерозкритого (ключі / production-дані). · [ ] 👤 co-authorship + open-license MoU × 5 (паралельно UNI.4-14) → Master Collaboration Agreement (юрист, не патентний повірений) · [ ] 🔗 після UNI.1/8/9/12/13
 
 #### 🌿 BIZ.12 — Horizon Europe CLUSTER 6 заявка (Biodiversity Monitoring, Mongabay pivot)
 - **P1** · 👤 · → `08_01 §24a`, `03_03 §10`

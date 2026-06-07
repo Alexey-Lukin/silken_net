@@ -21,25 +21,42 @@
 # (unresolved ids REPORTED, left alone); skips ``` fences + spans already in a link.
 #
 # Usage:
-#   ruby scripts/linkify_bare_refs.rb            # dry-run
-#   ruby scripts/linkify_bare_refs.rb --apply    # write
+#   ruby scripts/linkify_bare_refs.rb                           # dry-run (canon docs/*.md)
+#   ruby scripts/linkify_bare_refs.rb --apply                  # write (canon)
+#   ruby scripts/linkify_bare_refs.rb 'docs/protocols/**/*.md' # dry-run subdir targets
+#   ruby scripts/linkify_bare_refs.rb --apply docs/protocols/anchor/x.md
+# Subdir targets get ../-relative hrefs WITH .md (protocols/ convention); canon docs/*.md
+# keep the bare wiki-name href. Fences + table rows skipped.
 
 APPLY = ARGV.delete("--apply")
 root  = File.expand_path("..", __dir__)
-docs  = Dir.glob(File.join(root, "docs", "*.md")).sort
+docs_dir = File.join(root, "docs")
+corpus = Dir.glob(File.join(docs_dir, "*.md")).sort   # canon NN_NN = the link-TARGET registry
+# Files to rewrite: explicit ARGV paths (e.g. docs/protocols/**), else the canon corpus.
+targets = (ARGV.empty? ? corpus : ARGV.flat_map { |a| Dir.glob(File.expand_path(a)) }).uniq.sort
 
 MAP = {}            # NN_NN -> full basename (sans .md)
 HEADINGS = {}       # full basename -> downcased heading lines (for §-fold validation)
-docs.each do |f|
+corpus.each do |f|
   b = File.basename(f, ".md")
   next unless b =~ /\A\d\d_\d\d_/
   MAP[b[0, 5]] = b
   HEADINGS[b] = File.readlines(f).grep(/^\#{1,6}\s/).join("\n").downcase
 end
 
+# Href from a target file's dir to a canon doc: docs-root target → bare wiki-name (no .md,
+# the canon convention); subdir target (protocols/**) → ../-prefixed REAL path WITH .md
+# (matches the existing protocols/ convention, e.g. L1/SUMMARY → ../../../01_03_…md).
+def href_for(target_file, docs_dir, full)
+  rel = File.dirname(File.expand_path(target_file)).sub(%r{\A#{Regexp.escape(docs_dir)}/?}, "")
+  depth = rel.empty? ? 0 : rel.split("/").length
+  depth.zero? ? full : ("../" * depth + full + ".md")
+end
+
 EXEMPT = /\A00_00_|\A00_06_|\A00_07_|\A02_06_|_appendix_|\Amanifest/
-# code-span (not a link label), optional trailing " §token" on the same line.
-SPAN = /(?<!\[)`(docs\/)?(\d\d_\d\d)(_[A-Za-z0-9_]+)?`([ \t]*§[ \t]*([0-9A-Za-zА-Яа-яІіЇїЄє.\-]+))?/
+# code-span (not a link label) `NN_NN`, with an optional § EITHER inside the code-span
+# (`NN_NN §X`) OR trailing after it (`NN_NN` §X). g2=NN_NN, g4=inside-§, g5=outside-§.
+SPAN = /(?<!\[)`(docs\/)?(\d\d_\d\d)(_[A-Za-z0-9_]+)?(?:[ \t]*§[ \t]*([0-9A-Za-zА-Яа-яІіЇїЄє.\-]+))?`(?:[ \t]*§[ \t]*([0-9A-Za-zА-Яа-яІіЇїЄє.\-]+))?/
 
 def fold?(full, token)
   return false unless token
@@ -59,7 +76,7 @@ changes  = Hash.new { |h, k| h[k] = [] }
 dangling = []
 kept_prose = []     # §X left as prose (sub-point/descriptive) — for review
 
-docs.each do |f|
+targets.each do |f|
   base = File.basename(f, ".md")
   next if base.match?(EXEMPT)
 
@@ -70,26 +87,27 @@ docs.each do |f|
       next line
     end
     next line if in_fence
+    next line if line.lstrip.start_with?("|")   # table row — bare refs exempt (00_06 §3)
 
     line.gsub(SPAN) do
       orig    = Regexp.last_match(0)
       id      = Regexp.last_match(2)
-      sect_rw = Regexp.last_match(4)   # full " §X" suffix (or nil)
-      token   = Regexp.last_match(5)
+      token   = Regexp.last_match(4) || Regexp.last_match(5)   # § inside-or-outside the code-span
       full    = MAP[id]
       unless full
         dangling << "#{base} L#{ln}: #{orig} (no docs/#{id}_*.md)"
         next orig
       end
+      href = href_for(f, docs_dir, full)
       clean, tail = token ? split_dots(token) : [ nil, "" ]
       repl =
         if clean && fold?(full, clean)
-          "[`#{id} §#{clean}`](#{full})#{tail}"
-        elsif sect_rw
-          kept_prose << "#{base} L#{ln}: [`#{id}`](…)#{sect_rw}  (§ not a heading → prose)"
-          "[`#{id}`](#{full})#{sect_rw}"
+          "[`#{id} §#{clean}`](#{href})#{tail}"
+        elsif token
+          kept_prose << "#{base} L#{ln}: [`#{id}`](…) §#{token}  (§ not a heading → prose)"
+          "[`#{id}`](#{href}) §#{token}"
         else
-          "[`#{id}`](#{full})"
+          "[`#{id}`](#{href})"
         end
       changes[base] << [ ln, orig, repl ]
       repl

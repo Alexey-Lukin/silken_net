@@ -1,0 +1,42 @@
+Third-Party Notices — SilkenNet / GaiaNexus
+============================================
+
+Curated inventory of third-party components and their licenses. Every component
+BUNDLED in the product was verified (manifest level, 2026-06-07) compatible with
+SilkenNet's AGPL-3.0-or-later code license. Regenerate the full transitive list
+with: `bundle exec license_finder` (gems) + `npm` / forge (contracts) +
+conda / `pip-licenses` (tools).
+
+BUNDLED IN THE PRODUCT (must be AGPL-3.0-compatible)
+---------------------------------------------------
+Firmware (firmware/extern/, git submodules):
+  - ARM CMSIS-DSP ............ Apache-2.0
+  - ARM CMSIS_6 .............. Apache-2.0
+  - mruby .................... MIT
+
+Backend (Ruby gems — Gemfile; key direct deps, full transitive via license_finder):
+  - Rails & most gems ........ MIT / BSD / Apache-2.0
+  - Sidekiq .................. LGPL-3.0 (OSS; AGPL-compatible)
+  - prawn .................... GPL-2.0 / GPL-3.0 / Ruby (use GPL-3.0 option; AGPL-compatible)
+
+Smart contracts (contracts/):
+  - OpenZeppelin Contracts ... MIT
+  - forge-std (dev) .......... MIT / Apache-2.0
+
+Frontend:
+  - Turbo / Stimulus (importmap) ... MIT
+  - CARTO basemap tiles ............ CC-BY (attribution) — runtime map tiles
+
+TOOLS (run to generate results; NOT redistributed in the product)
+-----------------------------------------------------------------
+PySCF (Apache-2.0), OpenMM (MIT/LGPL), mdtraj (LGPL), numpy/scipy (BSD),
+AmberTools (GPL/LGPL). These constrain our USE, not the release; outputs are ours.
+
+DATA WITH SEPARATE TERMS (NOT under the repo licenses) — see NOTICE
+------------------------------------------------------------------
+  - AlphaFold 3 Server outputs (docs/protocols/ebfc/in_silico/alphafold3/** +
+    dgrGcGDH_AF3.pdb): AlphaFold Server Output Terms (non-commercial). See NOTICE.
+  - Small-molecule .sdf (docs/.../ligands/): public chemical data (PubChem / generated).
+
+No GPL-2.0-only / proprietary / non-commercial / SSPL / BUSL license was found in
+the bundled code at manifest level (2026-06-07).

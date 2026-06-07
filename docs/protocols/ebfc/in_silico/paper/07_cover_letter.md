@@ -1,7 +1,7 @@
 # Cover Letter — Стаття 1 (draft)
 
-> 🟡 **DRAFT** · 🛑 **HOLD until patent priority date** (`08_01 §2`; tracker `UNI.3`) — disclosing the
-> cascade/PCET mechanism is patent-relevant; **do not send before filing.**
+> 🟡 **DRAFT** · ✅ **submission-ready** — defensive publication (`08_01 §2`; tracker `UNI.3`): the
+> publication itself is the protection (prior art); no patent gate.
 > Target: *J. Phys. Chem. B* (primary) · *PCCP* fallback · *Bioelectrochemistry* applied-backup.
 > Voice/claims per [`00_OUTLINE.md §0`](00_OUTLINE.md) + [`00_WRITING_GUIDE.md`](00_WRITING_GUIDE.md);
 > numbers → [`SUMMARY.md`](../SUMMARY.md). Bracketed `[…]` = fill at submission.
@@ -46,7 +46,7 @@ scripts (a committed `conda-lock` environment), and the full pipeline is provide
 This work is original, has not been published previously, and is not under consideration elsewhere. A
 portion of the methodology (explicit-solvation QM/MM of the cascade) is being developed with the
 [School of B. Minaev, Cherkasy National University] and is reflected in the author contributions.
-[⚠️ founder: confirm competing-interests declaration in light of the pending patent filing — UNI.3.]
+[⚠️ founder: competing-interests — none re: IP (no patent pending; defensive-publication posture, 08_01 §2). Confirm standard declaration.]
 
 We thank you for your consideration and look forward to the reviewers' comments.
 

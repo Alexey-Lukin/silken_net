@@ -200,9 +200,9 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
     моніторингу загрози пожеж". Це усуває статтю про умисне псування.
   - **RWA Legal Wrapper:** структура DAO (Цуг/Вайомінг) + договір
     еко-концесії з місцевою громадою — кросс-юрисдикційний міст.
-  - **IP захист:** патенти на геометрію анкера ([`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK)),
+  - **IP постава:** defensive publication + open-license (AGPL / CERN-OHL-S) — анкер ([`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK)),
     EBFC ([`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)), bio-contract
-    ([`03_04`](03_04_mruby_Lorenz_Attractor)).
+    ([`03_04`](03_04_mruby_Lorenz_Attractor)) відкриті як prior art (не патенти; [`08_01 §2`](08_01_Joint_Publications_and_IP_Strategy)).
 - **API Out:**
   - "Блакитний океан" Cyber-Ecological Law: піонер у Web3/Eco-Law
     в Україні.

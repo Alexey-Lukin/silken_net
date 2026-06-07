@@ -352,3 +352,19 @@ kamal deploy
 ## 🌍 Масштаб
 
 Система спроектована для **мільйонів → мільярдів → трильйонів** дерев по всьому світу. Кожне архітектурне рішення — від партиціонування PostgreSQL до черг Sidekiq — розраховане на планетарний масштаб.
+
+---
+
+## 📜 Ліцензія та IP-постава
+
+SilkenNet — **mission-first, defensive-publication-first**: ми **не патентуємо** цю роботу, а публікуємо її як prior art, щоб вона лишалась вільною для всіх лісів і її **не можна було захопити**. Канон постави — [`08_01 §2`](docs/08_01_Joint_Publications_and_IP_Strategy.md); повна мапа зон і винятків — [`NOTICE`](NOTICE).
+
+| Зона | Ліцензія | Файл |
+|------|----------|------|
+| **Код** (backend / firmware / contracts / tooling) | **GNU AGPL-3.0-or-later** | [`LICENSE`](LICENSE) |
+| **Залізо** (гіроїд / EBFC / PCB-дизайн) | **CERN-OHL-S-2.0** | [`LICENSE-HARDWARE.txt`](LICENSE-HARDWARE.txt) |
+| **Документація** (`docs/**`) | **CC-BY-SA-4.0** | [`LICENSE-DOCS.txt`](LICENSE-DOCS.txt) |
+
+- **Patent non-assertion pledge:** не подаємо й не assert-имо патенти; інвентивне ядро опубліковане як defensive disclosure — [`docs/protocols/anchor/defensive_disclosure.md`](docs/protocols/anchor/defensive_disclosure.md).
+- **Third-party винятки:** виходи AlphaFold 3 (`docs/protocols/ebfc/in_silico/alphafold3/**` + `dgrGcGDH_AF3.pdb`) — під власними **non-commercial** AF3 Terms, **не** CC-BY-SA (див. [`NOTICE`](NOTICE)). Повний інвентар залежностей — `THIRD_PARTY_NOTICES`.
+- **Торгові марки** SilkenNet™ / GaiaNexus™ / SCC™ — зарезервовані (захист бренду), вище не ліцензуються.

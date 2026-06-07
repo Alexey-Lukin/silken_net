@@ -2,7 +2,7 @@
 
 > **This is the writing plan / skeleton**, not a number source. All numerical results
 > live in [`SUMMARY.md`](../SUMMARY.md) (One-Home) — this doc *references* them, never
-> restates. The canonical publication plan (title, journals, authors, embargo) lives in
+> restates. The canonical publication plan (title, journals, authors, IP posture) lives in
 > [`08_01 §Стаття 1`](../../../08_01_Joint_Publications_and_IP_Strategy.md); keep them in sync.
 > Built 2026-06-05 while ① runs; sections tagged **[READY]** / **[PENDING ②/③/④]**.
 
@@ -12,7 +12,7 @@
 - **Type:** purely computational quantum-chemistry paper (no wet experiment yet — Ti-coin = Stage 2). Sells on **mechanistic + methodological** novelty, NOT "validation."
 - **Target:** *J. Phys. Chem. B* (primary) · *PCCP* (fallback) · *Bioelectrochemistry* (applied backup). IMRaD identical across the first two.
 - **Authors / CRediT:** Architect (Silken Net) — Conceptualization, Methodology, Software, Investigation, Writing-original-draft. Школа Мінаєва (ЧНУ) — Methodology (explicit-water QM/MM, §3.5 upgrade), Investigation, Writing-review. Corresponding = founder's call.
-- **🛑 Embargo gate:** patent NOT filed → **draft freely, HOLD submission** until priority date (08_01 §2; prior-art `protocols/anchor/prior_art_queries.md`). Disclosing the cascade/PCET = patent-relevant.
+- **✅ IP — defensive publication** (08_01 §2): **публікація = захист** (prior art) → submission-ready, без патентного гейту. Prior-art landscape: `protocols/anchor/prior_art_landscape.md`.
 
 ## 1. Thesis (honest, one paragraph)
 

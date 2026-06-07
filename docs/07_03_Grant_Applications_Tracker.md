@@ -101,7 +101,7 @@
 
 | Артефакт | Статус | Де знайти |
 |---|---|---|
-| **GitHub Repository** (відкритий код контрактів та сервісів) | ✅ Готово | github.com/Alexey-Lukin/silken_net |
+| **GitHub Repository** (відкритий код — AGPL-3.0 / CERN-OHL-S / CC-BY-SA; defensive-publication, [`08_01 §2`](08_01_Joint_Publications_and_IP_Strategy)) | ✅ Готово | github.com/Alexey-Lukin/silken_net |
 | **Technical Wiki** (архітектурна документація) | ✅ Готово | wiki цього репозиторію |
 | **Demo** (Lorenz Attractor візуалізація) | ✅ Готово | згідно Wiki 03_04 |
 | **BOM & Unit Economics** | ✅ Готово | wiki 07_02 |
