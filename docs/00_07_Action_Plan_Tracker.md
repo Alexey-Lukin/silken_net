@@ -819,7 +819,7 @@
 
 #### UNI.3 — Defensive-publication + open-license execution (IP-постава)
 - **P1** · 👤🤖 · → `08_01 §2`
-- ✅ Постава = **defensive-publication-first** (`08_01 §2`; патент НЕ подаємо). 🤖 Ліцензії застосовано (AGPL / CERN-OHL-S / CC-BY-SA + `/NOTICE`); disclosure готовий ([`defensive_disclosure.md`](protocols/anchor/defensive_disclosure.md)) + landscape ([`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)). **Стаття 1 розблокована** (publish-to-protect). Owner-дії: · [ ] 👤 TDCommons-постинг disclosure (prior-art якір) · [ ] 👤 trademark-заявка SilkenNet™/GaiaNexus™/SCC™ через TISC (UNI.15) · [ ] 👤 Кафедра-ІВ open-license + AF3 legal review (UNI.16)
+- ✅ Постава = **defensive-publication-first** (`08_01 §2`; патент НЕ подаємо). 🤖 Ліцензії застосовано (AGPL / CERN-OHL-S / CC-BY-SA + `/NOTICE`); disclosure готовий ([`defensive_disclosure.md`](protocols/anchor/defensive_disclosure.md)) + landscape ([`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)). **Стаття 1 розблокована** (publish-to-protect). Owner-дії: · [ ] 👤 TDCommons-постинг disclosure (prior-art якір) · [ ] 👤 trademark-заявка SilkenNet™/GaiaNexus™/SCC™ через TISC (UNI.15) · [ ] 👤 Кафедра-ІВ open-license + AF3 legal review (UNI.16) · [ ] 🤖 **SPDX-headers по source** (`app`/`lib`/`firmware`[крім `extern`]/`contracts`/`tools` = `AGPL-3.0-or-later`; CERN-OHL-S для hw-design-файлів) — скриптом, ідемпотентно (skip-if-present); великий механічний diff → **deferred** (plan Phase 7)
 
 #### UNI.4 — ChNU школа Мінаєва: DFT-моделювання EBFC
 - **P1** · 👤 · → `08_01 §1.1`, `08_03 §1`
