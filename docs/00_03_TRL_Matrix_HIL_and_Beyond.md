@@ -120,6 +120,19 @@
 
 > HIL-симулятори **не приховують** фізичне відставання — `README.md` Current Stat показує **System TRL** (3) поряд із **per-domain TRL** (Rails 8, Solidity 9, anchor/EBFC 3). Це чесніше, ніж блокувати Software на TRL 3 формальністю TRL-Lock.
 
+### 3.5 Firmware bench-незалежність: класи A/B/C + bench-as-code
+
+> **Метод (2026-06-07):** кожен «bench-gated» firmware-пункт класифікується за тим, *що насправді відповідає на питання* — і більшість виявляється bench-gated лише за звичкою. Присуди по item-ах живуть у [`00_07`](00_07_Action_Plan_Tracker); це — спосіб мислення.
+
+| Клас | Що відповідає | Інструмент | Приклади (закриті цим методом) |
+|------|---------------|-----------|--------------------------------|
+| **A. Host-логіка** | чиста логіка + wire-контракти | `firmware/test/*` host-тести, скриптовані транскрипти, fault-injection | FW.3/FW.56 AT+CoAP розмова (скриптований SIM7070G), ARCH.28 Flash-KV (power-cut мок), SEC.3 EXECUTE (fake-CLI шим) |
+| **B. ISA-семантика** | реальний машинний код таргета, без периферії | **QEMU-M4 parity lane** (`qemu-system-arm mps2-an386`, [`03_01 §12.7`](03_01_Firmware_Lifecycle_and_DMA)) | FW.7/FW.19 ARM↔x86 double-drift → byte-exact гейт у CI (FW.55) |
+| **C. Кремній/фізика** | лише плата | **bench-as-code**: `firmware/scripts/bench/` (RUNBOOK + скрипти `--plan`/`--execute`) | CCM-атестація (FW.2 KAT через SWD), 300 нА floor, Vcap recharge-крива (E.63), LSE drift, RDP, RF |
+| | | | |
+
+**Принципи:** (1) самописна модель периферії **не може** атестувати кремній (модель AES писалась би проти того ж OpenSSL — циркулярно; тому Renode-порт STM32WL відхилено — perif-моделі WL відсутні upstream, а питання класу C вони не закривають); (2) клас C **не означає «чекати»** — bench-день кодифікується наперед (runbook + скрипти + атестаційна граматика KAT-звітів), щоб залізо відповідало на вичерпний список питань за години, а артефакти лягали в репо; (3) той самий вхідний скрипт локально і в CI (патерн `cppcheck.sh`/`qemu_parity.sh`).
+
 ---
 
 > **🌌 Beyond TRL 9 — винесено у власний дім.** Далекогоризонтна R&D-агенда — 4 Planetary-Intelligence прогалини (колективний гомеостаз, self-evolving edge AI, cross-biome, auto-immune sentinel security) + фрактальна мережева топологія (L1/L2/L3, H-LDSE, Edge Data Fusion), горизонт 2026–2040+ — тепер канонічно живе в [`00_08`](00_08_Beyond_TRL9_Planetary_Roadmap). Тут лишаються **жива TRL-матриця** (§1) + **метод** (TRL-Layered-Independence §2, HIL-симулятори §3).

@@ -1515,7 +1515,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 ```
 
 **Hardware-gated TODO:**
-- 👤 Реальний `STM32_Programmer_CLI` execution на STM32WLE5JC bench (зараз `EXECUTE=1` raise'ить `ProgrammerMissingError` без CLI у PATH)
+- 👤 Реальний `STM32_Programmer_CLI` execution на STM32WLE5JC bench (зараз `EXECUTE=1` raise'ить `ProgrammerMissingError` без CLI у PATH). ✅ (2026-06-07) Software-половина доведена шим-інтеграцією: fake-CLI на PATH → повна Session через реальні subprocess'и (ok/verify-fail/rdp-fail, stop-on-fail, transcript) — `spec/services/factory_flashing/session_run_execute_path_spec.rb`; на bench лишається фізика SWD
 - 👤 Bitwarden Secrets Manager live API (`BitwardenAdapter#fetch_master_key` placeholder)
 - 🔗 Live `cryptoauthlib` I²C call в `AteccProvisioner` — після SEC.6 PCBA з ATECC608B
 
