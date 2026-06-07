@@ -94,7 +94,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib \
-            cmake ninja-build ruby rake
+            cmake ninja-build ruby rake qemu-system-arm
 
       - name: '[FW.46] Bytecode mirror == bio_contract.rb (deep mrbc regen-diff)'
         run: tools/firmware/gen_bytecode.sh --check
@@ -114,6 +114,13 @@ jobs:
           cd firmware/extern/mruby
           SILKEN_ARM_BUILD=1 MRUBY_CONFIG="$GITHUB_WORKSPACE/firmware/mruby/build_config.rb" rake -j2
           arm-none-eabi-size -t build/arm-none-eabi/lib/libmruby_core.a | tail -1
+
+      - name: '[FW.55] QEMU-M4 bit-parity — host golden ↔ Cortex-M4 mruby (mps2-an386)'
+        # Той самий committed-байткод на реальному M4 код-шляху (software-double
+        # __aeabi_*, як на STM32WLE5JC) через qemu-system-arm. Гейт = byte-exact
+        # diff 64 зчеплених кейсів. Закриває FW.7/FW.19 ARM↔x86 residual до
+        # тонкого silicon-confirm. docs/03_01 §12.
+        run: REQUIRE_QEMU=1 firmware/scripts/qemu_parity.sh
 
       - name: '[FW.46] Host CMSIS log-mel packing-parity (no board)'
         run: |

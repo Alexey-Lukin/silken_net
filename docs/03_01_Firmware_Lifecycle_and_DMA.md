@@ -1457,6 +1457,20 @@ tools/firmware/run_bytecode_vm.sh                 # minimal VM runs the bytecode
 
 **Scope:** production-код (`firmware/test/` поки не лінтиться — host-scaffolding). Статус + залишок — [`00_07` — FW.48](00_07_Action_Plan_Tracker).
 
+### 12.7 QEMU-M4 bit-parity lane — ISA-емуляція замість bench (FW.55)
+
+**Що це:** committed-байткод `lorenz_bytecode.h` виконується реальним **Cortex-M4 код-шляхом** (minimal-gembox `libmruby.a` із `SILKEN_ARM_BUILD`, software-double `__aeabi_d*` — той самий машинний код, що піде на STM32WLE5JC) на `qemu-system-arm -M mps2-an386`, і дамп порівнюється **byte-exact** із host-голденом. Закриває FW.7/FW.19 residual «ARM↔x86 Float drift» до тонкого silicon-confirm (один прогін selftest на платі).
+
+**Чому бітова рівність — правильний гейт:** Lorenz = лише `+−×÷` (correctly-rounded за IEEE 754), VM виконує той самий байткод у тому ж порядку, double на M4F — детермінований software-шлях. Розбіжність = справжня знахідка, не шум. Кейси **зчеплені** (вихід N → вхід N+1, RTC-continuation патерн) — одиничний ULP-дрейф ампліфікується хаосом і не сховається.
+
+**Анатомія (One-Home):**
+- `firmware/sim/parity_core.h` — спільний runner (host і ARM компілюють той самий код); краєві піни (temp/acoustic/delta_t/vcap) + LCG-розгортка.
+- `firmware/sim/host_main.c` — host-голден; `firmware/sim/qemu_m4/{main,startup,syscalls}.c` + `mps2_an386.ld` — bare-metal нога (CMSDK UART0 → stdout, semihosting-вихід; карта пам'яті СИМУЛЯТОРА, не Солдата).
+- `firmware/scripts/qemu_parity.sh` — єдиний вхід (DRY, патерн `cppcheck.sh`): локально без qemu → host+ARM-build і чесний skip; CI з `REQUIRE_QEMU=1` — відсутній qemu = fail.
+- CI: крок `[FW.55]` у job `firmware_arm_build` (`ci.yml`) — реюзає вже зібрані mruby-ліби.
+
+**Межі чесності:** QEMU виконує ISA, а не кремній — він **не** відповідає за периферію (RTC/AES/SUBGHZ), споживання чи таймінги. Це шар B класифікації симуляції ([`00_03 §3`](00_03_TRL_Matrix_HIL_and_Beyond)); кремнієвий клас C живе у bench-runbook. Статус — [`00_07` — FW.55](00_07_Action_Plan_Tracker).
+
 ---
 
 ## 📈 13. EMA (Exponential Moving Average) на Soldier — FW.21 🤖

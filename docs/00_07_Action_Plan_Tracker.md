@@ -510,7 +510,7 @@
 
 #### FW.7 — Float vs BigDecimal divergence (TRL 6 mitigation)
 - **P1** · 👤 · → `03_04 §5`
-- ✅ backend `Attractor` BigDecimal→Float (IEEE 754 — DCI **категорично** однакові Z; raw drift ~1e-14 реальний mruby-VM↔CRuby, FW.46). ⚠️ ARM↔x86 Float drift лишається; категоричний tolerance band компенсує для TRL 6, строгий consensus → `ARCH.18`. · [ ] 👤 bench-verify (flag `MRB_USE_FLOAT32`=double вже пінено `build_config.rb` — FW.19/FW.46)
+- ✅ backend `Attractor` BigDecimal→Float (IEEE 754 — DCI **категорично** однакові Z; raw drift ~1e-14 реальний mruby-VM↔CRuby, FW.46). ✅ (2026-06-07) ARM↔x86 Float drift **знято FW.55**: QEMU-M4 bit-parity lane — реальний M4 soft-double код-шлях ≡ host byte-exact (64 зчеплені кейси, CI-гейт). · [ ] 👤 silicon-confirm: один прогін parity-дампу на платі (FW.55) — flag `MRB_USE_FLOAT32`=double вже пінено `build_config.rb` (FW.19/FW.46)
 
 #### FW.8 — CRITICAL_Z_MIN/MAX hardcoded
 - **P1** · 🟡 · → `03_01 §2`, `04_01`, `04_02`
@@ -522,7 +522,7 @@
 
 #### FW.19 — Float32 vs Float64 mruby compile flags
 - **P2** · 🤖+👤 · → `03_04 §5`
-- ✅ tolerance band «by design» (категорична `check_z_divergence!`). **Флаг — `MRB_USE_FLOAT32`** (перейменовано з `MRB_USE_FLOAT` у mruby ≥3.0; стара назва мертва — verified `doc/mruby4.0.md`). Без нього = double (потрібно), з ним = float32 → ±5-10 units на Z → bio_status зсув. · [x] 🤖 (FW.46) `firmware/mruby/build_config.rb` пінить double (НЕ ставить `MRB_USE_FLOAT32`) + boxing-інваріант (НЕ вмикати WORD/NAN boxing на 32-bit) — `03_01 §12.4` · [ ] 👤 bench-verify на STM32WLE5JC REVB
+- ✅ tolerance band «by design» (категорична `check_z_divergence!`). **Флаг — `MRB_USE_FLOAT32`** (перейменовано з `MRB_USE_FLOAT` у mruby ≥3.0; стара назва мертва — verified `doc/mruby4.0.md`). Без нього = double (потрібно), з ним = float32 → ±5-10 units на Z → bio_status зсув. · [x] 🤖 (FW.46) `firmware/mruby/build_config.rb` пінить double (НЕ ставить `MRB_USE_FLOAT32`) + boxing-інваріант (НЕ вмикати WORD/NAN boxing на 32-bit) — `03_01 §12.4` · [x] 🤖 (FW.55, 2026-06-07) double-шлях доведено на реальному M4-коді: QEMU bit-parity ≡ host byte-exact · [ ] 👤 silicon-confirm на STM32WLE5JC REVB (той самий дамп через SWD)
 
 #### FW.20 + FW.20-S2 — Time Sync (Rails ↔ Queen ↔ Soldier)
 - **P2** · 👤+🟡 · → `03_02 §5а` (канон-хаб)
@@ -620,6 +620,10 @@
 - **P2** · 🤖+👤 · → [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)
 - **Знахідка (FW.49 нора):** цільовий 300nA-режим (`03_01 §1.10`, «наступний firmware-цикл») вимикає SRAM2 retention (`PWR.CR3 RRS=0`, −800nA) → стан переживає STOP2 ТІЛЬКИ в RTC Backup. Але RAM-глобали `soldier_unix_ts` + FW.49 boot/beacon/request wall-маркери (та EMA-runtime, ota_buffer) гинуть щоцикл → drift-watchdog/годинник/EMA ламаються у 300nA-режимі. DR0-DR19 повні (`03_01 §2`) → персист мусить іти у Flash-KV (`03_01 §2.3 ARCH.28` шлях A). Зчеплення: FW.49 ↔ FW.20-S2 ↔ FW.21.
 - [ ] 🤖 інвентар RAM-стану, що мусить пережити SRAM2-off · [ ] 👤 Flash-KV store (§2.3 шлях A) АБО свідомий trade-off SRAM2-retain (−800nA vs Flash-wear) · [ ] 👤 bench: вимір 300nA + persist-roundtrip
+
+#### FW.55 — QEMU-M4 bit-parity lane: ARM↔x86 mruby double residual → CI
+- **P1** · 🤖 · → `03_01 §12`
+- ✅ (2026-06-07) committed-байткод на реальному Cortex-M4 код-шляху (`qemu-system-arm -M mps2-an386`, minimal-gembox `libmruby.a`, software-double `__aeabi_d*` — як на STM32WLE5JC): 64 **зчеплені** кейси (вихід N → вхід N+1 — хаос ампліфікує ULP-дрейф) + краєві піни; гейт = **byte-exact** diff проти host-голдена. `firmware/sim/*` + `firmware/scripts/qemu_parity.sh` (єдиний вхід local+CI) + крок у `firmware_arm_build`. Закриває FW.7/FW.19 «ARM↔x86 Float drift» до тонкого silicon-confirm. Межі: ISA ≠ кремній (периферія/споживання/таймінги — клас C, bench-runbook). · [ ] 🔗 розширення: stack-paint high-water на тому ж QEMU (FW.4 residual «~7KB стек vs 16KB arena») — після моделі · [ ] 👤 silicon-confirm: той самий дамп один раз на платі (SWD)
 
 #### FW.56 — Queen CoAP AT-граматика ≠ SIMCom: модем = UDP-труба, PDU будує хост
 - **P1** · 🤖+👤 · → `03_02 §4`

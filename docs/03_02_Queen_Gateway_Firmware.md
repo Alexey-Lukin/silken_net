@@ -116,7 +116,7 @@
 | `FLUSH_JITTER_MAX_MS` | `60 000` | main.c:41 | Макс. jitter (60 сек) |
 | `RNG_FALLBACK_XOR_MASK` | `0xA5A5A5A5UL` | main.c:42 | XOR-маска при відмові HRNG (jitter) |
 | `FLUSH_HEADROOM` | `5` | main.c:43 | Слоти до примусового flush |
-| `QUEEN_HEALTH_GP_MAX` | `31` | main.c | Макс. growth_points для sentinel (5-біт wire — дзеркало [FW.29-PACK], дім формату — `03_01 §2`) |
+| `QUEEN_HEALTH_GP_MAX` | `31` | main.c | Макс. growth_points для sentinel (5-біт wire — дзеркало [FW.29-PACK], дім формату — [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)) |
 | `OTA_MAX_CHUNKS` | `16` | main.c:45 | Макс. CoAP-чанків (bitmap 16 біт) |
 | `CACHE_MAX_ENTRIES` | `50` | main.c:87 | Місткість CIFO EdgeCache |
 | `CMD_DEDUP_SIZE` | `16` | main.c:113 | Розмір кільцевого буфера dedup |
