@@ -77,7 +77,7 @@
 | **Анкер Zone 2 (PEEK-терморозрив)** | Medical Grade PEEK. ЧПУ-фрезерування з annealing 200–250°C, допуски H7/s6. Press-fit з Zone 1 і Zone 3. | $3.00 |
 | **Радом (PCBA housing)** | Medical Grade PEEK купол ∅20–30 мм, термолиття. O-ring EPDM. IP68. Окрема деталь, **НЕ Zone 2**. | $2.50 |
 | **Power Deck (PCBA)** | BQ25570 (MPPT) + EDLC Supercapacitor 0.47 F + Pogo Pins + 47µF/25V/X7R/1210 buffer cap ([`02_03 §6.1`](02_03_BQ25570_MPPT_Nano_Power)) + **LTC3108 DNP footprint** для cold-start fallback (`02_03 BLOCKER-3`) + пасивна обв'язка 0402. | $6.35 |
-| **RF Deck (PCBA)** | STM32WLE5JC (LoRa SoC) + Ceramic SMD Antenna 868 МГц + TCXO (±1 ppm). | $5.80 |
+| **RF Deck (PCBA)** | STM32WLE5JC (LoRa SoC) + Ceramic SMD Antenna 868 МГц + TCXO (±1 ppm) + **ATECC608B DNP footprint** (SEC.6 soft-freeze, mass-only post-FW.2 — [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security); +$0.60–0.85 коли populated). | $5.80 |
 | **Біоелектрохімічна функціоналізація (Gen 2.0)** | fMWCNT + Os redox polymer + **dgrFAD-GDH** (Zone 1); fMWCNT + **Laccase/nCoCuCeZIF nanozyme** гібрид (Zone 3); **Genipin-Chitosan-CNC** захисна матриця; **Nafion-g-PSBMA** цвітеріонна мембрана (SI-ATRP). Деталі — [`01_03 §5`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell). | $15.00–$24.50 (1K шт) / $5–$8 (50K+ шт) |
 | **Стерилізація (no EtO)** | Гамма-опромінення Co-60 25 кГр в запакованому стані, або UV-C + 70% EtOH. Деталі — [`01_04 §6`](01_04_CODIT_and_Xylemointegration). | $0.50–$1.00 |
 | **Герметизація / IP68** | O-Rings EPDM, Sylgard 184 потинг (радом), машинна збірка тризонного анкера. | $1.50 |

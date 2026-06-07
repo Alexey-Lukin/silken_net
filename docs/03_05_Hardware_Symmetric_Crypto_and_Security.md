@@ -1773,6 +1773,14 @@ STM32_Programmer_CLI -c port=SWD -ob RDP=0xCC
 > 3. **BOM economy** — ATECC608B ~$0.85/unit @ 10k MOQ, vs SE050 ~$3.25/unit. На мільйон вузлів = $2.4M saved.
 > 4. **Quantum margin** — AES-128 під Grover'ом еквівалентний AES-64 = $2^{64}$ комбінацій; одного цього мало для довгого горизонту, але разом з **`[FW.17]` Hash Ratchet KDF** (key rotation кожні N днів → minimize accumulated ciphertext per key) + **§10 PQC bridge** через гібридний шар у Queen↔Rails — практично нездоланно на 25-річний горизонт.
 
+> ✅ **SEC.6 RESOLVED (2026-06-07) — soft-freeze (design-in, DNP, populate post-FW.2 на mass):** ATECC608B заводиться як **footprint + I²C-розводка на PCB зараз, DNP** (do-not-populate) на пілоті — точно як LTC3108 ([`02_01`](02_01_Hardware_Architecture_and_BOM) BOM п.13). Пілот (≤100 / <10k) лишається на Гілці A (RDP L2) — канон-мінімум (§3.4г). Монтаж + config-lock — **на mass-production (>10k)**, коли (а) FW.2 CCM landed (cleartext DID addressing → per-device-ізоляція оживає; інакше кластер де-факто на спільному ключі — [`00_07` — ARCH.43](00_07_Action_Plan_Tracker)), (б) масштаб виправдав, (в) eval-kit зняв I²C/slot-lock невідомі.
+>
+> **Чому soft-freeze (не populate-now і не cost-cut):** вартість ($0.60–0.85 на $55–70 вузол ≈ 1.5%) — не аргумент. Вирішує **асиметрія необоротності**: B→A неможливо (config-lock назавжди), A→B = PCB-респін → найдорожча помилка = **не закласти footprint**. DNP комітить дешеву оборотну частину (footprint ≈ $0), відкладаючи дорогу необоротну (монтаж+lock).
+>
+> **Межі очікувань — що ATECC дає / НЕ дає:** дає — AES-128 tamper-storage (Slot 0, ключ не покидає кремній) + **монотонні лічильники** (FW.2 cold-boot nonce + panic anti-replay) + anti-clone serial + SHA/HMAC OTA. **НЕ дає доказ фізичного походження даних** — його ECDSA-рушій **P-256 (secp256r1)** не збігається з жодним ланцюгом стека (EVM = secp256k1; Solana/peaq = Ed25519), тож для Web3-підпису непридатний. True device-origin = окремий шлях (E.60 Merkle + firmware-software Ed25519, Post-TRL 7), **не** SE.
+>
+> **Device-side Ed25519 — не потрібен у HW (тому SE050 не виправданий):** Soldier ніколи не підписує (LoRa-симетрика); Queen M2M-підпис рідкісний (раз/30 днів) → firmware-software ([`00_07` — ARCH.33](00_07_Action_Plan_Tracker): ~50 мс, ~512 B); peaq/Solana — Ed25519 custodial backend. SE050 лишається лише far-future PQC-hedge (§10, AES-256), не поточна потреба. Cross-ref [`00_07` — SEC.6](00_07_Action_Plan_Tracker), [`00_07` — FW.2](00_07_Action_Plan_Tracker).
+
 **Контекст:** навіть з RDP Level 2, key extraction теоретично можливий через **side-channel attacks** (DPA, EM analysis) або **fault injection** (voltage/clock glitching). Для batches > 1000 одиниць — це attractive target. Виділений Secure Element зберігає ключ у tamper-resistant ASIC з вбудованим detection.
 
 **Кандидат: Microchip ATECC608B**
@@ -1818,7 +1826,7 @@ STM32_Programmer_CLI -c port=SWD -ob RDP=0xCC
 | Slot | Тип | Призначення | Read | Write |
 |------|-----|-------------|------|-------|
 | 0 | AES-128 key | LoRa Soldier↔Queen sym key | ❌ never | One-time (factory) |
-| 1 | ECC P-256 private | Device identity (peaq DID signing) | ❌ never | One-time (factory) |
+| 1 | ECC P-256 private | Device-attestation cert (P-256, mTLS / device→backend). **НЕ** peaq/Solana DID-підпис — ті Ed25519 (custodial backend або firmware-software; ADR угорі / §3.4) | ❌ never | One-time (factory) |
 | 2 | Public key cert | X.509 device cert | ✅ open | Factory |
 | 3 | HMAC-SHA256 key | OTA image HMAC verification (FW.23) | ❌ never | One-time |
 | 4–15 | Reserved | Future use (key rotation, new chains) | — | — |
@@ -1873,7 +1881,7 @@ atca_status_t status = atcab_aes_encrypt(
 |---|---|---|
 | LoRa session-ключ живе | у ATECC Slot 0, **ніколи не залишає кремній SE** | у STM32 RDP-Flash (рівень захисту Гілки A для *цього* ключа) |
 | Шифрування пакета | `atcab_aes_encrypt()` через I²C, ~1.5 мс, MCU awake весь раунд | вбудований radio-AES STM32WLE5JC, ~10 µs, inline |
-| Роль ATECC | весь streaming AES **+** identity/attestation | **лише provisioning**: ECDH keygen, master/identity (Slot 1), device cert (Slot 2), OTA HMAC key (Slot 3), ECDSA-підпис DID |
+| Роль ATECC | весь streaming AES **+** identity/attestation | **лише provisioning**: ECDH keygen, master/identity (Slot 1), device cert (Slot 2), OTA HMAC key (Slot 3), P-256 device-cert (НЕ peaq/Solana Ed25519) |
 | Сильна сторона | LoRa-ключ DPA/EM-стійкий *by design* | SoC-AES створений саме для inline-LoRa; менше I²C failure-modes; latency ~10 µs |
 | Ціна | +1.5 мс MCU-awake/пакет на вузлі, що спить 99% часу; +1 шина, що може відмовити | LoRa session-ключ не захищений на рівні SE (master/identity лишаються в ATECC) |
 
@@ -1881,7 +1889,7 @@ atca_status_t status = atcab_aes_encrypt(
 
 **Чому per-packet (Варіант B) теж defensible:** для urban / high-value розгортань, де фізичний доступ до вузла ймовірний, tamper-resistance *самого LoRa-ключа* може бути вартий 1.5 мс. Це рішення про threat model, а не технічна необхідність.
 
-**Статус:** обидва шляхи сумісні з ARCH.42 (AES-128 SE-constraint). Вибір — при bench eval + BOM freeze (дорожня карта нижче), з **явним** вибором осі вище, а не за замовчуванням «0.1% acceptable». Cross-ref [`00_07` — SEC.14](00_07_Action_Plan_Tracker).
+**Статус:** SEC.6 (чи заводити SE взагалі) → **soft-freeze, RESOLVED 2026-06-07 — ADR угорі §3.7** (footprint-DNP зараз, populate post-FW.2 на mass). SEC.14 (роль *per-packet* vs *provisioning-only*) лишається **відкритим** — обидва шляхи сумісні з ARCH.42 (AES-128 SE-constraint); вибір при bench eval, з **явним** вибором осі вище, а не за замовчуванням «0.1% acceptable». Cross-ref [`00_07` — SEC.6](00_07_Action_Plan_Tracker), [`00_07` — SEC.14](00_07_Action_Plan_Tracker).
 
 **Альтернативи:**
 

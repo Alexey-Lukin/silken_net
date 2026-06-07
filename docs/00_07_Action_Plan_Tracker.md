@@ -1081,7 +1081,7 @@
 | ID | Пункт | Канон |
 |----|-------|-------|
 | ARCH.42 | ATECC608B AES-128 vs AES-256 — DECIDED (Variant B) | `03_05 §3.7` |
-| SEC.6 | ATECC608B Secure Element — оцінка інтеграції | `03_05 §3.7`, §3.4 |
+| SEC.6 | ATECC608B SE — ✅ **soft-freeze RESOLVED 2026-06-07** (footprint-DNP зараз, populate post-FW.2 на mass; ADR `03_05 §3.7`; device-HW-Ed25519 НЕ потрібен → не SE050). 👤 residual: eval-kit order + mass-populate + SEC.14 role | `03_05 §3.7`, §3.4 |
 | SEC.10 | Emergency-TX anti-replay frame counter (DR0 packing) | `03_02`, `03_01 §2` |
 | SEC.11 | Lorenz Seed Provenance (DCI hardening, K_seed HKDF) | `03_04`, `03_05 §3.4а`, `04_02`, `05_02` |
 | FW.5 | Lorenz β-пертурбація від delta_t/vcap (Variant B+) | `03_04`, `05_02` |

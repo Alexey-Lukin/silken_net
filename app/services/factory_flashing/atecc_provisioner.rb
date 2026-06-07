@@ -7,7 +7,7 @@
 # docs/03_05 §3.7) is:
 #
 #   Slot 0 → AES-128 LoRa session key   (16B)
-#   Slot 1 → ECC P-256 private key      (32B, peaq DID signing)
+#   Slot 1 → ECC P-256 private key      (32B, device-attestation cert; NOT peaq/Solana — ті Ed25519)
 #   Slot 2 → X.509 device certificate   (≤64B, DER)
 #   Slot 3 → HMAC-SHA256 OTA verify key (32B, K_ota — FW.23)
 #
@@ -74,7 +74,7 @@ module FactoryFlashing
       if @ecc_priv_hex
         out << "atcab_write_zone(ATCA_ZONE_DATA, 1, 0, 0, #{wrap(@ecc_priv_hex)}, 32) # Slot 1 ECC P-256 priv"
       else
-        out << "# Slot 1 ECC priv — TODO populate before peaq DID signing rollout"
+        out << "# Slot 1 ECC priv — TODO populate before device-attestation cert rollout (P-256; NOT peaq/Solana Ed25519)"
       end
 
       if @cert_der_hex
