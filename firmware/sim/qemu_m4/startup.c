@@ -15,8 +15,16 @@ extern uint32_t __bss_start__, __bss_end__, __stack_top__;
 int  main(void);
 void _exit(int code);
 
+/* CPACR: доступ до CP10/CP11 (FPU). Hard-float ABI кладе double в d-реги —
+ * без цього перший же VMOV дає UsageFault (саме так виглядав перший
+ * CI-прогін: PARITY-ABORT fault). */
+#define SCB_CPACR (*(volatile uint32_t *)0xE000ED88u)
+
 void Reset_Handler(void)
 {
+    SCB_CPACR |= (0xFu << 20);
+    __asm__ volatile ("dsb; isb" ::: "memory");
+
     for (uint32_t *p = &__bss_start__; p < &__bss_end__; p++) *p = 0u;
     exit(main());
 }
@@ -31,7 +39,7 @@ static void Hang_Handler(void)
 }
 
 __attribute__((used, section(".isr_vector")))
-static const void *const vectors[] = {
+static const void *const vectors[16] = {
     &__stack_top__,        /* initial SP */
     (void *)Reset_Handler, /* Reset */
     (void *)Hang_Handler,  /* NMI */
@@ -39,4 +47,10 @@ static const void *const vectors[] = {
     (void *)Hang_Handler,  /* MemManage */
     (void *)Hang_Handler,  /* BusFault */
     (void *)Hang_Handler,  /* UsageFault */
+    0, 0, 0, 0,
+    (void *)Hang_Handler,  /* SVCall */
+    (void *)Hang_Handler,  /* DebugMon */
+    0,
+    (void *)Hang_Handler,  /* PendSV */
+    (void *)Hang_Handler,  /* SysTick */
 };
