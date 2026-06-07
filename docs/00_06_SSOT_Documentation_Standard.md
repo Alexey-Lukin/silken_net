@@ -66,6 +66,7 @@
 | AES per-channel modes | `03_05 §6` (зведена channel-таблиця) + `§3.7` (ключі/ARCH.42). Firmware-доки `03_01 §9` / `03_02 §8` реферять цю таблицю, не дублюють (DOC-T.14) |
 | DePIN trust-origin ladder (L0→L1→L2) | `05_02` (Trust-origin ladder — рунги/гейти/статус; L2-механізм §E.60). SE/крипто-частина → `03_05 §3.7`. Інші доки реферять, не дублюють ladder |
 | Secure Element part (SE050) + slot-map | `03_05 §3.7` (SE = **SE050**; AES-128 = вибір, не SE-constraint; slot-map; ladder → `05_02`). Міграція — `00_07` SE050-MIGRATION |
+| L1 QATT batch-конверт (wire + повідомлення підпису + anti-replay) | `03_05 §2.2` (firmware-дзеркало розкладки: `firmware/common/queen_attest.h`; ladder-статус → `05_02`). Інші доки реферять, не дублюють формат |
 | Lorenz константи | `03_04 §4.1` |
 | Tokenomics rate / slashing thresholds / insurance pool | `05_03` · `05_05 §3/§4` |
 | Carbon (2000 SCC = 1 tCO₂) | `05_03` + `07_01 §3` (business view) |

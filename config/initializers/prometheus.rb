@@ -264,6 +264,16 @@ module SilkenNet
       docstring: "Total M2M nonce checks falling back from Redis to DB-backed cache (Redis outage indicator)"
     )
 
+    # [L1 QATT]: Queen-attestation batch nonce Redis → DB fallback counter.
+    # `UnpackTelemetryWorker#qatt_nonce_unique?` падає з Redis SET NX на
+    # Solid-Cache nonce коли Redis недоступний — той самий S6.1/S6.19 патерн,
+    # що й M2M, але окремий counter: змішування шляхів зробило б M2M-алерт
+    # сліпим до батч-стріму (різні частоти: auth ~1/30д vs батчі щогодини).
+    QATT_NONCE_FALLBACK_TOTAL = REGISTRY.counter(
+      :silkennet_qatt_nonce_fallback_total,
+      docstring: "Total Queen-attestation batch nonce checks falling back from Redis to DB-backed cache (Redis outage indicator)"
+    )
+
     # [FW.22 / S2.3]: Acoustic events overflow counter.
     # Firmware saturates acoustic_events at uint8 max (255).
     # Value 255 indicates real count may be higher — sensor data loss.

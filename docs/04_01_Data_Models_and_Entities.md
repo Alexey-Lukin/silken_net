@@ -397,6 +397,7 @@ dormant ──reactivate──► active
 | `config_sleep_interval_s` | integer | Інтервал сну (≥ 60 сек) |
 | `ip_address` | string | IP модему SIM7070G |
 | `last_seen_at` | datetime | Останній CoAP batch |
+| `last_attested_at` | datetime | **[L1 QATT]** Останній батч з валідним Ed25519-підписом Королеви (wire-дім [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security)); `nil` = шлюз на L0 |
 | `latest_voltage_mv` | integer | Денормалізована напруга |
 | `firmware_version` | string | Версія прошивки STM32 (SemVer) |
 | `altitude` | numeric | Висота над рівнем моря (м) |
@@ -450,7 +451,7 @@ any ──report_fault──► faulty
 | `aes_key_hex` | string (encrypted) | **Conditional length за `owner` type** (post-ARCH.42): **32 HEX символи** (AES-128, 16 байт) для Tree (LoRa, HKDF info `"silken-aes-128-lora-key"`); **64 HEX символи** (AES-256, 32 байти) для Gateway (CoAP, HKDF info `"silken-aes-256-device-key"`). AR Encryption non-deterministic. Cross-ref [`03_05 §3.4а`](03_05_Hardware_Symmetric_Crypto_and_Security#34а-hkdf-key-derivation-protocol-design-). Validation: `length: { in: [32, 64] }` + custom validator на узгодженість з owner type |
 | `previous_aes_key_hex` | string (encrypted) | Попередній AES ключ (Grace Period при ротації); same conditional length |
 | `lorenz_seed_hex` | string (encrypted) | **[SEC.11]** 64 HEX символи `K_seed` для атрактора Лоренца. AR Encryption non-deterministic. HKDF info-string: `"silken-lorenz-seed\|<DID>"`, salt: `"silken-lorenz-v1"`. Validated `presence: true` (hard cutover — кожен пристрій ОБОВ'ЯЗКОВО має K_seed). Cross-ref [`03_05 §3.4в`](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-) |
-| `ed25519_public_key_hex` | string | Публічний ключ Gateway для M2M JWT signing (`POST /api/v1/auth/m2m_token`). Тільки для Gateway, не Tree |
+| `ed25519_public_key_hex` | string | Публічний ключ Gateway: (а) M2M auth (`POST /api/v1/auth/m2m_token`); (б) **[L1 QATT]** верифікація Ed25519-підпису CoAP-батчів — wire-дім [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security). Тільки для Gateway, не Tree. Приватна сім'я (`EDSK`) — лише у Protected Flash пристрою; бекенд її НЕ знає (НЕ HKDF-від-master — інакше L1 не захищав би від backend-compromise) |
 | `rotated_at` | datetime | Час останньої ротації |
 
 **Ключові методи:**
@@ -534,6 +535,7 @@ any ──report_fault──► faulty
 | `vpd` | numeric | **[HW.32]** Vapor Pressure Deficit (kPa) — прямий confounder сокоруху (False-Slashing guard, [`05_05`](05_05_Slashing_and_Risk_Policy) §6/§7). Hot-path: device шле VPD-індекс; nullable. ⚠️ НЕ входить у Lorenz-Z (DCI-guard) |
 | `verified_by_iotex` | boolean | Підтверджено IoTeX W3bstream ZK-proof |
 | `zk_proof_ref` | string | Посилання на ZK-proof IoTeX |
+| `gateway_attested` | boolean | **[L1 QATT]** Рядок приїхав під валідним Ed25519-підписом Королеви (default `false`; wire-дім [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security), ladder [`05_02`](05_02_Proof_of_Growth_Pipeline)) |
 | `chainlink_request_id` | string | ID запиту Chainlink Oracle |
 | `tamper_detected` | boolean | Спроба відкриття корпусу капсули |
 | `cold_start_flag` | boolean | `true` якщо пакет перший після VBAT loss (initial_state від K_seed, не warm chain) |

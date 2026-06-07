@@ -138,6 +138,8 @@
 | `COAP_SERVER_PORT` | `5683` | main.c | CoAP UDP-порт |
 | `AT_LINE_MAX` | `160` | at_engine.h | [FW.3] Стеля AT-лінії (довші — truncated, класифікація живе) |
 | `AT_HEX_CHUNK` | `32` | sim7070_coap.h | [FW.3] Байтів PDU на один UART TX (64 hex-символи) |
+| `QATT_*` (layout) | — | `common/queen_attest.h` | [L1 QATT] One-Home розкладка підписаного батч-конверта (зсуви/residue/префікс); wire-дім — [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security) |
+| `FLASH_ED25519_SEED_MAGIC` | `"EDSK"` | main.c | [L1 QATT] Magic сім'ї голосу Королеви (слот після KEYC; дзеркало CommandBuilder) |
 
 ---
 
@@ -298,26 +300,33 @@ Buffer size: binary_batch_buffer[2048] — достатньо з запасом
    HAL_RNG_Init(&hrng)  ← ініціалізація тільки перед використанням
    for i in 0..3:
      if HAL_RNG_GenerateRandomNumber(&hrng, &batch_iv[i]) != HAL_OK:
-       tick = HAL_GetTick(); uid_hash = djb2_hash(queen_uid, strlen(queen_uid));
-        batch_iv[i] = tick ^ (uid_hash << i) ^ (i * 0xA5A5A5A5UL) ^ (tick >> (8*i))  ← IV fallback
+       batch_iv[i] = coap_fallback_iv_word(i, tick, uid_hash,
+                                           queen_unix_ts, coap_flush_seq)
+       ← [HRNG-IV harden] pure-деривація з coap_iv.h: унікальність across
+         device (uid_hash) / reboot (queen_unix_ts) / flush (coap_flush_seq);
+         host-tested у firmware/test/test_encryption.c
    HAL_RNG_DeInit(&hrng)  ← деініціалізація зразу після
 
 3. Switch CRYP: hcryp.Init.Algorithm = CRYP_AES_CBC
    hcryp.Init.pInitVect = batch_iv
    HAL_CRYP_Init(&hcryp)
 
-4. Encrypt: HAL_CRYP_Encrypt(binary_batch_buffer, padded_size/4, output+16, 2000)
+4. Encrypt: HAL_CRYP_Encrypt(binary_batch_buffer, padded_size/4,
+                             batch_attest_buffer + QATT_CT_OFFSET, 2000)
+   IV лягає на QATT_IV_OFFSET того ж буфера.
 
-5. Prepend IV: encrypted_batch_buffer[0..15] = batch_iv
-   Total encrypted_batch_buffer size = 16 (IV) + padded_size
+5. Restore ECB → [L1 QATT, якщо EDSK-сім'я прошита] header + право-вирівняний
+   префікс домену+UID + Ed25519-підпис хвостом (розкладка/повідомлення —
+   One-Home: common/queen_attest.h, wire-дім: 03_05 §2.2). Сім'ї нема →
+   legacy [IV][ct] без жодних змін.
 
-static uint8_t encrypted_batch_buffer[2048 + 16];  ← static (не стек!)
+static uint8_t batch_attest_buffer[QATT_BUFFER_SIZE];  ← static (не стек!)
 ```
 
 **Два різні HRNG fallback — не плутати:**
 | Місце | Fallback при HRNG fail | Маска | Пояснення |
 |-------|------------------------|-------|-----------|
-| CBC IV generation (batch) | `tick ^ (uid_hash << i) ^ (i * 0xA5A5A5A5UL) ^ (tick >> (8*i))` | per-word, 4 різні слова IV | djb2(UID) + подвійний tick shift (ліворуч і право) + маска — гарантує 4 унікальних слова навіть при однаковому tick та однаковому UID |
+| CBC IV generation (batch) | `coap_fallback_iv_word(i, tick, uid_hash, queen_unix_ts, coap_flush_seq)` — pure, дім: `firmware/queen/coap_iv.h` | per-word, 4 різні слова IV | [HRNG-IV harden] унікальність across device/reboot/flush; передбачуваний, але без chosen-plaintext вектора (BLOCKER-4 у [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security)); host-тести `test_encryption.c` |
 | Jitter regeneration після flush | `HAL_GetTick() ^ RNG_FALLBACK_XOR_MASK` | `0xA5A5A5A5UL` (одна константа) | Один tick, одна маска — простий jitter, криптостійкість не потрібна |
 | Startup jitter (один раз) | `HAL_GetTick()` (без XOR!) | без маски — рядок 228 | Startup: tick вже унікальний бо залежить від часу включення живлення; жодна маска не додає ентропії у цьому контексті; jitter — не криптографічна операція |
 
@@ -389,8 +398,9 @@ HAL_CRYP_Init(&hcryp);
      наступний flush повторить і DNS.
 
 2. PDU: Coap_Build_Put(CON PUT /telemetry/batch/<queen_uid>,
-                       payload = [IV:16][AES-256-CBC батч]) → coap_pdu_buf.
-   MID = ++coap_mid (анти-дублі на CoAP-сервері).
+                       payload = legacy [IV:16][ct] АБО підписаний
+                       [header][IV][ct][sig] — L1 QATT, wire-дім 03_05 §2.2)
+   → coap_pdu_buf. MID = ++coap_mid (анти-дублі на CoAP-сервері).
 
 3. Retry loop ≤ COAP_MAX_RETRIES, бюджет розмови COAP_CONV_BUDGET_MS (< IWDG):
    a. AT+CCOAPNEW="<ip>",5683,0      → +CCOAPNEW: <cid> → OK (cid — від модема)
@@ -925,7 +935,7 @@ Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пак
 | 6 | Reserved | `0x00` | Майбутнє: температура корпусу (°C) |
 | 7 | Cache load | `cache_count` (0–50) | Кількість дерев у кеші |
 | 8–9 | Reserved | `0x00` | Майбутнє: CSQ модему (0–31) |
-| 10 | GP / Status | `cache_count` (cap 63) | Proxy навантаження (bits [5:0]) |
+| 10 | GP / Status | `cache_count` (cap `QUEEN_HEALTH_GP_MAX`) | Proxy навантаження — 5-біт wire [FW.29-PACK], дзеркало коду вище |
 | 11–15 | Reserved | `0x00` | Майбутнє: V_bat, fw_version |
 
 **Маршрутизація на сервері:** Backend `TelemetryUnpackerService` детектує `DID == 0` і направляє до `GatewayTelemetryWorker` замість створення `TelemetryLog`.
@@ -979,10 +989,11 @@ Per-channel режими (LoRa **AES-128** ECB→CCM · CoAP **AES-256-CBC**) �
 | `coap_key[8]` | `uint32_t` | 32 B | **AES-256 CoAP ключ** Queen (для batch flush до Rails; окремий MX_CRYP re-init під час CoAP-сесії) |
 | `forest_cache[50]` | `EdgeCache` | 1150 B | CIFO EdgeCache (50 × 23 байти, після **[E.8]** додано `snr` 1 байт) |
 | `binary_batch_buffer[2048]` | `uint8_t` | 2048 B | Бінарний буфер перед шифруванням |
-| `encrypted_batch_buffer[2064]` | `uint8_t static` | 2064 B | **static** (IV + зашифровані дані) |
+| `batch_attest_buffer[QATT_BUFFER_SIZE]` | `uint8_t static` | 2192 B | **static** конверт батча: [prefix-зона][header][IV][ct][sig] — розкладка One-Home `common/queen_attest.h` (замінив `encrypted_batch_buffer[2064]`, L1 QATT) |
+| `ed25519_secret[64]` + `ed25519_pub[32]` | `uint8_t` | 97 B | [L1 QATT] голос Королеви (деривується при boot з EDSK-сім'ї; +`ed25519_ready` 1 B) |
 | `pending_ota_bytecode[8192]` | `uint8_t` | 8192 B | RAM-буфер збірки OTA від Rails |
 | `at_engine_state` | `AtEngine` | ~168 B | [FW.3] AT-токенайзер (лінія `AT_LINE_MAX` + стан) |
-| `coap_pdu_buf[2128]` | `uint8_t static` | 2128 B | [FW.56] CoAP PDU (заголовок+Uri-Path+батч; static у `Flush_Cache_To_Rails`) |
+| `coap_pdu_buf` | `uint8_t static` | sizeof(batch_attest_buffer)+64 | [FW.56] CoAP PDU (заголовок+Uri-Path+батч; static у `Flush_Cache_To_Rails`) |
 | `coap_server_ip[16]` | `char` | 16 B | [FW.56] CDNSGIP-кеш IP сервера (на boot) |
 | `cmd_dedup_ring[16]` | `uint32_t` | 64 B | DJB2 хеші idempotency токенів |
 | `cmd_decrypt_buf[544]` | `uint8_t` | 544 B | Decrypt buffer для CoAP команд/OTA |
@@ -994,7 +1005,7 @@ Per-channel режими (LoRa **AES-128** ECB→CCM · CoAP **AES-256-CBC**) �
 | `ota_total_expected_chunks` | `uint16_t` | 2 B | Очікуваний total від header |
 | `pending_ota_size` | `uint16_t` | 2 B | Реальний зібраний розмір байткоду |
 | Scalar variables | misc | ~24 B | `cache_count`, `current_rssi`, `lora_rx_head`, `lora_rx_tail`, `lora_rx_drops`, `ota_is_active`, `current_ota_chunk_idx`, `cmd_dedup_idx`, `cmd_dedup_used` |
-| **Разом** | | **~14.7 KB** | З 64 KB SRAM = ~23% використання |
+| **Разом** | | **~14.9 KB** | З 64 KB SRAM = ~23% використання |
 
 ---
 
@@ -1032,6 +1043,7 @@ make -C firmware/test at_engine   # [FW.3/FW.56] AT-двигун + CoAP PDU + р
 | CIFO Cache | Insert, dedup, priority eviction (всі 4 bio_status), fallback, edge RSSI |
 | Batch Packing | 21-байтний формат, ендіанність, RSSI -128, round-trip |
 | **[FW.51] Flush Lifecycle** | fail→кеш збережено, success→очищено, retry без втрат, dedup-refresh найсвіжішого |
+| **[L1 QATT] Attestation конверт** (`test_queen_attest.c`) | layout-інваріанти (residue/зсуви/префікс), crypto-parity Monocypher↔OpenSSL (pubkey + детермінований підпис байт-у-байт + tamper-fail), end-to-end збірка→backend-розбір, golden-KAT (дзеркало RSpec `unpack_telemetry_worker_attest_spec.rb` — три незалежні реалізації) |
 | OTA Chunk Builder | First/last chunk, reassembly, out-of-range index |
 | OTA Assembly (CoAP→RAM) | Multi-chunk, duplicate ignore via bitmap, buffer overflow, invalid marker |
 | RSSI Clamp | Normal, edge values, overflow proof, int16→int8 truncation demo |

@@ -557,9 +557,23 @@ HAL_CRYP_Encrypt(&hcryp, (uint32_t*)panic_payload,   4, (uint32_t*)encrypted_pan
 
 ---
 
-### 2.2 Queen → Rails: CoAP Batch Uplink (AES-256-CBC)
+### 2.2 Queen → Rails: CoAP Batch Uplink (AES-256-CBC + L1 QATT підпис)
 
-**Режим:** AES-256-CBC · **Структура:** `[IV:16][Encrypted Data: N×16]`
+**Режим:** AES-256-CBC · **Дві форми payload** (📐 wire-дім, firmware-дзеркало розкладки: `firmware/common/queen_attest.h`):
+
+```
+Legacy (L0):    [IV:16][Encrypted Data: N×16]                  довжина % 16 == 0
+Підписаний (L1): [ver:1=0x01][queen_unix_ts:4 BE][flush_seq:4 BE]
+                [IV:16][Encrypted Data: N×16][sig:64]          довжина % 16 == 9
+```
+
+**L1 Queen-attestation** (рунг драбини довіри — канон [`05_02`](05_02_Proof_of_Growth_Pipeline) «Trust-origin ladder»): Королева підписує батч **Ed25519** (software, Monocypher; сім'я `EDSK` у Protected Flash — §3.1). Encrypt-then-sign: бекенд (`UnpackTelemetryWorker`) верифікує підпис проти зареєстрованого при provisioning `HardwareKey.ed25519_public_key_hex` **ДО** decrypt — жодних padding-оракулів.
+
+- **Повідомлення підпису:** `"SLKN-QATT1" ‖ uid_len:1 ‖ uid ‖ <payload без хвостового sig>` — доменний тег проти cross-protocol reuse; UID (з CoAP URI-Path) вшито у підпис → батч однієї Королеви не сплайснути в URI іншої.
+- **Розрізнення форм** — residue довжини (legacy ≡ 0, підписаний ≡ 9 mod 16): детерміністичне, без magic-вгадування проти випадкового IV. Сім'я не прошита → Queen шле legacy = старий флот живе без змін.
+- **Anti-replay:** SHA256(sig) як nonce (Redis `SET NX`; Solid-Cache fallback — патерн M2M/S6.1; TTL-вікно — `UnpackTelemetryWorker::QATT_NONCE_TTL`). `ts`/`seq` — observability + майбутній high-water (Queen без RTC, [`03_02 §5а`](03_02_Queen_Gateway_Firmware) — `ts=0` легітимний); **residual:** replay після TTL-вікна — свідомий, строго кращий за L0 «replay будь-коли».
+- **Невалідний підпис** → drop + `attest_bad_signature` метрика (Grafana-алерт); **підписаний без зареєстрованого pubkey** → обробка як L0 + `attest_no_pubkey` (суворість нічого не дає, поки L0 приймається).
+- **Загроза-модель чесно:** L1 доводить gateway-origin (захист від backend-compromise/injection), **не** operator-fraud — то L2 (драбина у [`05_02`](05_02_Proof_of_Growth_Pipeline)).
 
 ```
 +------------------+------------------+------------------+-----+------------------+
@@ -656,7 +670,11 @@ uint32_t coap_key[8] = {0};   // 32 bytes — CoAP AES-256 (тільки Queen)
 
 // У main() перед MX_CRYP_Init():
 Load_AES_Key();  // reads from FLASH_KEY_ADDR, validates magic "KEYL",
-                 // populates aes_key[4] in RAM; on Queen also loads FLASH_COAP_KEY_ADDR → coap_key[8]
+                 // populates aes_key[4] in RAM
+// Queen додатково: Load_CoAP_Key() ("KEYC" → coap_key[8]; м'який fallback — нулі)
+// та Load_Ed25519_Seed() ("EDSK" → сім'я голосу L1 QATT, §2.2; відсутня → legacy-батчі).
+// Word→BE-байти за FW.30-конвенцією (дзеркало Load_Lorenz_Seed) — наївний memcpy
+// на LE Cortex-M4 перевернув би слова, і pubkey не зійшовся б із зареєстрованим.
 ```
 
 > 🚫 **Архітектурний baseline:** "ідентичний на ВСІХ вузлах" — **історична форма §Hardcoded AES Key**, закрита FW.1. Цей блок документа явно зберігає згадку як warning для аудиторів, що інспектують стару прошивку до FW.1. При відсутності magic `"KEYL"` у Flash (raw чіп з фабрики) — `Load_AES_Key()` відмовляє у boot і enter'ить infinite reset loop (захист від випуску партії без provisioning). Цей invariant перевіряється у `firmware/test/test_soldier_logic.c::test_aes_key_load_fail_no_magic`.
@@ -1129,7 +1147,7 @@ STM32CubeProgrammer → Option Bytes → Write Protection:
 | Output key size | **128 bits (16 bytes)** — ARCH.42 | 256 bits (32 bytes) | LoRa: AES-128 (ATECC608B constraint); CoAP: AES-256 (Queen Flash, no SE constraint) |
 | Info string | `"silken-aes-128-lora-key"` | `"silken-aes-256-device-key"` | Domain separation — два різні KDF outputs ortho |
 | Master key storage | Rails Vault (AR Encryption) + HSM у production | Same | Never in-repo |
-| Device key storage | Protected Flash (LoRa magic `"KEYL"`) → ATECC608B Slot 0 (Гілка B) | Protected Flash (CoAP magic `"KEYC"`) — Queen MCU only | Фізичний захист; ATECC608B обмежений AES-128 → CoAP-key залишається у MCU Flash |
+| Device key storage | Protected Flash (LoRa magic `"KEYL"`) → SE050 Slot 0 (Гілка B, §3.7) | Protected Flash (CoAP magic `"KEYC"`) — Queen MCU only | Фізичний захист; AES-128 на LoRa — свідомий вибір, не SE-constraint (ADR §3.7); CoAP-key лишається у MCU Flash (канал не через SE) |
 | Backup/rotate | Dual-key grace period (HardwareKey#previous_aes_key_hex) | Same | Zero-downtime rotation |
 | Post-quantum margin | $2^{128}$ (post-Grover ≈ $2^{64}$ — захищається ratchet `[FW.17]` + PQC bridge §10) | $2^{256}$ (post-Grover ≈ $2^{128}$ — абсолютний квантовий імунітет) | Чому CoAP залишається 256: інфраструктурне TLS-termination через Cloudflare X25519+Kyber вже доступне (post-quantum hybrid) |
 
@@ -1491,7 +1509,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 |-----|------|--------|
 | Session AASM | `app/models/provisioning_session.rb` | ✅ `pending → supervisor_approved → active → completed \| failed`, 2-Person Rule валідація `supervisor_id != operator_id` |
 | Master key source | `app/services/factory_flashing/master_key_source.rb` | ✅ `EnvAdapter` (з `Security::WeakKeyDetector` SEC.9), `BitwardenAdapter` skeleton (raise `NotImplementedError` — TODO live `bw` API) |
-| Command emission | `app/services/factory_flashing/command_builder.rb` | ✅ Гілка A — `STM32_Programmer_CLI -w32` per word для `KEYL`/`LSED`/`KEYC` slots, RDP level 1/2 config; Гілка B — skip key writes (keys через ATCA), only firmware connect + RDP lock |
+| Command emission | `app/services/factory_flashing/command_builder.rb` | ✅ Гілка A — `STM32_Programmer_CLI -w32` per word для `KEYL`/`LSED`/`KEYC`/`EDSK` slots (EDSK = L1 QATT сім'я голосу Королеви, Gateway-only; генерується `Session`'ом на фабричному хості — НЕ HKDF, у БД лише pubkey), RDP level 1/2 config; Гілка B — skip key writes (keys через ATCA), only firmware connect + RDP lock |
 | Subprocess executor | `app/services/factory_flashing/executor.rb` | ✅ dry-run default (`[dry-run] cmd`); `dry_run: false` → `Open3.capture3` з `ProgrammerMissingError` коли CLI відсутній у PATH; `CommandFailedError` зупиняє на першому non-zero exit |
 | ATECC provisioning | `app/services/factory_flashing/atecc_provisioner.rb` | ✅ Гілка B skeleton — emit `atcab_init` + `atcab_read_serial_number` + slot writes (0/1/2/3) + `atcab_lock_config_zone` + `atcab_lock_data_zone`; raw key bytes scrubbed (`/* NB elided */`) |
 | Audit trail | `app/services/factory_flashing/audit_trail.rb` | ✅ `AuditLog(action: "factory_flash")` chain-hashed + `MaintenanceRecord(action_type: :installation, skip_photo_validation: true)`; metadata містить `operator_id`/`supervisor_id`/`batch_id`/`flash_addr`/`rdp_level`/`atecc_serial_hex`/`firmware_version`/`command_count`/`dry_run` |
@@ -1950,9 +1968,12 @@ HAL_RNG_Init(&hrng);                    // Ініціалізуємо апара
 
 for (uint8_t i = 0U; i < 4U; i++) {
     if (HAL_RNG_GenerateRandomNumber(&hrng, &batch_iv[i]) != HAL_OK) {
-        // Fallback: djb2 хеш STM32 HW UID (унікальний per chip) XOR tick
-        uint32_t uid_hash = djb2_hash((uint8_t*)0x1FFF7590U, 12U);
-        batch_iv[i] = uid_hash ^ (HAL_GetTick() << (i * 8U)) ^ (i * RNG_FALLBACK_XOR_MASK);
+        // [HRNG-IV harden] pure-деривація (дім: firmware/queen/coap_iv.h):
+        // унікальність across device (uid_hash) / reboot (queen_unix_ts) /
+        // flush (coap_flush_seq); host-тести firmware/test/test_encryption.c
+        batch_iv[i] = coap_fallback_iv_word(i, HAL_GetTick(),
+                                            djb2_hash(queen_uid, strlen(queen_uid)),
+                                            queen_unix_ts, coap_flush_seq);
     }
 }
 
@@ -1961,11 +1982,11 @@ HAL_RNG_DeInit(&hrng);                  // Де-ініціалізація: ну
 hcryp.Init.pInitVect = batch_iv;        // Встановлюємо IV у крипто-модуль
 HAL_CRYP_Init(&hcryp);                  // Оновлюємо конфігурацію CRYP
 
-// IV передається перед зашифрованими даними:
-memcpy(encrypted_batch_buffer, batch_iv, 16);               // Prepend IV
+// IV лягає на свій зсув спільного конверта (розкладка: common/queen_attest.h):
+memcpy(batch_attest_buffer + QATT_IV_OFFSET, batch_iv, 16);
 HAL_CRYP_Encrypt(&hcryp, (uint32_t*)binary_batch_buffer,
                  padded_size / 4,
-                 (uint32_t*)(encrypted_batch_buffer + 16),   // Ciphertext після IV
+                 (uint32_t*)(batch_attest_buffer + QATT_CT_OFFSET),
                  2000);
 ```
 
@@ -1975,9 +1996,9 @@ HAL_CRYP_Encrypt(&hcryp, (uint32_t*)binary_batch_buffer,
 |----------|---------|
 | Розмір | 128 біт (4 × uint32_t) |
 | Джерело | HRNG (тепловий шум) — при успіху |
-| Fallback | `djb2(STM32_HW_UID) XOR (HAL_GetTick() << (i*8)) XOR XOR_MASK(i)` — унікальний на кожній Queen |
+| Fallback | `coap_fallback_iv_word(i, tick, uid_hash, queen_unix_ts, coap_flush_seq)` — pure (`coap_iv.h`), унікальний across device/reboot/flush; передбачуваний, але без chosen-plaintext вектора (BLOCKER-4) |
 | Унікальність | Новий IV на кожен батч-флашинг (не перевикористовується) |
-| Передача | Prepend до ciphertext: `[IV:16][Encrypted:N×16]` |
+| Передача | Prepend до ciphertext: `[IV:16][Encrypted:N×16]`; при L1 QATT — усередині підписаного конверта (§2.2) |
 
 ### 4.3 Queen: CBC IV для CoAP Command Downlink (Handle_CoAP_Command)
 
@@ -2024,15 +2045,16 @@ Flush_Cache_To_Rails():
   1. Pack to binary_batch_buffer (50 × 21 bytes = 1050 bytes)
   2. Pad to multiple of 16: padded_size
   3. Generate IV via HRNG (4 × HAL_RNG_GenerateRandomNumber)
-  4. hcryp → CBC mode, pInitVect = batch_iv
-  5. encrypted_batch_buffer = [IV:16][CBC-Encrypted:padded_size]
-  6. AT+CCOAPSEND → SIM7070G → CoAP PUT /telemetry/batch/<queen_uid>
-  7. Restore: hcryp → ECB mode, pInitVect = NULL
+  4. hcryp → CBC mode → encrypt у batch_attest_buffer (IV+ct на своїх зсувах)
+  5. Restore: hcryp → ECB mode (ОДРАЗУ після encrypt, ДО модемної розмови — FW.3)
+  6. [L1 QATT, якщо EDSK-сім'я прошита] Ed25519-підпис конверта (§2.2)
+  7. AT+CCOAPSEND → SIM7070G → CoAP PUT /telemetry/batch/<queen_uid>
          │
-         │ CoAP/UDP (AES-256-CBC, [IV:16][Ciphertext:N×16])
-         │ via SIM7070G → Starlink/LTE → Rails Backend
+         │ CoAP/UDP (AES-256-CBC; legacy [IV:16][ct] або підписаний
+         │ [header:9][IV:16][ct][sig:64] — §2.2) via SIM7070G → Rails
          ▼
 RAILS BACKEND
+  UnpackTelemetryWorker: [L1 QATT] verify-до-decrypt → strip конверта
   TelemetryUnpackerService.decrypt_and_parse(payload)
          │
          │ CoAP Downlink (AES-256-CBC, [IV:16][Ciphertext])
@@ -2053,7 +2075,7 @@ Handle_CoAP_Command():
 |-------|----------|-------|-----------|---------|---------|
 | **Soldier → Queen** (LoRa, 16B) | AES-128 | ECB | ❌ Відсутній | ❌ Відсутній | ⚠️ Replay вразливість |
 | **EwsAlert / Panic → Queen** (LoRa, 16B) | AES-128 | ECB | ❌ Відсутній | ❌ Відсутній | ⚠️ Критичні пакети без автентифікації |
-| **Queen → Rails** (CoAP Batch) | AES-256 | CBC | ✅ HRNG (128-bit) | ❌ Відсутній | IV prepend |
+| **Queen → Rails** (CoAP Batch) | AES-256 | CBC | ✅ HRNG (128-bit) | 🟡 **Ed25519 batch-sig (L1 QATT, §2.2)** — detached, encrypt-then-sign; legacy L0 без підпису приймається | IV prepend; sig хвостом |
 | **Rails → Queen** (CoAP Command) | AES-256 | CBC | ✅ Від Backend | ❌ Відсутній | IV в перших 16 байтах |
 | **Queen → Soldier** (OTA LoRa) | AES-128 | ECB | ❌ Відсутній | ❌ Відсутній | ⚠️ Прошивка без автентифікації |
 
@@ -2105,16 +2127,17 @@ HAL_CRYP_Init(&hcryp);
 | **Розмір ключа CoAP** | ✅ 256 біт | Без змін |
 | **Апаратне прискорення** | ✅ STM32 AES Block | Без програмної крипто-бібліотеки; підтримує і 128B, і 256B через runtime re-init |
 | **CBC IV для CoAP** | ✅ HRNG (тепловий шум) | Унікальний IV на кожен батч |
-| **Зберігання ключа** | ✅ Protected Flash Sector (LoRa magic `"KEYL"`, CoAP magic `"KEYC"`), RDP Level 1/2 protected. ATECC608B Slot 0 (Гілка B) для mass production >10k |
+| **Зберігання ключа** | ✅ Protected Flash Sector (LoRa `"KEYL"`, CoAP `"KEYC"`, L1-сім'я `"EDSK"`), RDP Level 1/2 protected. SE050 Slot 0 (Гілка B, §3.7) для mass production >10k |
 | **Унікальність ключа** | ✅ Per-device HKDF (FW.1 + ARCH.42) | LoRa: `HKDF-SHA256(MASTER, uid, "silken-aes-128-lora-key")`; CoAP: `HKDF-SHA256(MASTER, uid, "silken-aes-256-device-key")` — domain separation §3.4а |
 | **ECB для LoRa** | 🟡 Transitional після ARCH.42 | AES-128-ECB → AES-128-CCM (target FW.2, 24B packet + Frame Counter + 8B MIC) |
-| **MAC/MIC** | 🟡 OPEN — закривається з FW.2 CCM | 8-byte MIC (64-bit, forge probability $5.4×10^{-20}$) |
+| **MAC/MIC (LoRa)** | 🟡 OPEN — закривається з FW.2 CCM | 8-byte MIC (64-bit, forge probability $5.4×10^{-20}$) |
+| **CoAP batch origin + integrity** | 🟡 **L1 QATT shipped** (2026-06-07) | Ed25519 batch-підпис Королеви (§2.2): закриває CBC-malleability/injection + anti-replay у nonce-вікні; legacy L0 без підпису ще приймається (fleet-перехід); 👤 bench: EDSK на кремнії. Ladder → [`05_02`](05_02_Proof_of_Growth_Pipeline) |
 | **RDP Protection** | 🟡 OPEN | Level 0 (розробка). Level 1/2 — фінальний крок Factory Flashing (розділ 3.3). Pre-flight checklist та незворотна процедура задокументовані у §3.6 🤖 |
 | **Factory Flashing Pipeline** | 🟡 PARTIAL (SEC.3) | ✅ Архітектура (§3.4) + HKDF (§3.4а) + Operations Security threat model (§3.4г, 2026-05-17) + tool implementation (§3.4г Implementation status, 2026-05-24 — `app/services/factory_flashing/*`, `lib/tasks/factory.rake`, 63 specs, dry-run). 👤 Залишається: real `STM32_Programmer_CLI` execution на bench + Bitwarden live API + ATCA I²C |
 | **Shipping Mode (Геркон)** | 🟡 OPEN | Концепт визначено (розділ 3.5); компонент не доданий до BOM |
-| **Secure Element (ATECC608B)** | ✅ Узгоджено з ARCH.42 (Variant B) | §3.7 — Slot 0 (AES-128 LoRa), Slot 1 (ECC P-256 ID), Slot 2 (cert), Slot 3 (HMAC OTA). Bench eval kit + I²C integration — HW track |
+| **Secure Element (SE050)** | ✅ SEC.6 RESOLVED (true-DePIN) | §3.7 ADR — SE = **SE050** (Ed25519 on-chip keygen; реверс ATECC), soft-freeze DNP, populate post-FW.2; slot-map §3.7. Residuals → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker) |
 | **Key Rotation** | 🟡 OPEN | Рекомендовано: Hash Ratchet KDF (PFS без передачі ключа по мережі) — `[FW.17]` |
-| **HRNG Fallback** | ✅ Виправлено | djb2(STM32_HW_UID) XOR tick — унікальний на кожній Queen (PR #273) |
+| **HRNG Fallback** | ✅ Harden (2026-05-29) | `coap_fallback_iv_word` (pure, `coap_iv.h`) — унікальність across device/reboot/flush; §4.2 |
 | **PQC Migration Roadmap** | ✅ Документовано | §10 — TRL-stratified layering (2026 → 2028 → 2035); LoRa поточно квантово-стійкий через симетрію + ratchet, асиметричні шари мігрують через hybrid Cloudflare X25519+Kyber → ML-KEM/ML-DSA |
 
 ---

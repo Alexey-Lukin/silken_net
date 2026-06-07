@@ -27,6 +27,10 @@
 #include "coap_pdu.h"
 // [FW.3/FW.56] Повна CoAP-PUT розмова з модемом (pure-оркестратор)
 #include "sim7070_coap.h"
+// [L1 QATT] Розкладка підписаного батч-конверта (pure, host-tested) — 03_05 §2.2
+#include "../common/queen_attest.h"
+// [L1 QATT] Ed25519 (Monocypher, pinned submodule — 03_01 §12.5): голос Королеви
+#include "monocypher-ed25519.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -141,8 +145,17 @@
 // Protected Flash slot after K_seed via dedicated Factory Flashing step.
 // Поточно: zeroed at boot; Flush_Cache_To_Rails має використати цей буфер після
 // окремого Load_CoAP_Key() кроку у Factory Flashing pipeline.
+#define FLASH_COAP_KEY_ADDR       0x0803E040UL  // [KEYC][aes_coap:32] — дзеркало CommandBuilder FLASH_COAP_KEY_ADDR
 #define FLASH_COAP_KEY_WORDS      8             // 8 × uint32_t = 32 bytes = 256 bits CoAP
 #define FLASH_COAP_KEY_MAGIC      0x4B455943UL  // "KEYC" — CoAP key magic
+
+// [L1 QATT] Ed25519-сім'я голосу Королеви — слот одразу після KEYC-блоку (4+32).
+// Сім'я ГЕНЕРУЄТЬСЯ на фабричному хості (SecureRandom), НЕ HKDF-від-master:
+// бекенд НЕ МОЖЕ її вивести — інакше backend-compromise підробляв би підпис,
+// і рунг L1 не захищав би від того, від чого заявлений (канон: 05_02 ladder).
+#define FLASH_ED25519_SEED_ADDR   0x0803E064UL  // [EDSK][seed:32]
+#define FLASH_ED25519_SEED_WORDS  8             // 8 × uint32_t = 32 bytes seed
+#define FLASH_ED25519_SEED_MAGIC  0x4544534BUL  // "EDSK" — Ed25519 seed magic
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -169,12 +182,19 @@ IWDG_HandleTypeDef hiwdg; // [PLAN 2.6] Independent Watchdog для auto-recover
 // Ініціалізація нулями — значення перезаписується Load_AES_Key() перед MX_CRYP_Init().
 uint32_t aes_key[4] = {0};   // 16 bytes = AES-128 LoRa (SE = SE050 — 03_05 §3.7)
 
-// [ARCH.42 follow-up] CoAP AES-256 key — для batch flush Queen↔Rails (AES-256-CBC).
-// TODO: завантажується з окремого FLASH_COAP_KEY_ADDR через дедікований Factory
-// Flashing крок (info "silken-aes-256-device-key"). До повної інтеграції зберігається
-// нулями — Flush_Cache_To_Rails має використовувати цей буфер після окремого
-// Load_CoAP_Key() pipeline (FW.2 follow-up subtask у 00_08 ARCH.42).
+// [ARCH.42] CoAP AES-256 key — для batch flush Queen↔Rails (AES-256-CBC).
+// Завантажується з FLASH_COAP_KEY_ADDR при boot (Load_CoAP_Key; HKDF info
+// "silken-aes-256-device-key", пише CommandBuilder при Factory Flashing).
+// Не прошито → лишається нулями (м'який fallback, не цеглить dev/sim-плати).
 uint32_t coap_key[8] __attribute__((unused)) = {0};  // 32 bytes = AES-256 CoAP magistral
+
+// [L1 QATT] Голос Королеви (рунг L1 драбини довіри — канон 05_02): секрет і
+// pubkey деривуються при boot із Flash-сім'ї (Load_Ed25519_Seed). ready == 0
+// (сім'я не прошита) → батчі летять legacy-форматом [IV][ct] — старий флот
+// і dev-плати живуть без жодних змін.
+static uint8_t ed25519_secret[64];
+static uint8_t ed25519_pub[32] __attribute__((unused));  // знадобиться provisioning-діагностиці
+static uint8_t ed25519_ready = 0;
 
 // Унікальний ідентифікатор цієї Королеви.
 // [PLAN 2.4] Replaced hardcoded "QUEEN-001" with Flash-based UID.
@@ -424,8 +444,12 @@ static uint32_t djb2_hash(const char* str, uint8_t len);
 static uint32_t djb2_hash_bytes(const uint8_t* buf, uint8_t len);
 uint8_t Cmd_Dedup_Check(uint32_t hash);
 void Handle_CoAP_Command(uint8_t* payload, uint16_t len);
-// [FW.1] Завантаження AES-256 ключа з Protected Flash Sector.
+// [FW.1] Завантаження LoRa AES-128 ключа з Protected Flash Sector (post-ARCH.42).
 static void Load_AES_Key(void);
+// [ARCH.42] Завантаження CoAP AES-256 ключа (KEYC; м'який fallback — нулі).
+static void Load_CoAP_Key(void);
+// [L1 QATT] Ed25519-сім'я голосу Королеви (EDSK; відсутня → legacy-батчі).
+static void Load_Ed25519_Seed(void);
 // [FW.20] Помічники синхронізації часу (зрізання конверта CoAP + LoRa-маяк).
 static void Apply_Server_Time(uint32_t server_unix_ts);
 static uint32_t Get_Current_Unix_Ts(void);
@@ -454,6 +478,8 @@ int main(void)
   MX_USART1_UART_Init(); // UART для розмови з SIM7070G (115200 baud)
   MX_SUBGHZ_Init();
   Load_AES_Key();        // [FW.1] Завантажити per-device ключ з Flash ПЕРЕД ініціалізацією CRYP
+  Load_CoAP_Key();       // [ARCH.42] CoAP AES-256 магістраль (KEYC; м'який fallback — нулі)
+  Load_Ed25519_Seed();   // [L1 QATT] Голос Королеви (EDSK; відсутній → legacy-батчі)
   MX_CRYP_Init();        // Вмикаємо апаратний модуль AES (використовує aes_key, вже завантажений)
   MX_IWDG_Init();        // [PLAN 2.6] Watchdog: auto-reset ~26 sec after hang
 
@@ -1072,21 +1098,46 @@ void Flush_Cache_To_Rails(void)
     HAL_CRYP_Init(&hcryp);
 
     // 4. Шифруємо батч. Довжина в 32-бітних словах = padded_size / 4.
-    //    Буфер: IV (16 байт) + зашифровані дані
-    // [FIX: AUDIT CRITICAL] Переміщено з стеку в static.
-    // 2064 байти на стеку при 64KB RAM — ризик переповнення стеку.
-    // STM32 default stack = 1-4KB, а ця функція може бути викликана з глибокого call chain.
-    static uint8_t encrypted_batch_buffer[2048 + 16];
-    memcpy(encrypted_batch_buffer, batch_iv, 16); // Prepend IV як заголовок пакета
+    //    Буфер [L1 QATT]: [prefix-зона][header 9][IV 16][ct][sig 64] — один
+    //    static-конверт (розкладка: common/queen_attest.h, канон 03_05 §2.2).
+    //    IV+ct лягають на свої зсуви ОДРАЗУ — legacy і signed шляхи ділять
+    //    ті самі байти, різняться лише вікном payload'а.
+    // [FIX: AUDIT CRITICAL] static, не стек: ~2.2KB при 64KB RAM і глибокому
+    // call chain — переповнення стеку.
+    static uint8_t batch_attest_buffer[QATT_BUFFER_SIZE] __attribute__((aligned(4)));
+    memcpy(batch_attest_buffer + QATT_IV_OFFSET, batch_iv, QATT_IV_LEN);
     HAL_CRYP_Encrypt(&hcryp, (uint32_t*)binary_batch_buffer, padded_size / 4,
-                     (uint32_t*)(encrypted_batch_buffer + 16), 2000);
-
-    uint16_t total_size = 16 + padded_size; // IV (16) + зашифровані дані
+                     (uint32_t*)(batch_attest_buffer + QATT_CT_OFFSET), 2000);
 
     // [FIX FW.16 → FW.3] CRYP назад у LoRa-ECB ОДРАЗУ після CBC-шифрування:
     // модемна розмова попереду довга, а вікно чужого CRYP-режиму має бути
     // нульовим — інакше наступні HAL_CRYP_Decrypt() LoRa-пакетів жували б CBC.
     Restore_ECB_Mode();
+
+    // [L1 QATT] Голос Королеви: header → право-вирівняний префікс домену+UID →
+    // Ed25519 над prefix‖header‖IV‖ct (encrypt-then-sign), підпис лягає хвостом.
+    // Бекенд верифікує проти HardwareKey.ed25519_public_key_hex ДО decrypt.
+    // Сім'я не прошита (ready==0) чи UID битий → legacy [IV][ct], як завжди.
+    const uint8_t *coap_payload = batch_attest_buffer + QATT_IV_OFFSET;
+    uint16_t total_size         = (uint16_t)(QATT_IV_LEN + padded_size);
+    if (ed25519_ready) {
+        Qatt_Write_Header(batch_attest_buffer + QATT_HDR_OFFSET,
+                          Get_Current_Unix_Ts(), coap_flush_seq);
+        uint16_t prefix_len = Qatt_Compose_Prefix(batch_attest_buffer,
+                                                  QATT_HDR_OFFSET, queen_uid);
+        if (prefix_len != 0u) {
+            // Software-Ed25519 на M4 — десятки–сотні мс: годуємо пса ДО підпису.
+            HAL_IWDG_Refresh(&hiwdg);
+            const uint8_t *msg = batch_attest_buffer + QATT_HDR_OFFSET - prefix_len;
+            size_t msg_len = (size_t)prefix_len + QATT_HEADER_LEN
+                           + QATT_IV_LEN + padded_size;
+            crypto_ed25519_sign(batch_attest_buffer + QATT_CT_OFFSET + padded_size,
+                                ed25519_secret, msg, msg_len);
+            coap_payload = batch_attest_buffer + QATT_HDR_OFFSET;
+            total_size   = (uint16_t)(QATT_HEADER_LEN + QATT_IV_LEN
+                                      + padded_size + QATT_SIG_LEN);
+        }
+    }
 
     // [FW.56] SIM7070G — UDP-труба, не CoAP-стек: PDU (CON PUT
     // /telemetry/batch/<uid> + батч) будуємо самі, модем шле його hex'ом.
@@ -1104,11 +1155,11 @@ void Flush_Cache_To_Rails(void)
         }
     }
 
-    static uint8_t coap_pdu_buf[sizeof(encrypted_batch_buffer) + 64];
+    static uint8_t coap_pdu_buf[sizeof(batch_attest_buffer) + 64];
     coap_mid++;
     uint16_t pdu_len = Coap_Build_Put(coap_pdu_buf, sizeof coap_pdu_buf, coap_mid,
                                       "telemetry", "batch", queen_uid,
-                                      encrypted_batch_buffer, total_size);
+                                      coap_payload, total_size);
     if (pdu_len == 0u) return; // не зібрався PDU — слоти живі (FW.51)
 
     uint8_t send_success = 0;
@@ -1441,6 +1492,56 @@ static void Load_AES_Key(void)
     for (int i = 0; i < FLASH_KEY_WORDS; i++) {
         aes_key[i] = flash_ptr[1 + i];
     }
+}
+
+// =========================================================================
+// [ARCH.42 — закриває давній TODO] ЗАВАНТАЖЕННЯ CoAP AES-256 КЛЮЧА
+// =========================================================================
+// CommandBuilder (бекенд) ВЖЕ пише [KEYC][32B] на FLASH_COAP_KEY_ADDR для
+// шлюзів — а прошивка досі не читала: coap_key лишався нулями, і жоден
+// батч фабрично прошитої Королеви бекенд не зміг би розшифрувати.
+// М'який fallback (НЕ Error_Handler, на відміну від LoRa-ключа): dev/sim
+// плати без KEYC живуть як раніше; виявлення — бекендова decrypt-метрика.
+static void Load_CoAP_Key(void)
+{
+    const uint32_t *flash_ptr = (const uint32_t *)FLASH_COAP_KEY_ADDR;
+    if (flash_ptr[0] != FLASH_COAP_KEY_MAGIC) return;  // не прошито — нулі лишаються
+    uint32_t key_or = 0;
+    for (int i = 0; i < FLASH_COAP_KEY_WORDS; i++) key_or |= flash_ptr[1 + i];
+    if (key_or == 0) return;                           // битий provisioning
+    for (int i = 0; i < FLASH_COAP_KEY_WORDS; i++) coap_key[i] = flash_ptr[1 + i];
+}
+
+// =========================================================================
+// [L1 QATT] ЗАВАНТАЖЕННЯ Ed25519-СІМ'Ї ГОЛОСУ КОРОЛЕВИ
+// =========================================================================
+// [EDSK][seed:32] @ FLASH_ED25519_SEED_ADDR. Word→BE-байти РІВНО як
+// Load_Lorenz_Seed (FW.30-конвенція): CommandBuilder пише hex-слова через
+// `-w32`, тож на LE Cortex-M4 наївний memcpy перевернув би кожне слово —
+// і деривований pubkey не зійшовся б із зареєстрованим на бекенді.
+// crypto_ed25519_key_pair ВИТИРАЄ seed-копію (контракт Monocypher) —
+// Flash недоторканий. Magic відсутній → ready = 0 → Flush шле
+// legacy-формат: старий флот не ламається ні на байт.
+static void Load_Ed25519_Seed(void)
+{
+    const uint32_t *flash_ptr = (const uint32_t *)FLASH_ED25519_SEED_ADDR;
+    if (flash_ptr[0] != FLASH_ED25519_SEED_MAGIC) return;
+
+    uint32_t seed_or = 0;
+    for (int i = 0; i < FLASH_ED25519_SEED_WORDS; i++) seed_or |= flash_ptr[1 + i];
+    if (seed_or == 0) return;                          // битий provisioning
+
+    uint8_t seed[32];
+    for (int i = 0; i < FLASH_ED25519_SEED_WORDS; i++) {
+        uint32_t word = flash_ptr[1 + i];
+        seed[i * 4 + 0] = (uint8_t)(word >> 24);
+        seed[i * 4 + 1] = (uint8_t)(word >> 16);
+        seed[i * 4 + 2] = (uint8_t)(word >> 8);
+        seed[i * 4 + 3] = (uint8_t)(word & 0xFFu);
+    }
+
+    crypto_ed25519_key_pair(ed25519_secret, ed25519_pub, seed);  // seed wiped тут
+    ed25519_ready = 1;
 }
 
 // =========================================================================

@@ -564,7 +564,7 @@ Body:
   "peaq_did":         "did:peaq:0x{40hex}",
   "telemetry_log_id": 12345,
   "timestamp":        1720000000,
-  "hardware_signature": "SHA256('{did}:{log_id}:{created_at.to_i}')",
+  "hardware_signature": "Ed25519(derive_iotex_seed(did), '{did}:{log_id}:{created_at.to_i}')",
   "chaotic_data": {
     "z_value":        23.4521,
     "temperature_c":  22.5,
@@ -593,6 +593,8 @@ ChainlinkDispatchWorker.perform_async(telemetry_log_id, created_at_iso)
 
 **Ідемпотентність:** `return if log.verified_by_iotex?` в воркері.
 
+> **`hardware_signature` чесно:** primary = **Ed25519** окремим Iotex-seed (HKDF `derive_iotex_seed`, domain separation від AES/K_seed) — це **master-backed** (L0 custodial у ladder нижче), не device-bound. SHA256-fallback існує лише для legacy/dev і **fail-closed** у production / `WEB3_STRICT_MODE` (метрика `W3BSTREAM_SIGNATURE_FALLBACK_TOTAL`, S6.13).
+
 ---
 
 ### Trust-origin ladder — L0 → L1 → L2 [📐 КАНОН trust-походження]
@@ -604,7 +606,7 @@ ChainlinkDispatchWorker.perform_async(telemetry_log_id, created_at_iso)
 | Рунг | Хто підписує | Що доводить | Чого НЕ доводить | Гейт | Статус |
 |------|--------------|-------------|------------------|------|--------|
 | **L0** custodial | backend (HKDF-derived seed — `w3bstream_verification_service`) | цілісність pipeline + прив'язка до on-chain peaq DID (master-backed) | фізичне походження (backend сам генерує підпис) | — | **зараз** |
-| **L1** Queen-attestation | Королева (Ed25519 — ідентичність уже в M2M-auth) | crypto gateway-origin: дані пройшли крізь **реальну** Королеву, не підроблені backend'ом / injection | per-tree authenticity (оператор контролює Королеву) | firmware Queen software-Ed25519 + backend-verify | **feasible interim** — не gated на анкер/енергію/SE (Queen на LiFePO4) |
+| **L1** Queen-attestation | Королева (software-Ed25519, Monocypher; сім'я `EDSK` у Protected Flash — генерується фабричним хостом, **НЕ HKDF-від-master**, інакше backend міг би підробити; backend-verify проти `HardwareKey.ed25519_public_key_hex` — той самий ключ-реєстр, що M2M-auth) | crypto gateway-origin: дані пройшли крізь **реальну** Королеву, не підроблені backend'ом / injection; + integrity CBC-батча (до L1 він був malleable — без MAC) + anti-replay у nonce-вікні | per-tree authenticity (оператор контролює Королеву); replay після nonce-TTL-вікна | — (не gated на анкер/енергію/SE; Queen на LiFePO4) | 🟡 **shipped 2026-06-07** (firmware sign + backend verify + host/RSpec golden-parity; wire-дім [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security)). 👤 bench-residual: EDSK-flash на кремнії + e2e |
 | **L2** per-tree device-voice | **дерево саме** (SE050 non-extractable Ed25519, щотижневий Merkle-корінь) | повне device-origin, **операторо-непідробне** («голос дерева») | — | анкер-TRL + енергія (1 TX ≈ 39 мДж vs +33.6 мДж/добу Scenario C → weekly влазить, daily = Scenario D / 2× anchor) + SE050 populate | **North-Star** (механізм = §E.60 + [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)) |
 
 > **Крипта доповнює, не замінює:** L0–L2 доводять, що голос **дерева** і **цілий**; але **ЗВТ-метрологія** (STK.4) доводить, що голос **точний** (legal/CBAM carbon), а **operator-bond + slashing** (BIZ.13) робить брехню **дорогою**. Трійця (origin + accuracy + skin-in-game) = довірений RWA. Жоден рунг ladder не знімає потреби у ЗВТ та економічному шарі.

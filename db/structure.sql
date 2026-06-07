@@ -1482,7 +1482,8 @@ CREATE TABLE public.gateways (
     state integer,
     firmware_version character varying,
     latest_voltage_mv integer,
-    firmware_update_status integer DEFAULT 0 NOT NULL
+    firmware_update_status integer DEFAULT 0 NOT NULL,
+    last_attested_at timestamp without time zone
 );
 
 
@@ -1901,7 +1902,8 @@ CREATE TABLE public.telemetry_logs (
     time_unsynced_fallback boolean DEFAULT false NOT NULL,
     humidity numeric,
     pressure numeric,
-    vpd numeric
+    vpd numeric,
+    gateway_attested boolean DEFAULT false NOT NULL
 )
 PARTITION BY RANGE (created_at);
 
@@ -1959,7 +1961,8 @@ CREATE TABLE public.telemetry_logs_default (
     time_unsynced_fallback boolean DEFAULT false NOT NULL,
     humidity numeric,
     pressure numeric,
-    vpd numeric
+    vpd numeric,
+    gateway_attested boolean DEFAULT false NOT NULL
 );
 
 
@@ -1997,7 +2000,8 @@ CREATE TABLE public.telemetry_logs_y2026m01 (
     time_unsynced_fallback boolean DEFAULT false NOT NULL,
     humidity numeric,
     pressure numeric,
-    vpd numeric
+    vpd numeric,
+    gateway_attested boolean DEFAULT false NOT NULL
 );
 
 
@@ -2035,7 +2039,8 @@ CREATE TABLE public.telemetry_logs_y2026m02 (
     time_unsynced_fallback boolean DEFAULT false NOT NULL,
     humidity numeric,
     pressure numeric,
-    vpd numeric
+    vpd numeric,
+    gateway_attested boolean DEFAULT false NOT NULL
 );
 
 
@@ -2073,7 +2078,8 @@ CREATE TABLE public.telemetry_logs_y2026m03 (
     time_unsynced_fallback boolean DEFAULT false NOT NULL,
     humidity numeric,
     pressure numeric,
-    vpd numeric
+    vpd numeric,
+    gateway_attested boolean DEFAULT false NOT NULL
 );
 
 
@@ -2111,7 +2117,8 @@ CREATE TABLE public.telemetry_logs_y2026m04 (
     time_unsynced_fallback boolean DEFAULT false NOT NULL,
     humidity numeric,
     pressure numeric,
-    vpd numeric
+    vpd numeric,
+    gateway_attested boolean DEFAULT false NOT NULL
 );
 
 
@@ -2149,7 +2156,8 @@ CREATE TABLE public.telemetry_logs_y2026m05 (
     time_unsynced_fallback boolean DEFAULT false NOT NULL,
     humidity numeric,
     pressure numeric,
-    vpd numeric
+    vpd numeric,
+    gateway_attested boolean DEFAULT false NOT NULL
 );
 
 
@@ -2187,7 +2195,8 @@ CREATE TABLE public.telemetry_logs_y2026m06 (
     time_unsynced_fallback boolean DEFAULT false NOT NULL,
     humidity numeric,
     pressure numeric,
-    vpd numeric
+    vpd numeric,
+    gateway_attested boolean DEFAULT false NOT NULL
 );
 
 
@@ -2296,7 +2305,6 @@ CREATE TABLE public.trees (
     health_streak integer DEFAULT 0 NOT NULL,
     firmware_update_status integer DEFAULT 0 NOT NULL,
     peaq_did character varying,
-    peaq_did_compromised boolean DEFAULT false NOT NULL,
     latest_stress_index numeric(4,3) DEFAULT 0.0 NOT NULL
 );
 
@@ -7126,6 +7134,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260607180000'),
 ('20260524120000'),
 ('20260509120000');
 

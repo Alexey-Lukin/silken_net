@@ -27,7 +27,7 @@ points, it does not restate (so it can't drift). Verify a fact at its home befor
 | `firmware/soldier/main.c` | Sensor node: sense → TinyML → Lorenz → encrypt → TX (multi-phase STOP2 loop) |
 | `firmware/queen/main.c` | Gateway: RX → decrypt → CIFO cache → batch flush via CoAP |
 | `firmware/bio_contracts/bio_contract.rb` | mruby Lorenz attractor (runs on MCU); `calculate_state` is the sole entry-point |
-| `firmware/common/*.h` | Shared header-only One-Home libs (compile into BOTH firmware + host tests — kill the mirror-drift pattern): `silken_sha256.h` (SHA-256/HMAC, FIPS/RFC KAT), `lorenz_seed.h` (FW.30 cold-start deriv), `silken_crc.h` (CRC16-CCITT, OTA), `lora_ccm.h` (CCM packet), `adc_convert.h` (FW.50 VREFINT-cal ADC→mV, helper-only/not-yet-wired), `*_selftest.h` + `*_kat_vectors.h` (bench POST) |
+| `firmware/common/*.h` | Shared header-only One-Home libs (compile into BOTH firmware + host tests — kill the mirror-drift pattern): `silken_sha256.h` (SHA-256/HMAC, FIPS/RFC KAT), `lorenz_seed.h` (FW.30 cold-start deriv), `silken_crc.h` (CRC16-CCITT, OTA), `lora_ccm.h` (CCM packet), `adc_convert.h` (FW.50 VREFINT-cal ADC→mV, helper-only/not-yet-wired), `queen_attest.h` (L1 QATT signed-batch envelope layout — wire home `03_05 §2.2`), `*_selftest.h` + `*_kat_vectors.h` (bench POST) |
 | `firmware/test/` | x86 host-based tests — `make -C firmware/test` (host gate; not gcov-instrumented). New crypto in `common/` ⇒ add a parity test vs OpenSSL, don't re-copy logic into the test file. |
 
 > Line counts drift every commit — don't hardcode them (see `[[feedback_no_volatile_counts]]`); `wc -l` if you need a number.

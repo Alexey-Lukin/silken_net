@@ -7,3 +7,6 @@
 [submodule "firmware/extern/CMSIS_6"]
 	path = firmware/extern/CMSIS_6
 	url = https://github.com/ARM-software/CMSIS_6
+[submodule "firmware/extern/monocypher"]
+	path = firmware/extern/monocypher
+	url = https://github.com/LoupVaillant/Monocypher.git

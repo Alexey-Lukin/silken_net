@@ -9,7 +9,8 @@
 #
 #   0x0803E000  [magic "KEYL" :4 ][ aes_lora_key :16 ]
 #   0x0803E014  [magic "LSED" :4 ][ k_seed       :32 ]                 # Tree only
-#   0x0803Exxx  [magic "KEYC" :4 ][ aes_coap_key :32 ]                 # Gateway only
+#   0x0803E040  [magic "KEYC" :4 ][ aes_coap_key :32 ]                 # Gateway only
+#   0x0803E064  [magic "EDSK" :4 ][ ed25519_seed :32 ]                 # Gateway only — L1 QATT
 #
 # Output is an Array<String> — one shell command per element. Callers pipe it
 # through Executor (dry-run prints to stdout; --execute spawns subprocesses).
@@ -18,10 +19,12 @@ module FactoryFlashing
     FLASH_KEY_ADDR      = "0x0803E000"
     FLASH_SEED_ADDR     = "0x0803E014"   # FLASH_KEY_ADDR + 4 (magic) + 16 (key)
     FLASH_COAP_KEY_ADDR = "0x0803E040"   # After K_seed (4 magic + 32 = 36 bytes) — see Queen flash layout
+    FLASH_EDSK_ADDR     = "0x0803E064"   # After CoAP key (4 magic + 32) — L1 QATT голос Королеви
 
     KEYL_MAGIC = "0x4B45594C" # "KEYL" LoRa key magic (firmware: FLASH_KEY_MAGIC)
     LSED_MAGIC = "0x4C534544" # "LSED" Lorenz K_seed magic (firmware: FLASH_SEED_MAGIC)
     KEYC_MAGIC = "0x4B455943" # "KEYC" CoAP key magic (firmware: FLASH_COAP_KEY_MAGIC)
+    EDSK_MAGIC = "0x4544534B" # "EDSK" Ed25519 seed magic (firmware: FLASH_ED25519_SEED_MAGIC)
 
     PROGRAMMER = "STM32_Programmer_CLI"
 
@@ -29,11 +32,15 @@ module FactoryFlashing
     # @param device    [Tree|Gateway]
     # @param aes_key_hex     [String] 32 hex (Tree LoRa) or 64 hex (Gateway CoAP)
     # @param lorenz_seed_hex [String, nil] 64 hex; required for Tree
-    def initialize(session:, device:, aes_key_hex:, lorenz_seed_hex: nil)
+    # @param ed25519_seed_hex [String, nil] 64 hex; Gateway-only (L1 QATT) —
+    #   генерується Session'ом на фабричному хості (SecureRandom, НЕ HKDF),
+    #   у БД персиститься лише деривований pubkey. nil → Queen лишається L0.
+    def initialize(session:, device:, aes_key_hex:, lorenz_seed_hex: nil, ed25519_seed_hex: nil)
       @session = session
       @device = device
       @aes_key_hex = aes_key_hex.to_s
       @lorenz_seed_hex = lorenz_seed_hex.to_s
+      @ed25519_seed_hex = ed25519_seed_hex.to_s
       validate!
     end
 
@@ -52,6 +59,13 @@ module FactoryFlashing
     def validate!
       raise ArgumentError, "aes_key_hex must be 32 or 64 hex chars" unless [ 32, 64 ].include?(@aes_key_hex.length)
       raise ArgumentError, "aes_key_hex must be hexadecimal" unless @aes_key_hex.match?(/\A[0-9A-Fa-f]+\z/)
+
+      if @ed25519_seed_hex.present?
+        raise ArgumentError, "ed25519_seed_hex is Gateway-only (L1 QATT)" if @device.is_a?(Tree)
+        raise ArgumentError, "ed25519_seed_hex must be 64 hex chars" unless @ed25519_seed_hex.length == 64
+        raise ArgumentError, "ed25519_seed_hex must be hexadecimal" unless @ed25519_seed_hex.match?(/\A[0-9A-Fa-f]+\z/)
+      end
+
       return unless @device.is_a?(Tree)
       raise ArgumentError, "Tree provisioning requires lorenz_seed_hex (64 hex)" unless @lorenz_seed_hex.length == 64
       raise ArgumentError, "lorenz_seed_hex must be hexadecimal" unless @lorenz_seed_hex.match?(/\A[0-9A-Fa-f]+\z/)
@@ -70,6 +84,9 @@ module FactoryFlashing
         # unused (CoAP only); firmware loads coap_key from FLASH_COAP_KEY_ADDR.
         raise ArgumentError, "Gateway requires 64-hex AES-256 key" unless @aes_key_hex.length == 64
         out.concat(write_block(FLASH_COAP_KEY_ADDR, KEYC_MAGIC, @aes_key_hex))
+        # [L1 QATT] Голос Королеви: сім'я підпису батчів. Відсутня → Queen
+        # свідомо лишається на L0 (legacy-батчі без підпису).
+        out.concat(write_block(FLASH_EDSK_ADDR, EDSK_MAGIC, @ed25519_seed_hex)) if @ed25519_seed_hex.present?
       end
 
       out << rdp_command(@session.rdp_level)

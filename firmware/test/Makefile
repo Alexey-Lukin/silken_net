@@ -19,9 +19,9 @@ BINDIR   = .
 OPENSSL_CFLAGS = $(shell pkg-config --cflags openssl 2>/dev/null)
 OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
-.PHONY: all queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine flash_kv size-check clean
+.PHONY: all queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine flash_kv attest size-check clean
 
-all: queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine flash_kv
+all: queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine flash_kv attest
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -59,6 +59,9 @@ at_engine: $(BINDIR)/test_at_engine
 flash_kv: $(BINDIR)/test_flash_kv
 	@./$(BINDIR)/test_flash_kv
 
+attest: $(BINDIR)/test_queen_attest
+	@./$(BINDIR)/test_queen_attest
+
 $(BINDIR)/test_queen: test_queen_logic.c hal_mock.h ../common/silken_crc.h
 	$(CC) $(CFLAGS) -o $@ test_queen_logic.c
 
@@ -89,6 +92,17 @@ $(BINDIR)/test_at_engine: test_at_engine.c ../queen/at_engine.h ../queen/coap_pd
 $(BINDIR)/test_flash_kv: test_flash_kv.c ../common/flash_kv.c ../common/flash_kv.h ../common/silken_crc.h
 	$(CC) $(CFLAGS) -I../common -o $@ test_flash_kv.c ../common/flash_kv.c
 
+# [L1 QATT] Queen-attestation конверт — Monocypher (pinned submodule) ↔ OpenSSL
+# parity + end-to-end збірка/розбір; golden-KAT дзеркалиться у RSpec.
+MONOCYPHER_SRC = ../extern/monocypher/src
+$(BINDIR)/test_queen_attest: test_queen_attest.c ../common/queen_attest.h \
+                             $(MONOCYPHER_SRC)/monocypher.c \
+                             $(MONOCYPHER_SRC)/optional/monocypher-ed25519.c
+	$(CC) $(CFLAGS) $(OPENSSL_CFLAGS) -I$(MONOCYPHER_SRC) -I$(MONOCYPHER_SRC)/optional \
+	  -o $@ test_queen_attest.c \
+	  $(MONOCYPHER_SRC)/monocypher.c $(MONOCYPHER_SRC)/optional/monocypher-ed25519.c \
+	  $(OPENSSL_LIBS)
+
 # [SEC.11] Host parity for SilkenNet::SeedDerivation. Uses OpenSSL
 # libcrypto on host; firmware MCU side runs the same primitives via
 # mbedTLS (already linked for AES). Same standard primitives →
@@ -113,7 +127,7 @@ clean:
 	rm -f $(BINDIR)/test_queen $(BINDIR)/test_soldier $(BINDIR)/test_bio_contract \
 	      $(BINDIR)/test_tinyml $(BINDIR)/test_logmel $(BINDIR)/test_encryption \
 	      $(BINDIR)/test_seed_derivation $(BINDIR)/test_ccm $(BINDIR)/test_ccm_selftest \
-	      $(BINDIR)/test_sym_selftest
+	      $(BINDIR)/test_sym_selftest $(BINDIR)/test_queen_attest
 
 # [FW.26] CI gate — Static RAM budget check (.bss + .data ≤ 50 KB).
 #

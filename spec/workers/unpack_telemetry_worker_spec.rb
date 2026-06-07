@@ -37,7 +37,8 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
 
       described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
 
-      expect(TelemetryUnpackerService).to have_received(:call).with(anything, gateway.id)
+      expect(TelemetryUnpackerService).to have_received(:call)
+        .with(anything, gateway.id, gateway_attested: false)
     end
 
     it "updates gateway IP via mark_seen!" do

@@ -53,6 +53,18 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     expect(log.rssi).to eq(-70)
     expect(log.z_value).to eq(0.5)
     expect(log.mesh_ttl).to eq(3)
+    # [L1 QATT] без явного прапора — L0 (legacy/неатестований батч)
+    expect(log.gateway_attested).to be(false)
+  end
+
+  # [L1 QATT] Походження батча протягується у кожен рядок (05_02 ladder L1)
+  it "stamps gateway_attested on every row when the batch was Queen-attested" do
+    chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+
+    expect { described_class.call(chunk, nil, gateway_attested: true) }
+      .to change(TelemetryLog, :count).by(1)
+
+    expect(TelemetryLog.last.gateway_attested).to be(true)
   end
 
   it "rejects sensor data outside safe voltage range" do

@@ -427,7 +427,7 @@ POST /api/v1/auth/m2m_token
 | `family_id` | Integer | Лише для `tree` | ID породи дерева (TreeFamily) |
 | `latitude` | Float | ✅ | Широта GPS |
 | `longitude` | Float | ✅ | Довгота GPS |
-| `ed25519_public_key` | String (HEX) | Опційно | Ed25519 public key для M2M Auth (Gateway) |
+| `ed25519_public_key` | String (HEX) | Опційно | Ed25519 public key Gateway: M2M Auth + [L1 QATT] верифікація batch-підпису (wire-дім [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security)) |
 
 **Success Response `201 Created` (єдиний режим — HKDF, hard cutover):**
 
@@ -1139,7 +1139,7 @@ if (days_until_token_expiry() < 7) {
 
 | Параметр | Тип | Обов'язковий | Опис |
 |---|---|---|---|
-| `payload` | String (Base64) | ✅ | Base64-encoded бінарний батч: `[IV:16][AES-256-CBC encrypted records]`. Формат ідентичний CoAP uplink. Розмір обмежено до `MAX_UPLINK_PAYLOAD_SIZE = 16 KiB` (~16× headroom над реальним flush'ем 45 entries). Перевищення → `413 Payload Too Large` (`flash.telemetry.payload_too_large`). Запобігає DoS через Redis-Sidekiq queue. |
+| `payload` | String (Base64) | ✅ | Base64-encoded бінарний батч: legacy `[IV:16][AES-256-CBC encrypted records]` або підписаний L1 QATT конверт — обидві форми, формат ідентичний CoAP uplink (wire-дім [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security); верифікація — у спільному `UnpackTelemetryWorker`). Розмір обмежено до `MAX_UPLINK_PAYLOAD_SIZE = 16 KiB` (~16× headroom над реальним flush'ем 45 entries). Перевищення → `413 Payload Too Large` (`flash.telemetry.payload_too_large`). Запобігає DoS через Redis-Sidekiq queue. |
 
 **Success Response `202 Accepted`:**
 

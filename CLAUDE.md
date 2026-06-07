@@ -80,7 +80,7 @@ Ruby unpack: `"N n c C n C C a4"`.
 - LoRa RX -> **AES-128-ECB** decrypt (per-Soldier 128-bit key) -> CIFO EdgeCache (50 slots, дедуплікація за DID).
 - **Queen Sentinel:** `DID == 0x00000000` → власна телеметрія Королеви → `GatewayTelemetryWorker` (не `TelemetryLog`).
 - Flush trigger: >= 45 entries OR 1 година + HRNG jitter (0-60 сек).
-- Flush process: **AES-256-CBC** encrypt (CoAP key, окремий MX_CRYP re-init на `CRYP_KEYSIZE_256B`, HRNG IV) -> CoAP PDU будує **хост** (FW.56: SIMCom = UDP-труба) -> `AT+CCOAPSEND=<cid>,<len>,"<hex PDU>"` -> CoAP PUT `/telemetry/batch/<QUEEN_UID>` -> SIM7070G; доставка = URC `+CCOAPNMI` класу 2.xx.
+- Flush process: **AES-256-CBC** encrypt (CoAP key, окремий MX_CRYP re-init на `CRYP_KEYSIZE_256B`, HRNG IV) -> **[L1 QATT]** Ed25519-підпис батча, якщо EDSK-сім'я прошита (Monocypher; wire-дім `03_05 §2.2`, розкладка `firmware/common/queen_attest.h`; бекенд верифікує ДО decrypt, legacy без підпису = L0) -> CoAP PDU будує **хост** (FW.56: SIMCom = UDP-труба) -> `AT+CCOAPSEND=<cid>,<len>,"<hex PDU>"` -> CoAP PUT `/telemetry/batch/<QUEEN_UID>` -> SIM7070G; доставка = URC `+CCOAPNMI` класу 2.xx.
 - **BLOCKER: ECB restore** після CBC flush — якщо не відновити (`CRYP_KEYSIZE_128B` + LoRa key), наступні LoRa decrypt ламаються. (FW.3: restore тепер одразу після encrypt, ДО модемної розмови.)
 - **BLOCKER: `QUEEN-001` hardcoded** UID -> неможливий уніфікований флешинг.
 - ✅ AT blind delay закрито (FW.3/FW.56, 2026-06-07): `at_engine.h`/`coap_pdu.h`/`sim7070_coap.h` — байтовий токенайзер з early-exit, hex чанками; residual: UART DMA RX + verbatim-звірка SIM7070-ноти (bench). Канон: `03_02 §4`.

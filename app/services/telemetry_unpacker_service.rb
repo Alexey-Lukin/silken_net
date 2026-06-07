@@ -57,9 +57,12 @@ class TelemetryUnpackerService < ApplicationService
   # DID-сентинел: Королева передає власну телеметрію з DID = 0x00000000
   QUEEN_SENTINEL_DID = "0"
 
-  def initialize(binary_batch, gateway_id = nil)
+  # [L1 QATT] gateway_attested: батч пройшов Ed25519-верифікацію Королеви
+  # (UnpackTelemetryWorker) — прапор протягується у кожен TelemetryLog-рядок.
+  def initialize(binary_batch, gateway_id = nil, gateway_attested: false)
     @binary_batch = binary_batch
     @gateway = Gateway.find_by(id: gateway_id)
+    @gateway_attested = gateway_attested
     @trees_cache = {}
     @latest_firmware_id = nil
   end
@@ -598,6 +601,12 @@ class TelemetryUnpackerService < ApplicationService
   end
 
   def commit_telemetry(tree, attributes)
+    # [L1 QATT] Походження батча (Queen-attestation) — на кожному рядку:
+    # downstream (mint-гейти майбутніх рунгів, fraud-аналіз, UI) бачить,
+    # чи запис приїхав під валідним підписом Королеви. Єдина точка для
+    # обох шляхів (ECB process_chunk + CCM process_ccm_chunk).
+    attributes[:gateway_attested] = @gateway_attested
+
     growth_points = attributes[:growth_points]
 
     # Транзакція фіксує телеметрію та стан дерева як єдине ціле.

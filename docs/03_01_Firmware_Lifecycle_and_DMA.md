@@ -1033,7 +1033,7 @@ Cmd_Dedup_Check(hash):
 
 ## 💾 5. Queen RAM Budget
 
-Повний бюджет RAM Королеви — канон [`03_02 §9`](03_02_Queen_Gateway_Firmware) (з усіма FW.3/E.8-буферами: `lora_rx_ring`, `encrypted_batch_buffer`, OTA-скаляри). 03_01 — дім лише **Soldier** RAM (§3); Queen-таблиця тут раніше тихо розійшлась із домом (stale pre-FW.3 буфери, неузгоджений підсумок) → зведено до рефа.
+Повний бюджет RAM Королеви — канон [`03_02 §9`](03_02_Queen_Gateway_Firmware) (з усіма FW.3/E.8-буферами: `lora_rx_ring`, `batch_attest_buffer`, OTA-скаляри). 03_01 — дім лише **Soldier** RAM (§3); Queen-таблиця тут раніше тихо розійшлась із домом (stale pre-FW.3 буфери, неузгоджений підсумок) → зведено до рефа.
 
 ---
 
@@ -1446,7 +1446,7 @@ firmware/
   CMakeLists.txt              — owned-код (logmel.c) + CMSIS-DSP + size + guarded HAL
   cmake/arm-none-eabi.cmake   — toolchain-file (Cortex-M4F; pin Arm GNU 13.2.Rel1)
   mruby/build_config.rb       — mruby builds (host mrbc / host-min / arm minimal)
-  extern/                     — pinned submodules: CMSIS-DSP · CMSIS_6 (Core) · mruby
+  extern/                     — pinned submodules: CMSIS-DSP · CMSIS_6 (Core) · mruby · monocypher
 tools/firmware/
   gen_bytecode.sh             — mrbc: bio_contract.rb → lorenz_bytecode.h (+ --check drift)
   check_bytecode.py           — light stdlib stamp-gate (CI firmware_test)
@@ -1489,6 +1489,7 @@ tools/firmware/run_bytecode_vm.sh                 # minimal VM runs the bytecode
 | Залежність | Роль | Статус | Pin-план |
 |---|---|---|---|
 | CMSIS-DSP · CMSIS_6 · mruby | logmel FFT · Core · bio-contract VM | ✅ завендорено (§12.4) | submodule@tag |
+| Monocypher | [L1 QATT] software-Ed25519 — підпис CoAP-батчів Queen ([`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security)) | ✅ завендорено (2026-06-07) | `extern/monocypher`@4.0.2 (+ optional `monocypher-ed25519` — стандартний SHA-512 EdDSA, parity з ruby `ed25519` gem host-tested) |
 | OpenSSL | host-тест crypto (AES/HKDF/HMAC) | system host-dep; НЕ target | host-build, не вендориться |
 | mbedTLS | target HMAC-SHA256 / HKDF | 🔴 лише `TODO(FW.30-mbedtls)`, не залінковано | `extern/mbedtls`@tag — [`00_07` — FW.30](00_07_Action_Plan_Tracker) |
 | STM32 HAL + CMSIS-Device-WL | HAL · SUBGHZ/SX1262-радіо · CRYP | 🔴 assumed (CubeMX, поза репо); host = `hal_mock.h` | STM32CubeWL@tag — `-DSILKEN_WITH_HAL=ON` |

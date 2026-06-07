@@ -13,6 +13,26 @@ class UnpackTelemetryWorker
   # Розмір IV для AES-256-CBC (один AES-блок = 16 байт)
   AES_IV_SIZE = 16
 
+  # === [L1 QATT] Trust-origin L1 — Queen-attestation батч-конверта ===
+  # Канон: 05_02 «Trust-origin ladder» (рунг L1) + 03_05 §2.2 (wire);
+  # firmware-дзеркало розкладки — firmware/common/queen_attest.h.
+  # Підписаний payload: [ver:1][unix_ts:4 BE][flush_seq:4 BE][IV:16][ct][sig:64]
+  # Encrypt-then-sign: підпис верифікується ДО decrypt (без padding-оракулів).
+  # Повідомлення = DOMAIN_TAG ‖ uid_len ‖ uid ‖ <payload без хвостового sig> —
+  # UID з CoAP URI вшито у підпис (батч не сплайснути між шлюзами).
+  QATT_SIG_LEN    = 64
+  QATT_HEADER_LEN = 9
+  QATT_VERSION_1  = 0x01
+  QATT_DOMAIN_TAG = "SLKN-QATT1".b.freeze
+  # Residue-дискримінатор: legacy [IV][ct] ≡ 0 (mod 16), підписаний ≡ 9 —
+  # довжини ніколи не перетинаються, magic-вгадування проти random-IV не треба.
+  QATT_RESIDUE    = (QATT_HEADER_LEN + AES_IV_SIZE + QATT_SIG_LEN) % 16
+  QATT_MIN_SIZE   = QATT_HEADER_LEN + AES_IV_SIZE + 16 + QATT_SIG_LEN
+  # Replay-вікно: дубль підпису (SHA256-nonce, патерн M2M/S6.1) ріжеться
+  # в межах TTL; replay ПІСЛЯ вікна — задокументований residual (03_05 §2.2),
+  # строго кращий за «replay будь-коли» на L0.
+  QATT_NONCE_TTL  = 30.days
+
   # Сигнатура perform: encoded_payload, sender_ip, gateway_uid (необов'язково).
   # gateway_uid — незашифрований UID з CoAP URI-Path (/telemetry/batch/<UID>).
   # Дозволяє коректно ідентифікувати шлюзи за NAT / динамічним Starlink IP.
@@ -51,6 +71,24 @@ class UnpackTelemetryWorker
       return
     end
 
+    # [L1 QATT] Підписаний конверт детектиться за residue довжини й
+    # верифікується ДО decrypt. :reject = drop без retry (підпис не «одужає»);
+    # :unverified = конверт є, але pubkey не зареєстровано → обробка як L0
+    # (суворість нічого не дає, поки L0 приймається беззастережно) + метрика.
+    gateway_attested = false
+    if qatt_envelope?(binary_payload)
+      verdict = verify_qatt_envelope(binary_payload, gateway, key_record)
+      if verdict == :reject
+        SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "attest_rejected" })
+        return
+      end
+
+      gateway_attested = (verdict == :attested)
+      binary_payload = binary_payload.byteslice(
+        QATT_HEADER_LEN, binary_payload.bytesize - QATT_HEADER_LEN - QATT_SIG_LEN
+      )
+    end
+
     decrypted_data = attempt_decryption(binary_payload, key_record)
 
     unless decrypted_data
@@ -64,7 +102,8 @@ class UnpackTelemetryWorker
 
     # 4. ПЕРЕДАЧА В СЕРВІС РОЗПАКОВКИ
     # Конвеєр: [DID:4][RSSI:1][Payload:16] x N
-    TelemetryUnpackerService.call(decrypted_data, gateway.id)
+    # [L1 QATT] gateway_attested протягується до кожного TelemetryLog-рядка.
+    TelemetryUnpackerService.call(decrypted_data, gateway.id, gateway_attested: gateway_attested)
 
     # [S2.4] Track successful CoAP packet processing for Prometheus
     SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "success" })
@@ -81,6 +120,91 @@ class UnpackTelemetryWorker
   end
 
   private
+
+  # [L1 QATT] Чи payload — підписаний конверт? Residue довжини — детерміністичний
+  # дискримінатор (legacy ≡ 0 mod 16; підписаний ≡ QATT_RESIDUE).
+  def qatt_envelope?(payload)
+    payload.bytesize >= QATT_MIN_SIZE && (payload.bytesize % 16) == QATT_RESIDUE
+  end
+
+  # [L1 QATT] Верифікація Ed25519-підпису батча проти зареєстрованого при
+  # provisioning pubkey шлюзу (HardwareKey.ed25519_public_key_hex — той самий
+  # ключ, що в M2M-auth). Повертає :attested / :unverified (обробити як L0) /
+  # :reject (drop). ts/seq з header'а — observability (Queen без RTC: ts=0
+  # легітимний «ще не синхронізовано», 03_02 §5а) — НЕ основний anti-replay.
+  def verify_qatt_envelope(payload, gateway, key_record)
+    unless key_record.ed25519_public_key_hex.present?
+      Rails.logger.warn "⚠️ [L1 QATT] #{gateway.uid}: підписаний батч, але pubkey не зареєстровано — обробка як L0."
+      SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "attest_no_pubkey" })
+      return :unverified
+    end
+
+    version = payload.getbyte(0)
+    unless version == QATT_VERSION_1
+      # Невідома версія конверта = невідома розкладка → чесний drop, гучна
+      # метрика. Backend деплоїться ПЕРЕД firmware (Kamal vs OTA/bench).
+      Rails.logger.error "🚨 [L1 QATT] #{gateway.uid}: невідома версія конверта 0x#{version.to_s(16)}."
+      SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "attest_unknown_version" })
+      return :reject
+    end
+
+    signature = payload.byteslice(-QATT_SIG_LEN, QATT_SIG_LEN)
+    body      = payload.byteslice(0, payload.bytesize - QATT_SIG_LEN)
+    uid       = gateway.uid.to_s
+    message   = QATT_DOMAIN_TAG + [ uid.bytesize ].pack("C") + uid.b + body
+
+    valid = Ed25519Crypto::SigningService.verify(
+      key_record.ed25519_public_key_hex, signature.unpack1("H*"), message
+    )
+
+    unless valid
+      # Невалідний підпис при зареєстрованому ключі = підробка/пошкодження —
+      # подія безпеки, Grafana-алерт на цей лейбл.
+      Rails.logger.error "🚨 [L1 QATT] #{gateway.uid}: НЕВАЛІДНИЙ Ed25519-підпис батча (можлива підробка)."
+      SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "attest_bad_signature" })
+      return :reject
+    end
+
+    return :reject unless qatt_nonce_unique?(signature, gateway)
+
+    _ver, unix_ts, flush_seq = payload.unpack("CNN")
+    gateway.update_column(:last_attested_at, Time.current)
+    Rails.logger.info "🛡️ [L1 QATT] #{gateway.uid}: батч атестовано (ts=#{unix_ts}, seq=#{flush_seq})."
+    :attested
+  rescue Ed25519Crypto::SigningService::SigningError => e
+    # Малформлений ЗБЕРЕЖЕНИЙ pubkey (наша misprovisioning-помилка, не атака:
+    # sig з дроту завжди рівно 64 байти) → не караємо телеметрію, L0 + алерт.
+    Rails.logger.error "🚨 [L1 QATT] #{gateway.uid}: битий збережений pubkey: #{e.message}"
+    SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "attest_bad_stored_key" })
+    :unverified
+  end
+
+  # [L1 QATT] Anti-replay: SHA256(sig) як природний nonce (підпис детермінований
+  # над унікальним повідомленням — HRNG IV свіжий щофлешу). Точний M2M/S6.1
+  # патерн: Redis SET NX (атомарно) → Solid-Cache fallback при Redis-аутеджі
+  # (свідоме TOCTOU-вікно у degraded mode).
+  def qatt_nonce_unique?(signature, gateway)
+    digest = Digest::SHA256.hexdigest(signature)
+
+    begin
+      nonce_key = Kredis.namespaced_key("qatt_nonce:#{digest}")
+      acquired = Kredis.redis(config: :shared).set(nonce_key, "1", nx: true, ex: QATT_NONCE_TTL.to_i)
+    rescue Redis::BaseConnectionError, RedisClient::ConnectionError => e
+      SilkenNet::Metrics::QATT_NONCE_FALLBACK_TOTAL.increment
+      Rails.logger.warn "⚠️ [L1 QATT] Redis недоступний, nonce через Solid Cache: #{e.message}"
+
+      fallback_key = "qatt_nonce_fallback:#{digest}"
+      acquired = !Rails.cache.exist?(fallback_key)
+      Rails.cache.write(fallback_key, true, expires_in: QATT_NONCE_TTL) if acquired
+    end
+
+    unless acquired
+      Rails.logger.warn "⚠️ [L1 QATT] #{gateway.uid}: REPLAY підписаного батча заблоковано."
+      SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "attest_replay" })
+    end
+
+    !!acquired
+  end
 
   # Логіка "М'якої Ротації": пробуємо новий ключ, потім старий
   def attempt_decryption(payload, key_record)

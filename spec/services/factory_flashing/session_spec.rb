@@ -40,6 +40,41 @@ RSpec.describe FactoryFlashing::Session do
     end
   end
 
+  # [L1 QATT] Голос Королеви: Гілка-A Gateway отримує EDSK-сім'ю, у БД — лише pubkey
+  describe "happy path — Гілка A Gateway (голос Королеви)" do
+    let(:gateway)   { create(:gateway) }
+    let!(:session)  { make_session(gilka: "A", device_uid: gateway.uid) }
+
+    it "генерує сім'ю, шиє EDSK-блок і реєструє ЛИШЕ pubkey у HardwareKey" do
+      outcome = described_class.run(
+        session: session, executor: executor, master_key_source: master_key_source
+      )
+
+      edsk_cmds = outcome.transcript.select { |r| r.command.include?("0x4544534B") }
+      expect(edsk_cmds).not_to be_empty
+
+      hw_key = outcome.hardware_key.reload
+      expect(hw_key.ed25519_public_key_hex).to match(/\A[0-9a-f]{64}\z/)
+
+      # Сім'я (32 байти, 8 слів) присутня у транскрипті процесу,
+      # але деривований pubkey їй відповідає — звіримо незалежно:
+      seed_words = outcome.transcript.map(&:command)
+                          .select { |c| c.match?(/-w32 0x0803E0(6[8-9A-F]|7[0-9A-F]|8[0-4]) /) }
+                          .map { |c| c.split.last.delete_prefix("0x") }
+      seed_hex = seed_words.join
+      expect(seed_hex.length).to eq(64)
+      expect(Ed25519Crypto::SigningService.public_key_from_seed(seed_hex))
+        .to eq(hw_key.ed25519_public_key_hex)
+    end
+
+    it "НЕ персистить сиру сім'ю в AuditLog (metadata без байтів ключів)" do
+      outcome = described_class.run(
+        session: session, executor: executor, master_key_source: master_key_source
+      )
+      expect(outcome.audit_log.metadata.to_json).not_to include("0x4544534B")
+    end
+  end
+
   describe "happy path — Гілка B Tree" do
     let!(:session) { make_session(gilka: "B", atecc_serial_hex: "0123456789ABCDEF01") }
 

@@ -318,9 +318,9 @@ end
 > При зміні реєстру в коді — **регенерувати ЛИШЕ цю таблицю** (команда в кінці).
 > Де інкрементується/оновлюється кожна — `grep -rn "SilkenNet::Metrics::<CONST>" app/`.
 >
-> **Разом: 43 метрики = 22 counters + 19 gauges + 2 histograms.**
+> **Разом: 44 метрики = 23 counters + 19 gauges + 2 histograms.**
 
-**Counters (22):**
+**Counters (23):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
@@ -328,10 +328,11 @@ end
 | `silkennet_circuit_breaker_rejections_total` | `service` | Web3 requests fast-failed because a provider circuit breaker was open |
 | `silkennet_coap_packets_received_total` | `status` | Total CoAP UDP packets received by the telemetry daemon |
 | `silkennet_ews_alerts_total` | `alert_type` | Total EWS alerts dispatched (fire, drought, pest, storm) |
-| `silkennet_m2m_nonce_fallback_total` | — | M2M nonce checks falling back from Redis to DB-backed cache (Redis outage indicator) |
+| `silkennet_m2m_nonce_fallback_total` | — | Total M2M nonce checks falling back from Redis to DB-backed cache (Redis outage indicator) |
 | `silkennet_ota_chunks_sent_total` | `firmware_version` | Total OTA firmware chunks transmitted to field devices |
 | `silkennet_panic_replay_rejected_total` | — | Panic packets rejected as replay via SEC.10 Frame Counter SETNX nonce |
 | `silkennet_partition_maintenance_failures_total` | — | PartitionMaintenanceWorker run failures (missing partition → day-1 INSERT crash risk) |
+| `silkennet_qatt_nonce_fallback_total` | — | Total Queen-attestation batch nonce checks falling back from Redis to DB-backed cache (Redis outage indicator) |
 | `silkennet_rpc_errors_total` | `network`, `error_type` | Total Web3 RPC errors |
 | `silkennet_scc_minted_total` | `token_type` | Total SCC (SilkenCarbonCoin) tokens minted |
 | `silkennet_scc_slashed_total` | — | Total tokens slashed (burned due to cluster stress) |

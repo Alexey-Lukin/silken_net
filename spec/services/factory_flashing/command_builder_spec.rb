@@ -74,6 +74,52 @@ RSpec.describe FactoryFlashing::CommandBuilder do
     it "does NOT write the Lorenz K_seed slot (gateway has no Lorenz attractor)" do
       expect(commands).to all(satisfy { |c| !c.include?("0x4C534544") })
     end
+
+    it "skips the EDSK slot when ed25519_seed_hex is absent (Queen стає L0)" do
+      expect(commands).to all(satisfy { |c| !c.include?("0x4544534B") })
+    end
+  end
+
+  # [L1 QATT] Голос Королеви — сім'я Ed25519 у Protected Flash (05_02 ladder L1)
+  describe "Гілка A — Gateway з ed25519_seed_hex" do
+    subject(:commands) do
+      described_class.new(
+        session: session,
+        device: gateway,
+        aes_key_hex: aes_coap_hex,
+        ed25519_seed_hex: ed25519_seed_hex
+      ).commands
+    end
+
+    let(:session) { build(:provisioning_session, gilka: "A", rdp_level: 1) }
+    let(:ed25519_seed_hex) { "53494C4B454E2D4E45542D4C312D514154542D474F4C44454E2D534545442121" }
+
+    it "writes EDSK magic + 8 seed words right after the KEYC block" do
+      expect(commands).to include("STM32_Programmer_CLI -w32 0x0803E064 0x4544534B")
+      # KEYC (9) + EDSK (9) word-команд
+      expect(commands.count { |c| c.include?("-w32") }).to eq(18)
+      # перше seed-слово BE — firmware розгортає word→BE-байти (FW.30-конвенція)
+      expect(commands).to include("STM32_Programmer_CLI -w32 0x0803E068 0x53494C4B")
+    end
+
+    it "rejects ed25519_seed_hex on a Tree (Gateway-only slot)" do
+      expect {
+        described_class.new(
+          session: session, device: tree,
+          aes_key_hex: aes_lora_hex, lorenz_seed_hex: k_seed_hex,
+          ed25519_seed_hex: ed25519_seed_hex
+        )
+      }.to raise_error(ArgumentError, /Gateway-only/)
+    end
+
+    it "rejects a non-64-hex seed" do
+      expect {
+        described_class.new(
+          session: session, device: gateway,
+          aes_key_hex: aes_coap_hex, ed25519_seed_hex: "BEEF"
+        )
+      }.to raise_error(ArgumentError, /64 hex/)
+    end
   end
 
   describe "Гілка B" do

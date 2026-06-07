@@ -102,11 +102,29 @@ module FactoryFlashing
 
     def build_commands(hw_key)
       CommandBuilder.new(
-        session:        @session,
-        device:         @device,
-        aes_key_hex:    hw_key.aes_key_hex,
-        lorenz_seed_hex: hw_key.lorenz_seed_hex
+        session:          @session,
+        device:           @device,
+        aes_key_hex:      hw_key.aes_key_hex,
+        lorenz_seed_hex:  hw_key.lorenz_seed_hex,
+        ed25519_seed_hex: gateway_voice_seed(hw_key)
       ).commands
+    end
+
+    # [L1 QATT] Сім'я голосу Королеви (Gateway, Гілка A). КРИТИЧНО: НЕ
+    # HKDF-від-master — інакше backend-compromise міг би вивести сім'ю і
+    # підробити підпис, тобто L1 не захищав би від того, від чого заявлений
+    # (канон: 05_02 ladder). Генерується тут (фабричний хост) на кожен flash;
+    # у БД персиститься ЛИШЕ pubkey (AuditTrail сирих байтів не пише — §3.4г),
+    # сама сім'я живе тільки у транскрипті процесу → Protected Flash.
+    # Re-flash → нова сім'я → pubkey ротується разом із нею (коректно).
+    # Гілка B (SE050) — on-chip keygen, інший механізм (SE050-MIGRATION).
+    def gateway_voice_seed(hw_key)
+      return nil unless @device.is_a?(Gateway)
+      return nil unless @session.gilka == "A"
+
+      seed_hex = SecureRandom.hex(32)
+      hw_key.update!(ed25519_public_key_hex: Ed25519Crypto::SigningService.public_key_from_seed(seed_hex))
+      seed_hex
     end
 
     def run_atecc_if_needed(hw_key)

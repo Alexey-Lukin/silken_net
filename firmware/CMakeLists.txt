@@ -44,16 +44,29 @@ target_compile_definitions(silken_common PUBLIC LOGMEL_USE_CMSIS)
 target_compile_options(silken_common PRIVATE -Wall -Wextra -Os)
 target_link_libraries(silken_common PUBLIC CMSISDSP)
 
+# --- [L1 QATT] Ed25519 batch-attestation (Monocypher, pinned submodule) ----
+# Голос Королеви: software-Ed25519 для підпису CoAP-батчів (docs/05_02 ladder
+# L1; pin-policy docs/03_01 §12.5). Окрема lib, щоб ARM-lane доводив
+# крос-компіляцію і `size` бачив чесний footprint.
+add_library(silken_attest STATIC
+  ${SILKEN_EXTERN}/monocypher/src/monocypher.c
+  ${SILKEN_EXTERN}/monocypher/src/optional/monocypher-ed25519.c)
+target_include_directories(silken_attest PUBLIC
+  ${SILKEN_EXTERN}/monocypher/src
+  ${SILKEN_EXTERN}/monocypher/src/optional
+  common)
+target_compile_options(silken_attest PRIVATE -Wall -Wextra -Os)
+
 if(CMAKE_CROSSCOMPILING)
   # Real ARM footprint of everything we own + the DSP lib it pulls in.
   # Honest owned-code footprint: silken_common is logmel.c (the DSP we author).
   # CMSIS-DSP links as-needed (gc-sections) so its true contribution is measured
   # at the final HAL link, not as the whole .a — see docs/03_01 §12.4.
   add_custom_target(size ALL
-    COMMAND ${CMAKE_SIZE_TOOL} $<TARGET_FILE:silken_common>
-    DEPENDS silken_common
+    COMMAND ${CMAKE_SIZE_TOOL} $<TARGET_FILE:silken_common> $<TARGET_FILE:silken_attest>
+    DEPENDS silken_common silken_attest
     VERBATIM
-    COMMENT "[FW.46] arm-none-eabi-size — owned DSP code (.text/.data/.bss)")
+    COMMENT "[FW.46] arm-none-eabi-size — owned DSP code + L1 attest lib (.text/.data/.bss)")
 
   # Full HAL-linked .elf — needs the vendored CubeMX project (HAL drivers,
   # linker script, startup, system_stm32wlxx.c). Wired in the HAL phase.
