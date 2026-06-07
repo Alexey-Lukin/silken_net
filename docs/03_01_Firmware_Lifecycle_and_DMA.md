@@ -57,7 +57,7 @@
 | **Призначення** | Повноцінна C/C++ IDE для STM32WLE5JC (ARM Cortex-M4 + SX1262 LoRa) |
 | **Включає** | STM32CubeMX — графічний конфігуратор GPIO, тактових дерев, периферії |
 | **Порт** | Налаштування GPIO pinout (PA9/PA10 UART, ADC, TIM2 DMA, RNG, CRYP) до отримання плат |
-| **Clock Tree** | Конфігурація HSE/LSE для STOP2 ultra-low-power режиму (цільове: 300 nA RTC-only — [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power); на TRL 6 baseline: 2.1 µA з SRAM2 retention) |
+| **Clock Tree** | Конфігурація HSE/LSE для STOP2 ultra-low-power режиму (цільове: 300 nA RTC-only — [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power); на TRL 6 baseline: 1.07 µA з SRAM2 retention) |
 | **HAL drivers** | Auto-генерація ініціалізаційного коду для I2C/SPI/ADC/UART/RTC/CRYP |
 | **Debugger** | Інтеграція з ST-LINK-V3MINIE: breakpoints, live variable watch, SWO trace |
 | **Збірка** | GCC ARM Embedded toolchain (вбудований у CubeIDE); той самий компілятор що й для host-тестів |
@@ -232,7 +232,7 @@ MacBook USB-A   ──── FT232RL                  ──── UART: TX→RX
 │  Phase 4.5: RX Window (only if Vcap > 2800 mV)         │
 │      Scenario A: OTA (0x99 marker) → Flash write        │
 │      Scenario B: Mesh relay (16 bytes, TTL > 0)         │
-│  Phase 5: Save to RTC Backup Domain → STOP2 (2.1 µA)   │
+│  Phase 5: Save to RTC Backup Domain → STOP2 (1.07 µA)  │
 └─────────────────────────────────────────────────────────┘
        ↑ Wake on RTC Alarm або GPIO EXTI (piezo disk)
 ```
