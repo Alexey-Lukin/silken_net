@@ -1,27 +1,27 @@
 # frozen_string_literal: true
 
-# [SEC.3 + SEC.6] Factory Flashing — Гілка B ATECC608B provisioning skeleton.
+# [SEC.3 + SEC.6] Factory Flashing — Гілка B Secure Element provisioning skeleton.
 #
-# Гілка B writes per-device keys into the ATECC608B Secure Element via I²C
-# instead of STM32 Protected Flash. The on-chip slot map (canonical SSOT in
-# docs/03_05 §3.7) is:
+# ⚠️ SE = NXP SE050 (2026-06-07, true-DePIN — docs/03_05 §3.7 SEC.6; supersedes
+# ATECC608B). This class is the LEGACY ATECC `atcab_*` / 16-slot skeleton, kept as
+# the audit provisioning-sequence placeholder. Full SE05x rewrite — object-model
+# instead of slots, on-chip Ed25519 keygen for the tree-voice, generic class-rename
+# (AteccProvisioner → SecureElementProvisioner), DB column atecc_serial_hex →
+# se_serial_hex — is bundled with the real-I²C work at eval-kit (00_07 SE050-MIGRATION).
+#
+# Гілка B writes per-device keys into the Secure Element via I²C instead of STM32
+# Protected Flash. Slot map (canonical SSOT — docs/03_05 §3.7):
 #
 #   Slot 0 → AES-128 LoRa session key   (16B)
-#   Slot 1 → ECC P-256 private key      (32B, device-attestation cert; NOT peaq/Solana — ті Ed25519)
+#   Slot 1 → Ed25519 private key        (32B, tree-voice L2 + peaq/Solana; SE050 on-chip keygen)
 #   Slot 2 → X.509 device certificate   (≤64B, DER)
 #   Slot 3 → HMAC-SHA256 OTA verify key (32B, K_ota — FW.23)
 #
-# This class emits the textual `atcab_*` call sequence in dependency order
-# (write → lock-config → lock-data → verify-serial). Real `cryptoauthlib`
-# I²C transport is intentionally **not** implemented here — the firmware
-# will perform the actual writes during the factory power-up self-test
-# (docs/03_05 §3.4 Гілка B Step 4). The emitted strings are persisted into
-# the AuditLog transcript so a future audit can reproduce the provisioning
-# steps verbatim.
-#
-# Once a real cryptoauthlib Ruby binding lands (post-TRL 7), `#provision`
-# can be swapped from emit-only to actual I²C without changing the public
-# API.
+# Emit-only (textual `atcab_*` — LEGACY ATECC API). Real cryptoauthlib/SE05x I²C
+# transport intentionally **not** implemented — firmware does the actual writes at
+# factory power-up self-test (docs/03_05 §3.4 Гілка B). Emitted strings → AuditLog
+# transcript for verbatim audit reproduction. Post-TRL 7: swap emit-only → real
+# SE05x I²C (public API unchanged).
 module FactoryFlashing
   class AteccProvisioner
     Result = Struct.new(:statements, :atecc_serial_hex, keyword_init: true)
@@ -72,9 +72,9 @@ module FactoryFlashing
       out << "atcab_write_zone(ATCA_ZONE_DATA, 0, 0, 0, #{wrap(@aes_key_hex)}, #{@aes_key_hex.length / 2}) # Slot 0 AES-128 LoRa"
 
       if @ecc_priv_hex
-        out << "atcab_write_zone(ATCA_ZONE_DATA, 1, 0, 0, #{wrap(@ecc_priv_hex)}, 32) # Slot 1 ECC P-256 priv"
+        out << "atcab_write_zone(ATCA_ZONE_DATA, 1, 0, 0, #{wrap(@ecc_priv_hex)}, 32) # Slot 1 Ed25519 priv (LEGACY write; SE050 → on-chip keygen)"
       else
-        out << "# Slot 1 ECC priv — TODO populate before device-attestation cert rollout (P-256; NOT peaq/Solana Ed25519)"
+        out << "# Slot 1 Ed25519 priv — TODO SE050 on-chip keygen (tree-voice L2 + peaq/Solana; key never exported)"
       end
 
       if @cert_der_hex

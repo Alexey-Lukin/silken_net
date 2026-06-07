@@ -18,7 +18,7 @@ RSpec.describe FactoryFlashing::AteccProvisioner do
       expect(result.statements.first).to include("atcab_init")
       expect(result.statements).to include(a_string_matching(/Slot 0 AES-128 LoRa/))
       expect(result.statements).to include(a_string_matching(/Slot 3 K_ota \(FW\.23\)/))
-      expect(result.statements).to include(a_string_matching(/Slot 1 ECC priv — TODO/))
+      expect(result.statements).to include(a_string_matching(/Slot 1 Ed25519 priv — TODO/))
       expect(result.statements).to include(a_string_matching(/Slot 2 cert — TODO/))
       expect(result.statements).to include("atcab_lock_config_zone()  # irreversible: slot policies frozen")
       expect(result.statements).to include("atcab_lock_data_zone()    # irreversible: all slot writes forbidden forever")
@@ -34,13 +34,13 @@ RSpec.describe FactoryFlashing::AteccProvisioner do
       expect(result.statements.join).not_to include(ota_hmac_hex)
     end
 
-    it "emits ECC priv statement when ecc_priv_hex is provided" do
+    it "emits Ed25519 priv statement when ecc_priv_hex is provided" do
       result = described_class.new(
         session: session, aes_key_hex: aes_key_hex, ota_hmac_hex: ota_hmac_hex, ecc_priv_hex: ecc_priv_hex
       ).provision
 
-      expect(result.statements).to include(a_string_matching(/Slot 1 ECC P-256 priv$/))
-      expect(result.statements).not_to include(a_string_matching(/Slot 1 ECC priv — TODO/))
+      expect(result.statements).to include(a_string_matching(/Slot 1 Ed25519 priv/))
+      expect(result.statements).not_to include(a_string_matching(/Slot 1 Ed25519 priv — TODO/))
     end
 
     it "emits cert statement when cert_der_hex is provided" do

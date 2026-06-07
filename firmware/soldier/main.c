@@ -102,8 +102,8 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 // [FW.1 + ARCH.42 Variant B, 2026-05-23] Flash-based LoRa AES-128 key provisioning.
 // Per-device unique key derived via HKDF-SHA256 on backend with info
 // "silken-aes-128-lora-key" (HardwareKeyService.derive_lora_key). 16 bytes
-// (4 × uint32_t). Узгоджено з ATECC608B Secure Element Slot 0 (AES-128 hardware
-// constraint). See docs/03_05 §3.1, §3.4а for full protocol.
+// (4 × uint32_t). Узгоджено з SE050 Secure Element Slot 0 (AES-128 LoRa вибір,
+// не SE-constraint). See docs/03_05 §3.7 (SE), §3.1/§3.4а (protocol).
 //
 // Factory Flashing writes lora_key to protected Flash sector 0x0803E000 via SWD
 // (STM32CubeProgrammer). Magic marker "KEYL" guards against unprovisioned chips.
@@ -165,7 +165,7 @@ CRYP_HandleTypeDef hcryp; // Апаратний криптопроцесор AES
 // (post-ARCH.42; було 36 байт для AES-256).
 // Якщо ключ не provisioned — Error_Handler() (пристрій не може працювати без ключа).
 // Hardcoded значення нижче — ТІЛЬКИ для ініціалізації змінної до виклику Load_AES_Key().
-uint32_t aes_key[4] = {0};   // 16 bytes = AES-128 (ARCH.42; ATECC608B SE constraint)
+uint32_t aes_key[4] = {0};   // 16 bytes = AES-128 (ARCH.42 LoRa-вибір; SE = SE050 — 03_05 §3.7)
 
 // [SEC.11 / FW.30] K_seed — per-device Lorenz seed for cold-start derivation.
 // Loaded from Protected Flash Sector via Load_Lorenz_Seed().
@@ -2409,14 +2409,14 @@ static void Derive_Cold_Start_State(float *x0, float *y0, float *z0)
 }
 
 // Функція конфігурації апаратного AES (Створюється автоматично CubeMX)
-// Post-ARCH.42 Variant B (2026-05-23): LoRa-канал на AES-128 (ATECC608B SE constraint).
+// Post-ARCH.42 Variant B (2026-05-23): LoRa-канал на AES-128 (вибір; SE = SE050 — 03_05 §3.7).
 // FW.2 target — `CRYP_AES_CCM` з 24-byte packet + 8-byte MIC; потребує hardware bench
 // для верифікації `HAL_CRYPEx_AESCCM_Encrypt` на STM32WLE5JC RM0461 §27.4.
 static void MX_CRYP_Init(void)
 {
   hcryp.Instance = AES;
   hcryp.Init.DataType = CRYP_DATATYPE_32B;
-  hcryp.Init.KeySize = CRYP_KEYSIZE_128B; // ARCH.42 Variant B — даунгрейд 256→128 (ATECC608B SE constraint)
+  hcryp.Init.KeySize = CRYP_KEYSIZE_128B; // ARCH.42 Variant B — AES-128 LoRa (вибір; SE = SE050 — 03_05 §3.7)
   hcryp.Init.pKey = aes_key;              // 4 × uint32_t = 16 bytes (post-ARCH.42)
   hcryp.Init.Algorithm = CRYP_AES_ECB;    // ECB transitional → TARGET: CRYP_AES_CCM (FW.2)
   HAL_CRYP_Init(&hcryp);
@@ -2462,7 +2462,7 @@ static uint32_t Load_Frame_Counter(void)
         // згасла. Монотонного джерела, що пережило б повну смерть живлення, тут
         // немає (RTC-календар і soldier_unix_ts обидва на дефолтах — час дає лише
         // beacon Королеви, якого ще не було; запис у Flash небезпечний при кволому
-        // пост-drain заряді; ATECC свідомо не будимо) → пересіваємо рівномірно-
+        // пост-drain заряді; SE свідомо не будимо) → пересіваємо рівномірно-
         // випадковим зерном. Канон політики + чесна оцінка залишкового ризику
         // (MEDIUM): docs/03_05 (КАНОНІЧНЕ ДЖЕРЕЛО — FW.2 FC/nonce).
         // HRNG з трьома спробами; кволого HAL_GetTick fallback НЕМАЄ — на холодному

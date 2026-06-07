@@ -68,7 +68,7 @@
 
 ## 6. Решта фізики (по item-ах 00_07)
 
-- **HW-AES-KEY/SEC.6:** ATECC608B eval kit (SEC.14 роль SE — рішення при BOM freeze) + live `cryptoauthlib` I²C.
+- **HW-AES-KEY/SEC.6:** SE050 eval kit (SEC.14 роль SE — рішення при BOM freeze; SE = SE050 — 03_05 §3.7 / 00_07 SE050-MIGRATION) + live SE05x I²C.
 - **BME280** I2C bring-up + gate-timing (VPD).
 - **Flash-KV на кремнії:** `HAL_FLASH_*` glue + ECCD-політика читання + erase-час vs LoRa RX (`03_01 §2.3` bench-residual).
 - **`Write_OTA_Contract_To_Flash`** — реалізувати тіло (FW.52(г)) до будь-якого OTA-дня.

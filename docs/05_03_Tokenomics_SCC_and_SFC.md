@@ -693,7 +693,7 @@ type ProtocolFinancials @entity {
 | **The Graph** | `subgraph/` — SCC та SFC events індексуються (⚠️ SFC: contract address placeholder) |
 | **Chainlink** | Oracle dispatch для Proof of Growth pipeline (⚠️ Hybrid mode) |
 | **peaq DID** | Верифікація `did:peaq:0x...` перед мінтингом |
-| **IoTeX W3bstream** | ZK-доказ апаратного походження телеметрії |
+| **IoTeX W3bstream** | ZK-доказ цілісності pipeline + DID-binding (апаратне *походження* = true-DePIN roadmap — [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)) |
 | **Polygon Hadron** | KYC/KYB (ERC-3643) — `hadron_kyc_status == "approved"` |
 | **KlimaDAO** | ESG carbon retirement (approve + retire) |
 | **Ethereum L1** | Weekly state root anchoring (SHA-256) |

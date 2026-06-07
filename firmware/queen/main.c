@@ -131,7 +131,7 @@
 // (per-Soldier lookup) + CoAP AES-256 key (Queen↔Rails magistral).
 //   FLASH_KEY_ADDR     → LoRa AES-128 key (16 bytes, magic "KEYL")
 //   FLASH_COAP_KEY_ADDR → CoAP AES-256 key (32 bytes, magic "KEYC") — slot after K_seed
-// Узгоджено з ATECC608B Secure Element: Slot 0 (AES-128 LoRa), Queen Protected Flash
+// Узгоджено з SE050 Secure Element (03_05 §3.7): Slot 0 (AES-128 LoRa), Queen Protected Flash
 // (AES-256 CoAP — без SE constraint, бо CoAP канал не проходить через SE).
 #define FLASH_KEY_ADDR            0x0803E000UL  // Protected Flash sector for LoRa AES-128 key
 #define FLASH_KEY_WORDS           4             // 4 × uint32_t = 16 bytes = 128 bits (ARCH.42)
@@ -167,7 +167,7 @@ IWDG_HandleTypeDef hiwdg; // [PLAN 2.6] Independent Watchdog для auto-recover
 // [FLASH_KEY_MAGIC:4][key[0]:4]...[key[3]:4] = 20 байт (post-ARCH.42; було 36 для AES-256).
 // Якщо ключ не provisioned — Error_Handler() (пристрій не може працювати без ключа).
 // Ініціалізація нулями — значення перезаписується Load_AES_Key() перед MX_CRYP_Init().
-uint32_t aes_key[4] = {0};   // 16 bytes = AES-128 LoRa (ATECC608B SE constraint)
+uint32_t aes_key[4] = {0};   // 16 bytes = AES-128 LoRa (SE = SE050 — 03_05 §3.7)
 
 // [ARCH.42 follow-up] CoAP AES-256 key — для batch flush Queen↔Rails (AES-256-CBC).
 // TODO: завантажується з окремого FLASH_COAP_KEY_ADDR через дедікований Factory
@@ -1450,7 +1450,7 @@ static void MX_CRYP_Init(void)
 {
   hcryp.Instance = AES;
   hcryp.Init.DataType = CRYP_DATATYPE_32B;
-  // Post-ARCH.42 Variant B (2026-05-23): LoRa-канал на AES-128 (ATECC608B SE constraint).
+  // Post-ARCH.42 Variant B (2026-05-23): LoRa-канал на AES-128 (вибір; SE = SE050 — 03_05 §3.7).
   // CoAP-канал (Queen→Rails) залишається AES-256-CBC — динамічна re-init в
   // Flush_Cache_To_Rails на CRYP_KEYSIZE_256B + coap_key, потім restore назад.
   hcryp.Init.KeySize = CRYP_KEYSIZE_128B;
