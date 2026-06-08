@@ -285,7 +285,7 @@ RSpec.describe InsightGeneratorService, type: :service do
     end
 
     context "with stress_index calculations" do
-      it "includes z-value penalty when |avg_z| > 2.0" do
+      it "[E.64] no longer penalizes raw avg_z (degenerate always-on term removed)" do
         create(:telemetry_log, tree: tree,
           temperature_c: 25.0, voltage_mv: 3500, z_value: 3.0,
           acoustic_events: 2, growth_points: 10,
@@ -295,11 +295,11 @@ RSpec.describe InsightGeneratorService, type: :service do
         described_class.call(date)
 
         insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
-        # homeostasis (0) → base 0.0, z=3.0 (>2.0) → +0.2 penalty
-        expect(insight.stress_index).to eq(0.2)
+        # [E.64] homeostasis(0); z=3.0 no longer adds +0.2 (z_eq≥9 → was always-on); sap/acoustic inert → 0
+        expect(insight.stress_index).to be_zero
       end
 
-      it "includes temperature penalty for extreme high temps" do
+      it "[E.64] no longer adds an ambient-temperature weather penalty (high or low)" do
         create(:telemetry_log, tree: tree,
           temperature_c: 40.0, voltage_mv: 3500, z_value: 0.5,
           acoustic_events: 2, growth_points: 10,
@@ -309,25 +309,11 @@ RSpec.describe InsightGeneratorService, type: :service do
         described_class.call(date)
 
         insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
-        # homeostasis (0) → base 0.0, z=0.5 (≤2.0) → no z penalty, temp=40 (>35) → +0.1
-        expect(insight.stress_index).to eq(0.1)
+        # [E.64] homeostasis(0); temp=40 no longer adds +0.1 (weather discounts via VPD gate, never adds) → 0
+        expect(insight.stress_index).to be_zero
       end
 
-      it "includes temperature penalty for extreme low temps" do
-        create(:telemetry_log, tree: tree,
-          temperature_c: -10.0, voltage_mv: 3500, z_value: 0.5,
-          acoustic_events: 2, growth_points: 10,
-          bio_status: :homeostasis, metabolism_s: 1000,
-          created_at: date.beginning_of_day + 12.hours)
-
-        described_class.call(date)
-
-        insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
-        # homeostasis (0) → base 0.0, temp=-10 (<-5) → +0.1
-        expect(insight.stress_index).to eq(0.1)
-      end
-
-      it "returns stress_index 1.0 for anomaly status (max_status >= 2)" do
+      it "[E.64] anomaly (status 2) → bounded 0.6, NOT 1.0 (05_05 §7 Z alone never slashes; < 0.83)" do
         create(:telemetry_log, tree: tree,
           temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
           acoustic_events: 2, growth_points: 5,
@@ -337,11 +323,16 @@ RSpec.describe InsightGeneratorService, type: :service do
         described_class.call(date)
 
         insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
-        # anomaly (2) → return 1.0 immediately
-        expect(insight.stress_index).to eq(1.0)
+        # [E.64] anomaly(2) → 0.6 base (no auto-1.0); below 0.83 tree slash threshold → cannot slash alone
+        expect(insight.stress_index).to eq(0.6)
       end
 
-      it "applies base stress 0.6 for status 1 with combined penalties" do
+      it "[E.64] tamper / VM-error (status 3) → 1.0 (contract-integrity failure, not Z-health)" do
+        service = described_class.new
+        expect(service.send(:calculate_stress_index_heuristic, 3, 25.0, 0, 0.5)).to eq(1.0)
+      end
+
+      it "[E.64] status 1 (stress) → bounded 0.6 (z/temp terms removed)" do
         create(:telemetry_log, tree: tree,
           temperature_c: 40.0, voltage_mv: 3500, z_value: 3.0,
           acoustic_events: 2, growth_points: 5,
@@ -351,15 +342,15 @@ RSpec.describe InsightGeneratorService, type: :service do
         described_class.call(date)
 
         insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
-        # stress (1) → base 0.6, z=3.0 (>2.0) → +0.2, temp=40 (>35) → +0.1 = 0.9, min(0.9, 0.99)
-        expect(insight.stress_index).to eq(0.9)
+        # [E.64] stress(1) → 0.6; z=3.0/temp=40 no longer contribute; sap/acoustic inert
+        expect(insight.stress_index).to eq(0.6)
       end
 
-      it "returns combined maximum of 0.9 for status 1 with all penalties applied" do
+      it "[E.64] calculate_stress_index status 1 → 0.6 (heuristic ignores z/temp)" do
         service = described_class.new
-        # status=1 (base=0.6) + z>2.0 (+0.2) + temp>35 (+0.1) = 0.9
+        # [E.64] status=1 → 0.6 base; avg_temp=40 / avg_z=3.0 no longer add
         result = service.send(:calculate_stress_index, 1, 40.0, 0, 3.0)
-        expect(result).to eq(0.9)
+        expect(result).to eq(0.6)
       end
     end
 
@@ -495,8 +486,8 @@ RSpec.describe InsightGeneratorService, type: :service do
       described_class.call(date)
 
       insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
-      # stress(1)=0.6 + z>2(+0.2) + temp>35(+0.1) = 0.9; VPD present but gate inert (no calibration)
-      expect(insight.stress_index).to eq(0.9)
+      # [E.64] stress(1) → 0.6 (z/temp terms removed); VPD present but gate inert → unchanged 0.6
+      expect(insight.stress_index).to eq(0.6)
       expect(insight.reasoning["avg_vpd"]).to eq(0.1)
     end
   end
@@ -559,8 +550,8 @@ RSpec.describe InsightGeneratorService, type: :service do
     let(:service) { described_class.new }
 
     it "leaves the heuristic unchanged by default (sap term inert despite low sap)" do
-      # status 1 (0.6) + z>2 (0.2) + temp>35 (0.1) = 0.9; sap inert while uncalibrated
-      expect(service.send(:calculate_stress_index_heuristic, 1, 40.0, 0, 3.0, -0.9)).to eq(0.9)
+      # [E.64] status 1 → 0.6 (z/temp removed); sap inert while uncalibrated → 0.6
+      expect(service.send(:calculate_stress_index_heuristic, 1, 40.0, 0, 3.0, -0.9)).to eq(0.6)
     end
 
     context "when calibrated" do
@@ -785,8 +776,8 @@ RSpec.describe InsightGeneratorService, type: :service do
         described_class.call(date)
 
         insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
-        # Heuristic fallback: homeostasis + z=3.0 penalty = 0.2
-        expect(insight.stress_index).to eq(0.2)
+        # [E.64] Heuristic fallback: homeostasis(0), z=3.0 no longer penalized → 0.0
+        expect(insight.stress_index).to be_zero
       end
     end
 
@@ -809,8 +800,8 @@ RSpec.describe InsightGeneratorService, type: :service do
         described_class.call(date)
 
         insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
-        # Heuristic fallback: homeostasis + z=3.0 penalty = 0.2
-        expect(insight.stress_index).to eq(0.2)
+        # [E.64] Heuristic fallback: homeostasis(0), z=3.0 no longer penalized → 0.0
+        expect(insight.stress_index).to be_zero
       end
     end
 
@@ -836,8 +827,8 @@ RSpec.describe InsightGeneratorService, type: :service do
         described_class.call(date)
 
         insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
-        # Heuristic fallback: homeostasis + z=3.0 penalty = 0.2
-        expect(insight.stress_index).to eq(0.2)
+        # [E.64] Heuristic fallback: homeostasis(0), z=3.0 no longer penalized → 0.0
+        expect(insight.stress_index).to be_zero
       end
     end
 

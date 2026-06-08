@@ -310,15 +310,24 @@ class InsightGeneratorService < ApplicationService
     end
   end
 
-  def calculate_stress_index_heuristic(max_status, avg_temp, max_acoustic, avg_z, sap_signed_deviation = 0.0)
-    return 1.0 if max_status >= 2
-    base_stress = (max_status == 1 ? 0.6 : 0.0)
-    base_stress += 0.2 if avg_z.abs > 2.0
-    base_stress += 0.1 if avg_temp > 35.0 || avg_temp < -5.0
+  # [E.64] Conformance with 05_05 §7 "Z alone never slashes" (audit #3).
+  # `_avg_temp`/`_avg_z` accepted for signature symmetry with the ML path but
+  # NO LONGER used by the heuristic — both were confounds (see below).
+  def calculate_stress_index_heuristic(max_status, _avg_temp, max_acoustic, _avg_z, sap_signed_deviation = 0.0)
+    # tamper / VM-error (status 3) = contract-integrity failure → max stress.
+    # A Z-derived ANOMALY (status 2) does NOT slash alone: it gets the same bounded
+    # base as stress (0.6 < 0.83 tree slash threshold, 05_05 §3), and only DIRECT
+    # signals (sap / cavitation) can carry it past the threshold.
+    return 1.0 if max_status >= 3
+    # [E.64] Removed two confounded terms: the always-on `avg_z>2 → +0.2` (z_eq=ρ−1≥9,
+    # so it never discriminated — a constant sitting at the 0.20 threshold) and the
+    # ambient `temp → +0.1` weather term (humid/extreme weather suppresses sap on a
+    # HEALTHY tree — the VPD gate DISCOUNTS for that; weather must never ADD stress).
+    # Stress now = status-category (Z-categorical, ρ-relative E.64) + DIRECT signals.
+    base_stress = (max_status >= 1 ? 0.6 : 0.0)   # stress(1)/anomaly(2): bounded < slash 0.83
     # sap_flow↓ and cavitation↑ are CORRELATED drought signals (one root cause) →
-    # take the STRONGER, never SUM (00_01 SLASH-SAFETY: correlated signals must not
-    # stack — corroboration raises confidence, not double the penalty). Both inert
-    # until ENV-calibrated.
+    # take the STRONGER, never SUM (00_01 SLASH-SAFETY: corroboration, not double-penalty).
+    # Both inert until ENV-calibrated.
     base_stress += [ sap_stress_contribution(sap_signed_deviation),
                     acoustic_stress_contribution(max_acoustic) ].max
     [ base_stress, 0.99 ].min
