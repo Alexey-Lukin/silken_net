@@ -141,10 +141,10 @@
 #define FLASH_KEY_WORDS           4             // 4 × uint32_t = 16 bytes = 128 bits (ARCH.42)
 #define FLASH_KEY_MAGIC           0x4B45594CUL  // "KEYL" — LoRa key magic (post-ARCH.42; was "SKEY")
 
-// [ARCH.42] Окремий CoAP AES-256 key — TODO follow-up: load from a separate
-// Protected Flash slot after K_seed via dedicated Factory Flashing step.
-// Поточно: zeroed at boot; Flush_Cache_To_Rails має використати цей буфер після
-// окремого Load_CoAP_Key() кроку у Factory Flashing pipeline.
+// [ARCH.42] Окремий CoAP AES-256 key — завантажується Load_CoAP_Key() при boot
+// з цього Protected Flash slot ([KEYC][32B], який пише CommandBuilder бекенду).
+// М'який fallback: dev/sim без KEYC лишаються з нулями (не Error_Handler, на
+// відміну від LoRa-ключа; виявлення — бекенд decrypt-метрика).
 #define FLASH_COAP_KEY_ADDR       0x0803E040UL  // [KEYC][aes_coap:32] — дзеркало CommandBuilder FLASH_COAP_KEY_ADDR
 #define FLASH_COAP_KEY_WORDS      8             // 8 × uint32_t = 32 bytes = 256 bits CoAP
 #define FLASH_COAP_KEY_MAGIC      0x4B455943UL  // "KEYC" — CoAP key magic
@@ -1093,7 +1093,7 @@ void Flush_Cache_To_Rails(void)
     //    повертає LoRa context (CRYP_KEYSIZE_128B + aes_key[4] + ECB).
     hcryp.Init.Algorithm = CRYP_AES_CBC;
     hcryp.Init.KeySize   = CRYP_KEYSIZE_256B;   // CoAP AES-256 (без SE constraint)
-    hcryp.Init.pKey      = coap_key;            // 8 × uint32_t = 32 bytes (TODO: load from FLASH_COAP_KEY_ADDR)
+    hcryp.Init.pKey      = coap_key;            // 8 × uint32_t = 32 bytes (Load_CoAP_Key @boot з FLASH_COAP_KEY_ADDR)
     hcryp.Init.pInitVect = batch_iv;
     HAL_CRYP_Init(&hcryp);
 
@@ -1455,7 +1455,7 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
 //   [0] FLASH_KEY_MAGIC (0x4B45594C = "KEYL") — маркер LoRa-ключа
 //   [1..4] aes_key[0..3] — 4 × uint32_t = 128 bits LoRa AES-128 key
 // Загальний розмір регіону = 4 + 16 = 20 байт (було 4 + 32 = 36 для AES-256).
-// CoAP AES-256 ключ для Queen↔Rails — окремий FLASH_COAP_KEY_ADDR slot (TODO).
+// CoAP AES-256 ключ для Queen↔Rails — окремий FLASH_COAP_KEY_ADDR slot (Load_CoAP_Key @boot).
 //
 // Якщо magic відсутній або ключ нульовий — пристрій не provisioned,
 // Error_Handler() викликає software reset. Пристрій не може працювати
