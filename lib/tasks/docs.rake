@@ -57,6 +57,7 @@ namespace :docs do
     rate_drift  = []  # hard: tokenomics/carbon rate value re-stated outside its One-Home (05_03/07_01)
     bare_doc    = []  # hard: bare code-span `NN_NN` doc-id (no §) that should be a full link
     xref_form   = []  # hard: doc-id link label not in the single code-span form (00_06 §1)
+    superseded_fm = [] # hard: superseded term (ATECC608B) in 🎯/Статус front-matter
     graph_docs  = {}  # id "NN_NN" → text, for the #anchor-resolution gate (DocsGraph)
     doc_trls    = {}  # basename → member-TRL int (from ✅ Статус), for the 00_03 §1 band guard
 
@@ -105,6 +106,7 @@ namespace :docs do
       rate_drift.concat(DocsLinter.tokenomics_rate_drift(base, text).map { |h| "#{base}: #{h}" })
       bare_doc.concat(DocsLinter.bare_doc_ref(base, text, valid_ids).map { |h| "#{base}: #{h}" })
       xref_form.concat(DocsLinter.crossref_label_form(text).map { |h| "#{base}: #{h}" })
+      superseded_fm.concat(DocsLinter.superseded_term_in_frontmatter(base, text).map { |h| "#{base}: #{h}" })
     end
 
     # [external doc-path drift] HARD — non-docs repo files (.github/**, root *.md, source
@@ -272,6 +274,12 @@ namespace :docs do
       puts "  DEPRECATED TERMS (#{deprecated.size}) — retired SSOT tokens (DocsLinter::DEPRECATED_TERMS):"
       deprecated.sort.each { |d| puts "    ✗ #{d}" }
     end
+    if superseded_fm.empty?
+      puts "  superseded front-matter: no reversed-decision term in any 🎯/Статус ✓"
+    else
+      puts "  SUPERSEDED TERM IN FRONT-MATTER (#{superseded_fm.size}) — 🎯/Статус must name the CURRENT decision:"
+      superseded_fm.sort.each { |d| puts "    ✗ #{d}" }
+    end
     if label_drift.empty?
       puts "  link label↔href: every doc-link label leads with the doc it points to ✓"
     else
@@ -304,6 +312,7 @@ namespace :docs do
     failed << "Lorenz-formula drift (β re-stated outside 03_04 §4.1)" unless lorenz_drift.empty?
     failed << "retired growth_points clamp `(…,10,63)` (FW.29-PACK → 03_04 §4.3)" unless gp_clamp.empty?
     failed << "deprecated SSOT terms present" unless deprecated.empty?
+    failed << "superseded term in front-matter (🎯/Статус names a reversed decision)" unless superseded_fm.empty?
     failed << "tokenomics/carbon rate restated outside One-Home (05_03/07_01)" unless rate_drift.empty?
     failed << "bare code-span `NN_NN §X` refs (should be `[`…`](Doc)` links)" unless bare_refs.empty?
     failed << "bare code-span `NN_NN` doc-ids (should be `[`…`](Doc)` links)" unless bare_doc.empty?

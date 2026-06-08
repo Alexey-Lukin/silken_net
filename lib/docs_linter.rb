@@ -290,6 +290,32 @@ module DocsLinter
     end
   end
 
+  # [SSOT anti-drift] Superseded term in FRONT-MATTER (HARD). A decision that was
+  # REVERSED (e.g. ATECC608B → SE050, SEC.6 2026-06-07) can legitimately survive in
+  # the BODY as a documented legacy/reusable pattern — so `deprecated_terms` cannot
+  # ban it outright — but it must NOT appear in the doc's FRONT-MATTER (🎯 Мета /
+  # ✅ Статус), where only the CURRENT decision belongs. That is exactly how the
+  # SE050 migration left 03_05's 🎯 still naming ATECC608B as the current SE — a
+  # silent drift the structure-map's 🎯-column surfaced but no per-line gate caught.
+  # Scans ONLY the front-matter slice (between the 🎯 Мета and 🔗 Cross-references
+  # headings); the body is untouched (legacy pattern is allowed there).
+  SUPERSEDED_FRONTMATTER = {
+    "ATECC608B" => "SE = SE050 (`03_05 §3.7`, SEC.6); ATECC608B survives only as a legacy provisioning-pattern in the body"
+  }.freeze
+
+  SUPERSEDED_FM_EXEMPT = %w[00_06 00_07].freeze
+
+  def superseded_term_in_frontmatter(basename, text)
+    return [] if SUPERSEDED_FM_EXEMPT.any? { |prefix| basename.start_with?(prefix) }
+
+    m = text.match(/^##\s*🎯(?<front>.*?)^##\s*🔗/m)
+    return [] unless m
+
+    SUPERSEDED_FRONTMATTER.filter_map do |term, hint|
+      "superseded term `#{term}` in front-matter (🎯/✅) → #{hint}" if m[:front].include?(term)
+    end
+  end
+
   # [SSOT anti-drift] Link label ↔ href doc mismatch (HARD). A cross-ref written
   # `[`NN_NN §X`](NN_NN_Name)` must point at the SAME doc its visible label cites.
   # When the label LEADS with one NN_NN but the href resolves to a different doc,

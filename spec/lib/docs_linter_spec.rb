@@ -327,6 +327,32 @@ RSpec.describe DocsLinter do
     end
   end
 
+  describe ".superseded_term_in_frontmatter" do
+    let(:doc) do
+      ->(se) { "# 03_05: Crypto\n## 🎯 Мета\nKey mgmt via #{se} Secure Element for LoRa.\n## ✅ Статус\nTRL 6\n## 🔗 Cross-references\nbody...\n" }
+    end
+
+    it "flags a superseded term inside the 🎯/Статус front-matter" do
+      hits = described_class.superseded_term_in_frontmatter("03_05", doc.call("ATECC608B"))
+      expect(hits).not_to be_empty
+      expect(hits.first).to include("SE050")
+    end
+
+    it "ignores the term in the BODY (legacy pattern is allowed there)" do
+      text = "## 🎯 Мета\nSE = SE050.\n## 🔗 Cross-references\n## 3.2 Legacy\nATECC608B provisioning pattern lives here."
+      expect(described_class.superseded_term_in_frontmatter("03_05", text)).to be_empty
+    end
+
+    it "exempts the standard (00_06) and the tracker (00_07)" do
+      expect(described_class.superseded_term_in_frontmatter("00_07", doc.call("ATECC608B"))).to be_empty
+      expect(described_class.superseded_term_in_frontmatter("00_06", doc.call("ATECC608B"))).to be_empty
+    end
+
+    it "is clean when the front-matter names the current SE" do
+      expect(described_class.superseded_term_in_frontmatter("03_05", doc.call("SE050"))).to be_empty
+    end
+  end
+
   describe ".link_label_target_mismatch" do
     it "flags a label leading with a different doc-ID than the href resolves to" do
       hits = described_class.link_label_target_mismatch("див. [`00_06 §2/§4`](00_05_GitHub_Projects_and_IaC_Automation)")

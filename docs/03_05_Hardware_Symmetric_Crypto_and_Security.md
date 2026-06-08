@@ -10,7 +10,7 @@
 
 ## 🎯 Мета
 
-Зафіксувати детальний криптографічний пайплайн вузлів **Soldier** (датчик дерева) та **Queen** (шлюз-агрегатор): режими роботи AES (CCM для LoRa, CBC для CoAP), структуру зашифрованих пакетів, управління ключами (HKDF per-device + ATECC608B Secure Element для LoRa), генерацію вектора ініціалізації (IV/Nonce) та довгостроковий PQC migration roadmap. Документ є SSOT для Hardware Security Audit перед масовим виробничим розгортанням.
+Зафіксувати детальний криптографічний пайплайн вузлів **Soldier** (датчик дерева) та **Queen** (шлюз-агрегатор): режими роботи AES (CCM для LoRa, CBC для CoAP), структуру зашифрованих пакетів, управління ключами (HKDF per-device + SE050 Secure Element — голос-дерева Ed25519/attestation, SEC.6; деталі §3.7), генерацію вектора ініціалізації (IV/Nonce) та довгостроковий PQC migration roadmap. Документ є SSOT для Hardware Security Audit перед масовим виробничим розгортанням.
 
 ---
 
@@ -76,7 +76,7 @@
 | **HRNG Fallback — передбачуваний seed** | ✅ Reuse закрито (`coap_iv.h`: uid×device + unix_ts×reboot + flush_seq×flush + 4 host-тести); 🟡 predictability residual **low-severity** (no chosen-plaintext на CoAP — §HRNG Fallback) |
 | **Відсутність ротації ключів (Key Rotation)** | 🟡 OPEN (рекомендовано Hash Ratchet KDF — PFS без передачі ключа; PQC bridge через §10) |
 | **ECB Restoration Race (HAL_CRYP_Init failure)** | ✅ Виправлено (SEC.8) — RCC reset + `NVIC_SystemReset()` при апаратному збої |
-| **ATECC608B Secure Element — LoRa AES-128 + ECC P-256 [ARCH.42 enabler]** | 🟡 OPEN — slot mapping + I²C integration spec'нуто у §3.7; bench eval kit замовлення = HW-task |
+| **SE050 Secure Element — голос-дерева Ed25519 + AES-128 LoRa [SEC.6 RESOLVED → §3.7]** | 🟡 OPEN (hardware) — eval-kit + datasheet-verify (Ed25519/monotonic-counters/AES-128/I²C); ADR ✅ §3.7 |
 | **PQC migration roadmap (2026 → 2028 → 2035)** | 🟢 NEW — задокументовано у §10 (TRL-stratified layering для Soldier↔Queen, Queen↔Rails, OTA, peaq DID) |
 
 ---
@@ -721,6 +721,8 @@ Load_AES_Key();  // reads from FLASH_KEY_ADDR, validates magic "KEYL",
 **Сервіс автоматично запускається при кожному production boot — будь-яка ротація, яка пройшла повз runbook, буде заблокована до старту HTTP сервера.** Це й закриває SEC.9 line 668 🤖.
 
 ### 3.2 Secure Element (ATECC608B) — після ARCH.42
+
+> ⚠️ **SUPERSEDED → §3.7 (SEC.6 RESOLVED 2026-06-07):** SE = **NXP SE050** (true-DePIN «голос дерева» — non-extractable Ed25519), НЕ ATECC608B (реверс рішення 2026-05-23). Нижче (§3.2 + §3.4 Гілка B) лишено як **legacy ATECC provisioning-патерн** — factory-integration механіка **reusable для SE050**, тож не видаляється; чинне рішення, ціна, slot-map, ladder — **§3.7**.
 
 > 🎯 **ARCH.42 Variant B (2026-05-23) — ВИБРАНО:** ATECC608B Microchip (~$0.85/unit @ 10k MOQ) як єдиний SE для (а) LoRa AES-128 ключ у Slot 0, (б) ECC P-256 device identity у Slot 1, (в) device cert у Slot 2, (г) OTA HMAC-SHA256 ключ у Slot 3. AES-128 — апаратний maximum ATECC608B. Альтернативи (NXP SE050 / STSAFE-A110) розглядаються лише як future hedge у §10 PQC roadmap.
 
