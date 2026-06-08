@@ -596,8 +596,9 @@
 
 #### FW.50 — Vcap ADC: raw counts використовуються як мВ (без конверсії)
 - **P0** · 👤🤖 · → [`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA)
-- **Знахідка:** `vcap_voltage = HAL_ADC_GetValue()` (канал VREFINT) — сирий 12-bit відлік (~1500) скрізь трактується як мВ: пакування байтів 4-5, пороги `VCAP_LISTEN_THRESHOLD=2800`/`COLD_TX_DEFER=4000`/`FAUNA=4500` мВ, EMA, `vcap_mv` у mruby. На залізі RX-вікно (>2800) не відкриється ніколи, а Vcap-енергогейт — з фейкових значень. Плюс: VREFINT міряє VDDA (за buck'ом — константа), НЕ Vcap EDLC; для Vcap потрібен дільник на окремий ADC-канал (hardware, `02_01`/`02_03`).
-- [ ] 👤 схемна вилка: розводка Vcap на окремий ADC-пін (цільовий тракт BQ25570 VBAT_SEC — `02_01 §7.1`; OV/пороги — `02_03`) · [x] 🤖 pure-helper `Adc_Raw_To_Mv()` (VREFINT factory-cal @0x1FFF75AA + дільник-параметр, без запеченого номіналу) + host-тести — `firmware/common/adc_convert.h` (One-Home); жива розводка НЕ ввімкнена (чекає дільника+окремого каналу) · [ ] 👤 bench-калібрування (DMM-точки vs `Adc_Raw_To_Mv` — RUNBOOK §3.4)
+- **✅ Знахідка + helper канонізовано ([`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA)):** `vcap_voltage` — сирий 12-bit ADC-відлік (канал VREFINT = VDDA за buck'ом, не Vcap EDLC) трактувався скрізь як мВ (пороги/EMA/`vcap_mv`) → RX-вікно/Vcap-енергогейт з фейкових величин. Pure-helper `Adc_Raw_To_Mv()` (factory VREFINT-cal + дільник-параметр) + host-тести (`adc_convert.h`, One-Home) ✅; жива розводка НЕ ввімкнена. Лишається:
+  - [ ] 👤 схемна вилка: розводка Vcap на окремий ADC-пін (цільовий тракт BQ25570 **VBAT_SEC** — [`02_01 §7.1`](02_01_Hardware_Architecture_and_BOM); дільник-номінали — [`02_03`](02_03_BQ25570_MPPT_Nano_Power)).
+  - [ ] 👤 bench-калібрування (DMM-точки vs `Adc_Raw_To_Mv` — RUNBOOK §3.4).
 
 #### FW.52 — OTA throughput by-design: 1 RX-пакет/пробудження + give-up без печатки
 - **P2** · 👤 · → [`03_02 §5`](03_02_Queen_Gateway_Firmware)
