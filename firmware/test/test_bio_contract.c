@@ -125,13 +125,17 @@ static uint8_t evaluate_and_pack(uint32_t seed, int8_t temp, uint8_t acoustic,
                                  uint16_t delta_t_s) {
     double z_val = calculate_z_axis_from_seed(seed, temp, acoustic);
 
+    /* [E.64] ρ-relative anomaly ceiling — same ρ expr + clamp as calculate_z_axis. */
+    double local_rho = clamp_d(BASE_RHO + (temp * 0.2), RHO_MIN, RHO_MAX);
+    double anomaly_ceiling = local_rho + (CRITICAL_Z_MAX - BASE_RHO);
+
     int status = 0;
     int growth_points = 0;
 
     if (z_val < CRITICAL_Z_MIN) {
         status = BIO_STATUS_STRESS;
         growth_points = 1;
-    } else if (z_val > CRITICAL_Z_MAX) {
+    } else if (z_val > anomaly_ceiling) {
         status = BIO_STATUS_ANOMALY;
         growth_points = 0;
     } else {
@@ -355,12 +359,14 @@ static void test_status_stress_growth_points_is_1(void) {
 
 static void test_status_anomaly_growth_points_is_0(void) {
     /* When status is ANOMALY (z > 45.0), growth_points must be 0 */
-    double z_val = 50.0; /* above CRITICAL_Z_MAX */
+    /* [E.64] ρ-relative ceiling = ρ + (CRITICAL_Z_MAX - BASE_RHO); at ρ=BASE_RHO → 45 */
+    double z_val = 50.0; /* above the ρ=BASE_RHO ceiling (45) */
+    double anomaly_ceiling = BASE_RHO + (CRITICAL_Z_MAX - BASE_RHO);
     int status = 0, growth_points = 0;
     if (z_val < CRITICAL_Z_MIN) {
         status = BIO_STATUS_STRESS;
         growth_points = 1;
-    } else if (z_val > CRITICAL_Z_MAX) {
+    } else if (z_val > anomaly_ceiling) {
         status = BIO_STATUS_ANOMALY;
         growth_points = 0;
     }
@@ -468,18 +474,20 @@ static void test_z_axis_sensitivity_to_acoustic(void) {
 }
 
 static void test_growth_points_at_boundary_z(void) {
+    /* [E.64] ceiling at ρ=BASE_RHO = CRITICAL_Z_MAX (45) */
+    double anomaly_ceiling = BASE_RHO + (CRITICAL_Z_MAX - BASE_RHO);
     /* z_val = 2.0 (CRITICAL_Z_MIN) is NOT < 2.0 → homeostasis */
     double z_val = CRITICAL_Z_MIN;
     int status = (z_val < CRITICAL_Z_MIN) ? BIO_STATUS_STRESS
-               : (z_val > CRITICAL_Z_MAX) ? BIO_STATUS_ANOMALY
+               : (z_val > anomaly_ceiling) ? BIO_STATUS_ANOMALY
                : BIO_STATUS_HOMEOSTASIS;
     ASSERT(status == BIO_STATUS_HOMEOSTASIS,
            "test_growth_points_at_z_min_boundary_is_homeostasis");
 
-    /* z_val = 45.0 (CRITICAL_Z_MAX) is NOT > 45.0 → homeostasis */
+    /* z_val = 45.0 (= ceiling at ρ=BASE_RHO) is NOT > ceiling → homeostasis */
     z_val = CRITICAL_Z_MAX;
     status = (z_val < CRITICAL_Z_MIN) ? BIO_STATUS_STRESS
-           : (z_val > CRITICAL_Z_MAX) ? BIO_STATUS_ANOMALY
+           : (z_val > anomaly_ceiling) ? BIO_STATUS_ANOMALY
            : BIO_STATUS_HOMEOSTASIS;
     ASSERT(status == BIO_STATUS_HOMEOSTASIS,
            "test_growth_points_at_z_max_boundary_is_homeostasis");

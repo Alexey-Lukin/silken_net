@@ -114,7 +114,12 @@ module SilkenNet
     def self.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s = Attractor::BASELINE_DELTA_T_S, vcap_mv = Attractor::NOMINAL_VCAP_MV)
       _ = vcap_mv  # [E.63] vcap прибрано з винагороди (FW.50 raw-ADC); reserved
       z_val, x_final, y_final, z_final = Attractor.calculate_z_axis(x_prev, y_prev, z_prev, temp, acoustic)
-      payload_byte = pack_status_byte(z_val, delta_t_s)
+      # [E.64] ρ для ρ-відносної anomaly — той самий вираз і clamp, що в Attractor.iterate
+      # (DCI: backend рахує ідентично з temp у пакеті).
+      local_rho = Attractor::BASE_RHO + (temp * 0.2)
+      local_rho = Attractor::RHO_MIN if local_rho < Attractor::RHO_MIN
+      local_rho = Attractor::RHO_MAX if local_rho > Attractor::RHO_MAX
+      payload_byte = pack_status_byte(z_val, delta_t_s, local_rho)
       [ payload_byte, x_final, y_final, z_final ]
     end
 
@@ -123,12 +128,18 @@ module SilkenNet
     # PanicFlag заповнюється C-side; нормальні пакети завжди роблять
     # `lora_payload[10] &= ~PANIC_FLAG_BIT`. Тому pack_status_byte НІКОЛИ не
     # ставить bit 7 — status (2 біти) у bits 6..5, growth_points (5 біт) у 4..0.
-    def self.pack_status_byte(z_val, delta_t_s = Attractor::BASELINE_DELTA_T_S)
+    def self.pack_status_byte(z_val, delta_t_s = Attractor::BASELINE_DELTA_T_S, local_rho = Attractor::BASE_RHO)
+      # [E.64] Аномалія — ρ-ВІДНОСНА: z поза temp-очікуваною обвідною. Поріг
+      # anomaly_ceiling = ρ + (CRITICAL_Z_MAX − BASE_RHO) (offset 17 → зберігає 45 при
+      # ρ=28). Раніше absolute z>45 → теплий день (високий z_eq=ρ−1) хибно тригерив
+      # anomaly й обнуляв growth_points. Присуд + докази — 00_07 E.64. Stress (колапс
+      # конвекції до ~origin) лишається absolute (z<2) — справжній зрив, рідкісний.
+      anomaly_ceiling = local_rho + (CRITICAL_Z_MAX - Attractor::BASE_RHO)
       if z_val < CRITICAL_Z_MIN
-        status = 1            # Раннє попередження (посуха / втрата тургору)
+        status = 1            # Раннє попередження (посуха / втрата тургору / колапс)
         growth_points = 1     # Мінімальна генерація — дерево виживає
-      elsif z_val > CRITICAL_Z_MAX
-        status = 2            # Аномалія (критичний стрес)
+      elsif z_val > anomaly_ceiling
+        status = 2            # Аномалія (вихід за temp-обвідну — справжній зрив)
         growth_points = 0     # Емісія зупиняється
       else
         status = 0            # Гомеостаз (здоровий хаос)

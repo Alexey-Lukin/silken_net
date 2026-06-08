@@ -499,7 +499,10 @@ class TelemetryUnpackerService < ApplicationService
     return if server_z.nil? || device_bio_status.nil?
 
     thresholds = tree.effective_lorenz_thresholds
-    server_healthy = server_z.between?(thresholds[:min], thresholds[:max])
+    # [E.64] ρ-відносна стеля аномалії (дзеркало firmware bio_contract.rb): ambient-temp
+    # не дає хибний DCI-mismatch. homeostasis = z ≥ min (absolute) і ≤ ρ-relative ceiling.
+    ceiling = SilkenNet::Attractor.anomaly_ceiling(attributes[:temperature_c], thresholds[:max])
+    server_healthy = server_z >= thresholds[:min] && server_z <= ceiling
     device_healthy = device_bio_status == :homeostasis
 
     # [FW.31] Optional numeric drift check (feature-flagged, default off).
@@ -565,7 +568,9 @@ class TelemetryUnpackerService < ApplicationService
     candidates.each do |epoch_day|
       x0, y0, z0 = SilkenNet::SeedDerivation.initial_state(seed_bytes, epoch_day)
       z_candidate, = SilkenNet::Attractor.calculate_z_from_state(x0, y0, z0, temp, acoustic, delta_t, vcap)
-      candidate_healthy = z_candidate.between?(thresholds[:min], thresholds[:max])
+      # [E.64] ρ-відносна стеля (як у check_z_divergence!) — temp вже визначено вище.
+      candidate_healthy = z_candidate >= thresholds[:min] &&
+        z_candidate <= SilkenNet::Attractor.anomaly_ceiling(temp, thresholds[:max])
 
       next unless candidate_healthy == device_healthy
 

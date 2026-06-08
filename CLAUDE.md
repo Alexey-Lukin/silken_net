@@ -53,9 +53,9 @@ make -C firmware/test
    ```
    Формула growth_points [E.63 — Лоренц гейтить СТАТУС, метаболізм задає БАЛИ]:
    ```ruby
-   # CRITICAL_Z_MIN=2.0, CRITICAL_Z_MAX=45.0 (Лоренц-гейт статусу)
-   if z_val < 2.0  then status=1, growth_points=1   # stress
-   elsif z_val > 45.0 then status=2, growth_points=0  # anomaly
+   # CRITICAL_Z_MIN=2.0 (stress, absolute); anomaly_ceiling = ρ + (CRITICAL_Z_MAX−BASE_RHO) [E.64 ρ-relative, =45 при ρ=28]
+   if z_val < 2.0  then status=1, growth_points=1   # stress (колапс конвекції)
+   elsif z_val > anomaly_ceiling then status=2, growth_points=0  # anomaly (E.64: ρ-relative — ambient-temp не тригерить хибну)
    else  status=0  # homeostasis: growth_points = метаболічна жвавість m(delta_t), НЕ |29-z|
      growth_points = metabolic_health_points(delta_t_s)  # монотонно: швидший перезаряд → більше
    end

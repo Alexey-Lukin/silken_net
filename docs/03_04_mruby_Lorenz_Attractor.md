@@ -360,7 +360,7 @@ end
 
 ## 🌡️ 4. Логіка Гомеостазу: Z → growth_points
 
-> **⚠️ [Lorenz de-risk → E.64 присуд, 2026-06-08]** Мапінг **Z → bio_status — не просто «недоведена гіпотеза», а емпірично degenerate + temp-confounded** (paired-ensemble на реальному коді, [`00_07` — E.64](00_07_Action_Plan_Tracker)): `stress` (z<2) **недосяжний** (ρ-clamp 10 → z_eq≥9); `anomaly` (z>45) тригериться **ambient-температурою** (здорове дерево в теплий день → хибна аномалія → обнуляє growth_points). **[E.63] growth_points БІЛЬШЕ НЕ Z-похідні** (магнітуда = метаболізм `m(delta_t)`, §4.3) — Лоренц лишився лише status-гейтом. Політика: фінансовий slashing **ніколи** не спирається лише на Z (прямі сигнали sap_flow / VPD / acoustic; [`05_05 §7`](05_05_Slashing_and_Risk_Policy)); Lorenz-**DCI** (device-Z ≡ server-Z anti-fraud) валідний **незалежно**. Фікс status-гейту (ρ-відносний поріг) — E.64.
+> **⚠️ [Lorenz de-risk → E.64 присуд, 2026-06-08]** Мапінг **Z → bio_status — не просто «недоведена гіпотеза», а емпірично degenerate + temp-confounded** (paired-ensemble на реальному коді, [`00_07` — E.64](00_07_Action_Plan_Tracker)): `stress` (z<2) **недосяжний** (ρ-clamp 10 → z_eq≥9); `anomaly` (z>45) **тригерилася ambient-температурою** (здорове дерево в теплий день → хибна аномалія → обнуляла growth_points). **[E.63] growth_points БІЛЬШЕ НЕ Z-похідні** (магнітуда = метаболізм `m(delta_t)`, §4.3) — Лоренц лишився лише status-гейтом. Політика: фінансовий slashing **ніколи** не спирається лише на Z (прямі сигнали sap_flow / VPD / acoustic; [`05_05 §7`](05_05_Slashing_and_Risk_Policy)); Lorenz-**DCI** (device-Z ≡ server-Z anti-fraud) валідний **незалежно**. **✅ Фікс (E.64, 2026-06-08):** anomaly-поріг тепер **ρ-відносний** — `z > ρ + (CRITICAL_Z_MAX−BASE_RHO)` (=45 при ρ=28) → ambient-temp більше НЕ тригерить хибну аномалію (warm-day false-anomaly 22%→3%). `stress` (z<2 absolute) лишено — справжній колапс конвекції, рідкісний за дизайном.
 
 ### 4.1 Межі Стабільності та Їх Фізична Інтерпретація
 
@@ -379,7 +379,7 @@ end
 | Z-значення | Статус (`bio_status`) | Назва | growth_points | Пояснення |
 |---|---|---|---|---|
 | `z < 2.0` | `1` | ⚠️ Stress (Посуха) | `1` | Мінімальна генерація — дерево виживає, але не росте |
-| `z > 45.0` | `2` | 🚨 Anomaly (Критичний стрес) | `0` | Емісія зупиняється повністю |
+| `z > ρ+17` (=45 при ρ=28) | `2` | 🚨 Anomaly (вихід за temp-обвідну) | `0` | Емісія зупиняється; [E.64] ρ-відносний поріг |
 | `2.0 ≤ z ≤ 45.0` | `0` | ✅ Homeostasis (Здоровий Хаос) | `5 .. 31` (wire); `10 .. 62` (stored ×2) | Бали = метаболічна жвавість `m(delta_t)` (§4.3) |
 
 ### 4.3 Функція Нарахування Балів у Зоні Гомеостазу — Метаболічна Жвавість [E.63]
@@ -413,7 +413,7 @@ growth_points  = (5 + m * 26).round.clamp(5, 31)   # 5-бітний wire (FW.29-
 
 > 📐 **Wire vs Stored:** Wire `growth_points` — 5-бітне поле, яке Soldier пакує у StatusByte; backend `TelemetryUnpackerService` робить `(status_byte & 0x1F) * 2` → Stored (`TelemetryLog#growth_points`). Калібрувальні `DELTA_T_FAST_S`/`DELTA_T_SLOW_S` — placeholder (bench, E.63); таблиця оновиться після зміряної recharge-кривої.
 
-(Поза гомеостазом — гейт §4.2: `z < 2` → wire 1 / stored 2 (стрес); `z > 45` → wire 0 (аномалія).)
+(Поза гомеостазом — гейт §4.2: `z < 2` → wire 1 / stored 2 (стрес, absolute); `z > ρ+17` → wire 0 (аномалія, [E.64] ρ-відносна, =45 при ρ=28).)
 
 ### 4.4 Bit-Packing: Структура Байту BioContract
 
@@ -519,7 +519,9 @@ def check_z_divergence!(tree, attributes)
   return if server_z.nil? || device_bio_status.nil?
 
   thresholds = tree.effective_lorenz_thresholds
-  server_healthy = server_z.between?(thresholds[:min], thresholds[:max])
+  # [E.64] ρ-відносна стеля аномалії (дзеркало firmware): ambient-temp не дає хибний mismatch
+  ceiling = SilkenNet::Attractor.anomaly_ceiling(attributes[:temperature_c], thresholds[:max])
+  server_healthy = server_z >= thresholds[:min] && server_z <= ceiling
   device_healthy = device_bio_status == :homeostasis
   # ...
 end

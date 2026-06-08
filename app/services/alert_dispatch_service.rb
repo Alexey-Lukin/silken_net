@@ -71,7 +71,7 @@ class AlertDispatchService
     end
 
     # 4. ПОСУХА ТА АТРАКТОР (Mathematical Homeostasis)
-    is_out_of_homeostasis = !SilkenNet::Attractor.homeostatic?(telemetry_log.z_value, family)
+    is_out_of_homeostasis = !SilkenNet::Attractor.homeostatic?(telemetry_log.z_value, family, telemetry_log.temperature_c)
 
     if telemetry_log.bio_status_stress? || is_out_of_homeostasis
       msg = is_out_of_homeostasis ? "🌀 АТРАКТОР: Дестабілізація (Z: #{telemetry_log.z_value})." : "💧 ПОСУХА: Гідрологічний стрес."

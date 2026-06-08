@@ -70,24 +70,34 @@ RSpec.describe SilkenNet::Attractor do
     end
   end
 
-  describe ".homeostatic?" do
+  describe ".homeostatic? [E.64 ρ-relative anomaly ceiling]" do
     let(:family) { build(:tree_family, critical_z_min: 5.0, critical_z_max: 45.0) }
 
-    it "returns true when z_value is within family bounds" do
-      expect(described_class.homeostatic?(25.0, family)).to be true
+    it "returns true when z within bounds (temp=0 → ρ=28 → ceiling=45)" do
+      expect(described_class.homeostatic?(25.0, family, 0.0)).to be true
     end
 
-    it "returns false when z_value is below critical_z_min" do
-      expect(described_class.homeostatic?(3.0, family)).to be false
+    it "returns false below critical_z_min (absolute stress floor)" do
+      expect(described_class.homeostatic?(3.0, family, 0.0)).to be false
     end
 
-    it "returns false when z_value is above critical_z_max" do
-      expect(described_class.homeostatic?(50.0, family)).to be false
+    it "returns false above the ρ-relative anomaly ceiling (temp=0 → 45)" do
+      expect(described_class.homeostatic?(50.0, family, 0.0)).to be false
     end
 
-    it "returns true at boundary values (inclusive)" do
-      expect(described_class.homeostatic?(5.0, family)).to be true
-      expect(described_class.homeostatic?(45.0, family)).to be true
+    it "returns true at boundary values (inclusive, temp=0)" do
+      expect(described_class.homeostatic?(5.0, family, 0.0)).to be true
+      expect(described_class.homeostatic?(45.0, family, 0.0)).to be true
+    end
+
+    it "[E.64] warm temp raises the ceiling — z=50 anomaly@temp=0, homeostatic@temp=60" do
+      # temp=60 → ρ=40 → ceiling = 40 + (45-28) = 57; z=50 < 57 → homeostatic (not a warm-day false anomaly)
+      expect(described_class.homeostatic?(50.0, family, 0.0)).to be false
+      expect(described_class.homeostatic?(50.0, family, 60.0)).to be true
+    end
+
+    it "[E.64] anomaly_ceiling preserves critical_z_max at ρ=BASE_RHO (temp=0)" do
+      expect(described_class.anomaly_ceiling(0.0, 45.0)).to be_within(1e-9).of(45.0)
     end
   end
 

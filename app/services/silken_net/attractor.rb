@@ -66,8 +66,19 @@ module SilkenNet
       [ z.round(4), x, y, z ]
     end
 
-    def self.homeostatic?(z_value, tree_family)
-      z_value.between?(tree_family.critical_z_min, tree_family.critical_z_max)
+    # [E.64] ρ-відносна верхня межа аномалії: ceiling = ρ(temp) + (critical_z_max − BASE_RHO).
+    # Зберігає absolute critical_z_max при ρ=BASE_RHO; ambient-temp більше НЕ тригерить
+    # хибну аномалію (дзеркало firmware bio_contract.rb pack_status_byte). Присуд — 00_07 E.64.
+    def self.anomaly_ceiling(temp, critical_z_max)
+      rho = (BASE_RHO + temp.to_f * 0.2).clamp(RHO_LIMITS.min, RHO_LIMITS.max)
+      rho + (critical_z_max.to_f - BASE_RHO)
+    end
+
+    # [E.64] homeostasis = вище stress-підлоги (absolute critical_z_min) і нижче
+    # ρ-відносної anomaly-стелі. `temp` обов'язковий (потрібен для ρ).
+    def self.homeostatic?(z_value, tree_family, temp)
+      z_value >= tree_family.critical_z_min &&
+        z_value <= anomaly_ceiling(temp, tree_family.critical_z_max)
     end
 
     # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
