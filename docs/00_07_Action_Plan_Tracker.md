@@ -609,10 +609,6 @@
 - [x] ✅ 🤖 **(г) DONE (2026-06-08) — `Write_OTA_Contract_To_Flash` тіло:** `firmware/common/flash_ota.{h,c}` (`Flash_Write_Contract` — erase contract-сторінки 126 + dw-program; **power-cut-safe: RITE-magic dw ОСТАННІМ** → перерваний запис = нема magic = boot-fallback на embedded) + host-тест `test_flash_ota.c` (8/8: round-trip · magic-last · erase-fail · reject) + `main.c` HAL-glue (`g_ota_flash_ops`). Закриває «прототип без тіла → лінк падав при HAL-фазі». Reuse `FlashKvOps` (§2.3 патерн). 👤 residual: HAL_FLASH-фаза на STM32 bench.
 - [ ] 👤 рішення: прийняти повільний OTA як design або 🤖 re-arm RX у межах вікна при активній OTA-збірці (енергогейт vcap) + Queen: тримати `ota_is_active` до печатки/таймаута
 
-#### FW.53 — OTA wire-contract integrity (CRC32-trailer + явний CoAP len + CRC16-verify)
-- **P0** · 🤖 · → [`03_01 §4.6`](03_01_Firmware_Lifecycle_and_DMA)
-- ✅ OTA був зламаний end-to-end **двома** шарами: (1) бекенд НЕ додавав CRC32, який Soldier вимагає останніми 4 байтами зібраного перед Flash → кожен OTA гинув на integrity-gate; (2) Queen вгадувала довжину чанка з CBC zero-padding (формула `aligned−16−7`) → систематично обрізала 1..16 байт кожного чанка (повний 512B→500B), а CRC16 від бекенду не перевірявся. · [x] 🤖 `OtaPackagerService` будує wire-потік `bytecode + zero-pad + CRC32(BE)`, вирівняний на LoRa-MTU (Soldier рахує отримане як MTU×chunks → CRC32 лягає в кінець останнього чанка); HMAC над padded bytecode (дзеркало Soldier dual-gate) · [x] 🤖 CoAP-формат `[0x99][idx:2][total:2][len:2][bytecode:len][crc16:2]` + CRC16-verify (One-Home `firmware/common/silken_crc.h`, спільний Soldier/Queen/тести) · [x] 🤖 Soldier+Queen OTA campaign-change reset (мертва недозібрана кампанія більше не блокує живу) · [x] 🤖 host-тести (повний-512 не обрізано, CRC16-mismatch/lying-len reject) + rspec packager/integration. Cross-ref: FW.23 (HMAC trailer), FW.27-B (re-request), FW.52.
-
 #### FW.54 — STOP2 RTC-only 300nA: SRAM2-off → RAM-стан (Flash-KV vs RTC-реклемація)
 - **P2** · 🤖+👤 · → [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)
 - **Знахідка (FW.49 нора):** цільовий 300nA-режим (`03_01 §1.10`, «наступний firmware-цикл») вимикає SRAM2 retention (`PWR.CR3 RRS=0`, −800nA) → стан переживає STOP2 ТІЛЬКИ в RTC Backup. Але RAM-only глобали (`warning_counter` ескалації, вторинні wall-маркери, ota_buffer) гинуть щоцикл → ескалація/OTA-збірка ламаються у 300nA-режимі. **Уточнення (інвентар 2026-06-07):** EMA + mesh-кеш `recent_mesh_dids` живуть у RTC (DR10/12, DR8/9/11) → **виживають** (попередній опис помилково додавав їх до втрат); головний delta_t wall-маркер реюзає DR1. Зчеплення: FW.49 ↔ FW.20-S2 ↔ FW.21.
@@ -1117,6 +1113,7 @@
 | FW.29 | Panic vs saturated acoustic disambiguation (PANIC_FLAG_BIT) | `03_03 §5.3` |
 | FW.29-PACK | StatusByte layout collision fix (5-bit growth_points) | `03_01 §11.5`, `03_04 §4.3-5.2`, `05_02` |
 | FW.51 | Queen flush: пакування лише рахує (`packed_count`); CIFO-слоти звільняються ЛИШЕ при `send_success` (доставка, не транспорт-OK) → провал retry (LTE-діра) не губить годину телеметрії; dedup оновлює held DID; caller свідомо energy-conservative (без retry-шторму) | `03_02 §3/§4` |
+| FW.53 | OTA wire-contract integrity: backend CRC32-trailer (Soldier integrity-gate) + явний `len` + CRC16-verify (Queen більше не вгадує довжину з CBC-pad → не обрізає 1..16 байт чанка); `OtaPackagerService` wire-потік; campaign-change reset (мертва кампанія не блокує живу) | `03_01 §4.6`, `04_02`, `03_02 §5` |
 | S6.12 | TokenomicsEvaluator oracle-guards audit (KYC all-paths) | `04_02`, `05_02` |
 | BIZ.4 | DAO Governance (SilkenGovernor + Timelock) | `05_06`, `07_01` |
 | PUMA-RACK-1 | Idempotency write off response path (`rack.response_finished`) | `06_05 §7` |
