@@ -71,7 +71,12 @@ class AlertDispatchService
     end
 
     # 4. ПОСУХА ТА АТРАКТОР (Mathematical Homeostasis)
-    is_out_of_homeostasis = !SilkenNet::Attractor.homeostatic?(telemetry_log.z_value, family, telemetry_log.temperature_c)
+    # [FW.57 F2] anomaly_ceiling uses the device's RAW temp (DCI anchor), not the
+    # drift-corrected temperature_c — recover raw = temperature_c − offset (exact
+    # while offset == 0; alert is near-real-time so it hasn't moved). Fire/display
+    # above intentionally keep the calibrated physical value.
+    raw_temp = telemetry_log.temperature_c - (tree.device_calibration&.temperature_offset_c || 0.0)
+    is_out_of_homeostasis = !SilkenNet::Attractor.homeostatic?(telemetry_log.z_value, family, raw_temp)
 
     if telemetry_log.bio_status_stress? || is_out_of_homeostasis
       msg = is_out_of_homeostasis ? "🌀 АТРАКТОР: Дестабілізація (Z: #{telemetry_log.z_value})." : "💧 ПОСУХА: Гідрологічний стрес."

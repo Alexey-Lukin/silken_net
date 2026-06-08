@@ -34,6 +34,28 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     allow(StreamrBroadcastWorker).to receive(:perform_async)
   end
 
+  describe "[FW.57 F2] Lorenz/DCI uses the raw wire temp, not drift-corrected temperature_c" do
+    it "passes the RAW wire temp to the attractor; persists the calibrated value" do
+      tree.device_calibration.update!(temperature_offset_c: 3.0)
+      captured = nil
+      allow(SilkenNet::Attractor).to receive(:calculate_z_from_state) do |*args|
+        captured = args
+        [ 0.5, 0.1, 0.2, 0.3 ]
+      end
+
+      described_class.call(build_chunk(did_hex, -70, 3500, 22, 5, 100, 10, 3))
+
+      expect(captured[3]).to eq(22)                       # raw wire temp — NOT 25 (22 + 3 offset)
+      expect(TelemetryLog.last.temperature_c).to eq(25.0) # calibrated value still persisted
+    end
+
+    it "#lorenz_temperature prefers the threaded raw temp, else falls back to temperature_c" do
+      service = described_class.new("", nil)
+      expect(service.send(:lorenz_temperature, { temperature_c: 25.0, lorenz_temperature_c: 22 })).to eq(22)
+      expect(service.send(:lorenz_temperature, { temperature_c: 22.0 })).to eq(22.0)
+    end
+  end
+
   it "returns early when binary_batch is blank" do
     expect { described_class.call(nil) }.not_to change(TelemetryLog, :count)
     expect { described_class.call("") }.not_to change(TelemetryLog, :count)

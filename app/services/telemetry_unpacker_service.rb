@@ -173,6 +173,7 @@ class TelemetryUnpackerService < ApplicationService
       rssi: actual_rssi,
       voltage_mv: calibration.normalize_voltage(parsed_data[1]),
       temperature_c: calibration.normalize_temperature(parsed_data[2]),
+      lorenz_temperature_c: parsed_data[2], # [FW.57 F2] raw wire temp — DCI anchor (stripped pre-persist)
       acoustic_events: parsed_data[3],
       metabolism_s: parsed_data[4],
       # [FW.29-PACK] Wire-формат байту 10: [PanicFlag:1 (bit 7) | Status:2 (bits 6..5) | GrowthPoints:5 (bits 4..0)].
@@ -320,6 +321,7 @@ class TelemetryUnpackerService < ApplicationService
       rssi: actual_rssi,
       voltage_mv: calibration.normalize_voltage(vcap_mv),
       temperature_c: calibration.normalize_temperature(temp_c),
+      lorenz_temperature_c: temp_c, # [FW.57 F2] raw wire temp — DCI anchor (stripped pre-persist)
       acoustic_events: acoustic,
       metabolism_s: delta_t_s,
       growth_points: emission_eligible_growth_points(status_byte, bio_status),
@@ -404,6 +406,17 @@ class TelemetryUnpackerService < ApplicationService
   # no legacy devices, see SEC.11 hard-cutover decision).
   class MissingLorenzSeedError < StandardError; end
 
+  # [FW.57 F2] The Lorenz/DCI temperature is the device's RAW wire reading (what
+  # firmware packed Z from), NOT the drift-corrected `temperature_c` (physical/
+  # display). They coincide while `temperature_offset_c == 0` (today), but a
+  # future temp drift-calibration would make `temperature_c` diverge → server_z
+  # would chaotically miss device_z (a 5°C offset shifts Z by up to ~16 units)
+  # and false-flag fraud on every calibrated node. Z + anomaly_ceiling use this;
+  # the calibrated value is persisted for physical/display only. 00_07 — FW.57.
+  def lorenz_temperature(attributes)
+    attributes[:lorenz_temperature_c] || attributes[:temperature_c]
+  end
+
   def compute_server_z(tree, log_attributes)
     seed_bytes = tree.hardware_key&.binary_lorenz_seed
     raise MissingLorenzSeedError, "Tree #{tree.did} has no provisioned K_seed" if seed_bytes.nil?
@@ -414,7 +427,7 @@ class TelemetryUnpackerService < ApplicationService
 
     z_rounded, x_final, y_final, z_final = SilkenNet::Attractor.calculate_z_from_state(
       x0, y0, z0,
-      log_attributes[:temperature_c],
+      lorenz_temperature(log_attributes),
       log_attributes[:acoustic_events],
       log_attributes[:metabolism_s],
       log_attributes[:voltage_mv]
@@ -537,7 +550,7 @@ class TelemetryUnpackerService < ApplicationService
     thresholds = tree.effective_lorenz_thresholds
     # [E.64] ρ-відносна стеля аномалії (дзеркало firmware bio_contract.rb): ambient-temp
     # не дає хибний DCI-mismatch. homeostasis = z ≥ min (absolute) і ≤ ρ-relative ceiling.
-    ceiling = SilkenNet::Attractor.anomaly_ceiling(attributes[:temperature_c], thresholds[:max])
+    ceiling = SilkenNet::Attractor.anomaly_ceiling(lorenz_temperature(attributes), thresholds[:max])
     server_healthy = server_z >= thresholds[:min] && server_z <= ceiling
     device_healthy = device_bio_status == :homeostasis
 
@@ -596,7 +609,7 @@ class TelemetryUnpackerService < ApplicationService
     today = SilkenNet::SeedDerivation.current_epoch_day
     candidates = [ today, today - 1, FIRMWARE_RTC_DEFAULT_EPOCH_DAY ]
 
-    temp     = attributes[:temperature_c]
+    temp     = lorenz_temperature(attributes)
     acoustic = attributes[:acoustic_events]
     delta_t  = attributes[:metabolism_s]
     vcap     = attributes[:voltage_mv]
@@ -653,7 +666,9 @@ class TelemetryUnpackerService < ApplicationService
     # Транзакція фіксує телеметрію та стан дерева як єдине ціле.
     # Wallet credit, Sidekiq jobs та alert dispatch винесено ЗА межі транзакції (див. нижче).
     log = ActiveRecord::Base.transaction do
-      record = tree.telemetry_logs.create!(attributes)
+      # [FW.57 F2] :lorenz_temperature_c is a transient DCI input (raw wire temp),
+      # not a column — strip it before persisting (calibrated temperature_c stays).
+      record = tree.telemetry_logs.create!(attributes.except(:lorenz_temperature_c))
 
       # [OBSERVABILITY]: Count successfully committed telemetry chunks
       SilkenNet::Metrics::TELEMETRY_PROCESSED_TOTAL.increment

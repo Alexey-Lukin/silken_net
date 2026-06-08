@@ -34,6 +34,11 @@ class DeviceCalibration < ApplicationRecord
   # НОРМАЛІЗАЦІЯ СИГНАЛУ (The Signal Purifier)
   # =========================================================================
 
+  # [FW.57 F2] Display/physical calibration ONLY — `temperature_c` feeds the UI,
+  # fire-threshold and analytics. It is NOT the Lorenz/DCI temperature: server-side
+  # Z + anomaly_ceiling use the device's RAW wire temp (what firmware packed Z
+  # from), else a non-zero offset would chaotically diverge server_z from device_z
+  # and false-flag fraud. See TelemetryUnpackerService#lorenz_temperature.
   def normalize_temperature(raw_temp_c)
     (raw_temp_c + temperature_offset_c).round(2)
   end
