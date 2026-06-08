@@ -850,8 +850,8 @@ static void EMA_Update(uint32_t raw_dt_sec, uint16_t raw_vcap_mv) {
 }
 
 // Зчитуємо згладжені значення в оригінальних одиницях (секунди / мВ).
-// Конвертації у мілісекунди для β-пертурбації mruby — задача FW.5 B+
-// (потребує координованого backend апдейту, тут не реалізовано).
+// [E.63] delta_t → growth_points напряму у mruby (метаболічна m(delta_t),
+// 03_04 §4.3); β більше не збурюється. vcap reserved (FW.50 raw-ADC).
 static inline uint32_t EMA_Get_DeltaT_Sec(void) { return ema_delta_t_x100 / 100u; }
 static inline uint16_t EMA_Get_Vcap_Mv  (void) { return (uint16_t)(ema_vcap_x10 / 10u); }
 

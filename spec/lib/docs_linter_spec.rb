@@ -234,7 +234,7 @@ RSpec.describe DocsLinter do
     it "flags the retired `clamp(reward, 10, 63)` wire range outside the owner" do
       hits = described_class.growth_points_clamp_drift("05_02_Pipeline", "growth_points = clamp(reward, 10, 63)\n")
       expect(hits.size).to eq(1)
-      expect(hits.first).to include("5, 31")
+      expect(hits.first).to include("metabolic_health")
     end
 
     it "flags the retired clamp even inside a table cell (the real manifest:78 drift)" do
@@ -242,17 +242,21 @@ RSpec.describe DocsLinter do
       expect(described_class.growth_points_clamp_drift("manifest", row)).not_to be_empty
     end
 
-    it "exempts the owner docs (03_04 §4.3 + firmware-lifecycle 03_01) and the standard/tracker" do
-      old = "`(reward / 2).clamp(5, 31)` замість `clamp(reward, 10, 63)`\n"
+    it "exempts the owner doc (03_04 §4.3, may keep history) + standard/tracker" do
+      old = "`(reward / 2).clamp(5, 31)` from `50 - deviation`\n"
       expect(described_class.growth_points_clamp_drift("03_04_mruby_Lorenz_Attractor", old)).to be_empty
-      expect(described_class.growth_points_clamp_drift("03_01_Firmware_Lifecycle_and_DMA", old)).to be_empty
       expect(described_class.growth_points_clamp_drift("00_06_SSOT_Documentation_Standard", old)).to be_empty
       expect(described_class.growth_points_clamp_drift("00_07_Action_Plan_Tracker", old)).to be_empty
     end
 
-    it "does NOT flag the current FW.29-PACK form `(reward / 2).clamp(5, 31)` / stored 10, 62" do
-      expect(described_class.growth_points_clamp_drift("05_02_Pipeline", "growth_points = (reward / 2).clamp(5, 31)\n")).to be_empty
-      expect(described_class.growth_points_clamp_drift("manifest", "`clamp(50 − |Z − 29|, 10, 62)`\n")).to be_empty
+    it "[E.63] flags retired `(reward / 2)` / `50 - deviation` outside owner (03_01 no longer exempt)" do
+      expect(described_class.growth_points_clamp_drift("03_01_Firmware_Lifecycle_and_DMA", "growth_points = (reward / 2).clamp(5, 31)\n")).not_to be_empty
+      expect(described_class.growth_points_clamp_drift("05_02_Pipeline", "reward = 50 - deviation.round\n")).not_to be_empty
+    end
+
+    it "[E.63] does NOT flag the live metabolic form `5 + m * 26` / metabolic_health" do
+      expect(described_class.growth_points_clamp_drift("05_02_Pipeline", "growth_points = (5 + m * 26).round.clamp(5, 31)\n")).to be_empty
+      expect(described_class.growth_points_clamp_drift("03_03_TinyML", "m = metabolic_health(delta_t_s)\n")).to be_empty
     end
   end
 

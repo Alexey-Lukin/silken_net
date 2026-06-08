@@ -181,7 +181,7 @@ hcryp.Init.Algorithm = CRYP_AES_ECB;          // ECB transitional — TARGET: CR
 | 0..1 | `Vcap_mv` | uint16 BE | 0..65535 мВ (фактично 0..5500) | повна 1 мВ-роздільність, як у поточному 16B |
 | 2 | `temp_c` | int8 | −128..+127 °C | без змін |
 | 3 | `acoustic_events` | uint8 (saturating) | 0..255 | FW.22 — saturating increment, без overflow ambiguity |
-| 4..5 | `delta_t_s` | uint16 BE | 0..65535 сек (≈ 18 год) | повна роздільність — критично для FW.5 B+ β-перетурбації |
+| 4..5 | `delta_t_s` | uint16 BE | 0..65535 сек (≈ 18 год) | повна роздільність — критично для [E.63] метаболічного `growth_points` (delta_t→GP, backend відтворює) |
 | 6 | `status_byte` | bitfield | `[panic:1 \| status:2 \| growth_points:5]` | FW.29 PANIC_FLAG_BIT (bit 7) + status (bits 6..5) + growth (bits 4..0); зменшено growth з 6 → 5 бітів (0..31), масштабований діапазон у `bio_contract.rb` |
 | 7 | `mesh_ctrl` | bitfield | `[ttl:4 \| fw_version_id_low:4]` | TTL у верхніх 4 бітах (FW.10, max 15 hop), FW low-nibble (16-version rotation epoch керується OTA config) |
 

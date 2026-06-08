@@ -295,7 +295,7 @@ HAL_ADC_Stop(&hadc);
 
 > ⚠️ **Чому два окремих цикли?** STM32 ADC з подвійним каналом (температура + VREFINT) вимагає перемикання між каналами. Роздвоєний Start/Stop запобігає deadlock при прочитанні VREFINT одразу після температурного каналу.
 
-> **🔴 `vcap_voltage` — сирий ADC-відлік, не мВ.** `HAL_ADC_GetValue()` повертає 12-bit count (0..4095), а код скрізь трактує його ЯК мілівольти: пакування байтів 4-5, пороги `VCAP_LISTEN_THRESHOLD=2800` / `COLD_TX_DEFER_VCAP_MV=4000` / `FAUNA_VCAP_MIN_MV=4500`, EMA, `vcap_mv` у mruby. На реальному залізі raw VREFINT ≈ 1500 → RX-вікно (>2800) не відкриється ніколи, а β-пертурбація рахується з фейкових величин. Додатково: VREFINT міряє **VDDA** (за buck-регулятором — майже константа), а НЕ напругу EDLC-іоністора; для Vcap потрібен окремий ADC-канал з дільником (цільовий тракт = BQ25570 VBAT_SEC, [`02_01 §7.1`](02_01_Hardware_Architecture_and_BOM)). Pure-helper `Adc_Raw_To_Mv()` з factory VREFINT-калібруванням ✅ реалізовано + host-тести (`firmware/common/adc_convert.h`, One-Home); жива розводка (окремий ADC-канал Vcap + резистивний дільник) лишається hardware-гейтом — трекінг [`00_07` — FW.50](00_07_Action_Plan_Tracker), номінали дільника узгодити з [`02_03`](02_03_BQ25570_MPPT_Nano_Power).
+> **🔴 `vcap_voltage` — сирий ADC-відлік, не мВ.** `HAL_ADC_GetValue()` повертає 12-bit count (0..4095), а код скрізь трактує його ЯК мілівольти: пакування байтів 4-5, пороги `VCAP_LISTEN_THRESHOLD=2800` / `COLD_TX_DEFER_VCAP_MV=4000` / `FAUNA_VCAP_MIN_MV=4500`, EMA, `vcap_mv` у mruby. На реальному залізі raw VREFINT ≈ 1500 → RX-вікно (>2800) не відкриється ніколи, а Vcap-енергогейт працює з фейкових величин. Додатково: VREFINT міряє **VDDA** (за buck-регулятором — майже константа), а НЕ напругу EDLC-іоністора; для Vcap потрібен окремий ADC-канал з дільником (цільовий тракт = BQ25570 VBAT_SEC, [`02_01 §7.1`](02_01_Hardware_Architecture_and_BOM)). Pure-helper `Adc_Raw_To_Mv()` з factory VREFINT-калібруванням ✅ реалізовано + host-тести (`firmware/common/adc_convert.h`, One-Home); жива розводка (окремий ADC-канал Vcap + резистивний дільник) лишається hardware-гейтом — трекінг [`00_07` — FW.50](00_07_Action_Plan_Tracker), номінали дільника узгодити з [`02_03`](02_03_BQ25570_MPPT_Nano_Power).
 
 **HRNG (Chaos Seed):**
 ```c
@@ -1322,12 +1322,10 @@ elsif z_val > CRITICAL_Z_MAX   # Аномалія
   status = 2; growth_points = 0
 else                           # Гомеостаз
   status = 0
-  deviation = (OPTIMAL_Z_TARGET - z_val).abs
-  reward = 50 - deviation.round          # FW.13: .round замість .to_i (математично коректне округлення)
-  # [FW.29-PACK] Wire-діапазон скорочено з 6-біт (10..63) до 5-біт (5..31)
-  # щоб звільнити bit 7 під PANIC_FLAG_BIT (FW.29). Backend ×2 upscale зберігає
-  # tokenomic emission rate (effective stored 10..62 vs old 10..63).
-  growth_points = (reward / 2).clamp(5, 31)
+  # [E.63] growth_points = монотонна метаболічна жвавість зі швидкості перезаряду
+  # (delta_t), а НЕ |29−z| (та була хаотичним шумом). Формула m(delta_t)→GP +
+  # калібрувальні пороги — SSOT 03_04 §4.3 (One-Home, тут не дублюємо).
+  growth_points = metabolic_growth_points(delta_t_s)   # 5-bit wire (5..31)
 end
 
 # [FW.29-PACK] Layout: [PanicFlag:1 (bit 7) | Status:2 (bits 6..5) | GrowthPoints:5 (bits 4..0)].

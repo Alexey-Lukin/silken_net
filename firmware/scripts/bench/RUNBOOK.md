@@ -46,7 +46,7 @@
 |---|---|---|
 | 3.1 STOP2 floor | `03_power_profile.py --mode floor` (PPK2 source-meter) | CSV; ціль ~300 нА RTC-only (`03_01 §1.10`); **300 нА підтвердити JS220/SMU** (PPK2 floor) |
 | 3.2 Active-цикл енергія | `03_power_profile.py --mode cycle` | E_cycle мДж — прямий вхід у E.63 (повний SENSE→TX) |
-| 3.3 **Vcap recharge-крива** | `03_power_profile.py --mode recharge` | CSV кривої = медіана delta_t → калібрування `BASELINE_DELTA_T_S`/`BETA_DELTA_T_COEFF` (E.63) |
+| 3.3 **Vcap recharge-крива** | `03_power_profile.py --mode recharge` | CSV кривої = медіана delta_t → калібрування `DELTA_T_FAST_S`/`DELTA_T_SLOW_S` (E.63 метаболічний growth_points, `03_04 §4.3`) |
 | 3.4 Vcap ADC калібрування | DMM vs `Adc_Raw_To_Mv` після розводки дільника | таблиця точок (FW.50) |
 
 ## 4. Час/RTC (FW.49 / FW.20)

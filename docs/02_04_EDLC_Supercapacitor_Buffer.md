@@ -109,7 +109,7 @@ Ruby-код на сервері перевіряє стан гомеостазу
 - Для точного вимірювання $V_{OC}$ можна використати зовнішній 24-бітний ADC (наприклад, **ADS1220** від TI, ~$6.00) з режимом duty cycling (споживання 120 нА у сні, пробудження за мілісекунди). Однак для поточного TRL 6 вбудований 12-бітний ADC STM32WLE5JC є достатнім.
 - Ця інформація дозволяє **не «штрафувати» дерево за апаратну деградацію**.
 
-> **⚠️ DCI-safe архітектура [HW.19, verified 2026-05-29].** Корекцію застосовувати **НЕ в Z-математиці.** `SilkenNet::Attractor` — бітове дзеркало firmware `bio_contract.rb` для **Dual Computation Integrity** (server-Z мусить == device-Z). Firmware VOC не має → якщо сервер скоригує `perturb_beta`/Z за VOC, server-Z розійдеться з device-Z → `check_z_divergence!` флагне фрод на **кожному** пакеті. Тому:
+> **⚠️ DCI-safe архітектура [HW.19, verified 2026-05-29].** Корекцію застосовувати **НЕ в Z-математиці.** `SilkenNet::Attractor` — бітове дзеркало firmware `bio_contract.rb` для **Dual Computation Integrity** (server-Z мусить == device-Z). Firmware VOC не має → якщо сервер скоригує Z (σ/ρ) за VOC, server-Z розійдеться з device-Z → `check_z_divergence!` флагне фрод на **кожному** пакеті. Тому:
 > - **Z лишається ідентичним firmware** (без VOC) — DCI недоторканий.
 > - VOC-корекція живе на **шарі рішення про slashing** (`ContractHealthCheckService` / degradation count): дерево зі **здоровим VOC (≥500мВ) + degraded `delta_t`/`vcap`** → *hardware-confounded* → **виключається зі slashing-підрахунку** (не false-slash інвестора за старіння заліза).
 > - **VOC = рідкісний діагностичний сигнал** (кап деградує роками), НЕ per-packet (sensor payload повний) — потрібен окремий механізм доставки.

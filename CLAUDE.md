@@ -51,15 +51,17 @@ make -C firmware/test
    DT = 0.01;  ITERATIONS = 250
    SIGMA_LIMITS = (5.0..30.0);  RHO_LIMITS = (10.0..50.0)
    ```
-   Формула growth_points:
+   Формула growth_points [E.63 — Лоренц гейтить СТАТУС, метаболізм задає БАЛИ]:
    ```ruby
-   # CRITICAL_Z_MIN=2.0, CRITICAL_Z_MAX=45.0, OPTIMAL_Z_TARGET=29.0
+   # CRITICAL_Z_MIN=2.0, CRITICAL_Z_MAX=45.0 (Лоренц-гейт статусу)
    if z_val < 2.0  then status=1, growth_points=1   # stress
    elsif z_val > 45.0 then status=2, growth_points=0  # anomaly
-   else  status=0; growth_points = ((50 - deviation.round) / 2).clamp(5, 31)  # homeostasis (FW.29-PACK: 5-bit wire, backend ×2 upscale)
+   else  status=0  # homeostasis: growth_points = метаболічна жвавість m(delta_t), НЕ |29-z|
+     growth_points = metabolic_health_points(delta_t_s)  # монотонно: швидший перезаряд → більше
    end
    # StatusByte байт 10: [PanicFlag:1(bit7) | status:2 | growth_points:5]; status 0-3 (3=tamper); PanicFlag — C-side
    payload_byte = (status << 5) | growth_points  # C entry: calculate_state → uint8_t
+   # β = BASE_BETA фіксований (E.63: метаболізм НЕ через β). Формула m(delta_t) + калібрування — SSOT 03_04 §4.3 (One-Home).
    ```
    **Важливо [FIX FW.7]:** Backend переведено з BigDecimal на **Float (IEEE 754 double)** — ідентично firmware mruby. Раніше `("8.0".to_d / "3.0".to_d).round(18)` давав інший результат після 250 ітерацій; зараз обидві сторони використовують `8.0/3.0` → `2.6666666666666665`. Z: **категорично** ідентичний (status/growth_points/payload_byte — бітово), raw Z — у межах numeric-tolerance (реальний mruby 4.0.0 VM ↔ CRuby ~1e-14, хаотична ULP-амплітудизація; FW.31 ε=0.001 band; перша VM-перевірка + деталі — `docs/03_04`). Майбутній hardening через integer/fixed-point Q-format — `[FW.45]`, deferred до ZK-circuit milestone (див. `docs/03_04_mruby_Lorenz_Attractor.md`).
 
@@ -281,7 +283,7 @@ Solana: Ed25519 підпис, SPL Token Transfer, ATA резолюція чер�
 | ARCH.42 LoRa AES-size | `firmware/soldier/main.c` MX_CRYP_Init, `firmware/queen/main.c` MX_CRYP_Init | ✅ DECIDED 2026-05-23 (Variant B = AES-128 LoRa + ATECC608B SE). LoRa channel: `CRYP_KEYSIZE_128B`, `aes_key[4]`; CoAP канал залишається AES-256. Деталі — `docs/03_05 §3.7` |
 | AES-ECB | `firmware/soldier/main.c` (MX_CRYP_Init) | 🟡 Transitional AES-128-ECB після ARCH.42; повне закриття через FW.2 (AES-128-CCM, 24B packet, 8B MIC, Frame Counter). Hardware bench needed для `CRYP_AES_CCM` HAL верифікації |
 | TINYML-COMMENT | `firmware/soldier/main.c` (Phase 1.5) | log-mel фронтенд `Compute_LogMel` ✅ (FW.25); `Run_Inference()` + model header відсутні (чекає моделі) |
-| LORENZ-INPUTS | `firmware/bio_contracts/bio_contract.rb` | ✅ Виправлено (FW.5 B+, 2026-05-02): `delta_t_s`/`vcap_mv` передаються як β-пертурбація через `BETA_DELTA_T_COEFF`/`BETA_VCAP_COEFF`; EMA-згладжені значення з firmware. 500-case parity fuzz — 0 mismatches |
+| LORENZ-INPUTS | `firmware/bio_contracts/bio_contract.rb` | 🔄 [E.63, 2026-06-08] FW.5 β-пертурбація **РЕВЕРСОВАНА** — delta_t/vcap→β виявилась економічно нульовою (delta_t) / інвертованою (vcap) на paired-ensemble. Тепер β=`BASE_BETA` фікс; `delta_t`→`growth_points` НАПРЯМУ (метаболічна `m(delta_t)`, `03_04 §4.3`); vcap reserved. DCI parity 200-case fuzz 0-mismatch |
 | LORENZ-STATE | firmware | ✅ Виправлено: Стан (x,y,z) зберігається в RTC DR16-DR18 + magic marker `0x4C5A5354` (`"LZST"` = "Lorenz State"). Підтверджено в `firmware/soldier/main.c:239-249,746-749` |
 | OPTIMAL-Z | `bio_contract.rb:99` | ✅ Виправлено (2026-05-17): `OPTIMAL_Z_TARGET = 29.0` — коментар та константа узгоджені. Обґрунтування: +2 зміщення від z_eq=27.0 для кращої розрізненності класів. Задокументовано у `docs/03_04 §BLOCKER` |
 | QUEEN-UID | `firmware/queen/main.c` | ✅ Виправлено (PLAN 2.4): Flash-based UID з fallback |

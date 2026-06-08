@@ -588,7 +588,7 @@
 
 #### FW.49 — Tick-time ≠ wall-time у STOP2: системна семантика таймерів Soldier
 - **P0** · 👤🤖 · → [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)
-- **Знахідка:** `HAL_GetTick` (SysTick) заморожений у STOP2 → ВСЯ часова семантика Soldier на ньому: (а) `delta_t_seconds` (DR1) — ПЕРВИННИЙ біосигнал метаболізму (β-пертурбація → growth_points → токеноміка) міряв лише active-час (~1-5 с) → `improvement≈58` → **β притиснуто біля макс → усі дерева «максимально здорові» → over-mint (фальсифікація Proof-of-Growth, не просто мертвий сигнал)**; (б) FW.27-B re-request 5 хв = ~500 wake-циклів; (в) FW.20-S2 drift 12 год/cooldown 1 год/grace 10 хв ніколи не спрацюють; (г) beacon drift-comp + абсолютний UTC (epoch_day) відстають на тривалість STOP2. Host-тести сліпі (`hal_mock HAL_GetTick→0`).
+- **Знахідка:** `HAL_GetTick` (SysTick) заморожений у STOP2 → ВСЯ часова семантика Soldier на ньому: (а) `delta_t_seconds` (DR1) — ПЕРВИННИЙ біосигнал метаболізму (→ growth_points напряму [E.63] → токеноміка) міряв лише active-час (~1-5 с) → delta_t занижений (≈секунди, «миттєвий перезаряд») → **growth_points завищені → усі дерева «максимально здорові» → over-mint (фальсифікація Proof-of-Growth, не просто мертвий сигнал)**; (б) FW.27-B re-request 5 хв = ~500 wake-циклів; (в) FW.20-S2 drift 12 год/cooldown 1 год/grace 10 хв ніколи не спрацюють; (г) beacon drift-comp + абсолютний UTC (epoch_day) відстають на тривалість STOP2. Host-тести сліпі (`hal_mock HAL_GetTick→0`).
 - **✅ Рішення wake-source (founder 2026-06-07):** **RTC WUT (fine-tick) + Vcap-енергогейт (FW.50) + RTC-календар як timebase**; VBAT_OK лишається апаратним buck/brownout-гейтом (НЕ EXTI-wake — залипання HIGH при буфері 4.39 Дж + cold-start=power-on роблять edge надлишковим). delta_t = wall-різниця між energy-sufficient циклами.
 - **Staged-план:**
   - **S1-foundation** ✅ (shipped `ec99b97`): `common/wall_time.h` (delta/elapsed guards: cold-start/backward/epoch-jump→baseline) + `lorenz_seed.h Silken_Unix_From_Calendar` + host-тести. Host-**доведено**.
@@ -600,7 +600,7 @@
 
 #### FW.50 — Vcap ADC: raw counts використовуються як мВ (без конверсії)
 - **P0** · 👤🤖 · → [`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA)
-- **Знахідка:** `vcap_voltage = HAL_ADC_GetValue()` (канал VREFINT) — сирий 12-bit відлік (~1500) скрізь трактується як мВ: пакування байтів 4-5, пороги `VCAP_LISTEN_THRESHOLD=2800`/`COLD_TX_DEFER=4000`/`FAUNA=4500` мВ, EMA, `vcap_mv` у mruby. На залізі RX-вікно (>2800) не відкриється ніколи, β-пертурбація з фейкових значень. Плюс: VREFINT міряє VDDA (за buck'ом — константа), НЕ Vcap EDLC; для Vcap потрібен дільник на окремий ADC-канал (hardware, `02_01`/`02_03`).
+- **Знахідка:** `vcap_voltage = HAL_ADC_GetValue()` (канал VREFINT) — сирий 12-bit відлік (~1500) скрізь трактується як мВ: пакування байтів 4-5, пороги `VCAP_LISTEN_THRESHOLD=2800`/`COLD_TX_DEFER=4000`/`FAUNA=4500` мВ, EMA, `vcap_mv` у mruby. На залізі RX-вікно (>2800) не відкриється ніколи, а Vcap-енергогейт — з фейкових значень. Плюс: VREFINT міряє VDDA (за buck'ом — константа), НЕ Vcap EDLC; для Vcap потрібен дільник на окремий ADC-канал (hardware, `02_01`/`02_03`).
 - [ ] 👤 схемна вилка: розводка Vcap на окремий ADC-пін (цільовий тракт BQ25570 VBAT_SEC — `02_01 §7.1`; OV/пороги — `02_03`) · [x] 🤖 pure-helper `Adc_Raw_To_Mv()` (VREFINT factory-cal @0x1FFF75AA + дільник-параметр, без запеченого номіналу) + host-тести — `firmware/common/adc_convert.h` (One-Home); жива розводка НЕ ввімкнена (чекає дільника+окремого каналу) · [ ] 👤 bench-калібрування (DMM-точки vs `Adc_Raw_To_Mv` — RUNBOOK §3.4)
 
 #### FW.51 — Queen: телеметрія-батч губиться при провалі CoAP-send
@@ -728,12 +728,13 @@
 - **P1** · 🤖 · → `05_02 §E.60`
 - ✅ (2026-06-03) `Filecoin::CidGenerator` (детермін. CIDv1 raw+sha2-256→base32, golden-vector) + content-CID guard у потоці архівації AuditLog: `ArchiveService` вбудовує самоописовий `content_cid`, `VerificationService` fail-fast при розбіжності (локально vs віддалено) → детект ex-post swap. Закриває archive-swap gap для audit-архіву. · [ ] 🤖 follow-on: per-tree Merkle-witness для телеметрія-батчу (leaf_cid→`archive_root`→`mint(bytes32)`) — потребує `MerkleTree` + колонок на партиційованому `TelemetryLog` (міграція) + Solidity; worker-guard з `manual_review` саме в цьому батч-потоці. Канон `05_02 §E.60`
 
-#### E.63 — delta_t β-калібрування: BASELINE/COEFF під реальну шкалу перезаряду
+#### E.63 — метаболічний сигнал: розв'язано від хаосу (Option A) [2026-06-08]
 - **P1** · 👤+🤖 · → `05_02`
-- **Знахідка (FW.49 фізичний присуд):** L4 (`30_kinetics_delta_t.py`) валідує delta_t=36с лише в **оптимістичному куті** (j_max=494µА/см² лаб-стеля × A=2см² × E_cycle=5мДж → P_ebfc≈140µВт). β клампить `improvement = 60 − delta_t` на 0 → будь-яка delta_t > 60с не дає сигналу. Реалістично: `02_03` енергобюджет P_gen=15µВт (≈10× нижче — in-vivo derating) + E_cycle≈39мДж (повний TX) → delta_t 280-2600с → **β завжди клампиться → метаболічний сигнал мертвий** (навіть Scenario D 30µВт → ~167с). Хардкоднутий `BASELINE_DELTA_T_S=60` майже напевно надто оптимістичний для польового EBFC. Sensitivity: E_cycle≥10мДж АБО j_max≤300µА/см² → вже за clamp. Окремо від FW.49: той робить вимір правильним — це робить його осмисленим.
-- [ ] 👤 bench: реальна P_ebfc (V×j×A під навантаженням) — `HW.13` P-V крива + реальний E_cycle; вимір скриптовано: `03_power_profile.py --mode cycle|recharge` → CSV (RUNBOOK §3.2-3.3)
-- [ ] 🤖 калібрування: `BASELINE_DELTA_T_S` = зміряна медіана перезаряду, `BETA_DELTA_T_COEFF` під діапазон → calibrated per-deployment/species, не хардкод (DCI: `bio_contract.rb` ↔ `SilkenNet::Attractor` синхронно — `03_04`)
-- [ ] 🤖 firmware-левер: мінімізувати E_cycle (Vcap-енергогейт FW.49-S2 → малий ΔE/цикл → delta_t у-смузі). Cross-ref: FW.49, FW.50, HW.13, `01_03` L4, `03_04` β-конст.
+- **Присуд (paired-ensemble на реальному `bio_contract.rb`):** стара FW.5 β-пертурбація НЕробоча — `delta_t` економічно **нульовий** (`BETA_DELTA_T_COEFF=0.0001` → ΔGP ±0.1 проти хаотичного шуму std≈4; у полі delta_t 1-4 год → clamp=0) + `vcap` **інвертований** (здорове дерево → менше GP, на всіх temp) + L4 «✅ validated» стояло на оптимістичних `E_CYCLE=5мДж` / `P_ebfc≈140µW` (реально 38-58мДж / 15µW літо). Корінь: β НЕ рухає z-нерухому точку Лоренца (z_eq=ρ−1 від ρ/temp, не β).
+- [x] ✅ 🤖 **Option A (founder 2026-06-08) — розв'язати здоров'я від хаосу:** Лоренц = лише status-гейт (β=`BASE_BETA` фікс); `growth_points` у гомеостазі = монотонна `metabolic_health(delta_t)` напряму (дім [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor)). Код `bio_contract.rb`+`attractor.rb` (byte-identical DCI) + тести (firmware 39/39, backend 197/0) + канон (variance/§2.x; mirrors 03_01/05_02/04_02/CLAUDE→ref) + гейт `growth_points_clamp_drift` розширено (ловить стару форму) + honesty (L4/PIPELINE). Wire незмінний (delta_t уже в пакеті).
+- [ ] 👤 **bench:** реальна P_ebfc (V×j×A під навантаженням, `HW.13`) + E_cycle + recharge-крива → `03_power_profile.py --mode cycle|recharge` (RUNBOOK §3.2-3.3).
+- [ ] 🤖 **калібрування** `DELTA_T_FAST_S`/`DELTA_T_SLOW_S` (зараз placeholder 600/7200с) під зміряну recharge-криву — per-deployment/species (DCI: firmware ↔ канон синхронно).
+- [ ] 🔗 (опційно, hardening) backend GP-consistency: звіряти wire growth_points з `m(transmitted delta_t)` — тепер детерміновано можливо (defense-in-depth).
 
 ## §06 · Deploy / Observability / Secrets / Ops
 
@@ -1099,7 +1100,7 @@
 | SEC.6 | SE = **SE050** — ✅ RESOLVED 2026-06-07 (true-DePIN: голос дерева потребує non-extractable Ed25519 → SE050, не ATECC; soft-freeze DNP, populate post-FW.2). Деталі + усі residuals → SE050-MIGRATION | `03_05 §3.7`, §3.4 |
 | SEC.10 | Emergency-TX anti-replay frame counter (DR0 packing) | `03_02`, `03_01 §2` |
 | SEC.11 | Lorenz Seed Provenance (DCI hardening, K_seed HKDF) | `03_04`, `03_05 §3.4а`, `04_02`, `05_02` |
-| FW.5 | Lorenz β-пертурбація від delta_t/vcap (Variant B+) | `03_04`, `05_02` |
+| FW.5 | ~~Lorenz β-пертурбація від delta_t/vcap~~ → **РЕВЕРСОВАНО [E.63]** (delta_t → growth_points напряму) | `03_04 §4.3`, E.63 |
 | FW.18 | TinyML confidence threshold (RTC DR13/14 dual-zone) | `03_03`, `03_01 §2`, `04_06` |
 | FW.29 | Panic vs saturated acoustic disambiguation (PANIC_FLAG_BIT) | `03_03 §5.3` |
 | FW.29-PACK | StatusByte layout collision fix (5-bit growth_points) | `03_01 §11.5`, `03_04 §4.3-5.2`, `05_02` |

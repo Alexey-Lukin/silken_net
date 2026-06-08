@@ -111,7 +111,7 @@ Validation:
 | Does the matrix denature the protein? | ✅ NO (qualified) | L2 100ps: RMSD 1.11 Å. L2 10ns: RMSD 4.02 Å but **Rg stable** (-0.1%) → conformational relaxation from AF3, not denaturation. Needs 20-50 ns for full equilibration. |
 | Does the electron cascade flow? | ✅ YES (verified) | +465 mV / −0.47 eV downhill (verified E°s); raw DFT uphill = method limit (②) |
 | Is cathode DET fast enough? | 🟡 BORDERLINE | L3b geom-fixed t_ij + realistic λ → Cu-Co bottleneck ~turnover (×1–30, NOT the old ×10⁵); SUMMARY §Cathode |
-| Is delta_t physically meaningful? | ✅ YES | L4: healthy 36s, stressed 190s, baseline 60s justified |
+| Is delta_t physically meaningful? | 🟡 recharge-model OK; coupling REVISED | L4 recharge-kinetics sound але lab-ceiling (E_CYCLE=5mJ); [E.63] β-coupling reversed → delta_t now drives growth_points directly, FAST/SLOW calib-pending (00_07 E.63) |
 | Can we predict EIS results? | ✅ YES | L4c: Rct=130Ω, Cdl=50µF/cm² |
 
 **Verdict: ✅ YES — sufficient to order Ti-coins.** Anode thermodynamic + kinetic proofs pass. Remaining in-silico items now done (L3b geom-fixed, genipin/deprotonation rerun, species sweep). The cathode-DET **borderline** finding (§Cathode) refines confidence — it does NOT block Ti-coins; rather it makes the Ti-coin **EIS the decisive empirical test** of the real cathode margin.

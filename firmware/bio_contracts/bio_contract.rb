@@ -33,29 +33,28 @@ module SilkenNet
     RHO_MIN   = 10.0
     RHO_MAX   = 50.0
 
-    # [FW.5] β-perturbation від EBFC-метаболізму. Дзеркало
-    # app/services/silken_net/attractor.rb#perturb_beta.
-    # delta_t (час заряду іоністора) та vcap (напруга) — фізично значущі
-    # індикатори здоров'я дерева. Мапимо їх на β (геометричний параметр
-    # конвективної клітини у системі Лоренца): швидший заряд + стабільна
-    # vcap → активніший метаболізм → β зростає → траєкторія тяжіє до
-    # OPTIMAL_Z_TARGET → більше growth_points.
-    BETA_DELTA_T_COEFF = 0.0001  # 1 с швидше за baseline → β +0.0001
-    BETA_VCAP_COEFF    = 0.001   # 1 mV вище nominal → β +0.001
-    BETA_MIN           = 2.0     # clamp: класичний β ≈ 2.667 ± 50%
-    BETA_MAX           = 4.0
-    BASELINE_DELTA_T_S = 60      # очікуваний час заряду EBFC, секунди
-    NOMINAL_VCAP_MV    = 3300    # 3.3 V nominal
+    # [E.63] β БІЛЬШЕ НЕ збурюється метаболізмом. Раніше [FW.5] мапив
+    # delta_t/vcap на β, але β НЕ рухає z-нерухому точку Лоренца
+    # (z_eq = ρ−1 залежить від ρ, не від β) → delta_t-сигнал виходив
+    # економічно нульовий, а vcap — інвертований (здорове дерево → менше
+    # балів). Метаболізм тепер задає growth_points НАПРЯМУ та МОНОТОННО
+    # (BioContract.metabolic_health); Лоренц лишається чистим хаос-детектором
+    # стану. Емпіричний присуд + докази — 00_07 E.63 / 03_04.
+    # BASELINE_DELTA_T_S / NOMINAL_VCAP_MV лишаються лише як default-аргументи
+    # сигнатур (C-bridge передає 7 аргументів); на Z вони більше не впливають.
+    BASELINE_DELTA_T_S = 60
+    NOMINAL_VCAP_MV    = 3300
 
     # Sole entry-point: takes initial (x, y, z) directly. Returns
-    # [z, x_final, y_final, z_final] for RTC persistence.
-    def self.calculate_z_axis(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s = BASELINE_DELTA_T_S, vcap_mv = NOMINAL_VCAP_MV)
-      x, y, z = iterate(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)
+    # [z, x_final, y_final, z_final] for RTC persistence. [E.63] Чистий
+    # хаос — без delta_t/vcap (метаболізм перенесено у growth_points).
+    def self.calculate_z_axis(x_prev, y_prev, z_prev, temp, acoustic)
+      x, y, z = iterate(x_prev, y_prev, z_prev, temp, acoustic)
       [ z, x, y, z ]
     end
 
-    # Спільне ядро ітерацій Лоренца.
-    def self.iterate(x, y, z, temp, acoustic, delta_t_s, vcap_mv)
+    # Спільне ядро ітерацій Лоренца. β = BASE_BETA (фіксований).
+    def self.iterate(x, y, z, temp, acoustic)
       local_sigma = BASE_SIGMA + (acoustic * 0.1)
       local_rho   = BASE_RHO + (temp * 0.2)
 
@@ -65,21 +64,10 @@ module SilkenNet
       local_rho = RHO_MIN if local_rho < RHO_MIN
       local_rho = RHO_MAX if local_rho > RHO_MAX
 
-      # [FW.5] Лише позитивний внесок delta_t: чим швидше за baseline → тим більше β.
-      # vcap_centered може бути від'ємним при просадці — від β-зменшення захищає clamp.
-      delta_t_improvement_s = BASELINE_DELTA_T_S - delta_t_s
-      delta_t_improvement_s = 0 if delta_t_improvement_s < 0
-      vcap_centered = vcap_mv - NOMINAL_VCAP_MV
-
-      local_beta = BASE_BETA + (delta_t_improvement_s * BETA_DELTA_T_COEFF) +
-                               (vcap_centered * BETA_VCAP_COEFF)
-      local_beta = BETA_MIN if local_beta < BETA_MIN
-      local_beta = BETA_MAX if local_beta > BETA_MAX
-
       ITERATIONS.times do
         dx = local_sigma * (y - x)
         dy = x * (local_rho - z) - y
-        dz = (x * y) - (local_beta * z)
+        dz = (x * y) - (BASE_BETA * z)
 
         x += dx * DT
         y += dy * DT
@@ -96,52 +84,66 @@ module SilkenNet
   class BioContract
     CRITICAL_Z_MIN = 2.0   # Падіння нижче = втрата тургору / посуха
     CRITICAL_Z_MAX = 45.0  # Стрибок вище = аномальний стрес / втручання
-    OPTIMAL_Z_TARGET = 29.0  # Ідеальний стан конвекції — максимальне поглинання CO2
+    # Здоровий центр атрактора — використовується для інсайтів/інтерпретації
+    # статусу. [E.63] БІЛЬШЕ не входить у формулу growth_points (та була
+    # хаотичним шумом, не сигналом).
+    OPTIMAL_Z_TARGET = 29.0
+
+    # [E.63] Метаболічна винагорода: швидкість перезаряду EBFC (delta_t) →
+    # growth_points, МОНОТОННО і у польовому масштабі. Лоренц лише гейтить
+    # статус (стрес / аномалія / гомеостаз); у гомеостазі магнітуда балів =
+    # метаболічна жвавість m(delta_t), а не |OPTIMAL−Z| (хаотичний шум).
+    # Калібрувальні пороги — placeholder, чекають bench recharge-кривої
+    # (firmware/scripts/bench/RUNBOOK.md §3.3 / 00_07 E.63); фінал —
+    # per-deployment/species, не хардкод.
+    DELTA_T_FAST_S = 600     # ≤ цього → пік жвавості (m = 1.0)
+    DELTA_T_SLOW_S = 7200    # ≥ цього → мінімум (m = 0.0)
+    GP_HOMEO_MIN   = 5       # 5-бітний wire-діапазон гомеостазу (FW.29-PACK)
+    GP_HOMEO_MAX   = 31
+
+    # Монотонна метаболічна жвавість ∈ [0.0, 1.0]: швидший перезаряд → вище.
+    def self.metabolic_health(delta_t_s)
+      m = (DELTA_T_SLOW_S - delta_t_s).to_f / (DELTA_T_SLOW_S - DELTA_T_FAST_S)
+      m = 0.0 if m < 0.0
+      m = 1.0 if m > 1.0
+      m
+    end
 
     # Sole evaluation entry-point. Returns [payload_byte, x, y, z] —
     # C-side persists the trajectory tail back to RTC DR16-DR18.
     def self.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s = Attractor::BASELINE_DELTA_T_S, vcap_mv = Attractor::NOMINAL_VCAP_MV)
-      z_val, x_final, y_final, z_final = Attractor.calculate_z_axis(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)
-      payload_byte = pack_status_byte(z_val)
+      _ = vcap_mv  # [E.63] vcap прибрано з винагороди (FW.50 raw-ADC); reserved
+      z_val, x_final, y_final, z_final = Attractor.calculate_z_axis(x_prev, y_prev, z_prev, temp, acoustic)
+      payload_byte = pack_status_byte(z_val, delta_t_s)
       [ payload_byte, x_final, y_final, z_final ]
     end
 
-    # [FW.29-PACK] Спільна логіка пакування Z → status_byte.
+    # [FW.29-PACK] Z → status (Лоренц-гейт), delta_t → growth_points (метаболізм).
     # Wire-формат байту 10: [PanicFlag:1 (bit 7) | Status:2 (bits 6..5) | GrowthPoints:5 (bits 4..0)].
-    # PanicFlag заповнюється C-side (firmware/soldier/main.c), а нормальні
-    # пакети завжди виконують `lora_payload[10] &= ~PANIC_FLAG_BIT`. Тому
-    # mruby тут гарантує, що pack_status_byte НІКОЛИ не встановлює bit 7 —
-    # status (2 біти) лежить у bits 6..5, growth_points (5 біт) — у bits 4..0.
-    # До FW.29-PACK status паковано як `<< 6` → bit 7 status'у конфліктував
-    # з PANIC_FLAG_BIT mask'ом і status=2 (anomaly) / status=3 (tamper) тихо
-    # деградували до homeostasis / stress на бекенді.
-    def self.pack_status_byte(z_val)
-      status = 0
-      growth_points = 0  # Бали росту (Proof of Growth)
-
+    # PanicFlag заповнюється C-side; нормальні пакети завжди роблять
+    # `lora_payload[10] &= ~PANIC_FLAG_BIT`. Тому pack_status_byte НІКОЛИ не
+    # ставить bit 7 — status (2 біти) у bits 6..5, growth_points (5 біт) у 4..0.
+    def self.pack_status_byte(z_val, delta_t_s = Attractor::BASELINE_DELTA_T_S)
       if z_val < CRITICAL_Z_MIN
-        status = 1  # Сигнал раннього попередження (посуха / втрата тургору)
-        growth_points = 1  # Мінімальна генерація — дерево виживає
+        status = 1            # Раннє попередження (посуха / втрата тургору)
+        growth_points = 1     # Мінімальна генерація — дерево виживає
       elsif z_val > CRITICAL_Z_MAX
-        status = 2  # Аномалія (критичний стрес)
-        growth_points = 0  # Емісія зупиняється
+        status = 2            # Аномалія (критичний стрес)
+        growth_points = 0     # Емісія зупиняється
       else
-        status = 0  # Гомеостаз (здоровий хаос)
-        deviation = (OPTIMAL_Z_TARGET - z_val).abs
-        # Базова нагорода 50 балів мінус штраф за відхилення від OPTIMAL_Z_TARGET.
-        # [FIX FW.13] Explicit clamp замість окремих guard'ів.
-        # [FW.29-PACK] Перейшли з 6-бітного wire-діапазону (10..63) на 5-бітний
-        # (5..31): значення масштабоване ÷2 щоб зберегти приблизно ту ж саму
-        # tokenomic емісію після backend ×2 upscale (effective stored 10..62
-        # vs old 10..63 — <2% resolution loss).
-        reward = 50 - deviation.round
-        growth_points = (reward / 2).clamp(5, 31)
+        status = 0            # Гомеостаз (здоровий хаос)
+        # [E.63] growth_points = метаболічна жвавість (швидкість перезаряду),
+        # монотонно: швидший перезаряд → більше балів. 5-бітний wire (5..31).
+        m = metabolic_health(delta_t_s)
+        growth_points = (GP_HOMEO_MIN + (m * (GP_HOMEO_MAX - GP_HOMEO_MIN))).round
+        growth_points = GP_HOMEO_MIN if growth_points < GP_HOMEO_MIN
+        growth_points = GP_HOMEO_MAX if growth_points > GP_HOMEO_MAX
       end
 
       # Захист від переповнення для 5-бітного wire-простору (максимум 31).
-      growth_points = growth_points.clamp(0, 31)
+      growth_points = 0 if growth_points < 0
+      growth_points = 31 if growth_points > 31
 
-      # [PanicFlag:1 (bit 7, 0 у нормальному пакеті) | Status:2 (bits 6..5) | GrowthPoints:5 (bits 4..0)]
       (status << 5) | growth_points
     end
   end
@@ -154,6 +156,7 @@ end
 # from RTC DR16-DR18 (FW.6 warm continuation) or freshly derived from
 # K_seed via mbedTLS HKDF/HMAC (SEC.11 cold start). Returns
 # [payload_byte, x_final, y_final, z_final] for RTC persistence.
+# delta_t_s → growth_points (метаболізм, E.63); vcap_mv reserved.
 def calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s = SilkenNet::Attractor::BASELINE_DELTA_T_S, vcap_mv = SilkenNet::Attractor::NOMINAL_VCAP_MV)
   SilkenNet::BioContract.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)
 end

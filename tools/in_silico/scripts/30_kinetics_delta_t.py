@@ -9,8 +9,9 @@ Physical model
     → electron current (Os-mediated) → BQ25570 boost → EDLC charge → delta_t
 
 This closes the final level of the 4-level Zero-Lab pipeline (01_03 §3.4).
-The output delta_t is the same quantity that the Lorenz attractor uses as
-β-perturbation (bio_contract.rb: BASELINE_DELTA_T_S = 60 s).
+The output delta_t is the EBFC recharge time that, per [E.63], now drives
+growth_points DIRECTLY (bio_contract.rb metabolic_health) — NOT β-perturbation,
+which was reversed as economically null/inverted (00_07 E.63 / 03_04 §4.3).
 
 Key literature parameters
 -------------------------
@@ -256,21 +257,18 @@ def main() -> int:
         json.dump(lookup, fh, indent=2)
     print(f"  Wrote {lookup_path.relative_to(REPO_ROOT)}")
 
-    # ── 7. Verdict ──
-    banner("L4 verdict")
+    # ── 7. Verdict [E.63] ──
+    banner("L4 verdict [E.63 — see 00_07 E.63 / 03_04 §4.3]")
     dt_healthy = delta_t(10, 25)
     dt_stress = delta_t(5, 5)
-    verdict_ok = dt_healthy < BASELINE_DELTA_T_S and dt_stress > BASELINE_DELTA_T_S
-    if verdict_ok:
-        print("  ✅ BASELINE VALIDATED")
-        print(f"     Healthy tree (10 mM, 25°C): delta_t = {dt_healthy:.1f}s < 60s → β increases")
-        print(f"     Stressed tree (5 mM, 5°C):  delta_t = {dt_stress:.1f}s > 60s → β at baseline")
-        print("     EBFC discriminates healthy vs stressed → Lorenz attractor receives meaningful signal")
-    else:
-        print("  ⚠️  Model needs parameter adjustment")
-        print(f"     dt_healthy={dt_healthy:.1f}s, dt_stress={dt_stress:.1f}s")
+    print(f"     Healthy (10 mM, 25°C): delta_t = {dt_healthy:.1f}s | Stressed (5 mM, 5°C): {dt_stress:.1f}s")
+    print("  ⚠️  LAB-CEILING values (E_CYCLE=5mJ, j_max=494). The old 60s baseline +")
+    print("      β-perturbation coupling was REVERSED in E.63 (delta_t→β was economically")
+    print("      null/inverted). delta_t now drives growth_points DIRECTLY via")
+    print("      metabolic_health(delta_t); FAST/SLOW thresholds are field-scale and")
+    print("      calibration-pending on the bench recharge curve (RUNBOOK §3.2-3.3).")
 
-    banner("✅ L4 complete — EBFC kinetics validated against firmware BASELINE_DELTA_T_S = 60s")
+    banner("L4 complete — EBFC recharge-kinetics model (delta_t → growth_points, E.63)")
     return 0
 
 

@@ -1795,13 +1795,12 @@ TEST(test_ema_rtc_first_boot_no_magic) {
  *
  * Mirrors the firmware decision in `firmware/soldier/main.c` around the
  * `mrb_funcall_argv("calculate_state", 7, ...)` call: while the EMA
- * filter is still warming up (count < EMA_WARMUP_CYCLES) we MUST feed
- * the Lorenz attractor with neutral baseline values
- * (60 s / 3300 mV) — these match `BASELINE_DELTA_T_S` and
- * `NOMINAL_VCAP_MV` in `firmware/bio_contracts/bio_contract.rb`, so the
- * β-perturbation is exactly zero on cold boot. Once the filter is
- * warmed up, the smoothed EMA values are forwarded so β responds to
- * EBFC metabolism (delta_t) and supercap voltage (vcap).
+ * filter is still warming up (count < EMA_WARMUP_CYCLES) we feed neutral
+ * baseline values (60 s / 3300 mV); once warmed up, the smoothed EMA
+ * values are forwarded. [E.63] delta_t now drives growth_points DIRECTLY
+ * (metabolic_health, 03_04 §4.3), NOT β — β is fixed at BASE_BETA and
+ * vcap is reserved. This test pins WHICH inputs the C side selects —
+ * unchanged by E.63 (the selection logic is independent of the coupling).
  * ──────────────────────────────────────────────────────────────────── */
 
 #define FW5_DEFAULT_DELTA_T_S 60u    /* BASELINE_DELTA_T_S in bio_contract.rb */
@@ -1821,8 +1820,9 @@ static void Fw5_Select_Lorenz_Inputs(const Fw21EmaState *ema,
 }
 
 TEST(test_fw5_cold_boot_uses_baseline_defaults) {
-    /* Fresh EMA (count=0) → defaults must be selected so β-perturbation
-       is exactly zero on the very first wakeup after VBAT loss. */
+    /* Fresh EMA (count=0) → defaults must be selected so growth_points use
+       the neutral baseline on the very first wakeup after VBAT loss
+       ([E.63] delta_t → growth_points; β is fixed). */
     Fw21EmaState ema = {0};
     uint32_t dt_s = 0; uint16_t vcap_mv = 0;
     Fw5_Select_Lorenz_Inputs(&ema, &dt_s, &vcap_mv);
@@ -1883,8 +1883,8 @@ TEST(test_fw5_extreme_high_vcap_clamped_by_backend_beta) {
 
 TEST(test_fw5_extreme_fast_charge_forwarded) {
     /* Boundary input: delta_t_s = 1 (EBFC charging in 1 second — much
-       faster than baseline 60). β-perturbation hits its upper clamp,
-       but the firmware-side selection still forwards the raw EMA. */
+       faster than baseline 60). [E.63] delta_t this fast → max growth_points;
+       the firmware-side selection still forwards the raw EMA. */
     Fw21EmaState ema = {0};
     for (int i = 0; i < 10; i++) Fw21_EMA_Update(&ema, 1u, 3300);
 
@@ -4377,7 +4377,7 @@ TEST(test_fw50_raw_count_is_not_mv) {
  * [FW.49] WALL-CLOCK delta/elapsed guards (common/wall_time.h)
  *
  * HAL_GetTick freezes in STOP2 → tick-deltas measured only active-time, which
- * pinned delta_t near ~seconds → β-perturbation near max → every tree looked
+ * pinned delta_t near ~seconds → growth_points near max → every tree looked
  * maximally healthy (over-mint). The fix reads a free-running RTC calendar as
  * wall-seconds; these pure guards turn two wall reads into a safe delta_t
  * (cold-start / backward / epoch-jump → baseline) and a safe elapsed duration.

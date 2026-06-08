@@ -236,7 +236,7 @@ STM32WLE5JC
 - ⚠️ **Поправка до вихідної нотатки:** MCU deep-sleep у нас **300 нА** ([`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)), не 2.1 µA. Тобто BME280 не «у 20× менший за MCU»; але за load switch'ем його внесок ≈ 0.
 - ⚠️ **Поправка:** беремо **BME280, не BME680** — газовий VOC-сенсор BME680 має нагрівач 10–12 мА + burn-in/baseline, що несумісно з sub-µA harvested-energy бюджетом (§3.2).
 
-**🚨 DCI-guard (критично):** VPD **НЕ подається** у `perturb_beta` / Lorenz-математику — це зламало б firmware↔backend біт-ідентичність (Dual Computation Integrity, [`03_04`](03_04_mruby_Lorenz_Attractor)). VPD живе виключно на **confounder / slashing-шарі** (`ContractHealthCheckService`, `InsightGeneratorService#calculate_stress_index`). Той самий урок, що HW.19 (VOC-корекція на slashing-шарі, не в Z-обчисленні).
+**🚨 DCI-guard (критично):** VPD **НЕ подається** у Lorenz Z-математику (входи лише temp/acoustic) — це зламало б firmware↔backend біт-ідентичність (Dual Computation Integrity, [`03_04`](03_04_mruby_Lorenz_Attractor)). VPD живе виключно на **confounder / slashing-шарі** (`ContractHealthCheckService`, `InsightGeneratorService#calculate_stress_index`). Той самий урок, що HW.19 (VOC-корекція на slashing-шарі, не в Z-обчисленні).
 
 **Пакетний бюджет (LoRa byte-critical, 21B → 24B CCM target):** сирі t°/RH/тиск (~4–5 B) не влазять у hot-path. **Рекомендований гібрид:**
 

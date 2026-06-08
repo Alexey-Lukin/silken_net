@@ -238,18 +238,17 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 
 **Модуль `SilkenNet::Attractor` (firmware):**
 ```ruby
-# ─ Константи Лоренца (BASE_SIGMA/RHO/BETA, DT, ITERATIONS, SIGMA/RHO/BETA_LIMITS,
-#   BETA_DELTA_T_COEFF/BETA_VCAP_COEFF [FW.5], BASELINE_DELTA_T_S, NOMINAL_VCAP_MV)
-#   — SSOT: 03_04 §4.1 (firmware↔backend дзеркало, дві колонки). Значення тут НЕ
-#   дублюються: правити ЛИШЕ в 03_04, інакше — тихий DCI-дрейф device-Z vs server-Z.
-#   Нижче — лише pipeline-поведінка стадії (сигнатура + потік).
+# ─ Константи Лоренца (BASE_SIGMA/RHO/BETA, DT, ITERATIONS, SIGMA/RHO_LIMITS,
+#   BASELINE_DELTA_T_S, NOMINAL_VCAP_MV) — SSOT: 03_04 §4.1 (firmware↔backend
+#   дзеркало). Значення тут НЕ дублюються: правити ЛИШЕ в 03_04, інакше — тихий
+#   DCI-дрейф device-Z vs server-Z. [E.63] β = BASE_BETA фіксований (β-пертурбація
+#   ВИДАЛЕНА; метаболізм → growth_points напряму, 03_04 §4.3).
 
-def self.calculate_z_axis(x, y, z, temp, acoustic, delta_t_s = BASELINE_DELTA_T_S, vcap_mv = NOMINAL_VCAP_MV)
+def self.calculate_z_axis(x, y, z, temp, acoustic)   # [E.63] β фікс — без delta_t/vcap
   # [SEC.11] (x, y, z) приходять як аргументи: warm — з RTC DR16-18,
   # cold — з K_seed/epoch_day (див. evaluate_and_pack нижче). DID не є входом.
-  # local_sigma, local_rho: perturbation + clamp
-  # [FW.5] local_beta: perturb_beta(delta_t_s, vcap_mv) → β ∈ [2.0, 4.0]
-  ITERATIONS.times { dx/dy/dz → Euler integration (local_beta in dz) }
+  # local_sigma (acoustic), local_rho (temp): perturbation + clamp; β = BASE_BETA
+  ITERATIONS.times { dx/dy/dz → Euler integration (BASE_BETA in dz) }
   z  # Ruby Float, НЕ BigDecimal
 end
 ```
@@ -261,12 +260,12 @@ end
 
 def self.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)
   # (x_prev, y_prev, z_prev): warm — з RTC DR16-18; cold — з SEC.11 K_seed/epoch_day
-  z_val = Attractor.calculate_z_axis(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)
+  z_val = Attractor.calculate_z_axis(x_prev, y_prev, z_prev, temp, acoustic)  # [E.63] β фікс
   if    z_val < CRITICAL_Z_MIN  → status=1, growth_points=1  # stress
   elsif z_val > CRITICAL_Z_MAX  → status=2, growth_points=0  # anomaly
   else                          → status=0                    # homeostasis
-    deviation = (OPTIMAL_Z_TARGET - z_val).abs
-    growth_points = (reward / 2).clamp(5, 31)  # FW.29-PACK: 5-bit wire, halved reward
+    # [E.63] growth_points = метаболічна жвавість m(delta_t), НЕ |29−z| — SSOT 03_04 §4.3
+    growth_points = metabolic_growth_points(delta_t_s)        # 5-bit wire (5..31)
   end
   payload_byte = (status << 5) | growth_points  # [PanicFlag:1 (FW.29) | Status:2 | GP:5]
 end

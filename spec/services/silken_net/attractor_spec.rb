@@ -48,10 +48,15 @@ RSpec.describe SilkenNet::Attractor do
       expect(a).not_to eq(b)
     end
 
-    it "is sensitive to delta_t/vcap (β-perturbation)" do
+    it "[E.63] is INDEPENDENT of delta_t/vcap — metabolism no longer perturbs β/Z" do
+      # Lorenz is now a pure chaos gate (β = BASE_BETA). Metabolism sets
+      # growth_points directly on-device (firmware BioContract), so Z must
+      # NOT move with delta_t/vcap — decoupled. 00_07 E.63.
       base = described_class.calculate_z_from_state(0.1, 0.2, 0.3, 20.0, 5, 60, 3300)
       fast = described_class.calculate_z_from_state(0.1, 0.2, 0.3, 20.0, 5, 10, 3500)
-      expect(fast.first).not_to eq(base.first)
+      slow = described_class.calculate_z_from_state(0.1, 0.2, 0.3, 20.0, 5, 7200, 2800)
+      expect(fast.first).to eq(base.first)
+      expect(slow.first).to eq(base.first)
     end
 
     it "stays finite under extreme inputs" do
@@ -124,19 +129,15 @@ RSpec.describe SilkenNet::Attractor do
 
   describe "Dual Computation Integrity (firmware parity)" do
     # [SEC.11] Backend MUST produce identical Z-values to firmware
-    # mruby for the same (x₀, y₀, z₀, temp, acoustic, delta_t, vcap).
-    # This local re-impl is the canonical kernel — if backend ever
-    # drifts, this fuzz test catches it. Mirror of
-    # firmware/bio_contracts/bio_contract.rb#iterate.
+    # mruby for the same (x₀, y₀, z₀, temp, acoustic). [E.63] β = BASE_BETA
+    # is fixed on both sides — delta_t/vcap no longer affect Z. This local
+    # re-impl is the canonical kernel — if backend ever drifts, this fuzz
+    # test catches it. Mirror of firmware/bio_contracts/bio_contract.rb#iterate.
     def firmware_z(x, y, z, temp, acoustic, delta_t_s = 60, vcap_mv = 3300)
+      _ = [ delta_t_s, vcap_mv ]  # [E.63] accepted but no longer affect Z
       sigma = [ 5.0, [ 30.0, 10.0 + (acoustic * 0.1) ].min ].max
       rho   = [ 10.0, [ 50.0, 28.0 + (temp * 0.2) ].min ].max
-
-      dt_improvement = 60 - delta_t_s
-      dt_improvement = 0 if dt_improvement < 0
-      vcap_centered = vcap_mv - 3300
-      beta = (8.0 / 3.0) + (dt_improvement * 0.0001) + (vcap_centered * 0.001)
-      beta = [ 2.0, [ 4.0, beta ].min ].max
+      beta  = 8.0 / 3.0
 
       250.times do
         dx = sigma * (y - x)
@@ -181,36 +182,6 @@ RSpec.describe SilkenNet::Attractor do
         expect(be_healthy).to eq(fw_healthy),
           "Category mismatch for seed=#{seed}: fw_z=#{fw_z.round(4)} (#{fw_healthy}), be_z=#{be_z} (#{be_healthy})"
       end
-    end
-  end
-
-  describe "[FW.5] β-perturbation from EBFC metabolism" do
-    it "perturb_beta returns classic 8/3 at baseline inputs" do
-      expect(described_class.perturb_beta(60, 3300)).to eq(8.0 / 3.0)
-    end
-
-    it "increases β when EBFC charges faster than baseline" do
-      expect(described_class.perturb_beta(30, 3300)).to be_within(1e-15).of((8.0 / 3.0) + 0.003)
-    end
-
-    it "ignores slower-than-baseline delta_t (β floor on Δt alone)" do
-      expect(described_class.perturb_beta(120, 3300)).to eq(8.0 / 3.0)
-    end
-
-    it "increases β when vcap is above nominal" do
-      expect(described_class.perturb_beta(60, 3500)).to be_within(1e-15).of((8.0 / 3.0) + 0.2)
-    end
-
-    it "decreases β when vcap is below nominal" do
-      expect(described_class.perturb_beta(60, 3000)).to be_within(1e-15).of((8.0 / 3.0) - 0.3)
-    end
-
-    it "clamps β to BETA_LIMITS.max for extreme positive perturbation" do
-      expect(described_class.perturb_beta(0, 5000)).to eq(SilkenNet::Attractor::BETA_LIMITS.max)
-    end
-
-    it "clamps β to BETA_LIMITS.min for extreme negative perturbation" do
-      expect(described_class.perturb_beta(60, 0)).to eq(SilkenNet::Attractor::BETA_LIMITS.min)
     end
   end
 end

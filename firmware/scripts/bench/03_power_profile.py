@@ -2,7 +2,7 @@
 """03_power_profile.py — [bench] PPK2 power-профілі: STOP2 floor / E_cycle / Vcap recharge.
 
 Артефакти CSV → bench_artifacts/: пряме паливо для E.63 (медіана перезаряду →
-калібрування BASELINE_DELTA_T_S/BETA_DELTA_T_COEFF) і FW.54 (300 нА floor —
+калібрування DELTA_T_FAST_S/DELTA_T_SLOW_S метаболічного growth_points) і FW.54 (300 нА floor —
 NB: роздільність PPK2 ~100 нА → 300 нА підтверджувати JS220/SMU).
 
     03_power_profile.py --mode floor|cycle|recharge [--seconds N] [--out CSV]

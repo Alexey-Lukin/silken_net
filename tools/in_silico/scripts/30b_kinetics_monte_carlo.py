@@ -116,7 +116,7 @@ def main() -> int:
     ax.clabel(cs, fmt={0.5: "50%"}, fontsize=9)
     ax.set_xlabel("[glucose] (mM)")
     ax.set_ylabel("Temperature (°C)")
-    ax.set_title("P(delta_t < 60s) — probability of β-perturbation")
+    ax.set_title("P(delta_t < 60s) — old-baseline fraction (lab-scale; E.63: GP now field-scale)")
     fig.colorbar(im, ax=ax, label="Probability")
 
     # Distribution at reference condition (10 mM, 25°C)

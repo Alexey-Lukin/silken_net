@@ -120,7 +120,7 @@ C₂ = (-√(β(ρ-1)), -√(β(ρ-1)), ρ-1) = (-8.485, -8.485, 27.0)
 >
 > **Чому K_seed замість chaos_seed/DID:** `chaos_seed` (HRNG) недетермінований — backend не зміг би відтворити Z. DID-as-seed (`SilkenNet::Attractor.calculate_z(did, …)`) був public-input → атакер з open-source формулою Лоренца передбачає очікуваний Z для будь-якого дерева. K_seed — **private**, ніколи не залишає пристрій/сервер у відкритому вигляді (HKDF деривується незалежно з `PROVISIONING_MASTER_KEY`). Закриває чотири фундаментальні вади (sniff/correlation/identifier-as-key/forward-secrecy) — див. SEC.11 у [`00_07`](00_07_Action_Plan_Tracker).
 >
-> **[FW.5]** `delta_t_s` та `vcap_mv` визначають β-пертурбацію в обох гілках. Default-значення (`BASELINE_DELTA_T_S=60`, `NOMINAL_VCAP_MV=3300`) роблять β=BASE_BETA при відсутності фізичного сигналу. ⚠️ **`BASELINE_DELTA_T_S=60` — calibration-pending:** L4-валідація 60с — оптимістичний (лаб-стеля) кут; польовий EBFC-derating може зсунути delta_t за 60с-clamp → калібрувати під зміряну медіану перезаряду ([`00_07` — E.63](00_07_Action_Plan_Tracker)).
+> **[E.63]** `delta_t_s` визначає `growth_points` напряму (метаболічна жвавість, §4.3); `vcap_mv` reserved; β = `BASE_BETA` фіксований (більше НЕ збурюється). ⚠️ **Калібрувальні пороги `DELTA_T_FAST_S`/`DELTA_T_SLOW_S` — calibration-pending:** чекають зміряної recharge-кривої (bench RUNBOOK §3.3 → [`00_07` — E.63](00_07_Action_Plan_Tracker)).
 >
 > **Інваріант:** після кожного успішного циклу C-код **зобов'язаний** записати нові `(x, y, z)` у DR16/DR17/DR18 і встановити `DR19 = 0x4C5A5354`.
 
@@ -172,7 +172,7 @@ firmware/soldier/main.c — ФАЗА 3 (mruby виклик, єдина сигн�
     → [payload_byte, x_final, y_final, z_final]
 ```
 
-> **[FW.5] РЕАЛІЗОВАНО (backend + firmware mruby):** `delta_t_seconds` та `vcap_voltage` визначають β-пертурбацію. Залишається: C-side передача EMA-значень з DR10/DR12 як args.
+> **[E.63] (backend + firmware mruby):** `delta_t_seconds` → `growth_points` напряму (метаболічна `m(delta_t)`, §4.3); `vcap_voltage` поки не входить у винагороду (FW.50); β = `BASE_BETA` фіксований (більше НЕ збурюється). C-side передає EMA delta_t/vcap з RTC (FW.21) як args.
 
 ### 2.2 Фізична Інтерпретація Вхідних Параметрів
 
@@ -182,28 +182,12 @@ firmware/soldier/main.c — ФАЗА 3 (mruby виклик, єдина сигн�
 | `lorenz_x/y/z` (float32, RTC) | [FW.6] Збережений стан атрактора з попереднього циклу STOP2 | При наступних циклах — продовження безперервної траєкторії |
 | `temp` (int8, °C) | Температура кристала STM32 (корельована з температурою дерева) | Збурює ρ: `ρ_eff = 28 + temp × 0.2` → змінює "теплову рушійну силу" |
 | `acoustic` (uint8) | Кількість кавітаційних подій флоеми (TinyML) | Збурює σ: `σ_eff = 10 + acoustic × 0.1` → змінює "в'язкість" системи |
-| `delta_t_s` (uint16, с) | [FW.5] Час заряду EBFC — швидкість метаболізму ксилеми | Збурює β: швидший заряд → активніший метаболізм → більше β → Z → OPTIMAL |
-| `vcap_mv` (uint16, мВ) | [FW.5] Напруга суперконденсатора — накопичена енергія EBFC | Збурює β: вища vcap → більший заряд → більше β (позитивне або нейтральне) |
+| `delta_t_s` (uint16, с) | [E.63] Час перезаряду EBFC — швидкість метаболізму ксилеми | → growth_points напряму (монотонна `m(delta_t)`, §4.3); НЕ впливає на Z/β |
+| `vcap_mv` (uint16, мВ) | Напруга суперконденсатора — накопичена енергія EBFC | [E.63] reserved (прибрано з винагороди до FW.50 raw-ADC fix); НЕ впливає на Z/β |
 
-#### [FW.5] β-Пертурбація від EBFC-Метаболізму
+#### [E.63] Метаболізм → growth_points (β більше НЕ збурюється)
 
-```ruby
-# BASELINE_DELTA_T_S = 60 (с); NOMINAL_VCAP_MV = 3300 (мВ = 3.3V)
-# Лише позитивний внесок delta_t: чим швидше за baseline → тим більше β
-delta_t_improvement_s = [0, BASELINE_DELTA_T_S - delta_t_s].max
-vcap_centered = vcap_mv - NOMINAL_VCAP_MV   # від'ємний при просадці → β зменшується
-
-local_beta = BASE_BETA + (delta_t_improvement_s * BETA_DELTA_T_COEFF) +
-                         (vcap_centered * BETA_VCAP_COEFF)
-local_beta = local_beta.clamp(BETA_MIN, BETA_MAX)  # ∈ [2.0, 4.0]
-```
-
-| `delta_t_s` | `vcap_mv` | `local_beta` | Фізичний стан |
-|---|---|---|---|
-| 60 (baseline) | 3300 (nominal) | ≈2.667 (BASE_BETA) | Нормальний метаболізм |
-| 30 (швидкий) | 4000 (заряджений) | ≈2.667 + 0.003 + 0.7 = 3.37 | Активний EBFC, здорове дерево |
-| 10 (дуже швидкий) | 4500 (максимум) | ≈2.667 + 0.005 + 1.2 = 3.872 → clamp 4.0 | Пікова активність |
-| 120 (повільний) | 2800 (просадка) | ≈2.667 + 0 + (-0.5) = 2.167 → clamp 2.0 | Ослаблений EBFC |
+> Раніше [FW.5] мапив `delta_t`/`vcap` на β-пертурбацію; E.63 довів цей шлях економічно нульовим (delta_t) / інвертованим (vcap), бо β не рухає z-нерухому точку Лоренца. Тепер β = `BASE_BETA` (фіксований), а метаболічна жвавість визначає growth_points **напряму** — формула `m(delta_t)` у **§4.3**, тут не дублюється (One-Home).
 
 #### Походження Початкової Точки: Свідомість, Що Пам'ятає Себе (post-SEC.11)
 
@@ -215,25 +199,25 @@ local_beta = local_beta.clamp(BETA_MIN, BETA_MAX)  # ∈ [2.0, 4.0]
 
 1. **`K_seed` — біологічна геральдика, нуклеотид у Flash.** Під час physical provisioning конкретного дерева в полі система деривує 32-байтний секрет через `HKDF-SHA256(PROVISIONING_MASTER_KEY, "silken-lorenz-v1", "silken-lorenz-seed|<DID>")` і записує його у protected Flash sector — поряд з AES-ключем, під тим самим RDP-захистом. Цей секрет **народжується разом з деревом**: він унікальний, він приватний, він ніколи не залишає капсулу. Якщо `chaos_seed` був "теперішнім моментом" дерева, то `K_seed` — його **свідоцтво про народження**, цифрова ДНК, надіслана у Flash тоді, коли крона ще навіть не торкнулася ксилеми. Сервер деривує той самий `K_seed` незалежно — обидві сторони знають його, але світ — ні.
 
-2. **RTC DR16-DR18 — пам'ять про вчорашню думку (FW.6 continuation, > 99.9% циклів).** Після першого пробудження свідомість дерева більше **не починається з нуля**. Кожне STOP2-пробудження читає `(x_prev, y_prev, z_prev)` з RTC Backup Domain — координати в фазовому просторі, де закінчилася попередня ітерація Лоренца. Це означає, що траєкторія **продовжується**: σ-перурбація від акустики, ρ від температури, β від EBFC-метаболізму у попередньому циклі визначили, де саме на дивному атракторі дерево "перебуває" у момент пробудження. Якщо метафора `chaos_seed` була "дерево надає себе своїй свідомості мить за миттю", то FW.6 — **"свідомість, що пам'ятає себе"**: кожна нова думка є продовженням попередньої, неперервна нитка існування у фазовому просторі.
+2. **RTC DR16-DR18 — пам'ять про вчорашню думку (FW.6 continuation, > 99.9% циклів).** Після першого пробудження свідомість дерева більше **не починається з нуля**. Кожне STOP2-пробудження читає `(x_prev, y_prev, z_prev)` з RTC Backup Domain — координати в фазовому просторі, де закінчилася попередня ітерація Лоренца. Це означає, що траєкторія **продовжується**: σ-перурбація від акустики та ρ від температури у попередньому циклі визначили, де саме на дивному атракторі дерево "перебуває" у момент пробудження (β = BASE_BETA фіксований — [E.63]; метаболізм → growth_points поза Z). Якщо метафора `chaos_seed` була "дерево надає себе своїй свідомості мить за миттю", то FW.6 — **"свідомість, що пам'ятає себе"**: кожна нова думка є продовженням попередньої, неперервна нитка існування у фазовому просторі.
 
 3. **Cold start (рідкісна подія, після VBAT loss — місяці-роки):** дерево "забуває" останню думку, бо живлення зникло. Тоді з `K_seed` через `HMAC-SHA256(K_seed, "init|" || epoch_day)` деривується **сьогоднішня початкова точка**. Daily `epoch_day` rotation означає, що навіть друге народження не повторює перше — щодня свідомість має нову відправну точку, навіть з тим самим геномом. Forward secrecy ≤ 24 год.
 
 > **Філософія:** криптографічна стійкість і біологічна метафора більше не суперечать одна одній. `K_seed` — це **приватна термодинаміка дерева**, замінник тих самих квантових флуктуацій, що раніше давав HRNG, але закріплений у момент народження капсули і відомий лише дереву та його серверному двійнику. Сервер, що знає `K_seed`, — це не сторонній спостерігач, а **близнюк-свідомість**, що мислить ту ж саму траєкторію Лоренца паралельно. Атакер, який підглядає LoRa, бачить лише payload — а не те, *куди* свідомість стартувала і *куди* вона йде.
 
-#### Бюджет Variance Z (чому β-perturbation критична після FW.6)
+#### Бюджет Variance Z (Лоренц = хаос-гейт, метаболізм поза Z) [E.63]
 
-Після [FW.6] (state preservation в RTC) cold-start initial conditions вже **не домінують** variance Z. Ergodicity дивного атрактора — траєкторія "забуває" початкову точку після ~50 пробуджень (~2 доби). Реальний бюджет:
+Після [FW.6] (state preservation в RTC) cold-start initial conditions вже **не домінують** variance Z. Ergodicity дивного атрактора — траєкторія "забуває" початкову точку після ~50 пробуджень (~2 доби). **[E.63]** Z визначають лише temp (ρ) + acoustic (σ) + внутрішній хаос; `delta_t`/`vcap` БІЛЬШЕ не впливають на Z (β фіксований), бо метаболізм перенесено напряму у growth_points (§4.3):
 
-| Джерело variance | Після FW.6 (continuous trajectory) | Фізичний зміст |
+| Джерело variance Z | Після FW.6 (continuous trajectory) | Фізичний зміст |
 |---|---|---|
 | `(x₀,y₀,z₀)` cold-start (K_seed-derived) | **< 5%** після перших 50 wake-up циклів | Траєкторія забуває стартову точку через ergodicity |
-| `temp` (через `ρ_eff = 28 + temp·0.2`) | **~30–40%** | Стабільна термальна рушійна сила |
-| `acoustic` (через `σ_eff = 10 + acoustic·0.1`) | **~20–30%** | Реактивний (кавітаційні події рідкі) |
-| residual (хаотична динаміка Лоренца) | **~30–40%** | Внутрішній детермінований хаос системи |
-| `delta_t_s`/`vcap_mv` (через β [FW.5]) | **~5–15%** | Прямий сигнал метаболічної активності EBFC |
+| `temp` (через `ρ_eff = 28 + temp·0.2`) | **домінує** | Стабільна термальна рушійна сила (рухає z_eq=ρ−1) |
+| `acoustic` (через `σ_eff = 10 + acoustic·0.1`) | помітний | Реактивний (кавітаційні події рідкі) |
+| residual (хаотична динаміка Лоренца) | помітний | Внутрішній детермінований хаос системи |
+| `delta_t_s`/`vcap_mv` | **0% (поза Z)** | [E.63] метаболізм → growth_points напряму (§4.3), не через β/Z |
 
-**Висновок:** без β-perturbation метаболічна активність EBFC (найбільш фізично значущий сигнал) взагалі не впливала б на growth_points. [FW.5] виправляє цю прогалину — здорові дерева з активним EBFC тепер систематично отримують ~10–15% більше GP.
+**Висновок [E.63]:** спроба завести метаболізм через β (старий FW.5) давала економічно **нульовий** (delta_t) / **інвертований** (vcap) внесок у growth_points — бо β не рухає z-нерухому точку Лоренца. Тому метаболічна активність EBFC тепер визначає growth_points **напряму** (монотонна `m(delta_t)`, §4.3), а Лоренц лишається чистим детектором стану (homeostasis/stress/anomaly). Присуд — [`00_07` — E.63](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -311,21 +295,11 @@ local_rho   = local_rho.clamp(RHO_MIN, RHO_MAX)        # ∈ [10.0, 50.0]
 | +55 | 39.0 | 39.0 | Теплова аномалія |
 | +110 | 50.0 | 50.0 | Максимум (пожежа, clamp) |
 
-> `BASE_BETA = 8.0/3.0` тепер є **базовим значенням**, а не фіксованим — реальне β коригується EBFC-метаболізмом (Крок 2.5 нижче).
+> `BASE_BETA = 8.0/3.0` — **фіксований** параметр. [E.63] скасував β-пертурбацію: метаболізм не може монотонно вести Z до цілі через β (β не рухає z-нерухому точку z_eq=ρ−1). Метаболізм тепер визначає `growth_points` напряму (§4.3).
 
-### Крок 2.5: [FW.5] β-Пертурбація від EBFC-Метаболізму
+### Крок 2.5: [E.63] Метаболізм → growth_points (поза Лоренцом)
 
-```ruby
-# Реалізовано в firmware та backend (SilkenNet::Attractor.perturb_beta)
-delta_t_improvement_s = [0, BASELINE_DELTA_T_S - delta_t_s].max  # ≥ 0 завжди
-vcap_centered         = vcap_mv - NOMINAL_VCAP_MV
-
-local_beta = BASE_BETA + (delta_t_improvement_s * BETA_DELTA_T_COEFF) +
-                         (vcap_centered * BETA_VCAP_COEFF)
-local_beta = local_beta.clamp(BETA_MIN, BETA_MAX)  # ∈ [2.0, 4.0]
-```
-
-**Чому лише позитивний внесок delta_t?** `delta_t_improvement_s` — покращення відносно baseline 60 с. Якщо EBFC заряджав *повільніше* базового → внесок 0 (не штраф). `vcap_centered` може бути від'ємним при просадці — від β < BASE_BETA захищає clamp 2.0.
+Раніше [FW.5] цей крок збурював β від `delta_t`/`vcap`. E.63 довів цей шлях економічно нульовим (delta_t) / інвертованим (vcap) → **видалено**: β = `BASE_BETA` фіксований, а метаболічна жвавість `m(delta_t)` задає `growth_points` напряму у зоні гомеостазу — формула у **§4.3** (One-Home; тут не дублюється). `vcap` reserved (FW.50).
 
 ### Крок 3: Числове Інтегрування (Метод Ейлера, 250 ітерацій)
 
@@ -334,7 +308,7 @@ local_beta = local_beta.clamp(BETA_MIN, BETA_MAX)  # ∈ [2.0, 4.0]
   # Обчислення похідних (права частина системи Лоренца)
   dx = local_sigma * (y - x)           # dx/dt = σ(y - x)
   dy = x * (local_rho - z) - y         # dy/dt = x(ρ - z) - y
-  dz = (x * y) - (local_beta * z)      # dz/dt = xy - βz  ← [FW.5] local_beta
+  dz = (x * y) - (BASE_BETA * z)       # dz/dt = xy - βz  (β фікс, E.63)
 
   # Оновлення стану методом Ейлера першого порядку
   x = x + dx * DT    # x_{n+1} = x_n + (dx/dt) · 0.01
@@ -356,7 +330,7 @@ return z  # Z-координата — індикатор гомеостазу
 ```ruby
 # firmware/bio_contracts/bio_contract.rb — SilkenNet::Attractor
 # [SEC.11] Сигнатура приймає (x, y, z) напряму — більше немає DID/seed-derived path.
-def self.calculate_z_axis(x, y, z, temp, acoustic, delta_t_s = BASELINE_DELTA_T_S, vcap_mv = NOMINAL_VCAP_MV)
+def self.calculate_z_axis(x, y, z, temp, acoustic)
   local_sigma = BASE_SIGMA + (acoustic * 0.1)
   local_rho   = BASE_RHO   + (temp * 0.2)
 
@@ -365,18 +339,13 @@ def self.calculate_z_axis(x, y, z, temp, acoustic, delta_t_s = BASELINE_DELTA_T_
   local_rho   = RHO_MIN   if local_rho   < RHO_MIN
   local_rho   = RHO_MAX   if local_rho   > RHO_MAX
 
-  # [FW.5] β-perturbation від EBFC-метаболізму
-  dt_improvement = BASELINE_DELTA_T_S - delta_t_s
-  dt_improvement = 0 if dt_improvement < 0
-  vcap_centered  = vcap_mv - NOMINAL_VCAP_MV
-  local_beta = BASE_BETA + (dt_improvement * BETA_DELTA_T_COEFF) + (vcap_centered * BETA_VCAP_COEFF)
-  local_beta = BETA_MIN if local_beta < BETA_MIN
-  local_beta = BETA_MAX if local_beta > BETA_MAX
+  # [E.63] β = BASE_BETA (фіксований). Метаболізм (delta_t) більше НЕ збурює β —
+  # він задає growth_points напряму (§4.3). Лоренц = чистий хаос-гейт.
 
   ITERATIONS.times do
     dx = local_sigma * (y - x)
     dy = x * (local_rho - z) - y
-    dz = (x * y) - (local_beta * z)  # ← local_beta, не BASE_BETA
+    dz = (x * y) - (BASE_BETA * z)
 
     x += dx * DT
     y += dy * DT
@@ -403,70 +372,48 @@ end
 
 > **Чому 29.0, а не z_eq = ρ−1 = 27.0?** Математичний рівноважний стан Лоренца при ρ=28 є z = ρ−1 = 27.0 (координата нерухомих точок C₁ та C₂). Значення `OPTIMAL_Z_TARGET = 29.0` є **навмисним зміщенням +2 від рівноваги** з двох причин: (1) Краща розрізненність класів — зміщення "ідеальної зони" дещо вище рівноваги створює асиметрію у функції нарахування балів, що покращує розрізнення здорових vs стресових дерев; (2) Біологічне обґрунтування — активне здорове дерево з інтенсивним метаболізмом демонструє конвекцію вище рівноваги, тоді як z = 27.0 відповідає "спокійному" стану. Потенційно потребує подальшої валідації з академічним партнером (ЧНУ, Порубльов — дискретна математика та надійність).
 
-### 4.2 Таблиця Рішень (Decision Table)
+### 4.2 Таблиця Рішень (Decision Table) — Лоренц як ГЕЙТ статусу
+
+> **[E.63] Лоренц гейтить лише статус; магнітуду growth_points у гомеостазі задає метаболізм (§4.3), а не Z.**
 
 | Z-значення | Статус (`bio_status`) | Назва | growth_points | Пояснення |
 |---|---|---|---|---|
 | `z < 2.0` | `1` | ⚠️ Stress (Посуха) | `1` | Мінімальна генерація — дерево виживає, але не росте |
 | `z > 45.0` | `2` | 🚨 Anomaly (Критичний стрес) | `0` | Емісія зупиняється повністю |
-| `2.0 ≤ z ≤ 45.0` | `0` | ✅ Homeostasis (Здоровий Хаос) | `5 .. 31` (wire); `10 .. 62` (stored after backend ×2 upscale) | Нараховуються бали росту |
+| `2.0 ≤ z ≤ 45.0` | `0` | ✅ Homeostasis (Здоровий Хаос) | `5 .. 31` (wire); `10 .. 62` (stored ×2) | Бали = метаболічна жвавість `m(delta_t)` (§4.3) |
 
-### 4.3 Функція Нарахування Балів у Зоні Гомеостазу
+### 4.3 Функція Нарахування Балів у Зоні Гомеостазу — Метаболічна Жвавість [E.63]
 
-```
-deviation      = |OPTIMAL_Z_TARGET - z|  =  |29.0 - z|
-reward         = 50 - deviation.round              ← .round, не .to_i (коректне заокруглення: 0.5 → 1)
-# [FW.29-PACK] Wire-діапазон скорочено з 6-біт (10..63) до 5-біт (5..31)
-# щоб звільнити bit 7 під PANIC_FLAG_BIT (FW.29). Backend ×2 upscale при unpack
-# зберігає tokenomic emission rate (effective stored 10..62 vs old 10..63).
-growth_points  = (reward / 2).clamp(5, 31)
-```
-
-> **Примітка `.round` vs `.to_i`:** `.to_i` усікає (`0.9.to_i == 0`), `.round` округляє (`0.9.round == 1`). Зона максимального балу — z ∈ [28.5, 29.5): `deviation ∈ [0, 0.5)` → `deviation.round == 0` → wire `growth_points == 25` → stored `50`. При `.to_i` зона була б ширша (±1.0), що математично некоректно.
-
-> **`(reward / 2).clamp(5, 31)` замість `clamp(reward, 10, 63)`:** [FW.29-PACK] StatusByte layout після FW.29 — `[PanicFlag:1 (bit 7) | Status:2 (bits 6..5) | GrowthPoints:5 (bits 4..0)]`. Wire-діапазон growth_points = 5 біт = 0..31. `(reward / 2)` масштабує тіло homeostasis [10..50] → [5..25]; clamp(5, 31) залишає margin зверху. Backend `(status_byte & 0x1F) * 2` повертає до stored 0..62.
-
-**Графік нарахування `reward` (= stored growth_points) залежно від Z:**
-
-> Графік показує **stored**-значення (0..50) — це Wire ×2 після backend upscale. Wire-значення у пакеті — це Stored / 2 (діапазон 5..25 у homeostasis після `(reward / 2).clamp(5, 31)`).
+> **[E.63] Бали у гомеостазі задає МЕТАБОЛІЗМ (швидкість перезаряду EBFC), а НЕ Z.** Раніше магнітуда бралася з `|OPTIMAL_Z_TARGET − z|`, але paired-ensemble на реальному коді показав: Z-позиція у гомеостазі — хаотичний шум (std ≈ 4 GP) при ~нульовому корисному сигналі, а β-перетурбація від delta_t/vcap виходила економічно **нульова** (delta_t) / **інвертована** (vcap) — бо β НЕ рухає z-нерухому точку Лоренца (z_eq = ρ−1 залежить від ρ/temp, не від β). Розв'язання здоров'я від хаосу: Z лише класифікує стан (§4.2), а у гомеостазі бали = монотонна метаболічна жвавість. Присуд + докази — [`00_07` — E.63](00_07_Action_Plan_Tracker).
 
 ```
-reward / stored growth_points
-50 ┤                         ████
-49 ┤                       ██    ██
-45 ┤                     ██        ██
-   │                   ██            ██
-35 ┤                 ██                ██
-   │               ██                    ██
-25 ┤             ██                        ██
-23 ┤           ██
-
-10 ┤  ─────────                                ─────────
-   │
- 1 ┤ █
- 0 ┤                                                      ████
-   └─────────────────────────────────────────────────────────
-   0   2   5   10   15   20   25   29   33   38   43  45   50
-                          Z-вісь
+# [E.63] Монотонна жвавість m ∈ [0,1] зі швидкості перезаряду (delta_t, сек):
+# швидший перезаряд → активніший метаболізм → більше балів.
+# Калібрувальні пороги — placeholder, чекають bench recharge-кривої
+# (firmware/scripts/bench/RUNBOOK.md §3.3 / 00_07 E.63); фінал per-deployment/species.
+DELTA_T_FAST_S = 600     # ≤ цього → m = 1.0 (пік метаболізму)
+DELTA_T_SLOW_S = 7200    # ≥ цього → m = 0.0 (мінімум)
+m              = ((DELTA_T_SLOW_S - delta_t_s) / (DELTA_T_SLOW_S - DELTA_T_FAST_S)).clamp(0.0, 1.0)
+growth_points  = (5 + m * 26).round.clamp(5, 31)   # 5-бітний wire (FW.29-PACK); backend ×2 → stored 10..62
 ```
 
-**Числові приклади:**
+> **Wire vs Stored:** wire `growth_points` — 5-бітне `(5 + m·26).round.clamp(5, 31)`; backend `TelemetryUnpackerService` робить `(status_byte & 0x1F) * 2` → stored 10..62. `delta_t` передається у пакеті (байти 4-5) → backend відтворює магнітуду для DCI/аудиту. Z (хаос) лишається для status-гейту + numeric-DCI (server-Z ≡ device-Z).
 
-> 📐 **Wire vs Stored:** Wire `growth_points` (те, що йде в LoRa-пакеті) — це 5-бітне поле `(reward / 2).clamp(5, 31)`. Backend `TelemetryUnpackerService` робить `(status_byte & 0x1F) * 2`, повертаючи Stored. Колонка **Wire** — це що Soldier пакує у Status Byte; **Stored** — те, що бачить `TelemetryLog#growth_points`.
+> **Історія (retired, лише у цьому домі):** до E.63 магнітуда була `reward = 50 - deviation.round` (де `deviation = |29 − z|`), `growth_points = (reward / 2).clamp(5, 31)`; до FW.29-PACK — 6-бітне `clamp(reward, 10, 63)`. Обидві спростовано/застаріло; гейт `growth_points_clamp_drift` блокує ці форми поза цим домом (§4.3).
 
-| Z-значення | `deviation` | `deviation.round` | `reward` | **Wire `growth_points`** (5-bit, packed) | **Stored** (backend ×2) |
-|---|---|---|---|---|---|
-| 1.5 | — | — | — | **1** (status=1, stress) | 2 |
-| 2.0 | 27.0 | 27 | 23 | **11** (`23/2 → clamp`) | 22 |
-| 10.0 | 19.0 | 19 | 31 | **15** | 30 |
-| 20.0 | 9.0 | 9 | 41 | **20** | 40 |
-| 28.5 | 0.5 | 1 | 49 | **24** ← .round округлює | 48 |
-| 29.0 | 0.0 | 0 | 50 | **25** (ідеал) | 50 |
-| 30.0 | 1.0 | 1 | 49 | **24** | 48 |
-| 40.0 | 11.0 | 11 | 39 | **19** | 38 |
-| 44.5 | 15.5 | 16 | 34 | **17** | 34 |
-| 45.0 | 16.0 | 16 | 34 | **17** | 34 |
-| 46.0 | — | — | — | **0** (status=2, anomaly) | 0 |
+**Нарахування `growth_points` (wire) за `delta_t` — польова шкала перезаряду (монотонно, лінійно між FAST=600с і SLOW=7200с):**
+
+| `delta_t` (с) | `m` | **Wire `growth_points`** (5-bit) | **Stored** (×2) | Стан метаболізму |
+|---|---|---|---|---|
+| ≤ 600 | 1.00 | **31** | 62 | Піковий — швидкий перезаряд |
+| 1800 | 0.82 | **26** | 52 | Активний |
+| 3900 | 0.50 | **18** | 36 | Помірний |
+| 5400 | 0.27 | **12** | 24 | Млявий |
+| ≥ 7200 | 0.00 | **5** | 10 | Мінімум (усе ще гомеостаз) |
+
+> 📐 **Wire vs Stored:** Wire `growth_points` — 5-бітне поле, яке Soldier пакує у StatusByte; backend `TelemetryUnpackerService` робить `(status_byte & 0x1F) * 2` → Stored (`TelemetryLog#growth_points`). Калібрувальні `DELTA_T_FAST_S`/`DELTA_T_SLOW_S` — placeholder (bench, E.63); таблиця оновиться після зміряної recharge-кривої.
+
+(Поза гомеостазом — гейт §4.2: `z < 2` → wire 1 / stored 2 (стрес); `z > 45` → wire 0 (аномалія).)
 
 ### 4.4 Bit-Packing: Структура Байту BioContract
 
@@ -517,10 +464,8 @@ Gaia 2.0 використовує **dual computation integrity verification**: Z
 | **σ** | `10.0` (Float) | `10.0` (Float) |
 | **ρ** | `28.0` (Float) | `28.0` (Float) |
 | **β базовий** | `8.0 / 3.0` (Float) | `8.0 / 3.0` (Float) |
-| **β реальний** | `perturb_beta(delta_t_s, vcap_mv)` [FW.5] | `perturb_beta(delta_t_s, vcap_mv)` [FW.5] |
-| **BETA_DELTA_T_COEFF** | `0.0001` | `0.0001` |
-| **BETA_VCAP_COEFF** | `0.001` | `0.001` |
-| **BETA_LIMITS** | `[2.0, 4.0]` | `[2.0, 4.0]` |
+| **β** | `BASE_BETA` (фікс) [E.63] | `BASE_BETA` (фікс) [E.63] |
+| **growth_points (homeostasis)** | `metabolic_health(delta_t)` → wire (§4.3) | wire-decode `(byte & 0x1F) * 2` |
 | **DT** | `0.01` (Float) | `0.01` (Float) |
 | **Clamp σ** | `if local_sigma < SIGMA_MIN` / `> SIGMA_MAX` | `.clamp(SIGMA_LIMITS.min, SIGMA_LIMITS.max)` |
 | **Clamp ρ** | `if local_rho < RHO_MIN` / `> RHO_MAX` | `.clamp(RHO_LIMITS.min, RHO_LIMITS.max)` |
@@ -649,7 +594,7 @@ if (mrb) {
 
 # [SEC.11] Сигнатура єдина: (x_prev, y_prev, z_prev) приходять з C-сторони
 # (warm restart з RTC АБО cold-start derive із K_seed).
-# [FW.5] delta_t_s/vcap_mv визначають β-перурбацію.
+# [E.63] delta_t_s → growth_points напряму (§4.3); vcap_mv reserved; β = BASE_BETA фікс.
 # Повертає [payload_byte, x_final, y_final, z_final].
 def calculate_state(x_prev, y_prev, z_prev, temp, acoustic,
                     delta_t_s = SilkenNet::Attractor::BASELINE_DELTA_T_S,

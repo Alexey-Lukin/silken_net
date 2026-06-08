@@ -261,9 +261,9 @@ namespace :docs do
       lorenz_drift.sort.each { |d| puts "    ✗ #{d}" }
     end
     if gp_clamp.empty?
-      puts "  growth_points:  no retired `clamp(…,10,63)` wire range outside owner (03_04 §4.3) ✓"
+      puts "  growth_points:  no retired GP formula (`10,63` / `reward / 2` / `50 - deviation`) outside owner (03_04 §4.3) ✓"
     else
-      puts "  GROWTH_POINTS CLAMP DRIFT (#{gp_clamp.size}) — FW.29-PACK wire is `(reward / 2).clamp(5, 31)` (03_04 §4.3):"
+      puts "  GROWTH_POINTS FORMULA DRIFT (#{gp_clamp.size}) — [E.63] live form is `metabolic_health(delta_t)` (03_04 §4.3):"
       gp_clamp.sort.each { |d| puts "    ✗ #{d}" }
     end
     if deprecated.empty?
