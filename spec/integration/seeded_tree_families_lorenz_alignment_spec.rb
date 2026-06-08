@@ -48,19 +48,19 @@ RSpec.describe "Seeded TreeFamily values vs Lorenz attractor (OPS.8)" do
 
       it "classifies its own optimal_z_target as homeostatic" do
         expect(family.healthy_z?(attrs[:optimal_z_target])).to be true
-        expect(SilkenNet::Attractor.homeostatic?(attrs[:optimal_z_target], family)).to be true
+        expect(SilkenNet::Attractor.homeostatic?(attrs[:optimal_z_target], family, 0.0)).to be true
       end
 
       it "classifies Z just above critical_z_max as non-homeostatic" do
         z = attrs[:critical_z_max] + 1.0
         expect(family.healthy_z?(z)).to be false
-        expect(SilkenNet::Attractor.homeostatic?(z, family)).to be false
+        expect(SilkenNet::Attractor.homeostatic?(z, family, 0.0)).to be false # [E.64] temp=0 → ceiling=critical_z_max
       end
 
       it "classifies Z just below critical_z_min as non-homeostatic" do
         z = attrs[:critical_z_min] - 1.0
         expect(family.healthy_z?(z)).to be false
-        expect(SilkenNet::Attractor.homeostatic?(z, family)).to be false
+        expect(SilkenNet::Attractor.homeostatic?(z, family, 0.0)).to be false # [E.64] temp=0 → ceiling=critical_z_max
       end
 
       it "covers the realistic Lorenz Z reach (≥ ρ_min−1 ≈ 9 .. ρ_max−1 ≈ 49)" do

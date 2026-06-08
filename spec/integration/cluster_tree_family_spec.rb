@@ -183,9 +183,10 @@ RSpec.describe "Cluster health and tree family management" do
 
     it "checks homeostasis correctly" do
       family = create(:tree_family) # z_min: 5.0, z_max: 45.0
-      expect(SilkenNet::Attractor.homeostatic?(25.0, family)).to be true
-      expect(SilkenNet::Attractor.homeostatic?(1.0, family)).to be false
-      expect(SilkenNet::Attractor.homeostatic?(50.0, family)).to be false
+      # [E.64] homeostatic? now takes temp (ρ-relative ceiling); temp=0 → ρ=28 → ceiling=45
+      expect(SilkenNet::Attractor.homeostatic?(25.0, family, 0.0)).to be true
+      expect(SilkenNet::Attractor.homeostatic?(1.0, family, 0.0)).to be false
+      expect(SilkenNet::Attractor.homeostatic?(50.0, family, 0.0)).to be false
     end
 
     it "generates trajectory as flat array" do
