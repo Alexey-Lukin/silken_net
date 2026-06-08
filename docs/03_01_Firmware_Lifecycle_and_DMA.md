@@ -649,6 +649,8 @@ HAL_CRYP_Init(&hcryp);
 - **PVD Callback** (напруга < 2.2V — аварійне, не пробудження).
 - **VBAT_OK** ([`02_03 §7`](02_03_BQ25570_MPPT_Nano_Power)) — апаратний buck/brownout-**гейт** (нижче порогу MCU знеструмлений → recovery = power-on-reset), **НЕ** GPIO-EXTI wake: при буфері 4.39 Дж VBAT_OK залипає HIGH (нема періодичного edge), а cold-start = power-on робить EXTI надлишковим.
 
+> **Два різні пороги — не плутати (FW.49):** `VBAT_OK ON ≈ 3.4 В` — апаратний поріг **увімкнення buck'а** (BQ25570, [`02_03 §7`](02_03_BQ25570_MPPT_Nano_Power)): нижче нього MCU просто знеструмлений. **Vcap-енергогейт** — firmware-політика, що перевіряється вже ПІСЛЯ RTC-WUT-пробудження (пороги listen / cold-TX-defer / fauna ≈ 4.5 В — значення + сирий-ADC застереження у §1.4 [FW.50](00_07_Action_Plan_Tracker)) — і вирішує, чи цей конкретний цикл робить корисну роботу. Тобто «3.4 В» (HW-гейт живлення) ≠ «4.5 В» (FW-гейт fauna-сесії): різні шари, а не суперечливі значення одного порогу.
+
 > **ADR wake-source (FW.49, founder 2026-06-07):** RTC WUT + Vcap-енергогейт + RTC-календар як timebase — обрано замість (а) чистого RTC-розкладу (`delta_t`=константа → мертвий біосигнал) і (б) VBAT_OK-edge (залипання HIGH + квантований `delta_t` + потреба HW-траси VBAT_OK→EXTI). `delta_t` як час перезаряду = метаболізм живе через Vcap-гейт, вимірюється wall-time. Staged-план + bench bring-up (LSE/RTC clock-tree у repo відсутній) — [`00_07` FW.49](00_07_Action_Plan_Tracker).
 
 ---

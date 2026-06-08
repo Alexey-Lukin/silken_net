@@ -25,7 +25,7 @@
 | [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | Джерело (EBFC): V_OC, R_int, P-V крива |
 | [`02_02` — Blind Mate Pogo Pin Interface](02_02_Blind_Mate_Pogo_Pin_Interface) | Pogo R_interface (§3.3 Z-stack; cold-start contact) |
 | [`02_04` — EDLC Supercapacitor Buffer](02_04_EDLC_Supercapacitor_Buffer) | Буфер (0.47F, VBAT_OV/UV пороги) |
-| [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | Споживач (STM32, VBAT_OK wake) |
+| [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | Споживач (STM32; wake = RTC-WUT, VBAT_OK = живлення-гейт) |
 | [`02_06` — Legacy Breadboard Appendix](02_06_Legacy_Breadboard_Appendix) | Legacy LTC3108 breadboard прототип |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.7 resistors, HW.13 MPPT/R_int |
 
@@ -38,7 +38,7 @@
 - [4. Розрахунок Програмуючих Резисторів](#-4-розрахунок-програмуючих-резисторів)
 - [5. Зведена Таблиця Налаштувань](#-5-зведена-таблиця-налаштувань)
 - [6. Апаратний Хак: Buffer Cap для Піку LoRa TX](#-6-апаратний-хак-buffer-cap-для-піку-lora-tx)
-- [7. Логіка VBAT_OK: Коли Мікроконтролер Прокидається?](#-7-логіка-vbat_ok-коли-мікроконтролер-прокидається)
+- [7. Логіка VBAT_OK: апаратний живлення-гейт (cold-start + brownout)](#-7-логіка-vbat_ok-апаратний-живлення-гейт-cold-start--brownout)
 - [8. Теплові Та Операційні Нотатки](#-8-теплові-та-операційні-нотатки)
 - [9. Розрахунок Енергетичного Балансу (з урахуванням ККД)](#-9-розрахунок-енергетичного-балансу-з-урахуванням-ккд)
 - [10. Лабораторна Валідація (Production Breadboard, Post-Pivot)](#-10-лабораторна-валідація-production-breadboard-post-pivot)
@@ -78,7 +78,7 @@ Tree EBFC (>500mV)
 │  - MPPT: VOC sampling / 16s                  │
 │  - Boost Charger → VSTOR (до 5.5V)          │
 │  - Buck Converter → VOUT (3.3V стабілізовано)│
-│  - VBAT_OK → GPIO STM32 (дозвіл пробудження)│
+│  - VBAT_OK → GPIO STM32 (гейт живлення — HW)│
 └───────────────────┬──────────────────────────┘
                     │
                     ▼  VSTOR (накопичення)
@@ -151,20 +151,20 @@ VSTOR ──[Internal Buck]──▶ VOUT (3.3V) ──▶ STM32WLE5JC VDD
 
 ### VBAT_OK
 
-**Призначення:** Логічний вихід-дозволювач для пробудження STM32WLE5JC.
+**Призначення:** Апаратний buck-enable / brownout-**гейт живлення** STM32WLE5JC — дозволяє buck подавати 3.3 В, коли VSTOR достатній. Це **НЕ** джерело періодичного пробудження (канон wake-source — нижче, «У Firmware»).
 
 ```
-BQ25570 VBAT_OK ──▶ STM32 GPIO (EXTI або wake-up pin)
+BQ25570 VBAT_OK ──▶ STM32 GPIO (status/gate-вхід)
 ```
 
 **Логіка спрацьовування (гістерезис):**
 
-| Умова | Напруга VSTOR | VBAT_OK | Стан MCU |
+| Умова | Напруга VSTOR | VBAT_OK | Живлення MCU (buck) |
 |---|---|---|---|
-| Іоністор заряджається | < 3.4V | LOW (0V) | STOP2 (глибокий сон) |
-| Іоністор досяг порогу | ≥ 3.4V | HIGH (3.3V) | Дозвіл пробудження |
-| Іоністор розряджається | > 3.32V | HIGH | MCU продовжує роботу |
-| Іоністор критично сів | < 3.32V (~97% від 3.4V) | LOW → HIGH (гіст.) | MCU засинає (STOP2) |
+| Іоністор заряджається | < 3.4V | LOW (0V) | Знеструмлений (buck OFF) |
+| Іоністор досяг порогу | ≥ 3.4V | HIGH (3.3V) | Buck ON → 3.3 В на MCU |
+| Іоністор розряджається | > 3.32V | HIGH | Живлення тримається |
+| Іоністор критично сів | < 3.32V (~97% від 3.4V) | HIGH → LOW (гіст.) | Buck OFF → MCU знеструмлений |
 
 **Гістерезис:** пороги VBAT_OK **програмовані** ROK-резисторами (VBAT_OK_PROG — спад; VBAT_OK_HYST — підйом, ≈ PROG + 100 мВ; TI SLUSBH2), а **не** «вбудовані 3%». Запобігають дрижанню (chatter) при граничній напрузі. Значення 3.4 / 3.32 В у таблиці — поточна **ціль дизайну** (фінал — bench).
 
@@ -435,9 +435,9 @@ VOUT (3.3V) ──┬── [STM32WLE5JC 3V3 pin]
 
 ---
 
-## 🔋 7. Логіка VBAT_OK: Коли Мікроконтролер Прокидається?
+## 🔋 7. Логіка VBAT_OK: апаратний живлення-гейт (cold-start + brownout)
 
-Сигнал `VBAT_OK` від BQ25570 — це апаратний "дозволювач" для STM32. Він реалізує принцип "Нульового Лагу": MCU не витрачає жодної енергії на опитування напруги — BQ25570 сам повідомляє коли готовий.
+Сигнал `VBAT_OK` від BQ25570 — апаратний **гейт живлення**: він вирішує, чи buck взагалі подає 3.3 В на STM32, а **не** коли вузол прокидається. «Нульовий лаг» тут — у тому, що MCU не опитує напругу: BQ25570 сам тримає живлення лише коли VSTOR достатній. **Періодичне пробудження** (heartbeat) робить RTC-WUT, а корисність циклу гейтить Vcap-енергогейт — канон wake-source [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA) (FW.49). VBAT_OK фігурує лише на двох краях: **cold-start** (перший boot) і **brownout** (втрата/відновлення живлення).
 
 ```
 Часовий графік (типовий цикл):
@@ -452,17 +452,17 @@ VOUT (3.3V) ──┬── [STM32WLE5JC 3V3 pin]
                                                        (VSTOR ≥ 3.4V)
 ```
 
-**Поведінка в реальних умовах:**
+**Поведінка на краях (cold-start + brownout):**
 - **Після монтажу (свіжий супер-кап, 0V):** BQ25570 Cold-Start → VSTOR повільно зростає → через 15–30 хвилин досягає 3.4V → VBAT_OK = HIGH → STM32 завантажується вперше
-- **Нічна робота (низький EBFC-струм):** VSTOR може повільно падати → при VSTOR < 3.31V → VBAT_OK = LOW → STM32 переходить у STOP2 → зберігає стан у RTC Backup registers
-- **Відновлення зранку:** Сонце прогріває ліс → EBFC-струм зростає → VSTOR знову перевищує 3.4V → VBAT_OK = HIGH → STM32 відновлює роботу
+- **Глибокий розряд (зимовий дефіцит / тривала ніч):** якщо VSTOR падає < 3.31V → VBAT_OK = LOW → buck off → MCU **знеструмлений** (brownout), стан — у RTC Backup. ⚠️ Це **brownout**, не штатний сон: у нормі вузол STOP2-спить між RTC-WUT-циклами ([`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)), а не тому, що VBAT_OK впав.
+- **Відновлення:** EBFC підіймає VSTOR ≥ 3.4V → VBAT_OK = HIGH → buck ON → STM32 стартує заново (power-on-reset), `delta_t`-continuity з RTC.
 
-**Критичний пороговий ланцюжок:**
+**Граничний ланцюжок живлення (cold-start / brownout-recovery):**
 ```
 EBFC (>500mV) → BQ25570 Boost → VSTOR ≥ 3.4V → VBAT_OK HIGH
                                               → Buck ON → VOUT = 3.3V
-                                              → STM32 GPIO interrupt → Wakeup from STOP2
-                                              → Firmware Phase 1: SENSE
+                                              → MCU під живленням (перший boot / brownout-recovery = power-on-reset)
+                                              → штатний heartbeat далі = RTC-WUT ([`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)), НЕ VBAT_OK-edge
 ```
 
 ---
