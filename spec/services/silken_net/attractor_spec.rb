@@ -137,74 +137,60 @@ RSpec.describe SilkenNet::Attractor do
     end
   end
 
-  describe "Dual Computation Integrity (firmware parity)" do
-    # [SEC.11] Backend MUST produce identical Z-values to firmware
-    # mruby for the same (x₀, y₀, z₀, temp, acoustic). [E.63] β = BASE_BETA
-    # is fixed on both sides — delta_t/vcap no longer affect Z. This local
-    # re-impl is the canonical kernel — if backend ever drifts, this fuzz
-    # test catches it. Mirror of firmware/bio_contracts/bio_contract.rb#iterate.
-    def firmware_z(x, y, z, temp, acoustic, delta_t_s = 60, vcap_mv = 3300)
-      _ = [ delta_t_s, vcap_mv ]  # [E.63] accepted but no longer affect Z
-      sigma = [ 5.0, [ 30.0, 10.0 + (acoustic * 0.1) ].min ].max
-      rho   = [ 10.0, [ 50.0, 28.0 + (temp * 0.2) ].min ].max
-      beta  = 8.0 / 3.0
-
-      250.times do
-        dx = sigma * (y - x)
-        dy = x * (rho - z) - y
-        dz = (x * y) - (beta * z)
-        x += dx * 0.01
-        y += dy * 0.01
-        z += dz * 0.01
+  describe "Dual Computation Integrity (REAL firmware contract — subprocess)" do
+    # [FW.57 F4] The firmware contract (firmware/bio_contracts/bio_contract.rb)
+    # defines its OWN SilkenNet::Attractor, so it can't be co-loaded with the
+    # backend in one process. We run it in an isolated subprocess and compare its
+    # output DIRECTLY to the backend mirror — replacing the old hand-copied
+    # `firmware_z` (a 3rd kernel copy that could silently drift while both
+    # "parity" sides still agreed). Z + bio_status are compared; GP parity needs
+    # a backend metabolic_health mirror (= B, deferred to FW.2 — 00_07 E.63).
+    # NB: anomaly (z > ρ-relative ceiling) is rare by design (E.64) → the sweep
+    # mostly exercises the homeostasis branch + the kernel Z parity.
+    def run_firmware_contract(cases)
+      runner = Rails.root.join("tools/firmware/contract_runner.rb").to_s
+      out = IO.popen([ Gem.ruby, runner ], "r+") do |io|
+        io.write(JSON.generate(cases: cases))
+        io.close_write
+        io.read
       end
-      z
+      raise "contract_runner.rb failed (status #{$?.exitstatus}): #{out}" unless $?.success?
+      JSON.parse(out)
     end
 
-    it "matches firmware Z bit-by-bit on a 200-case fuzz sweep" do
+    it "matches the backend Z + bio_status on a 200-case fuzz sweep (real contract, not a mirror)" do
+      fw_family = Struct.new(:critical_z_min, :critical_z_max).new(2.0, 45.0)
       rng = Random.new(20_260_502)
-      mismatches = []
-      200.times do
-        x0   = rng.rand(-1.0..1.0)
-        y0   = rng.rand(-1.0..1.0)
-        z0   = rng.rand(-1.0..1.0)
-        temp = rng.rand(-40.0..60.0)
-        ac   = rng.rand(0..255)
-        dt_s = rng.rand(0..240)
-        vcap = rng.rand(2_000..4_500)
-
-        fw = firmware_z(x0, y0, z0, temp, ac, dt_s, vcap).round(4)
-        be = described_class.calculate_z_from_state(x0, y0, z0, temp, ac, dt_s, vcap).first
-        mismatches << [ x0, y0, z0, temp, ac, dt_s, vcap, fw, be ] if (fw - be).abs > 1e-9
-      end
-      expect(mismatches).to be_empty,
-        "Firmware/backend Z divergence on #{mismatches.size}/200 cases. First: #{mismatches.first}"
-    end
-
-    it "[E.64] firmware/backend agree on bio_status via the ρ-relative ceiling" do
-      # [F3] Was a hardcoded `between?(2.0, 45.0)` — the pre-E.64 ABSOLUTE
-      # threshold. Post-E.64 anomaly is ρ-relative (ceiling = ρ(temp) +
-      # (critical_z_max − BASE_RHO)); route both sides through anomaly_ceiling so
-      # this guards the ρ-relative path, not a stale 45. crit_min/max mirror
-      # firmware BioContract::CRITICAL_Z_MIN/MAX (family default).
-      crit_min = 2.0
-      crit_max = 45.0
-      categorise = lambda do |z, temp|
-        if z < crit_min then :stress
-        elsif z > described_class.anomaly_ceiling(temp, crit_max) then :anomaly
-        else :homeostasis
-        end
+      cases = Array.new(200) do
+        [ rng.rand(-1.0..1.0), rng.rand(-1.0..1.0), rng.rand(-1.0..1.0),
+          rng.rand(-40.0..60.0), rng.rand(0..255), rng.rand(0..7200) ]
       end
 
-      # temp=60 → ρ=40 → ceiling=57: a warm-day case the old absolute-45 missed.
-      [ [ 1, 50.0, 200 ], [ 54_321, 10.0, 50 ], [ 100, 22.0, 5 ], [ 7, 60.0, 20 ] ].each do |seed, temp, acoustic|
-        x, y, z = xyz_for(seed)
-        fw_z = firmware_z(x, y, z, temp, acoustic)
-        be_z = described_class.calculate_z_from_state(x, y, z, temp, acoustic).first.to_f
+      fw = run_firmware_contract(cases)
+      z_div = []
+      status_div = []
 
-        expect(categorise.call(be_z, temp)).to eq(categorise.call(fw_z, temp)),
-          "Category mismatch for seed=#{seed} temp=#{temp}: fw_z=#{fw_z.round(4)}, " \
-          "be_z=#{be_z.round(4)}, ceiling=#{described_class.anomaly_ceiling(temp, crit_max).round(2)}"
+      cases.each_with_index do |(x, y, z, temp, ac, dt), i|
+        fw_payload, fw_z = fw[i]
+        be_z = described_class.calculate_z_from_state(x, y, z, temp, ac, dt)[3] # raw final Z
+
+        z_div << [ i, fw_z, be_z ] if (fw_z - be_z).abs > 1e-9
+
+        # firmware packs status into bits 6..5; the backend classifies with its
+        # REAL homeostatic? / anomaly_ceiling (no hand-copied kernel logic).
+        fw_status = (fw_payload >> 5) & 0x03
+        agree =
+          case fw_status
+          when 0 then described_class.homeostatic?(be_z, fw_family, temp)
+          when 1 then be_z < fw_family.critical_z_min                                        # stress
+          when 2 then be_z > described_class.anomaly_ceiling(temp, fw_family.critical_z_max) # anomaly
+          else true # tamper/VM-error not produced by evaluate_and_pack
+          end
+        status_div << [ i, fw_status, be_z.round(4), temp.round(1) ] unless agree
       end
+
+      expect(z_div).to be_empty, "Z divergence (real fw ↔ backend): #{z_div.first(3)}"
+      expect(status_div).to be_empty, "bio_status divergence (real fw ↔ backend): #{status_div.first(3)}"
     end
   end
 end

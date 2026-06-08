@@ -634,7 +634,7 @@
 - **P2** · 👤 · → `03_04`
 - Аудит останніх 6 комітів (E.63/E.64, 2026-06-08) виявив дві низькосеверні DCI-parity поверхні — **передіснуючі**, не баги марафону:
 - [ ] 👤 **F2 — temp-нормалізація розриває parity при дрейфі:** backend рахує ρ (Z + `anomaly_ceiling`) з `normalize_temperature(raw)=raw+temperature_offset_c` (`device_calibration.rb:37`), firmware — з raw wire-temp. При `offset≠0` (дефолт 0, капов. ±5°C) ρ розходиться на `offset×0.2` → стеля ≤1.0, server_z хаотично → можливий хибний DCI-flag на дрейфнутих вузлах. E.64 розширила залежність на anomaly-стелю. Рішення: firmware-temp калібрувати тим самим offset, або DCI допускати ε-смугу по temp.
-- [ ] 🔗 **F4 — три рукописні копії Лоренц-kernel:** firmware `bio_contract.rb` / backend `attractor.rb` / spec `firmware_z` (firmware+backend обидва визначають `SilkenNet::Attractor` → не co-load'яться → spec тримає 3-тю копію). `pack_status_byte` parity = «by construction» (однакові вирази) + C golden-вектори, **не** co-execution-тест. Hardening: завантажувати firmware-контракт в ізольований namespace (anon module / subprocess) → точна co-execution звірка.
+- [x] ✅ 🤖 **F4 DONE (2026-06-08) — три рукописні копії Лоренц-kernel → пряма co-execution звірка:** видалено рукописну `firmware_z`-копію зі spec; `tools/firmware/contract_runner.rb` ганяє СПРАВЖНІЙ `bio_contract.rb` в ізольованому subprocess (firmware+backend обидва визначають `SilkenNet::Attractor` → не co-load'яться) → `attractor_spec` звіряє real-contract `Z`+`bio_status` ↔ backend напряму (200-fuzz; було лише транзитивно через golden-вектори + 3-тю копію). GP-parity лишається на B/FW.2 (потребує backend `metabolic_health` mirror).
 
 ## §03/§05 · Безпека (Edge crypto + Web3)
 
