@@ -603,10 +603,6 @@
 - **Знахідка:** `vcap_voltage = HAL_ADC_GetValue()` (канал VREFINT) — сирий 12-bit відлік (~1500) скрізь трактується як мВ: пакування байтів 4-5, пороги `VCAP_LISTEN_THRESHOLD=2800`/`COLD_TX_DEFER=4000`/`FAUNA=4500` мВ, EMA, `vcap_mv` у mruby. На залізі RX-вікно (>2800) не відкриється ніколи, а Vcap-енергогейт — з фейкових значень. Плюс: VREFINT міряє VDDA (за buck'ом — константа), НЕ Vcap EDLC; для Vcap потрібен дільник на окремий ADC-канал (hardware, `02_01`/`02_03`).
 - [ ] 👤 схемна вилка: розводка Vcap на окремий ADC-пін (цільовий тракт BQ25570 VBAT_SEC — `02_01 §7.1`; OV/пороги — `02_03`) · [x] 🤖 pure-helper `Adc_Raw_To_Mv()` (VREFINT factory-cal @0x1FFF75AA + дільник-параметр, без запеченого номіналу) + host-тести — `firmware/common/adc_convert.h` (One-Home); жива розводка НЕ ввімкнена (чекає дільника+окремого каналу) · [ ] 👤 bench-калібрування (DMM-точки vs `Adc_Raw_To_Mv` — RUNBOOK §3.4)
 
-#### FW.51 — Queen: телеметрія-батч губиться при провалі CoAP-send
-- **P2** · 🤖 · → [`03_02 §4`](03_02_Queen_Gateway_Firmware)
-- ✅ `Flush_Cache_To_Rails` звільняв CIFO-слоти (`is_active=0, cache_count=0`) ПІД ЧАС пакування — до підтвердження send → провал усіх retry (LTE-діра) мовчки знищував годину телеметрії лісу. · [x] 🤖 deferred-clear: пакування лише рахує `packed_count`, слоти (лише запаковані) звільняються ЛИШЕ при `send_success`; при провалі кеш лишається → наступний flush повторює, дедуплікація оновлює ті самі DID найсвіжішими даними. Викликача не чіпано (energy-conservative: count-trigger і так повторює при повному кеші, low-occupancy чекає ≤1 год — без retry-шторму на мертвому LTE). · [x] 🤖 4 host-тести (fail→keep / success→clear / retry-no-loss / dedup-refresh) + канон `03_02 §3/§4` синхронізовано. Cross-ref: FW.9 (retry loop), FW.53 (OTA wire).
-
 #### FW.52 — OTA throughput by-design: 1 RX-пакет/пробудження + give-up без печатки
 - **P2** · 👤 · → [`03_02 §5`](03_02_Queen_Gateway_Firmware)
 - **Знахідка (design-спостереження):** (а) Soldier RX-вікно обробляє МАКСИМУМ один пакет за wake-цикл (усі сценарії → `break`) — OTA на 1024B = ~98 чанків ≈ 98 пробуджень; (б) Queen гасить `ota_is_active=0`, якщо тіло відлунало до прибуття HMAC-печатки (CoAP-порядок не гарантує) — а re-request обслуговується лише при `ota_is_active==1` → мертвий OTA до повторного Rails-push; (в) Soldier шле re-request лише раз на «5 хв» tick-часу (див. FW.49); (г) **(2026-06-07)** `Write_OTA_Contract_To_Flash` — прототип (`soldier/main.c`) + виклик **без тіла** (лише hal_mock-стаб) → лінк упаде при HAL-фазі; реалізувати на flash-примітивах (еразе 126(-127) + dw-program, `03_01 §2.3` патерн). Разом: дні-тижні на один OTA. Можливо acceptable (energy-first), але рішення має бути СВІДОМИМ.
@@ -1120,6 +1116,7 @@
 | FW.18 | TinyML confidence threshold (RTC DR13/14 dual-zone) | `03_03`, `03_01 §2`, `04_06` |
 | FW.29 | Panic vs saturated acoustic disambiguation (PANIC_FLAG_BIT) | `03_03 §5.3` |
 | FW.29-PACK | StatusByte layout collision fix (5-bit growth_points) | `03_01 §11.5`, `03_04 §4.3-5.2`, `05_02` |
+| FW.51 | Queen flush: пакування лише рахує (`packed_count`); CIFO-слоти звільняються ЛИШЕ при `send_success` (доставка, не транспорт-OK) → провал retry (LTE-діра) не губить годину телеметрії; dedup оновлює held DID; caller свідомо energy-conservative (без retry-шторму) | `03_02 §3/§4` |
 | S6.12 | TokenomicsEvaluator oracle-guards audit (KYC all-paths) | `04_02`, `05_02` |
 | BIZ.4 | DAO Governance (SilkenGovernor + Timelock) | `05_06`, `07_01` |
 | PUMA-RACK-1 | Idempotency write off response path (`rack.response_finished`) | `06_05 §7` |
