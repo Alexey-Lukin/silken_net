@@ -415,6 +415,44 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       end
     end
 
+    describe "check_metabolic_divergence! [E.63/E.64 — metabolic-channel conformance]" do
+      let(:service) { described_class.new("", nil) }
+      let(:tree)    { create(:tree, did: format("SNET-%08X", "0000AC20".to_i(16))) }
+
+      # FW.29-PACK byte 10: [PanicFlag:1 | status:2 | growth_points:5].
+      def status_byte_for(status_code, growth_points)
+        (status_code << 5) | (growth_points & 0x1F)
+      end
+
+      it "stays silent for a conformant homeostasis packet (GP within 5..31)" do
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+        service.send(:check_metabolic_divergence!, tree, { bio_status: :homeostasis }, status_byte_for(0, 18))
+      end
+
+      it "flags a homeostasis packet whose GP is below the metabolic floor (GP < 5)" do
+        # firmware pack_status_byte clamps homeostasis GP to ≥ 5; GP=3 cannot come
+        # from current firmware → a corrupt/forged StatusByte.
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        service.send(:check_metabolic_divergence!, tree, { bio_status: :homeostasis }, status_byte_for(0, 3))
+      end
+
+      it "stays silent for a conformant stress packet (GP == 1)" do
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+        service.send(:check_metabolic_divergence!, tree, { bio_status: :stress }, status_byte_for(1, 1))
+      end
+
+      it "flags a stress packet whose GP is not the survival floor (GP ≠ 1)" do
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        service.send(:check_metabolic_divergence!, tree, { bio_status: :stress }, status_byte_for(1, 7))
+      end
+
+      it "does not flag anomaly/tamper — GP already neutralised by emission_eligible_growth_points" do
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+        service.send(:check_metabolic_divergence!, tree, { bio_status: :anomaly }, status_byte_for(2, 9))
+        service.send(:check_metabolic_divergence!, tree, { bio_status: :tamper_detected }, status_byte_for(3, 31))
+      end
+    end
+
     describe "check_z_divergence!" do
       let!(:tree_family) { create(:tree_family) }
       let!(:tree_with_family) do

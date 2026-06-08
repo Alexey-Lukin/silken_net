@@ -1690,7 +1690,7 @@ EMA_Update(delta_t_seconds, vcap_voltage);
 - Бачити реальний raw `delta_t` для діагностики
 - Самостійно рахувати EMA server-side якщо потрібно (через TimescaleDB continuous aggregates, E.37)
 
-**Dual Computation Integrity:** Backend `SilkenNet::Attractor` після реалізації FW.5 B+ отримуватиме raw `delta_t` з payload та застосовуватиме той самий EMA алгоритм server-side для верифікації → Divergence check залишається можливим.
+**Dual Computation Integrity (метаболічний канал):** [E.63] FW.5 B+ β-пертурбацію **реверсовано** — raw `delta_t` більше не входить у Z. Wire несе **raw** `delta_t`, а `growth_points` пакуються з **EMA-згладженого** (firmware-internal) → backend **не може** точно перерахувати GP з одного пакета. Тому метаболічний DCI зараз — **структурний** `check_metabolic_divergence!` (wire-GP↔статус conformance, observational; [`04_02`](04_02_Business_Logic_and_Services) / [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor)). Точний stateless `m(wire_dT)==GP` відкладено до **FW.2**, коли wire нестиме EMA `delta_t` (пакет → 24B CCM). Трекер — [`00_07` — E.63](00_07_Action_Plan_Tracker).
 
 ### 13.7 Тести (`firmware/test/test_soldier_logic.c` — секція FW.21)
 

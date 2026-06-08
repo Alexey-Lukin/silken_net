@@ -397,9 +397,7 @@ m              = ((DELTA_T_SLOW_S - delta_t_s) / (DELTA_T_SLOW_S - DELTA_T_FAST_
 growth_points  = (5 + m * 26).round.clamp(5, 31)   # 5-бітний wire (FW.29-PACK); backend ×2 → stored 10..62
 ```
 
-> **Wire vs Stored:** wire `growth_points` — 5-бітне `(5 + m·26).round.clamp(5, 31)`; backend `TelemetryUnpackerService` робить `(status_byte & 0x1F) * 2` → stored 10..62. `delta_t` передається у пакеті (байти 4-5) → backend відтворює магнітуду для DCI/аудиту. Z (хаос) лишається для status-гейту + numeric-DCI (server-Z ≡ device-Z).
-
-> **Історія (retired, лише у цьому домі):** до E.63 магнітуда була `reward = 50 - deviation.round` (де `deviation = |29 − z|`), `growth_points = (reward / 2).clamp(5, 31)`; до FW.29-PACK — 6-бітне `clamp(reward, 10, 63)`. Обидві спростовано/застаріло; гейт `growth_points_clamp_drift` блокує ці форми поза цим домом (§4.3).
+> **Wire vs Stored:** wire `growth_points` — 5-бітне `(5 + m·26).round.clamp(5, 31)`; backend `TelemetryUnpackerService` **лише декодує** wire-значення `(status_byte & 0x1F) * 2` → stored 10..62 — магнітуду з `delta_t` **НЕ** перераховує. Метаболічний DCI = структурний `check_metabolic_divergence!` (homeostasis→GP∈5..31, stress→GP==1; observational, як `check_z_divergence!`); точний `m(delta_t)`-перерахунок неможливий (wire=raw, GP=EMA), відкладено до **FW.2** — механіка й присуд у [`03_01 §13.6`](03_01_Firmware_Lifecycle_and_DMA). Z (хаос) — для status-гейту + numeric-DCI (server-Z ≡ device-Z).
 
 **Нарахування `growth_points` (wire) за `delta_t` — польова шкала перезаряду (монотонно, лінійно між FAST=600с і SLOW=7200с):**
 

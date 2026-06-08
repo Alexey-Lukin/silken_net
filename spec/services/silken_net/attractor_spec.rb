@@ -180,17 +180,30 @@ RSpec.describe SilkenNet::Attractor do
         "Firmware/backend Z divergence on #{mismatches.size}/200 cases. First: #{mismatches.first}"
     end
 
-    it "matches firmware bio_status category for boundary Z-values" do
-      [ [ 1, 50.0, 200 ], [ 54_321, 10.0, 50 ], [ 100, 22.0, 5 ] ].each do |seed, temp, acoustic|
+    it "[E.64] firmware/backend agree on bio_status via the ρ-relative ceiling" do
+      # [F3] Was a hardcoded `between?(2.0, 45.0)` — the pre-E.64 ABSOLUTE
+      # threshold. Post-E.64 anomaly is ρ-relative (ceiling = ρ(temp) +
+      # (critical_z_max − BASE_RHO)); route both sides through anomaly_ceiling so
+      # this guards the ρ-relative path, not a stale 45. crit_min/max mirror
+      # firmware BioContract::CRITICAL_Z_MIN/MAX (family default).
+      crit_min = 2.0
+      crit_max = 45.0
+      categorise = lambda do |z, temp|
+        if z < crit_min then :stress
+        elsif z > described_class.anomaly_ceiling(temp, crit_max) then :anomaly
+        else :homeostasis
+        end
+      end
+
+      # temp=60 → ρ=40 → ceiling=57: a warm-day case the old absolute-45 missed.
+      [ [ 1, 50.0, 200 ], [ 54_321, 10.0, 50 ], [ 100, 22.0, 5 ], [ 7, 60.0, 20 ] ].each do |seed, temp, acoustic|
         x, y, z = xyz_for(seed)
         fw_z = firmware_z(x, y, z, temp, acoustic)
         be_z = described_class.calculate_z_from_state(x, y, z, temp, acoustic).first.to_f
 
-        fw_healthy = fw_z.between?(2.0, 45.0)
-        be_healthy = be_z.between?(2.0, 45.0)
-
-        expect(be_healthy).to eq(fw_healthy),
-          "Category mismatch for seed=#{seed}: fw_z=#{fw_z.round(4)} (#{fw_healthy}), be_z=#{be_z} (#{be_healthy})"
+        expect(categorise.call(be_z, temp)).to eq(categorise.call(fw_z, temp)),
+          "Category mismatch for seed=#{seed} temp=#{temp}: fw_z=#{fw_z.round(4)}, " \
+          "be_z=#{be_z.round(4)}, ceiling=#{described_class.anomaly_ceiling(temp, crit_max).round(2)}"
       end
     end
   end

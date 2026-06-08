@@ -630,6 +630,12 @@
 - **P1** · 🤖+👤 · → `03_02 §4`
 - **Знахідка (sim-first, 2026-06-07):** граматика `CCOAPNEW="coap://…"` / `CCOAPSEND=<cid>,<method>,"<uri>",<len>,"<hex>"` у firmware **не існує** в сімействі SIMCom (офіційна CoAP App Note, звірено посторінково): реально `CCOAPNEW="<ip>",<port>,<cid>` → `+CCOAPNEW: <cid>`; `CCOAPSEND=<cid>,<len>,"<hex>"`, де hex — **сирий CoAP PDU** від хоста; відповідь сервера — URC `+CCOAPNMI: <cid>,<len>,"<hex>"`; доменів немає → потрібен `AT+CDNSGIP`. На bench це означало б «німий» модем невідомої причини. ✅ Закрито: `coap_pdu.h` (RFC 7252 CON-PUT builder + parser відповіді) + `sim7070_coap.h` (повна розмова, DNS-крок, hex чанками) + **FW.51 cache-clear ключується на доставку** (`+CCOAPNMI` клас 2.xx, наш MID), не транспортний OK; golden-вектор відповіді — дослівно з ноти (`60457233…` → ACK 2.05). Канон — `03_02 §4`. · [ ] 👤 bench: verbatim-звірка SIM7070-ноти V1.03 (PDF недоступний, 403) + реальні URC/таймінги · [ ] 🔗 e2e: Queen-PDU ↔ backend CoAP-intake (`coap_smoke.yml`) на staging
 
+#### FW.57 — DCI parity: latent surfaces (temp-нормалізація + три-імпл kernel) [2026-06-08]
+- **P2** · 👤 · → `03_04`
+- Аудит останніх 6 комітів (E.63/E.64, 2026-06-08) виявив дві низькосеверні DCI-parity поверхні — **передіснуючі**, не баги марафону:
+- [ ] 👤 **F2 — temp-нормалізація розриває parity при дрейфі:** backend рахує ρ (Z + `anomaly_ceiling`) з `normalize_temperature(raw)=raw+temperature_offset_c` (`device_calibration.rb:37`), firmware — з raw wire-temp. При `offset≠0` (дефолт 0, капов. ±5°C) ρ розходиться на `offset×0.2` → стеля ≤1.0, server_z хаотично → можливий хибний DCI-flag на дрейфнутих вузлах. E.64 розширила залежність на anomaly-стелю. Рішення: firmware-temp калібрувати тим самим offset, або DCI допускати ε-смугу по temp.
+- [ ] 🔗 **F4 — три рукописні копії Лоренц-kernel:** firmware `bio_contract.rb` / backend `attractor.rb` / spec `firmware_z` (firmware+backend обидва визначають `SilkenNet::Attractor` → не co-load'яться → spec тримає 3-тю копію). `pack_status_byte` parity = «by construction» (однакові вирази) + C golden-вектори, **не** co-execution-тест. Hardening: завантажувати firmware-контракт в ізольований namespace (anon module / subprocess) → точна co-execution звірка.
+
 ## §03/§05 · Безпека (Edge crypto + Web3)
 
 #### SEC.1 — Multisig Gnosis Safe для production admin role
@@ -734,7 +740,8 @@
 - [x] ✅ 🤖 **Option A (founder 2026-06-08) — розв'язати здоров'я від хаосу:** Лоренц = лише status-гейт (β=`BASE_BETA` фікс); `growth_points` у гомеостазі = монотонна `metabolic_health(delta_t)` напряму (дім [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor)). Код `bio_contract.rb`+`attractor.rb` (byte-identical DCI) + тести (firmware 39/39, backend 197/0) + канон (variance/§2.x; mirrors 03_01/05_02/04_02/CLAUDE→ref) + гейт `growth_points_clamp_drift` розширено (ловить стару форму) + honesty (L4/PIPELINE). Wire незмінний (delta_t уже в пакеті).
 - [ ] 👤 **bench:** реальна P_ebfc (V×j×A під навантаженням, `HW.13`) + E_cycle + recharge-крива → `03_power_profile.py --mode cycle|recharge` (RUNBOOK §3.2-3.3).
 - [ ] 🤖 **калібрування** `DELTA_T_FAST_S`/`DELTA_T_SLOW_S` (зараз placeholder 600/7200с) під зміряну recharge-криву — per-deployment/species (DCI: firmware ↔ канон синхронно).
-- [ ] 🔗 (опційно, hardening) backend GP-consistency: звіряти wire growth_points з `m(transmitted delta_t)` — тепер детерміновано можливо (defense-in-depth).
+- [x] ✅ 🤖 **backend GP-conformance C (2026-06-08):** `check_metabolic_divergence!` — структурна звірка wire growth_points зі статусом (homeostasis→GP∈5..31, stress→GP==1; anomaly/tamper вже занулені `emission_eligible_growth_points`) в обох unpack-шляхах + fraud-метрик, observational (як `check_z_divergence!`). `attractor.rb` GP_HOMEO_MIN/MAX/GP_STRESS + 5 тестів. Defense-in-depth у ECB-без-MAC епосі.
+- [ ] 🔗 **B на FW.2 — точна GP↔delta_t звірка:** аудит (2026-06-08) спростував «детерміновано можливо» — wire несе **raw** delta_t (`main.c:1573`), а GP рахується з **EMA-згладженого** (`main.c:1622`, device-only RTC) → stateless-перерахунок неможливий. Закриття: firmware пакує EMA-delta_t у wire (FW.2, пакет і так → 24B CCM) → бекенд робить точний stateless `m(wire_dT)==wire_GP`.
 
 #### E.64 — bio→economy signal-coupling audit (E.63-лінза) [2026-06-08]
 - **P1** · 👤+🤖 · → `05_05`

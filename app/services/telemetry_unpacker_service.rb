@@ -218,6 +218,7 @@ class TelemetryUnpackerService < ApplicationService
     # Server розраховує Z (Float, ідентично). Порівнюємо статуси:
     # якщо device каже "homeostasis" а server Z поза межами породи — fraud flag.
     check_z_divergence!(tree, log_attributes)
+    check_metabolic_divergence!(tree, log_attributes, status_byte)
 
     # 5. ФІКСАЦІЯ ТА ЕКОНОМІЧНИЙ ВІДГУК
     commit_telemetry(tree, log_attributes)
@@ -339,6 +340,7 @@ class TelemetryUnpackerService < ApplicationService
     log_attributes[:cold_start_flag] = cold_start
 
     check_z_divergence!(tree, log_attributes)
+    check_metabolic_divergence!(tree, log_attributes, status_byte)
     commit_telemetry(tree, log_attributes)
 
   rescue MissingLorenzSeedError
@@ -460,6 +462,40 @@ class TelemetryUnpackerService < ApplicationService
     return 0 unless EMISSION_ELIGIBLE_STATUSES.include?(bio_status)
 
     (status_byte & 0x1F) * 2
+  end
+
+  # [E.63/E.64 DCI] Structural conformance for the growth_points wire field —
+  # defense-in-depth twin of check_z_divergence! for the metabolic channel
+  # (E.63 made delta_t drive growth_points directly on-device, out of the
+  # Z-divergence net). Structural ONLY: the wire dT carries the RAW delta_t but
+  # firmware packs GP from the EMA-smoothed delta_t (device-only RTC state), so
+  # the exact GP↔delta_t recompute is deferred to FW.2 (wire to carry EMA dT) —
+  # 00_07 E.63. Here we enforce what is stateless-knowable: firmware
+  # guarantees homeostasis → GP ∈ [GP_HOMEO_MIN..GP_HOMEO_MAX], stress → GP_STRESS
+  # (anomaly/tamper already zeroed upstream). A violation ⇒ a corrupt ECB block
+  # (no MIC in the transitional frame), a forged StatusByte, or stale firmware.
+  # Observational (fraud metric, never drops the packet) — same posture as
+  # check_z_divergence!.
+  def check_metabolic_divergence!(tree, attributes, status_byte)
+    wire_gp = status_byte & 0x1F
+
+    conformant =
+      case attributes[:bio_status]
+      when :homeostasis
+        wire_gp.between?(SilkenNet::Attractor::GP_HOMEO_MIN, SilkenNet::Attractor::GP_HOMEO_MAX)
+      when :stress
+        wire_gp == SilkenNet::Attractor::GP_STRESS
+      else
+        true # anomaly/tamper GP already neutralised by emission_eligible_growth_points
+      end
+    return if conformant
+
+    Rails.logger.warn(
+      "🔍 [Metabolic Divergence] DID #{tree.did}: status=#{attributes[:bio_status]}, " \
+      "wire_growth_points=#{wire_gp} outside the firmware-guaranteed band. " \
+      "Structural growth_points conformance violation."
+    )
+    SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL.increment
   end
 
   # [DUAL COMPUTATION INTEGRITY] [SEC.11] Both server and device now

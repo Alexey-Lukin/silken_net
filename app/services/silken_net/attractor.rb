@@ -40,6 +40,17 @@ module SilkenNet
     BASELINE_DELTA_T_S = 60
     NOMINAL_VCAP_MV    = 3300
 
+    # [E.63/E.64] growth_points wire-band guaranteed by firmware pack_status_byte
+    # (bio_contracts/bio_contract.rb) — mirrored here for the stateless conformance
+    # check TelemetryUnpackerService#check_metabolic_divergence!: homeostasis →
+    # GP ∈ [GP_HOMEO_MIN, GP_HOMEO_MAX]; stress → GP_STRESS. The wire dT carries
+    # the RAW delta_t but firmware packs GP from the EMA-smoothed delta_t
+    # (device-only RTC state), so the exact GP↔delta_t recompute is deferred to
+    # FW.2 (wire to carry EMA delta_t). 00_07 E.63.
+    GP_HOMEO_MIN = 5
+    GP_HOMEO_MAX = 31
+    GP_STRESS    = 1
+
     # [SEC.11] Sole entry-point for Z-axis computation. Both branches —
     # cold start (initial coords from K_seed via SilkenNet::SeedDerivation)
     # and warm continuation (initial coords = previous TelemetryLog tail)
