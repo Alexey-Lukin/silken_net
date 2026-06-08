@@ -30,6 +30,12 @@ def norm(line)
   return nil if l.empty?
   return nil if l.start_with?("#", "```", "<!--", "|--", "> ", ">")        # heading/fence/quote/sep
   return nil if l =~ /\A[-*]\s*\[[ x]\]/ || l =~ /\A\|?\s*-{3,}/            # checkbox / hr
+  # skip navigation that repeats across docs BY DESIGN (not One-Home content drift):
+  #   · cross-ref directory rows — table row whose first cell is a doc-link `[…](NN_NN_…)`
+  #     (Cross-references / home-registry tables; every doc links the same siblings)
+  #   · per-doc `Поточний TRL` Статус lines (each doc declares its own member-TRL — skeleton-required)
+  return nil if l =~ /Поточний TRL/
+  return nil if l.start_with?("|") && l.split("|")[1].to_s =~ /\]\(\d\d_\d\d_/
   l = l.sub(/\A[-*+]\s+/, "").sub(/\A\d+\.\s+/, "")                        # list markers
   l = l.gsub(/\[([^\]]*)\]\([^)]*\)/, '\1')                               # links → label
   l = l.gsub(/[`*_~]/, "").gsub(/§\s*[\w.\-]+/, "").gsub(/\s+/, " ").strip # md + §-tokens

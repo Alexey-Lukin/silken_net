@@ -498,7 +498,7 @@
 
 #### FW.3 — Queen AT Command Blocking
 - **P1** · 🟡 · → `03_02 §4`
-- ✅ ring buffer + drain-loop закрив single-packet overwrite/emergency loss (Queen сліпа під час CoAP flush). ✅ (2026-06-07) **blind-вікно закрито архітектурно**: pure `at_engine.h` (байтовий токенайзер, early-exit на фіналі — обмін коштує реальну відповідь, не повний timeout) + `sim7070_coap.h` розмова + hex чанками замість побайтового TX (старі «~25 с» жили саме там); init теж response-driven (`ATE0`+транзакції). Host-тести на скриптованому модемі — `test_at_engine.c`; старі FW.9-дзеркала прибрано (урок R9). Wire-зміна граматики — FW.56. · [ ] 🟡 UART DMA interrupt-driven RX (зараз байтовий polling) — bench · [ ] 👤 bench: реальні таймінги SIM7070G
+- ✅ ring buffer + drain-loop (single-packet overwrite / emergency loss під CoAP-flush) + ✅ (FW.56) blind-вікно закрито **архітектурно** (host-рівень): pure `at_engine.h` early-exit токенайзер + `sim7070_coap.h` розмова + hex-чанки + response-driven init, host-тести `test_at_engine.c` — канон [`03_02 §4`](03_02_Queen_Gateway_Firmware). 🔴 фізичне закриття = bench-residual ↓. · [ ] 🟡 UART DMA interrupt-driven RX (зараз byte-polling) — bench · [ ] 👤 bench: реальні SIM7070G таймінги
 
 #### FW.4 — TinyML `Run_Inference()` — compilation unblocked, inference TBD
 - **P0** · 👤+🔗 · → `03_03`
@@ -576,11 +576,7 @@
 
 #### FW.46 — Enterprise-grade ARM firmware build (committed, reproducible, CI cross-compile)
 - **P1** · 🤖+👤 · → `03_01 §12.4`
-- **Owned-code foundation ✅ (2026-06-04):** відтворюваний CMake-крос-компайл того, що ми володіємо, + CI gate `firmware_arm_build` (перша реальна крос-компіляція main-line firmware C). Повний HAL-`.elf` — окремий 👤-крок (CubeMX поза репо). · [x] 🤖 CMake + `cmake/arm-none-eabi.cmake` (Cortex-M4F, pinned Arm GNU 13.2.Rel1) + pinned submodules CMSIS-DSP/CMSIS_6/mruby (`firmware/extern/`) · [x] 🤖 `logmel.c` крос-компілюється під ARM (`LOGMEL_USE_CMSIS` + CMSIS-DSP), real `arm-none-eabi-size` ~6.3KB · [x] 🤖 **mrbc bytecode** (`bio_contract.rb` → `lorenz_bytecode.h` — був placeholder-stub!) + drift-gate (light `check_bytecode.py` + deep `gen_bytecode.sh --check`) + minimal-VM harness (`run_bytecode_vm.sh` ганяє реальний байткод) · [x] 🤖 host↔target `arm_rfft_fast_f32` packing-parity (`test_logmel_cmsis`, worst Δ 7.6e-6) · [x] 🤖 mruby minimal gembox (double, NO_BOXING) крос-зібрано — ~117KB Flash / 0 RAM (`03_01 §12.4`) · [ ] 👤 STM32 HAL vendoring (CubeMX export) → `-DSILKEN_WITH_HAL=ON` → повний Soldier/Queen `.elf` + bench flash-verify · [ ] 🤖 flip FW.26 на повний `.elf` після HAL · [x] 🤖 verify `firmware_arm_build` зелений ✅ (2026-06-04, CI run 26948600632 — `firmware_arm_build` + `firmware_test` + `firmware_ram_budget` усі success на push ca90fa6; перший fresh-submodule-checkout прогін у CI підтвердив, що CI-only-validated концерн знято) · [ ] 🤖 (optional hardening) пін toolchain у CI через ARM-tarball замість apt (reproducible-build attestation — far-future, `00_08`). Cross-ref: FW.4 (logmel wiring), FW.26 (size), FW.19 (mruby double), FW.47 (submodule audit), SEC.3 (`.bin`), FW.55 (QEMU parity реюзає цей ARM-mruby).
-
-#### FW.47 — Repo-wide vendor-via-submodule audit (dependency hygiene)
-- **P2** · 🤖+👤 · → `03_01 §12.5`
-- FW.46 завендорив CMSIS-DSP/CMSIS_6/mruby як pinned submodules; FW.47 — аудит решти vendor-поверхні + єдина pin-політика ([`03_01 §12.5`](03_01_Firmware_Lifecycle_and_DMA)). · [x] 🤖 інвентар + pin-стратегія ✅ (2026-06-04 — повний інвентар: firmware-native + OpenSSL host-dep + contracts; конвенція `extern/<dep>`@tag) · [x] 👤 рішення per-dep ✅ (FW.47, 2026-06-04): contracts=**npm-keep** (`npm ci`+committed lock відтворювано); firmware-native=**submodule@tag**-конвенція; toolchain-pin=**far-future**. Фізичний вендоринг milestone-gated: mbedTLS → [`00_07` — FW.30](00_07_Action_Plan_Tracker), STM32 HAL → [`00_07` — FW.46](00_07_Action_Plan_Tracker) (`-DSILKEN_WITH_HAL=ON`), CMSIS-NN → [`00_07` — FW.4](00_07_Action_Plan_Tracker) · [x] 🤖 Python conda envs ✅ (2026-06-04): `in_silico` запінено committed `conda-lock.yml` (multi-platform versions+hashes) + CI job `lock_sync` гейтить lock↔`environment.yml` (`--check-input-hash`); `ml` свідомо deferred (parity-self-guards)
+- ✅ **Owned-code foundation** (2026-06-04, CI-gated `firmware_arm_build` зелений): відтворюваний CMake-крос-компайл того, чим **володіємо** — `cmake/arm-none-eabi.cmake` (Cortex-M4F, pinned Arm GNU + submodules `firmware/extern/`) · `logmel.c` під ARM (real `arm-none-eabi-size` ~6.3KB) · **mrbc** `bio_contract.rb`→`lorenz_bytecode.h` + drift-gate + minimal-VM harness · host↔target RFFT packing-parity · mruby minimal-gembox (double/NO_BOXING, ~117KB Flash / 0 RAM). Канон [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA). 🔴 повний HAL-лінкований `.elf` ще НЕ зібрано (CubeMX поза репо) ↓. · [ ] 👤 STM32 HAL vendoring (CubeMX export) → `-DSILKEN_WITH_HAL=ON` → повний Soldier/Queen `.elf` + bench flash-verify · [ ] 🤖 flip FW.26 на повний `.elf` після HAL · [ ] 🤖 (optional, far-future) toolchain pin via ARM-tarball (`00_08`). Cross-ref: FW.4/FW.26/FW.19/FW.47/SEC.3/FW.55.
 
 #### FW.48 — cppcheck static-analysis gate (enterprise "ruff/rubocop for C")
 - **P2** · 🤖 · → `03_01 §12.6`
@@ -620,12 +616,6 @@
 #### FW.56 — Queen CoAP AT-граматика ≠ SIMCom: модем = UDP-труба, PDU будує хост
 - **P1** · 🤖+👤 · → `03_02 §4`
 - **Знахідка (sim-first, 2026-06-07):** граматика `CCOAPNEW="coap://…"` / `CCOAPSEND=<cid>,<method>,"<uri>",<len>,"<hex>"` у firmware **не існує** в сімействі SIMCom (офіційна CoAP App Note, звірено посторінково): реально `CCOAPNEW="<ip>",<port>,<cid>` → `+CCOAPNEW: <cid>`; `CCOAPSEND=<cid>,<len>,"<hex>"`, де hex — **сирий CoAP PDU** від хоста; відповідь сервера — URC `+CCOAPNMI: <cid>,<len>,"<hex>"`; доменів немає → потрібен `AT+CDNSGIP`. На bench це означало б «німий» модем невідомої причини. ✅ Закрито: `coap_pdu.h` (RFC 7252 CON-PUT builder + parser відповіді) + `sim7070_coap.h` (повна розмова, DNS-крок, hex чанками) + **FW.51 cache-clear ключується на доставку** (`+CCOAPNMI` клас 2.xx, наш MID), не транспортний OK; golden-вектор відповіді — дослівно з ноти (`60457233…` → ACK 2.05). Канон — `03_02 §4`. · [ ] 👤 bench: verbatim-звірка SIM7070-ноти V1.03 (PDF недоступний, 403) + реальні URC/таймінги · [ ] 🔗 e2e: Queen-PDU ↔ backend CoAP-intake (`coap_smoke.yml`) на staging
-
-#### FW.57 — DCI parity: latent surfaces (temp-нормалізація + три-імпл kernel) [2026-06-08]
-- **P2** · 👤 · → `03_04`
-- Аудит останніх 6 комітів (E.63/E.64, 2026-06-08) виявив дві низькосеверні DCI-parity поверхні — **передіснуючі**, не баги марафону:
-- [x] ✅ 🤖 **F2 DONE — C (2026-06-08):** DCI/Lorenz бере **RAW** wire-temp, не calibrated. Probe-присуд: offset 5°C → server_z дрейфує до **~16u** (хаотично, не лінійно ≤1.0) → B (ε-смуга) мертвий, A (firmware-offset) непрактичний. C: `TelemetryUnpackerService#lorenz_temperature` (raw через транзит-ключ, стрипиться перед persist) у `compute_server_z`/`check_z_divergence!`/`try_time_sync_recovery`; `alert_dispatch` ceiling = `temperature_c−offset`; fire/display лишаються calibrated; `temperature_c` persist-иться calibrated. F2 був дрімотний (`temperature_offset_c` ніде не виставляється) — C робить розрив неможливим. Тест (captured raw≠calibrated) + `device_calibration.rb` інваріант-коментар.
-- [x] ✅ 🤖 **F4 DONE (2026-06-08) — три рукописні копії Лоренц-kernel → пряма co-execution звірка:** видалено рукописну `firmware_z`-копію зі spec; `tools/firmware/contract_runner.rb` ганяє СПРАВЖНІЙ `bio_contract.rb` в ізольованому subprocess (firmware+backend обидва визначають `SilkenNet::Attractor` → не co-load'яться) → `attractor_spec` звіряє real-contract `Z`+`bio_status` ↔ backend напряму (200-fuzz; було лише транзитивно через golden-вектори + 3-тю копію). GP-parity лишається на B/FW.2 (потребує backend `metabolic_health` mirror).
 
 ## §03/§05 · Безпека (Edge crypto + Web3)
 
@@ -816,7 +806,7 @@
 
 ## §07 · Юридичні / Бізнес
 
-> Юридично-бізнесовий work-stream — канон `07_xx`. NB: пов'язані BIZ-айтеми за канон-домом живуть у `§05` (BIZ.13 slashing) та `§08` (BIZ.5/10 IP, BIZ.12 Horizon-biodiv).
+> Юридично-бізнесовий work-stream — канон `07_xx`. NB: пов'язані BIZ-айтеми за канон-домом живуть у `§05` (BIZ.13 slashing) та `§08` (BIZ.10 IP, BIZ.12 Horizon-biodiv).
 
 #### BIZ.1 — 1 SCC = ? kg CO₂
 - **P2** · 👤 · → `07_01`, `05_03`
@@ -968,10 +958,6 @@
 
 ### ⚖️ IP / Grants (BIZ — канон-дім Модуль 08)
 
-#### BIZ.5 — Patent application → ВІДХИЛЕНО (defensive publication, 2026-06-07)
-- **P1** · 👤 · → `08_01 §2`
-- 🗄️ Патентний шлях відхилено на користь **defensive-publication-first** (`08_01 §2`): публікуємо ядро як prior art (вільне для всіх + анти-захоплення), без патенту / повіреного / PCT. Виконання → UNI.3 + BIZ.10. _(колишній patent-шлях — git history.)_
-
 #### BIZ.10 — Multi-party co-authorship + open-license MoU framework
 - **P1** · 👤 · → `08_03`, `08_02 §3-07`
 - 5-сторонній фреймворк (ChNU+ChDTU+ChIPB+ChMA+СЄУ+SilkenNet) **спрощено під open-поставою** (`08_01 §2`): tech відкрита всім → **немає патентних прав / royalty / tech-NDA до розподілу**; лишається **co-authorship + open-license acknowledgment** (AGPL/CERN-OHL-S/CC-BY-SA) + NDA **лише** для нерозкритого (ключі / production-дані). · [ ] 👤 co-authorship + open-license MoU × 5 (паралельно UNI.4-14) → Master Collaboration Agreement (юрист, не патентний повірений) · [ ] 🔗 після UNI.1/8/9/12/13
@@ -996,9 +982,6 @@
 | DOC-T.1 | Документація AES master key суперечлива: `03_05` лінія 531-537 каже «навмисно не публікується», а лінія 538 натякає що перші 4 слова збігаються з FIPS-197 Appendix B test vector. Скоординувати після SEC.9 (заміна seed key) | `03_05`, `firmware/soldier/main.c:66-67` | Після SEC.9 видалити test-vector згадку, оновити обидва параграфи | ⏸️ Заблоковано SEC.9 |
 | DOC-T.9 | Documentation `02_03` §9.3 raніше використовувала 15 mA/50 ms для LoRa TX. Виправлено на 120 mA/100 ms (~39 мДж) per SX1262 datasheet. Firmware energy accounting **не верифіковано незалежно** | `02_03`, `firmware/soldier/main.c` | Лабораторне вимірювання поточного TX (HW.x) + cross-ref у `02_03` після верифікації | ⏸️ Заблоковано лаб-стендом |
 | DOC-T.10 | Реструктуризація 05/07 (Фаза 3) — відкладені misplacement-рішення: `07_01 §11` Investor Q&A (pitch/diligence — дім 00_01 vs новий pitch-doc неоднозначний); `07_03 §5` Anchor Assembly + `§6` Virtual Prototyping (operational/field-ops дім, наразі grant-bootstrap контекст — не чистий misplacement) | `07_01`, `07_03` | Призначити operational/pitch-дім + перенести (рішення founder) | 🟡 Deferred |
-| DOC-T.11 | Реструктуризація 05/07 (Фази 1-2, 2026-05-30): slashing `00_01 §6` → `05_05`; governance `05_03 §749-905` → `05_06` — нові канон-доми; cross-refs re-pointed; `00_06 §2` / `00_00` / README синхронізовано (навігація: `00_01 §6` stub + `05_03 §Governance` stub) | `05_05`, `05_06`, `00_01`, `05_03` | — (виконано) | ✅ Done |
-| DOC-T.12 | Taxonomy v3 P4 (2026-05-30): дисолюція Module 08 (7→3 доки). `08_03 Joint Pubs/IP`→**`08_01`**; `08_02 Cyber/Math`+`08_01 University`+`08_04-07`→**new `08_02` Academic Institutions Registry** (5 ВНЗ — relationship-шар; інженерна субстанція реферить Tier I 01–06, zero-loss verified); `07_05 External`→**`08_03`**. ~260 inbound refs swept; genuinely-novel mesh-математика → Open Research `06_08` (percolation/Markov). `00_00`/README/CLAUDE/`ssot-maintenance` skill синхронізовано | `08_01`, `08_02`, `08_03`, `06_08` | — (виконано) | ✅ Done |
-| DOC-T.14 | **03_01 ↔ 03_02 semantic overlap** (виявлено `content_dup_audit.rb --near`, ≥88%): Queen RAM-budget, host-test-matrix, per-channel AES-таблиця дубльовані в обох firmware-доках — і вже тихо розійшлись (RAM: неузгоджений підсумок + stale pre-FW.3 буфери; test-matrix відстала на FW.1/FW.20/FW.20-S2/FW.27-B; AES nonce-клітинка + порядок рядків) | `03_01`, `03_02`, `03_05 §6` | ✅ Зведено (2026-06-03): Queen RAM → ref `03_02 §9`, Queen test-matrix → ref `03_02 §11`, AES-таблиця (обидва доки) → ref `03_05 §6`. 03_01 лишив Soldier RAM/тести + ECB-restore/HRNG impl-код; 03_02 лишив CRYP transition-діаграми | ✅ Done |
 
 #### DOC-T.2 — Canon↔canon de-dup (SSOT single-home) [#4, 2026-05-29]
 - **P2** · 🤖 · → `00_00`
@@ -1112,8 +1095,11 @@
 | FW.29-PACK | StatusByte layout collision fix (5-bit growth_points) | `03_01 §11.5`, `03_04 §4.3-5.2`, `05_02` |
 | FW.51 | Queen flush: пакування лише рахує (`packed_count`); CIFO-слоти звільняються ЛИШЕ при `send_success` (доставка, не транспорт-OK) → провал retry (LTE-діра) не губить годину телеметрії; dedup оновлює held DID; caller свідомо energy-conservative (без retry-шторму) | `03_02 §3/§4` |
 | FW.53 | OTA wire-contract integrity: backend CRC32-trailer (Soldier integrity-gate) + явний `len` + CRC16-verify (Queen більше не вгадує довжину з CBC-pad → не обрізає 1..16 байт чанка); `OtaPackagerService` wire-потік; campaign-change reset (мертва кампанія не блокує живу) | `03_01 §4.6`, `04_02`, `03_02 §5` |
+| FW.57 | DCI-parity latent surfaces: **F2** — Lorenz/DCI бере RAW wire-temp (не calibrated `temperature_c`; offset 5°C → server_z ~16u drift → false-fraud) для Z + `anomaly_ceiling`/`check_z_divergence!`/`try_time_sync_recovery`; calibrated лишається display/fire (`alert_dispatch` recover = `temp_c − offset`); raw стрипиться перед persist. **F4** — рукописну 3-тю Lorenz-kernel копію усунено, `attractor_spec` co-executes реальний `bio_contract.rb` у subprocess (`contract_runner.rb`, 200-fuzz). GP-parity → FW.2 | `04_02`, `03_04` |
+| FW.47 | Repo-wide vendor/dependency pin-policy: firmware-native → submodule@tag (`extern/<dep>`), contracts npm + committed lock, Python `in_silico` → committed `conda-lock.yml` + CI `lock_sync` drift-gate (`in_silico_smoke.yml`); `ml` deferred (parity-self-guard). Фізичний вендоринг milestone-gated → FW.30/FW.46/FW.4 | `03_01 §12.5` |
 | S6.12 | TokenomicsEvaluator oracle-guards audit (KYC all-paths) | `04_02`, `05_02` |
 | BIZ.4 | DAO Governance (SilkenGovernor + Timelock) | `05_06`, `07_01` |
+| BIZ.5 | Патентна заявка → **ВІДХИЛЕНО** (founder 2026-06-07): defensive-publication-first замість патенту-монополії — ядро як prior art (вільне + анти-захоплення), без повіреного/PCT; SilkenNet тримає лише ™ / governance / секрети. Виконання → активні UNI.3 + BIZ.10 | `08_01 §2` |
 | PUMA-RACK-1 | Idempotency write off response path (`rack.response_finished`) | `06_05 §7` |
 | TRL Матриця | Per-module TRL (мігровано з 00_07) | `00_03 §1` |
 | E.8 / DIFF.7 | SNR tiebreaker у Queen CIFO eviction | `03_02`, `04_06` |
@@ -1131,6 +1117,9 @@
 | OBS.1 | Observability: Grafana Alloy → Grafana Cloud SaaS (self-hosted Prometheus не потрібен) | `06_03` |
 | SEC.13 | peaq_did_compromised mint-skip guard + emergency revocation runbook | `06_04 §5.4` |
 | DOC-T.13 | SSOT 360 R3–R4: docs:graph ref-graph + #anchor HARD-gate + dup-guard table-rows | `00_06 §3` |
+| DOC-T.11 | 05/07 реструктуризація (Фази 1-2): slashing `00_01 §6` → `05_05`; governance `05_03` → `05_06` — нові канон-доми + навігаційні stubs; cross-refs re-pointed | `05_05`, `05_06` |
+| DOC-T.12 | Taxonomy v3 P4: дисолюція Module 08 (7→3 доки) — `08_01` Joint Pubs/IP · `08_02` Academic Registry (5 ВНЗ, relationship-шар, інж-субстанція реферить Tier I) · `08_03` External; mesh-математика → `06_08`; ~260 inbound refs swept | `08_01`, `08_02`, `08_03`, `06_08` |
+| DOC-T.14 | 03_01↔03_02 semantic overlap зведено: Queen RAM → `03_02 §9`, test-matrix → `03_02 §11`, AES-таблиця → `03_05 §6`; residual health-sentinel byte-map dup + stale 6-біт GP-cap теж усунено (03_01 → ref `03_02 §7`, cement 2026-06-08) | `03_02`, `03_05 §6` |
 | E.45 | SCC/SFC subgraph zero-address fail-fast guard (`subgraph/validate_addresses.sh`); real-address swap → S3.5 | `05_03` |
 | OPS.5 | Projects V2 TRL field schema (1-9 + Readiness Horizon SRL/MRL; `lib/github_bootstrap.rb`); live-board bootstrap-run → OPS.6 | `00_05 §1.1` |
 | E.61 | Solana micro-rewards batch payouts (Kredis-акумуляція → `transferChecked`, годинний cron, поріг-gated) | `05_01 §8`, `04_02 §10` |

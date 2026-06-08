@@ -948,14 +948,7 @@ EdgeCache forest_cache[50]; // 50 слотів = 1150 байт RAM
 5. `AT+CCOAPNEW` → `AT+CCOAPSEND` (hex-кодований) → `HAL_Delay(2000)` → `AT+CCOAPDEL`
 6. **Restore ECB+128B mode** → `CRYP_KEYSIZE_128B` + `aes_key[4]` (LoRa) для трафіку від Soldiers (критично — SEC.8 ECB Restoration)
 
-**Queen Sentinel Packet (DID = 0x00000000):**
-
-| Байти | Поле | Значення |
-|-------|------|---------|
-| 0-3 | DID | `0x00000000` (sentinel, "це Queen") |
-| 4-5 | Vcap → Uptime | `HAL_GetTick() / 1000` (uint16, wraps ~18.2 год = 65 535 с) |
-| 7 | Acoustic → Cache Load | `cache_count` (кількість дерев у кеші) |
-| 10 | BioContract → Health | `min(cache_count, 63)` |
+**Queen Sentinel Packet (DID = 0x00000000):** health-пакет Королеви перевикористовує ту саму 16-байтну wire-розкладку, що й Soldier, але з `DID=0` (sentinel «це Королева, не дерево») і репурпозить поля (uptime · cache-load · health-proxy `cache_count`, cap 5-біт). Повна byte-map + C-код + server-routing (`GatewayTelemetryWorker`) — канон [`03_02 §7`](03_02_Queen_Gateway_Firmware).
 
 ### 4.5 OTA Reflex Shot (Broadcast до Soldiers)
 
