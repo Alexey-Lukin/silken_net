@@ -107,6 +107,7 @@ coverage/
 /firmware/test/test_at_engine
 /firmware/test/test_flash_kv
 /firmware/test/test_queen_attest
+/firmware/test/test_flash_ota
 .claude/scheduled_tasks.lock
 
 # Python tooling artifacts (tools/** — pytest, compileall, ruff)

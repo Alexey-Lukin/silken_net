@@ -1131,6 +1131,7 @@ static uint8_t Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS(const uint8_t* frame,
 // [FW.46] Викарбуваний mrbc у build-час → committed-дзеркало `lorenz_bytecode[]`,
 // drift-gated. Регенерація: tools/firmware/gen_bytecode.sh · гейт: check_bytecode.py
 #include "../common/lorenz_bytecode.h"
+#include "../common/flash_ota.h"  // [FW.52-г] OTA contract blob writer (host-tested logic)
 
 /* USER CODE END PV */
 
@@ -1169,6 +1170,50 @@ static void Derive_Cold_Start_State(float *x0, float *y0, float *z0);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+// [FW.52-г] Запис зібраного OTA-байткоду у contract-сторінку Flash, щоб boot
+// magic-check (RITE @ MRUBY_CONTRACT_FLASH_ADDR) завантажив його наступним reset'ом.
+// Чиста логіка (erase + dw-program + power-cut-safety: magic-dw ОСТАННІМ) живе у
+// flash_ota.c (host-тести test_flash_ota.c, 8/8). Тут — лише HAL-фаза (HAL_FLASH),
+// що компілюється/виконується на STM32 bench. MRUBY_CONTRACT_FLASH_ADDR=0x0803F000
+// = сторінка OTA_CONTRACT_PAGE (126).
+static int Ota_Hal_Erase(void *io, uint8_t page)
+{
+    (void)io;
+    FLASH_EraseInitTypeDef ei = { .TypeErase = FLASH_TYPEERASE_PAGES, .Page = page, .NbPages = 1 };
+    uint32_t page_err = 0;
+    HAL_FLASH_Unlock();
+    HAL_StatusTypeDef st = HAL_FLASHEx_Erase(&ei, &page_err);
+    HAL_FLASH_Lock();
+    return (st == HAL_OK && page_err == 0xFFFFFFFFu) ? 1 : 0;
+}
+
+static int Ota_Hal_Program(void *io, uint32_t byte_off, uint64_t v)
+{
+    (void)io;
+    HAL_FLASH_Unlock();
+    HAL_StatusTypeDef st = HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD,
+                                             MRUBY_CONTRACT_FLASH_ADDR + byte_off, v);
+    HAL_FLASH_Lock();
+    return (st == HAL_OK) ? 1 : 0;
+}
+
+static uint64_t Ota_Hal_Read(void *io, uint32_t byte_off)
+{
+    (void)io;
+    return *(const volatile uint64_t *)(MRUBY_CONTRACT_FLASH_ADDR + byte_off);
+}
+
+static const FlashKvOps g_ota_flash_ops = { Ota_Hal_Read, Ota_Hal_Program, Ota_Hal_Erase };
+
+// Тіло forward-declared (вище) Write_OTA_Contract_To_Flash. На host-тестах
+// soldier-логіки натомість лінкується порожній hal_mock-стаб (main.c не
+// компілюється на хості) — реальний запис іде лише на MCU.
+void Write_OTA_Contract_To_Flash(uint8_t *data, uint16_t size)
+{
+    Flash_Write_Contract(&g_ota_flash_ops, (void *)0, data, size);
+}
+
 /* USER CODE END 0 */
 
 /**

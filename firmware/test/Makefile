@@ -19,9 +19,9 @@ BINDIR   = .
 OPENSSL_CFLAGS = $(shell pkg-config --cflags openssl 2>/dev/null)
 OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
-.PHONY: all queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine flash_kv attest size-check clean
+.PHONY: all queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine flash_kv flash_ota attest size-check clean
 
-all: queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine flash_kv attest
+all: queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine flash_kv flash_ota attest
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -59,6 +59,9 @@ at_engine: $(BINDIR)/test_at_engine
 flash_kv: $(BINDIR)/test_flash_kv
 	@./$(BINDIR)/test_flash_kv
 
+flash_ota: $(BINDIR)/test_flash_ota
+	@./$(BINDIR)/test_flash_ota
+
 attest: $(BINDIR)/test_queen_attest
 	@./$(BINDIR)/test_queen_attest
 
@@ -91,6 +94,10 @@ $(BINDIR)/test_at_engine: test_at_engine.c ../queen/at_engine.h ../queen/coap_pd
 # [ARCH.28/FW.54] Flash-KV журнал — RAM-мок + power-cut fault-injection.
 $(BINDIR)/test_flash_kv: test_flash_kv.c ../common/flash_kv.c ../common/flash_kv.h ../common/silken_crc.h
 	$(CC) $(CFLAGS) -I../common -o $@ test_flash_kv.c ../common/flash_kv.c
+
+# [FW.52-г] OTA contract blob writer — RAM-мок + magic-LAST power-cut safety.
+$(BINDIR)/test_flash_ota: test_flash_ota.c ../common/flash_ota.c ../common/flash_ota.h ../common/flash_kv.h
+	$(CC) $(CFLAGS) -I../common -o $@ test_flash_ota.c ../common/flash_ota.c
 
 # [L1 QATT] Queen-attestation конверт — Monocypher (pinned submodule) ↔ OpenSSL
 # parity + end-to-end збірка/розбір; golden-KAT дзеркалиться у RSpec.
@@ -127,7 +134,8 @@ clean:
 	rm -f $(BINDIR)/test_queen $(BINDIR)/test_soldier $(BINDIR)/test_bio_contract \
 	      $(BINDIR)/test_tinyml $(BINDIR)/test_logmel $(BINDIR)/test_encryption \
 	      $(BINDIR)/test_seed_derivation $(BINDIR)/test_ccm $(BINDIR)/test_ccm_selftest \
-	      $(BINDIR)/test_sym_selftest $(BINDIR)/test_queen_attest
+	      $(BINDIR)/test_sym_selftest $(BINDIR)/test_queen_attest \
+	      $(BINDIR)/test_at_engine $(BINDIR)/test_flash_kv $(BINDIR)/test_flash_ota
 
 # [FW.26] CI gate — Static RAM budget check (.bss + .data ≤ 50 KB).
 #
