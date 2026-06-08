@@ -221,7 +221,7 @@ static inline void NVIC_SystemReset(void) {}
 #define __enable_irq()  ((void)0)
 
 /* Flash stubs for OTA */
-static inline void Write_OTA_Contract_To_Flash(uint8_t* d, uint16_t s) { (void)d; (void)s; }
+static inline void Write_OTA_Contract_To_Flash(const uint8_t* d, uint16_t s) { (void)d; (void)s; }
 
 /* ── [FW.1 + ARCH.42] Flash Key Region Mock ─────────────────────────── */
 /*

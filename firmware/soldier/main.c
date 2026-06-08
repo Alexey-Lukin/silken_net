@@ -1150,7 +1150,7 @@ static void MX_CRYP_Init(void); // Ініціалізація шифруванн
 // Псевдо-функції для роботи зі звуком та тривогами
 void Record_Audio_Wave(float* buffer, uint16_t length);
 void Trigger_Emergency_LoRa_TX(void);
-void Write_OTA_Contract_To_Flash(uint8_t* data, uint16_t size);
+void Write_OTA_Contract_To_Flash(const uint8_t* data, uint16_t size);
 
 // [FW.1 + ARCH.42] Завантаження LoRa AES-128 ключа з Protected Flash Sector.
 // Викликається в main() ПЕРЕД MX_CRYP_Init().
@@ -1209,7 +1209,7 @@ static const FlashKvOps g_ota_flash_ops = { Ota_Hal_Read, Ota_Hal_Program, Ota_H
 // Тіло forward-declared (вище) Write_OTA_Contract_To_Flash. На host-тестах
 // soldier-логіки натомість лінкується порожній hal_mock-стаб (main.c не
 // компілюється на хості) — реальний запис іде лише на MCU.
-void Write_OTA_Contract_To_Flash(uint8_t *data, uint16_t size)
+void Write_OTA_Contract_To_Flash(const uint8_t *data, uint16_t size)
 {
     Flash_Write_Contract(&g_ota_flash_ops, (void *)0, data, size);
 }
