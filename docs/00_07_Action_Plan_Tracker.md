@@ -736,6 +736,14 @@
 - [ ] 🤖 **калібрування** `DELTA_T_FAST_S`/`DELTA_T_SLOW_S` (зараз placeholder 600/7200с) під зміряну recharge-криву — per-deployment/species (DCI: firmware ↔ канон синхронно).
 - [ ] 🔗 (опційно, hardening) backend GP-consistency: звіряти wire growth_points з `m(transmitted delta_t)` — тепер детерміновано можливо (defense-in-depth).
 
+#### E.64 — bio→economy signal-coupling audit (E.63-лінза) [2026-06-08]
+- **P1** · 👤+🤖 · → `05_05`
+- **Присуд (E.63-лінза, paired-ensemble на реальному коді):** окрім delta_t (E.63 ✅), решта bio→economy-зв'язків теж слабкі. **#2 Z→bio_status degenerate + temp-confounded:** `stress` (z<2) **НЕДОСЯЖНИЙ** (ρ-clamp 10 → z_eq≥9); `anomaly` (z>45) = конфаунд ambient-temp — здорове дерево @temp=30 дає ~12% anomaly-пакетів (@60 ~29%) → **обнуляє growth_points** + фальшивий «critical stress». Лоренц-status класифікує температуру+шум, не здоров'я. **#3 stress_index (slashing) конфаунд-домінований:** heuristic `max_status≥2→1.0` протікає temp-anomaly у фінансовий 1.0 (порушує [`05_05 §7`](05_05_Slashing_and_Risk_Policy) «Z alone never slashes»); `avg_z>2 → +0.2` завжди-on (z_eq≥9) = константа на порозі slash 0.20; погодний `temp`-член; ML-фічі 3/5 конфаундовані (temp / vcap-FW.50 / z). Реальні сигнали (sap/VPD/acoustic) ІНЕРТНІ (calibration-gated — добра дисципліна).
+- **Throughline:** Лоренц як health-оракул **декоративний**; реальна цінність = DCI anti-fraud (device-Z≡server-Z parity). Здоров'я/стрес мають вести ПРЯМІ фізичні сигнали (metabolism ✅ E.63 · sap · VPD · acoustic). Нічого не задеплоєно → це correctness перед першим деплоєм, не пожежа.
+- [ ] 👤 **status-fix design pick (founder):** ρ-відносний anomaly/stress-поріг (anomaly = Z поза temp-очікуваною обвідною z_eq=ρ−1, а не absolute 45/2) → ambient-temp більше не обнуляє GP. E.63-масштаб (firmware [`03_04 §4`](03_04_mruby_Lorenz_Attractor) + backend homeostasis-check + tree_family + DCI parity). Обвідна = design pick (напр. `z > ρ+17` або `z > 1.6·z_eq`).
+- [ ] 🤖 **stress_index conformance** ([`05_05 §7`](05_05_Slashing_and_Risk_Policy)): Z/temp-anomaly alone ≠ max stress (tamper(3)=1.0 OK; anomaly(2) bounded + потребує direct-signal corroboration); прибрати degenerate `avg_z>2`-константу + погодний temp-член. Backend-only, surgical.
+- [ ] 🔗 **real-signal activation** (sap/VPD/acoustic stress_index + per-species/season пороги) — ground-truth calibration (bench, [`08_02`](08_02_Academic_Institutions_Registry)). Це і є справжній health-сигнал. Cross-ref: E.63, FW.8, FW.50.
+
 ## §06 · Deploy / Observability / Secrets / Ops
 
 > Деплой, спостережуваність, секрети, DR — канон `06_xx`. (Частина цих пунктів раніше сиділа під §04 «DevOps»; тепер кожен у власному §06-домі.)
