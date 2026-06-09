@@ -49,6 +49,10 @@ The loop that stabilises the SSOT (repeat per drift class):
 
 > Before editing any symbol the docs describe, honour the repo's GitNexus rule (CLAUDE.md): `gitnexus_impact` first. Docs edits are low-risk, but value changes that mirror code are not.
 
+### Deep-archiving a 00_07 item (cement code + SSOT + tracker together)
+
+A heavier, specialised loop for *retiring* a tracker item. Walk **every** code/doc site of the ID — forward **and** inbound refs, **semantic terms** (service names, constants, opcodes), not just the ID, across **all** `00_01..08_03` + code + spec + `.github`. Verify each `✅` against real code + `git log` (don't trust prose-claims-done). Canonize what lives only in 00_07 prose **before** trimming (migrate-first); fix any drift found along the thread; then **cement-trim** (open residual stays) or **archive** (fully done → §🗄️ table). Follow the breadcrumbs (`[DOC.N]`/`[FW.N]` tags, Cross-ref lines, `00_06 §2` home-registry). Commit each ID separately. Full 18-step playbook + breadcrumbs + anti-patterns lives in **`.claude/prompts/deep_archival.md`** — this skill only points (One-Home).
+
 ## Commands
 
 All via binstubs — **`bin/rails` / `bin/rspec`**, never `bundle exec` (`[[feedback_rubocop_binstub]]`).
