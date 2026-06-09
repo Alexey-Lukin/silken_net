@@ -537,8 +537,9 @@
 - ✅ тип `uint8_t` + saturating increment (cap 255) + backend overflow-warning + Prometheus counter + 8 тестів. · [ ] 🔗 АБО 2 байти в payload (перепакування — FW.2 CCM)
 
 #### FW.23 — OTA firmware broadcast: ECB без автентифікації
-- **P1** · 🟡 · → `03_05 §3.4б`
-- ✅ HMAC-SHA256 OTA auth: `OtaHmacKeyService` (HKDF `silken-ota-hmac-v1`) + `OtaPackagerService` (`[0x9B]` trailer) + Queen relay + Soldier dual-gate (magic `RITE` + constant-time HMAC) + 30 RSpec/17 host. · [ ] 🟡 mbedTLS HMAC compute на STM32 HASH (lab, analog FW.30)
+- **P1** · 🟡 · → [`03_05 §3.4б`](03_05_Hardware_Symmetric_Crypto_and_Security)
+- **✅ HMAC-SHA256 OTA auth канонізовано ([`03_05 §3.4б`](03_05_Hardware_Symmetric_Crypto_and_Security)):** per-cluster K_ota (HKDF info `silken-ota-hmac-v1`) → `OtaPackagerService` 3× `[0x9B]` trailer (anti-replay/truncation: version_id+total_chunks у тезі) → Queen stateless relay → Soldier dual-gate (magic `RITE` + constant-time HMAC + fail-safe magic-wipe). Backend+wire+gate-logic ✅ (RSpec+host покрито, byte-accurate до wire). Лишається:
+  - [ ] 🟡 bench: реальна mbedTLS HMAC-SHA256 на STM32 HASH-peripheral (Soldier runtime compute — placeholder, аналог FW.30; гейт-логіка host-перевірена).
 
 #### FW.25 — TinyML DSP-path: Path B (log-mel) SELECTED [DECISION 2026-05-22]
 - **P0** · 👤+🤖 · → `03_03 §3.2/§3.4`

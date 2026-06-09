@@ -291,13 +291,12 @@ end
 OTA Batch Downlink Format (розширений):
   [CMD_TYPE:1] [PAYLOAD_LEN:2] [PAYLOAD:N]
 
-Типи команд:
-  CMD_OTA_BYTECODE    = 0x99   (існуючий — mruby chunks)
-  CMD_SET_THRESHOLDS  = 0x9A   (НОВИЙ — per-species Z thresholds)
-  CMD_SET_ML_THRESH   = 0x9B   (НОВИЙ — TinyML dual-threshold з FW.18)
-  CMD_TIME_SYNC       = 0x9C   (НОВИЙ — RTC correction, FW.20)
-  CMD_FACTORY_RESET   = 0xFE   (зарезервовано)
+Тип команди цього розділу (повна карта — дім нижче):
+  CMD_OTA_BYTECODE    = 0x99   (mruby chunks — існуючий)
+  CMD_SET_THRESHOLDS  = 0x9A   (per-species Lorenz Z пороги, FW.8)
 ```
+
+> **Повна карта `CMD_TYPE`-опкодів** (`0x99..0x9F`, без колізій) — канон-дім [`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA). NB: `0x9B` зайнятий `CMD_HMAC_TRAILER` (FW.23 OTA-печатка); TinyML-пороги — `0x9D` (`CMD_SET_AUDIO_THRESHOLDS`, FW.18), **не** `0x9B`.
 
 **CMD_SET_THRESHOLDS payload (10 байт):**
 
