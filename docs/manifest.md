@@ -64,7 +64,7 @@ This is what we mean when we say the architecture is **symbiotic** rather than *
 
 Tree health is not a scalar. It is the geometry of a dynamical system.
 
-On-device, an **mruby Bio-Contract** integrates a Lorenz attractor for 250 Euler steps at every wake-up cycle. The standard Lorenz parameters σ, ρ, β are **parametrically perturbed by physiologically meaningful inputs**:
+On-device, an **mruby Bio-Contract** integrates a Lorenz attractor for 250 Euler steps at every wake-up cycle. The Lorenz parameters **σ and ρ** are **parametrically perturbed by physiologically meaningful inputs** (β stays fixed — see below):
 
 - **σ** is modulated by xylem temperature gradient,
 - **ρ** by the TinyML acoustic event score,

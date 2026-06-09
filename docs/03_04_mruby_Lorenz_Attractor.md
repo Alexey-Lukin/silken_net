@@ -151,7 +151,7 @@ firmware/soldier/main.c — ФАЗА 1 (SENSE + State Restore)
 │                   isfinite() перевірка → захист від NaN/Inf корупції
 │
 ├── internal_temp ← HAL_ADC_GetValue(&hadc)  [ADC, канал internal temp]
-├── delta_t_seconds ← EMA (RTC DR10), vcap_mv ← EMA (RTC DR12)  [FW.21 + FW.5]
+├── delta_t_seconds ← EMA (RTC DR10), vcap_mv ← EMA (RTC DR12)  [FW.21; метаболізм→GP §4.3, E.63]
 └── acoustic_events ← TinyML inference + DMA accumulator  [RTC DR0]
 
 firmware/soldier/main.c — ФАЗА 3 (mruby виклик, єдина сигнатура post-SEC.11)
@@ -566,8 +566,8 @@ if (mrb) {
   args[2] = mrb_float_value(mrb, (double)z_prev);
   args[3] = mrb_fixnum_value((int8_t)lora_payload[6]); // Temp
   args[4] = mrb_fixnum_value(lora_payload[7]);          // Acoustic
-  args[5] = mrb_fixnum_value(delta_t_s);                // [FW.5] EMA з RTC DR10
-  args[6] = mrb_fixnum_value(vcap_mv);                  // [FW.5] EMA з RTC DR12
+  args[5] = mrb_fixnum_value(delta_t_s);                // [E.63] EMA DR10 → growth_points §4.3
+  args[6] = mrb_fixnum_value(vcap_mv);                  // [E.63] EMA DR12 (reserved; не на Z)
 
   mrb_value result = mrb_funcall_argv(mrb, mrb_top_self(mrb),
       mrb_intern_lit(mrb, "calculate_state"), 7, args);

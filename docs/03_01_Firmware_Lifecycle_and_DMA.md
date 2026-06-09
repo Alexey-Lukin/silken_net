@@ -1585,7 +1585,7 @@ EMA_t = α × x_t + (1−α) × EMA_{t-1}
 | DR12 [23:16] | `ema_count` | uint8 | Saturating counter @ 255 (warmup після ≥ `EMA_WARMUP_CYCLES`) |
 | DR12 [15:0] | `ema_vcap_x10` | uint16 | EMA vcap × 10 (fixed-point 0.1 мВ; max 55000 ≤ 2¹⁶) |
 
-**Cross-VBAT поведінка:** при втраті живлення RTC backup domain очищається → `ema_valid != 0x45` на boot → cold-start → 3 цикли warmup перед `EMA_Is_Warmed_Up()`. Споживач (FW.5 Lorenz) у ці 3 цикли мав би працювати з raw значеннями — але передавання EMA у mruby `calculate_state()` ще НЕ виконано (відкладено у задачу FW.5 B+ через потребу в координованому backend апдейті: `SilkenNet::Attractor` mirror, per-tree EMA state на сервері, 50k fuzz-тести Z-divergence < 1%).
+**Cross-VBAT поведінка:** при втраті живлення RTC backup domain очищається → `ema_valid != 0x45` на boot → cold-start → 3 цикли warmup перед `EMA_Is_Warmed_Up()`. Споживач ([E.63] метаболізм: `delta_t`→`growth_points`) у ці 3 цикли мав би працювати з raw значеннями — але реальне EMA-передавання у mruby `calculate_state()` ще НЕ wired (firmware шле defaults 60 с / 3300 мВ — §13.4); активація чекає FW.49 (wall-clock `delta_t`) + FW.50 (vcap ADC), bench-gated. `SilkenNet::Attractor` backend-mirror вже E.63-compliant (β фіксований, метаболізм → `growth_points`).
 
 ### 13.4 Firmware — реалізація
 

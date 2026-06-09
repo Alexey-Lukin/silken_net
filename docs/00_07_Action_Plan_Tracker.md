@@ -555,7 +555,7 @@
 
 #### FW.30 — SEC.11 C-bridge gap: `main.c` mruby виклик не оновлено
 - **P1** · 🔗 · → `03_04`
-- ✅ warm/cold paths → єдиний 7-arg `calculate_state`; `Load_Lorenz_Seed()` (K_seed Flash, magic `LSED`) + `Derive_Cold_Start_State()` (placeholder hash, TODO mbedTLS lab) + 11 host-тестів. (SEC.11 cutover зламав стару C-bridge сигнатуру → `BIO_STATUS_VM_ERROR`; новий bytecode не OTA-деплоївся до фіксу.) · [ ] 🔗 після FW.30 — FW.5 B+ (EMA delta_t/vcap як args[5..6]) незалежний
+- ✅ warm/cold paths → єдиний 7-arg `calculate_state`; `Load_Lorenz_Seed()` (K_seed Flash, magic `LSED`) + `Derive_Cold_Start_State()` (placeholder hash, TODO mbedTLS lab) + 11 host-тестів. (SEC.11 cutover зламав стару C-bridge сигнатуру → `BIO_STATUS_VM_ERROR`; новий bytecode не OTA-деплоївся до фіксу.) · ✅ args[5..6] (`delta_t`/`vcap` EMA) передаються у 7-arg `calculate_state`, живлять `growth_points` напряму [E.63] (планована FW.5 β-пертурбація реверсована як економічно нульова)
 
 #### FW.31 — DCI: числовий tolerance band у `check_z_divergence!` (feature-flag flip)
 - **P2** · 👤+🤖 · → `03_04 §7.1`
