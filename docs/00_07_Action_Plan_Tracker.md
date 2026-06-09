@@ -564,9 +564,9 @@
 - [ ] 🔗 при FW.4 fauna-pivot — unit-тест `test_fauna_sampling_no_stop2_in_session()`
 
 #### ARCH.41 — Cold-start Time Paradox (DCI)
-- **P2** · 🔗 · → `03_04 §2.1`
-- VBAT loss → RTC `epoch_day` розходиться з сервером (cold-derive 10957 = RTC-default 2000-01-01 vs chained ≈20585) → категоричний DCI false-positive до `CMD_TIME_SYNC`. **Mitigation A** (server-side: 3 epoch_day кандидати → `time_unsynced_fallback`, не падати DCI) ✅ реалізовано → `04_02` (`try_time_sync_recovery`). **Знахідка:** firmware-деривація тепер повний HMAC-parity з backend (`lorenz_seed.h`, FW.30 закрито) + кандидат виправлено 10951→10957 (стара цифра була артефактом leap-less формули). **Дотично FW.49:** поточний UTC (`soldier_unix_ts` + tick-offset) відстає на тривалість STOP2 → RTC-календар як timebase (FW.49) робить epoch_day/UTC коректним без tick-арифметики.
-- [ ] 🔗 (B/C) після стабілізації A, координований firmware rollout: **B** Soldier sentinel `acoustic_events=0xFE` на cold-boot; **C** defer-first-uplink grace «hello» (DID+Vcap+TIME_REQ, без Lorenz state)
+- **P2** · 🔗 · → [`03_04 §2.1`](03_04_mruby_Lorenz_Attractor)
+- **✅ Mitigation A канонізовано ([`03_04 §2.1`](03_04_mruby_Lorenz_Attractor) + [`04_02`](04_02_Business_Logic_and_Services)):** VBAT loss → RTC epoch_day (10 957, default 2000-01-01) ≠ server (~20 585) → DCI false-positive до `CMD_TIME_SYNC`. Server-side `try_time_sync_recovery` (3 epoch_day кандидати → `time_unsynced_fallback`, не падає DCI, `TimeSyncDownlinkWorker`). Firmware-деривація — повний HMAC-parity (FW.30 exact civil-days, `lorenz_seed.h`); UTC tick-offset відстає на STOP2 → RTC-календар timebase (FW.49).
+- [ ] 🔗 (B/C) координований firmware rollout: **B** Soldier sentinel `acoustic_events=0xFE` cold-boot; **C** defer-first-uplink grace «hello» (DID+Vcap+TIME_REQ, без Lorenz state)
 
 #### FW.46 — Enterprise-grade ARM firmware build (committed, reproducible, CI cross-compile)
 - **P1** · 🤖+👤 · → `03_01 §12.4`
