@@ -555,8 +555,9 @@
 - **✅ Design B канонізовано ([`03_02 §5.X.3`](03_02_Queen_Gateway_Firmware)):** Magic Re-Request — Soldier bitmap uplink `[0x55]` (`OTA_REQ_MARKER`, DOC.4) → Queen targeted re-broadcast лише missing chunks (60-90% economy vs wave) + djb2-dedup + host-тести; anti-storm bitmap → Flash-KV ([`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA), host-готовий). · [ ] 🔗 Design A (ACK-aggregation — collective recovery) залежить від ARCH.26 TDMA RX-вікна; B незалежний ✅ · ⚠️ re-request «5 хв тиші» на `HAL_GetTick` (мертвий STOP2) → wall-clock `OTA_SILENCE_WALL` (FW.49)
 
 #### FW.31 — DCI: числовий tolerance band у `check_z_divergence!` (feature-flag flip)
-- **P2** · 👤+🤖 · → `03_04 §7.1`
-- Після SEC.11 byte-identical `(x₀,y₀,z₀)` + ідентична Float math (drift ARM↔x86 <1e-12). check лишається категоричним; числовий `|Δz|<ε` (ε=0.001) готовий до flip → числовий fraud-detect (replay з правильним status, неправильним Z magnitude). · [ ] 👤 lab: однакові тест-вектори STM32 vs x86, `|Δz|` distribution (N=10k) · [ ] 🤖 оновити `03_04 §BLOCKER-2` з drift+ε (lab-blocked: STM32WLE5JC REVB; ε=0.001 default)
+- **P2** · 👤 · → [`03_04 §7.1`](03_04_mruby_Lorenz_Attractor)
+- **✅ Numeric band code-staged ([`03_04 §7.1`](03_04_mruby_Lorenz_Attractor)):** `check_z_divergence!` + `DEFAULT_DCI_EPSILON=0.001` за двома ENV-флагами (`GAIA_DCI_NUMERIC_TOLERANCE`/`_EPSILON`, default off) — `|server_z−device_z|<ε` ДОПОВНЮЄ (не заміняє) категоричний check → ловить replay з валідним StatusByte, але хибною Z-magnitude (RSpec покрито). Подвійно-gated: флаг off + `device_z` ще не у wire (21B пакет; зайде post-FW.2). Лишається:
+  - [ ] 👤 lab: тест-вектори STM32 vs x86, `|Δz|`-distribution (N=10k) → довірити ε фінрішенням (drift емпірично `<1e-12`, ε=0.001 = 9 порядків запасу; instrumented HW)
 
 #### FW.42 — Vcap guard для fauna acoustic sampling (brownout protection)
 - **P1** · 🔗 · → [`03_03 §10.3`](03_03_TinyML_Acoustic_Inference)
