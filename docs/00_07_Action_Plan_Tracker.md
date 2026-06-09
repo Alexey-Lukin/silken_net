@@ -645,7 +645,7 @@
 
 #### SEC.12 — HRNG-IV fallback hardening (CoAP CBC IV)
 - **P2** · 🔗 · → [`03_05` — HRNG Fallback](03_05_Hardware_Symmetric_Crypto_and_Security)
-- ✅ (2026-05-29) fallback IV → pure `coap_iv.h#coap_fallback_iv_word` (uid×device + `queen_unix_ts`×reboot + `coap_flush_seq`×flush) + 4 host-тести → **reuse закрито** по всіх осях. 🟡 Residual: IV передбачуваний на fallback — **low-severity** (CoAP-батч без chosen-plaintext вектора). · [ ] 🔗 повна unpredictability = key-derived IV `E_key(counter)` (AES-engine + SEC.8 restore) — bench-gated
+- ✅ (2026-05-29) fallback IV → pure `coap_iv.h#coap_fallback_iv_word` (uid×device + `queen_unix_ts`×reboot + `coap_flush_seq`×flush) + host-тести → **reuse закрито** по всіх осях. 🟡 Residual: IV передбачуваний на fallback — **low-severity** (CoAP-батч без chosen-plaintext вектора). · [ ] 🔗 повна unpredictability = key-derived IV `E_key(counter)` (AES-engine + SEC.8 restore) — bench-gated
 
 #### SEC.14 — ATECC608B role-split re-examination (ARCH.42 honesty)
 - **P2** · 👤 · → [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)
