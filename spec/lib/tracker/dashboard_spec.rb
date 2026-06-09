@@ -70,6 +70,40 @@ RSpec.describe Tracker::Dashboard do
     expect(res).not_to include(a_string_matching(/FW\.95/))
   end
 
+  # [whole-file §-ref guard, 2026-06-09] catches bare code-span §-refs in 📌/🗄️ cells +
+  # prose that section_dangling_refs (#### meta-refs only) misses. Uses the real docs.
+  describe ".file_section_dangling_refs (whole-file §-ref resolution)" do
+    it "flags a bare code-span §-ref (backlog/archive cell) to an absent section" do
+      expect(described_class.file_section_dangling_refs("| E.99 | x | `08_02` §1.3 (Ярмілко) | y |"))
+        .to include(a_string_matching(%r{08_02 §1\.3}))
+    end
+
+    it "does not flag a valid bare §-ref" do
+      expect(described_class.file_section_dangling_refs("| E.99 | x | `08_02` §1B | y |")).to be_empty
+    end
+
+    it "is boundary-aware: §1.3 does NOT resolve against a 2.1.3 heading" do
+      # 08_01 has §2.1.3 but no §1.3 — the retired substring `include?` would false-pass.
+      expect(described_class.file_section_dangling_refs("ref `08_01 §1.3` here"))
+        .to include(a_string_matching(%r{08_01 §1\.3}))
+    end
+
+    it "resolves a parent-group ref whose children exist (§4а ⇐ 4а.1..4а.5)" do
+      expect(described_class.file_section_dangling_refs("[`05_02 §4а`](05_02_Proof_of_Growth_Pipeline)")).to be_empty
+    end
+
+    it "skips a lowercase '.x' wildcard placeholder, resolves a real section" do
+      expect(described_class.file_section_dangling_refs("`03_03 §10.x` + `03_03 §3.4`")).to be_empty
+    end
+  end
+
+  describe ".heading_anchors" do
+    it "extracts leading heading numbers, skipping letter-led (Стаття N) headings" do
+      expect(described_class.heading_anchors("## 🎓 1B. ФОТІУС\n### 2.1.3. Foo\n### Стаття 1: Bar\n## 🎯 Мета"))
+        .to contain_exactly("1b", "2.1.3")
+    end
+  end
+
   # [dup-guard blind-spot fix, 2026-06-01] An ID used as BOTH a registry table row
   # AND a #### heading (the DOC.12 ↔ DOC.13 collision) escaped the heading-only
   # tally. table_row_ids surfaces first-cell IDs so the caller can merge them.
@@ -257,7 +291,7 @@ RSpec.describe Tracker::Dashboard do
     md = <<~MD
       ## §08 · Академічна інтеграція
       #### 🌿 UNI.13a — emoji-prefixed item
-      - **P1** · 👤 · → `08_01 §1.3`
+      - **P1** · 👤 · → `08_01 §1B`
     MD
     expect(described_class.parse(md).map(&:id)).to contain_exactly("UNI.13a")
   end

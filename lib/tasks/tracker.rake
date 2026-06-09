@@ -27,6 +27,7 @@ namespace :tracker do
     issues   = Tracker::Dashboard.issues(items)
     dangling = Tracker::Dashboard.dangling_refs(items)
     sect     = Tracker::Dashboard.section_dangling_refs(items)
+    filesect = Tracker::Dashboard.file_section_dangling_refs(md)
     home     = Tracker::Dashboard.section_home_violations(items)
     inbound  = Tracker::Dashboard.inbound_ref_violations
     prose    = Tracker::Dashboard.inbound_prose_ref_violations
@@ -54,6 +55,12 @@ namespace :tracker do
       puts "  stale canon §-refs (#{sect.size}) — § X absent in target (renamed/removed section):"
       sect.each { |s| puts "    - #{s}" }
     end
+    if filesect.empty?
+      puts "  00_07 §-refs:     every NN_NN §X ref (incl. backlog/archive cells) resolves ✓"
+    else
+      puts "  unresolved 00_07 §-refs (#{filesect.size}) — §X absent in target (collapsed/renamed section):"
+      filesect.each { |s| puts "    - #{s}" }
+    end
     if home.empty?
       puts "  section-home:     every #### under §NN canon-refs module NN ✓"
     else
@@ -80,6 +87,6 @@ namespace :tracker do
       chemdups.each { |id, n| puts "    - #{id} defined #{n}× in 00_07" }
       chemambig.each { |a| puts "    - #{a}" }
     end
-    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || home.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any?
+    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any?
   end
 end

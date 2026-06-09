@@ -319,6 +319,44 @@ module Tracker
       end
     end
 
+    # --- whole-file §-ref resolution [Module-08 §1.N sub-section-collapse, 2026-06-09] ---
+    # EVERY `NN_NN §X` ref ANYWHERE in 00_07 — incl. bare code-span refs in 📌 Backlog /
+    # 🗄️ Архів table cells + prose — must resolve to a real heading-anchor in the target.
+    # section_dangling_refs scans only #### `it.canon` meta-refs, and the bare-§ guard is
+    # 00_07-exempt, so ~20 refs orphaned by Taxonomy-v3's §1.x collapse (08_01/08_02 §1.1–
+    # §1.8 → §1A/§1B / "Стаття N") rotted unseen. Boundary-aware: a §1.3 ref does NOT
+    # falsely resolve against a 2.1.3 heading (the old substring `include?` would). A
+    # parent-group ref resolves when its children exist (§4а ⇐ 4а.1..4а.5). Ranges split on
+    # -/+///; a lowercase ".x" tail = wildcard placeholder (skipped — real literal subsecs
+    # use ".X"); "Стаття N" named refs carry no § → out of scope here.
+    DOC_SECTION_REF = %r{(\d\d_\d\d)`?\s*((?:§\s*[0-9][\p{L}0-9.]*\s*[-+/–—]?\s*)+)}
+
+    # The §-anchor token of a heading = its leading number ("## 🎓 1B. ФОТІУС" → "1b";
+    # "### 2.1.3. …" → "2.1.3"; "### Стаття 1: …" → none, letter-led). Pure.
+    def self.heading_anchors(text)
+      text.lines.grep(/^\#{1,6}\s/).each_with_object([]) do |h, acc|
+        body = h.sub(/^#+\s*/, "").sub(/^[^\p{L}\p{N}]+/, "")
+        acc << Regexp.last_match(1).downcase.sub(/\.+\z/, "") if body =~ /\A([0-9][\p{L}0-9.]*)/
+      end
+    end
+
+    def self.file_section_dangling_refs(markdown = File.read(DEFAULT_PATH), docs_dir = DOCS_DIR)
+      anchors = Dir.glob(File.join(docs_dir, "*.md")).each_with_object({}) do |f, h|
+        id = File.basename(f, ".md")[0, 5]
+        h[id] = heading_anchors(File.read(f)) if id =~ /\A\d\d_\d\d/
+      end
+      markdown.scan(DOC_SECTION_REF).flat_map do |doc, run|
+        next [] unless anchors[doc]
+
+        run.scan(/[0-9][\p{L}0-9.]*/).filter_map do |raw|
+          next if raw.match?(/\.x\z/) # lowercase ".x" tail = wildcard placeholder
+
+          t = raw.downcase.sub(/\.+\z/, "")
+          "`#{doc} §#{raw}`" unless anchors[doc].include?(t) || anchors[doc].any? { |a| a.start_with?("#{t}.") }
+        end
+      end.uniq
+    end
+
     # --- section↔canon-home guard: One-Home for the tracker itself ---
     # A `#### ` item under a `## §NN` registry section must canon-ref module NN — a
     # `§03/§05` or `§01–§02` header declares a multi-module set, any of which is OK.
