@@ -532,10 +532,6 @@
 - **P2** · 👤 · → [`03_01 §13`](03_01_Firmware_Lifecycle_and_DMA)
 - **✅ EMA канонізовано ([`03_01 §13`](03_01_Firmware_Lifecycle_and_DMA)):** `EMA_Update`/`Get_DeltaT_Sec`/`Get_Vcap_Mv`/`Is_Warmed_Up` (α=0.2 integer fixed-point) + RTC DR10/DR12-packed (звільнило DR11 → 3-й mesh-слот, §2) + 102 host-тести — згладжує delta_t/vcap (метаболізм [E.63]) і зменшує LoRa-трафік. · [ ] 👤 інтегрувати з Kalman-filter design ([`08_02`](08_02_Academic_Institutions_Registry) E.10 — Косенук)
 
-#### FW.22 — acoustic_events payload overflow (uint16 → uint8 truncation)
-- **P2** · 🔗 · → `03_03 §7.1`
-- ✅ тип `uint8_t` + saturating increment (cap 255) + backend overflow-warning + Prometheus counter + 8 тестів. · [ ] 🔗 АБО 2 байти в payload (перепакування — FW.2 CCM)
-
 #### FW.23 — OTA firmware broadcast: ECB без автентифікації
 - **P1** · 🤖🟡 · → [`03_05 §3.4б`](03_05_Hardware_Symmetric_Crypto_and_Security)
 - **✅ HMAC-SHA256 OTA auth канонізовано ([`03_05 §3.4б`](03_05_Hardware_Symmetric_Crypto_and_Security)):** per-cluster K_ota (HKDF info `silken-ota-hmac-v1`) → `OtaPackagerService` 3× `[0x9B]` trailer (anti-replay/truncation: version_id+total_chunks у тезі) → Queen stateless relay → Soldier dual-gate (magic `RITE` + constant-time HMAC + fail-safe magic-wipe). Backend+wire+gate-logic ✅ (RSpec+host покрито, byte-accurate до wire). Лишається:
@@ -1088,6 +1084,7 @@
 | FW.29 | Panic vs saturated acoustic disambiguation (PANIC_FLAG_BIT) | `03_03 §5.3` |
 | FW.29-PACK | StatusByte layout collision fix (5-bit growth_points) | `03_01 §11.5`, `03_04 §4.3-5.2`, `05_02` |
 | FW.30 | SEC.11 C-bridge: warm/cold → 7-arg `calculate_state` + `Load_Lorenz_Seed` (K_seed Flash `LSED`) + `Derive_Cold_Start_State` (pure-C HMAC-SHA256 `silken_sha256.h`/`lorenz_seed.h`, byte-parity vs OpenSSL — mbedTLS TODO закрито) + args[5..6] EMA→`growth_points` [E.63]; 11 host-тестів | `03_04 §6`, `03_05 §3.4а` |
+| FW.22 | acoustic_events overflow: тип `uint8_t` + saturating increment (cap 255 — без uint16→uint8 ambiguity), DR0-packed (SEC.10+FW.22) + backend overflow-warning + Prometheus counter + host-тести (saturating/atomic-snapshot); 2-байт payload — optional far-future (лише якщо FW.2 CCM repack потребує >255/cycle) | `03_03 §7.1`, `03_01 §2` |
 | FW.51 | Queen flush: пакування лише рахує (`packed_count`); CIFO-слоти звільняються ЛИШЕ при `send_success` (доставка, не транспорт-OK) → провал retry (LTE-діра) не губить годину телеметрії; dedup оновлює held DID; caller свідомо energy-conservative (без retry-шторму) | `03_02 §3/§4` |
 | FW.53 | OTA wire-contract integrity: backend CRC32-trailer (Soldier integrity-gate) + явний `len` + CRC16-verify (Queen більше не вгадує довжину з CBC-pad → не обрізає 1..16 байт чанка); `OtaPackagerService` wire-потік; campaign-change reset (мертва кампанія не блокує живу) | `03_01 §4.6`, `04_02`, `03_02 §5` |
 | FW.57 | DCI-parity latent surfaces: **F2** — Lorenz/DCI бере RAW wire-temp (не calibrated `temperature_c`; offset 5°C → server_z ~16u drift → false-fraud) для Z + `anomaly_ceiling`/`check_z_divergence!`/`try_time_sync_recovery`; calibrated лишається display/fire (`alert_dispatch` recover = `temp_c − offset`); raw стрипиться перед persist. **F4** — рукописну 3-тю Lorenz-kernel копію усунено, `attractor_spec` co-executes реальний `bio_contract.rb` у subprocess (`contract_runner.rb`, 200-fuzz). GP-parity → FW.2 | `04_02`, `03_04` |
