@@ -49,7 +49,7 @@
 
 **Перед польовим деплоєм (life-safety + security):**
 - `SEC.9` **P0** — замінити master AES key (FIPS-197 vector) на криптостійкий random
-- `FW.1`+`SEC.3` **P0** — provisioning ✅; залишається real `STM32_Programmer_CLI` на STM32WLE5JC bench
+- `SEC.3` **P0** — factory flashing: real `STM32_Programmer_CLI` на STM32WLE5JC bench (per-device HKDF provisioning ✅, FW.1 закрито)
 - `SEC.1` **P0** — Gnosis Safe multisig для `DEFAULT_ADMIN_ROLE` SCC/SFC до mainnet
 
 **Перед Web3 mainnet:**
@@ -488,10 +488,6 @@
 
 ## §03 · Firmware
 
-#### FW.1 — Hardcoded AES-256 Key
-- **P0** · 👤 · → `03_05`, `03_01`
-- ✅ per-device HKDF provisioning + Factory Flashing (раніше: один ключ на всіх → компрометація мережі). · [ ] 👤 RDP Level 2 activation як final step (bench — `firmware/scripts/bench/01_option_bytes.sh --rdp 2`, RUNBOOK §1.4)
-
 #### FW.2 — AES-128-ECB → AES-128-CCM (24B packet) [post-ARCH.42]
 - **P0** · 🤖 · → `03_05 §2.1`
 - ✅ дизайн 24B AES-128-CCM + backend-парсер (`process_ccm_chunk` + `Cryptography::LoraCcm`, OpenSSL) + firmware freeze-contract emit/decrypt + host-тести (golden-vector parity + tamper-семантика, **не залізна крипта**); FC у RTC DR15. **INERT** — флаги `FW2_CCM_ENABLED`/`TELEMETRY_CCM_ENABLED` off → ECB ще живий у проді. FC/nonce/cold-boot політика (📐 ЄДИНЕ ДЖЕРЕЛО; unique імовірнісна, MEDIUM, HRNG-reseed) + CCM-пакет/wire — канон [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security). Закриває ECB→CCM/MIC/replay (BLOCKER-2/3) + SEC.10 panic + FW.29; LoRa-ключ у SE (SE050, SEC.6). 🔴 silicon `CRYP_AES_CCM` ще НЕ перевірено ↓. · [ ] 🤖 верифікувати `CRYP_AES_CCM` на STM32WLE5JC REVB (RM0461 §27.4; bench-атестація скриптована — RUNBOOK §2 + `02_selftest_attest.py`, PASS = дозвіл flip) → flip обидва флаги — **ЄДИНИЙ HW-залежний пункт** · [ ] 🔗 TRL-7: monotonic FC-counter (Flash high-water / SE050 monotonic counter) для безумовної nonce-унікальності · [x] ✅ DR15 resource-conflict вирішено: FW.2 тримає DR15, FW.20-S2 bitmap → Flash-KV (`03_01 §2.3`)
@@ -518,7 +514,7 @@
 
 #### FW.17 — Key rotation mechanism (Hash Ratchet KDF)
 - **P2** · 🔗 · → [`03_05 §3`](03_05_Hardware_Symmetric_Crypto_and_Security)
-- Після FW.1. Статичний ключ при Factory Flashing → немає rotation без re-flash (GDPR/ISO 27001/NIST SP 800-57). Рішення: Hash Ratchet KDF (`CMD:ROTATE_KEY` → `K_current`→`K_next` AES-KDF, PFS). · [ ] 🔗 дизайн протоколу + CoAP command + cluster ACK + Flash/RTC storage + ECDH alt
+- Будує на FW.1 (✅ per-device provisioning, закрито — не блокує). Статичний ключ при Factory Flashing → немає rotation без re-flash (GDPR/ISO 27001/NIST SP 800-57). Рішення: Hash Ratchet KDF (`CMD:ROTATE_KEY` → `K_current`→`K_next` AES-KDF, PFS). · [ ] 🔗 дизайн протоколу + CoAP command + cluster ACK + Flash/RTC storage + ECDH alt
 
 #### FW.19 — Float32 vs Float64 mruby compile flags
 - **P2** · 🤖+👤 · → [`03_04 §5`](03_04_mruby_Lorenz_Attractor)
@@ -1091,6 +1087,7 @@
 | SEC.7 | OTA image authentication — **дубль FW.23** (HMAC-SHA256 dual-gate: `OtaHmacKeyService` + `OtaPackagerService` 0x9B trailer + Queen relay + Soldier dual-gate). Активні residuals (real `silken_sha256` HMAC compute + bench K_ota; ECDSA P-256 post-TRL7 migration path) тримає FW.23 — One-Home; stale «mbedTLS» framing виправлено | `03_05 §3.4б` (= FW.23) |
 | SEC.8 | ECB Restoration Race (Queen): restore CRYP→ECB+128B+LoRa-key після CoAP-CBC flush/downlink; `HAL_CRYP_Init` fail → RCC force-reset → `NVIC_SystemReset` (`firmware/queen/main.c`). Resolved-фікс, orphan-ID — cited by SEC.12 + RUNBOOK, бракувало archive-рядка (додано 2026-06-09) | `03_05` (розділ «ECB Restoration Race») |
 | SEC.5 | Chainlink oracle-callback HMAC fail-fast: `WEB3_STRICT_MODE=true` + порожній `CHAINLINK_HMAC_SECRET` → `SecurityError` (захищає `/oracle_callbacks` від forge `oracle_status_fulfilled?` → неавторизований mint). Guard `verify_chainlink_signature!` (`oracle_callbacks_controller.rb`) + RSpec. Resolved, orphan-ID — бракувало archive-рядка (ops: provision secret pre-mainnet → S1.1/`06_04`; додано 2026-06-09) | `04_03 §5.9` |
+| FW.1 | Hardcoded identical AES-key → per-device HKDF + `Load_AES_Key()` (Protected Flash `FLASH_KEY_ADDR`, magic `KEYL` + zero-key guard → refuse-boot без provisioning) — firmware CLOSED 2026-05-02 (soldier+queen `main.c` + host-тести `test_load_key_*`). Per-device ізоляція реальна з FW.2 CCM (ECB-транзит = спільний ключ, §3.1). Bench-residuals — власні items: RDP L2 → SEC.2 · factory SWD-flash → SEC.3 · weak-key boot-guard → SEC.9 | `03_05 §3.1`, §3.4а |
 | FW.5 | ~~Lorenz β-пертурбація від delta_t/vcap~~ → **РЕВЕРСОВАНО [E.63]** (delta_t → growth_points напряму) | `03_04 §4.3`, E.63 |
 | FW.18 | TinyML confidence threshold (RTC DR13/14 dual-zone) | `03_03`, `03_01 §2`, `04_06` |
 | FW.29 | Panic vs saturated acoustic disambiguation (PANIC_FLAG_BIT) | `03_03 §5.3` |

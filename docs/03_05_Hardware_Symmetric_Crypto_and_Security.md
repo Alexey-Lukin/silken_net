@@ -89,7 +89,7 @@
 
 **Статус:** ✅ Firmware ЗАКРИТО (FW.1, 2026-05-02). `Load_AES_Key()` зчитує per-device HKDF-derived ключ з Protected Flash Sector (`FLASH_KEY_ADDR`, magic `"KEYL"`). Hardcoded ідентичний ключ видалено. Factory Flashing Pipeline (SEC.3) та RDP Level 2 activation (SEC.2) — залишаються.
 
-**Файли (historical pre-FW.1):** `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82`
+**Файли (historical pre-FW.1):** `firmware/soldier/main.c`, `firmware/queen/main.c` (топ-рівневе оголошення `aes_key[]` до FW.1)
 
 > ⚠️ **[PRE-FW.1 HISTORICAL — до 2026-05-02]** Код нижче — аудит-артефакт. Поточний стан: `uint32_t aes_key[8] = {0};` + `Load_AES_Key()` → §3.1.
 
@@ -101,12 +101,12 @@ uint32_t aes_key[8] = {0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX,
                        0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX};
 ```
 
-> [HISTORICAL] `firmware/queen/main.c:63-64` до FW.1: `// МАЄ БУТИ ІДЕНТИЧНИМ ключу, зашитому в усіх Солдатах.`
+> [HISTORICAL] `firmware/queen/main.c` до FW.1: `// МАЄ БУТИ ІДЕНТИЧНИМ ключу, зашитому в усіх Солдатах.`
 
 **Виконані дії (FW.1, 2026-05-02):**
 
 - ✅ `HKDF(PROVISIONING_MASTER_KEY, device_uid, "silken-aes-128-lora-key")` → Protected Flash (`FLASH_KEY_ADDR`) — per-device unique key.
-- ✅ `Load_AES_Key()` + magic `"KEYL"` guard — boot відмовляє без provisioning (infinite reset loop; тест: `test_aes_key_load_fail_no_magic`).
+- ✅ `Load_AES_Key()` + magic `"KEYL"` guard — boot відмовляє без provisioning (infinite reset loop; тест: `test_load_key_unprovisioned_flash_error`).
 - ✅ Per-device ізоляція: злам одного Soldier не розкриває ключі сусідів.
 - ✅ `Security::WeakKeyDetector` + boot-time guard (§3.1а, SEC.9) — FIPS-197 test vector не може потрапити в production.
 
@@ -409,7 +409,7 @@ batch_iv[i] = (tick + i)                  // sub-second + per-word
   - Cluster-wide активація через confirmation ACK від усіх вузлів кластера.
 
 - Альтернатива: **ECDH/Curve25519** key exchange при provisioning (складніше, але дозволяє незалежну ротацію).
-- **Передумова:** FW.1 (per-device provisioning) має бути реалізований першим.
+- **Передумова:** FW.1 (per-device provisioning) — ✅ реалізовано (firmware CLOSED, §3.1); передумова виконана.
 
 **Блокує:** Довгострокова безпека мережі, відповідність регуляторним вимогам NaaS.
 
@@ -677,7 +677,7 @@ Load_AES_Key();  // reads from FLASH_KEY_ADDR, validates magic "KEYL",
 // на LE Cortex-M4 перевернув би слова, і pubkey не зійшовся б із зареєстрованим.
 ```
 
-> 🚫 **Архітектурний baseline:** "ідентичний на ВСІХ вузлах" — **історична форма §Hardcoded AES Key**, закрита FW.1. Цей блок документа явно зберігає згадку як warning для аудиторів, що інспектують стару прошивку до FW.1. При відсутності magic `"KEYL"` у Flash (raw чіп з фабрики) — `Load_AES_Key()` відмовляє у boot і enter'ить infinite reset loop (захист від випуску партії без provisioning). Цей invariant перевіряється у `firmware/test/test_soldier_logic.c::test_aes_key_load_fail_no_magic`.
+> 🚫 **Архітектурний baseline:** "ідентичний на ВСІХ вузлах" — **історична форма §Hardcoded AES Key**, закрита FW.1. Цей блок документа явно зберігає згадку як warning для аудиторів, що інспектують стару прошивку до FW.1. При відсутності magic `"KEYL"` у Flash (raw чіп з фабрики) — `Load_AES_Key()` відмовляє у boot і enter'ить infinite reset loop (захист від випуску партії без provisioning). Цей invariant перевіряється у `firmware/test/test_soldier_logic.c::test_load_key_unprovisioned_flash_error`.
 
 > ⚠️ **Audit-trail (історичний §Hardcoded AES Key):** До FW.1 перші 4 слова ключа збігалися зі стандартним тестовим ключем AES-128 з FIPS-197 (Appendix B). Поточна верифікація — `Security::WeakKeyDetector` (§3.1а нижче) + boot-time HKDF derivation гарантують, що цей вектор більше **не може потрапити** у production. Якщо інженер бачить hardcoded `0xXXXXXXXX` константи у будь-якій робочій копії — це означає, що FW.1 patch був відкочений; **stop and escalate**.
 
@@ -1290,7 +1290,7 @@ log.update!(lorenz_state_x: x_f, lorenz_state_y: y_f, lorenz_state_z: z_f,
 
 
 > **Cross-ref:** [`00_07` — FW.23](00_07_Action_Plan_Tracker) — дизайн завершено ✅
-> **Залежність:** Реалізація staging'ується після FW.1 (per-device HKDF) — потребує спільної master-secret інфраструктури.
+> **Залежність:** FW.1 (per-device HKDF) — ✅ реалізовано (§3.1); спільна master-secret інфраструктура наявна.
 
 **Мета:** усунути BLOCKER §6 «Queen → Soldier (OTA LoRa) — MAC/MIC відсутній». Зловмисник у радіусі Queen може:
 1. **Підмінити OTA chunks** → впровадити шкідливий mruby bytecode на всі Солдати кластера
@@ -2109,7 +2109,7 @@ HAL_CRYP_Init(&hcryp);
 |------|------|---------|
 | AES-128 LoRa block encrypt/decrypt round-trip [post-ARCH.42] | `firmware/test/test_encryption.c` | ✅ ECB single-block 128B |
 | AES-256 CoAP batch encrypt + IV prepend [Queen only] | `firmware/test/test_queen_logic.c` | ✅ Часткове |
-| Load_AES_Key() Flash magic guard | `firmware/test/test_soldier_logic.c::test_aes_key_load_fail_no_magic` | ✅ |
+| Load_AES_Key() Flash magic guard | `firmware/test/test_soldier_logic.c::test_load_key_unprovisioned_flash_error` | ✅ |
 | Emergency TX format | `firmware/test/` | ⚠️ Не верифіковано |
 | HRNG fallback behavior | Відсутній | 🔴 Не покрито |
 | Key hardcoding detection | `app/services/security/weak_key_detector.rb` + boot guard | ✅ Backend |
