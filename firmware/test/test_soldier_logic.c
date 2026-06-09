@@ -4183,7 +4183,7 @@ TEST(test_fw20s2_gossip_apply_drift_within_cap_corrects) {
 /* ════════════════════════════════════════════════════════════════════
  * [FW.42] Fauna acoustic-sampling Vcap guard (freeze-contract)
  * ════════════════════════════════════════════════════════════════════
- * Source SSOT: docs/03_03 §10.3 + docs/00_08 FW.42.
+ * Source SSOT: docs/03_03 §10.3 + docs/00_07 FW.42.
  *
  * Pure-logic mirror of `Fauna_Should_Sample` from firmware/soldier/main.c.
  * Decoupled from FW.4 (Run_Inference still commented) — when the fauna

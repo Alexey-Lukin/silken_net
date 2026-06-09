@@ -247,7 +247,7 @@ uint8_t warning_counter           = 0;   // Послідовні WARNING-под�
 
 // [FW.42] Vcap guard для fauna acoustic sampling.
 //
-// SSOT — docs/03_03 §10.3 + docs/00_08 FW.42.
+// SSOT — docs/03_03 §10.3 + docs/00_07 FW.42.
 //
 // Один fauna-сеанс (5 с моноліт @ 16 кГц = 156 послідовних MFCC+INT8
 // inference вікон) коштує ~78 мДж: ~16 мДж wait + ~62 мДж активного CPU

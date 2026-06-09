@@ -555,8 +555,8 @@
 - Після SEC.11 byte-identical `(x₀,y₀,z₀)` + ідентична Float math (drift ARM↔x86 <1e-12). check лишається категоричним; числовий `|Δz|<ε` (ε=0.001) готовий до flip → числовий fraud-detect (replay з правильним status, неправильним Z magnitude). · [ ] 👤 lab: однакові тест-вектори STM32 vs x86, `|Δz|` distribution (N=10k) · [ ] 🤖 оновити `03_04 §BLOCKER-2` з drift+ε (lab-blocked: STM32WLE5JC REVB; ε=0.001 default)
 
 #### FW.42 — Vcap guard для fauna acoustic sampling (brownout protection)
-- **P1** · 🔗 · → `03_03 §10.3`
-- ✅ `Fauna_Should_Sample(vcap_mv)` (≥FAUNA_VCAP_MIN_MV інакше skip + counter `fauna_skipped_low_vcap`) + 8 host-тестів. Fauna-сесія ~78.3мДж (×20 audit-fix); при V_cap≈3.5V просадка ~37мВ → concurrent TX = brownout. ⚠️ `vcap_mv` у guard — сирий ADC-відлік до розводки FW.50 (поріг `FAUNA_VCAP_MIN_MV=4500` мВ не спрацює на залізі до конверсії). · [ ] 🔗 активація: виклик у fauna-pathway після FW.4 uncomment · [ ] 🤖 Prometheus "fauna skip rate" — після FW.4
+- **P1** · 🔗 · → [`03_03 §10.3`](03_03_TinyML_Acoustic_Inference)
+- **✅ Guard канонізовано ([`03_03 §10.3`](03_03_TinyML_Acoustic_Inference)):** `Fauna_Should_Sample(vcap_mv)` (≥`FAUNA_VCAP_MIN_MV` інакше skip + counter `fauna_skipped_low_vcap`) + host-тести (freeze-contract); fauna-сесія ~78.3 мДж → при V_cap≈3.5V concurrent TX = brownout. ⚠️ поріг `FAUNA_VCAP_MIN_MV=4500` мВ на сирому ADC не спрацює до конверсії FW.50. · [ ] 🔗 активація fauna-pathway після FW.4 uncomment + 🤖 Prometheus «fauna skip rate»
 
 #### ARCH.40 — Fauna 5-сек вікно: монолітне awake-обчислення (SRAM2 wipe)
 - **P1** · 🔗 · → `03_03 §10.2`
