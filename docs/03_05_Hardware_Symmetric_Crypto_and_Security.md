@@ -516,7 +516,7 @@ static void MX_CRYP_Init(void)
 - `Temp°C` (byte 6): температура (int8_t), підписана (від -128 до +127 °C)
 - `Acoustic` (byte 7): кількість TinyML-відфільтрованих акустичних подій (кавітація/пилка)
 - `ΔT` (bytes 8-9): `delta_t_seconds` — час між пробудженнями (швидкість метаболізму EBFC)
-- `GrowthPoints` (byte 10): упакований результат mruby Lorenz `[Status:2|GrowthPoints:6]`
+- `GrowthPoints` (byte 10): упакований StatusByte `[PanicFlag:1|Status:2|GrowthPoints:5]` (FW.29-PACK; panic=0 у normal-frame, bits 6..5 status, bits 4..0 growth 0..31)
 - `TTL` (byte 11): Time to Live для Mesh-маршрутизації (початково 3, зменшується на 1 при кожному hop)
 - `FW` (bytes 12-13): Firmware Version ID, big-endian (для OTA targeting)
 - `PAD` (bytes 14-15): нульовий padding (резерв, не використовується)
