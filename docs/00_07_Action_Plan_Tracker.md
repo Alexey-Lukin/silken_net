@@ -650,8 +650,10 @@
 - ✅ (2026-05-29) fallback IV → pure `coap_iv.h#coap_fallback_iv_word` (uid×device + `queen_unix_ts`×reboot + `coap_flush_seq`×flush) + 4 host-тести → **reuse закрито** по всіх осях. 🟡 Residual: IV передбачуваний на fallback — **low-severity** (CoAP-батч без chosen-plaintext вектора). · [ ] 🔗 повна unpredictability = key-derived IV `E_key(counter)` (AES-engine + SEC.8 restore) — bench-gated
 
 #### SEC.14 — ATECC608B role-split re-examination (ARCH.42 honesty)
-- **P2** · 🤖+👤 · → `03_05 §3.7`
-- ✅ (2026-06-02) Чесний trade-off поданий у `03_05 §3.7` (новий підрозділ «Роль SE: per-packet AES vs provisioning-only») + §3.4 Гілка B вказівник. Перефреймовано «0.1% acceptable» → справжня вісь: tamper-resistance LoRa session-ключа (Варіант B: ключ не лишає ASIC → forces per-packet) ⟷ latency/ідіом (built-in radio-AES STM32 ~10µs + session-key у RDP-Flash, ATECC provisioning-only). Energy-аргумент перевірено = малий (≈70µJ/пакет ≈ 0.2% LoRa-TX ~39мДж per `02_03` / десяті % wake-budget vs 0.47F EDLC ≈7Дж), тому **НЕ вирішальний**. Уточнення всередині Варіанту B, **не** перегляд ARCH.42; ATECC-agnostic щодо FW.2 nonce-fix. · [x] 🤖 re-examine + чесно подати trade-off у `03_05 §3.7` ✅ · [ ] 👤/🤖 обрати роль SE (per-packet vs provisioning-only) при bench eval + BOM freeze — рішення про threat model, не технічна необхідність · [ ] 🤖 (optional) cross-check `02_01 §2` power-budget + `03_01` wake-energy для точної % величини
+- **P2** · 👤 · → [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)
+- **✅ Re-examine done — чесний trade-off канонізовано ([`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) «Роль SE: per-packet AES vs provisioning-only» + §1889 SEC.14-table):** перефреймовано «0.1% acceptable» → справжня вісь = tamper-resistance LoRa session-ключа (per-packet SE AES) ⟷ latency/ідіом (built-in radio-AES STM32 ~10µs + session-key у RDP-Flash, SE provisioning-only); energy перевірено = малий (~0.1% TX, **НЕ вирішальний**); ATECC-agnostic щодо FW.2 nonce. Лишається:
+  - [ ] 👤 обрати роль SE (per-packet vs provisioning-only) — bench eval + BOM freeze; threat-model-рішення, не тех-необхідність. Тепер **SE050**-контекст (вісь та сама) → рішення тримається у SE050-MIGRATION (One-Home)
+  - [ ] 🤖 (optional) cross-check `02_01 §2` power-budget + `03_01` wake-energy для точної %
 
 #### SEC.15 — IWDG у STOP2: option byte `IWDG_STOP` обов'язковий при factory flashing
 - **P1** · 👤 · → [`03_05 §3.4г`](03_05_Hardware_Symmetric_Crypto_and_Security)
