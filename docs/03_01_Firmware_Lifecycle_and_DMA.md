@@ -1500,7 +1500,7 @@ tools/firmware/run_bytecode_vm.sh                 # minimal VM runs the bytecode
 
 ### 12.6 Static-analysis gate — cppcheck (the "ruff/rubocop for C")
 
-**Дім cppcheck-гейту owned firmware C** (`soldier` + `queen` + `common`; vendored `extern/` + `.toolchain/` виключені). Аналог `lint` (RuboCop) / `python_lint` (ruff) — job `firmware_lint` у `.github/workflows/ci.yml`. cppcheck парсить джерела напряму (без крос-компіляції/HAL-хедерів) → ловить null-deref, buffer-overrun, uninit-read, знакові/цілочисельні сюрпризи й мертві умови ще до bench.
+**Дім cppcheck-гейту owned firmware C** (`soldier` + `queen` + `common` + `sim` — FW.55 bare-metal-нога, §12.7; vendored `extern/` + `.toolchain/` виключені). Аналог `lint` (RuboCop) / `python_lint` (ruff) — job `firmware_lint` у `.github/workflows/ci.yml`. cppcheck парсить джерела напряму (без крос-компіляції/HAL-хедерів) → ловить null-deref, buffer-overrun, uninit-read, знакові/цілочисельні сюрпризи й мертві умови ще до bench.
 
 **Єдиний вхід (DRY):** `firmware/scripts/cppcheck.sh` — той самий скрипт ганяють CI і розробник локально (`--deep` = `+ --inconclusive`; `--misra` = MISRA C:2012 advisory, non-gating, лише де є `misra.py`-addon — apt-build, не conda-forge).
 
@@ -1512,7 +1512,7 @@ tools/firmware/run_bytecode_vm.sh                 # minimal VM runs the bytecode
 - **Project-wide** (у runner): `missingInclude`/`missingIncludeSystem` (HAL/CMSIS/mruby-хедери лише в ARM-контексті); `staticFunction` (firmware = один TU `main.c`, host-тести компілюють **витягнуту** логіку → linkage-поради = шум; справжні мертві функції ловить рев'ю + ARM `-Wunused`).
 - **Inline** `// cppcheck-suppress` з причиною на місці: radio `OnRxDone` (= Semtech `RadioEvents_t.RxDone`, ABI-фіксована сигнатура) і HAL weak-symbol callback'и (`HAL_ADC_ConvCpltCallback`: `const`/перейменування зламали б перекриття слабкого символа).
 
-**Scope:** production-код (`firmware/test/` поки не лінтиться — host-scaffolding). Статус + залишок — [`00_07` — FW.48](00_07_Action_Plan_Tracker).
+**Scope:** `firmware/test/` **свідомо виключено** (host-scaffolding — знахідки = const-шум на тест-локалах + навмисні boundary/clamp/overflow-патерни, 0 реальних багів, дослідження 2026-06-07). MISRA C:2012 доступна як advisory (`--misra`, apt `misra.py`-addon, non-gating); ескалація до gating — optional far-future. Контекст — [`00_07` — FW.48](00_07_Action_Plan_Tracker).
 
 ### 12.7 QEMU-M4 bit-parity lane — ISA-емуляція замість bench (FW.55)
 

@@ -3,7 +3,7 @@
 # firmware/scripts/cppcheck.sh — Static-analysis gate for first-party firmware C.
 #
 # The "ruff / rubocop for C". cppcheck statically analyses the OWNED firmware
-# (soldier + queen + common) — NOT the vendored extern/ or .toolchain/ trees —
+# (soldier + queen + common + sim) — NOT the vendored extern/ or .toolchain/ trees —
 # and fails the build on any real defect: null-deref, buffer overrun, uninit
 # read, sign/integer surprise, dead condition. One entry point for CI and for
 # local runs (DRY), mirroring firmware/scripts/check_ram_budget.sh and the
