@@ -504,10 +504,6 @@
 - **P2** · 🔗 · → [`03_03 §5.4`](03_03_TinyML_Acoustic_Inference)
 - **✅ Counter канонізовано ([`03_03 §5.4`](03_03_TinyML_Acoustic_Inference)):** `TinyML_Apply_Thresholds`/`Validate_Threshold` відкидає NaN/out-of-range/інверсію OTA-порогів → default (інваріант `SILENCE<WARNING<CRITICAL` збережено); saturating `tinyml_threshold_invalid_count` (DR1 `WARN_ESC`) + host-тести. · [ ] 🔗 wiring лічильника у LoRa-пакет (bit-redistribution) · [ ] 🔗 backend Prometheus `tinyml_threshold_invalid_total{soldier_did}` + Grafana
 
-#### FW.7 — Float vs BigDecimal divergence (TRL 6 mitigation)
-- **P1** · 👤 · → [`03_04 §5`](03_04_mruby_Lorenz_Attractor)
-- **✅ DCI Float-parity канонізовано ([`03_04 §5`](03_04_mruby_Lorenz_Attractor)):** backend `Attractor` BigDecimal→Float (IEEE 754 double — категорично однакові Z з firmware mruby; raw drift ~1e-14 VM↔CRuby). ARM↔x86 drift **знято FW.55** (QEMU-M4 bit-parity, 64 зчеплені кейси, CI-гейт); `MRB_USE_FLOAT32`=double пінено `build_config.rb` (FW.19/FW.46). · [ ] 👤 silicon-confirm: один parity-дамп на платі (FW.55 bench)
-
 #### FW.8 — CRITICAL_Z_MIN/MAX hardcoded
 - **P1** · 🟡 · → [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)
 - **✅ per-species Z-пороги канонізовано (OTA-design [`05_02 §4а`](05_02_Proof_of_Growth_Pipeline), service [`04_02`](04_02_Business_Logic_and_Services)):** Rails `build_threshold_config_block` + `effective_lorenz_thresholds` 3-tier (cluster → TreeFamily → global 2.0/45.0/29.0) + firmware parser `Soldier_Handle_CMD_SET_THRESHOLDS` (freeze-contract, `FW8_PARSER_ENABLED 0`) + host-тести; CMD `0x9A` (DOC.4). · [ ] 🟡 deferred TRL-7: `FW8_PARSER_ENABLED 1` → persist у **Flash-KV** ([`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA) ARCH.28 — **НЕ** RTC, DR-фантоми) + boot-restore + HAL_FLASH bench
@@ -518,7 +514,7 @@
 
 #### FW.19 — Float32 vs Float64 mruby compile flags
 - **P2** · 🤖+👤 · → [`03_04 §5`](03_04_mruby_Lorenz_Attractor)
-- **✅ double-pin канонізовано (build [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA) + rationale [`03_04 §5`](03_04_mruby_Lorenz_Attractor)):** `build_config.rb` НЕ ставить `MRB_USE_FLOAT32` (mruby ≥3.0 rename — стара `MRB_USE_FLOAT` мертва) + boxing-інваріант (NO WORD/NAN boxing на 32-bit) → `mrb_float`=double; float32 дав би ±5-10 units на Z → bio_status зсув. ARM↔x86 double-drift знято FW.55 (QEMU bit-parity ≡ host, residual спільний з FW.7). · [ ] 👤 silicon-confirm на STM32WLE5JC REVB (той самий FW.55 дамп через SWD)
+- **✅ double-pin канонізовано (build [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA) + rationale [`03_04 §5`](03_04_mruby_Lorenz_Attractor)):** `build_config.rb` НЕ ставить `MRB_USE_FLOAT32` (mruby ≥3.0 rename — стара `MRB_USE_FLOAT` мертва) + boxing-інваріант (NO WORD/NAN boxing на 32-bit) → `mrb_float`=double; float32 дав би ±5-10 units на Z → bio_status зсув. ARM↔x86 double-drift знято FW.55 (QEMU bit-parity ≡ host; silicon-confirm спільний → FW.55). · [ ] 👤 silicon-confirm на STM32WLE5JC REVB (той самий FW.55 дамп через SWD)
 
 #### FW.20 + FW.20-S2 — Time Sync (Rails ↔ Queen ↔ Soldier)
 - **P2** · 👤+🟡 · → [`03_02 §5а`](03_02_Queen_Gateway_Firmware) (канон-хаб — SSOT)
@@ -1089,6 +1085,7 @@
 | SEC.5 | Chainlink oracle-callback HMAC fail-fast: `WEB3_STRICT_MODE=true` + порожній `CHAINLINK_HMAC_SECRET` → `SecurityError` (захищає `/oracle_callbacks` від forge `oracle_status_fulfilled?` → неавторизований mint). Guard `verify_chainlink_signature!` (`oracle_callbacks_controller.rb`) + RSpec. Resolved, orphan-ID — бракувало archive-рядка (ops: provision secret pre-mainnet → S1.1/`06_04`; додано 2026-06-09) | `04_03 §5.9` |
 | FW.1 | Hardcoded identical AES-key → per-device HKDF + `Load_AES_Key()` (Protected Flash `FLASH_KEY_ADDR`, magic `KEYL` + zero-key guard → refuse-boot без provisioning) — firmware CLOSED 2026-05-02 (soldier+queen `main.c` + host-тести `test_load_key_*`). Per-device ізоляція реальна з FW.2 CCM (ECB-транзит = спільний ключ, §3.1). Bench-residuals — власні items: RDP L2 → SEC.2 · factory SWD-flash → SEC.3 · weak-key boot-guard → SEC.9 | `03_05 §3.1`, §3.4а |
 | FW.5 | ~~Lorenz β-пертурбація від delta_t/vcap~~ → **РЕВЕРСОВАНО [E.63]** (delta_t → growth_points напряму) | `03_04 §4.3`, E.63 |
+| FW.7 | Backend Lorenz `Attractor` BigDecimal→**Float** (IEEE 754 double) — bit-identical Z з firmware mruby (BigDecimal `round(18)`/iter давав drift після 250 ітерацій); DCI parity. ✅ Закрито (BLOCKER-02, 2026-05-02; `app/services/silken_net/attractor.rb`; §5 порівняльна таблиця Firmware↔Backend). ARM↔x86 silicon-confirm → FW.55 (QEMU bit-parity CI-gated; той самий дамп закриває FW.7/FW.19 на платі) | `03_04 §5`, `05_02` |
 | FW.9 | Queen CoAP batch-delivery retry-loop (`COAP_MAX_RETRIES`, `COAP_CONV_BUDGET_MS` < IWDG) у flush-sequence; ✅ Реалізовано (`firmware/queen/main.c`; host: conversation-fail `test_at_engine.c` + fail→retry→no-loss `test_fw51_*`). Кеш-on-delivery → FW.51; Flash overflow + exp-backoff → ARCH.35. Orphan-ID (cited 06_08/04_06/03_02 §4, archive-рядка бракувало 2026-06-09) | `03_02 §4`, `06_08` |
 | FW.18 | TinyML confidence threshold (RTC DR13/14 dual-zone) | `03_03`, `03_01 §2`, `04_06` |
 | FW.29 | Panic vs saturated acoustic disambiguation (PANIC_FLAG_BIT) | `03_03 §5.3` |
