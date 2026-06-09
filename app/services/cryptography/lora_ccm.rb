@@ -23,7 +23,7 @@ require "openssl"
 # so each (key, nonce) pair is unique under normal operation — the constraint
 # CCM requires for confidentiality. (Cold boot after VBAT loss HRNG-reseeds the
 # FC, making uniqueness probabilistic then — ~1/2**24 reuse risk per drain; see
-# docs/03_05 §3.2 nonce note + 00_08 FW.2 for the monotonic-counter hardening.)
+# docs/03_05 §2.1 nonce note + 00_07 FW.2 for the monotonic-counter hardening.)
 #
 # Backend never holds firmware's CCM B0 block directly — OpenSSL builds it
 # internally from `iv` (nonce), `auth_tag_len`, and `ccm_data_len`.

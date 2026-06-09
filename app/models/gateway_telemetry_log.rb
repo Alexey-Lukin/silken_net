@@ -8,7 +8,7 @@ class GatewayTelemetryLog < ApplicationRecord
   # SSOT — docs/02_05 §4а.5: LiFePO4 розряд безпечний до −20°C; нижче
   # графітове плакування деградує і Queen уходить offline у найгірший
   # момент (зимова буря — коли HIL-симуляція не врятує). Hardware
-  # доповнення (NTC + charge MOSFET cut-off) — HW.16 у docs/00_08.
+  # доповнення (NTC + charge MOSFET cut-off) — HW.16 у docs/00_07.
   LOW_TEMPERATURE_THRESHOLD = -20   # °C: нижче — ризик відмови LiFePO4 / brownout
 
   # --- ЗВ'ЯЗКИ ---
