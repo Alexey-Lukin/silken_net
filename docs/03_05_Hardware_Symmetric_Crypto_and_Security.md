@@ -1998,7 +1998,7 @@ HAL_CRYP_Encrypt(&hcryp, (uint32_t*)binary_batch_buffer,
 |----------|---------|
 | Розмір | 128 біт (4 × uint32_t) |
 | Джерело | HRNG (тепловий шум) — при успіху |
-| Fallback | `coap_fallback_iv_word(i, tick, uid_hash, queen_unix_ts, coap_flush_seq)` — pure (`coap_iv.h`), унікальний across device/reboot/flush; передбачуваний, але без chosen-plaintext вектора (BLOCKER-4) |
+| Fallback | `coap_fallback_iv_word(i, tick, uid_hash, queen_unix_ts, coap_flush_seq)` — pure (`coap_iv.h`), унікальний across device/reboot/flush; передбачуваний, але без chosen-plaintext вектора (§HRNG Fallback) |
 | Унікальність | Новий IV на кожен батч-флашинг (не перевикористовується) |
 | Передача | Prepend до ciphertext: `[IV:16][Encrypted:N×16]`; при L1 QATT — усередині підписаного конверта (§2.2) |
 

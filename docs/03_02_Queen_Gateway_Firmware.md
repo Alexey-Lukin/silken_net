@@ -326,7 +326,7 @@ static uint8_t batch_attest_buffer[QATT_BUFFER_SIZE];  ← static (не стек
 **Два різні HRNG fallback — не плутати:**
 | Місце | Fallback при HRNG fail | Маска | Пояснення |
 |-------|------------------------|-------|-----------|
-| CBC IV generation (batch) | `coap_fallback_iv_word(i, tick, uid_hash, queen_unix_ts, coap_flush_seq)` — pure, дім: `firmware/queen/coap_iv.h` | per-word, 4 різні слова IV | [HRNG-IV harden] унікальність across device/reboot/flush; передбачуваний, але без chosen-plaintext вектора (BLOCKER-4 у [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security)); host-тести `test_encryption.c` |
+| CBC IV generation (batch) | `coap_fallback_iv_word(i, tick, uid_hash, queen_unix_ts, coap_flush_seq)` — pure, дім: `firmware/queen/coap_iv.h` | per-word, 4 різні слова IV | [HRNG-IV harden] унікальність across device/reboot/flush; передбачуваний, але без chosen-plaintext вектора (§HRNG Fallback у [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security)); host-тести `test_encryption.c` |
 | Jitter regeneration після flush | `HAL_GetTick() ^ RNG_FALLBACK_XOR_MASK` | `0xA5A5A5A5UL` (одна константа) | Один tick, одна маска — простий jitter, криптостійкість не потрібна |
 | Startup jitter (один раз) | `HAL_GetTick()` (без XOR!) | без маски — рядок 228 | Startup: tick вже унікальний бо залежить від часу включення живлення; жодна маска не додає ентропії у цьому контексті; jitter — не криптографічна операція |
 

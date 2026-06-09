@@ -20,7 +20,7 @@
  *   flush_seq -> cross-FLUSH uniqueness within a boot session (monotonic).
  *   tick + i  -> sub-second variation; the 4 IV words differ from each other.
  *
- * Threat model (03_05 BLOCKER-4): the CoAP batch plaintext is the Queen's own
+ * Threat model (03_05 §HRNG Fallback): the CoAP batch plaintext is the Queen's own
  * telemetry — an attacker cannot inject chosen plaintext, so there is no
  * BEAST/chosen-plaintext vector. CBC's operative requirement here is IV
  * UNIQUENESS (no reuse -> no equal-prefix leakage), which this guarantees.

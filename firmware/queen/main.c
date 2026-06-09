@@ -1078,7 +1078,7 @@ void Flush_Cache_To_Rails(void)
             /* [HRNG-IV] HRNG failed → derive a UNIQUE fallback IV word. NOT a CSPRNG:
                unique across device (uid_hash) / reboot (queen_unix_ts) / flush
                (coap_flush_seq), but predictable — acceptable here because the CoAP
-               batch has no chosen-plaintext vector (03_05 BLOCKER-4). Derivation lives
+               batch has no chosen-plaintext vector (03_05 §HRNG Fallback). Derivation lives
                in coap_iv.h (pure → host-tested in firmware/test/test_encryption.c). */
             batch_iv[i] = coap_fallback_iv_word(i, HAL_GetTick(),
                                                 djb2_hash(queen_uid, strlen(queen_uid)),

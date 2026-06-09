@@ -573,7 +573,7 @@ TEST(test_key_loaded_before_ecb_restore_preserves_key)
  *
  * Verifies the CoAP-batch fallback IV (used only when HAL_RNG fails) stays
  * UNIQUE across the dimensions that matter for CBC on a no-chosen-plaintext
- * channel (03_05 BLOCKER-4): device, reboot, flush, and per-word.
+ * channel (03_05 §HRNG Fallback): device, reboot, flush, and per-word.
  * ══════════════════════════════════════════════════════════════════ */
 TEST(test_coap_fallback_iv_words_distinct) {
     uint32_t w0 = coap_fallback_iv_word(0, 1000U, 0xDEADBEEFU, 1700000000U, 1U);
