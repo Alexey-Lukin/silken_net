@@ -313,11 +313,11 @@ The geometry fix shrank Cu-Co t_ij **25×** → **Cu-Co is the bottleneck**, not
 
 | Scenario | [glucose] | T(°C) | delta_t (s) | vs 60s baseline |
 |----------|-----------|-------|-------------|-----------------|
-| Healthy summer | 10 mM | 25°C | **35.7** | < 60s → β increases |
-| Active growth | 20 mM | 30°C | **18.3** | < 60s → β increases |
-| Moderate spring | 15 mM | 20°C | **36.6** | < 60s → β increases |
-| Cold winter | 5 mM | 5°C | **190.0** | > 60s → β at baseline |
-| Severe stress | 3 mM | 0°C | **399.8** | > 60s → β at baseline |
+| Healthy summer | 10 mM | 25°C | **35.7** | < 60s → GP↑ [E.63] |
+| Active growth | 20 mM | 30°C | **18.3** | < 60s → GP↑ [E.63] |
+| Moderate spring | 15 mM | 20°C | **36.6** | < 60s → GP↑ [E.63] |
+| Cold winter | 5 mM | 5°C | **190.0** | > 60s → GP↓ [E.63] |
+| Severe stress | 3 mM | 0°C | **399.8** | > 60s → GP↓ [E.63] |
 
 **Conclusion:** BASELINE_DELTA_T_S = 60s is physically justified. EBFC discriminates healthy vs stressed trees. Diffusion NOT rate-limiting (j_kinetic ≪ j_diffusion).
 

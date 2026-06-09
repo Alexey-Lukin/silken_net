@@ -804,7 +804,7 @@ static uint32_t Soldier_Try_Apply_Gossip_Ts(uint32_t local_ts, uint8_t gossip_ls
 
 // Експоненціальне ковзне середнє для delta_t (швидкість метаболізму EBFC)
 // та vcap (заряд іоністора). Зменшує ADC-/RTC-шум приблизно в 3× перед
-// тим, як ці сигнали потраплять до Атрактора (FW.5 Variant B+).
+// тим, як ці сигнали потраплять до mruby-контракту ([E.63] метаболізм).
 // Зберігаємо стан між циклами STOP2 у RTC Backup Registers DR10 та DR12,
 // щільно упакованих, щоб звільнити DR11 під 3-й слот anti-pingpong.
 // DR10 = ema_delta_t × 100 (fixed-point 0.01 с, full uint32)
@@ -856,7 +856,7 @@ static inline uint32_t EMA_Get_DeltaT_Sec(void) { return ema_delta_t_x100 / 100u
 static inline uint16_t EMA_Get_Vcap_Mv  (void) { return (uint16_t)(ema_vcap_x10 / 10u); }
 
 // Прапорець "фільтр прогрівся" — true після ≥ EMA_WARMUP_CYCLES зразків.
-// До того споживачі (Lorenz, FW.5) мають використовувати raw-значення.
+// До того споживач (mruby calculate_state) має використовувати raw-значення.
 static inline uint8_t EMA_Is_Warmed_Up(void) {
     return (ema_valid == EMA_VALID_MAGIC) && (ema_count >= EMA_WARMUP_CYCLES);
 }
@@ -1479,7 +1479,7 @@ int main(void)
     HAL_ADC_Stop(&hadc);
 
     // [FW.21] Оновлюємо фільтр пульсу (delta_t / vcap) — стан живе в RTC DR10-12,
-    // зчитано в Phase 0 (BOOT). Передавання згладжених значень у mruby — задача FW.5.
+    // зчитано в Phase 0 (BOOT). Реальне EMA-передавання у mruby — FW.49/FW.50 (bench).
     EMA_Update(delta_t_seconds, vcap_voltage);
 
     // 3. Квантовий Хаос (Зерно для mesh anti-pingpong, TX jitter, CoAP nonce)
@@ -1632,7 +1632,7 @@ int main(void)
     // [SEC.11 / FW.30] Єдина сигнатура: calculate_state(x, y, z, temp, acoustic, delta_t_s, vcap_mv)
     // Warm path: (x,y,z) з RTC DR16-DR18 (FW.6 state continuation).
     // Cold path: (x₀,y₀,z₀) з K_seed via HKDF/HMAC (SEC.11 seed derivation).
-    // delta_t_s/vcap_mv: defaults 60/3300 (FW.5 B+ EMA передавання — наступний крок).
+    // delta_t_s/vcap_mv: defaults 60/3300; реальне EMA-передавання — FW.49/FW.50 (bench).
     // =========================================================================
 
     if (mrb) {
@@ -1655,14 +1655,14 @@ int main(void)
       if (lorenz_state_valid) {
           // [SEC.11 / FW.30] Єдиний виклик calculate_state з 7 аргументами.
           // Повертає [payload_byte, x_final, y_final, z_final].
-          // [FW.5 B+] EMA-згладжені delta_t_s / vcap_mv передаються в args[5..6]
-          // лише після того, як фільтр прогрівся (EMA_Is_Warmed_Up — count ≥
-          // EMA_WARMUP_CYCLES). До цього подаємо нейтральні defaults (60 с, 3300
-          // мВ) — це не зміщує β-clamp у `bio_contract.rb` (BETA_MIN/MAX 2.0..4.0)
-          // і відповідає baseline (BASELINE_DELTA_T_S=60, NOMINAL_VCAP_MV=3300),
-          // тобто β-перетурбація = 0 у warmup-фазі.
-          uint32_t delta_t_for_lorenz = 60u;       // FW.5 baseline
-          uint16_t vcap_for_lorenz    = 3300u;     // FW.5 nominal
+          // [E.63] EMA-згладжені delta_t_s / vcap_mv передаються в args[5..6]
+          // лише після прогріву фільтра (EMA_Is_Warmed_Up — count ≥
+          // EMA_WARMUP_CYCLES). До цього — нейтральні defaults (60 с, 3300 мВ),
+          // що відповідають baseline (BASELINE_DELTA_T_S=60, NOMINAL_VCAP_MV=3300).
+          // delta_t живить growth_points напряму (metabolic_health, 03_04 §4.3);
+          // β лишається фіксованим (BASE_BETA) — стара FW.5 β-перетурбація реверсована.
+          uint32_t delta_t_for_lorenz = 60u;       // baseline (BASELINE_DELTA_T_S)
+          uint16_t vcap_for_lorenz    = 3300u;     // nominal (NOMINAL_VCAP_MV; reserved)
           if (EMA_Is_Warmed_Up()) {
               delta_t_for_lorenz = EMA_Get_DeltaT_Sec();
               vcap_for_lorenz    = EMA_Get_Vcap_Mv();
@@ -1674,8 +1674,8 @@ int main(void)
           args[2] = mrb_float_value(mrb, (double)lorenz_z);
           args[3] = mrb_fixnum_value((int8_t)lora_payload[6]); // Температура
           args[4] = mrb_fixnum_value(lora_payload[7]); // Акустика
-          args[5] = mrb_fixnum_value((mrb_int)delta_t_for_lorenz); // [FW.5 B+] EMA delta_t_s
-          args[6] = mrb_fixnum_value((mrb_int)vcap_for_lorenz);    // [FW.5 B+] EMA vcap_mv
+          args[5] = mrb_fixnum_value((mrb_int)delta_t_for_lorenz); // [E.63] delta_t → growth_points
+          args[6] = mrb_fixnum_value((mrb_int)vcap_for_lorenz);    // [E.63] vcap (reserved)
 
           mrb_value ruby_result = mrb_funcall_argv(mrb, mrb_top_self(mrb),
               mrb_intern_lit(mrb, "calculate_state"), 7, args);
