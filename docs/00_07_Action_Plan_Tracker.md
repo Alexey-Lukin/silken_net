@@ -621,8 +621,10 @@
 - ✅ `Deploy.s.sol` admin=Safe на genesis + `REQUIRE_SAFE_ADMIN` guard + runbook (нічого не задеплоєно → reassign не треба). · [ ] 👤 створити Gnosis Safe (3/5|2/3) на Polygon + деплой з `ADMIN_ADDRESS=<Safe>` `REQUIRE_SAFE_ADMIN=true`
 
 #### SEC.2 — RDP Level 2 activation timeline
-- **P1** · 🤖+👤 · → `03_05 §3.6`
-- ✅ процедура активації RDP L2 (pre-flight + CubeProgrammer CLI + rollout R&D→Pilot→Mass). · [ ] 🤖 верифікувати OTA flow end-to-end · [ ] 👤 перейти на RDP L1 для field batch
+- **P1** · 👤 · → [`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security)
+- **✅ Процедура RDP L2 канонізована ([`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security)):** pre-flight + CubeProgrammer CLI + rollout R&D→Pilot→Mass; скриптовано `firmware/scripts/bench/01_option_bytes.sh --rdp 2` (bench RUNBOOK). RDP L2 = **необоротний** SWD-lock → OTA мусить бути верифікований ДО активації (§3.6 ⚠️). Лишається:
+  - [ ] 🔗 верифікувати OTA flow end-to-end на bench ДО L2-lock
+  - [ ] 👤 field batch → RDP **L1** (зворотний); L2 — лише фінальний mass-deploy
 
 #### SEC.3 — Factory Flashing pipeline
 - **P0** · 👤 · → [`03_05 §3.4`](03_05_Hardware_Symmetric_Crypto_and_Security) (+ §3.4г threat model)
