@@ -1575,7 +1575,7 @@ TEST(test_tx_defer_boundary_minus15_zero_vcap) {
  *
  * Mirrors the production EMA in firmware/soldier/main.c.
  * α = 0.2 (integer fixed-point: 2/10), warmup = 3 cycles, state in SRAM.
- * Cross-ref: docs/03_01 §14, docs/10_02 FW.21.
+ * Cross-ref: docs/03_01 §13 (EMA home), docs/00_07 FW.21.
  * ════════════════════════════════════════════════════════════════════ */
 
 #define FW21_EMA_ALPHA_NUM     2

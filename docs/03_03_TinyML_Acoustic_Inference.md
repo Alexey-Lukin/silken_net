@@ -215,8 +215,8 @@ for(int i = 0; i < 512; i++) {
 > має більший Tensor Arena overhead на критично обмеженій SRAM (64 KB
 > STM32WLE5JC); (3) ESC-літературний консенсус (Salamon & Bello 2015, BirdNET,
 > ESC-50) однозначно: log-mel > MFCC > raw audio для CNN-based ESC; (4)
-> CMSIS-DSP вже в стеку (FW.21 EMA, FW.5 Lorenz) — додавання Mel-bank ~1-2 KB
-> коду без зміни toolchain.
+> CMSIS-DSP вже завендорено (FW.46 `extern/`; logmel FFT `arm_rfft_fast_f32`) —
+> додавання Mel-bank ~1-2 KB коду без зміни toolchain.
 >
 > **Fallback на Path C** — лише якщо ML-партнер (Бушин/Любченко) сильно
 > натисне на TFLM end-to-end через тренувальний workflow (Edge Impulse).

@@ -529,8 +529,8 @@
 - TRL-6 P2 (`Derive_Cold_Start_State` ±12год толер.); TRL-7 блокер (ARCH.26 TDMA, HMAC nonce, fire ±1с). ✅ FW.20 1-hop Done; FW.20-S2 4/5 Done. · [ ] 👤 lab drift-test ΔT=±60°C (термокамера, TRL-7; скрипт готовий — `04_lse_drift.py`, RUNBOOK §4.3) · [ ] 🟡 (4/5) anti-storm dedup bitmap → Flash-KV store (DR15 зайнято FW.2 CCM FC; `03_01 §2.3 ARCH.28`). ⚠️ drift 12год/cooldown 1год/grace 10хв + beacon drift-comp стоять на `HAL_GetTick` (заморожений у STOP2) → wall-clock міграція у FW.49 (S1-wiring). Cross-ref: ARCH.26, FW.30, FW.49, SEC.10/FW.29
 
 #### FW.21 — Edge data aggregation (RAM-aware Soldier)
-- **P2** · 👤 · → `03_01 §2`, `08_02`
-- ✅ `EmaState` + 4 функції (`EMA_Update`/`Get_DeltaT_Sec`/`Get_Vcap_Mv`/`Is_Warmed_Up`) + RTC DR10+DR12 (звільнено DR11) + 102 host-тести (EMA на MCU зменшує LoRa-трафік). · [ ] 👤 інтегрувати з Kalman filter design (E.10 — Косенук)
+- **P2** · 👤 · → [`03_01 §13`](03_01_Firmware_Lifecycle_and_DMA)
+- **✅ EMA канонізовано ([`03_01 §13`](03_01_Firmware_Lifecycle_and_DMA)):** `EMA_Update`/`Get_DeltaT_Sec`/`Get_Vcap_Mv`/`Is_Warmed_Up` (α=0.2 integer fixed-point) + RTC DR10/DR12-packed (звільнило DR11 → 3-й mesh-слот, §2) + 102 host-тести — згладжує delta_t/vcap (метаболізм [E.63]) і зменшує LoRa-трафік. · [ ] 👤 інтегрувати з Kalman-filter design ([`08_02`](08_02_Academic_Institutions_Registry) E.10 — Косенук)
 
 #### FW.22 — acoustic_events payload overflow (uint16 → uint8 truncation)
 - **P2** · 🔗 · → `03_03 §7.1`
