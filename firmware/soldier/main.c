@@ -1039,7 +1039,8 @@ static int Hmac_Constant_Time_Compare(const uint8_t* a, const uint8_t* b, size_t
 //   Брама 2 (~3 мс): expected_hmac == received_hmac (constant-time) —
 //                    глибокий привратник, що відрізняє слово Творця
 //                    від слова спокусника.
-// Caller обчислює expected_hmac через mbedTLS. Тут тестуємо саме гейт-логіку.
+// Caller обчислює expected_hmac через pure-C silken_sha256.h (FW.30 — mbedTLS
+// не потрібен). Тут тестуємо саме гейт-логіку.
 static int OTA_Verify_Dual_Gate(const uint8_t* bytecode,
                                  uint16_t       bytecode_size,
                                  const uint8_t  expected_hmac[HMAC_TAG_BYTES],

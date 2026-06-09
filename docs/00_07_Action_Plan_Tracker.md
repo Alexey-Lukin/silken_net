@@ -637,10 +637,6 @@
 - **P2** · 👤 · → [`03_05 §3.5`](03_05_Hardware_Symmetric_Crypto_and_Security)
 - Zero-consumption transport: магніт→circuit open, інсталятор знімає→first power-up (~$0.05/unit). Дизайн канонізовано, у BOM ще немає (окремий механізм від piezo Zero-Power Wake). · [ ] 👤 додати Hamlin 59140-1-T-00-A + N52 магніт до BOM + оновити KiCad schematic
 
-#### SEC.7 — OTA image автентифікація (cross-ref FW.23)
-- **P1** · 🔗 · → `03_05 §3.4б`
-- ✅ HMAC-SHA256 dual-gate (OtaHmacKeyService + OtaPackagerService + Soldier dual-gate + Queen relay). · [ ] 🟡 mbedTLS HMAC compute на STM32 HASH (lab) · [ ] 🔗 Ed25519 key pair (Post-TRL 7)
-
 #### SEC.9 — Production AES Key містить FIPS-197 Appendix B Test Vector
 - **P0** · 👤 · → `03_05 §3.1а`
 - ✅ guard `Security::WeakKeyDetector` + boot-guard refuse-to-boot на FIPS-197/NIST/degenerate vectors (30 specs). ⚠️ ОКРЕМЕ від FW.1: якщо master seed базується на цьому ключі — весь derivation tree скомпрометований. · [ ] 👤 замінити seed key на crypto-random → задокументувати генерацію у vault (без коміту) → re-flash прототипи
@@ -1096,6 +1092,7 @@
 | SEC.6 | SE = **SE050** — ✅ RESOLVED 2026-06-07 (true-DePIN: голос дерева потребує non-extractable Ed25519 → SE050, не ATECC; soft-freeze DNP, populate post-FW.2). Деталі + усі residuals → SE050-MIGRATION | `03_05 §3.7`, §3.4 |
 | SEC.10 | Emergency-TX anti-replay frame counter (DR0 packing) | `03_02`, `03_01 §2` |
 | SEC.11 | Lorenz Seed Provenance (DCI hardening, K_seed HKDF) | `03_04`, `03_05 §3.4а`, `04_02`, `05_02` |
+| SEC.7 | OTA image authentication — **дубль FW.23** (HMAC-SHA256 dual-gate: `OtaHmacKeyService` + `OtaPackagerService` 0x9B trailer + Queen relay + Soldier dual-gate). Активні residuals (real `silken_sha256` HMAC compute + bench K_ota; ECDSA P-256 post-TRL7 migration path) тримає FW.23 — One-Home; stale «mbedTLS» framing виправлено | `03_05 §3.4б` (= FW.23) |
 | FW.5 | ~~Lorenz β-пертурбація від delta_t/vcap~~ → **РЕВЕРСОВАНО [E.63]** (delta_t → growth_points напряму) | `03_04 §4.3`, E.63 |
 | FW.18 | TinyML confidence threshold (RTC DR13/14 dual-zone) | `03_03`, `03_01 §2`, `04_06` |
 | FW.29 | Panic vs saturated acoustic disambiguation (PANIC_FLAG_BIT) | `03_03 §5.3` |
