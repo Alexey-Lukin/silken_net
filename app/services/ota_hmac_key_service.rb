@@ -6,7 +6,7 @@ require "openssl"
 #
 # Per-cluster K_ota deriviation для аутентифікації OTA bytecode перед запуском
 # на Soldier (dual-gate: magic 0x45544952 "RITE" + HMAC-SHA256 verify).
-# Backend і Soldier (на лабораторній збірці з mbedTLS) обоє деривують один
+# Backend і Soldier (pure-C silken_sha256.h) обоє деривують один
 # і той самий K_ota з PROVISIONING_MASTER_KEY через HKDF-SHA256.
 #
 # Формула:

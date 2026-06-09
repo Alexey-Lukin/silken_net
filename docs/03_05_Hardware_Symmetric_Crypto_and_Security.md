@@ -1264,9 +1264,9 @@ log.update!(lorenz_state_x: x_f, lorenz_state_y: y_f, lorenz_state_z: z_f,
 | Backend AR Encryption поле | `HardwareKey#lorenz_seed_hex` (validated `presence: true`) |
 | Backend dispatch | `app/services/telemetry_unpacker_service.rb` (raises `MissingLorenzSeedError` без K_seed) |
 | Backend attractor entry-point | `Attractor.calculate_z_from_state(x₀, y₀, z₀, …)` |
-| Firmware mbedTLS bridge | `firmware/soldier/main.c` (HKDF/HMAC через `mbedtls_md_hmac`) |
+| Firmware pure-C bridge (FW.30) | `firmware/soldier/main.c` → `silken_sha256.h` (HKDF/HMAC, без mbedTLS) |
 | Firmware mruby entry-point | `firmware/bio_contracts/bio_contract.rb#calculate_state(x_prev, y_prev, z_prev, …)` |
-| Host-parity test | `firmware/test/test_seed_derivation.c` (OpenSSL HKDF/HMAC = mbedTLS на MCU) |
+| Host-parity test | `firmware/test/test_seed_derivation.c` (OpenSSL HKDF/HMAC = `silken_sha256.h` на MCU) |
 | Backend specs | `spec/services/silken_net/seed_derivation_spec.rb` |
 
 > **Cross-ref:** [`03_04 §2.1` First-Boot vs Continuation](03_04_mruby_Lorenz_Attractor#21-звідки-беруться-вхідні-параметри); [`05_02 §Dual` Computation Integrity](05_02_Proof_of_Growth_Pipeline); SEC.9 master-key rotation.

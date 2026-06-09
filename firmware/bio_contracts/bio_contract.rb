@@ -10,7 +10,7 @@ module SilkenNet
   #   * (x, y, z) restored from RTC DR16-DR18 (warm STOP2 continuation,
   #     FW.6), or
   #   * (x₀, y₀, z₀) derived on-device from per-device K_seed via
-  #     mbedTLS HKDF-SHA256 → HMAC-SHA256 → signed-unit-float unpack
+  #     pure-C silken_sha256.h HKDF-SHA256 → HMAC-SHA256 → signed-unit-float unpack
   #     (SEC.11 cold start after VBAT loss).
   # Both branches yield byte-identical (x, y, z) on backend (Ruby) and
   # firmware (mruby) for the same inputs — that is what makes Dual
@@ -165,7 +165,7 @@ end
 # =========================================================================
 # [SEC.11] Sole entry-point. C-side passes (x, y, z) — either restored
 # from RTC DR16-DR18 (FW.6 warm continuation) or freshly derived from
-# K_seed via mbedTLS HKDF/HMAC (SEC.11 cold start). Returns
+# K_seed via pure-C silken_sha256.h HKDF/HMAC (SEC.11 cold start). Returns
 # [payload_byte, x_final, y_final, z_final] for RTC persistence.
 # delta_t_s → growth_points (метаболізм, E.63); vcap_mv reserved.
 def calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s = SilkenNet::Attractor::BASELINE_DELTA_T_S, vcap_mv = SilkenNet::Attractor::NOMINAL_VCAP_MV)

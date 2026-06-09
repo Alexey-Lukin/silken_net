@@ -9,18 +9,18 @@
  *                          "init|" || epoch_day_be8)[0..7,8..15,16..23])
  *
  * Why mirror in C — firmware MCU side runs the very same math via
- * mbedTLS (linked already for AES). This file is the Soldier-equivalent
+ * pure-C silken_sha256.h (FW.30 — no mbedTLS, no HAL). This file is the Soldier-equivalent
  * implementation, verified to be byte-identical to the Ruby backend by
  * a fixed set of pinned vectors. The vectors are generated once with
  * Ruby and pasted in below; the test asserts that this C re-impl
- * produces the same bytes for the same inputs. If the firmware port
- * to mbedTLS regresses, this test catches it.
+ * produces the same bytes for the same inputs. If the firmware
+ * silken_sha256.h impl regresses, this test catches it.
  *
  * Build: make -C firmware/test seed_derivation
  *
  * Dependency: OpenSSL libcrypto (CI image has it). The on-target
- * firmware uses mbedTLS instead — same standard primitives, same
- * results.
+ * firmware uses the same pure-C silken_sha256.h — same standard
+ * primitives, same results.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -168,8 +168,8 @@ static int hex_eq(const uint8_t *bytes, size_t n, const char *expected_hex) {
  *   ENV["PROVISIONING_MASTER_KEY"]="silken-net-test-master-key-32b!!"
  *   SilkenNet::SeedDerivation.derive_seed("SNET-AC0001AB")
  *   SilkenNet::SeedDerivation.initial_state(seed_bytes, 20210)
- * The test re-derives in C with OpenSSL and asserts byte-equality so a
- * future firmware port to mbedTLS catches any drift before flashing.
+ * The test re-derives in C with OpenSSL and asserts byte-equality so any
+ * drift in the firmware silken_sha256.h impl is caught before flashing.
  * ======================================================================== */
 
 static void test_hkdf_known_vector_simple_uid(void) {

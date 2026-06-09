@@ -521,7 +521,7 @@ class TelemetryUnpackerService < ApplicationService
   #      Detects tampered firmware or replay with a forged StatusByte.
   #   2. Numeric divergence — |server_z − device_z| larger than the
   #      tolerance band. Detects a corrupted attractor input on either
-  #      side (e.g. wrong K_seed flashed, drift in mbedTLS port, etc.).
+  #      side (e.g. wrong K_seed flashed, drift in the silken_sha256 port, etc.).
   # Device Z is reconstructed from the bio_status nibble + growth_points
   # only categorically (the 21-byte packet does not carry raw Z), so the
   # numeric check is a forward-looking hook — kept here behind a metric

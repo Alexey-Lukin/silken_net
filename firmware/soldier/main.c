@@ -991,7 +991,7 @@ static uint8_t Build_OTA_ReRequest_Payload(uint32_t did,
 //   Брама 2: HMAC-SHA256(K_ota, bytecode || version_id_be || total_chunks_be)
 //            == received_hmac_tag (constant-time, без шепоту таймінгу)
 //
-// Чиста pure-функція для host-тестів. Реальний виклик K_ota / mbedTLS
+// Чиста pure-функція для host-тестів. Реальний виклик K_ota через silken_sha256.h
 // чекає на лабораторне втілення — тут вартує лише сама гейт-логіка.
 // Повертає:
 //   1 = чанк з валідним marker та seg_idx у [1..3], печатка лягла на місце

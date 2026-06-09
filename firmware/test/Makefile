@@ -112,7 +112,7 @@ $(BINDIR)/test_queen_attest: test_queen_attest.c ../common/queen_attest.h \
 
 # [SEC.11] Host parity for SilkenNet::SeedDerivation. Uses OpenSSL
 # libcrypto on host; firmware MCU side runs the same primitives via
-# mbedTLS (already linked for AES). Same standard primitives →
+# pure-C silken_sha256.h (FW.30; no mbedTLS). Same standard primitives →
 # byte-identical (x0, y0, z0) for the same (K_seed, epoch_day) tuple.
 $(BINDIR)/test_seed_derivation: test_seed_derivation.c ../common/lorenz_seed.h ../common/silken_sha256.h
 	$(CC) $(CFLAGS) $(OPENSSL_CFLAGS) -o $@ test_seed_derivation.c $(OPENSSL_LIBS) -lm

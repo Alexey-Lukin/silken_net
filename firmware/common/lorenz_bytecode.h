@@ -3,7 +3,7 @@
  * Source:    firmware/bio_contracts/bio_contract.rb
  * mruby:     4.0.0 (firmware/extern/mruby submodule)
  * float:     double (NO MRB_USE_FLOAT — FW.19 / FW.7 byte-parity)
- * bio_contract.rb sha256: d4c561a9a90e05df997a4f3228b27a8f382faf061bac0b3cc7974d3076c105d2
+ * bio_contract.rb sha256: 2e48c129a9d4d65cd96a67a729b7ddf22891dd186aebf7ab47dfc2230f75cbef
  *
  * Regenerate: tools/firmware/gen_bytecode.sh
  * Drift-gate: tools/firmware/check_bytecode.py (light, stdlib)

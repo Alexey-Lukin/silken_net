@@ -21,7 +21,7 @@ module SilkenNet
   #        x₀ = signed_unit_float(digest[ 0.. 7])  ∈ [-1, +1]
   #        y₀ = signed_unit_float(digest[ 8..15])
   #        z₀ = signed_unit_float(digest[16..23])
-  #      Daily epoch rotation. Both firmware (mbedTLS) and backend
+  #      Daily epoch rotation. Both firmware (silken_sha256.h) and backend
   #      (OpenSSL) compute byte-identical (x₀, y₀, z₀) for the same
   #      (K_seed, epoch_day) tuple, which is what makes the numeric Z
   #      divergence check possible after the field migration.
@@ -97,7 +97,7 @@ module SilkenNet
     # 8 raw bytes (big-endian uint64) → Float in [-1, +1].
     # Centered at 0.0 by subtracting (2^64 - 1) / 2 then dividing by the
     # same half-range. The mapping is bit-exact between OpenSSL (Ruby)
-    # and mbedTLS (firmware) when both perform the integer subtract and
+    # and silken_sha256.h (firmware) when both perform the integer subtract and
     # the single Float division.
     def signed_unit_float(bytes)
       n = bytes.unpack1("Q>")

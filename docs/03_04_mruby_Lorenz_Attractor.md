@@ -259,7 +259,7 @@ digest[16..23] = 0xC56D81EB4F09BB7C → z₀ ≈ 0.5418
 
 > Усі координати строго у (-1, +1). Перші кілька десятків ітерацій ("warm-up") атрактор "падає" з цієї точки на дивний атрактор Лоренца — як насінина, кинута у вітер, врешті-решт лягає на свою орбіту в кроні.
 
-`K_seed` — 32-байтний секрет, виведений при provisioning через `HKDF-SHA256(PROVISIONING_MASTER_KEY, salt="silken-lorenz-v1", info="silken-lorenz-seed|<DID>", len=32)`. Зберігається у protected Flash sector Soldier-вузла та у `hardware_keys.lorenz_seed_hex` (AR Encryption non-deterministic). НІКОЛИ не передається через мережу — обидві сторони деривують його незалежно з спільного `PROVISIONING_MASTER_KEY`. Реалізація — `app/services/silken_net/seed_derivation.rb` (backend, OpenSSL HKDF) і `firmware/test/test_seed_derivation.c` (host-parity test, що валідує OpenSSL ↔ mbedTLS байт-ідентичність).
+`K_seed` — 32-байтний секрет, виведений при provisioning через `HKDF-SHA256(PROVISIONING_MASTER_KEY, salt="silken-lorenz-v1", info="silken-lorenz-seed|<DID>", len=32)`. Зберігається у protected Flash sector Soldier-вузла та у `hardware_keys.lorenz_seed_hex` (AR Encryption non-deterministic). НІКОЛИ не передається через мережу — обидві сторони деривують його незалежно з спільного `PROVISIONING_MASTER_KEY`. Реалізація — `app/services/silken_net/seed_derivation.rb` (backend, OpenSSL HKDF) і `firmware/test/test_seed_derivation.c` (host-parity test, що валідує OpenSSL ↔ pure-C `silken_sha256.h` (FW.30) байт-ідентичність).
 
 > **Ергодичність зберігається:** дивний атрактор "забуває" початкову точку через ~50 пробуджень (~2 доби), тому daily rotation `epoch_day` не порушує неперервності траєкторії — лише дає forward secrecy ≤ 24 год при компрометації одного `K_seed`. Дерево, що зазнало VBAT loss сьогодні і завтра, отримає **дві різні** початкові точки — але траєкторії зійдуться в однаковий статистичний розподіл протягом доби. Природа не відрізнить.
 
@@ -471,7 +471,7 @@ Gaia 2.0 використовує **dual computation integrity verification**: Z
 | **Результат** | `z` (Float, необроблений) → пакується у `status_byte` | `z.round(4)` → зберігається у `TelemetryLog.z_value` |
 | **Де використовується** | Пакується у `payload_byte` (byte 10 LoRa) | `TelemetryLog.z_value`, ZK-proof верифікація |
 
-> **[SEC.11] Byte-Identical Initial State:** firmware та backend **деривують той самий `(x₀, y₀, z₀)`** через спільний HKDF/HMAC-SHA256 алгоритм з per-device `K_seed` (`SilkenNet::SeedDerivation` ↔ mbedTLS у firmware). DID більше не використовується як seed. Тому raw Z-значення тепер може порівнюватися чисельно (з врахуванням ARM↔x86 IEEE-754 drift < 1e-12 за 250 ітерацій). `check_z_divergence!` залишається категоричним за замовчанням; числовий tolerance band готовий до flip під feature-flag після інструментального вимірювання реального drift на target HW.
+> **[SEC.11] Byte-Identical Initial State:** firmware та backend **деривують той самий `(x₀, y₀, z₀)`** через спільний HKDF/HMAC-SHA256 алгоритм з per-device `K_seed` (`SilkenNet::SeedDerivation` ↔ pure-C `silken_sha256.h` у firmware). DID більше не використовується як seed. Тому raw Z-значення тепер може порівнюватися чисельно (з врахуванням ARM↔x86 IEEE-754 drift < 1e-12 за 250 ітерацій). `check_z_divergence!` залишається категоричним за замовчанням; числовий tolerance band готовий до flip під feature-flag після інструментального вимірювання реального drift на target HW.
 
 ### 5.2 Потік Верифікації
 
@@ -554,7 +554,7 @@ if (mrb) {
       uint8_t info[16];                          // "init|" + 8-byte BE epoch_day
       memcpy(info, "init|", 5);
       for (int i = 0; i < 8; i++) info[5 + i] = (epoch_day >> (8 * (7 - i))) & 0xFF;
-      mbedtls_md_hmac(MBEDTLS_MD_SHA256_INFO, k_seed, 32, info, 13, digest);
+      Silken_Hmac_Sha256(k_seed, 32, info, 13, digest);  // pure-C silken_sha256.h, FW.30 (НЕ mbedTLS)
       x_prev = bytes_to_signed_unit_float(digest +  0);
       y_prev = bytes_to_signed_unit_float(digest +  8);
       z_prev = bytes_to_signed_unit_float(digest + 16);

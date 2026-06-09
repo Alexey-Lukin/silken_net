@@ -80,7 +80,7 @@ static double metabolic_health(uint16_t delta_t_s) {
  * metabolism no longer perturbs the chaos; it sets growth_points directly.
  * [SEC.11] The kernel takes initial (x₀, y₀, z₀) directly — there is no
  * `seed` input. The harness uses seed_to_xyz() for terse setup; production
- * firmware feeds (x₀, y₀, z₀) derived from K_seed via mbedTLS HKDF/HMAC. */
+ * firmware feeds (x₀, y₀, z₀) derived from K_seed via pure-C silken_sha256.h HKDF/HMAC. */
 static double calculate_z_axis(double x, double y, double z,
                                int8_t temp, uint8_t acoustic) {
     double local_sigma = BASE_SIGMA + (acoustic * 0.1);
