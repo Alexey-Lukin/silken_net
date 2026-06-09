@@ -399,7 +399,7 @@ logmel = np.log(mel_fb @ power + 1e-6).astype(np.float32)                # [40, 
 
 ### 4.2 Класи Виходу (Output Classes)
 
-Визначено в `firmware/soldier/main.c:85`:
+Визначено в `firmware/soldier/main.c` (`ml_event_id`):
 
 ```c
 uint8_t ml_event_id = 0;  // Результат: 0-Тиша, 1-Вітер, 2-Кавітація, 3-Пилка

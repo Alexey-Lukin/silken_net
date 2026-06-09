@@ -150,7 +150,7 @@ Dual Computation Integrity: server Z vs device Z (SilkenNet::Attractor). Diverge
 |----|---------|------|
 | HW-AES-KEY | `firmware/*/main.c:65-66` | Hardcoded AES-256 key — єдиний ключ на всю мережу |
 | AES-ECB | `firmware/soldier/main.c:747` | ECB без MAC -> replay/bit-flip attack |
-| TINYML | `firmware/soldier/main.c:355` | `Run_Inference()` закоментована; `.h` відсутній |
+| TINYML | `firmware/soldier/main.c` (Phase 1.5 call-site) | `Run_Inference()` закоментована; `.h` відсутній |
 | LORENZ-INPUTS | `firmware/bio_contracts/bio_contract.rb` | `delta_t`/`vcap` не передаються в `calculate_state` |
 | LORENZ-STATE | firmware | Стан (x,y,z) не зберігається між циклами STOP2 |
 | QUEEN-UID | `firmware/queen/main.c` | `QUEEN-001` hardcoded |

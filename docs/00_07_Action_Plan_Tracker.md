@@ -501,7 +501,7 @@
 - ✅ ring buffer + drain-loop (single-packet overwrite / emergency loss під CoAP-flush) + ✅ (FW.56) blind-вікно закрито **архітектурно** (host-рівень): pure `at_engine.h` early-exit токенайзер + `sim7070_coap.h` розмова + hex-чанки + response-driven init, host-тести `test_at_engine.c` — канон [`03_02 §4`](03_02_Queen_Gateway_Firmware). 🔴 фізичне закриття = bench-residual ↓. · [ ] 🟡 UART DMA interrupt-driven RX (зараз byte-polling) — bench · [ ] 👤 bench: реальні SIM7070G таймінги
 
 #### FW.4 — TinyML `Run_Inference()` — compilation unblocked, inference TBD
-- **P0** · 👤+🔗 · → `03_03`
+- **P0** · 👤+🔗 · → [`03_03 §4`](03_03_TinyML_Acoustic_Inference)
 - Compilation unblocked (stub fallback); реальна модель + uncomment лишаються. Блокує acoustic detection (chainsaw/cavitation/wind) + Mongabay pivot. · [ ] 👤 тренування Path B log-mel 5-class (Бушин/Любченко) → `silken_net_audio_model.h` (заміна stub через `__has_include`) · [ ] 🔗 verify Tensor Arena (`arm-none-eabi-size`) + uncomment Run_Inference call-site (Phase 1.5) + wire `firmware/common/logmel.c` у ARM-build (`LOGMEL_USE_CMSIS` + CMSIS-DSP link; Flash +~7KB tables; ⚠️ ARM-стек ~7KB/4 буфери → bench stack-high-water vs 16KB arena+mruby, або reuse-buffers) — після моделі (DSP golden-vector тести → FW.25, One-Home) · [ ] 🌿 FW.4-EXT (post-TRL 7): 5-й клас `fauna_activity` dawn/dusk (`03_03 §10`), залежить від UNI.11+UNI.13a; альт. ACI descriptor
 
 #### FW.18b — OTA threshold invalid counter (production-visibility)
