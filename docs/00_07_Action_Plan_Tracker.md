@@ -547,8 +547,8 @@
 - ✅ CI gate `make size-check` (host `.bss+.data`<51200B; queen-статики зросли на ~1.9K після FW.56 `coap_pdu_buf` — дзеркало RAM-таблиці: `03_02 §9`). **FW.46:** real `arm-none-eabi-size` активний для owned-коду (logmel ~6.3KB; mruby ~117KB Flash / 0 static RAM — `03_01 §12.4`); повний `.elf` size (з tensor arena) — після HAL-vendoring + моделі. Точний arena невідомий (~16KB оцінка, Path B §3.2 ~15-30KB); >46KB → stack overflow при Lorenz. · [ ] 🤖 повний `.elf` `.bss+.data` після FW.4 модель + `-DSILKEN_WITH_HAL=ON` · [ ] 🤖 якщо >46KB — INT8 quantization/prune
 
 #### FW.27 — OTA broadcast: відсутня RX-верифікація Soldier
-- **P2** · 🔗 · → `03_02 §5`
-- ✅ Дизайн B (Magic Re-Request): Soldier bitmap uplink `[0x55]` → Queen targeted re-broadcast (60-90% economy) + 22 host-тести (Soldier у STOP2 пропускає chunk). Дизайн A (ACK-aggregation) — з ARCH.26. · [ ] 🔗 Дизайн A залежить від ARCH.26 (TDMA RX-вікно); B незалежний · ⚠️ re-request «5 хв тиші» (`ota_last_chunk_rx_tick`) на `HAL_GetTick` (мертвий у STOP2 = ~500 wake-циклів) → wall-clock у FW.49 · [x] 🤖 (2026-06-07) anti-storm dedup bitmap має домівку: Flash-KV host-готовий (`03_01 §2.3`) — лишилось wiring bitmap→ключі
+- **P2** · 🔗 · → [`03_02 §5.X`](03_02_Queen_Gateway_Firmware)
+- **✅ Design B канонізовано ([`03_02 §5.X.3`](03_02_Queen_Gateway_Firmware)):** Magic Re-Request — Soldier bitmap uplink `[0x55]` (`OTA_REQ_MARKER`, DOC.4) → Queen targeted re-broadcast лише missing chunks (60-90% economy vs wave) + djb2-dedup + host-тести; anti-storm bitmap → Flash-KV ([`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA), host-готовий). · [ ] 🔗 Design A (ACK-aggregation — collective recovery) залежить від ARCH.26 TDMA RX-вікна; B незалежний ✅ · ⚠️ re-request «5 хв тиші» на `HAL_GetTick` (мертвий STOP2) → wall-clock `OTA_SILENCE_WALL` (FW.49)
 
 #### FW.31 — DCI: числовий tolerance band у `check_z_divergence!` (feature-flag flip)
 - **P2** · 👤+🤖 · → `03_04 §7.1`
