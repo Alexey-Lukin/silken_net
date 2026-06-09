@@ -625,8 +625,11 @@
 - ✅ процедура активації RDP L2 (pre-flight + CubeProgrammer CLI + rollout R&D→Pilot→Mass). · [ ] 🤖 верифікувати OTA flow end-to-end · [ ] 👤 перейти на RDP L1 для field batch
 
 #### SEC.3 — Factory Flashing pipeline
-- **P0** · 👤 · → `03_05 §3.4` (+ §3.4г threat model)
-- ✅ Гілка A+B Rake-tool: `provisioning_sessions` AASM + 2-Person Rule + `factory_flashing/*` + rake `factory:flash|approve|execute` (dry-run) + specs. ✅ (2026-06-07) **EXECUTE-шлях інтеграційно доведено шимом**: fake `STM32_Programmer_CLI` на PATH (сценарії ok/verify-fail/rdp-fail) → повна Session через РЕАЛЬНІ subprocess'и — capture stdout/stderr/exit, stop-on-fail порядок, AASM failed+transcript (`spec/services/factory_flashing/session_run_execute_path_spec.rb`); bench-residual звузився до фізичного SWD-флешу. · [ ] 👤 real `STM32_Programmer_CLI` на bench (post-FW.2) — runbook `firmware/scripts/bench/` · [ ] 👤 Bitwarden Secrets API live (`BitwardenAdapter` зараз `NotImplementedError`) · [ ] 🔗 real `cryptoauthlib` I²C — після SEC.6 ATECC608B PCBA
+- **P0** · 👤 · → [`03_05 §3.4`](03_05_Hardware_Symmetric_Crypto_and_Security) (+ §3.4г threat model)
+- **✅ Гілка A+B Rake-tool канонізовано ([`03_05 §3.4г`](03_05_Hardware_Symmetric_Crypto_and_Security)):** `provisioning_sessions` AASM + 2-Person Rule + `factory_flashing/*` + rake `factory:flash|approve|execute` (dry-run); execute-шлях інтеграційно доведено шимом (fake `STM32_Programmer_CLI` → реальні subprocess'и: capture stdout/stderr/exit, stop-on-fail, AASM failed+transcript; RSpec). Bench-residual = фізичний SWD-флеш. Лишається:
+  - [ ] 👤 real `STM32_Programmer_CLI` на STM32WLE5JC bench (post-FW.2) — runbook `firmware/scripts/bench/`
+  - [ ] 👤 Bitwarden Secrets API live (`BitwardenAdapter` зараз `NotImplementedError`)
+  - [ ] 🔗 real SE I²C (Гілка B) — SE050 eval-kit; `cryptoauthlib`→SE05x код-міграція → SE050-MIGRATION (legacy ATECC-патерн reusable, [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security))
 
 #### SEC.4 — Reed Switch shipping mode (not in BOM)
 - **P2** · 👤 · → `03_05`
