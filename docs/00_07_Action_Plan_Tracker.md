@@ -581,11 +581,11 @@
 
 #### FW.49 — Tick-time ≠ wall-time у STOP2: системна семантика таймерів Soldier
 - **P0** · 👤🤖 · → [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)
-- **Контекст + ✅ done (канон [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA) ADR):** `HAL_GetTick` заморожений у STOP2 → `delta_t` міряв лише active-час → **over-mint (фальсифікація Proof-of-Growth)**; усі tick-таймери (FW.27-B/FW.20-S2/beacon) уражені. **Wake-source ВИРІШЕНО** (RTC WUT + Vcap-енергогейт FW.50 + RTC-календар timebase) + **S1-foundation** (`wall_time.h` + `Silken_Unix_From_Calendar`, `ec99b97`) + **S3-docs** ✅ зашиплено. Лишається:
+- ✅ **Wake-source ADR вирішено** (канон [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)): `HAL_GetTick` заморожений у STOP2 → tick-`delta_t` міряв лише active-час → over-mint (фальсифікація Proof-of-Growth); лік — RTC WUT + Vcap-енергогейт (FW.50) + RTC-календар timebase. S1-foundation (`wall_time.h`) + S3-docs ✅. Лишається:
   - [ ] 🤖+👤 **S1-wiring:** `Wall_Seconds_Now()` + tick→wall міграція (delta_t/FW.20-S2/FW.27-B/UTC) + 3 часові опори (boot/beacon/request, `Silken_Wall_Elapsed_Seconds`). ⚠️ **bench-gated:** LSE/RTC clock-tree у repo відсутній.
   - [ ] 🔗 **S2:** RTC-WUT-tick + Vcap-енергогейт → delta_t = справжній час перезаряду (чекає шкали ↓).
   - [ ] 👤 **bench bring-up:** LSE 32.768 кГц + `MX_RTC_Init` (календар + WUT-IRQ STOP2-wake) + верифікувати `Wall_Seconds_Now`/recharge-інтервал (RUNBOOK §3-4: `04_lse_drift.py`, `03_power_profile.py`).
-  - **🔴 Відкрите (фізика — Мінаєв/bench):** шкала delta_t — L4 очікує **36-190 с**, а [`02_03 §9.8`](02_03_BQ25570_MPPT_Nano_Power) енергобюджет дає **1.77 год** (P_gen=15µW); якщо реально ~1.77 год — β-сигнал мертвий навіть після S1/S2 (живе лише при L4-потужності EBFC). Калібрування — блокер E.63. Cross-ref: E.63, FW.50, FW.20, FW.27-B, FW.30.
+  - **🔴 Відкрите (фізика — Мінаєв/bench):** шкала delta_t — L4 очікує **36-190 с**, а [`02_03 §9.8`](02_03_BQ25570_MPPT_Nano_Power) енергобюджет дає **1.77 год** (P_gen=15µW); якщо реально ~1.77 год — метаболічний сигнал плоский (post-E.63: `metabolic_health(delta_t)`→growth_points майже константа; живе лише при L4-потужності EBFC). Калібрування — блокер E.63. Cross-ref: E.63, FW.50, FW.20, FW.27-B, FW.30.
 
 #### FW.50 — Vcap ADC: raw counts використовуються як мВ (без конверсії)
 - **P0** · 👤🤖 · → [`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA)
