@@ -19,7 +19,7 @@ at the OUTER interface (PEEK shrinks away from the outer Ti shell).
 
 No FEA needed — axisymmetric Lamé equations have closed-form solution.
 Relaxation params are literature-grounded estimates pending a Prony-series
-fit from школа Гусака (08_01 §1.2).
+fit from школа Гусака (08_01 Стаття 2).
 """
 from __future__ import annotations
 
@@ -69,7 +69,7 @@ P_SAP_MPa = 0.5              # MPa — conservative xylem positive/capillary sap
 # toward a floor E_∞, NOT to zero. Single-Maxwell + floor (≈ 2-term Prony):
 #   P_c(t) = P_c(0) · [ E∞/E0 + (1 − E∞/E0)·exp(−t/τ) ]
 # These two numbers are literature-grounded ESTIMATES; school of Gusak to
-# supply the proper Prony series (Maxwell-Wiechert) fit (08_01 §1.2).
+# supply the proper Prony series (Maxwell-Wiechert) fit (08_01 Стаття 2).
 PEEK_RELAX_FLOOR = 0.65      # E_∞/E_0 — fraction of modulus retained at equilibrium
 PEEK_RELAX_TAU_YEARS = 1.0   # relaxation time constant (years)
 
@@ -224,7 +224,7 @@ def main() -> int:
             "sap_pressure_MPa": P_SAP_MPa,
             "seal_holds_20yr": bool(pc_20 > P_SAP_MPa),
             "relaxation_series": relax_results,
-            "note": "relax_floor/tau are literature-grounded estimates; Prony fit pending (Gusak, 08_01 §1.2)",
+            "note": "relax_floor/tau are literature-grounded estimates; Prony fit pending (Gusak, 08_01 Стаття 2)",
         },
         "winter_cold_leak": {
             "dT_K": dT_cold,

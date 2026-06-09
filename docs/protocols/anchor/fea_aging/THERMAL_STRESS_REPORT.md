@@ -45,7 +45,7 @@ Initial interference ~50 µm → **P_c(0) = 34.7 MPa**. Under constant strain, P
 | 5 yr | 22.7 | seal holds |
 | 20 yr | **22.6** | seal holds |
 
-Model: `P_c(t) = P_c(0)·[E∞/E0 + (1−E∞/E0)·exp(−t/τ)]`, E∞/E0 ≈ 0.65, τ ≈ 1 yr. **These are literature-grounded estimates — a proper Prony-series (Maxwell-Wiechert) fit is requested from школа Гусака (`08_01 §1.2`).** Failure metric = residual P_c vs sap pressure (not "gap loss").
+Model: `P_c(t) = P_c(0)·[E∞/E0 + (1−E∞/E0)·exp(−t/τ)]`, E∞/E0 ≈ 0.65, τ ≈ 1 yr. **These are literature-grounded estimates — a proper Prony-series (Maxwell-Wiechert) fit is requested from школа Гусака (`08_01 Стаття 2`).** Failure metric = residual P_c vs sap pressure (not "gap loss").
 
 ### 3. Winter Cold-Leak — OUTER Interface (the weak link)
 
@@ -66,7 +66,7 @@ At -30°C (ΔT=50K), r=8mm: loss = **15.4 µm** → effective interference = 50 
 
 ## Remaining Tasks
 
-- [ ] **Prony-series stress-relaxation fit** for PEEK 450G (Maxwell-Wiechert) — replaces the 2-term E∞/τ estimate (школа Гусака, `08_01 §1.2`).
+- [ ] **Prony-series stress-relaxation fit** for PEEK 450G (Maxwell-Wiechert) — replaces the 2-term E∞/τ estimate (школа Гусака, `08_01 Стаття 2`).
 - [ ] FEA (CalculiX): stress concentration at annular barb tips.
 - [ ] **MD ion-permeation** of Ti²⁺/V³⁺ through PEEK matrix via MSD (classical MD, like script 13 for glucose) — NOT DFT (DFT can't model macroscopic diffusion; only single-jump barriers via NEB).
 
@@ -75,6 +75,6 @@ At -30°C (ΔT=50K), r=8mm: loss = **15.4 µm** → effective interference = 50 
 - Coaxial topology + mechanical lock → `docs/01_01 §4.3`
 - O-ring seal + Flush Mount → `docs/01_04 §3.1`
 - Ti metallurgy → `docs/01_02 §1.3`
-- Prony-series creep/relaxation request → `docs/08_01 §1.2` (школа Гусака)
+- Prony-series creep/relaxation request → `docs/08_01 Стаття 2` (школа Гусака)
 - ~~MD strain cycling~~ → ✅ DONE (script 16, pseudoplastic) — see `PIPELINE_STATUS.md`
 - Script → `tools/in_silico/scripts/50_thermal_stress_lame.py` · Cache → `cache/kinetics/thermal_stress_lame.json`
