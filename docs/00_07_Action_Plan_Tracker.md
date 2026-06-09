@@ -634,8 +634,8 @@
   - [ ] 🔗 real SE I²C (Гілка B) — SE050 eval-kit; `cryptoauthlib`→SE05x код-міграція → SE050-MIGRATION (legacy ATECC-патерн reusable, [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security))
 
 #### SEC.4 — Reed Switch shipping mode (not in BOM)
-- **P2** · 👤 · → `03_05`
-- Zero-consumption transport: магніт→circuit open, інсталятор знімає→first power-up (~$0.05/unit). Дизайн approved, BOM ні. · [ ] 👤 додати Hamlin 59140-1-T-00-A + N52 магніт до BOM + оновити KiCad schematic
+- **P2** · 👤 · → [`03_05 §3.5`](03_05_Hardware_Symmetric_Crypto_and_Security)
+- Zero-consumption transport: магніт→circuit open, інсталятор знімає→first power-up (~$0.05/unit). Дизайн канонізовано, у BOM ще немає (окремий механізм від piezo Zero-Power Wake). · [ ] 👤 додати Hamlin 59140-1-T-00-A + N52 магніт до BOM + оновити KiCad schematic
 
 #### SEC.7 — OTA image автентифікація (cross-ref FW.23)
 - **P1** · 🔗 · → `03_05 §3.4б`
