@@ -628,7 +628,8 @@ __HAL_RCC_CRYP_CLK_DISABLE();
 //    SRAM2 retention OFF — стан тільки в RTC BKP registers
 __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE2);
 // PWR->CR3 |= PWR_CR3_RRS  // RRSTP=0: SRAM2 OFF у STOP2 → -800 nA
-// Watchdog: IWDG продовжує працювати з LSI 32 kHz (~200 nA)
+// Watchdog: IWDG ЗАМОРОЖЕНО у STOP2 (option byte IWDG_STOP=0, SEC.15) —
+//           інакше spurious reset посеред сну >~32.7 с (нота нижче)
 
 // 4. Зупиняємо SysTick та входимо в STOP2
 HAL_SuspendTick();
@@ -642,6 +643,8 @@ HAL_CRYP_Init(&hcryp);
 ```
 
 **Trade-off RTC-only vs SRAM2 retention:** При SRAM2 OFF втрачається лише runtime-стан у **SRAM** — НЕ те, що в RTC Backup Domain. Виживає увесь DR0..DR19 (mesh-кеш `recent_mesh_dids`, EMA, Lorenz-стан, TinyML-пороги — §2 канонічна таблиця). Втрачається: OTA-буфер збирання, RAM-only лічильники (`warning_counter` ескалації TinyML тощо), scratch RX/TX/audio. Повний інвентар трьох груп + key→поле map того, що рятувати — §2.3.1. Усе, що має пережити STOP2 і **не** влазить у RTC (повний), іде у Flash-KV (§2.3). Перевага: економія ~800 nA × 3.3V × 3600s × η_buck(0.5) = 19 мДж/год → дозволяє +1 TX cycle на 2 години.
+
+> **IWDG заморожено у STOP2 (SEC.15 — 📐 freeze-rationale):** За замовчуванням Independent Watchdog тактується LSI і **продовжує лічити у Stop**; max період ~32.7 с (LSI 32 kHz / prescaler 256 / reload 4095). Soldier спить між energy-sufficient циклами значно довше (`delta_t` до ~18 год), тож незаморожений пес дав би **spurious reset посеред сну** = позаплановий повний reboot (марна енергія + збита RTC-WUT-каденція + втрата OTA-буфера збирання й RAM-only лічильників). Тому factory flashing виставляє option byte **`IWDG_STOP=0`** (freeze у Stop; `IWDG_STDBY=0` для узгодженості) — заскриптовано поряд з RDP у `firmware/scripts/bench/01_option_bytes.sh` (чекліст RUNBOOK §1.2). Заморожений пес **не входить** у STOP2-енергобюджет (звідси 300 nA RTC-only вище). Свідомий side-path: PVD-кома (`HAL_PWR_PVDCallback`) теж входить у STOP2 — freeze дозволяє комі тривати, поки напруга не підніметься; а вже **після** PVD-wake (IWDG знову лічить) `HAL_Delay`-hang із suspended-tick відновлюється саме IWDG-reset'ом. Bench (1 год сну, нуль spurious reset, RUNBOOK §4.4) → [`00_07` — SEC.15](00_07_Action_Plan_Tracker).
 
 **Джерела пробудження (📐 КАНОН wake-source — FW.49):**
 - **RTC WUT** (періодичний fine-tick, LSE йде у STOP2) — ОСНОВНИЙ wake. Вузол прокидається за розкладом, перевіряє Vcap-енергогейт ([FW.50](00_07_Action_Plan_Tracker)) і робить повний sense→Lorenz→TX цикл лише при достатньому перезаряді; інакше — назад у STOP2. `delta_t` = wall-різниця між energy-sufficient циклами через `Wall_Seconds_Now()` (RTC-календар), а НЕ active-tick.

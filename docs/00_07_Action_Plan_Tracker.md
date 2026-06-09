@@ -655,10 +655,11 @@
   - [ ] 👤 обрати роль SE (per-packet vs provisioning-only) — bench eval + BOM freeze; threat-model-рішення, не тех-необхідність. Тепер **SE050**-контекст (вісь та сама) → рішення тримається у SE050-MIGRATION (One-Home)
   - [ ] 🤖 (optional) cross-check `02_01 §2` power-budget + `03_01` wake-energy для точної %
 
-#### SEC.15 — IWDG у STOP2: option byte `IWDG_STOP` обов'язковий при factory flashing
-- **P1** · 👤 · → [`03_05 §3.4г`](03_05_Hardware_Symmetric_Crypto_and_Security)
-- **Знахідка:** IWDG (LSI) за замовчуванням НЕ зупиняється у STOP2; max timeout ~32.7 с (LSI 32k / presc 256 / reload 4095). Будь-який сон довший ≈26-32 с → IWDG-reset посеред STOP2 → втрата SRAM (mruby VM, ota_buffer, warning_counter) кожен цикл + марнування енергії на повний reboot. Лік — option byte **IWDG_STOP=0** (freeze у Stop) при заводській прошивці; у repo/SEC.3 pipeline це ніде не зафіксовано. Дотично: PVD-кома (`HAL_PWR_PVDCallback`) теж спить у STOP2 — без замороженого IWDG «кома» не довша за watchdog-період; а після PVD-wake можливий `HAL_Delay`-hang (tick suspended) → IWDG-reset як фактичний механізм відновлення — задокументувати як свідомий шлях.
-- [x] 🤖 (2026-06-07) `IWDG_STOP=0` + `IWDG_STDBY=0` у скриптованому option-bytes чеклисті поруч із RDP — `firmware/scripts/bench/01_option_bytes.sh` + RUNBOOK §1.2 · [ ] 👤 застосувати на платі при factory flashing · [ ] 👤 bench-верифікація: сон 1 год без spurious reset (RUNBOOK §4.4)
+#### SEC.15 — IWDG freeze у STOP2 (option byte `IWDG_STOP=0`)
+- **P1** · 👤 · → [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)
+- ✅ Freeze-rationale + PVD-кома side-path канонізовано ([`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)); `IWDG_STOP=0`+`IWDG_STDBY=0` заскриптовано поряд з RDP — `firmware/scripts/bench/01_option_bytes.sh` + RUNBOOK §1.2.
+  - [ ] 👤 застосувати на платі при factory flashing
+  - [ ] 👤 bench-верифікація: сон 1 год без spurious reset (RUNBOOK §4.4)
 
 #### SE050-MIGRATION — ATECC608B → NXP SE050 + true-DePIN ladder (2026-06-07)
 - **P1** · 👤+🤖 · → [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)
