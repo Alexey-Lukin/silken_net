@@ -411,7 +411,7 @@ growth_points  = (5 + m * 26).round.clamp(5, 31)   # 5-бітний wire (FW.29-
 
 > 📐 **Wire vs Stored:** Wire `growth_points` — 5-бітне поле, яке Soldier пакує у StatusByte; backend `TelemetryUnpackerService` робить `(status_byte & 0x1F) * 2` → Stored (`TelemetryLog#growth_points`). Калібрувальні `DELTA_T_FAST_S`/`DELTA_T_SLOW_S` — placeholder (bench, E.63); таблиця оновиться після зміряної recharge-кривої.
 
-(Поза гомеостазом — гейт §4.2: `z < 2` → wire 1 / stored 2 (стрес, absolute); `z > ρ+17` → wire 0 (аномалія, [E.64] ρ-відносна, =45 при ρ=28).)
+(Поза гомеостазом — гейт §4.2: `z < 2` → wire 1 / stored 2 (стрес, absolute); `z > ρ+(CRITICAL_Z_MAX−BASE_RHO)` → wire 0 (аномалія, [E.64] ρ-відносна; =45 при ρ=28, дзеркало `Attractor.anomaly_ceiling` §363/код — НЕ hardcoded offset).)
 
 ### 4.4 Bit-Packing: Структура Байту BioContract
 
