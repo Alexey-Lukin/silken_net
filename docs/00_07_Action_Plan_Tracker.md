@@ -505,8 +505,8 @@
 - Compilation unblocked (stub fallback); реальна модель + uncomment лишаються. Блокує acoustic detection (chainsaw/cavitation/wind) + Mongabay pivot. · [ ] 👤 тренування Path B log-mel 5-class (Бушин/Любченко) → `silken_net_audio_model.h` (заміна stub через `__has_include`) · [ ] 🔗 verify Tensor Arena (`arm-none-eabi-size`) + uncomment Run_Inference call-site (Phase 1.5) + wire `firmware/common/logmel.c` у ARM-build (`LOGMEL_USE_CMSIS` + CMSIS-DSP link; Flash +~7KB tables; ⚠️ ARM-стек ~7KB/4 буфери → bench stack-high-water vs 16KB arena+mruby, або reuse-buffers) — після моделі (DSP golden-vector тести → FW.25, One-Home) · [ ] 🌿 FW.4-EXT (post-TRL 7): 5-й клас `fauna_activity` dawn/dusk (`03_03 §10`), залежить від UNI.11+UNI.13a; альт. ACI descriptor
 
 #### FW.18b — OTA threshold invalid counter (production-visibility)
-- **P2** · 🔗 · → `03_03 §5`
-- ✅ saturating counter `tinyml_threshold_invalid_count` (відкидає NaN/out-of-range/інверсію OTA payload) + 7 host-тестів. · [ ] 🔗 wiring до LoRa packet (перерозподіл бітів) · [ ] 🔗 backend Prometheus `tinyml_threshold_invalid_total{soldier_did}` + Grafana
+- **P2** · 🔗 · → [`03_03 §5.4`](03_03_TinyML_Acoustic_Inference)
+- **✅ Counter канонізовано ([`03_03 §5.4`](03_03_TinyML_Acoustic_Inference)):** `TinyML_Apply_Thresholds`/`Validate_Threshold` відкидає NaN/out-of-range/інверсію OTA-порогів → default (інваріант `SILENCE<WARNING<CRITICAL` збережено); saturating `tinyml_threshold_invalid_count` (DR1 `WARN_ESC`) + host-тести. · [ ] 🔗 wiring лічильника у LoRa-пакет (bit-redistribution) · [ ] 🔗 backend Prometheus `tinyml_threshold_invalid_total{soldier_did}` + Grafana
 
 #### FW.7 — Float vs BigDecimal divergence (TRL 6 mitigation)
 - **P1** · 👤 · → [`03_04 §5`](03_04_mruby_Lorenz_Attractor)

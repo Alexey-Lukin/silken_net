@@ -547,6 +547,10 @@ void Trigger_Emergency_LoRa_TX(void)
 | Відправляється | Через Phase 4 (з jitter) | Через `Trigger_Emergency_LoRa_TX()` позачергово |
 | Backend | `TelemetryLog` | `EwsAlert` (критичний) |
 
+### 5.4 [FW.18b] OTA Threshold Validation + Invalid-Counter
+
+Пороги WARNING/CRITICAL — OTA-updatable (FW.18, `CMD_SET_AUDIO_THRESHOLDS` `0x9D` → RTC DR13/DR14). `TinyML_Apply_Thresholds(warn_raw, crit_raw)` валідує кожен OTA-payload перед застосуванням: `TinyML_Validate_Threshold` відкидає NaN/out-of-range → default; інверсія (`!(warn < crit)`) → default обидва (інваріант `SILENCE < WARNING < CRITICAL` зберігається навіть при корумпованому RTC або зловмисно сформованому OTA). Кожна відмова інкрементує `tinyml_threshold_invalid_count` (saturating `uint8` @ 255) — production-visibility лічильник, спакований у DR1 `WARN_ESC` ([`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)). 🔗 Відкрите ([`00_07` — FW.18b](00_07_Action_Plan_Tracker)): wiring лічильника у LoRa-пакет (bit-redistribution) + backend Prometheus `tinyml_threshold_invalid_total{soldier_did}`.
+
 ---
 
 ## 💾 6. Бюджет Пам'яті (Memory Audit)
