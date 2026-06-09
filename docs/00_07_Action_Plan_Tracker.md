@@ -509,8 +509,8 @@
 - ✅ saturating counter `tinyml_threshold_invalid_count` (відкидає NaN/out-of-range/інверсію OTA payload) + 7 host-тестів. · [ ] 🔗 wiring до LoRa packet (перерозподіл бітів) · [ ] 🔗 backend Prometheus `tinyml_threshold_invalid_total{soldier_did}` + Grafana
 
 #### FW.7 — Float vs BigDecimal divergence (TRL 6 mitigation)
-- **P1** · 👤 · → `03_04 §5`
-- ✅ backend `Attractor` BigDecimal→Float (IEEE 754 — DCI **категорично** однакові Z; raw drift ~1e-14 реальний mruby-VM↔CRuby, FW.46). ✅ (2026-06-07) ARM↔x86 Float drift **знято FW.55**: QEMU-M4 bit-parity lane — реальний M4 soft-double код-шлях ≡ host byte-exact (64 зчеплені кейси, CI-гейт). · [ ] 👤 silicon-confirm: один прогін parity-дампу на платі (FW.55) — flag `MRB_USE_FLOAT32`=double вже пінено `build_config.rb` (FW.19/FW.46)
+- **P1** · 👤 · → [`03_04 §5`](03_04_mruby_Lorenz_Attractor)
+- **✅ DCI Float-parity канонізовано ([`03_04 §5`](03_04_mruby_Lorenz_Attractor)):** backend `Attractor` BigDecimal→Float (IEEE 754 double — категорично однакові Z з firmware mruby; raw drift ~1e-14 VM↔CRuby). ARM↔x86 drift **знято FW.55** (QEMU-M4 bit-parity, 64 зчеплені кейси, CI-гейт); `MRB_USE_FLOAT32`=double пінено `build_config.rb` (FW.19/FW.46). · [ ] 👤 silicon-confirm: один parity-дамп на платі (FW.55 bench)
 
 #### FW.8 — CRITICAL_Z_MIN/MAX hardcoded
 - **P1** · 🟡 · → `03_01 §2`, `04_01`, `04_02`
