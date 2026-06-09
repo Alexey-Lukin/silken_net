@@ -513,8 +513,8 @@
 - **✅ DCI Float-parity канонізовано ([`03_04 §5`](03_04_mruby_Lorenz_Attractor)):** backend `Attractor` BigDecimal→Float (IEEE 754 double — категорично однакові Z з firmware mruby; raw drift ~1e-14 VM↔CRuby). ARM↔x86 drift **знято FW.55** (QEMU-M4 bit-parity, 64 зчеплені кейси, CI-гейт); `MRB_USE_FLOAT32`=double пінено `build_config.rb` (FW.19/FW.46). · [ ] 👤 silicon-confirm: один parity-дамп на платі (FW.55 bench)
 
 #### FW.8 — CRITICAL_Z_MIN/MAX hardcoded
-- **P1** · 🟡 · → `03_01 §2`, `04_01`, `04_02`
-- ✅ Rails + firmware-парсер `Soldier_Handle_CMD_SET_THRESHOLDS` (freeze-contract, `FW8_PARSER_ENABLED 0`) + 12 host-тестів (firmware 2.0/45.0 vs backend per-species `TreeFamily`). · [ ] 🟡 deferred TRL-7: активувати `FW8_PARSER_ENABLED 1` після FW.21 звільнить RTC register
+- **P1** · 🟡 · → [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)
+- **✅ per-species Z-пороги канонізовано (OTA-design [`05_02 §4а`](05_02_Proof_of_Growth_Pipeline), service [`04_02`](04_02_Business_Logic_and_Services)):** Rails `build_threshold_config_block` + `effective_lorenz_thresholds` 3-tier (cluster → TreeFamily → global 2.0/45.0/29.0) + firmware parser `Soldier_Handle_CMD_SET_THRESHOLDS` (freeze-contract, `FW8_PARSER_ENABLED 0`) + host-тести; CMD `0x9A` (DOC.4). · [ ] 🟡 deferred TRL-7: `FW8_PARSER_ENABLED 1` → persist у **Flash-KV** ([`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA) ARCH.28 — **НЕ** RTC, DR-фантоми) + boot-restore + HAL_FLASH bench
 
 #### FW.17 — Key rotation mechanism (Hash Ratchet KDF)
 - **P2** · 🔗 · → `03_05 §3`
