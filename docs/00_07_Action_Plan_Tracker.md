@@ -559,9 +559,8 @@
 - **✅ Guard канонізовано ([`03_03 §10.3`](03_03_TinyML_Acoustic_Inference)):** `Fauna_Should_Sample(vcap_mv)` (≥`FAUNA_VCAP_MIN_MV` інакше skip + counter `fauna_skipped_low_vcap`) + host-тести (freeze-contract); fauna-сесія ~78.3 мДж → при V_cap≈3.5V concurrent TX = brownout. ⚠️ поріг `FAUNA_VCAP_MIN_MV=4500` мВ на сирому ADC не спрацює до конверсії FW.50. · [ ] 🔗 активація fauna-pathway після FW.4 uncomment + 🤖 Prometheus «fauna skip rate»
 
 #### ARCH.40 — Fauna 5-сек вікно: монолітне awake-обчислення (SRAM2 wipe)
-- **P1** · 🔗 · → `03_03 §10.2`
-- ✅ Doc-fix вкочено: fauna-сесія монолітна за 1 awake (SRAM2 wipe не зберігає float[156][N_mel] між STOP2; DR15 не вміщає).
-- [ ] 🔗 при FW.4 fauna-pivot — unit-тест `test_fauna_sampling_no_stop2_in_session()`
+- **P1** · 🔗 · → [`03_03 §10.2`](03_03_TinyML_Acoustic_Inference)
+- **✅ Constraint канонізовано ([`03_03 §10.2`](03_03_TinyML_Acoustic_Inference)):** fauna-сесія монолітна за 1 awake (STOP2 wipe'не SRAM2 → `float[156][N_mel]` не переживе сну; 20 RTC DR зайняті) — Welford-accumulator у RAM, STOP2 лише після згортки в байт. · [ ] 🔗 при FW.4 fauna-pivot — unit-тест `test_fauna_sampling_no_stop2_in_session()`
 
 #### ARCH.41 — Cold-start Time Paradox (DCI)
 - **P2** · 🔗 · → [`03_04 §2.1`](03_04_mruby_Lorenz_Attractor)
