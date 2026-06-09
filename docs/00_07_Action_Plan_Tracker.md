@@ -521,8 +521,8 @@
 - Після FW.1. Статичний ключ при Factory Flashing → немає rotation без re-flash (GDPR/ISO 27001/NIST SP 800-57). Рішення: Hash Ratchet KDF (`CMD:ROTATE_KEY` → `K_current`→`K_next` AES-KDF, PFS). · [ ] 🔗 дизайн протоколу + CoAP command + cluster ACK + Flash/RTC storage + ECDH alt
 
 #### FW.19 — Float32 vs Float64 mruby compile flags
-- **P2** · 🤖+👤 · → `03_04 §5`
-- ✅ tolerance band «by design» (категорична `check_z_divergence!`). **Флаг — `MRB_USE_FLOAT32`** (перейменовано з `MRB_USE_FLOAT` у mruby ≥3.0; стара назва мертва — verified `doc/mruby4.0.md`). Без нього = double (потрібно), з ним = float32 → ±5-10 units на Z → bio_status зсув. · [x] 🤖 (FW.46) `firmware/mruby/build_config.rb` пінить double (НЕ ставить `MRB_USE_FLOAT32`) + boxing-інваріант (НЕ вмикати WORD/NAN boxing на 32-bit) — `03_01 §12.4` · [x] 🤖 (FW.55, 2026-06-07) double-шлях доведено на реальному M4-коді: QEMU bit-parity ≡ host byte-exact · [ ] 👤 silicon-confirm на STM32WLE5JC REVB (той самий дамп через SWD)
+- **P2** · 🤖+👤 · → [`03_04 §5`](03_04_mruby_Lorenz_Attractor)
+- **✅ double-pin канонізовано (build [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA) + rationale [`03_04 §5`](03_04_mruby_Lorenz_Attractor)):** `build_config.rb` НЕ ставить `MRB_USE_FLOAT32` (mruby ≥3.0 rename — стара `MRB_USE_FLOAT` мертва) + boxing-інваріант (NO WORD/NAN boxing на 32-bit) → `mrb_float`=double; float32 дав би ±5-10 units на Z → bio_status зсув. ARM↔x86 double-drift знято FW.55 (QEMU bit-parity ≡ host, residual спільний з FW.7). · [ ] 👤 silicon-confirm на STM32WLE5JC REVB (той самий FW.55 дамп через SWD)
 
 #### FW.20 + FW.20-S2 — Time Sync (Rails ↔ Queen ↔ Soldier)
 - **P2** · 👤+🟡 · → `03_02 §5а` (канон-хаб)
