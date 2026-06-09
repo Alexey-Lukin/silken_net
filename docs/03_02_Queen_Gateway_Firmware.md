@@ -762,6 +762,18 @@ if (decrypted_lora_buffer[0] == REREQUEST_MARKER) {
 
 > **Cross-ref:** [`00_07`](00_07_Action_Plan_Tracker) FW.27 — повний контекст; [`04_06 §B.2`](04_06_Testing_Guide_and_Coverage) — тест-список.
 
+#### 5.X.6 [FW.52] OTA throughput + `ota_is_active` lifetime — by-design observation
+
+> **Статус:** 🤖 Спостереження задокументовано чесно; свідоме рішення (прийняти повільний OTA vs re-arm RX) — відкрите ([`00_07`](00_07_Action_Plan_Tracker) FW.52).
+
+Один повний reflex-shot OTA-цикл (§5) **повільний** (порядок днів-тижнів) з трьох by-design причин. Це може бути прийнятним за energy-first, але рішення має бути свідомим:
+
+1. **1 RX-пакет за пробудження (Soldier).** RX-вікно обробляє максимум один пакет за wake-цикл — усі гілки (`firmware/soldier/main.c`: сценарій OTA `0x99`, mesh-естафета, HMAC-trailer `0x9B`) завершуються `break` перед `Radio.Sleep()`. Отже OTA на `N` байтів = `⌈N/11⌉` reflex-чанків = стільки ж пробуджень, по одному чанку на власний TX вузла (1024 B → ~94). Фундаментально без скоординованого RX-вікна (ARCH.26 TDMA), не баг.
+2. **`ota_is_active` гаситься, коли тіло відлунало без зібраної печатки (Queen).** Коли всі bytecode-чанки (`0x99`) відбродкастились, а HMAC-печатка (`0x9B`, окремий CoAP-chunk від Rails) ще не зібрана (`hmac_segments_received != 0x07`), Queen замикає вікно `ota_is_active = 0` (`firmware/queen/main.c`, [PLAN 2.5]/[FW.23] — без печатки Солдат не відрізнить істинне слово від спокусника). Re-request обслуговується лише при живому `ota_is_active` → якщо CoAP не доставив печатку до завершення тіла (порядок не гарантований), OTA «мертвий» до повторного Rails-push. Те саме `pending_ota_bytecode` lifetime-обмеження, що §5.X.3.
+3. **Re-request на замороженому tick.** `OTA_REREQUEST_TIMEOUT_MS` (5 хв, §5.X.3) лічиться на `HAL_GetTick`, замороженому в STOP2 → міграція на wall-clock = FW.49.
+
+> **Cross-ref:** FW.52 (рішення + контекст), FW.49 (wall-clock tick), §5.X.3 (re-request), §5 (reflex-shot механізм).
+
 ---
 
 ## 📡 5а. Time Sync (FW.20, FW.20-S2) — Канонічний хаб

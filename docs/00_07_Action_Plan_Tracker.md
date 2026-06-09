@@ -597,10 +597,10 @@
   - [ ] 👤 bench-калібрування (DMM-точки vs `Adc_Raw_To_Mv` — RUNBOOK §3.4).
 
 #### FW.52 — OTA throughput by-design: 1 RX-пакет/пробудження + give-up без печатки
-- **P2** · 👤 · → [`03_02 §5`](03_02_Queen_Gateway_Firmware)
-- **Знахідка (design-спостереження):** (а) Soldier RX-вікно обробляє МАКСИМУМ один пакет за wake-цикл (усі сценарії → `break`) — OTA на 1024B = ~98 чанків ≈ 98 пробуджень; (б) Queen гасить `ota_is_active=0`, якщо тіло відлунало до прибуття HMAC-печатки (CoAP-порядок не гарантує) — а re-request обслуговується лише при `ota_is_active==1` → мертвий OTA до повторного Rails-push; (в) Soldier шле re-request лише раз на «5 хв» tick-часу (див. FW.49); (г) **(2026-06-07)** `Write_OTA_Contract_To_Flash` — прототип (`soldier/main.c`) + виклик **без тіла** (лише hal_mock-стаб) → лінк упаде при HAL-фазі; реалізувати на flash-примітивах (еразе 126(-127) + dw-program, `03_01 §2.3` патерн). Разом: дні-тижні на один OTA. Можливо acceptable (energy-first), але рішення має бути СВІДОМИМ.
-- [x] ✅ 🤖 **(г) DONE (2026-06-08) — `Write_OTA_Contract_To_Flash` тіло:** `firmware/common/flash_ota.{h,c}` (`Flash_Write_Contract` — erase contract-сторінки 126 + dw-program; **power-cut-safe: RITE-magic dw ОСТАННІМ** → перерваний запис = нема magic = boot-fallback на embedded) + host-тест `test_flash_ota.c` (8/8: round-trip · magic-last · erase-fail · reject) + `main.c` HAL-glue (`g_ota_flash_ops`). Закриває «прототип без тіла → лінк падав при HAL-фазі». Reuse `FlashKvOps` (§2.3 патерн). 👤 residual: HAL_FLASH-фаза на STM32 bench.
-- [ ] 👤 рішення: прийняти повільний OTA як design або 🤖 re-arm RX у межах вікна при активній OTA-збірці (енергогейт vcap) + Queen: тримати `ota_is_active` до печатки/таймаута
+- **P2** · 👤🤖 · → [`03_02 §5.X.6`](03_02_Queen_Gateway_Firmware)
+- **✅ Знахідка канонізована ([`03_02 §5.X.6`](03_02_Queen_Gateway_Firmware)):** повільний OTA (порядок днів-тижнів) by-design — (а) Soldier RX = 1 пакет/wake (1024 B → ~94 пробудження); (б) Queen гасить `ota_is_active` коли тіло відлунало без зібраної печатки → re-request мертвий до повторного Rails-push; (в) re-request на замороженому STOP2-tick → FW.49. **(г) DONE** — `Write_OTA_Contract_To_Flash` тіло (`flash_ota.{h,c}`, power-cut-safe magic-last, 8/8 host-тести, reuse `FlashKvOps`) → канон [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA). Лишається:
+  - [ ] 👤 рішення: прийняти повільний OTA (energy-first) vs 🤖 re-arm RX у вікні при активній OTA-збірці (vcap-енергогейт) + Queen тримає `ota_is_active` до печатки/таймауту.
+  - [ ] 👤 bench: HAL_FLASH erase/program-фаза (`g_ota_flash_ops`, `main.c`) на STM32 + e2e OTA-day.
 
 #### FW.54 — STOP2 RTC-only 300nA: SRAM2-off → RAM-стан (Flash-KV vs RTC-реклемація)
 - **P2** · 🤖+👤 · → [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)
