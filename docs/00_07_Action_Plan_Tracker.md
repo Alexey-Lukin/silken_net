@@ -617,8 +617,8 @@
 ## §03/§05 · Безпека (Edge crypto + Web3)
 
 #### SEC.1 — Multisig Gnosis Safe для production admin role
-- **P0** · 👤 · → `05_03 §Admin-Role`
-- ✅ `Deploy.s.sol` admin=Safe на genesis + `REQUIRE_SAFE_ADMIN` guard + runbook (нічого не задеплоєно → reassign не треба). · [ ] 👤 створити Gnosis Safe (3/5|2/3) на Polygon + деплой з `ADMIN_ADDRESS=<Safe>` `REQUIRE_SAFE_ADMIN=true`
+- **P0** · 👤 · → [`05_03` — Admin-Role → Gnosis Safe](05_03_Tokenomics_SCC_and_SFC)
+- ✅ `Deploy.s.sol` admin=Safe на genesis + `REQUIRE_SAFE_ADMIN` guard (revert якщо EOA) + last-admin guard + runbook (нічого не задеплоєно → reassign не треба). · [ ] 👤 створити Gnosis Safe (3/5|2/3) на Polygon + деплой з `ADMIN_ADDRESS=<Safe>` `REQUIRE_SAFE_ADMIN=true`
 
 #### SEC.2 — RDP Level 2 activation timeline
 - **P1** · 👤 · → [`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security)
