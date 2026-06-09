@@ -101,7 +101,7 @@
 
 #### OPS.6 — Bootstrap scripts для GitHub Projects V2 + IaC initial sync
 - **P2** · 👤 · → `00_05 §1.2/§6`
-- ✅ `lib/github_bootstrap.rb` (`FIELDS` SSOT 11 полів, idempotent GraphQL diff, rake `github:bootstrap`, 16 specs). · [ ] 👤 запустити `bin/bootstrap_github.sh` проти живого Projects V2 при setup/fork
+- ✅ `lib/github_bootstrap.rb` (`FIELDS` SSOT, idempotent GraphQL diff, rake `github:bootstrap`, RSpec-покрито). · [ ] 👤 запустити `bin/bootstrap_github.sh` проти живого Projects V2 при setup/fork
 
 ## §01–§02 · Hardware & Lab
 
