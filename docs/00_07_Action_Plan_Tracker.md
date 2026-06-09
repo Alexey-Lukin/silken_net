@@ -746,8 +746,9 @@
 - `/metrics` (реєстр — `06_03 §2.8`) + Alloy sidecar → Grafana Cloud налаштовано. · [ ] 👤 верифікувати збір метрик після першого Akash deploy
 
 #### S2.4 — Observability industrial-grade hardening
-- **P1** · 🤖+👤 · → `06_03 §2.9`
-- ✅ `external_labels` (env/service/source/release) у `config.alloy` — атрибуція prod/canopy + Akash multi-provider. · [x] 🤖 CI-валідація `config.alloy` ✅ (`grafana/alloy fmt`, CI job `alloy_config_validate`) · [x] 🤖 process/runtime метрики ✅ (9 gauges: RSS/GC/threads/Puma; `sample_process_runtime!` + sample_connection_pool! wired; 13 specs) · [x] 🤖 `queue_config`/WAL tune + cardinality budget ✅ (2026-06-04, `config.alloy` — relabel `labeldrop` per-identity + queue_config + explicit WAL; → `06_03 §2.9` #2/#4) · [ ] 👤 `up`-scrape alert + SLO/error-budget
+- **P1** · 👤 · → [`06_03 §2.9`](06_03_Prometheus_Observability)
+- **✅ Industrial-grade hardening канонізовано ([`06_03 §2.9`](06_03_Prometheus_Observability)):** `external_labels` (env/service/source/release attribution) + `queue_config`+explicit WAL (backpressure) + cardinality-budget relabel + process/runtime gauges (`sample_process_runtime!`/`sample_connection_pool!`, RSpec-covered) + CI-валідація (`alloy_config_validate` / `grafana/alloy fmt`) — конкретні значення у `config.alloy` SSOT (не дублюються). Лишається:
+  - [ ] 👤 `up`-scrape alert + SLO/error-budget (§2.9 #6 — ingest availability, mint/slash success) — Grafana Cloud
 
 #### S2.2 — Grafana Cloud dashboards
 - **P0** · 👤 · → `06_03`
