@@ -525,8 +525,11 @@
 - **✅ double-pin канонізовано (build [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA) + rationale [`03_04 §5`](03_04_mruby_Lorenz_Attractor)):** `build_config.rb` НЕ ставить `MRB_USE_FLOAT32` (mruby ≥3.0 rename — стара `MRB_USE_FLOAT` мертва) + boxing-інваріант (NO WORD/NAN boxing на 32-bit) → `mrb_float`=double; float32 дав би ±5-10 units на Z → bio_status зсув. ARM↔x86 double-drift знято FW.55 (QEMU bit-parity ≡ host, residual спільний з FW.7). · [ ] 👤 silicon-confirm на STM32WLE5JC REVB (той самий FW.55 дамп через SWD)
 
 #### FW.20 + FW.20-S2 — Time Sync (Rails ↔ Queen ↔ Soldier)
-- **P2** · 👤+🟡 · → `03_02 §5а` (канон-хаб)
-- TRL-6 P2 (`Derive_Cold_Start_State` ±12год толер.); TRL-7 блокер (ARCH.26 TDMA, HMAC nonce, fire ±1с). ✅ FW.20 1-hop Done; FW.20-S2 4/5 Done. · [ ] 👤 lab drift-test ΔT=±60°C (термокамера, TRL-7; скрипт готовий — `04_lse_drift.py`, RUNBOOK §4.3) · [ ] 🟡 (4/5) anti-storm dedup bitmap → Flash-KV store (DR15 зайнято FW.2 CCM FC; `03_01 §2.3 ARCH.28`). ⚠️ drift 12год/cooldown 1год/grace 10хв + beacon drift-comp стоять на `HAL_GetTick` (заморожений у STOP2) → wall-clock міграція у FW.49 (S1-wiring). Cross-ref: ARCH.26, FW.30, FW.49, SEC.10/FW.29
+- **P2** · 👤+🟡 · → [`03_02 §5а`](03_02_Queen_Gateway_Firmware) (канон-хаб — SSOT)
+- **✅ 3-рівневий time-sync канонізовано ([`03_02 §5а`](03_02_Queen_Gateway_Firmware) — SSOT, 00_07 = лише вказівник):** CoAP envelope `0x9C` + Queen reflex-beacon + auth-flag + drift-monitor/panic-sync (`0x56`) + per-hop relay + gossip-piggyback (wire + Soldier-константи + regress-bench у §5а). FW.20 1-hop done; FW.20-S2 частини — freeze-contract. Лишається (deferred TRL-7, §5а.6):
+  - [ ] 🟡 anti-storm dedup-bitmap (4/5) → Flash-KV ([`03_01 §2.3 ARCH.28`](03_01_Firmware_Lifecycle_and_DMA)) + Queen beacon TTL≥2 (зараз TTL=1) → вмикає повний mesh-relay
+  - [ ] 👤 lab LSE drift-test ΔT=±60°C (термокамера; `04_lse_drift.py`, RUNBOOK §4.3)
+  - ⚠️ beacon-таймери на `HAL_GetTick` (мертвий STOP2) → wall-clock = FW.49. Cross-ref: ARCH.26, FW.49, FW.30, SEC.10/FW.29
 
 #### FW.21 — Edge data aggregation (RAM-aware Soldier)
 - **P2** · 👤 · → [`03_01 §13`](03_01_Firmware_Lifecycle_and_DMA)
