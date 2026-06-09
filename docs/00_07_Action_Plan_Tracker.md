@@ -512,10 +512,6 @@
 - **P2** · 🔗 · → [`03_05 §3`](03_05_Hardware_Symmetric_Crypto_and_Security)
 - Будує на FW.1 (✅ per-device provisioning, закрито — не блокує). Статичний ключ при Factory Flashing → немає rotation без re-flash (GDPR/ISO 27001/NIST SP 800-57). Рішення: Hash Ratchet KDF (`CMD:ROTATE_KEY` → `K_current`→`K_next` AES-KDF, PFS). · [ ] 🔗 дизайн протоколу + CoAP command + cluster ACK + Flash/RTC storage + ECDH alt
 
-#### FW.19 — Float32 vs Float64 mruby compile flags
-- **P2** · 🤖+👤 · → [`03_04 §5`](03_04_mruby_Lorenz_Attractor)
-- **✅ double-pin канонізовано (build [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA) + rationale [`03_04 §5`](03_04_mruby_Lorenz_Attractor)):** `build_config.rb` НЕ ставить `MRB_USE_FLOAT32` (mruby ≥3.0 rename — стара `MRB_USE_FLOAT` мертва) + boxing-інваріант (NO WORD/NAN boxing на 32-bit) → `mrb_float`=double; float32 дав би ±5-10 units на Z → bio_status зсув. ARM↔x86 double-drift знято FW.55 (QEMU bit-parity ≡ host; silicon-confirm спільний → FW.55). · [ ] 👤 silicon-confirm на STM32WLE5JC REVB (той самий FW.55 дамп через SWD)
-
 #### FW.20 + FW.20-S2 — Time Sync (Rails ↔ Queen ↔ Soldier)
 - **P2** · 👤+🟡 · → [`03_02 §5а`](03_02_Queen_Gateway_Firmware) (канон-хаб — SSOT)
 - **✅ 3-рівневий time-sync канонізовано ([`03_02 §5а`](03_02_Queen_Gateway_Firmware) — SSOT, 00_07 = лише вказівник):** CoAP envelope `0x9C` + Queen reflex-beacon + auth-flag + drift-monitor/panic-sync (`0x56`) + per-hop relay + gossip-piggyback (wire + Soldier-константи + regress-bench у §5а). FW.20 1-hop done; FW.20-S2 частини — freeze-contract. Лишається (deferred TRL-7, §5а.6):
@@ -1088,6 +1084,7 @@
 | FW.7 | Backend Lorenz `Attractor` BigDecimal→**Float** (IEEE 754 double) — bit-identical Z з firmware mruby (BigDecimal `round(18)`/iter давав drift після 250 ітерацій); DCI parity. ✅ Закрито (BLOCKER-02, 2026-05-02; `app/services/silken_net/attractor.rb`; §5 порівняльна таблиця Firmware↔Backend). ARM↔x86 silicon-confirm → FW.55 (QEMU bit-parity CI-gated; той самий дамп закриває FW.7/FW.19 на платі) | `03_04 §5`, `05_02` |
 | FW.9 | Queen CoAP batch-delivery retry-loop (`COAP_MAX_RETRIES`, `COAP_CONV_BUDGET_MS` < IWDG) у flush-sequence; ✅ Реалізовано (`firmware/queen/main.c`; host: conversation-fail `test_at_engine.c` + fail→retry→no-loss `test_fw51_*`). Кеш-on-delivery → FW.51; Flash overflow + exp-backoff → ARCH.35. Orphan-ID (cited 06_08/04_06/03_02 §4, archive-рядка бракувало 2026-06-09) | `03_02 §4`, `06_08` |
 | FW.18 | TinyML confidence threshold (RTC DR13/14 dual-zone) | `03_03`, `03_01 §2`, `04_06` |
+| FW.19 | mruby `build_config.rb` double-pin: НЕ `MRB_USE_FLOAT32` + NO WORD/NAN boxing → `mrb_float`=double inline (float32 → ±5-10 units на Z → bio_status зсув; word-boxing → RFloat heap-thrash на ~KB heap). ✅ Канонізовано + CI-enforced (`firmware/mruby/build_config.rb` + lorenz_bytecode drift-gate у `firmware_arm_build`). ARM↔x86 silicon-confirm → FW.55 (спільний дамп) | `03_01 §12.4`, `03_04 §5` |
 | FW.29 | Panic vs saturated acoustic disambiguation (PANIC_FLAG_BIT) | `03_03 §5.3` |
 | FW.29-PACK | StatusByte layout collision fix (5-bit growth_points) | `03_01 §11.3`, `03_04 §4.3-5.2`, `05_02` |
 | FW.30 | SEC.11 C-bridge: warm/cold → 7-arg `calculate_state` + `Load_Lorenz_Seed` (K_seed Flash `LSED`) + `Derive_Cold_Start_State` (pure-C HMAC-SHA256 `silken_sha256.h`/`lorenz_seed.h`, byte-parity vs OpenSSL — mbedTLS TODO закрито) + args[5..6] EMA→`growth_points` [E.63]; 11 host-тестів | `03_04 §6`, `03_05 §3.4а` |
