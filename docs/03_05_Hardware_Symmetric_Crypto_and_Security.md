@@ -656,7 +656,7 @@ CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<IDEMPOTENCY_TOKEN>
 | **Адреса** | `FLASH_KEY_ADDR` | `FLASH_COAP_KEY_ADDR` (тільки Queen) |
 | **Розмір** | **128 біт (16 байт, 4 × uint32_t)** — ARCH.42 | 256 біт (32 байти, 8 × uint32_t) |
 | **Захист** | RDP Level 1 (виробництво) / RDP Level 2 (необоротний final lock) — див. §3.3 | Те саме |
-| **Ротація** | Hash Ratchet KDF — див. [`00_07` — FW.17 у 00 07](00_07_Action_Plan_Tracker) (placeholder, P3) | Те саме |
+| **Ротація** | Hash Ratchet KDF — див. [`00_07` — FW.17](00_07_Action_Plan_Tracker) (placeholder) | Те саме |
 | **Унікальність** | **Унікальний per-device** через HKDF(`PROVISIONING_MASTER_KEY`, salt=`device_uid`, info=`"silken-aes-128-lora-key"`) | HKDF(`PROVISIONING_MASTER_KEY`, salt=`device_uid`, info=`"silken-aes-256-device-key"`) |
 | **Завантаження у RAM** | `Load_AES_Key()` на boot → `aes_key[4]` (LoRa-режим) | `Load_AES_Key()` на boot → `coap_key[8]` (динамічне MX_CRYP re-init для CoAP) |
 
@@ -1499,7 +1499,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 
 > ⚠️ **Internal Admin Tool — поза публічним REST API.** Цей розділ описує **окремий канал** доставки ключів від Rails Backend до програматора (SWD/JTAG). Він НЕ є описом `POST /api/v1/provisioning/register` (реєстрація після деплою, Zero-Trust, без ключа у відповіді — [`04_03 §5.2`](04_03_REST_API_v1_Reference) залишається незмінним). Threat model нижче розроблений з нуля з урахуванням фізичного доступу на заводі.
 
-**Cross-ref:** [`00_07` — SEC.3 у 00 07](00_07_Action_Plan_Tracker) | §3.4 (pipeline design) | §3.4а (HKDF derivation) | §3.6 (RDP Level 2) | §3.7 (ATECC608B) | SEC.1 (Gnosis Safe multisig) | SEC.2 (RDP activation) | SEC.6 (Secure Element) | SEC.9 (WeakKeyDetector)
+**Cross-ref:** [`00_07` — SEC.3](00_07_Action_Plan_Tracker) | §3.4 (pipeline design) | §3.4а (HKDF derivation) | §3.6 (RDP Level 2) | §3.7 (ATECC608B) | SEC.1 (Gnosis Safe multisig) | SEC.2 (RDP activation) | SEC.6 (Secure Element) | SEC.9 (WeakKeyDetector)
 
 ---
 
@@ -2213,7 +2213,7 @@ HAL_CRYP_Init(&hcryp);
 |---------|----------|
 | Чому AES-128 LoRa достатньо на 25-річний горизонт | Цей §10 + ARCH.42 у [`00_07`](00_07_Action_Plan_Tracker) |
 | Як Cloudflare hybrid Kyber+X25519 інтегровано | `06_02 INF.4` (Akash TLS strategy) |
-| Hash Ratchet KDF дизайн | `[FW.17]` у [`00_07`](00_07_Action_Plan_Tracker) (placeholder, P3) |
+| Hash Ratchet KDF дизайн | `[FW.17]` у [`00_07`](00_07_Action_Plan_Tracker) (placeholder) |
 | peaq DID міграція на Substrate-PQC | `05_01 Multichain Architecture` §peaq |
 | OTA HMAC-SHA256 dual-gate | §3.4б цього файла + `[FW.23]` у [`00_07`](00_07_Action_Plan_Tracker) |
 | Chainlink HMAC vs ECDSA migration | `04_02 ChainlinkOracleService` (delegated до Chainlink DON) |

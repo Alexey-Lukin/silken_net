@@ -517,7 +517,7 @@
 - **✅ per-species Z-пороги канонізовано (OTA-design [`05_02 §4а`](05_02_Proof_of_Growth_Pipeline), service [`04_02`](04_02_Business_Logic_and_Services)):** Rails `build_threshold_config_block` + `effective_lorenz_thresholds` 3-tier (cluster → TreeFamily → global 2.0/45.0/29.0) + firmware parser `Soldier_Handle_CMD_SET_THRESHOLDS` (freeze-contract, `FW8_PARSER_ENABLED 0`) + host-тести; CMD `0x9A` (DOC.4). · [ ] 🟡 deferred TRL-7: `FW8_PARSER_ENABLED 1` → persist у **Flash-KV** ([`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA) ARCH.28 — **НЕ** RTC, DR-фантоми) + boot-restore + HAL_FLASH bench
 
 #### FW.17 — Key rotation mechanism (Hash Ratchet KDF)
-- **P2** · 🔗 · → `03_05 §3`
+- **P2** · 🔗 · → [`03_05 §3`](03_05_Hardware_Symmetric_Crypto_and_Security)
 - Після FW.1. Статичний ключ при Factory Flashing → немає rotation без re-flash (GDPR/ISO 27001/NIST SP 800-57). Рішення: Hash Ratchet KDF (`CMD:ROTATE_KEY` → `K_current`→`K_next` AES-KDF, PFS). · [ ] 🔗 дизайн протоколу + CoAP command + cluster ACK + Flash/RTC storage + ECDH alt
 
 #### FW.19 — Float32 vs Float64 mruby compile flags
