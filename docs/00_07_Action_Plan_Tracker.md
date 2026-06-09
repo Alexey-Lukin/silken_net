@@ -638,8 +638,8 @@
 - Zero-consumption transport: магніт→circuit open, інсталятор знімає→first power-up (~$0.05/unit). Дизайн канонізовано, у BOM ще немає (окремий механізм від piezo Zero-Power Wake). · [ ] 👤 додати Hamlin 59140-1-T-00-A + N52 магніт до BOM + оновити KiCad schematic
 
 #### SEC.9 — Production AES Key містить FIPS-197 Appendix B Test Vector
-- **P0** · 👤 · → `03_05 §3.1а`
-- ✅ guard `Security::WeakKeyDetector` + boot-guard refuse-to-boot на FIPS-197/NIST/degenerate vectors (30 specs). ⚠️ ОКРЕМЕ від FW.1: якщо master seed базується на цьому ключі — весь derivation tree скомпрометований. · [ ] 👤 замінити seed key на crypto-random → задокументувати генерацію у vault (без коміту) → re-flash прототипи
+- **P0** · 👤 · → [`03_05 §3.1а`](03_05_Hardware_Symmetric_Crypto_and_Security)
+- ✅ guard `Security::WeakKeyDetector` + boot-guard refuse-to-boot на FIPS-197/NIST/degenerate vectors (RSpec-покрито). ⚠️ ОКРЕМЕ від FW.1: якщо master seed базується на цьому ключі — весь derivation tree скомпрометований. · [ ] 👤 замінити seed key на crypto-random → задокументувати генерацію у vault (без коміту) → re-flash прототипи
 
 #### SEC.12 — HRNG-IV fallback hardening (CoAP CBC IV)
 - **P2** · 🔗 · → `03_05 §HRNG Fallback`
