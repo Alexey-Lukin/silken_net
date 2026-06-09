@@ -1934,25 +1934,22 @@ int main(void)
                                 crc = ~crc;
 
                                 // [FW.23] Дві брами перед HAL_FLASH_Program.
-                                // Реальне HMAC-SHA256 обчислення через mbedTLS /
-                                // STM32 HASH-peripheral вмикається при лабораторній
-                                // інтеграції (analog FW.30 placeholder). До того
-                                // часу гейт-логіку перевіряють host-tests, а на
-                                // боржі — runtime-перевірка вимкнена, бо немає
-                                // справжнього K_ota.
+                                // Реальний HMAC-SHA256 compute — pure-C silken_sha256.h
+                                // (mbedTLS НЕ потрібен; той самий шлях, яким FW.30
+                                // закрив seed-HMAC). Зараз stub: hmac_complete лише
+                                // лічить отримані segments. Runtime чекає K_ota на
+                                // Flash (factory SEC.3); гейт-логіку перевіряють host-tests.
                                 uint8_t hmac_complete = (ota_hmac_segments_received == 0x07u);
                                 uint8_t crc_ok        = (crc == expected_crc);
 
                                 if (crc_ok && hmac_complete) {
-                                    // TODO: Обчислити очікувану HMAC-SHA256 через mbedTLS
-                                    //       над (ota_buffer[0..data_len] || version_id_be ||
-                                    //       total_chunks_be) ключем K_ota з Flash
-                                    //       (HKDF-derived per-cluster). Далі викликати
-                                    //       OTA_Verify_Dual_Gate(ota_buffer, data_len,
-                                    //                             expected_hmac, received_hmac_tag).
-                                    //       Чекає лабораторного звіряння mbedTLS link'у.
-                                    //       До того брами доведено host-tests'ами; у бойовому
-                                    //       полі прошивка не активується без лабораторного підтвердження.
+                                    // TODO: Обчислити очікувану HMAC-SHA256 через
+                                    //       silken_hmac_sha256(K_ota, ota_buffer[0..data_len]
+                                    //       || version_id_be || total_chunks_be) — K_ota
+                                    //       HKDF-derived per-cluster з Flash. Далі
+                                    //       OTA_Verify_Dual_Gate(…, expected_hmac, received_hmac_tag).
+                                    //       pure-C silken_sha256.h (НЕ mbedTLS — як FW.30);
+                                    //       runtime потребує K_ota на Flash (factory SEC.3).
                                     Write_OTA_Contract_To_Flash(ota_buffer, data_len);
                                     NVIC_SystemReset();
                                 }

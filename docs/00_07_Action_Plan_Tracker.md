@@ -537,9 +537,10 @@
 - ✅ тип `uint8_t` + saturating increment (cap 255) + backend overflow-warning + Prometheus counter + 8 тестів. · [ ] 🔗 АБО 2 байти в payload (перепакування — FW.2 CCM)
 
 #### FW.23 — OTA firmware broadcast: ECB без автентифікації
-- **P1** · 🟡 · → [`03_05 §3.4б`](03_05_Hardware_Symmetric_Crypto_and_Security)
+- **P1** · 🤖🟡 · → [`03_05 §3.4б`](03_05_Hardware_Symmetric_Crypto_and_Security)
 - **✅ HMAC-SHA256 OTA auth канонізовано ([`03_05 §3.4б`](03_05_Hardware_Symmetric_Crypto_and_Security)):** per-cluster K_ota (HKDF info `silken-ota-hmac-v1`) → `OtaPackagerService` 3× `[0x9B]` trailer (anti-replay/truncation: version_id+total_chunks у тезі) → Queen stateless relay → Soldier dual-gate (magic `RITE` + constant-time HMAC + fail-safe magic-wipe). Backend+wire+gate-logic ✅ (RSpec+host покрито, byte-accurate до wire). Лишається:
-  - [ ] 🟡 bench: реальна mbedTLS HMAC-SHA256 на STM32 HASH-peripheral (Soldier runtime compute — placeholder, аналог FW.30; гейт-логіка host-перевірена).
+  - [ ] 🤖 wire pure-C `silken_sha256.h` HMAC compute + `secure_compare` у Soldier dual-gate (**mbedTLS не потрібен** — той самий шлях, яким FW.30 закрив seed-HMAC; зараз stub `hmac_complete = segments-received`, реальний compute відсутній).
+  - [ ] 🟡 bench: K_ota на Soldier Protected Flash (factory SEC.3) + e2e dual-gate на STM32.
 
 #### FW.25 — TinyML DSP-path: Path B (log-mel) SELECTED [DECISION 2026-05-22]
 - **P0** · 👤+🤖 · → `03_03 §3.2/§3.4`
@@ -552,10 +553,6 @@
 #### FW.27 — OTA broadcast: відсутня RX-верифікація Soldier
 - **P2** · 🔗 · → `03_02 §5`
 - ✅ Дизайн B (Magic Re-Request): Soldier bitmap uplink `[0x55]` → Queen targeted re-broadcast (60-90% economy) + 22 host-тести (Soldier у STOP2 пропускає chunk). Дизайн A (ACK-aggregation) — з ARCH.26. · [ ] 🔗 Дизайн A залежить від ARCH.26 (TDMA RX-вікно); B незалежний · ⚠️ re-request «5 хв тиші» (`ota_last_chunk_rx_tick`) на `HAL_GetTick` (мертвий у STOP2 = ~500 wake-циклів) → wall-clock у FW.49 · [x] 🤖 (2026-06-07) anti-storm dedup bitmap має домівку: Flash-KV host-готовий (`03_01 §2.3`) — лишилось wiring bitmap→ключі
-
-#### FW.30 — SEC.11 C-bridge gap: `main.c` mruby виклик не оновлено
-- **P1** · 🔗 · → `03_04`
-- ✅ warm/cold paths → єдиний 7-arg `calculate_state`; `Load_Lorenz_Seed()` (K_seed Flash, magic `LSED`) + `Derive_Cold_Start_State()` (placeholder hash, TODO mbedTLS lab) + 11 host-тестів. (SEC.11 cutover зламав стару C-bridge сигнатуру → `BIO_STATUS_VM_ERROR`; новий bytecode не OTA-деплоївся до фіксу.) · ✅ args[5..6] (`delta_t`/`vcap` EMA) передаються у 7-arg `calculate_state`, живлять `growth_points` напряму [E.63] (планована FW.5 β-пертурбація реверсована як економічно нульова)
 
 #### FW.31 — DCI: числовий tolerance band у `check_z_divergence!` (feature-flag flip)
 - **P2** · 👤+🤖 · → `03_04 §7.1`
@@ -1090,6 +1087,7 @@
 | FW.18 | TinyML confidence threshold (RTC DR13/14 dual-zone) | `03_03`, `03_01 §2`, `04_06` |
 | FW.29 | Panic vs saturated acoustic disambiguation (PANIC_FLAG_BIT) | `03_03 §5.3` |
 | FW.29-PACK | StatusByte layout collision fix (5-bit growth_points) | `03_01 §11.5`, `03_04 §4.3-5.2`, `05_02` |
+| FW.30 | SEC.11 C-bridge: warm/cold → 7-arg `calculate_state` + `Load_Lorenz_Seed` (K_seed Flash `LSED`) + `Derive_Cold_Start_State` (pure-C HMAC-SHA256 `silken_sha256.h`/`lorenz_seed.h`, byte-parity vs OpenSSL — mbedTLS TODO закрито) + args[5..6] EMA→`growth_points` [E.63]; 11 host-тестів | `03_04 §6`, `03_05 §3.4а` |
 | FW.51 | Queen flush: пакування лише рахує (`packed_count`); CIFO-слоти звільняються ЛИШЕ при `send_success` (доставка, не транспорт-OK) → провал retry (LTE-діра) не губить годину телеметрії; dedup оновлює held DID; caller свідомо energy-conservative (без retry-шторму) | `03_02 §3/§4` |
 | FW.53 | OTA wire-contract integrity: backend CRC32-trailer (Soldier integrity-gate) + явний `len` + CRC16-verify (Queen більше не вгадує довжину з CBC-pad → не обрізає 1..16 байт чанка); `OtaPackagerService` wire-потік; campaign-change reset (мертва кампанія не блокує живу) | `03_01 §4.6`, `04_02`, `03_02 §5` |
 | FW.57 | DCI-parity latent surfaces: **F2** — Lorenz/DCI бере RAW wire-temp (не calibrated `temperature_c`; offset 5°C → server_z ~16u drift → false-fraud) для Z + `anomaly_ceiling`/`check_z_divergence!`/`try_time_sync_recovery`; calibrated лишається display/fire (`alert_dispatch` recover = `temp_c − offset`); raw стрипиться перед persist. **F4** — рукописну 3-тю Lorenz-kernel копію усунено, `attractor_spec` co-executes реальний `bio_contract.rb` у subprocess (`contract_runner.rb`, 200-fuzz). GP-parity → FW.2 | `04_02`, `03_04` |

@@ -1286,7 +1286,7 @@ log.update!(lorenz_state_x: x_f, lorenz_state_y: y_f, lorenz_state_z: z_f,
 | Backend specs | `spec/services/ota_hmac_key_service_spec.rb`, `spec/services/ota_packager_service_spec.rb`, `spec/integration/ota_firmware_flow_spec.rb` | determinism / domain separation / anti-replay / anti-truncation / per-cluster isolation / manifest metadata / package ordering / blank input / SEC.11 |
 | Firmware host-tests | `firmware/test/test_soldier_logic.c`, `test_queen_logic.c` | 3-chunk assemble (in-order/out-of-order) / reject seg_idx>3 / dual-gate magic-fail / dual-gate hmac-fail / both-pass / cleanup-on-failure / constant-time first/last byte / Queen relay segments assemble / wrong marker reject / overwrite same segment |
 
-**Залишковий TODO (не блокує цикл):** реальна mbedTLS HMAC-SHA256 деривація на STM32 HASH-peripheral у Soldier (`Phase 4.5 OTA assembly` має `TODO: Compute expected HMAC via mbedTLS` — потребує лабораторної ARM-збірки з mbedTLS link integration; до того гейт-логіка перевірена host-tests, runtime call вимкнений у бойовій збірці. Аналог FW.30 cold-start mbedTLS placeholder.).
+**Залишковий TODO (не блокує цикл):** реальний HMAC-SHA256 compute у Soldier dual-gate (`Phase 4.5 OTA assembly` — зараз `hmac_complete` = 3 segments-received stub, без обчислення). 🤖 **mbedTLS не потрібен** — pure-C `silken_sha256.h` (яким FW.30 закрив cold-start seed-HMAC, byte-parity vs OpenSSL) покриває цей compute: лишилось викликати `silken_hmac_sha256(K_ota, bytecode‖version‖total)` + `secure_compare(received_hmac_tag)`. 🟡 runtime потребує K_ota на Soldier Protected Flash (factory SEC.3) + e2e на STM32.
 
 
 > **Cross-ref:** [`00_07` — FW.23](00_07_Action_Plan_Tracker) — дизайн завершено ✅

@@ -1486,7 +1486,7 @@ tools/firmware/run_bytecode_vm.sh                 # minimal VM runs the bytecode
 | CMSIS-DSP · CMSIS_6 · mruby | logmel FFT · Core · bio-contract VM | ✅ завендорено (§12.4) | submodule@tag |
 | Monocypher | [L1 QATT] software-Ed25519 — підпис CoAP-батчів Queen ([`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security)) | ✅ завендорено (2026-06-07) | `extern/monocypher`@4.0.2 (+ optional `monocypher-ed25519` — стандартний SHA-512 EdDSA, parity з ruby `ed25519` gem host-tested) |
 | OpenSSL | host-тест crypto (AES/HKDF/HMAC) | system host-dep; НЕ target | host-build, не вендориться |
-| mbedTLS | target HMAC-SHA256 / HKDF | 🔴 лише `TODO(FW.30-mbedtls)`, не залінковано | `extern/mbedtls`@tag — [`00_07` — FW.30](00_07_Action_Plan_Tracker) |
+| ~~mbedTLS~~ | target HMAC-SHA256 | ✅ **не потрібен** — FW.30 cold-start seed-HMAC закрито pure-C `silken_sha256.h` (byte-parity vs OpenSSL, KAT FIPS/RFC 4231); FW.23 OTA HMAC compute теж може цей шлях (pure-C, без bench-лінку) | own-code `firmware/common/silken_sha256.h` |
 | STM32 HAL + CMSIS-Device-WL | HAL · SUBGHZ/SX1262-радіо · CRYP | 🔴 assumed (CubeMX, поза репо); host = `hal_mock.h` | STM32CubeWL@tag — `-DSILKEN_WITH_HAL=ON` |
 | CMSIS-NN | TinyML `Run_Inference` | 🔴 ще нема згадок (модель відсутня) | `extern/CMSIS-NN`@tag — [`00_07` — FW.4](00_07_Action_Plan_Tracker) |
 
