@@ -6,7 +6,7 @@
  *          This stub unblocks BLOCKER-1+2 (`docs/03_03 §BLOCKER-1/2`) by
  *          providing the symbols that `firmware/soldier/main.c` references
  *          from `silken_net_audio_model.h`. The real model header is produced
- *          by the ML partner (Бушин/Любченко, `docs/08_02 §1.5/§1.8`) and
+ *          by the ML partner (Бушин/Любченко, `docs/08_02 §1B`) and
  *          contains TFLite quantized weights + tensor arena allocation; that
  *          file replaces this stub at integration time.
  *
@@ -14,7 +14,7 @@
  *          run `arm-none-eabi-size firmware.elf` / `make size-check` to
  *          measure the RAM budget without disclosing model IP.
  *
- *          DSP-path decision (`docs/00_08 FW.25`, 2026-05-22):
+ *          DSP-path decision (`docs/03_03 §3.2`, FW.25, 2026-05-22):
  *          **Path B (log-mel spectrogram + 2D CNN)** is the official baseline.
  *          The constants below reflect that path; ML partner overrides them
  *          in the real header if Path A or C is selected as fallback.

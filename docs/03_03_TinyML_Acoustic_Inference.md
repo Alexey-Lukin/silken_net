@@ -27,7 +27,7 @@
 | [`04_01` — Data Models and Entities](04_01_Data_Models_and_Entities) | `TelemetryLog.acoustic_events` |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `TelemetryUnpackerService`, `EwsAlertCreatorService` |
 | `firmware/soldier/main.c` · `silken_net_audio_model.h` (TBD) · `_stub.h` | Phase 1.5 + ISR; реальна модель TBD ML-партнером; IP-friendly stub |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.4 Run_Inference/model.h/Tensor-Arena, FW.18 threshold, FW.25 DSP Path B |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.4 Run_Inference/model.h/Tensor-Arena, FW.18b threshold, FW.25 DSP Path B |
 
 ## 📑 Зміст
 

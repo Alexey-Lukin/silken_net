@@ -539,8 +539,12 @@
   - [ ] 🟡 bench: K_ota на Soldier Protected Flash (factory SEC.3) + e2e dual-gate на STM32.
 
 #### FW.25 — TinyML DSP-path: Path B (log-mel) SELECTED [DECISION 2026-05-22]
-- **P0** · 👤+🤖 · → `03_03 §3.2/§3.4`
-- Choice gate закрито: **Path B (log-mel + 2D-CNN)** baseline (Path A провалює fauna layered soundscape; Path C +5-10KB arena на 64KB SRAM; ESC-консенсус log-mel — Salamon&Bello/BirdNET; CMSIS-DSP вже в стеку; Mongabay → fauna-ready). Контракт §3.4 **self-owned** (ML-партнера нема) + локально верифікований. · [x] 🤖 ✅ §3.4 виправлено (latent DC-removal + periodic-Hann баги) + `silken_ml` оракул (librosa ≡ pure-stdlib, parity 1e-6) — `tools/ml` · [x] 🤖 ✅ `Compute_LogMel` (`firmware/common/logmel.c`; host radix-2 / ARM `arm_rfft_fast_f32`, **НЕ** `arm_mfcc_f32`) + golden-vector host-тести (`test_logmel.c`, tol 1e-3, 6/6) + auto-gen таблиці (`silken_ml.codegen`) · [ ] 👤 ML-партнер тренує на §3.4 (крос-чек, не гейт) · [ ] 🔗 verify TENSOR_ARENA (~15-30KB, FW.26) + inference тести — після моделі · [ ] 🌿 UNI.11+UNI.13a dataset dawn/dusk · [ ] 🤖 fallback Path C (TFLM) — потребує re-verify arena
+- **P0** · 👤+🤖 · → [`03_03 §3.4`](03_03_TinyML_Acoustic_Inference)
+- **✅ Path B (log-mel) обрано + DSP-фронтенд реалізовано self-owned** (decision matrix [`03_03 §3.2`](03_03_TinyML_Acoustic_Inference) · контракт [`03_03 §3.4`](03_03_TinyML_Acoustic_Inference) — ML-партнера нема, контракт наш end-to-end): `Compute_LogMel` (`firmware/common/logmel.c`) + 3-way parity librosa≡stdlib≡C (`contract_hash` tripwire, `tools/ml`) + golden-vector host-тести + auto-gen таблиці (`silken_ml.codegen`). Лишається (gated на FW.4 модель):
+  - [ ] 👤 ML-партнер (Бушин/Любченко) тренує 5-class CNN на §3.4 (крос-чек, не гейт)
+  - [ ] 🔗 verify TENSOR_ARENA (FW.26) + uncomment inference — після `silken_net_audio_model.h`
+  - [ ] 🌿 UNI.11+UNI.13a soundscape dataset (dawn/dusk fauna 5-й клас)
+  - [ ] 🤖 fallback Path C (TFLM) — потребує re-verify arena
 
 #### FW.26 — TENSOR_ARENA_SIZE ніколи не верифіковано
 - **P1** · 🤖 · → [`03_03 §4.3`](03_03_TinyML_Acoustic_Inference)
