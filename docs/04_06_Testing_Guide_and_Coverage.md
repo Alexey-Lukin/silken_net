@@ -335,7 +335,7 @@ it "test that status works" do
 |-------|------------|------|
 | Mock AES | 🔴 CRITICAL | `hal_mock.h` копіює plaintext→ciphertext; реальна AES верифікація неможлива без ARM HW |
 | Mock TinyML | 🟠 HIGH | `Run_Inference()` повертає фіксовані класи; реальна модель не тестується |
-| AT Command UART | 🟡 MEDIUM | SIM7070G modem I/O не тестується повністю (апаратна залежність). Константи retry та таймаутів верифіковані `test_coap_retry_constants` (FW.9) |
+| AT Command UART | 🟡 MEDIUM | SIM7070G modem I/O не тестується повністю (апаратна залежність). Retry/timeout-логіка верифікована `test_at_engine.c` (conversation-fail) + `test_fw51_*` (fail→retry→no-loss) (FW.9) |
 | DMA Audio Timing | 🟠 HIGH | 512-sample DMA transfer timing не верифікується на host |
 
 ### B.1.2 Solidity

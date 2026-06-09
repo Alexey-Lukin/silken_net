@@ -2618,7 +2618,8 @@ int main(void)
     RUN(test_cmd_cbc_during_decrypt);
     RUN(test_cmd_cbc_then_flush_cbc_both_restore);
 
-    /* [FW.3] CoAP Retry Logic (FW.9) переїхав у test_at_engine.c */
+    /* [FW.3/FW.9] CoAP retry: per-attempt conversation-fail — у test_at_engine.c;
+       fail→retry→no-loss — test_fw51_* нижче (COAP_MAX_RETRIES — main.c #define) */
 
     printf("\n  Flash-Based AES Key Loading (FW.1):\n");
     RUN(test_queen_load_key_provisioned_success);
