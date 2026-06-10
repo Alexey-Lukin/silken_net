@@ -9,7 +9,7 @@ deploy/grafana/
 ├── dashboards/
 │   └── silkennet-overview.json   # Головний дашборд (5 секцій)
 └── alerts/
-    └── silkennet-alerts.yaml     # 12 alert rules (P0/P1/P2)
+    └── silkennet-alerts.yaml     # alert rules (P0/P1/P2)
 ```
 
 ## Імпорт дашборду
@@ -69,7 +69,7 @@ resource "grafana_rule_group" "silkennet_p0" {
 
 | Секція | Метрики | S2.2 item |
 |--------|---------|-----------|
-| Telemetry Ingest + Fraud | processed_total, fraud_total, acoustic_overflow, panic_replay, cluster_entropy | Telemetry ingest rate + fraud detection |
+| Telemetry Ingest + Fraud | processed_total, fraud_total, acoustic_overflow, panic_replay, cluster_entropy, tinyml_threshold_invalid_reports (FW.18b) | Telemetry ingest rate + fraud detection |
 | Sidekiq Queues | queue_size × 9, queue_latency × 9 | Sidekiq queues (9 черг, size + latency) |
 | Web3 RPC | rpc_errors by network/type, circuit_breaker_open, scc_minted, oracle_dispatch latency | Web3 RPC errors by network |
 | Treasury / Oracle | oracle_balance_ratio, oracle_balance by network | Treasury / Oracle balance monitoring |
@@ -79,6 +79,7 @@ resource "grafana_rule_group" "silkennet_p0" {
 
 | ID | Rule | Severity | Поріг |
 |----|------|----------|-------|
+| sn-alert-partition-maintenance-failed | partition maintenance failures > 0 за 24h | critical | 0m |
 | sn-alert-web3-queue-critical | web3_critical queue > 100 jobs | critical | 5m |
 | sn-alert-fraud-detected | fraud rate > 0/s | critical | 2m |
 | sn-alert-oracle-balance-critical | oracle_balance_ratio < 0.2 | critical | 5m |
@@ -88,6 +89,7 @@ resource "grafana_rule_group" "silkennet_p0" {
 | sn-alert-circuit-breaker | circuit_breaker_open == 1 | warning | 2m |
 | sn-alert-cluster-entropy | cluster_entropy < 0.65 | warning | 30m |
 | sn-alert-acoustic-overflow | acoustic_overflow rate > 0 | warning | 5m |
+| sn-alert-tinyml-threshold-invalid | tinyml_threshold_invalid_reports rate(15m) > 0 (FW.18b) | warning | 5m |
 | sn-alert-oracle-balance-warning | oracle_balance_ratio < 1.0 | info | 15m |
 | sn-alert-db-pool-saturation | db_pool_waiting > 5 | info | 2m |
 | sn-alert-w3bstream-fallback | w3bstream SHA256 fallback > 0 | info | 5m |

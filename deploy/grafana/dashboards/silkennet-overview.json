@@ -149,7 +149,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 4, "w": 12, "x": 12, "y": 5 },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 5 },
       "id": 4,
       "options": { "minVizHeight": 75, "minVizWidth": 75, "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"] }, "showThresholdLabels": false, "showThresholdMarkers": true },
       "targets": [
@@ -162,6 +162,31 @@
       ],
       "title": "Cluster Entropy Score (pre-stress detector)",
       "type": "gauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "FW.18b: Солдати звітують відкинуті OTA-пороги (NaN/out-of-range/інверсія → default). Ненульовий = корумпований RTC або зловмисний OTA-payload десь у лісі; конкретний DID і значення лічильника — у warn-лозі бекенда (патерн FW.22).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "orange", "mode": "fixed" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 1 }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 5 },
+      "id": 5,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "increase(silkennet_tinyml_threshold_invalid_reports_total[15m])",
+          "legendFormat": "Invalid thresholds (15m)",
+          "refId": "A"
+        }
+      ],
+      "title": "TinyML Threshold Invalid (15m)",
+      "type": "stat"
     },
 
     {

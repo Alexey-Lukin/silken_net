@@ -506,7 +506,8 @@
 #### FW.18b — OTA threshold invalid counter (production-visibility)
 - **P2** · 👤 · → [`03_03 §5.4`](03_03_TinyML_Acoustic_Inference)
 - **✅ Counter канонізовано ([`03_03 §5.4`](03_03_TinyML_Acoustic_Inference)):** `TinyML_Apply_Thresholds`/`Validate_Threshold` відкидає NaN/out-of-range/інверсію OTA-порогів → default (інваріант `SILENCE<WARNING<CRITICAL` збережено); saturating `tinyml_threshold_invalid_count` (DR1 `WARN_ESC`) + host-тести.
-- **✅ (2026-06-10) wiring + метрика:** bit-redistribution байта 11 — бітфілд `[thr_invalid:5|TTL:3]` (One-Home `firmware/common/ttl_byte.h`; legacy-сумісно: counter=0 ⇒ бітово старий TTL; mesh-релей не чіпає лічильник origin'а) + backend маскує `mesh_ttl` і інкрементує `silkennet_tinyml_threshold_invalid_reports_total` — **без `{soldier_did}`** (cardinality budget [`06_03 §2.9`](06_03_Prometheus_Observability); DID — у warn-лозі, патерн FW.22). Freeze-contract goldens `test_soldier_logic.c` ↔ `telemetry_unpacker_service_spec.rb`. · [ ] 👤 Grafana-панель/alert (`rate(...[15m]) > 0`) — імпорт разом із S2.2
+- **✅ (2026-06-10) wiring + метрика:** bit-redistribution байта 11 — бітфілд `[thr_invalid:5|TTL:3]` (One-Home `firmware/common/ttl_byte.h`; legacy-сумісно: counter=0 ⇒ бітово старий TTL; mesh-релей не чіпає лічильник origin'а) + backend маскує `mesh_ttl` і інкрементує `silkennet_tinyml_threshold_invalid_reports_total` — **без `{soldier_did}`** (cardinality budget [`06_03 §2.9`](06_03_Prometheus_Observability); DID — у warn-лозі, патерн FW.22). Freeze-contract goldens `test_soldier_logic.c` ↔ `telemetry_unpacker_service_spec.rb`.
+- **✅ (2026-06-10) Grafana IaC:** stat-панель (дашборд, секція Telemetry) + alert rule `sn-alert-tinyml-threshold-invalid` (`rate(...[15m]) > 0`, warning, P1-група) → `deploy/grafana/`. · [ ] 👤 імпорт у Grafana Cloud — разом із S2.2/S2.3
 
 #### FW.8 — CRITICAL_Z_MIN/MAX hardcoded
 - **P1** · 🟡 · → [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)
@@ -744,11 +745,11 @@
 
 #### S2.2 — Grafana Cloud dashboards
 - **P0** · 👤 · → `06_03`
-- ✅ dashboard IaC (5 секцій, 15 панелів) → `deploy/grafana/`. · [ ] 👤 імпортувати у Grafana Cloud (інструкції `deploy/grafana/README.md`)
+- ✅ dashboard IaC (секції/панелі — зведення у `deploy/grafana/README.md`) → `deploy/grafana/`. · [ ] 👤 імпортувати у Grafana Cloud (інструкції `deploy/grafana/README.md`)
 
 #### S2.3 — Grafana Cloud alerting rules
 - **P0** · 👤 · → `06_03`
-- ✅ 13 alert rules IaC (5P0/5P1/3P2) → `deploy/grafana/alerts/` + counter `silkennet_telemetry_acoustic_overflow_total`. · [ ] 👤 замінити `${DATASOURCE_UID}` + notification channel (Slack/Email/PagerDuty)
+- ✅ alert rules IaC (P0/P1/P2, зведення у `deploy/grafana/README.md`) → `deploy/grafana/alerts/` + counter `silkennet_telemetry_acoustic_overflow_total`. · [ ] 👤 замінити `${DATASOURCE_UID}` + notification channel (Slack/Email/PagerDuty)
 
 #### INF.3 — TLS termination
 - **P2** · 👤 · → `06_02 §TLS термінація`

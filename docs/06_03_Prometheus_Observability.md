@@ -258,14 +258,7 @@ end
 
 Нормалізована ентропія Шеннона Z-розподілу кластера (0.0–1.0). Оновлюється `ClusterEntropyAnalyzerWorker` (queue: `alerts`, рекомендовано: щогодинний cron). Здоровий ліс: ≈ 0.75-0.95. Критичний поріг: < 0.65 → `EwsAlert(entropy_anomaly)`.
 
-**Grafana Alert Rule (операційна задача):**
-```yaml
-- alert: ClusterEntropyLow
-  expr: silkennet_cluster_entropy_score < 0.65
-  for: 30m
-  annotations:
-    summary: "Передстресовий сигнал: кластер {{ $labels.cluster_id }} — ентропія {{ $value }}"
-```
+**Grafana Alert Rule:** `sn-alert-cluster-entropy` (`< 0.65`, for 30m) — IaC-дім `deploy/grafana/alerts/silkennet-alerts.yaml`, 👤 import (S2.3).
 
 > Проміжний підсумок видалено — див. фінальну цифру у §2.8 (SSOT).
 
@@ -294,33 +287,20 @@ end
 
 Додатково: `silkennet_rpc_errors_total` тепер інструментовано безпосередньо в `Web3::ResilientClient#record_failure` з класифікацією error_type (timeout, connection_refused, host_unreachable, dns_error, io_error, rate_limited, unknown).
 
-**Grafana Alert Rules (операційні задачі):**
-```yaml
-- alert: AcousticOverflow
-  expr: rate(silkennet_telemetry_acoustic_overflow_total[5m]) > 0
-  for: 5m
-  annotations:
-    summary: "Acoustic sensor data loss: firmware uint8 saturation detected"
-
-- alert: RpcCircuitBreakerOpen
-  expr: silkennet_rpc_circuit_breaker_open == 1
-  for: 2m
-  annotations:
-    summary: "RPC provider {{ $labels.provider }} circuit breaker open"
-```
+**Grafana Alert Rules:** `sn-alert-acoustic-overflow` (`rate(...[5m]) > 0`, for 5m) та `sn-alert-circuit-breaker` (`== 1`, for 2m) — IaC-дім `deploy/grafana/alerts/silkennet-alerts.yaml`, 👤 import (S2.3). Споріднений firmware-діагностичний counter `silkennet_tinyml_threshold_invalid_reports_total` (FW.18b, той самий патерн warn-лог-атрибуції) і його `sn-alert-tinyml-threshold-invalid` — канон [`03_03 §5.4`](03_03_TinyML_Acoustic_Inference).
 
 ### 📊 Канонічний реєстр метрик (SSOT)
 
 > **ЄДИНЕ авторитетне джерело переліку + кількості метрик** — згенеровано з
 > `SilkenNet::Metrics::REGISTRY`, verified vs `config/initializers/prometheus.rb`
-> 2026-05-29. Усі інші згадки (CLAUDE.md, `config.alloy`, підсекції §2.3–2.7 з
+> 2026-06-10. Усі інші згадки (CLAUDE.md, `config.alloy`, підсекції §2.3–2.7 з
 > обґрунтуванням/alert-прикладами) **рефлять сюди**, не дублюють число/перелік.
 > При зміні реєстру в коді — **регенерувати ЛИШЕ цю таблицю** (команда в кінці).
 > Де інкрементується/оновлюється кожна — `grep -rn "SilkenNet::Metrics::<CONST>" app/`.
 >
 > **Разом: 45 метрик = 24 counters + 19 gauges + 2 histograms.**
 
-**Counters (23):**
+**Counters (24):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
@@ -338,26 +318,26 @@ end
 | `silkennet_scc_slashed_total` | — | Total tokens slashed (burned due to cluster stress) |
 | `silkennet_slashing_events_total` | `reason` | Total slashing (burn) events by reason |
 | `silkennet_streamr_broadcast_failures_total` | — | Total Streamr broadcast failures (P2P real-time telemetry delivery) |
-| `silkennet_telemetry_acoustic_overflow_total` | — | Telemetry packets with acoustic_events=255 (uint8 saturation) |
+| `silkennet_telemetry_acoustic_overflow_total` | — | Total telemetry packets with acoustic_events=255 (uint8 saturation) |
 | `silkennet_telemetry_ccm_decrypt_ok_total` | — | FW.2 CCM packets successfully decrypted with valid MIC |
-| `silkennet_telemetry_ccm_fc_replay_rejected_total` | — | FW.2 CCM packets rejected (per-DID Frame Counter not strictly increasing) |
+| `silkennet_telemetry_ccm_fc_replay_rejected_total` | — | FW.2 CCM packets rejected because per-DID Frame Counter was not strictly increasing |
 | `silkennet_telemetry_ccm_mic_fail_total` | — | FW.2 CCM packets rejected due to MIC verification failure |
-| `silkennet_telemetry_fraud_detected_total` | — | Telemetry packets rejected (sensor noise, unknown DID, tamper) |
-| `silkennet_telemetry_log_unpruned_lookups_total` | `caller` | TelemetryLog lookups without partition pruning (degraded path; missing/invalid created_at_iso) |
-| `silkennet_telemetry_processed_total` | — | Telemetry chunks processed by TelemetryUnpackerService |
+| `silkennet_telemetry_fraud_detected_total` | — | Total telemetry packets rejected (sensor noise, unknown DID, tamper) |
+| `silkennet_telemetry_log_unpruned_lookups_total` | `caller` | Total TelemetryLog lookups without partition pruning (degraded path; missing or invalid ISO8601 created_at_iso) |
+| `silkennet_telemetry_processed_total` | — | Total telemetry chunks processed by TelemetryUnpackerService |
 | `silkennet_tinyml_threshold_invalid_reports_total` | — | FW.18b telemetry packets reporting a nonzero rejected-OTA-thresholds counter (per-DID attribution in logs) |
-| `silkennet_treasury_check_errors_total` | `network`, `error_type` | Treasury monitoring RPC errors |
-| `silkennet_w3bstream_signature_fallback_total` | `reason` | W3bstream verifications using SHA256 fallback instead of Ed25519 hardware signature |
+| `silkennet_treasury_check_errors_total` | `network`, `error_type` | Total treasury monitoring RPC errors |
+| `silkennet_w3bstream_signature_fallback_total` | `reason` | Total W3bstream verifications using SHA256 fallback instead of Ed25519 hardware signature |
 
 **Gauges (19):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
 | `silkennet_cluster_entropy_score` | `cluster_id` | Normalized Shannon entropy of Z-value distribution per cluster (0.0-1.0) |
-| `silkennet_db_pool_connections` | `database` | Active (checked out) database connections |
-| `silkennet_db_pool_idle` | `database` | Idle database connections in the pool |
-| `silkennet_db_pool_size` | `database` | Maximum connections in the database pool |
-| `silkennet_db_pool_waiting` | `database` | Threads waiting for a database connection |
+| `silkennet_db_pool_connections` | `database` | Number of active (checked out) database connections |
+| `silkennet_db_pool_idle` | `database` | Number of idle database connections in the pool |
+| `silkennet_db_pool_size` | `database` | Maximum number of connections in the database pool |
+| `silkennet_db_pool_waiting` | `database` | Number of threads waiting for a database connection |
 | `silkennet_oracle_balance` | `network` | Oracle wallet balance in native currency (wei/lamports) |
 | `silkennet_oracle_balance_ratio` | `network` | Oracle balance as ratio to minimum threshold (below 1.0 = critical) |
 | `silkennet_process_resident_memory_bytes` | — | Resident set size (RSS) of the scraped process in bytes (Linux /proc; 0 elsewhere) |
@@ -365,13 +345,13 @@ end
 | `silkennet_puma_max_threads` | — | Puma configured max threads (pool ceiling) |
 | `silkennet_puma_pool_capacity` | — | Puma free thread-pool capacity (0 = saturated → requests queue in backlog) |
 | `silkennet_puma_running_threads` | — | Puma worker threads currently spawned (busy + idle) |
-| `silkennet_rpc_circuit_breaker_open` | `provider` | RPC provider circuit breaker open (1=open/disabled, 0=closed/healthy) |
+| `silkennet_rpc_circuit_breaker_open` | `provider` | Whether RPC provider circuit breaker is open (1=open/disabled, 0=closed/healthy) |
 | `silkennet_ruby_gc_count` | — | Total Ruby GC runs since process start (GC.stat[:count]) |
 | `silkennet_ruby_gc_heap_live_slots` | — | Live objects on the Ruby heap (GC.stat[:heap_live_slots]); sustained growth = leak |
 | `silkennet_ruby_gc_major_count` | — | Major Ruby GC runs since process start (GC.stat[:major_gc_count]) |
-| `silkennet_ruby_threads` | — | Live Ruby threads (Thread.list.size); sustained growth = thread leak |
-| `silkennet_sidekiq_queue_latency_seconds` | `queue` | Latency (age of oldest job) in a Sidekiq queue (all 9 queues) |
-| `silkennet_sidekiq_queue_size` | `queue` | Current size of a Sidekiq queue (all 9 queues) |
+| `silkennet_ruby_threads` | — | Live Ruby threads in the process (Thread.list.size); sustained growth = thread leak |
+| `silkennet_sidekiq_queue_latency_seconds` | `queue` | Latency (age of oldest job) in a Sidekiq queue |
+| `silkennet_sidekiq_queue_size` | `queue` | Current size of a Sidekiq queue |
 
 **Histograms (2):**
 
