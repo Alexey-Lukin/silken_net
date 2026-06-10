@@ -517,7 +517,7 @@ static void MX_CRYP_Init(void)
 - `Acoustic` (byte 7): кількість TinyML-відфільтрованих акустичних подій (кавітація/пилка)
 - `ΔT` (bytes 8-9): `delta_t_seconds` — час між пробудженнями (швидкість метаболізму EBFC)
 - `GrowthPoints` (byte 10): упакований StatusByte `[PanicFlag:1|Status:2|GrowthPoints:5]` (FW.29-PACK; panic=0 у normal-frame, bits 6..5 status, bits 4..0 growth 0..31)
-- `TTL` (byte 11): Time to Live для Mesh-маршрутизації (початково 3, зменшується на 1 при кожному hop)
+- `TTL byte` (byte 11): [FW.18b] бітфілд `[thr_invalid:5|TTL:3]` — нижні 3 біти Time to Live (початково 3, panic 5; −1 на hop), верхні 5 — лічильник відкинутих OTA-порогів (wire-дім [`03_01 §1.6`](03_01_Firmware_Lifecycle_and_DMA))
 - `FW` (bytes 12-13): Firmware Version ID, big-endian (для OTA targeting)
 - `PAD` (bytes 14-15): нульовий padding (резерв, не використовується)
 

@@ -94,6 +94,17 @@ module SilkenNet
       docstring: "FW.2 CCM packets rejected because per-DID Frame Counter was not strictly increasing"
     )
 
+    # [FW.18b] Telemetry packets whose TTL-byte high bits carry a nonzero
+    # rejected-OTA-thresholds counter (firmware/common/ttl_byte.h).
+    # БЕЗ per-DID мітки свідомо: cardinality budget (06_03 §2.9) тримає
+    # реєстр bounded — per-tree атрибуція йде warn-логом (патерн FW.22
+    # acoustic overflow). rate() > 0 = на якомусь дереві корумпований RTC
+    # або зловмисний OTA-payload; конкретний DID — у логах поруч.
+    TINYML_THRESHOLD_INVALID_REPORTS_TOTAL = REGISTRY.counter(
+      :silkennet_tinyml_threshold_invalid_reports_total,
+      docstring: "FW.18b telemetry packets reporting a nonzero rejected-OTA-thresholds counter (per-DID attribution in logs)"
+    )
+
     # -----------------------------------------------------------------------
     # ⚙️ SIDEKIQ QUEUE METRICS (Gauges — sampled at scrape time)
     # -----------------------------------------------------------------------

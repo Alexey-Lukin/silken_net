@@ -387,7 +387,7 @@ Offset | Size | Field            | Значення
 7      | 1    | Acoustic         | TinyML acoustic events (uint8, насичення: >255→255)
 8-9    | 2    | Metabolism       | delta_t_seconds (BE uint16)
 10     | 1    | BioContract      | [PanicFlag:1 bit | Status:2 bits | GrowthPoints:5 bits]
-11     | 1    | TTL              | Mesh Time-To-Live (initial = 3)
+11     | 1    | TTL byte         | [FW.18b] Бітфілд [thr_invalid:5 | TTL:3] (ttl_byte.h). TTL initial=3 (panic 5); верхні 5 біт — saturating лічильник відкинутих OTA-порогів (wire-кап 31; 03_03 §5.4)
 12-13  | 2    | FirmwareVersionID| FIRMWARE_VERSION_ID (BE uint16)
 14     | 1    | VPD index        | [HW.32] BME280 VPD (non-panic): 0–255 ≈ 0–5.1 kPa @ 0.02 kPa/LSB. Panic-пакет: байт належить SEC.10 frame counter
 15     | 1    | Reserved         | Зарезервовано (0). Panic-пакет: SEC.10 frame counter (14-15 BE)
@@ -1077,7 +1077,7 @@ if (panic_frame_counter < 0xFFFF) panic_frame_counter++;
 
 panic_payload[7]  = 0xFF;          // Acoustic = 0xFF = насичений лічильник паніки
 panic_payload[10] = PANIC_FLAG_BIT; // [FW.29] bit 7 = 1 → однозначний маркер panic
-panic_payload[11] = 5;             // TTL = 5 (стандарт 3, паніка 5 — більше стрибків)
+panic_payload[11] = Ttl_Byte_Pack(5, tinyml_threshold_invalid_count); // [FW.18b] TTL=5 у нижніх 3 бітах
 // [SEC.10] Counter BE у байтах 14..15 (вільні PAD bytes після firmware_id у 12..13)
 panic_payload[14] = (uint8_t)(panic_frame_counter >> 8);
 panic_payload[15] = (uint8_t)(panic_frame_counter & 0xFF);

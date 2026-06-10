@@ -14,6 +14,7 @@
 #include <stdint.h>
 
 #include "hal_mock.h"
+#include "../common/ttl_byte.h" /* [FW.18b] байт 11: [thr_invalid:5|TTL:3] */
 
 /* ════════════════════════════════════════════════════════════════════
  * CONSTANTS (from soldier/main.c)
@@ -181,8 +182,10 @@ static void Pack_Soldier_Payload(
     /* Byte 10: Bio-contract packed byte — [FW.29] clear PANIC_FLAG_BIT */
     lora_payload[10] = bio_contract_byte & 0x7F;
 
-    /* Byte 11: TTL */
-    lora_payload[11] = ttl;
+    /* Byte 11 [FW.18b]: бітфілд [thr_invalid:5|TTL:3] — main.c пакує через
+     * Ttl_Byte_Pack(ttl, tinyml_threshold_invalid_count); дзеркало тестів
+     * тримає counter=0 (бітово ≡ legacy), бітфілд критий своїми тестами. */
+    lora_payload[11] = Ttl_Byte_Pack(ttl, 0);
 
     /* Bytes 12-13: Firmware version (big-endian) [FIX: use padding] */
     lora_payload[12] = (uint8_t)(firmware_version_id >> 8);
@@ -215,7 +218,7 @@ static UnpackedPayload Unpack_Soldier_Payload(const uint8_t* p)
     u.metabolism = ((uint16_t)p[8] << 8) | p[9];
     u.bio_status    = (p[10] >> 5) & 0x03;  /* [FW.29-PACK] bits 6..5 */
     u.growth_points = p[10] & 0x1F;          /* [FW.29-PACK] bits 4..0 */
-    u.ttl       = p[11];
+    u.ttl       = Ttl_Byte_Ttl(p[11]); /* [FW.18b] нижні 3 біти — як бекенд */
     u.firmware_version = ((uint16_t)p[12] << 8) | p[13];
     return u;
 }
@@ -563,7 +566,9 @@ TEST(test_pack_max_values) {
      * `>>6 = 1` (stress) — silent tamper demotion. Зараз status=3 коректно зберігається. */
     ASSERT_EQ(u.bio_status, 3);
     ASSERT_EQ(u.growth_points, 31);
-    ASSERT_EQ(u.ttl, 255);
+    /* [FW.18b] TTL — 3 wire-біти: 255 на вході → маска 7. Реальні TTL
+     * (DEFAULT=3, PANIC=5) у діапазон вкладаються з запасом. */
+    ASSERT_EQ(u.ttl, 7);
     ASSERT_EQ(u.firmware_version, 0xFFFF);
 }
 
@@ -4442,6 +4447,58 @@ TEST(test_fw49_unix_from_calendar_known_date) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * [FW.18b] ttl_byte — бітфілд байта 11: [thr_invalid:5 | TTL:3]
+ *
+ * Лічильник відкинутих OTA-порогів їде верхніми 5 бітами TTL-байта;
+ * golden-байти нижче заморожені freeze-contract'ом з бекендом
+ * (spec/services/telemetry_unpacker_service_spec.rb). Тестуємо РЕАЛЬНИЙ
+ * shared-хедер (One-Home), не дзеркало.
+ * ════════════════════════════════════════════════════════════════════ */
+#include "../common/ttl_byte.h"
+
+TEST(test_fw18b_pack_zero_counter_is_legacy_byte) {
+    /* Лічильник 0 → байт бітово ідентичний старому чистому TTL:
+     * стара прошивка для нового бекенда виглядає як counter=0. */
+    ASSERT_EQ(Ttl_Byte_Pack(3, 0), 0x03); /* DEFAULT_TTL */
+    ASSERT_EQ(Ttl_Byte_Pack(5, 0), 0x05); /* PANIC_TTL   */
+}
+
+TEST(test_fw18b_pack_golden_wire) {
+    /* Freeze-contract: ці ж байти звіряє RSpec бекенда. */
+    ASSERT_EQ(Ttl_Byte_Pack(3, 7),  0x3B);
+    ASSERT_EQ(Ttl_Byte_Pack(5, 31), 0xFD);
+}
+
+TEST(test_fw18b_pack_saturates_at_wire_cap) {
+    /* RAM-лічильник сатурує @255, дріт — @31 (5 біт). */
+    ASSERT_EQ(Ttl_Byte_Pack(3, 255), 0xFB);
+    ASSERT_EQ(Ttl_Byte_Invalid(Ttl_Byte_Pack(3, 255)), 31);
+}
+
+TEST(test_fw18b_unpack_roundtrip) {
+    uint8_t b = Ttl_Byte_Pack(5, 17);
+    ASSERT_EQ(Ttl_Byte_Ttl(b), 5);
+    ASSERT_EQ(Ttl_Byte_Invalid(b), 17);
+}
+
+TEST(test_fw18b_decrement_preserves_origin_counter) {
+    /* Mesh-релей: TTL-- не сміє чіпати лічильник origin-Солдата. */
+    uint8_t b = Ttl_Byte_Decrement(Ttl_Byte_Pack(3, 9));
+    ASSERT_EQ(Ttl_Byte_Ttl(b), 2);
+    ASSERT_EQ(Ttl_Byte_Invalid(b), 9);
+
+    /* TTL=0 (мертвий пакет) — байт незмінний, без underflow у лічильник. */
+    uint8_t dead = Ttl_Byte_Pack(0, 9);
+    ASSERT_EQ(Ttl_Byte_Decrement(dead), dead);
+}
+
+TEST(test_fw18b_relay_liveness_masks_counter) {
+    /* Живість пакета = ЛИШЕ нижні 3 біти: ненульовий лічильник при TTL=0
+     * не сміє воскрешати пакет (вічний релей — анти-патерн). */
+    ASSERT_EQ(Ttl_Byte_Ttl(Ttl_Byte_Pack(0, 31)), 0);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * ENTRY POINT
  * ════════════════════════════════════════════════════════════════════ */
 
@@ -4805,6 +4862,14 @@ int main(void)
     RUN(test_fw49_elapsed_backward_clock_returns_zero);
     RUN(test_fw49_unix_from_calendar_rtc_epoch);
     RUN(test_fw49_unix_from_calendar_known_date);
+
+    printf("\n[FW.18b] ttl_byte бітфілд [thr_invalid:5|TTL:3]:\n");
+    RUN(test_fw18b_pack_zero_counter_is_legacy_byte);
+    RUN(test_fw18b_pack_golden_wire);
+    RUN(test_fw18b_pack_saturates_at_wire_cap);
+    RUN(test_fw18b_unpack_roundtrip);
+    RUN(test_fw18b_decrement_preserves_origin_counter);
+    RUN(test_fw18b_relay_liveness_masks_counter);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n\n", tests_passed, tests_failed);

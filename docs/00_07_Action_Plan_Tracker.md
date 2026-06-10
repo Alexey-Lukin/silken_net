@@ -504,8 +504,9 @@
 - Лишається: · [ ] 👤 тренування Path B log-mel 5-class (Бушин/Любченко) → `silken_net_audio_model.h` (заміна stub через `__has_include`) · [ ] 🔗 verify Tensor Arena (`arm-none-eabi-size`) + uncomment Run_Inference call-site (Phase 1.5) — після моделі (DSP golden-vector тести → FW.25, One-Home) · [ ] 🟡 bench-формальність: silicon float32-confirm CMSIS-шляху (один прогін на платі) · [ ] 🌿 FW.4-EXT (post-TRL 7): 5-й клас `fauna_activity` dawn/dusk (`03_03 §10`), залежить від UNI.11+UNI.13a; альт. ACI descriptor
 
 #### FW.18b — OTA threshold invalid counter (production-visibility)
-- **P2** · 🔗 · → [`03_03 §5.4`](03_03_TinyML_Acoustic_Inference)
-- **✅ Counter канонізовано ([`03_03 §5.4`](03_03_TinyML_Acoustic_Inference)):** `TinyML_Apply_Thresholds`/`Validate_Threshold` відкидає NaN/out-of-range/інверсію OTA-порогів → default (інваріант `SILENCE<WARNING<CRITICAL` збережено); saturating `tinyml_threshold_invalid_count` (DR1 `WARN_ESC`) + host-тести. · [ ] 🔗 wiring лічильника у LoRa-пакет (bit-redistribution) · [ ] 🔗 backend Prometheus `tinyml_threshold_invalid_total{soldier_did}` + Grafana
+- **P2** · 👤 · → [`03_03 §5.4`](03_03_TinyML_Acoustic_Inference)
+- **✅ Counter канонізовано ([`03_03 §5.4`](03_03_TinyML_Acoustic_Inference)):** `TinyML_Apply_Thresholds`/`Validate_Threshold` відкидає NaN/out-of-range/інверсію OTA-порогів → default (інваріант `SILENCE<WARNING<CRITICAL` збережено); saturating `tinyml_threshold_invalid_count` (DR1 `WARN_ESC`) + host-тести.
+- **✅ (2026-06-10) wiring + метрика:** bit-redistribution байта 11 — бітфілд `[thr_invalid:5|TTL:3]` (One-Home `firmware/common/ttl_byte.h`; legacy-сумісно: counter=0 ⇒ бітово старий TTL; mesh-релей не чіпає лічильник origin'а) + backend маскує `mesh_ttl` і інкрементує `silkennet_tinyml_threshold_invalid_reports_total` — **без `{soldier_did}`** (cardinality budget [`06_03 §2.9`](06_03_Prometheus_Observability); DID — у warn-лозі, патерн FW.22). Freeze-contract goldens `test_soldier_logic.c` ↔ `telemetry_unpacker_service_spec.rb`. · [ ] 👤 Grafana-панель/alert (`rate(...[15m]) > 0`) — імпорт разом із S2.2
 
 #### FW.8 — CRITICAL_Z_MIN/MAX hardcoded
 - **P1** · 🟡 · → [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)

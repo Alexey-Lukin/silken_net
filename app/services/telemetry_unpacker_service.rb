@@ -183,10 +183,26 @@ class TelemetryUnpackerService < ApplicationService
       # (`Wallet#lock_and_mint!` поріг 10000 SCC), а wire-байт виправлено
       # під дизайн з docs/03_01 §1.6 і docs/03_05 §FW.2.
       growth_points: emission_eligible_growth_points(status_byte, bio_status),
-      mesh_ttl: parsed_data[6],
+      # [FW.18b] Байт 11 — бітфілд [thr_invalid:5 | TTL:3], One-Home
+      # firmware/common/ttl_byte.h. Стара прошивка (чистий TTL ≤ 5) дає
+      # ті самі нижні біти і counter=0 — маска backward-сумісна.
+      mesh_ttl: parsed_data[6] & 0x07,
       firmware_version_id: (firmware_id.positive? ? firmware_id : nil),
       bio_status: bio_status
     }
+
+    # [FW.18b] Верхні 5 біт TTL-байта — saturating лічильник відкинутих
+    # OTA-порогів (03_03 §5.4). Метрика без per-DID мітки (cardinality
+    # budget 06_03 §2.9, патерн FW.22) — конкретне дерево і значення
+    # лічильника атрибутуються warn-логом.
+    threshold_invalid = (parsed_data[6] >> 3) & 0x1F
+    if threshold_invalid.positive?
+      SilkenNet::Metrics::TINYML_THRESHOLD_INVALID_REPORTS_TOTAL.increment
+      Rails.logger.warn(
+        "🎚️ [FW.18b] #{hex_did}: відкинуті OTA-пороги TinyML — лічильник #{threshold_invalid}" \
+        "#{threshold_invalid == 31 ? ' (wire-сатурація, реальне значення може бути більшим)' : ''}"
+      )
+    end
 
     # [FW.22] Firmware saturates acoustic_events at 255 (uint16 → uint8 clamped).
     # Value 255 likely indicates overflow — real count may be higher.

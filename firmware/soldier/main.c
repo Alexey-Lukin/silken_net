@@ -32,6 +32,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 // [SEC.11 / FW.30] Pure-C HMAC-SHA256 деривація cold-start
 // стану Лоренца — повний parity з backend SeedDerivation (без mbedTLS).
 #include "../common/lorenz_seed.h"
+#include "../common/ttl_byte.h"   // [FW.18b] бітфілд байта 11: [thr_invalid:5|TTL:3]
 
 // Підключаємо скомпільовану нейромережу TinyML.
 // Якщо реальної моделі ще немає (BLOCKER-1+2, docs/03_03), fallback на
@@ -882,9 +883,9 @@ static inline float TinyML_Validate_Threshold(float raw, float fallback_default)
 // "OTA threshold inversion rate per Soldier". Скидається на 0 тільки при
 // VBAT loss / cold-boot (SRAM ініціалізується нулями).
 //
-// Wiring до телеметрії — окрема задача (потребує перерозподілу бітів у
-// 21-байтному пакеті або додавання поля до status byte); до того часу
-// counter спостережний через GDB/SEGGER під час лабораторного debugging.
+// Wiring до телеметрії ✅ [FW.18b]: верхні 5 біт байта 11 (TTL-байт) —
+// бітфілд [thr_invalid:5 | TTL:3], One-Home ../common/ttl_byte.h; wire-кап
+// 31 (RAM-сатурація лишається @255 для GDB/SEGGER-діагностики).
 uint8_t tinyml_threshold_invalid_count = 0;
 
 // Перевірка пари: гарантує warning < critical, інакше дефолти на обидва.
@@ -1619,9 +1620,11 @@ int main(void)
     lora_payload[8] = (uint8_t)(delta_t_seconds >> 8);
     lora_payload[9] = (uint8_t)(delta_t_seconds & 0xFF);
 
-    // Байт 11: TTL (Time to Live) для Mesh-маршрутизації.
-    // Початкове життя пакета = 3 стрибки.
-    lora_payload[11] = DEFAULT_TTL;
+    // Байт 11 [FW.18b]: бітфілд [thr_invalid:5 | TTL:3] (../common/ttl_byte.h).
+    // TTL = 3 стрибки; верхні 5 біт — saturating лічильник відкинутих
+    // OTA-порогів (03_03 §5.4), wire-кап 31. За нульового лічильника байт
+    // бітово ідентичний старому чистому TTL.
+    lora_payload[11] = Ttl_Byte_Pack(DEFAULT_TTL, tinyml_threshold_invalid_count);
 
     // [FIX: Firmware Version] Байти 12-13: версія прошивки (big-endian).
     // Дозволяє серверу знати яка прошивка на кожному дереві, для OTA targeting.
@@ -1985,7 +1988,10 @@ int main(void)
                 }
                 // Сценарій Б: Mesh Естафета (Чужі дані на 16 байт)
                 else if (incoming_lora_size == 16) {
-                    uint8_t incoming_ttl = decrypted_rx_payload[11];
+                    // [FW.18b] Байт 11 — бітфілд: живість пакета = лише
+                    // нижні 3 біти TTL, верхні 5 — лічильник origin-Солдата
+                    // (інакше чужий ненульовий лічильник = вічний релей).
+                    uint8_t incoming_ttl = Ttl_Byte_Ttl(decrypted_rx_payload[11]);
 
                     if (incoming_ttl > 0) {
                         // Витягуємо DID відправника (перші 4 байти)
@@ -2011,8 +2017,8 @@ int main(void)
 
                         // Якщо пакет ще "живий", І ми його ще не пересилали
                         if (!is_known_did) {
-                            // Зменшуємо TTL
-                            decrypted_rx_payload[11] = incoming_ttl - 1;
+                            // Зменшуємо TTL (лічильник origin'а — недоторканий)
+                            decrypted_rx_payload[11] = Ttl_Byte_Decrement(decrypted_rx_payload[11]);
 
                             // Зашифровуємо змінений пакет назад для зберігання
                             HAL_CRYP_Encrypt(&hcryp, (uint32_t*)decrypted_rx_payload, 4, (uint32_t*)mesh_relay_payload, 1000);
@@ -2247,8 +2253,9 @@ void Trigger_Emergency_LoRa_TX(void)
     // [FW.29] Set PANIC_FLAG in StatusByte for unambiguous panic detection
     panic_payload[10] = PANIC_FLAG_BIT;
 
-    // 3. Збільшуємо TTL до 5, щоб пакет вижив довше і точно дійшов
-    panic_payload[11] = PANIC_TTL;
+    // 3. TTL = 5, щоб пакет вижив довше і точно дійшов; верхні 5 біт —
+    //    лічильник FW.18b (бітфілд ttl_byte.h, як у звичайному пакеті)
+    panic_payload[11] = Ttl_Byte_Pack(PANIC_TTL, tinyml_threshold_invalid_count);
 
     // [SEC.10] Лічильник panic-кадрів у байтах PAD 14..15 (BE).
     // Бекенд читає `pad_data[2..3].unpack1("n")` як nonce для SETNX.

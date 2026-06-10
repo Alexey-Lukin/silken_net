@@ -318,7 +318,7 @@ end
 > При зміні реєстру в коді — **регенерувати ЛИШЕ цю таблицю** (команда в кінці).
 > Де інкрементується/оновлюється кожна — `grep -rn "SilkenNet::Metrics::<CONST>" app/`.
 >
-> **Разом: 44 метрики = 23 counters + 19 gauges + 2 histograms.**
+> **Разом: 45 метрик = 24 counters + 19 gauges + 2 histograms.**
 
 **Counters (23):**
 
@@ -345,6 +345,7 @@ end
 | `silkennet_telemetry_fraud_detected_total` | — | Telemetry packets rejected (sensor noise, unknown DID, tamper) |
 | `silkennet_telemetry_log_unpruned_lookups_total` | `caller` | TelemetryLog lookups without partition pruning (degraded path; missing/invalid created_at_iso) |
 | `silkennet_telemetry_processed_total` | — | Telemetry chunks processed by TelemetryUnpackerService |
+| `silkennet_tinyml_threshold_invalid_reports_total` | — | FW.18b telemetry packets reporting a nonzero rejected-OTA-thresholds counter (per-DID attribution in logs) |
 | `silkennet_treasury_check_errors_total` | `network`, `error_type` | Treasury monitoring RPC errors |
 | `silkennet_w3bstream_signature_fallback_total` | `reason` | W3bstream verifications using SHA256 fallback instead of Ed25519 hardware signature |
 

@@ -183,6 +183,46 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     end
   end
 
+  describe "[FW.18b] TTL-байт як бітфілд [thr_invalid:5 | TTL:3]" do
+    # Freeze-contract: ці ж golden-байти заморожені у firmware
+    # (test_soldier_logic.c, test_fw18b_pack_golden_wire) — One-Home
+    # firmware/common/ttl_byte.h. 0x3B = Pack(ttl=3, invalid=7);
+    # 0xFD = Pack(ttl=5, invalid=31, wire-сатурація). Метрика без per-DID
+    # мітки (cardinality budget 06_03 §2.9) — DID атрибутується логом.
+    let(:counter) { SilkenNet::Metrics::TINYML_THRESHOLD_INVALID_REPORTS_TOTAL }
+
+    it "маскує mesh_ttl до нижніх 3 біт і рахує ненульовий звіт лічильника" do
+      before_val = counter.get
+      chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 0x3B)
+
+      allow(Rails.logger).to receive(:warn).and_call_original
+      described_class.call(chunk)
+
+      expect(Rails.logger).to have_received(:warn).with(/FW\.18b.*#{extracted_did}.*лічильник 7/)
+      expect(TelemetryLog.last.mesh_ttl).to eq(3)
+      expect(counter.get).to eq(before_val + 1.0)
+    end
+
+    it "читає wire-сатурований лічильник 31 при panic-TTL 5 і каже про сатурацію" do
+      chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 0xFD)
+
+      allow(Rails.logger).to receive(:warn).and_call_original
+      described_class.call(chunk)
+
+      expect(Rails.logger).to have_received(:warn).with(/лічильник 31 \(wire-сатурація/)
+      expect(TelemetryLog.last.mesh_ttl).to eq(5)
+    end
+
+    it "legacy-байт (чистий TTL, лічильник 0) не торкається метрики" do
+      before_val = counter.get
+      chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+      described_class.call(chunk)
+
+      expect(TelemetryLog.last.mesh_ttl).to eq(3)
+      expect(counter.get).to eq(before_val)
+    end
+  end
+
   describe "interpret_status" do
     it "maps status codes 1, 2, 3 to stress, anomaly, tamper_detected" do
       # [FW.29-PACK] Status byte layout: [PanicFlag:1 (bit 7) | Status:2 (bits 6..5) | GP:5 (bits 4..0)]
