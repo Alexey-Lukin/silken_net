@@ -109,14 +109,27 @@ RSpec.describe TelemetryLog, type: :model do
   end
 
   describe "#relayed_via_mesh?" do
-    it "returns true when TTL decreased from initial" do
-      log = build(:telemetry_log, mesh_ttl: 3)
+    # Стартовий TTL залежить від типу пакета (firmware DEFAULT_TTL=3 /
+    # PANIC_TTL=5) — до FW.29-panic-персистенції default=5 позначав
+    # «релейнутим» КОЖЕН direct normal-пакет.
+    it "returns false for a direct normal packet (TTL still at 3)" do
+      log = build(:telemetry_log, mesh_ttl: 3, panic: false)
+      expect(log.relayed_via_mesh?).to be false
+    end
+
+    it "returns true for a relayed normal packet (TTL decremented below 3)" do
+      log = build(:telemetry_log, mesh_ttl: 2, panic: false)
       expect(log.relayed_via_mesh?).to be true
     end
 
-    it "returns false when TTL equals initial" do
-      log = build(:telemetry_log, mesh_ttl: 5)
+    it "returns false for a direct panic packet (TTL still at 5)" do
+      log = build(:telemetry_log, mesh_ttl: 5, panic: true)
       expect(log.relayed_via_mesh?).to be false
+    end
+
+    it "returns true for a relayed panic packet (TTL decremented below 5)" do
+      log = build(:telemetry_log, mesh_ttl: 4, panic: true)
+      expect(log.relayed_via_mesh?).to be true
     end
   end
 

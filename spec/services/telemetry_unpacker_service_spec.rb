@@ -79,6 +79,14 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     expect(log.gateway_attested).to be(false)
   end
 
+  # [FW.29] PanicFlag (біт 7 StatusByte) персиститься — панічність queryable,
+  # relayed_via_mesh? знає стартовий TTL (3 normal / 5 panic)
+  it "does not mark a normal packet as panic (PanicFlag bit 7 = 0)" do
+    chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+    described_class.call(chunk)
+    expect(TelemetryLog.last.panic).to be(false)
+  end
+
   # [L1 QATT] Походження батча протягується у кожен рядок (05_02 ladder L1)
   it "stamps gateway_attested on every row when the batch was Queen-attested" do
     chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
@@ -1112,6 +1120,9 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       chunk = build_panic_chunk(did_hex, 42)
       expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
       expect(SilkenNet::Metrics::PANIC_REPLAY_REJECTED_TOTAL).not_to have_received(:increment)
+      # [FW.29] PanicFlag персиститься — панічний рядок queryable,
+      # relayed_via_mesh? знає стартовий TTL (PANIC_TTL=5)
+      expect(TelemetryLog.last.panic).to be(true)
     end
 
     it "rejects a replayed panic packet (same counter twice)" do
@@ -1293,6 +1304,21 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       expect(log.mesh_ttl).to eq(3)
       expect(SilkenNet::Metrics::TELEMETRY_CCM_DECRYPT_OK_TOTAL).to have_received(:increment)
       expect(SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL).not_to have_received(:increment)
+    end
+
+    it "persists the PanicFlag from the CCM status byte" do
+      # [FW.29] Soldier_Build_CCM_LoRa_Packet кладе той самий StatusByte
+      # у CCM-плейн — біт 7 (0x80) мусить доїхати до telemetry_logs.panic.
+      normal = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                               dt: 100, status: 0, ttl: 3, fc: 44)
+      panic  = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 255,
+                               dt: 100, status: 0x80, ttl: 5, fc: 45)
+
+      described_class.call(normal)
+      expect(TelemetryLog.last.panic).to be(false)
+
+      described_class.call(panic)
+      expect(TelemetryLog.last.panic).to be(true)
     end
 
     it "rejects a chunk with a tampered ciphertext byte" do

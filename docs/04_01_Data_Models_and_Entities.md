@@ -522,7 +522,8 @@ any ──report_fault──► faulty
 | `z_value` | decimal | Z-значення Атрактора Лоренца |
 | `piezo_voltage_mv` | integer | П'єзодатчик (сейсміка) |
 | `acoustic_events` | integer | Кількість акустичних подій (TinyML) |
-| `mesh_ttl` | integer | Time-To-Live пакету в mesh-мережі |
+| `mesh_ttl` | integer | Time-To-Live пакету в mesh-мережі (на прибутті; стартовий — 3 normal / 5 panic, дзеркало firmware `DEFAULT_TTL`/`PANIC_TTL`) |
+| `panic` | boolean | **[FW.29]** Панічний пакет (PanicFlag, біт 7 StatusByte; default `false`). Єдина надійна wire-ознака паніки — `acoustic_events=255` колізує з FW.22-сатурацією |
 | `queen_uid` | string | UID Королеви-ретранслятора |
 | `oracle_status` | enum | **[BLOCKER-12 FIX]** `pending / dispatched / fulfilled / failed` (string-backed Rails enum з prefix `oracle_status_`). Забезпечує type safety, валідацію та автоматичні scope-методи (`oracle_status_dispatched`, `oracle_status_fulfilled` тощо). Default: `pending`. |
 | `firmware_version_id` | integer | Версія прошивки з padding-байтів |
@@ -546,7 +547,7 @@ any ──report_fault──► faulty
 
 | Метод | Опис |
 |-------|------|
-| `relayed_via_mesh?(initial_ttl=5)` | `mesh_ttl < initial_ttl` |
+| `relayed_via_mesh?` | `mesh_ttl < стартовий TTL типу пакета` (`panic? ? 5 : 3` — `INITIAL_TTL_PANIC/NORMAL`). До FW.29-персистенції давній default 5 позначав «релейнутим» кожен direct normal-пакет |
 | `critical?` | `anomaly?` або `tamper_detected?` |
 | `healthy?` | homeostasis + temp < 50 + acoustic < 20 |
 | `optimal?` | healthy + voltage > 3600 + z_value 0.1..0.5 |

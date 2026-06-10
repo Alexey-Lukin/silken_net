@@ -1903,7 +1903,8 @@ CREATE TABLE public.telemetry_logs (
     humidity numeric,
     pressure numeric,
     vpd numeric,
-    gateway_attested boolean DEFAULT false NOT NULL
+    gateway_attested boolean DEFAULT false NOT NULL,
+    panic boolean DEFAULT false NOT NULL
 )
 PARTITION BY RANGE (created_at);
 
@@ -1962,7 +1963,8 @@ CREATE TABLE public.telemetry_logs_default (
     humidity numeric,
     pressure numeric,
     vpd numeric,
-    gateway_attested boolean DEFAULT false NOT NULL
+    gateway_attested boolean DEFAULT false NOT NULL,
+    panic boolean DEFAULT false NOT NULL
 );
 
 
@@ -2001,7 +2003,8 @@ CREATE TABLE public.telemetry_logs_y2026m01 (
     humidity numeric,
     pressure numeric,
     vpd numeric,
-    gateway_attested boolean DEFAULT false NOT NULL
+    gateway_attested boolean DEFAULT false NOT NULL,
+    panic boolean DEFAULT false NOT NULL
 );
 
 
@@ -2040,7 +2043,8 @@ CREATE TABLE public.telemetry_logs_y2026m02 (
     humidity numeric,
     pressure numeric,
     vpd numeric,
-    gateway_attested boolean DEFAULT false NOT NULL
+    gateway_attested boolean DEFAULT false NOT NULL,
+    panic boolean DEFAULT false NOT NULL
 );
 
 
@@ -2079,7 +2083,8 @@ CREATE TABLE public.telemetry_logs_y2026m03 (
     humidity numeric,
     pressure numeric,
     vpd numeric,
-    gateway_attested boolean DEFAULT false NOT NULL
+    gateway_attested boolean DEFAULT false NOT NULL,
+    panic boolean DEFAULT false NOT NULL
 );
 
 
@@ -2118,7 +2123,8 @@ CREATE TABLE public.telemetry_logs_y2026m04 (
     humidity numeric,
     pressure numeric,
     vpd numeric,
-    gateway_attested boolean DEFAULT false NOT NULL
+    gateway_attested boolean DEFAULT false NOT NULL,
+    panic boolean DEFAULT false NOT NULL
 );
 
 
@@ -2157,7 +2163,8 @@ CREATE TABLE public.telemetry_logs_y2026m05 (
     humidity numeric,
     pressure numeric,
     vpd numeric,
-    gateway_attested boolean DEFAULT false NOT NULL
+    gateway_attested boolean DEFAULT false NOT NULL,
+    panic boolean DEFAULT false NOT NULL
 );
 
 
@@ -2196,7 +2203,8 @@ CREATE TABLE public.telemetry_logs_y2026m06 (
     humidity numeric,
     pressure numeric,
     vpd numeric,
-    gateway_attested boolean DEFAULT false NOT NULL
+    gateway_attested boolean DEFAULT false NOT NULL,
+    panic boolean DEFAULT false NOT NULL
 );
 
 
@@ -7135,6 +7143,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260610120000'),
 ('20260607180000'),
 ('20260524120000'),
 ('20260509120000');

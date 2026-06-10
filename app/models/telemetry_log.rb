@@ -72,9 +72,17 @@ class TelemetryLog < ApplicationRecord
 
   # --- МЕТОДИ (Topology Analysis) ---
 
-  # Перевірка, чи пакет пройшов через Mesh-мережу інших дерев
-  def relayed_via_mesh?(initial_ttl = 5)
-    mesh_ttl < initial_ttl
+  # Стартовий TTL пакета на дроті — дзеркало firmware/soldier/main.c
+  # (DEFAULT_TTL / PANIC_TTL); значення правити там, тут лише читати.
+  INITIAL_TTL_NORMAL = 3
+  INITIAL_TTL_PANIC  = 5
+
+  # Чи пройшов пакет через Mesh-ретрансляцію інших дерев: кожен hop
+  # декрементує TTL, тож прибуття з TTL нижче стартового = релей.
+  # Стартовий TTL залежить від типу пакета — звичайний народжується з 3,
+  # панічний з 5 (panic персиститься з PanicFlag StatusByte, FW.29).
+  def relayed_via_mesh?
+    mesh_ttl < (panic? ? INITIAL_TTL_PANIC : INITIAL_TTL_NORMAL)
   end
 
   # Швидка перевірка на критичність для UI

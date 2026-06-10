@@ -147,6 +147,11 @@ class TelemetryUnpackerService < ApplicationService
     pad_data = parsed_data[FIRMWARE_PAD_INDEX]
     firmware_id = pad_data[0..1].unpack1("n")
 
+    # [FW.29] PanicFlag (біт 7 StatusByte) — єдина надійна ознака панічного
+    # пакета на дроті (acoustic=255 колізує з FW.22-сатурацією). Персистимо
+    # на записі: панічність queryable + relayed_via_mesh? знає стартовий TTL.
+    panic = status_byte.anybits?(PANIC_FLAG_BIT)
+
     # [SEC.10] Frame Counter anti-replay для panic packets.
     # Соломонова сторожа панічного каналу: panic_frame_counter (BE у байтах
     # 14..15 = pad_data[2..3]) інкрементується soldier'ом перед кожним
@@ -154,7 +159,7 @@ class TelemetryUnpackerService < ApplicationService
     # replay одного «chainsaw detected» = false fire alert + евакуація +
     # втрата довіри до системи. Поза-panic пакети нічого не платять
     # (counter-перевірка пропускається).
-    if (status_byte & PANIC_FLAG_BIT).nonzero?
+    if panic
       panic_counter = pad_data[2..3].to_s.unpack1("n").to_i
       if panic_counter.positive? && panic_replayed?(hex_did, panic_counter)
         Rails.logger.warn(
@@ -188,7 +193,8 @@ class TelemetryUnpackerService < ApplicationService
       # ті самі нижні біти і counter=0 — маска backward-сумісна.
       mesh_ttl: parsed_data[6] & 0x07,
       firmware_version_id: (firmware_id.positive? ? firmware_id : nil),
-      bio_status: bio_status
+      bio_status: bio_status,
+      panic: panic
     }
 
     # [FW.18b] Верхні 5 біт TTL-байта — saturating лічильник відкинутих
@@ -343,7 +349,10 @@ class TelemetryUnpackerService < ApplicationService
       growth_points: emission_eligible_growth_points(status_byte, bio_status),
       mesh_ttl: mesh_ttl,
       firmware_version_id: (fw_nibble.positive? ? fw_nibble : nil),
-      bio_status: bio_status
+      bio_status: bio_status,
+      # [FW.29] PanicFlag — той самий StatusByte їде і в CCM-плейні
+      # (Soldier_Build_CCM_LoRa_Packet приймає status_byte як є).
+      panic: status_byte.anybits?(PANIC_FLAG_BIT)
     }
 
     if acoustic == 255

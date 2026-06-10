@@ -9,7 +9,9 @@ FactoryBot.define do
     acoustic_events { 5 }
     metabolism_s { 120 }
     growth_points { 10 }
-    mesh_ttl { 5 }
+    # Direct normal-пакет: стартовий DEFAULT_TTL=3 без жодного relay
+    # (5 — wire-неможливе для non-panic; TelemetryLog::INITIAL_TTL_*).
+    mesh_ttl { 3 }
     z_value { 0.35 }
     rssi { -65 }
 
