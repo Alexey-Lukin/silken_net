@@ -75,7 +75,7 @@
 - `UNI.13`/`UNI.14` **P0** — верифікувати посади науковців ЧМА і СЄУ (офіційні сайти)
 
 ### 🔗 Заблоковано (чекає іншого)
-- `FW.2` **P0** — AES-128-CCM (backend-parser ✅; firmware emit + `CRYP_AES_CCM` verify → STM32 bench). Закриває ECB→CCM, MIC, `SEC.10` panic auth, `FW.29`. FC/nonce/cold-boot SSOT → `03_05` (📐 КАНОНІЧНЕ ДЖЕРЕЛО). NB: `FW.23` OTA auth — окремий HMAC-механізм, уже закрито (§3.4б); FW.2 його **не** закриває
+- `FW.2` **P0** — AES-128-CCM (backend-parser ✅; firmware emit + `CRYP_AES_CCM` verify → STM32 bench). Закриває ECB→CCM, MIC, `SEC.10` panic auth, `FW.29`. FC/nonce/cold-boot SSOT → `03_05` (📐 КАНОНІЧНЕ ДЖЕРЕЛО). NB: `FW.23` OTA auth — окремий HMAC-механізм, канонізовано в §3.4б (live-compute residual тримає FW.23); FW.2 його **не** закриває
 - Multi-signal slashing de-risk (`05_05 §7`) — код ✅: усі 3 прямі сигнали в `InsightGeneratorService`-евристиці (VPD-gate + sap-term + acoustic/cavitation-term; inert, ENV-calibration-gated; sap+acoustic через max() не суму). Активація → ground-truth калібрування ваг (`05_05 §8`) + ML-retrain (vpd-фіча) + firmware VPD (`HW.32`). Багатше on-device acoustic-джерело → TinyML unblock (`Run_Inference` закоментована, §03)
 - SLASH-1 deeper (B/insurance auto-route, A/B/C cause_classification, cause-driven pf uplift) → DAO/founder
 
@@ -522,7 +522,7 @@
 #### FW.23 — OTA firmware broadcast: ECB без автентифікації
 - **P1** · 🤖🟡 · → [`03_05 §3.4б`](03_05_Hardware_Symmetric_Crypto_and_Security)
 - **✅ HMAC-SHA256 OTA auth канонізовано ([`03_05 §3.4б`](03_05_Hardware_Symmetric_Crypto_and_Security)):** per-cluster K_ota (HKDF info `silken-ota-hmac-v1`) → `OtaPackagerService` 3× `[0x9B]` trailer (anti-replay/truncation: version_id+total_chunks у тезі) → Queen stateless relay → Soldier dual-gate (magic `RITE` + constant-time HMAC + fail-safe magic-wipe). Backend+wire+gate-logic ✅ (RSpec+host покрито, byte-accurate до wire). Лишається:
-  - [ ] 🤖 wire pure-C `silken_sha256.h` HMAC compute + `secure_compare` у Soldier dual-gate (**mbedTLS не потрібен** — той самий шлях, яким FW.30 закрив seed-HMAC; зараз stub `hmac_complete = segments-received`, реальний compute відсутній).
+  - [ ] 🤖 wire HMAC compute у Soldier dual-gate — зараз **інертний** (stub лічить 3 segments; gate-логіка `OTA_Verify_Dual_Gate` готова, але не викликається → tampered bytecode з валідним CRC32 пройшов би). Compute = pure-C `Silken_Hmac_Sha256` (`silken_sha256.h`, FW.30; mbedTLS не потрібен); бракує ще K_ota Flash-loader (`0x0803D000`) + `version_id` на дроті — деталі [`03_05 §3.4б`](03_05_Hardware_Symmetric_Crypto_and_Security).
   - [ ] 🟡 bench: K_ota на Soldier Protected Flash (factory SEC.3) + e2e dual-gate на STM32.
 
 #### FW.25 — TinyML DSP-path: Path B (log-mel) SELECTED [DECISION 2026-05-22]

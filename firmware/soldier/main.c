@@ -1945,7 +1945,7 @@ int main(void)
 
                                 if (crc_ok && hmac_complete) {
                                     // TODO: Обчислити очікувану HMAC-SHA256 через
-                                    //       silken_hmac_sha256(K_ota, ota_buffer[0..data_len]
+                                    //       Silken_Hmac_Sha256(K_ota, ota_buffer[0..data_len]
                                     //       || version_id_be || total_chunks_be) — K_ota
                                     //       HKDF-derived per-cluster з Flash. Далі
                                     //       OTA_Verify_Dual_Gate(…, expected_hmac, received_hmac_tag).
