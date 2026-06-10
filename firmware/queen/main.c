@@ -27,6 +27,8 @@
 #include "coap_pdu.h"
 // [FW.3/FW.56] Повна CoAP-PUT розмова з модемом (pure-оркестратор)
 #include "sim7070_coap.h"
+
+#include "uart_rx_ring.h"
 // [L1 QATT] Розкладка підписаного батч-конверта (pure, host-tested) — 03_05 §2.2
 #include "../common/queen_attest.h"
 // [L1 QATT] Ed25519 (Monocypher, pinned submodule — 03_01 §12.5): голос Королеви
@@ -282,6 +284,16 @@ volatile int8_t current_snr  = 0;       // [E.8] SNR поточного обро
 // [FW.3] Один AT-двигун на Королеву: токенайзер переживає транзакції, бо
 // URC (+CCOAPNMI, +CDNSGIP) вільні лунати і після фінала попередньої команди.
 static AtEngine at_engine_state;
+
+// [FW.3] Circular-DMA RX: кільце слухає модем БЕЗПЕРЕРВНО — байти і URC, що
+// прилітають поза вікном читання (запізнілий +CCOAPNMI, RDY після ребуту
+// модема), більше не вмирають в ORE. Розмір з запасом: найдовша лінія —
+// +CCOAPNMI з hex-PDU відповіді (AT_LINE_MAX), решта — короткі фінали.
+#define UART_RX_RING_SIZE 512u
+static uint8_t           uart_rx_buf[UART_RX_RING_SIZE];
+static UartRxRing        uart_rx_ring;
+static volatile uint32_t uart_rx_wraps;   // TC-переривання = повний оберт кільця
+static DMA_HandleTypeDef hdma_usart1_rx;
 static char     coap_server_ip[16];     // [FW.56] CDNSGIP-кеш (CCOAPNEW хоче IP, не домен)
 static uint16_t coap_mid;               // [FW.56] CoAP Message-ID наших PUT'ів
 
@@ -433,6 +445,7 @@ static void MX_USART1_UART_Init(void);
 static void MX_SUBGHZ_Init(void);
 static void MX_CRYP_Init(void); // Ініціалізація шифрування
 static void MX_IWDG_Init(void); // [PLAN 2.6] Independent Watchdog — auto-recovery from HardFault
+static void MX_USART1_RX_DMA_Init(void); // [FW.3] circular-DMA вухо модема
 
 /* USER CODE BEGIN PFP */
 // Функції-обгортки для роботи з модемом та транзитом
@@ -476,6 +489,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART1_UART_Init(); // UART для розмови з SIM7070G (115200 baud)
+  MX_USART1_RX_DMA_Init(); // [FW.3] кільце слухає модем з першої секунди
   MX_SUBGHZ_Init();
   Load_AES_Key();        // [FW.1] Завантажити per-device ключ з Flash ПЕРЕД ініціалізацією CRYP
   Load_CoAP_Key();       // [ARCH.42] CoAP AES-256 магістраль (KEYC; м'який fallback — нулі)
@@ -974,20 +988,92 @@ static void Restore_ECB_Mode(void)
     }
 }
 
-// [FW.3] UART-клей під чистий AT-двигун (at_engine.h). Стара схема читала
-// 128 байт «до упору» — HAL_UART_Receive вертався лише по повному таймауту,
-// тож КОЖЕН обмін коштував увесь бюджет, а "OK" шукався підстрокою будь-де
-// (навіть усередині слова). Тепер: байт за байтом, early-exit на фіналі,
-// владар дедлайну — UartAtIo; сам протокол — pure-хедери, host-тестовані
-// на скриптованому модемі (firmware/test/test_at_engine.c).
+// [FW.3] UART-клей під чистий AT-двигун (at_engine.h). Еволюція у три кроки:
+// (1) стара схема читала 128 байт «до упору» — кожен обмін коштував увесь
+// timeout; (2) побайтовий HAL_UART_Receive — early-exit, але глухота поза
+// викликом (ORE губив запізнілі URC); (3) тепер — circular-DMA кільце
+// (uart_rx_ring.h, host-тестоване): залізо пише завжди, ми лише знімаємо.
+// Владар дедлайну — UartAtIo; протокол — pure-хедери (test_at_engine.c).
 typedef struct { uint32_t deadline_tick; } UartAtIo;
+
+// [FW.3] Ініціалізація вуха: DMA1_Channel1 ← DMAMUX(USART1_RX), circular,
+// побайтово. При HAL-вендорингу (CubeMX) NVIC/handler переїдуть у *_it.c.
+static void MX_USART1_RX_DMA_Init(void)
+{
+    __HAL_RCC_DMAMUX1_CLK_ENABLE();
+    __HAL_RCC_DMA1_CLK_ENABLE();
+
+    hdma_usart1_rx.Instance                 = DMA1_Channel1;
+    hdma_usart1_rx.Init.Request             = DMA_REQUEST_USART1_RX;
+    hdma_usart1_rx.Init.Direction           = DMA_PERIPH_TO_MEMORY;
+    hdma_usart1_rx.Init.PeriphInc           = DMA_PINC_DISABLE;
+    hdma_usart1_rx.Init.MemInc              = DMA_MINC_ENABLE;
+    hdma_usart1_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+    hdma_usart1_rx.Init.MemDataAlignment    = DMA_MDATAALIGN_BYTE;
+    hdma_usart1_rx.Init.Mode                = DMA_CIRCULAR;
+    hdma_usart1_rx.Init.Priority            = DMA_PRIORITY_LOW;
+    if (HAL_DMA_Init(&hdma_usart1_rx) != HAL_OK) Error_Handler();
+    __HAL_LINKDMA(&huart1, hdmarx, hdma_usart1_rx);
+
+    HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 1, 0);
+    HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+
+    Uart_Ring_Init(&uart_rx_ring, uart_rx_buf, (uint16_t)UART_RX_RING_SIZE);
+    uart_rx_wraps = 0u;
+    if (HAL_UART_Receive_DMA(&huart1, uart_rx_buf, (uint16_t)UART_RX_RING_SIZE) != HAL_OK)
+        Error_Handler();
+}
+
+// Повний оберт кільця (TC). Half-transfer не потрібен — позицію пера дає NDTR.
+// cppcheck-suppress constParameterPointer // сигнатура weak-override фіксована HAL'ом
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart == &huart1) uart_rx_wraps++;
+}
+
+void DMA1_Channel1_IRQHandler(void)
+{
+    HAL_DMA_IRQHandler(&hdma_usart1_rx);
+}
+
+// Консистентний знімок продюсера: wraps двічі довкола NDTR — TC між
+// читаннями неможливо не помітити. Залишкову IRQ-латентність гасить
+// монотонний clamp усередині Uart_Ring_Advance (див. uart_rx_ring.h).
+static uint32_t Uart_Ring_Sync(void)
+{
+    uint32_t w1, w2;
+    uint16_t nd;
+    do {
+        w1 = uart_rx_wraps;
+        nd = (uint16_t)__HAL_DMA_GET_COUNTER(&hdma_usart1_rx);
+        w2 = uart_rx_wraps;
+    } while (w1 != w2);
+    return Uart_Ring_Advance(&uart_rx_ring, w2, nd);
+}
+
+// [FW.3] Свіжий старт розмови: викинути хвости ПОПЕРЕДНІХ обмінів (пізній
+// "OK" від таймаутнутого DEL годину тому НЕ сміє підтвердити нову команду).
+// Всередині розмови НЕ викликати — запізнілий +CCOAPNMI з валідним MID =
+// легітимна доставка, її якраз і ловимо.
+static void Uart_Rx_Drain_Stale(void)
+{
+    uint8_t b;
+    (void)Uart_Ring_Sync();
+    while (Uart_Ring_Pop(&uart_rx_ring, &b)) { /* зів'яле листя */ }
+}
 
 // cppcheck-suppress constParameterCallback // сигнатура AtByteSource спільна: host-модем мутує свій io
 static int Uart_At_Source(void *io, uint8_t *b)
 {
     const UartAtIo *u = (const UartAtIo *)io;
-    if ((int32_t)(HAL_GetTick() - u->deadline_tick) >= 0) return 0;
-    return HAL_UART_Receive(&huart1, b, 1, AT_INTERBYTE_TIMEOUT_MS) == HAL_OK;
+    uint32_t silence_deadline = HAL_GetTick() + AT_INTERBYTE_TIMEOUT_MS;
+    for (;;) {
+        if ((int32_t)(HAL_GetTick() - u->deadline_tick) >= 0) return 0;
+        (void)Uart_Ring_Sync();
+        if (Uart_Ring_Pop(&uart_rx_ring, b)) return 1;
+        // міжбайтова тиша = «модем дослухав» (семантика старого читання)
+        if ((int32_t)(HAL_GetTick() - silence_deadline) >= 0) return 0;
+    }
 }
 
 static int Uart_At_Sink(void *io, const uint8_t *bytes, uint16_t n)
@@ -1002,6 +1088,7 @@ static AtTxResult SIM7070_Transact(const char* command, uint32_t budget_ms)
 {
     UartAtIo io = { HAL_GetTick() + budget_ms };
     At_Engine_Reset(&at_engine_state);
+    Uart_Rx_Drain_Stale(); // init-шлях: відповідь мусить належати ЦІЙ команді
     if (HAL_UART_Transmit(&huart1, (uint8_t*)command, strlen(command), 1000) != HAL_OK) {
         return AT_TX_TIMEOUT;
     }
@@ -1144,6 +1231,11 @@ void Flush_Cache_To_Rails(void)
     // Доставка = відповідь сервера 2.xx у +CCOAPNMI з нашим MID — НЕ
     // транспортний OK. Уся розмова — pure-оркестратор sim7070_coap.h,
     // host-тестований на скриптованому модемі.
+    // [FW.3] Один drain на РОЗМОВУ (не на retry!): хвости минулих флешів
+    // геть, але запізнілий +CCOAPNMI цієї ж розмови (MID той самий між
+    // retry) лишається законним підтвердженням доставки.
+    Uart_Rx_Drain_Stale();
+
     if (coap_server_ip[0] == '\0') {
         // CCOAPNEW приймає IP → одна CDNSGIP-резолюція, кеш на життя boot'а.
         UartAtIo dns_io = { HAL_GetTick() + COAP_CONV_BUDGET_MS };

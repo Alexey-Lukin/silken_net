@@ -364,14 +364,25 @@ HAL_CRYP_Init(&hcryp);
 
 | Шар | Файл | Відповідальність | Host-тести |
 |-----|------|------------------|------------|
+| RX-кільце | `firmware/queen/uart_rx_ring.h` | Кільце-вид поверх circular-DMA: абсолютні лічильники (wraps·size + NDTR), монотонний clamp проти IRQ-латентності, overrun-детект + лічильник | `firmware/test/test_uart_rx_ring.c` (гонки знімка, wrap, overrun, інтеграція з токенайзером) |
 | Токенайзер | `firmware/queen/at_engine.h` | Байт→лінія→подія (`OK`/`ERROR`/`+CME ERROR: n`/URC), early-exit, транзакції, hex-кодек, парсери лапок | `firmware/test/test_at_engine.c` |
 | CoAP PDU | `firmware/queen/coap_pdu.h` | RFC 7252: CON PUT `/telemetry/batch/<uid>` builder + розбір відповіді (клас 2.xx, MID) | ↑ (golden-вектор — дослівно з SIMCom-ноти) |
 | Оркестратор | `firmware/queen/sim7070_coap.h` | `CDNSGIP → CCOAPNEW → CCOAPSEND(hex чанками) → +CCOAPNMI → CCOAPDEL` | ↑ (скриптований модем, повні розмови) |
-| UART-клей | `main.c` (`Uart_At_Source/Sink`, `SIM7070_Transact`) | HAL-байти + владар дедлайнів (`UartAtIo`) | компілюється cppcheck-гейтом |
+| UART-клей | `main.c` (`MX_USART1_RX_DMA_Init`, `Uart_Ring_Sync`, `Uart_At_Source/Sink`, `SIM7070_Transact`) | DMA-ініт + консистентний знімок (double-read wraps довкола NDTR) + владар дедлайнів (`UartAtIo`) | компілюється cppcheck-гейтом |
 
 Латентність: токенайзер виходить на фіналі — обмін коштує реальний час
 відповіді модему, а не повний timeout (стара схема `HAL_UART_Receive(128B)`
 поверталась лише по таймауту → кожна команда «коштувала» весь бюджет).
+
+**RX-вухо (FW.3, circular-DMA):** залізо пише в кільце безперервно і без
+CPU — байти й URC поза вікном читання (запізнілий `+CCOAPNMI`, `RDY` після
+ребуту модема) більше не гинуть в ORE, як у попередній побайтовій схемі.
+Семантика `AT_INTERBYTE_TIMEOUT_MS` збережена (тиша = «модем дослухав»).
+**Гігієна свіжості:** drain застояних байтів — перед кожною init-командою
+(`SIM7070_Transact`: відповідь мусить належати *цій* команді; пізній `OK`
+від таймаутнутого `CCOAPDEL` годину тому не сміє підтвердити нову) та один
+раз на старті CoAP-розмови — але **НЕ** між retry: запізнілий `+CCOAPNMI`
+з MID цієї розмови = законна доставка, заради якої кільце й існує.
 
 ### Ініціалізація (один раз при старті, response-driven)
 
@@ -424,7 +435,10 @@ Starlink NAT та динамічні адреси).
 
 **Що лишається bench (HW-residual FW.3):**
 - verbatim-звірка граматики SIM7070-ноти V1.03 + реальні таймінги модему;
-- UART DMA interrupt-driven RX (зараз — байтовий polling із interbyte-timeout);
+- кремнієве підтвердження DMA-вуха: DMAMUX-роутинг USART1_RX, поведінка
+  NDTR/TC на реальному кремнії, межовий байт рівно-повного кільця у гонці
+  (логіка кільця host-доведена — `test_uart_rx_ring.c`; ✅ архітектурне
+  закриття 2026-06-10: байтовий polling → circular-DMA кільце);
 - поведінка при реальних LTE-M/Starlink мережевих помилках (скриптовані
   ERROR/+CME/тиша — покриті host).
 
@@ -1004,6 +1018,7 @@ Per-channel режими (LoRa **AES-128** ECB→CCM · CoAP **AES-256-CBC**) �
 | `ed25519_secret[64]` + `ed25519_pub[32]` | `uint8_t` | 97 B | [L1 QATT] голос Королеви (деривується при boot з EDSK-сім'ї; +`ed25519_ready` 1 B) |
 | `pending_ota_bytecode[8192]` | `uint8_t` | 8192 B | RAM-буфер збірки OTA від Rails |
 | `at_engine_state` | `AtEngine` | ~168 B | [FW.3] AT-токенайзер (лінія `AT_LINE_MAX` + стан) |
+| `uart_rx_buf[512]` + `uart_rx_ring` + `hdma_usart1_rx` | `uint8_t` + `UartRxRing` + DMA handle | ~632 B | **[FW.3]** circular-DMA вухо модема: кільце + вид консьюмера (`queen/uart_rx_ring.h`) + HAL-handle; `uart_rx_wraps` — у скалярах |
 | `coap_pdu_buf` | `uint8_t static` | sizeof(batch_attest_buffer)+64 | [FW.56] CoAP PDU (заголовок+Uri-Path+батч; static у `Flush_Cache_To_Rails`) |
 | `coap_server_ip[16]` | `char` | 16 B | [FW.56] CDNSGIP-кеш IP сервера (на boot) |
 | `cmd_dedup_ring[16]` | `uint32_t` | 64 B | DJB2 хеші idempotency токенів |
@@ -1016,7 +1031,7 @@ Per-channel режими (LoRa **AES-128** ECB→CCM · CoAP **AES-256-CBC**) �
 | `ota_total_expected_chunks` | `uint16_t` | 2 B | Очікуваний total від header |
 | `pending_ota_size` | `uint16_t` | 2 B | Реальний зібраний розмір байткоду |
 | Scalar variables | misc | ~24 B | `cache_count`, `current_rssi`, `lora_rx_head`, `lora_rx_tail`, `lora_rx_drops`, `ota_is_active`, `current_ota_chunk_idx`, `cmd_dedup_idx`, `cmd_dedup_used` |
-| **Разом** | | **~14.9 KB** | З 64 KB SRAM = ~23% використання |
+| **Разом** | | **~15.5 KB** | З 64 KB SRAM = ~24% використання |
 
 ---
 

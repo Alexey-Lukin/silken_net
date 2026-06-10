@@ -105,6 +105,7 @@ coverage/
 /firmware/test/test_ccm_selftest
 /firmware/test/test_sym_selftest
 /firmware/test/test_at_engine
+/firmware/test/test_uart_rx_ring
 /firmware/test/test_flash_kv
 /firmware/test/test_queen_attest
 /firmware/test/test_flash_ota

@@ -19,9 +19,9 @@ BINDIR   = .
 OPENSSL_CFLAGS = $(shell pkg-config --cflags openssl 2>/dev/null)
 OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
-.PHONY: all queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine flash_kv flash_ota attest size-check clean
+.PHONY: all queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ota attest size-check clean
 
-all: queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine flash_kv flash_ota attest
+all: queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ota attest
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -55,6 +55,9 @@ sym_selftest: $(BINDIR)/test_sym_selftest
 
 at_engine: $(BINDIR)/test_at_engine
 	@./$(BINDIR)/test_at_engine
+
+uart_ring: $(BINDIR)/test_uart_rx_ring
+	@./$(BINDIR)/test_uart_rx_ring
 
 flash_kv: $(BINDIR)/test_flash_kv
 	@./$(BINDIR)/test_flash_kv
@@ -90,6 +93,10 @@ $(BINDIR)/test_encryption: test_encryption.c hal_mock.h ../queen/coap_iv.h
 # [FW.3/FW.56] AT-токенайзер + CoAP PDU + SIM7070G розмова — pure, без OpenSSL.
 $(BINDIR)/test_at_engine: test_at_engine.c ../queen/at_engine.h ../queen/coap_pdu.h ../queen/sim7070_coap.h
 	$(CC) $(CFLAGS) -o $@ test_at_engine.c
+
+# [FW.3] Кільце-вид поверх circular-DMA RX — гонки знімка/IRQ, overrun, wrap.
+$(BINDIR)/test_uart_rx_ring: test_uart_rx_ring.c ../queen/uart_rx_ring.h ../queen/at_engine.h
+	$(CC) $(CFLAGS) -o $@ test_uart_rx_ring.c
 
 # [ARCH.28/FW.54] Flash-KV журнал — RAM-мок + power-cut fault-injection.
 $(BINDIR)/test_flash_kv: test_flash_kv.c ../common/flash_kv.c ../common/flash_kv.h ../common/silken_crc.h
