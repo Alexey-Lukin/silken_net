@@ -328,12 +328,16 @@ OTA Batch Downlink Format (розширений):
 > `OtaPackagerService.build_threshold_config_block` теж залишається лише як
 > class method без інтеграції з downlink-pipeline.
 >
-> Розблокування: коли FW.21 EMA-рефакторинг або щільніша упаковка DR8/9/11
-> звільнить хоча б 1 регістр — тоді `FW8_PARSER_ENABLED 1` + boot-restore +
-> KENOSIS-write блок. Документація прикладу нижче залишається лише як
-> **wire-формат-контракт** (узгоджений з Ruby `OtaPackagerService` 13-байтним
-> кадром); імена `RTC_BKP_DR20..DR23` слід читати як placeholder для
-> майбутньої перерозкладки.
+> Розблокування — через **Flash-KV** (ARCH.28 шлях A; НЕ звільнений RTC-регістр
+> — їх не лишилось, [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)).
+> ✅ (2026-06-10) persist-логіка host-готова: `firmware/common/lorenz_thresholds.h`
+> — `Save/Load` на ключах `0x10/0x11` (реєстр [`03_01 §2.3.1`](03_01_Firmware_Lifecycle_and_DMA)),
+> ті самі інваріанти, що парсер (порвана/невалідна пара → firmware-дефолти),
+> power-cut host-тести у `test_flash_kv.c`. Лишається bench-фаза:
+> `FW8_PARSER_ENABLED 1` + mount KV у `main.c` (KENOSIS-write блок) + HAL_FLASH глю.
+> Документація прикладу нижче залишається лише як **wire-формат-контракт**
+> (узгоджений з Ruby `OtaPackagerService` 13-байтним кадром); імена
+> `RTC_BKP_DR20..DR23` слід читати як placeholder історичного дизайну.
 
 ```c
 // firmware/soldier/main.c — нові RTC Backup Register слоти:
@@ -399,7 +403,7 @@ def build_threshold_config_block(tree)
 end
 ```
 
-> **Статус [FW.8]:** ✅ Rails-сторона реалізована. Firmware C-side (обробник `CMD_SET_THRESHOLDS`) — parser host-tested, але gated (`FW8_PARSER_ENABLED=0`, deferred TRL-7); персист порогів іде у Flash-KV ([`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)), НЕ у RTC — DR20-DR23 не існують (DEPRECATED-блок вище). До активації Soldier використовує хардкодовані значення `CRITICAL_Z_MIN=2.0`, `CRITICAL_Z_MAX=45.0`, `OPTIMAL_Z_TARGET=29.0`.
+> **Статус [FW.8]:** ✅ Rails-сторона реалізована. Firmware C-side (обробник `CMD_SET_THRESHOLDS`) — parser host-tested, але gated (`FW8_PARSER_ENABLED=0`, deferred TRL-7); персист порогів іде у Flash-KV ([`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)), НЕ у RTC — DR20-DR23 не існують (DEPRECATED-блок вище); persist-логіка ✅ host-готова (`common/lorenz_thresholds.h`, 2026-06-10). До активації Soldier використовує хардкодовані значення `CRITICAL_Z_MIN=2.0`, `CRITICAL_Z_MAX=45.0`, `OPTIMAL_Z_TARGET=29.0`.
 
 ##### 4а.4 Per-Species Default Thresholds
 

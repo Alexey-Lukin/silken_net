@@ -276,6 +276,110 @@ TEST(test_wear_one_erase_per_compact_per_page) {
     ASSERT_EQ((flash.erase_count[0] - e0) + (flash.erase_count[1] - e1), 10);
 }
 
+/* ════════════════════════════════════════════════════════════════════
+ * 5. [FW.8] Persist Z-порогів поверх KV (lorenz_thresholds.h)
+ *
+ * Host-половина deferred-залишку FW.8: Save/Load на ключах 0x10/0x11
+ * (реєстр 03_01 §2.3.1). Парність інваріантів з парсером 0x9A пінується
+ * проти дзеркала test_soldier_logic.c (ті самі межі).
+ * ════════════════════════════════════════════════════════════════════ */
+#include "../common/lorenz_thresholds.h"
+
+TEST(test_fw8_save_load_roundtrip) {
+    fresh_mount();
+    LorenzThresholds in = { 150, 4800, 3100, 7, 3 }, out;
+    ASSERT_TRUE(Lorenz_Thresholds_Save(&kv, &in));
+    ASSERT_TRUE(Lorenz_Thresholds_Load(&kv, &out));
+    ASSERT_EQ(out.z_min_x100, 150);
+    ASSERT_EQ(out.z_max_x100, 4800);
+    ASSERT_EQ(out.z_opt_x100, 3100);
+    ASSERT_EQ(out.species_id, 7);
+    ASSERT_EQ(out.config_version, 3);
+}
+
+TEST(test_fw8_load_empty_kv_returns_defaults) {
+    fresh_mount();
+    LorenzThresholds out;
+    ASSERT_FALSE(Lorenz_Thresholds_Load(&kv, &out));
+    ASSERT_EQ(out.z_min_x100, FW8_DEFAULT_Z_MIN_X100);
+    ASSERT_EQ(out.z_max_x100, FW8_DEFAULT_Z_MAX_X100);
+    ASSERT_EQ(out.z_opt_x100, FW8_DEFAULT_Z_OPT_X100);
+    ASSERT_EQ(out.species_id, 0xFF);
+    ASSERT_EQ(out.config_version, 0);
+}
+
+TEST(test_fw8_save_rejects_invalid_never_pollutes_flash) {
+    fresh_mount();
+    LorenzThresholds bad = { 4800, 150, 3100, 7, 3 }; /* min > max */
+    ASSERT_FALSE(Lorenz_Thresholds_Save(&kv, &bad));
+    uint32_t v;
+    ASSERT_FALSE(FlashKv_Get32(&kv, FW8_KV_KEY_ZPAIR, &v)); /* нічого не лягло */
+}
+
+TEST(test_fw8_negative_z_survives_u32_packing) {
+    /* int16 → u16 → u32 → назад: знак не губиться (важливо для z_min < 0). */
+    fresh_mount();
+    LorenzThresholds in = { -500, 300, -100, 1, 9 }, out;
+    ASSERT_TRUE(Lorenz_Thresholds_Save(&kv, &in));
+    ASSERT_TRUE(Lorenz_Thresholds_Load(&kv, &out));
+    ASSERT_EQ(out.z_min_x100, -500);
+    ASSERT_EQ(out.z_opt_x100, -100);
+}
+
+TEST(test_fw8_torn_pair_powercut_falls_to_defaults) {
+    /* Power-cut між Put32(0x10) і Put32(0x11): z-пара лягла, мета — ні →
+     * Load не бачить пари ключів → дефолти, без половинної конфігурації. */
+    fresh_mount();
+    LorenzThresholds in = { 150, 4800, 3100, 7, 3 }, out;
+    flash.die_after_programs = 1; /* перший program ок, другий = power-cut */
+    ASSERT_FALSE(Lorenz_Thresholds_Save(&kv, &in));
+    flash.die_after_programs = -1;
+    ASSERT_FALSE(Lorenz_Thresholds_Load(&kv, &out));
+    ASSERT_EQ(out.z_min_x100, FW8_DEFAULT_Z_MIN_X100);
+}
+
+TEST(test_fw8_mixed_generation_invalid_combo_falls_to_defaults) {
+    /* v2 z-пара + v1 мета (torn re-send): z_opt v1 поза [min,max] v2 →
+     * інваріанти валять комбінацію → дефолти до наступного re-send. */
+    fresh_mount();
+    LorenzThresholds v1 = { 150, 4800, 3100, 7, 1 }, out;
+    ASSERT_TRUE(Lorenz_Thresholds_Save(&kv, &v1));
+    /* «v2» зсуває зону вище за v1.z_opt: пишемо лише z-пару (порвано). */
+    uint32_t zpair_v2 = (uint32_t)(uint16_t)(int16_t)3500 |
+                        ((uint32_t)(uint16_t)(int16_t)9000 << 16);
+    ASSERT_TRUE(FlashKv_Put32(&kv, FW8_KV_KEY_ZPAIR, zpair_v2));
+    ASSERT_FALSE(Lorenz_Thresholds_Load(&kv, &out));
+    ASSERT_EQ(out.config_version, 0);
+}
+
+TEST(test_fw8_valid_agrees_with_parser) {
+    /* Ті самі межі, що Test_Handle_CMD_SET_THRESHOLDS (test_soldier_logic.c)
+     * та парсер 0x9A: інверсія, z_opt поза зоною, |Z| > 100.00. */
+    LorenzThresholds t = { 200, 4500, 2900, 0xFF, 0 };
+    ASSERT_TRUE(Lorenz_Thresholds_Valid(&t));
+    t.z_min_x100 = t.z_max_x100;                  /* колапс зони */
+    ASSERT_FALSE(Lorenz_Thresholds_Valid(&t));
+    t = (LorenzThresholds){ 200, 4500, 100, 0, 0 };  /* opt < min */
+    ASSERT_FALSE(Lorenz_Thresholds_Valid(&t));
+    t = (LorenzThresholds){ -10001, 4500, 2900, 0, 0 }; /* за межею -100.00 */
+    ASSERT_FALSE(Lorenz_Thresholds_Valid(&t));
+    t = (LorenzThresholds){ 200, 10001, 2900, 0, 0 };   /* за межею +100.00 */
+    ASSERT_FALSE(Lorenz_Thresholds_Valid(&t));
+}
+
+TEST(test_fw8_survives_remount_and_compact) {
+    /* Persist = сенс фічі: конфіг живе через remount (VBAT-loss аналог)
+     * і через compact (перенос живих ключів на нову сторінку). */
+    fresh_mount();
+    LorenzThresholds in = { 150, 4800, 3100, 7, 3 }, out;
+    ASSERT_TRUE(Lorenz_Thresholds_Save(&kv, &in));
+    ASSERT_TRUE(FlashKv_Compact(&kv));
+    ASSERT_TRUE(FlashKv_Mount(&kv, &mock_ops, &flash, MOCK_PAGE_DWS));
+    ASSERT_TRUE(Lorenz_Thresholds_Load(&kv, &out));
+    ASSERT_EQ(out.z_max_x100, 4800);
+    ASSERT_EQ(out.config_version, 3);
+}
+
 /* ════════════════════════════════════════════════════════════════════ */
 int main(void)
 {
@@ -303,6 +407,16 @@ int main(void)
 
     printf("\n— Wear —\n");
     RUN(test_wear_one_erase_per_compact_per_page);
+
+    printf("\n— [FW.8] Z-пороги поверх KV (0x10/0x11) —\n");
+    RUN(test_fw8_save_load_roundtrip);
+    RUN(test_fw8_load_empty_kv_returns_defaults);
+    RUN(test_fw8_save_rejects_invalid_never_pollutes_flash);
+    RUN(test_fw8_negative_z_survives_u32_packing);
+    RUN(test_fw8_torn_pair_powercut_falls_to_defaults);
+    RUN(test_fw8_mixed_generation_invalid_combo_falls_to_defaults);
+    RUN(test_fw8_valid_agrees_with_parser);
+    RUN(test_fw8_survives_remount_and_compact);
 
     printf("\n════════════════════════════════════════════════════════════════════\n");
     printf("Passed: %d, Failed: %d\n", tests_passed, tests_failed);

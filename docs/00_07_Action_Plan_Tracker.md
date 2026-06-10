@@ -510,7 +510,8 @@
 
 #### FW.8 — CRITICAL_Z_MIN/MAX hardcoded
 - **P1** · 🟡 · → [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)
-- **✅ per-species Z-пороги канонізовано (OTA-design [`05_02 §4а`](05_02_Proof_of_Growth_Pipeline), service [`04_02`](04_02_Business_Logic_and_Services)):** Rails `build_threshold_config_block` + `effective_lorenz_thresholds` 3-tier (cluster → TreeFamily → global 2.0/45.0/29.0) + firmware parser `Soldier_Handle_CMD_SET_THRESHOLDS` (freeze-contract, `FW8_PARSER_ENABLED 0`) + host-тести; CMD `0x9A` (DOC.4). · [ ] 🟡 deferred TRL-7: `FW8_PARSER_ENABLED 1` → persist у **Flash-KV** ([`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA) ARCH.28 — **НЕ** RTC, DR-фантоми) + boot-restore + HAL_FLASH bench
+- **✅ per-species Z-пороги канонізовано (OTA-design [`05_02 §4а`](05_02_Proof_of_Growth_Pipeline), service [`04_02`](04_02_Business_Logic_and_Services)):** Rails `build_threshold_config_block` + `effective_lorenz_thresholds` 3-tier (cluster → TreeFamily → global 2.0/45.0/29.0) + firmware parser `Soldier_Handle_CMD_SET_THRESHOLDS` (freeze-contract, `FW8_PARSER_ENABLED 0`) + host-тести; CMD `0x9A` (DOC.4).
+- **✅ (2026-06-10) persist host-половина:** `firmware/common/lorenz_thresholds.h` — `Save/Load` поверх Flash-KV, ключі `0x10/0x11` за реєстром [`03_01 §2.3.1`](03_01_Firmware_Lifecycle_and_DMA); ті самі інваріанти, що парсер 0x9A (парність пінується тестом), порвана пара/power-cut/сміття → firmware-дефолти; host-тести у `test_flash_kv.c` (roundtrip · torn-pair · mixed-generation · remount+compact). Попутно знято 05_02-drift «розблокування = звільнений RTC-регістр» → Flash-KV. · [ ] 🟡 deferred TRL-7 (bench): `FW8_PARSER_ENABLED 1` + mount KV у `main.c` (KENOSIS-write блок) + HAL_FLASH глю
 
 #### FW.17 — Key rotation mechanism (Hash Ratchet KDF)
 - **P2** · 🔗 · → [`03_05 §3`](03_05_Hardware_Symmetric_Crypto_and_Security)

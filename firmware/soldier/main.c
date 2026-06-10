@@ -405,8 +405,11 @@ volatile uint32_t soldier_unix_ts_local_tick = 0;
 //     заради no-op feature. Чесніше відкласти.
 //
 // ВІДНОВЛЕННЯ: вільних RTC-регістрів не лишилось (DR15 → FW.2), тож FW.8
-// повертається через Flash-KV overflow (03_01 §2.3), а не звільнений регістр —
-// `#define FW8_PARSER_ENABLED 1` + boot-restore з Flash + KENOSIS-write блок.
+// повертається через Flash-KV overflow (03_01 §2.3), а не звільнений регістр.
+// Persist-логіка ✅ host-готова: ../common/lorenz_thresholds.h — Save/Load на
+// ключах 0x10/0x11 (порвана/невалідна пара → дефолти; power-cut тести у
+// test_flash_kv.c). Лишається bench: `#define FW8_PARSER_ENABLED 1` +
+// mount KV (KENOSIS-write блок) + HAL_FLASH глю.
 #define FW8_PARSER_ENABLED                0  // 🟡 Deferred TRL-7 (див. блок вище)
 #define CMD_SET_THRESHOLDS_MARKER         0x9A
 #define CMD_THRESHOLDS_HEADER_SIZE        3   // [маркер:1][len_le:2]
