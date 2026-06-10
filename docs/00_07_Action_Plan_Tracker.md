@@ -670,6 +670,10 @@
 
 > **Складність:** XS < 1 год · S = 1–4 год · M = 4–8 год · L = 1–3 дні
 
+#### E.65 — `piezo_voltage_mv`: фантомний продакшн-шлях (сейсміка)
+- **P3** · 👤 · → [`04_01 §3`](04_01_Data_Models_and_Entities)
+- Колонка в усіх партиціях + btree-індекс `idx_telemetry_logs_piezo_created` + скоуп `seismic_activity (> 1500)` + рядок у `04_01` — але жоден wire-формат (21B/CCM) не несе piezo і жоден код не пише колонку → скоуп вічно порожній, індекс індексує NULL-и. П'єзо в залізі реальне ([`02_01 §3`](02_01_Hardware_Architecture_and_BOM) BOM), але його роль — акустичний тригер TinyML (audio path), не окреме mV-поле телеметрії. · [ ] 👤 рішення: reserved-під-майбутній-сенсорний-фрейм (тоді лишити + чесна примітка) vs прибрати скоуп+індекс+колонку до появи реального wire-поля
+
 #### S6.1 — Redis SPOF для M2M автентифікації
 - **P1** · 👤 · → `04_03`
 - ✅ graceful degradation (Redis down → DB-backed nonce, TTL 10хв) + тести. · [ ] 👤 верифікувати Upstash multi-zone replication у production

@@ -5,8 +5,15 @@ class TelemetryLog < ApplicationRecord
   belongs_to :tree
   # Зв'язок із Королевою через її UID
   belongs_to :gateway, foreign_key: :queen_uid, primary_key: :uid, optional: true
-  # Трекінг версії прошивки (з 4 байтів padding-у)
-  belongs_to :bio_contract_firmware, foreign_key: :firmware_version_id, optional: true
+  # [E.62-патерн — mis-join trap, асоціація вимкнена]:
+  # `firmware_version_id` зберігає WIRE-ідентифікатор прошивки (21B: uint16 з
+  # PAD-байтів; CCM: 4-бітний epoch-нібл verbatim — стопгеп до OTA epoch config),
+  # а НЕ автоінкрементний `bio_contract_firmwares.id`. belongs_to по цій колонці
+  # повертав би чужий запис, щойно в таблиці з'являться рядки з малими id.
+  # Реальний трекінг версій — SemVer-рядки (`Tree.firmware_version`), див.
+  # коментар E.62 у `BioContractFirmware`. Розкоментовувати лише разом із
+  # канонізованим мапінгом wire-id ↔ запис.
+  # belongs_to :bio_contract_firmware, foreign_key: :firmware_version_id, optional: true
 
   # --- СТАТУСИ (The Pulse of Life) ---
   # [СИНХРОНІЗОВАНО]: Додано tamper_detected для відповідності сервісам
@@ -38,28 +45,45 @@ class TelemetryLog < ApplicationRecord
   # в TelemetryUnpackerService.valid_sensor_data? до створення запису.
   # ActiveRecord валідації на кожному INSERT — зайві цикли CPU.
 
+  # --- ПОРОГИ АНАЛІТИКИ (канон значень — тут, 04_01 дзеркалить) ---
+  # Акустика: < CALM_MAX — здорова тиша; > STORM_MIN — шторм (шкідники/пилка).
+  # Сіра зона CALM_MAX..STORM_MIN навмисна: «навантажено, але ще не аномалія».
+  ACOUSTIC_CALM_MAX  = 20
+  ACOUSTIC_STORM_MIN = 50
+  HEALTHY_TEMP_MAX_C = 50
+
   # --- СКОУПИ (The Analytical Eyes) ---
   # Індекс: index_telemetry_logs_on_tree_id_and_created_at
   scope :recent, -> { order(created_at: :desc) }
 
-  # Partition-aware lookup for RANGE-partitioned telemetry_logs.
-  # Workers pass created_at_iso to enable PostgreSQL to scan only the relevant
-  # partition (O(log N)) instead of all partitions (O(P×log N)).
-  def self.find_with_partition_pruning(id, created_at = nil)
-    scope = where(id: id)
-    if created_at.present?
-      time = created_at.is_a?(String) ? Time.iso8601(created_at) : created_at.to_time
-      scope = scope.where(created_at: time...(time + 1))
+  # [S6.16] Partition pruning з ISO-8601 рядка для RANGE-партиційованої
+  # таблиці; chainable: `TelemetryLog.where(...).partition_pruned(iso, ...)`.
+  # Єдиний дім pruning-логіки — воркери/сервіси/контролери НЕ дублюють.
+  # Вікно в 1 секунду — толерантне до секундної точності ISO проти
+  # мікросекундних DB-timestamps (стандарт `BlockchainTransaction`);
+  # PostgreSQL все одно прунить до однієї партиції.
+  # Degraded path (відсутній/битий created_at_iso) → сканування всіх
+  # партицій O(P×log N) — облікований лічильником unpruned_lookups.
+  def self.partition_pruned(created_at_iso, metric_caller:)
+    if created_at_iso.blank?
+      SilkenNet::Metrics::TELEMETRY_LOG_UNPRUNED_LOOKUPS_TOTAL
+        .increment(labels: { caller: "#{metric_caller}:missing_created_at_iso" })
+      return all
     end
-    scope.first!
-  rescue ArgumentError, TypeError, NoMethodError
-    where(id: id).first!
+
+    time = Time.iso8601(created_at_iso)
+    where(created_at: time...(time + 1))
+  rescue ArgumentError, TypeError
+    Rails.logger.warn "⚠️ [S6.16] #{metric_caller}: битий created_at_iso #{created_at_iso.inspect} — lookup без partition pruning."
+    SilkenNet::Metrics::TELEMETRY_LOG_UNPRUNED_LOOKUPS_TOTAL
+      .increment(labels: { caller: "#{metric_caller}:invalid_iso8601" })
+    all
   end
 
   # Індекс: idx_telemetry_logs_bio_status_created
   scope :anomalies, -> {
     where(bio_status: [ :stress, :anomaly, :tamper_detected ])
-    .or(where("acoustic_events > ?", 50))
+    .or(where("acoustic_events > ?", ACOUSTIC_STORM_MIN))
   }
 
   scope :in_timeframe, ->(start_time, end_time) { where(created_at: start_time..end_time) }
@@ -100,8 +124,8 @@ class TelemetryLog < ApplicationRecord
   # створюється через insert_all (KENOSIS TITAN bypass валідацій).
   def healthy?
     bio_status_homeostasis? &&
-      temperature_c.present? && temperature_c < 50 &&
-      acoustic_events.present? && acoustic_events < 20
+      temperature_c.present? && temperature_c < HEALTHY_TEMP_MAX_C &&
+      acoustic_events.present? && acoustic_events < ACOUSTIC_CALM_MAX
   end
 
   # "Optimal" стан Lorenz attractor: Z поряд із OPTIMAL_Z_TARGET (29.0).

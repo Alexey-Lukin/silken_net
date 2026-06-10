@@ -54,23 +54,14 @@ class MintingRollbackService < ApplicationService
   end
 
   def find_telemetry_log
-    scope = TelemetryLog.where(id: @telemetry_log_id)
-    if @created_at_iso.present?
-      begin
-        scope = scope.where(created_at: Time.iso8601(@created_at_iso))
-      rescue ArgumentError
-        # Некоректний формат — шукаємо без partition pruning
-        # [S6.16]: degraded path — записуємо counter для observability
-        SilkenNet::Metrics::TELEMETRY_LOG_UNPRUNED_LOOKUPS_TOTAL
-          .increment(labels: { caller: "MintingRollbackService:invalid_iso8601" })
-      end
-    else
-      # [S6.16]: rollback викликається без created_at_iso (legacy шлях, admin tool) —
-      # acceptable у cold path, але трекаємо для прозорості.
-      SilkenNet::Metrics::TELEMETRY_LOG_UNPRUNED_LOOKUPS_TOTAL
-        .increment(labels: { caller: "MintingRollbackService:missing_created_at_iso" })
-    end
-    scope.first
+    # [S6.16] pruning-логіка (1с-вікно + degraded-облік) — One-Home
+    # `TelemetryLog.partition_pruned`. Вікно толерантне до секундної
+    # точності ISO (адмінський виклик за прикладом із шапки файлу) —
+    # давня точна рівність тут мовчки промахувалась повз мікросекундний
+    # created_at → rollback ставав no-op.
+    TelemetryLog.where(id: @telemetry_log_id)
+                .partition_pruned(@created_at_iso, metric_caller: "MintingRollbackService")
+                .first
   end
 
   def rollback_transaction!(tx)

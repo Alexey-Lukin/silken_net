@@ -133,6 +133,64 @@ RSpec.describe TelemetryLog, type: :model do
     end
   end
 
+  # [S6.16] One-Home pruning-логіки: 1с-вікно (стандарт BlockchainTransaction)
+  # + degraded-облік. Воркери/сервіси/контролери делегують сюди.
+  describe ".partition_pruned" do
+    let(:tree) { create(:tree) }
+    let!(:log) { create(:telemetry_log, tree: tree, created_at: Time.current) }
+
+    before do
+      allow(SilkenNet::Metrics::TELEMETRY_LOG_UNPRUNED_LOOKUPS_TOTAL).to receive(:increment)
+    end
+
+    it "finds the record from a seconds-precision ISO despite microsecond created_at" do
+      # Давня точна рівність `created_at == Time.iso8601(iso)` тут мовчки
+      # промахувалась (DB тримає мікросекунди) — 1с-вікно це закриває.
+      seconds_iso = log.created_at.iso8601
+      found = described_class.where(id: log.id)
+                          .partition_pruned(seconds_iso, metric_caller: "Spec")
+                          .first
+      expect(found).to eq(log)
+      expect(SilkenNet::Metrics::TELEMETRY_LOG_UNPRUNED_LOOKUPS_TOTAL)
+        .not_to have_received(:increment)
+    end
+
+    it "finds the record from a microseconds-precision ISO" do
+      found = described_class.where(id: log.id)
+                          .partition_pruned(log.created_at.iso8601(6), metric_caller: "Spec")
+                          .first
+      expect(found).to eq(log)
+    end
+
+    it "falls back unpruned and counts the degraded path when ISO is blank" do
+      found = described_class.where(id: log.id)
+                          .partition_pruned(nil, metric_caller: "Spec")
+                          .first
+      expect(found).to eq(log)
+      expect(SilkenNet::Metrics::TELEMETRY_LOG_UNPRUNED_LOOKUPS_TOTAL)
+        .to have_received(:increment)
+        .with(labels: { caller: "Spec:missing_created_at_iso" })
+    end
+
+    it "falls back unpruned and counts the degraded path when ISO is malformed" do
+      found = described_class.where(id: log.id)
+                          .partition_pruned("not-a-date", metric_caller: "Spec")
+                          .first
+      expect(found).to eq(log)
+      expect(SilkenNet::Metrics::TELEMETRY_LOG_UNPRUNED_LOOKUPS_TOTAL)
+        .to have_received(:increment)
+        .with(labels: { caller: "Spec:invalid_iso8601" })
+    end
+
+    it "excludes records outside the 1-second window (pruning actually filters)" do
+      stale_iso = (log.created_at - 1.hour).iso8601
+      found = described_class.where(id: log.id)
+                          .partition_pruned(stale_iso, metric_caller: "Spec")
+                          .first
+      expect(found).to be_nil
+    end
+  end
+
   describe "scopes" do
     describe ".recent" do
       it "orders by created_at descending" do
@@ -175,40 +233,6 @@ RSpec.describe TelemetryLog, type: :model do
         expect(result).to include(seismic_log)
         expect(result).not_to include(normal_log)
       end
-    end
-  end
-
-  describe ".find_with_partition_pruning" do
-    let!(:log) { create(:telemetry_log) }
-
-    it "finds a log by id alone" do
-      expect(described_class.find_with_partition_pruning(log.id)).to eq(log)
-    end
-
-    it "finds a log by id and created_at Time" do
-      expect(described_class.find_with_partition_pruning(log.id, log.created_at)).to eq(log)
-    end
-
-    it "finds a log by id and created_at ISO8601 string" do
-      expect(described_class.find_with_partition_pruning(log.id, log.created_at.iso8601)).to eq(log)
-    end
-
-    it "raises when the record does not exist" do
-      expect {
-        described_class.find_with_partition_pruning(-1)
-      }.to raise_error(ActiveRecord::RecordNotFound)
-    end
-
-    it "raises when the timestamp points to a different partition window" do
-      # The lookup narrows created_at to a one-second range around the provided timestamp.
-      # Supplying a distant timestamp should therefore miss the record and raise.
-      expect {
-        described_class.find_with_partition_pruning(log.id, "2020-01-01T00:00:00Z")
-      }.to raise_error(ActiveRecord::RecordNotFound)
-    end
-
-    it "falls back to an id lookup when created_at cannot be parsed" do
-      expect(described_class.find_with_partition_pruning(log.id, "not-a-date")).to eq(log)
     end
   end
 
@@ -260,10 +284,12 @@ RSpec.describe TelemetryLog, type: :model do
       expect(assoc.options[:optional]).to be true
     end
 
-    it "belongs to bio_contract_firmware (optional)" do
-      assoc = described_class.reflect_on_association(:bio_contract_firmware)
-      expect(assoc.macro).to eq(:belongs_to)
-      expect(assoc.options[:optional]).to be true
+    it "does NOT expose bio_contract_firmware (mis-join trap, E.62-патерн)" do
+      # firmware_version_id зберігає wire-ідентифікатор (21B uint16 /
+      # CCM 4-бітний epoch-нібл), не автоінкрементний bio_contract_firmwares.id —
+      # belongs_to по цій колонці повертав би чужий запис. Guard проти
+      # випадкового повернення асоціації без канонізованого мапінгу.
+      expect(described_class.reflect_on_association(:bio_contract_firmware)).to be_nil
     end
   end
 

@@ -107,25 +107,11 @@ module ApplicationWeb3Worker
   # @param log_prefix [String] префікс для логування (e.g., "[Solana]", "[Chainlink]")
   # @return [TelemetryLog, nil]
   def find_telemetry_log_with_pruning(telemetry_log_id, created_at_iso, log_prefix: "[Web3]")
-    scope = TelemetryLog.where(id: telemetry_log_id)
-
-    if created_at_iso.present?
-      begin
-        scope = scope.where(created_at: Time.iso8601(created_at_iso))
-      rescue ArgumentError
-        # Некоректний формат — шукаємо без partition pruning
-        # [S6.16]: трекаємо як degraded path — некоректний ISO-формат призводить
-        # до глобального сканування всіх партицій (O(P × log N)).
-        SilkenNet::Metrics::TELEMETRY_LOG_UNPRUNED_LOOKUPS_TOTAL
-          .increment(labels: { caller: "ApplicationWeb3Worker:invalid_iso8601" })
-      end
-    else
-      # [S6.16]: відсутній created_at_iso — гарячий шлях не повинен туди потрапляти.
-      SilkenNet::Metrics::TELEMETRY_LOG_UNPRUNED_LOOKUPS_TOTAL
-        .increment(labels: { caller: "ApplicationWeb3Worker:missing_created_at_iso" })
-    end
-
-    log = scope.first
+    # [S6.16] pruning-логіка (1с-вікно + degraded-облік) — One-Home
+    # `TelemetryLog.partition_pruned`; тут лише id-scope і error-лог.
+    log = TelemetryLog.where(id: telemetry_log_id)
+                      .partition_pruned(created_at_iso, metric_caller: "ApplicationWeb3Worker")
+                      .first
     Rails.logger.error "🛑 #{log_prefix} TelemetryLog ##{telemetry_log_id} не знайдено." unless log
     log
   end

@@ -102,26 +102,13 @@ module Api
       # partition instead of scanning chainlink_request_id indexes across all partitions.
       # At billions of rows this is the difference between O(log N) and O(P × log N).
       def find_telemetry_log(request_id)
-        scope = TelemetryLog.where(chainlink_request_id: request_id)
-
-        if params[:created_at].present?
-          begin
-            parsed_time = Time.iso8601(params[:created_at])
-            scope = scope.where(created_at: parsed_time)
-          rescue ArgumentError => e
-            Rails.logger.warn "⚠️ [Oracle Callback] Malformed created_at ignored: #{e.message}"
-            # [S6.16]: malformed → fallback на повне сканування партицій
-            SilkenNet::Metrics::TELEMETRY_LOG_UNPRUNED_LOOKUPS_TOTAL
-              .increment(labels: { caller: "OracleCallbacksController:invalid_iso8601" })
-          end
-        else
-          # [S6.16]: callback без created_at — Chainlink DON має його передавати.
-          # Якщо рахунок зростає — оновити Chainlink Functions JS source та DON config.
-          SilkenNet::Metrics::TELEMETRY_LOG_UNPRUNED_LOOKUPS_TOTAL
-            .increment(labels: { caller: "OracleCallbacksController:missing_created_at" })
-        end
-
-        scope.order(created_at: :desc).first!
+        # [S6.16] pruning-логіка (1с-вікно + degraded-облік) — One-Home
+        # `TelemetryLog.partition_pruned`. Якщо missing-лічильник зростає —
+        # Chainlink DON має передавати created_at (Functions JS source + config).
+        TelemetryLog.where(chainlink_request_id: request_id)
+                    .partition_pruned(params[:created_at], metric_caller: "OracleCallbacksController")
+                    .order(created_at: :desc)
+                    .first!
       end
     end
   end

@@ -510,7 +510,7 @@ any ──report_fault──► faulty
 **Асоціації:**
 - `belongs_to :tree`
 - `belongs_to :gateway` via `queen_uid/uid` (optional)
-- `belongs_to :bio_contract_firmware` via `firmware_version_id` (optional)
+- ~~`belongs_to :bio_contract_firmware` via `firmware_version_id`~~ — **вимкнено (E.62-патерн, mis-join trap)**: колонка зберігає wire-ідентифікатор (21B uint16 / CCM 4-бітний epoch-нібл), не автоінкрементний id; трекінг версій — SemVer-рядки
 
 **Ключові поля:**
 
@@ -550,8 +550,9 @@ any ──report_fault──► faulty
 | `relayed_via_mesh?` | `mesh_ttl < стартовий TTL типу пакета` (`panic? ? 5 : 3` — `INITIAL_TTL_PANIC/NORMAL`). До FW.29-персистенції давній default 5 позначав «релейнутим» кожен direct normal-пакет |
 | `critical?` | `anomaly?` або `tamper_detected?` |
 | `healthy?` | homeostasis + temp < 50 + acoustic < 20 |
-| `optimal?` | healthy + voltage > 3600 + z_value 0.1..0.5 |
+| `optimal?` | healthy + voltage > 3600 + `\|z_value − 29.0\| ≤ 4.0` (`Tree::GLOBAL_LORENZ_Z_OPTIMAL` ± `OPTIMAL_Z_BAND`; реліктовий до-FW.8 діапазон 0.1..0.5 ретирувано) |
 | `recovery_confirmed?` | `healthy? && tree.health_streak >= 3` |
+| `.partition_pruned(iso, metric_caller:)` | **[S6.16]** One-Home pruning-логіки: chainable 1с-вікно по `created_at` (толерантне до секундної точності ISO — стандарт `BlockchainTransaction`) + облік degraded path лічильником `unpruned_lookups`. Воркери/сервіси/контролери делегують сюди, НЕ дублюють |
 
 **Scopes:** `recent`, `anomalies`, `in_timeframe`, `vandalized`, `seismic_activity`.
 
