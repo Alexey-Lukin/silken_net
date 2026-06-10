@@ -28,57 +28,67 @@
 
 #if defined(LOGMEL_USE_CMSIS)
 #include "arm_math.h"
-#include <string.h>
 static arm_rfft_fast_instance_f32 s_rfft;
 static int s_rfft_ready = 0;
 #endif
 
-/* RFFT кадру → power[257] (re²+im², без 1/N). */
-static void logmel_rfft_power(const float windowed[LOGMEL_N_FFT],
-                              float power[LOGMEL_N_BINS])
+/* RFFT кадру → power у низ work[0..LOGMEL_N_BINS) (re²+im², без 1/N).
+ *
+ * [FW.4 reuse-buffers] Стек — два буфери замість чотирьох: frame руйнується
+ * (він уже нікому не потрібен після FFT), спектр пакується у work і квадрати
+ * лягають in-place у його низ. Запис у work[k] завжди передує читанню
+ * work[2k]/work[2k+1] лише з МАЙБУТНІХ ітерацій (2k > k при k ≥ 1), тож
+ * жодне значення не затирається до використання; re(Nyquist) з work[1]
+ * виймаємо до циклу. Числово — ті самі float-операції, що й до рефакторингу. */
+// cppcheck-suppress constParameter // host-гілка лише читає frame, CMSIS-гілка РУЙНУЄ (pSrc RFFT)
+static void logmel_rfft_power(float frame[LOGMEL_N_FFT],
+                              float work[LOGMEL_N_FFT])
 {
 #if defined(LOGMEL_USE_CMSIS)
-    /* STM32: апаратний arm_rfft_fast_f32. Пакування виходу CMSIS —
-     * [re(0), re(N/2), re(1), im(1), …]; розпаковуємо у power[0..256].
-     * (Силіконова верифікація пакування — bench, FW.2-клас.) */
-    float fft_out[LOGMEL_N_FFT];
-    float scratch[LOGMEL_N_FFT];
+    /* STM32: arm_rfft_fast_f32 (pSrc руйнується — віддаємо frame без копії).
+     * Пакування виходу CMSIS — [re(0), re(N/2), re(1), im(1), …]. Парність
+     * пакування доведена host-ctest + QEMU-M4 ногою (qemu_logmel.sh);
+     * silicon-confirm — формальність bench. */
+    float nyq_re;
     int k;
     if (!s_rfft_ready) { arm_rfft_fast_init_f32(&s_rfft, LOGMEL_N_FFT); s_rfft_ready = 1; }
-    memcpy(scratch, windowed, sizeof(scratch));
-    arm_rfft_fast_f32(&s_rfft, scratch, fft_out, 0);
-    power[0]                = fft_out[0] * fft_out[0];   /* DC bin       */
-    power[LOGMEL_N_BINS - 1] = fft_out[1] * fft_out[1];  /* Nyquist bin  */
+    arm_rfft_fast_f32(&s_rfft, frame, work, 0);
+    nyq_re  = work[1];
+    work[0] = work[0] * work[0];                         /* DC bin */
     for (k = 1; k < LOGMEL_N_BINS - 1; k++) {
-        float re = fft_out[2 * k];
-        float im = fft_out[2 * k + 1];
-        power[k] = re * re + im * im;
+        float re = work[2 * k];
+        float im = work[2 * k + 1];
+        work[k] = re * re + im * im;
     }
+    work[LOGMEL_N_BINS - 1] = nyq_re * nyq_re;           /* Nyquist bin */
 #else
-    /* Host: naive real DFT як reference. Акумуляція у double — навмисно: задача
-     * host-тесту довести коректність ТАБЛИЦЬ + пайплайна проти double-оракула, а
-     * не float32-numerics. Naive-DFT float32 (O(N) ріст похибки) гірше
-     * кондиціонований за device-овий arm_rfft_fast_f32 (O(log N) butterfly), тож
-     * його шум на тихих смугах (через log-floor) перебільшував би помилку заліза.
-     * float32-парність самого arm_rfft верифікується на STM32-bench. */
+    /* Host: naive real DFT як reference (frame лише читається, power лягає у
+     * низ work). Акумуляція у double — навмисно: задача host-тесту довести
+     * коректність ТАБЛИЦЬ + пайплайна проти double-оракула, а не
+     * float32-numerics. Naive-DFT float32 (O(N) ріст похибки) гірше
+     * кондиціонований за device-овий arm_rfft_fast_f32 (O(log N) butterfly),
+     * тож його шум на тихих смугах (через log-floor) перебільшував би помилку
+     * заліза. float32-парність arm_rfft — host-ctest + QEMU-M4 нога. */
     int k, n;
     for (k = 0; k < LOGMEL_N_BINS; k++) {
         double re = 0.0, im = 0.0;
         double wk = -2.0 * M_PI * (double)k / (double)LOGMEL_N_FFT;
         for (n = 0; n < LOGMEL_N_FFT; n++) {
             double ang = wk * (double)n;
-            re += (double)windowed[n] * cos(ang);
-            im += (double)windowed[n] * sin(ang);
+            re += (double)frame[n] * cos(ang);
+            im += (double)frame[n] * sin(ang);
         }
-        power[k] = (float)(re * re + im * im);
+        work[k] = (float)(re * re + im * im);
     }
 #endif
 }
 
 void Compute_LogMel(const float audio[LOGMEL_N_FFT], float out_mel[LOGMEL_N_MELS])
 {
+    /* [FW.4 reuse-buffers] Лише два кадрові буфери на весь пайплайн:
+     * windowed руйнується RFFT'ом, power живе у низу work. */
     float windowed[LOGMEL_N_FFT];
-    float power[LOGMEL_N_BINS];
+    float work[LOGMEL_N_FFT];
     float mean = 0.0f;
     int i, m, t;
 
@@ -90,14 +100,14 @@ void Compute_LogMel(const float audio[LOGMEL_N_FFT], float out_mel[LOGMEL_N_MELS
     for (i = 0; i < LOGMEL_N_FFT; i++)
         windowed[i] = (audio[i] - mean) * LOGMEL_HANN[i];
 
-    /* 3. RFFT → power. */
-    logmel_rfft_power(windowed, power);
+    /* 3. RFFT → power (у низ work; windowed після цього мертвий). */
+    logmel_rfft_power(windowed, work);
 
     /* 4. HTK mel-bank (sparse triplet): out_mel[m] += w · power[k]. */
     for (m = 0; m < LOGMEL_N_MELS; m++) out_mel[m] = 0.0f;
     for (t = 0; t < LOGMEL_MEL_NNZ; t++) {
         const logmel_mel_triplet_t *tr = &LOGMEL_MEL_BANK[t];
-        out_mel[tr->m] += tr->w * power[tr->k];
+        out_mel[tr->m] += tr->w * work[tr->k];
     }
 
     /* 5. ln(·+1e-6). */

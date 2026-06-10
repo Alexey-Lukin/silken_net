@@ -66,6 +66,7 @@ first. **No ARM toolchain in this env by default** — pin Arm GNU 13.2.Rel1
 | bytecode mirror == source (light / deep) | `python3 tools/firmware/check_bytecode.py` / `tools/firmware/gen_bytecode.sh --check` | stdlib / +mrbc |
 | minimal VM runs the committed bytecode | `tools/firmware/run_bytecode_vm.sh` | host cc + ruby |
 | CMSIS RFFT packing == goldens (host, no board) | `cmake -B firmware/build-host -S firmware -DSILKEN_HOST_PARITY=ON -DHOST=ON -DCMSISCORE=… && ctest --test-dir firmware/build-host` | host cc, cmake |
+| CMSIS path on the real M4 ISA + stack high-water (QEMU mps2-an386, soft-float = WLE5 ABI; same check core `firmware/sim/logmel_parity_core.h`) | `firmware/scripts/qemu_logmel.sh` (local = cross-build + honest skip; CI `REQUIRE_QEMU=1`) | arm-gcc, cmake, qemu-system-arm |
 
 **mruby gotchas** (canon `03_01 §12.4` + `doc/mruby4.0.md`): float flag is
 `MRB_USE_FLOAT32` (renamed from `MRB_USE_FLOAT`); never enable WORD/NAN boxing

@@ -9,7 +9,10 @@
 #   • pass -DARM_TOOLCHAIN_PATH=/abs/path/to/bin at configure time.
 # When the CubeMX/HAL phase lands, re-pin to match the CubeIDE toolchain.
 #
-# STM32WLE5JC core = Arm Cortex-M4 with single-precision FPU (FPv4-SP-D16).
+# STM32WLE5JC core = Arm Cortex-M4 WITHOUT FPU — the STM32WL family omits it
+# (the word "FPU" never appears in DS13105/RM0461). All float math is software
+# (__aeabi_f*/__aeabi_d* from libgcc), hence -mfloat-abi=soft below: a
+# hard-float binary would UsageFault on the first VFP instruction on silicon.
 
 set(CMAKE_SYSTEM_NAME      Generic)
 set(CMAKE_SYSTEM_PROCESSOR arm)
@@ -32,8 +35,8 @@ set(CMAKE_ASM_COMPILER "${_tc_bin}${_tc_prefix}gcc")
 set(CMAKE_OBJCOPY      "${_tc_bin}${_tc_prefix}objcopy" CACHE FILEPATH "objcopy")
 set(CMAKE_SIZE_TOOL    "${_tc_bin}${_tc_prefix}size"    CACHE FILEPATH "size")
 
-# --- CPU / FPU ------------------------------------------------------------
-set(SILKEN_CPU_FLAGS "-mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb")
+# --- CPU / float ABI (no FPU on STM32WL) -----------------------------------
+set(SILKEN_CPU_FLAGS "-mcpu=cortex-m4 -mfloat-abi=soft -mthumb")
 
 set(CMAKE_C_FLAGS_INIT          "${SILKEN_CPU_FLAGS} -ffunction-sections -fdata-sections -Wall -Wextra")
 set(CMAKE_CXX_FLAGS_INIT        "${SILKEN_CPU_FLAGS} -ffunction-sections -fdata-sections -Wall -Wextra")

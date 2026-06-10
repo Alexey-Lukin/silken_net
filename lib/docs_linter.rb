@@ -277,7 +277,13 @@ module DocsLinter
   DEPRECATED_TERMS = {
     "silkennet-v1-aes256" => 'use "silken-aes-128-lora-key" / "silken-aes-256-device-key" (ARCH.42 256→128 HKDF info)',
     "ZP-3" => "retired ∅27mm through-hole piezo SKU → SMD piezo (Murata 7BB-15-6L0 / TDK B-Series), canon 02_01 §3",
-    "ZP-5" => "retired ∅27mm through-hole piezo SKU → SMD piezo (Murata 7BB-15-6L0 / TDK B-Series), canon 02_01 §3"
+    "ZP-5" => "retired ∅27mm through-hole piezo SKU → SMD piezo (Murata 7BB-15-6L0 / TDK B-Series), canon 02_01 §3",
+    # FPU-міф (знято 2026-06-10): STM32WL M4 — БЕЗ FPU; усі ARM-збірки -mfloat-abi=soft.
+    "fpv4-sp-d16" => "WLE5 has NO FPU → ARM builds are -mfloat-abi=soft (03_01 §12.4 ABI-інваріант)",
+    "FPv4-SP-D16" => "WLE5 has NO FPU → ARM builds are -mfloat-abi=soft (03_01 §12.4 ABI-інваріант)",
+    "mfloat-abi=hard" => "WLE5 has NO FPU → ARM builds are -mfloat-abi=soft (03_01 §12.4 ABI-інваріант)",
+    "Cortex-M4F" => "WLE5 core is Cortex-M4 WITHOUT FPU (03_01 §12.4 / 03_03 §1.1)",
+    "Cortex-M4 з FPU" => "WLE5 core is Cortex-M4 WITHOUT FPU (03_01 §12.4 / 03_03 §1.1)"
   }.freeze
 
   DEPRECATED_EXEMPT = %w[02_06 00_06 00_07].freeze

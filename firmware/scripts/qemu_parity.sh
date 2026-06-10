@@ -22,7 +22,10 @@ ARM_BUILD="$MRUBY/build/arm-none-eabi"
 OUT="$REPO/firmware/build-sim"
 mkdir -p "$OUT"
 
-CPU_FLAGS="-mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb"
+# soft-float = ABI реального WLE5 (STM32WL — M4 БЕЗ FPU; датащит FPU не знає).
+# mps2-an386 у QEMU FPU має, але ми свідомо його не чіпаємо — біти мають
+# народжуватись тим самим __aeabi_* шляхом, що й на дереві.
+CPU_FLAGS="-mcpu=cortex-m4 -mfloat-abi=soft -mthumb"
 
 # ── Інструменти ─────────────────────────────────────────────────────────
 CC_HOST="${CC:-cc}"

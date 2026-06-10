@@ -57,6 +57,9 @@ python3 -m silken_ml.codegen.emit_c           # PYTHONPATH=tools/ml/src
 
 # 3. the C front-end matches the golden vectors (tol 1e-3)
 make -C firmware/test logmel
+
+# 4. the CMSIS path on the real M4 ISA + stack high-water (QEMU; locally = build + skip)
+firmware/scripts/qemu_logmel.sh
 ```
 
 **Full path — conda `silken_ml` (adds the librosa parity gate):**

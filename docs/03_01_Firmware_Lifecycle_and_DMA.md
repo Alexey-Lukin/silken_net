@@ -1442,7 +1442,7 @@ make -C firmware/test clean   # Remove test_queen, test_soldier binaries
 ```
 firmware/
   CMakeLists.txt              — owned-код (logmel.c) + CMSIS-DSP + size + guarded HAL
-  cmake/arm-none-eabi.cmake   — toolchain-file (Cortex-M4F; pin Arm GNU 13.2.Rel1)
+  cmake/arm-none-eabi.cmake   — toolchain-file (Cortex-M4 soft-float; pin Arm GNU 13.2.Rel1)
   mruby/build_config.rb       — mruby builds (host mrbc / host-min / arm minimal)
   extern/                     — pinned submodules: CMSIS-DSP · CMSIS_6 (Core) · mruby · monocypher
 tools/firmware/
@@ -1460,6 +1460,16 @@ cmake --build firmware/build --target size        # arm-none-eabi-size logmel.o
 tools/firmware/gen_bytecode.sh --check            # bytecode mirror == bio_contract.rb
 tools/firmware/run_bytecode_vm.sh                 # minimal VM runs the bytecode
 ```
+
+**ABI-інваріант (FPU-міф знято, 2026-06-10):** STM32WL Cortex-M4 — **без FPU**
+(слово "FPU" відсутнє у DS13105/RM0461; рання версія цього розділу і
+toolchain-файлів помилково пінила апаратний FPv4 hard-float — такий `.elf` на
+кремнії впав би в UsageFault на першій VFP-інструкції). Тому **всі** ARM-збірки
+(toolchain-file, mruby `build_config.rb`, обидві QEMU-ноги §12.7) —
+`-mfloat-abi=soft`: float і double йдуть software `__aeabi_*`. QEMU-startup
+свідомо не вмикає CPACR — випадкове повернення hard-float ловиться як
+`PARITY-ABORT fault` (ABI-tripwire), а повернення hard-float токенів у канон
+блокує `deprecated_terms`-гейт.
 
 **Виміряний footprint** (вперше — ARM-build раніше не існувало):
 
@@ -1521,13 +1531,25 @@ tools/firmware/run_bytecode_vm.sh                 # minimal VM runs the bytecode
 
 **Що це:** committed-байткод `lorenz_bytecode.h` виконується реальним **Cortex-M4 код-шляхом** (minimal-gembox `libmruby.a` із `SILKEN_ARM_BUILD`, software-double `__aeabi_d*` — той самий машинний код, що піде на STM32WLE5JC) на `qemu-system-arm -M mps2-an386`, і дамп порівнюється **byte-exact** із host-голденом. Закриває FW.7/FW.19 residual «ARM↔x86 Float drift» до тонкого silicon-confirm (один прогін selftest на платі).
 
-**Чому бітова рівність — правильний гейт:** Lorenz = лише `+−×÷` (correctly-rounded за IEEE 754), VM виконує той самий байткод у тому ж порядку, double на M4F — детермінований software-шлях. Розбіжність = справжня знахідка, не шум. Кейси **зчеплені** (вихід N → вхід N+1, RTC-continuation патерн) — одиничний ULP-дрейф ампліфікується хаосом і не сховається.
+**Чому бітова рівність — правильний гейт:** Lorenz = лише `+−×÷` (correctly-rounded за IEEE 754), VM виконує той самий байткод у тому ж порядку, double на M4 (WLE5 без FPU — ABI-інваріант §12.4) — детермінований software-шлях `__aeabi_d*`. Розбіжність = справжня знахідка, не шум. Кейси **зчеплені** (вихід N → вхід N+1, RTC-continuation патерн) — одиничний ULP-дрейф ампліфікується хаосом і не сховається.
 
 **Анатомія (One-Home):**
 - `firmware/sim/parity_core.h` — спільний runner (host і ARM компілюють той самий код); краєві піни (temp/acoustic/delta_t/vcap) + LCG-розгортка.
 - `firmware/sim/host_main.c` — host-голден; `firmware/sim/qemu_m4/{main,startup,syscalls}.c` + `mps2_an386.ld` — bare-metal нога (CMSDK UART0 → stdout, semihosting-вихід; карта пам'яті СИМУЛЯТОРА, не Солдата).
 - `firmware/scripts/qemu_parity.sh` — єдиний вхід (DRY, патерн `cppcheck.sh`): локально без qemu → host+ARM-build і чесний skip; CI з `REQUIRE_QEMU=1` — відсутній qemu = fail.
 - CI: крок `[FW.55]` у job `firmware_arm_build` (`ci.yml`) — реюзає вже зібрані mruby-ліби.
+
+**Друга нога — log-mel DSP ([FW.4], 2026-06-10):** та сама машина, той самий
+метод, інший вантаж: `Compute_LogMel` (`silken_common`, `LOGMEL_USE_CMSIS` —
+справжній `arm_rfft_fast_f32` код-шлях, soft-float ABI WLE5) ганяє golden-вектори
+спільним ядром `firmware/sim/logmel_parity_core.h` (One-Home з host-ctest
+`test_logmel_cmsis`). Гейт тут — **толеранс проти double-оракула** (1e-3, не
+byte-exact: float32 ≠ binary64) + **stack high-water**: вікно під SP фарбується,
+після чистих викликів (вхід/вихід static, як DMA-буфер Солдата) сканується;
+перевищення бюджету-tripwire = fail. Вхід — `firmware/scripts/qemu_logmel.sh`
+(локально без qemu → cross-build і чесний skip; CI `REQUIRE_QEMU=1`, крок
+`[FW.4]` у `firmware_arm_build` — реюзає `firmware/build` з кроку FW.46).
+Latency QEMU **не** міряє (не цикло-точний) — то клас C.
 
 **Межі чесності:** QEMU виконує ISA, а не кремній — він **не** відповідає за периферію (RTC/AES/SUBGHZ), споживання чи таймінги. Це шар B класифікації симуляції ([`00_03 §3`](00_03_TRL_Matrix_HIL_and_Beyond)); кремнієвий клас C живе у bench-runbook. Статус — [`00_07` — FW.55](00_07_Action_Plan_Tracker).
 

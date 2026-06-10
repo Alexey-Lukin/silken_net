@@ -54,7 +54,7 @@
 
 | Характеристика | Значення |
 |----------------|----------|
-| Ядро | ARM Cortex-M4 з FPU |
+| Ядро | ARM Cortex-M4 **без FPU** (сімейство STM32WL його не має — слово "FPU" відсутнє у DS13105/RM0461; увесь float — software `__aeabi_*`, ABI `-mfloat-abi=soft`) |
 | Тактова частота | 48 MHz |
 | Flash | 256 KB |
 | SRAM | 64 KB |
@@ -323,6 +323,16 @@ firmware-роботи.
 Жоден з шляхів не перевищує бюджет одного awake-циклу (потрібен <250 мс для
 PVD safety, з запасом). Path B має найменшу sum, але різниця < 10%.
 
+> **⚠️ Чесність float-рядків (FPU-міф знято, 2026-06-10):** наведені часи
+> float-DSP (Hann/FFT/magnitude/mel/log) рахувались у припущенні апаратного
+> FPU — але **WLE5 його не має** (§1.1): CMSIS f32 виконується software
+> `__aeabi_f*`, тобто float-рядки Path B реально на порядок повільніші
+> (орієнтир ~5–15 мс на FFT замість ~1 мс; усе ще в межах <250 мс бюджету).
+> **CNN-інференс це не зачіпає** — CMSIS-NN INT8 цілочисельний. Точні часи —
+> клас C (bench, цикло-точність; QEMU її не дає). Якщо bench покаже тісний
+> енергобюджет — запасний хід: Q15 fixed-point шлях (`arm_rfft_q15`),
+> контракт §3.4 при цьому не змінюється (mel/log семантика та сама).
+
 ---
 
 ### 3.4 Log-Mel Feature Contract (FW.25) — конкретна специфікація
@@ -385,8 +395,9 @@ logmel = np.log(mel_fb @ power + 1e-6).astype(np.float32)                # [40, 
 Контракт — **наш канон end-to-end** (ML-партнера нема); верифікується локально без librosa на швидкому шляху.
 
 1. **Оракул + golden-gen** — `silken_ml.dsp` ([`tools/ml`](https://github.com/Alexey-Lukin/silken_net/blob/main/tools/ml)): librosa (training) ≡ pure-stdlib (швидкий, без numpy), parity tol 1e-6 у `ml_smoke.yml`.
-2. **Firmware** — `Compute_LogMel` ([`firmware/common/logmel.c`](https://github.com/Alexey-Lukin/silken_net/blob/main/firmware/common/logmel.c); host radix-2 / ARM `arm_rfft_fast_f32`) + golden-vector host-тести ([`firmware/test/test_logmel.c`](https://github.com/Alexey-Lukin/silken_net/blob/main/firmware/test/test_logmel.c), tol 1e-3). Таблиці Hann/mel-bank/golden — `silken_ml.codegen` → `firmware/common/logmel_*.h`.
-3. [ ] Розкоментувати `Run_Inference` call-site (Phase 1.5 у `main.c`, наразі закоментований) + виміряти Tensor Arena — після реальної моделі (`FW.4`, потребує `silken_net_audio_model.h`).
+2. **Firmware** — `Compute_LogMel` ([`firmware/common/logmel.c`](https://github.com/Alexey-Lukin/silken_net/blob/main/firmware/common/logmel.c); host naive-DFT reference / ARM `arm_rfft_fast_f32`) + golden-vector host-тести ([`firmware/test/test_logmel.c`](https://github.com/Alexey-Lukin/silken_net/blob/main/firmware/test/test_logmel.c), tol 1e-3). Таблиці Hann/mel-bank/golden — `silken_ml.codegen` → `firmware/common/logmel_*.h`.
+3. **CMSIS-шлях доведено без плати (FW.4, 2026-06-10)** — спільне ядро перевірок `firmware/sim/logmel_parity_core.h` ганяється двічі: host-ctest (скалярний CMSIS-DSP) **і** QEMU-M4 нога (`firmware/scripts/qemu_logmel.sh`, mps2-an386, soft-float ABI WLE5 — метод [`03_01 §12.7`](03_01_Firmware_Lifecycle_and_DMA)): golden-parity (tol 1e-3) + **stack high-water gate** навколо чистих викликів (стек після reuse-buffers — два кадрові буфери; бюджет-tripwire живе у `firmware/sim/qemu_m4/logmel_main.c`). Silicon-confirm float32 — тонка формальність bench.
+4. [ ] Розкоментувати `Run_Inference` call-site (Phase 1.5 у `main.c`, наразі закоментований) + виміряти Tensor Arena — після реальної моделі (`FW.4`, потребує `silken_net_audio_model.h`).
 
 ---
 
@@ -461,6 +472,10 @@ uint8_t Run_Inference(float* input_buffer, float* confidence);
 | Dense + Softmax | ~0.5 мс |
 | **Загальний Inference Latency** | **~8–24 мс** |
 | **З DSP (FFT + log-mel, `Compute_LogMel`)** | **~12–28 мс** |
+
+> CNN-рядки FPU-агностичні (CMSIS-NN — INT8/integer). DSP-доданок — див.
+> чесність-ноту §3.3: WLE5 без FPU → float-DSP software, реальний доданок
+> більший за табличний (точно — bench).
 
 ---
 
@@ -585,9 +600,9 @@ void Trigger_Emergency_LoRa_TX(void)
 | mruby VM heap (~4 KB) | 4 096 B |
 | Tensor Arena (оцінка) | ~12 288 B |
 | fauna_feature_accumulator *(transient, path-dependent — §3.2; лише під час fauna-сесії — §10.2)* | ~256 B (Path B/C) / ~2 KB (Path A raw window) |
-| Stack (оцінка) | ~4 096 B |
-| **Разом (оцінка)** | **~25 KB** *(peak з fauna-вікном)* |
-| **Залишок (з 64 KB)** | **~39 KB** |
+| Stack (бюджет; пік = `Compute_LogMel` — два кадрові буфери після FW.4 reuse-buffers, high-water гейтиться QEMU-ногою §3.4 п.3; число тут — дзеркало tripwire у `firmware/sim/qemu_m4/logmel_main.c`) | ~6 144 B |
+| **Разом (оцінка)** | **~27 KB** *(peak з fauna-вікном)* |
+| **Залишок (з 64 KB)** | **~37 KB** |
 
 > ⚠️ Точний розмір Tensor Arena невідомий. Потрібна верифікація через `arm-none-eabi-size`.
 

@@ -318,6 +318,16 @@ RSpec.describe DocsLinter do
       expect(described_class.deprecated_terms("02_03", "LTC3108 DNP cold-start fallback")).to be_empty
     end
 
+    it "flags the FPU myth tokens (WLE5 has no FPU — ARM builds are soft-float)" do
+      expect(described_class.deprecated_terms("03_03", "Ядро ARM Cortex-M4 з FPU")).not_to be_empty
+      expect(described_class.deprecated_terms("03_01", "toolchain Cortex-M4F pinned")).not_to be_empty
+      expect(described_class.deprecated_terms("03_01", "flags -mfpu=fpv4-sp-d16 -mfloat-abi=hard")).not_to be_empty
+    end
+
+    it "does NOT flag the corrected no-FPU wording" do
+      expect(described_class.deprecated_terms("03_03", "ARM Cortex-M4 без FPU, -mfloat-abi=soft")).to be_empty
+    end
+
     it "is clean when only current tokens are present" do
       expect(described_class.deprecated_terms("03_05", "HKDF info silken-aes-128-lora-key")).to be_empty
     end

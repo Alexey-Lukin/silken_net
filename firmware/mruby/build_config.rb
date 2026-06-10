@@ -60,7 +60,8 @@ if ENV['SILKEN_ARM_BUILD'] == '1'
     conf.linker.command   = "#{prefix}gcc"
     conf.archiver.command = "#{prefix}ar"
 
-    cpu   = %w[-mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb]
+    # WLE5 БЕЗ FPU (сімейство STM32WL) → soft-float: увесь float — __aeabi_*.
+    cpu   = %w[-mcpu=cortex-m4 -mfloat-abi=soft -mthumb]
     flags = cpu + %w[-Os -ffunction-sections -fdata-sections]
     conf.cc.flags  = [ flags ]
     conf.cxx.flags = [ flags ]

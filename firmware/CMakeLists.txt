@@ -68,6 +68,24 @@ if(CMAKE_CROSSCOMPILING)
     VERBATIM
     COMMENT "[FW.46] arm-none-eabi-size — owned DSP code + L1 attest lib (.text/.data/.bss)")
 
+  # --- [FW.4] QEMU-M4 log-mel leg: golden-parity + stack high-water ---------
+  # The same silken_common (LOGMEL_USE_CMSIS) on the real Cortex-M4 code path
+  # (soft-float = the WLE5 ABI) under qemu-system-arm mps2-an386. Shares the
+  # check core with the host ctest (sim/logmel_parity_core.h); wrapper script
+  # firmware/scripts/qemu_logmel.sh, CI gate next to the FW.55 parity leg.
+  add_executable(logmel_m4
+    sim/qemu_m4/logmel_main.c
+    sim/qemu_m4/startup.c
+    sim/qemu_m4/syscalls.c)
+  target_include_directories(logmel_m4 PRIVATE sim)
+  target_link_libraries(logmel_m4 PRIVATE silken_common m)
+  target_link_options(logmel_m4 PRIVATE
+    "-T${CMAKE_CURRENT_SOURCE_DIR}/sim/qemu_m4/mps2_an386.ld"
+    -nostartfiles "-Wl,--gc-sections")
+  set_target_properties(logmel_m4 PROPERTIES
+    SUFFIX ".elf"
+    LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/sim/qemu_m4/mps2_an386.ld")
+
   # Full HAL-linked .elf — needs the vendored CubeMX project (HAL drivers,
   # linker script, startup, system_stm32wlxx.c). Wired in the HAL phase.
   option(SILKEN_WITH_HAL "Link the full Soldier/Queen .elf (needs vendored CubeMX project)" OFF)
@@ -83,6 +101,7 @@ else()
   if(SILKEN_HOST_PARITY)
     enable_testing()
     add_executable(test_logmel_cmsis test/test_logmel_cmsis.c)
+    target_include_directories(test_logmel_cmsis PRIVATE sim)
     target_link_libraries(test_logmel_cmsis PRIVATE silken_common m)
     add_test(NAME logmel_cmsis_packing COMMAND test_logmel_cmsis)
   endif()

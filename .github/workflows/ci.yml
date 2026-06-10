@@ -127,6 +127,13 @@ jobs:
         # тонкого silicon-confirm. docs/03_01 §12.7.
         run: REQUIRE_QEMU=1 firmware/scripts/qemu_parity.sh
 
+      - name: '[FW.4] QEMU-M4 log-mel — CMSIS RFFT golden-parity + stack high-water (mps2-an386)'
+        # Той самий Compute_LogMel (LOGMEL_USE_CMSIS), що поїде в Солдата, на
+        # реальному M4 код-шляху (soft-float = ABI WLE5 без FPU): спільне ядро
+        # перевірок із host-ctest + stack-painting навколо чистих викликів.
+        # Reuse firmware/build з кроку FW.46 вище. docs/03_01 §12.7.
+        run: REQUIRE_QEMU=1 firmware/scripts/qemu_logmel.sh
+
       - name: '[FW.46] Host CMSIS log-mel packing-parity (no board)'
         run: |
           cmake -B firmware/build-host -S firmware -G Ninja \

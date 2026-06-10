@@ -15,16 +15,14 @@ extern uint32_t __bss_start__, __bss_end__, __stack_top__;
 int  main(void);
 void _exit(int code);
 
-/* CPACR: доступ до CP10/CP11 (FPU). Hard-float ABI кладе double в d-реги —
- * без цього перший же VMOV дає UsageFault (саме так виглядав перший
- * CI-прогін: PARITY-ABORT fault). */
-#define SCB_CPACR (*(volatile uint32_t *)0xE000ED88u)
+/* FPU свідомо НЕ вмикаємо (CPACR не чіпаємо): STM32WL — M4 БЕЗ FPU, тож усі
+ * образи будуються -mfloat-abi=soft і VFP-інструкцій не містять. Це ще й
+ * tripwire: якщо у збірку випадково повернеться hard-float — перший VMOV на
+ * вимкненому CP10/CP11 дасть UsageFault → Hang_Handler → "PARITY-ABORT fault",
+ * і CI впіймає ABI-дрейф замість тихої не-девайсної математики. */
 
 void Reset_Handler(void)
 {
-    SCB_CPACR |= (0xFu << 20);
-    __asm__ volatile ("dsb; isb" ::: "memory");
-
     // cppcheck-suppress comparePointers // лінкерні символи — межі ОДНОГО .bss
     for (uint32_t *p = &__bss_start__; p < &__bss_end__; p++) *p = 0u;
     exit(main());
