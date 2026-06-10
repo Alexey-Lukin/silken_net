@@ -19,9 +19,9 @@ BINDIR   = .
 OPENSSL_CFLAGS = $(shell pkg-config --cflags openssl 2>/dev/null)
 OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
-.PHONY: all queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ota attest size-check clean
+.PHONY: all queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ota attest key_ratchet size-check clean
 
-all: queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ota attest
+all: queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ota attest key_ratchet
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -67,6 +67,9 @@ flash_ota: $(BINDIR)/test_flash_ota
 
 attest: $(BINDIR)/test_queen_attest
 	@./$(BINDIR)/test_queen_attest
+
+key_ratchet: $(BINDIR)/test_key_ratchet
+	@./$(BINDIR)/test_key_ratchet
 
 $(BINDIR)/test_queen: test_queen_logic.c hal_mock.h ../common/silken_crc.h
 	$(CC) $(CFLAGS) -o $@ test_queen_logic.c
@@ -116,6 +119,10 @@ $(BINDIR)/test_queen_attest: test_queen_attest.c ../common/queen_attest.h \
 	  -o $@ test_queen_attest.c \
 	  $(MONOCYPHER_SRC)/monocypher.c $(MONOCYPHER_SRC)/optional/monocypher-ed25519.c \
 	  $(OPENSSL_LIBS)
+
+# [FW.17] Hash-Ratchet ротація LoRa-ключа — pure-C KAT (parity з RSpec).
+$(BINDIR)/test_key_ratchet: test_key_ratchet.c ../common/key_ratchet.h ../common/silken_sha256.h ../common/silken_crc.h
+	$(CC) $(CFLAGS) -o $@ test_key_ratchet.c
 
 # [SEC.11] Host parity for SilkenNet::SeedDerivation. Uses OpenSSL
 # libcrypto on host; firmware MCU side runs the same primitives via

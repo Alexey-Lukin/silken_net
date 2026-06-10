@@ -74,7 +74,7 @@
 | **ECB Mode для Soldier ↔ Queen (відсутність IV)** | 🟡 OPEN — transitional AES-128-ECB після ARCH.42; повне закриття після FW.2 CCM rollout |
 | **Відсутність MAC/MIC для LoRa-пакетів** | 🟡 OPEN — закривається разом з FW.2 CCM (8-byte MIC + 4-byte Frame Counter) |
 | **HRNG Fallback — передбачуваний seed** | ✅ Reuse закрито (`coap_iv.h`: uid×device + unix_ts×reboot + flush_seq×flush + 4 host-тести); 🟡 predictability residual **low-severity** (no chosen-plaintext на CoAP — §HRNG Fallback) |
-| **Відсутність ротації ключів (Key Rotation)** | 🟡 OPEN (рекомендовано Hash Ratchet KDF — PFS без передачі ключа; PQC bridge через §10) |
+| **Відсутність ротації ключів (Key Rotation)** | 🟡 механізм freeze-contract host-готовий (§3.8 Hash-Ratchet, 2026-06-10); активація gated на FW.2 CCM; PQC bridge через §10 |
 | **ECB Restoration Race (HAL_CRYP_Init failure)** | ✅ Виправлено (SEC.8) — RCC reset + `NVIC_SystemReset()` при апаратному збої |
 | **SE050 Secure Element — голос-дерева Ed25519 + AES-128 LoRa [SEC.6 RESOLVED → §3.7]** | 🟡 OPEN (hardware) — eval-kit + datasheet-verify (Ed25519/monotonic-counters/AES-128/I²C); ADR ✅ §3.7 |
 | **PQC migration roadmap (2026 → 2028 → 2035)** | 🟢 NEW — задокументовано у §10 (TRL-stratified layering для Soldier↔Queen, Queen↔Rails, OTA, peaq DID) |
@@ -385,31 +385,13 @@ batch_iv[i] = (tick + i)                  // sub-second + per-word
 2. **Регуляторна невідповідність:** GDPR, ISO 27001 та NIST SP 800-57 вимагають ротацію криптографічних ключів. При масштабуванні до публічного продукту NaaS це може стати юридичним блокером.
 3. **OTA як вектор атаки:** Якщо OTA-канал не має власного механізму ключ-обміну, оновлення нового ключа через OTA саме по собі шифрується старим (скомпрометованим) ключем.
 
-**Необхідна дія:**
-
-- **Рекомендоване рішення — Hash Ratchet (Key KDF) для Perfect Forward Secrecy:**
-
-  Передавати новий ключ через ефір (навіть зашифрованим старим ключем) — погана практика: якщо `K_old` скомпрометовано, `K_new` автоматично теж. Замість цього використовувати **синхронну деривацію** на обох кінцях без передачі самого ключа:
-
-  1. Сервер надсилає CoAP-команду: `CMD:ROTATE_KEY:<UUID>` (команда, не ключ!).
-  2. Queen пересилає команду через OTA-broadcast або цільовий downlink Солдату.
-  3. Soldier та Queen **одночасно** проганяють поточний ключ через криптографічну хеш-функцію (або AES в режимі KDF, оскільки на борту вже є апаратний AES):
-
-  ```c
-  // Псевдокод Hash Ratchet (in-place деривація):
-  HAL_CRYP_Encrypt(&hcryp, current_aes_key, 8, next_aes_key, 1000);
-  memcpy(current_aes_key, next_aes_key, 32);
-  // Запис нового ключа у Flash/RTC Backup Domain
-  ```
-
-  **Переваги Hash Ratchet:**
-  - Ключ ніколи не передається по мережі → навіть при перехопленні `CMD:ROTATE_KEY` зловмисник не отримує жодної інформації про новий ключ.
-  - **Perfect Forward Secrecy:** Якщо ключ коли-небудь скомпрометують фізично (витяг з Flash), атакуючий **не зможе** розшифрувати старі пакети, перехоплені раніше (бо попередній ключ вже знищено).
-  - Мінімальний обчислювальний overhead: одна AES-операція при ротації.
-  - Cluster-wide активація через confirmation ACK від усіх вузлів кластера.
-
-- Альтернатива: **ECDH/Curve25519** key exchange при provisioning (складніше, але дозволяє незалежну ротацію).
-- **Передумова:** FW.1 (per-device provisioning) — ✅ реалізовано (firmware CLOSED, §3.1); передумова виконана.
+**Рішення — спроєктовано і freeze-contract'нуто: §3.8 [FW.17].** Hash-Ratchet
+(NIST SP 800-108 HMAC-KDF, ключ ніколи не летить ефіром, wire-команда `0x9E`,
+backward secrecy + чесна модель загроз + ECDH-alt ADR) — повна специфікація,
+доми коду й residual'и живуть у §3.8 (One-Home), тут не дублюємо. Старий
+ескіз (AES-self-encrypt, claim повної PFS при фізичному витягу) — SUPERSEDED
+специфікацією §3.8. Передумова FW.1 (per-device provisioning) — ✅ виконана
+(§3.1); активація gated на FW.2 CCM (authenticated downlink).
 
 **Блокує:** Довгострокова безпека мережі, відповідність регуляторним вимогам NaaS.
 
@@ -656,7 +638,7 @@ CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<IDEMPOTENCY_TOKEN>
 | **Адреса** | `FLASH_KEY_ADDR` | `FLASH_COAP_KEY_ADDR` (тільки Queen) |
 | **Розмір** | **128 біт (16 байт, 4 × uint32_t)** — ARCH.42 | 256 біт (32 байти, 8 × uint32_t) |
 | **Захист** | RDP Level 1 (виробництво) / RDP Level 2 (необоротний final lock) — див. §3.3 | Те саме |
-| **Ротація** | Hash Ratchet KDF — див. [`00_07` — FW.17](00_07_Action_Plan_Tracker) (placeholder) | Те саме |
+| **Ротація** | Hash-Ratchet §3.8 (host-готово, активація CCM-gated) — [`00_07` — FW.17](00_07_Action_Plan_Tracker) | Те саме |
 | **Унікальність** | **Унікальний per-device** через HKDF(`PROVISIONING_MASTER_KEY`, salt=`device_uid`, info=`"silken-aes-128-lora-key"`) | HKDF(`PROVISIONING_MASTER_KEY`, salt=`device_uid`, info=`"silken-aes-256-device-key"`) |
 | **Завантаження у RAM** | `Load_AES_Key()` на boot → `aes_key[4]` (LoRa-режим) | `Load_AES_Key()` на boot → `coap_key[8]` (динамічне MX_CRYP re-init для CoAP) |
 
@@ -1950,6 +1932,39 @@ atca_status_t status = atcab_aes_encrypt(
 
 ---
 
+### 3.8 [FW.17] Hash-Ratchet ротація LoRa-ключа (freeze-contract; активація gated)
+
+**Статус:** 🟡 host-готово (2026-06-10) — примітив, wire-кадр і версійна дисципліна freeze-contract'нуті обабіч (golden-KAT byte-parity: `firmware/test/test_key_ratchet.c` ↔ `spec/services/cryptography/key_ratchet_spec.rb`); активація **gated** (residual нижче). Закриває механізм «Відсутній Механізм Ротації Ключів» (нарація ризиків — блок у відкритих питаннях вище).
+
+**Принцип.** Ключ ніколи не летить ефіром: backend командує лише «дожени версію N», обидва кінці синхронно деривують наступний ключ. Один крок ratchet'а — KDF in Counter Mode за NIST SP 800-108 (i=1, Label, Context=DID, L=128):
+
+```
+K_{v+1} = HMAC-SHA256(key = K_v,
+                      msg = 0x01 ‖ "silken-lora-ratchet-v1" ‖ 0x00 ‖ DID_be4 ‖ 0x0080)[0..15]
+```
+
+Примітив — pure-C `Silken_Hmac_Sha256` (FW.30: апаратного SHA на WLE5 нема; AES-self-encrypt зі старого ескізу відкинуто — нестандартна конструкція без потреби, коли SHA256 вже відвантажено). DID у Context розводить ланцюги пристроїв зі спільним постачанням. Доми коду: `firmware/common/key_ratchet.h` ↔ `Cryptography::KeyRatchet`.
+
+**Wire — `CMD_ROTATE_KEY` `0x9E` (опкод-карта [`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA)):** `[0x9E][len_le:2 = 4][target_version:u16le][crc16_le:2]` = 7 байт, каркас 0x9A. Будує `OtaPackagerService.build_rotate_key_block`, парсить `Key_Ratchet_Parse_Cmd`; golden-кадр `9E 0400 0300 5C48` заморожено обабіч.
+
+**Версійна дисципліна:** `u16` monotonic; advance лише вперед (replay/rollback → відмова) і стрибком ≤ `KEY_RATCHET_MAX_JUMP = 8` (CPU-bound: 1 крок = 1 HMAC; runaway-таргет зіпсутого кадру нешкідливий). Target — абсолютний, тож пропущені команди доганяються наступною.
+
+**Persist (узгоджено з [`03_01 §2.3.1`](03_01_Firmware_Lifecycle_and_DMA)):** у Flash-KV їде **лише версія** (ключ `0x13 FW17_KEYVER`) — журнал append-only, і старі записи не сміють тримати ключового матеріалу. Boot: `K_current = ratchet^v(K0)` з Protected Flash (FW.1); v HMAC-кроків на boot — мікросекунди навіть на сотнях версій.
+
+**ACK без окремого каналу:** backend ротує `HardwareKey` при dispatch'і команди (новий ключ; старий → `previous_aes_key_hex`, Dual-Key Grace §3.4а) → перший uplink, що декриптнувся новим ключем, = неявний per-device ACK (`clear_grace_period!` — наявна машинерія). Cluster-wide ротація = батч per-device команд; «cluster ACK» = усі grace-вікна кластера закриті.
+
+**Чесна модель загроз:**
+- ✅ **Backward secrecy** — головна регуляторна цінність (NIST SP 800-57 / GDPR / ISO 27001): витік `K_v` (DB-leak бекенда) не відкриває попередні ключі й записаний раніше трафік.
+- ⚠️ Майбутні ключі з `K_v` похідні (hash-ланцюг) — відновлення після компрометації = re-provisioning (SEC.3) або ECDH-alt (нижче). Ratchet ≠ compromise recovery.
+- ⚠️ Фізичний витяг `K0` з пристрою дає весь ланцюг — захист сьогодні = RDP2 (§3.6); справжнє закриття = SE050 non-extractable + HW monotonic counter (§3.7, рунг L2). `K0`-rederive свідомо обрано замість erase-old-key: append-only Flash-KV не вміє гарантовано стирати, а Protected Flash не перезаписується без unlock.
+- 🔴 **Активаційний gate:** ECB-downlink без MAC (BLOCKER-2) не сміє командувати ротацією (bit-flip/forge кадру). Активація — лише ПІСЛЯ FW.2 CCM (authenticated downlink). До того модуль інертний: не викликається ні в `main.c`, ні в production-pipeline.
+
+**ECDH-alt (ADR):** Curve25519-обмін при provisioning дає *незалежну* ротацію (компрометація поточного ключа не тягне майбутніх), але потребує asymmetric-церемонії на M4 + key transport. Рішення: ratchet зараз (симетрія, нуль нових примітивів), ECDH — природно разом із SE050-L2 (ECDH усередині SE).
+
+**Residual ([`00_07` — FW.17](00_07_Action_Plan_Tracker)):** інтеграція = `key_version` колонка `HardwareKey` + dispatch у downlink-pipeline + Soldier-гілка `0x9E` за CCM-флагом + mount Flash-KV у `main.c` + bench.
+
+---
+
 ## 🎲 4. Генерація Вектора Ініціалізації (IV)
 
 ### 4.1 Soldier: IV відсутній (ECB Mode)
@@ -2136,7 +2151,7 @@ HAL_CRYP_Init(&hcryp);
 | **Factory Flashing Pipeline** | 🟡 PARTIAL (SEC.3) | ✅ Архітектура (§3.4) + HKDF (§3.4а) + Operations Security threat model (§3.4г, 2026-05-17) + tool implementation (§3.4г Implementation status, 2026-05-24 — `app/services/factory_flashing/*`, `lib/tasks/factory.rake`, 63 specs, dry-run). 👤 Залишається: real `STM32_Programmer_CLI` execution на bench + Bitwarden live API + ATCA I²C |
 | **Shipping Mode (Геркон)** | 🟡 OPEN | Концепт визначено (розділ 3.5); компонент не доданий до BOM |
 | **Secure Element (SE050)** | ✅ SEC.6 RESOLVED (true-DePIN) | §3.7 ADR — SE = **SE050** (Ed25519 on-chip keygen; реверс ATECC), soft-freeze DNP, populate post-FW.2; slot-map §3.7. Residuals → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker) |
-| **Key Rotation** | 🟡 OPEN | Рекомендовано: Hash Ratchet KDF (PFS без передачі ключа по мережі) — `[FW.17]` |
+| **Key Rotation** | 🟡 host-готово | Hash-Ratchet freeze-contract §3.8 (backward secrecy, ключ не летить ефіром); активація CCM-gated — `[FW.17]` |
 | **HRNG Fallback** | ✅ Harden (2026-05-29) | `coap_fallback_iv_word` (pure, `coap_iv.h`) — унікальність across device/reboot/flush; §4.2 |
 | **PQC Migration Roadmap** | ✅ Документовано | §10 — TRL-stratified layering (2026 → 2028 → 2035); LoRa поточно квантово-стійкий через симетрію + ratchet, асиметричні шари мігрують через hybrid Cloudflare X25519+Kyber → ML-KEM/ML-DSA |
 

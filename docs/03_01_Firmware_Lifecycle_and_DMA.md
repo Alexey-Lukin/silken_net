@@ -801,6 +801,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 | `0x03` OTA_SILENCE_WALL | `ota_last_chunk_rx` (wall-сек) | u32 | FW.27-B OTA re-request silence | live (лише під OTA) |
 | `0x10`–`0x11` FW8_ZCFG | `lorenz_z_{min,max,opt}_x100` · `species_id` · `config_version` | 2 dw: `0x10`=[z_max:16\|z_min:16], `0x11`=[ver:8\|species:8\|z_opt:16] | FW.8 per-tree Z-пороги | gated (`FW8_PARSER_ENABLED=0`); persist-логіка ✅ host (`common/lorenz_thresholds.h` + power-cut тести) |
 | `0x12` FW8_AUDIO | audio config + version | u32 | FW.8 audio-пороги | gated |
+| `0x13` FW17_KEYVER | ratchet `key_version` (САМ ключ у Flash-KV НЕ їде — append-журнал не стирає; boot re-derive з K0) | `[version:16 \| rsv:16]` | FW.17 ротація ключа ([`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security)) | gated (активація після FW.2 CCM) |
 | `0x20…` S2_BITMAP | anti-storm dedup bitmap | multi-dw | FW.20-S2 mesh-relay | gated (повний mesh-relay) |
 
 > **Головний wall-маркер delta_t — НЕ Flash-KV ключ.** «Wall-секунди останнього energy-sufficient циклу» (база `Silken_Wall_Delta_Seconds`, `firmware/common/wall_time.h`) переселяє **семантику** `last_wakeup_timestamp` (DR1: tick-сек → wall-сек) — реюз наявного RTC-регістру, а не нова Flash-фіча. Тож FW.49 timebase **не** додає Flash-write/цикл; у Flash-KV їдуть лише вторинні маркери (`0x02`/`0x03`), що деградують м'яко (втрата → м'який re-ask після grace).
@@ -981,7 +982,7 @@ Chunk-розмір для LoRa OTA: **11 байт** корисного коду 
 | `0x9B` | CMD_HMAC_TRAILER (OTA HMAC-SHA256 печатка) | Rails→Queen→Soldier | CoAP/LoRa | [`03_05 §3.4б`](03_05_Hardware_Symmetric_Crypto_and_Security) | ✅ FW.23 (2026-05-02) |
 | `0x9C` | CMD_TIME_SYNC (envelope) | Rails→Queen | CoAP | §11 (FW.20) | ✅ FW.20 |
 | `0x9D` | CMD_SET_AUDIO_THRESHOLDS (TinyML per-Soldier) | Rails→Queen→Soldier | CoAP/LoRa | [`03_03` — BLOCKER-6](03_03_TinyML_Acoustic_Inference) | ✅ FW.18 (2026-05-02) |
-| `0x9E` | _reserved_ | — | — | — | вільний |
+| `0x9E` | CMD_ROTATE_KEY (hash-ratchet advance-to-version) | Rails→Queen→Soldier | CoAP/LoRa | [`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security) | 🟡 FW.17 (freeze-contract host-готово; активація CCM-gated) |
 | `0x9F` | _reserved_ | — | — | — | вільний |
 
 > **Політика розширення:** перед додаванням нового опкоду — (1) перевірити цю таблицю, (2) обрати наступний вільний з `0x9E..0x9F`, (3) задокументувати тут І у відповідному функціональному документі (03_02/03_05/05_02). Якщо `0x9E..0x9F` вичерпано — обговорити перепакування або новий безпечний діапазон.

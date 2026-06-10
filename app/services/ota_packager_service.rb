@@ -13,6 +13,7 @@ class OtaPackagerService
   CMD_SET_THRESHOLDS = 0x9A # per-tree Lorenz Z thresholds
   CMD_HMAC_TRAILER   = 0x9B # [FW.23] OTA HMAC-SHA256 trailer (3 LoRa chunks)
   CMD_TIME_SYNC      = 0x9C # backend UTC timestamp envelope (FW.20)
+  CMD_ROTATE_KEY     = 0x9E # [FW.17] hash-ratchet advance-to-version (без ключа на дроті)
 
   # [FW.23] HMAC trailer constants — wire format must mirror Soldier parser.
   HMAC_TAG_BYTES        = 32   # HMAC-SHA256 output size
@@ -59,6 +60,18 @@ class OtaPackagerService
     payload = body + [ crc ].pack("v") # uint16 little-endian
 
     [ CMD_SET_THRESHOLDS ].pack("C") + [ payload.bytesize ].pack("v") + payload
+  end
+
+  # [FW.17] Build a CMD_ROTATE_KEY (0x9E) frame — каркас 0x9A, але body = лише
+  # target_version: ключ НІКОЛИ не їде дротом, пристрій деривує його сам
+  # (Cryptography::KeyRatchet ↔ firmware/common/key_ratchet.h).
+  # Wire: [0x9E][PAYLOAD_LEN:2le = 4][target_version:u16le][crc16:u16le] = 7 байт.
+  def self.build_rotate_key_block(target_version)
+    raise ArgumentError, "target_version must be 1..65535" unless (1..0xFFFF).cover?(target_version)
+
+    body = [ target_version ].pack("v")
+    payload = body + [ crc16_ccitt(body) ].pack("v")
+    [ CMD_ROTATE_KEY ].pack("C") + [ payload.bytesize ].pack("v") + payload
   end
 
   # [FW.8] Class-level CRC16-CCITT (XMODEM polynomial 0x1021, init 0xFFFF)
