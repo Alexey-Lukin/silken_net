@@ -910,7 +910,7 @@ CoAP-магістраль (Queen ↔ Rails) — тільки на Gateway-ряд
 **Властивості HKDF:**
 - Якщо зловмисник знає `unique_device_key[i]`, він не може відновити `master_key` або `unique_device_key[j]` — однонаправлена функція
 - Два пристрої з однаковим `device_uid` отримають однаковий ключ (детерміновано) — важливо для Queen, яка повинна знати ключ кожного Soldier у своєму кластері
-- SHA-256 внутрішньо — апаратно прискорений на STM32WLE5JC (SHA256 у криптомодулі)
+- SHA-256 рахується програмно (backend — OpenSSL; Soldier cold-start — pure-C `silken_sha256.h`, FW.30): STM32WLE5JC має апаратний AES, але **не** HASH/SHA-блок
 
 #### Схема Provisioning (повна послідовність)
 
@@ -1144,7 +1144,7 @@ STM32CubeProgrammer → Option Bytes → Write Protection:
 
 | Параметр | LoRa-канал (Tree + Queen) | CoAP-канал (Queen only) | Обґрунтування |
 |----------|---------------------------|--------------------------|---------------|
-| KDF алгоритм | HKDF-SHA256 (RFC 5869) | HKDF-SHA256 | Стандарт NIST SP 800-56C, апаратний SHA256 у STM32 |
+| KDF алгоритм | HKDF-SHA256 (RFC 5869) | HKDF-SHA256 | Стандарт NIST SP 800-56C; SHA256 — software (backend OpenSSL / Soldier pure-C `silken_sha256.h`) |
 | Master key size | 256 bits | 256 bits | Master input — однаковий 256-bit secret для обох KDF-outputs |
 | Output key size | **128 bits (16 bytes)** — ARCH.42 | 256 bits (32 bytes) | LoRa: AES-128 (ATECC608B constraint); CoAP: AES-256 (Queen Flash, no SE constraint) |
 | Info string | `"silken-aes-128-lora-key"` | `"silken-aes-256-device-key"` | Domain separation — два різні KDF outputs ortho |
@@ -1286,7 +1286,7 @@ log.update!(lorenz_state_x: x_f, lorenz_state_y: y_f, lorenz_state_z: z_f,
 | Backend specs | `spec/services/ota_hmac_key_service_spec.rb`, `spec/services/ota_packager_service_spec.rb`, `spec/integration/ota_firmware_flow_spec.rb` | determinism / domain separation / anti-replay / anti-truncation / per-cluster isolation / manifest metadata / package ordering / blank input / SEC.11 |
 | Firmware host-tests | `firmware/test/test_soldier_logic.c`, `test_queen_logic.c` | 3-chunk assemble (in-order/out-of-order) / reject seg_idx>3 / dual-gate magic-fail / dual-gate hmac-fail / both-pass / cleanup-on-failure / constant-time first/last byte / Queen relay segments assemble / wrong marker reject / overwrite same segment |
 
-**Залишковий TODO (не блокує цикл):** реальний HMAC-SHA256 compute у Soldier dual-gate (`Phase 4.5 OTA assembly` — зараз `hmac_complete` = 3 segments-received stub, без обчислення). 🤖 **mbedTLS не потрібен** — pure-C `silken_sha256.h` (яким FW.30 закрив cold-start seed-HMAC, byte-parity vs OpenSSL) покриває цей compute: лишилось викликати `silken_hmac_sha256(K_ota, bytecode‖version‖total)` + `secure_compare(received_hmac_tag)`. 🟡 runtime потребує K_ota на Soldier Protected Flash (factory SEC.3) + e2e на STM32.
+**Залишковий TODO (не блокує цикл):** реальний HMAC-SHA256 compute у Soldier dual-gate **інертний** — `hmac_complete` зараз лише лічить 3 отримані `[0x9B]`-сегменти, без обчислення (gate-логіка `OTA_Verify_Dual_Gate` / `Hmac_Constant_Time_Compare` готова й host-тестована, але в живому шляху не викликається → підмінений bytecode з валідним CRC32 + 3 будь-якими trailer-чанками пройшов би). 🤖 сам compute дає pure-C `silken_sha256.h` (яким FW.30 закрив cold-start seed-HMAC, byte-parity vs OpenSSL; **mbedTLS не потрібен**): `Silken_Hmac_Sha256(K_ota, 32, bytecode‖version_id_be‖lora_total_be, …)` → `OTA_Verify_Dual_Gate`. Для wiring бракує ще двох опор на Soldier: (1) loader `K_ota` з Protected Flash (окремий сектор `0x0803D000` — наразі тримаються лише `KEYL`/`LSED`/role, слота K_ota нема); (2) джерела `version_id` (його нема на дроті — ні `[0x99]` body, ні `[0x9B]` trailer його не несуть). 🟡 далі — K_ota на Flash під час factory (SEC.3) + e2e dual-gate на STM32.
 
 
 > **Cross-ref:** [`00_07` — FW.23](00_07_Action_Plan_Tracker) — дизайн завершено ✅
@@ -1306,7 +1306,7 @@ HMAC-SHA256(K_ota, full_bytecode || version_id || total_chunks) → 32 bytes
 ```
 
 **Чому HMAC-SHA256, а не Ed25519/ECDSA:**
-- HMAC обчислюється апаратно через SHA256 у STM32WLE5JC CRYP-блоці (**~3 мс на 8 KB image**) проти ~80 мс для Ed25519 verify (програмно)
+- HMAC-SHA256 рахується **програмно** (pure-C `silken_sha256.h`, FW.30 — у STM32WLE5JC є апаратний AES, але **немає** HASH/SHA-блоку, тож SHA256 завжди software): кілька SHA-проходів над image — на порядок дешевше за програмний Ed25519 verify (~80 мс)
 - 32-байтний tag поміщається у 3 LoRa-чанки (vs 64 байти Ed25519 sig → 6 чанків)
 - Симетричне рішення прийнятне ТОМУ ЩО `K_ota` per-кластер, не глобальний (компрометація Queen ≠ компрометація всієї мережі)
 - При billion-tree масштабі — міграційний шлях на ECDSA P-256 (slot 1 ATECC608B, post-TRL 7) описаний нижче
@@ -1403,7 +1403,7 @@ void Try_Apply_Ota_Bytecode(void)
     return;  // НЕ записуємо у Flash
   }
 
-  // ─── Gate 2: HMAC verification (~3 мс, доводить authenticity) ──────────────────
+  // ─── Gate 2: HMAC verification (software SHA256, доводить authenticity) ─────────
   uint8_t computed_hmac[32];
   uint8_t hmac_input[8192 + 4 + 2];          // bytecode + version_id + total_chunks
   size_t  input_len = pending_ota_size + 6;
@@ -1412,17 +1412,15 @@ void Try_Apply_Ota_Bytecode(void)
   memcpy(hmac_input + pending_ota_size,     &pending_ota_version, 4);
   memcpy(hmac_input + pending_ota_size + 4, &ota_total_expected_chunks, 2);
 
-  HMAC_SHA256_HW(K_ota, hmac_input, input_len, computed_hmac);  // Wrapper навколо
-                                                                // HAL_HASHEx_SHA256_Start
-                                                                // (STM32 HASH peripheral)
-                                                                // — буде реалізовано
-                                                                // у firmware/soldier/crypto_utils.c
+  // pure-C silken_sha256.h (FW.30): SHA256 на STM32WLE5JC — software
+  // (чип має апаратний AES, але НЕ HASH-блок), byte-parity vs OpenSSL.
+  Silken_Hmac_Sha256(K_ota, 32, hmac_input, input_len, computed_hmac);
 
   // Constant-time comparison (захист від timing attack):
-  // secure_compare — буде реалізовано як volatile-XOR loop у firmware/soldier/crypto_utils.c
+  // Hmac_Constant_Time_Compare (main.c §1.13) — volatile-XOR loop, повертає 0 при рівності
   // (аналог OpenSSL CRYPTO_memcmp / Rails ActiveSupport::SecurityUtils.secure_compare).
   // НЕ використовувати memcmp — early-exit при першому розходженні витоку timing info.
-  if (!secure_compare(computed_hmac, received_hmac_tag, 32)) {
+  if (Hmac_Constant_Time_Compare(computed_hmac, received_hmac_tag, 32) != 0) {
     log_error("OTA: HMAC mismatch — possible substitution attack");
     pending_ota_bytecode[0..3] = 0x00;        // Затираємо magic, щоб next reboot
                                               // повернув бекап (lorenz_bytecode[])
@@ -1454,14 +1452,14 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 
 | Параметр | Значення | Обґрунтування |
 |----------|---------|---------------|
-| MAC алгоритм | HMAC-SHA256 (RFC 2104) | Стандарт NIST FIPS 198-1, апаратний SHA256 у STM32 |
+| MAC алгоритм | HMAC-SHA256 (RFC 2104) | Стандарт NIST FIPS 198-1; SHA256 — software (pure-C `silken_sha256.h`, FW.30 — чип без HASH-блоку) |
 | Tag size | 256 біт (32 байти) | NIST SP 800-107 рекомендація для AES-256 рівня безпеки |
 | `K_ota` size | 256 біт | Match HMAC output size |
 | `K_ota` scope | Per-cluster (HKDF salt = `"cluster:#{id}"`) | Ізоляція кластерів, broadcast-сумісність |
 | Domain separation | `info: "silken-ota-hmac-v1"` | Окремо від `"silken-aes-256-device-key"` (FW.1) |
 | Magic marker | `0x45544952` ("RITE" LE) | Існуючий u-boot-style format-integrity marker (Gate 1) |
 | HMAC input | `bytecode \|\| version_id \|\| total_chunks` | Anti-replay + anti-truncation |
-| Comparison | `secure_compare` (constant-time) | Захист від timing attack |
+| Comparison | `Hmac_Constant_Time_Compare` (constant-time) | Захист від timing attack |
 | Wire overhead | +3 LoRa chunks (+~180 мс broadcast) | < 0.5% від загальної OTA-сесії 745 чанків |
 | Implementation | Mandatory з дня 1 | Pre-production, no fallback path needed |
 
@@ -1481,7 +1479,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 1. Backend підписує image через ECDSA-P256 з master key (HSM)
 2. Public key розповсюджується у Soldier flash (slot 2 ATECC608B або Protected Flash)
 3. Wire format: `[0x9B][seg_idx:2][total:2][sig_segment]` → 6 чанків (64B sig)
-4. Verify ~80 мс vs 3 мс HMAC — прийнятно для рідкісної OTA-операції
+4. ECDSA verify (~80 мс, software) дорожчий за software HMAC-SHA256, але прийнятний для рідкісної OTA-операції
 5. Компрометація Soldier НЕ дозволяє підписувати OTA (асиметричні ключі — асимметрія довіри)
 
 #### Test Coverage Plan
