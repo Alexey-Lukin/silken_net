@@ -599,9 +599,10 @@
 
 #### FW.56 — Queen CoAP AT-граматика ≠ SIMCom: модем = UDP-труба, PDU будує хост
 - **P1** · 🤖+👤 · → [`03_02 §4`](03_02_Queen_Gateway_Firmware)
-- ✅ **CoAP-grammar fix (sim-first, канон [`03_02 §4`](03_02_Queen_Gateway_Firmware)):** SIMCom CoAP App Note ≠ firmware-припущена граматика (реально модем = UDP-труба: хост будує сирий RFC 7252 PDU, `CCOAPNEW="<ip>",<port>` + `CCOAPSEND=<cid>,<len>,"<hex>"` + URC `+CCOAPNMI`, домени через `CDNSGIP`) → `coap_pdu.h` (CON-PUT builder/parser + golden-vector з ноти) + `sim7070_coap.h` (повна розмова); FW.51 cache-clear ключується на доставку (`+CCOAPNMI` 2.xx). Лишається:
+- ✅ **CoAP-grammar fix (sim-first, канон [`03_02 §4`](03_02_Queen_Gateway_Firmware)):** SIMCom CoAP App Note ≠ firmware-припущена граматика (реально модем = UDP-труба: хост будує сирий RFC 7252 PDU, `CCOAPNEW="<ip>",<port>` + `CCOAPSEND=<cid>,<len>,"<hex>"` + URC `+CCOAPNMI`, домени через `CDNSGIP`) → `coap_pdu.h` (CON-PUT builder/parser + golden-vector з ноти) + `sim7070_coap.h` (повна розмова); FW.51 cache-clear ключується на доставку (`+CCOAPNMI` 2.xx).
+- ✅ (2026-06-10) **e2e Queen-PDU ↔ backend CoAP-intake (софтом):** golden freeze-contract C-білдер ↔ Rails-парсер (включно з пін-кейсом MID=0x00FF + 0xFF у payload) + pure `CoapServerPdu` (вердикт Брами; демон = UDP-клей) + повний ланцюг PDU → `UnpackTelemetryWorker` → decrypt → unpack (`spec/integration/coap_telemetry_intake_e2e_spec.rb`). Зловив/закрив 2 продакшн-баги Брами: глобальний пошук payload-маркера (кожен 256-й `coap_mid` = фантомна доставка: ACK 2.04 без батча → FW.51 чистив кеш дарма) + Sentinel `route_queen_health` гинув на Sidekiq strict_args під broad-rescue (стаб у старій спеці це маскував). ACK-семантика тепер чесна до FW.51: 2.04 лише після enqueue, 4.04/RST → Королева тримає кеш. Канон [`03_02 §4`](03_02_Queen_Gateway_Firmware). Лишається:
   - [ ] 👤 bench: verbatim-звірка SIM7070-ноти V1.03 + реальні URC/таймінги
-  - [ ] 🔗 e2e: Queen-PDU ↔ backend CoAP-intake (`coap_smoke.yml`) на staging
+  - [ ] 🔗 staging-smoke (`coap_smoke.yml`): той самий шлях через реальний UDP/Ingress до задеплоєної Брами (post-deploy gate)
 
 ## §03/§05 · Безпека (Edge crypto + Web3)
 

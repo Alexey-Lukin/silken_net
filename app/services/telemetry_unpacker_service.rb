@@ -796,12 +796,16 @@ class TelemetryUnpackerService < ApplicationService
   # [СЕНТИНЕЛ КОРОЛЕВИ]: Маршрутизація "нульового" пакета з власною телеметрією Королеви
   # до GatewayTelemetryWorker. Формат Payload однаковий: Vcap(2B), Temp(1B), Acoustic→CSQ(1B).
   def route_queen_health(parsed_data)
+    # Ключі — String: Sidekiq strict_args відкидає Symbol-ключі ArgumentError'ом,
+    # який broad rescue process_chunk мовчки ковтав — Sentinel-телеметрія
+    # гинула на реальному wire-шляху (ловить e2e spec/integration/
+    # coap_telemetry_intake_e2e_spec.rb; HIL :direct маскував stringify_keys).
     GatewayTelemetryWorker.perform_async(
       @gateway.uid,
       {
-        voltage_mv: parsed_data[1],           # Vcap Королеви (2 байти, мілівольти)
-        temperature_c: parsed_data[2],         # Температура корпусу Королеви (1 байт)
-        cellular_signal_csq: parsed_data[3]    # CSQ модему (1 байт, використовує поле Acoustic)
+        "voltage_mv" => parsed_data[1],           # Vcap Королеви (2 байти, мілівольти)
+        "temperature_c" => parsed_data[2],        # Температура корпусу Королеви (1 байт)
+        "cellular_signal_csq" => parsed_data[3]   # CSQ модему (1 байт, використовує поле Acoustic)
       }
     )
     Rails.logger.info "👑 [Sentinel] Королева #{@gateway.uid} повідомляє: #{parsed_data[1]}mV, #{parsed_data[2]}°C, CSQ=#{parsed_data[3]}"

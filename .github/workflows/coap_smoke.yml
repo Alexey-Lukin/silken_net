@@ -2,7 +2,7 @@ name: CoAP UDP Smoke Test
 
 # [INF.6] Post-deploy smoke test that exercises the end-to-end CoAP UDP
 # path: Queen-equivalent client → Ingress Anchor (HAProxy/socat or
-# Akash UDP expose) → CoAP daemon (`lib/daemons/coap_listener.rb`).
+# Akash UDP expose) → CoAP daemon (`lib/daemons/coap_listener`).
 #
 # Without this probe a silent UDP failure (closed firewall, missing
 # socat fork, daemon not running, SDL `5683/udp` not exposed) is not
@@ -105,7 +105,7 @@ jobs:
             echo "::error::  (a) GCP firewall: allow UDP 5683 from 0.0.0.0/0"
             echo "::error::  (b) Ingress Anchor: socat UDP-LISTEN:5683,fork UDP:<akash-pod-ip>:5683"
             echo "::error::  (c) Akash SDL: expose 5683 as protocol: udp"
-            echo "::error::  (d) lib/daemons/coap_listener.rb running in Sidekiq/job container"
+            echo "::error::  (d) lib/daemons/coap_listener running in Sidekiq/job container"
             exit 1
           fi
 

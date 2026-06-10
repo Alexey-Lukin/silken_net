@@ -23,26 +23,8 @@ class CoapClient
     socket = UDPSocket.new
 
     message_id = rand(1..65535)
-    header = [ 0x40, 0x03, message_id ].pack("CCn")
-
-    options_payload = "".b
-    current_opt_number = 0
-
-    # Uri-Path (11)
-    uri.path.split("/").reject(&:empty?).each do |segment|
-      options_payload += encode_option(11 - current_opt_number, segment)
-      current_opt_number = 11
-    end
-
-    # Uri-Query (15)
-    if uri.query
-      uri.query.split("&").each do |q|
-        options_payload += encode_option(15 - current_opt_number, q)
-        current_opt_number = 15
-      end
-    end
-
-    packet = header + options_payload + "\xFF".b + payload.b
+    packet = build_put(message_id: message_id, path: uri.path,
+                       query: uri.query, payload: payload)
 
     begin
       socket.send(packet, 0, host, port)
@@ -59,6 +41,30 @@ class CoapClient
     ensure
       socket&.close
     end
+  end
+
+  # Wire-дзеркало firmware Coap_Build_Put (firmware/queen/coap_pdu.h) —
+  # байт-у-байт та сама граматика CON PUT; golden-parity з C-білдером
+  # заморожено у spec/lib/coap_server_pdu_spec.rb ↔ test_at_engine.c.
+  def self.build_put(message_id:, path:, payload:, query: nil)
+    packet = [ 0x40, 0x03, message_id ].pack("CCn")
+    current_opt_number = 0
+
+    # Uri-Path (11)
+    path.split("/").reject(&:empty?).each do |segment|
+      packet += encode_option(11 - current_opt_number, segment)
+      current_opt_number = 11
+    end
+
+    # Uri-Query (15)
+    if query
+      query.split("&").each do |q|
+        packet += encode_option(15 - current_opt_number, q)
+        current_opt_number = 15
+      end
+    end
+
+    packet + "\xFF".b + payload.b
   end
 
   private

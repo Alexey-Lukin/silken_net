@@ -433,6 +433,23 @@ CPU — байти й URC поза вікном читання (запізніл
 PDU (опції Uri-Path) — сервер знаходить шлюз за UID, а не за IP (вирішує
 Starlink NAT та динамічні адреси).
 
+**E2e-парність граматики (софтом, без заліза) — ✅ 2026-06-10.** Golden-вектори
+`Coap_Build_Put` заморожені freeze-contract'ом обабіч дроту
+(`firmware/test/test_at_engine.c` ↔ `spec/lib/coap_server_pdu_spec.rb`,
+включно з пін-кейсом MID=0x00FF + 0xFF у payload), вердикт Брами винесено в
+pure `CoapServerPdu` (`lib/coap_server_pdu.rb` — серверне дзеркало
+`coap_pdu.h`; демон `lib/daemons/coap_listener` = лише UDP-клей), а повний
+ланцюг PDU → парсер → `UnpackTelemetryWorker` → decrypt → unpack доведено
+`spec/integration/coap_telemetry_intake_e2e_spec.rb`. Семантика відповіді
+вирівняна з FW.51: **ACK 2.04 лише ПІСЛЯ прийняття батча в чергу**;
+невідомий маршрут → 4.04, нечитабельний датаграм → RST (клас ≠ 2.xx →
+Королева тримає кеш і повторює). Цей e2e зловив і закрив два продакшн-баги
+Брами: (1) payload-маркер шукався глобальним `index("\xFF")` по всьому
+датаграму включно з заголовком — кожен 256-й `coap_mid` давав фантомну
+доставку (ACK 2.04 без батча → даремний cache-clear); (2) Sentinel-маршрут
+(§7) падав на Sidekiq strict_args і його ковтав broad-rescue. Staging-smoke
+(`coap_smoke.yml`, мережевий шлях до задеплоєної Брами) — окремий residual.
+
 **Що лишається bench (HW-residual FW.3):**
 - verbatim-звірка граматики SIM7070-ноти V1.03 + реальні таймінги модему;
 - кремнієве підтвердження DMA-вуха: DMAMUX-роутинг USART1_RX, поведінка
@@ -963,7 +980,7 @@ Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пак
 | 10 | GP / Status | `cache_count` (cap `QUEEN_HEALTH_GP_MAX`) | Proxy навантаження — 5-біт wire [FW.29-PACK], дзеркало коду вище |
 | 11–15 | Reserved | `0x00` | Майбутнє: V_bat, fw_version |
 
-**Маршрутизація на сервері:** Backend `TelemetryUnpackerService` детектує `DID == 0` і направляє до `GatewayTelemetryWorker` замість створення `TelemetryLog`.
+**Маршрутизація на сервері:** Backend `TelemetryUnpackerService` детектує `DID == 0` і направляє до `GatewayTelemetryWorker` замість створення `TelemetryLog`. Контракт enqueue — JSON-нативні (String) ключі stats-хеша: Sidekiq strict_args відкидає Symbol-ключі, і до 2026-06-10 цей `ArgumentError` мовчки ковтав broad-rescue `process_chunk` — Sentinel гинув на реальному wire-шляху (HIL `:direct` маскував через `stringify_keys`). Контракт запіннено e2e (`spec/integration/coap_telemetry_intake_e2e_spec.rb`, §4 e2e-парність).
 
 ---
 

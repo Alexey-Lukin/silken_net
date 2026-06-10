@@ -18,39 +18,11 @@ socket.bind("0.0.0.0", PORT)
 Rails.logger.info "🌳 [Sanctum] UDP/CoAP Брама відкрита на порту #{PORT}. Слухаємо дихання лісу..."
 puts "🛰️  Система моніторингу ефіру активована. Очікування пакетів..."
 
-# --- ТИТАНОВИЙ ПАРСЕР ОПЦІЙ (RFC 7252) ---
-def decode_options(buffer)
-  options = []
-  current_option_number = 0
-  cursor = 0
-
-  while cursor < buffer.bytesize
-    first_byte = buffer.getbyte(cursor)
-    cursor += 1
-
-    delta = (first_byte >> 4) & 0x0F
-    length = first_byte & 0x0F
-
-    # Обробка розширеної дельти (код 13: +1 байт)
-    if delta == 13
-      delta = buffer.getbyte(cursor) + 13
-      cursor += 1
-    end
-
-    # Обробка розширеної довжини (код 13: +1 байт)
-    if length == 13
-      length = buffer.getbyte(cursor) + 13
-      cursor += 1
-    end
-
-    current_option_number += delta
-    value = buffer.byteslice(cursor, length)
-    cursor += length
-
-    options << { number: current_option_number, value: value }
-  end
-  options
-end
+# Граматика RFC 7252 живе у pure CoapServerPdu (дзеркало firmware
+# coap_pdu.h, e2e golden-parity у spec/lib/coap_server_pdu_spec.rb).
+# Демон — лише UDP-клей: recvfrom → вердикт → відповідь → perform_async.
+# ACK 2.04 летить ПІСЛЯ маршрутизації: Королева чистить CIFO [FW.51]
+# тільки тоді, коли батч справді поставлено у чергу.
 
 # ПРОТОКОЛ ПРАВИЛЬНОГО ЗАВЕРШЕННЯ
 running = true
@@ -68,44 +40,20 @@ while running
       gateway_ip = sender[3]
       timestamp = Time.current
 
-      # 1. ПАРСЕР ЗАГОЛОВКА CoAP
-      header = data.unpack("CCn")
-      first_byte = header[0]
-      type = (first_byte >> 4) & 0x03
-      tkl  = first_byte & 0x0F
-      code = header[1]
-      msg_id = header[2]
+      result = CoapServerPdu.handle_telemetry_datagram(data)
 
-      # 2. МИТТЄВИЙ ACK (Confirmable Flow)
-      if type == 0
-        ack_header = [ (1 << 6) | (2 << 4) | tkl, 0x44, msg_id ].pack("CCn")
-        token = tkl > 0 ? data[4...(4 + tkl)] : "".b
-        socket.send(ack_header + token, 0, gateway_ip, sender[1])
+      case result.status
+      when :telemetry_batch
+        encoded_payload = Base64.strict_encode64(result.payload)
+        UnpackTelemetryWorker.perform_async(encoded_payload, gateway_ip, result.gateway_uid)
+        puts "📥 [#{timestamp.strftime('%T')}] Пакет від #{result.gateway_uid || gateway_ip} прийнято (#{result.payload.bytesize}б)"
+      when :unknown_route
+        puts "⚠️  [#{timestamp.strftime('%T')}] Відхилено (4.04): невідомий маршрут від #{gateway_ip}"
+      when :malformed
+        puts "⚠️  [#{timestamp.strftime('%T')}] Нечитабельний датаграм від #{gateway_ip} (#{data.bytesize}б) — RST"
       end
 
-      # 3. ПОШУК ПЕЙЛОАДА
-      payload_marker_index = data.index("\xFF".b)
-
-      if payload_marker_index
-        binary_payload = data[(payload_marker_index + 1)..-1]
-        options_block = data[(4 + tkl)...payload_marker_index]
-
-        parsed_options = decode_options(options_block)
-        path_segments = parsed_options.select { |o| o[:number] == 11 }.map { |o| o[:value] }
-
-        if path_segments.first(2) == [ "telemetry", "batch" ]
-          # UID Королеви передається як третій сегмент шляху: /telemetry/batch/<QUEEN_UID>
-          # Це стабільний ідентифікатор, що не залежить від динамічного Starlink/LTE IP.
-          gateway_uid = path_segments[2]
-
-          encoded_payload = Base64.strict_encode64(binary_payload)
-          UnpackTelemetryWorker.perform_async(encoded_payload, gateway_ip, gateway_uid)
-
-          puts "📥 [#{timestamp.strftime('%T')}] Пакет від #{gateway_uid || gateway_ip} прийнято (#{binary_payload.bytesize}б)"
-        else
-          puts "⚠️  [#{timestamp.strftime('%T')}] Відхилено: невідомий маршрут #{path_segments.join('/')}"
-        end
-      end
+      socket.send(result.reply, 0, gateway_ip, sender[1]) if result.reply
     end
   rescue Errno::EAGAIN, Errno::EWOULDBLOCK
     retry

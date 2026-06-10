@@ -169,14 +169,17 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     let!(:gateway) { create(:gateway) }
 
     it "routes DID=0x00000000 packets to GatewayTelemetryWorker when gateway is present" do
-      allow(GatewayTelemetryWorker).to receive(:perform_async)
+      # БЕЗ стаба perform_async: стаб перехоплював виклик ДО strict_args-валідації
+      # Sidekiq і роками ховав ArgumentError від Symbol-ключів (його ковтав broad
+      # rescue process_chunk). Fake-mode enqueue валідує контракт по-справжньому.
       chunk = build_chunk("00000000", -70, 3500, 25, 5, 100, 0, 3)
 
       expect { described_class.call(chunk, gateway.id) }.not_to change(TelemetryLog, :count)
-      expect(GatewayTelemetryWorker).to have_received(:perform_async).with(
-        gateway.uid,
-        a_hash_including(voltage_mv: anything, temperature_c: anything, cellular_signal_csq: anything)
-      )
+
+      job = GatewayTelemetryWorker.jobs.last
+      expect(job).to be_present
+      expect(job["args"][0]).to eq(gateway.uid)
+      expect(job["args"][1]).to include("voltage_mv", "temperature_c", "cellular_signal_csq")
     end
   end
 

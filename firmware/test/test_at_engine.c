@@ -310,6 +310,37 @@ TEST(test_coap_build_golden_layout) {
         "FF" "DEAD");
 }
 
+TEST(test_coap_build_golden_mid_ff) {
+    /* [FW.56 e2e] Пін-кейс бага бекенд-Брами: 0xFF у MID та в payload.
+     * Маркер payload легітимний лише на МЕЖІ опцій — глобальний пошук
+     * 0xFF у lib/daemons/coap_listener ламався на кожному 256-му
+     * coap_mid (ACK 2.04 летів, батч губився → FW.51 чистив кеш дарма).
+     * Той самий hex заморожено у spec/lib/coap_server_pdu_spec.rb —
+     * крос-імпл freeze-contract C-білдер ↔ Rails-парсер. */
+    uint8_t pdu[128];
+    const uint8_t payload[] = { 0xFF, 0x01, 0xFF };
+    uint16_t n = Coap_Build_Put(pdu, sizeof pdu, 0x00FF,
+                                "telemetry", "batch", "SNET-Q-00FF00FF",
+                                payload, 3);
+    ASSERT_EQ(n, 4 + (1 + 9) + (1 + 5) + (2 + 15) + 1 + 3);
+
+    char hex[2 * 64 + 1];
+    At_Hex_Encode(hex, pdu, n);
+    hex[2 * n] = '\0';
+    ASSERT_STREQ(hex,
+        "400300FF"                              /* CON PUT MID=0x00FF      */
+        "B974656C656D65747279"                  /* δ=11 len=9 "telemetry"  */
+        "056261746368"                          /* δ=0  len=5 "batch"      */
+        "0D02534E45542D512D3030464630304646"    /* δ=0  len=13+2 UID       */
+        "FF" "FF01FF");
+
+    /* ACK Брами на цей PDU (2.04, MID луною) — Ruby build_ack емітить
+     * рівно ці байти, ми їх тут зараховуємо як доставку. */
+    uint8_t ack[8]; uint16_t an = 0;
+    ASSERT_TRUE(At_Hex_Decode(ack, sizeof ack, "604400FF", &an));
+    ASSERT_TRUE(Coap_Reply_Confirms(ack, an, 0x00FF));
+}
+
 TEST(test_coap_build_guards) {
     uint8_t pdu[16]; /* замалий */
     ASSERT_EQ(Coap_Build_Put(pdu, sizeof pdu, 1, "telemetry", "batch", "X",
@@ -508,6 +539,7 @@ int main(void)
 
     printf("\n— CoAP PDU —\n");
     RUN(test_coap_build_golden_layout);
+    RUN(test_coap_build_golden_mid_ff);
     RUN(test_coap_build_guards);
     RUN(test_coap_parse_official_note_reply);
     RUN(test_coap_reply_rejects);
