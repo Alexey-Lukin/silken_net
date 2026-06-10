@@ -1018,28 +1018,13 @@ telemetry_log.update!(
 
 ---
 
-### BLOCKER-01: AES ключ захардкоджений в прошивках Солдата і Королеви [P0 — CRITICAL SECURITY]
+### BLOCKER-01: ✅ ЗАКРИТО — AES ключ захардкоджений в прошивках Солдата і Королеви [P0 — CRITICAL SECURITY]
 
-**Файли:**
-- `firmware/soldier/main.c:66–67`
-- `firmware/queen/main.c:81–82`
+> **Закрито (FW.1, 2026-05-02):** глобальний `aes_key[8]` (FIPS-197 Appendix B тест-вектор) **видалено з прошивки**. Тепер per-device унікальний LoRa-ключ деривується через HKDF-SHA256 на бекенді (`HardwareKeyService.provision`) і шиється у Protected Flash (`Load_AES_Key`, `FLASH_KEY_ADDR`). Деталі — [`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security) + [`00_07`](00_07_Action_Plan_Tracker) DOC-T.1 / SEC.3 (factory flashing). ⚠️ Окремо лишається **SEC.9** ([`00_07`](00_07_Action_Plan_Tracker)): master seed key може ще містити FIPS-197 vector → замінити на crypto-random перед польовим деплоєм.
 
-```c
-// ОДНАКОВИЙ У ОБОХ ФАЙЛАХ:
-uint32_t aes_key[8] = {0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C,
-                       0x1A2B3C4D, 0x5E6F7A8B, 0x9C0D1E2F, 0x3A4B5C6D};
-```
-
-**Наслідки:**
-1. Ключ є у відкритому вихідному коді репозиторію (source code exposure).
-2. Всі Солдати та всі Королеви світу використовують **один і той самий** AES ключ.
-3. Компрометація одного пристрою → компрометація всієї мережі.
-4. Бекенд зберігає ключ у `HardwareKey.binary_key` (per-device), але прошивка
-   ігнорує цю per-device модель і використовує глобальний ключ.
-
-**Потрібно:** Per-device унікальний ключ, що передається через provisioning API
-(`/api/v1/provisioning` вже повертає `@key_hex` через `HardwareKeyService.provision`),
-та механізм secure boot / attestation для захисту ключа в Flash.
+**Історичний контекст** (виявлено під час аудиту, до FW.1):
+- Обидві прошивки несли однаковий глобальний `uint32_t aes_key[8]` (FIPS-197 тест-вектор) у відкритому коді → компрометація одного пристрою = компрометація всієї мережі.
+- Бекенд уже зберігав per-device ключ (`HardwareKey.binary_key`), але прошивка ігнорувала цю модель — FW.1 закрив розрив (firmware читає ключ з Protected Flash, не з коду).
 
 ---
 

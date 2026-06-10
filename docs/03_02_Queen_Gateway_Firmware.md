@@ -109,27 +109,26 @@
 
 ## 📐 0. Всі #define Константи (SSOT)
 
-| Константа | Значення | Файл:Рядок | Призначення |
-|-----------|----------|------------|-------------|
-| `LORA_RX_INFINITE` | `0xFFFFFF` | main.c:39 | Нескінченний таймаут RX |
-| `FLUSH_INTERVAL_MS` | `3 600 000` | main.c:40 | Інтервал flush (1 год.) |
-| `FLUSH_JITTER_MAX_MS` | `60 000` | main.c:41 | Макс. jitter (60 сек) |
-| `RNG_FALLBACK_XOR_MASK` | `0xA5A5A5A5UL` | main.c:42 | XOR-маска при відмові HRNG (jitter) |
-| `FLUSH_HEADROOM` | `5` | main.c:43 | Слоти до примусового flush |
+| Константа | Значення | Файл | Призначення |
+|-----------|----------|------|-------------|
+| `LORA_RX_INFINITE` | `0xFFFFFF` | main.c | Нескінченний таймаут RX |
+| `FLUSH_INTERVAL_MS` | `3 600 000` | main.c | Інтервал flush (1 год.) |
+| `FLUSH_JITTER_MAX_MS` | `60 000` | main.c | Макс. jitter (60 сек) |
+| `RNG_FALLBACK_XOR_MASK` | `0xA5A5A5A5UL` | main.c | XOR-маска при відмові HRNG (jitter) |
+| `FLUSH_HEADROOM` | `5` | main.c | Слоти до примусового flush |
 | `QUEEN_HEALTH_GP_MAX` | `31` | main.c | Макс. growth_points для sentinel (5-біт wire — дзеркало [FW.29-PACK], дім формату — [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)) |
-| `OTA_MAX_CHUNKS` | `16` | main.c:45 | Макс. CoAP-чанків (bitmap 16 біт) |
-| `CACHE_MAX_ENTRIES` | `50` | main.c:87 | Місткість CIFO EdgeCache |
-| `CMD_DEDUP_SIZE` | `16` | main.c:113 | Розмір кільцевого буфера dedup |
-| `UUID_STR_LEN` | `36` | main.c:114 | Довжина UUID рядка (8-4-4-4-12) |
-| `CMD_DECRYPT_BUF_SIZE` | `544` | main.c:122 | Буфер decrypt CoAP команд/OTA |
-| `OTA_MARKER` | `0x99` | main.c:29 | Маркер OTA-пакета |
-| `OTA_HEADER_SIZE` | `5` | main.c:30 | Маркер + idx:2 + total:2 |
-| `OTA_CRC_SIZE` | `2` | main.c:31 | CRC16-CCITT |
-| `OTA_OVERHEAD` | `7` | main.c:32 | `OTA_HEADER_SIZE + OTA_CRC_SIZE` |
-| `AES_BLOCK_SIZE` | `16` | main.c:33 | AES block size (128-bit, фіксований AES spec — рівне для AES-128 та AES-256) |
-| `MAX_OTA_CHUNK_PAYLOAD` | `512` | main.c:34 | Макс. байткод у CoAP-чанку |
-| `OTA_FULL_CHUNK_THRESH` | `514` | main.c:35 | `MAX_OTA_CHUNK_PAYLOAD + OTA_CRC_SIZE` |
-| `MIN_OTA_ALIGNED` | `23` | main.c:36 | `AES_BLOCK_SIZE + OTA_OVERHEAD` |
+| `OTA_MAX_CHUNKS` | `16` | main.c | Макс. CoAP-чанків (bitmap 16 біт) |
+| `CACHE_MAX_ENTRIES` | `50` | main.c | Місткість CIFO EdgeCache |
+| `CMD_DEDUP_SIZE` | `16` | main.c | Розмір кільцевого буфера dedup |
+| `UUID_STR_LEN` | `36` | main.c | Довжина UUID рядка (8-4-4-4-12) |
+| `CMD_DECRYPT_BUF_SIZE` | `544` | main.c | Буфер decrypt CoAP команд/OTA |
+| `OTA_MARKER` | `0x99` | main.c | Маркер OTA-пакета |
+| `OTA_HEADER_SIZE` | `5` | main.c | Маркер + idx:2 + total:2 |
+| `OTA_CRC_SIZE` | `2` | main.c | CRC16-CCITT |
+| `AES_BLOCK_SIZE` | `16` | main.c | AES block size (128-bit, фіксований AES spec — рівне для AES-128 та AES-256) |
+| `MAX_OTA_CHUNK_PAYLOAD` | `512` | main.c | Макс. байткод у CoAP-чанку |
+| `OTA_COAP_HEADER_SIZE` | `7` | main.c | [FW.53] CoAP-шар (Rails→Queen): `[0x99][index:2][total:2][len:2]` — явний len |
+| `OTA_COAP_MIN_FRAME` | `10` | main.c | [FW.53] `OTA_COAP_HEADER_SIZE + 1 + OTA_CRC_SIZE` — мін. валідний CoAP-чанк |
 | `AT_INTERBYTE_TIMEOUT_MS` | `150` | main.c | [FW.3] Пауза між байтами UART = «модем дослухав» |
 | `AT_INIT_BUDGET_MS` | `2000` | main.c | [FW.3] Бюджет однієї init-команди (ATE0/AT/CNMP/CPSMS/CEDRXS) |
 | `COAP_CONV_BUDGET_MS` | `15000` | main.c | [FW.3] Повна CoAP-розмова NEW→SEND→NMI→DEL (< вікно IWDG) |

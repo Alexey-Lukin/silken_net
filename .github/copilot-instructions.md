@@ -144,21 +144,25 @@ Dual Computation Integrity: server Z vs device Z (SilkenNet::Attractor). Diverge
 
 ---
 
-## 5. Активні BLOCKER'и (не закривати без підтвердження в коді + docs)
+## 5. Активні BLOCKER'и (дзеркало CLAUDE.md §12 — правити там; не закривати без підтвердження в коді + docs)
 
-| ID | Локація | Суть |
-|----|---------|------|
-| HW-AES-KEY | `firmware/*/main.c:65-66` | Hardcoded AES-256 key — єдиний ключ на всю мережу |
-| AES-ECB | `firmware/soldier/main.c:747` | ECB без MAC -> replay/bit-flip attack |
-| TINYML | `firmware/soldier/main.c` (Phase 1.5 call-site) | `Run_Inference()` закоментована; `.h` відсутній |
-| LORENZ-INPUTS | `firmware/bio_contracts/bio_contract.rb` | `delta_t`/`vcap` не передаються в `calculate_state` |
-| LORENZ-STATE | firmware | Стан (x,y,z) не зберігається між циклами STOP2 |
-| QUEEN-UID | `firmware/queen/main.c` | `QUEEN-001` hardcoded |
-| OTA-LOOP | `firmware/queen/main.c` | `ota_is_active` ніколи не скидається |
-| BQ25570-R | `docs/02_03` | Резистори VBAT_OV не верифіковані (Li-Po дефолт 4.2V замість 5.5V для supercap) |
-| PROMETHEUS | `terraform/` | Prometheus Server відсутній у інфраструктурі |
-| SENTRY-DSN | `.kamal/secrets` | `SENTRY_DSN` відсутній — Sentry інертний у production |
-| QUEEN-BLIND | `firmware/queen/main.c:542` | AT command blocking ~25 сек під час CoAP flush |
+| ID | Локація | Статус / суть |
+|----|---------|---------------|
+| HW-AES-KEY | `firmware/*/main.c` (`Load_AES_Key`) | ✅ Firmware CLOSED (FW.1) — per-device HKDF + Protected Flash; 👤 residual: real `STM32_Programmer_CLI` на bench + RDP L2 (SEC.2) |
+| ARCH.42 | `firmware/*/main.c` (`MX_CRYP_Init`) | ✅ DECIDED 2026-05-23 — Variant B: AES-128 LoRa + SE; CoAP лишається AES-256 |
+| AES-ECB | `firmware/soldier/main.c` (`MX_CRYP_Init`) | 🟡 Transitional AES-128-ECB; повне закриття через FW.2 (AES-128-CCM, 8B MIC, Frame Counter) — STM32 bench |
+| TINYML | `firmware/soldier/main.c` (Phase 1.5) | log-mel `Compute_LogMel` ✅ (FW.25); `Run_Inference()` + model header відсутні (чекає моделі) |
+| LORENZ-INPUTS | `firmware/bio_contracts/bio_contract.rb` | 🔄 [E.63 2026-06-08] β=`BASE_BETA` фікс; `delta_t`→`growth_points` напряму (β-пертурбація реверсована); vcap reserved |
+| LORENZ-STATE | `firmware/soldier/main.c` | ✅ Стан (x,y,z) у RTC DR16-DR18 + magic `0x4C5A5354` ("LZST") |
+| OPTIMAL-Z | `firmware/bio_contracts/bio_contract.rb` | ✅ (2026-05-17) `OPTIMAL_Z_TARGET = 29.0` — коментар і константа узгоджені |
+| QUEEN-UID | `firmware/queen/main.c` | ✅ Flash-based UID з fallback (PLAN 2.4) |
+| QUEEN-OTA-LOOP | `firmware/queen/main.c` | ✅ `ota_is_active` скидається після повного циклу (PLAN 2.5) |
+| QUEEN-AT-BLIND | `firmware/queen/{at_engine,coap_pdu,sim7070_coap}.h` | ✅ Закрито архітектурно (FW.3/FW.56); 👤 residual: UART DMA RX + verbatim SIM7070-нота на bench |
+| HRNG-IV-REUSE | `firmware/queen/coap_iv.h` | ✅ Harden (2026-05-29) — reuse закрито; 🟡 residual: IV передбачуваний на fallback (low-severity) |
+| BQ25570-R | `docs/02_03` | 👤 VBAT_OV резистори не верифіковані (Li-Po дефолт 4.2V замість 5.5V для supercap) |
+| PROMETHEUS | `deploy/akash/config.alloy` | ✅ Вирішено (OBS.1) — Grafana Alloy → Grafana Cloud SaaS; self-hosted не потрібен |
+| SENTRY-DSN | `.kamal/secrets` | ✅ Додано `SENTRY_DSN` (потребує ENV at deploy time) |
+| AKASH-SIDEKIQ | `deploy/akash/deploy.yaml` | ✅ `job:` service з Sidekiq entrypoint додано (PLAN 5.8) |
 
 ---
 

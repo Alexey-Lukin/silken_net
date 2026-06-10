@@ -186,8 +186,8 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 | Джерело | Модель модему |
 |---------|--------------|
 | Wiki [`02_05`](02_05_Queen_Hardware_and_Starlink) (до аудиту) | **SIM7000G** |
-| `firmware/queen/main.c:53` (коментар) | **SIM7070G** |
-| `firmware/queen/main.c:206` AT-команди | `AT+CNMP=38` (LTE-M-специфічна, SIM7070G) |
+| `firmware/queen/main.c` (коментар `huart1`) | **SIM7070G** |
+| `firmware/queen/main.c` (init AT-команди) | `AT+CNMP=38` (LTE-M-специфічна, SIM7070G) |
 
 **SIM7000G vs SIM7070G — різні пристрої:**
 
@@ -271,7 +271,7 @@ SIM7070G у режимі LTE-M TX може споживати імпульсно
 
 **CIFO Cache (Forest Cache) — Hot Tier:**
 ```c
-// firmware/queen/main.c:87-97
+// firmware/queen/main.c (struct EdgeCache)
 typedef struct {
     uint32_t uid;         // DID дерева (4 байти)
     uint8_t  payload[16]; // Розшифровані дані сенсора
@@ -337,14 +337,14 @@ void cifo_drain_from_flash(void) {                              // FIFO: най�
 
 **Ініціалізація (AT-команди при старті):**
 ```c
-// firmware/queen/main.c:205-206
+// firmware/queen/main.c (init: SIM7070_Transact)
 SIM7070_SendATCommand("AT\r\n", 500);          // Перевірка зв'язку
 SIM7070_SendATCommand("AT+CNMP=38\r\n", 1000); // LTE-M only mode
 ```
 
 **CoAP Uplink (при кожному flush):**
 ```c
-// firmware/queen/main.c:542-566
+// firmware/queen/main.c (Flush_Cache_To_Rails)
 SIM7070_SendATCommand("AT+CCOAPNEW=\"coap://api.silkennet.com:5683\"\r\n", 1000);
 // AT+CCOAPSEND=0,2,"telemetry/batch/<queen_uid>",<size>,"<hex_data>"
 SIM7070_SendATCommand("AT+CCOAPDEL=0\r\n", 500);

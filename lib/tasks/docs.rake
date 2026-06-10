@@ -58,6 +58,7 @@ namespace :docs do
     bare_doc    = []  # hard: bare code-span `NN_NN` doc-id (no §) that should be a full link
     xref_form   = []  # hard: doc-id link label not in the single code-span form (00_06 §1)
     superseded_fm = [] # hard: superseded term (ATECC608B) in 🎯/Статус front-matter
+    src_line_refs = [] # hard: volatile `*.c:N`/`*.h:N` source line-refs (DOC-T.15)
     graph_docs  = {}  # id "NN_NN" → text, for the #anchor-resolution gate (DocsGraph)
     doc_trls    = {}  # basename → member-TRL int (from ✅ Статус), for the 00_03 §1 band guard
 
@@ -107,6 +108,7 @@ namespace :docs do
       bare_doc.concat(DocsLinter.bare_doc_ref(base, text, valid_ids).map { |h| "#{base}: #{h}" })
       xref_form.concat(DocsLinter.crossref_label_form(text).map { |h| "#{base}: #{h}" })
       superseded_fm.concat(DocsLinter.superseded_term_in_frontmatter(base, text).map { |h| "#{base}: #{h}" })
+      src_line_refs.concat(DocsLinter.source_line_ref_drift(base, text))
     end
 
     # [external doc-path drift] HARD — non-docs repo files (.github/**, root *.md, source
@@ -131,6 +133,16 @@ namespace :docs do
       DocsLinter.external_doc_path_drift(rel, File.read(f), existing)
     rescue ArgumentError
       [] # skip non-UTF-8 / binary files
+    end
+
+    # [DOC-T.15] volatile source line-refs in .github/** too (docs already scanned in
+    # the loop above). HARD since 2026-06-10 — the stale-blocker carriers (05_02
+    # §Блокери BLOCKER-01 + copilot-instructions blocker table) were de-reffed.
+    Dir[File.join(root_dir, ".github", "**", "*")].select { |p| File.file?(p) }.each do |f|
+      rel = f.delete_prefix("#{root_dir}/")
+      src_line_refs.concat(DocsLinter.source_line_ref_drift(rel, File.read(f)))
+    rescue ArgumentError
+      next # skip non-UTF-8 / binary files
     end
 
     # [TRL single-value] HARD — 00_03 §1 per-module matrix cells single 1-9.
@@ -179,6 +191,12 @@ namespace :docs do
     unless magic_drift.empty?
       puts "  ⚠️ magic-marker hex ≠ BE/LE ASCII of its name (#{magic_drift.uniq.size}) — advisory:"
       magic_drift.sort.uniq.first(40).each { |s| puts "    · #{s}" }
+    end
+    if src_line_refs.empty?
+      puts "  source line-refs: no volatile `*.c:N`/`*.h:N` in docs/ + .github/ (cite symbol/#define) ✓"
+    else
+      puts "  SOURCE LINE-REF DRIFT (#{src_line_refs.uniq.size}) — volatile `*.c:N`/`*.h:N` (DOC-T.15: cite symbol/#define):"
+      src_line_refs.sort.uniq.first(40).each { |s| puts "    ✗ #{s}" }
     end
     if bare_refs.empty?
       puts "  bare §-refs:    no bare code-span `NN_NN §X` outside owner docs (all linked) ✓"
@@ -320,6 +338,7 @@ namespace :docs do
     failed << "doc-id link labels not in code-span form (00_06 §1)" unless xref_form.empty?
     failed << "dangling #anchors (fragment ≠ heading slug)" unless dangling_anchors.empty?
     failed << "stale external docs/NN_NN refs (.github / root *.md / source)" unless ext_drift.empty?
+    failed << "volatile source line-refs `*.c:N`/`*.h:N` (DOC-T.15 — cite symbol/#define)" unless src_line_refs.empty?
     abort("docs:check_refs FAILED — #{failed.join(', ')}") unless failed.empty?
   end
 

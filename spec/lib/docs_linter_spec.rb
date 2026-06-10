@@ -578,4 +578,25 @@ RSpec.describe DocsLinter do
       expect(described_class.external_doc_path_drift("x.md", txt, existing)).to be_empty
     end
   end
+
+  describe ".source_line_ref_drift" do
+    it "flags bare, path-qualified and ranged *.c/*.h line-refs" do
+      txt = "| `K` | `1` | main.c:39 | x |\n// firmware/queen/main.c:87-97\nsee silken_sha256.h:12\n"
+      hits = described_class.source_line_ref_drift("03_02", txt)
+      expect(hits.size).to eq(3)
+      expect(hits).to include(a_string_matching(/`main\.c:39`/),
+                              a_string_matching(%r{`firmware/queen/main\.c:87-97`}),
+                              a_string_matching(/`silken_sha256\.h:12`/))
+    end
+
+    it "matches a wildcard path ref and carries the file prefix" do
+      hits = described_class.source_line_ref_drift(".github/copilot-instructions.md", "HW-AES-KEY firmware/*/main.c:65-66\n")
+      expect(hits).to contain_exactly(a_string_matching(%r{\.github/copilot-instructions\.md: .*`firmware/\*/main\.c:65-66`}))
+    end
+
+    it "does NOT flag a de-line-reffed symbol ref, a .md line-ref, or a decimal" do
+      txt = "main.c (struct EdgeCache)\nsee 03_02_Queen.md:114 row\nratio 1.5:30 here\n`htim2` метроном (коментар)\n"
+      expect(described_class.source_line_ref_drift("03_02", txt)).to be_empty
+    end
+  end
 end
