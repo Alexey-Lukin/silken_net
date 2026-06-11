@@ -19,9 +19,9 @@ BINDIR   = .
 OPENSSL_CFLAGS = $(shell pkg-config --cflags openssl 2>/dev/null)
 OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
-.PHONY: all queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ota attest key_ratchet size-check clean
+.PHONY: all queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ota attest key_ratchet fauna size-check clean
 
-all: queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ota attest key_ratchet
+all: queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ota attest key_ratchet fauna
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -68,6 +68,9 @@ flash_ota: $(BINDIR)/test_flash_ota
 attest: $(BINDIR)/test_queen_attest
 	@./$(BINDIR)/test_queen_attest
 
+fauna: $(BINDIR)/test_fauna_session
+	@./$(BINDIR)/test_fauna_session
+
 key_ratchet: $(BINDIR)/test_key_ratchet
 	@./$(BINDIR)/test_key_ratchet
 
@@ -104,6 +107,10 @@ $(BINDIR)/test_uart_rx_ring: test_uart_rx_ring.c ../queen/uart_rx_ring.h ../quee
 # [ARCH.28/FW.54] Flash-KV журнал — RAM-мок + power-cut fault-injection.
 $(BINDIR)/test_flash_kv: test_flash_kv.c ../common/flash_kv.c ../common/flash_kv.h ../common/silken_crc.h
 	$(CC) $(CFLAGS) -I../common -o $@ test_flash_kv.c ../common/flash_kv.c
+
+# [ARCH.40] Монолітна fauna-сесія — Welford + named-тест «жодного STOP2 посеред сесії».
+$(BINDIR)/test_fauna_session: test_fauna_session.c ../common/fauna_session.h ../common/logmel_contract.h
+	$(CC) $(CFLAGS) -I../common -o $@ test_fauna_session.c -lm
 
 # [FW.52-г] OTA contract blob writer — RAM-мок + magic-LAST power-cut safety.
 $(BINDIR)/test_flash_ota: test_flash_ota.c ../common/flash_ota.c ../common/flash_ota.h ../common/flash_kv.h
@@ -149,7 +156,8 @@ clean:
 	      $(BINDIR)/test_tinyml $(BINDIR)/test_logmel $(BINDIR)/test_encryption \
 	      $(BINDIR)/test_seed_derivation $(BINDIR)/test_ccm $(BINDIR)/test_ccm_selftest \
 	      $(BINDIR)/test_sym_selftest $(BINDIR)/test_queen_attest \
-	      $(BINDIR)/test_at_engine $(BINDIR)/test_flash_kv $(BINDIR)/test_flash_ota
+	      $(BINDIR)/test_at_engine $(BINDIR)/test_flash_kv $(BINDIR)/test_flash_ota \
+	      $(BINDIR)/test_fauna_session
 
 # [FW.26] CI gate — Static RAM budget check (.bss + .data ≤ 50 KB).
 #

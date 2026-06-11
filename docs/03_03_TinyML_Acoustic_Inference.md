@@ -601,7 +601,7 @@ void Trigger_Emergency_LoRa_TX(void)
 | Decrypted RX buffer (256 B) | 256 B |
 | mruby VM heap (~4 KB) | 4 096 B |
 | Tensor Arena (оцінка) | ~12 288 B |
-| fauna_feature_accumulator *(transient, path-dependent — §3.2; лише під час fauna-сесії — §10.2)* | ~256 B (Path B/C) / ~2 KB (Path A raw window) |
+| fauna_feature_accumulator *(transient, path-dependent — §3.2; лише під час fauna-сесії — §10.2)* | ~324 B (Path B: 40 mel × Welford mean+M2, `FaunaWelford` у `fauna_session.h`; sizeof-tripwire у host-тесті) / ~2 KB (Path A raw window) |
 | Stack (бюджет; пік = `Compute_LogMel` — два кадрові буфери після FW.4 reuse-buffers, high-water гейтиться QEMU-ногою §3.4 п.3; число тут — дзеркало tripwire у `firmware/sim/qemu_m4/logmel_main.c`) | ~6 144 B |
 | **Разом (оцінка)** | **~27 KB** *(peak з fauna-вікном)* |
 | **Залишок (з 64 KB)** | **~37 KB** |
@@ -714,6 +714,8 @@ TinyML-результат безпосередньо впливає на Lorenz 
 | Бюджет TX | 1 байт `acoustic_events` (saturating uint8) | Без змін у packet layout; «Fauna Activity Index» транслюється через **той самий байт** у режимі fauna-семплінгу (не змішується з кавітацією — режим маркується через окремий біт у Status Byte або через циркадне вікно на backend) |
 
 > ⚠️ **Constraint — SRAM2 wipe vs. accumulator (audit-fix, ARCH.40):** Архітектура енергозбереження Soldier'а v3 ([`03_01 §1`](03_01_Firmware_Lifecycle_and_DMA)) використовує STOP2 RTC-only з `PWR_CR1_RRSTP=1` для досягнення 300 нА deep-sleep. Це **повністю стирає SRAM2** при кожному переході в STOP2. Проміжна matrix-statistic (`mean+std` 156 MFCC-векторів) у RAM не переживе сну. RTC Backup Domain не врятує: усі 20 backup-регістрів зайняті (останній, DR15, пішов під FW.2 CCM FC — [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)), та й один uint32 фізично не вмістив би float-матрицю. **Висновок:** fauna-сесія мусить виконуватись **монолітно за один цикл активного пробудження**: 156 циклів TIM2+DMA послідовно один за одним у межах однієї main-loop ітерації, проміжна статистика тримається в RAM, і STOP2 викликається лише після того, як фінальний `fauna_activity_index` згорнуто в один байт. Декомпозиція на «спав → 32 мс → MFCC → знов сон» — заборонена.
+>
+> **Freeze-contract ✅ (2026-06-11, ARCH.40):** model-незалежна половина зафіксована кодом ДО fauna-pivot — `firmware/common/fauna_session.h` (Welford mean+M2 по 40 mel-бінах + монолітний `Fauna_Run_Session`: синхронний, завершений в одному виклику — STOP2 фізично не може втрутитись) + host-тести `make -C firmware/test fauna`, включно з named-тестом `test_fauna_sampling_no_stop2_in_session` (емуляція девайс-циклу: жоден із 156 кадрів не бачить сну перед собою) і чесним abort на збої кадру. Згортка mean/var → `fauna_activity_index` (0–63) **свідомо відкладена**: формула — калібрувальне рішення після приземлення моделі й польових ground-truth. Вхідний гейт сесії — `Fauna_Should_Sample` (FW.42, §10.3).
 
 ### 10.3 Енергетичний бюджет
 

@@ -560,7 +560,7 @@
 
 #### ARCH.40 — Fauna 5-сек вікно: монолітне awake-обчислення (SRAM2 wipe)
 - **P1** · 🔗 · → [`03_03 §10.2`](03_03_TinyML_Acoustic_Inference)
-- **✅ Constraint канонізовано ([`03_03 §10.2`](03_03_TinyML_Acoustic_Inference)):** fauna-сесія монолітна за 1 awake (STOP2 wipe'не SRAM2 → `float[156][N_mel]` не переживе сну; 20 RTC DR зайняті) — Welford-accumulator у RAM, STOP2 лише після згортки в байт. · [ ] 🔗 при FW.4 fauna-pivot — unit-тест `test_fauna_sampling_no_stop2_in_session()`
+- **✅ Constraint канонізовано ([`03_03 §10.2`](03_03_TinyML_Acoustic_Inference)):** fauna-сесія монолітна за 1 awake (STOP2 wipe'не SRAM2 → `float[156][N_mel]` не переживе сну; 20 RTC DR зайняті) — Welford-accumulator у RAM, STOP2 лише після згортки в байт. · ✅ (2026-06-11) **freeze-contract + named-тест ДО pivot'а**: model-незалежна половина зафіксована кодом — `firmware/common/fauna_session.h` (Welford mean+M2 по 40 mel + монолітний `Fauna_Run_Session`, синхронний/завершений в одному виклику; чесний abort на збої кадру; `FaunaWelford` ~324 Б із sizeof-tripwire) + `test_fauna_sampling_no_stop2_in_session` ✅ зелений (host, `make -C firmware/test fauna`: емуляція девайс-циклу — жоден із 156 кадрів не бачить сну перед собою) + Welford ↔ two-pass еталон + стабільність на зсунутих даних. Згортка mean/var→байт (0–63) свідомо відкладена (калібрування після моделі — не передчасний канон) · [ ] 🔗 при FW.4 fauna-pivot — вживлення call-site у main.c (TIM2+DMA провайдер кадрів + `Fauna_Should_Sample` гейт + згортка в байт) — ДО Фази 5 кенозису
 
 #### ARCH.41 — Cold-start Time Paradox (DCI)
 - **P2** · 🔗 · → [`03_04 §2.1`](03_04_mruby_Lorenz_Attractor)
