@@ -535,11 +535,11 @@
 
 #### FW.25 — TinyML DSP-path: Path B (log-mel) SELECTED [DECISION 2026-05-22]
 - **P0** · 👤+🤖 · → [`03_03 §3.4`](03_03_TinyML_Acoustic_Inference)
-- **✅ Path B (log-mel) обрано + DSP-фронтенд реалізовано self-owned** (decision matrix [`03_03 §3.2`](03_03_TinyML_Acoustic_Inference) · контракт [`03_03 §3.4`](03_03_TinyML_Acoustic_Inference) — ML-партнера нема, контракт наш end-to-end): `Compute_LogMel` (`firmware/common/logmel.c`) + 3-way parity librosa≡stdlib≡C (`contract_hash` tripwire, `tools/ml`) + golden-vector host-тести + auto-gen таблиці (`silken_ml.codegen`). Лишається (gated на FW.4 модель):
-  - [ ] 👤 ML-партнер (Бушин/Любченко) тренує 5-class CNN на §3.4 (крос-чек, не гейт)
-  - [ ] 🔗 verify TENSOR_ARENA (FW.26) + uncomment inference — після `silken_net_audio_model.h`
+- **✅ Path B (log-mel) обрано + DSP-фронтенд реалізовано self-owned** (decision matrix [`03_03 §3.2`](03_03_TinyML_Acoustic_Inference) · контракт [`03_03 §3.4`](03_03_TinyML_Acoustic_Inference) — ML-партнера нема, контракт наш end-to-end): `Compute_LogMel` (`firmware/common/logmel.c`) + 3-way parity librosa≡stdlib≡C (`contract_hash` tripwire, `tools/ml`) + golden-vector host-тести + auto-gen таблиці (`silken_ml.codegen`). · ✅ (2026-06-11) **контракт доукомплектовано бюджет-конвертом моделі** ([`03_03 §3.4`](03_03_TinyML_Acoustic_Inference)): arena target ≤ 10 КБ / тверда стеля 7–15 КБ (FW.26-леджер §6), INT8 обов'язковий, «топологію під стелю» — щоб партнер не натренував фізично недеплойовану модель; Path C-фолбек отримав леджер-противагу (TFLM-оверхед усередині тієї ж стелі → фолбек звузився, перед застосуванням повторити FW.26-замір). Лишається (gated на FW.4 модель):
+  - [ ] 👤 ML-партнер (Бушин/Любченко) тренує 5-class CNN на §3.4 **(контракт ознак + бюджет-конверт)** (крос-чек, не гейт)
+  - [ ] 🔗 фактичний arena-розмір проти виміряної стелі (FW.26-гейт зірветься сам) + uncomment inference — після `silken_net_audio_model.h`
   - [ ] 🌿 UNI.11+UNI.13a soundscape dataset (dawn/dusk fauna 5-й клас)
-  - [ ] 🤖 fallback Path C (TFLM) — потребує re-verify arena
+  - [ ] 🤖 fallback Path C (TFLM) — лише після повторного FW.26-заміру з TFLM-обвісом ([`03_03 §3.2`](03_03_TinyML_Acoustic_Inference) противага)
 
 #### FW.26 — TENSOR_ARENA_SIZE ніколи не верифіковано
 - **P1** · 🤖 · → [`03_03 §4.3`](03_03_TinyML_Acoustic_Inference)
