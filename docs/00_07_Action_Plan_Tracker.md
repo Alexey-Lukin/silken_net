@@ -801,7 +801,9 @@
 
 #### ARCH.35 — Queen Flash Ring Buffer (W25Q32 overflow tier)
 - **P1** · 🔗 · → `06_08 §1.2`, `02_05 §2.1`
-- CIFO 50-slot RAM cache переповнюється ~30 хв @100 Soldiers/Queen → SPI NOR W25Q32JV (4 МБ, ~$0.50, SOIC-8) як overflow tier; sector-based ring (~199k слотів ≈ 7 діб); pointers у Queen RTC backup регістрах (STM32WLE5JC має лише DR0..DR19; DR20+ не існують); drain Flash-first→RAM. Implementation Anchor resilience-policy на верхньому краю scaling. · [ ] 🔗 firmware ring-buffer + W25Q32 у Queen BOM (`02_05 §2.1`/§BOM)
+- CIFO 50-slot RAM cache переповнюється ~30 хв @100 Soldiers/Queen → SPI NOR W25Q32JV (4 МБ, ~$0.50, SOIC-8) як overflow tier; sector-based ring (192 слоти/сектор ≈ 197k слотів); drain Flash-first→RAM. Implementation Anchor resilience-policy на верхньому краю scaling.
+- **✅ 🤖 драйвер + gated Queen-глю зашито (2026-06-11f):** `firmware/common/flash_ring.{h,c}` — sector-ring з **in-band заголовками** `[magic|seq]` + NOR-бітмапи used/consumed (ADR: замінили ескізні RTC-покажчики — ті гинуть з VBAT і розходяться зі вмістом флешу; mount-scan відновлює head/tail/count після будь-якого знеструмлення, Queen DR не витрачаються); слот = 21-байтний wire-запис батча (бітове дзеркало пакувальника); power-cut-інваріанти: дані→used-біт, сирота tombstone'иться, consume лише після send-success → **at-least-once** (дубль можливий, втрата — ні). Host-тести `test_flash_ring.c` (NOR-мок 1→0 + fault-injection: roundtrip · remount-recovery · wrap-drop durable · consume across sectors · 3 power-cut сценарії) — тест одразу зловив NOR-діру дизайну (перезапис сироти AND-ить байти). Queen-глю (gated `ARCH35_RING_ENABLED 0`): SPI W25Q32 cmd-set (PP page-aware) + спіл евікшнів і провалених flush'ів + drain-refill у CIFO (`is_active=2`) з consume після наступного send-success. Канон: `02_05 §2.1` (дім дизайну) + `06_08 §1.2` L1.
+- [ ] 🔗 W25Q32 розводка (SPI + CS-пін, board-freeze `.ioc`) + bench SPI-глю → фліп `ARCH35_RING_ENABLED 1`
 
 #### ARCH.34 — Queen-side LoRaWAN Helium SOS fallback
 - **P2** · 🔗 · → `06_08 §1.2`, `02_05 §6.1`

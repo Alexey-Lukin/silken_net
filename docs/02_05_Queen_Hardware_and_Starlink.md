@@ -286,38 +286,17 @@ EdgeCache forest_cache[50]; // 50 × 22 байти = 1.1 KB
 
 ⚠️ **Capacity math (2026):** 50 слотів × 1 пакет/Soldier/год × 100 Soldiers/Queen ⇒ переповнення за **30 хв** при втраті Starlink. На верхньому краю scaling roadmap ([`00_08 §2.1`](00_08_Beyond_TRL9_Planetary_Roadmap), 200 Soldiers/Queen) — переповнення за **15 хв**. Це **критичний gap**, який маскувався тестами в стенді з <50 Soldiers.
 
-**Flash Ring Buffer — Overflow Tier (ARCH.35):**
-```c
-// firmware/queen/flash_buffer.c — пропозиція ARCH.35
-// W25Q32 SPI NOR: 4 MB = 1024 sectors × 4 KB; page-program 256 B, але erase —
-// ТІЛЬКИ цілим сектором 4 KB (NOR не вміє 0→1 без erase). Тому ring — ПО СЕКТОРАХ,
-// а не по довільних 21-байт offset'ах: 21-байт слоти пакуються послідовно у сектор
-// (~195 слотів/сектор) → ~199k слотів. Покажчики (write_sector, read_sector,
-// slot_in_sector) у вільних Queen RTC backup регістрах (DR0..DR19;
-// DR20+ не існують на WLE5 — лише 20 регістрів).
-#define SLOTS_PER_SECTOR  (4096 / 21)   // 195
-#define N_SECTORS         1024
+**Flash Ring Buffer — Overflow Tier (ARCH.35):** ✅ **драйвер host-готовий (2026-06-11), інтеграція gated.** Дім коду: `firmware/common/flash_ring.{h,c}` (host-тести `test_flash_ring.c` — NOR-мок із чесною 1→0 семантикою + power-cut fault-injection) ↔ gated-глю у `firmware/queen/main.c` (`ARCH35_RING_ENABLED 0`; SPI W25Q32 cmd-set, спіл евікшнів + провалених flush'ів, drain-refill у CIFO після send-success).
 
-void cifo_overflow_to_flash(EdgeCache* slot) {
-    if (slot_in_sector == 0) {                                  // починаємо новий сектор
-        if ((write_sector + 1) % N_SECTORS == read_sector)
-            read_sector = (read_sector + 1) % N_SECTORS;        // ring повний → FIFO-drop найстарішого СЕКТОРА
-        w25q32_erase_sector(write_sector);                      // обов'язковий erase ПЕРЕД програмуванням
-    }
-    w25q32_write_page(write_sector, slot_in_sector * 21, slot, 21);
-    if (++slot_in_sector >= SLOTS_PER_SECTOR) { slot_in_sector = 0; write_sector = (write_sector + 1) % N_SECTORS; }
-}
+Дизайн (уточнений на імплементації відносно первісного ескізу):
 
-void cifo_drain_from_flash(void) {                              // FIFO: найстаріший сектор першим
-    while (read_sector != write_sector && uplink_available()) {
-        for (int i = 0; i < SLOTS_PER_SECTOR; i++) {
-            w25q32_read(read_sector, i * 21, &slot, 21);
-            if (coap_send(&slot) != OK) return;                 // стоп без втрати прогресу
-        }
-        read_sector = (read_sector + 1) % N_SECTORS;            // сектор повністю злито (стертя — при наступному обороті)
-    }
-}
-```
+- **Ring по СЕКТОРАХ:** NOR не вміє 0→1 без erase, erase — цілим сектором 4 КБ; повний ring → FIFO-drop найстарішого сектора (durable consume-all без erase).
+- **Слот = 21-байтний wire-запис батча** (DID:4 BE + |RSSI| + payload:16) — бітово той самий формат, що пакує `Flush_Cache_To_Rails`: спіл/дрейн не перекодовують.
+- **In-band заголовки замість RTC-покажчиків** (ADR, замінив ескізні `write_sector/read_sector/slot_in_sector` у DR-регістрах): покажчики у RTC гинуть з VBAT і вміють розійтися зі вмістом флешу. Кожен сектор несе `[magic|seq:u32]` + два NOR-бітмапи (used/consumed, програмуються 1→0 без erase) → mount-scan відновлює head/tail/count після будь-якого знеструмлення, Queen не витрачає жодного DR. Ціна — 56 Б/сектор: **192 слоти/сектор → ~197k слотів** (4 МБ).
+- **Power-cut-інваріанти:** дані → used-біт (сирота невидима; NOT-перезаписувана сирота tombstone'иться used+consumed); consume — лише після підтвердженої доставки батча → **at-least-once** (дубль можливий, втрата — ні).
+- **Drain — через CIFO-refill,** не паралельним CoAP-шляхом: після send-success найстаріші недоставлені переливаються у звільнені RAM-слоти (`is_active=2`), наступний flush везе їх наявною FW.51-машинерією; consume їхніх flash-копій — після наступного send-success.
+
+🟡 Residual: W25Q32 розводка (SPI + CS-пін, board-freeze `.ioc`) + bench-верифікація SPI-глю/таймінгів → фліп `ARCH35_RING_ENABLED 1`.
 
 **Енерго-бюджет flash write:** W25Q32 page write ~10 мА × 0.7 мс/page = 7 µA·s; sector erase (4 KB) ~15 мА × ~45 мс ≈ 675 µA·s, але амортизовано раз на ~195 слотів. При середньому 100 overflow-events/добу на Queen — одиниці mA·s/добу, що значно нижче добового нойзу LiFePO4 12V/20Ah (~3.2 Вт·год/добу phase 2.5, див. §1.2 §Зимовий енергодефіцит). **Не змінює зимовий енергобюджет.**
 
@@ -774,7 +753,7 @@ if (uplink_down_minutes >= HELIUM_FALLBACK_THRESHOLD_MIN &&
 | 13 | **IP67 корпус** | ABS/PC + ущільнення, ≥2.5L | 1/2.5/3 | 📋 Не специфіковано |
 | 14 | **SWD програматор** | ST-LINK-V3MINIE | — | ✅ |
 | 15 | **UART адаптер** | FT232RL, 3.3V режим | — | ✅ |
-| 16 | **SPI NOR Flash** (ARCH.35) | Winbond **W25Q32JV** (4 MB, SPI, SOIC-8), 100k erase cycles | 1/2.5/3 | 🟡 Заплановано — overflow tier для CIFO; ~$0.50/од; 190k+ telemetry slots; ~10 мА × 0.7 мс/page write |
+| 16 | **SPI NOR Flash** (ARCH.35) | Winbond **W25Q32JV** (4 MB, SPI, SOIC-8), 100k erase cycles | 1/2.5/3 | 🟡 Заплановано (розводка SPI+CS — board-freeze); **драйвер ✅ host-tested** (`flash_ring.{h,c}`, gated `ARCH35_RING_ENABLED 0` — §2.1); ~$0.50/од; ~197k telemetry slots; ~10 мА × 0.7 мс/page write |
 | 17 | **C_BULK (SIM7070G VBAT tank)** | 470 µF / 6.3V / aluminum polymer, ESR ≤ 15 мΩ (Panasonic EEFCX0J471R або Kemet T520B477M006ATE015) | 1/2.5 | 🔴 **Обов'язково** — без нього brownout reboot SIM7070G при 2А LTE-M burst (§2.2.1) |
 | 18 | **C_MID (SIM7070G VBAT)** | 100 µF / 25V / X7R / 1210 (Murata GRM32ER71E107K) | 1/2.5 | 🔴 Обов'язково — С_eff ≈ 85 µF після DC bias derating |
 | 19 | **C_HF1 (SIM7070G VBAT)** | 10 µF / 25V / X7R / 0805 | 1/2.5 | 🔴 Обов'язково |

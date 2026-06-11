@@ -370,6 +370,140 @@ typedef struct {
 EdgeCache forest_cache[CACHE_MAX_ENTRIES];
 uint8_t cache_count = 0;
 
+// =========================================================================
+// [ARCH.35] Flash Ring Buffer — overflow tier CIFO (W25Q32JV SPI NOR)
+// =========================================================================
+// CIFO переповнюється за ~30 хв @100 Soldiers без uplink'а — евікшн мовчки
+// губить телеметрію лісу. Ring (../common/flash_ring.{h,c}, host-тестований
+// NOR-мок + power-cut) дає ~197k слотів буфера: спіл евікшнів і провалених
+// flush'ів, drain FIFO при відновленні uplink'а (06_08 §1.2 L1 two-tier).
+//
+// 🟡 СТАТУС: ВИМКНЕНО (ARCH35_RING_ENABLED 0) — W25Q32 ще не в Queen BOM
+// (02_05 §2.1 row 16 «Заплановано») і SPI-периферія не розведена; фліп =
+// board-freeze (.ioc: MX_SPI1_Init + CS-пін) + bench; збірка при фліпі:
+// + ../common/flash_ring.c (як test_flash_ring). Драйвер слотує
+// 21-байтний wire-запис батча БІТОВО як Flush_Cache_To_Rails — спіл/дрейн
+// не перекодовують. Семантика at-least-once: power-cut може повторити
+// доставку (бекенд толерує дубль), але не губить.
+#include "../common/flash_ring.h"
+
+#define ARCH35_RING_ENABLED  0   // 🟡 фліп після BOM + board-freeze (bench)
+
+#if ARCH35_RING_ENABLED
+// --- SPI-глю W25Q32JV (datasheet cmd set) -------------------------------
+// MX_SPI1_Init + W25Q32_CS_* пін — board-freeze фаза (.ioc), як HAL-глю
+// FW.46: тут лише протокол. PP (0x02) програмує В МЕЖАХ 256-байтної
+// сторінки (wrap!) → Ring_Program ріже chunk'и по page-межах.
+extern SPI_HandleTypeDef hspi1;
+
+#define W25_CMD_WREN   0x06u
+#define W25_CMD_PP     0x02u
+#define W25_CMD_READ   0x03u
+#define W25_CMD_SE     0x20u
+#define W25_CMD_RDSR   0x05u
+#define W25_PAGE_SIZE  256u
+#define W25_SPI_TO_MS  100u
+#define W25_ERASE_TO_MS 400u  // typ ~45 мс, max 400 мс (datasheet)
+
+static int W25_Xfer_Begin(uint8_t cmd, uint32_t addr, int with_addr)
+{
+    uint8_t hdr[4] = { cmd, (uint8_t)(addr >> 16), (uint8_t)(addr >> 8),
+                       (uint8_t)addr };
+    W25Q32_CS_LOW();
+    return HAL_SPI_Transmit(&hspi1, hdr, with_addr ? 4u : 1u,
+                            W25_SPI_TO_MS) == HAL_OK;
+}
+
+static int W25_Wait_Busy(uint32_t timeout_ms)
+{
+    uint32_t start = HAL_GetTick();
+    for (;;) {
+        uint8_t sr = 0;
+        if (!W25_Xfer_Begin(W25_CMD_RDSR, 0, 0)) { W25Q32_CS_HIGH(); return 0; }
+        int ok = HAL_SPI_Receive(&hspi1, &sr, 1, W25_SPI_TO_MS) == HAL_OK;
+        W25Q32_CS_HIGH();
+        if (!ok) return 0;
+        if ((sr & 0x01u) == 0u) return 1; // WIP=0 — готовий
+        if (HAL_GetTick() - start > timeout_ms) return 0;
+    }
+}
+
+static int W25_Write_Enable(void)
+{
+    if (!W25_Xfer_Begin(W25_CMD_WREN, 0, 0)) { W25Q32_CS_HIGH(); return 0; }
+    W25Q32_CS_HIGH();
+    return 1;
+}
+
+static int Ring_Ops_Read(void *io, uint32_t addr, uint8_t *buf, uint32_t len)
+{
+    (void)io;
+    if (!W25_Xfer_Begin(W25_CMD_READ, addr, 1)) { W25Q32_CS_HIGH(); return 0; }
+    int ok = HAL_SPI_Receive(&hspi1, buf, (uint16_t)len, W25_SPI_TO_MS) == HAL_OK;
+    W25Q32_CS_HIGH();
+    return ok;
+}
+
+static int Ring_Ops_Program(void *io, uint32_t addr, const uint8_t *buf,
+                            uint32_t len)
+{
+    (void)io;
+    while (len > 0u) {
+        uint32_t chunk = W25_PAGE_SIZE - (addr % W25_PAGE_SIZE);
+        if (chunk > len) chunk = len;
+        if (!W25_Write_Enable()) return 0;
+        if (!W25_Xfer_Begin(W25_CMD_PP, addr, 1)) { W25Q32_CS_HIGH(); return 0; }
+        int ok = HAL_SPI_Transmit(&hspi1, (uint8_t *)buf, (uint16_t)chunk,
+                                  W25_SPI_TO_MS) == HAL_OK;
+        W25Q32_CS_HIGH();
+        if (!ok || !W25_Wait_Busy(W25_SPI_TO_MS)) return 0;
+        addr += chunk; buf += chunk; len -= chunk;
+    }
+    return 1;
+}
+
+static int Ring_Ops_Erase(void *io, uint16_t sector)
+{
+    (void)io;
+    if (!W25_Write_Enable()) return 0;
+    if (!W25_Xfer_Begin(W25_CMD_SE, (uint32_t)sector * FLASH_RING_SECTOR_SIZE,
+                        1)) { W25Q32_CS_HIGH(); return 0; }
+    W25Q32_CS_HIGH();
+    return W25_Wait_Busy(W25_ERASE_TO_MS);
+}
+
+static const FlashRingOps queen_ring_ops = {
+    Ring_Ops_Read, Ring_Ops_Program, Ring_Ops_Erase
+};
+static FlashRing queen_ring;
+static uint8_t   queen_ring_mounted = 0;
+// Скільки ring-записів зараз перелито у CIFO і чекає підтвердження
+// доставки (consume — лише після send_success: power-cut → дубль, не втрата).
+static uint8_t   ring_inflight = 0;
+
+// Слот CIFO → 21-байтний wire-запис (бітове дзеркало пакувальника
+// Flush_Cache_To_Rails: DID:4 BE + |RSSI| + payload:16).
+static void Ring_Serialize_Slot(const EdgeCache *slot, uint8_t out[FLASH_RING_RECORD_SIZE])
+{
+    out[0] = (uint8_t)(slot->uid >> 24);
+    out[1] = (uint8_t)(slot->uid >> 16);
+    out[2] = (uint8_t)(slot->uid >> 8);
+    out[3] = (uint8_t)(slot->uid & 0xFFu);
+    out[4] = (uint8_t)(-(int16_t)slot->rssi);
+    memcpy(&out[5], slot->payload, 16);
+}
+
+static void Ring_Deserialize_Slot(const uint8_t rec[FLASH_RING_RECORD_SIZE], EdgeCache *slot)
+{
+    slot->uid = ((uint32_t)rec[0] << 24) | ((uint32_t)rec[1] << 16) |
+                ((uint32_t)rec[2] << 8)  | (uint32_t)rec[3];
+    slot->rssi = (int8_t)(-(int16_t)rec[4]);
+    slot->snr  = 0; // SNR не їде у wire-записі — лише evict-tiebreaker, 0 чесний
+    memcpy(slot->payload, &rec[5], 16);
+    slot->is_active = 2; // 2 = перелитий з ring'а (flash-копія ще не consumed)
+}
+#endif // ARCH35_RING_ENABLED
+
 // ЗБІЛЬШЕНО ЕФЕКТИВНІСТЬ (Drifting Ice):
 // Замість 8192 байтів текстового JSON використовуємо компактний бінарний буфер
 // 50 записів по 21 байту = всього 1050 байтів.
@@ -521,6 +655,15 @@ int main(void)
   memset(forest_cache, 0, sizeof(forest_cache));
   // [СИНХРОНІЗОВАНО з Rails]: Ініціалізація кільцевого буфера дедуплікації команд
   memset(cmd_dedup_ring, 0, sizeof(cmd_dedup_ring));
+
+#if ARCH35_RING_ENABLED
+  // [ARCH.35] Mount overflow-ring'а: mount-scan відновлює head/tail/count
+  // з in-band заголовків секторів (жодних RTC-покажчиків — переживає і
+  // VBAT-loss). Відмова → tier вимкнений, CIFO живе як раніше (деградація,
+  // не смерть); телеметрію про це повезе Queen Sentinel health-байт.
+  queen_ring_mounted = FlashRing_Mount(&queen_ring, &queen_ring_ops, NULL,
+                                       FLASH_RING_W25Q32_SECTORS);
+#endif
 
   // 3. Ініціалізація модему SIM7070G
   // [FW.3] Response-driven: кожна команда чекає фінал (OK/ERROR), а не сліпий
@@ -976,10 +1119,28 @@ void Process_And_Cache_Data(uint32_t uid, const uint8_t* payload, int8_t rssi, i
 
         int evict_idx = (best_evict_idx >= 0) ? best_evict_idx : fallback_idx;
 
+#if ARCH35_RING_ENABLED
+        // [ARCH.35] Витіснений запис більше не гине мовчки — спіл у ring.
+        // Перелитий слот (is_active==2) не дублюємо: його flash-копія ще
+        // unconsumed і повернеться наступним drain'ом — лише знімаємо з
+        // inflight-обліку, щоб consume після send_success її не списав.
+        if (queen_ring_mounted) {
+            if (forest_cache[evict_idx].is_active == 2u) {
+                if (ring_inflight > 0u) ring_inflight--;
+            } else {
+                uint8_t rec[FLASH_RING_RECORD_SIZE];
+                Ring_Serialize_Slot(&forest_cache[evict_idx], rec);
+                (void)FlashRing_Append(&queen_ring, rec); // відмова = старий лосс-шлях
+            }
+        }
+#endif
         forest_cache[evict_idx].uid = uid;
         memcpy(forest_cache[evict_idx].payload, payload, 16);
         forest_cache[evict_idx].rssi = rssi;
         forest_cache[evict_idx].snr  = snr;
+        // Свіжий LoRa-запис — НЕ перелитий з ring'а (1, не успадковане 2):
+        // інакше fail-спіл «почистив би» його як уже-збережений у флеші.
+        forest_cache[evict_idx].is_active = 1;
     }
 }
 
@@ -1305,7 +1466,59 @@ void Flush_Cache_To_Rails(void)
             }
         }
         cache_count -= cleared;
+
+#if ARCH35_RING_ENABLED
+        // [ARCH.35] Uplink живий: (1) durable-списуємо ring-записи, що
+        // були перелиті в ЦЕЙ доставлений батч (consume лише після
+        // send_success — power-cut дає дубль, не втрату); (2) drain-refill:
+        // тягнемо найстаріші недоставлені у звільнені слоти CIFO — наступний
+        // flush повезе їх існуючою машинерією (FW.51-семантика збережена).
+        if (queen_ring_mounted) {
+            if (ring_inflight > 0u) {
+                (void)FlashRing_Consume(&queen_ring, ring_inflight);
+                ring_inflight = 0;
+            }
+            uint8_t rec[FLASH_RING_RECORD_SIZE];
+            while (cache_count < CACHE_MAX_ENTRIES &&
+                   FlashRing_Count(&queen_ring) > ring_inflight &&
+                   FlashRing_Read_Tail(&queen_ring, ring_inflight, rec)) {
+                for (int i = 0; i < CACHE_MAX_ENTRIES; i++) {
+                    if (!forest_cache[i].is_active) {
+                        Ring_Deserialize_Slot(rec, &forest_cache[i]);
+                        cache_count++;
+                        ring_inflight++;
+                        break;
+                    }
+                }
+            }
+        }
+#endif
     }
+#if ARCH35_RING_ENABLED
+    else if (queen_ring_mounted) {
+        // [ARCH.35] Retry вичерпано (LTE-діра): спіл свіжих записів у ring
+        // звільняє RAM під нову годину телеметрії — дані чекають у флеші
+        // (раніше FW.51 тримав їх у RAM, і евікшни губили нове). Перелиті
+        // (is_active==2) не дублюємо — їхні flash-копії ще unconsumed.
+        // Відмова Append (ring помер) → слот лишається в CIFO, як до ARCH.35.
+        uint8_t spilled = 0;
+        for (int i = 0; i < CACHE_MAX_ENTRIES; i++) {
+            if (forest_cache[i].is_active == 2u) {
+                forest_cache[i].is_active = 0;
+                spilled++;
+            } else if (forest_cache[i].is_active) {
+                uint8_t rec[FLASH_RING_RECORD_SIZE];
+                Ring_Serialize_Slot(&forest_cache[i], rec);
+                if (FlashRing_Append(&queen_ring, rec)) {
+                    forest_cache[i].is_active = 0;
+                    spilled++;
+                }
+            }
+        }
+        cache_count -= spilled;
+        ring_inflight = 0;
+    }
+#endif
 }
 
 // =========================================================================

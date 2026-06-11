@@ -19,9 +19,9 @@ BINDIR   = .
 OPENSSL_CFLAGS = $(shell pkg-config --cflags openssl 2>/dev/null)
 OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
-.PHONY: all queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ota attest key_ratchet fauna size-check clean
+.PHONY: all queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet fauna size-check clean
 
-all: queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ota attest key_ratchet fauna
+all: queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet fauna
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -61,6 +61,9 @@ uart_ring: $(BINDIR)/test_uart_rx_ring
 
 flash_kv: $(BINDIR)/test_flash_kv
 	@./$(BINDIR)/test_flash_kv
+
+flash_ring: $(BINDIR)/test_flash_ring
+	@./$(BINDIR)/test_flash_ring
 
 flash_ota: $(BINDIR)/test_flash_ota
 	@./$(BINDIR)/test_flash_ota
@@ -107,6 +110,10 @@ $(BINDIR)/test_uart_rx_ring: test_uart_rx_ring.c ../queen/uart_rx_ring.h ../quee
 # [ARCH.28/FW.54] Flash-KV журнал — RAM-мок + power-cut fault-injection.
 $(BINDIR)/test_flash_kv: test_flash_kv.c ../common/flash_kv.c ../common/flash_kv.h ../common/silken_crc.h
 	$(CC) $(CFLAGS) -I../common -o $@ test_flash_kv.c ../common/flash_kv.c
+
+# [ARCH.35] W25Q32 sector-ring — NOR-мок (program 1→0) + power-cut fault-injection.
+$(BINDIR)/test_flash_ring: test_flash_ring.c ../common/flash_ring.c ../common/flash_ring.h
+	$(CC) $(CFLAGS) -I../common -o $@ test_flash_ring.c ../common/flash_ring.c
 
 # [ARCH.40] Монолітна fauna-сесія — Welford + named-тест «жодного STOP2 посеред сесії».
 $(BINDIR)/test_fauna_session: test_fauna_session.c ../common/fauna_session.h ../common/logmel_contract.h
