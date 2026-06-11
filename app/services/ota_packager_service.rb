@@ -17,7 +17,9 @@ class OtaPackagerService
 
   # [FW.23] HMAC trailer constants — wire format must mirror Soldier parser.
   HMAC_TAG_BYTES        = 32   # HMAC-SHA256 output size
-  HMAC_TRAILER_SEGMENTS = 3    # 32 bytes split across 3 LoRa chunks
+  HMAC_TRAILER_SEGMENTS = 3    # 32 bytes split across 3 LoRa chunks (seg_idx 1..3)
+  HMAC_VERSION_SEG_IDX  = 4    # seg_idx=4 carries version_id (Soldier HMAC input)
+  OTA_TRAILER_CHUNKS    = 4    # 3 HMAC tag chunks + 1 version chunk
   HMAC_SEG_BYTES        = 11   # 11 bytes payload per LoRa chunk (16 - 5 header)
   HMAC_TRAILER_BLOCK    = 16   # Single AES-256 block size on the wire
 
@@ -110,17 +112,22 @@ class OtaPackagerService
     OpenSSL::HMAC.digest("SHA256", binary_key, message)
   end
 
-  # [FW.23] Build 3 trailer 16-byte LoRa-formatted blocks carrying the 32-byte
-  # HMAC tag. Each block layout matches Soldier `Parse_HMAC_Trailer_Chunk`:
+  # [FW.23] Build 4 trailer 16-byte LoRa-formatted blocks. The first 3 carry the
+  # 32-byte HMAC tag; the 4th carries version_id so the Soldier can recompute the
+  # HMAC over (bytecode ‖ version_id_be ‖ total_be) — without it the dual-gate has
+  # no version input on the wire and stays inert. Layout mirrors Soldier
+  # `Parse_HMAC_Trailer_Chunk`:
   #   [0]    0x9B (CMD_HMAC_TRAILER)
-  #   [1..2] seg_idx (1..3, big-endian)
+  #   [1..2] seg_idx (1..4, big-endian)
   #   [3..4] lora_total_chunks (big-endian) — cross-check vs bytecode 0x99 header
-  #   [5..15] hmac segment (11 bytes; seg=3 has 10 real bytes + 1 PAD)
+  #   seg 1..3: [5..15] hmac segment (11 bytes; seg=3 has 10 real bytes + 1 PAD)
+  #   seg 4:    [5..8] version_id (big-endian) + [9..15] PAD
   #
-  # Deterministic for fixed (hmac_tag, lora_total_chunks).
-  def self.build_hmac_trailer_chunks(hmac_tag, lora_total_chunks)
+  # Deterministic for fixed (hmac_tag, lora_total_chunks, version_id).
+  def self.build_hmac_trailer_chunks(hmac_tag, lora_total_chunks, version_id)
     raise ArgumentError, "hmac_tag must be #{HMAC_TAG_BYTES} bytes" \
       unless hmac_tag && hmac_tag.bytesize == HMAC_TAG_BYTES
+    raise ArgumentError, "version_id required" if version_id.nil?
 
     chunks = []
     HMAC_TRAILER_SEGMENTS.times do |i|
@@ -133,6 +140,12 @@ class OtaPackagerService
       header = [ CMD_HMAC_TRAILER, seg_idx, lora_total_chunks ].pack("Cnn")
       chunks << (header + slice)
     end
+
+    # seg 4 — version envelope. version_id binds the tag to a firmware revision;
+    # the same 4-byte BE value goes into compute_hmac_tag's HMAC input.
+    version_header = [ CMD_HMAC_TRAILER, HMAC_VERSION_SEG_IDX, lora_total_chunks ].pack("Cnn")
+    version_body   = [ version_id.to_i ].pack("N") + ("\x00" * (HMAC_SEG_BYTES - 4))
+    chunks << (version_header + version_body)
     chunks
   end
 
@@ -186,7 +199,7 @@ class OtaPackagerService
     # without re-counting and so the UI progress bar stays correct.
     base.merge(
       lora_total_chunks: lora_total_chunks,
-      total_packages:    total_bytecode_chunks + HMAC_TRAILER_SEGMENTS,
+      total_packages:    total_bytecode_chunks + OTA_TRAILER_CHUNKS,
       hmac_signed:       true,
       hmac_cluster_id:   @cluster_id
     )
@@ -218,8 +231,8 @@ class OtaPackagerService
 
     return bytecode_chunks unless hmac_enabled?
 
-    # [FW.23] Concatenate bytecode chunks + 3 HMAC trailer chunks. Worker
-    # iterates packages.to_a; trailer chunks are 16-byte LoRa-pre-formatted
+    # [FW.23] Concatenate bytecode chunks + 4 trailer chunks (3 HMAC + 1 version).
+    # Worker iterates packages.to_a; trailer chunks are 16-byte LoRa-pre-formatted
     # blocks that Queen relays directly (stateless) and Soldier verifies via
     # dual-gate before flash write.
     Enumerator.new do |yielder|
@@ -249,6 +262,6 @@ class OtaPackagerService
       lora_total_chunks,
       cluster_id: @cluster_id
     )
-    self.class.build_hmac_trailer_chunks(tag, lora_total_chunks)
+    self.class.build_hmac_trailer_chunks(tag, lora_total_chunks, @firmware.id)
   end
 end

@@ -205,4 +205,41 @@ static void Silken_Hmac_Sha256(const uint8_t *key, size_t key_len,
     Silken_Sha256_Final(&ctx, digest);
 }
 
+/* HMAC-SHA256 над конкатенацією (a ‖ b) без суцільного буфера. [FW.23]
+ * OTA dual-gate хешує bytecode ‖ (version_be ‖ total_be): тіло прошивки само
+ * заповнює ota_buffer (~1 КБ), тож 6-байтний хвіст стрімимо окремо замість
+ * +1 КБ на стек. Тотожно Silken_Hmac_Sha256 над злитим a‖b (доведено host-
+ * тестом), а той — байт-у-байт OpenSSL::HMAC (test_seed_derivation). b_len==0
+ * дозволено (тоді це HMAC лише над a). */
+static inline void Silken_Hmac_Sha256_Concat(const uint8_t *key, size_t key_len,
+                                       const uint8_t *a, size_t a_len,
+                                       const uint8_t *b, size_t b_len,
+                                       uint8_t digest[SILKEN_SHA256_DIGEST_LEN])
+{
+    uint8_t key_block[SILKEN_SHA256_BLOCK_LEN];
+    uint8_t pad[SILKEN_SHA256_BLOCK_LEN];
+    uint8_t inner[SILKEN_SHA256_DIGEST_LEN];
+    SilkenSha256Ctx ctx;
+
+    memset(key_block, 0, sizeof(key_block));
+    if (key_len > SILKEN_SHA256_BLOCK_LEN) {
+        Silken_Sha256(key, key_len, key_block);
+    } else {
+        memcpy(key_block, key, key_len);
+    }
+
+    for (uint32_t i = 0; i < SILKEN_SHA256_BLOCK_LEN; i++) pad[i] = key_block[i] ^ 0x36u;
+    Silken_Sha256_Init(&ctx);
+    Silken_Sha256_Update(&ctx, pad, SILKEN_SHA256_BLOCK_LEN);
+    if (a_len > 0u) Silken_Sha256_Update(&ctx, a, a_len);
+    if (b_len > 0u) Silken_Sha256_Update(&ctx, b, b_len);
+    Silken_Sha256_Final(&ctx, inner);
+
+    for (uint32_t i = 0; i < SILKEN_SHA256_BLOCK_LEN; i++) pad[i] = key_block[i] ^ 0x5cu;
+    Silken_Sha256_Init(&ctx);
+    Silken_Sha256_Update(&ctx, pad, SILKEN_SHA256_BLOCK_LEN);
+    Silken_Sha256_Update(&ctx, inner, SILKEN_SHA256_DIGEST_LEN);
+    Silken_Sha256_Final(&ctx, digest);
+}
+
 #endif /* SILKEN_SHA256_H */

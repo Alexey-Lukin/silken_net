@@ -124,17 +124,19 @@ RSpec.describe "OTA firmware deployment flow" do
     let(:firmware) { create(:bio_contract_firmware, bytecode_payload: hex_payload) }
     let(:cluster_id) { "test-cluster-fw23" }
 
-    it "backend produces 3 HMAC trailer chunks at end of packages" do
+    it "backend produces 4 HMAC trailer chunks at end of packages (3 tag + version)" do
       result = OtaPackagerService.prepare(firmware, chunk_size: 512, cluster_id: cluster_id)
       packages = result[:packages].to_a
-      trailer  = packages.last(3)
+      trailer  = packages.last(4)
 
       # 0x9B marker on each trailer chunk
       expect(trailer.map { |p| p.unpack1("C") }).to all(eq(0x9B))
       # 16-byte LoRa-formatted blocks (single AES-256 block)
       expect(trailer.map(&:bytesize)).to all(eq(16))
-      # seg_idx 1, 2, 3 in big-endian
-      expect(trailer.map { |p| p[1..2].unpack1("n") }).to eq([ 1, 2, 3 ])
+      # seg_idx 1, 2, 3 (HMAC tag) + 4 (version_id) in big-endian
+      expect(trailer.map { |p| p[1..2].unpack1("n") }).to eq([ 1, 2, 3, 4 ])
+      # seg 4 carries firmware.id — the version_id input the Soldier needs to verify
+      expect(trailer.last[5..8].unpack1("N")).to eq(firmware.id)
     end
 
     # [FW.53] LoRa-шар тепер несе WIRE-потік: padded bytecode +
@@ -160,9 +162,9 @@ RSpec.describe "OTA firmware deployment flow" do
     it "trailer chunks reconstruct a 32-byte HMAC tag matching .compute_hmac_tag" do
       manifest = OtaPackagerService.prepare(firmware, chunk_size: 512, cluster_id: cluster_id).fetch(:manifest)
       packages = OtaPackagerService.prepare(firmware, chunk_size: 512, cluster_id: cluster_id).fetch(:packages).to_a
-      trailer  = packages.last(3)
+      trailer  = packages.last(4)
 
-      # Reconstruct tag from trailer payload bytes (bytes 5..)
+      # Reconstruct tag from the 3 HMAC trailer chunks (bytes 5..); seg 4 = version.
       reconstructed = trailer[0][5..15] + trailer[1][5..15] + trailer[2][5..14]
 
       expected = OtaPackagerService.compute_hmac_tag(
@@ -172,6 +174,8 @@ RSpec.describe "OTA firmware deployment flow" do
         cluster_id: cluster_id
       )
       expect(reconstructed.b).to eq(expected)
+      # seg 4 carries the exact version_id bound into that tag (firmware.id, 4B BE)
+      expect(trailer[3][5..8].unpack1("N")).to eq(firmware.id)
     end
 
     it "Soldier dual-gate would accept a properly signed firmware (mirrors C logic)" do

@@ -1262,13 +1262,13 @@ log.update!(lorenz_state_x: x_f, lorenz_state_y: y_f, lorenz_state_z: z_f,
 | Шар | Файл | Що зроблено |
 |-----|------|-------------|
 | Backend (HKDF) | `app/services/ota_hmac_key_service.rb` | `OtaHmacKeyService.fetch_for(cluster_id)` — HKDF-SHA256, info `"silken-ota-hmac-v1"`, raise `SecurityError` без `PROVISIONING_MASTER_KEY` (SEC.11 hard cutover) |
-| Backend (signing) | `app/services/ota_packager_service.rb` | `compute_hmac_tag(bytecode, version_id, lora_total_chunks, cluster_id:)` + `build_hmac_trailer_chunks(tag, lora_total_chunks)` (3× `[0x9B][seg_idx:2 BE][total:2 BE][hmac:11]`) + `prepare(..., cluster_id:)` opt-in з `manifest[:hmac_signed/lora_total_chunks/total_packages/hmac_cluster_id]` |
-| Firmware Queen | `firmware/queen/main.c` | Stateless relay: `Handle_CoAP_Command` зберігає 3 trailer-блоки у `pending_ota_hmac_chunks[3][16]`; reflex broadcast loop додає Phase 1 (HMAC trailer) після Phase 0 (bytecode); 60 ms pacing |
-| Firmware Soldier | `firmware/soldier/main.c` | `Parse_HMAC_Trailer_Chunk` (32-byte `received_hmac_tag` посегментно) + `Hmac_Constant_Time_Compare` + `OTA_Verify_Dual_Gate` (Gate 1 magic 0x45544952 "RITE" + Gate 2 HMAC compare); fail-safe затирання magic у RAM-bytecode при negative gate |
-| Backend specs | `spec/services/ota_hmac_key_service_spec.rb`, `spec/services/ota_packager_service_spec.rb`, `spec/integration/ota_firmware_flow_spec.rb` | determinism / domain separation / anti-replay / anti-truncation / per-cluster isolation / manifest metadata / package ordering / blank input / SEC.11 |
-| Firmware host-tests | `firmware/test/test_soldier_logic.c`, `test_queen_logic.c` | 3-chunk assemble (in-order/out-of-order) / reject seg_idx>3 / dual-gate magic-fail / dual-gate hmac-fail / both-pass / cleanup-on-failure / constant-time first/last byte / Queen relay segments assemble / wrong marker reject / overwrite same segment |
+| Backend (signing) | `app/services/ota_packager_service.rb` | `compute_hmac_tag(bytecode, version_id, lora_total_chunks, cluster_id:)` + `build_hmac_trailer_chunks(tag, lora_total_chunks, version_id)` (3× `[0x9B][seg_idx:2 BE][total:2 BE][hmac:11]` + seg 4 `[0x9B][0x0004][total:2 BE][version_id:4 BE][PAD:7]`) + `prepare(..., cluster_id:)` opt-in з `manifest[:hmac_signed/lora_total_chunks/total_packages/hmac_cluster_id]` |
+| Firmware Queen | `firmware/queen/main.c` | Stateless relay: `Handle_CoAP_Command` зберігає 4 trailer-блоки (3 печатки + версія) у `pending_ota_hmac_chunks[4][16]`, ready-bitmask = `0x0F`; reflex broadcast loop додає Phase 1 (trailer) після Phase 0 (bytecode); 60 ms pacing |
+| Firmware Soldier | `firmware/soldier/main.c` | `Load_Ota_Hmac_Key` (K_ota з Protected Flash `0x0803D000`, magic "KOTA"; fail-safe `ota_hmac_key_valid=0`) + `Parse_HMAC_Trailer_Chunk` (seg 1..3 → `received_hmac_tag`, seg 4 → `received_ota_version`) + `OTA_Try_Finalize` (**реальний** `Silken_Hmac_Sha256_Concat(K_ota, body‖version_be‖total_be)` → `OTA_Verify_Dual_Gate`: Gate 1 magic "RITE" + Gate 2 constant-time HMAC) — фіналізація з обох гілок (тіло 0x99 / печатка 0x9B), бо печатка приходить ПІСЛЯ тіла; APPLY лише при всіх 4 трейлер-чанках; fail-safe magic-wipe при REJECT |
+| Backend specs | `spec/services/ota_hmac_key_service_spec.rb`, `spec/services/ota_packager_service_spec.rb`, `spec/integration/ota_firmware_flow_spec.rb` | determinism / domain separation / anti-replay / anti-truncation / per-cluster isolation / manifest metadata / package ordering / version-on-wire (seg 4 = firmware.id BE) / blank input / SEC.11 |
+| Firmware host-tests | `firmware/test/test_soldier_logic.c`, `test_queen_logic.c` | trailer assemble (in-order/out-of-order/version chunk/all-4=0x0F) / reject seg_idx>4 / **real HMAC compute** (`Silken_Hmac_Sha256_Concat` ≡ one-shot ≡ OpenSSL) / `OTA_Try_Finalize` APPLY·WAIT·REJECT(tampered/version-mismatch/no-key) / dual-gate magic+hmac / constant-time first/last byte / Queen relay 4 segments / wrong marker reject / overwrite same segment |
 
-**Залишковий TODO (не блокує цикл):** реальний HMAC-SHA256 compute у Soldier dual-gate **інертний** — `hmac_complete` зараз лише лічить 3 отримані `[0x9B]`-сегменти, без обчислення (gate-логіка `OTA_Verify_Dual_Gate` / `Hmac_Constant_Time_Compare` готова й host-тестована, але в живому шляху не викликається → підмінений bytecode з валідним CRC32 + 3 будь-якими trailer-чанками пройшов би). 🤖 сам compute дає pure-C `silken_sha256.h` (яким FW.30 закрив cold-start seed-HMAC, byte-parity vs OpenSSL; **mbedTLS не потрібен**): `Silken_Hmac_Sha256(K_ota, 32, bytecode‖version_id_be‖lora_total_be, …)` → `OTA_Verify_Dual_Gate`. Для wiring бракує ще двох опор на Soldier: (1) loader `K_ota` з Protected Flash (окремий сектор `0x0803D000` — наразі тримаються лише `KEYL`/`LSED`/role, слота K_ota нема); (2) джерела `version_id` (його нема на дроті — ні `[0x99]` body, ні `[0x9B]` trailer його не несуть). 🟡 далі — K_ota на Flash під час factory (SEC.3) + e2e dual-gate на STM32.
+**Статус: реальний compute — ✅ зашито (2026-06-11).** Soldier dual-gate **більше не інертний**: `OTA_Try_Finalize` обчислює `Silken_Hmac_Sha256_Concat(K_ota, body ‖ version_id_be ‖ total_be)` (pure-C `silken_sha256.h`, той самий шлях, яким FW.30 закрив seed-HMAC; byte-parity vs OpenSSL транзитивно через `_Concat ≡ one-shot`; **mbedTLS не потрібен**) і пускає у `OTA_Verify_Dual_Gate` — підмінений bytecode з валідним CRC32 тепер **відсікається** на Gate 2. Дві опори, яких бракувало, додано: (1) `Load_Ota_Hmac_Key` — K_ota з Protected Flash `0x0803D000` (magic "KOTA", окремий сектор перед `KEYL`; `ota_hmac_key_valid=0` ⇒ жоден OTA не застосовується — fail-safe); (2) `version_id` на дроті — **4-й `[0x9B]` trailer-чанк** (seg_idx=4, `version_id:4 BE`), бо у 16-байтну печатку-сегмент він не влазив. Bonus-fix: фіналізація тепер спрацьовує з обох RX-гілок (тіло 0x99 / печатка 0x9B) — раніше перевірка стріляла по завершенню ТІЛА і скидала збірку, тож печатка, що Королева шле ПІСЛЯ тіла, гинула й OTA ніколи не застосовувався. 🟡 **Лишається (bench):** K_ota на Soldier Protected Flash під час factory (SEC.3) + e2e dual-gate на STM32.
 
 
 > **Cross-ref:** [`00_07` — FW.23](00_07_Action_Plan_Tracker) — дизайн завершено ✅
@@ -1295,7 +1295,7 @@ HMAC-SHA256(K_ota, full_bytecode || version_id || total_chunks) → 32 bytes
 
 #### Wire Format — `[0x9B] HMAC-Trailer` Chunk
 
-OTA-broadcast emit'ить 3 додаткові LoRa-чанки `[0x9B]` після останнього bytecode chunk. Існуючий формат `[0x99]` для bytecode chunks не змінюється — окремий маркер дає чисте розділення payload-і-tag шарів (audit trail у логах Queen, простіший parser у firmware).
+OTA-broadcast emit'ить **4** додаткові LoRa-чанки `[0x9B]` після останнього bytecode chunk: 3 несуть 32-байтну HMAC-печатку, 4-й — `version_id`. Існуючий формат `[0x99]` для bytecode chunks не змінюється — окремий маркер дає чисте розділення payload-і-tag шарів (audit trail у логах Queen, простіший parser у firmware).
 
 ```
 LoRa Reflex Shot чанки (16 байт після AES-128-ECB encrypt):
@@ -1311,23 +1311,28 @@ Chunk N+1 (HMAC trailer #2):                  Marker
 
 Chunk N+2 (HMAC trailer #3):                  Marker
   [0x9B][0x00][0x03][total:2][hmac[22..31]||PAD:1]  ← Останні 10 байт + 1 байт padding
+
+Chunk N+3 (version envelope #4):              Marker
+  [0x9B][0x00][0x04][total:2][version_id:4||PAD:7]  ← version_id (4 BE) + 7 PAD
 ```
 
 **Layout детально:**
 | Зсув | Розмір | Поле | Опис |
 |------|--------|------|------|
 | 0 | 1 | `0x9B` | HMAC-trailer marker (відрізняє від `0x99` bytecode) |
-| 1–2 | 2 | `seg_idx` BE | Індекс сегмента HMAC: 1, 2, або 3 |
+| 1–2 | 2 | `seg_idx` BE | Сегмент: 1–3 = HMAC-печатка, 4 = version envelope |
 | 3–4 | 2 | `total_chunks` BE | Загальна кількість bytecode chunks (для cross-check) |
-| 5–15 | 11 | `hmac_segment` | 11 байтів HMAC-SHA256 tag (останній сегмент має 10 байт + 1 PAD `0x00`) |
+| 5–15 (seg 1–3) | 11 | `hmac_segment` | 11 байтів HMAC-SHA256 tag (seg 3 має 10 байт + 1 PAD `0x00`) |
+| 5–8 (seg 4) | 4 | `version_id` BE | `firmware.id` — вхід HMAC, без нього Soldier не перерахує печатку |
+| 9–15 (seg 4) | 7 | PAD | `0x00` |
 
-**Чому 3 чанки:** 32-байтний HMAC ÷ 11 байт payload = 2.91 → ceil(2.91) = 3 чанки. Альтернатива (truncated HMAC до 16 байт = 2 чанки) знижує security margin до 128-bit — недостатньо для NIST SP 800-107 у production.
+**Чому 3 чанки печатки:** 32-байтний HMAC ÷ 11 байт payload = 2.91 → ceil(2.91) = 3 чанки. Альтернатива (truncated HMAC до 16 байт = 2 чанки) знижує security margin до 128-bit — недостатньо для NIST SP 800-107 у production. **Чому окремий 4-й чанк для `version_id`:** він — вхід HMAC, але у 16-байтну печатку-сегмент не влазить (1+2+2+11 зайнято); 0x99-заголовок теж повний. Окремий seg 4 під тим самим маркером — найдешевше (+1 LoRa-чанк ≈ 60 мс на ~745, той самий «<0.5%» бюджет), Queen релеїть його тим самим stateless-шляхом.
 
 #### Backend HMAC Generation — `OtaPackagerService` extension
 
 **Файл:** `app/services/ota_packager_service.rb`
 
-Розширення `prepare` методу: після генерації bytecode-chunks обчислюється HMAC поверх повного `payload`, потім додаються 3 trailer-chunks. Контракт `prepare` повертає той же hash, але `packages` enumerator emit'ить додатково 3 пакети.
+Розширення `prepare` методу: після генерації bytecode-chunks обчислюється HMAC поверх повного `payload`, потім додаються 4 trailer-chunks (3 печатки + version envelope). Контракт `prepare` повертає той же hash, але `packages` enumerator emit'ить додатково 4 пакети (`manifest[:total_packages] = total_chunks + 4`).
 
 ```
 HMAC input (canonical):
@@ -1373,56 +1378,45 @@ K_ota = HKDF-SHA256(
 
 Магічний marker `0x45544952` (`"RITE"` little-endian) — **необхідний, але недостатній**: він лише підтверджує цілісність формату, не походження. HMAC — **достатній**, але дорогий. Двоступенева перевірка економить cycles на ранній відсів пошкоджених/невалідних images:
 
+Реалізація — pure-функція вердикту `OTA_Try_Finalize` (host-tested), яку кличуть **обидві** RX-гілки (0x99 тіло / 0x9B печатка), бо печатка приходить ПІСЛЯ тіла:
+
 ```
-firmware/soldier/main.c — псевдокод OTA Flash write path:
+firmware/soldier/main.c — фактичний OTA Flash write path (FW.23):
 
-void Try_Apply_Ota_Bytecode(void)
+OtaFinalizeVerdict OTA_Try_Finalize(buf, bytes_received, chunks_received,
+                                    total_chunks, segments_received,
+                                    K_ota, k_ota_valid, version_id,
+                                    received_tag, &data_len)
 {
-  // ─── Gate 1: Magic check (швидкий, ~1 µs, фільтрує corruption/format errors) ───
-  uint32_t magic = *(uint32_t*)pending_ota_bytecode;
-  if (magic != 0x45544952UL) {
-    log_warn("OTA: bad magic 0x%08X — discarding", magic);
-    return;  // НЕ записуємо у Flash
-  }
+  // Зібрано і тіло, і всі 4 трейлер-чанки? Інакше — WAIT (нічого не чіпаємо).
+  if (chunks_received < total_chunks || total_chunks == 0)  return WAIT;
+  if (segments_received != 0x0F /* 3 печатки + версія */)   return WAIT;
 
-  // ─── Gate 2: HMAC verification (software SHA256, доводить authenticity) ─────────
-  uint8_t computed_hmac[32];
-  uint8_t hmac_input[8192 + 4 + 2];          // bytecode + version_id + total_chunks
-  size_t  input_len = pending_ota_size + 6;
+  data_len = bytes_received - 4;                 // тіло без CRC32-хвоста
+  if (CRC32(buf, data_len) != tail_crc)          return REJECT;
+  if (!k_ota_valid)                              return REJECT;  // fail-safe
 
-  memcpy(hmac_input, pending_ota_bytecode, pending_ota_size);
-  memcpy(hmac_input + pending_ota_size,     &pending_ota_version, 4);
-  memcpy(hmac_input + pending_ota_size + 4, &ota_total_expected_chunks, 2);
+  // Gate 2: HMAC над тілом ‖ version_be ‖ total_be. _Concat стрімить 6-байтний
+  // хвіст окремо — тіло (~1 КБ) живе у buf, без +1 КБ стека.
+  uint8_t suffix[6] = { version_id:4 BE, total_chunks:2 BE };
+  Silken_Hmac_Sha256_Concat(K_ota, 32, buf, data_len, suffix, 6, expected);
 
-  // pure-C silken_sha256.h (FW.30): SHA256 на STM32WLE5JC — software
-  // (чип має апаратний AES, але НЕ HASH-блок), byte-parity vs OpenSSL.
-  Silken_Hmac_Sha256(K_ota, 32, hmac_input, input_len, computed_hmac);
-
-  // Constant-time comparison (захист від timing attack):
-  // Hmac_Constant_Time_Compare (main.c §1.13) — volatile-XOR loop, повертає 0 при рівності
-  // (аналог OpenSSL CRYPTO_memcmp / Rails ActiveSupport::SecurityUtils.secure_compare).
-  // НЕ використовувати memcmp — early-exit при першому розходженні витоку timing info.
-  if (Hmac_Constant_Time_Compare(computed_hmac, received_hmac_tag, 32) != 0) {
-    log_error("OTA: HMAC mismatch — possible substitution attack");
-    pending_ota_bytecode[0..3] = 0x00;        // Затираємо magic, щоб next reboot
-                                              // повернув бекап (lorenz_bytecode[])
-    return;
-  }
-
-  // ─── Both gates passed → safe to commit ───────────────────────────────────────
-  HAL_FLASH_Unlock();
-  HAL_FLASH_Erase(MRUBY_CONTRACT_FLASH_ADDR);
-  HAL_FLASH_Program(MRUBY_CONTRACT_FLASH_ADDR, pending_ota_bytecode, pending_ota_size);
-  HAL_FLASH_Lock();
-
-  NVIC_SystemReset();   // Перезавантаження → завантаження нової прошивки
+  // OTA_Verify_Dual_Gate: Gate 1 magic "RITE" + Gate 2 constant-time compare.
+  return OTA_Verify_Dual_Gate(buf, data_len, expected, received_tag) ? APPLY : REJECT;
 }
+
+// Викликач (обидві гілки):
+//   APPLY  → Write_OTA_Contract_To_Flash(buf, data_len); NVIC_SystemReset();
+//   REJECT → buf[0..3]=0 (жертовний magic-wipe); Reset_Ota_Assembly();
+//   WAIT   → нічого (тіло зібране, печатка ще летить)
 ```
 
 **Властивості dual-gate:**
-- **Performance:** Gate 1 (magic) у ~1 µs відкидає 99% «битих» images БЕЗ запуску дорогої HMAC. Тільки коректні за форматом images доходять до Gate 2
-- **Defense-in-depth:** atомний bit-flip у RAM між Gate 1 і Gate 2 неможливо «провезти» — HMAC обчислюється на тих самих байтах, що Gate 2 verify
-- **Fail-safe:** обидва gates негативні → `pending_ota_bytecode[0..3] = 0x00` затирає magic у RAM, щоб partial OTA не записався при наступному перезавантаженні з корумпованим RAM
+- **Performance:** Gate 1 (magic, у `OTA_Verify_Dual_Gate`) у ~1 µs відкидає «биті» images; HMAC рахується лише коли зібрано і тіло, і всі 4 трейлер-чанки
+- **Defense-in-depth:** HMAC обчислюється на тих самих байтах, що Gate 1 verify (`buf[0..data_len)`) — bit-flip між брамами «провезти» не можна
+- **Fail-safe (no key):** `k_ota_valid==0` (K_ota не provisioned) ⇒ REJECT — без ключа походження не довести, краще не оновитись
+- **Fail-safe (magic-wipe):** REJECT затирає `buf[0..3]` у RAM, щоб частково записаний OTA не воскрес при наступному boot із корумпованого RAM
+- **Ordering-safe:** фіналізація спрацьовує з гілки, що завершилась ОСТАННЬОЮ (тіло чи печатка) — раніше перевірка по завершенню ТІЛА скидала збірку, і печатка (Королева шле її ПІСЛЯ тіла) гинула
 
 #### Queen Verification — опційний intermediate gate
 
@@ -1464,12 +1458,10 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 4. ECDSA verify (~80 мс, software) дорожчий за software HMAC-SHA256, але прийнятний для рідкісної OTA-операції
 5. Компрометація Soldier НЕ дозволяє підписувати OTA (асиметричні ключі — асимметрія довіри)
 
-#### Test Coverage Plan
-
-Реалізація (наступний цикл) повинна додати:
-- **Backend (`spec/services/ota_packager_service_spec.rb`):** HMAC chunk generation, deterministic за фіксованого `K_ota`, replay/truncation negative cases
-- **Firmware (`firmware/test/test_soldier_logic.c`):** dual-gate path (magic-fail, hmac-fail, both-pass), constant-time compare, cleanup на failure
-- **Integration (`spec/integration/ota_firmware_flow_spec.rb`):** end-to-end OTA з підписом → Queen relay → Soldier accept
+#### Test Coverage — ✅ реалізовано
+- **Backend (`spec/services/ota_packager_service_spec.rb`):** HMAC chunk generation (4 чанки = 3 печатки + версія), deterministic за фіксованого `K_ota`, replay/truncation negative cases, version_id-на-дроті (seg 4 = `firmware.id` BE)
+- **Firmware (`firmware/test/test_soldier_logic.c`):** trailer assemble (version chunk, all-4=0x0F, seg_idx>4 reject), **реальний HMAC compute** (`Silken_Hmac_Sha256_Concat ≡ one-shot ≡ OpenSSL`), `OTA_Try_Finalize` APPLY·WAIT·REJECT (tampered/version-mismatch/no-key), constant-time compare
+- **Integration (`spec/integration/ota_firmware_flow_spec.rb`):** backend → Queen relay (4 segments) → Soldier dual-gate accept/reject; tag reconstruction == `compute_hmac_tag`
 
 > **Cross-ref:** FW.1 (HKDF master-key infrastructure), FW.2 (CCM MIC для телеметрії — паралельний MAC concept), §3.7 (ATECC608B slot 3 reserved for OTA HMAC), §6 «Queen → Soldier (OTA LoRa)» row у криптографічній таблиці.
 

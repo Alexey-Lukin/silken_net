@@ -39,8 +39,8 @@ RSpec.describe "OTA transmission and actuator command pipeline" do
       # Small firmware that fits in one chunk
       small_fw = create(:bio_contract_firmware, version: "3.1.0", bytecode_payload: "BB" * 200)
       # [FW.23] Worker forwards gateway.cluster_id, so prepare() appends the
-      # 3-block HMAC trailer; the "last chunk" index must come from
-      # total_packages, not the bytecode-only total_chunks.
+      # 4-block trailer (3 HMAC + 1 version); the "last chunk" index must come
+      # from total_packages, not the bytecode-only total_chunks.
       ota_data = OtaPackagerService.prepare(small_fw, chunk_size: 512, cluster_id: gateway.cluster_id)
       total = ota_data[:manifest][:total_packages] || ota_data[:manifest][:total_chunks]
 

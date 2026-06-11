@@ -799,7 +799,7 @@ if (decrypted_lora_buffer[0] == REREQUEST_MARKER) {
 Один повний reflex-shot OTA-цикл (§5) **повільний** (порядок днів-тижнів) з трьох by-design причин. Це може бути прийнятним за energy-first, але рішення має бути свідомим:
 
 1. **1 RX-пакет за пробудження (Soldier).** RX-вікно обробляє максимум один пакет за wake-цикл — усі гілки (`firmware/soldier/main.c`: сценарій OTA `0x99`, mesh-естафета, HMAC-trailer `0x9B`) завершуються `break` перед `Radio.Sleep()`. Отже OTA на `N` байтів = `⌈N/11⌉` reflex-чанків = стільки ж пробуджень, по одному чанку на власний TX вузла (1024 B → ~94). Фундаментально без скоординованого RX-вікна (ARCH.26 TDMA), не баг.
-2. **`ota_is_active` гаситься, коли тіло відлунало без зібраної печатки (Queen).** Коли всі bytecode-чанки (`0x99`) відбродкастились, а HMAC-печатка (`0x9B`, окремий CoAP-chunk від Rails) ще не зібрана (`hmac_segments_received != 0x07`), Queen замикає вікно `ota_is_active = 0` (`firmware/queen/main.c`, [PLAN 2.5]/[FW.23] — без печатки Солдат не відрізнить істинне слово від спокусника). Re-request обслуговується лише при живому `ota_is_active` → якщо CoAP не доставив печатку до завершення тіла (порядок не гарантований), OTA «мертвий» до повторного Rails-push. Те саме `pending_ota_bytecode` lifetime-обмеження, що §5.X.3.
+2. **`ota_is_active` гаситься, коли тіло відлунало без зібраного трейлера (Queen).** Коли всі bytecode-чанки (`0x99`) відбродкастились, а 4 трейлер-чанки (`0x9B` — 3 печатки + version envelope, окремі CoAP-chunk'и від Rails) ще не зібрані (`hmac_segments_received != 0x0F`), Queen замикає вікно `ota_is_active = 0` (`firmware/queen/main.c`, [PLAN 2.5]/[FW.23] — без печатки+версії Солдат не відрізнить істинне слово від спокусника). Re-request обслуговується лише при живому `ota_is_active` → якщо CoAP не доставив трейлер до завершення тіла (порядок не гарантований), OTA «мертвий» до повторного Rails-push. Те саме `pending_ota_bytecode` lifetime-обмеження, що §5.X.3.
 3. **Re-request на замороженому tick.** `OTA_REREQUEST_TIMEOUT_MS` (5 хв, §5.X.3) лічиться на `HAL_GetTick`, замороженому в STOP2 → міграція на wall-clock = FW.49.
 
 > **Cross-ref:** FW.52 (рішення + контекст), FW.49 (wall-clock tick), §5.X.3 (re-request), §5 (reflex-shot механізм).
@@ -858,7 +858,7 @@ Soldier — gossip-uplift (3-hop reach)
 | `0x56` | SYNC_REQ_MARKER (FW.20-S2 panic sync) | Soldier→Queen LoRa | byte 10 = `'S'` (0x53) | ✅ |
 | `0x99` | OTA_MARKER (bytecode chunk) | bidirectional | — | ✅ |
 | `0x9A` | CMD_SET_LORENZ_THRESHOLDS (FW.8) | Rails→Queen→Soldier | freeze-contract | 🟡 deferred TRL-7 |
-| `0x9B` | HMAC_TRAILER_MARKER (FW.23 OTA dual-gate) | Rails→Queen→Soldier | seg_idx 1..3 | ✅ |
+| `0x9B` | HMAC_TRAILER_MARKER (FW.23 OTA dual-gate) | Rails→Queen→Soldier | seg_idx 1..3 печатка + 4 version | ✅ |
 | `0x9C` | CMD_TIME_SYNC envelope / Time Beacon (FW.20) | Rails→Queen / Queen→Soldier | byte 10 = `'B'` (0x42) для LoRa beacon'а | ✅ |
 | `0x9D` | CMD_SET_AUDIO_THRESHOLDS (FW.18) | Rails→Queen→Soldier | CRC16 | ✅ |
 

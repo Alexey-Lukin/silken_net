@@ -75,7 +75,7 @@
 - `UNI.13`/`UNI.14` **P0** — верифікувати посади науковців ЧМА і СЄУ (офіційні сайти)
 
 ### 🔗 Заблоковано (чекає іншого)
-- `FW.2` **P0** — AES-128-CCM (backend-parser ✅; firmware emit + `CRYP_AES_CCM` verify → STM32 bench). Закриває ECB→CCM, MIC, `SEC.10` panic auth, `FW.29`. FC/nonce/cold-boot SSOT → `03_05` (📐 КАНОНІЧНЕ ДЖЕРЕЛО). NB: `FW.23` OTA auth — окремий HMAC-механізм, канонізовано в §3.4б (live-compute residual тримає FW.23); FW.2 його **не** закриває
+- `FW.2` **P0** — AES-128-CCM (backend-parser ✅; firmware emit + `CRYP_AES_CCM` verify → STM32 bench). Закриває ECB→CCM, MIC, `SEC.10` panic auth, `FW.29`. FC/nonce/cold-boot SSOT → `03_05` (📐 КАНОНІЧНЕ ДЖЕРЕЛО). NB: `FW.23` OTA auth — окремий HMAC-механізм, канонізовано в §3.4б (live-compute ✅ зашито 2026-06-11, лишився bench K_ota); FW.2 його **не** закриває
 - Multi-signal slashing de-risk (`05_05 §7`) — код ✅: усі 3 прямі сигнали в `InsightGeneratorService`-евристиці (VPD-gate + sap-term + acoustic/cavitation-term; inert, ENV-calibration-gated; sap+acoustic через max() не суму). Активація → ground-truth калібрування ваг (`05_05 §8`) + ML-retrain (vpd-фіча) + firmware VPD (`HW.32`). Багатше on-device acoustic-джерело → TinyML unblock (`Run_Inference` закоментована, §03)
 - SLASH-1 deeper (B/insurance auto-route, A/B/C cause_classification, cause-driven pf uplift) → DAO/founder
 
@@ -527,9 +527,10 @@
   - ⚠️ beacon-таймери на `HAL_GetTick` (мертвий STOP2) → wall-clock = FW.49. Cross-ref: ARCH.26, FW.49, FW.30, SEC.10/FW.29
 
 #### FW.23 — OTA firmware broadcast: ECB без автентифікації
-- **P1** · 🤖🟡 · → [`03_05 §3.4б`](03_05_Hardware_Symmetric_Crypto_and_Security)
-- **✅ HMAC-SHA256 OTA auth канонізовано ([`03_05 §3.4б`](03_05_Hardware_Symmetric_Crypto_and_Security)):** per-cluster K_ota (HKDF info `silken-ota-hmac-v1`) → `OtaPackagerService` 3× `[0x9B]` trailer (anti-replay/truncation: version_id+total_chunks у тезі) → Queen stateless relay → Soldier dual-gate (magic `RITE` + constant-time HMAC + fail-safe magic-wipe). Backend+wire+gate-logic ✅ (RSpec+host покрито, byte-accurate до wire). Лишається:
-  - [ ] 🤖 wire HMAC compute у Soldier dual-gate — зараз **інертний** (stub лічить 3 segments; gate-логіка `OTA_Verify_Dual_Gate` готова, але не викликається → tampered bytecode з валідним CRC32 пройшов би). Compute = pure-C `Silken_Hmac_Sha256` (`silken_sha256.h`, FW.30; mbedTLS не потрібен); бракує ще K_ota Flash-loader (`0x0803D000`) + `version_id` на дроті — деталі [`03_05 §3.4б`](03_05_Hardware_Symmetric_Crypto_and_Security).
+- **P1** · 🟡 · → [`03_05 §3.4б`](03_05_Hardware_Symmetric_Crypto_and_Security)
+- **✅ HMAC-SHA256 OTA auth канонізовано + live-compute зашито ([`03_05 §3.4б`](03_05_Hardware_Symmetric_Crypto_and_Security)):** per-cluster K_ota (HKDF info `silken-ota-hmac-v1`) → `OtaPackagerService` 4× `[0x9B]` trailer (3 печатки + version envelope seg 4; anti-replay/truncation: version_id+total_chunks у тезі) → Queen stateless relay → Soldier dual-gate (magic `RITE` + constant-time HMAC + fail-safe magic-wipe).
+- **✅ 🤖 wire HMAC compute зашито (2026-06-11):** `OTA_Try_Finalize` обчислює `Silken_Hmac_Sha256_Concat(K_ota, body ‖ version_be ‖ total_be)` → `OTA_Verify_Dual_Gate` — tampered bytecode з валідним CRC32 тепер відсікається. Додано `Load_Ota_Hmac_Key` (K_ota з Protected Flash `0x0803D000`, magic "KOTA"; fail-safe `valid=0`) + `version_id` на дроті (4-й `[0x9B]` чанк). Bonus: фіналізація з обох RX-гілок (тіло 0x99 / печатка 0x9B) — печатка приходить ПІСЛЯ тіла, раніше гинула. RSpec+host (real HMAC ≡ OpenSSL, APPLY/WAIT/REJECT) ✅.
+- Лишається:
   - [ ] 🟡 bench: K_ota на Soldier Protected Flash (factory SEC.3) + e2e dual-gate на STM32.
 
 #### FW.25 — TinyML DSP-path: Path B (log-mel) SELECTED [DECISION 2026-05-22]
@@ -1084,7 +1085,7 @@
 | SEC.6 | SE = **SE050** — ✅ RESOLVED 2026-06-07 (true-DePIN: голос дерева потребує non-extractable Ed25519 → SE050, не ATECC; soft-freeze DNP, populate post-FW.2). Деталі + усі residuals → SE050-MIGRATION | `03_05 §3.7`, §3.4 |
 | SEC.10 | Emergency-TX anti-replay frame counter (DR0 packing) | `03_02`, `03_01 §2` |
 | SEC.11 | Lorenz Seed Provenance (DCI hardening, K_seed HKDF) | `03_04`, `03_05 §3.4а`, `04_02`, `05_02` |
-| SEC.7 | OTA image authentication — **дубль FW.23** (HMAC-SHA256 dual-gate: `OtaHmacKeyService` + `OtaPackagerService` 0x9B trailer + Queen relay + Soldier dual-gate). Активні residuals (real `silken_sha256` HMAC compute + bench K_ota; ECDSA P-256 post-TRL7 migration path) тримає FW.23 — One-Home; stale «mbedTLS» framing виправлено | `03_05 §3.4б` (= FW.23) |
+| SEC.7 | OTA image authentication — **дубль FW.23** (HMAC-SHA256 dual-gate: `OtaHmacKeyService` + `OtaPackagerService` 0x9B trailer + Queen relay + Soldier dual-gate, live-compute ✅ зашито 2026-06-11). Residuals (bench K_ota Protected Flash; ECDSA P-256 post-TRL7 migration path) тримає FW.23 — One-Home | `03_05 §3.4б` (= FW.23) |
 | SEC.8 | ECB Restoration Race (Queen): restore CRYP→ECB+128B+LoRa-key після CoAP-CBC flush/downlink; `HAL_CRYP_Init` fail → RCC force-reset → `NVIC_SystemReset` (`firmware/queen/main.c`). Resolved-фікс, orphan-ID — cited by SEC.12 + RUNBOOK, бракувало archive-рядка (додано 2026-06-09) | `03_05` (розділ «ECB Restoration Race») |
 | SEC.5 | Chainlink oracle-callback HMAC fail-fast: `WEB3_STRICT_MODE=true` + порожній `CHAINLINK_HMAC_SECRET` → `SecurityError` (захищає `/oracle_callbacks` від forge `oracle_status_fulfilled?` → неавторизований mint). Guard `verify_chainlink_signature!` (`oracle_callbacks_controller.rb`) + RSpec. Resolved, orphan-ID — бракувало archive-рядка (ops: provision secret pre-mainnet → S1.1/`06_04`; додано 2026-06-09) | `04_03 §5.9` |
 | FW.1 | Hardcoded identical AES-key → per-device HKDF + `Load_AES_Key()` (Protected Flash `FLASH_KEY_ADDR`, magic `KEYL` + zero-key guard → refuse-boot без provisioning) — firmware CLOSED 2026-05-02 (soldier+queen `main.c` + host-тести `test_load_key_*`). Per-device ізоляція реальна з FW.2 CCM (ECB-транзит = спільний ключ, §3.1). Bench-residuals — власні items: RDP L2 → SEC.2 · factory SWD-flash → SEC.3 · weak-key boot-guard → SEC.9 | `03_05 §3.1`, §3.4а |

@@ -2228,9 +2228,11 @@ TEST(test_rereq_queen_count_zero_when_all_received) {
  * 12. FW.23 OTA HMAC Trailer Relay (Queen-side)
  * ════════════════════════════════════════════════════════════════════ */
 #define Q_HMAC_TRAILER_MARKER       0x9B
-#define Q_HMAC_TRAILER_TOTAL_SEGS   3
+#define Q_HMAC_TRAILER_TOTAL_SEGS   3   /* печатка */
+#define Q_OTA_TRAILER_TOTAL_CHUNKS  4   /* [FW.23] + version_id чанк (seg 4) */
+#define Q_OTA_TRAILER_ALL_RECEIVED  0x0Fu
 
-static uint8_t q_pending_hmac_chunks[Q_HMAC_TRAILER_TOTAL_SEGS][16] = {{0}};
+static uint8_t q_pending_hmac_chunks[Q_OTA_TRAILER_TOTAL_CHUNKS][16] = {{0}};
 static uint8_t q_hmac_segments_received = 0;
 
 static uint8_t Test_Queen_Store_HMAC_Trailer(const uint8_t* inner_payload,
@@ -2239,7 +2241,7 @@ static uint8_t Test_Queen_Store_HMAC_Trailer(const uint8_t* inner_payload,
     if (inner_aligned < 16)                             return 0;
     if (inner_payload[0] != Q_HMAC_TRAILER_MARKER)      return 0;
     uint16_t seg_idx = ((uint16_t)inner_payload[1] << 8) | inner_payload[2];
-    if (seg_idx < 1 || seg_idx > Q_HMAC_TRAILER_TOTAL_SEGS) return 0;
+    if (seg_idx < 1 || seg_idx > Q_OTA_TRAILER_TOTAL_CHUNKS) return 0;
     memcpy(q_pending_hmac_chunks[seg_idx - 1], inner_payload, 16);
     q_hmac_segments_received |= (uint8_t)(1u << (seg_idx - 1));
     return 1;
@@ -2250,9 +2252,10 @@ static void reset_hmac_relay(void) {
     q_hmac_segments_received = 0;
 }
 
-TEST(test_queen_relay_stores_3_hmac_chunks) {
+TEST(test_queen_relay_stores_4_trailer_chunks) {
+    /* [FW.23] 3 печатки + version_id (seg 4) → 0x0F (relay-ready). */
     reset_hmac_relay();
-    for (uint8_t s = 1; s <= 3; s++) {
+    for (uint8_t s = 1; s <= 4; s++) {
         uint8_t chunk[16] = {0};
         chunk[0] = Q_HMAC_TRAILER_MARKER;
         chunk[1] = 0; chunk[2] = s;
@@ -2260,14 +2263,15 @@ TEST(test_queen_relay_stores_3_hmac_chunks) {
         chunk[5] = (uint8_t)(0xA0 + s);
         ASSERT_EQ(Test_Queen_Store_HMAC_Trailer(chunk, 16), 1);
     }
-    ASSERT_EQ(q_hmac_segments_received, 0x07);
+    ASSERT_EQ(q_hmac_segments_received, Q_OTA_TRAILER_ALL_RECEIVED);
 }
 
-TEST(test_queen_relay_rejects_seg_idx_4) {
+TEST(test_queen_relay_rejects_seg_idx_5) {
+    /* seg 4 (version) is now valid; seg 5 must still be rejected. */
     reset_hmac_relay();
     uint8_t chunk[16] = {0};
     chunk[0] = Q_HMAC_TRAILER_MARKER;
-    chunk[1] = 0; chunk[2] = 4;
+    chunk[1] = 0; chunk[2] = 5;
     ASSERT_EQ(Test_Queen_Store_HMAC_Trailer(chunk, 16), 0);
     ASSERT_EQ(q_hmac_segments_received, 0);
 }
@@ -2656,8 +2660,8 @@ int main(void)
     RUN(test_rereq_queen_count_zero_when_all_received);
 
     printf("\n  HMAC Trailer Relay (FW.23):\n");
-    RUN(test_queen_relay_stores_3_hmac_chunks);
-    RUN(test_queen_relay_rejects_seg_idx_4);
+    RUN(test_queen_relay_stores_4_trailer_chunks);
+    RUN(test_queen_relay_rejects_seg_idx_5);
     RUN(test_queen_relay_rejects_wrong_marker);
     RUN(test_queen_relay_overwrites_same_segment);
 

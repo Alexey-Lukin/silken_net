@@ -358,62 +358,73 @@ RSpec.describe OtaPackagerService do
     describe ".build_hmac_trailer_chunks" do
       let(:hmac_tag) { ("\xAA" * 32).b }
 
-      it "returns exactly 3 chunks" do
-        chunks = described_class.build_hmac_trailer_chunks(hmac_tag, 5)
-        expect(chunks.size).to eq(3)
+      it "returns exactly 4 chunks (3 HMAC tag + 1 version)" do
+        chunks = described_class.build_hmac_trailer_chunks(hmac_tag, 5, 42)
+        expect(chunks.size).to eq(4)
       end
 
       it "each chunk is exactly 16 bytes (LoRa AES block)" do
-        chunks = described_class.build_hmac_trailer_chunks(hmac_tag, 5)
+        chunks = described_class.build_hmac_trailer_chunks(hmac_tag, 5, 42)
         chunks.each { |c| expect(c.bytesize).to eq(16) }
       end
 
       it "first byte of each chunk is HMAC marker 0x9B" do
-        chunks = described_class.build_hmac_trailer_chunks(hmac_tag, 5)
+        chunks = described_class.build_hmac_trailer_chunks(hmac_tag, 5, 42)
         chunks.each { |c| expect(c.unpack1("C")).to eq(0x9B) }
       end
 
-      it "encodes seg_idx 1, 2, 3 in big-endian (bytes 1..2)" do
-        chunks = described_class.build_hmac_trailer_chunks(hmac_tag, 5)
+      it "encodes seg_idx 1, 2, 3, 4 in big-endian (bytes 1..2)" do
+        chunks = described_class.build_hmac_trailer_chunks(hmac_tag, 5, 42)
         seg_indices = chunks.map { |c| c[1..2].unpack1("n") }
-        expect(seg_indices).to eq([ 1, 2, 3 ])
+        expect(seg_indices).to eq([ 1, 2, 3, 4 ])
       end
 
       it "encodes lora_total_chunks consistently in bytes 3..4 (BE)" do
-        chunks = described_class.build_hmac_trailer_chunks(hmac_tag, 5)
+        chunks = described_class.build_hmac_trailer_chunks(hmac_tag, 5, 42)
         totals = chunks.map { |c| c[3..4].unpack1("n") }
         expect(totals).to all(eq(5))
       end
 
-      it "concatenated payloads (bytes 5..) reconstruct the original 32-byte tag" do
-        chunks = described_class.build_hmac_trailer_chunks(hmac_tag, 5)
+      it "concatenated payloads of seg 1..3 reconstruct the original 32-byte tag" do
+        chunks = described_class.build_hmac_trailer_chunks(hmac_tag, 5, 42)
         # seg=1: bytes 0..10, seg=2: bytes 11..21, seg=3: bytes 22..31 + 1 PAD
         reconstructed = chunks[0][5..15] + chunks[1][5..15] + chunks[2][5..14]
         expect(reconstructed.b).to eq(hmac_tag)
       end
 
+      it "seg 4 carries version_id as 4-byte big-endian (Soldier HMAC input)" do
+        chunks = described_class.build_hmac_trailer_chunks(hmac_tag, 5, 0x01020304)
+        expect(chunks[3][5..8].unpack1("N")).to eq(0x01020304)
+      end
+
       it "raises ArgumentError on wrong tag length" do
         expect {
-          described_class.build_hmac_trailer_chunks("\xAA" * 16, 5)
+          described_class.build_hmac_trailer_chunks("\xAA" * 16, 5, 42)
         }.to raise_error(ArgumentError, /32 bytes/)
+      end
+
+      it "raises ArgumentError on nil version_id" do
+        expect {
+          described_class.build_hmac_trailer_chunks(hmac_tag, 5, nil)
+        }.to raise_error(ArgumentError, /version_id/)
       end
     end
 
     describe ".prepare with cluster_id (HMAC enabled)" do
       let(:payload) { ("R" * 60).b }  # 60 bytes → ~6 LoRa chunks
 
-      it "appends 3 trailer packages after bytecode chunks" do
+      it "appends 4 trailer packages after bytecode chunks (3 HMAC + 1 version)" do
         bytecode_only = described_class.prepare(hmac_firmware, chunk_size: 512).fetch(:packages).to_a.size
         with_hmac     = described_class.prepare(hmac_firmware, chunk_size: 512, cluster_id: cluster_id).fetch(:packages).to_a.size
 
-        expect(with_hmac).to eq(bytecode_only + 3)
+        expect(with_hmac).to eq(bytecode_only + 4)
       end
 
       it "exposes hmac_signed metadata in manifest" do
         manifest = described_class.prepare(hmac_firmware, chunk_size: 512, cluster_id: cluster_id).fetch(:manifest)
         expect(manifest[:hmac_signed]).to be true
         expect(manifest[:hmac_cluster_id]).to eq(cluster_id)
-        expect(manifest[:total_packages]).to eq(manifest[:total_chunks] + 3)
+        expect(manifest[:total_packages]).to eq(manifest[:total_chunks] + 4)
       end
 
       it "exposes lora_total_chunks for cross-check with bytecode 0x99 header" do
@@ -422,15 +433,22 @@ RSpec.describe OtaPackagerService do
         expect(manifest[:lora_total_chunks]).to eq(expected_lora_total)
       end
 
-      it "trailer chunks all have 0x9B marker" do
+      it "all 4 trailer chunks have 0x9B marker" do
         packages = described_class.prepare(hmac_firmware, chunk_size: 512, cluster_id: cluster_id).fetch(:packages).to_a
-        trailer = packages.last(3)
+        trailer = packages.last(4)
         trailer.each { |t| expect(t.unpack1("C")).to eq(0x9B) }
+      end
+
+      it "final trailer chunk carries firmware.id as version_id (4-byte BE)" do
+        packages = described_class.prepare(hmac_firmware, chunk_size: 512, cluster_id: cluster_id).fetch(:packages).to_a
+        version_chunk = packages.last
+        expect(version_chunk[1..2].unpack1("n")).to eq(4)              # seg_idx = 4
+        expect(version_chunk[5..8].unpack1("N")).to eq(hmac_firmware.id)
       end
 
       it "bytecode chunks come BEFORE trailer chunks (order matters for Soldier window)" do
         packages = described_class.prepare(hmac_firmware, chunk_size: 512, cluster_id: cluster_id).fetch(:packages).to_a
-        last_bytecode_idx = packages.size - 4
+        last_bytecode_idx = packages.size - 5
         expect(packages[last_bytecode_idx].unpack1("C")).to eq(0x99)
         expect(packages[last_bytecode_idx + 1].unpack1("C")).to eq(0x9B)
       end

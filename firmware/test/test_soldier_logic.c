@@ -2745,19 +2745,34 @@ TEST(test_rereq_should_NOT_trigger_when_last_tick_zero) {
 #define S_HMAC_TRAILER_SEG_BYTES    11
 #define S_HMAC_TAG_BYTES            32
 #define S_HMAC_TRAILER_TOTAL_SEGS   3
+#define S_HMAC_VERSION_SEG_IDX      4
+#define S_OTA_TRAILER_TOTAL_CHUNKS  4
+#define S_OTA_TRAILER_ALL_RECEIVED  0x0Fu
 #define S_OTA_RITE_MAGIC            0x45544952u  /* "RITE" little-endian */
 
-/* Pure-logic mirror of Parse_HMAC_Trailer_Chunk (in soldier/main.c). */
+/* Pure-logic mirror of Parse_HMAC_Trailer_Chunk (in soldier/main.c).
+ * [FW.23] seg 1..3 → tag; seg 4 → version_id (BE bytes [5..8]). */
 static int Test_Parse_HMAC_Trailer_Chunk(const uint8_t* chunk, uint16_t chunk_size,
                                           uint8_t tag_out[S_HMAC_TAG_BYTES],
+                                          uint32_t* version_out,
                                           uint8_t* segments_received_inout)
 {
-    if (chunk == NULL || tag_out == NULL || segments_received_inout == NULL) return -1;
+    if (chunk == NULL || tag_out == NULL || version_out == NULL ||
+        segments_received_inout == NULL)                                    return -1;
     if (chunk_size < S_HMAC_TRAILER_HEADER_SIZE + S_HMAC_TRAILER_SEG_BYTES)  return -1;
     if (chunk[0] != S_HMAC_TRAILER_MARKER)                                   return 0;
 
     uint16_t seg_idx = ((uint16_t)chunk[1] << 8) | chunk[2];
-    if (seg_idx < 1 || seg_idx > S_HMAC_TRAILER_TOTAL_SEGS)                  return -1;
+    if (seg_idx < 1 || seg_idx > S_OTA_TRAILER_TOTAL_CHUNKS)                 return -1;
+
+    if (seg_idx == S_HMAC_VERSION_SEG_IDX) {
+        *version_out = ((uint32_t)chunk[S_HMAC_TRAILER_HEADER_SIZE]     << 24) |
+                       ((uint32_t)chunk[S_HMAC_TRAILER_HEADER_SIZE + 1] << 16) |
+                       ((uint32_t)chunk[S_HMAC_TRAILER_HEADER_SIZE + 2] <<  8) |
+                       ((uint32_t)chunk[S_HMAC_TRAILER_HEADER_SIZE + 3]);
+        *segments_received_inout |= (uint8_t)(1u << (S_HMAC_VERSION_SEG_IDX - 1));
+        return 1;
+    }
 
     uint8_t base = (uint8_t)((seg_idx - 1) * S_HMAC_TRAILER_SEG_BYTES);
     uint8_t copy_len = S_HMAC_TRAILER_SEG_BYTES;
@@ -2796,7 +2811,66 @@ static int Test_OTA_Verify_Dual_Gate(const uint8_t* bytecode, uint16_t bc_size,
     return 1;
 }
 
-/* Helper: build one of 3 backend HMAC trailer chunks (16-byte plaintext block).
+/* CRC32 (ISO 3309 / zlib) — mirror of the firmware loop, to forge valid OTA
+ * stream tails for the finalize tests. */
+static uint32_t test_crc32_iso3309(const uint8_t* data, uint16_t len)
+{
+    uint32_t crc = 0xFFFFFFFFu;
+    for (uint16_t i = 0; i < len; i++) {
+        crc ^= data[i];
+        for (uint8_t b = 0; b < 8; b++) {
+            crc = (crc & 1u) ? ((crc >> 1) ^ 0xEDB88320u) : (crc >> 1);
+        }
+    }
+    return ~crc;
+}
+
+/* [FW.23] Verdict mirror of OTA_Try_Finalize. Crypto is the REAL shared
+ * Silken_Hmac_Sha256_Concat (silken_sha256.h via lorenz_seed.h) — the security
+ * bytes are tested for real; only the WAIT/APPLY/REJECT glue is mirrored. */
+typedef enum { S_OTA_WAIT = 0, S_OTA_APPLY, S_OTA_REJECT } STestOtaVerdict;
+
+static STestOtaVerdict Test_OTA_Try_Finalize(const uint8_t* buf, uint16_t bytes_received,
+                                             uint16_t chunks_received, uint16_t total_chunks,
+                                             uint8_t segments_received,
+                                             const uint8_t* k_ota, uint8_t k_ota_valid,
+                                             uint32_t version_id,
+                                             const uint8_t received_tag[S_HMAC_TAG_BYTES],
+                                             uint16_t* data_len_out)
+{
+    if (buf == NULL || received_tag == NULL || data_len_out == NULL) return S_OTA_REJECT;
+    if (total_chunks == 0 || chunks_received < total_chunks)         return S_OTA_WAIT;
+    if (segments_received != S_OTA_TRAILER_ALL_RECEIVED)             return S_OTA_WAIT;
+    if (bytes_received <= 4)                                         return S_OTA_REJECT;
+
+    uint16_t data_len = (uint16_t)(bytes_received - 4u);
+    *data_len_out = data_len;
+
+    uint32_t expected_crc = ((uint32_t)buf[data_len] << 24) |
+                            ((uint32_t)buf[data_len + 1] << 16) |
+                            ((uint32_t)buf[data_len + 2] << 8)  |
+                            (uint32_t)buf[data_len + 3];
+    if (test_crc32_iso3309(buf, data_len) != expected_crc)          return S_OTA_REJECT;
+    if (!k_ota_valid)                                               return S_OTA_REJECT;
+
+    uint8_t suffix[6];
+    suffix[0] = (uint8_t)(version_id >> 24);
+    suffix[1] = (uint8_t)(version_id >> 16);
+    suffix[2] = (uint8_t)(version_id >> 8);
+    suffix[3] = (uint8_t)(version_id & 0xFFu);
+    suffix[4] = (uint8_t)(total_chunks >> 8);
+    suffix[5] = (uint8_t)(total_chunks & 0xFFu);
+
+    uint8_t expected_hmac[S_HMAC_TAG_BYTES];
+    Silken_Hmac_Sha256_Concat(k_ota, 32u, buf, data_len, suffix, sizeof(suffix), expected_hmac);
+
+    if (Test_OTA_Verify_Dual_Gate(buf, data_len, expected_hmac, received_tag) != 1) {
+        return S_OTA_REJECT;
+    }
+    return S_OTA_APPLY;
+}
+
+/* Helper: build one of 3 backend HMAC tag chunks (16-byte plaintext block).
  * seg_idx ∈ {1,2,3}. Caller passes 32-byte tag; this packs segment.            */
 static void compose_hmac_trailer_chunk(uint8_t seg_idx, uint16_t total_chunks,
                                         const uint8_t tag[S_HMAC_TAG_BYTES],
@@ -2817,17 +2891,34 @@ static void compose_hmac_trailer_chunk(uint8_t seg_idx, uint16_t total_chunks,
     memcpy(&out[S_HMAC_TRAILER_HEADER_SIZE], &tag[base], copy_len);
 }
 
+/* [FW.23] Helper: build the seg-4 version chunk (mirror of backend layout). */
+static void compose_version_chunk(uint16_t total_chunks, uint32_t version_id,
+                                   uint8_t out[16])
+{
+    memset(out, 0, 16);
+    out[0] = S_HMAC_TRAILER_MARKER;
+    out[1] = (uint8_t)(S_HMAC_VERSION_SEG_IDX >> 8);
+    out[2] = (uint8_t)(S_HMAC_VERSION_SEG_IDX & 0xFFu);
+    out[3] = (uint8_t)(total_chunks >> 8);
+    out[4] = (uint8_t)(total_chunks & 0xFFu);
+    out[S_HMAC_TRAILER_HEADER_SIZE + 0] = (uint8_t)(version_id >> 24);
+    out[S_HMAC_TRAILER_HEADER_SIZE + 1] = (uint8_t)(version_id >> 16);
+    out[S_HMAC_TRAILER_HEADER_SIZE + 2] = (uint8_t)(version_id >> 8);
+    out[S_HMAC_TRAILER_HEADER_SIZE + 3] = (uint8_t)(version_id & 0xFFu);
+}
+
 TEST(test_hmac_trailer_three_chunks_assemble_full_tag) {
     uint8_t expected[32];
     for (int i = 0; i < 32; i++) expected[i] = (uint8_t)(0xA0 + i);
 
     uint8_t recv[32] = {0};
+    uint32_t ver = 0;
     uint8_t segs = 0;
 
     for (uint8_t s = 1; s <= 3; s++) {
         uint8_t chunk[16];
         compose_hmac_trailer_chunk(s, 5, expected, chunk);
-        int rc = Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs);
+        int rc = Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs);
         ASSERT_EQ(rc, 1);
     }
     ASSERT_EQ(segs, 0x07);
@@ -2840,26 +2931,62 @@ TEST(test_hmac_trailer_out_of_order_chunks) {
     for (int i = 0; i < 32; i++) expected[i] = (uint8_t)(0xC0 + i);
 
     uint8_t recv[32] = {0};
+    uint32_t ver = 0;
     uint8_t segs = 0;
     uint8_t chunk[16];
 
     compose_hmac_trailer_chunk(3, 5, expected, chunk);
-    Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs);
+    Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs);
     compose_hmac_trailer_chunk(1, 5, expected, chunk);
-    Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs);
+    Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs);
     compose_hmac_trailer_chunk(2, 5, expected, chunk);
-    Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs);
+    Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs);
 
     ASSERT_EQ(segs, 0x07);
     ASSERT_EQ(memcmp(recv, expected, 32), 0);
+}
+
+TEST(test_hmac_trailer_version_chunk_parses) {
+    /* [FW.23] seg 4 carries version_id (BE) and sets bit 3. */
+    uint8_t chunk[16];
+    compose_version_chunk(5, 0x01020304u, chunk);
+    uint8_t recv[32] = {0};
+    uint32_t ver = 0;
+    uint8_t segs = 0;
+    int rc = Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs);
+    ASSERT_EQ(rc, 1);
+    ASSERT_EQ(ver, 0x01020304u);
+    ASSERT_EQ(segs, 0x08);  /* bit 3 only */
+}
+
+TEST(test_hmac_trailer_all_four_complete) {
+    /* [FW.23] 3 tag chunks + version → 0x0F, tag + version both present. */
+    uint8_t expected[32];
+    for (int i = 0; i < 32; i++) expected[i] = (uint8_t)(0x40 + i);
+    uint8_t recv[32] = {0};
+    uint32_t ver = 0;
+    uint8_t segs = 0;
+    uint8_t chunk[16];
+
+    for (uint8_t s = 1; s <= 3; s++) {
+        compose_hmac_trailer_chunk(s, 9, expected, chunk);
+        Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs);
+    }
+    compose_version_chunk(9, 0xDEADBEEFu, chunk);
+    Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs);
+
+    ASSERT_EQ(segs, S_OTA_TRAILER_ALL_RECEIVED);
+    ASSERT_EQ(memcmp(recv, expected, 32), 0);
+    ASSERT_EQ(ver, 0xDEADBEEFu);
 }
 
 TEST(test_hmac_trailer_rejects_wrong_marker) {
     uint8_t chunk[16] = {0};
     chunk[0] = 0x99;  /* OTA bytecode marker, not 0x9B */
     uint8_t recv[32] = {0};
+    uint32_t ver = 0;
     uint8_t segs = 0;
-    int rc = Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs);
+    int rc = Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs);
     ASSERT_EQ(rc, 0);  /* not our marker */
     ASSERT_EQ(segs, 0);
 }
@@ -2869,18 +2996,21 @@ TEST(test_hmac_trailer_rejects_seg_idx_zero) {
     chunk[0] = S_HMAC_TRAILER_MARKER;
     chunk[1] = 0; chunk[2] = 0;  /* seg_idx = 0 invalid */
     uint8_t recv[32] = {0};
+    uint32_t ver = 0;
     uint8_t segs = 0;
-    int rc = Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs);
+    int rc = Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs);
     ASSERT_EQ(rc, -1);
 }
 
-TEST(test_hmac_trailer_rejects_seg_idx_above_3) {
+TEST(test_hmac_trailer_rejects_seg_idx_above_4) {
+    /* [FW.23] seg 4 is now valid (version); seg 5 must still be rejected. */
     uint8_t chunk[16] = {0};
     chunk[0] = S_HMAC_TRAILER_MARKER;
-    chunk[1] = 0; chunk[2] = 4;  /* seg_idx = 4 invalid */
+    chunk[1] = 0; chunk[2] = 5;  /* seg_idx = 5 invalid */
     uint8_t recv[32] = {0};
+    uint32_t ver = 0;
     uint8_t segs = 0;
-    int rc = Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs);
+    int rc = Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs);
     ASSERT_EQ(rc, -1);
 }
 
@@ -2888,9 +3018,139 @@ TEST(test_hmac_trailer_rejects_undersized_chunk) {
     uint8_t chunk[8] = {0};
     chunk[0] = S_HMAC_TRAILER_MARKER;
     uint8_t recv[32] = {0};
+    uint32_t ver = 0;
     uint8_t segs = 0;
-    int rc = Test_Parse_HMAC_Trailer_Chunk(chunk, 8, recv, &segs);
+    int rc = Test_Parse_HMAC_Trailer_Chunk(chunk, 8, recv, &ver, &segs);
     ASSERT_EQ(rc, -1);
+}
+
+/* [FW.23] Silken_Hmac_Sha256_Concat(a,b) must equal one-shot HMAC over a‖b.
+ * The one-shot is byte-parity vs OpenSSL (test_seed_derivation), so by
+ * transitivity _Concat matches the backend OtaPackagerService.compute_hmac_tag. */
+TEST(test_hmac_concat_equals_oneshot) {
+    uint8_t key[32];   for (int i = 0; i < 32; i++) key[i] = (uint8_t)(0x10 + i);
+    uint8_t body[40];  for (int i = 0; i < 40; i++) body[i] = (uint8_t)(0x52 + i);
+    uint8_t suffix[6] = { 0x00, 0x00, 0x00, 0x2A, 0x00, 0x09 };  /* ver=42, total=9 */
+
+    uint8_t joined[46];
+    memcpy(joined, body, 40);
+    memcpy(joined + 40, suffix, 6);
+
+    uint8_t via_concat[32], via_oneshot[32];
+    Silken_Hmac_Sha256_Concat(key, 32, body, 40, suffix, 6, via_concat);
+    Silken_Hmac_Sha256(key, 32, joined, 46, via_oneshot);
+    ASSERT_EQ(memcmp(via_concat, via_oneshot, 32), 0);
+
+    /* b_len==0 path equals plain HMAC over a. */
+    uint8_t via_concat_a[32], via_oneshot_a[32];
+    Silken_Hmac_Sha256_Concat(key, 32, body, 40, NULL, 0, via_concat_a);
+    Silken_Hmac_Sha256(key, 32, body, 40, via_oneshot_a);
+    ASSERT_EQ(memcmp(via_concat_a, via_oneshot_a, 32), 0);
+}
+
+/* [FW.23] Build a valid signed OTA image (RITE magic + CRC32 tail + real HMAC),
+ * then drive OTA_Try_Finalize through APPLY / WAIT / REJECT paths. */
+static uint16_t forge_signed_ota(uint8_t* buf, const uint8_t* key, uint32_t version_id,
+                                 uint16_t total_chunks, uint8_t tag_out[32])
+{
+    /* Body: RITE magic + filler. */
+    uint16_t body_len = 36;
+    buf[0] = 0x52; buf[1] = 0x49; buf[2] = 0x54; buf[3] = 0x45;  /* "RITE" */
+    for (uint16_t i = 4; i < body_len; i++) buf[i] = (uint8_t)(i * 7u + 1u);
+
+    /* HMAC over body ‖ version_be ‖ total_be (matches backend + Soldier). */
+    uint8_t suffix[6] = {
+        (uint8_t)(version_id >> 24), (uint8_t)(version_id >> 16),
+        (uint8_t)(version_id >> 8),  (uint8_t)(version_id & 0xFFu),
+        (uint8_t)(total_chunks >> 8), (uint8_t)(total_chunks & 0xFFu)
+    };
+    Silken_Hmac_Sha256_Concat(key, 32, buf, body_len, suffix, 6, tag_out);
+
+    /* Append CRC32 tail → assembled stream the Soldier holds. */
+    uint32_t crc = test_crc32_iso3309(buf, body_len);
+    buf[body_len + 0] = (uint8_t)(crc >> 24);
+    buf[body_len + 1] = (uint8_t)(crc >> 16);
+    buf[body_len + 2] = (uint8_t)(crc >> 8);
+    buf[body_len + 3] = (uint8_t)(crc & 0xFFu);
+    return (uint16_t)(body_len + 4);  /* bytes_received */
+}
+
+TEST(test_ota_finalize_apply_real_hmac) {
+    uint8_t key[32]; for (int i = 0; i < 32; i++) key[i] = (uint8_t)(0xC0 ^ i);
+    uint8_t buf[64], tag[32];
+    uint16_t total = 4;
+    uint16_t bytes_received = forge_signed_ota(buf, key, 0x12345678u, total, tag);
+
+    uint16_t dl = 0;
+    STestOtaVerdict v = Test_OTA_Try_Finalize(buf, bytes_received, total, total,
+                                              S_OTA_TRAILER_ALL_RECEIVED, key, 1,
+                                              0x12345678u, tag, &dl);
+    ASSERT_EQ(v, S_OTA_APPLY);
+    ASSERT_EQ(dl, 36);
+}
+
+TEST(test_ota_finalize_wait_without_trailer) {
+    /* Body assembled, but the 4 trailer chunks not all in → WAIT (no reset). */
+    uint8_t key[32]; for (int i = 0; i < 32; i++) key[i] = (uint8_t)(0xC0 ^ i);
+    uint8_t buf[64], tag[32];
+    uint16_t total = 4;
+    uint16_t bytes_received = forge_signed_ota(buf, key, 0x12345678u, total, tag);
+
+    uint16_t dl = 0;
+    /* only 0x07 (tag) received, version (bit 3) still missing */
+    STestOtaVerdict v = Test_OTA_Try_Finalize(buf, bytes_received, total, total,
+                                              0x07u, key, 1, 0x12345678u, tag, &dl);
+    ASSERT_EQ(v, S_OTA_WAIT);
+}
+
+TEST(test_ota_finalize_reject_tampered_body) {
+    uint8_t key[32]; for (int i = 0; i < 32; i++) key[i] = (uint8_t)(0xC0 ^ i);
+    uint8_t buf[64], tag[32];
+    uint16_t total = 4;
+    uint16_t bytes_received = forge_signed_ota(buf, key, 0x12345678u, total, tag);
+
+    /* Attacker flips a body byte AND recomputes CRC32 (CRC is not crypto). */
+    buf[10] ^= 0xFF;
+    uint16_t data_len = (uint16_t)(bytes_received - 4);
+    uint32_t crc = test_crc32_iso3309(buf, data_len);
+    buf[data_len + 0] = (uint8_t)(crc >> 24);
+    buf[data_len + 1] = (uint8_t)(crc >> 16);
+    buf[data_len + 2] = (uint8_t)(crc >> 8);
+    buf[data_len + 3] = (uint8_t)(crc & 0xFFu);
+
+    uint16_t dl = 0;
+    STestOtaVerdict v = Test_OTA_Try_Finalize(buf, bytes_received, total, total,
+                                              S_OTA_TRAILER_ALL_RECEIVED, key, 1,
+                                              0x12345678u, tag, &dl);
+    ASSERT_EQ(v, S_OTA_REJECT);  /* valid CRC, but HMAC catches the tamper */
+}
+
+TEST(test_ota_finalize_reject_version_mismatch) {
+    /* Replay: same image+tag, but Soldier was told a different version → reject. */
+    uint8_t key[32]; for (int i = 0; i < 32; i++) key[i] = (uint8_t)(0xC0 ^ i);
+    uint8_t buf[64], tag[32];
+    uint16_t total = 4;
+    uint16_t bytes_received = forge_signed_ota(buf, key, 0x00000007u, total, tag);
+
+    uint16_t dl = 0;
+    STestOtaVerdict v = Test_OTA_Try_Finalize(buf, bytes_received, total, total,
+                                              S_OTA_TRAILER_ALL_RECEIVED, key, 1,
+                                              0x00000008u /* wrong */, tag, &dl);
+    ASSERT_EQ(v, S_OTA_REJECT);
+}
+
+TEST(test_ota_finalize_reject_no_key) {
+    /* Without K_ota provisioned (valid=0) no OTA is ever applied (fail-safe). */
+    uint8_t key[32]; for (int i = 0; i < 32; i++) key[i] = (uint8_t)(0xC0 ^ i);
+    uint8_t buf[64], tag[32];
+    uint16_t total = 4;
+    uint16_t bytes_received = forge_signed_ota(buf, key, 0x12345678u, total, tag);
+
+    uint16_t dl = 0;
+    STestOtaVerdict v = Test_OTA_Try_Finalize(buf, bytes_received, total, total,
+                                              S_OTA_TRAILER_ALL_RECEIVED, key, 0 /* no key */,
+                                              0x12345678u, tag, &dl);
+    ASSERT_EQ(v, S_OTA_REJECT);
 }
 
 TEST(test_dual_gate_both_pass_returns_1) {
@@ -2957,12 +3217,13 @@ TEST(test_hmac_trailer_state_survives_simulated_stop2_between_segments) {
     for (int i = 0; i < 32; i++) expected[i] = (uint8_t)(0xA0 + i);
 
     uint8_t recv[32] = {0};
+    uint32_t ver = 0;
     uint8_t segs = 0;
     uint8_t chunk[16];
 
     /* seg 1 arrives */
     compose_hmac_trailer_chunk(1, 5, expected, chunk);
-    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs), 1);
+    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs), 1);
     ASSERT_EQ(segs, 0x01);
 
     /* simulated STOP2 — recv[]/segs are SRAM-persistent */
@@ -2971,15 +3232,15 @@ TEST(test_hmac_trailer_state_survives_simulated_stop2_between_segments) {
      * test_hmac_trailer_out_of_order_chunks; here we focus on
      * cross-cycle stability of the partial state) */
     compose_hmac_trailer_chunk(3, 5, expected, chunk);
-    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs), 1);
+    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs), 1);
     ASSERT_EQ(segs, 0x05);  /* bits 0+2 set */
 
     /* simulated STOP2 again */
 
     /* seg 2 closes */
     compose_hmac_trailer_chunk(2, 5, expected, chunk);
-    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs), 1);
-    ASSERT_EQ(segs, 0x07);  /* all 3 bits set */
+    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs), 1);
+    ASSERT_EQ(segs, 0x07);  /* all 3 tag bits set */
     ASSERT_EQ(memcmp(recv, expected, 32), 0);
 }
 
@@ -2992,15 +3253,16 @@ TEST(test_hmac_trailer_duplicate_segment_overwrites_idempotently) {
     for (int i = 0; i < 32; i++) expected[i] = (uint8_t)(0xB0 + i);
 
     uint8_t recv[32] = {0};
+    uint32_t ver = 0;
     uint8_t segs = 0;
     uint8_t chunk[16];
 
     compose_hmac_trailer_chunk(1, 5, expected, chunk);
-    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs), 1);
+    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs), 1);
     ASSERT_EQ(segs, 0x01);
 
     /* Same segment re-arrives — OK, no double-count, no corruption */
-    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs), 1);
+    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &ver, &segs), 1);
     ASSERT_EQ(segs, 0x01);  /* still just bit 0 */
     /* Bytes 0..10 of seg 1 area unchanged */
     ASSERT_EQ(recv[0],  0xB0);
@@ -4723,9 +4985,11 @@ int main(void)
     printf("\n  HMAC Trailer + Dual-Gate (FW.23):\n");
     RUN(test_hmac_trailer_three_chunks_assemble_full_tag);
     RUN(test_hmac_trailer_out_of_order_chunks);
+    RUN(test_hmac_trailer_version_chunk_parses);
+    RUN(test_hmac_trailer_all_four_complete);
     RUN(test_hmac_trailer_rejects_wrong_marker);
     RUN(test_hmac_trailer_rejects_seg_idx_zero);
-    RUN(test_hmac_trailer_rejects_seg_idx_above_3);
+    RUN(test_hmac_trailer_rejects_seg_idx_above_4);
     RUN(test_hmac_trailer_rejects_undersized_chunk);
     RUN(test_dual_gate_both_pass_returns_1);
     RUN(test_dual_gate_magic_fail_returns_0);
@@ -4736,6 +5000,12 @@ int main(void)
     RUN(test_dual_gate_constant_time_compare_last_byte_diff);
     RUN(test_hmac_trailer_state_survives_simulated_stop2_between_segments);
     RUN(test_hmac_trailer_duplicate_segment_overwrites_idempotently);
+    RUN(test_hmac_concat_equals_oneshot);
+    RUN(test_ota_finalize_apply_real_hmac);
+    RUN(test_ota_finalize_wait_without_trailer);
+    RUN(test_ota_finalize_reject_tampered_body);
+    RUN(test_ota_finalize_reject_version_mismatch);
+    RUN(test_ota_finalize_reject_no_key);
 
     printf("\n  CMD_SET_AUDIO_THRESHOLDS Dispatcher (FW.18):\n");
     RUN(test_audio_dispatcher_accepts_default_60_85);
