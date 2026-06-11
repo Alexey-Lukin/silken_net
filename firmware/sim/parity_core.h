@@ -92,6 +92,11 @@ static int Parity_Run(void)
         argv[5] = mrb_float_value(mrb, dt);
         argv[6] = mrb_float_value(mrb, vcap);
 
+        /* Арена — як у Солдата (main.c, навколо того ж mrb_funcall_argv):
+         * без save/restore кожен результат пінився б в GC-арені, сміття 64
+         * кейсів не збиралося б, і heap-вотермарк міряв би артефакт runner'а,
+         * а не профіль девайса (фіт-гейт qemu_parity.sh саме це й зловив). */
+        int arena_idx = mrb_gc_arena_save(mrb);
         mrb_value r = mrb_funcall_argv(mrb, mrb_top_self(mrb),
                                        mrb_intern_lit(mrb, "calculate_state"),
                                        7, argv);
@@ -105,6 +110,7 @@ static int Parity_Run(void)
         x = mrb_float(mrb_ary_ref(mrb, r, 1));
         y = mrb_float(mrb_ary_ref(mrb, r, 2));
         z = mrb_float(mrb_ary_ref(mrb, r, 3));
+        mrb_gc_arena_restore(mrb, arena_idx);
 
         printf("C%02d p=%02lX", i, (unsigned long)(payload & 0xFFl));
         parity_dump_double("x", x);
