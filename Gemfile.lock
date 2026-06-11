@@ -305,7 +305,7 @@ GEM
       rdoc (>= 4.0.0)
       reline (>= 0.4.2)
     jmespath (1.6.2)
-    json (2.19.5)
+    json (2.19.8)
     jwt (3.2.0)
       base64
     kamal (2.11.0)
@@ -757,7 +757,7 @@ GEM
     unicode-emoji (4.2.0)
     uri (1.1.1)
     useragent (0.16.11)
-    view_component (4.11.0)
+    view_component (4.12.0)
       actionview (>= 7.1.0)
       activesupport (>= 7.1.0)
       concurrent-ruby (~> 1)
