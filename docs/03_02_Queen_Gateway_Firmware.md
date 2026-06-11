@@ -883,9 +883,14 @@ Soldier — gossip-uplift (3-hop reach)
 
 #define SYNC_REQ_MARKER                  0x56       // Soldier→Queen sync request
 #define SYNC_REQ_MAGIC_BYTE              0x53       // 'S' magic у byte 10
-#define TIME_SYNC_DRIFT_THRESHOLD_SEC    43200UL    // 12 год без beacon → panic
-#define TIME_SYNC_REQUEST_COOLDOWN_MS    3600000UL  // 1 год між zвiт-проханнями
-#define TIME_SYNC_COLD_BOOT_GRACE_MS     600000UL   // 10 хв cold-boot grace
+// Wall-кванти Солдата = ПРОБУДЖЕННЯ (2026-06-11): HAL_GetTick мертвий у
+// STOP2 — tick-пороги розтягувались у ~6-15× wall (та сама пастка, що
+// FW.27-B). Цикл 26-32 с (IWDG-вікно) → пробудження і є годинник.
+// Лічильники SRAM (переживають STOP2, гинуть з VBAT — grace перезапускається).
+#define TIME_SYNC_DRIFT_THRESHOLD_WAKEUPS 1440u     // ≈12 год без beacon → panic
+#define TIME_SYNC_REQUEST_COOLDOWN_WAKEUPS 120u     // ≈1 год між зойками
+#define TIME_SYNC_COLD_BOOT_GRACE_WAKEUPS  20u      // ≈10 хв cold-boot grace (ARCH.41-C)
+#define SOLDIER_NOMINAL_CYCLE_S          30u        // wire-конверсія wakeups→сек (0x56 поле, ±20%)
 
 #define GOSSIP_TS_PAYLOAD_OFFSET         14u        // byte 14 у normal telemetry
 #define GOSSIP_TS_MAX_DRIFT_SEC          127u       // ±128 sec window для gossip

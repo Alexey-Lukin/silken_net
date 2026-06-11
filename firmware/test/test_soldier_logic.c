@@ -4000,34 +4000,32 @@ TEST(test_fw20s2_legacy_beacon_byte9_zero_clears_flag) {
 #define FW20S2_SYNC_REQ_MARKER            0x56
 #define FW20S2_SYNC_REQ_MAGIC_BYTE        0x53  /* 'S' */
 #define FW20S2_SYNC_REQ_PACKET_SIZE       16
-#define FW20S2_DRIFT_THRESHOLD_SEC        43200UL    /* 12 год */
-#define FW20S2_REQUEST_COOLDOWN_MS        3600000UL  /* 1 год */
-#define FW20S2_COLD_BOOT_GRACE_MS         600000UL   /* 10 хв */
+/* Wall-кванти = ПРОБУДЖЕННЯ (tick мертвий у STOP2 — дзеркало main.c). */
+#define FW20S2_DRIFT_THRESHOLD_WAKEUPS    1440u  /* ≈12 год при циклі 26-32 с */
+#define FW20S2_REQUEST_COOLDOWN_WAKEUPS   120u   /* ≈1 год */
+#define FW20S2_COLD_BOOT_GRACE_WAKEUPS    20u    /* ≈10 хв */
+#define FW20S2_NOMINAL_CYCLE_S            30u
 #define FW20S2_PANIC_TTL                  5
 
 /* Test-local mirrors of firmware globals (Soldier-side).
- * Reuse existing test_soldier_unix_ts / test_soldier_unix_ts_local_tick defined
- * earlier in this file (line ~1997) for the FW.20-S1 beacon RX tests. */
-static uint32_t test_last_sync_request_tick              = 0;
+ * Reuse existing test_soldier_unix_ts defined earlier (FW.20-S1 beacon RX). */
+static uint16_t test_wakeups_since_boot         = 0;
+static uint16_t test_wakeups_since_sync         = 0;
+static uint16_t test_wakeups_since_sync_request = 0;
+static uint8_t  test_sync_request_ever          = 0;
 
-static uint8_t Test_Should_Request_Time_Sync(uint32_t now_tick) {
-    if (test_last_sync_request_tick != 0) {
-        uint32_t since_last_req_ms = now_tick - test_last_sync_request_tick;
-        if (since_last_req_ms < FW20S2_REQUEST_COOLDOWN_MS) return 0;
-    }
+static uint8_t Test_Should_Request_Time_Sync(void) {
+    if (test_sync_request_ever &&
+        test_wakeups_since_sync_request < FW20S2_REQUEST_COOLDOWN_WAKEUPS) return 0;
     if (test_soldier_unix_ts == 0) {
-        if (now_tick < FW20S2_COLD_BOOT_GRACE_MS) return 0;
-        return 1;
+        return (test_wakeups_since_boot >= FW20S2_COLD_BOOT_GRACE_WAKEUPS) ? 1 : 0;
     }
-    uint32_t since_sync_ms  = now_tick - test_soldier_unix_ts_local_tick;
-    uint32_t since_sync_sec = since_sync_ms / 1000u;
-    return (since_sync_sec > FW20S2_DRIFT_THRESHOLD_SEC) ? 1 : 0;
+    return (test_wakeups_since_sync >= FW20S2_DRIFT_THRESHOLD_WAKEUPS) ? 1 : 0;
 }
 
-static uint32_t Test_Seconds_Since_Last_Sync(uint32_t now_tick) {
+static uint32_t Test_Seconds_Since_Last_Sync(void) {
     if (test_soldier_unix_ts == 0) return 0;
-    uint32_t delta_ms = now_tick - test_soldier_unix_ts_local_tick;
-    return delta_ms / 1000u;
+    return (uint32_t)test_wakeups_since_sync * FW20S2_NOMINAL_CYCLE_S;
 }
 
 static void Test_Build_Time_Sync_Request_Payload(uint8_t* out, uint32_t did,
@@ -4052,67 +4050,70 @@ static void Test_Build_Time_Sync_Request_Payload(uint8_t* out, uint32_t did,
 static void Test_FW20S2_Reset(void) {
     test_soldier_unix_ts            = 0;
     test_soldier_unix_ts_local_tick = 0;
-    test_last_sync_request_tick     = 0;
+    test_wakeups_since_boot         = 0;
+    test_wakeups_since_sync         = 0;
+    test_wakeups_since_sync_request = 0;
+    test_sync_request_ever          = 0;
 }
 
 TEST(test_fw20s2_drift_cold_boot_grace_no_request) {
-    /* Cold-boot, минула 1 хвилина — ще у grace window (10 хв). Мовчимо. */
+    /* Cold-boot, 2 пробудження (≈1 хв) — ще у grace (20 пробуджень ≈10 хв). */
     Test_FW20S2_Reset();
-    uint32_t now_tick = 60u * 1000u;  /* 1 хв після boot */
-    ASSERT_EQ(Test_Should_Request_Time_Sync(now_tick), 0);
+    test_wakeups_since_boot = 2;
+    ASSERT_EQ(Test_Should_Request_Time_Sync(), 0);
 }
 
 TEST(test_fw20s2_drift_cold_boot_after_grace_requests) {
-    /* Cold-boot, минуло 11 хв — grace вийшов, beacon не прилетів. Просимо. */
+    /* Cold-boot, 22 пробудження (≈11 хв) — grace вийшов, beacon не прилетів. */
     Test_FW20S2_Reset();
-    uint32_t now_tick = 11u * 60u * 1000u;
-    ASSERT_EQ(Test_Should_Request_Time_Sync(now_tick), 1);
+    test_wakeups_since_boot = 22;
+    ASSERT_EQ(Test_Should_Request_Time_Sync(), 1);
 }
 
 TEST(test_fw20s2_drift_recently_synced_no_request) {
-    /* Beacon отримано 1 годину тому — далеко від 12-год порогу. Мовчимо. */
+    /* Beacon ≈1 год тому (120 пробуджень) — далеко від ≈12-год порогу (1440). */
     Test_FW20S2_Reset();
-    test_soldier_unix_ts            = 1714000000u;
-    test_soldier_unix_ts_local_tick = 1000u;          /* sync відбувся при tick=1s */
-    uint32_t now_tick = 1000u + (3600u * 1000u);      /* +1 год */
-    ASSERT_EQ(Test_Should_Request_Time_Sync(now_tick), 0);
+    test_soldier_unix_ts    = 1714000000u;
+    test_wakeups_since_sync = 120;
+    ASSERT_EQ(Test_Should_Request_Time_Sync(), 0);
 }
 
 TEST(test_fw20s2_drift_past_threshold_triggers_request) {
-    /* Beacon мовчить 13 годин — поза 12-год порогом. Сторожовий пес гавкає. */
+    /* Тиша ≈13 год (1560 пробуджень) — поза порогом. Сторожовий пес гавкає. */
     Test_FW20S2_Reset();
-    test_soldier_unix_ts            = 1714000000u;
-    test_soldier_unix_ts_local_tick = 1000u;
-    uint32_t now_tick = 1000u + (13u * 3600u * 1000u);
-    ASSERT_EQ(Test_Should_Request_Time_Sync(now_tick), 1);
+    test_soldier_unix_ts    = 1714000000u;
+    test_wakeups_since_sync = 1560;
+    ASSERT_EQ(Test_Should_Request_Time_Sync(), 1);
 }
 
 TEST(test_fw20s2_drift_cooldown_suppresses_repeat_request) {
-    /* Уже просили Королеву 30 хв тому, дрейф досі великий — мовчимо до 1 год. */
+    /* Уже просили ≈30 хв тому (60 пробуджень), дрейф досі великий — мовчимо
+     * до ≈1 год (120). */
     Test_FW20S2_Reset();
     test_soldier_unix_ts            = 1714000000u;
-    test_soldier_unix_ts_local_tick = 1000u;
-    uint32_t now_tick = 1000u + (13u * 3600u * 1000u);
-    test_last_sync_request_tick = now_tick - (30u * 60u * 1000u);  /* 30 хв тому */
-    ASSERT_EQ(Test_Should_Request_Time_Sync(now_tick), 0);
+    test_wakeups_since_sync         = 1560;
+    test_sync_request_ever          = 1;
+    test_wakeups_since_sync_request = 60;
+    ASSERT_EQ(Test_Should_Request_Time_Sync(), 0);
 
-    /* +35 хв = понад 1 год від попереднього request → знову можна. */
-    uint32_t later_tick = now_tick + (35u * 60u * 1000u);
-    ASSERT_EQ(Test_Should_Request_Time_Sync(later_tick), 1);
+    /* 130 пробуджень від попереднього зойку — понад cooldown, знову можна. */
+    test_wakeups_since_sync_request = 130;
+    ASSERT_EQ(Test_Should_Request_Time_Sync(), 1);
 }
 
 TEST(test_fw20s2_seconds_since_sync_zero_when_never_synced) {
     Test_FW20S2_Reset();
-    ASSERT_EQ(Test_Seconds_Since_Last_Sync(999999u), 0u);
+    test_wakeups_since_sync = 999;
+    ASSERT_EQ(Test_Seconds_Since_Last_Sync(), 0u);
 }
 
 TEST(test_fw20s2_seconds_since_sync_computed_warm) {
+    /* 1560 пробуджень × 30 с номіналу = 46 800 с (≈13 год) — масштаб для
+     * Grafana-алерту, точність ±20% за циклом 26-32 с. */
     Test_FW20S2_Reset();
-    test_soldier_unix_ts            = 1714000000u;
-    test_soldier_unix_ts_local_tick = 5000u;
-    /* 47000 секунд = 13.05 год */
-    uint32_t now_tick = 5000u + (47000u * 1000u);
-    ASSERT_EQ(Test_Seconds_Since_Last_Sync(now_tick), 47000u);
+    test_soldier_unix_ts    = 1714000000u;
+    test_wakeups_since_sync = 1560;
+    ASSERT_EQ(Test_Seconds_Since_Last_Sync(), 46800u);
 }
 
 TEST(test_fw20s2_sync_req_payload_layout) {

@@ -524,11 +524,11 @@ static uint8_t Soldier_Handle_CMD_SET_THRESHOLDS(const uint8_t* frame,
 // синхронізуватися з backend'ом → майбутнє відновлення Lorenz-стану після
 // VBAT-loss піде з неправильної точки → false slashing.
 //
-// Сторожовий пес часу: коли різниця між «зараз» (HAL_GetTick з останнього
-// sync'у, в секундах) і `soldier_unix_ts_local_tick` перевищує
-// TIME_SYNC_DRIFT_THRESHOLD_SEC (12 год), Солдат подає голос — uplink
-// LoRa-плейн з опкодом 0x56, щоб Королева повторила beacon. Cooldown
-// (1 год) запобігає спаму при тривалій тиші Королеви.
+// Сторожовий пес часу: коли тиша від останнього beacon'а перевищує
+// TIME_SYNC_DRIFT_THRESHOLD_WAKEUPS (≈12 год пробуджень — tick мертвий у
+// STOP2, wall-квант = пробудження), Солдат подає голос — uplink LoRa-плейн
+// з опкодом 0x56, щоб Королева повторила beacon. Cooldown (≈1 год
+// пробуджень) запобігає спаму при тривалій тиші Королеви.
 //
 // SSOT для опкодів: 03_01 §4.5а Downlink Opcode Map. 0x56 — uplink-діапазон
 // поряд з 0x55 (FW.27-B OTA Re-Request); 0x9C beacon — downlink і не
@@ -540,59 +540,57 @@ static uint8_t Soldier_Handle_CMD_SET_THRESHOLDS(const uint8_t* frame,
 #define SYNC_REQ_MARKER                  0x56       // [FW.20-S2] Uplink: «Королево, час!»
 #define SYNC_REQ_MAGIC_BYTE              0x53       // [FW.20-S2] 'S' = sync — у байті 10
 #define SYNC_REQ_PACKET_SIZE             16         // Один AES-128-ECB блок (post-ARCH.42)
-#define TIME_SYNC_DRIFT_THRESHOLD_SEC    43200UL    // 12 год без beacon'а → панікуємо
-#define TIME_SYNC_REQUEST_COOLDOWN_MS    3600000UL  // 1 год між повторними зойками
-#define TIME_SYNC_COLD_BOOT_GRACE_MS     600000UL   // 10 хв після boot перш ніж панікувати
+// Час-пороги — у ПРОБУДЖЕННЯХ, не мілісекундах: HAL_GetTick заморожений у
+// STOP2, tick-різниця міряла лише active-час (~2-5 с/цикл) і розтягувала
+// інтервали у ~6-15× wall (та сама пастка, що FW.27-B тиша). Цикл 26-32 с
+// (IWDG-вікно) → пробудження і є wall-квант Солдата.
+#define TIME_SYNC_DRIFT_THRESHOLD_WAKEUPS 1440u     // ≈12 год без beacon'а → панікуємо
+#define TIME_SYNC_REQUEST_COOLDOWN_WAKEUPS 120u     // ≈1 год між повторними зойками
+#define TIME_SYNC_COLD_BOOT_GRACE_WAKEUPS  20u      // ≈10 хв після boot перш ніж панікувати
                                                     // (Soldier ще чекає першого beacon'а)
+#define SOLDIER_NOMINAL_CYCLE_S          30u        // номінал циклу для wire-конверсії wakeups→сек
 #define TIME_SYNC_REQ_PAD_BYTES          5          // [11..15] — резерв під майбутні поля
 
-// Tick останнього відправленого SYNC_REQUEST. 0 = ще не просили.
-// RAM-only: при VBAT-loss скидається — Солдат подасть голос знову після
-// перших 10 хв cold-boot grace (TIME_SYNC_COLD_BOOT_GRACE_MS).
-uint32_t last_sync_request_tick = 0;
+// Wall-кванти Солдата (SRAM: переживають STOP2, гинуть з VBAT — і це
+// правильно: cold-boot перезапускає grace). Сатуруються, не обертаються.
+uint16_t wakeups_since_boot         = 0; // [ARCH.41-C] grace-вікно cold-boot
+uint16_t wakeups_since_sync         = 0; // тиша від останнього beacon'а (drift-watchdog)
+uint16_t wakeups_since_sync_request = 0; // cooldown зойків 0x56
+uint8_t  sync_request_ever          = 0; // 0 = ще не просили (перший зойк без cooldown)
 
-// Чи варто Солдату просити re-broadcast beacon'а?
-// Параметри:
-//   now_tick — поточний HAL_GetTick() мс
+// Чи варто Солдату просити re-broadcast beacon'а? (wall-кванти = пробудження)
 // Інваріанти:
 //   1. Якщо ще не отримували жодного beacon'а (soldier_unix_ts == 0):
-//      - Перші TIME_SYNC_COLD_BOOT_GRACE_MS після boot — терпимо тишу,
+//      - Перші TIME_SYNC_COLD_BOOT_GRACE_WAKEUPS — терпимо тишу,
 //        Королева могла ще не вийти на TX-вікно.
 //      - Після grace — просимо.
-//   2. Якщо отримували beacon, але остання синхронізація >12 год тому → просимо.
-//   3. Cooldown: якщо вже просили <1 год тому — мовчимо, не спамимо ефір.
+//   2. Якщо отримували beacon, але тиша вже ≈12 год пробуджень → просимо.
+//   3. Cooldown: якщо вже просили <≈1 год пробуджень тому — не спамимо ефір.
 // Повертає 1 (треба просити) або 0 (мовчати).
-static uint8_t Soldier_Should_Request_Time_Sync(uint32_t now_tick)
+static uint8_t Soldier_Should_Request_Time_Sync(void)
 {
-    // Cooldown guard: якщо нещодавно просили — не повторюємо.
-    // Перше прохання (last_sync_request_tick == 0) проходить guard завжди.
-    if (last_sync_request_tick != 0) {
-        uint32_t since_last_req_ms = now_tick - last_sync_request_tick;
-        if (since_last_req_ms < TIME_SYNC_REQUEST_COOLDOWN_MS) {
-            return 0;
-        }
+    // Cooldown guard: перше прохання (sync_request_ever == 0) проходить завжди.
+    if (sync_request_ever &&
+        wakeups_since_sync_request < TIME_SYNC_REQUEST_COOLDOWN_WAKEUPS) {
+        return 0;
     }
 
     if (soldier_unix_ts == 0) {
         // Cold-boot: ще ніколи не чули beacon'а. Дочекаємося grace.
-        if (now_tick < TIME_SYNC_COLD_BOOT_GRACE_MS) return 0;
-        return 1;
+        return (wakeups_since_boot >= TIME_SYNC_COLD_BOOT_GRACE_WAKEUPS) ? 1 : 0;
     }
 
-    // Warm: міряємо реальний час від останнього beacon'а у секундах.
-    uint32_t since_sync_ms  = now_tick - soldier_unix_ts_local_tick;
-    uint32_t since_sync_sec = since_sync_ms / 1000u;
-    return (since_sync_sec > TIME_SYNC_DRIFT_THRESHOLD_SEC) ? 1 : 0;
+    // Warm: тиша від останнього beacon'а у пробудженнях.
+    return (wakeups_since_sync >= TIME_SYNC_DRIFT_THRESHOLD_WAKEUPS) ? 1 : 0;
 }
 
-// Скільки секунд минуло від останнього beacon'а (0 якщо ще не синхронізувалися).
-// Використовується у payload'і, щоб бекенд міг побачити масштаб дрейфу і
-// логувати «Soldier X не чув Королеви Y годин» для Grafana alert'у.
-static uint32_t Soldier_Seconds_Since_Last_Sync(uint32_t now_tick)
+// Приблизні секунди тиші від останнього beacon'а (0 якщо ще не чули) —
+// wire-поле 0x56 для масштабу дрейфу у Grafana: wakeups × номінал циклу.
+// Точність ±20% (цикл 26-32 с) — для алерту «не чув Королеву Y годин» досить.
+static uint32_t Soldier_Seconds_Since_Last_Sync(void)
 {
     if (soldier_unix_ts == 0) return 0;
-    uint32_t delta_ms = now_tick - soldier_unix_ts_local_tick;
-    return delta_ms / 1000u;
+    return (uint32_t)wakeups_since_sync * SOLDIER_NOMINAL_CYCLE_S;
 }
 
 // Збираємо 16-байтний uplink-плейн «панічний sync-запит» / cold-boot hello
@@ -1630,6 +1628,13 @@ int main(void)
     // система автоматично перезавантажиться і відновить дані з RTC.
     HAL_IWDG_Refresh(&hiwdg);
 
+    // Wall-кванти Солдата: одне пробудження = один тік цих лічильників
+    // (tick заморожений у STOP2 — пробудження і є наш годинник; сатурація
+    // проти wrap). Скидання: wakeups_since_sync — beacon RX; _request — зойк.
+    if (wakeups_since_boot < 0xFFFFu)         wakeups_since_boot++;
+    if (wakeups_since_sync < 0xFFFFu)         wakeups_since_sync++;
+    if (wakeups_since_sync_request < 0xFFFFu) wakeups_since_sync_request++;
+
     // =========================================================================
     // ФАЗА 1: ЗБІР ФІЗИЧНИХ ДАНИХ (Нульова ентропія)
     // =========================================================================
@@ -1796,8 +1801,10 @@ int main(void)
     // замість телеметрії зі застарілим epoch_day; після grace (B) телеметрія
     // йде, але з sentinel 0xFE в acoustic і Лоренцом від acoustic=0.
     uint8_t time_uncertain = (soldier_unix_ts == 0u) ? 1u : 0u;
+    // Grace — у пробудженнях (tick мертвий у STOP2: 10 хв tick-grace тривали б
+    // ~1-2 год wall, відкладаючи телеметрію у стільки ж разів).
     uint8_t grace_hello = (time_uncertain &&
-                           HAL_GetTick() < TIME_SYNC_COLD_BOOT_GRACE_MS) ? 1u : 0u;
+                           wakeups_since_boot < TIME_SYNC_COLD_BOOT_GRACE_WAKEUPS) ? 1u : 0u;
 
     // Байт 7: Відлуння ксилеми (Відфільтровані TinyML).
     // [FW.22] saturating uint8: значення вже у [0..255] — затискати нічого.
@@ -1959,7 +1966,9 @@ int main(void)
                                         0u /* ніколи не чули */, vcap_voltage);
         HAL_CRYP_Encrypt(&hcryp, (uint32_t*)hello_plain, 4, (uint32_t*)encrypted_payload, 1000);
         Radio.Send(encrypted_payload, 16);
-        last_sync_request_tick = HAL_GetTick();
+        // Cooldown НЕ чіпаємо: grace-hello летить КОЖНЕ пробудження навмисно
+        // (замість телеметрії — Королеві потрібен uplink для OTA-рефлексу);
+        // cooldown належить сплячому drift-watchdog'у (0x56 ПОВЕРХ телеметрії).
     } else {
         HAL_CRYP_Encrypt(&hcryp, (uint32_t*)lora_payload, 4, (uint32_t*)encrypted_payload, 1000);
         Radio.Send(encrypted_payload, 16);
@@ -1997,6 +2006,7 @@ int main(void)
                     if (beacon_ts != 0) {
                         soldier_unix_ts            = beacon_ts;
                         soldier_unix_ts_local_tick = HAL_GetTick();
+                        wakeups_since_sync         = 0; // голос Королеви — тиша скінчилась
                     }
 
                     // [FW.20-S2] Зчитуємо authoritativeness прапорець з байту 9
