@@ -390,7 +390,7 @@ bin/rails runner 'SilkenNet::Metrics::REGISTRY.metrics.sort_by{|m|[m.type.to_s,m
 | 4 | ✅ **Cardinality budget** (2026-06-04) — `prometheus.relabel` `labeldrop` per-identity (`config.alloy`) | `cluster_id` (entropy) лишається (легітимна growth-вісь); per-DID labels (`did`/`tree_id`/`peaq_did`/`wallet_address`/`tx_hash`) дропаються до remote_write, щоб майбутня випадкова мітка не підірвала active-series біллінг (Grafana Cloud біллить за series / DPM) | ✅ DONE |
 | 5 | **`up` scrape-health alert** | `prometheus.scrape` авто-емітить `up{job="silken_net_scraper"}`; алерт на `==0` = web/alloy впав → метрики «осліпли» | ops |
 | 6 | **SLO + error-budget** (ingest availability, mint/slash success) | Зараз лише ad-hoc alert rules; SLO дають об'єктивний reliability-таргет | ops |
-| 7 | Dashboards + alerts **import** у Grafana Cloud (IaC у `deploy/grafana/`) | S2.2/S2.3 — IaC готовий, лишається 👤 import | ops |
+| 7 | Dashboards + alerts **import** у Grafana Cloud (IaC у `deploy/grafana/`) | S2.2/S2.3 — IaC готовий; ✅ one-command `deploy/grafana/import.rb` (2026-06-11, auto-discovery UID + ідемпотентний upsert, `--dry-run` без credentials); лишається 👤 запуск із токеном + contact point + verify | ops |
 
 **#2 + #4 — імплементовано (2026-06-04) у `deploy/akash/config.alloy`:** pipeline `prometheus.scrape → prometheus.relabel.cardinality_budget → prometheus.remote_write` (queue_config + явний WAL). Значення живуть у `config.alloy` (SSOT) — тут не дублюються, щоб уникнути drift; rationale — рядки #2/#4 вище. Валідація: CI job `alloy_config_validate` (`grafana/alloy fmt`).
 

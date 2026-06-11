@@ -2,19 +2,17 @@
 # SilkenNet Gaia 2.0 — Grafana Unified Alerting Rules
 # =============================================================================
 #
-# Формат: Grafana Alerting YAML (Grafana 9+, Unified Alerting).
-# Як застосувати:
-#   1. Grafana Cloud UI: Alerting → Alert rules → Import (paste YAML)
-#   2. Grafana HTTP API: POST /api/ruler/grafana/api/v1/rules/{namespace}
-#   3. Terraform grafana provider (рекомендовано для IaC):
-#      resource "grafana_rule_group" "silkennet" { ... }
+# Формат: Grafana Alerting provisioning YAML (Grafana 9+, Unified Alerting).
+# Як застосувати: `ruby deploy/grafana/import.rb` (one-command; README поруч) —
+# підставляє ${DATASOURCE_UID} у пам'яті й робить ідемпотентний upsert через
+# Alerting Provisioning API. Fallback: UI Alerting → Alert rules → Import.
 #
-# Notification channel (налаштувати в Grafana Cloud):
+# Notification channel (налаштувати в Grafana Cloud вручну):
 #   Alerting → Contact points → New: Slack / PagerDuty / Email
 #   Alerting → Notification policies → Default policy → Contact point: <обраний>
 #
-# Datasource: замінити {DATASOURCE_UID} на UID Prometheus datasource
-#   (знайти: Grafana → Configuration → Data Sources → Prometheus → UID у URL)
+# Datasource: плейсхолдер ${DATASOURCE_UID} — НЕ правити у цьому файлі;
+#   import.rb знаходить UID сам (або env DATASOURCE_UID).
 # =============================================================================
 
 apiVersion: 1

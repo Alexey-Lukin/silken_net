@@ -8,62 +8,35 @@ Infrastructure-as-Code конфіги для Grafana Cloud. Замінюють �
 deploy/grafana/
 ├── dashboards/
 │   └── silkennet-overview.json   # Головний дашборд (5 секцій)
-└── alerts/
-    └── silkennet-alerts.yaml     # alert rules (P0/P1/P2)
+├── alerts/
+│   └── silkennet-alerts.yaml     # alert rules (P0/P1/P2)
+└── import.rb                     # one-command імпорт обох артефактів
 ```
 
-## Імпорт дашборду
+## Імпорт — одна команда
 
-**Через Grafana Cloud UI:**
-1. Grafana → Dashboards → Import
-2. Upload JSON file → `dashboards/silkennet-overview.json`
-3. Select datasource: Prometheus (Grafana Cloud instance)
-4. Import
-
-**Через Grafana HTTP API:**
 ```bash
-curl -X POST https://<your-grafana-url>/api/dashboards/import \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <GRAFANA_API_TOKEN>" \
-  -d @dashboards/silkennet-overview.json
+# Перевірка артефактів без credentials (нічого не шле):
+ruby deploy/grafana/import.rb --dry-run
+
+# Імпорт (service-account token із роллю Editor+):
+GRAFANA_URL=https://<stack>.grafana.net \
+GRAFANA_API_TOKEN=<token> \
+  ruby deploy/grafana/import.rb
 ```
 
-## Імпорт alert rules
+Скрипт сам: знаходить UID Prometheus datasource (або `DATASOURCE_UID` env),
+створює folder «SilkenNet» (або `GRAFANA_FOLDER`), імпортує дашборд із
+правильним `inputs`-wrapper'ом і робить ідемпотентний upsert 14 alert rules
+через Alerting Provisioning API (`X-Disable-Provenance` — рулі лишаються
+редагованими в UI). Плейсхолдер `${DATASOURCE_UID}` підставляється в
+пам'яті — файл у репо не змінюється. Повторний запуск безпечний.
 
-**Крок 1:** Знайти UID Prometheus datasource:
-```
-Grafana → Configuration → Data Sources → Prometheus → copy UID from URL
-```
-
-**Крок 2:** Замінити `${DATASOURCE_UID}` у `alerts/silkennet-alerts.yaml`:
-```bash
-sed -i 's/${DATASOURCE_UID}/<your-datasource-uid>/g' alerts/silkennet-alerts.yaml
-```
-
-**Крок 3:** Імпорт через Grafana HTTP API:
-```bash
-# Створити folder "SilkenNet"
-curl -X POST https://<grafana-url>/api/folders \
-  -H "Authorization: Bearer <TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{"title": "SilkenNet"}'
-
-# Імпорт rules через Ruler API
-curl -X POST https://<grafana-url>/api/ruler/grafana/api/v1/rules/SilkenNet \
-  -H "Authorization: Bearer <TOKEN>" \
-  -H "Content-Type: application/yaml" \
-  --data-binary @alerts/silkennet-alerts.yaml
-```
-
-**Або через Terraform** (рекомендовано для IaC):
-```hcl
-resource "grafana_folder" "silkennet" {
-  title = "SilkenNet"
-}
-resource "grafana_rule_group" "silkennet_p0" {
-  # ... (grafana terraform provider)
-}
-```
+**Fallback через UI** (якщо токена нема): Dashboards → Import → upload
+`dashboards/silkennet-overview.json` → select Prometheus datasource;
+Alerting → Alert rules → Import → paste `alerts/silkennet-alerts.yaml`
+(попередньо замінивши `${DATASOURCE_UID}` на UID datasource — у копії,
+не в репо-файлі).
 
 ## Дашборд: секції
 
