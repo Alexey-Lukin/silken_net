@@ -338,6 +338,8 @@ it "test that status works" do
 | AT Command UART | 🟡 MEDIUM | SIM7070G modem I/O не тестується повністю (апаратна залежність). Retry/timeout-логіка верифікована `test_at_engine.c` (conversation-fail) + `test_fw51_*` (fail→retry→no-loss) (FW.9) |
 | DMA Audio Timing | 🟠 HIGH | 512-sample DMA transfer timing не верифікується на host |
 
+**Coverage-lane (TEST.1, 2026-06-11):** `make -C firmware/test coverage` — gcov-звіт по owned-модулях (`../common`, `../queen`: і `.c`, і header-only через атрибуцію у TU) + CI-крок у `ci.yml` (visibility, без порога). Чесні межі звіту: `test_soldier/queen_logic` міряють **дзеркала** логіки `main.c`, не сам `main.c` (його покриває QEMU/bench-фаза, [`03_01 §12.7`](03_01_Firmware_Lifecycle_and_DMA)); непокритий хвіст у звіті — переважно defensive ops-failure guards (таксономія §B.4: leave + чому).
+
 ### B.1.2 Solidity
 
 | Ризик | Серйозність | Опис |

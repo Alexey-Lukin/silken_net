@@ -52,6 +52,13 @@ jobs:
         # ловить регресії розмірів у статичних буферах ще до lab build.
         run: make -C firmware/test size-check
 
+      - name: '[TEST.1] Firmware host coverage lane (visibility, non-gating)'
+        # gcov-звіт по owned common/queen модулях — видимість дір, БЕЗ порога:
+        # host-лейн міряє дзеркала логіки, не main.c (04_06 §B.1.1). ОСТАННІМ
+        # кроком: лишає інструментовані -O0 бінарники (coverage-лічильники
+        # роздули б .bss → хибний фейл size-check'а, якби йшов перед ним).
+        run: make -C firmware/test coverage
+
   firmware_ram_budget:
     # [FW.26] RAM budget gate. Installs arm-none-eabi binutils so future cross-
     # compile pipelines (post-FW.4) can be measured. Currently informational —

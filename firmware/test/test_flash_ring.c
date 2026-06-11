@@ -224,6 +224,34 @@ TEST(test_consume_across_sector_boundary) {
     ASSERT_REC(&r, 0, (uint8_t)(FLASH_RING_SLOTS_PER_SECTOR + 3u));
 }
 
+TEST(test_drain_everything_then_continue_lifecycle) {
+    /* Повний життєвий цикл «усе доставлено»: consume до нуля → remount
+     * (mount без жодного pending: tail=head) → подальші append'и, включно
+     * з прокатом head'а у наступний сектор ПОРОЖНІМ (tail їде слідом). */
+    MockFlash m; mock_init(&m);
+    FlashRing r;
+    ASSERT_TRUE(FlashRing_Mount(&r, &mock_ops, &m, MOCK_SECTORS));
+    uint8_t rec[FLASH_RING_RECORD_SIZE];
+    /* Рівно до межі сектора: head_slot стає 192 — наступний append котить. */
+    for (uint16_t i = 0; i < FLASH_RING_SLOTS_PER_SECTOR; i++) {
+        make_rec(rec, (uint8_t)i);
+        ASSERT_TRUE(FlashRing_Append(&r, rec));
+    }
+    ASSERT_TRUE(FlashRing_Consume(&r, FLASH_RING_SLOTS_PER_SECTOR));
+    ASSERT_EQ(FlashRing_Count(&r), 0);
+
+    FlashRing r2;
+    ASSERT_TRUE(FlashRing_Mount(&r2, &mock_ops, &m, MOCK_SECTORS));
+    ASSERT_EQ(FlashRing_Count(&r2), 0);
+
+    /* Append у порожній ring з повним head-сектором: head котиться,
+     * порожній tail слідує за ним — записи знову читаються FIFO. */
+    make_rec(rec, 0xB7);
+    ASSERT_TRUE(FlashRing_Append(&r2, rec));
+    ASSERT_EQ(FlashRing_Count(&r2), 1);
+    ASSERT_REC(&r2, 0, 0xB7);
+}
+
 TEST(test_consume_more_than_count_refused) {
     MockFlash m; mock_init(&m);
     FlashRing r;
@@ -318,6 +346,7 @@ int main(void)
     printf("\n— Consume —\n");
     RUN(test_consume_advances_tail_durably);
     RUN(test_consume_across_sector_boundary);
+    RUN(test_drain_everything_then_continue_lifecycle);
     RUN(test_consume_more_than_count_refused);
 
     printf("\n— Power-cut —\n");

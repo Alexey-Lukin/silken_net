@@ -112,6 +112,11 @@ coverage/
 /firmware/test/test_flash_ota
 /firmware/test/test_key_ratchet
 /firmware/test/test_fauna_session
+# [TEST.1] coverage-lane artifacts (make -C firmware/test coverage)
+/firmware/test/*.gcno
+/firmware/test/*.gcda
+/firmware/test/*.gcov
+/firmware/test/coverage_raw.txt
 .claude/scheduled_tasks.lock
 
 # Python tooling artifacts (tools/** — pytest, compileall, ruff)

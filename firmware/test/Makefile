@@ -19,7 +19,7 @@ BINDIR   = .
 OPENSSL_CFLAGS = $(shell pkg-config --cflags openssl 2>/dev/null)
 OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
-.PHONY: all queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet fauna size-check clean
+.PHONY: all queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet fauna coverage size-check clean
 
 all: queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet fauna
 
@@ -163,8 +163,10 @@ clean:
 	      $(BINDIR)/test_tinyml $(BINDIR)/test_logmel $(BINDIR)/test_encryption \
 	      $(BINDIR)/test_seed_derivation $(BINDIR)/test_ccm $(BINDIR)/test_ccm_selftest \
 	      $(BINDIR)/test_sym_selftest $(BINDIR)/test_queen_attest \
-	      $(BINDIR)/test_at_engine $(BINDIR)/test_flash_kv $(BINDIR)/test_flash_ota \
-	      $(BINDIR)/test_fauna_session
+	      $(BINDIR)/test_at_engine $(BINDIR)/test_uart_rx_ring \
+	      $(BINDIR)/test_flash_kv $(BINDIR)/test_flash_ring $(BINDIR)/test_flash_ota \
+	      $(BINDIR)/test_key_ratchet $(BINDIR)/test_fauna_session \
+	      *.gcno *.gcda *.gcov coverage_raw.txt
 
 # [FW.26] CI gate — Static RAM budget check (.bss + .data ≤ 50 KB).
 #
@@ -184,6 +186,35 @@ clean:
 # Threshold 51200 bytes = 50 KB (ділимо 64 KB SRAM на буфери і кошти
 # виконання, залишаючи runtime ~14 KB запасу). Перевищення → exit 1.
 SIZE_LIMIT_BYTES ?= 51200
+# [TEST.1] Coverage-lane host-тестів — ВИДИМІСТЬ дір, не гейт.
+# Інструментована перебудова (--coverage, -O0 щоб інлайн не з'їдав рядки) +
+# прогін усієї сюїти + gcov-звіт по owned-модулях (../common, ../queen,
+# ../soldier — і .c, і header-only через атрибуцію в TU, що їх включає;
+# для header'а з кількох TU береться найкращий показник). Свідомо ПОЗА
+# звітом: test_*.c самі по собі, hal_mock, ../extern (чужий код). Межі
+# host-лейну чесні (04_06 §B.1.1): test_soldier/queen_logic міряють
+# ДЗЕРКАЛО логіки main.c, не сам main.c — його покриває bench/QEMU-фаза.
+# GCOV: gcc-gcov на CI (Linux), на macOS /usr/bin/gcov = llvm-cov шим.
+GCOV ?= gcov
+
+coverage:
+	@$(MAKE) clean >/dev/null
+	@echo "[TEST.1] Інструментована збірка + прогін host-сюїти (--coverage -O0)…"
+	@$(MAKE) all CFLAGS="-Wall -Wextra -Wpedantic -std=c11 -I. -O0 --coverage" >/dev/null
+	@rm -f coverage_raw.txt
+	@for g in *.gcda; do $(GCOV) "$$g" >> coverage_raw.txt 2>/dev/null || true; done
+	@echo ""
+	@echo "[TEST.1] Покриття owned-модулів (рядки):"
+	@echo "─────────────────────────────────────────────────────────────"
+	@awk "/^File '/ { f=\$$0; sub(/^File '/,\"\",f); sub(/'\$$/,\"\",f) } \
+	     /^Lines executed:/ && f ~ /\.\.\/(common|queen|soldier)\// { \
+	       split(\$$0,a,\":\"); split(a[2],b,\"% of \"); \
+	       if (!(f in pct) || b[1]+0 > pct[f]) { pct[f]=b[1]+0; n[f]=b[2]+0 } f=\"\" } \
+	     END { for (x in pct) printf \"  %6.2f%%  %5d рядків  %s\n\", pct[x], n[x], x }" \
+	     coverage_raw.txt | sort -k4
+	@echo "─────────────────────────────────────────────────────────────"
+	@echo "Анотовані *.gcov поряд (рядок-у-рядок); прибрати: make clean."
+
 SIZE_TOOL ?= size
 
 size-check: $(BINDIR)/test_soldier $(BINDIR)/test_queen
