@@ -680,7 +680,7 @@ Soldier мав би передбачити закінчення broadcast (на�
 
 #### 5.X.3 Дизайн B: Magic Re-Request (Soldier-initiated vector OTA) — ✅ Реалізовано (2026-05-02)
 
-**Статус:** ✅ Реалізовано у `firmware/soldier/main.c` (`Build_OTA_ReRequest_Payload`, OTA_REQ_MARKER 0x55, OTA_REREQUEST_TIMEOUT_MS=300000) + `firmware/queen/main.c` (`Process_LoRa_RX` REREQUEST handler перед CIFO/CoAP, `djb2_hash_bytes` length-strict NUL-safe replay-protection через `cmd_dedup_ring`). 22 host-тести (12 Soldier + 10 Queen) у `firmware/test/test_soldier_logic.c` + `test_queen_logic.c`. Опціонально (поза цим циклом): зберегти останній OTA SHA-256 у Queen Flash для cross-check на re-request — поки не реалізовано, після `ota_is_active=0` буфер `pending_ota_bytecode` може бути перезаписаний наступним CoAP-push'ем, тоді re-request не обслуговується (Solider має чекати наступного Rails-driven OTA cycle).
+**Статус:** ✅ Реалізовано у `firmware/soldier/main.c` (`Build_OTA_ReRequest_Payload`, OTA_REQ_MARKER 0x55; тиша = `OTA_REREQUEST_SILENT_WAKEUPS=10` **тихих пробуджень з відкритим вухом** ≈ 5 хв wall при циклі 26-32 с — стара tick-різниця була мертва у STOP2 і запізнювала зойк у ~6-15×; виправлено 2026-06-11, семантика навіть чесніша за wall-clock: лічиться тиша лише коли вухо справді слухало) + `firmware/queen/main.c` (`Process_LoRa_RX` REREQUEST handler перед CIFO/CoAP, `djb2_hash_bytes` length-strict NUL-safe replay-protection через `cmd_dedup_ring`). Host-тести (Soldier bitmap + silence-counter + Queen) у `firmware/test/test_soldier_logic.c` + `test_queen_logic.c`. Опціонально (поза цим циклом): зберегти останній OTA SHA-256 у Queen Flash для cross-check на re-request — поки не реалізовано, після `ota_is_active=0` буфер `pending_ota_bytecode` може бути перезаписаний наступним CoAP-push'ем, тоді re-request не обслуговується (Solider має чекати наступного Rails-driven OTA cycle).
 
 **Ідея:** Soldier при `ota_chunks_received < ota_total_chunks` після таймауту (наприклад, **5 хвилин без нових chunks**) ініціює uplink-запит конкретних missing chunks через звичайний LoRa TX → Queen приймає, ретранслює лише ці chunks.
 
@@ -688,16 +688,22 @@ Soldier мав би передбачити закінчення broadcast (на�
 
 ```c
 // firmware/soldier/main.c — додатковий стан OTA
-uint32_t ota_last_chunk_rx_tick = 0;
-#define OTA_REREQUEST_TIMEOUT_MS  300000  // 5 хв без нових chunks → re-request
-#define REREQUEST_MARKER          0x55    // Окремий маркер uplink-запиту
+uint32_t ota_last_chunk_rx_tick = 0;   // 0 = ще не чули OTA (маркер «вже чули»)
+uint8_t  ota_silent_wakeups     = 0;   // тихих пробуджень з відкритим вухом
+#define OTA_REREQUEST_SILENT_WAKEUPS 10 // ≈5 хв wall при циклі 26-32 с
+                                        // (tick мертвий у STOP2 — лічимо пробудження)
+#define REREQUEST_MARKER          0x55  // Окремий маркер uplink-запиту
 
-// У Phase 4.5 після обробки RX:
+// У Phase 4.5 після обробки RX (новий чанк у RX-гілці скидає лічильник у 0):
 if (ota_total_chunks > 0 &&
     ota_chunks_received < ota_total_chunks &&
-    (HAL_GetTick() - ota_last_chunk_rx_tick) > OTA_REREQUEST_TIMEOUT_MS) {
-    // Збираємо missing-bitmap і шлемо запит
-    Send_OTA_ReRequest(ota_chunk_received, ota_total_chunks);
+    ota_last_chunk_rx_tick != 0) {
+    if (ota_silent_wakeups < 255) ota_silent_wakeups++;
+    if (ota_silent_wakeups >= OTA_REREQUEST_SILENT_WAKEUPS) {
+        // Збираємо missing-bitmap і шлемо запит; лічильник у нуль —
+        // Королеві стільки ж тихих пробуджень на ретрансляцію
+        Send_OTA_ReRequest(ota_chunk_received, ota_total_chunks);
+    }
 }
 
 void Send_OTA_ReRequest(uint8_t* received_map, uint16_t total) {
@@ -800,7 +806,7 @@ if (decrypted_lora_buffer[0] == REREQUEST_MARKER) {
 
 1. **1 RX-пакет за пробудження (Soldier).** RX-вікно обробляє максимум один пакет за wake-цикл — усі гілки (`firmware/soldier/main.c`: сценарій OTA `0x99`, mesh-естафета, HMAC-trailer `0x9B`) завершуються `break` перед `Radio.Sleep()`. Отже OTA на `N` байтів = `⌈N/11⌉` reflex-чанків = стільки ж пробуджень, по одному чанку на власний TX вузла (1024 B → ~94). Фундаментально без скоординованого RX-вікна (ARCH.26 TDMA), не баг.
 2. **`ota_is_active` гаситься, коли тіло відлунало без зібраного трейлера (Queen).** Коли всі bytecode-чанки (`0x99`) відбродкастились, а 4 трейлер-чанки (`0x9B` — 3 печатки + version envelope, окремі CoAP-chunk'и від Rails) ще не зібрані (`hmac_segments_received != 0x0F`), Queen замикає вікно `ota_is_active = 0` (`firmware/queen/main.c`, [PLAN 2.5]/[FW.23] — без печатки+версії Солдат не відрізнить істинне слово від спокусника). Re-request обслуговується лише при живому `ota_is_active` → якщо CoAP не доставив трейлер до завершення тіла (порядок не гарантований), OTA «мертвий» до повторного Rails-push. Те саме `pending_ota_bytecode` lifetime-обмеження, що §5.X.3.
-3. **Re-request на замороженому tick.** `OTA_REREQUEST_TIMEOUT_MS` (5 хв, §5.X.3) лічиться на `HAL_GetTick`, замороженому в STOP2 → міграція на wall-clock = FW.49.
+3. **Re-request на замороженому tick — ✅ вирішено (2026-06-11).** Стара 5-хв перевірка лічилась на `HAL_GetTick` (заморожений у STOP2 → міряла лише active-час, зойк запізнювався у ~6-15×). Тепер тиша = `OTA_REREQUEST_SILENT_WAKEUPS=10` пробуджень з відкритим вухом (§5.X.3) — STOP2-імунно за конструкцією і без залежності від FW.49 LSE; wall-clock лишається опцією уточнення post-bench, якщо знадобиться точний хвилинний інтервал.
 
 > **Cross-ref:** FW.52 (рішення + контекст), FW.49 (wall-clock tick), §5.X.3 (re-request), §5 (reflex-shot механізм).
 

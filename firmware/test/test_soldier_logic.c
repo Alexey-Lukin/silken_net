@@ -2571,13 +2571,14 @@ TEST(test_thresholds_unmapped_species_id_0xFF_accepted) {
  *   [7..15] missing_bitmap (LSB-first; bit i ⇔ chunk_idx i missing)
  *
  * Triggered when ota_chunks_received < ota_total_chunks AND
- * (HAL_GetTick() - ota_last_chunk_rx_tick) > OTA_REREQUEST_TIMEOUT_MS (5 min).
+ * OTA_REREQUEST_SILENT_WAKEUPS тихих пробуджень поспіль (≈5 хв wall —
+ * tick-різниця мертва у STOP2, лічимо пробудження з відкритим вухом).
  * ════════════════════════════════════════════════════════════════════ */
 #define S_OTA_REQ_MARKER             0x55
 #define S_OTA_REQ_HEADER_SIZE        7
 #define S_OTA_REQ_BITMAP_MAX_BYTES   9
 #define S_OTA_REQ_PACKET_SIZE        16
-#define S_OTA_REREQUEST_TIMEOUT_MS   300000UL
+#define S_OTA_REREQUEST_SILENT_WAKEUPS 10u
 
 /* Pure-logic mirror of Build_OTA_ReRequest_Payload (in soldier/main.c).
  * Returns 1 if any chunk is missing (TX), 0 if all received (skip TX). */
@@ -2613,15 +2614,24 @@ static uint8_t Test_Build_OTA_ReRequest_Payload(uint32_t did,
     return any_missing;
 }
 
-/* Pure timeout decision — mirror of Phase 4.5 epilogue check. */
-static uint8_t Test_OTA_Should_ReRequest(uint16_t total, uint16_t received,
-                                          uint32_t last_rx_tick, uint32_t now_tick)
+/* Pure decision — mirror of Phase 4.5 epilogue: ЛІЧИЛЬНИК тихих пробуджень
+ * замість tick-різниці (HAL_GetTick мертвий у STOP2 → стара 5-хв перевірка
+ * запізнювала зойк у ~6-15×; 10 пробуджень × цикл 26-32 с ≈ той самий
+ * 5-хв інтент wall-часу). Мутує *silent_wakeups як епілог циклу: інкремент
+ * при відкритому вікні, скидання при fire. 1 = подати зойк. */
+static uint8_t Test_OTA_Silent_Wakeup_Tick(uint16_t total, uint16_t received,
+                                            uint32_t last_rx_tick,
+                                            uint8_t *silent_wakeups)
 {
     if (total == 0)             return 0;
     if (received >= total)      return 0;
     if (last_rx_tick == 0)      return 0;
-    if ((now_tick - last_rx_tick) <= S_OTA_REREQUEST_TIMEOUT_MS) return 0;
-    return 1;
+    if (*silent_wakeups < 255u) (*silent_wakeups)++;
+    if (*silent_wakeups >= S_OTA_REREQUEST_SILENT_WAKEUPS) {
+        *silent_wakeups = 0; /* даємо Королеві стільки ж тихих пробуджень */
+        return 1;
+    }
+    return 0;
 }
 
 TEST(test_rereq_full_bitmap_when_no_chunks) {
@@ -2707,34 +2717,56 @@ TEST(test_rereq_chunk_71_set_72_unset) {
     ASSERT_EQ(out[15], 0xFF);
 }
 
-TEST(test_rereq_should_trigger_after_5min) {
-    /* total=10, received=3, last_rx 6 minutes ago → trigger */
-    uint32_t last_rx = 1000;
-    uint32_t now     = 1000 + (6UL * 60UL * 1000UL);
-    ASSERT_EQ(Test_OTA_Should_ReRequest(10, 3, last_rx, now), 1);
+TEST(test_rereq_fires_on_10th_silent_wakeup_and_resets) {
+    /* total=10, received=3: 9 тихих пробуджень мовчимо, 10-те — зойк,
+     * лічильник у нуль (Королеві — таке ж вікно на ретрансляцію). */
+    uint8_t silent = 0;
+    for (int w = 1; w <= 9; w++)
+        ASSERT_EQ(Test_OTA_Silent_Wakeup_Tick(10, 3, 1000, &silent), 0);
+    ASSERT_EQ(silent, 9);
+    ASSERT_EQ(Test_OTA_Silent_Wakeup_Tick(10, 3, 1000, &silent), 1);
+    ASSERT_EQ(silent, 0);
 }
 
-TEST(test_rereq_should_NOT_trigger_below_5min) {
-    /* total=10, received=3, last_rx 4 min 59 sec ago → DO NOT trigger */
-    uint32_t last_rx = 1000;
-    uint32_t now     = 1000 + (4UL * 60UL * 1000UL) + (59UL * 1000UL);
-    ASSERT_EQ(Test_OTA_Should_ReRequest(10, 3, last_rx, now), 0);
+TEST(test_rereq_chunk_rx_reset_restarts_silence_window) {
+    /* 7 тихих → чанк прийшов (епілог RX скидає лічильник) → знову повних
+     * 10 тихих до зойку. */
+    uint8_t silent = 0;
+    for (int w = 0; w < 7; w++) Test_OTA_Silent_Wakeup_Tick(10, 3, 1000, &silent);
+    silent = 0; /* дзеркало RX-гілки: ota_silent_wakeups = 0 при новому чанку */
+    for (int w = 1; w <= 9; w++)
+        ASSERT_EQ(Test_OTA_Silent_Wakeup_Tick(10, 4, 1000, &silent), 0);
+    ASSERT_EQ(Test_OTA_Silent_Wakeup_Tick(10, 4, 1000, &silent), 1);
 }
 
-TEST(test_rereq_should_NOT_trigger_when_complete) {
-    uint32_t last_rx = 1000;
-    uint32_t now     = 1000 + (10UL * 60UL * 1000UL);
-    ASSERT_EQ(Test_OTA_Should_ReRequest(10, 10, last_rx, now), 0);
+TEST(test_rereq_should_NOT_tick_when_complete) {
+    uint8_t silent = 0;
+    ASSERT_EQ(Test_OTA_Silent_Wakeup_Tick(10, 10, 1000, &silent), 0);
+    ASSERT_EQ(silent, 0); /* закрите вікно не накопичує тиші */
 }
 
-TEST(test_rereq_should_NOT_trigger_when_window_inactive) {
+TEST(test_rereq_should_NOT_tick_when_window_inactive) {
     /* total=0 ⇒ no OTA window */
-    ASSERT_EQ(Test_OTA_Should_ReRequest(0, 0, 1000, 1000000), 0);
+    uint8_t silent = 0;
+    ASSERT_EQ(Test_OTA_Silent_Wakeup_Tick(0, 0, 1000, &silent), 0);
+    ASSERT_EQ(silent, 0);
 }
 
-TEST(test_rereq_should_NOT_trigger_when_last_tick_zero) {
-    /* last_rx_tick == 0 ⇒ window not yet observed any chunk */
-    ASSERT_EQ(Test_OTA_Should_ReRequest(10, 0, 0, 1000000), 0);
+TEST(test_rereq_should_NOT_tick_when_last_tick_zero) {
+    /* last_rx_tick == 0 ⇒ ще не чули жодного чанку — нічого перепитувати */
+    uint8_t silent = 0;
+    ASSERT_EQ(Test_OTA_Silent_Wakeup_Tick(10, 0, 0, &silent), 0);
+    ASSERT_EQ(silent, 0);
+}
+
+TEST(test_rereq_silent_counter_saturates_no_wrap) {
+    /* Патологія: вікно відкрите, зойки не виходять (edge any_missing=0 для
+     * >72-чанкових кампаній) — лічильник не повинен обернутись через 255 у
+     * тишу. Сатурація тримає поведінку «час подавати голос». */
+    uint8_t silent = 254;
+    (void)Test_OTA_Silent_Wakeup_Tick(100, 80, 1000, &silent); /* 255 → fire */
+    silent = 255;
+    ASSERT_EQ(Test_OTA_Silent_Wakeup_Tick(100, 80, 1000, &silent), 1);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -5032,11 +5064,12 @@ int main(void)
     RUN(test_rereq_did_endian_consistent);
     RUN(test_rereq_bitmap_capped_at_72_chunks);
     RUN(test_rereq_chunk_71_set_72_unset);
-    RUN(test_rereq_should_trigger_after_5min);
-    RUN(test_rereq_should_NOT_trigger_below_5min);
-    RUN(test_rereq_should_NOT_trigger_when_complete);
-    RUN(test_rereq_should_NOT_trigger_when_window_inactive);
-    RUN(test_rereq_should_NOT_trigger_when_last_tick_zero);
+    RUN(test_rereq_fires_on_10th_silent_wakeup_and_resets);
+    RUN(test_rereq_chunk_rx_reset_restarts_silence_window);
+    RUN(test_rereq_should_NOT_tick_when_complete);
+    RUN(test_rereq_should_NOT_tick_when_window_inactive);
+    RUN(test_rereq_silent_counter_saturates_no_wrap);
+    RUN(test_rereq_should_NOT_tick_when_last_tick_zero);
 
     printf("\n  HMAC Trailer + Dual-Gate (FW.23):\n");
     RUN(test_hmac_trailer_three_chunks_assemble_full_tag);

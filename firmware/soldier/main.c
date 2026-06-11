@@ -74,7 +74,12 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #define OTA_REQ_HEADER_SIZE       7          // [FW.27-B] [0x55][DID:4][total_chunks:2 BE]
 #define OTA_REQ_BITMAP_MAX_BYTES  9          // [FW.27-B] 16 - 7 header = 9 байт ⇒ ≤72 чанки на один зойк
 #define OTA_REQ_PACKET_SIZE       16         // [FW.27-B] Один AES блок (16 байт fixed, post-ARCH.42 LoRa AES-128), як у телеметрії
-#define OTA_REREQUEST_TIMEOUT_MS  300000UL   // [FW.27-B] 5 хв тиші → подати голос про пропуски
+// [FW.27-B] «5 хв тиші» → подати голос про пропуски. Лічимо ТИХІ ПРОБУДЖЕННЯ
+// з відкритим вухом (Фаза 4.5), а не мілісекунди: HAL_GetTick заморожений у
+// STOP2, тож tick-різниця міряла активний час і запізнювала зойк у ~6-15×.
+// 10 пробуджень × цикл 26-32 с ≈ інтент «5 хв» (03_02 §5.X.3); EXTI-шторм
+// (часті пробудження) лише пришвидшує — вухо й так відкривалось частіше.
+#define OTA_REREQUEST_SILENT_WAKEUPS  10u    // [FW.27-B] тихих пробуджень до re-request
 #define OTA_MISMATCH_RESET_THRESHOLD 3       // [FW.53] N поспіль чужих total → відпустити мертву кампанію
 // Мітка помилки mruby VM на дроті: [panic:0|status:11=tamper|growth:00000].
 // [FW.29] Було 0xFF — після FW.29-маски (&~0x80) ставало 0x7F =
@@ -324,11 +329,16 @@ uint16_t ota_chunks_received = 0;
 // Масив прапорців для захисту від дублікатів OTA
 uint8_t ota_chunk_received[256] = {0};
 
-// [FW.27-B] Magic Re-Request: tick останнього прийнятого OTA-чанку — щоб
-// помітити, коли провіщення затихло. Якщо ≥OTA_REREQUEST_TIMEOUT_MS жодного
-// нового слова — Солдат подає голос і просить Королеву повторити пропущене.
-// 0 = ніколи не чули OTA, чекаємо першої проповіді.
+// [FW.27-B] Magic Re-Request: tick останнього прийнятого OTA-чанку.
+// 0 = ніколи не чули OTA (чекаємо першої проповіді) — лишається маркером
+// «вже чули»; саму тишу міряє ota_silent_wakeups (tick мертвий у STOP2).
 uint32_t ota_last_chunk_rx_tick = 0;
+
+// [FW.27-B] Лічильник пробуджень із відкритим вухом БЕЗ нового OTA-слова.
+// Скидається кожним прийнятим чанком (0x99/0x9B) і після відправленого
+// зойку (даємо Королеві стільки ж часу на ретрансляцію). SRAM: переживає
+// STOP2, гине разом із OTA-буфером при VBAT-loss — узгоджено.
+uint8_t ota_silent_wakeups = 0;
 
 // [FW.53] Сторожовий лічильник зміни кампанії: якщо Солдат
 // застряг із недозібраною прошивкою (total=X), а Королева вже проповідує
@@ -2137,10 +2147,12 @@ int main(void)
                         ota_chunk_received[chunk_idx] = 1; // Цей шматок прошивки тепер наш
                         ota_chunks_received++;
                         ota_bytes_received += chunk_size;
-                        // [FW.27-B] Записуємо tick — Солдат пам'ятає, коли
-                        // востаннє чув голос Королеви. Тиша довша за 5 хв
-                        // змусить його озватися і перепитати про пропуски.
+                        // [FW.27-B] Солдат пам'ятає, що чув голос Королеви:
+                        // tick = маркер «вже чули», лічильник тиші — в нуль.
+                        // Достатньо тихих пробуджень — і він озветься
+                        // перепитати про пропуски.
                         ota_last_chunk_rx_tick = HAL_GetTick();
+                        ota_silent_wakeups = 0;
 
                         // [FW.23] Останній чанк ТІЛА міг прийти раніше за печатку
                         // (Королева шле тіло → потім печатку). OTA_Try_Finalize дає
@@ -2233,31 +2245,36 @@ int main(void)
         // =====================================================================
         // [FW.27-B] Magic Re-Request: Солдат подає голос про пропуски
         // =====================================================================
-        // Якщо OTA-вікно відкрите (>0 чанків лежить у пам'яті, але < total) і
-        // 5 хв тиші збігли — Солдат стріляє в ефір зойком
-        // [0x55][DID:4][total:2 BE][bitmap:9], і Королева повторює лише те,
-        // чого бракує. Власний jitter (TX_JITTER_MAX_MS) розводить голоси сусідніх
-        // дерев у часі — щоб ліс не закричав одночасно.
+        // Якщо OTA-вікно відкрите (>0 чанків лежить у пам'яті, але < total),
+        // а вухо цього пробудження не почуло нового слова — ще одна тиха ніч
+        // у лічильник. Десята (≈5 хв wall при циклі 26-32 с) — і Солдат
+        // стріляє в ефір зойком [0x55][DID:4][total:2 BE][bitmap:9], а
+        // Королева повторює лише те, чого бракує. Власний jitter
+        // (TX_JITTER_MAX_MS) розводить голоси сусідніх дерев у часі.
         if (ota_total_chunks > 0 &&
             ota_chunks_received < ota_total_chunks &&
-            ota_last_chunk_rx_tick != 0 &&
-            (HAL_GetTick() - ota_last_chunk_rx_tick) > OTA_REREQUEST_TIMEOUT_MS) {
+            ota_last_chunk_rx_tick != 0) {
 
-            uint8_t req_payload[OTA_REQ_PACKET_SIZE] = {0};
+            if (ota_silent_wakeups < 255u) ota_silent_wakeups++;
 
-            uint8_t any_missing = Build_OTA_ReRequest_Payload(tree_did,
-                                                               ota_total_chunks,
-                                                               ota_chunk_received,
-                                                               sizeof(ota_chunk_received),
-                                                               req_payload);
-            if (any_missing) {
-                uint8_t encrypted_req[OTA_REQ_PACKET_SIZE] = {0};
-                // Шифруємо запит (1 AES-128-ECB block = 16 байт = 4 слова, post-ARCH.42)
-                HAL_CRYP_Encrypt(&hcryp, (uint32_t*)req_payload, 4,
-                                  (uint32_t*)encrypted_req, 1000);
-                Radio.Send(encrypted_req, OTA_REQ_PACKET_SIZE);
-                // Reset tick — даємо Queen 5 хв на ретрансляцію перед наступним запитом
-                ota_last_chunk_rx_tick = HAL_GetTick();
+            if (ota_silent_wakeups >= OTA_REREQUEST_SILENT_WAKEUPS) {
+                uint8_t req_payload[OTA_REQ_PACKET_SIZE] = {0};
+
+                uint8_t any_missing = Build_OTA_ReRequest_Payload(tree_did,
+                                                                   ota_total_chunks,
+                                                                   ota_chunk_received,
+                                                                   sizeof(ota_chunk_received),
+                                                                   req_payload);
+                if (any_missing) {
+                    uint8_t encrypted_req[OTA_REQ_PACKET_SIZE] = {0};
+                    // Шифруємо запит (1 AES-128-ECB block = 16 байт = 4 слова, post-ARCH.42)
+                    HAL_CRYP_Encrypt(&hcryp, (uint32_t*)req_payload, 4,
+                                      (uint32_t*)encrypted_req, 1000);
+                    Radio.Send(encrypted_req, OTA_REQ_PACKET_SIZE);
+                    // Лічильник у нуль — даємо Королеві стільки ж тихих
+                    // пробуджень на ретрансляцію перед наступним зойком.
+                    ota_silent_wakeups = 0;
+                }
             }
         }
     }

@@ -547,7 +547,7 @@
 
 #### FW.27 — OTA broadcast: відсутня RX-верифікація Soldier
 - **P2** · 🔗 · → [`03_02 §5.X`](03_02_Queen_Gateway_Firmware)
-- **✅ Design B канонізовано ([`03_02 §5.X.3`](03_02_Queen_Gateway_Firmware)):** Magic Re-Request — Soldier bitmap uplink `[0x55]` (`OTA_REQ_MARKER`, DOC.4) → Queen targeted re-broadcast лише missing chunks (60-90% economy vs wave) + djb2-dedup + host-тести; anti-storm bitmap → Flash-KV ([`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA), host-готовий). · [ ] 🔗 Design A (ACK-aggregation — collective recovery) залежить від ARCH.26 TDMA RX-вікна; B незалежний ✅ · ⚠️ re-request «5 хв тиші» на `HAL_GetTick` (мертвий STOP2) → wall-clock `OTA_SILENCE_WALL` (FW.49)
+- **✅ Design B канонізовано ([`03_02 §5.X.3`](03_02_Queen_Gateway_Firmware)):** Magic Re-Request — Soldier bitmap uplink `[0x55]` (`OTA_REQ_MARKER`, DOC.4) → Queen targeted re-broadcast лише missing chunks (60-90% economy vs wave) + djb2-dedup + host-тести; anti-storm bitmap → Flash-KV ([`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA), host-готовий). · ✅ (2026-06-11) **«5 хв тиші» STOP2-імунно БЕЗ FW.49**: tick-різниця (мертва у STOP2, зойк запізнювався у ~6-15×) → `OTA_REREQUEST_SILENT_WAKEUPS=10` тихих пробуджень **з відкритим вухом** (≈5 хв wall при циклі 26-32 с; семантика чесніша за wall-clock — тиша лічиться лише коли справді слухали; скидання чанком і зойком; сатурація проти wrap; 6 host-тестів) — wall-clock `OTA_SILENCE_WALL` лишається опцією уточнення post-FW.49, потреби нема · [ ] 🔗 Design A (ACK-aggregation — collective recovery) залежить від ARCH.26 TDMA RX-вікна; B незалежний ✅
 
 #### FW.31 — DCI: числовий tolerance band у `check_z_divergence!` (feature-flag flip)
 - **P2** · 👤 · → [`03_04 §7.1`](03_04_mruby_Lorenz_Attractor)
