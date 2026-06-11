@@ -27,6 +27,11 @@ mkdir -p "$OUT"
 # народжуватись тим самим __aeabi_* шляхом, що й на дереві.
 CPU_FLAGS="-mcpu=cortex-m4 -mfloat-abi=soft -mthumb"
 
+# Дзеркало SILKEN_MIN_GEMS (One-Home: firmware/mruby/build_config.rb) — TU,
+# що інклудить mruby-хедери, МУСИТЬ бачити ті самі MRB_*-defines, що й ліба
+# (інакше layout mrb_state у TU ≠ layout у libmruby.a).
+MRB_DEFS="-DMRB_NO_STDIO -DMRB_CONSTRAINED_BASELINE_PROFILE"
+
 # ── Інструменти ─────────────────────────────────────────────────────────
 CC_HOST="${CC:-cc}"
 
@@ -69,7 +74,7 @@ INC=(-I"$MRUBY/include" -I"$REPO/firmware/common" -I"$REPO/firmware/sim")
 
 # ── Host-голден ─────────────────────────────────────────────────────────
 echo "▶ [FW.55] host golden…"
-"$CC_HOST" -std=c11 -O2 -Wall -Wextra "${INC[@]}" -I"$HOST_BUILD/include" \
+"$CC_HOST" -std=c11 -O2 -Wall -Wextra $MRB_DEFS "${INC[@]}" -I"$HOST_BUILD/include" \
   -o "$OUT/parity_host" "$REPO/firmware/sim/host_main.c" \
   "$HOST_BUILD/lib/libmruby.a" -lm
 "$OUT/parity_host" > "$OUT/host.txt"
@@ -77,7 +82,7 @@ grep -q "PARITY-COMPLETE" "$OUT/host.txt" || { echo "❌ host-прогін бе�
 
 # ── ARM-нога: збірка завжди (link-перевірка), запуск — якщо є qemu ──────
 echo "▶ [FW.55] arm-none-eabi build…"
-"$arm_gcc" $CPU_FLAGS -std=gnu11 -O2 -Wall -Wextra \
+"$arm_gcc" $CPU_FLAGS -std=gnu11 -O2 -Wall -Wextra $MRB_DEFS \
   -ffunction-sections -fdata-sections -nostartfiles \
   "${INC[@]}" -I"$ARM_BUILD/include" \
   -T "$REPO/firmware/sim/qemu_m4/mps2_an386.ld" -Wl,--gc-sections \
@@ -90,7 +95,7 @@ echo "▶ [FW.55] arm-none-eabi build…"
 # ── WLE5 bench-нога (RUNBOOK 2.3): збірка ЗАВЖДИ — link-check, щоб
 #    кремнієвий runner не гнив до bench-дня; фіт гейтиться нижче. ─────────
 echo "▶ [FW.55] wle5-bench build (кремнієва нога, RUNBOOK 2.3)…"
-"$arm_gcc" $CPU_FLAGS -std=gnu11 -O2 -Wall -Wextra \
+"$arm_gcc" $CPU_FLAGS -std=gnu11 -O2 -Wall -Wextra $MRB_DEFS \
   -ffunction-sections -fdata-sections -nostartfiles \
   "${INC[@]}" -I"$ARM_BUILD/include" \
   -T "$REPO/firmware/sim/wle5_bench/stm32wle5.ld" -Wl,--gc-sections \
@@ -131,6 +136,7 @@ echo "✅ [FW.55] біт-parity ARM(M4/QEMU) ≡ host: $n_cases зчеплени
 
 # ── WLE5-фіт: QEMU-числа переносяться на кремній (той самий libmruby/newlib
 #    → ідентична послідовність malloc'ів) — «не влазить у 64КБ» ловимо ТУТ. ──
+grep '^PARITY-MEM' "$OUT/arm.txt" | sed 's/^/  /' || true
 heap_high="$(sed -n 's/^PARITY-HEAP high-water=\([0-9]*\)$/\1/p' "$OUT/arm.txt")"
 stack_high="$(sed -n 's/^PARITY-STACK high-water=\([0-9]*\)$/\1/p' "$OUT/arm.txt")"
 if [ -z "$heap_high" ] || [ -z "$stack_high" ]; then

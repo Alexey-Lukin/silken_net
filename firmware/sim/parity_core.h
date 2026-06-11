@@ -125,6 +125,7 @@ static int Parity_Run(void)
          * дрейф сміття до GC-порогу (~2×live ≈ стеля 64КБ SRAM). GC не чіпає
          * математику — дамп лишається byte-exact. */
         mrb_full_gc(mrb);
+        if (i == 0) PARITY_MEM_MARK("case0");
 
         printf("C%02d p=%02lX", i, (unsigned long)(payload & 0xFFl));
         parity_dump_double("x", x);
