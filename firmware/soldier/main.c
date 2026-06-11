@@ -451,8 +451,10 @@ volatile uint32_t soldier_unix_ts_local_tick = 0;
 // Persist-логіка ✅ host-готова: ../common/lorenz_thresholds.h — Save/Load на
 // ключах 0x10/0x11 (порвана/невалідна пара → дефолти; power-cut тести у
 // test_flash_kv.c). Mount KV + HAL_FLASH глю ✅ написано (секція FW.17 нижче,
-// спільний гейт `FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED`). Лишається
-// bench: фліп + wiring Save/Load у boot/КЕНОЗИС + верифікація глю на кремнії.
+// спільний гейт `FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED`). Wiring
+// Save/Load ✅ написано за цим же гейтом: boot-restore після mount'а,
+// КЕНОЗИС-write по dirty-флагу прийнятого 0x9A. Лишається bench: фліп
+// `FW8_PARSER_ENABLED 1` + верифікація HAL-глю на кремнії.
 #define FW8_PARSER_ENABLED                0  // 🟡 Deferred TRL-7 (див. блок вище)
 #define CMD_SET_THRESHOLDS_MARKER         0x9A
 #define CMD_THRESHOLDS_HEADER_SIZE        3   // [маркер:1][len_le:2]
@@ -468,6 +470,14 @@ int16_t lorenz_z_max_x100      = LORENZ_DEFAULT_Z_MAX_X100;
 int16_t lorenz_z_opt_x100      = LORENZ_DEFAULT_Z_OPT_X100;
 uint8_t lorenz_species_id      = 0xFF;  // unmapped (OtaPackagerService::DEFAULT_SPECIES_ID)
 uint8_t lorenz_config_version  = 0;     // 0 = firmware-baked defaults
+
+// [FW.8] Save/Load порогів поверх Flash-KV (ключі 0x10/0x11) — One-Home
+// ../common/lorenz_thresholds.h; дефолти там дзеркалять LORENZ_DEFAULT_*.
+#include "../common/lorenz_thresholds.h"
+
+#if FW8_PARSER_ENABLED
+static uint8_t lorenz_thresholds_dirty = 0; // прийнятий 0x9A → Save у КЕНОЗИСІ
+#endif
 
 // CRC-16/CCITT-FALSE — One-Home у common/silken_crc.h [FW.53]
 // (спільний з Queen та host-тестами; дзеркало OtaPackagerService.crc16_ccitt).
@@ -1696,6 +1706,20 @@ int main(void)
   soldier_kv_mounted = FlashKv_Mount(&soldier_kv, &soldier_kv_ops, NULL,
                                      FLASH_KV_PAGE_DWS);
 #endif
+#if FW8_PARSER_ENABLED
+  // [FW.8] Boot-restore Z-порогів: Load жене збережене через ті самі
+  // інваріанти, що парсер 0x9A; нічого валідного → t = firmware-дефолти
+  // (ідентичні поточним глобалкам, тож безумовне застосування безпечне).
+  if (soldier_kv_mounted) {
+      LorenzThresholds t;
+      Lorenz_Thresholds_Load(&soldier_kv, &t);
+      lorenz_z_min_x100     = t.z_min_x100;
+      lorenz_z_max_x100     = t.z_max_x100;
+      lorenz_z_opt_x100     = t.z_opt_x100;
+      lorenz_species_id     = t.species_id;
+      lorenz_config_version = t.config_version;
+  }
+#endif
 #if FW17_RATCHET_ENABLED
   // [FW.17] ПІСЛЯ Load_AES_Key (K0) і DID-блоку (Context KDF): якщо KV має
   // версію — доганяємо K_current і ре-ініціалізуємо CRYP.
@@ -2144,14 +2168,18 @@ int main(void)
                 // але в production-цикл ВИМКНЕНО (`FW8_PARSER_ENABLED 0`).
                 // Деталі — у блоці-преамбулі біля визначення макроса.
                 // Бекенд `OtaPackagerService.build_threshold_config_block` —
-                // лише class method, у downlink pipeline не передається.
-                // Коли FW.21 рефакторинг звільнить RTC-регістр, повернути:
-                // `#define FW8_PARSER_ENABLED 1` + boot-restore + KENOSIS-write.
+                // лише class method, у downlink pipeline не передається
+                // (свідомий defer: на TRL-6 усі види на дефолтах — re-send
+                // щодня був би no-op за ~5% downlink-бюджету).
+                // Boot-restore і КЕНОЗИС-write написані за цим же гейтом —
+                // активація = лише фліп `FW8_PARSER_ENABLED 1` (bench).
 #if FW8_PARSER_ENABLED
                 if (decrypted_rx_payload[0] == CMD_SET_THRESHOLDS_MARKER &&
                     incoming_lora_size >= CMD_THRESHOLDS_FRAME_SIZE) {
-                    Soldier_Handle_CMD_SET_THRESHOLDS(decrypted_rx_payload,
-                                                      incoming_lora_size);
+                    if (Soldier_Handle_CMD_SET_THRESHOLDS(decrypted_rx_payload,
+                                                          incoming_lora_size)) {
+                        lorenz_thresholds_dirty = 1; // Flash-KV — у КЕНОЗИСІ
+                    }
                     // Незалежно від результату парсингу — не ретранслюємо (TTL=1)
                     break;
                 }
@@ -2481,10 +2509,10 @@ int main(void)
 
     // [FW.18] Зберігаємо TinyML-пороги перед STOP2 (DR13/DR14).
     // На стандартному циклі значення не змінюються (writeback того, що
-    // прочитали). Це робиться, щоб OTA-set значення (CMD_SET_THRESHOLDS,
-    // deferred) пережили STOP2 та повне знеструмлення RTC ⇒ при VBAT-loss
-    // RTC обнуляється, на boot Apply_Thresholds() повертає дефолти, і ці
-    // дефолти знову персистяться для наступного циклу.
+    // прочитали). Це робиться, щоб OTA-set значення (CMD_SET_AUDIO_THRESHOLDS
+    // 0x9D — жива гілка) пережили STOP2 та повне знеструмлення RTC ⇒ при
+    // VBAT-loss RTC обнуляється, на boot Apply_Thresholds() повертає
+    // дефолти, і ці дефолти знову персистяться для наступного циклу.
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR13, float_to_uint32(tinyml_warning_threshold));
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR14, float_to_uint32(tinyml_critical_threshold));
 
@@ -2499,9 +2527,30 @@ int main(void)
                           (uint32_t)lora_key_version)) {
             lora_key_version_dirty = 0;
         }
-        if (FlashKv_NeedsCompact(&soldier_kv, 8)) {
-            FlashKv_Compact(&soldier_kv); // безпечна фаза: після TX, перед сном
+    }
+#endif
+#if FW8_PARSER_ENABLED
+    // [FW.8] Прийняті 0x9A-пороги — у Flash-KV у тій самій безпечній фазі.
+    // Невалідну конфігурацію Save не пише взагалі; power-cut між парою
+    // ключів лікується наступним daily re-send (ADR у lorenz_thresholds.h).
+    if (lorenz_thresholds_dirty && soldier_kv_mounted) {
+        LorenzThresholds t;
+        t.z_min_x100     = lorenz_z_min_x100;
+        t.z_max_x100     = lorenz_z_max_x100;
+        t.z_opt_x100     = lorenz_z_opt_x100;
+        t.species_id     = lorenz_species_id;
+        t.config_version = lorenz_config_version;
+        if (Lorenz_Thresholds_Save(&soldier_kv, &t)) {
+            lorenz_thresholds_dirty = 0;
         }
+    }
+#endif
+#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED
+    // [ARCH.28] Ущільнення журналу — спільне для всіх KV-споживачів, лише
+    // у цій безпечній фазі (після TX, перед сном; erase ~десятки мс не
+    // сміє лягти під LoRa RX-вікно).
+    if (soldier_kv_mounted && FlashKv_NeedsCompact(&soldier_kv, 8)) {
+        FlashKv_Compact(&soldier_kv);
     }
 #endif
 

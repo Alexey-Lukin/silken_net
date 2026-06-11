@@ -333,8 +333,10 @@ OTA Batch Downlink Format (розширений):
 > ✅ (2026-06-10) persist-логіка host-готова: `firmware/common/lorenz_thresholds.h`
 > — `Save/Load` на ключах `0x10/0x11` (реєстр [`03_01 §2.3.1`](03_01_Firmware_Lifecycle_and_DMA)),
 > ті самі інваріанти, що парсер (порвана/невалідна пара → firmware-дефолти),
-> power-cut host-тести у `test_flash_kv.c`. Лишається bench-фаза:
-> `FW8_PARSER_ENABLED 1` + mount KV у `main.c` (KENOSIS-write блок) + HAL_FLASH глю.
+> power-cut host-тести у `test_flash_kv.c`. ✅ (2026-06-11) mount Flash-KV +
+> HAL-глю + wiring `Save/Load` написано у `main.c` за тим самим гейтом
+> (boot-restore після mount'а; КЕНОЗИС-write по dirty-флагу прийнятого 0x9A).
+> Лишається bench-фаза: фліп `FW8_PARSER_ENABLED 1` + верифікація глю на кремнії.
 > Документація прикладу нижче залишається лише як **wire-формат-контракт**
 > (узгоджений з Ruby `OtaPackagerService` 13-байтним кадром); імена
 > `RTC_BKP_DR20..DR23` слід читати як placeholder історичного дизайну.

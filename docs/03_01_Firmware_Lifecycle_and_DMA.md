@@ -799,7 +799,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 | `0x01` WARN_ESC | `warning_counter` · `tinyml_threshold_invalid_count` · `fauna_skipped_low_vcap` | `[warn:8 \| inval:8 \| fauna:8 \| rsv:8]` | TinyML escalation (3× WARNING поспіль — [`03_03 §5`](03_03_TinyML_Acoustic_Inference)) + діагностика | **live** |
 | `0x02` SYNC_WALL | `last_sync_request` (wall-сек) | u32 | FW.20-S2 sync-cooldown | live (degradable) |
 | `0x03` OTA_SILENCE_WALL | `ota_last_chunk_rx` (wall-сек) | u32 | FW.27-B OTA re-request silence | live (лише під OTA) |
-| `0x10`–`0x11` FW8_ZCFG | `lorenz_z_{min,max,opt}_x100` · `species_id` · `config_version` | 2 dw: `0x10`=[z_max:16\|z_min:16], `0x11`=[ver:8\|species:8\|z_opt:16] | FW.8 per-tree Z-пороги | gated (`FW8_PARSER_ENABLED=0`); persist-логіка ✅ host (`common/lorenz_thresholds.h` + power-cut тести) |
+| `0x10`–`0x11` FW8_ZCFG | `lorenz_z_{min,max,opt}_x100` · `species_id` · `config_version` | 2 dw: `0x10`=[z_max:16\|z_min:16], `0x11`=[ver:8\|species:8\|z_opt:16] | FW.8 per-tree Z-пороги | gated (`FW8_PARSER_ENABLED=0`); persist ✅ host (`common/lorenz_thresholds.h` + power-cut тести); споживач ✅ у `main.c` — boot-restore після mount'а + КЕНОЗИС-write по dirty 0x9A |
 | `0x12` FW8_AUDIO | audio config + version | u32 | FW.8 audio-пороги | gated |
 | `0x13` FW17_KEYVER | ratchet `key_version` (САМ ключ у Flash-KV НЕ їде — append-журнал не стирає; boot re-derive з K0) | `[version:16 \| rsv:16]` | FW.17 ротація ключа ([`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security)) | gated (`FW17_RATCHET_ENABLED=0`); споживач ✅ у `main.c` — RX 0x9E → КЕНОЗИС-write, boot `Key_Ratchet_Apply`; активація після FW.2 CCM |
 | `0x20…` S2_BITMAP | anti-storm dedup bitmap | multi-dw | FW.20-S2 mesh-relay | gated (повний mesh-relay) |
