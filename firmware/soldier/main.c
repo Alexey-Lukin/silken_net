@@ -2262,8 +2262,10 @@ int main(void)
 
     // [FIX: AUDIT Energy] Вимикаємо периферію перед STOP2 для мінімального споживання.
     // Без де-ініціалізації ці модулі тягнуть мікроампери навіть у STOP2.
+    // [FW.46] RCC-гейт криптоблока на WL зветься AES, не CRYP (F4/F7-стиль
+    // __HAL_RCC_CRYP_CLK_* у WL-HAL не існує — зловив HAL compile-lane).
     HAL_RNG_DeInit(&hrng);
-    __HAL_RCC_CRYP_CLK_DISABLE();
+    __HAL_RCC_AES_CLK_DISABLE();
 
     HAL_SuspendTick();
     HAL_PWREx_EnterSTOP2Mode(PWR_STOPENTRY_WFI);
@@ -2271,7 +2273,7 @@ int main(void)
 
     // [FIX: AUDIT Energy] Відновлюємо периферію після пробудження
     HAL_RNG_Init(&hrng);
-    __HAL_RCC_CRYP_CLK_ENABLE();
+    __HAL_RCC_AES_CLK_ENABLE();
     HAL_CRYP_Init(&hcryp);
 
     /* USER CODE END WHILE */

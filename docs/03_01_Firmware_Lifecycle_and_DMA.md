@@ -1488,11 +1488,13 @@ toolchain-файлів помилково пінила апаратний FPv4 h
 - **MCU-профіль:** `MRB_CONSTRAINED_BASELINE_PROFILE` (рідний upstream-профіль: heap-сторінки 256 об'єктів замість 1024, без method-cache, малий khash) — з дефолтними сторінками `mrb_open()` не вліз би у 64 КБ SRAM.
 - **minimal gembox:** core + лише `mruby-compar-ext` (для `clamp`); core дає `abs`/`round`/`times`. `default-no-stdio` (~254 KB) не влазить у Flash.
 
-**Scope-межа:** §12.4 крос-компілює owned-код і вимірює його розмір. Soldier/Queen `.elf` (`main.c`/`queen/main.c`) залежать від `main.h`/`radio.h` (CubeMX-HAL, поза репо) → лінкуються лише за `-DSILKEN_WITH_HAL=ON` після вендорингу CubeMX-проєкту (👤). Тоді `firmware/scripts/check_ram_budget.sh` дає істинний повний [`00_07` — FW.26](00_07_Action_Plan_Tracker) розмір. C-API mruby для `main.c` у HAL-фазі: `mrb_alloca→mrb_temp_alloc`, `mruby/ext/io.h→mruby/io.h` (4.0.0 renames).
+**HAL compile-lane (`-DSILKEN_WITH_HAL=ON`, 2026-06-11):** WL-HAL завендорено pinned submodules (`stm32wlxx-hal-driver` v1.6.0 + `cmsis-device-wl` v1.4.0 — консистентна пара за актуальним STM32CubeWL), і CI компілює **обидва** `main.c` (ARM soft-float) проти справжнього HAL — вперше за історію репо. Анатомія: `firmware/hal_glue/` — owned CubeMX-замінники (`main.h`, `stm32wlxx_hal_conf.h` з рівно нашим периферійним набором, `radio.h` API-дзеркало Semtech) + wrapper-TU (`{soldier,queen}_hal_check.c` `#include`'ять main.c дослівно і докладають порожні MX-заглушки в той самий TU — main.c-фрагменти незаймані, merge-модель CubeMX збережена). Перший прогін зловив: `__HAL_RCC_CRYP_*` (F4-стиль) не існує на WL → `__HAL_RCC_AES_*` (Soldier STOP2-цикл + Queen `Restore_ECB_Mode`). Передбачені раніше mruby-renames (`mrb_alloca`/`io.h`) не знадобились — main.c їх не вживає.
+
+**Scope-межа (залишок 👤):** повний `.elf` потребує те, чого не можна вигадати без board-freeze: `.ioc` → тіла `MX_*`/`SystemClock_Config` (пін-мапа, клок-дерево, ADC-канали, LSE — [`00_07` — FW.49/FW.50](00_07_Action_Plan_Tracker)) + SubGHz_Phy radio middleware (з реєстрацією `RadioEvents_t` — зараз `Radio.Init(NULL)`, латентний баг для Queen RX) + startup/ld → link → `check_ram_budget.sh` дає істинний повний [`00_07` — FW.26](00_07_Action_Plan_Tracker) розмір.
 
 ### 12.5 Vendor / dependency pin-policy (FW.47)
 
-**Дім pin-політики зовнішніх залежностей.** FW.46 завендорив CMSIS-DSP/CMSIS_6/mruby як pinned submodules (§12.4); FW.47 — аудит решти vendor-поверхні + єдина політика, щоб «assumed / вставлене вручну» не протікало в білд.
+**Дім pin-політики зовнішніх залежностей.** FW.46 завендорив CMSIS-DSP/CMSIS_6/mruby/monocypher + (2026-06-11) `stm32wlxx-hal-driver` v1.6.0 / `cmsis-device-wl` v1.4.0 як pinned submodules (§12.4); FW.47 — аудит решти vendor-поверхні + єдина політика, щоб «assumed / вставлене вручну» не протікало в білд.
 
 **Конвенція:** кожна firmware-native залежність → **pinned git-submodule `firmware/extern/<dep>` на release-tag** (як §12.4). CubeMX-glue (`*_hal_msp.c`, `main.h`/`radio.h`-config) лишається owned in-repo — submodule тягне лише upstream-драйвери.
 

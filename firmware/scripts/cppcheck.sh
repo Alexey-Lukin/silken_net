@@ -41,6 +41,9 @@ CPPCHECK="${CPPCHECK:-cppcheck}"
 PLATFORM="firmware/.cppcheck/stm32wle5.xml"
 
 # sim/ = owned bare-metal C QEMU-ноги (FW.55) — лінтиться нарівні з firmware.
+# hal_glue/ виключено СВІДОМО: wrapper-TU там #include'ять main.c дослівно
+# (main.c уже гейтиться тут standalone — повторний аналіз лише дублював би
+# кожну знахідку); самі заглушки порожні. (FW.46 HAL compile-lane)
 SOURCES=(firmware/soldier firmware/queen firmware/common firmware/sim)
 INCLUDES=(-I firmware/common -I firmware/soldier -I firmware/queen -I firmware/sim)
 

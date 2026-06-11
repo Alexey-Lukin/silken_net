@@ -10,3 +10,9 @@
 [submodule "firmware/extern/monocypher"]
 	path = firmware/extern/monocypher
 	url = https://github.com/LoupVaillant/Monocypher.git
+[submodule "firmware/extern/cmsis-device-wl"]
+	path = firmware/extern/cmsis-device-wl
+	url = https://github.com/STMicroelectronics/cmsis-device-wl
+[submodule "firmware/extern/stm32wlxx-hal-driver"]
+	path = firmware/extern/stm32wlxx-hal-driver
+	url = https://github.com/STMicroelectronics/stm32wlxx-hal-driver

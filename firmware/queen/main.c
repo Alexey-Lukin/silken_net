@@ -979,8 +979,10 @@ static void Restore_ECB_Mode(void)
     hcryp.Init.pKey      = aes_key;
     hcryp.Init.pInitVect = NULL;
     if (HAL_CRYP_Init(&hcryp) != HAL_OK) {
-        __HAL_RCC_CRYP_FORCE_RESET();
-        __HAL_RCC_CRYP_RELEASE_RESET();
+        // [FW.46] RCC-блок криптоядра на WL зветься AES, не CRYP (F4-стиль
+        // __HAL_RCC_CRYP_* у WL-HAL не існує — зловив HAL compile-lane).
+        __HAL_RCC_AES_FORCE_RESET();
+        __HAL_RCC_AES_RELEASE_RESET();
         hcryp.Init.Algorithm = CRYP_AES_ECB;
         hcryp.Init.KeySize   = CRYP_KEYSIZE_128B;
         hcryp.Init.pKey      = aes_key;
@@ -1115,7 +1117,7 @@ void Flush_Cache_To_Rails(void)
     // а дані ще нікуди не дійшли.
     for(int i = 0; i < CACHE_MAX_ENTRIES; i++) {
         if(forest_cache[i].is_active) {
-            if ((offset + 21) > sizeof(binary_batch_buffer)) break;
+            if ((size_t)(offset + 21) > sizeof(binary_batch_buffer)) break;
             // Копіюємо 4 байти DID (великоендіанний формат мережі)
             binary_batch_buffer[offset++] = (uint8_t)(forest_cache[i].uid >> 24);
             binary_batch_buffer[offset++] = (uint8_t)(forest_cache[i].uid >> 16);

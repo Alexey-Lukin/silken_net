@@ -81,8 +81,8 @@ static inline int Sim7070_Coap_Put(Sim7070Io *m, AtEngine *e,
 
     char hex[2u * AT_HEX_CHUNK];
     for (uint16_t off = 0; off < pdu_len; off += AT_HEX_CHUNK) {
-        uint16_t n = (uint16_t)((pdu_len - off < AT_HEX_CHUNK) ? (pdu_len - off)
-                                                               : AT_HEX_CHUNK);
+        uint16_t rem = (uint16_t)(pdu_len - off);
+        uint16_t n = (rem < AT_HEX_CHUNK) ? rem : (uint16_t)AT_HEX_CHUNK;
         At_Hex_Encode(hex, pdu + off, n);
         if (!m->sink(m->io, (const uint8_t *)hex, (uint16_t)(2u * n))) return 0;
     }

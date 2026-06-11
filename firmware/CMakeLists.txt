@@ -86,12 +86,38 @@ if(CMAKE_CROSSCOMPILING)
     SUFFIX ".elf"
     LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/sim/qemu_m4/mps2_an386.ld")
 
-  # Full HAL-linked .elf — needs the vendored CubeMX project (HAL drivers,
-  # linker script, startup, system_stm32wlxx.c). Wired in the HAL phase.
-  option(SILKEN_WITH_HAL "Link the full Soldier/Queen .elf (needs vendored CubeMX project)" OFF)
+  # [FW.46] HAL compile-lane — перший справжній компайл soldier/queen main.c
+  # проти PINNED stm32wlxx-hal-driver + cmsis-device-wl (firmware/extern/).
+  # Це ще НЕ повний .elf: тіла MX_*-init згенерує .ioc на board-freeze (👤,
+  # wrapper-TU у hal_glue/ докладають порожні заглушки в той самий TU) — але
+  # всі виклики/типи/HAL-API обох main.c верифікуються компілятором у CI.
+  # Уже зловив: __HAL_RCC_CRYP_* (F4-стиль) ≠ WL __HAL_RCC_AES_*.
+  # Повний link (startup/ld/radio middleware) — HAL-фаза. docs/03_01 §12.4.
+  option(SILKEN_WITH_HAL "HAL compile-lane: soldier/queen main.c vs vendored WL HAL" OFF)
   if(SILKEN_WITH_HAL)
-    message(STATUS "[FW.46] SILKEN_WITH_HAL=ON — full .elf build (HAL phase, docs/03_01 §12.4)")
-    # add_executable(soldier soldier/main.c ...) + linker script — deferred to HAL phase.
+    message(STATUS "[FW.46] SILKEN_WITH_HAL=ON — HAL compile-lane (docs/03_01 §12.4)")
+    if(NOT DEFINED SILKEN_MRUBY_ARM_INC)
+      # build-generated include (mruby/presym/…) — народжується ARM-збіркою mruby
+      set(SILKEN_MRUBY_ARM_INC ${SILKEN_EXTERN}/mruby/build/arm-none-eabi/include
+          CACHE PATH "mruby ARM build include dir")
+    endif()
+    add_library(hal_check OBJECT
+      hal_glue/soldier_hal_check.c
+      hal_glue/queen_hal_check.c)
+    target_include_directories(hal_check PRIVATE
+      hal_glue common
+      ${SILKEN_EXTERN}/cmsis-device-wl/Include
+      ${SILKEN_EXTERN}/stm32wlxx-hal-driver/Inc
+      ${CMSISCORE}/Include
+      ${SILKEN_EXTERN}/mruby/include
+      ${SILKEN_MRUBY_ARM_INC}
+      ${SILKEN_EXTERN}/monocypher/src
+      ${SILKEN_EXTERN}/monocypher/src/optional)
+    # MRB_*-defines — дзеркало SILKEN_MIN_GEMS (One-Home: firmware/mruby/build_config.rb)
+    target_compile_definitions(hal_check PRIVATE
+      STM32WLE5xx USE_HAL_DRIVER
+      MRB_NO_STDIO MRB_CONSTRAINED_BASELINE_PROFILE MRB_NO_BOXING)
+    target_compile_options(hal_check PRIVATE -Wall -Wextra -Os)
   endif()
 else()
   # Host build: FFT packing-parity harness (Phase 4) — proves the CMSIS RFFT
