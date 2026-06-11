@@ -50,6 +50,23 @@ extern uint32_t __stack_top__;
 
 static char *brk_cur, *brk_max;
 
+/* Сирий трас sbrk-викликів (діагностика фіт-гейта): без printf — він сам
+ * ходить у malloc → рекурсія. Друк hex напряму в UART. */
+static void sbrk_trace(int incr, const char *tot_from)
+{
+    static const char hexd[] = "0123456789ABCDEF";
+    char line[28] = "SBRK ";
+    char *w = line + 5;
+    uint32_t v = (uint32_t)(incr < 0 ? -incr : incr);
+    *w++ = incr < 0 ? '-' : '+';
+    for (int s = 28; s >= 0; s -= 4) *w++ = hexd[(v >> s) & 0xFu];
+    *w++ = ' '; *w++ = 't'; *w++ = '=';
+    v = (uint32_t)(tot_from - &end);
+    for (int s = 28; s >= 0; s -= 4) *w++ = hexd[(v >> s) & 0xFu];
+    *w++ = '\n'; *w = '\0';
+    Uart0_Puts_Raw(line);
+}
+
 void *_sbrk(int incr)
 {
     if (!brk_cur) brk_cur = &end;
@@ -58,6 +75,7 @@ void *_sbrk(int incr)
     char *prev = brk_cur;
     brk_cur += incr;
     if (brk_cur > brk_max) brk_max = brk_cur;
+    sbrk_trace(incr, brk_cur);
     return prev;
 }
 

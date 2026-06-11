@@ -137,6 +137,7 @@ echo "✅ [FW.55] біт-parity ARM(M4/QEMU) ≡ host: $n_cases зчеплени
 # ── WLE5-фіт: QEMU-числа переносяться на кремній (той самий libmruby/newlib
 #    → ідентична послідовність malloc'ів) — «не влазить у 64КБ» ловимо ТУТ. ──
 grep '^PARITY-MEM' "$OUT/arm.txt" | sed 's/^/  /' || true
+grep '^SBRK' "$OUT/arm.txt" | sed 's/^/  /' | tail -30 || true
 heap_high="$(sed -n 's/^PARITY-HEAP high-water=\([0-9]*\)$/\1/p' "$OUT/arm.txt")"
 stack_high="$(sed -n 's/^PARITY-STACK high-water=\([0-9]*\)$/\1/p' "$OUT/arm.txt")"
 if [ -z "$heap_high" ] || [ -z "$stack_high" ]; then
