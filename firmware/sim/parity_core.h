@@ -30,6 +30,13 @@
 
 #include "lorenz_bytecode.h" /* -I firmware/common */
 
+/* Зонд пам'яті для bare-metal ніг (хто скільки з'їв: open/irep/cases) —
+ * no-op на host-голдені. Нога визначає PARITY_MEM_MARK ДО include
+ * (друк через свій Sbrk_Highwater); лінії не ^C → diff не чіпають. */
+#ifndef PARITY_MEM_MARK
+#define PARITY_MEM_MARK(phase) ((void)0)
+#endif
+
 #define PARITY_N_CASES 64
 
 /* Дрібний детермінований LCG (Numerical Recipes) — однаковий на обох
@@ -56,9 +63,11 @@ static int Parity_Run(void)
 {
     mrb_state *mrb = mrb_open();
     if (!mrb) { printf("PARITY-ABORT mrb_open\n"); return 1; }
+    PARITY_MEM_MARK("open");
 
     mrb_load_irep(mrb, lorenz_bytecode);
     if (mrb->exc) { printf("PARITY-ABORT load_irep\n"); return 1; }
+    PARITY_MEM_MARK("irep");
 
     /* Кейс 0 — канонічний cold-start (як test_bytecode_vm.c); далі стани
      * зчеплені, а сенсорні входи йдуть від LCG по краях діапазонів. */
@@ -111,6 +120,11 @@ static int Parity_Run(void)
         y = mrb_float(mrb_ary_ref(mrb, r, 2));
         z = mrb_float(mrb_ary_ref(mrb, r, 3));
         mrb_gc_arena_restore(mrb, arena_idx);
+        /* Як Солдат після кожного пробудження (main.c): повний GC повертає
+         * купу до живого мінімуму — high-water міряє девайсний профіль, а не
+         * дрейф сміття до GC-порогу (~2×live ≈ стеля 64КБ SRAM). GC не чіпає
+         * математику — дамп лишається byte-exact. */
+        mrb_full_gc(mrb);
 
         printf("C%02d p=%02lX", i, (unsigned long)(payload & 0xFFl));
         parity_dump_double("x", x);
@@ -119,6 +133,7 @@ static int Parity_Run(void)
         printf("\n");
     }
 
+    PARITY_MEM_MARK("cases");
     mrb_close(mrb);
     printf("PARITY-COMPLETE n=%d\n", PARITY_N_CASES);
     return 0;

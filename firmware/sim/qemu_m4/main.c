@@ -10,11 +10,15 @@
 #include <stdio.h>
 #include <stdint.h>
 
+uint32_t Sbrk_Highwater(void);
+/* Зонд фаз пам'яті (open/irep/cases) — діагностика фіт-гейта. */
+#define PARITY_MEM_MARK(phase) \
+    printf("PARITY-MEM %s=%lu\n", phase, (unsigned long)Sbrk_Highwater())
+
 #include "../parity_core.h"
 #include "../stack_paint.h"
 
 void Uart0_Init(void);
-uint32_t Sbrk_Highwater(void);
 
 /* Вікно фарбування: глибше за очікуваний слід mruby VM (C-рекурсія + printf). */
 #define PAINT_WORDS (16u * 1024u / 4u)

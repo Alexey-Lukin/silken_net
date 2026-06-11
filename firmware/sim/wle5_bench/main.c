@@ -15,11 +15,15 @@
 #include <stdio.h>
 #include <stdint.h>
 
+uint32_t Sbrk_Highwater(void);
+/* Зонд фаз пам'яті (open/irep/cases) — діагностика фіт-гейта. */
+#define PARITY_MEM_MARK(phase) \
+    printf("PARITY-MEM %s=%lu\n", phase, (unsigned long)Sbrk_Highwater())
+
 #include "../parity_core.h"
 #include "../stack_paint.h"
 
 void Board_Init(void);
-uint32_t Sbrk_Highwater(void);
 
 /* Вікно під SP: усередині стек-резерву лінкер-карти (12К, stm32wle5.ld) —
  * нижче починається heap-ліміт _sbrk. */
