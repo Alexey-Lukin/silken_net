@@ -11,9 +11,45 @@
 #include <stdint.h>
 
 uint32_t Sbrk_Highwater(void);
-/* Зонд фаз пам'яті (open/irep/cases) — діагностика фіт-гейта. */
+
+/* Лічильний mrb-алокатор (діагностика фіт-гейта): об'єктний файл переважує
+ * mrb_basic_alloc_func з archive (allocf.c). Міряє ЧИСТІ mruby-запити на
+ * ARM-нозі (host-зонд показував +136Б/кейс — а sbrk ріс сторінками);
+ * великі запити (≥4КБ ≈ heap-сторінка 5144Б) логуються поіменно. printf
+ * тут безпечний: його malloc іде в newlib, не в цей allocf. */
+#include <stdlib.h>
+static size_t mrb_cur, mrb_peak;
+void *mrb_basic_alloc_func(void *p, size_t size)
+{
+    if (size == 0) {
+        if (p) { size_t *h = (size_t *)p - 2; mrb_cur -= h[0]; free(h); }
+        return NULL;
+    }
+    if (size >= 4096)
+        printf("MRB-BIG %lu (cur=%lu)\n", (unsigned long)size, (unsigned long)mrb_cur);
+    if (p) {
+        size_t *h = (size_t *)p - 2;
+        size_t old = h[0];
+        size_t *nh = realloc(h, size + 2 * sizeof(size_t));
+        if (!nh) return NULL;
+        nh[0] = size;
+        mrb_cur += size - old;
+        if (mrb_cur > mrb_peak) mrb_peak = mrb_cur;
+        return nh + 2;
+    }
+    size_t *h = malloc(size + 2 * sizeof(size_t));
+    if (!h) return NULL;
+    h[0] = size;
+    mrb_cur += size;
+    if (mrb_cur > mrb_peak) mrb_peak = mrb_cur;
+    return h + 2;
+}
+
+/* Зонд фаз пам'яті (open/irep/cases) — sbrk + чисті mruby-запити. */
 #define PARITY_MEM_MARK(phase) \
-    printf("PARITY-MEM %s=%lu\n", phase, (unsigned long)Sbrk_Highwater())
+    printf("PARITY-MEM %s=%lu mrb=%lu/%lu\n", phase, \
+           (unsigned long)Sbrk_Highwater(), \
+           (unsigned long)mrb_cur, (unsigned long)mrb_peak)
 
 #include "../parity_core.h"
 #include "../stack_paint.h"
