@@ -96,6 +96,41 @@ static inline int Key_Ratchet_Advance(uint8_t key[KEY_RATCHET_KEY_LEN],
     return 1;
 }
 
+/* Boot-модель: K_current = ratchet^version(K0). БЕЗ стелі MAX_JUMP — це не
+ * ефірна команда, а відтворення власного персистнутого стану (Flash-KV 0x13
+ * тримає лише версію; v HMAC-кроків — мікросекунди навіть на сотнях). */
+static inline void Key_Ratchet_Apply(uint8_t key[KEY_RATCHET_KEY_LEN],
+                                     uint16_t version, uint32_t did)
+{
+    for (uint16_t i = 0; i < version; i++) Key_Ratchet_Next(key, did);
+}
+
+/* Міст до CRYP-подання ключа: aes_key[4] на MCU живе словами у тій самій
+ * BE-конвенції, що factory `-w32` (перший байт ключа = старший байт слова;
+ * дзеркало Load_AES_Key ↔ CommandBuilder.write_block). Ratchet працює
+ * байтами — конверсія обабіч re-key. */
+static inline void Key_Ratchet_Words_To_Bytes(const uint32_t words[4],
+                                              uint8_t key[KEY_RATCHET_KEY_LEN])
+{
+    for (unsigned i = 0; i < 4u; i++) {
+        key[i * 4 + 0] = (uint8_t)(words[i] >> 24);
+        key[i * 4 + 1] = (uint8_t)(words[i] >> 16);
+        key[i * 4 + 2] = (uint8_t)(words[i] >> 8);
+        key[i * 4 + 3] = (uint8_t)(words[i] & 0xFFu);
+    }
+}
+
+static inline void Key_Ratchet_Bytes_To_Words(const uint8_t key[KEY_RATCHET_KEY_LEN],
+                                              uint32_t words[4])
+{
+    for (unsigned i = 0; i < 4u; i++) {
+        words[i] = ((uint32_t)key[i * 4 + 0] << 24) |
+                   ((uint32_t)key[i * 4 + 1] << 16) |
+                   ((uint32_t)key[i * 4 + 2] << 8)  |
+                   (uint32_t)key[i * 4 + 3];
+    }
+}
+
 /* Парсер кадру 0x9E — той самий патерн guard'ів, що 0x9A (FW.8).
  * 1 = валідний, *target_version заповнено. */
 static inline int Key_Ratchet_Parse_Cmd(const uint8_t *frame, uint16_t frame_size,

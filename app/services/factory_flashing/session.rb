@@ -112,7 +112,7 @@ module FactoryFlashing
     end
 
     # [FW.23] Per-cluster K_ota для OTA dual-gate — Гілка A пише його у
-    # Protected Flash 0x0803D000 (до 2026-06-11 емітувала лише superseded
+    # Protected Flash 0x0803E800 (до 2026-06-11 емітувала лише superseded
     # ATECC-гілка B → реальні дерева лишались із вічно fail-closed OTA).
     def tree_ota_hmac
       return nil unless @device.is_a?(Tree)

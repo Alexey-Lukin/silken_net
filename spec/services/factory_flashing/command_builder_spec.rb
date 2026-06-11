@@ -44,17 +44,18 @@ RSpec.describe FactoryFlashing::CommandBuilder do
         "STM32_Programmer_CLI -w32 0x0803E02C 0xBBAA9988",
         "STM32_Programmer_CLI -w32 0x0803E030 0x77665544",
         "STM32_Programmer_CLI -w32 0x0803E034 0x33221100",
-        # [FW.23] KOTA magic + 8 K_ota words — окремий сектор 0x0803D000;
+        # [FW.23] KOTA magic + 8 K_ota words — окрема сторінка 0x0803E800
+        # (стор. 125; 0x0803D000 належить Flash-KV — 03_01 §2.3);
         # розкладка дзеркалить Load_Ota_Hmac_Key (firmware/soldier/main.c)
-        "STM32_Programmer_CLI -w32 0x0803D000 0x4B4F5441",
-        "STM32_Programmer_CLI -w32 0x0803D004 0xA1B2C3D4",
-        "STM32_Programmer_CLI -w32 0x0803D008 0xE5F60718",
-        "STM32_Programmer_CLI -w32 0x0803D00C 0x293A4B5C",
-        "STM32_Programmer_CLI -w32 0x0803D010 0x6D7E8F90",
-        "STM32_Programmer_CLI -w32 0x0803D014 0x0F1E2D3C",
-        "STM32_Programmer_CLI -w32 0x0803D018 0x4B5A6978",
-        "STM32_Programmer_CLI -w32 0x0803D01C 0x8796A5B4",
-        "STM32_Programmer_CLI -w32 0x0803D020 0xC3D2E1F0",
+        "STM32_Programmer_CLI -w32 0x0803E800 0x4B4F5441",
+        "STM32_Programmer_CLI -w32 0x0803E804 0xA1B2C3D4",
+        "STM32_Programmer_CLI -w32 0x0803E808 0xE5F60718",
+        "STM32_Programmer_CLI -w32 0x0803E80C 0x293A4B5C",
+        "STM32_Programmer_CLI -w32 0x0803E810 0x6D7E8F90",
+        "STM32_Programmer_CLI -w32 0x0803E814 0x0F1E2D3C",
+        "STM32_Programmer_CLI -w32 0x0803E818 0x4B5A6978",
+        "STM32_Programmer_CLI -w32 0x0803E81C 0x8796A5B4",
+        "STM32_Programmer_CLI -w32 0x0803E820 0xC3D2E1F0",
         "STM32_Programmer_CLI -ob RDP=1",
         "STM32_Programmer_CLI -c port=SWD --quietMode"
       ])

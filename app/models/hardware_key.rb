@@ -62,6 +62,14 @@ class HardwareKey < ApplicationRecord
                                    allow_nil: true
   validate  :previous_aes_key_length_in_allowed_set
 
+  # [FW.17] Hash-Ratchet версія LoRa-ключа (Tree-пристрої). 0 = заводський K0;
+  # інкрементується ратчет-ротацією (HardwareKeyService); firmware-дзеркало
+  # живе у Flash-KV 0x13. Стеля 0xFFFF — версія їде по дроту як u16 (0x9E).
+  validates :key_version, presence: true,
+                          numericality: { only_integer: true,
+                                          greater_than_or_equal_to: 0,
+                                          less_than_or_equal_to: 0xFFFF }
+
   # Ed25519 public key для M2M автентифікації (64 hex chars = 32 bytes)
   validates :ed25519_public_key_hex, length: { is: 64 },
                                      format: { with: /\A[0-9a-fA-F]+\z/ },

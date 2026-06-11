@@ -45,6 +45,19 @@ RSpec.describe Cryptography::KeyRatchet do
     end
   end
 
+  describe ".did_to_u32 (інверсія SNET-%08X)" do
+    it "повертає сирий uint32 DID — той самий Context, що бачить firmware" do
+      expect(described_class.did_to_u32("SNET-DEADBEEF")).to eq(0xDEADBEEF)
+    end
+
+    it "відкидає рядок поза апаратним форматом" do
+      expect { described_class.did_to_u32("DEADBEEF") }
+        .to raise_error(described_class::InputError)
+      expect { described_class.did_to_u32("SNET-XYZ") }
+        .to raise_error(described_class::InputError)
+    end
+  end
+
   describe "OtaPackagerService.build_rotate_key_block (wire 0x9E)" do
     it "емітить заморожений golden-кадр (target_version = 3)" do
       # Той самий hex парсить firmware test_parse_golden_frame.

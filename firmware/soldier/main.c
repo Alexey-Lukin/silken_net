@@ -133,14 +133,18 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 // lorenz_seed.h (SILKEN_EPOCH_SECONDS) — One-Home, без дубля константи.
 
 // [FW.23] Flash-based OTA HMAC key (K_ota) provisioning — per-cluster 256-bit
-// HMAC-SHA256 ключ для dual-gate автентифікації OTA-байткоду. Окремий Protected
-// Flash сектор 0x0803D000 (перед AES-key сектором 0x0803E000), бо K_ota — per-
-// КЛАСТЕР (broadcast), тоді як LoRa AES-key — per-DEVICE. Factory Flashing пише
+// HMAC-SHA256 ключ для dual-gate автентифікації OTA-байткоду. Окрема Protected
+// Flash сторінка 125 (0x0803E800, одразу після per-device key-сторінки 124),
+// бо K_ota — per-КЛАСТЕР (broadcast), тоді як LoRa AES-key — per-DEVICE:
+// польова заміна K_ota стирає СВОЮ сторінку, не чіпаючи per-device ключі.
+// Сторінка 125 = канонічний «буфер росту key-блоку» (03_01 §2.3); первісна
+// адреса 0x0803D000 колідувала з freeze-contract Flash-KV регіоном
+// (сторінки 122-123) — mount KV стер би K_ota. Factory Flashing пише
 // HKDF-SHA256(master, salt="cluster:<id>", info="silken-ota-hmac-v1") через SWD.
 // Якщо magic відсутній — ota_hmac_key_valid=0: вузол НЕ застосує жоден OTA (fail-
 // safe — без ключа нема як довести походження). НЕ Error_Handler() (телеметрія
 // й Lorenz працюють без K_ota). Канон: docs/03_05 §3.4б.
-#define FLASH_OTA_KEY_ADDR        0x0803D000UL  // Окремий сектор перед AES-key сектором
+#define FLASH_OTA_KEY_ADDR        0x0803E800UL  // Сторінка 125 — за per-device key-сторінкою
 #define FLASH_OTA_KEY_WORDS       8             // 8 × uint32_t = 32 bytes = 256-bit HMAC key
 #define FLASH_OTA_KEY_MAGIC       0x4B4F5441UL  // "KOTA" — OTA HMAC key magic marker
 
@@ -446,8 +450,9 @@ volatile uint32_t soldier_unix_ts_local_tick = 0;
 // повертається через Flash-KV overflow (03_01 §2.3), а не звільнений регістр.
 // Persist-логіка ✅ host-готова: ../common/lorenz_thresholds.h — Save/Load на
 // ключах 0x10/0x11 (порвана/невалідна пара → дефолти; power-cut тести у
-// test_flash_kv.c). Лишається bench: `#define FW8_PARSER_ENABLED 1` +
-// mount KV (KENOSIS-write блок) + HAL_FLASH глю.
+// test_flash_kv.c). Mount KV + HAL_FLASH глю ✅ написано (секція FW.17 нижче,
+// спільний гейт `FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED`). Лишається
+// bench: фліп + wiring Save/Load у boot/КЕНОЗИС + верифікація глю на кремнії.
 #define FW8_PARSER_ENABLED                0  // 🟡 Deferred TRL-7 (див. блок вище)
 #define CMD_SET_THRESHOLDS_MARKER         0x9A
 #define CMD_THRESHOLDS_HEADER_SIZE        3   // [маркер:1][len_le:2]
@@ -513,6 +518,105 @@ static uint8_t Soldier_Handle_CMD_SET_THRESHOLDS(const uint8_t* frame,
     lorenz_config_version  = config_version;
     return 1;
 }
+
+// =========================================================================
+// [FW.17] Hash-Ratchet ротація LoRa-ключа (CMD_ROTATE_KEY 0x9E)
+// =========================================================================
+// Ключ ніколи не летить ефіром: кадр каже лише «дожени версію N», обидва
+// кінці синхронно деривують K_{v+1} (NIST SP 800-108 HMAC-KDF; One-Home:
+// ../common/key_ratchet.h ↔ Cryptography::KeyRatchet, golden-KAT parity у
+// test_key_ratchet.c). Persist — ЛИШЕ версія у Flash-KV (ключ 0x13): журнал
+// append-only не сміє тримати ключового матеріалу; boot re-derive
+// K_current = ratchet^v(K0 з Protected Flash).
+//
+// 🟡 СТАТУС: гілка ВИМКНЕНА (FW17_RATCHET_ENABLED 0) — фліп ЛИШЕ після
+// FW.2 CCM: ECB-downlink без MAC не сміє командувати ротацією (підроблений
+// 0x9E двигає версію вперед → desync → вузол глухне для бекенда; Dual-Key
+// Grace страхує лише авторизовану ротацію). Другий передзамок — Flash-KV
+// mount (нижче): без persist'у версії VBAT-loss повертає вузол на K0, поки
+// бекенд на K_v. Канон: 03_05 §3.8; реєстр KV-ключів — 03_01 §2.3.1.
+#include "../common/key_ratchet.h"
+#include "../common/flash_kv.h"
+
+#define FW17_RATCHET_ENABLED   0      // 🟡 фліп після FW.2 CCM + KV mount (bench)
+#define FW17_KV_KEY_VERSION    0x13u  // Flash-KV: [version:16 | rsv:16] (03_01 §2.3.1)
+
+// [ARCH.28 шлях A] Flash-KV журнал: сторінки 122-123 (freeze-contract
+// 03_01 §2.3; K_ota тому переїхав на сторінку 125 — первісний 0x0803D000
+// колідував із цим регіоном). Mount спільний для споживачів FW.17 (версія
+// ratchet'а) та FW.8 (Z-пороги, ../common/lorenz_thresholds.h) — його
+// вмикає будь-який із двох флагів.
+#define FLASH_KV_BASE_ADDR     0x0803D000UL
+#define FLASH_KV_FIRST_PAGE    122u
+#define FLASH_KV_PAGE_DWS      256u   // 2 КБ / 8 Б на dw-елемент
+
+#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED
+// Збірка при фліпі: + ../common/flash_kv.c (як test_flash_kv). Тут — реальні
+// залізні примітиви; host-тести ганяють ту саму журнальну логіку на RAM-моці
+// з fault-injection (power-cut посеред compact), HAL-глю верифікує bench.
+static uint64_t Soldier_KvReadDw(void *io, uint32_t byte_off)
+{
+    (void)io;
+    return *(const uint64_t *)(FLASH_KV_BASE_ADDR + byte_off);
+}
+
+static int Soldier_KvProgramDw(void *io, uint32_t byte_off, uint64_t v)
+{
+    (void)io;
+    HAL_FLASH_Unlock();
+    HAL_StatusTypeDef st = HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD,
+                                             FLASH_KV_BASE_ADDR + byte_off, v);
+    HAL_FLASH_Lock();
+    return st == HAL_OK;
+}
+
+static int Soldier_KvErasePage(void *io, uint8_t page)
+{
+    (void)io;
+    FLASH_EraseInitTypeDef erase = {0};
+    uint32_t page_error = 0;
+    erase.TypeErase = FLASH_TYPEERASE_PAGES;
+    erase.Page      = FLASH_KV_FIRST_PAGE + page;
+    erase.NbPages   = 1;
+    HAL_FLASH_Unlock();
+    HAL_StatusTypeDef st = HAL_FLASHEx_Erase(&erase, &page_error);
+    HAL_FLASH_Lock();
+    return st == HAL_OK;
+}
+
+static const FlashKvOps soldier_kv_ops = {
+    Soldier_KvReadDw, Soldier_KvProgramDw, Soldier_KvErasePage
+};
+static FlashKv soldier_kv;
+static uint8_t soldier_kv_mounted = 0;
+#endif // FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED
+
+#if FW17_RATCHET_ENABLED
+static void MX_CRYP_Init(void); // повний прототип нижче — потрібен re-key'ю
+
+static uint16_t lora_key_version       = 0; // RAM-копія; істина — Flash-KV 0x13
+static uint8_t  lora_key_version_dirty = 0; // запис у КЕНОЗИСІ, не під RX-вікном
+
+// Boot-restore: версія з Flash-KV → K_current = ratchet^v(K0). Викликати
+// ПІСЛЯ Load_AES_Key (K0 вже у aes_key) і ПІСЛЯ генерації tree_did (DID =
+// Context у KDF). Mount-fail / порожній KV → лишаємось на K0: target у 0x9E
+// абсолютний, тож бекендова команда дожене вузол при наступному downlink'у.
+static void FW17_Restore_Key_Version(uint32_t did)
+{
+    uint32_t stored = 0;
+    if (!soldier_kv_mounted) return;
+    if (!FlashKv_Get32(&soldier_kv, FW17_KV_KEY_VERSION, &stored)) return;
+
+    lora_key_version = (uint16_t)(stored & 0xFFFFu);
+    if (lora_key_version == 0) return;
+
+    uint8_t key_bytes[KEY_RATCHET_KEY_LEN];
+    Key_Ratchet_Words_To_Bytes(aes_key, key_bytes);
+    Key_Ratchet_Apply(key_bytes, lora_key_version, did);
+    Key_Ratchet_Bytes_To_Words(key_bytes, aes_key);
+    MX_CRYP_Init(); // CRYP тепер на K_v — інакше Королеву не почуємо
+}
+#endif // FW17_RATCHET_ENABLED
 
 // =========================================================================
 // [FW.20-S2] Drift-monitor + panic time-sync request
@@ -1586,6 +1690,18 @@ int main(void)
       memset(recent_mesh_dids, 0, sizeof(recent_mesh_dids));
   }
 
+#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED
+  // [ARCH.28] Mount Flash-KV (сторінки 122-123). Невдача (обидві сторінки
+  // биті) → mounted=0: споживачі живуть на дефолтах/K0 — деградація, не смерть.
+  soldier_kv_mounted = FlashKv_Mount(&soldier_kv, &soldier_kv_ops, NULL,
+                                     FLASH_KV_PAGE_DWS);
+#endif
+#if FW17_RATCHET_ENABLED
+  // [FW.17] ПІСЛЯ Load_AES_Key (K0) і DID-блоку (Context KDF): якщо KV має
+  // версію — доганяємо K_current і ре-ініціалізуємо CRYP.
+  FW17_Restore_Key_Version(tree_did);
+#endif
+
   // Якщо це найперший старт в житті анкера (пам'ять порожня)
   if (last_wakeup_timestamp == 0) {
       last_wakeup_timestamp = HAL_GetTick() / 1000;
@@ -2041,6 +2157,31 @@ int main(void)
                 }
 #endif
 
+                // Сценарій 1б: [FW.17] CMD_ROTATE_KEY (0x9E) — Hash-Ratchet
+                // ротація LoRa-ключа. 🟡 Вимкнено до FW.2 CCM (деталі — у
+                // преамбулі FW17_RATCHET_ENABLED). Невалідний кадр / replay /
+                // rollback / runaway-стрибок Advance мовчки відкидає — стан
+                // (ключ + версія) незмінний, як ефірний шум.
+#if FW17_RATCHET_ENABLED
+                if (decrypted_rx_payload[0] == CMD_ROTATE_KEY_MARKER &&
+                    incoming_lora_size >= CMD_ROTATE_KEY_FRAME_SIZE) {
+                    uint16_t rotate_target = 0;
+                    if (Key_Ratchet_Parse_Cmd((const uint8_t*)decrypted_rx_payload,
+                                              incoming_lora_size, &rotate_target)) {
+                        uint8_t key_bytes[KEY_RATCHET_KEY_LEN];
+                        Key_Ratchet_Words_To_Bytes(aes_key, key_bytes);
+                        if (Key_Ratchet_Advance(key_bytes, &lora_key_version,
+                                                rotate_target, tree_did)) {
+                            Key_Ratchet_Bytes_To_Words(key_bytes, aes_key);
+                            MX_CRYP_Init();             // re-key: CRYP тепер на K_v
+                            lora_key_version_dirty = 1; // Flash-KV — у КЕНОЗИСІ
+                        }
+                    }
+                    // Не ретранслюємо (TTL=1) — слово адресоване цьому Солдату
+                    break;
+                }
+#endif
+
                 // Сценарій 2: [FW.18] CMD_SET_AUDIO_THRESHOLDS (0x9D) — TinyML
                 // переналаштовує слух Солдата. Коли ліс глухне взимку чи
                 // дзвенить весною від тала, ми не перепрошиваємо вузли — ми
@@ -2347,6 +2488,23 @@ int main(void)
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR13, float_to_uint32(tinyml_warning_threshold));
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR14, float_to_uint32(tinyml_critical_threshold));
 
+#if FW17_RATCHET_ENABLED
+    // [FW.17] Версія ratchet'а — у Flash-KV саме тут, у КЕНОЗИСІ: erase/
+    // program не сміє лягти під LoRa RX-вікно (03_01 §2.3). Power-cut між
+    // re-key (RAM) і цим записом безпечний: boot повернеться на стару
+    // версію, а бекендовий Dual-Key Grace ще тримає старий ключ — наступний
+    // 0x9E (абсолютний target) дожене.
+    if (lora_key_version_dirty && soldier_kv_mounted) {
+        if (FlashKv_Put32(&soldier_kv, FW17_KV_KEY_VERSION,
+                          (uint32_t)lora_key_version)) {
+            lora_key_version_dirty = 0;
+        }
+        if (FlashKv_NeedsCompact(&soldier_kv, 8)) {
+            FlashKv_Compact(&soldier_kv); // безпечна фаза: після TX, перед сном
+        }
+    }
+#endif
+
     // [FIX: AUDIT Energy] Вимикаємо периферію перед STOP2 для мінімального споживання.
     // Без де-ініціалізації ці модулі тягнуть мікроампери навіть у STOP2.
     // [FW.46] RCC-гейт криптоблока на WL зветься AES, не CRYP (F4/F7-стиль
@@ -2601,7 +2759,7 @@ static void Load_Lorenz_Seed(void)
 }
 
 // [FW.23] Завантаження K_ota (per-cluster OTA HMAC key) з Protected Flash.
-// Flash layout на FLASH_OTA_KEY_ADDR (0x0803D000):
+// Flash layout на FLASH_OTA_KEY_ADDR (0x0803E800, сторінка 125):
 //   [FLASH_OTA_KEY_MAGIC:4]["KOTA"][k_ota[0]:4]...[k_ota[7]:4] = 4 + 32 = 36 байт
 // Якщо magic відсутній/стертий або ключ нульовий — ota_hmac_key_valid=0:
 // dual-gate ніколи не пройде Браму 2 ⇒ жоден OTA не запишеться (fail-safe;

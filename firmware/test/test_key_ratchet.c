@@ -122,6 +122,39 @@ TEST(test_boot_rederive_equals_incremental) {
     ASSERT_EQ(memcmp(boot, incr, KEY_RATCHET_KEY_LEN), 0);
 }
 
+TEST(test_apply_zero_is_identity_and_matches_kat) {
+    /* Boot-restore: Apply(0) = K0 без змін; Apply(3) = KAT K3 (без стелі
+     * MAX_JUMP — власний персистнутий стан, не ефірна команда). */
+    uint8_t key[KEY_RATCHET_KEY_LEN], k0[KEY_RATCHET_KEY_LEN];
+    kat_k0(key); kat_k0(k0);
+    Key_Ratchet_Apply(key, 0, KAT_DID);
+    ASSERT_EQ(memcmp(key, k0, KEY_RATCHET_KEY_LEN), 0);
+    Key_Ratchet_Apply(key, 3, KAT_DID);
+    ASSERT_KEY_EQ(key, "C7593AA70E31334ABB2BA45DC79B153B");
+}
+
+TEST(test_apply_exceeds_max_jump_ceiling) {
+    /* 12 > MAX_JUMP=8: boot-катчап навмисно не обмежений стелею. */
+    uint8_t boot[KEY_RATCHET_KEY_LEN], incr[KEY_RATCHET_KEY_LEN];
+    kat_k0(boot); kat_k0(incr);
+    Key_Ratchet_Apply(boot, 12, KAT_DID);
+    for (int i = 0; i < 12; i++) Key_Ratchet_Next(incr, KAT_DID);
+    ASSERT_EQ(memcmp(boot, incr, KEY_RATCHET_KEY_LEN), 0);
+}
+
+TEST(test_words_bytes_roundtrip_be_convention) {
+    /* CRYP-міст: перший байт ключа = старший байт слова (конвенція -w32 /
+     * Load_AES_Key). Roundtrip бітово-чистий. */
+    uint8_t key[KEY_RATCHET_KEY_LEN], back[KEY_RATCHET_KEY_LEN];
+    uint32_t words[4];
+    kat_k0(key);
+    Key_Ratchet_Bytes_To_Words(key, words);
+    ASSERT_EQ(words[0], 0x00010203u);
+    ASSERT_EQ(words[3], 0x0C0D0E0Fu);
+    Key_Ratchet_Words_To_Bytes(words, back);
+    ASSERT_EQ(memcmp(key, back, KEY_RATCHET_KEY_LEN), 0);
+}
+
 /* ════════════════════════════════════════════════════════════════════
  * 3. Wire-кадр 0x9E (дзеркало OtaPackagerService.build_rotate_key_block)
  * ════════════════════════════════════════════════════════════════════ */
@@ -172,6 +205,9 @@ int main(void)
     RUN(test_advance_applies_steps_and_version);
     RUN(test_advance_reject_leaves_state_untouched);
     RUN(test_boot_rederive_equals_incremental);
+    RUN(test_apply_zero_is_identity_and_matches_kat);
+    RUN(test_apply_exceeds_max_jump_ceiling);
+    RUN(test_words_bytes_roundtrip_be_convention);
 
     printf("\n— Wire-кадр 0x9E —\n");
     RUN(test_parse_golden_frame);

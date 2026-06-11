@@ -27,6 +27,18 @@ class HardwareKeyService
   # Помилка подвійної ротації: пристрій ще не підтвердив попереднє оновлення ключа.
   class RotationPendingError < StandardError; end
 
+  # [FW.17] Ratchet-ротація Tree-ключа замкнена, поки LoRa-downlink не
+  # автентифікований (FW.2 CCM): підроблений 0x9E у ECB-флоті двигає версію
+  # вперед → desync → вузол глухне. Дзеркало firmware FW17_RATCHET_ENABLED.
+  class RatchetGateClosedError < StandardError; end
+
+  # ENV-гейт диспатчу ратчет-ротації (default off — інертний шлях, 03_05 §3.8).
+  FW17_GATE_ENV = "FW17_RATCHET_DOWNLINK_ENABLED"
+
+  def self.ratchet_dispatch_enabled?
+    ENV[FW17_GATE_ENV].to_s.downcase == "true"
+  end
+
   # =========================================================================
   # ПРОВІЗІОНУВАННЯ (Zero-Trust Key Derivation, post-ARCH.42)
   # =========================================================================
@@ -135,6 +147,17 @@ class HardwareKeyService
   # =========================================================================
   # РОТАЦІЯ (The Dual-Key Handshake)
   # =========================================================================
+  # Два шляхи за типом пристрою:
+  #   • Tree   → [FW.17] Hash-Ratchet: ключ НІКОЛИ не летить ефіром — backend
+  #     деривує K_{v+1} (Cryptography::KeyRatchet, дзеркало key_ratchet.h),
+  #     а в ефір іде лише `CMD_ROTATE_KEY 0x9E [target_version]`. Гейт:
+  #     FW17_RATCHET_DOWNLINK_ENABLED (фліп після FW.2 CCM).
+  #   • Gateway → випадковий новий CoAP AES-256 ключ; доставка = фізичний
+  #     re-provision (SEC.3 Factory Flashing) — CoAP-downlink ключа не існує
+  #     (legacy "sys/key_update" видалено: він не мав firmware-споживача і
+  #     суперечив принципу §3.8 «ключ не летить ефіром»).
+  # ACK обох шляхів — неявний Dual-Key Grace: перший uplink, що декриптнувся
+  # новим ключем, → clear_grace_period!.
   def rotate!
     key_record = HardwareKey.find_by!(device_uid: @device_uid)
 
@@ -146,46 +169,66 @@ class HardwareKeyService
             "Дочекайтесь першого пакету на новому ключі або очистіть Grace Period вручну."
     end
 
-    # ⚡ [ЗАГАРТУВАННЯ]: Зберігаємо поточний ключ як попередній.
-    # Post-ARCH.42 (2026-05-23): rotate генерує ключ ТОЇ САМОЇ довжини, що поточний
-    # (Tree LoRa AES-128 = 16 bytes / 32 hex; Gateway CoAP AES-256 = 32 bytes / 64 hex).
-    old_key = key_record.aes_key_hex
-    byte_len = old_key.length / 2  # 16 для Tree LoRa, 32 для Gateway CoAP
-    new_hex_key = SecureRandom.hex(byte_len).upcase
-
-    # ⚡ [АТОМАРНІСТЬ]: Оновлення БД та постановка Downlink в чергу відбуваються
-    # в одній транзакції. Якщо Redis/Sidekiq недоступний — транзакція відкочується,
-    # і ключ у базі залишається незмінним.
-    HardwareKey.transaction do
-      key_record.update!(
-        previous_aes_key_hex: old_key, # "Подушка безпеки"
-        aes_key_hex: new_hex_key,
-        rotated_at: Time.current
-      )
-
-      # Надсилаємо Downlink ВСЕРЕДИНІ транзакції.
-      # ВАЖЛИВО: цей пакет має бути зашифрований OLD_KEY,
-      # бо дерево ще не знає про NEW_KEY!
-      trigger_key_update_downlink(new_hex_key, old_key)
+    if @device.is_a?(Tree)
+      rotate_tree_via_ratchet!(key_record)
+    else
+      rotate_gateway_random!(key_record)
     end
-
-    Rails.logger.warn "🔄 [Zero-Trust] Ротація для #{@device_uid} активована. Старий ключ збережено як резервний."
-    new_hex_key
   end
 
   private
 
-  def trigger_key_update_downlink(new_key_hex, encryption_key)
-    return unless @device.respond_to?(:ip_address) || @device.respond_to?(:gateway)
-    target_ip = @device.respond_to?(:ip_address) ? @device.ip_address : @device.gateway.ip_address
+  # [FW.17] Tree: один ратчет-крок вперед. Інкремент по одному — target у
+  # кадрі абсолютний, тож пропущена команда доганяється наступною; стрибки
+  # понад MAX_JUMP неможливі за побудовою.
+  def rotate_tree_via_ratchet!(key_record)
+    unless self.class.ratchet_dispatch_enabled?
+      raise RatchetGateClosedError,
+            "[FW.17] Ratchet-ротація #{@device_uid} відхилена: #{FW17_GATE_ENV} вимкнено. " \
+            "ECB-downlink без MAC не сміє командувати ротацією — фліп після FW.2 CCM (03_05 §3.8)."
+    end
 
-    # Формуємо команду для STM32.
-    # Воркер має використати 'encryption_key' для шифрування цієї команди.
-    ActuatorCommandWorker.perform_async(
-      @device_uid,
-      "sys/key_update",
-      { key: new_key_hex }.to_json,
-      { use_key: encryption_key } # Передаємо конкретний ключ для цього завдання
+    old_key = key_record.aes_key_hex
+    target_version = key_record.key_version + 1
+    new_hex_key = Cryptography::KeyRatchet.advance_hex(
+      old_key,
+      Cryptography::KeyRatchet.did_to_u32(@device_uid),
+      from: key_record.key_version,
+      to: target_version
     )
+
+    # ⚡ [АТОМАРНІСТЬ]: БД-ротація і enqueue 0x9E — в одній транзакції:
+    # недоступний Redis/Sidekiq відкочує і ключ, і версію.
+    HardwareKey.transaction do
+      key_record.update!(
+        previous_aes_key_hex: old_key, # "Подушка безпеки" до першого uplink'а на K_{v+1}
+        aes_key_hex: new_hex_key,
+        key_version: target_version,
+        rotated_at: Time.current
+      )
+      KeyRotationDownlinkWorker.perform_async(@device_uid, target_version)
+    end
+
+    Rails.logger.warn "🔄 [FW.17] Ratchet-ротація #{@device_uid} → v#{target_version}. " \
+                      "Старий ключ у Grace до першого пакета на новому."
+    new_hex_key
+  end
+
+  # Gateway: випадковий ключ тієї самої довжини. Без downlink'а — новий ключ
+  # доїжджає лише фізичним re-provision (SEC.3); до того часу Queen шле на
+  # старому, і Grace-декрипт на бекенді тримає канал живим.
+  def rotate_gateway_random!(key_record)
+    old_key = key_record.aes_key_hex
+    new_hex_key = SecureRandom.hex(old_key.length / 2).upcase
+
+    key_record.update!(
+      previous_aes_key_hex: old_key,
+      aes_key_hex: new_hex_key,
+      rotated_at: Time.current
+    )
+
+    Rails.logger.warn "🔄 [Zero-Trust] Ротація для #{@device_uid} активована. " \
+                      "Старий ключ у Grace; доставка нового — re-provision (SEC.3)."
+    new_hex_key
   end
 end

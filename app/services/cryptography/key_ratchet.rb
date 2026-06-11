@@ -57,5 +57,15 @@ module Cryptography
 
       steps.times.reduce(current_key_hex) { |hex, _| next_key_hex(hex, did) }
     end
+
+    # "SNET-DEADBEEF" → 0xDEADBEEF — інверсія TelemetryUnpackerService
+    # format("SNET-%08X", raw_did): Context KDF на firmware-боці отримує
+    # сирий uint32 DID, бекенд мусить деривувати з того самого числа.
+    def did_to_u32(did_string)
+      hex = did_string.to_s[/\ASNET-([0-9A-F]{8})\z/i, 1]
+      raise InputError, "did must match SNET-XXXXXXXX, got #{did_string.inspect}" unless hex
+
+      hex.to_i(16)
+    end
   end
 end

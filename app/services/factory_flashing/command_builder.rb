@@ -7,17 +7,17 @@
 # chip. The flash layout MUST match firmware constants
 # (firmware/soldier/main.c §FLASH_KEY_ADDR — post-ARCH.42):
 #
-#   0x0803D000  [magic "KOTA" :4 ][ k_ota        :32 ]                 # Tree only — FW.23 OTA dual-gate
 #   0x0803E000  [magic "KEYL" :4 ][ aes_lora_key :16 ]
 #   0x0803E014  [magic "LSED" :4 ][ k_seed       :32 ]                 # Tree only
 #   0x0803E040  [magic "KEYC" :4 ][ aes_coap_key :32 ]                 # Gateway only
 #   0x0803E064  [magic "EDSK" :4 ][ ed25519_seed :32 ]                 # Gateway only — L1 QATT
+#   0x0803E800  [magic "KOTA" :4 ][ k_ota        :32 ]                 # Tree only — FW.23 OTA dual-gate (стор. 125; 0x0803D000 належить Flash-KV)
 #
 # Output is an Array<String> — one shell command per element. Callers pipe it
 # through Executor (dry-run prints to stdout; --execute spawns subprocesses).
 module FactoryFlashing
   class CommandBuilder
-    FLASH_OTA_KEY_ADDR  = "0x0803D000"   # Окремий сектор перед KEYL — FW.23 K_ota (firmware: FLASH_OTA_KEY_ADDR)
+    FLASH_OTA_KEY_ADDR  = "0x0803E800"   # Сторінка 125 за KEYL-сторінкою — FW.23 per-cluster K_ota (firmware: FLASH_OTA_KEY_ADDR)
     FLASH_KEY_ADDR      = "0x0803E000"
     FLASH_SEED_ADDR     = "0x0803E014"   # FLASH_KEY_ADDR + 4 (magic) + 16 (key)
     FLASH_COAP_KEY_ADDR = "0x0803E040"   # After K_seed (4 magic + 32 = 36 bytes) — see Queen flash layout
@@ -90,7 +90,7 @@ module FactoryFlashing
         raise ArgumentError, "Tree requires 32-hex AES-128 key" unless @aes_key_hex.length == 32
         out.concat(write_block(FLASH_KEY_ADDR, KEYL_MAGIC, @aes_key_hex))
         out.concat(write_block(FLASH_SEED_ADDR, LSED_MAGIC, @lorenz_seed_hex))
-        # [FW.23] K_ota — окремий сектор 0x0803D000; без нього Load_Ota_Hmac_Key
+        # [FW.23] K_ota — окрема сторінка 0x0803E800; без нього Load_Ota_Hmac_Key
         # лишає dual-gate fail-closed і жоден OTA не застосовується.
         out.concat(write_block(FLASH_OTA_KEY_ADDR, KOTA_MAGIC, @ota_hmac_hex))
       else

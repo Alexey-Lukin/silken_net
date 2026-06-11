@@ -1365,6 +1365,7 @@ uint8_t Cmd_Dedup_Check(uint32_t hash)
 //     - "CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<UUID>"  → актуатор
 //     - [0x99][chunk_idx:2][total:2][bytecode][CRC]      → OTA-чанк байткоду
 //     - [0x9A][len_le:2][body:10]                         → CMD_SET_THRESHOLDS
+//     - [0x9E][len_le:2 = 4][target_version:u16le][crc16] → CMD_ROTATE_KEY (FW.17)
 // Приклад: CMD:OPEN:60:42:a1b2c3d4-e5f6-7890-abcd-ef1234567890
 //
 // [FW.20] Бекенд `CoapEncryption` тепер ЗАВЖДИ обгортає inner_payload у
@@ -1560,9 +1561,11 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         memcpy(pending_ota_hmac_chunks[seg_idx - 1], inner_payload, 16);
         hmac_segments_received |= (uint8_t)(1u << (seg_idx - 1));
     }
-    // [FW.20-Q2] CMD_SET_THRESHOLDS (0x9A) chunks для Солдатів ставляться в
-    // soldier_cmd_queue (спільну з періодичним beacon TX) — implementation-шлях
-    // використовує той самий LoRa-broadcast pipeline що й OTA-чанки.
+    // [FW.20-Q2] Soldier-bound команди (0x9A CMD_SET_THRESHOLDS, 0x9E
+    // CMD_ROTATE_KEY [FW.17]) ставляться в soldier_cmd_queue (спільну з
+    // періодичним beacon TX) — implementation-шлях використовує той самий
+    // LoRa-broadcast pipeline що й OTA-чанки. Реле 0x9E активується разом
+    // із Soldier-гілкою (FW17_RATCHET_ENABLED, після FW.2 CCM).
 }
 
 // =========================================================================

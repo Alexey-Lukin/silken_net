@@ -90,8 +90,6 @@ RSpec.describe "Gateway lifecycle and telemetry relay" do
     end
 
     it "rotates key with grace period protection" do
-      allow(ActuatorCommandWorker).to receive(:perform_async)
-
       HardwareKeyService.provision(gateway)
       key_record = HardwareKey.find_by(device_uid: gateway.uid)
       old_key = key_record.aes_key_hex
@@ -105,8 +103,6 @@ RSpec.describe "Gateway lifecycle and telemetry relay" do
     end
 
     it "prevents double rotation while grace period is active" do
-      allow(ActuatorCommandWorker).to receive(:perform_async)
-
       HardwareKeyService.provision(gateway)
       HardwareKeyService.rotate(gateway.uid)
 
@@ -115,8 +111,6 @@ RSpec.describe "Gateway lifecycle and telemetry relay" do
     end
 
     it "allows rotation after grace period is cleared" do
-      allow(ActuatorCommandWorker).to receive(:perform_async)
-
       HardwareKeyService.provision(gateway)
       HardwareKeyService.rotate(gateway.uid)
 
