@@ -87,8 +87,29 @@ echo "▶ [FW.55] arm-none-eabi build…"
   "$REPO/firmware/sim/qemu_m4/syscalls.c" \
   "$ARM_BUILD/lib/libmruby.a" -lm
 
+# ── WLE5 bench-нога (RUNBOOK 2.3): збірка ЗАВЖДИ — link-check, щоб
+#    кремнієвий runner не гнив до bench-дня; фіт гейтиться нижче. ─────────
+echo "▶ [FW.55] wle5-bench build (кремнієва нога, RUNBOOK 2.3)…"
+"$arm_gcc" $CPU_FLAGS -std=gnu11 -O2 -Wall -Wextra \
+  -ffunction-sections -fdata-sections -nostartfiles \
+  "${INC[@]}" -I"$ARM_BUILD/include" \
+  -T "$REPO/firmware/sim/wle5_bench/stm32wle5.ld" -Wl,--gc-sections \
+  -o "$OUT/parity_wle5.elf" \
+  "$REPO/firmware/sim/wle5_bench/main.c" \
+  "$REPO/firmware/sim/wle5_bench/startup.c" \
+  "$REPO/firmware/sim/wle5_bench/syscalls.c" \
+  "$ARM_BUILD/lib/libmruby.a" -lm
+
+# Числа фіту з реального bench-ELF: static RAM → heap-бюджет 64КБ-карти
+# (stack-резерв One-Home у stm32wle5.ld; flash-фіт довів би сам лінкер).
+arm_size="${arm_gcc%gcc}size"
+read -r wle5_text wle5_data wle5_bss <<<"$("$arm_size" "$OUT/parity_wle5.elf" | awk 'NR==2{print $1, $2, $3}')"
+stack_reserve="$(sed -n 's/^__stack_reserve__ = \([0-9]*\);.*/\1/p' "$REPO/firmware/sim/wle5_bench/stm32wle5.ld")"
+heap_budget=$(( 65536 - stack_reserve - wle5_data - wle5_bss ))
+echo "  wle5: flash $(( wle5_text + wle5_data ))/262144 Б, static RAM $(( wle5_data + wle5_bss )) Б, heap-бюджет $heap_budget Б, stack-резерв $stack_reserve Б"
+
 if [ -z "$QEMU" ]; then
-  echo "✅ [FW.55] host-голден OK + ARM .elf зібрано (QEMU-ногу доведе CI)"
+  echo "✅ [FW.55] host-голден OK + ARM .elf + wle5-bench .elf зібрано (QEMU-ногу і фіт-гейт доведе CI)"
   exit 0
 fi
 
@@ -107,3 +128,21 @@ if ! diff -u "$OUT/host_cases.txt" "$OUT/arm_cases.txt" > "$OUT/parity.diff"; th
 fi
 n_cases="$(wc -l < "$OUT/host_cases.txt" | tr -d ' ')"
 echo "✅ [FW.55] біт-parity ARM(M4/QEMU) ≡ host: $n_cases зчеплених кейсів, byte-exact"
+
+# ── WLE5-фіт: QEMU-числа переносяться на кремній (той самий libmruby/newlib
+#    → ідентична послідовність malloc'ів) — «не влазить у 64КБ» ловимо ТУТ. ──
+heap_high="$(sed -n 's/^PARITY-HEAP high-water=\([0-9]*\)$/\1/p' "$OUT/arm.txt")"
+stack_high="$(sed -n 's/^PARITY-STACK high-water=\([0-9]*\)$/\1/p' "$OUT/arm.txt")"
+if [ -z "$heap_high" ] || [ -z "$stack_high" ]; then
+  echo "❌ [FW.55] фіт-маркери PARITY-HEAP/PARITY-STACK не прийшли з QEMU"
+  exit 1
+fi
+if [ "$heap_high" -gt "$heap_budget" ]; then
+  echo "❌ [FW.55] mruby-прогін НЕ ВЛАЗИТЬ у WLE5: heap $heap_high Б > бюджет $heap_budget Б (64КБ SRAM)"
+  exit 1
+fi
+if [ "$stack_high" -gt "$stack_reserve" ]; then
+  echo "❌ [FW.55] стек глибший за резерв wle5-карти: $stack_high Б > $stack_reserve Б"
+  exit 1
+fi
+echo "✅ [FW.55] WLE5-фіт: heap $heap_high/$heap_budget Б, stack $stack_high/$stack_reserve Б — кремнієвій нозі є де жити"

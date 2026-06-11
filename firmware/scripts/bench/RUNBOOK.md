@@ -37,7 +37,7 @@
 |---|---|---|---|
 | 2.1 `ccm_selftest` на платі | HAL-збірка з викликом `Ccm_Run_Self_Test` → UART/RTT звіт (`02_selftest_attest.py --plan` дає кроки) | **усі KAT PASS** — тоді `HAL_CRYPEx_AESCCM_Encrypt` ≡ OpenSSL byte-exact (host-сторона вже доведена `test_ccm_selftest`) | FW.2 → фліп `FW2_CCM_ENABLED` + `TELEMETRY_CCM_ENABLED` (чеклист `03_05` flip) |
 | 2.2 `sym_selftest` (ECB/CBC) | той самий runner | PASS | SEC.8 контекст-світчі |
-| 2.3 FW.55 silicon-confirm | parity-runner (UART-варіант `firmware/sim/parity_core.h`) на платі → дамп | дамп ≡ host/QEMU byte-exact | FW.7/FW.19 остаточно |
+| 2.3 FW.55 silicon-confirm | `05_parity_dump.py --plan`: `qemu_parity.sh` (голден + `parity_wle5.elf`) → `00_flash.sh --elf … --execute` → `05_parity_dump.py --port <VCP>` | вердикт скрипта: дамп ≡ host byte-exact (фіт у 64КБ вже доведено CI-гейтом) | FW.7/FW.19 остаточно; плату перешити бойовим образом |
 | 2.4 L1 QATT e2e | прошити Queen EDSK-сім'ю (factory.rake Гілка A → `-w32` EDSK-блок) → flush на staging → бекенд-лог `батч атестовано` + `gateways.last_attested_at` | підпис верифікується (timing sign'а на M4 — заміряти принагідно); сім'я відсутня → legacy-батч приймається | L1 bench-residual (`00_07` SE050-MIGRATION) |
 
 ## 3. Живлення (FW.54 / FW.50 / E.63 — дані для β!)

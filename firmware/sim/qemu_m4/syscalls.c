@@ -48,15 +48,25 @@ extern char end;            /* з mps2_an386.ld */
 extern uint32_t __stack_top__;
 #define STACK_RESERVE (64u * 1024u)
 
+static char *brk_cur, *brk_max;
+
 void *_sbrk(int incr)
 {
-    static char *brk;
-    if (!brk) brk = &end;
+    if (!brk_cur) brk_cur = &end;
     const char *limit = (const char *)((uintptr_t)&__stack_top__ - STACK_RESERVE);
-    if (brk + incr > limit) { errno = ENOMEM; return (void *)-1; }
-    char *prev = brk;
-    brk += incr;
+    if (brk_cur + incr > limit) { errno = ENOMEM; return (void *)-1; }
+    char *prev = brk_cur;
+    brk_cur += incr;
+    if (brk_cur > brk_max) brk_max = brk_cur;
     return prev;
+}
+
+/* Водяний знак кучі: той самий libmruby/newlib, що й на WLE5 → послідовність
+ * malloc'ів ідентична, число ПЕРЕНОСИТЬСЯ на кремній (фіт у 64КБ SRAM гейтить
+ * qemu_parity.sh проти бюджету wle5_bench-карти). */
+uint32_t Sbrk_Highwater(void)
+{
+    return brk_max ? (uint32_t)(brk_max - &end) : 0u;
 }
 
 /* Semihosting ADP_Stopped_ApplicationExit — QEMU завершується (код 0;

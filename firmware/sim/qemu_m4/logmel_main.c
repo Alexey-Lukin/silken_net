@@ -19,12 +19,12 @@
 #include <stdint.h>
 
 #include "../logmel_parity_core.h"
+#include "../stack_paint.h"
 
 void Uart0_Init(void);
 
 /* Вікно фарбування під SP: глибше за будь-який очікуваний високий слід. */
 #define PAINT_WORDS    (16u * 1024u / 4u)
-#define PAINT_PATTERN  0xC0FFEE55u
 
 /* Tripwire-бюджет: після reuse-buffers очікуємо ~4 КБ (два кадрові буфери
  * по LOGMEL_N_FFT float + soft-float хвости). Перевищення = регресія стеку. */
@@ -34,26 +34,7 @@ void Uart0_Init(void);
 static float frame_in[LOGMEL_N_FFT];
 static float mel_out[LOGMEL_N_MELS];
 
-__attribute__((noinline))
-// cppcheck-suppress constParameterPointer // фарбування йде ЧЕРЕЗ похідний від sp_ref вказівник
-static void Stack_Paint(uint32_t *sp_ref)
-{
-    /* Зупиняємось під власним живим кадром — інакше зафарбували б свою
-     * адресу повернення. Незафарбований хвостик угорі вікна нічого не
-     * краде: глибокий слід Compute_LogMel лежить значно нижче. */
-    const uint32_t *own = (const uint32_t *)__builtin_frame_address(0);
-    for (uint32_t *p = sp_ref - PAINT_WORDS; p < own - 8; p++)
-        *p = PAINT_PATTERN;
-}
-
-__attribute__((noinline))
-static uint32_t Stack_Highwater(const uint32_t *sp_ref)
-{
-    /* Скан знизу: перше не-патерн слово = найглибший дотик. */
-    const uint32_t *p = sp_ref - PAINT_WORDS;
-    while (p < sp_ref && *p == PAINT_PATTERN) p++;
-    return (uint32_t)(sp_ref - p) * 4u;
-}
+/* Paint/scan — спільний ../stack_paint.h (One-Home з parity-ногами). */
 
 int main(void)
 {
@@ -70,13 +51,13 @@ int main(void)
     /* 2. Стек: фарба → чисті виклики (жодного stdio між ними) → скан. */
     {
         uint32_t *sp_ref = (uint32_t *)__builtin_frame_address(0);
-        Stack_Paint(sp_ref);
+        Stack_Paint(sp_ref, PAINT_WORDS);
         for (int g = 0; g < LOGMEL_GOLDEN_COUNT; g++) {
             for (int i = 0; i < LOGMEL_N_FFT; i++)
                 frame_in[i] = LOGMEL_GOLDEN[g].input[i];
             Compute_LogMel(frame_in, mel_out);
         }
-        highwater = Stack_Highwater(sp_ref);
+        highwater = Stack_Highwater(sp_ref, PAINT_WORDS);
     }
 
     /* Друк цілими числами: незалежно від float-printf варіанта newlib. */

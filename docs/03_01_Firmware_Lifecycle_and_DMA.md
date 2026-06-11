@@ -1537,8 +1537,13 @@ toolchain-файлів помилково пінила апаратний FPv4 h
 **Анатомія (One-Home):**
 - `firmware/sim/parity_core.h` — спільний runner (host і ARM компілюють той самий код); краєві піни (temp/acoustic/delta_t/vcap) + LCG-розгортка.
 - `firmware/sim/host_main.c` — host-голден; `firmware/sim/qemu_m4/{main,startup,syscalls}.c` + `mps2_an386.ld` — bare-metal нога (CMSDK UART0 → stdout, semihosting-вихід; карта пам'яті СИМУЛЯТОРА, не Солдата).
-- `firmware/scripts/qemu_parity.sh` — єдиний вхід (DRY, патерн `cppcheck.sh`): локально без qemu → host+ARM-build і чесний skip; CI з `REQUIRE_QEMU=1` — відсутній qemu = fail.
+- `firmware/sim/wle5_bench/{main,startup,syscalls}.c` + `stm32wle5.ld` — **кремнієва нога** (silicon-confirm, RUNBOOK 2.3): той самий `parity_core.h` + той самий `libmruby.a` на РЕАЛЬНІЙ карті WLE5 (FLASH 256K @ 0x0800_0000 / SRAM 64K, .data копіюється startup'ом; LPUART1 PA2 AF8 → ST-LINK VCP, голий RM0461 без HAL — дамп не чекає CubeMX-vendoring). Раунди стрімляться нескінченно (`PARITY-BEGIN`→кейси→`PARITY-COMPLETE`→фіт-звіт) — знімач дампу не грає в «хто перший: reset чи порт».
+- `firmware/sim/stack_paint.h` — спільний paint/scan стек-вотермарки всіх ARM-ніг.
+- `firmware/scripts/qemu_parity.sh` — єдиний вхід (DRY, патерн `cppcheck.sh`): локально без qemu → host+ARM+wle5-build і чесний skip; CI з `REQUIRE_QEMU=1` — відсутній qemu = fail.
+- `firmware/scripts/bench/05_parity_dump.py` — bench-день: дамп із плати по VCP ↔ host-голден, вердикт byte-exact (`--plan` дає кроки).
 - CI: крок `[FW.55]` у job `firmware_arm_build` (`ci.yml`) — реюзає вже зібрані mruby-ліби.
+
+**Фіт-гейт 64КБ (pre-flight кремнієвої ноги):** QEMU-mruby-нога друкує heap/stack high-water прогону (`PARITY-HEAP`/`PARITY-STACK`), а `qemu_parity.sh` гейтить ці числа проти бюджету wle5-карти — 64КБ мінус static RAM реального `parity_wle5.elf` мінус стек-резерв (One-Home числа резерву — `stm32wle5.ld`). Числа переносяться на кремній чесно: той самий `libmruby.a`/newlib ⇒ ідентична послідовність malloc'ів. «mruby-прогін не влазить у Солдата» — знахідка CI, не bench-дня.
 
 **Друга нога — log-mel DSP ([FW.4], 2026-06-10):** та сама машина, той самий
 метод, інший вантаж: `Compute_LogMel` (`silken_common`, `LOGMEL_USE_CMSIS` —
