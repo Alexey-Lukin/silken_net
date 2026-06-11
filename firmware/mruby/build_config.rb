@@ -30,6 +30,11 @@
 # box is ~254 KB .text, OVER the 256 KB STM32WLE5JC Flash; this set is a fraction.
 SILKEN_MIN_GEMS = lambda do |conf|
   conf.cc.defines << 'MRB_NO_STDIO'      # STM32 has no filesystem
+  # [FW.55] mruby's own MCU profile: heap pages 256 objects (default 1024 ≈
+  # tens of KB per page — the QEMU fit-gate caught mrb_open NOT fitting the
+  # 64 KB WLE5 SRAM), no method cache, small khash. Math/ABI untouched —
+  # parity dump stays byte-exact (gate re-proves on every CI run).
+  conf.cc.defines << 'MRB_CONSTRAINED_BASELINE_PROFILE'
   conf.gem core: 'mruby-compar-ext'      # Comparable#clamp — the only non-core need
   # [FW.19] No MRB_USE_FLOAT32 + no MRB_WORD_BOXING/MRB_NAN_BOXING → double, inline.
 end
