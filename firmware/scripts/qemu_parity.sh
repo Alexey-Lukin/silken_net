@@ -81,8 +81,12 @@ echo "▶ [FW.55] host golden…"
 grep -q "PARITY-COMPLETE" "$OUT/host.txt" || { echo "❌ host-прогін без маркера"; exit 1; }
 
 # ── ARM-нога: збірка завжди (link-перевірка), запуск — якщо є qemu ──────
+# nano.specs = newlib-nano (first-fit malloc) — майбутній CubeMX-дефолт
+# Солдата; повний newlib-dlmalloc давав +24КБ sbrk-роздуву проти чистих
+# mruby-запитів (SBRK-трас 2026-06-11) і був нерепрезентативний.
 echo "▶ [FW.55] arm-none-eabi build…"
 "$arm_gcc" $CPU_FLAGS -std=gnu11 -O2 -Wall -Wextra $MRB_DEFS \
+  --specs=nano.specs \
   -ffunction-sections -fdata-sections -nostartfiles \
   "${INC[@]}" -I"$ARM_BUILD/include" \
   -T "$REPO/firmware/sim/qemu_m4/mps2_an386.ld" -Wl,--gc-sections \
@@ -96,6 +100,7 @@ echo "▶ [FW.55] arm-none-eabi build…"
 #    кремнієвий runner не гнив до bench-дня; фіт гейтиться нижче. ─────────
 echo "▶ [FW.55] wle5-bench build (кремнієва нога, RUNBOOK 2.3)…"
 "$arm_gcc" $CPU_FLAGS -std=gnu11 -O2 -Wall -Wextra $MRB_DEFS \
+  --specs=nano.specs \
   -ffunction-sections -fdata-sections -nostartfiles \
   "${INC[@]}" -I"$ARM_BUILD/include" \
   -T "$REPO/firmware/sim/wle5_bench/stm32wle5.ld" -Wl,--gc-sections \
