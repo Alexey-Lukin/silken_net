@@ -81,7 +81,7 @@ dz/dt = x · y - β · z
 
 > **[FIX FW.7]:** Backend переведено з BigDecimal на Float (IEEE 754 double) — та сама математика, що firmware mruby (ті ж константи й операції). BigDecimal давав інші результати після 250 ітерацій через `round(18)` на кожному кроці.
 >
-> **Точність parity (уточнено FW.46, 2026-06-04 — перший реальний прогін mruby-VM):** firmware та backend дають **категорично ідентичний** вихід — `status`/`growth_points`/`payload_byte` бітово збігаються (перевірено реальним mruby 4.0.0 VM через `tools/firmware/run_bytecode_vm.sh`, що ганяє committed `lorenz_bytecode`). **Raw Z** реального mruby-VM розходиться з CRuby на **~1e-14** (хаотична амплітудизація last-ULP арифметичної різниці за ~2.5 ляпуновських часи) — у межах numeric-DCI band (`FW.31` ε=0.001) та canon ARM↔x86 drift `<1e-12` (§SEC.11 нижче). Раніше «bit-identical / 50k» стосувалося Ruby/C-мірор рівня (`firmware/test/test_bio_contract.c` реімплементує логіку в C), а не самого mruby-VM. Бітову інваріантність на **будь-якому** процесорі дає лише fixed-point Q-формат (§нижче, `FW.45`). **[FW.57 F4]** Окрім mruby-VM прогону, firmware↔backend `Z`/`bio_status` тепер звіряються ПРЯМО: `attractor_spec` ганяє справжній `bio_contract.rb` в ізольованому subprocess (`tools/firmware/contract_runner.rb`) замість рукописної `firmware_z`-копії — 3-тю kernel-копію усунено (GP-parity → FW.2).
+> **Точність parity (уточнено FW.46, 2026-06-04 — перший реальний прогін mruby-VM):** firmware та backend дають **категорично ідентичний** вихід — `status`/`growth_points`/`payload_byte` бітово збігаються (перевірено реальним mruby 4.0.0 VM через `tools/firmware/run_bytecode_vm.sh`, що ганяє committed `lorenz_bytecode`). **Raw Z:** перший VM-прогін (2026-06-04, один кейс) показував **~1e-14** проти CRuby — **superseded 2026-06-11**: за pinned-конфігурації (явний `MRB_NO_BOXING` + MCU-профіль, FW.55-④) sweep N=10 000 зчеплених кейсів дає **бітову рівність** mruby-VM ↔ CRuby (max|Δz| = 0, `tools/firmware/dci_epsilon_sweep.sh`; деталі Gate L — §7.1), а ARM↔x86 плече бітово-нульове за FW.55 QEMU byte-parity. Раніше «bit-identical / 50k» стосувалося Ruby/C-мірор рівня (`firmware/test/test_bio_contract.c` реімплементує логіку в C), а не самого mruby-VM. Бітову інваріантність на **будь-якому** процесорі дає лише fixed-point Q-формат (§нижче, `FW.45`). **[FW.57 F4]** Окрім mruby-VM прогону, firmware↔backend `Z`/`bio_status` тепер звіряються ПРЯМО: `attractor_spec` ганяє справжній `bio_contract.rb` в ізольованому subprocess (`tools/firmware/contract_runner.rb`) замість рукописної `firmware_z`-копії — 3-тю kernel-копію усунено (GP-parity → FW.2).
 
 > **[Майбутнє hardening — Integer/Fixed-Point Math, не реалізовано]** Float-парність вирішує bit-identity для пари x86-64 ↔ ARM Cortex-M4 (WLE5 — **без FPU**, [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA): binary64 рахується software `__aeabi_d*` — коректно-округлений IEEE 754; байт-парність саме цього шляху доведена QEMU-M4 ногою, [`03_01 §12.7`](03_01_Firmware_Lifecycle_and_DMA)). Вона **НЕ гарантує** парності для:
 > (a) інших toolchain/libc soft-float реалізацій поза перевіреним gcc/libgcc шляхом (денормали, FTZ-поведінка);
@@ -471,7 +471,7 @@ Gaia 2.0 використовує **dual computation integrity verification**: Z
 | **Результат** | `z` (Float, необроблений) → пакується у `status_byte` | `z.round(4)` → зберігається у `TelemetryLog.z_value` |
 | **Де використовується** | Пакується у `payload_byte` (byte 10 LoRa) | `TelemetryLog.z_value`, ZK-proof верифікація |
 
-> **[SEC.11] Byte-Identical Initial State:** firmware та backend **деривують той самий `(x₀, y₀, z₀)`** через спільний HKDF/HMAC-SHA256 алгоритм з per-device `K_seed` (`SilkenNet::SeedDerivation` ↔ pure-C `silken_sha256.h` у firmware). DID більше не використовується як seed. Тому raw Z-значення тепер може порівнюватися чисельно (з врахуванням ARM↔x86 IEEE-754 drift < 1e-12 за 250 ітерацій). `check_z_divergence!` залишається категоричним за замовчанням; числовий tolerance band готовий до flip під feature-flag після інструментального вимірювання реального drift на target HW.
+> **[SEC.11] Byte-Identical Initial State:** firmware та backend **деривують той самий `(x₀, y₀, z₀)`** через спільний HKDF/HMAC-SHA256 алгоритм з per-device `K_seed` (`SilkenNet::SeedDerivation` ↔ pure-C `silken_sha256.h` у firmware). DID більше не використовується як seed. Тому raw Z-значення тепер може порівнюватися чисельно (виміряний drift = **0 бітово**: ARM↔x86 — FW.55 QEMU byte-parity; mruby-VM↔CRuby — sweep N=10k, §7.1 Gate L). `check_z_divergence!` залишається категоричним за замовчанням; числовий tolerance band готовий до flip під feature-flag — Gate L закрито, лишаються гейти D/C/P/G (§7.1) + кремнієвий хвіст у FW.55 silicon-confirm дампі.
 
 ### 5.2 Потік Верифікації
 
@@ -669,22 +669,21 @@ Numeric branch виконується **лише** коли `attributes[:device_
 
 До цього часу — branch інертний, але код вже staged у production без поведінкової зміни.
 
-**Lab measurement protocol (pre-flip gate):**
+**Gate L — вимірювання drift ✅ machine-closed (2026-06-11, без заліза):**
 
-Потрібно фактично виміряти ARM↔x86 IEEE-754 drift на цільовому залізі, перш ніж довірити numeric ε фінансовим рішенням (slashing, mint). Емпірика [FW.7](../00_07_Action_Plan_Tracker.md) дала `< 1e-12` теоретично — але без instrumented testing цифру не можна "закладати в конституцію".
+Оригінальний протокол (N=10k векторів → x86 vs прошитий STM32 через SWD/RTT) писався до появи QEMU-лейну FW.55. Розкладання DCI-ланцюга на плечі закрило його софтом:
 
-| Крок | Дія | Артефакт |
-|------|-----|----------|
-| 1 | Згенерувати N=10 000 детермінованих тест-векторів через `SilkenNet::SeedDerivation` для синтетичних `K_seed` (різні per-vector) + випадкові `(temp, acoustic, delta_t_s, vcap_mv)` у валідних діапазонах | `firmware/test/test_dci_drift_vectors.json` (gitignored, recreatable) |
-| 2 | Прогнати ті самі вектори через `Attractor.calculate_z_from_state` на GCP x86-64 (production-mirror Docker image) | CSV: `vector_id, server_z` |
-| 3 | Прошити test-фірмвар на STM32WLE5JC (REVB silicon, той самий що у Pilot Site), прогнати вектори через mruby `calculate_state`, прочитати Z через SWD/RTT | CSV: `vector_id, device_z` |
-| 4 | Diff: `device_z − server_z` distribution. Скласти histogram (logspace bins для tail), розрахувати p50/p99/p99.9/p99.99/max | Jupyter notebook `analysis/dci_drift_distribution.ipynb` (deferred) |
-| 5 | Перевірити нульовий drift на subset, де `chaos_seed → byte-identical (x₀,y₀,z₀)` (SEC.11 invariant) — будь-який non-zero drift тут = баг в seed derivation, не Float | Assertion у notebook |
-| 6 | Обрати ε := max(p99.99, 2 × max_observed_drift). Якщо ε ≥ 0.1 — Lorenz dynamics зламана й треба окремо розбиратися (ARCH.18 fixed-point). Якщо ε < 0.0001 — поставити `0.001` як conservative default (надлишок margin) | Кеп ε у `DEFAULT_DCI_EPSILON` constant + PR |
+| Плече | Метод | Результат |
+|-------|-------|-----------|
+| mruby-ARM32 (девайс) ↔ mruby-x86 | FW.55 QEMU byte-parity ([`03_01 §12.7`](03_01_Firmware_Lifecycle_and_DMA)): той самий байткод на реальному M4 ISA-шляху, 64 зчеплені кейси (хаос ампліфікує будь-який ULP) | **бітова рівність** (кожен CI-прогін) |
+| mruby-VM ↔ CRuby (справжній контракт) | `tools/firmware/dci_epsilon_sweep.sh` — **N=10 000 зчеплених кейсів** (генератор бітово дзеркалить `parity_core.h`; кожна сторона ланцюжить власний хвіст = модель warm-chaining DCI; CRuby-сторона = `bio_contract.rb` напряму, FW.57-ізоляція) | **бітова рівність 10000/10000**, payload 0 розбіжностей, max\|Δz\| = 0 |
+| CRuby-контракт ↔ backend `Attractor` | 200-кейсовий fuzz `attractor_spec` (FW.57 F4, постійний CI-гейт) | категорично + числово збігається |
+
+**Висновок Gate L:** за поточної pinned-конфігурації (mruby 4.0.0, явний `MRB_NO_BOXING` + `MRB_CONSTRAINED_BASELINE_PROFILE` — [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA)) увесь ланцюг device-mruby → server-CRuby **бітово точний**; виміряний drift = 0, ε=0.001 — чиста страховка від silicon-сюрпризів і майбутніх конфіг-дрейфів (правило кроку 6 «ε < 0.0001 → ставимо 0.001 conservative» виконано з нескінченним запасом). Історичне спостереження «~1e-14» (перший VM-прогін 2026-06-04, один кейс) **superseded** — не відтворюється: той самий кейс сьогодні бітово рівний (sweep, кейс 0). Кремнієвий хвіст Gate L = той самий one-command FW.55 silicon-confirm дамп (SWD, закриває FW.7/FW.19/FW.31 разом). Sweep — відтворюваний інструмент, не CI-гейт: переганяти після змін контракту/mruby-конфігурації.
 
 **Rollout gates (порядок активації):**
 
-1. **Gate L (Lab):** Lab measurement виконано, ε обраний, distribution stored.
+1. **Gate L (Lab):** ✅ див. вище — drift виміряно (=0), ε=0.001 підтверджено conservative; кремнієвий хвіст їде з FW.55-дампом.
 2. **Gate D (Device coverage):** `device_z` доступний у ≥ 95% telemetry packets (після FW.2 wire revision АБО після ML2 variant).
 3. **Gate C (Canary):** Активація в `WEB3_STRICT_MODE=false` staging кластері на 24 год. Watch `silkennet_dci_numeric_rejections_total` (новий Prometheus counter, додати в [`06_03`](06_03_Prometheus_Observability) після Gate D). Очікувано: 0 rejections (бо ε > max observed drift у Gate L). Будь-яке non-zero rejection → analiza root cause (seed corruption? RTC drift? overflow?) перед production.
 4. **Gate P (Production canary):** Single Genesis cluster, `GAIA_DCI_NUMERIC_TOLERANCE=true` через `kamal env push`, моніторинг 72 год.

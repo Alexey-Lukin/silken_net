@@ -37,7 +37,12 @@
 #define PARITY_MEM_MARK(phase) ((void)0)
 #endif
 
+/* Переоверайдиться -DPARITY_N_CASES=<N>: QEMU-лейн тримає 64 (CI byte-diff),
+ * а DCI ε-sweep (FW.31, tools/firmware/dci_epsilon_sweep.sh) жене ті самі
+ * зчеплені кейси на N=10k через host-mruby для |Δz|-розподілу проти CRuby. */
+#ifndef PARITY_N_CASES
 #define PARITY_N_CASES 64
+#endif
 
 /* Дрібний детермінований LCG (Numerical Recipes) — однаковий на обох
  * таргетах, без libc rand(). */

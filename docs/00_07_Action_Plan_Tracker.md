@@ -551,8 +551,9 @@
 
 #### FW.31 — DCI: числовий tolerance band у `check_z_divergence!` (feature-flag flip)
 - **P2** · 👤 · → [`03_04 §7.1`](03_04_mruby_Lorenz_Attractor)
-- **✅ Numeric band code-staged ([`03_04 §7.1`](03_04_mruby_Lorenz_Attractor)):** `check_z_divergence!` + `DEFAULT_DCI_EPSILON=0.001` за двома ENV-флагами (`GAIA_DCI_NUMERIC_TOLERANCE`/`_EPSILON`, default off) — `|server_z−device_z|<ε` ДОПОВНЮЄ (не заміняє) категоричний check → ловить replay з валідним StatusByte, але хибною Z-magnitude (RSpec покрито). Подвійно-gated: флаг off + `device_z` ще не у wire (21B пакет; зайде post-FW.2). Лишається:
-  - [ ] 👤 lab: тест-вектори STM32 vs x86, `|Δz|`-distribution (N=10k) → довірити ε фінрішенням (drift емпірично `<1e-12`, ε=0.001 = 9 порядків запасу; instrumented HW)
+- **✅ Numeric band code-staged ([`03_04 §7.1`](03_04_mruby_Lorenz_Attractor)):** `check_z_divergence!` + `DEFAULT_DCI_EPSILON=0.001` за двома ENV-флагами (`GAIA_DCI_NUMERIC_TOLERANCE`/`_EPSILON`, default off) — `|server_z−device_z|<ε` ДОПОВНЮЄ (не заміняє) категоричний check → ловить replay з валідним StatusByte, але хибною Z-magnitude (RSpec покрито). Подвійно-gated: флаг off + `device_z` ще не у wire (21B пакет; зайде post-FW.2). · ✅ (2026-06-11) **Gate L machine-closed без заліза** (канон [`03_04 §7.1`](03_04_mruby_Lorenz_Attractor)): `|Δz|`-distribution N=10 000 зчеплених кейсів через СПРАВЖНІЙ mruby-VM ↔ справжній контракт у CRuby (`tools/firmware/dci_epsilon_sweep.sh`, генератор дзеркалить `parity_core.h`, кожна сторона ланцюжить власний хвіст) — **бітова рівність 10000/10000, payload 0 розбіжностей, max|Δz| = 0**; ARM-плече бітово-нульове за FW.55 QEMU byte-parity. Історичні «drift `<1e-12`» / «~1e-14» superseded (не відтворюються за pinned-конфігурації — явний `MRB_NO_BOXING`, FW.55-④). ε=0.001 = чиста страховка. Лишається:
+  - [ ] 👤 silicon-хвіст Gate L: той самий one-command FW.55 дамп (SWD) — закриває FW.7/FW.19/FW.31 разом
+  - [ ] 👤 flip-гейти D/C/P/G ([`03_04 §7.1`](03_04_mruby_Lorenz_Attractor)): `device_z` у wire (post-FW.2) → staging canary → production
 
 #### FW.42 — Vcap guard для fauna acoustic sampling (brownout protection)
 - **P1** · 🔗 · → [`03_03 §10.3`](03_03_TinyML_Acoustic_Inference)
