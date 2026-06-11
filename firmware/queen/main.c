@@ -75,6 +75,13 @@
 #define OTA_REQ_BITMAP_MAX_BYTES   9
 #define OTA_REQ_PACKET_SIZE        16
 
+// [ARCH.41-C / FW.20-S2] SYNC_REQ — зойк «Королево, час!» (дзеркало
+// soldier/main.c freeze-contract): [0x56][DID:4][secs_since_sync:4][TTL]
+// ['S'][vcap_mv:2][pad:3]. Шлеться у cold-boot grace-вікні (hello) або
+// сторожовим псом дрейфу. Відповідь — негайна перемотка маяка.
+#define SYNC_REQ_MARKER            0x56
+#define SYNC_REQ_MAGIC_BYTE        0x53  /* 'S' */
+
 // [FIX: AUDIT MISRA] Іменовані константи замість магічних чисел
 #define LORA_RX_INFINITE      0xFFFFFF  // Нескінченний таймаут прийому LoRa
 #define FLUSH_INTERVAL_MS     3600000   // Інтервал скидання кешу (1 година)
@@ -753,6 +760,19 @@ int main(void)
             }
             // Цей пакет не лягає у CIFO/CoAP — він не належить літопису рою.
             // Re-arm RX і переходимо до наступного голосу у рингу.
+            Radio.Rx(LORA_RX_INFINITE);
+            continue;
+        }
+
+        // [ARCH.41-C] Зойк «Королево, час!» — hello cold-boot Солдата
+        // (grace-вікно) чи сторожовий пес дрейфу. Не телеметрія — у літопис
+        // не лягає. Відповідь: перемотка last_beacon_time → маяк стрельне на
+        // цьому ж обороті циклу (~60 мс ефіру). Дедуп не потрібен: перемотка
+        // ідемпотентна, маяк і так максимум один на оборот; без власного часу
+        // (queen_unix_ts==0) Broadcast_Time_Beacon сам змовчить.
+        if (decrypted_payload[0] == SYNC_REQ_MARKER &&
+            decrypted_payload[10] == SYNC_REQ_MAGIC_BYTE) {
+            last_beacon_time = HAL_GetTick() - TIME_BEACON_INTERVAL_MS - 1u;
             Radio.Rx(LORA_RX_INFINITE);
             continue;
         }

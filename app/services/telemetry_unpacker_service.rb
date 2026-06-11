@@ -54,6 +54,14 @@ class TelemetryUnpackerService < ApplicationService
   # recovery candidate must match the real value.
   FIRMWARE_RTC_DEFAULT_EPOCH_DAY = 10_957
 
+  # [ARCH.41-B] Wire-sentinel «час невідомий»: Soldier без жодного beacon'а
+  # (cold-boot після VBAT-loss / Королева мовчить) шле 0xFE замість
+  # acoustic-лічильника, а Лоренц НА ПРИСТРОЇ рахується з acoustic=0 —
+  # дзеркальна нейтралізація тут (до DCI) тримає паритет. Реальні 254
+  # неможливі (firmware клампить у 0xFD); 255 лишається FW.22-сатурацією.
+  # Дім: 03_04 §2.1; firmware-дзеркало — Soldier_Acoustic_Wire_Value.
+  ACOUSTIC_TIME_UNCERTAIN_SENTINEL = 0xFE
+
   # DID-сентинел: Королева передає власну телеметрію з DID = 0x00000000
   QUEEN_SENTINEL_DID = "0"
 
@@ -196,6 +204,9 @@ class TelemetryUnpackerService < ApplicationService
       bio_status: bio_status,
       panic: panic
     }
+
+    # [ARCH.41-B] sentinel 0xFE → нейтралізація ДО DCI + CMD_TIME_SYNC.
+    apply_time_uncertain_sentinel!(tree, log_attributes, hex_did)
 
     # [FW.18b] Верхні 5 біт TTL-байта — saturating лічильник відкинутих
     # OTA-порогів (03_03 §5.4). Метрика без per-DID мітки (cardinality
@@ -354,6 +365,9 @@ class TelemetryUnpackerService < ApplicationService
       # (Soldier_Build_CCM_LoRa_Packet приймає status_byte як є).
       panic: status_byte.anybits?(PANIC_FLAG_BIT)
     }
+
+    # [ARCH.41-B] sentinel 0xFE → нейтралізація ДО DCI + CMD_TIME_SYNC.
+    apply_time_uncertain_sentinel!(tree, log_attributes, hex_did)
 
     if acoustic == 255
       SilkenNet::Metrics::TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL.increment
@@ -658,6 +672,26 @@ class TelemetryUnpackerService < ApplicationService
     end
 
     false
+  end
+
+  # [ARCH.41-B] Явний sentinel «час невідомий» з прошивки (acoustic = 0xFE).
+  # На відміну від recovery (ARCH.41-A, детектив постфактум) — це голос самого
+  # Солдата: «мій epoch_day застарілий». Нейтралізуємо acoustic до 0 ДО DCI
+  # (пристрій рахував Лоренц з 0 — дзеркало Soldier_Acoustic_Wire_Value),
+  # ставимо time_unsynced_fallback і одразу просимо CMD_TIME_SYNC. Побічний
+  # виграш нейтралізації: alert-ланцюг (сейсміка/шкідники) і stress_index
+  # бачать 0, а не фальшиві 254 «події». DCI при цьому НЕ обходиться —
+  # sentinel не може служити маскою для підробленого Z (fraud-логіка жива).
+  def apply_time_uncertain_sentinel!(tree, attributes, hex_did)
+    return unless attributes[:acoustic_events] == ACOUSTIC_TIME_UNCERTAIN_SENTINEL
+
+    attributes[:acoustic_events] = 0
+    attributes[:time_unsynced_fallback] = true
+    Rails.logger.info(
+      "🕰️ [ARCH.41-B] DID #{hex_did}: acoustic sentinel 0xFE — Soldier ще не чув " \
+      "beacon'а (cold-boot після VBAT-loss?). Лоренц з acoustic=0; CMD_TIME_SYNC у чергу."
+    )
+    TimeSyncDownlinkWorker.perform_async(tree.cluster_id) if tree.cluster_id.present?
   end
 
   # [FW.31] Feature-flag — defaults to false so production behaviour

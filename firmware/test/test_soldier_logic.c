@@ -3999,7 +3999,8 @@ static uint32_t Test_Seconds_Since_Last_Sync(uint32_t now_tick) {
 }
 
 static void Test_Build_Time_Sync_Request_Payload(uint8_t* out, uint32_t did,
-                                                   uint32_t secs_since_sync) {
+                                                   uint32_t secs_since_sync,
+                                                   uint16_t vcap_mv) {
     out[0]  = FW20S2_SYNC_REQ_MARKER;
     out[1]  = (uint8_t)(did >> 24);
     out[2]  = (uint8_t)(did >> 16);
@@ -4011,7 +4012,9 @@ static void Test_Build_Time_Sync_Request_Payload(uint8_t* out, uint32_t did,
     out[8]  = (uint8_t)(secs_since_sync & 0xFFu);
     out[9]  = FW20S2_PANIC_TTL;
     out[10] = FW20S2_SYNC_REQ_MAGIC_BYTE;
-    for (uint8_t i = 11; i < FW20S2_SYNC_REQ_PACKET_SIZE; i++) out[i] = 0;
+    out[11] = (uint8_t)(vcap_mv >> 8);   /* [ARCH.41-C] здоров'я EDLC у hello */
+    out[12] = (uint8_t)(vcap_mv & 0xFFu);
+    for (uint8_t i = 13; i < FW20S2_SYNC_REQ_PACKET_SIZE; i++) out[i] = 0;
 }
 
 static void Test_FW20S2_Reset(void) {
@@ -4082,7 +4085,7 @@ TEST(test_fw20s2_seconds_since_sync_computed_warm) {
 
 TEST(test_fw20s2_sync_req_payload_layout) {
     uint8_t p[FW20S2_SYNC_REQ_PACKET_SIZE];
-    Test_Build_Time_Sync_Request_Payload(p, 0xCAFEBABEu, 47000u);
+    Test_Build_Time_Sync_Request_Payload(p, 0xCAFEBABEu, 47000u, 4321u);
     ASSERT_EQ(p[0], FW20S2_SYNC_REQ_MARKER);
     /* DID big-endian */
     ASSERT_EQ(p[1], 0xCAu);
@@ -4096,19 +4099,58 @@ TEST(test_fw20s2_sync_req_payload_layout) {
     ASSERT_EQ(p[8], 0x98u);
     ASSERT_EQ(p[9], FW20S2_PANIC_TTL);
     ASSERT_EQ(p[10], FW20S2_SYNC_REQ_MAGIC_BYTE);
-    /* PAD bytes 11..15 must be zeroed */
-    for (int i = 11; i < FW20S2_SYNC_REQ_PACKET_SIZE; i++) ASSERT_EQ(p[i], 0u);
+    /* [ARCH.41-C] vcap_mv big-endian: 4321 = 0x10E1 */
+    ASSERT_EQ(p[11], 0x10u);
+    ASSERT_EQ(p[12], 0xE1u);
+    /* PAD bytes 13..15 must be zeroed */
+    for (int i = 13; i < FW20S2_SYNC_REQ_PACKET_SIZE; i++) ASSERT_EQ(p[i], 0u);
 }
 
 TEST(test_fw20s2_sync_req_marker_disambiguation_from_ota_req) {
     /* OTA_REQ використовує 0x55 + magic 'R' (FW.27-B); SYNC_REQ — 0x56 + 'S'.
      * Жоден байт-у-байт overlap'у — маркер І магія різні. */
     uint8_t p[FW20S2_SYNC_REQ_PACKET_SIZE];
-    Test_Build_Time_Sync_Request_Payload(p, 0xDEADBEEFu, 0u);
+    Test_Build_Time_Sync_Request_Payload(p, 0xDEADBEEFu, 0u, 3300u);
     ASSERT_TRUE(p[0] != 0x55u);              /* НЕ OTA_REQ_MARKER */
     ASSERT_TRUE(p[10] != 'R');               /* НЕ FW.27-B magic */
     ASSERT_EQ(p[0], 0x56u);
     ASSERT_EQ(p[10], 'S');
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * [ARCH.41-B] Sentinel «час невідомий» в acoustic-байті
+ * ════════════════════════════════════════════════════════════════════
+ * Дзеркало Soldier_Acoustic_Wire_Value (firmware/soldier/main.c):
+ * time_uncertain ⇒ 0xFE на дроті (Лоренц на обох сторонах рахується з 0 —
+ * бекенд нейтралізує 0xFE→0 до DCI); реальні 0xFE → 0xFD (ніколи не
+ * імітувати sentinel); 0xFF лишається легальною FW.22-сатурацією.
+ */
+#define ARCH41_ACOUSTIC_SENTINEL 0xFEu
+
+static uint8_t Test_Acoustic_Wire_Value(uint8_t snapshot, uint8_t time_uncertain) {
+    if (time_uncertain) return ARCH41_ACOUSTIC_SENTINEL;
+    if (snapshot == ARCH41_ACOUSTIC_SENTINEL) return 0xFDu;
+    return snapshot;
+}
+
+TEST(test_arch41_sentinel_replaces_acoustic_when_time_uncertain) {
+    /* Час невідомий — реальний лічильник жертвується, летить sentinel. */
+    ASSERT_EQ(Test_Acoustic_Wire_Value(0u, 1u),    ARCH41_ACOUSTIC_SENTINEL);
+    ASSERT_EQ(Test_Acoustic_Wire_Value(42u, 1u),   ARCH41_ACOUSTIC_SENTINEL);
+    ASSERT_EQ(Test_Acoustic_Wire_Value(0xFFu, 1u), ARCH41_ACOUSTIC_SENTINEL);
+}
+
+TEST(test_arch41_real_0xfe_clamped_never_impersonates_sentinel) {
+    /* 254 справжні події → 253 на дроті: sentinel однозначний назавжди. */
+    ASSERT_EQ(Test_Acoustic_Wire_Value(ARCH41_ACOUSTIC_SENTINEL, 0u), 0xFDu);
+}
+
+TEST(test_arch41_normal_acoustic_passthrough_incl_saturation) {
+    /* Час відомий — лічильник іде як є; 0xFF (FW.22 saturation) легальний. */
+    ASSERT_EQ(Test_Acoustic_Wire_Value(0u, 0u),    0u);
+    ASSERT_EQ(Test_Acoustic_Wire_Value(42u, 0u),   42u);
+    ASSERT_EQ(Test_Acoustic_Wire_Value(0xFDu, 0u), 0xFDu);
+    ASSERT_EQ(Test_Acoustic_Wire_Value(0xFFu, 0u), 0xFFu);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -5084,6 +5126,11 @@ int main(void)
     RUN(test_fw20s2_relay_hold_exactly_at_max_passes);
     RUN(test_fw20s2_relay_tick_wrap_safe);
     RUN(test_fw20s2_relay_two_hop_chain_kills_authoritativeness);
+
+    /* [ARCH.41-B] acoustic sentinel «час невідомий» */
+    RUN(test_arch41_sentinel_replaces_acoustic_when_time_uncertain);
+    RUN(test_arch41_real_0xfe_clamped_never_impersonates_sentinel);
+    RUN(test_arch41_normal_acoustic_passthrough_incl_saturation);
 
     printf("\n  Gossip-Piggyback (FW.20-S2 #5, freeze-contract):\n");
     RUN(test_fw20s2_gossip_pack_zero_ts_returns_zero);

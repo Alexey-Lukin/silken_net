@@ -580,19 +580,23 @@ static uint32_t Soldier_Seconds_Since_Last_Sync(uint32_t now_tick)
     return delta_ms / 1000u;
 }
 
-// Збираємо 16-байтний uplink-плейн «панічний sync-запит». Wire-формат:
+// Збираємо 16-байтний uplink-плейн «панічний sync-запит» / cold-boot hello
+// (ARCH.41-C — той самий wire, hello шле secs_since_sync=0). Wire-формат:
 //
 //   Byte 0     : SYNC_REQ_MARKER (0x56)
 //   Byte 1..4  : DID big-endian
-//   Byte 5..8  : secs_since_sync big-endian (uint32)
+//   Byte 5..8  : secs_since_sync big-endian (uint32; 0 = ніколи не чули)
 //   Byte 9     : TTL (PANIC_TTL=5 — пакет повинен пробитися через mesh)
 //   Byte 10    : SYNC_REQ_MAGIC_BYTE ('S' = 0x53) — миттєва дезамбігвація
 //                від 0x55 OTA_REQ (де байт 10 не визначений)
-//   Byte 11..15: PAD = 0 (резерв під майбутні поля: pkt_seq, last_known_ts, ...)
+//   Byte 11..12: vcap_mv big-endian [ARCH.41-C] — здоров'я EDLC у hello
+//                (бекенд бачить заряд навіть коли телеметрія відкладена)
+//   Byte 13..15: PAD = 0 (резерв під майбутні поля: pkt_seq, last_known_ts, ...)
 //
 // Перед TX обгортаємо в AES-128-ECB як звичайний LoRa-пакет (post-ARCH.42).
 static void Build_Time_Sync_Request_Payload(uint8_t* out, uint32_t did,
-                                              uint32_t secs_since_sync)
+                                              uint32_t secs_since_sync,
+                                              uint16_t vcap_mv)
 {
     out[0]  = SYNC_REQ_MARKER;
     out[1]  = (uint8_t)(did >> 24);
@@ -605,7 +609,28 @@ static void Build_Time_Sync_Request_Payload(uint8_t* out, uint32_t did,
     out[8]  = (uint8_t)(secs_since_sync & 0xFFu);
     out[9]  = PANIC_TTL;
     out[10] = SYNC_REQ_MAGIC_BYTE;
-    for (uint8_t i = 11; i < SYNC_REQ_PACKET_SIZE; i++) out[i] = 0;
+    out[11] = (uint8_t)(vcap_mv >> 8);
+    out[12] = (uint8_t)(vcap_mv & 0xFFu);
+    for (uint8_t i = 13; i < SYNC_REQ_PACKET_SIZE; i++) out[i] = 0;
+}
+
+// =========================================================================
+// [ARCH.41-B] Sentinel «час невідомий» в acoustic-байті
+// =========================================================================
+// Поки Солдат не чув жодного beacon'а (soldier_unix_ts == 0), його epoch_day
+// після VBAT-loss застарілий (RTC default 2000-01-01) — сервер ловив би DCI
+// false-positive. Повний пакет тоді несе 0xFE замість лічильника, а Лоренц
+// на ОБОХ сторонах рахується з acoustic=0 (дзеркало: TelemetryUnpackerService
+// нейтралізує 0xFE→0 ДО DCI). 0xFF лишається легальною FW.22-сатурацією;
+// реальні 0xFE притискаються до 0xFD, щоб лічильник ніколи не імітував
+// sentinel. Канон: 03_04 §2.1.
+#define ACOUSTIC_TIME_UNCERTAIN_SENTINEL  0xFEu
+
+static uint8_t Soldier_Acoustic_Wire_Value(uint8_t snapshot, uint8_t time_uncertain)
+{
+    if (time_uncertain) return ACOUSTIC_TIME_UNCERTAIN_SENTINEL;
+    if (snapshot == ACOUSTIC_TIME_UNCERTAIN_SENTINEL) return 0xFDu;
+    return snapshot;
 }
 
 // =========================================================================
@@ -1751,9 +1776,19 @@ int main(void)
     acoustic_events = 0;
     __enable_irq();
 
+    // [ARCH.41-B/C] Час невідомий: ні beacon'а від народження (cold-boot після
+    // VBAT-loss, або Королева ще мовчить). У grace-вікні (C) шлемо hello 0x56
+    // замість телеметрії зі застарілим epoch_day; після grace (B) телеметрія
+    // йде, але з sentinel 0xFE в acoustic і Лоренцом від acoustic=0.
+    uint8_t time_uncertain = (soldier_unix_ts == 0u) ? 1u : 0u;
+    uint8_t grace_hello = (time_uncertain &&
+                           HAL_GetTick() < TIME_SYNC_COLD_BOOT_GRACE_MS) ? 1u : 0u;
+
     // Байт 7: Відлуння ксилеми (Відфільтровані TinyML).
     // [FW.22] saturating uint8: значення вже у [0..255] — затискати нічого.
-    lora_payload[7] = acoustic_snapshot;
+    // [ARCH.41-B] sentinel-підміна при невідомому часі (реальний лічильник
+    // цього пробудження жертвується — час важливіший за один відлік).
+    lora_payload[7] = Soldier_Acoustic_Wire_Value(acoustic_snapshot, time_uncertain);
 
     // Байти 8-9: Швидкість заряду (Секунди)
     lora_payload[8] = (uint8_t)(delta_t_seconds >> 8);
@@ -1778,7 +1813,13 @@ int main(void)
     // delta_t_s/vcap_mv: defaults 60/3300; реальне EMA-передавання — FW.49/FW.50 (bench).
     // =========================================================================
 
-    if (mrb) {
+    if (grace_hello) {
+      // [ARCH.41-C] Лоренц відкладено до першого beacon'а: cold-start
+      // деривація від застарілого epoch_day отруїла б RTC-ланцюг траєкторії.
+      // lorenz_state_valid лишається 0 → стан у RTC не пишеться; після синку
+      // перша деривація піде з ПРАВИЛЬНОЇ доби — серверу не доведеться
+      // вгадувати кандидатів.
+    } else if (mrb) {
       // [FIX: mruby Heap Fragmentation] Зберігаємо стан арени GC перед кожним
       // виконанням. Після отримання результату — відновлюємо. Це запобігає
       // повільному «витоку» пам'яті через тижні безперервної роботи.
@@ -1816,7 +1857,10 @@ int main(void)
           args[1] = mrb_float_value(mrb, (double)lorenz_y);
           args[2] = mrb_float_value(mrb, (double)lorenz_z);
           args[3] = mrb_fixnum_value((int8_t)lora_payload[6]); // Температура
-          args[4] = mrb_fixnum_value(lora_payload[7]); // Акустика
+          // [ARCH.41-B] sentinel ⇒ Лоренц рахується з acoustic=0 на ОБОХ
+          // сторонах (сервер нейтралізує 0xFE→0 до DCI) — інакше 0xFE=254
+          // штовхав би σ у clamp і спотворював біостатус.
+          args[4] = mrb_fixnum_value(time_uncertain ? 0 : lora_payload[7]); // Акустика
           args[5] = mrb_fixnum_value((mrb_int)delta_t_for_lorenz); // [E.63] delta_t → growth_points
           args[6] = mrb_fixnum_value((mrb_int)vcap_for_lorenz);    // [E.63] vcap (reserved)
 
@@ -1889,11 +1933,22 @@ int main(void)
         has_mesh_relay = 0; // Пакет відправлено, очищаємо пам'ять
     }
 
-    // 2. Шифруємо наші власні дані (16 байтів = 4 слова по 32 біти)
-    HAL_CRYP_Encrypt(&hcryp, (uint32_t*)lora_payload, 4, (uint32_t*)encrypted_payload, 1000);
-
-    // 3. Відправляємо захищені дані в ефір
-    Radio.Send(encrypted_payload, 16);
+    // 2-3. Шифруємо і відправляємо. [ARCH.41-C] У grace-вікні замість
+    // телеметрії летить hello 0x56 (DID + Vcap + TIME_REQ): Королева
+    // відповість маяком (перемотка last_beacon_time), а OTA-рефлекс живе —
+    // він стріляє на БУДЬ-ЯКИЙ валідний RX ще до розбору маркера. Вікно
+    // слухання (Фаза 4.5) спільне — маяк буде почуто цим же пробудженням.
+    if (grace_hello) {
+        uint8_t hello_plain[SYNC_REQ_PACKET_SIZE];
+        Build_Time_Sync_Request_Payload(hello_plain, tree_did,
+                                        0u /* ніколи не чули */, vcap_voltage);
+        HAL_CRYP_Encrypt(&hcryp, (uint32_t*)hello_plain, 4, (uint32_t*)encrypted_payload, 1000);
+        Radio.Send(encrypted_payload, 16);
+        last_sync_request_tick = HAL_GetTick();
+    } else {
+        HAL_CRYP_Encrypt(&hcryp, (uint32_t*)lora_payload, 4, (uint32_t*)encrypted_payload, 1000);
+        Radio.Send(encrypted_payload, 16);
+    }
 
     // =========================================================================
     // ФАЗА 4.5: ЕНЕРГОЕФЕКТИВНИЙ СЛУХ (Directed Mesh & OTA)

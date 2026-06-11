@@ -857,6 +857,60 @@ RSpec.describe TelemetryUnpackerService, type: :service do
           expect(TimeSyncDownlinkWorker).not_to have_received(:perform_async)
         end
       end
+
+      # [ARCH.41-B] Явний wire-sentinel «час невідомий» (acoustic = 0xFE) —
+      # голос самого Солдата, на відміну від recovery-детектива (ARCH.41-A).
+      # Нейтралізація ДО DCI: пристрій рахував Лоренц з acoustic=0 (дзеркало
+      # Soldier_Acoustic_Wire_Value), сервер мусить так само; alert/stress
+      # ланцюги бачать 0, а не фальшиві 254 «події».
+      describe "[ARCH.41-B] apply_time_uncertain_sentinel!" do
+        let!(:sentinel_tree) do
+          t = create(:tree,
+            did: format("SNET-%08X", "0000AC30".to_i(16)),
+            cluster: cluster,
+            tree_family: tree_family)
+          t.create_device_calibration! if t.device_calibration.nil?
+          t
+        end
+        let(:service) { described_class.new("", nil) }
+
+        it "neutralizes 0xFE to zero, flags time_unsynced_fallback and enqueues CMD_TIME_SYNC" do
+          allow(TimeSyncDownlinkWorker).to receive(:perform_async)
+          attributes = { acoustic_events: 0xFE }
+
+          service.send(:apply_time_uncertain_sentinel!, sentinel_tree, attributes, "0000AC30")
+
+          expect(attributes[:acoustic_events]).to eq(0)
+          expect(attributes[:time_unsynced_fallback]).to be(true)
+          expect(TimeSyncDownlinkWorker).to have_received(:perform_async).with(sentinel_tree.cluster_id)
+        end
+
+        it "leaves real acoustic counts untouched (incl. FW.22 saturation 255 and clamped 253)" do
+          allow(TimeSyncDownlinkWorker).to receive(:perform_async)
+
+          [ 0, 42, 0xFD, 0xFF ].each do |real_count|
+            attributes = { acoustic_events: real_count }
+            service.send(:apply_time_uncertain_sentinel!, sentinel_tree, attributes, "0000AC30")
+
+            expect(attributes[:acoustic_events]).to eq(real_count)
+            expect(attributes[:time_unsynced_fallback]).to be_nil
+          end
+          expect(TimeSyncDownlinkWorker).not_to have_received(:perform_async)
+        end
+
+        it "still neutralizes and flags when tree has no cluster (no worker enqueue)" do
+          orphan_tree = sentinel_tree
+          allow(orphan_tree).to receive(:cluster_id).and_return(nil)
+          allow(TimeSyncDownlinkWorker).to receive(:perform_async)
+          attributes = { acoustic_events: 0xFE }
+
+          service.send(:apply_time_uncertain_sentinel!, orphan_tree, attributes, "0000AC31")
+
+          expect(attributes[:acoustic_events]).to eq(0)
+          expect(attributes[:time_unsynced_fallback]).to be(true)
+          expect(TimeSyncDownlinkWorker).not_to have_received(:perform_async)
+        end
+      end
     end
 
     describe "update_health_streak!" do
