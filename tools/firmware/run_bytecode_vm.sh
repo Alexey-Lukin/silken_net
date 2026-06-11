@@ -20,7 +20,7 @@ bin="$(mktemp -u)"
 # MRB_DEFS — дзеркало SILKEN_MIN_GEMS (One-Home: firmware/mruby/build_config.rb):
 # TU з mruby-хедерами мусить бачити ті самі MRB_*-defines, що й libmruby.a.
 "$CC" -std=c11 -O2 -Wall \
-  -DMRB_NO_STDIO -DMRB_CONSTRAINED_BASELINE_PROFILE \
+  -DMRB_NO_STDIO -DMRB_CONSTRAINED_BASELINE_PROFILE -DMRB_NO_BOXING \
   -I"$MRUBY/include" -I"$BUILD/include" -I"$REPO/firmware/common" \
   -o "$bin" "$REPO/firmware/test/test_bytecode_vm.c" \
   "$BUILD/lib/libmruby.a" -lm

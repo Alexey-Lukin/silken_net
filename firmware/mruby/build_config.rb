@@ -18,7 +18,11 @@
 #  • NEVER enable MRB_WORD_BOXING / MRB_NAN_BOXING on the 32-bit MCU. On 32-bit
 #    a word can't hold a 64-bit double, so word boxing has NO inline float — every
 #    Lorenz double would be heap-allocated (RFloat) → GC thrash on the ~KB heap.
-#    Default NO_BOXING keeps doubles inline in mrb_value (struct, ~16 B). ✓
+#    ⚠ mruby 4.0 DEFAULTS to MRB_WORD_BOXING (mrbconf.h) — NOT no-boxing as this
+#    file claimed until 2026-06-11. On a 64-bit host word boxing still inlines
+#    doubles (looks clean!), on ARM32 it cost ~20 KB of transient RFloats per
+#    single calculate_state — caught live by the FW.55 QEMU fit-gate. The pin
+#    below is therefore EXPLICIT: MRB_NO_BOXING → doubles inline on both widths.
 #    (mruby 4.0.0 also moved method tables to .rodata + fixed several 32-bit
 #     NO_BOXING bugs — strictly better than 3.x for this target.)
 
@@ -35,8 +39,10 @@ SILKEN_MIN_GEMS = lambda do |conf|
   # 64 KB WLE5 SRAM), no method cache, small khash. Math/ABI untouched —
   # parity dump stays byte-exact (gate re-proves on every CI run).
   conf.cc.defines << 'MRB_CONSTRAINED_BASELINE_PROFILE'
+  # [FW.19/FW.55] EXPLICIT no-boxing pin (4.0 default = WORD_BOXING — see ⚠ above).
+  conf.cc.defines << 'MRB_NO_BOXING'
   conf.gem core: 'mruby-compar-ext'      # Comparable#clamp — the only non-core need
-  # [FW.19] No MRB_USE_FLOAT32 + no MRB_WORD_BOXING/MRB_NAN_BOXING → double, inline.
+  # [FW.19] No MRB_USE_FLOAT32 → mrb_float stays double.
 end
 
 # Host build (full default box) — produces bin/mrbc for tools/firmware/gen_bytecode.sh.

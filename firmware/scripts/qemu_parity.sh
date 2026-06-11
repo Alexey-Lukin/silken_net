@@ -30,7 +30,7 @@ CPU_FLAGS="-mcpu=cortex-m4 -mfloat-abi=soft -mthumb"
 # Дзеркало SILKEN_MIN_GEMS (One-Home: firmware/mruby/build_config.rb) — TU,
 # що інклудить mruby-хедери, МУСИТЬ бачити ті самі MRB_*-defines, що й ліба
 # (інакше layout mrb_state у TU ≠ layout у libmruby.a).
-MRB_DEFS="-DMRB_NO_STDIO -DMRB_CONSTRAINED_BASELINE_PROFILE"
+MRB_DEFS="-DMRB_NO_STDIO -DMRB_CONSTRAINED_BASELINE_PROFILE -DMRB_NO_BOXING"
 
 # ── Інструменти ─────────────────────────────────────────────────────────
 CC_HOST="${CC:-cc}"
