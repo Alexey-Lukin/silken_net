@@ -161,13 +161,13 @@ clean:
 
 # [FW.26] CI gate — Static RAM budget check (.bss + .data ≤ 50 KB).
 #
-# STM32WLE5JC має 64 KB SRAM. ⚠️ Виміряна реальність (FW.55 QEMU фіт-гейт,
-# 2026-06-11): mruby-куча ~38 KB sbrk-плато (boot+irep+churn, newlib-nano,
-# NO_BOXING) — НЕ «~4 KB», як вважав цей коментар раніше. Тобто стеля 50 KB
-# статики + stack ~8 KB + Tensor Arena 8-32 KB + mruby ~38 KB НЕ сходяться —
-# ревізія RAM-плану при HAL-інтеграції (00_07 FW.26/FW.55). Сам gate і досі
-# цінний: ловить тиху регресію СТАТИКИ (нові buffers, розширення EMA-вікон,
-# OTA масивів тощо) до того, як вона з'їсть залишок.
+# STM32WLE5JC має 64 KB SRAM. Виміряний леджер (2026-06-11) — One-Home у
+# 03_03 §6 + firmware/scripts/check_ram_budget.sh (хедер): mruby-куча 38 392 Б
+# (FW.55, не «~4 KB»-міф) + stack 12 288 + статика ~8 000 ⇒ стеля tensor
+# arena 7-15 КБ. АВТОРИТЕТНИЙ гейт статики — CI `[FW.26] ARM static-RAM`
+# (--hal-objects, реальні .obj обох main.c); цей host-гейт лишається швидким
+# локальним проксі проти тихої регресії СТАТИКИ (нові buffers, EMA-вікна,
+# OTA масиви) — його поріг свідомо грубий.
 #
 # Використовуємо host `size` проти host-тест build як ПЛАЦХОЛЬДЕР, доки
 # lab build з arm-none-eabi-size не активний. Host build містить ті ж

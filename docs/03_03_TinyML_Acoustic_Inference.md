@@ -432,7 +432,7 @@ uint8_t ml_event_id = 0;  // Результат: 0-Тиша, 1-Вітер, 2-К�
 
 | Параметр | Типова оцінка | Примітка |
 |----------|---------------|---------|
-| Tensor Arena Size | **~16 KB** | Path B 2D-CNN на log-mel (INT8); §3.2 діапазон ~15–30 KB |
+| Tensor Arena Size | **~16 KB** *(типова для класу — АЛЕ виміряна стеля Солдата = 7–15 КБ, §6 леджер 2026-06-11 → target ≤ 10 КБ)* | Path B 2D-CNN на log-mel (INT8); §3.2 діапазон ~15–30 KB **не влазить** поруч із виміряною mruby-кучею (38 КБ) — INT8+prune+менша топологія обов'язкові |
 | Model Size (Flash) | **32–64 KB** | INT8 квантована модель |
 | Input tensor | `float32[40]` (Path B log-mel) | 1 кадр 40 mel-смуг від `Compute_LogMel` (§3.4); INT8 → `int8[40]`. (Path A 1D-raw `[512]` — superseded) |
 | Output tensor | `float32[5]` або `int8[5]` | Softmax 5 класів (0–3 + fauna §10) |
@@ -599,14 +599,14 @@ void Trigger_Emergency_LoRa_TX(void)
 | OTA chunk map (256 B) | 256 B |
 | Incoming LoRa buffer (256 B) | 256 B |
 | Decrypted RX buffer (256 B) | 256 B |
-| mruby VM heap (~4 KB) | 4 096 B |
-| Tensor Arena (оцінка) | ~12 288 B |
+| mruby VM heap **(ВИМІРЯНО, FW.55 QEMU sbrk-плато, newlib-nano)** | **38 392 B** консервативно (із зонд-оверхедом ~+4-5 КБ; чистий ~34 КБ; live-set ~27 КБ — простір для капу) |
+| Tensor Arena (оцінка §4.3 ~16 КБ — але див. ВИМІРЯНУ стелю нижче) | ляже у `.bss` Солдата при приземленні моделі |
 | fauna_feature_accumulator *(transient, path-dependent — §3.2; лише під час fauna-сесії — §10.2)* | ~324 B (Path B: 40 mel × Welford mean+M2, `FaunaWelford` у `fauna_session.h`; sizeof-tripwire у host-тесті) / ~2 KB (Path A raw window) |
-| Stack (бюджет; пік = `Compute_LogMel` — два кадрові буфери після FW.4 reuse-buffers, high-water гейтиться QEMU-ногою §3.4 п.3; число тут — дзеркало tripwire у `firmware/sim/qemu_m4/logmel_main.c`) | ~6 144 B |
-| **Разом (оцінка)** | **~27 KB** *(peak з fauna-вікном)* |
-| **Залишок (з 64 KB)** | **~37 KB** |
+| Stack: резерв леджера 12 288 B (wle5-карта, FW.55 фіт-гейт; виміряні сліди: mruby-шлях 2 896, `Compute_LogMel` 4 660 проти tripwire 6 144 у QEMU-нозі §3.4 п.3) | 12 288 B |
+| **Статика Soldier-TU (ВИМІРЯНО, ARM `.data+.bss` compile-lane FW.46)** | **5 690 B** (рядки вище ≈ 4 976 Б + дрібнота; + libc/common/HAL ≈ 2.3 КБ поза TU) |
+| **Леджер: 65 536 − mruby 38 392 − stack 12 288 − статика ~8 000** | **СТЕЛЯ tensor arena ≈ 6 856 B** (консервативно) … **≈ 15 344 B** (чистий mruby ~34 КБ + стек 8 КБ) |
 
-> ⚠️ Точний розмір Tensor Arena невідомий. Потрібна верифікація через `arm-none-eabi-size`.
+> ⚠️ **Виміряна стеля arena = 7–15 КБ** (2026-06-11; залежить від mruby-капу й стек-резерву) — оцінка §4.3 «~16 КБ» **не влазить** ні за якого розкладу без заходів: INT8 + prune + менша топологія (target ≤ 10 КБ arena — **бриф ML-партнерам**) та/або жорсткий `_sbrk`-кап mruby (GC-on-OOM тримає live ~27 КБ ціною GC-тиску). Точний розмір самої arena — після моделі; статику вже тримає CI-гейт `[FW.26] ARM static-RAM` (`check_ram_budget.sh --hal-objects`, per-TU бюджети: Soldier 8 192, Queen 20 480 — arena зірве гейт і змусить свідому ревізію цього леджера).
 
 > 🌿 **`fauna_feature_accumulator` (audit-fix, ARCH.40 / §10.2 / FW.25 path-dependent):** Welford running `mean+M2` для агрегації 156 feature-векторів у межах **одного** awake-циклу (5 с моноліт — STOP2 wipe'не SRAM2, тому декомпозиція "сон-між-вікнами" заборонена). **Розмір залежить від обраного DSP-шляху (§3.2 Decision Matrix):**
 > - **Path B (log-mel, default-рекомендація)** при `N_mel = 13` (⚠️ **орієнтовна reduced-dim лише для fauna-агрегату** — НЕ per-frame контракт, той = **40** mel, §3.4; фінальний fauna `N_features` open, п.3 нижче): `mean[13] = 52 B` + `M2[13] = 52 B` + `count (uint32) = 4 B` + `inference_input[mean‖std][26] = 104 B` ≈ **212 B**, округлено до **~256 B** з запасом на FFT scratch buffer.
