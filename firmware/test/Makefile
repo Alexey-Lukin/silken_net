@@ -153,11 +153,13 @@ clean:
 
 # [FW.26] CI gate — Static RAM budget check (.bss + .data ≤ 50 KB).
 #
-# STM32WLE5JC має 64 KB SRAM; runtime stack ~8 KB, heap mruby ~4 KB,
-# Tensor Arena (FW.4) ~8-32 KB. Решту 50 KB ділять усі статичні буфери,
-# глобали і фрейми. Цей gate ловить тиху регресію розмірів (нові buffers,
-# розширення EMA-вікон, OTA масивів тощо) до того, як вона з'їсть
-# залишковий простір TinyML.
+# STM32WLE5JC має 64 KB SRAM. ⚠️ Виміряна реальність (FW.55 QEMU фіт-гейт,
+# 2026-06-11): mruby-куча ~38 KB sbrk-плато (boot+irep+churn, newlib-nano,
+# NO_BOXING) — НЕ «~4 KB», як вважав цей коментар раніше. Тобто стеля 50 KB
+# статики + stack ~8 KB + Tensor Arena 8-32 KB + mruby ~38 KB НЕ сходяться —
+# ревізія RAM-плану при HAL-інтеграції (00_07 FW.26/FW.55). Сам gate і досі
+# цінний: ловить тиху регресію СТАТИКИ (нові buffers, розширення EMA-вікон,
+# OTA масивів тощо) до того, як вона з'їсть залишок.
 #
 # Використовуємо host `size` проти host-тест build як ПЛАЦХОЛЬДЕР, доки
 # lab build з arm-none-eabi-size не активний. Host build містить ті ж
