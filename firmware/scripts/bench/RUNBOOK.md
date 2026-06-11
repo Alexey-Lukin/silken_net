@@ -39,6 +39,7 @@
 | 2.2 `sym_selftest` (ECB/CBC) | той самий runner | PASS | SEC.8 контекст-світчі |
 | 2.3 FW.55 silicon-confirm | `05_parity_dump.py --plan`: `qemu_parity.sh` (голден + `parity_wle5.elf`) → `00_flash.sh --elf … --execute` → `05_parity_dump.py --port <VCP>` | вердикт скрипта: дамп ≡ host byte-exact (фіт у 64КБ вже доведено CI-гейтом) | FW.7/FW.19 остаточно; плату перешити бойовим образом |
 | 2.4 L1 QATT e2e | прошити Queen EDSK-сім'ю (factory.rake Гілка A → `-w32` EDSK-блок) → flush на staging → бекенд-лог `батч атестовано` + `gateways.last_attested_at` | підпис верифікується (timing sign'а на M4 — заміряти принагідно); сім'я відсутня → legacy-батч приймається | L1 bench-residual (`00_07` SE050-MIGRATION) |
+| 2.5 FW.23 OTA dual-gate e2e | K_ota вже у транскрипті factory (Гілка A KOTA-блок `0x0803D000`; крок 1.3 пише його разом з KEYL/LSED) → OTA-day: валідний bytecode → APPLY; підмінений байт тіла (валідний CRC32) → REJECT + magic-wipe | обидва вердикти на платі ≡ host-тестам | FW.23 остаточно |
 
 ## 3. Живлення (FW.54 / FW.50 / E.63 — дані для β!)
 

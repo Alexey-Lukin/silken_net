@@ -10,6 +10,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
   let(:aes_lora_hex) { "0123456789ABCDEF0123456789ABCDEF" }                                # 16 bytes
   let(:aes_coap_hex) { "F" * 64 }                                                          # 32 bytes
   let(:k_seed_hex)   { "00112233445566778899AABBCCDDEEFF" + "FFEEDDCCBBAA99887766554433221100" }
+  let(:k_ota_hex)    { "A1B2C3D4E5F60718293A4B5C6D7E8F90" + "0F1E2D3C4B5A69788796A5B4C3D2E1F0" }
 
   describe "Гілка A — Tree" do
     subject(:commands) do
@@ -17,13 +18,14 @@ RSpec.describe FactoryFlashing::CommandBuilder do
         session: session,
         device: tree,
         aes_key_hex: aes_lora_hex,
-        lorenz_seed_hex: k_seed_hex
+        lorenz_seed_hex: k_seed_hex,
+        ota_hmac_hex: k_ota_hex
       ).commands
     end
 
     let(:session) { build(:provisioning_session, gilka: "A", rdp_level: 1) }
 
-    it "opens SWD, writes KEYL+AES16 at 0x0803E000, LSED+seed32 at 0x0803E014, then sets RDP" do
+    it "opens SWD, writes KEYL+AES16, LSED+seed32, KOTA+k_ota32 (FW.23), then sets RDP" do
       expect(commands).to eq([
         "STM32_Programmer_CLI -c port=SWD reset=HWrst",
         # KEYL magic + 4 AES words at 0x0803E000..0x0803E010
@@ -42,9 +44,31 @@ RSpec.describe FactoryFlashing::CommandBuilder do
         "STM32_Programmer_CLI -w32 0x0803E02C 0xBBAA9988",
         "STM32_Programmer_CLI -w32 0x0803E030 0x77665544",
         "STM32_Programmer_CLI -w32 0x0803E034 0x33221100",
+        # [FW.23] KOTA magic + 8 K_ota words — окремий сектор 0x0803D000;
+        # розкладка дзеркалить Load_Ota_Hmac_Key (firmware/soldier/main.c)
+        "STM32_Programmer_CLI -w32 0x0803D000 0x4B4F5441",
+        "STM32_Programmer_CLI -w32 0x0803D004 0xA1B2C3D4",
+        "STM32_Programmer_CLI -w32 0x0803D008 0xE5F60718",
+        "STM32_Programmer_CLI -w32 0x0803D00C 0x293A4B5C",
+        "STM32_Programmer_CLI -w32 0x0803D010 0x6D7E8F90",
+        "STM32_Programmer_CLI -w32 0x0803D014 0x0F1E2D3C",
+        "STM32_Programmer_CLI -w32 0x0803D018 0x4B5A6978",
+        "STM32_Programmer_CLI -w32 0x0803D01C 0x8796A5B4",
+        "STM32_Programmer_CLI -w32 0x0803D020 0xC3D2E1F0",
         "STM32_Programmer_CLI -ob RDP=1",
         "STM32_Programmer_CLI -c port=SWD --quietMode"
       ])
+    end
+
+    it "refuses a Tree without ota_hmac_hex — інакше OTA вічно fail-closed (FW.23)" do
+      expect {
+        described_class.new(
+          session: session,
+          device: tree,
+          aes_key_hex: aes_lora_hex,
+          lorenz_seed_hex: k_seed_hex
+        )
+      }.to raise_error(ArgumentError, /ota_hmac_hex/)
     end
 
     it "honours rdp_level=2 (irreversible) in emitted RDP command" do
@@ -165,7 +189,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
     end
 
     it "Tree with 64-hex AES (wrong size for LoRa) raises in #commands" do
-      builder = described_class.new(session: session, device: tree, aes_key_hex: aes_coap_hex, lorenz_seed_hex: k_seed_hex)
+      builder = described_class.new(session: session, device: tree, aes_key_hex: aes_coap_hex, lorenz_seed_hex: k_seed_hex, ota_hmac_hex: k_ota_hex)
       expect { builder.commands }.to raise_error(ArgumentError, /AES-128/)
     end
 
@@ -182,7 +206,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
 
     it "raises on unknown gilka value at #commands" do
       session.gilka = "C"
-      builder = described_class.new(session: session, device: tree, aes_key_hex: aes_lora_hex, lorenz_seed_hex: k_seed_hex)
+      builder = described_class.new(session: session, device: tree, aes_key_hex: aes_lora_hex, lorenz_seed_hex: k_seed_hex, ota_hmac_hex: k_ota_hex)
       expect { builder.commands }.to raise_error(ArgumentError, /Unknown gilka/)
     end
   end

@@ -106,8 +106,17 @@ module FactoryFlashing
         device:           @device,
         aes_key_hex:      hw_key.aes_key_hex,
         lorenz_seed_hex:  hw_key.lorenz_seed_hex,
+        ota_hmac_hex:     tree_ota_hmac,
         ed25519_seed_hex: gateway_voice_seed(hw_key)
       ).commands
+    end
+
+    # [FW.23] Per-cluster K_ota для OTA dual-gate — Гілка A пише його у
+    # Protected Flash 0x0803D000 (до 2026-06-11 емітувала лише superseded
+    # ATECC-гілка B → реальні дерева лишались із вічно fail-closed OTA).
+    def tree_ota_hmac
+      return nil unless @device.is_a?(Tree)
+      OtaHmacKeyService.fetch_for(@device.cluster_id)
     end
 
     # [L1 QATT] Сім'я голосу Королеви (Gateway, Гілка A). КРИТИЧНО: НЕ

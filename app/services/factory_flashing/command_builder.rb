@@ -7,6 +7,7 @@
 # chip. The flash layout MUST match firmware constants
 # (firmware/soldier/main.c §FLASH_KEY_ADDR — post-ARCH.42):
 #
+#   0x0803D000  [magic "KOTA" :4 ][ k_ota        :32 ]                 # Tree only — FW.23 OTA dual-gate
 #   0x0803E000  [magic "KEYL" :4 ][ aes_lora_key :16 ]
 #   0x0803E014  [magic "LSED" :4 ][ k_seed       :32 ]                 # Tree only
 #   0x0803E040  [magic "KEYC" :4 ][ aes_coap_key :32 ]                 # Gateway only
@@ -16,11 +17,13 @@
 # through Executor (dry-run prints to stdout; --execute spawns subprocesses).
 module FactoryFlashing
   class CommandBuilder
+    FLASH_OTA_KEY_ADDR  = "0x0803D000"   # Окремий сектор перед KEYL — FW.23 K_ota (firmware: FLASH_OTA_KEY_ADDR)
     FLASH_KEY_ADDR      = "0x0803E000"
     FLASH_SEED_ADDR     = "0x0803E014"   # FLASH_KEY_ADDR + 4 (magic) + 16 (key)
     FLASH_COAP_KEY_ADDR = "0x0803E040"   # After K_seed (4 magic + 32 = 36 bytes) — see Queen flash layout
     FLASH_EDSK_ADDR     = "0x0803E064"   # After CoAP key (4 magic + 32) — L1 QATT голос Королеви
 
+    KOTA_MAGIC = "0x4B4F5441" # "KOTA" OTA HMAC key magic (firmware: FLASH_OTA_KEY_MAGIC) — FW.23
     KEYL_MAGIC = "0x4B45594C" # "KEYL" LoRa key magic (firmware: FLASH_KEY_MAGIC)
     LSED_MAGIC = "0x4C534544" # "LSED" Lorenz K_seed magic (firmware: FLASH_SEED_MAGIC)
     KEYC_MAGIC = "0x4B455943" # "KEYC" CoAP key magic (firmware: FLASH_COAP_KEY_MAGIC)
@@ -32,14 +35,19 @@ module FactoryFlashing
     # @param device    [Tree|Gateway]
     # @param aes_key_hex     [String] 32 hex (Tree LoRa) or 64 hex (Gateway CoAP)
     # @param lorenz_seed_hex [String, nil] 64 hex; required for Tree
+    # @param ota_hmac_hex    [String, nil] 64 hex; required for Tree — per-cluster
+    #   K_ota (OtaHmacKeyService, FW.23). До 2026-06-11 K_ota емітувала ЛИШЕ
+    #   superseded ATECC-гілка B — Гілка A не писала його взагалі, тож
+    #   Load_Ota_Hmac_Key не знаходив magic і OTA був вічно fail-closed.
     # @param ed25519_seed_hex [String, nil] 64 hex; Gateway-only (L1 QATT) —
     #   генерується Session'ом на фабричному хості (SecureRandom, НЕ HKDF),
     #   у БД персиститься лише деривований pubkey. nil → Queen лишається L0.
-    def initialize(session:, device:, aes_key_hex:, lorenz_seed_hex: nil, ed25519_seed_hex: nil)
+    def initialize(session:, device:, aes_key_hex:, lorenz_seed_hex: nil, ota_hmac_hex: nil, ed25519_seed_hex: nil)
       @session = session
       @device = device
       @aes_key_hex = aes_key_hex.to_s
       @lorenz_seed_hex = lorenz_seed_hex.to_s
+      @ota_hmac_hex = ota_hmac_hex.to_s
       @ed25519_seed_hex = ed25519_seed_hex.to_s
       validate!
     end
@@ -69,16 +77,22 @@ module FactoryFlashing
       return unless @device.is_a?(Tree)
       raise ArgumentError, "Tree provisioning requires lorenz_seed_hex (64 hex)" unless @lorenz_seed_hex.length == 64
       raise ArgumentError, "lorenz_seed_hex must be hexadecimal" unless @lorenz_seed_hex.match?(/\A[0-9A-Fa-f]+\z/)
+      return unless @session.gilka == "A" # Гілка B: ключі пише SE-provisioner, не SWD
+      raise ArgumentError, "Tree provisioning requires ota_hmac_hex (64 hex, FW.23 K_ota)" unless @ota_hmac_hex.length == 64
+      raise ArgumentError, "ota_hmac_hex must be hexadecimal" unless @ota_hmac_hex.match?(/\A[0-9A-Fa-f]+\z/)
     end
 
     def gilka_a_commands
       out = [ connect_command ]
 
       if @device.is_a?(Tree)
-        # Tree: 16-byte LoRa AES-128 key + 32-byte Lorenz K_seed.
+        # Tree: 16-byte LoRa AES-128 key + 32-byte Lorenz K_seed + 32-byte K_ota.
         raise ArgumentError, "Tree requires 32-hex AES-128 key" unless @aes_key_hex.length == 32
         out.concat(write_block(FLASH_KEY_ADDR, KEYL_MAGIC, @aes_key_hex))
         out.concat(write_block(FLASH_SEED_ADDR, LSED_MAGIC, @lorenz_seed_hex))
+        # [FW.23] K_ota — окремий сектор 0x0803D000; без нього Load_Ota_Hmac_Key
+        # лишає dual-gate fail-closed і жоден OTA не застосовується.
+        out.concat(write_block(FLASH_OTA_KEY_ADDR, KOTA_MAGIC, @ota_hmac_hex))
       else
         # Gateway: 32-byte CoAP AES-256 key. LoRa AES-128 slot intentionally
         # unused (CoAP only); firmware loads coap_key from FLASH_COAP_KEY_ADDR.

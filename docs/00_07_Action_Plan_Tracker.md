@@ -530,8 +530,9 @@
 - **P1** · 🟡 · → [`03_05 §3.4б`](03_05_Hardware_Symmetric_Crypto_and_Security)
 - **✅ HMAC-SHA256 OTA auth канонізовано + live-compute зашито ([`03_05 §3.4б`](03_05_Hardware_Symmetric_Crypto_and_Security)):** per-cluster K_ota (HKDF info `silken-ota-hmac-v1`) → `OtaPackagerService` 4× `[0x9B]` trailer (3 печатки + version envelope seg 4; anti-replay/truncation: version_id+total_chunks у тезі) → Queen stateless relay → Soldier dual-gate (magic `RITE` + constant-time HMAC + fail-safe magic-wipe).
 - **✅ 🤖 wire HMAC compute зашито (2026-06-11):** `OTA_Try_Finalize` обчислює `Silken_Hmac_Sha256_Concat(K_ota, body ‖ version_be ‖ total_be)` → `OTA_Verify_Dual_Gate` — tampered bytecode з валідним CRC32 тепер відсікається. Додано `Load_Ota_Hmac_Key` (K_ota з Protected Flash `0x0803D000`, magic "KOTA"; fail-safe `valid=0`) + `version_id` на дроті (4-й `[0x9B]` чанк). Bonus: фіналізація з обох RX-гілок (тіло 0x99 / печатка 0x9B) — печатка приходить ПІСЛЯ тіла, раніше гинула. RSpec+host (real HMAC ≡ OpenSSL, APPLY/WAIT/REJECT) ✅.
+- **✅ 🤖 factory-тракт K_ota зашито (2026-06-11b):** Гілка A (`CommandBuilder`) тепер емітує KOTA-блок `0x0803D000` (magic + 8 слів; golden-спека дзеркалить `Load_Ota_Hmac_Key`; `Session` тягне `OtaHmacKeyService.fetch_for(cluster_id)`; Tree без K_ota — відмова на validate). **Знахідка-розкол:** до цього K_ota емітувала ЛИШЕ superseded ATECC-гілка B (Slot 3) — Гілка A випускала б дерева з вічно fail-closed OTA, а канон §3.4б декларував запис як факт (claim-vs-code drift). SE-резидентний K_ota = рішення SE050-MIGRATION; поки HMAC рахує MCU — ключ у MCU Flash.
 - Лишається:
-  - [ ] 🟡 bench: K_ota на Soldier Protected Flash (factory SEC.3) + e2e dual-gate на STM32.
+  - [ ] 🟡 bench: фізичний `factory:execute` (SWD, KOTA вже у транскрипті) + e2e dual-gate на STM32 (APPLY/REJECT) — RUNBOOK §2.5.
 
 #### FW.25 — TinyML DSP-path: Path B (log-mel) SELECTED [DECISION 2026-05-22]
 - **P0** · 👤+🤖 · → [`03_03 §3.4`](03_03_TinyML_Acoustic_Inference)
