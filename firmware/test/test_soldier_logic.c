@@ -4571,6 +4571,20 @@ TEST(test_fw42_fauna_mixed_calls_do_not_decrement_counter) {
     ASSERT_EQ(test_fauna_skipped_low_vcap, 2);
 }
 
+TEST(test_fw42_raw_adc_range_always_skips_fail_closed) {
+    /* [FW.50-footgun, виконуване знання] Контракт guard'а — МІЛІВОЛЬТИ
+     * (Adc_Raw_To_Mv). Доки call-site (main.c vcap_voltage) тримає СИРИЙ
+     * 12-bit відлік (max 4095 < 4500), guard НІКОЛИ не пропустить сесію —
+     * fauna мовчить навіть на повному EDLC. Це fail-CLOSED (brownout
+     * неможливий — безпечно), але «fauna мертва» діагностується лише
+     * лічильником пропусків. Розгейт: FW.50 (дільник + конверсія у
+     * call-site), НЕ зниження порогу. */
+    Reset_Fauna_Skip_Counter();
+    ASSERT_EQ(Test_Fauna_Should_Sample(4095), 0); /* raw full-scale */
+    ASSERT_EQ(Test_Fauna_Should_Sample(1500), 0); /* типовий сирий Vcap */
+    ASSERT_EQ(test_fauna_skipped_low_vcap, 2);
+}
+
 /* ════════════════════════════════════════════════════════════════════
  * [FW.29] Follow-up boundary tests
  * ════════════════════════════════════════════════════════════════════
@@ -5150,6 +5164,7 @@ int main(void)
     RUN(test_fw42_fauna_skip_counter_increments_per_block);
     RUN(test_fw42_fauna_skip_counter_saturates_at_uint8_max);
     RUN(test_fw42_fauna_mixed_calls_do_not_decrement_counter);
+    RUN(test_fw42_raw_adc_range_always_skips_fail_closed);
 
     printf("\n  FW.29 Follow-ups (StatusByte + panic boundary):\n");
     RUN(test_fw29_status_byte_panic_with_max_growth_points);

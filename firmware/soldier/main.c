@@ -286,6 +286,11 @@ uint8_t warning_counter           = 0;   // Послідовні WARNING-под�
 
 uint8_t fauna_skipped_low_vcap = 0; // saturating uint8 counter (SRAM)
 
+// КОНТРАКТ call-site: vcap_mv — МІЛІВОЛЬТИ (Adc_Raw_To_Mv, adc_convert.h),
+// НЕ сирий відлік. Сирий 12-bit (max 4095 < 4500) ⇒ guard fail-CLOSED:
+// brownout неможливий, але fauna мовчить і на повному EDLC — розгейт через
+// FW.50 (дільник + конверсія), не зниженням порогу. Tripwire-тест:
+// test_fw42_raw_adc_range_always_skips_fail_closed.
 static uint8_t Fauna_Should_Sample(uint16_t vcap_mv)
 {
     if (vcap_mv >= FAUNA_VCAP_MIN_MV) return 1;
