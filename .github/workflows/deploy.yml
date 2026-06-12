@@ -127,3 +127,16 @@ jobs:
           DATABASE_URL: ${{ secrets.CANOPY_DATABASE_URL }}
           REDIS_URL: ${{ secrets.CANOPY_REDIS_URL }}
           RELEASE_VERSION: ${{ github.sha }}
+
+  # [INF.6] Post-deploy gate: FW.56 freeze-contract probes through the real
+  # UDP boundary (Ingress Anchor → Akash → coap_listener). HTTP health checks
+  # cannot see a dead CoAP path — without this the network goes dark silently.
+  # Активація: задати repo Variable CANOPY_COAP_HOST (host Ingress Anchor);
+  # поки змінна порожня, job видимо skipped (Брама ще не задеплоєна).
+  coap-smoke:
+    name: CoAP UDP Smoke [INF.6]
+    needs: deploy
+    if: ${{ vars.CANOPY_COAP_HOST != '' }}
+    uses: ./.github/workflows/coap_smoke.yml
+    with:
+      host: ${{ vars.CANOPY_COAP_HOST }}

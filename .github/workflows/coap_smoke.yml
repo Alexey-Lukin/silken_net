@@ -18,10 +18,12 @@ name: CoAP UDP Smoke Test
 #
 # Triggers:
 #   - `workflow_dispatch` — manual probe from any branch with custom host.
-#   - `workflow_call` — to be invoked from `deploy.yml` / `deploy-production.yml`
-#                       as a post-deploy gate once the Брама is deployed
-#                       (00_07 INF.6 residual). Fails the parent workflow
-#                       if the CoAP path is broken.
+#   - `workflow_call` — invoked from `deploy.yml` / `deploy-production.yml`
+#                       as a post-deploy gate (job `coap-smoke`, needs: deploy).
+#                       Host comes from repo Variables CANOPY_COAP_HOST /
+#                       PRODUCTION_COAP_HOST; while unset the gate is visibly
+#                       skipped (Ingress Anchor not yet deployed). Fails the
+#                       parent workflow if the CoAP path is broken.
 #
 # This workflow is intentionally NOT triggered on `push` / `pull_request`
 # — it would never be able to reach a real Ingress Anchor from a CI

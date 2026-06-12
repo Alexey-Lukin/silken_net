@@ -450,7 +450,9 @@ pure `CoapServerPdu` (`lib/coap_server_pdu.rb` — серверне дзерка
 (§7) падав на Sidekiq strict_args і його ковтав broad-rescue. Staging-smoke
 (`coap_smoke.yml` → `bin/coap_smoke`: ті самі freeze-contract байти зондами
 через реальний UDP/Ingress — RST/4.04-з-0xFF-MID-піном/2.04-після-enqueue,
-loopback-довід `spec/lib/coap_smoke_spec.rb`) чекає лише задеплоєну Браму.
+loopback-довід `spec/lib/coap_smoke_spec.rb`) заведений post-deploy gate'ом
+у обидва deploy-workflows (INF.6) і чекає лише задеплоєну Браму
+(активація = host-Variable).
 
 **Що лишається bench (HW-residual FW.3):**
 - verbatim-звірка граматики SIM7070-ноти V1.03 + реальні таймінги модему;

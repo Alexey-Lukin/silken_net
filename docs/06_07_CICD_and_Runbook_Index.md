@@ -8,8 +8,8 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — workflows активні; production+canopy deploy налаштовані; частина gates ще не `required` (INF.6, OPS.2).
-- **Відкрите:** required-check прогалини (coap_smoke INF.6, ssot_guard OPS.2) → [`00_07`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 6 — workflows активні; production+canopy deploy налаштовані; `coap-smoke` gate заведений, але dormant до host-Variable (INF.6); `ssot_guard` ще не `required` (OPS.2).
+- **Відкрите:** активація coap-smoke (repo Variables — INF.6), required-check прогалина ssot_guard (OPS.2) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -51,7 +51,7 @@
 |---|---|---|
 | `deploy.yml` | `workflow_run` (CI success on `main`) + dispatch | **Canopy** deploy: terraform + `kamal deploy -d canopy` |
 | `deploy-production.yml` | `release: published` + dispatch | **Production**: `verify-secrets` (SEC.11) → terraform apply → `kamal deploy` |
-| `coap_smoke.yml` | `workflow_call` (від deploy) + dispatch | Post-deploy CoAP/UDP boundary smoke (INF.6; ще не required gate) |
+| `coap_smoke.yml` | `workflow_call` (job `coap-smoke` в обох deploy-workflows, `needs: deploy`) + dispatch | Post-deploy CoAP/UDP boundary smoke (INF.6; активується repo Variable `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST`, до того — видимо skipped) |
 | `mirror-ghcr.yml` | `workflow_run` + `release` + dispatch | Дзеркалить Docker image у GHCR (для Akash pull) |
 
 ### Repo / Project governance
@@ -67,11 +67,11 @@
 PR ─→ ci.yml (+ ssot_guard / solidity_audit / in_silico за шляхами) ─→ merge main
 main ─→ ci.yml ──success──→ deploy.yml (Canopy) ──→ coap_smoke (post-deploy)
                           └─→ mirror-ghcr.yml (image → GHCR)
-release published ─→ deploy-production.yml (verify-secrets → terraform → kamal deploy)
+release published ─→ deploy-production.yml (verify-secrets → terraform → kamal deploy) ──→ coap_smoke (post-deploy)
                   └─→ mirror-ghcr.yml
 ```
 
-> **Required-check прогалини (tracked):** `coap_smoke` ще не required post-deploy gate (`INF.6`); `ssot_guard` ще не required на `main` (`OPS.2`).
+> **Gate-прогалини (tracked):** `coap-smoke` заведений post-deploy gate'ом (fail валить deploy-run), але dormant до задання host-Variables (`INF.6`); `ssot_guard` ще не required на `main` (`OPS.2`).
 
 ---
 

@@ -772,7 +772,7 @@
 
 #### INF.6 — CoAP UDP smoke test через Ingress Anchor (post-deploy gate)
 - **P1** · 🤖+👤 · → `06_01`, `06_02`, `06_08 §1.2`
-- ✅ workflow `coap_smoke.yml` (`workflow_dispatch` + `workflow_call`-able; виклик із `deploy.yml` ще НЕ заведений — це і є residual) — 🟡 ще не required gate. Без UDP-smoke silent UDP failure не помітний (Queen→Ingress Anchor→Akash→CoAP). ✅ (2026-06-12) зонди = freeze-contract `bin/coap_smoke` (точні байти, регресія фантомної доставки — деталі: FW.56) замість generic libcoap POST. · [ ] 👤 завести виклик у `deploy.yml`/`deploy-production.yml` + активувати як required post-deploy gate (`needs: coap-smoke`) · [ ] 👤 перший boundary smoke з Queen/`bin/forest_simulator`
+- ✅ workflow `coap_smoke.yml` (`workflow_dispatch` + `workflow_call`). Без UDP-smoke silent UDP failure не помітний (Queen→Ingress Anchor→Akash→CoAP). ✅ (2026-06-12) зонди = freeze-contract `bin/coap_smoke` (точні байти, регресія фантомної доставки — деталі: FW.56) замість generic libcoap POST. ✅ (2026-06-12) виклик заведено post-deploy gate'ом у `deploy.yml` + `deploy-production.yml` (job `coap-smoke`, `needs: deploy` — fail валить deploy-run); поки repo Variable з host не задана, job видимо skipped (Брама не задеплоєна — не silent). · [ ] 👤 задати repo Variables `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST` коли Ingress Anchor існує → gate активний · [ ] 👤 перший boundary smoke з Queen/`bin/forest_simulator`
 
 #### INF.4 — Akash TLS strategy decision: hostname operator vs Cloudflare
 - **P1** · 👤+🤖 · → `06_02 §TLS термінація`
