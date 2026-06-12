@@ -19,9 +19,9 @@ BINDIR   = .
 OPENSSL_CFLAGS = $(shell pkg-config --cflags openssl 2>/dev/null)
 OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
-.PHONY: all queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet fauna bme280 coverage size-check clean
+.PHONY: all queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet cmd_queue fauna bme280 coverage size-check clean
 
-all: queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet fauna bme280
+all: queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet cmd_queue fauna bme280
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -79,6 +79,9 @@ bme280: $(BINDIR)/test_bme280
 
 key_ratchet: $(BINDIR)/test_key_ratchet
 	@./$(BINDIR)/test_key_ratchet
+
+cmd_queue: $(BINDIR)/test_soldier_cmd_queue
+	@./$(BINDIR)/test_soldier_cmd_queue
 
 $(BINDIR)/test_queen: test_queen_logic.c hal_mock.h ../common/silken_crc.h
 	$(CC) $(CFLAGS) -o $@ test_queen_logic.c
@@ -146,6 +149,10 @@ $(BINDIR)/test_queen_attest: test_queen_attest.c ../common/queen_attest.h \
 $(BINDIR)/test_key_ratchet: test_key_ratchet.c ../common/key_ratchet.h ../common/silken_sha256.h ../common/silken_crc.h
 	$(CC) $(CFLAGS) -o $@ test_key_ratchet.c
 
+# [FW.20-Q2] Черга Soldier-bound команд (0x9A/0x9E) — рефлекс-реле Королеви.
+$(BINDIR)/test_soldier_cmd_queue: test_soldier_cmd_queue.c ../queen/soldier_cmd_queue.h ../common/key_ratchet.h ../common/silken_crc.h ../common/silken_sha256.h
+	$(CC) $(CFLAGS) -o $@ test_soldier_cmd_queue.c
+
 # [SEC.11] Host parity for SilkenNet::SeedDerivation. Uses OpenSSL
 # libcrypto on host; firmware MCU side runs the same primitives via
 # pure-C silken_sha256.h (FW.30; no mbedTLS). Same standard primitives →
@@ -173,7 +180,8 @@ clean:
 	      $(BINDIR)/test_sym_selftest $(BINDIR)/test_queen_attest \
 	      $(BINDIR)/test_at_engine $(BINDIR)/test_uart_rx_ring \
 	      $(BINDIR)/test_flash_kv $(BINDIR)/test_flash_ring $(BINDIR)/test_flash_ota \
-	      $(BINDIR)/test_key_ratchet $(BINDIR)/test_fauna_session \
+	      $(BINDIR)/test_key_ratchet $(BINDIR)/test_soldier_cmd_queue \
+	      $(BINDIR)/test_fauna_session \
 	      $(BINDIR)/test_bme280 \
 	      *.gcno *.gcda *.gcov coverage_raw.txt
 

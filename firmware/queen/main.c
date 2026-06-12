@@ -584,6 +584,30 @@ uint8_t  hmac_broadcast_phase   = 0;     // 0 = bytecode-фаза; 1 = фаза 
 volatile uint32_t queen_unix_ts          = 0;
 volatile uint32_t queen_unix_ts_local_tick = 0;  // HAL_GetTick() в момент синхронізації
 
+// =========================================================================
+// [FW.20-Q2] SOLDIER CMD RELAY — черга Soldier-bound команд (0x9A, 0x9E)
+// =========================================================================
+// Королева-гонець для командних кадрів спільного каркаса: CoAP downlink від
+// Rails → soldier_cmd_queue → рефлекторний постріл услід за uplink'ом Солдата
+// (його єдине вікно слуху ~500 мс після власного TX; періодичний маяк летить
+// у глухий ліс — ADR у soldier_cmd_queue.h). Повтори нешкідливі: 0x9E —
+// forward-only ratchet, 0x9A — ідемпотентний; ACK 0x9E = Dual-Key Grace на
+// бекенді (03_05 §3.8).
+//
+// 🟡 СТАТУС: ВИМКНЕНО (FW20_Q2_CMD_RELAY_ENABLED 0) — дзеркало Soldier-гейтів
+// FW17_RATCHET_ENABLED / FW8_PARSER_ENABLED: ECB-downlink без MAC не сміє
+// командувати ротацією, а на спільному транзит-ключі командний broadcast
+// чули б усі Солдати (per-device адресація = CCM-крипто). Фліп — разом із
+// FW.2 CCM + Soldier-гілками. Логіка черги pure (host-тести
+// test_soldier_cmd_queue.c); канон — 03_02 §5б.
+#include "soldier_cmd_queue.h"
+
+#define FW20_Q2_CMD_RELAY_ENABLED  0   // 🟡 фліп разом із FW.2 CCM (bench)
+
+#if FW20_Q2_CMD_RELAY_ENABLED
+static SoldierCmdQueue soldier_cmd_queue;
+#endif
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -757,6 +781,25 @@ int main(void)
             // 1. РОЗШИФРОВУЄМО ПАКЕТ
             // 4 слова × 32 біти = 16 байт = один AES-128-ECB блок (post-ARCH.42 LoRa).
             HAL_CRYP_Decrypt(&hcryp, (uint32_t*)rx_payload, 4, (uint32_t*)decrypted_payload, 1000);
+
+#if FW20_Q2_CMD_RELAY_ENABLED
+        // =========================================================================
+        // [FW.20-Q2] РЕФЛЕКТОРНИЙ ПОСТРІЛ КОМАНДИ (0x9A / 0x9E)
+        // =========================================================================
+        // Солдат, чий голос щойно прозвучав, слухає ефір ~500 мс — один
+        // командний постріл (60 мс) перед OTA-чанком вміщається з запасом.
+        // Команда першою: ротація ключа (FW.17) важливіша за чанк прошивки.
+        {
+            uint8_t cmd_plain[SOLDIER_CMD_BLOCK_SIZE];
+            uint8_t cmd_cipher[SOLDIER_CMD_BLOCK_SIZE];
+            if (Soldier_Cmd_Queue_Next(&soldier_cmd_queue, cmd_plain)) {
+                HAL_CRYP_Encrypt(&hcryp, (uint32_t*)cmd_plain, 4,
+                                 (uint32_t*)cmd_cipher, 1000);
+                Radio.Send(cmd_cipher, SOLDIER_CMD_BLOCK_SIZE);
+                HAL_Delay(60);  // PHY доказує пакет перед наступним TX/RX
+            }
+        }
+#endif
 
         // =========================================================================
         // РЕФЛЕКТОРНИЙ ПОСТРІЛ (OTA BROADCAST)
@@ -1791,11 +1834,18 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
             ota_is_active        = 1;
         }
     }
-    // [FW.20-Q2] Soldier-bound команди (0x9A CMD_SET_THRESHOLDS, 0x9E
-    // CMD_ROTATE_KEY [FW.17]) ставляться в soldier_cmd_queue (спільну з
-    // періодичним beacon TX) — implementation-шлях використовує той самий
-    // LoRa-broadcast pipeline що й OTA-чанки. Реле 0x9E активується разом
-    // із Soldier-гілкою (FW17_RATCHET_ENABLED, після FW.2 CCM).
+    // [FW.20-Q2] Soldier-bound команди спільного каркаса (0x9A
+    // CMD_SET_THRESHOLDS [FW.8], 0x9E CMD_ROTATE_KEY [FW.17]) → черга
+    // рефлекторних пострілів (валідатор + дедуп + бюджет —
+    // soldier_cmd_queue.h). Невалідний кадр черга мовчки відкидає — як
+    // Солдат відкинув би, тільки без витрачених пострілів в ефір.
+#if FW20_Q2_CMD_RELAY_ENABLED
+    else if (inner_aligned > 0 &&
+             (inner_payload[0] == SOLDIER_CMD_MARKER_THRESHOLDS ||
+              inner_payload[0] == SOLDIER_CMD_MARKER_ROTATE_KEY)) {
+        Soldier_Cmd_Queue_Push(&soldier_cmd_queue, inner_payload, inner_aligned);
+    }
+#endif
 }
 
 // =========================================================================

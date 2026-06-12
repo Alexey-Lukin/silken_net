@@ -111,6 +111,7 @@ coverage/
 /firmware/test/test_queen_attest
 /firmware/test/test_flash_ota
 /firmware/test/test_key_ratchet
+/firmware/test/test_soldier_cmd_queue
 /firmware/test/test_fauna_session
 /firmware/test/test_bme280
 # [TEST.1] coverage-lane artifacts (make -C firmware/test coverage)

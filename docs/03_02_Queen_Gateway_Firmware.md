@@ -38,6 +38,7 @@
 - [4. SIM7070G Модем: Життєвий Цикл та AT-Команди](#-4-sim7070g-модем-життєвий-цикл-та-at-команди)
 - [5. OTA Broadcast (Reflex Shot — LoRa Downlink до Солдатів)](#-5-ota-broadcast-reflex-shot--lora-downlink-до-солдатів)
 - [5а. Time Sync (FW.20, FW.20-S2) — Канонічний хаб](#-5а-time-sync-fw20-fw20-s2--канонічний-хаб)
+- [5б. Soldier Command Relay (FW.20-Q2) — черга рефлекторних пострілів](#-5б-soldier-command-relay-fw20-q2--черга-рефлекторних-пострілів)
 - [6. Actuator Command Dedup (Idempotency Ring Buffer)](#-6-actuator-command-dedup-idempotency-ring-buffer)
 - [7. Queen Health Sentinel (DID = 0x00000000)](#-7-queen-health-sentinel-did--0x00000000)
 - [8. Шифрування: Режими та Переходи](#-8-шифрування-режими-та-переходи)
@@ -876,6 +877,7 @@ Soldier — gossip-uplift (3-hop reach)
 | `0x9B` | HMAC_TRAILER_MARKER (FW.23 OTA dual-gate) | Rails→Queen→Soldier | seg_idx 1..3 печатка + 4 version | ✅ |
 | `0x9C` | CMD_TIME_SYNC envelope / Time Beacon (FW.20) | Rails→Queen / Queen→Soldier | byte 10 = `'B'` (0x42) для LoRa beacon'а | ✅ |
 | `0x9D` | CMD_SET_AUDIO_THRESHOLDS (FW.18) | Rails→Queen→Soldier | CRC16 | ✅ |
+| `0x9E` | CMD_ROTATE_KEY (FW.17, реле — §5б) | Rails→Queen→Soldier | CRC16 | 🟡 gated (FW.2 CCM) |
 
 > **Розмежування 0x55 vs 0x56:** оба uplink-маркери, їх дезамбігвує magic-byte у позиції 10 (`'R'` для re-request vs `'S'` для sync) — захищає від ложної маршрутизації при випадковому bit-flip першого байта.
 
@@ -934,6 +936,22 @@ Soldier — gossip-uplift (3-hop reach)
 - **Drift compensation** при ΔT = ±60°C lab-вимірювання (потребує термокамери, відсутня @ TRL-6)
 
 > **Закриття 00_07:** після цього хабу записи `FW.20`, `FW.20-S2 (1/5..5/5)` у [`00_07 §03`](00_07_Action_Plan_Tracker#03--firmware) шорткозамкнено — лишилося лише посилання сюди для аудиту прогресу.
+
+---
+
+## 📨 5б. Soldier Command Relay (FW.20-Q2) — черга рефлекторних пострілів
+
+**Статус:** ✅ написано (2026-06-12), інертне за гейтом `FW20_Q2_CMD_RELAY_ENABLED 0` — фліп разом із FW.2 CCM та Soldier-гілками (`FW17_RATCHET_ENABLED` / `FW8_PARSER_ENABLED`).
+
+Королева-гонець для Soldier-bound команд **спільного каркаса** `[маркер][len_le:2][body][crc16_le:2]` (зараз: `0x9A` CMD_SET_THRESHOLDS, `0x9E` CMD_ROTATE_KEY — повна опкод-карта [`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA#45а-downlink-opcode-map--canonical-ssot-doc4)). Дім коду: `firmware/queen/soldier_cmd_queue.h` (pure) + глю в `queen/main.c`; host-тести `firmware/test/test_soldier_cmd_queue.c` (`make -C firmware/test cmd_queue`).
+
+**Шлях слова:** `Handle_CoAP_Command` (після зрізання 0x9C-конверта) маршрутизує кадр за маркером → валідатор каркаса (len + CRC-16/CCITT-FALSE — дзеркало guard'ів Солдата: битий у LTE-транзиті біт помирає на Королеві, не з'їдаючи ефір) → черга 16-байтних plaintext-блоків (zero-pad до одного LoRa AES-блоку) → **рефлекторний постріл** услід за кожним прийнятим uplink'ом (ECB-encrypt поточним LoRa-ключем + `Radio.Send`, перед OTA-чанком — команда першою).
+
+**Чому рефлекс, а не маяковий слот (ADR):** Солдат слухає ефір лише ~500 мс після ВЛАСНОГО TX — постріл услід за його голосом є єдиним гарантовано чутим вікном; періодичний маяк летить у переважно глухий ліс. Первісний ескіз «спільна з beacon TX черга» відкинуто.
+
+**Бюджет замість ACK:** на LoRa-рівні ACK нема (справжній per-device ACK `0x9E` — Dual-Key Grace на бекенді, [`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security)); кадр живе `SOLDIER_CMD_SHOT_BUDGET` пострілів (покриває повний оберт uplink'ів кластера з запасом) і згасає. Повтори нешкідливі за конструкцією: `0x9E` — forward-only ratchet (replay → відмова), `0x9A` — ідемпотентний; після re-key Солдата старі постріли дешифруються в сміття → CRC-відмова. Дедуп (Sidekiq retry / подвійний dispatch) — ідентичний блок лише освіжає бюджет; переповнення витісняє слот із найменшим лишком.
+
+**Активаційний gate (той самий, що [`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security)):** ECB-downlink без MAC не сміє командувати ротацією, а на спільному транзит-ключі командний broadcast чули б **усі** Солдати — per-device адресація приходить лише з CCM-криптом (FW.2). Глибина черги під per-device CCM-батч cluster-wide ротації — частина активаційного дизайну.
 
 ---
 
@@ -1132,6 +1150,7 @@ make -C firmware/test at_engine   # [FW.3/FW.56] AT-двигун + CoAP PDU + р
 | **[FW.20-S2] Beacon Authoritativeness Flag** | byte 9 bit 7 (`BEACON_AUTH_FLAG=0x80`) — Королева транслює `byte9 = 0x82` (auth=1 \| TTL=2). Relay-маяки Провідників — auth=0, TTL−1. Layout `[0x9C][ts_be:4][reserved:0×4][AUTH_FLAG\|TTL][magic 'B'][padding:0×5]` |
 | **[FW.27-B] Magic Re-Request Handler** | Bitmap accept/dedup, total mismatch, no-active-OTA |
 | **[FW.23] HMAC Trailer Relay** | 3 segs storage, seg_idx>3 reject, marker mismatch |
+| **[FW.20-Q2] Soldier Cmd Queue** (`test_soldier_cmd_queue.c`) | Валідатор каркаса (golden 0x9E, кадр 0x9A, чужі маркери, битий len/CRC), zero-pad до AES-блоку, shot-бюджет до згасання, дедуп-refresh, round-robin без голодування, евікція найбіднішого слота, інтеграція блоку з черги крізь `Key_Ratchet_Parse_Cmd` |
 
 **Не покрито host-тестами (справжній HW-residual):**
 - verbatim-звірка граматики SIM7070-ноти V1.03 + реальні таймінги/URC реального модему (bench-runbook)
