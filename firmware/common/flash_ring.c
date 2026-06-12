@@ -190,8 +190,8 @@ int FlashRing_Append(FlashRing *r, const uint8_t rec[FLASH_RING_RECORD_SIZE])
             if (next == r->tail_sector && r->count > 0u) {
                 if (!drop_oldest_sector(r)) return 0;
             } else if (next == r->tail_sector) {
-                /* Порожній ring наздогнав сам себе: tail їде разом із head. */
-                r->tail_sector = next;
+                /* Порожній ring наздогнав сам себе: tail (вже = next за
+                 * умовою гілки) їде разом із head — скидаємо лише слот. */
                 r->tail_slot   = 0;
             }
             r->head_sector = next;

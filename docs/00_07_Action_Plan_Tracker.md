@@ -595,8 +595,8 @@
 #### FW.52 — OTA throughput by-design: 1 RX-пакет/пробудження + give-up без печатки
 - **P2** · 👤🤖 · → [`03_02 §5.X.6`](03_02_Queen_Gateway_Firmware)
 - **✅ Знахідка канонізована ([`03_02 §5.X.6`](03_02_Queen_Gateway_Firmware)):** повільний OTA (порядок днів-тижнів) by-design — (а) Soldier RX = 1 пакет/wake (1024 B → ~94 пробудження); (б) Queen гасить `ota_is_active` коли тіло відлунало без зібраної печатки → re-request мертвий до повторного Rails-push; (в) re-request на замороженому STOP2-tick → FW.49. **(г) DONE** — `Write_OTA_Contract_To_Flash` тіло (`flash_ota.{h,c}`, power-cut-safe magic-last, 8/8 host-тести, reuse `FlashKvOps`) → канон [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA). Лишається:
-  - [ ] 👤 рішення: прийняти повільний OTA (energy-first) vs 🤖 re-arm RX у вікні при активній OTA-збірці (vcap-енергогейт) + Queen тримає `ota_is_active` до печатки/таймауту.
-  - [ ] 👤 bench: HAL_FLASH erase/program-фаза (`g_ota_flash_ops`, `main.c`) на STM32 + e2e OTA-day.
+  - ✅ (2026-06-12) **обидва рішення прийнято (founder):** (а) **повільний OTA прийнято як свідомий energy-first ADR** — delta_t = економіка дерева (E.63), `break`-після-пакета = анти-vampire, OTA рідкісний, security-важіль 0x9E поза OTA; vcap-гейтований re-arm = опція перегляду лише після bench E_cycle/recharge (FW.50). (б) **мертве вікно при запізнілій печатці виявилось reliability-багом і ВИПРАВЛЕНО** — запізнілий `0x9B`-трейлер раніше лягав у пам'ять мовчки (тіло в RAM, печатка зібрана, re-request кричить у мертве вікно → весь OTA змарновано до повторного Rails-push); тепер довершення трейлера воскрешає вікно одразу у фазу печатки (pure `Ota_Late_Trailer_Resurrects`, `firmware/queen/ota_window.h` + host-тести `test_queen_logic.c`; анти-проповідь [PLAN 2.5] збережена). Канон: [`03_02 §5.X.6`](03_02_Queen_Gateway_Firmware).
+  - [ ] 👤 bench: HAL_FLASH erase/program-фаза (`g_ota_flash_ops`, `main.c`) на STM32 + e2e OTA-day (включно з late-trailer сценарієм воскресіння).
 
 #### FW.54 — STOP2 RTC-only 300nA: SRAM2-off → RAM-стан (Flash-KV vs RTC-реклемація)
 - **P2** · 🤖+👤 · → [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)

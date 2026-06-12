@@ -29,6 +29,7 @@
 #include "sim7070_coap.h"
 
 #include "uart_rx_ring.h"
+#include "ota_window.h"   // [FW.52б] воскресіння OTA-вікна запізнілою печаткою
 // [L1 QATT] Розкладка підписаного батч-конверта (pure, host-tested) — 03_05 §2.2
 #include "../common/queen_attest.h"
 // [L1 QATT] Ed25519 (Monocypher, pinned submodule — 03_01 §12.5): голос Королеви
@@ -1773,6 +1774,19 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         // Беремо перші 16 байт inner_payload — готовий до повторної проповіді блок.
         memcpy(pending_ota_hmac_chunks[seg_idx - 1], inner_payload, 16);
         hmac_segments_received |= (uint8_t)(1u << (seg_idx - 1));
+
+        // [FW.52б] Запізніла печатка: тіло вже відлунало і вікно згасло
+        // (§5.X.6 п.2), а цей сегмент щойно довершив трейлер → воскрешаємо
+        // вікно одразу у фазу печатки. Анти-проповідь [PLAN 2.5] збережена;
+        // Солдати з частковим тілом знову почуті (re-request живий).
+        if (Ota_Late_Trailer_Resurrects(hmac_segments_received,
+                                        OTA_TRAILER_ALL_RECEIVED,
+                                        ota_is_active, pending_ota_size,
+                                        ota_chunk_bitmap, ota_chunks_received)) {
+            hmac_broadcast_phase = 1;
+            current_hmac_seg_idx = 0;
+            ota_is_active        = 1;
+        }
     }
     // [FW.20-Q2] Soldier-bound команди (0x9A CMD_SET_THRESHOLDS, 0x9E
     // CMD_ROTATE_KEY [FW.17]) ставляться в soldier_cmd_queue (спільну з

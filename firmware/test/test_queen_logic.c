@@ -2298,6 +2298,58 @@ TEST(test_queen_relay_overwrites_same_segment) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * [FW.52б] ВОСКРЕСІННЯ OTA-ВІКНА ЗАПІЗНІЛОЮ ПЕЧАТКОЮ (ota_window.h)
+ * ════════════════════════════════════════════════════════════════════
+ * Сценарій-баг (§5.X.6 п.2): тіло відлунало → ota_is_active=0; печатка
+ * доїздить пізніше по CoAP → без предиката лягала мовчки, OTA мертвий
+ * до повторного Rails-push, хоч усе потрібне вже в RAM Королеви. */
+#include "../queen/ota_window.h"
+
+TEST(test_ota_resurrect_fires_on_late_complete_trailer) {
+    /* Печатка повна, вікно мертве, тіло зібране (збірка idle) → воскресіння */
+    ASSERT_EQ(Ota_Late_Trailer_Resurrects(0x0F, 0x0F, 0, 1024, 0, 0), 1);
+}
+
+TEST(test_ota_resurrect_silent_while_body_broadcasting) {
+    /* Вікно ще живе (тіло мовиться) — звичайний перехід зробить
+     * бродкаст-цикл (main.c phase 0→1), предикат мовчить */
+    ASSERT_EQ(Ota_Late_Trailer_Resurrects(0x0F, 0x0F, 1, 1024, 0, 0), 0);
+}
+
+TEST(test_ota_resurrect_silent_on_incomplete_trailer) {
+    /* 3 з 4 сегментів — без version envelope не воскрешаємо */
+    ASSERT_EQ(Ota_Late_Trailer_Resurrects(0x07, 0x0F, 0, 1024, 0, 0), 0);
+}
+
+TEST(test_ota_resurrect_silent_without_body) {
+    /* Печатка є, тіла нема (новий boot / буфер не наповнювався) */
+    ASSERT_EQ(Ota_Late_Trailer_Resurrects(0x0F, 0x0F, 0, 0, 0, 0), 0);
+}
+
+TEST(test_ota_resurrect_silent_mid_assembly) {
+    /* Тіло ще збирається (bitmap/лічильник ненульові) — недозібране
+     * слово не мовиться, re-request по химері не служиться */
+    ASSERT_EQ(Ota_Late_Trailer_Resurrects(0x0F, 0x0F, 0, 512, 0x0003, 2), 0);
+    ASSERT_EQ(Ota_Late_Trailer_Resurrects(0x0F, 0x0F, 0, 512, 0, 2), 0);
+}
+
+TEST(test_ota_resurrect_e2e_with_trailer_store) {
+    /* Інтеграція з релеєм: 4 сегменти по одному — воскресіння спрацьовує
+     * рівно на четвертому, не раніше */
+    reset_hmac_relay();
+    for (uint8_t s = 1; s <= 4; s++) {
+        uint8_t chunk[16] = {0};
+        chunk[0] = Q_HMAC_TRAILER_MARKER;
+        chunk[1] = 0; chunk[2] = s;
+        ASSERT_EQ(Test_Queen_Store_HMAC_Trailer(chunk, 16), 1);
+        uint8_t resurrected = Ota_Late_Trailer_Resurrects(
+            q_hmac_segments_received, Q_OTA_TRAILER_ALL_RECEIVED,
+            0 /* вікно мертве */, 1024 /* тіло в RAM */, 0, 0);
+        ASSERT_EQ(resurrected, (s == 4) ? 1 : 0);
+    }
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * [FW.3] LORA RX RING BUFFER TESTS — ПРИХИСТОК ГОЛОСІВ РОЮ
  * ════════════════════════════════════════════════════════════════════
  * Закриває head-of-list пункт BLOCKER-2: single-packet buffer overwrite
@@ -2664,6 +2716,12 @@ int main(void)
     RUN(test_queen_relay_rejects_seg_idx_5);
     RUN(test_queen_relay_rejects_wrong_marker);
     RUN(test_queen_relay_overwrites_same_segment);
+    RUN(test_ota_resurrect_fires_on_late_complete_trailer);
+    RUN(test_ota_resurrect_silent_while_body_broadcasting);
+    RUN(test_ota_resurrect_silent_on_incomplete_trailer);
+    RUN(test_ota_resurrect_silent_without_body);
+    RUN(test_ota_resurrect_silent_mid_assembly);
+    RUN(test_ota_resurrect_e2e_with_trailer_store);
 
     printf("\n  LoRa RX Ring Buffer (FW.3):\n");
     RUN(test_lora_rx_ring_initial_empty);
