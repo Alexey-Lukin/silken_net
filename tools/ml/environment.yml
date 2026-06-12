@@ -24,5 +24,11 @@ dependencies:
   - pytest>=7.0
   - pytest-cov>=4.0
   - pip
-  # NB: TensorFlow / tflite-runtime are DEFERRED until the training + INT8-export
-  # module lands (keeps this env lean). See README "Deferred stack".
+  # --- training + INT8 export (TFLite post-training quantization) ---
+  # Landed 2026-06-12 with the baseline-model program (tools/ml/docs/
+  # baseline_model_program.md). TF is pip-installed (conda-forge osx-arm64 TF is
+  # finicky); provides Keras 3 + tf.lite.TFLiteConverter (INT8 PTQ →
+  # silken_net_audio_model.h). Verified: the librosa≡stdlib parity gate stays
+  # green alongside TF's numpy 2.x / librosa 0.11.
+  - pip:
+      - tensorflow>=2.20
