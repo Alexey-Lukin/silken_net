@@ -4603,16 +4603,15 @@ TEST(test_fw42_fauna_mixed_calls_do_not_decrement_counter) {
 }
 
 TEST(test_fw42_raw_adc_range_always_skips_fail_closed) {
-    /* [FW.50-footgun, виконуване знання] Контракт guard'а — МІЛІВОЛЬТИ
-     * (Adc_Raw_To_Mv). Доки call-site (main.c vcap_voltage) тримає СИРИЙ
-     * 12-bit відлік (max 4095 < 4500), guard НІКОЛИ не пропустить сесію —
-     * fauna мовчить навіть на повному EDLC. Це fail-CLOSED (brownout
-     * неможливий — безпечно), але «fauna мертва» діагностується лише
-     * лічильником пропусків. Розгейт: FW.50 (дільник + конверсія у
-     * call-site), НЕ зниження порогу. */
+    /* [FW.50-footgun, виконуване знання] Контракт guard'а — МІЛІВОЛЬТИ.
+     * Call-site (main.c) з 2026-06-12 дає чесні мВ VDDA-проксі (≈3300,
+     * стеля VREFINT-тракту < 4500) — fauna ЛИШАЄТЬСЯ fail-CLOSED аж до
+     * живого Vcap-каналу з дільником (повний EDLC 5500 мВ > поріг).
+     * «Fauna мертва» діагностується лічильником пропусків. Розгейт: FW.50
+     * hardware-частина (дільник), НЕ зниження порогу. */
     Reset_Fauna_Skip_Counter();
-    ASSERT_EQ(Test_Fauna_Should_Sample(4095), 0); /* raw full-scale */
-    ASSERT_EQ(Test_Fauna_Should_Sample(1500), 0); /* типовий сирий Vcap */
+    ASSERT_EQ(Test_Fauna_Should_Sample(4095), 0); /* стеля 12-bit тракту */
+    ASSERT_EQ(Test_Fauna_Should_Sample(3300), 0); /* VDDA-проксі (типово) */
     ASSERT_EQ(test_fauna_skipped_low_vcap, 2);
 }
 

@@ -79,7 +79,7 @@
 | 1 | Delta T (Алгоритм Часу) | RTC | `Timers → RTC` | **Activate Clock Source** + **WakeUp** (STOP2 wake) |
 | 2 | Температура Кристала | ADC | `Analog → ADC` | **Temperature Sensor Channel** ✓ |
 | 3 | Голос Дерева / П'єзодиск | GPIO_EXTI | Клік на пін **PA0** → | **GPIO_EXTI0** (зовнішнє переривання) |
-| 4 | Глибина Резервуара (Vcap) | ADC | `Analog → ADC` | **Vrefint Channel** ✓ (одночасно з каналом 2; ⚠️ FW.50: міряє VDDA, не Vcap — потрібен окремий канал+дільник, §1.4) |
+| 4 | Глибина Резервуара (Vcap) | ADC | `Analog → ADC` | **Vrefint Channel** ✓ (одночасно з каналом 2; FW.50: конвертується у чесні мВ VDDA = проксі заряду; реальний Vcap — окремий канал+дільник, §1.4) |
 | 5 | RSSI Біомаса / Фенологія | — | *Без конфігурації на вузлі* | Zero-Energy: вимірюється Queen на стороні Gateway |
 | 6 | Квантовий Шум (TRNG seed) | RNG | `Security → RNG` або `Computing → RNG` | **Activated** ✓ |
 
@@ -286,16 +286,17 @@ HAL_ADC_PollForConversion(&hadc, 10);
 internal_temp = HAL_ADC_GetValue(&hadc);
 HAL_ADC_Stop(&hadc);
 
-// Цикл 2: сирий VREFINT-відлік (= опора VDDA, НЕ мВ Vcap — 🔴 FW.50 нижче)
+// Цикл 2: VREFINT-відлік → справжні мВ VDDA (проксі заряду — FW.50 нижче)
 HAL_ADC_Start(&hadc);
 HAL_ADC_PollForConversion(&hadc, 10);
-vcap_voltage = HAL_ADC_GetValue(&hadc);
+uint16_t vrefint_raw = HAL_ADC_GetValue(&hadc);
+vcap_voltage = Adc_Vdda_Mv(vrefint_raw, *(volatile const uint16_t*)ADC_VREFINT_CAL_ADDR);
 HAL_ADC_Stop(&hadc);
 ```
 
 > ⚠️ **Чому два окремих цикли?** STM32 ADC з подвійним каналом (температура + VREFINT) вимагає перемикання між каналами. Роздвоєний Start/Stop запобігає deadlock при прочитанні VREFINT одразу після температурного каналу.
 
-> **🔴 `vcap_voltage` — сирий ADC-відлік, не мВ.** `HAL_ADC_GetValue()` повертає 12-bit count (0..4095), а код скрізь трактує його ЯК мілівольти: пакування байтів 4-5, пороги `VCAP_LISTEN_THRESHOLD=2800` / `COLD_TX_DEFER_VCAP_MV=4000` / `FAUNA_VCAP_MIN_MV=4500`, EMA, `vcap_mv` у mruby. На реальному залізі raw VREFINT ≈ 1500 → RX-вікно (>2800) не відкриється ніколи, а Vcap-енергогейт працює з фейкових величин. Додатково: VREFINT міряє **VDDA** (за buck-регулятором — майже константа), а НЕ напругу EDLC-іоністора; для Vcap потрібен окремий ADC-канал з дільником (цільовий тракт = BQ25570 VBAT_SEC, [`02_01 §7.1`](02_01_Hardware_Architecture_and_BOM)). Pure-helper `Adc_Raw_To_Mv()` з factory VREFINT-калібруванням ✅ реалізовано + host-тести (`firmware/common/adc_convert.h`, One-Home); жива розводка (окремий ADC-канал Vcap + резистивний дільник) лишається hardware-гейтом — трекінг [`00_07` — FW.50](00_07_Action_Plan_Tracker), номінали дільника узгодити з [`02_03`](02_03_BQ25570_MPPT_Nano_Power).
+> **🟡 `vcap_voltage` = VDDA-проксі у справжніх мВ [FW.50, рішення founder 2026-06-12].** До фіксу сирий 12-bit VREFINT-відлік (~1500) трактувався ЯК мілівольти: RX-вікно (`VCAP_LISTEN_THRESHOLD=2800`) **не відкривалось ніколи** — на кремнії Солдат був би глухий до OTA/mesh/time-sync/ротації ключа, а Vcap-енергогейти працювали з фейкових величин. Тепер call-site конвертує через `Adc_Vdda_Mv()` (factory VREFINT-cal, `firmware/common/adc_convert.h`, One-Home + host-тести): `vcap_voltage` = чесні мВ VDDA (≈3300, поки buck тримає; сідає лише при брауноуті). Семантика гейтів до живого Vcap-каналу: «слухай» = живлення здорове (3300 > 2800 — вухо відкрите); fauna (`FAUNA_VCAP_MIN_MV=4500`) чесно зачинена (стеля VREFINT-тракту < 4500). **Залишок hardware:** VREFINT міряє VDDA, НЕ напругу EDLC — реальний Vcap = окремий ADC-канал з дільником (цільовий тракт = BQ25570 VBAT_SEC, [`02_01 §7.1`](02_01_Hardware_Architecture_and_BOM)); конверсія та сама (`Adc_Raw_To_Mv`, дільник-параметр), номінали узгодити з [`02_03`](02_03_BQ25570_MPPT_Nano_Power) — трекінг [`00_07` — FW.50](00_07_Action_Plan_Tracker).
 
 **HRNG (Chaos Seed):**
 ```c

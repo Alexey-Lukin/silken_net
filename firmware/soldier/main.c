@@ -34,6 +34,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #include "../common/lorenz_seed.h"
 #include "../common/ttl_byte.h"   // [FW.18b] бітфілд байта 11: [thr_invalid:5|TTL:3]
 #include "did_derive.h"           // [FW.54 Вісь 2] DID = f(UID), recompute на boot
+#include "../common/adc_convert.h" // [FW.50] VREFINT-калібровані мВ (One-Home з host-тестами)
 
 // Підключаємо скомпільовану нейромережу TinyML.
 // Якщо реальної моделі ще немає (BLOCKER-1+2, docs/03_03), fallback на
@@ -296,10 +297,11 @@ uint8_t warning_counter           = 0;   // Послідовні WARNING-под�
 
 uint8_t fauna_skipped_low_vcap = 0; // saturating uint8 counter (SRAM)
 
-// КОНТРАКТ call-site: vcap_mv — МІЛІВОЛЬТИ (Adc_Raw_To_Mv, adc_convert.h),
-// НЕ сирий відлік. Сирий 12-bit (max 4095 < 4500) ⇒ guard fail-CLOSED:
-// brownout неможливий, але fauna мовчить і на повному EDLC — розгейт через
-// FW.50 (дільник + конверсія), не зниженням порогу. Tripwire-тест:
+// КОНТРАКТ call-site: vcap_mv — МІЛІВОЛЬТИ (adc_convert.h). Зараз це
+// VDDA-проксі (≈3300, стеля VREFINT-тракту < 4500) ⇒ guard fail-CLOSED:
+// brownout неможливий, fauna свідомо спить до живого Vcap-каналу з
+// дільником (FW.50 hardware; повний EDLC 5500 > поріг) — розгейт залізом,
+// не зниженням порогу. Tripwire-тест:
 // test_fw42_raw_adc_range_always_skips_fail_closed.
 static uint8_t Fauna_Should_Sample(uint16_t vcap_mv)
 {
@@ -1776,15 +1778,21 @@ int main(void)
 
     HAL_ADC_Start(&hadc);
     if (HAL_ADC_PollForConversion(&hadc, 10) == HAL_OK) {
-        // [FW.50] Сирий VREFINT-відлік (= опора VDDA), НЕ мВ іоністора.
-        // Конверсія готова у common/adc_convert.h (Adc_Raw_To_Mv); жива
-        // розводка (окремий ADC-канал Vcap + дільник) — hardware-гейт 👤.
-        vcap_voltage = HAL_ADC_GetValue(&hadc);
+        // [FW.50, рішення founder 2026-06-12] VREFINT + заводська каліброванка
+        // → справжні мВ VDDA. Це ПРОКСІ заряду (≈3300, поки buck тримає; сідає
+        // лише при брауноуті) — без нього сирий відлік ~1500 < 2800 тримав
+        // вухо RX-вікна зачиненим НАЗАВЖДИ (OTA/mesh/time-sync глухі на
+        // кремнії). Реальний Vcap іоністора — окремий канал + дільник
+        // (hardware-гейт 👤: Adc_Raw_To_Mv, номінали — 02_03).
+        uint16_t vrefint_raw = HAL_ADC_GetValue(&hadc);
+        vcap_voltage = Adc_Vdda_Mv(vrefint_raw,
+                                   *(volatile const uint16_t*)ADC_VREFINT_CAL_ADDR);
     }
     HAL_ADC_Stop(&hadc);
 
     // [FW.21] Оновлюємо фільтр пульсу (delta_t / vcap) — стан живе в RTC DR10-12,
-    // зчитано в Phase 0 (BOOT). Реальне EMA-передавання у mruby — FW.49/FW.50 (bench).
+    // зчитано в Phase 0 (BOOT). delta_t чесний лише після FW.49 (wall-clock);
+    // vcap — VDDA-проксі мВ до живого Vcap-каналу (FW.50 bench).
     EMA_Update(delta_t_seconds, vcap_voltage);
 
     // 3. Квантовий Хаос (Зерно для mesh anti-pingpong, TX jitter, CoAP nonce)

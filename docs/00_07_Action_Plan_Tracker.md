@@ -588,8 +588,9 @@
 
 #### FW.50 — Vcap ADC: raw counts використовуються як мВ (без конверсії)
 - **P0** · 👤🤖 · → [`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA)
-- **✅ Знахідка + helper канонізовано ([`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA)):** `vcap_voltage` — сирий 12-bit ADC-відлік (канал VREFINT = VDDA за buck'ом, не Vcap EDLC) трактувався скрізь як мВ (пороги/EMA/`vcap_mv`) → RX-вікно/Vcap-енергогейт з фейкових величин. Pure-helper `Adc_Raw_To_Mv()` (factory VREFINT-cal + дільник-параметр) + host-тести (`adc_convert.h`, One-Home) ✅; жива розводка НЕ ввімкнена. Лишається:
-  - [ ] 👤 схемна вилка: розводка Vcap на окремий ADC-пін (цільовий тракт BQ25570 **VBAT_SEC** — [`02_01 §7.1`](02_01_Hardware_Architecture_and_BOM); дільник-номінали — [`02_03`](02_03_BQ25570_MPPT_Nano_Power)).
+- **✅ Знахідка + helper канонізовано ([`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA)):** `vcap_voltage` — сирий 12-bit ADC-відлік (канал VREFINT = VDDA за buck'ом, не Vcap EDLC) трактувався скрізь як мВ (пороги/EMA/`vcap_mv`) → RX-вікно/Vcap-енергогейт з фейкових величин. Pure-helper `Adc_Raw_To_Mv()` (factory VREFINT-cal + дільник-параметр) + host-тести (`adc_convert.h`, One-Home) ✅.
+- ✅ (2026-06-12, рішення founder) **VDDA-проксі ввімкнено у call-site — глухота вилікувана:** сирий відлік ~1500 < `VCAP_LISTEN_THRESHOLD=2800` тримав вухо RX-вікна зачиненим НАЗАВЖДИ (OTA/mesh/time-sync/ротація ключа мертві на кремнії; host-тести цього не бачили — вони вже жили в мВ-семантиці). Тепер `vcap_voltage = Adc_Vdda_Mv(VREFINT, factory-cal)` = чесні мВ VDDA (≈3300 поки buck живий): вухо відкрите, fauna-гейт (4500) чесно зачинений до реального Vcap-каналу, wire/EMA/mruby — справжні одиниці. Канон [`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA); попутно знято VSTOR↔VBAT_SEC дрейф у [`02_03`](02_03_BQ25570_MPPT_Nano_Power). Лишається:
+  - [ ] 👤 схемна вилка: розводка Vcap на окремий ADC-пін (цільовий тракт BQ25570 **VBAT_SEC** — [`02_01 §7.1`](02_01_Hardware_Architecture_and_BOM); дільник-номінали — [`02_03`](02_03_BQ25570_MPPT_Nano_Power): десятки МОм bleed vs TPS22860-гейт).
   - [ ] 👤 bench-калібрування (DMM-точки vs `Adc_Raw_To_Mv` — RUNBOOK §3.4).
 
 #### FW.52 — OTA throughput by-design: 1 RX-пакет/пробудження + give-up без печатки
