@@ -151,7 +151,7 @@ Dual Computation Integrity: server Z vs device Z (SilkenNet::Attractor). Diverge
 | HW-AES-KEY | `firmware/*/main.c` (`Load_AES_Key`) | ✅ Firmware CLOSED (FW.1) — per-device HKDF + Protected Flash; 👤 residual: real `STM32_Programmer_CLI` на bench + RDP L2 (SEC.2) |
 | ARCH.42 | `firmware/*/main.c` (`MX_CRYP_Init`) | ✅ DECIDED 2026-05-23 — Variant B: AES-128 LoRa + SE; CoAP лишається AES-256 |
 | AES-ECB | `firmware/soldier/main.c` (`MX_CRYP_Init`) | 🟡 Transitional AES-128-ECB; повне закриття через FW.2 (AES-128-CCM, 8B MIC, Frame Counter) — STM32 bench |
-| TINYML | `firmware/soldier/main.c` (Phase 1.5) | log-mel `Compute_LogMel` ✅ (FW.25); `Run_Inference()` + model header відсутні (чекає моделі) |
+| TINYML | `firmware/soldier/main.c` (Phase 1.5) | ✅ ЗАКРИТО (FW.4 2026-06-12): self-owned ESC-50 baseline → `silken_net_audio_model.h` (INT8 forward-pass), call-site розкоментований; residual: ARM size (CI) + bench |
 | LORENZ-INPUTS | `firmware/bio_contracts/bio_contract.rb` | 🔄 [E.63 2026-06-08] β=`BASE_BETA` фікс; `delta_t`→`growth_points` напряму (β-пертурбація реверсована); vcap reserved |
 | LORENZ-STATE | `firmware/soldier/main.c` | ✅ Стан (x,y,z) у RTC DR16-DR18 + magic `0x4C5A5354` ("LZST") |
 | OPTIMAL-Z | `firmware/bio_contracts/bio_contract.rb` | ✅ (2026-05-17) `OPTIMAL_Z_TARGET = 29.0` — коментар і константа узгоджені |
