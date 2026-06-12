@@ -4188,11 +4188,16 @@ TEST(test_arch41_normal_acoustic_passthrough_incl_saturation) {
  * [FW.20-S2] Mesh-Relay: per-hop drift compensation (freeze-contract)
  * ════════════════════════════════════════════════════════════════════
  * Дзеркало логіки з firmware/soldier/main.c:
- *   Soldier_Try_Relay_Time_Beacon(in_plain, role, in_rx_tick, now_tick, out_plain)
- *     → BeaconRelayResult enum (OK / 6 reasons of drop)
+ *   Soldier_Try_Relay_Time_Beacon(in_plain, role, in_rx_tick, now_tick,
+ *                                 dedup, out_plain)
+ *     → BeaconRelayResult enum (OK / 7 reasons of drop)
  * Кенозис тесту: відтворюємо «Провідник почув Королеву, потримав маяк 5 секунд,
- * передав далі з компенсованим часом» — і всі 6 причин дропу.
+ * передав далі з компенсованим часом» — і всі причини дропу. Журнал поколінь
+ * (anti-storm, FW.20-S2 4/5) — РЕАЛЬНИЙ beacon_dedup.h: тут ганяються лише
+ * його чисті функції (Gen/Seen/Mark), persistence-банк — test_flash_kv.c.
  */
+#include "../common/beacon_dedup.h"
+
 #define FW20S2_MESH_BEACON_MARKER       0x9C
 #define FW20S2_MESH_BEACON_MAGIC        'B'
 #define FW20S2_MESH_AUTH_FLAG           0x80
@@ -4210,12 +4215,14 @@ typedef enum {
     FW20S2_RELAY_NULL_TS,
     FW20S2_RELAY_NOT_AUTHORITATIVE,
     FW20S2_RELAY_TTL_EXHAUSTED,
-    FW20S2_RELAY_HOP_TOO_LONG
+    FW20S2_RELAY_HOP_TOO_LONG,
+    FW20S2_RELAY_DUPLICATE
 } TestBeaconRelayResult;
 
 static TestBeaconRelayResult Test_Try_Relay_Time_Beacon(
     const uint8_t* in_plain, uint8_t role,
-    uint32_t in_rx_tick, uint32_t now_tick, uint8_t* out_plain)
+    uint32_t in_rx_tick, uint32_t now_tick,
+    const BeaconDedup* dedup, uint8_t* out_plain)
 {
     if (role != FW20S2_MESH_ROLE_PROVISIONER) return FW20S2_RELAY_NOT_PROVISIONER;
     if (in_plain[0]  != FW20S2_MESH_BEACON_MARKER) return FW20S2_RELAY_BAD_FRAME;
@@ -4224,11 +4231,14 @@ static TestBeaconRelayResult Test_Try_Relay_Time_Beacon(
                        ((uint32_t)in_plain[3] << 8)  | (uint32_t)in_plain[4];
     if (orig_ts == 0) return FW20S2_RELAY_NULL_TS;
     uint8_t in_byte9 = in_plain[9];
-    if (!(in_byte9 & FW20S2_MESH_AUTH_FLAG)) return FW20S2_RELAY_NOT_AUTHORITATIVE;
+    if (dedup == NULL && !(in_byte9 & FW20S2_MESH_AUTH_FLAG))
+        return FW20S2_RELAY_NOT_AUTHORITATIVE;
     uint8_t in_ttl = in_byte9 & FW20S2_MESH_TTL_MASK;
     if (in_ttl < FW20S2_MESH_MIN_TTL) return FW20S2_RELAY_TTL_EXHAUSTED;
     uint32_t hold_sec = (now_tick - in_rx_tick) / 1000u;
     if (hold_sec > FW20S2_MESH_MAX_HOP_DELAY_SEC) return FW20S2_RELAY_HOP_TOO_LONG;
+    if (dedup != NULL && Beacon_Dedup_Seen(dedup, Beacon_Dedup_Gen(orig_ts)))
+        return FW20S2_RELAY_DUPLICATE;
     for (uint8_t i = 0; i < FW20S2_MESH_FRAME_SIZE; i++) out_plain[i] = in_plain[i];
     uint32_t relayed_ts = orig_ts + hold_sec;
     out_plain[1] = (uint8_t)(relayed_ts >> 24);
@@ -4258,7 +4268,7 @@ TEST(test_fw20s2_relay_happy_path_with_drift_compensation) {
     Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
     TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
         in, FW20S2_MESH_ROLE_PROVISIONER,
-        /*rx_tick*/ 100u, /*now_tick*/ 100u + 5000u, out);
+        /*rx_tick*/ 100u, /*now_tick*/ 100u + 5000u, NULL, out);
     ASSERT_EQ(r, FW20S2_RELAY_OK);
     /* Wire decode перевіряє per-hop drift compensation */
     uint32_t out_ts = ((uint32_t)out[1] << 24) | ((uint32_t)out[2] << 16) |
@@ -4278,7 +4288,7 @@ TEST(test_fw20s2_relay_zero_hold_keeps_ts_unchanged) {
     uint8_t in[16], out[16];
     Test_Build_Mesh_Beacon(in, 1714000000u, 3, 1);
     TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
-        in, FW20S2_MESH_ROLE_PROVISIONER, 500u, 500u, out);
+        in, FW20S2_MESH_ROLE_PROVISIONER, 500u, 500u, NULL, out);
     ASSERT_EQ(r, FW20S2_RELAY_OK);
     uint32_t out_ts = ((uint32_t)out[1] << 24) | ((uint32_t)out[2] << 16) |
                       ((uint32_t)out[3] << 8)  | (uint32_t)out[4];
@@ -4294,7 +4304,7 @@ TEST(test_fw20s2_relay_preserves_tdma_reserve_and_padding) {
     in[5] = 0xAA; in[6] = 0xBB; in[7] = 0xCC; in[8] = 0xDD;
     in[11] = 0x11; in[12] = 0x22; in[13] = 0x33; in[14] = 0x44; in[15] = 0x55;
     TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
-        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, out);
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, NULL, out);
     ASSERT_EQ(r, FW20S2_RELAY_OK);
     ASSERT_EQ(out[5], 0xAA); ASSERT_EQ(out[6], 0xBB);
     ASSERT_EQ(out[7], 0xCC); ASSERT_EQ(out[8], 0xDD);
@@ -4308,7 +4318,7 @@ TEST(test_fw20s2_relay_drop_when_role_is_soldier) {
     uint8_t in[16], out[16] = {0xFF};  /* sentinel — out не повинен мутуватися */
     Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
     TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
-        in, FW20S2_MESH_ROLE_SOLDIER, 0, 1000u, out);
+        in, FW20S2_MESH_ROLE_SOLDIER, 0, 1000u, NULL, out);
     ASSERT_EQ(r, FW20S2_RELAY_NOT_PROVISIONER);
     ASSERT_EQ(out[0], 0xFF);  /* out недоторкнутий */
 }
@@ -4319,7 +4329,7 @@ TEST(test_fw20s2_relay_drop_when_marker_wrong) {
     Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
     in[0] = 0x99;
     TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
-        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, out);
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, NULL, out);
     ASSERT_EQ(r, FW20S2_RELAY_BAD_FRAME);
 }
 
@@ -4329,7 +4339,7 @@ TEST(test_fw20s2_relay_drop_when_magic_wrong) {
     Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
     in[10] = 'X';
     TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
-        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, out);
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, NULL, out);
     ASSERT_EQ(r, FW20S2_RELAY_BAD_FRAME);
 }
 
@@ -4338,7 +4348,7 @@ TEST(test_fw20s2_relay_drop_when_ts_zero) {
     uint8_t in[16], out[16];
     Test_Build_Mesh_Beacon(in, 0u, 2, 1);
     TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
-        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, out);
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, NULL, out);
     ASSERT_EQ(r, FW20S2_RELAY_NULL_TS);
 }
 
@@ -4347,7 +4357,7 @@ TEST(test_fw20s2_relay_drop_when_not_authoritative) {
     uint8_t in[16], out[16];
     Test_Build_Mesh_Beacon(in, 1714000000u, 2, /*auth=*/0);
     TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
-        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, out);
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, NULL, out);
     ASSERT_EQ(r, FW20S2_RELAY_NOT_AUTHORITATIVE);
 }
 
@@ -4356,7 +4366,7 @@ TEST(test_fw20s2_relay_drop_when_ttl_exhausted) {
     uint8_t in[16], out[16];
     Test_Build_Mesh_Beacon(in, 1714000000u, /*ttl=*/1, 1);
     TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
-        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, out);
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, NULL, out);
     ASSERT_EQ(r, FW20S2_RELAY_TTL_EXHAUSTED);
 }
 
@@ -4366,7 +4376,7 @@ TEST(test_fw20s2_relay_drop_when_hold_exceeds_max) {
     Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
     /* 3601 секунд = 3601000 мс — на 1 секунду понад MAX_HOP_DELAY_SEC */
     TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
-        in, FW20S2_MESH_ROLE_PROVISIONER, 0u, 3601u * 1000u, out);
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0u, 3601u * 1000u, NULL, out);
     ASSERT_EQ(r, FW20S2_RELAY_HOP_TOO_LONG);
 }
 
@@ -4375,7 +4385,7 @@ TEST(test_fw20s2_relay_hold_exactly_at_max_passes) {
     uint8_t in[16], out[16];
     Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
     TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
-        in, FW20S2_MESH_ROLE_PROVISIONER, 0u, 3600u * 1000u, out);
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0u, 3600u * 1000u, NULL, out);
     ASSERT_EQ(r, FW20S2_RELAY_OK);
     uint32_t out_ts = ((uint32_t)out[1] << 24) | ((uint32_t)out[2] << 16) |
                       ((uint32_t)out[3] << 8)  | (uint32_t)out[4];
@@ -4389,7 +4399,7 @@ TEST(test_fw20s2_relay_tick_wrap_safe) {
     Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
     TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
         in, FW20S2_MESH_ROLE_PROVISIONER,
-        /*rx_tick=*/ 0xFFFFFF00u, /*now_tick=*/ 0x00000064u, out);
+        /*rx_tick=*/ 0xFFFFFF00u, /*now_tick=*/ 0x00000064u, NULL, out);
     ASSERT_EQ(r, FW20S2_RELAY_OK);
     /* hold = 0x164 = 356 мс → 0 секунд → ts unchanged */
     uint32_t out_ts = ((uint32_t)out[1] << 24) | ((uint32_t)out[2] << 16) |
@@ -4399,16 +4409,137 @@ TEST(test_fw20s2_relay_tick_wrap_safe) {
 
 TEST(test_fw20s2_relay_two_hop_chain_kills_authoritativeness) {
     /* Симулюємо A→Provisioner→B: вихід першого relay'у НЕ повинен
-     * пройти guard повторно (auth=0) — це anti-storm freeze-contract. */
+     * пройти guard повторно (auth=0) — це anti-storm freeze-contract
+     * БЕЗ журналу поколінь (dedup=NULL — KV не змонтовано / гейт off). */
     uint8_t in1[16], out1[16], out2[16];
     Test_Build_Mesh_Beacon(in1, 1714000000u, 3, 1);  /* TTL=3 (достатньо для relay), але auth=0 після першого hop'а запобігає повторному relay'у */
     TestBeaconRelayResult r1 = Test_Try_Relay_Time_Beacon(
-        in1, FW20S2_MESH_ROLE_PROVISIONER, 0, 2000u, out1);
+        in1, FW20S2_MESH_ROLE_PROVISIONER, 0, 2000u, NULL, out1);
     ASSERT_EQ(r1, FW20S2_RELAY_OK);
     /* Другий Провідник пробує ретранслювати out1 — має відмовити */
     TestBeaconRelayResult r2 = Test_Try_Relay_Time_Beacon(
-        out1, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, out2);
+        out1, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, NULL, out2);
     ASSERT_EQ(r2, FW20S2_RELAY_NOT_AUTHORITATIVE);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * [FW.20-S2 4/5] Повний mesh-relay: журнал поколінь (anti-storm dedup)
+ * Журнал — РЕАЛЬНИЙ ../common/beacon_dedup.h (чисті Gen/Seen/Mark);
+ * persistence (Flash-KV 0x20, power-cut) — банк у test_flash_kv.c.
+ * ────────────────────────────────────────────────────────────────────── */
+
+TEST(test_fw20s2_mesh_dedup_unlocks_auth0_relay) {
+    /* З журналом relay'ний маяк (auth=0) relay-able далі — повний mesh.
+     * Без журналу той самий кадр падав на NOT_AUTHORITATIVE (тест вище). */
+    uint8_t in[16], out[16];
+    BeaconDedup dd = {0, 0, 0};
+    Test_Build_Mesh_Beacon(in, 1714000000u, /*ttl=*/2, /*auth=*/0);
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, &dd, out);
+    ASSERT_EQ(r, FW20S2_RELAY_OK);
+    ASSERT_FALSE(out[9] & FW20S2_MESH_AUTH_FLAG);       /* auth лишився 0 */
+    ASSERT_EQ(out[9] & FW20S2_MESH_TTL_MASK, 1u);       /* TTL 2→1 */
+}
+
+TEST(test_fw20s2_mesh_dedup_queen_double_broadcast_suppressed) {
+    /* Королева маячить і за 15-хв тактом, І після кожного зрізаного
+     * конверта — те саме покоління лунає двічі. Перший relay проходить
+     * (викликач Mark'ає після TX), другий — DUPLICATE. Це головний шторм
+     * на TTL=2, який гасить журнал. */
+    uint8_t in1[16], in2[16], out[16];
+    BeaconDedup dd = {0, 0, 0};
+    Test_Build_Mesh_Beacon(in1, 1714000000u, 2, 1);
+    TestBeaconRelayResult r1 = Test_Try_Relay_Time_Beacon(
+        in1, FW20S2_MESH_ROLE_PROVISIONER, 0, 0, &dd, out);
+    ASSERT_EQ(r1, FW20S2_RELAY_OK);
+    Beacon_Dedup_Mark(&dd, Beacon_Dedup_Gen(1714000000u)); /* після TX */
+    /* +30 секунд — той самий 900-с bucket */
+    Test_Build_Mesh_Beacon(in2, 1714000030u, 2, 1);
+    TestBeaconRelayResult r2 = Test_Try_Relay_Time_Beacon(
+        in2, FW20S2_MESH_ROLE_PROVISIONER, 0, 0, &dd, out);
+    ASSERT_EQ(r2, FW20S2_RELAY_DUPLICATE);
+}
+
+TEST(test_fw20s2_mesh_dedup_pingpong_storm_killed) {
+    /* TTL=4: A несе покоління G, B несе луну A (для B покоління свіже),
+     * але луна B назад до A — DUPLICATE: журнал, а не TTL, глушить
+     * пінг-понг Провідник↔Провідник. */
+    uint8_t in[16], outA[16], outB[16], outA2[16];
+    BeaconDedup ddA = {0, 0, 0}, ddB = {0, 0, 0};
+    Test_Build_Mesh_Beacon(in, 1714000000u, /*ttl=*/4, /*auth=*/1);
+
+    TestBeaconRelayResult rA = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 0, &ddA, outA);
+    ASSERT_EQ(rA, FW20S2_RELAY_OK);                     /* A: TTL 4→3 */
+    Beacon_Dedup_Mark(&ddA, Beacon_Dedup_Gen(1714000000u));
+
+    TestBeaconRelayResult rB = Test_Try_Relay_Time_Beacon(
+        outA, FW20S2_MESH_ROLE_PROVISIONER, 0, 0, &ddB, outB);
+    ASSERT_EQ(rB, FW20S2_RELAY_OK);                     /* B: TTL 3→2 */
+    Beacon_Dedup_Mark(&ddB, Beacon_Dedup_Gen(1714000000u));
+
+    /* Луна B повертається до A: TTL=2 ще relay-able, auth=0 relay-able
+     * з журналом — лише DUPLICATE зупиняє шторм. */
+    TestBeaconRelayResult rA2 = Test_Try_Relay_Time_Beacon(
+        outB, FW20S2_MESH_ROLE_PROVISIONER, 0, 0, &ddA, outA2);
+    ASSERT_EQ(rA2, FW20S2_RELAY_DUPLICATE);
+}
+
+TEST(test_fw20s2_mesh_dedup_fresh_generation_relays_again) {
+    /* Нове покоління (наступний 900-с bucket) — журнал пропускає. */
+    uint8_t in[16], out[16];
+    BeaconDedup dd = {0, 0, 0};
+    Beacon_Dedup_Mark(&dd, Beacon_Dedup_Gen(1714000000u));
+    Test_Build_Mesh_Beacon(in, 1714000000u + 900u, 2, 1);
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 0, &dd, out);
+    ASSERT_EQ(r, FW20S2_RELAY_OK);
+}
+
+TEST(test_fw20s2_mesh_dedup_stale_generation_refused) {
+    /* Покоління старше за вікно (8 × 900 с = 2 год) — «бачили»: застарілий
+     * час не ретранслюємо, навіть якщо біта у вікні вже нема. */
+    uint8_t in[16], out[16];
+    BeaconDedup dd = {0, 0, 0};
+    Beacon_Dedup_Mark(&dd, Beacon_Dedup_Gen(1714000000u));
+    Test_Build_Mesh_Beacon(in, 1714000000u - 8u * 900u, 2, 1);
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 0, &dd, out);
+    ASSERT_EQ(r, FW20S2_RELAY_DUPLICATE);
+}
+
+TEST(test_fw20s2_mesh_dedup_out_of_order_within_window_relays) {
+    /* Повільний шлях: покоління G-2 приїздить ПІСЛЯ G. Воно ще не
+     * ретрансльовано і у вікні → OK (повільне піддерево теж отримає час).
+     * Це і є перевага window-журналу над голим high-water. */
+    uint8_t in[16], out[16];
+    BeaconDedup dd = {0, 0, 0};
+    Beacon_Dedup_Mark(&dd, Beacon_Dedup_Gen(1714000000u));
+    Test_Build_Mesh_Beacon(in, 1714000000u - 2u * 900u, 2, 1);
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 0, &dd, out);
+    ASSERT_EQ(r, FW20S2_RELAY_OK);
+}
+
+TEST(test_fw20s2_mesh_dedup_duplicate_checked_last) {
+    /* DUPLICATE — останній guard: структурні відмови (TTL) звітуються
+     * раніше, навіть якщо покоління вже у журналі. Чесна метрика шторму. */
+    uint8_t in[16], out[16];
+    BeaconDedup dd = {0, 0, 0};
+    Beacon_Dedup_Mark(&dd, Beacon_Dedup_Gen(1714000000u));
+    Test_Build_Mesh_Beacon(in, 1714000000u, /*ttl=*/1, 1);
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 0, &dd, out);
+    ASSERT_EQ(r, FW20S2_RELAY_TTL_EXHAUSTED);
+}
+
+TEST(test_fw20s2_mesh_dedup_gen_bucket_boundary) {
+    /* Wire-санітарка такту: ts у межах одного 900-с bucket'а — одне
+     * покоління; через межу — різні. */
+    ASSERT_EQ(Beacon_Dedup_Gen(1714000199u), Beacon_Dedup_Gen(1714000100u));
+    ASSERT_TRUE(Beacon_Dedup_Gen(1714000800u) > Beacon_Dedup_Gen(1714000799u - 900u));
+    /* max uint32 ts вміщується у 24-бітне покоління (пакування 0x20) */
+    ASSERT_TRUE(Beacon_Dedup_Gen(0xFFFFFFFFu) < (1u << 24));
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -5214,6 +5345,16 @@ int main(void)
     RUN(test_fw20s2_relay_hold_exactly_at_max_passes);
     RUN(test_fw20s2_relay_tick_wrap_safe);
     RUN(test_fw20s2_relay_two_hop_chain_kills_authoritativeness);
+
+    printf("\n  Mesh-Relay: журнал поколінь / anti-storm (FW.20-S2 4/5):\n");
+    RUN(test_fw20s2_mesh_dedup_unlocks_auth0_relay);
+    RUN(test_fw20s2_mesh_dedup_queen_double_broadcast_suppressed);
+    RUN(test_fw20s2_mesh_dedup_pingpong_storm_killed);
+    RUN(test_fw20s2_mesh_dedup_fresh_generation_relays_again);
+    RUN(test_fw20s2_mesh_dedup_stale_generation_refused);
+    RUN(test_fw20s2_mesh_dedup_out_of_order_within_window_relays);
+    RUN(test_fw20s2_mesh_dedup_duplicate_checked_last);
+    RUN(test_fw20s2_mesh_dedup_gen_bucket_boundary);
 
     /* [ARCH.41-B] acoustic sentinel «час невідомий» */
     RUN(test_arch41_sentinel_replaces_acoustic_when_time_uncertain);

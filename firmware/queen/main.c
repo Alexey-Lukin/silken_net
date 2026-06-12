@@ -123,17 +123,20 @@
 // [FW.20-Q2] LoRa-маяк синхронізації часу (Голос Королеви про UTC).
 // Королева транслює UTC-секунди Солдатам через ECB-шифрований 16-байтний LoRa-пакет.
 // Формат відкритого тексту (16 байт):
-//   [BEACON_MARKER 0x9C][unix_ts_be:u32][резерв: 0x00 × 4][TTL=1][магія 'B':1][padding 0x00 × 5]
+//   [BEACON_MARKER 0x9C][unix_ts_be:u32][резерв: 0x00 × 4][AUTH|TTL][магія 'B':1][padding 0x00 × 5]
 // Солдат дивиться на байт 0 розшифрованого RX — відрізняється від OTA (0x99),
 // телеметрії (починається з DID) та текстового CMD:. Маяк лунає приблизно раз на
 // 15 хвилин у звичайному циклі скидання + одразу після кожного зрізаного конверта
-// (щоб свіжий серверний час одразу йшов униз по рою). TTL=1 — Солдати не ретранслюють.
+// (щоб свіжий серверний час одразу йшов униз по рою). TTL=2 — Провідник може
+// понести голос на 1 хоп далі (FW.20-S2 mesh-relay): TTL задає лише ГЛИБИНУ,
+// обсяг луни гасить журнал поколінь Солдата (beacon_dedup.h, ≤1 ретрансляція
+// на покоління на Провідника) — глибше TTL = рішення founder'а, тепер шторм-безпечне.
 #define BEACON_MARKER              0x9C
-#define BEACON_TTL                 1                    // Без луни в ефірі
+#define BEACON_TTL                 2                    // 1 relay-хоп (03_02 §5а)
 #define BEACON_MAGIC_BYTE          'B'                  // 0x42
 // [FW.20-S2] Authoritativeness flag — біт 7 байту 9. Королева є єдиним
-// authoritative джерелом часу (1); майбутні relay-маяки від Провідників
-// (ARCH.27, ARCH.26) транслюватимуть з 0. TTL фактично у нижніх 7 бітах.
+// authoritative джерелом часу (1); relay-маяки Провідників транслюють
+// з 0. TTL фактично у нижніх 7 бітах.
 #define BEACON_AUTH_FLAG           0x80
 #define BEACON_BYTE9_AUTHORITATIVE ((uint8_t)(BEACON_AUTH_FLAG | BEACON_TTL))
 #define TIME_BEACON_INTERVAL_MS    900000U              // 15 хвилин
@@ -2032,7 +2035,7 @@ static uint32_t Get_Current_Unix_Ts(void)
 
 // Транслюємо 16-байтний маяк синхронізації часу через LoRa (ECB-encrypted),
 // макет відкритого тексту:
-//   [0x9C][unix_ts_be:u32][резерв:0×4][TTL=1][магія 'B'][pad:0×5]
+//   [0x9C][unix_ts_be:u32][резерв:0×4][AUTH|TTL][магія 'B'][pad:0×5]
 // Придушено якщо queen_unix_ts == 0 (щоб не навчати Солдатів хибній епосі
 // до нашого першого CoAP-роздтрипа). Кожен маяк коштує ~50–60 мс ефірного часу.
 static void Broadcast_Time_Beacon(void)
@@ -2050,8 +2053,8 @@ static void Broadcast_Time_Beacon(void)
     plaintext[4] = (uint8_t)(now & 0xFFu);
     // байти 5..8 зарезервовано під майбутню розкладку TDMA-слотів (ARCH.26)
     // [FW.20-S2] Байт 9: біт 7 = authoritativeness (Королева=1), нижні 7
-    // біт = TTL (поточний BEACON_TTL=1, без ретрансляції). Соціолог-Солдат
-    // зчитує цей біт у time_source_authoritative для майбутньої mesh-арбітрації.
+    // біт = TTL (BEACON_TTL=2 — Провідник несе на 1 хоп далі). Соціолог-
+    // Солдат зчитує біт 7 у time_source_authoritative для mesh-арбітрації.
     plaintext[9]  = BEACON_BYTE9_AUTHORITATIVE;
     plaintext[10] = (uint8_t)BEACON_MAGIC_BYTE;
     // байти 11..15 = 0x00 (padding до 16-байтного AES-блоку)

@@ -827,15 +827,19 @@ Rails (NTP/UTC source)
    ▼
 Queen (LTE-anchored time)
    │  ① Reflex broadcast `[0x9C][ts:4][TDMA-resv:4][AUTH_FLAG|TTL][magic 'B'][PAD:5]`  ✅ FW.20
-   │  ② Authoritativeness flag (byte 9 bit 7 = AUTH)                                  ✅ FW.20-S2 (1/5)
+   │  ② Authoritativeness flag (byte 9 bit 7 = AUTH); TTL=2 — 1 relay-хоп             ✅ FW.20-S2 (1/5)
    │
    │  1-hop reach (direct LoRa coverage)
    ▼
 Soldier — direct
    │  ③ Drift-monitor + panic sync request `[0x56][DID:4][secs:4][TTL][magic 'S']`     ✅ FW.20-S2 (2/5)
-   │  ④ Per-hop drift compensation (Provisioner-only relay): freeze-contract callable  ✅ FW.20-S2 (3/5)
-   │     — `Soldier_Try_Relay_Time_Beacon` готова, активація потребує Queen TTL≥2
-   │     + anti-storm dedup-bitmap → Flash-KV store (DR15 зайнято FW.2 CCM FC, 03_01 §2)
+   │  ④ Per-hop drift compensation + anti-storm журнал поколінь (mesh-relay)           ✅ FW.20-S2 (3/5 + 4/5)
+   │     — `Soldier_Try_Relay_Time_Beacon` вшито у RX-гілку Сценарію 0 за гейтом
+   │       `FW20_MESH_RELAY_ENABLED` (фліп = bench Flash-KV HAL, як FW.17/FW.8/FW.2);
+   │       журнал — Flash-KV `0x20` (`common/beacon_dedup.h`, реєстр 03_01 §2.3.1):
+   │       ≤1 ретрансляція на покоління (`unix_ts/900`) на Провідника — TTL задає
+   │       ГЛИБИНУ mesh'а, журнал гасить ОБСЯГ (подвійний маяк у такті, пінг-понг
+   │       при TTL≥3); без журналу (mount-fail) — fallback на auth-гейт (2-hop)
    │
    │  2-hop reach (mesh relay через Provisioners)
    ▼
@@ -886,6 +890,12 @@ Soldier — gossip-uplift (3-hop reach)
 
 #define SYNC_REQ_MARKER                  0x56       // Soldier→Queen sync request
 #define SYNC_REQ_MAGIC_BYTE              0x53       // 'S' magic у byte 10
+
+// [FW.20-S2 4/5] Anti-storm журнал поколінь (firmware/common/beacon_dedup.h)
+#define FW20_DEDUP_KV_KEY                0x20u      // Flash-KV: [gen_hi:24|window:8]
+#define FW20_DEDUP_GEN_SECONDS           900u       // такт покоління = період маяка
+#define FW20_DEDUP_WINDOW_BITS           8u         // 2 год — глибше за max hop-delay
+#define FW20_MESH_RELAY_ENABLED          0          // фліп = bench Flash-KV HAL
 // Wall-кванти Солдата = ПРОБУДЖЕННЯ (2026-06-11): HAL_GetTick мертвий у
 // STOP2 — tick-пороги розтягувались у ~6-15× wall (та сама пастка, що
 // FW.27-B). Цикл 26-32 с (IWDG-вікно) → пробудження і є годинник.
@@ -901,20 +911,23 @@ Soldier — gossip-uplift (3-hop reach)
 
 ### 5а.5 Регресійний бенч
 
-| Шар | Тест-blok | Кількість | Файл |
-|-----|-----------|-----------|------|
-| Backend `CoapEncryption` envelope | TIME_SYNC envelope strip + roundtrip | 8 | `spec/workers/concerns/coap_encryption_spec.rb` |
-| Queen beacon plaintext | `Build_Time_Beacon_Plaintext` byte 9 = 0x81 | 2 | `firmware/test/test_queen_logic.c` |
-| Soldier beacon RX | authoritative/relay/legacy byte9 → flag | 3 | `firmware/test/test_soldier_logic.c` |
-| Soldier drift-monitor | `Soldier_Should_Request_Time_Sync` cold-boot/grace/cooldown/payload layout | 9 | `firmware/test/test_soldier_logic.c` |
-| Soldier mesh-relay (per-hop drift) | `Soldier_Try_Relay_Time_Beacon` 6 reasons + happy + boundary | 13 | `firmware/test/test_soldier_logic.c` |
-| Soldier gossip-piggyback (freeze) | pack/apply, cold-boot, drift cap, window selection | 7 | `firmware/test/test_soldier_logic.c` |
-| **Всього FW.20 + FW.20-S2** | — | **42** | — |
+> Кількісні тарифи тестів тут не ведемо (дрейфують щокомміту) — істина в самих тест-файлах; нижче — покриття за шарами.
+
+| Шар | Тест-blok | Файл |
+|-----|-----------|------|
+| Backend `CoapEncryption` envelope | TIME_SYNC envelope strip + roundtrip | `spec/workers/concerns/coap_encryption_spec.rb` |
+| Queen beacon plaintext | `Build_Time_Beacon_Plaintext` byte 9 = 0x82 (auth=1 \| TTL=2 — регресійна точка) | `firmware/test/test_queen_logic.c` |
+| Soldier beacon RX | authoritative/relay/legacy byte9 → flag | `firmware/test/test_soldier_logic.c` |
+| Soldier drift-monitor | `Soldier_Should_Request_Time_Sync` cold-boot/grace/cooldown/payload layout | `firmware/test/test_soldier_logic.c` |
+| Soldier mesh-relay (per-hop drift) | `Soldier_Try_Relay_Time_Beacon` всі drop-reasons + happy + boundary (NULL-dedup = legacy auth-гейт) | `firmware/test/test_soldier_logic.c` |
+| Soldier mesh-relay anti-storm (4/5) | журнал поколінь: auth=0 unlock, подвійний маяк у такті, пінг-понг при TTL=4, out-of-order у вікні, stale-відмова, DUPLICATE-останнім | `firmware/test/test_soldier_logic.c` |
+| Журнал 0x20 persistence | roundtrip/window-slide/big-jump/wear-дисципліна/program-fail/garbage/compact — поверх реального Flash-KV з power-cut | `firmware/test/test_flash_kv.c` |
+| Soldier gossip-piggyback (freeze) | pack/apply, cold-boot, drift cap, window selection | `firmware/test/test_soldier_logic.c` |
 
 ### 5а.6 Що ще лежить як freeze-contract (deferred TRL-7)
 
-- **Anti-storm dedup bitmap** для повного активного mesh-relay'у — у Flash-KV store (DR15 зайнято FW.2 CCM Frame Counter, [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA); cross-ref [`03_01 §2.3 ARCH.28`](03_01_Firmware_Lifecycle_and_DMA#23-overflow-strategy-flash-based-kv-store-arch28))
-- **Queen beacon TTL≥2** (зараз hardcoded TTL=1 у `BEACON_BYTE9_AUTHORITATIVE = 0x81`; перемикається коли реалізуємо anti-storm)
+- ✅ (2026-06-12) **Anti-storm журнал поколінь** — реалізовано: `common/beacon_dedup.h` поверх Flash-KV ключа `0x20` (реєстр — [`03_01 §2.3 ARCH.28`](03_01_Firmware_Lifecycle_and_DMA#23-overflow-strategy-flash-based-kv-store-arch28)); wiring у `soldier/main.c` за гейтом `FW20_MESH_RELAY_ENABLED=0` — residual = чистий bench-фліп (верифікація Flash-KV HAL, спільна з FW.17/FW.8/FW.2)
+- ✅ (2026-06-12) **Queen beacon TTL=2** (`BEACON_BYTE9_AUTHORITATIVE = 0x82`) — канонічна умова «перемикається коли реалізуємо anti-storm» виконана. Глибше TTL (3+ хопи) — рішення founder'а про airtime: журнал робить його шторм-безпечним (TTL обмежує лише глибину, обсяг ≤1 ретрансляція/покоління/Провідник), фліп = одна константа
 - **Hot-path виклик** `Soldier_Pack_Gossip_Ts_Byte` у Phase 2 normal-telemetry pack + RX-обробник для прийому
 - **Drift compensation** при ΔT = ±60°C lab-вимірювання (потребує термокамери, відсутня @ TRL-6)
 
@@ -1114,7 +1127,7 @@ make -C firmware/test at_engine   # [FW.3/FW.56] AT-двигун + CoAP PDU + р
 | **[FW.3] LoRa RX Ring Buffer** | FIFO семантика, переповнення → drop counter, RSSI clamp passthrough, flush-вікно сценарій (ISR-пакети під час розмови з модемом) |
 | **[FW.1] Flash Key Loading** | `Load_AES_Key()` magic check, key-not-provisioned → Error_Handler |
 | **[FW.20] Time Sync Envelope + Beacon** | CMD_TIME_SYNC strip, beacon plaintext layout, ts=0 guard |
-| **[FW.20-S2] Beacon Authoritativeness Flag** | byte 9 bit 7 (`BEACON_AUTH_FLAG=0x80`) — Королева транслює `byte9 = 0x81` (auth=1 \| TTL=1). Relay-маяки Провідників матимуть auth=0. Layout `[0x9C][ts_be:4][reserved:0×4][AUTH_FLAG\|TTL][magic 'B'][padding:0×5]` |
+| **[FW.20-S2] Beacon Authoritativeness Flag** | byte 9 bit 7 (`BEACON_AUTH_FLAG=0x80`) — Королева транслює `byte9 = 0x82` (auth=1 \| TTL=2). Relay-маяки Провідників — auth=0, TTL−1. Layout `[0x9C][ts_be:4][reserved:0×4][AUTH_FLAG\|TTL][magic 'B'][padding:0×5]` |
 | **[FW.27-B] Magic Re-Request Handler** | Bitmap accept/dedup, total mismatch, no-active-OTA |
 | **[FW.23] HMAC Trailer Relay** | 3 segs storage, seg_idx>3 reject, marker mismatch |
 

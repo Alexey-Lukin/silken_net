@@ -80,7 +80,7 @@ key_ratchet: $(BINDIR)/test_key_ratchet
 $(BINDIR)/test_queen: test_queen_logic.c hal_mock.h ../common/silken_crc.h
 	$(CC) $(CFLAGS) -o $@ test_queen_logic.c
 
-$(BINDIR)/test_soldier: test_soldier_logic.c hal_mock.h ../common/lorenz_seed.h ../common/silken_sha256.h ../common/silken_crc.h ../common/adc_convert.h ../common/wall_time.h
+$(BINDIR)/test_soldier: test_soldier_logic.c hal_mock.h ../common/lorenz_seed.h ../common/silken_sha256.h ../common/silken_crc.h ../common/adc_convert.h ../common/wall_time.h ../common/beacon_dedup.h
 	$(CC) $(CFLAGS) -o $@ test_soldier_logic.c
 
 $(BINDIR)/test_bio_contract: test_bio_contract.c
@@ -109,7 +109,7 @@ $(BINDIR)/test_uart_rx_ring: test_uart_rx_ring.c ../queen/uart_rx_ring.h ../quee
 
 # [ARCH.28/FW.54] Flash-KV журнал — RAM-мок + power-cut fault-injection.
 # (+ FW.8 Z-пороги та FW.2 FC high-water — споживацькі секції поверх KV.)
-$(BINDIR)/test_flash_kv: test_flash_kv.c ../common/flash_kv.c ../common/flash_kv.h ../common/silken_crc.h ../common/lorenz_thresholds.h ../common/fc_hiwater.h ../common/lora_ccm.h
+$(BINDIR)/test_flash_kv: test_flash_kv.c ../common/flash_kv.c ../common/flash_kv.h ../common/silken_crc.h ../common/lorenz_thresholds.h ../common/fc_hiwater.h ../common/lora_ccm.h ../common/beacon_dedup.h
 	$(CC) $(CFLAGS) -I../common -o $@ test_flash_kv.c ../common/flash_kv.c
 
 # [ARCH.35] W25Q32 sector-ring — NOR-мок (program 1→0) + power-cut fault-injection.

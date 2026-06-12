@@ -407,14 +407,14 @@ static inline float uint32_to_float(uint32_t u) {
 //   [0x9C][unix_ts_be:u32][резерв:0×4][TTL][магія 'B'][padding:0×5]
 // Солдат дивиться на байт 0 розшифрованого RX-payload — відрізняється від
 // OTA (0x99), телеметрії (починається з DID, ніколи не 0x9C) та текстового
-// CMD:. Маяк НЕ ретранслюємо (TTL=1) — споживаємо локально, щоб виправити
-// дрейф RTC.
+// CMD:. Маяк споживаємо локально (дрейф RTC); Провідник може понести його
+// далі — mesh-relay з anti-storm журналом (FW.20-S2, гейт нижче).
 #define BEACON_MARKER             0x9C
 #define BEACON_MAGIC_BYTE         0x42  // 'B'
 #define BEACON_PLAINTEXT_SIZE     16
 // [FW.20-S2] Біт 7 байту 9: 1 = маяк прямо від Королеви (authoritative),
-// 0 = relay-маяк через Провідника (deferred TRL-7) або легасі-формат.
-// TTL фактично займає нижні 7 біт (max 127); у поточних beacons TTL=1.
+// 0 = relay-маяк через Провідника або легасі-формат. TTL фактично займає
+// нижні 7 біт (max 127); Королева транслює TTL=2 (1 relay-хоп).
 #define BEACON_AUTH_FLAG          0x80
 #define BEACON_TTL_MASK           0x7F
 
@@ -582,7 +582,20 @@ static uint8_t  fc_hiwater_degraded = 0; // TX перетнув межу, Flash 
                                          // нема (PAD повний — патерн FW.42)
 #endif
 
-#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED
+// [FW.20-S2 4/5] Гейт повного mesh-relay Time Beacon'а: Провідник несе далі
+// й relay'ні маяки (auth=0), шторм гасить журнал поколінь у Flash-KV 0x20
+// (../common/beacon_dedup.h — політика й чому Flash, не SRAM). Фліп ЛИШЕ
+// після bench-верифікації Flash-KV HAL-глю (та сама умова, що FW.17/FW.8):
+// без журналу дедуп тримається тільки на auth-біті (2-hop стеля, NULL-гілка
+// Soldier_Try_Relay_Time_Beacon). Королева вже транслює TTL=2 (03_02 §5а).
+#define FW20_MESH_RELAY_ENABLED 0
+#include "../common/beacon_dedup.h"
+
+#if FW20_MESH_RELAY_ENABLED
+static BeaconDedup beacon_dedup; // RAM-кеш журналу; істина — Flash-KV 0x20
+#endif
+
+#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED || FW20_MESH_RELAY_ENABLED
 // Збірка при фліпі: + ../common/flash_kv.c (як test_flash_kv). Тут — реальні
 // залізні примітиви; host-тести ганяють ту саму журнальну логіку на RAM-моці
 // з fault-injection (power-cut посеред compact), HAL-глю верифікує bench.
@@ -621,7 +634,7 @@ static const FlashKvOps soldier_kv_ops = {
 };
 static FlashKv soldier_kv;
 static uint8_t soldier_kv_mounted = 0;
-#endif // FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED
+#endif // FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED || FW20_MESH_RELAY_ENABLED
 
 #if FW17_RATCHET_ENABLED
 static void MX_CRYP_Init(void); // повний прототип нижче — потрібен re-key'ю
@@ -785,22 +798,24 @@ static uint8_t Soldier_Acoustic_Wire_Value(uint8_t snapshot, uint8_t time_uncert
 // =========================================================================
 // [FW.20-S2] Mesh-Relay: голос Королеви через Провідника (per-hop drift)
 // =========================================================================
-// Кенозис маяка: Королева транслює UTC раз на 15 хв з TTL=1 — Солдати поза
-// прямою радіозоною ніколи не чують її голосу. Провідник (ARCH.27, роль PROV
-// у Protected Flash) — еліта рою з надлишком vcap — приймає authoritative-маяк
-// (auth=1, TTL≥2 у майбутній прошивці Королеви), додає до `unix_ts` секунди,
-// що минули від RX до власного TX (per-hop drift compensation), декрементує
-// TTL, гасить authoritativeness-біт і ретранслює. Downstream-Соціологи бачать
-// auth=0 → НЕ ретранслюють далі (anti-storm). Це дає 1+1=2-hop reach без
-// потреби у dedup-bitmap у RTC (який чекає вільного слоту, див. ARCH.28 §2.3).
+// Кенозис маяка: Солдати поза прямою радіозоною Королеви ніколи не чують
+// її голосу. Провідник (ARCH.27, роль PROV у Protected Flash) — еліта рою
+// з надлишком vcap — приймає маяк, додає до `unix_ts` секунди, що минули
+// від RX до власного TX (per-hop drift compensation), декрементує TTL,
+// гасить authoritativeness-біт і ретранслює.
 //
-// СВЯЩЕННА ЗАУВАГА — це FREEZE-CONTRACT:
-// функція callable та повністю host-tested, але до RX-гілки головного циклу
-// НЕ вшита. Активація потребує (a) Королева почне слати TTL≥2 у beacon (зараз
-// TTL=1 — design choice до приходу повного mesh-relay), (b) anti-storm
-// dedup-bitmap у Flash-KV (DR15 зайнято FW.2, усі RTC-регістри повні —
-// див. 03_01 §2.3 overflow strategy). Сторожовий пес часу (drift-monitor)
-// зараз закриває розрив для не-PROV Солдатів через панічний sync request.
+// Два режими anti-storm (вибирає аргумент `dedup`):
+//   • dedup == NULL (KV не змонтовано / гейт off): ретранслюємо лише прямі
+//     маяки Королеви (auth=1) — 2-hop стеля, шторм-безпечно конструкцією.
+//   • dedup != NULL: повний mesh — auth=0 теж relay-able, а обсяг шторму
+//     гасить журнал поколінь (Flash-KV 0x20, beacon_dedup.h): ≤1
+//     ретрансляція на покоління на Провідника. TTL обмежує лише глибину.
+//     Це глушить і подвійний маяк Королеви (15-хв такт + після кожного
+//     зрізаного конверта), і луну Провідник↔Провідник при TTL≥3.
+//
+// Вшито у RX-гілку Сценарію 0 за гейтом FW20_MESH_RELAY_ENABLED (фліп =
+// bench-верифікація Flash-KV HAL). Сторожовий пес часу (drift-monitor)
+// закриває розрив для не-PROV Солдатів через панічний sync request.
 //
 // Wire-формат relayed beacon (16 байт ECB plaintext, дзеркало Queen):
 //   Byte 0     : BEACON_MARKER (0x9C)
@@ -811,7 +826,7 @@ static uint8_t Soldier_Acoustic_Wire_Value(uint8_t snapshot, uint8_t time_uncert
 //   Byte 11..15: padding — копіюємо as-is (зараз 0; майбутні поля переживуть
 //                hop без втрати, якщо Королева почне їх писати)
 //
-// SSOT для опкодів: 03_01 §4.5а; для байту 9: 03_01 §11 (FW.20).
+// SSOT для опкодів: 03_01 §4.5а; для wire-формату маяка/байту 9: 03_02 §5а.
 
 // Sanity cap: hold-час від RX до relay-TX не повинен перевищувати 1 годину.
 // Більший — означає що Провідник був зайнятий OTA / IWDG-шторм / зависнув
@@ -829,9 +844,10 @@ typedef enum {
     BEACON_RELAY_NOT_PROVISIONER,         // Звичайний Солдат — не наша справа
     BEACON_RELAY_BAD_FRAME,               // Wrong marker або magic — не beacon
     BEACON_RELAY_NULL_TS,                 // unix_ts == 0 — Королева ще не знала часу
-    BEACON_RELAY_NOT_AUTHORITATIVE,       // Маяк уже relay'ний — anti-storm стоп
+    BEACON_RELAY_NOT_AUTHORITATIVE,       // relay-маяк без dedup-журналу — auth-гейт
     BEACON_RELAY_TTL_EXHAUSTED,           // TTL у нижніх 7 бітах < MIN_TTL (=2)
-    BEACON_RELAY_HOP_TOO_LONG             // Hold-delay > MAX_HOP_DELAY_SEC
+    BEACON_RELAY_HOP_TOO_LONG,            // Hold-delay > MAX_HOP_DELAY_SEC
+    BEACON_RELAY_DUPLICATE                // Покоління вже несли — журнал 0x20
 } BeaconRelayResult;
 
 // Спроба зібрати ретрансльований маяк з drift-компенсацією.
@@ -841,6 +857,9 @@ typedef enum {
 //   role       — g_node_role (ROLE_SOLDIER або ROLE_PROVISIONER)
 //   in_rx_tick — HAL_GetTick() у момент прийому маяка (мс)
 //   now_tick   — HAL_GetTick() зараз, перед TX (мс)
+//   dedup      — журнал поколінь (NULL → auth-гейт, 2-hop режим).
+//                ЧИТАЄТЬСЯ тут; Mark — справа викликача ПІСЛЯ Radio.Send
+//                (невідправлене покоління не випалюється з журналу).
 //   out_plain  — буфер ≥16 байт під вихідний beacon plaintext.
 //                Модифікується ВИКЛЮЧНО при поверненні BEACON_RELAY_OK.
 //
@@ -850,14 +869,16 @@ typedef enum {
 //
 // Викликач:
 //     BeaconRelayResult r = Soldier_Try_Relay_Time_Beacon(...);
-//     if (r == BEACON_RELAY_OK) { AES-ECB encrypt + Radio.Send(16 bytes); }
+//     if (r == BEACON_RELAY_OK) { AES-ECB encrypt + Radio.Send(16 bytes);
+//                                 Beacon_Dedup_Mark(...); }
 //     else                       { reason'ом логується для діагностики; }
 static BeaconRelayResult Soldier_Try_Relay_Time_Beacon(
-    const uint8_t* in_plain,
-    uint8_t        role,
-    uint32_t       in_rx_tick,
-    uint32_t       now_tick,
-    uint8_t*       out_plain)
+    const uint8_t*     in_plain,
+    uint8_t            role,
+    uint32_t           in_rx_tick,
+    uint32_t           now_tick,
+    const BeaconDedup* dedup,
+    uint8_t*           out_plain)
 {
     // Guard 1: Звичайні Солдати не транслюють — енергобюджет.
     if (role != ROLE_PROVISIONER)               return BEACON_RELAY_NOT_PROVISIONER;
@@ -871,9 +892,11 @@ static BeaconRelayResult Soldier_Try_Relay_Time_Beacon(
                        ((uint32_t)in_plain[3] << 8)  | (uint32_t)in_plain[4];
     if (orig_ts == 0)                           return BEACON_RELAY_NULL_TS;
 
-    // Guard 4: Anti-storm — ретранслюємо лише прямі маяки Королеви (auth=1).
+    // Guard 4: Anti-storm без журналу — лише прямі маяки Королеви (auth=1).
+    // З журналом auth=0 relay-able (повний mesh) — шторм гасить Guard 7.
     uint8_t in_byte9 = in_plain[9];
-    if (!(in_byte9 & BEACON_AUTH_FLAG))         return BEACON_RELAY_NOT_AUTHORITATIVE;
+    if (dedup == NULL && !(in_byte9 & BEACON_AUTH_FLAG))
+        return BEACON_RELAY_NOT_AUTHORITATIVE;
 
     // Guard 5: TTL у нижніх 7 бітах має бути ≥ 2 (decrement не дасть 0).
     uint8_t in_ttl = in_byte9 & BEACON_TTL_MASK;
@@ -882,6 +905,12 @@ static BeaconRelayResult Soldier_Try_Relay_Time_Beacon(
     // Guard 6: Sanity cap — hold-delay не перевищує 1 год.
     uint32_t hold_sec = (now_tick - in_rx_tick) / 1000u;
     if (hold_sec > BEACON_RELAY_MAX_HOP_DELAY_SEC) return BEACON_RELAY_HOP_TOO_LONG;
+
+    // Guard 7: Покоління вже несли (подвійний маяк Королеви у межах такту,
+    // луна іншого Провідника) — мовчимо. Останнім: DUPLICATE означає
+    // «поніс би, якби не журнал» — чесна метрика придушеного шторму.
+    if (dedup != NULL && Beacon_Dedup_Seen(dedup, Beacon_Dedup_Gen(orig_ts)))
+        return BEACON_RELAY_DUPLICATE;
 
     // Усі guard'и пройшли — складаємо ретрансльований маяк.
     // Спочатку повна копія: майбутні поля у байтах 5..8 (TDMA) і 11..15
@@ -904,8 +933,8 @@ static BeaconRelayResult Soldier_Try_Relay_Time_Beacon(
 // === 1.10г. FW.20-S2 — Gossip-Piggyback (5 з 5) ======================
 // =====================================================================
 // Найдешевший канал часо-синхронізації: «голос Королеви через сусіда».
-// Замість того, щоб додавати окремий beacon-relay (вимагає freed RTC слот
-// під anti-storm bitmap), ми вшиваємо 1 байт `unix_ts & 0xFFu` у звичайний
+// Доповнення до beacon-relay (він — окремий TX Провідника; тут нуль
+// airtime): ми вшиваємо 1 байт `unix_ts & 0xFFu` у звичайний
 // telemetry-uplink — байт PAD позиції 14 normal-плейту (НЕ панічного, де
 // байт 14..15 уже зайнятий лічильником SEC.10). FW.29 PANIC_FLAG_BIT у
 // StatusByte (байт 10 біт 7) — однозначний дезамбігватор: бекенд читає
@@ -1702,11 +1731,18 @@ int main(void)
                                  *(uint32_t*)(0x1FFF7594),
                                  *(uint32_t*)(0x1FFF7598));
 
-#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED
+#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED || FW20_MESH_RELAY_ENABLED
   // [ARCH.28] Mount Flash-KV (сторінки 122-123). Невдача (обидві сторінки
   // биті) → mounted=0: споживачі живуть на дефолтах/K0 — деградація, не смерть.
   soldier_kv_mounted = FlashKv_Mount(&soldier_kv, &soldier_kv_ops, NULL,
                                      FLASH_KV_PAGE_DWS);
+#endif
+#if FW20_MESH_RELAY_ENABLED
+  // [FW.20-S2 4/5] Журнал поколінь маяка з Flash: без нього (mount-fail)
+  // relay падає на NULL-гілку (auth-гейт, 2-hop) — шторм-безпечно завжди.
+  if (soldier_kv_mounted) {
+      Beacon_Dedup_Load(&soldier_kv, &beacon_dedup);
+  }
 #endif
 #if FW2_CCM_ENABLED
   // [FW.2 TRL-7] Кеш межі FC: один Get32 на boot, далі Load_Frame_Counter
@@ -2186,7 +2222,30 @@ int main(void)
                     time_source_authoritative =
                         (decrypted_rx_payload[9] & BEACON_AUTH_FLAG) ? 1 : 0;
 
-                    // TTL=1: НЕ ретранслюємо. Виходимо з RX-циклу, йдемо спати.
+#if FW20_MESH_RELAY_ENABLED
+                    // [FW.20-S2 4/5] Провідник несе голос далі. Енергогейт
+                    // успадковано: ця гілка живе лише при vcap > LISTEN-
+                    // порога, а роль PROV — еліта з надлишком (ARCH.27).
+                    // Mark — RAM одразу після TX; запис 0x20 у Flash — у
+                    // КЕНОЗИСІ (program не сміє лягати під RX-вікно).
+                    if (beacon_ts != 0) {
+                        uint8_t  relay_plain[BEACON_PLAINTEXT_SIZE];
+                        uint32_t relay_now = HAL_GetTick();
+                        BeaconRelayResult rr = Soldier_Try_Relay_Time_Beacon(
+                            decrypted_rx_payload, g_node_role,
+                            relay_now, relay_now,
+                            soldier_kv_mounted ? &beacon_dedup : NULL,
+                            relay_plain);
+                        if (rr == BEACON_RELAY_OK) {
+                            HAL_CRYP_Encrypt(&hcryp, (uint32_t*)relay_plain, 4,
+                                             (uint32_t*)encrypted_payload, 1000);
+                            Radio.Send(encrypted_payload, BEACON_PLAINTEXT_SIZE);
+                            Beacon_Dedup_Mark(&beacon_dedup,
+                                              Beacon_Dedup_Gen(beacon_ts));
+                        }
+                    }
+#endif
+                    // Один RX-пакет за пробудження (FW.52 ADR) — спати.
                     break;
                 }
 
@@ -2590,7 +2649,15 @@ int main(void)
         }
     }
 #endif
-#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED
+#if FW20_MESH_RELAY_ENABLED
+    // [FW.20-S2 4/5] Журнал поколінь маяка — у тій самій безпечній фазі.
+    // Відмова запису не критична: dirty лишається, RAM-копія тримає дедуп
+    // до сну, power-cut коштує однієї зайвої ретрансляції після ребуту.
+    if (soldier_kv_mounted) {
+        Beacon_Dedup_Persist(&soldier_kv, &beacon_dedup);
+    }
+#endif
+#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED || FW20_MESH_RELAY_ENABLED
     // [ARCH.28] Ущільнення журналу — спільне для всіх KV-споживачів, лише
     // у цій безпечній фазі (після TX, перед сном; erase ~десятки мс не
     // сміє лягти під LoRa RX-вікно).

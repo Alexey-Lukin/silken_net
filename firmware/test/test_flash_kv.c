@@ -504,6 +504,138 @@ TEST(test_fw2_hiwater_survives_remount_and_compact) {
     ASSERT_EQ(Fc_Hiwater_Load(&kv), 4242u);
 }
 
+/* ════════════════════════════════════════════════════════════════════
+ * 7. [FW.20-S2 4/5] Журнал поколінь маяка (beacon_dedup.h, ключ 0x20)
+ *
+ * Anti-storm повного mesh-relay: ≤1 ретрансляція на покоління (unix_ts/900)
+ * на Провідника. Один атомарний dw [gen:24|window:8] — порваної пари
+ * gen↔window не існує конструкцією. Тут — persistence-банк; relay-сценарії
+ * (auth=0 / пінг-понг / DUPLICATE) — test_soldier_logic.c.
+ * ════════════════════════════════════════════════════════════════════ */
+#include "../common/beacon_dedup.h"
+
+TEST(test_fw20s2_dedup_load_empty_nothing_seen) {
+    fresh_mount();
+    BeaconDedup bd;
+    Beacon_Dedup_Load(&kv, &bd);
+    ASSERT_EQ(bd.gen_hi, 0u);
+    ASSERT_FALSE(Beacon_Dedup_Seen(&bd, Beacon_Dedup_Gen(1714000000u)));
+}
+
+TEST(test_fw20s2_dedup_mark_persist_reload_roundtrip) {
+    fresh_mount();
+    uint32_t gen = Beacon_Dedup_Gen(1714000000u);
+    BeaconDedup bd;
+    Beacon_Dedup_Load(&kv, &bd);
+    Beacon_Dedup_Mark(&bd, gen);
+    ASSERT_TRUE(bd.dirty);
+    ASSERT_TRUE(Beacon_Dedup_Persist(&kv, &bd));
+    ASSERT_FALSE(bd.dirty);
+    /* Нове втілення (cold-boot) бачить журнал */
+    BeaconDedup bd2;
+    Beacon_Dedup_Load(&kv, &bd2);
+    ASSERT_EQ(bd2.gen_hi, gen);
+    ASSERT_TRUE(Beacon_Dedup_Seen(&bd2, gen));
+    ASSERT_FALSE(Beacon_Dedup_Seen(&bd2, gen + 1u));
+}
+
+TEST(test_fw20s2_dedup_window_slides_preserving_recent) {
+    /* Mark G, потім G+3: вікно зсувається, G лишається видимим (біт 3),
+     * G+1/G+2 — ні (не ретранслювались), G-5 — за вікном після зсуву. */
+    fresh_mount();
+    uint32_t g = Beacon_Dedup_Gen(1714000000u);
+    BeaconDedup bd;
+    Beacon_Dedup_Load(&kv, &bd);
+    Beacon_Dedup_Mark(&bd, g);
+    Beacon_Dedup_Mark(&bd, g + 3u);
+    ASSERT_TRUE(Beacon_Dedup_Persist(&kv, &bd));
+    BeaconDedup bd2;
+    Beacon_Dedup_Load(&kv, &bd2);
+    ASSERT_TRUE(Beacon_Dedup_Seen(&bd2, g + 3u));
+    ASSERT_TRUE(Beacon_Dedup_Seen(&bd2, g));
+    ASSERT_FALSE(Beacon_Dedup_Seen(&bd2, g + 1u));
+    ASSERT_FALSE(Beacon_Dedup_Seen(&bd2, g + 2u));
+    ASSERT_TRUE(Beacon_Dedup_Seen(&bd2, g - 5u)); /* делта 8 ≥ вікно → стале */
+}
+
+TEST(test_fw20s2_dedup_big_jump_resets_window) {
+    /* Стрибок ≥ 8 поколінь (≥2 год тиші) — старі біти беззмістовні,
+     * вікно починається з чистого аркуша + біт нового покоління. */
+    fresh_mount();
+    uint32_t g = Beacon_Dedup_Gen(1714000000u);
+    BeaconDedup bd;
+    Beacon_Dedup_Load(&kv, &bd);
+    Beacon_Dedup_Mark(&bd, g);
+    Beacon_Dedup_Mark(&bd, g + 12u);
+    ASSERT_EQ(bd.window, 1u);
+    ASSERT_EQ(bd.gen_hi, g + 12u);
+    /* g тепер делта 12 ≥ вікно → «стале» = seen (не ретранслюємо) */
+    ASSERT_TRUE(Beacon_Dedup_Seen(&bd, g));
+    /* а g+5 (делта 7, ніколи не несли) — у вікні і чисте */
+    ASSERT_FALSE(Beacon_Dedup_Seen(&bd, g + 5u));
+}
+
+TEST(test_fw20s2_dedup_clean_persist_no_wear) {
+    /* Повторний Mark того самого покоління не бруднить стан → Persist
+     * no-op без program (wear тільки за реальні зміни). */
+    fresh_mount();
+    uint32_t gen = Beacon_Dedup_Gen(1714000000u);
+    BeaconDedup bd;
+    Beacon_Dedup_Load(&kv, &bd);
+    Beacon_Dedup_Mark(&bd, gen);
+    ASSERT_TRUE(Beacon_Dedup_Persist(&kv, &bd));
+    int programs_before = flash.program_count;
+    Beacon_Dedup_Mark(&bd, gen); /* дубль — стан не змінився */
+    ASSERT_FALSE(bd.dirty);
+    ASSERT_TRUE(Beacon_Dedup_Persist(&kv, &bd));
+    ASSERT_EQ(flash.program_count, programs_before);
+}
+
+TEST(test_fw20s2_dedup_persist_fail_ram_still_dedups) {
+    /* Мертвий program → Persist чесно відмовляє, dirty лишається, але
+     * RAM-копія тримає дедуп до сну; оживлений Flash доганяє наступним
+     * КЕНОЗИСОМ. */
+    fresh_mount();
+    uint32_t gen = Beacon_Dedup_Gen(1714000000u);
+    BeaconDedup bd;
+    Beacon_Dedup_Load(&kv, &bd);
+    Beacon_Dedup_Mark(&bd, gen);
+    flash.die_after_programs = 0;
+    ASSERT_FALSE(Beacon_Dedup_Persist(&kv, &bd));
+    ASSERT_TRUE(bd.dirty);
+    ASSERT_TRUE(Beacon_Dedup_Seen(&bd, gen)); /* RAM-дедуп живий */
+    flash.die_after_programs = -1;
+    ASSERT_TRUE(Beacon_Dedup_Persist(&kv, &bd));
+    BeaconDedup bd2;
+    Beacon_Dedup_Load(&kv, &bd2);
+    ASSERT_TRUE(Beacon_Dedup_Seen(&bd2, gen));
+}
+
+TEST(test_fw20s2_dedup_load_rejects_garbage) {
+    /* gen=0 із ненульовим вікном — не наше покоління запису → порожній
+     * журнал (перший маяк піде в ефір, шторм-ризик нульовий). */
+    fresh_mount();
+    ASSERT_TRUE(FlashKv_Put32(&kv, FW20_DEDUP_KV_KEY, 0x000000ABu));
+    BeaconDedup bd;
+    Beacon_Dedup_Load(&kv, &bd);
+    ASSERT_EQ(bd.gen_hi, 0u);
+    ASSERT_FALSE(Beacon_Dedup_Seen(&bd, Beacon_Dedup_Gen(1714000000u)));
+}
+
+TEST(test_fw20s2_dedup_survives_remount_and_compact) {
+    fresh_mount();
+    uint32_t gen = Beacon_Dedup_Gen(1714000000u);
+    BeaconDedup bd;
+    Beacon_Dedup_Load(&kv, &bd);
+    Beacon_Dedup_Mark(&bd, gen);
+    ASSERT_TRUE(Beacon_Dedup_Persist(&kv, &bd));
+    ASSERT_TRUE(FlashKv_Compact(&kv));
+    ASSERT_TRUE(FlashKv_Mount(&kv, &mock_ops, &flash, MOCK_PAGE_DWS));
+    BeaconDedup bd2;
+    Beacon_Dedup_Load(&kv, &bd2);
+    ASSERT_TRUE(Beacon_Dedup_Seen(&bd2, gen));
+}
+
 /* ════════════════════════════════════════════════════════════════════ */
 int main(void)
 {
@@ -552,6 +684,16 @@ int main(void)
     RUN(test_fw2_coldboot_floor_above_all_sent);
     RUN(test_fw2_double_coldboot_no_reuse);
     RUN(test_fw2_hiwater_survives_remount_and_compact);
+
+    printf("\n— [FW.20-S2 4/5] Журнал поколінь маяка поверх KV (0x20) —\n");
+    RUN(test_fw20s2_dedup_load_empty_nothing_seen);
+    RUN(test_fw20s2_dedup_mark_persist_reload_roundtrip);
+    RUN(test_fw20s2_dedup_window_slides_preserving_recent);
+    RUN(test_fw20s2_dedup_big_jump_resets_window);
+    RUN(test_fw20s2_dedup_clean_persist_no_wear);
+    RUN(test_fw20s2_dedup_persist_fail_ram_still_dedups);
+    RUN(test_fw20s2_dedup_load_rejects_garbage);
+    RUN(test_fw20s2_dedup_survives_remount_and_compact);
 
     printf("\n════════════════════════════════════════════════════════════════════\n");
     printf("Passed: %d, Failed: %d\n", tests_passed, tests_failed);
