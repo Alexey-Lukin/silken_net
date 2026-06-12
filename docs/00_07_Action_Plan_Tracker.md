@@ -614,7 +614,7 @@
 - ✅ **CoAP-grammar fix (sim-first, канон [`03_02 §4`](03_02_Queen_Gateway_Firmware)):** SIMCom CoAP App Note ≠ firmware-припущена граматика (реально модем = UDP-труба: хост будує сирий RFC 7252 PDU, `CCOAPNEW="<ip>",<port>` + `CCOAPSEND=<cid>,<len>,"<hex>"` + URC `+CCOAPNMI`, домени через `CDNSGIP`) → `coap_pdu.h` (CON-PUT builder/parser + golden-vector з ноти) + `sim7070_coap.h` (повна розмова); FW.51 cache-clear ключується на доставку (`+CCOAPNMI` 2.xx).
 - ✅ (2026-06-10) **e2e Queen-PDU ↔ backend CoAP-intake (софтом):** golden freeze-contract C-білдер ↔ Rails-парсер (включно з пін-кейсом MID=0x00FF + 0xFF у payload) + pure `CoapServerPdu` (вердикт Брами; демон = UDP-клей) + повний ланцюг PDU → `UnpackTelemetryWorker` → decrypt → unpack (`spec/integration/coap_telemetry_intake_e2e_spec.rb`). Зловив/закрив 2 продакшн-баги Брами: глобальний пошук payload-маркера (кожен 256-й `coap_mid` = фантомна доставка: ACK 2.04 без батча → FW.51 чистив кеш дарма) + Sentinel `route_queen_health` гинув на Sidekiq strict_args під broad-rescue (стаб у старій спеці це маскував). ACK-семантика тепер чесна до FW.51: 2.04 лише після enqueue, 4.04/RST → Королева тримає кеш. Канон [`03_02 §4`](03_02_Queen_Gateway_Firmware). Лишається:
   - [ ] 👤 bench: verbatim-звірка SIM7070-ноти V1.03 + реальні URC/таймінги
-  - [ ] 🔗 staging-smoke (`coap_smoke.yml`): той самий шлях через реальний UDP/Ingress до задеплоєної Брами (post-deploy gate)
+  - [ ] 🔗 staging-smoke (`coap_smoke.yml`): той самий шлях через реальний UDP/Ingress до задеплоєної Брами (post-deploy gate). ✅ (2026-06-12) зонди підняті з generic liveness (libcoap POST, «будь-що крім 5.xx») до **freeze-contract**: `bin/coap_smoke` (+ pure `lib/coap_smoke.rb`) звіряє відповіді байт-у-байт з golden-векторами e2e — RST на сміття, 4.04 з піном 0xFF-MID (регресія фантомної доставки: legacy-сервер тут відповідав 2.04), чесний 2.04-після-enqueue (`SNET-Q-SMOKETEST` не-hex → worker гасить як `unknown_device` без сліду в БД); loopback-довід `spec/lib/coap_smoke_spec.rb`. Лишилось 🔗: прогін проти задеплоєної Брами
 
 ## §03/§05 · Безпека (Edge crypto + Web3)
 
@@ -769,7 +769,7 @@
 
 #### INF.6 — CoAP UDP smoke test через Ingress Anchor (post-deploy gate)
 - **P1** · 🤖+👤 · → `06_01`, `06_02`, `06_08 §1.2`
-- ✅ workflow `coap_smoke.yml` (`workflow_call` від `deploy.yml`) — 🟡 ще не required gate. Без UDP-smoke silent UDP failure не помітний (Queen→Ingress Anchor→Akash→CoAP). · [ ] 👤 активувати як required post-deploy gate (`needs: coap-smoke`) · [ ] 👤 перший boundary smoke з Queen/`bin/forest_simulator`
+- ✅ workflow `coap_smoke.yml` (`workflow_dispatch` + `workflow_call`-able; виклик із `deploy.yml` ще НЕ заведений — це і є residual) — 🟡 ще не required gate. Без UDP-smoke silent UDP failure не помітний (Queen→Ingress Anchor→Akash→CoAP). ✅ (2026-06-12) зонди = freeze-contract `bin/coap_smoke` (точні байти, регресія фантомної доставки — деталі: FW.56) замість generic libcoap POST. · [ ] 👤 завести виклик у `deploy.yml`/`deploy-production.yml` + активувати як required post-deploy gate (`needs: coap-smoke`) · [ ] 👤 перший boundary smoke з Queen/`bin/forest_simulator`
 
 #### INF.4 — Akash TLS strategy decision: hostname operator vs Cloudflare
 - **P1** · 👤+🤖 · → `06_02 §TLS термінація`

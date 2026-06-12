@@ -448,7 +448,9 @@ pure `CoapServerPdu` (`lib/coap_server_pdu.rb` — серверне дзерка
 датаграму включно з заголовком — кожен 256-й `coap_mid` давав фантомну
 доставку (ACK 2.04 без батча → даремний cache-clear); (2) Sentinel-маршрут
 (§7) падав на Sidekiq strict_args і його ковтав broad-rescue. Staging-smoke
-(`coap_smoke.yml`, мережевий шлях до задеплоєної Брами) — окремий residual.
+(`coap_smoke.yml` → `bin/coap_smoke`: ті самі freeze-contract байти зондами
+через реальний UDP/Ingress — RST/4.04-з-0xFF-MID-піном/2.04-після-enqueue,
+loopback-довід `spec/lib/coap_smoke_spec.rb`) чекає лише задеплоєну Браму.
 
 **Що лишається bench (HW-residual FW.3):**
 - verbatim-звірка граматики SIM7070-ноти V1.03 + реальні таймінги модему;

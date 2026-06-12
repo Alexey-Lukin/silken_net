@@ -1,0 +1,75 @@
+# frozen_string_literal: true
+
+require "rails_helper"
+require "coap_client"
+require "coap_smoke"
+
+# [FW.56/INF.6] Smoke-зонди доводяться через РЕАЛЬНИЙ loopback-UDP: сервер
+# нижче — той самий вердикт CoapServerPdu + send-семантика демона
+# (lib/daemons/coap_listener = recvfrom → вердикт → reply, якщо є). Регресія
+# фантомної доставки пінується legacy-сервером, що ACK'ає до парсингу.
+RSpec.describe CoapSmoke do
+  def with_loopback_server(handler)
+    server = UDPSocket.new
+    server.bind("127.0.0.1", 0)
+    port = server.addr[1]
+    thread = Thread.new do
+      loop do
+        data, sender = server.recvfrom(2048)
+        reply = handler.call(data)
+        server.send(reply, 0, sender[3], sender[1]) if reply
+      end
+    end
+    yield port
+  ensure
+    thread&.kill
+    server&.close
+  end
+
+  let(:io) { StringIO.new }
+
+  it "проти чесної Брами всі три зонди зелені (точні байти freeze-contract)" do
+    honest = ->(data) { CoapServerPdu.handle_telemetry_datagram(data).reply }
+
+    with_loopback_server(honest) do |port|
+      expect(described_class.run(host: "127.0.0.1", port: port,
+                                 timeout: 2.0, retries: 2, io: io)).to be(true)
+    end
+
+    expect(io.string.scan("✅").size).to eq(3)
+    expect(io.string).to include("7000ABCD", "608400FF", "604400FF")
+  end
+
+  it "валить legacy-сервер фантомної доставки (ACK 2.04 до парсингу — всім)" do
+    phantom = ->(data) { ("\x60\x44".b + data.byteslice(2, 2)) if data.bytesize >= 4 }
+
+    with_loopback_server(phantom) do |port|
+      expect(described_class.run(host: "127.0.0.1", port: port,
+                                 timeout: 2.0, retries: 1, io: io)).to be(false)
+    end
+
+    # Фантом «доставив» сміття і невідомий маршрут — рівно ті зонди й валяться.
+    expect(io.string).to include("очікував 7000ABCD, прийшло 6044ABCD")
+    expect(io.string).to include("очікував 608400FF, прийшло 604400FF")
+  end
+
+  it "тиша (порт без Брами) = чесний фейл, не вічне очікування" do
+    throwaway = UDPSocket.new
+    throwaway.bind("127.0.0.1", 0)
+    dead_port = throwaway.addr[1]
+    throwaway.close
+
+    expect(described_class.run(host: "127.0.0.1", port: dead_port,
+                               timeout: 0.2, retries: 1, io: io)).to be(false)
+    expect(io.string).to include("тиша", "UDP-шлях мертвий")
+  end
+
+  it "зонд 2.04 несе SMOKE_UID, який worker гасить як unknown_device" do
+    batch = described_class.probes.last
+    request = CoapServerPdu.parse_request(batch.datagram)
+
+    expect(request.uri_path).to eq([ "telemetry", "batch", described_class::SMOKE_UID ])
+    # не-hex суфікс → ніколи не збіжиться з flashed Queen ("SNET-Q-[8 HEX]")
+    expect(described_class::SMOKE_UID).not_to match(/\ASNET-Q-\h{8}\z/)
+  end
+end

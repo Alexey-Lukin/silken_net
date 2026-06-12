@@ -1,6 +1,6 @@
 name: CoAP UDP Smoke Test
 
-# [INF.6] Post-deploy smoke test that exercises the end-to-end CoAP UDP
+# [INF.6/FW.56] Post-deploy smoke that exercises the end-to-end CoAP UDP
 # path: Queen-equivalent client → Ingress Anchor (HAProxy/socat or
 # Akash UDP expose) → CoAP daemon (`lib/daemons/coap_listener`).
 #
@@ -9,11 +9,19 @@ name: CoAP UDP Smoke Test
 # visible from HTTP-only health checks — gateways simply cannot push
 # telemetry and the network goes dark without any error in CI.
 #
+# The probes are NOT a generic liveness ping: `bin/coap_smoke` replays the
+# FW.56 freeze-contract (same golden vectors as firmware/test/test_at_engine.c
+# ↔ spec/lib/coap_server_pdu_spec.rb) and asserts exact reply bytes —
+# RST on garbage, 4.04 on an unknown route with the 0xFF-MID phantom-delivery
+# pin (the legacy server answered 2.04 here), and an honest 2.04-after-enqueue
+# batch PUT. Loopback-proven by spec/lib/coap_smoke_spec.rb.
+#
 # Triggers:
 #   - `workflow_dispatch` — manual probe from any branch with custom host.
-#   - `workflow_call` — invoked from `deploy.yml` / `deploy-production.yml`
-#                       as a post-deploy gate. Fails the parent workflow
-#                       if the CoAP daemon is unreachable.
+#   - `workflow_call` — to be invoked from `deploy.yml` / `deploy-production.yml`
+#                       as a post-deploy gate once the Брама is deployed
+#                       (00_07 INF.6 residual). Fails the parent workflow
+#                       if the CoAP path is broken.
 #
 # This workflow is intentionally NOT triggered on `push` / `pull_request`
 # — it would never be able to reach a real Ingress Anchor from a CI
@@ -31,15 +39,15 @@ on:
         required: false
         default: "5683"
         type: string
-      path:
-        description: "CoAP resource path"
-        required: false
-        default: "/api/v1/telemetry/smoke"
-        type: string
       timeout_seconds:
-        description: "Per-request timeout (seconds)"
+        description: "Per-probe timeout (seconds)"
         required: false
-        default: "30"
+        default: "10"
+        type: string
+      retries:
+        description: "Attempts per probe (UDP is lossy)"
+        required: false
+        default: "3"
         type: string
   workflow_call:
     inputs:
@@ -52,15 +60,15 @@ on:
         required: false
         default: "5683"
         type: string
-      path:
-        description: "CoAP resource path"
-        required: false
-        default: "/api/v1/telemetry/smoke"
-        type: string
       timeout_seconds:
-        description: "Per-request timeout (seconds)"
+        description: "Per-probe timeout (seconds)"
         required: false
-        default: "30"
+        default: "10"
+        type: string
+      retries:
+        description: "Attempts per probe (UDP is lossy)"
+        required: false
+        default: "3"
         type: string
 
 permissions:
@@ -68,58 +76,40 @@ permissions:
 
 jobs:
   coap-smoke:
-    name: CoAP UDP smoke test
+    name: CoAP freeze-contract smoke
     runs-on: ubuntu-latest
     steps:
-      - name: Install libcoap2-bin
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends libcoap2-bin
+      - name: Checkout code
+        uses: actions/checkout@v6
 
-      - name: CoAP smoke POST
+      # bin/coap_smoke is stdlib-only (socket/optparse) — no bundle install.
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: false
+
+      - name: Freeze-contract probes
         env:
           COAP_HOST: ${{ inputs.host }}
           COAP_PORT: ${{ inputs.port }}
-          COAP_PATH: ${{ inputs.path }}
           COAP_TIMEOUT: ${{ inputs.timeout_seconds }}
+          COAP_RETRIES: ${{ inputs.retries }}
         run: |
           set -euo pipefail
-          uri="coap://${COAP_HOST}:${COAP_PORT}${COAP_PATH}"
           echo "::group::CoAP smoke target"
-          echo "URI: ${uri}"
-          echo "Timeout: ${COAP_TIMEOUT}s"
+          echo "Host: ${COAP_HOST}:${COAP_PORT} (timeout ${COAP_TIMEOUT}s × ${COAP_RETRIES} retries/probe)"
           echo "::endgroup::"
 
-          # `coap-client` exit codes:
-          #   0 — request completed (any 2.xx / 4.xx / 5.xx response code is acceptable —
-          #       it proves the UDP path is alive even if the resource itself returns 4.04).
-          #   non-zero — connection refused / timeout / DNS / kernel UDP failure.
-          # `-B` sets the timeout (seconds). `-v 9` enables verbose tracing for CI logs.
-          if ! timeout "${COAP_TIMEOUT}" coap-client \
-              -m post -e '{"smoke":"test","ts":"'"$(date -u +%FT%TZ)"'"}' \
-              -B "${COAP_TIMEOUT}" -v 9 \
-              "${uri}" \
-              | tee coap_response.txt; then
-            echo "::error::CoAP smoke test FAILED: ${uri} unreachable within ${COAP_TIMEOUT}s timeout"
+          if ! bin/coap_smoke --host "${COAP_HOST}" --port "${COAP_PORT}" \
+              --timeout "${COAP_TIMEOUT}" --retries "${COAP_RETRIES}"; then
+            echo "::error::CoAP freeze-contract smoke FAILED (see probe verdicts above)"
             echo "::error::Troubleshooting checklist (06_01 Pre-Flight #6):"
             echo "::error::  (a) GCP firewall: allow UDP 5683 from 0.0.0.0/0"
             echo "::error::  (b) Ingress Anchor: socat UDP-LISTEN:5683,fork UDP:<akash-pod-ip>:5683"
             echo "::error::  (c) Akash SDL: expose 5683 as protocol: udp"
             echo "::error::  (d) lib/daemons/coap_listener running in Sidekiq/job container"
+            echo "::error::  (e) wire-граматика: bin/coap_smoke verdicts vs spec/lib/coap_server_pdu_spec.rb"
             exit 1
           fi
 
-          # `coap-client` returns exit 0 even on application-level error codes —
-          # we still want to flag a clearly broken state for ANY 5.xx response
-          # (CoAP class 5 = Server Error: 5.00 Internal Server Error,
-          # 5.02 Bad Gateway, 5.03 Service Unavailable, 5.04 Gateway Timeout, ...).
-          # Every 5.xx indicates the daemon is reachable but cannot serve the
-          # request — that fails the deploy gate as deliberately as a timeout.
-          # Acceptable: 2.xx (success), 4.04 (path not registered — daemon alive).
-          if grep -qE "5\\.[0-9]{2}" coap_response.txt; then
-            echo "::error::CoAP daemon returned 5.xx (server error). Response:"
-            cat coap_response.txt
-            exit 1
-          fi
-
-          echo "✅ CoAP UDP path is alive (response captured above)."
+          echo "✅ CoAP UDP path serves the FW.56 freeze-contract."

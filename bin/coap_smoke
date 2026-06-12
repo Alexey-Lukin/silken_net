@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# [FW.56/INF.6] CLI freeze-contract зондів staging-Брами — без Rails-boot
+# (CI-раннер coap_smoke.yml ставить лише ruby). Логіка та freeze-contract —
+# lib/coap_smoke.rb; loopback-довід — spec/lib/coap_smoke_spec.rb.
+
+$LOAD_PATH.unshift File.expand_path("../lib", __dir__)
+require "optparse"
+require "coap_client"
+require "coap_smoke"
+
+options = { port: 5683, timeout: 10.0, retries: 3 }
+OptionParser.new do |o|
+  o.banner = "Usage: bin/coap_smoke --host HOST [--port 5683] [--timeout 10] [--retries 3]"
+  o.on("--host HOST", "CoAP-хост Брами (api.silkennet.com / canopy...)") { |v| options[:host] = v }
+  o.on("--port PORT", Integer) { |v| options[:port] = v }
+  o.on("--timeout SEC", Float, "на одну спробу зонда") { |v| options[:timeout] = v }
+  o.on("--retries N", Integer, "спроб на зонд (UDP lossy)") { |v| options[:retries] = v }
+end.parse!
+
+abort("❌ --host обов'язковий (bin/coap_smoke --help)") unless options[:host]
+exit(CoapSmoke.run(**options) ? 0 : 1)
