@@ -3,12 +3,13 @@
  * @file    silken_net_audio_model_stub.h
  * @brief   IP-friendly STUB for the TinyML acoustic model contract.
  *
- *          This stub unblocks BLOCKER-1+2 (`docs/03_03 §BLOCKER-1/2`) by
- *          providing the symbols that `firmware/soldier/main.c` references
- *          from `silken_net_audio_model.h`. The real model header is produced
- *          by the ML partner (Бушин/Любченко, `docs/08_02 §1B`) and
- *          contains TFLite quantized weights + tensor arena allocation; that
- *          file replaces this stub at integration time.
+ *          FALLBACK when `silken_net_audio_model.h` is absent: provides the
+ *          symbols that `firmware/soldier/main.c` references so the build still
+ *          compiles. The PRIMARY header now EXISTS — a self-owned INT8 baseline
+ *          (ESC-50, FW.4, `silken_ml.export`, gemmlowp pure-C forward pass); a
+ *          future partner/field model (Бушин/Любченко + Cherkasy soundscape,
+ *          `docs/08_02 §1B`) replaces it. BLOCKER-1/2 closed 2026-06-12 (model
+ *          landed, call-site uncommented).
  *
  *          With this stub present the ARM toolchain can compile main.c and
  *          run `arm-none-eabi-size firmware.elf` / `make size-check` to
@@ -54,8 +55,9 @@
 /* === Tensor Arena estimate (Path B baseline) ============================ */
 /* 16 KB is the conservative estimate from `docs/03_03 §3.2 Decision Matrix`
  * (~15–30 KB range for Path B). Real value must be measured via
- * `arm-none-eabi-size firmware.elf` after the production model is loaded —
- * this is the "first action after BLOCKER-1 unblock" from §BLOCKER-3.
+ * `arm-none-eabi-size firmware.elf`. The PRIMARY baseline (FW.4) measured
+ * ~76 B (forward-pass, stack); this stub keeps the 16 KB worst-case for a
+ * fallback TFLM-class model.
  */
 #define TENSOR_ARENA_SIZE        (16u * 1024u)
 
@@ -73,9 +75,10 @@
  *
  * @return  Class ID in [0, NUM_CLASSES). See ML_CLASS_* macros above.
  *
- * @note    Stub provides declaration only. Without the real model header
- *          the symbol is unresolved — keep the Phase 1.5 call-site in main.c
- *          commented out until BLOCKER-1 is closed.
+ * @note    Stub provides declaration only (fallback). The PRIMARY header ships
+ *          an inline `Run_Inference` definition (FW.4); with this stub alone the
+ *          symbol is unresolved at link — the fallback compiles but cannot run
+ *          inference until the real header is present.
  */
 uint8_t Run_Inference(const float* buffer, float* confidence);
 

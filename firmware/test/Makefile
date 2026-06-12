@@ -19,9 +19,9 @@ BINDIR   = .
 OPENSSL_CFLAGS = $(shell pkg-config --cflags openssl 2>/dev/null)
 OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
-.PHONY: all queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet cmd_queue fauna bme280 coverage size-check clean
+.PHONY: all queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet cmd_queue fauna bme280 coverage size-check clean
 
-all: queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet cmd_queue fauna bme280
+all: queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet cmd_queue fauna bme280
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -37,6 +37,13 @@ tinyml: $(BINDIR)/test_tinyml
 
 logmel: $(BINDIR)/test_logmel
 	@./$(BINDIR)/test_logmel
+
+# [FW.4] Generated INT8 acoustic model — Run_Inference vs silken_ml golden vectors.
+audio_model: $(BINDIR)/test_audio_model
+	@./$(BINDIR)/test_audio_model
+
+$(BINDIR)/test_audio_model: test_audio_model.c ../soldier/silken_net_audio_model.h silken_net_audio_model_golden.h
+	$(CC) $(CFLAGS) -o $@ test_audio_model.c -lm
 
 encryption: $(BINDIR)/test_encryption
 	@./$(BINDIR)/test_encryption
@@ -182,7 +189,7 @@ clean:
 	      $(BINDIR)/test_flash_kv $(BINDIR)/test_flash_ring $(BINDIR)/test_flash_ota \
 	      $(BINDIR)/test_key_ratchet $(BINDIR)/test_soldier_cmd_queue \
 	      $(BINDIR)/test_fauna_session \
-	      $(BINDIR)/test_bme280 \
+	      $(BINDIR)/test_bme280 $(BINDIR)/test_audio_model \
 	      *.gcno *.gcda *.gcov coverage_raw.txt
 
 # [FW.26] CI gate — Static RAM budget check (.bss + .data ≤ 50 KB).

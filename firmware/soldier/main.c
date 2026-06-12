@@ -46,8 +46,11 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #  include "silken_net_audio_model.h"
 #else
 #  include "silken_net_audio_model_stub.h"
-#  warning "TinyML: using silken_net_audio_model_stub.h — production model not present (BLOCKER-1)"
+#  warning "TinyML: silken_net_audio_model.h absent — using stub fallback (Run_Inference undefined; baseline normally committed, FW.4)"
 #endif
+
+// [FW.25] Акустичний DSP-фронтенд: 512-семпловий кадр → 40 log-mel ознак (Path B).
+#include "../common/logmel.h"
 
 // Підключаємо низькорівневий драйвер радіо (Radio Middleware)
 #include "radio.h"
@@ -244,7 +247,7 @@ uint8_t encrypted_payload[16] = {0}; // Буфер для зашифровани
 uint16_t raw_audio_buffer[512];   // Буфер для DMA (сирі 12-бітні дані від АЦП)
 float audio_buffer[512];          // Буфер для запису звукової хвилі (нормалізований для TinyML)
 volatile uint8_t audio_ready = 0; // Прапорець завершення роботи DMA-павутиння
-uint8_t ml_event_id = 0;          // Результат: 0-Тиша, 1-Вітер, 2-Кавітація, 3-Пилка
+uint8_t ml_event_id = 0;          // Результат: 0-Тиша, 1-Вітер, 2-Кавітація, 3-Пилка, 4-Фауна
 float ml_confidence = 0.0;        // Рівень впевненості моделі (0.0 - 1.0)
 
 // === 1.5а. ДВОРІВНЕВА СИСТЕМА ПОРОГІВ TINYML (FW.18) ===
@@ -1920,13 +1923,12 @@ int main(void)
             }
 
             // 5. Запускаємо "Свідомість" (Шаховий розтин звуку) — Path B (FW.25, 03_03 §3.4).
-            //    Сирий кадр → 40 log-mel ознак → інференс. Compute_LogMel
-            //    (firmware/common/logmel.c) готовий і host-тестований; Run_Inference
-            //    лишається закоментованим, доки нема моделі (BLOCKER-1, FW.4).
-            //    Розкоментувати разом із #include "../common/logmel.h", коли модель приземлиться:
-            // float logmel_features[LOGMEL_N_MELS];
-            // Compute_LogMel(audio_buffer, logmel_features);
-            // ml_event_id = Run_Inference(logmel_features, &ml_confidence);
+            //    Сирий кадр → 40 log-mel ознак (Compute_LogMel) → INT8-інференс.
+            //    [FW.4 closed] silken_net_audio_model.h приземлено (self-owned baseline
+            //    ESC-50; stub лишається fallback'ом через __has_include у шапці файлу).
+            float logmel_features[LOGMEL_N_MELS];
+            Compute_LogMel(audio_buffer, logmel_features);
+            ml_event_id = Run_Inference(logmel_features, &ml_confidence);
 
             // [FW.18] Dual-Threshold Decision Logic (заміна hardcoded 0.80).
             // Пороги завантажуються з RTC DR13/DR14 на boot з валідацією
