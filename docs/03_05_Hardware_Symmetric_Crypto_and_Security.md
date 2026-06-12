@@ -877,7 +877,7 @@ Device Memory → Option Bytes → Read Out Protection → RDP: Level 1 (або 
 
 **Latency impact (Гілка B vs A):** ATECC608B AES-ECB ~1.5 мс/блок vs MCU HAL_CRYP ~10 µs. Для одного 16/28-байтного LoRa пакета — нехтовно. Для CBC batch 50 × 16 байт = 800 байт — додаткові ~75 мс на flush (CoAP flush триває кілька секунд у будь-якому разі).
 
-**Power impact (Гілка B):** ATECC active 14 мА × 1.5 мс = 70 мкДж/пакет → ~0.1% до енергобюджету Soldier. ATECC sleep 150 нА — нехтовно. ⚠️ Енергія тут **мала, але не вирішальна**: чи робить ATECC AES щопакета, чи лише provisioning (а streaming AES — на вбудованому radio-AES STM32) — окрема вісь компромісу (tamper-resistance LoRa-ключа ⟷ latency/ідіом), повний розбір — §3.7 (SEC.14).
+**Power impact (Гілка B):** ATECC active ~69 мкДж/пакет → ≈0.2% active-циклу Soldier (точні числа — §3.7, дзеркало SSOT там). ⚠️ Sleep 150 нА always-on **з'їдає весь запас Сценарію C** → SE обов'язково за load-switch гейтом (розрахунок і вимога — §3.7). Енергія active **мала, але не вирішальна**: чи робить SE AES щопакета, чи лише provisioning (а streaming AES — на вбудованому radio-AES STM32) — окрема вісь компромісу (tamper-resistance LoRa-ключа ⟷ latency/ідіом), повний розбір — §3.7 (SEC.14).
 
 **Cost impact (Гілка B):** +$0.60/unit (ATECC608B 10k MOQ) або +$0.85/unit (STSAFE-A110). Cross-ref §7.2 unit economics.
 
@@ -1888,10 +1888,10 @@ atca_status_t status = atcab_aes_encrypt(
 
 **Latency impact:** ATECC608B AES-ECB ~1.5 мс/блок vs ~10 µs MCU HAL_CRYP. За **енергією** на один 16-байтний LoRa пакет — нехтовно (числа нижче), але це тримає MCU awake ~1.5 мс/пакет замість ~10 µs — одна з осей trade-off «per-packet vs provisioning-only» (підрозділ нижче). Для CBC batch (50 × 16 байт = 800 байт) — додаткові ~75 мс на flush — прийнятно (CoAP flush триває кілька сек у будь-якому разі).
 
-**Power impact** (перевірено — НЕ блокер, але й **не** вирішальний аргумент):
-- Active (1.5 мс): 14 мА × 3.3V = 46 мВт. На 1 LoRa пакет → ~70 мкДж.
-- Sleep: 150 нА (нехтовно у бюджеті Soldier `E_sleep ≈ 1.5 мкА`)
-- Контекст величини: ~70 мкДж ≈ 0.2% енергії самого LoRa-TX (~39 мДж, [`02_03`](02_03_BQ25570_MPPT_Nano_Power)) і десяті частки % повного wake-budget; проти 0.47 F EDLC (≈7 Дж) — це не «вбивця іоністора». Енергія SE per-packet **мала** — і саме тому вона **не** головний критерій вибору ролі (див. підрозділ нижче).
+**Power impact** (cross-check проти канонічного Сценарію C, [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power) / дзеркало [`02_01 §2`](02_01_Hardware_Architecture_and_BOM) — active НЕ блокер, sleep-floor БЕЗ гейта перевертає баланс):
+- **Active** (1.5 мс): 14 мА × 3.3 В = 46 мВт → ~69 мкДж/пакет на VOUT (~79 мкДж з VSTOR, η_buck 0.88). Проти Сценарію C: **≈0.3% LoRa-TX** (+14 dBm SF9, 21.8 мДж на VOUT) і **≈0.2% повного active-циклу** (33.7 мДж); у годинному вимірі (1 TX/1.77 год) ≈0.04 мДж/год ≈ 3% запасу Сценарію C (+1.4 мДж/год). Проти 0.47 F EDLC (≈7 Дж) — не «вбивця іоністора». Per-packet active-енергія SE **мала** — і саме тому вона **не** головний критерій вибору ролі (див. підрозділ нижче). ⚠️ Не рахувати % проти «TX ~39 мДж» — то E_TX @ +22 dBm зі *списаного* сценарію ([`02_03 §9.4`](02_03_BQ25570_MPPT_Nano_Power)).
+- **Sleep: 150 нА — НЕ нехтовно** (інверсія попередньої подачі, що спиралась на застарілий бюджет ~1.5 мкА): у канонічному Сценарії C (300 нА RTC-only) always-on SE = 150 нА × 3.3 В / η_buck 0.50 (нанострумовий режим) ≈ **3.6 мДж/год з VSTOR — більше за весь запас Сценарію C (+1.4 мДж/год)** → баланс −2.2 мДж/год, supercap повільно розряджається. **Вимога-висновок:** SE сидить за load-switch гейтом (патерн TPS22860, як BME280 — [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)); живлення лише в active-вікні. Сумісно з обома ролями: per-packet вмикає SE на кожен wake, provisioning-only — лише при ротації/фабриці. З гейтом sleep-внесок ~0.
+- Числа — ATECC608B (порядок величини); SE050 active/standby струми — datasheet-verify при eval-kit ([`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker), no-premature-canon).
 
 **Footprint (PCB):**
 - UDFN-8: 2×3 мм
@@ -1954,6 +1954,7 @@ atca_status_t status = atcab_aes_encrypt(
 
 - [ ] 🤖 (наступний цикл) Завершити оцінку: ATECC608B vs STSAFE-A110 матриця, узгоджена з KiCad floorplan
 - [x] 🤖 (SEC.14) Перефреймувати latency/power → чесний trade-off «per-packet AES vs provisioning-only» — ✅ Виконано (підрозділ вище): енерго-аргумент перевірено = малий, але не вирішальний; справжня вісь = tamper-resistance LoRa-ключа ⟷ latency/ідіом; role-split альтернатива подана
+- [x] 🤖 (SEC.14, 2026-06-12) Cross-check проти Сценарію C ([`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)) — точні %: active ≈0.3% TX / ≈0.2% циклу / ≈3% годинного запасу (підтверджує «малий»); **знахідка-інверсія**: always-on sleep 150 нА ≈ 3.6 мДж/год > запас Сценарію C → **load-switch гейт SE обов'язковий** (Power impact вище; стосується обох ролей)
 - [ ] 👤/🤖 (SEC.14) Обрати роль SE — per-packet SE050 AES (Варіант B) vs built-in AES + SE050 provisioning-only — за віссю trade-off вище, при bench eval + BOM freeze (не за замовчуванням)
 - [x] 🤖 Update §3.4 Factory Flashing pipeline з SE-варіантом — ✅ Виконано: §3.4 розділено на Гілку A (Protected Flash, TRL 6/7) та Гілку B (ATECC608B/STSAFE-A110, mass production > 10k); додано двошаровий defense-in-depth (data zone lock + RDP), latency/power/cost impact, criteria для вибору гілки, та irreversibility note (B → A неможливо)
 - [ ] 🤖 Інтеграція з Backend `Provisioning::HardwareKeyService` (генерація ECC keypair + cert)
