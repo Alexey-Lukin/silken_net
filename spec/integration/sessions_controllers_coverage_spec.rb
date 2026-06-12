@@ -80,17 +80,12 @@ RSpec.describe "Controller coverage — uncovered paths" do
     end
 
     describe "DELETE /api/v1/logout (JSON)" do
-      # current_session is not defined on the controller; prepend a module to provide it
-      around do |example|
-        mod = Module.new do
-          def current_session
-            current_user&.sessions&.last
-          end
-        end
-        Api::V1::SessionsController.prepend(mod)
-        example.run
-      end
-
+      # БЕЗ prepend-стабів: `current_session` визначений НА контролері
+      # (старий around-хук препендив анонімний модуль за хибною преміссою
+      # «методу нема» — а Module#prepend незворотний, тож ВСЯ решта сюїти
+      # після цього прикладу тестувала підмінений метод, і coverage рядків
+      # 80-82 плавав за сідом; знахідка seed-діффа TEST.1,
+      # scripts/coverage_seed_diff.rb).
       it "returns success message when logged in" do
         post "/api/v1/login",
              params: { email: user.email_address, password: "password12345" },
