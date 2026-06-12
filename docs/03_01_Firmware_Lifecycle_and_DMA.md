@@ -1525,7 +1525,7 @@ toolchain-файлів помилково пінила апаратний FPv4 h
 | OpenSSL | host-тест crypto (AES/HKDF/HMAC) | system host-dep; НЕ target | host-build, не вендориться |
 | ~~mbedTLS~~ | target HMAC-SHA256 | ✅ **не потрібен** — FW.30 cold-start seed-HMAC закрито pure-C `silken_sha256.h` (byte-parity vs OpenSSL, KAT FIPS/RFC 4231); FW.23 OTA HMAC compute теж може цей шлях (pure-C, без bench-лінку) | own-code `firmware/common/silken_sha256.h` |
 | STM32 HAL + CMSIS-Device-WL | HAL · SUBGHZ/SX1262-радіо · CRYP | 🔴 assumed (CubeMX, поза репо); host = `hal_mock.h` | STM32CubeWL@tag — `-DSILKEN_WITH_HAL=ON` |
-| CMSIS-NN | TinyML `Run_Inference` | 🔴 ще нема згадок (модель відсутня) | `extern/CMSIS-NN`@tag — [`00_07` — FW.4](00_07_Action_Plan_Tracker) |
+| CMSIS-NN | TinyML `Run_Inference` (опц. ARM-прискорення) | ✅ baseline = pure-C forward pass (FW.4, нуль нового vendoring) | `extern/CMSIS-NN`@tag — ЛИШЕ якщо більша модель захоче ARM-kernels ([`00_07` — FW.4](00_07_Action_Plan_Tracker)) |
 
 > SX1262-радіо = HAL SUBGHZ-периферія (`SUBGHZ_HandleTypeDef`), не окремий Semtech-драйвер → у HAL-submodule, не окрема залежність.
 

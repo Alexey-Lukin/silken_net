@@ -12,7 +12,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — модель інтегрована, DMA налаштовано, DSP Path B зафіксовано; `Run_Inference()` закоментована (stub fallback). Відкриті: Run_Inference + model.h + Tensor Arena (`FW.4`), confidence threshold (`FW.18`) → [`00_07 §03`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 6 — DSP Path B зафіксовано + **self-owned baseline приземлено** (`FW.4`, 2026-06-12): `Run_Inference` розкоментовано, `silken_net_audio_model.h` (INT8 forward-pass, §4.1), arena виміряно (§4.3). Відкриті: ARM `arm-none-eabi-size` (CI hal_check) + confidence threshold (`FW.18`) → [`00_07 §03`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -26,8 +26,8 @@
 | [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Шифрування panic-пакетів EwsAlert |
 | [`04_01` — Data Models and Entities](04_01_Data_Models_and_Entities) | `TelemetryLog.acoustic_events` |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `TelemetryUnpackerService`, `EwsAlertCreatorService` |
-| `firmware/soldier/main.c` · `silken_net_audio_model.h` (TBD) · `_stub.h` | Phase 1.5 + ISR; реальна модель TBD ML-партнером; IP-friendly stub |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.4 Run_Inference/model.h/Tensor-Arena, FW.18b threshold, FW.25 DSP Path B |
+| `firmware/soldier/main.c` · `silken_net_audio_model.h` (self-owned baseline, `FW.4`) · `_stub.h` (fallback) | Phase 1.5 + ISR; INT8 forward-pass інференс приземлено; партнерська модель — опційний апгрейд |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Статус** (SSOT): FW.4 ✅ baseline landed (machine half; ARM-size + bench residual) · FW.18b threshold · FW.25 DSP Path B |
 
 ## 📑 Зміст
 
@@ -186,7 +186,7 @@ for(int i = 0; i < 512; i++) {
 
 **Перетворення:** `ADC[i] ∈ [0, 4095]` → `audio_buffer[i] ∈ [0.0, 1.0]`
 
-**Жодного частотного аналізу:** Відсутні FFT, MFCC, Mel-bank, window function (Hann/Hamming). Модель отримує сирий time-domain сигнал. Чи є DSP preprocessing всередині `silken_net_audio_model.h` — невідомо (BLOCKER-2).
+**Path B зафіксовано (§3.2) — цей розділ описує дотрансформаційний стан:** модель отримує **40 log-mel ознак** від `Compute_LogMel` (RFFT + HTK mel-bank + log; §3.4), НЕ сирий time-domain сигнал. Лінійна нормалізація `[0,1)` лишається ЛИШЕ входом до `Compute_LogMel` (DC прибирається покадрово всередині).
 
 ### 3.2 Decision Matrix: Три шляхи DSP (FW.25)
 
@@ -274,7 +274,7 @@ audio, frontend op виконує DSP як layer.
 | Model size (INT8) | ~20–35 KB Flash (frontend params + downstream layers) |
 | CPU per inference | ~15–22 мс @ 48 MHz (frontend ~2 мс + CNN ~13–20 мс) |
 | Сильні сторони | **Нуль custom DSP коду** у firmware. Офіційно підтримано Google, well-tested, identical floating-point behavior між training (Python) та inference (firmware). Standard для STM32 keyword spotting (Google Speech Commands tutorial) |
-| Слабкі сторони | Лочить на TFLM runtime (вже наш runtime choice, тож не реальний lock). Tensor Arena трохи більший (frontend scratch). Менше control над DSP параметрами |
+| Слабкі сторони | Лочить на TFLM-інтерпретатор (НЕ завендорено; baseline-рантайм = self-contained INT8 forward pass, §4.1). Tensor Arena трохи більший (frontend scratch). Менше control над DSP параметрами |
 | Коли обрати | Якщо ML-партнер використовує Edge Impulse, Google TF Speech tutorial, або хоче "config-only" approach без firmware DSP коду |
 
 #### Реалізаційні наслідки кожного шляху
@@ -409,7 +409,7 @@ logmel = np.log(mel_fb @ power + 1e-6).astype(np.float32)                # [40, 
 1. **Оракул + golden-gen** — `silken_ml.dsp` ([`tools/ml`](https://github.com/Alexey-Lukin/silken_net/blob/main/tools/ml)): librosa (training) ≡ pure-stdlib (швидкий, без numpy), parity tol 1e-6 у `ml_smoke.yml`.
 2. **Firmware** — `Compute_LogMel` ([`firmware/common/logmel.c`](https://github.com/Alexey-Lukin/silken_net/blob/main/firmware/common/logmel.c); host naive-DFT reference / ARM `arm_rfft_fast_f32`) + golden-vector host-тести ([`firmware/test/test_logmel.c`](https://github.com/Alexey-Lukin/silken_net/blob/main/firmware/test/test_logmel.c), tol 1e-3). Таблиці Hann/mel-bank/golden — `silken_ml.codegen` → `firmware/common/logmel_*.h`.
 3. **CMSIS-шлях доведено без плати (FW.4, 2026-06-10)** — спільне ядро перевірок `firmware/sim/logmel_parity_core.h` ганяється двічі: host-ctest (скалярний CMSIS-DSP) **і** QEMU-M4 нога (`firmware/scripts/qemu_logmel.sh`, mps2-an386, soft-float ABI WLE5 — метод [`03_01 §12.7`](03_01_Firmware_Lifecycle_and_DMA)): golden-parity (tol 1e-3) + **stack high-water gate** навколо чистих викликів (стек після reuse-buffers — два кадрові буфери; бюджет-tripwire живе у `firmware/sim/qemu_m4/logmel_main.c`). Silicon-confirm float32 — тонка формальність bench.
-4. [ ] Розкоментувати `Run_Inference` call-site (Phase 1.5 у `main.c`, наразі закоментований) + виміряти Tensor Arena — після реальної моделі (`FW.4`, потребує `silken_net_audio_model.h`).
+4. ✅ Розкоментовано `Run_Inference` call-site (`main.c`, `FW.4`) + виміряно Tensor Arena (forward-pass: 76 B стек / 0 .bss / 972 B Flash, §4.3) — self-owned baseline ESC-50 приземлено; host-тест `test_audio_model`. ARM-elf замір — CI hal_check lane.
 
 ---
 
@@ -417,15 +417,31 @@ logmel = np.log(mel_fb @ power + 1e-6).astype(np.float32)                # [40, 
 
 ### 4.1 Фреймворк
 
-**Очікуваний фреймворк:** TensorFlow Lite for Microcontrollers (TFLM) або ST X-CUBE-AI.
-**Джерело:** `#include "silken_net_audio_model.h"` (файл відсутній — BLOCKER-2).
+**Деплой-рантайм:** self-contained цілочисельний (INT8) forward pass у
+`silken_net_audio_model.h` — фіксована топологія, gemmlowp-style requantize,
+**без TFLM/CMSIS-NN залежності** (ваги → Flash `const`, активації → стек, ~0 .bss).
+
+> ⚠️ **Примирення TFLM ↔ CMSIS-NN (2026-06-12):** це **не альтернативи** — TFLM є
+> *інтерпретатором*, що на Cortex-M делегує саме в CMSIS-NN (kernel-бекенд). Решта
+> канону ([`02_01`](02_01_Hardware_Architecture_and_BOM), [`00_00`](00_00_SSOT_Index), [`03_01`](03_01_Firmware_Lifecycle_and_DMA) vendor-таблиця, [`08_01`](08_01_Joint_Publications_and_IP_Strategy) Стаття 24a) каже
+> «CMSIS-NN»; ранній запис тут «TFLM/X-CUBE-AI» передував виміру FW.55 (mruby 38 КБ
+> → arena-стеля 7–15 КБ, §6), на якому C++-каркас TFLM (~16–20 КБ Flash + ~4 КБ
+> SRAM **понад** arena) став маргінальним. Тому baseline деплоїться фіксованою
+> топологією-кодогеном (pure-C, host≡ARM, нуль нового vendoring), а **TFLite/LiteRT**
+> — лише train/quantize/archive-формат (`silken_ml.export` INT8 PTQ). TFLM-інтерпретатор
+> лишається fallback'ом, якщо знадобиться OTA-гнучкість графів **і** виміряний
+> footprint влізе. ST X-CUBE-AI (нині ST Edge AI) — опція vendor-кодогену для більшої
+> партнерської моделі. Метод — `tools/ml/docs/baseline_model_program.md`.
+
+**Джерело:** `#include "silken_net_audio_model.h"` — baseline приземлено (`FW.4`,
+self-owned ESC-50); stub лишається fallback'ом через `__has_include`.
 
 ### 4.2 Класи Виходу (Output Classes)
 
 Визначено в `firmware/soldier/main.c` (`ml_event_id`):
 
 ```c
-uint8_t ml_event_id = 0;  // Результат: 0-Тиша, 1-Вітер, 2-Кавітація, 3-Пилка
+uint8_t ml_event_id = 0;  // Результат: 0-Тиша, 1-Вітер, 2-Кавітація, 3-Пилка, 4-Фауна
 ```
 
 | Class ID | Назва | Фізичний сенс | Частотна характеристика |
@@ -440,7 +456,7 @@ uint8_t ml_event_id = 0;  // Результат: 0-Тиша, 1-Вітер, 2-К�
 
 ### 4.3 Tensor Arena (SRAM Budget) — Оцінка
 
-> ⚠️ Точні значення невідомі через відсутність `silken_net_audio_model.h` (BLOCKER-2). Наступні дані — типові значення для схожих архітектур.
+> ✅ **Baseline приземлено (`FW.4`, 2026-06-12):** виміряний footprint self-owned ESC-50-моделі (per-frame 40→16→5, INT8) — **972 B Flash-ваги (`const`/.rodata), ~0 .bss, ~76 B стек** (активації forward-pass) — arena **<<** стелі 7–15 КБ (§6) з гігантським запасом. Таблиця нижче — рання оцінка для TFLM-2D-CNN-класу (fallback); фактичний baseline це forward-pass, не TFLM-arena (§4.1).
 
 | Параметр | Типова оцінка | Примітка |
 |----------|---------------|---------|
@@ -464,7 +480,7 @@ fauna (§10): Input(mean‖std log-mel) → … → Dense(5) → Softmax
 // Очікувана сигнатура:
 uint8_t Run_Inference(float* input_buffer, float* confidence);
 
-// Виклик у main.c (Phase 1.5, закоментований — BLOCKER-1):
+// Виклик у main.c (Phase 1.5, ✅ розкоментований — FW.4):
 // ml_event_id = Run_Inference(out_mel, &ml_confidence);  // Path B: 40 log-mel від Compute_LogMel
 ```
 
@@ -472,7 +488,7 @@ uint8_t Run_Inference(float* input_buffer, float* confidence);
 |----------|-----|-------|
 | `input_buffer` | `float*` | **40 log-mel ознак** (Path B) від `Compute_LogMel` (§3.4); сирі [0,1)-семпли більше НЕ вхід моделі |
 | `confidence` | `float*` | Ймовірність найбільш впевненого класу [0.0, 1.0] |
-| Повернене значення | `uint8_t` | Class ID: 0=Silence, 1=Wind, 2=Cavitation, 3=Chainsaw |
+| Повернене значення | `uint8_t` | Class ID: 0=Silence, 1=Wind, 2=Cavitation, 3=Chainsaw, 4=Fauna |
 
 ### 4.5 Latency Estimation @ 48 MHz Cortex-M4
 
@@ -504,7 +520,7 @@ HAL_ADC_Stop_DMA() + HAL_TIM_Base_Stop()      ← Зупинка конвеєр�
         ↓
 for i in [0..511]: audio_buffer[i] = raw[i] / 4095.0f   ← Нормалізація
         ↓
-[BLOCKER-1: ЗАКОМЕНТОВАНО]
+[✅ FW.4: розкоментовано]
 ml_event_id = Run_Inference(audio_buffer, &ml_confidence) ← Інференс
         ↓
 if (ml_confidence > 0.80)                     ← Поріг 80%
@@ -555,7 +571,7 @@ void Trigger_Emergency_LoRa_TX(void)
     // Байт 11: PANIC_TTL = 5 (стандартний TTL = 3 стрибки)
     panic_payload[11] = PANIC_TTL; // 5 стрибків замість стандартних 3
 
-    // AES-256-ECB шифрування + негайна відправка
+    // AES-128-ECB шифрування + негайна відправка (post-ARCH.42 LoRa-ключ; режими — 03_05 §3.7)
     HAL_CRYP_Encrypt(&hcryp, (uint32_t*)panic_payload, 4, (uint32_t*)encrypted_panic, 1000);
     Radio.Send(encrypted_panic, 16);
 
@@ -593,7 +609,7 @@ void Trigger_Emergency_LoRa_TX(void)
 | `ml_event_id` | `uint8_t` | 1 B | Клас виходу (0–3) |
 | `ml_confidence` | `float` | 4 B | Ймовірність (0.0–1.0) |
 | `audio_ready` | `volatile uint8_t` | 1 B | Прапорець DMA complete |
-| **Tensor Arena** | (невідомо) | **~8–16 KB** | SRAM для TFLM runtime |
+| **Tensor Arena** | (fallback TFLM) | **~8–16 KB** | SRAM лише для fallback TFLM-інтерпретатора; landed baseline (`FW.4`) = forward-pass ~76 B стек / 0 .bss (§4.1, §4.3) |
 | `fauna_feature_accumulator` *(transient, fauna-only, path-dependent — see §3.2)* | `float[]` + scalar | **~256 B** (Path B/C) або **~2 KB** (Path A: raw window memory) | Welford `mean+M2` агрегація 156 feature-векторів за 5 с (Path B: log-mel coefs; Path C: frontend output; Path A: raw audio statistics). 256 B залишається валідною оцінкою для Path B/C; Path A потребує ширшої статистики (`mean+std+kurtosis` на raw envelope) — TBD |
 | **Разом TinyML** | | **~11–19 KB** (Path B/C) / **~13–21 KB** (Path A) | З урахуванням Tensor Arena; +~256 B–2 KB transient під час fauna-сесії |
 
@@ -638,7 +654,7 @@ TinyML Inference → ml_event_id → acoustic_events counter
                                          ↓
                                lora_payload[7] = (uint8_t)(acoustic_events & 0xFF)
                                          ↓
-                               AES-256-ECB encrypt → Radio.Send
+                               AES-128-ECB encrypt → Radio.Send
                                          ↓
                                Queen decrypts → CIFO Cache → CoAP PUT
                                          ↓
@@ -685,10 +701,10 @@ TinyML-результат безпосередньо впливає на Lorenz 
 
 | # | Критерій | Статус |
 |---|----------|--------|
-| 1 | `silken_net_audio_model.h` закоміщено в репозиторій | 🟡 Stub додано (2026-05-22), реальна модель TBD ML-партнером |
-| 2 | `Run_Inference()` розкоментовано та функціонує | 🔴 Відкрито (потребує реальної моделі) |
-| 3 | `TENSOR_ARENA_SIZE` задокументовано з реального файлу | 🟡 Stub фіксує 16 KB (Path B baseline); реальна — TBD |
-| 4 | Memory Map верифіковано (`arm-none-eabi-size`) | 🟡 `make size-check` проходить зі stub; ARM elf — після інтеграції моделі |
+| 1 | `silken_net_audio_model.h` закоміщено в репозиторій | ✅ Self-owned baseline (ESC-50, `FW.4`, 2026-06-12); stub лишається fallback'ом через `__has_include` |
+| 2 | `Run_Inference()` розкоментовано та функціонує | ✅ Розкоментовано (`main.c`); host-тест `test_audio_model` (12 golden, class-exact + softmax) |
+| 3 | `TENSOR_ARENA_SIZE` задокументовано з реального файлу | ✅ Виміряно: 76 B стек / 0 .bss / 972 B Flash-ваги (forward-pass, §4.3) |
+| 4 | Memory Map верифіковано (`arm-none-eabi-size`) | 🟡 Host footprint виміряно (`silken_ml.export`); ARM `arm-none-eabi-size` — CI hal_check lane |
 | 5 | Host-based тести TinyML pipeline додані | ✅ Реалізовано (`test_tinyml_pipeline.c`; `make -C firmware/test tinyml`) |
 | 6 | Smoke-тест: class 2 → `acoustic_events++` верифіковано | 🔴 Відкрито |
 | 7 | Smoke-тест: class 3 → `Trigger_Emergency_LoRa_TX()` верифіковано | 🔴 Відкрито |
@@ -819,11 +835,11 @@ TRL 8 → 9  (production biodiversity D-MRV):
 
 ### 10.7 Ризики та відкриті питання
 
-1. **Tensor Arena зростання** для 5-class CNN — масштаб залежить від обраного DSP-шляху (§3.2): Path A: +30–50% RAM (~20–40 KB; модель сама вчиться features); Path B: +10–20% (~15–30 KB; features pre-extracted, менша модель); Path C: +15–25% (~25–35 KB; включає frontend scratch). Залежить від BLOCKER-3.
+1. **Tensor Arena зростання** для 5-class CNN — масштаб залежить від обраного DSP-шляху (§3.2): Path A: +30–50% RAM (~20–40 KB; модель сама вчиться features); Path B: +10–20% (~15–30 KB; features pre-extracted, менша модель); Path C: +15–25% (~25–35 KB; включає frontend scratch). Baseline (per-frame MLP) тривіально влазить (§4.3); партнерська 2D-CNN — повторний замір проти стелі §6.
 2. **Шум вітру 0.5–2 кГц перетинається з амфібіями** — ризик false positives для класу 4. Mitigation: акумульоване вікно + dawn/dusk timing constraint (вночі/на світанку вітер слабший). Path B/C дають кращу spectral discrimination ніж Path A.
 3. **Регіональна специфіка soundscape** — модель, натренована на Черкаському борі, може не узагальнюватись на тропіки. Potential solution: Federated Learning (вже описаний у §9).
 4. **Чи буде fauna класифікуватись через TinyML, чи через окремий DSP-only метричний модуль (без NN)?** — alternative architecture: спектральний descriptor **(ACI — Acoustic Complexity Index, Pieretti et al. 2011) обчислюється на STM32 з FFT (тобто потребує Path B-style DSP), без NN**. Це може стати TRL-7 інкрементом до повноцінної 5-class моделі. ACI **не є** "no-FFT alternative" — це спектральний показник, не часовий; виконується на тому ж FFT-output, що й Path B mel-bank.
-5. **DSP-path lock-in ризик:** якщо обрати Path B (custom Mel-bank у firmware), а потім ML-партнер мігрує на Path C (TFLM frontend) — firmware DSP код стає мертвим вантажем у Flash. Mitigation: обирати Path C з самого початку при будь-яких сумнівах щодо архітектурного контракту з ML-партнером.
+5. **DSP-path lock-in ризик:** Path B (custom Mel-bank) self-owned + доведено (3-way parity + QEMU + baseline приземлено) → міграція на Path C малоймовірна; червневий леджер (§3.2) показав, що TFLM-фолбек вузький (його C++-каркас з'їдає ту саму arena-стелю). «Обирати Path C з самого початку» — **застаріла порада** (передувала self-owned DSP + бюджет-виміру); Path C лишається лише документованим fallback (§4.1).
 
 ### 10.8 Резонансні концепти Silken Net (поза статтею)
 
@@ -841,11 +857,13 @@ TRL 8 → 9  (production biodiversity D-MRV):
 
 ### Формат Моделі — TFLite (єдиний допустимий)
 
-**Критичне обмеження:** STM32WLE5JC (ARM Cortex-M4, C/C++) **не може** виконувати Ruby/Python артефакти (`.marshal`, `.pkl`, `.h5`). Єдиний допустимий формат для OTA-оновлення моделі:
+**Критичне обмеження:** STM32WLE5JC (ARM Cortex-M4, C/C++) **не може** виконувати Ruby/Python артефакти (`.marshal`, `.pkl`, `.h5`). Допустимі формати для OTA-оновлення моделі:
+
+> ⚠️ **Узгодження з runtime (§4.1):** на пристрої baseline виконується **fixed-topology INT8 forward-pass** (НЕ TFLM-інтерпретатор). Тому OTA-апдейт baseline-моделі = **INT8 weight-blob** (топологія фіксована, найдешевший шлях); повний `.tflite`-граф через OTA потребував би TFLM-fallback-інтерпретатора (post-TRL 8). FlatBuffer лишається форматом квантизації/архіву + OTA-графу для fallback-шляху.
 
 | Формат | Розширення | Допустимість | Причина |
 |--------|-----------|-------------|---------|
-| **TensorFlow Lite FlatBuffer** | `.tflite` | ✅ Єдиний | Бінарний, виконується TFLM runtime на Cortex-M4 |
+| **TensorFlow Lite FlatBuffer** | `.tflite` | ✅ Квантизація/архів + OTA-граф | На пристрої — лише через TFLM-fallback-інтерпретатор (§4.1); baseline = fixed-topology forward-pass (OTA = weight-blob) |
 | TensorFlow Lite C-array | `.h` / `.cc` | ✅ Альтернативний | Скомпільований масив `const unsigned char model[]` — вбудовується у firmware |
 | X-CUBE-AI (STM) | `.c` / `.h` | ⚠️ Можливий | Проприєтарний ST; краща оптимізація для STM32, але vendor lock-in |
 | Ruby Marshal | `.marshal` | ❌ Заборонено | MCU не має Ruby VM |
@@ -887,9 +905,9 @@ OtaPackagerService → 512-byte chunks → OtaTransmissionWorker → Queen → S
 - Rails **лише** приймає готовий `.tflite` через API, зберігає в ActiveStorage, рахує SHA-256
 - Тренування виконується **поза** Rails (Python, GPU-сервер або хмарний ML pipeline)
 - `TinyMlModel` AR модель зберігає: `binary_payload`, `payload_size`, `binary_sha256`, `model_version`, `quantization_type` (`:int8`)
-- OTA chunk format: `[0x99][index:2][total:2][bytecode:11]` — AES-256-CBC, pacing 60ms
+- OTA chunk format: `[0x99][index:2][total:2][bytecode:11]` — AES-128-ECB (Queen→Soldier reflex, LoRa-ключ; режими — 03_05 §3.7), pacing 60ms
 
-**Статус:** Не реалізовано. Post-TRL 8. Залежить від BLOCKER-1 (Run_Inference) та BLOCKER-2 (model.h).
+**Статус:** Не реалізовано. Post-TRL 8. Прерквізити FW.4 ✅ (inference + `model.h` приземлено) — federated retraining лишається TRL-8 надбудовою.
 
 ### Beyond TRL 9: On-Device Learning — Edge RL та Evolutionary Algorithms
 

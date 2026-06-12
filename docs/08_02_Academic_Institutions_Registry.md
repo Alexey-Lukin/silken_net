@@ -98,7 +98,7 @@
 |---|---|---|---|
 | доц. **Карапетян А.Р.** (зав.) | статистика та прикл. математика (R/Data Science) | Time-series, ML, anomaly-інваріанти (без raw Z), Lyapunov/RQA, utility-функції, Kalman → [`04_02`](04_02_Business_Logic_and_Services), [`03_04`](03_04_mruby_Lorenz_Attractor) | Ст. 11–14 |
 | декан **Гончаров А.** | ФЕТР, радіотехніка | Експериментальна RF-верифікація (VNA S11, EMC pre-scan, натурний Link Budget) розрахунків Косенюка → [`02_01 §5`](02_01_Hardware_Architecture_and_BOM) | Ст. 23 |
-| проф. **Базіло К.В.** + проф. **Бондаренко М.О.** | ПМКТ, акустична мехатроніка | Валідація фононної лінзи гіроїда (EIS + AE) + **калібрувальний TinyML-датасет** (закриває [`03_03`](03_03_TinyML_Acoustic_Inference) `FW.4`/Run_Inference blocker) | Ст. 24 |
+| проф. **Базіло К.В.** + проф. **Бондаренко М.О.** | ПМКТ, акустична мехатроніка | Валідація фононної лінзи гіроїда (EIS + AE) + **калібрувальний TinyML-датасет** (польова валідність 5-class моделі; машинну половину `FW.4`/Run_Inference закрив self-owned ESC-50 baseline — [`03_03 §4.1`](03_03_TinyML_Acoustic_Inference)) | Ст. 24 |
 | доц. **Хоменко Ю.В.** | металорізальні верстати (80+ патентів) | DMLS post-processing, геометрія різання анкера, deinstall-інструмент, prior-art landscape → [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK), [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) | IP→08_01 |
 
 > Повний реєстр Data-Science задач (≈10 тем × методи) — research-агенда рівня публікацій; інженерні точки дотику вже в каноні (`InsightGeneratorService`, `Attractor`, `dClimate`, `ParametricInsurance`). Деталі методів — у спільних статтях [`08_01 §1B`](08_01_Joint_Publications_and_IP_Strategy).
