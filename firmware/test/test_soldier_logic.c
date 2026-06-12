@@ -4794,6 +4794,49 @@ TEST(test_fw49_unix_from_calendar_known_date) {
     ASSERT_EQ(Silken_Unix_From_Calendar(2024, 1, 1, 12, 30, 45), 1704112245u);
 }
 
+/* [FW.49 S1] Інверсія unix→civil (Wall_Calendar_Set шлях). */
+TEST(test_fw49_civil_from_unix_goldens) {
+    int32_t y; uint32_t mo, d, hh, mm, ss;
+
+    Silken_Civil_From_Unix(946684800u, &y, &mo, &d, &hh, &mm, &ss);
+    ASSERT_EQ(y, 2000); ASSERT_EQ(mo, 1u); ASSERT_EQ(d, 1u);
+    ASSERT_EQ(hh, 0u);  ASSERT_EQ(mm, 0u); ASSERT_EQ(ss, 0u);
+
+    /* 2026-06-12 12:34:56 UTC = 1781267696 (epoch_day 20616). */
+    Silken_Civil_From_Unix(1781267696u, &y, &mo, &d, &hh, &mm, &ss);
+    ASSERT_EQ(y, 2026); ASSERT_EQ(mo, 6u);  ASSERT_EQ(d, 12u);
+    ASSERT_EQ(hh, 12u); ASSERT_EQ(mm, 34u); ASSERT_EQ(ss, 56u);
+    ASSERT_EQ(Silken_Epoch_Day_From_Unix(1781267696u), 20616u);
+
+    /* Високосний лютий: 2028-02-29 23:59:59. */
+    uint32_t leap = Silken_Unix_From_Calendar(2028, 2, 29, 23, 59, 59);
+    Silken_Civil_From_Unix(leap, &y, &mo, &d, &hh, &mm, &ss);
+    ASSERT_EQ(y, 2028); ASSERT_EQ(mo, 2u); ASSERT_EQ(d, 29u); ASSERT_EQ(ss, 59u);
+}
+
+/* [FW.49 S1] Roundtrip-пара: інверсія (wall_time.h) ↔ пряма FW.30-функція
+ * (lorenz_seed.h) — мовчки розійтись не можуть. Прості кроки простим числом
+ * покривають межі місяців/років/високосних на всьому RTC-вікні 2000..2099. */
+TEST(test_fw49_civil_unix_roundtrip_sweep) {
+    int32_t y; uint32_t mo, d, hh, mm, ss;
+    for (uint32_t ts = 946684800u; ts <= 4102444799u; ts += 86399u * 37u) {
+        Silken_Civil_From_Unix(ts, &y, &mo, &d, &hh, &mm, &ss);
+        ASSERT_EQ(Silken_Unix_From_Calendar(y, mo, d, hh, mm, ss), ts);
+    }
+    /* стеля RTC-вікна: 2099-12-31 23:59:59 */
+    Silken_Civil_From_Unix(4102444799u, &y, &mo, &d, &hh, &mm, &ss);
+    ASSERT_EQ(y, 2099); ASSERT_EQ(mo, 12u); ASSERT_EQ(d, 31u);
+}
+
+/* [FW.49 S1] UTC-предикат: незсинхований 2000-based календар ніколи не
+ * перетинає поріг за життя вузла; справжній UTC — завжди вище. */
+TEST(test_fw49_wall_is_utc_boundary) {
+    ASSERT_EQ(Silken_Wall_Is_Utc(946684800u), 0);   /* RTC-default епоха */
+    ASSERT_EQ(Silken_Wall_Is_Utc(1599999999u), 0);
+    ASSERT_EQ(Silken_Wall_Is_Utc(1600000000u), 1);
+    ASSERT_EQ(Silken_Wall_Is_Utc(1781267696u), 1);  /* сьогодення */
+}
+
 /* ════════════════════════════════════════════════════════════════════
  * [FW.18b] ttl_byte — бітфілд байта 11: [thr_invalid:5 | TTL:3]
  *
@@ -5225,6 +5268,9 @@ int main(void)
     RUN(test_fw49_elapsed_backward_clock_returns_zero);
     RUN(test_fw49_unix_from_calendar_rtc_epoch);
     RUN(test_fw49_unix_from_calendar_known_date);
+    RUN(test_fw49_civil_from_unix_goldens);
+    RUN(test_fw49_civil_unix_roundtrip_sweep);
+    RUN(test_fw49_wall_is_utc_boundary);
 
     printf("\n[FW.18b] ttl_byte бітфілд [thr_invalid:5|TTL:3]:\n");
     RUN(test_fw18b_pack_zero_counter_is_legacy_byte);

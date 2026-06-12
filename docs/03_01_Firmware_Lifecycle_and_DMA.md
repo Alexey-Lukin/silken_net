@@ -266,14 +266,17 @@ void Error_Handler(void) {
 
 **Метаболізм (delta_t):**
 ```c
-uint32_t current_time = HAL_GetTick() / 1000;
-delta_t_seconds = current_time - last_wakeup_timestamp;
+// [FW.49 S1] wall-секунди з free-running RTC-календаря (LSE йде у STOP2)
+uint32_t current_time = Wall_Seconds_Now();
+delta_t_seconds = Silken_Wall_Delta_Seconds(current_time, last_wakeup_timestamp,
+                                            BASELINE_DELTA_T_S,        // 60 с
+                                            DELTA_T_MAX_PLAUSIBLE_S);  // 7 діб
 last_wakeup_timestamp = current_time;
 ```
 
 `delta_t_seconds` — час між пробудженнями в секундах. Відображає швидкість заряду EDLC суперконденсатора (іоністора). Чим швидше заряд → тим активніший фотосинтез → тим здоровіше дерево. Це є первинний біофізичний сигнал для Атрактора Лоренца.
 
-> **🔴 tick ≠ wall-time у STOP2 — структурний дефект виміру.** `HAL_GetTick()` (SysTick) **заморожений** під час `HAL_PWREx_EnterSTOP2Mode` (`HAL_SuspendTick`+WFI). Тож `delta_t_seconds` тут міряє лише **active-час** циклу (~секунди обчислень), а НЕ wall-інтервал між пробудженнями, який і є фізичним часом заряду EDLC (L4-модель вище очікує 36–190 с). Цей дефект ділять усі tick-таймери Soldier (FW.27-B re-request, FW.20-S2 drift/cooldown/grace, beacon drift-comp). Канон-фікс і трекінг — [`00_07` — FW.49](00_07_Action_Plan_Tracker) (`Wall_Seconds_Now()` на RTC-календарі/LSE). Host-тести цього не ловлять — mock-tick монотонний. **Wake-source ВИРІШЕНО** — RTC WUT + Vcap-енергогейт (ADR §1.10, founder 2026-06-07); лишається лише bench bring-up (`MX_RTC_Init`/LSE clock-tree у repo відсутній).
+> **🟡 tick ≠ wall-time у STOP2 — S1-wiring ✅ (2026-06-12), bench bring-up 👤.** `HAL_GetTick()` (SysTick) **заморожений** у STOP2 — стара tick-різниця міряла лише active-час (~секунди) замість wall-інтервалу заряджання → `m(delta_t)` ≈ максимум у всіх дерев → over-mint Proof-of-Growth. Тепер: `Wall_Seconds_Now()` читає RTC-календар (`Silken_Unix_From_Calendar`, FW.30-арифметика) — він free-running від 2000-01-01 ще ДО першого синку (дельтам цього досить), а beacon-UTC робить його абсолютним (`Wall_Calendar_Set`: `Silken_Civil_From_Unix`-інверсія, roundtrip host-пара з прямою функцією). Guard-и дельти (cold-start / зсув назад / стрибок епохи при першому синку → baseline) — `wall_time.h`. Wire `dT:2` сатурується @0xFFFF (wall-дельти бувають добами; wrap збрехав би бекенду). Cold-start `epoch_day` (SEC.11) — wall-first з `Silken_Wall_Is_Utc`-предикатом; tick-екстраполяція лишилась фолбеком (бекенд-кандидати — [`03_04`](03_04_mruby_Lorenz_Attractor) Mitigation A). Tick-таймери порогів (FW.27-B/FW.20-S2) ще раніше мігрували на лічильники пробуджень. **Wake-source ВИРІШЕНО** — RTC WUT + Vcap-енергогейт (ADR §1.10, founder 2026-06-07); 👤 лишається bench bring-up: LSE clock-tree + `MX_RTC_Init` (календар/WUT) + верифікація `Wall_Seconds_Now` на кремнії (RUNBOOK §4).
 
 > **In-silico L4 validation (2026-05-25):** Michaelis-Menten + Arrhenius модель підтверджує `BASELINE_DELTA_T_S=60` фізично обґрунтованим. Очікувані значення: здорове дерево (10 мМ глюкози, 25°C) → delta_t ≈ 36 с; стресоване (5 мМ, 5°C) → ≈ 190 с; Monte Carlo 90% CI для healthy: 14–120 с. Деталі → [`01_03 §3.4 L4`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell), [`in_silico/SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md).
 
@@ -694,7 +697,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 | Регістр | Змінна | Тип | Опис |
 |---------|--------|-----|------|
 | `DR0` | `[panic_frame_counter:16 \| reserved:8 \| acoustic_events:8]` | uint32 packed | **[SEC.10 + FW.22]** Спакована плоть: лічильник panic-кадрів anti-replay (uint16, monotonic + saturating @ 0xFFFF) у high 16 біт + лічильник акустичних подій (uint8, saturating [0,255]) у low 8 біт. Біти [23:16] зарезервовано. Пакетне збереження економить регістр — без packing був би потрібен новий слот, що залишило б DR15 єдиним вільним. Cold-boot DR0=0 → `panic_frame_counter` пересіюється з HRNG (range 0x0001..0xFFFF) для уникнення колізії з ще-не-протухлими Redis nonce-ключами попереднього втілення. |
-| `DR1` | `last_wakeup_timestamp` | uint32 | Час останнього пробудження (HAL_GetTick/1000). [ARCH.21] Зберігається при PVD-брауноуті для delta_t continuity після recovery. |
+| `DR1` | `last_wakeup_timestamp` | uint32 | **[FW.49 S1]** Wall-маркер останнього циклу (`Wall_Seconds_Now()`, unix-секунди RTC-календаря; до 2026-06-12 — заморожений у STOP2 `HAL_GetTick/1000`). Перехід tick→wall значень поглинають guard-и `wall_time.h` (стрибок → baseline). [ARCH.21] Зберігається при PVD-брауноуті для delta_t continuity після recovery. |
 | `DR2` | `has_mesh_relay` | uint8 | Прапорець: 1 = є пакет для ретрансляції |
 | `DR3` | `mesh_relay_payload[0..3]` | uint32 | Транзитний пакет, байти 0-3 |
 | `DR4` | `mesh_relay_payload[4..7]` | uint32 | Транзитний пакет, байти 4-7 |

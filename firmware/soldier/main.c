@@ -35,6 +35,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #include "../common/ttl_byte.h"   // [FW.18b] бітфілд байта 11: [thr_invalid:5|TTL:3]
 #include "did_derive.h"           // [FW.54 Вісь 2] DID = f(UID), recompute на boot
 #include "../common/adc_convert.h" // [FW.50] VREFINT-калібровані мВ (One-Home з host-тестами)
+#include "../common/wall_time.h"   // [FW.49] wall-clock guards + civil-інверсія (One-Home)
 
 // Підключаємо скомпільовану нейромережу TinyML.
 // Якщо реальної моделі ще немає (BLOCKER-1+2, docs/03_03), fallback на
@@ -89,6 +90,11 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 // 0x60 переживає маску незмінним і чесно каже: довіри нема, емісії нема.
 #define BIO_STATUS_VM_ERROR       0x60
 #define VCAP_LISTEN_THRESHOLD     2800       // Поріг напруги для прослуховування ефіру (мВ)
+// [FW.49 S1] delta_t — wall-секунди з RTC-календаря (LSE йде у STOP2);
+// заморожений HAL_GetTick міряв лише active-час → m(delta_t) ≈ максимум
+// у ВСІХ дерев → over-mint Proof-of-Growth. Guard-пороги дельти:
+#define BASELINE_DELTA_T_S        60u        // нейтральний baseline (= mruby BASELINE_DELTA_T_S)
+#define DELTA_T_MAX_PLAUSIBLE_S   604800u    // 7 діб: довше = стрибок епохи (перший sync) / wrap
 #define LORA_RX_TIMEOUT_MS        500        // Таймаут прийому LoRa (мс)
 #define LORA_RX_LOOP_MS           600        // Максимальний час очікування пакета (мс)
 #define TX_JITTER_MAX_MS          500        // Максимальна рандомізована затримка TX (мс)
@@ -1461,6 +1467,8 @@ static void Load_Node_Role(void);  // [ARCH.27] Прочитати роль ву
 // (VBAT loss → DR19 != LORENZ_STATE_MAGIC). Використовує K_seed з Flash
 // + epoch_day (UTC unix_time / 86400). Дзеркало firmware/test/test_seed_derivation.c.
 static void Derive_Cold_Start_State(float *x0, float *y0, float *z0);
+static uint32_t Wall_Seconds_Now(void);          // [FW.49 S1] RTC-календар → unix-секунди
+static void Wall_Calendar_Set(uint32_t unix_ts); // [FW.49 S1] beacon-UTC → RTC-календар
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -1707,10 +1715,10 @@ int main(void)
   FW17_Restore_Key_Version(tree_did);
 #endif
 
-  // Якщо це найперший старт в житті анкера (пам'ять порожня)
-  if (last_wakeup_timestamp == 0) {
-      last_wakeup_timestamp = HAL_GetTick() / 1000;
-  }
+  // [FW.49 S1] Найперший старт (DR1 == 0) НЕ засіюється тут: guard
+  // Silken_Wall_Delta_Seconds трактує last==0 як cold-start → нейтральний
+  // baseline для першого циклу (чесніше за майже-нульову tick-дельту),
+  // а Phase 1 сама виставить wall-маркер.
 
   // 3. Калібрування АЦП (Встановлюємо абсолютний фізичний нуль)
   HAL_ADCEx_Calibration_Start(&hadc);
@@ -1760,9 +1768,15 @@ int main(void)
     // ФАЗА 1: ЗБІР ФІЗИЧНИХ ДАНИХ (Нульова ентропія)
     // =========================================================================
 
-    // 1. Метаболізм (Час)
-    uint32_t current_time = HAL_GetTick() / 1000;
-    delta_t_seconds = current_time - last_wakeup_timestamp;
+    // 1. Метаболізм (Час) — [FW.49 S1] wall-секунди з RTC-календаря, НЕ tick:
+    // SysTick заморожений у STOP2, тож tick-різниця міряла лише active-час
+    // (~секунди) → m(delta_t) ≈ максимум у всіх → over-mint. Guard-и дельти
+    // (cold-start / зсув назад / стрибок епохи при першому sync) — wall_time.h.
+    // wall_now == 0 (HAL-збій) → cold-start гілка guard'а → baseline.
+    uint32_t current_time = Wall_Seconds_Now();
+    delta_t_seconds = Silken_Wall_Delta_Seconds(current_time, last_wakeup_timestamp,
+                                                BASELINE_DELTA_T_S,
+                                                DELTA_T_MAX_PLAUSIBLE_S);
     last_wakeup_timestamp = current_time;
 
     // 2. Внутрішні метрики (Температура та Заряд)
@@ -1939,9 +1953,12 @@ int main(void)
     // цього пробудження жертвується — час важливіший за один відлік).
     lora_payload[7] = Soldier_Acoustic_Wire_Value(acoustic_snapshot, time_uncertain);
 
-    // Байти 8-9: Швидкість заряду (Секунди)
-    lora_payload[8] = (uint8_t)(delta_t_seconds >> 8);
-    lora_payload[9] = (uint8_t)(delta_t_seconds & 0xFF);
+    // Байти 8-9: час перезаряду (с). [FW.49] Wall-дельти бувають добами
+    // (зимовий голод) — wire-поле uint16, тож сатуруємо: 0xFFFF = «≥18.2 год»
+    // (wrap збрехав би бекенду, 200000 с → 3392 с).
+    uint32_t dt_wire = (delta_t_seconds > 0xFFFFu) ? 0xFFFFu : delta_t_seconds;
+    lora_payload[8] = (uint8_t)(dt_wire >> 8);
+    lora_payload[9] = (uint8_t)(dt_wire & 0xFF);
 
     // Байт 11 [FW.18b]: бітфілд [thr_invalid:5 | TTL:3] (../common/ttl_byte.h).
     // TTL = 3 стрибки; верхні 5 біт — saturating лічильник відкинутих
@@ -1994,7 +2011,7 @@ int main(void)
           // що відповідають baseline (BASELINE_DELTA_T_S=60, NOMINAL_VCAP_MV=3300).
           // delta_t живить growth_points напряму (metabolic_health, 03_04 §4.3);
           // β лишається фіксованим (BASE_BETA) — стара FW.5 β-перетурбація реверсована.
-          uint32_t delta_t_for_lorenz = 60u;       // baseline (BASELINE_DELTA_T_S)
+          uint32_t delta_t_for_lorenz = BASELINE_DELTA_T_S;
           uint16_t vcap_for_lorenz    = 3300u;     // nominal (NOMINAL_VCAP_MV; reserved)
           if (EMA_Is_Warmed_Up()) {
               delta_t_for_lorenz = EMA_Get_DeltaT_Sec();
@@ -2134,6 +2151,10 @@ int main(void)
                         soldier_unix_ts            = beacon_ts;
                         soldier_unix_ts_local_tick = HAL_GetTick();
                         wakeups_since_sync         = 0; // голос Королеви — тиша скінчилась
+                        // [FW.49 S1] UTC у RTC-календар: wall-clock стає
+                        // абсолютним — delta_t/epoch_day переживають STOP2
+                        // без tick-екстраполяції (вона лишається фолбеком).
+                        Wall_Calendar_Set(beacon_ts);
                     }
 
                     // [FW.20-S2] Зчитуємо authoritativeness прапорець з байту 9
@@ -2881,25 +2902,64 @@ static void Load_Node_Role(void)
 //      громадянська арифметика). RTC-default після VBAT-loss = 2000-01-01 →
 //      epoch_day 10957 — бекенд тримає його кандидатом
 //      FIRMWARE_RTC_DEFAULT_EPOCH_DAY у ARCH.41 time-sync recovery.
+// [FW.49 S1] Єдине джерело wall-секунд: free-running RTC-календар (LSE йде
+// у STOP2, на відміну від замороженого SysTick). До першого time-sync
+// календар біжить від RTC-default 2000-01-01 — дельтам (delta_t) цього
+// досить; абсолютним він стає, коли beacon-UTC записується у календар
+// (Wall_Calendar_Set нижче). 0 = HAL-читання не вдалось (чесна відмова —
+// викликачі мають baseline/fallback гілки). Кремнієва верифікація
+// (LSE bring-up + MX_RTC_Init clock-tree) — bench, RUNBOOK §4.
+static uint32_t Wall_Seconds_Now(void)
+{
+    RTC_TimeTypeDef t = {0};
+    RTC_DateTypeDef d = {0};
+    if (HAL_RTC_GetTime(&hrtc, &t, RTC_FORMAT_BIN) != HAL_OK) return 0u;
+    // GetDate ОБОВ'ЯЗКОВО після GetTime — HAL розкриває shadow-регістри парою.
+    if (HAL_RTC_GetDate(&hrtc, &d, RTC_FORMAT_BIN) != HAL_OK) return 0u;
+    return Silken_Unix_From_Calendar((int32_t)d.Year + 2000, d.Month, d.Date,
+                                     t.Hours, t.Minutes, t.Seconds);
+}
+
+// [FW.49 S1] Beacon-UTC → RTC-календар: відтепер wall-clock абсолютний, і
+// epoch_day (SEC.11) переживає будь-який STOP2 без tick-екстраполяції.
+// Best-effort: невдача запису не фатальна — legacy-шлях (unix_ts + tick)
+// лишається фолбеком у Derive_Cold_Start_State.
+static void Wall_Calendar_Set(uint32_t unix_ts)
+{
+    int32_t year; uint32_t month, day, hh, mm, ss;
+    Silken_Civil_From_Unix(unix_ts, &year, &month, &day, &hh, &mm, &ss);
+    if (year < 2000 || year > 2099) return; // RTC STM32 — 2000-based вікно
+
+    RTC_TimeTypeDef t = {0};
+    RTC_DateTypeDef d = {0};
+    t.Hours = (uint8_t)hh; t.Minutes = (uint8_t)mm; t.Seconds = (uint8_t)ss;
+    d.Year  = (uint8_t)(year - 2000); d.Month = (uint8_t)month; d.Date = (uint8_t)day;
+    d.WeekDay = RTC_WEEKDAY_MONDAY; // RTC вимагає валідне поле; для unix-математики байдуже
+    if (HAL_RTC_SetTime(&hrtc, &t, RTC_FORMAT_BIN) != HAL_OK) return;
+    (void)HAL_RTC_SetDate(&hrtc, &d, RTC_FORMAT_BIN);
+}
+
 static void Derive_Cold_Start_State(float *x0, float *y0, float *z0)
 {
     uint64_t epoch_day;
+    uint32_t wall_now = Wall_Seconds_Now();
 
-    if (soldier_unix_ts != 0u) {
+    if (wall_now != 0u && (Silken_Wall_Is_Utc(wall_now) || soldier_unix_ts == 0u)) {
+        // Календар — головний timebase (sync пише його у Wall_Calendar_Set).
+        // Незсинхований 2000-default дає epoch_day 10957+ — рівно той
+        // кандидат, який бекенд тримає у Mitigation A (ARCH.41 recovery).
+        epoch_day = Silken_Epoch_Day_From_Unix(wall_now);
+    } else if (soldier_unix_ts != 0u) {
+        // Sync був, але календар не взяв UTC (Set не вдався) — legacy
+        // tick-екстраполяція (заморожена у STOP2 — відома вада; сервер
+        // тримає кандидатів, 03_04 Mitigation A).
         uint32_t now_ts = soldier_unix_ts +
             ((HAL_GetTick() - soldier_unix_ts_local_tick) / 1000u);
         epoch_day = Silken_Epoch_Day_From_Unix(now_ts);
     } else {
-        RTC_TimeTypeDef sTime = {0};
-        RTC_DateTypeDef sDate = {0};
-        // GetDate ОБОВ'ЯЗКОВО після GetTime — HAL розкриває shadow-регістри парою.
-        HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-        HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
-
-        int32_t days = Silken_Days_From_Civil((int32_t)sDate.Year + 2000,
-                                              (uint32_t)sDate.Month,
-                                              (uint32_t)sDate.Date);
-        epoch_day = (days > 0) ? (uint64_t)days : 0u;
+        // Календар нечитабельний і синку не було: RTC-default кандидат —
+        // бекенд упізнає його серед epoch_day-кандидатів recovery.
+        epoch_day = 10957u; // 2000-01-01 (FIRMWARE_RTC_DEFAULT_EPOCH_DAY)
     }
 
     double dx = 0.0, dy = 0.0, dz = 0.0;
