@@ -19,9 +19,9 @@ BINDIR   = .
 OPENSSL_CFLAGS = $(shell pkg-config --cflags openssl 2>/dev/null)
 OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
-.PHONY: all queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet fauna coverage size-check clean
+.PHONY: all queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet fauna bme280 coverage size-check clean
 
-all: queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet fauna
+all: queen soldier bio_contract tinyml logmel encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet fauna bme280
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -74,6 +74,9 @@ attest: $(BINDIR)/test_queen_attest
 fauna: $(BINDIR)/test_fauna_session
 	@./$(BINDIR)/test_fauna_session
 
+bme280: $(BINDIR)/test_bme280
+	@./$(BINDIR)/test_bme280
+
 key_ratchet: $(BINDIR)/test_key_ratchet
 	@./$(BINDIR)/test_key_ratchet
 
@@ -119,6 +122,10 @@ $(BINDIR)/test_flash_ring: test_flash_ring.c ../common/flash_ring.c ../common/fl
 # [ARCH.40] Монолітна fauna-сесія — Welford + named-тест «жодного STOP2 посеред сесії».
 $(BINDIR)/test_fauna_session: test_fauna_session.c ../common/fauna_session.h ../common/logmel_contract.h
 	$(CC) $(CFLAGS) -I../common -o $@ test_fauna_session.c -lm
+
+# [HW.32] BME280 компенсація (int datasheet §8.2 ↔ float-референс §8.1) + VPD-confounder.
+$(BINDIR)/test_bme280: test_bme280.c ../common/bme280.h
+	$(CC) $(CFLAGS) -I../common -o $@ test_bme280.c -lm
 
 # [FW.52-г] OTA contract blob writer — RAM-мок + magic-LAST power-cut safety.
 $(BINDIR)/test_flash_ota: test_flash_ota.c ../common/flash_ota.c ../common/flash_ota.h ../common/flash_kv.h
@@ -167,6 +174,7 @@ clean:
 	      $(BINDIR)/test_at_engine $(BINDIR)/test_uart_rx_ring \
 	      $(BINDIR)/test_flash_kv $(BINDIR)/test_flash_ring $(BINDIR)/test_flash_ota \
 	      $(BINDIR)/test_key_ratchet $(BINDIR)/test_fauna_session \
+	      $(BINDIR)/test_bme280 \
 	      *.gcno *.gcda *.gcov coverage_raw.txt
 
 # [FW.26] CI gate — Static RAM budget check (.bss + .data ≤ 50 KB).

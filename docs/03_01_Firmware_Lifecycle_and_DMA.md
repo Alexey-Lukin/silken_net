@@ -314,11 +314,15 @@ HAL_RNG_GenerateRandomNumber(&hrng, &chaos_seed);
 // Клімат змінюється повільно → опитування раз на N пробуджень (climate_due), не щоцикл.
 if (climate_due) {
   HAL_GPIO_WritePin(BME_PWR_PORT, BME_PWR_PIN, GPIO_PIN_SET);   // power-gate ON
-  bme280_forced_read(&bme_temp_c, &bme_rh_pct, &bme_pressure_hpa);  // ~10 мс @ ~700 µA
+  bme280_forced_read(&adc_t, &adc_p, &adc_h);  // I²C, ~10 мс @ ~700 µA (bench-stub)
   HAL_GPIO_WritePin(BME_PWR_PORT, BME_PWR_PIN, GPIO_PIN_RESET);  // OFF
-  vpd_index = compute_vpd_index(bme_temp_c, bme_rh_pct);  // VPD=f(t°,RH), on-node → 1 байт
+  int32_t t_fine, temp_centi = Bme280_Compensate_T(&bme_calib, adc_t, &t_fine);
+  uint32_t rh_q10 = Bme280_Compensate_H(&bme_calib, adc_h, t_fine);
+  vpd_index = Bme280_Vpd_Index_From_Compensated(temp_centi, rh_q10);  // → 1 байт
 }
 ```
+
+> **[HW.32] Реалізовано як pure-модуль `firmware/common/bme280.h`** (компенсація datasheet Bosch §8.2 + VPD FAO-56, host-golden `firmware/test/test_bme280.c` — int-шлях звірено проти незалежної float-копії §8.1). `bme280_forced_read` (I²C bring-up) лишається **bench**-залежним стабом; SENSE call-site вшивається разом із **CCM-флипом** (`FW2_CCM_ENABLED`), бо `vpd_index` живе тільки у CCM wire-rev2 (байт 19) — у транзитному 16B-кадрі місця нема. Канон формули — [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM).
 
 > **VPD (Vapor Pressure Deficit)** обчислюється на вузлі з t°+RH і пакується **1 байтом** (канонічний дім — **CCM wire-rev2 byte 19 `vpd_index`**, [`03_05 §3.2`](03_05_Hardware_Symmetric_Crypto_and_Security) wire-budget ledger; у транзитному 21B-кадрі VPD НЕ передається — байт 14 там належить gossip-freeze) як **прямий confounder сокоруху** — backend використовує його, щоб не штрафувати за погоду (False-Slashing guard, [`05_05`](05_05_Slashing_and_Risk_Policy) §6/§7). Сирі RH/тиск (для NaaS клімат-оракула, [`07_01`](07_01_Nature_as_a_Service_Contracts)) — у періодичному **climate frame** (FW.2 24B CCM extended payload; транзитний 16B-кадр місця не має). Тригер climate frame: кожні N uplink'ів або значна Δтиску (раннє попередження про шторм). Енергія: за TPS22860-гейтом ≈8нА avg ([`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM), [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)). 🚨 **DCI-guard:** BME280-дані (VPD/RH/тиск) **НЕ** входять у входи Атрактора Лоренца (ті — temp/acoustic/delta_t/vcap, FW.5) → firmware↔backend bit-identity не зачіпається.
 
