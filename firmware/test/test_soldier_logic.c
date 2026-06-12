@@ -223,21 +223,11 @@ static UnpackedPayload Unpack_Soldier_Payload(const uint8_t* p)
     return u;
 }
 
-/* ---------- DID generation ---------- */
-static uint32_t Generate_DID(uint32_t uid0, uint32_t uid1, uint32_t uid2, uint32_t random)
-{
-    uint32_t did = uid0 ^ (uid1 << 5) ^ (uid2 >> 3) ^ random;
-    // [FW.24] HRNG-based fallback: avoid deterministic DID collision
-    if (did == 0) {
-        RNG_HandleTypeDef hrng_local = { .Instance = RNG };
-        uint32_t rng_fallback = 0;
-        for (int i = 0; i < 3 && rng_fallback == 0; i++) {
-            HAL_RNG_GenerateRandomNumber(&hrng_local, &rng_fallback);
-        }
-        did = (rng_fallback != 0) ? rng_fallback : (HAL_GetTick() ^ 0x511CEE01);
-    }
-    return did;
-}
+/* ---------- DID derivation ----------
+ * [FW.54 Вісь 2] Не дзеркало, а САМ хедер (урок R9: dual-impl golden-ref
+ * дрейфує від оригіналу). Golden-вектори нижче — freeze-contract з Ruby
+ * (spec/services/silken_net/did_derivation_spec.rb). */
+#include "../soldier/did_derive.h"
 
 /* ---------- Mesh dedup ring (anti-pingpong) ---------- */
 static uint32_t mesh_dids[MESH_DID_CACHE_SIZE];
@@ -583,30 +573,32 @@ TEST(test_pack_zero_values) {
  * 2. DID GENERATION TESTS
  * ════════════════════════════════════════════════════════════════════ */
 
-TEST(test_did_non_zero_guarantee) {
-    /* [FW.24] If XOR produces 0, HRNG fallback is used (mock returns 42) */
-    uint32_t did = Generate_DID(0, 0, 0, 0);
+/* Golden g1: реалістичний WLE5 UID-триплет. Freeze-contract з Ruby-дзеркалом. */
+TEST(test_did_golden_realistic_uid) {
+    uint32_t did = Did_Derive_From_Uid(0x0039002Fu, 0x31385115u, 0x38323634u);
+    ASSERT_EQ(did, 0x80B12004u);
+}
+
+/* Golden g2: дефектний UID все-нулі — детермінований, ненульовий, заприсяжений.
+ * (Колізію двох дефектних кристалів ловить фабрика DB-unique, не HRNG.) */
+TEST(test_did_golden_defective_uid_all_zero) {
+    uint32_t did = Did_Derive_From_Uid(0u, 0u, 0u);
     ASSERT_NE(did, (long long)0);
-    /* With HRNG mock returning 42, should get 42 instead of 0x511CEE01 */
-    ASSERT_EQ(did, 42);
+    ASSERT_EQ(did, 0xC611B59Bu);
 }
 
-TEST(test_did_deterministic) {
-    uint32_t a = Generate_DID(0x1234, 0x5678, 0x9ABC, 0xDEF0);
-    uint32_t b = Generate_DID(0x1234, 0x5678, 0x9ABC, 0xDEF0);
-    ASSERT_EQ(a, b);
+/* Golden g3: все-FF (erased-flash патерн читання UID). */
+TEST(test_did_golden_all_ff) {
+    uint32_t did = Did_Derive_From_Uid(0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu);
+    ASSERT_EQ(did, 0x8BA660CAu);
 }
 
-TEST(test_did_unique_per_device) {
-    uint32_t a = Generate_DID(0x1111, 0x2222, 0x3333, 0x4444);
-    uint32_t b = Generate_DID(0xAAAA, 0xBBBB, 0xCCCC, 0xDDDD);
+/* Golden g4 (avalanche): один біт UID → зовсім інший DID. */
+TEST(test_did_avalanche_single_bit) {
+    uint32_t a = Did_Derive_From_Uid(0x0039002Fu, 0x31385115u, 0x38323634u);
+    uint32_t b = Did_Derive_From_Uid(0x0039002Eu, 0x31385115u, 0x38323634u);
     ASSERT_NE(a, b);
-}
-
-TEST(test_did_random_changes_output) {
-    uint32_t a = Generate_DID(0x1234, 0x5678, 0x9ABC, 0x0001);
-    uint32_t b = Generate_DID(0x1234, 0x5678, 0x9ABC, 0x0002);
-    ASSERT_NE(a, b);
+    ASSERT_EQ(b, 0xE203A561u);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -1099,13 +1091,19 @@ TEST(test_normal_payload_panic_flag_clear) {
     ASSERT_EQ(p[10], 0x7F);
 }
 
-/* [FW.24] DID HRNG fallback test */
-TEST(test_did_hrng_fallback_not_magic) {
-    /* When XOR gives 0, HRNG provides fallback — result should NOT be 0x511CEE01 */
-    uint32_t did = Generate_DID(0, 0, 0, 0);
-    ASSERT_NE(did, (long long)0);
-    /* Mock HRNG returns 42, so result should be 42, not the old magic constant */
-    ASSERT_NE(did, (long long)0x511CEE01);
+/* [FW.54 Вісь 2] DID ніколи не нуль (0 ефіру = Королева-Сентінель) і завжди
+ * детермінований: LCG-sweep UID-триплетів — жодного нуля, повторний прохід
+ * біт-у-біт той самий. */
+TEST(test_did_sweep_never_zero_and_deterministic) {
+    uint32_t lcg = 0x12345678u;
+    for (int i = 0; i < 10000; i++) {
+        uint32_t w0 = (lcg = lcg * 1664525u + 1013904223u);
+        uint32_t w1 = (lcg = lcg * 1664525u + 1013904223u);
+        uint32_t w2 = (lcg = lcg * 1664525u + 1013904223u);
+        uint32_t a = Did_Derive_From_Uid(w0, w1, w2);
+        ASSERT_NE(a, (long long)0);
+        ASSERT_EQ(a, Did_Derive_From_Uid(w0, w1, w2));
+    }
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -4874,11 +4872,11 @@ int main(void)
     RUN(test_pack_zero_values);
 
     printf("\n  DID Generation:\n");
-    RUN(test_did_non_zero_guarantee);
-    RUN(test_did_deterministic);
-    RUN(test_did_unique_per_device);
-    RUN(test_did_random_changes_output);
-    RUN(test_did_hrng_fallback_not_magic);
+    RUN(test_did_golden_realistic_uid);
+    RUN(test_did_golden_defective_uid_all_zero);
+    RUN(test_did_golden_all_ff);
+    RUN(test_did_avalanche_single_bit);
+    RUN(test_did_sweep_never_zero_and_deterministic);
 
     printf("\n  Mesh Dedup (Anti-Pingpong):\n");
     RUN(test_mesh_empty_cache_unknown);

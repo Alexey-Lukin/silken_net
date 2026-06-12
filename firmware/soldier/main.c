@@ -33,6 +33,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 // стану Лоренца — повний parity з backend SeedDerivation (без mbedTLS).
 #include "../common/lorenz_seed.h"
 #include "../common/ttl_byte.h"   // [FW.18b] бітфілд байта 11: [thr_invalid:5|TTL:3]
+#include "did_derive.h"           // [FW.54 Вісь 2] DID = f(UID), recompute на boot
 
 // Підключаємо скомпільовану нейромережу TinyML.
 // Якщо реальної моделі ще немає (BLOCKER-1+2, docs/03_03), fallback на
@@ -1665,40 +1666,18 @@ int main(void)
   }
 
   // =========================================================================
-  // ГЕНЕРАЦІЯ DECENTRALIZED IDENTITY (DID)
+  // ДЕРИВАЦІЯ DECENTRALIZED IDENTITY (DID)
   // =========================================================================
-  // Зчитуємо DID з вічної пам'яті (Регістр 7)
-  tree_did = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR7);
-
-  if (tree_did == 0) {
-      // НАРОДЖЕННЯ (Перший старт в житті пристрою).
-      // 1. Беремо всі 96 біт унікального паспорта STM32
-      uint32_t uid_word0 = *(uint32_t*)(0x1FFF7590);
-      uint32_t uid_word1 = *(uint32_t*)(0x1FFF7594);
-      uint32_t uid_word2 = *(uint32_t*)(0x1FFF7598);
-
-      // 2. Генеруємо істинну випадковість з теплового шуму кристала
-      uint32_t true_random = 0;
-      HAL_RNG_GenerateRandomNumber(&hrng, &true_random);
-
-      // 3. Формуємо криптографічний хеш-ідентифікатор (Digital Twin Address)
-      tree_did = uid_word0 ^ (uid_word1 << 5) ^ (uid_word2 >> 3) ^ true_random;
-
-      // [FW.24] HRNG-based fallback: avoid deterministic DID collision from defective UID
-      if (tree_did == 0) {
-          uint32_t rng_fallback = 0;
-          for (int i = 0; i < 3 && rng_fallback == 0; i++) {
-              HAL_RNG_GenerateRandomNumber(&hrng, &rng_fallback);
-          }
-          tree_did = (rng_fallback != 0) ? rng_fallback : (HAL_GetTick() ^ 0x511CEE01);
-      }
-
-      // Назавжди блокуємо цей DID у вічній пам'яті
-      HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR7, tree_did);
-
-      // При народженні очищаємо кеш пліток від заводського "сміття"
-      memset(recent_mesh_dids, 0, sizeof(recent_mesh_dids));
-  }
+  // [FW.54 Вісь 2] Ім'я дерева детерміноване: f(96-біт кремнієвого паспорта),
+  // recompute на кожному boot — зберігати нічого (DR7 звільнено, 03_01 §2).
+  // VBAT-loss більше не сиротить identity/гаманець; фабрика (SEC.3) деривує
+  // той самий DID з UID по SWD ще до прошивки — однопрохідний провіженінг.
+  // Стара схема UID⊕random (з FW.24-fallback'ом) жила в DR7 і гинула разом
+  // з ним; колізії тепер ловить фабрика DB-unique-перевіркою, не HRNG.
+  // DID==0 неможливий (did_derive.h) — нуль ефіру належить Королеві-Сентінель.
+  tree_did = Did_Derive_From_Uid(*(uint32_t*)(0x1FFF7590),
+                                 *(uint32_t*)(0x1FFF7594),
+                                 *(uint32_t*)(0x1FFF7598));
 
 #if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED
   // [ARCH.28] Mount Flash-KV (сторінки 122-123). Невдача (обидві сторінки

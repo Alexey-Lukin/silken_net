@@ -31,8 +31,6 @@ uk:
     oracle:
       simulation_started: Оракул почав симуляцію.
     provisioning:
-      defective_uid: Це резервоване firmware значення для defective STM32 UID — реєстрація заборонена. Перепрошийте пристрій та повторно зчитайте unique ID.
-      fallback_magic_rejected: Hardware UID закінчується магічним fallback значенням (%{magic}). %{detail}
       node_initiated: 'Ініціація вузла завершена. DID: %{did}. Hardware UID: %{uid}'
       uid_taken: Пристрій з UID %{uid} вже зареєстрований в системі.
     sessions:

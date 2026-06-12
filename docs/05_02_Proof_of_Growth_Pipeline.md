@@ -315,11 +315,10 @@ OTA Batch Downlink Format (розширений):
 ##### 4а.2 Firmware — зберігання у RTC Backup Domain
 
 > ⚠️ **DEPRECATED — DR20-DR23 не існують на STM32WLE5JC.**
-> STM32WLE5JC має лише 20 RTC Backup Register'ів: **DR0..DR19**. Канонічна
-> SSOT-таблиця в [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA) показує, що всі 20 регістрів зайняті (DR0-2:
-> acoustic/wakeup/relay; DR3-6: mesh payload; DR7: DID; DR8/9/11: anti-pingpong;
-> DR10/12: EMA; DR13/14: TinyML thresholds; DR16-19: Lorenz state; DR15: 4-байтний
-> резерв — недостатньо для 8-байтного body порогів).
+> STM32WLE5JC має лише 20 RTC Backup Register'ів: **DR0..DR19**. Актуальну
+> розкладку тримає **тільки** канонічна SSOT-таблиця [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)
+> (попередня копія списку тут уже встигла розійтися з нею — дзеркало знято).
+> Висновок для FW.8 незмінний: суміжних 8 байтів під body порогів у RTC немає.
 >
 > Наслідок: **FW.8 (CMD_SET_THRESHOLDS) — Deferred TRL-7.** Парсер
 > `Soldier_Handle_CMD_SET_THRESHOLDS` написано як freeze-контракт wire-формату

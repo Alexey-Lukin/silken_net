@@ -31,8 +31,6 @@ en:
     oracle:
       simulation_started: The Oracle has started the simulation.
     provisioning:
-      defective_uid: This is a reserved firmware value for a defective STM32 UID — registration forbidden. Reflash the device and re-read the unique ID.
-      fallback_magic_rejected: Hardware UID ends with the firmware fallback magic value (%{magic}). %{detail}
       node_initiated: 'Node initiation complete. DID: %{did}. Hardware UID: %{uid}'
       uid_taken: Device with UID %{uid} is already registered in the system.
     sessions:

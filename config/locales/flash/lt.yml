@@ -31,8 +31,6 @@ lt:
     oracle:
       simulation_started: Oracle pradėjo simuliaciją.
     provisioning:
-      defective_uid: Tai rezervuota programinės įrangos reikšmė defektuotam STM32 UID — registracija uždrausta. Perflešuokite įrenginį ir nuskaitykite unikalų ID iš naujo.
-      fallback_magic_rejected: Aparatūros UID baigiasi programinės įrangos atsarginės magiškos reikšmės (%{magic}). %{detail}
       node_initiated: 'Mazgo inicijavimas baigtas. DID: %{did}. Aparatūros UID: %{uid}'
       uid_taken: Įrenginys su UID %{uid} jau užregistruotas sistemoje.
     sessions:

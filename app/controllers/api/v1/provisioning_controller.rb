@@ -3,14 +3,6 @@
 module Api
   module V1
     class ProvisioningController < BaseController
-      # [FW.24]: Firmware Soldier має fallback DID (`0x511CEE01`), що використовується
-      # коли STM32 unique ID XOR дає 0 (defective UID block). Backend MUST reject
-      # таких пристроїв при provisioning, щоб уникнути колізій (два дефектні пристрої
-      # отримають однаковий DID `SNET-511CEE01`). Зловмисник також може спробувати
-      # зареєструвати "магічний" UID для накладання на легітимні firmware fallback'и.
-      # Class-level constant — system-wide invariant tied to firmware behavior.
-      FIRMWARE_FALLBACK_DID_MAGIC = "511CEE01"
-
       before_action :authorize_forester!
 
       # --- ТЕРМІНАЛ ІНІЦІАЦІЇ ---
@@ -33,26 +25,14 @@ module Api
       # --- РИТУАЛ ПРИВ'ЯЗКИ ---
       def register
         # [SEC] Normalize hardware_uid ONCE — every downstream check
-        # (FW.24 guard, double-init check, DID generation) must operate
-        # on the same canonical form. Mixing `.last(8).upcase` (DID path)
-        # with `.strip.upcase.last(8)` (guard path) created a bypass:
-        # `"  any511CEE01"` passed the FW.24 guard via `.strip` but
-        # generated DID `SNET-511CEE01` collision in the firmware fallback space.
+        # (double-init check, DID generation) must operate on the same
+        # canonical form (історичний bypass: `.strip` в одному шляху і ні —
+        # в іншому). FW.24-guard (магічний суфікс 511CEE01) знято разом зі
+        # старою random-схемою DID [FW.54 Вісь 2]: firmware більше не емітує
+        # цю константу, а під DID=f(UID) вона — легітимна точка простору;
+        # колізії тепер ловить DB-unique на trees.did.
         normalized_uid = provisioning_params[:hardware_uid].to_s.strip.upcase
         normalized_suffix = normalized_uid.last(8)
-
-        # [FW.24 GUARD]: Reject hardware_uid whose last 8 hex chars match
-        # firmware DID fallback magic (`FIRMWARE_FALLBACK_DID_MAGIC`).
-        # DID is generated as `"SNET-#{normalized_uid.last(8)}"`, so any UID
-        # ending in `511CEE01` would produce the firmware fallback DID.
-        if normalized_suffix == FIRMWARE_FALLBACK_DID_MAGIC
-          render json: {
-            error: I18n.t("flash.provisioning.fallback_magic_rejected",
-                          magic: FIRMWARE_FALLBACK_DID_MAGIC,
-                          detail: I18n.t("flash.provisioning.defective_uid"))
-          }, status: :unprocessable_content
-          return
-        end
 
         # [ЗАХИСТ ВІД ПОДВІЙНОЇ ІНІЦІАЦІЇ]: hardware_uid already provisioned?
         if HardwareKey.exists?(device_uid: normalized_uid)

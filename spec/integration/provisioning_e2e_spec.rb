@@ -242,12 +242,13 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
   end
 
   # ---------------------------------------------------------------------------
-  # 4. FW.24 — Firmware fallback magic UID rejection
+  # 4. [FW.54 Вісь 2] FW.24-guard знято — суфікс 511CEE01 більше не магічний
   # ---------------------------------------------------------------------------
-  describe "FW.24 — rejects hardware_uid ending with firmware fallback magic" do
+  # Firmware не емітує fallback-константу (DID = f(UID), did_derive.h);
+  # під новою схемою цей суфікс — легітимна точка DID-простору, тож e2e
+  # пінує повний happy-path для нього, включно з крипто-пропискою.
+  describe "hardware_uid ending with retired FW.24 magic provisions normally" do
     before do
-      # Run in HKDF mode to also prove the guard short-circuits BEFORE
-      # any HardwareKeyService work happens.
       allow(ENV).to receive(:[]).and_call_original
       allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return("e2e-master-key-32bytes-hkdf-test")
     end
@@ -265,16 +266,14 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
       }
     end
 
-    it "rejects with 422 and creates no DB side effects" do
+    it "creates Tree + HardwareKey and enqueues Web3 registration" do
       expect {
         post "/api/v1/provisioning/register", params: magic_params, headers: headers, as: :json
-      }.to not_change(Tree, :count)
-       .and not_change(HardwareKey, :count)
-       .and not_change(MaintenanceRecord, :count)
+      }.to change(Tree, :count).by(1)
+       .and change(HardwareKey, :count).by(1)
 
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(response.parsed_body["error"]).to include("511CEE01")
-      expect(PeaqRegistrationWorker).not_to have_received(:perform_async)
+      expect(response).to have_http_status(:created)
+      expect(PeaqRegistrationWorker).to have_received(:perform_async)
     end
   end
 

@@ -37,7 +37,7 @@
 - [4. Queen — Архітектура Шлюзу-Агрегатора](#-4-queen--архітектура-шлюзу-агрегатора)
 - [5. Queen RAM Budget](#-5-queen-ram-budget)
 - [6. ISR Map (Апаратні Рефлекси)](#-6-isr-map-апаратні-рефлекси)
-- [7. DID Generation (Народження)](#-7-did-generation-народження)
+- [7. DID Derivation (Ім'я з кремнію)](#-7-did-derivation-імя-з-кремнію)
 - [8. Binary Packet Format (Зовнішній фрейм, 21 байт)](#-8-binary-packet-format-зовнішній-фрейм-21-байт)
 - [9. Encryption Architecture](#-9-encryption-architecture)
 - [10. Покриття Host-Based Тестами](#-10-покриття-host-based-тестами)
@@ -699,7 +699,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 | `DR4` | `mesh_relay_payload[4..7]` | uint32 | Транзитний пакет, байти 4-7 |
 | `DR5` | `mesh_relay_payload[8..11]` | uint32 | Транзитний пакет, байти 8-11 |
 | `DR6` | `mesh_relay_payload[12..15]` | uint32 | Транзитний пакет, байти 12-15 |
-| `DR7` | `tree_did` | uint32 | DID дерева (записується ОДИН РАЗ при народженні) |
+| `DR7` | **(вільний)** | — | **[FW.54 Вісь 2, 2026-06-12]** Звільнено: `tree_did` тепер детермінований `f(UID)` — recompute на boot з кремнієвого паспорта (`did_derive.h`, §7), зберігати нічого. Перший вільний регістр з часів FW.2-freeze — витрачати за процедурою §2.2 |
 | `DR8` | `recent_mesh_dids[0]` | uint32 | Anti-pingpong DID cache, слот 0 |
 | `DR9` | `recent_mesh_dids[1]` | uint32 | Anti-pingpong DID cache, слот 1 |
 | `DR10` | `ema_delta_t_x100` | uint32 | [FW.21] EMA delta_t × 100 (fixed-point 0.01 с) |
@@ -713,7 +713,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 | `DR18` | `lorenz_z` | float32→uint32 | [FW.6] Z-координата атрактора (інтенсивність конвекції) |
 | `DR19` | `LORENZ_STATE_MAGIC` | uint32 | [FW.6] Маркер валідності: `0x4C5A5354` ("LZST"). Захист від RTC-корупції |
 
-> **DR7 — Незмінний DID:** Записується один раз при першому старті (`tree_did == 0`). Якщо `tree_did != 0` при наступних стартах, запис пропускається. Це гарантує унікальність ідентифікатора навіть після OTA-ребуту.
+> **DR7 — звільнений [FW.54 Вісь 2]:** до 2026-06-12 тримав write-once `tree_did` (стара схема `UID⊕random`). DID тепер деривується з UID на кожному boot (§7) — ідентичність пережила б і повний VBAT-loss, і OTA-ребут без жодного збереженого слова.
 
 > **DR16-DR19 — Стан Лоренца (FW.6):** Зберігається/відновлюється при кожному циклі STOP2. При первинному старті або після повного знеструмлення (DR19 ≠ `0x4C5A5354`) система переходить у режим cold-start від K_seed через HKDF/HMAC деривацію `(x₀,y₀,z₀)` (**[SEC.11 / FW.30]** — замість старого `chaos_seed`). K_seed зчитується з Protected Flash Sector (`FLASH_SEED_ADDR = FLASH_KEY_ADDR + 20` post-ARCH.42, magic `"LSED"` = `0x4C534544`). NaN/Inf перевірка через `isfinite()` захищає від бітових помилок у Backup Domain. STM32WLE5 підтримує 20 backup registers (DR0-DR19). Після [FW.18] DR13/DR14 зайнято TinyML-порогами; **після FW.2 freeze-contract (2026-05-24) DR15 зайнято CCM Frame Counter** (24-bit + 8-bit magic) — резервних регістрів більше немає.
 
@@ -727,7 +727,8 @@ RTC Backup Domain не скидається при STOP2 та більшості
 |-----------------|----------------|-------|----------------|--------------|----------|
 | `LORENZ_STATE_MAGIC` | `0x4C5A5354` | `"LZST"` | `DR19` | `DR16/DR17/DR18` (lorenz_x/y/z) | [`03_04 §2.1`](03_04_mruby_Lorenz_Attractor#21-звідки-беруться-вхідні-параметри) |
 | `EMA_VALID_FLAG` (8 біт у DR12) | `0xA5` (high byte) | — | `DR12[31:24]` | `DR10` (ema_delta_t), `DR12[15:0]` (ema_vcap_x10) | [§13.3](#133-persistence--rtc-backup-registers-dr10--dr12-packed) |
-| `tree_did != 0` | будь-яке non-zero | — | `DR7` (self) | `DR7` (захист від перезапису DID при OTA) | [§7](#-7-did-generation-народження) |
+
+> Маркер `tree_did != 0` (захист DID у DR7) знято [FW.54 Вісь 2]: DID тепер деривується з UID на кожному boot ([§7](#-7-did-derivation-імя-з-кремнію)) — захищати в RTC нічого.
 
 > **DR12 packed format (FW.21):** `[valid:8 | count:8 | ema_vcap_x10:16]`. `valid == 0xA5` означає що EMA fields ініціалізовано та накопичено ≥1 семпл. При cold boot DR12 == 0 → `valid != 0xA5` → EMA reset.
 
@@ -828,8 +829,8 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 - `DR7` `tree_did` — **write-once identity** у дефіцитному wear-free RTC; а часто-оновлюваний FW.54-стан (§2.3) виштовхується у wear-prone Flash. Інверсія.
 - DID уже відомий провіженінгу: K_seed деривується **з DID** (`SilkenNet::SeedDerivation`, `info = "silken-lorenz-seed|<DID>"`; firmware-дзеркало — SEC.11 / §2) → щоб запекти K_seed у Protected Flash, host **мусить** знати DID на провіженінгу.
-- ⚠️ Поточний firmware натомість **самогенерує** DID з UID **⊕ true_random** (§7 НАРОДЖЕННЯ) і тримає лише в DR7. Наслідки: (1) DID **не VBAT-durable** → повний розряд EDLC (HW.14 зимовий дефіцит — а cold-start machinery саме й існує, бо VBAT-loss очікуваний) **сиротить identity/гаманець** новим random-DID; (2) DID **не відтворюваний** → провіженінг не може його передбачити, лише device-first (пристрій репортить → host деривує K_seed 2-м проходом).
-- **Реклемація:** DID → Protected Flash (поряд key/seed/role на `FLASH_KEY_ADDR`; write-once → нуль wear) **АБО** детермінований DID = f(UID) без random (відтворюваний з always-present UID `0x1FFF7590` → DR7 стає кешем, recompute на boot). Обидва шляхи: **DR7 вільний** + DID стає VBAT-durable. 👤 рішення: source-of-truth DID (UID-deterministic vs backend-assigned) обирає шлях — це **окремий correctness/hardening finding**, не лише register-free (трекер [`00_07`](00_07_Action_Plan_Tracker) FW.54).
+- ⚠️ Firmware до 2026-06-12 **самогенерував** DID з UID **⊕ true_random** і тримав лише в DR7. Наслідки: (1) DID **не VBAT-durable** → повний розряд EDLC (HW.14 зимовий дефіцит — а cold-start machinery саме й існує, бо VBAT-loss очікуваний) **сиротив identity/гаманець** новим random-DID; (2) DID **не відтворюваний** → провіженінг не міг його передбачити, лише device-first (пристрій репортить → host деривує K_seed 2-м проходом).
+- ✅ **ВИРІШЕНО (founder 2026-06-12): детермінований DID = f(UID)** без random — recompute на boot з always-present UID `0x1FFF7590`, зберігати нічого (кеш теж не потрібен) ⇒ **DR7 вільний** + DID VBAT-durable + однопрохідна фабрика. Канон механізму — **§7** (`did_derive.h` + Ruby-дзеркало `SilkenNet::DidDerivation`, golden freeze-contract обабіч). Альтернативу backend-assigned→Protected Flash відхилено (без self-derivation пристрій не має identity поза фабричним транскриптом; Flash-write на провіженінгу зайвий). Колізії ловить фабрична DB-unique-перевірка — деталі §7.
 
 **Вісь 3 — durability-клас (transient operational).** RTC backup = VBAT-durable. Та частина стану потребує лише warm-STOP2-виживання, не VBAT-durability, і має прийнятну loss-on-power-cut семантику:
 
@@ -1101,34 +1102,43 @@ Queen не має PVD, EXTI, DMA або IWDG ISR. Мінімальний ISR-foo
 
 ---
 
-## 🔐 7. DID Generation (Народження)
+## 🔐 7. DID Derivation (Ім'я з кремнію)
+
+> **[FW.54 Вісь 2, рішення founder 2026-06-12]** DID **детермінований**:
+> `f(96-біт UID)` без random, recompute на кожному boot — зберігати нічого
+> (DR7 звільнено, §2). Попередня схема (`UID⊕random` з FW.24-fallback'ом,
+> write-once у DR7) мала дві системні вади: DID **не VBAT-durable** (повний
+> розряд EDLC — очікувана подія HW.14 — сиротив identity/гаманець новим
+> random-DID) і **не відтворюваний** (провіженінг був приречений на
+> device-first два проходи, хоча K_seed деривується саме з DID). Аналіз —
+> §2.3.2 Вісь 2.
 
 ```c
-// Виконується ОДИН РАЗ в житті пристрою (якщо DR7 == 0)
-uint32_t uid_word0 = *(uint32_t*)(0x1FFF7590); // STM32 factory UID (96 bits)
-uint32_t uid_word1 = *(uint32_t*)(0x1FFF7594);
-uint32_t uid_word2 = *(uint32_t*)(0x1FFF7598);
-
-uint32_t true_random = 0;
-HAL_RNG_GenerateRandomNumber(&hrng, &true_random); // TRNG (теплошумова ентропія)
-
-tree_did = uid_word0 ^ (uid_word1 << 5) ^ (uid_word2 >> 3) ^ true_random;
-
-// [FW.24] HRNG-based fallback: до 3 спроб HRNG замість детермінованої магічної константи
-if (tree_did == 0) {
-    uint32_t rng_fallback = 0;
-    for (int i = 0; i < 3 && rng_fallback == 0; i++) {
-        HAL_RNG_GenerateRandomNumber(&hrng, &rng_fallback);
-    }
-    tree_did = (rng_fallback != 0) ? rng_fallback : (HAL_GetTick() ^ 0x511CEE01);
-}
-
-HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR7, tree_did); // Locked forever
+// Кожен boot (firmware/soldier/did_derive.h — pure, host-тестований):
+tree_did = Did_Derive_From_Uid(*(uint32_t*)(0x1FFF7590),   // STM32 factory
+                               *(uint32_t*)(0x1FFF7594),   // UID, 96 біт,
+                               *(uint32_t*)(0x1FFF7598));  // read-only
 ```
 
-> **[FW.24] Навіщо змінено fallback?** Стара реалізація використовувала константу `0x511CEE01` — єдине детерміноване значення, яке колізувало б у всіх Солдатів зі зламаним UID і нулевим HRNG. FW.24 вводить три додаткові спроби HRNG: при справному RNG хоч одна дасть ненульовий результат, забезпечуючи унікальний DID навіть при нульовому XOR-результаті UID. Магічна константа залишається лише як останній рядок захисту при повній відмові HRNG.
+Мікс — murmur3-fmix32 ланцюгом (повний avalanche: один біт UID перемішує
+весь DID). `DID == 0` неможливий (нуль ефіру = Королева-Сентінель,
+[`03_02 §7`](03_02_Queen_Gateway_Firmware)) — нуль-хеш відображається у
+`"SNET"`-константу. Ruby-дзеркало для фабрики — `SilkenNet::DidDerivation`;
+golden-вектори заморожені обабіч (`test_soldier_logic.c` ↔
+`spec/services/silken_net/did_derivation_spec.rb`).
 
-**Потім:** `POST /api/v1/provisioning/register` — реєструє DID у Rails backend для отримання AES-ключа та прив'язки до Tree-сутності в БД.
+> **Колізії та дефектні UID (доля FW.24).** Birthday-математика 32-бітного
+> DID однакова для random- і деривованої схеми, але детермінізм робить
+> колізію **видимою на фабриці** (DB-unique на `trees.did` при провіженінгу
+> → quarantine юніта) замість тихого злиття двох дерев у полі. HRNG-fallback
+> FW.24 знято разом з random-схемою: дефектний UID (все-нулі) дає
+> детермінований заприсяжений DID (golden g2), і дублікат такого юніта
+> впаде на тій самій фабричній перевірці. «Самонародження» без фабрики було
+> ілюзією: без SEC.3-провіженінгу пристрій не має ні AES-ключа, ні K_seed.
+
+**Потім:** фабрика (SEC.3) читає UID по SWD ще **до** прошивки → деривує той
+самий DID → створює Tree + HardwareKey + запікає K_seed **однопрохідно**;
+`POST /api/v1/provisioning/register` реєструє DID у Rails backend.
 
 ---
 
@@ -1212,7 +1222,7 @@ make -C firmware/test encryption  # AES encryption
 | Модуль | Тести | Що покривається |
 |--------|-------|-----------------|
 | Payload Packing | 13 | Всі поля, signed temp, max/zero, pack-unpack roundtrip, reserved=0 |
-| DID Generation | 5 | HRNG-based fallback (FW.24), детермінізм, унікальність; magic constant `0x511CEE01` лише як last-resort |
+| DID Derivation | 5 | [FW.54 Вісь 2] golden-вектори g1-g4 (freeze-contract з `DidDerivation`-дзеркалом), avalanche, нуль-неможливість + детермінізм на LCG-sweep |
 | Mesh Dedup | 10 | 3-slot cache (FW.21), eviction, pingpong scenario, relay decisions (OK/echo/known/ttl_zero) |
 | OTA Assembly (Soldier) | 7 | Multi-chunk, duplicate ignore, buffer overflow, total mismatch, bitmap |
 | CRC32 | 7 | ISO 3309 known value (`0xCBF43926`), bit flip detection, OTA verify/corrupted |
