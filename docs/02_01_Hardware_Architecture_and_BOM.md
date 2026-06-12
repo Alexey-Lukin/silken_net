@@ -238,7 +238,7 @@ STM32WLE5JC
 
 **🚨 DCI-guard (критично):** VPD **НЕ подається** у Lorenz Z-математику (входи лише temp/acoustic) — це зламало б firmware↔backend біт-ідентичність (Dual Computation Integrity, [`03_04`](03_04_mruby_Lorenz_Attractor)). VPD живе виключно на **confounder / slashing-шарі** (`ContractHealthCheckService`, `InsightGeneratorService#calculate_stress_index`). Той самий урок, що HW.19 (VOC-корекція на slashing-шарі, не в Z-обчисленні).
 
-**Пакетний бюджет (LoRa byte-critical, 21B → 24B CCM target):** сирі t°/RH/тиск (~4–5 B) не влазять у hot-path. **Рекомендований гібрид:**
+**Пакетний бюджет (LoRa byte-critical, 21B → 28B CCM wire-rev2; черга на байти — wire-budget ledger [`03_05 §3.2`](03_05_Hardware_Symmetric_Crypto_and_Security)):** сирі t°/RH/тиск (~4–5 B) не влазять у hot-path. **Рекомендований гібрид:**
 
 - Hot-path: **1-байтний VPD / confounder-індекс** (для slashing-гейту) — дешево, прямо на ціль.
 - Періодичний **«climate frame»** (сирі t°/RH/тиск рідше або при значній Δтиску) для клімат-оракула. Wire-формат → [`03_01`](03_01_Firmware_Lifecycle_and_DMA) / [`05_02`](05_02_Proof_of_Growth_Pipeline). *(Дизайн рекомендований, відкритий до перегляду.)*

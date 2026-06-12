@@ -128,7 +128,7 @@ C₂ = (-√(β(ρ-1)), -√(β(ρ-1)), ρ-1) = (-8.485, -8.485, 27.0)
 >
 > - **Firmware:** `Derive_Cold_Start_State()` (`firmware/soldier/main.c`) рахує epoch_day **exact civil-days** (`lorenz_seed.h` `Silken_Days_From_Civil`, [FW.30] — стара `Month*30 approximation` закрита); RTC-default 2000-01-01 → 10 957, паритет із backend-кандидатом.
 > - **Backend:** `TelemetryUnpackerService#compute_server_z` сьогодні **уникає** проблеми у >99% випадків через `previous_lorenz_state_for(tree)` chaining (server бере хвіст останнього TelemetryLog, не cold-derive). Cold-derive виконується лише коли у дерева **немає історії** (вперше підключений вузол). У такому сценарії server бере `Time.now.utc.to_i / 86_400` — і Soldier з RTC=2000-01-01 не співпаде з server-day.
-> - **Сценарій тонкого розриву:** VBAT loss у дерева **з історією** → Soldier cold-restart'ить Lorenz з RTC-default epoch_day, server chain'ить з попереднього хвоста → траєкторії розходяться категорично на ергодичному горизонті ~50 циклів (≈ 2 доби), доки `CMD_TIME_SYNC` не дочекається наступного CoAP downlink'у. Сьогодні numeric DCI branch (`GAIA_DCI_NUMERIC_TOLERANCE`) інертний у production (LoRa packet 21B не несе device_z), тож на DCI це поки **не валиться** — але блокує майбутній numeric tolerance band, якщо `device_z` додасться у wire-формат.
+> - **Сценарій тонкого розриву:** VBAT loss у дерева **з історією** → Soldier cold-restart'ить Lorenz з RTC-default epoch_day, server chain'ить з попереднього хвоста → траєкторії розходяться категорично на ергодичному горизонті ~50 циклів (≈ 2 доби), доки `CMD_TIME_SYNC` не дочекається наступного CoAP downlink'у. Сьогодні numeric DCI branch (`GAIA_DCI_NUMERIC_TOLERANCE`) інертний у production (транзитний 21B ECB не несе device_z; wire-дім у FW.2 wire-rev2 готовий, чекає CCM-фліпу), тож на DCI це поки **не валиться** — але стане живим обмеженням разом із numeric tolerance band після фліпу.
 >
 > **Мітигація:**
 > 1. **Server-side detect-and-recover** ✅ **Реалізовано (2026-05-17, ARCH.41 Option A):** `TelemetryUnpackerService#try_time_sync_recovery` — коли `cold_start_flag == false` (є історія) АЛЕ категоричний DCI мисматч, пробує 3 кандидати `epoch_day` (today, today−1, `FIRMWARE_RTC_DEFAULT_EPOCH_DAY=10_957`). Для кожного: `SilkenNet::SeedDerivation.initial_state(seed_bytes, epoch_day)` → `Attractor.calculate_z_from_state(...)` → категорична перевірка. При збігу: `TelemetryLog#time_unsynced_fallback = true`, `TimeSyncDownlinkWorker.perform_async(cluster_id)` (envelope-only CoAP → Queen RTC → LoRa beacon → Soldier sync). fraud_metric НЕ інкрементується. 9 spec examples.
@@ -659,15 +659,11 @@ if (mrb) {
 | `GAIA_DCI_NUMERIC_TOLERANCE` | unset → `false` | Boolean (`true`/`1`/`yes`) | Вмикає numeric branch **on top of** категоричної перевірки (не замінює). Категоричний enum-match завжди виконується першим. |
 | `GAIA_DCI_NUMERIC_EPSILON` | `0.001` (constant `TelemetryUnpackerService::DEFAULT_DCI_EPSILON`) | Float (parsed via `Float()`) | Tolerance threshold. Malformed/non-numeric value → graceful fallback до DEFAULT_DCI_EPSILON + `Rails.logger.warn`. |
 
-**Гейт активації — `device_z` має бути в payload:**
+**Гейт активації — `device_z` має бути в payload: ✅ wire-дім існує (FW.2 wire-rev2, 2026-06-12).**
 
-Numeric branch виконується **лише** коли `attributes[:device_z]` присутній. Сьогодні LoRa packet 21B (`Soldier → Queen`) **не несе** raw Z — фірмварний `bio_contract.rb#calculate_state` повертає тільки `status_byte = [PanicFlag:1 | Status:2 | GrowthPoints:5]` (FW.29-PACK). Branch стає активним після одного з:
+Numeric branch виконується **лише** коли `attributes[:device_z]` присутній. Транзитний 21B ECB-пакет raw Z **не несе** — фірмварний `bio_contract.rb#calculate_state` повертає тільки `status_byte = [PanicFlag:1 | Status:2 | GrowthPoints:5]` (FW.29-PACK). **FW.2 wire-rev2** (28-байтний CCM-пакет, [`03_05 §3.2 BLOCKER-2`](03_05_Hardware_Symmetric_Crypto_and_Security) + wire-budget ledger) виділив `device_z` bytes 16..17 шифртексту: **u16 фіксована точка z×512 (q=2⁻⁹)** — похибка квантування ≤ 0.00098 строго менша за ε=0.001 (запас тонкий, але Gate L дав drift=0, тож сумарна |Δ| = сама квантизація); діапазон 0..127.99 покриває E.64-стелю (≤67 при ρ_max=50) без сатурації; **сентинель `0xFFFF` = «Лоренц цього циклу не рахувався»** (ARCH.41-C grace, невалідний seed) → атрибут відсутній, branch чесно пропускається. Pack — `Pack_FW2_Device_Z(lorenz_z, lorenz_state_valid)` (`lora_ccm.h`); unpack + e2e — `process_ccm_chunk` ("FW.2 CCM 29-byte path" спеки). Покриття ≥95% (Gate D) досяжне, бо device_z їде у КОЖНОМУ telemetry-кадрі (сентинель лише у grace-вікнах). Альтернативи (ML2 snapshot-варіант / server-side surrogate) лишаються в історії як відкинуті — wire-дім дешевший і дає повне покриття.
 
-1. **FW.2 CCM transition** (24-байтний пакет, [`03_05 §3.2 BLOCKER-2`](03_05_Hardware_Symmetric_Crypto_and_Security)) — якщо при перепакуванні зарезервувати ≥2 байти на стиснутий Z (наприклад, [E.7 ARCH.22 lambda-exponent](05_02_Proof_of_Growth_Pipeline)).
-2. **Окремий пакет-варіант ML2** — рідкісний uplink (~1/добу) із повним Z-snapshot для калібровки.
-3. **Server-side surrogate** — backend сам обчислює `device_z` зі збереженого `(x_prev, y_prev, z_prev)` chain'у + telemetry inputs, як референс для self-check (це робить numeric branch ефективно lab-only).
-
-До цього часу — branch інертний, але код вже staged у production без поведінкової зміни.
+Branch інертний до фліпу `FW2_CCM_ENABLED` + `TELEMETRY_CCM_ENABLED` (+ ENV-флаги вище) — код staged у production без поведінкової зміни.
 
 **Gate L — вимірювання drift ✅ machine-closed (2026-06-11, без заліза):**
 
@@ -684,7 +680,7 @@ Numeric branch виконується **лише** коли `attributes[:device_
 **Rollout gates (порядок активації):**
 
 1. **Gate L (Lab):** ✅ див. вище — drift виміряно (=0), ε=0.001 підтверджено conservative; кремнієвий хвіст їде з FW.55-дампом.
-2. **Gate D (Device coverage):** `device_z` доступний у ≥ 95% telemetry packets (після FW.2 wire revision АБО після ML2 variant).
+2. **Gate D (Device coverage):** `device_z` доступний у ≥ 95% telemetry packets. ✅ Wire-дім готовий (FW.2 wire-rev2, bytes 16..17 + сентинель — блок вище); вимірювання 95% — після CCM-фліпу (метрика decrypt_ok vs сентинель-частка).
 3. **Gate C (Canary):** Активація в `WEB3_STRICT_MODE=false` staging кластері на 24 год. Watch `silkennet_dci_numeric_rejections_total` (новий Prometheus counter, додати в [`06_03`](06_03_Prometheus_Observability) після Gate D). Очікувано: 0 rejections (бо ε > max observed drift у Gate L). Будь-яке non-zero rejection → analiza root cause (seed corruption? RTC drift? overflow?) перед production.
 4. **Gate P (Production canary):** Single Genesis cluster, `GAIA_DCI_NUMERIC_TOLERANCE=true` через `kamal env push`, моніторинг 72 год.
 5. **Gate G (Global):** Flip всіх production кластерів.

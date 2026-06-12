@@ -102,7 +102,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║     Payload [16 bytes]: DID(N) Vcap(n) Temp(c) Acoustic(C)          ║
 ║                          Metabolism(n) StatusByte(C) TTL(C) Pad(a4) ║
 ║     AES-128-ECB hardware (CRYP module) → encrypted_payload[16]      ║
-║     [post-ARCH.42; FW.2 target: AES-128-CCM 24B з MIC]               ║
+║     [post-ARCH.42; FW.2 target: AES-128-CCM 28B wire-rev2 з MIC]     ║
 ║     Prefix: DID[4] + RSSI_inverted[1] = L2 header (21 bytes total)  ║
 ║                                                                      ║
 ║   ФАЗА 4: LoRa TX / MESH RELAY                                       ║
@@ -440,7 +440,7 @@ Backend вже має `TreeFamily#critical_z_min|max|optimal_z_target` чере�
 15–16  Reserved pad       uint16 Pad[2:3] (нулі, зарезервовано)
 ```
 
-**Шифрування:** **AES-128-ECB** апаратним модулем `CRYP` (`CRYP_KEYSIZE_128B`, post-ARCH.42 Variant B) → `HAL_CRYP_Encrypt`. **FW.2 target:** AES-128-CCM (24B packet з 8-byte MIC + Frame Counter, апаратно через `HAL_CRYPEx_AESCCM_Encrypt`).
+**Шифрування:** **AES-128-ECB** апаратним модулем `CRYP` (`CRYP_KEYSIZE_128B`, post-ARCH.42 Variant B) → `HAL_CRYP_Encrypt`. **FW.2 target:** AES-128-CCM (28B wire-rev2 packet з 8-byte MIC + Frame Counter + device_z/diag/vpd, апаратно через `HAL_CRYPEx_AESCCM_Encrypt`; розкладка — [`03_05 §3.2`](03_05_Hardware_Symmetric_Crypto_and_Security)).
 Заголовок [DID:4][RSSI:1] передається відкрито; payload[16] зашифровано.
 
 #### Фаза 4 — LoRa TX + Mesh

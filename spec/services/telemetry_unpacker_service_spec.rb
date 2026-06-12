@@ -603,9 +603,9 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       # [FW.31] Numeric tolerance band feature-flag.
       # Categorical default is preserved; numeric branch only fires when
       # `GAIA_DCI_NUMERIC_TOLERANCE=true` AND `device_z` is present in
-      # the attributes hash (which today never happens — the LoRa packet
-      # does not carry raw Z; hook is wired for a future packet revision
-      # post-FW.2 CCM transition).
+      # the attributes hash. Wire-home для device_z існує з FW.2 wire-rev2
+      # (CCM bytes 16..17, ×512; сентинель 0xFFFF → атрибут відсутній) —
+      # e2e-шлях покритий у describe "FW.2 CCM 29-byte path".
       describe "[FW.31] numeric tolerance band" do
         let(:service) { described_class.new("", nil) }
 
@@ -1311,13 +1311,14 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     end
   end
 
-  # [FW.2] AES-128-CCM 25-byte chunk path, gated on TELEMETRY_CCM_ENABLED=true.
-  # Wire format produced by Queen after receiving a 24B CCM packet on LoRa:
+  # [FW.2 wire-rev2] AES-128-CCM 29-byte chunk path, gated on
+  # TELEMETRY_CCM_ENABLED=true. Wire format produced by Queen after
+  # receiving a 28B CCM packet on LoRa:
   #
-  #   [DID:4][RSSI:1][FrameCounter:4 BE][ciphertext:8][MIC:8]
+  #   [DID:4][RSSI:1][gossip_ts_lsb:1][FrameCounter:3 BE][ciphertext:12][MIC:8]
   #
   # Defaults stay on the 21B ECB path until firmware ships CCM emission.
-  describe "FW.2 CCM 25-byte path [TELEMETRY_CCM_ENABLED=true]" do
+  describe "FW.2 CCM 29-byte path [TELEMETRY_CCM_ENABLED=true]" do
     let(:lora_key_hex) { SecureRandom.hex(16).upcase }
     let(:lora_key_bin) { [ lora_key_hex ].pack("H*") }
 
@@ -1342,7 +1343,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       super(did_hex: did_hex_arg, key: key, **kwargs)
     end
 
-    it "decrypts a 25-byte CCM chunk and creates a telemetry log" do
+    it "decrypts a 29-byte CCM chunk and creates a telemetry log" do
       chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
                               dt: 100, status: 0, ttl: 3, fc: 42)
 
@@ -1389,7 +1390,19 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
                               dt: 100, status: 0, ttl: 3, fc: 44)
       tampered = chunk.dup
-      tampered.setbyte(20, tampered.getbyte(20) ^ 0x80)
+      tampered.setbyte(25, tampered.getbyte(25) ^ 0x80) # MIC = chunk bytes 21..28
+
+      expect { described_class.call(tampered) }.not_to change(TelemetryLog, :count)
+      expect(SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL).to have_received(:increment).once
+    end
+
+    it "rejects a chunk whose cleartext gossip byte was tampered (AAD under MIC)" do
+      # [wire-rev2] gossip_ts_lsb (chunk byte 5) їде відкритим для
+      # сусідів-Солдатів, але бекенд автентифікує його MIC'ом.
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fc: 46, gossip_ts_lsb: 0x42)
+      tampered = chunk.dup
+      tampered.setbyte(5, tampered.getbyte(5) ^ 0xA5)
 
       expect { described_class.call(tampered) }.not_to change(TelemetryLog, :count)
       expect(SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL).to have_received(:increment).once
@@ -1428,6 +1441,66 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       expect { described_class.call(c1) }.to change(TelemetryLog, :count).by(1)
       expect { described_class.call(c2) }.to change(TelemetryLog, :count).by(1)
       expect(SilkenNet::Metrics::TELEMETRY_CCM_FC_REPLAY_REJECTED_TOTAL).not_to have_received(:increment)
+    end
+
+    # ── wire-rev2 поля (device_z / diag / vpd_index) ──────────────────────
+
+    it "feeds wire device_z into the numeric DCI branch end-to-end (FW.31 Gate D)" do
+      stub_const("ENV", ENV.to_h.merge(
+        "GAIA_DCI_NUMERIC_TOLERANCE" => "true",
+        "GAIA_DCI_NUMERIC_EPSILON" => "0.001"
+      ))
+      allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+      allow(Rails.logger).to receive(:warn).and_call_original
+
+      # device_z = 99.0 — за E.64 стелею (≤ ~67) жоден server_z так не зайде:
+      # drift > ε гарантовано → numeric-гілка мусить крикнути.
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fc: 47, device_z: 99.0)
+
+      # Лог комітиться (numeric DCI = сигнал, не відмова) — і це водночас
+      # доводить strip транзієнта :device_z перед create! (не-колонка).
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      expect(Rails.logger).to have_received(:warn).with(/Z Divergence Numeric/)
+      expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL)
+        .to have_received(:increment).at_least(:once)
+    end
+
+    it "skips the numeric branch on the device_z sentinel (Lorenz slept — ARCH.41-C)" do
+      stub_const("ENV", ENV.to_h.merge(
+        "GAIA_DCI_NUMERIC_TOLERANCE" => "true",
+        "GAIA_DCI_NUMERIC_EPSILON" => "0.001"
+      ))
+      allow(Rails.logger).to receive(:warn).and_call_original
+
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fc: 48, device_z: nil)
+
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      expect(Rails.logger).not_to have_received(:warn).with(/Z Divergence Numeric/)
+    end
+
+    it "surfaces diag-byte bits as Prometheus signals (FW.18b/FW.42/FW.2)" do
+      allow(SilkenNet::Metrics::TINYML_THRESHOLD_INVALID_REPORTS_TOTAL).to receive(:increment)
+      allow(SilkenNet::Metrics::FAUNA_SKIP_REPORTS_TOTAL).to receive(:increment)
+      allow(SilkenNet::Metrics::FW2_FC_DEGRADED_REPORTS_TOTAL).to receive(:increment)
+
+      diag  = (3 << 3) | 0x02 | 0x01 # thr_invalid=3 | fauna_skip | fc_degraded
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fc: 49, diag: diag)
+
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      expect(SilkenNet::Metrics::TINYML_THRESHOLD_INVALID_REPORTS_TOTAL).to have_received(:increment)
+      expect(SilkenNet::Metrics::FAUNA_SKIP_REPORTS_TOTAL).to have_received(:increment)
+      expect(SilkenNet::Metrics::FW2_FC_DEGRADED_REPORTS_TOTAL).to have_received(:increment)
+    end
+
+    it "keeps the vpd column nil until HW.32 calibration defines the index scale" do
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                              dt: 100, status: 0, ttl: 3, fc: 50, vpd_index: 77)
+
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      expect(TelemetryLog.last.vpd).to be_nil
     end
 
     it "drops the Queen-sentinel CCM packet (DID=0) without raising or committing a log" do

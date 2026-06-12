@@ -1,21 +1,31 @@
 /*
  * lora_ccm.h — Shared AES-128-CCM packet helpers for Soldier ↔ Queen.
  *
- * [FW.2 / ARCH.42 Variant B, freeze-contract 2026-05-24]
+ * [FW.2 / ARCH.42 Variant B, freeze-contract 2026-05-24;
+ *  wire-rev2 28B — founder decision 2026-06-12, docs/03_05 wire-budget ledger]
  *
- * Single source of truth for the 24-byte CCM LoRa packet format,
+ * Single source of truth for the 28-byte CCM LoRa packet format,
  * Frame Counter packing into RTC_BKP_DR15, and CCM HAL invocation
  * shape. Used by:
  *   - firmware/soldier/main.c  (encrypt path, gated #if FW2_CCM_ENABLED)
  *   - firmware/queen/main.c    (decrypt path, gated #if FW2_CCM_ENABLED)
  *   - firmware/test/test_ccm.c (host tests, libcrypto-backed HAL mock)
  *
- * Wire format (24 bytes on the air; Queen prepends RSSI byte before
- * forwarding the 25-byte chunk over CoAP to Rails):
+ * Wire format (28 bytes on the air; Queen prepends RSSI byte before
+ * forwarding the 29-byte chunk over CoAP to Rails). Airtime note:
+ * at SF10/125kHz/CR4:5 a 28B frame costs one symbol block more than
+ * 24B (493.6 ms vs 452.7 ms, +12 mJ/TX) — approved against the
+ * wire-budget ledger (docs/03_05): it homes EVERY known wire claimant
+ * (device_z, diag bits, VPD, gossip) so no second field migration.
  *
  *   ┌─ AAD (cleartext, MIC-protected) ─────────────────────────────┐
  *   │ Byte 0..3 : DID (uint32 BE)                                  │
- *   │ Byte 4..7 : Frame Counter (uint32 BE)                        │
+ *   │ Byte 4    : gossip_ts_lsb (= unix_ts & 0xFF; 0 = час         │
+ *   │             невідомий). Cleartext НАВМИСНО: сусіди-Солдати   │
+ *   │             читають його без per-Soldier ключа (FW.20-S2 #5  │
+ *   │             gossip переживає CCM); бекенд верифікує MIC'ом.  │
+ *   │ Byte 5..7 : Frame Counter (24-bit BE — справжня ширина FC;   │
+ *   │             старший байт старого FC32-поля був завжди 0x00)  │
  *   ├─ Ciphertext (encrypted sensor payload) ──────────────────────┤
  *   │ Byte 8..9 : Vcap (uint16 BE, mV)                             │
  *   │ Byte 10   : temp_c (int8, °C)                                │
@@ -23,11 +33,20 @@
  *   │ Byte 12..13: delta_t_s (uint16 BE, seconds)                  │
  *   │ Byte 14   : status_byte [panic:1 | status:2 | growth:5]      │
  *   │ Byte 15   : mesh_ctrl  [ttl:4 | fw_epoch_nibble:4]           │
+ *   │ Byte 16..17: device_z (uint16 BE, z × 512; 0xFFFF = «не      │
+ *   │             обчислено» — FW.31 numeric DCI, q=2⁻⁹ ⇒          │
+ *   │             похибка ≤ 0.00098 < ε 0.001, діапазон 0..127.99) │
+ *   │ Byte 18   : diag [thr_invalid:5 | fauna_mode:1 |             │
+ *   │             fauna_skip:1 | fc_degraded:1] (FW.18b/FW.42/FW.2)│
+ *   │ Byte 19   : vpd_index (uint8; 0x00 = немає BME280 — резерв   │
+ *   │             під HW.32, шкала визначається при калібруванні)  │
  *   ├─ MIC (AES-CCM tag) ──────────────────────────────────────────┤
- *   │ Byte 16..23: MIC (8 bytes = 64-bit MAC)                      │
+ *   │ Byte 20..27: MIC (8 bytes = 64-bit MAC)                      │
  *   └──────────────────────────────────────────────────────────────┘
  *
- * Nonce (12 bytes) = DID(4) || FrameCounter(4 BE) || 0x00 × 4
+ * Nonce (12 bytes) = DID(4) || FrameCounter(4 BE, top byte 0) || 0x00 × 4
+ *   — БАЙТ-У-БАЙТ як у rev1: gossip-байт у нонс НЕ входить (унікальність
+ *   гарантує сам FC), тож nonce-математика і Redis replay-guard незмінні.
  *
  * Frame Counter persistence (RTC_BKP_DR15):
  *   DR15 packed = [FW2_FC_MAGIC:8 | frame_counter:24]
@@ -43,11 +62,11 @@
 #include <stdint.h>
 #include <string.h>
 
-#define FW2_CCM_AIR_PACKET_LEN     24
-#define FW2_CCM_AAD_LEN            8   /* DID(4) + FC(4) */
-#define FW2_CCM_PLAINTEXT_LEN      8   /* sensor payload */
+#define FW2_CCM_AIR_PACKET_LEN     28
+#define FW2_CCM_AAD_LEN            8   /* DID(4) + gossip(1) + FC24(3) */
+#define FW2_CCM_PLAINTEXT_LEN      12  /* sensor payload (wire-rev2) */
 #define FW2_CCM_MIC_LEN            8   /* tag */
-#define FW2_CCM_NONCE_LEN          12  /* DID + FC + 4 zero bytes */
+#define FW2_CCM_NONCE_LEN          12  /* DID + FC32 + 4 zero bytes */
 
 /* RTC_BKP_DR15 magic marker (high 8 bits). Distinct from
  * LORENZ_STATE_MAGIC (DR19) to keep slot-marker grep'able. */
@@ -69,53 +88,120 @@
 #define FW2_MESH_TTL_MASK          0x0Fu
 #define FW2_MESH_FW_NIBBLE_MASK    0x0Fu
 
+/* device_z (bytes 16..17): фіксована точка z × 512 (q = 2⁻⁹).
+ * Сентинель 0xFFFF = «Лоренц цього циклу не рахувався» (ARCH.41-C grace,
+ * невалідний seed) — бекенд пропускає numeric DCI-гілку (Gate D guard).
+ * Стеля 0xFFFE = z 127.996 — вище за будь-який легальний z (anomaly
+ * ceiling ≤ 67 при ρ_max=50, E.64), сатурація не зустрічається у полі. */
+#define FW2_DEVICE_Z_SCALE         512u
+#define FW2_DEVICE_Z_NONE          0xFFFFu
+#define FW2_DEVICE_Z_MAX           0xFFFEu
+
+/* diag byte (byte 18) = [thr_invalid:5 | fauna_mode:1 | fauna_skip:1 |
+ * fc_degraded:1] — лічильник зверху, прапорці знизу (патерн ttl_byte.h).
+ * thr_invalid — FW.18b saturating-лічильник відкинутих OTA-порогів
+ * (у 21B жив у байті 11 [thr:5|TTL:3]; CCM TTL живе у mesh_ctrl).
+ * fauna_mode/skip — FW.42/ARCH.40; fc_degraded — FW.2 I-HW сторожа. */
+#define FW2_DIAG_THR_INVALID_SHIFT 3u
+#define FW2_DIAG_THR_INVALID_MAX   31u
+#define FW2_DIAG_FAUNA_MODE_BIT    0x04u
+#define FW2_DIAG_FAUNA_SKIP_BIT    0x02u
+#define FW2_DIAG_FC_DEGRADED_BIT   0x01u
+
 /* ----- pure-bit helpers (no HAL dependency, host-testable directly) ----- */
 
-static inline void Build_CCM_AAD(uint32_t did, uint32_t frame_counter,
+/* AAD (wire bytes 0..7): DID || gossip_ts_lsb || FC 24-bit BE.
+ * Gossip-байт автентифікується MIC'ом — бекенд відкине підробку;
+ * сусід-Солдат читає його без ключа як НЕдовірене уточнення (та сама
+ * довіра, що у ECB-piggyback — FW.20-S2 #5). */
+static inline void Build_CCM_AAD(uint32_t did, uint8_t gossip_ts_lsb,
+                                 uint32_t frame_counter,
                                  uint8_t aad[FW2_CCM_AAD_LEN]) {
     aad[0] = (uint8_t)(did >> 24);
     aad[1] = (uint8_t)(did >> 16);
     aad[2] = (uint8_t)(did >> 8);
     aad[3] = (uint8_t)(did);
-    aad[4] = (uint8_t)(frame_counter >> 24);
+    aad[4] = gossip_ts_lsb;
     aad[5] = (uint8_t)(frame_counter >> 16);
     aad[6] = (uint8_t)(frame_counter >> 8);
     aad[7] = (uint8_t)(frame_counter);
 }
 
+/* Nonce — байт-у-байт rev1: DID || FC32 BE (top byte 0) || 0x00×4.
+ * Gossip-байт НЕ входить: унікальність (key, nonce) тримає сам FC. */
 static inline void Build_CCM_Nonce(uint32_t did, uint32_t frame_counter,
                                    uint8_t nonce[FW2_CCM_NONCE_LEN]) {
-    Build_CCM_AAD(did, frame_counter, nonce);
+    nonce[0]  = (uint8_t)(did >> 24);
+    nonce[1]  = (uint8_t)(did >> 16);
+    nonce[2]  = (uint8_t)(did >> 8);
+    nonce[3]  = (uint8_t)(did);
+    nonce[4]  = (uint8_t)(frame_counter >> 24);
+    nonce[5]  = (uint8_t)(frame_counter >> 16);
+    nonce[6]  = (uint8_t)(frame_counter >> 8);
+    nonce[7]  = (uint8_t)(frame_counter);
     nonce[8]  = 0x00;
     nonce[9]  = 0x00;
     nonce[10] = 0x00;
     nonce[11] = 0x00;
 }
 
+/* Квантування device_z для дроту. valid=0 (Лоренц не рахувався) →
+ * сентинель NONE. Від'ємний/несинченний z (не трапляється на атракторі,
+ * захист від сміття) → 0. Round-to-nearest: похибка ≤ q/2 = 0.00098. */
+static inline uint16_t Pack_FW2_Device_Z(float z, uint8_t valid) {
+    if (!valid) return (uint16_t)FW2_DEVICE_Z_NONE;
+    if (!(z > 0.0f)) return 0u; /* NaN теж сюди — чесний нуль, не сміття */
+    float scaled = z * (float)FW2_DEVICE_Z_SCALE + 0.5f;
+    if (scaled >= (float)FW2_DEVICE_Z_MAX) return (uint16_t)FW2_DEVICE_Z_MAX;
+    return (uint16_t)scaled;
+}
+
+static inline uint8_t Pack_FW2_Diag(uint8_t thr_invalid, uint8_t fauna_mode,
+                                    uint8_t fauna_skip, uint8_t fc_degraded) {
+    uint8_t capped = (thr_invalid > FW2_DIAG_THR_INVALID_MAX)
+                         ? (uint8_t)FW2_DIAG_THR_INVALID_MAX
+                         : thr_invalid;
+    return (uint8_t)((uint8_t)(capped << FW2_DIAG_THR_INVALID_SHIFT) |
+                     (fauna_mode  ? FW2_DIAG_FAUNA_MODE_BIT  : 0u) |
+                     (fauna_skip  ? FW2_DIAG_FAUNA_SKIP_BIT  : 0u) |
+                     (fc_degraded ? FW2_DIAG_FC_DEGRADED_BIT : 0u));
+}
+
 static inline void Pack_CCM_Sensor_Payload(uint16_t vcap_mv, int8_t temp_c,
                                            uint8_t acoustic, uint16_t delta_t_s,
                                            uint8_t status_byte, uint8_t mesh_ctrl,
+                                           uint16_t device_z, uint8_t diag,
+                                           uint8_t vpd_index,
                                            uint8_t out[FW2_CCM_PLAINTEXT_LEN]) {
-    out[0] = (uint8_t)(vcap_mv >> 8);
-    out[1] = (uint8_t)(vcap_mv);
-    out[2] = (uint8_t)temp_c;
-    out[3] = acoustic;
-    out[4] = (uint8_t)(delta_t_s >> 8);
-    out[5] = (uint8_t)(delta_t_s);
-    out[6] = status_byte;
-    out[7] = mesh_ctrl;
+    out[0]  = (uint8_t)(vcap_mv >> 8);
+    out[1]  = (uint8_t)(vcap_mv);
+    out[2]  = (uint8_t)temp_c;
+    out[3]  = acoustic;
+    out[4]  = (uint8_t)(delta_t_s >> 8);
+    out[5]  = (uint8_t)(delta_t_s);
+    out[6]  = status_byte;
+    out[7]  = mesh_ctrl;
+    out[8]  = (uint8_t)(device_z >> 8);
+    out[9]  = (uint8_t)(device_z);
+    out[10] = diag;
+    out[11] = vpd_index;
 }
 
 static inline void Unpack_CCM_Sensor_Payload(const uint8_t in[FW2_CCM_PLAINTEXT_LEN],
                                              uint16_t *vcap_mv, int8_t *temp_c,
                                              uint8_t *acoustic, uint16_t *delta_t_s,
-                                             uint8_t *status_byte, uint8_t *mesh_ctrl) {
+                                             uint8_t *status_byte, uint8_t *mesh_ctrl,
+                                             uint16_t *device_z, uint8_t *diag,
+                                             uint8_t *vpd_index) {
     *vcap_mv     = (uint16_t)((in[0] << 8) | in[1]);
     *temp_c      = (int8_t)in[2];
     *acoustic    = in[3];
     *delta_t_s   = (uint16_t)((in[4] << 8) | in[5]);
     *status_byte = in[6];
     *mesh_ctrl   = in[7];
+    *device_z    = (uint16_t)((in[8] << 8) | in[9]);
+    *diag        = in[10];
+    *vpd_index   = in[11];
 }
 
 /* ----- RTC_BKP_DR15 Frame Counter packing -----

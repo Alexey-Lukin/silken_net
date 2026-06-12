@@ -859,7 +859,7 @@ Soldier — gossip-uplift (3-hop reach)
 | CMD_TIME_SYNC envelope | `0x9C` | Rails→Queen (CoAP) | `[0x9C][unix_ts_be:4][inner_payload]` | 5+N байт | FW.20 §1, `app/workers/concerns/coap_encryption.rb` |
 | Time Beacon | `0x9C` + magic `'B'` | Queen→Soldier (LoRa ECB) | `[0x9C][ts:4][reserved:4][AUTH\|TTL][magic 'B'][PAD:5]` | 16 байт | FW.20 §2 |
 | SYNC_REQUEST | `0x56` + magic `'S'` | Soldier→Queen (LoRa ECB) | `[0x56][DID:4][secs_since_sync:4][PANIC_TTL][magic 'S' = 0x53][PAD:5]` | 16 байт | FW.20-S2 §3, `firmware/soldier/main.c:Build_Time_Sync_Request_Payload` |
-| Gossip ts_lsb (freeze) | — | Soldier→Soldier (piggyback у telemetry) | normal-telemetry plaintext byte 14 = `(soldier_unix_ts & 0xFFu)`; only valid коли `StatusByte & PANIC_FLAG_BIT == 0` | 1 байт у існуючому 16-байт payload | FW.20-S2 §5 |
+| Gossip ts_lsb (freeze) | — | Soldier→Soldier (piggyback у telemetry) | 21B ECB: plaintext byte 14 = `(soldier_unix_ts & 0xFFu)`, valid коли `StatusByte & PANIC_FLAG_BIT == 0`. **CCM wire-rev2: AAD byte 4** (cleartext навмисно — сусід читає без per-Soldier ключа, бекенд автентифікує MIC'ом; [`03_05 §3.2`](03_05_Hardware_Symmetric_Crypto_and_Security) wire-budget ledger) | 1 байт задарма обома форматами | FW.20-S2 §5 |
 
 ### 5а.3 Опкод-карта (SSOT)
 
@@ -928,7 +928,7 @@ Soldier — gossip-uplift (3-hop reach)
 
 - ✅ (2026-06-12) **Anti-storm журнал поколінь** — реалізовано: `common/beacon_dedup.h` поверх Flash-KV ключа `0x20` (реєстр — [`03_01 §2.3 ARCH.28`](03_01_Firmware_Lifecycle_and_DMA#23-overflow-strategy-flash-based-kv-store-arch28)); wiring у `soldier/main.c` за гейтом `FW20_MESH_RELAY_ENABLED=0` — residual = чистий bench-фліп (верифікація Flash-KV HAL, спільна з FW.17/FW.8/FW.2)
 - ✅ (2026-06-12) **Queen beacon TTL=2** (`BEACON_BYTE9_AUTHORITATIVE = 0x82`) — канонічна умова «перемикається коли реалізуємо anti-storm» виконана. Глибше TTL (3+ хопи) — рішення founder'а про airtime: журнал робить його шторм-безпечним (TTL обмежує лише глибину, обсяг ≤1 ретрансляція/покоління/Провідник), фліп = одна константа
-- **Hot-path виклик** `Soldier_Pack_Gossip_Ts_Byte` у Phase 2 normal-telemetry pack + RX-обробник для прийому
+- **Hot-path виклик** `Soldier_Pack_Gossip_Ts_Byte` у Phase 2 normal-telemetry pack + RX-обробник для прийому. (Дім у CCM-кадрі вже зарезервовано — AAD byte 4, wire-rev2: gossip переживає per-Soldier ключі; CCM-фліп вшиває pack-половину автоматично через параметр `Soldier_Build_CCM_LoRa_Packet`)
 - **Drift compensation** при ΔT = ±60°C lab-вимірювання (потребує термокамери, відсутня @ TRL-6)
 
 > **Закриття 00_07:** після цього хабу записи `FW.20`, `FW.20-S2 (1/5..5/5)` у [`00_07 §03`](00_07_Action_Plan_Tracker#03--firmware) шорткозамкнено — лишилося лише посилання сюди для аудиту прогресу.

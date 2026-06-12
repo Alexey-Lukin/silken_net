@@ -1,6 +1,6 @@
 /*
  * test_ccm.c — Host-based unit tests for [FW.2 / ARCH.42 Variant B]
- *              AES-128-CCM LoRa packet emission and reception.
+ *              AES-128-CCM LoRa packet emission and reception (wire-rev2 28B).
  *
  * Build & run: make -C firmware/test ccm
  *
@@ -87,7 +87,7 @@ static int test_golden_vector_encrypt(void) {
     uint8_t out[FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN];
 
     Build_CCM_Nonce(G_DID, G_FC, nonce);
-    Build_CCM_AAD(G_DID, G_FC, aad);
+    Build_CCM_AAD(G_DID, G_GOSSIP, G_FC, aad);
     Cryp_Init_For_Encrypt(key_words, nonce, aad);
 
     int rc = HAL_CRYPEx_AESCCM_Encrypt(&hcryp, (uint8_t*)G_PT,
@@ -109,7 +109,7 @@ static int test_golden_vector_decrypt(void) {
     uint8_t out[FW2_CCM_PLAINTEXT_LEN];
 
     Build_CCM_Nonce(G_DID, G_FC, nonce);
-    Build_CCM_AAD(G_DID, G_FC, aad);
+    Build_CCM_AAD(G_DID, G_GOSSIP, G_FC, aad);
     memcpy(ct_and_tag, G_CT, FW2_CCM_PLAINTEXT_LEN);
     memcpy(ct_and_tag + FW2_CCM_PLAINTEXT_LEN, G_TAG, FW2_CCM_MIC_LEN);
 
@@ -156,10 +156,12 @@ static int test_fc_reseed_clamps_boundary(void) {
 
 static int test_sensor_payload_pack_roundtrip(void) {
     uint8_t buf[FW2_CCM_PLAINTEXT_LEN];
-    Pack_CCM_Sensor_Payload(3500, -15, 99, 1234, 0x5A, 0x37, buf);
+    Pack_CCM_Sensor_Payload(3500, -15, 99, 1234, 0x5A, 0x37,
+                            0x2E00 /* z=23.0 x512 */, 0xAD, 0x42, buf);
     uint16_t vcap; int8_t temp; uint8_t acoustic; uint16_t dt;
-    uint8_t status, ctrl;
-    Unpack_CCM_Sensor_Payload(buf, &vcap, &temp, &acoustic, &dt, &status, &ctrl);
+    uint8_t status, ctrl, diag, vpd; uint16_t dz;
+    Unpack_CCM_Sensor_Payload(buf, &vcap, &temp, &acoustic, &dt, &status, &ctrl,
+                              &dz, &diag, &vpd);
     ASSERT_EQ(vcap, 3500);
     ASSERT_EQ((uint32_t)(int32_t)temp, (uint32_t)(int32_t)-15);
     ASSERT_EQ(acoustic, 99);
@@ -169,6 +171,9 @@ static int test_sensor_payload_pack_roundtrip(void) {
     /* mesh_ctrl bitfield: TTL=3, fw_nibble=7 */
     ASSERT_EQ((ctrl >> FW2_MESH_TTL_SHIFT) & FW2_MESH_TTL_MASK, 3);
     ASSERT_EQ(ctrl & FW2_MESH_FW_NIBBLE_MASK, 7);
+    ASSERT_EQ(dz, 0x2E00);
+    ASSERT_EQ(diag, 0xAD);
+    ASSERT_EQ(vpd, 0x42);
     printf("  test_sensor_payload_pack_roundtrip                         ✅\n");
     return 0;
 }
@@ -189,8 +194,9 @@ static int test_soldier_to_queen_roundtrip(void) {
     uint8_t ct_tag[FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN];
 
     Build_CCM_Nonce(did, fc, nonce);
-    Build_CCM_AAD(did, fc, aad);
-    Pack_CCM_Sensor_Payload(4200, 22, 7, 600, 0x00, 0x53, pt);
+    Build_CCM_AAD(did, 0x00, fc, aad);
+    Pack_CCM_Sensor_Payload(4200, 22, 7, 600, 0x00, 0x53,
+                            Pack_FW2_Device_Z(28.731f, 1), 0x00, 0x00, pt);
 
     Cryp_Init_For_Encrypt(key_words, nonce, aad);
     ASSERT_EQ(HAL_CRYPEx_AESCCM_Encrypt(&hcryp, pt, FW2_CCM_PLAINTEXT_LEN, ct_tag, 1000), HAL_OK);
@@ -198,8 +204,8 @@ static int test_soldier_to_queen_roundtrip(void) {
     /* Assemble 24B on-air packet. */
     uint8_t air[FW2_CCM_AIR_PACKET_LEN];
     memcpy(&air[0],  aad, FW2_CCM_AAD_LEN);
-    memcpy(&air[8],  ct_tag, FW2_CCM_PLAINTEXT_LEN);
-    memcpy(&air[16], ct_tag + FW2_CCM_PLAINTEXT_LEN, FW2_CCM_MIC_LEN);
+    memcpy(&air[FW2_CCM_AAD_LEN], ct_tag, FW2_CCM_PLAINTEXT_LEN);
+    memcpy(&air[FW2_CCM_AAD_LEN + FW2_CCM_PLAINTEXT_LEN], ct_tag + FW2_CCM_PLAINTEXT_LEN, FW2_CCM_MIC_LEN);
 
     /* Parse as Queen (manual — replicates Queen_Parse_CCM_LoRa_Packet). */
     uint8_t recv_nonce[FW2_CCM_NONCE_LEN];
@@ -207,11 +213,11 @@ static int test_soldier_to_queen_roundtrip(void) {
     uint32_t recv_did =
         ((uint32_t)air[0] << 24) | ((uint32_t)air[1] << 16) |
         ((uint32_t)air[2] << 8)  | (uint32_t)air[3];
+    uint8_t  recv_gossip = air[4];
     uint32_t recv_fc =
-        ((uint32_t)air[4] << 24) | ((uint32_t)air[5] << 16) |
-        ((uint32_t)air[6] << 8)  | (uint32_t)air[7];
+        ((uint32_t)air[5] << 16) | ((uint32_t)air[6] << 8) | (uint32_t)air[7];
     Build_CCM_Nonce(recv_did, recv_fc, recv_nonce);
-    Build_CCM_AAD(recv_did, recv_fc, recv_aad);
+    Build_CCM_AAD(recv_did, recv_gossip, recv_fc, recv_aad);
 
     uint8_t recv_ct_tag[FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN];
     memcpy(recv_ct_tag, &air[8], FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN);
@@ -234,15 +240,15 @@ static int test_soldier_to_queen_roundtrip(void) {
 static void Build_Reference_Packet(uint32_t key_words[4], uint32_t did, uint32_t fc,
                                    uint8_t out[FW2_CCM_AIR_PACKET_LEN]) {
     uint8_t nonce[FW2_CCM_NONCE_LEN], aad[FW2_CCM_AAD_LEN];
-    uint8_t pt[FW2_CCM_PLAINTEXT_LEN] = {1,2,3,4,5,6,7,8};
+    uint8_t pt[FW2_CCM_PLAINTEXT_LEN] = {1,2,3,4,5,6,7,8,9,10,11,12};
     uint8_t ct_tag[FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN];
     Build_CCM_Nonce(did, fc, nonce);
-    Build_CCM_AAD(did, fc, aad);
+    Build_CCM_AAD(did, 0x00, fc, aad);
     Cryp_Init_For_Encrypt(key_words, nonce, aad);
     HAL_CRYPEx_AESCCM_Encrypt(&hcryp, pt, FW2_CCM_PLAINTEXT_LEN, ct_tag, 1000);
     memcpy(&out[0],  aad, FW2_CCM_AAD_LEN);
-    memcpy(&out[8],  ct_tag, FW2_CCM_PLAINTEXT_LEN);
-    memcpy(&out[16], ct_tag + FW2_CCM_PLAINTEXT_LEN, FW2_CCM_MIC_LEN);
+    memcpy(&out[FW2_CCM_AAD_LEN], ct_tag, FW2_CCM_PLAINTEXT_LEN);
+    memcpy(&out[FW2_CCM_AAD_LEN + FW2_CCM_PLAINTEXT_LEN], ct_tag + FW2_CCM_PLAINTEXT_LEN, FW2_CCM_MIC_LEN);
 }
 
 static int Try_Decrypt(uint32_t key_words[4],
@@ -252,11 +258,11 @@ static int Try_Decrypt(uint32_t key_words[4],
     uint32_t did =
         ((uint32_t)in[0] << 24) | ((uint32_t)in[1] << 16) |
         ((uint32_t)in[2] << 8)  | (uint32_t)in[3];
+    uint8_t  gossip = in[4];
     uint32_t fc =
-        ((uint32_t)in[4] << 24) | ((uint32_t)in[5] << 16) |
-        ((uint32_t)in[6] << 8)  | (uint32_t)in[7];
+        ((uint32_t)in[5] << 16) | ((uint32_t)in[6] << 8) | (uint32_t)in[7];
     Build_CCM_Nonce(did, fc, nonce);
-    Build_CCM_AAD(did, fc, aad);
+    Build_CCM_AAD(did, gossip, fc, aad);
 
     uint8_t ct_tag[FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN];
     memcpy(ct_tag, &in[8], FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN);
@@ -337,13 +343,14 @@ static int test_panic_flag_inside_encrypted_payload(void) {
     uint8_t pt[FW2_CCM_PLAINTEXT_LEN];
     uint8_t ct_tag[FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN];
     Build_CCM_Nonce(0xAABBCCDD, 42, nonce);
-    Build_CCM_AAD(0xAABBCCDD, 42, aad);
-    Pack_CCM_Sensor_Payload(3500, 25, 5, 100, 0x00 /* no panic */, 0x33, pt);
+    Build_CCM_AAD(0xAABBCCDD, 0x00, 42, aad);
+    Pack_CCM_Sensor_Payload(3500, 25, 5, 100, 0x00 /* no panic */, 0x33,
+                            FW2_DEVICE_Z_NONE, 0x00, 0x00, pt);
     Cryp_Init_For_Encrypt(key, nonce, aad);
     ASSERT_EQ(HAL_CRYPEx_AESCCM_Encrypt(&hcryp, pt, FW2_CCM_PLAINTEXT_LEN, ct_tag, 1000), HAL_OK);
     memcpy(&pkt[0],  aad, FW2_CCM_AAD_LEN);
-    memcpy(&pkt[8],  ct_tag, FW2_CCM_PLAINTEXT_LEN);
-    memcpy(&pkt[16], ct_tag + FW2_CCM_PLAINTEXT_LEN, FW2_CCM_MIC_LEN);
+    memcpy(&pkt[FW2_CCM_AAD_LEN], ct_tag, FW2_CCM_PLAINTEXT_LEN);
+    memcpy(&pkt[FW2_CCM_AAD_LEN + FW2_CCM_PLAINTEXT_LEN], ct_tag + FW2_CCM_PLAINTEXT_LEN, FW2_CCM_MIC_LEN);
 
     /* Attacker flips PANIC_FLAG_BIT on byte 14 of the on-air packet. */
     pkt[14] ^= FW2_STATUS_PANIC_BIT;
@@ -365,6 +372,52 @@ static int test_mesh_ctrl_bitfield_extraction(void) {
     return 0;
 }
 
+static int test_gossip_byte_is_mic_protected(void) {
+    /* [wire-rev2] AAD byte 4 = gossip_ts_lsb. Сусід читає його без ключа,
+     * але бекенд верифікує MIC'ом: підміна gossip на дроті → decrypt fail.
+     * (Сусідська довіра до gossip лишається untrusted-уточненням ±128 c —
+     * та сама модель, що ECB-piggyback FW.20-S2 #5.) */
+    uint32_t key[4] = {0xCAFE0000, 0xCAFE0001, 0xCAFE0002, 0xCAFE0003};
+    uint8_t pkt[FW2_CCM_AIR_PACKET_LEN];
+    Build_Reference_Packet(key, 0xAABBCCDD, 42, pkt);
+
+    pkt[4] ^= 0xA5; /* flip gossip byte → AAD diverges → MIC must fail */
+    uint8_t pt[FW2_CCM_PLAINTEXT_LEN];
+    ASSERT_EQ(Try_Decrypt(key, pkt, pt), HAL_ERROR);
+    printf("  test_gossip_byte_is_mic_protected                          ✅\n");
+    return 0;
+}
+
+static int test_device_z_quantization(void) {
+    /* [FW.31 Gate D] q=2⁻⁹: round-to-nearest, похибка ≤ 0.00098 < ε=0.001. */
+    ASSERT_EQ(Pack_FW2_Device_Z(0.0f, 1), 0);
+    ASSERT_EQ(Pack_FW2_Device_Z(23.0f, 1), 23 * 512);
+    /* 28.7310 × 512 = 14710.27 → 14710; назад 14710/512 = 28.73046875,
+     * |Δ| = 0.00053 < ε. */
+    ASSERT_EQ(Pack_FW2_Device_Z(28.731f, 1), 14710);
+    /* Лоренц спав (ARCH.41-C grace) → сентинель, не нуль. */
+    ASSERT_EQ(Pack_FW2_Device_Z(28.731f, 0), FW2_DEVICE_Z_NONE);
+    /* Сатурація на стелі: сентинель недосяжний для реальних z. */
+    ASSERT_EQ(Pack_FW2_Device_Z(1000.0f, 1), FW2_DEVICE_Z_MAX);
+    /* Від'ємне/сміття → чесний нуль. */
+    ASSERT_EQ(Pack_FW2_Device_Z(-3.0f, 1), 0);
+    printf("  test_device_z_quantization                                 ✅\n");
+    return 0;
+}
+
+static int test_diag_byte_pack(void) {
+    /* [thr_invalid:5 | fauna_mode:1 | fauna_skip:1 | fc_degraded:1] */
+    ASSERT_EQ(Pack_FW2_Diag(0, 0, 0, 0), 0x00);
+    ASSERT_EQ(Pack_FW2_Diag(1, 0, 0, 1), 0x09);
+    ASSERT_EQ(Pack_FW2_Diag(31, 1, 1, 1), 0xFF);
+    /* RAM-лічильник сатурує на wire-стелі 31 (патерн ttl_byte.h). */
+    ASSERT_EQ(Pack_FW2_Diag(200, 0, 0, 0), (uint8_t)(31u << FW2_DIAG_THR_INVALID_SHIFT));
+    ASSERT_EQ(Pack_FW2_Diag(0, 1, 0, 0), FW2_DIAG_FAUNA_MODE_BIT);
+    ASSERT_EQ(Pack_FW2_Diag(0, 0, 1, 0), FW2_DIAG_FAUNA_SKIP_BIT);
+    printf("  test_diag_byte_pack                                        ✅\n");
+    return 0;
+}
+
 #define RUN(test) do { \
     if (test()) { failed++; } else { passed++; } \
 } while (0)
@@ -372,7 +425,7 @@ static int test_mesh_ctrl_bitfield_extraction(void) {
 int main(void) {
     int passed = 0, failed = 0;
     printf("════════════════════════════════════════════════════════════════════\n");
-    printf("  [FW.2 / ARCH.42 Variant B] AES-128-CCM 24-byte LoRa packet tests\n");
+    printf("  [FW.2 / ARCH.42 Variant B] AES-128-CCM 28-byte (wire-rev2) LoRa packet tests\n");
     printf("════════════════════════════════════════════════════════════════════\n");
 
     Reset_Mock_State();
@@ -392,6 +445,9 @@ int main(void) {
     RUN(test_wrong_key_rejected);
     RUN(test_panic_flag_inside_encrypted_payload);
     RUN(test_mesh_ctrl_bitfield_extraction);
+    RUN(test_gossip_byte_is_mic_protected);
+    RUN(test_device_z_quantization);
+    RUN(test_diag_byte_pack);
 
     printf("════════════════════════════════════════════════════════════════════\n");
     printf("Passed: %d   Failed: %d\n", passed, failed);

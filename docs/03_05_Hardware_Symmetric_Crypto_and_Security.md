@@ -62,7 +62,7 @@
 |-----------|------|
 | **Апаратний AES-модуль** (`MX_CRYP_Init` / `HAL_CRYP_Init`) | ✅ Реалізовано (обидва вузли). Підтримує `CRYP_KEYSIZE_128B` (LoRa) та `CRYP_KEYSIZE_256B` (CoAP — лише Queen) |
 | **Soldier → Queen (LoRa): AES-128-ECB** [ARCH.42 transitional] | ✅ Реалізовано (key-size flip 256→128 виконано 2026-05-23). CCM-mode upgrade — окремий FW.2 subtask |
-| **Soldier → Queen (LoRa): AES-128-CCM 24B packet** [FW.2 target] | 🟡 PARTIAL — backend parser `TelemetryUnpackerService.process_ccm_chunk` + `Cryptography::LoraCcm` ✅ ЗАКРИТО (2026-05-24, feature-flagged `ENV TELEMETRY_CCM_ENABLED`); firmware Soldier CCM emit + Queen CCM decrypt — окремий subtask, потребує STM32 hardware bench для `CRYP_AES_CCM` HAL верифікації |
+| **Soldier → Queen (LoRa): AES-128-CCM 28B packet (wire-rev2)** [FW.2 target] | 🟡 PARTIAL — backend parser `TelemetryUnpackerService.process_ccm_chunk` + `Cryptography::LoraCcm` ✅ ЗАКРИТО (2026-05-24, feature-flagged `ENV TELEMETRY_CCM_ENABLED`); firmware Soldier CCM emit + Queen CCM decrypt — окремий subtask, потребує STM32 hardware bench для `CRYP_AES_CCM` HAL верифікації |
 | **Queen → Rails (CoAP Batch): AES-256-CBC + HRNG IV** | ✅ Реалізовано (без змін після ARCH.42 — CoAP не зачіпається) |
 | **Rails → Queen (CoAP Command): AES-256-CBC + IV** | ✅ Реалізовано (без змін після ARCH.42) |
 | **ECB Restoration після CBC операцій (Queen)** | ✅ Виправлено (`[FIX: CRITICAL — ECB Restoration]`) |
@@ -157,24 +157,26 @@ hcryp.Init.Algorithm = CRYP_AES_ECB;          // ECB transitional — TARGET: CR
 
 Найефективніший шлях вирішення §ECB Mode та §MAC/MIC одночасно — перехід на **AES-128-CCM** (Counter with CBC-MAC), який **апаратно підтримується STM32WLE5JC** (`CRYP_AES_CCM` у HAL) та узгоджений з SE = **SE050** (§3.7). CCM надає конфіденційність + автентифікацію + захист від replay в одній операції. Силова margin: $2^{128}$ комбінацій — золотий стандарт LoRaWAN/Zigbee/Thread/BLE (індустріальне підтвердження "достатньо" для constrained IoT на 25-річний горизонт). Постквантовий розгляд — у §10.
 
-**Нова структура 24-байтного LoRa-пакета (замість поточних 16-байтних) — фінальний дизайн 🤖 (FW.2, AES-128-CCM):**
+**Структура 28-байтного LoRa-пакета (wire-rev2, founder decision 2026-06-12 — замість 16B ECB; rev1 = 24B, ревізовано ДО фліпу за wire-budget ledger нижче):**
 
 ```
 ┌─ Header (cleartext, AAD) ─────────────────────────────────────────────┐
 │ Byte 0 │ Byte 1 │ Byte 2 │ Byte 3 │ Byte 4 │ Byte 5 │ Byte 6 │ Byte 7 │
-│      DID (Device ID, 4 байти)     │    Frame Counter (4 байти, BE)    │
+│      DID (Device ID, 4 байти)     │ gossip │  Frame Counter (3 B, BE) │
 └────────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┘
-┌─ Encrypted payload (sensor data, 8 байтів) ───────────────────────────┐
+┌─ Encrypted payload (sensor data, 12 байтів) ──────────────────────────┐
 │ Byte 8 │ Byte 9 │Byte 10 │Byte 11 │Byte 12 │Byte 13 │Byte 14 │Byte 15 │
 │    Vcap (mV, BE)  │  Temp  │ Acous. │  delta_t (sec, BE)│ Status │ Ctrl│
-└────────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┘
+│Byte 16 │Byte 17 │Byte 18 │Byte 19 │                                   │
+│  device_z (BE)    │  diag  │  vpd   │                                  │
+└────────┴────────┴────────┴────────┴───────────────────────────────────┘
 ┌─ MIC (Message Integrity Code, 8 байтів) ──────────────────────────────┐
-│Byte 16 │Byte 17 │Byte 18 │Byte 19 │Byte 20 │Byte 21 │Byte 22 │Byte 23 │
+│Byte 20 │Byte 21 │Byte 22 │Byte 23 │Byte 24 │Byte 25 │Byte 26 │Byte 27 │
 │                    AES-CCM MAC (8 байтів — 64-bit)                    │
 └────────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┘
 ```
 
-**8-байтний sensor payload (bytes 8..15) — компресія з поточних 16:**
+**12-байтний sensor payload (bytes 8..19):**
 
 | Зсув | Поле | Тип | Діапазон / Кодування | Походження |
 |------|------|-----|----------------------|------------|
@@ -184,6 +186,9 @@ hcryp.Init.Algorithm = CRYP_AES_ECB;          // ECB transitional — TARGET: CR
 | 4..5 | `delta_t_s` | uint16 BE | 0..65535 сек (≈ 18 год) | повна роздільність — критично для [E.63] метаболічного `growth_points` (delta_t→GP на пристрої; backend декодує wire, точна звірка — FW.2, [`03_01 §13.6`](03_01_Firmware_Lifecycle_and_DMA)) |
 | 6 | `status_byte` | bitfield | `[panic:1 \| status:2 \| growth_points:5]` | FW.29 PANIC_FLAG_BIT (bit 7) + status (bits 6..5) + growth (bits 4..0); зменшено growth з 6 → 5 бітів (0..31), масштабований діапазон у `bio_contract.rb` |
 | 7 | `mesh_ctrl` | bitfield | `[ttl:4 \| fw_version_id_low:4]` | TTL у верхніх 4 бітах (FW.10, max 15 hop), FW low-nibble (16-version rotation epoch керується OTA config) |
+| 8..9 | `device_z` | uint16 BE | фіксована точка z×512 (q=2⁻⁹, 0..127.99); `0xFFFF` = «Лоренц не рахувався» (ARCH.41-C grace) | **[FW.31 Gate D]** numeric DCI: похибка квантування ≤ 0.00098 < ε 0.001; у шифртексті (z = здоров'я дерева); pack — `Pack_FW2_Device_Z` |
+| 10 | `diag` | bitfield | `[thr_invalid:5 \| fauna_mode:1 \| fauna_skip:1 \| fc_degraded:1]` | **[FW.18b]** лічильник відкинутих OTA-порогів (у 21B жив у байті 11) + **[FW.42]** fauna-маркери ([`03_03 §10.4`](03_03_TinyML_Acoustic_Inference)) + **[FW.2]** I-HW degraded-прапорець; pack — `Pack_FW2_Diag` |
+| 11 | `vpd_index` | uint8 | `0x00` = немає BME280 | **[HW.32]** резерв-дім VPD-індексу; шкала index→kPa визначається при калібруванні сенсора — закриває double-booking байта 14 з gossip'ом у 21B-плані |
 
 **Поля, які видалено / переміщено з поточного 16-байтного payload:**
 
@@ -191,13 +196,14 @@ hcryp.Init.Algorithm = CRYP_AES_ECB;          // ECB transitional — TARGET: CR
 |------------|--------------|---------|
 | `firmware_version_id` (2B → 4 bits) | spliced у `mesh_ctrl[3..0]`; epoch керується OTA | повна 16-bit version_id занадто щедра — на практиці одночасно живуть ≤ 16 версій fleet-wide; epoch у OTA config block (FW.8 канал) подовжує rotation |
 | `panic_frame_counter` (2B, SEC.10) | замінено CCM Frame Counter (header) + MIC | **CCM nonce + MIC = криптографічний anti-replay**; SEC.10 RTC counter був тимчасовою сторожею панічного каналу до приходу FW.2 (явно так задокументовано в §3.5а) |
-| `gossip_ts_byte` (1B, FW.20-S2 5/5) | переходить в окремий tail-byte AAD або у downlink (ARCH.26 TDMA beacon) | gossip-piggyback не критичний для homeostasis pipeline; deferred до FW.20-S3 mesh-relay TDMA узгодження |
-| `PAD` (2B) | усунено повністю | 24B пакет щільніший за 16B+5B header |
+| `gossip_ts_byte` (1B, FW.20-S2 5/5) | **AAD byte 4** (wire-rev2) — навмисно cleartext | per-Soldier CCM-ключ робить шифртекст нечитним для сусідів → gossip У payload помер би; AAD-байт сусіди читають без ключа (та сама untrusted-довіра ±128 c, що в ECB-piggyback), бекенд автентифікує MIC'ом. Стара ідея «deferred до FW.20-S3 TDMA» знята — місце знайшлося задарма (top-байт FC32-поля був завжди 0x00, бо лічильник 24-бітний) |
+| `PAD` (2B) | усунено повністю | пакет щільніший за 16B+5B header |
 
 **Header (cleartext, AAD-authenticated):**
 
 - **DID (4B):** Незмінений — Queen-side filter та lookup ключа. Передається як AAD у CCM, тому MIC покриває і його (підміна DID → MIC fail).
-- **Frame Counter (4B BE):** monotonic uint32 у `RTC_BKP_DR15` (єдиний вільний слот — DR2 ❌ зайнято `has_mesh_relay` за SSOT 03_01 §2; doc-fix 2026-05-24). Cold-boot магічний маркер `FW2_FC_MAGIC = 0x46434E54` ("FCNT") у packing `[FW2_FC_MAGIC:8 | frame_counter:24]` — magic у high 8 бітах захищає від невалідного DR15 після VBAT loss (similar pattern до LORENZ_STATE_MAGIC у DR19). 24-bit FC дає **~16.7M значень** — за бюджету 1 TX/година × 8760 год/рік × 25 років = ~219 тис. TX/пристрій життєвий цикл = `18 bit` зайнято, **запас 6 bit ≈ 64× longevity margin** (компроміс: уживаємо magic-byte для cold-boot detection vs full 32-bit FC). Інкрементується перед кожним TX. Cold-boot після VBAT-loss (DR15 magic не збігається) → **Flash high-water floor** (KV-ключ `0x14`, монотонний якір — TRL-7 host-half ✅ 2026-06-12), fallback — reseed з HRNG (range `0x000001..0xFFFFFE`, без обнулення/overflow boundaries). Backend per-DID Redis SETNX 25h-window дедуплікує replay у вікні. **Повна cold-boot політика (floor+advance атомарність, чесна оцінка nonce-унікальності) — у 📐 КАНОНІЧНОМУ ДЖЕРЕЛІ нижче** (не дублюємо тут). **Реклама `panic_frame_counter` із DR0[31:16] звільняється** разом з активацією FW2_CCM (`#define FW2_CCM_ENABLED 1`) — CCM FC одночасно служить anti-replay для всіх пакетів (включно з panic), що закриває SEC.10 firmware-сторону автоматично.
+- **gossip_ts_lsb (1B, byte 4):** `soldier_unix_ts & 0xFF` (0 = час невідомий) — FW.20-S2 #5 gossip-piggyback, що переживає per-Soldier ключі. У нонс НЕ входить (унікальність тримає сам FC); підміна на дроті → MIC fail на бекенді.
+- **Frame Counter (3B BE, wire-rev2):** на дроті їде справжня 24-бітна ширина (rev1 слав 4B, де top-байт був завжди 0x00 — wire-rev2 віддав його gossip'у). Monotonic 24-bit у `RTC_BKP_DR15` (єдиний вільний слот — DR2 ❌ зайнято `has_mesh_relay` за SSOT 03_01 §2; doc-fix 2026-05-24). Cold-boot магічний маркер `FW2_FC_MAGIC_BYTE = 0x46` ('F', — дзеркало `lora_ccm.h`) у packing `[magic:8 | frame_counter:24]` — magic у high 8 бітах захищає від невалідного DR15 після VBAT loss (similar pattern до LORENZ_STATE_MAGIC у DR19). 24-bit FC дає **~16.7M значень** — за бюджету 1 TX/година × 8760 год/рік × 25 років = ~219 тис. TX/пристрій життєвий цикл = `18 bit` зайнято, **запас 6 bit ≈ 64× longevity margin** (компроміс: уживаємо magic-byte для cold-boot detection vs full 32-bit FC). Інкрементується перед кожним TX. Cold-boot після VBAT-loss (DR15 magic не збігається) → **Flash high-water floor** (KV-ключ `0x14`, монотонний якір — TRL-7 host-half ✅ 2026-06-12), fallback — reseed з HRNG (range `0x000001..0xFFFFFE`, без обнулення/overflow boundaries). Backend per-DID Redis SETNX 25h-window дедуплікує replay у вікні. **Повна cold-boot політика (floor+advance атомарність, чесна оцінка nonce-унікальності) — у 📐 КАНОНІЧНОМУ ДЖЕРЕЛІ нижче** (не дублюємо тут). **Реклама `panic_frame_counter` із DR0[31:16] звільняється** разом з активацією FW2_CCM (`#define FW2_CCM_ENABLED 1`) — CCM FC одночасно служить anti-replay для всіх пакетів (включно з panic), що закриває SEC.10 firmware-сторону автоматично.
 
 **MIC (8B = 64-bit MAC) — обґрунтування розширення з 4B:**
 
@@ -205,14 +211,18 @@ CCM специфікація (NIST SP 800-38C) дозволяє `t ∈ {4, 6, 8,
 - 4B MIC: атакер з ~4 млрд forge-attempts (~14 годин при LoRa duty cycle) має ймовірність успіху ≈ 1
 - 8B MIC: forge probability ≈ 1/2⁶⁴ ≈ 5.4×10⁻²⁰ — **криптографічно безпечно** на 25-річний горизонт навіть проти optimal-attack
 
-Зайняття 4 додаткових байтів **звільняється** від видалення «Зарезервовано» поля (попередня чорнетка) — total залишається 24B без перевитрат.
+Зайняття 4 додаткових байтів **звільняється** від видалення «Зарезервовано» поля (попередня чорнетка). Wire-rev2 свідомо НЕ торкає MIC (LoRaWAN-мінімум 4B відкинуто): +4B на claimants узято з символьного бюджету кадру (див. airtime нижче), 64-bit MIC лишається.
 
 **Nonce конструкція (CCM nonce, 12 байт):**
 
 ```
-nonce[12] = DID[0..3] || FrameCounter[0..3] || 0x00 × 4
+nonce[12] = DID[0..3] || FC32[0..3 BE, top-байт 0] || 0x00 × 4
             ↑              ↑
-            из header      monotonic per-DID
+            з header       monotonic per-DID (24-bit, доповнений нулем)
+
+Байт-у-байт ідентичний rev1-нонсу: gossip-байт (AAD byte 4) у нонс НЕ
+входить — унікальність (key, nonce) гарантує сам FC, а Redis replay-guard
+і golden-вектори нонс-математики лишаються чинними.
 
 ```
 
@@ -224,7 +234,7 @@ nonce[12] = DID[0..3] || FrameCounter[0..3] || 0x00 × 4
 - **Нормальна робота:** per-device LoRa key (FW.1 HKDF) константний + FC monotonic-incrementing → кожна (key, nonce) пара унікальна **за конструкцією**.
 - **Flash high-water якір (TRL-7 monotonic, host-half ✅ 2026-06-12, gated `FW2_CCM_ENABLED`):** у Flash-KV ключі `0x14` (реєстр [`03_01 §2.3.1`](03_01_Firmware_Lifecycle_and_DMA)) лежить межа, яку жоден переданий FC ще не перетнув — **інваріант I-HW: переданий FC строго менший за межу у Flash на момент TX** (LoRaWAN NVM-патерн). Підтримка: проактивний advance у КЕНОЗИСІ (наступний TX ближче ніж `MARGIN=8` до межі → один dw-program ставить її на `STRIDE=256` уперед; ~856 записів за life-budget — мізер для wear, [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)) + сторожа-останній-рубіж у `Build_CCM` (energy-gated `VCAP_LISTEN_THRESHOLD`; відмова → TX дозволений + degraded-прапорець: телеметрія дорожча за теоретичний replay). Механіка + дисципліна викликача — `firmware/common/fc_hiwater.h`; сценарні host-тести (інваріант щоцикл, подвійний brownout, fault-injection) — `firmware/test/test_flash_kv.c` секція FW.2.
 - **Cold-boot (VBAT loss):** DR15 magic втрачено → **перший рубіж = Flash-floor**: рестарт з межі `0x14` монотонний без жодної ентропії. Floor законний **лише разом з негайним просуванням межі** (атомарність floor+advance — інакше повторний brownout до наступного КЕНОЗИСУ стартував би з того самого floor і повторив nonce); запис тут — один атомарний dw-program без erase (compact відкладений у безпечну фазу), тож давнє застереження «Flash-write небезпечний при кволому пост-drain заряді» знято конструкцією: відмова program безпечна — спрацьовує fallback. **Fallback (якоря нема / Flash відмовив):** FC reseed **uniform-random з HRNG** — стара TRL-6 політика без погіршення. Monotonic-across-boot RTC-джерел у цей момент немає (RTC-календар і `soldier_unix_ts` на дефолтах — wall-clock дає лише FW.20 beacon, якого ще нема — той самий стан, що Lorenz cold-start, §3.4в); SE свідомо не будимо (§3.7).
-- **Залишковий ризик / severity:** при живому якорі повтор (key, nonce) **неможливий за конструкцією** (інваріант I-HW). Імовірнісний ризик `N/2²⁴` на cold-boot лишається **тільки** на fallback-шляху: перше втілення до першого КЕНОЗИСУ або стабільно мертвий Flash-program — **Severity: MEDIUM на fallback, не baseline** (CTR-reuse дає лише витік `P1⊕P2` двох 8-байтних низькоентропійних сенсорних payload'ів, **не** компрометацію ключа; forge все одно потребує per-device key). Cold-boot'и рідкісні (drain ≈ сезонний). Epoch-край: 24-bit простір одноразовий — біля `0xFFFFFF` межа клемпиться, нову nonce-епоху відкриває лише ротація ключа (FW.17, §3.8); за life-budget край недосяжний (64× margin).
+- **Залишковий ризик / severity:** при живому якорі повтор (key, nonce) **неможливий за конструкцією** (інваріант I-HW). Імовірнісний ризик `N/2²⁴` на cold-boot лишається **тільки** на fallback-шляху: перше втілення до першого КЕНОЗИСУ або стабільно мертвий Flash-program — **Severity: MEDIUM на fallback, не baseline** (CTR-reuse дає лише витік `P1⊕P2` двох 12-байтних низькоентропійних сенсорних payload'ів, **не** компрометацію ключа; forge все одно потребує per-device key). Cold-boot'и рідкісні (drain ≈ сезонний). Epoch-край: 24-bit простір одноразовий — біля `0xFFFFFF` межа клемпиться, нову nonce-епоху відкриває лише ротація ключа (FW.17, §3.8); за life-budget край недосяжний (64× margin).
 - **Reseed entropy (fallback-шлях):** тільки HRNG з **retry ×3** — слабкого `HAL_GetTick` fallback **немає** (на cold-boot tick малий+передбачуваний → кластеризується між cold-boot'ами того ж пристрою). Last-resort при мертвому HRNG — `tree_did ^ tick` (DID ламає крос-девайс кластеризацію). SEC.10 panic-counter (`main.c` DR0[31:16]) — **той самий** reseed-патерн + те саме hardening при активації FW.2.
 - **TRL-7 residual:** SE050 monotonic counter лишається alt-шляхом для рунга L2 (§3.7) — Flash high-water його не потребує. Silicon-residual high-water = той самий, що FW.8/FW.17: Flash-KV HAL-глю на кремнії (bench). Трекінг → `00_07 FW.2`.
 
@@ -236,23 +246,50 @@ nonce[12] = DID[0..3] || FrameCounter[0..3] || 0x00 × 4
 hcryp.Init.KeySize      = CRYP_KEYSIZE_128B;   // ARCH.42 — AES-128 LoRa (SE = SE050 — §3.7)
 hcryp.Init.pKey         = aes_key;             // uint32_t aes_key[4] (16 bytes, AES-128)
 hcryp.Init.Algorithm    = CRYP_AES_CCM;
-hcryp.Init.HeaderSize   = 8;                   // AAD = DID(4) + FC(4)
+hcryp.Init.HeaderSize   = 8;                   // AAD = DID(4) + gossip(1) + FC24(3)
 hcryp.Init.Header       = (uint32_t*)header;   // bytes [0..7] of packet
 hcryp.Init.B0           = b0_block;            // CCM B0 (formatted nonce + length flags)
-// Encrypt: input = sensor_payload[8], output = ciphertext[8] + MIC[8]
-HAL_CRYPEx_AESCCM_Encrypt(&hcryp, sensor_payload, 8, ciphertext_with_mic, 100);
-// → ciphertext_with_mic[0..7] = encrypted sensor, [8..15] = MIC
+// Encrypt: input = sensor_payload[12], output = ciphertext[12] + MIC[8]
+HAL_CRYPEx_AESCCM_Encrypt(&hcryp, sensor_payload, 12, ciphertext_with_mic, 100);
+// → ciphertext_with_mic[0..11] = encrypted sensor, [12..19] = MIC
 ```
 
-> **Примітка airtime:** 24-байтний пакет збільшує LoRa airtime на **+10%** vs поточних 21B (включаючи 5-байтний LoRa header), але залишається в межах duty-cycle бюджету EU868 (< 0.013% при 1 TX/година, SF10/DR2). Детальний розрахунок — нижче.
+> **Примітка airtime:** 28-байтний пакет коштує 493.6 мс (+20% vs 21B, +9% vs 24B-rev1; SF10/DR2) — у межах duty-cycle бюджету EU868 (< 0.014% при 1 TX/година, запас 72×). Ключовий факт символьної квантизації: 24..27B коштують ОДНАКОВО (43 символи), 28-й байт відкриває новий блок (48 символів) — тому перші +3B claimants безкоштовні, а четвертий (VPD) оплачено свідомо (+12 мДж/TX), щоб не платити другий польовий міграційний цикл при приході BME280. Детальний розрахунок + wire-budget ledger — нижче.
 
-> **Cross-ref для backend (✅ Виконано 2026-05-24):** `TelemetryUnpackerService.process_ccm_chunk` реалізовано feature-flagged через `ENV["TELEMETRY_CCM_ENABLED"]=true` (default off → 21B ECB path без змін). Парсить 25-байтний chunk `[DID:4][RSSI:1][FC:4 BE][ciphertext:8][MIC:8]` (Queen prepends RSSI до 24B LoRa air format), виконує AES-128-CCM decrypt + MIC verify через `Cryptography::LoraCcm.decrypt(...)` (8-byte AAD=DID‖FC, 12-byte nonce=AAD‖4×0x00, 8-byte tag, `HardwareKey#binary_key` — 16 bytes після ARCH.42), per-DID Frame Counter SETNX `silken:ccm:fc:{did}:{fc}` TTL=25h (як SEC.10 panic guard), unpack 8-byte sensor payload (`n c C n C C` = Vcap BE / temp i8 / acoustic u8 / dt BE / status / mesh_ctrl), upscale `growth_points` 5-bit (0..31) → stored 0..62 через ×2 multiplier (per-species coefficient залишається у `Wallet#lock_and_mint!` через `tree_family.carbon_sequestration_coefficient` — без змін). Prometheus метрики: `silkennet_telemetry_ccm_decrypt_ok_total`, `silkennet_telemetry_ccm_mic_fail_total`, `silkennet_telemetry_ccm_fc_replay_rejected_total`. Spec coverage: `spec/services/cryptography/lora_ccm_spec.rb` (golden vectors) + `spec/services/telemetry_unpacker_service_spec.rb` "FW.2 CCM 25-byte path" (happy-path / MIC tamper / CT tamper / FC replay / cross-DID FC reuse / Queen sentinel drop / short chunk / sensor noise / growth_points credit / feature flag off → ECB fallback / ENV roundtrip).
+> **Cross-ref для backend (✅ 2026-05-24; wire-rev2 ✅ 2026-06-12):** `TelemetryUnpackerService.process_ccm_chunk` реалізовано feature-flagged через `ENV["TELEMETRY_CCM_ENABLED"]=true` (default off → 21B ECB path без змін). Парсить 29-байтний chunk `[DID:4][RSSI:1][gossip:1][FC:3 BE][ciphertext:12][MIC:8]` (Queen prepends RSSI до 28B LoRa air format), виконує AES-128-CCM decrypt + MIC verify через `Cryptography::LoraCcm.decrypt(...)` (8-byte AAD=DID‖gossip‖FC24, 12-byte nonce=DID‖FC32‖4×0x00, 8-byte tag, `HardwareKey#binary_key` — 16 bytes після ARCH.42), per-DID Frame Counter SETNX `silken:ccm:fc:{did}:{fc}` TTL=25h (як SEC.10 panic guard), unpack 12-byte sensor payload (`n c C n C C n C C` = … + device_z BE / diag / vpd_index), upscale `growth_points` 5-bit (0..31) → stored 0..62 через ×2 multiplier (per-species coefficient залишається у `Wallet#lock_and_mint!` через `tree_family.carbon_sequestration_coefficient` — без змін). Споживання rev2-полів: `device_z` (≠0xFFFF → /512.0) живить numeric DCI ([`03_04 §7.1`](03_04_mruby_Lorenz_Attractor) Gate D; транзієнт — стрипається перед persist, як lorenz_temperature_c); diag-біти → метрики `silkennet_tinyml_threshold_invalid_reports_total` / `silkennet_fauna_skip_reports_total` / `silkennet_fw2_fc_degraded_reports_total` (cardinality-патерн FW.18b: per-DID атрибуція warn-логом); `vpd_index` до калібрування HW.32 у БД не пишеться. Spec coverage: `spec/services/cryptography/lora_ccm_spec.rb` (golden vectors rev2, дзеркало `ccm_kat_vectors.h`) + `spec/services/telemetry_unpacker_service_spec.rb` "FW.2 CCM 29-byte path".
 
-> **Cross-ref для firmware (✅ 2026-05-24 doc-fix + freeze-contract impl):** RTC Backup Domain розширення — Frame Counter у DR15 (єдиний вільний слот; DR2 ❌ був помилково вказаний — насправді DR2 зайнято `has_mesh_relay`). Magic marker `FW2_FC_MAGIC = 0x46434E54` ("FCNT") у high 8 бітах захищає cold-boot. Реалізовано freeze-contract у `firmware/soldier/main.c` (`Load_Frame_Counter` / `Save_Frame_Counter` / `Build_CCM_Packet`) та `firmware/queen/main.c` (`Decrypt_CCM_Packet`) під `#define FW2_CCM_ENABLED 0` — production cycle не активний до hardware bench. Host-тести у `firmware/test/test_encryption.c` (CCM секція) забезпечують byte-level parity з OpenSSL CCM (linked via `-lcrypto`); єдине, що залишається для HW bench — підтвердити що STM32WLE5JC `HAL_CRYPEx_AESCCM_Encrypt` дає байт-точну відповідність до OpenSSL.
+> **Cross-ref для firmware (✅ 2026-05-24 doc-fix + freeze-contract impl):** RTC Backup Domain розширення — Frame Counter у DR15 (єдиний вільний слот; DR2 ❌ був помилково вказаний — насправді DR2 зайнято `has_mesh_relay`). Magic marker `FW2_FC_MAGIC_BYTE = 0x46` ('F') у high 8 бітах захищає cold-boot. Реалізовано freeze-contract у `firmware/soldier/main.c` (`Load_Frame_Counter` / `Save_Frame_Counter` / `Soldier_Build_CCM_LoRa_Packet`) та `firmware/queen/main.c` (`Queen_Parse_CCM_LoRa_Packet`) під `#define FW2_CCM_ENABLED 0` — production cycle не активний до hardware bench. Host-тести у `firmware/test/test_ccm.c` + спільні KAT-вектори `firmware/common/ccm_kat_vectors.h` (wire-rev2, регенеровано 2026-06-12) забезпечують byte-level parity з OpenSSL CCM (linked via `-lcrypto`); єдине, що залишається для HW bench — підтвердити що STM32WLE5JC `HAL_CRYPEx_AESCCM_Encrypt` дає байт-точну відповідність до OpenSSL.
 
-> **📋 FW.2 flip-checklist (НЕ забути при `FW2_CCM_ENABLED 1`):** окрім самого дефайна і bench-атестації (`ccm_selftest` + `sym_selftest` через SWD), Queen потребує трьох RX-правок, які freeze-contract НЕ покриває: (1) `OnRxDone` жорстко відкидає `size != 16` → 24-байтні CCM-кадри впадуть ще в ISR; (2) `LoRaRxSlot.payload[16]` замалий для 24B — ринг треба розширити; (3) `Queen_Parse_CCM_LoRa_Packet` ніде не викликається з main-loop RX-гілки — треба call-site з маршрутизацією 24B-телеметрія vs 16B-control-frames (OTA/re-request лишаються ECB). Бекенд-сторона flip — `TELEMETRY_CCM_ENABLED=true` (вже feature-flagged).
+> **📋 FW.2 flip-checklist (НЕ забути при `FW2_CCM_ENABLED 1`):** окрім самого дефайна і bench-атестації (`ccm_selftest` + `sym_selftest` через SWD), Queen потребує трьох RX-правок, які freeze-contract НЕ покриває: (1) `OnRxDone` жорстко відкидає `size != 16` → 28-байтні CCM-кадри впадуть ще в ISR; (2) `LoRaRxSlot.payload[16]` замалий для 28B — ринг треба розширити; (3) `Queen_Parse_CCM_LoRa_Packet` ніде не викликається з main-loop RX-гілки — треба call-site з маршрутизацією 28B-телеметрія vs 16B-control-frames (OTA/re-request лишаються ECB). Soldier-сторона: call-site `Soldier_Build_CCM_LoRa_Packet` у Фазі TX (джерела rev2-полів — шапка функції у `main.c`: `Pack_FW2_Device_Z(lorenz_z, lorenz_state_valid)` + `Pack_FW2_Diag(...)` + gossip). Бекенд-сторона flip — `TELEMETRY_CCM_ENABLED=true` (вже feature-flagged, rev2-ready).
 
-#### 🤖 Верифікація LoRa Airtime Budget: 16B (ECB) vs 24B (CCM) vs 21B (поточний raw)
+#### 📒 Wire-budget ledger (SSOT черги на байти LoRa-кадру)
+
+> **Навіщо:** до wire-rev2 на байти кадру стояла тіньова черга без обліку — претенденти жили розкидано по трекеру, а 24B-freeze мовчки ВИПУСТИВ FW.18b-лічильник (freeze 2026-05-24 старший за FW.18b 2026-06-10) і вбивав gossip (per-Soldier ключ робить payload нечитним для сусідів). Цей ledger — єдине місце обліку. **Нова потреба у wire-байтах реєструється ТУТ до того, як їй пообіцяно місце.**
+
+**Бюджетні факти (рахуються з airtime-формули нижче):**
+- Символьна квантизація SF10/125kHz/CR4:5: кадри **24..27B коштують однаково** (43 символи, 452.7 мс); 28B відкриває новий блок (48 символів, 493.6 мс); наступний поріг — 32B.
+- Top-байт старого FC32-поля був **завжди 0x00** (лічильник 24-бітний) — 1 безкоштовний cleartext-байт в AAD.
+- Headroom після rev2: **+3 байти безкоштовно** (28..31B — той самий 48-символьний блок; 32B відкриває наступний). Біти: `mesh_ctrl.ttl:4` тримає max 15 hop при потребі 0..5 (1 біт можна реклемувати), `vpd_index` до HW.32-калібрування = de-facto резервний байт.
+
+**Розв'язана черга (wire-rev2, 2026-06-12):**
+
+| Претендент | Розмір | Дім у rev2 | Статус |
+|---|---|---|---|
+| FW.31 Gate D `device_z` (numeric DCI; покриття ≥95% → мультиплексувати не можна) | 2 B | ciphertext bytes 16..17 (`×512`, сентинель `0xFFFF`) | ✅ |
+| FW.18b `thr_invalid` (випав із 24B-freeze!) | 5 біт | `diag[7..3]` | ✅ |
+| FW.42 fauna mode + skip | 2 біти | `diag[2..1]` | ✅ |
+| FW.2 `fc_degraded` (I-HW сторожа без транспорту) | 1 біт | `diag[0]` | ✅ |
+| FW.20-S2 gossip `ts_lsb` (МУСИТЬ бути cleartext) | 1 B | AAD byte 4 (екс-FC-нуль — задарма) | ✅ |
+| HW.32 VPD-індекс (закрив double-booking байта 14 у 21B-плані: 03_01 §HW.32 і 03_02 §5а.2 обидва претендували на byte 14) | 1 B | ciphertext byte 19 (`0x00` до BME280) | ✅ (шкала — при калібруванні) |
+
+**Відкриті спостереження (НЕ розв'язано rev2 — кандидати наступної ревізії/ARCH.26):**
+- **Mesh-relay TTL у шифртексті:** ретранслятор НЕ може декрементувати `mesh_ctrl.ttl` (encrypted+MIC, per-Soldier ключ). Спадок rev1-freeze, rev2 не погіршує: relay CCM-телеметрії = opaque store-and-forward, дедуп — за cleartext DID (`recent_mesh_dids`). Чесне рішення (TTL у AAD? hop-лічильник Queen-side?) — разом з ARCH.26 TDMA.
+- **Climate frame (HW.32 сирі RH/тиск):** окремий періодичний кадр (НЕ per-cycle поле) — Queen маршрутизує за довжиною (16B control / 28B телеметрія / інша довжина = climate). Формат проєктувати при HW.32.
+- **E.63 EMA-delta_t (точний stateless метаболічний DCI):** `m(wire_dT)==GP` потребує, щоб wire ніс САМЕ EMA-згладжений delta_t, з якого рахувались GP. Кандидат rev3: «замінити семантику наявного dT-поля на EMA» (0 байтів, але бекенд втрачає raw dT) vs «+2B EMA-поле» (28..31B — той самий символьний блок, задарма) — рішення за founder'ом ([`00_07` — E.63](00_07_Action_Plan_Tracker)).
+
+**Дисципліна ревізії:** формат ревізується ЛИШЕ до польового фліпу (`FW2_CCM_ENABLED` все ще 0 — обидві прошивки і бекенд за гейтами, тож rev2 коштував код+тести+KAT-регенерацію, нуль міграції). Після фліпу будь-яка зміна = повний міграційний цикл (фліт у полі) → нові претенденти збираються тут і їдуть пакетом у rev3.
+
+#### 🤖 Верифікація LoRa Airtime Budget: 16B (ECB) vs 24B/28B (CCM) vs 21B (поточний raw)
 
 **Параметри LoRa (Silken Net default):**
 - Частота: 868.1 МГц (EU868 band, sub-band g1)
@@ -284,6 +321,8 @@ payload_symbols = 8 + max(ceil((8×PL - 4×SF + 28 + 16) / (4×(SF-2))) × (CR+4
 | T_total (мс) | 100.4 + 311.3 = **411.7** | 100.4 + 270.3 = **370.7** | 100.4 + 352.3 = **452.7** | 100.4 + 393.2 = **493.6** |
 | Δ vs поточний | baseline | −10% | **+10%** | +20% |
 
+> **Символьна квантизація (ключ wire-budget ledger):** формула дає ОДНАКОВІ 43 символи для PL = 24..27 (ceil((8·PL+4)/32) = 7) і 48 символів для PL = 28..31. Тобто перші +3B понад 24B були безкоштовні, **28B (wire-rev2) = той самий airtime, що гіпотетичні 29B з колонки вище: 493.6 мс**; наступний поріг — 32B.
+
 **Duty cycle бюджет (EU868, sub-band g1: 1% duty cycle):**
 
 ```
@@ -292,14 +331,14 @@ Duty cycle = T_airtime / T_period
 При 1 TX / годину:
   21B: 411.7 мс / 3,600,000 мс = 0.011% ✅ (87× запас)
   24B: 452.7 мс / 3,600,000 мс = 0.013% ✅ (79× запас)
-  29B: 493.6 мс / 3,600,000 мс = 0.014% ✅ (72× запас)
+  28B (wire-rev2): 493.6 мс / 3,600,000 мс = 0.014% ✅ (72× запас)
 
 При 1 TX / 10 хв (stress mode):
-  24B: 452.7 мс / 600,000 мс = 0.075% ✅ (13× запас)
+  28B: 493.6 мс / 600,000 мс = 0.082% ✅ (12× запас)
 
 При Emergency TX (PANIC_TTL=5, max 5 hops):
-  24B: 5 × 452.7 мс = 2.26 сек total airtime
-  Duty cycle single burst: 2.26s / 3,600s = 0.063% ✅ (16× запас)
+  28B: 5 × 493.6 мс = 2.47 сек total airtime
+  Duty cycle single burst: 2.47s / 3,600s = 0.069% ✅ (14× запас)
 ```
 
 **Енергетичний вплив (SX1262, +14 dBm, 3.3V):**
@@ -307,12 +346,13 @@ Duty cycle = T_airtime / T_period
 | Пакет | Airtime | Струм TX | Енергія TX |
 |-------|---------|----------|------------|
 | 21B (ECB) | 411.7 мс | 87 мА | 411.7 × 87 × 3.3 / 1000 = **118 мДж** |
-| 24B (CCM) | 452.7 мс | 87 мА | 452.7 × 87 × 3.3 / 1000 = **130 мДж** |
-| Δ | +41 мс | — | **+12 мДж (+10%)** |
+| 24B (CCM rev1) | 452.7 мс | 87 мА | 452.7 × 87 × 3.3 / 1000 = **130 мДж** |
+| 28B (CCM wire-rev2) | 493.6 мс | 87 мА | 493.6 × 87 × 3.3 / 1000 = **142 мДж** |
+| Δ rev2 vs 21B | +82 мс | — | **+24 мДж (+20%)** |
 
-Для EDLC 0.47F × 5.5V (E_stored = ½CV² = 7.1 Дж): один TX CCM-пакет споживає 130 мДж = **1.8% заряду суперконденсатора**. При одному TX/годину та EBFC > 500 мВ генерації — бюджет **з великим запасом**.
+Для EDLC 0.47F × 5.5V (E_stored = ½CV² = 7.1 Дж): один TX CCM-пакет (wire-rev2 28B) споживає 142 мДж = **2.0% заряду суперконденсатора**. При одному TX/годину та EBFC > 500 мВ генерації — бюджет **з великим запасом**.
 
-**Висновок:** Перехід з 21B ECB → 24B CCM збільшує airtime на **+10%** (+41 мс), duty cycle на **+0.002%**, енергоспоживання на **+12 мДж/TX**. Зміна key size з 256→128 (ARCH.42) **не змінює** airtime (block-cipher block size = 128 bit обох випадках; зменшується лише кількість Round-функцій з 14→10, що дає ~25% швидший AES-операцію — нехтовно). Усі параметри залишаються **далеко в межах** EU868 duty cycle (1%) та енергобюджету Soldier (1.8% заряду EDLC per TX). **LoRa airtime budget верифіковано: перехід на AES-128-CCM 24B схвалений.** ✅
+**Висновок:** Перехід з 21B ECB → 28B CCM (wire-rev2) збільшує airtime на **+20%** (+82 мс), duty cycle на **+0.003%**, енергоспоживання на **+24 мДж/TX** — з них +12 мДж купують дім для ВСІХ відомих wire-претендентів (ledger вище), що знімає другий польовий міграційний цикл. Зміна key size з 256→128 (ARCH.42) **не змінює** airtime (block-cipher block size = 128 bit обох випадках; зменшується лише кількість Round-функцій з 14→10, що дає ~25% швидший AES-операцію — нехтовно). Усі параметри залишаються **далеко в межах** EU868 duty cycle (1%) та енергобюджету Soldier (2.0% заряду EDLC per TX). **LoRa airtime budget верифіковано: AES-128-CCM 28B (wire-rev2) схвалено founder'ом 2026-06-12.** ✅
 
 **Альтернативні рішення (якщо `CRYP_AES_CCM` не підтвердиться при STM32WLE5JC bench-тестуванні):**
 - **AES-128-GCM** — аналогічно CCM, але апаратна підтримка на цій ревізії може відрізнятися (треба перевірити RM0461 §27.4).
@@ -340,7 +380,7 @@ Duty cycle = T_airtime / T_period
 
 **Необхідна дія:**
 
-- **Рекомендоване рішення (після ARCH.42 Варіант B):** Перейти на **AES-128-CCM** з 24-байтним пакетом — вирішує §ECB Mode та §MAC/MIC одночасно (див. §ECB Mode вище для повної специфікації 24-байтного формату з Frame Counter + MIC).
+- **Рекомендоване рішення (після ARCH.42 Варіант B):** Перейти на **AES-128-CCM** з 28-байтним пакетом (wire-rev2) — вирішує §ECB Mode та §MAC/MIC одночасно (див. §ECB Mode вище для повної специфікації формату з Frame Counter + MIC).
 - Альтернатива: **AES-128-GCM** (надає одночасно конфіденційність + автентифікацію + nonce).
 - Або: додати **HMAC-SHA256 MIC** (4 байти суфіксу) до кожного LoRa-пакету, скоротивши сенсорний payload до 12 корисних байтів.
 - LoRaWAN-нативний вибір: **AES-128-CMAC** (стандарт LoRaWAN MAC layer) — спрощує bridging до Helium/Sigfox/Things Network (ARCH.34).
@@ -436,7 +476,7 @@ static void MX_CRYP_Init(void)
   hcryp.Init.DataType    = CRYP_DATATYPE_32B;   // 32-бітний порядок слів
   hcryp.Init.KeySize     = CRYP_KEYSIZE_128B;    // ARCH.42 (2026-05-23): AES-128 LoRa (SE = SE050 — §3.7)
   hcryp.Init.pKey        = aes_key;              // Per-device HKDF-derived LoRa key (RAM mirror, populated by Load_AES_Key() at boot — see §3.4а; uint32_t aes_key[4] = 16 bytes)
-  hcryp.Init.Algorithm   = CRYP_AES_ECB;         // ECB transitional — TARGET: CRYP_AES_CCM після FW.2 24B-packet rollout
+  hcryp.Init.Algorithm   = CRYP_AES_ECB;         // ECB transitional — TARGET: CRYP_AES_CCM після FW.2 28B-packet rollout (wire-rev2)
   HAL_CRYP_Init(&hcryp);
 }
 ```
@@ -481,7 +521,7 @@ static void MX_CRYP_Init(void)
 ### 2.1 Soldier → Queen: LoRa Uplink (AES-128-ECB transitional → AES-128-CCM target)
 
 **Поточний режим (transitional після ARCH.42, 2026-05-23):** AES-128-ECB · **Розмір:** 16 байт = 1 AES-блок · **IV:** відсутній
-**Цільовий режим (FW.2):** AES-128-CCM · **Розмір:** 24 байти (header 8B + ciphertext 8B + MIC 8B) — див. §ECB Mode
+**Цільовий режим (FW.2):** AES-128-CCM · **Розмір:** 28 байтів (wire-rev2: header 8B + ciphertext 12B + MIC 8B) — див. §ECB Mode
 
 ```
 +--------+--------+--------+--------+--------+--------+--------+--------+
@@ -835,7 +875,7 @@ Device Memory → Option Bytes → Read Out Protection → RDP: Level 1 (або 
 | **STM32 RDP Level 1/2** | SWD flash dump | Прямий read firmware через debug port |
 | **Backend (atecc_serial pin)** | ATECC swap на іншому board | Адверсар викрадає ATECC з одного board і ставить на інший — backend reject при провіженінгу через mismatch (device_uid, atecc_serial) пари |
 
-**Latency impact (Гілка B vs A):** ATECC608B AES-ECB ~1.5 мс/блок vs MCU HAL_CRYP ~10 µs. Для одного 16/24-байтного LoRa пакета — нехтовно. Для CBC batch 50 × 16 байт = 800 байт — додаткові ~75 мс на flush (CoAP flush триває кілька секунд у будь-якому разі).
+**Latency impact (Гілка B vs A):** ATECC608B AES-ECB ~1.5 мс/блок vs MCU HAL_CRYP ~10 µs. Для одного 16/28-байтного LoRa пакета — нехтовно. Для CBC batch 50 × 16 байт = 800 байт — додаткові ~75 мс на flush (CoAP flush триває кілька секунд у будь-якому разі).
 
 **Power impact (Гілка B):** ATECC active 14 мА × 1.5 мс = 70 мкДж/пакет → ~0.1% до енергобюджету Soldier. ATECC sleep 150 нА — нехтовно. ⚠️ Енергія тут **мала, але не вирішальна**: чи робить ATECC AES щопакета, чи лише provisioning (а streaming AES — на вбудованому radio-AES STM32) — окрема вісь компромісу (tamper-resistance LoRa-ключа ⟷ latency/ідіом), повний розбір — §3.7 (SEC.14).
 
@@ -1753,7 +1793,7 @@ STM32_Programmer_CLI -c port=SWD -ob RDP=0xCC
 
 > ✅ **SE = NXP EdgeLock SE050 (SEC.6 RESOLVED 2026-06-07; supersedes the 2026-05-23 ATECC608B pick):** коли SilkenNet зобов'язався дати деревам **власний криптографічний голос** (true-DePIN: дерево підписує свої дані ключем, що не покидає кремній і якого не підробить навіть оператор), SE-частина мусила вміти **non-extractable Ed25519** (крива peaq/Solana). **ATECC608B (P-256 only) цього не вміє** → SE = **SE050** (Ed25519/EdDSA + AES-128/256 + monotonic counters + secure storage — суперсет ATECC). Trust-напрям + ladder — у SEC.6 ADR нижче.
 >
-> **AES-128 для LoRa лишається — але це тепер ВИБІР, не constraint:** ATECC мав HW-максимум 128; SE050 вміє 128/256. Тримаємо **AES-128-CCM** свідомо — golden-standard constrained-IoT (LoRaWAN/Zigbee/Thread/BLE), сумісність з LoRaWAN-fallback (ARCH.34) і **freeze-contract FW.2** (24-byte CCM packet). CoAP-магістраль Queen↔Rails — AES-256-CBC (ключ у Queen Protected Flash, не в SE). **ARCH.42 AES-128-рішення СТОЇТЬ — змінилась лише SE-частина (ATECC→SE050).** Глобальний AES-128-патч (ARCH.42) чинний: `CRYP_KEYSIZE_128B`, `HardwareKey.aes_key_hex` (Tree=32 hex / Gateway=64 hex), HKDF info `"silken-aes-128-lora-key"`.
+> **AES-128 для LoRa лишається — але це тепер ВИБІР, не constraint:** ATECC мав HW-максимум 128; SE050 вміє 128/256. Тримаємо **AES-128-CCM** свідомо — golden-standard constrained-IoT (LoRaWAN/Zigbee/Thread/BLE), сумісність з LoRaWAN-fallback (ARCH.34) і **freeze-contract FW.2** (28-byte CCM packet, wire-rev2). CoAP-магістраль Queen↔Rails — AES-256-CBC (ключ у Queen Protected Flash, не в SE). **ARCH.42 AES-128-рішення СТОЇТЬ — змінилась лише SE-частина (ATECC→SE050).** Глобальний AES-128-патч (ARCH.42) чинний: `CRYP_KEYSIZE_128B`, `HardwareKey.aes_key_hex` (Tree=32 hex / Gateway=64 hex), HKDF info `"silken-aes-128-lora-key"`.
 >
 > **Чому НЕ ATECC (реверс рішення 2026-05-23):** ATECC обрали за ціною ($0.85 vs SE050 ~$2.40–3.25) під припущення **кастодіального** trust. True-DePIN перевертає логіку: ECDSA-рушій ATECC — **P-256 (secp256r1)**, не збігається з жодним ланцюгом (EVM=secp256k1, Solana/peaq=Ed25519) → не може тримати голос дерева. Ціна (founder: не проблема) поступається vision. **SE050 datasheet-verify** (Ed25519/EdDSA + monotonic counters + AES-128) → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker).
 
@@ -2139,7 +2179,7 @@ HAL_CRYP_Init(&hcryp);
 | **CBC IV для CoAP** | ✅ HRNG (тепловий шум) | Унікальний IV на кожен батч |
 | **Зберігання ключа** | ✅ Protected Flash Sector (LoRa `"KEYL"`, CoAP `"KEYC"`, L1-сім'я `"EDSK"`), RDP Level 1/2 protected. SE050 Slot 0 (Гілка B, §3.7) для mass production >10k |
 | **Унікальність ключа** | ✅ Per-device HKDF (FW.1 + ARCH.42) | LoRa: `HKDF-SHA256(MASTER, uid, "silken-aes-128-lora-key")`; CoAP: `HKDF-SHA256(MASTER, uid, "silken-aes-256-device-key")` — domain separation §3.4а |
-| **ECB для LoRa** | 🟡 Transitional після ARCH.42 | AES-128-ECB → AES-128-CCM (target FW.2, 24B packet + Frame Counter + 8B MIC) |
+| **ECB для LoRa** | 🟡 Transitional після ARCH.42 | AES-128-ECB → AES-128-CCM (target FW.2, 28B wire-rev2 packet + Frame Counter + 8B MIC) |
 | **MAC/MIC (LoRa)** | 🟡 OPEN — закривається з FW.2 CCM | 8-byte MIC (64-bit, forge probability $5.4×10^{-20}$) |
 | **CoAP batch origin + integrity** | 🟡 **L1 QATT shipped** (2026-06-07) | Ed25519 batch-підпис Королеви (§2.2): закриває CBC-malleability/injection + anti-replay у nonce-вікні; legacy L0 без підпису ще приймається (fleet-перехід); 👤 bench: EDSK на кремнії. Ladder → [`05_02`](05_02_Proof_of_Growth_Pipeline) |
 | **RDP Protection** | 🟡 OPEN | Level 0 (розробка). Level 1/2 — фінальний крок Factory Flashing (розділ 3.3). Pre-flight checklist та незворотна процедура задокументовані у §3.6 🤖 |
@@ -2182,7 +2222,7 @@ HAL_CRYP_Init(&hcryp);
 | Polygon SCC mint | **ECDSA secp256k1** | Делегуємо Polygon L2 (EVM-стек мігрує синхронно з Ethereum) |
 
 **Що ми НЕ робимо у TRL 4–6:**
-- ❌ НЕ пишемо жодного рядка PQC коду на Soldier (Dilithium підпис — 2420 байт, не вміщається у 24B LoRa packet; Kyber публічний ключ — 1184 байти, не вміщається у LoRa airtime budget)
+- ❌ НЕ пишемо жодного рядка PQC коду на Soldier (Dilithium підпис — 2420 байт, не вміщається у 28B LoRa packet; Kyber публічний ключ — 1184 байти, не вміщається у LoRa airtime budget)
 - ❌ НЕ міняємо STM32WLE5JC на чіп з апаратним Kyber acceleration (такі чіпи ще не існують у TRL 9 silicon @ low-power profile)
 - ❌ НЕ форсуємо peaq/Polygon DID міграцію — це залежить від upstream blockchain ecosystems
 
@@ -2212,7 +2252,7 @@ HAL_CRYP_Init(&hcryp);
 |------------|----------|----------------|
 | **Arithmetic Coding** (Shannon-optimal compression) | Стискання payload з 21B → ~14B (34% airtime saving) | Потребує big-integer math на кожен біт → з'їдає більше мікроамперів CPU ніж економить на LoRa TX. Bit-flip в ефірі руйнує весь пакет (no FEC). Наш bit-packing у [`03_01`](03_01_Firmware_Lifecycle_and_DMA) ефективніший за енергією. |
 | **ASCON** (NIST Lightweight Crypto winner 2023) | Швидший за програмний AES на 8/32-bit MCU | STM32WLE5JC має **апаратний** AES (0 CPU cycles) — ASCON у софті повільніший за наш HW-AES. ASCON стане конкурентним лише коли silicon-вендори додадуть apparatне acceleration. |
-| **Dilithium-2 signature** (PQC) | Квантова невідрікальність на per-packet рівні | Підпис 2420 байт vs наш 24-byte LoRa packet → fundamental fit problem. Якщо рамку розширити — duty cycle EU868 (1%) порушиться на 2 порядки. |
+| **Dilithium-2 signature** (PQC) | Квантова невідрікальність на per-packet рівні | Підпис 2420 байт vs наш 28-byte LoRa packet → fundamental fit problem. Якщо рамку розширити — duty cycle EU868 (1%) порушиться на 2 порядки. |
 | **Kyber-768 KEM** (PQC key encapsulation) | Постквантовий ephemeral key exchange | Публічний ключ 1184 байти, ciphertext 1088 байт — LoRa SF10 payload max ~255 байт. Технологічно несумісно з constrained radio link. |
 
 ### 10.4 SSOT-карта: де читати про PQC
@@ -2228,13 +2268,13 @@ HAL_CRYP_Init(&hcryp);
 
 ### 10.5 Висновок
 
-> **Наше поточне рішення** — 24-байтний LoRa packet з AES-128-CCM + 8-байтним MIC + Hash Ratchet rotation — це ідеальна **інженерна точка паритету** (Sweet Spot) для фізичної реальності TRL 6:
+> **Наше поточне рішення** — 28-байтний LoRa packet (wire-rev2) з AES-128-CCM + 8-байтним MIC + Hash Ratchet rotation — це ідеальна **інженерна точка паритету** (Sweet Spot) для фізичної реальності TRL 6:
 >
 > ```
 > [Абсолютна теорія: PQC + Ed25519 + Arithmetic] ─── Несумісно з EBFC батарейкою та 64KB SRAM
 >                      │
 >                      ▼ [Суворий інженерний компроміс]
-> [Наше рішення: 24B AES-128-CCM + 8B MIC] ─── ✅ 20 років автономності, 0% CPU overhead,
+> [Наше рішення: 28B AES-128-CCM + 8B MIC] ─── ✅ 20 років автономності, 0% CPU overhead,
 >                                                  криптографічний anti-replay та anti-tamper.
 >                      │
 >                      ▼ [TRL 7-8 hybrid layering, 2028+]

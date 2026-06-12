@@ -6,17 +6,18 @@ RSpec.describe Cryptography::LoraCcm, type: :service do
   let(:zero_key)      { ("\x00".b * 16).b }
   let(:did_bytes)     { "\x01\x02\x03\x04".b }
   let(:frame_counter) { 5 }
-  let(:plaintext)     { "\x01\x02\x03\x04\x05\x06\x07\x08".b }
+  let(:plaintext)     { "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c".b }
 
-  # Golden vector — produced by OpenSSL aes-128-ccm with:
+  # Golden vector (wire-rev2, 12B payload) — produced by OpenSSL aes-128-ccm:
   #   key   = 00 × 16
-  #   nonce = DID(01020304) || FC(00000005) || 00 × 4
-  #   aad   = DID || FC (8 bytes)
-  #   pt    = 01 02 03 04 05 06 07 08
-  # If OpenSSL ever changes its CCM internals, this guards the contract
-  # the firmware HAL_CRYPEx_AESCCM_Encrypt is expected to match bit-for-bit.
-  let(:expected_ciphertext) { [ "08ceca97bbf4fdc5" ].pack("H*") }
-  let(:expected_mic)        { [ "a6d8e20ce0deeae9" ].pack("H*") }
+  #   nonce = DID(01020304) || FC32(00000005) || 00 × 4
+  #   aad   = DID || gossip(00) || FC24(000005) (8 bytes)
+  #   pt    = 01..0c
+  # Mirror: firmware/common/ccm_kat_vectors.h (G_CT/G_TAG). If OpenSSL ever
+  # changes its CCM internals, this guards the contract the firmware
+  # HAL_CRYPEx_AESCCM_Encrypt is expected to match bit-for-bit.
+  let(:expected_ciphertext) { [ "08ceca97bbf4fdc5aa2a365e" ].pack("H*") }
+  let(:expected_mic)        { [ "2e68947871a505c4" ].pack("H*") }
 
   describe ".encrypt" do
     it "produces the documented golden ciphertext and 8-byte MIC" do
@@ -53,7 +54,7 @@ RSpec.describe Cryptography::LoraCcm, type: :service do
         mic: expected_mic
       )
       expect(pt).to eq(plaintext)
-      expect(pt.bytesize).to eq(8)
+      expect(pt.bytesize).to eq(12)
     end
 
     it "raises AuthError when the MIC is tampered" do
@@ -138,23 +139,31 @@ RSpec.describe Cryptography::LoraCcm, type: :service do
       }.to raise_error(Cryptography::LoraCcm::InputError, /did_bytes must be 4 bytes/)
     end
 
-    it "rejects a frame counter outside uint32 range" do
+    it "rejects a frame counter outside the 24-bit wire range" do
       expect {
         described_class.encrypt(key: zero_key, did_bytes: did_bytes,
                                 frame_counter: -1, plaintext: plaintext)
-      }.to raise_error(Cryptography::LoraCcm::InputError, /uint32/)
+      }.to raise_error(Cryptography::LoraCcm::InputError, /24 bits/)
 
       expect {
         described_class.encrypt(key: zero_key, did_bytes: did_bytes,
-                                frame_counter: 2**32, plaintext: plaintext)
-      }.to raise_error(Cryptography::LoraCcm::InputError, /uint32/)
+                                frame_counter: 2**24, plaintext: plaintext)
+      }.to raise_error(Cryptography::LoraCcm::InputError, /24 bits/)
     end
 
-    it "rejects a payload that is not 8 bytes" do
+    it "rejects a gossip byte outside one octet" do
+      expect {
+        described_class.encrypt(key: zero_key, did_bytes: did_bytes,
+                                frame_counter: 1, gossip_ts_lsb: 256,
+                                plaintext: plaintext)
+      }.to raise_error(Cryptography::LoraCcm::InputError, /gossip_ts_lsb/)
+    end
+
+    it "rejects a payload that is not 12 bytes" do
       expect {
         described_class.encrypt(key: zero_key, did_bytes: did_bytes,
                                 frame_counter: 1, plaintext: "\x00".b * 4)
-      }.to raise_error(Cryptography::LoraCcm::InputError, /payload must be 8 bytes/)
+      }.to raise_error(Cryptography::LoraCcm::InputError, /payload must be 12 bytes/)
     end
 
     it "rejects a MIC that is not 8 bytes during decrypt" do
@@ -177,10 +186,25 @@ RSpec.describe Cryptography::LoraCcm, type: :service do
   end
 
   describe ".build_aad" do
-    it "produces an 8-byte AAD = DID || FrameCounter (BE)" do
-      aad = described_class.build_aad(did_bytes, 0xDEADBEEF)
-      expect(aad).to eq(did_bytes + [ 0xDEADBEEF ].pack("N"))
+    it "produces an 8-byte AAD = DID || gossip || FrameCounter (24-bit BE)" do
+      aad = described_class.build_aad(did_bytes, 0x5A, 0xADBEEF)
+      expect(aad).to eq(did_bytes + "\x5A".b + "\xAD\xBE\xEF".b)
       expect(aad.bytesize).to eq(Cryptography::LoraCcm::AAD_LEN)
+    end
+  end
+
+  describe "gossip byte authentication (wire-rev2)" do
+    it "raises AuthError when the cleartext gossip byte is tampered" do
+      ct, mic = described_class.encrypt(
+        key: zero_key, did_bytes: did_bytes, frame_counter: frame_counter,
+        gossip_ts_lsb: 0x42, plaintext: plaintext
+      )
+      expect {
+        described_class.decrypt(
+          key: zero_key, did_bytes: did_bytes, frame_counter: frame_counter,
+          gossip_ts_lsb: 0x43, ciphertext: ct, mic: mic
+        )
+      }.to raise_error(Cryptography::LoraCcm::AuthError)
     end
   end
 end

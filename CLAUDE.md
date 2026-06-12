@@ -13,7 +13,7 @@
 
 SilkenNet / Gaia 2.0 — планетарна кіберфізична платформа для моніторингу здоров'я лісів. Система поєднує:
 - **Hardware edge**: Ti-6Al-4V гіроїдний анкер (DMLS, пористість 65%, діапазон 60-70%) вживляється в дерево. EBFC (Enzymatic Bio-Fuel Cell) на межі метал-ксилема генерує ~500 мВ. BQ25570 MPPT -> EDLC суперконденсатор 0.47F/5.5V -> MCU 3.3V. Принцип "zero grid" — дерево живить власний монітор.
-- **Firmware**: Soldier (STM32WLE5JC) збирає дані, запускає mruby Lorenz attractor, упаковує 21-байтний пакет (FW.2 target: 24B з CCM MIC), шифрує **AES-128-ECB** (transitional після ARCH.42 Variant B; target — AES-128-CCM), відправляє LoRa 868 МГц.
+- **Firmware**: Soldier (STM32WLE5JC) збирає дані, запускає mruby Lorenz attractor, упаковує 21-байтний пакет (FW.2 target: 28B wire-rev2 з CCM MIC), шифрує **AES-128-ECB** (transitional після ARCH.42 Variant B; target — AES-128-CCM), відправляє LoRa 868 МГц.
 - **Backend**: Rails 8.1 / Ruby 4.0.2 / PostgreSQL / Sidekiq — декодує, верифікує через 12-chain Web3 pipeline, мінтить SCC.
 - **Tokenomics**: Proof of Growth — 10,000 growth_points = 1 SCC (Polygon ERC-20). Слешинг при деградації лісу.
 
@@ -65,11 +65,11 @@ make -C firmware/test
    ```
    **Важливо [FIX FW.7]:** Backend переведено з BigDecimal на **Float (IEEE 754 double)** — ідентично firmware mruby. Раніше `("8.0".to_d / "3.0".to_d).round(18)` давав інший результат після 250 ітерацій; зараз обидві сторони використовують `8.0/3.0` → `2.6666666666666665`. Z: **категорично** ідентичний (status/growth_points/payload_byte — бітово), raw Z — у межах numeric-tolerance (реальний mruby 4.0.0 VM ↔ CRuby ~1e-14, хаотична ULP-амплітудизація; FW.31 ε=0.001 band; перша VM-перевірка + деталі — `docs/03_04`). Майбутній hardening через integer/fixed-point Q-format — `[FW.45]`, deferred до ZK-circuit milestone (див. `docs/03_04_mruby_Lorenz_Attractor.md`).
 
-4. **PACK**: 16-байтний payload (FW.2 target: 8-byte sensor payload у 24B AES-128-CCM frame).
-5. **ENCRYPT**: **AES-128-ECB** transitional (апаратний CRYP модуль, без IV) — ARCH.42 Variant B з 2026-05-23. 1 блок = 1 AES operation. Target FW.2: AES-128-CCM з 8-byte MIC + Frame Counter.
+4. **PACK**: 16-байтний payload (FW.2 target: 12-byte sensor payload у 28B AES-128-CCM frame, wire-rev2 — 03_05 §3.2 + wire-budget ledger).
+5. **ENCRYPT**: **AES-128-ECB** transitional (апаратний CRYP модуль, без IV) — ARCH.42 Variant B з 2026-05-23. 1 блок = 1 AES operation. Target FW.2: AES-128-CCM 28B (wire-rev2): 8-byte MIC + 24-bit FC + gossip-байт у AAD + device_z/diag/vpd у payload.
 6. **TX**: `Radio.Send(21 bytes)`. Mesh TTL-based. Emergency TX при chainsaw detection (PANIC_TTL=5).
 
-**21-байтний packet format** (transitional; FW.2 target — 24-byte CCM):
+**21-байтний packet format** (transitional; FW.2 target — 28-byte CCM wire-rev2):
 ```
 [DID:4][RSSI:1] | [Vcap:2][Temp:1][Acoustic:1][dT:2][StatusByte:1][TTL:1][FW:2][PAD:2]
   unencrypted   |  AES-128-ECB encrypted (16 bytes = 1 block)
@@ -281,7 +281,7 @@ Solana: Ed25519 підпис, SPL Token Transfer, ATA резолюція чер�
 |---------|------|------|
 | HW-AES-KEY | `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82` | ✅ Firmware CLOSED (FW.1, 2026-05-02): `Load_AES_Key()` + per-device HKDF + Protected Flash. SEC.3 Factory Flashing Pipeline tool — ✅ Rake CLI dry-run (2026-05-24, `app/services/factory_flashing/*`, threat model: `03_05 §3.4г`). 👤 Залишається: real `STM32_Programmer_CLI` execution на bench + RDP Level 2 (SEC.2) |
 | ARCH.42 LoRa AES-size | `firmware/soldier/main.c` MX_CRYP_Init, `firmware/queen/main.c` MX_CRYP_Init | ✅ DECIDED 2026-05-23 (Variant B = AES-128 LoRa + ATECC608B SE). LoRa channel: `CRYP_KEYSIZE_128B`, `aes_key[4]`; CoAP канал залишається AES-256. Деталі — `docs/03_05 §3.7` |
-| AES-ECB | `firmware/soldier/main.c` (MX_CRYP_Init) | 🟡 Transitional AES-128-ECB після ARCH.42; повне закриття через FW.2 (AES-128-CCM, 24B packet, 8B MIC, Frame Counter). Hardware bench needed для `CRYP_AES_CCM` HAL верифікації |
+| AES-ECB | `firmware/soldier/main.c` (MX_CRYP_Init) | 🟡 Transitional AES-128-ECB після ARCH.42; повне закриття через FW.2 (AES-128-CCM, 28B wire-rev2 packet, 8B MIC, Frame Counter). Hardware bench needed для `CRYP_AES_CCM` HAL верифікації |
 | TINYML-COMMENT | `firmware/soldier/main.c` (Phase 1.5) | log-mel фронтенд `Compute_LogMel` ✅ (FW.25); `Run_Inference()` + model header відсутні (чекає моделі) |
 | LORENZ-INPUTS | `firmware/bio_contracts/bio_contract.rb` | 🔄 [E.63, 2026-06-08] FW.5 β-пертурбація **РЕВЕРСОВАНА** — delta_t/vcap→β виявилась економічно нульовою (delta_t) / інвертованою (vcap) на paired-ensemble. Тепер β=`BASE_BETA` фікс; `delta_t`→`growth_points` НАПРЯМУ (метаболічна `m(delta_t)`, `03_04 §4.3`); vcap reserved. DCI parity 200-case fuzz 0-mismatch |
 | LORENZ-STATE | firmware | ✅ Виправлено: Стан (x,y,z) зберігається в RTC DR16-DR18 + magic marker `0x4C5A5354` (`"LZST"` = "Lorenz State"). Підтверджено в `firmware/soldier/main.c:239-249,746-749` |

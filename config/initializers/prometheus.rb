@@ -105,6 +105,25 @@ module SilkenNet
       docstring: "FW.18b telemetry packets reporting a nonzero rejected-OTA-thresholds counter (per-DID attribution in logs)"
     )
 
+    # [FW.42] CCM diag-байт (wire-rev2 byte 18, fauna_skip bit): Солдат
+    # пропустив fauna-сесію через низький Vcap (брауноут-захист,
+    # 03_03 §10.4). Без per-DID мітки — той самий cardinality-патерн, що
+    # TINYML_THRESHOLD_INVALID: дерево атрибутується warn-логом. Стійкий
+    # rate() > 0 = енергодефіцит кластера (зима / деградація EDLC).
+    FAUNA_SKIP_REPORTS_TOTAL = REGISTRY.counter(
+      :silkennet_fauna_skip_reports_total,
+      docstring: "FW.42 telemetry packets reporting a fauna session skipped on low Vcap (per-DID attribution in logs)"
+    )
+
+    # [FW.2] CCM diag-байт (fc_degraded bit): інваріант I-HW (Flash
+    # high-water > усіх переданих FC) тимчасово втрачено — Flash відмовляв
+    # багато КЕНОЗИСІВ поспіль. Будь-який ненульовий rate() — деградація
+    # nonce-гарантії конкретного вузла (DID у warn-лозі поруч).
+    FW2_FC_DEGRADED_REPORTS_TOTAL = REGISTRY.counter(
+      :silkennet_fw2_fc_degraded_reports_total,
+      docstring: "FW.2 telemetry packets reporting a lost FC high-water invariant (Flash refusing writes; per-DID attribution in logs)"
+    )
+
     # -----------------------------------------------------------------------
     # ⚙️ SIDEKIQ QUEUE METRICS (Gauges — sampled at scrape time)
     # -----------------------------------------------------------------------

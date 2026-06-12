@@ -5,12 +5,17 @@ class TelemetryUnpackerService < ApplicationService
   CHUNK_SIZE     = 21
   ECB_CHUNK_SIZE = 21
 
-  # [FW.2] CCM 25-byte chunk = Queen-prepended RSSI(1) + 24B LoRa air format
-  # ([DID:4][FC:4 BE] AAD + [ciphertext:8] + [MIC:8]).
+  # [FW.2 wire-rev2] CCM 29-byte chunk = Queen-prepended RSSI(1) + 28B LoRa
+  # air format ([DID:4][gossip:1][FC:3 BE] AAD + [ciphertext:12] + [MIC:8]).
   # Enabled via ENV `TELEMETRY_CCM_ENABLED=true`; defaults to ECB so the
   # production wire format is unchanged until firmware ships CCM emission.
-  CCM_CHUNK_SIZE             = 25
-  CCM_SENSOR_PAYLOAD_FORMAT  = "n c C n C C" # Vcap(2BE) Temp(i8) Acoustic(u8) dt(2BE) Status(u8) MeshCtrl(u8)
+  # Rev2 rationale + повна розкладка: docs/03_05 wire-budget ledger.
+  CCM_CHUNK_SIZE             = 29
+  # Vcap(2BE) Temp(i8) Acoustic(u8) dt(2BE) Status(u8) MeshCtrl(u8)
+  # DeviceZ(2BE ×512, 0xFFFF=none) Diag(u8) VpdIndex(u8)
+  CCM_SENSOR_PAYLOAD_FORMAT  = "n c C n C C n C C"
+  CCM_DEVICE_Z_NONE          = 0xFFFF
+  CCM_DEVICE_Z_SCALE         = 512.0
   CCM_FC_NONCE_TTL           = 25.hours
   CCM_FC_NONCE_KEY_PREFIX    = "silken:ccm:fc"
 
@@ -267,22 +272,25 @@ class TelemetryUnpackerService < ApplicationService
     Rails.logger.error "🛑 [Telemetry Error] DID #{hex_did || 'UNKNOWN'}: #{e.message}\n#{trace}"
   end
 
-  # [FW.2] AES-128-CCM 25-byte chunk path. Activated via
+  # [FW.2 wire-rev2] AES-128-CCM 29-byte chunk path. Activated via
   # `TELEMETRY_CCM_ENABLED=true`. Chunk layout:
   #
-  #   [DID:4][RSSI:1][FrameCounter:4 BE][ciphertext:8][MIC:8]
+  #   [DID:4][RSSI:1][gossip_ts_lsb:1][FrameCounter:3 BE][ciphertext:12][MIC:8]
   #
-  # Queen prepends RSSI(1) to the 24B LoRa air packet — RSSI is NOT
-  # covered by the CCM MIC (it's receiver-side metadata), DID and
-  # FrameCounter form the 8-byte AAD which IS authenticated.
+  # Queen prepends RSSI(1) to the 28B LoRa air packet — RSSI is NOT
+  # covered by the CCM MIC (it's receiver-side metadata); DID, gossip byte
+  # and FrameCounter form the 8-byte AAD which IS authenticated. The
+  # gossip byte is addressed to neighbouring Soldiers (FW.20-S2 #5) —
+  # backend only authenticates it, no server-side consumption.
   def process_ccm_chunk(chunk)
     raw_did       = chunk[0..3].unpack1("N")
     hex_did       = format("SNET-%08X", raw_did)
     actual_rssi   = -chunk[4].unpack1("C")
     did_bytes     = chunk[0..3]
-    frame_counter = chunk[5..8].unpack1("N")
-    ciphertext    = chunk[9..16]
-    mic           = chunk[17..24]
+    gossip_ts_lsb = chunk[5].unpack1("C")
+    frame_counter = ("\x00".b + chunk[6..8]).unpack1("N")
+    ciphertext    = chunk[9..20]
+    mic           = chunk[21..28]
 
     # Queen sentinel — see ECB path. In CCM mode the Queen does not
     # encrypt its own self-telemetry as a fake Soldier (different key
@@ -312,6 +320,7 @@ class TelemetryUnpackerService < ApplicationService
         key: aes_key,
         did_bytes: did_bytes,
         frame_counter: frame_counter,
+        gossip_ts_lsb: gossip_ts_lsb,
         ciphertext: ciphertext,
         mic: mic
       )
@@ -330,7 +339,8 @@ class TelemetryUnpackerService < ApplicationService
     SilkenNet::Metrics::TELEMETRY_CCM_DECRYPT_OK_TOTAL.increment
 
     sensor   = plaintext.unpack(CCM_SENSOR_PAYLOAD_FORMAT)
-    vcap_mv, temp_c, acoustic, delta_t_s, status_byte, mesh_ctrl = sensor
+    vcap_mv, temp_c, acoustic, delta_t_s, status_byte, mesh_ctrl,
+      device_z_raw, diag_byte, vpd_index = sensor
 
     unless SAFE_VOLTAGE_RANGE.cover?(vcap_mv) && SAFE_TEMP_RANGE.cover?(temp_c)
       Rails.logger.warn "📡 [CCM Sensor Noise] DID #{hex_did}: vcap=#{vcap_mv} temp=#{temp_c} — out of physical bounds."
@@ -365,6 +375,42 @@ class TelemetryUnpackerService < ApplicationService
       # (Soldier_Build_CCM_LoRa_Packet приймає status_byte як є).
       panic: status_byte.anybits?(PANIC_FLAG_BIT)
     }
+
+    # [FW.31 Gate D] device_z з шифртексту (wire-rev2 bytes 16..17,
+    # фіксована точка ×512): живить numeric DCI-гілку check_z_divergence!.
+    # Сентинель 0xFFFF = «Лоренц цього циклу не рахувався» (ARCH.41-C
+    # grace) → атрибут відсутній, numeric branch чесно пропускається.
+    # Транзієнт як lorenz_temperature_c — стрипається перед persist.
+    if device_z_raw != CCM_DEVICE_Z_NONE
+      log_attributes[:device_z] = device_z_raw / CCM_DEVICE_Z_SCALE
+    end
+
+    # [FW.18b] diag-байт (wire-rev2 byte 18): [thr_invalid:5 | fauna_mode:1 |
+    # fauna_skip:1 | fc_degraded:1] — дзеркало Pack_FW2_Diag (lora_ccm.h).
+    # Той самий cardinality-патерн, що ECB-шлях: метрика без per-DID мітки,
+    # конкретне дерево — у warn-лозі.
+    threshold_invalid = (diag_byte >> 3) & 0x1F
+    if threshold_invalid.positive?
+      SilkenNet::Metrics::TINYML_THRESHOLD_INVALID_REPORTS_TOTAL.increment
+      Rails.logger.warn(
+        "🎚️ [FW.18b] #{hex_did}: відкинуті OTA-пороги TinyML — лічильник #{threshold_invalid}" \
+        "#{threshold_invalid == 31 ? ' (wire-сатурація, реальне значення може бути більшим)' : ''}"
+      )
+    end
+    if diag_byte.anybits?(0x02) # fauna_skip [FW.42]
+      SilkenNet::Metrics::FAUNA_SKIP_REPORTS_TOTAL.increment
+      Rails.logger.warn "🦉 [FW.42] #{hex_did}: fauna-сесію пропущено через низький Vcap (брауноут-захист)."
+    end
+    if diag_byte.anybits?(0x01) # fc_degraded [FW.2 I-HW]
+      SilkenNet::Metrics::FW2_FC_DEGRADED_REPORTS_TOTAL.increment
+      Rails.logger.warn "🛡️ [FW.2] #{hex_did}: інваріант FC high-water втрачено (Flash відмовляє) — nonce-гарантія деградована."
+    end
+
+    # [HW.32] vpd_index (byte 19): 0x00 = немає BME280 (резерв-дім поля).
+    # Шкала index→kPa визначиться при калібруванні сенсора — до того
+    # байт лише займає своє місце у wire, у БД не пишемо.
+    # (vpd-колонка telemetry_logs чекає каліброваного значення.)
+    _ = vpd_index
 
     # [ARCH.41-B] sentinel 0xFE → нейтралізація ДО DCI + CMD_TIME_SYNC.
     apply_time_uncertain_sentinel!(tree, log_attributes, hex_did)
@@ -727,7 +773,9 @@ class TelemetryUnpackerService < ApplicationService
     log = ActiveRecord::Base.transaction do
       # [FW.57 F2] :lorenz_temperature_c is a transient DCI input (raw wire temp),
       # not a column — strip it before persisting (calibrated temperature_c stays).
-      record = tree.telemetry_logs.create!(attributes.except(:lorenz_temperature_c))
+      # [FW.31] :device_z (wire-rev2) — той самий транзієнт-клас: вхід numeric
+      # DCI, серверна істина z_value вже зберігається окремо.
+      record = tree.telemetry_logs.create!(attributes.except(:lorenz_temperature_c, :device_z))
 
       # [OBSERVABILITY]: Count successfully committed telemetry chunks
       SilkenNet::Metrics::TELEMETRY_PROCESSED_TOTAL.increment

@@ -80,15 +80,19 @@ module TelemetryChunkHelper
   end
 
   # ---------------------------------------------------------------------
-  # 25-byte AES-128-CCM chunk (FW.2 / ARCH.42 Variant B wire format).
+  # 29-byte AES-128-CCM chunk (FW.2 wire-rev2, founder decision 2026-06-12).
   #
-  #   [DID:4][RSSI:1][FrameCounter:4 BE][ciphertext:8][MIC:8]
+  #   [DID:4][RSSI:1][gossip_ts_lsb:1][FrameCounter:3 BE][ciphertext:12][MIC:8]
   #
-  # Plaintext sensor layout (8 bytes, `CCM_SENSOR_PAYLOAD_FORMAT`):
+  # Plaintext sensor layout (12 bytes, `CCM_SENSOR_PAYLOAD_FORMAT`):
   #   vcap_mv(2), temp_c(1), acoustic(1), delta_t_s(2),
-  #   status_byte(1), mesh_ctrl(1)
+  #   status_byte(1), mesh_ctrl(1), device_z(2 BE, ×512; 0xFFFF = none),
+  #   diag(1), vpd_index(1)
   #
-  # `mesh_ctrl` packs `[ttl:4 high | fw_nibble:4 low]`.
+  # `mesh_ctrl` packs `[ttl:4 high | fw_nibble:4 low]`;
+  # `diag` packs `[thr_invalid:5 | fauna_mode:1 | fauna_skip:1 | fc_degraded:1]`.
+  # `device_z:` приймає Float (квантується тут, дзеркало Pack_FW2_Device_Z)
+  # або `nil` → сентинель 0xFFFF («Лоренц не рахувався»).
   #
   # `did_hex:` and `key:` are required — no implicit lookup from
   # surrounding `let` bindings. Specs that share a fixed key/DID
@@ -96,15 +100,25 @@ module TelemetryChunkHelper
   # them in, keeping this helper pure and reusable.
   # ---------------------------------------------------------------------
   def build_ccm_chunk(did_hex:, key:, rssi:, vcap:, temp:, acoustic:, dt:, status:, ttl:,
-                      fw_nibble: 0, fc: 1)
-    did_int   = did_hex.to_i(16)
-    did_bytes = [ did_int ].pack("N")
-    mesh_ctrl = ((ttl & 0x0F) << 4) | (fw_nibble & 0x0F)
-    plaintext = [ vcap, temp, acoustic, dt, status, mesh_ctrl ].pack("n c C n C C")
+                      fw_nibble: 0, fc: 1, device_z: nil, diag: 0, vpd_index: 0,
+                      gossip_ts_lsb: 0)
+    did_int      = did_hex.to_i(16)
+    did_bytes    = [ did_int ].pack("N")
+    mesh_ctrl    = ((ttl & 0x0F) << 4) | (fw_nibble & 0x0F)
+    device_z_raw =
+      if device_z.nil?
+        TelemetryUnpackerService::CCM_DEVICE_Z_NONE
+      else
+        [ (device_z * TelemetryUnpackerService::CCM_DEVICE_Z_SCALE + 0.5).floor, 0xFFFE ].min
+      end
+    plaintext = [ vcap, temp, acoustic, dt, status, mesh_ctrl,
+                  device_z_raw, diag, vpd_index ].pack("n c C n C C n C C")
     ct, mic   = Cryptography::LoraCcm.encrypt(
-      key: key, did_bytes: did_bytes, frame_counter: fc, plaintext: plaintext
+      key: key, did_bytes: did_bytes, frame_counter: fc,
+      gossip_ts_lsb: gossip_ts_lsb, plaintext: plaintext
     )
-    did_bytes + [ -rssi ].pack("C") + [ fc ].pack("N") + ct + mic
+    did_bytes + [ -rssi ].pack("C") + [ gossip_ts_lsb ].pack("C") +
+      [ fc ].pack("N")[1..3] + ct + mic
   end
 end
 

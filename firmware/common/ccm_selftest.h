@@ -40,8 +40,10 @@ typedef void (*ccm_selftest_report_fn)(const char *name, int pass);
 // cppcheck-suppress shadowVariable
 static inline int Ccm_Kat_Run_One(CRYP_HandleTypeDef *hcryp,
                                   const uint8_t key[16], const uint8_t nonce[12],
-                                  const uint8_t aad[8], const uint8_t pt[8],
-                                  const uint8_t ct[8], const uint8_t tag[8]) {
+                                  const uint8_t aad[FW2_CCM_AAD_LEN],
+                                  const uint8_t pt[FW2_CCM_PLAINTEXT_LEN],
+                                  const uint8_t ct[FW2_CCM_PLAINTEXT_LEN],
+                                  const uint8_t tag[FW2_CCM_MIC_LEN]) {
     uint32_t key_w[4];
     uint32_t nonce_w[3];   /* 12 bytes */
     uint8_t  aad_buf[FW2_CCM_AAD_LEN];
@@ -91,11 +93,11 @@ static inline int Ccm_Run_Self_Test(CRYP_HandleTypeDef *hcryp,
                                     ccm_selftest_report_fn report) {
     int failed = 0;
 
-    /* Golden — nonce/AAD built from DID/FC exactly like the field TX path. */
+    /* Golden — nonce/AAD built from DID/gossip/FC exactly like field TX. */
     uint8_t g_nonce[FW2_CCM_NONCE_LEN];
     uint8_t g_aad[FW2_CCM_AAD_LEN];
     Build_CCM_Nonce(G_DID, G_FC, g_nonce);
-    Build_CCM_AAD(G_DID, G_FC, g_aad);
+    Build_CCM_AAD(G_DID, G_GOSSIP, G_FC, g_aad);
     int g_pass = Ccm_Kat_Run_One(hcryp, G_ZERO_KEY, g_nonce, g_aad, G_PT, G_CT, G_TAG);
     if (!g_pass) failed++;
     if (report) report("golden: zero-key DID=01020304 FC=5", g_pass);

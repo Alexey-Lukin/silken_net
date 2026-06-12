@@ -3170,12 +3170,22 @@ static void Save_Frame_Counter(uint32_t fc_24bit)
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR15, Pack_FW2_Frame_Counter(fc_24bit));
 }
 
-// Зібрати повний 24-байтний CCM LoRa-пакет та просунути лічильник кадрів.
-// Успіх: out_packet[0..23] — готовий до ефіру, повертає HAL_OK.
+// Зібрати повний 28-байтний CCM LoRa-пакет (wire-rev2) та просунути
+// лічильник кадрів. Успіх: out_packet[0..27] — готовий до ефіру, HAL_OK.
 // Збій HAL_CRYPEx: повертає HAL_ERROR — TX заборонено, лічильник не рухаємо.
+//
+// Нові поля rev2 (джерела на боці викликача при фліп-вшиванні):
+//   device_z   — Pack_FW2_Device_Z(lorenz_z, lorenz_state_valid): сирий Z
+//                для FW.31 numeric DCI (сентинель NONE коли Лоренц спав)
+//   diag       — Pack_FW2_Diag(tinyml_threshold_invalid_count, fauna_mode,
+//                fauna_skip, fc_hiwater_degraded)
+//   vpd_index  — 0x00 до приходу BME280 (HW.32)
+//   gossip_ts_lsb — Soldier_Pack_Gossip_Ts_Byte(soldier_unix_ts): їде у
+//                cleartext-AAD, сусіди читають без ключа (FW.20-S2 #5)
 int Soldier_Build_CCM_LoRa_Packet(
     uint32_t did, uint16_t vcap_mv, int8_t temp_c, uint8_t acoustic,
     uint16_t delta_t_s, uint8_t status_byte, uint8_t mesh_ctrl,
+    uint16_t device_z, uint8_t diag, uint8_t vpd_index, uint8_t gossip_ts_lsb,
     uint8_t out_packet[FW2_CCM_AIR_PACKET_LEN])
 {
     uint32_t fc = Load_Frame_Counter();
@@ -3208,9 +3218,10 @@ int Soldier_Build_CCM_LoRa_Packet(
     uint8_t ct_and_tag[FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN];
 
     Build_CCM_Nonce(did, next_fc, nonce);
-    Build_CCM_AAD(did, next_fc, aad);
+    Build_CCM_AAD(did, gossip_ts_lsb, next_fc, aad);
     Pack_CCM_Sensor_Payload(vcap_mv, temp_c, acoustic, delta_t_s,
-                            status_byte, mesh_ctrl, plaintext);
+                            status_byte, mesh_ctrl,
+                            device_z, diag, vpd_index, plaintext);
 
     MX_CRYP_Init_CCM(nonce, aad);
     int status = HAL_CRYPEx_AESCCM_Encrypt(&hcryp, plaintext, FW2_CCM_PLAINTEXT_LEN,
@@ -3222,9 +3233,10 @@ int Soldier_Build_CCM_LoRa_Packet(
     }
 
     // Складаємо пакет до ефіру: AAD-заголовок || шифротекст || MIC-печатка.
-    memcpy(&out_packet[0],  aad,           FW2_CCM_AAD_LEN);
-    memcpy(&out_packet[8],  ct_and_tag,    FW2_CCM_PLAINTEXT_LEN);
-    memcpy(&out_packet[16], ct_and_tag + FW2_CCM_PLAINTEXT_LEN, FW2_CCM_MIC_LEN);
+    memcpy(&out_packet[0], aad, FW2_CCM_AAD_LEN);
+    memcpy(&out_packet[FW2_CCM_AAD_LEN], ct_and_tag, FW2_CCM_PLAINTEXT_LEN);
+    memcpy(&out_packet[FW2_CCM_AAD_LEN + FW2_CCM_PLAINTEXT_LEN],
+           ct_and_tag + FW2_CCM_PLAINTEXT_LEN, FW2_CCM_MIC_LEN);
 
     Save_Frame_Counter(next_fc);
     return HAL_OK;

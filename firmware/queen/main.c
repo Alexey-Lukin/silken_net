@@ -1942,9 +1942,12 @@ static void MX_CRYP_Init_CCM_Decrypt(uint8_t *nonce_12b, uint8_t *aad_8b)
     HAL_CRYP_Init(&hcryp);
 }
 
-// Розшифрувати 24-байтний CCM LoRa-пакет від Солдата. Повертає HAL_OK і заповнює:
-//   *out_did, *out_fc           — з відкритого AAD (перші 8 байт пакета)
-//   out_sensor[8]               — розшифрований сенсорний payload
+// Розшифрувати 28-байтний CCM LoRa-пакет (wire-rev2) від Солдата.
+// Повертає HAL_OK і заповнює:
+//   *out_did, *out_fc           — з відкритого AAD (DID + FC24)
+//   out_sensor[12]              — розшифрований сенсорний payload
+// (gossip-байт AAD[4] Королеві не потрібен — вона має власний LTE-час;
+//  він адресований Солдатам-сусідам і їде у CoAP-chunk як є.)
 // Якщо MIC не б'ється, формат кривий або HAL захрип — повертає HAL_ERROR;
 // ловець зобов'язаний дропнути пакет: ні ретрансляції, ні бекенду.
 //
@@ -1960,14 +1963,15 @@ int Queen_Parse_CCM_LoRa_Packet(const uint8_t in_packet[FW2_CCM_AIR_PACKET_LEN],
     uint32_t did =
         ((uint32_t)in_packet[0] << 24) | ((uint32_t)in_packet[1] << 16) |
         ((uint32_t)in_packet[2] << 8)  | (uint32_t)in_packet[3];
+    uint8_t  gossip = in_packet[4];
     uint32_t fc =
-        ((uint32_t)in_packet[4] << 24) | ((uint32_t)in_packet[5] << 16) |
-        ((uint32_t)in_packet[6] << 8)  | (uint32_t)in_packet[7];
+        ((uint32_t)in_packet[5] << 16) | ((uint32_t)in_packet[6] << 8) |
+        (uint32_t)in_packet[7];
 
     uint8_t nonce[FW2_CCM_NONCE_LEN];
     uint8_t aad[FW2_CCM_AAD_LEN];
     Build_CCM_Nonce(did, fc, nonce);
-    Build_CCM_AAD(did, fc, aad);
+    Build_CCM_AAD(did, gossip, fc, aad);
 
     // HAL_CRYPEx_AESCCM_Decrypt потребує одного буфера: шифротекст || MIC-тег.
     uint8_t ct_and_tag[FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN];

@@ -293,14 +293,14 @@ end
 
 > **ЄДИНЕ авторитетне джерело переліку + кількості метрик** — згенеровано з
 > `SilkenNet::Metrics::REGISTRY`, verified vs `config/initializers/prometheus.rb`
-> 2026-06-10. Усі інші згадки (CLAUDE.md, `config.alloy`, підсекції §2.3–2.7 з
+> 2026-06-12. Усі інші згадки (CLAUDE.md, `config.alloy`, підсекції §2.3–2.7 з
 > обґрунтуванням/alert-прикладами) **рефлять сюди**, не дублюють число/перелік.
 > При зміні реєстру в коді — **регенерувати ЛИШЕ цю таблицю** (команда в кінці).
 > Де інкрементується/оновлюється кожна — `grep -rn "SilkenNet::Metrics::<CONST>" app/`.
 >
-> **Разом: 45 метрик = 24 counters + 19 gauges + 2 histograms.**
+> **Разом: 47 метрик = 26 counters + 19 gauges + 2 histograms.**
 
-**Counters (24):**
+**Counters (26):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
@@ -308,6 +308,8 @@ end
 | `silkennet_circuit_breaker_rejections_total` | `service` | Web3 requests fast-failed because a provider circuit breaker was open |
 | `silkennet_coap_packets_received_total` | `status` | Total CoAP UDP packets received by the telemetry daemon |
 | `silkennet_ews_alerts_total` | `alert_type` | Total EWS alerts dispatched (fire, drought, pest, storm) |
+| `silkennet_fauna_skip_reports_total` | — | FW.42 telemetry packets reporting a fauna session skipped on low Vcap (per-DID attribution in logs) |
+| `silkennet_fw2_fc_degraded_reports_total` | — | FW.2 telemetry packets reporting a lost FC high-water invariant (Flash refusing writes; per-DID attribution in logs) |
 | `silkennet_m2m_nonce_fallback_total` | — | Total M2M nonce checks falling back from Redis to DB-backed cache (Redis outage indicator) |
 | `silkennet_ota_chunks_sent_total` | `firmware_version` | Total OTA firmware chunks transmitted to field devices |
 | `silkennet_panic_replay_rejected_total` | — | Panic packets rejected as replay via SEC.10 Frame Counter SETNX nonce |

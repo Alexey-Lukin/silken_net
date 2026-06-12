@@ -320,7 +320,7 @@ if (climate_due) {
 }
 ```
 
-> **VPD (Vapor Pressure Deficit)** обчислюється на вузлі з t°+RH і пакується **1 байтом** (Phase 2, байт 14) як **прямий confounder сокоруху** — backend використовує його, щоб не штрафувати за погоду (False-Slashing guard, [`05_05`](05_05_Slashing_and_Risk_Policy) §6/§7). Сирі RH/тиск (для NaaS клімат-оракула, [`07_01`](07_01_Nature_as_a_Service_Contracts)) — у періодичному **climate frame** (FW.2 24B CCM extended payload; транзитний 16B-кадр місця не має). Тригер climate frame: кожні N uplink'ів або значна Δтиску (раннє попередження про шторм). Енергія: за TPS22860-гейтом ≈8нА avg ([`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM), [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)). 🚨 **DCI-guard:** BME280-дані (VPD/RH/тиск) **НЕ** входять у входи Атрактора Лоренца (ті — temp/acoustic/delta_t/vcap, FW.5) → firmware↔backend bit-identity не зачіпається.
+> **VPD (Vapor Pressure Deficit)** обчислюється на вузлі з t°+RH і пакується **1 байтом** (канонічний дім — **CCM wire-rev2 byte 19 `vpd_index`**, [`03_05 §3.2`](03_05_Hardware_Symmetric_Crypto_and_Security) wire-budget ledger; у транзитному 21B-кадрі VPD НЕ передається — байт 14 там належить gossip-freeze) як **прямий confounder сокоруху** — backend використовує його, щоб не штрафувати за погоду (False-Slashing guard, [`05_05`](05_05_Slashing_and_Risk_Policy) §6/§7). Сирі RH/тиск (для NaaS клімат-оракула, [`07_01`](07_01_Nature_as_a_Service_Contracts)) — у періодичному **climate frame** (FW.2 24B CCM extended payload; транзитний 16B-кадр місця не має). Тригер climate frame: кожні N uplink'ів або значна Δтиску (раннє попередження про шторм). Енергія: за TPS22860-гейтом ≈8нА avg ([`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM), [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)). 🚨 **DCI-guard:** BME280-дані (VPD/RH/тиск) **НЕ** входять у входи Атрактора Лоренца (ті — temp/acoustic/delta_t/vcap, FW.5) → firmware↔backend bit-identity не зачіпається.
 
 **RSSI (Канал 5 — Zero-Energy Фенологія):**
 
@@ -404,7 +404,7 @@ Offset | Size | Field            | Значення
 
 > **[FW.29] Disambiguація panic vs насичений acoustic_events:** до FW.29 `acoustic_events == 0xFF` вказував і на реальне насичення кавітаційних подій, і на panic. Тепер `PANIC_FLAG_BIT` (bit 7 байта 10) однозначно маркує паніку: `panic_payload[10] = 0x80`, а `panic_payload[7] = 0xFF` (acoustic). Нормальні пакети завжди виконують `lora_payload[10] &= ~PANIC_FLAG_BIT`.
 
-> **[HW.32] Байт 14 (VPD index) — co-existence з SEC.10:** на **non-panic** пакетах байт 14 несе VPD-індекс (BME280, on-node), а байт 15 = 0. На **panic**-пакетах байти 14-15 належать SEC.10 anti-replay frame counter (BE) — VPD там не інтерпретується. Конфлікту немає: інтерпретація розрізняється `PANIC_FLAG_BIT` (байт 10, bit 7). Backend (`TelemetryUnpackerService`) читає байт 14 → `vpd` лише для non-panic пакетів. Сирі RH/тиск чекають FW.2 24B CCM (climate frame).
+> **[HW.32] Дім VPD-байта — ✅ ПЕРЕВИРІШЕНО (wire-rev2, 2026-06-12):** стара претензія «non-panic байт 14 = VPD» мовчки колідувала з FW.20-S2 #5 gossip-freeze (обидва канони бронювали байт 14 non-panic кадрів — double-booking зловив wire-budget ledger). Вердикт: VPD-індекс живе у **CCM wire-rev2 byte 19 `vpd_index`** ([`03_05 §3.2`](03_05_Hardware_Symmetric_Crypto_and_Security)), транзитний 21B байт 14 лишається gossip'у; у CCM gossip переїхав у AAD byte 4. SEC.10-співіснування зняте самим CCM (panic-counter замінено FC+MIC). Сирі RH/тиск чекають окремого climate frame (ledger, «відкриті спостереження»).
 
 Після пакування:
 
@@ -1735,7 +1735,7 @@ EMA_Update(delta_t_seconds, vcap_voltage);
 - Бачити реальний raw `delta_t` для діагностики
 - Самостійно рахувати EMA server-side якщо потрібно (через TimescaleDB continuous aggregates, E.37)
 
-**Dual Computation Integrity (метаболічний канал):** [E.63] FW.5 B+ β-пертурбацію **реверсовано** — raw `delta_t` більше не входить у Z. Wire несе **raw** `delta_t`, а `growth_points` пакуються з **EMA-згладженого** (firmware-internal) → backend **не може** точно перерахувати GP з одного пакета. Тому метаболічний DCI зараз — **структурний** `check_metabolic_divergence!` (wire-GP↔статус conformance, observational; [`04_02`](04_02_Business_Logic_and_Services) / [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor)). Точний stateless `m(wire_dT)==GP` відкладено до **FW.2**, коли wire нестиме EMA `delta_t` (пакет → 24B CCM). Трекер — [`00_07` — E.63](00_07_Action_Plan_Tracker).
+**Dual Computation Integrity (метаболічний канал):** [E.63] FW.5 B+ β-пертурбацію **реверсовано** — raw `delta_t` більше не входить у Z. Wire несе **raw** `delta_t`, а `growth_points` пакуються з **EMA-згладженого** (firmware-internal) → backend **не може** точно перерахувати GP з одного пакета. Тому метаболічний DCI зараз — **структурний** `check_metabolic_divergence!` (wire-GP↔статус conformance, observational; [`04_02`](04_02_Business_Logic_and_Services) / [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor)). Точний stateless `m(wire_dT)==GP` відкладено: wire мусить понести EMA `delta_t` — **wire-rev2 (28B CCM) цього свідомо не додав**, кандидат rev3 у wire-budget ledger ([`03_05 §3.2`](03_05_Hardware_Symmetric_Crypto_and_Security)). Трекер — [`00_07` — E.63](00_07_Action_Plan_Tracker).
 
 ### 13.7 Тести (`firmware/test/test_soldier_logic.c` — секція FW.21)
 
