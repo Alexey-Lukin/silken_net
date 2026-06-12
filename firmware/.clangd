@@ -6,9 +6,40 @@
 # files (firmware/test/*.c, firmware/common/logmel.c). Point clangd at the host
 # parity build instead; if it isn't built yet, clangd falls back to host
 # heuristics (also correct for these files).
-#
-# NB: firmware/soldier/main.c + queen/main.c still show main.h / radio.h /
-# mruby/*.h unresolved — those are CubeMX/submodule-generated and only present
-# in the full HAL build (docs/03_01 §12.4), not in the host DB. Expected.
 CompileFlags:
   CompilationDatabase: build-host
+
+---
+
+# soldier/main.c + queen/main.c (+ hal_glue wrapper-TUs) live outside the CMake
+# targets — they are compiled only by the CI hal_check lane (FW.46). The
+# build-host DB would make clangd infer their flags from logmel.c (bogus
+# pp_file_not_found / unknown_typename noise; the old "Expected" note here
+# predated hal_glue/ + the vendored WL HAL — everything resolves now), so for
+# these paths we drop the DB and mirror hal_check's include dirs + defines
+# (firmware/CMakeLists.txt; MRB_* One-Home: firmware/mruby/build_config.rb).
+# Change hal_check → sync this block. PathMatch is relative to this config's
+# directory (firmware/); relative -I resolve from the file's own directory —
+# every matched dir sits at depth firmware/*/. No ARM toolchain needed: clangd
+# parses with its own front-end, host-target, same as the host tests.
+If:
+  PathMatch: (soldier|queen|hal_glue)/.*\.(c|h)
+CompileFlags:
+  CompilationDatabase: None
+  Add:
+    - -xc          # standalone .h інакше парситься як ObjC++
+    - -std=c11
+    - -I../hal_glue
+    - -I../common
+    - -I../extern/cmsis-device-wl/Include
+    - -I../extern/stm32wlxx-hal-driver/Inc
+    - -I../extern/CMSIS_6/CMSIS/Core/Include
+    - -I../extern/mruby/include
+    - -I../extern/mruby/build/arm-none-eabi/include
+    - -I../extern/monocypher/src
+    - -I../extern/monocypher/src/optional
+    - -DSTM32WLE5xx
+    - -DUSE_HAL_DRIVER
+    - -DMRB_NO_STDIO
+    - -DMRB_CONSTRAINED_BASELINE_PROFILE
+    - -DMRB_NO_BOXING
