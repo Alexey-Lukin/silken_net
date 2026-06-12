@@ -455,7 +455,8 @@ pure `CoapServerPdu` (`lib/coap_server_pdu.rb` — серверне дзерка
 - кремнієве підтвердження DMA-вуха: DMAMUX-роутинг USART1_RX, поведінка
   NDTR/TC на реальному кремнії, межовий байт рівно-повного кільця у гонці
   (логіка кільця host-доведена — `test_uart_rx_ring.c`; ✅ архітектурне
-  закриття 2026-06-10: байтовий polling → circular-DMA кільце);
+  закриття 2026-06-10: байтовий polling → circular-DMA кільце; bench-день
+  скриптовано — `firmware/scripts/bench/06_uart_dma_ears.py`, RUNBOOK 5.4);
 - поведінка при реальних LTE-M/Starlink мережевих помилках (скриптовані
   ERROR/+CME/тиша — покриті host).
 

@@ -66,7 +66,7 @@
 | 5.1 **Verbatim-звірка ноти** | роздобути SIM7070_…_CoAP(S)_Application Note **V1.03** (Techship/SIMCom; публічні дзеркала 403) і звірити проти `03_02 §4` | граматика збігається АБО оновити `at_engine`-транскрипти |
 | 5.2 Живі транскрипти | minicom-лог: ATE0/AT/CNMP/CPSMS/CEDRXS + CDNSGIP + CCOAPNEW/SEND/DEL | лог ≡ скриптовані транскрипти `test_at_engine.c` (URC-порядки, таймінги) |
 | 5.3 e2e PUT → Rails | повний flush на staging CoAP-intake | `+CCOAPNMI` 2.xx; запис у `TelemetryLog` |
-| 5.4 UART DMA RX | наступна ітерація FW.3 (зараз байтовий polling) | — |
+| 5.4 DMA-вуха кремнію | `06_uart_dma_ears.py --plan`: USB-UART замість модема + pyOCD attach (producer-лічильники wraps/NDTR по SWD; логіка кільця host-доведена `test_uart_rx_ring.c`) | вердикт ✅ ROUTE/FEED/WRAP/BOUNDARY: DMAMUX-роутинг USART1_RX, TC = рівно +1 wrap, межовий байт повного кільця не губиться/не двоїться |
 
 ## 6. Решта фізики (по item-ах 00_07)
 
