@@ -31,8 +31,10 @@
  *
  * Frame Counter persistence (RTC_BKP_DR15):
  *   DR15 packed = [FW2_FC_MAGIC:8 | frame_counter:24]
- *   Magic = 0x46 ("F"). Invalid magic on cold boot → reseed via HRNG
- *   (range 0x000001..0xFFFFFE — skip 0 and 0xFFFFFF boundaries).
+ *   Magic = 0x46 ("F"). Invalid magic on cold boot → Flash high-water
+ *   floor first (fc_hiwater.h, KV key 0x14 — unconditional uniqueness),
+ *   HRNG reseed as fallback (range 0x000001..0xFFFFFE — skip 0 and
+ *   0xFFFFFF boundaries). Policy canon: docs/03_05 §2.1.
  */
 
 #ifndef LORA_CCM_H
@@ -119,9 +121,11 @@ static inline void Unpack_CCM_Sensor_Payload(const uint8_t in[FW2_CCM_PLAINTEXT_
 /* ----- RTC_BKP_DR15 Frame Counter packing -----
  *
  * Cold-boot resilience: if the persisted DR15 magic byte does not
- * match FW2_FC_MAGIC_BYTE, caller must reseed via HRNG (Soldier-side
- * `Cold_Reseed_Frame_Counter`). Magic byte stays constant once written
- * and survives every STOP2 cycle so long as VBAT holds.
+ * match FW2_FC_MAGIC_BYTE, caller restarts from the Flash high-water
+ * floor (fc_hiwater.h) and only falls back to HRNG reseed when no
+ * anchor exists (Soldier-side `Load_Frame_Counter`). Magic byte stays
+ * constant once written and survives every STOP2 cycle so long as
+ * VBAT holds.
  */
 
 static inline uint32_t Pack_FW2_Frame_Counter(uint32_t fc_24bit) {

@@ -563,13 +563,26 @@ static uint8_t Soldier_Handle_CMD_SET_THRESHOLDS(const uint8_t* frame,
 // [ARCH.28 шлях A] Flash-KV журнал: сторінки 122-123 (freeze-contract
 // 03_01 §2.3; K_ota тому переїхав на сторінку 125 — первісний 0x0803D000
 // колідував із цим регіоном). Mount спільний для споживачів FW.17 (версія
-// ratchet'а) та FW.8 (Z-пороги, ../common/lorenz_thresholds.h) — його
-// вмикає будь-який із двох флагів.
+// ratchet'а), FW.8 (Z-пороги, ../common/lorenz_thresholds.h) та FW.2
+// (FC high-water, ../common/fc_hiwater.h) — його вмикає будь-який із флагів.
 #define FLASH_KV_BASE_ADDR     0x0803D000UL
 #define FLASH_KV_FIRST_PAGE    122u
 #define FLASH_KV_PAGE_DWS      256u   // 2 КБ / 8 Б на dw-елемент
 
-#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED
+// [FW.2] Гейт усієї CCM-гілки (сама гілка — секція внизу файла). Define
+// живе тут, бо KV-mount спільний: FC high-water (TRL-7 монотонна межа,
+// політика 03_05 §2.1) їде у Flash-KV ключем 0x14 і мусить вмикати mount.
+#define FW2_CCM_ENABLED  0  // freeze-contract — flip після HAL verification (RUNBOOK §2)
+#include "../common/fc_hiwater.h"
+
+#if FW2_CCM_ENABLED
+static uint32_t fc_hiwater_cache    = 0; // RAM-кеш межі; істина — Flash-KV 0x14
+static uint8_t  fc_hiwater_degraded = 0; // TX перетнув межу, Flash мовчить —
+                                         // діагностика; wire-транспорту поки
+                                         // нема (PAD повний — патерн FW.42)
+#endif
+
+#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED
 // Збірка при фліпі: + ../common/flash_kv.c (як test_flash_kv). Тут — реальні
 // залізні примітиви; host-тести ганяють ту саму журнальну логіку на RAM-моці
 // з fault-injection (power-cut посеред compact), HAL-глю верифікує bench.
@@ -608,7 +621,7 @@ static const FlashKvOps soldier_kv_ops = {
 };
 static FlashKv soldier_kv;
 static uint8_t soldier_kv_mounted = 0;
-#endif // FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED
+#endif // FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED
 
 #if FW17_RATCHET_ENABLED
 static void MX_CRYP_Init(void); // повний прототип нижче — потрібен re-key'ю
@@ -1689,11 +1702,18 @@ int main(void)
                                  *(uint32_t*)(0x1FFF7594),
                                  *(uint32_t*)(0x1FFF7598));
 
-#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED
+#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED
   // [ARCH.28] Mount Flash-KV (сторінки 122-123). Невдача (обидві сторінки
   // биті) → mounted=0: споживачі живуть на дефолтах/K0 — деградація, не смерть.
   soldier_kv_mounted = FlashKv_Mount(&soldier_kv, &soldier_kv_ops, NULL,
                                      FLASH_KV_PAGE_DWS);
+#endif
+#if FW2_CCM_ENABLED
+  // [FW.2 TRL-7] Кеш межі FC: один Get32 на boot, далі Load_Frame_Counter
+  // та КЕНОЗИС працюють з RAM-кешем (Flash читається лише тут).
+  if (soldier_kv_mounted) {
+      fc_hiwater_cache = Fc_Hiwater_Load(&soldier_kv);
+  }
 #endif
 #if FW8_PARSER_ENABLED
   // [FW.8] Boot-restore Z-порогів: Load жене збережене через ті самі
@@ -2553,7 +2573,24 @@ int main(void)
         }
     }
 #endif
-#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED
+#if FW2_CCM_ENABLED
+    // [FW.2 TRL-7] Проактивне просування межі FC — у тій самій безпечній
+    // фазі. Наступний TX підбирається до межі ближче ніж на MARGIN →
+    // один dw-program ставить її на STRIDE уперед, і сторожа у Build_CCM
+    // лишається мертвим кодом. fc_now == 0 — CCM у цьому втіленні ще не
+    // передавав (магія DR15 не зведена), межі нічого не загрожує.
+    if (soldier_kv_mounted) {
+        uint32_t fc_now = Unpack_FW2_Frame_Counter(
+            HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR15));
+        if (fc_now != 0 &&
+            Fc_Hiwater_Should_Advance(fc_hiwater_cache, fc_now + 1u) &&
+            Fc_Hiwater_Advance(&soldier_kv, Fc_Hiwater_Target(fc_now),
+                               &fc_hiwater_cache)) {
+            fc_hiwater_degraded = 0; // межа знову попереду всіх переданих
+        }
+    }
+#endif
+#if FW17_RATCHET_ENABLED || FW8_PARSER_ENABLED || FW2_CCM_ENABLED
     // [ARCH.28] Ущільнення журналу — спільне для всіх KV-споживачів, лише
     // у цій безпечній фазі (після TX, перед сном; erase ~десятки мс не
     // сміє лягти під LoRa RX-вікно).
@@ -3000,7 +3037,8 @@ static void MX_CRYP_Init(void)
 // (b) HAL_CRYPEx виклик, (c) RTC FC management через HAL_RTCEx_BKUPRead/Write.
 #include "../common/lora_ccm.h"
 
-#define FW2_CCM_ENABLED  0  // freeze-contract — flip після HAL verification
+// FW2_CCM_ENABLED визначений угорі, біля Flash-KV гейтів — FC high-water
+// (TRL-7) вмикає спільний KV-mount, тож define мусить жити до нього.
 
 #if FW2_CCM_ENABLED || defined(HAL_MOCK_CCM_ENABLED)
 // Reconfigure hcryp для CCM-режиму. Викликається перед HAL_CRYPEx_AESCCM_Encrypt;
@@ -3023,23 +3061,36 @@ static uint32_t Load_Frame_Counter(void)
     uint32_t fc = Unpack_FW2_Frame_Counter(packed);
     if (fc == 0) {
         // Холодний старт після втрати VBAT: вічна пам'ять стерта, магія DR15
-        // згасла. Монотонного джерела, що пережило б повну смерть живлення, тут
-        // немає (RTC-календар і soldier_unix_ts обидва на дефолтах — час дає лише
-        // beacon Королеви, якого ще не було; запис у Flash небезпечний при кволому
-        // пост-drain заряді; SE свідомо не будимо) → пересіваємо рівномірно-
-        // випадковим зерном. Канон політики + чесна оцінка залишкового ризику
-        // (MEDIUM): docs/03_05 (КАНОНІЧНЕ ДЖЕРЕЛО — FW.2 FC/nonce).
-        // HRNG з трьома спробами; кволого HAL_GetTick fallback НЕМАЄ — на холодному
-        // старті tick дрібний і вгадуваний, кластеризується між cold-boot'ами того
-        // ж вузла (саме там і причаївся б повтор nonce).
+        // згасла. Першим словом озивається Flash-якір [FW.2 TRL-7]: межа з
+        // KV-ключа 0x14 строго вища за все, що цей вузол будь-коли передав
+        // (інваріант I-HW, fc_hiwater.h) → рестарт з неї монотонний без
+        // жодної ентропії. Floor законний ЛИШЕ разом з негайним просуванням
+        // межі (атомарність: повторний brownout до наступного КЕНОЗИСУ
+        // інакше стартував би з того самого floor і повторив nonce).
+#if FW2_CCM_ENABLED
+        uint32_t floor_fc = fc_hiwater_cache;
+        if (floor_fc != 0 && soldier_kv_mounted &&
+            Fc_Hiwater_Advance(&soldier_kv, Fc_Hiwater_Target(floor_fc),
+                               &fc_hiwater_cache)) {
+            fc = floor_fc; // перший TX = floor+1 > усіх переданих
+            HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR15, Pack_FW2_Frame_Counter(fc));
+            return fc;
+        }
+#endif
+        // Якоря нема (перше втілення / Flash відмовив) → пересіваємо
+        // рівномірно-випадковим зерном — стара імовірнісна політика, чесна
+        // деградація (MEDIUM): docs/03_05 §2.1 (КАНОНІЧНЕ ДЖЕРЕЛО — FW.2
+        // FC/nonce). HRNG з трьома спробами; кволого HAL_GetTick fallback
+        // НЕМАЄ — на холодному старті tick дрібний і вгадуваний,
+        // кластеризується між cold-boot'ами того ж вузла (саме там і
+        // причаївся б повтор nonce).
         uint32_t hrng_word = 0;
         for (int i = 0; i < 3 && hrng_word == 0; i++) {
             if (HAL_RNG_GenerateRandomNumber(&hrng, &hrng_word) != HAL_OK) hrng_word = 0;
         }
         // Остання межа, лише якщо HRNG зовсім мертвий: підмішуємо per-device DID,
         // щоб зерно різнилося між вузлами (ламає крос-девайс кластеризацію);
-        // залишковий ризик повтору приймаємо свідомо (див. SSOT). Безумовну
-        // унікальність дасть монотонний лічильник — це задача TRL-7.
+        // залишковий ризик повтору приймаємо свідомо (див. SSOT).
         if (hrng_word == 0) hrng_word = tree_did ^ HAL_GetTick();
         fc = Reseed_FW2_Frame_Counter(hrng_word);
         HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR15, Pack_FW2_Frame_Counter(fc));
@@ -3065,6 +3116,24 @@ int Soldier_Build_CCM_LoRa_Packet(
     // Нуль обходимо — він би вбив magic-перевірку при наступному boot.
     uint32_t next_fc = (fc + 1u) & FW2_FC_VALUE_MASK;
     if (next_fc == 0u) next_fc = FW2_FC_HRNG_MIN;
+
+    // [FW.2 TRL-7] Сторожа межі (інваріант I-HW, fc_hiwater.h): за
+    // дисципліни КЕНОЗИС-advance (запас MARGIN) сюди не заходимо ніколи —
+    // це останній рубіж, коли Flash відмовляв багато циклів поспіль.
+    // Energy-gate: один dw-program дозволяємо лише при заряді, якого
+    // вистачає й на RX-вікно (vcap_mv — мВ, конверсія на боці викликача).
+    // Відмова → TX усе одно (телеметрія дорожча за теоретичний replay),
+    // але інваріант чесно позначається втраченим до наступного advance.
+    // (Гейт окремий від HAL_MOCK_CCM_ENABLED: host-мок живе без Flash-KV.)
+#if FW2_CCM_ENABLED
+    if (fc_hiwater_cache != 0 && next_fc >= fc_hiwater_cache) {
+        if (!soldier_kv_mounted || vcap_mv < VCAP_LISTEN_THRESHOLD ||
+            !Fc_Hiwater_Advance(&soldier_kv, Fc_Hiwater_Target(next_fc),
+                                &fc_hiwater_cache)) {
+            fc_hiwater_degraded = 1;
+        }
+    }
+#endif
 
     uint8_t nonce[FW2_CCM_NONCE_LEN];
     uint8_t aad[FW2_CCM_AAD_LEN];

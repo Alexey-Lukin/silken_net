@@ -108,7 +108,8 @@ $(BINDIR)/test_uart_rx_ring: test_uart_rx_ring.c ../queen/uart_rx_ring.h ../quee
 	$(CC) $(CFLAGS) -o $@ test_uart_rx_ring.c
 
 # [ARCH.28/FW.54] Flash-KV журнал — RAM-мок + power-cut fault-injection.
-$(BINDIR)/test_flash_kv: test_flash_kv.c ../common/flash_kv.c ../common/flash_kv.h ../common/silken_crc.h
+# (+ FW.8 Z-пороги та FW.2 FC high-water — споживацькі секції поверх KV.)
+$(BINDIR)/test_flash_kv: test_flash_kv.c ../common/flash_kv.c ../common/flash_kv.h ../common/silken_crc.h ../common/lorenz_thresholds.h ../common/fc_hiwater.h ../common/lora_ccm.h
 	$(CC) $(CFLAGS) -I../common -o $@ test_flash_kv.c ../common/flash_kv.c
 
 # [ARCH.35] W25Q32 sector-ring — NOR-мок (program 1→0) + power-cut fault-injection.

@@ -380,6 +380,130 @@ TEST(test_fw8_survives_remount_and_compact) {
     ASSERT_EQ(out.config_version, 3);
 }
 
+/* ════════════════════════════════════════════════════════════════════
+ * 6. [FW.2 TRL-7] FC high-water поверх KV (fc_hiwater.h, ключ 0x14)
+ *
+ * Інваріант I-HW: переданий FC строго менший за межу у Flash на момент
+ * TX → floor після cold-boot не може повторити nonce. Дисципліна
+ * викликача (КЕНОЗИС-advance, атомарний floor+advance на cold-boot) —
+ * шапка fc_hiwater.h; тут вона прогоняється як сценарій.
+ * ════════════════════════════════════════════════════════════════════ */
+#include "../common/fc_hiwater.h"
+
+TEST(test_fw2_load_empty_kv_no_floor) {
+    fresh_mount();
+    ASSERT_EQ(Fc_Hiwater_Load(&kv), 0u); /* нема якоря → HRNG-шлях */
+}
+
+TEST(test_fw2_advance_load_roundtrip) {
+    fresh_mount();
+    uint32_t cache = 0;
+    ASSERT_TRUE(Fc_Hiwater_Advance(&kv, 1257u, &cache));
+    ASSERT_EQ(cache, 1257u);
+    ASSERT_EQ(Fc_Hiwater_Load(&kv), 1257u);
+}
+
+TEST(test_fw2_load_rejects_garbage) {
+    /* Значення поза 24-bit вікном FC = сміття (не наше покоління запису)
+     * → floor відсутній, без отруєння лічильника. */
+    fresh_mount();
+    ASSERT_TRUE(FlashKv_Put32(&kv, FW2_FC_KV_KEY_HIWATER,
+                              FW2_FC_VALUE_MASK + 1u));
+    ASSERT_EQ(Fc_Hiwater_Load(&kv), 0u);
+    ASSERT_TRUE(FlashKv_Put32(&kv, FW2_FC_KV_KEY_HIWATER, 0u));
+    ASSERT_EQ(Fc_Hiwater_Load(&kv), 0u);
+}
+
+TEST(test_fw2_should_advance_semantics) {
+    /* Ключа ще нема (hiwater 0) → перший запис "час" завжди. */
+    ASSERT_TRUE(Fc_Hiwater_Should_Advance(0u, 1u));
+    /* Далеко від межі → спимо. */
+    ASSERT_FALSE(Fc_Hiwater_Should_Advance(1000u, 100u));
+    /* Рівно MARGIN до межі → вже час (включно). */
+    ASSERT_TRUE(Fc_Hiwater_Should_Advance(1000u,
+                                          1000u - FW2_FC_HIWATER_MARGIN));
+    ASSERT_FALSE(Fc_Hiwater_Should_Advance(1000u,
+                                           999u - FW2_FC_HIWATER_MARGIN));
+}
+
+TEST(test_fw2_target_clamps_at_ceiling_no_wear) {
+    /* Біля стелі 24-bit межа клемпиться; повторний Advance на ту саму
+     * стелю ідемпотентний — нуль зайвих program (epoch-край без wear). */
+    fresh_mount();
+    uint32_t cache = 0;
+    uint32_t t = Fc_Hiwater_Target(FW2_FC_VALUE_MASK - 10u);
+    ASSERT_EQ(t, FW2_FC_VALUE_MASK);
+    ASSERT_TRUE(Fc_Hiwater_Advance(&kv, t, &cache));
+    int programs_before = flash.program_count;
+    ASSERT_TRUE(Fc_Hiwater_Advance(&kv, t, &cache)); /* no-op */
+    ASSERT_EQ(flash.program_count, programs_before);
+}
+
+TEST(test_fw2_advance_fail_cache_untouched) {
+    /* Мертвий program → Advance чесно відмовляє, кеш недоторканий —
+     * cold-boot-викликач відкочується на HRNG-reseed, не на сирий floor. */
+    fresh_mount();
+    uint32_t cache = 0;
+    ASSERT_TRUE(Fc_Hiwater_Advance(&kv, 500u, &cache));
+    flash.die_after_programs = 0;
+    ASSERT_FALSE(Fc_Hiwater_Advance(&kv, 756u, &cache));
+    ASSERT_EQ(cache, 500u);
+}
+
+TEST(test_fw2_coldboot_floor_above_all_sent) {
+    /* Життя вузла: reseed → сотні TX з КЕНОЗИС-advance за дисципліною →
+     * смерть VBAT. Інваріант: floor у Flash > максимального переданого FC. */
+    fresh_mount();
+    uint32_t fc = 1000u;          /* HRNG-reseed першого втілення */
+    uint32_t hiwater = Fc_Hiwater_Load(&kv); /* 0 — якоря ще нема */
+    uint32_t max_sent = 0;
+    for (int cycle = 0; cycle < 600; cycle++) {
+        fc = (fc + 1u) & FW2_FC_VALUE_MASK;  /* TX циклу */
+        max_sent = fc;
+        /* КЕНОЗИС: проактивний advance із запасом MARGIN */
+        if (Fc_Hiwater_Should_Advance(hiwater, fc + 1u)) {
+            ASSERT_TRUE(Fc_Hiwater_Advance(&kv, Fc_Hiwater_Target(fc),
+                                           &hiwater));
+        }
+        ASSERT_TRUE(fc < hiwater); /* I-HW тримається щоцикл */
+    }
+    /* VBAT-смерть → нове втілення монтує той самий Flash */
+    ASSERT_TRUE(FlashKv_Mount(&kv, &mock_ops, &flash, MOCK_PAGE_DWS));
+    uint32_t floor_fc = Fc_Hiwater_Load(&kv);
+    ASSERT_TRUE(floor_fc > max_sent); /* повтор nonce неможливий */
+}
+
+TEST(test_fw2_double_coldboot_no_reuse) {
+    /* Brownout одразу після brownout: floor застосовний лише разом з
+     * НЕГАЙНИМ advance (атомарність) → другий cold-boot стартує вище
+     * за все, що перше коротке втілення встигло передати. */
+    fresh_mount();
+    uint32_t cache = 0;
+    ASSERT_TRUE(Fc_Hiwater_Advance(&kv, 1000u, &cache)); /* якір минулого */
+
+    /* cold-boot #1: floor + атомарний advance, кілька TX, раптова смерть */
+    ASSERT_TRUE(FlashKv_Mount(&kv, &mock_ops, &flash, MOCK_PAGE_DWS));
+    uint32_t floor1 = Fc_Hiwater_Load(&kv);
+    ASSERT_EQ(floor1, 1000u);
+    uint32_t hiwater = floor1;
+    ASSERT_TRUE(Fc_Hiwater_Advance(&kv, Fc_Hiwater_Target(floor1), &hiwater));
+    uint32_t last_sent = floor1 + 3u; /* TX floor+1 .. floor+3 */
+
+    /* cold-boot #2 */
+    ASSERT_TRUE(FlashKv_Mount(&kv, &mock_ops, &flash, MOCK_PAGE_DWS));
+    uint32_t floor2 = Fc_Hiwater_Load(&kv);
+    ASSERT_TRUE(floor2 > last_sent); /* перший TX = floor2+1 — без повтору */
+}
+
+TEST(test_fw2_hiwater_survives_remount_and_compact) {
+    fresh_mount();
+    uint32_t cache = 0;
+    ASSERT_TRUE(Fc_Hiwater_Advance(&kv, 4242u, &cache));
+    ASSERT_TRUE(FlashKv_Compact(&kv));
+    ASSERT_TRUE(FlashKv_Mount(&kv, &mock_ops, &flash, MOCK_PAGE_DWS));
+    ASSERT_EQ(Fc_Hiwater_Load(&kv), 4242u);
+}
+
 /* ════════════════════════════════════════════════════════════════════ */
 int main(void)
 {
@@ -417,6 +541,17 @@ int main(void)
     RUN(test_fw8_mixed_generation_invalid_combo_falls_to_defaults);
     RUN(test_fw8_valid_agrees_with_parser);
     RUN(test_fw8_survives_remount_and_compact);
+
+    printf("\n— [FW.2 TRL-7] FC high-water поверх KV (0x14) —\n");
+    RUN(test_fw2_load_empty_kv_no_floor);
+    RUN(test_fw2_advance_load_roundtrip);
+    RUN(test_fw2_load_rejects_garbage);
+    RUN(test_fw2_should_advance_semantics);
+    RUN(test_fw2_target_clamps_at_ceiling_no_wear);
+    RUN(test_fw2_advance_fail_cache_untouched);
+    RUN(test_fw2_coldboot_floor_above_all_sent);
+    RUN(test_fw2_double_coldboot_no_reuse);
+    RUN(test_fw2_hiwater_survives_remount_and_compact);
 
     printf("\n════════════════════════════════════════════════════════════════════\n");
     printf("Passed: %d, Failed: %d\n", tests_passed, tests_failed);
