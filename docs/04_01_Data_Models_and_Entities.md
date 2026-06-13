@@ -1577,35 +1577,16 @@ Codex (Lore — read-only):
 
 ## 🧭 12. SSOT Drift Register (Doc ↔ Schema Sync)
 
-> **Принцип:** Цей документ — SSOT схеми БД. Тобто:
-> - якщо **схема випередила документ** (нова таблиця/колонка/індекс/тригер є у `db/structure.sql`, але не описана) — оновлюємо документ;
-> - якщо **документ випередив схему** (модель/таблиця документована як існуюча, але немає у `structure.sql` чи `app/models/`) — створюємо/оновлюємо запис у [`00_07`](00_07_Action_Plan_Tracker) як невиконану задачу;
-> - якщо **нема ні там, ні там** — приймаємо рішення (потрібне → реєструємо в [`00_07`](00_07_Action_Plan_Tracker); не потрібне → видаляємо плани з 04_01).
->
-> Дзеркало [`04_02 §13b`](04_02_Business_Logic_and_Services) — спільна методологія, але різний скоуп: тут — БД-шар (таблиці, колонки, індекси, тригери, партиції); в 04_02 — service-шар (сервіси, воркери, ENV).
-> Періодичний аудит — кожен Cool-down цикл Shape Up ([`00_04 §5.3`](00_04_Shape_Up_Operations_and_RnD_Clusters)).
+> **Принцип:** `db/structure.sql` після `db:migrate` — authoritative reality схеми; 04_01 — її SSOT-опис. Загальний метод drift-resolution (schema-ahead → онови док; doc-ahead → задача в [`00_07`](00_07_Action_Plan_Tracker); не «допишу до 04_01 потім») — [`00_06`](00_06_SSOT_Documentation_Standard) + скіл `ssot-maintenance`. Дзеркало для service-шару (сервіси/воркери/ENV, інший скоуп) — [`04_02 §13b`](04_02_Business_Logic_and_Services).
 
-| Дата | Зона | Тип drift | Що зроблено | Cross-ref |
-|------|------|-----------|-------------|-----------|
-| 2026-05-12 | `codex_matches` партиціонування | Schema ahead of doc (таблиця партиціонована у `db/structure.sql`, `PartitionMaintenanceWorker::PARTITIONED_TABLES` містить 4 елементи, але §0 04_01 і §11 row "Партиціонування по місяцях" перераховували лише 3 таблиці) | Додано `codex_matches` row у §0; виправлено "трьох" → "чотирьох таблиць"; §11 row оновлено; cross-ref на SSOT-константу | §7b Codex::Match, §11, `app/workers/partition_maintenance_worker.rb` |
-| 2026-06-13 | `ProvisioningSession` модель | Model ahead of doc (`app/models/provisioning_session.rb` існує — SEC.3 factory flashing AASM, задокументована лише в [`03_05 §3.4г`](03_05_Hardware_Symmetric_Crypto_and_Security), але відсутня у 04_01 → §12-інваріант «к-сть моделей = к-сть файлів» порушено: doc 35, код 36) | Додано §7 `ProvisioningSession` + count 35→36 (26→27 core) + ToC + ordering-convention + фантом «модель Firmware»→`BioContractFirmware`/`TinyMlModel.binary_sha256` | §7 ProvisioningSession, [`03_05 §3.4г`](03_05_Hardware_Symmetric_Crypto_and_Security), `app/models/provisioning_session.rb` |
-| — (відкрите) | Active Storage таблиці (`active_storage_attachments`, `active_storage_blobs`, `active_storage_variant_records`) | Schema (framework) — НЕ documented як окремі таблиці | Status: framework infrastructure, не domain. Inline-згадки у моделях (`Organization.logo`, `MaintenanceRecord.photos`, `Codex::Node.cover_image/gallery`) — достатньо. Не реєструвати як drift | — |
-| — (відкрите) | `schema_migrations`, `ar_internal_metadata` | Framework infra | Same as вище — не реєструвати | — |
+**Механічні інваріанти — ✅ enforced by `scripts/model_doc_sync.rb`** (CI `docs.yml` тригериться і на `docs/`, і на `app/models/**`, тож дрейф ловиться з обох боків; локально — `ruby scripts/model_doc_sync.rb`):
 
-### Як додавати нові записи
+1. Model-файли (`app/models/**`, мінус `application_record` / `codex.rb`-shim / `concerns/`) ⟷ код-спан-заголовки `### Model` у §2..§7b — рівно 1:1.
+2. Concern-файли (`app/models/concerns/`) ⟷ код-спан-заголовки `### Concern` у §1.
+3. `PartitionMaintenanceWorker::PARTITIONED_TABLES` ⟷ згадки таблиць у §0 + §11.
 
-1. Виявили divergence (нова таблиця у міграціях, нова колонка, новий індекс, новий тригер, нова партиціонована таблиця) — додайте рядок у таблицю з датою.
-2. Якщо drift вимагає коду (наприклад, треба додати колонку у модель, бо схема її має, а AR не знає) — заведіть запис у [`00_07`](00_07_Action_Plan_Tracker) з UID (`E.NN` / `S6.NN`) і посиланням сюди.
-3. Drift register **не замінює** оновлення відповідної секції моделі — обидва місця мають бути синхронізовані.
+> Раніше це був ручний «drift register» з датованим логом виправлень — він мовчки протух (заявляв 35 моделей при 36 файлах), тож логіку винесено у скрипт-гейт; історія виправлень живе в git.
 
-> **Anti-pattern:** "Додам колонку у міграцію, а до 04_01 запишу потім". `structure.sql` після `bin/rails db:migrate` — це authoritative reality; будь-яке `bin/rails db:schema:dump` яке не супроводжується оновленням [`04_01`](04_01_Data_Models_and_Entities) (модель + індекс) створює silent drift, який ловиться лише при наступному аудиті.
+**Решта (ручний cool-down audit, [`00_04 §5.3`](00_04_Shape_Up_Operations_and_RnD_Clusters), поки не автоматизовано):** кожна `include AASM`-модель має state-перелік у своєму §; поліморфні `_type/_id` пари §10 «Карта Зв'язків» ⟷ реальні колонки `structure.sql`.
 
-### Інваріанти для перевірки на cool-down аудиті
-
-| Інваріант | Як перевірити |
-|-----------|---------------|
-| Кількість моделей у 04_01 = кількість файлів у `app/models/` (мінус ApplicationRecord + namespace-shims типу `app/models/codex.rb`) | `find app/models -name "*.rb" \| wc -l` vs ToC count |
-| Усі `PARTITION BY RANGE` таблиці зі `structure.sql` присутні у §0 + у `PartitionMaintenanceWorker::PARTITIONED_TABLES` + у §11 row | `grep "PARTITION BY RANGE" db/structure.sql` |
-| Concerns у 04_01 §1 = `app/models/concerns/*.rb` | `ls app/models/concerns/` vs §1 subheadings |
-| AASM-моделі: `Gateway`, `NaasContract`, `BlockchainTransaction`, `ParametricInsurance`, `Actuator`, `ActuatorCommand`, `Tree` (декомісіонування), `EwsAlert` — кожна повинна мати state-таблицю/перелік у відповідному §-розділі. `Wallet` керує балансом через прямі методи (`lock_funds!`, `finalize_spend!`), `EthereumAnchor` використовує integer enum без AASM-машини. | `grep -l "include AASM" app/models/*.rb` |
-| Поліморфні асоціації у §10 "Карта Зв'язків" = реальні `_type/_id` пари у `structure.sql` | `grep "_type.*character varying" db/structure.sql` |
+> **Поза скоупом (за дизайном, не drift):** Active Storage (`active_storage_*`), `schema_migrations` / `ar_internal_metadata` — framework-інфра; документується inline-згадками у моделях (`Organization.logo`, `MaintenanceRecord.photos`, `Codex::Node.cover_image`), не як окремі сутності.
