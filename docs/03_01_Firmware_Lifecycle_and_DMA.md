@@ -214,7 +214,7 @@ MacBook USB-A   ──── FT232RL                  ──── UART: TX→RX
 | `hsubghz` | SUBGHZ | Інтегрований LoRa трансивер SX1262 (868 МГц) |
 | `hcryp` | AES | Апаратний AES (Hardware Crypto Engine). **LoRa-канал: AES-128-ECB** (post-ARCH.42 transitional → CCM target FW.2). Queen додатково динамічно re-init'ить на AES-256-CBC для CoAP-batch flush. |
 
-**Примітка:** Soldier — єдиний вузол, що має ADC, TIM2, RNG та RTC. Queen — не має ADC, TIM2 та RTC (окрім RNG, AES та IWDG, доданого у PR #273).
+**Примітка:** Soldier — єдиний вузол, що має ADC, TIM2, RNG та RTC. Queen — не має ADC, TIM2 та RTC (має RNG, AES та IWDG).
 
 ### 1.2 Загальний Lifecycle
 
@@ -902,9 +902,9 @@ Queen **ніколи не спить** (continuous operation). Живиться 
 | `hsubghz` | SUBGHZ | LoRa трансивер SX1262 (868 МГц) |
 | `hcryp` | AES | ECB (LoRa), CBC (CoAP batches), CBC (downlink commands) |
 | `hrng` | RNG | HRNG для генерації IV (CBC) та flush jitter |
-| `hiwdg` | IWDG | Апаратний Watchdog (~26.6 с timeout, додано у PR #273) |
+| `hiwdg` | IWDG | Апаратний Watchdog (~26.6 с timeout) |
 
-**Queen НЕ має:** ADC, TIM2, RTC — на відміну від Soldier. **Queen тепер має IWDG** (додано у PR #273).
+**Queen НЕ має:** ADC, TIM2, RTC — на відміну від Soldier. **Queen має IWDG.**
 
 ### 4.2 Загальний Lifecycle
 
@@ -1286,7 +1286,7 @@ C-код знає **тільки** про `calculate_state` (через `mrb_int
 | `RHO_MIN` | `10.0` | Clamp мінімум rho |
 | `RHO_MAX` | `50.0` | Clamp максимум rho |
 
-**Ініціалізація стану (x, y, z) з chaos_seed:**
+**Ініціалізація стану (x, y, z) з seed:**
 
 ```ruby
 x = ((seed % 1000) / 500.0) - 1.0          # x ∈ [-1.0, 1.0]
@@ -1294,7 +1294,7 @@ y = (((seed >> 4) % 1000) / 500.0) - 1.0   # y ∈ [-1.0, 1.0]
 z = (((seed >> 8) % 1000) / 500.0) - 1.0   # z ∈ [-1.0, 1.0]
 ```
 
-HRNG-seed з кожним пробудженням дає нову початкову точку, роблячи кожну ітерацію унікальною. Але за 250 кроків система **завжди виходить на дивний атрактор Лоренца** — хаотична, але детермінована траєкторія.
+`seed` деривується з per-device K_seed (**[SEC.11 / FW.30]**, §1.4) — **детермінований**, бо сервер мусить відтворити Z (Dual Computation Integrity); це **НЕ** HRNG-per-wake. За 250 кроків система **завжди виходить на дивний атрактор Лоренца** — хаотична, але детермінована траєкторія. Між пробудженнями стан `(x,y,z)` продовжується з RTC (§2, DR16-19); cold-start — з K_seed.
 
 **Пертурбація параметрів датчиками:**
 
@@ -1334,12 +1334,14 @@ z += dz * DT
 
 ```ruby
 z_val = Attractor.calculate_z_axis(seed, temp, acoustic)
+# [E.64] anomaly-стеля ρ-відносна: anomaly_ceiling = ρ + (CRITICAL_Z_MAX − BASE_RHO) (=45 при ρ=28)
+anomaly_ceiling = local_rho + (CRITICAL_Z_MAX - BASE_RHO)
 
-    # Стрес
+if z_val < CRITICAL_Z_MIN        # Стрес
   status = 1; growth_points = 1
-elsif z_val > CRITICAL_Z_MAX   # Аномалія
+elsif z_val > anomaly_ceiling    # Аномалія
   status = 2; growth_points = 0
-else                           # Гомеостаз
+else                             # Гомеостаз
   status = 0
   # [E.63] growth_points = монотонна метаболічна жвавість зі швидкості перезаряду
   # (delta_t), а НЕ |29−z| (та була хаотичним шумом). Формула m(delta_t)→GP +
@@ -1353,15 +1355,15 @@ end
 payload_byte = (status << 5) | growth_points
 ```
 
-**Reward Formula:** базова нагорода 50, мінус штраф за відхилення від `OPTIMAL_Z_TARGET=29.0`. Wire-значення масштабується ÷2 (для 5-бітного простору 5..31), backend ×2 upscale при unpack для збереження tokenomic invariant.
+**Growth-points [E.63]:** у гомеостазі `growth_points` = метаболічна жвавість `m(delta_t)` (швидший перезаряд → більше балів), **НЕ** функція відхилення Z від 29 — формула + калібрування живуть у [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor). Wire-значення масштабується ÷2 (5-бітний простір 5..31), backend ×2 upscale при unpack для збереження tokenomic invariant.
 
 **Відображення на байт BioContract (байт 10 payload, після FW.29-PACK):**
 
 | z_val | Status | Wire GP | Hex (приклад) |
 |-------|--------|---------|---------------|
-| < 2.0 | 1 (stress) | 1 | `0x21` |
-| > 45.0 | 2 (anomaly) | 0 | `0x40` |
-| ≈ 29.0 | 0 (homeostasis) | 25 | `0x19` |
+| < 2.0 (`CRITICAL_Z_MIN`) | 1 (stress) | 1 | `0x21` |
+| > anomaly_ceiling (ρ-relative, ≈45 @ ρ=28) | 2 (anomaly) | 0 | `0x40` |
+| 2.0 … ceiling (homeostasis) | 0 | `m(delta_t)`, напр. 25 | `0x19` |
 | mruby VM error | 3 (tamper) | 31 (after `& 0x7F`) | `0x7F` |
 
 > **Синхронізація з сервером:** `app/services/silken_net/attractor.rb` обчислює той самий z-val за тими самими константами. Якщо значення розходяться → Dual Computation Integrity Alert. **[FIX: R-11]** Виправлено: `BASE_BETA` уніфіковано як `8.0/3.0` (не `2.666`), sigma/rho clamp синхронізовано з сервером.
@@ -1624,7 +1626,8 @@ EMA_t = α × x_t + (1−α) × EMA_{t-1}
 > | DR8, DR9, **DR11** | `recent_mesh_dids[3]` (3 слоти, fallback від 8→3) |
 > | DR10 | `ema_delta_t_x100` (full uint32) |
 > | **DR12** | `[valid:8 \| count:8 \| ema_vcap_x10:16]` (packed) |
-> | DR13..DR15 | резерв для майбутніх FW-задач |
+>
+> (DR13..DR19 пізніше зайнято TinyML-порогами / Lorenz-станом / FW.2 Frame Counter — канонічна розкладка §2; вільних регістрів немає.)
 
 **Trade-off ping-pong (8 → 3 слоти, FW.21 fallback):**
 - 2 слотів достатньо для immediate echo A→B→A; **3 слоти додатково покривають короткі кільця A→B→C→A** (B та C ще в кеші коли пакет повертається).
