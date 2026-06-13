@@ -668,8 +668,20 @@ RSpec.describe DocsLinter do
       expect(hits).to contain_exactly(a_string_matching(%r{\.github/copilot-instructions\.md: .*`firmware/\*/main\.c:65-66`}))
     end
 
-    it "does NOT flag a de-line-reffed symbol ref, a .md line-ref, or a decimal" do
-      txt = "main.c (struct EdgeCache)\nsee 03_02_Queen.md:114 row\nratio 1.5:30 here\n`htim2` метроном (коментар)\n"
+    it "flags Ruby `*.rb`/`*.rake` line-refs (path-qualified and ranged) [DOC-T.17]" do
+      txt = "see `app/services/blockchain_minting_service.rb:107`\n" \
+            "`config/initializers/master_key_strength_check.rb:33-37` crashes\n" \
+            "lib/tasks/docs.rake:42 builds\n"
+      hits = described_class.source_line_ref_drift("06_02", txt)
+      expect(hits.size).to eq(3)
+      expect(hits).to include(a_string_matching(%r{`app/services/blockchain_minting_service\.rb:107`}),
+                              a_string_matching(%r{`config/initializers/master_key_strength_check\.rb:33-37`}),
+                              a_string_matching(%r{`lib/tasks/docs\.rake:42`}))
+    end
+
+    it "does NOT flag a de-line-reffed symbol ref, a .md line-ref, a decimal, or a bare .rb path" do
+      txt = "main.c (struct EdgeCache)\nsee 03_02_Queen.md:114 row\nratio 1.5:30 here\n" \
+            "`htim2` метроном (коментар)\n`app/models/ai_insight.rb` (the enum)\n"
       expect(described_class.source_line_ref_drift("03_02", txt)).to be_empty
     end
   end

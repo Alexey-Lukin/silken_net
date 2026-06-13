@@ -809,7 +809,7 @@ LoRa payload[7] = fauna_activity_index (0–63), маркер режиму у St
 TelemetryUnpackerService → TelemetryLog#fauna_activity_index (нова колонка, TBD post-TRL 7)
         ↓
 InsightGeneratorService → AiInsight(insight_type: :biodiversity_trend)
-   (enum уже існує у app/models/ai_insight.rb:13 — джерело даних до сьогодні було невизначене;
+   (enum уже існує у app/models/ai_insight.rb — джерело даних до сьогодні було невизначене;
     Mongabay pivot робить TinyML soundscape ОФІЦІЙНИМ джерелом для biodiversity_trend)
         ↓
 ForestNFT (SFC) метадані → "biodiversity_score": 0.0–1.0

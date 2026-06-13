@@ -574,15 +574,16 @@ module DocsLinter
     end
   end
 
-  # [SSOT anti-drift, DOC-T.15] Volatile `*.c:N` / `*.h:N` source line-refs. A
-  # firmware file grows and every `main.c:747` in the docs silently points at the
-  # wrong line — exactly the drift the campaign avoids (FW.4's trio once aimed at
-  # `DEFAULT_TTL` instead of `Run_Inference`). Cite the stable symbol/`#define`/
-  # function instead of a line number. Scanned over docs/ + .github/ only (source
-  # trees legitimately carry such refs in code comments). NOT fence-skipped — most
-  # refs live in `// path:N` comments inside ```c blocks. The `.md`/decimal forms
-  # never match (`\.[ch]` requires a literal `.c`/`.h` before the colon). Pure.
-  SOURCE_LINE_REF_RE = %r{(?<![\w/])[\w/*.-]+\.[ch]:\d+(?:[–-]\d+)?}
+  # [SSOT anti-drift, DOC-T.15 firmware + DOC-T.17 Ruby] Volatile source line-refs:
+  # `*.c`/`*.h` (firmware) AND `*.rb`/`*.rake` (Ruby). A file grows and every
+  # `main.c:747` / `blockchain_minting_service.rb:107` in the docs silently points at
+  # the wrong line — exactly the drift the campaign avoids (FW.4's trio once aimed at
+  # `DEFAULT_TTL` instead of `Run_Inference`). Cite the stable symbol/`#define`/class/
+  # method instead of a line number. Scanned over docs/ + .github/ only (source trees
+  # legitimately carry such refs in code comments). NOT fence-skipped — many refs live
+  # in `// path:N` comments inside ```c blocks. The `.md`/decimal forms never match
+  # (the alternation requires a literal `.c`/`.h`/`.rb`/`.rake` before the colon). Pure.
+  SOURCE_LINE_REF_RE = %r{(?<![\w/])[\w/*.-]+\.(?:[ch]|rb|rake):\d+(?:[–-]\d+)?}
 
   def source_line_ref_drift(path, text)
     text.each_line.filter_map do |line|

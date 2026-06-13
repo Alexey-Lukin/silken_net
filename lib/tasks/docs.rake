@@ -60,7 +60,7 @@ namespace :docs do
     bare_doc    = []  # hard: bare code-span `NN_NN` doc-id (no §) that should be a full link
     xref_form   = []  # hard: doc-id link label not in the single code-span form (00_06 §1)
     superseded_fm = [] # hard: superseded term (ATECC608B) in 🎯/Статус front-matter
-    src_line_refs = [] # hard: volatile `*.c:N`/`*.h:N` source line-refs (DOC-T.15)
+    src_line_refs = [] # hard: volatile `*.c`/`*.h`/`*.rb` source line-refs (DOC-T.15)
     graph_docs  = {}  # id "NN_NN" → text, for the #anchor-resolution gate (DocsGraph)
     doc_trls    = {}  # basename → member-TRL int (from ✅ Статус), for the 00_03 §1 band guard
 
@@ -197,9 +197,9 @@ namespace :docs do
       magic_drift.sort.uniq.first(40).each { |s| puts "    · #{s}" }
     end
     if src_line_refs.empty?
-      puts "  source line-refs: no volatile `*.c:N`/`*.h:N` in docs/ + .github/ (cite symbol/#define) ✓"
+      puts "  source line-refs: no volatile `*.c`/`*.h`/`*.rb` in docs/ + .github/ (cite symbol/#define) ✓"
     else
-      puts "  SOURCE LINE-REF DRIFT (#{src_line_refs.uniq.size}) — volatile `*.c:N`/`*.h:N` (DOC-T.15: cite symbol/#define):"
+      puts "  SOURCE LINE-REF DRIFT (#{src_line_refs.uniq.size}) — volatile `*.c`/`*.h`/`*.rb` (DOC-T.15: cite symbol/#define):"
       src_line_refs.sort.uniq.first(40).each { |s| puts "    ✗ #{s}" }
     end
     if bare_refs.empty?
@@ -356,7 +356,7 @@ namespace :docs do
     failed << "doc-id link labels not in code-span form (00_06 §1)" unless xref_form.empty?
     failed << "dangling #anchors (fragment ≠ heading slug)" unless dangling_anchors.empty?
     failed << "stale external docs/NN_NN refs (.github / root *.md / source)" unless ext_drift.empty?
-    failed << "volatile source line-refs `*.c:N`/`*.h:N` (DOC-T.15 — cite symbol/#define)" unless src_line_refs.empty?
+    failed << "volatile source line-refs `*.c`/`*.h`/`*.rb` (DOC-T.15 — cite symbol/#define)" unless src_line_refs.empty?
     abort("docs:check_refs FAILED — #{failed.join(', ')}") unless failed.empty?
   end
 

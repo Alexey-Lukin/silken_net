@@ -119,8 +119,8 @@ Gem `sentry-sidekiq` автоматично додає Sentry middleware до Si
 
 | Воркер | Файл | Тег |
 |--------|------|-----|
-| `UnpackTelemetryWorker` | `app/workers/unpack_telemetry_worker.rb:21` | `Sentry.set_tags(gateway_uid: ...)` |
-| `GatewayTelemetryWorker` | `app/workers/gateway_telemetry_worker.rb:17` | `Sentry.set_tags(queen_uid: ...)` |
+| `UnpackTelemetryWorker` | `app/workers/unpack_telemetry_worker.rb` | `Sentry.set_tags(gateway_uid: ...)` |
+| `GatewayTelemetryWorker` | `app/workers/gateway_telemetry_worker.rb` | `Sentry.set_tags(queen_uid: ...)` |
 
 Ці теги дозволяють в Sentry UI фільтрувати помилки за конкретним gateway або queen UID.
 

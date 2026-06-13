@@ -279,7 +279,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 | Slasher Oracle (`ORACLE_SLASHER_PRIVATE_KEY`) | ❌ | ✅ | ❌ | ❌ | ✅ |
 | Platform Admin (`ADMIN_ADDRESS`) | ❌ | ❌ | ✅ | ❌ (окремий admin) | ❌ |
 
-> ✅ **B-02 ВИРІШЕНО (2026):** SCC та SFC контракти приймають `minterOracle` і `slasherOracle` як **окремі параметри конструктора** ([`05_03 §SCC Constructor`](05_03_Tokenomics_SCC_and_SFC), рядки 108-111). Backend використовує два фізично розділені приватні ключі — `ORACLE_MINTER_PRIVATE_KEY` у `BlockchainMintingService` (`app/services/blockchain_minting_service.rb:107`) та `ORACLE_SLASHER_PRIVATE_KEY` у `BlockchainBurningService` (`app/services/blockchain_burning_service.rb:58`). Компрометація одного гаманця не дає повного контролю над токеноекономікою — мінтер не може спалити, слешер не може емітувати. Backward-compatible fallback на старий `ORACLE_PRIVATE_KEY` залишається лише для legacy/migration сервісів (Celo, Etherisc, Toucan тощо).
+> ✅ **B-02 ВИРІШЕНО (2026):** SCC та SFC контракти приймають `minterOracle` і `slasherOracle` як **окремі параметри конструктора** ([`05_03 §SCC Constructor`](05_03_Tokenomics_SCC_and_SFC), рядки 108-111). Backend використовує два фізично розділені приватні ключі — `ORACLE_MINTER_PRIVATE_KEY` у `BlockchainMintingService` (`app/services/blockchain_minting_service.rb`) та `ORACLE_SLASHER_PRIVATE_KEY` у `BlockchainBurningService` (`app/services/blockchain_burning_service.rb`). Компрометація одного гаманця не дає повного контролю над токеноекономікою — мінтер не може спалити, слешер не може емітувати. Backward-compatible fallback на старий `ORACLE_PRIVATE_KEY` залишається лише для legacy/migration сервісів (Celo, Etherisc, Toucan тощо).
 
 ---
 

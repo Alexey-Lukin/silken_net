@@ -1065,7 +1065,7 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 > 3. **Телеметрія НЕ втрачається:** Пакети від Soldiers/Queens продовжують надходити і обробляються через `UnpackTelemetryWorker` як зазвичай. Лише BLACKOUT-алерт (відсутність даних за весь день) не генерується.
 > 4. **Агрегація продовжується:** Якщо дані ІСНУЮТЬ у вихідні — `InsightGeneratorOrchestratorWorker` запускається нормально. Пропускаються лише blackout-алерти.
 >
-> Код: `app/workers/daily_aggregation_worker.rb:45` — `if target_date.on_weekday?`
+> Код: `app/workers/daily_aggregation_worker.rb` — `if target_date.on_weekday?`
 
 #### `InsightGeneratorOrchestratorWorker`
 

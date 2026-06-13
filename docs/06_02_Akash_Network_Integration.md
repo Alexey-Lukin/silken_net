@@ -68,7 +68,7 @@
 | `GCP_SA_KEY_BASE64` | `bin/docker-entrypoint` | Auth Proxy не може автентифікуватися до Google Cloud API |
 | `REDIS_URL` | `config/initializers/sidekiq.rb` | Sidekiq client не підключиться |
 | `KREDIS_REDIS_URL` | `config/initializers/kredis.rb` | Distributed locks не працюють |
-| `PROVISIONING_MASTER_KEY` | `config/initializers/master_key_strength_check.rb:33-37` | **`SecurityError` у `after_initialize` → Puma crash до accept loop** |
+| `PROVISIONING_MASTER_KEY` | `config/initializers/master_key_strength_check.rb` | **`SecurityError` у `after_initialize` → Puma crash до accept loop** |
 
 #### Категорія B — Web3 worker DeadSet (всі Sidekiq-воркери `web3_critical`)
 
@@ -96,7 +96,7 @@
 
 | ENV | Файл | Поведінка без значення |
 |-----|------|------------------------|
-| `SENTRY_DSN` | `config/initializers/sentry.rb:15` | Sentry inert → production errors невидимі |
+| `SENTRY_DSN` | `config/initializers/sentry.rb` | Sentry inert → production errors невидимі |
 
 > **Чому критично:** Akash provider реструктує контейнер у нескінченному hot loop при boot-crash. Це означає що навіть найменша помилка у Категорії A зробить deployment **постійно недоступним** при тому що ескроу AKT продовжує згорати. Категорія B веде до «тихої» поломки Proof of Growth pipeline — Rails запускається, телеметрія приймається, але токени ніколи не мінтяться.
 

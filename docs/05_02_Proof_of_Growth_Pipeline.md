@@ -510,7 +510,7 @@ Soldier:
 **Тригер:** `POST /api/v1/provisioning` → `ProvisioningController#register`
 
 **Файли:**
-- `app/controllers/api/v1/provisioning_controller.rb:60`
+- `app/controllers/api/v1/provisioning_controller.rb`
 - `app/workers/peaq_registration_worker.rb` — queue: `web3` (prio 7), retry: 5
 - `app/services/peaq/did_registry_service.rb`
 - `app/services/ed25519_crypto/signing_service.rb`
