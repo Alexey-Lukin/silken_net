@@ -152,7 +152,7 @@ jobs:
   guard:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with: { fetch-depth: 0 }
 
       - name: Check bypass labels
@@ -216,7 +216,7 @@ jobs:
   - solc (версія → [`05_03`](05_03_Tokenomics_SCC_and_SFC)), EVM cancun, optimizer 200 runs (default), 1000 runs (production profile)
   - Gas reports: SCC, SFC, StateRootAnchor, SilkenGovernor, SilkenTimelock, ProtocolParameters
   - Fuzz: 512 runs (default), 256 (ci profile). Invariant: 128 runs, depth 64
-- **Тестове покриття:** 171 тест у 6 test suites (`contracts/test/*.t.sol`)
+- **Тестове покриття:** 6 test suites (`contracts/test/*.t.sol`; точна к-сть тестів — `forge test`)
 
 ### 2.5 Labels Sync (IaC) — `.github/labels.yml` + `labels_sync.yml`
 
@@ -234,7 +234,7 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: EndBug/label-sync@v2
         with:
           config-file: .github/labels.yml
