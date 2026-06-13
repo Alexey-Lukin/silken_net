@@ -11,7 +11,7 @@
 ---
 
 > **Розмітка виконавців:**
-> - 🤖 **Код/аналіз** — Copilot може виконати самостійно (код, firmware, розрахунок, документ, тест)
+> - 🤖 **Код/аналіз** — coding-agent може виконати самостійно (код, firmware, розрахунок, документ, тест)
 > - 👤 **Операційна** — потрібен власник (hardware, зовнішні UI/дашборди, секрети, зустрічі, юрист, фізична лабораторія)
 > - 🔗 **Заблоковано** — чекає іншої задачі або рішення
 
@@ -125,10 +125,10 @@
 - [ ] 👤 µCT-сканування для верифікації градієнту розміру пор (центр 300–500 → периферія 100–150 µm) при пористості 65 ± 2%
 
 ##### Підблокер HW.1.PicoGK — Code-as-CAD Alternative (paralleled R&D track) — `01_02 §6 PicoGK`
-> **Стратегія:** PicoGK (open-source SDF engine від LEAP 71) + C# як AI-агент-сумісна альтернатива nTop GUI. Усуває "GUI-blindness" Cursor/Claude/Copilot та робить геометрію Git-friendly. Не замінює nTop одразу — паралельний evaluation track.
+> **Стратегія:** PicoGK (open-source SDF engine від LEAP 71) + C# як AI-агент-сумісна альтернатива nTop GUI. Усуває "GUI-blindness" coding-agents та робить геометрію Git-friendly. Не замінює nTop одразу — паралельний evaluation track.
 - [ ] 👤 **Setup C# проєкту:** Visual Studio 2022 або JetBrains Rider, .NET 7+, console project
 - [ ] 👤 **Build PicoGK з GitHub** (`github.com/leap71/PicoGK`) → підключити як бібліотеку
-- [ ] 👤 **Promt template для Claude/Copilot:** Senior C# інженер пише `Zone1Anode` клас з SDF гіроїда (формула sin(x)cos(y)+sin(y)cos(z)+sin(z)cos(x)=0), параметризованим діаметром/пор/wall thickness
+- [ ] 👤 **Промпт-template для coding-agent:** Senior C# інженер пише `Zone1Anode` клас з SDF гіроїда (формула sin(x)cos(y)+sin(y)cos(z)+sin(z)cos(x)=0), параметризованим діаметром/пор/wall thickness
 - [ ] 👤 **Stage 1 SLA generation через PicoGK** (паралельно з nTop reference) — порівняти STL output на topology errors
 - [ ] 👤 **Per-species CEM (5 SKU):** pine/oak/broadleaf/mangrove/tropical — параметрична генерація через зміну однієї змінної ([`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap) cross-biome generalization)
 - [ ] 👤 **Migration decision gate (Q2 2026):** якщо PicoGK видає clean STL без BREP errors → почати міграцію SSOT з `.ntop` на `.cs` (Git-friendly)

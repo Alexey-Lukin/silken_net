@@ -290,6 +290,33 @@ module DocsLinter
     end
   end
 
+  # [SSOT anti-drift] AI-vendor name re-stated outside owner (HARD, owner-only vocabulary).
+  # The AI tool roster is VOLATILE (vendors come and go); canon must describe stable ROLES
+  # (frontier-LLM / coding-agent) with concrete instances snapshotted ONCE in 00_02 §2.
+  # A vendor token re-stated elsewhere drifts the moment the roster shifts. Same shape as
+  # solc/tokenomics. Case-sensitive on purpose (lowercase "cursor"/"grok" = UI/verb, не вендор).
+  # EXCLUDES overloaded/generic tokens that would false-positive: "Codex" (04_05 Codex Lore
+  # Module / "The Codex" SSOT-guard nickname / ADR-CDX), bare "Claude"/"Opus"/"Sonnet"/"Fable"
+  # (model words that collide with prose). Exempt: 00_02 (roster home), 00_06 (cites examples),
+  # 00_07 (tracker), 02_06 (legacy). Skips fenced code (a script may legitimately name a tool).
+  AI_VENDOR_OWNER_DOC = /\A00_02_|\A00_06_|\A00_07_|\A02_06_/
+  AI_VENDOR_RE        = /(?<![A-Za-z])(Gemini|Cursor|Copilot|Windsurf|ChatGPT|Grok|DeepSeek|Claude Code)(?![A-Za-z])/
+  AI_VENDOR_MIRROR_RE = /дзеркал|mirror|00_02/i
+
+  def ai_vendor_name_drift(basename, text)
+    return [] if basename.match?(AI_VENDOR_OWNER_DOC)
+
+    in_fence = false
+    text.each_line.filter_map do |line|
+      in_fence = !in_fence if line.start_with?("```")
+      next if in_fence
+      next if line.match?(AI_VENDOR_MIRROR_RE)
+      next unless (m = line.match(AI_VENDOR_RE))
+
+      "AI-vendor name `#{m[1]}` outside owner (00_02 §2 roster = ROLES frontier-LLM/coding-agent; reference the role) → #{line.strip[0, 90]}"
+    end
+  end
+
   # [SSOT anti-drift] Deprecated-term registry (HARD) — the enforcement arm of
   # Ruthless Pruning (00_06 §4). Tokens retired SSOT-wide must not reappear in the
   # ACTIVE canon; as each drift is fixed, the old form is added here so CI blocks its

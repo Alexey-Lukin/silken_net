@@ -548,7 +548,7 @@ nTop — провідний інструмент для генерації мі�
 
 **Наступний крок:** Передати STL з nTop на завод разом із специфікацією дворівневої шорсткості (розділ 1).
 
-**🟡 Архітектурне обмеження nTop:** GUI-only workflow → **AI-агенти сліпі у візуальних інтерфейсах** (Claude/Copilot/Cursor не можуть "клікати" по нодах). Це блокер для AI-Native Engineering принципу ([`00_02 §2`](00_02_AI_Native_Engineering_and_TRL)). Параметричні моделі зберігаються у бінарних `.ntop` файлах — **не Git-friendly**, без зрозумілого diff'у, без code review. Для масової вибірки per-species геометрій (5 SKU: pine/oak/broadleaf/mangrove/tropical — [`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)) потрібна Code-as-CAD парадигма.
+**🟡 Архітектурне обмеження nTop:** GUI-only workflow → **AI-агенти сліпі у візуальних інтерфейсах** (coding-agents не можуть "клікати" по нодах). Це блокер для AI-Native Engineering принципу ([`00_02 §2`](00_02_AI_Native_Engineering_and_TRL)). Параметричні моделі зберігаються у бінарних `.ntop` файлах — **не Git-friendly**, без зрозумілого diff'у, без code review. Для масової вибірки per-species геометрій (5 SKU: pine/oak/broadleaf/mangrove/tropical — [`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)) потрібна Code-as-CAD парадигма.
 
 ### PicoGK + C# — Code-as-CAD Alternative (паралельний R&D track)
 
@@ -569,7 +569,7 @@ nTop — провідний інструмент для генерації мі�
 | IDE | Visual Studio 2022 / JetBrains Rider |
 | Geometric engine | PicoGK (open source: `github.com/leap71/PicoGK`) |
 | Repo | C# console project + `PicoGK.dll` як бібліотека |
-| AI-pipeline | Claude / Copilot / Cursor пишуть SDF-обгортки на основі математичних промптів |
+| AI-pipeline | coding-agents пишуть SDF-обгортки на основі математичних промптів |
 
 **Концептуальний каркас (псевдокод — реальний API LEAP 71 може дещо відрізнятися):**
 
@@ -611,13 +611,13 @@ public class Zone1Anode
 |---|---|---|
 | SSOT format | Бінарний `.ntop` | Текстовий `.cs` (Git-friendly) |
 | Diff/code review | ❌ | ✅ |
-| AI-agents можуть писати | ❌ (сліпі у GUI) | ✅ (Claude/Copilot нативно) |
+| AI-agents можуть писати | ❌ (сліпі у GUI) | ✅ (coding-agents нативно) |
 | Per-species varianti (5 SKU) | ~1 година на варіант | Зміна 1 змінної + Run (секунди) |
 | Topology errors на TPMS | Можливі | **0** (implicit geometry guarantee) |
 | Ліцензія | Платна (~$25K/year) | Open source (Apache 2.0) |
 | Експорт у DMLS-slicer | STL/3MF | STL/3MF (clean topology) |
 
-**Промпт-template для AI-clones (Claude/Copilot):**
+**Промпт-template для coding-agents:**
 
 ```
 Ти — Senior C# інженер, що працює з бібліотекою PicoGK (voxel SDF engine).

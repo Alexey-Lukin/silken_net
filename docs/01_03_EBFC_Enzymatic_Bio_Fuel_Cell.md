@@ -248,10 +248,10 @@ O₂ + 4H⁺ + 4e⁻ → 2H₂O   (повне 4-електронне відно�
 | **L3: Квантова хімія (DFT)** | **PySCF** (Python-based Simulations of Chemistry Framework) | Розрахунок енергетичних рівнів HOMO/LUMO осмієвого полімеру та FAD-кофактора. Якщо E°(Os²⁺/³⁺) трохи нижча за E°(FAD/FADH₂) → електрон "потече" → програмно доводимо OCV > 500 мВ. Окремо: hopping integrals для DET через ZIF-каркас (Cu/Ce/Co центри емулюють T1/T2/T3 кластер лаккази). **Os-полімер електронна структура — суто L3 territory** (DFT нативно обробляє d-orbitals перехідних металів; класична MD — ні). |
 | **L4: Хімічна кінетика** | **Python (scipy/numpy)** — аналітична модель Michaelis-Menten + Arrhenius + BQ25570 boost. Cantera/COPASI не потрібні для поточного baseline (модель замкнута аналітично). | Michaelis-Menten кінетика dgrFAD-GDH (j_max=494 µA/cm², Km=20 mM) + Arrhenius temp correction → EBFC power → BQ25570 boost → delta_t(glucose, temp). **🟡 recharge-model** (2026-05-25): delta_t=36s (healthy) / 190s (stressed) — **за лаб-стеля параметрами** (j_max=494, A=2см², E_cycle=5мДж → P_ebfc≈140µВт). ⚠️ [E.63] польовий derating (P_ebfc ~15µВт, E_cycle ~39мДж) → delta_t ≫ старого 60с-baseline; β-coupling **реверсовано** → `delta_t` → `growth_points` напряму ([`03_04 §4.3`](03_04_mruby_Lorenz_Attractor)), FAST/SLOW calib-pending — [`00_07` — E.63](00_07_Action_Plan_Tracker). |
 
-**Промптинг AI-агентів (Claude/Copilot):**
+**Промптинг coding-agents:**
 
 ```python
-# Приклад prompt для Claude/Copilot:
+# Приклад prompt для coding-agent:
 # "Напиши Python-скрипт для OpenMM. Завантаж PDB-файл ферменту dgrFAD-GDH
 #  (з AlphaFold 3 deglycosylated output). Створи simulation box з water,
 #  додай іони щоб симулювати pH 4.5. Додай молекулу геніпіну. Запусти

@@ -328,6 +328,38 @@ RSpec.describe DocsLinter do
     end
   end
 
+  describe ".ai_vendor_name_drift" do
+    it "flags an AI-vendor name re-stated outside the 00_02 roster owner" do
+      hits = described_class.ai_vendor_name_drift("00_04_Shape_Up", "Handoff: Gemini (Shaping) → Cursor (Implementation)\n")
+      expect(hits.size).to eq(1) # one violation per line (first vendor reported)
+      expect(hits.first).to include("AI-vendor name `Gemini`")
+    end
+
+    it "flags a vendor even inside a table cell" do
+      row = "| AI-pipeline | Copilot пише SDF-обгортки |\n"
+      expect(described_class.ai_vendor_name_drift("01_02_Ti", row)).not_to be_empty
+    end
+
+    it "exempts the owner 00_02, the standard 00_06, the tracker 00_07 and legacy 02_06" do
+      line = "frontier-LLM: Gemini · coding-agent: Cursor / Copilot\n"
+      expect(described_class.ai_vendor_name_drift("00_02_AI_Native", line)).to be_empty
+      expect(described_class.ai_vendor_name_drift("00_06_SSOT_Documentation_Standard", line)).to be_empty
+      expect(described_class.ai_vendor_name_drift("00_07_Action_Plan_Tracker", line)).to be_empty
+      expect(described_class.ai_vendor_name_drift("02_06_Legacy_Breadboard", line)).to be_empty
+    end
+
+    it "does not flag a labelled mirror or a line referencing the 00_02 home" do
+      expect(described_class.ai_vendor_name_drift(
+        "01_02_Ti", "ростер — дзеркало, правити в 00_02 (Cursor/Copilot)\n")).to be_empty
+    end
+
+    it "skips fenced code and does not false-positive on lowercase cursor/grok or excluded tokens" do
+      expect(described_class.ai_vendor_name_drift("03_01_Firmware", "```\nGemini api call\n```\n")).to be_empty
+      expect(described_class.ai_vendor_name_drift("04_02_Business", "move the cursor; agents grok the spec\n")).to be_empty
+      expect(described_class.ai_vendor_name_drift("04_05_Codex", "The Codex narrative; Claude/Opus/Sonnet/Fable\n")).to be_empty
+    end
+  end
+
   describe ".deprecated_terms" do
     it "flags a retired token and gives the replacement hint" do
       hits = described_class.deprecated_terms("03_05", "derive via HKDF info silkennet-v1-aes256 here")
