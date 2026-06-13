@@ -64,17 +64,32 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
+    defaults:
+      run:
+        working-directory: contracts
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
       - name: Install contract dependencies
-        run: npm ci --prefix contracts
+        run: npm ci
+
+      # Compile here (deps live in node_modules) so Slither reads Foundry's out/
+      # AST via ignore-compile. The action's own installer runs `forge install`,
+      # which assumes a lib/ git-submodule layout this project does not use.
+      - name: Build contracts with AST
+        run: forge build --ast
 
       - name: Run Slither
         uses: crytic/slither-action@v0.4.2
         with:
           target: contracts/
-          node-version: '20'
-          solc-version: '0.8.28'
+          ignore-compile: true
+          slither-config: contracts/slither.config.json
           fail-on: high
