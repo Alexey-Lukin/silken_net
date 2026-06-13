@@ -114,7 +114,7 @@ archetype_key` замість наслідування. Додавання 5-г�
 
 `*_md` колонки рендеряться на сервері через `Codex::MarkdownRenderer`
 (Rails `Rails::HTML5::SafeListSanitizer`) з allow-list:
-`p, h2, h3, h4, ul, ol, li, strong, em, blockquote, code, pre, a[href]`.
+`p, h2, h3, h4, ul, ol, li, strong, em, blockquote, code, pre, a[href], br`.
 Жорсткі ліміти довжини в моделі: `body_md_*` ≤ 8 КіБ,
 `subtitle_*` ≤ 2 КіБ. Сирий HTML ніколи не потрапляє в DOM.
 
