@@ -1756,3 +1756,16 @@ The mobile labels come from `data-label`, which itself is i18n'd through the sta
 
 Sandbox-обмеження: автоматичний прогін axe-core / Lighthouse у CI потребує headless Chromium з мережевим доступом. Поки що це **manual gate** для рев'ювера. Коли `cuprite` тести отримають axe-runner — переведемо у автомат і відмітимо чек-бокс програмно.
 
+### 18.10 Authoring micro-conventions (Phlex + Tailwind)
+
+Дрібні, але обов'язкові правила написання розмітки (доповнюють §3.5 кольори / §4 типографіку / §9 a11y):
+
+- **Без `@apply` у Phlex** — композиція класів лише Ruby (`tokens()` + приватні методи), не CSS-`@apply`.
+- **`gap-*` замість `space-x/y`** у flex/grid контейнерах.
+- **`grid` для 2D-розкладок, `flex` для 1D.**
+- **Порядок класів:** Layout → Spacing → Type → Visual → Interactive (стабільний read/diff).
+- **Довгі рядки класів** — виносити у приватні методи компонента, особливо у shared/ui (не inline-портянки).
+- **SVG — `stroke="currentColor"`** (успадковує колір тексту → працює з токенами/темами).
+- **`tracking-widest`** для uppercase-міток; **`leading-tight`** для заголовків.
+- **`group` / `group-hover:`** для вкладених hover-взаємодій (PhotoCard, Sidebar).
+
