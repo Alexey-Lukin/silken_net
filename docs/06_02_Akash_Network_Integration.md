@@ -326,7 +326,7 @@ backend "gcs" {
 }
 ```
 
-Цей bucket має існувати **до** першого `terraform init`. Terraform не може його створити автоматично. Деталі вирішення — в [`06_01`](06_01_Deployment_Kamal_Terraform) BLOCKER-2.
+Цей bucket має існувати **до** першого `terraform init`. Terraform не може його створити автоматично. Деталі вирішення — в [`06_01`](06_01_Deployment_Kamal_Terraform) (Quickstart, Крок 1 — `terraform/bootstrap.sh`).
 
 ---
 
@@ -844,7 +844,7 @@ terraform apply
 # - akash CLI встановлений: https://docs.akash.network/guides/cli
 # - Гаманець Akash: akash keys add silken-deploy
 # - Поповнити гаманець AKT токенами (мінімум ~5 AKT для ескроу)
-# - GCS bucket існує: gs://silken-net-terraform-state (див. 06_01 BLOCKER-2)
+# - GCS bucket існує: gs://silken-net-terraform-state (див. 06_01 Quickstart Крок 1, bootstrap.sh)
 
 # 1. Налаштування ENV для Akash CLI
 export AKASH_KEY_NAME=silken-deploy
@@ -936,7 +936,7 @@ akash tx deployment close \
 | **Порт 5683 (CoAP/UDP)** | ✅ | ✅ (через Ingress Anchor) | ✅ |
 | **Database** | Cloud SQL private IP | ✅ Cloud SQL Auth Proxy (in-container) | ✅ BLOCKER-1 вирішено |
 | **Redis** | Memorystore private | ✅ Upstash serverless Redis (TLS) | ✅ BLOCKER-1 вирішено |
-| **Sidekiq (31+ workers)** | ✅ (Kamal `job` role) | ✅ (`job` сервіс в SDL) | ✅ BLOCKER-2 вирішено |
+| **Sidekiq (job role)** | ✅ (Kamal `job` role) | ✅ (`job` сервіс в SDL) | ✅ BLOCKER-2 вирішено |
 | **ActionCable (multi-replica)** | Solid Cable (PostgreSQL) | ✅ Solid Cable (Cloud SQL) | ✅ BLOCKER-8 вирішено |
 | **Управління** | Kamal + Terraform GCP | Akash CLI + Terraform | ✅ |
 | **Цінова модель** | Фіксована (GCP billing) | Аукціон (uAKT/block) | ✅ Потенційно дешевше |
