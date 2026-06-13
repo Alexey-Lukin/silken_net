@@ -56,7 +56,7 @@
 | 00 Foundation (Vision + Method) | 9 | 9 | — (методологія/візія зрілі) |
 | 01 Materials & EBFC | 3 | 6 | Фізичний Ti-coin in-vitro (Zero-Lab in-silico ✅; physical TRL 4 pending — ЧНУ) |
 | 02 Hardware & BOM | 4 | 6 | BQ25570, PCB, Pogo, PEEK |
-| 03 Firmware | 6 | 8 | AES key, TinyML, AT blocking |
+| 03 Firmware | 6 | 8 | STM32 bench (silicon class C — FW.2 CCM verify + RDP/RF/300nA floor); host-half ✅ (AES/HKDF FW.1 · TinyML FW.4 · AT/CoAP FW.3/FW.56) |
 | 04 Backend Rails | 8 | 9 | RSpec тести |
 | 05 Web3 Pipeline | 8 | 9 | SFC address |
 | 06 DevOps | 5 | 9 | перший реальний Akash deploy не проведено (06_02; GHCR mirror + Upstash TLS вже ✅); GCP/Kamal = fallback (06_01=4, не на критичному шляху) |
@@ -126,7 +126,7 @@
 
 | Клас | Що відповідає | Інструмент | Приклади (закриті цим методом) |
 |------|---------------|-----------|--------------------------------|
-| **A. Host-логіка** | чиста логіка + wire-контракти | `firmware/test/*` host-тести, скриптовані транскрипти, fault-injection | FW.3/FW.56 AT+CoAP розмова (скриптований SIM7070G), ARCH.28 Flash-KV (power-cut мок), SEC.3 EXECUTE (fake-CLI шим) |
+| **A. Host-логіка** | чиста логіка + wire-контракти | `firmware/test/*` host-тести, скриптовані транскрипти, fault-injection | FW.3/FW.56 AT+CoAP розмова (скриптований SIM7070G), ARCH.28 Flash-KV (power-cut мок), SEC.3 EXECUTE (fake-CLI шим), FW.4 TinyML INT8 forward-pass (host-golden class-exact) |
 | **B. ISA-семантика** | реальний машинний код таргета, без периферії | **QEMU-M4 parity lane** (`qemu-system-arm mps2-an386`, [`03_01 §12.7`](03_01_Firmware_Lifecycle_and_DMA)) | FW.7/FW.19 ARM↔x86 double-drift → byte-exact гейт у CI (FW.55) |
 | **C. Кремній/фізика** | лише плата | **bench-as-code**: `firmware/scripts/bench/` (RUNBOOK + скрипти `--plan`/`--execute`) | CCM-атестація (FW.2 KAT через SWD), 300 нА floor, Vcap recharge-крива (E.63), LSE drift, RDP, RF |
 | | | | |
