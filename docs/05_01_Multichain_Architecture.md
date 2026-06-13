@@ -41,7 +41,7 @@
 
 ## 🏗️ 0. Модульний DePIN Стек: Рольова Карта (The Protocol Symphony)
 
-> **Нотатка інтегрована (2026-03-25).** Архітектурне обґрунтування: ЧОМУ кожна мережа існує у стеку SilkenNet і яку унікальну функцію вона виконує. Це доповнення до таблиці імплементації (розділ 1).
+> **Архітектурне обґрунтування:** ЧОМУ кожна мережа існує у стеку SilkenNet і яку унікальну функцію вона виконує (доповнює таблицю імплементації §1).
 
 SilkenNet не обирає один блокчейн. Система використовує модульний DePIN стек, де **кожна мережа вирішує конкретну проблему**, недосяжну для інших. Це не "ми скрізь" — це "ми використовуємо найкращий інструмент для кожного шару".
 
@@ -420,14 +420,7 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 | **RPC** | `ALCHEMY_ETHEREUM_RPC_URL` |
 | **Спека** | `spec/services/ethereum/state_anchor_service_spec.rb` |
 
-**Алгоритм:**
-```ruby
-root_data = generate_state_root  # { state_root, total_scc, chain_hash, anchored_at }
-# EthereumAnchor.create!(status: :pending, **root_data)
-state_root = Digest::SHA256.hexdigest("#{total_scc}|#{chain_hash}|#{anchored_at.iso8601}")
-# → Ethereum L1: storeStateRoot(bytes32)
-# EthereumAnchor.update!(status: :sent, tx_hash:)
-```
+**Формула `state_root` + флоу** — §4 нижче (повна 5-польова версія E.53/E.54: `total_scc|total_sfc|active_tree_count|chain_hash|anchored_at`); SSOT-дім формули — [`05_04`](05_04_Ethereum_L1_State_Anchor).
 
 **Економіка:** 32 байти раз на тиждень. Мінімальний газ, але рівень безпеки мережі Ethereum вартістю в сотні мільярдів доларів.
 
@@ -439,7 +432,7 @@ state_root = Digest::SHA256.hexdigest("#{total_scc}|#{chain_hash}|#{anchored_at.
 
 ### Крок 1: Збір (Hardware → Backend)
 
-Сенсор зчитує час заряду іоністора (`delta_t`) і напругу (`vcap`), пакує у 16 байт і шифрує AES-256.
+Сенсор зчитує час заряду іоністора (`delta_t`) і напругу (`vcap`), пакує у 16 байт і шифрує **AES-128** (LoRa-канал Soldier→Queen; режими — [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)). AES-256-CBC застосовується далі, на магістралі Queen→Rails (CoAP-батч).
 
 ```
 firmware/soldier/main.c → LoRa TX → Queen → CoAP PUT → UnpackTelemetryWorker → TelemetryUnpackerService
@@ -587,8 +580,8 @@ TokenomicsEvaluatorWorker (щогодини, cron: 0 * * * *)
 | **RPC** | `ALCHEMY_ETHEREUM_RPC_URL` |
 
 ```ruby
-# Роздільник: `|` (pipe), не `:` — узгоджено з кодом та docs/05_04.
-# [E.53/E.54] Формула розширена: включає total_sfc та active_tree_count.
+# Формула — дзеркало SSOT (owner [`05_04`](05_04_Ethereum_L1_State_Anchor)), правити ТАМ.
+# Роздільник `|` (pipe), не `:`. [E.53/E.54] 5 полів: + total_sfc, active_tree_count.
 state_root = Digest::SHA256.hexdigest("#{total_scc}|#{total_sfc}|#{active_tree_count}|#{chain_hash}|#{timestamp.iso8601}")
 ```
 
@@ -660,6 +653,8 @@ state_root = Digest::SHA256.hexdigest("#{total_scc}|#{total_sfc}|#{active_tree_c
 | 14 | Polygon | Gas Optimization | `MintBatchCollectorWorker` | `web3` | 3 | `*/5 * * * *` |
 | 14b | Solana | Gas Optimization | `SolanaBatchPayoutWorker` [E.61] | `web3` | 3 | `20 * * * *` |
 
+> **Тести.** Spec-шлях кожного сервісу — у його картці §1 (One-Home: інвентар біля підсистеми). Конвенції написання / coverage-гейт / тріаж прогалин — [`04_06`](04_06_Testing_Guide_and_Coverage).
+
 ---
 
 ## 🚨 8. Disaster Recovery / Chain Outage Strategy (S6.11)
@@ -714,7 +709,7 @@ state_root = Digest::SHA256.hexdigest("#{total_scc}|#{total_sfc}|#{active_tree_c
 
 1. **`web3_critical` queue зростає** — Grafana alert.
 2. **TelemetryLog accumulate з `oracle_status: dispatched`** — і `E.42` гарантує: **cleanup job НЕ видаляє dispatched records**, callbacks гарантовано приймуться після відновлення.
-3. **Manual oracle bypass** (тільки super_admin): **планується створення** `OracleManualFulfillmentService` (станом на 2026-04-29 не реалізовано — окремий ARCH-todo) для ручного просування `dispatched → fulfilled` при доведеному multi-day Chainlink outage. **Юридично:** використовувати ТІЛЬКИ з реліз-тегом для аудиту та письмовим narrowing у runbook.
+3. **Manual oracle bypass** (тільки super_admin): **планується створення** `OracleManualFulfillmentService` (не реалізовано — окремий ARCH-todo) для ручного просування `dispatched → fulfilled` при доведеному multi-day Chainlink outage. **Юридично:** використовувати ТІЛЬКИ з реліз-тегом для аудиту та письмовим narrowing у runbook.
 4. **Альтернативний Oracle Provider:** UMA (Optimistic Oracle), Pyth, RedStone — **архітектурний задаток**, не реалізовано. Дизайн потребує redundancy шляху в `Chainlink::OracleDispatchService` (ARCH-todo).
 
 ### 8.4. Critical Path: IoTeX W3bstream
@@ -775,5 +770,5 @@ Outage цих мереж **не блокує** core flow:
 | The Graph | 🟢 Nice | No (read-only) | Yes | — |
 | Celo | 🟢 Nice | RPC fallback | Yes | — |
 | KlimaDAO | 🟢 Nice | No | Yes | — |
-| Ethereum L1 | �� Nice | No | Yes (cron retry) | — |
+| Ethereum L1 | 🟢 Nice | No | Yes (cron retry) | — |
 
