@@ -36,9 +36,7 @@
 - [Схема Полів БД (Proof of Growth State Machine)](#схема-полів-бд-proof-of-growth-state-machine)
 - [Змінні Середовища та Credentials](#змінні-середовища-та-credentials)
 - [SEC.11 — Lorenz Seed Provenance & Dual Computation Integrity](#-sec11--lorenz-seed-provenance--dual-computation-integrity)
-- [Блокери (Needs Action)](#-блокери-needs-action)
-- [Матриця Ризиків](#-матриця-ризиків)
-- [Статус Імплементації по Кроках](#-статус-імплементації-по-кроках)
+- [Блокери та статус](#-блокери-та-статус)
 <!-- TOC:AUTO:END -->
 
 ---
@@ -434,7 +432,7 @@ Backend вже має `TreeFamily#critical_z_min|max|optimal_z_target` чере�
 7      Temperature         int8  Температура (зі знаком)
 8      Acoustic_events    uint8  Кількість акустичних подій
 9–10   Metabolism_s       uint16 Час зарядки EBFC δt (секунди)
-11     StatusByte         uint8  [7:6] bio_status | [5:0] growth_points
+11     StatusByte         uint8  [7]PanicFlag | [6:5]bio_status | [4:0]growth_points (FW.29-PACK)
 12     Mesh TTL           uint8  Initial=5 → decrements on each hop
 13–14  Firmware version   uint16 firmware_version_id (перші 2 байти Pad-поля: Pad[0]<<8|Pad[1])
 15–16  Reserved pad       uint16 Pad[2:3] (нулі, зарезервовано)
@@ -685,7 +683,7 @@ raise DispatchError unless @log.verified_by_iotex?
   "lorenz_state": {
     "sigma": 10.0,
     "rho":   28.0,
-    "beta":  2.666666666666666667,
+    "beta":  2.6666666666666665,
     "z_value": 23.4521
   },
   "zk_proof_ref":     "zk-proof-abc123",
@@ -695,6 +693,8 @@ raise DispatchError unless @log.verified_by_iotex?
   "timestamp":        "2026-03-23T06:00:01Z"
 }
 ```
+
+> σ/ρ/β у `lorenz_state` — дзеркало [`03_04 §4.1`](03_04_mruby_Lorenz_Attractor) (правити ТАМ); тут лише ілюстрація форми payload, не другий дім констант.
 
 **Режим PROD (CHAINLINK_FUNCTIONS_ROUTER + CHAINLINK_SUBSCRIPTION_ID задані):**
 ```ruby
@@ -1015,87 +1015,14 @@ telemetry_log.update!(
 
 ---
 
-## 🚨 Блокери (Needs Action)
+## 🚨 Блокери та статус
 
-Нижче зафіксовані всі заглушки, хардкод, фейкові перевірки та пропущені
-криптографічні верифікації, виявлені під час аудиту коду. **Жодного рефакторингу
-в цьому документі.** Кожен блокер — передумова для Mainnet deployment.
+> **One-Home:** відкриті блокери живуть у [`00_07`](00_07_Action_Plan_Tracker), не в каноні (00_06 §1). Для цього пайплайну:
+> - **FW.8** — `CRITICAL_Z_MIN/MAX` firmware-hardcoded vs server per-species (раніше тут «BLOCKER-03» — невідповідність `bio_status`/`growth_points` firmware↔backend для не-сосни). OTA-дизайн — §4а вище; трекер — [`00_07` — FW.8](00_07_Action_Plan_Tracker) (Rails-сторона ✅, firmware-парсер host-tested+gated, persist Flash-KV; bench-residual).
+> - **SEC.9** — master seed key може ще містити FIPS-197 тест-вектор → crypto-random перед польовим деплоєм ([`00_07`](00_07_Action_Plan_Tracker)).
 
----
+**Закриті** (design-rationale у канон-домах + git-історії):
+- AES-ключ hardcoded у прошивках → ✅ **FW.1** (per-device HKDF-LoRa-ключ у Protected Flash — [`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security); SEC.9 — залишковий хвіст вище).
+- Lorenz Float↔BigDecimal divergence + DID-as-seed антипатерн → ✅ **FW.7** (Float-as-numeric-mirror) + **SEC.11** (K_seed-derived cold start) — дизайн у секції «SEC.11» вище.
 
-### BLOCKER-01: ✅ ЗАКРИТО — AES ключ захардкоджений в прошивках Солдата і Королеви [P0 — CRITICAL SECURITY]
-
-> **Закрито (FW.1, 2026-05-02):** глобальний `aes_key[8]` (FIPS-197 Appendix B тест-вектор) **видалено з прошивки**. Тепер per-device унікальний LoRa-ключ деривується через HKDF-SHA256 на бекенді (`HardwareKeyService.provision`) і шиється у Protected Flash (`Load_AES_Key`, `FLASH_KEY_ADDR`). Деталі — [`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security) + [`00_07`](00_07_Action_Plan_Tracker) DOC-T.1 / SEC.3 (factory flashing). ⚠️ Окремо лишається **SEC.9** ([`00_07`](00_07_Action_Plan_Tracker)): master seed key може ще містити FIPS-197 vector → замінити на crypto-random перед польовим деплоєм.
-
-**Історичний контекст** (виявлено під час аудиту, до FW.1):
-- Обидві прошивки несли однаковий глобальний `uint32_t aes_key[8]` (FIPS-197 тест-вектор) у відкритому коді → компрометація одного пристрою = компрометація всієї мережі.
-- Бекенд уже зберігав per-device ключ (`HardwareKey.binary_key`), але прошивка ігнорувала цю модель — FW.1 закрив розрив (firmware читає ключ з Protected Flash, не з коду).
-
----
-
-### BLOCKER-02: ✅ ЗАКРИТО — Lorenz Float vs BigDecimal divergence + DID-as-seed
-
-> **Закрито (2026-05-02):** дві ортогональні зміни усунули блокер.
-> 1. **FW.7 (попередня сесія):** `app/services/silken_net/attractor.rb` переведено з `BigDecimal(18)` на Float (IEEE 754 double), байт-ідентично з firmware mruby. Накопичена похибка за 250 ітерацій Ейлера — < 1e-12 (емпірично).
-> 2. **SEC.11 (поточна сесія, hard cutover):** початкова точка `(x₀, y₀, z₀)` тепер деривується з per-device `K_seed` через `HMAC-SHA256(K_seed, "init|" || epoch_day_be)` на обох сторонах байт-ідентично. DID видалено зі входів атрактора повністю (був identifier-as-key антипатерн). `check_z_divergence!` отримав hook для числового tolerance band (`< 0.001`) — flip під feature-flag після інструментального drift вимірювання у польових умовах.
->
-> Деталі — секція **«SEC.11 — Lorenz Seed Provenance & Dual Computation Integrity»** вище.
-
-**Історичний контекст** (для розуміння еволюції рішення):
-- `firmware/bio_contracts/bio_contract.rb` — `BASE_BETA = 8.0 / 3.0` (Ruby Float)
-- `app/services/silken_net/attractor.rb` (до FW.7) — `BASE_BETA = ("8.0".to_d / "3.0".to_d).round(18)` (BigDecimal)
-- Різна математика (Float vs BigDecimal) давала розбіжність Z на десятки одиниць після 250 ітерацій хаотичної системи. Plus identifier-as-key антипатерн робив `check_z_divergence!` неможливим як числову перевірку.
-
----
-
-### BLOCKER-03: CRITICAL_Z_MIN/MAX захардкоджені у bio_contract, але на сервері — per-species з TreeFamily [P1]
-
-**Файли:**
-- `firmware/bio_contracts/bio_contract.rb:60–61`
-- `app/models/tree_family.rb:21–24`
-
-```ruby
-# Firmware — глобальні константи для ВСІХ видів дерев:
-CRITICAL_Z_MIN = 2.0
-CRITICAL_Z_MAX = 45.0
-
-# Backend — per-species поріги з БД:
-tree_family.critical_z_min  # може бути 5.0 для дуба, 1.5 для берези
-tree_family.critical_z_max  # може бути 40.0 для дуба, 55.0 для берези
-```
-
-**Наслідок:** Firmware визначає `bio_status` та `growth_points` за однаковими
-порогами для всіх видів, тоді як бекенд (`SilkenNet::Attractor.homeostatic?`,
-`AlertDispatchService`) використовує `tree_family.critical_z_min/max`.
-Дуб може отримати `status=0` (homeostasis) у firmware, але `anomaly` на сервері,
-або навпаки — невідповідність у фінансовому звіті.
-
-**Потрібно:** OTA-синхронізація порогів конкретного виду до кожного Солдата
-(наприклад, через provisioning або OTA bio_contract з параметрами).
-
----
-
-
-
-## 📊 Матриця Ризиків
-
-| # | Блокер | Область | Вплив | Пріоритет |
-|---|--------|---------|-------|-----------|
-| 01 | AES ключ захардкоджений у firmware | Security | Компрометація всіх пристроїв | P0 |
-| 02 | ~~Float vs BigDecimal Lorenz divergence~~ + ~~DID-as-seed identifier-as-key антипатерн~~ | Correctness + Security | ✅ Закрито (FW.7 + SEC.11, 2026-05-02) | — |
-| 03 | CRITICAL_Z thresholds: global vs per-species | Correctness | Некоректний bio_status | P1 |
-
-**Легенда пріоритетів:**
-P0 = Блокує Mainnet негайно (security breach)
-P1 = Потрібно вирішити до Mainnet deployment
-
----
-
-## 📋 Статус Імплементації по Кроках
-
-| Крок | Компонент | Статус | Примітка |
-|------|-----------|--------|----------|
-| Firmware Soldier | STM32WLE5JC + mruby BioContract | ⚠️ Open | BLOCKER-01, BLOCKER-03 (BLOCKER-02 закрито FW.7 + SEC.11, 2026-05-02) |
-| Firmware Queen | STM32WLE5JC + SIM7070G CIFO | ⚠️ Open | BLOCKER-01 |
-
-**Загальний висновок:** Пайплайн повністю реалізовано та покрито RSpec-тестами. Відкрито 2 блокери, пов'язані з firmware: BLOCKER-01 (hardware AES key) + BLOCKER-03 (per-species CRITICAL_Z thresholds). BLOCKER-02 (Float vs BigDecimal divergence + DID-as-seed) закрито спільно FW.7 (Float-as-numeric-mirror) та SEC.11 (K_seed-derived cold start). Backend-шар готовий до Mainnet.
+**Висновок:** пайплайн повністю реалізовано та покрито RSpec; backend-шар готовий до Mainnet, залишкові блокери — firmware-bench (FW.8 / SEC.9), трекаються в [`00_07`](00_07_Action_Plan_Tracker).
