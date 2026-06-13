@@ -206,12 +206,13 @@ jobs:
 
 Автоматизована перевірка та аудит смарт-контрактів Solidity (6 контрактів: SCC, SFC, StateRootAnchor, SilkenGovernor, SilkenTimelock, ProtocolParameters).
 
-- **Тригер:** Push до `main` або PR з змінами у `contracts/**`
+- **Тригер:** Push до `main` або PR зі змінами у `contracts/**` (або в самому workflow-файлі); + ручний `workflow_dispatch`
 - **Job 1: Foundry Tests & Coverage** (`foundry-tests`, timeout: 15 хв):
   - `npm ci` → `forge build --sizes` → `forge test -vvv --gas-report` → `forge coverage --ir-minimum --report lcov --report summary`
   - Coverage artifact: `lcov.info` (retention 14 днів)
 - **Job 2: Slither Static Analysis** (`slither`, timeout: 10 хв):
-  - `crytic/slither-action@v0.4.2`, solc (версія → [`05_03`](05_03_Tokenomics_SCC_and_SFC)), `fail-on: high`
+  - Install Foundry + `npm ci` → `forge build --build-info` (компілюємо самі), далі `crytic/slither-action@v0.4.2` з `ignore-compile: true` — crytic читає Foundry build-info, а власний `forge install` екшена **не** запускається (deps з npm, не `lib/`-сабмодулі — рішення FW.47, [`03_01`](03_01_Firmware_Lifecycle_and_DMA))
+  - `slither-config: contracts/slither.config.json` (фільтр `node_modules|test/` → аудит лише деплойних контрактів), solc (версія → [`05_03`](05_03_Tokenomics_SCC_and_SFC)), `fail-on: high`
 - **Конфігурація Foundry** (`contracts/foundry.toml`):
   - solc (версія → [`05_03`](05_03_Tokenomics_SCC_and_SFC)), EVM cancun, optimizer 200 runs (default), 1000 runs (production profile)
   - Gas reports: SCC, SFC, StateRootAnchor, SilkenGovernor, SilkenTimelock, ProtocolParameters
