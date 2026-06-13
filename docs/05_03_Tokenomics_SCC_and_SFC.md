@@ -8,13 +8,13 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 9 — всі контракти production-ready, готові до Mainnet deployment та зовнішнього аудиту
+- **Поточний TRL:** TRL 8 (Module 05 Web3 — канон-матриця [`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond): поточний 8, ціль 9, гейт «SFC address»). Контракти code-complete, Foundry-tested, Slither у CI — **готові до** testnet→mainnet deploy + зовнішнього аудиту. TRL 9 = mainnet-deployed ([`00_03`](00_03_TRL_Matrix_HIL_and_Beyond): «TRL 9 → mainnet») — ще не досягнуто (placeholder-адреси, manual audit + Gnosis multisig = TODO).
 - **SCC контракт:** ✅ Production-ready (MAX_SUPPLY=1B, MINTER/SLASHER split, ReentrancyGuard, NatSpec, PremiumPaid event, mintForTree alias, audit hardening, slash bypasses pause, admin protection, locked pragma)
 - **SFC контракт:** ✅ Production-ready (MAX_SUPPLY=100M, SLASHER_ROLE + slash(), ReentrancyGuard, NatSpec, slash bypasses pause, auto-delegation, admin protection, locked pragma)
 - **Аудит-зміцнення:** ✅ Явна перевірка балансу в `slash()`, валідація нульових значень у `mint()`/`slash()`, перевірка порожнього батчу у `batchMint()`, NatSpec, захист від The Graph DoS (`treeDid`/`clusterId` length ≤256 bytes), валідація `recordPremiumPaid()`, per-element string validation у `batchMint()` для обох контрактів
 - **Зовнішній аудит (19 findings):** ✅ Аналіз 19 знахідок: 9 виправлено on-chain (slash bypass pause, admin protection, auto-delegate, batch size 100, anchor interval, locked pragma, mint dedup, rootHistory, timestamp NatSpec), 10 задокументовано як operational/by-design
 - **Backend інтеграція:** ✅ `BlockchainMintingService` + `BlockchainBurningService`
-- **The Graph subgraph:** ✅ `TokenSlashed` виправлено, `PremiumPaid` додано, `treeDidHash` (bytes32) додано. ✅ SFC: `ForestMintEvent` + `GovernanceSlashEvent` + handlers додано (Sprint 3, S3.5). ⚠️ SFC contract address — placeholder до Mainnet deploy.
+- **The Graph subgraph:** ✅ `TokenSlashed` виправлено, `PremiumPaid` додано, `treeDidHash` (bytes32) додано. ✅ SFC: `ForestMintEvent` + `GovernanceSlashEvent` + handlers додано (S3.5). ⚠️ SFC contract address — placeholder до Mainnet deploy.
 - **Відкрите:** SFC contract address placeholder до Mainnet deploy; зовнішній аудит execution → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
@@ -497,8 +497,8 @@ function nonces(address owner)
 | `CarbonMinted(indexed address,uint256,indexed bytes32,string)` | `CarbonMinted` | ✅ `treeDidHash` (bytes32) |
 | `TokenSlashed(indexed address,uint256)` | `TokenSlashed` | ✅ Синхронізовано |
 | `PremiumPaid(indexed address,uint256)` | `PremiumPaid` | ✅ Event + handler додано |
-| `ForestMinted(indexed address,uint256,indexed bytes32,string)` | `ForestMinted` (SFC) | ✅ Handler додано (Sprint 3, S3.5) |
-| `GovernanceSlashed(indexed address,uint256)` | `GovernanceSlashed` (SFC) | ✅ Handler додано (Sprint 3, S3.5) |
+| `ForestMinted(indexed address,uint256,indexed bytes32,string)` | `ForestMinted` (SFC) | ✅ Handler додано (S3.5) |
+| `GovernanceSlashed(indexed address,uint256)` | `GovernanceSlashed` (SFC) | ✅ Handler додано (S3.5) |
 
 > ⚠️ SFC data source в `subgraph.yaml` використовує placeholder `0x0000000000000000000000000000000000000000` — блокує deploy subgraph до Mainnet. Замінити після деплою SFC контракту.
 
@@ -648,7 +648,7 @@ FilecoinArchiveWorker → IPFS/Filecoin permanent record
 - event: PremiumPaid(indexed address,uint256)
   handler: handlePremiumPaid            # ✅ Event додано до контракту
 
-# SFC data source (додано Sprint 3, S3.5)
+# SFC data source (додано S3.5)
 - event: ForestMinted(indexed address,uint256,indexed bytes32,string)
   handler: handleForestMinted           # ✅ clusterIdHash як bytes32
 
@@ -758,7 +758,7 @@ On-chain governance (SFC-голосування за протокольні па
 
 | Фаза | Інструмент / Постачальник | Тип | Коли | Статус |
 |------|--------------------------|-----|------|--------|
-| **1. Automated Static Analysis** | [Slither](https://github.com/crytic/slither) | Безкоштовний open-source | Зараз (CI/CD) | ✅ Реалізовано (Сесія 19): `.github/workflows/solidity_audit.yml` |
+| **1. Automated Static Analysis** | [Slither](https://github.com/crytic/slither) | Безкоштовний open-source | Зараз (CI/CD) | ✅ Реалізовано: `.github/workflows/solidity_audit.yml` |
 | **1b. Symbolic Execution** | [Mythril](https://github.com/Consensys/mythril) | Безкоштовний open-source | Зараз (CI/CD) | 🟡 TODO |
 | **2. Manual Audit (Pre-Testnet)** | [Hacken](https://hacken.io/) або [Hashlock](https://hashlock.com/) | Платний аудит | Перед Amoy → Mainnet | 🔴 TODO |
 | **3. Runtime Monitoring** | [CertiK Skynet](https://skynet.certik.com/) | 24/7 моніторинг | Після Mainnet deploy | 🔴 TODO |
@@ -781,7 +781,7 @@ On-chain governance (SFC-голосування за протокольні па
 # OpenZeppelin 5.x через contracts/package.json
 ```
 
-**Foundry Deploy Script (✅ Реалізовано — Сесія 23):**
+**Foundry Deploy Script (✅ Реалізовано):**
 ```bash
 # contracts/script/Deploy.s.sol — деплой всіх 6 контрактів у правильному порядку:
 # 1. SCC → 2. SFC → 3. StateRootAnchor → 4. Timelock → 5. Governor → 6. ProtocolParameters
