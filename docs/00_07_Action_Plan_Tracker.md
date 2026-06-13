@@ -324,6 +324,8 @@
 - [ ] 👤 Обрати MPPT: мінімум Victron SmartSolar MPPT 75/15
 - [ ] 👤 PCB layout: розмістити C_BULK ≤ 10 мм від VBAT pin, HF caps впритул
 - [ ] 👤 Оновити BOM (закупка 5 нових компонентів)
+- [ ] 👤 Bench: фізично звірити маркування модему на прототипі = **SIM7070G** (не SIM7000G; найменування у firmware/BOM/`02_05` вже уніфіковано — лишилась лише фізична звірка)
+- [ ] 🔗 Firmware: додати `AT+CPSMS` + `AT+CEDRXS` (PSM/eDRX, idle ~3 µA) у Queen flush-цикл — `03_02`
 
 #### HW.16 — Thermal management в IP67 enclosure
 - **P1** · 👤 · → `02_05 §Теплове управління IP67`
