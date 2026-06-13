@@ -584,9 +584,9 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 
 ### Наступні кроки
 
-1. ✅ ~~**Вирішити BLOCKER-1** (Prometheus Server)~~ — вирішено через Grafana Alloy → Grafana Cloud.
-2. ✅ ~~**Вирішити BLOCKER-2** (Grafana)~~ — вирішено через Grafana Cloud SaaS.
-3. ✅ ~~**Вирішити BLOCKER-3** (Alertmanager)~~ — вирішено через Grafana Cloud Alerting.
+1. ✅ Prometheus Server — вирішено через Grafana Alloy → Grafana Cloud.
+2. ✅ Grafana — вирішено через Grafana Cloud SaaS.
+3. ✅ Alertmanager — вирішено через Grafana Cloud Alerting.
 4. 🟡 **Створити дашборди** — операційна задача в Grafana Cloud UI.
 5. 🟡 **Створити алерти** — операційна задача в Grafana Cloud UI.
 

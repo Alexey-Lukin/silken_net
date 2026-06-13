@@ -132,7 +132,7 @@ terraform apply
 #
 # ⚠️ AKASH SECURITY NOTE: ENV vars видимі провайдеру у plaintext.
 # Ротуй keys кожні 90 днів. Akash-deployment keys — тільки з MINTER_ROLE/
-# SLASHER_ROLE (ніколи з DEFAULT_ADMIN_ROLE). Детальніше: 06_02 BLOCKER-3.
+# SLASHER_ROLE (ніколи з DEFAULT_ADMIN_ROLE). Детальніше: 06_02 §2 (ENV/секрети) + 00_07 S4.3.
 
 # Крок 6: Деплой на Akash Network
 cd terraform/akash
@@ -582,7 +582,7 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
 ☐ 2. Створити terraform/terraform.tfvars
       project_id, db_password, ssh_source_ranges=[<your-ip>]
 
-☐ 3. Заповнити всі GitHub Secrets (BLOCKER-3)
+☐ 3. Заповнити всі GitHub Secrets (00_07 S1.1)
       GCP_SA_KEY, GCP_PROJECT_ID, DATABASE_PASSWORD, DATABASE_URL, ...
 
 ☐ 4. terraform init && terraform plan && terraform apply

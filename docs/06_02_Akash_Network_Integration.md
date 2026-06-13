@@ -500,7 +500,7 @@ expose:
 | **443** | TCP (HTTPS) | TLS-термінований трафік; TLS через Akash ingress або Cloudflare | `boot.proxy.publish "443:443"` |
 | **5683** | UDP | CoAP — IoT телеметрія від Queen gateway (21-байтні бінарні пакети) | `boot.proxy.publish "5683:5683/udp"` |
 
-> **Порт 443** оголошений у SDL. TLS термінація потребує налаштування Akash hostname operator або зовнішнього Cloudflare proxy — див. BLOCKER-5.
+> **Порт 443** оголошений у SDL. TLS термінація потребує налаштування Akash hostname operator або зовнішнього Cloudflare proxy — див. §TLS термінація (00_07 INF.4).
 
 **Схема мережевого потоку (поточний стан):**
 
@@ -523,7 +523,7 @@ Queen Gateway (STM32 + SIM7070G)
 │  Akash Provider (децентралізований)     │
 │  SilkenNet Container                    │
 │  HTTP :80 (Rails 8.1 + Puma)            │
-│  HTTPS :443 (TLS термінація — BLOCKER-5)│
+│  HTTPS :443 (TLS термінація — INF.4)      │
 │  UDP :5683 (CoAP listener)              │
 │                                         │
 │  ┌─────────────────────────────────┐    │
@@ -931,13 +931,13 @@ akash tx deployment close \
 | **Ephemeral Disk** | 30 GB SSD | 50 GiB | ✅ Більше |
 | **Persistent Disk** | Docker volume | 10 GiB (`beta3`) | ✅ Аналогічно |
 | **Порт 80 (HTTP)** | ✅ | ✅ | ✅ |
-| **Порт 443 (HTTPS)** | ✅ (Kamal proxy) | 🟡 В SDL, TLS термінація не конфігурована | 🟡 BLOCKER-5 |
+| **Порт 443 (HTTPS)** | ✅ (Kamal proxy) | 🟡 В SDL, TLS термінація не конфігурована | 🟡 INF.4 |
 | **Rails security headers** | ✅ `force_ssl`, HSTS, CSP, X-Frame: DENY, Permissions-Policy | ✅ (ті самі Rails initializers) | ✅ Однакова конфігурація |
 | **Порт 5683 (CoAP/UDP)** | ✅ | ✅ (через Ingress Anchor) | ✅ |
-| **Database** | Cloud SQL private IP | ✅ Cloud SQL Auth Proxy (in-container) | ✅ BLOCKER-1 вирішено |
-| **Redis** | Memorystore private | ✅ Upstash serverless Redis (TLS) | ✅ BLOCKER-1 вирішено |
-| **Sidekiq (job role)** | ✅ (Kamal `job` role) | ✅ (`job` сервіс в SDL) | ✅ BLOCKER-2 вирішено |
-| **ActionCable (multi-replica)** | Solid Cable (PostgreSQL) | ✅ Solid Cable (Cloud SQL) | ✅ BLOCKER-8 вирішено |
+| **Database** | Cloud SQL private IP | ✅ Cloud SQL Auth Proxy (in-container) | ✅ вирішено |
+| **Redis** | Memorystore private | ✅ Upstash serverless Redis (TLS) | ✅ вирішено |
+| **Sidekiq (job role)** | ✅ (Kamal `job` role) | ✅ (`job` сервіс в SDL) | ✅ вирішено |
+| **ActionCable (multi-replica)** | Solid Cable (PostgreSQL) | ✅ Solid Cable (Cloud SQL) | ✅ вирішено |
 | **Управління** | Kamal + Terraform GCP | Akash CLI + Terraform | ✅ |
 | **Цінова модель** | Фіксована (GCP billing) | Аукціон (uAKT/block) | ✅ Потенційно дешевше |
 | **Відмовостійкість** | GCP SLA + Shielded VM | Залежить від провайдера | 🟡 Без SLA гарантій |
@@ -954,10 +954,10 @@ Mapping між конфігурацією Kamal (`config/deploy.yml` + `.kamal/s
 | Kamal (config/deploy.yml) | Akash SDL (deploy/akash/deploy.yaml) |
 |--------------------------|--------------------------------------|
 | `servers.web` | `services.web` |
-| `servers.job` (Sidekiq) | `services.job` (✅ BLOCKER-2 виправлено) |
+| `servers.job` (Sidekiq) | `services.job` (✅ виправлено) |
 | `image` (Artifact Registry) | `services.web.image` (GHCR public) |
 | `boot.proxy.publish "80:80"` | `expose[0]: port: 80, global: true` |
-| `boot.proxy.publish "443:443"` | `expose[1]: port: 443, global: true` (🟡 BLOCKER-5: TLS термінація) |
+| `boot.proxy.publish "443:443"` | `expose[1]: port: 443, global: true` (🟡 INF.4: TLS термінація) |
 | `boot.proxy.publish "5683:5683/udp"` | `expose[2]: port: 5683, proto: udp, global: true` |
 | `env.clear RAILS_ENV=production` | `env: RAILS_ENV=production` |
 | `env.clear WEB_CONCURRENCY=2` | `env: WEB_CONCURRENCY=4` (більше CPU на Akash) |
@@ -1032,13 +1032,13 @@ Mapping між конфігурацією Kamal (`config/deploy.yml` + `.kamal/s
 | `CHAINLINK_HMAC_SECRET` | `CHAINLINK_HMAC_SECRET=${chainlink_hmac_secret}` | `var.chainlink_hmac_secret` |
 | `CHAINLINK_DON_ID` | `CHAINLINK_DON_ID=${chainlink_don_id}` | `var.chainlink_don_id` |
 
-> **🔴 Drift guard:** при додаванні нового ENV у Kamal `env.secret` **ОБОВ'ЯЗКОВО** додати у всі 5 локацій вище. Інакше Akash deployment отримає boot crash (категорія A) або тиху Web3 відмову (категорія B). Див. також **BLOCKER-3** для повного списку категорій.
+> **🔴 Drift guard:** при додаванні нового ENV у Kamal `env.secret` **ОБОВ'ЯЗКОВО** додати у всі 5 локацій вище. Інакше Akash deployment отримає boot crash (категорія A) або тиху Web3 відмову (категорія B). Див. також §Секрети SDL (категорії A/B/C) вище.
 
 ---
 
 ## 7. Інтеграція у Загальну Архітектуру Gaia 2.0
 
-Akash Network займає рівень **L5 (Rails Backend)** в 8-рівневій архітектурі. З вирішенням BLOCKER-1 (DB + Redis connectivity) всі рівні L5–L8 тепер працюють на Akash:
+Akash Network займає рівень **L5 (Rails Backend)** в 8-рівневій архітектурі. З вирішенням мережевої ізоляції (DB + Redis connectivity) всі рівні L5–L8 тепер працюють на Akash:
 
 ```
 L8  Ethereum L1          Weekly State Root          (EthereumAnchorWorker — ✅ запускається на Akash через Sidekiq job сервіс)
@@ -1060,11 +1060,11 @@ L1  Biophysics            Ti-6Al-4V EBFC            (не залежить ві�
 | TRL | Що потрібно | Статус |
 |-----|------------|--------|
 | **TRL 5** ✅ | SDL-маніфест (`web` + `job` + `alloy`), DB+Redis connectivity, GHCR mirror | ✅ Всі передумови виконані |
-| **TRL 5** ✅ | Вирішити мережеву ізоляцію (Cloud SQL + Redis) | ✅ BLOCKER-1 — Cloud SQL Auth Proxy + Upstash |
-| **TRL 5** ✅ | Додати `job` сервіс в SDL для Sidekiq | ✅ BLOCKER-2 виправлено |
-| **TRL 5** ✅ | Замінити Docker образ на публічний реєстр (GHCR) | ✅ BLOCKER-4 виправлено (`mirror-ghcr.yml`) |
-| **TRL 6** 🎯 | Перший реальний деплой на Akash Mainnet + функціональне тестування CoAP | 🔴 BLOCKER-3 (секрети — заповнити `terraform.tfvars`) |
-| **TRL 7** 🎯 | Налаштувати TLS через Akash ingress hostname operator або Cloudflare | 🟡 BLOCKER-5 (порт 443 у SDL, TLS не активована) |
-| **TRL 7** 🎯 | GCS bucket для Terraform state | 🟡 BLOCKER-6 (створити вручну перед `terraform init`) |
+| **TRL 5** ✅ | Вирішити мережеву ізоляцію (Cloud SQL + Redis) | ✅ Cloud SQL Auth Proxy + Upstash |
+| **TRL 5** ✅ | Додати `job` сервіс в SDL для Sidekiq | ✅ виправлено |
+| **TRL 5** ✅ | Замінити Docker образ на публічний реєстр (GHCR) | ✅ виправлено (`mirror-ghcr.yml`) |
+| **TRL 6** 🎯 | Перший реальний деплой на Akash Mainnet + функціональне тестування CoAP | 🔴 00_07 S4.3 (секрети — заповнити `terraform.tfvars`) |
+| **TRL 7** 🎯 | Налаштувати TLS через Akash ingress hostname operator або Cloudflare | 🟡 00_07 INF.4 (порт 443 у SDL, TLS не активована) |
+| **TRL 7** 🎯 | GCS bucket для Terraform state | 🟡 00_07 S5.6 (створити вручну перед `terraform init`) |
 | **TRL 8** | Production деплой з Grafana Cloud метриками + alerting | Потребує TRL 7 + GRAFANA_* secrets |
 | **TRL 9** | Automated failover GCP ↔ Akash + повна CI/CD інтеграція | — |
