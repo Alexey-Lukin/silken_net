@@ -18,7 +18,7 @@ resource "google_sql_database_instance" "silken_db" {
       # or VPN required. See: Dockerfile + bin/docker-entrypoint.
       ipv4_enabled    = false
       private_network = google_compute_network.silken_net_vpc.id
-      require_ssl     = true
+      ssl_mode        = "ENCRYPTED_ONLY"
     }
 
     backup_configuration {
@@ -127,7 +127,7 @@ resource "google_sql_database_instance" "read_replica" {
     ip_configuration {
       ipv4_enabled    = false
       private_network = google_compute_network.silken_net_vpc.id
-      require_ssl     = true
+      ssl_mode        = "ENCRYPTED_ONLY"
     }
   }
 

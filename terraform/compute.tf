@@ -181,7 +181,7 @@ SYSTEMD_UNIT
   EOF
 
   metadata = {
-    enable-oslogin       = "TRUE"
+    enable-oslogin = "TRUE"
     # Update this value after Akash deployment to route traffic:
     #   gcloud compute instances add-metadata silken-net-ingress \
     #     --metadata akash-deployment-ip=<NEW_AKASH_IP> --zone europe-west1-b

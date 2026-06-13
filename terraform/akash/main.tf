@@ -65,35 +65,35 @@ resource "local_file" "akash_sdl" {
     web_concurrency                    = var.web_concurrency
     rails_max_threads                  = var.rails_max_threads
     # 🛑 BOOT-CRITICAL: Rails refuses to boot without this (master_key_strength_check.rb)
-    provisioning_master_key            = var.provisioning_master_key
+    provisioning_master_key = var.provisioning_master_key
     # Observability
-    sentry_dsn                         = var.sentry_dsn
+    sentry_dsn = var.sentry_dsn
     # Web3 oracle keys (dual-key split, B-02)
-    oracle_private_key                 = var.oracle_private_key
-    oracle_minter_private_key          = var.oracle_minter_private_key
-    oracle_slasher_private_key         = var.oracle_slasher_private_key
-    ethereum_anchor_private_key        = var.ethereum_anchor_private_key
+    oracle_private_key          = var.oracle_private_key
+    oracle_minter_private_key   = var.oracle_minter_private_key
+    oracle_slasher_private_key  = var.oracle_slasher_private_key
+    ethereum_anchor_private_key = var.ethereum_anchor_private_key
     # RPC endpoints (Web3::RpcConnectionPool)
-    alchemy_polygon_rpc_url            = var.alchemy_polygon_rpc_url
-    alchemy_ethereum_rpc_url           = var.alchemy_ethereum_rpc_url
-    solana_rpc_url                     = var.solana_rpc_url
+    alchemy_polygon_rpc_url  = var.alchemy_polygon_rpc_url
+    alchemy_ethereum_rpc_url = var.alchemy_ethereum_rpc_url
+    solana_rpc_url           = var.solana_rpc_url
     # Solana minting (SolanaMicroRewardWorker)
-    solana_wallet_keypair              = var.solana_wallet_keypair
-    solana_fee_payer_pubkey            = var.solana_fee_payer_pubkey
-    solana_fee_payer_token_account     = var.solana_fee_payer_token_account
-    solana_usdc_mint_address           = var.solana_usdc_mint_address
+    solana_wallet_keypair          = var.solana_wallet_keypair
+    solana_fee_payer_pubkey        = var.solana_fee_payer_pubkey
+    solana_fee_payer_token_account = var.solana_fee_payer_token_account
+    solana_usdc_mint_address       = var.solana_usdc_mint_address
     # Chainlink Functions Router v1 (ChainlinkDispatchWorker — S6.2)
-    chainlink_functions_router         = var.chainlink_functions_router
-    chainlink_subscription_id          = var.chainlink_subscription_id
-    chainlink_don_id                   = var.chainlink_don_id
-    chainlink_hmac_secret              = var.chainlink_hmac_secret
+    chainlink_functions_router = var.chainlink_functions_router
+    chainlink_subscription_id  = var.chainlink_subscription_id
+    chainlink_don_id           = var.chainlink_don_id
+    chainlink_hmac_secret      = var.chainlink_hmac_secret
     # OBS.1: Grafana Alloy observability sidecar
-    grafana_remote_write_url           = var.grafana_remote_write_url
-    grafana_remote_write_username      = var.grafana_remote_write_username
-    grafana_remote_write_token         = var.grafana_remote_write_token
-    prometheus_auth_user               = var.prometheus_auth_user
-    prometheus_auth_password           = var.prometheus_auth_password
-    alloy_config_base64                = filebase64("${path.module}/../../deploy/akash/config.alloy")
+    grafana_remote_write_url      = var.grafana_remote_write_url
+    grafana_remote_write_username = var.grafana_remote_write_username
+    grafana_remote_write_token    = var.grafana_remote_write_token
+    prometheus_auth_user          = var.prometheus_auth_user
+    prometheus_auth_password      = var.prometheus_auth_password
+    alloy_config_base64           = filebase64("${path.module}/../../deploy/akash/config.alloy")
   })
   filename = "${path.module}/generated-deploy.yaml"
 
