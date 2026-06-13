@@ -84,11 +84,13 @@ jobs:
       - name: Install contract dependencies
         run: npm ci
 
-      # Compile here (deps live in node_modules) so Slither reads Foundry's out/
-      # AST via ignore-compile. The action's own installer runs `forge install`,
-      # which assumes a lib/ git-submodule layout this project does not use.
-      - name: Build contracts with AST
-        run: forge build --ast
+      # Compile here (deps live in node_modules) and emit build-info: under
+      # ignore-compile crytic-compile parses Foundry's hardhat-style build-info
+      # JSON (out/build-info), not the per-file out/ artifacts, and reads the AST
+      # from it. This also skips the action's own `forge install`, which assumes
+      # a lib/ git-submodule layout this project does not use.
+      - name: Build contracts (build-info for Slither)
+        run: forge build --build-info
 
       - name: Run Slither
         uses: crytic/slither-action@v0.4.2
