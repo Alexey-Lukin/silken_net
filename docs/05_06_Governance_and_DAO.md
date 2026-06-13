@@ -183,6 +183,8 @@ params = SystemParameter.current_values(lorenz_sigma: 10.0, lorenz_rho: 28.0)
 SystemParameter.set("lorenz_sigma", "12.0", updated_by: admin, source: "governance")
 ```
 
+> Значення-дефолти у прикладах (`10.0` / `0.20` / `28.0`) — лише `default:`-fallback, що дзеркалить канон-доми (примітка §1 вище має посилання: Lorenz / slash / курс); governance/admin override має пріоритет.
+
 **`SystemParameter` model** (`app/models/system_parameter.rb`):
 - Кеш поточних значень з TTL 24h (invalidation через `after_commit`)
 - Fallback на `default:` при відсутності запису
