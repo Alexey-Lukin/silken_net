@@ -20,7 +20,17 @@ SHOW_SECS = ARGV.delete("--secs")
 FROM = ARGV[0] || "00_00"
 TO   = ARGV[1] || "08_99"
 
-SKELETON = /🎯|✅|🔗|📑|Зміст|Cross-ref|Мета|Статус/i
+# Front-matter (skeleton) заголовки розпізнаються за МІТКОЮ після емодзі — НЕ за голим
+# емодзі. Нумерований контент-заголовок ("## 🎯 5. …", "## 🔗 7. …") має той самий емодзі,
+# але це РЕАЛЬНА секція й не має фільтруватись (це був тихий баг — ховав 7 секцій канону).
+SKELETON_LABELS = /\A(Мета|Статус|Cross-references?|Зміст|TOC|File\s*Map|Файлова)/i
+
+def skeleton_kind(heading)
+  core = heading.sub(/\A[^\p{L}\p{N}]+/u, "") # зняти провідні емодзі + пробіли
+  return nil unless core =~ SKELETON_LABELS
+
+  core =~ /\AМета/i ? :meta : (core =~ /\AСтатус/i ? :status : :other_skel)
+end
 
 root = File.expand_path("..", __dir__)
 files = Dir.glob(File.join(root, "docs", "[0-9][0-9]_[0-9][0-9]_*.md")).sort
@@ -42,7 +52,7 @@ files.each do |path|
   meta = status = nil
   crossrefs = 0
   content_secs = []
-  cur = nil
+  cur_skel = nil  # :meta / :status / :other_skel для поточної ## секції; nil = контент
   in_fence = false
 
   lines.each do |l|
@@ -50,19 +60,21 @@ files.each do |path|
     next if in_fence  # skip ## inside ``` fences (skeleton/template examples ≠ real sections)
 
     if l.start_with?("## ")
-      cur = l.sub(/^##\s+/, "").strip
-      content_secs << cur unless cur =~ SKELETON
-    elsif cur
+      heading  = l.sub(/^##\s+/, "").strip
+      cur_skel = skeleton_kind(heading)        # за міткою, не за голим емодзі
+      content_secs << heading unless cur_skel  # нумерована "🎯 5. …" — це контент
+    elsif cur_skel
       next if l.strip.empty?
-      if cur =~ /🎯|Мета/ && meta.nil? && !l.start_with?("#")
+      if cur_skel == :meta && meta.nil? && !l.start_with?("#")
         meta = l.strip.delete_prefix("> ")
-      elsif cur =~ /✅|Статус/ && status.nil? && l =~ /TRL/i
+      elsif cur_skel == :status && status.nil? && l =~ /TRL/i
         status = l.strip.delete_prefix("> ")
       end
     end
     crossrefs += l.scan(/\[`?\d\d_\d\d/).size if l.include?("](")
   end
-  status ||= lines.find { |l| l =~ /\bTRL[\s-]?\d/i }&.strip&.slice(0, 90)
+  # Фолбек для index-доків без ✅ Статус: реальний TRL-рядок, НЕ directory-лінк / table-row.
+  status ||= lines.find { |l| l =~ /\bTRL[\s-]?\d/i && !l.include?("](") && !l.lstrip.start_with?("|") }&.strip&.slice(0, 90)
   total_secs += content_secs.size
 
   if mod != prev_mod
