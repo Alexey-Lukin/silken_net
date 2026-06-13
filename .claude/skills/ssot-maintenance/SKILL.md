@@ -67,8 +67,9 @@ All via binstubs — **`bin/rails` / `bin/rspec`**, never `bundle exec` (`[[feed
 | `bin/rails wiki:sync PUSH=1` | Commit + push the canon `NN_NN` pages to the GitHub wiki (SSH to `*.wiki.git`). | ↑ |
 | `COVERAGE=0 bin/rspec spec/lib/docs_linter_spec.rb spec/lib/docs_toc_spec.rb spec/lib/docs_graph_spec.rb` | Unit-test the linter / ToC / ref-graph engines (pure functions — `spec_helper`, **no Rails/DB**; `COVERAGE=0` skips the whole-suite coverage gate on a subset run). | — |
 | `ruby scripts/docs_check.rb [refs\|tracker]` | **Fast local** alias — runs `docs:check_refs` + `tracker:check` with **no Rails boot** (~0.3s vs ~1.2s; no `bundle`/DB — only `ruby`+`rake`). Reuses the exact rake bodies → cannot drift from CI. Read-only (ToC regen stays `bin/rails docs:toc`). Ideal for a pre-commit hook / non-Rails contributor. | reuses `lib/tasks/docs.rake` + `tracker.rake` |
+| `ruby scripts/model_doc_sync.rb` | **code↔doc registry gate** (HARD, CI `docs.yml`): `04_01` ⟷ `app/models/` — model files ⟷ `### Model` headings §2..§7b (1:1) · concerns ⟷ §1 · `PARTITIONED_TABLES` ⟷ §0/§11. Replaced the manual «§12 SSOT Drift Register» (silently stale: claimed 35 models for 36 files). Run it (or rely on CI) after adding a model. Pure Ruby, no Rails. Method/why → `00_06 §3`. | `scripts/model_doc_sync.rb` (standalone) |
 
-CI: `docs.yml` is the **single home** for the doc gates — triggers on `docs/**`, `**.md`, the lib-docs engines/specs, and `.github/**` (so the external-doc-path guard sees `.github/`+root-md changes). The duplicate steps were removed from `ci.yml` (2026-06-02), so a mixed code+docs PR no longer double-runs them; `ci.yml` (code CI) `paths-ignore`s `**.md`/`docs/**`. `main` is currently **unprotected** — when protection lands, mark `docs_check` required (a docs-only PR skips `ci.yml`).
+CI: `docs.yml` is the **single home** for the doc gates — triggers on `docs/**`, `**.md`, the lib-docs engines/specs, `.github/**` (so the external-doc-path guard sees `.github/`+root-md changes), **and `app/models/**` + `partition_maintenance_worker.rb` + `scripts/model_doc_sync.rb`** (so the model↔code registry gate catches a model added in code, not just a doc edit). The duplicate steps were removed from `ci.yml` (2026-06-02), so a mixed code+docs PR no longer double-runs them; `ci.yml` (code CI) `paths-ignore`s `**.md`/`docs/**`. `main` is currently **unprotected** — when protection lands, mark `docs_check` required (a docs-only PR skips `ci.yml`).
 
 ## Add a new drift guard — *how this skill evolves*
 
@@ -127,6 +128,7 @@ GATE per-phase docs:check_refs + tracker:check + zero-loss set-diff + wiki dry-r
 - [ ] bin/rails docs:check_refs           → green
 - [ ] bin/rails tracker:check             → green (if 00_07 touched)
 - [ ] bin/rails docs:toc                  → run if headings changed, then check_refs green
+- [ ] ruby scripts/model_doc_sync.rb      → green (if 04_01/04_02 or app/models touched)
 - [ ] linter/ToC specs green              → if lib/docs_*.rb touched
 - [ ] fact edited ONLY at its home (§8.2); mirrors labelled
 - [ ] no volatile counts · no blocker section in canon · Cross-references at top
