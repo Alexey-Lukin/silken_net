@@ -11,7 +11,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 — політика затверджена; backend-механіка реалізована частково (convex-формула `BlockchainBurningService#calculate_slash_ratio` + blackout-routing `ContractHealthCheckService#flag_data_blackout!` + cause-driven `penalty_factor` de-correlation `#calculate_penalty_factor` (INERT за gate), RSpec-покрито). **Відкрите:** formal `cause_classification` A/B/C-gate (SLASH-1), operator-bond (BIZ.13), DAO-confirm перед mainnet → [`00_07`](00_07_Action_Plan_Tracker).
-- **Slashing v2:** жорстке "burn-on-degradation" замінено двокатегорійною моделлю (негілентність / форс-мажор) + safety-default (невизначеність) — травень 2026.
+- **Slashing v2:** жорстке "burn-on-degradation" замінено двокатегорійною моделлю (халатність / форс-мажор) + safety-default (невизначеність).
 - **De-risk інваріант:** фінансовий slashing **ніколи** не спирається лише на Z-Лоренца — потрібен ≥1 прямий некорельований сигнал (sap_flow / VPD / acoustic).
 
 ---
@@ -166,7 +166,7 @@ ForceMajeure event → InsurancePayoutWorker
 
 **Інваріант:** доки Z↔health не підтверджено емпірично, slashing вимагає підтвердження **≥1 прямим вимірним сигналом** (sap_flow / chainsaw-acoustic / dClimate), не лише Z/device-status.
 
-**Прямі сигнали (corroboration set):** `sap_flow`/`delta_t` (метаболізм), chainsaw-acoustic (TinyML), dClimate (супутник), і **VPD з BME280** [`02_01` — ADR [02 01 §3.4](02_01_Hardware_Architecture_and_BOM)] (t°+RH): прямий фізіологічний confounder, що відрізняє падіння сокоруху через погоду (дощ/туман, RH≈100%) від хвороби. VPD — апаратне втілення цього інваріанта: вбиває False Slashing біля джерела. ⚠️ VPD живе на slashing/confounder-шарі, **НЕ** в Lorenz-Z (DCI-guard, [`03_04`](03_04_mruby_Lorenz_Attractor)). Разом з «correlated comms-loss guard» (§6) це формує повний принцип: **не штрафувати за недоведений Z, за погоду, ані за втрату зв'язку** — лише за прямо підтверджену халатність.
+**Прямі сигнали (corroboration set):** `sap_flow`/`delta_t` (метаболізм), chainsaw-acoustic (TinyML), dClimate (супутник), і **VPD з BME280** (ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM), t°+RH): прямий фізіологічний confounder, що відрізняє падіння сокоруху через погоду (дощ/туман, RH≈100%) від хвороби. VPD — апаратне втілення цього інваріанта: вбиває False Slashing біля джерела. ⚠️ VPD живе на slashing/confounder-шарі, **НЕ** в Lorenz-Z (DCI-guard, [`03_04`](03_04_mruby_Lorenz_Attractor)). Разом з «correlated comms-loss guard» (§6) це формує повний принцип: **не штрафувати за недоведений Z, за погоду, ані за втрату зв'язку** — лише за прямо підтверджену халатність.
 
 ## 🔬 8. Ground-Truth Validation Protocol — Z↔health [Lorenz de-risk]
 
@@ -175,7 +175,7 @@ ForceMajeure event → InsurancePayoutWorker
 **Дизайн** (польова валідація — ЧНУ біо-хаб + Data Science Карапетян + лабораторія Гусака; партнерський ростер і академічний вихід → [`08_02`](08_02_Academic_Institutions_Registry)):
 - **Когорта:** 20–30 дерев (Черкаський бір), SilkenNet-анкер + **незалежний ground-truth**: еталонний sap-flow сенсор (незалежний від EBFC `delta_t`), дендрометр (приріст), періодичний NDVI/leaf-area, експертний бал стану + події смертності/хвороби.
 - **Тривалість:** ≥1 вегетаційний сезон (захопити стрес-події: посуха, шкідники).
-- **Збір:** щоденні `stress_index` + компоненти (`Z`, `sap_flow`, `acoustic`, `temp`, `vcap`, **`RH`/`VPD`** [`02_01` — BME280, [[02 01 §3.4](02_01_Hardware_Architecture_and_BOM)](02_01_Hardware_Architecture_and_BOM)]), `growth_points`, ground-truth.
+- **Збір:** щоденні `stress_index` + компоненти (`Z`, `sap_flow`, `acoustic`, `temp`, `vcap`, **`RH`/`VPD`** (BME280, [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM))), `growth_points`, ground-truth.
 - **Аналіз** (backend-харнес `SilkenNet::LorenzValidationService` — ✅ реалізовано, `app/services/silken_net/`, RSpec-покрито):
   1. Кореляція `stress_index` ↔ ground-truth decline (Spearman ρ).
   2. **Incremental value Z:** чи додає Z предиктивність ПОНАД прямі сигнали (sap_flow)? Якщо ні → демоут Z до **DCI-only**.
