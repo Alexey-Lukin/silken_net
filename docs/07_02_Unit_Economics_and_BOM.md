@@ -76,7 +76,7 @@
 | **Анкер Zone 1 + Zone 3 (Anode + Cathode)** | Ti-6Al-4V Grade 5. SLM+HIP друк (Zone 1) + SLM/EBM (Zone 3). Маса ~9 г сумарно (пористість гіроїда 65%). Включає Hard Gold pogo-площадку та PTFE-GDL катодну мембрану. | $20.00–$25.00 |
 | **Анкер Zone 2 (PEEK-терморозрив)** | Medical Grade PEEK. ЧПУ-фрезерування з annealing 200–250°C, допуски H7/s6. Press-fit з Zone 1 і Zone 3. | $3.00 |
 | **Радом (PCBA housing)** | Medical Grade PEEK купол ∅20–30 мм, термолиття. O-ring EPDM. IP68. Окрема деталь, **НЕ Zone 2**. | $2.50 |
-| **Power Deck (PCBA)** | BQ25570 (MPPT) + EDLC Supercapacitor 0.47 F + Pogo Pins + 47µF/25V/X7R/1210 buffer cap ([`02_03 §6.1`](02_03_BQ25570_MPPT_Nano_Power)) + **LTC3108 DNP footprint** для cold-start fallback (`02_03 BLOCKER-3`) + пасивна обв'язка 0402. | $6.35 |
+| **Power Deck (PCBA)** | BQ25570 (MPPT) + EDLC Supercapacitor 0.47 F + Pogo Pins + 47µF/25V/X7R/1210 buffer cap ([`02_03 §6.1`](02_03_BQ25570_MPPT_Nano_Power)) + **LTC3108 DNP footprint** для cold-start fallback ([`02_03 §1.5`](02_03_BQ25570_MPPT_Nano_Power)) + пасивна обв'язка 0402. | $6.35 |
 | **RF Deck (PCBA)** | STM32WLE5JC (LoRa SoC) + Ceramic SMD Antenna 868 МГц + TCXO (±1 ppm) + **SE050 DNP footprint** (SEC.6 / SE050-MIGRATION, mass-only post-FW.2 — [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security); +$2.40–3.25 коли populated). | $5.80 |
 | **Біоелектрохімічна функціоналізація (Gen 2.0)** | fMWCNT + Os redox polymer + **dgrFAD-GDH** (Zone 1); fMWCNT + **Laccase/nCoCuCeZIF nanozyme** гібрид (Zone 3); **Genipin-Chitosan-CNC** захисна матриця; **Nafion-g-PSBMA** цвітеріонна мембрана (SI-ATRP). Деталі — [`01_03 §5`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell). | $15.00–$24.50 (1K шт) / $5–$8 (50K+ шт) |
 | **Стерилізація (no EtO)** | Гамма-опромінення Co-60 25 кГр в запакованому стані, або UV-C + 70% EtOH. Деталі — [`01_04 §6`](01_04_CODIT_and_Xylemointegration). | $0.50–$1.00 |
@@ -98,7 +98,7 @@
 | 8 | Pogo Pins | Mill-Max 0906 Series (2 шт, spring-loaded) | ~$0.40 |
 | 9 | Buffer cap VOUT | 47 µF / **25V X7R 1210** (Murata GRM32E70J476ME20), **НЕ 6.3V** — [`02_03 §6.1`](02_03_BQ25570_MPPT_Nano_Power) | ~$0.18 |
 | — | **Electronics TOTAL** | | **~$11.48** |
-| — | _LTC3108 + Coilcraft xfmr 1:100 (DNP footprint)_ | _Cold-start fallback, не populated за замовчуванням — `02_03 BLOCKER-3`. PCB pads ~$0._ | _$0 / +$1.20 якщо populated після lab R_int test_ |
+| — | _LTC3108 + Coilcraft xfmr 1:100 (DNP footprint)_ | _Cold-start fallback, не populated за замовчуванням — [`02_03 §1.5`](02_03_BQ25570_MPPT_Nano_Power). PCB pads ~$0._ | _$0 / +$1.20 якщо populated після lab R_int test_ |
 | — | _BME280 + TPS22860 gate + PTFE vent (climate add-on)_ | _t°/RH/тиск → VPD confounder (False-Slashing kill, [`05_05`](05_05_Slashing_and_Risk_Policy) §6/§7) + клімат-оракул NaaS ([`07_01`](07_01_Nature_as_a_Service_Contracts)); ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM), pending bench._ | _+$2.60 якщо populated_ |
 
 > **Climate add-on (BME280, ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)):** +$2.60/вузол якщо populated — **НЕ** входить у baseline Electronics TOTAL ($11.48) ані CAPEX §1.2, доки ADR не закрито bench'ем. Перетворює вузол на кліматичний (VPD-confounder + NaaS клімат-оракул) — підвищує цінність D-MRV-даних для агро/страхового ринку.

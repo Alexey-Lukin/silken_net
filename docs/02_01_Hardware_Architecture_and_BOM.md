@@ -175,7 +175,7 @@ STM32WLE5JC
 | 8 | **PCB** | FR4, 4 шари, 1.6 мм, HASL/ENIG | Power Deck + RF Deck (2-поверховий дизайн) | ~$0.65 |
 | 9 | **Buffer Cap (VOUT)** | 47 µF / **25V X7R 1210** (Murata GRM32ER70J476ME20 або еквівалент) | Buffer для LoRa TX peak; **НЕ 6.3V** ([`02_03 §6.1`](02_03_BQ25570_MPPT_Nano_Power) — DC bias derating) | ~$0.18 |
 | 10 | **Пасивні компоненти** | 0402/0603 резистори (1% E96), C0G/X7R cap; **резистори BQ25570 OV/UV/OK** перепрограмовано на 5.5V supercap ([`02_03 §4`](02_03_BQ25570_MPPT_Nano_Power)) | Фільтрація, розв'язка, MPPT резисторна мережа | ~$0.20 |
-| 11 | **LTC3108 DNP footprint** (опційно) | `02_03 BLOCKER-3`: pads на PCB для LTC3108 cold-start preboost, **Do Not Populate** за замовчуванням; припаюється тільки якщо lab R_int EBFC > 12 кΩ | Cold-start fallback при високому R_int EBFC | $0.00 (pads) / +$1.20 якщо populated |
+| 11 | **LTC3108 DNP footprint** (опційно) | [`02_03 §1.5`](02_03_BQ25570_MPPT_Nano_Power): pads на PCB для LTC3108 cold-start preboost, **Do Not Populate** за замовчуванням; припаюється тільки якщо lab R_int EBFC > 12 кΩ | Cold-start fallback при високому R_int EBFC | $0.00 (pads) / +$1.20 якщо populated |
 | 12 | **Board-to-Board Connector Pair** | Samtec FTSH/CLT 1.27 мм pitch (10-pin, SMD, vertical, stack height 8–10 мм) — **header на Power Deck + socket на RF Deck**. Альтернативи: Hirose DF40 (0.4 мм, 6 мм stack), Molex SlimStack 0.50/0.635 мм | Mezzanine з'єднання Power Deck ↔ RF Deck (§5.3: standoff 8–10 мм). Передає 3V3, GND, VSTOR_sense, EBFC_sense, piezo_EXTI, BQ25570 enable lines (6–8 сигналів) | ~$0.85 (пара) |
 | 13 | **NXP SE050 Secure Element — DNP footprint** (опційно) | [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) SEC.6 / SE050-MIGRATION: pads + I²C (PB6/PB7, спільна шина з BME280) + pull-ups + **load-switch гейт** (always-on SE sleep з'їдає запас Сценарію C — розрахунок [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) Power impact; окремий TPS22860 чи спільний з BME280 — KiCad-рішення HW.9), **Do Not Populate** на пілоті. Монтується на mass (>10k) ПІСЛЯ FW.2 ([`00_07` — ARCH.43](00_07_Action_Plan_Tracker)) | non-extractable Ed25519 (голос дерева, L2) + AES-128 tamper-storage + монотонні лічильники (FW.2 nonce/panic) + anti-clone serial | $0.00 (pads) / +$2.40–3.25 якщо populated |
 | — | **Electronics TOTAL** | | **Собівартість лише електроніки** | **~$12.05** |
@@ -195,7 +195,7 @@ STM32WLE5JC
 
 | Компонент | Статус | Деталі |
 |---|---|---|
-| LTC3108 (Meissner Oscillator) | ⚠️ **DNP footprint лишити** | EBFC V_OC >500 мВ, але cold start charge pump тягне 15 µA → під навантаженням V просідає за R_int EBFC. Якщо R_int > 12 кΩ — система зависає в reset loop (`02_03 BLOCKER-3`). PCB має зберігати pads для LTC3108 як DNP fallback. |
+| LTC3108 (Meissner Oscillator) | ⚠️ **DNP footprint лишити** | EBFC V_OC >500 мВ, але cold start charge pump тягне 15 µA → під навантаженням V просідає за R_int EBFC. Якщо R_int > 12 кΩ — система зависає в reset loop ([`02_03 §1.5`](02_03_BQ25570_MPPT_Nano_Power)). PCB має зберігати pads для LTC3108 як DNP fallback. |
 | Coilcraft LPR6235 (1:100 трансформатор) | ⚠️ DNP разом з LTC3108 | Trасування і footprint лишити на PCB. Не populating до field validation. |
 | U.FL / SMA конектор + коаксіальний кабель | ❌ Виключено повністю | Замінено вбудованою керамічною SMD-антеною (розділ 5). Не повертати. |
 | MLCC 100µF 6.3V X5R (будь-який корпус) | ❌ Заборонено для VOUT buffer | DC bias derating −45 до −85% при 3.3V ([`02_03 §6.1`](02_03_BQ25570_MPPT_Nano_Power)). Використовувати 25V X7R 1210. |
@@ -541,7 +541,7 @@ STM32WLE5JC
 |---|---|---|
 | nTop (CAD гіроїдного анкера) | ✅ Ліцензія отримана | Параметрична модель Ti-6Al-4V для DMLS-друку |
 | Перша партія DMLS (100 шт) | 🟡 В процесі | Перемовини з виробниками Київ/Дніпро |
-| Тестування BQ25570 (макетна плата) | 🟡 Частково | MPPT підтверджено від лабораторного джерела з низьким R_source. **Cold-start від реального EBFC ще НЕ верифіковано під навантаженням 15 µA** — `02_03 BLOCKER-3`. Lab test R_int EBFC обов'язковий. |
+| Тестування BQ25570 (макетна плата) | 🟡 Частково | MPPT підтверджено від лабораторного джерела з низьким R_source. **Cold-start від реального EBFC ще НЕ верифіковано під навантаженням 15 µA** — [`02_03 §1.5`](02_03_BQ25570_MPPT_Nano_Power). Lab test R_int EBFC обов'язковий. |
 | Тестування Supercapacitor | ✅ Завершено | Заряд до 4.2 В за ~18 хв від EBFC-симулятора |
 | PCB Soldier (KiCad layout) | 🔴 Не розпочато | Блокується: фіналізація BOM та RF Keep-Out специфікації |
 | PCB Queen (KiCad layout) | 🔴 Не розпочато | Модем зафіксовано: **SIM7070G** (рішення HW.10 / [`02_05`](02_05_Queen_Hardware_and_Starlink)) — кращий PSM/eDRX для NB-IoT |
