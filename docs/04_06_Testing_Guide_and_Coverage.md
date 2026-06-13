@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Об'єднати у єдиному документі (а) канонічний набір конвенцій для RSpec тестів Phlex-компонентів SilkenNet та (б) повну карту покриття тестами всіх шарів (RSpec, Firmware C, Foundry Solidity). Документ оновлюється при додаванні нових сервісів, воркерів, компонентів або смарт-контрактів і є базою для аудиту якості.
+Канонічний дім тест-**методології** SilkenNet: (а) конвенції RSpec для Phlex-компонентів (Частина A) + карта покриття view-шару (§A.10); (б) gap-аналіз ризиків покриття всіх шарів — RSpec, Firmware C, Foundry Solidity (Частина B). **One-Home-межа (за типом):** методологія/гейт/тріаж/cross-cutting-ризики + view-coverage — тут; per-subsystem spec-інвентарі («який spec що верифікує» для конкретної підсистеми) живуть БІЛЯ своєї підсистеми (Ethereum — [`05_04 §7`](05_04_Ethereum_L1_State_Anchor), Queen-firmware — [`03_02 §11`](03_02_Queen_Gateway_Firmware), crypto — [`03_05 §8`](03_05_Hardware_Symmetric_Crypto_and_Security), метрики — [`06_03`](06_03_Prometheus_Observability) тощо), посилаючись сюди за методом.
 
 ---
 
@@ -38,6 +38,7 @@
 - [A.7 Performance & DRY](#a7-performance--dry)
 - [A.8 Документація та стиль](#a8-документація-та-стиль)
 - [A.9 Checklist для code review](#a9-checklist-для-code-review)
+- [A.10 Карта покриття — view-компоненти (spec ⟶ що верифікує)](#a10-карта-покриття--view-компоненти-spec--що-верифікує)
 - [B.1 Відомі обмеження та відкриті ризики](#b1-відомі-обмеження-та-відкриті-ризики)
 - [B.2 Рекомендації для нових фіч](#b2-рекомендації-для-нових-фіч)
 - [B.3 Скоуп покриття та гейт](#b3-скоуп-покриття-та-гейт)
@@ -322,6 +323,37 @@ it "test that status works" do
 - [ ] Пагінація з `mock_pagy(last: 3)` (BP #23-24)
 - [ ] `let(:html)` шариться в describe-блоці (BP #25)
 - [ ] Мінімум 8 examples (BP #30)
+
+---
+
+## A.10 Карта покриття — view-компоненти (spec ⟶ що верифікує)
+
+Інвентар спек view-шару. One-Home: 04_06 володіє конвенціями цих спек (Частина A), тож і їхня карта покриття живе тут; реєстр самих компонентів — [`04_04 §6`](04_04_Phlex_UI_and_Tailwind). Точні example-counts навмисно НЕ фіксуються (volatile, [`00_06 §1`](00_06_SSOT_Documentation_Standard)) — покриття описане словами.
+
+| Spec-файл | Покриття |
+|---|---|
+| `spec/views/shared/ui/status_badge_spec.rb` | Всі AASM стани, семантичні токени, доступність |
+| `spec/views/shared/ui/stat_card_spec.rb` | Props, danger-режим, перевизначення класу |
+| `spec/views/shared/ui/action_badge_spec.rb` | Pattern matching, семантичні стилі |
+| `spec/views/shared/ui/empty_state_spec.rb` | За замовчуванням, кастомна іконка, table-режим |
+| `spec/views/shared/ui/meta_row_spec.rb` | Мітка/значення, обробка nil |
+| `spec/views/shared/ui/relative_time_spec.rb` | Інтервали часу, граничні випадки |
+| `spec/views/shared/web3/address_spec.rb` | Обрізання, clipboard, nil fallback |
+| `spec/views/shared/iot/metric_value_spec.rb` | Точність, nil, BigDecimal, одиниця |
+| `spec/views/components/alerts/badge_spec.rb` | Матриця severity × status |
+| `spec/views/components/dashboard/event_row_spec.rb` | Поліморфні типи подій |
+| `spec/views/components/wallets/transaction_row_spec.rb` | Типи токенів, обрізання хешу |
+| `spec/views/components/wallets/balance_display_spec.rb` | Рендеринг балансу, Turbo target |
+| `spec/views/components/actuators/card_spec.rb` | Статус LED, рендеринг матриці |
+| `spec/views/shared/ui/data_table_spec.rb` | Стовпці+рядки, порожній стан, кастомний empty_message, відповідність дизайн-системі, доступність, перевизначення класу, один стовпець |
+| `spec/views/shared/ui/pagination_spec.rb` | Перша/середня/остання/одна сторінка, відповідність дизайн-системі, доступність, focus-visible, guard невалідного pagy |
+| `spec/views/shared/ui/photo_card_spec.rb` | Ініціалізація, валідація, відповідність дизайн-системі, editable true/false, типографіка |
+| `spec/views/shared/ui/skeleton_spec.rb` | Всі 6 варіантів, кастомні рядки, перевизначення класу |
+| `spec/views/shared/ui/theme_switcher_spec.rb` | Поведінка перемикання, dark/light стан |
+| `spec/views/components/alerts/row_spec.rb` | Severity, статус, дія вирішення |
+| `spec/views/components/clusters/show_spec.rb` | Індекс здоров'я, список дерев, стан загрози |
+| `spec/views/components/tree_families/form_spec.rb` | Форма створення/оновлення, валідація |
+| `spec/views/components/wallets/show_spec.rb` | Фрейм балансу, журнал транзакцій, pagy пагінація |
 
 ---
 

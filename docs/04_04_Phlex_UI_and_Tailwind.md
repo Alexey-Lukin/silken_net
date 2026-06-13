@@ -36,7 +36,7 @@
 - [7. Stimulus Контролери](#7-stimulus-контролери)
 - [8. Інтеграція Turbo (Streams & Frames)](#8-інтеграція-turbo-streams--frames)
 - [9. Чекліст Доступності](#9-чекліст-доступності)
-- [10. Тестування та Lookbook](#10-тестування-та-lookbook)
+- [10. Lookbook (Дослідник Компонентів)](#10-lookbook-дослідник-компонентів)
 - [Додаткові Матеріали](#додаткові-матеріали)
 - [11. Міграція з ActionController::API на ActionController::Base](#11-міграція-з-actioncontrollerapi-на-actioncontrollerbase)
 - [12. Інтернаціоналізація та Локалізація (i18n)](#12-інтернаціоналізація-та-локалізація-i18n)
@@ -897,36 +897,9 @@ class: "transition-colors duration-300"   # перемикання теми
 
 ---
 
-## 10. Тестування та Lookbook
+## 10. Lookbook (Дослідник Компонентів)
 
-### RSpec Тести Компонентів
-
-| Spec-файл | Покриття |
-|---|---|
-| `spec/views/shared/ui/status_badge_spec.rb` | Всі AASM стани, семантичні токени, доступність |
-| `spec/views/shared/ui/stat_card_spec.rb` | Props, danger-режим, перевизначення класу |
-| `spec/views/shared/ui/action_badge_spec.rb` | Pattern matching, семантичні стилі |
-| `spec/views/shared/ui/empty_state_spec.rb` | За замовчуванням, кастомна іконка, table-режим |
-| `spec/views/shared/ui/meta_row_spec.rb` | Мітка/значення, обробка nil |
-| `spec/views/shared/ui/relative_time_spec.rb` | Інтервали часу, граничні випадки |
-| `spec/views/shared/web3/address_spec.rb` | Обрізання, clipboard, nil fallback |
-| `spec/views/shared/iot/metric_value_spec.rb` | Точність, nil, BigDecimal, одиниця |
-| `spec/views/components/alerts/badge_spec.rb` | Матриця severity × status |
-| `spec/views/components/dashboard/event_row_spec.rb` | Поліморфні типи подій |
-| `spec/views/components/wallets/transaction_row_spec.rb` | Типи токенів, обрізання хешу |
-| `spec/views/components/wallets/balance_display_spec.rb` | Рендеринг балансу, Turbo target |
-| `spec/views/components/actuators/card_spec.rb` | Статус LED, рендеринг матриці |
-| `spec/views/shared/ui/data_table_spec.rb` | Стовпці+рядки, порожній стан, кастомний empty_message, відповідність дизайн-системі, доступність, перевизначення класу, один стовпець |
-| `spec/views/shared/ui/pagination_spec.rb` | Перша/середня/остання/одна сторінка, відповідність дизайн-системі, доступність, focus-visible, guard невалідного pagy |
-| `spec/views/shared/ui/photo_card_spec.rb` | Ініціалізація, валідація, відповідність дизайн-системі, editable true/false, типографіка |
-| `spec/views/shared/ui/skeleton_spec.rb` | Всі 6 варіантів, кастомні рядки, перевизначення класу |
-| `spec/views/shared/ui/theme_switcher_spec.rb` | Поведінка перемикання, dark/light стан |
-| `spec/views/components/alerts/row_spec.rb` | Severity, статус, дія вирішення |
-| `spec/views/components/clusters/show_spec.rb` | Індекс здоров'я, список дерев, стан загрози |
-| `spec/views/components/tree_families/form_spec.rb` | Форма створення/оновлення, валідація |
-| `spec/views/components/wallets/show_spec.rb` | Фрейм балансу, журнал транзакцій, pagy пагінація |
-
-### Lookbook (Дослідник Компонентів)
+> **Тести view-компонентів** — конвенції написання спек + карта покриття (який spec що верифікує) живуть у [`04_06`](04_06_Testing_Guide_and_Coverage) (Testing Guide: Частина A — конвенції, §A.10 — карта покриття). One-Home: 04_06 володіє view-component-тестуванням; цей документ — реєстр компонентів ([§6](#6-реєстр-компонентів)) + Lookbook-explorer нижче.
 
 Lookbook надає живий попередній перегляд усіх компонентів за адресою `http://localhost:3000/lookbook` (лише в режимі development).
 

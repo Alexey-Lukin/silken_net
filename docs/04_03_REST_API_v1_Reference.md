@@ -102,13 +102,15 @@ POST /api/v1/auth/m2m_token
 
 ### 1.5 Тестове Покриття Безпеки
 
+> Конвенції/методологія написання цих спек — [`04_06`](04_06_Testing_Guide_and_Coverage) (Testing Guide). Нижче — security-специфічний інвентар (One-Home: біля API-безпеки; example-counts навмисно не фіксуються — volatile).
+
 - `spec/initializers/rack_attack_spec.rb` — throttle правила `m2m_auth/ip` та `oracle_callbacks/ip`
 - `spec/requests/api/v1/m2m_auth_controller_spec.rb` — некоректний Ed25519 підпис → 401; nonce replay → 401; Redis unavailable → DB fallback (Solid Cache)
 - `spec/requests/api/v1/oracle_callbacks_controller_spec.rb` — replay callback → 409 Conflict; state machine guard
 - `spec/requests/api/v1/actuators_controller_spec.rb` — відсутній `Idempotency-Key` → 400; ідемпотентний повтор → 202; `command_status` 404 для cross-org команди; forester-guard
-- `spec/requests/api/v1/account_security_controller_spec.rb` — **MFA disable step-up** (3 examples: wrong password / missing password / OAuth-only bypass); **session revocation на password change** (2 examples: keeps current IP+UA / fallback на newest row)
-- `spec/requests/api/v1/alerts_controller_spec.rb` — enum allow-list для `status`/`severity` (2 fail-fast + 1 happy "resolved")
-- `spec/requests/api/v1/blockchain_transactions_controller_spec.rb` — enum allow-list для `status`/`token_type` (2 fail-fast)
+- `spec/requests/api/v1/account_security_controller_spec.rb` — **MFA disable step-up** (wrong password / missing password / OAuth-only bypass); **session revocation на password change** (keeps current IP+UA / fallback на newest row)
+- `spec/requests/api/v1/alerts_controller_spec.rb` — enum allow-list для `status`/`severity` (fail-fast + happy "resolved")
+- `spec/requests/api/v1/blockchain_transactions_controller_spec.rb` — enum allow-list для `status`/`token_type` (fail-fast)
 - `spec/requests/api/v1/firmwares_controller_spec.rb` — bytecode_payload size cap (422), `target_type` allow-list (400), cluster tenant guard (404)
 - `spec/requests/api/v1/maintenance_records_controller_spec.rb` — `authorize_record_mutation!` (403 для not-author, admin override); ISO8601 date validation (`from`/`to` → 400)
 - `spec/requests/api/v1/oracle_visions_controller_spec.rb` — cross-tenant scoping (polymorphic analyzable, per-org cache key); simulate cluster_id tenant guard
