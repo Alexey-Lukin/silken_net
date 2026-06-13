@@ -363,7 +363,7 @@ RSpec.describe Tracker::Dashboard do
     end
 
     it "renders an empty-state with a P2/P3 note for a role with no focus item" do
-      expect(rendered).to match(%r{жодного відкритого P0/P1; 1 × P2/P3})
+      expect(rendered).to include('жодного відкритого P0/P1; 1 × P2/P3')
     end
 
     it "renders a bare empty-state when a role has no items at all" do
@@ -373,7 +373,7 @@ RSpec.describe Tracker::Dashboard do
         - **P0** · 🤖 · → `03_05`
       MD
       # owner + blocked roles have zero items → empty-state without a P2/P3 tail
-      expect(sparse).to match(%r{\(жодного відкритого P0/P1\)_})
+      expect(sparse).to include('(жодного відкритого P0/P1)_')
     end
   end
 

@@ -20,7 +20,7 @@
 - **Packet format (21 байт):** `[DID:4][RSSI:1][AES-256-ECB payload:16]`. Payload: `[Vcap:2][Temp:1][Acoustic:1][dT:2][StatusByte:1][TTL:1][FW:2][PAD:2]`. `StatusByte = [bio_status:2 | growth_points:6]`.
 
 ### Backend стек
-- **Ruby 4.0.2**
+- **Ruby 4.0.5**
 - **Rails 8.1** — thin controllers, бізнес-логіка тільки в services/workers
 - **PostgreSQL multi-DB** — `db/structure.sql` (не `schema.rb`), партиціювання RANGE по `created_at` для `telemetry_logs`, `gateway_telemetry_logs`, `blockchain_transactions`
 - **Sidekiq** strict-priority, 9 черг (суворий порядок дренування):
@@ -63,7 +63,7 @@
 ## 2. Незмінні правила розробки
 
 ### Ruby / Rails
-- Ruby **4.0.2** — єдина версія. Перевірте: `ruby --version`.
+- Ruby **4.0.5** — єдина версія. Перевірте: `ruby --version`.
 - `db/structure.sql` — ніколи `schema.rb`.
 - Контролери тонкі: лише параметри, авторизація, рендеринг. Вся логіка — у `app/services/` або `app/workers/`.
 - RBAC через Pundit. Ролі: `investor(0) < forester(1) < admin(2) < super_admin(3)`.
@@ -109,7 +109,7 @@ Dual Computation Integrity: server Z vs device Z (SilkenNet::Attractor). Diverge
 ### Деплой
 - **Kamal** (production/canopy) + **Terraform/GCP** (infrastructure, `europe-west1`).
 - CoAP UDP порт 5683 пробрасується у Kamal та Akash SDL.
-- Docker: `ruby:4.0.1-slim`, multi-stage build, `USER rails:1000`, CMD: `thrust ./bin/rails server`.
+- Docker: `ruby:4.0.5-slim`, multi-stage build, `USER rails:1000`, CMD: `thrust ./bin/rails server`.
 - Canopy: staging, auto-deploy після push в `main`. Production: після GitHub Release (`v*.*.*`).
 
 ---

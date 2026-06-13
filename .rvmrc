@@ -1,1 +1,1 @@
-rvm use ruby-4.0.2@silken_net --create
+rvm use ruby-4.0.5@silken_net --create

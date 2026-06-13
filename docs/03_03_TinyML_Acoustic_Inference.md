@@ -722,10 +722,10 @@ TinyML-результат безпосередньо впливає на Lorenz 
 | 3 | `TENSOR_ARENA_SIZE` задокументовано з реального файлу | ✅ Виміряно: 76 B стек / 0 .bss / 972 B Flash-ваги (forward-pass, §4.3) |
 | 4 | Memory Map верифіковано (`arm-none-eabi-size`) | 🟡 Host footprint виміряно (`silken_ml.export`); ARM `arm-none-eabi-size` — CI hal_check lane |
 | 5 | Host-based тести TinyML pipeline додані | ✅ Реалізовано (`test_tinyml_pipeline.c`; `make -C firmware/test tinyml`) |
-| 6 | Smoke-тест: class 2 → `acoustic_events++` верифіковано | 🔴 Відкрито |
-| 7 | Smoke-тест: class 3 → `Trigger_Emergency_LoRa_TX()` верифіковано | 🔴 Відкрито |
+| 6 | Smoke-тест: class 2 → `acoustic_events++` верифіковано | ✅ `test_audio_model` e2e (FW.4, 2026-06-13): cavitation-golden → real `Run_Inference` → `decide` → `acoustic_events++` |
+| 7 | Smoke-тест: class 3 → `Trigger_Emergency_LoRa_TX()` верифіковано | ✅ `test_audio_model` e2e: chainsaw-golden → real `Run_Inference` → `decide` → emergency TX (per-class golden coverage у `emit_golden`) |
 | 8 | Confidence threshold конфігурується (не хардкод) | ✅ FW.18: dual-threshold у RTC DR13/DR14 + 19 host-tests + Soldier OTA CMD dispatcher `0x9D` (`CMD_SET_AUDIO_THRESHOLDS`) з 7 host-tests |
-| 9 | DSP preprocessing задокументовано (чи є FFT в моделі) | 🟡 Відкрито |
+| 9 | DSP preprocessing задокументовано (чи є FFT в моделі) | ✅ Path B log-mel — `Compute_LogMel` (RFFT + HTK mel-bank + log; §3.1/§3.4), не сирий time-domain |
 | 10 | `acoustic_events` overflow захист реалізовано | ✅ Реалізовано (FW.22: `uint8_t` + saturating increment) |
 | 11 | План 5-го класу «Fauna Activity» (§10, Mongabay pivot) задокументовано | ✅ Реалізовано (цей doc §10 + cross-ref до 08_01/08_02/08_03/00_07) |
 

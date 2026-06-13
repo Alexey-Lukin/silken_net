@@ -44,7 +44,7 @@ RSpec.describe Codex::PairSelectorService, type: :service do
       create(:codex_node, realm: realm, lifecycle_status: :extinct)
       result = described_class.call(user: user, realm: realm)
       expect(result.success?).to be(false)
-      expect(result.error).to match(/not enough nodes/)
+      expect(result.error).to include('not enough nodes')
     end
 
     it "fails for an unsaved user" do
@@ -56,7 +56,7 @@ RSpec.describe Codex::PairSelectorService, type: :service do
       ::Codex::Realm.delete_all
       result = described_class.call(user: user, realm: nil)
       expect(result.success?).to be(false)
-      expect(result.error).to match(/no realm/)
+      expect(result.error).to include('no realm')
     end
   end
 

@@ -518,7 +518,7 @@ Service Account: silken-net-deploy@<project>.iam.gserviceaccount.com
 ## 🐳 Docker — Multi-stage Build
 
 ```
-Stage 1: base          — ruby:4.0.2-slim + libjemalloc2, libvips, postgresql-client
+Stage 1: base          — ruby:4.0.5-slim + libjemalloc2, libvips, postgresql-client
 Stage 2: build         — bundle install, bootsnap, assets:precompile
 Stage 3: final         — COPY gems + app + Cloud SQL Auth Proxy, USER rails:1000, CMD: thrust ./bin/rails server
 ```

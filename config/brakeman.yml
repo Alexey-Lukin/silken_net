@@ -1,0 +1,13 @@
+---
+# Brakeman is a Rails static-analysis scanner run from the repo root (bin/brakeman).
+# Skip firmware/ — NONE of it is a Rails attack surface:
+#   - firmware/extern/mruby — pinned C-interpreter submodule; its build tooling uses
+#     git/popen/Marshal/class_eval (flagged as command-injection / eval / RCE) but runs
+#     at firmware-build time on a developer box, never in a Rails request path.
+#   - firmware/mruby + firmware/bio_contracts — Ruby that runs on the on-device mruby VM
+#     (STM32WLE5JC), not the Rails server.
+# CI's brakeman job checks out WITHOUT submodules, so extern/mruby is absent there; this
+# skip also makes a local run (which DOES have the submodule) match CI instead of erroring
+# on mruby's vendored build scripts.
+:skip_files:
+  - firmware/

@@ -12,7 +12,7 @@
 ## Оточення та інструменти
 
 ```bash
-ruby --version  # must be 4.0.2
+ruby --version  # must be 4.0.5
 bundle exec rubocop    # завжди перед commit
 bundle exec rspec      # якщо DB/services доступні
 bundle exec brakeman   # при змінах безпеки
@@ -27,7 +27,7 @@ forge coverage --report summary             # покриття контракт�
 ## Жорсткі правила (порушення = баг)
 
 ### Ruby / Rails
-1. **Ruby 4.0.2** — єдина версія. Немає `.ruby-version` переключень.
+1. **Ruby 4.0.5** — єдина версія. Немає `.ruby-version` переключень.
 2. **`db/structure.sql`** — ніколи `schema.rb`. PostgreSQL партиціювання вимагає structure.sql.
 3. **Thin controllers**: параметри + авторизація + рендеринг. Логіка -> `app/services/` або `app/workers/`.
 4. **Sidekiq `:strict: true`** — порядок черг незмінний:

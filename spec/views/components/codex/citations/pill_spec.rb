@@ -67,7 +67,7 @@ RSpec.describe Codex::Citations::Pill, type: :view_component do
 
     it "builds an aria label without the trailing note clause" do
       html = render_pill(citation: citation)
-      expect(html).to match(/aria-label="Codex citation: Mafusail \(Test Realm\)"/)
+      expect(html).to include('aria-label="Codex citation: Mafusail (Test Realm)"')
     end
 
     it "uses the bare title as the hover title attribute" do

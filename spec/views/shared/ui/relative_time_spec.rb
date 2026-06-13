@@ -21,7 +21,7 @@ RSpec.describe Views::Shared::UI::RelativeTime do
     end
 
     it "displays relative time with 'ago' suffix" do
-      expect(html).to match(/ago/)
+      expect(html).to include('ago')
     end
 
     it "uses design system text-muted token" do

@@ -43,6 +43,7 @@ on-device features, proven, not hoped.**
 | Want | Run | Needs |
 |---|---|---|
 | C front-end ≡ goldens (tol 1e-3) | `make -C firmware/test logmel` | gcc only |
+| C model ≡ silken_ml int-ref (class-exact + softmax + §8 #6/#7 smoke) | `make -C firmware/test audio_model` | gcc only |
 | committed tables == contract | `python3 tools/ml/scripts/check_firmware_tables.py` | stdlib `python3` |
 | regenerate tables after a contract change | `python3 -m silken_ml.codegen.emit_c` (`PYTHONPATH=tools/ml/src`) | stdlib |
 | **librosa ≡ stdlib** parity (1e-6) + full suite | `pytest tools/ml/tests` | conda `silken_ml` |
@@ -85,16 +86,35 @@ Editing a log-mel parameter touches **three homes** — keep them in lockstep:
 
 The `contract_hash` + `emit_c --check` catch any side left behind. **Audit inbound cross-refs to 03_03** when you change the input shape / preprocessing — drift-linters catch owned *values*, not "the same fact in other words" (e.g. "512 raw input" or "MFCC" prose elsewhere); that's a manual sweep.
 
-## Adding a new ML module
+## The baseline acoustic model + INT8 export (FW.4 — landed)
 
-`data/ models/ train/ export/` under `silken_ml` are **scaffolds** (interfaces +
-`NotImplementedError` + enterprise conventions in their docstrings). Fill them per
-those docstrings — config-driven, seeded, reproducibility manifest (`{data_hash,
-code_sha, env_hash, config, metrics}`), real eval (stratified split, confusion,
-calibration), model registry with provenance. Add TensorFlow to `environment.yml`
-only when the INT8-export/training module actually lands. The trained model replaces
-the stub (`silken_net_audio_model.h`) via `__has_include` in `firmware/soldier/main.c`;
-then FW.4 measures the real arena and uncuts the Phase-1.5 call-site.
+`silken_ml.{data,models,train,export}` are **filled** (no longer scaffolds): a self-owned
+ESC-50 per-frame baseline (40 log-mel → hidden → 5, INT8). Method + honesty home is
+`tools/ml/docs/baseline_model_program.md`; TF lives in the `silken_ml` env (PTQ + parity only).
+
+**Export pipeline** (`silken_ml.export`): fold Normalization→fc1 → INT8 PTQ (`TFLiteConverter`,
+real-log-mel representative set) → extract per-channel params → **QUANTIZATION-PARITY gate**
+(numpy int-ref == TFLite interpreter; `raise` if `argmax_mismatch≠0 || max|Δlogit|>1`) → emit
+`firmware/soldier/silken_net_audio_model.h` (pure-C gemmlowp forward pass) + the host golden.
+
+| Want | How (`silken_ml` env) |
+|---|---|
+| full retrain → header (re-quantizes; may churn weights) | `from silken_ml.export import build_from_run; build_from_run('tools/ml/models/registry/<run>')` |
+| **banner/golden-only re-emit, ZERO weight churn** | `extract_params(<run>/model_int8.tflite) + emit_header(p, prov)` / `emit_golden(p, X)` — the committed `.tflite` is the deterministic anchor; `git diff` the `.h` must show banner-only |
+| C model ≡ int-ref + §8 #6/#7 decision smoke | `make -C firmware/test audio_model` (gcc) |
+
+`emit_golden` auto-selects **per-predicted-class** coverage (round-robin so the n_golden cap never
+drops a class → ≥1 cavitation/chainsaw frame for the `03_03 §8` #6/#7 smoke).
+
+**Registry provenance** (`tools/ml/.gitignore`): commit the SMALL provenance (`reproducibility` /
+`export_report` / `data_manifest` `.json` + `model_int8.tflite` + `norm_stats.npz`) so the header's
+`run`/`data-manifest` hashes are auditable + the header re-emittable; heavy/regenerable artifacts
+(`model.keras`, PTQ `*.npz`, TF SavedModel temp) stay ignored.
+
+**Honesty (don't conflate the two halves):** per-class field-validity is canon in `docs/03_03 §4.2` —
+silence + cavitation are **synthetic placeholders** (cavitation NOT field-validated); baseline
+accuracy is a **pipeline-integrity** metric, NOT field accuracy. A future partner CNN is a drop-in
+header swap (the `_stub.h` `__has_include` fallback stays).
 
 ## Two ML domains — keep the boundary
 

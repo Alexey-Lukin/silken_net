@@ -42,7 +42,7 @@ RSpec.describe "Api::V1::Codex::Comments", type: :request do
            params: { comment: { body_md: "Hi" } },
            headers: bad_headers, as: :json
       expect(response).to have_http_status(:bad_request)
-      expect(response.parsed_body["error"]).to match(/Idempotency-Key/)
+      expect(response.parsed_body["error"]).to include('Idempotency-Key')
     end
 
     it "returns the cached response on a retry with the same Idempotency-Key" do

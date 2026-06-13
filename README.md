@@ -71,7 +71,7 @@ Slashing: лише за доведену халатність (cause-gate A/B/C;
 
 | Шар | Технологія |
 |-----|------------|
-| **Backend** | Ruby 4.0.2 / Rails 8.1.2 (Omakase) |
+| **Backend** | Ruby 4.0.5 / Rails 8.1.2 (Omakase) |
 | **База даних** | PostgreSQL (4 БД: primary, cache, queue, cable) |
 | **Черги** | Sidekiq (31 воркер, 9 пріоритетних черг) + Solid Queue |
 | **Frontend** | Phlex + Turbo 8 + Stimulus + Tailwind CSS 4 |

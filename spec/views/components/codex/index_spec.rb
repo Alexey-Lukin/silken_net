@@ -67,7 +67,7 @@ RSpec.describe Codex::Index do
       )
 
       # Empty state replaces the grid; no NodeCard markup
-      expect(html).not_to match(/grid-cols-1 md:grid-cols-2 lg:grid-cols-3/)
+      expect(html).not_to include('grid-cols-1 md:grid-cols-2 lg:grid-cols-3')
     end
   end
 

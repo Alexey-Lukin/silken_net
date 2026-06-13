@@ -14,7 +14,7 @@
 SilkenNet / Gaia 2.0 — планетарна кіберфізична платформа для моніторингу здоров'я лісів. Система поєднує:
 - **Hardware edge**: Ti-6Al-4V гіроїдний анкер (DMLS, пористість 65%, діапазон 60-70%) вживляється в дерево. EBFC (Enzymatic Bio-Fuel Cell) на межі метал-ксилема генерує ~500 мВ. BQ25570 MPPT -> EDLC суперконденсатор 0.47F/5.5V -> MCU 3.3V. Принцип "zero grid" — дерево живить власний монітор.
 - **Firmware**: Soldier (STM32WLE5JC) збирає дані, запускає mruby Lorenz attractor, упаковує 21-байтний пакет (FW.2 target: 28B wire-rev2 з CCM MIC), шифрує **AES-128-ECB** (transitional після ARCH.42 Variant B; target — AES-128-CCM), відправляє LoRa 868 МГц.
-- **Backend**: Rails 8.1 / Ruby 4.0.2 / PostgreSQL / Sidekiq — декодує, верифікує через 12-chain Web3 pipeline, мінтить SCC.
+- **Backend**: Rails 8.1 / Ruby 4.0.5 / PostgreSQL / Sidekiq — декодує, верифікує через 12-chain Web3 pipeline, мінтить SCC.
 - **Tokenomics**: Proof of Growth — 10,000 growth_points = 1 SCC (Polygon ERC-20). Слешинг при деградації лісу.
 
 **Поточний TRL**: firmware TRL 6, backend TRL 8, hardware capsule TRL 6, anchor/EBFC **TRL 3** (Zero-Lab in-silico L1-L4 ✅ 2026-05-25 = аналітичний PoC; фізичний TRL 4 = in-vitro Ti-coin, Stage 2 pending — in-silico ≠ TRL 4 за NASA/ISO 16290). **System TRL = 3** (gated by anchor/EBFC). Поточні числа pipeline — `docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md`.
@@ -24,7 +24,7 @@ SilkenNet / Gaia 2.0 — планетарна кіберфізична плат�
 ## 2. Середовище розробки
 
 ```bash
-ruby --version  # must show 4.0.2
+ruby --version  # must show 4.0.5
 bundle exec rubocop
 bundle exec rspec
 bundle exec brakeman
@@ -250,7 +250,7 @@ uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5)
 - **GCP** `europe-west1` (GDPR): Cloud SQL PostgreSQL 16, Memorystore Redis 7.0, GCE instances.
 - **Kamal**: production + canopy. SSH deploy, Traefik reverse proxy, Let's Encrypt SSL.
 - **Akash Network**: децентралізована хмара (ЄС, цензуростійкість). SDL в `deploy/akash/`: `web` + `job` (Sidekiq) + `alloy` сервіси.
-- **Docker**: `ruby:4.0.1-slim`, multi-stage, `thrust ./bin/rails server`.
+- **Docker**: `ruby:4.0.5-slim`, multi-stage, `thrust ./bin/rails server`.
 - **Observability**: `/metrics` endpoint (custom business-метрики — реєстр + кількість SSOT: `06_03 §2.8`) скрейпиться **Grafana Alloy** sidecar (Akash SDL) → `remote_write` → **Grafana Cloud** (Prometheus storage + dashboards + alerting, SaaS). Self-hosted Prometheus НЕ потрібен (Rails на Akash, не GCP).
 - **Sentry** 6.5.0: налаштований; `SENTRY_DSN` у `.kamal/secrets` (значення задається при деплої).
 - **Pre-flight**: антена ПЕРЕД живленням на SX1262 (згорить без антени). Per-device унікальні AES ключі через HKDF (LoRa AES-128 для Tree+Queen LoRa-сесії, CoAP AES-256 для Queen↔Rails).

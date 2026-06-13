@@ -4,8 +4,10 @@
  * Tests the audio processing path: vibration detection → DMA → normalization →
  * inference (mocked) → event classification → acoustic_events accumulation.
  *
- * Mock Run_Inference() simulates all 4 TinyML output classes:
- *   0: Silence, 1: Wind, 2: Cavitation (xylem), 3: Chainsaw/Tamper
+ * Mock Run_Inference() drives the TinyML output classes (0: Silence, 1: Wind,
+ *   2: Cavitation/xylem, 3: Chainsaw/Tamper, 4: Fauna); only 2/3 trigger a decision
+ *   action (acoustic_events++ / emergency TX) — 0/1/4 are no-ops. Real-model class
+ *   correctness lives in test_audio_model (FW.4 golden + §8 #6/#7 e2e smoke).
  *
  * Build: make -C firmware/test tinyml
  *

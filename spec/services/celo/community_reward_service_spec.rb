@@ -395,9 +395,9 @@ RSpec.describe Celo::CommunityRewardService do
 
         expect(client).to be_a(Web3::ResilientClient)
         urls = client.provider_health.map { |h| h[:provider] }
-        expect(urls).to include(match(/forno\.celo\.org/))
-        expect(urls).to include(match(/rpc\.ankr\.com/))
-        expect(urls).to include(match(/1rpc\.io/))
+        expect(urls).to include(include('forno.celo.org'))
+        expect(urls).to include(include('rpc.ankr.com'))
+        expect(urls).to include(include('1rpc.io'))
       ensure
         Web3::RpcConnectionPool.reset!
       end
