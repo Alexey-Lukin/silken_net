@@ -54,7 +54,7 @@
 
 ## ⚠️ Pre-Flight Checklist (до першого фізичного деплою)
 
-> **НОВА СЕКЦІЯ (інтегровано нотатки N7–N12, N18).** Це доповнення до існуючих блокерів Terraform/Kamal — фокус на типових помилках при першому виводі системи в роботу.
+> Доповнення до блокерів Terraform/Kamal — фокус на типових помилках при першому виводі системи в роботу.
 
 П'ять речей, які можуть мовчки зламати перший деплой:
 
@@ -81,7 +81,7 @@
 
 ## 🚀 Quickstart: Перший Деплой Інфраструктури
 
-> Покрокова послідовність першого реального деплою (інтегровано нотатку N18).
+> Покрокова послідовність першого реального деплою.
 
 ```bash
 # Крок 1: Створити GCS bucket для Terraform State (один раз, до terraform init)
@@ -213,7 +213,7 @@ terraform apply
 │  │  4 vCPU / 8 GB RAM / 50 GB ephemeral                │   │
 │  │  Порти: :80 (HTTP) + :5683/UDP (CoAP)               │   │
 │  │                                                      │   │
-│  │  ✅ job сервіс (Sidekiq, всі 31+ воркери)            │   │
+│  │  ✅ job сервіс (Sidekiq, всі воркери)                │   │
 │  │  ✅ alloy сервіс (Grafana Alloy → Grafana Cloud)     │   │
 │  │  ✅ Cloud SQL через Auth Proxy (HTTPS tunnel)        │   │
 │  │  ✅ Redis через Upstash (зовнішній, TLS, rediss://) │   │
@@ -721,7 +721,7 @@ FOREST_COIN_CONTRACT_ADDRESS=0x...  # SFC
 ### Мультичейн (Gaia 2.0)
 
 ```bash
-# Ethereum L1 (State Anchoring) — SSOT name expected by app/services/ethereum/state_anchor_service.rb:146 та treasury/monitor_service.rb:54.
+# Ethereum L1 (State Anchoring) — SSOT name expected by app/services/ethereum/state_anchor_service.rb та app/services/treasury/monitor_service.rb.
 ALCHEMY_ETHEREUM_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY
 ETHEREUM_ANCHOR_PRIVATE_KEY=0x...  # Окремий гаманець для тижневого state-root anchoring (НЕ дорівнює ORACLE_PRIVATE_KEY).
 
@@ -779,17 +779,6 @@ COAP_PORT=5683
 # Встановіть Foundry (https://book.getfoundry.sh/)
 curl -L https://foundry.paradigm.xyz | bash
 foundryup
-
-# Деплой SCC на testnet
-cd contracts/
-forge create SilkenCarbonCoin --rpc-url $ALCHEMY_POLYGON_RPC_URL --private-key $ORACLE_PRIVATE_KEY
-
-# Деплой SFC на testnet
-forge create SilkenForestCoin --rpc-url $ALCHEMY_POLYGON_RPC_URL --private-key $ORACLE_PRIVATE_KEY
-
-# Деплой на Mainnet з верифікацією
-forge create SilkenCarbonCoin \
-  --rpc-url $ALCHEMY_POLYGON_RPC_URL \
-  --private-key $ORACLE_PRIVATE_KEY \
-  --verify --etherscan-api-key $POLYGONSCAN_API_KEY
 ```
+
+> **Канонічний деплой — `contracts/script/Deploy.s.sol`** (усі 6 контрактів у правильному порядку SCC→SFC→StateRootAnchor→Timelock→Governor→ProtocolParameters + Gnosis-Safe admin guard `REQUIRE_SAFE_ADMIN`). Точні команди (`forge script … --broadcast --verify`) та ENV — [`05_03`](05_03_Tokenomics_SCC_and_SFC) (§Smart Contract Audit Roadmap). **НЕ** деплоїти контракти поштучно через `forge create` — це пропускає admin-setup, ordered dependencies й 4 з 6 контрактів.
