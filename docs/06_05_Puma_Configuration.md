@@ -129,7 +129,7 @@ end
 env["rack.response_finished"] << -> { Rails.cache.write(cache_key, response_body, expires_in: 24.hours) }
 ```
 
-Кеш пишеться **після** flush відповіді клієнту → зменшує p50 latency на ~1-2 мс. TTL та логіка незмінні; spec coverage оновлено. *(Мігровано з `00_07 PUMA-RACK-1` 2026-05-28.)*
+Кеш пишеться **після** flush відповіді клієнту → зменшує p50 latency на ~1-2 мс. TTL та логіка незмінні; spec coverage оновлено. *(Мігровано з [`00_07`](00_07_Action_Plan_Tracker) PUMA-RACK-1.)*
 
 > **Майбутнє (planetary scale):** при > 1M actuator-команд/добу — переглянути на користь batched cache writes.
 
@@ -142,7 +142,7 @@ env["rack.response_finished"] << -> { Rails.cache.write(cache_key, response_body
 
 ### Як це працює
 
-Puma 8.0+ виставляє `env["puma.mark_as_io_bound"]` → лямбду ДО виклику Rack-додатка (`puma/response.rb:75`). Middleware викликає цю лямбду (`&.call`) для вибраних endpoints:
+Puma 8.0+ виставляє `env["puma.mark_as_io_bound"]` → лямбду ДО виклику Rack-додатка (`puma/response.rb`). Middleware викликає цю лямбду (`&.call`) для вибраних endpoints:
 
 ```
 POST /api/v1/oracle_callbacks       — Chainlink HMAC + Polygon eth_call dry-run
@@ -227,5 +227,5 @@ bundle exec ruby -e '
 
 # 4. RSpec для middleware
 bundle exec rspec spec/middleware/mark_web3_requests_as_io_bound_spec.rb
-# Очікується: 10 examples, 0 failures
+# Очікується: 0 failures
 ```
