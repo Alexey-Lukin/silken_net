@@ -1169,14 +1169,14 @@ STM32CubeProgrammer → Option Bytes → Write Protection:
 |----------|---------------------------|--------------------------|---------------|
 | KDF алгоритм | HKDF-SHA256 (RFC 5869) | HKDF-SHA256 | Стандарт NIST SP 800-56C; SHA256 — software (backend OpenSSL / Soldier pure-C `silken_sha256.h`) |
 | Master key size | 256 bits | 256 bits | Master input — однаковий 256-bit secret для обох KDF-outputs |
-| Output key size | **128 bits (16 bytes)** — ARCH.42 | 256 bits (32 bytes) | LoRa: AES-128 (ATECC608B constraint); CoAP: AES-256 (Queen Flash, no SE constraint) |
+| Output key size | **128 bits (16 bytes)** — ARCH.42 | 256 bits (32 bytes) | LoRa: AES-128 (свідомий вибір, **не** SE-constraint — SE050 вміє 256, §3.7); CoAP: AES-256 (Queen Flash, no SE constraint) |
 | Info string | `"silken-aes-128-lora-key"` | `"silken-aes-256-device-key"` | Domain separation — два різні KDF outputs ortho |
 | Master key storage | Rails Vault (AR Encryption) + HSM у production | Same | Never in-repo |
 | Device key storage | Protected Flash (LoRa magic `"KEYL"`) → SE050 Slot 0 (Гілка B, §3.7) | Protected Flash (CoAP magic `"KEYC"`) — Queen MCU only | Фізичний захист; AES-128 на LoRa — свідомий вибір, не SE-constraint (ADR §3.7); CoAP-key лишається у MCU Flash (канал не через SE) |
 | Backup/rotate | Dual-key grace period (HardwareKey#previous_aes_key_hex) | Same | Zero-downtime rotation |
 | Post-quantum margin | $2^{128}$ (post-Grover ≈ $2^{64}$ — захищається ratchet `[FW.17]` + PQC bridge §10) | $2^{256}$ (post-Grover ≈ $2^{128}$ — абсолютний квантовий імунітет) | Чому CoAP залишається 256: інфраструктурне TLS-termination через Cloudflare X25519+Kyber вже доступне (post-quantum hybrid) |
 
-> **Cross-ref:** SEC.3 Factory Flashing pipeline, SEC.6 ATECC608B, SEC.2 RDP Level 2, **ARCH.42 ✅ resolved 2026-05-23 (Variant B)**, **§10 PQC Migration Roadmap**.
+> **Cross-ref:** SEC.3 Factory Flashing pipeline, SEC.6 Secure Element (SE050, §3.7), SEC.2 RDP Level 2, **ARCH.42 ✅ resolved 2026-05-23 (Variant B)**, **§10 PQC Migration Roadmap**.
 
 ---
 
@@ -1736,7 +1736,7 @@ MaintenanceRecord.create!(
 - [ ] OTA rollback тестований: якщо новий bytecode falls back до embedded `lorenz_bytecode[]` при corrupt magic.
 - [ ] Provisioning HKDF flow завершено (§Hardcoded AES Key mitigation): унікальний `aes_key` записано в protected sector, master_key генерується HRNG (не FIPS-197 test vector).
 - [ ] FW.2 (CCM) integrated: інакше після RDP-2 вже не можна «полагодити» AES-ECB вразливість через SWD reflash.
-- [ ] Watchdog (IWDG) тестовано: якщо firmware зависає, IWDG перезавантажує MCU без SWD (§ECB Restoration Race в [`02_05`](02_05_Queen_Hardware_and_Starlink) ✅).
+- [ ] Watchdog (IWDG) тестовано: якщо firmware зависає, IWDG перезавантажує MCU без SWD (SEC.8 §ECB Restoration Race у цьому доку ✅).
 - [ ] Final firmware version task-snapshot задокументовано у `RELEASE_VERSION` ENV (Sentry release tracking) та git tag `vX.Y.Z`.
 - [ ] Spare batch (≥10 одиниць) залишено на RDP Level 1 для in-field troubleshooting (RDP-1 дозволяє стирати+перепрошивати, але не зчитувати → ключ безпечний).
 
