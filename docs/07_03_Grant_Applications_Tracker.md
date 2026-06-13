@@ -22,7 +22,7 @@
 | [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) | NaaS value-prop |
 | [`07_02` — Unit Economics and BOM](07_02_Unit_Economics_and_BOM) | Unit economics для заявок |
 | [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | академічні гранти |
-| [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | консорціум (Horizon Europe) |
+| [`08_01` — Joint Publications and IP Strategy](08_01_Joint_Publications_and_IP_Strategy) | Twin-pack / Horizon консорціум backbone (§1G) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | BIZ.12, UNI.1/UNI.8 |
 
 ## 📑 Зміст
@@ -235,7 +235,7 @@ WP9 Exploitation & IPR            → ActiveBridge + Silken Net
 
 ## 🗺️ 9. Грантова Дипломатія (Cross-chain Grant Strategy)
 
-> **Нотатка інтегрована (2026-03-25).** Стратегічний протокол подачі грантових заявок: кому, про кого і як розповідати для максимального результату на технічних дзвінках (Technical Due Diligence).
+> Стратегічний протокол подачі грантових заявок: кому, про кого і як розповідати для максимального результату на технічних дзвінках (Technical Due Diligence).
 
 ### Загальне Позиціонування
 
