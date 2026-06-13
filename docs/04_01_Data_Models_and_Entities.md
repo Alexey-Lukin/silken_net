@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Зафіксувати повну структуру реляційної бази даних (PostgreSQL) та ActiveRecord моделей для моноліту Ruby on Rails 8.1. Цей документ є **вичерпним довідником** всіх 35 моделей (26 ядра + 9 шар Codex / Lore — Realm, Node, Citation у Phase 1; Comment, Attunement у Phase 2; Fraction у Phase 3; Match у Phase 4; Discovery, DiscoveryRule у Phase 5), 6 concerns, ключових індексів, AASM-машин стану та seeds-стану системи. Визначає, як фізичні об'єкти (дерева, шлюзи) та абстрактні концепції (контракти, токени, аудит, lore-вузли) пов'язані між собою в єдину Кіберфізичну Державу Gaia 2.0.
+Зафіксувати повну структуру реляційної бази даних (PostgreSQL) та ActiveRecord моделей для моноліту Ruby on Rails 8.1. Цей документ є **вичерпним довідником** всіх 36 моделей (27 ядра + 9 шар Codex / Lore — Realm, Node, Citation у Phase 1; Comment, Attunement у Phase 2; Fraction у Phase 3; Match у Phase 4; Discovery, DiscoveryRule у Phase 5), 6 concerns, ключових індексів, AASM-машин стану та seeds-стану системи. Визначає, як фізичні об'єкти (дерева, шлюзи) та абстрактні концепції (контракти, токени, аудит, lore-вузли) пов'язані між собою в єдину Кіберфізичну Державу Gaia 2.0.
 
 ---
 
@@ -32,7 +32,7 @@
    - §4 AI / OTA / Актуатори (TinyMlModel, BioContractFirmware, Actuator, ActuatorCommand) — інтелект та фізична відповідь
    - §5 Люди та Організації (Organization, User, Session, Identity) — соціальний шар
    - §6 Економічний (Wallet, BlockchainTransaction, NaasContract, ParametricInsurance) — токеноміка
-   - §7 Інтелект та Аудит (AiInsight, EwsAlert, AuditLog, MaintenanceRecord, EthereumAnchor, SystemParameter) — спостережуваність + governance
+   - §7 Інтелект та Аудит (AiInsight, EwsAlert, AuditLog, MaintenanceRecord, EthereumAnchor, SystemParameter, ProvisioningSession) — спостережуваність + governance
 4. **§7b Codex (Lore Layer)** — окремий шар, не на критичному шляху телеметрії. Read-only outbound полі-морфні посилання на core-моделі.
 5. **§8 Seeds, §9 Індекси, §10 Карта зв'язків, §11 Архітектурні Принципи, §12 SSOT Drift Register** — horizontal cross-cuts (не належать до конкретного домену; стосуються всіх моделей одразу).
 
@@ -50,7 +50,7 @@
 - [4. AI / OTA / Актуатори](#-4-ai--ota--актуатори) — TinyMlModel, BioContractFirmware, Actuator, ActuatorCommand
 - [5. Люди та Організації](#-5-люди-та-організації) — Organization, User, Session, Identity
 - [6. Економічний Рівень](#-6-економічний-рівень) — Wallet, **BlockchainTransaction** (partitioned), NaasContract, ParametricInsurance
-- [7. Інтелект та Аудит](#-7-інтелект-та-аудит) — AiInsight, EwsAlert, AuditLog, MaintenanceRecord, EthereumAnchor, SystemParameter
+- [7. Інтелект та Аудит](#-7-інтелект-та-аудит) — AiInsight, EwsAlert, AuditLog, MaintenanceRecord, EthereumAnchor, SystemParameter, ProvisioningSession
 - [7b. Codex — Lore Layer (Кодекс Архетипів)](#-7b-codex--lore-layer-кодекс-архетипів) — Realm, Node, Citation, Comment, Attunement, Fraction, **Match** (partitioned), Discovery, DiscoveryRule
 - [8. Seeds — Початковий Стан Системи](#-8-seeds--початковий-стан-системи)
 - [9. Ключові Індекси](#-9-ключові-індекси)
@@ -402,8 +402,9 @@ dormant ──reactivate──► active
 | `firmware_version` | string | Версія прошивки STM32 (SemVer) |
 | `altitude` | numeric | Висота над рівнем моря (м) |
 
-> **Примітка:** `firmware_hash` НЕ є полем Gateway. Хеш прошивки зберігається в моделі `Firmware`
-> і відстежується під час OTA-оновлення. UI-компоненти використовують `try(:firmware_hash)` з safe fallback.
+> **Примітка:** `firmware_hash` НЕ є полем Gateway і наразі не існує як колонка — UI-компонент
+> (`components/gateways/show.rb`) робить `try(:firmware_hash)` із safe fallback `"—"`. Хеші OTA-артефактів
+> живуть у `BioContractFirmware` / `TinyMlModel` (`binary_sha256`), окремої моделі `Firmware` немає.
 
 **AASM State Machine (column: `state`):**
 
@@ -1021,8 +1022,6 @@ active/draft ──cancel──► cancelled
 
 **Ключові методи:** `evaluate_daily_health!(target_date)`, `activate_payout!(percentage)`, `recipient_wallet_address`, `uses_etherisc?` (`etherisc_policy_id.present?`).
 
-**Ключові методи:** `evaluate_daily_health!(target_date)`, `activate_payout!(percentage)`, `recipient_wallet_address`.
-
 ---
 
 ## 🚨 7. Інтелект та Аудит
@@ -1264,6 +1263,46 @@ active/draft ──cancel──► cancelled
 **Кешування:** `after_commit :invalidate_cache`. Ключ: `"system_parameter:#{key}"`. TTL: 24 години.
 
 **Використовується:** `SilkenNet::Attractor` (Lorenz параметри), `ContractHealthCheckService` (slashing threshold), `TokenomicsEvaluatorWorker` (emission threshold), `BlockchainMintingService` (dynamic_tax_rate, insurance_pool_threshold — читаються через `SystemParameter.current` для on-chain параметрів мінтингу), `Governance::ParameterSyncWorker` (sync on-chain → DB).
+
+---
+
+### `ProvisioningSession` — Сесія Factory Flashing (SEC.3)
+
+**Включає:** `AASM`
+
+**Призначення:** [SEC.3] Стан-машина однієї спроби Factory Flashing для одного пристрою. Енфорсить **2-Person Rule** ([`03_05 §3.4г`](03_05_Hardware_Symmetric_Crypto_and_Security)): оператор ініціює, супервайзер схвалює, лише тоді сесія виконується. Кожен перехід аудитований через FK на `users` + `AuditTrail`-записи від `FactoryFlashing::Session`.
+
+**Асоціації:**
+- `belongs_to :operator, class_name: "User"`
+- `belongs_to :supervisor, class_name: "User", optional: true`
+
+**Ключові поля:**
+
+| Поле | Тип | Опис |
+|------|-----|------|
+| `device_uid` | string | Пристрій, що провіжиниться (presence) |
+| `batch_id` | string | Ідентифікатор партії (presence) |
+| `gilka` | string | Гілка провіжинингу: `"A"` (Protected Flash + RDP) / `"B"` (Secure Element; `atecc_serial_hex` обов'язковий) — `GILKAS = %w[A B]` |
+| `rdp_level` | integer | Рівень RDP після flash — `RDP_LEVELS = [0, 1, 2]` |
+| `atecc_serial_hex` | string | 18 HEX (9-байт SE serial); presence лише для гілки B, format `/\A[0-9A-F]{18}\z/` |
+| `flash_addr` | string | Адреса запису ключа (presence) |
+| `firmware_version` | string | Версія прошивки (presence) |
+| `state` | enum (AASM) | `pending / supervisor_approved / active / completed / failed` |
+| `started_at` · `supervisor_approved_at` · `completed_at` | datetime | Часові мітки переходів |
+| `error_message` | string | Причина `failed` |
+
+**AASM (column: `state`, whiny_persistence):**
+
+```
+pending ──approve──► supervisor_approved ──start──► active ──complete──► completed
+supervisor_approved/active ──fail_with(reason)──► failed
+```
+
+`approve` має guard `supervisor_present?` (`supervisor_id` присутній і ≠ `operator_id`).
+
+**Валідації:** `supervisor_must_differ_from_operator` (2-Person Rule); `gilka` inclusion `[A,B]`; `rdp_level` inclusion `[0,1,2]`; `atecc_serial_hex` format (18 HEX).
+
+> Service-шар (orchestrator `FactoryFlashing::Session` + `MasterKeySource`/`CommandBuilder`/`Executor`/`AteccProvisioner`/`AuditTrail`, Rake CLI) — канон [`03_05 §3.4г`](03_05_Hardware_Symmetric_Crypto_and_Security); дзеркало у [`04_02`](04_02_Business_Logic_and_Services).
 
 ---
 
@@ -1549,6 +1588,7 @@ Codex (Lore — read-only):
 | Дата | Зона | Тип drift | Що зроблено | Cross-ref |
 |------|------|-----------|-------------|-----------|
 | 2026-05-12 | `codex_matches` партиціонування | Schema ahead of doc (таблиця партиціонована у `db/structure.sql`, `PartitionMaintenanceWorker::PARTITIONED_TABLES` містить 4 елементи, але §0 04_01 і §11 row "Партиціонування по місяцях" перераховували лише 3 таблиці) | Додано `codex_matches` row у §0; виправлено "трьох" → "чотирьох таблиць"; §11 row оновлено; cross-ref на SSOT-константу | §7b Codex::Match, §11, `app/workers/partition_maintenance_worker.rb` |
+| 2026-06-13 | `ProvisioningSession` модель | Model ahead of doc (`app/models/provisioning_session.rb` існує — SEC.3 factory flashing AASM, задокументована лише в [`03_05 §3.4г`](03_05_Hardware_Symmetric_Crypto_and_Security), але відсутня у 04_01 → §12-інваріант «к-сть моделей = к-сть файлів» порушено: doc 35, код 36) | Додано §7 `ProvisioningSession` + count 35→36 (26→27 core) + ToC + ordering-convention + фантом «модель Firmware»→`BioContractFirmware`/`TinyMlModel.binary_sha256` | §7 ProvisioningSession, [`03_05 §3.4г`](03_05_Hardware_Symmetric_Crypto_and_Security), `app/models/provisioning_session.rb` |
 | — (відкрите) | Active Storage таблиці (`active_storage_attachments`, `active_storage_blobs`, `active_storage_variant_records`) | Schema (framework) — НЕ documented як окремі таблиці | Status: framework infrastructure, не domain. Inline-згадки у моделях (`Organization.logo`, `MaintenanceRecord.photos`, `Codex::Node.cover_image/gallery`) — достатньо. Не реєструвати як drift | — |
 | — (відкрите) | `schema_migrations`, `ar_internal_metadata` | Framework infra | Same as вище — не реєструвати | — |
 
