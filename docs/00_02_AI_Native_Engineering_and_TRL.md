@@ -19,8 +19,8 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [`00_04` — Shape Up Operations and RnD Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) | Операційна реалізація: Shape Up 6+2, R&D кластери, Betting Table |
 | [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | TRL-матриця + per-domain TRL + HIL |
+| [`00_04` — Shape Up Operations and RnD Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) | Операційна реалізація: Shape Up 6+2, R&D кластери, Betting Table |
 | [`00_05` — GitHub Projects and IaC Automation](00_05_GitHub_Projects_and_IaC_Automation) | Projects V2 fields, labels-as-code, workflows |
 | [`04_05` — Codex Lore Module](04_05_Codex_Lore_Module) | Codex (read-only Atlas) застосовує ці ж AI-Native принципи |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Поточний backlog задач (SSOT) |
@@ -149,4 +149,3 @@ Hardware Stream історично був "повільним" потоком (�
 > **⚠️ Корекція: для Hardware/Chemistry (Atoms) самих CI-перевірок НЕДОСТАТНЬО.** Зелений CI доводить, що **код виконується**, а не що **фізика коректна** — PySCF-скрипт може відпрацювати без помилок і видати термодинамічно абсурдний результат. Тому:
 > - **Logic / Verification (Bytes / Proofs):** CI + HIL-симуляції + code review — достатньо (критерій (c)).
 > - **Hardware / Chemistry (Atoms):** CI необхідний, але НЕ достатній. Вимагаються **згенеровані ТА валідовані фізичні метрики** (напр., ΔG < 0, RMSD < поріг, k_ET у літературному діапазоні), підтверджені домен-експертом або крос-перевіркою (cross-validated In-Silico report, [`PIPELINE_STATUS.md`](../protocols/ebfc/in_silico/PIPELINE_STATUS.md)) — тобто пройдений **Validation Gate** (§2 крок 2).
-

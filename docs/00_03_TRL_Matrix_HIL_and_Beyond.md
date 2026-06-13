@@ -23,13 +23,13 @@
 | [`00_05` — GitHub Projects and IaC Automation](00_05_GitHub_Projects_and_IaC_Automation) | TRL Auto-Advancement (HIL → Projects V2 cards) |
 | [`04_06` — Testing Guide and Coverage](04_06_Testing_Guide_and_Coverage) | §B Gap Analysis — відомі обмеження тестів + відкриті ризики |
 | [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | Фізичні валідаційні протоколи ВНЗ (TRL 1-4) |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): Module 01 chemistry (HW.*), 06 DevOps deploy, 08 UNI.* |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** |
 
 ## 📑 Зміст
 
 <!-- TOC:AUTO:START -->
 - [1. Матриця готовності Silken Net (The TRL Matrix)](#-1-матриця-готовності-silken-net-the-trl-matrix)
-- [2. Принцип "TRL-Lock" → "TRL-Layered Independence"](#-2-принцип-trl-lock--trl-layered-independence)
+- [2. Принцип "TRL-Layered Independence"](#-2-принцип-trl-layered-independence)
 - [3. HIL Simulators — Програмне розблокування Software TRL](#-3-hil-simulators--програмне-розблокування-software-trl)
 <!-- TOC:AUTO:END -->
 
@@ -42,14 +42,14 @@
 | Рівень | Етап | Технічний критерій (Evidence) | Лабораторія / Хаб |
 |:---|:---|:---|:---|
 | **TRL 1-2** | Ідея / Принцип | Математичне обґрунтування EBFC та Атрактора Лоренца. | ЧНУ (Хімія/Фізика) |
-| **TRL 3-4** | Proof of Concept | **TRL 3 (in-silico, ✅ 2026-05-25):** валідація EBFC Gen 2.0 **>500 мВ** (OCV ~600 мВ > BQ25570 Cold-Start 330 мВ; [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)) — хімія/CAD/кінетика. **TRL 4 (фізичний breadboard, pending):** перший Ti-coin заряджає реальний BQ25570 → 3.3V boost + транзакція в Sandbox (Stage 2). *(«44 мВ» — застаріла гіпотеза streaming-potential/п'єзо, відкинута з Gen 2.0.)* | ЧНУ (ФОТІУС) |
+| **TRL 3-4** | Proof of Concept | **TRL 3 (in-silico, ✅ 2026-05-25):** валідація EBFC Gen 2.0 **>500 мВ** (OCV ~600 мВ > BQ25570 Cold-Start 330 мВ; [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)) — хімія/CAD/кінетика. **TRL 4 (фізичний breadboard, pending):** перший Ti-coin заряджає реальний BQ25570 → 3.3V boost + транзакція в Sandbox (Stage 2). | ЧНУ (ФОТІУС) |
 | **TRL 5-6** | Прототипування | Робота кластера "Солдат-Королева" в Черкаському борі (30 днів). | Silken Lab |
 | **TRL 7-8** | Кваліфікація | Повна інтеграція: DID → ZK-Proof → Chainlink → Polygon. | Production (Canopy) |
 | **TRL 9** | Експлуатація | Стабільна безперебійна комерційна робота повноцінного лісового кластера (**Operational Canopy**, 1000+ дерев) у mainnet + фіналізація в L1. *(Масштаб до мільйонів вузлів = SRL/виробнича зрілість, НЕ TRL — [`00_08`](00_08_Beyond_TRL9_Planetary_Roadmap).)* | Operational Canopy → Global Mainnet |
 
 ### Per-module TRL (канонічне джерело)
 
-> SSOT для per-domain TRL. **System TRL = найнижчий модуль критичного шляху (01–07 build-path)** — наразі **3** (модуль 01 anchor/EBFC на TRL 3: Zero-Lab in-silico завершено, фізичний Ti-coin in-vitro pending; модуль 02 на TRL 4 — реальний breadboard CJMCU-25570 + EDLC). **Foundation (00)** = візія/метод (зрілі, TRL 9 — поза критичним шляхом, не гейтить). Модулі 08 (R&D-партнерства), 09 (PM-процес), 10 (Security-hardening) — це org/process/безпекова зрілість, яка трекається окремо і **не гейтить** System TRL (інакше System=2 за рахунок ранніх ВНЗ-партнерств, що хибно). Оновлюється при кожному cool-down. *(Мігровано з [`00_07`](00_07_Action_Plan_Tracker) — канон тут.)*
+> SSOT для per-domain TRL. **System TRL = найнижчий модуль критичного шляху (01–07 build-path)** — наразі **3** (модуль 01 anchor/EBFC на TRL 3: Zero-Lab in-silico завершено, фізичний Ti-coin in-vitro pending; модуль 02 на TRL 4 — реальний breadboard CJMCU-25570 + EDLC). **Foundation (00)** = візія/метод (зрілі, TRL 9 — поза критичним шляхом, не гейтить). Модулі 08 (R&D-партнерства), 09 (PM-процес), 10 (Security-hardening) — це org/process/безпекова зрілість, яка трекається окремо і **не гейтить** System TRL (інакше System=2 за рахунок ранніх ВНЗ-партнерств, що хибно). Оновлюється при кожному cool-down. Канон тут.
 
 | Модуль | TRL | Цільовий | Головний блокер |
 |--------|-----|----------|-----------------|
@@ -69,13 +69,11 @@
 
 ---
 
-## 🛡️ 2. Принцип "TRL-Lock" → "TRL-Layered Independence"
+## 🛡️ 2. Принцип "TRL-Layered Independence"
 
-> **Стара формулювання (Waterfall):** *"Жоден компонент не може бути переведений у стан Production, якщо він не досяг TRL 7. Якщо апаратна частина анкера на рівні TRL 4, а софт на TRL 8 — загальний статус модуля залишається TRL 4."*
+Якщо Rails-модуль, токеноміка і Web3-мости готові до TRL 8, вони не повинні чекати, поки хіміки з ЧМА закінчать роботу з EBFC.
 
-Це лінійне правило знищує сенс Concurrent Engineering. Якщо Rails-модуль, токеноміка і Web3-мости готові до TRL 8, вони не повинні чекати, поки хіміки з ЧМА закінчать роботу з EBFC.
-
-### Нова формулювання (Concurrent + HIL):
+### Формулювання (Concurrent + HIL):
 
 1. **System TRL** залишається обмеженим найнижчим модулем **критичного шляху** (01–07; §1-note) — це чесна метрика для grant заявок та regulator-комунікації ("система готова до пілоту тоді й тільки тоді, коли всі шари готові").
 2. **Per-domain TRL** є **незалежним** і відстежується в `docs/00_03 §TRL Matrix` per-module. Software може бути TRL 8 коли Hardware TRL 4.
@@ -122,7 +120,7 @@
 
 ### 3.5 Firmware bench-незалежність: класи A/B/C + bench-as-code
 
-> **Метод (2026-06-07):** кожен «bench-gated» firmware-пункт класифікується за тим, *що насправді відповідає на питання* — і більшість виявляється bench-gated лише за звичкою. Присуди по item-ах живуть у [`00_07`](00_07_Action_Plan_Tracker); це — спосіб мислення.
+> **Метод:** кожен «bench-gated» firmware-пункт класифікується за тим, *що насправді відповідає на питання* — і більшість виявляється bench-gated лише за звичкою. Присуди по item-ах живуть у [`00_07`](00_07_Action_Plan_Tracker); це — спосіб мислення.
 
 | Клас | Що відповідає | Інструмент | Приклади (закриті цим методом) |
 |------|---------------|-----------|--------------------------------|

@@ -23,8 +23,8 @@
 | Ресурс | Опис |
 |--------|------|
 | [`00_02` — AI Native Engineering and TRL](00_02_AI_Native_Engineering_and_TRL) | AI-Native методологія (philosophy) |
-| [`00_04` — Shape Up Operations and RnD Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) | Shape Up operations; §5.2 Betting Table, §6 Academic Semester |
 | [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | Стратегічна дорожня карта + TRL-матриця |
+| [`00_04` — Shape Up Operations and RnD Clusters](00_04_Shape_Up_Operations_and_RnD_Clusters) | Shape Up operations; §5.2 Betting Table, §6 Academic Semester |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | §13b Drift Register (живиться результатами SSOT Integrity Guard) |
 | [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) | Kamal / Terraform CI integration |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (OPS.3 / OPS.4 + trl_sync/labeler) |
@@ -34,7 +34,7 @@
 <!-- TOC:AUTO:START -->
 - [1. Налаштування GitHub Projects V2](#-1-налаштування-github-projects-v2)
 - [2. Автоматизація через GitHub Actions](#-2-автоматизація-через-github-actions)
-- [3. Репозиторії Екосистеми](#-3-репозиторії-екосистеми)
+- [3. Репозиторій (Monorepo)](#-3-репозиторій-monorepo)
 - [4. Label Conventions (SSOT)](#-4-label-conventions-ssot)
 - [5. Верифікація та Критерії Виходу](#-5-верифікація-та-критерії-виходу)
 - [6. Первинне налаштування репозиторію (Bootstrap)](#-6-первинне-налаштування-репозиторію-bootstrap)
@@ -311,13 +311,17 @@ jobs:
 
 ---
 
-## 🗂️ 3. Репозиторії Екосистеми
+## 🗂️ 3. Репозиторій (Monorepo)
 
-Кожен репозиторій керується єдиними правилами контекстного управління:
+Уся система живе в **одному репозиторії `silken_net`** (monorepo) — єдині правила контекстного управління та один CI на всі шари:
 
-- **silken_net:** Ядро системи (Rails 8.1, PostgreSQL, Sidekiq). Включає смарт-контракти у `contracts/` (Solidity, Foundry toolchain).
-- **silken-soldier-fw:** Низькорівнева прошивка (C, mruby) для STM32 та LoRa.
-- **silken-contracts:** ⚠️ Архівний. Активні контракти тепер у `silken_net/contracts/` з повним Foundry CI.
+- **`app/` · `lib/` · `config/` · `db/`** — Rails 8.1 ядро (PostgreSQL, Sidekiq, Solid Queue/Cable).
+- **`contracts/`** — смарт-контракти (Solidity, Foundry toolchain + Slither CI).
+- **`firmware/`** — прошивка Soldier/Queen (C, mruby) для STM32WLE5JC + LoRa (host-тести `make -C firmware/test`).
+- **`tools/`** — in-silico (EBFC: PySCF/OpenMM) + ML (TinyML/log-mel) пайплайни.
+- **`docs/`** — SSOT-канон (дзеркалиться у GitHub Wiki — [`00_06`](00_06_SSOT_Documentation_Standard)).
+
+> **Історія:** колишні окремі репо `silken-soldier-fw` (прошивка) та `silken-contracts` (контракти) **консолідовані в monorepo** — активні джерела тепер тут, під спільним CI; старі репо архівні.
 
 ---
 
@@ -399,4 +403,3 @@ gh api repos/Alexey-Lukin/silken_net/milestones \
 mkdir -p docs/shaping
 echo "Stub shape for cluster C: First Akash production deploy" > docs/shaping/akash-prod-deploy.md
 ```
-
