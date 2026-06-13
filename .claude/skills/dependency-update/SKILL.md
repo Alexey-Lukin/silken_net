@@ -46,6 +46,7 @@ the per-domain recipes**; it does **not** restate versions or track which bump s
 | **in-silico** | `tools/in_silico/environment.yml` + **`conda-lock.yml`** (the real pin) | `pip list --outdated` in `silken_md`; `gh` latest | rebuild + **re-run DFT vs `docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md`**; `ruff check` |
 | **firmware C** | 6 git submodules in `firmware/extern/` | `gh api repos/<org>/<repo>/releases\|tags` vs `git submodule status` | host CMSIS-parity ctest (local) + `make -C firmware/test`; ARM build + QEMU parity (**CI-only** — arm-gcc/qemu not local) |
 | **Solidity** | `contracts/{foundry.toml,package.json,package-lock.json}` + `*.sol` pragmas | `gh api` OZ/solc/forge-std latest | `forge test` (local) + `forge fmt --check`; `slither` (**CI-only**) |
+| **Terraform** | `terraform/*.tf` `required_providers` (+ `.terraform.lock.hcl` if present) | `gh api repos/hashicorp/terraform-provider-<p>/releases/latest` vs the `~>` pin | `terraform validate` + `terraform fmt -check`; `terraform plan` (**CI/creds-gated** — needs GCP creds + state) |
 
 `rvm use <v>` / `mamba run -n <env>` prefixes are MANDATORY per Bash call — shell state does
 not persist between calls (a fresh shell defaults to the rvm default → `RubyVersionMismatch`).
@@ -72,6 +73,10 @@ not persist between calls (a fresh shell defaults to the rvm default → `RubyVe
   (forge test, host CMSIS-parity ctest, `make -C firmware/test`) run locally; push → CI does the
   rest; `gh run watch <id> --exit-status` confirms. mruby/CMSIS-FFT bumps risk the ARM↔x86
   bit-parity / log-mel parity — keep `evm_version`/float flags pinned, lean on the parity gates.
+- **Terraform provider majors are big breaking migrations** (e.g. `google` 5→7 = renamed/removed
+  args across Cloud SQL/GCE/VPC/IAM). Read the per-major upgrade guide; bump the `~>` constraint +
+  `terraform init -upgrade` + `terraform plan` against real state (CI/creds-gated) — never a blind
+  sweep bump. (`.terraform.lock.hcl` pins the resolved provider hashes if committed.)
 - **Deprecation/future-keyword warnings:** resolve in OUR code (e.g. solc `error`/`at` → rename);
   if they're in vendored code (OZ `EnumerableSet.at()`), they're upstream's — note, don't touch.
 - **`db/structure.sql` / `Gemfile.lock`:** verify the diff is ONLY the intended dep (no drive-by
