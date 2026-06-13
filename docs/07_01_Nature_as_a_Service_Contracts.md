@@ -68,7 +68,7 @@ NaaS — це модель підписки, де клієнти (Організ
 **Страхова премія (Hybrid Protocol Gaia):**
 При активації контракту 5% від `total_funding` направляється до DAO Treasury Parametric Insurance Pool (константа `NaasContract::INSURANCE_PREMIUM_RATE = BigDecimal("0.05")`). Залишок 95% — `forester_share_amount` — надходить форестеру.
 
-**Поточний стан:** Бізнес-логіка реалізована в коді. Юридичного шаблону угоди (Term Sheet, Master Service Agreement) — немає. Це BLOCKER-1.
+**Поточний стан:** Бізнес-логіка реалізована в коді. Юридичного шаблону угоди (Term Sheet, Master Service Agreement) — немає → відкрите [`00_07`](00_07_Action_Plan_Tracker) BIZ.2 (B2B MSA).
 
 ---
 
@@ -87,7 +87,7 @@ NaaS — це модель підписки, де клієнти (Організ
 - Роль `User.role = :investor` або `User.role = :forester`.
 - `Wallet` автоматично створюється при реєстрації Tree-вузла.
 
-**Поточний стан:** Технічна інфраструктура повністю готова. Публічного B2C онбординг-флоу (лендинг, ToS, Privacy Policy) — немає. Це BLOCKER-2.
+**Поточний стан:** Технічна інфраструктура повністю готова. Публічного B2C онбординг-флоу (лендинг, ToS, Privacy Policy) — немає → відкрите [`00_07`](00_07_Action_Plan_Tracker) BIZ.3 (B2C ToS/Privacy).
 
 ---
 
@@ -103,7 +103,7 @@ NaaS — це модель підписки, де клієнти (Організ
 - Участь у верифікованій екосистемі (SCC-адреса на Polygon).
 - Gasless approvals через EIP-2612 (`ERC20Permit`).
 
-**Поточний стан:** SFC смарт-контракт задеплоєно. DAO Governance процес (Snapshot / Governor) — не визначений. Це BLOCKER-5.
+**Поточний стан:** SFC смарт-контракт задеплоєно. DAO Governance процес (Snapshot / Governor) — не визначений → механіка [`05_06`](05_06_Governance_and_DAO); юр-оформлення DAO → [`00_07`](00_07_Action_Plan_Tracker) BIZ.*.
 
 ---
 
@@ -442,7 +442,7 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 
 ## 🎤 11. Технічна Перевірка Due Diligence (Investor Q&A)
 
-> **Нотатка інтегрована (2026-03-25).** 10 найжорсткіших питань від технічних аудиторів IoTeX, peaq та грантових комітетів (Ethereum Foundation, Climate.biz) — та «залізні» відповіді, що демонструють архітектурну зрілість системи.
+> 10 найжорсткіших питань від технічних аудиторів IoTeX, peaq та грантових комітетів (Ethereum Foundation, Climate.biz) — та «залізні» відповіді, що демонструють архітектурну зрілість системи.
 
 ### 🔋 Блок 1: Фізика та Залізо (Hardware & Energy)
 
@@ -545,4 +545,4 @@ function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE)
 | **CO₂ методологія** | ✅ 2000 SCC = 1 tCO₂ (1 SCC = 0.5 kg CO₂) — on-chain + SystemParameter |
 | **DAO Governance** | 🟡 SFC slash() реалізовано; Vote Escrow — опціонально |
 | **RWA реєстрація** | 🟡 Інфраструктура є, процес не відпрацьований |
-| **DB schema** | ✅ Узгоджено (`signed_at` прибрано з коду — BLOCKER-8 закрито) |
+| **DB schema** | ✅ Узгоджено (`signed_at` прибрано з коду) |
