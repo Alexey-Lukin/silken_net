@@ -1518,6 +1518,8 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 
 #### Implementation status (2026-05-24)
 
+> **Реєстр сервіс-об'єктів (роль кожного `FactoryFlashing::*`) — дім [`04_02 §8`](04_02_Business_Logic_and_Services); модель сесії — [`04_01` ProvisioningSession](04_01_Data_Models_and_Entities).** Нижче — security-нюанси + impl/bench-статус per шар (дім 03_05).
+>
 > Дизайн A–D нижче імплементовано як Rake-driven internal admin tool. Реальний `STM32_Programmer_CLI` subprocess execution та live `cryptoauthlib` I²C — gated на HW bench (deferred).
 
 | Шар | Файл | Статус |

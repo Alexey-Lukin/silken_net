@@ -35,7 +35,8 @@ on:
       - 'spec/lib/docs_toc_spec.rb'
       - 'scripts/model_doc_sync.rb'
       - 'app/models/**'
-      - 'app/workers/partition_maintenance_worker.rb'
+      - 'app/services/**'
+      - 'app/workers/**'
       - '.github/**'
   push:
     branches: [ main ]
@@ -51,7 +52,8 @@ on:
       - 'spec/lib/docs_toc_spec.rb'
       - 'scripts/model_doc_sync.rb'
       - 'app/models/**'
-      - 'app/workers/partition_maintenance_worker.rb'
+      - 'app/services/**'
+      - 'app/workers/**'
       - '.github/**'
 
 permissions:

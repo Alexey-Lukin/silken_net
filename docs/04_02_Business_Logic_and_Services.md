@@ -167,6 +167,15 @@
 | **Математика** | `H = -Σ p(x) × log₂(p(x))`, `H_norm = H / log₂(NUM_BINS)` ∈ [0.0, 1.0] |
 | **Вихід** | `Float` (0.0-1.0) або `nil` (недостатньо даних). |
 
+### `SilkenNet::LorenzValidationService` [Lorenz de-risk]
+
+| | |
+|---|---|
+| **Файл** | `app/services/silken_net/lorenz_validation_service.rb` |
+| **Вхід** | парні `(telemetry, ground_truth)`-спостереження (передаються аргументом — **pure / read-only**, без DB-доступу й slashing-side-effects) |
+| **Що робить** | Ground-truth validation harness для гіпотези «Lorenz Z ↔ здоров'я дерева» ([`05_05 §8`](05_05_Slashing_and_Risk_Policy) / [`08_02 §4`](08_02_Academic_Institutions_Registry)): Spearman-кореляція `stress_index` ↔ занепад + `z_incremental_over_sap` (чи Z додає predictive value **понад** прямі sap-сигнали). Push-button аналіз для ЧНУ після збору парних даних — поки гіпотеза недоведена (сигнал, не вердикт). |
+| **Вихід** | `report` (Hash кореляцій/інкрементів). Чиста функція. |
+
 ### `TreeChronicleService`
 
 | | |
@@ -446,6 +455,28 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Bypass** | `SILKENNET_SKIP_MASTER_KEY_STRENGTH_CHECK=1` — для one-off rescue-boot при флеші zaжатого кластера. Логується гучно, не може стати рутиною. |
 | **Зв'язок з HKDF tree** | Captured-критично: master-ключ є коренем для **чотирьох** info-strings (post-ARCH.42): `HardwareKeyService.derive_lora_key` (Tree AES-128 LoRa, info `"silken-aes-128-lora-key"`), `HardwareKeyService.derive_device_key` (Gateway AES-256 CoAP, info `"silken-aes-256-device-key"`), `OtaHmacKeyService` (K_ota, info `silken-ota-hmac-v1`), `SilkenNet::SeedDerivation` (Lorenz `K_seed`, info `silken-lorenz-seed`). Компрометація master = каскадна компрометація всіх чотирьох — тому guard працює fail-closed до запуску HTTP-сервера. |
 
+### `SilkenNet::DidDerivation` [FW.54]
+
+| | |
+|---|---|
+| **Файл** | `app/services/silken_net/did_derivation.rb` |
+| **Що робить** | DID = f(96-біт UID) — Ruby-дзеркало firmware `did_derive.h` (murmur3-fmix32 ланцюгом по трьох словах STM32-UID; **біт-у-біт**, golden-вектори заморожені обабіч). Споживач — фабричний провіженінг (SEC.3): host читає UID по SWD **ДО** прошивки, деривує той самий DID, що пристрій порахує на boot → однопрохідне `Tree + HardwareKey + K_seed`. `DID==0` зарезервовано під Queen-Sentinel (нуль-хеш → SEED-константа). Колізію 32-біт ловить DB-unique на `trees.did` до поля. Канон механізму — [`03_01 §7`](03_01_Firmware_Lifecycle_and_DMA). |
+| **Вихід** | DID-рядок (детермінований per-UID). |
+| **Викликається з** | `FactoryFlashing::Session` / provisioning (SEC.3) |
+
+### `FactoryFlashing::*` — Factory Flashing Pipeline (SEC.3)
+
+Internal-admin сервіси конвеєра прошивки/провіжинингу (Rake-driven, **поза** публічним REST API). **Цей реєстр — дім опису сервіс-об'єктів** (One-Home для «що робить кожен»). Security/threat-model контекст (2-Person Rule, гілки A/B, master-key handling) + impl/bench-статус — [`03_05 §3.4г`](03_05_Hardware_Symmetric_Crypto_and_Security); модель сесії — [`04_01` ProvisioningSession](04_01_Data_Models_and_Entities).
+
+| Сервіс | Роль |
+|--------|------|
+| `FactoryFlashing::Session` | Orchestrator — `ActiveRecord::Base.transaction` (провіжен `HardwareKey` + audit з rollback разом); `PreflightError` для non-approved сесій |
+| `FactoryFlashing::MasterKeySource` | Джерело master-ключа: `EnvAdapter` (з `Security::WeakKeyDetector`), `BitwardenAdapter` skeleton |
+| `FactoryFlashing::CommandBuilder` | Емісія `STM32_Programmer_CLI` команд per гілка A/B (KEYL/LSED/KEYC/EDSK slots, RDP level) |
+| `FactoryFlashing::Executor` | Subprocess-запуск: dry-run за замовч.; `Open3.capture3` при `dry_run: false`, stop-on-first-fail |
+| `FactoryFlashing::AteccProvisioner` | Гілка B skeleton: `atcab_*` slot-writes + config/data-zone lock (raw key bytes scrubbed; rename → SE050 у SE050-MIGRATION) |
+| `FactoryFlashing::AuditTrail` | `AuditLog(action:"factory_flash")` chain-hashed + `MaintenanceRecord(:installation)` |
+
 ---
 
 ## 💰 9. Домен: Фінансові Оракули (Finance Oracles)
@@ -565,6 +596,15 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Що робить** | Верифікує цілісність: завантажує JSON з IPFS за `ipfs_cid`, порівнює `chain_hash` з локальним. |
 | **Зовнішні виклики** | `Web3::HttpClient.get` → `FILECOIN_GATEWAY_URL/{cid}` |
 | **Вихід** | `{ verified: Boolean, cid:, chain_hash: }` або `{ verified: false, local_hash:, remote_hash: }`. |
+
+### `Filecoin::CidGenerator`
+
+| | |
+|---|---|
+| **Файл** | `app/services/filecoin/cid_generator.rb` |
+| **Що робить** | Детермінований self-verifying **CIDv1** (multiformats: `raw 0x55` + `sha2-256` multihash) для довільного payload **без** звернення до IPFS-шлюзу — той самий вміст завжди дає той самий CID (`bafkrei…`), тож архів неможливо ex-post підмінити непомітно (верифікатор перераховує CID локально й порівнює з тим, що пінилося). Leaf-рівень E.60 ([`05_02`](05_02_Proof_of_Growth_Pipeline)). |
+| **Зовнішні виклики** | — (in-memory: SHA-256 + multiformats) |
+| **Вихід** | CIDv1-рядок (`"bafkrei…"`). |
 
 ### `Streamr::BroadcasterService`
 
@@ -1528,38 +1568,13 @@ Financial action
 
 ## 🧭 13b. SSOT Drift Register (Doc ↔ Code Sync)
 
-> **Принцип:** Цей документ — SSOT. Тобто:
-> - якщо **код випередив документ** — оновлюємо документ (тут, у [`04_02`](04_02_Business_Logic_and_Services)) щоб реальність відображалася;
-> - якщо **документ випередив код** — створюємо/оновлюємо запис у [`00_07`](00_07_Action_Plan_Tracker) як невиконану задачу;
-> - якщо **нема ні там, ні там** — приймаємо рішення (потрібне → реєструємо в [`00_07`](00_07_Action_Plan_Tracker); не потрібне → видаляємо плани з [`04_02`](04_02_Business_Logic_and_Services)).
->
-> Цей реєстр фіксує **відомі divergence-точки** та їх статус. Періодичний аудит — кожен Cool-down цикл Shape Up ([`00_04 §5.3`](00_04_Shape_Up_Operations_and_RnD_Clusters)).
+> **Принцип:** Цей документ — service-шар SSOT; `app/services/` / `app/workers/` — authoritative reality. Метод drift-resolution (код-ahead → онови док; doc-ahead → задача в [`00_07`](00_07_Action_Plan_Tracker)) + дзеркало data-шару (04_01 §12) — [`00_06 §3`](00_06_SSOT_Documentation_Standard). Колишній датований лог виправлень → git.
 
-| Дата | Зона | Тип drift | Що зроблено | Cross-ref |
-|------|------|-----------|-------------|-----------|
-| 2026-05-12 | `Security::WeakKeyDetector` + `master_key_strength_check.rb` initializer | Code ahead of doc (були в [`00_07`](00_07_Action_Plan_Tracker)/[`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security), але §8 04_02 їх не описувала) | Додано в §8 (renamed → "Hardware, IoT & Security") | [SEC.9](00_07_Action_Plan_Tracker), [`03_05 §3.1а`](03_05_Hardware_Symmetric_Crypto_and_Security) |
-| 2026-05-12 | `Celo::CommunityRewardService` RPC fallback cascade | Code matched doc (E.49 синхронно виконано: код + 04_02 + .env.example + 00_07) | `RPC_FALLBACK_ENV_KEYS` додано, External API row оновлено | [E.49](00_07_Action_Plan_Tracker) |
-| 2026-05-12 | `MintingRollbackService` (Celo branch) | Code bug + doc gap (fallback указував на polygon-rpc.com для Celo TX) | Виправлено per-chain dispatch; doc оновлено | [E.49](00_07_Action_Plan_Tracker) |
-| 2026-05-12 | `MintBatchCollectorWorker` секція | Doc misplacement (queue `web3` був у "💤 Web3 Low") | Перенесено у "🌐 Web3 — Стандартні Мультичейн" | §11 |
-| 2026-05-12 | `ClusterHealthCheckWorker` heading | Doc structure bug (таблиця без `####` заголовка) | Додано `#### ClusterHealthCheckWorker` | §11 |
-| 2026-05-18 | `MintingRollbackService#fetch_evm_transaction_receipt` | **Code bug — double-spend hole.** Сервіс читав `receipt["status"]` напряму, тоді як eth gem 0.5.x повертає wrapped JSON-RPC envelope (`{"result":{"status":…}}`) → всі confirmed/pending транзакції класифікувались як `:reverted`, кошти розблоковувались поверх вже-надісланого on-chain mint'у. Spec фіксував саме хибну flat-форму, тож регрес не світився у CI. | Витягнуто `classify_evm_receipt(envelope)` — приймає обидві форми (production wrapped + legacy flat); додано 4 нові spec example у `describe "JSON-RPC envelope shape (real eth gem 0.5.x)"`; запис у §4 оновлено. | §4 MintingRollbackService; `spec/services/minting_rollback_service_spec.rb` |
-| 2026-05-18 | `SilkenNet::SeedDerivation` API назви | Doc-ahead-of-code: doc посилався на `derive_initial_state`, `bytes_to_signed_unit_float`, keyword-args `derive_seed(device_uid:)` — у коді реально `initial_state`, `signed_unit_float`, позиційний `derive_seed(device_uid)`. | Назви, повернений тип (`derive_seed → 64-char HEX`) та сигнатура виправлені у §3; згадки у `Attractor` (cold-start) теж оновлено. | §3 SilkenNet::SeedDerivation / Attractor |
-| 2026-05-18 | `Ethereum::StateAnchorService.generate_state_root` формула | Code ahead of doc (E.53 SFC supply + E.54 active_tree_count): код хешує 5 компонентів і обгорнутий у REPEATABLE READ, doc показував стару 3-компонентну формулу й не згадував double-anchor guard / pending-resume. | §10 переписано: повний 5-компонентний SHA-256, snapshot isolation, double-anchor guard, timeout-as-pending recovery; `EthereumAnchor#verify_state_root` зафіксовано як SSOT-метод верифікації. | §10 Ethereum::StateAnchorService |
-| 2026-05-18 | `PartitionMaintenanceWorker::PARTITIONED_TABLES` | Code ahead of doc: код тримає 4 RANGE-таблиці (включно з `codex_matches` Phase 4), doc перераховував 3. | §11 оновлено: `codex_matches` додано до списку; згадано Sentry rescue. | §11 PartitionMaintenanceWorker (узгоджено з DOC-R.11) |
-| 2026-05-18 | `OtaTransmissionWorker` cluster_id forwarding | **Code bug + doc drift — FW.23 HMAC trailer був ВИМКНЕНИЙ у проді.** Doc обіцяв `OtaPackagerService.prepare(firmware, cluster_id: cluster.id)`, але worker викликав `prepare(firmware_obj, chunk_size: CHUNK_SIZE)` без `cluster_id:`, тож `hmac_enabled?` повертав false → жодного `0x9B` трейлеру → Soldier dual-gate не мав HMAC печатки для верифікації → tampered/replayed OTA байткод проходив. `total_chunks` зчитувався з `manifest[:total_chunks]` (bytecode-only) замість `total_packages` (bytecode + 3 trailer), тож при міграції на signed-stream шлюз би переходив у `:idle` на 3 чанки раніше HMAC seal'у. | Worker передає `cluster_id: gateway.cluster_id` (NOT NULL у схемі) + читає `total_packages \|\| total_chunks`; spec має 2 нові examples у `describe "[FW.23] HMAC trailer cluster_id forwarding"`; doc оновлено. | `app/workers/ota_transmission_worker.rb`; `spec/workers/ota_transmission_worker_spec.rb`; §11 OtaTransmissionWorker |
-| 2026-05-18 | `ClusterHealthCheckWorker` double-trigger → подвійна cUSD виплата | **Code bug** — `config/sidekiq.yml` має `cluster_health_arbitration` cron на 02:00 UTC, і ТА сама job ставиться через `InsightBatchCallbacks#on_success` після 01:00 батчу. Worker (`recalculate_health_index!`) ідемпотентний, але `CeloRewardWorker.perform_async(cluster_id, date)` без guard'у; `Celo::CommunityRewardService.reward_community!` тримав лише `Kredis.lock(lock:web3:oracle:<address>)` — це серіалізує усі Celo TX'и, не дедуплікує `(cluster, date)`. Здоровий кластер отримував 10 cUSD на день замість 5. | Додано `reward_already_sent?` guard у `Celo::CommunityRewardService` — перевіряє `BlockchainTransaction.where(sourceable: cluster, token_type: :cusd, status: [:sent, :confirmed, :processing], created_at: target_date.beginning_of_day...+1.day).exists?`; failed/manual_review TX'и НЕ блокують admin retry. Spec має 2 нові examples (skip on existing, retry on failed). Doc для `ClusterHealthCheckWorker` оновлено — обидва тригери задокументовані з посиланням на guard. | §11 `ClusterHealthCheckWorker`; `app/services/celo/community_reward_service.rb`; `spec/services/celo/community_reward_service_spec.rb` |
-| 2026-05-29 | `ContractHealthCheckService` / `BlockchainBurningService` slashing path | **Doc-ahead + financial-safety — формула + blackout закрито 2026-05-29; de-correlation 2026-06-03.** [`05_05 §3`](05_05_Slashing_and_Risk_Policy) специфікує convex-формулу `damage_ratio^1.3 × min(penalty_factor,2.0)` + `cause_classification` gate. Стан коду: (1) `cause_classification` A/B/C-термін ще відсутній (🟡 open); (2) ✅ `BlockchainBurningService` тепер палить за **§3 convex-кривою** (`#calculate_slash_ratio`; GAMMA/PF_MAX через `SystemParameter`, clamp 0..1, 8 specs) — **не лінійно**; (3) ✅ `ContractHealthCheckService#flag_data_blackout!` — cluster-wide empty → Field Audit (force-majeure), no burn (10 specs); (4) ✅ cause-driven `penalty_factor` uplift із comms-loss **de-correlation** (`#calculate_penalty_factor`: no-ack/Streamr через `max()`, no-maintenance additive; **INERT** за `SystemParameter :slash_cause_uplift_enabled` до DAO-confirm). | **Частково закрито** (convex-формула + blackout-routing). Лишається: formal A/B/C `cause_classification` + **активація** uplift → DAO/founder-go (незворотна фін. логіка) + repeat-offence вага + tree-side `streamr_undelivered` сигнал-джерело. Принцип: [`05_05`](05_05_Slashing_and_Risk_Policy) §6/§7. tracked: [`00_07`](00_07_Action_Plan_Tracker) SLASH-1. | [`05_05`](05_05_Slashing_and_Risk_Policy) §3/§6; [`00_07`](00_07_Action_Plan_Tracker) SLASH-1; `contract_health_check_service.rb`, `blockchain_burning_service.rb` |
-| — (відкрите) | `ClusterEntropyAnalyzerWorker` cron | Doc-only feature: §11 каже "Sidekiq cron, щогодини", але у `config/sidekiq.yml` запису немає, і жоден інший шлях не викликає воркер (єдина згадка поза тестами — коментар у `prometheus.rb`). Без cron `silkennet_cluster_entropy_score` gauge ніколи не оновлюється → entropy_anomaly алерти не спрацьовують. | Не виправлено цією зміною: воркер приймає `cluster_id` — для cron потрібен окремий orchestrator-воркер що проходить `Cluster.find_each` і фан-аутить через `perform_async`. Залишається на reviewer'а як окремий PR. | §11 `ClusterEntropyAnalyzerWorker` |
-| — (відкрите) | `InsurancePayoutWorker` сweep cron | Doc-only feature: §11 каже "cron при triggered insurances", але у `config/sidekiq.yml` запису немає. Якщо `Dclimate::VerificationService` enqueue впав, або всі 10 retry вичерпались, страховка лишається у `:triggered` назавжди — кошти у DAO Treasury не доходять до постраждалої організації. | Не виправлено цією зміною: треба окремий sweep-worker, що бере `ParametricInsurance.status_triggered` і робить `perform_async(id)`. Залишається на reviewer'а як окремий PR. | §11 `InsurancePayoutWorker` |
-| — (відкрите) | Forester Guild / Cross-Registry / Federated Learning | Doc-only "Planned" — в коді **відсутні**; статус нормальний (Post-TRL 6/7) | Зберігати як design RFC; не маркувати code drift | §"Planned" |
+**Механічна частина — ✅ enforced by `scripts/model_doc_sync.rb`** (CI `docs.yml`): кожен `app/services/**` / `app/workers/**` клас згаданий у цьому реєстрі — зловив би сервіс, повністю відсутній у доку (як `FactoryFlashing::*`-пропуск, що цей гейт і закрив). Семантику (сигнатури/ENV/guard-clauses/queue-розміщення) скрипт НЕ перевіряє — ручний cool-down аудит ([`00_04 §5.3`](00_04_Shape_Up_Operations_and_RnD_Clusters)).
 
-### Як додавати нові записи
+**Відкриті drift-айтеми живуть у [`00_07`](00_07_Action_Plan_Tracker)** (One-Home для backlog — не датований лог у каноні): cron-missing воркери ([`00_07` — S6.19](00_07_Action_Plan_Tracker)), slashing A/B/C `cause_classification` + uplift-активація ([`00_07` — SLASH-1](00_07_Action_Plan_Tracker); convex-формула + blackout ✅ у картках §6).
 
-1. Виявили divergence (наприклад, нову константу, новий guard clause, новий ENV у коді який не описаний тут) — додайте рядок у таблицю з датою.
-2. Якщо drift вимагає коду — заведіть запис у [`00_07`](00_07_Action_Plan_Tracker) з тим самим UID (`E.NN` / `SEC.NN` / `S6.NN`) і посиланням сюди.
-3. Drift register **не замінює** оновлення відповідної секції — обидва місця мають бути синхронізовані.
-
-> **Anti-pattern:** "Тимчасово впишу у 04_02, а виправлю код пізніше". Якщо завдання потребує > 1 PR — заведіть [`00_07`](00_07_Action_Plan_Tracker) запис, не блюрте тут.
+> **«Planned» (Forester Guild / Cross-Registry / Federated Learning)** — design-RFC, у коді **відсутні** (Post-TRL 6/7, нормально — не code-drift, тому не у `model_doc_sync`).
 
 ---
 
