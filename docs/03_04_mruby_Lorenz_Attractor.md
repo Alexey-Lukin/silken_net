@@ -411,7 +411,7 @@ growth_points  = (5 + m * 26).round.clamp(5, 31)   # 5-бітний wire (FW.29-
 
 > 📐 **Wire vs Stored:** Wire `growth_points` — 5-бітне поле, яке Soldier пакує у StatusByte; backend `TelemetryUnpackerService` робить `(status_byte & 0x1F) * 2` → Stored (`TelemetryLog#growth_points`). Калібрувальні `DELTA_T_FAST_S`/`DELTA_T_SLOW_S` — placeholder (bench, E.63); таблиця оновиться після зміряної recharge-кривої.
 
-(Поза гомеостазом — гейт §4.2: `z < 2` → wire 1 / stored 2 (стрес, absolute); `z > ρ+(CRITICAL_Z_MAX−BASE_RHO)` → wire 0 (аномалія, [E.64] ρ-відносна; =45 при ρ=28, дзеркало `Attractor.anomaly_ceiling` §363/код — НЕ hardcoded offset).)
+(Поза гомеостазом — гейт §4.2: `z < 2` → wire 1 / stored 2 (стрес, absolute); `z > ρ+(CRITICAL_Z_MAX−BASE_RHO)` → wire 0 (аномалія, [E.64] ρ-відносна; =45 при ρ=28, дзеркало `Attractor.anomaly_ceiling` §4 E.64-нота / код — НЕ hardcoded offset).)
 
 ### 4.4 Bit-Packing: Структура Байту BioContract
 
@@ -697,7 +697,7 @@ kamal env push --secret GAIA_DCI_NUMERIC_TOLERANCE=false
 
 **Side effects після flip:**
 
-- Fraud detection стає **числовим**: ловить replay-атаки з правильним enum, неправильним magnitude — як написано у §145 вище.
+- Fraud detection стає **числовим**: ловить replay-атаки з правильним enum, неправильним magnitude — як описано на початку §7.1.
 - `TelemetryLog#fraud_flagged` зростає на ~0.001-0.01% legitimate traffic (false positives на ε boundary) — це **acceptable noise**, бо `fraud_flagged` тригерить ручний review, не automatic slashing.
 - Mint pipeline ([`05_02`](05_02_Proof_of_Growth_Pipeline)) НЕ блокується numeric divergence — це лише signal для AML/risk layer.
 
