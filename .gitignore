@@ -99,6 +99,7 @@ coverage/
 /firmware/test/test_bio_contract
 /firmware/test/test_tinyml
 /firmware/test/test_logmel
+/firmware/test/test_audio_model
 /firmware/test/test_encryption
 /firmware/test/test_seed_derivation
 /firmware/test/test_ccm

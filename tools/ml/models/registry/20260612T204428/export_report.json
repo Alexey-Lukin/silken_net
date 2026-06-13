@@ -1,0 +1,20 @@
+{
+  "parity": {
+    "n": 5318,
+    "argmax_mismatch": 0,
+    "max_abs_logit_delta": 1
+  },
+  "footprint": {
+    "flash_weights_bytes": 972,
+    "int8_weights_bytes": 720,
+    "stack_activation_bytes": 76,
+    "bss_arena_bytes": 0
+  },
+  "int8_acc": 0.854080481383979,
+  "provenance": {
+    "run_id": "20260612T204428",
+    "float_acc": 0.8557728469349379,
+    "int8_acc": 0.854080481383979,
+    "manifest_hash": "4147c92422be3949"
+  }
+}

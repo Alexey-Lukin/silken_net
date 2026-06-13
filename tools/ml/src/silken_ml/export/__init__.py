@@ -296,6 +296,9 @@ def emit_header(p: dict, prov: dict) -> str:
         " *\n",
         f" * Provenance: run {prov['run_id']} | float-acc {prov['float_acc']:.4f}"
         f" | int8-acc {prov['int8_acc']:.4f} | data-manifest {prov['manifest_hash']}\n",
+        " *   ^ MIXED corpus: silence + cavitation are SYNTHETIC placeholders (2/5 classes) —\n",
+        " *   a pipeline-integrity metric, NOT field accuracy; cavitation is NOT field-validated.\n",
+        " *   Per-class validity: docs/03_03 §4.2 / tools/ml/docs/baseline_model_program.md §2.1.\n",
         f" * Quant parity vs TFLite: argmax-exact, max|d logit|={prov['parity']['max_abs_logit_delta']}"
         f" (n={prov['parity']['n']}).\n",
         f" * Log-mel contract hash {contract_hash()} (docs/03_03 §3.4) — RETRAIN if it changes.\n",

@@ -31,7 +31,15 @@ data/processed/
 *.h5
 *.keras
 *.pkl
-models/registry/
+
+# Model registry: NOT blanket-ignored — commit the SMALL provenance so the generated
+# firmware header's run/manifest hashes stay auditable and the header is re-emittable from
+# the committed .tflite. Tracked: the 3 *.json (reproducibility/export_report/data_manifest)
+# + model_int8.tflite + norm_stats.npz (re-included below). Ignored: model.keras (*.keras),
+# the PTQ representative/parity .npz (*.npz), and the TF SavedModel temp dir (explicit).
+models/registry/*/plain_sm/
+!models/registry/*/model_int8.tflite
+!models/registry/*/norm_stats.npz
 
 # NB: the generated firmware headers (firmware/common/logmel_*.h) ARE committed —
 # they are the golden source the C consumes — and live OUTSIDE this dir.

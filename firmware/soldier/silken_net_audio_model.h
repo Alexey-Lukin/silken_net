@@ -5,6 +5,9 @@
  * UNBLOCKS FW.4 — replaces silken_net_audio_model_stub.h via __has_include.
  *
  * Provenance: run 20260612T204428 | float-acc 0.8558 | int8-acc 0.8541 | data-manifest 4147c92422be3949
+ *   ^ MIXED corpus: silence + cavitation are SYNTHETIC placeholders (2/5 classes) —
+ *   a pipeline-integrity metric, NOT field accuracy; cavitation is NOT field-validated.
+ *   Per-class validity: docs/03_03 §4.2 / tools/ml/docs/baseline_model_program.md §2.1.
  * Quant parity vs TFLite: argmax-exact, max|d logit|=1 (n=5318).
  * Log-mel contract hash 0cd21eb3c2d89ac6 (docs/03_03 §3.4) — RETRAIN if it changes.
  *

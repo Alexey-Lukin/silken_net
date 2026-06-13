@@ -37,7 +37,7 @@
 #define ML_CLASS_WIND            1u
 #define ML_CLASS_CAVITATION      2u
 #define ML_CLASS_CHAINSAW        3u
-#define ML_CLASS_FAUNA_ACTIVITY  4u   /* Mongabay pivot, post-TRL 7 */
+#define ML_CLASS_FAUNA           4u   /* Mongabay pivot, post-TRL 7 */
 
 #define NUM_CLASSES              5u
 

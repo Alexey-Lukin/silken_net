@@ -96,6 +96,8 @@ CMSIS-DSP (лінкується у `silken_common` через `LOGMEL_USE_CMSIS`
 | 3 chainsaw | ESC-50 `chainsaw` | реальне |
 | 4 fauna | ESC-50 тваринні (`crickets`/`chirping_birds`/`frog`/`insects`) як interim soundscape-проксі | **interim**; реальне = Cherkasy Soundscape Library (post-TRL 7) |
 
+> **One-Home:** канонічна field-валідність-теза (що field-valid, що placeholder, + framing «pipeline-метрика, не польова точність») живе в [`03_03 §4.2`](../../../docs/03_03_TinyML_Acoustic_Inference.md); ця таблиця — джерела/генератори (HOW), не дублює канон.
+
 > **Per-frame labeling caveat (документується):** кожен 32-мс кадр кліпу успадковує мітку
 > кліпу (з silence-gating тихих кадрів). Мітки *слабкі* (кадр може не містити подію) —
 > це обмеження baseline; майбутня темпоральна агрегація (fauna Welford §10.2 / партнерська
@@ -105,8 +107,8 @@ CMSIS-DSP (лінкується у `silken_common` через `LOGMEL_USE_CMSIS`
 
 ## 3. Pipeline — заповнення скаффолдів (enterprise-конвенції з докстрінгів)
 
-- **`silken_ml.data`** — ESC-50 loader; **committed `data/manifest.json`** (per-file
-  sha256 + source + license + label); seeded stratified split; синт-генератори
+- **`silken_ml.data`** — ESC-50 loader; **committed `models/registry/<run>/data_manifest.json`**
+  (per-file sha256 + source + license + label); seeded stratified split; синт-генератори
   (silence, cavitation); фічі через `silken_ml.dsp` (ТОЙ САМИЙ контракт → train≡device).
 - **`silken_ml.models`** — config-driven топологія під стелю.
 - **`silken_ml.train`** — config (dataclass/YAML); seed-everything; **reproducibility

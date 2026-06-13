@@ -1,0 +1,1945 @@
+{
+  "config_hash": "a8de8027785e9f11",
+  "esc50_files": [
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "1-100038-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "2faa39d8e59e8f292dfbdbe72bd8a00294f9535714b3c19b39904c2c17e14675"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "1-116765-A-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "1199ff6d4f5040bf20f06a441276bcd6448b1e1de4f098ce3e47d856ee97ce33"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "1-137296-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "73e2dd5e66dda29f76a54b53c3c8e33441d105fc35c1d231bfbd8f7a18442969"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "1-15689-A-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "bdb124b7004b02ab8299f7d7389d15b5eb53e12002cff379d49dcdec4d8b1372"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "1-15689-B-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "db7a1d190931f1101d533661852e3cdebaa2b89c4b743385b201391be7de003d"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "1-17585-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "beb564e150ce6aab27740bb44445cc710695979362b43edea09c90552723b9ce"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "1-17970-A-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "3ef1243cfebc5a6d45e8395c505349a1b3cfd5d97ad48ed4dcc68d3b0240e296"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "1-18755-A-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "7fc23f0179e6ab9f9cd851e49c305e773ab5bbc944490b6b67eed30346635598"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "1-18755-B-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "3fadff6b71d7a5d8f96cd098218f55265fb07b9a618943e4a34d5e8b1ca7c6d9"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "1-18757-A-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "dac86a651f49fccc16b5b5de5dac68182ed572841ea5914da2afccc83ae83700"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "1-19501-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "d10dfa62d347aa2b72dc8c6e1c1d76125f59c37d08596f2b62e91e82502acb78"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "1-19898-A-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "02afa3102978b5fb16f9c6237d90231abb74318873309600f01caf4776746944"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "1-19898-B-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "cab4735712a7727e16cc1946308f80034c926c59ed467dccf539f39bebe8d61d"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "1-19898-C-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "04f11bf73d8b4df3c64b523a334f42f44053045478810093bf028fb02a82448e"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "1-29532-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "f7161457776ff69adbb903e870a3ecf532228a033de6896f25af2f4ce77c5f68"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "1-31836-A-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "2807d582aaeaf50414cb7e1e4f0ea2cbfd80727c7a08727eb2b68ed6db30f758"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "1-31836-B-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "d59a86d8a55ceaf65673df4ca0997503ee5f795c3bdb0fcb4b075ec653fa5f82"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "1-34495-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "3641b914303dca50d01c2ab5aceaaf918ce977028f4ee752c22beb64d09eeec3"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "1-34497-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "fcb9f579a65a189a2b0e35a38c6711eaad931aa208c8c43de0bf3ba15cf8380f"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "1-38559-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "bda988c22f4b928012abe6d4231b4244700dc615b6d43f439476cda3d7f8a5d8"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "1-38560-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "d6b1c659ed64ba12036d8834d0af88200849669dd5a16527e583d8c7f8c86106"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "1-46040-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "065fe905f87b0a21efaebb6cd88ecee9fe407eb72bad3b43c52d2e099d262d72"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "1-46938-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "d97f844fa224ecf18068598b5ad83027f6185720071da8e331d14f2e103dd43d"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "1-46938-B-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "53e23b708d758fd482d159a1060aeb121ba478c7d97445facb853e4a99447ef1"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "1-47250-A-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "81312e10f426ae6312c29a97fd4227ef36bcae323c520ddff4b8e890d458772d"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "1-47250-B-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "25cd4254bfe2be5d1d4674161a8dbc16635fd658cdd1b7bac80510099911f3c5"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "1-47709-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "179c0a007da435841be8bca63bb0aa44fefc1af1b9dbb2a413f9c0acff805fea"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "1-47714-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "cfcba34eb24f53b5be2c5a824c664dc376890631490c29a46655abb43b19ae8b"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "1-51035-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "d8b851e1a4210e2a8ef92ce603b4dabe12743a51318a59d3b1d393e856de12b0"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "1-51036-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "77aee0377d909fb77cd085ef1a1828c8aec3da8306e8ca7cf8c17f5c77ae3111"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "1-51037-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "3609c5ef4959aab64c320e757d5d7d6aab49ab027ba9cf955de00874d16e8b23"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "1-54918-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "86ee46f8d022bc8083828f9aacfbcd21602a35002e59740385341268a8df0ddc"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "1-54918-B-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "86620fddba2ad91ec91181fa049a4e54ab02b667d426f7b4865ae53a3d7f0e45"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "1-57316-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "2df85254c1ba9c2bcb8517c8d2b36caeaf60ab6197e2e3b7285680720ecd638c"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "1-57318-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "0e02985a93837d58cfaaf3da12e49bb0438bcd007afc22b46a8bb05002bcb849"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "1-59102-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "e316ba0e0a2e1eafa204909392c0834ee679355e1eb4c583e40624905dd22493"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "1-64398-A-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "0bb8b8988b6d398e67e0f896d5acbf28adf1d4bec9d00cb45fb00d430389ad95"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "1-64398-B-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "fc460220cde3dc9a080da0c1742d38755a25870463bc34d66aec65eb16050fb5"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "1-65483-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "66bea025f6a3fef1d9e92b74bc307cadd090d741420823d727d3eb6b333225e1"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "1-69760-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "60280269ee55438b8c30486db5711cb52d566555aac4abf169ae8cd0d875ec77"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "1-73585-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "167d606a6707a59115243e50b344c5cf97f5865f3ec70585feb7480e15b20dbd"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "1-7456-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "e0d183004905b786e6e5e48aa9b6e0aa7630b4b4dfbaeae5da900c041b5e7408"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "1-75189-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "626f938e5e5ef9fc37f3cc326a3286fb6ad1c8128336dfa02cbf9342eea53b4d"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "1-7973-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "889f613a74d03a8c299193ca8f37c4468a5b88229932ab2ba3fa0a725d8aabb9"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "1-80785-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "c150869a185f1a5d95c0593e2ff248b78219eb9831aeff2dc31d7a241bc18238"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "1-80840-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "9cfbec9acd3a7deee1f7cc758a562911ec357291c633b487880403d3b326d050"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "1-80841-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "dea6239d0ea4995f0f6103bc060541b70a5b514523d5a68187363ff16ea385d9"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "1-9841-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "42d997027d8227c21fdf7edf24fcee019d6450bfb3343dbfffb5d3210a24c0ff"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "2-104952-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "d3f15c7eaac8332a48fb0aeb921d1b50ae8eba558928eaa4f7c30639018854df"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "2-104952-B-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "88d27648c6a78a46cebaba763af5e09dc491296dd49a0a928b1104c1cda1c735"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "2-106019-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "8728828af8b276092646dd7d734502d6dae960aa2f4dc4a585e001645e03d41e"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "2-108760-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "c8b166433114f83cb401192a7f485e501698c9ebc091bf8c4c21a17b9b3040fc"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "2-108760-B-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "717fd2c117208dde97da875c237918141c66c7a4b92818fd7d236c9fb3fc0783"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "2-108761-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "e8ae4ed6faea0630e7c7f555a73c9dda5e67e37f108b26f8e15d4275dfd53d0c"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "2-109371-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "0cf39cf3983eaedfffa3ba3a2a70a4a55146845029f2888fdc66d4c070809c37"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "2-109371-B-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "be0ea8a1ff1748c5c5a4bbff92e03ddb2a67bf4b7f07679047468490d08f8bdc"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "2-109371-C-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "0f4cdd69ef229b244563c681b4b3fde04840941c9304dea0946b919c060752ef"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "2-109371-D-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "c40dcc1e5ee9ab4c3663f0022d9443d2623a0c205924f3e508ee710deb4f0d98"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "2-109374-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "a4aaa0c3473b7db30a3738ad432299d2360d2236bb5816c9c5cf1f0fa855f52d"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "2-110613-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "2d52254a00d857f7ac022fa4ab0bcb6cd3cd082d631876c5456994c1e465e9a3"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "2-122616-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "3007fb5df39d042addc2a73a2ddd16d246d2cda64fb7b95f9e9134d248cb7818"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "2-125821-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "2befdc649b281a3a185b10240e83b70210bc262bf8cb2b0edcb443871a5f7077"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "2-125875-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "4c4360eca2d961048bde5fa984ca772b6ac2d2a7e9a7f8ff5c81cc9df6f6b839"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "2-160128-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "e5b29a67400bf3ad91670d13969771c71b17d33ceb5c73b3325384b1d2b0d55a"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "2-205966-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "ddd9c3577d08f999d3f1d8bc487d8a31570dc8380d150cabf50ad74dbca691a2"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "2-32515-A-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "229efc7a3fb6c6cb96dde4ef6c8f9f0472638835249801563d88d68d34885654"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "2-32515-B-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "076124f0a17498055ab1fa51af998dd8e24a96e791e32da1224c69bfab030e95"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "2-32515-C-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "c5755ad48ae74830a7d2d4eb78d844bf931ac4ad7066be27485a9ced1d6daa58"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "2-32515-D-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "f2278cc95bb14afefc5e901618f4fa6d2c3160a9797262b158e71c09d13c11ca"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "2-32834-A-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "f2dfbb926b4c3d69d75ed6dbb9a8a2db93be15cd7fe51ffd3b037ff66f95d723"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "2-50667-A-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "b099e90db935a98b053d2a13db180ed783d35c89d600c07fa4f3aa8261cbf1ef"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "2-50667-B-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "c8d73fbda3f8b2ed27df38e09ced22fe2d59c46160a92ba985c37d9fdcb6f474"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "2-50668-A-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "b3b5b151092231382feea724dc38188638814a7824592c7d80967d1bad59669f"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "2-50668-B-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "11a783b1f9a74db022ac654722d21aef2e374cbf6b68ecb8fa20c576662edefc"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "2-52085-A-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "5c7f5327e8ae6192b335597171cb6a9157cc5f282ff72c89dfa64dfe4d0a7628"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "2-52085-B-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "9f3adbf5dffeffba4bdcd5991a9acccc9f22e411f553270b94b25ff10fbc44b3"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "2-52789-A-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "2bbc51a820bb26ea757e9bf85d922b0ecc2b6ebe5d91bb1160534fc476429b07"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "2-68391-A-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "fd9981a2adcd14a9b297e1bae44b268cfbbb9586a57219e1297c3fc470ec525b"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "2-68391-B-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "7c098d4477e3ac8cbf8a66d4ff144ef3706526c159eb54ede68f6b39257db425"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "2-72547-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "81ef03338b4b86b20bc0e8251d32aec24f2c5ab0d04d90a27c621bf263c8f33d"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "2-72547-B-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "a0d7dc0e4d408b47be30fc0da4ff4b1f88fd917dcd978dbb48489e5a730a1c5a"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "2-72547-C-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "0b2fa30fd7c1a50c7b02f1865d6417d786d4fea910a14a65de7770a9be2aa57e"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "2-72547-D-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "49a79fa3b76bdf17e00b0da2f43289b25f0345e989994d15d78bcd8501cda4e1"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "2-77945-A-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "cf77f72a73605adbcea2a0d61bdd666b4335e190edf722b8f67a216392ebd224"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "2-77945-B-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "7a7c9cb12b77609346548ae861044137910b0e1dddc8da116fdc258fff13cd6c"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "2-80844-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "c782c333b6535d2bdefce90246df3f6890bfb2d241eaf8e3e9278b774abe5397"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "2-81970-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "424e1adafdcaa01fc5cb9afec55f7f0fa92c73236e113f4919cbc63d58aa2930"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "2-81970-B-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "62ea1a423fe75dae705567ae43b3174e1c92ff4b6fc705285437d7c86beb784b"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "2-81970-C-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "ea94a99a5e6e90e78df9796ffc66b056f9f0b1897e482ac91edcb598296ef922"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "2-82077-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "916f2e34ad242ef01de0a1ad323cde7afd32663578774758e869a0f54c292395"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "2-83270-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "d926cf001495e9b27a2b2ad4c861bc19612d70d5f3c1f8a0ed8670742d725dc5"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "2-85139-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "cdf2a5251de71ffc19f3f616eb96a78f27feb02122d0c760b38a0f92d11cda93"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "2-96033-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "ecebe6fdc3440b0b4849b67dbbf5e31af47952cb6e2248d636671897735a79f7"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "2-99955-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "f2e4ede4565714bebf6ce9e575bda1ae4490683e73fbd131121c3fda269d5aec"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "2-99955-B-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "07eb4085a6c48a4c8c8e8b52d0f12ba242ce7c40e5aac030ba2f38b9f3a3f7de"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "2-99955-C-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "36efed273884d26ecb9653d76c71c05e8024a3d2689fe7460e0c6aa7fe87dd3c"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "3-102908-A-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "6ab7175db115e478c82e0981bead1bbd4e5766e1527aef8d1d61c1ba674dd5cc"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "3-104761-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "a035a81227152c0b54fb9d63bfdce5f00a0ff2a967c239fbdb15c80d73441e07"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "3-104761-B-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "b13051656d00b823f59a0678fcd133880f6f7858de77c254066188f01190f94d"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "3-105235-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "188bf6625b13c616fd825a2977d0bcd7a051aceea71c1a84dd1379b8ea261175"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "3-105236-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "dad8e9e5161d0044d5a3bf1251ae795bb4903718645b979003128fbb75ecb557"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "3-110913-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "1d807fd9a43b9493102f43e59e1b231f4698da8164c5f634ec0acf0d4eb4b968"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "3-110913-B-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "7b1d051e87b0f5f5b3bea09438c5ecddc6cd4ea63af8eb475dca7620a4542b3c"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "3-110913-C-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "8d6e7220816ccd1f08e15474445806217412c1683d12ce2eb21cb57a16444602"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "3-110913-D-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "9bacabbba20e42035df9ab4c25f962b9b990c89b9c4812cd2d7f082b43c9a59a"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "3-117504-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "e8870d76a3bb29b43606231859c1b75ffc6dfaded319944028d122993470669e"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "3-117504-B-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "c57afdb76acf9b99fa15282bca63f411c280a158e905c2619488aabbf53ef04e"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "3-118656-A-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "c8b03e975750a6c264f839e6adc68a5450a5d44d4db808b443522d918fe3185f"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "3-118657-A-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "e3ea73b1d6c8390853acf5e390eae7d90b314d749c03cdab3a4560d924687aba"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "3-118657-B-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "a1f94069bc51bb5ef19075a4a746610d98f9e05405750fa30d9818832286c07f"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "3-118658-A-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "55f4073b9095db0ad4d20230badbb7decc9549e5f080df29717d7d379648405e"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "3-118658-B-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "f26428971e55d517dbca42ad5b5678fd0fce166931f3e1c581121a93b346cf61"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "3-118972-A-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "c98d58cf863f4b16e9c9416f4a3b253f69eed3f4fc3b0ce22ae3f7f2dedf43d2"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "3-118972-B-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "354e5e850c5a474d4e822af1ed35ce304780ee4a9494f3d5edfee7a9fe859cfe"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "3-129338-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "2b2bd8a6bca8ba75fc635a6028e4e906c028f59f818de1bf929aa6eb710b0376"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "3-129678-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "f6ae5649cfa7ef7276fbe0d04694edf9524b425213fe06a446648e5dbf2912b9"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "3-134699-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "1801639106154163503cde2fb8544efc6ab5d4e95a09f5b780efb7f44a017fbf"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "3-134699-B-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "4836977a0362e609b42dcc47811190268da98d573cecc7a8a4270db979ecea54"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "3-134699-C-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "3c313aab15b8bf3a3ca3dccfc0bb81281f4cb440231f8ce8cc90c141033a64e5"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "3-134802-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "1dd6708b6f727f3b361367dcad1e50f69b912921699e81de153ec349ba24f5b0"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "3-136608-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "0fb13968566e14200c01ac1aa3f0f878f8e11ba806fb4d5e2b19d34eb4844cc8"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "3-146033-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "e667c05eb2138c3ab9423157979c3e1ec0f9b8b5332d0e214299c7604e16238d"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "3-155577-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "962fc83526ff70ac2392023ad032ae0f2f898d609775b438f22a4e3b639cbe7d"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "3-155578-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "3203e75865f750f362b9c0b8d8265b4a4332631d8b2d48b5d7e5324f79456fdf"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "3-155579-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "001ac631fb996c35e511a732e758e82c123e5a353a547acb05f81e7223c1540e"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "3-155583-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "72ba6bac187597092a075357be3de44afb1a27761fb6a1e4cbfa088e2e268f2a"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "3-155584-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "f806bf97ee343fdec1eb56fa9347e3ea9a48143282f4b2f8753beb2717ad69ae"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "3-155766-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "2095c94cb12f8deed814578138c71802c4c090106149aeee536cf2768a70b9c5"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "3-156581-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "84dcba1ac7493f9b72a7507d92a81b5e8ef680f7f685ba2b7652b0286cefb496"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "3-156581-B-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "4b12f5ad0034beaac805ebeab9f1fe24e5ca94283deddadf18559481c19b638f"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "3-162786-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "b8eb49bd608bd3f525c021689601857a51c1a94f99f75c2e9854e52ff9885c56"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "3-163607-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "84a809683296237fe88f185b856ac8f8bc100f5b6c8450af64cb5fb0066b2940"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "3-163607-B-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "8ab927913468338f081b484410b18ba1f8a82eb438a67234747952a569f89163"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "3-165856-A-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "4382daa9057a7ccd87814f783f8cc72260a243e989cab1680977711cc2117d6b"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "3-181132-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "e454897f74f9c366242072e46a8ab4ed788419e0ff0443920bd58c46d9f8d410"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "3-246513-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "ea4351647ba7f248a404e583e525a83b86118c7e7c5f4544f8b1315e84ff7557"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "3-246513-B-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "e0adc1831f31a13f692e123ea4024cbcab64b2191c21ac632700e139206fc351"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "3-70962-A-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "678df375c2e35eebad0f251d1ce6240139a93c87c0ec5ca6c4937b7032477145"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "3-70962-B-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "f102aec2b3c44ae526519dc8f52124be0e7c9a00d5ab5240b0e67744db3f05c4"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "3-70962-C-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "bcb3b0fe85defbcf9ba6e2d59f7fe74d558195ab1c2bb498b819087fb683fcfb"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "3-71964-A-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "7b33225d63d55c2d0a186c4d8ba3b340be281a5be8787165a85bb03c694a1c98"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "3-71964-B-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "4adfb45778a391fbb5e732ec4f816d1fd6c709d81d0a8352e625862981f08507"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "3-71964-C-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "aab6176d922cc933204cd8798d6bee77c35266e70e9c555d3f98232752dff6a2"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "3-83527-A-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "132e40f789fa26bd861af24281ca956470506b1bcd03cb4bea94deb16cffbf71"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "4-130584-A-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "e532de799975d8f91e61e7cd5f0bf22138ccd49b43f6973f0d17ac3c1c207a4c"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "4-130891-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "12c07996c260c95c96cd9125780c40c39af0c46cb4b4e49fa67c7a2625b2ea98"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "4-133895-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "e1d8ea898754bb96ef68854e8f37452019e3fad05a36fe349c4042eec4d25824"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "4-143118-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "60f56e656e795a8916258b85a5485fff61199f99a3c9f1dde9eaedaebd4d2f61"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "4-143118-B-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "d49b3d79ede70b70d0e01015088a8acadc6c4410973dd133736c4684a326bb0f"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "4-144083-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "a0b0bbb04a05542784cc031b2f806605d47f469c49576d8b903cebf9cc58f4b7"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "4-144083-B-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "6295c5592ebaa83de1109be26a2473912d15565d5594abb24784b89cb17d29ae"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "4-144083-C-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "942008e68f61223b0888964844bed818bd22288cc0fbb993720d6cb641b08f3d"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "4-144085-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "b757e037f324d9c0986290237792ae24d2df71988e9c4f972d1252c9de8ac088"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "4-149294-A-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "6f17cda330dc854816ff6fa810a4535882077f1db34f7da8f6a046661164b958"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "4-149294-B-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "93988074f02db3b15f57181ee8bf2707a2151190dd7b674d110bd88e32a57506"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "4-154793-A-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "70848cc5cfe7f2c5f3ef1266f47901c50463a4887ff6ffa8910cba9b22c89d4f"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "4-157611-A-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "9a71c693e78177287023ad26d3192535104f8a5fa45290150a3f4db647ae5226"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "4-157611-B-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "e2c2b22cd1b32e80cb5bd0cb5d4e5e3f593fddb609b32ce13e92ee1be0409a7d"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "4-159609-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "186ec9ba8f6288e2b37a3642287a7b2f06add4357adb91ad84b8c1495aa9cd42"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "4-159609-B-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "0f00302ed01916e1a1c0ed885aae5c96fc4dac3a65cc31a920b3292de016e13f"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "4-163606-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "92246658b7d47b7628efc35da952e4b1ef47322c809542e221037408b69d7de2"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "4-163608-B-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "696f32e8d0e62b5cb5bf388f6045b720bb81f93c887e3b15991b01aeb293b732"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "4-163609-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "c2d27e6f92ed5a3e0175d30c0fc9f45cbd746c5a1ff4b4e4b0c2828f0a6e7d53"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "4-163609-B-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "668cc23d97b4c9cc94053bff6b6d03797058e4d941a731d02c5df2cf6633ee51"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "4-163697-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "8b02f23af70a2035464c83a3da2c7d1424cd0af658f4c8c20c40e8abdc1a0444"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "4-165823-A-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "59bb8e0b1a116bbea7ea48ff6898f37a22a2e875437d480a8ae990fec37ab5ee"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "4-165823-B-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "b65207c334c37b5ce88da303197f15d1b2e21ee3002b6d644d06c9f9cd5c0a6e"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "4-169127-A-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "039a8b4ff220493783bc34bbf5f08126f28ea061a50f723f5f334437669484ee"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "4-169127-B-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "6417b5f63d03cd517df89d1bb598b9e991debfd43a64d3b168d76e75866d6a42"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "4-171823-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "28e90df696050c77041c2d97c0d7f495440afbe7ed34cf20b9b1969ab1524371"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "4-172143-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "e9ec71eea53a6052543935b88392f030d32a27534687482ef77adf54ce3ed43c"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "4-181362-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "7bd3244a6d3d997b4ff7d95206504deba716bd32eb6668c49a173e865ed2d683"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "4-182314-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "cfb0d81b963ed90ea0736b55a1854c89f39e87941a34954fa0c8f27dcf71fc5a"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "4-182314-B-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "ffdb86b98879c808982f5932177a6079803a94e82574e88327b3a1b89254d538"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "4-182795-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "c993100465e6db9482ce2da4e69420931bb2902cf5809162aec274411813bc6c"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "4-187769-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "03884ce6ca8ef10ced57c11be0066dc190a6349ab403c213b4c7276a254c461a"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "4-187769-B-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "4bdf0f2e55640ac80a67cde3d28b618dd8b9cc4ac46f044e11ddfad3caff4078"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "4-191246-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "18442565ed3bbf8c39da5b81b5edaedc103e00ad6cd3c373d26a6e15081c7a03"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "4-191246-B-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "9f7734cc5ddf8e56b218c4106107b8e4f3c6074f925ce2861b12caeff095327a"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "4-194246-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "6f1517ceb086279528d9876869ea5149a1cac7cec22554a0863c025e0c029c12"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "4-195707-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "abda8af0a90cb34def75f542a913e0facf441155340243441d4182199030d66f"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "4-195805-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "e5d8b0efbdc1b7c828b6abae7376e7cc87c0212af4efde6378a8ab41fa420ef0"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "4-202749-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "1b6dabb98399e6d18cb82c7db5f0a5923947d8f3da98c13e8368dda3178932ad"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "4-216211-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "96a892c31d259bd757423400e087c7d053884b42df7c0879a5bc09dfdee6ad55"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "4-223125-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "1eabad37d03dd47bba20a964479951887d38d96aa83bfca83626216eba8f8d39"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "4-223127-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "36f76b6e7b928388339f5c620c93999f8b80f1198fbbf8d2a9d032e380038413"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "4-99193-A-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "c59255545e4251d833ca7ad5b4a9987110e156663a51d14e253db5f7d8ce2945"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "4-99193-B-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "f8554c373bb4ec21a2e117c5e47bb692297683caf401db6938f8120eee8bfd38"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "4-99644-A-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "d2babf16b5f6d7b310b19398326b60f6abb13810cf1a137253fe02af7647819e"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "4-99644-B-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "ebae4574f6260013b4024ca8a4b57337ac562d66e07a73cfa7509cc28d969ed4"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "4-99644-C-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "7f1494d57c156afb7f644d7674ce0c8bfba643ae17214c1d6bc443167add56a2"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "4-99644-D-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "ec538641512c83a1b562d7f22b134bf2a3553dca61a242d4a163b02a6a32bf75"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "5-117773-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "d14a14512b9d39a4be54b218136bf188336f7798a193fd20623e4fdafa5fdf18"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "5-156026-A-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "ef687ba63c3d6250946a224bdb96ca9b6728b579daa64a7236e4c2acee33606a"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "5-156026-B-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "19ac15e1587e6e0d89f37ca13a5b8b4c2522eac5f6887d0b4b67f4d35073ecc6"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "5-156026-C-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "615275b1ece880c24a3d17356b99b03ccf4c248832fe26e4cdcb337690066a81"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "5-156026-D-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "57d87e239c2cdef0e5afad43f4786c8b3d73aaa6caf804a3daafbec80d209900"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "5-157204-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "5334617e6eb886d8dbdb1c19dedeb9a0e033e2d9448ce9ad409061db6f9324f6"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "5-157204-B-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "9dc13dfb211d876dc322e31bc71d24166e1ea59d900d62be80a1d719c923d2bc"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "5-170338-A-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "db6e46d327b67ba496c758b58e18dcbef90ab832ed84596985ff84ad5bce8538"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "5-170338-B-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "cd356d4499a30a75b976d45500bff121d0c13d68fcb3864a76d44731ac87f9aa"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "5-171653-A-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "2fcbbc97d0ac376a8219ec709ee6d90ccfca3df7bcbd2abbbf9a60491cddbb5d"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "5-179496-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "d84895990f4738c2d28c2045add1c49310081994b9bf344861537b1b76c6c482"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "5-179496-B-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "7113369bc05fc966b3ddd86cf3d969ee6697400123282022515c8f9da8d23c2f"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "5-185579-A-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "aa779381c3411b478b46c61cc46fd0ac9bac4ecfd4f37c0ac412cec1421a8578"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "5-185579-B-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "853d5ae507977df944cba7775cbdd2a3e262b3f7e99729d5ec465c51dc692a6d"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "5-187201-A-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "485754fb5c7c48355d6d9cbccef00c8d501b42dd9ed658c6cebe634115a45fde"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "5-187201-B-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "ce055f61c4e3024443227caf701f1ea35bed562e22fe14fc8a651280dac189be"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "5-189795-A-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "06dcafb84db34a40decacfbc0b40636ca950220719e8546d6a76b68e43129a20"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "5-194932-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "1068b661c90b194c6bb0ad42c77ea65620ec5205e4e256f7fee89717d7a11fdf"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "5-195517-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "5bc17ca82342b70769a0129336aa6517a668a577b551cb4d9a705315f2b3410c"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "5-195518-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "d826d4ceb38127fac8fdead53b89274ffe716088acfedd2c5168913ad4564e14"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "5-197446-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "b85e8363386040b021485efcad2a09d7c834e9cb78b221dc6286f86fda00e039"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "5-198278-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "d4a264ca24fea9c78c77c765d009e03246df8cf04fb151abcee9f4a287a65360"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "5-198278-B-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "1ea680dfdae9bac4b5095746a10ad93c221146e0dfb2c4f11d9bf509233499b4"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "5-198278-C-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "d75eefbb63a7b74af1c3dcc249aaba69c98ef585545c8295dd9d0c3e2283893c"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "5-204352-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "e85d36d6ed59b76c774a019ee2e74ca234aedd1cd70d7566ec20d74855d6b3ce"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "5-204352-B-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "f607788b6fd6b4ff90f3e8e916d13906ceb60620e7b6c767430a9c1f67f94b80"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "5-210540-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "fca4028d5f7dfe996871952a6088867a594ff1eecc57b4dd0233a1f72ed4683e"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "5-215172-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "a38957323d3af6e7f935e53ea83ff91990962021ec2ca2dec49faa8cefd6d862"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "5-215179-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "881d746721acc929af3e21f344905f30575ec8f2654df20a1e11b467f04e4736"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "5-216213-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "5d8584afaf6533abf7ac493bee11f4f5170a259c969fedd31f219944fe0be725"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "5-216214-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "0a4ebd720ec3dbafc3a60981556a14360d9880e3291f1df119f0e84f6dd86ac6"
+    },
+    {
+      "category": "crickets",
+      "esc50_target": 13,
+      "filename": "5-216216-A-13.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "9bc5ca9badccd0611cd96e30d59f5d0224f454cfad55e7dac4defd8a2b12197b"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "5-216370-A-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "429453805c51b7fe554997e8ec90680545ba375eea3d18869ed141be72872dd8"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "5-216370-B-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "0c641aafddc7f25a6f10e5f2a34578bef750c3ffc09f9caa195060162703fc6d"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "5-217186-A-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "428743d3755e48d1c6f3179f832f47014c37432fe8ac1bec6c0fe30c73f5123e"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "5-217186-B-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "78291a06ca8c2a2c78fbade2a673c24cb96c354cb74f6699b5d30040254da3d1"
+    },
+    {
+      "category": "wind",
+      "esc50_target": 16,
+      "filename": "5-217186-C-16.wav",
+      "label": 1,
+      "label_name": "wind",
+      "sha256": "f1557bde7e98c6e4f433a4236e1bbb9a2d9486d4875783b137d904d50f9f6097"
+    },
+    {
+      "category": "chainsaw",
+      "esc50_target": 41,
+      "filename": "5-222524-A-41.wav",
+      "label": 3,
+      "label_name": "chainsaw",
+      "sha256": "0161df57f3e454993357e6a2082d895a9ec7dbeb83e730e63bde030b46837136"
+    },
+    {
+      "category": "insects",
+      "esc50_target": 7,
+      "filename": "5-233787-A-7.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "a7bc8f99317c21defbadea43555db6a77cbfaad9a673c73002364de8d74f362a"
+    },
+    {
+      "category": "frog",
+      "esc50_target": 4,
+      "filename": "5-237499-A-4.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "208b8bb2a5ff0aa2bf3209257b2d01ded9b8a83d051cce5521f3c1e439d70025"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "5-242490-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "101ad1a679e4de3a874bc9402d535cfdf56fa79152fac06d2913a98616eb217b"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "5-242491-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "009963196c07e3a3e3c7297031684cf22e4ecf1012ee28bebdd37db6beaeabec"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "5-243448-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "d82ce9096453626f99fb221af788ef1d1404759a5960761a06eef8ff64defe0d"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "5-243449-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "f30a2a9b60d7a75762d8f1aa2b8b070f26767410cfc7fc0a6ed5e19d0e3373c9"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "5-243450-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "2f72112be0971db0f1e92ac08ad22129a7d245cae56cc18a09ba732c3b368028"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "5-243459-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "0615734b8ef3283156091db7c8736e1d4b055646a7d26c2b3b3f75de7e94923e"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "5-243459-B-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "878ddf2e264e4a665bff818337b57282ed1e831c54b4103e9ed89a5b187c7a5a"
+    },
+    {
+      "category": "chirping_birds",
+      "esc50_target": 14,
+      "filename": "5-257839-A-14.wav",
+      "label": 4,
+      "label_name": "fauna",
+      "sha256": "db73c55a7bd0d77247e7f865549edaeb0032a47c6ecefedf0896cae352218b3c"
+    }
+  ],
+  "esc50_license": "CC BY-NC 3.0 \u2014 ESC-50, K. J. Piczak (github.com/karolpiczak/ESC-50)",
+  "schema": "silken_ml.baseline_corpus/1",
+  "source": "ESC-50 @ github.com/karolpiczak/ESC-50 (master)",
+  "synthetic": {
+    "cavitation": {
+      "generator": "gen_cavitation",
+      "label": 2,
+      "n_clips": 40,
+      "note": "physics-motivated placeholder; not field-valid (docs/03_03 \u00a74.2)",
+      "seed": 20260814,
+      "version": "1.0.0"
+    },
+    "silence": {
+      "generator": "gen_silence",
+      "label": 0,
+      "n_clips": 40,
+      "seed": 20260713,
+      "version": "1.0.0"
+    }
+  }
+}

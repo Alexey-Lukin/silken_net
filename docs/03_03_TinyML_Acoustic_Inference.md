@@ -452,6 +452,14 @@ uint8_t ml_event_id = 0;  // Результат: 0-Тиша, 1-Вітер, 2-К�
 | **3** | Пилка/Вандалізм (Chainsaw/Tamper) | Бензопила або механічне пошкодження | 2–8 kHz, циклічний |
 | **4** *(planned, Mongabay pivot)* | Fauna Activity (Soundscape) | «Багатошаровий» хор комах/птахів/амфібій з характерними піками на світанку та в сутінках — маркер реального функціонування екосистеми | 0.5–12 kHz, ритмічний (циркадний) |
 
+> **⚖️ Field-валідність landed-baseline (`FW.4`) per-class — НЕ плутати з цілісністю пайплайну:**
+> wind/chainsaw — **реальні** (ESC-50); fauna — **interim** ESC-50-проксі (реальне = Cherkasy
+> Soundscape Library, post-TRL 7); **silence + cavitation — синтетичні placeholder'и** —
+> cavitation (ключовий фізіологічний клас) натреновано лише на фізично-вмотивованому
+> генераторі, **поки НЕ field-валідовано**. Тому baseline-точність (число → [`00_07 §03`](00_07_Action_Plan_Tracker)
+> + run-provenance) — метрика **цілісності пайплайну** на змішаному корпусі, **НЕ** польова
+> точність детекції. Джерела/генератори per-class — `tools/ml/docs/baseline_model_program.md` §2.1.
+
 > **🌿 Mongabay Pivot — 5-й клас «Fauna Activity»:** Стаття Delgado et al. (Nicoya Peninsula, Costa Rica, 119 ділянок, 16 000 годин аудіо; короткий огляд: Mongabay, травень 2026) науково підтвердила, що **акустичний фон фауни** є надійним маркером екологічного здоров'я лісу — захищені та регенеровані під PES ліси демонструють виражені піки активності на світанку/в сутінках, тоді як пасовища та монокультурні плантації — ні. Для Silken Net це означає **стратегічний pivot від карбонового D-MRV до повноцінного D-MRV біорізноманіття**: TinyML починає не лише ловити вандалізм/кавітацію, а й безперервно доводити, що Carbon Credit прив'язаний до **живої екосистеми**, а не до мертвої посадки. Класи 0–3 залишаються (security + physiology); клас 4 додається як **окрема метрика "Fauna Activity Index"** (інтенсивність 0–63) у тому ж байті телеметрії або поряд з `acoustic_events`. Детальний план у §10 нижче.
 
 ### 4.3 Tensor Arena (SRAM Budget) — Оцінка
@@ -473,15 +481,14 @@ fauna (§10): Input(mean‖std log-mel) → … → Dense(5) → Softmax
 ```
 > Path A (1D time-domain `Input(512)→Conv1D…→Dense(4)`) — **superseded** рішенням §3.2; лишається лише як 4-class raw-MVP fallback, якщо ML-партнер недоступний.
 
-### 4.4 Сигнатура функції інференсу (очікувана)
+### 4.4 Сигнатура функції інференсу
 
 ```c
-// Оголошення в silken_net_audio_model.h (недоступний)
-// Очікувана сигнатура:
-uint8_t Run_Inference(float* input_buffer, float* confidence);
+// Оголошення в silken_net_audio_model.h (✅ landed FW.4):
+uint8_t Run_Inference(const float* buffer, float* confidence);
 
 // Виклик у main.c (Phase 1.5, ✅ розкоментований — FW.4):
-// ml_event_id = Run_Inference(out_mel, &ml_confidence);  // Path B: 40 log-mel від Compute_LogMel
+// ml_event_id = Run_Inference(logmel_features, &ml_confidence);  // Path B: 40 log-mel від Compute_LogMel
 ```
 
 | Параметр | Тип | Зміст |
@@ -520,8 +527,10 @@ HAL_ADC_Stop_DMA() + HAL_TIM_Base_Stop()      ← Зупинка конвеєр�
         ↓
 for i in [0..511]: audio_buffer[i] = raw[i] / 4095.0f   ← Нормалізація
         ↓
+Compute_LogMel(audio_buffer, logmel_features)   ← 512 семплів → 40 log-mel (Path B, §3.4)
+        ↓
 [✅ FW.4: розкоментовано]
-ml_event_id = Run_Inference(audio_buffer, &ml_confidence) ← Інференс
+ml_event_id = Run_Inference(logmel_features, &ml_confidence) ← Інференс (40 log-mel)
         ↓
 if (ml_confidence > 0.80)                     ← Поріг 80%
     │
@@ -550,6 +559,13 @@ acoustic_events = 0; // Скидаємо лічильник після паку�
 | **Кавітація** | **2** | **> 0.80** | **`acoustic_events++`** | **`TelemetryLog#acoustic_events > 0`** |
 | Пилка | 3 | ≤ 0.80 | Нічого | `lora_payload[7] == 0` |
 | **Пилка/Вандалізм** | **3** | **> 0.80** | **`Trigger_Emergency_LoRa_TX()`** | **`EwsAlert` тривога** |
+
+> **🎯 Калібрування `ml_confidence` (пороги FW.18) — застереження landed-baseline:** на пристрої
+> `ml_confidence` = max-prob softmax над **INT8-dequant** логітами (`SNAM_OUT_SCALE`), а ECE / conf-
+> at-precision у тренуванні рахувалися на **float-softmax** keras-моделі — це РІЗНІ розподіли. Пороги
+> FW.18 (RTC `DR13`/`DR14`, runtime-tunable) тому калібровані не на deployed-softmax; з appearance
+> польових даних — перекалібрувати на INT8-dequant-розподілі (`silken_ml.export.int_reference_logits`).
+> Деталі — `tools/ml/docs/baseline_model_program.md` §2.1.
 
 ### 5.3 Emergency LoRa TX (Реакція на Бензопилу)
 
