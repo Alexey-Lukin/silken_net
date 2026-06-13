@@ -1222,28 +1222,30 @@ make -C firmware/test encryption  # AES encryption
 
 **CI:** Firmware тести інтегровані в GitHub Actions (`firmware_test` job у `.github/workflows/ci.yml`).
 
+> Методологія / гейт / тріаж покриття (cross-cutting) — канон [`04_06`](04_06_Testing_Guide_and_Coverage); тут — лише інвентар host-тестів цієї підсистеми (Soldier нижче, Queen — [`03_02 §11`](03_02_Queen_Gateway_Firmware)).
+
 ### Тести Queen
 
 Повна Queen host-test-matrix (вкл. FW.1 Flash-key / FW.20 / FW.20-S2 / FW.27-B) — канон [`03_02 §11`](03_02_Queen_Gateway_Firmware). Дублювати тут означало drift (ця копія відставала від дому).
 
 ### Тести Soldier
 
-| Модуль | Тести | Що покривається |
-|--------|-------|-----------------|
-| Payload Packing | 13 | Всі поля, signed temp, max/zero, pack-unpack roundtrip, reserved=0 |
-| DID Derivation | 5 | [FW.54 Вісь 2] golden-вектори g1-g4 (freeze-contract з `DidDerivation`-дзеркалом), avalanche, нуль-неможливість + детермінізм на LCG-sweep |
-| Mesh Dedup | 10 | 3-slot cache (FW.21), eviction, pingpong scenario, relay decisions (OK/echo/known/ttl_zero) |
-| OTA Assembly (Soldier) | 7 | Multi-chunk, duplicate ignore, buffer overflow, total mismatch, bitmap |
-| CRC32 | 7 | ISO 3309 known value (`0xCBF43926`), bit flip detection, OTA verify/corrupted |
-| Bio-Contract Byte | 8 | All statuses, clamping, full 256-combination roundtrip, `0xFF`=VM error |
-| Panic Payload | 6 | DID, acoustic=0xFF marker, TTL=5, zero fields; **[FW.29]** PANIC_FLAG_BIT встановлений у panic, відсутній у звичайному пакеті |
-| OnRxDone Boundary | 5 | Normal 16B, 255B accepted, 256B accepted, 257B rejected, 0B rejected |
-| Lorenz State Persistence (FW.6) | 9 | RTC DR16-DR19, magic marker, NaN/Inf guard, cold boot |
-| Acoustic Saturating Increment (FW.22) | 6 | Нуль, нормальний приріст, 254→255, 255 залишається 255, насичення, atomic snapshot |
-| RSSI Clamping | 7 | Нормальні, edge ±128, overflow proof |
-| EMA Filter (FW.21) | 10 | Cold start, smoothing (α=0.2), convergence, noise rejection, warmup flag, count saturation, zero inputs, overflow max, RTC save/load, cold boot |
-| ADC→mV (FW.50) | 10 | VDDA recovery, pin voltage, 2:1 divider, div-by-zero guards, raw-count≠mV proof (helper `common/adc_convert.h`) |
-| [решта] | ~12 | Lorenz state + mesh + misc |
+| Модуль | Що покривається |
+|--------|-----------------|
+| Payload Packing | Всі поля, signed temp, max/zero, pack-unpack roundtrip, reserved=0 |
+| DID Derivation | [FW.54 Вісь 2] golden-вектори g1-g4 (freeze-contract з `DidDerivation`-дзеркалом), avalanche, нуль-неможливість + детермінізм на LCG-sweep |
+| Mesh Dedup | 3-slot cache (FW.21), eviction, pingpong scenario, relay decisions (OK/echo/known/ttl_zero) |
+| OTA Assembly (Soldier) | Multi-chunk, duplicate ignore, buffer overflow, total mismatch, bitmap |
+| CRC32 | ISO 3309 known value (`0xCBF43926`), bit flip detection, OTA verify/corrupted |
+| Bio-Contract Byte | All statuses, clamping, full 256-combination roundtrip, `0xFF`=VM error |
+| Panic Payload | DID, acoustic=0xFF marker, TTL=5, zero fields; **[FW.29]** PANIC_FLAG_BIT встановлений у panic, відсутній у звичайному пакеті |
+| OnRxDone Boundary | Normal 16B, 255B accepted, 256B accepted, 257B rejected, 0B rejected |
+| Lorenz State Persistence (FW.6) | RTC DR16-DR19, magic marker, NaN/Inf guard, cold boot |
+| Acoustic Saturating Increment (FW.22) | Нуль, нормальний приріст, 254→255, 255 залишається 255, насичення, atomic snapshot |
+| RSSI Clamping | Нормальні, edge ±128, overflow proof |
+| EMA Filter (FW.21) | Cold start, smoothing (α=0.2), convergence, noise rejection, warmup flag, count saturation, zero inputs, overflow max, RTC save/load, cold boot |
+| ADC→mV (FW.50) | VDDA recovery, pin voltage, 2:1 divider, div-by-zero guards, raw-count≠mV proof (helper `common/adc_convert.h`) |
+| [решта] | Lorenz state + mesh + misc |
 
 > **Що НЕ покривається тестами:** STOP2 wakeup sequence, IWDG timeout, PVD voltage threshold, реальний Radio.Send/Rx, SIM7070G AT-команди. Ці компоненти потребують Hardware-in-the-Loop (HIL) тестування.
 

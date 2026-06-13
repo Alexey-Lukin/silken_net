@@ -1123,7 +1123,7 @@ make -C firmware/test queen       # CIFO/OTA/beacon/key-loading suite
 make -C firmware/test at_engine   # [FW.3/FW.56] AT-двигун + CoAP PDU + розмова
 ```
 
-> Лічильники тестів тут не ведемо (drift) — істина = вивід `make`. Нижче —
+> Лічильники тестів тут не ведемо (drift) — істина = вивід `make`; методологія / гейт / тріаж — канон [`04_06`](04_06_Testing_Guide_and_Coverage). Нижче —
 > покриті області та їхні нюанси.
 
 | Модуль | Що покривається |
