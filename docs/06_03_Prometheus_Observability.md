@@ -111,7 +111,7 @@ AES-ключі, мнемоніки та бінарні payload автомати�
 ### 1.3 Інтеграція з Sidekiq (`sentry-sidekiq`)
 
 Gem `sentry-sidekiq` автоматично додає Sentry middleware до Sidekiq server middleware chain. Це означає:
-- Будь-який **необроблений виняток** у будь-якому з 31+ воркерів автоматично надсилається до Sentry.
+- Будь-який **необроблений виняток** у будь-якому воркері автоматично надсилається до Sentry.
 - Кожна Sidekiq-задача отримує власну транзакцію Sentry з метаданими: `queue`, `class`, `jid`, `args`.
 - Повторні спроби (retries) відстежуються як окремі події.
 
@@ -195,11 +195,11 @@ end
 
 | Metric Name | Ruby Constant | Labels | Де інкрементується | Бізнес-значення |
 |-------------|--------------|--------|-------------------|-----------------|
-| `silkennet_scc_minted_total` | `SilkenNet::Metrics::SCC_MINTED_TOTAL` | `token_type` (carbon_coin, forest_coin) | `BlockchainMintingService` (рядок 162–163) | Кожен успішний мінт SCC/SFC в Polygon mempool |
-| `silkennet_scc_slashed_total` | `SilkenNet::Metrics::SCC_SLASHED_TOTAL` | — | `BlockchainBurningService` (рядок 96–97) | Кумулятивна **сума спалених токенів** (increment `by: burn_amount`, не лічильник подій) |
-| `silkennet_rpc_errors_total` | `SilkenNet::Metrics::RPC_ERRORS_TOTAL` | `network`, `error_type` (timeout, connection) | `ApplicationWeb3Worker` (4 точки: рядки 76, 80, 84, 88) | Кожна RPC-помилка по всіх 12 блокчейн-мережах |
-| `silkennet_telemetry_processed_total` | `SilkenNet::Metrics::TELEMETRY_PROCESSED_TOTAL` | — | `TelemetryUnpackerService` (рядок 154) | Кожен успішно оброблений telemetry chunk |
-| `silkennet_telemetry_fraud_detected_total` | `SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL` | — | `TelemetryUnpackerService` (рядки 79, 87) | Відхилені пакети (sensor noise, unknown DID, tamper) |
+| `silkennet_scc_minted_total` | `SilkenNet::Metrics::SCC_MINTED_TOTAL` | `token_type` (carbon_coin, forest_coin) | `BlockchainMintingService` | Кожен успішний мінт SCC/SFC в Polygon mempool |
+| `silkennet_scc_slashed_total` | `SilkenNet::Metrics::SCC_SLASHED_TOTAL` | — | `BlockchainBurningService` | Кумулятивна **сума спалених токенів** (increment `by: burn_amount`, не лічильник подій) |
+| `silkennet_rpc_errors_total` | `SilkenNet::Metrics::RPC_ERRORS_TOTAL` | `network`, `error_type` (timeout, connection) | `ApplicationWeb3Worker` (4 точки) | Кожна RPC-помилка по всіх 12 блокчейн-мережах |
+| `silkennet_telemetry_processed_total` | `SilkenNet::Metrics::TELEMETRY_PROCESSED_TOTAL` | — | `TelemetryUnpackerService` | Кожен успішно оброблений telemetry chunk |
+| `silkennet_telemetry_fraud_detected_total` | `SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL` | — | `TelemetryUnpackerService` (2 точки) | Відхилені пакети (sensor noise, unknown DID, tamper) |
 | `silkennet_panic_replay_rejected_total` | `SilkenNet::Metrics::PANIC_REPLAY_REJECTED_TOTAL` | — | `TelemetryUnpackerService` (SEC.10 panic Frame Counter) | **[SEC.10]** Panic-пакети відкинуті як replay через Redis SETNX nonce. Сторожовий пес панічного каналу — кожен сплеск тут означає або legitimate retransmission (LoRa mesh duplicate) або replay-attack. Grafana alert при різкому стрибку → можливий attacker injection forged panic packets. |
 
 #### Gauges (поточне значення — оновлюються при кожному scrape)
@@ -228,16 +228,16 @@ end
 
 ### 2.4.1 RSpec покриття нових метрик (S2.4 — Виконано)
 
-Нові метрики покриті RSpec тестами:
+> Конвенції написання / coverage-гейт / тріаж — [`04_06`](04_06_Testing_Guide_and_Coverage) (Testing Guide). Нижче — per-subsystem інвентар тестів метрик (One-Home: біля підсистеми; example-counts навмисно не фіксуються — volatile).
 
-| Spec файл | Метрика | Кількість тестів | Що перевіряється |
-|-----------|---------|------------------|------------------|
-| `spec/initializers/prometheus_spec.rb` | Всі 5+1 нових | 22 | Реєстрація, інкрементування, доступність констант, label validation |
-| `spec/workers/burn_carbon_tokens_worker_spec.rb` | `SLASHING_EVENTS_TOTAL` | 3 | Інкремент по reason (tree_death / cluster_degradation), не інкрементується при breached |
-| `spec/workers/ota_transmission_worker_spec.rb` | `OTA_CHUNKS_SENT_TOTAL` | 3 | Інкремент при успішній передачі, не інкрементується при failure, послідовна передача |
-| `spec/workers/dclimate_verification_worker_spec.rb` | `EWS_ALERTS_TOTAL` | 4 | Інкремент при успішній верифікації, не інкрементується при falsey/verified/not found |
-| `spec/workers/chainlink_dispatch_worker_spec.rb` | `ORACLE_DISPATCH_DURATION` | 3 | Histogram observation, не observe при skip/not found |
-| `spec/workers/unpack_telemetry_worker_spec.rb` | `COAP_PACKETS_RECEIVED_TOTAL` | 4 | Статуси: success, unknown_device, decrypt_error; ізоляція між статусами |
+| Spec файл | Метрика | Що перевіряється |
+|-----------|---------|------------------|
+| `spec/initializers/prometheus_spec.rb` | нові метрики | Реєстрація, інкрементування, доступність констант, label validation |
+| `spec/workers/burn_carbon_tokens_worker_spec.rb` | `SLASHING_EVENTS_TOTAL` | Інкремент по reason (tree_death / cluster_degradation), не інкрементується при breached |
+| `spec/workers/ota_transmission_worker_spec.rb` | `OTA_CHUNKS_SENT_TOTAL` | Інкремент при успішній передачі, не інкрементується при failure, послідовна передача |
+| `spec/workers/dclimate_verification_worker_spec.rb` | `EWS_ALERTS_TOTAL` | Інкремент при успішній верифікації, не інкрементується при falsey/verified/not found |
+| `spec/workers/chainlink_dispatch_worker_spec.rb` | `ORACLE_DISPATCH_DURATION` | Histogram observation, не observe при skip/not found |
+| `spec/workers/unpack_telemetry_worker_spec.rb` | `COAP_PACKETS_RECEIVED_TOTAL` | Статуси: success, unknown_device, decrypt_error; ізоляція між статусами |
 
 ### 2.5 Додаткові метрики (S5.1 — Виконано)
 
