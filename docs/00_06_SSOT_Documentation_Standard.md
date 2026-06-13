@@ -88,6 +88,7 @@
 | Metabolic-DCI канал (FW.57): wire несе **raw** `delta_t` + raw temp; backend декодує GP та бере raw temp для Z (НЕ calibrated `temperature_c` — той physical/display); точний GP↔`delta_t` recompute відкладено до FW.2 | `03_01 §13.6` (firmware→backend impact дім). Формула `metabolic_health`/GP-bands → `03_04 §4.3`; service-чеки (`check_metabolic_divergence!`) → `04_02`. Інші реферять, не дублюють |
 | Firmware ARM build / toolchain pin / mruby build_config (FW.46) | `03_01 §12.4` (CMake + `firmware/cmake/arm-none-eabi.cmake` + `firmware/mruby/build_config.rb`; pinned submodules у `firmware/extern/`). Гейт — `ci.yml › firmware_arm_build` |
 | Vendor / dependency pin-policy (FW.47) | `03_01 §12.5` — repo-wide external-dep pinning: firmware-native `extern/<dep>`@tag · contracts npm+lock · Python conda (`in_silico` → committed `conda-lock.yml`, гейт `lock_sync`; `ml` deferred — parity-self-guards). Інші доки реферять, не дублюють рішення |
+| Solidity solc / pragma версія | `05_03` (Pragma-таблиця, «Dual Token System»). Код-SSOT = `contracts/foundry.toml` + кожен `*.sol` pragma; pin-policy → `03_01 §12.5`. Інші доки реферять, не дублюють (guard §3) |
 
 > Повний канон↔канон дубль-аудит — `00_07 DOC-T.2`.
 
@@ -131,6 +132,7 @@
 | **ref-graph audit** | _(on-demand, НЕ CI-gate)_ orphan/dead-end сторінки · in/out-degree skew · one-way (asymmetric) sibling-лінки · linked-`§X` валідація — власний ref-граф канону (GitNexus моделює код, не NN_NN-конвенцію). `#anchor`-резолюція звідси випущена у HARD-gate (рядок вище); граф лишає графовий вигляд, якого per-line гейти не дають | `bin/rails docs:graph` (`lib/docs_graph.rb`; spec `spec/lib/docs_graph_spec.rb`) |
 | **log-mel contract** (FW.25) | §3.4 значення == C-дзеркало `logmel_contract.h` == python `contract.py` через stamped `contract_hash`; committed `firmware/common/logmel_*.h` == canonical regen — ловить тиху правку будь-якої сторони (значення-as-bytes, не проза) | `check_firmware_tables.py` (ci.yml, stdlib) + `emit_c --check` (ml_smoke.yml) |
 | **mruby bytecode drift** (FW.46) | committed `firmware/common/lorenz_bytecode.h` мусить відповідати `bio_contract.rb`: light — sha256-stamp джерела в заголовку (stdlib, без mrbc); deep — mrbc-regen + diff (pinned mruby submodule) | `tools/firmware/check_bytecode.py` (ci.yml `firmware_test`) + `gen_bytecode.sh --check` (ci.yml `firmware_arm_build`) |
+| **solc/pragma version One-Home** | locked compiler-версія (`pragma solidity 0.8.X` / foundry `solc_version` / myth `--solv`) живе лише в owner `05_03` (Pragma-таблиця; код-SSOT = `contracts/foundry.toml` + `*.sol`); re-statement деінде дрейфує миттю при бампі solc — зловив 9 stale `0.8.28`-копій across 00_05/05_04, що пережили 0.8.35-бамп до sweep'у. **НЕ** table-skip (05_04-drift жив у table-cell). Exempt: 05_03 owner + 00_06 (цитує приклад) + 00_07 (tracker). Owner-only vocabulary, як `tokenomics_rate_drift` | `bin/rails docs:check_refs` (HARD 2026-06-13; `lib/docs_linter.rb`) |
 
 **Правило при зміні факту:** правити лише у home (§2) → рефи лишаються чинними; будь-який новий NN_NN-док/реф — `docs:check_refs` має лишатись зеленим перед merge.
 

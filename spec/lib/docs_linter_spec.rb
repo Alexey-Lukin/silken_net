@@ -296,6 +296,38 @@ RSpec.describe DocsLinter do
     end
   end
 
+  describe ".solc_pragma_version_drift" do
+    it "flags a solc version re-stated outside the 05_03 owner" do
+      hits = described_class.solc_pragma_version_drift("00_05_GitHub_Projects", "Slither: solc 0.8.35, fail-on high\n")
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("solc/pragma version")
+    end
+
+    it "flags a pragma literal even inside a table cell (the 05_04 drift)" do
+      row = "| `StateRootAnchor.sol` | ✅ Pragma locked `0.8.35` |\n"
+      expect(described_class.solc_pragma_version_drift("05_04_Ethereum_L1_State_Anchor", row)).not_to be_empty
+    end
+
+    it "exempts the owner 05_03, the standard 00_06 and the tracker 00_07" do
+      line = "pragma solidity 0.8.35 (locked)\n"
+      expect(described_class.solc_pragma_version_drift("05_03_Tokenomics_SCC_and_SFC", line)).to be_empty
+      expect(described_class.solc_pragma_version_drift("00_06_SSOT_Documentation_Standard", line)).to be_empty
+      expect(described_class.solc_pragma_version_drift("00_07_Action_Plan_Tracker", line)).to be_empty
+    end
+
+    it "does not flag a line that references the home or is a labelled mirror" do
+      expect(described_class.solc_pragma_version_drift(
+        "05_02_Pipeline", "solc 0.8.35 — дзеркало, правити в [`05_03`](05_03_Tokenomics_SCC_and_SFC)\n")).to be_empty
+    end
+
+    it "does not false-positive on a bare 0.8.x without a solc/pragma keyword, nor a larger version" do
+      expect(described_class.solc_pragma_version_drift(
+        "02_01_Hardware", "похибка 0.8.35 мВ на каналі\n")).to be_empty
+      expect(described_class.solc_pragma_version_drift(
+        "06_01_Deployment", "solc toolchain at 10.8.35\n")).to be_empty
+    end
+  end
+
   describe ".deprecated_terms" do
     it "flags a retired token and gives the replacement hint" do
       hits = described_class.deprecated_terms("03_05", "derive via HKDF info silkennet-v1-aes256 here")

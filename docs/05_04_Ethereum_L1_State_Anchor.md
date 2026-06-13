@@ -550,7 +550,7 @@ bundle exec rspec spec/services/ethereum/ spec/workers/ethereum_anchor_worker_sp
 
 | Аспект | TRL 8 (до PR #254) | TRL 9 (після PR #254) | Аудит-зміцнення |
 |--------|-----------|--------------|-----------------|
-| `StateRootAnchor.sol` | 🔴 Відсутній | ✅ `contracts/StateRootAnchor.sol` | ✅ Pragma locked `0.8.28` |
+| `StateRootAnchor.sol` | 🔴 Відсутній | ✅ `contracts/StateRootAnchor.sol` | ✅ Pragma locked ([`05_03`](05_03_Tokenomics_SCC_and_SFC)) |
 | `EthereumAnchor` модель | 🔴 Відсутня | ✅ `app/models/ethereum_anchor.rb` | — |
 | Персистентність state_root | 🔴 Тільки logger | ✅ PostgreSQL аудит-трейл | — |
 | Gas management | 🔴 Відсутній | ✅ Явні caps + ENV overrides | — |

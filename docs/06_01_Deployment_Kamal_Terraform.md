@@ -450,7 +450,7 @@ kamal logs -f -d canopy
 
 ```
 terraform/
-├── main.tf       # Provider (google ~> 5.0), GCP APIs, Artifact Registry
+├── main.tf       # Provider (google ~> 7.0), GCP APIs, Artifact Registry
 ├── vpc.tf        # VPC, subnet (10.0.0.0/20), Cloud Router, Cloud NAT, Firewall
 ├── compute.tf    # Ingress Anchor (e2-micro, silken-net-ingress), Static IP
 ├── database.tf   # Cloud SQL PostgreSQL 17, 4 databases, Private Service Access

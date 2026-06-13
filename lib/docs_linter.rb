@@ -263,6 +263,33 @@ module DocsLinter
     end
   end
 
+  # [SSOT anti-drift] Solidity solc / pragma version One-Home (HARD). The locked
+  # compiler version (`pragma solidity 0.8.X`, foundry `solc_version`, myth `--solv`) is a
+  # single repo-wide fact — every contract pins the SAME version. Its documented home is
+  # the contracts doc 05_03 (Pragma table, "Dual Token System"); the ultimate SSOT is the
+  # CODE (contracts/foundry.toml + each *.sol pragma), pin-policy → 03_01 §12.5. Re-stating
+  # the literal elsewhere drifts the instant we bump solc — exactly the silent dup just
+  # found: 9 stale `0.8.28` copies survived the 0.8.35 bump across 00_05/05_04 until swept.
+  # Other docs REFERENCE 05_03, never restate the number. Owner 05_03 keeps the Pragma table
+  # + the foundry/slither/myth command examples (it IS the home). Exempt: 05_03 (owner) +
+  # 00_06 (this standard) + 00_07 (tracker historical log). A line that references the home
+  # (`05_03`) or is a labelled mirror is not flagged. NOT table-skipped (the 05_04 drift
+  # lived in a table cell). Same shape as tokenomics_rate_drift.
+  SOLC_OWNER_DOC  = /\A05_03_|\A00_06_|\A00_07_/
+  SOLC_VERSION_RE = /(?:pragma(?:\s+solidity)?|solc\w*|--solv)[^\n]{0,20}?(?<!\d)0\.8\.\d+/i
+  SOLC_MIRROR_RE  = /дзеркал|mirror|05_03/i
+
+  def solc_pragma_version_drift(basename, text)
+    return [] if basename.match?(SOLC_OWNER_DOC)
+
+    text.each_line.filter_map do |line|
+      next unless line.match?(SOLC_VERSION_RE)
+      next if line.match?(SOLC_MIRROR_RE)
+
+      "solc/pragma version re-stated outside owner (05_03 Pragma table; code SSOT = contracts/foundry.toml + *.sol) → #{line.strip[0, 100]}"
+    end
+  end
+
   # [SSOT anti-drift] Deprecated-term registry (HARD) — the enforcement arm of
   # Ruthless Pruning (00_06 §4). Tokens retired SSOT-wide must not reappear in the
   # ACTIVE canon; as each drift is fixed, the old form is added here so CI blocks its

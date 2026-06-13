@@ -55,6 +55,7 @@ namespace :docs do
     magic_drift = []  # soft: magic-marker hex ≠ BE/LE ASCII of its quoted name
     bare_refs   = []  # hard: bare code-span `NN_NN §X` ref that should be a full link
     rate_drift  = []  # hard: tokenomics/carbon rate value re-stated outside its One-Home (05_03/07_01)
+    solc_drift  = []  # hard: solc/pragma version re-stated outside 05_03 owner (code SSOT = foundry.toml)
     bare_doc    = []  # hard: bare code-span `NN_NN` doc-id (no §) that should be a full link
     xref_form   = []  # hard: doc-id link label not in the single code-span form (00_06 §1)
     superseded_fm = [] # hard: superseded term (ATECC608B) in 🎯/Статус front-matter
@@ -105,6 +106,7 @@ namespace :docs do
       magic_drift.concat(DocsLinter.magic_marker_hex_drift(text).map { |h| "#{base}: #{h}" })
       bare_refs.concat(DocsLinter.bare_section_ref(base, text).map { |h| "#{base}: #{h}" })
       rate_drift.concat(DocsLinter.tokenomics_rate_drift(base, text).map { |h| "#{base}: #{h}" })
+      solc_drift.concat(DocsLinter.solc_pragma_version_drift(base, text).map { |h| "#{base}: #{h}" })
       bare_doc.concat(DocsLinter.bare_doc_ref(base, text, valid_ids).map { |h| "#{base}: #{h}" })
       xref_form.concat(DocsLinter.crossref_label_form(text).map { |h| "#{base}: #{h}" })
       superseded_fm.concat(DocsLinter.superseded_term_in_frontmatter(base, text).map { |h| "#{base}: #{h}" })
@@ -220,6 +222,12 @@ namespace :docs do
       puts "  RATE DRIFT (#{rate_drift.size}) — mint/carbon rate value belongs only in 05_03 / 07_01 §3:"
       rate_drift.sort.each { |d| puts "    ✗ #{d}" }
     end
+    if solc_drift.empty?
+      puts "  solc One-Home: no solc/pragma version restated outside 05_03 ✓"
+    else
+      puts "  SOLC VERSION DRIFT (#{solc_drift.size}) — pragma/solc version belongs only in 05_03 (code = foundry.toml):"
+      solc_drift.sort.each { |d| puts "    ✗ #{d}" }
+    end
     if trl_missing.empty?
       puts "  TRL presence:   every ✅ Статус doc declares a TRL ✓"
     else
@@ -332,6 +340,7 @@ namespace :docs do
     failed << "deprecated SSOT terms present" unless deprecated.empty?
     failed << "superseded term in front-matter (🎯/Статус names a reversed decision)" unless superseded_fm.empty?
     failed << "tokenomics/carbon rate restated outside One-Home (05_03/07_01)" unless rate_drift.empty?
+    failed << "solc/pragma version restated outside One-Home (05_03; code = foundry.toml)" unless solc_drift.empty?
     failed << "bare code-span `NN_NN §X` refs (should be `[`…`](Doc)` links)" unless bare_refs.empty?
     failed << "bare code-span `NN_NN` doc-ids (should be `[`…`](Doc)` links)" unless bare_doc.empty?
     failed << "link label↔href mismatches" unless label_drift.empty?

@@ -60,7 +60,7 @@
 | **Мережа** | Polygon (Amoy testnet → Mainnet) | Polygon (Amoy testnet → Mainnet) |
 | **Файл** | `contracts/SilkenCarbonCoin.sol` | `contracts/SilkenForestCoin.sol` |
 | **ENV адреса** | `CARBON_COIN_CONTRACT_ADDRESS` | `FOREST_COIN_CONTRACT_ADDRESS` |
-| **Pragma** | `0.8.28` (locked) | `0.8.28` (locked) |
+| **Pragma** | `0.8.35` (locked) | `0.8.35` (locked) |
 | **Максимальна емісія** | ✅ `MAX_SUPPLY = 1_000_000_000 SCC` | ✅ `MAX_SUPPLY = 100_000_000 SFC` |
 | **Slash / Burn** | ✅ `slash()` через `SLASHER_ROLE` | ✅ `slash()` через `SLASHER_ROLE` (B-06 виправлено) |
 | **Gasless approvals** | ✅ EIP-2612 / EIP-712 (PR #253) | ✅ EIP-2612 / EIP-712 |
@@ -687,7 +687,7 @@ type ProtocolFinancials @entity {
 |---|---|
 | **Мережа** | Polygon PoS (Amoy testnet → Mainnet) |
 | **Toolchain** | Foundry (forge, cast, anvil) |
-| **OpenZeppelin** | 5.6.x (`pragma solidity 0.8.28` — locked) |
+| **OpenZeppelin** | 5.6.x (`pragma solidity 0.8.35` — locked) |
 | **RPC** | `ALCHEMY_POLYGON_RPC_URL` (через `Web3::RpcConnectionPool`) |
 | **Oracle wallet** | `ORACLE_MINTER_PRIVATE_KEY` (MINTER_ROLE) + `ORACLE_SLASHER_PRIVATE_KEY` (SLASHER_ROLE) — окремі ключі |
 | **The Graph** | `subgraph/` — SCC та SFC events індексуються (⚠️ SFC: contract address placeholder) |
@@ -743,7 +743,7 @@ contracts/test/
 ├── SilkenTimelock.t.sol             # ✅ [ARCH.4] Foundry тести Timelock (delay, roles, scheduling)
 └── ProtocolParameters.t.sol         # ✅ [ARCH.4] Foundry тести registry (set, batch, access, defaults)
 
-contracts/foundry.toml               # ✅ Foundry config: solc 0.8.28, EVM cancun, profiles (default/ci/production)
+contracts/foundry.toml               # ✅ Foundry config: solc 0.8.35, EVM cancun, profiles (default/ci/production)
 ```
 
 ---
@@ -775,7 +775,7 @@ On-chain governance (SFC-голосування за протокольні па
 ```yaml
 # .github/workflows/solidity_audit.yml
 # Тригер: зміни в contracts/ на PR або push to main
-# crytic/slither-action@v0.4.0, solc 0.8.28, fail-on: high
+# crytic/slither-action@v0.4.2, solc 0.8.35, fail-on: high
 # OpenZeppelin 5.x через contracts/package.json
 ```
 
@@ -790,7 +790,7 @@ On-chain governance (SFC-голосування за протокольні па
 
 **Mythril (TODO):**
 ```bash
-myth analyze contracts/SilkenCarbonCoin.sol --solv 0.8.28
+myth analyze contracts/SilkenCarbonCoin.sol --solv 0.8.35
 ```
 
 **Operational Security (production):**

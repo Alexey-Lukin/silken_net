@@ -211,9 +211,9 @@ jobs:
   - `npm ci` → `forge build --sizes` → `forge test -vvv --gas-report` → `forge coverage --ir-minimum --report lcov --report summary`
   - Coverage artifact: `lcov.info` (retention 14 днів)
 - **Job 2: Slither Static Analysis** (`slither`, timeout: 10 хв):
-  - `crytic/slither-action@v0.4.0`, solc 0.8.28, `fail-on: high`
+  - `crytic/slither-action@v0.4.2`, solc (версія → [`05_03`](05_03_Tokenomics_SCC_and_SFC)), `fail-on: high`
 - **Конфігурація Foundry** (`contracts/foundry.toml`):
-  - solc 0.8.28, EVM cancun, optimizer 200 runs (default), 1000 runs (production profile)
+  - solc (версія → [`05_03`](05_03_Tokenomics_SCC_and_SFC)), EVM cancun, optimizer 200 runs (default), 1000 runs (production profile)
   - Gas reports: SCC, SFC, StateRootAnchor, SilkenGovernor, SilkenTimelock, ProtocolParameters
   - Fuzz: 512 runs (default), 256 (ci profile). Invariant: 128 runs, depth 64
 - **Тестове покриття:** 171 тест у 6 test suites (`contracts/test/*.t.sol`)
