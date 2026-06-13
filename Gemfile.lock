@@ -667,15 +667,15 @@ GEM
       ffi-compiler (>= 1.0, < 2.0)
       rake (~> 13)
     securerandom (0.4.1)
-    sentry-rails (6.5.0)
+    sentry-rails (6.6.2)
       railties (>= 5.2.0)
-      sentry-ruby (~> 6.5.0)
-    sentry-ruby (6.5.0)
+      sentry-ruby (~> 6.6.2)
+    sentry-ruby (6.6.2)
       bigdecimal
       concurrent-ruby (~> 1.0, >= 1.0.2)
       logger
-    sentry-sidekiq (6.5.0)
-      sentry-ruby (~> 6.5.0)
+    sentry-sidekiq (6.6.2)
+      sentry-ruby (~> 6.6.2)
       sidekiq (>= 5.0)
     sidekiq (8.1.6)
       connection_pool (>= 3.0.0)
@@ -837,7 +837,7 @@ DEPENDENCIES
   rumale
   sentry-rails (~> 6.5)
   sentry-ruby (~> 6.5)
-  sentry-sidekiq (~> 6.5)
+  sentry-sidekiq (~> 6.6)
   sidekiq
   sidekiq-scheduler
   simplecov
