@@ -81,6 +81,14 @@ not persist between calls (a fresh shell defaults to the rvm default → `RubyVe
   if they're in vendored code (OZ `EnumerableSet.at()`), they're upstream's — note, don't touch.
 - **`db/structure.sql` / `Gemfile.lock`:** verify the diff is ONLY the intended dep (no drive-by
   churn) before committing.
+- **Canon docs mirror pinned versions — sweep them too (a bump is not done at the manifest).**
+  The SSOT docs pin versions in prose: `00_05` (CI-action `@vN` like `checkout@v6` + the foundry
+  config), `05_03` (solc/pragma + OpenZeppelin), `05_04` (anchor pragma), `06_01` (Terraform
+  provider `~>`, Ruby, Cloud SQL Postgres), `03_01 §12.4` (submodule tags). Code + docs drift
+  apart silently — this repo's solc `0.8.28 → 0.8.35` left **9 stale doc copies** until a follow-up
+  swept them. After any bump: grep the canon for the OLD literal and reconcile, then `docs:check_refs`.
+  The `solc_pragma_version_drift` guard (`00_06 §3`) now holds the solc line (owner = `05_03`);
+  there is no such guard for CI-action / provider / PG versions yet — grep those by hand.
 
 ## Keep this skill bounded
 
