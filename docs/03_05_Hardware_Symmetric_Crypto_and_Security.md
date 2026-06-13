@@ -1,6 +1,6 @@
 # 03_05: Апаратне симетричне шифрування та Безпека (Криптографія Пакетів)
 
-> 📜 **Архітектурна нота (2026-05-23):** Документ перейменовано з [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security) після прийняття **ARCH.42 Варіант B**. Силова частина криптостеку розділена на дві категорії:
+> 📜 **Архітектурна нота (ARCH.42 Варіант B, 2026-05-23):** Силова частина криптостеку розділена на дві категорії:
 > 1. **LoRa-канал (Soldier ↔ Queen + OTA broadcast):** AES-128-CCM (ARCH.42 LoRa-вибір; SE = SE050 — §3.7)
 > 2. **CoAP-магістраль (Queen ↔ Rails) + AR-Encryption у Postgres:** AES-256-CBC / AES-256-GCM (без апаратного SE-constraint; ключ Queen зберігається у Protected Flash MCU)
 >
@@ -741,13 +741,13 @@ Load_AES_Key();  // reads from FLASH_KEY_ADDR, validates magic "KEYL",
 3. Записати у Bitwarden / 1Password / Kamal secrets / Akash SDL (див. [`06_04`](06_04_Secrets_Checklist)).
 4. Re-deploy — initializer перезапустить guard з боку production.
 
-**Сервіс автоматично запускається при кожному production boot — будь-яка ротація, яка пройшла повз runbook, буде заблокована до старту HTTP сервера.** Це й закриває SEC.9 line 668 🤖.
+**Сервіс автоматично запускається при кожному production boot — будь-яка ротація, яка пройшла повз runbook, буде заблокована до старту HTTP сервера.** Це й закриває SEC.9 🤖.
 
 ### 3.2 Secure Element (ATECC608B) — після ARCH.42
 
 > ⚠️ **SUPERSEDED → §3.7 (SEC.6 RESOLVED 2026-06-07):** SE = **NXP SE050** (true-DePIN «голос дерева» — non-extractable Ed25519), НЕ ATECC608B (реверс рішення 2026-05-23). Нижче (§3.2 + §3.4 Гілка B) лишено як **legacy ATECC provisioning-патерн** — factory-integration механіка **reusable для SE050**, тож не видаляється; чинне рішення, ціна, slot-map, ladder — **§3.7**.
 
-> 🎯 **ARCH.42 Variant B (2026-05-23) — ВИБРАНО:** ATECC608B Microchip (~$0.85/unit @ 10k MOQ) як єдиний SE для (а) LoRa AES-128 ключ у Slot 0, (б) ECC P-256 device identity у Slot 1, (в) device cert у Slot 2, (г) OTA HMAC-SHA256 ключ у Slot 3. AES-128 — апаратний maximum ATECC608B. Альтернативи (NXP SE050 / STSAFE-A110) розглядаються лише як future hedge у §10 PQC roadmap.
+> 🎯 **ARCH.42 Variant B (2026-05-23) — legacy, SUPERSEDED → SE050 (§3.7):** початковий вибір був ATECC608B Microchip (~$0.85/unit @ 10k MOQ) як єдиний SE для (а) LoRa AES-128 ключ у Slot 0, (б) ECC P-256 device identity у Slot 1, (в) device cert у Slot 2, (г) OTA HMAC-SHA256 ключ у Slot 3. AES-128 — апаратний maximum ATECC608B. **Чинне рішення — NXP SE050** (non-extractable Ed25519 «голос дерева», SEC.6 RESOLVED — §3.7); ATECC slot-провіжининг-патерн нижче лишено як reusable для SE050.
 
 Поточна Гілка A (RDP Level 2 + Protected Flash) залишається активною baseline для pilot/<1000 unit deployments. Гілка B (ATECC608B) активується для mass production > 10k unit та urban deployments — див. §3.4 Гілка B та §3.7.
 
@@ -2174,7 +2174,7 @@ HAL_CRYP_Init(&hcryp);
 |-----------|------|--------|
 | **Алгоритм LoRa** | ✅ AES-128 [ARCH.42] | Відповідає FIPS 197, IEEE 802.15.4 / LoRaWAN industry standard |
 | **Алгоритм CoAP** | ✅ AES-256 | Без змін — Queen MCU зберігає 256-bit key у Protected Flash (немає SE-constraint на цьому каналі) |
-| **Розмір ключа LoRa** | ✅ 128 біт | ARCH.42 Variant B — ATECC608B Secure Element compatibility |
+| **Розмір ключа LoRa** | ✅ 128 біт | ARCH.42 — свідомий вибір (golden-standard LoRaWAN/Zigbee/BLE), **не** SE-constraint (SE050 вміє і 256; §3.7) |
 | **Розмір ключа CoAP** | ✅ 256 біт | Без змін |
 | **Апаратне прискорення** | ✅ STM32 AES Block | Без програмної крипто-бібліотеки; підтримує і 128B, і 256B через runtime re-init |
 | **CBC IV для CoAP** | ✅ HRNG (тепловий шум) | Унікальний IV на кожен батч |
@@ -2243,7 +2243,7 @@ HAL_CRYP_Init(&hcryp);
 | Зміна | Як зробимо |
 |-------|------------|
 | **Заміна STM32WLE5JC на STM32 серії з апаратним Kyber** | Нова revision PCB Soldier; завдяки Blind-Mate [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) ліснику достатньо replace PEEK-капсулу — титановий анкер у заболоні залишається у дереві |
-| **AES-128 LoRa → AES-256 + post-Grover margin через SE upgrade** | Заміна ATECC608B на NXP SE050 (AES-128/192/256 hardware) — описано як future hedge у §3.7 |
+| **AES-128 LoRa → AES-256 (post-Grover margin)** | SE050 (чинний SE, §3.7) вже підтримує AES-128/192/256 hardware — апгрейд = key-size flip без заміни SE (AES-128 наразі свідомий вибір, не constraint) |
 | **OTA HMAC-SHA256 → LMS/XMSS (stateful hash-based signature)** | NIST SP 800-208 стандарт; для billion-tree fleet — wholesale upgrade через factory re-flash під час planned maintenance windows |
 | **peaq DID Ed25519 → ML-DSA (Dilithium)** | peaq Substrate-нативний; ми оновлюємо лише `Peaq::DidRegistryService` RPC bibilio через Gemfile bump |
 
