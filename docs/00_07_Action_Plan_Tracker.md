@@ -928,6 +928,10 @@
 - **P2** · 👤 · → `08_02 §2`
 - Хоменко (Заслужений винахідник, 80+ патентів): прецизійна обробка + різьба анкера для живої деревини (`01_01`/`01_02`/`02_02`, deinstall `08_02 §3 Несен`). · [ ] 👤 контакт (ChDTU rectorat) + prior-art landscape consult (UNI.15) + прототип різальної геометрії в ЧДТУ machine shop
 
+#### UNI.18 — ЧНУ ректорат: follow-up рішення + рамковий MoU
+- **P1** · 👤 · → `08_02`, `08_01`
+- Зустрічі **відбулися** (Кирилюк, ректор — 6 трав. 2026; Спрягайло — 8 трав.) → очікується рішення ректорату, рамковий MoU ЧНУ↔SilkenNet **ще не підписаний**. Тиша достатньо довга для ввічливого нагадування. NB субординація: ректор делегує операційну ФОТІУС-координацію декану Онищенку (UNI.1) — НЕ маршрутизувати «теплий інтро» через декана після зустрічі з ректором. · [ ] 👤 ввічливий follow-up Кирилюк/Спрягайло + дотиснути рамковий MoU (framework — BIZ.10)
+
 ### 🌐 External Stakeholders (B2G / B2B / Cultural — non-academic outreach)
 
 > **Поточний стан:** Зовнішні залежності виокремлені в [`08_03`](08_03_External_Stakeholders_Registry) (Cultural Layer) та [`08_03`](08_03_External_Stakeholders_Registry) (B2G/B2B Matrix). Це не операційні залежності hot-path — це outreach pool, що активується за TRL-тригерами у відповідних модулях. Імена нижче — публічна інформація; контакти живуть у gitignored CRM.
@@ -977,6 +981,10 @@
 #### BIZ.10 — Multi-party co-authorship + open-license MoU framework
 - **P1** · 👤 · → `08_03`, `08_02 §3-07`
 - 5-сторонній фреймворк (ChNU+ChDTU+ChIPB+ChMA+СЄУ+SilkenNet) **спрощено під open-поставою** (`08_01 §2`): tech відкрита всім → **немає патентних прав / royalty / tech-NDA до розподілу**; лишається **co-authorship + open-license acknowledgment** (AGPL/CERN-OHL-S/CC-BY-SA) + NDA **лише** для нерозкритого (ключі / production-дані). · [ ] 👤 co-authorship + open-license MoU × 5 (паралельно UNI.4-14) → Master Collaboration Agreement (юрист, не патентний повірений) · [ ] 🔗 після UNI.1/8/9/12/13
+
+#### BIZ.16 — Naming model: codename «Gaia 2.0» vs trademark «GaiaNexus»
+- **P3** · 👤 · → `08_01 §2`
+- Проєкт всюди вживає codename/версію «Gaia 2.0»; founder обрав ™ «GaiaNexus» (сама trademark-заявка — UNI.3/UNI.15). **Відкрите founder-рішення:** модель найменування — rename project-wide чи codename(Gaia 2.0)+brand(GaiaNexus)-split. Масове перейменування **відкладене до рішення** (інакше One-Home cross-ref sweep довелося б робити двічі). · [ ] 👤 рішення founder про модель → (якщо rename) One-Home sweep `Gaia 2.0`↔`GaiaNexus` по docs+code
 
 #### 🌿 BIZ.12 — Horizon Europe CLUSTER 6 заявка (Biodiversity Monitoring, Mongabay pivot)
 - **P1** · 👤 · → `08_01 Стаття 24a`, `03_03 §10`
