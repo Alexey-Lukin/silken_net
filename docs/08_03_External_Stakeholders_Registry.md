@@ -594,7 +594,7 @@ Tier 5: Social Inclusion (EU)     ─┘  TRL 7 в Модулі 05
 
 ## 11. Stakeholder Matrix (Культурний шар)
 
-### 2.1. Tier A — Cherkasy Cultural Anchor (локальна команда)
+### 11.1. Tier A — Cherkasy Cultural Anchor (локальна команда)
 
 Митці з прямим зв'язком із Черкаським Genesis-кластером (Черкаський бір).
 Пріоритет вищий: вони фізично доступні для пленерів, обговорень дизайну
@@ -720,7 +720,7 @@ PEEK-куполів, антивандальної біомімікрії.
   [`07_03`](07_03_Grant_Applications_Tracker).
 - **Status:** 🔵 Identified.
 
-### 2.2. Tier B — National Visual Identity (PR-валюта)
+### 11.2. Tier B — National Visual Identity (PR-валюта)
 
 Митці національного рівня. Залучення доцільне ТІЛЬКИ для Genesis NFT
 launch (TRL 8+) або міжнародного пітча (Ethereum Foundation, Horizon
@@ -867,7 +867,7 @@ Europe). Не зараз — але треба зафіксувати, доки 
   [`07_01`](07_01_Nature_as_a_Service_Contracts) (pitch deck visuals).
 - **Status:** 🔵 Identified (verify life status before formal outreach).
 
-### 2.3. Tier C — Народна творчість, медіа, звук
+### 11.3. Tier C — Народна творчість, медіа, звук
 
 | # | Особа | Звання / Роль | Афіліація | API In | SSOT-мапінг | Status |
 |---|---|---|---|---|---|---|
