@@ -46,7 +46,6 @@
 - [16. Codemod-Driven Migration (Phase 4)](#16-codemod-driven-migration-phase-4)
 - [17. Responsive Tables — CSS-only Card Flip (Phase 5)](#17-responsive-tables--css-only-card-flip-phase-5)
 - [18. Industry Standards (SSOT) + Per-PR Definition of Done](#18-industry-standards-ssot--per-pr-definition-of-done)
-- [Status: Frontend Overhaul Complete](#status-frontend-overhaul-complete)
 <!-- TOC:AUTO:END -->
 
 ---
@@ -902,30 +901,30 @@ class: "transition-colors duration-300"   # перемикання теми
 
 ### RSpec Тести Компонентів
 
-| Spec-файл | Приклади | Покриття |
-|---|---|---|
-| `spec/views/shared/ui/status_badge_spec.rb` | 13 | Всі AASM стани, семантичні токени, доступність |
-| `spec/views/shared/ui/stat_card_spec.rb` | 14 | Props, danger-режим, перевизначення класу |
-| `spec/views/shared/ui/action_badge_spec.rb` | 10 | Pattern matching, семантичні стилі |
-| `spec/views/shared/ui/empty_state_spec.rb` | 10 | За замовчуванням, кастомна іконка, table-режим |
-| `spec/views/shared/ui/meta_row_spec.rb` | 5 | Мітка/значення, обробка nil |
-| `spec/views/shared/ui/relative_time_spec.rb` | 9 | Інтервали часу, граничні випадки |
-| `spec/views/shared/web3/address_spec.rb` | 10 | Обрізання, clipboard, nil fallback |
-| `spec/views/shared/iot/metric_value_spec.rb` | 8 | Точність, nil, BigDecimal, одиниця |
-| `spec/views/components/alerts/badge_spec.rb` | 12 | Матриця severity × status |
-| `spec/views/components/dashboard/event_row_spec.rb` | 10 | Поліморфні типи подій |
-| `spec/views/components/wallets/transaction_row_spec.rb` | 16 | Типи токенів, обрізання хешу |
-| `spec/views/components/wallets/balance_display_spec.rb` | 8 | Рендеринг балансу, Turbo target |
-| `spec/views/components/actuators/card_spec.rb` | 14 | Статус LED, рендеринг матриці |
-| `spec/views/shared/ui/data_table_spec.rb` | 20 | Стовпці+рядки, порожній стан, кастомний empty_message, відповідність дизайн-системі, доступність, перевизначення класу, один стовпець |
-| `spec/views/shared/ui/pagination_spec.rb` | 22 | Перша/середня/остання/одна сторінка, відповідність дизайн-системі, доступність, focus-visible, guard невалідного pagy |
-| `spec/views/shared/ui/photo_card_spec.rb` | 17 | Ініціалізація, валідація, відповідність дизайн-системі, editable true/false, типографіка |
-| `spec/views/shared/ui/skeleton_spec.rb` | 13 | Всі 6 варіантів, кастомні рядки, перевизначення класу |
-| `spec/views/shared/ui/theme_switcher_spec.rb` | 10 | Поведінка перемикання, dark/light стан |
-| `spec/views/components/alerts/row_spec.rb` | 12 | Severity, статус, дія вирішення |
-| `spec/views/components/clusters/show_spec.rb` | 17 | Індекс здоров'я, список дерев, стан загрози |
-| `spec/views/components/tree_families/form_spec.rb` | 14 | Форма створення/оновлення, валідація |
-| `spec/views/components/wallets/show_spec.rb` | 11 | Фрейм балансу, журнал транзакцій, pagy пагінація |
+| Spec-файл | Покриття |
+|---|---|
+| `spec/views/shared/ui/status_badge_spec.rb` | Всі AASM стани, семантичні токени, доступність |
+| `spec/views/shared/ui/stat_card_spec.rb` | Props, danger-режим, перевизначення класу |
+| `spec/views/shared/ui/action_badge_spec.rb` | Pattern matching, семантичні стилі |
+| `spec/views/shared/ui/empty_state_spec.rb` | За замовчуванням, кастомна іконка, table-режим |
+| `spec/views/shared/ui/meta_row_spec.rb` | Мітка/значення, обробка nil |
+| `spec/views/shared/ui/relative_time_spec.rb` | Інтервали часу, граничні випадки |
+| `spec/views/shared/web3/address_spec.rb` | Обрізання, clipboard, nil fallback |
+| `spec/views/shared/iot/metric_value_spec.rb` | Точність, nil, BigDecimal, одиниця |
+| `spec/views/components/alerts/badge_spec.rb` | Матриця severity × status |
+| `spec/views/components/dashboard/event_row_spec.rb` | Поліморфні типи подій |
+| `spec/views/components/wallets/transaction_row_spec.rb` | Типи токенів, обрізання хешу |
+| `spec/views/components/wallets/balance_display_spec.rb` | Рендеринг балансу, Turbo target |
+| `spec/views/components/actuators/card_spec.rb` | Статус LED, рендеринг матриці |
+| `spec/views/shared/ui/data_table_spec.rb` | Стовпці+рядки, порожній стан, кастомний empty_message, відповідність дизайн-системі, доступність, перевизначення класу, один стовпець |
+| `spec/views/shared/ui/pagination_spec.rb` | Перша/середня/остання/одна сторінка, відповідність дизайн-системі, доступність, focus-visible, guard невалідного pagy |
+| `spec/views/shared/ui/photo_card_spec.rb` | Ініціалізація, валідація, відповідність дизайн-системі, editable true/false, типографіка |
+| `spec/views/shared/ui/skeleton_spec.rb` | Всі 6 варіантів, кастомні рядки, перевизначення класу |
+| `spec/views/shared/ui/theme_switcher_spec.rb` | Поведінка перемикання, dark/light стан |
+| `spec/views/components/alerts/row_spec.rb` | Severity, статус, дія вирішення |
+| `spec/views/components/clusters/show_spec.rb` | Індекс здоров'я, список дерев, стан загрози |
+| `spec/views/components/tree_families/form_spec.rb` | Форма створення/оновлення, валідація |
+| `spec/views/components/wallets/show_spec.rb` | Фрейм балансу, журнал транзакцій, pagy пагінація |
 
 ### Lookbook (Дослідник Компонентів)
 
@@ -960,45 +959,6 @@ Lookbook надає живий попередній перегляд усіх к
 ---
 
 ## Додаткові Матеріали
-
-### Зведена Таблиця Відповідності 29 Правилам TailwindCSS
-
-> Відстежує відповідність **Маніфесту 29 Найкращих Практик TailwindCSS** для всіх 67+ компонентів.
-
-#### ✅ Повністю Застосовано (всі компоненти + shared/ui + layout + navigation)
-
-| Правило | Опис | Статус |
-|---------|------|--------|
-| 1 | Без довільних значень | ✅ Всі `text-[Npx]` замінено на `text-micro/mini/tiny/compact` в 63+ файлах |
-| 2 | Семантичні кольори для станів | ✅ Всі amber → токени `status-warning`/`token-forest` (20 файлів) |
-| 6 | Без @apply у Phlex | ✅ Лише Ruby-методи |
-| 7 | Mobile-first | ✅ За замовчуванням = mobile, `md:` для desktop |
-| 8 | `gap-` замість margins | ✅ `space-x`/`space-y` → `gap` у flex/grid (26+ файлів) |
-| 10 | `grid` для 2D, `flex` для 1D | ✅ Правильне використання скрізь |
-| 11 | Запобігання горизонтальному скролу | ✅ `overflow-x-auto` на таблицях |
-| 13 | Перевизначення класів через `tokens()` | ✅ Патерн `**attrs` в shared/ui компонентах |
-| 14 | Логічне групування класів | ✅ Layout→Spacing→Type→Visual→Interactive |
-| 15 | Виносити довгі рядки класів | ✅ Приватні методи у shared/ui |
-| 17 | Без hardcoded margins у компонентах | ✅ `mt-6`, `mb-4`, `mb-2` видалено зі shared/ui |
-| 18 | SVG використовують `currentColor` | ✅ `stroke="currentColor"` |
-| 20 | `tracking-widest` для uppercase | ✅ Додано де бракувало |
-| 21 | `leading-tight` для заголовків | ✅ Застосовано до `h1` |
-| 25 | Стани `hover`/`focus`/`active` | ✅ Всі інтерактивні елементи |
-| 26 | `focus-visible:` замість `focus:` | ✅ **Всі 67+ компонентів** — нуль порушень `focus:` |
-| 27 | Transitions з duration/ease | ✅ `duration-200 ease-in-out` у shared/ui |
-| 28 | Стани `disabled:` | ✅ На кнопці видалення |
-| 29 | Вкладені взаємодії `group`/`group-hover` | ✅ PhotoCard, Sidebar |
-
-#### ⏳ Робота з Низьким Пріоритетом
-
-| Правило | Опис | Статус |
-|---------|------|--------|
-| 3 | Dark mode визначення | ✅ Light/dark динамічні кольори статусів реалізовані через CSS custom properties |
-| 13 | Перевизначення класів у domain компонентах | ⏳ Shared/ui має `**attrs`; domain компоненти — page-level (потреба менша) |
-| 15 | Виносити класи у domain компонентах | ⏳ Довгі inline рядки залишаються в деяких domain views |
-| 17 | Margins у domain page компонентах | ⏳ Page-level margins (`mb-4`, `mt-6`) допустимі в non-reusable views |
-
----
 
 ### Налаштування Lookbook
 
@@ -1204,11 +1164,7 @@ Layout-компоненти (`AuthLayout`, `DashboardLayout`) використо
 3. **`bin/rails tailwindcss:build` обов'язковий перед тестами**, якщо layout-компоненти посилаються
    на скомпільовані CSS-файли.
 
-### CSRF Захист
-
-`protect_from_forgery with: :exception` (найсуворіша стратегія). Bearer-token запити обходять CSRF
-через `handle_unverified_request` — браузери ніколи не прикріплюють `Authorization` header автоматично
-при cross-origin запитах, тому Bearer-token запити імунні до CSRF за дизайном.
+> **CSRF** — `protect_from_forgery with: :exception` + Bearer-bypass через `handle_unverified_request`: дім опису — §1 (архітектура контролера).
 
 ---
 
@@ -1826,20 +1782,4 @@ The mobile labels come from `data-label`, which itself is i18n'd through the sta
 - [ ] `parallel_validation` (Code Review + CodeQL) пройшов або addressed
 
 Sandbox-обмеження: автоматичний прогін axe-core / Lighthouse у CI потребує headless Chromium з мережевим доступом. Поки що це **manual gate** для рев'ювера. Коли `cuprite` тести отримають axe-runner — переведемо у автомат і відмітимо чек-бокс програмно.
-
----
-
-## Status: Frontend Overhaul Complete
-
-Всі шість фаз перебудови фронтенда (D1–D7 KPI з оригінального плану) виконано:
-
-| KPI | Статус | Де реалізовано |
-|---|---|---|
-| **D1** Перемикання dark↔light видно на ≥ 95 % площі | ✅ | § 3 — gaia-токени всюди в shared/ + 8 мігрованих доменних компонентів |
-| **D2** WCAG AA контраст у обох темах | ✅ | § 3 — переглянуто status-токени, додано `text-strong/muted/subtle` |
-| **D3** UA (default) + EN, switcher, cookie + Accept-Language | ✅ | § 12 — `LocaleSettable` (concern у обох контролерах) + `LocaleSwitcher` (native `<form>` + `<select>` + auto-submit, no JS) |
-| **D4** Mobile drawer, без horizontal scroll | ✅ | § 13 (drawer на нативному `<dialog>`) + § 17 (responsive tables) |
-| **D5** `prefers-reduced-motion` глобально, `duration-{150-300}` | ✅ | § 14.4 — глобальний CSS rule + motion budget |
-| **D6** Min font-size 12 px у production-розмітці | ✅ | § 4 — `text-micro/mini/tiny` лишилися як decorative-only labels |
-| **D7** Жоден shared/ui компонент не має raw Tailwind | ✅ | § 16 — `gaia:lint_tokens` rake task; backlog у `app/views/components/` опрацьовується доменними PR-ами |
 
