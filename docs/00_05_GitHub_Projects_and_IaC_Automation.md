@@ -87,6 +87,8 @@ done
 
 ### 2.1 Workflow Inventory
 
+> **Повний CI/CD-індекс усіх workflows** (deploy/deploy-production/mirror-ghcr/ml_smoke/ci тощо) — канон [`06_07`](06_07_CICD_and_Runbook_Index). Нижче — лише **Projects/IaC-automation + governance**-релевантні (дім цього доку); інші реферять 06_07, не дублюють.
+
 | Workflow | Файл | Тригер | Статус |
 |----------|------|--------|--------|
 | TRL Auto-Advancement | `.github/workflows/trl_sync.yml` | `issues: [closed]` | ✅ Workflow + TRL≥5 architect-approval gate реалізовані (OPS.1/OPS.9); чекає `PROJECT_PAT` provision (OPS.1, 00_07) |

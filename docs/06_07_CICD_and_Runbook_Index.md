@@ -45,6 +45,8 @@
 | `ssot_guard.yml` | PR | SSOT integrity — code↔doc drift guard (OPS.2; ще не required) |
 | `solidity_audit.yml` | PR/push `contracts/**` | Smart-contract статичний аудит |
 | `in_silico_smoke.yml` | PR/push `tools/in_silico/**` | EBFC in-silico pipeline smoke (L2) |
+| `docs.yml` | PR/push `docs/**`, `**.md`, lib-docs engines/specs, `.github/**` | SSOT doc gates — `docs:check_refs` + `tracker:check` + linter-specs ([`00_06 §3`](00_06_SSOT_Documentation_Standard)) |
+| `ml_smoke.yml` | PR/push `tools/ml/**`, `firmware/common/logmel_*.h` | TinyML/log-mel contract smoke — `emit_c --check` golden-parity ([`00_06 §3`](00_06_SSOT_Documentation_Standard), [`03_03 §3.4`](03_03_TinyML_Acoustic_Inference)) |
 
 ### Deploy
 | Workflow | Trigger | Призначення |
