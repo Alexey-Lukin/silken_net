@@ -4,13 +4,17 @@ permissions:
   contents: read
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - 'contracts/**'
+      # Re-run when the audit workflow itself changes, so config fixes self-validate.
+      - '.github/workflows/solidity_audit.yml'
   push:
     branches: [ main ]
     paths:
       - 'contracts/**'
+      - '.github/workflows/solidity_audit.yml'
 
 jobs:
   foundry-tests:
