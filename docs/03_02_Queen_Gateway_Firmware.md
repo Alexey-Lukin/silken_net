@@ -145,7 +145,7 @@
 
 ## 📡 1. LoRa Reception та ISR
 
-> **Роль у вирішенні Проблеми Рандеву:** Королева є **єдиним always-on listener** у мережі. Її SX1262 завжди в `Radio.Rx(LORA_RX_INFINITE)` — нескінченний таймаут прийому. Це вирішує фундаментальну Проблему Рандеву (Rendezvous Problem) для всіх вузлів у прямій видимості (150–200 м): Солдат може "вистрілити" пакетом у будь-яку мілісекунду — Королева завжди зловить. Це можливо завдяки зовнішньому живленню (сонячна панель / акумулятор), на відміну від Солдатів з EBFC біобатарейкою. Для вузлів за межами прямої видимості Queen потрібні Синхронні Вікна (TDMA) та CAD — нереалізовані механізми рівнів L2/L3 ([ARCH.26](00_07_Action_Plan_Tracker), [`03_01` — деталі → 03 01 §1.9](03_01_Firmware_Lifecycle_and_DMA)).
+> **Роль у вирішенні Проблеми Рандеву:** Королева є **єдиним always-on listener** у мережі. Її SX1262 завжди в `Radio.Rx(LORA_RX_INFINITE)` — нескінченний таймаут прийому. Це вирішує фундаментальну Проблему Рандеву (Rendezvous Problem) для всіх вузлів у прямій видимості (150–200 м): Солдат може "вистрілити" пакетом у будь-яку мілісекунду — Королева завжди зловить. Це можливо завдяки зовнішньому живленню (сонячна панель / акумулятор), на відміну від Солдатів з EBFC біобатарейкою. Для вузлів за межами прямої видимості Queen потрібні Синхронні Вікна (TDMA) та CAD — нереалізовані механізми рівнів L2/L3 ([ARCH.26](00_07_Action_Plan_Tracker), деталі — [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA)).
 
 ### OnRxDone (Апаратне переривання)
 
@@ -1108,7 +1108,7 @@ Per-channel режими (LoRa **AES-128** ECB→CCM · CoAP **AES-256-CBC**) �
 | `hcryp` | AES | ECB для LoRa, CBC для CoAP батчів та команд |
 | `hrng` | RNG | HRNG для CBC IV та Thundering Herd jitter |
 | `hiwdg` | IWDG | Апаратний Watchdog (~26.6 с timeout, auto-reset при зависанні) |
-| `hspi1` | SPI1 | Зовнішня NOR Flash **Winbond W25Q32JV** (4 MB) — Overflow Tier CIFO ([ARCH.35](00_07_Action_Plan_Tracker), [`02_05` — BOM поз. 16 → 02 05 §BOM](02_05_Queen_Hardware_and_Starlink)). Піни: `PB3=SCK`, `PB4=MISO`, `PB5=MOSI`, `PA4=CS` (GPIO software-driven). Driver (**planned, ARCH.35 — ще не реалізовано**): `firmware/queen/flash_buffer.c` (`w25q32_write_page` / `w25q32_read` / `w25q32_erase_sector`; **sector-based** ring — NOR стирається цілим 4 KB сектором, деталі та псевдокод у [`02_05 §2.1`](02_05_Queen_Hardware_and_Starlink)). |
+| `hspi1` | SPI1 | Зовнішня NOR Flash **Winbond W25Q32JV** (4 MB) — Overflow Tier CIFO ([ARCH.35](00_07_Action_Plan_Tracker), [`02_05 §7`](02_05_Queen_Hardware_and_Starlink) BOM поз. 16). Піни: `PB3=SCK`, `PB4=MISO`, `PB5=MOSI`, `PA4=CS` (GPIO software-driven). Driver (**planned, ARCH.35 — ще не реалізовано**): `firmware/queen/flash_buffer.c` (`w25q32_write_page` / `w25q32_read` / `w25q32_erase_sector`; **sector-based** ring — NOR стирається цілим 4 KB сектором, деталі та псевдокод у [`02_05 §2.1`](02_05_Queen_Hardware_and_Starlink)). |
 
 **Примітка:** Queen **не має** ADC, TIM, RTC — на відміну від Soldier. HRNG та IWDG ініціалізуються при старті. HRNG де-ініціалізується "on-demand" (Wu-Wei підхід — нульове споживання між використаннями). `hspi1` ініціалізується тільки в момент drain CIFO→Flash (overflow event) і де-ініціалізується одразу після — енерго-нейтральний підхід (W25Q32JV power-down 1 µA, page write ~10 мА × 0.7 мс).
 
