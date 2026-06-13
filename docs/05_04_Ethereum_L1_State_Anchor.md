@@ -38,7 +38,6 @@
 - [8. Місце в Gaia 2.0 Pipeline](#8-місце-в-gaia-20-pipeline)
 - [9. Залежності](#9-залежності)
 - [10. Конфігурація Production](#10-конфігурація-production)
-- [Зміни від Попередньої Версії SSOT](#зміни-від-попередньої-версії-ssot)
 - [Перспективи Розвитку L1 Якоріння](#-перспективи-розвитку-l1-якоріння)
 <!-- TOC:AUTO:END -->
 
@@ -384,6 +383,8 @@ Web3::RpcConnectionPool.client_for("ALCHEMY_ETHEREUM_RPC_URL")
 
 ## 7. RSpec Покриття
 
+> Конвенції написання / coverage-гейт / тріаж прогалин — [`04_06`](04_06_Testing_Guide_and_Coverage) (Testing Guide). Нижче — per-subsystem інвентар тестів L1-якоря (One-Home: інвентар біля підсистеми).
+
 ### `spec/services/ethereum/state_anchor_service_spec.rb`
 
 | Тест | Що перевіряє |
@@ -446,7 +447,7 @@ Web3::RpcConnectionPool.client_for("ALCHEMY_ETHEREUM_RPC_URL")
 ║    generate_state_root():                                            ║
 ║      [REPEATABLE READ transaction]                                   ║
 ║      total_scc           = Wallet.sum(:scc_balance)  [PostgreSQL]   ║
-║      total_sfc           = Wallet.sum(:sfc_balance)  [PostgreSQL]   ║
+║      total_sfc           = BlockchainTx(SFC).sum     [PostgreSQL]   ║
 ║      active_tree_count   = Tree.where(...).count     [PostgreSQL]   ║
 ║      chain_hash          = AuditLog.last.chain_hash  [PostgreSQL]   ║
 ║      anchored_at         = Time.current.utc          [Runtime]      ║
@@ -543,25 +544,6 @@ bundle exec rspec spec/services/ethereum/ spec/workers/ethereum_anchor_worker_sp
 - **Anti-Spam:** `MIN_ANCHOR_INTERVAL = 6 days` запобігає спаму фейковими state roots компрометованим oracle
 - **Roles & Events:** запис авторизується роллю `ANCHOR_ROLE` (oracle-гаманець); кожен запис емітує `StateRootStored(bytes32 indexed root, uint256 timestamp, uint256 anchorIndex)` — джерело для subgraph-індексації
 - **Timestamp:** `block.timestamp` може відрізнятись від реального часу до ~12 секунд (Ethereum PoS). Для compliance-звітності крос-референс з `EthereumAnchor.anchored_at` в PostgreSQL
-
----
-
-## Зміни від Попередньої Версії SSOT
-
-| Аспект | TRL 8 (до PR #254) | TRL 9 (після PR #254) | Аудит-зміцнення |
-|--------|-----------|--------------|-----------------|
-| `StateRootAnchor.sol` | 🔴 Відсутній | ✅ `contracts/StateRootAnchor.sol` | ✅ Pragma locked ([`05_03`](05_03_Tokenomics_SCC_and_SFC)) |
-| `EthereumAnchor` модель | 🔴 Відсутня | ✅ `app/models/ethereum_anchor.rb` | — |
-| Персистентність state_root | 🔴 Тільки logger | ✅ PostgreSQL аудит-трейл | — |
-| Gas management | 🔴 Відсутній | ✅ Явні caps + ENV overrides | — |
-| ETH balance guard | 🟡 Тільки Treasury monitor | ✅ Inline guard перед TX | — |
-| `.env.example` | 🔴 Відсутній | ✅ Додано до репозиторію | — |
-| Reproducible state_root | 🔴 Non-reproducible | ✅ Компоненти збережені в EthereumAnchor | — |
-| Worker retry | 3 | 5 | — |
-| MIN_ANCHOR_INTERVAL | — | — | ✅ 6 днів (захист від спаму) |
-| rootHistory mapping | — | — | ✅ `getRootAtIndex()` для ISO 14064 |
-| Admin protection | — | — | ✅ `_adminCount` — захист від видалення останнього адміна |
-| Timestamp NatSpec | — | — | ✅ Документовано ~12с variance |
 
 ---
 
