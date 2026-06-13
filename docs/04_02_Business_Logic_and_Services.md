@@ -1572,7 +1572,7 @@ Financial action
 
 **Механічна частина — ✅ enforced by `scripts/model_doc_sync.rb`** (CI `docs.yml`): кожен `app/services/**` / `app/workers/**` клас згаданий у цьому реєстрі — зловив би сервіс, повністю відсутній у доку (як `FactoryFlashing::*`-пропуск, що цей гейт і закрив). Семантику (сигнатури/ENV/guard-clauses/queue-розміщення) скрипт НЕ перевіряє — ручний cool-down аудит ([`00_04 §5.3`](00_04_Shape_Up_Operations_and_RnD_Clusters)).
 
-**Відкриті drift-айтеми живуть у [`00_07`](00_07_Action_Plan_Tracker)** (One-Home для backlog — не датований лог у каноні): cron-missing воркери ([`00_07` — S6.19](00_07_Action_Plan_Tracker)), slashing A/B/C `cause_classification` + uplift-активація ([`00_07` — SLASH-1](00_07_Action_Plan_Tracker); convex-формула + blackout ✅ у картках §6).
+**Відкриті drift-айтеми живуть у [`00_07`](00_07_Action_Plan_Tracker)** (One-Home для backlog — не датований лог у каноні): cron-missing воркери ([`00_07` — S6.20](00_07_Action_Plan_Tracker)), slashing A/B/C `cause_classification` + uplift-активація ([`00_07` — SLASH-1](00_07_Action_Plan_Tracker); convex-формула + blackout ✅ у картках §6).
 
 > **«Planned» (Forester Guild / Cross-Registry / Federated Learning)** — design-RFC, у коді **відсутні** (Post-TRL 6/7, нормально — не code-drift, тому не у `model_doc_sync`).
 

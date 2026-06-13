@@ -206,7 +206,7 @@ POST /api/v1/auth/m2m_token
 | 8 | POST | `/api/v1/auth/m2m_token` | `m2m_auth#create` | 🌐 Public (Ed25519) | **M2M Auth:** Gateway отримує Bearer token через Ed25519-підпис DID |
 | 8a | POST | `/api/v1/auth/m2m_token/refresh` | `m2m_auth#refresh` | 🔑 Auth (Bearer) | **M2M Refresh:** Оновлення Bearer token без Ed25519 re-auth |
 | **🛡️ Безпека Акаунту** | | | | | |
-| 9 | GET | `/api/v1/account_security` | `account_security#show` | �� Auth | MFA-стан, прив'язані identity |
+| 9 | GET | `/api/v1/account_security` | `account_security#show` | 🔑 Auth | MFA-стан, прив'язані identity |
 | 10 | PATCH | `/api/v1/account_security/mfa` | `account_security#toggle_mfa` | 🔑 Auth | Увімкнути/вимкнути MFA. **Disable вимагає `current_password` (step-up auth)**, окрім OAuth-only акаунтів. |
 | 11 | PATCH | `/api/v1/account_security/password` | `account_security#change_password` | 🔑 Auth | Змінити пароль. **Усі інші Session-row відкликаються**, поточний request session виживає (IP+UA match → fallback на newest). |
 | 12 | DELETE | `/api/v1/account_security/identities/:id` | `account_security#unlink_identity` | 🔑 Auth | Відв'язати OAuth-провайдера |
@@ -1031,13 +1031,13 @@ POST /api/v1/auth/m2m_token
 
 SHA256-дайджест значення `signature` зберігається в Redis як nonce (`SET NX`, TTL 10 хв). Перший запит проходить — всі наступні з тією ж підписом повертають `401 Unauthorized` (`"Replay attack detected"`). **[S6.1]** Якщо Redis недоступний — fallback на Solid Cache (DB-backed): nonce зберігається в БД з TTL 10 хв. Шлюзи залишаються активними замість отримання `503 Service Unavailable`.
 
-**TTL = 10 хв — обґрунтування [S6.18]:**
+**TTL = 10 хв — обґрунтування:**
 - **Timestamp validity window**: ±5 хв (компенсує clock drift gateway RTC vs server).
 - **Maximum signature lifetime**: 10 хв = 5 хв (минулий timestamp на trailing edge) + 5 хв (margin для server-side processing delay).
 - **Чому не 5 хв (рівно window):** підпис, створений на trailing edge timestamp window (наприклад, 5 хвилин тому, ще валідний за timestamp check), й одразу повторно надісланий — пройде nonce check якщо TTL == window. 10 хв = window + margin гарантує покриття всього періоду, протягом якого підпис вважається валідним.
 - **Чому не 15+ хв:** довший TTL збільшує Redis memory footprint per gateway (індивідуально незначно, але на 100k+ пристроях та burst auth flows накопичується) без додаткової security користі — timestamps старші 5 хв вже відхиляються timestamp check'ом.
 
-**Спостережуваність [S6.19]:** Prometheus counter `silkennet_m2m_nonce_fallback_total` інкрементується щоразу, коли запит падає з Redis на DB-backed fallback. Alert: rate > 0.1% requests/h → escalate до multi-zone Upstash.
+**Спостережуваність:** Prometheus counter `silkennet_m2m_nonce_fallback_total` інкрементується щоразу, коли запит падає з Redis на DB-backed fallback. Alert: rate > 0.1% requests/h → escalate до multi-zone Upstash.
 
 **Підпис на прошивці (псевдокод):**
 

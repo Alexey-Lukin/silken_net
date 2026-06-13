@@ -701,7 +701,7 @@
 - **P2** · 👤 · → `04_02 §S6.14`, `06_04 §5.4`
 - ✅ rotation policy (dual-key 72h, 90д) + emergency revocation runbook. · [ ] 👤 vault-store production `peaq_signing_key`
 
-#### S6.19 — Два воркери без cron у `config/sidekiq.yml` (doc-ahead-of-code)
+#### S6.20 — Два воркери без cron у `config/sidekiq.yml` (doc-ahead-of-code)
 - **P2** · 👤 · → [`04_02 §11`](04_02_Business_Logic_and_Services)
 - [`04_02 §11`](04_02_Business_Logic_and_Services) описує два воркери як cron-driven, але запису в `config/sidekiq.yml` немає → жоден шлях їх не кличе: (1) **`ClusterEntropyAnalyzerWorker`** — `silkennet_cluster_entropy_score` gauge ніколи не оновлюється → `entropy_anomaly`-алерти не спрацьовують; потрібен orchestrator-воркер (`Cluster.find_each` → `perform_async(cluster_id)`). (2) **`InsurancePayoutWorker`** — `:triggered`-страховки залипають назавжди (якщо `Dclimate::VerificationService` enqueue впав / 10 retry вичерпались) → кошти не доходять до постраждалої org; потрібен sweep-воркер по `ParametricInsurance.status_triggered`. · [ ] 👤 додати cron/orchestrator для обох (або, якщо trigger лишається ручним, прибрати «cron»-формулювання з §11)
 
