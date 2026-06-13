@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Єдиний SSOT-checklist усіх секретів, необхідних для роботи системи в Canopy (staging) та Production. Документ закриває **S1.1 (BLOCKER-3 у [`06_01`](06_01_Deployment_Kamal_Terraform))** — "GitHub Secrets заповнення" — частину 🤖.
+Єдиний SSOT-checklist усіх секретів, необхідних для роботи системи в Canopy (staging) та Production. Документ закриває **[`00_07`](00_07_Action_Plan_Tracker) S1.1** («GitHub Secrets заповнення», deploy-контекст [`06_01`](06_01_Deployment_Kamal_Terraform)) — частину 🤖.
 
 > **Принцип:** Секрет = **будь-яке значення, втрата якого означає можливість компрометації або знищення системи**: приватні ключі, паролі БД, master keys, API tokens, RPC credentials. Реальні значення **ніколи** не комітяться в git та не зберігаються у цьому документі.
 
@@ -119,7 +119,7 @@
 
 ## 3. Akash SDL (`deploy/akash/deploy.yaml` + `deploy.yaml.tpl`)
 
-> **Статус:** SDL містить `REQUIRED_SECRET_NOT_SET` плейсхолдери для критичних змінних (BLOCKER-5 у [`06_01`](06_01_Deployment_Kamal_Terraform), BLOCKER-3 у [`06_02`](06_02_Akash_Network_Integration)).
+> **Статус:** SDL містить `REQUIRED_SECRET_NOT_SET` плейсхолдери для критичних змінних — відкрите [`00_07`](00_07_Action_Plan_Tracker) **S4.3** (Akash SDL secrets; деталі — [`06_02 §Секрети SDL`](06_02_Akash_Network_Integration)).
 >
 > **Рекомендований workflow:** використовувати `deploy/akash/deploy.yaml.tpl` Terraform-шаблон — секрети підставляються автоматично з `terraform.tfvars`.
 >
@@ -414,8 +414,8 @@ bin/rails runner "
 
 | Документ | Зв'язок |
 |---|---|
-| [`06_01`](06_01_Deployment_Kamal_Terraform) | Вихідний BLOCKER-3 |
-| [`06_02`](06_02_Akash_Network_Integration) | BLOCKER-5 (REQUIRED_SECRET_NOT_SET) |
+| [`06_01`](06_01_Deployment_Kamal_Terraform) | Kamal/Terraform secrets (00_07 S1.1) |
+| [`06_02`](06_02_Akash_Network_Integration) | Akash SDL secrets / `REQUIRED_SECRET_NOT_SET` (00_07 S4.3) |
 | [`06_03`](06_03_Prometheus_Observability) | `SENTRY_DSN`, Grafana Cloud tokens |
 | [`05_01`](05_01_Multichain_Architecture) | Web3 ENV variables (§5) |
 | [`00_07`](00_07_Action_Plan_Tracker) | S1.1, S4.3, S5.2, S5.6 |
