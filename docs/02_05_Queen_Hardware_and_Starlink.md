@@ -202,7 +202,7 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 | **PSM (Power Saving Mode)** | ✅ Підтримує | ✅ **Покращена підтримка** (AT+CPSMS) |
 | **Idle споживання (PSM)** | ~10 мкА | **~3 мкА** (критично для IoT) |
 
-> **📝 Рішення (Legacy notes, підтверджено):** Зупинитися на **SIM7070G**. Він має кращу підтримку eDRX та PSM для мереж NB-IoT/LTE-M, що критично для зниження idle-споживання Queen між hourly CoAP flush-циклами. PSM-режим SIM7070G (~3 мкА) значно знижує фонове споживання порівняно з SIM7000G (~10 мкА). AT-команди у firmware вже орієнтовані на SIM7070G (`AT+CNMP=38`).
+> **📝 Рішення (підтверджено):** Зупинитися на **SIM7070G**. Він має кращу підтримку eDRX та PSM для мереж NB-IoT/LTE-M, що критично для зниження idle-споживання Queen між hourly CoAP flush-циклами. PSM-режим SIM7070G (~3 мкА) значно знижує фонове споживання порівняно з SIM7000G (~10 мкА). AT-команди у firmware вже орієнтовані на SIM7070G (`AT+CNMP=38`).
 
 **Необхідна дія:**
 - Фізично перевірити маркування на прототипі модему
@@ -595,7 +595,7 @@ Starlink Mini — компактний термінал LEO-супутника �
            │ 5. HRNG → 128-бітний IV
            │ 6. AES-256-CBC шифрує весь батч (CoAP магістраль)
            │ 7. Restore CRYP_KEYSIZE_128B + LoRa aes_key (SEC.8)
-           │ 6. AT+CCOAPNEW + AT+CCOAPSEND → SIM7070G UART
+           │ 8. AT+CCOAPNEW + AT+CCOAPSEND → SIM7070G UART
            │
            ▼
 [SIM7070G: LTE-M]
@@ -635,7 +635,7 @@ Starlink Mini — компактний термінал LEO-супутника �
 
 **Рішення:** [Helium Network](https://www.helium.com/) — найбільша у світі децентралізована мережа **LoRaWAN**. Сотні тисяч hotspot-ів у 180+ країнах, встановлених звичайними людьми на балконах та дахах.
 
-> ⚠️ **Архітектурне уточнення (2026, post-ARCH.42):** Helium працює на протоколі **LoRaWAN MAC-layer**, а Soldier використовує **raw LoRa P2P** (фізичний рівень) з **AES-128-ECB** (ARCH.42; transitional) → AES-128-CCM (FW.2 target) поверх 21-байтного binary payload. Helium hotspot **не прийме** прямий пакет з Soldier — для валідного uplink потрібен LoRaWAN frame з DevEUI/AppEUI/AppKey, FCntUp counter, MIC та OTAA/ABP join state. Однак LoRaWAN нативно використовує саме AES-128 (AppSKey/NwkSKey), тому ARCH.42 спрощує future Helium bridging — той самий ключ-розмір. Helium fallback архітектурно **переноситься з Soldier на Queen**.
+> ⚠️ **Архітектурне уточнення (post-ARCH.42):** Helium працює на протоколі **LoRaWAN MAC-layer**, а Soldier використовує **raw LoRa P2P** (фізичний рівень) з **AES-128-ECB** (ARCH.42; transitional) → AES-128-CCM (FW.2 target) поверх 21-байтного binary payload. Helium hotspot **не прийме** прямий пакет з Soldier — для валідного uplink потрібен LoRaWAN frame з DevEUI/AppEUI/AppKey, FCntUp counter, MIC та OTAA/ABP join state. Однак LoRaWAN нативно використовує саме AES-128 (AppSKey/NwkSKey), тому ARCH.42 спрощує future Helium bridging — той самий ключ-розмір. Helium fallback архітектурно **переноситься з Soldier на Queen**.
 
 ### Архітектура Helium Fallback (правильна)
 
@@ -723,7 +723,7 @@ if (uplink_down_minutes >= HELIUM_FALLBACK_THRESHOLD_MIN &&
 
 | Компонент | Стан |
 |-----------|------|
-| Концепт і архітектура (Queen-side LoRaWAN) | ✅ Визначено (правка 2026) |
+| Концепт і архітектура (Queen-side LoRaWAN) | ✅ Визначено |
 | LoRaWAN MAC-stack у Queen firmware | 🔴 Не реалізовано (ARCH.34) |
 | Rails endpoint `/api/v1/telemetry/helium` | 🔴 Не реалізовано |
 | Реєстрація Queen у Helium Console | 🔴 Не виконано |
@@ -748,7 +748,7 @@ if (uplink_down_minutes >= HELIUM_FALLBACK_THRESHOLD_MIN &&
 | 8 | **BMS** | 12V / 20А continuous / 50А peak, температурний захист | 1/2.5/3 | 🟡 Модель не зафіксована |
 | 9 | **DC-DC buck 12V→3.7V** | ≥3А continuous, ≥5А peak | 1/2.5 | ✅ Архітектурно |
 | 10 | **DC-DC buck 12V→3.3V** | ≥500 мА | 1/2.5/3 | ✅ Архітектурно |
-| 11 | **LTE-M / NB-IoT антена** | Wideband Cellular **700–2700 МГц** (покриває Kyivstar B1/B3/B7/B8/B20). Зовнішня SMA, IP67. **БЕЗ суміщення з 868 МГц LoRa** — окремі чіпи (STM32WLE5JC vs SIM7070G), окремі RF-порти. Опційно: LTE+Active GNSS combo (Taoglas FXUB63, Pulse W3007) — додає GPS L1 1575 МГц для PPS time-sync SIM7070G. Раніше «868/LTE-M dual-band» — **виключено** (поганий VSWR на вузькому 868, низьке gain). | 1/2.5 | ✅ Архітектурно (REVISED 2026-05-16) |
+| 11 | **LTE-M / NB-IoT антена** | Wideband Cellular **700–2700 МГц** (покриває Kyivstar B1/B3/B7/B8/B20). Зовнішня SMA, IP67. **БЕЗ суміщення з 868 МГц LoRa** — окремі чіпи (STM32WLE5JC vs SIM7070G), окремі RF-порти. Опційно: LTE+Active GNSS combo (Taoglas FXUB63, Pulse W3007) — додає GPS L1 1575 МГц для PPS time-sync SIM7070G. «868/LTE-M dual-band» **виключено** (поганий VSWR на вузькому 868, низьке gain). | 1/2.5 | ✅ Архітектурно |
 | 12 | **LoRa антена** | 868 МГц **tuned** (вузькодіапазонна, 863–870 EU ISM), 5 dBi Fiberglass collinear omni (Mobilemark OD8-868, Taoglas ALL.4101 або еквівалент). Зовнішня SMA, IP67. Призначена для пробивання вологого лісу 150+ м до Soldiers. **НЕ використовувати dual-band/wideband** — VSWR > 2.5 на 868, втрата ~3-5 дБ EIRP → втрата покриття. | 1/2.5/3 | ✅ Архітектурно |
 | 13 | **IP67 корпус** | ABS/PC + ущільнення, ≥2.5L | 1/2.5/3 | 📋 Не специфіковано |
 | 14 | **SWD програматор** | ST-LINK-V3MINIE | — | ✅ |
