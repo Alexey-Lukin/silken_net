@@ -14,12 +14,14 @@ channels:
 dependencies:
   - python=3.12
   # --- DSP + canonical log-mel oracle (parity vs pure-stdlib, tol 1e-6) ---
-  - numpy>=1.26
-  - scipy>=1.12
-  - librosa>=0.10        # pulls soundfile (audio I/O) transitively
+  # Floors raised to tested-current (2026-06-13 sweep): an older numpy/librosa could
+  # silently change the log-mel computation and break the librosa≡stdlib parity contract.
+  - numpy>=2.0
+  - scipy>=1.13
+  - librosa>=0.11        # log-mel oracle; pulls soundfile (audio I/O) transitively
   # --- classical ML (dataset eval / future backend-RF parity) ---
-  - scikit-learn>=1.4
-  - matplotlib>=3.8
+  - scikit-learn>=1.5
+  - matplotlib>=3.9
   # --- testing ---
   - pytest>=7.0
   - pytest-cov>=4.0
@@ -30,5 +32,6 @@ dependencies:
   # finicky); provides Keras 3 + tf.lite.TFLiteConverter (INT8 PTQ →
   # silken_net_audio_model.h). Verified: the librosa≡stdlib parity gate stays
   # green alongside TF's numpy 2.x / librosa 0.11.
+  # NB: TF 2.21 pins h5py<3.15 → h5py stays 3.14.x (transitive; 3.16 awaits a TF release relaxing it).
   - pip:
       - tensorflow>=2.20

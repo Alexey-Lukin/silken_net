@@ -14,7 +14,7 @@ requires-python = ">=3.10"
 dependencies = []
 
 [project.optional-dependencies]
-oracle = ["numpy>=1.26", "librosa>=0.10"]      # canonical DSP oracle + parity
+oracle = ["numpy>=2.0", "librosa>=0.11"]       # canonical DSP oracle + parity (floors at tested versions, 2026-06-13)
 test = ["pytest>=7", "pytest-cov>=4"]
 
 [project.scripts]
