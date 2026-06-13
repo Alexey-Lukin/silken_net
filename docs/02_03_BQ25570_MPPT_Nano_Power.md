@@ -23,7 +23,7 @@
 | Ресурс | Опис |
 |--------|------|
 | [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | Джерело (EBFC): V_OC, R_int, P-V крива |
-| [`02_02` — Blind Mate Pogo Pin Interface](02_02_Blind_Mate_Pogo_Pin_Interface) | Pogo R_interface (§3.3 Z-stack; cold-start contact) |
+| [`02_02` — Blind Mate Pogo Pin Interface](02_02_Blind_Mate_Pogo_Pin_Interface) | Pogo R_interface (§3.5 Z-stack; cold-start contact) |
 | [`02_04` — EDLC Supercapacitor Buffer](02_04_EDLC_Supercapacitor_Buffer) | Буфер (0.47F, VBAT_OV/UV пороги) |
 | [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | Споживач (STM32; wake = RTC-WUT, VBAT_OK = живлення-гейт) |
 | [`02_06` — Legacy Breadboard Appendix](02_06_Legacy_Breadboard_Appendix) | Legacy LTC3108 breadboard прототип |
@@ -323,7 +323,7 @@ ROK1/ROK2 = 1.810
 ROK1 = 1.810 × 4.75 = 8.60 MΩ → 8.66 MΩ (E96)
 
 Перевірка: 1.21 × (1 + 8.66/4.75) = 1.21 × 2.824 = 3.417V ≈ 3.4V ✓
-Гістерезис (~3% вбудований): V_OK_OFF = 3.417 × 0.97 = 3.31V
+Гістерезис: V_OK_OFF ≈ 3.31V (≈ ON − 0.11 В; програмований ROK-плечем — §2, не «вбудовані 3%»)
 ```
 
 | Компонент | Значення | Допуск | Корпус |
@@ -364,7 +364,7 @@ ROUT1 = 1.727 × 4.75 = 8.20 MΩ → 8.25 MΩ (E96)
 | Overvoltage | OV | ROV1 = **16.9 MΩ** | ROV2 = **4.75 MΩ** | **5.52V** | 5.5V |
 | Undervoltage | UV | RUV1 = **7.15 MΩ** | RUV2 = **4.75 MΩ** | **3.03V** | 3.0V |
 | System OK ON | OK | ROK1 = **8.66 MΩ** | ROK2 = **4.75 MΩ** | **3.42V** | 3.4V |
-| System OK OFF | OK | (гістерезис ~3%) | — | **~3.31V** | ~3.3V |
+| System OK OFF | OK | (гістерезис програмований, §2) | — | **~3.31V** | ~3.3V |
 | Buck Output | VOUT_SET | ROUT1 = **8.25 MΩ** | ROUT2 = **4.75 MΩ** | **3.31V** | 3.3V |
 
 > 🔴 **BLOCKER-1:** Значення ROV1, ROV2, RUV1, RUV2, ROK1, ROK2, ROUT1, ROUT2 є **розрахунковими цільовими**. Вони **не верифіковані** на фізичному CJMCU-25570 модулі. Дефолтні Li-Po резистори модуля конфліктують з нашими вимогами. Необхідно фізично виміряти та при потребі замінити всі 8 резисторів перед замовленням PCBA.
@@ -379,7 +379,7 @@ ROUT1 = 1.727 × 4.75 = 8.20 MΩ → 8.25 MΩ (E96)
 
 ### 6.1. Реалістичний DC Bias Derating (виправлено)
 
-> **⚠️ Критична правка специфікації:** Рання версія документа казала «DC bias derating для X5R: ~20% при 3.3V/6.3V» — це **сильно недооцінено**. Реальні дані з Murata GRM32 series datasheet (1210 corpus):
+> **⚠️ DC bias derating — реалістичні дані:** наївна оцінка «~20% для X5R при 3.3V/6.3V» сильно недооцінює просадку ємності. Реальні дані з Murata GRM32 series datasheet (1210 corpus):
 
 | Part | C@0V | C@3.3V | Derating | Eff. capacitance |
 |---|---|---|---|---|
@@ -488,7 +488,7 @@ EBFC (>500mV) → BQ25570 Boost → VSTOR ≥ 3.4V → VBAT_OK HIGH
 
 ## ⚡ 9. Розрахунок Енергетичного Балансу (з урахуванням ККД)
 
-> **⚠️ Критична переробка v2:** Попередня версія робила лінійний розрахунок без ККД boost+buck. Це призвело до помилкового висновку «1 TX/год = в плюсі». При реалістичних ККД система **виходила в мінус на 54 мДж/год**. Нижче — повний перерахунок з ККД per-stage та три рішення, що повертають баланс у плюс.
+> **⚠️ ККД boost+buck — вирішальний:** лінійний розрахунок без ККД дав би хибний висновок «1 TX/год = в плюсі». При реалістичних ККД per-stage система **виходить у мінус на 54 мДж/год** без мітигацій. Нижче — повний розрахунок з ККД per-stage та три рішення, що повертають баланс у плюс.
 
 ### 9.1. ККД BQ25570 — точні значення (TI datasheet SLVSBH2)
 
@@ -609,7 +609,7 @@ H = 38.25 / (81 − 15.04) = 0.58 години = 35 хв
 
 ### 9.8. Рішення для Архітектури
 
-**Затверджено для v3:**
+**Затверджено:**
 1. **TX power +14 dBm @ SF9** замість +22 dBm @ SF7 (Сценарій C). Залежить від реального link budget Queen↔Soldier — потребує польового тесту на полігоні (запит до `02_02 / 10_xx`).
 2. **STM32WLE5JC STOP2 RTC-only mode** — sleep current 300 nA замість 1.07 µA (firmware change у [`03_01`](03_01_Firmware_Lifecycle_and_DMA)).
 3. **Buffer cap §6:** 47µF 25V X7R 1210 (Конфігурація B) — достатньо для +14 dBm pulse.
@@ -668,7 +668,7 @@ EBFC (Ti-6Al-4V anchor)  >500 мВ
 
 Замість 44 мВ-симулятора через дільник напруги — використати **програмований source-meter (Keithley 2400 або еквівалент)** у режимі «emulated EBFC»:
 - V_OC = 500 мВ (program voltage source)
-- Series R = 10 кΩ (симуляція R_int EBFC; за потреби — підняти до 15-20 кΩ для stress-test BLOCKER-3)
+- Series R = 10 кΩ (симуляція R_int EBFC; за потреби — підняти до 15-20 кΩ для stress-test §1.5)
 - Поведінкова крива: лінійна VR-характеристика; за потреби — Tafel-curve через Python script на SCPI
 
 Це дозволяє відтворити cold-start loop, MPPT tracking та аналіз TX просадки **без LTC3108 у тестовому setup**, оскільки виробнича схема його не має.
@@ -683,12 +683,12 @@ EBFC (Ti-6Al-4V anchor)  >500 мВ
 
 1. Зібрати compact wiring §10.1
 2. Виміряти V_OC EBFC мультиметром (без навантаження) — має бути ≥ 500 мВ
-3. Виміряти R_int за двома точками (`BLOCKER-3 §test`) — має бути ≤ 12 кΩ
+3. Виміряти R_int за двома точками (§1.5) — має бути ≤ 12 кΩ
 4. Підключити EBFC до VIN_DC; supercap @ 0V
 5. Спостерігати VSTOR через осцилограф або мультиметр: ramp up 0 → 1.8V (cold start) → 3.4V (VBAT_OK HIGH) → 5.5V (OV stop)
 6. Час до першого VBAT_OK: 15–60 хв при P_gen=15 µW
 7. Перевірка просадки VOUT під час TX:
-   - Запустити firmware test `firmware/test/test_tx_burst.c` (1× LoRa TX @ +14 dBm)
+   - Запустити firmware test `firmware/test/test_tx_burst.c` (планований; 1× LoRa TX @ +14 dBm)
    - Осцилограф на VOUT — ΔV має бути < 50 мВ
 
 ---
@@ -704,7 +704,7 @@ EBFC (Ti-6Al-4V anchor)  >500 мВ
 - [ ] Виміряти повну P-V криву EBFC у лабораторії ([`08_02 §4`](08_02_Academic_Institutions_Registry)); зафіксувати MPP%
 - [ ] Налаштувати ROC1/ROC2 згідно з виміряним MPP (стартова конфігурація 65%)
 
-**Cold-Start Loop (BLOCKER-3) — НОВИЙ:**
+**Cold-Start Loop (§1.5):**
 - [ ] Виміряти V_OC EBFC (no load) — має бути ≥ 500 мВ
 - [ ] Виміряти R_int методом двох точок (15 µA load) — має бути ≤ 12 кΩ
 - [ ] Якщо R_int > 12 кΩ — обрати fallback (A: serial stack 2× EBFC / B: 2× anchor parallel / C: LTC3108 DNP populate)
