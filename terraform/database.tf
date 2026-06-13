@@ -1,7 +1,7 @@
 # Cloud SQL PostgreSQL instance
 resource "google_sql_database_instance" "silken_db" {
   name             = "silken-db"
-  database_version = "POSTGRES_16"
+  database_version = "POSTGRES_17"
   region           = var.region
 
   settings {
@@ -113,7 +113,7 @@ resource "google_sql_database_instance" "read_replica" {
   name                 = "silken-db-replica-${count.index}"
   master_instance_name = google_sql_database_instance.silken_db.name
   region               = var.region
-  database_version     = "POSTGRES_16"
+  database_version     = "POSTGRES_17"
 
   replica_configuration {
     failover_target = false

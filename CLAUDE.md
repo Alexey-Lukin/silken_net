@@ -247,7 +247,7 @@ uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5)
 
 ## 10. Деплой та інфраструктура
 
-- **GCP** `europe-west1` (GDPR): Cloud SQL PostgreSQL 16, Memorystore Redis 7.0, GCE instances.
+- **GCP** `europe-west1` (GDPR): Cloud SQL PostgreSQL 17, Memorystore Redis 7.0, GCE instances.
 - **Kamal**: production + canopy. SSH deploy, Traefik reverse proxy, Let's Encrypt SSL.
 - **Akash Network**: децентралізована хмара (ЄС, цензуростійкість). SDL в `deploy/akash/`: `web` + `job` (Sidekiq) + `alloy` сервіси.
 - **Docker**: `ruby:4.0.5-slim`, multi-stage, `thrust ./bin/rails server`.

@@ -199,7 +199,7 @@ terraform apply
 │  │  Ingress Anchor (e2-micro, silken-net-ingress)      │   │
 │  │    — статична IP, HAProxy/socat                     │   │
 │  │    — проксює HTTP/HTTPS/CoAP на Akash deployment   │   │
-│  │  Cloud SQL PostgreSQL 16 (4 бази, HA, приватна IP)  │   │
+│  │  Cloud SQL PostgreSQL 17 (4 бази, HA, приватна IP)  │   │
 │  │  Artifact Registry (Docker images)                   │   │
 │  └──────────────────────────────────────────────────────┘   │
 │  ❌ Memorystore Redis — ВИДАЛЕНО (замінено на Upstash)      │
@@ -244,7 +244,7 @@ terraform apply
 | **Sidekiq (job role)** | ❌ | ✅ | — | — | `job` сервіс в Akash SDL |
 | **Grafana Alloy (metrics agent)** | ❌ | ✅ | — | — | `alloy` сервіс в Akash SDL, пушить у Grafana Cloud |
 | **CoAP UDP daemon (:5683)** | proxy | ✅ | — | — | Ingress Anchor проксює UDP на Akash |
-| **Cloud SQL PostgreSQL 16** | ✅ | — | — | — | Приватна IP, доступ через Auth Proxy |
+| **Cloud SQL PostgreSQL 17** | ✅ | — | — | — | Приватна IP, доступ через Auth Proxy |
 | **ActionCable (Solid Cable)** | ✅ | ✅ | — | — | Спільна Cloud SQL БД `cable`, LISTEN/NOTIFY (без sticky sessions) |
 | **Redis** | ❌ | — | ✅ | — | Upstash Serverless, TLS (`rediss://`) |
 | **Prometheus + Grafana + Alerting** | ❌ | — | — | ✅ | SaaS, Alloy → remote_write |
@@ -453,7 +453,7 @@ terraform/
 ├── main.tf       # Provider (google ~> 5.0), GCP APIs, Artifact Registry
 ├── vpc.tf        # VPC, subnet (10.0.0.0/20), Cloud Router, Cloud NAT, Firewall
 ├── compute.tf    # Ingress Anchor (e2-micro, silken-net-ingress), Static IP
-├── database.tf   # Cloud SQL PostgreSQL 16, 4 databases, Private Service Access
+├── database.tf   # Cloud SQL PostgreSQL 17, 4 databases, Private Service Access
 ├── iam.tf        # Service Account silken-net-deploy + 7 IAM roles
 ├── variables.tf  # Всі input variables з валідацією
 └── outputs.tf    # ingress_ip, DB URL тощо
