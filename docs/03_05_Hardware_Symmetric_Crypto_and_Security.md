@@ -56,28 +56,7 @@
 
 ---
 
-### ⚙️ Стан Реалізації
-
-| Компонент | Стан |
-|-----------|------|
-| **Апаратний AES-модуль** (`MX_CRYP_Init` / `HAL_CRYP_Init`) | ✅ Реалізовано (обидва вузли). Підтримує `CRYP_KEYSIZE_128B` (LoRa) та `CRYP_KEYSIZE_256B` (CoAP — лише Queen) |
-| **Soldier → Queen (LoRa): AES-128-ECB** [ARCH.42 transitional] | ✅ Реалізовано (key-size flip 256→128 виконано 2026-05-23). CCM-mode upgrade — окремий FW.2 subtask |
-| **Soldier → Queen (LoRa): AES-128-CCM 28B packet (wire-rev2)** [FW.2 target] | 🟡 PARTIAL — backend parser `TelemetryUnpackerService.process_ccm_chunk` + `Cryptography::LoraCcm` ✅ ЗАКРИТО (2026-05-24, feature-flagged `ENV TELEMETRY_CCM_ENABLED`); firmware Soldier CCM emit + Queen CCM decrypt — окремий subtask, потребує STM32 hardware bench для `CRYP_AES_CCM` HAL верифікації |
-| **Queen → Rails (CoAP Batch): AES-256-CBC + HRNG IV** | ✅ Реалізовано (без змін після ARCH.42 — CoAP не зачіпається) |
-| **Rails → Queen (CoAP Command): AES-256-CBC + IV** | ✅ Реалізовано (без змін після ARCH.42) |
-| **ECB Restoration після CBC операцій (Queen)** | ✅ Виправлено (`[FIX: CRITICAL — ECB Restoration]`) |
-| **HRNG Fallback (безпечна деградація)** | ✅ Реалізовано (XOR tick + index) |
-| **Emergency TX (EwsAlert / Panic): AES-128-ECB [transitional] / AES-128-CCM [FW.2]** | ✅ Реалізовано (key-size 128). CCM-mode сторожа панічного каналу — після FW.2 transition |
-| **AES Key — per-device HKDF provisioning (FW.1)** | ✅ Firmware CLOSED (2026-05-02). Factory Flashing Pipeline (SEC.3) + RDP Level 2 (SEC.2) — залишаються |
-| **Per-device LoRa AES-128 key (16-byte) [ARCH.42]** | ✅ Backend `HardwareKeyService.derive_lora_key` (info `"silken-aes-128-lora-key"`) + Firmware `Load_AES_Key()` 4 words |
-| **Per-device CoAP AES-256 key (32-byte) — Gateway only** | ✅ Backend `HardwareKeyService.derive_device_key` (info `"silken-aes-256-device-key"`) + Queen Flash 8 words |
-| **ECB Mode для Soldier ↔ Queen (відсутність IV)** | 🟡 OPEN — transitional AES-128-ECB після ARCH.42; повне закриття після FW.2 CCM rollout |
-| **Відсутність MAC/MIC для LoRa-пакетів** | 🟡 OPEN — закривається разом з FW.2 CCM (8-byte MIC + 4-byte Frame Counter) |
-| **HRNG Fallback — передбачуваний seed** | ✅ Reuse закрито (`coap_iv.h`: uid×device + unix_ts×reboot + flush_seq×flush + 4 host-тести); 🟡 predictability residual **low-severity** (no chosen-plaintext на CoAP — §HRNG Fallback) |
-| **Відсутність ротації ключів (Key Rotation)** | 🟡 механізм freeze-contract host-готовий (§3.8 Hash-Ratchet, 2026-06-10); активація gated на FW.2 CCM; PQC bridge через §10 |
-| **ECB Restoration Race (HAL_CRYP_Init failure)** | ✅ Виправлено (SEC.8) — RCC reset + `NVIC_SystemReset()` при апаратному збої |
-| **SE050 Secure Element — голос-дерева Ed25519 + AES-128 LoRa [SEC.6 RESOLVED → §3.7]** | 🟡 OPEN (hardware) — eval-kit + datasheet-verify (Ed25519/monotonic-counters/AES-128/I²C); ADR ✅ §3.7 |
-| **PQC migration roadmap (2026 → 2028 → 2035)** | 🟢 NEW — задокументовано у §10 (TRL-stratified layering для Soldier↔Queen, Queen↔Rails, OTA, peaq DID) |
+> **Стан реалізації** кожного компонента живе у відповідному розділі body нижче (§1–§10: крипто-init, packet-структура, key-management, IV, restore, PQC) + трекер відкритих пунктів — [`00_07`](00_07_Action_Plan_Tracker) (SEC.*). Канон **не тримає** окремий status-dashboard «Компонент \| Стан» (00_06 §1: стан компонентів читається з body + code-рефів, інакше дубль body/00_07 → drift).
 
 ---
 
@@ -87,7 +66,7 @@
 
 ### Hardcoded AES-256 Key — Firmware CLOSED (FW.1, 2026-05-02)
 
-**Статус:** ✅ Firmware ЗАКРИТО (FW.1, 2026-05-02). `Load_AES_Key()` зчитує per-device HKDF-derived ключ з Protected Flash Sector (`FLASH_KEY_ADDR`, magic `"KEYL"`). Hardcoded ідентичний ключ видалено. Factory Flashing Pipeline (SEC.3) та RDP Level 2 activation (SEC.2) — залишаються.
+✅ Firmware ЗАКРИТО (FW.1, 2026-05-02): `Load_AES_Key()` зчитує per-device HKDF-derived ключ з Protected Flash Sector (`FLASH_KEY_ADDR`, magic `"KEYL"`); hardcoded ідентичний ключ видалено. Factory Flashing Pipeline (SEC.3) та RDP Level 2 activation (SEC.2) залишаються (трекер → [`00_07`](00_07_Action_Plan_Tracker)).
 
 **Файли (historical pre-FW.1):** `firmware/soldier/main.c`, `firmware/queen/main.c` (топ-рівневе оголошення `aes_key[]` до FW.1)
 
@@ -110,10 +89,7 @@ uint32_t aes_key[8] = {0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX,
 - ✅ Per-device ізоляція: злам одного Soldier не розкриває ключі сусідів.
 - ✅ `Security::WeakKeyDetector` + boot-time guard (§3.1а, SEC.9) — FIPS-197 test vector не може потрапити в production.
 
-**Залишається:**
-
-- [x] SEC.3: Factory Flashing Pipeline tool (✅ 2026-05-24, dry-run mode; реалізація, integration тест, threat model → §3.4г). Hardware-gated: real `STM32_Programmer_CLI` subprocess + live `cryptoauthlib` I²C — deferred до HW bench
-- [ ] SEC.2: RDP Level 2 activation (необоротний final lock перед field deployment)
+**Залишається** (трекер — [`00_07`](00_07_Action_Plan_Tracker) SEC.2/SEC.3): SEC.3 Factory Flashing Pipeline tool (✅ 2026-05-24, dry-run; real `STM32_Programmer_CLI` subprocess + live `cryptoauthlib` I²C — deferred до HW bench; threat model → §3.4г); SEC.2 RDP Level 2 activation (необоротний final lock перед field deployment).
 
 > **⚠️ ОПЕРАЦІЙНИЙ РИЗИК (Pre-Flight Checklist):** При кожному циклі прошивки — верифікувати що firmware binary отримує ключ з vault (не хардкоджений placeholder). Симптом помилки: Queen бачить щойно декриптований Soldier-пакет як хаотичний сміттєвий масив, ліс мовчазний, жодних помилок у Rails. Причина — ключ не синхронізований між Soldier і Queen Flash секторами. **Той самий «сміттєвий» ефект фундаментальний і для inter-Soldier mesh-релею за per-device ключів** (сусід не має ключа відправника) — opaque-релей вимагає cleartext address-шару або shared mesh-key → [`00_07` — ARCH.43](00_07_Action_Plan_Tracker).
 >
@@ -123,7 +99,7 @@ uint32_t aes_key[8] = {0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX,
 
 ### ECB Mode для LoRa Soldier → Queen (transitional після ARCH.42)
 
-**Статус:** 🟡 Частково мітиговано через ARCH.42 (key-size 128). **Повне закриття — після FW.2 CCM rollout.**
+🟡 Частково мітиговано через ARCH.42 (key-size 128); **повне закриття — після FW.2 CCM rollout** (трекер → [`00_07`](00_07_Action_Plan_Tracker) FW.2).
 
 **Файли:** `firmware/soldier/main.c` (MX_CRYP_Init), `firmware/queen/main.c` (MX_CRYP_Init)
 
@@ -368,7 +344,7 @@ Duty cycle = T_airtime / T_period
 
 ### Відсутність MAC/MIC (Message Authentication Code) для LoRa-пакетів
 
-**Статус:** Відкрито. **Критична відсутність автентифікації повідомлень.**
+🟡 Відкрито (трекер → [`00_07`](00_07_Action_Plan_Tracker); закривається FW.2 CCM) — **критична відсутність автентифікації повідомлень.**
 
 **Контекст:** LoRa-пакет (16 байт) містить лише зашифровані сенсорні дані. Не передбачено жодного механізму перевірки цілісності або автентифікації джерела.
 
@@ -391,7 +367,7 @@ Duty cycle = T_airtime / T_period
 
 ### HRNG Fallback — покращена ентропія (Виправлено)
 
-**Статус:** ✅ Reuse закрито; **harden 2026-05-29** (cross-reboot/flush uniqueness + host-тести).
+✅ Reuse закрито; **harden 2026-05-29** (cross-reboot/flush uniqueness + host-тести). 🟡 Residual (predictability) — low-severity, нижче.
 
 **Реалізація:** fallback-IV винесено у pure-функцію `firmware/queen/coap_iv.h` →
 `coap_fallback_iv_word(i, tick, uid_hash, unix_ts, flush_seq)`, host-тестовану в
@@ -416,7 +392,7 @@ batch_iv[i] = (tick + i)                  // sub-second + per-word
 
 ### Відсутній Механізм Ротації Ключів (Key Rotation)
 
-**Статус:** Відкрито. Системна проблема при масштабуванні.
+🟡 Відкрито (трекер → [`00_07`](00_07_Action_Plan_Tracker) FW.17) — системна проблема при масштабуванні.
 
 **Контекст:** Поточна архітектура передбачає єдиний статичний ключ, зашитий при Factory Flashing. Немає механізму зміни ключа без повної перепрошивки через OTA або фізичного доступу.
 
@@ -440,7 +416,7 @@ backward secrecy + чесна модель загроз + ECDH-alt ADR) — по
 
 ### Захист від ECB Restoration Race — реалізовано (SEC.8)
 
-**Статус:** Виправлено (SEC.8). ECB-відновлення тепер захищене RCC-скиданням та `NVIC_SystemReset()`.
+✅ Виправлено (SEC.8): ECB-відновлення захищене RCC-скиданням та `NVIC_SystemReset()`.
 **Файл:** `firmware/queen/main.c`
 
 **Реалізація:**
