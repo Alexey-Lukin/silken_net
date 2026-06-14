@@ -36,7 +36,7 @@
 - [§06 · Deploy / Observability / Secrets / Ops](#06--deploy--observability--secrets--ops)
 - [§07 · Юридичні / Бізнес](#07--юридичні--бізнес)
 - [§08 · Академічна інтеграція + External Stakeholders](#08--академічна-інтеграція--external-stakeholders)
-- [Cross-cutting · Doc-drift (DOC-T) — tracker doc↔firmware↔backend reconciliation](#-cross-cutting--doc-drift-doc-t--tracker-docfirmwarebackend-reconciliation)
+- [Cross-cutting · Doc-drift (DOC-T) — SSOT doc↔code + tracker form/tooling](#-cross-cutting--doc-drift-doc-t--ssot-doccode--tracker-formtooling)
 - [Backlog · Додаткові знахідки (не блокери)](#-backlog--додаткові-знахідки-не-блокери)
 - [Backlog · Архітектурні пропозиції (довгострокові)](#-backlog--архітектурні-пропозиції-довгострокові)
 - [Архів закритих пунктів (мігровано в канон)](#-архів-закритих-пунктів-мігровано-в-канон)
@@ -1047,12 +1047,12 @@
 - [ ] 👤 identify call (HORIZON-CL6-*-BIODIV) → consortium (SilkenNet coord + ЧНУ/ЧДТУ/біо-хаб + 1-2 EU: Linköping/CSIC) → submit при acceptance 24a
 - [ ] 🔗 E.59/FW.4-EXT (5-class TinyML) + UNI.13a (Soundscape Library)
 
-## 🔀 Cross-cutting · Doc-drift (DOC-T) — tracker doc↔firmware↔backend reconciliation
+## 🔀 Cross-cutting · Doc-drift (DOC-T) — SSOT doc↔code + tracker form/tooling
 
-Потребують узгодження між docs, firmware та backend. **Не блокери виконання, але блокери для аудиту і онбордингу.**
+DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** еволюцію самого tracker'а — форму пунктів і drift-guards. **Не блокери виконання, але блокери для аудиту й онбордингу.**
 
 > ✅ **DOC.N namespace розведено (2026-06-03):** раніше `DOC.N` означав ТРИ різні речі → колізії (DOC.2/5/9/10/11). Тепер три окремі префікси, кожен у своєму домі:
-> - **`DOC-T.N`** — цей tracker (doc↔firmware↔backend doc-drift TODO, 00_07; таблиця нижче).
+> - **`DOC-T.N`** — цей tracker (SSOT doc-drift + tracker form/tooling TODO, 00_07; таблиця нижче).
 > - **`DOC-R.N`** — code↔doc divergence registry ([`04_02 §11`](04_02_Business_Logic_and_Services) + `04_01 §12` дзеркало).
 > - **`DOC.N`** (bare) — canon-block SSOT-home теги **всередині** канон-доків (`03_01`/`03_04`/`04_04`/`05_02`…); numbers **load-bearing** у GitHub anchor-слагах (`-docN`, на які лінкуються інші доки), тож заморожені на місці. `DOC.8` (cleanup constraint) — спільний канон-constraint у 04_01+04_02, лишається `DOC.8`.
 >
@@ -1062,17 +1062,7 @@
 |----|----------------|-------------------|-----|--------|
 | DOC-T.9 | Documentation `02_03` §9.3 raніше використовувала 15 mA/50 ms для LoRa TX. Виправлено на 120 mA/100 ms (~39 мДж) per SX1262 datasheet. Firmware energy accounting **не верифіковано незалежно** | `02_03`, `firmware/soldier/main.c` | Лабораторне вимірювання поточного TX (HW.x) + cross-ref у `02_03` після верифікації | ⏸️ Заблоковано лаб-стендом |
 | DOC-T.10 | Реструктуризація 05/07 (Фаза 3) — відкладені misplacement-рішення: `07_01 §11` Investor Q&A (pitch/diligence — дім 00_01 vs новий pitch-doc неоднозначний); `07_03 §5` Anchor Assembly + `§6` Virtual Prototyping (operational/field-ops дім, наразі grant-bootstrap контекст — не чистий misplacement) | `07_01`, `07_03` | Призначити operational/pitch-дім + перенести (рішення founder) | 🟡 Deferred |
-| DOC-T.15 | **Volatile `*.c:N` line-refs** — drift кампанія уникає (`main.c` росте → ref вказує на ХИБНИЙ зміст; FW.4-трійка цілила в `DEFAULT_TTL` замість Run_Inference). **РЕЗОЛВНУТО 2026-06-10:** усі 30 рефів прибрано — `03_02 §0` const-table (bare `main.c`; попутно −3 мертві FW.53-константи `OTA_OVERHEAD`/`OTA_FULL_CHUNK_THRESH`/`MIN_OTA_ALIGNED`, +2 заміни `OTA_COAP_HEADER_SIZE`/`OTA_COAP_MIN_FRAME`), `02_05` ×5 + `03_03` ×1 → symbol-рефи, `05_02` BLOCKER-01 marked ✅ ЗАКРИТО (FW.1 видалив hardcoded-key), `.github/copilot-instructions.md` blocker-table синхронізовано → дзеркало CLAUDE.md §12. Guard `DocsLinter.source_line_ref_drift` → **HARD** (`00_06 §3`). | `docs/**` + `.github/**` (root CLAUDE.md поза скоупом) | done; guard HARD тримає лінію | ✅ Resolved 2026-06-10 |
 | DOC-T.16 | **bare-§ після whole-doc-лінка** — форма `[NN_NN](Doc) §X` (канон = `[NN_NN §X](Doc)`, `00_06 §1`); **gate-TOLERATED**: ні `bare_section_ref` (лише code-span поза лінком), ні `crossref_label_form` (лише мітка href) його не ловлять. Campaign-wide — 13 лише в Module 01. | `docs/**` | NEW guard `section_ref_after_doclink` + 1-shot all-module normalize sweep (як crossref-кампанія R1–R3), **НЕ** piecemeal per-module | 🟡 Approved (founder 2026-06-13) |
-| DOC-T.17 | **Volatile Ruby `*.rb:N`/`*.rake:N` line-refs** — той самий drift-клас, що DOC-T.15 (`.c/.h`), але регекс `\.[ch]:\d+` його не ловив → накопичувалися нечуто (`*.rb:N` указує на ХИБНИЙ рядок коли файл росте). **РЕЗОЛВНУТО 2026-06-13:** `SOURCE_LINE_REF_RE` розширено на alternation `\.(?:[ch]\|rb\|rake):\d+`; sweep усіх 10 рефів (7 доків: 03_03/04_02/04_04/05_02/06_02×2/06_03×2/07_01×2) → лишено file/class (кожен поряд уже цитує symbol/ENV/worker), усі 10 файлів верифіковано як наявні; +2 спеки. Guard **HARD** (`00_06 §3`). | `docs/**` + `.github/**` | done; guard HARD тримає лінію | ✅ Resolved 2026-06-13 |
-| DOC-T.18 | **Tracker parser моделює STAGE окремо від WHO** (post WHO+STAGE meta-sweep `9625297`): `EXECUTORS` мапив `🟡`/`🔗` як `:blocked` executor — конфлація who-with-status. | `lib/tracker/dashboard.rb`, `spec/lib/tracker/dashboard_spec.rb`, `00_06 §3` | ✅ done (`df12483`): `EXECUTORS`=WHO-only `{🤖,👤}` · `STAGES`/`Item.stage` · parse STAGE з meta-line · conformance вимагає `WHO·STAGE` (138/138 pass) · render «Заблоковано»=STAGE `🔗`; +specs (45/0), `00_06 §3` | ✅ Resolved 2026-06-14 |
-| DOC-T.19 | **Universal `**Стан:**` form-sweep + обидва guards HARD** (founder AskUser 2026-06-14): кожен 00_07-пункт веде з `**Стан:**` (не «✅ X»/prose/bare-checkbox-лід — однорідність). **DONE:** усі 138 items на `**Стан:**`-ліді across §00–§08 (SESSION-8 §00/§07/§08+named → run-on guard HARD; SESSION-9 решта 48 = весь §01-02 HW block + §04/§05/§06 + DOC-T.2, deep verify-canon by READING + code-truth, ~10 drift-fixes along threads) → `inline_residual_runon` + `verdict_lead_violations` **обидва HARD** = трекер однорідний. | `docs/00_07`, `lib/tracker/dashboard.rb`, `00_06 §3` | — | 🟢 Done (2026-06-14) |
-| DOC-T.20 | **DOC-T section form-heterogeneity** (founder-flagged 2026-06-14): `DOC-T.2` — lone `#### `-item, тоді як усі інші DOC-T = table-rows; + resolved `DOC-T.15/17/18/19` кластеряться в active-таблиці замість §🗄️ Архів (де живуть 13/11/12/14/1 та все інше resolved). | `docs/00_07` | homogenize: archive resolved (15/17/18/19) → §🗄️ + `DOC-T.2` `#### `→active row → active DOC-T table = лише open (9/10/16/2). (Опц.: ревізувати застарілий section-title «doc↔firmware↔backend reconciliation» — секція переросла у загальний doc-tooling bucket.) | 🟡 Queued (fresh session) |
-
-#### DOC-T.2 — Canon↔canon de-dup (SSOT single-home)
-- **P2** · 🤖 · 🟢 · → `00_06 §2`
-- **Стан:** High-value канон↔канон de-dup завершено — driftable ПОВНИХ ре-декларацій не лишилось: Lorenz-блок `05_02`→`03_04 §4.1` був єдиною справжньою (11 значень verify-present перед стрипом, 0 loss); AES/rate/carbon/slashing/insurance/gyroid/delta_t = контекстні згадки, НЕ spec-блоки, і тепер стережені value-guard'ами (`00_06 §3`: lorenz/rate/carbon/solc/AES-roster). ⚠️ Blind value-de-dup небезпечний — колізія чисел (`02_03 «65%»` = MPPT-фракція VOC ≠ gyroid-пористість): масовий ref за значенням зіпсував би непов'язаний факт → рефати лише по-кейсу з per-fact верифікацією. Реєстр домів — `00_06 §2`.
-- [ ] 🤖 (stretch, deferred) розширити `tracker:check` на канон↔канон hardcoded-value детект поза home — ⚠️ ризик false-positive на колізіях чисел (важко без AST доків)
 
 ## 📌 Backlog · Додаткові знахідки (не блокери)
 
@@ -1203,6 +1193,12 @@
 | DOC-T.12 | Taxonomy v3 P4: дисолюція Module 08 (7→3 доки) — `08_01` Joint Pubs/IP · `08_02` Academic Registry (5 ВНЗ, relationship-шар, інж-субстанція реферить Tier I) · `08_03` External; mesh-математика → `06_08`; ~260 inbound refs swept | `08_01`, `08_02`, `08_03`, `06_08` |
 | DOC-T.14 | 03_01↔03_02 semantic overlap зведено: Queen RAM → `03_02 §9`, test-matrix → `03_02 §11`, AES-таблиця → `03_05 §6`; residual health-sentinel byte-map dup + stale 6-біт GP-cap теж усунено (03_01 → ref `03_02 §7`, cement 2026-06-08) | `03_02`, `03_05 §6` |
 | DOC-T.1 | AES master-key doc contradiction («навмисно не публікується» vs «перші 4 слова = FIPS-197 Appendix B») — РЕЗОЛВНУТО (re-audit 2026-06-09): §3.1 тепер когерентний (FW.1 hardcoded-key removed → per-device HKDF + Protected Flash) + §3.1а WeakKeyDetector boot-guard. Оригінальна дія «видалити test-vector згадку» **суперседнута**: історична FIPS-197-нота лишена СВІДОМО як stop-and-escalate сигнал для аудиторів pre-FW.1 прошивки. Doc-side key-agnostic → НЕ залежав від SEC.9 key-replace (хибний «blocked»); stale line-refs (panic-map range + `main.c` AES-key block=removed) знято | `03_05 §3.1`, §3.1а |
+| DOC-T.2 | Канон↔канон дубль-аудит завершено: єдина справжня ПОВНА ре-декларація (Lorenz-блок `05_02` → `03_04 §4.1`) усунена; решта = контекстні згадки під value-guard'ами; ⚠️ blind value-de-dup небезпечний (колізії чисел) → рефати per-case; auto canon↔canon value-detect deferred | `00_06 §2`, §3 |
+| DOC-T.15 | Volatile `*.c`/`*.h:N` line-refs killed (30 рефів → symbol/`#define`); guard `source_line_ref_drift` HARD | `00_06 §3` |
+| DOC-T.17 | Volatile Ruby `*.rb`/`*.rake:N` line-refs killed (10 рефів, 7 доків → file/class); `SOURCE_LINE_REF_RE` alternation → HARD | `00_06 §3` |
+| DOC-T.18 | Tracker parser моделює STAGE окремо від WHO (`EXECUTORS`=WHO-only · `STAGES`/`Item.stage` · conformance вимагає WHO·STAGE) | `lib/tracker/dashboard.rb`, `00_06 §3` |
+| DOC-T.19 | Universal `**Стан:**` form-sweep усіх 138 items §00–§08 → `inline_residual_runon` + `verdict_lead_violations` обидва HARD = трекер однорідний | `lib/tracker/dashboard.rb`, `00_06 §3` |
+| DOC-T.20 | DOC-T section гомогенізовано: resolved 15/17/18/19 + DOC-T.2 → §🗄️ (вердикт DOC-T.2 canonized → `00_06 §2`), `#### `-форму знято, section-title оновлено → active DOC-T = лише open (9/10/16) | `00_07` |
 | E.45 | SCC/SFC subgraph zero-address fail-fast guard (`subgraph/validate_addresses.sh`); real-address swap → S3.5 | `05_03` |
 | OPS.5 | Projects V2 TRL field schema (1-9 + Readiness Horizon SRL/MRL; `lib/github_bootstrap.rb`); live-board bootstrap-run → OPS.6 | `00_05 §1.1` |
 | E.61 | Solana micro-rewards batch payouts (Kredis-акумуляція → `transferChecked`, годинний cron, поріг-gated) | `05_01 §8`, `04_02 §10` |
