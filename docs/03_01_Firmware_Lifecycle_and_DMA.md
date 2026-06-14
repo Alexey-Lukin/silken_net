@@ -1265,112 +1265,34 @@ module SilkenNet
   class BioContract   # Бізнес-логіка (токеноміка + статуси)
 end
 
-def calculate_state(seed, temp, acoustic)  # C bridge — єдина публічна функція
-  SilkenNet::BioContract.evaluate_and_pack(seed, temp, acoustic)
+# C bridge — єдина публічна точка входу (7-арг сигнатура після SEC.11 cutover; owner [`03_04 §6`](03_04_mruby_Lorenz_Attractor)):
+def calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)
+  SilkenNet::BioContract.evaluate_and_pack(...)   # логіка status/GP — 03_04 §4/§4.3
 end
 ```
 
-C-код знає **тільки** про `calculate_state` (через `mrb_intern_lit`). Вся логіка всередині `SilkenNet::*` невидима для firmware.
+C-код знає **тільки** про `calculate_state` (через `mrb_intern_lit`). Вся логіка всередині `SilkenNet::*` невидима для firmware. `(x_prev, y_prev, z_prev)` — RTC continuation (§2) або K_seed cold-start; `delta_t_s`/`vcap_mv` — EMA з RTC (FW.21).
 
-### 11.2 Attractor — Математичне Ядро
+### 11.2 Attractor — Математичне Ядро (firmware-дзеркало; owner 03_04)
 
-**Константи:**
+> **Константи (σ=10 / ρ=28 / β=`8.0/3.0` / DT=0.01 / N=250 + clamps SIGMA/RHO), σ/ρ-пертурбація сенсорами (acoustic→σ, temp→ρ) і 250 кроків Ейлера — owner [`03_04 §1.2`](03_04_mruby_Lorenz_Attractor) (firmware↔backend таблиця) + [`03_04 §3`](03_04_mruby_Lorenz_Attractor) (алгоритм крок-за-кроком); тут НЕ дублюємо (One-Home; β=BASE_BETA фіксований після [E.63]).**
 
-| Константа | Значення | Призначення |
-|-----------|----------|-------------|
-| `BASE_SIGMA` | `10.0` | Швидкість конвекції (температурний градієнт) |
-| `BASE_RHO` | `28.0` | Число Релея (нагрів → конвекція) |
-| `BASE_BETA` | `8.0 / 3.0` | Геометрична константа (розсіювання) |
-| `DT` | `0.01` | Крок інтегрування Ейлера |
-| `ITERATIONS` | `250` | Кількість ітерацій до виходу на траєкторію хаосу |
-| `SIGMA_MIN` | `5.0` | Clamp мінімум sigma |
-| `SIGMA_MAX` | `30.0` | Clamp максимум sigma |
-| `RHO_MIN` | `10.0` | Clamp мінімум rho |
-| `RHO_MAX` | `50.0` | Clamp максимум rho |
+**Firmware-специфіка:** початковий стан `(x,y,z)` — НЕ наївний `seed%1000`, а детермінована деривація з per-device **K_seed** через HMAC-SHA256 ([SEC.11 / FW.30], §1.4 + [`03_06 §3`](03_06_Factory_Flashing_and_Key_Provisioning)). Детермінізм критичний: сервер мусить відтворити той самий Z для **Dual Computation Integrity** (це НЕ HRNG-per-wake). Між пробудженнями стан продовжується з RTC DR16-DR19 (§2, FW.6 continuation > 99.9% циклів); cold-start — з K_seed. Серверне дзеркало `app/services/silken_net/attractor.rb` рахує ідентично (DCI крос-верифікація).
 
-**Ініціалізація стану (x, y, z) з seed:**
+### 11.3 BioContract — Статуси та Wire-Пакування
+
+> **Пороги (`CRITICAL_Z_MIN`=2.0 stress; anomaly-стеля **ρ-relative** [E.64]: `ρ + (CRITICAL_Z_MAX−BASE_RHO)` ≈45 @ ρ=28) та логіка Z→status→growth_points — owner [`03_04 §4`](03_04_mruby_Lorenz_Attractor); growth_points-формула `m(delta_t)` — [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor) (One-Home). [E.63]: у гомеостазі GP = метаболічна жвавість `m(delta_t)`, НЕ `|29−z|`; Лоренц лишився лише status-гейтом.**
+
+**Firmware-специфіка — StatusByte wire-пакування** (байт 10 payload, FW.29-PACK):
 
 ```ruby
-x = ((seed % 1000) / 500.0) - 1.0          # x ∈ [-1.0, 1.0]
-y = (((seed >> 4) % 1000) / 500.0) - 1.0   # y ∈ [-1.0, 1.0]
-z = (((seed >> 8) % 1000) / 500.0) - 1.0   # z ∈ [-1.0, 1.0]
-```
-
-`seed` деривується з per-device K_seed (**[SEC.11 / FW.30]**, §1.4) — **детермінований**, бо сервер мусить відтворити Z (Dual Computation Integrity); це **НЕ** HRNG-per-wake. За 250 кроків система **завжди виходить на дивний атрактор Лоренца** — хаотична, але детермінована траєкторія. Між пробудженнями стан `(x,y,z)` продовжується з RTC (§2, DR16-19); cold-start — з K_seed.
-
-**Пертурбація параметрів датчиками:**
-
-```ruby
-local_sigma = (BASE_SIGMA + acoustic * 0.1).clamp(SIGMA_MIN, SIGMA_MAX)
-local_rho   = (BASE_RHO   + temp    * 0.2).clamp(RHO_MIN,   RHO_MAX)
-```
-
-- `acoustic` → σ (скільки "турбуленції" в системі — кавітація посилює хаос)
-- `temp` → ρ (температура впливає на тепловий рушій конвекції)
-- `BASE_BETA = 8.0/3.0` — незмінний (геометрична постійна ксилемного каналу)
-
-**250 ітерацій Ейлера:**
-
-```ruby
-dx = local_sigma * (y - x)
-dy = x * (local_rho - z) - y
-dz = (x * y) - (BASE_BETA * z)
-x += dx * DT
-y += dy * DT
-z += dz * DT
-```
-
-**Повертає:** `z` — інтенсивність конвекції (рух соку у ксилемі). Серверна копія (`app/services/silken_net/attractor.rb`) обчислює те саме для крос-верифікації.
-
-### 11.3 BioContract — Токеноміка та Статуси
-
-**Порогові значення:**
-
-| Константа | Значення | Значення для дерева |
-|-----------|----------|---------------------|
-| `CRITICAL_Z_MIN` | `2.0` | Нижче → втрата тургору, посуха |
-| `CRITICAL_Z_MAX` | `45.0` | Вище → аномальний стрес, втручання |
-| `OPTIMAL_Z_TARGET` | `29.0` | Ідеальний стан конвекції (max CO₂ депонування) |
-
-**Логіка `evaluate_and_pack(seed, temp, acoustic)`:**
-
-```ruby
-z_val = Attractor.calculate_z_axis(seed, temp, acoustic)
-# [E.64] anomaly-стеля ρ-відносна: anomaly_ceiling = ρ + (CRITICAL_Z_MAX − BASE_RHO) (=45 при ρ=28)
-anomaly_ceiling = local_rho + (CRITICAL_Z_MAX - BASE_RHO)
-
-if z_val < CRITICAL_Z_MIN        # Стрес
-  status = 1; growth_points = 1
-elsif z_val > anomaly_ceiling    # Аномалія
-  status = 2; growth_points = 0
-else                             # Гомеостаз
-  status = 0
-  # [E.63] growth_points = монотонна метаболічна жвавість зі швидкості перезаряду
-  # (delta_t), а НЕ |29−z| (та була хаотичним шумом). Формула m(delta_t)→GP +
-  # калібрувальні пороги — SSOT 03_04 §4.3 (One-Home, тут не дублюємо).
-  growth_points = metabolic_growth_points(delta_t_s)   # 5-bit wire (5..31)
-end
-
-# [FW.29-PACK] Layout: [PanicFlag:1 (bit 7) | Status:2 (bits 6..5) | GrowthPoints:5 (bits 4..0)].
-# Status переїхав з bits 7..6 на bits 6..5 для уникнення колізії з bit 7,
-# який FW.29 зарезервував під однозначне маркування panic-frame'у.
+# Layout: [PanicFlag:1 (bit 7) | Status:2 (bits 6..5) | GrowthPoints:5 (bits 4..0)]
+# Status переїхав з bits 7..6 → 6..5 (bit 7 = panic-frame marker, FW.29).
 payload_byte = (status << 5) | growth_points
 ```
 
-**Growth-points [E.63]:** у гомеостазі `growth_points` = метаболічна жвавість `m(delta_t)` (швидший перезаряд → більше балів), **НЕ** функція відхилення Z від 29 — формула + калібрування живуть у [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor). Wire-значення масштабується ÷2 (5-бітний простір 5..31), backend ×2 upscale при unpack для збереження tokenomic invariant.
+Status: 0 homeostasis / 1 stress / 2 anomaly / 3 tamper (mruby VM error, виживає `& 0x7F` → GP 31). Wire-GP 5-біт (5..31) масштабується ÷2; backend ×2 upscale при unpack (tokenomic invariant). Серверне дзеркало `attractor.rb` звіряє z-val (розходження → DCI Alert).
 
-**Відображення на байт BioContract (байт 10 payload, після FW.29-PACK):**
-
-| z_val | Status | Wire GP | Hex (приклад) |
-|-------|--------|---------|---------------|
-| < 2.0 (`CRITICAL_Z_MIN`) | 1 (stress) | 1 | `0x21` |
-| > anomaly_ceiling (ρ-relative, ≈45 @ ρ=28) | 2 (anomaly) | 0 | `0x40` |
-| 2.0 … ceiling (homeostasis) | 0 | `m(delta_t)`, напр. 25 | `0x19` |
-| mruby VM error | 3 (tamper) | 31 (after `& 0x7F`) | `0x7F` |
-
-> **Синхронізація з сервером:** `app/services/silken_net/attractor.rb` обчислює той самий z-val за тими самими константами. Якщо значення розходяться → Dual Computation Integrity Alert. **[FIX: R-11]** Виправлено: `BASE_BETA` уніфіковано як `8.0/3.0` (не `2.666`), sigma/rho clamp синхронізовано з сервером.
-
----
 
 ## 🛠️ 12. Тестова Інфраструктура (`firmware/test/`)
 
