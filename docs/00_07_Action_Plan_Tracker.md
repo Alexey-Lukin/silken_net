@@ -694,15 +694,18 @@
 
 #### SLASH-1 — Slashing cause_classification gate (financial-safety) 🔴
 - **P0** · 🤖+👤 · 🟡 · → `05_05 §3/§6` (divergence `04_02 §11`)
-- ✅ supporting-механіка coded + RSpec, але **INERT** (gate `SystemParameter :slash_cause_uplift_enabled`, default off → жива поведінка = baseline-лінійна): convex §3 slash-крива (`#calculate_slash_ratio`, GAMMA/PF_MAX DAO-governed) · blackout → Field Audit no-burn (`#flag_data_blackout!`) · comms-loss de-correlation `max()`-не-сума (`#combine_penalty_factor`). Канон [`05_05 §3/§6`](05_05_Slashing_and_Risk_Policy). 🔴 **формальний A/B/C `cause_classification`-gate (namesake) ще НЕ в коді** + uplift не активований. · [ ] 👤 DAO/founder перед mainnet: A/B/C cause_classification + активація uplift + tree-side `streamr_undelivered` сигнал (guarded→0) + repeat-offence вага (BIZ.13 operator-bond, `05_05 §3.1`)
+- **Стан:** Supporting-механіка coded + RSpec, але **INERT** (gate `SystemParameter :slash_cause_uplift_enabled` off → жива поведінка baseline-лінійна): convex §3 slash-крива `#calculate_slash_ratio` · blackout→Field-Audit no-burn `#flag_data_blackout!` · comms-loss de-correlation `#combine_penalty_factor` (`max()`-не-сума). 🔴 формальний A/B/C `cause_classification`-gate (namesake) ще НЕ в коді + uplift не активований. Канон [`05_05 §3/§6`](05_05_Slashing_and_Risk_Policy).
+- [ ] 👤 DAO/founder перед mainnet: A/B/C cause_classification + активація uplift + tree-side `streamr_undelivered` сигнал (guarded→0) + repeat-offence вага (BIZ.13 operator-bond, `05_05 §3.1`)
 
 #### S3.2 — dClimate Real API verification
 - **P1** · 👤 · 🟢 · → `05_01`
-- ✅ `Dclimate::VerificationService` (NASA FIRMS, FRP≥10MW, cloud fallback). · [ ] 👤 верифікувати з реальним API key у staging + e2e `DclimateVerificationWorker`
+- **Стан:** Реалізовано — `Dclimate::VerificationService` (NASA FIRMS, FRP≥10MW, cloud fallback) + `DclimateVerificationWorker`. Лишається verify з реальним API key у staging. Канон `05_01`.
+- [ ] 👤 верифікувати з реальним API key у staging + e2e `DclimateVerificationWorker`
 
 #### S3.5 — Subgraph contract address
 - **P1** · 👤 · 🟢 · → `05_03`
-- SFC events (ForestMinted, GovernanceSlashed) у subgraph; адреса = placeholder. Zero-address fail-fast guard `subgraph/validate_addresses.sh` ✅ (раніше E.45). · [ ] 👤 замінити `0x0000…` на реальну SFC-адресу у `subgraph.yaml` (після контракт-деплою)
+- **Стан:** SFC events (ForestMinted, GovernanceSlashed) у subgraph + zero-address fail-fast guard `subgraph/validate_addresses.sh` ✅ (раніше E.45); SFC-адреса = placeholder до mainnet-деплою. Канон `05_03`.
+- [ ] 👤 замінити `0x0000…` на реальну SFC-адресу у `subgraph.yaml` (після контракт-деплою)
 
 #### BIZ.13 — Slashing principal-agent: investor capital vs operator-bond
 - **P2** · 🤖+👤 · 🟡 · → `05_05 §3.1`, `05_03 §Slashing`, `04_02`
@@ -712,7 +715,8 @@
 
 #### E.60 — Merkle CID-witness: Polygon ↔ Filecoin integrity bridge
 - **P1** · 🤖 · 🟢 · → `05_02 §E.60`
-- ✅ (2026-06-03) `Filecoin::CidGenerator` (детермін. CIDv1 raw+sha2-256→base32, golden-vector) + content-CID guard у потоці архівації AuditLog: `ArchiveService` вбудовує самоописовий `content_cid`, `VerificationService` fail-fast при розбіжності (локально vs віддалено) → детект ex-post swap. Закриває archive-swap gap для audit-архіву. · [ ] 🤖 follow-on: per-tree Merkle-witness для телеметрія-батчу (leaf_cid→`archive_root`→`mint(bytes32)`) — потребує `MerkleTree` + колонок на партиційованому `TelemetryLog` (міграція) + Solidity; worker-guard з `manual_review` саме в цьому батч-потоці. Канон `05_02 §E.60`
+- **Стан:** Leaf-рівень закрито (2026-06-03) — `Filecoin::CidGenerator` (детермін. CIDv1 raw+sha2-256→base32, golden-vector) + content-CID guard: `ArchiveService` вбудовує самоописовий `content_cid`, `VerificationService` fail-fast при розбіжності → детект ex-post archive-swap. Канон `05_02 §E.60`.
+- [ ] 🤖 follow-on (deferred): per-tree Merkle-witness телеметрія-батчу (leaf_cid→`archive_root`→`mint(bytes32)`) — потребує `MerkleTree` + колонки на партиційованому `TelemetryLog` (міграція) + Solidity; worker-guard з `manual_review` у цьому батч-потоці
 
 #### E.63 — метаболічний сигнал: розв'язано від хаосу (Option A) [2026-06-08]
 - **P1** · 🤖+👤 · 🟡 · → `05_02`
