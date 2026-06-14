@@ -811,11 +811,11 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 
 2. **Envelope encryption (TRL 6/7, pilot batch):** `PROVISIONING_MASTER_KEY` зберігається у Bitwarden Secrets Manager або 1Password Secrets Automation. Перед кожною сесією — short-lived token (TTL 15 хв) генерується через API і передається інструменту через `PROVISIONING_SESSION_TOKEN` ENV. Після закінчення TTL — інструмент не може деривувати нові ключі без нового токена.
 
-3. **Direct ENV (development/lab only):** `PROVISIONING_MASTER_KEY` встановлюється в ENV вручну перед запуском. Недопустимо у field-batch. `Security::WeakKeyDetector` блокує запуск з тест-векторами (03_05 03_05 §3.1а, SEC.9).
+3. **Direct ENV (development/lab only):** `PROVISIONING_MASTER_KEY` встановлюється в ENV вручну перед запуском. Недопустимо у field-batch. `Security::WeakKeyDetector` блокує запуск з тест-векторами ([`03_05 §3.1а`](03_05_Hardware_Symmetric_Crypto_and_Security), SEC.9).
 
 **Ротація master key:**
 
-- Нова сесія починається лише після верифікації нового ключа через `Security::WeakKeyDetector` (CLI runbook у 03_05 03_05 §3.1а).
+- Нова сесія починається лише після верифікації нового ключа через `Security::WeakKeyDetector` (CLI runbook у [`03_05 §3.1а`](03_05_Hardware_Symmetric_Crypto_and_Security)).
 - `previous_aes_key_hex` (Dual-Key Grace Period у `HardwareKey`) активний до підтвердження прошивки всіх пристроїв у партії.
 - Fail-closed boot guard: `config/initializers/master_key_strength_check.rb` відмовляє у запуску Rails якщо `PROVISIONING_MASTER_KEY` = тест-вектор (SEC.9).
 

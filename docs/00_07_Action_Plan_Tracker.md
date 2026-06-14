@@ -638,8 +638,8 @@
 - [ ] 👤 field batch → RDP **L1** (зворотний); L2 — лише фінальний mass-deploy
 
 #### SEC.3 — Factory Flashing pipeline
-- **P0** · 👤 · 🟡 · → [`03_06 §1`](03_06_Factory_Flashing_and_Key_Provisioning) (+ threat model 03_06 §5)
-- **✅ Гілка A+B Rake-tool канонізовано ([`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning)):** `provisioning_sessions` AASM + 2-Person Rule + `factory_flashing/*` + rake `factory:flash|approve|execute` (dry-run); execute-шлях інтеграційно доведено шимом (fake `STM32_Programmer_CLI` → реальні subprocess'и: capture stdout/stderr/exit, stop-on-fail, AASM failed+transcript; RSpec). Bench-residual = фізичний SWD-флеш.
+- **P0** · 👤 · 🟡 · → [`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning)
+- **Стан:** Гілка A+B Rake-tool канонізовано — `provisioning_sessions` AASM + 2-Person Rule + `factory_flashing/*` + rake `factory:flash|approve|execute` (dry-run); execute-шлях інтеграційно доведено шимом (fake `STM32_Programmer_CLI` → реальні subprocess'и: stdout/stderr/exit capture, stop-on-fail, AASM failed+transcript). Конвеєр [`03_06 §1`](03_06_Factory_Flashing_and_Key_Provisioning); bench-residual = фізичний SWD-флеш.
 - [ ] 👤 real `STM32_Programmer_CLI` на STM32WLE5JC bench (post-FW.2) — runbook `firmware/scripts/bench/`
 - [ ] 👤 Bitwarden Secrets API live (`BitwardenAdapter` зараз `NotImplementedError`)
 - [ ] 🔗 real SE I²C (Гілка B) — SE050 eval-kit; `cryptoauthlib`→SE05x код-міграція → SE050-MIGRATION (legacy ATECC-патерн reusable, [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security))
@@ -650,7 +650,8 @@
 
 #### SEC.9 — Production AES Key містить FIPS-197 Appendix B Test Vector
 - **P0** · 👤 · 🟡 · → [`03_05 §3.1а`](03_05_Hardware_Symmetric_Crypto_and_Security)
-- ✅ guard `Security::WeakKeyDetector` + boot-guard refuse-to-boot на FIPS-197/NIST/degenerate vectors (RSpec-покрито). ⚠️ ОКРЕМЕ від FW.1: якщо master seed базується на цьому ключі — весь derivation tree скомпрометований. · [ ] 👤 замінити seed key на crypto-random → задокументувати генерацію у vault (без коміту) → re-flash прототипи
+- **Стан:** guard `Security::WeakKeyDetector` + fail-closed boot-guard (refuse-to-boot на FIPS-197/NIST/degenerate vectors, RSpec-покрито) не дає тест-вектору потрапити у `PROVISIONING_MASTER_KEY`. ⚠️ ОКРЕМЕ від FW.1: якщо master seed базується на цьому ключі — весь derivation tree скомпрометований.
+- [ ] 👤 замінити seed key на crypto-random → задокументувати генерацію у vault (без коміту) → re-flash прототипи
 
 #### SEC.12 — HRNG-IV fallback hardening (CoAP CBC IV)
 - **P2** · 👤 · 🟢 · → [`03_05` — HRNG Fallback](03_05_Hardware_Symmetric_Crypto_and_Security)
