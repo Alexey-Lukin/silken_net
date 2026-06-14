@@ -321,16 +321,14 @@
 
 #### HW.14 — Winter energy deficit for Queen Phase 3 (Starlink Mini)
 - **P1** · 👤 · ⚪ · → `02_05 §Зимовий енергодефіцит`
-- **Опис:** Phase 3 (Starlink Mini): 44 Wh/day consumption vs 18.75 Wh/day winter generation = -25 Wh/day deficit. 12V/20Ah LiFePO4 → 7.7 днів автономності
-- **Пріоритет:** Phase 3 only (Phase 2.5 unaffected)
+- **Стан:** Не розпочато — Phase 3 (Starlink Mini) зимовий дефіцит: 44 Wh/добу спожив. vs 18.75 Wh генерації = −25 Wh/добу (LiFePO4 12V/20Ah → 7.7 днів автономності); Phase 2.5 (DTC) не зачеплено. Мітигації: 40Ah / 1-хв duty / 100W панель. Канон `02_05 §4` (§Зимовий енергодефіцит).
 - [ ] 👤 Збільшити батарею до 40Ah (15 днів автономності), АБО
 - [ ] 👤 Зменшити Starlink duty cycle до 1 хв/год (~9 Wh/day), АБО
 - [ ] 👤 Встановити 100W solar panel
 
 #### HW.15 — BMS + VBAT decoupling для SIM7070G
 - **P1** · 👤 · 🟡 · → `02_05 §Пікові струми SIM7070G`, `§2.2.1`
-- **Опис:** SIM7070G TX peak current до 2A. Дві окремі проблеми: (1) BMS model не вказано в BOM (system-level); (2) транзієнтна просадка VBAT модему при 2A burst → brownout reboot (module-level). Тепер з обома вирішеннями.
-- **Module-level fix (✅ specification зафіксовано 2026-05-16):** 5-cap tank bank біля VBAT pin SIM7070G — 470 µF aluminum polymer SP-Cap (Panasonic EEFCX0J471R) + 100 µF MLCC X7R 25V 1210 + 10 µF X7R 0805 + 100 nF X7R 0402 + 33 pF NP0 0402. Розрахункова просадка: 8 mV (margin > 35× проти 700 mV brownout). Деталі — `02_05 §2.2.1`.
+- **Стан:** Module-level fix зафіксовано — 5-cap VBAT tank bank проти 2A-burst brownout (просадка <20mV, margin >35×; BOM поз.17–20). Лишається system-level: BMS/MPPT моделі в BOM + bench-звірка маркування SIM7070G + firmware PSM/eDRX. Канон `02_05 §2.2.1` (+ §Пікові струми).
 - [ ] 👤 Обрати BMS: мінімум 12V / 20A continuous / 50A peak
 - [ ] 👤 Обрати MPPT: мінімум Victron SmartSolar MPPT 75/15
 - [ ] 👤 PCB layout: розмістити C_BULK ≤ 10 мм від VBAT pin, HF caps впритул
@@ -340,15 +338,13 @@
 
 #### HW.16 — Thermal management в IP67 enclosure
 - **P1** · 👤 · 🟡 · → `02_05 §Теплове управління IP67`
-- **Опис:** SIM7070G + MCU при TX: ~500 mW × 5 sec. Літній interior temp до 60-70°C. LiFePO4 charging при T < 0°C пошкоджує батарею; розряд нижче −20°C → graphite plating damage
-- ✅ Зроблено: тепловий бюджет IP67 (Phase 1/2.5 ~130мВт→ΔT<1K; Phase 3 3Вт→ΔT~4.5K; sun load +15K; sun-shade рекоменд.) + backend critical-temp гілка. Канон: `02_05 §4а`.
+- **Стан:** Тепловий бюджет IP67 зроблено (Phase 1/2.5 ~130мВт→ΔT<1K; Phase 3 3Вт→ΔT~4.5K; sun load +15K домінує → sun-shade) + backend critical-temp гілка (`GatewayTelemetryLog#critical_fault?`, T<−20°C → ❄️ EwsAlert) ✅. Лишається hardware зимовий charge-protect (NTC/DS18B20 + MOSFET). Канон `02_05 §4а`.
 - [ ] 👤 Додати temperature sensor (NTC або DS18B20)
 - [ ] 👤 Реалізувати hardware charge protection при T < 0°C
 
-#### HW.17 — PEEK radome prototype (Деталь 4) — REVISED 2026-05-16
+#### HW.17 — PEEK radome prototype (Деталь 4)
 - **P1** · 👤 · ⚪ · → `02_01 §5.2`, `01_04 §5.5`
-- **Опис:** Деталь 4 (PEEK Crown / Капсула-Радом) — радіопрозорий купол ∅20–30 мм, який «насаджується» на зовнішню різьбу **Деталі 3 = Zone 3 = КАТОДНОГО ФЛАНЦЯ** (раніше документ помилково писав «Деталь 3 (Анод)» — критичний SSOT-bug, виправлено). Різьба або байонет + O-ring EPDM → IP68. Керамічна SMD-антена в ≥ 8 мм Z-clearance від Ti-фланця (`02_01 §5.3` revised — 2D ≥3мм, **3D ≥8мм** вертикально + overhang за периметр Ti). Anti-overgrowth shield: виступ ≥ 3 мм + R ≥ 5 мм + super-hydrophobic coating (Fluoropel PFC-1601V) — `01_04 §5.5`.
-- **Блокує:** Ceramic antenna protection, RF performance validation, Zero-Touch Assembly validation, long-term cathode O₂ access
+- **Стан:** Не розпочато — PEEK Radome (Деталь 4) ∅20–30мм на різьбі Zone 3 катод-фланця (НЕ анод): радіопрозорий купол + O-ring EPDM → IP68; керамічна антена ≥8мм Z-clearance + overhang за Ti-периметр (`02_01 §5.3`); anti-overgrowth shield виступ ≥3мм + R≥5мм + super-hydrophobic Fluoropel (`01_04 §5.5`). Блокує antenna protection, RF validation, Zero-Touch, cathode O₂-access. Канон `02_01 §5.2` / `01_04 §5.5`.
 - [ ] 👤 KiCad PCB layout (HW.9) → PEEK radome dimensions
 - [ ] 👤 Визначити тип кріплення: різьба на **Деталь 3 = Катод** (НЕ Анод!) vs байонет
 - [ ] 👤 Визначити матеріал O-ring (EPDM vs FKM) для ксилемного середовища
@@ -360,9 +356,7 @@
 
 #### HW.18 — Starlink DTC: ESP32-S3 vs SIM8200G-M2 WiFi co-processor
 - **P2** · 👤 · 🟡 · → `02_05 §Starlink DTC vs Mini`
-- **Опис:** Phase 3 (Starlink Mini terminal) потребує WiFi co-processor. Архітектурне рішення між ESP32-S3 та SIM8200G-M2 не прийнято
-- **Пріоритет:** Phase 3 only
-- ✅ Зроблено (🤖): decision memo + рекомендація **ESP32-S3** → `02_05` (HW.18).
+- **Стан:** Decision memo зроблено — рекомендація **ESP32-S3** (~$3, near-zero sleep) над SIM8200G-M2 (5G марнується в лісі, ~20× дорожчий) для WiFi-мосту STM32→Starlink Mini (Phase 3 only). Лишається confirm + 03_02 firmware-контракт + co-proc прошивка. Канон `02_05 §Starlink DTC` (memo HW.18).
 - [ ] 👤 Підтвердити рішення (рекоменд. ESP32-S3)
 - [ ] 🤖 Оновити 03_02 з рішенням
 - [ ] 🔗 Додати co-processor firmware до `firmware/`
@@ -470,7 +464,8 @@
 
 #### HW.31 — Queen Antenna Split (868 LoRa tuned ≠ dual-band)
 - **P0** · 👤 · 🟡 · → `02_05 §7`
-- ✅ Рознесено в каноні: поз.11 wideband LTE-M/NB-IoT (700–2700 МГц, Kyivstar B1/B3/B7/B8/B20, опц. LTE+GNSS combo) · поз.12 LoRa 868 **tuned** 5 dBi fiberglass omni (OD8-868/ALL.4101) — окремі RF-порти SX1262 vs SIM7070G; dual-band SMA відхилено (VSWR>2.5 @868 → −3-5 дБ EIRP). · [ ] 👤 freeze поз.11/12 у BOM Королеви при 02_05 BOM freeze
+- **Стан:** Рознесено в каноні — поз.11 wideband LTE-M/NB-IoT (700–2700 МГц, Kyivstar B1/B3/B7/B8/B20, опц. LTE+GNSS) · поз.12 LoRa 868 **tuned** 5 dBi fiberglass omni (OD8-868/ALL.4101); окремі RF-порти SX1262 vs SIM7070G, dual-band SMA відхилено (VSWR>2.5 @868 → −3-5 дБ EIRP). Канон `02_05 §7`.
+- [ ] 👤 freeze поз.11/12 у BOM Королеви при 02_05 BOM freeze
 
 ## §03 · Firmware
 
