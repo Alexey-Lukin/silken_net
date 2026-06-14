@@ -310,77 +310,9 @@ OTA Batch Downlink Format (розширений):
 
 **LoRa-канал (Soldier→Queen):** розшифровується **AES-128-CCM** (FW.2 target, post-ARCH.42) або AES-128-ECB (transitional). **CoAP-магістраль (Queen→Rails):** AES-256-CBC (без змін).
 
-##### 4а.2 Firmware — зберігання у RTC Backup Domain
+##### 4а.2 Firmware-persist (Flash-KV)
 
-> ⚠️ **DEPRECATED — DR20-DR23 не існують на STM32WLE5JC.**
-> STM32WLE5JC має лише 20 RTC Backup Register'ів: **DR0..DR19**. Актуальну
-> розкладку тримає **тільки** канонічна SSOT-таблиця [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)
-> (попередня копія списку тут уже встигла розійтися з нею — дзеркало знято).
-> Висновок для FW.8 незмінний: суміжних 8 байтів під body порогів у RTC немає.
->
-> Наслідок: **FW.8 (CMD_SET_THRESHOLDS) — Deferred TRL-7.** Парсер
-> `Soldier_Handle_CMD_SET_THRESHOLDS` написано як freeze-контракт wire-формату
-> (`firmware/soldier/main.c` + 12 host-тестів), але виклик у production-цикл
-> захищено `#define FW8_PARSER_ENABLED 0`. Бекенд
-> `OtaPackagerService.build_threshold_config_block` теж залишається лише як
-> class method без інтеграції з downlink-pipeline.
->
-> Розблокування — через **Flash-KV** (ARCH.28 шлях A; НЕ звільнений RTC-регістр
-> — їх не лишилось, [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)).
-> ✅ (2026-06-10) persist-логіка host-готова: `firmware/common/lorenz_thresholds.h`
-> — `Save/Load` на ключах `0x10/0x11` (реєстр [`03_01 §2.3.1`](03_01_Firmware_Lifecycle_and_DMA)),
-> ті самі інваріанти, що парсер (порвана/невалідна пара → firmware-дефолти),
-> power-cut host-тести у `test_flash_kv.c`. ✅ (2026-06-11) mount Flash-KV +
-> HAL-глю + wiring `Save/Load` написано у `main.c` за тим самим гейтом
-> (boot-restore після mount'а; КЕНОЗИС-write по dirty-флагу прийнятого 0x9A).
-> Лишається bench-фаза: фліп `FW8_PARSER_ENABLED 1` + верифікація глю на кремнії.
-> Документація прикладу нижче залишається лише як **wire-формат-контракт**
-> (узгоджений з Ruby `OtaPackagerService` 13-байтним кадром); імена
-> `RTC_BKP_DR20..DR23` слід читати як placeholder історичного дизайну.
-
-```c
-// firmware/soldier/main.c — нові RTC Backup Register слоти:
-
-// RTC_BKP_DR20 — CRITICAL_Z_MIN × 100 (int16_t у lower 16 bits)
-// RTC_BKP_DR21 — CRITICAL_Z_MAX × 100 (int16_t у lower 16 bits)
-// RTC_BKP_DR22 — OPTIMAL_Z_TARGET × 100 (int16_t у lower 16 bits)
-// RTC_BKP_DR23 — [config_version:8 | species_id:8]
-
-#define THRESHOLD_MAGIC   0x5448524D  // "THRM" — маркер валідності
-
-// Читання (з fallback на defaults якщо RTC порожній):
-float Get_Critical_Z_Min(void) {
-    if (HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR23) >> 24 != 0x54) {  // check "T"
-        return 2.0f;  // default Pinus sylvestris
-    }
-    return (float)((int16_t)HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR20)) / 100.0f;
-}
-
-// OTA CMD handler:
-case CMD_SET_THRESHOLDS:
-    if (verify_crc16(cmd_payload, 8) == *(uint16_t*)(cmd_payload + 8)) {
-        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR20, (int16_t)(cmd_payload[0]|(cmd_payload[1]<<8)));
-        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR21, (int16_t)(cmd_payload[2]|(cmd_payload[3]<<8)));
-        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR22, (int16_t)(cmd_payload[4]|(cmd_payload[5]<<8)));
-        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR23,
-            THRESHOLD_MAGIC | (cmd_payload[7] << 8) | cmd_payload[6]);
-    }
-    break;
-```
-
-**У bio_contract.rb (mruby) — замість hardcoded констант:**
-
-```ruby
-# BioContract — зчитує пороги з C-side через mrb_define_method або mrb_const_set
-# Firmware C-code передає через mrb_fixnum_value() до виклику:
-# args[4] = mrb_fixnum_value(z_min_x100)   # ← NEW
-# args[5] = mrb_fixnum_value(z_max_x100)   # ← NEW
-# args[6] = mrb_fixnum_value(z_opt_x100)   # ← NEW
-
-CRITICAL_Z_MIN    = mrb_get_arg(4) / 100.0   # dynamic
-CRITICAL_Z_MAX    = mrb_get_arg(5) / 100.0   # dynamic
-OPTIMAL_Z_TARGET  = mrb_get_arg(6) / 100.0   # dynamic
-```
+> Прийняті пороги firmware зберігає у **Flash-KV** — bit-layout (ключі `0x10`/`0x11`: z_min/z_max/z_opt ×100 · `species_id` · `config_version`), інваріанти «порвана/невалідна пара → firmware-дефолти» + power-cut семантика = канон-дім [`03_01 §2.3.1`](03_01_Firmware_Lifecycle_and_DMA). Код — `common/lorenz_thresholds.h` (`Save/Load`, host-готовий) + handler `0x9A` у `firmware/soldier/main.c`, виклик gated `FW8_PARSER_ENABLED 0` (deferred TRL-7 — лишається bench-фліп + HAL-глю на кремнії). RTC-підхід **відкинуто**: STM32WLE5JC має лише `DR0..DR19` (карта [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)), суміжних байтів під пороги немає. Повний статус персисту/wiring → [`00_07` — FW.8](00_07_Action_Plan_Tracker).
 
 ##### 4а.3 Backend — OtaPackagerService та TreeFamily
 
@@ -402,7 +334,7 @@ def build_threshold_config_block(tree)
 end
 ```
 
-> **Статус [FW.8]:** ✅ Rails-сторона реалізована. Firmware C-side (обробник `CMD_SET_THRESHOLDS`) — parser host-tested, але gated (`FW8_PARSER_ENABLED=0`, deferred TRL-7); персист порогів іде у Flash-KV ([`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)), НЕ у RTC — DR20-DR23 не існують (DEPRECATED-блок вище); persist-логіка ✅ host-готова (`common/lorenz_thresholds.h`, 2026-06-10). До активації Soldier використовує хардкодовані значення `CRITICAL_Z_MIN=2.0`, `CRITICAL_Z_MAX=45.0`, `OPTIMAL_Z_TARGET=29.0`.
+> **Статус [FW.8]:** ✅ Rails-сторона (`build_threshold_config_block`) реалізована; firmware C-side (parser `0x9A` host-tested) + персист + gate (`FW8_PARSER_ENABLED 0`, deferred TRL-7) — §4а.2 вище. До активації Soldier використовує хардкодовані пороги (дім [`03_04 §1.2`](03_04_mruby_Lorenz_Attractor)).
 
 ##### 4а.4 Per-Species Default Thresholds
 
