@@ -32,7 +32,7 @@ class PartitionMaintenanceWorker
     # INSERT against the affected table on day-1 of the new month crashes with
     # `no partition of relation "<table>" found for row`. We re-raise so Sidekiq
     # picks it up for the configured `retry: 3`, increment a Prometheus counter
-    # (Grafana P0 alert, 06_03 §BLOCKER-5) AND report to Sentry so the operator
+    # (Grafana P0 alert, 06_03 §2.8 / 00_07 S2.5) AND report to Sentry so the operator
     # gets paged BEFORE the partition window expires.
     SilkenNet::Metrics::PARTITION_MAINTENANCE_FAILURES_TOTAL.increment
     if defined?(Sentry)

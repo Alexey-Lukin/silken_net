@@ -347,7 +347,7 @@ module SilkenNet
       labels: [ :caller ]
     )
 
-    # [06_03 §BLOCKER-5 / S2.5]: PartitionMaintenanceWorker run failures.
+    # [06_03 §2.8 / 00_07 S2.5]: PartitionMaintenanceWorker run failures.
     # Each failure = a monthly partition may be missing → the first INSERT against
     # the affected RANGE table on day-1 of the new month crashes with
     # `no partition of relation`. Alert (silkennet-alerts.yaml, P0): increase>0 → page.

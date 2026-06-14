@@ -31,7 +31,7 @@ test:
 #   - [@cluster, :alerts] (cluster alerts)
 #   - "telemetry_live_stream" (raw hex broadcast)
 #
-# See: docs/06_02_Akash_Network_Integration.md → BLOCKER-8 (resolved)
+# See: docs/06_02_Akash_Network_Integration.md (GCS bootstrap, resolved → INF.*)
 # =============================================================================
 production:
   adapter: solid_cable

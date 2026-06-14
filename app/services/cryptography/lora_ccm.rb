@@ -6,7 +6,7 @@ require "openssl"
 # AES-128-CCM authenticated decrypt + encrypt for the Soldier ↔ Queen LoRa
 # channel.
 #
-# Wire format on the air (28 bytes) — see docs/03_05 §3.2 BLOCKER-2 +
+# Wire format on the air (28 bytes) — see docs/03_05 §2.1 (CCM wire) +
 # wire-budget ledger (the rev2 rationale):
 #
 #   ┌─ AAD (cleartext, MIC-protected) ──────────────────────────────────┐

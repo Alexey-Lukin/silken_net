@@ -661,7 +661,7 @@ if (mrb) {
 
 **Гейт активації — `device_z` має бути в payload: ✅ wire-дім існує (FW.2 wire-rev2, 2026-06-12).**
 
-Numeric branch виконується **лише** коли `attributes[:device_z]` присутній. Транзитний 21B ECB-пакет raw Z **не несе** — фірмварний `bio_contract.rb#calculate_state` повертає тільки `status_byte = [PanicFlag:1 | Status:2 | GrowthPoints:5]` (FW.29-PACK). **FW.2 wire-rev2** (28-байтний CCM-пакет, [`03_05 §3.2 BLOCKER-2`](03_05_Hardware_Symmetric_Crypto_and_Security) + wire-budget ledger) виділив `device_z` bytes 16..17 шифртексту: **u16 фіксована точка z×512 (q=2⁻⁹)** — похибка квантування ≤ 0.00098 строго менша за ε=0.001 (запас тонкий, але Gate L дав drift=0, тож сумарна |Δ| = сама квантизація); діапазон 0..127.99 покриває E.64-стелю (≤67 при ρ_max=50) без сатурації; **сентинель `0xFFFF` = «Лоренц цього циклу не рахувався»** (ARCH.41-C grace, невалідний seed) → атрибут відсутній, branch чесно пропускається. Pack — `Pack_FW2_Device_Z(lorenz_z, lorenz_state_valid)` (`lora_ccm.h`); unpack + e2e — `process_ccm_chunk` ("FW.2 CCM 29-byte path" спеки). Покриття ≥95% (Gate D) досяжне, бо device_z їде у КОЖНОМУ telemetry-кадрі (сентинель лише у grace-вікнах). Альтернативи (ML2 snapshot-варіант / server-side surrogate) лишаються в історії як відкинуті — wire-дім дешевший і дає повне покриття.
+Numeric branch виконується **лише** коли `attributes[:device_z]` присутній. Транзитний 21B ECB-пакет raw Z **не несе** — фірмварний `bio_contract.rb#calculate_state` повертає тільки `status_byte = [PanicFlag:1 | Status:2 | GrowthPoints:5]` (FW.29-PACK). **FW.2 wire-rev2** (28-байтний CCM-пакет, [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security) + wire-budget ledger) виділив `device_z` bytes 16..17 шифртексту: **u16 фіксована точка z×512 (q=2⁻⁹)** — похибка квантування ≤ 0.00098 строго менша за ε=0.001 (запас тонкий, але Gate L дав drift=0, тож сумарна |Δ| = сама квантизація); діапазон 0..127.99 покриває E.64-стелю (≤67 при ρ_max=50) без сатурації; **сентинель `0xFFFF` = «Лоренц цього циклу не рахувався»** (ARCH.41-C grace, невалідний seed) → атрибут відсутній, branch чесно пропускається. Pack — `Pack_FW2_Device_Z(lorenz_z, lorenz_state_valid)` (`lora_ccm.h`); unpack + e2e — `process_ccm_chunk` ("FW.2 CCM 29-byte path" спеки). Покриття ≥95% (Gate D) досяжне, бо device_z їде у КОЖНОМУ telemetry-кадрі (сентинель лише у grace-вікнах). Альтернативи (ML2 snapshot-варіант / server-side surrogate) лишаються в історії як відкинуті — wire-дім дешевший і дає повне покриття.
 
 Branch інертний до фліпу `FW2_CCM_ENABLED` + `TELEMETRY_CCM_ENABLED` (+ ENV-флаги вище) — код staged у production без поведінкової зміни.
 
@@ -711,7 +711,7 @@ kamal env push --secret GAIA_DCI_NUMERIC_TOLERANCE=false
 5. malformed `GAIA_DCI_NUMERIC_EPSILON="abc"` → graceful fallback + warn
 6. `device_z` missing → numeric branch skipped (Gate D guard)
 
-**Cross-ref:** [`00_07` — FW.31](00_07_Action_Plan_Tracker), [`03_05 §3.2` BLOCKER-2 FW.2 CCM wire format](03_05_Hardware_Symmetric_Crypto_and_Security), [`04_02` — TelemetryUnpackerService](04_02_Business_Logic_and_Services), [`06_03` — Prometheus](06_03_Prometheus_Observability) (після Gate D — додати `silkennet_dci_numeric_rejections_total`).
+**Cross-ref:** [`00_07` — FW.31](00_07_Action_Plan_Tracker), [`03_05 §2.1` FW.2 CCM wire format](03_05_Hardware_Symmetric_Crypto_and_Security), [`04_02` — TelemetryUnpackerService](04_02_Business_Logic_and_Services), [`06_03` — Prometheus](06_03_Prometheus_Observability) (після Gate D — додати `silkennet_dci_numeric_rejections_total`).
 
 ---
 

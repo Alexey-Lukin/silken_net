@@ -303,8 +303,8 @@ services:
   # ---------------------------------------------------------------------------
   # Lightweight sidecar that scrapes the Rails /metrics endpoint (web:80)
   # every 15s and pushes metrics to Grafana Cloud via Prometheus remote_write.
-  # Resolves BLOCKER-1 (Prometheus Server), BLOCKER-2 (Grafana), and
-  # BLOCKER-3 (Alertmanager) from 06_03 by using Grafana Cloud SaaS.
+  # Resolves observability (Prometheus/Grafana/Alertmanager) from 06_03
+  # (OBS.1) by using Grafana Cloud SaaS.
   #
   # Config is injected via base64-encoded env var (decoded at startup).
   # Source: deploy/akash/config.alloy

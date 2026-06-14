@@ -38,7 +38,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #include "../common/wall_time.h"   // [FW.49] wall-clock guards + civil-інверсія (One-Home)
 
 // Підключаємо скомпільовану нейромережу TinyML.
-// Якщо реальної моделі ще немає (BLOCKER-1+2, docs/03_03), fallback на
+// Якщо реальної моделі ще немає (модель ще не #include'нута → fallback; docs/03_03 §4) на
 // IP-friendly stub з контрактом (Run_Inference signature, TENSOR_ARENA_SIZE,
 // NUM_CLASSES) — це дозволяє make size-check / arm-none-eabi-size verify
 // RAM-budget без розкриття IP моделі.
@@ -265,7 +265,7 @@ float ml_confidence = 0.0;        // Рівень впевненості мод�
 // TinyML_Validate_Threshold() віддає TINYML_DEFAULT_*. Аналогічно при NaN/Inf
 // (наприклад, після VBAT-loss + bit-flip). При cold-start або корупції —
 // fallback на дефолти TINYML_DEFAULT_WARNING / TINYML_DEFAULT_CRITICAL з
-// 03_03 BLOCKER-6.
+// 03_03 §5 (CRITICAL зони).
 //
 // SSOT для розташування RTC регістрів: 03_01 §2 (Soldier RTC Backup Map).
 // DR13/DR14 тримають ці два пороги TinyML; повна розкладка — там, не дублюємо.
@@ -1688,7 +1688,7 @@ int main(void)
   // читається як 0x00000000 → float 0.0f → не проходить діапазон [0.01, 0.99]
   // → TinyML_Validate_Threshold() віддає дефолт. Якщо обидва RTC-значення
   // валідні, але інверсія (warn ≥ crit) — TinyML_Apply_Thresholds() відкочує
-  // обидва на дефолти, гарантуючи інваріант зон. SSOT: 03_03 BLOCKER-6 §214.
+  // обидва на дефолти, гарантуючи інваріант зон. SSOT: 03_03 §5 (CRITICAL зони).
   {
       float rtc_warn = uint32_to_float(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR13));
       float rtc_crit = uint32_to_float(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR14));
@@ -1934,7 +1934,7 @@ int main(void)
             // Пороги завантажуються з RTC DR13/DR14 на boot з валідацією
             // [TINYML_THRESHOLD_MIN_VALID..MAX_VALID]; OTA може оновити їх
             // через CMD-фреймворк (deferred, спільно з FW.8). SILENCE/WARNING/
-            // CRITICAL зони — див. 03_03 §214 (BLOCKER-6 design).
+            // CRITICAL зони — див. 03_03 §5 (CRITICAL зони design).
             if (ml_confidence >= tinyml_critical_threshold) {
                 // === CRITICAL ZONE === — повна впевненість моделі
                 if (ml_event_id == 2) {

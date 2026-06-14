@@ -2,7 +2,7 @@
 # Mirror Docker Image to GitHub Container Registry (GHCR)
 # =============================================================================
 #
-# Resolves INF.2 / 06_02 BLOCKER-4:
+# Resolves INF.2 (06_02):
 # Akash providers cannot pull images from private GCP Artifact Registry.
 # This workflow builds the production Docker image and pushes it to GHCR
 # (ghcr.io), which is publicly accessible to Akash providers.

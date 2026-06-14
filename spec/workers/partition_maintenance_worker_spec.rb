@@ -85,7 +85,7 @@ RSpec.describe PartitionMaintenanceWorker, type: :worker do
         }.to raise_error(ActiveRecord::StatementInvalid, /permission denied/)
       end
 
-      it "increments the partition_maintenance_failures counter (06_03 §BLOCKER-5 alert)" do
+      it "increments the partition_maintenance_failures counter (06_03 §2.8 / S2.5 alert)" do
         counter = SilkenNet::Metrics::PARTITION_MAINTENANCE_FAILURES_TOTAL
         before = counter.get
         expect { described_class.new.perform }.to raise_error(ActiveRecord::StatementInvalid)
