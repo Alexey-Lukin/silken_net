@@ -36,6 +36,7 @@ namespace :tracker do
     chemambig = Tracker::Dashboard.chem_ambiguous_token_lines(md)
     runon    = Tracker::Dashboard.inline_residual_runon(md)
     verdict  = Tracker::Dashboard.verdict_lead_violations(md)
+    metaform = Tracker::Dashboard.meta_form_violations(md)
 
     puts "00_07 lint — #{items.size} #### items (#{Tracker::Dashboard.open_items(items).size} actionable)"
     puts "  duplicate IDs:    #{dups.empty? ? 'none ✓' : dups.inspect}"
@@ -107,6 +108,14 @@ namespace :tracker do
     else
       puts "  verdict-lead non-Стан leads (#{verdict.size}) — Universal-Стан standard violated (00_07 intro): #{verdict.first(8).join(', ')}…"
     end
-    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any? || runon.any? || verdict.any?
+    # [DOC-T.23, founder 2026-06-14] meta-line form — WHO ∈ {🤖,👤,🤖+👤} + no tail after
+    # canon-ref. HARD (joins abort): the DOC-T.23 sweep took 00_07 to 0 violations. (00_06 §3.)
+    if metaform.empty?
+      puts "  meta-line form:   every meta `**P?** · WHO · STAGE · ref` (WHO canonical, no tail) ✓"
+    else
+      puts "  meta-line form violations (#{metaform.size}) — non-canonical WHO / trailing tail (00_07 intro):"
+      metaform.each { |m| puts "    - #{m}" }
+    end
+    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any? || runon.any? || verdict.any? || metaform.any?
   end
 end

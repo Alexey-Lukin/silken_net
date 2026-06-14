@@ -461,6 +461,45 @@ module Tracker
       end
     end
 
+    # --- meta-line form guard [DOC-T.23, founder 2026-06-14] ---
+    # Every registry #### meta-line is EXACTLY `- **P?** · WHO · STAGE · → канон-реф`:
+    # WHO ∈ {🤖, 👤, 🤖+👤} (canonical AI-first combo — rejects 👤+🤖 / 👤/🤖) and NOTHING
+    # trails the canon-ref (a `· ✅ ліцензія` / `· 🔗 UNI.1` tail belongs in Стан). The
+    # executor parser uses `include?`, so it silently tolerated 👤+🤖 and tails; this locks
+    # in the DOC-T.23 standardization. Registry scope as `parse`. (00_06 §3 recipe.)
+    META_LINE = /\A-\s+\*\*P[0-3]\*\*\s+·\s+(.+?)\s+·\s+[⚪🟡🟢🔗🌿]\s+·\s+(.+?)\s*\z/u
+    WHO_CANON = [ "🤖", "👤", "🤖+👤" ].freeze
+    def self.meta_form_violations(markdown = File.read(DEFAULT_PATH))
+      in_registry = false
+      current = nil
+      seen_meta = false
+      markdown.each_line.with_object([]) do |line, bad|
+        if line.start_with?("## ")
+          in_registry = line.match?(REGISTRY_SECTION) && !line.match?(SKIP_SECTION)
+          current = nil
+          next
+        end
+        next unless in_registry
+        if (m = line.match(ITEM_HEAD))
+          current = m[1]
+          seen_meta = false
+          next
+        end
+        next if current.nil? || seen_meta
+        next unless line.match?(/\*\*P[0-3]\*\*/)
+
+        seen_meta = true
+        if (mm = line.match(META_LINE))
+          who = mm[1].strip
+          bad << "#{current}: WHO `#{who}` ∉ {🤖,👤,🤖+👤}" unless WHO_CANON.include?(who)
+          bad << "#{current}: meta tail after canon-ref" if mm[2].include?(" · ")
+        else
+          bad << "#{current}: malformed meta-line"
+        end
+        current = nil
+      end
+    end
+
     # --- regenerate the AUTO block in place ---
     def self.regenerate(path = DEFAULT_PATH)
       md = File.read(path)

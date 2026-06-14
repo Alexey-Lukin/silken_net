@@ -454,6 +454,47 @@ RSpec.describe Tracker::Dashboard do
     end
   end
 
+  describe ".meta_form_violations" do
+    it "flags a non-canonical WHO combo, passes 🤖+👤 / 🤖 / 👤" do
+      md = <<~MD
+        ## §06 · Ops
+        #### S9.7 — bad WHO order
+        - **P1** · 👤+🤖 · 🟡 · → `06_04`
+        - **Стан:** x.
+        #### S9.8 — canonical combo
+        - **P1** · 🤖+👤 · 🟡 · → `06_04`
+        - **Стан:** x.
+      MD
+      res = described_class.meta_form_violations(md)
+      expect(res).to include(a_string_matching(/S9\.7/))
+      expect(res).not_to include(a_string_matching(/S9\.8/))
+    end
+
+    it "flags a tail after the canon-ref, passes a clean multi-ref (comma, not ·)" do
+      md = <<~MD
+        ## §06 · Ops
+        #### S9.9 — meta tail
+        - **P1** · 👤 · ⚪ · → `06_04` · ✅ done extra
+        - **Стан:** x.
+        #### S9.10 — clean multi-ref
+        - **P1** · 👤 · 🟢 · → `02_01 §3.4`, `07_02 §1.3`
+        - **Стан:** x.
+      MD
+      res = described_class.meta_form_violations(md)
+      expect(res).to include(a_string_matching(/S9\.9/))
+      expect(res).not_to include(a_string_matching(/S9\.10/))
+    end
+
+    it "skips non-registry sections (📌 Backlog / 🗄️ Архів)" do
+      md = <<~MD
+        ## 📌 Backlog · Findings
+        #### B9.2 — backlog with odd WHO
+        - **P3** · 👤/🤖 · ⚪ · → `06_04`
+      MD
+      expect(described_class.meta_form_violations(md)).to be_empty
+    end
+  end
+
   describe "guard branches (absent / malformed canon)" do
     it ".dangling_refs skips an item whose canon has no NN_NN prefix" do
       items = [ described_class::Item.new(id: "X.1", canon: "not-a-doc-id") ]
