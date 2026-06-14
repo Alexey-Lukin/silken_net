@@ -91,27 +91,33 @@
 
 #### OPS.1 — TRL Auto-Advancement GitHub Action
 - **P1** · 👤 · 🟡 · → `00_05`
-- ✅ `trl_sync.yml` (GraphQL Projects v2, TRL≥5 architect-approval gate — OPS.9). · [ ] 👤 створити `PROJECT_PAT` (project:write) + тест з issues · [ ] 👤 (security) мігрувати `PROJECT_PAT` → GitHub App installation token (`GITHUB_TOKEN` не вміє Projects V2; `00_05 §2.2`)
+- **Стан:** `trl_sync.yml` реалізовано — GraphQL Projects v2 + TRL≥5 architect-approval gate (OPS.9); чекає лише secret-provision, канон `00_05 §2.2`.
+- [ ] 👤 створити `PROJECT_PAT` (project:write) + тест з issues
+- [ ] 👤 (security) мігрувати `PROJECT_PAT` → GitHub App installation token (`GITHUB_TOKEN` не вміє Projects V2; `00_05 §2.2`)
 
 #### OPS.2 — SSOT Integrity Guard
 - **P1** · 👤 · 🟡 · → `00_05`
-- ✅ `ssot_guard.yml` (app/models·firmware·contracts·services; `type:*` bypass). · [ ] 👤 зробити required check на `main`
+- **Стан:** `ssot_guard.yml` реалізовано (app/models·firmware·contracts·services; semantic `type:*` bypass) — `00_05 §2.3`.
+- [ ] 👤 зробити required check на `main`
 
 #### OPS.3 — R&D Portfolio Management: Shape Up + cluster routing
 - **P1** · 👤 · 🟡 · → `00_04 §5`, `00_05 §6`
-- ✅ Shape Up template + Projects V2 kanban-mapping (R&D Cluster/Stage/Cycle + auto-routing; 4 кластери A/B/C/D). · [ ] 👤 перший betting cycle після UNI.1/UNI.8
+- **Стан:** Shape Up template + Projects V2 kanban-mapping реалізовано (R&D Cluster/Stage/Cycle + auto-routing; 4 кластери A/B/C/D) — `00_04 §5`, `00_05 §6`.
+- [ ] 👤 перший betting cycle після UNI.1/UNI.8
 
 #### OPS.4 — GitHub Projects V2: семестрова синхронізація з ChNU/ChDTU
 - **P2** · 👤 · 🟡 · → `00_05 §5`
-- ✅ семестр-мапінг (Fall/Spring + TRL milestones + 15.VI; `trl_sync.yml` стемпить `Academic Semester`). · [ ] 👤 узгодити календар з ФОТІУС (UNI.2) + створити `Academic Semester` single-select field у Projects V2
+- **Стан:** семестр-мапінг реалізовано (Fall/Spring + TRL milestones + 15.VI; `trl_sync.yml` стемпить `Academic Semester`) — `00_05 §5`.
+- [ ] 👤 узгодити календар з ФОТІУС (UNI.2) + створити `Academic Semester` single-select field у Projects V2
 
 #### OPS.6 — Bootstrap scripts для GitHub Projects V2 + IaC initial sync
 - **P2** · 👤 · 🟢 · → `00_05 §1.2/§6`
-- ✅ `lib/github_bootstrap.rb` (`FIELDS` SSOT, idempotent GraphQL diff, rake `github:bootstrap`, RSpec-покрито). · [ ] 👤 запустити `bin/bootstrap_github.sh` проти живого Projects V2 при setup/fork
+- **Стан:** `lib/github_bootstrap.rb` готовий (`FIELDS` SSOT, idempotent GraphQL diff, rake `github:bootstrap`, RSpec-покрито) — `00_05 §1.2/§6`.
+- [ ] 👤 запустити `bin/bootstrap_github.sh` проти живого Projects V2 при setup/fork
 
 #### OPS.7 — 00_07 → Projects V2 draft-issues sync (tracker-as-tasks IaC)
 - **P3** · 🤖 · ⚪ · → `00_05 §1.2`
-- Скрипт-парсер 00_07-пунктів (`#### ID` + meta-line + відкриті `[ ]`) → idempotent sync у Projects V2 draft-issues (поля з `lib/github_bootstrap.rb`: Module/TRL/Cluster/Appetite/SSOT Link). Спирається на канонну форму пункту (інтро 00_07) — стандартизація трекера = передумова. Чернетки скрипта нема; founder поки відклав («як треба»).
+- **Стан:** Не почато — скрипт-парсер 00_07-пунктів (`#### ID` + meta-line + відкриті `[ ]`) → idempotent sync у Projects V2 draft-issues (поля з `lib/github_bootstrap.rb`: Module/TRL/Cluster/Appetite/SSOT Link). Спирається на канонну форму пункту (інтро 00_07) — стандартизація трекера = передумова; чернетки скрипта нема, founder відклав («як треба»). Канон `00_05 §1.2`.
 - [ ] 🤖 парсер 00_07 → draft-issues (idempotent за ID; pri/executor/module → поля)
 - [ ] 👤 прогін проти живого Projects V2
 
