@@ -550,9 +550,8 @@
 - **P0** · 🤖+👤 · 🟢 · → [`03_03 §3.4`](03_03_TinyML_Acoustic_Inference)
 - **Стан:** Path B (log-mel) обрано + DSP-фронтенд реалізовано self-owned (ML-партнера нема, контракт наш end-to-end): `Compute_LogMel` (`firmware/common/logmel.c`) + 3-way parity librosa≡stdlib≡C (`contract_hash` tripwire) + golden-vector host-тести + auto-gen таблиці (`silken_ml.codegen`). Контракт доукомплектовано бюджет-конвертом моделі (arena target ≤ 10 КБ, тверда стеля 7–15 КБ §6, INT8 обов'язковий, «топологію під стелю»; Path C-фолбек звузився під тим самим леджером); baseline приземлено (FW.4) → DSP-фронтенд живить реальний інференс. Канон: decision-matrix [`03_03 §3.2`](03_03_TinyML_Acoustic_Inference) · контракт + бюджет-конверт [`03_03 §3.4`](03_03_TinyML_Acoustic_Inference).
 - [ ] 👤 опційний апгрейд: ML-партнер (Бушин/Любченко) тренує 5-class CNN на §3.4 (крос-чек, не гейт)
-  - ✅ (2026-06-12) фактичний arena виміряно (forward-pass **972 B Flash / 0 .bss / 76 B стек** — << стелі 7–15 КБ) + inference розкоментовано (FW.4 baseline приземлено; host-тест `test_audio_model`)
-  - [ ] 🌿 UNI.11+UNI.13a soundscape dataset (dawn/dusk fauna 5-й клас)
-  - [ ] 🤖 fallback Path C (TFLM) — лише після повторного FW.26-заміру з TFLM-обвісом ([`03_03 §3.2`](03_03_TinyML_Acoustic_Inference) противага)
+- [ ] 🌿 UNI.11+UNI.13a soundscape dataset (dawn/dusk fauna 5-й клас)
+- [ ] 🤖 fallback Path C (TFLM) — лише після повторного FW.26-заміру з TFLM-обвісом ([`03_03 §3.2`](03_03_TinyML_Acoustic_Inference) противага)
 
 #### FW.26 — TENSOR_ARENA_SIZE ніколи не верифіковано
 - **P1** · 🤖 · 🟢 · → [`03_03 §4.3`](03_03_TinyML_Acoustic_Inference)
@@ -592,18 +591,18 @@
 
 #### FW.49 — Tick-time ≠ wall-time у STOP2: системна семантика таймерів Soldier
 - **P0** · 🤖+👤 · 🟡 · → [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)
-- ✅ **Wake-source ADR вирішено** (канон [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)): `HAL_GetTick` заморожений у STOP2 → tick-`delta_t` міряв лише active-час → over-mint (фальсифікація Proof-of-Growth); лік — RTC WUT + Vcap-енергогейт (FW.50) + RTC-календар timebase. S1-foundation (`wall_time.h`) + S3-docs ✅. Лишається:
-  - ✅ (2026-06-12) **S1-wiring SHIPPED (host-частина):** `Wall_Seconds_Now()` (RTC-календар → unix через FW.30 `Silken_Unix_From_Calendar`; free-running від 2000-01-01 ще до синку — дельтам досить) + `Wall_Calendar_Set` (beacon-UTC → календар: нова інверсія `Silken_Civil_From_Unix` у `wall_time.h`, roundtrip host-пара з прямою FW.30-функцією на всьому RTC-вікні 2000-2099) + **delta_t мігровано** (guard-и cold-start/назад/стрибок-епохи → baseline; RTC-маркер останнього циклу тепер wall-секунди — канон-таблиця `03_01 §2`) + **cold-start epoch_day wall-first** (`Silken_Wall_Is_Utc`-предикат; tick-екстраполяція — фолбек) + **wire `dT:2` сатурація @0xFFFF** (wall-дельти бувають добами — wrap брехав би бекенду: 200000с→3392с). «3 часові опори» (boot/beacon/request) застаріли — пороги FW.20-S2/FW.27-B ще 2026-06-11 переведені на лічильники пробуджень (wall їм не потрібен). Канон [`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA) + §2 (рядок wall-маркера). ⚠️ **bench-gated residual:** LSE/RTC clock-tree (`MX_RTC_Init`) у repo відсутній — `Wall_Seconds_Now` на кремнії поверне 0 (чесна відмова → baseline) до bring-up.
-  - [ ] 🔗 **S2:** RTC-WUT-tick + Vcap-енергогейт → delta_t = справжній час перезаряду (чекає шкали ↓).
-  - [ ] 👤 **bench bring-up:** LSE 32.768 кГц + `MX_RTC_Init` (календар + WUT-IRQ STOP2-wake) + верифікувати `Wall_Seconds_Now`/recharge-інтервал (RUNBOOK §3-4: `04_lse_drift.py`, `03_power_profile.py`).
-  - **🔴 Відкрите (фізика — Мінаєв/bench):** шкала delta_t — L4 очікує **36-190 с**, а [`02_03 §9.8`](02_03_BQ25570_MPPT_Nano_Power) енергобюджет дає **1.77 год** (P_gen=15µW); якщо реально ~1.77 год — метаболічний сигнал плоский (post-E.63: `metabolic_health(delta_t)`→growth_points майже константа; живе лише при L4-потужності EBFC). Калібрування — блокер E.63. Cross-ref: E.63, FW.50, FW.20, FW.27-B, FW.30.
+- ✅ **Wake-source ADR вирішено** (канон [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)): `HAL_GetTick` заморожений у STOP2 → tick-`delta_t` міряв лише active-час → over-mint (фальсифікація Proof-of-Growth); лік — RTC WUT + Vcap-енергогейт (FW.50) + RTC-календар timebase. S1-foundation (`wall_time.h`) + S3-docs ✅.
+- ✅ (2026-06-12) **S1-wiring SHIPPED (host-частина):** `Wall_Seconds_Now()` (RTC-календар → unix через FW.30 `Silken_Unix_From_Calendar`; free-running від 2000-01-01 ще до синку — дельтам досить) + `Wall_Calendar_Set` (beacon-UTC → календар: нова інверсія `Silken_Civil_From_Unix` у `wall_time.h`, roundtrip host-пара з прямою FW.30-функцією на всьому RTC-вікні 2000-2099) + **delta_t мігровано** (guard-и cold-start/назад/стрибок-епохи → baseline; RTC-маркер останнього циклу тепер wall-секунди — канон-таблиця `03_01 §2`) + **cold-start epoch_day wall-first** (`Silken_Wall_Is_Utc`-предикат; tick-екстраполяція — фолбек) + **wire `dT:2` сатурація @0xFFFF** (wall-дельти бувають добами — wrap брехав би бекенду: 200000с→3392с). «3 часові опори» (boot/beacon/request) застаріли — пороги FW.20-S2/FW.27-B ще 2026-06-11 переведені на лічильники пробуджень (wall їм не потрібен). Канон [`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA) + §2 (рядок wall-маркера). ⚠️ **bench-gated residual:** LSE/RTC clock-tree (`MX_RTC_Init`) у repo відсутній — `Wall_Seconds_Now` на кремнії поверне 0 (чесна відмова → baseline) до bring-up.
+- [ ] 🔗 **S2:** RTC-WUT-tick + Vcap-енергогейт → delta_t = справжній час перезаряду (чекає шкали ↓).
+- [ ] 👤 **bench bring-up:** LSE 32.768 кГц + `MX_RTC_Init` (календар + WUT-IRQ STOP2-wake) + верифікувати `Wall_Seconds_Now`/recharge-інтервал (RUNBOOK §3-4: `04_lse_drift.py`, `03_power_profile.py`).
+- **🔴 Відкрите (фізика — Мінаєв/bench):** шкала delta_t — L4 очікує **36-190 с**, а [`02_03 §9.8`](02_03_BQ25570_MPPT_Nano_Power) енергобюджет дає **1.77 год** (P_gen=15µW); якщо реально ~1.77 год — метаболічний сигнал плоский (post-E.63: `metabolic_health(delta_t)`→growth_points майже константа; живе лише при L4-потужності EBFC). Калібрування — блокер E.63. Cross-ref: E.63, FW.50, FW.20, FW.27-B, FW.30.
 
 #### FW.50 — Vcap ADC: raw counts використовуються як мВ (без конверсії)
 - **P0** · 👤 · 🟢 · → [`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA)
 - **✅ Знахідка + helper канонізовано ([`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA)):** `vcap_voltage` — сирий 12-bit ADC-відлік (канал VREFINT = VDDA за buck'ом, не Vcap EDLC) трактувався скрізь як мВ (пороги/EMA/`vcap_mv`) → RX-вікно/Vcap-енергогейт з фейкових величин. Pure-helper `Adc_Raw_To_Mv()` (factory VREFINT-cal + дільник-параметр) + host-тести (`adc_convert.h`, One-Home) ✅.
-- ✅ (2026-06-12, рішення founder) **VDDA-проксі ввімкнено у call-site — глухота вилікувана:** сирий відлік ~1500 < `VCAP_LISTEN_THRESHOLD=2800` тримав вухо RX-вікна зачиненим НАЗАВЖДИ (OTA/mesh/time-sync/ротація ключа мертві на кремнії; host-тести цього не бачили — вони вже жили в мВ-семантиці). Тепер `vcap_voltage = Adc_Vdda_Mv(VREFINT, factory-cal)` = чесні мВ VDDA (≈3300 поки buck живий): вухо відкрите, fauna-гейт (4500) чесно зачинений до реального Vcap-каналу, wire/EMA/mruby — справжні одиниці. Канон [`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA); попутно знято VSTOR↔VBAT_SEC дрейф у [`02_03`](02_03_BQ25570_MPPT_Nano_Power). Лишається:
-  - [ ] 👤 схемна вилка: розводка Vcap на окремий ADC-пін (цільовий тракт BQ25570 **VBAT_SEC** — [`02_01 §7.1`](02_01_Hardware_Architecture_and_BOM); дільник-номінали — [`02_03`](02_03_BQ25570_MPPT_Nano_Power): десятки МОм bleed vs TPS22860-гейт).
-  - [ ] 👤 bench-калібрування (DMM-точки vs `Adc_Raw_To_Mv` — RUNBOOK §3.4).
+- ✅ (2026-06-12, рішення founder) **VDDA-проксі ввімкнено у call-site — глухота вилікувана:** сирий відлік ~1500 < `VCAP_LISTEN_THRESHOLD=2800` тримав вухо RX-вікна зачиненим НАЗАВЖДИ (OTA/mesh/time-sync/ротація ключа мертві на кремнії; host-тести цього не бачили — вони вже жили в мВ-семантиці). Тепер `vcap_voltage = Adc_Vdda_Mv(VREFINT, factory-cal)` = чесні мВ VDDA (≈3300 поки buck живий): вухо відкрите, fauna-гейт (4500) чесно зачинений до реального Vcap-каналу, wire/EMA/mruby — справжні одиниці. Канон [`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA); попутно знято VSTOR↔VBAT_SEC дрейф у [`02_03`](02_03_BQ25570_MPPT_Nano_Power).
+- [ ] 👤 схемна вилка: розводка Vcap на окремий ADC-пін (цільовий тракт BQ25570 **VBAT_SEC** — [`02_01 §7.1`](02_01_Hardware_Architecture_and_BOM); дільник-номінали — [`02_03`](02_03_BQ25570_MPPT_Nano_Power): десятки МОм bleed vs TPS22860-гейт).
+- [ ] 👤 bench-калібрування (DMM-точки vs `Adc_Raw_To_Mv` — RUNBOOK §3.4).
 
 #### FW.52 — OTA throughput by-design: 1 RX-пакет/пробудження + give-up без печатки
 - **P2** · 👤 · 🟢 · → [`03_02 §5.1.6`](03_02_Queen_Gateway_Firmware)
@@ -612,10 +611,10 @@
 
 #### FW.54 — STOP2 RTC-only 300nA: SRAM2-off → RAM-стан (Flash-KV vs RTC-реклемація)
 - **P2** · 👤 · 🟢 · → [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)
-- **✅ Done (канон [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA) / §2.3.1 / §2.3.2):** 300nA-режим вимикає SRAM2 retention → RAM-only стан гине (EMA/mesh-кеш виживають у RTC; delta_t wall-маркер реюзає DR1). Flash-KV host-first (`flash_kv.{h,c}`, power-cut тести) + RAM-state інвентар (§2.3.1) + RTC-headroom 3-осьова реклемація (§2.3.2: live-набір вміщується в RTC, Flash для нього не потрібен). Лишається:
-  - [ ] 👤 рішення: RTC-реклемація (§2.3.2) vs Flash-KV persist vs SRAM2-retain — **свідомо відкладено до bench (founder 2026-06-12):** приймати з виміряним 300nA floor (PPK2/JS220, RUNBOOK 3.1), не з моделлю; Вісь-1 пакування DR0 — дешеве й mode-independent, але churn DR-розкладки без підтвердженої економії передчасний.
-  - [ ] 👤 bench: HAL_FLASH glue + ECCD-політика + вимір 300nA + persist-roundtrip.
-  - ✅ (2026-06-12) **DID-інверсія ВИРІШЕНА (founder: DID = f(UID) детермінований)** — `did_derive.h` (murmur3-fmix32 по 96-біт UID, recompute на boot, нуль неможливий — 0 ефіру = Queen Sentinel) + Ruby-дзеркало `SilkenNet::DidDerivation` (фабрика деривує DID з UID по SWD до прошивки → однопрохідний провіженінг) + golden freeze-contract обабіч (`test_soldier_logic.c` g1-g4 ↔ `did_derivation_spec.rb`). **регістр DID повернуто в пул** (перша реклемація з часів FW.2-freeze; істина розкладки — канон-таблиця `03_01 §2`); FW.24 HRNG-fallback знято — колізії/дефектні UID ловить фабрична DB-unique-перевірка до поля. Канон: [`03_01 §7`](03_01_Firmware_Lifecycle_and_DMA) (механізм) + §2 (DR-map) + §2.3.2 Вісь 2 (рішення). Було: write-once UID⊕random у DR7 → не VBAT-durable (розряд EDLC сиротив гаманець) + не відтворюваний (device-first 2 проходи). · [ ] 🔗 SEC.3: завести `DidDerivation.wire_did` у фабричний транскрипт (UID по SWD → Tree+K_seed до прошивки). Зчеплення: SEC.11/FW.30, SEC.3, HW.14.
+- **✅ Done (канон [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA) / §2.3.1 / §2.3.2):** 300nA-режим вимикає SRAM2 retention → RAM-only стан гине (EMA/mesh-кеш виживають у RTC; delta_t wall-маркер реюзає DR1). Flash-KV host-first (`flash_kv.{h,c}`, power-cut тести) + RAM-state інвентар (§2.3.1) + RTC-headroom 3-осьова реклемація (§2.3.2: live-набір вміщується в RTC, Flash для нього не потрібен).
+- [ ] 👤 рішення: RTC-реклемація (§2.3.2) vs Flash-KV persist vs SRAM2-retain — **свідомо відкладено до bench (founder 2026-06-12):** приймати з виміряним 300nA floor (PPK2/JS220, RUNBOOK 3.1), не з моделлю; Вісь-1 пакування DR0 — дешеве й mode-independent, але churn DR-розкладки без підтвердженої економії передчасний.
+- [ ] 👤 bench: HAL_FLASH glue + ECCD-політика + вимір 300nA + persist-roundtrip.
+- ✅ (2026-06-12) **DID-інверсія ВИРІШЕНА (founder: DID = f(UID) детермінований)** — `did_derive.h` (murmur3-fmix32 по 96-біт UID, recompute на boot, нуль неможливий — 0 ефіру = Queen Sentinel) + Ruby-дзеркало `SilkenNet::DidDerivation` (фабрика деривує DID з UID по SWD до прошивки → однопрохідний провіженінг) + golden freeze-contract обабіч (`test_soldier_logic.c` g1-g4 ↔ `did_derivation_spec.rb`). **регістр DID повернуто в пул** (перша реклемація з часів FW.2-freeze; істина розкладки — канон-таблиця `03_01 §2`); FW.24 HRNG-fallback знято — колізії/дефектні UID ловить фабрична DB-unique-перевірка до поля. Канон: [`03_01 §7`](03_01_Firmware_Lifecycle_and_DMA) (механізм) + §2 (DR-map) + §2.3.2 Вісь 2 (рішення). Було: write-once UID⊕random у DR7 → не VBAT-durable (розряд EDLC сиротив гаманець) + не відтворюваний (device-first 2 проходи). · [ ] 🔗 SEC.3: завести `DidDerivation.wire_did` у фабричний транскрипт (UID по SWD → Tree+K_seed до прошивки). Зчеплення: SEC.11/FW.30, SEC.3, HW.14.
 
 #### FW.55 — QEMU-M4 bit-parity lane: ARM↔x86 mruby double residual → CI
 - **P1** · 👤 · 🟢 · → [`03_01 §12.7`](03_01_Firmware_Lifecycle_and_DMA)
@@ -636,16 +635,16 @@
 
 #### SEC.2 — RDP Level 2 activation timeline
 - **P1** · 👤 · 🟢 · → [`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security)
-- **✅ Процедура RDP L2 канонізована ([`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security)):** pre-flight + CubeProgrammer CLI + rollout R&D→Pilot→Mass; скриптовано `firmware/scripts/bench/01_option_bytes.sh --rdp 2` (bench RUNBOOK). RDP L2 = **необоротний** SWD-lock → OTA мусить бути верифікований ДО активації (§3.6 ⚠️). Лишається:
-  - [ ] 🔗 верифікувати OTA flow end-to-end на bench ДО L2-lock
-  - [ ] 👤 field batch → RDP **L1** (зворотний); L2 — лише фінальний mass-deploy
+- **✅ Процедура RDP L2 канонізована ([`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security)):** pre-flight + CubeProgrammer CLI + rollout R&D→Pilot→Mass; скриптовано `firmware/scripts/bench/01_option_bytes.sh --rdp 2` (bench RUNBOOK). RDP L2 = **необоротний** SWD-lock → OTA мусить бути верифікований ДО активації (§3.6 ⚠️).
+- [ ] 🔗 верифікувати OTA flow end-to-end на bench ДО L2-lock
+- [ ] 👤 field batch → RDP **L1** (зворотний); L2 — лише фінальний mass-deploy
 
 #### SEC.3 — Factory Flashing pipeline
 - **P0** · 👤 · 🟡 · → [`03_06 §1`](03_06_Factory_Flashing_and_Key_Provisioning) (+ threat model 03_06 §5)
-- **✅ Гілка A+B Rake-tool канонізовано ([`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning)):** `provisioning_sessions` AASM + 2-Person Rule + `factory_flashing/*` + rake `factory:flash|approve|execute` (dry-run); execute-шлях інтеграційно доведено шимом (fake `STM32_Programmer_CLI` → реальні subprocess'и: capture stdout/stderr/exit, stop-on-fail, AASM failed+transcript; RSpec). Bench-residual = фізичний SWD-флеш. Лишається:
-  - [ ] 👤 real `STM32_Programmer_CLI` на STM32WLE5JC bench (post-FW.2) — runbook `firmware/scripts/bench/`
-  - [ ] 👤 Bitwarden Secrets API live (`BitwardenAdapter` зараз `NotImplementedError`)
-  - [ ] 🔗 real SE I²C (Гілка B) — SE050 eval-kit; `cryptoauthlib`→SE05x код-міграція → SE050-MIGRATION (legacy ATECC-патерн reusable, [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security))
+- **✅ Гілка A+B Rake-tool канонізовано ([`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning)):** `provisioning_sessions` AASM + 2-Person Rule + `factory_flashing/*` + rake `factory:flash|approve|execute` (dry-run); execute-шлях інтеграційно доведено шимом (fake `STM32_Programmer_CLI` → реальні subprocess'и: capture stdout/stderr/exit, stop-on-fail, AASM failed+transcript; RSpec). Bench-residual = фізичний SWD-флеш.
+- [ ] 👤 real `STM32_Programmer_CLI` на STM32WLE5JC bench (post-FW.2) — runbook `firmware/scripts/bench/`
+- [ ] 👤 Bitwarden Secrets API live (`BitwardenAdapter` зараз `NotImplementedError`)
+- [ ] 🔗 real SE I²C (Гілка B) — SE050 eval-kit; `cryptoauthlib`→SE05x код-міграція → SE050-MIGRATION (legacy ATECC-патерн reusable, [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security))
 
 #### SEC.4 — Reed Switch shipping mode (not in BOM)
 - **P2** · 👤 · ⚪ · → [`03_05 §3.5`](03_05_Hardware_Symmetric_Crypto_and_Security)
@@ -661,15 +660,15 @@
 
 #### SEC.14 — ATECC608B role-split re-examination (ARCH.42 honesty)
 - **P2** · 👤 · 🟢 · → [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)
-- **✅ Re-examine done — чесний trade-off канонізовано ([`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) «Роль SE: per-packet AES vs provisioning-only» + SEC.14 trade-off-таблиця там само):** перефреймовано «0.1% acceptable» → справжня вісь = tamper-resistance LoRa session-ключа (per-packet SE AES) ⟷ latency/ідіом (built-in radio-AES STM32 ~10µs + session-key у RDP-Flash, SE provisioning-only); energy active перевірено = малий (≈0.3% TX / ≈0.2% циклу Сценарію C, **НЕ вирішальний**); ATECC-agnostic щодо FW.2 nonce. Лишається:
-  - [ ] 👤 обрати роль SE (per-packet vs provisioning-only) — bench eval + BOM freeze; threat-model-рішення, не тех-необхідність. Тепер **SE050**-контекст (вісь та сама) → рішення тримається у SE050-MIGRATION (One-Home)
-  - [x] 🤖 (2026-06-12) cross-check проти канонічного бюджету ([`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power) Сценарій C, дзеркало [`02_01 §2`](02_01_Hardware_Architecture_and_BOM)): active ≈0.3% TX / ≈0.2% циклу / ≈3% годинного запасу — «малий» підтверджено (старе «~39 мДж TX» було deprecated +22 dBm); **знахідка-інверсія: always-on SE sleep 150 нА ≈ 3.6 мДж/год > весь запас Сценарію C (+1.4 мДж/год)** → SE обов'язково за load-switch гейтом (TPS22860-патерн) — канон [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) Power impact; стосується обох ролей, тож НЕ блокує 👤-вибір вище
+- **✅ Re-examine done — чесний trade-off канонізовано ([`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) «Роль SE: per-packet AES vs provisioning-only» + SEC.14 trade-off-таблиця там само):** перефреймовано «0.1% acceptable» → справжня вісь = tamper-resistance LoRa session-ключа (per-packet SE AES) ⟷ latency/ідіом (built-in radio-AES STM32 ~10µs + session-key у RDP-Flash, SE provisioning-only); energy active перевірено = малий (≈0.3% TX / ≈0.2% циклу Сценарію C, **НЕ вирішальний**); ATECC-agnostic щодо FW.2 nonce.
+- [ ] 👤 обрати роль SE (per-packet vs provisioning-only) — bench eval + BOM freeze; threat-model-рішення, не тех-необхідність. Тепер **SE050**-контекст (вісь та сама) → рішення тримається у SE050-MIGRATION (One-Home)
+- [x] 🤖 (2026-06-12) cross-check проти канонічного бюджету ([`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power) Сценарій C, дзеркало [`02_01 §2`](02_01_Hardware_Architecture_and_BOM)): active ≈0.3% TX / ≈0.2% циклу / ≈3% годинного запасу — «малий» підтверджено (старе «~39 мДж TX» було deprecated +22 dBm); **знахідка-інверсія: always-on SE sleep 150 нА ≈ 3.6 мДж/год > весь запас Сценарію C (+1.4 мДж/год)** → SE обов'язково за load-switch гейтом (TPS22860-патерн) — канон [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) Power impact; стосується обох ролей, тож НЕ блокує 👤-вибір вище
 
 #### SEC.15 — IWDG freeze у STOP2 (option byte `IWDG_STOP=0`)
 - **P1** · 👤 · 🟢 · → [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)
 - ✅ Freeze-rationale + PVD-кома side-path канонізовано ([`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)); `IWDG_STOP=0`+`IWDG_STDBY=0` заскриптовано поряд з RDP — `firmware/scripts/bench/01_option_bytes.sh` + RUNBOOK §1.2.
-  - [ ] 👤 застосувати на платі при factory flashing
-  - [ ] 👤 bench-верифікація: сон 1 год без spurious reset (RUNBOOK §4.4)
+- [ ] 👤 застосувати на платі при factory flashing
+- [ ] 👤 bench-верифікація: сон 1 год без spurious reset (RUNBOOK §4.4)
 
 #### SE050-MIGRATION — ATECC608B → NXP SE050 + true-DePIN ladder (2026-06-07)
 - **P1** · 🤖+👤 · 🟡 · → [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)
@@ -740,15 +739,15 @@
 
 #### E.63 — метаболічний сигнал: розв'язано від хаосу (Option A) [2026-06-08]
 - **P1** · 🤖+👤 · 🟡 · → `05_02`
-- ✅ **Option A (founder 2026-06-08) — здоров'я розв'язано від хаосу:** Лоренц = лише status-гейт (β=`BASE_BETA` фікс), `growth_points` у гомеостазі = `metabolic_health(delta_t)` напряму; FW.5 β-перт реверсована (delta_t економічно нульовий / vcap інвертований — β не рухає z-нерухому точку z_eq=ρ−1). Код (`bio_contract.rb`+`attractor.rb`, byte-identical DCI) + тести + канон ([`03_04 §4.3`](03_04_mruby_Lorenz_Attractor) verdict · [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) L4 · [`02_03 §9.8`](02_03_BQ25570_MPPT_Nano_Power) енергобюджет) + guard `growth_points_clamp_drift` + backend GP-conformance C (`check_metabolic_divergence!`, observational). Wire незмінний. Лишається:
-  - [ ] 👤 bench: реальна P_ebfc (`HW.13`) + E_cycle + recharge-крива (`03_power_profile.py`, RUNBOOK §3.2-3.3)
-  - [ ] 🤖 калібрування `DELTA_T_FAST_S`/`DELTA_T_SLOW_S` (placeholder 600/7200с) під зміряну recharge-криву — per-deployment/species
-  - [ ] 🔗 B на FW.2 — точна stateless GP↔delta_t (wire несе **raw** delta_t, GP з EMA-згладженого device-RTC → перерахунок лише коли CCM-кадр понесе EMA-delta_t; **wire-rev2 28B цього НЕ додав** — зареєстровано кандидатом rev3 у wire-budget ledger [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security): рішення «замінити семантику dT-поля на EMA» vs «+2B» — за founder'ом)
+- ✅ **Option A (founder 2026-06-08) — здоров'я розв'язано від хаосу:** Лоренц = лише status-гейт (β=`BASE_BETA` фікс), `growth_points` у гомеостазі = `metabolic_health(delta_t)` напряму; FW.5 β-перт реверсована (delta_t економічно нульовий / vcap інвертований — β не рухає z-нерухому точку z_eq=ρ−1). Код (`bio_contract.rb`+`attractor.rb`, byte-identical DCI) + тести + канон ([`03_04 §4.3`](03_04_mruby_Lorenz_Attractor) verdict · [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) L4 · [`02_03 §9.8`](02_03_BQ25570_MPPT_Nano_Power) енергобюджет) + guard `growth_points_clamp_drift` + backend GP-conformance C (`check_metabolic_divergence!`, observational). Wire незмінний.
+- [ ] 👤 bench: реальна P_ebfc (`HW.13`) + E_cycle + recharge-крива (`03_power_profile.py`, RUNBOOK §3.2-3.3)
+- [ ] 🤖 калібрування `DELTA_T_FAST_S`/`DELTA_T_SLOW_S` (placeholder 600/7200с) під зміряну recharge-криву — per-deployment/species
+- [ ] 🔗 B на FW.2 — точна stateless GP↔delta_t (wire несе **raw** delta_t, GP з EMA-згладженого device-RTC → перерахунок лише коли CCM-кадр понесе EMA-delta_t; **wire-rev2 28B цього НЕ додав** — зареєстровано кандидатом rev3 у wire-budget ledger [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security): рішення «замінити семантику dT-поля на EMA» vs «+2B» — за founder'ом)
 
 #### E.64 — bio→economy signal-coupling audit (E.63-лінза) [2026-06-08]
 - **P1** · 🤖+👤 · 🟢 · → [`05_05 §7`](05_05_Slashing_and_Risk_Policy)
-- ✅ **E.63-лінза fixes (2026-06-08):** окрім delta_t (E.63), решта bio→economy слабка — фікси: **#2** anomaly ρ-relative (`z > ρ + (CRITICAL_Z_MAX−BASE_RHO)` = 45 при ρ=28; ambient-temp більше не тригерить хибну, warm-day 22%→3%; firmware+backend `anomaly_ceiling`/`homeostatic?`); **#3** stress_index conformance ([`05_05 §7`](05_05_Slashing_and_Risk_Policy)): Z-anomaly bounded 0.6≪0.83 «Z alone never slashes», degenerate `avg_z`/weather-`temp` прибрано, `max_status≥3` лише tamper. **Throughline:** Лоренц health-оракул **декоративний** → реальна цінність DCI anti-fraud (device-Z≡server-Z); здоров'я ведуть ПРЯМІ сигнали (metabolism ✅ E.63 · sap · VPD · acoustic). Канон [`03_04 §4`](03_04_mruby_Lorenz_Attractor) · [`05_05 §7`](05_05_Slashing_and_Risk_Policy) · [`05_05 §8`](05_05_Slashing_and_Risk_Policy). Нічого не задеплоєно → correctness перед деплоєм. Лишається:
-  - [ ] 🔗 real-signal activation (sap/VPD/acoustic stress_index + per-species/season пороги) — ground-truth calibration (bench, [`08_02`](08_02_Academic_Institutions_Registry)). Cross-ref: E.63, FW.8, FW.50.
+- ✅ **E.63-лінза fixes (2026-06-08):** окрім delta_t (E.63), решта bio→economy слабка — фікси: **#2** anomaly ρ-relative (`z > ρ + (CRITICAL_Z_MAX−BASE_RHO)` = 45 при ρ=28; ambient-temp більше не тригерить хибну, warm-day 22%→3%; firmware+backend `anomaly_ceiling`/`homeostatic?`); **#3** stress_index conformance ([`05_05 §7`](05_05_Slashing_and_Risk_Policy)): Z-anomaly bounded 0.6≪0.83 «Z alone never slashes», degenerate `avg_z`/weather-`temp` прибрано, `max_status≥3` лише tamper. **Throughline:** Лоренц health-оракул **декоративний** → реальна цінність DCI anti-fraud (device-Z≡server-Z); здоров'я ведуть ПРЯМІ сигнали (metabolism ✅ E.63 · sap · VPD · acoustic). Канон [`03_04 §4`](03_04_mruby_Lorenz_Attractor) · [`05_05 §7`](05_05_Slashing_and_Risk_Policy) · [`05_05 §8`](05_05_Slashing_and_Risk_Policy). Нічого не задеплоєно → correctness перед деплоєм.
+- [ ] 🔗 real-signal activation (sap/VPD/acoustic stress_index + per-species/season пороги) — ground-truth calibration (bench, [`08_02`](08_02_Academic_Institutions_Registry)). Cross-ref: E.63, FW.8, FW.50.
 
 ## §06 · Deploy / Observability / Secrets / Ops
 
@@ -768,8 +767,8 @@
 
 #### S2.4 — Observability industrial-grade hardening
 - **P1** · 👤 · 🟡 · → [`06_03 §2.9`](06_03_Prometheus_Observability)
-- **✅ Industrial-grade hardening канонізовано ([`06_03 §2.9`](06_03_Prometheus_Observability)):** `external_labels` (env/service/source/release attribution) + `queue_config`+explicit WAL (backpressure) + cardinality-budget relabel + process/runtime gauges (`sample_process_runtime!`/`sample_connection_pool!`, RSpec-covered) + CI-валідація (`alloy_config_validate` / `grafana/alloy fmt`) — конкретні значення у `config.alloy` SSOT (не дублюються). Лишається:
-  - [ ] 👤 `up`-scrape alert + SLO/error-budget (§2.9 #6 — ingest availability, mint/slash success) — Grafana Cloud
+- **✅ Industrial-grade hardening канонізовано ([`06_03 §2.9`](06_03_Prometheus_Observability)):** `external_labels` (env/service/source/release attribution) + `queue_config`+explicit WAL (backpressure) + cardinality-budget relabel + process/runtime gauges (`sample_process_runtime!`/`sample_connection_pool!`, RSpec-covered) + CI-валідація (`alloy_config_validate` / `grafana/alloy fmt`) — конкретні значення у `config.alloy` SSOT (не дублюються).
+- [ ] 👤 `up`-scrape alert + SLO/error-budget (§2.9 #6 — ingest availability, mint/slash success) — Grafana Cloud
 
 #### S2.2 — Grafana Cloud dashboards
 - **P0** · 👤 · 🟢 · → `06_03`
