@@ -109,3 +109,19 @@
     governance_parameter_sync:
       cron: '30 3 * * *' # Щодня о 03:30 UTC
       class: Governance::ParameterSyncWorker
+
+    # --- ЦИКЛ ЕНТРОПІЇ (The Pre-Stress Sentinel) [S6.20] ---
+    # Погодинний fan-out ClusterEntropyAnalyzerWorker на кожен кластер. Без нього
+    # gauge silkennet_cluster_entropy_score мертвий і entropy_anomaly EWS-тривоги
+    # не спрацьовують (аналізатор приймає cluster_id, його ніхто не оркеструвало).
+    cluster_entropy_sweep:
+      cron: '10 * * * *' # Щогодини о :10 (зміщено від :00-піку tokenomics)
+      class: ClusterEntropySweepWorker
+
+    # --- ЦИКЛ ВІДНОВЛЕННЯ ВИПЛАТ (The Safety Net) [S6.20] ---
+    # Підбирає страховки, що залипли у :triggered (втрачений подієвий enqueue з
+    # Dclimate). Первинний тригер — подієвий; це лише сітка. InsurancePayoutWorker
+    # ідемпотентний (lock + status guard + double-spend), тож re-enqueue безпечний.
+    insurance_payout_recovery:
+      cron: '15,45 * * * *' # Кожні 30 хв (:15/:45)
+      class: InsurancePayoutRecoveryWorker

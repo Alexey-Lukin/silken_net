@@ -658,10 +658,10 @@
 - **Стан:** Graceful degradation реалізовано — Redis down → DB-backed nonce (Solid Cache, TTL 10хв), шлюзи не отримують 503 (`m2m_auth_controller` [S6.1] + spec). Канон `04_03` (replay-nonce M2M).
 - [ ] 👤 верифікувати Upstash multi-zone replication у production
 
-#### S6.20 — Два воркери без cron у `config/sidekiq.yml` (doc-ahead-of-code)
-- **P1** · 👤 · ⚪ · → [`04_02 §11`](04_02_Business_Logic_and_Services)
-- **Стан:** Не розпочато (doc-ahead-of-code) — `04_02 §11` описує два воркери як cron-driven, але обох немає в `config/sidekiq.yml` (verified): (1) **`ClusterEntropyAnalyzerWorker`** — `silkennet_cluster_entropy_score` gauge ніколи не оновлюється → `entropy_anomaly`-алерти мертві (потрібен orchestrator `Cluster.find_each → perform_async`); (2) **`InsurancePayoutWorker`** — `:triggered`-страховки залипають назавжди (якщо `Dclimate::VerificationService` enqueue впав) → кошти не доходять (потрібен sweep по `ParametricInsurance.status_triggered`). Канон [`04_02 §11`](04_02_Business_Logic_and_Services).
-- [ ] 👤 додати cron/orchestrator для обох (або, якщо trigger ручний, прибрати «cron»-формулювання з §11)
+#### S6.20 — ClusterEntropy + InsurancePayout: cron-оркестратори (doc-ahead-of-code закрито)
+- **P1** · 🤖+👤 · 🟢 · → [`04_02 §11`](04_02_Business_Logic_and_Services)
+- **Стан:** Розрив doc-ahead-of-code закрито — обидва per-record воркери тепер cron-driven через оркестратори (host-done + RSpec): (1) `ClusterEntropySweepWorker` (`Cluster.find_each` → `ClusterEntropyAnalyzerWorker`, cron `10 * * * *`) оживив EWS-детектор ентропії (`silkennet_cluster_entropy_score` gauge + `entropy_anomaly` алерти більше не мертві); (2) `InsurancePayoutRecoveryWorker` (`ParametricInsurance.status_triggered.find_each` → `InsurancePayoutWorker`, cron `15,45 * * * *`) — страхувальна сітка для застряглих :triggered виплат (первинний тригер лишається подієвим; re-enqueue безпечний — payout ідемпотентний). Канон [`04_02 §11`](04_02_Business_Logic_and_Services).
+- [ ] 👤 deploy-verify: sidekiq-scheduler підхопив обидва cron у проді (Sidekiq dashboard) + перші інкременти entropy-gauge
 
 #### E.41 — Fire-event 48h latency (dClimate obscuration) → immediate-broadcast fallback
 - **P1** · 🤖+👤 · 🟡 · → `04_02`, `05_01`

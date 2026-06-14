@@ -960,11 +960,23 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 |----------|----------|
 | **Черга** | `alerts` |
 | **Retry** | 3 |
-| **Тригер** | Періодичний (рекомендовано: щогодини через Sidekiq cron) |
+| **Тригер** | `ClusterEntropySweepWorker` — погодинний оркестратор (`Cluster.find_each` → fan-out; cron `10 * * * *`) |
 | **Вхід** | `cluster_id` (Integer) |
 | **Сервіси** | `SilkenNet::EntropyCalculatorService.call(z_values)` |
 | **Side Effects** | Оновлює `cluster.entropy_score` (денормалізація). При entropy < `CRITICAL_ENTROPY_THRESHOLD` (0.65) створює `EwsAlert` (type: `entropy_anomaly`, severity: `medium`). Redis silence filter: 1 год per cluster. Prometheus gauge: `silkennet_cluster_entropy_score`. Інвалідація кешу `oracle_expected_yield_24h`. |
 | **Примітка** | Аналізує Z-значення за останні 24 години (partition-aware query). Мінімум 30 точок даних для статистичної значущості. Alignment: ЧДТУ task #12 (08_02 §2). Чому Z-value, а не HRNG seed: `chaos_seed` НЕ передається у 21-байтному пакеті (03_01, Phase 2). |
+
+---
+
+#### `ClusterEntropySweepWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `alerts` |
+| **Retry** | 3 |
+| **Тригер** | Sidekiq cron `10 * * * *` (`cluster_entropy_sweep`, щогодини) |
+| **Вхід** | — |
+| **Side Effects** | Fan-out: `Cluster.find_each` → `ClusterEntropyAnalyzerWorker.perform_async(cluster.id)`. Замикає doc-ahead-of-code розрив [S6.20] — без оркестратора EWS-детектор ентропії ніколи не виконувався. |
 
 ---
 
@@ -987,10 +999,20 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 |----------|----------|
 | **Черга** | `critical` |
 | **Retry** | 10 |
-| **Тригер** | `Dclimate::VerificationService` (fire_confirmed), cron при triggered insurances |
+| **Тригер** | `Dclimate::VerificationService` (fire_confirmed) + `ParametricInsurance` (при triggered, подієво); recovery sweep `InsurancePayoutRecoveryWorker` (cron `15,45 * * * *`) |
 | **Вхід** | `insurance_id` (Integer) |
 | **Сервіси** | `Etherisc::ClaimService.new(insurance).claim!` (при `uses_etherisc?`) або `BlockchainMintingService.call` |
 | **Side Effects** | `insurance.pay!`, `BlockchainConfirmationWorker.perform_in(30.seconds, ...)`. Перевіряє супутниковий консенсус (Cosmic Eye guard). |
+
+#### `InsurancePayoutRecoveryWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `critical` |
+| **Retry** | 3 |
+| **Тригер** | Sidekiq cron `15,45 * * * *` (`insurance_payout_recovery`, кожні 30 хв) |
+| **Вхід** | — |
+| **Side Effects** | Fan-out: `ParametricInsurance.status_triggered.find_each` → `InsurancePayoutWorker.perform_async(insurance.id)`. Страхувальна сітка для застряглих :triggered виплат (втрачений подієвий enqueue з Dclimate); re-enqueue безпечний — payout-воркер ідемпотентний (lock + status guard + double-spend) [S6.20]. |
 
 #### `EcosystemHealingWorker`
 
