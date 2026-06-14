@@ -767,7 +767,8 @@
 
 #### S2.1 — Верифікація метрик після deploy
 - **P0** · 👤 · ⚪ · → `06_03`
-- `/metrics` (реєстр — `06_03 §2.8`) + Alloy sidecar → Grafana Cloud налаштовано. · [ ] 👤 верифікувати збір метрик після першого Akash deploy
+- **Стан:** `/metrics` (реєстр — `06_03 §2.8`) + Alloy sidecar → Grafana Cloud налаштовано; чекає першого Akash deploy для верифікації збору.
+- [ ] 👤 верифікувати збір метрик після першого Akash deploy
 
 #### S2.4 — Observability industrial-grade hardening
 - **P1** · 👤 · 🟡 · → [`06_03 §2.9`](06_03_Prometheus_Observability)
@@ -776,11 +777,13 @@
 
 #### S2.2 — Grafana Cloud dashboards
 - **P0** · 👤 · 🟢 · → `06_03`
-- ✅ dashboard IaC (секції/панелі — зведення у `deploy/grafana/README.md`) → `deploy/grafana/`. · [ ] 👤 імпортувати у Grafana Cloud (інструкції `deploy/grafana/README.md`)
+- **Стан:** dashboard IaC готовий (`deploy/grafana/dashboards/`, секції/панелі — `deploy/grafana/README.md`).
+- [ ] 👤 імпортувати у Grafana Cloud (інструкції `deploy/grafana/README.md`)
 
 #### S2.3 — Grafana Cloud alerting rules
 - **P0** · 👤 · 🟢 · → `06_03`
-- ✅ alert rules IaC (P0/P1/P2, зведення у `deploy/grafana/README.md`) → `deploy/grafana/alerts/` + counter `silkennet_telemetry_acoustic_overflow_total`. · [ ] 👤 замінити `${DATASOURCE_UID}` + notification channel (Slack/Email/PagerDuty)
+- **Стан:** alert rules IaC готові (`deploy/grafana/alerts/silkennet-alerts.yaml`, P0/P1/P2; зведення `deploy/grafana/README.md`) + counter `silkennet_telemetry_acoustic_overflow_total`.
+- [ ] 👤 замінити `${DATASOURCE_UID}` + notification channel (Slack/Email/PagerDuty)
 
 #### INF.3 — TLS termination
 - **P2** · 👤 · ⚪ · → `06_02 §TLS термінація`
