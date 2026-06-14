@@ -9,7 +9,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 — Мультичейн архітектура повністю спроєктована. Структурний скелет усіх 12 мереж присутній у кодбейсі. Всі сервіси мають RSpec-покриття.
-- **Відкрите:** dClimate mock→real API (E.7), Production credentials (S3.2), chain-outage DR (§8) → [`00_07`](00_07_Action_Plan_Tracker).
+- **Відкрите:** dClimate real API + Production credentials (S3.2), chain-outage DR (§8) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 

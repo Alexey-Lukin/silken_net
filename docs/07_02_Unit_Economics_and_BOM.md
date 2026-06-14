@@ -225,7 +225,7 @@
 1. **Phase 3 viable лише при SCC ≥ $0.41** — вимагає ReFi premium або Blue Carbon market
 2. **Starlink sharing:** розгортати ≥3 кластери на 1 Starlink термінал → Starlink cost per cluster $50/міс → breakeven $0.18/SCC ✅
 3. **Duty cycling:** Starlink 1 хв/год замість 5 хв/год → OPEX $30/міс (близько Phase 1/2.5)
-4. **Альтернатива Helium Network:** E.4 — якщо покриття є, кратно нижчий OPEX
+4. **Альтернатива Helium Network:** ARCH.34 (Queen Helium fallback) — якщо покриття є, кратно нижчий OPEX
 
 | Сценарій Phase 3 | OPEX/міс | Breakeven SCC | Payback @$1.00 (CAPEX $6,504) |
 |---|---|---|---|

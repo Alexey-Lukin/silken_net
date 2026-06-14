@@ -37,8 +37,7 @@
 - [§07 · Юридичні / Бізнес](#07--юридичні--бізнес)
 - [§08 · Академічна інтеграція + External Stakeholders](#08--академічна-інтеграція--external-stakeholders)
 - [Cross-cutting · Doc-drift (DOC-T) — SSOT doc↔code + tracker form/tooling](#-cross-cutting--doc-drift-doc-t--ssot-doccode--tracker-formtooling)
-- [Backlog · Додаткові знахідки (не блокери)](#-backlog--додаткові-знахідки-не-блокери)
-- [Backlog · Архітектурні пропозиції (довгострокові)](#-backlog--архітектурні-пропозиції-довгострокові)
+- [Backlog (не блокери · довгострокові)](#-backlog-не-блокери--довгострокові)
 - [Архів закритих пунктів (мігровано в канон)](#-архів-закритих-пунктів-мігровано-в-канон)
 <!-- TOC:AUTO:END -->
 
@@ -585,6 +584,13 @@
 - [ ] 👤 bench: verbatim-звірка SIM7070-ноти V1.03 + реальні URC/таймінги
 - [ ] 🔗 staging-smoke прогін проти задеплоєної Брами (`coap_smoke.yml` post-deploy gate; `bin/coap_smoke` + pure `lib/coap_smoke.rb` freeze-contract готовий — байт-звірка golden-векторів e2e: RST на сміття, 4.04 з 0xFF-MID піном, 2.04-після-enqueue; loopback-довід `coap_smoke_spec.rb`)
 
+#### E.59 — Mongabay biodiversity D-MRV pivot (acoustic fauna) [strategic]
+- **P1** · 🤖+👤 · 🟡 · → `03_03 §10`, `08_01 §1`
+- **Стан:** Стратегічний pivot carbon-MRV → biodiversity D-MRV (acoustic), після Delgado et al. (Nicoya, 119 ділянок, 16000 год аудіо; Mongabay, тр. 2026). Defensible moat проти Pachama/Sylvera/NCX (єдиний micro-acoustic verification layer). Координує вже-трековані: FW.4-EXT (5-class TinyML + `fauna_activity`), FW.25 (log-mel P1→P0), UNI.11+UNI.13a (Cherkasy Soundscape Library), BIZ.12 (Horizon CLUSTER 6 grant), 08_01 Стаття 24a. Канон `03_03 §10` + `08_01 §1/§2` + `08_02 §1B`.
+- [ ] 🤖 FW.4-EXT: 5-class модель з `fauna_activity` (розширення FW.4)
+- [ ] 👤 AiInsight#biodiversity_trend → ForestNFT metadata "biodiversity_score" (`04_02`)
+- [ ] 🔗 координація UNI.11/UNI.13a (soundscape) + BIZ.12 (Horizon) + 08_01 Стаття 24a
+
 ## §03/§05 · Безпека (Edge crypto + Web3)
 
 #### SEC.1 — Multisig Gnosis Safe для production admin role
@@ -677,6 +683,12 @@
 - **Стан:** RSpec gate raised — `/lib/tasks/` відфільтровано (логіка в lib-движках 100%), line/branch підняті + per-group tripwire, великий branch+line-push з тріажем (мертві `&.`→`.`, real guard/empty-state/error tests, dead-code прибрано) + 2 dead-branch рефактори + ReDoS-fix `TABLE_ID_RE`; firmware coverage-lane `make -C firmware/test coverage` (gcov, owned `../common`/`../queen`, +`flash_ring` drain-test) живий; seed-флак вполльовано (`scripts/coverage_seed_diff.rb`; справжній інтегріті-дефект `sessions#current_session` `Module#prepend` знято). Пороги — лише `spec/spec_helper.rb`. Канон `04_06 §B.1/§B.3` (gate/scope) · `04_06 §B.4/§B.5` (gap-triage + dead-vs-defensive таксономія + worked-examples).
 - [ ] 🤖 RSpec залишок: branch-хвіст звужується партіями (решта домінована **defensive** — Phlex `&.current_user` / env `defined?` / model-validation-dead / exhaustive-case → leave за §B.4: fragile white-box заради % = анти-§A.16-17)
 - [ ] 🤖 Solidity (`contracts/`): глибший branch-targeting pass (line/func високі, forge-тести зелені; forge branch% низький — переважно forge-артефакт: кожен `require` + OZ-inherited, revert-шляхи покриті `testRevert_*`)
+
+#### E.41 — Fire-event 48h latency (dClimate obscuration) → immediate-broadcast fallback
+- **P1** · 🤖+👤 · 🟡 · → `04_02`, `05_01`
+- **Стан:** ⚠️ Life-safety — dClimate satellite fire-events можуть запізнюватись ~48h (хмарна обструкція). Первинна мітигація ✅ зашита: edge chainsaw→panic-TX негайний broadcast (`03_03`/`03_01`, `PANIC_TTL=5`, `Trigger_Emergency_LoRa_TX` — urgent шлях НЕ чекає dClimate). Вторинна: Forester Guild fallback-oracle = E.20 (Post-TRL 6). P1 — не відкладати на Post-TRL 6. Канон `04_02` (AlertNotification/EWS), `05_01` (dClimate).
+- [ ] 🤖 verify backend EWS fire-alert routing не гейтить на satellite clearance (chainsaw → immediate-alert path)
+- [ ] 🔗 Forester Guild fallback-oracle (E.20, Post-TRL 6)
 
 ## §05 · Web3 / Економіка / Slashing
 
@@ -1054,19 +1066,15 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 | DOC-T.10 | Реструктуризація 05/07 (Фаза 3) — відкладені misplacement-рішення: `07_01 §11` Investor Q&A (pitch/diligence — дім 00_01 vs новий pitch-doc неоднозначний); `07_03 §5` Anchor Assembly + `§6` Virtual Prototyping (operational/field-ops дім, наразі grant-bootstrap контекст — не чистий misplacement) | `07_01`, `07_03` | Призначити operational/pitch-дім + перенести (рішення founder) | 🟡 Deferred |
 | DOC-T.16 | **bare-§ після whole-doc-лінка** — форма `[NN_NN](Doc) §X` (канон = `[NN_NN §X](Doc)`, `00_06 §1`); **gate-TOLERATED**: ні `bare_section_ref` (лише code-span поза лінком), ні `crossref_label_form` (лише мітка href) його не ловлять. Campaign-wide — 13 лише в Module 01. | `docs/**` | NEW guard `section_ref_after_doclink` + 1-shot all-module normalize sweep (як crossref-кампанія R1–R3), **НЕ** piecemeal per-module | 🟡 Approved (founder 2026-06-13) |
 
-## 📌 Backlog · Додаткові знахідки (не блокери)
+## 📌 Backlog (не блокери · довгострокові)
 
-| # | Знахідка | Джерело | Примітка |
-|---|----------|---------|----------|
+| ID | Опис | Джерело | Note / Milestone |
+|----|------|---------|------------------|
 | E.3 | Breadboard video відсутнє (для грантів) | `07_03` | Зняти відео |
-| E.4 | Helium Network fallback — concept є, реалізації немає | `02_05` | Дизайн + реалізація |
 | E.5 | CoAP listener Ruby — масштабується до ~10k вузлів | `06_01` | Series D: Rust/Go proxy |
-| E.7 | dClimate mock mode — потрібна реальна інтеграція для Production | `05_01` | Пов'язано з S3.2 |
 | E.9 | DMA SPI optimization — зменшення енергоспоживання (Vector 1 — Ярмілко) | `08_02` | R&D partnership |
 | E.10 | Kalman/EMA filtering для delta_t noise suppression (±8% → ±1.2%) | `08_02` | R&D partnership |
-| E.11 | CE/FCC/EMC/IP68 certification roadmap не розпочато | `08_02` | Потребує Косенюк (RF) |
 | E.12 | Boolean minimization TX decision conditions (Karnaugh/Quine-McCluskey) | `08_02` | Потребує Любченко |
-| E.13 | Petri Net model of Rails monolith — deadlock-free verification at 10k concurrent IoT | `08_02` | Потребує Супруненко |
 | E.14 | Multi-source satellite + anchor data fusion (Sentinel-2 NDVI) | `08_02` | Потребує Любченко + Бушин |
 | E.15 | Reed-Solomon FEC або Hamming для LoRa error correction | `08_02` | Потребує Косенюк |
 | E.18 | 10 запланованих Q1 публікацій — blocked by lab data | `08_03` | Blocked by UNI.1-3 |
@@ -1082,29 +1090,18 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 | E.34 | dClimate fallback → ForestBountyService (drone/ranger PoPhW) | `04_02` | Post-TRL 6 |
 | E.36 | PostGIS Generated Column (geo_boundary) замість тригера | `04_01` | Post-TRL 8 |
 | E.37 | TimescaleDB для telemetry_logs: hypertables + continuous aggregates | `04_01` | >100M рядків/місяць |
-| E.38 | Press-Fit фаски: R ≥ 0.2 мм для зняття напружень у PEEK + **annular barbs (h=0.3mm)** на Zone 1 та Zone 3 контактних поверхнях для PEEK creep mechanical lock (`01_01 §4.3`, HW.26) | `01_01` | Включити у nTop (HW.1, HW.26) |
-| E.39 | **EBFC Gen 2.0 (BASELINE, REWRITTEN 2026-05-22):** dgrFAD-GDH (deglycosylated) + Laccase/ZIF-nanozyme + Genipin-Chitosan-CNC матриця + Nafion-g-PSBMA цвітеріонна мембрана. 20–25 років. Gen 1.0 (GOx+CAT+GA+PEG) виключена як нежиттєздатна. | `01_03` §1–3 | ЧНУ lab testing |
 | E.40 | **Ignion Virtual Antenna™:** NN02-310 як альтернатива Yageo/Taoglas 868 МГц | `02_01` §5 | Evaluation kit + VSWR тест |
 | DIFF.1 | `Wallet#lock_and_mint!` threshold = runtime param (не hardcoded) | `04_02` | Informational, no action |
-| E.41 | **Fire events delayed 48h** via dClimate satellite obscuration — **⚠️ life-safety risk**. Mitigation: Forester Guild as Fallback Oracle (E.20) + immediate local broadcast via panic TX (не чекати satellite clearance при chainsaw detection). **Пріоритет: P1** (не відкладати на Post-TRL 6) | `04_02`, `05_01` | P1: interim emergency fallback |
 | E.48 | **The Graph subgraph на testnet `polygon-amoy`** — потребує mainnet deploy перед production | `05_01` | Post mainnet deploy |
 | E.50 | **Edge fuzzy_distance dedup function** на STM32WLE5JC: <1 мс CPU, <128 байт RAM, ціль — 30-40% TX зниження за рахунок suppression near-duplicate пакетів | `08_02` §1B (Ярмілко) | Post-TRL 7 (R&D — Ярмілко) |
 | E.51 | **Monte Carlo TTL-flood симуляція** для обґрунтування `PANIC_TTL=5` та `DEFAULT_TTL=3`: цільовий P_delivery ≥ 0.99 при 20-30% одночасних відмов вузлів. Виходи: math-обґрунтування для seed deck | `08_02` §1B (Порубльов) | Post-TRL 6 (Порубльов, ЧНУ) |
 | E.52 | **GA-оптимізація ваг `silken_forest.marshal`** ML моделі на Akash GPU кластері — генетичний алгоритм для `InsightGeneratorService` stress_index класифікації | `08_02` §1B (Любченко) | Post-TRL 7 |
 | E.53 | **VNA-вимір SMD-антени під PEEK радомом** — VSWR <1.5 на 868 МГц для 3-5 варіантів товщини PEEK (1.5/2.0/2.5 мм) у вологому/сухому стані + **3D Keep-Out з Ti-фланцем нижче** (Z-clearance 5/8/12 мм, з/без overhang за периметр Ti). Лабораторна задача (cross-ref UNI.10 ChDTU Гончаров, нова вимога `02_01 §5.3` revised) | `08_02` §2 (Гончаров) + `02_01` | P1, blocked by HW.17 + UNI.10 |
 | E.54 | **SOP документи для 7 типів EwsAlert** — стандартизовані інструкції UA+EN: severe_drought, insect_epidemic, vandalism_breach, fire_detected, seismic_anomaly, system_fault, entropy_anomaly. Інтеграція як inline UI у Phlex (cross-ref ARCH.31) | `08_02 §3` | P1, joint with ChIPB-NUTSU (UNI.12) |
-| E.55 | **Multi-party NDA + IP framework** для 5-сторонньої академічної співпраці (ChNU + ChDTU + ChIPB + ChMA + СЄУ + Silken Net) — base-line для всіх UNI.x публікацій | `08_03`, `08_02 §3`, `08_02 §4`, `08_02 §5` | P1, cross-ref BIZ.10 |
-| 🌿 E.59 | **Mongabay biodiversity pivot — acoustic D-MRV** — стратегічний pivot Silken Net від карбонового MRV до повноцінного D-MRV біорізноманіття після Delgado et al. (Nicoya Peninsula, 119 ділянок, 16 000 год аудіо; *Mongabay News*, травень 2026). Включає: (1) FW.4-EXT 5-class TinyML модель з класом `fauna_activity`; (2) FW.25 DSP log-mel з P1→P0; (3) UNI.11+UNI.13a Cherkasy Soundscape Library (ЧДТУ ПМКТ + ЧНУ Біо-хаб); (4) 08_02 §1 Macro-Micro verification (Бушин CNN + fauna feature); (5) 08_02 §1 NSGA-II multi-objective GA (Любченко); (6) 08_01 Стаття 24a co-authored Q1 publication; (7) Horizon Europe CLUSTER 6 (Biodiversity Monitoring) grant vector; (8) AiInsight#biodiversity_trend → ForestNFT metadata "biodiversity_score"; (9) ринкова диференціація — defensible moat проти Pachama/Sylvera/NCX (тільки Silken Net має micro-acoustic verification layer) | `03_03` §10 + `08_01` §1+§2 + `08_02` §1B + `08_01` Стаття 24a | **P1 strategic** — координує FW.4-EXT, FW.25, UNI.11, UNI.13a |
-
-## 📌 Backlog · Архітектурні пропозиції (довгострокові)
-
-| ID | Пропозиція | Джерело | Milestone |
-|----|-----------|---------|-----------|
 | ARCH.1 | Fractal topology: L2 Conductor nodes (Hub Trees, formerly "Sergeant"; H-LDSE hierarchical routing, geohashing) | `00_01` | Post-TRL 7 |
 | ARCH.2 | Ingress Proxy (Rust/Go) + Kafka для >1M packets/hour | `00_01`, `06_01` | Series D |
 | ARCH.5 | Cross-Registry Export (Verra, Gold Standard, UNFCCC) | `04_02` | Post-TRL 7 |
 | ARCH.6 | Federated Learning auto-retraining (monthly cycle, A/B testing) — **обмежено L2 Conductors / L3 Queens; ніколи на L1 Soldier** (compute budget paradox, [`00_08 §1.2`](00_08_Beyond_TRL9_Planetary_Roadmap) revised 2026-05-16: 0.47F supercap + STOP2 300 nA не витримує жодного gradient epoch'у) | `04_02`, [`00_08 §1`](00_08_Beyond_TRL9_Planetary_Roadmap) | Post-TRL 7 |
-| ARCH.7 | Edge Data Fusion: transmit 2-byte λ-exponent замість 16-byte Z payload | `00_01` | Post-TRL 7 |
 | ARCH.8 | Event-Triggered Reporting: heartbeat 1/day normal, continuous on anomaly | `00_01` | Post-TRL 6 |
 | ARCH.9 | Network Sharding: isolate anomalous clusters to prevent storm propagation | `00_01` | Post-TRL 7 |
 | ARCH.10 | Queen-to-Queen Backhaul Mesh: LoRa SF12 inter-Queen relay (Starlink fallback) | `00_01` | Post-TRL 8 |
