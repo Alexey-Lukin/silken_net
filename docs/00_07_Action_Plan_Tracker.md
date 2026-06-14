@@ -265,13 +265,13 @@
 
 #### HW.8 — Pogo pin specification (7 блокерів)
 - **P1** · 👤 · → `02_02`
-- [ ] 👤 BLOCKER-1: Матеріал напилення piн → Gold (Hard Gold, Au 0.76 µm)
-- [ ] 👤 **BLOCKER-1a (NEW 2026-05-16): Hard Gold ENIG на центральній площадці анкера** (торець виводу шини Zone 1, ø 4–5 мм) — **обов'язково**, інакше золотий pogo притискається до голого Ti → гальванічна пара Ti↔Au → Rc drift > 500 мОм за 18–36 міс → cold-start fail. Передати specмапу селективного gold-plating заводу (~$0.05/анкер). Деталі — `02_02 §1.2` ⚠️ блок.
-- [ ] 👤 BLOCKER-2: Сила пружини → ~100 г/пін, Travel ≥ 1.5 мм
-- [ ] 👤 BLOCKER-3: Механізм фіксації → Quarter-turn bayonet (рекомендовано)
-- [ ] 👤 BLOCKER-4: O-ring → EPDM, CS 1.5-2.0 мм, 15-25% compression; цільовий клас IP (IP67/IP68) — затвердити (`02_02 §3.3`)
-- [ ] 👤 BLOCKER-5: Допуски соосності (XY-площина) → Lead-in chamfer
-- [ ] 👤 **BLOCKER-6 (NEW 2026-05-16): 1D Tolerance Stack-Up по Z-осі** — обов'язковий розрахунок RSS або worst-case envelope для PCB→Radome→O-ring→Zone3 stack так, щоб O-ring завжди компресував 15-25% **і** Pogo Pin завжди в 50-70% страйку (0.76-1.06 мм з 1.52). Без цього ~10-30% капсул йде у брак (О-ring under-compressed → water ingress, АБО Pogo under-engaged → Cold-Start Fail). Деталі — `02_02 §3.5`. **P0** для PCBA/анкер/Радом freeze.
+- [ ] 👤 HW.8.1: Матеріал напилення piн → Gold (Hard Gold, Au 0.76 µm)
+- [ ] 👤 **HW.8.2 (NEW 2026-05-16): Hard Gold ENIG на центральній площадці анкера** (торець виводу шини Zone 1, ø 4–5 мм) — **обов'язково**, інакше золотий pogo притискається до голого Ti → гальванічна пара Ti↔Au → Rc drift > 500 мОм за 18–36 міс → cold-start fail. Передати specмапу селективного gold-plating заводу (~$0.05/анкер). Деталі — `02_02 §1.2` ⚠️ блок.
+- [ ] 👤 HW.8.3: Сила пружини → ~100 г/пін, Travel ≥ 1.5 мм
+- [ ] 👤 HW.8.4: Механізм фіксації → Quarter-turn bayonet (рекомендовано)
+- [ ] 👤 HW.8.5: O-ring → EPDM, CS 1.5-2.0 мм, 15-25% compression; цільовий клас IP (IP67/IP68) — затвердити (`02_02 §3.3`)
+- [ ] 👤 HW.8.6: Допуски соосності (XY-площина) → Lead-in chamfer
+- [ ] 👤 **HW.8.7 (NEW 2026-05-16): 1D Tolerance Stack-Up по Z-осі** — обов'язковий розрахунок RSS або worst-case envelope для PCB→Radome→O-ring→Zone3 stack так, щоб O-ring завжди компресував 15-25% **і** Pogo Pin завжди в 50-70% страйку (0.76-1.06 мм з 1.52). Без цього ~10-30% капсул йде у брак (О-ring under-compressed → water ingress, АБО Pogo under-engaged → Cold-Start Fail). Деталі — `02_02 §3.5`. **P0** для PCBA/анкер/Радом freeze.
 
 #### HW.9 — PCB KiCad layouts
 - **P1** · 👤 · → `02_01`
@@ -351,7 +351,7 @@
 - **P2** · 👤 · → `02_05 §Starlink DTC vs Mini`
 - **Опис:** Phase 3 (Starlink Mini terminal) потребує WiFi co-processor. Архітектурне рішення між ESP32-S3 та SIM8200G-M2 не прийнято
 - **Пріоритет:** Phase 3 only
-- ✅ Зроблено (🤖): decision memo + рекомендація **ESP32-S3** → `02_05` BLOCKER-1.
+- ✅ Зроблено (🤖): decision memo + рекомендація **ESP32-S3** → `02_05` (HW.18).
 - [ ] 👤 Підтвердити рішення (рекоменд. ESP32-S3)
 - [ ] 🤖 Оновити 03_02 з рішенням
 - [ ] 🔗 Додати co-processor firmware до `firmware/`
@@ -401,7 +401,7 @@
 - [ ] 👤 Постачальник Co-60: Чорнобиль НДІ радіаційної медицини / Київ ІРОНЦ — підтвердити можливість low-dose 15 кГр (не стандартної 25)
 
 #### HW.23 — HIP postprocess specification for SLM anode
-- **P0** · 👤 · → `01_02 §1.7 BLOCKER-3`
+- **P0** · 👤 · → `01_02 §1.7`
 - **Опис:** SLM-друк створює залишкові термічні напруження та внутрішню металургійну пористість. Без HIP (Hot Isostatic Pressing) ці дефекти стануть зародками втомних тріщин при 20-річному циклічному навантаженні.
 - **Параметри:** 920°C ± 20°C / 100–150 МПа Ar / 2–4 год / контрольоване охолодження
 - **Блокує:** Втомну міцність, 20-річну довговічність, TRL 5
@@ -411,7 +411,7 @@
 - [ ] 👤 Втомні випробування (Wöhler) у синтетичному ксилемному соку — еквівалент 5+ років фретингу
 
 #### HW.24 — Staged validation gate (SLA → Ti-coin → full anchor)
-- **P0** · 👤 · → `01_01 §6.1 BLOCKER-2`
+- **P0** · 👤 · → `01_01 §6.1`
 - **Опис:** Тризонний анкер — складна збірка. Передчасний перехід на DMLS-партію 100 шт. без верифікації базових принципів був методологічною помилкою. Цей блокер фіксує гейт: 100 анкерів замовляємо **тільки** після проходження двох попередніх етапів.
 - [ ] 👤 **Stage 1 — SLA макети (5 шт):** друк прозорого фотополімеру (Form 3 або SLA-сервіс) для перевірки form & fit, ергономіки, Flush Mount step drilling, допусків press-fit «пластик-в-пластик»
 - [ ] 👤 **Stage 2 — Ti-coins (~15 шт, ⌀10–15 мм або 10×10×1 мм):** SLM-друк + EAAE (з обов'язковим dehydrogenation bake `01_02 §1.3 Крок 5b`) → **Gen 2.0 анодний стек** (одношаровий dgrFAD-GDH + Os polymer в geniпin-chitosan-CNC матриці поверх fMWCNT, `01_03 §2.1`) + **Gen 2.0 катодний стек** (Laccase + nCoCuCeZIF nanozyme гібрид DET, `01_03 §2.2`) + **Nafion-g-PSBMA анти-resin coating** → in vitro CV/EIS у синтетичному ксилемному соку (рецептура від біо-хабу ЧНУ, [`08_02`](08_02_Academic_Institutions_Registry)). 30-day stability gate. Chloride tolerance test (0.25 М NaCl). UCST winter-lock тест (-10°C → +25°C цикл). 💡 **Electrode-дизайн:** замовити з «вушком» (отвір/виступ на краю) для кріплення потенціостат-кліпси без пошкодження активної площі (A_electrode = 2 см²). In-silico predictions для порівняння — `40_validate_vs_experiment.py` готовий. (`01_03 §3.7`)
@@ -472,7 +472,7 @@
 - **Альтернатива (дорожча):** rigid-flex PCB замість двох плат + B2B (~+$1.50, але усуває механічну точку відмови).
 - [ ] 👤 KiCad: place B2B footprints на обидві деки + перевірка signal integrity для 6-8 сигналів (3V3, GND, VSTOR_sense, EBFC_sense, piezo_EXTI, BQ25570 EN)
 - [ ] 👤 Виміряти insertion loss + height variation на 5 зразках першої партії
-- [ ] 👤 Pre-fabrication sanity check vs `HW.8 BLOCKER-6` (B2B stack height впливає на Z-tolerance envelope)
+- [ ] 👤 Pre-fabrication sanity check vs `HW.8.7` (B2B stack height впливає на Z-tolerance envelope)
 
 #### HW.30 — SMD Piezo + Acoustic Pad (Zero-Touch Wake) (NEW 2026-05-16)
 - **P2** · 👤 · → `02_01 §6`
@@ -492,7 +492,7 @@
 
 #### FW.2 — AES-128-ECB → AES-128-CCM (28B packet, wire-rev2) [post-ARCH.42]
 - **P0** · 🤖 · → `03_05 §2.1`
-- ✅ дизайн AES-128-CCM (rev1 24B → **wire-rev2 28B**, нижче) + backend-парсер (`process_ccm_chunk` + `Cryptography::LoraCcm`, OpenSSL) + firmware freeze-contract emit/decrypt + host-тести (golden-vector parity + tamper-семантика, **не залізна крипта**); FC у RTC DR15. **INERT** — флаги `FW2_CCM_ENABLED`/`TELEMETRY_CCM_ENABLED` off → ECB ще живий у проді. FC/nonce/cold-boot політика (📐 ЄДИНЕ ДЖЕРЕЛО) + CCM-пакет/wire — канон [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security). Закриває ECB→CCM/MIC/replay (BLOCKER-2/3) + SEC.10 panic + FW.29; LoRa-ключ у SE (SE050, SEC.6). 🔴 silicon `CRYP_AES_CCM` ще НЕ перевірено ↓.
+- ✅ дизайн AES-128-CCM (rev1 24B → **wire-rev2 28B**, нижче) + backend-парсер (`process_ccm_chunk` + `Cryptography::LoraCcm`, OpenSSL) + firmware freeze-contract emit/decrypt + host-тести (golden-vector parity + tamper-семантика, **не залізна крипта**); FC у RTC DR15. **INERT** — флаги `FW2_CCM_ENABLED`/`TELEMETRY_CCM_ENABLED` off → ECB ще живий у проді. FC/nonce/cold-boot політика (📐 ЄДИНЕ ДЖЕРЕЛО) + CCM-пакет/wire — канон [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security). Закриває ECB→CCM/MIC/replay + SEC.10 panic + FW.29; LoRa-ключ у SE (SE050, SEC.6). 🔴 silicon `CRYP_AES_CCM` ще НЕ перевірено ↓.
 - ✅ (2026-06-12) **TRL-7 monotonic FC host-half: Flash high-water** (канон [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security) 📐, KV-ключ `0x14` — реєстр [`03_01 §2.3.1`](03_01_Firmware_Lifecycle_and_DMA)): nonce-унікальність через cold-boot тепер **безумовна при живому Flash-якорі** (інваріант I-HW: переданий FC < межі у Flash; було: імовірнісна HRNG, MEDIUM — лишилась тільки fallback'ом). `common/fc_hiwater.h` (STRIDE 256/MARGIN 8, epoch-край клемпиться → нову епоху дає FW.17-ротація) + wiring `main.c` за гейтом `FW2_CCM_ENABLED` (boot-кеш після спільного KV-mount'а, КЕНОЗИС-advance, **атомарний floor+advance** у `Load_Frame_Counter` — подвійний brownout не повторює nonce, сторожа-останній-рубіж у `Build_CCM` energy-gated) + сценарні host-тести (`test_flash_kv.c` секція FW.2: інваріант щоцикл, подвійний brownout, fault-injection → кеш недоторканий). SE050 monotonic counter — лише alt для L2 (не потрібен high-water). Residual = той самий bench, що FW.8/FW.17 (Flash-KV HAL-глю на кремнії).
 - ✅ (2026-06-12) **WIRE-REV2 28B — ревізія ДО фліпу (founder decision):** wire-черга мала 5 претендентів без місця + 2 приховані регресії (FW.18b `thr_invalid` мовчки випав із 24B-freeze; gossip гинув від per-Soldier ключів) → формат ревізовано, поки всі три сторони ще за гейтами (нуль польової міграції). 28B: AAD `[DID:4|gossip:1|FC24:3]` (нонс байт-у-байт rev1 — replay-guard незмінний) + ciphertext 12B (+`device_z` u16×512 для FW.31 numeric DCI, +`diag [thr_invalid:5|fauna:2|fc_degraded:1]`, +`vpd_index` для HW.32) + MIC 8B без компромісу. Airtime: 24..27B коштують однаково (символьна квантизація) — перші 3B задарма, 28-й = +12 мДж/TX свідомо (дім для VPD до приходу BME280 — без другого міграційного циклу). KAT-вектори регенеровано OpenSSL-оракулом (C `ccm_kat_vectors.h` ≡ Ruby golden); `lora_ccm.h` + Soldier emit + Queen parse + `Cryptography::LoraCcm` + `process_ccm_chunk` (29B chunk) + спеки обабіч. **SSOT: [`03_05 §3.2`](03_05_Hardware_Symmetric_Crypto_and_Security) + 📒 wire-budget ledger там само** (нові претенденти на байти реєструються в ledger, НЕ в трекері). · [ ] 🤖 верифікувати `CRYP_AES_CCM` на STM32WLE5JC REVB (RM0461 §27.4; bench-атестація скриптована — RUNBOOK §2 + `02_selftest_attest.py`, PASS = дозвіл flip) → flip обидва флаги — **ЄДИНИЙ HW-залежний пункт**
 
@@ -852,7 +852,7 @@
 - **P2** · 👤+🤖 · → `07_01 §8`
 - Hadron (ERC-3643) RWA-pilot: 1 ділянка з кадастром + biomass appraisal (LIDAR+ground) + Hadron compliance. · [ ] 👤 партнер-лісокористувач (post-war/Carpathian) + кадастр/biomass appraisal · [ ] 🤖 `Hadron::TokenizeForestPlotService` + KYC flow spec · [ ] 🔗 після BIZ.2 (MSA)
 
-#### BIZ.14 — SFC Vote-Escrow during breach→slash lag (07_01 BLOCKER-7 residual)
+#### BIZ.14 — SFC Vote-Escrow during breach→slash lag (07_01 SFC vote-escrow residual)
 - **P3** · 🔗 · → `07_01 §8`
 - ✅ Core закрито: `SilkenForestCoin.slash()` (SLASHER_ROLE) зменшує voting power при slashing → атака «купити SFC + навмисне порушення NaaS» неможлива. 🟡 Residual: ~1–5 хв lag (`web3_critical` черга) між SCC-slash і SFC-slash — у вікні учасник технічно ще може проголосувати. · [ ] 🔗 Vote-Escrow (veToken) при `breached`-контрактах — опціонально, gated на повний DAO governance launch (BIZ.4)
 
@@ -914,7 +914,7 @@
 
 #### UNI.8 — Перший контакт з ректоратом СЄУ (legacy ID — see UNI.14)
 - **P0** · 👤 · → `08_02 §5`
-- Блокує Economic Whitepaper, Legal Framework, NaaS шаблони (`07_01` BLOCKER-1/3). · [ ] 👤 зустріч Чудаєва/Аблязова Н. + verify 7 посад + MoU СЄУ↔SilkenNet + workshops Аблязов (MSA) + Ус (ESG)
+- Блокує Economic Whitepaper, Legal Framework, NaaS шаблони (`07_01` B2B-MSA / B2C-ToS). · [ ] 👤 зустріч Чудаєва/Аблязова Н. + verify 7 посад + MoU СЄУ↔SilkenNet + workshops Аблязов (MSA) + Ус (ESG)
 
 #### UNI.15 — ЧНУ TISC engagement (prior-art landscape + trademark + open-license consult)
 - **P1** · 👤+🤖 · → `08_01 §2.1` · 🔗 UNI.1 (MoU)
@@ -922,7 +922,7 @@
 
 #### UNI.16 — ЧНУ Кафедра ІВ engagement (юр-експертиза RWA/токеноміки + open-license)
 - **P1** · 👤 · → `08_01 §2.1` · 🔗 UNI.1 (MoU)
-- Кафедра ІВ ЧНУ — точковий UA-юрисдикційний review (СЄУ §1F = макро): (1) RWA ERC-3643 vs Лісовий Кодекс/ПЗФ, (2) SCC/SFC за ЗУ «Про віртуальні активи» 2022 + MiCA 2024, (3) NaaS у UA Civil Code, (4) авторське право `bio_contract.rb`/`Attractor` (як основа enforcement копілефту, не пропрієтарність), (5) **open-license review: AGPL/CERN-OHL-S/CC-BY-SA дійсність у UA + AF3 non-commercial × комерц-вимір**. Ціль: 2 меморандуми + license-sanity. · [ ] 👤 контакт зав. кафедри + workshop Аблязов (UA×MiCA) + меморандум RWA (розблок `07_01` BLOCKER-6) + меморандум SCC + open-license/AF3 review
+- Кафедра ІВ ЧНУ — точковий UA-юрисдикційний review (СЄУ §1F = макро): (1) RWA ERC-3643 vs Лісовий Кодекс/ПЗФ, (2) SCC/SFC за ЗУ «Про віртуальні активи» 2022 + MiCA 2024, (3) NaaS у UA Civil Code, (4) авторське право `bio_contract.rb`/`Attractor` (як основа enforcement копілефту, не пропрієтарність), (5) **open-license review: AGPL/CERN-OHL-S/CC-BY-SA дійсність у UA + AF3 non-commercial × комерц-вимір**. Ціль: 2 меморандуми + license-sanity. · [ ] 👤 контакт зав. кафедри + workshop Аблязов (UA×MiCA) + меморандум RWA (розблок `07_01` RWA-передумов) + меморандум SCC + open-license/AF3 review
 
 #### UNI.17 — ChDTU Хоменко (Кафедра металорізальних верстатів): прецизійна механіка + DMLS post-processing
 - **P2** · 👤 · → `08_02 §2`
