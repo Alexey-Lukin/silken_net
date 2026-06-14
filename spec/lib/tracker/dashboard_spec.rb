@@ -414,6 +414,46 @@ RSpec.describe Tracker::Dashboard do
     end
   end
 
+  describe ".verdict_lead_violations" do
+    it "flags a non-Стан lead (✅/prose), passes a `- **Стан:**` lead" do
+      md = <<~MD
+        ## §06 · Ops
+        #### S9.4 — checkmark lead
+        - **P1** · 👤 · 🟡 · → `06_04`
+        - ✅ done thing. · [ ] 👤 residual
+        #### S9.5 — Стан lead
+        - **P1** · 👤 · 🟡 · → `06_04`
+        - **Стан:** done thing.
+        - [ ] 👤 residual
+      MD
+      res = described_class.verdict_lead_violations(md)
+      expect(res).to include("S9.4")
+      expect(res).not_to include("S9.5")
+    end
+
+    it "checks ONLY the first body line (a later non-Стан line passes)" do
+      md = <<~MD
+        ## §06 · Ops
+        #### S9.6 — Стан lead then prose
+        - **P1** · 👤 · 🟡 · → `06_04`
+        - **Стан:** verdict here.
+        - some follow-up prose, not a Стан line
+        - [ ] 👤 residual
+      MD
+      expect(described_class.verdict_lead_violations(md)).to be_empty
+    end
+
+    it "skips non-registry sections (📌 Backlog / 🗄️ Архів)" do
+      md = <<~MD
+        ## 📌 Backlog · Findings
+        #### B9.1 — backlog item without Стан lead
+        - **P3** · 🤖 · ⚪ · → `06_04`
+        - prose lead, no Стан
+      MD
+      expect(described_class.verdict_lead_violations(md)).to be_empty
+    end
+  end
+
   describe "guard branches (absent / malformed canon)" do
     it ".dangling_refs skips an item whose canon has no NN_NN prefix" do
       items = [ described_class::Item.new(id: "X.1", canon: "not-a-doc-id") ]

@@ -422,6 +422,45 @@ module Tracker
       end
     end
 
+    # --- verdict-lead guard [DOC-T.19, founder 2026-06-14] ---
+    # Universal-Стан: EVERY registry #### item body must LEAD with `- **Стан:**` (verdict /
+    # essence + canon pointer) — max homogeneity, no «✅ X»-lead / prose-lead / bare-checkbox
+    # (the heterogeneity the founder «can't look at without tears»). Flags any registry item
+    # whose first body line after the meta-line (`- **P?** …`) is not `- **Стан:**`. Same
+    # registry scope as `parse` (REGISTRY_SECTION, not SKIP). ADVISORY during the §03/§05/§06
+    # sweep, flips HARD at 0 (00_06 §3 recipe). Pure.
+    STAN_LEAD = /\A-\s+\*\*Стан:\*\*/
+    def self.verdict_lead_violations(markdown = File.read(DEFAULT_PATH))
+      in_registry = false
+      current = nil
+      seen_meta = false
+      in_fence = false
+      markdown.each_line.with_object([]) do |line, bad|
+        in_fence = !in_fence if line.lstrip.start_with?("```")
+        next if in_fence
+        if line.start_with?("## ")
+          in_registry = line.match?(REGISTRY_SECTION) && !line.match?(SKIP_SECTION)
+          current = nil
+          next
+        end
+        next unless in_registry
+        if (m = line.match(ITEM_HEAD))
+          current = m[1]
+          seen_meta = false
+          next
+        end
+        next unless current
+
+        unless seen_meta
+          seen_meta = true if line.match?(/\*\*P[0-3]\*\*/)
+          next
+        end
+        next if line.strip.empty?
+        bad << current unless line.lstrip.match?(STAN_LEAD)
+        current = nil # check ONLY the first body line per item
+      end
+    end
+
     # --- regenerate the AUTO block in place ---
     def self.regenerate(path = DEFAULT_PATH)
       md = File.read(path)

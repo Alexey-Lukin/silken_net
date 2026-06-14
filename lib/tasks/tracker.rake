@@ -35,6 +35,7 @@ namespace :tracker do
     chemdups = Tracker::Dashboard.chem_note_ids(md).tally.select { |_, c| c > 1 }
     chemambig = Tracker::Dashboard.chem_ambiguous_token_lines(md)
     runon    = Tracker::Dashboard.inline_residual_runon(md)
+    verdict  = Tracker::Dashboard.verdict_lead_violations(md)
 
     puts "00_07 lint — #{items.size} #### items (#{Tracker::Dashboard.open_items(items).size} actionable)"
     puts "  duplicate IDs:    #{dups.empty? ? 'none ✓' : dups.inspect}"
@@ -88,14 +89,23 @@ namespace :tracker do
       chemdups.each { |id, n| puts "    - #{id} defined #{n}× in 00_07" }
       chemambig.each { |a| puts "    - #{a}" }
     end
-    # [founder 2026-06-14] inline residual run-on — ADVISORY during the sweep (legacy
-    # violators), flips HARD (joins the abort below) once 00_07 is at 0. (00_06 §3 recipe.)
+    # [founder 2026-06-14] inline residual run-on — HARD (joins the abort below). The
+    # DOC-T.19 sweep took 00_07 to 0 inline run-on (all residuals vertical); the guard now
+    # holds the line. (00_06 §3 recipe.)
     if runon.empty?
       puts "  residual lists:   no inline run-on (≥2 `· [ ]` per line) — vertical ✓"
     else
-      puts "  inline run-on residual lists (#{runon.size}) — ADVISORY (sweep → vertical list):"
+      puts "  inline run-on residual lists (#{runon.size}) — vertical-list standard violated (00_07 intro):"
       runon.each { |r| puts "    - #{r}" }
     end
-    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any?
+    # [DOC-T.19, founder 2026-06-14] verdict-lead — EVERY item body leads with `- **Стан:**`
+    # (Universal-Стан, max homogeneity). ADVISORY during the §03/§05/§06 sweep (legacy
+    # non-Стан leads), flips HARD at 0. (00_06 §3 recipe.)
+    if verdict.empty?
+      puts "  verdict-lead:     every item body leads with `- **Стан:**` ✓"
+    else
+      puts "  verdict-lead non-Стан leads (#{verdict.size}) — ADVISORY (sweep → **Стан:**-lead): #{verdict.first(8).join(', ')}…"
+    end
+    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any? || runon.any?
   end
 end
