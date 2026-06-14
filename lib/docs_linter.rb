@@ -94,9 +94,11 @@ module DocsLinter
   # [SSOT standard conformance] Each canon doc must carry the standard skeleton
   # (00_06): a ✅ Статус, a top 🔗 Cross-references, and an auto-ToC (TOC:AUTO
   # markers). Exempt: 00_00 (SSOT index), 00_07 (tracker / blocker home), and
-  # legacy appendix files (02_04 / *_appendix_*). Caller passes basename (sans .md)
+  # legacy appendix files (02_04_ prefix OR any *_Appendix / *_appendix name —
+  # case-insensitive first letter so the real `..._Appendix` basename matches, not
+  # only a lowercase `_[Aa]ppendix`). Caller passes basename (sans .md)
   # + text; returns the missing element names so a CI gate keeps the tree from regressing.
-  CONFORMANCE_EXEMPT = /\A00_00_|\A00_07_|\A02_04_|_appendix_/
+  CONFORMANCE_EXEMPT = /\A00_00_|\A00_07_|\A02_04_|_[Aa]ppendix/
 
   def conformance_violations(basename, text)
     return [] unless basename.match?(/\A\d\d_\d\d_/)
@@ -442,7 +444,7 @@ module DocsLinter
   # registry tables are the bare-by-design home registry), 00_07 (tracker — terse
   # pointers by design, §-resolution is tracker:check's job), legacy appendix.
   # Caller passes basename (sans .md) + text; returns ["bare ref `05_05 §3` …", …].
-  BARE_REF_EXEMPT = /\A00_00_|\A00_06_|\A00_07_|\A02_04_|_appendix_/
+  BARE_REF_EXEMPT = /\A00_00_|\A00_06_|\A00_07_|\A02_04_|_[Aa]ppendix/
   BARE_SECTION_REF_RE = /(?<!\[)`(\d\d_\d\d[^`]*§[^`]*)`/
   PLACEHOLDER_SECTION_RE = /\A[nxy._]+\z/i
 
@@ -475,7 +477,7 @@ module DocsLinter
   # set as bare_section_ref + manifest — index / standard-owner / tracker / appendix /
   # manifesto keep their bare-by-design refs. Caller passes basename + text + the Set
   # of valid NN_NN ids. Pure: no I/O.
-  BARE_DOC_EXEMPT = /\A00_00_|\A00_06_|\A00_07_|\A02_04_|_appendix_|\Amanifest/
+  BARE_DOC_EXEMPT = /\A00_00_|\A00_06_|\A00_07_|\A02_04_|_[Aa]ppendix|\Amanifest/
   BARE_DOC_REF_RE = /(?<!\[)`(?:docs\/)?(\d\d_\d\d)(?:_[A-Za-z0-9_]+)?`/
 
   def bare_doc_ref(basename, text, valid_ids)

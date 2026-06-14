@@ -126,6 +126,8 @@ RSpec.describe DocsLinter do
       expect(described_class.conformance_violations("00_00_SSOT_Index", bare)).to be_empty
       expect(described_class.conformance_violations("00_07_Action_Plan_Tracker", bare)).to be_empty
       expect(described_class.conformance_violations("02_04_Legacy_Breadboard_Appendix", bare)).to be_empty
+      # the *_Appendix NAME-branch (not the 02_04_ prefix) must also exempt a future appendix doc:
+      expect(described_class.conformance_violations("07_09_Some_Field_Appendix", bare)).to be_empty
     end
 
     it "ignores non-canon filenames (README, etc.)" do
