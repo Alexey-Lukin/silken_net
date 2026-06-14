@@ -636,7 +636,7 @@
 
 #### SEC.4 — Reed Switch shipping mode (not in BOM)
 - **P2** · 👤 · ⚪ · → [`03_05 §3.5`](03_05_Hardware_Symmetric_Crypto_and_Security)
-- **Стан:** дизайн канонізовано, у BOM ще немає — zero-consumption transport (магніт→circuit open, інсталятор знімає→first power-up, ~$0.05/unit; окремий механізм від piezo Zero-Power Wake).
+- **Стан:** Не розпочато — дизайн канонізовано, у BOM ще немає: zero-consumption transport (магніт→circuit open, інсталятор знімає→first power-up, ~$0.05/unit; окремий механізм від piezo Zero-Power Wake).
 - [ ] 👤 додати Hamlin 59140-1-T-00-A + N52 магніт до BOM + оновити KiCad schematic
 
 #### SEC.12 — HRNG-IV fallback hardening (CoAP CBC IV)
@@ -742,7 +742,7 @@
 - [ ] 👤 заповнити GitHub repository secrets (12 крит.: `GCP_SA_KEY`, `DATABASE_PASSWORD`, `SSH_PRIVATE_KEY`…) → верифікувати CI
 
 #### S2.1 — Верифікація метрик після deploy
-- **P0** · 👤 · ⚪ · → `06_03`
+- **P0** · 👤 · 🟢 · → `06_03`
 - **Стан:** `/metrics` (реєстр — `06_03 §2.8`) + Alloy sidecar → Grafana Cloud налаштовано; чекає першого Akash deploy для верифікації збору.
 - [ ] 👤 верифікувати збір метрик після першого Akash deploy
 
@@ -1046,7 +1046,7 @@
 
 #### BIZ.16 — Naming model: codename «Gaia 2.0» vs trademark «GaiaNexus»
 - **P3** · 👤 · ⚪ · → `08_01 §2`
-- **Стан:** Відкрите founder-рішення — проєкт всюди вживає codename «Gaia 2.0»; founder обрав ™ «GaiaNexus» (заявка — UNI.3/UNI.15). Модель найменування: rename project-wide чи codename(Gaia 2.0)+brand(GaiaNexus)-split. Масове перейменування відкладене до рішення (інакше One-Home cross-ref sweep довелося б робити двічі). Канон `08_01 §2`.
+- **Стан:** Не розпочато — відкрите founder-рішення: проєкт всюди вживає codename «Gaia 2.0»; founder обрав ™ «GaiaNexus» (заявка — UNI.3/UNI.15). Модель найменування: rename project-wide чи codename(Gaia 2.0)+brand(GaiaNexus)-split. Масове перейменування відкладене до рішення (інакше One-Home cross-ref sweep довелося б робити двічі). Канон `08_01 §2`.
 - [ ] 👤 рішення founder про модель → (якщо rename) One-Home sweep `Gaia 2.0`↔`GaiaNexus` по docs+code
 
 ## 🔀 Cross-cutting · Doc-drift (DOC-T) — SSOT doc↔code + tracker form/tooling
