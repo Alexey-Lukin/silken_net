@@ -791,11 +791,15 @@
 
 #### INF.6 — CoAP UDP smoke test через Ingress Anchor (post-deploy gate)
 - **P1** · 🤖+👤 · 🟢 · → `06_01`, `06_02`, `06_08 §1.2`
-- ✅ workflow `coap_smoke.yml` (`workflow_dispatch` + `workflow_call`). Без UDP-smoke silent UDP failure не помітний (Queen→Ingress Anchor→Akash→CoAP). ✅ (2026-06-12) зонди = freeze-contract `bin/coap_smoke` (точні байти, регресія фантомної доставки — деталі: FW.56) замість generic libcoap POST. ✅ (2026-06-12) виклик заведено post-deploy gate'ом у `deploy.yml` + `deploy-production.yml` (job `coap-smoke`, `needs: deploy` — fail валить deploy-run); поки repo Variable з host не задана, job видимо skipped (Брама не задеплоєна — не silent). · [ ] 👤 задати repo Variables `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST` коли Ingress Anchor існує → gate активний · [ ] 👤 перший boundary smoke з Queen/`bin/forest_simulator`
+- **Стан:** UDP-smoke gate проти silent CoAP-failure (Queen→Ingress Anchor→Akash) — workflow `coap_smoke.yml` (`workflow_dispatch`+`workflow_call`); зонди = freeze-contract `bin/coap_smoke`/`lib/coap_smoke.rb` (точні байти, регресія фантомної доставки FW.56); виклик = post-deploy gate у `deploy.yml`+`deploy-production.yml` (job `coap-smoke`, `needs: deploy`); поки repo Variable host не задана — job skipped (не silent).
+- [ ] 👤 задати repo Variables `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST` коли Ingress Anchor існує → gate активний
+- [ ] 👤 перший boundary smoke з Queen/`bin/forest_simulator`
 
 #### INF.4 — Akash TLS strategy decision: hostname operator vs Cloudflare
 - **P1** · 🤖+👤 · 🟡 · → `06_02 §TLS термінація`
-- ✅ runbook: Опція A (Cloudflare HTTPS + direct UDP CoAP) рекоменд. + pre-flight + fallback B. Cloudflare НЕ proxies UDP → CoAP потребує direct ingress. · [ ] 👤 прийняти рішення (рекоменд. A) · [ ] 🤖 якщо Akash hostname — automation у `terraform/`
+- **Стан:** runbook готовий — Опція A (Cloudflare HTTPS + direct UDP CoAP) рекоменд. + pre-flight + fallback B (Cloudflare НЕ proxies UDP → CoAP потребує direct ingress).
+- [ ] 👤 прийняти рішення (рекоменд. A)
+- [ ] 🤖 якщо Akash hostname — automation у `terraform/`
 
 #### S4.3 — Akash SDL secrets
 - **P3** · 👤 · ⚪ · → `06_02`
@@ -811,7 +815,9 @@
 
 #### S6.18 — Rails web security hardening (§8 audit)
 - **P1** · 👤 · 🟢 · → `06_04 §2.1`
-- ✅ production.rb (force_ssl/HSTS/hosts) + CSP (report-only) + security_headers.rb + session_store. · [ ] 👤 `RAILS_ALLOWED_HOSTS` у Kamal/Akash перед prod · [ ] 👤 після 1-2 тиж CSP-репортів → `CSP_ENFORCE=true`
+- **Стан:** production.rb (force_ssl/HSTS/hosts) + CSP (report-only) + security_headers.rb + session_store.
+- [ ] 👤 `RAILS_ALLOWED_HOSTS` у Kamal/Akash перед prod
+- [ ] 👤 після 1-2 тиж CSP-репортів → `CSP_ENFORCE=true`
 
 #### PUMA-IPV6-1 — Верифікація IPv6 bind після першого Kamal-деплою
 - **P1** · 👤 · ⚪ · → `06_05`
@@ -819,7 +825,9 @@
 
 #### DR.1 — Disaster Recovery drill + master-key backup
 - **P1** · 👤 · 🟢 · → `06_06`
-- ✅ DR-постуру задокументовано (`06_06`): Cloud SQL PITR + REGIONAL HA + 30×daily + restore-runbook'и + RTO/RPO. · [ ] 👤 quarterly DR-drill (PITR-clone + TF-state rollback на staging, зафіксувати факт. RTO/RPO vs цілі) · [ ] 👤 master-ключі (`RAILS_MASTER_KEY`/`PROVISIONING_MASTER_KEY`) → vault + offline-копія (незамінні, поза backup)
+- **Стан:** DR-постуру задокументовано (`06_06`): Cloud SQL PITR + REGIONAL HA + 30×daily + restore-runbook'и + RTO/RPO.
+- [ ] 👤 quarterly DR-drill (PITR-clone + TF-state rollback на staging, зафіксувати факт. RTO/RPO vs цілі)
+- [ ] 👤 master-ключі (`RAILS_MASTER_KEY`/`PROVISIONING_MASTER_KEY`) → vault + offline-копія (незамінні, поза backup)
 
 #### ARCH.35 — Queen Flash Ring Buffer (W25Q32 overflow tier)
 - **P1** · 👤 · 🟢 · → `06_08 §1.2`, `02_05 §2.1`
