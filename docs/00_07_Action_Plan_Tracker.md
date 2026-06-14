@@ -1068,26 +1068,10 @@
 | DOC-T.18 | **Tracker parser моделює STAGE окремо від WHO** (post WHO+STAGE meta-sweep `9625297`): `EXECUTORS` мапив `🟡`/`🔗` як `:blocked` executor — конфлація who-with-status. | `lib/tracker/dashboard.rb`, `spec/lib/tracker/dashboard_spec.rb`, `00_06 §3` | ✅ done (`df12483`): `EXECUTORS`=WHO-only `{🤖,👤}` · `STAGES`/`Item.stage` · parse STAGE з meta-line · conformance вимагає `WHO·STAGE` (138/138 pass) · render «Заблоковано»=STAGE `🔗`; +specs (45/0), `00_06 §3` | ✅ Resolved 2026-06-14 |
 | DOC-T.19 | **Universal `**Стан:**` form-sweep + run-on guard HARD + verdict-lead guard** (founder AskUser 2026-06-14): кожен 00_07-пункт веде з `**Стан:**` (не «✅ X»/prose/bare-checkbox-лід — однорідність). **DONE (`05b37db`→`7ac3bfb`):** §00/§01-02-named(HW.32/HW.5)/§07/§08 + SE050-MIGRATION/TEST.1/BIZ.13 swept (deep, verify-canon by READING канону §00_05/§02_01/§01_03/§03_05/§04_06/§07/§08) → **inline run-on 19→0** → `inline_residual_runon` flipped **HARD**; NEW guard `verdict_lead_violations` доданий **ADVISORY**; UNI.18 STAGE ⚪→🟡 drift-fix; Стан-лід 40→90/138. | `docs/00_07`, `lib/tracker/dashboard.rb`, `spec/lib/tracker/dashboard_spec.rb`, `00_06 §3` | sweep решти ~48 non-Стан лідів (§01-02 HW.* · §03 firmware · §03/§05 SEC.* · §04/§05/§06 S*/INF*/E.* · DOC-T) → Стан-лід → **flip verdict-lead guard HARD** | 🟡 In progress (2026-06-14) |
 
-#### DOC-T.2 — Canon↔canon de-dup (SSOT single-home) [#4, 2026-05-29]
-- **P2** · 🤖 · 🟡 · → `00_00`
-- Реструктуризація 00_07 (#4) виявила факти, дубльовані у багатьох канон-доках — порушення «одна річ — одне місце». Призначити ОДИН дім + замінити решту на 1-рядковий ref (значення лишається ТІЛЬКИ в home):
-
-| Факт | Канон-дім | Дублюється у (→ має рефати дім) |
-|---|---|---|
-| AES-режими per-channel (ECB→CCM / CBC 256) | `03_05 §3.7` | ~20 доків (00_01/03_01/03_02/04_02/04_03/05_01/05_02 + 08_xx) — **найбільший дубль** |
-| Lorenz константи (Z 2.0/45.0/29.0 · σ10 ρ28 β8÷3 · dt0.01 · 250 iter) | `03_04 §4.1` | ✅ **05_02 «Фаза 2» зроблено** (повна ре-декларація → SSOT-ref, 2026-05-29). Решта легітимні (НЕ дубль): 04_01 self-labeled mirror Rails-конст., 03_01 firmware-doc контекст, 04_02 service-impl, 08_xx академ. верифікація |
-| Tokenomics rate 10 000 GP = 1 SCC | `05_03` | 05_01/07_01/07_02/03_03 |
-| Carbon 2000 SCC = 1 tCO₂ (0.5 кг) | `05_03` + `07_01` коеф. | 00_01/07_01/07_02 |
-| Slashing пороги stress 0.83 / slash 0.20 | `05_05 §3` + `04_02` (ContractHealthCheckService) | 05_03/07_01 |
-| Insurance pool 100 000 SCC | `05_05 §4` + `05_03` (Dynamic Tax) | 04_02/05_03 |
-| delta_t baseline 60 с | `03_04` (BASELINE_DELTA_T_S) | 03_01/04_02/05_02/01_03 |
-| Gyroid пористість 65% (60-70%) | `01_01` | 01_02/02_01/07_02 + 08_xx |
-
-- [x] 🤖 Замінити справжні ПОВНІ re-statements значення на 1-рядковий ref на home (значення — лише в home). **Зроблено:** ✅ Lorenz (05_02) — єдина справжня повна ре-декларація; решта = легітимний контекст (див. аудит нижче).
-- [ ] 🤖 Розширити `tracker:check` на канон↔канон: детект hardcoded-значень поза home-доком (stretch — складно без AST доків; ⚠️ ризик false-positive на колізіях чисел, див. нижче).
-- 📌 08_xx-академічні згадки часто легітимний контекст (не чистий дубль) — рефати, але не видаляти контекст.
-- ✅ **Lorenz-pilot (2026-05-29):** аудит «14 доків» → справжню ПОВНУ ре-декларацію канон-блоку мала ЛИШЕ `05_02 «Фаза 2»` → SSOT-ref `03_04 §4.1` (11 значень верифіковано present у home ПЕРЕД стрипом, 0 loss; метод-логіка лишена). Решта — self-labeled mirror (`04_01`) / firmware-контекст (`03_01`) / service-impl (`04_02`) / академ. верифікація (`08_xx`) — НЕ чіпати.
-- ✅ **Повний аудит DOC-T.2 (2026-05-29) — де-дуп завершено:** після Lorenz **driftable ПОВНИХ ре-декларацій більше не виявлено**. AES = контекстні згадки в кожному домен-доці (не відтворення per-channel таблиці) — home `03_05 §3.7`, не чіпати. Slashing-формула — поза home не ре-декларується. Tokenomics / carbon / insurance / gyroid — контекстні згадки одного значення (не spec-блок). ⚠️ **Blind value-de-dup НЕБЕЗПЕЧНИЙ:** `02_03 "65%"` = MPPT-фракція VOC (BQ25570 R_OC divider), а НЕ gyroid-пористість — **колізія чисел**; масовий ref за значенням зіпсував би непов'язаний power-electronics факт. **Висновок:** високоцінний/безпечний де-дуп закрито; решта — легітимний контекст, рефати лише по-кейсу за явним запитом + per-fact верифікацією.
+#### DOC-T.2 — Canon↔canon de-dup (SSOT single-home)
+- **P2** · 🤖 · 🟢 · → `00_06 §2`
+- **Стан:** High-value канон↔канон de-dup завершено — driftable ПОВНИХ ре-декларацій не лишилось: Lorenz-блок `05_02`→`03_04 §4.1` був єдиною справжньою (11 значень verify-present перед стрипом, 0 loss); AES/rate/carbon/slashing/insurance/gyroid/delta_t = контекстні згадки, НЕ spec-блоки, і тепер стережені value-guard'ами (`00_06 §3`: lorenz/rate/carbon/solc/AES-roster). ⚠️ Blind value-de-dup небезпечний — колізія чисел (`02_03 «65%»` = MPPT-фракція VOC ≠ gyroid-пористість): масовий ref за значенням зіпсував би непов'язаний факт → рефати лише по-кейсу з per-fact верифікацією. Реєстр домів — `00_06 §2`.
+- [ ] 🤖 (stretch, deferred) розширити `tracker:check` на канон↔канон hardcoded-value детект поза home — ⚠️ ризик false-positive на колізіях чисел (важко без AST доків)
 
 ## 📌 Backlog · Додаткові знахідки (не блокери)
 
