@@ -12,7 +12,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — C-код шлюзу написаний, host-based тести зелені (`make -C firmware/test queen`). Відкрите: AT-blind async UART DMA flush (`FW.3`) → [`00_07 §03`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 6 — C-код шлюзу написаний, host-based тести зелені (`make -C firmware/test queen`). Відкрите: FW.3 silicon-bench (AT/UART DMA RX закрито host-рівнем) → [`00_07 §03`](00_07_Action_Plan_Tracker).
 
 ---
 
