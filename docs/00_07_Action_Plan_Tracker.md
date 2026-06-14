@@ -110,6 +110,12 @@
 - **P2** · 👤 · → `00_05 §1.2/§6`
 - ✅ `lib/github_bootstrap.rb` (`FIELDS` SSOT, idempotent GraphQL diff, rake `github:bootstrap`, RSpec-покрито). · [ ] 👤 запустити `bin/bootstrap_github.sh` проти живого Projects V2 при setup/fork
 
+#### OPS.7 — 00_07 → Projects V2 draft-issues sync (tracker-as-tasks IaC)
+- **P3** · 🤖 · → `00_05 §1.2`
+- Скрипт-парсер 00_07-пунктів (`#### ID` + meta-line + відкриті `[ ]`) → idempotent sync у Projects V2 draft-issues (поля з `lib/github_bootstrap.rb`: Module/TRL/Cluster/Appetite/SSOT Link). Спирається на канонну форму пункту (інтро 00_07) — стандартизація трекера = передумова. Чернетки скрипта нема; founder поки відклав («як треба»).
+- [ ] 🤖 парсер 00_07 → draft-issues (idempotent за ID; pri/executor/module → поля)
+- [ ] 👤 прогін проти живого Projects V2
+
 ## §01–§02 · Hardware & Lab
 
 > ⚠️ Потребують фізичної роботи в лабораторії та/або з підрядниками.
