@@ -18,7 +18,7 @@
 |--------|------|
 | [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | Фізичний рівень (Soldier/Queen DID, RTC) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (сервіси над моделями) |
-| [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | HardwareKey HKDF (§3.4а/в): aes_key, lorenz_seed |
+| [`03_06` — Factory Flashing and Key Provisioning](03_06_Factory_Flashing_and_Key_Provisioning) | HardwareKey HKDF/K_seed деривація (03_06 §2/§3): aes_key, lorenz_seed |
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Web3-економіка (Wallet, BlockchainTransaction) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (SSOT Drift Register §12) |
 
@@ -449,9 +449,9 @@ any ──report_fault──► faulty
 | Поле | Тип | Опис |
 |------|-----|------|
 | `device_uid` | string | Унікальний ідентифікатор пристрою |
-| `aes_key_hex` | string (encrypted) | **Conditional length за `owner` type** (post-ARCH.42): **32 HEX символи** (AES-128, 16 байт) для Tree (LoRa, HKDF info `"silken-aes-128-lora-key"`); **64 HEX символи** (AES-256, 32 байти) для Gateway (CoAP, HKDF info `"silken-aes-256-device-key"`). AR Encryption non-deterministic. Cross-ref [`03_05 §3.4а`](03_05_Hardware_Symmetric_Crypto_and_Security#34а-hkdf-key-derivation-protocol-design-). Validation: `length: { in: [32, 64] }` + custom validator на узгодженість з owner type |
+| `aes_key_hex` | string (encrypted) | **Conditional length за `owner` type** (post-ARCH.42): **32 HEX символи** (AES-128, 16 байт) для Tree (LoRa, HKDF info `"silken-aes-128-lora-key"`); **64 HEX символи** (AES-256, 32 байти) для Gateway (CoAP, HKDF info `"silken-aes-256-device-key"`). AR Encryption non-deterministic. Cross-ref [`03_06 §2`](03_06_Factory_Flashing_and_Key_Provisioning). Validation: `length: { in: [32, 64] }` + custom validator на узгодженість з owner type |
 | `previous_aes_key_hex` | string (encrypted) | Попередній AES ключ (Grace Period при ротації); same conditional length |
-| `lorenz_seed_hex` | string (encrypted) | **[SEC.11]** 64 HEX символи `K_seed` для атрактора Лоренца. AR Encryption non-deterministic. HKDF info-string: `"silken-lorenz-seed\|<DID>"`, salt: `"silken-lorenz-v1"`. Validated `presence: true` (hard cutover — кожен пристрій ОБОВ'ЯЗКОВО має K_seed). Cross-ref [`03_05 §3.4в`](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-) |
+| `lorenz_seed_hex` | string (encrypted) | **[SEC.11]** 64 HEX символи `K_seed` для атрактора Лоренца. AR Encryption non-deterministic. HKDF info-string: `"silken-lorenz-seed\|<DID>"`, salt: `"silken-lorenz-v1"`. Validated `presence: true` (hard cutover — кожен пристрій ОБОВ'ЯЗКОВО має K_seed). Cross-ref [`03_06 §3`](03_06_Factory_Flashing_and_Key_Provisioning) |
 | `ed25519_public_key_hex` | string | Публічний ключ Gateway: (а) M2M auth (`POST /api/v1/auth/m2m_token`); (б) **[L1 QATT]** верифікація Ed25519-підпису CoAP-батчів — wire-дім [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security). Тільки для Gateway, не Tree. Приватна сім'я (`EDSK`) — лише у Protected Flash пристрою; бекенд її НЕ знає (НЕ HKDF-від-master — інакше L1 не захищав би від backend-compromise) |
 | `rotated_at` | datetime | Час останньої ротації |
 
@@ -1270,7 +1270,7 @@ active/draft ──cancel──► cancelled
 
 **Включає:** `AASM`
 
-**Призначення:** [SEC.3] Стан-машина однієї спроби Factory Flashing для одного пристрою. Енфорсить **2-Person Rule** ([`03_05 §3.4г`](03_05_Hardware_Symmetric_Crypto_and_Security)): оператор ініціює, супервайзер схвалює, лише тоді сесія виконується. Кожен перехід аудитований через FK на `users` + `AuditTrail`-записи від `FactoryFlashing::Session`.
+**Призначення:** [SEC.3] Стан-машина однієї спроби Factory Flashing для одного пристрою. Енфорсить **2-Person Rule** ([`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning)): оператор ініціює, супервайзер схвалює, лише тоді сесія виконується. Кожен перехід аудитований через FK на `users` + `AuditTrail`-записи від `FactoryFlashing::Session`.
 
 **Асоціації:**
 - `belongs_to :operator, class_name: "User"`
@@ -1302,7 +1302,7 @@ supervisor_approved/active ──fail_with(reason)──► failed
 
 **Валідації:** `supervisor_must_differ_from_operator` (2-Person Rule); `gilka` inclusion `[A,B]`; `rdp_level` inclusion `[0,1,2]`; `atecc_serial_hex` format (18 HEX).
 
-> Service-шар (orchestrator `FactoryFlashing::Session` + `MasterKeySource`/`CommandBuilder`/`Executor`/`AteccProvisioner`/`AuditTrail`, Rake CLI) — канон [`03_05 §3.4г`](03_05_Hardware_Symmetric_Crypto_and_Security); дзеркало у [`04_02`](04_02_Business_Logic_and_Services).
+> Service-шар (orchestrator `FactoryFlashing::Session` + `MasterKeySource`/`CommandBuilder`/`Executor`/`AteccProvisioner`/`AuditTrail`, Rake CLI) — канон [`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning); дзеркало у [`04_02`](04_02_Business_Logic_and_Services).
 
 ---
 

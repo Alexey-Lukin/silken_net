@@ -24,7 +24,7 @@
 |--------|------|
 | [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | Soldier lifecycle; RTC DR16-18 Lorenz state (FW.6) |
 | [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) | `acoustic_events` → σ-пертурбація |
-| [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | §3.4в K_seed derivation (SEC.11, HKDF/HMAC) |
+| [`03_06` — Factory Flashing and Key Provisioning](03_06_Factory_Flashing_and_Key_Provisioning) | §3 K_seed derivation (SEC.11, HKDF/HMAC) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | TelemetryUnpacker, SeedDerivation, DCI check |
 | [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Dual Computation Integrity (Z крос-верифікація) |
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | CRITICAL_Z_MIN/MAX → slashing |

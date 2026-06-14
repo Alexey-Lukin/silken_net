@@ -4,7 +4,7 @@
 #
 # The Factory Flashing tool must obtain the master key to derive per-device
 # keys, but it should never assume *how* the operator surfaces it. The two
-# documented options in docs/03_05 §3.4г A are:
+# documented options in docs/03_06 §5 A are:
 #
 #   1. EnvAdapter        — read PROVISIONING_MASTER_KEY directly from ENV.
 #                          Acceptable for dev / lab; production use requires
@@ -16,7 +16,7 @@
 #                          raises NotImplementedError so callers can wire it
 #                          without committing the implementation.
 #
-# Adding a third adapter (HSM injection — §3.4г A.1) is a matter of
+# Adding a third adapter (HSM injection — 03_06 §5 A.1) is a matter of
 # implementing #fetch_master_key with the same nil-safe contract.
 module FactoryFlashing
   module MasterKeySource
@@ -53,7 +53,7 @@ module FactoryFlashing
       #   - call Security::WeakKeyDetector before returning,
       #   - on failure raise UnavailableError with the upstream reason.
       def fetch_master_key
-        raise NotImplementedError, "BitwardenAdapter is a planned source — see SEC.3 design doc 03_05 §3.4г A.2"
+        raise NotImplementedError, "BitwardenAdapter is a planned source — see SEC.3 design doc 03_06 §5 A.2"
       end
     end
 

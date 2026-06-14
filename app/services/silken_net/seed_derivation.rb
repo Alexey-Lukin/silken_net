@@ -48,7 +48,7 @@ module SilkenNet
     # representation (64 chars) so it can be stored in the same column
     # shape as `aes_key_hex`. Always requires PROVISIONING_MASTER_KEY —
     # there is no SecureRandom fallback (SEC.11 hard cutover, see
-    # docs/03_05 §3.4а).
+    # docs/03_06 §2).
     def derive_seed(device_uid)
       master_key = ENV["PROVISIONING_MASTER_KEY"]
 

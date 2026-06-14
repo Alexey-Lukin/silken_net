@@ -22,7 +22,7 @@ _Top-down конституція системи: дані течуть зниз�
 |--------|----------|-------|
 | **1. Біофізика (The Root)** | Тризонний коаксіальний анкер Ti-6Al-4V + EBFC Gen 2.0 (dgrFAD-GDH анод + Laccase/ZIF катод, цвітеріонна мембрана) → >500 mV прямо з метаболізму дерева, без зовнішніх дротів | [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK) · [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) · [`01_04`](01_04_CODIT_and_Xylemointegration) |
 | **2. Апаратура (The Capsule)** | Герметична капсула, blind-mate Pogo Pins до анкера, BQ25570 MPPT + іоністор 0.47F/5.5V, акустичний п'єзо-тригер пробудження (Zero-Power Wake) | [`02_01`](02_01_Hardware_Architecture_and_BOM) · [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) · [`02_03`](02_03_BQ25570_MPPT_Nano_Power) |
-| **3. Прошивка / Edge AI (The Brain)** | STM32WLE5JC, STOP2 RTC-only **300 nA**, DMA-мікрофон, TinyML (тиша/вітер/пилка), mruby Lorenz-атрактор, апаратний AES-128 (LoRa-payload) | [`03_01`](03_01_Firmware_Lifecycle_and_DMA) · [`03_03`](03_03_TinyML_Acoustic_Inference) · [`03_04`](03_04_mruby_Lorenz_Attractor) · [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security) |
+| **3. Прошивка / Edge AI (The Brain)** | STM32WLE5JC, STOP2 RTC-only **300 nA**, DMA-мікрофон, TinyML (тиша/вітер/пилка), mruby Lorenz-атрактор, апаратний AES-128 (LoRa-payload), factory provisioning ключів | [`03_01`](03_01_Firmware_Lifecycle_and_DMA) · [`03_03`](03_03_TinyML_Acoustic_Inference) · [`03_04`](03_04_mruby_Lorenz_Attractor) · [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security) · [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning) |
 | **4. Мережа (The Veins)** | LoRa mesh 868 МГц (custom TTL-based, AES-128); Queen-шлюз агрегує пакети → CoAP-батч (**AES-256-CBC**) у хмару (опц. Starlink D2C); Helium як fallback при втраті Queen | [`02_05`](02_05_Queen_Hardware_and_Starlink) · [`03_02`](03_02_Queen_Gateway_Firmware) · failover [`06_08`](06_08_Resilience_and_Failover_Policy) |
 | **5. Серверне ядро (The Engine)** | Rails 8.1 Omakase + PostgreSQL + Sidekiq: декодування L3, REST API, бізнес-логіка NaaS-контрактів | Модуль 04 ([`04_01`](04_01_Data_Models_and_Entities) · [`04_02`](04_02_Business_Logic_and_Services)) |
 | **6. Верифікація (The Truth)** | peaq Machine DID (паспорт дерева) + IoTeX W3bstream ZK-proofs (real-silicon + гомеостаз Лоренца) + Streamr/Filecoin | [`05_01`](05_01_Multichain_Architecture) · [`05_02`](05_02_Proof_of_Growth_Pipeline) |
@@ -114,6 +114,7 @@ _Логіка STM32WLE5JC: STOP2 / DMA / TinyML / mruby Lorenz / апаратн�
 - [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) (CMSIS-NN: класифікація пилки/кавітації/тиші)
 - [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) (mruby VM атрактор хаосу — гомеостаз дерева; канон Lorenz-констант)
 - [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) (LoRa AES-128-CCM + CoAP AES-256-CBC + SE050 Secure Element + Flash Key + RDP + PQC roadmap)
+- [`03_06` — Factory Flashing and Key Provisioning](03_06_Factory_Flashing_and_Key_Provisioning) (фабричний флешинг Гілки A/B + HKDF per-device ключі + Lorenz K_seed SEC.11 + OTA-HMAC FW.23 + factory-ops SEC.3)
 
 ## 🗄️ Модуль 04: Серверне Ядро (Web2 Backend)
 

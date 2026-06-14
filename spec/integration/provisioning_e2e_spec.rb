@@ -9,7 +9,7 @@ require "rails_helper"
 # stubbing `HardwareKeyService` (unlike the controller request spec, which
 # mocks `.provision`). Goal: prove that the API contract documented in
 # `docs/04_03_REST_API_v1_Reference.md` §POST /api/v1/provisioning/register
-# and the HKDF design in `docs/03_05_Hardware_Symmetric_Crypto_and_Security.md` §3.4а
+# and the HKDF design in `docs/03_06_Factory_Flashing_and_Key_Provisioning.md` §2
 # hold true end-to-end across controller → service → AR Encryption → DB.
 #
 # Specifically verifies:
@@ -33,7 +33,7 @@ require "rails_helper"
 #     effects, regardless of HKDF/TRL4 mode.
 #   * Duplicate `hardware_uid` → 409 Conflict with no side effects.
 #
-# Cross-refs: docs/00_07 FW.1, docs/03_05 §3.4а, docs/04_03 §POST register.
+# Cross-refs: docs/00_07 FW.1, docs/03_06 §2, docs/04_03 §POST register.
 # =============================================================================
 RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
   # Negated matcher used in compound expectations (`change ... .and not_change ...`)
@@ -146,7 +146,7 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
         expect(hw_key.aes_key_hex).to match(/\A[0-9A-F]{32}\z/)
 
         # binary_key must unhexify to exactly 16 bytes (firmware loads this into
-        # CRYP_KEYSIZE_128B via Load_AES_Key() — see 03_05 §3.4а post-ARCH.42).
+        # CRYP_KEYSIZE_128B via Load_AES_Key() — see 03_06 §2 post-ARCH.42).
         expect(hw_key.binary_key.bytesize).to eq(16)
       end
 

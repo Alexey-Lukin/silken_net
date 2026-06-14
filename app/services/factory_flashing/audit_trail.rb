@@ -3,7 +3,7 @@
 # [SEC.3] Factory Flashing — append-only audit trail writer.
 #
 # Closes the "physically flashed ↔ DB-registered" loop required by
-# docs/03_05 §3.4г C. Each successful (or failed) provisioning session
+# docs/03_06 §5 C. Each successful (or failed) provisioning session
 # materializes:
 #
 #   1. AuditLog(action: "factory_flash", auditable: hardware_key, ...)

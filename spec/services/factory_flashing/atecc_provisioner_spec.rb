@@ -25,7 +25,7 @@ RSpec.describe FactoryFlashing::AteccProvisioner do
       expect(result.atecc_serial_hex).to eq("0123456789ABCDEF01")
     end
 
-    it "scrubs raw key bytes from the transcript (anti-leak per §3.4г B)" do
+    it "scrubs raw key bytes from the transcript (anti-leak per 03_06 §5 B)" do
       result = described_class.new(
         session: session, aes_key_hex: aes_key_hex, ota_hmac_hex: ota_hmac_hex
       ).provision

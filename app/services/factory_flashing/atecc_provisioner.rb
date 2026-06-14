@@ -19,7 +19,7 @@
 #
 # Emit-only (textual `atcab_*` — LEGACY ATECC API). Real cryptoauthlib/SE05x I²C
 # transport intentionally **not** implemented — firmware does the actual writes at
-# factory power-up self-test (docs/03_05 §3.4 Гілка B). Emitted strings → AuditLog
+# factory power-up self-test (docs/03_06 §1 Гілка B). Emitted strings → AuditLog
 # transcript for verbatim audit reproduction. Post-TRL 7: swap emit-only → real
 # SE05x I²C (public API unchanged).
 module FactoryFlashing

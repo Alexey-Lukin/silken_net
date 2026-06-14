@@ -123,7 +123,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 // Per-device unique key derived via HKDF-SHA256 on backend with info
 // "silken-aes-128-lora-key" (HardwareKeyService.derive_lora_key). 16 bytes
 // (4 × uint32_t). Узгоджено з SE050 Secure Element Slot 0 (AES-128 LoRa вибір,
-// не SE-constraint). See docs/03_05 §3.7 (SE), §3.1/§3.4а (protocol).
+// не SE-constraint). See docs/03_05 §3.7 (SE), §3.1 + docs/03_06 §2 (HKDF protocol).
 //
 // Factory Flashing writes lora_key to protected Flash sector 0x0803E000 via SWD
 // (STM32CubeProgrammer). Magic marker "KEYL" guards against unprovisioned chips.
@@ -136,7 +136,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 // right after the AES key: [MAGIC:4][lora_key:16] | [SEED_MAGIC:4][seed[0]:4]...[seed[7]:4]
 // = 20 + 36 = 56 bytes total before role byte (post-ARCH.42 layout, was 4+32=36 for AES-256).
 // Factory Flashing writes K_seed via HardwareKeyService.provision (HKDF-SHA256).
-// See docs/03_05 §3.4в for full protocol design.
+// See docs/03_06 §3 for full protocol design.
 #define FLASH_SEED_ADDR           (FLASH_KEY_ADDR + 20)  // After LoRa key (4 magic + 16 key = 20 bytes)
 #define FLASH_SEED_WORDS          8             // 8 × uint32_t = 32 bytes
 #define FLASH_SEED_MAGIC          0x4C534544UL  // "LSED" — Lorenz Seed magic marker
@@ -154,7 +154,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 // HKDF-SHA256(master, salt="cluster:<id>", info="silken-ota-hmac-v1") через SWD.
 // Якщо magic відсутній — ota_hmac_key_valid=0: вузол НЕ застосує жоден OTA (fail-
 // safe — без ключа нема як довести походження). НЕ Error_Handler() (телеметрія
-// й Lorenz працюють без K_ota). Канон: docs/03_05 §3.4б.
+// й Lorenz працюють без K_ota). Канон: docs/03_06 §4.
 #define FLASH_OTA_KEY_ADDR        0x0803E800UL  // Сторінка 125 — за per-device key-сторінкою
 #define FLASH_OTA_KEY_WORDS       8             // 8 × uint32_t = 32 bytes = 256-bit HMAC key
 #define FLASH_OTA_KEY_MAGIC       0x4B4F5441UL  // "KOTA" — OTA HMAC key magic marker
@@ -2854,7 +2854,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 //   STM32CubeProgrammer --write key_payload.bin 0x0803E000
 // Ключ деривується на backend: HKDF-SHA256(master_key, device_uid, "silken-aes-128-lora-key")
 // — info-string відрізняється від CoAP-каналу (Gateway) "silken-aes-256-device-key"
-// для domain separation. Див. docs/03_05 §3.1, §3.4а для повного протоколу.
+// для domain separation. Див. docs/03_05 §3.1 + docs/03_06 §2 для повного протоколу.
 static void Load_AES_Key(void)
 {
     const uint32_t *flash_ptr = (const uint32_t *)FLASH_KEY_ADDR;

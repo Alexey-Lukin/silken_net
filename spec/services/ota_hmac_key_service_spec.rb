@@ -23,7 +23,7 @@ RSpec.describe OtaHmacKeyService do
       end
 
       it "uses domain-separated info '#{described_class::HKDF_INFO}'" do
-        # Ensure constant matches design spec (docs/03_05 §3.4б).
+        # Ensure constant matches design spec (docs/03_06 §4).
         expect(described_class::HKDF_INFO).to eq("silken-ota-hmac-v1")
       end
 

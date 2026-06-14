@@ -3,7 +3,7 @@
 # [SEC.3] Factory Flashing Pipeline — operator CLI.
 #
 # Three-step workflow enforcing the 2-Person Rule documented in
-# docs/03_05 §3.4г C:
+# docs/03_06 §5 C:
 #
 #   rake factory:flash[device_uid,batch_id,gilka,operator_id,supervisor_id,firmware_version]
 #     → creates a ProvisioningSession in :pending and prints session id

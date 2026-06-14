@@ -90,6 +90,7 @@
 | Firmware ARM build / toolchain pin / mruby build_config (FW.46) | `03_01 §12.4` (CMake + `firmware/cmake/arm-none-eabi.cmake` + `firmware/mruby/build_config.rb`; pinned submodules у `firmware/extern/`). Гейт — `ci.yml › firmware_arm_build` |
 | Vendor / dependency pin-policy (FW.47) | `03_01 §12.5` — repo-wide external-dep pinning: firmware-native `extern/<dep>`@tag · contracts npm+lock · Python conda (`in_silico` → committed `conda-lock.yml`, гейт `lock_sync`; `ml` deferred — parity-self-guards). Інші доки реферять, не дублюють рішення |
 | Solidity solc / pragma версія | `05_03` (Pragma-таблиця, «Dual Token System»). Код-SSOT = `contracts/foundry.toml` + кожен `*.sol` pragma; pin-policy → `03_01 §12.5`. Інші доки реферять, не дублюють (guard §3) |
+| Factory flashing + provisioning ключів (HKDF per-device · Lorenz K_seed SEC.11 · OTA-HMAC FW.23 · factory-ops SEC.3) | `03_06` (виокремлено з 03_05 §3.4, 2026-06-14). Крипто-режими/SE050/ротація/IV лишаються в `03_05`; інші доки реферять конкретну `03_06 §N` |
 
 > Повний канон↔канон дубль-аудит — `00_07 DOC-T.2`.
 

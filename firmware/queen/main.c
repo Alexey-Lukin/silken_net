@@ -145,7 +145,7 @@
 // Factory Flashing writes device_key to protected Flash sector 0x0803E000
 // via SWD (STM32CubeProgrammer). Key is derived from master_key via HKDF-SHA256
 // on the backend (HardwareKeyService.derive_device_key).
-// See docs/03_05 §3.4а for full protocol design.
+// See docs/03_06 §2 for full protocol design.
 // [ARCH.42 Variant B, 2026-05-23] Two protected Flash slots: LoRa AES-128 key
 // (per-Soldier lookup) + CoAP AES-256 key (Queen↔Rails magistral).
 //   FLASH_KEY_ADDR     → LoRa AES-128 key (16 bytes, magic "KEYL")
@@ -1865,7 +1865,7 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
 // Записується при Factory Flashing через SWD:
 //   STM32CubeProgrammer --write key_payload.bin 0x0803E000
 // Ключ деривується на backend: HKDF-SHA256(master_key, device_uid, "silken-aes-128-lora-key") [post-ARCH.42]
-// Див. docs/03_05 §3.4а для повного протоколу.
+// Див. docs/03_06 §2 для повного протоколу.
 static void Load_AES_Key(void)
 {
     const uint32_t *flash_ptr = (const uint32_t *)FLASH_KEY_ADDR;

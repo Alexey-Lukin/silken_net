@@ -28,7 +28,7 @@ require "openssl"
 # HardwareKeyService: `SecurityError` без master key (SEC.11 hard cutover,
 # no SecureRandom fallback in production).
 #
-# Див. docs/03_05 §3.4б для повного протоколу.
+# Див. docs/03_06 §4 для повного протоколу.
 class OtaHmacKeyService
   KEY_SIZE_BYTES = 32
   HKDF_INFO      = "silken-ota-hmac-v1"

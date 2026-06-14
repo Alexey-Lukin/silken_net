@@ -145,7 +145,7 @@
 | **Алгоритм та парність** | OpenSSL HKDF-SHA256 (RFC 5869) + HMAC-SHA256. Host-parity test `firmware/test/test_seed_derivation.c` валідує OpenSSL ↔ `silken_sha256.h` (pure-C) байт-ідентичність на детермінованих векторах + 100-case fuzz. Backend ↔ firmware деривують `(x₀, y₀, z₀)` byte-identical для тієї самої пари `(K_seed, epoch_day)`. |
 | **Викликається з** | `HardwareKeyService#provision` (provisioning), `TelemetryUnpackerService` (cold-start dispatch) |
 | **Зовнішні виклики** | `OpenSSL::KDF.hkdf`, `OpenSSL::HMAC.digest("SHA256", …)` |
-| **Безпека** | `K_seed` ніколи не залишає Ruby-процес у відкритому вигляді (in-process derivation з `ENV["PROVISIONING_MASTER_KEY"]`). DID використовується лише як `info`-string у HKDF (namespace separator) — криптографічно безпечно. Cross-ref: [`03_05 §3.4в` Lorenz K_seed Derivation](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-), [`03_04 §3` Крок 1](03_04_mruby_Lorenz_Attractor#крок-1-походження-початкових-координат-x₀-y₀-z₀-sec11). |
+| **Безпека** | `K_seed` ніколи не залишає Ruby-процес у відкритому вигляді (in-process derivation з `ENV["PROVISIONING_MASTER_KEY"]`). DID використовується лише як `info`-string у HKDF (namespace separator) — криптографічно безпечно. Cross-ref: [`03_06 §3`](03_06_Factory_Flashing_and_Key_Provisioning) Lorenz K_seed Derivation, [`03_04 §3` Крок 1](03_04_mruby_Lorenz_Attractor#крок-1-походження-початкових-координат-x₀-y₀-z₀-sec11). |
 
 ### `SilkenNet::GeoUtils`
 
@@ -416,7 +416,7 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Зовнішні виклики** | `OpenSSL::KDF.hkdf` |
 | **Публічні методи** | `.fetch_for(cluster_id) → String` (64-символьний HEX, upper); `.fetch_binary_for(cluster_id) → String` (32 binary bytes) — для прямого `OpenSSL::HMAC.digest` |
 | **Вихід** | 64-символьний HEX або 32-байтна binary-string. |
-| **Cross-ref** | [`03_05 §3.4б`](03_05_Hardware_Symmetric_Crypto_and_Security) — повний протокол OTA HMAC dual-gate. |
+| **Cross-ref** | [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning) — повний протокол OTA HMAC dual-gate. |
 
 ### `OtaPackagerService`
 
@@ -451,7 +451,7 @@ peaq_node_url: "https://peaq-node.example.com"
 | | |
 |---|---|
 | **Файл** | `config/initializers/master_key_strength_check.rb` |
-| **Що робить** | У `Rails.env.production?` (включно з canopy) після `after_initialize` перевіряє `ENV["PROVISIONING_MASTER_KEY"]`: (1) blank → raise `SecurityError` з посиланням на `docs/03_05 §3.4а`; (2) непустий, але `Security::WeakKeyDetector.detect` повертає reason → raise `SecurityError` з cause. У dev/test guard вимкнений (там зафіксований стабільний non-secret fixture у `spec/rails_helper.rb` — інакше весь suite не завантажиться). |
+| **Що робить** | У `Rails.env.production?` (включно з canopy) після `after_initialize` перевіряє `ENV["PROVISIONING_MASTER_KEY"]`: (1) blank → raise `SecurityError` з посиланням на `docs/03_06 §2`; (2) непустий, але `Security::WeakKeyDetector.detect` повертає reason → raise `SecurityError` з cause. У dev/test guard вимкнений (там зафіксований стабільний non-secret fixture у `spec/rails_helper.rb` — інакше весь suite не завантажиться). |
 | **Bypass** | `SILKENNET_SKIP_MASTER_KEY_STRENGTH_CHECK=1` — для one-off rescue-boot при флеші zaжатого кластера. Логується гучно, не може стати рутиною. |
 | **Зв'язок з HKDF tree** | Captured-критично: master-ключ є коренем для **чотирьох** info-strings (post-ARCH.42): `HardwareKeyService.derive_lora_key` (Tree AES-128 LoRa, info `"silken-aes-128-lora-key"`), `HardwareKeyService.derive_device_key` (Gateway AES-256 CoAP, info `"silken-aes-256-device-key"`), `OtaHmacKeyService` (K_ota, info `silken-ota-hmac-v1`), `SilkenNet::SeedDerivation` (Lorenz `K_seed`, info `silken-lorenz-seed`). Компрометація master = каскадна компрометація всіх чотирьох — тому guard працює fail-closed до запуску HTTP-сервера. |
 
@@ -466,7 +466,7 @@ peaq_node_url: "https://peaq-node.example.com"
 
 ### `FactoryFlashing::*` — Factory Flashing Pipeline (SEC.3)
 
-Internal-admin сервіси конвеєра прошивки/провіжинингу (Rake-driven, **поза** публічним REST API). **Цей реєстр — дім опису сервіс-об'єктів** (One-Home для «що робить кожен»). Security/threat-model контекст (2-Person Rule, гілки A/B, master-key handling) + impl/bench-статус — [`03_05 §3.4г`](03_05_Hardware_Symmetric_Crypto_and_Security); модель сесії — [`04_01` ProvisioningSession](04_01_Data_Models_and_Entities).
+Internal-admin сервіси конвеєра прошивки/провіжинингу (Rake-driven, **поза** публічним REST API). **Цей реєстр — дім опису сервіс-об'єктів** (One-Home для «що робить кожен»). Security/threat-model контекст (2-Person Rule, гілки A/B, master-key handling) + impl/bench-статус — [`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning); модель сесії — [`04_01` ProvisioningSession](04_01_Data_Models_and_Entities).
 
 | Сервіс | Роль |
 |--------|------|
@@ -1925,7 +1925,7 @@ $$\begin{cases} \dot{x} = \sigma(y - x) \\ \dot{y} = x(\rho - z) - y \\ \dot{z} 
 
 ### Принципи Безпеки
 
-1. **Zero-Trust:** Кожен пакет шифрується hardware-bound AES ключем у `HardwareKey` (LoRa AES-128 для Tree↔Queen, CoAP AES-256 для Queen↔Rails — domain separation §3.4а у [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security)).
+1. **Zero-Trust:** Кожен пакет шифрується hardware-bound AES ключем у `HardwareKey` (LoRa AES-128 для Tree↔Queen, CoAP AES-256 для Queen↔Rails — domain separation — [`03_06 §2`](03_06_Factory_Flashing_and_Key_Provisioning)).
 2. **Idempotency:** Всі фінансові воркери мають захист від повторного виконання (status guards / pessimistic lock).
 3. **Resilience:** Система підтримує 10+ ретраїв для Web3 операцій та 3–5 для апаратних команд.
 4. **Float Determinism:** Розрахунки Атрактора виконуються з Float (IEEE 754 double) ідентично firmware mruby для Dual Computation Integrity (BigDecimal вилучено — давав розбіжність Z після 250 ітерацій хаотичної системи).

@@ -286,6 +286,7 @@ kamal deploy
 - [`03_03`](docs/03_03_TinyML_Acoustic_Inference.md) — TinyML: класифікація звуку пилки
 - [`03_04`](docs/03_04_mruby_Lorenz_Attractor.md) — mruby Атрактор Лоренца (гомеостаз дерева)
 - [`03_05`](docs/03_05_Hardware_Symmetric_Crypto_and_Security.md) — апаратне симетричне шифрування (LoRa AES-128-CCM, CoAP AES-256-CBC) та PQC migration roadmap
+- [`03_06`](docs/03_06_Factory_Flashing_and_Key_Provisioning.md) — Factory Flashing та provisioning ключів (HKDF · K_seed · OTA-HMAC · factory-ops security)
 
 **Серверне Ядро (Модуль 04)**
 - [`04_01`](docs/04_01_Data_Models_and_Entities.md) — ActiveRecord моделі, PostgreSQL схема, partitioning

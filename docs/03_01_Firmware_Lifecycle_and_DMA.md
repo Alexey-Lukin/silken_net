@@ -990,7 +990,7 @@ Chunk-розмір для LoRa OTA: **11 байт** корисного коду 
 | `0x56` | SYNC_REQ_MARKER («Королево, час!» / cold-boot hello: DID + secs_since_sync + 'S' + vcap_mv у байтах 11..12) | Soldier→Queen | LoRa **uplink** | [`03_04 §2.1`](03_04_mruby_Lorenz_Attractor) (ARCH.41-C) | ✅ hello + Queen-перемотка маяка (2026-06-11); drift-watchdog re-request — FW.20-S2 freeze-contract |
 | `0x99` | OTA_MARKER (bytecode chunks) | Rails→Queen→Soldier | CoAP/LoRa | §4.4 + 03_02 §5 | ✅ |
 | `0x9A` | CMD_SET_THRESHOLDS (Lorenz Z per-tree) | Rails→Queen→Soldier | CoAP/LoRa | [`05_02 §4а.1`](05_02_Proof_of_Growth_Pipeline) | 🟡 FW.8 (Queen-side; Soldier dispatcher TBD) |
-| `0x9B` | CMD_HMAC_TRAILER (OTA HMAC-SHA256 печатка) | Rails→Queen→Soldier | CoAP/LoRa | [`03_05 §3.4б`](03_05_Hardware_Symmetric_Crypto_and_Security) | ✅ FW.23 (2026-05-02) |
+| `0x9B` | CMD_HMAC_TRAILER (OTA HMAC-SHA256 печатка) | Rails→Queen→Soldier | CoAP/LoRa | [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning) | ✅ FW.23 (2026-05-02) |
 | `0x9C` | CMD_TIME_SYNC (envelope) | Rails→Queen | CoAP | §11 (FW.20) | ✅ FW.20 |
 | `0x9D` | CMD_SET_AUDIO_THRESHOLDS (TinyML per-Soldier) | Rails→Queen→Soldier | CoAP/LoRa | [`03_03` — BLOCKER-6](03_03_TinyML_Acoustic_Inference) | ✅ FW.18 (2026-05-02) |
 | `0x9E` | CMD_ROTATE_KEY (hash-ratchet advance-to-version) | Rails→Queen→Soldier | CoAP/LoRa | [`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security) | 🟡 FW.17 (freeze-contract host-готово; активація CCM-gated) |
