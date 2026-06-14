@@ -125,13 +125,13 @@
 > ⚠️ Потребують фізичної роботи в лабораторії та/або з підрядниками.
 
 #### HW.32 — BME280 environmental sensing + VPD confounder [ADR `02_01 §3.4`]
-- **P1** · 🤖+👤 · 🟢 · → `02_01 §3.4`, `07_02 §1.3`
+- **P1** · 👤 · 🟢 · → `02_01 §3.4`, `07_02 §1.3`
 - **Стан:** BME280 (t°/RH/тиск, I2C за TPS22860) приземлено host-side — docs + `03_01` SENSE + TelemetryLog cols (structure.sql) + firmware pure-модуль `firmware/common/bme280.h` (datasheet Bosch §8.2 компенсація `Bme280_Compensate_T/P/H` + VPD FAO-56 Tetens `Bme280_Vpd_Index`, host-golden `test_bme280.c`) + VPD-gate/sap-term у backend (inert, ENV-calibration-gated). Wire: VPD = CCM wire-rev2 **byte 19 `vpd_index`** ([`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)). DCI-guard: VPD НЕ в Lorenz-Z. Канон `02_01 §3.4` (формула/шкала/bench-чеклист) · slashing-роль `05_05 §6/§7` · клімат-оракул `07_01` · калібрування ваг `05_05 §8`.
 - [ ] 👤 bench: I2C bring-up `bme280_forced_read`, SENSE call-site вшивається з CCM-флипом, gate-timing, VPD-калібрування + PTFE-мембрана механіка (`02_02`)
 
 #### HW.1 — nTop model → SLM+HIP factory (Anode Zone 1)
-- **P0** · 👤 · ⚪ · → `01_01`, `01_02 §1.7` · ✅ ліцензія отримана
-- **Стан:** Не розпочато — фабрична генерація тризонного анкера: Zone 1 (анод-гіроїд) SLM+HIP, Zone 3 (катод-фланець) SLM/EBM, Zone 2 (PEEK) CNC + annealing 200–250°C. Канон `01_01 §1/§5.5`, `01_02 §1.6/§1.7/§3.6`. Паралельний code-as-CAD трек **PicoGK** (AI-агент-сумісна альтернатива nTop GUI, Git-friendly SDF; стек/переваги/псевдокод → `01_02 §6`).
+- **P0** · 👤 · ⚪ · → `01_01`, `01_02 §1.7`
+- **Стан:** Не розпочато — фабрична генерація тризонного анкера: Zone 1 (анод-гіроїд) SLM+HIP, Zone 3 (катод-фланець) SLM/EBM, Zone 2 (PEEK) CNC + annealing 200–250°C. Канон `01_01 §1/§5.5`, `01_02 §1.6/§1.7/§3.6`. Паралельний code-as-CAD трек **PicoGK** (AI-агент-сумісна альтернатива nTop GUI, Git-friendly SDF; стек/переваги/псевдокод → `01_02 §6`). nTop-ліцензія ПЗ отримана ✅.
 - [ ] 👤 Генерація TPMS gyroid geometry (65% porosity, **тільки для Zone 1**)
 - [ ] 👤 **Вертикальна орієнтація пор** (`01_01` §5.5): головна вісь TPMS-комірки паралельна осі анкера (паралельно потоку соку)
 - [ ] 👤 **Градієнт розміру пор** (`01_01` §5.5): центр 300–500 µm → периферія 100–150 µm при сталій пористості 65% — параметризація nTop cell size як функція радіуса
@@ -156,7 +156,7 @@
 - [ ] 👤 Отримати SEM images ×500/×5,000/×50,000
 
 #### HW.3 — Accelerated aging test (Arrhenius)
-- **P1** · 👤 · ⚪ · → `01_02`
+- **P1** · 🤖+👤 · ⚪ · → `01_02`
 - **Стан:** Не розпочато — 12-тиж. Arrhenius-старіння у синтетичному ксилемі (ICP-MS Ti<0.1/Al<0.05/V<0.02 µg/cm², EIS<50%); відкритий конфлікт V-release Zone 1 (1.12 µg/cm²/yr, 56× over) — мітигація a/b/c. Блокує seed-раунд, whitepaper (TRL 5→6). Канон `01_02 §2/§2.5`. **In-silico precursor (HW.3.IS):** аналітичний Lamé + stress-relaxation → Ti↔PEEK press-fit виживає 20+ р ✅ та ±5% strain-cycling MD ✅ ([`SUMMARY`](protocols/ebfc/in_silico/SUMMARY.md) §HW.3.IS; strain → `01_03 §2.1`). Важка FEA/Prony → Гусак (`08_01` Стаття 2, `00_02 §4a`).
 - [ ] 👤 Синтез штучного ксилемного соку (потрібен ботанік)
 - [ ] 👤 Запуск 12-тижневого тесту
@@ -344,14 +344,14 @@
 - [ ] 👤 12-місячний польовий тест anti-overgrowth shield на тестовому дереві — фотодокументація щоквартально
 
 #### HW.18 — Starlink DTC: ESP32-S3 vs SIM8200G-M2 WiFi co-processor
-- **P2** · 👤 · 🟡 · → `02_05 §Starlink DTC vs Mini`
+- **P2** · 🤖+👤 · 🟡 · → `02_05 §Starlink DTC vs Mini`
 - **Стан:** Decision memo зроблено — рекомендація **ESP32-S3** (~$3, near-zero sleep) над SIM8200G-M2 (5G марнується в лісі, ~20× дорожчий) для WiFi-мосту STM32→Starlink Mini (Phase 3 only). Лишається confirm + 03_02 firmware-контракт + co-proc прошивка. Канон `02_05 §Starlink DTC` (memo HW.18).
 - [ ] 👤 Підтвердити рішення (рекоменд. ESP32-S3)
 - [ ] 🤖 Оновити 03_02 з рішенням
 - [ ] 🔗 Додати co-processor firmware до `firmware/`
 
 #### HW.19 — VOC-діагностика деградації конденсатора (ADS1220 + TPS22860)
-- **P2** · 👤 · 🟡 · → `02_03 §12.4.2`
+- **P2** · 🤖+👤 · 🟡 · → `02_03 §12.4.2`
 - **Стан:** Концепт верифіковано (DCI-safe) — добова VOC EBFC розрізняє «дерево хворіє» vs «конденсатор деградує» (обидва ростять delta_t); корекція живе на **slashing-шарі** (`ContractHealthCheckService`), НЕ в Z-математиці (інакше server-Z≠device-Z → fraud-flag щопакета). Реалізація gated на firmware VOC-вимір + delivery-контракт. TRL 8+. Канон `02_03 §12.4.2`.
 - [ ] 🤖 Валідувати концепт на вбудованому 12-біт ADC (firmware: GPIO disconnect EDLC → measure VOC → reconnect)
 - [ ] 👤 Якщо 12-біт недостатньо — додати ADS1220 + TPS22860 до BOM
@@ -643,7 +643,7 @@
 - [~] 🤖 код partial: `atecc_provisioner.rb` SE050 header + Slot-1→**Ed25519** (on-chip keygen) ✅; **лишилось** (bundled з eval-kit real-I²C): rename `AteccProvisioner`→`SecureElementProvisioner` (+session/spec/factory refs) + SE05x emit замість `atcab_*` + DB-колонка `atecc_serial_hex`→`se_serial_hex` міграція (+structure.sql). Гілка-B не live → ризик-кероване відкладання.
 - [ ] 🤖 `03_05` deep mechanics → SE05x (no-premature-canon: при eval-kit + datasheet-verify): candidate-table, `atcab_*`→`Se05x`/`sss` API, role-split, latency/power/footprint, object-model замість 16 slots, on-chip Ed25519 keygen
 - [ ] 👤 SEC.6 hardware: eval-kit order + datasheet-verify (SE050 Ed25519/EdDSA + monotonic counters + AES-128 + I²C + active/standby струми) + SEC.14 role (per-packet vs prov-only) + mass-BOM populate **разом з load-switch гейтом SE** (TPS22860-патерн; sleep-floor — [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) Power impact)
-- [~] 👤/🤖 L1 Queen-attestation — 🤖 **shipped**: firmware Queen software-Ed25519 (Monocypher, pinned) підписує CoAP-батч (EDSK Protected Flash; конверт `firmware/common/queen_attest.h`) + backend verify-до-decrypt у `UnpackTelemetryWorker` (nonce anti-replay; маркери `gateways.last_attested_at`/`telemetry_logs.gateway_attested`) + factory EDSK + закрито `Load_CoAP_Key` TODO; parity host C↔RSpec golden-KAT. Wire [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security), ladder-статус [`05_02`](05_02_Proof_of_Growth_Pipeline). Лишилось:
+- [~] 🤖+👤 L1 Queen-attestation — 🤖 **shipped**: firmware Queen software-Ed25519 (Monocypher, pinned) підписує CoAP-батч (EDSK Protected Flash; конверт `firmware/common/queen_attest.h`) + backend verify-до-decrypt у `UnpackTelemetryWorker` (nonce anti-replay; маркери `gateways.last_attested_at`/`telemetry_logs.gateway_attested`) + factory EDSK + закрито `Load_CoAP_Key` TODO; parity host C↔RSpec golden-KAT. Wire [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security), ladder-статус [`05_02`](05_02_Proof_of_Growth_Pipeline). Лишилось:
   - [ ] 👤 bench: EDSK-flash на кремнії + e2e attested-батч (RUNBOOK)
   - [ ] 🔗 HIL `queen_simulator` signed-режим (опційний e2e без заліза)
 - [ ] 🔗 **L2 per-tree device-voice** (North-Star, energy-gated Scenario D / 2× anchor): on-chip Ed25519 keygen + device-keygen provisioning (не HKDF-only — ARCH.33) + Merkle-root signing (E.60) + signature-transmission (weekly ≈ 5 LoRa-frames). Post-anchor-TRL.
@@ -772,7 +772,7 @@
 - [ ] 👤 налаштувати TLS (Akash ingress або Cloudflare)
 
 #### INF.6 — CoAP UDP smoke test через Ingress Anchor (post-deploy gate)
-- **P1** · 🤖+👤 · 🟢 · → `06_01`, `06_02`, `06_08 §1.2`
+- **P1** · 👤 · 🟢 · → `06_01`, `06_02`, `06_08 §1.2`
 - **Стан:** UDP-smoke gate проти silent CoAP-failure (Queen→Ingress Anchor→Akash) — workflow `coap_smoke.yml` (`workflow_dispatch`+`workflow_call`); зонди = freeze-contract `bin/coap_smoke`/`lib/coap_smoke.rb` (точні байти, регресія фантомної доставки FW.56); виклик = post-deploy gate у `deploy.yml`+`deploy-production.yml` (job `coap-smoke`, `needs: deploy`); поки repo Variable host не задана — job skipped (не silent).
 - [ ] 👤 задати repo Variables `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST` коли Ingress Anchor існує → gate активний
 - [ ] 👤 перший boundary smoke з Queen/`bin/forest_simulator`
@@ -912,7 +912,7 @@
 - [ ] 👤 зустріч + спільний експеримент HW.3 + co-authored paper
 
 #### UNI.9 — ChDTU Карапетян: Data Science колаборація
-- **P1** · 👤 · ⚪ · → `08_02 §2`
+- **P1** · 🤖+👤 · ⚪ · → `08_02 §2`
 - **Стан:** Не почато — ChDTU R-кластер для ML; А.Р. Карапетян — статистика телеметрії (anomaly/fraud), магістерські. Канон `08_02 §2`.
 - [ ] 👤 зустріч (ChDTU rectorat) + кафедральна тема «Statistics of Bio-IoT Telemetry» + 2-3 магістерські (2026-2027)
 - [ ] 🤖 SLA R-кластеру (тренування `silken_forest.marshal`, post-TRL 7)
@@ -957,12 +957,12 @@
 - [ ] 👤 зустріч Чудаєва/Аблязова Н. + verify 7 посад + MoU СЄУ↔SilkenNet + workshops Аблязов (MSA) + Ус (ESG)
 
 #### UNI.15 — ЧНУ TISC engagement (prior-art landscape + trademark + open-license consult)
-- **P1** · 👤+🤖 · 🔗 · → `08_01 §2.1` · 🔗 UNI.1 (MoU)
+- **P1** · 👤 · 🔗 · → `08_01 §2.1`
 - **Стан:** prior-art landscape готовий (query-sets + CPC, [`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)); далі TISC ЧНУ (WIPO/УкрНОІВІ) engagement — (2) торгові марки SilkenNet™/GaiaNexus™/SCC™ (~5-10k UAH; повірений УкрНОІВІ) + (3) open-license UA-сумісність consult. Патент НЕ подаємо (defensive publication, `08_01 §2.1`). Заблоковано на UNI.1 (MoU).
 - [ ] 👤 контакт TISC (Спрягайло) + auxiliary MoU + trademark-заявка + open-license sanity
 
 #### UNI.16 — ЧНУ Кафедра ІВ engagement (юр-експертиза RWA/токеноміки + open-license)
-- **P1** · 👤 · 🔗 · → `08_01 §2.1` · 🔗 UNI.1 (MoU)
+- **P1** · 👤 · 🔗 · → `08_01 §2.1`
 - **Стан:** Заблоковано на UNI.1 (MoU) — Кафедра ІВ ЧНУ точковий UA-юрисдикційний review (СЄУ §1F = макро): (1) RWA ERC-3643 vs Лісовий Кодекс/ПЗФ, (2) SCC/SFC за ЗУ «Про віртуальні активи» 2022 + MiCA 2024, (3) NaaS у UA Civil Code, (4) авторське право `bio_contract.rb`/`Attractor` (основа enforcement копілефту), (5) open-license review (AGPL/CERN-OHL-S/CC-BY-SA дійсність у UA + AF3 non-commercial × комерц-вимір). Ціль: 2 меморандуми + license-sanity. Канон `08_01 §2.1`.
 - [ ] 👤 контакт зав. кафедри + workshop Аблязов (UA×MiCA) + меморандум RWA (розблок `07_01` RWA-передумов) + меморандум SCC + open-license/AF3 review
 
