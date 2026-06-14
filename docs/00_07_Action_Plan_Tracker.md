@@ -281,6 +281,7 @@
 
 #### HW.8 — Pogo pin specification (7 блокерів)
 - **P1** · 👤 · ⚪ · → `02_02`
+- **Стан:** Не розпочато — фіналізація сліпого pogo-інтерфейсу, 7 суб-блокерів: напилення пінів Au + Hard-Gold ENIG на центральній площадці анкера (проти Ti↔Au гальванопари), spring force ~100г, байонет, O-ring/IP-клас, соосність, Z-stack tolerance (Pogo 50–70% страйк ∧ O-ring 15–25%). Канон `02_02` (§Підсумок audit + §1.2 CRITICAL центральна площадка / §3.5 Z-stack).
 - [ ] 👤 HW.8.1: Матеріал напилення piн → Gold (Hard Gold, Au 0.76 µm)
 - [ ] 👤 **HW.8.2 (NEW 2026-05-16): Hard Gold ENIG на центральній площадці анкера** (торець виводу шини Zone 1, ø 4–5 мм) — **обов'язково**, інакше золотий pogo притискається до голого Ti → гальванічна пара Ti↔Au → Rc drift > 500 мОм за 18–36 міс → cold-start fail. Передати specмапу селективного gold-plating заводу (~$0.05/анкер). Деталі — `02_02 §1.2` ⚠️ блок.
 - [ ] 👤 HW.8.3: Сила пружини → ~100 г/пін, Travel ≥ 1.5 мм
@@ -291,16 +292,14 @@
 
 #### HW.9 — PCB KiCad layouts
 - **P1** · 👤 · ⚪ · → `02_01`
-- **Опис:** Soldier PCB та Queen PCB: "Не розпочато"
+- **Стан:** Не розпочато — Soldier + Queen PCB KiCad layouts (блокується фіналізацією BOM + RF Keep-Out спекою); від HW.9 залежать HW.17/HW.20/HW.29 (B2B) + SE050 DNP-footprint. Канон `02_01 §8` (status) / §5.2–§5.3 (RF Keep-Out).
 - [ ] 👤 Soldier PCB layout (KiCad)
 - [ ] 👤 Queen PCB layout (KiCad)
 - [ ] 👤 RF Keep-Out Zone verification
 
-#### HW.11 — Conformal Coating (REVISED 2026-05-16: Sylgard відхилено через TinyML)
+#### HW.11 — Conformal Coating (Parylene C; Sylgard rejected — TinyML acoustic)
 - **P1** · 👤 · 🟡 · → `02_01`, `02_02 §3.4`
-- **Опис:** Раніше планувався full-potting Sylgard 184 (Shore A < 50 проти crack кварцу при -20°C). Архітектурна рецензія виявила **критичний конфлікт**: Sylgard 184 — відомий **акустичний демпфер** (3-bands attenuation 15–25 dB @ 16 kHz), який глушить п'єзодиск Soldier для TinyML-детекції бензопили та кавітації ксилеми (`03_03`).
-- **Нове рішення (v3):** **Parylene C 10 µm (CVD)** для серійного виробництва — конформне покриття всіх SMD-компонентів та припою через CVD-деposition; selective masking п'єзодиска (відкрита поверхня або тонка PDMS ≤ 10 µm); внутрішній об'єм капсули — повітря (опційно desiccant). Для прототипів TRL 4–5 — acrylic conformal (Humiseal 1A33) easily reworkable. ✅ Acoustically transparent, ✅ IP67 з O-ring.
-- **Блокує:** Hardware freeze, IP67 certification, TinyML функціональність
+- **Стан:** Рішення зафіксовано — **Parylene C 10 µm (CVD)** для серії + acrylic Humiseal 1A33 для прототипів; повний Sylgard-184 potting відхилено (акустичний демпфер 15–25 dB @ 16 kHz глушить TinyML-п'єзо). Acoustically transparent + IP67 з O-ring. Лишається вибір coating + verify. Канон `02_02 §3.4` (+ BOM `02_01 §3`).
 - [ ] 👤 Обрати coating: Parylene C (production) + Humiseal 1A33 (prototypes)
 - [ ] 👤 Контакт з CVD-сервісом Parylene-deposition (Київ / Львів — пошукати спеціалізовані PCB-house)
 - [ ] 👤 Верифікувати п'єзо-attenuation: тест 16 kHz tone з/без coating на калібрувальному стенді
@@ -463,16 +462,14 @@
 
 #### HW.29 — Board-to-Board Connector pair: Power Deck ↔ RF Deck (NEW 2026-05-16)
 - **P1** · 👤 · ⚪ · → `02_01 §3.1`, `§5.3`
-- **Опис:** Multi-deck PCB архітектура (Power Deck + RF Deck, standoff 8–10 мм) була специфікована у §5.3 без відповідного компонента у BOM. Без B2B-конектора RF Deck не отримує живлення 3V3 (Pogo Pins зайняті VIN_DC+GND). Тепер BOM включає Samtec FTSH header + CLT socket (1.27 мм pitch SMD, 8–10 мм stack) ~$0.85/пара.
-- **Альтернатива (дорожча):** rigid-flex PCB замість двох плат + B2B (~+$1.50, але усуває механічну точку відмови).
+- **Стан:** Не розпочато — B2B-конектор Power Deck ↔ RF Deck (Samtec FTSH header + CLT socket, 1.27мм pitch SMD, 8–10мм stack, ~$0.85/пара): без нього RF Deck не отримує 3V3 (Pogo зайняті VIN_DC+GND). Альтернатива — rigid-flex (~+$1.50, усуває механічну точку відмови). Канон `02_01 §5.3` (+ BOM поз.12 §3.1).
 - [ ] 👤 KiCad: place B2B footprints на обидві деки + перевірка signal integrity для 6-8 сигналів (3V3, GND, VSTOR_sense, EBFC_sense, piezo_EXTI, BQ25570 EN)
 - [ ] 👤 Виміряти insertion loss + height variation на 5 зразках першої партії
 - [ ] 👤 Pre-fabrication sanity check vs `HW.8.7` (B2B stack height впливає на Z-tolerance envelope)
 
 #### HW.30 — SMD Piezo + Acoustic Pad (Zero-Touch Wake) (NEW 2026-05-16)
 - **P2** · 👤 · ⚪ · → `02_01 §6`
-- **Опис:** Раніше — клеєний ∅27 мм через-отворний п'єзодиск з дротами до GPIO. **Порушення Zero-Touch §5.2:** клеєння + дроти ≠ робот pick-and-place. Pogo Pins вже зайняті VIN_DC+GND.
-- **Нове рішення:** SMD-piezo (Murata 7BB-15-6L0 / TDK B-Series / Mallory MSR205P) на нижній стороні Power Deck + Bergquist Sil-Pad 1500ST (0.5–1.0 мм, Z_acoustic ≈ 1.5 МRayl ~ Ti) як coupling до Ti Zone 3. Сигнал через B2B (HW.29) до RF Deck → BAT54S → EXTI GPIO. Усе SMD; робот installs everything.
+- **Стан:** Не розпочато — SMD-piezo (Murata 7BB-15-6L0 / TDK / Mallory) на нижній стороні Power Deck + Bergquist Sil-Pad 1500ST acoustic coupling до Ti Zone 3 → сигнал через B2B (HW.29) → BAT54S → EXTI; усе SMD (стара клеєна ∅27мм через-отв. з дротами порушувала Zero-Touch §5.2). Канон `02_01 §6` (+ BOM поз.5 §3.1).
 - [ ] 👤 Вибрати SMD-piezo з 3 кандидатів (Murata/TDK/Mallory), компроміс sensitivity vs пасивний voltage swing на резонансі ~4 кГц
 - [ ] 👤 Acoustic coupling test: SMD-piezo + Sil-Pad + Ti-coin → подаючи 16 кГц tone через анкер → виміряти voltage spike на p'єзо vs стара ∅27 мм через-отв. архітектура
 - [ ] 👤 Verify EXTI wake-on-vibration latency vs стара через-отв. baseline (target < 5 мс)

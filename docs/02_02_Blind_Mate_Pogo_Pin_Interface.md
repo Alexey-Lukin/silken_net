@@ -29,7 +29,7 @@
 | [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC: V-I крива (cold-start навантаження) |
 | [`02_01` — Hardware Architecture and BOM](02_01_Hardware_Architecture_and_BOM) | Апаратна архітектура капсули; Parylene C conformal |
 | [`02_03` — BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power) | MPPT; cold-start loop (R_interface вплив, §5) |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.8 pogo (7 sub), HW.11 Parylene, HW.30 B2B, HW.31 piezo |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.8 pogo (7 sub), HW.11 Parylene, HW.29 B2B, HW.30 piezo |
 
 ## 📑 Зміст
 
