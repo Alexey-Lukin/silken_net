@@ -33,7 +33,7 @@ class TelemetryLog < ApplicationRecord
     failed: "failed"
   }, prefix: true
 
-  # --- КЛІМАТ (BME280, HW.20 — ADR 02_01 §3.4) ---
+  # --- КЛІМАТ (BME280, HW.32 — ADR 02_01 §3.4) ---
   # humidity (% RH), pressure (hPa), vpd (kPa) — усі nullable/sparse: hot-path шле
   # лише VPD-індекс, raw RH/тиск приходять у періодичному climate frame. `vpd` —
   # прямий confounder сокоруху (False-Slashing guard, 00_01 §6.5/§6.6).
