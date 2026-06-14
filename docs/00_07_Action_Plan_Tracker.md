@@ -194,7 +194,7 @@
 - **P1** · 🤖+👤 · 🟡 · → `01_03 §3.4`
 - **Стан:** Zero-Lab in-silico (TRL 3) ✅ завершено (2026-05-25) — computational reverse-engineering хімії ДО Ti-coin (AlphaFold3+OpenMM+PySCF+scipy, Python→AI-clones); фізичний TRL 4 = Ti-coin in-vitro pending. Q1-paper (`08_01` Стаття 1): ①②④ ✅, ③ cathode borderline-robust (Ru λ=0.78) → текст сабміт-ready (publish-to-protect, UNI.3, `08_01 §2`). Канон `01_03 §3.4`; числа → [`SUMMARY`](protocols/ebfc/in_silico/SUMMARY.md)/[`PIPELINE_STATUS`](protocols/ebfc/in_silico/PIPELINE_STATUS.md). Хімічний working-backlog (CHEM.N + open computes) ↓.
 - [ ] 👤 інфраструктура: workstation RTX 4090 ($5–10K) АБО cloud GPU (AWS p5.2xlarge / GCP g2-standard-12)
-- [ ] 👤 Joint Q1-paper з Мінаєвим (`08_01` Стаття 1 — «In Silico Design of Long-Lived EBFC») — текст draft-complete (`paper/`), сабміт-ready
+- [ ] 👤 Joint Q1-paper з Мінаєвим (`08_01` Стаття 1 — in-silico electron-transfer energetics; повна назва — дім `08_01 §1`) — текст draft-complete (`paper/`), сабміт-ready
 - [ ] 👤 Fig 1 graphical-abstract (BioRender; code-draft є) + TOC-графіка
 - [ ] 👤 фіналізувати cover letter (draft є)
 
@@ -1053,7 +1053,6 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 | DOC-T.9 | Documentation `02_03` §9.3 raніше використовувала 15 mA/50 ms для LoRa TX. Виправлено на 120 mA/100 ms (~39 мДж) per SX1262 datasheet. Firmware energy accounting **не верифіковано незалежно** | `02_03`, `firmware/soldier/main.c` | Лабораторне вимірювання поточного TX (HW.x) + cross-ref у `02_03` після верифікації | ⏸️ Заблоковано лаб-стендом |
 | DOC-T.10 | Реструктуризація 05/07 (Фаза 3) — відкладені misplacement-рішення: `07_01 §11` Investor Q&A (pitch/diligence — дім 00_01 vs новий pitch-doc неоднозначний); `07_03 §5` Anchor Assembly + `§6` Virtual Prototyping (operational/field-ops дім, наразі grant-bootstrap контекст — не чистий misplacement) | `07_01`, `07_03` | Призначити operational/pitch-дім + перенести (рішення founder) | 🟡 Deferred |
 | DOC-T.16 | **bare-§ після whole-doc-лінка** — форма `[NN_NN](Doc) §X` (канон = `[NN_NN §X](Doc)`, `00_06 §1`); **gate-TOLERATED**: ні `bare_section_ref` (лише code-span поза лінком), ні `crossref_label_form` (лише мітка href) його не ловлять. Campaign-wide — 13 лише в Module 01. | `docs/**` | NEW guard `section_ref_after_doclink` + 1-shot all-module normalize sweep (як crossref-кампанія R1–R3), **НЕ** piecemeal per-module | 🟡 Approved (founder 2026-06-13) |
-| DOC-T.21 | 18 tracker-family `[ID]`-тегів цитуються в коді/доках як feature/audit-provenance анотації (circuit-breaker, partition-pruning, isfinite-RTC-validation, governance-DAO, PROMETHEUS_ALLOWED_IPS, winter-kenosis…), але мають **0 дому в 00_07** → reader не знайде. Gates green (ніхто не резолвить `[S6.4]` як 00_07-лінк) — не drift, BLOCKER-N-клас «records». IDs (snapshot orphan-sweep SESSION-10): S6.4/6/8/9/13/15/16/17/19 · FW.6/10/16/28/45 · E.46 · HW.10 · INF.5/7 | code (app/·lib/·firmware/·spec/·contracts/) + docs/; 00_07 §🗄️ | **option 3 (founder-approved 2026-06-14):** per-ID verify resolved-in-code → 1-рядк. §🗄️ orphan-row (cross-ref integrity, deep_archival orphan-sweep як SEC.5/SEC.8); відкласти — не блокер | 🟡 Approved, deferred |
 
 ## 📌 Backlog · Додаткові знахідки (не блокери)
 
@@ -1115,7 +1114,7 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 | ARCH.14 | Read-Only PostgreSQL Replicas для analytics та Oracle queries | `00_01`, `06_01` | Post-TRL 7 |
 | ARCH.16 | Mobile app для foresters (Phase 2 roadmap) | `00_01 §4` | Post-TRL 7 |
 | ARCH.17 | Bonding Curves для dynamic SCC pricing | `05_03` | TRL 9+ |
-| ARCH.18 | Детерміністична Fixed-Point арифметика (Integer Math): для досягнення побітової ідентичності розрахунків (consensus) між STM32 (Soldier) та GCP/Akash (Backend), необхідно відмовитись від IEEE 754 Floating-Point. Всі вхідні дані мають множитись на 10⁶ (або 10⁸) і розраховуватись у 64-бітних цілих числах (`int64_t` у C, `Integer` у Ruby). Це усуне апаратний drift при розрахунку Атрактора Лоренца. Потребує повного переписування математики в прошивці з урахуванням ризиків переповнення буферів (overflows) під час множення великих чисел. | `03_04`, `05_02` | Post-TRL 7 |
+| ARCH.18 | Детерміністична Fixed-Point арифметика (Integer Math): для досягнення побітової ідентичності розрахунків (consensus) між STM32 (Soldier) та GCP/Akash (Backend), необхідно відмовитись від IEEE 754 Floating-Point. Всі вхідні дані мають множитись на 10⁶ (або 10⁸) і розраховуватись у 64-бітних цілих числах (`int64_t` у C, `Integer` у Ruby). Це усуне апаратний drift при розрахунку Атрактора Лоренца. Потребує повного переписування математики в прошивці з урахуванням ризиків переповнення буферів (overflows) під час множення великих чисел. **Firmware-код тег цього ж рішення = `[FW.45]`** (Lorenz Integer-Math hardening, deferred until ZK-circuit milestone — `03_04`). | `03_04`, `05_02` | Post-TRL 7 |
 | ARCH.19 | BSP-кластеризація IoT-графу для заміни flat TTL-mesh при масштабуванні: Binary Space Partitioning дерево на основі географічних координат Queen. Зменшує broadcast collisions та енергоспоживання. Кожна Queen знає тільки своїх сусідів | `08_02` | Post-TRL 7 |
 | ARCH.20 | Petri Net PN-модель Rails моноліту: формальна верифікація відсутності deadlock при 10,000 concurrent IoT connections. Sidekiq + Puma + PostgreSQL modeling. Конволюційний метод для зменшення state space explosion у 10-100 разів | `08_02` | R&D (Супруненко, ЧНУ) |
 | ARCH.22 | Arithmetic compression для LoRa payload: lambda-exponent (2 байти) замість повного Z (16 байт). Потенційна економія ~34% TX часу (21→~14 bytes). Event-Triggered Reporting: "мовчання = здоров'я" — 24× зниження трафіку. **DCI-precondition (нот.6):** λ послаблює anti-fraud (λ many-to-one → device-λ vs server-λ слабший за точний Z-cross-check) → потребує full-Z challenge sampling / Z-sentinel перед вмиканням | `08_02`, `00_01`, `00_08 §2.3` | Post-TRL 7 |
@@ -1191,11 +1190,30 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 | DOC-T.19 | Universal `**Стан:**` form-sweep усіх 138 items §00–§08 → `inline_residual_runon` + `verdict_lead_violations` обидва HARD = трекер однорідний | `lib/tracker/dashboard.rb`, `00_06 §3` |
 | DOC-T.20 | DOC-T section гомогенізовано: resolved 15/17/18/19 + DOC-T.2 → §🗄️ (вердикт DOC-T.2 canonized → `00_06 §2`), `#### `-форму знято, section-title оновлено → active DOC-T = лише open (9/10/16) | `00_07` |
 | DOC-T.22 | §01-02 HW під-регіон стандартизовано (form-decision: фасетні під-блокери інлайн HW.8-стилем, standalone-програма → `####`): HW.5 Gen 2.0-блок → pointer `01_03 §1–3`; HW.1.PicoGK + HW.3.IS згорнуто інлайн; HW.5.IS → `####` (CHEM.N + in-silico = `#####` working-backlog діти, kept per no-premature-canon). Drift-fixes по нитці: HW.3.IS creep→stress-relaxation + DFT→MD-permeation + Trek-C heavy-FEA→Гусак; `00_02 §4a` reconcile (аналітичний Lamé-bound легіт, відкладає важку FEA Гусаку); Стаття 28→Стаття 1; `01_03` HW.5a→HW.5 | `00_07`, `01_03 §1–3` |
+| DOC-T.21 | 18 tracker-family `[ID]` cited у коді/доках без 00_07-дому → per-ID verify resolved-in-code + §🗄️ orphan-rows (OBS.1/SEC.5/SEC.8 pattern): S6.4/6/8/9/13/15/16/17/19 · FW.6/10/16/28 · E.46 · HW.10 · INF.5/7 = resolved code-annotations; FW.45 = dup→ARCH.18 (firmware-тег) | `00_07` |
 | E.45 | SCC/SFC subgraph zero-address fail-fast guard (`subgraph/validate_addresses.sh`); real-address swap → S3.5 | `05_03` |
 | OPS.5 | Projects V2 TRL field schema (1-9 + Readiness Horizon SRL/MRL; `lib/github_bootstrap.rb`); live-board bootstrap-run → OPS.6 | `00_05 §1.1` |
 | E.61 | Solana micro-rewards batch payouts (Kredis-акумуляція → `transferChecked`, годинний cron, поріг-gated) | `05_01 §8`, `04_02 §10` |
 | E.56 | DSP preprocessing для TinyML — RESOLVED: Path B log-mel (НЕ raw/MFCC); front-end `Compute_LogMel` | `03_03 §3.2/§3.4` |
 | E.57 | TENSOR_ARENA budget — **дубль, не окремий трек** (НЕ resolved): робота й мітигація живуть в активному FW.26 | `03_03 §4.3` (active FW.26) |
+| S6.4 | Per-service circuit breaker (web3 `ResilientClient`/`http_client.rb`) — resolved code-annotation, orphan-home (DOC-T.21) | `04_02`, `06_08` |
+| S6.6 | Anchor-gap alerting threshold 8d (`EthereumAnchorWorker`) — resolved code-annotation | `05_04` |
+| S6.8 | Weekend Telemetry Blackout — behaviour rationale — resolved code-annotation | `04_02` |
+| S6.9 | Governance-controlled fallback price (`ProtocolParameters.sol`) — resolved code-annotation | `05_03` |
+| S6.13 | IoTeX fallback allowed only legacy/dev TRL≤5 (`W3bstreamVerificationService`) — resolved code-annotation | `05_02` |
+| S6.15 | Chainlink router ABI version-lock (`chainlink_router_version.rb`) — resolved code-annotation | `05_01` |
+| S6.16 | Partition pruning from ISO-8601, single home (`TelemetryLog#partition_pruned`) — resolved code-annotation | `04_01` |
+| S6.17 | Mint rate from `SystemParameter` (governance-aware) (`BlockchainMintingService`) — resolved code-annotation | `05_03` |
+| S6.19 | m2m nonce-fallback counter for Grafana alerting (`m2m_auth_controller`) — resolved code-annotation | `04_03`, `06_03` |
+| FW.6 | isfinite() RTC Lorenz-state validation (`soldier/main.c`) — resolved code-annotation | `03_04`, `03_01` |
+| FW.10 | Winter-kenosis TX gate (−15°C, ESR) (`soldier/main.c`) — resolved code-annotation | `03_01` |
+| FW.16 | `Restore_ECB_Mode` error-recovery after CoAP-CBC (`queen/main.c`; ↔ SEC.8) — resolved code-annotation | `03_05` |
+| FW.28 | Atomic acoustic capture (ISR↔pack window lock) (`soldier/main.c`) — resolved code-annotation | `03_03` |
+| FW.45 | Integer-Math/fixed-point Lorenz hardening — **дубль, не окремий трек** (deferred): концепт = active **ARCH.18** (FW.45 = firmware-тег цього ж рішення) | `03_04` (= ARCH.18) |
+| E.46 | Mint-during-RPC-fail = no slash (`BlockchainMintingService`) — resolved code-annotation | `05_05`, `04_02` |
+| HW.10 | PSM + eDRX idle-power for NB-IoT/LTE-M (`queen/main.c`) — resolved code-annotation | `03_02`, `02_05` |
+| INF.5 | `PROMETHEUS_ALLOWED_IPS` CIDR allowlist for /metrics — resolved code-annotation | `06_03`, `06_04` |
+| INF.7 | `ALLOY_CONFIG_BASE64` manual SDL deploy encoding — resolved code-annotation | `06_02` |
 
 ---
 
