@@ -1005,16 +1005,17 @@ atca_status_t status = atcab_aes_encrypt(
 
 **Статус:** SEC.6 (чи заводити SE + який) → **RESOLVED 2026-06-07: SE = SE050, soft-freeze + true-DePIN ladder (ADR угорі §3.7)**. SEC.14 (роль *per-packet* vs *provisioning-only*) лишається **відкритим** — обидва шляхи сумісні з ARCH.42 (AES-128 — тепер вибір, не SE-constraint: SE050 вміє 128/256); вибір при bench eval, з **явним** вибором осі. Cross-ref [`00_07` — SEC.6](00_07_Action_Plan_Tracker), [`00_07` — SEC.14](00_07_Action_Plan_Tracker), [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker).
 
-**Альтернативи:**
+**Розглянуті SE-чипи (історичне порівняння; SE050 обрано — true-DePIN, ADR угорі §3.7):**
 
 | Чіп | Виробник | Особливості | Висновок |
 |-----|----------|-------------|----------|
-| **ATECC608B** | Microchip | Зрілий ecosystem, ESP/STM32 libraries, AWS IoT default | ⭐ Рекомендовано |
-| **STSAFE-A110** | STMicroelectronics | Same vendor як STM32 → unified toolchain (CubeMX), краща інтеграція | Сильна альтернатива |
-| **OPTIGA Trust M** | Infineon | TPM 2.0 features, X.509 PKI heavy | Overkill для нашого use case |
+| **SE050** | NXP | Ed25519/EdDSA + AES-128/256 + monotonic counters + secure storage (суперсет ATECC) | ✅ **Обрано** (SEC.6) — єдиний з non-extractable Ed25519 = голос дерева |
+| **ATECC608B** | Microchip | Зрілий ecosystem, ESP/STM32 libraries, AWS IoT default; **ECC = P-256 only** | Відхилено (P-256 ≠ голос дерева); slot-provisioning-патерн reusable для SE050 |
+| **STSAFE-A110** | STMicroelectronics | Same vendor як STM32 → unified CubeMX toolchain; **ECC = P-256 only** | Відхилено (P-256 ≠ голос дерева) |
+| **OPTIGA Trust M** | Infineon | TPM 2.0 features, X.509 PKI heavy; P-256/384 | Overkill + без Ed25519 |
 | **NXP A71CH** | NXP | EOL announced 2024 | ❌ Не використовувати |
 
-**Рекомендація:** ATECC608B або STSAFE-A110. Final pick — після завершення KiCad layout (HW.9) і перевірки I²C bus utilization (вже використовується для DS18B20 в [`02_05 §4а`](02_05_Queen_Hardware_and_Starlink)?). STSAFE-A110 має невелику перевагу через native CubeMX-інтеграцію — економить ~3 дні firmware-розробки.
+**Обрано: SE050** — true-DePIN вимагає non-extractable Ed25519 («голос дерева», крива peaq/Solana), і лише SE050 його вміє (решта — P-256-only). ATECC slot-provisioning-механіка лишається reusable для SE050 (SE05x = object-model замість 16 slots — §3.7 callout угорі). Deep SE05x-механіка (API, object-model, latency/power, footprint/I²C) + final BOM — **eval-kit-gated, no-premature-canon** → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker).
 
 **Factory Flashing impact (cross-ref 03_06 §1):**
 
@@ -1038,14 +1039,14 @@ atca_status_t status = atcab_aes_encrypt(
 
 **Дорожня карта:**
 
-- [ ] 🤖 (наступний цикл) Завершити оцінку: ATECC608B vs STSAFE-A110 матриця, узгоджена з KiCad floorplan
+- [ ] 🤖 SE050 footprint + I²C placement у KiCad floorplan (soft-freeze DNP — ADR угорі §3.7) → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker)
 - [x] 🤖 (SEC.14) Перефреймувати latency/power → чесний trade-off «per-packet AES vs provisioning-only» — ✅ Виконано (підрозділ вище): енерго-аргумент перевірено = малий, але не вирішальний; справжня вісь = tamper-resistance LoRa-ключа ⟷ latency/ідіом; role-split альтернатива подана
 - [x] 🤖 (SEC.14, 2026-06-12) Cross-check проти Сценарію C ([`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)) — точні %: active ≈0.3% TX / ≈0.2% циклу / ≈3% годинного запасу (підтверджує «малий»); **знахідка-інверсія**: always-on sleep 150 нА ≈ 3.6 мДж/год > запас Сценарію C → **load-switch гейт SE обов'язковий** (Power impact вище; стосується обох ролей)
 - [ ] 👤/🤖 (SEC.14) Обрати роль SE — per-packet SE050 AES (Варіант B) vs built-in AES + SE050 provisioning-only — за віссю trade-off вище, при bench eval + BOM freeze (не за замовчуванням)
 - [x] 🤖 Update 03_06 §1 Factory Flashing pipeline з SE-варіантом — ✅ Виконано: 03_06 §1 розділено на Гілку A (Protected Flash, TRL 6/7) та Гілку B (ATECC608B/STSAFE-A110, mass production > 10k); додано двошаровий defense-in-depth (data zone lock + RDP), latency/power/cost impact, criteria для вибору гілки, та irreversibility note (B → A неможливо)
 - [ ] 🤖 Інтеграція з Backend `Provisioning::HardwareKeyService` (генерація ECC keypair + cert)
-- [ ] 🤖 Firmware HAL: drop-in replacement `Crypto_AES_Encrypt_Block()` що внутрішньо викликає ATECC або HAL_CRYP залежно від `#define USE_SECURE_ELEMENT`
-- [ ] 👤 Замовити evaluation kit (Microchip ATECC608B-MAH-DAO або ST STSAFE-A110) для bench-test
+- [ ] 🤖 Firmware HAL: drop-in replacement `Crypto_AES_Encrypt_Block()` що внутрішньо викликає SE050 або HAL_CRYP залежно від `#define USE_SECURE_ELEMENT` (gated SEC.14 role + eval-kit)
+- [ ] 👤 Замовити SE050 evaluation kit для bench-test → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker)
 - [ ] 👤 Прийняти final BOM рішення перед першим mass production batch (>1000 unit)
 
 **Пріоритет:** P2 — для TRL 6/7 RDP Level 2 (§3.6) є достатнім захистом. Secure Element — обов'язковий перед mass production (>10 000 unit) або для high-value deployments (urban / commercial sites).
