@@ -23,7 +23,7 @@
  * temp/acoustic/delta_t/vcap) → firmware↔backend bit-identity не зачіпається.
  * VPD живе виключно на confounder/slashing-шарі (03_04 DCI).
  *
- * Дріт: байт 19 `vpd_index` CCM wire-rev2 (03_05 §3.2 ledger; lora_ccm.h).
+ * Дріт: байт 19 `vpd_index` CCM wire-rev2 (03_05 §2.1 wire-budget ledger; lora_ccm.h).
  * Канон: 02_01 §3.4 (ADR + VPD-формула) · 03_01 SENSE · 05_05 §6/§7 · 00_07 HW.32.
  */
 #ifndef SILKEN_BME280_H

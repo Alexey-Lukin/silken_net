@@ -65,7 +65,7 @@ make -C firmware/test
    ```
    **Важливо [FIX FW.7]:** Backend переведено з BigDecimal на **Float (IEEE 754 double)** — ідентично firmware mruby. Раніше `("8.0".to_d / "3.0".to_d).round(18)` давав інший результат після 250 ітерацій; зараз обидві сторони використовують `8.0/3.0` → `2.6666666666666665`. Z: **категорично** ідентичний (status/growth_points/payload_byte — бітово), raw Z — у межах numeric-tolerance (реальний mruby 4.0.0 VM ↔ CRuby ~1e-14, хаотична ULP-амплітудизація; FW.31 ε=0.001 band; перша VM-перевірка + деталі — `docs/03_04`). Майбутній hardening через integer/fixed-point Q-format — `[FW.45]`, deferred до ZK-circuit milestone (див. `docs/03_04_mruby_Lorenz_Attractor.md`).
 
-4. **PACK**: 16-байтний payload (FW.2 target: 12-byte sensor payload у 28B AES-128-CCM frame, wire-rev2 — 03_05 §3.2 + wire-budget ledger).
+4. **PACK**: 16-байтний payload (FW.2 target: 12-byte sensor payload у 28B AES-128-CCM frame, wire-rev2 — 03_05 §2.1 + wire-budget ledger).
 5. **ENCRYPT**: **AES-128-ECB** transitional (апаратний CRYP модуль, без IV) — ARCH.42 Variant B з 2026-05-23. 1 блок = 1 AES operation. Target FW.2: AES-128-CCM 28B (wire-rev2): 8-byte MIC + 24-bit FC + gossip-байт у AAD + device_z/diag/vpd у payload.
 6. **TX**: `Radio.Send(21 bytes)`. Mesh TTL-based. Emergency TX при chainsaw detection (PANIC_TTL=5).
 
