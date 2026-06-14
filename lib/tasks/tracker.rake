@@ -34,11 +34,12 @@ namespace :tracker do
     chem     = Tracker::Dashboard.chem_note_ref_violations
     chemdups = Tracker::Dashboard.chem_note_ids(md).tally.select { |_, c| c > 1 }
     chemambig = Tracker::Dashboard.chem_ambiguous_token_lines(md)
+    runon    = Tracker::Dashboard.inline_residual_runon(md)
 
     puts "00_07 lint — #{items.size} #### items (#{Tracker::Dashboard.open_items(items).size} actionable)"
     puts "  duplicate IDs:    #{dups.empty? ? 'none ✓' : dups.inspect}"
     if issues.empty?
-      puts "  #3 conformance:   every item has priority + executor + canon-ref ✓"
+      puts "  #3 conformance:   every item has priority + executor + stage + canon-ref ✓"
     else
       puts "  #3 conformance gaps (#{issues.size}):"
       issues.each { |i| puts "    - #{i}" }
@@ -86,6 +87,14 @@ namespace :tracker do
       chem.each { |c| puts "    - #{c}" }
       chemdups.each { |id, n| puts "    - #{id} defined #{n}× in 00_07" }
       chemambig.each { |a| puts "    - #{a}" }
+    end
+    # [founder 2026-06-14] inline residual run-on — ADVISORY during the sweep (legacy
+    # violators), flips HARD (joins the abort below) once 00_07 is at 0. (00_06 §3 recipe.)
+    if runon.empty?
+      puts "  residual lists:   no inline run-on (≥2 `· [ ]` per line) — vertical ✓"
+    else
+      puts "  inline run-on residual lists (#{runon.size}) — ADVISORY (sweep → vertical list):"
+      runon.each { |r| puts "    - #{r}" }
     end
     abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any?
   end

@@ -14,15 +14,15 @@ RSpec.describe Tracker::Dashboard do
       ignored preamble
       ## §03 · Firmware
       #### FW.99 — well-formed item
-      - **P1** · 🤖+👤 · → `03_05 §3.2`
+      - **P1** · 🤖+👤 · 🟡 · → `03_05 §3.2`
       - детальний контекст
       #### FW.98 — malformed (no meta-line)
       - просто текст без пріоритету/виконавця/канону
       #### HW.99 — dangling canon ref
-      - **P2** · 👤 · → `99_99 §1`
+      - **P2** · 👤 · 🔗 · → `99_99 §1`
       ## 🗄️ Архів закритих пунктів
       #### FW.97 — archived, must be skipped
-      - **P0** · 🤖 · → `03_05`
+      - **P0** · 🤖 · 🟢 · → `03_05`
     MD
   end
 
@@ -32,16 +32,17 @@ RSpec.describe Tracker::Dashboard do
     expect(items.map(&:id)).to contain_exactly("FW.99", "FW.98", "HW.99")
   end
 
-  it "reads priority, executor(s) and canon-ref from the meta-line" do
+  it "reads priority, WHO (executor), STAGE and canon-ref from the meta-line [DOC-T.18]" do
     fw99 = items.find { |it| it.id == "FW.99" }
     expect(fw99.priority).to eq("P1")
-    expect(fw99.executors).to contain_exactly(:machine, :owner)
+    expect(fw99.executors).to contain_exactly(:machine, :owner)  # WHO axis (🤖+👤)
+    expect(fw99.stage).to eq(:in_progress)                       # STAGE axis (🟡), separate
     expect(fw99.canon).to eq("03_05 §3.2")
   end
 
-  it "flags a malformed item missing priority/executor/canon (#3 conformance)" do
+  it "flags a malformed item missing priority/executor/stage/canon (#3 conformance)" do
     expect(described_class.issues(items))
-      .to include(a_string_matching(/FW\.98: missing priority, executor, canon-ref/))
+      .to include(a_string_matching(/FW\.98: missing priority, executor, stage, canon-ref/))
   end
 
   it "passes conformance for a well-formed item" do
@@ -342,7 +343,7 @@ RSpec.describe Tracker::Dashboard do
         #### OWN.1 — owner focus item
         - **P1** · 👤 · → `06_04`
         #### BLK.1 — blocked low-priority only
-        - **P2** · 🔗 · → `04_02`
+        - **P2** · 👤 · 🔗 · → `04_02`
       MD
     end
     let(:rendered) { described_class.render(described_class.parse(md)) }
@@ -374,6 +375,42 @@ RSpec.describe Tracker::Dashboard do
       MD
       # owner + blocked roles have zero items → empty-state without a P2/P3 tail
       expect(sparse).to include('(жодного відкритого P0/P1)_')
+    end
+  end
+
+  # [inline residual run-on guard, founder 2026-06-14] residuals must be a VERTICAL list;
+  # ≥2 inline `· [ ]` on one body line is flagged (00_07 intro standard). Skips intro
+  # blockquote examples, fenced code, and table rows.
+  describe ".inline_residual_runon" do
+    it "flags a body line packing ≥2 inline checkboxes, passes a vertical list" do
+      md = <<~MD
+        ## §06 · Ops
+        #### S9.1 — run-on residuals
+        - **P1** · 👤 · 🟡 · → `06_04`
+        - ✅ done. · [ ] 👤 first · [ ] 🤖 second
+        #### S9.2 — clean vertical
+        - **P1** · 👤 · 🟡 · → `06_04`
+        - **Стан:** done.
+        - [ ] 👤 first
+        - [ ] 🤖 second
+      MD
+      res = described_class.inline_residual_runon(md)
+      expect(res).to include(a_string_matching(/S9\.1/))
+      expect(res).not_to include(a_string_matching(/S9\.2/))
+    end
+
+    it "skips a blockquote example line and a fenced code block (no false positive)" do
+      md = <<~MD
+        ## §06 · Ops
+        #### S9.3 — blockquote + fenced examples then a lone residual
+        - **P1** · 👤 · 🟡 · → `06_04`
+        > приклад у цитаті: `[ ]` done · `[ ]` again
+        ```
+        [ ] x · [ ] y
+        ```
+        - [ ] 👤 lone residual
+      MD
+      expect(described_class.inline_residual_runon(md)).to be_empty
     end
   end
 

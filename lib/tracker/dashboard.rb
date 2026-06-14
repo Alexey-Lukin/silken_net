@@ -20,7 +20,17 @@ module Tracker
     # Non-actionable / index sections explicitly excluded.
     SKIP_SECTION = /^## (?:🎯|🚦|📌|🗄️)/
 
-    EXECUTORS = { "🤖" => :machine, "👤" => :owner, "🔗" => :blocked, "🟡" => :blocked }.freeze
+    # WHO axis (Projects-V2 "Assigned Agent") — who does the OPEN work.
+    EXECUTORS = { "🤖" => :machine, "👤" => :owner }.freeze
+    # STAGE axis (Projects-V2 "Shape Up Stage") — lifecycle, SEPARATE from WHO [DOC-T.18].
+    # 🟡 (in-progress) and 🔗 (blocked) were wrongly mapped as :blocked EXECUTORS —
+    # conflating who-with-status (a 🟡 in-progress item is NOT blocked; it routed to
+    # the dashboard's "Заблоковано" bucket). Now STAGE is its own axis; "blocked" in
+    # the dashboard = STAGE 🔗, not a WHO.
+    STAGES = {
+      "⚪" => :not_started, "🟡" => :in_progress, "🟢" => :done_inert,
+      "🔗" => :blocked, "🌿" => :far_horizon
+    }.freeze
     PRIORITY_RANK = { "P0" => 0, "P1" => 1, "P2" => 2, "P3" => 3 }.freeze
     HEADINGS = {
       machine: "🤖 Machine-doable (AI, non-gated)",
@@ -28,7 +38,7 @@ module Tracker
       blocked: "🔗 Заблоковано (чекає іншого)"
     }.freeze
 
-    Item = Struct.new(:id, :title, :priority, :executors, :canon, :section_modules, keyword_init: true)
+    Item = Struct.new(:id, :title, :priority, :executors, :stage, :canon, :section_modules, keyword_init: true)
 
     # `## §NN`-section module set: `§01–§02`→["01","02"], `§03/§05`→["03","05"].
     SECTION_NUMS = /§\s*(\d{2})/
@@ -60,8 +70,12 @@ module Tracker
         elsif current
           if (pr = line[/\*\*(P[0-3])\*\*/, 1])
             current.priority ||= pr
-            # the meta-line `- **P?** · 👤/🤖/🔗 · → canon` carries the executor(s)
+            # meta-line `- **P?** · WHO · STAGE · → canon` carries WHO (executor) on one
+            # axis and STAGE (lifecycle) on the other [DOC-T.18]. STAGE is read ONLY here
+            # (meta-line), not from `[ ] 🔗 …` residual bullets where 🔗 marks a per-residual
+            # block, not the item's stage.
             EXECUTORS.each { |emoji, role| current.executors << role if line.include?(emoji) }
+            STAGES.each { |emoji, st| current.stage ||= st if line.include?(emoji) }
           end
           # also pick up executors from unchecked checkbox bullets (HW light-touch items)
           if line.match?(/^\s*-\s*\[ \]/)
@@ -248,9 +262,15 @@ module Tracker
     # --- render 🚦 Dashboard markdown (focus: P0/P1; P2 as a tail count) ---
     def self.render(items)
       open = open_items(items)
+      # [DOC-T.18] blocked is a STAGE (🔗), not a WHO: the "Заблоковано" bucket holds
+      # stage-blocked items; machine/owner buckets hold non-blocked items by their WHO.
+      bucket = lambda do |role|
+        return open.select { |it| it.stage == :blocked } if role == :blocked
+        open.select { |it| it.executors.include?(role) && it.stage != :blocked }
+      end
       out = []
       HEADINGS.each do |role, heading|
-        in_role = open.select { |it| it.executors.include?(role) }
+        in_role = bucket.call(role)
         low = %w[P2 P3]
         focus = in_role.reject { |it| low.include?(it.priority) }
                        .sort_by { |it| [ PRIORITY_RANK[it.priority] || 9, it.id ] }
@@ -277,6 +297,7 @@ module Tracker
         missing = []
         missing << "priority" unless it.priority
         missing << "executor" if it.executors.empty?
+        missing << "stage" unless it.stage          # [DOC-T.18] WHO · STAGE both required
         missing << "canon-ref" unless it.canon
         "#{it.id}: missing #{missing.join(', ')}" if missing.any?
       end
@@ -372,6 +393,32 @@ module Tracker
         next unless mod
 
         "#{it.id}: → `#{it.canon}` (module #{mod}) sits under §#{it.section_modules.join('/')}" unless it.section_modules.include?(mod)
+      end
+    end
+
+    # --- inline residual run-on guard [founder 2026-06-14] ---
+    # The item-form standard (00_07 intro) requires open residuals as a VERTICAL list —
+    # «≥2 residual'и — завжди список; НЕ паковати кілька `· [ ]` в один рядок». A body line
+    # packing ≥2 markdown checkboxes (`· [ ] … · [ ]`) hides residuals from the eye and makes
+    # diffs glue-prone. Flags any #### item body line with ≥2 checkboxes; skips the intro
+    # blockquote (`> ` example lines), fenced code, and table rows. ANY_ITEM_HEAD spans all
+    # sections (the run-on can sit under any #### item). Pure (caller may pass markdown).
+    CHECKBOX = /\[[ xX~]\]/
+    def self.inline_residual_runon(markdown = File.read(DEFAULT_PATH))
+      current = nil
+      in_fence = false
+      markdown.each_line.with_object([]) do |line, bad|
+        in_fence = !in_fence if line.lstrip.start_with?("```")
+        next if in_fence
+        if (m = line.match(ANY_ITEM_HEAD))
+          current = m[1]
+          next
+        end
+        next unless current
+
+        stripped = line.lstrip
+        next if stripped.start_with?(">", "|") # intro blockquote example / table row
+        bad << "#{current}: #{line.strip[0, 60]}…" if line.scan(CHECKBOX).size >= 2
       end
     end
 
