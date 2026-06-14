@@ -28,18 +28,18 @@ HORIZON_KW = /post-?TRL|Post-?TRL|TRL [789]\+|TRL 7\+|far-horizon|North-Star|Ser
 # Re-audited overrides (verify-by-reading, 2026-06-14) — where the heuristic is wrong.
 # Esp. "blocked" that is actually done-inert (host-done, awaiting bench/FW.2/FW.4) or unblocked.
 OVERRIDES = {
-  "FW.2"=>["👤","🟢"],     "FW.20"=>["👤","🟢"],    # already cemented — keep consistent
-  "FW.4"=>["👤","🟢"],     "FW.8"=>["👤","🟢"],     "FW.17"=>["👤","🟢"],
-  "FW.27"=>["🤖","🟢"],    "FW.42"=>["🤖","🟢"],    "ARCH.40"=>["🤖","🟢"],
-  "ARCH.41"=>["👤","🟢"],  "SEC.12"=>["👤","🟢"],   "ARCH.35"=>["👤","🟢"],
-  "BIZ.14"=>["🤖","🟢"],   "ARCH.34"=>["🤖","⚪"],   # ARCH.34 = named-next AI task, NOT blocked
-  "S6.10"=>["🤖","🔗"],    "UNI.15"=>["👤+🤖","🔗"],"UNI.16"=>["👤","🔗"], "STK.3"=>["👤","🔗"],
-  "HW.1"=>["👤","⚪"],      "UNI.9"=>["👤","⚪"],     # HW.1: license=precondition; UNI.9: false-🌿
-  "BIZ.8"=>["👤","⚪"],                              # BIZ.6-✅=precondition; own quotes/NDA not started
-  "SE050-MIGRATION"=>["🤖+👤","🟡"],                # real SE05x mechanics rewrite (not activation)
-  "FW.31"=>["👤","🟢"],    "FW.50"=>["👤","🟢"],    "FW.55"=>["👤","🟢"], "FW.52"=>["👤","🟢"],
-  "FW.54"=>["👤","🟢"],    "FW.56"=>["👤","🟢"],    "FW.46"=>["🤖+👤","🟢"], "FW.26"=>["🤖","🟢"],
-  "FW.25"=>["🤖+👤","🟢"],                           # DSP+baseline done; open = optional upgrades only
+  "FW.2"=>[ "👤", "🟢" ],     "FW.20"=>[ "👤", "🟢" ],    # already cemented — keep consistent
+  "FW.4"=>[ "👤", "🟢" ],     "FW.8"=>[ "👤", "🟢" ],     "FW.17"=>[ "👤", "🟢" ],
+  "FW.27"=>[ "🤖", "🟢" ],    "FW.42"=>[ "🤖", "🟢" ],    "ARCH.40"=>[ "🤖", "🟢" ],
+  "ARCH.41"=>[ "👤", "🟢" ],  "SEC.12"=>[ "👤", "🟢" ],   "ARCH.35"=>[ "👤", "🟢" ],
+  "BIZ.14"=>[ "🤖", "🟢" ],   "ARCH.34"=>[ "🤖", "⚪" ],   # ARCH.34 = named-next AI task, NOT blocked
+  "S6.10"=>[ "🤖", "🔗" ],    "UNI.15"=>[ "👤+🤖", "🔗" ], "UNI.16"=>[ "👤", "🔗" ], "STK.3"=>[ "👤", "🔗" ],
+  "HW.1"=>[ "👤", "⚪" ],      "UNI.9"=>[ "👤", "⚪" ],     # HW.1: license=precondition; UNI.9: false-🌿
+  "BIZ.8"=>[ "👤", "⚪" ],                              # BIZ.6-✅=precondition; own quotes/NDA not started
+  "SE050-MIGRATION"=>[ "🤖+👤", "🟡" ],                # real SE05x mechanics rewrite (not activation)
+  "FW.31"=>[ "👤", "🟢" ],    "FW.50"=>[ "👤", "🟢" ],    "FW.55"=>[ "👤", "🟢" ], "FW.52"=>[ "👤", "🟢" ],
+  "FW.54"=>[ "👤", "🟢" ],    "FW.56"=>[ "👤", "🟢" ],    "FW.46"=>[ "🤖+👤", "🟢" ], "FW.26"=>[ "🤖", "🟢" ],
+  "FW.25"=>[ "🤖+👤", "🟢" ]                           # DSP+baseline done; open = optional upgrades only
 }.freeze
 
 def parse(lines)
@@ -58,7 +58,7 @@ def parse(lines)
       items << cur if cur
       cur = { id: m[1], title: m[2], head_i: i, meta_i: nil, pn: nil, meta: nil, head_line: line, body: [] }
     elsif cur
-      cur[:body] << [i, line]
+      cur[:body] << [ i, line ]
       if cur[:meta_i].nil? && (pm = line.match(META))
         cur[:meta_i] = i
         cur[:pn] = pm[1]
@@ -85,7 +85,7 @@ def classify(it)
     who << "🤖" if cb.include?("🤖")
     who << "👤" if cb.include?("👤")
   end
-  who = ["👤"] if who.empty?            # safest default — owner
+  who = [ "👤" ] if who.empty?            # safest default — owner
   who_s = who.sort_by { |w| w == "🤖" ? 0 : 1 }.uniq.join("+")  # 🤖 leads if both? -> but keep leading=primary; refine in review
 
   # STAGE signals
@@ -114,7 +114,7 @@ def classify(it)
   sig += " inert-open" if all_open_inert
   sig += " block-kw" if blocked_sig && !was_blocked
   sig += " horizon-kw" if is_horizon
-  [who_s, stage, sig]
+  [ who_s, stage, sig ]
 end
 
 mode = ARGV[0]
@@ -128,7 +128,7 @@ if mode == "--propose"
   items.each do |it|
     old = (it[:meta] || "")[/\*\*P[0-3]\*\* · ([^→]*?) ·/, 1]&.strip || "?"
     who, stage, sig = classify(it)
-    puts "%-14s %-9s → %-7s %-5s  %s" % [it[:id], old[0, 9], who, stage, sig]
+    puts "%-14s %-9s → %-7s %-5s  %s" % [ it[:id], old[0, 9], who, stage, sig ]
     tsv << "#{it[:id]}\t#{who}\t#{stage}\t#{old}\t#{sig}"
   end
   File.write("/tmp/stage_map.tsv", tsv.join("\n") + "\n")
@@ -137,7 +137,7 @@ elsif mode == "--apply"
   map = {}
   File.readlines(ARGV[1]).each do |l|
     id, who, stage, = l.chomp.split("\t")
-    map[id] = [who, stage] if id && who && stage
+    map[id] = [ who, stage ] if id && who && stage
   end
   applied = 0
   items.each do |it|
