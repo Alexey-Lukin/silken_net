@@ -99,13 +99,14 @@ namespace :tracker do
       runon.each { |r| puts "    - #{r}" }
     end
     # [DOC-T.19, founder 2026-06-14] verdict-lead — EVERY item body leads with `- **Стан:**`
-    # (Universal-Стан, max homogeneity). ADVISORY during the §03/§05/§06 sweep (legacy
-    # non-Стан leads), flips HARD at 0. (00_06 §3 recipe.)
+    # (Universal-Стан, max homogeneity). HARD (joins abort below): the DOC-T.19 sweep took
+    # 00_07 to 0 non-Стан leads across §00–§08 (all 138 items), the guard now holds the line.
+    # (00_06 §3 recipe.)
     if verdict.empty?
       puts "  verdict-lead:     every item body leads with `- **Стан:**` ✓"
     else
-      puts "  verdict-lead non-Стан leads (#{verdict.size}) — ADVISORY (sweep → **Стан:**-lead): #{verdict.first(8).join(', ')}…"
+      puts "  verdict-lead non-Стан leads (#{verdict.size}) — Universal-Стан standard violated (00_07 intro): #{verdict.first(8).join(', ')}…"
     end
-    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any? || runon.any?
+    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any? || runon.any? || verdict.any?
   end
 end
