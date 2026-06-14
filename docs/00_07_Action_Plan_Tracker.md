@@ -630,7 +630,7 @@
 - **Стан:** fallback IV → pure `coap_iv.h#coap_fallback_iv_word` (uid×device + `queen_unix_ts`×reboot + `coap_flush_seq`×flush) + host-тести → **reuse закрито** по всіх осях. Чесний residual: IV передбачуваний на fallback-шляху — **low-severity** (CoAP-батч несе власну телеметрію → немає chosen-plaintext вектора; вимога тут = uniqueness, досягнуто). Канон [`03_05` — HRNG Fallback](03_05_Hardware_Symmetric_Crypto_and_Security).
 - [ ] 🔗 повна unpredictability = key-derived IV `E_key(counter)` (AES-engine + SEC.8 restore) — bench-gated
 
-#### SEC.14 — ATECC608B role-split re-examination (ARCH.42 honesty)
+#### SEC.14 — SE role-split re-examination — per-packet AES vs provisioning-only (ARCH.42 honesty)
 - **P2** · 👤 · 🟢 · → [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)
 - **Стан:** re-examine done — чесний trade-off канонізовано. Справжня вісь = tamper-resistance LoRa session-ключа (per-packet SE AES) ⟷ latency/ідіом (built-in radio-AES ~10µs + session-key у RDP-Flash, SE provisioning-only), не «0.1% acceptable». Active-енергія мала, АЛЕ знахідка-інверсія: always-on SE sleep 150 нА ≈ 3.6 мДж/год > весь запас Сценарію C → SE **обов'язково за load-switch гейтом** (TPS22860, як BME280), стосується обох ролей. Тепер SE = **SE050** (вісь та сама). Trade-off-таблиця + Power impact — [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security).
 - [ ] 👤 обрати роль SE (per-packet vs provisioning-only) — bench eval + BOM freeze; threat-model-рішення (не тех-необхідність) → тримається у SE050-MIGRATION (One-Home)
