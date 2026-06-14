@@ -629,7 +629,8 @@
 
 #### SEC.1 — Multisig Gnosis Safe для production admin role
 - **P0** · 👤 · 🟢 · → [`05_03` — Admin-Role → Gnosis Safe](05_03_Tokenomics_SCC_and_SFC)
-- ✅ `Deploy.s.sol` admin=Safe на genesis + `REQUIRE_SAFE_ADMIN` guard (revert якщо EOA) + last-admin guard + runbook (нічого не задеплоєно → reassign не треба). · [ ] 👤 створити Gnosis Safe (3/5|2/3) на Polygon + деплой з `ADMIN_ADDRESS=<Safe>` `REQUIRE_SAFE_ADMIN=true`
+- **Стан:** `Deploy.s.sol` admin=Safe на genesis + `REQUIRE_SAFE_ADMIN` guard (mainnet revert якщо EOA) + last-admin guard + runbook; нічого не задеплоєно → reassign не треба.
+- [ ] 👤 створити Gnosis Safe (3/5|2/3) на Polygon + деплой з `ADMIN_ADDRESS=<Safe>` `REQUIRE_SAFE_ADMIN=true`
 
 #### SEC.2 — RDP Level 2 activation timeline
 - **P1** · 👤 · 🟢 · → [`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security)
@@ -646,7 +647,8 @@
 
 #### SEC.4 — Reed Switch shipping mode (not in BOM)
 - **P2** · 👤 · ⚪ · → [`03_05 §3.5`](03_05_Hardware_Symmetric_Crypto_and_Security)
-- Zero-consumption transport: магніт→circuit open, інсталятор знімає→first power-up (~$0.05/unit). Дизайн канонізовано, у BOM ще немає (окремий механізм від piezo Zero-Power Wake). · [ ] 👤 додати Hamlin 59140-1-T-00-A + N52 магніт до BOM + оновити KiCad schematic
+- **Стан:** дизайн канонізовано, у BOM ще немає — zero-consumption transport (магніт→circuit open, інсталятор знімає→first power-up, ~$0.05/unit; окремий механізм від piezo Zero-Power Wake).
+- [ ] 👤 додати Hamlin 59140-1-T-00-A + N52 магніт до BOM + оновити KiCad schematic
 
 #### SEC.9 — Production AES Key містить FIPS-197 Appendix B Test Vector
 - **P0** · 👤 · 🟡 · → [`03_05 §3.1а`](03_05_Hardware_Symmetric_Crypto_and_Security)
