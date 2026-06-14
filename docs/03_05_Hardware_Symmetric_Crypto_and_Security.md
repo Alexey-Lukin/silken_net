@@ -1240,6 +1240,8 @@ HAL_CRYP_Init(&hcryp);
 
 ## 🧪 8. Тестове Покриття (Host-Based Tests)
 
+> Методологія / гейт / тріаж покриття (cross-cutting) — канон [`04_06`](04_06_Testing_Guide_and_Coverage); тут — лише per-subsystem інвентар host-тестів крипто-пайплайну (One-Home: інвентар біля підсистеми). Лічильники не ведемо (drift) — істина = вивід `make -C firmware/test`.
+
 | Тест | Файл | Покриття |
 |------|------|---------|
 | AES-128 LoRa block encrypt/decrypt round-trip [post-ARCH.42] | `firmware/test/test_encryption.c` | ✅ ECB single-block 128B |
