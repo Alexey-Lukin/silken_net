@@ -771,7 +771,7 @@
 
 #### S2.4 — Observability industrial-grade hardening
 - **P1** · 👤 · 🟡 · → [`06_03 §2.9`](06_03_Prometheus_Observability)
-- **✅ Industrial-grade hardening канонізовано ([`06_03 §2.9`](06_03_Prometheus_Observability)):** `external_labels` (env/service/source/release attribution) + `queue_config`+explicit WAL (backpressure) + cardinality-budget relabel + process/runtime gauges (`sample_process_runtime!`/`sample_connection_pool!`, RSpec-covered) + CI-валідація (`alloy_config_validate` / `grafana/alloy fmt`) — конкретні значення у `config.alloy` SSOT (не дублюються).
+- **Стан:** industrial-grade hardening канонізовано — `external_labels` (env/service/source/release attribution) + `queue_config`+explicit WAL (backpressure) + cardinality-budget relabel + process/runtime gauges (`sample_process_runtime!`/`sample_connection_pool!`, RSpec-covered; bonus-fix: pool-gauges раніше були stale) + CI-валідація (`alloy_config_validate`). Конкретні значення — `config.alloy` SSOT (не дублюються). Канон [`06_03 §2.9`](06_03_Prometheus_Observability).
 - [ ] 👤 `up`-scrape alert + SLO/error-budget (§2.9 #6 — ingest availability, mint/slash success) — Grafana Cloud
 
 #### S2.2 — Grafana Cloud dashboards
