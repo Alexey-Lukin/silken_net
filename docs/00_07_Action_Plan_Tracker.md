@@ -48,7 +48,7 @@
 > Сортовано за **виконавцем**, потім пріоритетом. Повний опис кожного пункту — у §модулі нижче (**one place**); тут — тонкий індекс. Легенда: 🤖 AI-doable · 👤 власник · 🔗 заблоковано.
 
 ### 🤖 Machine-doable зараз (AI, non-gated)
-> Великі незаблоковані 🤖-стріми поетапно закриваються (SSOT-кампанія; firmware build/dependency-hardening — FW.46 ARM build + FW.47 pin-policy + `in_silico` conda-lock). Залишок 🤖 переважно **gated** (ML-retrain, ground-truth калібрування, STM32 bench) → див. 🔗. Незаблокований 🤖-backlog ітемізується у §модулях (P2 ре-бакетинг).
+> Великі незаблоковані 🤖-стріми поетапно закриваються (SSOT-кампанія; firmware build/dependency-hardening — FW.46 ARM build + FW.47 pin-policy + `in_silico` conda-lock; backend `S6.20` cron-оркестратори + `E.41` fire-alert verify). Залишок 🤖 переважно **gated** (ML-retrain, ground-truth калібрування, STM32 bench) → див. 🔗, або in-silico-важкий (`HW.3.IS` MD-permeation). Незаблокований 🤖-backlog ітемізується у §модулях.
 
 ### 👤 На тобі (власник)
 
@@ -77,7 +77,7 @@
 **Academic:**
 - `UNI.1` **P0** — зустріч з деканом Онищенком (ChNU FOTIUS); блокує публікації Q1
 - `UNI.8` **P0** — контакт з ректоратом СЄУ; блокує MSA/B2B legal
-- `UNI.13`/`UNI.14` **P0** — верифікувати посади науковців ЧМА і СЄУ (офіційні сайти)
+- `UNI.14` **P1** / `UNI.13` **P2** — СПОЧАТКУ verify посади науковців (СЄУ Аблязов/Ус · ЧМА) перед cold-contact
 
 ### 🔗 Заблоковано (чекає іншого)
 - `FW.2` **P0** — AES-128-CCM (backend-parser ✅; firmware emit + `CRYP_AES_CCM` verify → STM32 bench). Закриває ECB→CCM, MIC, `SEC.10` panic auth, `FW.29`. FC/nonce/cold-boot SSOT → `03_05` (📐 КАНОНІЧНЕ ДЖЕРЕЛО). NB: `FW.23` OTA auth — окремий HMAC-механізм, канонізовано в `03_06 §4` (live-compute ✅ зашито 2026-06-11, лишився bench K_ota); FW.2 його **не** закриває
@@ -1065,9 +1065,6 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 | DOC-T.9 | Documentation `02_03` §9.3 raніше використовувала 15 mA/50 ms для LoRa TX. Виправлено на 120 mA/100 ms (~39 мДж) per SX1262 datasheet. Firmware energy accounting **не верифіковано незалежно** | `02_03`, `firmware/soldier/main.c` | Лабораторне вимірювання поточного TX (HW.x) + cross-ref у `02_03` після верифікації | ⏸️ Заблоковано лаб-стендом |
 | DOC-T.10 | Реструктуризація 05/07 (Фаза 3) — відкладені misplacement-рішення: `07_01 §11` Investor Q&A (pitch/diligence — дім 00_01 vs новий pitch-doc неоднозначний); `07_03 §5` Anchor Assembly + `§6` Virtual Prototyping (operational/field-ops дім, наразі grant-bootstrap контекст — не чистий misplacement) | `07_01`, `07_03` | Призначити operational/pitch-дім + перенести (рішення founder) | 🟡 Deferred |
 | DOC-T.16 | **bare-§ після whole-doc-лінка** — форма `[NN_NN](Doc) §X` (канон = `[NN_NN §X](Doc)`, `00_06 §1`); **gate-TOLERATED**: ні `bare_section_ref` (лише code-span поза лінком), ні `crossref_label_form` (лише мітка href) його не ловлять. Campaign-wide — 13 лише в Module 01. | `docs/**` | NEW guard `section_ref_after_doclink` + 1-shot all-module normalize sweep (як crossref-кампанія R1–R3), **НЕ** piecemeal per-module | 🟡 Approved (founder 2026-06-13) |
-| DOC-T.23 | **00_07-wide STAGE/WHO re-audit** — пройти ВСІ items на свіжість STAGE (⚪🟡🟢🔗🌿) + WHO (🤖/👤); знайти де 🤖 може просунути 👤/🔗-item (machine-doable під-крок, схований у residual/прозі) | `00_07` | per-item STAGE+WHO re-verify + AI-advanceability pass (читати item BODIES, не лише WHO-теги) | 🟡 Queued (fresh session) |
-| DOC-T.24 | **Priorities re-audit + sort** — P0-P3 по §-секціях стейл/нерівні → переглянути пріоритети + відсортувати items за пріоритетом усередині КОЖНОЇ §-секції | `00_07` | per-section priority review (founder confirms P-levels) + sort items by priority | 🟡 Queued (fresh session) |
-| DOC-T.25 | **🚦 Dashboard refresh** — «Dashboard (за виконавцем)» може розійтися з поточними статусами/пріоритетами/owner | `00_07` (🚦 Dashboard) | rebuild Dashboard з поточних items (🤖/👤/🔗 buckets, P0/P1 топ) — after DOC-T.23/24 | 🟡 Queued (fresh session) |
 
 ## 📌 Backlog (не блокери · довгострокові)
 
@@ -1214,6 +1211,9 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 | HW.10 | PSM + eDRX idle-power for NB-IoT/LTE-M (`queen/main.c`) — resolved code-annotation | `03_02`, `02_05` |
 | INF.5 | `PROMETHEUS_ALLOWED_IPS` CIDR allowlist for /metrics — resolved code-annotation | `06_03`, `06_04` |
 | INF.7 | `ALLOY_CONFIG_BASE64` manual SDL deploy encoding — resolved code-annotation | `06_02` |
+| DOC-T.23 | STAGE/WHO re-audit (7 WHO fixes, open-work semantic) + meta-line form std (combo `🤖+👤`, no tails) + AI-advanceability (S6.20/E.41 advanced); NEW guard `meta_form_violations` HARD | `00_07`, `00_06 §3` |
+| DOC-T.24 | Priority re-assess (P1 73→59, un-flattened by TRL-horizon/blocking-impact) + stable in-section sort by priority (P0 gates surface on top); tools `tracker_set_meta.rb` + `tracker_sort.rb` | `00_07` |
+| DOC-T.25 | 🚦 Dashboard refreshed from current items (UNI.13/14 priority drift fixed; 🤖-note S6.20/E.41) — human-curated do-now roadmap kept; auto-render `Tracker::Dashboard.render` available if drift recurs | `00_07` |
 
 ---
 
