@@ -40,7 +40,7 @@ RSpec.describe FactoryFlashing::MasterKeySource do
   describe FactoryFlashing::MasterKeySource::BitwardenAdapter do
     it "raises NotImplementedError pointing at the design doc" do
       expect { described_class.new.fetch_master_key }
-        .to raise_error(NotImplementedError, /SEC\.3.*03_05/)
+        .to raise_error(NotImplementedError, /SEC\.3.*03_06/)
     end
   end
 
