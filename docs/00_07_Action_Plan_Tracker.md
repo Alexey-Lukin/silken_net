@@ -855,39 +855,53 @@
 
 #### BIZ.1 — 1 SCC = ? kg CO₂
 - **P2** · 👤 · 🟡 · → `07_01`, `05_03`
-- ✅ 2000 SCC = 1 tCO₂ (0.5 кг/SCC), carbon coefficient per-species. · [ ] 👤 сертифікація методології (Verra/Gold Standard, Post-TRL 7 → BIZ.9)
+- **Стан:** 2000 SCC = 1 tCO₂ (0.5 кг/SCC), carbon coefficient per-species — канон `07_01`, `05_03`.
+- [ ] 👤 сертифікація методології (Verra/Gold Standard, Post-TRL 7 → BIZ.9)
 
 #### BIZ.2 — B2B MSA (Master Service Agreement)
 - **P1** · 👤 · ⚪ · → `07_01`, `08_02 §5`
-- Партнер: СЄУ (Аблязов Д.Е., к.ю.н.). · [ ] 👤 юр-консультація (MiCA/ERC-3643/RWA) → MSA template (Term Sheet + Carbon Credit Purchase Agreement) → review практикуючим юристом
+- **Стан:** Не почато — B2B MSA template; партнер СЄУ (Аблязов Д.Е., к.ю.н.). Канон `07_01`, `08_02 §5`.
+- [ ] 👤 юр-консультація (MiCA/ERC-3643/RWA) → MSA template (Term Sheet + Carbon Credit Purchase Agreement) → review практикуючим юристом
 
 #### BIZ.3 — B2C ToS / Privacy Policy
 - **P2** · 👤 · ⚪ · → `07_01`
+- **Стан:** Не почато — B2C юр-документи (канон `07_01`).
 - [ ] 👤 ToS draft + Privacy Policy (GDPR) + Cookie Policy
 
 #### BIZ.6 — Supply chain war-zone risk mitigation
 - **P1** · 👤 · 🟡 · → `07_02 §8.1.1`
-- ✅ Contingency Plan EU Backup DMLS Hubs (4 кандидати; triggers; +~20% payback) — UA-підрядники у зоні бойових дій. · [ ] 👤 отримати quotes для порівняння (→ BIZ.8)
+- **Стан:** Contingency Plan EU Backup DMLS Hubs готовий (4 кандидати; triggers; +~20% payback) — UA-підрядники у зоні бойових дій. Канон `07_02 §8.1.1`.
+- [ ] 👤 отримати quotes для порівняння (→ BIZ.8)
 
 #### BIZ.8 — EU DMLS quotes → Frame Agreement (procurement track, extends BIZ.6)
 - **P1** · 👤 · ⚪ · → `07_02 §8.1.1`
-- BIZ.6 ✅ ідентифікував 4 EU кандидати (3D Lab PL, Materialise BE, Sauber/Lithoz, TRUMPF). · [ ] 👤 quotes у 3D Lab PL + Materialise BE → порівняльна таблиця (раніше OPS.5) · [ ] 👤 NDA+RFQ зі 3D Lab PL → sample part order (10 шт) quality benchmark → Frame Agreement (+20% premium, 30-day activation)
+- **Стан:** Не почато — BIZ.6 ✅ ідентифікував 4 EU кандидати (3D Lab PL, Materialise BE, Sauber/Lithoz, TRUMPF); procurement-трек до Frame Agreement. Канон `07_02 §8.1.1`.
+- [ ] 👤 quotes у 3D Lab PL + Materialise BE → порівняльна таблиця (раніше OPS.5)
+- [ ] 👤 NDA+RFQ зі 3D Lab PL → sample part order (10 шт) quality benchmark → Frame Agreement (+20% premium, 30-day activation)
 
 #### BIZ.9 — Незалежний carbon credit методолог (Verra/Gold Standard)
 - **P2** · 👤 · ⚪ · → `07_01 §3`, `07_02 §7.3`
-- Конвертація SCC utility-token → сертифіковані kg CO₂ для institutional buyers потребує independent methodology audit (Verra/Gold Standard/Puro.earth). · [ ] 👤 engagement methodologist (~$50-100k) → PDD у Verra · [ ] 🔗 залежить від HW.3 (Arrhenius) + UNI.6/UNI.7 (DFT+diffusion)
+- **Стан:** Не почато — конвертація SCC utility-token → сертифіковані kg CO₂ для institutional buyers потребує independent methodology audit (Verra/Gold Standard/Puro.earth). Канон `07_01 §3`, `07_02 §7.3`.
+- [ ] 👤 engagement methodologist (~$50-100k) → PDD у Verra
+- [ ] 🔗 залежить від HW.3 (Arrhenius) + UNI.6/UNI.7 (DFT+diffusion)
 
 #### BIZ.11 — RWA pilot реєстрація лісової ділянки через Polygon Hadron
 - **P2** · 🤖+👤 · ⚪ · → `07_01 §8`
-- Hadron (ERC-3643) RWA-pilot: 1 ділянка з кадастром + biomass appraisal (LIDAR+ground) + Hadron compliance. · [ ] 👤 партнер-лісокористувач (post-war/Carpathian) + кадастр/biomass appraisal · [ ] 🤖 `Hadron::TokenizeForestPlotService` + KYC flow spec · [ ] 🔗 після BIZ.2 (MSA)
+- **Стан:** Не почато — Hadron (ERC-3643) RWA-pilot: 1 ділянка з кадастром + biomass appraisal (LIDAR+ground) + Hadron compliance. Канон `07_01 §8`.
+- [ ] 👤 партнер-лісокористувач (post-war/Carpathian) + кадастр/biomass appraisal
+- [ ] 🤖 `Hadron::TokenizeForestPlotService` + KYC flow spec
+- [ ] 🔗 після BIZ.2 (MSA)
 
 #### BIZ.14 — SFC Vote-Escrow during breach→slash lag (07_01 SFC vote-escrow residual)
 - **P3** · 🤖 · 🟢 · → `07_01 §8`
-- ✅ Core закрито: `SilkenForestCoin.slash()` (SLASHER_ROLE) зменшує voting power при slashing → атака «купити SFC + навмисне порушення NaaS» неможлива. 🟡 Residual: ~1–5 хв lag (`web3_critical` черга) між SCC-slash і SFC-slash — у вікні учасник технічно ще може проголосувати. · [ ] 🔗 Vote-Escrow (veToken) при `breached`-контрактах — опціонально, gated на повний DAO governance launch (BIZ.4)
+- **Стан:** Core закрито — `SilkenForestCoin.slash()` (SLASHER_ROLE) зменшує voting power при slashing → атака «купити SFC + навмисне порушення NaaS» неможлива. Residual: ~1–5 хв lag (`web3_critical` черга) між SCC-slash і SFC-slash — у вікні учасник технічно ще може проголосувати. Канон `07_01 §8`.
+- [ ] 🔗 Vote-Escrow (veToken) при `breached`-контрактах — опціонально, gated на повний DAO governance launch (BIZ.4)
 
 #### BIZ.15 — B2B Fiat-to-Retirement SPV (corporate carbon on-ramp)
 - **P2** · 👤 · ⚪ · → `07_01 §8`
-- Корпорації з ESG-зобов'язаннями не триматимуть крипту/ключі заради ретайрменту — потрібен SPV-міст: фіат → SPV купує+ретайрить SCC → сертифікат офсету (CBAM/ISO 14064). Поточний `KlimaRetirementWorker` припускає, що клієнт уже on-chain власник SCC (нот.19). · [ ] 👤 юрисдикція SPV + ліцензія на вуглецеві активи + кастодіан крипти (СЄУ Аблязов Д., RWA/MiCA — `08_02 §5`) · [ ] 👤 бухгалтерська класифікація + сертифікат-флоу (СЄУ Ус Г.)
+- **Стан:** Не почато — корпорації з ESG-зобов'язаннями не триматимуть крипту/ключі заради ретайрменту → потрібен SPV-міст: фіат → SPV купує+ретайрить SCC → сертифікат офсету (CBAM/ISO 14064). Поточний `KlimaRetirementWorker` припускає, що клієнт уже on-chain власник SCC (нот.19). Канон `07_01 §8`.
+- [ ] 👤 юрисдикція SPV + ліцензія на вуглецеві активи + кастодіан крипти (СЄУ Аблязов Д., RWA/MiCA — `08_02 §5`)
+- [ ] 👤 бухгалтерська класифікація + сертифікат-флоу (СЄУ Ус Г.)
 
 ## §08 · Академічна інтеграція + External Stakeholders
 
