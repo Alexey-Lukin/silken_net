@@ -659,23 +659,28 @@
 
 #### E.65 — `piezo_voltage_mv`: фантомний продакшн-шлях (сейсміка)
 - **P3** · 👤 · ⚪ · → [`04_01 §3`](04_01_Data_Models_and_Entities)
-- Колонка в усіх партиціях + btree-індекс `idx_telemetry_logs_piezo_created` + скоуп `seismic_activity (> 1500)` + рядок у `04_01` — але жоден wire-формат (21B/CCM) не несе piezo і жоден код не пише колонку → скоуп вічно порожній, індекс індексує NULL-и. П'єзо в залізі реальне ([`02_01 §3`](02_01_Hardware_Architecture_and_BOM) BOM), але його роль — акустичний тригер TinyML (audio path), не окреме mV-поле телеметрії. · [ ] 👤 рішення: reserved-під-майбутній-сенсорний-фрейм (тоді лишити + чесна примітка) vs прибрати скоуп+індекс+колонку до появи реального wire-поля
+- **Стан:** Не розпочато — `piezo_voltage_mv` фантомна: колонка (всі партиції, `structure.sql`) + btree-індекс `idx_telemetry_logs_piezo_created` + скоуп `seismic_activity(>1500)` (`telemetry_log.rb`) існують, але жоден wire-формат (21B/CCM) не несе piezo і жоден код не пише колонку → скоуп вічно порожній, індекс на NULL-ах. П'єзо в залізі реальне ([`02_01 §3`](02_01_Hardware_Architecture_and_BOM)), але роль — акустичний тригер TinyML, не mV-поле. Канон [`04_01 §3`](04_01_Data_Models_and_Entities).
+- [ ] 👤 рішення: reserved-під-майбутній-сенсорний-фрейм (лишити + чесна примітка) vs прибрати скоуп+індекс+колонку до появи реального wire-поля
 
 #### S6.1 — Redis SPOF для M2M автентифікації
 - **P1** · 👤 · 🟢 · → `04_03`
-- ✅ graceful degradation (Redis down → DB-backed nonce, TTL 10хв) + тести. · [ ] 👤 верифікувати Upstash multi-zone replication у production
+- **Стан:** Graceful degradation реалізовано — Redis down → DB-backed nonce (Solid Cache, TTL 10хв), шлюзи не отримують 503 (`m2m_auth_controller` [S6.1] + spec). Канон `04_03` (replay-nonce M2M).
+- [ ] 👤 верифікувати Upstash multi-zone replication у production
 
 #### S6.10 — MaintenanceRecord — лише лог
 - **P3** · 🤖 · 🔗 · → `04_02 §Forester Guild`
-- ✅ архітектурний дизайн task-assignment (bounty, scoring, `FOR UPDATE NOWAIT`, GPS/EXIF/IPFS→USDC, anti-Sybil). · [ ] 🔗 зв'язати з Forester Guild PoPhW (E.20)
+- **Стан:** Архітектурний дизайн готовий — task-assignment matching ranger↔bounty (scoring, `FOR UPDATE NOWAIT`, GPS/EXIF/IPFS→USDC, anti-Sybil). Заблоковано на Forester Guild PoPhW (E.20). Канон `04_02 §Forester Guild`.
+- [ ] 🔗 зв'язати з Forester Guild PoPhW (E.20)
 
 #### S6.14 — peaq_signing_key: відсутня rotation policy
 - **P2** · 👤 · 🟡 · → `04_02 §S6.14`, `06_04 §5.4`
-- ✅ rotation policy (dual-key 72h, 90д) + emergency revocation runbook. · [ ] 👤 vault-store production `peaq_signing_key`
+- **Стан:** Rotation policy готова — dual-key grace 72h + планова ротація 90д + emergency revocation runbook. Лишається vault-store production-ключа. Канон `04_02 §S6.14`, `06_04 §5.4`.
+- [ ] 👤 vault-store production `peaq_signing_key`
 
 #### S6.20 — Два воркери без cron у `config/sidekiq.yml` (doc-ahead-of-code)
 - **P2** · 👤 · ⚪ · → [`04_02 §11`](04_02_Business_Logic_and_Services)
-- [`04_02 §11`](04_02_Business_Logic_and_Services) описує два воркери як cron-driven, але запису в `config/sidekiq.yml` немає → жоден шлях їх не кличе: (1) **`ClusterEntropyAnalyzerWorker`** — `silkennet_cluster_entropy_score` gauge ніколи не оновлюється → `entropy_anomaly`-алерти не спрацьовують; потрібен orchestrator-воркер (`Cluster.find_each` → `perform_async(cluster_id)`). (2) **`InsurancePayoutWorker`** — `:triggered`-страховки залипають назавжди (якщо `Dclimate::VerificationService` enqueue впав / 10 retry вичерпались) → кошти не доходять до постраждалої org; потрібен sweep-воркер по `ParametricInsurance.status_triggered`. · [ ] 👤 додати cron/orchestrator для обох (або, якщо trigger лишається ручним, прибрати «cron»-формулювання з §11)
+- **Стан:** Не розпочато (doc-ahead-of-code) — `04_02 §11` описує два воркери як cron-driven, але обох немає в `config/sidekiq.yml` (verified): (1) **`ClusterEntropyAnalyzerWorker`** — `silkennet_cluster_entropy_score` gauge ніколи не оновлюється → `entropy_anomaly`-алерти мертві (потрібен orchestrator `Cluster.find_each → perform_async`); (2) **`InsurancePayoutWorker`** — `:triggered`-страховки залипають назавжди (якщо `Dclimate::VerificationService` enqueue впав) → кошти не доходять (потрібен sweep по `ParametricInsurance.status_triggered`). Канон [`04_02 §11`](04_02_Business_Logic_and_Services).
+- [ ] 👤 додати cron/orchestrator для обох (або, якщо trigger ручний, прибрати «cron»-формулювання з §11)
 
 #### TEST.1 — Test coverage: RSpec gate raised; Solidity/firmware tracked
 - **P2** · 🤖 · 🟢 · → `04_06 §B.1`
