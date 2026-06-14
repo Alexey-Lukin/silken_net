@@ -971,7 +971,7 @@ governance-treasury / ключі / raw-дані — вище).
 
 | Експертиза кафедри | Конкретне завдання Silken Net | Cross-ref |
 |---------------------|-------------------------------|-----------|
-| Правова архітектура **RWA-токенізації** (Real-World Assets) під українським законодавством | Як зареєструвати лісову ділянку (державний ПЗФ або приватне лісокористування) як `hadron_asset_id` для ERC-3643 без конфлікту з Лісовим Кодексом України та Законом «Про природно-заповідний фонд»? | [`07_01` — BLOCKER-6](07_01_Nature_as_a_Service_Contracts) (RWA реєстрація-process не відпрацьований) |
+| Правова архітектура **RWA-токенізації** (Real-World Assets) під українським законодавством | Як зареєструвати лісову ділянку (державний ПЗФ або приватне лісокористування) як `hadron_asset_id` для ERC-3643 без конфлікту з Лісовим Кодексом України та Законом «Про природно-заповідний фонд»? | [`00_07` — BIZ.11](00_07_Action_Plan_Tracker) (RWA реєстрація-process не відпрацьований) |
 | Юридична експертиза **токеноміки** (SCC/SFC) на відповідність UA-режиму віртуальних активів (Закон «Про віртуальні активи» 2022 + MiCA-imports 2024) | Чи є SCC utility token чи security token? Які KYC-вимоги до wallet holders для UA-резидентів? Як корелює `dynamic_tax` з UA tax law? | [`05_03` — Tokenomics](05_03_Tokenomics_SCC_and_SFC), [`08_02 §5` СЄУ Аблязов Д.] |
 | Цивільно-правові аспекти **NaaS-контрактів** (Nature-as-a-Service) | Юридична природа NaaS-контракту: чи це договір про надання послуг, чи новий sui generis вид? Як корелює `parametric_insurance` з UA Civil Code? | [`07_01` — NaaS Contracts](07_01_Nature_as_a_Service_Contracts) |
 | Авторське право на **Lorenz / `bio_contract.rb` / `attractor.rb`** | Основа **enforcement AGPL-копілефту** (не пропрієтарність) у UA-режимі — щоб копілефт був дієвим | §2 (стовп 2) |
@@ -985,7 +985,7 @@ governance-treasury / ключі / raw-дані — вище).
 | 2 | Prior-art landscape (TISC) | 🤖 TISC + 👤 | новизна для Статті 1 + нема блокуючого патенту (анти-захоплення) → [`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md) |
 | 3 | Публікація disclosure (TDCommons) + застосувати LICENSE-файли | 👤 + 🤖 | prior art зафіксовано → [`defensive_disclosure.md`](protocols/anchor/defensive_disclosure.md) |
 | 4 | Заявка на торгові марки (SilkenNet™ / GaiaNexus™ / SCC™) | 👤 повірений + TISC | зареєстровані ™ |
-| 5 | Юр-review Кафедри ІВ (open-license + RWA + SCC + NaaS + AF3) | 👤 Кафедра ІВ + Аблязов / Чудаєва | меморандуми → розблок [`07_01` — BLOCKER-6](07_01_Nature_as_a_Service_Contracts), [`05_03`](05_03_Tokenomics_SCC_and_SFC), [`08_02 §5`](08_02_Academic_Institutions_Registry) |
+| 5 | Юр-review Кафедри ІВ (open-license + RWA + SCC + NaaS + AF3) | 👤 Кафедра ІВ + Аблязов / Чудаєва | меморандуми → розблок [`00_07` — BIZ.11](00_07_Action_Plan_Tracker) (07_01 RWA), [`05_03`](05_03_Tokenomics_SCC_and_SFC), [`08_02 §5`](08_02_Academic_Institutions_Registry) |
 | 6 | Сабміт Статті 1 (вже unblocked — publish-to-protect) | 👤 | подано до журналу |
 
 ---
