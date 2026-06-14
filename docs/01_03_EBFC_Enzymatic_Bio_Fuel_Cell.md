@@ -18,8 +18,7 @@
 | [`01_01` — Coaxial Gyroid Topology and PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Геометрія гіроїда (носій ферментів) |
 | [`01_02` — Ti 6Al 4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Фізичний носій Ti-6Al-4V, поверхня (EAAE) |
 | [`01_04` — CODIT and Xylemointegration](01_04_CODIT_and_Xylemointegration) | Ксилемна реакція дерева; §4 PTFE-GDL (катод anti-flooding) |
-| [`02_03` — BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power) | Електричний приймач (MPPT boost) |
-| [`02_04` — EDLC Supercapacitor Buffer](02_04_EDLC_Supercapacitor_Buffer) | Буфер енергії (EDLC 0.47F) |
+| [`02_03` — BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power) | Електричний приймач (MPPT boost) + буфер EDLC 0.47F (§12) |
 | [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | Біохімічна валідація ферментів (ЧМА) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.5 enzyme/ZIF stack, HW.6 membrane/resin barrier, HW.24 Ti-coin |
 

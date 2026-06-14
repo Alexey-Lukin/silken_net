@@ -357,12 +357,12 @@
 - [ ] 🔗 Додати co-processor firmware до `firmware/`
 
 #### HW.19 — VOC-діагностика деградації конденсатора (ADS1220 + TPS22860)
-- **P2** · 👤 · → `02_04 §4.2`
+- **P2** · 👤 · → `02_03 §12.4.2`
 - **Опис:** Раз на добу вимірювати чисту VOC EBFC (при від'єднаному навантаженні) для розрізнення "дерево хворіє" vs "конденсатор деградує". Обидва стани проявляються як зростання delta_t. ADS1220 (24-bit ADC) + TPS22860 (load switch) для прецизійного duty-cycling вимірювання. Для TRL 6 достатньо вбудованого 12-біт ADC STM32
 - **Пріоритет:** TRL 8+ (після базової валідації в полі)
 - [ ] 🤖 Валідувати концепт на вбудованому 12-біт ADC (firmware: GPIO disconnect EDLC → measure VOC → reconnect)
 - [ ] 👤 Якщо 12-біт недостатньо — додати ADS1220 + TPS22860 до BOM
-- ✅ Зроблено (🤖 verify, 2026-05-29): DCI-safe дизайн зафіксовано → `02_04 §4.2`. Попереднє «корекція моделі Лоренца» **зламало б DCI** (server-Z ≠ device-Z, бо firmware VOC не має → fraud-flag на кожному пакеті). Корекція має жити на slashing-шарі, не в Z.
+- ✅ Зроблено (🤖 verify, 2026-05-29): DCI-safe дизайн зафіксовано → `02_03 §12.4.2`. Попереднє «корекція моделі Лоренца» **зламало б DCI** (server-Z ≠ device-Z, бо firmware VOC не має → fraud-flag на кожному пакеті). Корекція має жити на slashing-шарі, не в Z.
 - [ ] 🤖 Backend (gated): `voc_mv` колонка + VOC-корекція у `ContractHealthCheckService` (виключити hardware-confounded дерева зі slashing-підрахунку), **НЕ в `Attractor`**. Чекає firmware VOC-вимір + delivery-контракт.
 
 #### HW.20 — Buffer Cap: Tantalum → MLCC migration

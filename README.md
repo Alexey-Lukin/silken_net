@@ -277,8 +277,7 @@ kamal deploy
 **Апаратне Забезпечення (Модуль 02)**
 - [`02_01`](docs/02_01_Hardware_Architecture_and_BOM.md) — BOM та архітектура Солдата
 - [`02_02`](docs/02_02_Blind_Mate_Pogo_Pin_Interface.md) — сліпий з'єднувач Pogo Pin
-- [`02_03`](docs/02_03_BQ25570_MPPT_Nano_Power.md) — BQ25570 MPPT та нано-менеджмент живлення
-- [`02_04`](docs/02_04_EDLC_Supercapacitor_Buffer.md) — буфер суперконденсатора EDLC 0.47Ф
+- [`02_03`](docs/02_03_BQ25570_MPPT_Nano_Power.md) — BQ25570 MPPT, нано-менеджмент живлення + EDLC-буфер 0.47Ф (§12)
 - [`02_05`](docs/02_05_Queen_Hardware_and_Starlink.md) — шлюз Королева + Starlink/LTE
 
 **Прошивка та Edge AI (Модуль 03)**

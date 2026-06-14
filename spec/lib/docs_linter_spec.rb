@@ -518,7 +518,7 @@ RSpec.describe DocsLinter do
 
     it "flags every bare ref on a line (multiple per line)" do
       expect(described_class.bare_section_ref(
-        "05_05_Slashing", "інваріант `02_01 §3.4` + сестра `02_04 §4.2`\n").size).to eq(2)
+        "05_05_Slashing", "інваріант `02_01 §3.4` + сестра `02_03 §12.4.2`\n").size).to eq(2)
     end
 
     it "exempts the index, the standard-owner, the tracker, and appendix docs" do

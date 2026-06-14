@@ -458,8 +458,7 @@ PCBA + Збірка (Черкаси — SVS-ARTA)
 |---|---|
 | [`02_01`](02_01_Hardware_Architecture_and_BOM) | Детальний технічний BOM + RF & Antenna Subsystem (EDR-02-01-RF) |
 | [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface) | Механіка Pogo Pin з'єднання анкер ↔ PCBA |
-| [`02_03`](02_03_BQ25570_MPPT_Nano_Power) | Розрахунки MPPT і живлення від EBFC |
-| [`02_04`](02_04_EDLC_Supercapacitor_Buffer) | Розрахунки іоністора 0.47 F |
+| [`02_03`](02_03_BQ25570_MPPT_Nano_Power) | Розрахунки MPPT і живлення від EBFC + EDLC іоністор 0.47 F (§12) |
 | [`02_05`](02_05_Queen_Hardware_and_Starlink) | Queen CAPEX та Starlink Mother Gateway |
 | [`05_03`](05_03_Tokenomics_SCC_and_SFC) | Механізм мінтингу SCC, Proof of Growth (10k growth_points = 1 SCC) |
 | [`07_01`](07_01_Nature_as_a_Service_Contracts) | Юридична модель NaaS |

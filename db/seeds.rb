@@ -73,7 +73,7 @@ system_params = [
   { key: "fire_confidence_threshold", value: "50", value_type: "integer", category: "alerts",
     min_value: 20, max_value: 100, description: "Minimum satellite fire detection confidence (%)" },
 
-  # --- Hardware (02_03, 02_04) ---
+  # --- Hardware (02_03) ---
   { key: "vcap_min_mv", value: "2800", value_type: "integer", category: "hardware",
     min_value: 2000, max_value: 3500, description: "Minimum supercap voltage (mV)" },
   { key: "vcap_max_mv", value: "5500", value_type: "integer", category: "hardware",

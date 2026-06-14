@@ -98,7 +98,7 @@
 
 > ⚠️ **Compute Budget Paradox — L1 не "self-evolves" фізично.** Стовпчик «Виклики на STM32WLE5JC» вище **не** є інженерним планом запуску GA/RL/online-backprop на Soldier — це інвентаризація причин, **чому це неможливо** у поточному hardware envelope:
 >
-> - **mini-GA (4 candidate sets × multi-epoch fitness):** кожна fitness-епоха = повний цикл sense+Lorenz+TX (≈58 мДж/cycle, [`02_03 §9.4`](02_03_BQ25570_MPPT_Nano_Power)). 10 generations/тиждень × 4 candidates × 58 мДж = **2.3 Дж/тиждень додатково** при загальному робочому вікні supercap **3.87 Дж** ([`02_04 §1`](02_04_EDLC_Supercapacitor_Buffer)). → Перевищує бюджет у 4-6× після врахування sleep drain.
+> - **mini-GA (4 candidate sets × multi-epoch fitness):** кожна fitness-епоха = повний цикл sense+Lorenz+TX (≈58 мДж/cycle, [`02_03 §9.4`](02_03_BQ25570_MPPT_Nano_Power)). 10 generations/тиждень × 4 candidates × 58 мДж = **2.3 Дж/тиждень додатково** при загальному робочому вікні supercap **3.87 Дж** ([`02_03 §8`](02_03_BQ25570_MPPT_Nano_Power)). → Перевищує бюджет у 4-6× після врахування sleep drain.
 > - **Tabular Q-learning (12-state × 4-action):** сам lookup дешевий, але **reward сигнал = "days-to-next-VBAT_OK"** вимагає тижневих епізодів — ε-greedy exploration з 0.1 ймовірністю "sample_extra" з'їсть весь energy headroom Сценарію C (+1.4 мДж/год).
 > - **TinyML on-device incremental learning:** full backprop на Cortex-M4 без AI-accelerator потребує seconds × 12 mA, що **гарантовано brownout**.
 >
