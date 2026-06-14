@@ -666,7 +666,7 @@
 #### E.41 — Fire-event 48h latency (dClimate obscuration) → immediate-broadcast fallback
 - **P1** · 🤖+👤 · 🟡 · → `04_02`, `05_01`
 - **Стан:** ⚠️ Life-safety — dClimate satellite fire-events можуть запізнюватись ~48h (хмарна обструкція). Первинна мітигація ✅ зашита: edge chainsaw→panic-TX негайний broadcast (`03_03`/`03_01`, `PANIC_TTL=5`, `Trigger_Emergency_LoRa_TX` — urgent шлях НЕ чекає dClimate). Вторинна: Forester Guild fallback-oracle = E.20 (Post-TRL 6). P1 — не відкладати на Post-TRL 6. Канон `04_02` (AlertNotification/EWS), `05_01` (dClimate).
-- [ ] 🤖 verify backend EWS fire-alert routing не гейтить на satellite clearance (chainsaw → immediate-alert path)
+- [x] 🤖 verified — backend fire-alert dispatch негайний (`AlertDispatchService#create_and_dispatch_alert!` → `EwsAlert` + `EmergencyResponseService`); єдині гейти = Redis silence (5хв debounce) + SEC.10 per-DID rate-limit, **НЕ** satellite. dClimate-clearance гейтить лише ВИПЛАТУ (`InsurancePayoutWorker#satellite_verification_pending?`), не тривогу → fire-response не залежить від 48h супутникового лагу
 - [ ] 🔗 Forester Guild fallback-oracle (E.20, Post-TRL 6)
 
 #### S6.14 — peaq_signing_key: відсутня rotation policy
