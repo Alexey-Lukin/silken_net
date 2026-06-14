@@ -26,7 +26,7 @@
 | [`02_02` — Blind Mate Pogo Pin Interface](02_02_Blind_Mate_Pogo_Pin_Interface) | Pogo R_interface (§3.5 Z-stack; cold-start contact) |
 | [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | BioContract: `delta_t` заряду EDLC → growth_points (§12.3) |
 | [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | Споживач (STM32; wake = RTC-WUT, VBAT_OK = живлення-гейт) |
-| [`02_06` — Legacy Breadboard Appendix](02_06_Legacy_Breadboard_Appendix) | Legacy LTC3108 breadboard прототип |
+| [`02_04` — Legacy Breadboard Appendix](02_04_Legacy_Breadboard_Appendix) | Legacy LTC3108 breadboard прототип |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.7 resistors, HW.13 MPPT/R_int |
 
 ## 📑 Зміст
@@ -54,11 +54,11 @@
 
 Мікросхема BQ25570 — це надпотужний менеджер живлення, але вона має **фундаментальне обмеження**: для самостійного запуску (Cold Start) їй необхідна вхідна напруга не менше **330 мВ** та струм не менше 15 мкА.
 
-> 📦 **Історична нота (артефакт → [`02_06`](02_06_Legacy_Breadboard_Appendix)):** рання версія припускала, що ксилемний потоковий потенціал дає лише ~**44 мВ** (макет з імітатором — дільник 3.3 кОм/100 Ом від AA), ~7.5× менше за поріг cold-start. Ця гіпотеза **відкинута з EBFC Gen 2.0**; повний опис того breadboard — у legacy-додатку, тут не дублюється.
+> 📦 **Історична нота (артефакт → [`02_04`](02_04_Legacy_Breadboard_Appendix)):** рання версія припускала, що ксилемний потоковий потенціал дає лише ~**44 мВ** (макет з імітатором — дільник 3.3 кОм/100 Ом від AA), ~7.5× менше за поріг cold-start. Ця гіпотеза **відкинута з EBFC Gen 2.0**; повний опис того breadboard — у legacy-додатку, тут не дублюється.
 
-### 1.2. Первісне Рішення: Каскад LTC3108 → BQ25570 (артефакт → 02_06)
+### 1.2. Первісне Рішення: Каскад LTC3108 → BQ25570 (артефакт → 02_04)
 
-> 📦 Рання архітектура долала cold-start каскадом **LTC3108** (осцилятор Майснера: трансформатор 1:100 + 330 пФ, старт від ~20 мВ) перед BQ25570. Повний опис того breadboard-каскаду — схема, піни, повний перелік недоліків — живе у legacy-додатку [`02_06`](02_06_Legacy_Breadboard_Appendix); тут **не дублюється** (Ruthless Pruning, [`00_06 §4`](00_06_SSOT_Documentation_Standard)). Стисло про мотивацію пів'оту: +2 компоненти (трансформатор + LTC3108), нижчий загальний ККД, +~40% площі плати, складніша збірка.
+> 📦 Рання архітектура долала cold-start каскадом **LTC3108** (осцилятор Майснера: трансформатор 1:100 + 330 пФ, старт від ~20 мВ) перед BQ25570. Повний опис того breadboard-каскаду — схема, піни, повний перелік недоліків — живе у legacy-додатку [`02_04`](02_04_Legacy_Breadboard_Appendix); тут **не дублюється** (Ruthless Pruning, [`00_06 §4`](00_06_SSOT_Documentation_Standard)). Стисло про мотивацію пів'оту: +2 компоненти (трансформатор + LTC3108), нижчий загальний ККД, +~40% площі плати, складніша збірка.
 
 ### 1.3. Архітектурний Пів'от
 
@@ -678,7 +678,7 @@ EBFC (Ti-6Al-4V anchor)  >500 мВ
 
 Для студентських лабораторних робіт (ЧНУ, демонстрація принципу 44мВ→3.3V) — окремий навчальний breadboard на LTC3108 + AA + Coilcraft xfmr — задокументовано в окремому додатку:
 
-→ **[`02_06` — Legacy Breadboard Appendix](02_06_Legacy_Breadboard_Appendix)** (legacy LTC3108-based, 44 мВ симулятор, тільки для освіти)
+→ **[`02_04` — Legacy Breadboard Appendix](02_04_Legacy_Breadboard_Appendix)** (legacy LTC3108-based, 44 мВ симулятор, тільки для освіти)
 
 ### 10.4. Тестовий Запуск з Реальним EBFC
 

@@ -125,7 +125,7 @@ RSpec.describe DocsLinter do
       bare = "## 🎯 Мета\n"
       expect(described_class.conformance_violations("00_00_SSOT_Index", bare)).to be_empty
       expect(described_class.conformance_violations("00_07_Action_Plan_Tracker", bare)).to be_empty
-      expect(described_class.conformance_violations("02_06_Legacy_Breadboard_Appendix", bare)).to be_empty
+      expect(described_class.conformance_violations("02_04_Legacy_Breadboard_Appendix", bare)).to be_empty
     end
 
     it "ignores non-canon filenames (README, etc.)" do
@@ -340,12 +340,12 @@ RSpec.describe DocsLinter do
       expect(described_class.ai_vendor_name_drift("01_02_Ti", row)).not_to be_empty
     end
 
-    it "exempts the owner 00_02, the standard 00_06, the tracker 00_07 and legacy 02_06" do
+    it "exempts the owner 00_02, the standard 00_06, the tracker 00_07 and legacy 02_04" do
       line = "frontier-LLM: Gemini · coding-agent: Cursor / Copilot\n"
       expect(described_class.ai_vendor_name_drift("00_02_AI_Native", line)).to be_empty
       expect(described_class.ai_vendor_name_drift("00_06_SSOT_Documentation_Standard", line)).to be_empty
       expect(described_class.ai_vendor_name_drift("00_07_Action_Plan_Tracker", line)).to be_empty
-      expect(described_class.ai_vendor_name_drift("02_06_Legacy_Breadboard", line)).to be_empty
+      expect(described_class.ai_vendor_name_drift("02_04_Legacy_Breadboard", line)).to be_empty
     end
 
     it "does not flag a labelled mirror or a line referencing the 00_02 home" do
@@ -373,7 +373,7 @@ RSpec.describe DocsLinter do
     end
 
     it "exempts the legacy-appendix + meta docs (they may name retired things)" do
-      expect(described_class.deprecated_terms("02_06", "legacy ZP-3 + silkennet-v1-aes256")).to be_empty
+      expect(described_class.deprecated_terms("02_04", "legacy ZP-3 + silkennet-v1-aes256")).to be_empty
       expect(described_class.deprecated_terms("00_06", "example token ZP-3")).to be_empty
       expect(described_class.deprecated_terms("00_07", "migrate-from ZP-3 baseline")).to be_empty
     end
@@ -525,7 +525,7 @@ RSpec.describe DocsLinter do
       expect(described_class.bare_section_ref("00_00_SSOT_Index", "`05_05 §3`\n")).to be_empty
       expect(described_class.bare_section_ref("00_06_SSOT_Documentation_Standard", "| AES | `03_05 §3.7` |\n")).to be_empty
       expect(described_class.bare_section_ref("00_07_Action_Plan_Tracker", "- **P0** · → `05_05 §3`\n")).to be_empty
-      expect(described_class.bare_section_ref("02_06_Legacy_Breadboard_Appendix", "`02_03 §9`\n")).to be_empty
+      expect(described_class.bare_section_ref("02_04_Legacy_Breadboard_Appendix", "`02_03 §9`\n")).to be_empty
     end
   end
 
@@ -560,7 +560,7 @@ RSpec.describe DocsLinter do
 
     it "exempts index / standard-owner / tracker / appendix / manifesto" do
       %w[00_00_SSOT_Index 00_06_SSOT_Documentation_Standard 00_07_Action_Plan_Tracker
-         02_06_Legacy_Breadboard_Appendix manifest].each do |b|
+         02_04_Legacy_Breadboard_Appendix manifest].each do |b|
         expect(described_class.bare_doc_ref(b, "`06_07`\n", ids)).to be_empty
       end
     end

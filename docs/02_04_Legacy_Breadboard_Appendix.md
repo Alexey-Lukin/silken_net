@@ -1,4 +1,4 @@
-# 02_03 Appendix — Legacy Breadboard Prototype з LTC3108 + 44 мВ Симулятором
+# 02_04: Legacy Breadboard Appendix (Додаток до 02_03) — LTC3108 + 44 мВ Симулятор
 
 > **⚠️ LEGACY DOCUMENT — НЕ ВИРОБНИЧА АРХІТЕКТУРА.**
 >

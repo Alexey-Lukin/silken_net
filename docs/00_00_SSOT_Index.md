@@ -102,8 +102,8 @@ _Електроніка Soldier/Queen, енергетичні буфери, ме
 - [`02_01` — Hardware Architecture and BOM](02_01_Hardware_Architecture_and_BOM) (BOM капсули Солдата + ASCII power tree)
 - [`02_02` — Blind Mate Pogo Pin Interface](02_02_Blind_Mate_Pogo_Pin_Interface) (Сліпий магнітний конектор Pogo-Pin до коаксіального анкера)
 - [`02_03` — BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power) (BQ25570 MPPT нано-потужність + пряме живлення від EBFC + EDLC-буфер іоністор 0.47Ф / 5.5В §12)
+- [`02_04` — Legacy Breadboard Appendix](02_04_Legacy_Breadboard_Appendix) (📦 Архів: legacy LTC3108 breadboard-прототип — НЕ виробнича архітектура)
 - [`02_05` — Queen Hardware and Starlink](02_05_Queen_Hardware_and_Starlink) (Шлюз Королева + SIM7070G + Starlink Direct-to-Cell)
-- [`02_06` — Legacy Breadboard Appendix](02_06_Legacy_Breadboard_Appendix) (📦 Архів: legacy LTC3108 breadboard-прототип — НЕ виробнича архітектура)
 
 ## 🧠 Модуль 03: Прошивка та Edge AI (The Brain)
 

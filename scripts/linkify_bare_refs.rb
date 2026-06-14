@@ -53,7 +53,7 @@ def href_for(target_file, docs_dir, full)
   depth.zero? ? full : ("../" * depth + full + ".md")
 end
 
-EXEMPT = /\A00_00_|\A00_06_|\A00_07_|\A02_06_|_appendix_|\Amanifest/
+EXEMPT = /\A00_00_|\A00_06_|\A00_07_|\A02_04_|_appendix_|\Amanifest/
 # code-span (not a link label) `NN_NN`, with an optional § EITHER inside the code-span
 # (`NN_NN §X`) OR trailing after it (`NN_NN` §X). g2=NN_NN, g4=inside-§, g5=outside-§.
 SPAN = /(?<!\[)`(docs\/)?(\d\d_\d\d)(_[A-Za-z0-9_]+)?(?:[ \t]*§[ \t]*([0-9A-Za-zА-Яа-яІіЇїЄє.\-]+))?`(?:[ \t]*§[ \t]*([0-9A-Za-zА-Яа-яІіЇїЄє.\-]+))?/
