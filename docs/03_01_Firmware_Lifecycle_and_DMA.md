@@ -457,6 +457,9 @@ if (!mrb->exc) {
     mrb->exc = NULL;
 }
 mrb_gc_arena_restore(mrb, arena_idx);     // Відновлюємо GC arena
+mrb_full_gc(mrb);                         // [FW.55] VM вічна → повний GC щопробудження:
+                                          // купа до живого мінімуму ДО сну (не reactive
+                                          // OOM→GC→retry). Деталь WHY — коментар main.c + §12.7
 ```
 
 **Вибір байт-коду при старті:**
