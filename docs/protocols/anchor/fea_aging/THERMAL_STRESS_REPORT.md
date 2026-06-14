@@ -67,7 +67,7 @@ At -30°C (ΔT=50K), r=8mm: loss = **15.4 µm** → effective interference = 50 
 ## Remaining Tasks
 
 - [ ] **Prony-series stress-relaxation fit** for PEEK 450G (Maxwell-Wiechert) — replaces the 2-term E∞/τ estimate (школа Гусака, `08_01 Стаття 2`).
-- [ ] FEA (CalculiX): stress concentration at annular barb tips.
+- [ ] Barb-tip stress-concentration FEA → школа Гусака (heavy mesh-FEA outsourced, `00_02 §4a`; the axisymmetric stress is already solved analytically above — no in-house mesh-FEA).
 - [ ] **MD ion-permeation** of Ti²⁺/V³⁺ through PEEK matrix via MSD (classical MD, like script 13 for glucose) — NOT DFT (DFT can't model macroscopic diffusion; only single-jump barriers via NEB).
 
 ## Cross-References

@@ -132,7 +132,7 @@
 
 #### HW.1 — nTop model → SLM+HIP factory (Anode Zone 1)
 - **P0** · 👤 · ⚪ · → `01_01`, `01_02 §1.7` · ✅ ліцензія отримана
-- **Стан:** Не розпочато — фабрична генерація тризонного анкера: Zone 1 (анод-гіроїд) SLM+HIP, Zone 3 (катод-фланець) SLM/EBM, Zone 2 (PEEK) CNC + annealing 200–250°C. Канон `01_01 §1/§5.5`, `01_02 §1.6/§1.7/§3.6`.
+- **Стан:** Не розпочато — фабрична генерація тризонного анкера: Zone 1 (анод-гіроїд) SLM+HIP, Zone 3 (катод-фланець) SLM/EBM, Zone 2 (PEEK) CNC + annealing 200–250°C. Канон `01_01 §1/§5.5`, `01_02 §1.6/§1.7/§3.6`. Паралельний code-as-CAD трек **PicoGK** (AI-агент-сумісна альтернатива nTop GUI, Git-friendly SDF; стек/переваги/псевдокод → `01_02 §6`).
 - [ ] 👤 Генерація TPMS gyroid geometry (65% porosity, **тільки для Zone 1**)
 - [ ] 👤 **Вертикальна орієнтація пор** (`01_01` §5.5): головна вісь TPMS-комірки паралельна осі анкера (паралельно потоку соку)
 - [ ] 👤 **Градієнт розміру пор** (`01_01` §5.5): центр 300–500 µm → периферія 100–150 µm при сталій пористості 65% — параметризація nTop cell size як функція радіуса
@@ -142,16 +142,12 @@
 - [ ] 👤 **Карта обмежень покриттів** (`01_02` §3.6): передати заводу інструкцію — ZnO-Ta НЕ наносити на гіроїдні стінки Zone 1
 - [ ] 👤 SEM criteria для приймання партії
 - [ ] 👤 µCT-сканування для верифікації градієнту розміру пор (центр 300–500 → периферія 100–150 µm) при пористості 65 ± 2%
-
-##### Підблокер HW.1.PicoGK — Code-as-CAD Alternative (paralleled R&D track) — `01_02 §6 PicoGK`
-> **Стратегія:** PicoGK (open-source SDF engine від LEAP 71) + C# як AI-агент-сумісна альтернатива nTop GUI. Усуває "GUI-blindness" coding-agents та робить геометрію Git-friendly. Не замінює nTop одразу — паралельний evaluation track.
-- [ ] 👤 **Setup C# проєкту:** Visual Studio 2022 або JetBrains Rider, .NET 7+, console project
-- [ ] 👤 **Build PicoGK з GitHub** (`github.com/leap71/PicoGK`) → підключити як бібліотеку
-- [ ] 👤 **Промпт-template для coding-agent:** Senior C# інженер пише `Zone1Anode` клас з SDF гіроїда (формула sin(x)cos(y)+sin(y)cos(z)+sin(z)cos(x)=0), параметризованим діаметром/пор/wall thickness
-- [ ] 👤 **Stage 1 SLA generation через PicoGK** (паралельно з nTop reference) — порівняти STL output на topology errors
-- [ ] 👤 **Per-species CEM (5 SKU):** pine/oak/broadleaf/mangrove/tropical — параметрична генерація через зміну однієї змінної ([`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap) cross-biome generalization)
-- [ ] 👤 **Migration decision gate (Q2 2026):** якщо PicoGK видає clean STL без BREP errors → почати міграцію SSOT з `.ntop` на `.cs` (Git-friendly)
-- [ ] 👤 **Annular barbs SDF:** реалізувати asymmetric triangle profile h=0.3mm у C# для PEEK mechanical lock (`01_01 §4.3`, HW.26)
+- [ ] 👤 HW.1.PicoGK: setup C# (.NET 7+, VS2022/Rider) + build PicoGK lib (`github.com/leap71/PicoGK`)
+- [ ] 👤 HW.1.PicoGK: coding-agent пише `Zone1Anode` SDF-гіроїд (формула/псевдокод → `01_02 §6`)
+- [ ] 👤 HW.1.PicoGK: Stage 1 SLA-gen через PicoGK ∥ nTop reference — порівняти STL на topology errors
+- [ ] 👤 HW.1.PicoGK: per-species CEM 5 SKU (pine/oak/broadleaf/mangrove/tropical → [`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap))
+- [ ] 👤 HW.1.PicoGK: migration gate (Q2 2026) — clean STL без BREP → SSOT `.ntop`→`.cs`
+- [ ] 👤 HW.1.PicoGK: annular barbs SDF h=0.3mm для PEEK lock (`01_01 §4.3`, HW.26)
 
 #### HW.2 — Dual-scale roughness spec
 - **P1** · 👤 · ⚪ · → `01_02`
@@ -162,17 +158,15 @@
 
 #### HW.3 — Accelerated aging test (Arrhenius)
 - **P1** · 👤 · ⚪ · → `01_02`
-- **Стан:** Не розпочато — 12-тиж. Arrhenius-старіння у синтетичному ксилемі (ICP-MS Ti<0.1/Al<0.05/V<0.02 µg/cm², EIS<50%); відкритий конфлікт V-release Zone 1 (1.12 µg/cm²/yr, 56× over) — мітигація a/b/c. Блокує seed-раунд, whitepaper (TRL 5→6). Канон `01_02 §2/§2.5`.
+- **Стан:** Не розпочато — 12-тиж. Arrhenius-старіння у синтетичному ксилемі (ICP-MS Ti<0.1/Al<0.05/V<0.02 µg/cm², EIS<50%); відкритий конфлікт V-release Zone 1 (1.12 µg/cm²/yr, 56× over) — мітигація a/b/c. Блокує seed-раунд, whitepaper (TRL 5→6). Канон `01_02 §2/§2.5`. **In-silico precursor (HW.3.IS):** аналітичний Lamé + stress-relaxation → Ti↔PEEK press-fit виживає 20+ р ✅ та ±5% strain-cycling MD ✅ ([`SUMMARY`](protocols/ebfc/in_silico/SUMMARY.md) §HW.3.IS; strain → `01_03 §2.1`). Важка FEA/Prony → Гусак (`08_01` Стаття 2, `00_02 §4a`).
 - [ ] 👤 Синтез штучного ксилемного соку (потрібен ботанік)
 - [ ] 👤 Запуск 12-тижневого тесту
 - [ ] 👤 ICP-MS аналіз: Ti < 0.1 µg/cm², V < 0.02 µg/cm²
 - [ ] 👤 EIS degradation < 50%
 - [ ] 👤 **V-release Zone 1 mitigation** (відкритий конфлікт, `01_02 §2.5`): голий Ti-6Al-4V ≈ 1.12 µg/cm²/yr V (56× over target), ZnO не можна на Zone 1 → in-vitro тест chitosan-matrix бар'єру (b) ± опція V-free сплав Ti-6Al-7Nb / Ti-5Al-2.5Fe (a)
-
-##### Підблокер HW.3.IS — In Silico FEA Aging (Stage 0, mechanics) — `00_02 §4a` Trek C
-> **Стратегія:** Симуляція напружень Ti+PEEK при extreme температурах ще ДО фізичного 12-week теста. Використовуються рівняння Ляме для thick-walled cylinder (Zone 1 ↔ Zone 2 ↔ Zone 3 коаксіальний press-fit). Закриває (a) механічну цілісність PEEK creep на 20-річному horizon'і, (b) сезонні термоциклічні навантаження.
-- [ ] 👤 **FEA setup:** CalculiX (open source, .NET/Python wrappers) або Code_Aster (Python) — заміна ANSYS GUI для AI-агент-сумісного workflow
-- [ ] 👤 **DFT (PySCF) для іонного бар'єра:** енергія активації дифузії Ti²⁺/Ti⁴⁺/Al³⁺/V³⁺ через PEEK-матрицю → корозія НЕ отруїть ферменти за 20+ років
+- [ ] 👤 HW.3.IS: Prony-series relaxation-fit PEEK 450G (Maxwell-Wiechert, замінює 2-term E∞/τ оцінку script 50) → Гусак (`08_01` Стаття 2)
+- [ ] 👤 HW.3.IS: barb-tip stress-concentration FEA → Гусак (важка механіка аутсорс, `00_02 §4a`; in-silico вже дав аналітичний Lamé-bound)
+- [ ] 🤖 HW.3.IS: MD ion-permeation Ti²⁺/V³⁺ через PEEK-матрицю (MSD, класична MD як script 13) — підтвердити «корозія не отруїть ферменти 20р»; **НЕ DFT** (DFT лише single-jump NEB)
 
 #### HW.4 — Self-healing coating (NEW: zone-restricted)
 - **P1** · 👤 · ⚪ · → `01_02 §3/§3.6`
@@ -183,13 +177,8 @@
 - [ ] 👤 **Thiol-Michael interphase** (`01_02` §1a.1): тест адгезії self-healing шару при ростовому навантаженні, порівняння з простою APTES-силанізацією — додано в `01_02`
 
 #### HW.5 — Enzyme lifespan + Gen 2.0 chemistry stack
-- **P1** · 👤 · 🟡 · → `01_03 §1–3` (REWRITTEN 2026-05-22)
-- **Стан:** In-progress — ціль: довгострокова стабільність біоелектрохімічного стеку у кислому ксилемі (pH 4.5–5.5) + повна імунологічна невидимість для CODIT-каскаду, термін **20–25 років**. Архітектура = Gen 2.0 (одношарова FAD-GDH, деталі ↓; канон `01_03 §1–3`). In-silico Zero-Lab (TRL 3) ✅; фізичний Ti-coin in-vitro (TRL 4) pending.
-- **Gen 2.0 baseline (REWRITTEN 2026-05-22 — одношарова FAD-GDH архітектура):** Архітектура `01_03` повністю переписана на Gen 2.0. Gen 1.0 (GOx + Catalase + глутаральдегід + PEG) **визнана нежиттєздатною** і виключена з усіх лабораторних протоколів — не використовується навіть як baseline. Новий стек:
-  - **Анод (Zone 1):** одношаровий `fMWCNT + Os-полімер + dgrFAD-GDH` (деглікозильована FAD-залежна глюкозодегідрогеназа з *Glomerella cingulata* або *Aspergillus*) → не виробляє H₂O₂, O₂-незалежна, повний pH 4.0–8.0 діапазон. Каталаза не потрібна.
-  - **Захисна матриця:** **Genipin-Chitosan-CNC** (геніпін як нетоксичний зшивач замість глутаральдегіду + целюлозні нанокристали 2–6% для псевдопластики проти тигмоморфогенезу).
-  - **Катод (Zone 3):** Гібрид `Laccase + ZIF-nanozyme` (nCoCuCeZIF/Lac або nCuCeAuZIF/Lac) — ×10 power density, 75% активності після 10 днів, **+7.5% з 0.25 М NaCl** (vs -41.7% для чистої Laccase), резервний безферментний каталізатор при денатурації.
-  - **Anti-biofouling мембрана (Шар 5):** **Nafion-g-PSBMA** (цвітеріонний полімер ковалентно прищеплений через SI-ATRP) — 8 молекул води/ланцюг, блокує абієтинову кислоту/смоли, σ(H⁺) = 45.2 мС/см, UCST winter-lock @ 5°C.
+- **P1** · 👤 · 🟡 · → `01_03 §1–3`
+- **Стан:** In-progress — ціль: довгострокова стабільність біоелектрохімічного стеку у кислому ксилемі (pH 4.5–5.5) + повна імунологічна невидимість для CODIT-каскаду, термін **20–25 років**. Архітектура = Gen 2.0 (одношарова FAD-GDH; повний стек анод/матриця/катод/мембрана — канон `01_03 §1–3`; Gen 1.0 GOx+CAT+GA+PEG відкинуто як нежиттєздатна). In-silico Zero-Lab (TRL 3) ✅; фізичний Ti-coin in-vitro (TRL 4) pending.
 - [ ] 👤 **Gen 2.0 anode (priority):** одношаровий dgrFAD-GDH+Os electroactive layer + geniпin-chitosan-CNC матриця — `01_03` §2.1
 - [ ] 👤 **Gen 2.0 cathode (priority):** Laccase + nCoCuCeZIF nanozyme гібрид на MWCNT — `01_03` §2.2
 - [ ] 👤 **Цвітеріонна мембрана:** SI-ATRP синтез Nafion-g-PSBMA (контрактна синтез-лабораторія) — `01_03` §2.1 Шар 5. ⚠️ **Bottleneck:** пришивка ATRP-ініціатора потребує переведення Nafion у сульфонілхлоридну форму → вимагати досвіду з фторполімерами. Lead time 3–6 тиж. (`01_03 §3.7`)
@@ -201,14 +190,15 @@
 - [ ] 👤 Test 30-day stability на Ti-coins у синтетичному ксилемному соку — `01_03` §3.5
 - [ ] 👤 UCST winter-lock тест PSBMA: -10°C → +25°C цикл, регідратація мембрани — `01_03` §2.1 Шар 5
 
-##### Підблокер HW.5.IS — In Silico Stage 0 (Zero-Lab) — `01_03 §3.4`
-> **Стратегія:** Computational reverse engineering хімії ДО першого Ti-monet. AlphaFold 3 + OpenMM + PySCF + scipy/numpy повністю Python-кервані → інтеграція з AI-clones. **Zero-Lab in-silico (= TRL 3) ✅ завершено (2026-05-25); фізичний TRL 4 = Ti-monet in-vitro (pending).** Q1-paper program (Стаття 1): ① Hammett mediator ✅, ② micro-solvation+speciation ✅, ④ FAD-GDH E° fix (+60→−265 мВ, Schachinger) ✅, ③ cathode λ/coupling ⏳ (Ru-fix validated: λ=0.78 vs Co ~3 eV). Then chemistry-notes backlog (↓) → draft.
-- [ ] 👤 **Інфраструктура:** workstation NVIDIA RTX 4090 ($5–10K) АБО AWS p5.2xlarge / GCP g2-standard-12 ($2–5/год)
-- [ ] 👤 **Joint Q1-publication з ЧНУ Мінаєвим:** "In Silico Design of Long-Lived Enzymatic Bio-Fuel Cells for Tree-Integrated Energy Harvesting" — `08_03` Стаття 28. Текст draft-complete (`paper/`: Methods/Results/Tables/Discussion/Abstract/Intro-40-refs/Fig2-cartoon, усі DOI), **сабміт-ready** — publish-to-protect (UNI.3; `08_01 §2`): публікація = prior-art захист, без патентного гейту:
-  - [ ] 👤 **Fig 1** graphical-abstract (BioRender; code-schematic draft є) + **TOC-графіка**
-  - [ ] 👤 фіналізувати cover letter (draft є)
+#### HW.5.IS — In-Silico Stage 0 (Zero-Lab)
+- **P1** · 🤖+👤 · 🟡 · → `01_03 §3.4`
+- **Стан:** Zero-Lab in-silico (TRL 3) ✅ завершено (2026-05-25) — computational reverse-engineering хімії ДО Ti-coin (AlphaFold3+OpenMM+PySCF+scipy, Python→AI-clones); фізичний TRL 4 = Ti-coin in-vitro pending. Q1-paper (`08_01` Стаття 1): ①②④ ✅, ③ cathode borderline-robust (Ru λ=0.78) → текст сабміт-ready (publish-to-protect, UNI.3, `08_01 §2`). Канон `01_03 §3.4`; числа → [`SUMMARY`](protocols/ebfc/in_silico/SUMMARY.md)/[`PIPELINE_STATUS`](protocols/ebfc/in_silico/PIPELINE_STATUS.md). Хімічний working-backlog (CHEM.N + open computes) ↓.
+- [ ] 👤 інфраструктура: workstation RTX 4090 ($5–10K) АБО cloud GPU (AWS p5.2xlarge / GCP g2-standard-12)
+- [ ] 👤 Joint Q1-paper з Мінаєвим (`08_01` Стаття 1 — «In Silico Design of Long-Lived EBFC») — текст draft-complete (`paper/`), сабміт-ready
+- [ ] 👤 Fig 1 graphical-abstract (BioRender; code-draft є) + TOC-графіка
+- [ ] 👤 фіналізувати cover letter (draft є)
 
-###### 🧪 Chemistry-improvement notes (CHEM.N) — founder batch 2026-06-05, triaged + verified
+##### 🧪 Chemistry-improvement notes (CHEM.N) — founder batch 2026-06-05, triaged + verified
 > 31 triaged + verified 2026-06-06; **5 corrected-out/merged Ruthless-Pruned** (00_06 §4 — refuted/dup/relocated; **git history**: CHEM.28 epitaxial-prestress · CHEM.30 acid-ΔG · CHEM.12 done-by-② · CHEM.17 dup-of-CHEM.23 · CHEM.24 magnetic-CNT→`02_03 §1.5`); 26 active below. **+5 cathode/method notes 2026-06-06 → CHEM.32-36** (verified vs canon first: Co→Ru low-λ + cMOF already in `01_03 §3.2`; pH-protonation already in all MD scripts — batch ↓). **Full verdicts in the SSOT canon (docs/):** anode → `01_03 §3.1` · matrix → `01_03 §3.3` · cathode levers → `01_03 §3.2` · in-silico methods → `PIPELINE_STATUS` Future · aggregation → `L1 §2` · computed → `SUMMARY`/`L3`. Thin pointers below. ⚠️ = weak.
 
 **P0 — in-pipeline (paper computes, ✅ canonized):**
@@ -245,7 +235,7 @@
 **Separate streams (not chemistry-paper):**
 - [ ] CHEM.18 / CHEM.27 / CHEM.19 — cryoprotectant T-corr (firmware) / Belleville washers (hardware) / biological gasket (bio-seal) — tracked in their own modules
 
-###### 🔬 In-silico pipeline — open computes (script audit 2026-06-06; detail → `PIPELINE_STATUS`)
+##### 🔬 In-silico pipeline — open computes (script audit 2026-06-06; detail → `PIPELINE_STATUS`)
 > All ~37 `tools/in_silico/scripts/` audited — almost all ✅ (cached). Open work captured here so we never re-audit; closed/superseded = 21 · 21c · 29 (honest limitations-points, not work).
 - [x] ✅ 🤖 **Re-run chain DONE:** 24b FO-DFT → 25 → ③ k_DET rigor: borderline **robust to coupling method** (t_ij 0.00546 ~4× crude + 0.18 eV site-gap; old ×10⁵ excluded) → `SUMMARY` §Cathode / `PIPELINE` 24b
 - [x] ✅ 🤖 **②/tunnelling robustness DONE:** 34b ωB97X ②-speciation (functional-robust: aqua>bis-Im>chloro reproduced) → `SUMMARY` §Cluster-Continuum · 28b dynamic-tunnelling ensemble (β·d 2.02±0.13; image_molecules PBC)
@@ -1064,7 +1054,6 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 | DOC-T.10 | Реструктуризація 05/07 (Фаза 3) — відкладені misplacement-рішення: `07_01 §11` Investor Q&A (pitch/diligence — дім 00_01 vs новий pitch-doc неоднозначний); `07_03 §5` Anchor Assembly + `§6` Virtual Prototyping (operational/field-ops дім, наразі grant-bootstrap контекст — не чистий misplacement) | `07_01`, `07_03` | Призначити operational/pitch-дім + перенести (рішення founder) | 🟡 Deferred |
 | DOC-T.16 | **bare-§ після whole-doc-лінка** — форма `[NN_NN](Doc) §X` (канон = `[NN_NN §X](Doc)`, `00_06 §1`); **gate-TOLERATED**: ні `bare_section_ref` (лише code-span поза лінком), ні `crossref_label_form` (лише мітка href) його не ловлять. Campaign-wide — 13 лише в Module 01. | `docs/**` | NEW guard `section_ref_after_doclink` + 1-shot all-module normalize sweep (як crossref-кампанія R1–R3), **НЕ** piecemeal per-module | 🟡 Approved (founder 2026-06-13) |
 | DOC-T.21 | 18 tracker-family `[ID]`-тегів цитуються в коді/доках як feature/audit-provenance анотації (circuit-breaker, partition-pruning, isfinite-RTC-validation, governance-DAO, PROMETHEUS_ALLOWED_IPS, winter-kenosis…), але мають **0 дому в 00_07** → reader не знайде. Gates green (ніхто не резолвить `[S6.4]` як 00_07-лінк) — не drift, BLOCKER-N-клас «records». IDs (snapshot orphan-sweep SESSION-10): S6.4/6/8/9/13/15/16/17/19 · FW.6/10/16/28/45 · E.46 · HW.10 · INF.5/7 | code (app/·lib/·firmware/·spec/·contracts/) + docs/; 00_07 §🗄️ | **option 3 (founder-approved 2026-06-14):** per-ID verify resolved-in-code → 1-рядк. §🗄️ orphan-row (cross-ref integrity, deep_archival orphan-sweep як SEC.5/SEC.8); відкласти — не блокер | 🟡 Approved, deferred |
-| DOC-T.22 | §01-02 HW під-регіон (~рядки 146-255) form-heterogeneous/uncemented: (1) **HW.5 fat inline «Gen 2.0 baseline» блок** (anode/matrix/cathode/membrane хімія) ДУБЛЮЄ канон `01_03 §1–3` (28 canon-mentions verified) = One-Home dup; (2) **3 під-блокери** HW.1.PicoGK/HW.3.IS/HW.5.IS = `##### ` + `> Стратегія:` + raw `[ ]` (без Стан-ліду/meta → невидимі verdict-lead/conformance guards, що сканують лише `#### `); (3) **CHEM.N + in-silico** `###### ` research-backlogs verbose (verdicts уже в canon `01_03 §3.4`). | 00_07 §01-02; `01_03 §1–3` | (fresh session, deep_archival, NOT-rush): cement-trim HW.5 Gen 2.0 → pointer `01_03 §1–3` (zero-loss, canon owns); standardize 3 під-блокери → консистентна форма (meta+Стан-lead vs документована sub-track-конвенція = founder-decision); CHEM.N/in-silico — assess thin-to-pointer vs keep working-backlog | 🟡 Queued (fresh session) |
 
 ## 📌 Backlog · Додаткові знахідки (не блокери)
 
@@ -1201,6 +1190,7 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 | DOC-T.18 | Tracker parser моделює STAGE окремо від WHO (`EXECUTORS`=WHO-only · `STAGES`/`Item.stage` · conformance вимагає WHO·STAGE) | `lib/tracker/dashboard.rb`, `00_06 §3` |
 | DOC-T.19 | Universal `**Стан:**` form-sweep усіх 138 items §00–§08 → `inline_residual_runon` + `verdict_lead_violations` обидва HARD = трекер однорідний | `lib/tracker/dashboard.rb`, `00_06 §3` |
 | DOC-T.20 | DOC-T section гомогенізовано: resolved 15/17/18/19 + DOC-T.2 → §🗄️ (вердикт DOC-T.2 canonized → `00_06 §2`), `#### `-форму знято, section-title оновлено → active DOC-T = лише open (9/10/16) | `00_07` |
+| DOC-T.22 | §01-02 HW під-регіон стандартизовано (form-decision: фасетні під-блокери інлайн HW.8-стилем, standalone-програма → `####`): HW.5 Gen 2.0-блок → pointer `01_03 §1–3`; HW.1.PicoGK + HW.3.IS згорнуто інлайн; HW.5.IS → `####` (CHEM.N + in-silico = `#####` working-backlog діти, kept per no-premature-canon). Drift-fixes по нитці: HW.3.IS creep→stress-relaxation + DFT→MD-permeation + Trek-C heavy-FEA→Гусак; `00_02 §4a` reconcile (аналітичний Lamé-bound легіт, відкладає важку FEA Гусаку); Стаття 28→Стаття 1; `01_03` HW.5a→HW.5 | `00_07`, `01_03 §1–3` |
 | E.45 | SCC/SFC subgraph zero-address fail-fast guard (`subgraph/validate_addresses.sh`); real-address swap → S3.5 | `05_03` |
 | OPS.5 | Projects V2 TRL field schema (1-9 + Readiness Horizon SRL/MRL; `lib/github_bootstrap.rb`); live-board bootstrap-run → OPS.6 | `00_05 §1.1` |
 | E.61 | Solana micro-rewards batch payouts (Kredis-акумуляція → `transferChecked`, годинний cron, поріг-gated) | `05_01 §8`, `04_02 §10` |
