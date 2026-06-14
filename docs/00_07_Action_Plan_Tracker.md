@@ -168,7 +168,7 @@
 - [ ] 🤖 HW.3.IS: MD ion-permeation Ti²⁺/V³⁺ через PEEK-матрицю (MSD, класична MD як script 13) — підтвердити «корозія не отруїть ферменти 20р»; **НЕ DFT** (DFT лише single-jump NEB)
 
 #### HW.4 — Self-healing coating (NEW: zone-restricted)
-- **P1** · 👤 · ⚪ · → `01_02 §3/§3.6`
+- **P2** · 👤 · ⚪ · → `01_02 §3/§3.6`
 - **Стан:** Не розпочато — 8-HQ self-healing мікрокапсули не синтезовані; наносяться **лише на неактивні поверхні** (Zone 3 сорочка, торці PEEK) — НЕ на Zone 1 гіроїд / катодну каталітичну грань (блокує DET). Блокує 20+ річні longevity-claims (TRL 6). Канон `01_02 §3/§3.6`.
 - [ ] 👤 Синтез 8-HQ мікрокапсул (in-situ polymerization)
 - [ ] 👤 Інтеграція в PEO electrolyte або layer-by-layer — ТІЛЬКИ на дозволених зонах
@@ -286,7 +286,7 @@
 - [ ] 👤 RF Keep-Out Zone verification
 
 #### HW.11 — Conformal Coating (Parylene C; Sylgard rejected — TinyML acoustic)
-- **P1** · 👤 · 🟡 · → `02_01`, `02_02 §3.4`
+- **P2** · 👤 · 🟡 · → `02_01`, `02_02 §3.4`
 - **Стан:** Рішення зафіксовано — **Parylene C 10 µm (CVD)** для серії + acrylic Humiseal 1A33 для прототипів; повний Sylgard-184 potting відхилено (акустичний демпфер 15–25 dB @ 16 kHz глушить TinyML-п'єзо). Acoustically transparent + IP67 з O-ring. Лишається вибір coating + verify. Канон `02_02 §3.4` (+ BOM `02_01 §3`).
 - [ ] 👤 Обрати coating: Parylene C (production) + Humiseal 1A33 (prototypes)
 - [ ] 👤 Контакт з CVD-сервісом Parylene-deposition (Київ / Львів — пошукати спеціалізовані PCB-house)
@@ -309,7 +309,7 @@
 - [ ] 👤 **Cold-start R_int** (`02_03 §1.5`): виміряти R_int EBFC (V_OC + V@15µA); якщо > 12 кΩ → cold-start oscillation-loop → серійний стек 2× EBFC (A) / паралель (B) / LTC3108 DNP-footprint (C). Не замовляти 100 PCBA без DNP-LTC3108 до перевірки.
 
 #### HW.14 — Winter energy deficit for Queen Phase 3 (Starlink Mini)
-- **P1** · 👤 · ⚪ · → `02_05 §Зимовий енергодефіцит`
+- **P2** · 👤 · ⚪ · → `02_05 §Зимовий енергодефіцит`
 - **Стан:** Не розпочато — Phase 3 (Starlink Mini) зимовий дефіцит: 44 Wh/добу спожив. vs 18.75 Wh генерації = −25 Wh/добу (LiFePO4 12V/20Ah → 7.7 днів автономності); Phase 2.5 (DTC) не зачеплено. Мітигації: 40Ah / 1-хв duty / 100W панель. Канон `02_05 §4` (§Зимовий енергодефіцит).
 - [ ] 👤 Збільшити батарею до 40Ah (15 днів автономності), АБО
 - [ ] 👤 Зменшити Starlink duty cycle до 1 хв/год (~9 Wh/day), АБО
@@ -326,7 +326,7 @@
 - [ ] 🔗 Firmware: додати `AT+CPSMS` + `AT+CEDRXS` (PSM/eDRX, idle ~3 µA) у Queen flush-цикл — `03_02`
 
 #### HW.16 — Thermal management в IP67 enclosure
-- **P1** · 👤 · 🟡 · → `02_05 §Теплове управління IP67`
+- **P2** · 👤 · 🟡 · → `02_05 §Теплове управління IP67`
 - **Стан:** Тепловий бюджет IP67 зроблено (Phase 1/2.5 ~130мВт→ΔT<1K; Phase 3 3Вт→ΔT~4.5K; sun load +15K домінує → sun-shade) + backend critical-temp гілка (`GatewayTelemetryLog#critical_fault?`, T<−20°C → ❄️ EwsAlert) ✅. Лишається hardware зимовий charge-protect (NTC/DS18B20 + MOSFET). Канон `02_05 §4а`.
 - [ ] 👤 Додати temperature sensor (NTC або DS18B20)
 - [ ] 👤 Реалізувати hardware charge protection при T < 0°C
@@ -408,7 +408,7 @@
 - [ ] 👤 Метод ламінації PTFE на катодний фланець (без клеїв — механічний обтиск по периметру)
 
 #### HW.26 — PEEK Cold-Flow Creep: Mechanical Lock (NEW 2026-05-16)
-- **P1** · 👤 · ⚪ · → `01_01 §4.3`
+- **P2** · 👤 · ⚪ · → `01_01 §4.3`
 - **Стан:** Не розпочато — mechanical lock проти PEEK cold-flow creep (barbs h=0.25–0.4mm α30°/β70° + DIN 471 Ti retaining ring ∅0.8×0.6mm + hex ≤0.05mm; press-fit 150°C >T_g); без нього −60% contact pressure за 10р → втрата O-ring seal / вирив Zone 3. ~$0.30/анкер, комплементарний до §4.2 ΔCTE. Блокує 20+ річну надійність (TRL 7→8). Канон `01_01 §4.3`.
 - [ ] 👤 Update nTop CAD-моделі: додати annular barbs на циліндричних частинах Zone 1 та Zone 3
 - [ ] 👤 Update CNC-чертежі: retaining ring grooves на anchor end Zone 1 + flange end Zone 3
@@ -482,7 +482,7 @@
 - [ ] 👤 запустити `deploy/grafana/import.rb` (Grafana Cloud токен + notification policy + verify на живих метриках) — разом із S2.2/S2.3
 
 #### FW.8 — CRITICAL_Z_MIN/MAX hardcoded
-- **P1** · 👤 · 🟢 · → [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)
+- **P2** · 👤 · 🟢 · → [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)
 - **Стан:** per-species Lorenz Z-пороги OTA — Rails `build_threshold_config_block` + `effective_lorenz_thresholds` 3-tier (cluster→family→global 2.0/45.0/29.0) + firmware parser CMD `0x9A` (freeze-contract, `FW8_PARSER_ENABLED 0`) + persist Flash-KV (`lorenz_thresholds.h`, ключі `0x10/0x11`) + mount/wiring (`main.c`, спільний гейт із FW.17) — host-done + канон OTA-design [`05_02 §4а`](05_02_Proof_of_Growth_Pipeline) / persist [`03_01 §2.3.1`](03_01_Firmware_Lifecycle_and_DMA) / service [`04_02`](04_02_Business_Logic_and_Services). Production-dispatch `0x9A` свідомо deferred (TRL-6 — усі дерева на дефолтах).
 - [ ] 👤 bench: фліп `FW8_PARSER_ENABLED 1` + HAL-глю на кремнії (спільний bench з FW.17/FW.2)
 
@@ -526,13 +526,13 @@
 - [ ] 👤 flip-гейти D/C/P/G (staging canary → production): виміряти ≥95% device_z-покриття після CCM-фліпу, тоді canary
 
 #### FW.42 — Vcap guard для fauna acoustic sampling (brownout protection)
-- **P1** · 🤖 · 🟢 · → [`03_03 §10.3`](03_03_TinyML_Acoustic_Inference)
+- **P2** · 🤖 · 🟢 · → [`03_03 §10.3`](03_03_TinyML_Acoustic_Inference)
 - **Стан:** Brownout-guard для fauna-сесії — `Fauna_Should_Sample(vcap_mv)` (дворівнева Vcap-політика: ≥4.5V повна сесія, нижче — skip + counter `fauna_skipped_low_vcap`; fauna ~78.3 мДж ≈ 2× TX → при низькому V_cap concurrent TX = brownout) + host-тести. Поки сирий ADC не сконвертовано (FW.50), guard **fail-CLOSED** — `FAUNA_VCAP_MIN_MV=4500` > стелі VREFINT-тракту, tripwire-тест тримає інваріант ([`03_01 §1`](03_01_Firmware_Lifecycle_and_DMA) FW.50). Wire-дім: fauna-маркери = 2 біти `diag[2..1]` (28B byte 18, [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security) ledger) + бекенд-лічильник `silkennet_fauna_skip_reports_total` ([`06_03 §2.8`](06_03_Prometheus_Observability)). Канон [`03_03 §10.3`](03_03_TinyML_Acoustic_Inference).
 - [ ] 🔗 активація fauna-pathway після FW.4 fauna-pivot (гейт + ARCH.40-сесія готові; firmware call-site ставить diag-біти при pivot'і)
 - [ ] 🔗 Grafana-панель — після перших живих інкрементів (мертва панель без джерела = передчасний dashboard)
 
 #### ARCH.40 — Fauna 5-сек вікно: монолітне awake-обчислення (SRAM2 wipe)
-- **P1** · 🤖 · 🟢 · → [`03_03 §10.2`](03_03_TinyML_Acoustic_Inference)
+- **P2** · 🤖 · 🟢 · → [`03_03 §10.2`](03_03_TinyML_Acoustic_Inference)
 - **Стан:** Fauna-сесія монолітна за 1 awake — STOP2 стирає SRAM2 (`float[156][N_mel]` не переживе сну, 20 RTC DR зайняті) → Welford mean+M2 у RAM, STOP2 лише після згортки в байт. Model-незалежна половина зафіксована кодом ДО pivot'а: `firmware/common/fauna_session.h` (монолітний `Fauna_Run_Session`, синхронний — STOP2 фізично не втрутиться; `FaunaWelford` ~324 Б із sizeof-tripwire) + named-тест `test_fauna_sampling_no_stop2_in_session` + Welford↔two-pass еталон. Згортка mean/var→байт (0–63) свідомо відкладена (калібрування після моделі). Канон [`03_03 §10.2`](03_03_TinyML_Acoustic_Inference).
 - [ ] 🔗 при FW.4 fauna-pivot — вживлення call-site у main.c (TIM2+DMA провайдер кадрів + `Fauna_Should_Sample` гейт + згортка в байт) ДО Фази 5 кенозису
 
@@ -674,7 +674,7 @@
 - [ ] 👤 vault-store production `peaq_signing_key`
 
 #### S6.20 — Два воркери без cron у `config/sidekiq.yml` (doc-ahead-of-code)
-- **P2** · 👤 · ⚪ · → [`04_02 §11`](04_02_Business_Logic_and_Services)
+- **P1** · 👤 · ⚪ · → [`04_02 §11`](04_02_Business_Logic_and_Services)
 - **Стан:** Не розпочато (doc-ahead-of-code) — `04_02 §11` описує два воркери як cron-driven, але обох немає в `config/sidekiq.yml` (verified): (1) **`ClusterEntropyAnalyzerWorker`** — `silkennet_cluster_entropy_score` gauge ніколи не оновлюється → `entropy_anomaly`-алерти мертві (потрібен orchestrator `Cluster.find_each → perform_async`); (2) **`InsurancePayoutWorker`** — `:triggered`-страховки залипають назавжди (якщо `Dclimate::VerificationService` enqueue впав) → кошти не доходять (потрібен sweep по `ParametricInsurance.status_triggered`). Канон [`04_02 §11`](04_02_Business_Logic_and_Services).
 - [ ] 👤 додати cron/orchestrator для обох (або, якщо trigger ручний, прибрати «cron»-формулювання з §11)
 
@@ -716,7 +716,7 @@
 - [ ] 🤖 якщо operator-bond — `OperatorBond` + `ProtocolParameters` + контракт + синх `05_05 §3`/`05_03`/`04_02`
 
 #### E.60 — Merkle CID-witness: Polygon ↔ Filecoin integrity bridge
-- **P1** · 🤖 · 🟢 · → `05_02 §E.60`
+- **P2** · 🤖 · 🟢 · → `05_02 §E.60`
 - **Стан:** Leaf-рівень закрито (2026-06-03) — `Filecoin::CidGenerator` (детермін. CIDv1 raw+sha2-256→base32, golden-vector) + content-CID guard: `ArchiveService` вбудовує самоописовий `content_cid`, `VerificationService` fail-fast при розбіжності → детект ex-post archive-swap. Канон `05_02 §E.60`.
 - [ ] 🤖 follow-on (deferred): per-tree Merkle-witness телеметрія-батчу (leaf_cid→`archive_root`→`mint(bytes32)`) — потребує `MerkleTree` + колонки на партиційованому `TelemetryLog` (міграція) + Solidity; worker-guard з `manual_review` у цьому батч-потоці
 
@@ -728,7 +728,7 @@
 - [ ] 🔗 B (на FW.2) — точний stateless GP↔delta_t recompute (wire=raw delta_t, GP=EMA device-RTC; wire-rev2 28B не додав EMA-delta_t → rev3-кандидат у wire-budget ledger [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)) — механіка [`03_01 §13.6`](03_01_Firmware_Lifecycle_and_DMA)
 
 #### E.64 — bio→economy signal-coupling audit (E.63-лінза) [2026-06-08]
-- **P1** · 🤖+👤 · 🟢 · → [`05_05 §7`](05_05_Slashing_and_Risk_Policy)
+- **P2** · 🤖+👤 · 🟢 · → [`05_05 §7`](05_05_Slashing_and_Risk_Policy)
 - **Стан:** E.63-лінза — окрім delta_t, решта bio→economy була слабка → виправлено: **anomaly ρ-відносна** (`z > ρ + (CRITICAL_Z_MAX−BASE_RHO)`, =45 при ρ=28 — ambient-temp більше не тригерить хибну аномалію) + **stress_index conformance** (Z-anomaly bounded ≪ slash-поріг «Z alone never slashes»; degenerate `avg_z`/weather-`temp` прибрано; `max_status` слешить лише tamper). Throughline: Лоренц-оракул здоров'я **декоративний** → реальна цінність = DCI anti-fraud (device-Z≡server-Z); здоров'я ведуть ПРЯМІ сигнали (metabolism E.63 · sap · VPD · acoustic). Нічого не задеплоєно → correctness перед деплоєм. Канон [`03_04 §4`](03_04_mruby_Lorenz_Attractor) · [`05_05 §7`](05_05_Slashing_and_Risk_Policy) · [`05_05 §8`](05_05_Slashing_and_Risk_Policy).
 - [ ] 🔗 real-signal activation (sap/VPD/acoustic stress_index + per-species/season пороги) — ground-truth calibration (bench, [`08_02`](08_02_Academic_Institutions_Registry)). Cross-ref: E.63, FW.8, FW.50.
 
@@ -752,7 +752,7 @@
 - [ ] 👤 верифікувати збір метрик після першого Akash deploy
 
 #### S2.4 — Observability industrial-grade hardening
-- **P1** · 👤 · 🟡 · → [`06_03 §2.9`](06_03_Prometheus_Observability)
+- **P2** · 👤 · 🟡 · → [`06_03 §2.9`](06_03_Prometheus_Observability)
 - **Стан:** industrial-grade hardening канонізовано — `external_labels` (env/service/source/release attribution) + `queue_config`+explicit WAL (backpressure) + cardinality-budget relabel + process/runtime gauges (`sample_process_runtime!`/`sample_connection_pool!`, RSpec-covered; bonus-fix: pool-gauges раніше були stale) + CI-валідація (`alloy_config_validate`). Конкретні значення — `config.alloy` SSOT (не дублюються). Канон [`06_03 §2.9`](06_03_Prometheus_Observability).
 - [ ] 👤 `up`-scrape alert + SLO/error-budget (§2.9 #6 — ingest availability, mint/slash success) — Grafana Cloud
 
@@ -805,7 +805,7 @@
 - [ ] 👤 після 1-2 тиж CSP-репортів → `CSP_ENFORCE=true`
 
 #### PUMA-IPV6-1 — Верифікація IPv6 bind після першого Kamal-деплою
-- **P1** · 👤 · ⚪ · → `06_05`
+- **P2** · 👤 · ⚪ · → `06_05`
 - **Стан:** Не розпочато — Puma 8 bind `[::]:3000` dual-stack, Thruster → `127.0.0.1:3000`; верифікувати IPv6 bind після першого Kamal-деплою. Канон `06_05`.
 - [ ] 👤 після canopy deploy: `ss -tlnp\|grep 3000` (`tcp6 [::]:3000`) + `curl` v4/v6 `/up` → задокументувати у `06_05`
 
@@ -816,7 +816,7 @@
 - [ ] 👤 master-ключі (`RAILS_MASTER_KEY`/`PROVISIONING_MASTER_KEY`) → vault + offline-копія (незамінні, поза backup)
 
 #### ARCH.35 — Queen Flash Ring Buffer (W25Q32 overflow tier)
-- **P1** · 👤 · 🟢 · → `06_08 §1.2`, `02_05 §2.1`
+- **P2** · 👤 · 🟢 · → `06_08 §1.2`, `02_05 §2.1`
 - **Стан:** CIFO 50-slot RAM cache переповнюється ~30 хв @100 Soldiers/Queen → SPI NOR W25Q32JV (4 МБ, ~$0.50) overflow tier: sector-ring (~197k слотів) з in-band заголовками + used/consumed бітмапи (mount-scan recovery, 0 RTC DR), at-least-once power-cut-safe. Драйвер `firmware/common/flash_ring.{h,c}` host-tested ✅; Queen-глю зашито gated `ARCH35_RING_ENABLED 0`; residual = board-freeze + bench. Канон `02_05 §2.1` (дизайн) / `06_08 §1.2` L1.
 - [ ] 🔗 W25Q32 розводка (SPI + CS-пін, board-freeze `.ioc`) + bench SPI-глю → фліп `ARCH35_RING_ENABLED 1`
 
@@ -930,7 +930,7 @@
 - [ ] 🌿 Mongabay: dawn/dusk Cherkasy Soundscape Library для 5-class TinyML «Fauna» (`08_01 Стаття 24a`) — recordings з UNI.13a (Спрягайло-Гаврилюк): AudioMoth, 4 сезони, ≥30хв dawn+dusk/ділянку, labeled таксони
 
 #### 🌿 UNI.13a — ChNU Біо-хаб (Спрягайло+Гаврилюк): Acoustic Biodiversity Baseline (Mongabay)
-- **P1** · 👤 · 🌿 · → `08_01 §1/§2`, `08_01 Стаття 24a`
+- **P2** · 👤 · 🌿 · → `08_01 §1/§2`, `08_01 Стаття 24a`
 - **Стан:** Far-horizon (Mongabay-пивот) — Delgado et al. (Nicoya, 119 ділянок, 16k год; Mongabay 2026): dawn/dusk fauna-піки = маркер біорізноманіття (NDVI бачить покрив, не функцію). UA-аналог: **Cherkasy Soundscape Library** (4 сезони, з ЧДТУ ПМКТ UNI.11) → ground truth для 5-class TinyML (FW.4-EXT) + Q1. Канон `08_01 §1/§2`, `08_01 Стаття 24a`.
 - [ ] 👤 зустріч Спрягайло (проректор) + Гаврилюк (ННІ природничих) + студенти-біологи + joint methodology workshop (з ЧДТУ ПМКТ) + expedition runs (4 ділянки × 4 сезони × dawn/dusk ≈ 32 записи)
 - [ ] 🔗 manual labeling (комахи/птахи/амфібії 0-63) → GA-оптимізація Любченко (UNI.6/E.52-EXT) + cross-val 10-річні дані (Спрягайло) + Horizon CL6 grant (BIZ.12)
@@ -1044,7 +1044,7 @@
 - [ ] 👤 рішення founder про модель → (якщо rename) One-Home sweep `Gaia 2.0`↔`GaiaNexus` по docs+code
 
 #### 🌿 BIZ.12 — Horizon Europe CLUSTER 6 заявка (Biodiversity Monitoring, Mongabay pivot)
-- **P1** · 👤 · 🌿 · → `08_01 Стаття 24a`, `03_03 §10`
+- **P2** · 👤 · 🌿 · → `08_01 Стаття 24a`, `03_03 §10`
 - **Стан:** Far-horizon — Horizon CL6 Biodiversity Monitoring (2-6 М€, 36-48 міс); SilkenNet = єдиний планетарний D-MRV з micro-acoustic біорізноманіттям. Submission прив'язати до acceptance Статті 24a → «published research». Канон `08_01 Стаття 24a`, `03_03 §10`.
 - [ ] 👤 identify call (HORIZON-CL6-*-BIODIV) → consortium (SilkenNet coord + ЧНУ/ЧДТУ/біо-хаб + 1-2 EU: Linköping/CSIC) → submit при acceptance 24a
 - [ ] 🔗 E.59/FW.4-EXT (5-class TinyML) + UNI.13a (Soundscape Library)
