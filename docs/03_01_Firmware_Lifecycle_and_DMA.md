@@ -986,7 +986,7 @@ Chunk-розмір для LoRa OTA: **11 байт** корисного коду 
 
 | Опкод | Назва | Напрямок | Лінк | Документ | Статус |
 |-------|-------|----------|------|----------|--------|
-| `0x55` | OTA_REQ_MARKER (Magic Re-Request) | Soldier→Queen | LoRa **uplink** | [`03_02 §5.X.3`](03_02_Queen_Gateway_Firmware) | ✅ FW.27-B (2026-05-02) |
+| `0x55` | OTA_REQ_MARKER (Magic Re-Request) | Soldier→Queen | LoRa **uplink** | [`03_02 §5.1.3`](03_02_Queen_Gateway_Firmware) | ✅ FW.27-B (2026-05-02) |
 | `0x56` | SYNC_REQ_MARKER («Королево, час!» / cold-boot hello: DID + secs_since_sync + 'S' + vcap_mv у байтах 11..12) | Soldier→Queen | LoRa **uplink** | [`03_04 §2.1`](03_04_mruby_Lorenz_Attractor) (ARCH.41-C) | ✅ hello + Queen-перемотка маяка (2026-06-11); drift-watchdog re-request — FW.20-S2 freeze-contract |
 | `0x99` | OTA_MARKER (bytecode chunks) | Rails→Queen→Soldier | CoAP/LoRa | §4.4 + 03_02 §5 | ✅ |
 | `0x9A` | CMD_SET_THRESHOLDS (Lorenz Z per-tree) | Rails→Queen→Soldier | CoAP/LoRa | [`05_02 §4а.1`](05_02_Proof_of_Growth_Pipeline) | 🟡 FW.8 (Queen-side; Soldier dispatcher TBD) |

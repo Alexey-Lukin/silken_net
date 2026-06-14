@@ -823,7 +823,7 @@ TEST(test_vm_error_wire_byte_is_tamper_with_zero_growth) {
  *       у `test_rereq_*` уже є full-missing і edge cases, але не
  *       partial pattern (e.g. missing chunks 17, 35, 71 з 72) — типова
  *       реальна картина після RF dead zone.
- * Cross-ref: docs/03_02 §5.X.3 (FW.27-B Magic Re-Request).
+ * Cross-ref: docs/03_02 §5.1.3 (FW.27-B Magic Re-Request).
  * ─────────────────────────────────────────────────────────────────── */
 TEST(test_ota_duplicate_with_different_payload_preserves_original) {
     OTA_Init();
