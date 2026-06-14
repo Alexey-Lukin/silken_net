@@ -736,11 +736,13 @@
 
 #### S1.1 — GitHub Secrets заповнення
 - **P0** · 👤 · 🟢 · → `06_04`
-- ✅ checklist + інвентаризація 4 місць секретів. · [ ] 👤 заповнити GitHub repository secrets (12 крит.: `GCP_SA_KEY`, `DATABASE_PASSWORD`, `SSH_PRIVATE_KEY`…) → верифікувати CI
+- **Стан:** Checklist + інвентаризація 4 місць секретів ✅. Лишається заповнити GitHub repo secrets. Канон `06_04`.
+- [ ] 👤 заповнити GitHub repository secrets (12 крит.: `GCP_SA_KEY`, `DATABASE_PASSWORD`, `SSH_PRIVATE_KEY`…) → верифікувати CI
 
 #### S1.5 — Kamal IP placeholders
 - **P2** · 👤 · ⚪ · → `06_01`
-- `192.168.0.1` / `<CANOPY_SERVER_IP>` плейсхолдери в Kamal config. · [ ] 👤 підставити реальні IP після `terraform apply` → верифікувати deploy
+- **Стан:** Не розпочато — `192.168.0.1` / `<CANOPY_SERVER_IP>` плейсхолдери в Kamal config; підставити реальні IP після `terraform apply`. Канон `06_01`.
+- [ ] 👤 підставити реальні IP після `terraform apply` → верифікувати deploy
 
 #### S2.1 — Верифікація метрик після deploy
 - **P0** · 👤 · ⚪ · → `06_03`
@@ -764,7 +766,8 @@
 
 #### INF.3 — TLS termination
 - **P2** · 👤 · ⚪ · → `06_02 §TLS термінація`
-- SDL відкриває 80/443/CoAP-UDP 5683, але TLS termination не налаштовано (browsers block WS HTTPS→HTTP). · [ ] 👤 налаштувати TLS (Akash ingress або Cloudflare)
+- **Стан:** Не розпочато — SDL відкриває 80/443/CoAP-UDP 5683, але TLS termination не налаштовано (browsers block WS HTTPS→HTTP). Канон `06_02 §TLS термінація`.
+- [ ] 👤 налаштувати TLS (Akash ingress або Cloudflare)
 
 #### INF.6 — CoAP UDP smoke test через Ingress Anchor (post-deploy gate)
 - **P1** · 🤖+👤 · 🟢 · → `06_01`, `06_02`, `06_08 §1.2`
@@ -780,15 +783,18 @@
 
 #### S4.3 — Akash SDL secrets
 - **P3** · 👤 · ⚪ · → `06_02`
-- `REQUIRED_SECRET_NOT_SET` для 4 крит. змінних. · [ ] 👤 заповнити в `deploy/akash/deploy.yaml` → верифікувати startup
+- **Стан:** Не розпочато — `REQUIRED_SECRET_NOT_SET` для 4 крит. змінних Akash SDL. Канон `06_02`.
+- [ ] 👤 заповнити в `deploy/akash/deploy.yaml` → верифікувати startup
 
 #### S5.2 — RELEASE_VERSION ENV для Sentry
 - **P2** · 👤 · 🟢 · → `06_03`
-- ✅ `RELEASE_VERSION` у deploy configs. · [ ] 👤 верифікувати Sentry release tracking
+- **Стан:** `RELEASE_VERSION` у deploy configs ✅. Лишається verify Sentry release tracking. Канон `06_03`.
+- [ ] 👤 верифікувати Sentry release tracking
 
 #### S5.6 — GCS bucket для Terraform state (chicken-and-egg)
 - **P3** · 👤 · ⚪ · → `06_02 §GCS bucket`
-- GCS bucket для remote TF state — вручну перед `terraform init`. · [ ] 👤 `gsutil mb` → верифікувати `terraform init`
+- **Стан:** Не розпочато — GCS bucket для remote TF state створюється вручну перед `terraform init` (chicken-and-egg). Канон `06_02 §GCS bucket`.
+- [ ] 👤 `gsutil mb` → верифікувати `terraform init`
 
 #### S6.18 — Rails web security hardening (§8 audit)
 - **P1** · 👤 · 🟢 · → `06_04 §2.1`
@@ -798,7 +804,8 @@
 
 #### PUMA-IPV6-1 — Верифікація IPv6 bind після першого Kamal-деплою
 - **P1** · 👤 · ⚪ · → `06_05`
-- Puma 8 bind `[::]:3000` dual-stack; Thruster → `127.0.0.1:3000`. · [ ] 👤 після canopy deploy: `ss -tlnp\|grep 3000` (`tcp6 [::]:3000`) + `curl` v4/v6 `/up` → задокументувати у `06_05`
+- **Стан:** Не розпочато — Puma 8 bind `[::]:3000` dual-stack, Thruster → `127.0.0.1:3000`; верифікувати IPv6 bind після першого Kamal-деплою. Канон `06_05`.
+- [ ] 👤 після canopy deploy: `ss -tlnp\|grep 3000` (`tcp6 [::]:3000`) + `curl` v4/v6 `/up` → задокументувати у `06_05`
 
 #### DR.1 — Disaster Recovery drill + master-key backup
 - **P1** · 👤 · 🟢 · → `06_06`
@@ -808,13 +815,13 @@
 
 #### ARCH.35 — Queen Flash Ring Buffer (W25Q32 overflow tier)
 - **P1** · 👤 · 🟢 · → `06_08 §1.2`, `02_05 §2.1`
-- CIFO 50-slot RAM cache переповнюється ~30 хв @100 Soldiers/Queen → SPI NOR W25Q32JV (4 МБ, ~$0.50, SOIC-8) як overflow tier; sector-based ring (192 слоти/сектор ≈ 197k слотів); drain Flash-first→RAM. Implementation Anchor resilience-policy на верхньому краю scaling.
-- **✅ 🤖 драйвер + gated Queen-глю зашито (2026-06-11f):** `firmware/common/flash_ring.{h,c}` — sector-ring з **in-band заголовками** `[magic|seq]` + NOR-бітмапи used/consumed (ADR: замінили ескізні RTC-покажчики — ті гинуть з VBAT і розходяться зі вмістом флешу; mount-scan відновлює head/tail/count після будь-якого знеструмлення, Queen DR не витрачаються); слот = 21-байтний wire-запис батча (бітове дзеркало пакувальника); power-cut-інваріанти: дані→used-біт, сирота tombstone'иться, consume лише після send-success → **at-least-once** (дубль можливий, втрата — ні). Host-тести `test_flash_ring.c` (NOR-мок 1→0 + fault-injection: roundtrip · remount-recovery · wrap-drop durable · consume across sectors · 3 power-cut сценарії) — тест одразу зловив NOR-діру дизайну (перезапис сироти AND-ить байти). Queen-глю (gated `ARCH35_RING_ENABLED 0`): SPI W25Q32 cmd-set (PP page-aware) + спіл евікшнів і провалених flush'ів + drain-refill у CIFO (`is_active=2`) з consume після наступного send-success. Канон: `02_05 §2.1` (дім дизайну) + `06_08 §1.2` L1.
+- **Стан:** CIFO 50-slot RAM cache переповнюється ~30 хв @100 Soldiers/Queen → SPI NOR W25Q32JV (4 МБ, ~$0.50) overflow tier: sector-ring (~197k слотів) з in-band заголовками + used/consumed бітмапи (mount-scan recovery, 0 RTC DR), at-least-once power-cut-safe. Драйвер `firmware/common/flash_ring.{h,c}` host-tested ✅; Queen-глю зашито gated `ARCH35_RING_ENABLED 0`; residual = board-freeze + bench. Канон `02_05 §2.1` (дизайн) / `06_08 §1.2` L1.
 - [ ] 🔗 W25Q32 розводка (SPI + CS-пін, board-freeze `.ioc`) + bench SPI-глю → фліп `ARCH35_RING_ENABLED 1`
 
 #### ARCH.34 — Queen-side LoRaWAN Helium SOS fallback
 - **P2** · 🤖 · ⚪ · → `06_08 §1.2`, `02_05 §6.1`
-- Helium fallback перенесено Soldier→Queen (STM32WLE5JC flash/RAM/topology несумісний). Queen: LoRaMac-node stack + OTAA join state + FCntUp persist; SOS-маяк ~12 байт (НЕ телеметрія кластера — SF12 EU868 ~51B cap) → Helium hotspot → LNS → Rails `POST /telemetry/helium`. Soldier лишається raw LoRa P2P AES-128. Implementation Anchor L3; без нього L3 fallback архітектурно неможливий. · [ ] 🔗 Queen `queen_helium_lorawan_uplink()`
+- **Стан:** Не розпочато — Helium SOS fallback перенесено Soldier→Queen (STM32WLE5JC flash/RAM/topology несумісний): Queen LoRaMac-node + OTAA join + FCntUp persist; SOS-маяк ~12 байт (НЕ телеметрія — SF12 EU868 ~51B cap) → Helium hotspot → LNS → Rails `POST /telemetry/helium`; Soldier лишається raw LoRa P2P AES-128. Implementation Anchor L3. Канон `02_05 §6.1` / `06_08 §1.2`.
+- [ ] 🔗 Queen `queen_helium_lorawan_uplink()`
 
 ## §07 · Юридичні / Бізнес
 
