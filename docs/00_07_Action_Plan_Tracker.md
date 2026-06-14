@@ -633,7 +633,7 @@
 
 #### SEC.2 — RDP Level 2 activation timeline
 - **P1** · 👤 · 🟢 · → [`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security)
-- **✅ Процедура RDP L2 канонізована ([`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security)):** pre-flight + CubeProgrammer CLI + rollout R&D→Pilot→Mass; скриптовано `firmware/scripts/bench/01_option_bytes.sh --rdp 2` (bench RUNBOOK). RDP L2 = **необоротний** SWD-lock → OTA мусить бути верифікований ДО активації (§3.6 ⚠️).
+- **Стан:** процедура RDP L2 канонізована — pre-flight + CubeProgrammer CLI + rollout R&D→Pilot→Mass; скриптовано `firmware/scripts/bench/01_option_bytes.sh --rdp 2` (bench RUNBOOK). RDP L2 = **необоротний** SWD-lock → OTA мусить бути верифікований ДО активації. Канон [`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security).
 - [ ] 🔗 верифікувати OTA flow end-to-end на bench ДО L2-lock
 - [ ] 👤 field batch → RDP **L1** (зворотний); L2 — лише фінальний mass-deploy
 
@@ -665,7 +665,7 @@
 
 #### SEC.15 — IWDG freeze у STOP2 (option byte `IWDG_STOP=0`)
 - **P1** · 👤 · 🟢 · → [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)
-- ✅ Freeze-rationale + PVD-кома side-path канонізовано ([`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)); `IWDG_STOP=0`+`IWDG_STDBY=0` заскриптовано поряд з RDP — `firmware/scripts/bench/01_option_bytes.sh` + RUNBOOK §1.2.
+- **Стан:** freeze-rationale + PVD-кома side-path канонізовано — `IWDG_STOP=0`+`IWDG_STDBY=0` (LSI-пес лічить у STOP2 max ~32.7с → spurious reset посеред багатогодинного сну) заскриптовано поряд з RDP у `firmware/scripts/bench/01_option_bytes.sh` (RUNBOOK §1.2). Канон [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA).
 - [ ] 👤 застосувати на платі при factory flashing
 - [ ] 👤 bench-верифікація: сон 1 год без spurious reset (RUNBOOK §4.4)
 
