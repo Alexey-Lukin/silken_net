@@ -16,6 +16,12 @@
 #                 cross-doc) — ловить reworded One-Home порушення, яких exact-режим
 #                 і per-value лінтери не бачать. On-demand (шумний за природою; НЕ CI-гейт).
 #   --threshold T поріг подібності для --near (default 0.82)
+#
+# ⚠️ Scope: cross-doc + token-Jaccard. MISSES (a) within-doc concept-dups (e.g. two
+#    00_07 tracker IDs for one idea — E.13=ARCH.20) and (b) cross-language EN↔UK dups
+#    (different tokens). Those are MANUAL: per-ID whole-project `grep -F` + shared
+#    distinctive-noun hunt (person/source/tech-noun). See memory feedback_dedup_id_search
+#    + the deep_archival orphan-sweep.
 
 MIN  = (i = ARGV.index("--min")) ? ARGV[i + 1].to_i : 2
 ALL  = ARGV.delete("--all")
