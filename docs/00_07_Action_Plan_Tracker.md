@@ -626,11 +626,6 @@
 - **Стан:** Graceful degradation реалізовано — Redis down → DB-backed nonce (Solid Cache, TTL 10хв), шлюзи не отримують 503 (`m2m_auth_controller` [S6.1] + spec). Канон `04_03` (replay-nonce M2M).
 - [ ] 👤 верифікувати Upstash multi-zone replication у production
 
-#### S6.20 — ClusterEntropy + InsurancePayout: cron-оркестратори (doc-ahead-of-code закрито)
-- **P1** · 🤖+👤 · 🟢 · → [`04_02 §11`](04_02_Business_Logic_and_Services)
-- **Стан:** Розрив doc-ahead-of-code закрито — обидва per-record воркери тепер cron-driven через оркестратори (host-done + RSpec): (1) `ClusterEntropySweepWorker` (`Cluster.find_each` → `ClusterEntropyAnalyzerWorker`, cron `10 * * * *`) оживив EWS-детектор ентропії (`silkennet_cluster_entropy_score` gauge + `entropy_anomaly` алерти більше не мертві); (2) `InsurancePayoutRecoveryWorker` (`ParametricInsurance.status_triggered.find_each` → `InsurancePayoutWorker`, cron `15,45 * * * *`) — страхувальна сітка для застряглих :triggered виплат (первинний тригер лишається подієвим; re-enqueue безпечний — payout ідемпотентний). Канон [`04_02 §11`](04_02_Business_Logic_and_Services).
-- [ ] 👤 deploy-verify: sidekiq-scheduler підхопив обидва cron у проді (Sidekiq dashboard) + перші інкременти entropy-gauge
-
 #### E.41 — Fire-event 48h latency (dClimate obscuration) → immediate-broadcast fallback
 - **P1** · 🤖+👤 · 🟡 · → `04_02`, `05_01`
 - **Стан:** ⚠️ Life-safety — dClimate satellite fire-events можуть запізнюватись ~48h (хмарна обструкція). Первинна мітигація ✅ зашита: edge chainsaw→panic-TX негайний broadcast (`03_03`/`03_01`, `PANIC_TTL=5`, `Trigger_Emergency_LoRa_TX` — urgent шлях НЕ чекає dClimate). Вторинна: Forester Guild fallback-oracle = E.20 (Post-TRL 6). P1 — не відкладати на Post-TRL 6. Канон `04_02` (AlertNotification/EWS), `05_01` (dClimate).
@@ -1162,6 +1157,7 @@ _Активних DOC-T наразі немає — усі вирішено/ар
 | S6.16 | Partition pruning from ISO-8601, single home (`TelemetryLog#partition_pruned`) — resolved code-annotation | `04_01` |
 | S6.17 | Mint rate from `SystemParameter` (governance-aware) (`BlockchainMintingService`) — resolved code-annotation | `05_03` |
 | S6.19 | m2m nonce-fallback counter for Grafana alerting (`m2m_auth_controller`) — resolved code-annotation | `04_03`, `06_03` |
+| S6.20 | ClusterEntropy + InsurancePayout cron-оркестратори (doc-ahead-of-code закрито): `ClusterEntropySweepWorker` (cron `10 * * * *` — оживив `silkennet_cluster_entropy_score` + `entropy_anomaly`) + `InsurancePayoutRecoveryWorker` (cron `15,45 * * * *` — idempotent safety-net); host-done + RSpec + `config/sidekiq.yml`. Scheduler-pickup = той самий механізм, що й решта кронів (не per-cron ризик) | `04_02 §11` |
 | FW.6 | isfinite() RTC Lorenz-state validation (`soldier/main.c`) — resolved code-annotation | `03_04`, `03_01` |
 | FW.10 | Winter-kenosis TX gate (−15°C, ESR) (`soldier/main.c`) — resolved code-annotation | `03_01` |
 | FW.16 | `Restore_ECB_Mode` error-recovery after CoAP-CBC (`queen/main.c`; ↔ SEC.8) — resolved code-annotation | `03_05` |
