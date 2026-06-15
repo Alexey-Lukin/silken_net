@@ -1,19 +1,19 @@
 # frozen_string_literal: true
 
-# [00_07 DRY tooling — #1 auto-dashboard + #3 format contract]
+# [00_07 DRY tooling — #3 item-form contract + drift guards]
 #
 # Parses the undone-task registry (§-module + 🔀 cross-cutting sections) of
-# docs/00_07_Action_Plan_Tracker.md and regenerates the 🚦 Dashboard between the
-# AUTO markers, so the executor-grouped index can never drift from the registry
-# — the "one fact, one place" principle made mechanical (user).
+# docs/00_07_Action_Plan_Tracker.md and lints it: duplicate IDs, item-form
+# conformance (priority + WHO + STAGE + canon-ref), §-ref / section↔home /
+# inbound-ref resolution, and run-on / verdict-lead / meta-line form — the
+# "one fact, one place" principle made mechanical (user). The 🚦 do-now view is a
+# hand-curated Critical Path in the doc (DOC-T.16); there is no auto-render.
 #
 # Pure Ruby (no Rails) — runnable from a rake task or CI without booting the app.
 module Tracker
   class Dashboard
     DEFAULT_PATH = File.expand_path("../../docs/00_07_Action_Plan_Tracker.md", __dir__)
     DOCS_DIR = File.expand_path("../../docs", __dir__)
-    START_MARK = "<!-- DASHBOARD:AUTO:START -->"
-    END_MARK   = "<!-- DASHBOARD:AUTO:END -->"
 
     # #### items under these sections feed the dashboard (mirror canon modules).
     REGISTRY_SECTION = /^## (?:§|🔀)/
@@ -30,12 +30,6 @@ module Tracker
     STAGES = {
       "⚪" => :not_started, "🟡" => :in_progress, "🟢" => :done_inert,
       "🔗" => :blocked, "🌿" => :far_horizon
-    }.freeze
-    PRIORITY_RANK = { "P0" => 0, "P1" => 1, "P2" => 2, "P3" => 3 }.freeze
-    HEADINGS = {
-      machine: "🤖 Machine-doable (AI, non-gated)",
-      owner: "👤 На тобі (власник)",
-      blocked: "🔗 Заблоковано (чекає іншого)"
     }.freeze
 
     Item = Struct.new(:id, :title, :priority, :executors, :stage, :canon, :section_modules, keyword_init: true)
@@ -259,38 +253,6 @@ module Tracker
     # Open = has ≥1 unchecked bullet with a known executor.
     def self.open_items(items) = items.select { |it| it.executors.any? }
 
-    # --- render 🚦 Dashboard markdown (focus: P0/P1; P2 as a tail count) ---
-    def self.render(items)
-      open = open_items(items)
-      # [DOC-T.18] blocked is a STAGE (🔗), not a WHO: the "Заблоковано" bucket holds
-      # stage-blocked items; machine/owner buckets hold non-blocked items by their WHO.
-      bucket = lambda do |role|
-        return open.select { |it| it.stage == :blocked } if role == :blocked
-        open.select { |it| it.executors.include?(role) && it.stage != :blocked }
-      end
-      out = []
-      HEADINGS.each do |role, heading|
-        in_role = bucket.call(role)
-        low = %w[P2 P3]
-        focus = in_role.reject { |it| low.include?(it.priority) }
-                       .sort_by { |it| [ PRIORITY_RANK[it.priority] || 9, it.id ] }
-        lown = in_role.count { |it| low.include?(it.priority) }
-        out << "### #{heading}"
-        if focus.empty?
-          out << "_(жодного відкритого P0/P1#{lown.positive? ? "; #{lown} × P2/P3 — див. §модулі" : ''})_"
-        else
-          focus.each do |it|
-            pr  = it.priority ? " **#{it.priority}**" : ""
-            ref = it.canon ? " → `#{it.canon}`" : ""
-            out << "- `#{it.id}`#{pr} — #{it.title}#{ref}"
-          end
-          out << "_(+ #{lown} × P2/P3 — див. §модулі)_" if lown.positive?
-        end
-        out << ""
-      end
-      out.join("\n").rstrip
-    end
-
     # --- #3 conformance: open items missing priority / canon-ref ---
     def self.issues(items)
       items.filter_map do |it|
@@ -500,21 +462,5 @@ module Tracker
       end
     end
 
-    # --- regenerate the AUTO block in place ---
-    def self.regenerate(path = DEFAULT_PATH)
-      md = File.read(path)
-      raise "AUTO markers not found in #{path}" unless md.include?(START_MARK) && md.include?(END_MARK)
-
-      block = "#{START_MARK}\n#{render(parse(md))}\n#{END_MARK}"
-      File.write(path, md.sub(/#{Regexp.escape(START_MARK)}.*?#{Regexp.escape(END_MARK)}/m, block))
-    end
-
-    # --- CI drift-guard + conformance report ---
-    def self.check(path = DEFAULT_PATH)
-      md = File.read(path)
-      items = parse(md)
-      current = md[/#{Regexp.escape(START_MARK)}\n(.*?)\n#{Regexp.escape(END_MARK)}/m, 1]
-      { drift: current&.strip != render(items).strip, issues: issues(items), open: open_items(items).size }
-    end
   end
 end

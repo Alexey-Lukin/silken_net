@@ -1181,6 +1181,6 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 | INF.7 | `ALLOY_CONFIG_BASE64` manual SDL deploy encoding — resolved code-annotation | `06_02` |
 | DOC-T.23 | STAGE/WHO re-audit (7 WHO fixes, open-work semantic) + meta-line form std (combo `🤖+👤`, no tails) + AI-advanceability (S6.20/E.41 advanced); NEW guard `meta_form_violations` HARD | `00_07`, `00_06 §3` |
 | DOC-T.24 | Priority re-assess (P1 73→59, un-flattened by TRL-horizon/blocking-impact) + stable in-section sort by priority (P0 gates surface on top); tools `tracker_set_meta.rb` + `tracker_sort.rb` | `00_07` |
-| DOC-T.25 | 🚦 Dashboard refreshed from current items (UNI.13/14 priority drift fixed; 🤖-note S6.20/E.41) — human-curated do-now roadmap kept; auto-render `Tracker::Dashboard.render` available if drift recurs | `00_07` |
+| DOC-T.25 | 🚦 Dashboard refreshed from current items (UNI.13/14 priority drift fixed; 🤖-note S6.20/E.41) — human-curated do-now roadmap. (Superseded by DOC-T.16: Dashboard → slim 🚦 Critical Path; the unused auto-render code `Tracker::Dashboard.render`/`regenerate`/`check` pruned.) | `00_07` |
 | DOC-T.16 | bare-§ після whole-doc-лінка (`[NN_NN](Doc) §X` → `[NN_NN §X](Doc)`, `00_06 §1`) — NEW guard `section_ref_after_doclink` (HARD, tree-wide вкл. `docs/protocols/` relative-href) + 1-shot sweep 35 рефів / 16 доків; по нитці виправлено стале §-номери (СЄУ §1.3→§5, Cold-Start→§1.5, фін-константи §2.3→§3). Ширша protocols ref-integrity → DOC-T.26 | `00_06 §3`, `lib/docs_linter.rb` |
 

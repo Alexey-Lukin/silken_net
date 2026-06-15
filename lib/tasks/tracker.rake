@@ -11,8 +11,8 @@
 #     target (caught 12 stale §BLOCKER-N / wrong-doc-id refs orphaned by blockers→00_07)
 #   - section↔canon-home: a #### under `## §NN` must canon-ref module NN (canon-mirror;
 #     killed the §06-deploy-under-§04 "DevOps" drift)
-# Engine: lib/tracker/dashboard.rb (pure Ruby; the 🚦 Dashboard stays human-curated,
-# so drift/regenerate are intentionally not wired — this is a guard, not an overwriter).
+# Engine: lib/tracker/dashboard.rb (pure Ruby; pure guard — the 🚦 do-now view is a
+# hand-curated Critical Path in the doc (DOC-T.16), so there is no render/overwrite path).
 require_relative "../tracker/dashboard"
 
 namespace :tracker do
