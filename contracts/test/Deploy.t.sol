@@ -65,9 +65,12 @@ contract DeployWiringTest is Test {
         );
     }
 
-    // ─── StateRootAnchor: admin = Safe (low-severity, by design) ──────
-    function test_anchor_adminIsSafe() public view {
-        assertTrue(d.anchor.hasRole(d.anchor.DEFAULT_ADMIN_ROLE(), safe));
+    // ─── StateRootAnchor: admin = Timelock (uniform rule; ANCHOR_ROLE = oracle) ──────
+    function test_anchor_adminIsTimelock_notSafe() public view {
+        assertTrue(
+            d.anchor.hasRole(d.anchor.DEFAULT_ADMIN_ROLE(), address(d.timelock)), "Anchor admin must be Timelock"
+        );
+        assertFalse(d.anchor.hasRole(d.anchor.DEFAULT_ADMIN_ROLE(), safe), "Safe must NOT be Anchor admin");
         assertTrue(d.anchor.hasRole(d.anchor.ANCHOR_ROLE(), anchorOracle));
     }
 

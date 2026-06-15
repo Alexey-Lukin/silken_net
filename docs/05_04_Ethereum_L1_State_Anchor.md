@@ -539,7 +539,7 @@ bundle exec rspec spec/services/ethereum/ spec/workers/ethereum_anchor_worker_sp
 
 ### Operational Security
 
-- **Multisig:** Для production deployment `DEFAULT_ADMIN_ROLE` має бути призначено Gnosis Safe multisig (3/5 або 2/3) замість EOA — стандартна operational security practice для контрактів, що управляють L1 finality
+- **Admin = Timelock [SEC.1]:** Для production `DEFAULT_ADMIN_ROLE` призначається `SilkenTimelock` (48h), а не Gnosis Safe / EOA — `StateRootAnchor` не має `pause()`, тож видача `ANCHOR_ROLE` (oracle-rotation) = management-влада → governance-gated (правило «admin=Timelock, окрім pause»; деталі — [`05_03`](05_03_Tokenomics_SCC_and_SFC)). Recovery: Safe = PROPOSER Timelock'а (планова rotation за 48h); 6-денний `MIN_ANCHOR_INTERVAL` + off-chain root-верифікація роблять повільніше відкликання некритичним
 - **Admin Protection:** Контракт блокує видалення останнього `DEFAULT_ADMIN_ROLE` через `_adminCount` лічильник — `renounceRole()` та `revokeRole()` ревертять якщо залишився один адмін
 - **Anti-Spam:** `MIN_ANCHOR_INTERVAL = 6 days` запобігає спаму фейковими state roots компрометованим oracle
 - **Roles & Events:** запис авторизується роллю `ANCHOR_ROLE` (oracle-гаманець); кожен запис емітує `StateRootStored(bytes32 indexed root, uint256 timestamp, uint256 anchorIndex)` — джерело для subgraph-індексації

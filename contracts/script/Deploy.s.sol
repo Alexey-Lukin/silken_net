@@ -17,7 +17,7 @@ import "../ProtocolParameters.sol";
  *         tokens' DEFAULT_ADMIN at genesis; deployer is a TEMP timelock admin)
  *      2. SilkenCarbonCoin (SCC) — utility token (admin=Timelock, pauser=Safe)
  *      3. SilkenForestCoin (SFC) — governance token (admin=Timelock, pauser=Safe)
- *      4. StateRootAnchor — L1 weekly state finalization (admin=Safe)
+ *      4. StateRootAnchor — L1 weekly state finalization (admin=Timelock)
  *      5. SilkenGovernor — DAO governance (depends on SFC + Timelock)
  *      6. ProtocolParameters — on-chain parameter registry (admin=Timelock, governance=Timelock)
  *      7. Post-deploy: wire Timelock roles, then hand timelock admin → Safe + renounce deployer
@@ -45,8 +45,10 @@ import "../ProtocolParameters.sol";
  *         Timelock too — so the Safe cannot re-grant itself GOVERNANCE_ROLE and change
  *         economic params (slash curve / dynamic tax / insurance threshold / fallback
  *         price) outside the 48h veto window, i.e. [E.35] holds as stated. PAUSER_ROLE =
- *         the Safe (instant emergency pause). StateRootAnchor admin = Safe (no mint/funds;
- *         a bad root is detectable off-chain; 6-day spam interval — low severity). The
+ *         the Safe (instant emergency pause). StateRootAnchor admin = Timelock too — no
+ *         pause() exists and granting ANCHOR_ROLE is a management power, not an emergency
+ *         brake, so it is governance-gated (the 6-day MIN_ANCHOR_INTERVAL + off-chain root
+ *         verification make the slower oracle-rotation a non-issue). The
  *         Safe is also a Timelock PROPOSER (bootstrap: it can schedule role grants pre-DAO,
  *         but only with the 48h delay). Production: ADMIN_ADDRESS = Gnosis Safe (3/5 or
  *         2/3) + REQUIRE_SAFE_ADMIN=true.
@@ -76,7 +78,7 @@ contract DeploySilkenNet is Script {
 
         console.log("");
         console.log(
-            "[SEC.1] Verify: tokens+Params DEFAULT_ADMIN=Timelock; PAUSER_ROLE=Safe; Safe=Timelock admin+PROPOSER; deployer renounced"
+            "[SEC.1] Verify: tokens+Anchor+Params DEFAULT_ADMIN=Timelock; PAUSER_ROLE=Safe; Safe=Timelock admin+PROPOSER; deployer renounced"
         );
         console.log("Post-deploy: set CARBON/FOREST/ANCHOR contract ENV; update subgraph (S3.5); verify on Polygonscan");
     }
@@ -99,8 +101,12 @@ contract DeploySilkenNet is Script {
         d.sfc = new SilkenForestCoin(address(d.timelock), safe, minter, slasher);
         console.log("SFC deployed at:", address(d.sfc));
 
-        // 4. StateRootAnchor — admin = Safe (no mint/pause; anchor-oracle management only).
-        d.anchor = new StateRootAnchor(safe, anchorOracle);
+        // 4. StateRootAnchor — admin = Timelock (uniform "admin=Timelock except pause": the
+        // contract has no pause(), and granting ANCHOR_ROLE is a management power, not an
+        // emergency brake → governance-gated. The 6-day MIN_ANCHOR_INTERVAL + off-chain root
+        // verification make the slower (48h) oracle-rotation a non-issue; no backend depends
+        // on the admin — only ANCHOR_ROLE, set at construction.)
+        d.anchor = new StateRootAnchor(address(d.timelock), anchorOracle);
         console.log("StateRootAnchor deployed at:", address(d.anchor));
 
         // 5-6. Governor + ProtocolParameters. [SEC.1] Params admin = Timelock (NOT the Safe):

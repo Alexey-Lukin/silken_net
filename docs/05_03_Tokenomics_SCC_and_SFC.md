@@ -208,7 +208,7 @@ _[SEC.1] PAUSER (Safe) ≠ ADMIN (Timelock): pause — швидко; видач�
 | 4 | `forge script script/Deploy.s.sol --rpc-url $RPC --broadcast` |
 | 5 | Верифікація (нижче) |
 
-**Deploy-послідовність [SEC.1]:** Timelock деплоїться **першим** (deployer = тимчасовий admin) → токени з `admin=Timelock`, `pauser=Safe` → Anchor/Governor/Params → wire Timelock-ролей (Governor = PROPOSER+CANCELLER; **Safe = PROPOSER** — bootstrap: може *планувати* `grantRole(MINTER)` з 48h-затримкою до активації DAO) → передати Timelock-admin Safe + **renounce deployer** (deployer лишається без жодної ролі). StateRootAnchor admin = Safe (нема mint/коштів; поганий root детектується off-chain — low severity). **ProtocolParameters admin = Timelock** (як токени, 2026-06-15): DEFAULT_ADMIN не може `grantRole(GOVERNANCE_ROLE, self)` в обхід 48h → зміна економічних параметрів (dynamic-tax / slash-curve / fallback-ціна, які бекенд читає через `SystemParameter`) теж за 48h-veto, тобто [E.35] правда як написано.
+**Deploy-послідовність [SEC.1]:** Timelock деплоїться **першим** (deployer = тимчасовий admin) → токени з `admin=Timelock`, `pauser=Safe` → Anchor/Governor/Params → wire Timelock-ролей (Governor = PROPOSER+CANCELLER; **Safe = PROPOSER** — bootstrap: може *планувати* `grantRole(MINTER)` з 48h-затримкою до активації DAO) → передати Timelock-admin Safe + **renounce deployer** (deployer лишається без жодної ролі). StateRootAnchor admin = Timelock теж (uniform «admin=Timelock, окрім pause»): контракт не має `pause()`, а видача `ANCHOR_ROLE` — management-влада, не аварійне гальмо → governance-gated; 6-денний `MIN_ANCHOR_INTERVAL` + off-chain верифікація root роблять повільніше (48h) oracle-rotation некритичним (low-sev). **ProtocolParameters admin = Timelock** (як токени, 2026-06-15): DEFAULT_ADMIN не може `grantRole(GOVERNANCE_ROLE, self)` в обхід 48h → зміна економічних параметрів (dynamic-tax / slash-curve / fallback-ціна, які бекенд читає через `SystemParameter`) теж за 48h-veto, тобто [E.35] правда як написано.
 
 **Guard у `Deploy.s.sol`:** при `REQUIRE_SAFE_ADMIN=true` деплой ревертиться, якщо `ADMIN_ADDRESS` — EOA (`safe.code.length == 0`); інакше — warning (testnet/local EOA допустимо).
 
@@ -814,7 +814,7 @@ myth analyze contracts/SilkenCarbonCoin.sol --solv 0.8.35
 **Operational Security (production) [SEC.1] — деталі §Admin-Role Split вище:**
 - `DEFAULT_ADMIN_ROLE` (токени + `ProtocolParameters`) → **SilkenTimelock** (48h) — ✅ `Deploy.s.sol`; видача будь-якої ролі за 48h
 - `PAUSER_ROLE` → **Gnosis Safe** (3/5 або 2/3) — миттєва пауза поза Timelock; 👤 **TODO**: реальний Safe + зовнішні co-signer'и
-- `StateRootAnchor` admin → Safe (нема mint/коштів — low severity)
+- `StateRootAnchor` admin → **SilkenTimelock** (нема `pause()`; видача `ANCHOR_ROLE` = management → governance-gated; uniform «admin=Timelock, окрім pause»)
 - `MINTER_ROLE` / `SLASHER_ROLE` → окремі Oracle EOA (✅ реалізовано, E.2)
 - `pause()` → без timelock (потрібна миттєва реакція при exploits)
 
