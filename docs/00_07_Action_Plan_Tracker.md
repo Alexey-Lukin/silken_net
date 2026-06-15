@@ -642,12 +642,6 @@
 - **Стан:** Rotation policy готова — dual-key grace 72h + планова ротація 90д + emergency revocation runbook. Лишається vault-store production-ключа. Канон `04_02 §S6.14`, `06_04 §5.4`.
 - [ ] 👤 vault-store production `peaq_signing_key`
 
-#### TEST.1 — Test coverage: RSpec gate raised; Solidity/firmware tracked
-- **P2** · 🤖 · 🟢 · → `04_06 §B.1`
-- **Стан:** RSpec gate raised — `/lib/tasks/` відфільтровано (логіка в lib-движках 100%), line/branch підняті + per-group tripwire, великий branch+line-push з тріажем (мертві `&.`→`.`, real guard/empty-state/error tests, dead-code прибрано) + 2 dead-branch рефактори + ReDoS-fix `TABLE_ID_RE`; firmware coverage-lane `make -C firmware/test coverage` (gcov, owned `../common`/`../queen`, +`flash_ring` drain-test) живий; seed-флак вполльовано (`scripts/coverage_seed_diff.rb`; справжній інтегріті-дефект `sessions#current_session` `Module#prepend` знято). Пороги — лише `spec/spec_helper.rb`. Канон `04_06 §B.1/§B.3` (gate/scope) · `04_06 §B.4/§B.5` (gap-triage + dead-vs-defensive таксономія + worked-examples).
-- [ ] 🤖 RSpec залишок: branch-хвіст звужується партіями (решта домінована **defensive** — Phlex `&.current_user` / env `defined?` / model-validation-dead / exhaustive-case → leave за §B.4: fragile white-box заради % = анти-§A.16-17)
-- [ ] 🤖 Solidity (`contracts/`): глибший branch-targeting pass (line/func високі, forge-тести зелені; forge branch% низький — переважно forge-артефакт: кожен `require` + OZ-inherited, revert-шляхи покриті `testRevert_*`)
-
 #### E.65 — `piezo_voltage_mv`: фантомний продакшн-шлях (сейсміка)
 - **P3** · 👤 · ⚪ · → [`04_01 §3`](04_01_Data_Models_and_Entities)
 - **Стан:** Не розпочато — `piezo_voltage_mv` фантомна: колонка (всі партиції, `structure.sql`) + btree-індекс `idx_telemetry_logs_piezo_created` + скоуп `seismic_activity(>1500)` (`telemetry_log.rb`) існують, але жоден wire-формат (21B/CCM) не несе piezo і жоден код не пише колонку → скоуп вічно порожній, індекс на NULL-ах. П'єзо в залізі реальне ([`02_01 §3`](02_01_Hardware_Architecture_and_BOM)), але роль — акустичний тригер TinyML, не mV-поле. Канон [`04_01 §3`](04_01_Data_Models_and_Entities).
@@ -1153,6 +1147,7 @@ _Активних DOC-T наразі немає — усі вирішено/ар
 | DOC-T.20 | DOC-T section гомогенізовано: resolved 15/17/18/19 + DOC-T.2 → §🗄️ (вердикт DOC-T.2 canonized → `00_06 §2`), `#### `-форму знято, section-title оновлено → active DOC-T = лише open (9/10/16) | `00_07` |
 | DOC-T.22 | §01-02 HW під-регіон стандартизовано (form-decision: фасетні під-блокери інлайн HW.8-стилем, standalone-програма → `####`): HW.5 Gen 2.0-блок → pointer `01_03 §1–3`; HW.1.PicoGK + HW.3.IS згорнуто інлайн; HW.5.IS → `####` (CHEM.N + in-silico = `#####` working-backlog діти, kept per no-premature-canon). Drift-fixes по нитці: HW.3.IS creep→stress-relaxation + DFT→MD-permeation + Trek-C heavy-FEA→Гусак; `00_02 §4a` reconcile (аналітичний Lamé-bound легіт, відкладає важку FEA Гусаку); Стаття 28→Стаття 1; `01_03` HW.5a→HW.5 | `00_07`, `01_03 §1–3` |
 | DOC-T.21 | 18 tracker-family `[ID]` cited у коді/доках без 00_07-дому → per-ID verify resolved-in-code + §🗄️ orphan-rows (OBS.1/SEC.5/SEC.8 pattern): S6.4/6/8/9/13/15/16/17/19 · FW.6/10/16/28 · E.46 · HW.10 · INF.5/7 = resolved code-annotations; FW.45 = dup→ARCH.18 (firmware-тег) | `00_07` |
+| TEST.1 | Solidity contract coverage: низький forge `--ir-minimum` branch%/окремі line = артефакт виміру (require-reverts/`pause`/override-делегації тестовані+проходять; гейт на line/func), Governor `_cancel` func-геп закрито `test_cancel_byProposerWhilePending`. RSpec gate + firmware coverage-lane (раніше теж під TEST.1) — done | `04_06 §B.1.2`, §B.3 |
 | E.45 | SCC/SFC subgraph zero-address fail-fast guard (`subgraph/validate_addresses.sh`); real-address swap → S3.5 | `05_03` |
 | OPS.5 | Projects V2 TRL field schema (1-9 + Readiness Horizon SRL/MRL; `lib/github_bootstrap.rb`); live-board bootstrap-run → OPS.6 | `00_05 §1.1` |
 | E.61 | Solana micro-rewards batch payouts (Kredis-акумуляція → `transferChecked`, годинний cron, поріг-gated) | `05_01 §8`, `04_02 §10` |

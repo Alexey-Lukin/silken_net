@@ -226,6 +226,29 @@ contract SilkenGovernorTest is Test {
         assertTrue(governor.proposalNeedsQueuing(proposalId));
     }
 
+    // ─── Proposal Cancellation ────────────────────────────────────────
+
+    /// @dev Proposer cancels their own proposal while it is still Pending
+    ///      (before voting begins). Exercises the _cancel → Timelock override
+    ///      (the cancel path was previously untested) and confirms the proposal
+    ///      lands in the Canceled state.
+    function test_cancel_byProposerWhilePending() public {
+        vm.roll(block.number + 1);
+
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
+            _createSetParameterProposal(keccak256("lorenz_sigma"), 12e18, "GIP-cancel: proposer withdraws");
+
+        vm.prank(voter1);
+        uint256 proposalId = governor.propose(targets, values, calldatas, description);
+
+        // Still within votingDelay → state is Pending → the proposer may cancel.
+        bytes32 descriptionHash = keccak256(bytes(description));
+        vm.prank(voter1);
+        governor.cancel(targets, values, calldatas, descriptionHash);
+
+        assertEq(uint256(governor.state(proposalId)), uint256(IGovernor.ProposalState.Canceled));
+    }
+
     // ─── Helpers ──────────────────────────────────────────────────────
 
     function _mintAndDelegate(address to, uint256 amount, string memory clusterId) internal {
