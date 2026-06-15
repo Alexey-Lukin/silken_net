@@ -4,7 +4,7 @@
 #
 # Each row represents one Factory-Flashing attempt for a single device. The
 # AASM state machine (see ProvisioningSession) enforces the 2-Person Rule
-# documented in docs/03_05_Hardware_Symmetric_Crypto_and_Security.md §3.4г C:
+# documented in docs/03_06_Factory_Flashing_and_Key_Provisioning.md §5 C:
 #
 #   pending → supervisor_approved → active → completed | failed
 #

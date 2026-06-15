@@ -128,7 +128,7 @@ namespace :docs do
     # 03_05-rename residue). Text source extensions only (skips contracts/out JSON +
     # binaries). Exempt the linter + its spec: they cite stale paths as deliberate examples.
     ext_exempt = %w[lib/docs_linter.rb spec/lib/docs_linter_spec.rb].freeze
-    source_glob = File.join(root_dir, "{bin,lib,app,firmware,contracts,spec,scripts,tools}",
+    source_glob = File.join(root_dir, "{bin,lib,app,firmware,contracts,spec,scripts,tools,config,db}",
                             "**", "*.{rb,sh,c,h,sol,py,rake,erb}")
     external_files = (Dir[File.join(root_dir, ".github", "**", "*")].select { |p| File.file?(p) } +
                       Dir[File.join(root_dir, "*.md")] +
