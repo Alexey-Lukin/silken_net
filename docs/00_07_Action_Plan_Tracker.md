@@ -616,7 +616,7 @@
 
 #### SEC.14 — SE role-split re-examination — per-packet AES vs provisioning-only (ARCH.42 honesty)
 - **P2** · 👤 · 🟢 · → [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)
-- **Стан:** re-examine done — чесний trade-off канонізовано. Справжня вісь = tamper-resistance LoRa session-ключа (per-packet SE AES) ⟷ latency/ідіом (built-in radio-AES ~10µs + session-key у RDP-Flash, SE provisioning-only), не «0.1% acceptable». Active-енергія мала, АЛЕ знахідка-інверсія: always-on SE sleep 150 нА ≈ 3.6 мДж/год > весь запас Сценарію C → SE **обов'язково за load-switch гейтом** (TPS22860, як BME280), стосується обох ролей. Тепер SE = **SE050** (вісь та сама). **Рекомендація аналізу:** дефолт **provisioning-only** (built-in radio-AES ідіоматичний для inline-LoRa ~10µs; per-device HKDF → злам 1 вузла ≠ мережа); per-packet SE AES лише для urban/high-value threat-model з імовірним фізичним доступом. Trade-off-таблиця + Power impact — [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security).
+- **Стан:** re-examine done — чесний trade-off канонізовано. Справжня вісь = tamper-resistance LoRa session-ключа ⟷ latency/ідіоматичність (НЕ енергія — мала з обох боків; окрема знахідка-інверсія: always-on SE sleep 150нА ≈ 3.6 мДж/год > запас Сценарію C → SE обовʼязково за load-switch гейтом). **Рекомендація: provisioning-only дефолт** (built-in radio-AES ідіоматичний для inline-LoRa, FW.2-CCM підсилює; per-device HKDF → злам 1 вузла ≠ мережа); per-packet SE — лише urban/high-value threat-model. Канон [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security).
 - [ ] 👤 обрати роль SE (per-packet vs provisioning-only) — bench eval + BOM freeze; threat-model-рішення (не тех-необхідність) → тримається у SE050-MIGRATION (One-Home)
 
 ## §04 · Backend / API / UI
