@@ -565,7 +565,7 @@
 
 #### SEC.1 — Multisig Gnosis Safe + PAUSER⊥admin split (production admin role)
 - **P0** · 👤 · 🟢 · → [`05_03` — Admin-Role Split](05_03_Tokenomics_SCC_and_SFC)
-- **Стан:** ✅ **PAUSER⊥DEFAULT_ADMIN split shipped** — SCC+SFC `PAUSER_ROLE`; `pause/unpause`→PAUSER; конструктор `(admin, pauser, minter, slasher)`. `Deploy.s.sol` рознесено: Timelock-first → токени `admin=Timelock` (`grantRole(MINTER)` за 48h = mint-вектор закрито) + `pauser=Safe` (миттєвий pause) + Safe=Timelock PROPOSER(bootstrap)+admin, deployer renounce. `REQUIRE_SAFE_ADMIN` + last-admin guard. forge build/test(195/0)/fmt зелені; нічого не задеплоєно. Канон [`05_03` — Admin-Role Split](05_03_Tokenomics_SCC_and_SFC).
+- **Стан:** ✅ **PAUSER⊥DEFAULT_ADMIN split shipped** — SCC+SFC `PAUSER_ROLE`; `pause/unpause`→PAUSER; конструктор `(admin, pauser, minter, slasher)`. `Deploy.s.sol` рознесено: Timelock-first → токени `admin=Timelock` (`grantRole(MINTER)` за 48h = mint-вектор закрито) + `pauser=Safe` (миттєвий pause) + Safe=Timelock PROPOSER(bootstrap)+admin, deployer renounce. **`ProtocolParameters` DEFAULT_ADMIN→Timelock теж (2026-06-15): Safe не може `grantRole(GOVERNANCE_ROLE,self)` й змінити економічні параметри в обхід 48h ([E.35] правда як написано); `Deploy.t.sol` пінить матрицю ролей + цей bypass.** `REQUIRE_SAFE_ADMIN` + last-admin guard. forge build/test/fmt зелені; нічого не задеплоєно. Канон [`05_03` — Admin-Role Split](05_03_Tokenomics_SCC_and_SFC).
 - [ ] 👤 створити Gnosis Safe (3/5|2/3) на Polygon + деплой з `ADMIN_ADDRESS=<Safe>` `REQUIRE_SAFE_ADMIN=true`
 - [ ] 👤 реальні зовнішні co-signer'и Safe — solo-founder: усі ключі в однієї особи = театр (HW-wallet'и + social recovery); renounce Timelock-admin + Safe-PROPOSER→`address(0)` post-DAO
 
@@ -576,6 +576,7 @@
 - [ ] 👤 Bitwarden Secrets API live (`BitwardenAdapter` зараз `NotImplementedError`)
 - [ ] 🔗 real SE I²C (Гілка B) — SE050 eval-kit; `cryptoauthlib`→SE05x код-міграція → SE050-MIGRATION (legacy ATECC-патерн reusable, [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security))
 - [ ] 👤 operational residual: console/DB-доступ обходить authenticated-approval CLI (`approve!` напряму) → закрити access-control'ом §5.A ([`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning); master-key=`super_admin`+MFA+HSM); full crypto-approval (per-user PKI замість пароля) — bench/future
+- [ ] 👤 (опція, 2026-06-15 аналіз — рішення founder) defense-in-depth: guard `credentials_verified?` на AASM-переході `approve` → сирий `approve!` з console теж вимагатиме пароля (нині обходить); зсуває bypass до raw-SQL `update_column`. Дешево (модель + ~6 specs), не замінює §5.A
 
 #### SEC.9 — Production AES Key містить FIPS-197 Appendix B Test Vector
 - **P0** · 👤 · 🟡 · → [`03_05 §3.1а`](03_05_Hardware_Symmetric_Crypto_and_Security)
@@ -594,6 +595,7 @@
 - [ ] 👤 застосувати на платі при factory flashing
 - [ ] 👤 bench-верифікація: сон 1 год без spurious reset (RUNBOOK §4.4)
 - [ ] 👤 bench-audit CubeMX `MX_RTC_Init` на WUT **auto-reload + IT enabled** + reliable WAKE за багатогодинний сон (не лише no-spurious-reset) — підтверджено: arming = навмисний порожній stub `firmware/hal_glue/soldier_hal_check.c` «календар/WUT FW.49 — bench» (board-freeze, не код); frozen IWDG × SEC.2 RDP-L2 → WUT = ЄДИНИЙ backstop живучості (нема watchdog/SWD recovery). Канон [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA); RTC clock-tree bring-up = FW.49
+- [ ] 👤 (2026-06-15 аналіз) hardening-рішення: винести армінг WUT (`HAL_RTCEx_SetWakeUpTimer_IT`) з регенерованого `MX_RTC_Init` у власну ревʼюйовану функцію — єдиний backstop живучості не має жити лише в .ioc-коді, що мовчки перезапишеться при наступному CubeMX-регені (код-частина 🤖-доступна; верифікація періоду — bench)
 
 #### SE050-MIGRATION — ATECC608B → NXP SE050 + true-DePIN ladder (2026-06-07)
 - **P1** · 🤖+👤 · 🟡 · → [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)
@@ -612,7 +614,7 @@
 - **P2** · 👤 · ⚪ · → [`03_05 §3.5`](03_05_Hardware_Symmetric_Crypto_and_Security)
 - **Стан:** Не розпочато — дизайн канонізовано, у BOM ще немає: zero-consumption transport (магніт→circuit open, інсталятор знімає→first power-up, ~$0.05/unit; окремий механізм від piezo Zero-Power Wake). ⚠️ continuous power-cut = magnet-DoS вектор на security-сенсорі → дизайн-вимога latching first-boot; self-powered → можливий Ruthless-Prune (§3.5).
 - [ ] 👤 додати Hamlin 59140-1-T-00-A + N52 магніт до BOM + оновити KiCad schematic
-- [ ] 👤 latching first-boot (не continuous power-cut) — magnet-DoS guard; або de-scope/pull-tab при BOM-freeze ([`03_05 §3.5`](03_05_Hardware_Symmetric_Crypto_and_Security))
+- [ ] 👤 BOM-freeze рішення (2026-06-15 аналіз): **pull-tab = security-дефолт** (немає magnet-DoS, дешевший, one-shot за природою → домінує над герконом); геркон лише з latching first-boot, якщо потрібен «перший вдих»-наратив ([`03_05 §3.5`](03_05_Hardware_Symmetric_Crypto_and_Security))
 
 #### SEC.14 — SE role-split re-examination — per-packet AES vs provisioning-only (ARCH.42 honesty)
 - **P2** · 👤 · 🟢 · → [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)

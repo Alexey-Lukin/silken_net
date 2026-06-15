@@ -208,7 +208,7 @@ _[SEC.1] PAUSER (Safe) ≠ ADMIN (Timelock): pause — швидко; видач�
 | 4 | `forge script script/Deploy.s.sol --rpc-url $RPC --broadcast` |
 | 5 | Верифікація (нижче) |
 
-**Deploy-послідовність [SEC.1]:** Timelock деплоїться **першим** (deployer = тимчасовий admin) → токени з `admin=Timelock`, `pauser=Safe` → Anchor/Governor/Params → wire Timelock-ролей (Governor = PROPOSER+CANCELLER; **Safe = PROPOSER** — bootstrap: може *планувати* `grantRole(MINTER)` з 48h-затримкою до активації DAO) → передати Timelock-admin Safe + **renounce deployer** (deployer лишається без жодної ролі). StateRootAnchor/ProtocolParameters admin = Safe (нема mint; params вже governance-gated через Timelock).
+**Deploy-послідовність [SEC.1]:** Timelock деплоїться **першим** (deployer = тимчасовий admin) → токени з `admin=Timelock`, `pauser=Safe` → Anchor/Governor/Params → wire Timelock-ролей (Governor = PROPOSER+CANCELLER; **Safe = PROPOSER** — bootstrap: може *планувати* `grantRole(MINTER)` з 48h-затримкою до активації DAO) → передати Timelock-admin Safe + **renounce deployer** (deployer лишається без жодної ролі). StateRootAnchor admin = Safe (нема mint/коштів; поганий root детектується off-chain — low severity). **ProtocolParameters admin = Timelock** (як токени, 2026-06-15): DEFAULT_ADMIN не може `grantRole(GOVERNANCE_ROLE, self)` в обхід 48h → зміна економічних параметрів (dynamic-tax / slash-curve / fallback-ціна, які бекенд читає через `SystemParameter`) теж за 48h-veto, тобто [E.35] правда як написано.
 
 **Guard у `Deploy.s.sol`:** при `REQUIRE_SAFE_ADMIN=true` деплой ревертиться, якщо `ADMIN_ADDRESS` — EOA (`safe.code.length == 0`); інакше — warning (testnet/local EOA допустимо).
 
@@ -224,7 +224,7 @@ cast call $SCC "hasRole(bytes32,address)(bool)" $ADMIN $DEPLOYER  # → false
 # повторити для $SFC, $ANCHOR, $TIMELOCK, $PROTOCOL_PARAMS
 ```
 
-> `MINTER_ROLE` / `SLASHER_ROLE` належать backend-оракулам (operational, не admin) — нормально. `ProtocolParameters` керується `SilkenTimelock` (DAO).
+> `MINTER_ROLE` / `SLASHER_ROLE` належать backend-оракулам (operational, не admin) — нормально. `ProtocolParameters` **повністю** керується `SilkenTimelock` — і `GOVERNANCE_ROLE` (зміна параметрів), і `DEFAULT_ADMIN` (видача ролей) → обидва за 48h (Safe НЕ admin Params).
 
 ---
 
@@ -800,7 +800,7 @@ On-chain governance (SFC-голосування за протокольні па
 **Foundry Deploy Script (✅ Реалізовано):**
 ```bash
 # contracts/script/Deploy.s.sol — деплой всіх 6 контрактів у правильному порядку:
-# 1. SCC → 2. SFC → 3. StateRootAnchor → 4. Timelock → 5. Governor → 6. ProtocolParameters
+# 1. Timelock → 2. SCC → 3. SFC → 4. StateRootAnchor → 5. Governor → 6. ProtocolParameters
 # Потрібні ENV: DEPLOYER_PRIVATE_KEY, ADMIN_ADDRESS, MINTER_ORACLE, SLASHER_ORACLE, ANCHOR_ORACLE
 # Dry-run: forge script script/Deploy.s.sol --rpc-url $RPC_URL
 # Broadcast: FOUNDRY_PROFILE=production forge script script/Deploy.s.sol --rpc-url $RPC_URL --broadcast --verify
@@ -811,11 +811,12 @@ On-chain governance (SFC-голосування за протокольні па
 myth analyze contracts/SilkenCarbonCoin.sol --solv 0.8.35
 ```
 
-**Operational Security (production):**
-- `DEFAULT_ADMIN_ROLE` → Gnosis Safe multisig (3/5 або 2/3) — **TODO** (SEC.1)
+**Operational Security (production) [SEC.1] — деталі §Admin-Role Split вище:**
+- `DEFAULT_ADMIN_ROLE` (токени + `ProtocolParameters`) → **SilkenTimelock** (48h) — ✅ `Deploy.s.sol`; видача будь-якої ролі за 48h
+- `PAUSER_ROLE` → **Gnosis Safe** (3/5 або 2/3) — миттєва пауза поза Timelock; 👤 **TODO**: реальний Safe + зовнішні co-signer'и
+- `StateRootAnchor` admin → Safe (нема mint/коштів — low severity)
 - `MINTER_ROLE` / `SLASHER_ROLE` → окремі Oracle EOA (✅ реалізовано, E.2)
 - `pause()` → без timelock (потрібна миттєва реакція при exploits)
-- Всі інші governance-зміни → через Timelock 48h
 
 ---
 

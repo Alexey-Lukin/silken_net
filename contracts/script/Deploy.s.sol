@@ -19,11 +19,13 @@ import "../ProtocolParameters.sol";
  *      3. SilkenForestCoin (SFC) — governance token (admin=Timelock, pauser=Safe)
  *      4. StateRootAnchor — L1 weekly state finalization (admin=Safe)
  *      5. SilkenGovernor — DAO governance (depends on SFC + Timelock)
- *      6. ProtocolParameters — on-chain parameter registry (governed by Timelock)
+ *      6. ProtocolParameters — on-chain parameter registry (admin=Timelock, governance=Timelock)
  *      7. Post-deploy: wire Timelock roles, then hand timelock admin → Safe + renounce deployer
  *
- *      run() is split into helpers to keep the stack shallow (the default profile is
- *      via_ir=false; CI runs `forge build --sizes` there — see foundry.toml).
+ *      The deploy + role wiring lives in `deployAll(...)` — param-driven and ENV-free —
+ *      so `test/Deploy.t.sol` can assert the exact post-deploy role matrix without ENV
+ *      or broadcast. `run()` only reads ENV + wraps it in vm.broadcast. Helpers keep the
+ *      stack shallow (the default profile is via_ir=false; CI runs `forge build --sizes`).
  *
  *      Usage:
  *        forge script script/Deploy.s.sol --rpc-url $RPC_URL                       # dry-run
@@ -37,15 +39,30 @@ import "../ProtocolParameters.sol";
  *        SLASHER_ORACLE       — backend oracle for slashing (BlockchainBurningService)
  *        ANCHOR_ORACLE        — backend oracle for L1 anchoring (EthereumAnchorWorker)
  *
- * [SEC.1] Role split: tokens' DEFAULT_ADMIN_ROLE = the 48h Timelock (so granting any
- *         role — incl. MINTER_ROLE — carries a 48h public delay; closes the instant-mint
- *         vector even for the multisig). PAUSER_ROLE = the Safe (instant emergency pause).
- *         The Safe is also a Timelock PROPOSER (bootstrap: it can schedule role grants
- *         pre-DAO, but only with the 48h delay). Production: ADMIN_ADDRESS = Gnosis Safe
- *         (3/5 or 2/3) + REQUIRE_SAFE_ADMIN=true.
+ * [SEC.1] Role split: every DEFAULT_ADMIN_ROLE that gates an economic vector = the 48h
+ *         Timelock. Tokens: granting any role (incl. MINTER_ROLE) carries a 48h public
+ *         delay (closes instant-mint even for the multisig). ProtocolParameters: admin =
+ *         Timelock too — so the Safe cannot re-grant itself GOVERNANCE_ROLE and change
+ *         economic params (slash curve / dynamic tax / insurance threshold / fallback
+ *         price) outside the 48h veto window, i.e. [E.35] holds as stated. PAUSER_ROLE =
+ *         the Safe (instant emergency pause). StateRootAnchor admin = Safe (no mint/funds;
+ *         a bad root is detectable off-chain; 6-day spam interval — low severity). The
+ *         Safe is also a Timelock PROPOSER (bootstrap: it can schedule role grants pre-DAO,
+ *         but only with the 48h delay). Production: ADMIN_ADDRESS = Gnosis Safe (3/5 or
+ *         2/3) + REQUIRE_SAFE_ADMIN=true.
  * [S3.5]  After deployment: update subgraph.yaml with the real SFC contract address.
  */
 contract DeploySilkenNet is Script {
+    /// @notice All deployed contract handles — returned by `deployAll` for the wiring test.
+    struct Deployed {
+        SilkenTimelock timelock;
+        SilkenCarbonCoin scc;
+        SilkenForestCoin sfc;
+        StateRootAnchor anchor;
+        SilkenGovernor governor;
+        ProtocolParameters protocolParams;
+    }
+
     function run() external {
         address safe = _envAddr("ADMIN_ADDRESS"); // [SEC.1] Gnosis Safe multisig
         _requireSafeOrWarn(safe);
@@ -54,38 +71,48 @@ contract DeploySilkenNet is Script {
         address deployer = vm.addr(deployerKey);
 
         vm.startBroadcast(deployerKey);
-
-        // 1. Timelock first (deployer = TEMP admin, handed to the Safe in _wireTimelock).
-        SilkenTimelock timelock = _deployTimelock(deployer);
-
-        // 2-3. Tokens: admin = Timelock (grantRole, incl. MINTER, is 48h-delayed); pauser = Safe.
-        SilkenCarbonCoin scc =
-            new SilkenCarbonCoin(address(timelock), safe, _envAddr("MINTER_ORACLE"), _envAddr("SLASHER_ORACLE"));
-        console.log("SCC deployed at:", address(scc));
-        SilkenForestCoin sfc =
-            new SilkenForestCoin(address(timelock), safe, _envAddr("MINTER_ORACLE"), _envAddr("SLASHER_ORACLE"));
-        console.log("SFC deployed at:", address(sfc));
-
-        // 4. StateRootAnchor — admin = Safe (no mint/pause; anchor-oracle management only).
-        StateRootAnchor anchor = new StateRootAnchor(safe, _envAddr("ANCHOR_ORACLE"));
-        console.log("StateRootAnchor deployed at:", address(anchor));
-
-        // 5-6. Governor + ProtocolParameters (governed by the Timelock).
-        SilkenGovernor governor = new SilkenGovernor(IVotes(address(sfc)), timelock);
-        console.log("SilkenGovernor deployed at:", address(governor));
-        ProtocolParameters protocolParams = new ProtocolParameters(safe, address(timelock));
-        console.log("ProtocolParameters deployed at:", address(protocolParams));
-
-        // 7. Wire Timelock roles, then hand admin → Safe + renounce deployer.
-        _wireTimelock(timelock, address(governor), safe, deployer);
-
+        deployAll(safe, deployer, _envAddr("MINTER_ORACLE"), _envAddr("SLASHER_ORACLE"), _envAddr("ANCHOR_ORACLE"));
         vm.stopBroadcast();
 
         console.log("");
         console.log(
-            "[SEC.1] Verify: tokens DEFAULT_ADMIN=Timelock; PAUSER_ROLE=Safe; Safe=Timelock admin+PROPOSER; deployer renounced"
+            "[SEC.1] Verify: tokens+Params DEFAULT_ADMIN=Timelock; PAUSER_ROLE=Safe; Safe=Timelock admin+PROPOSER; deployer renounced"
         );
         console.log("Post-deploy: set CARBON/FOREST/ANCHOR contract ENV; update subgraph (S3.5); verify on Polygonscan");
+    }
+
+    /// @notice Deploy + wire all contracts in dependency order. ENV-free + param-driven so
+    ///         `test/Deploy.t.sol` can assert the exact post-deploy role matrix. The caller
+    ///         (run() under broadcast, or the test) is the temporary Timelock admin
+    ///         (`deployer`) and ends with NO roles after `_wireTimelock`.
+    /// @return d Handles of every deployed contract.
+    function deployAll(address safe, address deployer, address minter, address slasher, address anchorOracle)
+        public
+        returns (Deployed memory d)
+    {
+        // 1. Timelock first (deployer = TEMP admin, handed to the Safe in _wireTimelock).
+        d.timelock = _deployTimelock(deployer);
+
+        // 2-3. Tokens: admin = Timelock (grantRole, incl. MINTER, is 48h-delayed); pauser = Safe.
+        d.scc = new SilkenCarbonCoin(address(d.timelock), safe, minter, slasher);
+        console.log("SCC deployed at:", address(d.scc));
+        d.sfc = new SilkenForestCoin(address(d.timelock), safe, minter, slasher);
+        console.log("SFC deployed at:", address(d.sfc));
+
+        // 4. StateRootAnchor — admin = Safe (no mint/pause; anchor-oracle management only).
+        d.anchor = new StateRootAnchor(safe, anchorOracle);
+        console.log("StateRootAnchor deployed at:", address(d.anchor));
+
+        // 5-6. Governor + ProtocolParameters. [SEC.1] Params admin = Timelock (NOT the Safe):
+        // setParameter is GOVERNANCE_ROLE=Timelock, and DEFAULT_ADMIN=Timelock too so the Safe
+        // cannot re-grant GOVERNANCE_ROLE to itself and bypass the 48h delay on economic params.
+        d.governor = new SilkenGovernor(IVotes(address(d.sfc)), d.timelock);
+        console.log("SilkenGovernor deployed at:", address(d.governor));
+        d.protocolParams = new ProtocolParameters(address(d.timelock), address(d.timelock));
+        console.log("ProtocolParameters deployed at:", address(d.protocolParams));
+
+        // 7. Wire Timelock roles, then hand admin → Safe + renounce deployer.
+        _wireTimelock(d.timelock, address(d.governor), safe, deployer);
     }
 
     /// @dev Read a required, non-zero address from ENV (reverts if unset/zero).

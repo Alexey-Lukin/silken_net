@@ -68,7 +68,9 @@ contract ProtocolParameters is AccessControl {
     event ParameterUpdated(bytes32 indexed key, uint256 oldValue, uint256 newValue, address indexed updatedBy);
 
     /// @notice Конструктор ProtocolParameters.
-    /// @param admin Адміністратор контракту (DEFAULT_ADMIN_ROLE). Рекомендовано: Gnosis Safe multisig.
+    /// @param admin Адміністратор ролей (DEFAULT_ADMIN_ROLE). [SEC.1] production = SilkenTimelock
+    ///        (НЕ Gnosis Safe): інакше admin міг би `grantRole(GOVERNANCE_ROLE, self)` і змінити
+    ///        параметри в обхід 48h-Timelock — підрив [E.35]. Безпечно = той самий Timelock, що і timelock.
     /// @param timelock Адреса SilkenTimelock (GOVERNANCE_ROLE). Всі зміни параметрів через governance.
     constructor(address admin, address timelock) {
         require(admin != address(0), "ProtocolParameters: zero admin");
