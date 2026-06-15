@@ -368,26 +368,21 @@ Duty cycle = T_airtime / T_period
 
 ### HRNG Fallback — покращена ентропія (Виправлено)
 
-✅ Reuse закрито; **harden 2026-05-29** (cross-reboot/flush uniqueness + host-тести). 🟡 Residual (predictability) — low-severity, нижче.
+✅ Reuse закрито (harden 2026-05-29); **predictability закрито 2026-06-15 [SEC.12]** — fallback-IV тепер key-derived PRF (HMAC-SHA256), host-парність vs OpenSSL.
 
-**Реалізація:** fallback-IV винесено у pure-функцію `firmware/queen/coap_iv.h` →
-`coap_fallback_iv_word(i, tick, uid_hash, unix_ts, flush_seq)`, host-тестовану в
-`firmware/test/test_encryption.c` (per-word / per-device / cross-reboot /
-cross-flush uniqueness). Нормальний шлях — HRNG (CSPRNG); fallback спрацьовує лише
-при апаратній відмові RNG.
+**Реалізація:** нормальний шлях — HRNG (CSPRNG). При апаратній відмові RNG (`HAL_RNG` error) увесь 16-байтний fallback-IV деривується чистою функцією `coap_fallback_iv` (`firmware/queen/coap_iv.h`) як **HMAC-SHA256, ключований секретним CoAP-ключем** — host-тестована в `firmware/test/test_encryption.c` проти ДВОХ незалежних oracle (OpenSSL HMAC + one-shot `Silken_Hmac_Sha256`) + per-device/reboot/flush uniqueness:
 
 ```c
-// coap_iv.h — uniqueness-preserving degradation (НЕ CSPRNG)
-batch_iv[i] = (tick + i)                  // sub-second + per-word
-            ^ (uid_hash << i)             // per-DEVICE (djb2 queen_uid / STM32 HW UID)
-            ^ (unix_ts * 65537U)          // cross-REBOOT (server-synced wall-clock)
-            ^ (flush_seq * 2654435761U)   // cross-FLUSH (monotonic per-boot)
-            ^ ((uint32_t)i * RNG_FALLBACK_XOR_MASK);
+// coap_iv.h — key-derived IV (НЕ raw CSPRNG, але НЕПЕРЕДБАЧУВАНИЙ без ключа)
+IV[0:16] = HMAC_SHA256(coap_key,
+             "SilkenNet-CoAP-IV-v1" || uid_hash || unix_ts || flush_seq || tick)[0:16]
+//  coap_key  -> робить PRF непередбачуваним (атакер без ключа не вгадає IV)
+//  uid_hash -> per-DEVICE · unix_ts -> cross-REBOOT · flush_seq -> cross-FLUSH · tick -> sub-second
 ```
 
-**IV Reuse** унеможливлено по всіх осях: `uid_hash` (per-device, mass blackout-reboot guard) + `queen_unix_ts` (cross-reboot) + `coap_flush_seq` (cross-flush).
+**IV Reuse** унеможливлено по всіх осях (per-device/reboot/flush контекст), а **IV Unpredictability** — досягнуто: вихід HMAC обчислювально непередбачуваний без `coap_key`. Примітив — той самий shared `silken_sha256.h` (FW.30, byte-parity vs OpenSSL `SeedDerivation`).
 
-> 🟡 **Чесний residual (predictability):** fallback-IV **унікальний, але передбачуваний** (uid/час/лічильник вгадувані). Сувора вимога CBC — *непередбачуваність*; але загроза тут **low-severity**, бо CoAP-батч несе власну телеметрію Королеви → **немає chosen-plaintext вектора** (BEAST-патерн непридатний), отже операційна вимога — саме *uniqueness* (досягнуто). Повна unpredictability = key-derived IV `E_key(counter)` через AES-engine (окремий CRYP-крок + SEC.8 restore) — **bench-gated** roadmap-пункт. Normal-path HRNG вже непередбачуваний.
+> ✅ **Residual закрито [SEC.12, 2026-06-15]:** колишній XOR-mix (`coap_fallback_iv_word`) давав лише *uniqueness*; key-derived HMAC дає й *unpredictability* — **без** AES-engine `E_key(counter)`, **без** SEC.8 ECB-restore, **без** bench-гейту. Канон раніше припускав, що key-derived IV потребує CRYP-двигун; `silken_sha256.h` робить це у pure-SW (Королева на LiFePO4; HMAC лише на rare RNG-failure шляху). Normal-path HRNG лишається первинним.
 
 ---
 
@@ -805,6 +800,11 @@ Device Memory → Option Bytes → Read Out Protection → RDP: Level 1 (або 
 - Простота: 1 компонент, ~$0.05/шт, без програмного коду
 - Маркетингова цінність: "The node takes its first breath the moment the anchor enters the tree"
 
+**⚠️ Ризик і дизайн-вимога [SEC.4]:**
+- **Magnet-DoS на security-сенсорі:** геркон, що **безперервно** розриває живлення, можна повторно тригернути в полі — зловмисник (напр. лісоруб) із сильним магнітом вимикає сусідній вузол. Для анти-illegal-logging сенсора це реальний вектор глушіння.
+- **Фікс — latching first-boot:** геркон гейтить лише **перший** boot; далі софт латчить power-on (set-and-hold через GPIO/load-switch) і **ігнорує** подальший стан геркону → польовий магніт уже не вимкне вузол. Переносить shipping-mode з «continuous power-cut» у «one-shot arm».
+- **Чи потрібен взагалі (self-powered):** Солдат живиться від EBFC дерева — у коробці дерева нема, отже й живлення нема. Цінність геркону = зберегти factory-заряд supercap до інсталяції (швидший first-breath). Якщо cold-start від EBFC прийнятний — це Ruthless-Prune-кандидат (або pull-tab замість магніту, який не спуфиться). Зважити при BOM-freeze.
+
 **Додати до BOM Солдата:** геркон (наприклад, Hamlin 59140-1-T-00-A або аналог) + N52 неодимовий магніт ∅6×3 мм.
 
 ---
@@ -860,6 +860,8 @@ STM32_Programmer_CLI -c port=SWD -ob RDP=0xCC
 ```
 
 **Recovery options після RDP-2:** **жодних.** SWD інтерфейс фізично відключений у кремнії. Якщо OTA зламається → пристрій — електронне сміття. Тому checklist вище — обов'язковий.
+
+> ⚠️ **OTA латає ЛИШЕ mruby-байткод, не C-firmware [SEC.2].** `Flash_Write_Contract` (`firmware/common/flash_ota.h`) пише contract-сторінку (magic «RITE» @ `MRUBY_CONTRACT_FLASH_ADDR`) — тобто OTA оновлює **BioContract-байткод**, а НЕ C-прошивку (radio stack, AES, main loop). Після RDP L2 баг у C-коді **невиправний** (SWD off, OTA не дістає C). Чекліст-рядок «OTA rollback → fallback на embedded `lorenz_bytecode`» стосується **байткоду**, не C-recovery — це різні відмови. Висновок: RDP L2 = **остаточне заморожування C-прошивки** → активувати лише коли C-код доведений у полі на L1-партії місяцями (rollout-таблиця нижче) + FW.2 інтегровано.
 
 **Поетапний rollout (рекомендовано):**
 
