@@ -571,11 +571,11 @@
 
 #### SEC.3 — Factory Flashing pipeline
 - **P0** · 👤 · 🟡 · → [`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning)
-- **Стан:** Гілка A+B Rake-tool канонізовано — `provisioning_sessions` AASM + 2-Person Rule + `factory_flashing/*` + rake `factory:flash|approve|execute` (dry-run); execute-шлях інтеграційно доведено шимом (fake `STM32_Programmer_CLI` → реальні subprocess'и: stdout/stderr/exit capture, stop-on-fail, AASM failed+transcript). Конвеєр [`03_06 §1`](03_06_Factory_Flashing_and_Key_Provisioning); bench-residual = фізичний SWD-флеш.
+- **Стан:** Гілка A+B Rake-tool канонізовано — `provisioning_sessions` AASM + 2-Person Rule (operator≠supervisor + **supervisor-password-auth на `approve`** via `approve_with_credentials!`/Argon2id, SEC.3 — оператор сам не схвалить) + `factory_flashing/*` + rake `factory:flash|approve|execute` (dry-run); execute-шлях інтеграційно доведено шимом (fake `STM32_Programmer_CLI` → реальні subprocess'и: stdout/stderr/exit capture, stop-on-fail, AASM failed+transcript). Конвеєр [`03_06 §1`](03_06_Factory_Flashing_and_Key_Provisioning); bench-residual = фізичний SWD-флеш.
 - [ ] 👤 real `STM32_Programmer_CLI` на STM32WLE5JC bench (post-FW.2) — runbook `firmware/scripts/bench/`
 - [ ] 👤 Bitwarden Secrets API live (`BitwardenAdapter` зараз `NotImplementedError`)
 - [ ] 🔗 real SE I²C (Гілка B) — SE050 eval-kit; `cryptoauthlib`→SE05x код-міграція → SE050-MIGRATION (legacy ATECC-патерн reusable, [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security))
-- [ ] 👤 2-Person Rule = ідентичність-dual-control (approve≠execute — РІЗНІ автентифіковані принципали), не лише AASM-стан `supervisor_approved`; інакше «1 особа двічі» проти зловмисного фабричного оператора
+- [ ] 👤 operational residual: console/DB-доступ обходить authenticated-approval CLI (`approve!` напряму) → закрити access-control'ом §5.A ([`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning); master-key=`super_admin`+MFA+HSM); full crypto-approval (per-user PKI замість пароля) — bench/future
 
 #### SEC.9 — Production AES Key містить FIPS-197 Appendix B Test Vector
 - **P0** · 👤 · 🟡 · → [`03_05 §3.1а`](03_05_Hardware_Symmetric_Crypto_and_Security)
