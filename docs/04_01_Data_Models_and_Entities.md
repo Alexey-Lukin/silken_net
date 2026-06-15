@@ -987,6 +987,7 @@ active/draft ──cancel──► cancelled
 | `active_threats?` | Загрози в кластері |
 | `insurance_premium_amount` | `total_funding * INSURANCE_PREMIUM_RATE` (5%) — обчислювальний метод |
 | `forester_share_amount` | `total_funding * 0.95` — частка лісника (обчислювальний метод) |
+| `self.total_insurance_premiums` | Σ премій (5%) по активованих (active/fulfilled/breached) контрактах — DB-джерело premium-показника Real-Yield звіту ([`04_03`](04_03_REST_API_v1_Reference) `reports#financial_summary`); off-chain USDC-факт, НЕ on-chain подія |
 
 **Scopes:** `active`, `pending_completion` (active + end_date < now).
 

@@ -9,12 +9,12 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 (Module 05 Web3 — канон-матриця [`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond): поточний 8, ціль 9, гейт «SFC address»). Контракти code-complete, Foundry-tested, Slither у CI — **готові до** testnet→mainnet deploy + зовнішнього аудиту. TRL 9 = mainnet-deployed ([`00_03`](00_03_TRL_Matrix_HIL_and_Beyond): «TRL 9 → mainnet») — ще не досягнуто (placeholder-адреси, manual audit + Gnosis multisig = TODO).
-- **SCC контракт:** ✅ Production-ready (MAX_SUPPLY=1B, MINTER/SLASHER split, ReentrancyGuard, NatSpec, PremiumPaid event, mintForTree alias, audit hardening, slash bypasses pause, admin protection, locked pragma)
+- **SCC контракт:** ✅ Production-ready (MAX_SUPPLY=1B, MINTER/SLASHER split, ReentrancyGuard, NatSpec, mintForTree alias, audit hardening, slash bypasses pause, admin protection, locked pragma)
 - **SFC контракт:** ✅ Production-ready (MAX_SUPPLY=100M, SLASHER_ROLE + slash(), ReentrancyGuard, NatSpec, slash bypasses pause, auto-delegation, admin protection, locked pragma)
-- **Аудит-зміцнення:** ✅ Явна перевірка балансу в `slash()`, валідація нульових значень у `mint()`/`slash()`, перевірка порожнього батчу у `batchMint()`, NatSpec, захист від The Graph DoS (`treeDid`/`clusterId` length ≤256 bytes), валідація `recordPremiumPaid()`, per-element string validation у `batchMint()` для обох контрактів
+- **Аудит-зміцнення:** ✅ Явна перевірка балансу в `slash()`, валідація нульових значень у `mint()`/`slash()`, перевірка порожнього батчу у `batchMint()`, NatSpec, захист від The Graph DoS (`treeDid`/`clusterId` length ≤256 bytes), per-element string validation у `batchMint()` для обох контрактів
 - **Зовнішній аудит (19 findings):** ✅ Аналіз 19 знахідок: 9 виправлено on-chain (slash bypass pause, admin protection, auto-delegate, batch size 100, anchor interval, locked pragma, mint dedup, rootHistory, timestamp NatSpec), 10 задокументовано як operational/by-design
 - **Backend інтеграція:** ✅ `BlockchainMintingService` + `BlockchainBurningService`
-- **The Graph subgraph:** ✅ `TokenSlashed` виправлено, `PremiumPaid` додано, `treeDidHash` (bytes32) додано. ✅ SFC: `ForestMintEvent` + `GovernanceSlashEvent` + handlers додано (S3.5). ⚠️ SFC contract address — placeholder до Mainnet deploy.
+- **The Graph subgraph:** ✅ `TokenSlashed` виправлено, `treeDidHash` (bytes32) додано. ✅ SFC: `ForestMintEvent` + `GovernanceSlashEvent` + handlers додано (S3.5). ⚠️ SFC contract address — placeholder до Mainnet deploy.
 - **Відкрите:** SFC contract address placeholder до Mainnet deploy; зовнішній аудит execution → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
@@ -67,7 +67,7 @@
 | **Slash / Burn** | ✅ `slash()` через `SLASHER_ROLE` | ✅ `slash()` через `SLASHER_ROLE` (B-06 виправлено) |
 | **Gasless approvals** | ✅ EIP-2612 / EIP-712 (PR #253) | ✅ EIP-2612 / EIP-712 |
 | **DAO голосування** | ❌ | ✅ `ERC20Votes` |
-| **Subgraph індексація** | ✅ `CarbonMinted`, ✅ `TokenSlashed`, ✅ `PremiumPaid` | ✅ `ForestMintEvent`, ✅ `GovernanceSlashEvent` (⚠️ contract address placeholder) |
+| **Subgraph індексація** | ✅ `CarbonMinted`, ✅ `TokenSlashed` | ✅ `ForestMintEvent`, ✅ `GovernanceSlashEvent` (⚠️ contract address placeholder) |
 
 ---
 
@@ -332,23 +332,7 @@ function slash(address investor, uint256 amount)
 - **Guard on pause:** Слешинг **НЕ блокується** при паузі — `_update` дозволяє `_burn()` (to == address(0)) навіть коли контракт призупинено. Це запобігає governance attack vector де адмін захищає порушників від слешингу.
 - **Подія:** `TokenSlashed(address indexed investor, uint256 amount)`
 
-#### `recordPremiumPaid(address payer, uint256 amount)`
-
-```solidity
-function recordPremiumPaid(address payer, uint256 amount)
-    external
-    onlyRole(DEFAULT_ADMIN_ROLE)
-{
-    require(payer != address(0), "SCC: zero payer");
-    require(amount > 0, "SCC: zero premium");
-    emit PremiumPaid(payer, amount);
-}
-```
-
-- **Модифікатор:** `onlyRole(DEFAULT_ADMIN_ROLE)`
-- **Призначення:** Off-chain tracking для Parametric Insurance. Фактична передача токенів відбувається поза контрактом — функція тільки емітує подію `PremiumPaid` для індексації The Graph subgraph
-- **Валідація:** `payer != address(0)`, `amount > 0` — запобігає event spoofing (некоректні події індексувались би у subgraph `ProtocolFinancials.totalPremiums`)
-- **Подія:** `PremiumPaid(address indexed payer, uint256 amount)` → `handlePremiumPaid` у subgraph
+> **Страхова премія — НЕ on-chain SCC-подія (знято [SEC.1], 2026-06-15).** Премія NaaS-контракту (5% від funding) — **off-chain USDC-факт** у БД (`NaasContract`; концепт-дім [`07_01`](07_01_Nature_as_a_Service_Contracts), ризик-політика [`05_05`](05_05_Slashing_and_Risk_Policy)). Колишній `recordPremiumPaid()` + `PremiumPaid`-event на SCC-токені був **never-fed** (жоден backend-виклик) і архітектурно чужорідним (SCC-event для USDC-факту) → видалено з контракту/тестів/subgraph. Real-Yield звіт бере премію з БД (`NaasContract.total_insurance_premiums`, [`04_03`](04_03_REST_API_v1_Reference) `reports#financial_summary`). Не плутати з **Dynamic-Tax SCC-пулом** — окремий on-chain механізм поповнення страхового пулу ([`05_02`](05_02_Proof_of_Growth_Pipeline)).
 
 #### `pause()` / `unpause()`
 
@@ -495,7 +479,6 @@ function nonces(address owner)
 |---|---|---|---|
 | `CarbonMinted` | `CarbonMinted(address indexed investor, uint256 amount, bytes32 indexed treeDidHash, string treeDid)` | `investor`, `treeDidHash` | ✅ `handleCarbonMinted` |
 | `TokenSlashed` | `TokenSlashed(address indexed investor, uint256 amount)` | `investor` | ✅ `handleTokenSlashed` |
-| `PremiumPaid` | `PremiumPaid(address indexed payer, uint256 amount)` | `payer` | ✅ `handlePremiumPaid` |
 
 ### SFC
 
@@ -510,7 +493,6 @@ function nonces(address owner)
 |---|---|---|
 | `CarbonMinted(indexed address,uint256,indexed bytes32,string)` | `CarbonMinted` | ✅ `treeDidHash` (bytes32) |
 | `TokenSlashed(indexed address,uint256)` | `TokenSlashed` | ✅ Синхронізовано |
-| `PremiumPaid(indexed address,uint256)` | `PremiumPaid` | ✅ Event + handler додано |
 | `ForestMinted(indexed address,uint256,indexed bytes32,string)` | `ForestMinted` (SFC) | ✅ Handler додано (S3.5) |
 | `GovernanceSlashed(indexed address,uint256)` | `GovernanceSlashed` (SFC) | ✅ Handler додано (S3.5) |
 
@@ -661,9 +643,6 @@ FilecoinArchiveWorker → IPFS/Filecoin permanent record
 - event: TokenSlashed(indexed address,uint256)
   handler: handleTokenSlashed           # ✅ Синхронізовано з контрактом
 
-- event: PremiumPaid(indexed address,uint256)
-  handler: handlePremiumPaid            # ✅ Event додано до контракту
-
 # SFC data source (додано S3.5)
 - event: ForestMinted(indexed address,uint256,indexed bytes32,string)
   handler: handleForestMinted           # ✅ clusterIdHash як bytes32
@@ -689,7 +668,6 @@ type ProtocolFinancials @entity {
   id: ID!
   totalMinted: BigInt!
   totalBurned: BigInt!           # ✅ Індексується через TokenSlashed (SCC)
-  totalPremiums: BigInt!         # ✅ Індексується через PremiumPaid
   totalForestMinted: BigInt!     # ✅ Індексується через ForestMinted (SFC)
   totalGovernanceSlashed: BigInt! # ✅ Індексується через GovernanceSlashed (SFC)
 }
@@ -741,8 +719,8 @@ app/workers/
 
 subgraph/
 ├── schema.graphql                    # CarbonMintEvent (treeDidHash), SlashingEvent, ProtocolFinancials
-├── subgraph.yaml                     # ✅ PremiumPaid handler (event додано до контракту)
-└── src/mapping.ts                    # handleCarbonMinted, handleTokenSlashed, handlePremiumPaid
+├── subgraph.yaml                     # SCC: CarbonMinted + TokenSlashed; SFC: ForestMinted + GovernanceSlashed
+└── src/mapping.ts                    # handleCarbonMinted, handleTokenSlashed (+ SFC handlers)
 
 spec/services/
 ├── blockchain_minting_service_spec.rb

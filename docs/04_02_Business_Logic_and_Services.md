@@ -622,9 +622,9 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 |---|---|
 | **Файл** | `app/services/the_graph/query_service.rb` |
 | **Вхід** | — (no args, class instance methods) |
-| **Що робить** | GraphQL запити до The Graph subgraph (Polygon). `fetch_total_carbon_minted` — сума `carbonMintEvents.amount`. `fetch_protocol_financials` — `totalMinted`, `totalBurned`, `totalPremiums`. |
+| **Що робить** | GraphQL запити до The Graph subgraph (Polygon). `fetch_total_carbon_minted` — сума `carbonMintEvents.amount`. `fetch_protocol_financials` — `totalMinted`, `totalBurned` (премії — off-chain USDC з БД, `NaasContract.total_insurance_premiums`, не subgraph). |
 | **Зовнішні виклики** | `Web3::HttpClient.post` → `the_graph_api_url` |
-| **Вихід** | `fetch_total_carbon_minted → Integer`. `fetch_protocol_financials → { total_minted:, total_burned:, total_premiums: }`. |
+| **Вихід** | `fetch_total_carbon_minted → Integer`. `fetch_protocol_financials → { total_minted:, total_burned: }`. |
 
 ### `Dclimate::VerificationService`
 

@@ -223,7 +223,7 @@ did:peaq:0x{SHA256(hardware_identifier + tree_id + created_at)[0:40]}
 
 **Методи:**
 - `fetch_total_carbon_minted` — останні 100 `CarbonMintEvent`, сума `amount`
-- `fetch_protocol_financials` — singleton `ProtocolFinancial` entity (`totalMinted`, `totalBurned`, `totalPremiums`)
+- `fetch_protocol_financials` — singleton `ProtocolFinancial` entity (`totalMinted`, `totalBurned`)
 
 **Entities (GraphQL):**
 ```graphql
@@ -241,11 +241,9 @@ type ProtocolFinancials @entity {
   id: ID!
   totalMinted: BigInt!
   totalBurned: BigInt!
-  totalPremiums: BigInt!
 }
 
 type SlashingEvent @entity { ... }
-type PremiumPaidEvent @entity { ... }
 ```
 
 ---
