@@ -50,10 +50,13 @@ RSpec.describe ProvisioningSession do
       expect(session).to be_pending
     end
 
-    describe "#approve!" do
-      it "transitions pending → supervisor_approved and stamps timestamp" do
-        expect { session.approve! }.to change(session, :state).from("pending").to("supervisor_approved")
-        expect(session.supervisor_approved_at).to be_within(2.seconds).of(Time.current)
+    describe "#approve! (raw event — credential-gated) [SEC.3]" do
+      it "refuses a bare approve! — credentials not verified (no console self-approve)" do
+        # The session has a valid supervisor, but no password was verified this call,
+        # so the credentials_verified? guard refuses the transition. Only
+        # #approve_with_credentials! (Argon2id) can reach :supervisor_approved.
+        expect { session.approve! }.to raise_error(AASM::InvalidTransition)
+        expect(session.reload).to be_pending
       end
 
       it "refuses to approve when supervisor is absent" do
@@ -82,13 +85,20 @@ RSpec.describe ProvisioningSession do
         expect { cred_session.approve_with_credentials!("password12345") }
           .to raise_error(ProvisioningSession::SupervisorAuthError, /no supervisor/)
       end
+
+      it "does not leak credential verification — a later bare approve! still fails [SEC.3]" do
+        expect { cred_session.approve_with_credentials!("wrong-password") }
+          .to raise_error(ProvisioningSession::SupervisorAuthError)
+        expect { cred_session.approve! }.to raise_error(AASM::InvalidTransition)
+        expect(cred_session.reload).to be_pending
+      end
     end
 
     describe "#start!" do
       it "transitions supervisor_approved → active and stamps started_at" do
-        session.approve!
-        expect { session.start! }.to change(session, :state).from("supervisor_approved").to("active")
-        expect(session.started_at).to be_within(2.seconds).of(Time.current)
+        approved = create(:provisioning_session, :supervisor_approved)
+        expect { approved.start! }.to change(approved, :state).from("supervisor_approved").to("active")
+        expect(approved.started_at).to be_within(2.seconds).of(Time.current)
       end
 
       it "cannot start without supervisor approval" do
@@ -98,27 +108,25 @@ RSpec.describe ProvisioningSession do
 
     describe "#complete!" do
       it "transitions active → completed and stamps completed_at" do
-        session.approve!
-        session.start!
-        expect { session.complete! }.to change(session, :state).from("active").to("completed")
-        expect(session.completed_at).to be_within(2.seconds).of(Time.current)
+        active = create(:provisioning_session, :active)
+        expect { active.complete! }.to change(active, :state).from("active").to("completed")
+        expect(active.completed_at).to be_within(2.seconds).of(Time.current)
       end
     end
 
     describe "#fail_with!" do
       it "captures error_message and transitions to :failed" do
-        session.approve!
-        session.start!
-        expect { session.fail_with!("HSM unreachable") }
-          .to change(session, :state).from("active").to("failed")
-        expect(session.error_message).to eq("HSM unreachable")
-        expect(session.completed_at).to be_within(2.seconds).of(Time.current)
+        active = create(:provisioning_session, :active)
+        expect { active.fail_with!("HSM unreachable") }
+          .to change(active, :state).from("active").to("failed")
+        expect(active.error_message).to eq("HSM unreachable")
+        expect(active.completed_at).to be_within(2.seconds).of(Time.current)
       end
 
       it "is reachable from supervisor_approved (fail before execution)" do
-        session.approve!
-        expect { session.fail_with!("operator aborted") }
-          .to change(session, :state).from("supervisor_approved").to("failed")
+        approved = create(:provisioning_session, :supervisor_approved)
+        expect { approved.fail_with!("operator aborted") }
+          .to change(approved, :state).from("supervisor_approved").to("failed")
       end
     end
   end

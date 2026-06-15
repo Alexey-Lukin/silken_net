@@ -1270,7 +1270,7 @@ active/draft ──cancel──► cancelled
 
 **Включає:** `AASM`
 
-**Призначення:** [SEC.3] Стан-машина однієї спроби Factory Flashing для одного пристрою. Енфорсить **2-Person Rule** ([`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning)): оператор ініціює, супервайзер схвалює, лише тоді сесія виконується. Кожен перехід аудитований через FK на `users` + `AuditTrail`-записи від `FactoryFlashing::Session`.
+**Призначення:** [SEC.3] Стан-машина однієї спроби Factory Flashing для одного пристрою. Енфорсить **2-Person Rule** ([`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning)): оператор ініціює, супервайзер схвалює, лише тоді сесія виконується. Кожен перехід аудитований через FK на `users` + `AuditTrail`-записи від `FactoryFlashing::Session`. Перехід `approve` guard-нутий (`credentials_verified?`) — лише `approve_with_credentials!` (Argon2id-пароль супервайзера) досягає `supervisor_approved`; сирий `approve!` відмовляється ([`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning)).
 
 **Асоціації:**
 - `belongs_to :operator, class_name: "User"`

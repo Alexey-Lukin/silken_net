@@ -39,8 +39,14 @@ class ProvisioningSession < ApplicationRecord
     state :failed
 
     event :approve do
+      # [SEC.3] Two guards: the 2-Person Rule (supervisor present & differs from the
+      # operator) AND proof that the supervisor's password was verified *this call*
+      # via #approve_with_credentials!. A bare `approve!` (e.g. from a Rails console)
+      # leaves @credentials_verified false → the transition is refused. This closes
+      # the console self-approve path in code; raw-SQL / object manipulation remains
+      # an operational boundary (docs/03_06 §5.A access control).
       transitions from: :pending, to: :supervisor_approved,
-                  guard: :supervisor_present?,
+                  guard: %i[supervisor_present? credentials_verified?],
                   after: :stamp_supervisor_approval
     end
 
@@ -63,8 +69,10 @@ class ProvisioningSession < ApplicationRecord
   # [SEC.3] Authenticated 2-Person approval: the supervisor must prove possession
   # of their own account (Argon2id password) — an operator who merely *names* a
   # supervisor on the session cannot approve it alone. This is the entry point the
-  # factory CLI (`rake factory:approve`) uses. Console/DB access bypasses it
-  # (operational boundary — docs/03_06 §5.A access control); the CLI cannot.
+  # factory CLI (`rake factory:approve`) uses, and the ONLY path that sets
+  # @credentials_verified, so the AASM `approve` guard accepts the transition.
+  # Console/DB access bypasses it (operational boundary — docs/03_06 §5.A access
+  # control); the CLI and a bare `approve!` cannot.
   def approve_with_credentials!(supervisor_password)
     raise SupervisorAuthError, "session has no supervisor assigned" if supervisor.blank?
 
@@ -72,13 +80,25 @@ class ProvisioningSession < ApplicationRecord
       raise SupervisorAuthError, "supervisor password authentication failed"
     end
 
+    # [SEC.3] Flag the verification so the AASM `approve` guard accepts this call,
+    # then reset in `ensure` so it can never linger past this single transition.
+    @credentials_verified = true
     approve!
+  ensure
+    @credentials_verified = false
   end
 
   private
 
   def supervisor_present?
     supervisor_id.present? && supervisor_id != operator_id
+  end
+
+  # [SEC.3] True only inside #approve_with_credentials!, after the supervisor's
+  # password authenticates — the AASM `approve` guard requires it, so a raw
+  # `approve!` (no credential check) cannot reach :supervisor_approved.
+  def credentials_verified?
+    @credentials_verified == true
   end
 
   def stamp_supervisor_approval
