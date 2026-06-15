@@ -28,8 +28,10 @@
 |---|---|---|---|
 | 1.1 Перший flash `.elf` | `00_flash.sh --elf <path> --execute` | verify OK | лог CLI |
 | 1.2 Option bytes: **IWDG_STOP=0** (SEC.15 — інакше IWDG-reset посеред STOP2 ≈26-32 с), IWDG_STDBY узгодити | `01_option_bytes.sh --execute` | `-ob displ` показує застосоване | дамп `-ob displ` |
-| 1.3 Factory-провіжининг ключів | `EXECUTE=1 bin/rails factory:execute[...]` (SEC.3; шим-інтеграція вже довела софт — лишилась фізика SWD) | session → completed | AuditLog id |
+| 1.3 Factory-провіжининг ключів (**SEC.9 pre-req:** `PROVISIONING_MASTER_KEY` = свіжий crypto-random, WeakKeyDetector-verified, НЕ FIPS-197 тест-вектор) | `EXECUTE=1 bin/rails factory:execute[...]` (SEC.3; шим-інтеграція вже довела софт — лишилась фізика SWD) | session → completed | AuditLog id |
 | 1.4 RDP: R&D = Level 1; **Level 2 — НЕЗВОРОТНІЙ** (SEC.2 rollout R&D→Pilot→Mass; на жертовному чипі спершу) | `01_option_bytes.sh --rdp 1 --execute` | re-power → захист активний | фото/лог |
+
+> **⚠️ Pre-L2 hard-gate (SEC.2 × SEC.15) — bench-день палить лише L1.** RDP **Level 2** (необоротний) — НЕ цей день, а останній крок mass-deploy, і лише ПІСЛЯ того як на жертовному чипі зелені §2.5 (OTA e2e dual-gate) **і** §4.1/§4.6 (WUT reliable multi-hour wake) + §4.4 (нуль spurious reset). Причина: після L2 SWD off, OTA латає **лише mruby**, не C → C-firmware замерзає назавжди; а frozen-IWDG × L2 робить RTC-WUT **ЄДИНИМ** backstop живучості. Тому армінг WUT мусить бути **закоммічена ревʼюйована fn** (не регенерований .ioc, що CubeMX тихо перезапише) + bench-verified ДО burn — інакше реген, який вимкне WUT-IT, цеглить L2-вузол без recovery. Канон [`03_05 §3.6`](../../../docs/03_05_Hardware_Symmetric_Crypto_and_Security.md) + [`03_01 §1.10`](../../../docs/03_01_Firmware_Lifecycle_and_DMA.md).
 
 ## 2. Крипто-атестація кремнію (FW.2 CCM + sym)
 
@@ -60,6 +62,7 @@
 | 4.3 Drift ±60°C | той самий скрипт у термокамері (TRL-7, FW.20) | ppm(T) крива |
 | 4.4 IWDG 1 год сну | сон 1 год після §1.2 | **нуль** spurious reset (SEC.15) |
 | 4.5 ARCH.41 cold-boot e2e день | VBAT-pull (повний дрейн EDLC) → перший boot: grace-вікно (Лоренц мовчить) + hello `SYNC_REQ 0x56` (DID+Vcap) → Queen перемотує маяк → синк → перший чистий пакет | до синку acoustic-байт = sentinel `0xFE` (бекенд `time_unsynced_fallback`, DCI не отруєний); після — sentinel зникає, epoch_day правильна без серверного вгадування (`03_04 §2.1` B+C) |
+| 4.6 **WUT reliable multi-hour wake** (SEC.15 — понад §4.4) | сон кілька годин × N циклів | вузол НАДІЙНО прокидається кожен цикл (не лише no-spurious-reset): WUT auto-reload + IT = ЄДИНИЙ backstop під frozen-IWDG; **армінг = закоммічена ревʼюйована fn, не регенерований .ioc** — pre-req будь-якого RDP-L2 (gate §1) |
 
 ## 5. Модем SIM7070G (FW.3 / FW.56)
 
