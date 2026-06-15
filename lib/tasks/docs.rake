@@ -59,6 +59,7 @@ namespace :docs do
     ai_vendor   = []  # hard: AI-vendor name (Gemini/Cursor/…) re-stated outside 00_02 §2 roster (use roles)
     bare_doc    = []  # hard: bare code-span `NN_NN` doc-id (no §) that should be a full link
     xref_form   = []  # hard: doc-id link label not in the single code-span form (00_06 §1)
+    sec_after_link = [] # hard: bare §X dangling after a whole-doc link — fold into label (DOC-T.16)
     superseded_fm = [] # hard: superseded term (ATECC608B) in 🎯/Статус front-matter
     src_line_refs = [] # hard: volatile `*.c`/`*.h`/`*.rb` source line-refs (DOC-T.15)
     graph_docs  = {}  # id "NN_NN" → text, for the #anchor-resolution gate (DocsGraph)
@@ -111,6 +112,7 @@ namespace :docs do
       ai_vendor.concat(DocsLinter.ai_vendor_name_drift(base, text).map { |h| "#{base}: #{h}" })
       bare_doc.concat(DocsLinter.bare_doc_ref(base, text, valid_ids).map { |h| "#{base}: #{h}" })
       xref_form.concat(DocsLinter.crossref_label_form(text).map { |h| "#{base}: #{h}" })
+      sec_after_link.concat(DocsLinter.section_ref_after_doclink(base, text).map { |h| "#{base}: #{h}" })
       superseded_fm.concat(DocsLinter.superseded_term_in_frontmatter(base, text).map { |h| "#{base}: #{h}" })
       src_line_refs.concat(DocsLinter.source_line_ref_drift(base, text))
     end
@@ -145,6 +147,17 @@ namespace :docs do
     Dir[File.join(root_dir, ".github", "**", "*")].select { |p| File.file?(p) }.each do |f|
       rel = f.delete_prefix("#{root_dir}/")
       src_line_refs.concat(DocsLinter.source_line_ref_drift(rel, File.read(f)))
+    rescue ArgumentError
+      next # skip non-UTF-8 / binary files
+    end
+
+    # [DOC-T.16] the docs/protocols/ subtree references canon by relative path and
+    # sits OUTSIDE the top-level `files` loop; scan it for §-after-doclink too —
+    # canon refs must stay consistent wherever they live. (The broader ref-integrity
+    # family needs relative-href support before it can cover protocols/ → 00_07 DOC-T.26.)
+    (Dir[File.join(DOCS_DIR, "**", "*.md")] - files).each do |f|
+      base = File.basename(f, ".md")
+      sec_after_link.concat(DocsLinter.section_ref_after_doclink(base, File.read(f)).map { |h| "#{base}: #{h}" })
     rescue ArgumentError
       next # skip non-UTF-8 / binary files
     end
@@ -217,6 +230,12 @@ namespace :docs do
       puts "  ✗ bare code-span `NN_NN` doc-ids — must be `[`…`](Doc)` links (#{bare_doc.size}) — HARD:"
       puts "      per-doc: " + by_doc.map { |d, n| "#{d}:#{n}" }.join("  ")
       bare_doc.sort.first(50).each { |s| puts "    · #{s}" }
+    end
+    if sec_after_link.empty?
+      puts "  §-after-link:   no bare §X dangling after a whole-doc link (all folded) ✓"
+    else
+      puts "  ✗ §-after-link — fold §X into the label `[`NN_NN §X`](Doc)` (#{sec_after_link.size}) — HARD (DOC-T.16):"
+      sec_after_link.sort.first(50).each { |s| puts "    · #{s}" }
     end
     if rate_drift.empty?
       puts "  rate One-Home: no tokenomics/carbon rate value restated outside 05_03/07_01 ✓"
@@ -354,6 +373,7 @@ namespace :docs do
     failed << "bare code-span `NN_NN` doc-ids (should be `[`…`](Doc)` links)" unless bare_doc.empty?
     failed << "link label↔href mismatches" unless label_drift.empty?
     failed << "doc-id link labels not in code-span form (00_06 §1)" unless xref_form.empty?
+    failed << "§-after-link refs (DOC-T.16 — fold §X into the link label)" unless sec_after_link.empty?
     failed << "dangling #anchors (fragment ≠ heading slug)" unless dangling_anchors.empty?
     failed << "stale external docs/NN_NN refs (.github / root *.md / source)" unless ext_drift.empty?
     failed << "volatile source line-refs `*.c`/`*.h`/`*.rb` (DOC-T.15 — cite symbol/#define)" unless src_line_refs.empty?

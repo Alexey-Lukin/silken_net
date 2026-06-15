@@ -635,6 +635,51 @@ RSpec.describe DocsLinter do
     end
   end
 
+  describe ".section_ref_after_doclink" do
+    it "flags a bare §X dangling after a whole-doc link" do
+      hits = described_class.section_ref_after_doclink(
+        "01_01_Coaxial", "див. [`01_04`](01_04_CODIT_and_Xylemointegration) §4 деталі\n")
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("01_04_CODIT_and_Xylemointegration")
+    end
+
+    it "flags the directory-form label too (`[`NN_NN` — Title](Doc) §X`)" do
+      expect(described_class.section_ref_after_doclink(
+        "07_01_NaaS",
+        "Детально: [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) §5.\n").size).to eq(1)
+    end
+
+    it "flags a relative-path href (docs/protocols/ refs canon by ../)" do
+      expect(described_class.section_ref_after_doclink(
+        "SUMMARY", "база [`01_03`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell) §3.2\n").size).to eq(1)
+    end
+
+    it "passes the canonical folded form (§ inside the label)" do
+      expect(described_class.section_ref_after_doclink(
+        "01_01_Coaxial", "див. [`01_04 §4`](01_04_CODIT_and_Xylemointegration)\n")).to be_empty
+    end
+
+    it "ignores filename-label links (not an NN_NN canon ref — protocols/ convention)" do
+      expect(described_class.section_ref_after_doclink(
+        "01_03_EBFC", "катод [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) §Cathode\n")).to be_empty
+    end
+
+    it "skips meta placeholders (`§X`) and fenced code" do
+      expect(described_class.section_ref_after_doclink(
+        "00_03_TRL", "форма [`03_04`](03_04_mruby_Lorenz_Attractor) §X\n")).to be_empty
+      expect(described_class.section_ref_after_doclink(
+        "01_01_Coaxial", "```\n[`01_04`](01_04_CODIT_and_Xylemointegration) §4\n```\n")).to be_empty
+    end
+
+    it "exempts the index, standard-owner, tracker, and appendix docs" do
+      txt = "[`01_04`](01_04_CODIT_and_Xylemointegration) §4\n"
+      %w[00_00_SSOT_Index 00_06_SSOT_Documentation_Standard
+         00_07_Action_Plan_Tracker 02_04_Legacy_Breadboard_Appendix].each do |b|
+        expect(described_class.section_ref_after_doclink(b, txt)).to be_empty
+      end
+    end
+  end
+
   describe ".external_doc_path_drift" do
     let(:existing) { %w[00_05_GitHub_Projects_and_IaC_Automation 08_03_External_Stakeholders_Registry] }
 

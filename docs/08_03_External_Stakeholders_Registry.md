@@ -29,7 +29,7 @@
   - **Tier 2-3 (Infrastructure / B2B):** до моменту першої SCC-емісії
     в production ([`05_02`](05_02_Proof_of_Growth_Pipeline)).
 - **Власник:** TBD (CEO / Head of Partnerships).
-- **Outreach tracker:** [`00_07`](00_07_Action_Plan_Tracker) § External Stakeholders.
+- **Outreach tracker:** [`00_07`](00_07_Action_Plan_Tracker) — секція External Stakeholders.
 
 ---
 

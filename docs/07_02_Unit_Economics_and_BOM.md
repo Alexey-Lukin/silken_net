@@ -61,7 +61,7 @@
 
 > **Архітектурна зміна (Pivot v3):** «Матрьошка» замінена на тризонний анкер. PEEK у Zone 2 виконує одночасно три функції — електричний ізолятор, терморозрив, механічний демпфер. Деталі — [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK), [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell).
 
-> **Архітектурна зміна (Pivot v4, 2026-05-22 — EBFC Gen 2.0 baseline):** Біохімічний стек повністю переписаний. Gen 1.0 (GOx + Catalase + глутаральдегід + PEG) визнана нежиттєздатною та виключена. **Новий baseline:** деглікозильована FAD-GDH на аноді (без H₂O₂) + Laccase/ZIF-nanozyme гібрид на катоді (×10 power density, chloride-tolerant) + Genipin-Chitosan-CNC матриця (нетоксичний зшивач + псевдопластика) + Nafion-g-PSBMA цвітеріонна мембрана (8 H₂O/ланцюг, σ = 45.2 мС/см, UCST winter-lock). Очікуваний термін служби: **20–25 років**. Деталі — [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) §1–3.
+> **Архітектурна зміна (Pivot v4, 2026-05-22 — EBFC Gen 2.0 baseline):** Біохімічний стек повністю переписаний. Gen 1.0 (GOx + Catalase + глутаральдегід + PEG) визнана нежиттєздатною та виключена. **Новий baseline:** деглікозильована FAD-GDH на аноді (без H₂O₂) + Laccase/ZIF-nanozyme гібрид на катоді (×10 power density, chloride-tolerant) + Genipin-Chitosan-CNC матриця (нетоксичний зшивач + псевдопластика) + Nafion-g-PSBMA цвітеріонна мембрана (8 H₂O/ланцюг, σ = 45.2 мС/см, UCST winter-lock). Очікуваний термін служби: **20–25 років**. Деталі — [`01_03 §1–3`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell).
 
 ### 1.2. Зведений CAPEX Soldier — по підсистемах
 
@@ -95,7 +95,7 @@
 | 9 | Buffer cap VOUT | 47 µF / **25V X7R 1210** (Murata GRM32E70J476ME20), **НЕ 6.3V** — [`02_03 §6.1`](02_03_BQ25570_MPPT_Nano_Power) | ~$0.18 |
 | — | **Electronics TOTAL** | | **~$11.48** |
 | — | _LTC3108 + Coilcraft xfmr 1:100 (DNP footprint)_ | _Cold-start fallback, не populated за замовчуванням — [`02_03 §1.5`](02_03_BQ25570_MPPT_Nano_Power). PCB pads ~$0._ | _$0 / +$1.20 якщо populated після lab R_int test_ |
-| — | _BME280 + TPS22860 gate + PTFE vent (climate add-on)_ | _t°/RH/тиск → VPD confounder (False-Slashing kill, [`05_05`](05_05_Slashing_and_Risk_Policy) §6/§7) + клімат-оракул NaaS ([`07_01`](07_01_Nature_as_a_Service_Contracts)); ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM), pending bench._ | _+$2.60 якщо populated_ |
+| — | _BME280 + TPS22860 gate + PTFE vent (climate add-on)_ | _t°/RH/тиск → VPD confounder (False-Slashing kill, [`05_05 §6/§7`](05_05_Slashing_and_Risk_Policy)) + клімат-оракул NaaS ([`07_01`](07_01_Nature_as_a_Service_Contracts)); ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM), pending bench._ | _+$2.60 якщо populated_ |
 
 > **Climate add-on (BME280, ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)):** +$2.60/вузол якщо populated — **НЕ** входить у baseline Electronics TOTAL ($11.48) ані CAPEX §1.2, доки ADR не закрито bench'ем. Перетворює вузол на кліматичний (VPD-confounder + NaaS клімат-оракул) — підвищує цінність D-MRV-даних для агро/страхового ринку.
 
@@ -254,7 +254,7 @@
 
 Система генерує цінність через емісію токенів **SCC (Silken Carbon/Condition Coin)**, які підтверджують гомеостаз дерева (Proof of Growth) та поглинання CO₂ (→ [`05_03`](05_03_Tokenomics_SCC_and_SFC)).
 
-> **⚠️ ВИПРАВЛЕННЯ (аудит 2026-04-23):** Попередня версія документа помилково вказувала "1 SCC/дерево/добу". Правильна модель узгоджена з [`07_01`](07_01_Nature_as_a_Service_Contracts) §2.3 та [`05_03`](05_03_Tokenomics_SCC_and_SFC) Tokenomics: **10,000 growth_points = 1 SCC, середня генерація ~1 SCC/тиждень/дерево** (при 24 пакетах/добу × ~60 GP/пакет у гомеостазі).
+> **⚠️ ВИПРАВЛЕННЯ (аудит 2026-04-23):** Попередня версія документа помилково вказувала "1 SCC/дерево/добу". Правильна модель узгоджена з [`07_01 §3`](07_01_Nature_as_a_Service_Contracts) та [`05_03`](05_03_Tokenomics_SCC_and_SFC) Tokenomics: **10,000 growth_points = 1 SCC, середня генерація ~1 SCC/тиждень/дерево** (при 24 пакетах/добу × ~60 GP/пакет у гомеостазі).
 
 ### 7.1. Механізм накопичення growth_points та CO₂ еквівалент
 

@@ -4,7 +4,7 @@
 
 ## 🎯 Мета
 
-Зафіксувати конвеєр **Factory Flashing** (масове виробництво) та повний протокол **provisioning ключів** вузлів Soldier/Queen: дві гілки фабрики (Protected Flash STM32 / Secure Element), HKDF-деривація per-device AES-ключів, Lorenz K_seed (SEC.11), OTA image authentication (FW.23 HMAC dual-gate) та operations-security threat model заводського каналу (SEC.3). Виокремлено з [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security) §3.4 (там лишаються крипто-режими/пакети/IV/SE050/ротація; тут — provisioning-підсистема).
+Зафіксувати конвеєр **Factory Flashing** (масове виробництво) та повний протокол **provisioning ключів** вузлів Soldier/Queen: дві гілки фабрики (Protected Flash STM32 / Secure Element), HKDF-деривація per-device AES-ключів, Lorenz K_seed (SEC.11), OTA image authentication (FW.23 HMAC dual-gate) та operations-security threat model заводського каналу (SEC.3). Виокремлено з [`03_05 §3.4`](03_05_Hardware_Symmetric_Crypto_and_Security) (там лишаються крипто-режими/пакети/IV/SE050/ротація; тут — provisioning-підсистема).
 
 ---
 

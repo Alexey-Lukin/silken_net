@@ -34,7 +34,7 @@ Codex Lore Layer — пояснити *чому* схема, черги й ме�
 > домах Модуля 04 вище; цей документ тримає **тільки** *чому*: філософію (§1) та
 > ADR (§2). Seed-корпус (4 Realm + Node) — `db/seeds/codex/` (`realms.yml` ·
 > `discovery_rules.yml` · `nodes/`), ідемпотентний імпорт через
-> `Codex::NodeImportService` ([`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) §10b).
+> `Codex::NodeImportService` ([`04_02 §10b`](04_02_Business_Logic_and_Services)).
 
 ## 📑 Зміст
 
@@ -156,7 +156,7 @@ Codex-UI тримає рівно **два** Stimulus-контролери, ко�
   (шорткати без підказки = discoverability-fail; arena працює і без них — §3).
 
 Правило: Stimulus-контролер мусить *заробити* місце UX-ом, недосяжним для сервера.
-Дзеркало рішення `codex--attune` — [`04_04`](04_04_Phlex_UI_and_Tailwind) §6.4.
+Дзеркало рішення `codex--attune` — [`04_04 §6.4`](04_04_Phlex_UI_and_Tailwind).
 
 ### ADR-CDX-9 — Allow-list поліморфної цілі цитати
 

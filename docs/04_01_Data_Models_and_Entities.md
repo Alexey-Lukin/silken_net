@@ -534,7 +534,7 @@ any ──report_fault──► faulty
 | `sap_flow` | numeric | Потік соку ксилеми |
 | `humidity` | numeric | **[HW.32]** Відносна вологість повітря (% RH, BME280) — climate frame, nullable |
 | `pressure` | numeric | **[HW.32]** Атмосферний тиск (hPa, BME280) — nullable; барометр → раннє попередження про шторм |
-| `vpd` | numeric | **[HW.32]** Vapor Pressure Deficit (kPa) — прямий confounder сокоруху (False-Slashing guard, [`05_05`](05_05_Slashing_and_Risk_Policy) §6/§7). Hot-path: device шле VPD-індекс; nullable. ⚠️ НЕ входить у Lorenz-Z (DCI-guard) |
+| `vpd` | numeric | **[HW.32]** Vapor Pressure Deficit (kPa) — прямий confounder сокоруху (False-Slashing guard, [`05_05 §6/§7`](05_05_Slashing_and_Risk_Policy)). Hot-path: device шле VPD-індекс; nullable. ⚠️ НЕ входить у Lorenz-Z (DCI-guard) |
 | `verified_by_iotex` | boolean | Підтверджено IoTeX W3bstream ZK-proof |
 | `zk_proof_ref` | string | Посилання на ZK-proof IoTeX |
 | `gateway_attested` | boolean | **[L1 QATT]** Рядок приїхав під валідним Ed25519-підписом Королеви (default `false`; wire-дім [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security), ladder [`05_02`](05_02_Proof_of_Growth_Pipeline)) |

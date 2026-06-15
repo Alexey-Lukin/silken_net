@@ -522,6 +522,41 @@ module DocsLinter
     end
   end
 
+  # [SSOT anti-drift, DOC-T.16] Section-ref AFTER a whole-doc link (HARD). The
+  # canonical section ref (00_06 §1) folds the section INTO the link label —
+  # `[`NN_NN §X`](DocName)`. A whole-doc (or directory-form) link immediately
+  # trailed by a loose `§X` — `[`NN_NN`](DocName) §X` — is that same ref split in
+  # two: the §X dangles outside the link (non-clickable) AND is invisible to BOTH
+  # sibling guards (`bare_section_ref` needs the doc-id + § in ONE bare code-span;
+  # `crossref_label_form` only inspects the label↔href, never the text after `)`).
+  # Fold it back. Fires on a link whose label LEADS with a code-span doc-id
+  # (`[`NN_NN`…]` or directory `[`NN_NN` — Title]`) followed by optional space +
+  # `§token`. The href may be a bare `NN_NN_Name` (top-level canon) OR a relative
+  # `../../NN_NN_Name` (the docs/protocols/ subtree references canon by relative
+  # path) — both are canon refs, so both are in scope. Filename-label links
+  # (`[`SUMMARY.md`](SUMMARY.md)`) are NOT canon NN_NN refs (protocols/ internal
+  # convention) → out of scope by design. Skips ``` fences + meta placeholders
+  # (`§X`/`§N`). Same exempt set as the bare-ref siblings (index / standard-owner /
+  # tracker / appendix). Pure: no I/O.
+  SECTION_AFTER_DOCLINK_RE = %r{\[(`\d\d_\d\d[^`]*`[^\]]*)\]\((?:\.\./)*(\d\d_\d\d_[A-Za-z0-9_]+)(?:#[^)]*)?\)[ \t]*§[ \t]*(\S+)}
+
+  def section_ref_after_doclink(basename, text)
+    return [] if basename.match?(BARE_REF_EXEMPT)
+
+    in_fence = false
+    text.each_line.flat_map do |line|
+      in_fence = !in_fence if line.start_with?("```")
+      next [] if in_fence
+
+      line.scan(SECTION_AFTER_DOCLINK_RE).filter_map do |label, target, token|
+        next if token.match?(PLACEHOLDER_SECTION_RE)
+
+        id = label[/\d\d_\d\d/]
+        "§-after-link `…](#{target}) §#{token[0, 10]}` (fold → `[`#{id} §…`](DocName)`) → #{line.strip[0, 80]}"
+      end
+    end
+  end
+
   # [SSOT anti-drift] Magic-marker hex self-consistency (ADVISORY). Firmware uses
   # 4-byte ASCII magic markers ("RITE"/"LZST"/"KEYL"/"LSED"/"KEYC"/"QUID"…) whose
   # uint32 literal is the byte-packing of the four characters — but the codebase
