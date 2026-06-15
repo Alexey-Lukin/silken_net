@@ -584,7 +584,7 @@
 
 #### SEC.2 — RDP Level 2 activation timeline
 - **P1** · 👤 · 🟢 · → [`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security)
-- **Стан:** процедура RDP L2 канонізована — pre-flight + CubeProgrammer CLI + rollout R&D→Pilot→Mass; скриптовано `firmware/scripts/bench/01_option_bytes.sh --rdp 2` (bench RUNBOOK). RDP L2 = **необоротний** SWD-lock → OTA мусить бути верифікований ДО активації. ⚠️ OTA латає **лише mruby-байткод, не C-firmware** → RDP L2 заморожує C-прошивку назавжди (radio/AES/main loop невиправні post-L2); чекліст-rollback = байткод-fallback, не C-recovery. Канон [`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security).
+- **Стан:** ✅ RDP-L2 процедура канонізована (pre-flight + CubeProgrammer CLI + R&D→Pilot→Mass rollout) + скриптовано `01_option_bytes.sh --rdp 2` (bench RUNBOOK). Незворотний SWD-lock, а OTA латає **лише mruby-байткод, не C** → C-прошивка замерзає назавжди → OTA мусить бути верифікований у полі ДО активації. Канон [`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security).
 - [ ] 🔗 верифікувати OTA flow end-to-end на bench ДО L2-lock
 - [ ] 👤 field batch → RDP **L1** (зворотний); L2 — лише фінальний mass-deploy
 
