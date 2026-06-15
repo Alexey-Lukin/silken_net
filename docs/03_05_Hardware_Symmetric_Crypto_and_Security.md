@@ -693,6 +693,7 @@ Load_AES_Key();  // reads from FLASH_KEY_ADDR, validates magic "KEYL",
 | Публічні HMAC тест-вектори | RFC 4231 Test Cases 1 / 3 / 6-7 (20×0x0b, 20×0xaa, 131×0xaa), FIPS 198-1 §A.1 |
 | Префіксні співпадіння | 32-байтний master, перші 16 байт якого = опубліковане 16-байтне FIPS значення (історична форма BLOCKER-а) |
 | Виродженні патерни | all-zero, all-0xFF, single-byte repeat, монотонна послідовність (Δ=±1) |
+| Низька ентропія [SEC.9] | короткий повторюваний блок (≤8 байт — напр. `deadbeef`×8) або <4 різних байт-значень (generic-евристика, останній прохід; CSPRNG-ключ ~30 distinct → 0 false positives) |
 | Плейсхолдери | `CHANGEME`, `placeholder`, `your-master-…`, `<your-key>`, `TODO`, `secret-here`, сам spec-fixture |
 
 Детектор перевіряє і raw-bytes, і hex-decoded, і base64-decoded інтерпретації — той самий тест-вектор не може непомітно зайти через "інший спосіб набору" (історично у репозиторії одне місце мало raw bytes, інше — hex).

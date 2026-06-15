@@ -76,6 +76,28 @@ RSpec.describe Security::WeakKeyDetector do
       end
     end
 
+    context "with low-entropy patterns (SEC.9 entropy heuristic)" do
+      it "flags a key that is a short block repeated (deadbeef × 8)" do
+        expect(described_class.detect("deadbeef" * 8)).to include("repeating")
+      end
+
+      it "flags a 2-byte repeating raw pattern" do
+        expect(described_class.detect("\xAB\xCD".b * 16)).to include("repeating")
+      end
+
+      it "flags a key with very few distinct byte values" do
+        weak = ([ 0x11, 0x22, 0x33 ] * 11).first(32).pack("C*") # 3 distinct, not a clean period
+        expect(described_class.detect(weak)).to include("distinct")
+      end
+
+      it "does NOT flag CSPRNG random keys (no false positives)" do
+        50.times do
+          expect(described_class.detect(SecureRandom.hex(32))).to be_nil
+          expect(described_class.detect(SecureRandom.bytes(32))).to be_nil
+        end
+      end
+    end
+
     context "with placeholder strings" do
       %w[
         CHANGEME

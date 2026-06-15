@@ -64,11 +64,22 @@ module Security
     def detect(value, hint: nil)
       return nil if value.nil?
 
-      candidate_byte_strings(value).each do |bytes|
+      candidates = candidate_byte_strings(value)
+
+      # Specific reasons first (known vectors / degenerate / placeholder), across
+      # every interpretation — so e.g. "0b"×20 reports "RFC 4231", not the generic
+      # "repeating 2-byte block" of its hex spelling.
+      candidates.each do |bytes|
         %i[match_known_vector match_degenerate match_placeholder].each do |checker|
           reason = send(checker, bytes)
           return decorate(reason, hint) if reason
         end
+      end
+
+      # [SEC.9] Generic low-entropy heuristic last (weakest signal).
+      candidates.each do |bytes|
+        reason = match_low_entropy(bytes)
+        return decorate(reason, hint) if reason
       end
 
       nil
@@ -185,6 +196,29 @@ module Security
       if diffs.length == 1 && [ 1, -1 ].include?(diffs.first)
         return "strictly-monotonic byte run (delta=#{diffs.first})"
       end
+
+      nil
+    end
+
+    # [SEC.9] Low-entropy patterns a known-vector blocklist misses: a key that is
+    # a short block repeated (e.g. "deadbeef"×8 → 4-byte period — passes the
+    # single-byte/monotonic checks above) or has very few distinct byte values.
+    # Conservative thresholds: a CSPRNG 32-byte key has ~30 distinct bytes and is
+    # never a repetition of a ≤8-byte block, so false positives on a real random
+    # master are astronomically unlikely.
+    def match_low_entropy(bytes)
+      return nil if bytes.bytesize < 8
+
+      max_period = [ bytes.bytesize / 2, 8 ].min
+      (2..max_period).each do |p|
+        next unless (bytes.bytesize % p).zero?
+
+        block = bytes.byteslice(0, p)
+        return format("repeating %d-byte block", p) if block * (bytes.bytesize / p) == bytes
+      end
+
+      distinct = bytes.bytes.uniq.size
+      return format("only %d distinct byte values", distinct) if distinct < 4
 
       nil
     end
