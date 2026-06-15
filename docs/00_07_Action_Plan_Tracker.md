@@ -6,7 +6,7 @@
 
 **Правило одного місця (DRY):** редагуєш канон → онови залежні пункти 00_07 (за рефами); закрив пункт → онови канон + познач тут (✅ → **§🗄️ Архів**, вказівник ID→канон). Так апдейт робиться в одному місці, а референси ведуть, де ще синхронізувати.
 
-**Структура:** **🚦 Dashboard** (що робити зараз, за виконавцем) → **§00–§08 модуль-секції** (реєстр незробленого; **номер секції = канон-модуль першого рефа** — enforced `tracker:check` section-home guard) → **🔀 Cross-cutting** / **📌 Backlog** → **🗄️ Архів**. Документ — живий операційний інструмент.
+**Структура:** **🚦 Critical Path** (P0-гейти перед мілстоунами) → **§00–§08 модуль-секції** (реєстр незробленого; **номер секції = канон-модуль першого рефа** — enforced `tracker:check` section-home guard) → **🔀 Cross-cutting** / **📌 Backlog** → **🗄️ Архів**. Документ — живий операційний інструмент.
 
 ---
 
@@ -26,7 +26,7 @@
 ## 📑 Зміст
 
 <!-- TOC:AUTO:START -->
-- [Dashboard — що робити зараз (за виконавцем)](#-dashboard--що-робити-зараз-за-виконавцем)
+- [Critical Path — P0-гейти перед мілстоунами](#-critical-path--p0-гейти-перед-мілстоунами)
 - [§00 · Process / IaC / SSOT-tooling](#00--process--iac--ssot-tooling)
 - [§01–§02 · Hardware & Lab](#0102--hardware--lab)
 - [§03 · Firmware](#03--firmware)
@@ -35,7 +35,9 @@
 - [§05 · Web3 / Економіка / Slashing](#05--web3--економіка--slashing)
 - [§06 · Deploy / Observability / Secrets / Ops](#06--deploy--observability--secrets--ops)
 - [§07 · Юридичні / Бізнес](#07--юридичні--бізнес)
-- [§08 · Академічна інтеграція + External Stakeholders](#08--академічна-інтеграція--external-stakeholders)
+- [§08 · Академічна інтеграція](#08--академічна-інтеграція)
+- [§08 · External Stakeholders (B2G / B2B / Cultural)](#08--external-stakeholders-b2g--b2b--cultural)
+- [§08 · IP / Grants (BIZ)](#08--ip--grants-biz)
 - [Cross-cutting · Doc-drift (DOC-T) — SSOT doc↔code + tracker form/tooling](#-cross-cutting--doc-drift-doc-t--ssot-doccode--tracker-formtooling)
 - [Backlog (не блокери · довгострокові)](#-backlog-не-блокери--довгострокові)
 - [Архів закритих пунктів (мігровано в канон)](#-архів-закритих-пунктів-мігровано-в-канон)
@@ -43,50 +45,18 @@
 
 ---
 
-## 🚦 Dashboard — що робити зараз (за виконавцем)
+## 🚦 Critical Path — P0-гейти перед мілстоунами
 
-> Сортовано за **виконавцем**, потім пріоритетом. Повний опис кожного пункту — у §модулі нижче (**one place**); тут — тонкий індекс. Легенда: 🤖 AI-doable · 👤 власник · 🔗 заблоковано.
+> Крос-модульний зріз **P0-блокерів** перед ключовими мілстоунами (тонкі ID-вказівники; повний опис кожного — у §модулі, **one place**). P1/P2 — у §модулях (DOC-T.24 виносить пріоритет нагору в секціях). 🤖-роботи — у 🔀 `DOC-T`.
 
-### 🤖 Machine-doable зараз (AI, non-gated)
-> Великі незаблоковані 🤖-стріми поетапно закриваються (SSOT-кампанія; firmware build/dependency-hardening — FW.46 ARM build + FW.47 pin-policy + `in_silico` conda-lock; backend `S6.20` cron-оркестратори + `E.41` fire-alert verify). Залишок 🤖 переважно **gated** (ML-retrain, ground-truth калібрування, STM32 bench) → див. 🔗, або in-silico-важкий (`HW.3.IS` MD-permeation). Незаблокований 🤖-backlog ітемізується у §модулях.
-
-### 👤 На тобі (власник)
-
-**Перед польовим деплоєм (life-safety + security):**
-- `SEC.9` **P0** — замінити master AES key (FIPS-197 vector) на криптостійкий random
-- `SEC.3` **P0** — factory flashing: real `STM32_Programmer_CLI` на STM32WLE5JC bench (per-device HKDF provisioning ✅, FW.1 закрито)
-- `SEC.1` **P0** — Gnosis Safe multisig для `DEFAULT_ADMIN_ROLE` SCC/SFC до mainnet
-
-**Перед Web3 mainnet:**
-- `S1.1` **P0** — GitHub Secrets (`DATABASE_PASSWORD`, `GCP_SA_KEY`, `SSH_PRIVATE_KEY`, …)
-- `S3.5` **P1** — реальна SCC/SFC адреса у `subgraph.yaml` (zero-addr guard ✅ E.45; gated: post contract-deploy)
-- `SOLANA_RPC_URL` mainnet **P0** — інакше USDC на Devnet; provision secret → `06_04` (refuse-to-boot guard ✅ E.47)
-- `INF.4`+`INF.6` **P1** — TLS termination + CoAP Proxy verification (Akash ingress)
-- `S2.1`+`S2.2`+`S2.3` **P0** (ops) — Grafana Cloud dashboards & alerts після першого `/metrics`
-
-**Hardware TRL 4→6 (лаб/підрядники):**
-- `HW.31` **P0** — Queen antenna split (868 LoRa tuned ≠ dual-band); блокує BOM Королеви
-- `HW.24` **P0** — staged validation gate (SLA→Ti-coin→full anchor); блокує 100 шт DMLS
-- `HW.23` **P0** — HIP postprocess spec для SLM anode; блокує перший SLM-замовлення
-- `HW.22` **P1** — sterilization protocol (no EtO); блокує Stage 4 польові
-- `HW.7` **P1** — BQ25570 VBAT_OV резистори; блокує PCBA freeze
-- `HW.13`/`ARCH.29-MPPT` **P1** — P-V крива EBFC, 50%→65% VOC
-- `HW.3` **P1** — Arrhenius accelerated aging тест; блокує seed
-- `HW.25` **P1** — PTFE-GDL катодна мембрана (Zone 3)
-
-**Academic:**
-- `UNI.1` **P0** — зустріч з деканом Онищенком (ChNU FOTIUS); блокує публікації Q1
-- `UNI.8` **P0** — контакт з ректоратом СЄУ; блокує MSA/B2B legal
-- `UNI.14` **P1** / `UNI.13` **P2** — СПОЧАТКУ verify посади науковців (СЄУ Аблязов/Ус · ЧМА) перед cold-contact
-
-### 🔗 Заблоковано (чекає іншого)
-- `FW.2` **P0** — AES-128-CCM (backend-parser ✅; firmware emit + `CRYP_AES_CCM` verify → STM32 bench). Закриває ECB→CCM, MIC, `SEC.10` panic auth, `FW.29`. FC/nonce/cold-boot SSOT → `03_05` (📐 КАНОНІЧНЕ ДЖЕРЕЛО). NB: `FW.23` OTA auth — окремий HMAC-механізм, канонізовано в `03_06 §4` (live-compute ✅ зашито 2026-06-11, лишився bench K_ota); FW.2 його **не** закриває
-- Multi-signal slashing de-risk (`05_05 §7`) — код ✅: усі 3 прямі сигнали в `InsightGeneratorService`-евристиці (VPD-gate + sap-term + acoustic/cavitation-term; inert, ENV-calibration-gated; sap+acoustic через max() не суму). Активація → ground-truth калібрування ваг (`05_05 §8`) + ML-retrain (vpd-фіча) + firmware VPD (`HW.32`). Багатше on-device acoustic-джерело → TinyML підсилення (`Run_Inference` ✅ приземлено FW.4, §03)
-- SLASH-1 deeper (B/insurance auto-route, A/B/C cause_classification, cause-driven pf uplift) → DAO/founder
+- **Перед польовим деплоєм** (life-safety + security): `SEC.9` · `SEC.3` · `SEC.1`
+- **Перед Web3 mainnet:** `S1.1` (GitHub CI secrets) · prod deploy-ENV → [`06_04`](06_04_Secrets_Checklist) (вкл. `SOLANA_RPC_URL` — інакше USDC на Devnet; guard ✅ E.47) · `S2.1`+`S2.2`+`S2.3` (Grafana після першого `/metrics`)
+- **Hardware-гейт** (TRL 4→6): `HW.31` (BOM Королеви) · `HW.24` (100 DMLS) · `HW.23` (SLM-замовлення)
+- **Academic:** `UNI.1` (лаб + публікації) · `UNI.8` (MSA / B2B legal)
 
 ## §00 · Process / IaC / SSOT-tooling
 
-> Process-automation, Projects-V2/IaC та SSOT-tooling — канон `00_04`/`00_05`. Оперативний індекс P0/P1 — у 🚦 Dashboard.
+> Process-automation, Projects-V2/IaC та SSOT-tooling — канон `00_04`/`00_05`. P0-гейти — у 🚦 Critical Path.
 
 #### OPS.1 — TRL Auto-Advancement GitHub Action
 - **P1** · 👤 · 🟡 · → `00_05`
@@ -651,8 +621,6 @@
 
 ## §04 · Backend / API / UI
 
-> **Складність:** XS < 1 год · S = 1–4 год · M = 4–8 год · L = 1–3 дні
-
 #### S6.1 — Redis SPOF для M2M автентифікації
 - **P1** · 👤 · 🟢 · → `04_03`
 - **Стан:** Graceful degradation реалізовано — Redis down → DB-backed nonce (Solid Cache, TTL 10хв), шлюзи не отримують 503 (`m2m_auth_controller` [S6.1] + spec). Канон `04_03` (replay-nonce M2M).
@@ -879,7 +847,7 @@
 - **Стан:** Core закрито — `SilkenForestCoin.slash()` (SLASHER_ROLE) зменшує voting power при slashing → атака «купити SFC + навмисне порушення NaaS» неможлива. Residual: ~1–5 хв lag (`web3_critical` черга) між SCC-slash і SFC-slash — у вікні учасник технічно ще може проголосувати. Канон `07_01 §8`.
 - [ ] 🔗 Vote-Escrow (veToken) при `breached`-контрактах — опціонально, gated на повний DAO governance launch (BIZ.4)
 
-## §08 · Академічна інтеграція + External Stakeholders
+## §08 · Академічна інтеграція
 
 > **Поточний стан:** Партнерство з 5+ академічними установами — ChNU (фізико-хімія + ФОТІУС), ChDTU (Data Science + RF + акустика), ChIPB-NUTSU (пожежна безпека), ChMA (біохімія + токсикологія), СЄУ (правова + економічна архітектура). UNI.1-3, UNI.8 — раніше ідентифіковані; нижче — розширення на всі 5 установ.
 
@@ -976,7 +944,7 @@
 - **Стан:** Не почато — Хоменко (Заслужений винахідник, 80+ патентів): прецизійна обробка + різьба анкера для живої деревини (`01_01`/`01_02`/`02_02`, deinstall `08_02 §3 Несен`). Канон `08_02 §2`.
 - [ ] 👤 контакт (ChDTU rectorat) + prior-art landscape consult (UNI.15) + прототип різальної геометрії в ЧДТУ machine shop
 
-### 🌐 External Stakeholders (B2G / B2B / Cultural — non-academic outreach)
+## §08 · External Stakeholders (B2G / B2B / Cultural)
 
 > **Поточний стан:** Зовнішні залежності виокремлені в [`08_03`](08_03_External_Stakeholders_Registry) (Cultural Layer) та [`08_03`](08_03_External_Stakeholders_Registry) (B2G/B2B Matrix). Це не операційні залежності hot-path — це outreach pool, що активується за TRL-тригерами у відповідних модулях. Імена нижче — публічна інформація; контакти живуть у gitignored CRM.
 
@@ -1030,7 +998,7 @@
 - **Стан:** Не почато (trigger: TRL 8 у `05_03`) — 8 національних митців (Марчук, Чебаник, Микита, Сидоренко, Медвідь, Гуменюк, Гуйда, Ковтун), старша когорта (зафіксувати window); hand-off PR-агентству. Канон `08_03 §11.2`.
 - [ ] 👤 verify life/health × 8 → gallery/agent кожному → pitch package (brief+animation)
 
-### ⚖️ IP / Grants (BIZ — канон-дім Модуль 08)
+## §08 · IP / Grants (BIZ)
 
 #### BIZ.10 — Multi-party co-authorship + open-license MoU framework
 - **P1** · 👤 · ⚪ · → `08_03`, `08_02 §3-07`
@@ -1053,12 +1021,12 @@
 
 DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** еволюцію самого tracker'а — форму пунктів і drift-guards. **Не блокери виконання, але блокери для аудиту й онбордингу.**
 
-> ✅ **DOC.N namespace розведено (2026-06-03):** раніше `DOC.N` означав ТРИ різні речі → колізії (DOC.2/5/9/10/11). Тепер три окремі префікси, кожен у своєму домі:
-> - **`DOC-T.N`** — цей tracker (SSOT doc-drift + tracker form/tooling TODO, 00_07; таблиця нижче).
-> - **`DOC-R.N`** — code↔doc divergence registry ([`04_02 §11`](04_02_Business_Logic_and_Services) + `04_01 §12` дзеркало).
-> - **`DOC.N`** (bare) — canon-block SSOT-home теги **всередині** канон-доків (`03_01`/`03_04`/`04_04`/`05_02`…); numbers **load-bearing** у GitHub anchor-слагах (`-docN`, на які лінкуються інші доки), тож заморожені на місці. `DOC.8` (cleanup constraint) — спільний канон-constraint у 04_01+04_02, лишається `DOC.8`.
+> **Три `DOC*`-неймспейси (кожен у своєму домі — не плутати):**
+> - **`DOC-T.N`** — цей tracker (SSOT doc-drift + tracker form/tooling TODO; таблиця нижче).
+> - **`DOC-R.N`** — code↔doc divergence registry ([`04_02 §11`](04_02_Business_Logic_and_Services); дзеркало `04_01 §12`).
+> - **`DOC.N`** (bare) — canon-block SSOT-home теги **всередині** канон-доків (`03_01`/`03_04`/`04_04`/`05_02`…); номери **load-bearing** у GitHub anchor-слагах (`-docN`) → заморожені на місці. `DOC.8` (cleanup constraint) — спільний у 04_01+04_02.
 >
-> Legacy one-off audit-мітки (`DOC.21`/`DOC.33`/`DOC.9 FIX`) знейтралізовано (не реєстрові ID). Inbound item-ref resolution (`NN_NN — DOC-T.N`) тепер гейтиться `tracker:check` (`00_06 §3`) — закрило dangling `06_02 → 00_07 DOC.5`.
+> Inbound item-ref (`NN_NN — DOC-T.N`) резолвиться `tracker:check` ([`00_06 §3`](00_06_SSOT_Documentation_Standard)).
 
 | ID | Невідповідність | Документи / Файли | Дія | Статус |
 |----|----------------|-------------------|-----|--------|
@@ -1128,7 +1096,7 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 
 ## 🗄️ Архів закритих пунктів (мігровано в канон)
 
-> Повністю завершені пункти, винесені з активного трекера 2026-05-28. Знання — у канонічних доках (стовпець «Канон»); повна історія — у git. Тримаємо лише вказівник для крос-реф цілісності (CLAUDE.md та живі пункти посилаються на ці ID).
+> Повністю завершені пункти. Знання — у канонічних доках (стовпець «Канон»); повна історія — у git. Тримаємо лише вказівник для крос-реф цілісності (CLAUDE.md та живі пункти посилаються на ці ID).
 
 | ID | Пункт | Канон |
 |----|-------|-------|
@@ -1214,12 +1182,4 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 | DOC-T.23 | STAGE/WHO re-audit (7 WHO fixes, open-work semantic) + meta-line form std (combo `🤖+👤`, no tails) + AI-advanceability (S6.20/E.41 advanced); NEW guard `meta_form_violations` HARD | `00_07`, `00_06 §3` |
 | DOC-T.24 | Priority re-assess (P1 73→59, un-flattened by TRL-horizon/blocking-impact) + stable in-section sort by priority (P0 gates surface on top); tools `tracker_set_meta.rb` + `tracker_sort.rb` | `00_07` |
 | DOC-T.25 | 🚦 Dashboard refreshed from current items (UNI.13/14 priority drift fixed; 🤖-note S6.20/E.41) — human-curated do-now roadmap kept; auto-render `Tracker::Dashboard.render` available if drift recurs | `00_07` |
-
----
-
-> **Як оновлювати цей документ:**
-> 1. Знайти відповідний пункт (S1.1, FW.3, HW.7, тощо)
-> 2. Змінити `[ ]` → `[x]` для виконаних підзадач
-> 3. Для нових знахідок — додавати у відповідну секцію + посилання на джерело docs
-> 4. Раз на квартал — повний docs audit з оновленням «Top-Critical Path» секції зверху
 
