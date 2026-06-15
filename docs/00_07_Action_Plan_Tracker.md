@@ -632,11 +632,6 @@
 - [x] 🤖 verified — backend fire-alert dispatch негайний (`AlertDispatchService#create_and_dispatch_alert!` → `EwsAlert` + `EmergencyResponseService`); єдині гейти = Redis silence (5хв debounce) + SEC.10 per-DID rate-limit, **НЕ** satellite. dClimate-clearance гейтить лише ВИПЛАТУ (`InsurancePayoutWorker#satellite_verification_pending?`), не тривогу → fire-response не залежить від 48h супутникового лагу
 - [ ] 🔗 Forester Guild fallback-oracle (E.20, Post-TRL 6)
 
-#### S6.14 — peaq_signing_key: відсутня rotation policy
-- **P2** · 👤 · 🟡 · → `04_02 §S6.14`, `06_04 §5.4`
-- **Стан:** Rotation policy готова — dual-key grace 72h + планова ротація 90д + emergency revocation runbook. Лишається vault-store production-ключа. Канон `04_02 §S6.14`, `06_04 §5.4`.
-- [ ] 👤 vault-store production `peaq_signing_key`
-
 #### S6.10 — MaintenanceRecord — лише лог
 - **P3** · 🤖 · 🔗 · → `04_02 §Forester Guild`
 - **Стан:** Архітектурний дизайн готовий — task-assignment matching ranger↔bounty (scoring, `FOR UPDATE NOWAIT`, GPS/EXIF/IPFS→USDC, anti-Sybil). Заблоковано на Forester Guild PoPhW (E.20). Канон `04_02 §Forester Guild`.
@@ -731,6 +726,11 @@
 - **Стан:** DR-постуру задокументовано (`06_06`): Cloud SQL PITR + REGIONAL HA + 30×daily + restore-runbook'и + RTO/RPO.
 - [ ] 👤 quarterly DR-drill (PITR-clone + TF-state rollback на staging, зафіксувати факт. RTO/RPO vs цілі)
 - [ ] 👤 master-ключі (`RAILS_MASTER_KEY`/`PROVISIONING_MASTER_KEY`) → vault + offline-копія (незамінні, поза backup)
+
+#### S6.14 — peaq_signing_key: rotation & revocation
+- **P2** · 👤 · 🟡 · → `06_04 §5.4`, `04_02 §S6.14`
+- **Стан:** Rotation policy готова — dual-key grace 72h + планова ротація 90д + emergency revocation runbook. Лишається vault-store production-ключа. Канон `06_04 §5.4` (revocation runbook) · `04_02 §S6.14` (policy + код-стан).
+- [ ] 👤 vault-store production `peaq_signing_key`
 
 #### S1.5 — Kamal IP placeholders
 - **P2** · 👤 · ⚪ · → `06_01`
