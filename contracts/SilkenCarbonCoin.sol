@@ -62,11 +62,6 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @param amount Кількість спалених токенів (wei).
     event TokenSlashed(address indexed investor, uint256 amount);
 
-    /// @notice Емітується при оплаті страхової премії (Parametric Insurance).
-    /// @param payer Адреса платника премії.
-    /// @param amount Сума премії (wei).
-    event PremiumPaid(address indexed payer, uint256 amount);
-
     /// @notice [B-02][B-03][SEC.1] Конструктор з розділеними ролями.
     /// @param admin Адміністратор (DEFAULT_ADMIN_ROLE) — у production = `SilkenTimelock`
     ///        (48h governance-затримка на видачу будь-якої ролі, у т.ч. MINTER_ROLE).
@@ -170,16 +165,6 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         require(balanceOf(investor) >= amount, "SCC: insufficient balance");
         _burn(investor, amount);
         emit TokenSlashed(investor, amount);
-    }
-
-    /// @notice Запис оплати страхової премії (Parametric Insurance).
-    /// @param payer Адреса платника премії.
-    /// @param amount Сума премії (wei).
-    /// @dev Тільки запис події (off-chain tracking). Валідація запобігає event spoofing.
-    function recordPremiumPaid(address payer, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(payer != address(0), "SCC: zero payer");
-        require(amount > 0, "SCC: zero premium");
-        emit PremiumPaid(payer, amount);
     }
 
     /// @notice [SEC.1] Призупинення всіх трансферів (emergency) — PAUSER_ROLE (Safe),

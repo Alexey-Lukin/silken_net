@@ -2,7 +2,6 @@ import { BigInt } from "@graphprotocol/graph-ts";
 import {
   CarbonMinted,
   TokenSlashed,
-  PremiumPaid,
 } from "../generated/SilkenCarbonCoin/SilkenCarbonCoin";
 import {
   ForestMinted,
@@ -14,7 +13,6 @@ import {
   GovernanceSlashEvent,
   ProtocolFinancials,
   SlashingEvent,
-  PremiumPaidEvent,
 } from "../generated/schema";
 
 function getProtocolFinancials(): ProtocolFinancials {
@@ -23,7 +21,6 @@ function getProtocolFinancials(): ProtocolFinancials {
     financials = new ProtocolFinancials("1");
     financials.totalMinted = BigInt.zero();
     financials.totalBurned = BigInt.zero();
-    financials.totalPremiums = BigInt.zero();
     financials.totalForestMinted = BigInt.zero();
     financials.totalGovernanceSlashed = BigInt.zero();
   }
@@ -67,24 +64,6 @@ export function handleTokenSlashed(event: TokenSlashed): void {
 
   let financials = getProtocolFinancials();
   financials.totalBurned = financials.totalBurned.plus(event.params.amount);
-  financials.save();
-}
-
-export function handlePremiumPaid(event: PremiumPaid): void {
-  let id =
-    event.transaction.hash.toHexString() +
-    "-" +
-    event.logIndex.toString();
-  let entity = new PremiumPaidEvent(id);
-
-  entity.payer = event.params.payer;
-  entity.amount = event.params.amount;
-  entity.timestamp = event.block.timestamp;
-
-  entity.save();
-
-  let financials = getProtocolFinancials();
-  financials.totalPremiums = financials.totalPremiums.plus(event.params.amount);
   financials.save();
 }
 

@@ -30,7 +30,6 @@ dataSources:
         - CarbonMintEvent
         - ProtocolFinancials
         - SlashingEvent
-        - PremiumPaidEvent
       abis:
         - name: SilkenCarbonCoin
           file: ./abis/SilkenCarbonCoin.json
@@ -39,8 +38,6 @@ dataSources:
           handler: handleCarbonMinted
         - event: TokenSlashed(indexed address,uint256)
           handler: handleTokenSlashed
-        - event: PremiumPaid(indexed address,uint256)
-          handler: handlePremiumPaid
       file: ./src/mapping.ts
 
   # [S3.5] SilkenForestCoin (SFC) — Governance & Biodiversity Token

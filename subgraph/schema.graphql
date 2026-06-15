@@ -35,7 +35,6 @@ type ProtocolFinancials @entity {
   id: ID!
   totalMinted: BigInt!
   totalBurned: BigInt!
-  totalPremiums: BigInt!
   totalForestMinted: BigInt!
   totalGovernanceSlashed: BigInt!
 }
@@ -43,13 +42,6 @@ type ProtocolFinancials @entity {
 type SlashingEvent @entity {
   id: ID!
   target: Bytes!
-  amount: BigInt!
-  timestamp: BigInt!
-}
-
-type PremiumPaidEvent @entity {
-  id: ID!
-  payer: Bytes!
   amount: BigInt!
   timestamp: BigInt!
 }

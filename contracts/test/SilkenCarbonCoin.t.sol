@@ -35,7 +35,6 @@ contract SilkenCarbonCoinTest is Test {
 
     event CarbonMinted(address indexed investor, uint256 amount, bytes32 indexed treeDidHash, string treeDid);
     event TokenSlashed(address indexed investor, uint256 amount);
-    event PremiumPaid(address indexed payer, uint256 amount);
 
     function setUp() public {
         scc = new SilkenCarbonCoin(admin, pauser, minter, slasher);
@@ -385,35 +384,6 @@ contract SilkenCarbonCoinTest is Test {
         vm.prank(pauser);
         vm.expectRevert();
         scc.grantRole(minterRole, unauthorized);
-    }
-
-    // ═══════════════════════════════════════════════════════════════════
-    // RECORD PREMIUM PAID
-    // ═══════════════════════════════════════════════════════════════════
-
-    function test_recordPremiumPaid_emitsEvent() public {
-        vm.prank(admin);
-        vm.expectEmit(true, false, false, true);
-        emit PremiumPaid(user1, 50e18);
-        scc.recordPremiumPaid(user1, 50e18);
-    }
-
-    function testRevert_recordPremiumPaid_zeroPayer() public {
-        vm.prank(admin);
-        vm.expectRevert("SCC: zero payer");
-        scc.recordPremiumPaid(address(0), 50e18);
-    }
-
-    function testRevert_recordPremiumPaid_zeroPremium() public {
-        vm.prank(admin);
-        vm.expectRevert("SCC: zero premium");
-        scc.recordPremiumPaid(user1, 0);
-    }
-
-    function testRevert_recordPremiumPaid_unauthorized() public {
-        vm.prank(unauthorized);
-        vm.expectRevert();
-        scc.recordPremiumPaid(user1, 50e18);
     }
 
     // ═══════════════════════════════════════════════════════════════════
