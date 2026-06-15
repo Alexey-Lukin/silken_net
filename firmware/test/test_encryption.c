@@ -27,6 +27,8 @@
 
 #include "hal_mock.h"
 #include "../queen/coap_iv.h"  /* [HRNG-IV] real fallback-IV derivation under test */
+#include <openssl/hmac.h>      /* [SEC.12] independent HMAC oracle for the keyed IV */
+#include <openssl/evp.h>
 
 /* ══════════════════════════════════════════════════════════════════
  * CONSTANTS (from queen/main.c)
@@ -571,35 +573,82 @@ TEST(test_key_loaded_before_ecb_restore_preserves_key)
 /* ══════════════════════════════════════════════════════════════════
  * HRNG-IV FALLBACK (coap_iv.h — the REAL derivation, not re-implemented)
  *
- * Verifies the CoAP-batch fallback IV (used only when HAL_RNG fails) stays
- * UNIQUE across the dimensions that matter for CBC on a no-chosen-plaintext
- * channel (03_05 §HRNG Fallback): device, reboot, flush, and per-word.
+ * [SEC.12] The fallback IV is now a KEY-DERIVED PRF: HMAC-SHA256(coap_key,
+ * label || uid || ts || seq || tick)[0:16]. Verifies (1) byte-parity with two
+ * independent oracles — OpenSSL HMAC + the shared one-shot Silken_Hmac_Sha256
+ * (proving it is genuinely that HMAC ⇒ UNPREDICTABLE without the key), and
+ * (2) UNIQUENESS across the dimensions that matter for CBC: device, reboot,
+ * flush. Canon: 03_05 §HRNG Fallback.
  * ══════════════════════════════════════════════════════════════════ */
-TEST(test_coap_fallback_iv_words_distinct) {
-    uint32_t w0 = coap_fallback_iv_word(0, 1000U, 0xDEADBEEFU, 1700000000U, 1U);
-    uint32_t w1 = coap_fallback_iv_word(1, 1000U, 0xDEADBEEFU, 1700000000U, 1U);
-    uint32_t w2 = coap_fallback_iv_word(2, 1000U, 0xDEADBEEFU, 1700000000U, 1U);
-    uint32_t w3 = coap_fallback_iv_word(3, 1000U, 0xDEADBEEFU, 1700000000U, 1U);
-    ASSERT_EQ(w0 != w1 && w0 != w2 && w0 != w3 && w1 != w2 && w1 != w3 && w2 != w3, 1);
-    ASSERT_EQ((w0 | w1 | w2 | w3) != 0U, 1);  /* never all-zero */
+
+/* Arbitrary fixed 32-byte test key (AES-256 CoAP-key stand-in). */
+static const uint8_t TEST_COAP_KEY[32] = {
+    0x9f, 0x2c, 0x41, 0xb7, 0x6e, 0x18, 0xd3, 0x05,
+    0xaa, 0x57, 0x3e, 0xc9, 0x12, 0x84, 0xfb, 0x60,
+    0x7d, 0x39, 0xe2, 0x4c, 0x91, 0x08, 0xbd, 0x56,
+    0x2f, 0xa1, 0x6b, 0xd4, 0x83, 0x1e, 0xc7, 0x70
+};
+
+static void put_be32(uint8_t *p, uint32_t v) {
+    p[0] = (uint8_t)(v >> 24); p[1] = (uint8_t)(v >> 16);
+    p[2] = (uint8_t)(v >> 8);  p[3] = (uint8_t)v;
+}
+
+TEST(test_coap_fallback_iv_parity) {
+    uint8_t iv[16];
+    coap_fallback_iv(iv, TEST_COAP_KEY, sizeof TEST_COAP_KEY,
+                     1000U, 0xDEADBEEFU, 1700000000U, 1U);
+
+    /* Independent message assembly: BE label || uid || ts || seq || tick. */
+    uint8_t msg[20 + 16];
+    memcpy(msg, "SilkenNet-CoAP-IV-v1", 20);
+    put_be32(msg + 20, 0xDEADBEEFU);
+    put_be32(msg + 24, 1700000000U);
+    put_be32(msg + 28, 1U);
+    put_be32(msg + 32, 1000U);
+
+    /* Oracle 1: OpenSSL HMAC (fully independent primitive). */
+    uint8_t mac_ossl[32];
+    unsigned int mlen = 0;
+    HMAC(EVP_sha256(), TEST_COAP_KEY, (int)sizeof TEST_COAP_KEY, msg, sizeof msg, mac_ossl, &mlen);
+    ASSERT_EQ(memcmp(iv, mac_ossl, 16) == 0, 1);
+
+    /* Oracle 2: the shared one-shot HMAC over the contiguous buffer (proves the
+       concat-streamed wrapper equals a flat HMAC over the same bytes). */
+    uint8_t mac_silken[SILKEN_SHA256_DIGEST_LEN];
+    Silken_Hmac_Sha256(TEST_COAP_KEY, sizeof TEST_COAP_KEY, msg, sizeof msg, mac_silken);
+    ASSERT_EQ(memcmp(iv, mac_silken, 16) == 0, 1);
+}
+
+TEST(test_coap_fallback_iv_deterministic) {
+    uint8_t a[16], b[16];
+    coap_fallback_iv(a, TEST_COAP_KEY, sizeof TEST_COAP_KEY, 1000U, 0xDEADBEEFU, 1700000000U, 1U);
+    coap_fallback_iv(b, TEST_COAP_KEY, sizeof TEST_COAP_KEY, 1000U, 0xDEADBEEFU, 1700000000U, 1U);
+    ASSERT_EQ(memcmp(a, b, 16) == 0, 1);   /* same inputs → same IV */
 }
 
 TEST(test_coap_fallback_iv_per_device) {
     /* mass blackout-reboot: same tick/unix/seq, different device UID → different IV */
-    ASSERT_EQ(coap_fallback_iv_word(0, 1000U, 0xAAAA1111U, 1700000000U, 1U)
-           != coap_fallback_iv_word(0, 1000U, 0xBBBB2222U, 1700000000U, 1U), 1);
+    uint8_t a[16], b[16];
+    coap_fallback_iv(a, TEST_COAP_KEY, sizeof TEST_COAP_KEY, 1000U, 0xAAAA1111U, 1700000000U, 1U);
+    coap_fallback_iv(b, TEST_COAP_KEY, sizeof TEST_COAP_KEY, 1000U, 0xBBBB2222U, 1700000000U, 1U);
+    ASSERT_EQ(memcmp(a, b, 16) != 0, 1);
 }
 
 TEST(test_coap_fallback_iv_cross_reboot) {
     /* different wall-clock (queen_unix_ts) → different IV (cross-reboot uniqueness) */
-    ASSERT_EQ(coap_fallback_iv_word(0, 1000U, 0xDEADBEEFU, 1700000000U, 1U)
-           != coap_fallback_iv_word(0, 1000U, 0xDEADBEEFU, 1700003600U, 1U), 1);
+    uint8_t a[16], b[16];
+    coap_fallback_iv(a, TEST_COAP_KEY, sizeof TEST_COAP_KEY, 1000U, 0xDEADBEEFU, 1700000000U, 1U);
+    coap_fallback_iv(b, TEST_COAP_KEY, sizeof TEST_COAP_KEY, 1000U, 0xDEADBEEFU, 1700003600U, 1U);
+    ASSERT_EQ(memcmp(a, b, 16) != 0, 1);
 }
 
 TEST(test_coap_fallback_iv_cross_flush) {
     /* different flush sequence → different IV (within-boot uniqueness) */
-    ASSERT_EQ(coap_fallback_iv_word(0, 1000U, 0xDEADBEEFU, 1700000000U, 1U)
-           != coap_fallback_iv_word(0, 1000U, 0xDEADBEEFU, 1700000000U, 2U), 1);
+    uint8_t a[16], b[16];
+    coap_fallback_iv(a, TEST_COAP_KEY, sizeof TEST_COAP_KEY, 1000U, 0xDEADBEEFU, 1700000000U, 1U);
+    coap_fallback_iv(b, TEST_COAP_KEY, sizeof TEST_COAP_KEY, 1000U, 0xDEADBEEFU, 1700000000U, 2U);
+    ASSERT_EQ(memcmp(a, b, 16) != 0, 1);
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -646,8 +695,9 @@ int main(void)
     RUN(test_no_key_means_no_cryp_init);
     RUN(test_key_loaded_before_ecb_restore_preserves_key);
 
-    printf("\n  HRNG-IV Fallback (coap_iv.h):\n");
-    RUN(test_coap_fallback_iv_words_distinct);
+    printf("\n  HRNG-IV Fallback (coap_iv.h, SEC.12 keyed-HMAC):\n");
+    RUN(test_coap_fallback_iv_parity);
+    RUN(test_coap_fallback_iv_deterministic);
     RUN(test_coap_fallback_iv_per_device);
     RUN(test_coap_fallback_iv_cross_reboot);
     RUN(test_coap_fallback_iv_cross_flush);

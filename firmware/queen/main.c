@@ -17,7 +17,7 @@
 
 // Підключаємо низькорівневий драйвер радіо (Radio Middleware)
 #include "radio.h"
-// [HRNG-IV] Pure, host-testable CoAP-batch fallback-IV derivation (coap_fallback_iv_word)
+// [HRNG-IV] Pure, host-testable CoAP-batch fallback-IV derivation (coap_fallback_iv)
 #include "coap_iv.h"
 // [FW.53] CRC16-CCITT One-Home — перевірка CoAP-OTA чанків від Rails
 #include "../common/silken_crc.h"
@@ -544,7 +544,7 @@ uint8_t ota_is_active = 0;
 uint16_t current_ota_chunk_idx = 0;
 
 // [HRNG-IV] Monotonic per-boot CoAP-flush counter — mixed into the HRNG-fallback
-// CBC IV (coap_fallback_iv_word) so successive fallback IVs stay unique within a
+// CBC IV (coap_fallback_iv) so successive fallback IVs stay unique within a
 // boot even if HAL_GetTick() barely advances between flushes.
 static uint32_t coap_flush_seq = 0;
 
@@ -1393,17 +1393,26 @@ void Flush_Cache_To_Rails(void)
     hrng.Instance = RNG;
     HAL_RNG_Init(&hrng);
 
+    uint8_t hrng_ok = 1U;
     for (uint8_t i = 0U; i < 4U; i++) {
         if (HAL_RNG_GenerateRandomNumber(&hrng, &batch_iv[i]) != HAL_OK) {
-            /* [HRNG-IV] HRNG failed → derive a UNIQUE fallback IV word. NOT a CSPRNG:
-               unique across device (uid_hash) / reboot (queen_unix_ts) / flush
-               (coap_flush_seq), but predictable — acceptable here because the CoAP
-               batch has no chosen-plaintext vector (03_05 §HRNG Fallback). Derivation lives
-               in coap_iv.h (pure → host-tested in firmware/test/test_encryption.c). */
-            batch_iv[i] = coap_fallback_iv_word(i, HAL_GetTick(),
-                                                djb2_hash(queen_uid, strlen(queen_uid)),
-                                                queen_unix_ts, coap_flush_seq);
+            hrng_ok = 0U;
+            break;
         }
+    }
+    if (!hrng_ok) {
+        /* [SEC.12] HRNG failed → derive an UNPREDICTABLE fallback IV: HMAC-SHA256
+           keyed by the secret CoAP key over device (uid_hash) / reboot
+           (queen_unix_ts) / flush (coap_flush_seq) / tick context. Unique AND
+           unpredictable (an attacker without the CoAP key cannot guess it) —
+           closes the old XOR-mix predictability residual in pure software, no
+           AES-engine / SEC.8 restore / bench needed (03_05 §HRNG Fallback).
+           Derivation in coap_iv.h (pure → host-tested vs OpenSSL in
+           firmware/test/test_encryption.c). */
+        coap_fallback_iv((uint8_t *)batch_iv,
+                         (const uint8_t *)coap_key, sizeof(coap_key),
+                         HAL_GetTick(), djb2_hash(queen_uid, strlen(queen_uid)),
+                         queen_unix_ts, coap_flush_seq);
     }
 
     HAL_RNG_DeInit(&hrng);
