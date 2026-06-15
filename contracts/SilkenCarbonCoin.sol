@@ -33,6 +33,12 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @notice Роль для спалювання токенів при slashing protocol (окремий oracle).
     bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
 
+    /// @notice [SEC.1] Роль аварійної паузи — ВІДОКРЕМЛЕНА від DEFAULT_ADMIN_ROLE.
+    /// @dev Тримає Gnosis Safe (миттєва реакція на exploit, поза 48h Timelock).
+    ///      DEFAULT_ADMIN_ROLE (видача ролей, у т.ч. MINTER) у production = Timelock →
+    ///      катастрофічний `grantRole(MINTER_ROLE)` несе 48h-затримку; pause лишається швидким.
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+
     /// @notice [B-01] Максимальна емісія SCC: 1 мільярд токенів (18 decimals).
     /// @dev Once MAX_SUPPLY is reached, mint/batchMint revert with "SCC: cap exceeded".
     uint256 public constant MAX_SUPPLY = 1_000_000_000 * 1e18;
@@ -61,20 +67,26 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @param amount Сума премії (wei).
     event PremiumPaid(address indexed payer, uint256 amount);
 
-    /// @notice [B-02][B-03] Конструктор з розділеними oracle-адресами.
-    /// @param admin Адміністратор контракту (DEFAULT_ADMIN_ROLE).
+    /// @notice [B-02][B-03][SEC.1] Конструктор з розділеними ролями.
+    /// @param admin Адміністратор (DEFAULT_ADMIN_ROLE) — у production = `SilkenTimelock`
+    ///        (48h governance-затримка на видачу будь-якої ролі, у т.ч. MINTER_ROLE).
+    /// @param pauser [SEC.1] Власник PAUSER_ROLE — у production = Gnosis Safe
+    ///        (миттєва аварійна пауза, БЕЗ Timelock-затримки).
     /// @param minterOracle Oracle-адреса для мінтингу (MINTER_ROLE).
     /// @param slasherOracle Oracle-адреса для slashing (SLASHER_ROLE).
-    constructor(address admin, address minterOracle, address slasherOracle)
+    constructor(address admin, address pauser, address minterOracle, address slasherOracle)
         ERC20("Silken Carbon Coin", "SCC")
         ERC20Permit("Silken Carbon Coin")
     {
         require(admin != address(0), "SCC: zero admin");
+        require(pauser != address(0), "SCC: zero pauser");
         require(minterOracle != address(0), "SCC: zero minter oracle");
         require(slasherOracle != address(0), "SCC: zero slasher oracle");
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         // Emits: RoleGranted(DEFAULT_ADMIN_ROLE, admin, msg.sender)
+        _grantRole(PAUSER_ROLE, pauser);
+        // Emits: RoleGranted(PAUSER_ROLE, pauser, msg.sender)
         _grantRole(MINTER_ROLE, minterOracle);
         // Emits: RoleGranted(MINTER_ROLE, minterOracle, msg.sender)
         _grantRole(SLASHER_ROLE, slasherOracle);
@@ -170,13 +182,14 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         emit PremiumPaid(payer, amount);
     }
 
-    /// @notice Призупинення всіх трансферів (emergency).
-    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    /// @notice [SEC.1] Призупинення всіх трансферів (emergency) — PAUSER_ROLE (Safe),
+    ///         навмисно ШВИДКЕ (поза Timelock) для негайної реакції на exploit.
+    function pause() external onlyRole(PAUSER_ROLE) {
         _pause();
     }
 
-    /// @notice Відновлення трансферів після призупинення.
-    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    /// @notice [SEC.1] Відновлення трансферів після призупинення — PAUSER_ROLE.
+    function unpause() external onlyRole(PAUSER_ROLE) {
         _unpause();
     }
 

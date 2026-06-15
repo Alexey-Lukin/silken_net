@@ -20,6 +20,7 @@ contract SilkenForestCoinTest is Test {
     SilkenForestCoin public sfc;
 
     address public admin = makeAddr("admin");
+    address public pauser = makeAddr("pauser");
     address public minter = makeAddr("minter");
     address public slasher = makeAddr("slasher");
     address public user1 = makeAddr("user1");
@@ -32,7 +33,7 @@ contract SilkenForestCoinTest is Test {
     event GovernanceSlashed(address indexed investor, uint256 amount);
 
     function setUp() public {
-        sfc = new SilkenForestCoin(admin, minter, slasher);
+        sfc = new SilkenForestCoin(admin, pauser, minter, slasher);
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -46,6 +47,7 @@ contract SilkenForestCoinTest is Test {
 
     function test_constructor_grantsRoles() public view {
         assertTrue(sfc.hasRole(sfc.DEFAULT_ADMIN_ROLE(), admin));
+        assertTrue(sfc.hasRole(sfc.PAUSER_ROLE(), pauser));
         assertTrue(sfc.hasRole(sfc.MINTER_ROLE(), minter));
         assertTrue(sfc.hasRole(sfc.SLASHER_ROLE(), slasher));
     }
@@ -56,17 +58,22 @@ contract SilkenForestCoinTest is Test {
 
     function testRevert_constructor_zeroAdmin() public {
         vm.expectRevert("SFC: zero admin");
-        new SilkenForestCoin(address(0), minter, slasher);
+        new SilkenForestCoin(address(0), pauser, minter, slasher);
+    }
+
+    function testRevert_constructor_zeroPauser() public {
+        vm.expectRevert("SFC: zero pauser");
+        new SilkenForestCoin(admin, address(0), minter, slasher);
     }
 
     function testRevert_constructor_zeroOracle() public {
         vm.expectRevert("SFC: zero oracle");
-        new SilkenForestCoin(admin, address(0), slasher);
+        new SilkenForestCoin(admin, pauser, address(0), slasher);
     }
 
     function testRevert_constructor_zeroSlasher() public {
         vm.expectRevert("SFC: zero slasher oracle");
-        new SilkenForestCoin(admin, minter, address(0));
+        new SilkenForestCoin(admin, pauser, minter, address(0));
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -322,7 +329,7 @@ contract SilkenForestCoinTest is Test {
         vm.prank(minter);
         sfc.mint(user1, 1000e18, CLUSTER_ID);
 
-        vm.prank(admin);
+        vm.prank(pauser);
         sfc.pause();
 
         vm.prank(user1);
@@ -331,7 +338,7 @@ contract SilkenForestCoinTest is Test {
     }
 
     function test_pause_blocksMinting() public {
-        vm.prank(admin);
+        vm.prank(pauser);
         sfc.pause();
 
         vm.prank(minter);
@@ -343,7 +350,7 @@ contract SilkenForestCoinTest is Test {
         vm.prank(minter);
         sfc.mint(user1, 1000e18, CLUSTER_ID);
 
-        vm.prank(admin);
+        vm.prank(pauser);
         sfc.pause();
 
         // Slash MUST work during pause — governance security mechanism
@@ -356,14 +363,29 @@ contract SilkenForestCoinTest is Test {
         vm.prank(minter);
         sfc.mint(user1, 1000e18, CLUSTER_ID);
 
-        vm.prank(admin);
+        vm.prank(pauser);
         sfc.pause();
-        vm.prank(admin);
+        vm.prank(pauser);
         sfc.unpause();
 
         vm.prank(user1);
         sfc.transfer(user2, 100e18);
         assertEq(sfc.balanceOf(user2), 100e18);
+    }
+
+    /// @notice [SEC.1] DEFAULT_ADMIN (the Timelock in prod) must NOT pause — PAUSER_ROLE only.
+    function testRevert_pause_adminCannotPause() public {
+        vm.prank(admin);
+        vm.expectRevert();
+        sfc.pause();
+    }
+
+    /// @notice [SEC.1] PAUSER (the Safe) must NOT grant roles — grantRole stays DEFAULT_ADMIN (Timelock).
+    function testRevert_pauser_cannotGrantRoles() public {
+        bytes32 minterRole = sfc.MINTER_ROLE(); // pre-compute (the prank/expectRevert must hit grantRole)
+        vm.prank(pauser);
+        vm.expectRevert();
+        sfc.grantRole(minterRole, unauthorized);
     }
 
     // ═══════════════════════════════════════════════════════════════════

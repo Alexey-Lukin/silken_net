@@ -24,6 +24,7 @@ contract SilkenCarbonCoinTest is Test {
     SilkenCarbonCoin public scc;
 
     address public admin = makeAddr("admin");
+    address public pauser = makeAddr("pauser");
     address public minter = makeAddr("minter");
     address public slasher = makeAddr("slasher");
     address public user1 = makeAddr("user1");
@@ -37,7 +38,7 @@ contract SilkenCarbonCoinTest is Test {
     event PremiumPaid(address indexed payer, uint256 amount);
 
     function setUp() public {
-        scc = new SilkenCarbonCoin(admin, minter, slasher);
+        scc = new SilkenCarbonCoin(admin, pauser, minter, slasher);
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -51,6 +52,7 @@ contract SilkenCarbonCoinTest is Test {
 
     function test_constructor_grantsRoles() public view {
         assertTrue(scc.hasRole(scc.DEFAULT_ADMIN_ROLE(), admin));
+        assertTrue(scc.hasRole(scc.PAUSER_ROLE(), pauser));
         assertTrue(scc.hasRole(scc.MINTER_ROLE(), minter));
         assertTrue(scc.hasRole(scc.SLASHER_ROLE(), slasher));
     }
@@ -61,17 +63,22 @@ contract SilkenCarbonCoinTest is Test {
 
     function testRevert_constructor_zeroAdmin() public {
         vm.expectRevert("SCC: zero admin");
-        new SilkenCarbonCoin(address(0), minter, slasher);
+        new SilkenCarbonCoin(address(0), pauser, minter, slasher);
+    }
+
+    function testRevert_constructor_zeroPauser() public {
+        vm.expectRevert("SCC: zero pauser");
+        new SilkenCarbonCoin(admin, address(0), minter, slasher);
     }
 
     function testRevert_constructor_zeroMinter() public {
         vm.expectRevert("SCC: zero minter oracle");
-        new SilkenCarbonCoin(admin, address(0), slasher);
+        new SilkenCarbonCoin(admin, pauser, address(0), slasher);
     }
 
     function testRevert_constructor_zeroSlasher() public {
         vm.expectRevert("SCC: zero slasher oracle");
-        new SilkenCarbonCoin(admin, minter, address(0));
+        new SilkenCarbonCoin(admin, pauser, minter, address(0));
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -89,6 +96,7 @@ contract SilkenCarbonCoinTest is Test {
     function test_roleConstants() public view {
         assertEq(scc.MINTER_ROLE(), keccak256("MINTER_ROLE"));
         assertEq(scc.SLASHER_ROLE(), keccak256("SLASHER_ROLE"));
+        assertEq(scc.PAUSER_ROLE(), keccak256("PAUSER_ROLE"));
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -311,7 +319,7 @@ contract SilkenCarbonCoinTest is Test {
         vm.prank(minter);
         scc.mint(user1, 1000e18, TREE_DID);
 
-        vm.prank(admin);
+        vm.prank(pauser);
         scc.pause();
 
         vm.prank(user1);
@@ -320,7 +328,7 @@ contract SilkenCarbonCoinTest is Test {
     }
 
     function test_pause_blocksMinting() public {
-        vm.prank(admin);
+        vm.prank(pauser);
         scc.pause();
 
         vm.prank(minter);
@@ -333,7 +341,7 @@ contract SilkenCarbonCoinTest is Test {
         vm.prank(minter);
         scc.mint(user1, 1000e18, TREE_DID);
 
-        vm.prank(admin);
+        vm.prank(pauser);
         scc.pause();
 
         vm.prank(slasher);
@@ -346,9 +354,9 @@ contract SilkenCarbonCoinTest is Test {
         vm.prank(minter);
         scc.mint(user1, 1000e18, TREE_DID);
 
-        vm.prank(admin);
+        vm.prank(pauser);
         scc.pause();
-        vm.prank(admin);
+        vm.prank(pauser);
         scc.unpause();
 
         vm.prank(user1);
@@ -360,6 +368,23 @@ contract SilkenCarbonCoinTest is Test {
         vm.prank(unauthorized);
         vm.expectRevert();
         scc.pause();
+    }
+
+    /// @notice [SEC.1] DEFAULT_ADMIN (the Timelock in prod) must NOT be able to pause —
+    ///         pause is PAUSER_ROLE only (the Safe). Proves the role split.
+    function testRevert_pause_adminCannotPause() public {
+        vm.prank(admin);
+        vm.expectRevert();
+        scc.pause();
+    }
+
+    /// @notice [SEC.1] PAUSER (the Safe) must NOT be able to grant roles — the catastrophic
+    ///         grantRole(MINTER) power stays with DEFAULT_ADMIN (the Timelock).
+    function testRevert_pauser_cannotGrantRoles() public {
+        bytes32 minterRole = scc.MINTER_ROLE(); // pre-compute (the prank/expectRevert must hit grantRole)
+        vm.prank(pauser);
+        vm.expectRevert();
+        scc.grantRole(minterRole, unauthorized);
     }
 
     // ═══════════════════════════════════════════════════════════════════

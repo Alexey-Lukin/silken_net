@@ -37,7 +37,7 @@ contract SilkenGovernorTest is Test {
 
     function setUp() public {
         // 1. Deploy SFC (governance token)
-        sfc = new SilkenForestCoin(admin, minter, slasher);
+        sfc = new SilkenForestCoin(admin, admin, minter, slasher); // [SEC.1] pauser=admin (no pause in governance tests)
 
         // 2. Deploy Timelock (governor is proposer, anyone can execute)
         address[] memory proposers = new address[](0); // Will add governor after deployment

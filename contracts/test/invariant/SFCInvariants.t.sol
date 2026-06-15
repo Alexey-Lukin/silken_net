@@ -92,7 +92,7 @@ contract SFCInvariants is Test {
     address internal slasher = makeAddr("sfc_inv_slasher");
 
     function setUp() public {
-        sfc = new SilkenForestCoin(admin, minter, slasher);
+        sfc = new SilkenForestCoin(admin, admin, minter, slasher); // [SEC.1] pauser=admin (no pause in invariants)
         handler = new SFCHandler(sfc, minter, slasher);
         targetContract(address(handler));
     }

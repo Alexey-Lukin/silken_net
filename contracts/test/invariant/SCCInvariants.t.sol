@@ -89,7 +89,7 @@ contract SCCInvariants is Test {
     address internal slasher = makeAddr("inv_slasher");
 
     function setUp() public {
-        scc = new SilkenCarbonCoin(admin, minter, slasher);
+        scc = new SilkenCarbonCoin(admin, admin, minter, slasher); // [SEC.1] pauser=admin (no pause in invariants)
         handler = new SCCHandler(scc, minter, slasher);
         targetContract(address(handler));
     }
