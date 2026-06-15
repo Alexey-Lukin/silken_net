@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
+
 #
 # [SSOT anti-drift, DOC-T.26] docs/protocols/ canon-ref RESOLUTION gate (HARD, CI docs.yml).
 #
