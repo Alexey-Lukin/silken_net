@@ -1023,7 +1023,11 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 >
 > Inbound item-ref (`NN_NN — DOC-T.N`) резолвиться `tracker:check` ([`00_06 §3`](00_06_SSOT_Documentation_Standard)).
 
-_Активних DOC-T наразі немає — усі вирішено/архівовано (§🗄️ нижче). Нові SSOT doc-drift / tracker-tooling знахідки → додавати рядком таблиці (формат — §🗄️)._
+| ID | Пункт | Канон |
+|----|-------|-------|
+| DOC-T.27 | 🤖 ⚪ **Deep-audit §05/§06/§07/§08** — той самий deep-archival метод, що застосовано до §04: per-item verify-canon ЧИТАННЯМ дому → cement (Стан-вердикт, без done-`[x]`) → re-examine priority/WHO/STAGE → archive resolved + promote misclassified backlog-блокери → fix drift по нитці | `00_06 §4` |
+
+_Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tooling знахідки → додавати рядком сюди._
 
 ## 📌 Backlog (не блокери · довгострокові)
 
