@@ -622,13 +622,13 @@
 ## §04 · Backend / API / UI
 
 #### S6.1 — Redis SPOF для M2M автентифікації
-- **P1** · 👤 · 🟢 · → `04_03`
-- **Стан:** Graceful degradation реалізовано — Redis down → DB-backed nonce (Solid Cache, TTL 10хв), шлюзи не отримують 503 (`m2m_auth_controller` [S6.1] + spec). Канон `04_03` (replay-nonce M2M).
+- **P1** · 👤 · 🟢 · → `04_03 §1.4`
+- **Стан:** Graceful degradation реалізовано — Redis down → DB-backed nonce (Solid Cache, TTL 10хв), шлюзи не отримують 503 (`m2m_auth_controller` [S6.1] + spec). Канон `04_03 §1.4` (M2M replay-nonce + graceful degradation).
 - [ ] 👤 верифікувати Upstash multi-zone replication у production
 
 #### E.41 — Fire-event 48h latency (dClimate obscuration) → immediate-broadcast fallback
-- **P1** · 🤖+👤 · 🟡 · → `04_02`, `05_01`
-- **Стан:** ⚠️ Life-safety — dClimate satellite fire-events можуть запізнюватись ~48h (хмарна обструкція). Первинна мітигація ✅ зашита: edge chainsaw→panic-TX негайний broadcast (`03_03`/`03_01`, `PANIC_TTL=5`, `Trigger_Emergency_LoRa_TX` — urgent шлях НЕ чекає dClimate). Вторинна: Forester Guild fallback-oracle = E.20 (Post-TRL 6). P1 — не відкладати на Post-TRL 6. Канон `04_02` (AlertNotification/EWS), `05_01` (dClimate).
+- **P1** · 🤖 · 🔗 · → `04_02 §11`, `05_01`
+- **Стан:** ⚠️ Life-safety — dClimate satellite fire-events можуть запізнюватись ~48h (хмарна обструкція). Ціль (immediate-broadcast) ✅ досягнута двома негайними шляхами, **НЕ** satellite-gated (verified нижче): edge chainsaw→panic-TX (`03_03`/`03_01`, `PANIC_TTL=5`) + backend temp/anomaly alert (`AlertDispatchService`). Відкрите — лише вторинна belt-and-suspenders: Forester Guild fallback-oracle для satellite-obscured wildfire, 🔗 на E.20 (design `04_02 §11`/§953 — `[PLANNED — blocked by ForestBountyService, Post-TRL 6]`). Канон `04_02 §11` (Dclimate/EWS), `05_01` (dClimate).
 - [x] 🤖 verified — backend fire-alert dispatch негайний (`AlertDispatchService#create_and_dispatch_alert!` → `EwsAlert` + `EmergencyResponseService`); єдині гейти = Redis silence (5хв debounce) + SEC.10 per-DID rate-limit, **НЕ** satellite. dClimate-clearance гейтить лише ВИПЛАТУ (`InsurancePayoutWorker#satellite_verification_pending?`), не тривогу → fire-response не залежить від 48h супутникового лагу
 - [ ] 🔗 Forester Guild fallback-oracle (E.20, Post-TRL 6)
 
