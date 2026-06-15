@@ -5,9 +5,10 @@
 # scripts/doc_structure_map.rb — структурна мапа канону SilkenNet.
 #
 # Для кожної сторінки `docs/NN_NN_*.md` витягує "голову" (title + 🎯 Мета +
-# ✅ Статус/TRL + 🔗 cross-refs count) і список контент-секцій (## ...) —
-# тобто все до кінця змісту-ToC, БЕЗ тіла. Дає компактну мапу всього проєкту,
-# щоб орієнтуватися не перечитуючи кожен файл.
+# ✅ Статус/TRL + 🔗 cross-refs count + 📏 line-count) і список контент-секцій
+# (## ...) — тобто все до кінця змісту-ToC, БЕЗ тіла. Дає компактну мапу всього
+# проєкту, щоб орієнтуватися не перечитуючи кожен файл. Per-module heft-підсумок
+# (стор · рядків) — для size-rebalance лінзи (small→merge / large→split).
 #
 # Read-only. Нічого не змінює.
 #
@@ -40,6 +41,9 @@ abort "Жодного docs/NN_NN файлу в діапазоні #{FROM}..#{TO}
 
 prev_mod = nil
 total_secs = 0
+total_lines = 0
+mod_pages = Hash.new(0)
+mod_lines = Hash.new(0)
 
 files.each do |path|
   base   = File.basename(path)
@@ -76,6 +80,9 @@ files.each do |path|
   # Фолбек для index-доків без ✅ Статус: реальний TRL-рядок, НЕ directory-лінк / table-row.
   status ||= lines.find { |l| l =~ /\bTRL[\s-]?\d/i && !l.include?("](") && !l.lstrip.start_with?("|") }&.strip&.slice(0, 90)
   total_secs += content_secs.size
+  total_lines += lines.size
+  mod_pages[mod] += 1
+  mod_lines[mod] += lines.size
 
   if mod != prev_mod
     tier = case mod
@@ -91,9 +98,12 @@ files.each do |path|
   puts "  🎯 #{meta}"              if meta
   puts "  ✅ #{status}"            if status
   puts "  🔗 ~#{crossrefs} doc-links"
+  puts "  📏 #{lines.size} рядків"
   puts "  §  #{content_secs.size} секцій: " + content_secs.join(" · ") if SHOW_SECS && !content_secs.empty?
   puts "  §  #{content_secs.size} секцій"                              if !SHOW_SECS && !content_secs.empty?
 end
 
 puts "\n──────────"
-puts "Разом: #{files.size} сторінок, #{total_secs} контент-секцій (діапазон #{FROM}..#{TO})."
+puts "Heft по модулях (стор · рядків) — лінза size-rebalance (small→merge / large→split):"
+mod_pages.keys.sort.each { |m| puts "  M#{m}: #{mod_pages[m]} стор · #{mod_lines[m]} рядків" }
+puts "Разом: #{files.size} сторінок, #{total_secs} контент-секцій, #{total_lines} рядків (діапазон #{FROM}..#{TO})."
