@@ -122,24 +122,24 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
 
 | Роль | Константа | Призначається в конструкторі | Можливості |
 |---|---|---|---|
-| `DEFAULT_ADMIN_ROLE` | `0x00` (OpenZeppelin default) | `admin` (параметр конструктора) | Видача / відкликання будь-яких ролей; `pause()`, `unpause()` |
+| `DEFAULT_ADMIN_ROLE` | `0x00` (OpenZeppelin default) | `admin` — у production = **SilkenTimelock** (48h) | Видача / відкликання будь-яких ролей (у т.ч. `MINTER_ROLE`) — **за 48h-затримкою** [SEC.1] |
+| `PAUSER_ROLE` | `keccak256("PAUSER_ROLE")` | `pauser` — у production = **Gnosis Safe** | `pause()`, `unpause()` — **миттєво, поза Timelock** [SEC.1] |
 | `MINTER_ROLE` | `keccak256("MINTER_ROLE")` | `minterOracle` (окремий параметр) | `mintForTree()`, `mint()`, `batchMint()` |
 | `SLASHER_ROLE` | `keccak256("SLASHER_ROLE")` | `slasherOracle` (окремий параметр) | `slash()` |
 
 ```solidity
-constructor(address admin, address minterOracle, address slasherOracle)
+constructor(address admin, address pauser, address minterOracle, address slasherOracle)
     ERC20("Silken Carbon Coin", "SCC")
     ERC20Permit("Silken Carbon Coin")
 {
-    require(admin != address(0), "SCC: zero admin");
+    require(admin != address(0), "SCC: zero admin");        // production: Timelock
+    require(pauser != address(0), "SCC: zero pauser");      // production: Gnosis Safe [SEC.1]
     require(minterOracle != address(0), "SCC: zero minter oracle");
     require(slasherOracle != address(0), "SCC: zero slasher oracle");
-    _grantRole(DEFAULT_ADMIN_ROLE, admin);
-    // Emits: RoleGranted(DEFAULT_ADMIN_ROLE, admin, msg.sender)
+    _grantRole(DEFAULT_ADMIN_ROLE, admin);   // 48h-gated role grants (Timelock)
+    _grantRole(PAUSER_ROLE, pauser);         // instant emergency pause (Safe) [SEC.1]
     _grantRole(MINTER_ROLE, minterOracle);
-    // Emits: RoleGranted(MINTER_ROLE, minterOracle, msg.sender)
     _grantRole(SLASHER_ROLE, slasherOracle);
-    // Emits: RoleGranted(SLASHER_ROLE, slasherOracle, msg.sender)
 }
 ```
 
@@ -147,62 +147,74 @@ constructor(address admin, address minterOracle, address slasherOracle)
 
 | Роль | Константа | Призначається в конструкторі | Можливості |
 |---|---|---|---|
-| `DEFAULT_ADMIN_ROLE` | `0x00` | `admin` | Видача / відкликання ролей; `pause()`, `unpause()` |
+| `DEFAULT_ADMIN_ROLE` | `0x00` | `admin` — у production = **SilkenTimelock** (48h) | Видача / відкликання ролей (у т.ч. `MINTER_ROLE`) — **за 48h-затримкою** [SEC.1] |
+| `PAUSER_ROLE` | `keccak256("PAUSER_ROLE")` | `pauser` — у production = **Gnosis Safe** | `pause()`, `unpause()` — **миттєво, поза Timelock** [SEC.1] |
 | `MINTER_ROLE` | `keccak256("MINTER_ROLE")` | `oracle` (параметр конструктора) | `mint()`, `batchMint()` |
 | `SLASHER_ROLE` | `keccak256("SLASHER_ROLE")` | `slasherOracle` | `slash()` — спалення governance-токенів при breach |
 
 ```solidity
-constructor(address admin, address oracle, address slasherOracle)
+constructor(address admin, address pauser, address oracle, address slasherOracle)
     ERC20("Silken Forest Coin", "SFC")
     ERC20Permit("Silken Forest Coin")
 {
-    require(admin != address(0), "SFC: zero admin");
+    require(admin != address(0), "SFC: zero admin");        // production: Timelock
+    require(pauser != address(0), "SFC: zero pauser");      // production: Gnosis Safe [SEC.1]
     require(oracle != address(0), "SFC: zero oracle");
     require(slasherOracle != address(0), "SFC: zero slasher oracle");
-    _grantRole(DEFAULT_ADMIN_ROLE, admin);
-    // Emits: RoleGranted(DEFAULT_ADMIN_ROLE, admin, msg.sender)
+    _grantRole(DEFAULT_ADMIN_ROLE, admin);   // 48h-gated role grants (Timelock)
+    _grantRole(PAUSER_ROLE, pauser);         // instant emergency pause (Safe) [SEC.1]
     _grantRole(MINTER_ROLE, oracle);
-    // Emits: RoleGranted(MINTER_ROLE, oracle, msg.sender)
     _grantRole(SLASHER_ROLE, slasherOracle);
-    // Emits: RoleGranted(SLASHER_ROLE, slasherOracle, msg.sender)
 }
 ```
 
 ### Матриця Дозволів
 
-| Дія | SCC MINTER | SCC SLASHER | SCC ADMIN | SFC MINTER | SFC SLASHER | SFC ADMIN |
-|---|---|---|---|---|---|---|
-| `mintForTree()` / `mint()` SCC | ✅ | ❌ | ❌ | — | — | — |
-| `batchMint()` SCC | ✅ | ❌ | ❌ | — | — | — |
-| `slash()` SCC | ❌ | ✅ | ❌ | — | — | — |
-| `pause()` SCC | ❌ | ❌ | ✅ | — | — | — |
-| `unpause()` SCC | ❌ | ❌ | ✅ | — | — | — |
-| Видача ролей SCC | ❌ | ❌ | ✅ | — | — | — |
-| `mint()` SFC | — | — | — | ✅ | ❌ | ❌ |
-| `batchMint()` SFC | — | — | — | ✅ | ❌ | ❌ |
-| `slash()` SFC | — | — | — | ❌ | ✅ | ❌ |
-| `pause()` SFC | — | — | — | ❌ | ❌ | ✅ |
-| Видача ролей SFC | — | — | — | ❌ | ❌ | ✅ |
+_[SEC.1] PAUSER (Safe) ≠ ADMIN (Timelock): pause — швидко; видача ролей — за 48h._
+
+| Дія | SCC MINTER | SCC SLASHER | SCC PAUSER | SCC ADMIN | SFC MINTER | SFC SLASHER | SFC PAUSER | SFC ADMIN |
+|---|---|---|---|---|---|---|---|---|
+| `mintForTree()` / `mint()` SCC | ✅ | ❌ | ❌ | ❌ | — | — | — | — |
+| `batchMint()` SCC | ✅ | ❌ | ❌ | ❌ | — | — | — | — |
+| `slash()` SCC | ❌ | ✅ | ❌ | ❌ | — | — | — | — |
+| `pause()` / `unpause()` SCC | ❌ | ❌ | ✅ | ❌ | — | — | — | — |
+| Видача ролей SCC | ❌ | ❌ | ❌ | ✅ | — | — | — | — |
+| `mint()` SFC | — | — | — | — | ✅ | ❌ | ❌ | ❌ |
+| `batchMint()` SFC | — | — | — | — | ✅ | ❌ | ❌ | ❌ |
+| `slash()` SFC | — | — | — | — | ❌ | ✅ | ❌ | ❌ |
+| `pause()` / `unpause()` SFC | — | — | — | — | ❌ | ❌ | ✅ | ❌ |
+| Видача ролей SFC | — | — | — | — | ❌ | ❌ | ❌ | ✅ |
 
 ---
 
-### 🔐 Admin-Role → Gnosis Safe [SEC.1]
+### 🔐 Admin-Role Split: Timelock + Safe + PAUSER [SEC.1]
 
-`DEFAULT_ADMIN_ROLE` (SCC, SFC, StateRootAnchor, SilkenTimelock, ProtocolParameters) дає повний контроль (pause, видача/відкликання ролей). У production він **мусить** належати **Gnosis Safe multisig (3/5 або 2/3)**, не EOA.
+**Загроза:** `DEFAULT_ADMIN_ROLE` може `grantRole(MINTER_ROLE, …)` → намінтити до `MAX_SUPPLY`. Якщо він у EOA/Safe **без затримки**, скомпрометований ключ дає миттєвий катастрофічний mint. Тому SCC/SFC рознесено на дві осі:
 
-**Контракти ще ніде не задеплоєно → міграція ролей не потрібна;** admin виставляється правильно одразу на genesis-деплої через `ADMIN_ADDRESS`:
+| Роль | Власник (production) | Швидкість | Що тримає |
+|------|----------------------|-----------|-----------|
+| `DEFAULT_ADMIN_ROLE` | **SilkenTimelock** (48h) | повільно | видача/відкликання будь-якої ролі (у т.ч. MINTER) — публічна 48h-затримка → час на veto/alert |
+| `PAUSER_ROLE` | **Gnosis Safe** (3/5 або 2/3) | миттєво | `pause()`/`unpause()` — негайна реакція на exploit (поза Timelock) |
+
+Тобто **навіть multisig не може миттєво намінтити** — `grantRole(MINTER)` мусить пройти 48h-Timelock; pause лишається швидким (`SilkenTimelock.sol` явно декларує цей намір — «pause НЕ через Timelock»).
+
+**Контракти ще ніде не задеплоєно → міграція ролей не потрібна;** ролі виставляються одразу на genesis (`Deploy.s.sol`):
 
 | Крок | Дія |
 |------|-----|
 | 1 | Створити Gnosis Safe (3/5 або 2/3) на Polygon — `app.safe.global` |
-| 2 | `ADMIN_ADDRESS=<Safe>` у deploy ENV |
-| 3 | `REQUIRE_SAFE_ADMIN=true` (mainnet) → `Deploy.s.sol` hard-fail якщо admin = EOA |
+| 2 | `ADMIN_ADDRESS=<Safe>` у deploy ENV (= token PAUSER + Timelock admin) |
+| 3 | `REQUIRE_SAFE_ADMIN=true` (mainnet) → деплой hard-fail якщо `ADMIN_ADDRESS` = EOA |
 | 4 | `forge script script/Deploy.s.sol --rpc-url $RPC --broadcast` |
 | 5 | Верифікація (нижче) |
 
-**Guard у `Deploy.s.sol` [SEC.1]:** при `REQUIRE_SAFE_ADMIN=true` деплой ревертиться, якщо `ADMIN_ADDRESS` — EOA (`admin.code.length == 0`); інакше — warning (testnet/local EOA допустимо).
+**Deploy-послідовність [SEC.1]:** Timelock деплоїться **першим** (deployer = тимчасовий admin) → токени з `admin=Timelock`, `pauser=Safe` → Anchor/Governor/Params → wire Timelock-ролей (Governor = PROPOSER+CANCELLER; **Safe = PROPOSER** — bootstrap: може *планувати* `grantRole(MINTER)` з 48h-затримкою до активації DAO) → передати Timelock-admin Safe + **renounce deployer** (deployer лишається без жодної ролі). StateRootAnchor/ProtocolParameters admin = Safe (нема mint; params вже governance-gated через Timelock).
 
-**Last-admin guard (код SCC/SFC):** `_revokeRole` блокує видалення останнього `DEFAULT_ADMIN_ROLE` (`require(_adminCount > 1)`) — захист від lockout (релевантно лише при майбутньому reassign на live-контракті: grant-before-renounce).
+**Guard у `Deploy.s.sol`:** при `REQUIRE_SAFE_ADMIN=true` деплой ревертиться, якщо `ADMIN_ADDRESS` — EOA (`safe.code.length == 0`); інакше — warning (testnet/local EOA допустимо).
+
+**Last-admin guard (код SCC/SFC):** `_revokeRole` блокує видалення останнього `DEFAULT_ADMIN_ROLE` (`require(_adminCount > 1)`) — захист від lockout (останній admin = Timelock).
+
+**Операційна реальність (solo-founder):** «3/5 multisig», де всі ключі в однієї особи = театр; справжній Safe потребує зовнішніх co-signer'ів (HW-wallet'и + social recovery). Bootstrap-PROPOSER Safe + Timelock-admin renounce-аються на `address(0)`, коли DAO активний з реальними виборцями. → [`00_07` — SEC.1](00_07_Action_Plan_Tracker).
 
 **Верифікація (`cast`):**
 ```bash

@@ -563,12 +563,11 @@
 
 ## §03/§05 · Безпека (Edge crypto + Web3)
 
-#### SEC.1 — Multisig Gnosis Safe для production admin role
-- **P0** · 👤 · 🟢 · → [`05_03` — Admin-Role → Gnosis Safe](05_03_Tokenomics_SCC_and_SFC)
-- **Стан:** `Deploy.s.sol` admin=Safe на genesis + `REQUIRE_SAFE_ADMIN` guard (mainnet revert якщо EOA) + last-admin guard + runbook; нічого не задеплоєно → reassign не треба.
+#### SEC.1 — Multisig Gnosis Safe + PAUSER⊥admin split (production admin role)
+- **P0** · 👤 · 🟢 · → [`05_03` — Admin-Role Split](05_03_Tokenomics_SCC_and_SFC)
+- **Стан:** ✅ **PAUSER⊥DEFAULT_ADMIN split shipped** — SCC+SFC `PAUSER_ROLE`; `pause/unpause`→PAUSER; конструктор `(admin, pauser, minter, slasher)`. `Deploy.s.sol` рознесено: Timelock-first → токени `admin=Timelock` (`grantRole(MINTER)` за 48h = mint-вектор закрито) + `pauser=Safe` (миттєвий pause) + Safe=Timelock PROPOSER(bootstrap)+admin, deployer renounce. `REQUIRE_SAFE_ADMIN` + last-admin guard. forge build/test(195/0)/fmt зелені; нічого не задеплоєно. Канон [`05_03` — Admin-Role Split](05_03_Tokenomics_SCC_and_SFC).
 - [ ] 👤 створити Gnosis Safe (3/5|2/3) на Polygon + деплой з `ADMIN_ADDRESS=<Safe>` `REQUIRE_SAFE_ADMIN=true`
-- [ ] 👤 рознести `PAUSER_ROLE` (Safe, fast) від `DEFAULT_ADMIN_ROLE` (→ Timelock 48h) у SCC+SFC конструкторах — `grantRole(MINTER)` зараз без затримки = катастрофічний mint-вектор навіть з multisig; pre-mainnet + forge-тести (🤖 prep на запит)
-- [ ] 👤 реальні зовнішні co-signer'и Safe — solo-founder: усі ключі в однієї особи = театр (HW-wallet'и + social recovery); + renounce Timelock-admin→`address(0)` post-bootstrap
+- [ ] 👤 реальні зовнішні co-signer'и Safe — solo-founder: усі ключі в однієї особи = театр (HW-wallet'и + social recovery); renounce Timelock-admin + Safe-PROPOSER→`address(0)` post-DAO
 
 #### SEC.3 — Factory Flashing pipeline
 - **P0** · 👤 · 🟡 · → [`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning)
