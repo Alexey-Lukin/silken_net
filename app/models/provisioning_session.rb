@@ -14,6 +14,10 @@
 class ProvisioningSession < ApplicationRecord
   include AASM
 
+  # [SEC.3] Raised when the supervisor's password authentication fails during a
+  # 2-Person-Rule approval (see #approve_with_credentials!).
+  class SupervisorAuthError < StandardError; end
+
   GILKAS = %w[A B].freeze
   RDP_LEVELS = [ 0, 1, 2 ].freeze
 
@@ -54,6 +58,21 @@ class ProvisioningSession < ApplicationRecord
       transitions from: %i[supervisor_approved active], to: :failed,
                   after: ->(reason) { update!(error_message: reason, completed_at: Time.current) }
     end
+  end
+
+  # [SEC.3] Authenticated 2-Person approval: the supervisor must prove possession
+  # of their own account (Argon2id password) — an operator who merely *names* a
+  # supervisor on the session cannot approve it alone. This is the entry point the
+  # factory CLI (`rake factory:approve`) uses. Console/DB access bypasses it
+  # (operational boundary — docs/03_06 §5.A access control); the CLI cannot.
+  def approve_with_credentials!(supervisor_password)
+    raise SupervisorAuthError, "session has no supervisor assigned" if supervisor.blank?
+
+    unless supervisor.authenticate(supervisor_password)
+      raise SupervisorAuthError, "supervisor password authentication failed"
+    end
+
+    approve!
   end
 
   private

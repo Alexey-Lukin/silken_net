@@ -43,6 +43,8 @@ RSpec.describe "Factory Flashing E2E (Rake trio)", :aggregate_failures do
     Rake::Task[task_name].invoke(*args)
   end
 
+  after { ENV.delete("SUPERVISOR_PASSWORD") }
+
   it "flash → approve → execute completes the cycle and persists a deriviation-matching HardwareKey" do
     tree # ensure persisted
     operator
@@ -60,6 +62,7 @@ RSpec.describe "Factory Flashing E2E (Rake trio)", :aggregate_failures do
     session = ProvisioningSession.order(:id).last
     expect(session.state).to eq("pending")
 
+    ENV["SUPERVISOR_PASSWORD"] = "password12345" # supervisor's own password (2-Person Rule, SEC.3)
     invoke("factory:approve", session.id.to_s)
     expect(session.reload.state).to eq("supervisor_approved")
 
@@ -98,7 +101,7 @@ RSpec.describe "Factory Flashing E2E (Rake trio)", :aggregate_failures do
     expect(HardwareKey.where(device_uid: tree.did)).to be_empty
   end
 
-  it "rejects mismatched SUPERVISOR_ID env on approve" do
+  it "rejects approval without the supervisor's password [SEC.3]" do
     allow($stdout).to receive(:puts)
     operator; supervisor; tree
     invoke("factory:flash",
@@ -106,13 +109,14 @@ RSpec.describe "Factory Flashing E2E (Rake trio)", :aggregate_failures do
            operator.id.to_s, supervisor.id.to_s, "fw-e2e-1.0")
     session = ProvisioningSession.order(:id).last
 
-    ENV["SUPERVISOR_ID"] = "999999"
-    begin
-      expect {
-        invoke("factory:approve", session.id.to_s)
-      }.to raise_error(SystemExit)
-    ensure
-      ENV.delete("SUPERVISOR_ID")
-    end
+    # wrong supervisor password → abort (SystemExit); session stays pending
+    ENV["SUPERVISOR_PASSWORD"] = "definitely-wrong"
+    expect { invoke("factory:approve", session.id.to_s) }.to raise_error(SystemExit)
+    expect(session.reload.state).to eq("pending")
+
+    # missing password → abort too
+    ENV.delete("SUPERVISOR_PASSWORD")
+    expect { invoke("factory:approve", session.id.to_s) }.to raise_error(SystemExit)
+    expect(session.reload.state).to eq("pending")
   end
 end

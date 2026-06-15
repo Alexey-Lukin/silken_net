@@ -62,6 +62,28 @@ RSpec.describe ProvisioningSession do
       end
     end
 
+    describe "#approve_with_credentials! [SEC.3]" do
+      let(:sup) { create(:user) } # user factory password = "password12345"
+      let(:cred_session) { create(:provisioning_session, operator: create(:user), supervisor: sup) }
+
+      it "approves when the supervisor password is correct" do
+        expect { cred_session.approve_with_credentials!("password12345") }
+          .to change(cred_session, :state).from("pending").to("supervisor_approved")
+      end
+
+      it "raises and stays pending on a wrong supervisor password" do
+        expect { cred_session.approve_with_credentials!("wrong-password") }
+          .to raise_error(ProvisioningSession::SupervisorAuthError, /authentication failed/)
+        expect(cred_session.reload).to be_pending
+      end
+
+      it "raises when no supervisor is assigned" do
+        cred_session.update_columns(supervisor_id: nil)
+        expect { cred_session.approve_with_credentials!("password12345") }
+          .to raise_error(ProvisioningSession::SupervisorAuthError, /no supervisor/)
+      end
+    end
+
     describe "#start!" do
       it "transitions supervisor_approved → active and stamps started_at" do
         session.approve!

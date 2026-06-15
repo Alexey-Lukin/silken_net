@@ -32,16 +32,21 @@ namespace :factory do
     puts "✅ Session ##{session.id} created (state=pending). Next: rake factory:approve[#{session.id}]"
   end
 
-  desc "Supervisor approves a pending session. Args: session_id. Requires SUPERVISOR_ID env to match the persisted supervisor."
+  desc "Supervisor authenticates + approves a pending session. Args: session_id. Requires SUPERVISOR_PASSWORD env (the supervisor's OWN password — 2-Person Rule, SEC.3)."
   task :approve, %i[session_id] => :environment do |_t, args|
     session = ProvisioningSession.find(Integer(args[:session_id]))
-    expected_supervisor_id = ENV["SUPERVISOR_ID"]
-    if expected_supervisor_id.present? && Integer(expected_supervisor_id) != session.supervisor_id
-      abort "SUPERVISOR_ID env (#{expected_supervisor_id}) does not match session.supervisor_id (#{session.supervisor_id})"
+    password = ENV["SUPERVISOR_PASSWORD"]
+    if password.blank?
+      abort "SUPERVISOR_PASSWORD env required — supervisor ##{session.supervisor_id} must authenticate the approval (2-Person Rule, SEC.3)"
     end
 
-    session.approve!
-    puts "✅ Session ##{session.id} approved by supervisor ##{session.supervisor_id}. Next: rake factory:execute[#{session.id}]"
+    begin
+      session.approve_with_credentials!(password)
+    rescue ProvisioningSession::SupervisorAuthError => e
+      abort "Approval rejected: #{e.message}"
+    end
+
+    puts "✅ Session ##{session.id} approved by supervisor ##{session.supervisor_id} (password-authenticated). Next: rake factory:execute[#{session.id}]"
   end
 
   desc "Execute a supervisor-approved session (dry-run unless EXECUTE=1). Args: session_id."
