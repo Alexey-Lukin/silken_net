@@ -521,7 +521,6 @@ any ──report_fault──► faulty
 | `temperature_c` | decimal | Температура (°C) |
 | `voltage_mv` | integer | Напруга EBFC (мВ) |
 | `z_value` | decimal | Z-значення Атрактора Лоренца |
-| `piezo_voltage_mv` | integer | П'єзодатчик (сейсміка) |
 | `acoustic_events` | integer | Кількість акустичних подій (TinyML) |
 | `mesh_ttl` | integer | Time-To-Live пакету в mesh-мережі (на прибутті; стартовий — 3 normal / 5 panic, дзеркало firmware `DEFAULT_TTL`/`PANIC_TTL`) |
 | `panic` | boolean | **[FW.29]** Панічний пакет (PanicFlag, біт 7 StatusByte; default `false`). Єдина надійна wire-ознака паніки — `acoustic_events=255` колізує з FW.22-сатурацією |
@@ -555,7 +554,7 @@ any ──report_fault──► faulty
 | `recovery_confirmed?` | `healthy? && tree.health_streak >= 3` |
 | `.partition_pruned(iso, metric_caller:)` | **[S6.16]** One-Home pruning-логіки: chainable 1с-вікно по `created_at` (толерантне до секундної точності ISO — стандарт `BlockchainTransaction`) + облік degraded path лічильником `unpruned_lookups`. Воркери/сервіси/контролери делегують сюди, НЕ дублюють |
 
-**Scopes:** `recent`, `anomalies`, `in_timeframe`, `vandalized`, `seismic_activity`.
+**Scopes:** `recent`, `anomalies`, `in_timeframe`, `vandalized`.
 
 > ⚡ **KENOSIS TITAN:** Валідації видалено з hot path. Перевірка відбувається в `TelemetryUnpackerService.valid_sensor_data?` до INSERT.
 
@@ -1480,7 +1479,6 @@ bin/rails governance:seed_parameters  # UPSERT dynamic_tax_rate + insurance_pool
 | `ai_insights` | `idx_ai_insights_reasoning_fts` | GIN (tsvector) | Повнотекстовий пошук по `reasoning->>'description'` — використовується scope `search_reasoning` |
 | `ai_insights` | `index_ai_insights_on_source_log_ids` | GIN | Пошук по масиву log IDs |
 | `telemetry_logs` | `idx_telemetry_logs_bio_status_created` | BTREE (ONLY) | Фільтр аномалій |
-| `telemetry_logs` | `idx_telemetry_logs_piezo_created` | BTREE (ONLY) | Сейсмічний моніторинг |
 | `telemetry_logs` | `idx_telemetry_logs_oracle_dispatched` | PARTIAL | oracle_status = 'dispatched' |
 | `telemetry_logs` | `idx_telemetry_logs_oracle_failed` | PARTIAL | oracle_status = 'failed' |
 | `gateway_telemetry_logs` | `idx_gateway_telemetry_logs_queen_uid_created` | BTREE (ONLY) | Зв'язок через uid |

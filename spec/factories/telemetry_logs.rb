@@ -57,10 +57,6 @@ FactoryBot.define do
       oracle_status { "fulfilled" }
     end
 
-    trait :seismic do
-      piezo_voltage_mv { 2000 }
-    end
-
     trait :hot do
       temperature_c { 55.0 }
     end

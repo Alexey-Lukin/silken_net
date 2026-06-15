@@ -222,18 +222,6 @@ RSpec.describe TelemetryLog, type: :model do
         expect(described_class.anomalies).to include(noisy_log)
       end
     end
-
-    describe ".seismic_activity" do
-      it "includes records with high piezo voltage" do
-        tree = create(:tree)
-        normal_log = create(:telemetry_log, tree: tree, piezo_voltage_mv: 500)
-        seismic_log = create(:telemetry_log, :seismic, tree: tree)
-
-        result = described_class.seismic_activity
-        expect(result).to include(seismic_log)
-        expect(result).not_to include(normal_log)
-      end
-    end
   end
 
   # =========================================================================

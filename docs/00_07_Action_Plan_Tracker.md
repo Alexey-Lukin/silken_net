@@ -637,11 +637,6 @@
 - **Стан:** Rotation policy готова — dual-key grace 72h + планова ротація 90д + emergency revocation runbook. Лишається vault-store production-ключа. Канон `04_02 §S6.14`, `06_04 §5.4`.
 - [ ] 👤 vault-store production `peaq_signing_key`
 
-#### E.65 — `piezo_voltage_mv`: фантомний продакшн-шлях (сейсміка)
-- **P3** · 👤 · ⚪ · → [`04_01 §3`](04_01_Data_Models_and_Entities)
-- **Стан:** Не розпочато — `piezo_voltage_mv` фантомна: колонка (всі партиції, `structure.sql`) + btree-індекс `idx_telemetry_logs_piezo_created` + скоуп `seismic_activity(>1500)` (`telemetry_log.rb`) існують, але жоден wire-формат (21B/CCM) не несе piezo і жоден код не пише колонку → скоуп вічно порожній, індекс на NULL-ах. П'єзо в залізі реальне ([`02_01 §3`](02_01_Hardware_Architecture_and_BOM)), але роль — акустичний тригер TinyML, не mV-поле. Канон [`04_01 §3`](04_01_Data_Models_and_Entities).
-- [ ] 👤 рішення: reserved-під-майбутній-сенсорний-фрейм (лишити + чесна примітка) vs прибрати скоуп+індекс+колонку до появи реального wire-поля
-
 #### S6.10 — MaintenanceRecord — лише лог
 - **P3** · 🤖 · 🔗 · → `04_02 §Forester Guild`
 - **Стан:** Архітектурний дизайн готовий — task-assignment matching ranger↔bounty (scoring, `FOR UPDATE NOWAIT`, GPS/EXIF/IPFS→USDC, anti-Sybil). Заблоковано на Forester Guild PoPhW (E.20). Канон `04_02 §Forester Guild`.
@@ -1144,6 +1139,7 @@ _Активних DOC-T наразі немає — усі вирішено/ар
 | DOC-T.21 | 18 tracker-family `[ID]` cited у коді/доках без 00_07-дому → per-ID verify resolved-in-code + §🗄️ orphan-rows (OBS.1/SEC.5/SEC.8 pattern): S6.4/6/8/9/13/15/16/17/19 · FW.6/10/16/28 · E.46 · HW.10 · INF.5/7 = resolved code-annotations; FW.45 = dup→ARCH.18 (firmware-тег) | `00_07` |
 | TEST.1 | Solidity contract coverage: низький forge `--ir-minimum` branch%/окремі line = артефакт виміру (require-reverts/`pause`/override-делегації тестовані+проходять; гейт на line/func), Governor `_cancel` func-геп закрито `test_cancel_byProposerWhilePending`. RSpec gate + firmware coverage-lane (раніше теж під TEST.1) — done | `04_06 §B.1.2`, §B.3 |
 | E.45 | SCC/SFC subgraph zero-address fail-fast guard (`subgraph/validate_addresses.sh`); real-address swap → S3.5 | `05_03` |
+| E.65 | `piezo_voltage_mv` фантом ВИДАЛЕНО (Ruthless Prune): колонка (всі партиції) + scope `seismic_activity` + btree-індекс — жоден wire-формат не ніс piezo, нічого не писало колонку. П'єзо = пасивний EXTI акустик-тригер ([`02_01 §3`](02_01_Hardware_Architecture_and_BOM)), не mV-датчик; сейсміка через `acoustic_events` | `04_01 §3` |
 | OPS.5 | Projects V2 TRL field schema (1-9 + Readiness Horizon SRL/MRL; `lib/github_bootstrap.rb`); live-board bootstrap-run → OPS.6 | `00_05 §1.1` |
 | E.61 | Solana micro-rewards batch payouts (Kredis-акумуляція → `transferChecked`, годинний cron, поріг-gated) | `05_01 §8`, `04_02 §10` |
 | E.56 | DSP preprocessing для TinyML — RESOLVED: Path B log-mel (НЕ raw/MFCC); front-end `Compute_LogMel` | `03_03 §3.2/§3.4` |

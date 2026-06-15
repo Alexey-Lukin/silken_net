@@ -1,6 +1,7 @@
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -1882,7 +1883,6 @@ CREATE TABLE public.telemetry_logs (
     growth_points numeric,
     mesh_ttl integer,
     metabolism_s integer,
-    piezo_voltage_mv integer,
     queen_uid character varying,
     rssi integer,
     tamper_detected boolean,
@@ -1942,7 +1942,6 @@ CREATE TABLE public.telemetry_logs_default (
     growth_points numeric,
     mesh_ttl integer,
     metabolism_s integer,
-    piezo_voltage_mv integer,
     queen_uid character varying,
     rssi integer,
     tamper_detected boolean,
@@ -1982,7 +1981,6 @@ CREATE TABLE public.telemetry_logs_y2026m01 (
     growth_points numeric,
     mesh_ttl integer,
     metabolism_s integer,
-    piezo_voltage_mv integer,
     queen_uid character varying,
     rssi integer,
     tamper_detected boolean,
@@ -2022,7 +2020,6 @@ CREATE TABLE public.telemetry_logs_y2026m02 (
     growth_points numeric,
     mesh_ttl integer,
     metabolism_s integer,
-    piezo_voltage_mv integer,
     queen_uid character varying,
     rssi integer,
     tamper_detected boolean,
@@ -2062,7 +2059,6 @@ CREATE TABLE public.telemetry_logs_y2026m03 (
     growth_points numeric,
     mesh_ttl integer,
     metabolism_s integer,
-    piezo_voltage_mv integer,
     queen_uid character varying,
     rssi integer,
     tamper_detected boolean,
@@ -2102,7 +2098,6 @@ CREATE TABLE public.telemetry_logs_y2026m04 (
     growth_points numeric,
     mesh_ttl integer,
     metabolism_s integer,
-    piezo_voltage_mv integer,
     queen_uid character varying,
     rssi integer,
     tamper_detected boolean,
@@ -2142,7 +2137,6 @@ CREATE TABLE public.telemetry_logs_y2026m05 (
     growth_points numeric,
     mesh_ttl integer,
     metabolism_s integer,
-    piezo_voltage_mv integer,
     queen_uid character varying,
     rssi integer,
     tamper_detected boolean,
@@ -2182,7 +2176,6 @@ CREATE TABLE public.telemetry_logs_y2026m06 (
     growth_points numeric,
     mesh_ttl integer,
     metabolism_s integer,
-    piezo_voltage_mv integer,
     queen_uid character varying,
     rssi integer,
     tamper_detected boolean,
@@ -4295,13 +4288,6 @@ CREATE INDEX idx_telemetry_logs_oracle_fulfilled ON ONLY public.telemetry_logs U
 
 
 --
--- Name: idx_telemetry_logs_piezo_created; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_telemetry_logs_piezo_created ON ONLY public.telemetry_logs USING btree (piezo_voltage_mv, created_at);
-
-
---
 -- Name: index_active_storage_attachments_on_blob_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5093,13 +5079,6 @@ CREATE INDEX telemetry_logs_default_oracle_status_idx2 ON public.telemetry_logs_
 
 
 --
--- Name: telemetry_logs_default_piezo_voltage_mv_created_at_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX telemetry_logs_default_piezo_voltage_mv_created_at_idx ON public.telemetry_logs_default USING btree (piezo_voltage_mv, created_at);
-
-
---
 -- Name: telemetry_logs_default_tree_id_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5146,13 +5125,6 @@ CREATE INDEX telemetry_logs_y2026m01_oracle_status_idx1 ON public.telemetry_logs
 --
 
 CREATE INDEX telemetry_logs_y2026m01_oracle_status_idx2 ON public.telemetry_logs_y2026m01 USING btree (oracle_status) WHERE ((oracle_status)::text = 'failed'::text);
-
-
---
--- Name: telemetry_logs_y2026m01_piezo_voltage_mv_created_at_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX telemetry_logs_y2026m01_piezo_voltage_mv_created_at_idx ON public.telemetry_logs_y2026m01 USING btree (piezo_voltage_mv, created_at);
 
 
 --
@@ -5205,13 +5177,6 @@ CREATE INDEX telemetry_logs_y2026m02_oracle_status_idx2 ON public.telemetry_logs
 
 
 --
--- Name: telemetry_logs_y2026m02_piezo_voltage_mv_created_at_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX telemetry_logs_y2026m02_piezo_voltage_mv_created_at_idx ON public.telemetry_logs_y2026m02 USING btree (piezo_voltage_mv, created_at);
-
-
---
 -- Name: telemetry_logs_y2026m02_tree_id_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5258,13 +5223,6 @@ CREATE INDEX telemetry_logs_y2026m03_oracle_status_idx1 ON public.telemetry_logs
 --
 
 CREATE INDEX telemetry_logs_y2026m03_oracle_status_idx2 ON public.telemetry_logs_y2026m03 USING btree (oracle_status) WHERE ((oracle_status)::text = 'failed'::text);
-
-
---
--- Name: telemetry_logs_y2026m03_piezo_voltage_mv_created_at_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX telemetry_logs_y2026m03_piezo_voltage_mv_created_at_idx ON public.telemetry_logs_y2026m03 USING btree (piezo_voltage_mv, created_at);
 
 
 --
@@ -5317,13 +5275,6 @@ CREATE INDEX telemetry_logs_y2026m04_oracle_status_idx2 ON public.telemetry_logs
 
 
 --
--- Name: telemetry_logs_y2026m04_piezo_voltage_mv_created_at_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX telemetry_logs_y2026m04_piezo_voltage_mv_created_at_idx ON public.telemetry_logs_y2026m04 USING btree (piezo_voltage_mv, created_at);
-
-
---
 -- Name: telemetry_logs_y2026m04_tree_id_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5373,13 +5324,6 @@ CREATE INDEX telemetry_logs_y2026m05_oracle_status_idx2 ON public.telemetry_logs
 
 
 --
--- Name: telemetry_logs_y2026m05_piezo_voltage_mv_created_at_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX telemetry_logs_y2026m05_piezo_voltage_mv_created_at_idx ON public.telemetry_logs_y2026m05 USING btree (piezo_voltage_mv, created_at);
-
-
---
 -- Name: telemetry_logs_y2026m05_tree_id_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5426,13 +5370,6 @@ CREATE INDEX telemetry_logs_y2026m06_oracle_status_idx1 ON public.telemetry_logs
 --
 
 CREATE INDEX telemetry_logs_y2026m06_oracle_status_idx2 ON public.telemetry_logs_y2026m06 USING btree (oracle_status) WHERE ((oracle_status)::text = 'failed'::text);
-
-
---
--- Name: telemetry_logs_y2026m06_piezo_voltage_mv_created_at_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX telemetry_logs_y2026m06_piezo_voltage_mv_created_at_idx ON public.telemetry_logs_y2026m06 USING btree (piezo_voltage_mv, created_at);
 
 
 --
@@ -6269,13 +6206,6 @@ ALTER INDEX public.idx_telemetry_logs_oracle_failed ATTACH PARTITION public.tele
 
 
 --
--- Name: telemetry_logs_default_piezo_voltage_mv_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_telemetry_logs_piezo_created ATTACH PARTITION public.telemetry_logs_default_piezo_voltage_mv_created_at_idx;
-
-
---
 -- Name: telemetry_logs_default_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -6329,13 +6259,6 @@ ALTER INDEX public.idx_telemetry_logs_oracle_fulfilled ATTACH PARTITION public.t
 --
 
 ALTER INDEX public.idx_telemetry_logs_oracle_failed ATTACH PARTITION public.telemetry_logs_y2026m01_oracle_status_idx2;
-
-
---
--- Name: telemetry_logs_y2026m01_piezo_voltage_mv_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_telemetry_logs_piezo_created ATTACH PARTITION public.telemetry_logs_y2026m01_piezo_voltage_mv_created_at_idx;
 
 
 --
@@ -6395,13 +6318,6 @@ ALTER INDEX public.idx_telemetry_logs_oracle_failed ATTACH PARTITION public.tele
 
 
 --
--- Name: telemetry_logs_y2026m02_piezo_voltage_mv_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_telemetry_logs_piezo_created ATTACH PARTITION public.telemetry_logs_y2026m02_piezo_voltage_mv_created_at_idx;
-
-
---
 -- Name: telemetry_logs_y2026m02_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -6455,13 +6371,6 @@ ALTER INDEX public.idx_telemetry_logs_oracle_fulfilled ATTACH PARTITION public.t
 --
 
 ALTER INDEX public.idx_telemetry_logs_oracle_failed ATTACH PARTITION public.telemetry_logs_y2026m03_oracle_status_idx2;
-
-
---
--- Name: telemetry_logs_y2026m03_piezo_voltage_mv_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_telemetry_logs_piezo_created ATTACH PARTITION public.telemetry_logs_y2026m03_piezo_voltage_mv_created_at_idx;
 
 
 --
@@ -6521,13 +6430,6 @@ ALTER INDEX public.idx_telemetry_logs_oracle_failed ATTACH PARTITION public.tele
 
 
 --
--- Name: telemetry_logs_y2026m04_piezo_voltage_mv_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_telemetry_logs_piezo_created ATTACH PARTITION public.telemetry_logs_y2026m04_piezo_voltage_mv_created_at_idx;
-
-
---
 -- Name: telemetry_logs_y2026m04_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -6584,13 +6486,6 @@ ALTER INDEX public.idx_telemetry_logs_oracle_failed ATTACH PARTITION public.tele
 
 
 --
--- Name: telemetry_logs_y2026m05_piezo_voltage_mv_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_telemetry_logs_piezo_created ATTACH PARTITION public.telemetry_logs_y2026m05_piezo_voltage_mv_created_at_idx;
-
-
---
 -- Name: telemetry_logs_y2026m05_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -6644,13 +6539,6 @@ ALTER INDEX public.idx_telemetry_logs_oracle_fulfilled ATTACH PARTITION public.t
 --
 
 ALTER INDEX public.idx_telemetry_logs_oracle_failed ATTACH PARTITION public.telemetry_logs_y2026m06_oracle_status_idx2;
-
-
---
--- Name: telemetry_logs_y2026m06_piezo_voltage_mv_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_telemetry_logs_piezo_created ATTACH PARTITION public.telemetry_logs_y2026m06_piezo_voltage_mv_created_at_idx;
 
 
 --
@@ -7144,9 +7032,5 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
-('20260611150000'),
-('20260610120000'),
-('20260607180000'),
-('20260524120000'),
 ('20260509120000');
 

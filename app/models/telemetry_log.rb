@@ -91,9 +91,6 @@ class TelemetryLog < ApplicationRecord
   # [ВИПРАВЛЕНО]: Використовуємо енум замість окремої колонки
   scope :vandalized, -> { bio_status_tamper_detected }
 
-  # Індекс: idx_telemetry_logs_piezo_created
-  scope :seismic_activity, -> { where("piezo_voltage_mv > ?", 1500) }
-
   # --- МЕТОДИ (Topology Analysis) ---
 
   # Стартовий TTL пакета на дроті — дзеркало firmware/soldier/main.c
