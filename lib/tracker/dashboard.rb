@@ -461,6 +461,5 @@ module Tracker
         current = nil
       end
     end
-
   end
 end

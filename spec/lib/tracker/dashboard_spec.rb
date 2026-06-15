@@ -470,5 +470,4 @@ RSpec.describe Tracker::Dashboard do
       expect(described_class.inbound_ref_violations("/no/such/tracker/dir")).to eq([])
     end
   end
-
 end
