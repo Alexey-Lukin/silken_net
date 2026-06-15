@@ -604,4 +604,27 @@ RSpec.describe NaasContract, type: :model do
       expect(contract.insurance_premium_amount + contract.forester_share_amount).to eq(contract.total_funding)
     end
   end
+
+  describe ".total_insurance_premiums" do
+    let(:organization) { create(:organization) }
+    let(:cluster) { create(:cluster, organization: organization) }
+
+    it "is 5% of total_funding across activated (active/fulfilled/breached) contracts" do
+      create(:naas_contract, status: :active, organization: organization, cluster: cluster, total_funding: 100_000)
+      create(:naas_contract, status: :fulfilled, organization: organization, cluster: cluster, total_funding: 200_000)
+      create(:naas_contract, status: :breached, organization: organization, cluster: cluster, total_funding: 100_000)
+      # (100k + 200k + 100k) × 5% = 20_000
+      expect(described_class.total_insurance_premiums).to eq(BigDecimal("20000.0"))
+    end
+
+    it "excludes draft (premium not yet paid) and cancelled (refunded)" do
+      create(:naas_contract, status: :draft, organization: organization, cluster: cluster, total_funding: 500_000)
+      create(:naas_contract, status: :cancelled, organization: organization, cluster: cluster, total_funding: 500_000)
+      expect(described_class.total_insurance_premiums).to eq(BigDecimal("0.0"))
+    end
+
+    it "returns zero when there are no contracts" do
+      expect(described_class.total_insurance_premiums).to eq(BigDecimal("0"))
+    end
+  end
 end

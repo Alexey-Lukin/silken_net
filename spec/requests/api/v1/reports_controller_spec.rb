@@ -55,7 +55,7 @@ RSpec.describe Api::V1::ReportsController, type: :request do
   describe "GET /api/v1/reports/financial_summary" do
     before do
       allow_any_instance_of(TheGraph::QueryService).to receive(:fetch_protocol_financials)
-        .and_return(total_minted: 500_000, total_burned: 150_000, total_premiums: 30_000)
+        .and_return(total_minted: 500_000, total_burned: 150_000)
     end
 
     it "returns a financial summary report as JSON" do
@@ -67,7 +67,12 @@ RSpec.describe Api::V1::ReportsController, type: :request do
       expect(body["data"]).to include("total_invested", "blockchain_transactions")
     end
 
-    it "includes real_yield data in JSON response" do
+    it "includes real_yield data in JSON response (premiums DB-sourced from NaaS contracts)" do
+      # [SEC.1] total_premiums_usdc now comes from the DB (5% of activated NaaS funding),
+      # not a never-emitted on-chain PremiumPaid event. 600_000 funding × 5% = 30_000.
+      create(:naas_contract, status: :active, organization: organization,
+                             cluster: create(:cluster, organization: organization), total_funding: 600_000)
+
       get "/api/v1/reports/financial_summary", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
@@ -146,6 +151,31 @@ RSpec.describe Api::V1::ReportsController, type: :request do
           "total_minted_scc" => 0,
           "total_burned_scc" => 0,
           "total_premiums_usdc" => 0,
+          "net_deflation" => 0
+        )
+      end
+    end
+
+    context "when TheGraph is down but NaaS premiums exist (DB-sourced)" do
+      before do
+        allow_any_instance_of(TheGraph::QueryService).to receive(:fetch_protocol_financials)
+          .and_raise(TheGraph::QueryService::QueryError, "connection refused")
+      end
+
+      it "still reports DB premiums while minted/burned fall back to 0" do
+        # [SEC.1] Premiums are DB-sourced, decoupled from the subgraph — a GraphQL
+        # outage zeroes minted/burned/net_deflation but NOT a known premium.
+        create(:naas_contract, status: :active, organization: organization,
+                               cluster: create(:cluster, organization: organization), total_funding: 200_000)
+
+        get "/api/v1/reports/financial_summary", headers: headers, as: :json
+        expect(response).to have_http_status(:ok)
+
+        ry = response.parsed_body.dig("data", "real_yield")
+        expect(ry).to include(
+          "total_minted_scc" => 0,
+          "total_burned_scc" => 0,
+          "total_premiums_usdc" => 10_000,
           "net_deflation" => 0
         )
       end

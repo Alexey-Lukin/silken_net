@@ -71,6 +71,16 @@ class NaasContract < ApplicationRecord
     (total_funding - insurance_premium_amount).round(2)
   end
 
+  # [SEC.1] Сукупна страхова премія (5% від funding), спрямована до DAO Treasury
+  # Parametric Insurance Pool через активовані контракти. Премія сплачується при
+  # активації (USDC) і лишається в пулі через fulfilled/breached; draft ще не сплачено,
+  # cancelled повертається — обидва виключені. Це DB-джерело правди для premium-показника
+  # Real-Yield звіту: премія — off-chain USDC-факт, НЕ on-chain SCC-подія (знятий
+  # `PremiumPaid` — канон 05_03).
+  def self.total_insurance_premiums
+    (where(status: %i[active fulfilled breached]).sum(:total_funding) * INSURANCE_PREMIUM_RATE).round(2)
+  end
+
   # --- ВАЛІДАЦІЇ ---
   validates :total_funding, presence: true, numericality: { greater_than: 0 }
   validates :start_date, :end_date, presence: true

@@ -126,8 +126,7 @@ RSpec.describe TheGraph::QueryService, type: :service do
           "data" => {
             "protocolFinancial" => {
               "totalMinted" => "1000000",
-              "totalBurned" => "250000",
-              "totalPremiums" => "50000"
+              "totalBurned" => "250000"
             }
           }
         }
@@ -136,7 +135,7 @@ RSpec.describe TheGraph::QueryService, type: :service do
         allow(Web3::HttpClient).to receive(:post).and_return(response)
 
         result = described_class.new.fetch_protocol_financials
-        expect(result).to eq(total_minted: 1_000_000, total_burned: 250_000, total_premiums: 50_000)
+        expect(result).to eq(total_minted: 1_000_000, total_burned: 250_000)
       end
 
       it "sends a valid GraphQL query for protocolFinancial" do
@@ -146,7 +145,6 @@ RSpec.describe TheGraph::QueryService, type: :service do
           expect(body[:query]).to include('protocolFinancial(id: "1")')
           expect(body[:query]).to include("totalMinted")
           expect(body[:query]).to include("totalBurned")
-          expect(body[:query]).to include("totalPremiums")
           Web3::HttpClient::Response.new({ "data" => { "protocolFinancial" => nil } }.to_json)
         end
 
@@ -158,7 +156,7 @@ RSpec.describe TheGraph::QueryService, type: :service do
         allow(Web3::HttpClient).to receive(:post).and_return(response)
 
         result = described_class.new.fetch_protocol_financials
-        expect(result).to eq(total_minted: 0, total_burned: 0, total_premiums: 0)
+        expect(result).to eq(total_minted: 0, total_burned: 0)
       end
 
       it "raises QueryError when The Graph returns error" do

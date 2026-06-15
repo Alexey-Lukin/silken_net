@@ -37,8 +37,9 @@ module TheGraph
       raise QueryError, "Збій зв'язку з The Graph: #{e.message}"
     end
 
-    # Повертає протокольні фінанси (totalMinted, totalBurned, totalPremiums)
-    # з singleton-сутності ProtocolFinancials у The Graph subgraph.
+    # Повертає протокольні фінанси (totalMinted, totalBurned) з singleton-сутності
+    # ProtocolFinancials у The Graph subgraph. Премії тут НЕ запитуються — вони
+    # off-chain USDC-факт (NaasContract), джерело правди — БД (див. 05_03 / reports_controller).
     def fetch_protocol_financials
       api_url = validated_api_url
 
@@ -47,7 +48,6 @@ module TheGraph
           protocolFinancial(id: "1") {
             totalMinted
             totalBurned
-            totalPremiums
           }
         }
       GRAPHQL
@@ -58,8 +58,7 @@ module TheGraph
       financials = data.dig("data", "protocolFinancial") || {}
       {
         total_minted: financials["totalMinted"].to_i,
-        total_burned: financials["totalBurned"].to_i,
-        total_premiums: financials["totalPremiums"].to_i
+        total_burned: financials["totalBurned"].to_i
       }
     rescue QueryError
       raise

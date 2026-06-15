@@ -134,9 +134,17 @@ module Api
 
       REAL_YIELD_DEFAULTS = { total_minted_scc: 0, total_burned_scc: 0, total_premiums_usdc: 0, net_deflation: 0 }.freeze
 
-      # [ВИПРАВЛЕНО: Sync RPC Trap]: Кешуємо GraphQL результат на 5 хвилин,
-      # щоб не блокувати HTTP-запит при кожному генеруванні фінансового звіту.
+      # [SEC.1] Премія — off-chain USDC-факт (NaasContract), береться з БД і мерджиться
+      # сюди, тож збій subgraph НЕ обнуляє відому премію. Minted/burned/net_deflation —
+      # з subgraph (кеш 5 хв). Раніше total_premiums_usdc читав ніколи-не-емітовану
+      # on-chain подію PremiumPaid → вічний 0 (знято, канон 05_03).
       def fetch_real_yield
+        cached_subgraph_real_yield.merge(total_premiums_usdc: NaasContract.total_insurance_premiums.to_i)
+      end
+
+      # SCC-показники з subgraph (minted/burned/net_deflation), кеш 5 хв — щоб не блокувати
+      # HTTP-запит GraphQL-раундтрипом. Премії тут НЕ беруться (DB-джерело — див. вище).
+      def cached_subgraph_real_yield
         Rails.cache.fetch("reports_real_yield", expires_in: 5.minutes) do
           financials = Timeout.timeout(10) do
             TheGraph::QueryService.new.fetch_protocol_financials
@@ -144,16 +152,15 @@ module Api
           {
             total_minted_scc: financials[:total_minted],
             total_burned_scc: financials[:total_burned],
-            total_premiums_usdc: financials[:total_premiums],
             net_deflation: financials[:total_burned] - financials[:total_minted]
           }
         end
       rescue TheGraph::QueryService::QueryError => e
         Rails.logger.warn("Real yield fetch failed: #{e.message}")
-        REAL_YIELD_DEFAULTS.dup
+        REAL_YIELD_DEFAULTS.except(:total_premiums_usdc)
       rescue StandardError => e
         Rails.logger.warn("Real yield fetch timeout: #{e.message}")
-        REAL_YIELD_DEFAULTS.dup
+        REAL_YIELD_DEFAULTS.except(:total_premiums_usdc)
       end
 
       # --- CSV Streaming ---
