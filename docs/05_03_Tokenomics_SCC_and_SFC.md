@@ -52,6 +52,8 @@
 
 ## 🏗️ Dual Token System (Архітектура)
 
+> **Чому власний токен (SCC), а не USDC?** USDC представляє **минулу** цінність (фіат); SCC — **майбутній верифікований ріст біомаси** (Proof of Growth). Ключове: власний ERC-20 дозволяє **алгоритмічний Slashing** — спалення токенів порушника при стійкому порушенні NaaS-контракту ([`05_05 §3`](05_05_Slashing_and_Risk_Policy)), чого зі стороннім стейблкоїном без централізованого контролю зробити **неможливо**. SCC + Slashing = trustless accountability учасників екосистеми (SFC аналогічно несе `slash()` для governance-порушень).
+
 | Параметр | SCC — Silken Carbon Coin | SFC — Silken Forest Coin |
 |---|---|---|
 | **Тип** | Utility Token | Governance Token |
