@@ -567,6 +567,8 @@
 - **P0** · 👤 · 🟢 · → [`05_03` — Admin-Role → Gnosis Safe](05_03_Tokenomics_SCC_and_SFC)
 - **Стан:** `Deploy.s.sol` admin=Safe на genesis + `REQUIRE_SAFE_ADMIN` guard (mainnet revert якщо EOA) + last-admin guard + runbook; нічого не задеплоєно → reassign не треба.
 - [ ] 👤 створити Gnosis Safe (3/5|2/3) на Polygon + деплой з `ADMIN_ADDRESS=<Safe>` `REQUIRE_SAFE_ADMIN=true`
+- [ ] 👤 рознести `PAUSER_ROLE` (Safe, fast) від `DEFAULT_ADMIN_ROLE` (→ Timelock 48h) у SCC+SFC конструкторах — `grantRole(MINTER)` зараз без затримки = катастрофічний mint-вектор навіть з multisig; pre-mainnet + forge-тести (🤖 prep на запит)
+- [ ] 👤 реальні зовнішні co-signer'и Safe — solo-founder: усі ключі в однієї особи = театр (HW-wallet'и + social recovery); + renounce Timelock-admin→`address(0)` post-bootstrap
 
 #### SEC.3 — Factory Flashing pipeline
 - **P0** · 👤 · 🟡 · → [`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning)
@@ -574,6 +576,7 @@
 - [ ] 👤 real `STM32_Programmer_CLI` на STM32WLE5JC bench (post-FW.2) — runbook `firmware/scripts/bench/`
 - [ ] 👤 Bitwarden Secrets API live (`BitwardenAdapter` зараз `NotImplementedError`)
 - [ ] 🔗 real SE I²C (Гілка B) — SE050 eval-kit; `cryptoauthlib`→SE05x код-міграція → SE050-MIGRATION (legacy ATECC-патерн reusable, [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security))
+- [ ] 👤 2-Person Rule = ідентичність-dual-control (approve≠execute — РІЗНІ автентифіковані принципали), не лише AASM-стан `supervisor_approved`; інакше «1 особа двічі» проти зловмисного фабричного оператора
 
 #### SEC.9 — Production AES Key містить FIPS-197 Appendix B Test Vector
 - **P0** · 👤 · 🟡 · → [`03_05 §3.1а`](03_05_Hardware_Symmetric_Crypto_and_Security)
@@ -582,7 +585,7 @@
 
 #### SEC.2 — RDP Level 2 activation timeline
 - **P1** · 👤 · 🟢 · → [`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security)
-- **Стан:** процедура RDP L2 канонізована — pre-flight + CubeProgrammer CLI + rollout R&D→Pilot→Mass; скриптовано `firmware/scripts/bench/01_option_bytes.sh --rdp 2` (bench RUNBOOK). RDP L2 = **необоротний** SWD-lock → OTA мусить бути верифікований ДО активації. Канон [`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security).
+- **Стан:** процедура RDP L2 канонізована — pre-flight + CubeProgrammer CLI + rollout R&D→Pilot→Mass; скриптовано `firmware/scripts/bench/01_option_bytes.sh --rdp 2` (bench RUNBOOK). RDP L2 = **необоротний** SWD-lock → OTA мусить бути верифікований ДО активації. ⚠️ OTA латає **лише mruby-байткод, не C-firmware** → RDP L2 заморожує C-прошивку назавжди (radio/AES/main loop невиправні post-L2); чекліст-rollback = байткод-fallback, не C-recovery. Канон [`03_05 §3.6`](03_05_Hardware_Symmetric_Crypto_and_Security).
 - [ ] 🔗 верифікувати OTA flow end-to-end на bench ДО L2-lock
 - [ ] 👤 field batch → RDP **L1** (зворотний); L2 — лише фінальний mass-deploy
 
@@ -591,6 +594,7 @@
 - **Стан:** freeze-rationale + PVD-кома side-path канонізовано — `IWDG_STOP=0`+`IWDG_STDBY=0` (LSI-пес лічить у STOP2 max ~32.7с → spurious reset посеред багатогодинного сну) заскриптовано поряд з RDP у `firmware/scripts/bench/01_option_bytes.sh` (RUNBOOK §1.2). Канон [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA).
 - [ ] 👤 застосувати на платі при factory flashing
 - [ ] 👤 bench-верифікація: сон 1 год без spurious reset (RUNBOOK §4.4)
+- [ ] 👤 верифікувати періодичний RTC-wake безумовно зброєний + auto-reload (arming не видно в рукописному main.c — лише CubeMX `MX_RTC_Init`) — із замороженим IWDG це ЄДИНИЙ backstop живучості (× SEC.2 RDP L2 = немає SWD-recovery); bench має покрити reliable WAKE за довгий сон, не лише no-spurious-reset
 
 #### SE050-MIGRATION — ATECC608B → NXP SE050 + true-DePIN ladder (2026-06-07)
 - **P1** · 🤖+👤 · 🟡 · → [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)
@@ -602,21 +606,18 @@
   - [ ] 👤 bench: EDSK-flash на кремнії + e2e attested-батч (RUNBOOK)
   - [ ] 🔗 HIL `queen_simulator` signed-режим (опційний e2e без заліза)
 - [ ] 🔗 **L2 per-tree device-voice** (North-Star, energy-gated Scenario D / 2× anchor): on-chip Ed25519 keygen + device-keygen provisioning (не HKDF-only — ARCH.33) + Merkle-root signing (E.60) + signature-transmission (weekly ≈ 5 LoRa-frames). Post-anchor-TRL.
+- [ ] 🔗 L2 design-gap: тижневий device-Merkle-корінь підписується ПІСЛЯ intra-week мінтингу (Queen-relay L1) → потрібен explicit reconcile (device-root vs намінтоване) → slash/clawback при mismatch, інакше L2 = ex-post доказ, не pre-mint захист (дім [`05_05`](05_05_Slashing_and_Risk_Policy) × E.60)
 - Cross-ref: SEC.6, SEC.14, ARCH.42, ARCH.43 (per-device-ізоляція post-FW.2), E.60 (Merkle), FW.2, FW.23, ARCH.33 (firmware-Ed25519 feasibility), STK.4 (ЗВТ), BIZ.13 (operator-bond).
 
 #### SEC.4 — Reed Switch shipping mode (not in BOM)
 - **P2** · 👤 · ⚪ · → [`03_05 §3.5`](03_05_Hardware_Symmetric_Crypto_and_Security)
-- **Стан:** Не розпочато — дизайн канонізовано, у BOM ще немає: zero-consumption transport (магніт→circuit open, інсталятор знімає→first power-up, ~$0.05/unit; окремий механізм від piezo Zero-Power Wake).
+- **Стан:** Не розпочато — дизайн канонізовано, у BOM ще немає: zero-consumption transport (магніт→circuit open, інсталятор знімає→first power-up, ~$0.05/unit; окремий механізм від piezo Zero-Power Wake). ⚠️ continuous power-cut = magnet-DoS вектор на security-сенсорі → дизайн-вимога latching first-boot; self-powered → можливий Ruthless-Prune (§3.5).
 - [ ] 👤 додати Hamlin 59140-1-T-00-A + N52 магніт до BOM + оновити KiCad schematic
-
-#### SEC.12 — HRNG-IV fallback hardening (CoAP CBC IV)
-- **P2** · 👤 · 🟢 · → [`03_05` — HRNG Fallback](03_05_Hardware_Symmetric_Crypto_and_Security)
-- **Стан:** fallback IV → pure `coap_iv.h#coap_fallback_iv_word` (uid×device + `queen_unix_ts`×reboot + `coap_flush_seq`×flush) + host-тести → **reuse закрито** по всіх осях. Чесний residual: IV передбачуваний на fallback-шляху — **low-severity** (CoAP-батч несе власну телеметрію → немає chosen-plaintext вектора; вимога тут = uniqueness, досягнуто). Канон [`03_05` — HRNG Fallback](03_05_Hardware_Symmetric_Crypto_and_Security).
-- [ ] 🔗 повна unpredictability = key-derived IV `E_key(counter)` (AES-engine + SEC.8 restore) — bench-gated
+- [ ] 👤 latching first-boot (не continuous power-cut) — magnet-DoS guard; або de-scope/pull-tab при BOM-freeze ([`03_05 §3.5`](03_05_Hardware_Symmetric_Crypto_and_Security))
 
 #### SEC.14 — SE role-split re-examination — per-packet AES vs provisioning-only (ARCH.42 honesty)
 - **P2** · 👤 · 🟢 · → [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)
-- **Стан:** re-examine done — чесний trade-off канонізовано. Справжня вісь = tamper-resistance LoRa session-ключа (per-packet SE AES) ⟷ latency/ідіом (built-in radio-AES ~10µs + session-key у RDP-Flash, SE provisioning-only), не «0.1% acceptable». Active-енергія мала, АЛЕ знахідка-інверсія: always-on SE sleep 150 нА ≈ 3.6 мДж/год > весь запас Сценарію C → SE **обов'язково за load-switch гейтом** (TPS22860, як BME280), стосується обох ролей. Тепер SE = **SE050** (вісь та сама). Trade-off-таблиця + Power impact — [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security).
+- **Стан:** re-examine done — чесний trade-off канонізовано. Справжня вісь = tamper-resistance LoRa session-ключа (per-packet SE AES) ⟷ latency/ідіом (built-in radio-AES ~10µs + session-key у RDP-Flash, SE provisioning-only), не «0.1% acceptable». Active-енергія мала, АЛЕ знахідка-інверсія: always-on SE sleep 150 нА ≈ 3.6 мДж/год > весь запас Сценарію C → SE **обов'язково за load-switch гейтом** (TPS22860, як BME280), стосується обох ролей. Тепер SE = **SE050** (вісь та сама). **Рекомендація аналізу:** дефолт **provisioning-only** (built-in radio-AES ідіоматичний для inline-LoRa ~10µs; per-device HKDF → злам 1 вузла ≠ мережа); per-packet SE AES лише для urban/high-value threat-model з імовірним фізичним доступом. Trade-off-таблиця + Power impact — [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security).
 - [ ] 👤 обрати роль SE (per-packet vs provisioning-only) — bench eval + BOM freeze; threat-model-рішення (не тех-необхідність) → тримається у SE050-MIGRATION (One-Home)
 
 ## §04 · Backend / API / UI
@@ -1102,6 +1103,7 @@ _Активних DOC-T наразі немає — усі вирішено/ар
 | SEC.11 | Lorenz Seed Provenance (DCI hardening, K_seed HKDF) | `03_04`, `03_06 §2`, `04_02`, `05_02` |
 | SEC.7 | OTA image authentication — **дубль FW.23** (HMAC-SHA256 dual-gate: `OtaHmacKeyService` + `OtaPackagerService` 0x9B trailer + Queen relay + Soldier dual-gate, live-compute ✅ зашито 2026-06-11). Residuals (bench K_ota Protected Flash; ECDSA P-256 post-TRL7 migration path) тримає FW.23 — One-Home | `03_06 §4` (= FW.23) |
 | SEC.8 | ECB Restoration Race (Queen): restore CRYP→ECB+128B+LoRa-key після CoAP-CBC flush/downlink; `HAL_CRYP_Init` fail → RCC force-reset → `NVIC_SystemReset` (`firmware/queen/main.c`). Resolved-фікс, orphan-ID — cited by SEC.12 + RUNBOOK, бракувало archive-рядка (додано 2026-06-09) | `03_05` (розділ «ECB Restoration Race») |
+| SEC.12 | HRNG-IV fallback predictability — closed in SW 2026-06-15: key-derived HMAC-SHA256 IV (`coap_iv.h#coap_fallback_iv`, host-parity vs OpenSSL) → unpredictable, не лише unique; no AES-engine `E_key(ctr)` / SEC.8-restore / bench needed (pure-SW `silken_sha256.h`) | `03_05` (розділ «HRNG Fallback») |
 | SEC.5 | Chainlink oracle-callback HMAC fail-fast: `WEB3_STRICT_MODE=true` + порожній `CHAINLINK_HMAC_SECRET` → `SecurityError` (захищає `/oracle_callbacks` від forge `oracle_status_fulfilled?` → неавторизований mint). Guard `verify_chainlink_signature!` (`oracle_callbacks_controller.rb`) + RSpec. Resolved, orphan-ID — бракувало archive-рядка (ops: provision secret pre-mainnet → S1.1/`06_04`; додано 2026-06-09) | `04_03 §5.9` |
 | FW.1 | Hardcoded identical AES-key → per-device HKDF + `Load_AES_Key()` (Protected Flash `FLASH_KEY_ADDR`, magic `KEYL` + zero-key guard → refuse-boot без provisioning) — firmware CLOSED 2026-05-02 (soldier+queen `main.c` + host-тести `test_load_key_*`). Per-device ізоляція реальна з FW.2 CCM (ECB-транзит = спільний ключ, §3.1). Bench-residuals — власні items: RDP L2 → SEC.2 · factory SWD-flash → SEC.3 · weak-key boot-guard → SEC.9 | `03_05 §3.1`, `03_06 §2` |
 | FW.5 | ~~Lorenz β-пертурбація від delta_t/vcap~~ → **РЕВЕРСОВАНО [E.63]** (delta_t → growth_points напряму) | `03_04 §4.3`, E.63 |
