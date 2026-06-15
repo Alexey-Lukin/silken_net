@@ -593,7 +593,7 @@
 - **Стан:** freeze-rationale + PVD-кома side-path канонізовано — `IWDG_STOP=0`+`IWDG_STDBY=0` (LSI-пес лічить у STOP2 max ~32.7с → spurious reset посеред багатогодинного сну) заскриптовано поряд з RDP у `firmware/scripts/bench/01_option_bytes.sh` (RUNBOOK §1.2). Канон [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA).
 - [ ] 👤 застосувати на платі при factory flashing
 - [ ] 👤 bench-верифікація: сон 1 год без spurious reset (RUNBOOK §4.4)
-- [ ] 👤 верифікувати періодичний RTC-wake безумовно зброєний + auto-reload (arming не видно в рукописному main.c — лише CubeMX `MX_RTC_Init`) — із замороженим IWDG це ЄДИНИЙ backstop живучості (× SEC.2 RDP L2 = немає SWD-recovery); bench має покрити reliable WAKE за довгий сон, не лише no-spurious-reset
+- [ ] 👤 bench-audit CubeMX `MX_RTC_Init` на WUT **auto-reload + IT enabled** + reliable WAKE за багатогодинний сон (не лише no-spurious-reset) — підтверджено: arming = навмисний порожній stub `firmware/hal_glue/soldier_hal_check.c` «календар/WUT FW.49 — bench» (board-freeze, не код); frozen IWDG × SEC.2 RDP-L2 → WUT = ЄДИНИЙ backstop живучості (нема watchdog/SWD recovery). Канон [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA); RTC clock-tree bring-up = FW.49
 
 #### SE050-MIGRATION — ATECC608B → NXP SE050 + true-DePIN ladder (2026-06-07)
 - **P1** · 🤖+👤 · 🟡 · → [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)
