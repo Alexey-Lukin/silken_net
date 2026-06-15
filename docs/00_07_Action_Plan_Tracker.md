@@ -610,10 +610,9 @@
 - Cross-ref: SEC.6, SEC.14, ARCH.42, ARCH.43 (per-device-ізоляція post-FW.2), E.60 (Merkle), FW.2, FW.23, ARCH.33 (firmware-Ed25519 feasibility), STK.4 (ЗВТ), BIZ.13 (operator-bond).
 
 #### SEC.4 — Reed Switch shipping mode (not in BOM)
-- **P2** · 👤 · ⚪ · → [`03_05 §3.5`](03_05_Hardware_Symmetric_Crypto_and_Security)
-- **Стан:** Не розпочато — дизайн канонізовано, у BOM ще немає: zero-consumption transport (магніт→circuit open, інсталятор знімає→first power-up, ~$0.05/unit; окремий механізм від piezo Zero-Power Wake). ⚠️ continuous power-cut = magnet-DoS вектор на security-сенсорі → дизайн-вимога latching first-boot; self-powered → можливий Ruthless-Prune (§3.5).
-- [ ] 👤 додати Hamlin 59140-1-T-00-A + N52 магніт до BOM + оновити KiCad schematic
-- [ ] 👤 BOM-freeze рішення (2026-06-15 аналіз): **pull-tab = security-дефолт** (немає magnet-DoS, дешевший, one-shot за природою → домінує над герконом); геркон лише з latching first-boot, якщо потрібен «перший вдих»-наратив ([`03_05 §3.5`](03_05_Hardware_Symmetric_Crypto_and_Security))
+- **P2** · 👤 · 🟢 · → [`03_05 §3.5`](03_05_Hardware_Symmetric_Crypto_and_Security)
+- **Стан:** Дизайн + рекомендація канонізовані (BOM не заморожено). Питання «чи потрібен shipping-mode взагалі» (self-powered, anchor-TRL-gated → Ruthless-Prune-кандидат) передує вибору компонента; якщо потрібен — pull-tab дефолт (геркон = magnet-DoS на security-сенсорі без latching first-boot). Канон [`03_05 §3.5`](03_05_Hardware_Symmetric_Crypto_and_Security).
+- [ ] 👤 BOM-freeze (§3.5): спершу чи потрібен shipping-mode (anchor-TRL); якщо так — **pull-tab дефолт** (нема magnet-DoS, дешевший, one-shot → домінує над герконом) + KiCad; геркон Hamlin+N52 лише з latching first-boot + «перший вдих»-наратив ([`03_05 §3.5`](03_05_Hardware_Symmetric_Crypto_and_Security))
 
 #### SEC.14 — SE role-split re-examination — per-packet AES vs provisioning-only (ARCH.42 honesty)
 - **P2** · 👤 · 🟢 · → [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)

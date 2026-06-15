@@ -806,7 +806,7 @@ Device Memory → Option Bytes → Read Out Protection → RDP: Level 1 (або 
 - **Фікс — latching first-boot:** геркон гейтить лише **перший** boot; далі софт латчить power-on (set-and-hold через GPIO/load-switch) і **ігнорує** подальший стан геркону → польовий магніт уже не вимкне вузол. Переносить shipping-mode з «continuous power-cut» у «one-shot arm».
 - **Спершу — чи потрібен shipping-mode взагалі (це питання передує вибору pull-tab vs геркон):** Солдат живиться від EBFC дерева — у коробці дерева нема, отже й живлення нема. Єдина цінність будь-якого shipping-mode = зберегти factory-заряд supercap до інсталяції (швидший first-breath). Це **anchor-TRL-gated**: поки час cold-start EBFC не виміряний (anchor TRL-3), невідомо, чи економія варта компонента → shipping-mode цілком Ruthless-Prune-кандидат. **Якщо потрібен** — дефолт **pull-tab** (security: не спуфиться магнітом, дешевший, one-shot за природою → домінує над герконом); геркон лише з latching first-boot і якщо потрібен «перший вдих»-наратив. Рішення при BOM-freeze.
 
-**Додати до BOM Солдата:** геркон (наприклад, Hamlin 59140-1-T-00-A або аналог) + N52 неодимовий магніт ∅6×3 мм.
+**BOM Солдата (лише якщо shipping-mode потрібен — див. вище):** дефолт **pull-tab** (механічний/друкований, без партномера, не спуфиться). Геркон Hamlin 59140-1-T-00-A + N52 ∅6×3 мм — **лише** якщо свідомо обрано «перший вдих»-наратив із latching first-boot (анти-magnet-DoS).
 
 ---
 
