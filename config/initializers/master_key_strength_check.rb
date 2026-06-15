@@ -25,7 +25,17 @@
 Rails.application.config.after_initialize do
   # Canopy uses the same RAILS_ENV=production as mainnet; both are gated here.
   next unless Rails.env.production?
-  next if ENV["SILKENNET_SKIP_MASTER_KEY_STRENGTH_CHECK"] == "1"
+
+  if ENV["SILKENNET_SKIP_MASTER_KEY_STRENGTH_CHECK"] == "1"
+    # [SEC.9] Loud on purpose — a bypassed boot-time crypto strength check must
+    # leave a trail so the rescue-boot escape hatch cannot quietly become routine.
+    Rails.logger.warn(
+      "[SEC.9] PROVISIONING_MASTER_KEY strength check BYPASSED via " \
+      "SILKENNET_SKIP_MASTER_KEY_STRENGTH_CHECK=1 — intended only for one-off rescue " \
+      "boots while re-flashing a stuck cluster. Unset it for normal operation."
+    )
+    next
+  end
 
   master_key = ENV["PROVISIONING_MASTER_KEY"]
   hint       = "PROVISIONING_MASTER_KEY"
