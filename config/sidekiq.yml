@@ -53,10 +53,12 @@
     # `InsightBatchCallbacks#on_success` after the orchestrator batch
     # finishes (≈01:00–02:00 UTC depending on tenant size). This 02:00 cron
     # is a defensive fallback: it runs even if the batch had zero clusters
-    # with data and the callback never fired. The worker itself is safe to
-    # re-run (per-cluster idempotent recalculate_health_index!) but Celo
-    # rewards do double-fire today — see SSOT Drift Register row dated
-    # 2026-05-18 for the cleanup task.
+    # with data and the callback never fired. Both effects are idempotent
+    # under this double-enqueue: health recalc (per-cluster
+    # recalculate_health_index!) and the Celo reward path —
+    # CommunityRewardService#reward_community! short-circuits via
+    # reward_already_sent? (per cluster+date BlockchainTransaction ledger),
+    # so a healthy cluster is paid cUSD once per day, not twice.
     cluster_health_arbitration:
       cron: '0 2 * * *' # 02:00 UTC щодня (одразу після агрегації)
       class: ClusterHealthCheckWorker
