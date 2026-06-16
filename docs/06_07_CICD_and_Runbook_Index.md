@@ -90,3 +90,5 @@ release published ─→ deploy-production.yml (verify-secrets → terraform →
 | **DR:** Cloud SQL PITR restore, TF-state rollback, region rebuild | [`06_06 §5`](06_06_Disaster_Recovery_and_Backup) |
 | Runtime failover (circuit breakers, comms-loss) | [`06_08`](06_08_Resilience_and_Failover_Policy) |
 | `config.alloy` validation (local) | [`06_03 §2.9`](06_03_Prometheus_Observability) + `alloy_config_validate` CI |
+| Grafana Cloud dashboards + alerts import + post-deploy metrics verify (S2.1/S2.2/S2.3) | `deploy/grafana/README.md` (`import.rb` — datasource UID, contact point) + [`06_03 §2.9`](06_03_Prometheus_Observability) |
+| **Bench-gated §06** (CoAP boundary smoke INF.6 · W25Q32 flash-ring ARCH.35) | `firmware/scripts/bench/RUNBOOK.md §5.3/§6` |
