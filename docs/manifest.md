@@ -163,4 +163,4 @@ The trees, as it turns out, have a great deal to say. We have simply not, until 
 
 ---
 
-*Silken Net / Gaia 2.0 is an open research and engineering program. Hardware specifications, firmware, smart contracts, and the full 12-chain backend live in the project repository. We invite collaboration from the ReFi, DePIN, climate-tech, and dynamical-systems communities — and pointed questions from everyone else.*
+*Silken Net is an open research and engineering program. Hardware specifications, firmware, smart contracts, and the full 12-chain backend live in the project repository. We invite collaboration from the ReFi, DePIN, climate-tech, and dynamical-systems communities — and pointed questions from everyone else.*

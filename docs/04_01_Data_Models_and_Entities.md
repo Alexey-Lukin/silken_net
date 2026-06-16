@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Зафіксувати повну структуру реляційної бази даних (PostgreSQL) та ActiveRecord моделей для моноліту Ruby on Rails 8.1. Цей документ є **вичерпним довідником** всіх 36 моделей (27 ядра + 9 шар Codex / Lore — Realm, Node, Citation у Phase 1; Comment, Attunement у Phase 2; Fraction у Phase 3; Match у Phase 4; Discovery, DiscoveryRule у Phase 5), 6 concerns, ключових індексів, AASM-машин стану та seeds-стану системи. Визначає, як фізичні об'єкти (дерева, шлюзи) та абстрактні концепції (контракти, токени, аудит, lore-вузли) пов'язані між собою в єдину Кіберфізичну Державу Gaia 2.0.
+Зафіксувати повну структуру реляційної бази даних (PostgreSQL) та ActiveRecord моделей для моноліту Ruby on Rails 8.1. Цей документ є **вичерпним довідником** всіх 36 моделей (27 ядра + 9 шар Codex / Lore — Realm, Node, Citation у Phase 1; Comment, Attunement у Phase 2; Fraction у Phase 3; Match у Phase 4; Discovery, DiscoveryRule у Phase 5), 6 concerns, ключових індексів, AASM-машин стану та seeds-стану системи. Визначає, як фізичні об'єкти (дерева, шлюзи) та абстрактні концепції (контракти, токени, аудит, lore-вузли) пов'язані між собою в єдину Кіберфізичну Державу SilkenNet.
 
 ---
 
@@ -1187,7 +1187,7 @@ active/draft ──cancel──► cancelled
 
 ### `EthereumAnchor` — Аудит-Трейл L1 Anchoring
 
-**Призначення:** Персистентний журнал щотижневих операцій фіналізації стану Gaia 2.0 в Ethereum Mainnet. Зберігає `state_root`, `tx_hash`, `block_number` та компоненти для незалежної верифікації (BLOCKER-2, BLOCKER-6).
+**Призначення:** Персистентний журнал щотижневих операцій фіналізації стану SilkenNet в Ethereum Mainnet. Зберігає `state_root`, `tx_hash`, `block_number` та компоненти для незалежної верифікації (BLOCKER-2, BLOCKER-6).
 
 **Ключові поля:**
 
@@ -1308,7 +1308,7 @@ supervisor_approved/active ──fail_with(reason)──► failed
 
 ## 📖 7b. Codex — Lore Layer (Кодекс Архетипів)
 
-Lore-шар Gaia 2.0 — read-only бібліотека "архетипів" (екосистеми, унікальні дерева, біо/інженерні протоколи, міфо-фреймворки) + соціальний шар (коментарі, attunements). Повна специфікація: **[`04_05`](04_05_Codex_Lore_Module)**. Phase 1 додає 3 моделі (Realm/Node/Citation), Phase 2 — 2 моделі (Comment/Attunement) + ActionCable broadcast. Phase 3-5 розширять цей шар (`Match`, `Discovery`, `Fraction`).
+Lore-шар SilkenNet — read-only бібліотека "архетипів" (екосистеми, унікальні дерева, біо/інженерні протоколи, міфо-фреймворки) + соціальний шар (коментарі, attunements). Повна специфікація: **[`04_05`](04_05_Codex_Lore_Module)**. Phase 1 додає 3 моделі (Realm/Node/Citation), Phase 2 — 2 моделі (Comment/Attunement) + ActionCable broadcast. Phase 3-5 розширять цей шар (`Match`, `Discovery`, `Fraction`).
 
 ### `Codex::Realm` — Шар (4 семантичні групи)
 

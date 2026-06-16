@@ -718,7 +718,7 @@ CARBON_COIN_CONTRACT_ADDRESS=0x...  # SCC
 FOREST_COIN_CONTRACT_ADDRESS=0x...  # SFC
 ```
 
-### Мультичейн (Gaia 2.0)
+### Мультичейн (SilkenNet)
 
 ```bash
 # Ethereum L1 (State Anchoring) — SSOT name expected by app/services/ethereum/state_anchor_service.rb та app/services/treasury/monitor_service.rb.

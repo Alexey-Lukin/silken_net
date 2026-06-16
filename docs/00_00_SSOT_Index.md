@@ -1,4 +1,4 @@
-# 🌍 Gaia 2.0 (Silken Net) — Single Source of Truth (SSOT)
+# 🌍 SilkenNet — Single Source of Truth (SSOT)
 
 > _"Ми не просто спостерігаємо за лісом. Ми даємо йому цифрову волю."_
 

@@ -375,7 +375,7 @@ jobs:
 - **Протокол тестування:** Закриття тестового Issue з `Target TRL ≤ 4` фізично переміщує колонку на дошці "Матриця TRL" без ручного втручання; Issue з `Target TRL ≥ 5` переходить у `Pending Architect Approval` і просувається лише після лейбла `architect-approved` (§2.2 gate).
 - **Критерій Виходу:** Жодного ручного перетягування карток. Єдине свідоме втручання Архітектора — `architect-approved` на TRL-гейтах ≥5 (approval, а не рутинна зміна статусу).
 - **Критерій IaC:** Жодного ручного клікання у GitHub UI для створення / видалення labels (все через `.github/labels.yml`).
-- **Результат валідації:** `[Dashboard: Gaia 2.0 Command Center]` (URL TBD)
+- **Результат валідації:** `[Dashboard: SilkenNet Command Center]` (URL TBD)
 
 ---
 
