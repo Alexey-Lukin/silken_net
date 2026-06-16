@@ -149,9 +149,9 @@
 
 **Web3 oracle keys (dual-key split, B-02 — без них Sidekiq DeadSet):**
 - [ ] `ORACLE_PRIVATE_KEY` — legacy fallback (Celo/Toucan/Klima/PuroEarth/Etherisc)
-- [ ] `ORACLE_MINTER_PRIVATE_KEY` — MINTER_ROLE на SCC/SFC (`BlockchainMintingService:107`)
-- [ ] `ORACLE_SLASHER_PRIVATE_KEY` — SLASHER_ROLE (`BlockchainBurningService:58`)
-- [ ] `ETHEREUM_ANCHOR_PRIVATE_KEY` — окремий wallet для weekly L1 anchor (`Ethereum::StateAnchorService:147`)
+- [ ] `ORACLE_MINTER_PRIVATE_KEY` — MINTER_ROLE на SCC/SFC (`BlockchainMintingService`)
+- [ ] `ORACLE_SLASHER_PRIVATE_KEY` — SLASHER_ROLE (`BlockchainBurningService`)
+- [ ] `ETHEREUM_ANCHOR_PRIVATE_KEY` — окремий wallet для weekly L1 anchor (`Ethereum::StateAnchorService`)
 
 **RPC endpoints (`Web3::RpcConnectionPool` — `ENV.fetch` raises KeyError без значення):**
 - [ ] `ALCHEMY_POLYGON_RPC_URL`

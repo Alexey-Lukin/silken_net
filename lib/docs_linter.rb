@@ -615,23 +615,35 @@ module DocsLinter
     end
   end
 
-  # [SSOT anti-drift, DOC-T.15 firmware + DOC-T.17 Ruby] Volatile source line-refs:
-  # `*.c`/`*.h` (firmware) AND `*.rb`/`*.rake` (Ruby). A file grows and every
-  # `main.c:747` / `blockchain_minting_service.rb:107` in the docs silently points at
-  # the wrong line — exactly the drift the campaign avoids (FW.4's trio once aimed at
-  # `DEFAULT_TTL` instead of `Run_Inference`). Cite the stable symbol/`#define`/class/
-  # method instead of a line number. Scanned over docs/ + .github/ only (source trees
-  # legitimately carry such refs in code comments). NOT fence-skipped — many refs live
-  # in `// path:N` comments inside ```c blocks. The `.md`/decimal forms never match
-  # (the alternation requires a literal `.c`/`.h`/`.rb`/`.rake` before the colon). Pure.
-  SOURCE_LINE_REF_RE = %r{(?<![\w/])[\w/*.-]+\.(?:[ch]|rb|rake):\d+(?:[–-]\d+)?}
+  # [SSOT anti-drift, DOC-T.15 firmware + DOC-T.17 Ruby + DOC-T.29 class/prose] Volatile
+  # source line-refs in three dialects: (1) path-form `*.c`/`*.h`/`*.rb`/`*.rake`/`*.sol`,
+  # (2) Ruby-symbol `ClassName:NNN`, (3) Ukrainian-prose `(р.162)`/`(рядок 31)`. A file
+  # grows and every `main.c:747` / `BlockchainMintingService:107` / `(рядок 31)` in the
+  # docs silently points at the wrong line — exactly the drift the campaign avoids (FW.4's
+  # trio once aimed at `DEFAULT_TTL` instead of `Run_Inference`; verified 2026-06-16:
+  # `BlockchainMintingService:107`→120, `application.rb (рядок 31)`→41). Cite the stable
+  # symbol/`#define`/class/method, not a line number. Scanned over docs/ + .github/ only
+  # (source trees legitimately carry path-refs in code comments). NOT fence-skipped — many
+  # refs live in `// path:N` comments inside ```c blocks. The `.md`/decimal forms never
+  # match the path alternation (requires a literal `.c`/`.h`/`.rb`/`.rake`/`.sol` before
+  # the colon); the class form anchors on a `::`-namespace or a Ruby class-suffix so
+  # wire-field notation (`Payload:16`, `[DID:4]`) is NOT a false positive. Pure.
+  SOURCE_LINE_REF_RE = %r{(?<![\w/])[\w/*.-]+\.(?:[ch]|rb|rake|sol):\d+(?:[–-]\d+)?}
+  CLASS_LINE_REF_RE  = /(?<![\w:])[A-Z][A-Za-z0-9]*(?:::[A-Z][A-Za-z0-9]*)+:\d+|(?<![\w:])[A-Z][A-Za-z0-9]*(?:Service|Worker|Controller|Job|Channel|Mailer|Component|Pool):\d+/
+  PROSE_LINE_REF_RE  = /\(\s*(?:р|ряд(?:ок|ки))\.?\s*\d+(?:\s*,\s*\d+)*\s*\)/
 
   def source_line_ref_drift(path, text)
-    text.each_line.filter_map do |line|
-      ref = line[SOURCE_LINE_REF_RE]
-      next unless ref
-
-      "#{path}: volatile source line-ref `#{ref}` — cite the symbol/#define, not a line → #{line.strip[0, 80]}"
+    base = File.basename(path.to_s)
+    cites_examples = base.start_with?("00_06", "00_07")           # standard + tracker name the bad forms
+    prose_exempt = cites_examples || base.start_with?("02_04")    # + legacy breadboard rows ≠ source
+    text.each_line.flat_map do |line|
+      [
+        line[SOURCE_LINE_REF_RE],
+        (line[CLASS_LINE_REF_RE] unless cites_examples),
+        (line[PROSE_LINE_REF_RE] unless prose_exempt)
+      ].compact.map do |ref|
+        "#{path}: volatile source line-ref `#{ref}` — cite the symbol/#define, not a line → #{line.strip[0, 80]}"
+      end
     end
   end
 end

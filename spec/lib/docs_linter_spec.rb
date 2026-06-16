@@ -741,5 +741,25 @@ RSpec.describe DocsLinter do
             "`htim2` метроном (коментар)\n`app/models/ai_insight.rb` (the enum)\n"
       expect(described_class.source_line_ref_drift("03_02", txt)).to be_empty
     end
+
+    it "flags `ClassName:NNN` Ruby-symbol line-refs but not wire-field notation [DOC-T.29]" do
+      txt = "`BlockchainMintingService:107` (MINTER_ROLE)\n" \
+            "`Ethereum::StateAnchorService:147` weekly anchor\n" \
+            "the packet `[Payload:16]` is one AES block\n"
+      hits = described_class.source_line_ref_drift("06_02", txt)
+      expect(hits.size).to eq(2)
+      expect(hits).to include(a_string_matching(/`BlockchainMintingService:107`/),
+                              a_string_matching(/`Ethereum::StateAnchorService:147`/))
+      expect(hits).not_to include(a_string_matching(/Payload:16/))
+    end
+
+    it "flags `(р.N)`/`(рядок N)` Ukrainian-prose line-refs, exempt legacy 02_04 [DOC-T.29]" do
+      txt = "`application.rb` (рядок 31) registers it\n`web3.rb` (р.76,80,84,88) counters\n"
+      hits = described_class.source_line_ref_drift("06_03", txt)
+      expect(hits.size).to eq(2)
+      expect(hits).to include(a_string_matching(/\(рядок 31\)/), a_string_matching(/\(р\.76,80,84,88\)/))
+      # 02_04 legacy breadboard: "рядок 10" = a physical breadboard row, not a source line
+      expect(described_class.source_line_ref_drift("02_04", "Точка Магії (рядок 10) між R1 та R2\n")).to be_empty
+    end
   end
 end

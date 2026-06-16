@@ -77,19 +77,19 @@
 | ENV | Сервіс / Worker | Поведінка |
 |-----|-----------------|-----------|
 | `ORACLE_PRIVATE_KEY` | `Celo::CommunityRewardService`, `Toucan::BridgeService`, `Klima::RetirementService`, `Etherisc::ClaimService`, `PuroEarth::PassportService`, fallback для minter/slasher | `KeyError` при першому виклику |
-| `ORACLE_MINTER_PRIVATE_KEY` | `BlockchainMintingService:107` (MINTER_ROLE) | SCC/SFC mint неможливий |
-| `ORACLE_SLASHER_PRIVATE_KEY` | `BlockchainBurningService:58` (SLASHER_ROLE) | Slashing зривається |
-| `ETHEREUM_ANCHOR_PRIVATE_KEY` | `Ethereum::StateAnchorService:147` | Weekly state-root anchor падає |
+| `ORACLE_MINTER_PRIVATE_KEY` | `BlockchainMintingService` (MINTER_ROLE) | SCC/SFC mint неможливий |
+| `ORACLE_SLASHER_PRIVATE_KEY` | `BlockchainBurningService` (SLASHER_ROLE) | Slashing зривається |
+| `ETHEREUM_ANCHOR_PRIVATE_KEY` | `Ethereum::StateAnchorService` | Weekly state-root anchor падає |
 | `ALCHEMY_POLYGON_RPC_URL` | `Web3::RpcConnectionPool.client_for` | Усі Polygon-операції недоступні |
-| `ALCHEMY_ETHEREUM_RPC_URL` | `Ethereum::StateAnchorService:146` | L1 anchor TX зривається |
-| `SOLANA_RPC_URL` | `Solana::MintingService:112` | Defaults to devnet — не критично, але неправильна мережа |
-| `SOLANA_WALLET_KEYPAIR` | `Solana::MintingService:116` | `nil`-check невдалий |
-| `SOLANA_FEE_PAYER_PUBKEY` | `Solana::MintingService:119` | Raises `🛑 [Solana] SOLANA_FEE_PAYER_PUBKEY is required` |
-| `SOLANA_FEE_PAYER_TOKEN_ACCOUNT` | `Solana::MintingService:125` | Raises explicit error |
-| `SOLANA_USDC_MINT_ADDRESS` | `Solana::MintingService:127` | Raises explicit error |
-| `CHAINLINK_FUNCTIONS_ROUTER` | `Chainlink::OracleDispatchService:67` | Fallback на stub (або raise у `WEB3_STRICT_MODE`) |
-| `CHAINLINK_SUBSCRIPTION_ID` | `Chainlink::OracleDispatchService:68` | Те саме |
-| `CHAINLINK_DON_ID` | `Chainlink::OracleDispatchService:95` | Raises `DispatchError` для on-chain dispatch |
+| `ALCHEMY_ETHEREUM_RPC_URL` | `Ethereum::StateAnchorService` | L1 anchor TX зривається |
+| `SOLANA_RPC_URL` | `Solana::MintingService` | Defaults to devnet — не критично, але неправильна мережа |
+| `SOLANA_WALLET_KEYPAIR` | `Solana::MintingService` | `nil`-check невдалий |
+| `SOLANA_FEE_PAYER_PUBKEY` | `Solana::MintingService` | Raises `🛑 [Solana] SOLANA_FEE_PAYER_PUBKEY is required` |
+| `SOLANA_FEE_PAYER_TOKEN_ACCOUNT` | `Solana::MintingService` | Raises explicit error |
+| `SOLANA_USDC_MINT_ADDRESS` | `Solana::MintingService` | Raises explicit error |
+| `CHAINLINK_FUNCTIONS_ROUTER` | `Chainlink::OracleDispatchService` | Fallback на stub (або raise у `WEB3_STRICT_MODE`) |
+| `CHAINLINK_SUBSCRIPTION_ID` | `Chainlink::OracleDispatchService` | Те саме |
+| `CHAINLINK_DON_ID` | `Chainlink::OracleDispatchService` | Raises `DispatchError` для on-chain dispatch |
 | `CHAINLINK_HMAC_SECRET` | `Api::V1::OracleCallbacksController` | Підпис callback не перевіряється |
 
 #### Категорія C — Observability (silent failures)
@@ -621,9 +621,9 @@ ENV-блоки `web` та `job` сервісів **дзеркалюють** од
 | Змінна | Значення в SDL | Required for | Сервіс |
 |--------|---------------|-------------|--------|
 | `ORACLE_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | Legacy fallback (Celo/Toucan/Klima/PuroEarth/Etherisc) |
-| `ORACLE_MINTER_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | `BlockchainMintingService:107` (MINTER_ROLE) |
-| `ORACLE_SLASHER_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | `BlockchainBurningService:58` (SLASHER_ROLE) |
-| `ETHEREUM_ANCHOR_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | `Ethereum::StateAnchorService:147` (окремий гаманець!) |
+| `ORACLE_MINTER_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | `BlockchainMintingService` (MINTER_ROLE) |
+| `ORACLE_SLASHER_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | `BlockchainBurningService` (SLASHER_ROLE) |
+| `ETHEREUM_ANCHOR_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | `Ethereum::StateAnchorService` (окремий гаманець!) |
 
 ### 2.5 RPC endpoints (`Web3::RpcConnectionPool`)
 

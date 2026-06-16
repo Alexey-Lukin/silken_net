@@ -402,7 +402,7 @@ SilkenForestCoin має `ERC20Votes` (checkpoint-based voting power), але:
 
 При порушенні NaaS контракту спрацьовує Slashing Protocol:
 1. `BurnCarbonTokensWorker` → `BlockchainBurningService` → `SilkenCarbonCoin.slash(investor, amount)` — SCC зловмисника **спалюються**.
-2. ✅ `SilkenForestCoin.sol` **має `SLASHER_ROLE`** (рядок 37) та `slash()` функцію (рядок 148) — реалізовано в `[B-06]`.
+2. ✅ `SilkenForestCoin.sol` **має `SLASHER_ROLE`** та `slash()` функцію — реалізовано в `[B-06]`.
 3. Результат: зловмисник **втрачає voting power** пропорційно обсягу slash.
 
 **Поточний стан коду** (`contracts/SilkenForestCoin.sol`):

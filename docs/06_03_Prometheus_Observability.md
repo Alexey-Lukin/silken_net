@@ -529,13 +529,13 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 | `config/initializers/sentry.rb` | Ініціалізація Sentry (DSN, sampling, exclusions, scrubbing) | ✅ |
 | `config/initializers/prometheus.rb` | Визначення `SilkenNet::Metrics` (реєстр + кількість — §2.8) | ✅ |
 | `app/middleware/prometheus_collector.rb` | Rack middleware: `/metrics` endpoint, IP allowlist, Basic Auth, Sidekiq gauge refresh | ✅ |
-| `config/application.rb` (рядок 31) | `config.middleware.use PrometheusCollector` | ✅ |
-| `app/services/blockchain_minting_service.rb` (р.162) | `SCC_MINTED_TOTAL.increment(labels: {token_type:})` | ✅ |
-| `app/services/blockchain_burning_service.rb` (р.97) | `SCC_SLASHED_TOTAL.increment(by: burn_amount)` — кумулятивна сума спалених токенів | ✅ |
-| `app/workers/application_web3_worker.rb` (р.76,80,84,88) | `RPC_ERRORS_TOTAL.increment(labels: {network:, error_type:})` | ✅ |
-| `app/services/telemetry_unpacker_service.rb` (р.79,87,154) | `TELEMETRY_FRAUD_DETECTED_TOTAL.increment`, `TELEMETRY_PROCESSED_TOTAL.increment` | ✅ |
-| `app/workers/unpack_telemetry_worker.rb` (р.21) | `Sentry.set_tags(gateway_uid:)` | ✅ |
-| `app/workers/gateway_telemetry_worker.rb` (р.17) | `Sentry.set_tags(queen_uid:)` | ✅ |
+| `config/application.rb` | `config.middleware.use PrometheusCollector` | ✅ |
+| `app/services/blockchain_minting_service.rb` | `SCC_MINTED_TOTAL.increment(labels: {token_type:})` | ✅ |
+| `app/services/blockchain_burning_service.rb` | `SCC_SLASHED_TOTAL.increment(by: burn_amount)` — кумулятивна сума спалених токенів | ✅ |
+| `app/workers/application_web3_worker.rb` | `RPC_ERRORS_TOTAL.increment(labels: {network:, error_type:})` | ✅ |
+| `app/services/telemetry_unpacker_service.rb` | `TELEMETRY_FRAUD_DETECTED_TOTAL.increment`, `TELEMETRY_PROCESSED_TOTAL.increment` | ✅ |
+| `app/workers/unpack_telemetry_worker.rb` | `Sentry.set_tags(gateway_uid:)` | ✅ |
+| `app/workers/gateway_telemetry_worker.rb` | `Sentry.set_tags(queen_uid:)` | ✅ |
 | `terraform/main.tf` | `google_project_service.monitoring` (Cloud Monitoring API) | ✅ (Cloud Monitoring) |
 | `terraform/iam.tf` | `roles/monitoring.metricWriter` (для GCP-native метрик) | ✅ |
 | `deploy/akash/deploy.yaml` | Akash SDL (web + job + alloy services, CoAP/UDP) | ✅ (з Alloy sidecar) |
