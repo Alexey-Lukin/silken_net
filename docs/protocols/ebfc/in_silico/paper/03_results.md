@@ -102,7 +102,7 @@ experiment is the decisive empirical test.
 The raw computed cascade FADH₂→Os is **unfavourable in every method** (Table 2) — the frontier-orbital alignment
 is inverted (a Koopmans HOMO−LUMO offset of −0.91 eV, the donor level *below* the acceptor) and the
 adiabatic ΔSCF free energy is uphill (+0.88 eV) — whereas the experimentally anchored driving force is
-**downhill** (+465 mV, −0.47 eV; from the verified E°s, §3.2 and §3.6). (The orbital offset and the free
+**downhill** (+465 mV, −0.47 eV; from the verified FAD-GDH potential, §3.6, and a *representative* osmium-polymer potential of +200 mV within the measured +15–489 mV vs NHE window [Zafar et al., 2012] — the cascade is downhill across that entire window, +465 mV being the value at the representative mediator). (The orbital offset and the free
 energy are distinct quantities, so their signs are not directly comparable; both nonetheless point the
 "wrong" way against experiment.) The ~1.3 eV discrepancy between the ΔSCF free energy and the verified
 value is the paper's methodological core, and we decompose rather than excuse it.
@@ -170,8 +170,8 @@ N5 sits **16.0 Å** below the surface — within the 18–20 Å tunnelling windo
 **Figure 3. Anode→mediator electron-transfer energetics.** *(a)* Frontier-orbital cascade for the
 rate-determining FADH₂→Os(III) step (B3LYP/6-31G(d)+LANL2DZ(Os)/C-PCM). The raw frontier-orbital offset
 is uphill (Δε = −0.909 eV) and the adiabatic ΔSCF free energy is +0.88 eV, whereas the experimentally
-anchored driving force is downhill (+465 mV / −0.47 eV, from E°(Os) +200 mV and the bound
-E°(FAD-GDH) −265 mV vs SHE); the raw inversion is the PCM/speciation artefact decomposed in Fig 5. The
+anchored driving force is downhill (+465 mV / −0.47 eV, from a representative E°(Os) +200 mV [within the
++15–489 mV vs NHE Os-polymer window, Zafar 2012] and the verified bound E°(FAD-GDH) −265 mV vs SHE); the raw inversion is the PCM/speciation artefact decomposed in Fig 5. The
 proton-referenced flavin potential, E°(FAD/FADH₂) = −158 mV vs SHE at pH 7, lies within 50 mV of
 experiment (−208 mV). *(b)* Hammett structure–activity relationship for cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺
 at constant charge: ΔE_red(III→II) is linear in σ_para (slope −0.92 eV/σ, r² = 1.00; fit over the

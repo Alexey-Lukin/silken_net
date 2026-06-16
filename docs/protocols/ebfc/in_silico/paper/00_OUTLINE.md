@@ -61,7 +61,7 @@ L1 (distance/path) + L3 (anode) + L3b (cathode) + mediator series + solvation me
 ## 6. Introduction reference scaffold (key anchors; expand to ~40–60)
 
 - **EBFC reviews / field + challenges:** Pak et al. 2025 *Adv. Funct. Mater.* 10.1002/adfm.202415933; *Biosensors* 2025 (implantable EBFCs) 10.3390/bios15040218; Kundu 2026 *Fuel Cells*; "Tackling the Challenges of Enzymatic (Bio)Fuel Cells" *Chem. Rev.* 10.1021/acs.chemrev.9b00115.
-- **Os-mediated FAD-GDH (experimental anchor):** Degani & Heller 1989 → Mano/Heller Os-polymers (+15…+489 mV, opt ~+309 mV); "Electron-Transfer Studies with FAD-GDH and Os polymers of different redox potentials."
+- **Os-mediated FAD-GDH (experimental anchor):** Degani & Heller 1987 → GcGDH Os-polymer window **+15…+489 mV vs NHE** = **Zafar, Wang, Sygmund, Ludwig, Leech, Gorton, *Anal. Chem.* 2012, 84, 334, doi:10.1021/ac202647z** (the "Electron-Transfer Studies… Os polymers of different redox potentials" paper; opt ~+309 mV). ⚠️ E°(Os) **+200 mV** in the cascade is a *representative* value within this window, NOT a single measured anchor (no standalone source) — cascade stays downhill across the entire window. Mao 2003 = electron-transport, not the potential range.
 - **Mediator design precedent (genre):** JPCB 10.1021/acs.jpcb.3c03740 (model-driven redox-mediator design, GOx).
 - **Lever LFER:** Lever 1990 *Inorg. Chem.* 10.1021/ic00331a030; DFT↔Lever↔Hammett correlation *Inorg. Chem.* 10.1021/ic0105258.
 - **Implicit-solvation redox benchmarks (methods lesson):** group-8 octahedral reduction potentials *JPCC* 10.1021/jp406772u; cluster-continuum Pliego-Riveros *JPCA* 10.1021/jp004192w; multistep explicit solvation *JCTC* 10.1021/acs.jctc.8b00982.

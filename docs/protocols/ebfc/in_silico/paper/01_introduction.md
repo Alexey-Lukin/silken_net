@@ -25,13 +25,13 @@ at the level of electronic structure.
 
 The architecture modelled here, representative of the high-performance mediated designs in the
 literature, pairs an FAD-dependent glucose dehydrogenase (FAD-GDH) anode with an osmium redox-polymer
-mediator and an oxygen-reducing cathode (Degani & Heller, 1989; Heller–Mano wired enzymes). FAD-GDH is the
+mediator and an oxygen-reducing cathode (Degani & Heller, 1987; Heller–Mano wired enzymes). FAD-GDH is the
 enzyme of choice for the anode because it is oxygen-insensitive and glucose-specific, unlike the
 classical glucose oxidase; but its catalytic flavin sits roughly 1.5 nm below the protein surface — too
 far for efficient direct electron transfer — so an electron relay is required. The osmium
 poly(vinylimidazole) polymer fills that role, its redox potential tuned empirically across a wide range
-(≈ +15 to +489 mV vs Ag/AgCl, optimum near +0.3 V) to balance the driving force handed to the cascade
-against the open-circuit voltage it costs the cell (Mano et al., 2003). On the cathode side, direct
+(≈ +15 to +489 mV vs NHE, optimum near +0.3 V) to balance the driving force handed to the cascade
+against the open-circuit voltage it costs the cell (Zafar et al., 2012). On the cathode side, direct
 electron transfer to a bimetallic zeolitic-imidazolate-framework (ZIF) nanozyme that mimics the
 multicopper centres of laccase removes a second fragile enzyme from the device, trading turnover for
 robustness (Cu/Zn-ZIF and Cu-ZIF-67 ORR nanozymes; cf. laccase-CueO cluster studies). The recurring
@@ -89,7 +89,7 @@ conductive-MOF band transport, or an acid-stable enzyme-free catalyst) that reli
 that the apparent uphill cascade is a *quantified* limitation of continuum solvation on charged
 transition-metal couples — decomposed into mediator speciation and differential solvation and benchmarked
 against the known group-8 error — rather than a failure of the chemistry. The flavin redox tuning by the
-protein environment is computed in the same spirit (QM/MM flavin studies, 2015; protein-electrostatics
+protein environment is computed in the same spirit (Bhattacharyya et al., 2007; protein-electrostatics
 flavin tuning, 2025).
 
 The contribution is therefore both a set of mechanistic design rules and a transferable methodological
@@ -122,6 +122,7 @@ accompanying version-pinned scripts.
 - Ohara, T. J.; Rajagopalan, R.; Heller, A. Glucose electrodes based on cross-linked [Os(bpy)₂Cl]⁺/²⁺ complexed poly(1-vinylimidazole) films. *Anal. Chem.* **1994**. doi:10.1021/ac00071a031
 - Mao, F.; Mano, N.; Heller, A. Long tethers binding redox centers to polymer backbones enhance electron transport in enzyme "wiring" hydrogels. *J. Am. Chem. Soc.* **2003**, *125*, 4951. doi:10.1021/ja029510e
 - Zafar, M. N.; Ludwig, R. et al. Characterization of different FAD-dependent glucose dehydrogenases for possible use in glucose-based biosensors and biofuel cells (j_max anchor). *Anal. Bioanal. Chem.* **2011**. doi:10.1007/s00216-011-5650-7
+- Zafar, M. N.; Wang, X.; Sygmund, C.; Ludwig, R.; Leech, D.; Gorton, L. Electron-transfer studies with a new FAD-dependent glucose dehydrogenase and osmium polymers of different redox potentials (GcGDH wired by six Os polymers spanning **+15 to +489 mV vs NHE** — source for the mediator potential window). *Anal. Chem.* **2012**, *84*, 334. doi:10.1021/ac202647z
 - Schachinger, F.; Ma, S.; Ludwig, R. Redox potential of FAD-dependent glucose dehydrogenase. *Electrochem. Commun.* **2022**, *146*, 107405. doi:10.1016/j.elecom.2022.107405 <!-- ⚠️ scaffold мав "Sygmund, C.; Ludwig, R."; ця стаття дає E° = −265 mV (не −266) для GcGDH — звірити значення по всьому SSOT -->
 - Sygmund, C.; Ludwig, R. et al. Heterologous overexpression of *Glomerella cingulata* FAD-dependent glucose dehydrogenase in *E. coli* and *P. pastoris* (our GcGDH). *Microb. Cell Fact.* **2011**, *10*, 106. doi:10.1186/1475-2859-10-106
 
@@ -139,7 +140,7 @@ accompanying version-pinned scripts.
 - Multistep explicit solvation of ions. *J. Chem. Theory Comput.* **2019**. doi:10.1021/acs.jctc.8b00982
 
 **Flavin redox & protein tuning**
-- Bhattacharyya, S.; Stankovich, M. T.; Truhlar, D. G.; Gao, J. Combined QM/MM simulations of one- and two-electron reduction potentials of flavin cofactor in water, MCAD, and cholesterol oxidase. *J. Phys. Chem. A* **2007**, *111*, 5729. PMC4480342
+- Bhattacharyya, S.; Stankovich, M. T.; Truhlar, D. G.; Gao, J. Combined QM/MM simulations of one- and two-electron reduction potentials of flavin cofactor in water, MCAD, and cholesterol oxidase. *J. Phys. Chem. A* **2007**, *111*, 5729. doi:10.1021/jp071526+ (PMC4480342)
 - Protein-electrostatics tuning of flavin. *Chem. Sci.* **2025**. doi:10.1039/d5sc02960k
 - Cluster vs QM/MM for protein redox. *J. Chem. Theory Comput.* doi:10.1021/acs.jctc.5c01656
 - Jiang, Q. et al. Feasible cluster model method for simulating the redox potentials of laccase CueO and its variant. *Front. Bioeng. Biotechnol.* **2022**, *10*, 957694. doi:10.3389/fbioe.2022.957694
