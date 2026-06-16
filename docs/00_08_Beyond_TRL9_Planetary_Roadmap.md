@@ -31,6 +31,7 @@
 <!-- TOC:AUTO:START -->
 - [1. Beyond TRL 9 — Planetary Intelligence Gaps (Long-Horizon R&D Agenda)](#-1-beyond-trl-9--planetary-intelligence-gaps-long-horizon-rd-agenda)
 - [2. Фрактальна Мережева Топологія — Planetary Network Scaling](#-2-фрактальна-мережева-топологія--planetary-network-scaling)
+- [3. Beyond the Forest — GaiaNexus Planetary Federation](#-3-beyond-the-forest--gaianexus-planetary-federation)
 <!-- TOC:AUTO:END -->
 
 ---
@@ -299,3 +300,33 @@ relay_eligible = vcap_mv > VCAP_SAFE_THRESHOLD       # інакше Mesh Relay O
 | Вхідний шар | CoAP прямо в Rails | Ingress Proxy (Rust/Go) → Kafka/Pub-Sub → Rails consumers |
 | БД читання | Primary + Query | Read-Only Replicas для всіх аналітичних запитів та Oracle |
 | TinyML навчання | Централізоване | **Cluster-level Edge Retraining** (на кластерах → OTA через `OtaPackagerService`); справжній FL лише як Queen↔Rails обмін оновленнями (делегування — §1.2) |
+
+---
+
+## 🪐 3. Beyond the Forest — GaiaNexus Planetary Federation
+
+> **Горизонт цього розділу — найдальший** (за §1/§2, які масштабують *лісовий* net). Це **рамка
+> найменування й візії, НЕ дорожня карта**: фокус проєкту лишається на **Silken Net** (ліс). Повний
+> каталог планетарних процесів свідомо **не канонізується** ([`00_06 §4`](00_06_SSOT_Documentation_Standard) —
+> Ruthless Pruning) — він живе як артефакт-нотатки, не baseline.
+
+Інженерна абстракція Silken Net факторизується у **`PlanetaryNode`**: `Збір енергії → Сенсорика →
+Оцифрування хаосу (Атрактор Лоренца) → Токенізація`. Той самий чотиритактний інваріант лягає не лише на
+ксилемний сік дерева, а й на інші планетарні процеси — тож **Silken Net = перший інстанс** (орган
+біосфери), а не кінцева система.
+
+За геофізичними сферами Землі (кандидати рівня `SRL:Concept` — **НЕ** baseline, **НЕ** TRL-gated):
+
+| Сфера | Net | `z`-сигнал (приклад) |
+|---|---|---|
+| Biosphere | **Silken Net** *(є)* | гомеостаз дерева (`delta_t` / акустика) |
+| Cryosphere | Cryo Net | стабільність шельфу / альбедо |
+| Hydrosphere | Abyssal Net | солоність / швидкість занурення (AMOC) |
+| Lithosphere | Litho Net | тектонічна напруга (форшоки) |
+| Pedosphere | Myco Net | мікробіом / іонні потоки ґрунту |
+
+Інтегратор усіх сфер — **GaiaNexus**: федерація net-ів на спільному L1, де забезпеченням цінності стає
+**планетарний гомеостаз** (звід `z` усіх сфер). Це фізичний контур **ноосфери** Вернадського; топологія
+звʼязку — образ **сітки Індри** (кожен вузол-самоцвіт віддзеркалює стан усієї мережі). Назва-конвенція
+та ™-розклад — [`08_01 §2`](08_01_Joint_Publications_and_IP_Strategy); near-term візія/місія —
+[`00_01`](00_01_Vision_Mission_and_Roadmap).
