@@ -312,14 +312,34 @@ module Tracker
     # parent-group ref resolves when its children exist (§4а ⇐ 4а.1..4а.5). Ranges split on
     # -/+///; a lowercase ".x" tail = wildcard placeholder (skipped — real literal subsecs
     # use ".X"); "Стаття N" named refs carry no § → out of scope here.
-    DOC_SECTION_REF = %r{(\d\d_\d\d)`?\s*((?:§\s*[0-9][\p{L}0-9.]*\s*[-+/–—]?\s*)+)}
+    # The inter-token separator also eats `,;` and a closing backtick so a comma/list of §
+    # under ONE doc-id resolves EVERY member, not just the first — `04_05 §2.9, §6` and
+    # `` `03_05 §3.7`, §3.4 `` were a blind spot (the run stopped at the comma/backtick, so
+    # the trailing §-ref rotted unseen). Only separator chars join consecutive § tokens; any
+    # word/paren between them ends the run, so a later §X of a DIFFERENT doc is never swept in.
+    DOC_SECTION_REF = %r{(\d\d_\d\d)`?\s*((?:§\s*[0-9][\p{L}0-9.]*[\s,;`+/–—-]*)+)}
 
     # The §-anchor token of a heading = its leading number ("## 🎓 1B. ФОТІУС" → "1b";
-    # "### 2.1.3. …" → "2.1.3"; "### Стаття 1: …" → none, letter-led). Pure.
+    # "### 2.1.3. …" → "2.1.3"; "### Стаття 1: …" → none, letter-led). A single-letter
+    # subsection ("### A. …" / "### А. …") under a numbered parent additionally emits a
+    # parent-qualified anchor ("## 5." → "### A." ⇒ "5.a"; "## 🧮 4." → "### А." ⇒ "4.а")
+    # so a PRECISE `§5.A` / `§4.А` ref resolves to the real subsection, not just its
+    # parent (Latin + Cyrillic letters; 03_06 §5.A-D and 02_03 §4.А-Д live this way).
+    # Pure.
     def self.heading_anchors(text)
+      num_at_level = {} # heading level → its numeric anchor, to parent letter-subsections
       text.lines.grep(/^\#{1,6}\s/).each_with_object([]) do |h, acc|
-        body = h.sub(/^#+\s*/, "").sub(/^[^\p{L}\p{N}]+/, "")
-        acc << Regexp.last_match(1).downcase.sub(/\.+\z/, "") if body =~ /\A([0-9][\p{L}0-9.]*)/
+        level = h[/\A#+/].length
+        body  = h.sub(/^#+\s*/, "").sub(/^[^\p{L}\p{N}]+/, "")
+        if body =~ /\A([0-9][\p{L}0-9.]*)/
+          anchor = Regexp.last_match(1).downcase.sub(/\.+\z/, "")
+          acc << anchor
+          num_at_level.reject! { |lvl, _| lvl >= level } # same/deeper levels are stale
+          num_at_level[level] = anchor
+        elsif (m = body.match(/\A(\p{L})\.(?:\s|\z)/)) &&
+              (parent = num_at_level.select { |lvl, _| lvl < level }.max_by(&:first)&.last)
+          acc << "#{parent}.#{m[1].downcase}"
+        end
       end
     end
 

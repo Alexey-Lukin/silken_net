@@ -96,12 +96,45 @@ RSpec.describe Tracker::Dashboard do
     it "skips a lowercase '.x' wildcard placeholder, resolves a real section" do
       expect(described_class.file_section_dangling_refs("`03_03 §10.x` + `03_03 §3.4`")).to be_empty
     end
+
+    it "resolves EVERY member of a comma/backtick-joined §-list under one doc-id" do
+      # The run used to stop at the comma / closing backtick → the trailing ref went
+      # unchecked (`04_05 §2.9, §6` blind spot). All four below are real sections.
+      expect(described_class.file_section_dangling_refs("see `03_05 §3.6`, §3.7 and 04_05 §1, §3")).to be_empty
+    end
+
+    it "flags a STALE trailing ref in a comma-joined list (not just the first)" do
+      expect(described_class.file_section_dangling_refs("04_05 §1, §9 here"))
+        .to include(a_string_matching(%r{04_05 §9}))
+    end
+
+    it "does NOT sweep a §X separated from the doc-id by intervening prose" do
+      # only separator chars join consecutive § tokens; a word ("плюс") ends the run,
+      # so the stale §9 is never (mis)attributed to 04_05 and falsely flagged.
+      expect(described_class.file_section_dangling_refs("04_05 §1 плюс §9")).to be_empty
+    end
   end
 
   describe ".heading_anchors" do
     it "extracts leading heading numbers, skipping letter-led (Стаття N) headings" do
       expect(described_class.heading_anchors("## 🎓 1B. ФОТІУС\n### 2.1.3. Foo\n### Стаття 1: Bar\n## 🎯 Мета"))
         .to contain_exactly("1b", "2.1.3")
+    end
+
+    it "emits parent-qualified anchors for single-letter subsections (Latin + Cyrillic)" do
+      # "### A." under "## 5." → "5.a"; "### Б." (Cyrillic) → "5.б" — a precise
+      # `§5.A` / `§4.А` ref resolves to the real subsection (03_06 §5.A-D, 02_03 §4.А-Д).
+      expect(described_class.heading_anchors("## 5. Ops\n### A. Access\n### Б. Бета"))
+        .to contain_exactly("5", "5.a", "5.б")
+    end
+
+    it "parents a letter-subsection to the NEAREST numbered ancestor (deeper nesting)" do
+      expect(described_class.heading_anchors("## 4. Lock\n### 4.3. Sub\n#### A. Barb"))
+        .to contain_exactly("4", "4.3", "4.3.a")
+    end
+
+    it "ignores a single-letter subsection that has no numbered parent" do
+      expect(described_class.heading_anchors("## Мета\n### A. Orphan")).to be_empty
     end
   end
 
