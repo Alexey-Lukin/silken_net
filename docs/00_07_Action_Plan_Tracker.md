@@ -628,12 +628,12 @@
 
 #### E.41 — Fire-event 48h latency (dClimate obscuration) → immediate-broadcast fallback
 - **P1** · 🤖 · 🔗 · → `04_02 §11`, `05_01`
-- **Стан:** ⚠️ Life-safety — dClimate satellite fire-events можуть запізнюватись ~48h (хмарна обструкція). Ціль (immediate-broadcast) ✅ досягнута двома негайними шляхами, **НЕ** satellite-gated: edge chainsaw→panic-TX (`03_03`/`03_01`, `PANIC_TTL=5`) + backend temp/anomaly alert (`AlertDispatchService`; гейти = Redis silence + SEC.10 rate-limit, dClimate гейтить лише ВИПЛАТУ через `InsurancePayoutWorker`, не тривогу). Відкрите — лише вторинна belt-and-suspenders: Forester Guild fallback-oracle для satellite-obscured wildfire, 🔗 на E.20 (design `04_02 §11`/§953 — `[PLANNED — blocked by ForestBountyService]`). Канон `04_02 §11` (Dclimate/EWS), `05_01` (dClimate).
+- **Стан:** ⚠️ Life-safety — dClimate satellite fire-events можуть запізнюватись ~48h (хмарна обструкція). Ціль (immediate-broadcast) ✅ досягнута двома негайними шляхами, **НЕ** satellite-gated: edge chainsaw→panic-TX (`03_03`/`03_01`, `PANIC_TTL=5`) + backend temp/anomaly alert (`AlertDispatchService`; гейти = Redis silence + SEC.10 rate-limit, dClimate гейтить лише ВИПЛАТУ через `InsurancePayoutWorker`, не тривогу). Відкрите — лише вторинна belt-and-suspenders: Forester Guild fallback-oracle для satellite-obscured wildfire, 🔗 на E.20 (design `04_02 §Forester Guild` — `[PLANNED — blocked by ForestBountyService]`). Канон `04_02 §11` (Dclimate/EWS), `05_01` (dClimate).
 - [ ] 🔗 Forester Guild fallback-oracle (E.20)
 
 #### E.20 — Forester Guild: ForestBountyService (PoPhW fallback oracle + ranger economy)
 - **P2** · 🤖+👤 · ⚪ · → `04_02 §Forester Guild`
-- **Стан:** Резервний Оракул через фізичний PoPhW (рейнджер+дрон) + ranger bounty-економіка (GPS/EXIF/IPFS→USDC, anti-Sybil). **Блокер** для S6.10 (task-assignment) + E.41 (satellite-obscured fire fallback, = E.34). Гейт — `ForestBountyService` ще не збудовано (bounty matching ranger↔alert) + реальна ranger-мережа. Канон `04_02 §Forester Guild` (Dclimate-hook `04_02 §11`/§953). **Enabler BIZ.13:** PoPhW→earned operator-bond + `ForesterGuild`-реєстр→guild-sponsor ([`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)).
+- **Стан:** Резервний Оракул через фізичний PoPhW (рейнджер+дрон) + ranger bounty-економіка (GPS/EXIF/IPFS→USDC, anti-Sybil). **Блокер** для S6.10 (task-assignment) + E.41 (satellite-obscured fire fallback, = E.34). Гейт — `ForestBountyService` ще не збудовано (bounty matching ranger↔alert) + реальна ranger-мережа. Канон `04_02 §Forester Guild` (Dclimate-hook `04_02 §11`). **Enabler BIZ.13:** PoPhW→earned operator-bond + `ForesterGuild`-реєстр→guild-sponsor ([`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)).
 - [ ] 🤖 `ForestBountyService` — bounty matching ranger↔alert + USDC payout
 - [ ] 👤 онбординг рейнджерів Forester Guild
 
