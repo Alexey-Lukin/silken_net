@@ -21,7 +21,7 @@ class DailyAggregationWorker
 
     Rails.logger.info "🕒 [Хронометрист] Початок великої агрегації за #{target_date}..."
 
-    # [A-3: Wiki 04_02 §14 — Sidekiq Batch для покластерної обробки]
+    # [A-3: Wiki 04_02 §11 — Sidekiq Batch для покластерної обробки]
     # Замість синхронного InsightGeneratorService.call (OOM-ризик при 10M+ дерев),
     # запускаємо батч-оркестратор. InsightBatchCallbacks#on_success автоматично
     # запустить ClusterHealthCheckWorker після завершення всіх чанків.

@@ -15,7 +15,7 @@ RSpec.describe "CoAP intake e2e: Queen PDU grammar → Rails pipeline", type: :i
   let(:gateway)    { create(:gateway, cluster: cluster, ip_address: "10.7.0.7") }
   let(:key_record) { create(:hardware_key, device_uid: gateway.uid) }
 
-  # Queen-Sentinel батч (DID=0, RSSI=0 — локальний; 03_02 §4.4): канонічний
+  # Queen-Sentinel батч (DID=0, RSSI=0 — локальний; 03_02 §7): канонічний
   # wire-білдер TelemetryChunkHelper (auto-include за *telemetry*-шляхом).
   let(:sentinel_chunk) { build_chunk("00000000", 0, 4_100, 25, 22, 3_600, 7, 0) }
 

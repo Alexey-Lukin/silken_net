@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Codex::CommentPolicy — author-edits ≤ 24h; admin+ may *hide* (never
-# destroy) per docs/04_05 §5. Anonymous users may not even read the thread
+# destroy) per docs/04_01 §7b. Anonymous users may not even read the thread
 # (the host node already requires auth, so this is just a defence in depth).
 module Codex
   class CommentPolicy < ApplicationPolicy

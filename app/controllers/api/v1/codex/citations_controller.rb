@@ -3,7 +3,7 @@
 module Api
   module V1
     module Codex
-      # Citations endpoint — Phase 6 cross-domain stitch (`docs/04_05` §2.9, §6).
+      # Citations endpoint — Phase 6 cross-domain stitch (`docs/04_05` §1 bidirectional lore; ADR-CDX-9 citable allow-list).
       #
       # The lore layer is bidirectional: an EwsAlert can quote the
       # `chainsaw_protocol` Node, a Tree can quote the `roots-darwin-brain`

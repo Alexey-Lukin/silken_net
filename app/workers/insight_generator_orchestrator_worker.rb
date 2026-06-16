@@ -3,7 +3,7 @@
 # = ===================================================================
 # 🧠 INSIGHT GENERATOR ORCHESTRATOR (Sidekiq Pro Batch)
 # = ===================================================================
-# [A-3: Wiki 04_02 §14 — Sidekiq Batch для покластерної обробки]
+# [A-3: Wiki 04_02 §11 — Sidekiq Batch для покластерної обробки]
 #
 # При 10M+ дерев монолітний InsightGeneratorService#perform є OOM-ризиком.
 # Аналогічно до TokenomicsEvaluatorWorker (Sidekiq::Batch → EvaluateTreeBatchWorker),

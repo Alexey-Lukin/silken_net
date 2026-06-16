@@ -40,7 +40,7 @@ module Views
           # AASM: Actuator states
           "offline"            => "bg-status-neutral text-status-neutral-text",
           "maintenance_needed" => "bg-status-warning text-status-warning-text",
-          # Codex::Node lifecycle_status (docs/04_05 §7)
+          # Codex::Node lifecycle_status (docs/04_01 §7b)
           "mythical"   => "bg-status-info text-status-info-text",
           "extinct"    => "bg-status-neutral text-status-neutral-text opacity-50",
           "endangered" => "bg-status-warning text-status-warning-text",

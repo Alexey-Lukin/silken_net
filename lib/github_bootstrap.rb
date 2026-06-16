@@ -38,7 +38,7 @@ module GithubBootstrap
   # is tracked as a separate dimension: SRL (System Readiness — emergence,
   # self-evolution, cross-biome, AI-security) staged Concept→Pilot→Deployed,
   # and MRL (Manufacturing Readiness, 8-10 — 5-SKU mass production).
-  # See 00_02 §1 / 00_03 §7.
+  # See 00_02 §1 / 00_08 §1.
   READINESS_HORIZON_OPTIONS = %w[
     SRL:Concept SRL:Pilot SRL:Deployed MRL:8 MRL:9 MRL:10
   ].freeze

@@ -11,7 +11,7 @@
 # `VoteRecorderService` later DELs the key on first use → replay-proof,
 # even within the TTL window.
 #
-# Selection heuristic (per docs/04_05 §2.2 + §2.6):
+# Selection heuristic (per docs/04_02 §10b — Codex::PairSelectorService):
 #   1. Pull pickable nodes in the requested realm (lifecycle ∉ destroyed/extinct).
 #   2. Anchor: random node weighted toward fewer matches (`1 / (match_count+1)`).
 #   3. Opponent: random pick within ±200 Elo of the anchor — falls back

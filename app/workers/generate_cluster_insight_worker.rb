@@ -3,7 +3,7 @@
 # = ===================================================================
 # 🌳 GENERATE CLUSTER INSIGHT WORKER (Sidekiq Pro Batch Child)
 # = ===================================================================
-# [A-3: Wiki 04_02 §14 — Sidekiq Batch для покластерної обробки]
+# [A-3: Wiki 04_02 §11 — Sidekiq Batch для покластерної обробки]
 #
 # Обробляє чанк кластерів у межах батчу InsightGeneratorOrchestratorWorker.
 # Кожен інстанс отримує масив cluster_ids (до CLUSTER_BATCH_SIZE елементів)

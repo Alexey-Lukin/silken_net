@@ -54,7 +54,7 @@ class GatewayTelemetryWorker
       check_system_health(gateway, log)
     end
 
-    # [A-1 FIX: Transactional Outbox — Wiki 04_02 §14]
+    # [A-1 FIX: Transactional Outbox — Wiki 04_02 §11 GatewayTelemetryWorker]
     # Notification відбувається через EwsAlert.after_create_commit :dispatch_notifications!
     # яка безпечно ставить job у чергу ПІСЛЯ commit транзакції.
 

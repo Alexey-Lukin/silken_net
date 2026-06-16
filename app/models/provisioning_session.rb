@@ -3,7 +3,7 @@
 # [SEC.3] Factory Flashing Pipeline — session state machine.
 #
 # Represents one Factory-Flashing attempt for one device. Enforces the
-# 2-Person Rule documented in docs/03_06 §5 C (operator initiates;
+# 2-Person Rule documented in docs/03_06 §5.C (operator initiates;
 # supervisor approves; only then can the session execute). Every transition
 # is auditable through the foreign keys to `users` plus `AuditTrail` writes
 # created by `FactoryFlashing::Session`.

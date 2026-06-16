@@ -4,7 +4,7 @@
 # to any "commentable" Codex resource (Phase 2 only writes nodes; the column
 # shape leaves room for future surfaces — e.g. Match recap, Discovery toast).
 #
-# Moderation philosophy (per docs/04_05 §5):
+# Moderation philosophy (per docs/04_01 §7b — Codex::Comment):
 #   * authors may edit/delete their own row within 24h;
 #   * admin+ moderators *hide* (`hidden_at` + `hidden_by_admin_id`) — never
 #     destroy — preserving a tamper-evident moderation trail.

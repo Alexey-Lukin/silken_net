@@ -118,7 +118,7 @@ class AlertDispatchService
     Rails.cache.delete("oracle_expected_yield_24h")
     Rails.logger.warn "🚨 [FRAUD ALERT] #{tree.did}: #{message}"
 
-    # [A-1 FIX: Transactional Outbox — Wiki 04_02 §14]
+    # [A-1 FIX: Transactional Outbox — Wiki 04_02 §2 AlertDispatchService]
     # AlertNotificationWorker.perform_async видалено.
     # EwsAlert.after_create_commit :dispatch_notifications! вже безпечно ставить job
     # у чергу ПІСЛЯ commit транзакції. Явний виклик тут був:
@@ -172,7 +172,7 @@ class AlertDispatchService
 
     EmergencyResponseService.call(alert) if defined?(EmergencyResponseService)
 
-    # [A-1 FIX: Transactional Outbox — Wiki 04_02 §14]
+    # [A-1 FIX: Transactional Outbox — Wiki 04_02 §2 AlertDispatchService]
     # AlertNotificationWorker.perform_async видалено.
     # EwsAlert.after_create_commit :dispatch_notifications! вже безпечно ставить job
     # у чергу ПІСЛЯ commit транзакції. Явний виклик тут був:
