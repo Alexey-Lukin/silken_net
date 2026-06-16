@@ -401,7 +401,7 @@ RSpec.describe InsightGeneratorService, type: :service do
     end
   end
 
-  # [VPD weather-confounder gate — 00_01 §6.5/§6.6] Discount-only, inert until
+  # [VPD weather-confounder gate — 05_05 §7] Discount-only, inert until
   # calibrated. Guards against FALSE slashing during a humid spell (low VPD →
   # suppressed sap on a healthy tree). Must never raise stress and must ship no
   # guessed kPa threshold into the slashing path until ground-truth calibration.
@@ -492,7 +492,7 @@ RSpec.describe InsightGeneratorService, type: :service do
     end
   end
 
-  # [Sap-flow stress term — closes the 00_01 §6.6 GAP where the heuristic ignored
+  # [Sap-flow stress term — closes the 05_05 §7 GAP where the heuristic ignored
   # sap.] Low sap (below baseline) is the primary DIRECT drought signal. Inert
   # until calibrated; bounded so it corroborates but never solely triggers slashing.
   describe "#sap_stress_contribution" do
@@ -598,7 +598,7 @@ RSpec.describe InsightGeneratorService, type: :service do
     end
   end
 
-  # [Acoustic (cavitation) stress term — closes the acoustic half of the 00_01 §6.6
+  # [Acoustic (cavitation) stress term — closes the acoustic half of the 05_05 §7
   # heuristic GAP.] acoustic_events = cavitation count (drought signal); chainsaw is
   # a separate panic path. Inert until calibrated; max()'d with sap (correlated).
   describe "#acoustic_stress_contribution" do

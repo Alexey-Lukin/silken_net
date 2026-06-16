@@ -36,8 +36,8 @@ class ContractHealthCheckService < ApplicationService
     # [SLASH-1, 2026-05-29] Cluster-wide data blackout (zero insights for the
     # WHOLE cluster) is a gateway-fault / force-majeure signature (stolen or
     # destroyed gateway, Starlink outage, storm) — NOT per-tree negligence.
-    # NEVER auto-burn on absence of data (00_01 §6.5 correlated comms-loss guard,
-    # §6.6). Route to Field Audit / peer-review (Category C); a human classifies
+    # NEVER auto-burn on absence of data (05_05 §6 correlated comms-loss guard,
+    # §7). Route to Field Audit / peer-review (Category C); a human classifies
     # A (negligence → slash) vs B (force-majeure → insurance).
     if daily_insights.empty?
       flag_data_blackout!
@@ -75,16 +75,16 @@ class ContractHealthCheckService < ApplicationService
   # [SLASH-1] Absence-of-data → freeze for Field Audit, NEVER slash. A
   # cluster-wide blackout (stolen/destroyed gateway, Starlink outage, storm) is
   # force-majeure, not the forester's negligence — burning investor tokens on it
-  # would be a false slash (00_01 §6.4/§6.5). Raise a gateway-fault (system_fault)
+  # would be a false slash (05_05 §1/§6). Raise a gateway-fault (system_fault)
   # alert; the contract stays :active pending human classification (Category C).
   def flag_data_blackout!
-    Rails.logger.warn "🌐 [D-MRV] NaasContract ##{@contract.id}: cluster-wide data blackout (#{@target_date}) — gateway-fault signature → Field Audit, NO slash (00_01 §6.5)."
+    Rails.logger.warn "🌐 [D-MRV] NaasContract ##{@contract.id}: cluster-wide data blackout (#{@target_date}) — gateway-fault signature → Field Audit, NO slash (05_05 §6)."
 
     EwsAlert.create!(
       cluster: @cluster,
       severity: :critical,
       alert_type: :system_fault,
-      message: "Cluster-wide data blackout (#{@target_date}): можлива відмова шлюзу / Starlink-блекаут (force-majeure). Slashing НЕ застосовано — потрібен Field Audit (Category C, 00_01 §6.4/§6.5)."
+      message: "Cluster-wide data blackout (#{@target_date}): можлива відмова шлюзу / Starlink-блекаут (force-majeure). Slashing НЕ застосовано — потрібен Field Audit (Category C, 05_05 §5)."
     )
   end
 end

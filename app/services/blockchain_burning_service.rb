@@ -10,7 +10,7 @@ class BlockchainBurningService < ApplicationService
   # Змініть тут, якщо почнемо підтримувати стейблкоіни з іншою розрядністю (напр. USDC = 6).
   TOKEN_DECIMALS = 18
 
-  # [§6.2 Slashing curve — DAO-governed via SystemParameter ← ProtocolParameters.sol (05_03)]
+  # [05_05 §3 Slashing curve — DAO-governed via SystemParameter ← ProtocolParameters.sol (05_03)]
   DEFAULT_SLASH_GAMMA = 1.3          # convex progressive curve (no dead-zone)
   DEFAULT_PENALTY_FACTOR_MAX = 2.0   # ceiling on the penalty MULTIPLIER (not final slash_ratio)
   DEFAULT_PENALTY_FACTOR = 1.0       # negligence baseline (no cause-driven uplift)
@@ -59,7 +59,7 @@ class BlockchainBurningService < ApplicationService
     # [КОЕФІЦІЄНТ ВТРАТ]: Спалюємо лише ту частку токенів, що відповідає
     # відсотку пошкодженої біомаси (розрахунок через AiInsight).
     # Це запобігає повній ануляції контракту при загибелі одного дерева з тисячі.
-    # [§6.2] Progressive convex slash curve (damage_ratio^GAMMA × min(pf, MAX)),
+    # [05_05 §3] Progressive convex slash curve (damage_ratio^GAMMA × min(pf, MAX)),
     # NOT the old linear total × damage_ratio. See #calculate_slash_ratio.
     damage_ratio = calculate_damage_ratio
     slash_ratio  = calculate_slash_ratio(damage_ratio, calculate_penalty_factor)
@@ -86,7 +86,7 @@ class BlockchainBurningService < ApplicationService
       tx_hash = nil
       reason = @source_tree ? "загибель дерева #{@source_tree.did}" : "порушення умов кластера"
 
-      Rails.logger.warn "🔥 [Slashing] Вилучення #{burn_amount}/#{total_minted_amount} SCC (damage #{(damage_ratio * 100).round(1)}% → slash #{(slash_ratio * 100).round(1)}%, §6.2 γ=#{slash_gamma}) у #{@organization.name}. Причина: #{reason}."
+      Rails.logger.warn "🔥 [Slashing] Вилучення #{burn_amount}/#{total_minted_amount} SCC (damage #{(damage_ratio * 100).round(1)}% → slash #{(slash_ratio * 100).round(1)}%, 05_05 §3 γ=#{slash_gamma}) у #{@organization.name}. Причина: #{reason}."
 
       # [ВИПРАВЛЕНО: Lock Duration]: 30 секунд достатньо для transact() (fire-and-forget,
       # повертається миттєво після відправки TX у мемпул). Операції всередині локу:
@@ -175,10 +175,10 @@ class BlockchainBurningService < ApplicationService
     end
   end
 
-  # [§6.2 Slashing curve] Progressive CONVEX penalty:
+  # [05_05 §3 Slashing curve] Progressive CONVEX penalty:
   #   slash_ratio = clamp(damage_ratio^GAMMA × min(penalty_factor, PENALTY_FACTOR_MAX), 0, 1.0)
   # Replaces the old LINEAR burn (total × damage_ratio — no GAMMA, no penalty_factor; the
-  # verified code↔doc divergence, 00_01 §6.2 / 04_02 §11). GAMMA>1 makes the curve convex:
+  # verified code↔doc divergence, 05_05 §3 / 04_02 §11). GAMMA>1 makes the curve convex:
   # a small loss is punished gently (d=0.10 → ~5%) so an investor isn't wiped out over a
   # minor incident, yet full negligent loss reaches 100% (d=1.0, pf=1.0 → 1.0) — the
   # "no dead-zone" property (the old min(…, 0.40) ceiling that flat-lined 40%→100% damage

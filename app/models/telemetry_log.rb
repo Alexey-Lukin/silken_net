@@ -36,7 +36,7 @@ class TelemetryLog < ApplicationRecord
   # --- КЛІМАТ (BME280, HW.32 — ADR 02_01 §3.4) ---
   # humidity (% RH), pressure (hPa), vpd (kPa) — усі nullable/sparse: hot-path шле
   # лише VPD-індекс, raw RH/тиск приходять у періодичному climate frame. `vpd` —
-  # прямий confounder сокоруху (False-Slashing guard, 00_01 §6.5/§6.6).
+  # прямий confounder сокоруху (False-Slashing guard, 05_05 §7).
   # ⚠️ DCI-guard: жодне з цих НЕ входить у Lorenz-Z (firmware↔backend bit-identity).
 
   # --- ВАЛІДАЦІЇ ---

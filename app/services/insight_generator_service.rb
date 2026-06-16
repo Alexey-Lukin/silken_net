@@ -176,7 +176,7 @@ class InsightGeneratorService < ApplicationService
     # $$Stress = \min(1.0, \text{base\_stress} + \text{anomaly\_penalties})$$
     stress_index = is_fraud ? 1.0 : calculate_stress_index(stats.max_status.to_i, stats.avg_temp.to_f, stats.max_acoustic.to_i, stats.avg_z.to_f, stats.avg_vcap.to_i, calculate_deviation(stats.avg_sap.to_f, baseline[:sap]), signed_deviation(stats.avg_sap.to_f, baseline[:sap]))
 
-    # [VPD weather-confounder, 00_01 §6.5/§6.6] Discount-only weather gate so a
+    # [VPD weather-confounder, 05_05 §7] Discount-only weather gate so a
     # humid spell (low VPD → suppressed sap on a HEALTHY tree) cannot push a
     # cluster over the slash threshold. Inert until firmware sends VPD + ML
     # retrain + ground-truth calibration (see #apply_weather_confounder). Fraud
@@ -247,7 +247,7 @@ class InsightGeneratorService < ApplicationService
     ((value - base) / base).round(4)
   end
 
-  # [VPD weather-confounder gate — 04_02 §VPD, 00_01 §6.5/§6.6] DISCOUNT-ONLY.
+  # [VPD weather-confounder gate — 04_02 §VPD, 05_05 §7] DISCOUNT-ONLY.
   # Lowers stress_index when a low sap_flow is explained by WEATHER, not disease:
   # saturated air (rain/fog → low VPD) gives near-zero transpiration pull, so sap
   # legitimately drops on a HEALTHY tree. Without this, a regional humid spell
@@ -263,7 +263,7 @@ class InsightGeneratorService < ApplicationService
   #
   # ⚠️ Activate ONLY after all three land: firmware VPD + ML-retrain (vpd feature
   # in silken_forest.marshal) + ground-truth calibration. Until then a wired,
-  # tested no-op. NB: the heuristic still ignores sap entirely (GAP, 00_01 §6.6) —
+  # tested no-op. NB: the heuristic still ignores sap entirely (GAP, 05_05 §7) —
   # a signed low-sap (not |dev|) test is part of that calibration follow-up.
   def apply_weather_confounder(stress_index, avg_vpd, sap_deviation)
     return stress_index if avg_vpd.nil?
@@ -333,7 +333,7 @@ class InsightGeneratorService < ApplicationService
     [ base_stress, 0.99 ].min
   end
 
-  # [Sap-flow stress term — closes the 00_01 §6.6 GAP where the heuristic ignored
+  # [Sap-flow stress term — closes the 05_05 §7 GAP where the heuristic ignored
   # sap entirely.] Low sap_flow (below cluster baseline) is the PRIMARY DIRECT
   # drought/disease signal — more grounded than the unproven Lorenz-Z. Only LOW
   # sap (signed dev ≤ −threshold) adds stress; high sap is vigour, never penalised.
@@ -365,7 +365,7 @@ class InsightGeneratorService < ApplicationService
     { threshold: threshold, weight: [ weight, 0.99 ].min }
   end
 
-  # [Acoustic (cavitation) stress term — closes the acoustic half of the 00_01 §6.6
+  # [Acoustic (cavitation) stress term — closes the acoustic half of the 05_05 §7
   # heuristic GAP, symmetric to the sap term.] acoustic_events = COUNT of phloem
   # cavitation events (TinyML, uint8 saturating at 255; 03_04) — a DIRECT drought /
   # water-tension signal (high cavitation = xylem under stress).

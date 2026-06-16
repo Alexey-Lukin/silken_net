@@ -10,7 +10,7 @@ module SilkenNet
   # no DB reads/writes, no slashing side-effects, no global state. Safe to run
   # anywhere (rake task, console, CI) without touching production records.
   #
-  # Primary questions it answers (00_01 §6.6, 08_02 §4):
+  # Primary questions it answers (05_05 §8, 08_02 §4):
   #   1. Does `stress_index` track ground-truth decline?         → spearman
   #   2. Does Z add predictive value OVER direct signals (sap)?   → report[:z_incremental_over_sap]
   #   3. Does device bio_status agree with expert labels?         → cohens_kappa
@@ -91,7 +91,7 @@ module SilkenNet
     # :stress_index and :ground_truth_decline (higher = sicker). If :z_value and
     # :sap_flow are present, also reports the *incremental* predictive value of Z
     # over the direct physiological signal — the core de-risk question: if Z adds
-    # ~nothing over sap_flow, demote Z to DCI-only (00_01 §6.6).
+    # ~nothing over sap_flow, demote Z to DCI-only (05_05 §8).
     def report(samples)
       stress = samples.map { |s| s[:stress_index].to_f }
       decline = samples.map { |s| s[:ground_truth_decline].to_f }

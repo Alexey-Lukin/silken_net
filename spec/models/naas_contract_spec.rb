@@ -27,7 +27,7 @@ RSpec.describe NaasContract, type: :model do
     end
 
     # [SLASH-1] Cluster-wide blackout = gateway-fault / force-majeure signature,
-    # NOT negligence → must NOT auto-burn (00_01 §6.5). Route to Field Audit.
+    # NOT negligence → must NOT auto-burn (05_05 §6). Route to Field Audit.
     context "when Oracle is silent (no daily insights) — cluster-wide blackout" do
       it "does NOT slash (no breach, no burn)" do
         create(:tree, cluster: cluster, status: :active)
