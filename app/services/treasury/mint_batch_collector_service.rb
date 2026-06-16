@@ -10,7 +10,7 @@ module Treasury
   # Замість відправки одиночних mint() транзакцій через MintCarbonCoinWorker,
   # цей сервіс періодично збирає пакети pending транзакцій і делегує їх
   # BlockchainMintingService.call_batch — де batchMint() на Solidity рівні
-  # обробляє до 200 txs за один виклик.
+  # обробляє до 100 txs за один виклик (MAX_BATCH_SIZE).
   #
   # Gas savings: batchMint(100) ≈ 30-40% дешевше ніж 100 × mint()
   #

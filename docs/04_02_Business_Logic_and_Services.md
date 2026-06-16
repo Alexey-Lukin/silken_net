@@ -563,7 +563,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 |---|---|
 | **Файл** | `app/services/treasury/mint_batch_collector_service.rb` |
 | **Вхід** | — (no args) |
-| **Що робить** | **[NEW]** Sidekiq-level агрегація pending `BlockchainTransaction` записів для оптимізації газу. Збирає `status: :pending, blockchain_network: "evm"`, групує за `token_type` (SCC/SFC), розділяє на urgent (старше `MAX_PENDING_AGE_MINUTES=30хв` — відправляє негайно) та standard (чекає `MIN_BATCH_SIZE=5`). Делегує `BlockchainMintingService.call_batch(ids)` пакетами по `OPTIMAL_BATCH_SIZE=100` (max `MAX_BATCH_SIZE=200`). Gas savings: `batchMint(100) ≈ 30-40%` дешевше ніж `100 × mint()`. Працює паралельно з `MintCarbonCoinWorker` (oracle-driven immediate). `MAX_TRANSACTIONS_PER_RUN = 1000`. |
+| **Що робить** | **[NEW]** Sidekiq-level агрегація pending `BlockchainTransaction` записів для оптимізації газу. Збирає `status: :pending, blockchain_network: "evm"`, групує за `token_type` (SCC/SFC), розділяє на urgent (старше `MAX_PENDING_AGE_MINUTES=30хв` — відправляє негайно) та standard (чекає `MIN_BATCH_SIZE=5`). Делегує `BlockchainMintingService.call_batch(ids)` пакетами по `OPTIMAL_BATCH_SIZE=100` (= `MAX_BATCH_SIZE`, контракт-cap; дім [`05_03`](05_03_Tokenomics_SCC_and_SFC)). Gas savings: `batchMint(100) ≈ 30-40%` дешевше ніж `100 × mint()`. Працює паралельно з `MintCarbonCoinWorker` (oracle-driven immediate). `MAX_TRANSACTIONS_PER_RUN = 1000`. |
 | **Зовнішні виклики** | `BlockchainMintingService.call_batch` |
 | **Вихід** | `nil`. Side effect: транзакції відправлені пакетами. |
 

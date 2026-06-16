@@ -547,7 +547,7 @@ TokenomicsEvaluatorWorker (щогодини, cron: 0 * * * *)
 
 **Ключові функції:**
 - `mint(address to, uint256 amount, string memory treeDid)` — Базовий мінтинг. Емітує `CarbonMinted`.
-- `batchMint(address[] recipients, uint256[] amounts, string[] treeDids)` — До 200 дерев за один виклик.
+- `batchMint(address[] recipients, uint256[] amounts, string[] treeDids)` — До 100 дерев за один виклик (`MAX_BATCH_SIZE`, дім [`05_03`](05_03_Tokenomics_SCC_and_SFC)).
 - `slash(address investor, uint256 amount)` — Спалює токени при порушенні. Емітує `TokenSlashed`.
 - `pause() / unpause()` — Екстрене заморожування.
 - `nonces(address)` — Override для ERC20Permit/Nonces MRO сумісності.

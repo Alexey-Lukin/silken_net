@@ -20,7 +20,7 @@ import "@openzeppelin/contracts/utils/Nonces.sol";
  *
  * [B-01] MAX_SUPPLY = 100 000 000 SFC — верхня межа емісії governance токенів.
  * [B-03] Конструктор валідує ненульові адреси.
- * [B-04] batchMint обмежено 200 елементами для gas safety.
+ * [B-04] batchMint обмежено 100 елементами для gas safety.
  * [B-06] Додано SLASHER_ROLE та slash() для governance slashing.
  * [B-07] Уніфіковано: whenNotPaused modifier замість ручної перевірки.
  * [B-10] Events: string поля не indexed, додано bytes32 indexed хеші.

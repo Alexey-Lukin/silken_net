@@ -21,7 +21,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
  * [B-01] MAX_SUPPLY = 1 000 000 000 SCC — верхня межа емісії.
  * [B-02] Розділено MINTER_ROLE та SLASHER_ROLE на окремі oracle-адреси.
  * [B-03] Конструктор валідує ненульові адреси.
- * [B-04] batchMint обмежено 200 елементами для gas safety.
+ * [B-04] batchMint обмежено 100 елементами для gas safety.
  * [B-10] Events: string поля не indexed, додано bytes32 indexed хеші.
  * [B-13] ReentrancyGuard для превентивного захисту.
  * [B-15] String length validation: treeDid/clusterId <= 256 bytes (The Graph safety).
