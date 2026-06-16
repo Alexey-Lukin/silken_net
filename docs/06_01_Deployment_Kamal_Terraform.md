@@ -186,7 +186,7 @@ terraform apply
 | **Redis** | Upstash Serverless Redis (TLS, `rediss://`) | Upstash Serverless Redis (TLS, `rediss://`) |
 | **SSL/HTTPS** | ✅ `force_ssl` + HSTS (1рік, subdomains, preload). `DISABLE_SSL=true` для override | ✅ `force_ssl` + HSTS (1рік, subdomains, preload) |
 | **DB** | Окрема або спільна Cloud SQL | `silken_net_production` (HA) |
-| **Puma workers** | `WEB_CONCURRENCY: 2` | `WEB_CONCURRENCY: 2` |
+| **Puma workers** | `WEB_CONCURRENCY: 4` (Akash SDL; `2` на Kamal/GCP-fallback) | `WEB_CONCURRENCY: 4` (Akash SDL; `2` на Kamal/GCP-fallback) |
 
 ---
 
