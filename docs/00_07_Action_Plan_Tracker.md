@@ -693,7 +693,7 @@
 
 ## §06 · Deploy / Observability / Secrets / Ops
 
-> Деплой, спостережуваність, секрети, DR — канон `06_xx`. (Частина цих пунктів раніше сиділа під §04 «DevOps»; тепер кожен у власному §06-домі.)
+> Деплой, спостережуваність, секрети, DR — канон `06_xx`.
 
 #### S1.1 — GitHub Secrets заповнення
 - **P0** · 👤 · 🟢 · → `06_04`
@@ -746,7 +746,7 @@
 
 #### S1.5 — Kamal IP placeholders
 - **P2** · 👤 · ⚪ · → `06_01`
-- **Стан:** Не розпочато — `192.168.0.1` / `<CANOPY_SERVER_IP>` плейсхолдери в Kamal config; підставити реальні IP після `terraform apply`. Канон `06_01`.
+- **Стан:** Не розпочато — `192.168.0.1` (`config/deploy.yml`) / `<INGRESS_ANCHOR_IP>` (`config/deploy.canopy.yml`) плейсхолдери; підставити реальну Ingress Anchor IP після `terraform apply` (canopy = той самий IP, диференціюється Akash SDL env). Канон `06_01`.
 - [ ] 👤 підставити реальні IP після `terraform apply` → верифікувати deploy
 
 #### S2.4 — Observability industrial-grade hardening
@@ -781,7 +781,7 @@
 
 #### S4.3 — Akash SDL secrets
 - **P3** · 👤 · ⚪ · → `06_02`
-- **Стан:** Не розпочато — `REQUIRED_SECRET_NOT_SET` для 4 крит. змінних Akash SDL. Канон `06_02`.
+- **Стан:** Не розпочато — SDL (`deploy/akash/deploy.yaml`) тримає `REQUIRED_SECRET_NOT_SET` плейсхолдери для **повного дзеркала** Kamal `env.secret` (обидва сервіси web+job). Канон `06_02 §2` (категорії A/B/C — boot-critical / web3 / observability).
 - [ ] 👤 заповнити в `deploy/akash/deploy.yaml` → верифікувати startup
 
 #### S5.6 — GCS bucket для Terraform state (chicken-and-egg)
