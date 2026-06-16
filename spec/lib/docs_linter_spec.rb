@@ -374,6 +374,16 @@ RSpec.describe DocsLinter do
       expect(described_class.deprecated_terms("07_02", "ZP-5 piezo")).not_to be_empty
     end
 
+    it "flags the retired «Gaia 2.0» project codename (BIZ.16) in active canon" do
+      expect(described_class.deprecated_terms("05_01", "архітектура Gaia 2.0 pipeline")).not_to be_empty
+      expect(described_class.deprecated_terms("00_00", "# Gaia 2.0 SSOT")).not_to be_empty
+    end
+
+    it "does NOT flag «Gen 2.0» (separate, live EBFC biochem generation axis)" do
+      expect(described_class.deprecated_terms("07_02", "EBFC Gen 2.0 baseline dgrFAD-GDH")).to be_empty
+      expect(described_class.deprecated_terms("01_03", "Gen 2.0 anode/cathode chemistry")).to be_empty
+    end
+
     it "exempts the legacy-appendix + meta docs (they may name retired things)" do
       expect(described_class.deprecated_terms("02_04", "legacy ZP-3 + silkennet-v1-aes256")).to be_empty
       expect(described_class.deprecated_terms("00_06", "example token ZP-3")).to be_empty

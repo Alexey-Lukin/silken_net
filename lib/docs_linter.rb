@@ -339,7 +339,11 @@ module DocsLinter
     "FPv4-SP-D16" => "WLE5 has NO FPU → ARM builds are -mfloat-abi=soft (03_01 §12.4 ABI-інваріант)",
     "mfloat-abi=hard" => "WLE5 has NO FPU → ARM builds are -mfloat-abi=soft (03_01 §12.4 ABI-інваріант)",
     "Cortex-M4F" => "WLE5 core is Cortex-M4 WITHOUT FPU (03_01 §12.4 / 03_03 §1.1)",
-    "Cortex-M4 з FPU" => "WLE5 core is Cortex-M4 WITHOUT FPU (03_01 §12.4 / 03_03 §1.1)"
+    "Cortex-M4 з FPU" => "WLE5 core is Cortex-M4 WITHOUT FPU (03_01 §12.4 / 03_03 §1.1)",
+    # Retired project codename (BIZ.16, 2026-06-16): dissolved by altitude →
+    # SilkenNet (product) / GaiaNexus (planetary federation). Distinct literal from
+    # the LIVE "Gen 2.0" EBFC biochem axis (substring match → no false positive).
+    "Gaia 2.0" => "retired project codename → SilkenNet (product) / GaiaNexus (planetary federation), 08_01 §2"
   }.freeze
 
   DEPRECATED_EXEMPT = %w[02_04 00_06 00_07].freeze
