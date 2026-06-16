@@ -192,6 +192,12 @@ Gemfile, а `config/initializers/sidekiq_pro.rb` робить `on(:success)` no-
 
 - **Federated Codex** — інші гільдії лісників підключають власні Realm'и через
   підписані маніфести (peaq DID attestation).
+- **Forester-Guild economic-layer ↔ Codex** — `Codex::Citation` (`chainsaw_protocol`/vandalism
+  на `EwsAlert`) як cause-forensic overlay для Field-Audit (вхід C→A класифікації);
+  `Codex::DiscoveryRule` (DAO-editable `condition_type`) гейміфікує bond/reputation-шлях
+  форестера. **ADR-CDX-4: overlay, НЕ control** — slashing-guard лишається операційним,
+  Codex його лише документує. Дизайн → [`04_02 §Forester Guild`](04_02_Business_Logic_and_Services)
+  (BIZ.13/SLASH-1).
 - **Cultural state-root anchor** — топ-N найцитованіших nodes у тижневий Ethereum L1
   anchor ([`05_04`](05_04_Ethereum_L1_State_Anchor)) → on-chain finality для Codex.
 - **`codex--battle` re-enable** — повернути keyboard-шорткати Battle Arena, щойно

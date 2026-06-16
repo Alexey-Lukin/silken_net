@@ -1814,6 +1814,31 @@ end
 
 При `EwsAlert :critical` + `:obscured_by_clouds` (супутник не може verify) — `ForestBountyService.create_bounty!(ews_alert, type: :drone_verification)` стає **Резервним Оракулом**: ranger летить з дроном, фотографує/знімає відео, IPFS upload → `EwsAlert.resolve_via_bounty!(bounty)` закриває тривогу швидше за наступний clear satellite pass (24-48 год).
 
+#### 🏦 Економічний шар + Codex: Operator-Bond · Guild-Sponsor · Positive-A-Guard (Planned — BIZ.13/SLASH-1)
+
+> **Статус: design-RFC, НЕ збудовано · DAO-gated.** Політика — [`05_05 §3.1`](05_05_Slashing_and_Risk_Policy) (bond/sponsor) + [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy) (positive-A-guard). Тут — implementation-карта на наявних патернах + Codex-інтеграція. Економічні параметри = DAO (`ProtocolParameters`), не baseline-канон.
+
+**Економічна модель A→B.** Сьогодні (**Модель A**) `Forester` = `User` у складі investor-`Organization` (вертикальна інтеграція) → org інтерналізує ризик власного оператора. Operator-bond вимагає **Моделі B**: `Forester` як first-class економічний актор (власний bond/reputation, привʼязаний до кластера, який доглядає — operator↔cluster assignment, якого зараз НЕМАЄ). Тож economic-шар будується РАЗОМ з guild-маркетплейсом (E.20), greenfield, не ретрофітом.
+
+**Фаза 1 (зараз, Модель A і B) — Positive-A-Guard.** `BlockchainBurningService` перед `slash()` → `has_direct_A_evidence?` (reuse `HardwareKey.tamper_detected_at` / chainsaw-acoustic / `critical_unmaintained?`); немає → freeze + Field-Audit (як `flag_data_blackout!`), НЕ burn. Один guard на чокпоінті накриває всі 4 тригери burn. Деталі — [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy).
+
+**Фаза 2 (з guild-маркетплейсом) — нові моделі (дзеркало наявних патернів):**
+
+| Модель | Reuse/дзеркало | Поля (ескіз) |
+|--------|----------------|--------------|
+| `OperatorBond` | симетрія `ParametricInsurance` (Кат-B↔A); escrow = `Wallet#lock_funds!`/`finalize_spend!` | `belongs_to forester, cluster`; AASM `active→partially_slashed→depleted/released`; `bonded_amount`, `source` (holdback/earned-PoPhW); `has_one blockchain_transaction` |
+| `GuildSponsorship` | web-of-trust | `belongs_to sponsor, sponsored (Forester)`; `collateral_amount`; AASM `active→graduated/called`; per-sponsor cap |
+| `Forester` (промоція ролі) | `ForesterGuild`-реєстр (§Нові компоненти) | `reputation` (=`reputation_score` §Task Assignment), `bond_balance`, certifications, operator-of-cluster |
+
+**Waterfall** (після positive-A-guard підтвердив A): holdback (`forester_share`-escrow) → operator-bond → sponsor-bond → investor `locked_balance` (excess). **Уніфікація A/B:** `ParametricInsurance#evaluate_daily_health!` (B→payout) і slashing daily-health (A→bond-slash) — паралельні евалуатори; cause-route = розвилка A→bond-waterfall / B→payout / C→freeze (кандидат на спільний `DailyHealthRouter`, DRY).
+
+**Codex-інтеграція (04_05) — narrative/audit overlay, НЕ control.** 🔴 **ADR-CDX-4: Codex НІКОЛИ не в hot path** (гейміфікація не голодує телеметрію) → інтеграція збагачує, не гейтить:
+- **Cause-forensic слід (вхід Field-Audit).** `Codex::Citation` цитує архетип-`Node` (`chainsaw_protocol`/vandalism) на `EwsAlert` (citable-allow-list включає `EwsAlert`, ADR-CDX-9), атрибутований forester-ом (`created_by_user`) + нотатка → людино-атестований lore-forensic запис Кат-A події = **доказова база Field-Audit** (C→A апгрейд, [`05_05 §5`](05_05_Slashing_and_Risk_Policy)). Але guard (control) НЕ залежить від citations (операційні сигнали); citation — downstream overlay.
+- **Гейміфікація forester-економіки.** Новий DAO-editable `Codex::DiscoveryRule.condition_type` (bond-milestone / sponsorship-graduated / clean-record-streak) → `DiscoveryProbeWorker` (fire-and-forget, `default`-черга) розблоковує lore-`Discovery` форестеру при PoPhW/bond-подіях — гейміфікує bond/reputation-шлях (як «нудну середину» спостереження). DAO-tunable без редеплою — консистентно з bond-params.
+- **Breach→lore.** Slashing/breach-подія → citable lore-forensic запис (Operations→Lore). *(Speculative, не форсуємо: reputation↔Codex-Elo уніфікація · fraction↔guild membership · breach-lore у cultural state-root anchor (Codex future [`04_05 §3`](04_05_Codex_Lore_Module)).)*
+
+**DAO-параметри + передумови.** bond-sizing `max(BOND_FLOOR, k×expected_cluster_reward)`, holdback-%, sponsor-cap, reputation-scaling (`ProtocolParameters`/`SystemParameter`). Передумови: operator↔cluster assignment (S6.10) + forester-payout disbursement (зараз computed-only) + DAO-ратифікація. Tracked → [`00_07` BIZ.13/SLASH-1](00_07_Action_Plan_Tracker).
+
 ---
 
 ## 🌍 Planned: Cross-Registry API (Міністерство Закордонних Справ)
