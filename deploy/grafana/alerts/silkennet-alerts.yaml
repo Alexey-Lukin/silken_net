@@ -1,5 +1,5 @@
 # =============================================================================
-# SilkenNet Gaia 2.0 — Grafana Unified Alerting Rules
+# SilkenNet — Grafana Unified Alerting Rules
 # =============================================================================
 #
 # Формат: Grafana Alerting provisioning YAML (Grafana 9+, Unified Alerting).

@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/utils/Nonces.sol";
 
 /**
  * @title Silken Forest Coin (SFC)
- * @notice Токен управління (governance) та біорізноманіття для екосистеми Gaia 2.0.
+ * @notice Токен управління (governance) та біорізноманіття для екосистеми SilkenNet.
  * @dev ERC20Votes додано для підтримки DAO governance (Governor/Timelock).
  *      ERC20Permit — gasless approvals (EIP-2612).
  *      ERC20Permit includes block.chainid in the EIP-712 domain separator,

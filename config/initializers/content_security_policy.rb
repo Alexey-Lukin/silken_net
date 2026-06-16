@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # = ===================================================================
-# 🛡️ CONTENT SECURITY POLICY (Gaia 2.0 Dashboard)
+# 🛡️ CONTENT SECURITY POLICY (SilkenNet Dashboard)
 # = ===================================================================
 # Tightened to the actual browser-side dependencies of the codebase:
 #

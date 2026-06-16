@@ -1,4 +1,4 @@
-# Grafana IaC — SilkenNet Gaia 2.0
+# Grafana IaC — SilkenNet
 
 Infrastructure-as-Code конфіги для Grafana Cloud. Замінюють ручне налаштування в UI (S2.2/S2.3).
 

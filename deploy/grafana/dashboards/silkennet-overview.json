@@ -20,7 +20,7 @@
     { "type": "panel", "id": "table", "name": "Table", "version": "" }
   ],
   "annotations": { "list": [] },
-  "description": "SilkenNet Gaia 2.0 — головний дашборд: телеметрія, Sidekiq, Web3, treasury, DB pool.",
+  "description": "SilkenNet — головний дашборд: телеметрія, Sidekiq, Web3, treasury, DB pool.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,

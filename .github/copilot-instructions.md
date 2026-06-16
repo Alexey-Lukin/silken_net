@@ -1,4 +1,4 @@
-# Copilot Instructions — SilkenNet (Gaia 2.0)
+# Copilot Instructions — SilkenNet
 
 ## SSOT — читати перед будь-якими архітектурними рішеннями
 1. GitHub Wiki: https://github.com/Alexey-Lukin/silken_net/wiki
@@ -11,7 +11,7 @@
 
 ## 1. Знімок проєкту
 
-**SilkenNet / Gaia 2.0** — планетарна Bio-IoT D-MRV (Digital Measurement, Reporting, Verification) платформа для моніторингу лісів.
+**SilkenNet** — планетарна Bio-IoT D-MRV (Digital Measurement, Reporting, Verification) платформа для моніторингу лісів.
 
 ### Апаратний стек (Edge)
 - **Soldier вузол:** STM32WLE5JC + SX1262 LoRa. Ti-6Al-4V гіроїдний анкер (3D DMLS, пористість 65%, діапазон 60-70%) вживляється в дерево. EBFC (Enzymatic Bio-Fuel Cell) генерує ~500 мВ з ксилемного соку. BQ25570 MPPT -> EDLC суперконденсатор 0.47F/5.5V -> 3.3V для MCU.

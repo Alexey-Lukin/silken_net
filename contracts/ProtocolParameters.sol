@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
  * @title ProtocolParameters
- * @notice On-chain registry для параметрів протоколу Gaia 2.0.
+ * @notice On-chain registry для параметрів протоколу SilkenNet.
  * @dev Зберігає ключові константи екосистеми (Lorenz attractor, tokenomics, slashing thresholds)
  *      як uint256 з 18 decimals fixed-point (1e18 = 1.0). Параметри змінюються ТІЛЬКИ через
  *      governance pipeline: SilkenGovernor → SilkenTimelock (48h) → ProtocolParameters.

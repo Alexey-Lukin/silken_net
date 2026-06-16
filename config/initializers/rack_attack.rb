@@ -2,7 +2,7 @@
 
 # = Rack::Attack — Enterprise DDoS / Brute-Force / Bot-Scanner Shield
 #
-# Protects the Gaia 2.0 platform against:
+# Protects the SilkenNet platform against:
 #   • Volumetric DDoS (global per-IP throttle)
 #   • Telemetry endpoint spam (burst-tolerant per-gateway throttle)
 #   • Credential stuffing / vulnerability scanning (Fail2Ban on 401/404)

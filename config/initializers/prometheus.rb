@@ -4,7 +4,7 @@
 # 📊 PROMETHEUS METRICS (Observability for Grafana/Prometheus)
 # = ===================================================================
 # Lightweight metrics exporter using the official prometheus-client gem.
-# Exposes custom business metrics for the Gaia 2.0 platform:
+# Exposes custom business metrics for the SilkenNet platform:
 #
 # - Sidekiq web3 queue size and latency
 # - Web3 RPC error rates (by network/type)

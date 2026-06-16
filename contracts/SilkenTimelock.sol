@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/governance/TimelockController.sol";
 
 /**
  * @title SilkenTimelock
- * @notice TimelockController для Gaia 2.0 governance pipeline.
+ * @notice TimelockController для SilkenNet governance pipeline.
  * @dev Всі governance-рішення (зміна параметрів протоколу, ролей) проходять через
  *      48-годинну затримку. Це дає час DAO учасникам виявити та відреагувати
  *      на потенційно шкідливі зміни перед їх виконанням.

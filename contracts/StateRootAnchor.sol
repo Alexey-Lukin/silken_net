@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
  * @title StateRootAnchor
- * @notice Щотижнева фіналізація стану Gaia 2.0 в Ethereum Mainnet (L1).
+ * @notice Щотижнева фіналізація стану SilkenNet в Ethereum Mainnet (L1).
  * @dev Зберігає 32-байтний SHA-256 state_root — криптографічний commitment
  *      глобального стану SilkenNet (total_scc + chain_hash + timestamp).
  *

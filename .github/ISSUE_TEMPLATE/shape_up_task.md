@@ -1,5 +1,5 @@
 ---
-name: "Gaia 2.0 Task (Shape Up)"
+name: "SilkenNet Task (Shape Up)"
 about: "Стандартизований шаблон для розробки кіберфізичних та програмних компонентів"
 title: "[Code]: [Component Name]"
 labels: ''

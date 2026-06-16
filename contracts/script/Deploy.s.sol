@@ -11,7 +11,7 @@ import "../ProtocolParameters.sol";
 
 /**
  * @title DeploySilkenNet
- * @notice Foundry deployment script for all Gaia 2.0 smart contracts on Polygon.
+ * @notice Foundry deployment script for all SilkenNet smart contracts on Polygon.
  * @dev Deploys contracts in dependency order:
  *      1. SilkenTimelock — 48h governance delay (deployed FIRST so it can be the
  *         tokens' DEFAULT_ADMIN at genesis; deployer is a TEMP timelock admin)

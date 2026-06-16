@@ -7,7 +7,7 @@
 # X-Content-Type-Options=nosniff, Referrer-Policy=strict-origin-when-cross-origin).
 # We tighten them further:
 #
-#   • X-Frame-Options: DENY  — Gaia 2.0 dashboard is never embedded in an
+#   • X-Frame-Options: DENY  — SilkenNet dashboard is never embedded in an
 #                              <iframe>; CSP frame-ancestors 'none' is the
 #                              modern equivalent but X-Frame-Options is
 #                              still respected by older browsers.

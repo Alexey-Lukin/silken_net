@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.so
 
 /**
  * @title SilkenGovernor
- * @notice DAO Governor для Gaia 2.0 — управління параметрами протоколу через SFC голосування.
+ * @notice DAO Governor для SilkenNet — управління параметрами протоколу через SFC голосування.
  * @dev Реалізує OpenZeppelin Governor з повним захистом від Flash Loan атак:
  *
  *      1. **Snapshot Voting** (GovernorVotes): `getPastVotes(account, blockNumber)` замість `balanceOf()`.

@@ -9,7 +9,7 @@ import "../ProtocolParameters.sol";
 
 /**
  * @title SilkenGovernor Test Suite
- * @notice Foundry tests for SilkenGovernor.sol — DAO governance for Gaia 2.0.
+ * @notice Foundry tests for SilkenGovernor.sol — DAO governance for SilkenNet.
  * @dev Covers: constructor params, voting delay/period, proposal threshold, quorum,
  *      full governance pipeline (propose → vote → queue → execute),
  *      Flash Loan defense via snapshot voting, and integration with ProtocolParameters.
