@@ -1008,11 +1008,6 @@
 - [ ] 👤 identify call (HORIZON-CL6-*-BIODIV) → consortium (SilkenNet coord + ЧНУ/ЧДТУ/біо-хаб + 1-2 EU: Linköping/CSIC) → submit при acceptance 24a
 - [ ] 🔗 E.59/FW.4-EXT (5-class TinyML) + UNI.13a (Soundscape Library)
 
-#### BIZ.16 — Naming model: codename «Gaia 2.0» vs trademark «GaiaNexus»
-- **P3** · 👤 · ⚪ · → `08_01 §2`
-- **Стан:** Не розпочато — відкрите founder-рішення: проєкт всюди вживає codename «Gaia 2.0»; founder обрав ™ «GaiaNexus» (заявка — UNI.3/UNI.15). Модель найменування: rename project-wide чи codename(Gaia 2.0)+brand(GaiaNexus)-split. Масове перейменування відкладене до рішення (інакше One-Home cross-ref sweep довелося б робити двічі). Канон `08_01 §2`.
-- [ ] 👤 рішення founder про модель → (якщо rename) One-Home sweep `Gaia 2.0`↔`GaiaNexus` по docs+code
-
 ## 🔀 Cross-cutting · Doc-drift (DOC-T) — SSOT doc↔code + tracker form/tooling
 
 DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** еволюцію самого tracker'а — форму пунктів і drift-guards. **Не блокери виконання, але блокери для аудиту й онбордингу.**
@@ -1068,6 +1063,7 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 | ARCH.10 | Queen-to-Queen Backhaul Mesh: LoRa SF12 inter-Queen relay (Starlink fallback) | `00_01` | Post-TRL 8 |
 | ARCH.12 | Merkle Tree state root (замість flat SHA-256) для partial verification / ISO 14064 | `05_04` | TRL 9 |
 | ARCH.17 | Bonding Curves для dynamic SCC pricing | `05_03` | TRL 9+ |
+| ARCH.44 | **GaiaNexus multi-net vision page** (BIZ.16 level-3, founder-deferred) — опційний повний vision/manifesto планетарної федерації (Cryo/Abyssal/Litho/Myco + ноосферна економіка). Тонка far-horizon рамка вже є ([`00_08 §3`](00_08_Beyond_TRL9_Planetary_Roadmap)); повний 17-net каталог лишається в нотатках founder'а (no-premature-canon). Будувати лише на founder go | `00_08 §3`, `08_01 §2` | Post-TRL 9 (vision; founder-gated) |
 | E.3 | Breadboard video відсутнє (для грантів) | `07_03` | Зняти відео |
 | E.5 | CoAP listener Ruby — масштабується до ~10k вузлів | `06_01` | Series D: Rust/Go proxy |
 | E.9 | DMA SPI optimization — зменшення енергоспоживання (Vector 1 — Ярмілко) | `08_02` | R&D partnership |
@@ -1123,6 +1119,7 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 | S6.12 | TokenomicsEvaluator oracle-guards audit (KYC all-paths) | `04_02`, `05_02` |
 | BIZ.4 | DAO Governance (SilkenGovernor + Timelock) | `05_06`, `07_01` |
 | BIZ.5 | Патентна заявка → **ВІДХИЛЕНО** (founder 2026-06-07): defensive-publication-first замість патенту-монополії — ядро як prior art (вільне + анти-захоплення), без повіреного/PCT; SilkenNet тримає лише ™ / governance / секрети. Виконання → активні UNI.3 + BIZ.10 | `08_01 §2` |
+| BIZ.16 | Naming model **RESOLVED** (founder 2026-06-16): codename «Gaia 2.0» **розчинено** за висотою → **SilkenNet** (лісовий net / продукт) + **GaiaNexus** (планетарна федерація / ноосферний апекс, far-horizon); sphere-таксономія + `PlanetaryNode`-абстракція. ~66-site sweep (docs+code+contracts NatSpec+foundry fuzz-seed) + deprecated-term guard «Gaia 2.0». ™-заявка лишається UNI.3/UNI.15; повна multi-net vision-сторінка відкладена → ARCH.44 | `08_01 §2`, `00_08 §3` |
 | PUMA-RACK-1 | Idempotency write off response path (`rack.response_finished`) | `06_05 §7` |
 | TRL Матриця | Per-module TRL (мігровано з 00_07) | `00_03 §1` |
 | E.8 / DIFF.7 | SNR tiebreaker у Queen CIFO eviction | `03_02`, `04_06` |
