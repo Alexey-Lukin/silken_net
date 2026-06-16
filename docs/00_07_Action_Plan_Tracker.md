@@ -652,10 +652,11 @@
 
 > Мультичейн, oracle/chain-конфіг та slashing-механіка — канон `05_xx`.
 
-#### SLASH-1 — Slashing cause_classification gate (financial-safety) 🔴
-- **P0** · 🤖+👤 · 🟡 · → `05_05 §3/§6` (divergence `04_02 §11`)
-- **Стан:** Supporting-механіка coded + RSpec, але **INERT** (gate `SystemParameter :slash_cause_uplift_enabled` off → жива поведінка baseline-лінійна): convex §3 slash-крива `#calculate_slash_ratio` · blackout→Field-Audit no-burn `#flag_data_blackout!` · comms-loss de-correlation `#combine_penalty_factor` (`max()`-не-сума). 🔴 формальний A/B/C `cause_classification`-gate (namesake) ще НЕ в коді + uplift не активований. Канон [`05_05 §3/§6`](05_05_Slashing_and_Risk_Policy).
-- [ ] 👤 DAO/founder перед mainnet: A/B/C cause_classification + активація uplift + tree-side `streamr_undelivered` сигнал (guarded→0) + repeat-offence вага (BIZ.13 operator-bond, `05_05 §3.1`)
+#### SLASH-1 — Slashing cause-gate (positive-A-evidence) 🔴
+- **P0** · 🤖+👤 · 🟡 · → `05_05 §3.2/§6` (divergence `04_02 §11`)
+- **Стан:** Deep-audit (2026-06-16): **4 ЖИВІ тригери burn** (daily-health stress>20% · dClimate clear_sky · tree-death bulk `after_update_commit` · contract-termination) — усі через чокпоінт `BlockchainBurningService`, але **лише `flag_data_blackout!` перевіряє причину**; решта 3 палять БЕЗ верифікації Кат-A → 3 false-slash діри (природна пожежа / хвороба-посуха як «фрод» / природна смерть). Код **інвертує власний C-дефолт §2** (палить-поки-не-відведено замість freeze-поки-не-A). Supporting-механіка coded+INERT (convex §3 · blackout no-burn · de-correlation uplift за `slash_cause_uplift_enabled`-off). Рекомендація (founder-схвалено): **positive-A-evidence guard** на чокпоінті (burn лише за доведеної A — tamper/chainsaw/`critical_unmaintained?`, сигнали вже в коді; інакше freeze), **потрібен ЗАРАЗ** (фаза 1; bond §3.1 — пізніше з guild). Канон [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy).
+- [ ] 👤 DAO/founder перед mainnet: ратифікувати positive-A-guard (які сигнали = доказ A) + активувати uplift
+- [ ] 🤖 positive-A-guard у `BlockchainBurningService` (reuse tamper/`critical_unmaintained?`/chainsaw як ворота, default→freeze) + tree-side `streamr_undelivered` (guarded→0) + repeat-offence вага
 
 #### S3.2 — dClimate Real API verification
 - **P1** · 👤 · 🟢 · → `05_01`
