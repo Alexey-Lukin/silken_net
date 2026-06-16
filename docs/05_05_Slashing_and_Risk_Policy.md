@@ -88,24 +88,29 @@ PENALTY_FACTOR_MAX = 2.0   # стеля застосовується до МНО
 
 > **De-correlation [SLASH-SAFETY §6].** `no_ack` і `streamr_gap` **корельовані** (спільний root-cause «вузол offline») → комбінуються через **`max()`, не суму** (інакше один gateway-outage карається багаторазово); `no_maintenance` — незалежний фізичний сигнал → **additive**. Комбінатор — `BlockchainBurningService#calculate_penalty_factor`, **INERT** за `SystemParameter :slash_cause_uplift_enabled` (default off) доки DAO/founder не активує перед mainnet — структурно готовий, живу фінансову поведінку не змінює (як inert sap/acoustic у §7).
 
-### 3.1 Principal-Agent resolution [BIZ.13] — рекомендація: hybrid operator-bond
+### 3.1 Principal-Agent resolution [BIZ.13] — рекомендація: hybrid operator-bond + guild-sponsor
 
-Категорія A **за визначенням** operator-attributable (chainsaw, відсутність firebreak після алерту, Forester не приєднався до SLA, tamper). Тож зрізати **інвесторський** `locked_balance` за провину **оператора** — principal-agent помилка: (1) moral hazard — оператор без skin-in-the-game; (2) інвестор тікає від гео-ризику.
+Категорія A **за визначенням** operator-attributable (chainsaw, відсутність firebreak після алерту, Forester не приєднався до SLA, tamper). Зрізати **інвесторський** `locked_balance` за провину **оператора** — не дрібна несправедливість, а **порушення базової філософії §1 / [`00_01 §6`](00_01_Vision_Mission_and_Roadmap) «не карати жертву»**: інвестор не контролює денний догляд (це робить forester), тож слешити його за недбалість оператора = той самий анти-патерн, що й слешити за блискавку (force-majeure). **Код-реальність загострює:** forester отримує `forester_share_amount` (**95%** від `NaasContract.total_funding`), 5% → insurance pool, а **operator-bond не існує** — винагороджена сторона несе **нуль** ризику, карається жертва (max moral hazard).
 
 | Модель | + | − |
 |--------|---|---|
-| **Investor-slash (статус-кво)** | проста; нуль нової механіки | principal-agent порушено; оператор без stake; інвестор демотивований |
-| **Pure operator-bond** | оператор має skin-in-game; інвестор захищений | капітальний барʼєр для Forester (особливо post-war UA); sizing; Sybil |
-| **Hybrid (рекомендовано)** | bond-first вирівнює оператора + інвестор захищений від рутинної недбалості, експонований лише до катастрофічного excess | трохи складніша механіка |
+| **Investor-slash (статус-кво)** | проста; нуль нової механіки | порушує «не карати жертву»; оператор без stake; інвестор тікає від гео-ризику |
+| **Pure operator-bond** | оператор має skin-in-game; інвестор захищений | провалює катастрофу (шкода > bond → діра); капітал-барʼєр; Sybil |
+| **Hybrid + guild-sponsor (рекомендовано)** | bond-first вирівнює оператора; інвестор лише до катастрофічного excess (функція його єдиної агенції — вибору кластера); bootstrap новачків | складніша механіка |
 
-**Рекомендація: hybrid, attribution-driven.** Для категорії A спершу слешиться **operator-bond** (до розміру bond), і лише надлишок (катастрофа > bond) ескалює на інвесторський `locked_balance`. Категорія B — без змін (insurance). Формула §3 застосовується послідовно: **bond first, then locked_balance**.
+**Рекомендований waterfall** (категорія A, б'ється згори донизу до вичерпання; B без змін — insurance; формула §3 рахує лише РОЗМІР, waterfall — ЧИЙ капітал):
+1. **Per-contract holdback** — частка `forester_share` в escrow до виконання контракту (retention-патерн).
+2. **Operator portfolio-bond** — earned з PoPhW-винагород (E.20 Forester Guild), reputation-scaled; не upfront → знімає капітал-барʼєр post-war UA.
+3. **Sponsor-bond** (bootstrap, нижче).
+4. **Investor `locked_balance`** — лише катастрофічний надлишок понад усе вище.
 
-**Операційні застереження:**
-- **Bond sizing** — DAO-параметр у `ProtocolParameters` (напр. `bond = max(BOND_FLOOR, k × expected_cluster_reward)`).
-- **Капітальний барʼєр (post-war UA foresters):** bond фінансується з накопичених PoPhW-винагород (E.20 Forester Guild) — *earned-bond*, не upfront; добра історія → менший bond (reputation-scaled).
-- **Sybil:** KYC-gated (Hadron) + per-operator + geo-staking.
+Разом зі SLASH-1 (positive-A-guard = КОЛИ слешити) це повний механізм: **SLASH-1 — ворота, BIZ.13 — водоспад**, обидва на чокпоінті `BlockchainBurningService`.
 
-**🤖 Реалізація після DAO-confirm:** `OperatorBond` модель + `ProtocolParameters` (bond_size, bond_first) + `BlockchainBurningService` (слеш bond перед `locked_balance` для A) + контракт-escrow. Tracked → [`00_07` BIZ.13/SLASH-1](00_07_Action_Plan_Tracker).
+**Guild-sponsor (bootstrap нових операторів):** новачок = 0 earned-bond → перші кластери інакше падають на інвестора саме там, де ризик max. Established guild-member ручається власним bond як **соціальна застава** до graduation новачка. Це trust-**minimized** (web-of-trust, не центральний гарант), self-policing (спонсор не поручиться за безбашенного — ризикує bond), знімає капітал-барʼєр (mutual-aid, пасує post-war UA + структурі E.20), anti-Sybil поверх KYC. **Failure-modes в дизайн:** sponsor-collusion (bond > можливий фрод; sponsor-bond реально слешиться) · liability-cascade (cap поручительств/bond) · genesis-cohort (перші форестери — пряма DAO-верифікація, «genesis trust») · **детекція незмінна** (DCI/anti-fraud детектить недбалість незалежно — sponsorship міняє лише ХТО платить, не ЧИ виявлено).
+
+**Параметри — DAO-governed (`ProtocolParameters`), НЕ baseline-канон до ратифікації:** bond-sizing `max(BOND_FLOOR, k × expected_cluster_reward)`; holdback-%; sponsorship-cap; reputation-scaling. Sybil: KYC (Hadron) + per-operator + geo-staking.
+
+**🤖 Реалізація після DAO-confirm (разом зі SLASH-1):** `OperatorBond` + `GuildSponsorship` моделі + `ProtocolParameters` + `BlockchainBurningService` waterfall (holdback→bond→sponsor→`locked_balance` для A) + контракт-escrow. Tracked → [`00_07` BIZ.13/SLASH-1](00_07_Action_Plan_Tracker).
 
 ## 4. Insurance Payout (тільки для категорії B)
 

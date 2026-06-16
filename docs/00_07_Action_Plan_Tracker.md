@@ -633,19 +633,19 @@
 
 #### E.20 — Forester Guild: ForestBountyService (PoPhW fallback oracle + ranger economy)
 - **P2** · 🤖+👤 · ⚪ · → `04_02 §Forester Guild`
-- **Стан:** Резервний Оракул через фізичний PoPhW (рейнджер+дрон) + ranger bounty-економіка (GPS/EXIF/IPFS→USDC, anti-Sybil). **Блокер** для S6.10 (task-assignment) + E.41 (satellite-obscured fire fallback, = E.34). Гейт — `ForestBountyService` ще не збудовано (bounty matching ranger↔alert) + реальна ranger-мережа. Канон `04_02 §Forester Guild` (Dclimate-hook `04_02 §11`/§953).
+- **Стан:** Резервний Оракул через фізичний PoPhW (рейнджер+дрон) + ranger bounty-економіка (GPS/EXIF/IPFS→USDC, anti-Sybil). **Блокер** для S6.10 (task-assignment) + E.41 (satellite-obscured fire fallback, = E.34). Гейт — `ForestBountyService` ще не збудовано (bounty matching ranger↔alert) + реальна ranger-мережа. Канон `04_02 §Forester Guild` (Dclimate-hook `04_02 §11`/§953). **Enabler BIZ.13:** PoPhW→earned operator-bond + `ForesterGuild`-реєстр→guild-sponsor ([`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)).
 - [ ] 🤖 `ForestBountyService` — bounty matching ranger↔alert + USDC payout
 - [ ] 👤 онбординг рейнджерів Forester Guild
 
 #### ARCH.31 — SOP-в-Phlex inline UI для EwsAlert
 - **P2** · 🤖+👤 · 🔗 · → `04_02`, `08_02 §3`
-- **Стан:** 7 SOP-runbook'ів (drought/epidemic/vandalism/fire/seismic/fault/entropy) як inline-інструкції при кліку на EwsAlert у дашборді — forester отримує немедіане runbook замість пошуку в документах. 🔗 на E.54 (самі SOP-документи UA+EN, joint ChIPB-NUTSU UNI.12). Канон `04_02` (EwsAlert/EWS), `08_02 §3` (SOP-джерело).
+- **Стан:** 7 SOP-runbook'ів (drought/epidemic/vandalism/fire/seismic/fault/entropy) як inline-інструкції при кліку на EwsAlert у дашборді — forester отримує немедіане runbook замість пошуку в документах. 🔗 на E.54 (самі SOP-документи UA+EN, joint ChIPB-NUTSU UNI.12). Канон `04_02` (EwsAlert/EWS), `08_02 §3` (SOP-джерело). SOP-compliance = зворотний бік Кат-A negligence-evidence (no-firebreak-after-alert = недотримання fire-SOP — SLASH-1/BIZ.13 міряють саме його відсутність).
 - [ ] 🔗 E.54 — 7 SOP-документів (UNI.12)
 - [ ] 🤖 Phlex inline-SOP компонент на EwsAlert dashboard
 
 #### S6.10 — MaintenanceRecord — лише лог
 - **P3** · 🤖 · 🔗 · → `04_02 §Forester Guild`
-- **Стан:** Архітектурний дизайн готовий — task-assignment matching ranger↔bounty (scoring, `FOR UPDATE NOWAIT`, GPS/EXIF/IPFS→USDC, anti-Sybil). Заблоковано на Forester Guild PoPhW (E.20). Канон `04_02 §Forester Guild`.
+- **Стан:** Архітектурний дизайн готовий — task-assignment matching ranger↔bounty (scoring, `FOR UPDATE NOWAIT`, GPS/EXIF/IPFS→USDC, anti-Sybil). Заблоковано на Forester Guild PoPhW (E.20). Канон `04_02 §Forester Guild`. Ranger-scoring живить reputation-scaling operator-bond (BIZ.13 [`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)).
 - [ ] 🔗 зв'язати з Forester Guild PoPhW (E.20)
 
 ## §05 · Web3 / Економіка / Slashing
@@ -668,17 +668,17 @@
 - [ ] 👤 замінити `0x0000…` на реальну SFC-адресу у `subgraph.yaml` (після контракт-деплою)
 
 #### E.63 — метаболічний сигнал: розв'язано від хаосу (Option A) [2026-06-08]
-- **P1** · 🤖+👤 · 🟡 · → `05_02`
+- **P1** · 🤖+👤 · 🟢 · → `05_02`
 - **Стан:** Option A (founder) — здоров'я **розв'язано від хаосу**: Лоренц = лише status-гейт (β=`BASE_BETA` фікс), `growth_points` у гомеостазі = `metabolic_health(delta_t)` напряму (FW.5 β-перт реверсована — β не рухає z-нерухому точку z_eq=ρ−1, тому delta_t→β-сигнал виходив економічно нульовий). Код (`bio_contract.rb` + backend `attractor.rb`, byte-identical DCI) + тести + guard `growth_points_clamp_drift` + backend GP-conformance (`check_metabolic_divergence!`, observational); wire незмінний. Формула + присуд — [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor); фізична шкала delta_t — [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) L4 / [`02_03 §9.8`](02_03_BQ25570_MPPT_Nano_Power) енергобюджет.
 - [ ] 👤 bench: реальна P_ebfc (`HW.13`) + E_cycle + recharge-крива (`03_power_profile.py`, RUNBOOK §3.2-3.3)
 - [ ] 🤖 калібрування `DELTA_T_FAST_S`/`DELTA_T_SLOW_S` (placeholder 600/7200с) під зміряну recharge-криву — per-deployment/species
 - [ ] 🔗 B (на FW.2) — точний stateless GP↔delta_t recompute (wire=raw delta_t, GP=EMA device-RTC; wire-rev2 28B не додав EMA-delta_t → rev3-кандидат у wire-budget ledger [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)) — механіка [`03_01 §13.6`](03_01_Firmware_Lifecycle_and_DMA)
 
 #### BIZ.13 — Slashing principal-agent: investor capital vs operator-bond
-- **P2** · 🤖+👤 · 🟡 · → `05_05 §3.1`, `05_03 §Slashing`, `04_02`
-- **Стан:** Кат-A slash зрізає інвесторський `locked_balance`, хоча недбалість — провина оператора (principal-agent проблема); decision memo → рекомендація **hybrid operator-bond**. Канон `05_05 §3.1`, `05_03 §Slashing`, `04_02`.
-- [ ] 👤 DAO confirm: hybrid vs investor-slash vs pure operator-bond
-- [ ] 🤖 якщо operator-bond — `OperatorBond` + `ProtocolParameters` + контракт + синх `05_05 §3`/`05_03`/`04_02`
+- **P1** · 🤖+👤 · 🟡 · → `05_05 §3.1`, `05_03 §Slashing`, `04_02`
+- **Стан:** Кат-A slash зрізає інвесторський `locked_balance` за провину **оператора** — порушення `00_01 §6` «не карати жертву» (інвестор не контролює денний догляд) + max moral hazard (forester отримує 95% `total_funding`, несе 0 ризику, operator-bond не існує). Рекомендація (deep-audit 2026-06-16, founder-схвалено): **hybrid + guild-sponsor** — waterfall holdback→operator-bond→sponsor-bond→investor-excess; guild-sponsor = соціальна застава новачка (bootstrap, post-war UA mutual-aid, anti-Sybil, self-policing). Зв'язано зі SLASH-1 (ворота=КОЛИ, bond=ЧИЄ) — будувати разом. Канон [`05_05 §3.1`](05_05_Slashing_and_Risk_Policy) (повна політика + failure-modes); service-зв'язок `04_02 §Forester Guild`.
+- [ ] 👤 DAO ratify: hybrid+guild-sponsor vs investor-slash vs pure-bond + параметри (bond-sizing / holdback-% / sponsor-cap / reputation-scaling)
+- [ ] 🤖 після DAO + guild-infra E.20 (разом зі SLASH-1) — `OperatorBond` + `GuildSponsorship` + `ProtocolParameters` + `BlockchainBurningService` waterfall + escrow + синх `05_05 §3`/`05_03`/`04_02`
 
 #### E.60 — Merkle CID-witness: Polygon ↔ Filecoin integrity bridge
 - **P2** · 🤖 · 🟢 · → `05_02 §E.60`

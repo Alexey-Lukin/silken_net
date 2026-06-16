@@ -1648,6 +1648,9 @@ FilecoinArchiveWorker → immutable proof archive
 | `ProofOfPhysicalWork` | Model | Зберігає: фото, GPS, timestamp, IPFS CID, ranger_id |
 | `ForesterGuild` | Model | Реєстр верифікованих лісників з рейтингом |
 | `BountySmartContract.sol` | Solidity | USDC bounty lock/release з time-based expiry |
+| `OperatorBond` + `GuildSponsorship` | Model | **[BIZ.13]** Skin-in-game форестера: earned-bond з PoPhW + соціальна застава новачка established-членом. Slash-waterfall + sponsor-політика (DAO-gated) → [`05_05 §3.1`](05_05_Slashing_and_Risk_Policy) |
+
+> **Зв'язок зі slashing [BIZ.13].** PoPhW-винагороди (`ProofOfPhysicalWork`) живлять **operator-bond**, а `ForesterGuild`-реєстр + рейтинг вмикають **guild-sponsor** (поручительство) + reputation-scaling bond-розміру. Це дає форестеру skin-in-game, якого зараз НЕМАЄ (Кат-A slash б'є інвестора за провину оператора — порушення [`00_01 §6`](00_01_Vision_Mission_and_Roadmap) «не карати жертву»). Повна waterfall/sponsor-політика + failure-modes — [`05_05 §3.1`](05_05_Slashing_and_Risk_Policy) (One-Home; DAO-ratify перед імплементацією).
 
 **Інтеграція з існуючими моделями:**
 - `MaintenanceRecord` отримує нові поля: `bounty_tx_hash`, `proof_cid`, `ranger_id`, `payout_amount_usdc`
