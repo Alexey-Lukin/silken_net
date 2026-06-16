@@ -1025,7 +1025,7 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 
 | ID | Пункт | Канон |
 |----|-------|-------|
-| DOC-T.27 | 🤖 ⚪ **Deep-audit §05/§06/§07/§08** — той самий deep-archival метод, що застосовано до §04: per-item verify-canon ЧИТАННЯМ дому → cement (Стан-вердикт, без done-`[x]`) → re-examine priority/WHO/STAGE → archive resolved + promote misclassified backlog-блокери → fix drift по нитці | `00_06 §4` |
+| DOC-T.27 | 🤖 🟡 **Deep-audit §05/§06/§07/§08** — той самий deep-archival метод, що застосовано до §04: per-item verify-canon ЧИТАННЯМ дому → cement (Стан-вердикт, без done-`[x]`) → re-examine priority/WHO/STAGE → archive resolved + promote misclassified backlog-блокери → fix drift по нитці. **§05 ✅ 2026-06-16:** 7 items code↔canon-verified (всі real, 0 phantom); drift swept по нитці — 00_01 §6.x→05_05 code-sweep · batchMint cap 200→100 · blackout-SLA row · dangling E.7 · SLASH-1 cause-routing honesty-gap. Далі §06/§07/§08 | `00_06 §4` |
 
 _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tooling знахідки → додавати рядком сюди._
 
