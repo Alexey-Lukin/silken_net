@@ -1,6 +1,6 @@
 ---
 name: firmware
-description: "Navigation + gotchas for Soldier/Queen STM32 firmware. Read SSOT docs first."
+description: "Use when working on the silken_net STM32 firmware — Soldier (sense→TinyML→Lorenz→encrypt→TX, STOP2 loop) and Queen (LoRa RX→CIFO dedup→CoAP flush, OTA) in firmware/{soldier,queen}/main.c, the mruby bio_contract.rb, and the header-only One-Home libs in firmware/common/ (silken_sha256, lorenz_seed, lora_ccm, silken_crc, queen_attest). Knows the non-obvious gotchas — ECB-restore after CBC, Load_AES_Key before MX_CRYP_Init, RTC DR0..DR19 budget, post-FW.29 StatusByte bit-layout, Lorenz continuation vs cold-start, HAL_GetTick frozen in STOP2, vcap raw-ADC-not-mV, gated CCM vs live ECB — and the host-test parity discipline (make -C firmware/test). Routes to CLAUDE.md §3 + the 03_01..03_05 canon, does not restate. Examples: \"add a sensor field\", \"change Lorenz params\", \"modify AES / CRYP init\", \"touch RTC-persisted state\", \"why do LoRa decrypts fail after a flush\", \"edit the seed / cold-start crypto\"."
 ---
 
 # Firmware (Soldier + Queen)

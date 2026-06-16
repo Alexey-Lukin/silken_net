@@ -1,6 +1,6 @@
 ---
 name: web3-pipeline
-description: "Navigation + gotchas for 12-chain Web3 pipeline. Read SSOT docs first."
+description: "Use when working on the silken_net Web3 / on-chain surface — the 12-chain Proof-of-Growth pipeline (app/services/ + workers): SCC/SFC Solidity contracts, batchMint + Binary-Search poisoned-record isolation, the BlockchainTransaction AASM (incl. manual_review double-spend guard), minting guard-clauses (IoTeX / Chainlink / Hadron KYC), Dynamic Tax, slashing / penalty-factor de-correlation, Solana micro-rewards (Ed25519, batch payouts), DAO / Governor / Timelock, WEB3_STRICT_MODE. Routes to CLAUDE.md §11 + the 05_01..05_06 canon (solc One-Home = 05_03), does not restate. Examples: \"add a chain integration\", \"change the minting threshold\", \"why is a tx stuck in manual_review\", \"batchMint reverts on dry-run\", \"edit the slashing penalty\", \"Solana reward formula / batch payout\"."
 ---
 
 # Web3 Pipeline

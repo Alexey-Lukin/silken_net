@@ -1,6 +1,6 @@
 ---
 name: in-silico
-description: "Navigation + gotchas for EBFC in-silico pipeline (L1-L4 MD+DFT). Read SSOT docs first."
+description: "Use when working on the silken_net in-silico surface — the EBFC Gen 2.0 Zero-Lab DFT+MD pipeline (tools/in_silico/, silken_md conda env): L1 AlphaFold-3 protein architecture, L2 OpenMM MD, L3 PySCF quantum-chemistry (ΔSCF redox cascade, Hammett mediator series, ZIF-cathode DET, cluster-continuum solvation), L4 kinetics/EIS, plus the Стаття 1 computes. Operational playbook — the script dependency graph, the hard-won DFT/MD gotchas (no density_fit for Os/Ce, level_shift=0.3 for open-shell metals, never two heavy DFT jobs per CPU, 10K MD pre-relaxation, thermodynamic proton reference for PCET), the conda-lock env, and the cache-is-SSOT discipline; routes to the 01_03 §3.4 + protocols/ebfc/in_silico canon, does not restate results. Examples: \"run or add a DFT/MD script\", \"why does the Os(III) SCF oscillate forever\", \"the FADH2->Os cascade comes out uphill\", \"set up the in-silico env\", \"why is density_fit slower for Ce\", \"add a ligand to the pipeline\", \"check the cascade verdict\"."
 ---
 
 # In-Silico Pipeline (EBFC Gen 2.0 Zero-Lab Proof)

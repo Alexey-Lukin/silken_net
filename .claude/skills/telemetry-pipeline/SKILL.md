@@ -1,6 +1,6 @@
 ---
 name: telemetry-pipeline
-description: "Navigation + gotchas for uplink→verification→minting pipeline. Read SSOT docs first."
+description: "Use when working on the silken_net telemetry / Proof-of-Growth pipeline — the uplink→verification→minting flow (CoAP intake → UnpackTelemetryWorker / TelemetryUnpackerService → IoTeX verify → Chainlink oracle → mint), the Sidekiq strict-priority queues, TelemetryLog (RANGE-partitioned, KENOSIS — validations live in valid_sensor_data?, not the model), and the dual-computation integrity (server Float Lorenz ≡ firmware mruby). Knows the gotchas — Queen Sentinel DID 0x0 → GatewayTelemetryWorker, oracle_status_*? enum methods, strict queue drain (uplink fully before alerts), find_with_partition_pruning. Routes to CLAUDE.md §5/§6 + the 05_02 canon, does not restate. Examples: \"add a telemetry field\", \"change minting logic / guards\", \"why is an alert delayed\", \"decode the uplink packet\", \"why does server Z differ from device Z\"."
 ---
 
 # Telemetry Pipeline
