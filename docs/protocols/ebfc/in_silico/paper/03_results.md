@@ -116,8 +116,11 @@ reproduced at the range-separated ωB97X functional — a cross-check confirming
 not a B3LYP artefact). **Differential solvation** of the
 charge-changing octahedral couple adds a further ~0.20 eV for three explicit chloride-shell waters and
 trends toward the full shell; benchmarked on [Os(H₂O)₆]³⁺/²⁺, where adding the second hydration shell
-shifts the potential by **+0.98 eV**, reproducing the known ~1 V group-8 implicit-solvation error. The
-residual is thus a quantified, transferable limitation of continuum solvent on charged transition-metal
+shifts the potential by **+0.98 eV**, reproducing the known ~1 V group-8 implicit-solvation error. Crucially,
+neither contribution is tuned to the experimentally anchored cascade — the speciation shifts follow from the
+ligand-exchange thermodynamics and the differential-solvation term is benchmarked on a *separate*
+[Os(H₂O)₆]³⁺/²⁺ couple — so the discrepancy is decomposed independently rather than absorbed into a fitted
+correction. The residual is thus a quantified, transferable limitation of continuum solvent on charged transition-metal
 redox couples — not a chemistry problem — whose rigorous closure is explicit-water QM/MM of the correct
 species.
 
