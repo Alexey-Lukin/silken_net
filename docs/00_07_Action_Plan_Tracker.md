@@ -771,7 +771,7 @@
 
 #### ARCH.35 — Queen Flash Ring Buffer (W25Q32 overflow tier)
 - **P2** · 👤 · 🟢 · → `06_08 §1.2`, `02_05 §2.1`
-- **Стан:** CIFO 50-slot RAM cache переповнюється ~30 хв @100 Soldiers/Queen → SPI NOR W25Q32JV (4 МБ, ~$0.50) overflow tier: sector-ring (~197k слотів) з in-band заголовками + used/consumed бітмапи (mount-scan recovery, 0 RTC DR), at-least-once power-cut-safe. Драйвер `firmware/common/flash_ring.{h,c}` host-tested; Queen-глю зашито gated `ARCH35_RING_ENABLED 0`; residual = board-freeze + bench. Канон `02_05 §2.1` (дизайн) / `06_08 §1.2` L1.
+- **Стан:** CIFO RAM-cache overflow tier → SPI NOR W25Q32 sector-ring (дизайн — capacity-math, in-band headers vs RTC, mount-scan recovery, power-cut-safe — `02_05 §2.1`; failover-роль L1 `06_08 §1.2`). Драйвер `firmware/common/flash_ring.{h,c}` host-tested; Queen-глю gated `ARCH35_RING_ENABLED 0`.
 - [ ] 👤 W25Q32 розводка (SPI + CS-пін, board-freeze `.ioc`) + bench SPI-глю → фліп `ARCH35_RING_ENABLED 1`
 
 #### ARCH.34 — Queen-side LoRaWAN Helium SOS fallback
