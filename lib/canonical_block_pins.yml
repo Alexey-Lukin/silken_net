@@ -19,3 +19,16 @@ lorenz_core:
   note: 'SSOT = this code. On drift: reconcile the mirrors, regen lorenz_bytecode.h
     (FW.46) + full bin/rspec, then `rake docs:repin`.'
   repinned: '2026-06-16'
+wire_payload_format:
+  source: app/services/telemetry_unpacker_service.rb
+  consts:
+  - PAYLOAD_FORMAT
+  - CCM_SENSOR_PAYLOAD_FORMAT
+  sha256: 369f7298f1ac300ace453a5fcaacca33d4e2d2024506ab01b35c9c2ab2107d70
+  mirrors:
+  - CLAUDE.md §3 — 21-byte packet format block + Ruby unpack string
+  - docs/03_05_Hardware_Symmetric_Crypto_and_Security.md §2.1 — wire-budget ledger
+    / CCM wire-rev2
+  note: 'Wire decode formats — a silent change here breaks the whole uplink decode.
+    On drift: reconcile mirrors + full bin/rspec, then `rake docs:repin`.'
+  repinned: '2026-06-16'
