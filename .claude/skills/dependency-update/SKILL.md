@@ -26,6 +26,7 @@ the per-domain recipes**; it does **not** restate versions or track which bump s
               Does it touch OUR code/usage? (grep the symbol — direct vs transitive.)
 3. DECIDE     bump unless a transitive cap blocks it or the risk outweighs the benefit.
               In-silico/physics: bump if it gives MORE-CORRECT/better results, not just "newer".
+              Release-age quarantine: skip a version <~7d old unless it's a needed security fix (gotchas).
 4. VALIDATE   the domain's gate (table). Deprecation warnings → RESOLVE, don't leave
               (rename identifiers, fix call-sites) — unless they're in vendored code.
 5. CAPTURE    commit (standing founder authorization: commit+push main + wiki:sync when
@@ -57,6 +58,15 @@ not persist between calls (a fresh shell defaults to the rvm default → `RubyVe
   (Ruby 4.0.x, json 2.19.x, sentry 6.6.x…). Web *search* lags; fetch the gem's own
   `CHANGES.md` / `gh api .../releases` for the exact version, and trust `bundle outdated` /
   `gh` / rubygems over memory. If a changelog truly isn't retrievable, say so + classify.
+- **Release-age quarantine (supply-chain).** A version published in the last ~7 days is the prime
+  window for a hijacked-maintainer / malicious-postinstall compromise — these get caught and yanked
+  within days, so a short wait kills most of the class for free. Default: **don't auto-take a version
+  younger than ~7 days; let it age** — a security fix you actually need is the exception (take it now).
+  Nothing in bundler/npm enforces this out of the box (pnpm's `minimumReleaseAge` does, for pnpm
+  projects) → eyeball the publish date for anything outside a trusted core dep: `npm view <pkg> time`
+  (`contracts/`), rubygems.org (gems), PyPI release history (ML/in-silico). A `@vN`-pinned CI action
+  also floats to fresh patches that run in CI with secrets — SHA-pin the high-blast-radius ones
+  (cf. tj-actions/changed-files, 2025).
 - **Transitive caps block "latest" — and that's not our drift.** A bump can be held back by a
   depending gem's constraint; document the blocker, don't force it (forcing breaks the holder):
   seen this session — `eth` caps openssl `~>3.3` + bigdecimal `~>3.1`; `rbsecp256k1` caps
