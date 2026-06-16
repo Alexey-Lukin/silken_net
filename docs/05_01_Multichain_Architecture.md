@@ -21,7 +21,7 @@
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (SCC/SFC контракти) |
 | [`05_04` — Ethereum L1 State Anchor](05_04_Ethereum_L1_State_Anchor) | Ethereum L1 фіналізація (state root) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Chain-сервіси (`Blockchain::Orchestrator`) |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (E.7 dClimate, S3.2, DR) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (S3.2 dClimate real-API, DR §8) |
 
 ## 📑 Зміст
 
