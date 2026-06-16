@@ -762,4 +762,35 @@ RSpec.describe DocsLinter do
       expect(described_class.source_line_ref_drift("02_04", "Точка Магії (рядок 10) між R1 та R2\n")).to be_empty
     end
   end
+
+  describe ".canonical_block_sha / .canonical_block_drift" do
+    let(:src) do
+      "  BASE_RHO   = 28.0\n  BASE_SIGMA = 10.0\n  BASE_BETA  = 8.0 / 3.0  # bit-identical to backend\n"
+    end
+    let(:names) { %w[BASE_RHO BASE_SIGMA BASE_BETA] }
+
+    it "extracts the consts, stable to inner whitespace + trailing comments" do
+      sha, missing = described_class.canonical_block_sha(src, names)
+      expect(missing).to be_empty
+      cosmetic = "BASE_RHO=28.0\nBASE_SIGMA  =  10.0\nBASE_BETA = 8.0 / 3.0  # x\n"
+      expect(described_class.canonical_block_sha(cosmetic, names).first).to eq(sha)
+    end
+
+    it "returns no drift when the live hash matches the pin" do
+      sha, = described_class.canonical_block_sha(src, names)
+      expect(described_class.canonical_block_drift("lorenz", "bio.rb", src, names, sha)).to be_empty
+    end
+
+    it "flags drift when a pinned value changes" do
+      sha, = described_class.canonical_block_sha(src, names)
+      hits = described_class.canonical_block_drift("lorenz", "bio.rb", src.sub("28.0", "28.1"), names, sha)
+      expect(hits.first).to include("canonical block in bio.rb changed")
+    end
+
+    it "reports a renamed/absent const separately from a hash mismatch" do
+      sha, = described_class.canonical_block_sha(src, names)
+      hits = described_class.canonical_block_drift("lorenz", "bio.rb", "BASE_RHO = 28.0\n", names, sha)
+      expect(hits.first).to match(/pinned const\(s\) absent.*BASE_SIGMA, BASE_BETA/)
+    end
+  end
 end

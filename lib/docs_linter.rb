@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "digest"
+
 # [SSOT anti-drift] Pure-function structural lints for docs/*.md (00_06).
 # No Rails, no file I/O — each method takes file *text* and returns an array of
 # human-readable violation strings, so it is unit-tested
@@ -645,5 +647,39 @@ module DocsLinter
         "#{path}: volatile source line-ref `#{ref}` — cite the symbol/#define, not a line → #{line.strip[0, 80]}"
       end
     end
+  end
+
+  # [SSOT anti-drift] Canonical source-block pin (HARD) — generalizes the solc /
+  # judge-prompt "hash the canonical block, force a re-pin on change" pattern to
+  # value-bearing constant blocks that legitimately live in BOTH code (the SSOT) AND
+  # doc mirrors (CLAUDE.md, 03_04). solc One-Home FORBIDS the mirror; here the mirror
+  # is wanted (pedagogical), so instead we PIN the code block's hash: when the SSOT
+  # consts change, check_refs fails until the author reconciles the mirrors and
+  # re-pins (`rake docs:repin`). Stays pure (text + names + expected sha in, strings
+  # out); the file I/O (read source, read canonical_block_pins.yml) lives in docs.rake.
+  #
+  # Extract each `NAME = value` definition line (trailing #comment stripped), normalize
+  # the value's inner whitespace, hash the sorted `name=value` set. Returns [sha, missing].
+  def canonical_block_sha(source_text, const_names)
+    missing = []
+    pairs = const_names.filter_map do |name|
+      m = source_text.match(/^\s*#{Regexp.escape(name)}\s*=\s*(.+?)\s*(?:#.*)?$/)
+      next (missing << name) && nil unless m
+
+      "#{name}=#{m[1].gsub(/\s+/, ' ').strip}"
+    end
+    [ Digest::SHA256.hexdigest(pairs.sort.join("\n")), missing ]
+  end
+
+  # Compare a source block's live hash to its pinned hash; returns drift strings.
+  # A renamed/removed const reports separately (the sha comparison would be vacuous).
+  def canonical_block_drift(key, source_basename, source_text, const_names, expected_sha)
+    sha, missing = canonical_block_sha(source_text, const_names)
+    unless missing.empty?
+      return [ "#{key}: pinned const(s) absent in #{source_basename} → #{missing.join(', ')} (renamed? update canonical_block_pins.yml + `rake docs:repin`)" ]
+    end
+    return [] if sha == expected_sha
+
+    [ "#{key}: canonical block in #{source_basename} changed (#{sha[0, 12]}… ≠ pinned #{(expected_sha.to_s.empty? ? '(unpinned)' : expected_sha[0, 12])}…) — reconcile the mirrors in canonical_block_pins.yml, then `rake docs:repin`" ]
   end
 end

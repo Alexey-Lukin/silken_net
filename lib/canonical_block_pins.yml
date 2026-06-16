@@ -1,0 +1,21 @@
+---
+lorenz_core:
+  source: firmware/bio_contracts/bio_contract.rb
+  consts:
+  - BASE_SIGMA
+  - BASE_RHO
+  - BASE_BETA
+  - DT
+  - ITERATIONS
+  - SIGMA_MIN
+  - SIGMA_MAX
+  - RHO_MIN
+  - RHO_MAX
+  sha256: 65bed100a839390686a1712da5dea89aebe4c80b2622dcdf4ad4cf4a3c0ee627
+  mirrors:
+  - CLAUDE.md §3 (Firmware Lorenz константи block; SIGMA_LIMITS/RHO_LIMITS Range-form
+    mirrors code MIN/MAX consts)
+  - docs/03_04_mruby_Lorenz_Attractor.md (§4.1 const table + iterate listings)
+  note: 'SSOT = this code. On drift: reconcile the mirrors, regen lorenz_bytecode.h
+    (FW.46) + full bin/rspec, then `rake docs:repin`.'
+  repinned: '2026-06-16'

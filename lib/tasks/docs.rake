@@ -34,6 +34,7 @@
 # Pure file I/O, no Rails boot needed. Engines: lib/docs_linter.rb + lib/docs_toc.rb
 # + lib/docs_graph.rb (anchor resolution) + lib/tracker/dashboard.rb (canon §-resolution)
 # — all unit-tested.
+require "yaml"
 require_relative "../docs_linter"
 require_relative "../docs_toc"
 require_relative "../docs_graph"
@@ -124,6 +125,27 @@ namespace :docs do
       sec_after_link.concat(DocsLinter.section_ref_after_doclink(base, text).map { |h| "#{base}: #{h}" })
       superseded_fm.concat(DocsLinter.superseded_term_in_frontmatter(base, text).map { |h| "#{base}: #{h}" })
       src_line_refs.concat(DocsLinter.source_line_ref_drift(base, text))
+    end
+
+    # [canonical source-block pin] HARD — value-bearing const blocks that live in BOTH
+    # code (the SSOT) and doc mirrors (CLAUDE.md/03_04) are pinned by SHA-256; a change in
+    # the code block fails CI until the mirrors are reconciled + re-pinned (`rake docs:repin`).
+    # Generalizes solc/judge-prompt drift-guard to blocks where the mirror is WANTED, not
+    # forbidden. Config = lib/canonical_block_pins.yml (source-relative-to-repo-root + consts + sha).
+    block_drift = []
+    repo_root = File.expand_path("../..", __dir__)
+    pins_path = File.join(repo_root, "lib", "canonical_block_pins.yml")
+    if File.exist?(pins_path)
+      (YAML.safe_load_file(pins_path) || {}).each do |key, cfg|
+        src = File.join(repo_root, cfg["source"].to_s)
+        unless File.exist?(src)
+          block_drift << "#{key}: source #{cfg['source']} not found"
+          next
+        end
+        block_drift.concat(
+          DocsLinter.canonical_block_drift(key, File.basename(src), File.read(src), Array(cfg["consts"]), cfg["sha256"].to_s)
+        )
+      end
     end
 
     # [canon §-ref resolution] HARD — every NUMBERED `NN_NN §X` ref in a canon doc must
@@ -279,6 +301,12 @@ namespace :docs do
       puts "  SOLC VERSION DRIFT (#{solc_drift.size}) — pragma/solc version belongs only in 05_03 (code = foundry.toml):"
       solc_drift.sort.each { |d| puts "    ✗ #{d}" }
     end
+    if block_drift.empty?
+      puts "  canonical pins: every pinned source-block matches canonical_block_pins.yml ✓"
+    else
+      puts "  CANONICAL BLOCK DRIFT (#{block_drift.size}) — a pinned code block changed; reconcile mirrors + `rake docs:repin`:"
+      block_drift.sort.each { |d| puts "    ✗ #{d}" }
+    end
     if ai_vendor.empty?
       puts "  AI-roster One-Home: no AI-vendor name restated outside 00_02 §2 (roles) ✓"
     else
@@ -398,6 +426,7 @@ namespace :docs do
     failed << "superseded term in front-matter (🎯/Статус names a reversed decision)" unless superseded_fm.empty?
     failed << "tokenomics/carbon rate restated outside One-Home (05_03/07_01)" unless rate_drift.empty?
     failed << "solc/pragma version restated outside One-Home (05_03; code = foundry.toml)" unless solc_drift.empty?
+    failed << "canonical source-block drift (pinned code block changed → reconcile mirrors + `rake docs:repin`)" unless block_drift.empty?
     failed << "AI-vendor name restated outside One-Home (00_02 §2 roster; use roles)" unless ai_vendor.empty?
     failed << "bare code-span `NN_NN §X` refs (should be `[`…`](Doc)` links)" unless bare_refs.empty?
     failed << "bare code-span `NN_NN` doc-ids (should be `[`…`](Doc)` links)" unless bare_doc.empty?
@@ -409,6 +438,32 @@ namespace :docs do
     failed << "stale external docs/NN_NN refs (.github / root *.md / source)" unless ext_drift.empty?
     failed << "volatile source line-refs `*.c`/`*.h`/`*.rb` (DOC-T.15 — cite symbol/#define)" unless src_line_refs.empty?
     abort("docs:check_refs FAILED — #{failed.join(', ')}") unless failed.empty?
+  end
+
+  desc "Re-pin canonical source-block SHAs in lib/canonical_block_pins.yml (run AFTER reconciling the mirrors)"
+  task :repin do
+    repo_root = File.expand_path("../..", __dir__)
+    pins_path = File.join(repo_root, "lib", "canonical_block_pins.yml")
+    pins = YAML.safe_load_file(pins_path) || {}
+    changed = 0
+    pins.each do |key, cfg|
+      src = File.join(repo_root, cfg["source"].to_s)
+      abort("docs:repin — source #{cfg['source']} not found") unless File.exist?(src)
+      sha, missing = DocsLinter.canonical_block_sha(File.read(src), Array(cfg["consts"]))
+      abort("docs:repin — #{key} pinned const(s) absent: #{missing.join(', ')}") unless missing.empty?
+      next if cfg["sha256"].to_s == sha
+
+      puts "  re-pinned #{key}: #{cfg['sha256'].to_s.empty? ? '(unpinned)' : cfg['sha256'][0, 12]}… → #{sha[0, 12]}…"
+      cfg["sha256"] = sha
+      cfg["repinned"] = Time.now.strftime("%Y-%m-%d")
+      changed += 1
+    end
+    if changed.zero?
+      puts "  canonical pins already current ✓"
+    else
+      File.write(pins_path, YAML.dump(pins))
+      puts "  wrote #{changed} pin(s) → lib/canonical_block_pins.yml (verify diff before commit)"
+    end
   end
 
   desc "Regenerate the 📑 Зміст ToC between TOC:AUTO markers in docs that have them"
