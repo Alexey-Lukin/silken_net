@@ -676,10 +676,10 @@
 - [ ] 🔗 B (на FW.2) — точний stateless GP↔delta_t recompute (wire=raw delta_t, GP=EMA device-RTC; wire-rev2 28B не додав EMA-delta_t → rev3-кандидат у wire-budget ledger [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)) — механіка [`03_01 §13.6`](03_01_Firmware_Lifecycle_and_DMA)
 
 #### BIZ.13 — Slashing principal-agent: investor capital vs operator-bond
-- **P1** · 🤖+👤 · 🟡 · → `05_05 §3.1`, `05_03 §Slashing`, `04_02`
-- **Стан:** Кат-A slash зрізає інвесторський `locked_balance` за провину **оператора** — порушення `00_01 §6` «не карати жертву» (інвестор не контролює денний догляд) + max moral hazard (forester отримує 95% `total_funding`, несе 0 ризику, operator-bond не існує). Рекомендація (deep-audit 2026-06-16, founder-схвалено): **hybrid + guild-sponsor** — waterfall holdback→operator-bond→sponsor-bond→investor-excess; guild-sponsor = соціальна застава новачка (bootstrap, post-war UA mutual-aid, anti-Sybil, self-policing). Зв'язано зі SLASH-1 (ворота=КОЛИ, bond=ЧИЄ) — будувати разом. Канон [`05_05 §3.1`](05_05_Slashing_and_Risk_Policy) (повна політика + failure-modes); service-зв'язок `04_02 §Forester Guild`.
-- [ ] 👤 DAO ratify: hybrid+guild-sponsor vs investor-slash vs pure-bond + параметри (bond-sizing / holdback-% / sponsor-cap / reputation-scaling)
-- [ ] 🤖 після DAO + guild-infra E.20 (разом зі SLASH-1) — `OperatorBond` + `GuildSponsorship` + `ProtocolParameters` + `BlockchainBurningService` waterfall + escrow + синх `05_05 §3`/`05_03`/`04_02`
+- **P2** · 🤖+👤 · 🔗 · → `05_05 §3.1`, `05_03 §Slashing`, `04_02`
+- **Стан:** Principal-agent (slash інвестора за провину оператора, `00_01 §6` «не карати жертву») **ЛАТЕНТНИЙ у поточній Моделі A** (ERD: `Cluster`+`NaasContract` belongs_to ОДНІЄЇ org, forester ∈ org → org інтерналізує ризик власного оператора; `forester_share` 95% обчислюється-**не**-диспенситься, doc-ahead-of-code). Зʼявляється з **guild-маркетплейсом** (Модель B: незалежні foresters ≠ інвестори — E.20). Рекомендація (deep-audit 2026-06-16, founder-схвалено): **hybrid + guild-sponsor** waterfall (holdback→operator-bond→sponsor-bond→investor-excess); guild-sponsor = соціальна застава новачка. **Фаза 2** — будувати РАЗОМ з forester-payout (greenfield) + з guild (E.20); фаза 1 = positive-A-guard (SLASH-1 §3.2, зараз). Канон [`05_05 §3.1`](05_05_Slashing_and_Risk_Policy); service-зв'язок `04_02 §Forester Guild`.
+- [ ] 👤 DAO ratify (на Модель-B перехід): hybrid+guild-sponsor + параметри (bond-sizing / holdback-% / sponsor-cap / reputation-scaling)
+- [ ] 🤖 після DAO + guild-маркетплейс E.20 — `OperatorBond` + `GuildSponsorship` + `ProtocolParameters` + `BlockchainBurningService` waterfall + escrow (reuse `Wallet#lock_funds!`) + синх `05_05 §3`/`05_03`/`04_02`
 
 #### E.60 — Merkle CID-witness: Polygon ↔ Filecoin integrity bridge
 - **P2** · 🤖 · 🟢 · → `05_02 §E.60`
