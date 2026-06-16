@@ -24,11 +24,20 @@
 #                     at page-top and the §-label guard never sees it. Graduated
 #                     from the on-demand docs:graph audit (00_06 §3) once all anchors
 #                     were clean. The graph keeps the orphan/dead-end/degree lens.
+#   HARD  (gates CI): every numbered `NN_NN §X` ref in a canon doc resolves to a real
+#                     heading-anchor in the target (boundary-aware, bare+linked, comma-
+#                     joined — Tracker::Dashboard.file_section_dangling_refs, the same
+#                     resolver tracker:check runs on 00_07). Closed the canon blind spot
+#                     where cross-doc §-refs had only the substring `section_label_drift`
+#                     advisory (let 08_02 §1.x / 05_03 §749 / 02_03 §4.А rot). Exempt
+#                     00_06 (cites stale refs as drift examples) + 00_07 (tracker:check).
 # Pure file I/O, no Rails boot needed. Engines: lib/docs_linter.rb + lib/docs_toc.rb
-# + lib/docs_graph.rb (anchor resolution) — all unit-tested.
+# + lib/docs_graph.rb (anchor resolution) + lib/tracker/dashboard.rb (canon §-resolution)
+# — all unit-tested.
 require_relative "../docs_linter"
 require_relative "../docs_toc"
 require_relative "../docs_graph"
+require_relative "../tracker/dashboard"
 
 namespace :docs do
   DOCS_DIR = File.expand_path("../../docs", __dir__)
@@ -115,6 +124,21 @@ namespace :docs do
       sec_after_link.concat(DocsLinter.section_ref_after_doclink(base, text).map { |h| "#{base}: #{h}" })
       superseded_fm.concat(DocsLinter.superseded_term_in_frontmatter(base, text).map { |h| "#{base}: #{h}" })
       src_line_refs.concat(DocsLinter.source_line_ref_drift(base, text))
+    end
+
+    # [canon §-ref resolution] HARD — every NUMBERED `NN_NN §X` ref in a canon doc must
+    # resolve to a real heading-anchor in the target (boundary-aware, bare+linked, comma/
+    # list-joined — Tracker::Dashboard.file_section_dangling_refs). That resolver was
+    # 00_07-only (tracker:check) + protocols-only; the canon docs cross-reference each
+    # other's §-sections by the dozen and got only the weaker substring `section_label_drift`
+    # ADVISORY — the blind spot that let 08_02 §1.x, 05_03 §749 (a LINE number!), 02_03 §4.А
+    # rot. Exempt: 00_06 (the standard doc cites stale refs as drift EXAMPLES) + 00_07
+    # (tracker:check owns its §-resolution, One-Home). Named (`§SLA`) refs stay with
+    # section_label_drift — this resolver is digit-led only. (00_06 §3 recipe.)
+    canon_section_exempt = /\A00_0[67]_/
+    canon_secrefs = files.reject { |f| File.basename(f).match?(canon_section_exempt) }
+                         .flat_map do |f|
+      Tracker::Dashboard.file_section_dangling_refs(File.read(f)).map { |h| "#{File.basename(f, '.md')}: #{h}" }
     end
 
     # [external doc-path drift] HARD — non-docs repo files (.github/**, root *.md, source
@@ -236,6 +260,12 @@ namespace :docs do
     else
       puts "  ✗ §-after-link — fold §X into the label `[`NN_NN §X`](Doc)` (#{sec_after_link.size}) — HARD (DOC-T.16):"
       sec_after_link.sort.first(50).each { |s| puts "    · #{s}" }
+    end
+    if canon_secrefs.empty?
+      puts "  canon §-refs:   every numbered `NN_NN §X` ref resolves to a real heading ✓"
+    else
+      puts "  ✗ canon §-refs — §X absent in target (collapsed/renamed/wrong section) (#{canon_secrefs.size}) — HARD:"
+      canon_secrefs.sort.uniq.first(50).each { |s| puts "    · #{s}" }
     end
     if rate_drift.empty?
       puts "  rate One-Home: no tokenomics/carbon rate value restated outside 05_03/07_01 ✓"
@@ -374,6 +404,7 @@ namespace :docs do
     failed << "link label↔href mismatches" unless label_drift.empty?
     failed << "doc-id link labels not in code-span form (00_06 §1)" unless xref_form.empty?
     failed << "§-after-link refs (DOC-T.16 — fold §X into the link label)" unless sec_after_link.empty?
+    failed << "canon §-refs (numbered `NN_NN §X` not resolving to a heading)" unless canon_secrefs.empty?
     failed << "dangling #anchors (fragment ≠ heading slug)" unless dangling_anchors.empty?
     failed << "stale external docs/NN_NN refs (.github / root *.md / source)" unless ext_drift.empty?
     failed << "volatile source line-refs `*.c`/`*.h`/`*.rb` (DOC-T.15 — cite symbol/#define)" unless src_line_refs.empty?
