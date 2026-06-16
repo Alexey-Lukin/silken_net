@@ -697,8 +697,8 @@
 
 #### S1.1 — GitHub Secrets заповнення
 - **P0** · 👤 · 🟢 · → `06_04`
-- **Стан:** Checklist + інвентаризація 4 місць секретів ✅. Лишається заповнити GitHub repo secrets. Канон `06_04`.
-- [ ] 👤 заповнити GitHub repository secrets (12 крит.: `GCP_SA_KEY`, `DATABASE_PASSWORD`, `SSH_PRIVATE_KEY`…) → верифікувати CI
+- **Стан:** Checklist + інвентаризація 4 місць секретів готові. Лишається заповнити GitHub repo secrets. Канон `06_04`.
+- [ ] 👤 заповнити GitHub repository secrets (P0-blocking перелік — `06_04 §1.1`) → верифікувати CI
 
 #### S2.1 — Верифікація метрик після deploy
 - **P0** · 👤 · 🟢 · → `06_03`
@@ -713,7 +713,7 @@
 #### S2.3 — Grafana Cloud alerting rules
 - **P0** · 👤 · 🟢 · → `06_03`
 - **Стан:** alert rules IaC готові (`deploy/grafana/alerts/silkennet-alerts.yaml`, P0/P1/P2; зведення `deploy/grafana/README.md`) + counter `silkennet_telemetry_acoustic_overflow_total`.
-- [ ] 👤 замінити `${DATASOURCE_UID}` + notification channel (Slack/Email/PagerDuty)
+- [ ] 👤 замінити `${DATASOURCE_UID}` + notification channel (Email/PagerDuty)
 
 #### INF.6 — CoAP UDP smoke test через Ingress Anchor (post-deploy gate)
 - **P1** · 👤 · 🟢 · → `06_01`, `06_02`, `06_08 §1.2`
@@ -727,7 +727,7 @@
 - [ ] 👤 прийняти рішення (рекоменд. A)
 - [ ] 🤖 якщо Akash hostname — automation у `terraform/`
 
-#### S6.18 — Rails web security hardening (§8 audit)
+#### S6.18 — Rails web security hardening
 - **P1** · 👤 · 🟢 · → `06_04 §2.1`
 - **Стан:** production.rb (force_ssl/HSTS/hosts) + CSP (report-only) + security_headers.rb + session_store.
 - [ ] 👤 `RAILS_ALLOWED_HOSTS` у Kamal/Akash перед prod
@@ -755,29 +755,29 @@
 - [ ] 👤 `up`-scrape alert + SLO/error-budget (§2.9 #6 — ingest availability, mint/slash success) — Grafana Cloud
 
 #### INF.3 — TLS termination
-- **P2** · 👤 · ⚪ · → `06_02 §TLS термінація`
-- **Стан:** Не розпочато — SDL відкриває 80/443/CoAP-UDP 5683, але TLS termination не налаштовано (browsers block WS HTTPS→HTTP). Канон `06_02 §TLS термінація`.
+- **P2** · 👤 · 🔗 · → `06_02 §TLS термінація`
+- **Стан:** Заблоковано на INF.4 (рішення стратегії TLS — Cloudflare vs Akash hostname). SDL відкриває 80/443/CoAP-UDP 5683, але TLS termination не налаштовано (browsers block WS HTTPS→HTTP); конфігурація залежить від обраного шляху. Канон `06_02 §TLS термінація`.
 - [ ] 👤 налаштувати TLS (Akash ingress або Cloudflare)
 
 #### S5.2 — RELEASE_VERSION ENV для Sentry
 - **P2** · 👤 · 🟢 · → `06_03`
-- **Стан:** `RELEASE_VERSION` у deploy configs ✅. Лишається verify Sentry release tracking. Канон `06_03`.
+- **Стан:** `RELEASE_VERSION` заведено у deploy configs. Лишається verify Sentry release tracking. Канон `06_03`.
 - [ ] 👤 верифікувати Sentry release tracking
 
 #### PUMA-IPV6-1 — Верифікація IPv6 bind після першого Kamal-деплою
-- **P2** · 👤 · ⚪ · → `06_05`
-- **Стан:** Не розпочато — Puma 8 bind `[::]:3000` dual-stack, Thruster → `127.0.0.1:3000`; верифікувати IPv6 bind після першого Kamal-деплою. Канон `06_05`.
+- **P2** · 👤 · 🟢 · → `06_05`
+- **Стан:** Конфіг готовий — Puma 8 bind `[::]:3000` dual-stack (default), Thruster → `127.0.0.1:3000`; лишається верифікувати IPv6 bind після першого Kamal-деплою. Канон `06_05`.
 - [ ] 👤 після canopy deploy: `ss -tlnp\|grep 3000` (`tcp6 [::]:3000`) + `curl` v4/v6 `/up` → задокументувати у `06_05`
 
 #### ARCH.35 — Queen Flash Ring Buffer (W25Q32 overflow tier)
 - **P2** · 👤 · 🟢 · → `06_08 §1.2`, `02_05 §2.1`
-- **Стан:** CIFO 50-slot RAM cache переповнюється ~30 хв @100 Soldiers/Queen → SPI NOR W25Q32JV (4 МБ, ~$0.50) overflow tier: sector-ring (~197k слотів) з in-band заголовками + used/consumed бітмапи (mount-scan recovery, 0 RTC DR), at-least-once power-cut-safe. Драйвер `firmware/common/flash_ring.{h,c}` host-tested ✅; Queen-глю зашито gated `ARCH35_RING_ENABLED 0`; residual = board-freeze + bench. Канон `02_05 §2.1` (дизайн) / `06_08 §1.2` L1.
-- [ ] 🔗 W25Q32 розводка (SPI + CS-пін, board-freeze `.ioc`) + bench SPI-глю → фліп `ARCH35_RING_ENABLED 1`
+- **Стан:** CIFO 50-slot RAM cache переповнюється ~30 хв @100 Soldiers/Queen → SPI NOR W25Q32JV (4 МБ, ~$0.50) overflow tier: sector-ring (~197k слотів) з in-band заголовками + used/consumed бітмапи (mount-scan recovery, 0 RTC DR), at-least-once power-cut-safe. Драйвер `firmware/common/flash_ring.{h,c}` host-tested; Queen-глю зашито gated `ARCH35_RING_ENABLED 0`; residual = board-freeze + bench. Канон `02_05 §2.1` (дизайн) / `06_08 §1.2` L1.
+- [ ] 👤 W25Q32 розводка (SPI + CS-пін, board-freeze `.ioc`) + bench SPI-глю → фліп `ARCH35_RING_ENABLED 1`
 
 #### ARCH.34 — Queen-side LoRaWAN Helium SOS fallback
 - **P2** · 🤖 · ⚪ · → `06_08 §1.2`, `02_05 §6.1`
 - **Стан:** Не розпочато — Helium SOS fallback перенесено Soldier→Queen (STM32WLE5JC flash/RAM/topology несумісний): Queen LoRaMac-node + OTAA join + FCntUp persist; SOS-маяк ~12 байт (НЕ телеметрія — SF12 EU868 ~51B cap) → Helium hotspot → LNS → Rails `POST /telemetry/helium`; Soldier лишається raw LoRa P2P AES-128. Implementation Anchor L3. Канон `02_05 §6.1` / `06_08 §1.2`.
-- [ ] 🔗 Queen `queen_helium_lorawan_uplink()`
+- [ ] 🤖 Queen `queen_helium_lorawan_uplink()`
 
 #### S4.3 — Akash SDL secrets
 - **P3** · 👤 · ⚪ · → `06_02`

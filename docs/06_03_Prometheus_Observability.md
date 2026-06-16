@@ -580,7 +580,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 
 1. **Grafana Cloud дашборди** — створити в Grafana Cloud UI: Sidekiq queues, Web3 RPC errors, Telemetry ingest, Treasury.
 2. **Grafana Cloud алерти** — створити правила алертів: `web3_critical` > 100, fraud rate > 0, RPC errors > 10/min.
-3. **Notification channels** — налаштувати Slack / Email / PagerDuty у Grafana Cloud.
+3. **Notification channels** — налаштувати Email / PagerDuty у Grafana Cloud.
 
 ### Наступні кроки
 

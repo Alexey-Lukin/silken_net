@@ -63,7 +63,7 @@
 Сама Queen відправляє себе як `DID == 0x00000000` (Queen Sentinel, [`03_02 §7`](03_02_Queen_Gateway_Firmware)) з полями: `vcap_mv`, `uptime_s`, `cifo_fill`, `coap_retries_24h`, `last_starlink_rssi`. Backend записує у `GatewayTelemetryLog` і обчислює:
 
 - `online?` = `last_seen_at >= (sleep_interval * 1.2).seconds.ago` (поточна модель `Gateway`, [`04_01`](04_01_Data_Models_and_Entities))
-- Якщо `online?` стає `false` довше 10 хв → `Gateway.state` AASM `mark_faulty!` + dispatch `EwsAlert(type: queen_offline)` → Forester Guild notify (Slack/SMS).
+- Якщо `online?` стає `false` довше 10 хв → `Gateway.state` AASM `mark_faulty!` + dispatch `EwsAlert(type: queen_offline)` → Forester Guild notify (SMS/email).
 
 ### 1.4 Dynamic Mesh Rerouting (Soldier-side)
 
