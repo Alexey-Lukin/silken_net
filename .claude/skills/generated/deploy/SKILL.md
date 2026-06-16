@@ -31,7 +31,7 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 Будь-хто, хто чіпає деплой, МУСИТЬ це знати:
 
 - **Akash + GCP — failover, не «або-або».** Rails-ворклоад на Akash; GCP тримає
-  Cloud SQL / Memorystore Redis + є failover-ціллю. → `06_01` / `06_02`.
+  Cloud SQL + є failover-ціллю (Redis — зовнішній **Upstash** Serverless TLS, не GCP). → `06_01` / `06_02`.
 - **Cloud SQL Auth Proxy тунелює Postgres через outbound HTTPS** (Google Cloud API) —
   без публічного IP чи VPN. Запечений у Docker-образ; активується **лише** коли
   `CLOUD_SQL_INSTANCE_CONNECTION_NAME` заданий у ENV. → `06_02`.
