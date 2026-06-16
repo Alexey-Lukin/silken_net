@@ -47,11 +47,12 @@
 ### 1. Потоки (threads) та IO-bound пул
 
 ```ruby
-threads 3, 3                                                    # секція 1
+threads_count = ENV.fetch("RAILS_MAX_THREADS", 3)              # секція 1
+threads threads_count, threads_count
 max_io_threads ENV.fetch("PUMA_MAX_IO_THREADS", 16).to_i       # секція 1b
 ```
 
-**Чому `threads 3, 3`:** кожен потік відкриває власний DB-connection. `Akash: 4 workers × 3 threads = 12 threads → 12 connections`. Значення `400` у `database.tf max_connections` має великий запас.
+**Чому `threads = RAILS_MAX_THREADS` (default 3):** кожен потік відкриває власний DB-connection (+2 Cable headroom на процес → `pool 5`, `config/database.yml`). Бюджет з'єднань і запас `max_connections=400` — [`06_01 §Розрахунок max_connections`](06_01_Deployment_Kamal_Terraform).
 
 **Чому `max_io_threads 16`:** запити до Oracle (`oracle_callbacks` — Chainlink HMAC + Polygon `eth_call` через Alchemy) та provisioning (`provisioning/register` — peaq DID + Hadron KYC) синхронно дзвонять по HTTP (~200-2000ms кожен). При лише 3 CPU-threads три таких запити блокують увесь worker. IO-bound пул дозволяє до 3+16 паралельних threads на worker без OOM (IO-threads майже не споживають CPU).
 

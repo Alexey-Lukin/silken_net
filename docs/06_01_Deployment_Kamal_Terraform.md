@@ -500,18 +500,15 @@ Service Account: silken-net-deploy@<project>.iam.gserviceaccount.com
 
 ### Розрахунок `max_connections` (database.tf)
 
-Поточне значення `400`. Розрахунок мінімальних потреб:
+Поточне значення `400`. Формула пулу — SSOT у `config/database.yml` (коментований блок): `pool = RAILS_MAX_THREADS + 2 (Cable headroom) = 5` на процес, на кожну з 4 баз (primary/cache/queue/cable).
 
-| Компонент | Підключення |
+| Компонент | З'єднання (піковий checkout) |
 |-----------|------------|
-| Akash web: Puma workers (2) × Threads (5) | 10 |
-| Akash job: Sidekiq threads (25) | 25 |
-| Akash replicas (canopy) × Threads | 12 |
-| Rails DB console / admin | 5 |
-| Cloud SQL Auth Proxy overhead | 3 |
-| **Мінімум** | **~55** |
+| Akash web | `WEB_CONCURRENCY` (4) × pool (5) × 4 бази = **~80** |
+| Akash job (Sidekiq) | `:concurrency` (15) → `DB_POOL ≥ 15` = **~15–60** |
+| Cloud SQL Auth Proxy + admin/console | **~8** |
 
-`400` — з великим запасом для масштабування. Адекватно.
+Навіть за пікового checkout усіх пулів — суттєво нижче `400`; запас закладено під read-репліки та canopy-репліки на спільному Cloud SQL інстансі. Адекватно.
 
 ---
 
