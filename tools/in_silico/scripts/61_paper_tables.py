@@ -20,7 +20,7 @@ from lib.constants import DFT_CACHE, PAPER_DIR, REPO_ROOT
 # Canon values that live in SUMMARY prose (not a single cache field) — kept here as
 # explicit constants WITH a source note, and cross-checked against cache where one exists.
 B3LYP_CORRECTED_WITHDRAWN = -0.07     # SUMMARY: tuned to the wrong −0.14 → withdrawn, do NOT cite
-EXP_VERIFIED_EV = -0.47              # E°(Os)+200 − E°(FAD-GDH)−265 mV SHE (Schachinger, Ma, Ludwig 2022)
+EXP_VERIFIED_EV = -0.574             # E°(Os)+309 − E°(FAD-GDH)−265 mV SHE (Zafar 2012 + Schachinger 2022)
 
 
 def _load(name: str) -> dict:
@@ -76,16 +76,16 @@ def main() -> int:
     # ── Table 2 — cascade energetics, all methods ──
     koop = abs(wb["cascade"]["delta_eV"])
     md.append("## Table 2. Anode→mediator cascade ΔG per electron, all methods\n")
-    md.append("| Method | ΔG/e⁻ (eV) | Direction | vs verified −0.47 eV |")
+    md.append("| Method | ΔG/e⁻ (eV) | Direction | vs verified −0.574 eV |")
     md.append("|---|---|---|---|")
     md.append(f"| Koopmans ωB97X (orbital offset) | +{koop:.3f} | uphill | range-separation artefact — *never use* |")
     md.append(f"| ΔSCF ωB97X (vertical) | +{dscf['dG_vertical_eV']:.3f} | uphill | +{dscf['dG_vertical_eV'] - EXP_VERIFIED_EV:.2f} |")
     md.append(f"| **ΔSCF ωB97X (adiabatic)** | **+{dscf['dG_adiabatic_eV']:.3f}** | uphill | +{dscf['dG_adiabatic_eV'] - EXP_VERIFIED_EV:.2f} |")
     md.append(f"| B3LYP Koopmans «corrected» | {B3LYP_CORRECTED_WITHDRAWN:+.2f} | — | **withdrawn** (tuned to the wrong −0.14) |")
     md.append(f"| **Experiment (verified E°s)** | **{EXP_VERIFIED_EV:+.2f}** | **downhill** | reference |")
-    md.append("\n*The raw uphill ΔG is the implicit-solvation method limit (mediator speciation + PCM "
-              "differential solvation, Fig 5 / ②); the verified +465 mV / −0.47 eV is E°(Os) +200 − "
-              "E°(FAD-GDH) −265 mV vs SHE.*\n")
+    md.append("\n*The raw uphill ΔG is the implicit-solvation method limit (differential PCM solvation, "
+              "chloro↔bis-Im bracket + the 4,4′-dimethyl substituent, Fig 5 / ②); the verified +574 mV / "
+              "−0.574 eV is E°(Os) +309 − E°(FAD-GDH) −265 mV vs SHE.*\n")
 
     # ── Table 3 — DET hops + reorganization energies (cathode) ──
     p = {x["label"].split()[0]: x for x in zif["pairs"]}   # "Cu-Co"/"Co-Ce"/"Ce-graphene"

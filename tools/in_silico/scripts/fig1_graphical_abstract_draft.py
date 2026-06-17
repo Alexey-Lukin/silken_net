@@ -2,7 +2,7 @@
 """Fig 1 graphical-abstract — code-schematic DRAFT (layout reference for BioRender).
 
 NOT the final art: a matplotlib block diagram that fixes the LAYOUT, the elements,
-the arrows and the canon numbers (cascade +465 mV; E°(Os) +200, E°(FAD-GDH) −265
+the arrows and the canon numbers (cascade +574 mV; E°(Os) +309, E°(FAD-GDH) −265
 vs SHE) so a BioRender / Illustrator pass has an exact, drift-free reference.
 
 Conveys the two patentable synergies (patent_claims_draft.md):
@@ -62,11 +62,11 @@ def main() -> int:
     yc = 3.25
     box(ax, 3.4, yc, 1.25, 0.8, "glucose\n→ FAD-GDH", "#e7b7b7", 8)
     box(ax, 5.05, yc, 1.35, 0.8, "FADH₂\nE° −265 mV", "#e7b7b7", 8)
-    box(ax, 6.8, yc, 1.35, 0.8, "Os-PVI\nmediator\n+200 mV", C["med"], 8)
+    box(ax, 6.8, yc, 1.35, 0.8, "Os-PVI\nmediator\n+309 mV", C["med"], 8)
     box(ax, 8.55, yc, 1.45, 0.8, "ZIF cathode\nO₂ → H₂O", "#b7c7e7", 8)
     for x1, x2 in [(4.65, 5.05), (6.4, 6.8), (8.15, 8.55)]:
         arrow(ax, x1, yc + 0.4, x2, yc + 0.4, C["elec"], 2.5)
-    ax.text(6.7, yc + 1.05, "cascade  +465 mV / −0.47 eV (downhill, verified E°s)",
+    ax.text(6.7, yc + 1.05, "cascade  +574 mV / −0.574 eV (downhill, verified E°s)",
             ha="center", fontsize=8, color="#a40", weight="bold")
     ax.text(6.7, yc - 0.3, "e⁻  (Beratan–Onuchic tunnelling β·d = 2.05)",
             ha="center", fontsize=7.5, style="italic")
