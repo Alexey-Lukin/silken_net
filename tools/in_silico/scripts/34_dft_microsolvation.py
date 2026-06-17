@@ -55,10 +55,20 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import DFT_CACHE, HARTREE_TO_EV, LIGANDS_DIR, REPO_ROOT
 from lib.dft_utils import dft_singlepoint
-from lib.os_geometry import build_os_complex, write_xyz
+from lib.os_geometry import BPY_SMILES, DMBPY_SMILES, build_os_complex, write_xyz
 from lib.utils import banner
 
 OUT = DFT_CACHE / "microsolvation.json"
+# Chelate for the mediator/aqua/bis-Im stages. Default = parent bpy; `--dimethyl`
+# (OS-RECOMPUTE) overrides to the real device 4,4'-dimethyl-bpy (Zafar +309 mV) and
+# writes a separate cache so the plain-bpy records are never cache-skipped into it.
+BPY = BPY_SMILES
+
+
+def _xyz_stem(name: str) -> str:
+    """Ligand xyz filename, dmbpy-prefixed when the dimethyl mediator is active so a
+    --dimethyl run never clobbers the plain-bpy geometries (hexaaqua is ligand-independent)."""
+    return f"{'os_dmbpy' if BPY == DMBPY_SMILES else 'os_bpy'}_{name}"
 OS_O_AQUA = 2.10          # Å, Os–OH₂ (vertical, both oxidation states; screening tier)
 OH = 0.9572               # Å, water O–H
 HOH = np.radians(104.52)  # water bond angle
@@ -166,7 +176,7 @@ def stage_mediator(results, cache):
     """Real cis-[Os(bpy)₂(1-MeIm)Cl]⁺/²⁺ + k waters H-bonded to the Cl⁻ ligand.
     k=0 ≡ ① parent (21b). Cl is the last-appended atom from build_os_complex."""
     banner("STAGE mediator — [Os(bpy)₂(MeIm)Cl]⁺/²⁺ + k·H₂O on Cl⁻")
-    base, info = build_os_complex()  # parent bpy, axial = (MeIm +y, Cl +x)
+    base, info = build_os_complex(bpy_smiles=BPY)  # axial = (MeIm +y, Cl +x)
     cl_idx = next(i for i, (s, _) in enumerate(base) if s == "Cl")
     cl_pos = base[cl_idx][1]
     os_pos = base[0][1]
@@ -186,7 +196,7 @@ def stage_mediator(results, cache):
             atoms += donor_water(cl_pos, approaches[j], ref=perp if j else None)
         run_pair(atoms, q_os2=1, q_os3=2, name=f"mediator_k{k}_clwaters",
                  results=results, cache=cache,
-                 xyz=LIGANDS_DIR / f"os_bpy_meim_cl_{k}w.xyz" if k else None)
+                 xyz=LIGANDS_DIR / _xyz_stem(f"meim_cl_{k}w.xyz") if k else None)
 
 
 def stage_bisim(results, cache):
@@ -206,7 +216,7 @@ def stage_bisim(results, cache):
     # (ring–ring and ring–bpy both relieved). Rotation about the M–N bond is a real
     # low-barrier DOF, so the vertical ΔSCF couple stays on the same programmatic tier
     # as the chloro/aqua stages (apples-to-apples speciation).
-    atoms, info = build_os_complex(axial=axial, axial_twists=(45.0, 30.0))
+    atoms, info = build_os_complex(bpy_smiles=BPY, axial=axial, axial_twists=(45.0, 30.0))
     print(f"  bis-Im complex: {info['n_atoms']} atoms, min-interlig {info['min_interlig_A']} Å "
           f"({info['min_interlig_pair']}), Os-coord {info['os_coord_distances_A']}")
     if info["min_interlig_A"] < 1.8:
@@ -214,7 +224,7 @@ def stage_bisim(results, cache):
               f"re-tune axial_twists (00_07 CHEM.20/26).")
         return
     run_pair(atoms, q_os2=2, q_os3=3, name="bisim_meim2",
-             results=results, cache=cache, xyz=LIGANDS_DIR / "os_bpy_meim2.xyz")
+             results=results, cache=cache, xyz=LIGANDS_DIR / _xyz_stem("meim2.xyz"))
 
 
 def stage_aqua(results, cache):
@@ -229,11 +239,11 @@ def stage_aqua(results, cache):
     from lib.os_geometry import MEIM_SMILES, WATER_SMILES
     banner("STAGE aqua — [Os(bpy)₂(MeIm)(H₂O)]²⁺/³⁺ (Cl⁻→aqua speciation)")
     axial = (("ligand", MEIM_SMILES, "N"), ("ligand", WATER_SMILES, "O"))
-    atoms, info = build_os_complex(axial=axial)
+    atoms, info = build_os_complex(bpy_smiles=BPY, axial=axial)
     print(f"  aqua complex: {info['n_atoms']} atoms, min {info['min_contact_A']} Å, "
           f"Os-coord {info['os_coord_distances_A']}")
     run_pair(atoms, q_os2=2, q_os3=3, name="aqua_meim_h2o",
-             results=results, cache=cache, xyz=LIGANDS_DIR / "os_bpy_meim_h2o.xyz")
+             results=results, cache=cache, xyz=LIGANDS_DIR / _xyz_stem("meim_h2o.xyz"))
 
 
 def summarize(results):
@@ -261,6 +271,12 @@ def summarize(results):
 
 
 def main(argv) -> int:
+    global BPY, OUT
+    argv = list(argv)
+    if "--dimethyl" in argv:   # OS-RECOMPUTE: real device mediator + separate cache
+        BPY = DMBPY_SMILES
+        OUT = DFT_CACHE / "microsolvation_dmbpy.json"
+        argv.remove("--dimethyl")
     stage = argv[1] if len(argv) > 1 else "all"
     cache = {}
     if OUT.exists():

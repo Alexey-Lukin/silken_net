@@ -60,3 +60,13 @@ BASELINE_DELTA_T_S = 60      # s — firmware baseline (bio_contract.rb)
 D_EFF_GLUCOSE = 2e-6         # cm²/s — through chitosan/Nafion matrix (literature)
 DELTA_MEMBRANE = 20e-4       # cm (20 µm) — Layers 4+5 thickness
 N_ELECTRONS = 2              # electrons per glucose (FAD → FADH₂)
+
+# ── Cascade anchors (experimental E°, verified — the AUTHORITATIVE cascade verdict;
+#    raw DFT is uphill = the decomposed method limit, ②). One-Home: SUMMARY/L3/paper link here.
+# Os mediator [Os(4,4'-dimethyl-bpy)₂(PVI)Cl]⁺: E°'=+21 mV vs Ag/AgCl(0.1M KCl) +288 mV
+#   = +309 mV vs NHE (Zafar et al. 2012, Anal. Chem. 84, 334, doi:10.1021/ac202647z — the
+#   best-performing of six Os polymers, +15…+489 mV window, wired to GcGDH).
+# FAD-GDH bound FAD: −265 mV vs SHE (Schachinger, Ma, Ludwig 2022, Electrochem. Commun. 146, 107405).
+E_OS_MEDIATOR_MV_NHE = 309        # was a +200 mV under-specified anchor pre-OS-RECOMPUTE
+E_FAD_GDH_MV_SHE = -265
+CASCADE_DRIVING_FORCE_MV = E_OS_MEDIATOR_MV_NHE - E_FAD_GDH_MV_SHE   # +574 mV (−0.574 eV downhill)

@@ -23,10 +23,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import DFT_CACHE, HARTREE_TO_EV, REPO_ROOT
 from lib.dft_utils import dft_singlepoint
-from lib.os_geometry import MEIM_SMILES, WATER_SMILES, build_os_complex
+from lib.os_geometry import BPY_SMILES, DMBPY_SMILES, MEIM_SMILES, WATER_SMILES, build_os_complex
 from lib.utils import banner
 
 OUT = DFT_CACHE / "wb97x_speciation.json"
+BPY = BPY_SMILES   # parent bpy; --dimethyl (OS-RECOMPUTE) → real device 4,4'-dimethyl-bpy + separate cache
 
 # (name, axial spec, axial_twists, q_os2, q_os3) — chloro is a **+1/+2** couple (the
 # anionic Cl⁻ removes one charge); aqua + bis-Im are **+2/+3** (neutral 6th ligand). The
@@ -40,7 +41,7 @@ FORMS = [
 
 
 def run_form(name, axial, twists, q2, q3):
-    atoms, info = build_os_complex(axial=axial, axial_twists=twists)
+    atoms, info = build_os_complex(bpy_smiles=BPY, axial=axial, axial_twists=twists)
     banner(f"ωB97X {name} — {info['n_atoms']} atoms, min-interlig {info['min_interlig_A']} Å, couple +{q2}/+{q3}")
     os2 = dft_singlepoint(atoms, charge=q2, spin=0, label=f"Os(II) {name}", xc="wb97x")
     print(f"  Os(II)  E={os2['E_total_Ha']:.6f} Ha ({os2['wall_seconds']}s, conv={os2['converged']})")
@@ -57,7 +58,11 @@ def run_form(name, axial, twists, q2, q3):
     }
 
 
-def main() -> int:
+def main(argv) -> int:
+    global BPY, OUT
+    if "--dimethyl" in argv:   # OS-RECOMPUTE: real device mediator + separate cache
+        BPY = DMBPY_SMILES
+        OUT = DFT_CACHE / "wb97x_speciation_dmbpy.json"
     banner("② speciation — ωB97X ΔSCF cross-check (chloro → aqua → bis-Im)")
     t0 = time.time()
     results = [run_form(*f) for f in FORMS]
@@ -83,4 +88,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(sys.argv))

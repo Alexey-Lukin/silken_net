@@ -87,8 +87,8 @@ finding a borderline, λ-limited margin — a corrected finding, not the orders-
 earlier geometry-and-λ error had implied — together with the design levers (a low-reorganization metal,
 conductive-MOF band transport, or an acid-stable enzyme-free catalyst) that relieve it; and (iv) show
 that the apparent uphill cascade is a *quantified* limitation of continuum solvation on charged
-transition-metal couples — decomposed into mediator speciation and differential solvation and benchmarked
-against the known group-8 error — rather than a failure of the chemistry. The flavin redox tuning by the
+transition-metal couples — decomposed into a chloro↔bis-imidazole differential-solvation bracket and a
+4,4′-dimethyl substituent term, benchmarked against the known group-8 error — rather than a failure of the chemistry. The flavin redox tuning by the
 protein environment is computed in the same spirit (Bhattacharyya et al., 2007; protein-electrostatics
 flavin tuning, 2025).
 

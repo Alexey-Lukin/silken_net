@@ -74,8 +74,8 @@ a meaningful λ. Reported λ are inner-sphere; the Marcus outer-sphere term adds
 To probe the implicit-solvation limit on the charge-changing octahedral couples, explicit
 first/second-shell waters were added around the redox centre and the chloride ligand and the ΔSCF
 redox energy re-evaluated as a function of shell size, benchmarked on the [Os(H₂O)₆]³⁺/²⁺ couple
-(the literature group-8 ~1 V PCM error). The residual cascade gap was decomposed into mediator
-speciation and differential solvation contributions.
+(the literature group-8 ~1 V PCM error). The residual cascade gap was decomposed into a
+chloro↔bis-imidazole differential-solvation bracket and a 4,4′-dimethyl substituent term.
 
 ## 2.7 Reproducibility
 

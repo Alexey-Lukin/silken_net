@@ -32,8 +32,8 @@ the osmium mediator (slope ≈ −0.93 eV per σ unit) furnishes a predictive, t
 rationalises the empirical potential optimum; (3) charge-localised ΔSCF with first-principles
 reorganisation energies places the bimetallic-ZIF cathode direct electron transfer at a *borderline,
 reorganisation-energy-limited* margin, with an explicit low-λ mitigation path; and (4) the apparently
-uphill anode→mediator cascade is shown — by decomposition into mediator speciation and differential
-implicit-solvation contributions, benchmarked against the known group-8 ~1 V PCM error — to be a
+uphill anode→mediator cascade is shown — by decomposition into a chloro↔bis-imidazole differential-solvation
+bracket and a 4,4′-dimethyl substituent term, benchmarked against the known group-8 ~1 V PCM error — to be a
 **quantified limitation of continuum solvation on charged transition-metal couples, not a failure of
 the chemistry**, with explicit-water QM/MM identified as the route to closure.
 

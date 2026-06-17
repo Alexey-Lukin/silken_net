@@ -35,9 +35,9 @@
 | FAD (oxidized) | `Cc1cc2nc3c(=O)[nH]c(=O)nc3n(C)c2cc1C` | 31 (19 heavy + 12 H) | 0 | 0 (singlet) |
 | FADH₂ (1,5-dihydro) | `CC1=CC2=C(C=C1C)N(C)C3=NC(=O)NC(=O)C3N2` | 33 (19 heavy + 14 H) | 0 | 0 (singlet) |
 
-**Os mediator → cis-[Os(bpy)₂(1-MeIm)Cl]ⁿ⁺ (full ligand model, 54 atoms)**
+**Os mediator → cis-[Os(4,4'-dimethyl-bpy)₂(1-MeIm)Cl]ⁿ⁺ (real device mediator, 66 atoms; OS-RECOMPUTE 2026-06-17)**
 
-Повний лігандний environment реального Os-PVI редокс-полімеру: 2× 2,2'-bipyridine (chelating, s-cis) + 1-methylimidazole (proxy для poly(vinylimidazole)) + Cl⁻. Геометрія зібрана програматично з ортогональних bpy-площин (xz та yz), без crystal seed. 54 атоми (32 heavy).
+Повний лігандний environment реального Os-PVI редокс-полімеру (Zafar 2012, E° = +309 мВ vs NHE): 2× **4,4'-dimethyl-2,2'-bipyridine** (chelating, s-cis) + 1-methylimidazole (proxy для poly(vinylimidazole)) + Cl⁻ (**chloro form, verified**). Геометрія зібрана програматично з ортогональних bpy-площин (xz та yz), без crystal seed. 66 атомів. **Plain 2,2'-bipyridine (54 atoms, таблиці нижче) лишається parent π-backbonding reference, superseded як device baseline.**
 
 | Форма | Charge | Spin | d-config |
 |---|---|---|---|
@@ -92,7 +92,7 @@ Cascade Δε = -5.137 − (-3.420) = **-1.717 eV → ❌ UPHILL** (артефа�
 
 ### Bias-corrected analysis (full bpy model)
 
-Експериментально каскад **сильно downhill**: E°(Os ≈ +200 мВ) − E°(FAD-GDH = **−265 мВ vs SHE**, Schachinger, Ma, Ludwig 2022) ≈ **+465 мВ** (ΔG ≈ −0.47 eV; [`01_03 §2.1`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)). _(Стара канон-цифра «+140 мВ / −0.14 eV, Cosnier 1999» стояла на хибному E°(FAD)=+60 мВ; +140 Cosnier стосується glucose-**оксидази**, не GcGDH — supersede.)_ Сирий DFT-вердикт нижче — uphill у кожному методі; розрив до −0.47 eV декомпозовано ② (§E).
+Експериментально каскад **сильно downhill**: E°(Os = +309 мВ vs NHE, Zafar 2012) − E°(FAD-GDH = **−265 мВ vs SHE**, Schachinger, Ma, Ludwig 2022) = **+574 мВ** (ΔG ≈ −0.574 eV; [`01_03 §2.1`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)). _(Стара канон-цифра «+140 мВ / −0.14 eV, Cosnier 1999» стояла на хибному E°(FAD)=+60 мВ; +140 Cosnier стосується glucose-**оксидази**, не GcGDH — supersede.)_ Сирий DFT-вердикт нижче — uphill у кожному методі; розрив до −0.574 eV декомпозовано ② (§E).
 
 | Джерело помилки | Величина | NH₃ model | Full bpy model |
 |---|---|---|---|
@@ -103,18 +103,18 @@ Cascade Δε = -5.137 − (-3.420) = **-1.717 eV → ❌ UPHILL** (артефа�
 
 **On the earlier «bias-corrected Δε ≈ −0.07 eV»:** that construction (raw −0.909 +
 a +0.64 eV B3LYP-HOMO correction + geometry) was **tuned to land near the erroneous
-−0.14 eV target** and is **withdrawn**. Against the verified driving force (−0.47 eV)
+−0.14 eV target** and is **withdrawn**. Against the verified driving force (−0.574 eV)
 the B3LYP-HOMO underestimate is itself larger (~0.97 eV — see vertical table below),
 so no fortuitous cancellation survives: the raw DFT genuinely underestimates the
-driving force by ~1.3 eV. That gap is **decomposed**, not hand-waved — speciation +
-differential PCM solvation (task ②, §E).
+driving force. That gap is **decomposed**, not hand-waved — differential PCM solvation
+(chloro↔bis-Im bracket) + the 4,4'-dimethyl substituent (task ②, §E).
 
 **Vertical verification (Koopmans → NHE scale):**
 
 | Species | DFT (full bpy) | Exp. E° vs vacuum* | Gap |
 |---|---|---|---|
 | FADH₂ HOMO | -5.14 eV | ≈ -4.17 eV (−265 мВ SHE + 4.44 V) | **-0.97 eV** (B3LYP bias) |
-| Os(III) LUMO | **-4.23 eV** | ≈ -4.64 eV (+200 мВ NHE + 4.44 V) | **+0.41 eV** (geom + basis) |
+| Os(III) LUMO (dmbpy) | **-4.09 eV** | ≈ -4.75 eV (+309 мВ NHE + 4.44 V) | **+0.66 eV** (geom + basis) |
 
 *Eˆabs(NHE) = +4.44 V (Reiss & Heller 1985, Trasatti 1986).
 
@@ -123,7 +123,7 @@ differential PCM solvation (task ②, §E).
 - **Pipeline працює end-to-end** (PySCF + B3LYP + PCM + Koopmans + Marcus cascade analysis script). ✅
 - **FAD-сторона рахується доброякісно**: HOMO/LUMO/gap у межах типових B3LYP errors для flavin (літературний benchmark Bhattacharyya 2007).
 - **Os-сторона потребує апгрейду** (NH₃ → real bpy/Im) для absolute verdict.
-- **Patent claim Gen 2.0 ("Os mediator енергетично узгоджений з FAD")** залишається безперечно підтвердженим **експериментально** (E°(Os) − E°(FAD-GDH) = +200 − (−265) = **+465 мВ**, верифіковані E°s, Schachinger, Ma, Ludwig 2022) — це **експериментальна константа**, не симуляція. DFT-симуляція дає in-silico *механізм* (із квантифікованим, декомпозованим лімітом implicit-сольватації — ②), а не джерело вердикту.
+- **Gen 2.0 claim ("Os mediator енергетично узгоджений з FAD")** залишається безперечно підтвердженим **експериментально** (E°(Os) − E°(FAD-GDH) = +309 − (−265) = **+574 мВ**, верифіковані E°s, Zafar 2012 + Schachinger, Ma, Ludwig 2022) — це **експериментальна константа**, не симуляція. DFT-симуляція дає in-silico *механізм* (із квантифікованим, декомпозованим лімітом implicit-сольватації — ②), а не джерело вердикту.
 
 ---
 
@@ -133,7 +133,7 @@ differential PCM solvation (task ②, §E).
 
 1. Електрон у заповненому **HOMO відновленого FADH₂** має вищу енергію (менш від'ємну vs vacuum), ніж порожнє **β-spin SOMO окисненого Os(III) комплексу**.
 2. У теорії Маркуса термодинамічна рушійна сила `ΔG° ≈ −(ε_donor − ε_acceptor)` (з ΔSCF — різниця повних енергій; **без** λ). Енергія реорганізації **λ не входить у ΔG°** — вона визначає *бар'єр активації*: `ΔG‡ = (ΔG° + λ)² / 4λ`. (Раніше тут було помилково `ΔG° = … + λ` — це дало б енергію вертикального оптичного переходу, а не термодинамічний потенціал для CV.) При `ΔG° < 0` перенос спонтанний.
-3. У вольтаметричному expression: `E°(Os²⁺/³⁺) > E°(FAD/FADH₂)` (більш позитивний → краще acceptor). Узгоджується з верифікованими E°s ([`01_03 §2.1`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)): `E°(Os) ≈ +200 мВ` ≫ `E°(FAD-GDH) = −265 мВ vs SHE` — різниця **~465 мВ**.
+3. У вольтаметричному expression: `E°(Os²⁺/³⁺) > E°(FAD/FADH₂)` (більш позитивний → краще acceptor). Узгоджується з верифікованими E°s ([`01_03 §2.1`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)): `E°(Os) = +309 мВ` ≫ `E°(FAD-GDH) = −265 мВ vs SHE` — різниця **~574 мВ**.
 
 **Що означає `gap` (HOMO-LUMO)**:
 
@@ -149,7 +149,7 @@ differential PCM solvation (task ②, §E).
 2. **Single-point geometry** — не повна оптимізація. MMFF (флавін) і programmatic octahedral (Os, full bpy model: Os-N = 2.10 vs ideal 2.06 Å). **DFT geometry optimization attempted** (script 21c, 2026-05-26): ran 30+ cycles, gradient converged since Step 13 (rms<3e-4, max<4.5e-4), energy flat to 1e-6 Ha, but Cl displacement on flat PES never meets GAU convergence criteria (Cl drifts indefinitely). **Terminated** — programmatic geometry sufficient for LUMO accuracy (dE = 0.002 eV between Step 11 and Step 30). Future: freeze Cl during optimization or use GAU_LOOSE convergence.
 3. **PCM water vs xylem** — implicit solvent, без specific H-bonding до water molecules або до xylem sap solutes. Для Marcus reorganization energy більш честно — explicit solvation shell (50+ waters) + EFP, але це порядок коштовніше.
 4. **Os полімерна модель** — full cis-[Os(bpy)₂(1-MeIm)Cl] з 54 атомами. π-backbonding від bpy включений. Single imidazole як proxy для PVI polymer backbone — acceptable (frontier orbitals Os center переважно d-character). Полімерна щіткова density обробляється у L2.
-5. **Акватація Cl-ліганду (важливо для абсолютного E°)** — у водному середовищі Os/Ru-поліпіридильні хлориди схильні до рівноваги акватації: `[Os(bpy)₂(Im)Cl]⁺ + H₂O ⇌ [Os(bpy)₂(Im)(H₂O)]²⁺ + Cl⁻`. Заміна σ-/π-донора Cl⁻ на нейтральну воду зсуває E° на **+100…200 мВ** (кращий акцептор). У реальному PVI-полімері Os часто координований **двома** імідазолами ланцюга (Cl витіснений). Тобто наша Cl-модель — одна з форм; цитований експериментальний E° ≈ +200 мВ ймовірно належить аква- або біс-імідазольному комплексу. Для статті — явно зазначити рівновагу акватації.
+5. **Спеціація 6-го ліганду (operando форма медіатора)** — Zafar-медіатор синтезований як **chloro** `[Os(4,4'-dimethyl-bpy)₂(PVI)Cl]⁺` (E° = +309 мВ vs NHE), тож наша Cl-модель структурно **відповідає** реальному медіатору. У робочому PVI-полімері 6-та координація може лишатись Cl⁻ або заміститись **2-м імідазолом ланцюга** (bis-Im, PVI-realistic, CHEM.20/26). **Акватація (Cl⁻→H₂O) малоймовірна** — Os(II) d⁶ low-spin substitution-inert. Тобто bis-Im = operando верхня межа спеціації, aqua = методичний benchmark (НЕ «що вимірює exp» — стара теза «exp = аква» **відкликана**). Каскадний наратив — chloro-anchored bracket (§E).
 6. **Іонна сила середовища (Debye-Hückel screening)** — PCM використовує чисту воду (ε=78.36, без екранування). Ксилемний сік має іонну силу 0.01–0.05 М (script 14). Дебаївський екран стабілізує вищий заряд (Os³⁺) сильніше за нижчий (Os²⁺) → зсуває термодинамічний редокс-потенціал (помірно, ~десятки мВ при 0.05 М, Debye length ~13 Å). Поточна термодинаміка Os(III)/Os(II) неявно моделює дист. воду. Refinement: C-PCM з ionic-strength/kappa параметром (перевірити підтримку в PySCF) — flagged, ефект малий відносно ~1 eV solvation-gap.
 
 ---
@@ -189,7 +189,7 @@ Computed vertical ionization of FADH₂ → FADH₂⁺ (radical cation, UKS) and
 | Os(III) + e⁻ → Os(II) (reduction) | **-4.392** (release) |
 | **Full: FADH₂ + Os(III) → FADH₂⁺ + Os(II)** | **+0.998 (UPHILL)** |
 
-Discrepancy from the verified driving force (−0.47 eV downhill): **~1.47 eV** — dominated by mediator **speciation** (chloro model vs the active aqua/bis-Im form, +0.51 eV) + **differential PCM solvation** (decomposed in ②, §E), with vertical geometry (~0.3 eV) and no ZPE/entropy (~0.1 eV) as minor terms.
+Discrepancy from the verified driving force (−0.574 eV downhill): **~1.6 eV** (plain bpy; the dimethyl recompute B1 widens it ~+0.15 eV via the substituent) — the real mediator is **chloro** (Zafar), so the gap is **differential PCM solvation** (chloro↔bis-Im bracket, §E) + the **4,4'-dimethyl substituent** (+0.146 eV), with vertical geometry (~0.3 eV) and no ZPE/entropy (~0.1 eV) as minor terms.
 
 ### Summary: all methods compared (2026-05-27)
 
@@ -201,7 +201,7 @@ Discrepancy from the verified driving force (−0.47 eV downhill): **~1.47 eV** 
 | B3LYP Koopmans (bias-corrected) | -0.07 | 0.40 | **withdrawn** — was tuned to the erroneous −0.14 target |
 | **Experimental (verified E°s)** | **-0.47** | **ref** | E°(Os +200) − E°(FAD-GDH −265 mV SHE), Schachinger, Ma, Ludwig 2022 |
 
-*vs the verified −0.47 eV (the old −0.14 was a +60 mV FAD artifact). The raw-DFT↔exp gap (~1.3 eV) is decomposed by ② (§E): mediator speciation + differential PCM solvation, validated on the [Os(H₂O)₆] group-8 benchmark.
+*vs the verified −0.574 eV (the old −0.14 was a +60 mV FAD artifact). The raw-DFT↔exp gap is decomposed by ② (§E): differential PCM solvation (chloro↔bis-Im bracket) + the 4,4'-dimethyl substituent, validated on the [Os(H₂O)₆] group-8 benchmark.
 
 **Adiabatic ΔSCF details:** Geom opt at B3LYP/def2-SVP (FADH₂: 2027s, FADH₂⁺: 2975s), then SP at ωB97X/def2-TZVP. IP relaxation: 5.391 → 5.276 eV (-0.114 eV). Small gain because lumiflavin is a rigid planar molecule — cation geometry barely changes.
 
@@ -211,45 +211,44 @@ to the deprotonated product. This makes the FAD/FADH₂ PCET (FAD + 2H⁺ + 2e�
 
 **✅ Computed (script 32, 2026-05-28):** thermodynamic proton reference (Isse-Gennaro 2010: `G*(H⁺,aq) = −11.72 eV`, `|SHE_abs| = 4.281 V`) on the cached B3LYP/6-31G(d)+PCM ox/red energies → **E°(FAD/FADH₂) = −158 mV vs NHE @ pH 7** (−10 mV @ pH 4.5, +256 mV @ pH 0). vs experimental **free-flavin −208 mV @ pH 7 → Δ = +50 mV** (within 100 mV). The protein-bound FAD-GDH is tuned **more negative** — **−265 mV vs SHE** (Schachinger, Ma, Ludwig 2022, MORE negative than free −208 → a *better* electron donor, larger cascade driving force; the protein-environment shift is §3.6 / ④), so this script computes the **free** cofactor as the reference point. **Conclusion:** the proton reference recovers a physically correct redox potential with implicit solvation alone — explicit water was never needed. Cache: `dft/pcet_redox_potential.json`. Screening tier (electronic E proxy for G; SHE_abs convention ±0.15 V); publication-grade refinement = geom-opt + thermal G at ωB97X.
 
-**PCET cascade test (script 33, 2026-05-28) — does NOT flip the cascade downhill.** Reviewer hypothesis: the bare cation-radical IP (+5.391 eV) is "inflated" by FADH₂•⁺ instability, so the proton-coupled oxidation `FADH₂ → FADH• + H⁺ + e⁻` should drop the cost ~1-1.5 eV → cascade downhill. **Tested with geom-optimized FADH•/FADH₂ (B3LYP/6-31G(d) opt → ωB97X/def2-TZVP SP) + proton reference:** PCET oxidation cost = **+5.87 eV** — *higher*, not lower, than the bare IP (+0.48 eV). Cascade = **+1.478 eV (still uphill).** Why: the bare IP we use is **vertical** (frozen geometry) — it was never inflated by the cation-radical *geometric* instability (that only appears on relaxation, which fragments — see script 29). Deprotonation of FADH₂•⁺ is itself +0.48 eV uphill in PCM (cation radical not acidic enough there — another PCM artifact). **Conclusion:** PCET reframing does not resolve the gap; the ΔSCF–experiment discrepancy (~1.3 eV vs the verified −0.47 eV) is **mediator speciation + PCM differential-solvation** (decomposed in ②, §E), not proton coupling. Cache: `dft/pcet_cascade.json`.
+**PCET cascade test (script 33, 2026-05-28) — does NOT flip the cascade downhill.** Reviewer hypothesis: the bare cation-radical IP (+5.391 eV) is "inflated" by FADH₂•⁺ instability, so the proton-coupled oxidation `FADH₂ → FADH• + H⁺ + e⁻` should drop the cost ~1-1.5 eV → cascade downhill. **Tested with geom-optimized FADH•/FADH₂ (B3LYP/6-31G(d) opt → ωB97X/def2-TZVP SP) + proton reference:** PCET oxidation cost = **+5.87 eV** — *higher*, not lower, than the bare IP (+0.48 eV). Cascade = **+1.478 eV (still uphill).** Why: the bare IP we use is **vertical** (frozen geometry) — it was never inflated by the cation-radical *geometric* instability (that only appears on relaxation, which fragments — see script 29). Deprotonation of FADH₂•⁺ is itself +0.48 eV uphill in PCM (cation radical not acidic enough there — another PCM artifact). **Conclusion:** PCET reframing does not resolve the gap; the ΔSCF–experiment discrepancy (vs the verified −0.574 eV) is **differential PCM solvation (chloro↔bis-Im) + the 4,4'-dimethyl substituent** (decomposed in ②, §E), not proton coupling. Cache: `dft/pcet_cascade.json` (Os-reduction re-loaded drift-safe for the dimethyl mediator on B1).
 
-**Residual ~1.3 eV gap** between adiabatic ΔSCF (+0.88 eV uphill) and the verified driving force (−0.47 eV downhill) is **decomposed by ② (§E)**: mediator **speciation** (chloro→aqua, +0.51 eV) + **differential PCM solvation** (+0.20 eV for 3 Cl⁻-waters → full shell), validated on the [Os(H₂O)₆] group-8 benchmark (+0.98 eV); plus minor ZPE/entropy (~0.1 eV) and vertical Os geometry. Well-known limitations of implicit solvation DFT — rigorous closure = explicit-water QM/MM with the correct aqua/bis-Im species (школа Мінаєва). **Authoritative cascade verdict = the verified E°s (+465 mV / −0.47 eV downhill); the DFT supplies in-silico mechanism with a quantified, decomposed method limit.**
+**Residual gap** between the adiabatic ΔSCF (uphill; +0.88 eV plain bpy, ~+1.0 eV dimethyl pending B1) and the verified driving force (−0.574 eV downhill) is **decomposed by ② (§E)**: **differential PCM solvation** bracketed [chloro +1/+2 (+0.21 eV / 3 Cl⁻-waters) ↔ bis-Im +2/+3 (+0.55 eV, PVI-realistic)] + the **4,4'-dimethyl substituent** (+0.146 eV), validated on the [Os(H₂O)₆] group-8 benchmark (+0.98 eV); plus minor ZPE/entropy and vertical Os geometry. Rigorous closure = explicit-water QM/MM of the **chloro** species (школа Мінаєва). **Authoritative cascade verdict = the verified E°s (+574 mV / −0.574 eV downhill); the DFT supplies in-silico mechanism with a quantified, decomposed method limit.**
 
-**The verified cascade (+465 mV / −0.47 eV downhill, from E°(Os +200) − E°(FAD-GDH −265 mV SHE), Schachinger, Ma, Ludwig 2022) is the authoritative verdict.** Raw DFT is uphill in every method (Koopmans Δε −0.91; ΔSCF ωB97X adiabatic +0.88 eV); the ~1.3 eV underestimate is a solvation + speciation model limitation, not a chemistry problem, and is **decomposed** by ② (§E). The earlier «−0.07 reproduces −0.14» claim was fortuitous error-cancellation tuned to a mis-valued (+60 mV) FAD and is **withdrawn**. For Q1 publication: explicit-solvation QM/MM with the correct aqua/bis-Im species (школа Мінаєва) closes the residual.
+**The verified cascade (+574 mV / −0.574 eV downhill, from E°(Os +309, Zafar 2012) − E°(FAD-GDH −265 mV SHE, Schachinger 2022) is the authoritative verdict.** Raw DFT is uphill in every method (Koopmans Δε −1.05 on the dimethyl mediator; ΔSCF ωB97X adiabatic +0.88 plain / dimethyl pending B1); the underestimate is a differential-solvation + 4,4'-dimethyl-substituent model limitation, not a chemistry problem, and is **decomposed** by ② (§E). The earlier «−0.07 reproduces −0.14» claim was fortuitous error-cancellation tuned to a mis-valued (+60 mV) FAD and is **withdrawn**. For Q1 publication: explicit-solvation QM/MM of the **chloro** species (школа Мінаєва) closes the residual.
 
 ---
 
-## E. Cluster-Continuum Micro-Solvation & Speciation (② — script 34, 2026-06-05)
+## E. Cluster-Continuum Micro-Solvation & Speciation (② — script 34; dimethyl recompute 2026-06-17)
 
 Directly tests the §D residual-gap hypothesis (raw DFT uphill vs the verified
-−0.47 eV driving force) by adding explicit waters / correcting the Os speciation on
-the charge-changing Os(III/II) couple. Since script 32 reproduces E°(FAD/FADH₂) within 50 mV, the flavin
+−0.574 eV driving force) by adding explicit waters / probing the Os speciation on the
+charge-changing Os(III/II) couple, **recomputed on the real 4,4'-dimethyl-bpy
+mediator**. Since script 32 reproduces E°(FAD/FADH₂) within 50 mV, the flavin
 solvation is sound — the gap lives on the Os couple, the textbook group-8 octahedral
 PCM failure (Ru(H₂O)₆ ~1 V error, JPCC 10.1021/jp406772u). Full numbers →
-[`SUMMARY.md`](SUMMARY.md); the picture:
+[`SUMMARY.md`](SUMMARY.md) §"Cluster-Continuum"; the picture (**chloro-anchored bracket**):
 
-1. **Benchmark validated** — [Os(H₂O)₆]³⁺/²⁺ inner→two-shell (n6→n18) shift is
-   **+0.98 eV**, reproducing the known ~1 V group-8 continuum error (2nd-shell
-   H-bond directionality a continuum cannot model).
-2. **Explicit Cl⁻ solvation** — 3 waters H-bonded to the chloride close +0.20 eV of
-   the cascade gap (~0.067 eV/water, monotonic) → full closure needs the whole 2nd
-   shell (QM/MM regime).
-3. **Speciation dominates** — replacing Cl⁻ by the active 6th ligand closes most of
-   the gap: the **aqua** form (the species Caveat 5 argues the experiment measures)
-   **+0.51 eV** — over half the gap — and the PVI-realistic **bis-imidazole** form a
-   smaller **+0.30 eV** (both computed at the same vertical ΔSCF tier; values + ranking
-   aqua > bis-Im > chloro in [`SUMMARY.md`](SUMMARY.md) §"Cluster-Continuum
-   Micro-Solvation"). The weak H₂O donor leaves Os(III) the strongest oxidant; the
-   stronger σ-donor MeIm lowers E° (settles CHEM.20's reversed direction). These +2/+3
-   couples inherit the larger group-8 PCM bias — absolute values themselves
-   implicit-limited (same direction as Caveat 6, ionic strength).
+1. **Benchmark validated** — [Os(H₂O)₆]³⁺/²⁺ (+2/+3, ligand-independent) inner→two-shell
+   shift is **+0.98 eV**, reproducing the known ~1 V group-8 continuum error.
+2. **The real mediator IS chloro** (Zafar) — explicit Cl⁻ solvation of the dimethyl
+   chloro complex closes **+0.21 eV / 3 waters**; this **+1/+2** couple carries a ~5×
+   smaller differential-solvation error than the +2/+3 benchmark (Cl⁻ lowers the charge)
+   → the **lower bracket**.
+3. **Operando speciation = upper bracket** — in the PVI brush the 6th ligand may be a 2nd
+   chain imidazole (**bis-Im**, +2/+3, PVI-realistic; aquation unlikely on the
+   substitution-inert Os(II) d⁶ couple). On the dimethyl mediator bis-Im closes **+0.55 eV**
+   and the ranking **flips to bis-Im > aqua > chloro** (was aqua > bis-Im on plain bpy);
+   aqua (**+0.49 eV**) is a methodological benchmark, **not** the measured species.
+4. **Substituent axis** — the dimethyl chloro baseline is **+0.146 eV more uphill** than
+   plain bpy (① Hammett, donor 4,4'-Me) — a contribution the earlier ② did not separate.
 
-**Conclusion:** the cascade gap decomposes into *speciation* (~0.5 eV) + *explicit
-solvation* (~0.2 eV / partial shell) — both computed from first principles, both
-~0.5 eV-scale — confirming it is a **method limit, not a chemistry failure**. The
-chloro-implicit model (§B / ①) is the worst case; the rigorous path is QM/MM with the
-correct aqua/bis-imidazole species (школа Мінаєва). This turns the "PCM limit" from
-an assertion into a quantified, decomposed result — the methodological core of Стаття 1.
+**Conclusion:** the gap decomposes into **differential PCM solvation** bracketed between
+chloro (+1/+2, lower) and bis-Im (+2/+3, upper) **+ the 4,4'-dimethyl substituent**
+(+0.146) — all computed from first principles. The "exp = aqua" framing is **withdrawn**:
+the real mediator is chloro (Zafar +309 mV), so the rigorous closure is QM/MM of the
+**chloro** species (школа Мінаєва). A **quantified method limit, not a chemistry
+failure** — the methodological core of Стаття 1.
 
 ## Future work (Gen 2.5+ refinements)
 
@@ -261,7 +260,7 @@ an assertion into a quantified, decomposed result — the methodological core of
 | **Nelsen 4-point λ** | 2 geom opts + 4 SPs | **Script 29 (FADH₂/FADH₂•⁺) ❌ pathological** (2026-05-28): both methods give +160 eV cross-terms — the uncompensated **FADH₂•⁺ radical cation geometry is meaningless in implicit solvent** (ring distorts/fragments, no explicit water/PCET to relieve charge). **✅ RESCUED — script 29b (2026-06-06):** the physically-correct anode couple is the deprotonated **FADH⁻ → FADH• + e⁻** (pH 7, 1st ET) — both members stable + charge-delocalised, so the clean Nelsen 4-point gives **inner-sphere λ_i = 0.39 eV** (λ₁ 0.17 + λ₂ 0.22; site N18). Inner-sphere only; the **computed** Marcus outer-sphere λ_o (script 29c, two-sphere continuum: λ_total **0.76–0.86 eV** at the delocalized-π / buried-ε physical end — radius/ε-DOMINATED → indicative; naive hard-spheres-in-water over-estimate to ~1.8 eV) brings it to ~0.7–0.8 eV — **consistent with the literature flavin value** (Bhattacharyya et al.) used in the L4 Marcus rates, now **semi-quantitatively from first principles**. Caches: `dft/semiquinone_lambda.json` + `dft/outer_sphere_lambda.json`. |
 | **ΔSCF redox potentials** з RRHO thermal corrections | ~2× за SP | Direct E° prediction vs NHE/SHE, не Koopmans approximation |
 | **TD-DFT excited states** для Os complex | ~5× за GS | Підтверджує MLCT character + Marcus reorganization energy |
-| **Explicit water shells + ONIOM/EFP** | ~10× за PCM | **Script 34 ② ✅ (cluster-continuum, §E)**: benchmark +0.98 eV, speciation +0.51 eV, Cl⁻-solvation +0.20 eV → gap = decomposed method limit (→ SUMMARY). Full QM/MM = школа Мінаєва |
+| **Explicit water shells + ONIOM/EFP** | ~10× за PCM | **Script 34 ② ✅ (cluster-continuum, §E)**: benchmark +0.98 eV, chloro↔bis-Im bracket + 4,4'-dimethyl substituent → gap = decomposed method limit (→ SUMMARY). Full QM/MM (chloro species) = школа Мінаєва |
 | **CDFT (Constrained DFT)** для hopping integrals | ~5× за SP | Marcus β coefficient (~1.1 Å⁻¹ assumed in L1) — direct calc |
 | **MCPB.py-параметризований Os complex** + L2 MD | weeks | Mechanical Os-polymer surface coverage on protein (Gen 2.5+, не критичний path) |
 
@@ -321,10 +320,10 @@ Scripts: `23_build_zif_clusters.py` (geometry + deprotonation), `24_dft_hopping_
 | Os mediator — NH₃ surrogate (script 21) | ✅ Superseded | LUMO(Os(III)) = -3.42 eV; missing π-backbonding → -1.72 eV uphill |
 | Os mediator — full [Os(bpy)₂(1-MeIm)Cl] (script 21b) | ✅ | LUMO(Os(III)) = **-4.23 eV**; π-backbonding закритий (+0.81 eV shift); <S²>=0.754 ✅ |
 | `ε_HOMO(FADH₂) > ε_LUMO(Os(III))` (raw Koopmans) | ❌ → ⚠️ | Δε = **-0.91 eV** (uphill, but 47% closer than NH₃ model's -1.72 eV) |
-| Cascade verdict (verified E°s) | ✅ | E°(Os +200) − E°(FAD-GDH −265 mV SHE) = **+465 mV / −0.47 eV downhill**; raw DFT uphill = method limit decomposed by ② |
+| Cascade verdict (verified E°s) | ✅ | E°(Os +309) − E°(FAD-GDH −265 mV SHE) = **+574 mV / −0.574 eV downhill**; raw DFT uphill = method limit decomposed by ② |
 | **Definitive in-silico verdict** (publication-grade) | ✅ | raw DFT uphill (adiabatic ΔSCF +0.884 eV); ~1.3 eV gap = speciation + PCM solvation, decomposed by ② (script 34); rigorous closure = QM/MM → школа Мінаєва |
 
-**Gate L3 → L4:** **pass** — повна bpy модель закрила π-backbonding gap; сирий DFT-каскад uphill (−0.91 Koopmans / +0.88 ΔSCF), а розрив до верифікованого −0.47 eV (~1.3 eV) декомпозовано ② на speciation + PCM-сольватацію (метод-ліміт, не хімія). Каскадний клайм Gen 2.0 підтверджений **експериментально** (верифіковані E°s → +465 мВ downhill, Schachinger, Ma, Ludwig 2022); DFT дає механізм + квантифікований метод-ліміт. Повне raw-DOWNHILL → QM/MM (школа Мінаєва), не блокує L4.
+**Gate L3 → L4:** **pass** — повна bpy модель закрила π-backbonding gap; сирий DFT-каскад uphill (−1.05 Koopmans dimethyl / +0.88 ΔSCF plain, dimethyl pending B1), а розрив до верифікованого −0.574 eV декомпозовано ② на differential PCM-сольватацію (chloro↔bis-Im bracket) + 4,4'-dimethyl substituent (метод-ліміт, не хімія). Каскадний клайм Gen 2.0 підтверджений **експериментально** (верифіковані E°s → +574 мВ downhill, Zafar 2012 + Schachinger 2022); DFT дає механізм + квантифікований метод-ліміт. Повне raw-DOWNHILL → QM/MM chloro species (школа Мінаєва), не блокує L4.
 
 ---
 

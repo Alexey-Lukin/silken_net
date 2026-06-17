@@ -51,17 +51,22 @@ def cascade_verdict(homo_donor_eV: float, lumo_acceptor_eV: float) -> dict:
 def dft_singlepoint(atoms, charge: int, spin: int, label: str = "",
                     xc: str = "b3lyp", with_pcm: bool = True,
                     conv_tol: float = 1e-6, max_cycle: int = 100,
-                    level_shift_open: float = 0.0) -> dict:
-    """B3LYP single-point on a metal complex (RKS closed / UKS open) + C-PCM water.
+                    level_shift_open: float = 0.0,
+                    basis_light: str | None = None) -> dict:
+    """DFT single-point on a metal complex (RKS closed / UKS open) + C-PCM water.
 
-    Shared SSOT runner for the L3 Os scripts (21b / 21e series). `atoms` is a list
-    of (symbol, xyz-array). `level_shift_open` is OFF by default (0.0) to match the
-    validated 21b behaviour and keep reported virtual-orbital energies physical —
-    PySCF's level_shift adds a constant to virtual MO energies, so an enabled shift
-    biases the reported LUMO (E_total stays shift-invariant). Enable it only where
-    SCF oscillates (in-silico skill gotcha #5: UKS on Co/Ce) and then read E_total,
-    not LUMO. No `density_fit` (gotcha #4: heavy-metal aux basis is slower).
-    Returns E_total (Ha) + frontier energies (eV).
+    Shared SSOT runner for the L3 Os scripts (21b / 21e / 34 / 34b series). `atoms`
+    is a list of (symbol, xyz-array). `xc` selects the functional (b3lyp screening /
+    wb97x range-separated); `basis_light` overrides the light-atom basis (default
+    `None` → constants.BASIS_LIGHT = 6-31G(d); pass "def2-tzvp" for the
+    publication-grade ωB97X tier). Os always uses LANL2DZ+ECP. `level_shift_open`
+    is OFF by default (0.0) to match the validated 21b behaviour and keep reported
+    virtual-orbital energies physical — PySCF's level_shift adds a constant to
+    virtual MO energies, so an enabled shift biases the reported LUMO (E_total stays
+    shift-invariant). Enable it only where SCF oscillates (in-silico skill gotcha
+    #5: UKS on Os(III)/Co/Ce) and then read E_total, not LUMO. No `density_fit`
+    (gotcha #4: heavy-metal aux basis is slower). Returns E_total (Ha) + frontier
+    energies (eV).
     """
     import time
 
@@ -69,9 +74,10 @@ def dft_singlepoint(atoms, charge: int, spin: int, label: str = "",
 
     from .constants import BASIS_LIGHT, BASIS_OS, ECP_OS, SOLVENT_EPS_WATER
 
+    light = basis_light or BASIS_LIGHT
     atoms_pyscf = [(s, (float(p[0]), float(p[1]), float(p[2]))) for s, p in atoms]
     mol = gto.M(atom=atoms_pyscf,
-                basis={"Os": BASIS_OS, "default": BASIS_LIGHT}, ecp={"Os": ECP_OS},
+                basis={"Os": BASIS_OS, "default": light}, ecp={"Os": ECP_OS},
                 charge=charge, spin=spin, unit="Angstrom")
     mf = dft.RKS(mol) if spin == 0 else dft.UKS(mol)
     mf.xc = xc

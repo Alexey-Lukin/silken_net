@@ -17,8 +17,8 @@ metal, conductive-MOF band transport, or an acid-stable enzyme-free catalyst.
 
 The paper's methodological core is the honest treatment of the cascade. The raw computed driving force
 is uphill in every method, against an experimentally downhill cascade; rather than hide the gap behind a
-fortuitous error cancellation, we **decompose** it into mediator speciation and differential
-implicit-solvation contributions, each computed and benchmarked against the known ~1 V group-8 PCM
+fortuitous error cancellation, we **decompose** it into a chloro↔bis-imidazole differential-solvation
+bracket and a 4,4′-dimethyl substituent term, each computed and benchmarked against the known ~1 V group-8 PCM
 error. The residual is therefore a quantified, transferable limitation of continuum solvation on charged
 transition-metal redox couples — not a failure of the chemistry — whose rigorous closure is
 explicit-water QM/MM of the correct molecular species.

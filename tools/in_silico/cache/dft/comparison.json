@@ -1,7 +1,7 @@
 {
   "donor_homo_eV": -5.137012354676674,
-  "acceptor_lumo_eV": -4.227722237243394,
-  "delta_eV": -0.9092901174332804,
+  "acceptor_lumo_eV": -4.0855633078052795,
+  "delta_eV": -1.0514490468713946,
   "favorable": false,
   "verdict": "\u274c UPHILL \u2014 electron transfer FAD \u2192 Os is NOT favorable at this level of theory",
   "fad": {
@@ -38,37 +38,40 @@
     }
   },
   "os": {
-    "method": "B3LYP/lanl2dz(Os)+6-31g(d)(others)+PCM(water,C-PCM)",
-    "model_note": "Full cis-[Os(bpy)2(1-MeIm)Cl]^n+ with \u03c0-backbonding from bipyridine. Supersedes the NH3 surrogate model (script 21).",
+    "method": "B3LYP/6-31g(d)+LANL2DZ(Os)+C-PCM(water,C-PCM)",
+    "model_note": "REAL device mediator cis-[Os(4,4'-dimethyl-bpy)2(1-MeIm)Cl]^n+ (Zafar 2012 +309 mV vs NHE). Supersedes the plain-bpy 21b/21d as the device baseline; plain-bpy retained as the parent \u03c0-backbonding reference.",
+    "ligand": "4,4'-dimethyl-2,2'-bipyridine",
     "os2_plus": {
-      "label": "Os(II) [Os(bpy)2(1-MeIm)Cl]+",
+      "label": "Os(II) dmbpy (b3lyp)",
       "charge": 1,
       "spin": 0,
-      "n_atoms": 54,
-      "n_electrons": 240,
+      "n_atoms": 66,
+      "n_electrons": 272,
       "converged": true,
-      "wall_seconds": 500.6054120063782,
-      "E_total_Ha": -1807.5760892762305,
-      "HOMO_Ha": -0.17914699763380368,
-      "LUMO_Ha": -0.07922878588624235,
-      "HOMO_eV": -4.87483814742253,
-      "LUMO_eV": -2.155925094551223,
-      "gap_eV": 2.7189130528713066
+      "wall_seconds": 470.8,
+      "E_total_Ha": -1964.8520605282465,
+      "HOMO_Ha": -0.17361301696555498,
+      "LUMO_Ha": -0.07433319944675437,
+      "HOMO_eV": -4.724250861980984,
+      "LUMO_eV": -2.0227094010456947,
+      "gap_eV": 2.7015414609352892
     },
     "os3_plus": {
-      "label": "Os(III) [Os(bpy)2(1-MeIm)Cl]2+",
+      "label": "Os(III) dmbpy (b3lyp)",
       "charge": 2,
       "spin": 1,
-      "n_atoms": 54,
-      "n_electrons": 239,
+      "n_atoms": 66,
+      "n_electrons": 271,
       "converged": true,
-      "wall_seconds": 647.2830729484558,
-      "E_total_Ha": -1807.409627511845,
-      "HOMO_Ha": -0.2336893717259085,
-      "LUMO_Ha": -0.15536592656563838,
-      "HOMO_eV": -6.359011755615963,
-      "LUMO_eV": -4.227722237243394,
-      "gap_eV": 2.1312895183725695
-    }
+      "wall_seconds": 751.1,
+      "E_total_Ha": -1964.691069120926,
+      "HOMO_Ha": -0.22818352395891825,
+      "LUMO_Ha": -0.1501416822675709,
+      "HOMO_eV": -6.209190005416781,
+      "LUMO_eV": -4.0855633078052795,
+      "gap_eV": 2.1236266976115017
+    },
+    "dE_red_III_to_II_eV": -4.3808,
+    "EA_Os3_eV": 4.3808
   }
 }

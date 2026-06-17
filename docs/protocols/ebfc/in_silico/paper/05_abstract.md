@@ -16,7 +16,7 @@ and rationalises the empirical potential optimum; and charge-localised ΔSCF wit
 reorganisation energies places the bimetallic-ZIF cathode direct electron transfer at a borderline,
 reorganisation-energy-limited margin, with explicit low-λ mitigation. The apparently uphill
 anode→mediator cascade is shown to be a *quantified* limitation of continuum solvation on charged
-transition-metal couples — decomposed into mediator speciation and differential solvation and benchmarked
-against the known group-8 ~1 V implicit-solvation error — rather than a failure of the chemistry, with
+transition-metal couples — decomposed into a chloro↔bis-imidazole differential-solvation bracket and a
+4,4′-dimethyl substituent term, benchmarked against the known group-8 ~1 V implicit-solvation error — rather than a failure of the chemistry, with
 explicit-water QM/MM the route to closure. The study yields transferable mechanistic design rules and a
 solvation-methodology lesson, and predicts the impedance signatures for experimental validation.

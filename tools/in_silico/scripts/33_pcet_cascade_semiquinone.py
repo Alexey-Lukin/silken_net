@@ -18,7 +18,9 @@ Then the cascade vs the Os reduction (cached ΔSCF, −4.392 eV):
 
 Expectation (review): deprotonation relieves the cation-radical strain →
 Cost_PCET drops ~1–1.5 eV below +5.391 → cascade collapses toward DOWNHILL,
-matching experiment (−0.14 eV, Cosnier 1999).
+matching experiment. (RESULT below: it does NOT flip — the residual gap is the
+PCM/speciation limit, not proton coupling; the verified driving force is −0.574 eV,
+E°(Os +309) − E°(FAD-GDH −265 mV SHE).)
 
 Levels: radical site screened at B3LYP/6-31G(d)+PCM (cheap), final energies
 at ωB97X/def2-TZVP+PCM (consistent with the cached cascade pieces).
@@ -43,11 +45,22 @@ LUMIFLAVIN_RED = "CC1=CC2=C(C=C1C)N(C)C3=NC(=O)NC(=O)C3N2"
 
 # Thermodynamic proton reference (same constant as script 32, Isse-Gennaro 2010)
 G_STAR_H_AQ_EV = -11.72          # G*(H⁺,aq,1M); reviewer's no-1M-corr value = -11.80
-OS_REDUCTION_EV = -4.392         # ΔE(Os III + e⁻ → Os II), ωB97X ΔSCF (cached cascade)
-BARE_IP_EV = 5.391               # FADH₂ → FADH₂•⁺ + e⁻ (the wrong, cached value)
-EXP_CASCADE_EV = -0.14           # experimental downhill (Cosnier 1999)
+BARE_IP_EV = 5.391               # FADH₂ → FADH₂•⁺ + e⁻ (vertical FAD IP — unchanged by the mediator)
+EXP_CASCADE_EV = -0.574          # verified downhill: E°(Os +309) − E°(FAD-GDH −265 mV SHE); was −0.14 (Cosnier, withdrawn)
 
 OUT_JSON = DFT_CACHE / "pcet_cascade.json"
+
+
+def _os_reduction_ev() -> float:
+    """ΔE(Os III + e⁻ → Os II), ωB97X ΔSCF — LOADED drift-safe from the Os cache
+    (OS-RECOMPUTE: prefer the real dimethyl mediator; fall back to plain-bpy until 21f
+    wb97x has run, then a literal as last resort)."""
+    for name in ("os_complex_wb97xd_dmbpy.json", "os_complex_wb97xd.json"):
+        p = DFT_CACHE / name
+        if p.exists():
+            d = json.loads(p.read_text())
+            return (d["os2_plus"]["E_total_Ha"] - d["os3_plus"]["E_total_Ha"]) * HARTREE_TO_EV
+    return -4.392
 
 
 def atoms_from_rdkit(mol_rd):
@@ -174,11 +187,12 @@ def main() -> int:
     # --- PCET arithmetic ---
     banner("PCET-corrected oxidation cost + cascade")
     cost_pcet = (e_fadhrad - e_fadh2) * HARTREE_TO_EV + G_STAR_H_AQ_EV
-    cascade_pcet = cost_pcet + OS_REDUCTION_EV
+    os_reduction = _os_reduction_ev()
+    cascade_pcet = cost_pcet + os_reduction
     print(f"  Bare cation-radical IP (old):   FADH₂→FADH₂•⁺      = +{BARE_IP_EV:.3f} eV")
     print(f"  PCET oxidation cost (new):      FADH₂→FADH•+H⁺+e⁻ = {cost_pcet:+.3f} eV")
     print(f"  Drop vs bare IP:                {cost_pcet - BARE_IP_EV:+.3f} eV")
-    print(f"  + Os(III)→Os(II) reduction:     {OS_REDUCTION_EV:+.3f} eV")
+    print(f"  + Os(III)→Os(II) reduction:     {os_reduction:+.3f} eV (Os ωB97X cache, drift-safe)")
     print(f"  → ΔG_cascade(PCET):             {cascade_pcet:+.3f} eV")
     print(f"  (old bare cascade = +0.998 eV uphill; experiment = {EXP_CASCADE_EV:+.2f} eV)")
     downhill = cascade_pcet < 0
@@ -194,7 +208,7 @@ def main() -> int:
         "bare_IP_eV": BARE_IP_EV,
         "pcet_oxidation_cost_eV": round(cost_pcet, 3),
         "drop_vs_bare_eV": round(cost_pcet - BARE_IP_EV, 3),
-        "os_reduction_eV": OS_REDUCTION_EV,
+        "os_reduction_eV": round(os_reduction, 4),
         "cascade_pcet_eV": round(cascade_pcet, 3),
         "cascade_bare_eV": 0.998,
         "exp_cascade_eV": EXP_CASCADE_EV,

@@ -100,29 +100,33 @@ experiment is the decisive empirical test.
 ## 3.5 The cascade and the limits of implicit solvation
 
 The raw computed cascade FADH₂→Os is **unfavourable in every method** (Table 2) — the frontier-orbital alignment
-is inverted (a Koopmans HOMO−LUMO offset of −0.91 eV, the donor level *below* the acceptor) and the
-adiabatic ΔSCF free energy is uphill (+0.88 eV) — whereas the experimentally anchored driving force is
-**downhill** (+465 mV, −0.47 eV; from the verified FAD-GDH potential, §3.6, and a *representative* osmium-polymer potential of +200 mV within the measured +15–489 mV vs NHE window [Zafar et al., 2012] — the cascade is downhill across that entire window, +465 mV being the value at the representative mediator). (The orbital offset and the free
-energy are distinct quantities, so their signs are not directly comparable; both nonetheless point the
-"wrong" way against experiment.) The ~1.3 eV discrepancy between the ΔSCF free energy and the verified
-value is the paper's methodological core, and we decompose rather than excuse it.
+is inverted (a Koopmans HOMO−LUMO offset of −1.05 eV on the real 4,4′-dimethyl-bpy mediator, the donor level
+*below* the acceptor) and the adiabatic ΔSCF free energy is uphill (+0.88 eV for the plain-bpy reference; the
+dimethyl recompute widens it by the substituent term below) — whereas the **experimentally verified** driving force
+is **downhill** (+574 mV, −0.574 eV; from the verified bound FAD-GDH potential, §3.6, and the device osmium-polymer
+potential **+309 mV vs NHE** — the best-performing of six polymers wired to GcGDH, measured as +21 mV vs
+Ag/AgCl(0.1 M KCl) with the paper's +288 mV conversion [Zafar et al., 2012]). (The orbital offset and the free
+energy are distinct quantities, so their signs are not directly comparable; both nonetheless point the "wrong" way
+against experiment.) The discrepancy between the ΔSCF free energy and the verified value is the paper's
+methodological core, and we decompose rather than excuse it.
 
-Two computed contributions account for it (Fig 5). **Mediator speciation** — the cited experimental potential
-and the real Os–PVI polymer correspond to the aqua or bis-imidazole complex, not the chloro model used
-to define the cascade — shifts the redox energy by **+0.51 eV (aqua)** and **+0.30 eV (bis-imidazole)**;
-the stronger σ-donor imidazole lowers E°(Os) relative to the weakly-donating aqua ligand, reproducing
-the experimental ordering of osmium-imidazole potentials (this aqua > bis-Im > chloro ordering is
-reproduced at the range-separated ωB97X functional — a cross-check confirming the speciation effect is
-not a B3LYP artefact). **Differential solvation** of the
-charge-changing octahedral couple adds a further ~0.20 eV for three explicit chloride-shell waters and
-trends toward the full shell; benchmarked on [Os(H₂O)₆]³⁺/²⁺, where adding the second hydration shell
-shifts the potential by **+0.98 eV**, reproducing the known ~1 V group-8 implicit-solvation error. Crucially,
-neither contribution is tuned to the experimentally anchored cascade — the speciation shifts follow from the
-ligand-exchange thermodynamics and the differential-solvation term is benchmarked on a *separate*
-[Os(H₂O)₆]³⁺/²⁺ couple — so the discrepancy is decomposed independently rather than absorbed into a fitted
-correction. The residual is thus a quantified, transferable limitation of continuum solvent on charged transition-metal
-redox couples — not a chemistry problem — whose rigorous closure is explicit-water QM/MM of the correct
-species.
+The real mediator is the **chloro** complex [Os(4,4′-dimethyl-bpy)₂(PVI)Cl]⁺ (Zafar), so the DFT chloro model is
+structurally correct and the gap is a **differential-solvation bracket** plus a substituent term (Fig 5).
+Differential solvation of the charge-changing octahedral couple is the dominant axis: the as-synthesised **chloro
+(+1/+2)** couple closes +0.21 eV with three explicit chloride-shell waters — the **lower bracket**, since the anionic
+chloride lowers the couple charge and its continuum error is ≈5× smaller than the benchmark — while in the operating
+poly(vinylimidazole) brush the sixth ligand may instead be a second chain imidazole, the PVI-realistic
+**bis-imidazole (+2/+3)** form, which closes **+0.55 eV** (the **upper bracket**; aquation is unlikely on the
+substitution-inert Os(II) d⁶ couple, so the earlier "the experiment measures the aqua form" framing is withdrawn —
+aqua serves only as a methodological benchmark). The [Os(H₂O)₆]³⁺/²⁺ benchmark fixes the +2/+3 scale: adding the
+second hydration shell shifts the potential by **+0.98 eV**, reproducing the known ~1 V group-8 implicit-solvation
+error. A second, smaller axis is the **4,4′-dimethyl substituent** itself (+0.146 eV more uphill than plain bpy — the
+donor methyls raise the Os(III) acceptor level, consistent with the Hammett series ①). Crucially, none of these
+contributions is tuned to the anchored cascade — the solvation term is benchmarked on a *separate* couple and the
+substituent term follows from the structure–activity series — so the discrepancy is decomposed independently rather
+than absorbed into a fitted correction. The residual is thus a quantified, transferable limitation of continuum
+solvent on charged transition-metal redox couples — not a chemistry problem — whose rigorous closure is
+explicit-water QM/MM of the **chloro** species.
 
 ## 3.6 The protein environment on the FAD potential
 
@@ -169,9 +173,10 @@ N5 sits **16.0 Å** below the surface — within the 18–20 Å tunnelling windo
 
 **Figure 3. Anode→mediator electron-transfer energetics.** *(a)* Frontier-orbital cascade for the
 rate-determining FADH₂→Os(III) step (B3LYP/6-31G(d)+LANL2DZ(Os)/C-PCM). The raw frontier-orbital offset
-is uphill (Δε = −0.909 eV) and the adiabatic ΔSCF free energy is +0.88 eV, whereas the experimentally
-anchored driving force is downhill (+465 mV / −0.47 eV, from a representative E°(Os) +200 mV [within the
-+15–489 mV vs NHE Os-polymer window, Zafar 2012] and the verified bound E°(FAD-GDH) −265 mV vs SHE); the raw inversion is the PCM/speciation artefact decomposed in Fig 5. The
+is uphill (Δε = −1.05 eV on the dimethyl mediator) and the adiabatic ΔSCF free energy is +0.88 eV (plain-bpy
+reference), whereas the verified driving force is downhill (+574 mV / −0.574 eV, from E°(Os) **+309 mV vs NHE**
+[the device 4,4′-dimethyl-bpy Os-PVI polymer, Zafar 2012] and the verified bound E°(FAD-GDH) −265 mV vs SHE); the
+raw inversion is the PCM-solvation + 4,4′-dimethyl-substituent artefact decomposed in Fig 5. The
 proton-referenced flavin potential, E°(FAD/FADH₂) = −158 mV vs SHE at pH 7, lies within 50 mV of
 experiment (−208 mV). *(b)* Hammett structure–activity relationship for cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺
 at constant charge: ΔE_red(III→II) is linear in σ_para (slope −0.92 eV/σ, r² = 1.00; fit over the
@@ -192,14 +197,14 @@ low-λ metal (Co→Ru, computed λ 0.78 eV) restores a ~×31 margin.
 
 ![Figure 5](figures/fig5_solvation_pcm.png)
 
-**Figure 5. The ~1 eV cascade gap decomposes into computed speciation and solvation contributions** (the
-"limits of implicit solvation" result). *(a)* Adding explicit waters to the chloride ligand of the
-mediator monotonically reduces the cascade gap (0.069 eV/water; three waters close ~22%). *(b)* Speciation
-accounts for the larger part: the active aqua and bis-imidazole forms shift the cascade by +0.51 and
-+0.30 eV vs the chloro model (B3LYP cascade-Δ), an ordering reproduced at the range-separated ωB97X
-functional (|Δ(ΔE_red)| 0.43 / 0.27 eV) — so the effect is not a B3LYP artefact. The [Os(H₂O)₆]³⁺/²⁺
-benchmark recovers the known ~1 V group-8 implicit-solvation error on adding the second hydration shell
-(+0.98 eV).
+**Figure 5. The cascade gap decomposes into a chloro↔bis-Im differential-solvation bracket plus a substituent
+term** (the "limits of implicit solvation" result). *(a)* Adding explicit waters to the chloride of the real
+(chloro) dimethyl mediator monotonically closes the gap (+0.21 eV / three waters) — the **+1/+2 lower bracket**
+(the anionic Cl⁻ lowers the couple charge, so its continuum error is ≈5× smaller than the benchmark). *(b)* In the
+operating PVI brush the sixth ligand may be a second chain imidazole — the PVI-realistic **bis-imidazole (+2/+3)
+upper bracket** (+0.55 eV vs chloro); on the dimethyl mediator the ranking is **bis-Im > aqua > chloro** (aqua, a
+methodological benchmark, +0.49 eV). The [Os(H₂O)₆]³⁺/²⁺ benchmark fixes the +2/+3 scale — the second-shell shift
+of **+0.98 eV** reproduces the known ~1 V group-8 implicit-solvation error.
 
 ![Figure S1](figures/figS1_betad_ensemble.png)
 

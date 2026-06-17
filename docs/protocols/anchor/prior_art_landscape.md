@@ -43,8 +43,8 @@
 (laccase OR "bilirubin oxidase") NEAR15 (ZIF OR "zeolitic imidazolate" OR MOF OR nanozyme*) AND ("oxygen reduction" OR ORR OR cathode*)
 ```
 **CPC:** G01N 27/327 (enzyme-біосенсори); H01M 8/16 (biofuel cells); C12N 9/04 (оксидоредуктази).
-> 🔎 **Відомий prior art** (літ-скан): Os-медіація FAD-GDH established (Degani-Heller 1989→; Mano/Heller
-> +15…+489 mV; тюнінг обвіозний через Lever E_L 1990); laccase/ZIF-катоди опубліковані (Cu/Zn-ZIF,
+> 🔎 **Відомий prior art** (літ-скан): Os-медіація FAD-GDH established (Degani-Heller 1987→; Os-PVI window
+> +15…+489 mV, Zafar 2012; тюнінг обвіозний через Lever E_L 1990); laccase/ZIF-катоди опубліковані (Cu/Zn-ZIF,
 > Cu-ZIF-67). → це **очікувано** і **підкреслює**, що наша новизна — у синергії (EBFC = одночасно
 > живлення *і* zero-noise сенсор), а не в хімії компонентів. Деталі — [`defensive_disclosure.md`](defensive_disclosure.md) §1.
 
