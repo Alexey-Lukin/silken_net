@@ -326,7 +326,7 @@ Scripts: `23_build_zif_clusters.py` (geometry + deprotonation), `24_dft_hopping_
 | Cascade verdict (verified E°s) | ✅ | E°(Os +309) − E°(FAD-GDH −265 mV SHE) = **+574 mV / −0.574 eV downhill**; raw DFT uphill = method limit decomposed by ② |
 | **Definitive in-silico verdict** (publication-grade) | ✅ | raw DFT uphill (adiabatic ΔSCF +1.03 eV dimethyl); gap = differential PCM solvation (chloro↔bis-Im) + 4,4'-dimethyl substituent, decomposed by ② (script 34); rigorous closure = QM/MM chloro species → школа Мінаєва |
 
-**Gate L3 → L4:** **pass** — повна bpy модель закрила π-backbonding gap; сирий DFT-каскад uphill (−1.05 Koopmans dimethyl / +0.88 ΔSCF plain, dimethyl pending B1), а розрив до верифікованого −0.574 eV декомпозовано ② на differential PCM-сольватацію (chloro↔bis-Im bracket) + 4,4'-dimethyl substituent (метод-ліміт, не хімія). Каскадний клайм Gen 2.0 підтверджений **експериментально** (верифіковані E°s → +574 мВ downhill, Zafar 2012 + Schachinger 2022); DFT дає механізм + квантифікований метод-ліміт. Повне raw-DOWNHILL → QM/MM chloro species (школа Мінаєва), не блокує L4.
+**Gate L3 → L4:** **pass** — повна bpy модель закрила π-backbonding gap; сирий DFT-каскад uphill (−1.05 Koopmans dimethyl / +1.03 ΔSCF dimethyl, B1 ✅ 2026-06-17; +0.88 plain), а розрив до верифікованого −0.574 eV декомпозовано ② на differential PCM-сольватацію (chloro↔bis-Im bracket) + 4,4'-dimethyl substituent (метод-ліміт, не хімія). Каскадний клайм Gen 2.0 підтверджений **експериментально** (верифіковані E°s → +574 мВ downhill, Zafar 2012 + Schachinger 2022); DFT дає механізм + квантифікований метод-ліміт. Повне raw-DOWNHILL → QM/MM chloro species (школа Мінаєва), не блокує L4.
 
 ---
 

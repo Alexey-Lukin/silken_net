@@ -91,7 +91,7 @@ DFT (CPU, done):
   24 (hopping ΔSCF) ───┘── L3b verdict (geom-fixed t_ij; k_DET borderline, λ-sensitive — scripts 25/35)
 
 Kinetics (CPU, done):
-  30 (delta_t) ──→ BASELINE 60s validated
+  30 (delta_t) ──→ 36s healthy / 190s stressed (E.63-revised; field-derated higher)
   30b (Monte Carlo) ──→ 90% CI
   31 (EIS) ──→ Nyquist predictions
 

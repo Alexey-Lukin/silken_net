@@ -101,8 +101,7 @@ experiment is the decisive empirical test.
 
 The raw computed cascade FADH₂→Os is **unfavourable in every method** (Table 2) — the frontier-orbital alignment
 is inverted (a Koopmans HOMO−LUMO offset of −1.05 eV on the real 4,4′-dimethyl-bpy mediator, the donor level
-*below* the acceptor) and the adiabatic ΔSCF free energy is uphill (+0.88 eV for the plain-bpy reference; the
-dimethyl recompute widens it by the substituent term below) — whereas the **experimentally verified** driving force
+*below* the acceptor) and the adiabatic ΔSCF free energy is uphill (+1.03 eV on the dimethyl mediator, matching the Koopmans offset above and Table 2; +0.88 eV for the plain-bpy parent, the +0.146 eV difference being the substituent term ①) — whereas the **experimentally verified** driving force
 is **downhill** (+574 mV, −0.574 eV; from the verified bound FAD-GDH potential, §3.6, and the device osmium-polymer
 potential **+309 mV vs NHE** — the best-performing of six polymers wired to GcGDH, measured as +21 mV vs
 Ag/AgCl(0.1 M KCl) with the paper's +288 mV conversion [Zafar et al., 2012]). (The orbital offset and the free
@@ -173,8 +172,7 @@ N5 sits **16.0 Å** below the surface — within the 18–20 Å tunnelling windo
 
 **Figure 3. Anode→mediator electron-transfer energetics.** *(a)* Frontier-orbital cascade for the
 rate-determining FADH₂→Os(III) step (B3LYP/6-31G(d)+LANL2DZ(Os)/C-PCM). The raw frontier-orbital offset
-is uphill (Δε = −1.05 eV on the dimethyl mediator) and the adiabatic ΔSCF free energy is +0.88 eV (plain-bpy
-reference), whereas the verified driving force is downhill (+574 mV / −0.574 eV, from E°(Os) **+309 mV vs NHE**
+is uphill (Δε = −1.05 eV on the dimethyl mediator) and the adiabatic ΔSCF free energy is +1.03 eV on the dimethyl mediator (+0.88 eV plain-bpy reference), whereas the verified driving force is downhill (+574 mV / −0.574 eV, from E°(Os) **+309 mV vs NHE**
 [the device 4,4′-dimethyl-bpy Os-PVI polymer, Zafar 2012] and the verified bound E°(FAD-GDH) −265 mV vs SHE); the
 raw inversion is the PCM-solvation + 4,4′-dimethyl-substituent artefact decomposed in Fig 5. The
 proton-referenced flavin potential, E°(FAD/FADH₂) = −158 mV vs SHE at pH 7, lies within 50 mV of
