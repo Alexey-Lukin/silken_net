@@ -49,7 +49,7 @@
 | 31 | `eis_impedance_model` | Rct=130Ω, Rs=100Ω | `kinetics/eis_model.json` |
 | 31b | `cathode_det_rct` | ③ cathode DET R_ct band ~0.002–230 Ω (borderline k_DET × unknown Γ, ×10⁵) → kinetic competition, not a fixed Rct; INDICATIVE | `kinetics/cathode_det_rct.json` |
 | 32 | `pcet_redox_potential` | E°(FAD/FADH₂) **-158 mV** (Δ50 mV vs free-flavin exp) — PCET valid w/ implicit solvent | `dft/pcet_redox_potential.json` |
-| 33 | `pcet_cascade_semiquinone` | PCET cost +5.87 eV → cascade +1.48 eV, **does NOT flip downhill** (~1 eV = PCM solvation limit) | `dft/pcet_cascade.json` |
+| 33 | `pcet_cascade_semiquinone` | PCET cost +5.87 eV → cascade **+1.63 eV** (dimethyl Os), **does NOT flip downhill** (PCM solvation limit) | `dft/pcet_cascade.json` |
 | 34 | `dft_microsolvation` | **② chloro-bracket (dimethyl)**: [Os(H₂O)₆] **+0.98 eV** benchmark, chloro Cl⁻-solvation **+0.21 eV** (+1/+2 lower), bis-Im **+0.55** / aqua **+0.49** (+2/+3 upper) + substituent **+0.146** → gap = decomposed method limit | `dft/microsolvation_dmbpy.json` |
 | 34b | `wb97x_speciation` | **② ωB97X cross-check ✅** (B4 dimethyl): chloro↔+2/+3 **bracket functional-robust** (both functionals); internal aqua↔bis-Im order functional-**sensitive** (ωB97X aqua>bis-Im, B3LYP-dimethyl bis-Im>aqua, <0.15 eV) | `dft/wb97x_speciation[_dmbpy].json` |
 | 35 | `dft_metal_reorganization` | **③** computed inner-sphere λ (Nelsen 4-pt): Ru **0.78**, Ce 0.87, Co 3.09 (B3LYP spin-crossover ~2× over-est) | `dft/metal_reorganization.json` |
