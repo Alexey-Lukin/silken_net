@@ -238,8 +238,11 @@ PCM failure (Ru(H₂O)₆ ~1 V error, JPCC 10.1021/jp406772u). Full numbers →
 3. **Operando speciation = upper bracket** — in the PVI brush the 6th ligand may be a 2nd
    chain imidazole (**bis-Im**, +2/+3, PVI-realistic; aquation unlikely on the
    substitution-inert Os(II) d⁶ couple). On the dimethyl mediator bis-Im closes **+0.55 eV**
-   and the ranking **flips to bis-Im > aqua > chloro** (was aqua > bis-Im on plain bpy);
-   aqua (**+0.49 eV**) is a methodological benchmark, **not** the measured species.
+   (B3LYP; **+0.27 eV at ωB97X**, B4). At B3LYP the ranking flips to bis-Im > aqua > chloro
+   (was aqua > bis-Im on plain bpy), but this internal order is **functional-sensitive** — the
+   ωB97X cross-check keeps aqua > bis-Im (≤0.15 eV); functional-robust is the chloro↔{aqua,bis-Im}
+   bracket (both +2/+3 above chloro at both functionals). aqua (**+0.49 eV**) is a methodological
+   benchmark, **not** the measured species.
 4. **Substituent axis** — the dimethyl chloro baseline is **+0.146 eV more uphill** than
    plain bpy (① Hammett, donor 4,4'-Me) — a contribution the earlier ② did not separate.
 

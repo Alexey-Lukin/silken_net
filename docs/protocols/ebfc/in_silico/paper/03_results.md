@@ -202,8 +202,9 @@ term** (the "limits of implicit solvation" result). *(a)* Adding explicit waters
 (chloro) dimethyl mediator monotonically closes the gap (+0.21 eV / three waters) — the **+1/+2 lower bracket**
 (the anionic Cl⁻ lowers the couple charge, so its continuum error is ≈5× smaller than the benchmark). *(b)* In the
 operating PVI brush the sixth ligand may be a second chain imidazole — the PVI-realistic **bis-imidazole (+2/+3)
-upper bracket** (+0.55 eV vs chloro); on the dimethyl mediator the ranking is **bis-Im > aqua > chloro** (aqua, a
-methodological benchmark, +0.49 eV). The [Os(H₂O)₆]³⁺/²⁺ benchmark fixes the +2/+3 scale — the second-shell shift
+upper bracket** (+0.55 eV vs chloro at B3LYP, +0.27 eV at ωB97X). Both +2/+3 forms (aqua, +0.49 eV, a
+methodological benchmark) lie above chloro at **both** functionals — the chloro↔+2/+3 bracket is functional-robust;
+only the internal aqua↔bis-Im order is functional-sensitive (B3LYP bis-Im > aqua, ωB97X aqua > bis-Im, ≤0.15 eV). The [Os(H₂O)₆]³⁺/²⁺ benchmark fixes the +2/+3 scale — the second-shell shift
 of **+0.98 eV** reproduces the known ~1 V group-8 implicit-solvation error.
 
 ![Figure S1](figures/figS1_betad_ensemble.png)
