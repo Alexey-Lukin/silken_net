@@ -1,0 +1,34 @@
+{
+  "method": "\u03c9B97X/6-31G(d)+LANL2DZ(Os)+C-PCM vertical \u0394SCF \u0394E_red; cross-check of the B3LYP \u2461 speciation trend (script 34). Same programmatic geometries.",
+  "note": "\u0394SCF total-energy difference (\u03c9B97X Koopmans LUMOs are unreliable); tests whether the aqua > bis-Im > chloro speciation trend is functional-robust.",
+  "forms": [
+    {
+      "name": "chloro",
+      "n_atoms": 66,
+      "dE_red_eV": -4.2466,
+      "converged": true,
+      "E_os2_Ha": -1964.436300344034,
+      "E_os3_Ha": -1964.2802413653571,
+      "shift_vs_chloro_eV": 0.0
+    },
+    {
+      "name": "aqua",
+      "n_atoms": 68,
+      "dE_red_eV": -4.6681,
+      "converged": true,
+      "E_os2_Ha": -1580.475247454705,
+      "E_os3_Ha": -1580.3036987840742,
+      "shift_vs_chloro_eV": -0.4215
+    },
+    {
+      "name": "bisim",
+      "n_atoms": 77,
+      "dE_red_eV": -4.5205,
+      "converged": true,
+      "E_os2_Ha": -1769.5640855937572,
+      "E_os3_Ha": -1769.3979615186809,
+      "shift_vs_chloro_eV": -0.2739
+    }
+  ],
+  "wall_seconds": 26036.2
+}

@@ -239,23 +239,29 @@ since the Os(II) d⁶ couple is substitution-**inert**, and the PVI-realistic fo
 - **bis-Im** cis-[Os(dmbpy)₂(1-MeIm)₂]²⁺/³⁺ → cascade Δ **−0.500 = +0.554 eV vs chloro** (the PVI-realistic **upper bracket**).
 - **aqua** cis-[Os(dmbpy)₂(1-MeIm)(H₂O)]²⁺/³⁺ → cascade Δ **−0.565 = +0.490 eV vs chloro** (methodological benchmark — aquation unlikely on the inert couple).
 
-On the **real dimethyl mediator the ranking flips to bis-Im > aqua > chloro** (on plain bpy
-it was aqua > bis-Im): the strong σ-donor 2nd imidazole combined with the 4,4'-dimethyl
-donors makes bis-Im the strongest acceptor. Both +2/+3 forms carry the larger group-8 PCM
-bias (benchmark a).
+On the dimethyl mediator **B3LYP gives bis-Im > aqua > chloro** (on plain bpy it was aqua >
+bis-Im) — the strong σ-donor 2nd imidazole plus the 4,4'-dimethyl donors. **This internal
+aqua↔bis-Im flip is functional-sensitive, though** — the ωB97X cross-check (B4, §below) keeps
+aqua > bis-Im (within 0.15 eV). What *is* functional-robust is the chloro(+1/+2) ↔ {aqua,
+bis-Im}(+2/+3) bracket — both +2/+3 forms sit above chloro at both functionals, and both
+carry the larger group-8 PCM bias (benchmark a).
 
 **Verdict (chloro-anchored bracket):** the real mediator is **chloro** (Zafar +309 mV), so
 the raw-DFT↔exp gap is differential PCM solvation **bracketed** between the as-synthesised
 **chloro (+1/+2, lower — +0.21 eV/3 waters, trending to a sub-1-eV full shell)** and the
-operando **bis-Im (+2/+3, upper — +0.55 eV, PVI-realistic)**, plus the **4,4'-dimethyl
+operando **bis-Im (+2/+3, upper — +0.55 eV B3LYP / +0.27 ωB97X, PVI-realistic)**, plus the **4,4'-dimethyl
 substituent** (+0.146 eV, a separate axis ①). aqua is a methodological benchmark, **not**
 "what the experiment measures" — the earlier "exp = aqua" framing is **withdrawn** (Zafar's
 polymer is explicitly chloro). The gap is a **quantified method limit**, not a chemistry
 failure; rigorous closure = QM/MM of the **chloro** species (школа Мінаєва).
 
-**ωB97X cross-check (script 34b):** the speciation trend is functional-robust on plain bpy
-(aqua/bis-Im shifts reproduced at the range-separated hybrid); the dimethyl cross-check
-re-runs as B4 (`wb97x_speciation_dmbpy.json`).
+**ωB97X cross-check (script 34b ✅ B4):** on the dimethyl mediator ωB97X ΔSCF puts **both
+aqua (+0.42) and bis-Im (+0.27 eV vs chloro) above the as-synthesised chloro** — so the
+chloro↔+2/+3 **bracket is functional-robust**. The internal aqua↔bis-Im order is **not**:
+ωB97X keeps **aqua > bis-Im** (the plain-bpy order), whereas B3LYP-dimethyl uniquely flipped
+to bis-Im > aqua (the two within <0.15 eV). Since aqua is only a methodological benchmark,
+the operando **chloro↔bis-Im bracket holds at both functionals**. Cache
+`wb97x_speciation_dmbpy.json` (3/3 forms converged via Newton, ⟨S²⟩≈0.754).
 
 ### Electron Tunneling Pathway (script 28, Beratan-Onuchic)
 

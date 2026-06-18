@@ -91,8 +91,8 @@ def fig3() -> None:
     os3_lumo = osc["os3_plus"]["LUMO_eV"]
     raw_delta = fadh2_homo - os3_lumo
     _close(fadh2_homo, -5.137, 0.01, "FADH₂ HOMO")
-    _close(os3_lumo, -4.228, 0.01, "Os(III) LUMO")
-    _close(raw_delta, -0.909, 0.01, "raw Δε")
+    _close(os3_lumo, -4.086, 0.01, "Os(III) LUMO (dimethyl)")
+    _close(raw_delta, -1.051, 0.01, "raw Δε (dimethyl)")
     e_pcet_ph7 = pcet["E_vs_SHE_mV"]["pH_7.0"]
     _close(e_pcet_ph7, -158.4, 1.0, "PCET E° pH7")
     _close(pcet["delta_vs_exp_pH7_mV"], 49.6, 1.0, "PCET Δ vs exp")
@@ -266,8 +266,10 @@ def fig4() -> None:
 # Fig 5 — solvation / PCM limit (②): (a) explicit waters · (b) speciation + benchmark
 # ─────────────────────────────────────────────────────────────────────────────
 def fig5() -> None:
-    micro = {r["name"]: r for r in _load("microsolvation.json")["results"]}
-    wb = {f["name"]: f for f in _load("wb97x_speciation.json")["forms"]}
+    micro = {r["name"]: r for r in _load("microsolvation_dmbpy.json")["results"]}   # dimethyl mediator (the device Os)
+    # [Os(H₂O)₆] group-8 benchmark is bpy-independent → from the plain cache (the dmbpy run omits n18)
+    grp8src = {r["name"]: r for r in _load("microsolvation.json")["results"]}
+    wb = {f["name"]: f for f in _load("wb97x_speciation_dmbpy.json")["forms"]}       # B4 ωB97X dimethyl cross-check
 
     k0 = micro["mediator_k0_clwaters"]["cascade_delta_eV"]
     kseries = [
@@ -278,12 +280,12 @@ def fig5() -> None:
     ]
     aqua_shift = micro["aqua_meim_h2o"]["cascade_delta_eV"] - k0
     bisim_shift = micro["bisim_meim2"]["cascade_delta_eV"] - k0
-    n6 = micro["aquo_n6_innershell"]["dE_red_eV"]
-    n18 = micro["aquo_n18_twoshell"]["dE_red_eV"]
+    n6 = grp8src["aquo_n6_innershell"]["dE_red_eV"]
+    n18 = grp8src["aquo_n18_twoshell"]["dE_red_eV"]
     grp8 = n18 - n6
-    _close(k0, -0.908, 0.01, "② chloro k0")
-    _close(aqua_shift, 0.510, 0.02, "② aqua speciation shift")
-    _close(bisim_shift, 0.299, 0.02, "② bis-Im speciation shift")
+    _close(k0, -1.054, 0.01, "② chloro k0 (dimethyl)")
+    _close(aqua_shift, 0.490, 0.02, "② aqua speciation shift (dimethyl)")
+    _close(bisim_shift, 0.554, 0.02, "② bis-Im speciation shift (dimethyl)")
     _close(grp8, 0.982, 0.02, "② group-8 n6→n18")
 
     fig, (axa, axb) = plt.subplots(1, 2, figsize=(9.6, 4.3))
@@ -326,7 +328,7 @@ def fig5() -> None:
     axb.set_xticks([*list(xs), gx])
     axb.set_xticklabels([*species, "group-8\nPCM error"])
     axb.set_ylabel("shift vs chloro / 2nd-shell shift (eV)")
-    axb.set_title("(b) Speciation is functional-robust;\n[Os(H₂O)₆] recovers the ~1 V group-8 PCM error")
+    axb.set_title("(b) Bracket functional-robust; aqua↔bis-Im order is not;\n[Os(H₂O)₆] recovers the ~1 V group-8 PCM error")
     axb.legend(loc="upper left", frameon=False)
     axb.set_ylim(0, 1.15)
 

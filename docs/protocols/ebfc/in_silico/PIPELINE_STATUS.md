@@ -51,7 +51,7 @@
 | 32 | `pcet_redox_potential` | E°(FAD/FADH₂) **-158 mV** (Δ50 mV vs free-flavin exp) — PCET valid w/ implicit solvent | `dft/pcet_redox_potential.json` |
 | 33 | `pcet_cascade_semiquinone` | PCET cost +5.87 eV → cascade +1.48 eV, **does NOT flip downhill** (~1 eV = PCM solvation limit) | `dft/pcet_cascade.json` |
 | 34 | `dft_microsolvation` | **② chloro-bracket (dimethyl)**: [Os(H₂O)₆] **+0.98 eV** benchmark, chloro Cl⁻-solvation **+0.21 eV** (+1/+2 lower), bis-Im **+0.55** / aqua **+0.49** (+2/+3 upper) + substituent **+0.146** → gap = decomposed method limit | `dft/microsolvation_dmbpy.json` |
-| 34b | `wb97x_speciation` | **② ωB97X cross-check** (plain bpy: functional-robust, aqua > bis-Im > chloro); **dimethyl re-run = B4 pending** | `dft/wb97x_speciation[_dmbpy].json` |
+| 34b | `wb97x_speciation` | **② ωB97X cross-check ✅** (B4 dimethyl): chloro↔+2/+3 **bracket functional-robust** (both functionals); internal aqua↔bis-Im order functional-**sensitive** (ωB97X aqua>bis-Im, B3LYP-dimethyl bis-Im>aqua, <0.15 eV) | `dft/wb97x_speciation[_dmbpy].json` |
 | 35 | `dft_metal_reorganization` | **③** computed inner-sphere λ (Nelsen 4-pt): Ru **0.78**, Ce 0.87, Co 3.09 (B3LYP spin-crossover ~2× over-est) | `dft/metal_reorganization.json` |
 | 40 | `validate_vs_experiment` | predictions ready for Ti-coin CV/EIS | `kinetics/validation_report.json` |
 | 50 | `thermal_stress_lame` | safety 9.9× at -30°C; press-fit P_c 34.7→22.6 MPa (stress relaxation, not creep); O-ring seals, barbs axial-only | `kinetics/thermal_stress_lame.json` |
