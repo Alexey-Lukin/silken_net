@@ -837,9 +837,9 @@ DEPENDENCIES
   rubocop-rails-omakase
   rubocop-rspec
   rumale
-  sentry-rails (~> 6.5)
-  sentry-ruby (~> 6.5)
-  sentry-sidekiq (~> 6.5)
+  sentry-rails
+  sentry-ruby
+  sentry-sidekiq
   sidekiq
   sidekiq-scheduler
   simplecov
