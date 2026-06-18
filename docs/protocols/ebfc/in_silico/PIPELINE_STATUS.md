@@ -1,6 +1,6 @@
 # In-Silico Pipeline — Operational Status & Dependencies
 
-> **Last updated:** 2026-06-17 (OS-RECOMPUTE — dimethyl mediator +309 mV, ② chloro-bracket; B1 ωB97X dimethyl in progress)
+> **Last updated:** 2026-06-18 (OS-RECOMPUTE — dimethyl mediator +309 mV, ② chloro-bracket; B1/B2 ωB97X dimethyl ✅, adiabatic ΔSCF +1.03 eV; B4 speciation re-run pending)
 > **TRL 3→4 Gate:** ✅ PASSED (2026-05-25)
 
 ---
@@ -31,7 +31,7 @@
 | 16 | `strain_cycling_md` | pseudoplastic (compress<stretch), PE drift 1.0% | `kinetics/strain_cycling.json` |
 | 20 | `dft_lumiflavin` | HOMO(FADH₂) = -5.14 eV | `dft/lumiflavin.json` |
 | 21b | `dft_os_bpy_full` | LUMO(Os III) = -4.23 eV (π-backbonding) | `dft/os_complex.json` |
-| 21d/21f | `dft_os_bpy_wb97xd` / `dft_os_dimethyl` | **Adiabatic ΔSCF +0.884 eV** (plain bpy; **dimethyl B1 in progress** ~+1.0, real mediator); verified cascade **+574 mV** → SUMMARY | `dft/os_complex_wb97xd[_dmbpy].json` |
+| 21d/21f/21g | `dft_os_bpy_wb97xd` / `dft_os_dimethyl` / `adiabatic_dscf` | **Adiabatic ΔSCF +1.03 eV** (dimethyl, real mediator; +0.884 plain baseline) — B1/B2 ✅; verified cascade **+574 mV** → SUMMARY | `dft/os_complex_wb97xd[_dmbpy].json`, `delta_scf_corrections.json` |
 | 21e | `dft_os_mediator_series` | **① Hammett LFER** slope ≈ −0.93 eV/σ; realistic optimum **SO₂CF₃** (cascade −0.227, inert) > NO₂ (degrades on cycling) | `dft/os_mediator_series.json` |
 | 22 | `compare_homo_lumo` | cascade Δε = **-1.05 raw** (dimethyl, uphill); verified **−0.574 eV** (→ SUMMARY) | `dft/comparison.json` |
 | 23 | `build_zif_clusters` | 3 ZIF cluster XYZ | `ligands/` |
@@ -122,13 +122,13 @@ Validation:
 |-----------|--------|----------------|
 | L1 protein architecture | ✅ Complete | — |
 | L2 stability MD | ✅ Complete | Genipin ✅, temp sweep ✅ (4/4), PSBMA ✅, xylem sap ✅ (6/6), PVI ✅, strain ✅ |
-| L3 anode DFT | ✅ Complete | ωB97X/def2-TZVP ✅ (adiabatic ΔSCF +0.884 eV); tunneling ✅; MD ensemble HOMO robust ✅ |
+| L3 anode DFT | ✅ Complete | ωB97X/def2-TZVP ✅ (adiabatic ΔSCF +1.03 eV dimethyl / +0.884 plain); tunneling ✅; MD ensemble HOMO robust ✅ |
 | L3b cathode DET | ✅ Complete (geom-fixed) | k_DET borderline (×1–30, λ-sensitive — a real finding, motivates Ru/cMOF/enzyme-free) |
 | L4 kinetics | ✅ Complete | — |
 | L4b Monte Carlo | ✅ Complete | — |
 | L4c EIS | ✅ Complete | — |
 
-**Verdict: ✅ Ready.** Q1 publication (школа Мінаєва): ωB97X/def2-TZVP adiabatic ΔSCF complete (B3LYP corrected -0.07 eV best estimate); L3b cathode complete (geom-fixed; k_DET borderline at realistic λ — a clean paper finding, motivates Ru/cMOF/enzyme-free); MD→DFT ensemble confirms thermal robustness; PCET via thermodynamic proton reference (script 32) validates the FAD/FADH₂ potential (within 50 mV of free-flavin). Closed limitations (both clean "limitations of implicit solvation" points for the paper): (a) Nelsen λ — script-29 (FADH₂•⁺) radical-cation pathological, **rescued by 29b** (FADH⁻/FADH• couple) → computed inner-sphere λ_i = **0.39 eV**, total ~0.7-0.8 w/ outer-sphere ≈ lit (→ L3 Nelsen-λ row); (b) PCET cascade reframing (script 33) does NOT flip the ΔSCF cascade downhill — the gap is differential PCM solvation (chloro↔bis-Im bracket) + the 4,4'-dimethyl substituent (decomposed by ②, script 34), not proton coupling. **Authoritative cascade verdict = verified E°s (+574 mV / −0.574 eV downhill, Zafar 2012 + Schachinger 2022); raw DFT uphill = quantified method limit (the «−0.07 ≈ −0.14» claim was withdrawn — built on a +60 mV FAD artifact).**
+**Verdict: ✅ Ready.** Q1 publication (школа Мінаєва): ωB97X/def2-TZVP adiabatic ΔSCF complete (+1.03 eV dimethyl, uphill = quantified method limit; the «−0.07 corrected» estimate **withdrawn** — built on a +60 mV FAD artifact); L3b cathode complete (geom-fixed; k_DET borderline at realistic λ — a clean paper finding, motivates Ru/cMOF/enzyme-free); MD→DFT ensemble confirms thermal robustness; PCET via thermodynamic proton reference (script 32) validates the FAD/FADH₂ potential (within 50 mV of free-flavin). Closed limitations (both clean "limitations of implicit solvation" points for the paper): (a) Nelsen λ — script-29 (FADH₂•⁺) radical-cation pathological, **rescued by 29b** (FADH⁻/FADH• couple) → computed inner-sphere λ_i = **0.39 eV**, total ~0.7-0.8 w/ outer-sphere ≈ lit (→ L3 Nelsen-λ row); (b) PCET cascade reframing (script 33) does NOT flip the ΔSCF cascade downhill — the gap is differential PCM solvation (chloro↔bis-Im bracket) + the 4,4'-dimethyl substituent (decomposed by ②, script 34), not proton coupling. **Authoritative cascade verdict = verified E°s (+574 mV / −0.574 eV downhill, Zafar 2012 + Schachinger 2022); raw DFT uphill = quantified method limit (the «−0.07 ≈ −0.14» claim was withdrawn — built on a +60 mV FAD artifact).**
 
 ### ✅ Sufficient for Pitch / Investor Meeting?
 
@@ -142,7 +142,7 @@ Validation:
 
 **Verdict: ✅ YES.** Key pitch points:
 1. Pipeline PySCF+B3LYP+PCM runs end-to-end ✅
-2. Full bpy model (54 atoms) closes π-backbonding gap ✅; ωB97X/def2-TZVP adiabatic ΔSCF **done ourselves** (+0.884 eV)
+2. Full bpy model (54 atoms) closes π-backbonding gap ✅; ωB97X/def2-TZVP adiabatic ΔSCF **done ourselves** (+1.03 eV dimethyl / +0.884 plain)
 3. **Ask:** QM/MM with explicit solvation shell to overcome the **~1 eV PCM differential-solvation limit** we established via ωB97X adiabatic ΔSCF (raw DOWNHILL is unreachable with implicit solvent — proven, not pending)
 4. **Ask:** CDFT hopping integrals for the full periodic ZIF lattice (our 24 used cluster ΔSCF; multi-week project)
 5. Co-authored Q1 paper → 08_01 Стаття 1 (title home; "Computational Electron-Transfer Energetics…") — incl. a "limitations of implicit solvation" section (λ + cascade)
@@ -160,7 +160,7 @@ Validation:
 - ✅ ~~Temperature sweep (script 12)~~ — DONE 4/4 temps (263K-313K all stable, ≪3Å)
 - ✅ ~~PSBMA diffusion (script 13)~~ — DONE (model limitation noted)
 - ✅ ~~Xylem sap sweep (script 14)~~ — DONE 6/6 species (pH 4.2-5.8 all stable)
-- ✅ ~~ωB97X DFT (script 21d)~~ — DONE (plain). **dimethyl recompute B1 in progress** (21f). Koopmans Δε=-5.88 eV (RSH artifact). Adiabatic ΔSCF +0.884 eV plain (uphill; verified cascade +574 mV → SUMMARY).
+- ✅ ~~ωB97X DFT (scripts 21d/21f/21g)~~ — DONE. **dimethyl recompute B1/B2 ✅**. Koopmans Δε=−6.02 eV dimethyl (RSH artifact). Adiabatic ΔSCF +1.03 eV dimethyl / +0.884 plain (uphill; verified cascade +574 mV → SUMMARY).
 - ✅ ~~L3b Co-Ce + Ce-graphene (script 24)~~ — DONE (geom-fixed t_ij; k_DET borderline ×1–30, scripts 24/25/35)
 - ✅ ~~PCET potential + cascade (scripts 32, 33)~~ — DONE (potential -158 mV valid; cascade does not flip — PCM limit)
 
