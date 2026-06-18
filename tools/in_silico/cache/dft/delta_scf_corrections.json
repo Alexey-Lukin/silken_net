@@ -1,16 +1,24 @@
 {
-  "E_H2O_Ha": -76.45004036993706,
-  "E_H3O_Ha": -76.85725529842296,
-  "dE_proton_eV": -11.08088270416219,
-  "IP_vertical_eV": 5.390766095035305,
-  "IP_adiabatic_eV": 5.276448810966792,
-  "relaxation_eV": -0.11431728406851291,
-  "dG_vertical_eV": 0.998467395521321,
-  "dG_pcet_eV": -10.08241530864087,
-  "dG_adiabatic_eV": 0.8841501114528081,
-  "dG_adiabatic_pcet_eV": -10.196732592709383,
+  "method": "Composite adiabatic \u0394SCF: geom-opt B3LYP/def2-SVP+PCM, SP \u03c9B97X/def2-TZVP+PCM. FAD side recomputed; EA_Os3 loaded drift-safe from the Os \u03c9B97X cache.",
+  "mediator": "4,4'-dimethyl-bpy (real device, Zafar +309 mV)",
+  "ea_os3_source": "os_complex_wb97xd_dmbpy.json",
+  "E_FADH2_Ha": -873.4517779214837,
+  "E_FADH2_cation_adiabatic_Ha": -873.2578714906117,
+  "E_FADH2_cation_vertical_Ha": -873.2445807900256,
+  "IP_vertical_eV": 5.6381,
+  "IP_adiabatic_eV": 5.2765,
+  "relaxation_eV": -0.3617,
+  "EA_Os3_eV": 4.243,
+  "dG_vertical_eV": 1.3952,
+  "dG_adiabatic_eV": 1.0335,
   "geom_opt_converged": {
     "FADH2": true,
     "FADH2_cation": true
-  }
+  },
+  "sp_converged": {
+    "FADH2": true,
+    "cation_adiabatic": true,
+    "cation_vertical": true
+  },
+  "wall_seconds": 5026.3
 }

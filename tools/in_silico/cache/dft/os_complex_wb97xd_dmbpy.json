@@ -1,0 +1,37 @@
+{
+  "method": "WB97X/def2-tzvp+LANL2DZ(Os)+C-PCM(water,C-PCM)",
+  "model_note": "REAL device mediator cis-[Os(4,4'-dimethyl-bpy)2(1-MeIm)Cl]^n+ (Zafar 2012 +309 mV vs NHE). Supersedes the plain-bpy 21b/21d as the device baseline; plain-bpy retained as the parent \u03c0-backbonding reference.",
+  "ligand": "4,4'-dimethyl-2,2'-bipyridine",
+  "os2_plus": {
+    "label": "Os(II) dmbpy (wb97x)",
+    "charge": 1,
+    "spin": 0,
+    "n_atoms": 66,
+    "n_electrons": 272,
+    "converged": true,
+    "wall_seconds": 4518.1,
+    "E_total_Ha": -1964.9611737762252,
+    "HOMO_Ha": -0.2558293872541592,
+    "LUMO_Ha": -0.011425347094375605,
+    "HOMO_eV": -6.961472269647365,
+    "LUMO_eV": -0.3108995327795313,
+    "gap_eV": 6.650572736867835
+  },
+  "os3_plus": {
+    "label": "Os(III) dmbpy (wb97x)",
+    "charge": 2,
+    "spin": 1,
+    "n_atoms": 66,
+    "n_electrons": 271,
+    "converged": true,
+    "wall_seconds": 23661.3,
+    "E_total_Ha": -1964.805247727567,
+    "HOMO_Ha": -0.3209857003464558,
+    "LUMO_Ha": -0.06043050380663412,
+    "HOMO_eV": -8.734465871566373,
+    "LUMO_eV": -1.6443977801219691,
+    "gap_eV": 7.090068091444404
+  },
+  "dE_red_III_to_II_eV": -4.243,
+  "EA_Os3_eV": 4.243
+}

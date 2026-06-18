@@ -111,13 +111,16 @@ def _opt(atoms, charge, spin, level_shift=0.0):
 
 
 def _load_ea_os3(plain: bool) -> tuple[float, str]:
-    """EA_Os3 = E(Os II) − E(Os III), ωB97X/def2-TZVP. Drift-safe: read from cache."""
+    """EA_Os3 = E(Os III) − E(Os II) = the energy RELEASED on the Os(III)+e⁻→Os(II)
+    reduction, as a positive magnitude — the cascade is dG = IP(FAD) − EA_Os3 (plain
+    orphan: +4.392 = E_os3−E_os2, dG = 5.276−4.392 = 0.884). ωB97X/def2-TZVP, drift-safe
+    from cache. (E_os2−E_os3 is the signed exothermic dE_red, the negative of this.)"""
     name = "os_complex_wb97xd.json" if plain else "os_complex_wb97xd_dmbpy.json"
     p = DFT_CACHE / name
     if not p.exists():
         sys.exit(f"missing {p} — run 21f (wb97x) first" if not plain else f"missing {p}")
     d = json.loads(p.read_text())
-    ea = (d["os2_plus"]["E_total_Ha"] - d["os3_plus"]["E_total_Ha"]) * HARTREE_TO_EV
+    ea = (d["os3_plus"]["E_total_Ha"] - d["os2_plus"]["E_total_Ha"]) * HARTREE_TO_EV
     return ea, name
 
 

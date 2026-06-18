@@ -16,15 +16,15 @@
 
 ## Table 2. Anode→mediator cascade ΔG per electron, all methods
 
-| Method | ΔG/e⁻ (eV) | Direction | vs verified −0.47 eV |
+| Method | ΔG/e⁻ (eV) | Direction | vs verified −0.574 eV |
 |---|---|---|---|
-| Koopmans ωB97X (orbital offset) | +5.884 | uphill | range-separation artefact — *never use* |
-| ΔSCF ωB97X (vertical) | +0.998 | uphill | +1.47 |
-| **ΔSCF ωB97X (adiabatic)** | **+0.884** | uphill | +1.35 |
+| Koopmans ωB97X (orbital offset) | +6.020 | uphill | range-separation artefact — *never use* |
+| ΔSCF ωB97X (vertical) | +1.395 | uphill | +1.97 |
+| **ΔSCF ωB97X (adiabatic)** | **+1.034** | uphill | +1.61 |
 | B3LYP Koopmans «corrected» | -0.07 | — | **withdrawn** (tuned to the wrong −0.14) |
-| **Experiment (verified E°s)** | **-0.47** | **downhill** | reference |
+| **Experiment (verified E°s)** | **-0.57** | **downhill** | reference |
 
-*The raw uphill ΔG is the implicit-solvation method limit (mediator speciation + PCM differential solvation, Fig 5 / ②); the verified +465 mV / −0.47 eV is E°(Os) +200 − E°(FAD-GDH) −265 mV vs SHE.*
+*The raw uphill ΔG is the implicit-solvation method limit (differential PCM solvation, chloro↔bis-Im bracket + the 4,4′-dimethyl substituent, Fig 5 / ②); the verified +574 mV / −0.574 eV is E°(Os) +309 − E°(FAD-GDH) −265 mV vs SHE.*
 
 ## Table 3. Cathode DET hops, couplings and reorganisation energies
 

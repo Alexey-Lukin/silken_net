@@ -41,12 +41,14 @@ def main() -> int:
     fodft = _load("fodft_coupling.json")
     ket = _load("cathode_ket_lambda.json")
     dscf = _load("delta_scf_corrections.json")
-    wb = _load("os_complex_wb97xd.json")
+    wb = _load("os_complex_wb97xd.json")           # plain — FADH₂ ωB97X HOMO (FAD unchanged)
+    wb_dm = _load("os_complex_wb97xd_dmbpy.json")   # dimethyl Os (B1) — the real mediator
+    koop_dm = abs(wb["fadh2_red"]["HOMO_eV"] - wb_dm["os3_plus"]["LUMO_eV"])  # ωB97X Koopmans, dimethyl
 
     # ── drift asserts vs SUMMARY canon ──
-    _close(dscf["dG_vertical_eV"], 0.998, 0.01, "T2 ΔSCF vertical")
-    _close(dscf["dG_adiabatic_eV"], 0.884, 0.01, "T2 ΔSCF adiabatic")
-    _close(abs(wb["cascade"]["delta_eV"]), 5.884, 0.01, "T2 Koopmans ωB97X")
+    _close(dscf["dG_vertical_eV"], 1.395, 0.01, "T2 ΔSCF vertical (dimethyl)")
+    _close(dscf["dG_adiabatic_eV"], 1.0335, 0.01, "T2 ΔSCF adiabatic (dimethyl)")
+    _close(koop_dm, 6.020, 0.01, "T2 Koopmans ωB97X (dimethyl)")
     _close(zif["pairs"][0]["t_ij_eV"], 0.00128, 1e-4, "T3 Cu-Co ΔSCF t_ij")
     _close(fodft["t_ij_eV"], 0.005462, 1e-4, "T3 Cu-Co FO-DFT t_ij")
     _close(ket["scenarios"]["literature λ"]["margin_vs_turnover"], 1.385, 0.05, "T3 lit-λ margin")
@@ -74,7 +76,7 @@ def main() -> int:
     md.append("\n*Reproducibility: deterministic scripts in `tools/in_silico`, version-pinned conda-lock env.*\n")
 
     # ── Table 2 — cascade energetics, all methods ──
-    koop = abs(wb["cascade"]["delta_eV"])
+    koop = koop_dm
     md.append("## Table 2. Anode→mediator cascade ΔG per electron, all methods\n")
     md.append("| Method | ΔG/e⁻ (eV) | Direction | vs verified −0.574 eV |")
     md.append("|---|---|---|---|")

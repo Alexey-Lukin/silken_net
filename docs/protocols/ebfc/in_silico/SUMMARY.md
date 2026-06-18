@@ -149,27 +149,25 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 
 **Conclusion:** Raw DFT verdict UPHILL is a **method limit** (differential PCM solvation, chloro↔bis-Im bracket + the 4,4'-dimethyl substituent), decomposed by ② (§"Cluster-Continuum Micro-Solvation"). The cascade is **experimentally downhill** (+574 mV, verified E°s — Os +309 vs NHE / FAD-GDH −265 mV SHE). The earlier «bias-corrected Δε ≈ −0.07 eV reproduces exp −0.14» was fortuitous cancellation tuned to a mis-valued (+60 mV) FAD potential — **withdrawn**; Cosnier 1999's +140 mV pertains to glucose-oxidase, not GcGDH.
 
-### Publication-grade: ωB97X/def2-TZVP
+### Publication-grade: ωB97X/def2-TZVP (dimethyl mediator, B1 ✅ 2026-06-17)
 
-> ⚠️ **Values below are plain-bpy (2026-05-27); the dimethyl recompute (B1) is IN PROGRESS**
-> (`os_complex_wb97xd_dmbpy.json`). The adiabatic ΔSCF shifts ~**+0.15 eV more uphill** on the
-> real mediator (B5 substituent ①); this table + the B2 adiabatic generator re-run on B1 completion.
-
-| Species (plain bpy) | HOMO (eV) | LUMO (eV) | Gap (eV) |
+| Species (dimethyl bpy) | HOMO (eV) | LUMO (eV) | Gap (eV) |
 |---------|-----------|-----------|----------|
-| Os(II) | -7.128 | -0.438 | 6.691 |
-| **Os(III)** | -8.887 | **-1.781** | 7.106 |
+| Os(II) | -6.961 | -0.311 | 6.650 |
+| **Os(III)** | -8.734 | **-1.644** | 7.090 |
 | **FADH₂** | **-7.664** | 0.282 | 7.946 |
 
-**All methods comparison** (ΔG = plain bpy; dimethyl pending B1/B2):
+**All methods comparison** (dimethyl mediator; EA_Os3 = **4.243 eV** from B1, +0.149 lower than plain via the donor substituent; FAD IP from the B2 generator):
 
 | Method | ΔG/e⁻ (eV) | vs verified −0.574 |
 |--------|-----------|---------|
-| Koopmans ωB97X | +5.884 | RSH artifact (never use) |
-| ΔSCF ωB97X (vertical) | +0.998 | +1.57 |
-| **ΔSCF ωB97X (adiabatic)** | **+0.884** | **+1.46** |
+| Koopmans ωB97X | +6.02 | RSH artifact (never use) |
+| ΔSCF ωB97X (vertical) | +1.40 | +1.97 |
+| **ΔSCF ωB97X (adiabatic)** | **+1.03** | **+1.61** |
 | B3LYP corrected (−0.07) | −0.07 | withdrawn (tuned to wrong −0.14) |
 | **Experiment (verified E°s)** | **−0.574** | ref (Os +309 − FAD −265) |
+
+> **B2 ✅** (`21g` — reproducible, closes the orphan cache): adiabatic **+1.0335** = IP_adiab(FAD 5.276) − EA_Os3(dmbpy 4.243); +0.149 more uphill than plain (+0.884) = the substituent term ①, exactly the B5/B3 shift. The **adiabatic is the robust headline** (reproduces plain 0.884); the vertical +1.40 (fresh-generator IP_vert 5.638 > the lost orphan's 5.391) is cation-relaxation-sensitive and secondary.
 
 *vs the verified −0.574 eV (E°(Os +309 vs NHE) − E°(FAD-GDH −265 mV SHE); the old −0.14 was a +60 mV FAD artifact). Residual gap = differential PCM solvation (chloro↔bis-Im bracket) + the 4,4'-dimethyl substituent, decomposed by ② (§"Cluster-Continuum Micro-Solvation").
 
