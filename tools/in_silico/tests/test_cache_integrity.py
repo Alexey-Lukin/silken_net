@@ -178,6 +178,46 @@ def test_wb97x_cache_complete():
     assert data["os3_plus"]["converged"] is True
 
 
+def test_b1_dmbpy_wb97x_cache():
+    """B1 (OS-RECOMPUTE): dimethyl Os ωB97X — the real device mediator (supersedes plain
+    bpy). Both redox states converged; physical Os(III) LUMO + electron affinity."""
+    path = DFT / "os_complex_wb97xd_dmbpy.json"
+    if not path.exists():
+        pytest.skip("B1 dmbpy cache missing")
+    d = json.loads(path.read_text())
+    assert d["os2_plus"]["converged"] and d["os3_plus"]["converged"]
+    assert -2.0 < d["os3_plus"]["LUMO_eV"] < -1.0, "Os(III) dmbpy LUMO out of range"
+    assert 3.5 < d["EA_Os3_eV"] < 5.0, "EA_Os3 out of physical range"
+
+
+def test_b2_adiabatic_dscf_cache():
+    """B2 (OS-RECOMPUTE): adiabatic ΔSCF generator — uphill dimethyl cascade, EA drift-safe
+    from B1; vertical exceeds adiabatic (cation geometric relaxation)."""
+    path = DFT / "delta_scf_corrections.json"
+    if not path.exists():
+        pytest.skip("B2 cache missing")
+    d = json.loads(path.read_text())
+    assert d["geom_opt_converged"]["FADH2"] and d["geom_opt_converged"]["FADH2_cation"]
+    assert 0.5 < d["dG_adiabatic_eV"] < 1.5, "adiabatic ΔG out of physical range"
+    assert d["dG_vertical_eV"] > d["dG_adiabatic_eV"], "vertical must exceed adiabatic"
+
+
+def test_b4_speciation_dmbpy_bracket():
+    """B4 (OS-RECOMPUTE): ωB97X dimethyl speciation — 3 forms converged, and BOTH +2/+3
+    forms (aqua, bis-Im) are better acceptors than chloro = the functional-robust bracket.
+    The internal aqua↔bis-Im order is deliberately NOT asserted — it is functional-sensitive
+    (≤0.15 eV; ωB97X aqua>bis-Im, B3LYP-dimethyl bis-Im>aqua)."""
+    path = DFT / "wb97x_speciation_dmbpy.json"
+    if not path.exists():
+        pytest.skip("B4 cache missing")
+    d = json.loads(path.read_text())
+    forms = {f["name"]: f for f in d["forms"]}
+    assert set(forms) == {"chloro", "aqua", "bisim"}
+    assert all(f["converged"] for f in d["forms"])
+    assert forms["aqua"]["shift_vs_chloro_eV"] < 0, "aqua should sit above chloro"
+    assert forms["bisim"]["shift_vs_chloro_eV"] < 0, "bis-Im should sit above chloro"
+
+
 def test_tunneling_pathway():
     """Tunneling pathway should find a route with β·d < 5."""
     path = DFT / "tunneling_pathway.json"

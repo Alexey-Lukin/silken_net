@@ -27,7 +27,7 @@ The architecture modelled here, representative of the high-performance mediated 
 literature, pairs an FAD-dependent glucose dehydrogenase (FAD-GDH) anode with an osmium redox-polymer
 mediator and an oxygen-reducing cathode (Degani & Heller, 1987; Heller–Mano wired enzymes). FAD-GDH is the
 enzyme of choice for the anode because it is oxygen-insensitive and glucose-specific, unlike the
-classical glucose oxidase; but its catalytic flavin sits roughly 1.5 nm below the protein surface — too
+classical glucose oxidase; but its catalytic flavin sits roughly 1.6 nm below the protein surface — too
 far for efficient direct electron transfer — so an electron relay is required. The osmium
 poly(vinylimidazole) polymer fills that role, its redox potential tuned empirically across a wide range
 (≈ +15 to +489 mV vs NHE, optimum near +0.3 V) to balance the driving force handed to the cascade
