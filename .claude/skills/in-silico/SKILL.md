@@ -91,16 +91,9 @@ Bridge:
 
 ## Cascade Verdict Summary
 
-Verified cascade = **+465 mV / −0.47 eV downhill** (E°(Os +200) − E°(FAD-GDH −265 mV SHE), Schachinger, Ma & Ludwig 2022; numbers mirror SUMMARY — edit there). Raw DFT is uphill in every method (numbers → SUMMARY / L3):
+Verified downhill **+574 mV / −0.574 eV** (E°(Os) **+309** Zafar 2012 − E°(FAD-GDH) −265 mV SHE Schachinger 2022); raw DFT uphill in every method (adiabatic ΔSCF **+1.03 eV** on the dimethyl mediator). The ~1 eV gap is decomposed by ② into a **chloro↔+2/+3 differential-solvation bracket** (functional-robust; the internal aqua↔bis-Im order is functional-sensitive) + the **4,4'-dimethyl substituent**; rigorous closure = QM/MM (Мінаєв).
 
-| Method | ΔG/e⁻ (eV) | vs verified −0.47 | Use for |
-|--------|-----------|----------------|---------|
-| ΔSCF ωB97X (adiabatic) | +0.884 | 1.35 eV | raw DFT (uphill) |
-| ΔSCF ωB97X (vertical) | +0.998 | 1.47 eV | baseline |
-| Koopmans ωB97X | +5.884 | 6.35 eV | **never use** (RSH artifact) |
-| B3LYP Koopmans «corrected» −0.07 | −0.07 | withdrawn | tuned to the wrong −0.14 (+60 mV FAD) — do NOT cite |
-
-~1.3 eV gap = mediator **speciation** (chloro→aqua +0.51) + **PCM differential solvation** (+0.20/3 H₂O → full shell), decomposed by ② (script 34); [Os(H₂O)₆] benchmark +0.98 eV. Rigorous closure = QM/MM (Мінаєв).
+**All numbers + the all-methods table live in `SUMMARY.md` §Cascade + `L3_quantum_chemistry.md` — this skill routes, does not restate.** (Mirrored numbers drift: this block silently carried the old +200/+465/−0.47 + plain-bpy ΔSCF until the 2026-06-18 dimethyl recompute.)
 
 ## When Modifying
 
@@ -109,6 +102,7 @@ Verified cascade = **+465 mV / −0.47 eV downhill** (E°(Os +200) − E°(FAD-G
 - **After any change**: `pytest tools/in_silico/tests/` → commit → update all the SSOT docs above
 - **Drift-proof comments/constants** — never hardcode a mirror of another script's result (crude t_ij, single-snapshot β·d, an E°); LOAD it from that script's cache JSON at runtime (24b/28b do this) so it can't silently diverge
 - **Verify a doc value against its cache** — the cache JSON is ground truth; any computed number in SUMMARY/PIPELINE/01_03 must match it (caught SUMMARY §Cathode "Ce 0.87" = the *computed* λ, lit = 1.0)
+- **Re-gen an artifact after editing its generator** — a committed PNG/table can lag its script: changing a hardcoded anchor in `60`/`61`/`fig1` and committing without re-running ships a stale asset (the fig1 graphical-abstract carried the old +200/+465 anchors after a commit changed only the script — caught + re-genned 2026-06-18). Re-run the generator + `git status` the artifact before commit.
 - **Script-list One-Home** — README = inventory (what + cost) · SUMMARY = results · PIPELINE_STATUS = per-script status + volatile counts. Update the RIGHT one; never mirror numbers across them (a past drift source: README ↔ SUMMARY both listed scripts)
 - **Don't `git add -A` a still-warm background-compute output** — read + sanity-check it first (physical? expected range? n_valid? ≈ a reference?) before staging
 - **New DFT script**: import from `lib.constants` + `lib.utils` + `lib.dft_utils`. Use `level_shift=0.3` for UKS. No density_fit for heavy metals.
