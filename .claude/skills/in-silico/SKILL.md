@@ -77,7 +77,7 @@ Bridge:
 - **Spin parity** — odd electrons → odd spin (2S). Auto-detect: `spin = mol.nelectron % 2` as fallback.
 - **PCET with H₃O⁺/PCM** — PCM oversolvates small ions (H₃O⁺ by ~7 eV). Don't use for proton transfer corrections. Need explicit water for meaningful PCET.
 - **FAD in MD topology** — GAFF renames FAD to "UNK", all atoms have "x" suffix. 86 atoms total, 53 heavy. Full FAD has odd electron count — set charge=1 for even.
-- **Os mediator speciation matters (② / script 34)** — chloro vs aqua vs bis-imidazole shifts E°(Os III/II) by ~0.5 eV (cascade Δ −0.91 chloro → −0.61 bis-Im → −0.40 aqua, all computed; stronger σ-donor → lower E° → worse acceptor); the experiment (+200 mV) + real Os-PVI polymer likely measure the **aqua / bis-Im** form, not the chloro complex. The aqua couple is +2/+3 → larger group-8 PCM differential-solvation bias (benchmark [Os(H₂O)₆] n6→n18 +0.98 eV). Decompose the cascade gap into speciation + solvation; don't lump it. No `density_fit` for Os, `level_shift=0.3` for the Os(III) UKS doublet. **Functional-robust** — ωB97X (34b) reproduces the aqua>bis-Im>chloro ordering.
+- **Os mediator speciation matters (② / script 34)** — chloro vs aqua vs bis-imidazole shifts E°(Os III/II) by ~0.5 eV. On the **dimethyl device mediator** (+309 mV, Zafar 2012; OS-RECOMPUTE 2026-06-17) the ② frame is a **chloro(+1/+2)↔{aqua,bis-Im}(+2/+3) differential-solvation bracket**: chloro +0.21 (3 Cl⁻-waters, lower) ↔ bis-Im +0.55 / aqua +0.49 (upper), on the [Os(H₂O)₆] n6→n18 **+0.98 eV** benchmark; the +2/+3 couples carry the larger group-8 PCM bias. Decompose the cascade gap into speciation + solvation **+ the 4,4'-dimethyl substituent (+0.146)**; don't lump it. **chloro↔+2/+3 bracket is functional-ROBUST; the internal aqua↔bis-Im order is functional-SENSITIVE** (34b: ωB97X aqua>bis-Im, B3LYP-dimethyl bis-Im>aqua, <0.15 eV). No `density_fit` for Os, `level_shift=0.3` for the Os(III) UKS doublet. (Pre-recompute plain-bpy values −0.91/−0.61/−0.40 + the "+200 mV / aqua>bis-Im>chloro" framing are superseded.)
 - **lo.PM / lo.Boys crash (PySCF `lib.einsum` version bug)** — `ValueError: not enough values to unpack (expected 4, got 3)` in `pipek.py`. For the 2-orbital FO-DFT localisation (24b) skip PySCF `lo` entirely: diagonalise the metal-projected 2×2 Mulliken population matrix in the {i,j} MO basis → rotation `R` → `H_ab` = off-diagonal of `Rᵀ·diag(εᵢ,εⱼ)·R` (Mulliken-Hush diabatisation, pure numpy; F is diagonal = ε in the orthonormal MO basis).
 
 ## MD Gotchas (Hard-Won Lessons)
@@ -91,9 +91,9 @@ Bridge:
 
 ## Cascade Verdict Summary
 
-Verified downhill **+574 mV / −0.574 eV** (E°(Os) **+309** Zafar 2012 − E°(FAD-GDH) −265 mV SHE Schachinger 2022); raw DFT uphill in every method (adiabatic ΔSCF **+1.03 eV** on the dimethyl mediator). The ~1 eV gap is decomposed by ② into a **chloro↔+2/+3 differential-solvation bracket** (functional-robust; the internal aqua↔bis-Im order is functional-sensitive) + the **4,4'-dimethyl substituent**; rigorous closure = QM/MM (Мінаєв).
+Verified downhill **+574 mV / −0.574 eV** (E°(Os) **+309** Zafar 2012 − E°(FAD-GDH) −265 mV SHE Schachinger 2023); raw DFT uphill in every method (adiabatic ΔSCF **+1.03 eV** on the dimethyl mediator). The ~1 eV gap is decomposed by ② into a **chloro↔+2/+3 differential-solvation bracket** (functional-robust; the internal aqua↔bis-Im order is functional-sensitive) + the **4,4'-dimethyl substituent**; rigorous closure = QM/MM (Мінаєв).
 
-**All numbers + the all-methods table live in `SUMMARY.md` §Cascade + `L3_quantum_chemistry.md` — this skill routes, does not restate.** (Mirrored numbers drift: this block silently carried the old +200/+465/−0.47 + plain-bpy ΔSCF until the 2026-06-18 dimethyl recompute.)
+**All numbers + the all-methods table live in `SUMMARY.md` §Cascade + `L3_quantum_chemistry.md` — this skill routes, does not restate.** (Mirrored numbers drift: this block silently carried the old +200/+465/−0.47 + plain-bpy ΔSCF until the 2026-06-18 dimethyl recompute, then "Schachinger 2022" until the 2026-06-19 Crossref fix → published-print 2023. Skill prose lags too — sweep it after a recompute.)
 
 ## When Modifying
 
