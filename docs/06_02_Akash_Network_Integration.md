@@ -393,7 +393,7 @@ services:
 | **Платформа** | `amd64` | `config/deploy.yml` → `builder.arch: amd64` |
 | **Кількість реплік** | `1` | `config/deploy.yml` → `web_node_count = 1` |
 
-> ✅ GHCR образ — публічний, доступний Akash-провайдерам без credentials. Дзеркалюється автоматично `.github/workflows/mirror-ghcr.yml`. Kamal паралельно пушить у GCP Artifact Registry для GCP деплою.
+> ✅ GHCR образ — публічний, доступний Akash-провайдерам без credentials. Дзеркалюється автоматично `.github/workflows/mirror-ghcr.yml` (`Deploy · GHCR Mirror`) — несе **SLSA build-provenance + SBOM** атестації, тож недовірений Akash-провайдер (або будь-хто) може верифікувати походження+вміст образу: `gh attestation verify oci://ghcr.io/alexey-lukin/silken_net:latest --owner Alexey-Lukin`. Kamal паралельно пушить у GCP Artifact Registry для GCP деплою.
 
 > **Ingress Anchor:** Важкі GCP web VM замінені легковажним `e2-micro` інстансом зі статичним IP. HAProxy/socat на Ingress Anchor перенаправляє трафік до Akash deployment. Queen шлюзи надсилають CoAP на цей статичний IP, який проксіює до Akash-контейнера.
 

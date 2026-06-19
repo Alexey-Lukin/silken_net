@@ -8,8 +8,8 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — workflows активні; production+canopy deploy налаштовані; `coap-smoke` gate заведений, але dormant до host-Variable (INF.6); `ssot_guard` ще не `required` (OPS.2).
-- **Відкрите:** активація coap-smoke (repo Variables — INF.6), required-check прогалина ssot_guard (OPS.2) → [`00_07`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 6 — workflows активні; production+canopy deploy налаштовані; **`main` захищено branch-protection** (required status check = `CI passed`, `enforce_admins=false` → owner лишає прямий push, PR-и гейтяться); `coap-smoke` gate заведений, але dormant до host-Variable (INF.6).
+- **Відкрите:** активація coap-smoke (repo Variables — INF.6) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -38,42 +38,50 @@
 
 ## 1. CI/CD Workflows (`.github/workflows/`)
 
+> **Naming:** workflows follow a `Категорія · Назва` taxonomy (CI · / Smoke · / Deploy · / Ops ·) so they group in the Actions UI. The table keys on the stable **filename**; the display `name:` is shown after `→`.
+
 ### Quality gates
-| Workflow | Trigger | Призначення |
+| Workflow (`file` → name) | Trigger | Призначення |
 |---|---|---|
-| `ci.yml` | PR + push `main` | firmware host-tests, RAM-budget, brakeman, bundler-audit, importmap-audit, rubocop, i18n-tasks, **tracker:check**, **alloy_config_validate**, rspec, feature-tests |
-| `ssot_guard.yml` | PR | SSOT integrity — code↔doc drift guard (OPS.2; ще не required) |
-| `solidity_audit.yml` | PR/push `contracts/**` | Smart-contract статичний аудит |
-| `in_silico_smoke.yml` | PR/push `tools/in_silico/**` | EBFC in-silico pipeline smoke (L2) |
-| `docs.yml` | PR/push `docs/**`, `**.md`, lib-docs engines/specs, `.github/**` | SSOT doc gates — `docs:check_refs` + `tracker:check` + linter-specs ([`00_06 §3`](00_06_SSOT_Documentation_Standard)) |
-| `ml_smoke.yml` | PR/push `tools/ml/**`, `firmware/common/logmel_*.h` | TinyML/log-mel contract smoke — `emit_c --check` golden-parity ([`00_06 §3`](00_06_SSOT_Documentation_Standard), [`03_03 §3.4`](03_03_TinyML_Acoustic_Inference)) |
+| `ci.yml` → **CI · Code** | PR + push `main` (no paths-ignore) | Path-gated by changed area — a `changes` job (`dorny/paths-filter`) flips firmware / ruby / js / python / alloy, and each job runs only when its area changed (a Gemfile bump skips the 25-min ARM build; a firmware-only change skips RSpec). The always-on **`ci-ok` aggregate (check name `CI passed`)** is the single **required** status check on `main` (branch-protection, `enforce_admins=false`). A change to `ci.yml`/the composite action self-validates the whole matrix. |
+| `ssot_guard.yml` → **CI · SSOT Guard** | PR (paths: app/models, app/services, firmware/{soldier,queen,bio_contracts}, contracts) | code↔doc drift guard (OPS.2; advisory — path-gated, so NOT a hard required check) |
+| `solidity_audit.yml` → **CI · Solidity** | PR/push `contracts/**` | Smart-contract static audit (forge + Slither) |
+| CodeQL (GitHub **default-setup**) | PR + push `main` + weekly | First-party SAST — `Analyze (<lang>)` checks for actions/c-cpp/js/ts/python/ruby. Configured in the **Security tab** (no workflow file → a file-scan won't see it). |
+| `in_silico_smoke.yml` → **Smoke · In-silico L2** | PR/push `tools/in_silico/**` | EBFC in-silico pipeline smoke (L2) |
+| `docs.yml` → **CI · Docs** | PR/push `docs/**`, `**.md`, lib-docs engines/specs, `.github/**`, `app/models/**` | SSOT doc gates — `docs:check_refs` + `tracker:check` + linter-specs + model↔code sync ([`00_06 §3`](00_06_SSOT_Documentation_Standard)) |
+| `ml_smoke.yml` → **Smoke · ML log-mel** | PR/push `tools/ml/**`, `firmware/common/logmel_*.h` | TinyML/log-mel contract smoke — `emit_c --check` golden-parity ([`00_06 §3`](00_06_SSOT_Documentation_Standard), [`03_03 §3.4`](03_03_TinyML_Acoustic_Inference)) |
 
 ### Deploy
-| Workflow | Trigger | Призначення |
+| Workflow (`file` → name) | Trigger | Призначення |
 |---|---|---|
-| `deploy.yml` | `workflow_run` (CI success on `main`) + dispatch | **Canopy** deploy: terraform + `kamal deploy -d canopy` |
-| `deploy-production.yml` | `release: published` + dispatch | **Production**: `verify-secrets` (SEC.11) → terraform apply → `kamal deploy` |
-| `coap_smoke.yml` | `workflow_call` (job `coap-smoke` в обох deploy-workflows, `needs: deploy`) + dispatch | Post-deploy CoAP/UDP boundary smoke (INF.6; активується repo Variable `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST`, до того — видимо skipped) |
-| `mirror-ghcr.yml` | `workflow_run` + `release` + dispatch | Дзеркалить Docker image у GHCR (для Akash pull) |
+| `deploy.yml` → **Deploy · Canopy** | `workflow_run` (CI success on `main`) + dispatch | **Canopy** deploy: terraform + `kamal deploy -d canopy`. `verify-secrets` **skips cleanly** (green run) when no deploy secrets are configured — no red noise. |
+| `deploy-production.yml` → **Deploy · Production** | `release: published` + dispatch | **Production**: `verify-secrets` (SEC.11) → terraform apply → `kamal deploy`. The GitHub Release that triggers it is created by **Ops · Release** (release-please). |
+| `coap_smoke.yml` → **Smoke · CoAP UDP** | `workflow_call` (job `coap-smoke` в обох deploy-workflows, `needs: deploy`) + dispatch | Post-deploy CoAP/UDP boundary smoke (INF.6; активується repo Variable `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST`, до того — видимо skipped) |
+| `mirror-ghcr.yml` → **Deploy · GHCR Mirror** | `workflow_run` + `release` + dispatch | Дзеркалить Docker image у GHCR (для Akash pull). **Path-gated** — на workflow_run перебудовує лише коли змінились image-релевантні файли; пушить **SLSA provenance + SBOM** з образом (verify: `gh attestation verify oci://…`). |
 
 ### Repo / Project governance
-| Workflow | Trigger | Призначення |
+| Workflow (`file` → name) | Trigger | Призначення |
 |---|---|---|
-| `trl_sync.yml` | `issues` | GraphQL Projects v2 — TRL-stamping (OPS.1; [`00_05`](00_05_GitHub_Projects_and_IaC_Automation)) |
-| `labeler.yml` | `pull_request_target` | Auto-label PR за шляхами |
-| `labels_sync.yml` | push `.github/labels.yml` + dispatch | Labels-as-IaC sync |
+| `release-please.yml` → **Ops · Release** | push `main` | Тримає release-PR (semver bump + CHANGELOG з conventional commits); merge → tag `vX.Y.Z` + GitHub Release → годує **Deploy · Production** + **Deploy · GHCR Mirror** |
+| `trl_sync.yml` → **Ops · TRL Sync** | `issues` | GraphQL Projects v2 — TRL-stamping (OPS.1; [`00_05`](00_05_GitHub_Projects_and_IaC_Automation)) |
+| `labeler.yml` → **Ops · PR Labeler** | `pull_request_target` | Auto-label PR за шляхами |
+| `labels_sync.yml` → **Ops · Labels Sync** | push `.github/labels.yml` + dispatch | Labels-as-IaC sync |
 
 ## 2. Pipeline flow
 
 ```
-PR ─→ ci.yml (+ ssot_guard / solidity_audit / in_silico за шляхами) ─→ merge main
-main ─→ ci.yml ──success──→ deploy.yml (Canopy) ──→ coap_smoke (post-deploy)
-                          └─→ mirror-ghcr.yml (image → GHCR)
-release published ─→ deploy-production.yml (verify-secrets → terraform → kamal deploy) ──→ coap_smoke (post-deploy)
-                  └─→ mirror-ghcr.yml
+PR ─→ CI · Code (changes → path-gated jobs → ci-ok = "CI passed")  ─┐ required: ci-ok green
+   └→ CI · Docs / CI · Solidity / Smoke · * / CodeQL (за шляхами)    ▼
+                                              merge main (PR; admin може push напряму)
+main push ─→ CI · Code ──ci-ok──→ Deploy · Canopy ──→ Smoke · CoAP UDP
+          │                    └─→ Deploy · GHCR Mirror (path-gated, +provenance/SBOM)
+          └→ Ops · Release (release-please тримає release-PR)
+release-PR merge ─→ GitHub Release vX.Y.Z ─→ Deploy · Production (verify-secrets → terraform → kamal)
+                                          └─→ Deploy · GHCR Mirror (semver tag)
 ```
 
-> **Gate-прогалини (tracked):** `coap-smoke` заведений post-deploy gate'ом (fail валить deploy-run), але dormant до задання host-Variables (`INF.6`); `ssot_guard` ще не required на `main` (`OPS.2`).
+> **Branch-protection (`main`):** required status check = **`CI passed`** (ci-ok), `enforce_admins=false` → owner лишає прямий push, PR-и (вкл. Dependabot / release-please) мерджаться лише на зеленому ci-ok. Налаштування: `gh api -X PUT repos/Alexey-Lukin/silken_net/branches/main/protection` (контексти + `enforce_admins`).
+> **Gate-прогалини (tracked):** `coap-smoke` post-deploy gate dormant до host-Variables (`INF.6`); `ssot_guard` / `docs_check` лишаються **advisory** (path-gated → не можуть бути hard-required без блокування code-only PR; hard docs-gate = окремий рефактор `docs.yml` з changes+aggregate, OPS.2).
 
 ---
 

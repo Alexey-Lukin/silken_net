@@ -14,7 +14,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 7 — CI/CD пайплайн TRL Auto-Advancement на стадії впровадження. Відкриті: `PROJECT_PAT` provision + GitHub App-token міграція, `ssot_guard` required-check (OPS.*) → [`00_07`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 7 — CI/CD пайплайн TRL Auto-Advancement на стадії впровадження. **`main` захищено branch-protection** (required status check = `CI passed`, `enforce_admins=false` — owner лишає прямий push; канон [`06_07 §2`](06_07_CICD_and_Runbook_Index)). Відкриті: `PROJECT_PAT` provision + GitHub App-token міграція → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -98,7 +98,7 @@ done
 | Solidity Audit | `.github/workflows/solidity_audit.yml` | `push` / PR з `contracts/**` | ✅ Реалізовано |
 | CoAP Smoke Test | `.github/workflows/coap_smoke.yml` | `workflow_dispatch` / `workflow_call` із `deploy.yml`+`deploy-production.yml` (post-deploy gate; активується repo Variable `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST` — INF.6) | ✅ Реалізовано — freeze-contract зонди `bin/coap_smoke` (точні байти FW.56 golden-векторів; loopback-довід `spec/lib/coap_smoke_spec.rb`) |
 | In-silico L2 Smoke | `.github/workflows/in_silico_smoke.yml` | `pull_request` / `push` з path-filter `tools/in_silico/**`, `docs/protocols/ebfc/in_silico/**` | ✅ Реалізовано (Zero-Lab L2 engine gate; CPU-only via `SILKEN_FORCE_PLATFORM=CPU`, micromamba env cache, не гейтить деплой) |
-| Docs CI (SSOT gates) | `.github/workflows/docs.yml` | `push` / PR path-filter `docs/**`, `**.md`, linter-engine/специ | ✅ Реалізовано (2026-05-30) — `tracker:check` + `docs:check_refs` + linter-специ. Виділено з `ci.yml`, щоб docs-only зміни **не** ганяли важкий код-CI (`ci.yml` має `paths-ignore: ['**.md','docs/**']`) — економія Actions-хвилин. ⚠️ якщо ci.yml-джоби required, познач `docs_check` required теж |
+| Docs CI (SSOT gates) → **CI · Docs** | `.github/workflows/docs.yml` | `push` / PR path-filter `docs/**`, `**.md`, linter-engine/специ, `.github/**`, `app/models/**` | ✅ Реалізовано (2026-05-30) — `tracker:check` + `docs:check_refs` + linter-специ + model↔code sync. **Branch-protection (2026-06-19):** `main` вимагає `CI passed` (ci-ok), який тепер завжди звітує — `ci.yml` більше **НЕ** `paths-ignore`s docs (інакше docs-only PR не дав би required-чек). `docs_check` лишається advisory (path-gated); hard docs-gate → [`06_07 §2`](06_07_CICD_and_Runbook_Index), OPS.2 |
 
 ### 2.2 Протокол "TRL Auto-Advancement" (`trl_sync.yml`)
 
@@ -113,7 +113,7 @@ done
 
 ```yaml
 # .github/workflows/trl_sync.yml — skeleton (повна логіка inline у файлі)
-name: TRL Sync
+name: Ops · TRL Sync
 on:
   issues:
     types: [closed]
@@ -142,7 +142,7 @@ jobs:
 
 ```yaml
 # .github/workflows/ssot_guard.yml
-name: SSOT Integrity Guard
+name: CI · SSOT Guard
 on:
   pull_request:
     paths:
@@ -227,7 +227,7 @@ jobs:
 
 ```yaml
 # .github/workflows/labels_sync.yml — skeleton
-name: Labels Sync (IaC)
+name: Ops · Labels Sync
 on:
   push:
     branches: [main]
@@ -291,7 +291,7 @@ Routes PRs автоматично у відповідні кластери на 
 
 ```yaml
 # .github/workflows/labeler.yml  (відображає реальний файл)
-name: PR Auto-Labeler
+name: Ops · PR Labeler
 on:
   pull_request_target:
     types: [opened, reopened, synchronize]

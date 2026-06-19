@@ -65,9 +65,10 @@
 - [ ] 👤 (security) мігрувати `PROJECT_PAT` → GitHub App installation token (`GITHUB_TOKEN` не вміє Projects V2; `00_05 §2.2`)
 
 #### OPS.2 — SSOT Integrity Guard
-- **P1** · 👤 · 🟡 · → `00_05`
-- **Стан:** `ssot_guard.yml` реалізовано (app/models·firmware·contracts·services; semantic `type:*` bypass) — `00_05 §2.3`.
-- [ ] 👤 зробити required check на `main`
+- **P1** · 🤖+👤 · 🟡 · → `00_05`
+- **Стан:** `ssot_guard.yml` реалізовано (app/models·firmware·contracts·services; semantic `type:*` bypass) — `00_05 §2.3`. **Branch-protection landed (2026-06-19):** `main` вимагає `CI passed` (ci-ok), `enforce_admins=false`; `ssot_guard`/`docs_check` лишаються **advisory** — вони path-gated (не біжать на code-only PR), тож hard-required блокували б merge. Канон `06_07 §2`.
+- [ ] 🤖 hard SSOT-gate: `docs.yml` → changes-job + always-on `docs-ok` aggregate
+- [ ] 👤 додати `docs-ok` у required checks на `main`
 
 #### OPS.3 — R&D Portfolio Management: Shape Up + cluster routing
 - **P1** · 👤 · 🟡 · → `00_04 §5`, `00_05 §6`

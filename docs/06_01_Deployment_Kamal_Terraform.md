@@ -179,8 +179,8 @@ terraform apply
 
 | Параметр | Canopy 🌿 | Production 🌲 |
 |---------|-----------|--------------|
-| **Тригер деплою** | Push в `main` після успішного CI | GitHub Release (`v*.*.*`) |
-| **Workflow** | `.github/workflows/deploy.yml` | `.github/workflows/deploy-production.yml` |
+| **Тригер деплою** | Push в `main` після успішного CI (continuous) | GitHub Release (`v*.*.*`) — створюється **release-please** (`Ops · Release`) з conventional commits → канон [`06_07 §1`](06_07_CICD_and_Runbook_Index) |
+| **Workflow** | `.github/workflows/deploy.yml` (`Deploy · Canopy`) | `.github/workflows/deploy-production.yml` (`Deploy · Production`) |
 | **Платформа** | Akash Network (окремий SDL або namespace) | Akash Network |
 | **GCP ресурси** | Cloud SQL (спільна або окрема БД) + Ingress Anchor (`e2-micro`) | Cloud SQL (HA) + Ingress Anchor (`e2-micro`) |
 | **Redis** | Upstash Serverless Redis (TLS, `rediss://`) | Upstash Serverless Redis (TLS, `rediss://`) |
