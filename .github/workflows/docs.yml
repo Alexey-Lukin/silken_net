@@ -23,6 +23,10 @@
 # so ci jobs alone would never gate docs.
 name: Docs CI
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 on:
   pull_request:
     paths:
