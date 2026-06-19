@@ -93,6 +93,27 @@ RSpec.describe Sentry do
       expect(filtered.extra[:mnemonic]).to eq("[FILTERED]")
     end
 
+    it "scrubs a labelled secret value leaked into event.message" do
+      event = Sentry::Event.new(configuration: config)
+      event.message = "decrypt failed aes_key=2b7e151628aed2a6abf7158809cf4f3c retrying"
+      hint = {}
+
+      filtered = config.before_send.call(event, hint)
+
+      expect(filtered.message).to include("aes_key=[FILTERED]")
+      expect(filtered.message).not_to include("2b7e151628aed2a6")
+    end
+
+    it "leaves public hashes / non-secret message text intact" do
+      event = Sentry::Event.new(configuration: config)
+      event.message = "tx 0xabc123def reverted on Polygon"
+      hint = {}
+
+      filtered = config.before_send.call(event, hint)
+
+      expect(filtered.message).to eq("tx 0xabc123def reverted on Polygon")
+    end
+
     it "passes through events without sensitive fields unchanged" do
       event = Sentry::Event.new(configuration: config)
       event.extra = { gateway_uid: "SNET-Q-001", status: "ok" }

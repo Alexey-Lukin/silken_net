@@ -39,6 +39,17 @@ Sentry.init do |config|
       end
     end
 
+    # Defense-in-depth: redact secret VALUES that leaked into free text. An
+    # accidental `raise "... aes_key=#{hex}"` surfaces in event.exception.values[].value
+    # (and Sentry.capture_message in event.message) — which the extra-context scrub above
+    # and filter_parameters (request params only) both miss. Redact only the value AFTER a
+    # labelled secret, so public hashes (tx / address) stay readable for debugging.
+    secret_value = /\b(aes_key|wallet_private_key|private_key|secret_key|signing_key|api_key|secret|mnemonic|seed|keypair|passw(?:or)?d|token)(["']?\s*[=:]\s*["']?)([^\s"',;)]{2,})/i
+    redact = ->(str) { str.is_a?(String) ? str.gsub(secret_value) { "#{$1}#{$2}[FILTERED]" } : str }
+
+    event.try(:exception)&.values&.each { |ex| ex.value = redact.call(ex.value) }
+    event.message = redact.call(event.message) if event.respond_to?(:message=) && event.message.present?
+
     event
   }
 

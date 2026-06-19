@@ -106,7 +106,7 @@ gem "sentry-sidekiq" # 6.5.0 — auto-instruments Sidekiq
 ```ruby
 scrub_patterns = /aes_key|wallet_private_key|mnemonic|private_key|binary_payload|secret_key/i
 ```
-AES-ключі, мнемоніки та бінарні payload автоматично замінюються на `[FILTERED]`.
+AES-ключі, мнемоніки та бінарні payload у **extra-context** замінюються на `[FILTERED]` за **іменем поля**. Додатково редагуються секретні **значення**, що протекли у вільний текст — exception message (`event.exception.values[].value`) та `Sentry.capture_message` — за патерном `<secret-label>[=:]<value>` (напр. `aes_key=2b7e…` → `aes_key=[FILTERED]`); публічні хеші (tx/адреса) лишаються читабельними. `filter_parameters` покриває лише request-params, не текст помилок.
 
 ### 1.3 Інтеграція з Sidekiq (`sentry-sidekiq`)
 
@@ -196,8 +196,8 @@ end
 | Metric Name | Ruby Constant | Labels | Де інкрементується | Бізнес-значення |
 |-------------|--------------|--------|-------------------|-----------------|
 | `silkennet_scc_minted_total` | `SilkenNet::Metrics::SCC_MINTED_TOTAL` | `token_type` (carbon_coin, forest_coin) | `BlockchainMintingService` | Кожен успішний мінт SCC/SFC в Polygon mempool |
-| `silkennet_mint_attempts_total` | `SilkenNet::Metrics::MINT_ATTEMPTS_TOTAL` | `token_type` | `BlockchainMintingService` (вхід `process_token_group`, до локу) | **[A4]** Спроби on-chain мінту (txs, що пройшли pre-flight guards) — знаменник SLO «≥80% mint success during outage» ([`06_08 §2.4`](06_08_Resilience_and_Failover_Policy)) |
-| `silkennet_mint_success_total` | `SilkenNet::Metrics::MINT_SUCCESS_TOTAL` | `token_type` | `BlockchainMintingService` (status→sent) | **[A4]** Успішні broadcast'и в mempool — чисельник того ж SLO |
+| `silkennet_mint_attempts_total` | `SilkenNet::Metrics::MINT_ATTEMPTS_TOTAL` | `token_type` | `BlockchainMintingService` (вхід `process_token_group`, до локу) | Спроби on-chain мінту (txs, що пройшли pre-flight guards) — знаменник SLO «≥80% mint success during outage» ([`06_08 §2.4`](06_08_Resilience_and_Failover_Policy)) |
+| `silkennet_mint_success_total` | `SilkenNet::Metrics::MINT_SUCCESS_TOTAL` | `token_type` | `BlockchainMintingService` (status→sent) | Успішні broadcast'и в mempool — чисельник того ж SLO |
 | `silkennet_scc_slashed_total` | `SilkenNet::Metrics::SCC_SLASHED_TOTAL` | — | `BlockchainBurningService` | Кумулятивна **сума спалених токенів** (increment `by: burn_amount`, не лічильник подій) |
 | `silkennet_rpc_errors_total` | `SilkenNet::Metrics::RPC_ERRORS_TOTAL` | `network`, `error_type` (timeout, connection) | `ApplicationWeb3Worker` (4 точки) | Кожна RPC-помилка по всіх 12 блокчейн-мережах |
 | `silkennet_telemetry_processed_total` | `SilkenNet::Metrics::TELEMETRY_PROCESSED_TOTAL` | — | `TelemetryUnpackerService` | Кожен успішно оброблений telemetry chunk |
