@@ -65,10 +65,9 @@
 - [ ] 👤 (security) мігрувати `PROJECT_PAT` → GitHub App installation token (`GITHUB_TOKEN` не вміє Projects V2; `00_05 §2.2`)
 
 #### OPS.2 — SSOT Integrity Guard
-- **P1** · 🤖+👤 · 🟡 · → `00_05`
-- **Стан:** `ssot_guard.yml` реалізовано (app/models·firmware·contracts·services; semantic `type:*` bypass) — `00_05 §2.3`. **Branch-protection landed (2026-06-19):** `main` вимагає `CI passed` (ci-ok), `enforce_admins=false`; `ssot_guard`/`docs_check` лишаються **advisory** — вони path-gated (не біжать на code-only PR), тож hard-required блокували б merge. Канон `06_07 §2`.
-- [ ] 🤖 hard SSOT-gate: `docs.yml` → changes-job + always-on `docs-ok` aggregate
-- [ ] 👤 додати `docs-ok` у required checks на `main`
+- **P1** · 👤 · 🟢 · → `00_05`
+- **Стан:** Hard SSOT-gate **landed (2026-06-19):** `main` (branch-protection, `enforce_admins=false`) вимагає `CI passed` (ci-ok) **+ `Docs passed`** — `docs-ok` always-on aggregate у `docs.yml` (tracker:check/docs:check_refs/linter-specs/model-sync гейтяться `changes`-джобом, але `docs-ok` `if: always()`, тож надійний required-чек; path-gated `docs_check` напряму required бути не може — блокував би code-only PR). `ssot_guard.yml` (`type:*` bypass) біжить path-gated advisory поруч. Канон `06_07 §2`, `00_05 §2.3`.
+- [ ] 👤 (опц.) увімкнути "Require review from Code Owners" коли зʼявиться другий рев'юер (CODEOWNERS уже на місці)
 
 #### OPS.3 — R&D Portfolio Management: Shape Up + cluster routing
 - **P1** · 👤 · 🟡 · → `00_04 §5`, `00_05 §6`
@@ -736,6 +735,11 @@
 - **Стан:** UDP-smoke gate проти silent CoAP-failure (Queen→Ingress Anchor→Akash) — workflow `coap_smoke.yml` (`workflow_dispatch`+`workflow_call`); зонди = freeze-contract `bin/coap_smoke`/`lib/coap_smoke.rb` (точні байти, регресія фантомної доставки FW.56); виклик = post-deploy gate у `deploy.yml`+`deploy-production.yml` (job `coap-smoke`, `needs: deploy`); поки repo Variable host не задана — job skipped (не silent).
 - [ ] 👤 задати repo Variables `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST` коли Ingress Anchor існує → gate активний
 - [ ] 👤 перший boundary smoke з Queen/`bin/forest_simulator`
+
+#### INF.9 — deploy.yml path-gate (infra-relevant changes only)
+- **P3** · 🤖 · ⚪ · → `06_07`
+- **Стан:** Не розпочато — `Deploy · Canopy` (`deploy.yml`) стріляє на КОЖЕН main CI-success; коли деплой стане живим (реальні секрети), загейтити на infra-шляхи (`terraform/**`/`Dockerfile`/`config/deploy.yml`/`.kamal/**`) тим самим changes-діфом, що `Deploy · GHCR Mirror`. Зараз premature — deploy і так no-op'иться без секретів. Канон `06_07 §1`.
+- [ ] 🤖 path-gate `deploy.yml` коли deploy стане живим
 
 #### INF.4 — Akash TLS strategy decision: hostname operator vs Cloudflare
 - **P1** · 🤖+👤 · 🟡 · → `06_02 §TLS термінація`

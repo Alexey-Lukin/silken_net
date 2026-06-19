@@ -112,7 +112,7 @@ jobs:
           ruby-version: "3.3"
 
       - name: Install Kamal
-        run: gem install kamal -v '~> 2.11.0'
+        run: gem install kamal -v '~> 2.12.0'
 
       - name: Set up SSH key
         run: |
