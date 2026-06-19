@@ -42,13 +42,49 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  mirror:
-    name: Build & Push to GHCR
+  changes:
+    name: Detect image-relevant changes
     runs-on: ubuntu-latest
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'release' ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    outputs:
+      build: ${{ steps.decide.outputs.build }}
+    steps:
+      - name: Checkout (history for the diff)
+        if: github.event_name == 'workflow_run'
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 2
+      - name: Decide whether to (re)build the image
+        id: decide
+        run: |
+          # Manual dispatch + release always (re)build. A post-CI workflow_run only
+          # rebuilds when files that actually affect the image changed — otherwise
+          # the cached layers would just be re-pushed under a new sha tag for nothing.
+          # (Diffs the tip commit; on any ambiguity it builds — a needless rebuild is
+          # cheap & cached, a missed one is not. A manual dispatch always forces one.)
+          if [ "${{ github.event_name }}" != "workflow_run" ]; then
+            echo "build=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if ! changed=$(git diff --name-only HEAD^ HEAD 2>/dev/null); then
+            echo "::warning::No parent to diff (shallow/first commit) — building to be safe."
+            echo "build=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if echo "$changed" | grep -qE '^(Dockerfile|\.dockerignore|Gemfile|Gemfile\.lock|\.ruby-version|Procfile|Rakefile|config\.ru|app/|lib/|config/|bin/|db/|public/|vendor/)'; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::No image-relevant files changed — skipping the GHCR rebuild."
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  mirror:
+    name: Build & Push to GHCR
+    needs: changes
+    if: ${{ needs.changes.outputs.build == 'true' }}
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
@@ -85,3 +121,8 @@ jobs:
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # SLSA build provenance + SBOM attestations, pushed alongside the image so
+          # an Akash provider (or anyone) can verify origin + contents:
+          #   gh attestation verify oci://ghcr.io/alexey-lukin/silken_net:latest --owner Alexey-Lukin
+          provenance: mode=max
+          sbom: true
