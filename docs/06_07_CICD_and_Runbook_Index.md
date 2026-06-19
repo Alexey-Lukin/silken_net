@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — workflows активні; production+canopy deploy налаштовані; **`main` захищено branch-protection** (required status check = `CI passed`, `enforce_admins=false` → owner лишає прямий push, PR-и гейтяться); `coap-smoke` gate заведений, але dormant до host-Variable (INF.6).
+- **Поточний TRL:** TRL 6 — workflows активні; production+canopy deploy налаштовані; **`main` захищено branch-protection** (required status checks = `CI passed` + `Docs passed`, `enforce_admins=false` → owner лишає прямий push, PR-и гейтяться); `coap-smoke` gate заведений, але dormant до host-Variable (INF.6).
 - **Відкрите:** активація coap-smoke (repo Variables — INF.6) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
@@ -80,7 +80,7 @@ release-PR merge ─→ GitHub Release vX.Y.Z ─→ Deploy · Production (verif
                                           └─→ Deploy · GHCR Mirror (semver tag)
 ```
 
-> **Branch-protection (`main`):** required status check = **`CI passed`** (ci-ok), `enforce_admins=false` → owner лишає прямий push, PR-и (вкл. Dependabot / release-please) мерджаться лише на зеленому ci-ok. Налаштування: `gh api -X PUT repos/Alexey-Lukin/silken_net/branches/main/protection` (контексти + `enforce_admins`).
+> **Branch-protection (`main`):** required status checks = **`CI passed`** (ci-ok) + **`Docs passed`** (docs-ok), `enforce_admins=false` → owner лишає прямий push, PR-и (вкл. Dependabot / release-please) мерджаться лише на зеленому ci-ok. Налаштування: `gh api -X PUT repos/Alexey-Lukin/silken_net/branches/main/protection` (контексти + `enforce_admins`).
 > **SSOT doc gate (OPS.2, landed):** `CI · Docs` runs on every PR/push; its always-on **`docs-ok` aggregate (check `Docs passed`)** is a **required** check on `main` alongside `CI passed` (path-gated `docs_check` can't be required directly — would block code-only PRs; `docs-ok` `if: always()` never skips). `ssot_guard` stays advisory (path-gated, `type:*` bypass).
 > **Gate-прогалини (tracked):** `coap-smoke` post-deploy gate dormant до host-Variables (`INF.6`).
 

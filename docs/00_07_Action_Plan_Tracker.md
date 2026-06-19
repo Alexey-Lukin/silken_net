@@ -90,6 +90,14 @@
 - [ ] 🤖 парсер 00_07 → draft-issues (idempotent за ID; pri/executor/module → поля)
 - [ ] 👤 прогін проти живого Projects V2
 
+#### OPS.10 — Supply-chain CI hardening residuals (long tail; CI ~90% done)
+- **P3** · 🤖+👤 · ⚪ · → `00_05`
+- **Стан:** Не почато (свідомо відкладено — CI/supply-chain зрілий, це довгий хвіст). Аудит 2026-06-19: GitHub secret-scanning вимкнено (API 404), commits не підписані, екшени на `@vN` тегах (не SHA-pin — найбільший supply-chain вектор, але per-action SHA-resolve = окремий 🤖-прохід), немає harden-runner/Scorecard. Не блокери — settings-тумблери + дрібні workflow-додатки. Канон `06_07 §1` (workflows) + `00_05 §2` (Actions IaC).
+- [ ] 👤 (settings) GitHub secret-scanning + push-protection
+- [ ] 👤 (settings) require signed commits (branch-protection `required_signatures`)
+- [ ] 🤖 `step-security/harden-runner` (egress-audit) на CI-джобах
+- [ ] 🤖 OpenSSF Scorecard workflow
+
 ## §01–§02 · Hardware & Lab
 
 > ⚠️ Потребують фізичної роботи в лабораторії та/або з підрядниками.
