@@ -144,6 +144,11 @@ class BlockchainMintingService < ApplicationService
     contract = Eth::Contract.from_abi(name: "SilkenCoin", address: contract_address, abi: CONTRACT_ABI)
     lock_key = "lock:web3:oracle:#{oracle_key.address}"
 
+    # [A4 OBSERVABILITY]: every tx we commit to minting counts as an attempt — the
+    # SLO denominator (success = MINT_SUCCESS_TOTAL on status→sent). Counted before
+    # the lock so lock-timeout / RPC-outage failures still land in the ratio.
+    txs.each { SilkenNet::Metrics::MINT_ATTEMPTS_TOTAL.increment(labels: { token_type: token_type }) }
+
     begin
       tx_hash = nil
 
@@ -213,6 +218,8 @@ class BlockchainMintingService < ApplicationService
 
           # [OBSERVABILITY]: Increment minted token counter for Prometheus
           SilkenNet::Metrics::SCC_MINTED_TOTAL.increment(labels: { token_type: token_type })
+          # [A4]: SLO numerator — successful broadcast (status→sent).
+          SilkenNet::Metrics::MINT_SUCCESS_TOTAL.increment(labels: { token_type: token_type })
         end
 
         # Запускаємо воркер-підтверджувач, який прийде через 30 секунд перевірити квитанцію
@@ -424,6 +431,8 @@ class BlockchainMintingService < ApplicationService
     broadcast_tx_update(tx)
 
     SilkenNet::Metrics::SCC_MINTED_TOTAL.increment(labels: { token_type: token_type })
+    # [A4]: SLO numerator — successful broadcast (status→sent).
+    SilkenNet::Metrics::MINT_SUCCESS_TOTAL.increment(labels: { token_type: token_type })
 
     # Запускаємо підтверджувач для кожної індивідуальної транзакції
     BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)

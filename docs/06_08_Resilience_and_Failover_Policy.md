@@ -158,7 +158,7 @@ end
 | Метрика | Target | Як вимірюється |
 |---------|--------|----------------|
 | Telemetry intake survival при Queen offline | ≥ 95% за 24 год | Queen self-telemetry CIFO fill + Helium fallback hit rate |
-| Mint flow availability при single Web3-chain outage | ≥ 80% (degraded but functional) | Prometheus `silkennet_mint_success_total / silkennet_mint_attempt_total` over 1h windows |
+| Mint flow availability при single Web3-chain outage | ≥ 80% (degraded but functional) | Prometheus `silkennet_mint_success_total / silkennet_mint_attempts_total` over 1h windows |
 | Recovery to full pipeline after multi-chain outage | < 4 год once external chains restore | Backfill workers drain rate (`IotexBackfillWorker`, `FilecoinReconcileWorker`) |
 | No data loss when all external chains down for ≤ 24 год | 100% — все буферизується | `TelemetryLog.count`, `BlockchainTransaction.where(state: :pending).count` зростання без втрат |
 

@@ -1207,6 +1207,29 @@ end
 
         expect(metric.get(labels: { token_type: "carbon_coin" })).to be > before_val
       end
+
+      it "increments MINT_ATTEMPTS_TOTAL and MINT_SUCCESS_TOTAL on a successful mint [A4]" do
+        log = create(:telemetry_log, :verified_telemetry, tree: tree)
+        attempts = SilkenNet::Metrics::MINT_ATTEMPTS_TOTAL
+        success  = SilkenNet::Metrics::MINT_SUCCESS_TOTAL
+        attempts_before = attempts.get(labels: { token_type: "carbon_coin" })
+        success_before  = success.get(labels: { token_type: "carbon_coin" })
+
+        described_class.call(tx.id, telemetry_log: log)
+
+        expect(attempts.get(labels: { token_type: "carbon_coin" })).to be > attempts_before
+        expect(success.get(labels: { token_type: "carbon_coin" })).to be > success_before
+      end
+
+      it "does not increment MINT_ATTEMPTS_TOTAL when a guard blocks before the on-chain attempt [A4]" do
+        log = create(:telemetry_log, tree: tree, verified_by_iotex: false, oracle_status: "fulfilled")
+        attempts = SilkenNet::Metrics::MINT_ATTEMPTS_TOTAL
+        attempts_before = attempts.get(labels: { token_type: "carbon_coin" })
+
+        expect { described_class.call(tx.id, telemetry_log: log) }.to raise_error(RuntimeError)
+
+        expect(attempts.get(labels: { token_type: "carbon_coin" })).to eq(attempts_before)
+      end
     end
   end
 
