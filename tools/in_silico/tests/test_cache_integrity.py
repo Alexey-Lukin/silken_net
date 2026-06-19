@@ -94,6 +94,11 @@ def test_dft_os_complex_json():
     assert data["os3_plus"]["converged"] is True
     lumo = data["os3_plus"]["LUMO_eV"]
     assert -6.0 < lumo < -2.0, f"Os(III) LUMO out of range: {lumo}"
+    # os_complex.json is owned by 21f — the +309 mV dimethyl device mediator (OS-RECOMPUTE).
+    # Pin the identity so a 21/21b co-write (plain/NH₃) can't silently revert the cascade.
+    assert data.get("ligand") == "4,4'-dimethyl-2,2'-bipyridine", (
+        f"os_complex.json ligand={data.get('ligand')!r} — expected the dimethyl device "
+        "mediator; re-run 21f, not 21/21b")
 
 
 def test_dft_comparison_json():

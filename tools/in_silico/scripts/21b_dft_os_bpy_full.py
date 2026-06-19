@@ -24,7 +24,7 @@ verdict requires ωB97X-D/def2-TZVP or ΔSCF (→ Future Work).
 Outputs
 -------
   * docs/protocols/ebfc/in_silico/ligands/os_bpy_im_cl.xyz  — assembled geom
-  * tools/in_silico/cache/dft/os_complex.json                — DFT energies
+  * tools/in_silico/cache/dft/os_complex_plain.json          — DFT energies (plain-bpy reference)
 
 Run
 ---
@@ -401,7 +401,8 @@ def main() -> int:
         "method": f"{XC_FUNCTIONAL.upper()}/{BASIS_OS}(Os)+{BASIS_LIGHT}(others)+PCM(water,C-PCM)",
         "model_note": (
             "Full cis-[Os(bpy)2(1-MeIm)Cl]^n+ with π-backbonding from bipyridine. "
-            "Supersedes the NH3 surrogate model (script 21)."
+            "Supersedes the NH3 surrogate model (script 21). Plain-bpy reference — itself "
+            "superseded as the device baseline by 21f (dimethyl, os_complex.json canon)."
         ),
         "os2_plus": dft_singlepoint(
             atoms_pyscf, charge=1, spin=0,
@@ -416,7 +417,7 @@ def main() -> int:
     de = (results["os2_plus"]["E_total_Ha"] - results["os3_plus"]["E_total_Ha"]) * HARTREE_TO_EV
     print(f"\n  ΔE(Os(III) → Os(II)) ≈ {de:.3f} eV  (electronic only; no ZPE/thermal)")
 
-    out_path = DFT_CACHE / "os_complex.json"
+    out_path = DFT_CACHE / "os_complex_plain.json"
     with out_path.open("w", encoding="utf-8") as fh:
         json.dump(results, fh, indent=2)
     banner(f"✅ Saved {out_path.relative_to(REPO_ROOT)}")

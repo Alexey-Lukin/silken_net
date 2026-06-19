@@ -183,7 +183,9 @@ def main() -> int:
     de_red = (results["os2_plus"]["E_total_Ha"] - results["os3_plus"]["E_total_Ha"]) * HARTREE_TO_EV
     print(f"\n  ΔE(Os(III) → Os(II)) ≈ {de_red:.3f} eV  (electronic only; no ZPE/thermal)")
 
-    out_path = DFT_CACHE / "os_complex.json"
+    # Superseded NH₃ surrogate — writes its OWN cache, never the canon os_complex.json
+    # (owned by 21f, the dimethyl device mediator). Kept as the pedagogical π-backbonding foil.
+    out_path = DFT_CACHE / "os_complex_nh3.json"
     with out_path.open("w", encoding="utf-8") as fh:
         json.dump(results, fh, indent=2)
     banner(f"✅ Saved {out_path.relative_to(REPO_ROOT)}")

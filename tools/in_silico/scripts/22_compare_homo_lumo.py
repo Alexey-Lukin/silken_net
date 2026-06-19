@@ -36,7 +36,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import DFT_CACHE, REPO_ROOT
+from lib.constants import DFT_CACHE, OS_DEVICE_MEDIATOR_LIGAND, REPO_ROOT
 
 FLAV_JSON = DFT_CACHE / "lumiflavin.json"
 OS_JSON = DFT_CACHE / "os_complex.json"
@@ -50,6 +50,13 @@ def main() -> int:
 
     flav = json.loads(FLAV_JSON.read_text(encoding="utf-8"))
     osj = json.loads(OS_JSON.read_text(encoding="utf-8"))
+
+    # os_complex.json has ONE canonical owner — 21f (the +309 mV 4,4'-dimethyl-bpy device
+    # mediator, OS-RECOMPUTE). Scripts 21/21b write their own _nh3/_plain caches; guard here so
+    # re-running the wrong one can never silently revert this cascade verdict to plain/NH₃.
+    if osj.get("ligand") != OS_DEVICE_MEDIATOR_LIGAND:
+        sys.exit(f"CANON: os_complex.json ligand={osj.get('ligand')!r}, expected "
+                 f"{OS_DEVICE_MEDIATOR_LIGAND!r} — re-run 21f (dimethyl), not 21/21b.")
 
     fad_ox_homo = flav["ox"]["HOMO_eV"]
     fad_ox_lumo = flav["ox"]["LUMO_eV"]

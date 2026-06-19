@@ -9,7 +9,7 @@ decomposition did not separate). This script recomputes the Os(II)/Os(III) coupl
 dimethyl complex at two tiers, replacing the plain-bpy numbers in the canon (founder: full
 dimethyl swap):
 
-  b3lyp  (B5) → B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM  → os_complex.json   (feeds 22 / comparison)
+  b3lyp  (B5) → B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM  → os_complex.json   (SOLE owner; feeds 22 / comparison)
   wb97x  (B1) → ωB97X/def2-TZVP+LANL2DZ(Os)+C-PCM → os_complex_wb97xd_dmbpy.json (feeds the
                  adiabatic ΔSCF generator: EA_Os3(dmbpy) = E(OsII) − E(OsIII))
 
@@ -31,7 +31,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import DFT_CACHE, HARTREE_TO_EV, LIGANDS_DIR, REPO_ROOT
+from lib.constants import DFT_CACHE, HARTREE_TO_EV, LIGANDS_DIR, OS_DEVICE_MEDIATOR_LIGAND, REPO_ROOT
 from lib.dft_utils import dft_singlepoint
 from lib.os_geometry import DMBPY_SMILES, build_os_complex, write_xyz
 from lib.utils import banner
@@ -80,7 +80,7 @@ def main(argv) -> int:
         "model_note": ("REAL device mediator cis-[Os(4,4'-dimethyl-bpy)2(1-MeIm)Cl]^n+ "
                        "(Zafar 2012 +309 mV vs NHE). Supersedes the plain-bpy 21b/21d as the "
                        "device baseline; plain-bpy retained as the parent π-backbonding reference."),
-        "ligand": "4,4'-dimethyl-2,2'-bipyridine",
+        "ligand": OS_DEVICE_MEDIATOR_LIGAND,
         "os2_plus": os2,
         "os3_plus": os3,
         "dE_red_III_to_II_eV": round(dE_red, 4),
