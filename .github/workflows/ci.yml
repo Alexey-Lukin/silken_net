@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: '[L1 QATT] Init monocypher submodule (attest host-tests)'
         # Тільки monocypher — CMSIS/mruby цьому job не потрібні (вони живуть
@@ -70,7 +70,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install arm-none-eabi binutils
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends binutils-arm-none-eabi
@@ -90,7 +90,7 @@ jobs:
 
     steps:
       - name: Checkout (with submodules)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: recursive
 
@@ -181,7 +181,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install cppcheck (apt — version fixed by the ubuntu-24.04 image)
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cppcheck
@@ -194,7 +194,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -212,7 +212,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -228,7 +228,7 @@ jobs:
       RUBOCOP_CACHE_ROOT: tmp/rubocop
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -256,7 +256,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -275,7 +275,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -320,7 +320,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Validate Alloy config (River parse — deploy/akash/config.alloy)
         run: |
@@ -350,7 +350,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Rails test environment
         uses: ./.github/actions/setup-rails-test
@@ -397,7 +397,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Rails test environment
         uses: ./.github/actions/setup-rails-test

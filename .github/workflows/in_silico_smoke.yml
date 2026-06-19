@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Install conda-lock
         run: pipx install conda-lock
       - name: conda-lock.yml in sync with environment.yml (no silent drift)
@@ -53,7 +53,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up silken_md conda env (cached, pinned lock)
         # Installs the EXACT pinned env from the committed conda-lock.yml

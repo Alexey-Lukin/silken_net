@@ -24,7 +24,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Sync labels from .github/labels.yml
         uses: EndBug/label-sync@v2

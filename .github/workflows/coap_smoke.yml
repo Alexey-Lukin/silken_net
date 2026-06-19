@@ -82,7 +82,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       # bin/coap_smoke is stdlib-only (socket/optparse) — no bundle install.
       - name: Set up Ruby

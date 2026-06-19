@@ -154,7 +154,7 @@ jobs:
   guard:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with: { fetch-depth: 0 }
 
       - name: Check bypass labels
@@ -237,7 +237,7 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: EndBug/label-sync@v2
         with:
           config-file: .github/labels.yml
