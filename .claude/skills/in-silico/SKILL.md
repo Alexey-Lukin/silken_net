@@ -65,7 +65,7 @@ Bridge:
 5. **level_shift=0.3 for open-shell transition metals** — UKS on Os(III), Co-Ce, Ce without it → SCF oscillates forever (60h+ observed).
 6. **MD NaN at NVT ramp** — 10K pre-relaxation (1000 steps at 10K) + start NVT from 50K + ramp step 10K (not 5K). Especially at high T (313K) and with many ligands. Use `maxIterations=10000` for minimization.
 7. **MD trajectories gitignored** — only JSON/PNG summaries in `cache/dft/` and `cache/kinetics/` committed.
-8. **CI smoke test** — `in_silico_smoke.yml`: CPU-only, padding 0.5nm, 500 min iterations, 30 min timeout.
+8. **CI smoke test** — `in_silico_smoke.yml`: CPU-only, padding 0.5nm, 500 min iterations, 40 min timeout. Deterministic anti-NaN gate (b8b506f): `seed=42` on BOTH the velocity draw and the Langevin thermostat + a 1000-step 10K pre-relax before the 298K run (the script-12-14 house pattern). The flaky `Particle coordinate is NaN` was unseeded RNG on a 500-iter-truncated box, NOT a regression — re-running the same code passes. Verify a touch here locally with the exact CI env (`SILKEN_FORCE_PLATFORM=CPU SILKEN_WATER_PADDING=0.5 SILKEN_MIN_ITERATIONS=500 SILKEN_MD_STEPS=100`).
 
 ## DFT Gotchas (Hard-Won Lessons)
 
