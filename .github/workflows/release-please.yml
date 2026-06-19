@@ -1,0 +1,28 @@
+name: Ops · Release
+
+# release-please reads the Conventional Commit history (chore/fix/feat/…, which
+# this repo already uses) and keeps an open "release PR": it bumps the version in
+# .release-please-manifest.json, updates CHANGELOG.md, and — when that PR is merged
+# (gated by `CI passed`) — creates tag vX.Y.Z + a GitHub Release. The published
+# release then fans out to Deploy · Production and Deploy · GHCR Mirror (semver tag).
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
