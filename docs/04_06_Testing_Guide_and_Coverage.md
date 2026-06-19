@@ -398,7 +398,7 @@ it "test that status works" do
 4. **Phlex компоненти** — слідувати Частині A цього документа (min 8 examples).
 5. **Firmware** — кожна нова функція потребує host-based test у `firmware/test/`.
 6. **Solidity** — naming: `test_` (happy), `testRevert_` (error), `testFuzz_` (fuzz).
-7. **Per-group SimpleCov tripwire** — окрім глобального гейту, `spec/spec_helper.rb` `SimpleCov.at_exit` падає, якщо line-покриття групи `Services` / `Models` / `Workers` опускається нижче порога. Глобальні та per-group пороги живуть **тільки** у `spec/spec_helper.rb` (їхній єдиний дім — точні числа тут не дублюються, [`00_06 §1`](00_06_SSOT_Documentation_Standard)). Мета — ловити випадкове видалення спек у hot path-ах. Скоуп і політику гейту описує §B.3.
+7. **Per-group SimpleCov tripwire** — окрім глобального гейту, `spec/spec_helper.rb` `SimpleCov.at_exit` падає, якщо **line- або branch**-покриття групи `Services` / `Models` / `Workers` опускається нижче порога (поріг per-group = `floor(поточне покриття)` — найтісніший цілий % нижче факту; branch — тісніший сигнал за line). Глобальні та per-group пороги живуть **тільки** у `spec/spec_helper.rb` (їхній єдиний дім — точні числа тут не дублюються, [`00_06 §1`](00_06_SSOT_Documentation_Standard)). Мета — ловити випадкове видалення спек у hot path-ах. Скоуп і політику гейту описує §B.3.
 8. **Нова непокрита гілка** — спершу спитай: вона *dead* (недосяжна за інваріантом / валідацією / типом) чи *real*? **Dead → прибрати (рефактор)** краще, ніж тестувати — зменшує знаменник і прибирає cruft. Real → тест. Defensive-leave — лише з інлайн-обґрунтуванням ЧОМУ (тріаж + матриця §B.4).
 
 ---

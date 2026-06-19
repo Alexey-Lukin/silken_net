@@ -67,21 +67,27 @@ unless ENV["FEATURE_TEST"] || ENV["COVERAGE"] == "0"
   SimpleCov.at_exit do
     SimpleCov.result.format!
 
-    # Per-group line floors, kept below actual coverage so normal churn
-    # doesn't trip them while a large regression (e.g. an accidentally
-    # deleted spec dropping a whole group) still does.
+    # Per-group line + branch floors, set to floor(current coverage) so a
+    # regression in a single group trips even while the global average holds.
+    # Branch is the tighter signal (line is ~99.9 everywhere). Models branch (99)
+    # has the least churn margin — loosen by 1 if a seed-dependent run false-fails.
     minimums = {
-      "Services" => 95.0,
-      "Workers"  => 95.0,
-      "Models"   => 95.0
+      "Services" => { line: 99.0, branch: 97.0 },
+      "Workers"  => { line: 99.0, branch: 96.0 },
+      "Models"   => { line: 99.0, branch: 99.0 }
     }
 
-    failures = SimpleCov.result.groups.filter_map do |name, files|
-      threshold = minimums[name]
-      next if threshold.nil? || files.empty?
-      actual = files.covered_percent
-      next if actual >= threshold
-      "  #{name}: #{actual.round(2)}% < #{threshold}%"
+    failures = SimpleCov.result.groups.flat_map do |name, files|
+      floors = minimums[name]
+      next [] if floors.nil? || files.empty?
+
+      {
+        "line"   => [ files.covered_percent,        floors[:line] ],
+        "branch" => [ files.branch_covered_percent, floors[:branch] ]
+      }.filter_map do |metric, (actual, threshold)|
+        next if actual >= threshold
+        "  #{name} #{metric}: #{actual.round(2)}% < #{threshold}%"
+      end
     end
 
     next if failures.empty?
