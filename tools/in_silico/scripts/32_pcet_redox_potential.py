@@ -51,7 +51,7 @@ NERNST_SLOPE = 0.05916   # V per pH unit at 298 K
 
 # Experimental references for context
 EXP_FREE_FLAVIN_PH7_MV = -208   # free FAD/FADH₂ vs NHE @ pH 7 (well-known)
-EXP_PROTEIN_BOUND_MV = -265     # GcGDH bound FAD, VERIFIED −0.265 V vs SHE (Schachinger, Ma, Ludwig, Electrochem. Commun. 2022, 146, 107405); 01_03 "+60 mV" was wrong (conflated w/ Os mediator)
+EXP_PROTEIN_BOUND_MV = -265     # GcGDH bound FAD, VERIFIED −0.265 V vs SHE (Schachinger, Ma, Ludwig, Electrochem. Commun. 2023, 146, 107405); 01_03 "+60 mV" was wrong (conflated w/ Os mediator)
 
 OUT_JSON = DFT_CACHE / "pcet_redox_potential.json"
 

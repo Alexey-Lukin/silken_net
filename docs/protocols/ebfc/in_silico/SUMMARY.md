@@ -144,7 +144,7 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 | ε_LUMO(Os(III)) dmbpy | -4.086 eV |
 | Raw Δε (dimethyl) | -1.054 eV (UPHILL; +0.146 more uphill than plain bpy via the 4,4'-substituent ①) |
 | **Verified driving force** | **+574 mV / −0.574 eV (downhill)** |
-| ↳ E°(Os +309 vs NHE, Zafar 2012) − E°(FAD-GDH −265 mV SHE, Schachinger 2022) | verified E°s |
+| ↳ E°(Os +309 vs NHE, Zafar 2012) − E°(FAD-GDH −265 mV SHE, Schachinger 2023) | verified E°s |
 | Gap raw-DFT ↔ verified | ② chloro-anchored bracket — differential PCM solvation [chloro +1/+2 lower ↔ bis-Im +2/+3 upper] + substituent +0.146 |
 
 **Conclusion:** Raw DFT verdict UPHILL is a **method limit** (differential PCM solvation, chloro↔bis-Im bracket + the 4,4'-dimethyl substituent), decomposed by ② (§"Cluster-Continuum Micro-Solvation"). The cascade is **experimentally downhill** (+574 mV, verified E°s — Os +309 vs NHE / FAD-GDH −265 mV SHE). The earlier «bias-corrected Δε ≈ −0.07 eV reproduces exp −0.14» was fortuitous cancellation tuned to a mis-valued (+60 mV) FAD potential — **withdrawn**; Cosnier 1999's +140 mV pertains to glucose-oxidase, not GcGDH.

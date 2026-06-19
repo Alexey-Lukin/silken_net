@@ -128,14 +128,14 @@ Validation:
 | L4b Monte Carlo | ✅ Complete | — |
 | L4c EIS | ✅ Complete | — |
 
-**Verdict: ✅ Ready.** Q1 publication (школа Мінаєва): ωB97X/def2-TZVP adiabatic ΔSCF complete (+1.03 eV dimethyl, uphill = quantified method limit; the «−0.07 corrected» estimate **withdrawn** — built on a +60 mV FAD artifact); L3b cathode complete (geom-fixed; k_DET borderline at realistic λ — a clean paper finding, motivates Ru/cMOF/enzyme-free); MD→DFT ensemble confirms thermal robustness; PCET via thermodynamic proton reference (script 32) validates the FAD/FADH₂ potential (within 50 mV of free-flavin). Closed limitations (both clean "limitations of implicit solvation" points for the paper): (a) Nelsen λ — script-29 (FADH₂•⁺) radical-cation pathological, **rescued by 29b** (FADH⁻/FADH• couple) → computed inner-sphere λ_i = **0.39 eV**, total ~0.7-0.8 w/ outer-sphere ≈ lit (→ L3 Nelsen-λ row); (b) PCET cascade reframing (script 33) does NOT flip the ΔSCF cascade downhill — the gap is differential PCM solvation (chloro↔bis-Im bracket) + the 4,4'-dimethyl substituent (decomposed by ②, script 34), not proton coupling. **Authoritative cascade verdict = verified E°s (+574 mV / −0.574 eV downhill, Zafar 2012 + Schachinger 2022); raw DFT uphill = quantified method limit (the «−0.07 ≈ −0.14» claim was withdrawn — built on a +60 mV FAD artifact).**
+**Verdict: ✅ Ready.** Q1 publication (школа Мінаєва): ωB97X/def2-TZVP adiabatic ΔSCF complete (+1.03 eV dimethyl, uphill = quantified method limit; the «−0.07 corrected» estimate **withdrawn** — built on a +60 mV FAD artifact); L3b cathode complete (geom-fixed; k_DET borderline at realistic λ — a clean paper finding, motivates Ru/cMOF/enzyme-free); MD→DFT ensemble confirms thermal robustness; PCET via thermodynamic proton reference (script 32) validates the FAD/FADH₂ potential (within 50 mV of free-flavin). Closed limitations (both clean "limitations of implicit solvation" points for the paper): (a) Nelsen λ — script-29 (FADH₂•⁺) radical-cation pathological, **rescued by 29b** (FADH⁻/FADH• couple) → computed inner-sphere λ_i = **0.39 eV**, total ~0.7-0.8 w/ outer-sphere ≈ lit (→ L3 Nelsen-λ row); (b) PCET cascade reframing (script 33) does NOT flip the ΔSCF cascade downhill — the gap is differential PCM solvation (chloro↔bis-Im bracket) + the 4,4'-dimethyl substituent (decomposed by ②, script 34), not proton coupling. **Authoritative cascade verdict = verified E°s (+574 mV / −0.574 eV downhill, Zafar 2012 + Schachinger 2023); raw DFT uphill = quantified method limit (the «−0.07 ≈ −0.14» claim was withdrawn — built on a +60 mV FAD artifact).**
 
 ### ✅ Sufficient for Pitch / Investor Meeting?
 
 **Verdict: ✅ YES.** SUMMARY.md has all numbers. Key claims:
 - "EBFC Gen 2.0 validated in silico across 4 levels"
 - "BASELINE_DELTA_T_S = 60s physically justified (Monte Carlo 90% CI: 14-120s)"
-- "Electrode cascade E°(Os) − E°(FAD-GDH) = +574 mV (verified E°s, Zafar 2012 + Schachinger 2022); raw DFT uphill = method limit decomposed by ②"
+- "Electrode cascade E°(Os) − E°(FAD-GDH) = +574 mV (verified E°s, Zafar 2012 + Schachinger 2023); raw DFT uphill = method limit decomposed by ②"
 - "ZIF cathode DET computed at the electronic-structure level — borderline at realistic λ, with a clear low-λ-metal (Ru) / conductive-MOF improvement path"
 
 ### ✅ Sufficient for Мінаєв Meeting?

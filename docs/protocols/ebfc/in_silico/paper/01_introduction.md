@@ -104,17 +104,18 @@ accompanying version-pinned scripts.
 
 ## References (draft scaffold — expand to ~40–60, ACS numbered, via reference manager)
 
-> **DOIs Crossref-verified 2026-06-19** (existence + author/title match). All 32 checked DOIs resolve to
+> **DOIs Crossref-verified 2026-06-19** (existence + author/title match). All **41** DOIs resolve to
 > real, correct papers — **zero fabrications, zero wrong-paper cites**. First authors resolved for the
 > previously title-only entries: Biosensors→**Fredj**, Chem. Rev. 2019→**Xiao**, JPCB mediator→**Mtemeri &
 > Hickey**, Inorg. Chem. (Lever–Hammett)→**Perrin**, JPC C group-8→**Rulíšek**, Chem. Sci. flavin→**Singh**,
 > JCTC protein-redox→**Stier & Kästner**, Anal. Chem. laccase-mimic→**Chen**, Cu-ZIF-67→**Haider**, multistep
 > solvation→**Sterling & Bjornsson**. **Corrections applied:** Ohara 1994→**1993**, JPCB mediator 2024→**2023**,
-> Solomon (first author is **Lee**) 2001→**2002**, Boggs DOI added. **Schachinger year → Zotero-arbitrated** (founder 2026-06-19): Crossref-issued
-> **2023** (online 2022); markdown keeps **2022** as the working value across all SSOT — the final year + ref formatting come from the DOI at reference-manager import (Zotero = arbiter); online/issue
-> splits kept at issue year (Zafar 2012, Mano 2018, Pak 2025, Haider 2021). The 8 pure DFT-method classics
-> (Becke/LYP/Chai/Hehre/Weigend/Hay-Wadt/Cossi/Sun-PySCF) are method-name-cited → existence-checked at Zotero
-> import. Final ACS-numbered formatting still via the reference manager — do not hand-format here.
+> Solomon (first author is **Lee**) 2001→**2002**, Boggs DOI added. **Schachinger year CORRECTED 2022→2023** (2026-06-19): Crossref `published-print` [2023,1], vol 146, no
+> online date — the "2022" was the Elsevier DOI suffix (`elecom.2022.107405` = acceptance year) misread as
+> the publication year; flipped across all ~15 SSOT sites + `constants.py`/scripts. Other refs already cited
+> at their volume year (Zafar 2012/v84, Mano 2018/v118, Pak 2025/v35, Haider 2021/v18 — correct). The 8 pure
+> DFT-method classics (Becke/LYP/Chai/Hehre/Weigend/Hay-Wadt/Cossi/Sun-PySCF) **also Crossref-verified ✅** —
+> all 41 refs now resolve to real, correct papers. Final ACS comma-formatting = a mechanical last pass (no Zotero needed — metadata verified).
 
 **EBFC field & challenges**
 - Pak, J. et al. *Adv. Funct. Mater.* **2025**. doi:10.1002/adfm.202415933
@@ -129,7 +130,7 @@ accompanying version-pinned scripts.
 - Mao, F.; Mano, N.; Heller, A. Long tethers binding redox centers to polymer backbones enhance electron transport in enzyme "wiring" hydrogels. *J. Am. Chem. Soc.* **2003**, *125*, 4951. doi:10.1021/ja029510e
 - Zafar, M. N.; Ludwig, R. et al. Characterization of different FAD-dependent glucose dehydrogenases for possible use in glucose-based biosensors and biofuel cells (j_max anchor). *Anal. Bioanal. Chem.* **2011**. doi:10.1007/s00216-011-5650-7
 - Zafar, M. N.; Wang, X.; Sygmund, C.; Ludwig, R.; Leech, D.; Gorton, L. Electron-transfer studies with a new FAD-dependent glucose dehydrogenase and osmium polymers of different redox potentials (GcGDH wired by six Os polymers spanning **+15 to +489 mV vs NHE** — source for the mediator potential window). *Anal. Chem.* **2012**, *84*, 334. doi:10.1021/ac202647z
-- Schachinger, F.; Ma, S.; Ludwig, R. Redox potential of FAD-dependent glucose dehydrogenase. *Electrochem. Commun.* **2022**, *146*, 107405. doi:10.1016/j.elecom.2022.107405 <!-- citation corrected (scaffold had "Sygmund, C.; Ludwig, R."); E° = −265 mV (not −266) for GcGDH — verified consistent across ALL SSOT 2026-06-18, no −266 anywhere -->
+- Schachinger, F.; Ma, S.; Ludwig, R. Redox potential of FAD-dependent glucose dehydrogenase. *Electrochem. Commun.* **2023**, *146*, 107405. doi:10.1016/j.elecom.2022.107405 <!-- citation corrected (scaffold had "Sygmund, C.; Ludwig, R."); E° = −265 mV (not −266) for GcGDH — verified consistent across ALL SSOT 2026-06-18, no −266 anywhere -->
 - Sygmund, C.; Ludwig, R. et al. Heterologous overexpression of *Glomerella cingulata* FAD-dependent glucose dehydrogenase in *E. coli* and *P. pastoris* (our GcGDH). *Microb. Cell Fact.* **2011**, *10*, 106. doi:10.1186/1475-2859-10-106
 
 **Mediator design precedent (genre)**

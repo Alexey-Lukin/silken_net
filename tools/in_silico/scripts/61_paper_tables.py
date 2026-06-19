@@ -20,7 +20,7 @@ from lib.constants import DFT_CACHE, PAPER_DIR, REPO_ROOT
 # Canon values that live in SUMMARY prose (not a single cache field) — kept here as
 # explicit constants WITH a source note, and cross-checked against cache where one exists.
 B3LYP_CORRECTED_WITHDRAWN = -0.07     # SUMMARY: tuned to the wrong −0.14 → withdrawn, do NOT cite
-EXP_VERIFIED_EV = -0.574             # E°(Os)+309 − E°(FAD-GDH)−265 mV SHE (Zafar 2012 + Schachinger 2022)
+EXP_VERIFIED_EV = -0.574             # E°(Os)+309 − E°(FAD-GDH)−265 mV SHE (Zafar 2012 + Schachinger 2023)
 
 
 def _load(name: str) -> dict:
