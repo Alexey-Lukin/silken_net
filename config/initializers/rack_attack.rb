@@ -56,7 +56,7 @@ end
 # 3. GLOBAL THROTTLE — 300 requests per 5 minutes per IP
 # ---------------------------------------------------------------------------
 Rack::Attack.throttle("req/ip", limit: 300, period: 5.minutes) do |request|
-  request.ip unless request.path.start_with?("/assets", "/up")
+  request.ip unless request.path.start_with?("/assets", "/up", "/ready")
 end
 
 # ---------------------------------------------------------------------------

@@ -78,6 +78,8 @@ Authorization: Bearer <token>
 | `/api/v1/reset_password` | GET, PATCH | Форма та обробка нового пароля |
 | `/api/v1/oracle_callbacks` | POST | Chainlink DON callback (HMAC-SHA256 валідація через `X-Chainlink-Signature`) |
 | `/api/v1/auth/m2m_token` | POST | M2M автентифікація (Ed25519-підпис, без Bearer token) |
+| `/up` | GET | Liveness — Rails `rails/health#show` (процес живий, без перевірки залежностей) |
+| `/ready` | GET | Readiness — `ReadinessController` [A3], root-level; DB + Redis round-trip → 200 `ready` / 503 `not_ready` (ops/семантика: [`06_05`](06_05_Puma_Configuration)) |
 
 > **Примітка:** `/api/v1/oracle_callbacks` виключено з `authenticate_user!`, але захищено `before_action :verify_chainlink_signature!` — HMAC-SHA256 валідація заголовку `X-Chainlink-Signature` (ENV `CHAINLINK_HMAC_SECRET`). Якщо змінна не встановлена — HMAC пропускається з попередженням (dev/test). **При `WEB3_STRICT_MODE=true` (production) — відсутність `CHAINLINK_HMAC_SECRET` викликає `SecurityError` (fail-fast).**
 
@@ -328,6 +330,9 @@ POST /api/v1/auth/m2m_token
 | 108 | POST | `/api/v1/codex/admin/nodes` | `codex/admin/nodes#create` | 👑 Super Admin only | **Phase 6:** мінтить новий DAO Node з `seed_origin: :dao_proposal`. Атомарне створення; `archetype_key` має бути в `Codex::ARCHETYPES`, `codex_uid` має формат `CDX-(ECO\|TRE\|PRT\|MYT)-NNNN`. 201 / 403 (admin) / 422. |
 | 109 | PATCH/PUT | `/api/v1/codex/admin/nodes/:slug` | `codex/admin/nodes#update` | 🛡️ Admin+ | **Phase 6:** часткове оновлення (publish toggle, geo correction, lore copy). Invalid `lifecycle_status` → 422 (Rails 8 enum ArgumentError ловиться). 200 / 403 / 422. |
 | 110 | DELETE | `/api/v1/codex/admin/nodes/:slug` | `codex/admin/nodes#destroy` | 👑 Super Admin only | **Phase 6:** retire Node; cascades through `dependent: :destroy` на `citations`/`comments`/`attunements`/`discoveries`/`fractions`. 204 / 403 (admin). |
+| **🩺 Health-проби (root-level, поза `/api/v1`)** | | | | | |
+| — | GET | `/up` | `rails/health#show` | 🌐 Public | **Liveness** — процес живий (без перевірки залежностей). Виключено з `force_ssl`/host-auth redirect + Rack::Attack throttle. |
+| — | GET | `/ready` | `readiness#show` | 🌐 Public | **Readiness** — DB + Redis round-trip → 200 `ready` / 503 `not_ready` (ops: [`06_05`](06_05_Puma_Configuration)). Ті самі виключення, що `/up`. |
 
 **Легенда:**
 

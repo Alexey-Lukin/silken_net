@@ -1,0 +1,38 @@
+# frozen_string_literal: true
+
+require "rails_helper"
+
+RSpec.describe "Readiness probe", type: :request do
+  describe "GET /ready" do
+    it "returns 200 ready when DB and Redis are up" do
+      get "/ready"
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body).to eq(
+        "status" => "ready",
+        "checks" => { "database" => true, "redis" => true }
+      )
+    end
+
+    it "returns 503 not_ready when the database does not respond" do
+      conn = ActiveRecord::Base.connection
+      allow(conn).to receive(:execute).and_call_original
+      allow(conn).to receive(:execute).with("SELECT 1").and_raise(ActiveRecord::StatementInvalid)
+
+      get "/ready"
+
+      expect(response).to have_http_status(:service_unavailable)
+      expect(response.parsed_body["status"]).to eq("not_ready")
+      expect(response.parsed_body.dig("checks", "database")).to be(false)
+    end
+
+    it "returns 503 not_ready when Redis does not respond" do
+      allow(Sidekiq).to receive(:redis).and_raise("redis down")
+
+      get "/ready"
+
+      expect(response).to have_http_status(:service_unavailable)
+      expect(response.parsed_body.dig("checks", "redis")).to be(false)
+    end
+  end
+end

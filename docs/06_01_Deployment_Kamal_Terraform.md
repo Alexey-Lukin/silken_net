@@ -606,7 +606,8 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
        Верифікувати web та job сервіси запущені
 
 ☐ 12. Верифікувати Ingress Anchor маршрутизацію
-       curl https://api.silkennet.com/up → 200
+       curl https://api.silkennet.com/up    → 200
+       curl https://api.silkennet.com/ready → 200 {"status":"ready"}  (DB+Redis; 503 = not_ready)
 
 ☐ 13. Oracle гаманці поповнені газом (MATIC/ETH/SOL/CELO) (Pre-Flight #3)
 

@@ -39,11 +39,11 @@ Rails.application.configure do
   config.assume_ssl = ENV["DISABLE_SSL"] != "true"
 
   # [PROD] Force all access to the app over SSL, enable HSTS (1 year + subdomains + preload),
-  # and use secure cookies. Health check (/up) and Prometheus scrape (/metrics) are excluded so
+  # and use secure cookies. Health checks (/up, /ready) and Prometheus scrape (/metrics) are excluded so
   # internal probes that hit HTTP directly continue to work.
   config.force_ssl = ENV["DISABLE_SSL"] != "true"
   config.ssl_options = {
-    redirect: { exclude: ->(request) { request.path == "/up" || request.path == "/metrics" } },
+    redirect: { exclude: ->(request) { request.path == "/up" || request.path == "/ready" || request.path == "/metrics" } },
     hsts:     { expires: 1.year, subdomains: true, preload: true }
   }
 
@@ -147,6 +147,6 @@ Rails.application.configure do
     end
   end
   config.host_authorization = {
-    exclude: ->(request) { request.path == "/up" || request.path == "/metrics" }
+    exclude: ->(request) { request.path == "/up" || request.path == "/ready" || request.path == "/metrics" }
   }
 end
