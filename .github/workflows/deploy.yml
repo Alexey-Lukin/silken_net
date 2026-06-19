@@ -24,17 +24,25 @@ jobs:
     name: Verify Required Secrets [SEC.11]
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    outputs:
+      configured: ${{ steps.check.outputs.configured }}
     steps:
-      - name: Assert PROVISIONING_MASTER_KEY is present
+      - name: Check PROVISIONING_MASTER_KEY
+        id: check
         env:
           PROVISIONING_MASTER_KEY: ${{ secrets.PROVISIONING_MASTER_KEY }}
         run: |
+          # Absent key → not a failure: this repo simply has no deploy secrets
+          # configured. Emit configured=false so the deploy jobs skip cleanly
+          # (green run, no red noise) instead of asserting and going red.
           if [ -z "$PROVISIONING_MASTER_KEY" ]; then
-            echo "::error::PROVISIONING_MASTER_KEY secret is missing." \
-                 "Canopy/staging deploy without this ENV would force HardwareKeyService" \
-                 "into deterministic-seed fallback. See SEC.11 in docs/00_08."
-            exit 1
+            echo "::notice::PROVISIONING_MASTER_KEY not set — Canopy deploy skipped" \
+                 "(no deploy secrets configured for this repo). See SEC.11 in docs/00_08."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+          # Key IS set → still validate it (a present-but-malformed key is a real
+          # misconfiguration and must stay loud).
           KEY_LEN=${#PROVISIONING_MASTER_KEY}
           if [ "$KEY_LEN" -lt 64 ]; then
             echo "::error::PROVISIONING_MASTER_KEY is suspiciously short ($KEY_LEN chars)." \
@@ -42,12 +50,13 @@ jobs:
             exit 1
           fi
           echo "PROVISIONING_MASTER_KEY present (length: $KEY_LEN chars). OK."
+          echo "configured=true" >> "$GITHUB_OUTPUT"
 
   terraform:
     name: Terraform Apply
     needs: verify-secrets
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ needs.verify-secrets.outputs.configured == 'true' }}
 
     defaults:
       run:
@@ -81,8 +90,9 @@ jobs:
 
   deploy:
     name: Kamal Deploy (Canopy)
-    needs: terraform
+    needs: [verify-secrets, terraform]
     runs-on: ubuntu-latest
+    if: ${{ needs.verify-secrets.outputs.configured == 'true' }}
 
     steps:
       - name: Checkout code
@@ -105,7 +115,7 @@ jobs:
           ruby-version: "3.3"
 
       - name: Install Kamal
-        run: gem install kamal -v '~> 2.11.0'
+        run: gem install kamal -v '~> 2.12.0'
 
       - name: Set up SSH key
         run: |
