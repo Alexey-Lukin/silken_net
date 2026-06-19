@@ -1,0 +1,47 @@
+name: CI · CodeQL
+
+# GitHub's first-party SAST — the dataflow/taint analysis the other linters
+# (brakeman/bundler-audit/importmap-audit/ruff/cppcheck/slither) don't do.
+# Results land in the repo Security tab. Not wired as a required check yet
+# (kept separate from the `CI passed` aggregate); promote it once it's been
+# quiet for a few runs. The weekly schedule re-scans even on idle weeks.
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**']
+  push:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**']
+  schedule:
+    - cron: '27 3 * * 1'  # Mondays 03:27 UTC
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+  security-events: write   # upload SARIF results to the Security tab
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        # Interpreted languages — CodeQL extracts from source, no build step.
+        language: [ruby, javascript-typescript]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
