@@ -45,7 +45,7 @@
 - [5. Домен: Верифікація та Ідентичність (Verification & Identity)](#-5-домен-верифікація-та-ідентичність-verification--identity) — IoTeX, peaq, Chainlink, Ed25519
 - [6. Домен: NaaS Контракти (Contract Management)](#-6-домен-naas-контракти-contract-management) — Contract health/termination
 - [7. Домен: Надзвичайне Реагування (Emergency Response)](#-7-домен-надзвичайне-реагування-emergency-response) — `EmergencyResponseService`
-- [8. Домен: Апаратне Забезпечення та Безпека (Hardware, IoT & Security)](#-8-домен-апаратне-забезпечення-та-безпека-hardware-iot--security) — HardwareKey, OTA HMAC, OtaPackager, **WeakKeyDetector**
+- [8. Домен: Апаратне Забезпечення та Безпека (Hardware, IoT & Security)](#-8-домен-апаратне-забезпечення-та-безпека-hardware-iot--security) — HardwareKey, OTA HMAC, OtaPackager, **WeakKeyDetector**, **Web3NetworkGuard**
 - [9. Домен: Фінансові Оракули (Finance Oracles)](#-9-домен-фінансові-оракули-finance-oracles) — `PriceOracleService`
 - [10. Домен: Мультичейн — Паралельні Рейки (Multi-chain)](#-10-домен-мультичейн--паралельні-рейки-multi-chain) — Solana, Celo, Klima, Hadron, Ethereum L1, Filecoin, Streamr, The Graph, dClimate, Toucan, Treasury
 - [10b. Codex (Lore Layer) Сервіси](#-10b-codex-lore-layer-сервіси)
@@ -454,6 +454,27 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Що робить** | У `Rails.env.production?` (включно з canopy) після `after_initialize` перевіряє `ENV["PROVISIONING_MASTER_KEY"]`: (1) blank → raise `SecurityError` з посиланням на `docs/03_06 §2`; (2) непустий, але `Security::WeakKeyDetector.detect` повертає reason → raise `SecurityError` з cause. У dev/test guard вимкнений (там зафіксований стабільний non-secret fixture у `spec/rails_helper.rb` — інакше весь suite не завантажиться). |
 | **Bypass** | `SILKENNET_SKIP_MASTER_KEY_STRENGTH_CHECK=1` — для one-off rescue-boot при флеші zaжатого кластера. Логується гучно, не може стати рутиною. |
 | **Зв'язок з HKDF tree** | Captured-критично: master-ключ є коренем для **чотирьох** info-strings (post-ARCH.42): `HardwareKeyService.derive_lora_key` (Tree AES-128 LoRa, info `"silken-aes-128-lora-key"`), `HardwareKeyService.derive_device_key` (Gateway AES-256 CoAP, info `"silken-aes-256-device-key"`), `OtaHmacKeyService` (K_ota, info `silken-ota-hmac-v1`), `SilkenNet::SeedDerivation` (Lorenz `K_seed`, info `silken-lorenz-seed`). Компрометація master = каскадна компрометація всіх чотирьох — тому guard працює fail-closed до запуску HTTP-сервера. |
+
+### `Security::Web3NetworkGuard` 🔐
+
+| | |
+|---|---|
+| **Файл** | `app/services/security/web3_network_guard.rb` |
+| **Вхід** | `env` (Hash-подібний, типово `ENV`; інжектиться в тестах) |
+| **Що робить** | Чистий content-judge небезпечної Web3-конфігурації (дзеркалить `WeakKeyDetector`). **A1 (chain identity)** — сканує `*_RPC_URL` (Ethereum/Polygon/Celo/Solana) на testnet-маркери (`amoy`/`mumbai`/`sepolia`/`goerli`/`holesky`/`devnet`…, alnum-boundary-anchored проти хибних збігів у API-ключі): mainnet-деплой на testnet мінтив би реальну вартість на throwaway-чейні. Chain-id константи в коді немає, а live `eth_chainId` на boot свідомо НЕ робиться (boot почав би залежати від доступності RPC = гірший failure-mode). **A2 (oracle keys)** — `BlockchainMintingService`/`BlockchainBurningService` резолвлять підписанта через `ENV.fetch("ORACLE_MINTER_PRIVATE_KEY") { ENV.fetch("ORACLE_PRIVATE_KEY") }` (+`ORACLE_SLASHER_PRIVATE_KEY`): відсутність обох → `KeyError` глибоко в Sidekiq-воркері → тихий DeadSet. Перевіряє резолв fallback-ланцюга + hex-формат (64 hex, опц. `0x`). |
+| **Зовнішні виклики** | — (in-memory, без мережі за дизайном). |
+| **Публічні методи** | `.violations(env = ENV) → Array<String>` (порожній = безпечно; кожен рядок — людиночитане порушення з префіксом `[A1]`/`[A2]`) |
+| **Тест coverage** | `spec/services/security/web3_network_guard_spec.rb` — testnet-RPC (Amoy/devnet), alnum-boundary false-positive, missing/malformed/`0x` oracle-key |
+| **Інвокери** | `config/initializers/web3_network_guard.rb` (boot-time guard, див. нижче) |
+| **Cross-ref** | [`05_01 §5`](05_01_Multichain_Architecture) (RPC/ENV-конфіг), [`06_04`](06_04_Secrets_Checklist) (ORACLE-ключі), [`00_07` — OPS.10](00_07_Action_Plan_Tracker). Розширює runtime E.47 Solana-guard на boot-time + EVM. |
+
+#### Boot-time Web3 network guard (initializer)
+
+| | |
+|---|---|
+| **Файл** | `config/initializers/web3_network_guard.rb` |
+| **Що робить** | У `Rails.env.production?`/canopy АБО `WEB3_STRICT_MODE=true` (той самий gate, що IoTeX/Hadron) після `after_initialize` викликає `Security::Web3NetworkGuard.violations(ENV)`; будь-яке порушення → raise `SecurityError` fail-closed ДО прийому трафіку. У dev/test без strict-mode — вимкнений. Asset-build skip через `SECRET_KEY_BASE_DUMMY`. |
+| **Bypass** | `SILKENNET_SKIP_WEB3_NETWORK_GUARD=1` — для one-off rescue-boot. Логується гучно, не може стати рутиною. |
 
 ### `SilkenNet::DidDerivation` [FW.54]
 
