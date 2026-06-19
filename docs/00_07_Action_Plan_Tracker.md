@@ -228,7 +228,9 @@
 - [ ] CHEM.36 — local cathode acidity (solid-acid/Nafion on PTFE-GDL inner face): ⚠️ **mis-targeted** — boosts ORR proton supply, NOT the internal Cu-Co electron-hop site-gap bottleneck; xylem already pH ~4.5 + laccase acid-loving → marginal for the DET margin. Low
 
 **Separate streams (not chemistry-paper):**
-- [ ] CHEM.18 / CHEM.27 / CHEM.19 — cryoprotectant T-corr (firmware) / Belleville washers (hardware) / biological gasket (bio-seal) — tracked in their own modules
+- [ ] CHEM.18 — cryoprotectant T-corr (firmware low-T compensation for the matrix cryoprotectant's effect on EBFC output; **gated on CHEM.25**) → Gen 2.1+ firmware, **NOT yet homed** (no 03_xx note exists)
+- [ ] CHEM.27 — Belleville/disc-spring anchor preload (holds anchor–xylem clamp force vs 20-yr Ti creep + thermal cycle; ≠ the [`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface.md) pogo-pin *contact* spring) → hardware reliability, **NOT yet homed**
+- [ ] CHEM.19 — biological gasket / wound bio-seal (manages the anchor–wound interface vs infection + resin flooding) → domain home [`01_04`](01_04_CODIT_and_Xylemointegration.md) (resinosis failure-mode); bio-seal *solution* **NOT yet homed**
 
 ##### 🔬 In-silico pipeline — open computes (script audit 2026-06-06; detail → `PIPELINE_STATUS`)
 > All ~37 `tools/in_silico/scripts/` audited — almost all ✅ (cached). Open work captured here so we never re-audit; closed/superseded = 21 · 21c · 29 (honest limitations-points, not work).
