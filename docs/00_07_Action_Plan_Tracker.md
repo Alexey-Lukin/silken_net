@@ -736,11 +736,6 @@
 - [ ] 👤 задати repo Variables `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST` коли Ingress Anchor існує → gate активний
 - [ ] 👤 перший boundary smoke з Queen/`bin/forest_simulator`
 
-#### INF.9 — deploy.yml path-gate (infra-relevant changes only)
-- **P3** · 🤖 · ⚪ · → `06_07`
-- **Стан:** Не розпочато — `Deploy · Canopy` (`deploy.yml`) стріляє на КОЖЕН main CI-success; коли деплой стане живим (реальні секрети), загейтити на infra-шляхи (`terraform/**`/`Dockerfile`/`config/deploy.yml`/`.kamal/**`) тим самим changes-діфом, що `Deploy · GHCR Mirror`. Зараз premature — deploy і так no-op'иться без секретів. Канон `06_07 §1`.
-- [ ] 🤖 path-gate `deploy.yml` коли deploy стане живим
-
 #### INF.4 — Akash TLS strategy decision: hostname operator vs Cloudflare
 - **P1** · 🤖+👤 · 🟡 · → `06_02 §TLS термінація`
 - **Стан:** runbook готовий — Опція A (Cloudflare HTTPS + direct UDP CoAP) рекоменд. + pre-flight + fallback B (Cloudflare НЕ proxies UDP → CoAP потребує direct ingress).
@@ -798,6 +793,11 @@
 - **P2** · 🤖 · ⚪ · → `06_08 §1.2`, `02_05 §6.1`
 - **Стан:** Не розпочато — Helium SOS fallback перенесено Soldier→Queen (STM32WLE5JC flash/RAM/topology несумісний): Queen LoRaMac-node + OTAA join + FCntUp persist; SOS-маяк ~12 байт (НЕ телеметрія — SF12 EU868 ~51B cap) → Helium hotspot → LNS → Rails `POST /telemetry/helium`; Soldier лишається raw LoRa P2P AES-128. Implementation Anchor L3. Канон `02_05 §6.1` / `06_08 §1.2`.
 - [ ] 🤖 Queen `queen_helium_lorawan_uplink()`
+
+#### INF.9 — deploy.yml path-gate (infra-relevant changes only)
+- **P3** · 🤖 · ⚪ · → `06_07`
+- **Стан:** Не розпочато — `Deploy · Canopy` (`deploy.yml`) стріляє на КОЖЕН main CI-success; коли деплой стане живим (реальні секрети), загейтити на infra-шляхи (`terraform/**`/`Dockerfile`/`config/deploy.yml`/`.kamal/**`) тим самим changes-діфом, що `Deploy · GHCR Mirror`. Зараз premature — deploy і так no-op'иться без секретів. Канон `06_07 §1`.
+- [ ] 🤖 path-gate `deploy.yml` коли deploy стане живим
 
 #### S4.3 — Akash SDL secrets
 - **P3** · 👤 · ⚪ · → `06_02`
