@@ -30,7 +30,7 @@
 | 15 | `pvi_coverage_md` | RMSD 1.10 Å → PVI brush safe, no denaturation | `runs/` |
 | 16 | `strain_cycling_md` | pseudoplastic (compress<stretch), PE drift 1.0% | `kinetics/strain_cycling.json` |
 | 20 | `dft_lumiflavin` | HOMO(FADH₂) = -5.14 eV | `dft/lumiflavin.json` |
-| 21b | `dft_os_bpy_full` | LUMO(Os III) = -4.09 eV (dmbpy; π-backbonding) | `dft/os_complex.json` |
+| 21b | `dft_os_bpy_full` (plain bpy) — **os_complex.json now holds `21f` B5 dimethyl** | LUMO(Os III) = -4.09 eV (dmbpy; π-backbonding) | `dft/os_complex.json` (21b/21f co-write ⚠️) |
 | 21d/21f/21g | `dft_os_bpy_wb97xd` / `dft_os_dimethyl` / `adiabatic_dscf` | **Adiabatic ΔSCF +1.03 eV** (dimethyl, real mediator; +0.884 plain baseline) — B1/B2 ✅; verified cascade **+574 mV** → SUMMARY | `dft/os_complex_wb97xd[_dmbpy].json`, `delta_scf_corrections.json` |
 | 21e | `dft_os_mediator_series` | **① Hammett LFER** slope ≈ −0.93 eV/σ; realistic optimum **SO₂CF₃** (cascade −0.227, inert) > NO₂ (degrades on cycling) | `dft/os_mediator_series.json` |
 | 22 | `compare_homo_lumo` | cascade Δε = **-1.05 raw** (dimethyl, uphill); verified **−0.574 eV** (→ SUMMARY) | `dft/comparison.json` |
