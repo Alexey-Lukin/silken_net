@@ -15,7 +15,7 @@ electricity using redox enzymes as catalysts, operating at ambient temperature a
 (Pak et al., 2025; Mano & de Poulpiquet, 2018). Their power density is modest by comparison with
 abiotic fuel cells, which excludes them from bulk power generation but suits a niche that conventional
 batteries serve poorly: self-powered, implantable or environmentally-embedded sensors that must run
-unattended for years on a fuel drawn from their surroundings (Biosensors review, 2025; Kundu, 2026).
+unattended for years on a fuel drawn from their surroundings (Fredj et al., 2025; Kundu et al., 2026).
 The work reported here is motivated by one such application — a tree-integrated sensor powered at the
 titanium–xylem interface, where the dilute sugars of sap are the local fuel — but the electron-transfer
 questions it raises are generic to the EBFC anode→mediator→cathode chain and, we argue, are best posed
@@ -25,7 +25,7 @@ at the level of electronic structure.
 
 The architecture modelled here, representative of the high-performance mediated designs in the
 literature, pairs an FAD-dependent glucose dehydrogenase (FAD-GDH) anode with an osmium redox-polymer
-mediator and an oxygen-reducing cathode (Degani & Heller, 1987; Heller–Mano wired enzymes). FAD-GDH is the
+mediator and an oxygen-reducing cathode (Degani & Heller, 1987; Mao et al., 2003). FAD-GDH is the
 enzyme of choice for the anode because it is oxygen-insensitive and glucose-specific, unlike the
 classical glucose oxidase; but its catalytic flavin sits roughly 1.6 nm below the protein surface — too
 far for efficient direct electron transfer — so an electron relay is required. The osmium
@@ -34,11 +34,11 @@ poly(vinylimidazole) polymer fills that role, its redox potential tuned empirica
 against the open-circuit voltage it costs the cell (Zafar et al., 2012). On the cathode side, direct
 electron transfer to a bimetallic zeolitic-imidazolate-framework (ZIF) nanozyme that mimics the
 multicopper centres of laccase removes a second fragile enzyme from the device, trading turnover for
-robustness (Cu/Zn-ZIF and Cu-ZIF-67 ORR nanozymes; cf. laccase-CueO cluster studies). The recurring
+robustness (Haider et al., 2021; Chen et al., 2026; cf. Jiang et al., 2022). The recurring
 engineering challenges of such cells — interfacial electron-transfer efficiency, direct-electron-transfer
 kinetics at the cathode, multi-year enzyme and mediator stability, and metal-ion leaching from the
 support — are, at root, the same question asked four ways: how an electron moves, and how the molecular
-environment governs that motion (Chem. Rev., 2019).
+environment governs that motion (Xiao et al., 2019).
 
 ## The gap: an electronic-structure account is missing
 
@@ -57,7 +57,7 @@ implicit solvent on small, charged species (Pliego & Riveros, 2001). Individuall
 standard. What is missing is their *integrated* application to a complete, realistic EBFC chain — the
 redox potentials, reorganization energies, electronic couplings and solvation responses that actually
 govern the cascade, computed for the same system, end to end. That integration is the gap this paper
-addresses; model-driven mediator design at this level has begun for glucose oxidase (JPCB, 2024) but
+addresses; model-driven mediator design at this level has begun for glucose oxidase (Mtemeri & Hickey, 2023) but
 not for the FAD-GDH/Os/ZIF system.
 
 ## A methodological hazard worth naming up front
@@ -65,7 +65,7 @@ not for the FAD-GDH/Os/ZIF system.
 A complete electronic-structure account of this chain must cross a known hazard: implicit-solvation DFT
 systematically misestimates the reduction potentials of small, highly charged transition-metal complexes,
 with errors approaching ~1 V for group-8 (Fe/Ru/Os) octahedra because a continuum cannot reproduce the
-directional second-shell hydrogen bonding around a +2/+3 couple (group-8 octahedral benchmark, JPCC;
+directional second-shell hydrogen bonding around a +2/+3 couple (Rulíšek, 2013;
 Pliego & Riveros, 2001). The osmium mediator at the centre of this device is precisely such a couple.
 Rather than treat this as a nuisance to be absorbed into an empirical correction, we make it part of the
 result — quantifying the error on a clean benchmark and decomposing the device-level discrepancy into its
@@ -81,7 +81,7 @@ implicit-solvation density-functional theory reaches its limit on this problem. 
 reproduce the proton-coupled FAD redox potential to within ~50 mV of experiment using a thermodynamic
 proton reference, isolating the cascade discrepancy to the mediator rather than the flavin; (ii)
 establish a Hammett structure–activity relationship for the osmium mediator that is predictive and
-rationalizes the empirically observed optimum (Lever, 1990; DFT–Lever–Hammett correlation, 2001); (iii) compute the
+rationalizes the empirically observed optimum (Lever, 1990; Perrin et al., 2001); (iii) compute the
 bimetallic-ZIF cathode direct-electron-transfer kinetics with first-principles reorganization energies,
 finding a borderline, λ-limited margin — a corrected finding, not the orders-of-magnitude artefact an
 earlier geometry-and-λ error had implied — together with the design levers (a low-reorganization metal,
@@ -89,8 +89,7 @@ conductive-MOF band transport, or an acid-stable enzyme-free catalyst) that reli
 that the apparent uphill cascade is a *quantified* limitation of continuum solvation on charged
 transition-metal couples — decomposed into a chloro↔bis-imidazole differential-solvation bracket and a
 4,4′-dimethyl substituent term, benchmarked against the known group-8 error — rather than a failure of the chemistry. The flavin redox tuning by the
-protein environment is computed in the same spirit (Bhattacharyya et al., 2007; protein-electrostatics
-flavin tuning, 2025).
+protein environment is computed in the same spirit (Bhattacharyya et al., 2007; Singh et al., 2025).
 
 The contribution is therefore both a set of mechanistic design rules and a transferable methodological
 lesson; it is explicitly *not* a re-confirmation of the experimentally known cascade. The scope is the
@@ -105,10 +104,17 @@ accompanying version-pinned scripts.
 
 ## References (draft scaffold — expand to ~40–60, ACS numbered, via reference manager)
 
-> OUTLINE §6 / WRITING_GUIDE §7 DOIs carried verbatim. **[verify]** = method-classic cited from domain
-> knowledge — confirm the exact DOI/locator in the reference manager before submission. Not yet
-> exhaustive: the field/challenge, Os-GcGDH experimental series, and ZIF-laccase-mimic cathode clusters
-> each warrant several more primary citations (see OUTLINE §6 groupings).
+> **DOIs Crossref-verified 2026-06-19** (existence + author/title match). All 32 checked DOIs resolve to
+> real, correct papers — **zero fabrications, zero wrong-paper cites**. First authors resolved for the
+> previously title-only entries: Biosensors→**Fredj**, Chem. Rev. 2019→**Xiao**, JPCB mediator→**Mtemeri &
+> Hickey**, Inorg. Chem. (Lever–Hammett)→**Perrin**, JPC C group-8→**Rulíšek**, Chem. Sci. flavin→**Singh**,
+> JCTC protein-redox→**Stier & Kästner**, Anal. Chem. laccase-mimic→**Chen**, Cu-ZIF-67→**Haider**, multistep
+> solvation→**Sterling & Bjornsson**. **Corrections applied:** Ohara 1994→**1993**, JPCB mediator 2024→**2023**,
+> Solomon (first author is **Lee**) 2001→**2002**, Boggs DOI added. **Flag (your call):** Schachinger
+> Crossref-issued **2023** (online 2022) — load-bearing −265 mV anchor cited "2022" across all SSOT; online/issue
+> splits kept at issue year (Zafar 2012, Mano 2018, Pak 2025, Haider 2021). The 8 pure DFT-method classics
+> (Becke/LYP/Chai/Hehre/Weigend/Hay-Wadt/Cossi/Sun-PySCF) are method-name-cited → existence-checked at Zotero
+> import. Final ACS-numbered formatting still via the reference manager — do not hand-format here.
 
 **EBFC field & challenges**
 - Pak, J. et al. *Adv. Funct. Mater.* **2025**. doi:10.1002/adfm.202415933
@@ -119,7 +125,7 @@ accompanying version-pinned scripts.
 
 **Os-mediated FAD-GDH (experimental anchor)**
 - Degani, Y.; Heller, A. Direct electrical communication between chemically modified enzymes and metal electrodes. 1. Electron transfer from glucose oxidase via covalently bound electron relays. *J. Phys. Chem.* **1987**, *91*, 1285. doi:10.1021/j100290a001
-- Ohara, T. J.; Rajagopalan, R.; Heller, A. Glucose electrodes based on cross-linked [Os(bpy)₂Cl]⁺/²⁺ complexed poly(1-vinylimidazole) films. *Anal. Chem.* **1994**. doi:10.1021/ac00071a031
+- Ohara, T. J.; Rajagopalan, R.; Heller, A. Glucose electrodes based on cross-linked [Os(bpy)₂Cl]⁺/²⁺ complexed poly(1-vinylimidazole) films. *Anal. Chem.* **1993**, *65*, 3512. doi:10.1021/ac00071a031
 - Mao, F.; Mano, N.; Heller, A. Long tethers binding redox centers to polymer backbones enhance electron transport in enzyme "wiring" hydrogels. *J. Am. Chem. Soc.* **2003**, *125*, 4951. doi:10.1021/ja029510e
 - Zafar, M. N.; Ludwig, R. et al. Characterization of different FAD-dependent glucose dehydrogenases for possible use in glucose-based biosensors and biofuel cells (j_max anchor). *Anal. Bioanal. Chem.* **2011**. doi:10.1007/s00216-011-5650-7
 - Zafar, M. N.; Wang, X.; Sygmund, C.; Ludwig, R.; Leech, D.; Gorton, L. Electron-transfer studies with a new FAD-dependent glucose dehydrogenase and osmium polymers of different redox potentials (GcGDH wired by six Os polymers spanning **+15 to +489 mV vs NHE** — source for the mediator potential window). *Anal. Chem.* **2012**, *84*, 334. doi:10.1021/ac202647z
@@ -127,7 +133,7 @@ accompanying version-pinned scripts.
 - Sygmund, C.; Ludwig, R. et al. Heterologous overexpression of *Glomerella cingulata* FAD-dependent glucose dehydrogenase in *E. coli* and *P. pastoris* (our GcGDH). *Microb. Cell Fact.* **2011**, *10*, 106. doi:10.1186/1475-2859-10-106
 
 **Mediator design precedent (genre)**
-- Model-driven redox-mediator design (GOx). *J. Phys. Chem. B* **2024**. doi:10.1021/acs.jpcb.3c03740
+- Mtemeri & Hickey. Model-driven design of redox mediators — quinone structure vs bioelectrocatalytic activity (GOx). *J. Phys. Chem. B* **2023**, *127*, 7685. doi:10.1021/acs.jpcb.3c03740
 
 **LFER / Lever electrochemical parametrization**
 - Lever, A. B. P. *Inorg. Chem.* **1990**, *29*, 1271. doi:10.1021/ic00331a030
@@ -148,7 +154,7 @@ accompanying version-pinned scripts.
 **ZIF laccase-mimic cathode**
 - Glucose/O₂ enzymatic biofuel cell with a laccase-mimicking nanozyme cathode for efficient O₂ reduction (onset 841 mV). *Anal. Chem.* doi:10.1021/acs.analchem.6c00462
 - Cu-doped ZIF-67 electrocatalyst for the oxygen reduction reaction. *J. Electrochem. Energy Convers. Storage* **2021**, *18*, 021001. doi:10.1115/1.4047331
-- Solomon, E. I. et al. Nature of the intermediate formed in the reduction of O₂ to H₂O at the trinuclear copper cluster active site in native laccase. *J. Am. Chem. Soc.* **2001**. doi:10.1021/ja0114052
+- Lee et al. (incl. Solomon, E. I.). Nature of the intermediate formed in the reduction of O₂ to H₂O at the trinuclear copper cluster active site in native laccase. *J. Am. Chem. Soc.* **2002**, *124*, 6180. doi:10.1021/ja0114052
 
 **Electron-transfer theory & methods (classics)**
 - Marcus, R. A.; Sutin, N. Electron transfers in chemistry and biology. *Biochim. Biophys. Acta* **1985**, *811*, 265. doi:10.1016/0304-4173(85)90014-X
@@ -159,7 +165,7 @@ accompanying version-pinned scripts.
 
 **DFT best-practice & reporting standard**
 - Bursch, M. et al. Best-practice DFT protocols. *Angew. Chem. Int. Ed.* **2022**. doi:10.1002/anie.202205735
-- Boggs, J. E. Reporting electronic-structure calculations. *Pure Appl. Chem.* **1998**, *70*, 1015.
+- Boggs, J. E. Guidelines for presentation of methodological choices in the publication of computational results. A. Ab initio electronic structure calculations (IUPAC Recommendations 1998). *Pure Appl. Chem.* **1998**, *70*, 1015. doi:10.1351/pac199870041015
 
 **DFT functionals, basis sets & solvation (computational methods)**
 - Becke, A. D. Density-functional thermochemistry. III. The role of exact exchange (B3LYP). *J. Chem. Phys.* **1993**, *98*, 5648. doi:10.1063/1.464913
