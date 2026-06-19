@@ -65,28 +65,28 @@ Geometry: cis-октаедричний, Os в origin, bpy1 у xz-площині,
 
 Cascade Δε = -5.137 − (-3.420) = **-1.717 eV → ❌ UPHILL** (артефакт missing π-backbonding).
 
-### B. Full bpy model (2026-05-25, script 21b — current)
+### B. Full dmbpy device model (script 21b — current; dimethyl recompute)
 
-Той самий DFT стек, але з повним cis-[Os(bpy)₂(1-MeIm)Cl]ⁿ⁺ (54 atoms, 240 electrons). SCF wall-clock: Os(II) 501 s, Os(III) 647 s (Apple Silicon, multi-core). <S²>(Os(III)) = 0.754 ≈ exact 0.75 → чистий doublet.
+Той самий DFT стек, але з повним cis-[Os(dmbpy)₂(1-MeIm)Cl]ⁿ⁺ (66 atoms, 272/271 electrons; `os_complex.json`). SCF wall-clock: Os(II) 471 s, Os(III) 751 s (Apple Silicon, multi-core). <S²>(Os(III)) ≈ 0.75 → чистий doublet. _(Plain-bpy [Os(bpy)₂…] лишається як Hammett σ=0 опорна точка — SUMMARY §LFER / 06_tables.)_
 
 | Species | HOMO (eV) | LUMO (eV) | gap (eV) |
 |---|---|---|---|
 | FAD (ox lumiflavin) | -6.188 | -2.779 | 3.409 |
 | **FADH₂ (red) — donor** | **-5.137** | -1.592 | 3.545 |
-| Os(II) [Os(bpy)₂(1-MeIm)Cl]⁺ | -4.875 | -2.156 | 2.719 |
-| **Os(III) [Os(bpy)₂(1-MeIm)Cl]²⁺ — acceptor** | -6.359 | **-4.228** | 2.131 |
+| Os(II) [Os(dmbpy)₂(1-MeIm)Cl]⁺ | -4.724 | -2.023 | 2.702 |
+| **Os(III) [Os(dmbpy)₂(1-MeIm)Cl]²⁺ — acceptor** | -6.209 | **-4.086** | 2.124 |
 
-### Marcus cascade verdict (full bpy, raw Koopmans)
+### Marcus cascade verdict (dmbpy device, raw Koopmans)
 
-| Quantity | NH₃ model | Full bpy model |
+| Quantity | NH₃ model | dmbpy device |
 |---|---|---|
 | `ε_HOMO(FADH₂)` — donor | -5.137 eV | -5.137 eV |
-| `ε_LUMO(Os(III))` — acceptor | -3.420 eV | **-4.228 eV** |
-| `Δε = donor − acceptor` | -1.717 eV | **-0.909 eV** |
-| π-backbonding shift | — | **+0.808 eV** |
+| `ε_LUMO(Os(III))` — acceptor | -3.420 eV | **-4.086 eV** |
+| `Δε = donor − acceptor` | -1.717 eV | **-1.051 eV** |
+| π-backbonding shift | — | **+0.666 eV** |
 | Direction | ❌ UPHILL | ❌ UPHILL (closer) |
 
-⚠️ **Сирий verdict все ще UPHILL** (-0.909 eV), але π-backbonding зменшив розрив з 1.72 eV до 0.91 eV — на 47%. Залишковий bias домінується **B3LYP FADH₂ HOMO underestimate** (~0.64 eV) + **geometry not DFT-optimized** (~0.1-0.3 eV).
+⚠️ **Сирий verdict все ще UPHILL** (-1.051 eV, dmbpy device), але π-backbonding зменшив розрив з 1.72 eV до 1.05 eV — на ~39%. Залишковий bias домінується **B3LYP FADH₂ HOMO underestimate** (~0.97 eV vs verified −265 мВ) + **geometry not DFT-optimized** (~0.1-0.3 eV). (Plain-bpy baseline Δε = −0.909; різниця −0.142 = 4,4'-dimethyl substituent ②.)
 
 Діаграма енергетичної сходинки: [`tools/in_silico/cache/dft/energy_ladder.png`](../../../../tools/in_silico/cache/dft/energy_ladder.png).
 
@@ -97,7 +97,7 @@ Cascade Δε = -5.137 − (-3.420) = **-1.717 eV → ❌ UPHILL** (артефа�
 | Джерело помилки | Величина | NH₃ model | Full bpy model |
 |---|---|---|---|
 | **B3LYP underestimate FADH₂ HOMO** | ~0.97 eV | applies | **applies** (vs verified −265 mV FAD) |
-| **Missing π-backbonding** | ~0.8-1.5 eV | applies | **✅ closed** (+0.81 eV shift measured) |
+| **Missing π-backbonding** | ~0.8-1.5 eV | applies | **✅ closed** (+0.67 eV shift, NH₃→dmbpy) |
 | **Geometry not DFT-optimized** | ~0.1-0.3 eV | minor | **applies** |
 | **Total bias** | | ~1.6-2.1 eV | **~0.7-0.9 eV** |
 
@@ -177,7 +177,7 @@ driving force. That gap is **decomposed**, not hand-waved — differential PCM s
 | Δε (dimethyl) | -1.054 eV | **-6.020 eV** |
 | Direction | ❌ UPHILL | ❌ UPHILL (much larger) |
 
-**Critical interpretation:** The much larger ωB97X uphill (-5.88 eV vs -0.91 eV) does NOT invalidate the cascade. Range-separated hybrids are known to give Koopmans orbital energies that are **poor proxies for redox potentials** — they correctly reproduce ionization potentials but virtual orbital energies (LUMO) are systematically too high. B3LYP benefits from error cancellation that makes its orbital energies closer to E° values.
+**Critical interpretation:** The much larger ωB97X uphill (-6.02 eV vs -1.05 eV, dmbpy) does NOT invalidate the cascade. Range-separated hybrids are known to give Koopmans orbital energies that are **poor proxies for redox potentials** — they correctly reproduce ionization potentials but virtual orbital energies (LUMO) are systematically too high. B3LYP benefits from error cancellation that makes its orbital energies closer to E° values.
 
 ### ΔSCF vertical IP/EA (ωB97X/def2-TZVP, 2026-05-27)
 
@@ -321,8 +321,8 @@ Scripts: `23_build_zif_clusters.py` (geometry + deprotonation), `24_dft_hopping_
 | Pipeline end-to-end працює (PySCF + B3LYP + PCM + Marcus cascade) | ✅ | 4 скрипти (20, 21, 21b, 22), JSON-керовані, deterministic |
 | FAD redox core моделюється на B3LYP/6-31G(d) + PCM | ✅ | HOMO -5.14 eV (B3LYP ~0.97 eV below the -4.17 eV implied by bound -265 mV SHE) |
 | Os mediator — NH₃ surrogate (script 21) | ✅ Superseded | LUMO(Os(III)) = -3.42 eV; missing π-backbonding → -1.72 eV uphill |
-| Os mediator — full [Os(bpy)₂(1-MeIm)Cl] (script 21b) | ✅ | LUMO(Os(III)) = **-4.23 eV**; π-backbonding закритий (+0.81 eV shift); <S²>=0.754 ✅ |
-| `ε_HOMO(FADH₂) > ε_LUMO(Os(III))` (raw Koopmans) | ❌ → ⚠️ | Δε = **-0.91 eV** (uphill, but 47% closer than NH₃ model's -1.72 eV) |
+| Os mediator — full [Os(dmbpy)₂(1-MeIm)Cl] (script 21b) | ✅ | LUMO(Os(III)) = **-4.09 eV** (dmbpy, os_complex.json); π-backbonding закритий vs NH₃-сурогат (−3.42→−4.09); <S²>=0.754 ✅ |
+| `ε_HOMO(FADH₂) > ε_LUMO(Os(III))` (raw Koopmans) | ❌ → ⚠️ | Δε = **-1.05 eV** (dmbpy; uphill, ~39% closer than NH₃ model's -1.72 eV) |
 | Cascade verdict (verified E°s) | ✅ | E°(Os +309) − E°(FAD-GDH −265 mV SHE) = **+574 mV / −0.574 eV downhill**; raw DFT uphill = method limit decomposed by ② |
 | **Definitive in-silico verdict** (publication-grade) | ✅ | raw DFT uphill (adiabatic ΔSCF +1.03 eV dimethyl); gap = differential PCM solvation (chloro↔bis-Im) + 4,4'-dimethyl substituent, decomposed by ② (script 34); rigorous closure = QM/MM chloro species → школа Мінаєва |
 
