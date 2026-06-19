@@ -15,6 +15,16 @@ concurrency:
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    # Only the protected areas this guard checks (the path→doc mappings in the
+    # script below). A PR touching only ml/terraform/docs never trips the guard,
+    # so don't spin a runner for it. Mixed code+X PRs still match.
+    paths:
+      - 'app/models/**'
+      - 'app/services/**'
+      - 'firmware/soldier/**'
+      - 'firmware/queen/**'
+      - 'firmware/bio_contracts/**'
+      - 'contracts/**'
 
 permissions:
   contents: read
