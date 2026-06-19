@@ -1,4 +1,11 @@
 version: 2
+# Auto-PRs for the ecosystems Dependabot natively understands. The rest are swept
+# manually by the `dependency-update` skill, on purpose:
+#   - conda (tools/ml, tools/in_silico): Dependabot has no conda ecosystem; a
+#     pip-on-conda shim would fight tools/in_silico/conda-lock.yml (the pin the
+#     EBFC paper's DFT ran on) — reproducibility beats auto-bumps there.
+#   - firmware submodules (firmware/extern/*): not Dependabot-native; bumped on the
+#     firmware bench cadence, gated by host CMSIS / QEMU bit-parity.
 updates:
 - package-ecosystem: bundler
   directory: "/"
@@ -7,6 +14,16 @@ updates:
   open-pull-requests-limit: 10
 - package-ecosystem: github-actions
   directory: "/"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 10
+- package-ecosystem: npm           # contracts/: @openzeppelin/contracts, forge-std
+  directory: "/contracts"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 10
+- package-ecosystem: terraform     # terraform/: google + akash providers
+  directory: "/terraform"
   schedule:
     interval: weekly
   open-pull-requests-limit: 10
