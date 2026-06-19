@@ -31,7 +31,7 @@ module SilkenNet
       labels: [ :token_type ]
     )
 
-    # [A4] Mint attempts vs successes → the "≥80% mint success during a single
+    # Mint attempts vs successes → the "≥80% mint success during a single
     # chain outage" SLO (docs/06_08 §2.4) becomes measurable as
     # silkennet_mint_success_total / silkennet_mint_attempts_total (per token_type).
     MINT_ATTEMPTS_TOTAL = REGISTRY.counter(

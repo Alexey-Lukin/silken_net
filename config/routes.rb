@@ -4,7 +4,7 @@ Rails.application.routes.draw do
   # Reveal health status on /up
   get "up" => "rails/health#show", as: :rails_health_check
 
-  # [A3] Readiness probe (DB + Redis) for orchestrators — unauthenticated, 503 when a dep is down.
+  # Readiness probe (DB + Redis) for orchestrators — unauthenticated, 503 when a dep is down.
   get "ready" => "readiness#show", as: :readiness_check
 
   # Lookbook component preview browser (development only)

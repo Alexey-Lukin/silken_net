@@ -79,7 +79,7 @@ Authorization: Bearer <token>
 | `/api/v1/oracle_callbacks` | POST | Chainlink DON callback (HMAC-SHA256 валідація через `X-Chainlink-Signature`) |
 | `/api/v1/auth/m2m_token` | POST | M2M автентифікація (Ed25519-підпис, без Bearer token) |
 | `/up` | GET | Liveness — Rails `rails/health#show` (процес живий, без перевірки залежностей) |
-| `/ready` | GET | Readiness — `ReadinessController` [A3], root-level; DB + Redis round-trip → 200 `ready` / 503 `not_ready` (ops/семантика: [`06_05`](06_05_Puma_Configuration)) |
+| `/ready` | GET | Readiness — `ReadinessController` (root-level); DB + Redis round-trip → 200 `ready` / 503 `not_ready` (ops/семантика: [`06_05`](06_05_Puma_Configuration)) |
 
 > **Примітка:** `/api/v1/oracle_callbacks` виключено з `authenticate_user!`, але захищено `before_action :verify_chainlink_signature!` — HMAC-SHA256 валідація заголовку `X-Chainlink-Signature` (ENV `CHAINLINK_HMAC_SECRET`). Якщо змінна не встановлена — HMAC пропускається з попередженням (dev/test). **При `WEB3_STRICT_MODE=true` (production) — відсутність `CHAINLINK_HMAC_SECRET` викликає `SecurityError` (fail-fast).**
 

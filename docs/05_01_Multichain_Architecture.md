@@ -617,7 +617,7 @@ state_root = Digest::SHA256.hexdigest("#{total_scc}|#{total_sfc}|#{active_tree_c
 | `SOLANA_USDC_MINT_ADDRESS` | Solana USDC |
 | `FILECOIN_PINNING_API_URL` | Pinata |
 
-> **Boot guard (A1/A2):** `Security::Web3NetworkGuard` ([`04_02 §8`](04_02_Business_Logic_and_Services)) fail-closes at boot у production / `WEB3_STRICT_MODE`, якщо будь-який `*_RPC_URL` вище несе testnet-маркер (Amoy / devnet / Sepolia…) або `ORACLE_*` signer-ключ відсутній/malformed — розширює runtime E.47 Solana-guard (`SOLANA_RPC_URL` за замовчуванням = Devnet) на EVM + boot-time. Live `eth_chainId`-probe свідомо не робиться (нуль RPC-залежності на boot).
+> **Boot guard:** `Security::Web3NetworkGuard` ([`04_02 §8`](04_02_Business_Logic_and_Services)) fail-closes at boot у production / `WEB3_STRICT_MODE`, якщо будь-який `*_RPC_URL` вище несе testnet-маркер (Amoy / devnet / Sepolia…) або `ORACLE_*` signer-ключ відсутній/malformed — розширює runtime E.47 Solana-guard (`SOLANA_RPC_URL` за замовчуванням = Devnet) на EVM + boot-time. Live `eth_chainId`-probe свідомо не робиться (нуль RPC-залежності на boot).
 
 ---
 

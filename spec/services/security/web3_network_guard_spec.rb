@@ -17,16 +17,16 @@ RSpec.describe Security::Web3NetworkGuard do
       expect(described_class.violations(clean_env)).to be_empty
     end
 
-    # --- A1: chain identity ---------------------------------------------------
+    # --- chain identity ---------------------------------------------------
 
     it "flags a Polygon Amoy testnet RPC" do
       env = clean_env.merge("ALCHEMY_POLYGON_RPC_URL" => "https://polygon-amoy.g.alchemy.com/v2/key")
-      expect(described_class.violations(env)).to include(a_string_matching(/\[A1\].*TESTNET/))
+      expect(described_class.violations(env)).to include(a_string_matching(/\[chain\].*TESTNET/))
     end
 
     it "flags a Solana devnet RPC" do
       env = clean_env.merge("SOLANA_RPC_URL" => "https://api.devnet.solana.com")
-      expect(described_class.violations(env)).to include(a_string_matching(/\[A1\].*TESTNET/))
+      expect(described_class.violations(env)).to include(a_string_matching(/\[chain\].*TESTNET/))
     end
 
     it "does not false-positive when a marker is glued inside an API-key token" do
@@ -35,11 +35,11 @@ RSpec.describe Security::Web3NetworkGuard do
       expect(described_class.violations(env)).to be_empty
     end
 
-    # --- A2: oracle signer keys -----------------------------------------------
+    # --- oracle signer keys -----------------------------------------------
 
     it "flags a missing minting oracle key (no specific key, no fallback)" do
       env = clean_env.except("ORACLE_PRIVATE_KEY")
-      expect(described_class.violations(env)).to include(a_string_matching(/\[A2\].*minting/))
+      expect(described_class.violations(env)).to include(a_string_matching(/\[oracle-key\].*minting/))
     end
 
     it "accepts specific minter+slasher keys without the ORACLE_PRIVATE_KEY fallback" do
@@ -52,7 +52,7 @@ RSpec.describe Security::Web3NetworkGuard do
 
     it "flags a malformed oracle key" do
       env = clean_env.merge("ORACLE_PRIVATE_KEY" => "not-a-hex-key")
-      expect(described_class.violations(env)).to include(a_string_matching(/\[A2\].*hex/))
+      expect(described_class.violations(env)).to include(a_string_matching(/\[oracle-key\].*hex/))
     end
 
     it "accepts a 0x-prefixed key" do

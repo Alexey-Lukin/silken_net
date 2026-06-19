@@ -158,7 +158,7 @@
 - [ ] `ALCHEMY_ETHEREUM_RPC_URL`
 - [ ] `SOLANA_RPC_URL`
 
-> **Boot guard [A1/A2]:** `config/initializers/web3_network_guard.rb` ([`04_02 §8`](04_02_Business_Logic_and_Services)) fail-closes at boot у production / `WEB3_STRICT_MODE`, якщо `ORACLE_*` ключ відсутній/malformed **або** будь-який `*_RPC_URL` несе testnet-маркер (Amoy / devnet / Sepolia) — перетворює «Sidekiq DeadSet» / «mint на testnet» на гучний boot-refuse ДО прийому трафіку (розширює `E.47` на boot-time + EVM).
+> **Boot guard:** `config/initializers/web3_network_guard.rb` ([`04_02 §8`](04_02_Business_Logic_and_Services)) fail-closes at boot у production / `WEB3_STRICT_MODE`, якщо `ORACLE_*` ключ відсутній/malformed **або** будь-який `*_RPC_URL` несе testnet-маркер (Amoy / devnet / Sepolia) — перетворює «Sidekiq DeadSet» / «mint на testnet» на гучний boot-refuse ДО прийому трафіку (розширює `E.47` на boot-time + EVM).
 
 **Solana minting (`Solana::MintingService` raises explicit errors):**
 - [ ] `SOLANA_WALLET_KEYPAIR` — 64-byte hex keypair

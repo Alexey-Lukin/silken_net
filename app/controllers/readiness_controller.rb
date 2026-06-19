@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# [A3] Unauthenticated readiness probe for orchestrators (k8s / Akash / Kamal).
+# Unauthenticated readiness probe for orchestrators (k8s / Akash / Kamal).
 #
 # Liveness ("is the process up?") is already served by Rails' `/up`
 # (`rails/health#show`). This adds the missing READINESS signal ("can it serve
