@@ -1,4 +1,4 @@
-name: Solidity Audit
+name: CI · Solidity
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

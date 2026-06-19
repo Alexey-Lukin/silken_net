@@ -1,4 +1,4 @@
-name: ML smoke (log-mel parity)
+name: Smoke · ML log-mel
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

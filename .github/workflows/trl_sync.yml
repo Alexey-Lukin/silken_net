@@ -21,7 +21,7 @@
 #    as the Project node ID (starts with PVT_), and paste them below.
 # ─────────────────────────────────────────────────────────────────────
 
-name: TRL Sync
+name: Ops · TRL Sync
 
 on:
   issues:

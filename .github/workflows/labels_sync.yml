@@ -6,7 +6,7 @@
 #
 # Doc reference: docs/00_05_GitHub_Projects_and_IaC_Automation.md §2.5.
 
-name: Labels Sync (IaC)
+name: Ops · Labels Sync
 
 on:
   push:

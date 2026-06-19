@@ -21,7 +21,7 @@
 # ⚠️ Branch-protection: `main` is currently UNPROTECTED (no required checks). When it
 # is enabled, mark `docs_check` required — a docs-only PR skips ci.yml (paths-ignore),
 # so ci jobs alone would never gate docs.
-name: Docs CI
+name: CI · Docs
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

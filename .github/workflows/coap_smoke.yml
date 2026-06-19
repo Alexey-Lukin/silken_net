@@ -1,4 +1,4 @@
-name: CoAP UDP Smoke Test
+name: Smoke · CoAP UDP
 
 # [INF.6/FW.56] Post-deploy smoke that exercises the end-to-end CoAP UDP
 # path: Queen-equivalent client → Ingress Anchor (HAProxy/socat or

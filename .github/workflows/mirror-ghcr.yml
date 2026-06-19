@@ -18,11 +18,11 @@
 #   - ghcr.io/alexey-lukin/silken_net:v1.2.3        (on release)
 # =============================================================================
 
-name: Mirror to GHCR
+name: Deploy · GHCR Mirror
 
 on:
   workflow_run:
-    workflows: ["CI"]
+    workflows: ["CI · Code"]
     types: [completed]
     branches: [main]
   release:

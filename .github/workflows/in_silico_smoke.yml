@@ -1,4 +1,4 @@
-name: In-silico smoke (L2)
+name: Smoke · In-silico L2
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

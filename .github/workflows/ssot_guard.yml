@@ -6,7 +6,7 @@
 # This prevents context drift between implementation and the SSOT docs.
 # Ref: docs/00_05_GitHub_Projects_and_IaC_Automation.md
 
-name: SSOT Guard
+name: CI · SSOT Guard
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

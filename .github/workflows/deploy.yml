@@ -1,8 +1,8 @@
-name: Deploy Canopy
+name: Deploy · Canopy
 
 on:
   workflow_run:
-    workflows: ["CI"]
+    workflows: ["CI · Code"]
     types: [completed]
     branches: [main]
   workflow_dispatch:
