@@ -284,9 +284,9 @@ failure** — the methodological core of Стаття 1.
 | `docs/protocols/ebfc/in_silico/ligands/lumiflavin_ox.xyz` | MMFF94s geometry лумифлавіну |
 | `docs/protocols/ebfc/in_silico/ligands/lumiflavin_red.xyz` | MMFF94s geometry 1,5-дигідролумифлавіну |
 | `docs/protocols/ebfc/in_silico/ligands/os_amine_cl.xyz` | NH₃ surrogate geometry (22 atoms, superseded) |
-| `docs/protocols/ebfc/in_silico/ligands/os_bpy_im_cl.xyz` | Full bpy/Im/Cl geometry (54 atoms, current) |
+| `docs/protocols/ebfc/in_silico/ligands/os_bpy_im_cl.xyz` | Full plain-bpy/Im/Cl geometry (54 atoms, reference; device canon = dimethyl `os_dmbpy_meim_cl_full.xyz`) |
 | `tools/in_silico/cache/dft/lumiflavin.json` | Output 20-го скрипту (gitignored runs, але cached) |
-| `tools/in_silico/cache/dft/os_complex.json` | Output 21-го скрипту |
+| `tools/in_silico/cache/dft/os_complex.json` | Output 21f (dimethyl canon); 21→`os_complex_nh3.json`, 21b→`os_complex_plain.json` |
 | `tools/in_silico/cache/dft/comparison.json` | Aggregated результати 22-го скрипту |
 | `tools/in_silico/cache/dft/energy_ladder.png` | Marcus cascade diagram |
 
@@ -318,10 +318,10 @@ Scripts: `23_build_zif_clusters.py` (geometry + deprotonation), `24_dft_hopping_
 
 | Критерій | Статус | Деталі |
 |---|---|---|
-| Pipeline end-to-end працює (PySCF + B3LYP + PCM + Marcus cascade) | ✅ | 4 скрипти (20, 21, 21b, 22), JSON-керовані, deterministic |
+| Pipeline end-to-end працює (PySCF + B3LYP + PCM + Marcus cascade) | ✅ | canon cascade 20 → 21f → 22 (21/21b superseded refs), JSON-керовані, deterministic |
 | FAD redox core моделюється на B3LYP/6-31G(d) + PCM | ✅ | HOMO -5.14 eV (B3LYP ~0.97 eV below the -4.17 eV implied by bound -265 mV SHE) |
 | Os mediator — NH₃ surrogate (script 21) | ✅ Superseded | LUMO(Os(III)) = -3.42 eV; missing π-backbonding → -1.72 eV uphill |
-| Os mediator — full [Os(dmbpy)₂(1-MeIm)Cl] (script 21b) | ✅ | LUMO(Os(III)) = **-4.09 eV** (dmbpy, os_complex.json); π-backbonding закритий vs NH₃-сурогат (−3.42→−4.09); <S²>=0.754 ✅ |
+| Os mediator — full [Os(dmbpy)₂(1-MeIm)Cl] (script 21f) | ✅ | LUMO(Os(III)) = **-4.09 eV** (dmbpy, os_complex.json; plain-bpy parent = 21b → os_complex_plain.json); π-backbonding закритий vs NH₃-сурогат (−3.42→−4.09); <S²>=0.754 ✅ |
 | `ε_HOMO(FADH₂) > ε_LUMO(Os(III))` (raw Koopmans) | ❌ → ⚠️ | Δε = **-1.05 eV** (dmbpy; uphill, ~39% closer than NH₃ model's -1.72 eV) |
 | Cascade verdict (verified E°s) | ✅ | E°(Os +309) − E°(FAD-GDH −265 mV SHE) = **+574 mV / −0.574 eV downhill**; raw DFT uphill = method limit decomposed by ② |
 | **Definitive in-silico verdict** (publication-grade) | ✅ | raw DFT uphill (adiabatic ΔSCF +1.03 eV dimethyl); gap = differential PCM solvation (chloro↔bis-Im) + 4,4'-dimethyl substituent, decomposed by ② (script 34); rigorous closure = QM/MM chloro species → школа Мінаєва |

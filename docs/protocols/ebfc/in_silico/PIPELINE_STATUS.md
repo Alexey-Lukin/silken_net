@@ -30,7 +30,7 @@
 | 15 | `pvi_coverage_md` | RMSD 1.10 Å → PVI brush safe, no denaturation | `runs/` |
 | 16 | `strain_cycling_md` | pseudoplastic (compress<stretch), PE drift 1.0% | `kinetics/strain_cycling.json` |
 | 20 | `dft_lumiflavin` | HOMO(FADH₂) = -5.14 eV | `dft/lumiflavin.json` |
-| 21b | `dft_os_bpy_full` (plain bpy) — **os_complex.json now holds `21f` B5 dimethyl** | LUMO(Os III) = -4.09 eV (dmbpy; π-backbonding) | `dft/os_complex.json` (21b/21f co-write ⚠️) |
+| 21b/21f | plain bpy (21b → `os_complex_plain.json`) · **dimethyl B3LYP (21f → `os_complex.json`, canon)** | LUMO(Os III) = -4.09 eV (dmbpy; π-backbonding) | `dft/os_complex.json` — 21f sole owner ✅ (co-write split 2026-06-19; 21→`_nh3`, 21b→`_plain`) |
 | 21d/21f/21g | `dft_os_bpy_wb97xd` / `dft_os_dimethyl` / `adiabatic_dscf` | **Adiabatic ΔSCF +1.03 eV** (dimethyl, real mediator; +0.884 plain baseline) — B1/B2 ✅; verified cascade **+574 mV** → SUMMARY | `dft/os_complex_wb97xd[_dmbpy].json`, `delta_scf_corrections.json` |
 | 21e | `dft_os_mediator_series` | **① Hammett LFER** slope ≈ −0.93 eV/σ; realistic optimum **SO₂CF₃** (cascade −0.227, inert) > NO₂ (degrades on cycling) | `dft/os_mediator_series.json` |
 | 22 | `compare_homo_lumo` | cascade Δε = **-1.05 raw** (dimethyl, uphill); verified **−0.574 eV** (→ SUMMARY) | `dft/comparison.json` |
@@ -63,7 +63,7 @@
 
 | # | Script | Why | Resolution |
 |---|--------|-----|------------|
-| 21 | `dft_os_bipy_complex` | NH₃ surrogate (no π-backbonding) | Superseded by 21b full bpy model |
+| 21 | `dft_os_bipy_complex` | NH₃ surrogate (no π-backbonding) | Superseded; own cache `os_complex_nh3.json` (was co-writing os_complex.json) |
 | 21c | `dft_os_bpy_geomopt` | Cl displacement never converges (flat PES) | Programmatic geometry (21b) sufficient — LUMO Δ<0.002 eV |
 | 29 | `dft_reorganization_energy` | λ: two methods both give E(n@R_cation) +160 eV — **FADH₂•⁺ radical-cation geometry pathological in implicit solvent** | **✅ RESCUED by 29b** (`semiquinone_lambda.json`): FADH⁻/FADH• couple → inner-sphere λ_i = **0.39 eV**, total ~0.7–0.8 w/ outer-sphere ≈ lit → L3 Nelsen-λ row |
 | 29b | `dft_semiquinone_lambda` | **anode inner-sphere λ from first principles** — FADH•/FADH⁻ Nelsen 4-point (rescues 29) → **λ_i = 0.39 eV** (λ₁ 0.17 + λ₂ 0.22, site N18) | `dft/semiquinone_lambda.json` |
@@ -85,7 +85,7 @@ Parameterization (CPU, done):
 
 DFT (CPU, done):
   20 (FAD HOMO/LUMO) ──┐
-  21b (Os full bpy) ───┼── 22 (cascade comparison) ──→ verdict
+  21f (Os dimethyl) ───┼── 22 (cascade comparison) ──→ verdict
                        │
   23 (ZIF clusters) ───┤
   24 (hopping ΔSCF) ───┘── L3b verdict (geom-fixed t_ij; k_DET borderline, λ-sensitive — scripts 25/35)
