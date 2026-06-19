@@ -43,6 +43,12 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   інвентар + checklist — `06_04`. CI-гейт `verify-secrets`.
 - **Akash SDL ENV — plaintext, видимий провайдеру.** Реальні ключі **ніколи** не в
   `deploy/akash/deploy.yaml`; інжектити через Akash Console / `env.secret`. → `06_02` / `06_04`.
+- **Deploy/release ланцюг (2026-06-19).** Canopy = кожен push у `main` після CI (continuous);
+  Production = GitHub Release, який тримає **release-please** (`Ops · Release`: semver+CHANGELOG із
+  conventional commits → `release: published`); GHCR-mirror path-gated + пушить SLSA provenance+SBOM
+  з образом (`gh attestation verify`). `verify-secrets` у Canopy **skip-clean** без секретів (Production
+  лишається fail-loud). `main` захищено branch-protection (required `CI passed` + `Docs passed`,
+  `enforce_admins=false` — owner пушить напряму). Деталі/діаграма — `06_07 §1`/`§2`.
 
 ## Карта коду / конфігів
 
@@ -53,7 +59,7 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 | Akash | `deploy/akash/` (`deploy.yaml` SDL · `config.alloy` · `encode-alloy-config.sh`) |
 | Observability | `config/initializers/prometheus.rb` (`SilkenNet::Metrics`) · `app/middleware/prometheus_collector.rb` · `deploy/akash/config.alloy` |
 | Web-сервер | `config/puma.rb` |
-| CI/CD | `.github/workflows/` (`deploy.yml` · `deploy-production.yml` · `ci.yml` · `docs.yml` · `ssot_guard.yml` · `trl_sync.yml`) |
+| CI/CD | `.github/workflows/` (`deploy.yml` · `deploy-production.yml` · `mirror-ghcr.yml` · `release-please.yml` · `ci.yml` · `docs.yml` · `ssot_guard.yml`) |
 
 ## Gotchas (верифіковані, не з канону)
 
