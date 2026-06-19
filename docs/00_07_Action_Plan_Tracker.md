@@ -772,6 +772,11 @@
 - **Стан:** Не розпочато — `192.168.0.1` (`config/deploy.yml`) / `<INGRESS_ANCHOR_IP>` (`config/deploy.canopy.yml`) плейсхолдери; підставити реальну Ingress Anchor IP після `terraform apply` (canopy = той самий IP, диференціюється Akash SDL env). Канон `06_01`.
 - [ ] 👤 підставити реальні IP після `terraform apply` → верифікувати deploy
 
+#### INF.10 — Kamal-proxy healthcheck → `/ready` (readiness-gated cutover)
+- **P3** · 👤 · ⚪ · → `06_01`
+- **Стан:** Не розпочато — `/ready` readiness-проба існує (DB+Redis round-trip, [`06_05`](06_05_Puma_Configuration)), але kamal-proxy за замовчуванням healthcheck'ає `/up` (liveness). Для zero-downtime: додати `proxy: healthcheck: { path: /ready }` у `config/deploy.yml` — kamal не перемикає трафік на новий контейнер, поки DB+Redis не готові. Свідомо НЕ забетоновано зараз (deploy pre-first-run; змінює cutover-поведінку → застосувати+верифікувати на першому деплої, не тихо). Канон `06_01`.
+- [ ] 👤 додати `proxy.healthcheck.path: /ready` у `config/deploy.yml` на першому деплої + верифікувати cutover
+
 #### S2.4 — Observability industrial-grade hardening
 - **P2** · 👤 · 🟡 · → [`06_03 §2.9`](06_03_Prometheus_Observability)
 - **Стан:** industrial-grade hardening канонізовано — `external_labels` (env/service/source/release attribution) + `queue_config`+explicit WAL (backpressure) + cardinality-budget relabel + process/runtime gauges (`sample_process_runtime!`/`sample_connection_pool!`, RSpec-covered; bonus-fix: pool-gauges раніше були stale) + CI-валідація (`alloy_config_validate`). Конкретні значення — `config.alloy` SSOT (не дублюються). Канон [`06_03 §2.9`](06_03_Prometheus_Observability).
