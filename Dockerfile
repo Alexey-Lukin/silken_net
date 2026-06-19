@@ -30,9 +30,14 @@ ENV RAILS_ENV="production" \
 # Throw-away build stage to reduce size of final image
 FROM base AS build
 
-# Install packages needed to build gems
+# Install packages needed to build gems.
+# autoconf/automake/libtool: rbsecp256k1 (pulled by eth) vendors libsecp256k1
+# and runs its autogen.sh → autoreconf during the native build. Without autotools
+# the gem dies with "autoreconf: not found" and the whole image fails to build.
+# These live only in this throw-away build stage — the final image (FROM base,
+# below) copies just the compiled gems, so nothing here bloats the runtime image.
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential git libpq-dev libyaml-dev pkg-config && \
+    apt-get install --no-install-recommends -y build-essential git libpq-dev libyaml-dev pkg-config autoconf automake libtool && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Install application gems
