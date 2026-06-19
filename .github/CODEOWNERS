@@ -1,0 +1,33 @@
+# Code ownership → auto-requests review from the owner on a PR touching these
+# paths. Solo repo today: every area is @Alexey-Lukin. The per-area split is
+# deliberate — it mirrors the R&D cluster structure (docs/00_04 §2) so a future
+# cluster lead slots in by changing one line, not restructuring the file.
+#
+# NB: this only *requests* review until branch protection turns on
+# "Require review from Code Owners" (off today — owner uses admin-bypass).
+
+*                          @Alexey-Lukin
+
+# Cluster A — Hardware / EBFC / firmware
+/firmware/                 @Alexey-Lukin
+/docs/01_                  @Alexey-Lukin
+/docs/02_                  @Alexey-Lukin
+/docs/03_                  @Alexey-Lukin
+
+# Cluster B — Verification / Math / smart contracts
+/contracts/                @Alexey-Lukin
+/docs/05_                  @Alexey-Lukin
+
+# Cluster C — Scaling / Cloud (Rails + infra)
+/app/                      @Alexey-Lukin
+/lib/                      @Alexey-Lukin
+/config/                   @Alexey-Lukin
+/deploy/                   @Alexey-Lukin
+/terraform/                @Alexey-Lukin
+/docs/06_                  @Alexey-Lukin
+
+# In-silico + ML toolchains
+/tools/                    @Alexey-Lukin
+
+# CI / IaC / governance
+/.github/                  @Alexey-Lukin
