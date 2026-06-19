@@ -3,22 +3,81 @@ name: CI
 permissions:
   contents: read
 
+# Cancel a superseded run when a new commit is pushed to the SAME PR — only the
+# latest revision needs validating. main pushes are NOT cancelled (the group key
+# is the ref, and cancel-in-progress is gated to PRs), so every commit that lands
+# on main still gets a full, independent CI run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 on:
-  # Docs-only changes are validated by docs.yml (the SSOT gates) — skip the
-  # heavy code CI here (RSpec, CodeQL, Brakeman, firmware, i18n) to save Actions
-  # minutes. A mixed code+docs push still matches and runs everything.
+  # Runs on EVERY PR/push — NO paths-ignore. Once `ci-ok` (below) is a required
+  # status check, a docs-only PR must still PRODUCE that status or the merge
+  # blocks forever ("Expected — waiting for status"). The `changes` job skips
+  # every code job for docs-only diffs, so `ci-ok` still goes green in ~1 min,
+  # while the actual SSOT doc gates run in docs.yml.
   pull_request:
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
   push:
     branches: [ main ]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
 
 jobs:
+  changes:
+    # Per-area change detection so the heavy jobs below run ONLY when relevant:
+    # a Ruby-only change skips the 25-min firmware ARM build; a firmware-only
+    # change skips the 15-min RSpec suite. A change to ci.yml itself or to the
+    # shared composite action flips `ci` true → the whole matrix self-validates
+    # (same self-test posture as solidity_audit re-running on its own edits).
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      firmware: ${{ steps.filter.outputs.firmware }}
+      ruby: ${{ steps.filter.outputs.ruby }}
+      js: ${{ steps.filter.outputs.js }}
+      python: ${{ steps.filter.outputs.python }}
+      alloy: ${{ steps.filter.outputs.alloy }}
+      ci: ${{ steps.filter.outputs.ci }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Detect changed areas
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            ci:
+              - '.github/workflows/ci.yml'
+              - '.github/actions/setup-rails-test/**'
+            firmware:
+              - 'firmware/**'
+              - 'tools/firmware/**'
+              - 'tools/ml/**'
+            ruby:
+              - 'app/**'
+              - 'lib/**'
+              - 'config/**'
+              - 'db/**'
+              - 'bin/**'
+              - 'spec/**'
+              - 'Gemfile'
+              - 'Gemfile.lock'
+              - '.ruby-version'
+              - 'Rakefile'
+              - '.rubocop.yml'
+              - '.rubocop_todo.yml'
+            js:
+              - 'config/importmap.rb'
+              - 'app/javascript/**'
+              - 'vendor/javascript/**'
+            python:
+              - '**/*.py'
+              - 'ruff.toml'
+            alloy:
+              - 'deploy/**'
+
   firmware_test:
+    needs: changes
+    if: ${{ needs.changes.outputs.firmware == 'true' || needs.changes.outputs.ci == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -60,6 +119,8 @@ jobs:
         run: make -C firmware/test coverage
 
   firmware_ram_budget:
+    needs: changes
+    if: ${{ needs.changes.outputs.firmware == 'true' || needs.changes.outputs.ci == 'true' }}
     # [FW.26] RAM budget gate. Installs arm-none-eabi binutils so future cross-
     # compile pipelines (post-FW.4) can be measured. Currently informational —
     # the script exits 0 with a notice when no ELF is present. Once the ARM
@@ -79,6 +140,8 @@ jobs:
         run: firmware/scripts/check_ram_budget.sh
 
   firmware_arm_build:
+    needs: changes
+    if: ${{ needs.changes.outputs.firmware == 'true' || needs.changes.outputs.ci == 'true' }}
     # [FW.46] Reproducible ARM cross-compile of the owned firmware code + the
     # mruby bytecode pipeline (docs/03_01 §12.4). Compiles logmel.c for
     # Cortex-M4 against vendored CMSIS-DSP, regenerates + diffs the committed
@@ -167,6 +230,8 @@ jobs:
           ctest --test-dir firmware/build-host --output-on-failure
 
   firmware_lint:
+    needs: changes
+    if: ${{ needs.changes.outputs.firmware == 'true' || needs.changes.outputs.ci == 'true' }}
     # cppcheck static-analysis gate for the OWNED firmware C (soldier + queen +
     # common) — the "ruff/rubocop for C". Analog of job `lint` (RuboCop) /
     # `python_lint` (ruff). Standalone: cppcheck parses the sources directly, no
@@ -190,6 +255,8 @@ jobs:
         run: firmware/scripts/cppcheck.sh
 
   scan_ruby:
+    needs: changes
+    if: ${{ needs.changes.outputs.ruby == 'true' || needs.changes.outputs.ci == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -203,11 +270,13 @@ jobs:
 
       - name: Scan for common Rails security vulnerabilities using static analysis
         run: bin/brakeman --no-pager
-      
+
       - name: Scan for known security vulnerabilities in gems used
         run: bin/bundler-audit
-      
+
   scan_js:
+    needs: changes
+    if: ${{ needs.changes.outputs.js == 'true' || needs.changes.outputs.ci == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -223,6 +292,8 @@ jobs:
         run: bin/importmap audit
 
   lint:
+    needs: changes
+    if: ${{ needs.changes.outputs.ruby == 'true' || needs.changes.outputs.ci == 'true' }}
     runs-on: ubuntu-latest
     env:
       RUBOCOP_CACHE_ROOT: tmp/rubocop
@@ -249,6 +320,8 @@ jobs:
         run: bin/rubocop -f github
 
   python_lint:
+    needs: changes
+    if: ${{ needs.changes.outputs.python == 'true' || needs.changes.outputs.ci == 'true' }}
     # Ruff-лінт для Python-тулінгу (tools/**) — аналог job `lint` (RuboCop) для Ruby.
     # Standalone, без conda: ruff — самодостатній бінарник. Конфіг — root ruff.toml
     # (RUF001-3 off = кирилиця house-style; E501 off = паритет з omakase).
@@ -270,6 +343,8 @@ jobs:
         run: ruff check . --output-format=github
 
   i18n_check:
+    needs: changes
+    if: ${{ needs.changes.outputs.ruby == 'true' || needs.changes.outputs.ci == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -310,6 +385,8 @@ jobs:
       # (2026-06-02) — removed from here to stop the mixed code+docs double-run.
 
   alloy_config_validate:
+    needs: changes
+    if: ${{ needs.changes.outputs.alloy == 'true' || needs.changes.outputs.ci == 'true' }}
     # [OBS hardening, 06_03 §2.9] Parse-validate the Grafana Alloy River config so a
     # syntax error is caught HERE, not as a crash-loop of the `alloy` sidecar on Akash
     # deploy (06_02 §debug). `alloy fmt` parses the River AST and exits non-zero on a
@@ -329,6 +406,8 @@ jobs:
           echo "✅ config.alloy parses (River syntax valid)"
 
   test:
+    needs: changes
+    if: ${{ needs.changes.outputs.ruby == 'true' || needs.changes.outputs.ci == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -376,6 +455,8 @@ jobs:
           if-no-files-found: ignore
 
   feature-test:
+    needs: changes
+    if: ${{ needs.changes.outputs.ruby == 'true' || needs.changes.outputs.ci == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -418,3 +499,35 @@ jobs:
           name: screenshots
           path: ${{ github.workspace }}/tmp/screenshots
           if-no-files-found: ignore
+
+  ci-ok:
+    # Single aggregate status check for branch protection. Because the jobs above
+    # are path-gated (skipped when their area didn't change), they can't each be a
+    # required check — a skipped required check blocks the merge. This job depends
+    # on all of them and fails ONLY if one that actually ran failed/was cancelled;
+    # skipped + success are both fine. Make THIS the sole required check on main.
+    name: CI passed
+    if: ${{ always() }}
+    needs:
+      - changes
+      - firmware_test
+      - firmware_ram_budget
+      - firmware_arm_build
+      - firmware_lint
+      - scan_ruby
+      - scan_js
+      - lint
+      - python_lint
+      - i18n_check
+      - alloy_config_validate
+      - test
+      - feature-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any required job failed or was cancelled
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: |
+          echo "::error::A required CI job failed or was cancelled — see the job list above."
+          exit 1
+      - name: All clear
+        run: echo "All CI jobs that ran passed (path-skipped jobs are OK)."
