@@ -387,7 +387,7 @@ k_DET ~ turnover (§Cathode), with the measured Ti-coin cathode EIS the decisive
 
 ## Milestone Tasks — all closed (per-script status → PIPELINE_STATUS, One-Home)
 
-> Every L1–L4 script is complete or closed. The **per-script status table** (results + caches + dependency graph) lives **only** in [`PIPELINE_STATUS.md`](PIPELINE_STATUS.md) — this results page no longer mirrors it (was a drift source: README inventory ↔ this status table ↔ PIPELINE). Nothing pending; FO-DFT (24b) running.
+> Every L1–L4 script is complete or closed. The **per-script status table** (results + caches + dependency graph) lives **only** in [`PIPELINE_STATUS.md`](PIPELINE_STATUS.md) — this results page no longer mirrors it (was a drift source: README inventory ↔ this status table ↔ PIPELINE). Nothing pending.
 
 ---
 

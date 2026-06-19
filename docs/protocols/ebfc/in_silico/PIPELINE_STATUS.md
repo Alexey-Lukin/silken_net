@@ -1,6 +1,6 @@
 # In-Silico Pipeline — Operational Status & Dependencies
 
-> **Last updated:** 2026-06-18 (OS-RECOMPUTE — dimethyl mediator +309 mV, ② chloro-bracket; B1/B2 ωB97X dimethyl ✅, adiabatic ΔSCF +1.03 eV; B4 speciation re-run pending)
+> **Last updated:** 2026-06-19 (OS-RECOMPUTE closed — dimethyl mediator +309 mV, ② chloro-bracket; B1/B2/B4 ωB97X dimethyl ✅, adiabatic ΔSCF +1.03 eV, PCET cascade +1.627 eV; pytest 86 ✅)
 > **TRL 3→4 Gate:** ✅ PASSED (2026-05-25)
 
 ---
