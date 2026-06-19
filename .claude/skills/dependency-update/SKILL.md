@@ -49,8 +49,13 @@ the per-domain recipes**; it does **not** restate versions or track which bump s
 | **Solidity** | `contracts/{foundry.toml,package.json,package-lock.json}` + `*.sol` pragmas | `gh api` OZ/solc/forge-std latest | `forge test` (local) + `forge fmt --check`; `slither` (**CI-only**) |
 | **Terraform** | `terraform/*.tf` `required_providers` (+ `.terraform.lock.hcl` if present) | `gh api repos/hashicorp/terraform-provider-<p>/releases/latest` vs the `~>` pin | `terraform validate` + `terraform fmt -check`; `terraform plan` (**CI/creds-gated** — needs GCP creds + state) |
 
-`rvm use <v>` / `mamba run -n <env>` prefixes are MANDATORY per Bash call — shell state does
-not persist between calls (a fresh shell defaults to the rvm default → `RubyVersionMismatch`).
+`rvm use ruby-<v>@silken_net` / `mamba run -n <env>` prefixes are MANDATORY per Bash call — shell
+state does not persist between calls. Name the **full gemset** (repo pins `.ruby-gemset=silken_net`):
+`rvm use ruby-<v>` *without* `@silken_net` selects the empty default gemset → `Bundler::GemNotFound`
+for every gem (not `RubyVersionMismatch`); a bare `rvm use <v>` prints "Unknown ruby interpreter"
+and returns non-zero, so it breaks an `&&` chain (the real command never runs). Bites
+`run_in_background:` Bash hardest (the login profile's gemset auto-select isn't reliable there) —
+`bundle check` before a long suite run.
 
 ## Hard-won gotchas
 
