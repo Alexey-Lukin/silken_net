@@ -256,7 +256,7 @@ uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5)
 
 - Паролі: Argon2id (`HasArgon2Password`).
 - API tokens: Rails 8 `generates_token_for` (TTL: password_reset 15хв, email_verify 24г, api_access 30д).
-- MFA: TOTP + recovery codes (10 штук).
+- MFA: recovery codes (10 шт., `consume_recovery_code!`) + `otp_required_for_login` флаг + step-up (`current_password`) на disable; **TOTP-другий-фактор ще НЕ реалізовано** (нема `rotp`/`otp_secret`) → `00_07` S6.21.
 - OAuth2: google, facebook, linkedin, twitter. Lock/unlock identity.
 - `send_default_pii: false` в Sentry (Zero-Trust).
 - AES keys шифруються AR Encryption non-deterministic в БД.

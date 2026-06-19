@@ -649,6 +649,12 @@
 - **Стан:** Graceful degradation реалізовано — Redis down → DB-backed nonce (Solid Cache, TTL 10хв), шлюзи не отримують 503 (`m2m_auth_controller` [S6.1] + spec). Канон `04_03 §1.4` (M2M replay-nonce + graceful degradation).
 - [ ] 👤 верифікувати Upstash multi-zone replication у production
 
+#### S6.21 — MFA: TOTP second factor (claimed, not implemented)
+- **P2** · 🤖+👤 · ⚪ · → `04_03 §1`
+- **Стан:** Не розпочато — honesty-gap: CLAUDE.md §9 раніше заявляв «MFA: TOTP» (виправлено 2026-06-19). Реальність (`04_01` User): лише recovery-codes (10 шт., `consume_recovery_code!`) + `otp_required_for_login` булевий флаг + step-up (`current_password`) на disable — **справжнього TOTP-другого-фактора нема** (нема `rotp` gem / `otp_secret` / provisioning_uri). Білд: `rotp` + `otp_secret` (AR-encrypted) + `MfaSetupsController` (provisioning_uri/QR) + verify-on-login + recovery-rotation. Канон `04_03 §1` (Автентифікація) / `04_01` (User).
+- [ ] 🤖 `rotp` + `otp_secret` (encrypted) + `MfaSetupsController` (QR/provisioning_uri) + verify-on-login
+- [ ] 👤 (опц.) WebAuthn / hardware-key як сильніша альтернатива TOTP
+
 #### E.41 — Fire-event 48h latency (dClimate obscuration) → immediate-broadcast fallback
 - **P1** · 🤖 · 🔗 · → `04_02 §11`, `05_01`
 - **Стан:** ⚠️ Life-safety — dClimate satellite fire-events можуть запізнюватись ~48h (хмарна обструкція). Ціль (immediate-broadcast) ✅ досягнута двома негайними шляхами, **НЕ** satellite-gated: edge chainsaw→panic-TX (`03_03`/`03_01`, `PANIC_TTL=5`) + backend temp/anomaly alert (`AlertDispatchService`; гейти = Redis silence + SEC.10 rate-limit, dClimate гейтить лише ВИПЛАТУ через `InsurancePayoutWorker`, не тривогу). Відкрите — лише вторинна belt-and-suspenders: Forester Guild fallback-oracle для satellite-obscured wildfire, 🔗 на E.20 (design `04_02 §Forester Guild` — `[PLANNED — blocked by ForestBountyService]`). Канон `04_02 §11` (Dclimate/EWS), `05_01` (dClimate).
