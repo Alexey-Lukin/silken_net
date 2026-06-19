@@ -28,7 +28,7 @@ experimentally known device.
 
 Four results stand on their own: (1) a thermodynamic proton reference reproduces the proton-coupled
 FAD redox potential to within ~50 mV of experiment; (2) a Hammett structure–activity relationship for
-the osmium mediator (slope ≈ −0.93 eV per σ unit) furnishes a predictive, transferable design rule and
+the osmium mediator (slope ≈ −0.92 eV per σ unit) furnishes a predictive, transferable design rule and
 rationalises the empirical potential optimum; (3) charge-localised ΔSCF with first-principles
 reorganisation energies places the bimetallic-ZIF cathode direct electron transfer at a *borderline,
 reorganisation-energy-limited* margin, with an explicit low-λ mitigation path; and (4) the apparently

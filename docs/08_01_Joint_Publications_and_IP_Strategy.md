@@ -183,7 +183,7 @@ SilkenNet об'єднує сім академічних та індустріа�
 
 **Foreground (сильні, чисті результати — обличчя статті):**
 - **PCET редокс-потенціал FAD** — proton thermodynamic reference відтворює E°(FAD/FADH₂) у межах ~50 mV від експ. free-flavin (значення → `SUMMARY.md`, script 32).
-- **Mediator structure–activity (Hammett LFER ①)** — E°(Os III/II) лінійний у σ_para (нахил ≈ −0.93 eV/σ) → **предиктивне правило дизайну** медіатора; реалістичний оптимум = інертний **SO₂CF₃** (NO₂ деградує на циклюванні). Триангульовано DFT↔Lever↔Hammett (числа → `SUMMARY.md` §Mediator, script 21e).
+- **Mediator structure–activity (Hammett LFER ①)** — E°(Os III/II) лінійний у σ_para (нахил ≈ −0.92 eV/σ) → **предиктивне правило дизайну** медіатора; реалістичний оптимум = інертний **SO₂CF₃** (NO₂ деградує на циклюванні). Триангульовано DFT↔Lever↔Hammett (числа → `SUMMARY.md` §Mediator, script 21e).
 - **DET через ZIF-нанозим** — ΔSCF hopping (geom-fixed) + computed Nelsen λ: a λ-sensitive cathode margin — **borderline** at realistic λ (Cu-Co ~turnover, не old ×10⁵) + a low-λ-metal (Ru) design rule (числа → `SUMMARY.md` §Cathode, scripts 23/24/25/35).
 - **Геометрія + through-bond tunneling pathway** анода — глибина залягання FAD < tunneling-межі (L1 + script 28).
 - **Термічна робастність** frontier-орбіталі FAD (MD→DFT ensemble, script 27).

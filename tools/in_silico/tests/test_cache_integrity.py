@@ -110,6 +110,21 @@ def test_dft_comparison_json():
     assert "delta_eV" in data
 
 
+def test_os_mediator_series_lfer():
+    """① Hammett LFER slope is COMPUTED → cached = single source for fig 60 / table 61 / prose.
+    Pins the canonical fit-set + the −0.92 eV/σ value so prose can't silently drift back to −0.93."""
+    path = DFT / "os_mediator_series.json"
+    assert path.exists()
+    data = json.loads(path.read_text())
+    assert "lfer" in data, "os_mediator_series.json missing computed 'lfer' block (re-run 21e)"
+    lf = data["lfer"]
+    assert lf["fit_set"] == ["ome", "dmbpy", "bpy", "dcbpy", "no2"], (
+        f"LFER fit-set drifted: {lf['fit_set']} (must exclude donor-sat NMe₂/NH₂ + inert CF₃-family)")
+    assert -0.93 < lf["slope_eV_per_sigma"] < -0.91, (
+        f"LFER slope off canon −0.92: {lf['slope_eV_per_sigma']}")
+    assert lf["r2"] > 0.999, f"LFER r² unexpectedly low: {lf['r2']}"
+
+
 def test_energy_ladder_png():
     path = DFT / "energy_ladder.png"
     assert path.exists()

@@ -189,7 +189,7 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 
 **Design rule (✅ cascade monotonic with σ):** electron-withdrawing 4,4'-bpy improves FADH₂→Os alignment — cascade Δ rises −1.50 (NMe₂) → −0.23 eV. **Realistic optimum = SO₂CF₃** (σ 0.96, cascade −0.227 ≈ NO₂'s −0.232) — same alignment but **electrochemically inert**, whereas NO₂ degrades (NO₂→NHOH→NH₂ on Os cycling at pH 4.5) → would relax the cascade to the donor-saturated −1.5 worst case (CHEM.23). CF₃ (−0.502) = milder inert option. *Caveat:* max cascade-Δ ≠ optimal EBFC mediator — higher E°(Os) lowers OCV → optimum balances driving-force vs cell-voltage (exp Os opt ~+309 mV).
 
-**E° LFER:** ΔE_red linear in σ over OMe→NO₂ (slope ≈ −0.93 eV/σ) with **donor-saturation at NMe₂/NH₂** (plateau ~−3.91 eV, σ_para⁻ regime) — strict E°-monotonicity breaks only at that 4-meV pair (expected resonance saturation, not error).
+**E° LFER:** ΔE_red linear in σ over OMe→NO₂ (slope ≈ −0.92 eV/σ, r²=1.00) with **donor-saturation at NMe₂/NH₂** (plateau ~−3.91 eV, σ_para⁻ regime) — strict E°-monotonicity breaks only at that 4-meV pair (expected resonance saturation, not error).
 
 **Honest:** raw B3LYP-Koopmans cascade stays slightly uphill even for NO₂ (−0.23 eV) — same ~1 eV PCM differential-solvation bias (→ ② micro-solvation); the *trend/design rule* is the robust, transferable result. Numbers: `dft/os_mediator_series.json`.
 

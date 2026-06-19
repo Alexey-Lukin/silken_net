@@ -8,7 +8,9 @@ Establishes (a) the Hammett LFER for the Os(III/II) potential and (b) the
 cascade-alignment design rule Δ = HOMO(FADH₂) − LUMO(Os III) vs substituent.
 
 Pre-check (dmbpy/bpy/dcbpy) PASSED 2026-06-05: monotonic with σ, reproduces 21b
-(Δ=0.000), LFER slope ≈ −0.89 eV/σ. This is the full series.
+(Δ=0.000). The LFER slope is COMPUTED here (not hardcoded) over the linear-regime
+fit-set (REF_LFER_SET) and written to results["lfer"] — the single source the
+figure (60), table (61) and prose all read, so the number cannot drift.
 
 PREDICTION (fixed): ΔE_red decreases (E° rises) and the cascade Δ rises toward 0
 (less uphill) as σ_para increases (electron-withdrawing 4,4'-substituents).
@@ -52,7 +54,29 @@ SERIES = [
 ]
 
 REF_21B = {"os2_HOMO": -4.875, "os2_LUMO": -2.156, "os3_HOMO": -6.359, "os3_LUMO": -4.228}
+
+# Canonical Hammett LFER fit-set = classic monosubstituents OMe→NO₂ (the linear regime).
+# EXCLUDED (overlaid as called-out points, NOT fitted): NMe₂/NH₂ (σ⁻ donor-resonance
+# saturation, plateau ~−3.91 eV) and the inert CF₃-family design picks CF₃/SO₂CF₃
+# (high-σ flattening). Must stay identical to the fit-set in 60_paper_figures.py.
+REF_LFER_SET = ["ome", "dmbpy", "bpy", "dcbpy", "no2"]
 OUT = DFT_CACHE / "os_mediator_series.json"
+
+
+def _lfer_fit(sigmas: list[float], energies: list[float]) -> dict:
+    """Least-squares ΔE_red-vs-σ slope + R² (pure-python, no numpy dep)."""
+    n = len(sigmas)
+    sx, sy = sum(sigmas), sum(energies)
+    sxx = sum(s * s for s in sigmas)
+    sxy = sum(s * e for s, e in zip(sigmas, energies, strict=True))
+    slope = (n * sxy - sx * sy) / (n * sxx - sx * sx)
+    intercept = (sy - slope * sx) / n
+    ybar = sy / n
+    ss_tot = sum((e - ybar) ** 2 for e in energies)
+    ss_res = sum((e - (slope * s + intercept)) ** 2 for s, e in zip(sigmas, energies, strict=True))
+    r2 = 1.0 - ss_res / ss_tot
+    return {"slope_eV_per_sigma": round(slope, 4), "intercept_eV": round(intercept, 4),
+            "r2": round(r2, 4), "n": n}
 
 
 def _load_cache() -> dict:
@@ -132,6 +156,17 @@ def main() -> int:
               f"cascade Δ monotonic (rises with σ)? {'✅' if mono_casc else '❌'}")
         print(f"  Least-uphill cascade: {best['name']} (Δ={best['cascade_delta_eV']:+.4f} eV) "
               f"→ design rule: electron-withdrawing 4,4'-bpy improves FADH₂→Os alignment")
+
+    # ── Hammett LFER slope (computed → JSON = single source for fig 60 / table 61 / prose) ──
+    by_name = {c["name"]: c for c in results["complexes"]}
+    fit_pts = [(by_name[n]["sigma_para"], by_name[n]["dE_red_eV"]) for n in REF_LFER_SET]
+    lfer = _lfer_fit([s for s, _ in fit_pts], [e for _, e in fit_pts])
+    lfer["fit_set"] = REF_LFER_SET
+    lfer["excluded"] = {"donor_saturation": ["nme2", "nh2"], "inert_design_picks": ["cf3", "so2cf3"]}
+    lfer["x"], lfer["y"] = "sigma_para", "dE_red_eV"
+    results["lfer"] = lfer
+    print(f"  ① LFER slope (OMe→NO₂, n={lfer['n']}): {lfer['slope_eV_per_sigma']:+.3f} eV/σ "
+          f"(r²={lfer['r2']:.3f})")
 
     OUT.write_text(json.dumps(results, indent=2), encoding="utf-8")
     banner(f"✅ saved {OUT.relative_to(REPO_ROOT)} ({len(results['complexes'])} complexes)")

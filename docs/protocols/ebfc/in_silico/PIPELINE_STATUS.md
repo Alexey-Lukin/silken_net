@@ -32,7 +32,7 @@
 | 20 | `dft_lumiflavin` | HOMO(FADH₂) = -5.14 eV | `dft/lumiflavin.json` |
 | 21b/21f | plain bpy (21b → `os_complex_plain.json`) · **dimethyl B3LYP (21f → `os_complex.json`, canon)** | LUMO(Os III) = -4.09 eV (dmbpy; π-backbonding) | `dft/os_complex.json` — 21f sole owner ✅ (co-write split 2026-06-19; 21→`_nh3`, 21b→`_plain`) |
 | 21d/21f/21g | `dft_os_bpy_wb97xd` / `dft_os_dimethyl` / `adiabatic_dscf` | **Adiabatic ΔSCF +1.03 eV** (dimethyl, real mediator; +0.884 plain baseline) — B1/B2 ✅; verified cascade **+574 mV** → SUMMARY | `dft/os_complex_wb97xd[_dmbpy].json`, `delta_scf_corrections.json` |
-| 21e | `dft_os_mediator_series` | **① Hammett LFER** slope ≈ −0.93 eV/σ; realistic optimum **SO₂CF₃** (cascade −0.227, inert) > NO₂ (degrades on cycling) | `dft/os_mediator_series.json` |
+| 21e | `dft_os_mediator_series` | **① Hammett LFER** slope ≈ −0.92 eV/σ (r²=1.00, computed→`lfer` block); realistic optimum **SO₂CF₃** (cascade −0.227, inert) > NO₂ (degrades on cycling) | `dft/os_mediator_series.json` |
 | 22 | `compare_homo_lumo` | cascade Δε = **-1.05 raw** (dimethyl, uphill); verified **−0.574 eV** (→ SUMMARY) | `dft/comparison.json` |
 | 23 | `build_zif_clusters` | 3 ZIF cluster XYZ | `ligands/` |
 | 24 | `dft_hopping_integrals` | **3/3 pairs ✅** (geom-fixed) → k_DET **borderline** ×1–30 (λ-sensitive, scripts 25/35) | `dft/zif_hopping.json` |

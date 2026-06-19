@@ -125,9 +125,10 @@ def main() -> int:
         n = c["name"]
         md.append(f"| {lbl.get(n, n)} | {c['sigma_para']:+.2f} | {c['dE_red_eV']:.3f} | "
                   f"{c['os3']['LUMO_eV']:.3f} | {c['cascade_delta_eV']:.4f} | {note.get(n, '')} |")
-    md.append("\n*Design rule: cascade Δ rises monotonically with σ (−1.50 NMe₂ → −0.23 SO₂CF₃); ΔE_red "
-              "LFER slope ≈ −0.92 eV/σ over OMe→NO₂ (Fig 3b). Higher E°(Os) lowers OCV, so the cell "
-              "optimum (~+309 mV) balances driving force vs overpotential.*\n")
+    lf_slope = series["lfer"]["slope_eV_per_sigma"]
+    md.append(f"\n*Design rule: cascade Δ rises monotonically with σ (−1.50 NMe₂ → −0.23 SO₂CF₃); ΔE_red "
+              f"LFER slope ≈ −{abs(lf_slope):.2f} eV/σ over OMe→NO₂ (Fig 3b). Higher E°(Os) lowers OCV, so "
+              f"the cell optimum (~+309 mV) balances driving force vs overpotential.*\n")
 
     out = PAPER_DIR / "06_tables.md"
     out.write_text("\n".join(md) + "\n")

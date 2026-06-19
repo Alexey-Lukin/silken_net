@@ -464,5 +464,30 @@
   ],
   "monotonic_with_sigma": false,
   "cascade_monotonic": true,
-  "best_cascade_mediator": "so2cf3"
+  "best_cascade_mediator": "so2cf3",
+  "lfer": {
+    "slope_eV_per_sigma": -0.923,
+    "intercept_eV": -4.5332,
+    "r2": 0.9996,
+    "n": 5,
+    "fit_set": [
+      "ome",
+      "dmbpy",
+      "bpy",
+      "dcbpy",
+      "no2"
+    ],
+    "excluded": {
+      "donor_saturation": [
+        "nme2",
+        "nh2"
+      ],
+      "inert_design_picks": [
+        "cf3",
+        "so2cf3"
+      ]
+    },
+    "x": "sigma_para",
+    "y": "dE_red_eV"
+  }
 }

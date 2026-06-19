@@ -144,14 +144,15 @@ def fig3() -> None:
     _close(casc[names.index("so2cf3")], -0.2269, 0.005, "① cascade(SO₂CF₃)")
     _close(casc[names.index("nme2")], -1.5013, 0.005, "① cascade(NMe₂)")
 
-    # Reference Hammett LFER = classic monosubstituents OMe→NO₂ (the linear regime).
-    # Excluded from the fit: NMe₂/NH₂ (σ⁻ donor-resonance saturation) and the inert
-    # CF₃-family design picks (high-σ flattening) — both overlaid as called-out points.
-    ref = ["ome", "dmbpy", "bpy", "dcbpy", "no2"]
+    # Hammett LFER (classic monosubstituents OMe→NO₂, the linear regime): slope/intercept/r²
+    # are COMPUTED in 21e over REF_LFER_SET and read from os_mediator_series.json — single
+    # source, so fig/table/prose cannot drift. Excluded (overlaid as called-out points):
+    # NMe₂/NH₂ (σ⁻ donor saturation) + inert CF₃-family design picks (high-σ flattening).
+    lf = series["lfer"]
+    ref = lf["fit_set"]
     ri = [names.index(n) for n in ref]
-    slope, intercept = np.polyfit(sig[ri], dered[ri], 1)
-    r2 = np.corrcoef(sig[ri], dered[ri])[0, 1] ** 2
-    _close(slope, -0.93, 0.03, "① LFER slope (OMe→NO₂)")
+    slope, intercept, r2 = lf["slope_eV_per_sigma"], lf["intercept_eV"], lf["r2"]
+    _close(slope, -0.92, 0.01, "① LFER slope (OMe→NO₂)")
     xs = np.linspace(sig[ri].min() - 0.05, 1.0, 50)
     axb.plot(xs, slope * xs + intercept, color=C["grey"], lw=1.2, ls="--", zorder=1,
              label=f"ΔE_red LFER  {slope:.2f} eV/σ (r²={r2:.2f})")
