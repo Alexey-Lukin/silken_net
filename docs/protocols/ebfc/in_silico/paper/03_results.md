@@ -101,7 +101,7 @@ experiment is the decisive empirical test.
 
 The raw computed cascade FADH₂→Os is **unfavourable in every method** (Table 2) — the frontier-orbital alignment
 is inverted (a Koopmans HOMO−LUMO offset of −1.05 eV on the real 4,4′-dimethyl-bpy mediator, the donor level
-*below* the acceptor) and the adiabatic ΔSCF free energy is uphill (+1.03 eV on the dimethyl mediator, matching the Koopmans offset above and Table 2; +0.88 eV for the plain-bpy parent, the +0.146 eV difference being the substituent term ①) — whereas the **experimentally verified** driving force
+*below* the acceptor) and the adiabatic ΔSCF free energy is uphill (+1.03 eV on the dimethyl mediator, matching the Koopmans offset above and Table 2; +0.88 eV for the plain-bpy parent, the +0.15 eV difference being the substituent term ①) — whereas the **experimentally verified** driving force
 is **downhill** (+574 mV, −0.574 eV; from the verified bound FAD-GDH potential, §3.6, and the device osmium-polymer
 potential **+309 mV vs NHE** — the best-performing of six polymers wired to GcGDH, measured as +21 mV vs
 Ag/AgCl(0.1 M KCl) with the paper's +288 mV conversion [Zafar et al., 2012]). (The orbital offset and the free
@@ -119,7 +119,7 @@ poly(vinylimidazole) brush the sixth ligand may instead be a second chain imidaz
 substitution-inert Os(II) d⁶ couple, so the earlier "the experiment measures the aqua form" framing is withdrawn —
 aqua serves only as a methodological benchmark). The [Os(H₂O)₆]³⁺/²⁺ benchmark fixes the +2/+3 scale: adding the
 second hydration shell shifts the potential by **+0.98 eV**, reproducing the known ~1 V group-8 implicit-solvation
-error. A second, smaller axis is the **4,4′-dimethyl substituent** itself (+0.146 eV more uphill than plain bpy — the
+error. A second, smaller axis is the **4,4′-dimethyl substituent** itself (+0.14 eV more uphill than plain bpy — the
 donor methyls raise the Os(III) acceptor level, consistent with the Hammett series ①). Crucially, none of these
 contributions is tuned to the anchored cascade — the solvation term is benchmarked on a *separate* couple and the
 substituent term follows from the structure–activity series — so the discrepancy is decomposed independently rather
