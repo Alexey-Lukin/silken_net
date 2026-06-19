@@ -47,7 +47,9 @@ jobs:
     # Forces the CPU platform — runners have no GPU drivers and we want
     # deterministic timing for the gate.
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 40 not 30: the seeded 10 K pre-relaxation (the NaN fix) adds a few minutes
+    # on a slow runner, and the slowest observed smoke run already neared 30.
+    timeout-minutes: 40
 
     steps:
       - name: Checkout code

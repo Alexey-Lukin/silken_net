@@ -48,6 +48,15 @@ TEMPERATURE = 298       # K
 WATER_PADDING = float(os.environ.get("SILKEN_WATER_PADDING", "1.0"))  # nm; CI uses 0.5 for speed
 MD_STEPS = int(os.environ.get("SILKEN_MD_STEPS", "1000"))  # CI uses 100 for speed
 MIN_ITERATIONS = int(os.environ.get("SILKEN_MIN_ITERATIONS", "500"))
+# Deterministic RNG so the CI smoke GATE is reproducible, not flaky. Both the
+# starting velocity draw and the Langevin thermostat are stochastic; unseeded
+# (OpenMM seed 0 = random per run) a not-fully-minimised box occasionally
+# explodes mid-integration → "Particle coordinate is NaN". seed=42 = pipeline convention.
+RANDOM_SEED = int(os.environ.get("SILKEN_RANDOM_SEED", "42"))
+# 10 K pre-relaxation steps before the 298 K run — the house anti-NaN pattern
+# (scripts 12-14): a cold thermostat bleeds off residual steric strain the
+# (CI-truncated) minimisation leaves, instead of exploding on the first kick.
+PRE_RELAX_STEPS = int(os.environ.get("SILKEN_PRE_RELAX_STEPS", "1000"))
 
 
 def main() -> int:
@@ -102,6 +111,7 @@ def main() -> int:
         1.0 / picosecond,
         TIMESTEP_FS * femtosecond,
     )
+    integrator.setRandomNumberSeed(RANDOM_SEED)  # deterministic thermostat noise
     platform = pick_platform()
     print(f"Platform: {platform.getName()}")
     simulation = Simulation(modeller.topology, system, integrator, platform)
@@ -124,8 +134,12 @@ def main() -> int:
         print("  ⚠️  PE still positive (large system on CPU may need more iterations — OK for smoke test)")
 
     # ---------- 5. Short MD ----------
+    banner(f"Pre-relaxing at 10 K ({PRE_RELAX_STEPS} steps)")
+    simulation.context.setVelocitiesToTemperature(10 * kelvin, RANDOM_SEED)
+    simulation.step(PRE_RELAX_STEPS)
+
     banner(f"Running {MD_STEPS} MD steps ({MD_STEPS * TIMESTEP_FS / 1000:.1f} ps @ {TIMESTEP_FS} fs)")
-    simulation.context.setVelocitiesToTemperature(TEMPERATURE * kelvin)
+    simulation.context.setVelocitiesToTemperature(TEMPERATURE * kelvin, RANDOM_SEED)
     t = time.time()
     simulation.step(MD_STEPS)
     dt_md = time.time() - t
