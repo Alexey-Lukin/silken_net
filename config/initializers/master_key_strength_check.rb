@@ -14,6 +14,9 @@
 # ---------
 # * Production / canopy: raise on missing OR weak master key — fail fast at
 #   boot instead of silently deriving compromised child keys.
+# * Asset build: skip when `SECRET_KEY_BASE_DUMMY` is set — the Dockerfile's
+#   `assets:precompile` boots production without secrets on purpose; the runtime
+#   boot (no dummy flag) still enforces the check.
 # * Test / development: skip entirely. `spec/rails_helper.rb` pins a stable
 #   non-secret fixture (`silken-net-test-master-key-32b!!`) — guarding here
 #   would make the whole suite refuse to load, which is not the threat
@@ -25,6 +28,14 @@
 Rails.application.config.after_initialize do
   # Canopy uses the same RAILS_ENV=production as mainnet; both are gated here.
   next unless Rails.env.production?
+
+  # Build-time asset compilation (`SECRET_KEY_BASE_DUMMY=1 ./bin/rails
+  # assets:precompile` in the Dockerfile) boots the production environment with
+  # no real secrets injected — by design, PROVISIONING_MASTER_KEY must never be
+  # baked into the image. Honour Rails' own dummy-boot signal and skip here; the
+  # runtime boot (no SECRET_KEY_BASE_DUMMY) still enforces the check before the
+  # app accepts traffic.
+  next if ENV["SECRET_KEY_BASE_DUMMY"].present?
 
   if ENV["SILKENNET_SKIP_MASTER_KEY_STRENGTH_CHECK"] == "1"
     # [SEC.9] Loud on purpose — a bypassed boot-time crypto strength check must
