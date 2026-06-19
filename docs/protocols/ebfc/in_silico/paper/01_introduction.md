@@ -110,8 +110,8 @@ accompanying version-pinned scripts.
 > Hickey**, Inorg. Chem. (Lever–Hammett)→**Perrin**, JPC C group-8→**Rulíšek**, Chem. Sci. flavin→**Singh**,
 > JCTC protein-redox→**Stier & Kästner**, Anal. Chem. laccase-mimic→**Chen**, Cu-ZIF-67→**Haider**, multistep
 > solvation→**Sterling & Bjornsson**. **Corrections applied:** Ohara 1994→**1993**, JPCB mediator 2024→**2023**,
-> Solomon (first author is **Lee**) 2001→**2002**, Boggs DOI added. **Flag (your call):** Schachinger
-> Crossref-issued **2023** (online 2022) — load-bearing −265 mV anchor cited "2022" across all SSOT; online/issue
+> Solomon (first author is **Lee**) 2001→**2002**, Boggs DOI added. **Schachinger year → Zotero-arbitrated** (founder 2026-06-19): Crossref-issued
+> **2023** (online 2022); markdown keeps **2022** as the working value across all SSOT — the final year + ref formatting come from the DOI at reference-manager import (Zotero = arbiter); online/issue
 > splits kept at issue year (Zafar 2012, Mano 2018, Pak 2025, Haider 2021). The 8 pure DFT-method classics
 > (Becke/LYP/Chai/Hehre/Weigend/Hay-Wadt/Cossi/Sun-PySCF) are method-name-cited → existence-checked at Zotero
 > import. Final ACS-numbered formatting still via the reference manager — do not hand-format here.
