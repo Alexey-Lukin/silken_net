@@ -134,7 +134,7 @@
 
 | Шар | Що треба узагальнити | Як |
 |---|---|---|
-| **Hardware (BOM)** | 5 SKU замість 1: pine, oak, broadleaf, mangrove, tropical-hardwood — різна геометрія гіроїда, ферменти, anchor довжина | **PicoGK Code-as-CAD** (`tools/cad`) — 5-SKU sweep ✅ 2026-06-20 (v1 demo-геометрія; реальні per-species — gradient v2 + bio-валідація; [`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)). Stage 2 Ti-coin тести ([`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) на 5 синтетичних соках |
+| **Hardware (BOM)** | 5 SKU замість 1: pine, oak, broadleaf, mangrove, tropical-hardwood — різна геометрія гіроїда, ферменти, anchor довжина | **PicoGK Code-as-CAD** (`tools/cad`) — 5-SKU sweep ✅ 2026-06-20 + **gradient v2 ✅ 2026-06-21** (3 осі градації; геометрія демо, реальні per-species pore-числа — bio-валідація+FEA: [`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) / [`00_07` HW.33](00_07_Action_Plan_Tracker)). Stage 2 Ti-coin тести ([`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) на 5 синтетичних соках |
 | **Firmware (Lorenz constants)** | `bio_contract.rb` приймає species_id → calibrated (σ, ρ, β) з flash table 16 × 24 bytes | OTA bytecode update із species-specific table; species_id зашитий у DID на provisioning |
 | **Backend (Validation)** | `SilkenNet::Attractor` має model registry per-species; oracle dispatch validates against correct baseline | `MODEL_REGISTRY = { pine: '...', oak: '...' }` + migration `add_species to trees` |
 | **DAO Governance** | Кожен new biome потребує community vote (SFC) + lab validation slot перш ніж SCC можуть мінтитись з нього | Розширення Slashing v2 на biome-specific stress detection thresholds |

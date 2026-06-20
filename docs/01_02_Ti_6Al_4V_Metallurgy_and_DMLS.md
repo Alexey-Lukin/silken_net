@@ -549,7 +549,7 @@ nTop — провідний інструмент для генерації мі�
 
 ### PicoGK + C# — Code-as-CAD (primary code-CAD трек)
 
-**Статус: ✅ SHIPPED scaffold + Ti-coin + validation-as-code (2026-06-20, `tools/cad/`)** — pipeline доведено end-to-end (PicoGK 2.2 → LEAP source → headless `Library.Go` → STL + `metrics.json`). **PicoGK = primary code-CAD шлях** (nTop-ліцензія є, але робота в nTop практично не починалась → реального incumbent немає). Реалізаційний стан/залишок → [`00_07` HW.1.PicoGK](00_07_Action_Plan_Tracker); анкер-геометрія + founder-рішення → HW.33.
+**Статус: ✅ scaffold + Ti-coin + v1 анкер (2026-06-20) + v2 ГРАДІЄНТНИЙ анкер (2026-06-21), `tools/cad/`** — pipeline доведено end-to-end (PicoGK 2.2 → **власний SDF** → headless `Library.Go` → STL + per-shell `metrics.json`); 3 осі градації (cell-size / `wallParam`-пористість / stepped-зони) + 7-SKU + 8 xUnit. **PicoGK = primary code-CAD шлях** (nTop-ліцензія є, але робота в nTop практично не починалась → реального incumbent немає). Реалізаційний стан/залишок → [`00_07` HW.1.PicoGK](00_07_Action_Plan_Tracker); анкер-геометрія + founder-рішення → HW.33.
 
 **PicoGK** ("пікок", павич) — відкритий воксельний SDF-ядро від **LEAP 71** (засновники Lin Kayser, Josefine Lissner, ex-Hyperganic; CEO LEAP 71). Це open-source engine, на якому працює пропрієтарна ШІ-модель LEAP 71 **Noyron** (внутрішній "головний інженер"). Сам Noyron закритий, але PicoGK відкритий на GitHub.
 
@@ -561,8 +561,8 @@ nTop — провідний інструмент для генерації мі�
 **Методологія Noyron — те, що ми переймаємо (не сам Noyron, він закритий):**
 - **CEM (Computational Engineering Model) = детермінований алгоритм, НЕ ML.** Lin Kayser: *«a Computational Engineering Model is an algorithm, not a neural net — closer to an expert system».* Геометрія **обчислюється з наміру** (фізика + інженерні правила + виробничі обмеження, закодовані в коді), а не «малюється» нейромережею → детерміновано, простежувано, рев'юабельно, без галюцинацій.
 - **Уточнює наш «AI-Native»** ([`00_02 §4a`](00_02_AI_Native_Engineering_and_TRL)): «AI генерує геометрію кодом» = **агент пише детермінований генератор** (Git-diffable `.cs`), не LLM, що емітить mesh.
-- **Intent-first:** правило рахує геометрію (`IBeamThickness` тримає 65% порозність при градієнті розміру пори), а не ручні числа.
-- **Одна модель → родина:** per-species 5-SKU = один CEM × 5 спеків анатомії соку ([`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)) — як Noyron робить різні двигуни з одного CEM.
+- **Intent-first:** правило рахує геометрію (CEM-параметр + `wallParam(r)` тримають порозність при градієнті розміру пори; **вимірюється per-shell**, не хардкод), а не ручні числа.
+- **Одна модель → родина:** per-species 7-SKU (5 видів + porosity-gradient + stepped demo) = один CEM × N спеків ([`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)) — як Noyron робить різні двигуни з одного CEM.
 - **Design↔sim злиті:** validation-as-code (порозність/градієнт/wall/manifold → `metrics.json`) = Noyron-івський «predicted-performance» output генератора.
 
 **Реальний стек (підтверджено в `tools/cad`, НЕ псевдокод):**
@@ -575,7 +575,7 @@ nTop — провідний інструмент для генерації мі�
 | Headless | `Library.Go(voxelSize, task, bEndAppWithTask:true)` — batch/CI без блокування на viewer (голий `new Library()` з v1.6-доків у v2.2 застарів) |
 | ОС | офіційно Win64 + **macOS Apple Silicon**; Linux — лише community Docker |
 
-**Реальний API** (живий код — `tools/cad/src/SilkenCad/`): циліндр+отвір = `BasePipe(frame, length, rInner, rOuter)` · гіроїд = `ImplicitRadialGyroid(unitsPerRound, unitSizeZ, wall)` · радіальний градієнт = `FunctionalScaleTrafo` (`ICoordinateTrafo`) + `IBeamThickness` (порозність) · булеві на `Voxels` (`BoolAdd/Subtract/Intersect`) · рендер `voxBounding.voxIntersectImplicit(gyroid)` · export `vox.mshAsMesh().SaveToStlFile(path)` · метрики `Voxels.CalculateProperties(out vol, out bbox)`. **Градієнтний гіроїд — композиція цих примітивів, не from-scratch SDF** (головний ризик знятий).
+**Реальний API** (живий код — `tools/cad/src/SilkenCad/`): циліндр+отвір = `BasePipe(frame, length, rInner, rOuter)` · гіроїд = **власний `CartesianGyroid : IImplicit`** (НЕ `ImplicitRadialGyroid` — вироджений біля осі стрижня) · радіальний градієнт = **власні `GradedCartesianGyroid` / `ZonedGyroid`** (НЕ `FunctionalScaleTrafo` — хардкодед Z-demo, не радіальна) · рендер = **`new Voxels(IImplicit, BBox3)` + `BoolIntersect`** (НЕ `voxIntersectImplicit` — malformed level-set → native abort на тонких частинах) · export `vox.mshAsMesh().SaveToStlFile(path)` · метрики `Voxels.CalculateProperties`. **Градієнтний гіроїд = власний from-scratch SDF** (LEAP graded-примітиви виявились непридатні: Z-demo + degenerate + ~1р застарілий submodule; повний список gotchas → skill `picogk` / `tools/cad/README`).
 
 **Переваги для Silken Net:**
 
@@ -591,7 +591,7 @@ nTop — провідний інструмент для генерації мі�
 
 **Чесні застереження (TRL 3, in-silico):**
 - Згенерований STL ≠ фізичний анкер; жоден TRL-claim не рухається ([`00_02 §1`](00_02_AI_Native_Engineering_and_TRL)).
-- **Воксельна стеля:** ~100µm-пора / 0.3мм-стінка → воксель ~25–33µm → ~10⁹-воксель bbox; калібрувати RAM перед градієнтним анкером ([`00_07`](00_07_Action_Plan_Tracker) HW.1.PicoGK).
+- **Воксельна + DMLS стеля:** 100µm-пора@65% **фізично недрукований** (SLM стінка ~200µm → мін друкована пора ≈1.2мм) ТА воксель ~0.03мм → ~10⁹-bbox. Простий радіальний градієнт чистий лише ≤~0.8× (phase-distortion); сильний контраст → stepped-зони. Деталі — [`01_01 §5.5`](01_01_Coaxial_Gyroid_Topology_and_PEEK) + [`00_07` HW.33](00_07_Action_Plan_Tracker).
 - **Bus-factor:** PicoGK v2.x, single-vendor (LEAP 71), молода спільнота → пінимо версії; nTop лишається задокументованим escape-hatch.
 - **Headless у CI** потребує display-контексту (`Library.Go` піднімає viewer): macOS-runner OK, Linux — лише community Docker + xvfb.
 
