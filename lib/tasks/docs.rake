@@ -72,6 +72,7 @@ namespace :docs do
     sec_after_link = [] # hard: bare §X dangling after a whole-doc link — fold into label (DOC-T.16)
     superseded_fm = [] # hard: superseded term (ATECC608B) in 🎯/Статус front-matter
     src_line_refs = [] # hard: volatile `*.c`/`*.h`/`*.rb` source line-refs (DOC-T.15)
+    anchor_dim   = []  # hard: superseded anchor dimension range near part keyword (01_01 §1 freeze)
     graph_docs  = {}  # id "NN_NN" → text, for the #anchor-resolution gate (DocsGraph)
     doc_trls    = {}  # basename → member-TRL int (from ✅ Статус), for the 00_03 §1 band guard
 
@@ -124,6 +125,7 @@ namespace :docs do
       xref_form.concat(DocsLinter.crossref_label_form(text).map { |h| "#{base}: #{h}" })
       sec_after_link.concat(DocsLinter.section_ref_after_doclink(base, text).map { |h| "#{base}: #{h}" })
       superseded_fm.concat(DocsLinter.superseded_term_in_frontmatter(base, text).map { |h| "#{base}: #{h}" })
+      anchor_dim.concat(DocsLinter.anchor_dimension_drift(base, text).map { |h| "#{base}: #{h}" })
       src_line_refs.concat(DocsLinter.source_line_ref_drift(base, text))
     end
 
@@ -313,6 +315,12 @@ namespace :docs do
       puts "  AI-VENDOR DRIFT (#{ai_vendor.size}) — vendor belongs only in 00_02 §2 roster (use frontier-LLM/coding-agent):"
       ai_vendor.sort.each { |d| puts "    ✗ #{d}" }
     end
+    if anchor_dim.empty?
+      puts "  anchor dims One-Home: no superseded flange/Zone2 range outside the 01_01 §1 freeze ✓"
+    else
+      puts "  ANCHOR DIM DRIFT (#{anchor_dim.size}) — superseded range near part keyword; collapse to the 01_01 §1 frozen value:"
+      anchor_dim.sort.each { |d| puts "    ✗ #{d}" }
+    end
     if trl_missing.empty?
       puts "  TRL presence:   every ✅ Статус doc declares a TRL ✓"
     else
@@ -423,6 +431,7 @@ namespace :docs do
     failed << "Lorenz-formula drift (β re-stated outside 03_04 §4.1)" unless lorenz_drift.empty?
     failed << "retired growth_points clamp `(…,10,63)` (FW.29-PACK → 03_04 §4.3)" unless gp_clamp.empty?
     failed << "deprecated SSOT terms present" unless deprecated.empty?
+    failed << "anchor dimension drift (superseded flange/Zone2 range outside 01_01 §1 freeze)" unless anchor_dim.empty?
     failed << "superseded term in front-matter (🎯/Статус names a reversed decision)" unless superseded_fm.empty?
     failed << "tokenomics/carbon rate restated outside One-Home (05_03/07_01)" unless rate_drift.empty?
     failed << "solc/pragma version restated outside One-Home (05_03; code = foundry.toml)" unless solc_drift.empty?

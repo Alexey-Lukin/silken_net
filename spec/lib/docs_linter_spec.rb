@@ -362,6 +362,42 @@ RSpec.describe DocsLinter do
     end
   end
 
+  describe ".anchor_dimension_drift" do
+    it "flags a superseded flange/radome Ø range next to the part keyword" do
+      hits = described_class.anchor_dimension_drift("07_02", "радом-купол ∅20–30 мм, термолиття\n")
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("Ø = 25 mm")
+    end
+
+    it "flags a superseded Zone 2 length range" do
+      expect(described_class.anchor_dimension_drift(
+        "02_01", "Zone 2 (PEEK-терморозрив 40–60 мм)\n").size).to eq(1)
+    end
+
+    it "flags inside the 01_01 owner too (owner states the new value, never the old range)" do
+      expect(described_class.anchor_dimension_drift("01_01", "фланець ∅20-30 мм\n")).not_to be_empty
+    end
+
+    it "passes the frozen single values" do
+      expect(described_class.anchor_dimension_drift("07_02", "радом-купол ∅25 мм\n")).to be_empty
+      expect(described_class.anchor_dimension_drift("02_01", "Zone 2 (PEEK-терморозрив 50 мм)\n")).to be_empty
+    end
+
+    it "ignores a range with no part keyword (a bare number elsewhere)" do
+      expect(described_class.anchor_dimension_drift("02_05", "робоча температура 20–30 °C\n")).to be_empty
+      expect(described_class.anchor_dimension_drift("07_02", "діапазон 40–60 Гц\n")).to be_empty
+    end
+
+    it "exempts a line marking the value historical" do
+      expect(described_class.anchor_dimension_drift(
+        "01_01", "фланець був ∅20–30 мм (superseded → 25)\n")).to be_empty
+    end
+
+    it "skips fenced code" do
+      expect(described_class.anchor_dimension_drift("02_01", "```\nрадом ∅20–30 мм\n```\n")).to be_empty
+    end
+  end
+
   describe ".deprecated_terms" do
     it "flags a retired token and gives the replacement hint" do
       hits = described_class.deprecated_terms("03_05", "derive via HKDF info silkennet-v1-aes256 here")

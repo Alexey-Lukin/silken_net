@@ -332,6 +332,39 @@ module DocsLinter
   # specific. Meta/legacy docs are EXEMPT (they legitimately NAME retired things):
   # 02_04 (legacy-appendix home), 00_06 (this standard cites them as examples),
   # 00_07 (tracker may reference an old baseline in a "migrate-from" note).
+  # [SSOT anti-drift] Frozen anchor key-dimensions (01_01 §1 home, radial+axial freeze
+  # 2026-06-20). ONE physical anchor crosses every domain doc (geometry / metallurgy /
+  # capsule / pogo / economics / RF), so each legitimately cites its dims — and a freeze must
+  # collapse the OLD range to the new single value in ALL of them at once (the 7-doc manual
+  # grep-sweep that motivated this guard). A SUPERSEDED range reappearing next to its part
+  # keyword = freeze-drift. Heuristic mirrors the RTC guard: a range pattern AND a part-context
+  # keyword on the same line; skip fenced code; a line marking the value historical is exempt.
+  # Applies to ALL docs incl. the 01_01 owner (owner states the NEW value, never the old range).
+  # At the NEXT freeze, add the newly-superseded range here — exactly like DEPRECATED_TERMS.
+  ANCHOR_DIM_DRIFT = [
+    [ /(?<!\d)20\s*[–-]\s*30(?!\d)/, /фланець|radome|радом|таблетк|купол|crown/i,
+     "flange/radome Ø = 25 mm frozen (01_01 §1)" ],
+    [ /(?<!\d)40\s*[–-]\s*60(?!\d)/, /zone ?2|зона ?2|втулк|терморозрив/i,
+     "Zone 2 length = 50 mm frozen (01_01 §1)" ]
+  ].freeze
+
+  ANCHOR_DIM_HISTORICAL = /було|superseded|застаріл|replaced|замінен|historical|історичн|former|деприкейт/i
+
+  def anchor_dimension_drift(_basename, text)
+    in_fence = false
+    out = []
+    text.each_line do |line|
+      in_fence = !in_fence if line.start_with?("```")
+      next if in_fence
+      next if line.match?(ANCHOR_DIM_HISTORICAL)
+
+      ANCHOR_DIM_DRIFT.each do |range_re, ctx_re, frozen|
+        out << "superseded anchor range → #{frozen} | #{line.strip[0, 90]}" if line.match?(range_re) && line.match?(ctx_re)
+      end
+    end
+    out
+  end
+
   DEPRECATED_TERMS = {
     "silkennet-v1-aes256" => 'use "silken-aes-128-lora-key" / "silken-aes-256-device-key" (ARCH.42 256→128 HKDF info)',
     "ZP-3" => "retired ∅27mm through-hole piezo SKU → SMD piezo (Murata 7BB-15-6L0 / TDK B-Series), canon 02_01 §3",
