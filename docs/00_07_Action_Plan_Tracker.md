@@ -160,6 +160,13 @@
 - [ ] 🤖 **LatticeLibrary submodule stale** (2025-07 vs ShapeKernel 2026-06) → `dependency-update` прохід (не блокер — власний SDF не залежить)
 - [ ] 🤖 **Ti-coin площа (CAD-реалізація спеки HW.24):** канон A_electrode=2 см² (`01_03`/HW.24); диск Ø10мм=0.79 см²/грань → CEM до Ø16мм (1 грань) або 10×10 мм (обидві = 2 см²)
 
+#### ARCH.25 — Gyroid geometric validation scripts (per-slice / topology / BFS connectivity)
+- **P2** · 🤖 · 🟡 · → `01_02 §6`, `08_02 §1B`
+- **Стан:** Промотовано з Backlog (2026-06-21 — PicoGK validation-as-code зробив це актуальним). Основу закрито: `tools/cad` міряє per-shell порозність + manifold + bbox → `metrics.json` (exit-code gate). Лишається поглиблення: per-slice (axial) порозність-профіль, capillary-channel connectivity via BFS (наскрізна проникність гіроїда), C++ topological-integrity mesh. Gating DMLS factory order (важкий CFD — Онищенко ЧНУ, cross-ref ARCH.30 Akash GPU). Канон `01_02 §6`.
+- [ ] 🤖 BFS capillary-channel connectivity (наскрізна проникність) у `tools/cad` validation
+- [ ] 🤖 per-slice axial порозність-профіль — доповнити radial per-shell
+- [ ] 🔗 C++/CFD topological-integrity mesh + Akash GPU (ARCH.30, Онищенко)
+
 #### HW.32 — BME280 environmental sensing + VPD confounder [ADR `02_01 §3.4`]
 - **P1** · 👤 · 🟢 · → `02_01 §3.4`, `07_02 §1.3`
 - **Стан:** BME280 (t°/RH/тиск, I2C за TPS22860) приземлено host-side — docs + `03_01` SENSE + TelemetryLog cols (structure.sql) + firmware pure-модуль `firmware/common/bme280.h` (datasheet Bosch §8.2 компенсація `Bme280_Compensate_T/P/H` + VPD FAO-56 Tetens `Bme280_Vpd_Index`, host-golden `test_bme280.c`) + VPD-gate/sap-term у backend (inert, ENV-calibration-gated). Wire: VPD = CCM wire-rev2 **byte 19 `vpd_index`** ([`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)). DCI-guard: VPD НЕ в Lorenz-Z. Канон `02_01 §3.4` (формула/шкала/bench-чеклист) · slashing-роль `05_05 §6/§7` · клімат-оракул `07_01` · калібрування ваг `05_05 §8`.
@@ -1139,7 +1146,6 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 | ARCH.13 | EigenLayer AVS як альтернатива direct L1 write (~$0.01/week vs $5-15/week) | `05_04` | Research |
 | ARCH.20 | Petri Net PN-модель Rails моноліту: формальна верифікація відсутності deadlock при 10,000 concurrent IoT connections. Sidekiq + Puma + PostgreSQL modeling. Конволюційний метод для зменшення state space explosion у 10-100 разів | `08_02` | R&D (Супруненко, ЧНУ) |
 | ARCH.24 | CE/FCC/RoHS/EMC/IP68 compliance roadmap для EU/NA ринків: CE-RED (868 МГц LoRa), FCC Part 15/90, RoHS-2, IP68 (IEC 60529), REACH. Кожна сертифікація потребує 3-6 місяців та спеціалізованої лабораторії | `08_02` | Pre-mass production (Косенюк, ЧНУ) |
-| ARCH.25 | Gyroid geometric validation scripts: Python/C++ верифікація 65% пористості per-slice, topological integrity mesh, capillary channel connectivity via BFS (breadth-first search). Запускається після кожного PicoGK/nTop build (PicoGK validation-as-code вже міряє порозність/manifold per `tools/cad`) для запобігання помилкам DMLS | `08_02` | Before DMLS factory order |
 | ARCH.33 | **ECDH P-256 key exchange як альтернатива HKDF-only provisioning** — мерехтливий розгляд: замість per-device HKDF (FW.1) використати ECDH у factory або field provisioning. Plus: Perfect Forward Secrecy без shared master key. Minus: Curve25519/P-256 потребує ~512 байт SRAM + 50 мс CPU на handshake | `08_02` §1B (Ярмілко), `03_05` | Research alternative (узгодити з FW.17 Hash Ratchet) |
 
 ## 🗄️ Архів закритих пунктів (мігровано в канон)
