@@ -18,6 +18,7 @@ internal static class Program
                 "smoke" => RunHeadless(0.5f, Smoke),
                 "build" => args.Length >= 2 ? Build(args[1]) : Fail("usage: build <cem.json>"),
                 "verify" => args.Length >= 2 ? Verify(args[1]) : Fail("usage: verify <cem.json>"),
+                "sweep" => Sweep(),
                 "help" or "--help" or "-h" => Help(),
                 var strCmd => Fail($"unknown command: {strCmd}"),
             };
@@ -109,6 +110,34 @@ internal static class Program
         }
     }
 
+    // Per-species 5-SKU sweep (00_08 §1.3) — generates + verifies every
+    // cem/anchor_zone1.*.json (one Library.Go per SKU). The concrete payoff of
+    // code-as-CAD over a GUI: a whole family from one generator × N manifests.
+    private static int Sweep()
+    {
+        string[] aCems = Directory.GetFiles("cem", "anchor_zone1.*.json")
+            .Where(p => !p.EndsWith(".metrics.json", StringComparison.Ordinal))
+            .OrderBy(p => p, StringComparer.Ordinal)
+            .ToArray();
+        if (aCems.Length == 0)
+            return Fail("no cem/anchor_zone1.*.json found");
+
+        int iRc = 0;
+        foreach (string strCem in aCems)
+        {
+            AnchorCem cem = Cem.Parse<AnchorCem>(File.ReadAllText(strCem));
+            Console.WriteLine($"--- {cem.Name} (voxel {cem.VoxelSizeMm} mm) ---");
+            iRc |= RunHeadless(cem.VoxelSizeMm, () =>
+            {
+                Voxels voxEnv = Zone1Anode.Envelope(cem);
+                Voxels voxAnode = Zone1Anode.Anode(cem, voxEnv);
+                Export(voxAnode, cem.Name);
+                return Report(cem.Name, cem.VoxelSizeMm, voxAnode, voxEnv, cem.PorosityTarget);
+            });
+        }
+        return iRc == 0 ? 0 : 1;
+    }
+
     private static int Report(string strName, float fVoxel, Voxels voxSolid, Voxels? voxEnvelope, float fPorosityTarget = 0f)
     {
         GeometryMetrics oMetrics = Validation.Measure(strName, fVoxel, voxSolid, voxEnvelope);
@@ -146,7 +175,8 @@ internal static class Program
             "silkencad — SilkenNet Code-as-CAD (PicoGK)\n" +
             "  smoke             foundation self-test (no output file)\n" +
             "  build <cem.json>  generate an STL from a CEM manifest (ti_coin | anchor_zone1)\n" +
-            "  verify <cem.json> measure golden-metrics → out/<name>.metrics.json (exit 0/1)");
+            "  verify <cem.json> measure golden-metrics → out/<name>.metrics.json (exit 0/1)\n" +
+            "  sweep             generate + verify every cem/anchor_zone1.*.json (5-SKU)");
         return 0;
     }
 

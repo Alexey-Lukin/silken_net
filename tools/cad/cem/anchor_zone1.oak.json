@@ -1,0 +1,12 @@
+{
+  "_note": "v1 DEMO placeholder — coarse constant gyroid, NOT a validated per-species spec. Real per-species geometry = radial pore gradient (v2) + bio-hub validation (00_08 §1.3, HW.33). Oak (Quercus): ring-porous, wide vessels ~200-400µm → larger pore period.",
+  "kind": "anchor_zone1",
+  "name": "anchor_zone1_oak",
+  "voxel_size_mm": 0.1,
+  "outer_diameter_mm": 12.0,
+  "bore_diameter_mm": 1.6,
+  "length_mm": 40.0,
+  "gyroid_period_mm": 3.5,
+  "gyroid_wall_param": 1.0,
+  "porosity_target": 0.65
+}
