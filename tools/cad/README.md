@@ -32,11 +32,12 @@ geometry** deterministically. Parity is on derived metrics, never the raw STL by
 | Path | What |
 |---|---|
 | `cem/*.json` | CEM manifests (Git-SSOT inputs) — e.g. `ti_coin`, `anchor_zone1.pine` |
-| `src/SilkenCad/Program.cs` | CLI: `smoke` / `build <cem>` / `verify <cem>` (headless `Library.Go`) |
+| `src/SilkenCad/Program.cs` | CLI: `smoke` / `build <cem>` / `verify <cem>` (headless `Library.Go`) · `scan <cem>` (wallParam window, pure) |
 | `src/SilkenCad/TiCoin.cs` | Stage-2 in-vitro coupon — disc + eyelet (`01_01 §6.1`) |
 | `src/SilkenCad/Zone1Anode.cs` | Zone-1 gyroid anode + the custom `CartesianGyroid` SDF |
 | `src/SilkenCad/Validation.cs` | golden-metrics via `Voxels.CalculateProperties` (porosity/bbox/tris) + LEAP `Measure.fGetSurfaceArea` |
 | `src/SilkenCad/Connectivity.cs` | ARCH.25 two-phase topological audit — SDF-sample + flood-fill (open/closed-pore, percolation, solid-island, specific-surface) |
+| `src/SilkenCad/WallScan.cs` | wallParam critical-threshold scan → the CEM working window (printable + open-pore + percolating); pure-managed, no render |
 | `src/SilkenCad/MechanicalLock.cs` | §4.3 mechanical lock — `MechanicalLockShank` ratchet-barb + DIN-471 groove SDF on a hollow shank (Zone-1/Zone-3 demo) + self-support metric |
 | `src/SilkenCad.Leap/` | vendored LEAP source compiled in (relaxed warnings — not ours) |
 | `extern/LEAP71_{ShapeKernel,LatticeLibrary}` | git submodules (source-only; not on NuGet) |
@@ -52,6 +53,7 @@ dotnet build SilkenCad.sln                                                  # 0W
 dotnet run --project src/SilkenCad -- smoke                                 # foundation self-test
 dotnet run --project src/SilkenCad -- build  cem/anchor_zone1.pine.json     # → out/*.stl
 dotnet run --project src/SilkenCad -- verify cem/anchor_zone1.pine.json     # → out/*.metrics.json (exit 0/1)
+dotnet run --project src/SilkenCad -- scan   cem/anchor_zone1.pine.json     # → out/*.wallscan.json (wallParam working window)
 ```
 
 ## Gotchas (hard-won — read before touching the generators)
@@ -124,9 +126,20 @@ ratchet self-supports at the `01_02 §1.6` tip-down / leading-ramp-down orientat
 downface, Sa≈15µm). Zone-1 Ø11 + Zone-3 placeholder Ø (HW.8 dim-freeze). Grounded over canon §4.3:
 tooth over-spec resolved at h=0.28; DIN-471 groove = real shaft dims (was off-spec 0.8×0.6).
 
+**Ti-coin A_electrode (shipped)** — `ti_coin` CEM → Ø16 disc, 1 face ≈ 2 cm² (01_03 §3.5); `verify` gates
+the projected `active_electrode_area_cm2` (|A−2.0|≤0.1) + an optional `active_window_diameter_mm` (an
+O-ring / lacquer defined-area cell — decouples A from the coin edge). Disc not square: RDE-ready, uniform
+radial j, no corner edge-effects (01_01 §6.1).
+
+**wallParam scan (shipped)** — `scan <anchor-cem>` sweeps the gyroid wall band → the CEM working window
+(the wallParam range that stays printable + open-pore + percolating; pine: [0.80, 1.30], default 1.0 →
+67.6 % mid-window). Pure-managed (no Library.Go), `WallScan.cs` + 3 xUnit; feeds HW.33 + the FEA
+sheet-vs-network envelope.
+
 **Deferred:** integrating shank+barbs into the full gyroid rod (separate session) · PEEK Radome ("шляпа",
 HW.17) + cathode flange/PEEK Zone 2 as further PicoGK parts (blocked on HW.33 dim-freeze) ·
-a phase-correct strong continuous gradient (period-tensor/conformal).
+a phase-correct strong continuous gradient (period-tensor/conformal) · Euler-χ / tortuosity connectivity
+cross-checks (ARCH.25 nice-to-have).
 
 ## License
 

@@ -159,7 +159,7 @@
 - [ ] 👤 **sheet vs network — FEA-вісь, дані схиляють до network (`01_01 §5.5/§5.2`; ARCH.25 2026-06-21):** наш default SDF = sheet (**триконтинуальний** — 2 pore-лабіринти + стінка); network = **біконтинуальний** (1 pore + 1 solid). ARCH.25-аудит + літ схиляють до **network** по 4 осях: (1) топологія — network 1+1 чисто vs sheet 2 лабіринти + крайова фрагментація; (2) транспорт — 1 зв'язна мережа vs 2 розділені; (3) **механіка — sheet@65% stretch (n≈0.89–1.0) → E ~20–30+ ГПа ≫ деревина 9–16 → stress-shield повертається; network@65% bending n=2 → E≈13.5 = САМЕ цільова §5.2**; (4) друк — менше floating-island. Контр-аргумент sheet — ~2× specific-surface для EBFC, але EAAE-шорсткість r=10–50× (`01_02 §1.4`) домінує над макроплощею. **НЕ рішення** (Gibson-Ashby = наближення; точна E = FEA-homogenization — self-own-кандидат, Гусак pending); `tools/cad` ARCH.25 + specific-surface = topology-agnostic вимірювальний стіл. Trade-off EBFC-площа ↔ ізоеластичність — FEA-рішення
 - [ ] 👤 **стала vs градієнтна пористість — відкрито (founder 2026-06-21, `01_01 §5.5`):** «відхиляємо градієнт пористості» було передчасним; для біо-інтерфейсу м'якша периферія можлива. CAD підтримує обидві (`wallParam(r)`) — FEA-рішення
 - [ ] 🤖 **LatticeLibrary submodule stale** (2025-07 vs ShapeKernel 2026-06) → `dependency-update` прохід (не блокер — власний SDF не залежить)
-- [ ] 🤖 **Ti-coin площа (CAD-реалізація спеки HW.24):** канон A_electrode=2 см² (`01_03`/HW.24); диск Ø10мм=0.79 см²/грань → CEM до Ø16мм (1 грань) або 10×10 мм (обидві = 2 см²)
+- [x] 🤖 **Ti-coin площа ✅ 2026-06-20 (`tools/cad`):** канон A_electrode=2 см² (`01_03 §3.5`/HW.24) реалізовано — CEM `ti_coin` → **Ø16 disc** (1 грань = π·8² = 2.01 см²), `ActiveElectrodeAreaCm2`-метрика + verify-гейт (`|A−2.0|≤0.1`), опц. `active_window` для O-ring defined-area cell. Форма = **disc, не square** (RDE-сумісність / рівномірна j / без кутових edge-ефектів + ребро-похибки); літ-grounding — `01_01 §6.1`. Square відкинуто
 
 #### ARCH.25 — Gyroid geometric validation scripts (per-slice / topology / BFS connectivity)
 - **P2** · 🤖 · 🟢 · → `01_02 §6`, `08_02 §1B`
@@ -167,7 +167,8 @@
 - [x] 🤖 BFS capillary-channel connectivity (наскрізна проникність) у `tools/cad` validation ✅ 2026-06-21 (`a5ed3d9`)
 - [x] 🤖 per-slice axial порозність-профіль — доповнити radial per-shell ✅ 2026-06-21 (bin ≥2 періоди → axial-тренд, не фаза)
 - [ ] 🔗 C++/CFD topological-integrity mesh + Akash GPU (ARCH.30, Онищенко) — self-own за потреби, партнер pending
-- [ ] 🤖 deferred (nice-to-have, не пріоритет): Euler-χ крос-чек (`V−F/2` з PicoGK mesh `nVertex`+`nTriangleCount`) · tortuosity (random-walk на percolated cluster) · voxel-cross-check на as-printed grid (0.1мм rendered, не лише SDF-intent) · `wallParam` критичний-поріг скан (робоче вікно CEM)
+- [x] 🤖 **`wallParam` критичний-поріг скан ✅ 2026-06-20** (`tools/cad` `scan` + `WallScan.cs`): свіп wall-band → робоче вікно CEM (pine: `wallParam ∈ [0.80, 1.30]` @ porosity 55–75% / open≥95% / solid-disc≤2% / percolating; default 1.0 → 67.6% по центру). Pure-managed (без `Library.Go`) + 3 xUnit
+- [ ] 🤖 deferred (nice-to-have, не пріоритет): Euler-χ крос-чек (`V−F/2` з PicoGK mesh `nVertex`+`nTriangleCount`) · tortuosity (random-walk на percolated cluster) · voxel-cross-check на as-printed grid (0.1мм rendered, не лише SDF-intent)
 
 #### HW.32 — BME280 environmental sensing + VPD confounder [ADR `02_01 §3.4`]
 - **P1** · 👤 · 🟢 · → `02_01 §3.4`, `07_02 §1.3`
