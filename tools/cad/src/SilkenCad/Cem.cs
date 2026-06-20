@@ -111,3 +111,41 @@ internal sealed record MechanicalLockCem
     public float GrooveWidthMm { get; init; } = 0.8f;
     public float GrooveDepthMm { get; init; } = 0.6f;
 }
+
+// Zone 3 cathode flange (Деталь 3, 01_01 §1 + 02_02 §1.2) — the capsule-side anchor end: a SOLID Ti
+// flange (Ø25 frozen) on a barbed shank that press-fits into the PEEK Zone-2 sleeve. Top face = pogo-pad
+// plane (centre GND bus + outer V+, Hard Gold — coating, NOT geometry); the side/perimeter is the cathode
+// catalytic zone (Laccase/ZIF + PTFE-GDL, O₂ from the side under the radome bell — 02_02 §1.2, фаза-2).
+// Bayonet lugs mate the PEEK Radome (Деталь 4). Barbs reuse the §4.3 lock (Zone-3 set, opposite lean).
+// Shank Ø + flange thickness = HW.8 placeholders (no-premature-canon).
+internal sealed record CathodeFlangeCem
+{
+    public string Kind { get; init; } = "cathode_flange";
+    public string Name { get; init; } = "cathode_flange";
+    public float VoxelSizeMm { get; init; } = 0.05f;       // barb-feature floor (as mechanical_lock)
+    public float FlangeDiameterMm { get; init; } = 25f;    // frozen (01_01 §1 = Radome Ø, 02_02 §1.3)
+    public float FlangeThicknessMm { get; init; } = 3f;    // placeholder (HW.8 dim-freeze)
+    public float ShankDiameterMm { get; init; } = 9f;      // placeholder (HW.8); Zone-3 into PEEK
+    public float ShankLengthMm { get; init; } = 14f;
+    public float BoreDiameterMm { get; init; } = 1.3f;     // GND bus channel (hollow through flange+shank)
+
+    // Barbs (§4.3, reuse MechanicalLock; Zone-3 = opposite ratchet lean, dir −1)
+    public int BarbRows { get; init; } = 3;
+    public float BarbHeightMm { get; init; } = 0.28f;
+    public float LeadAngleDeg { get; init; } = 30f;
+    public float TrailAngleDeg { get; init; } = 70f;
+    public float ContactStartMm { get; init; } = 2f;
+    public float ContactLengthMm { get; init; } = 9f;
+    public float GrooveOffsetMm { get; init; } = 12f;      // DIN-471 for an Ø9 shaft
+    public float GrooveWidthMm { get; init; } = 1.0f;
+    public float GrooveDepthMm { get; init; } = 0.3f;
+
+    // Bayonet lugs (mate the Радом socket, фаза 2) — radial pins evenly spaced
+    public int BayonetLugs { get; init; } = 3;
+    public float LugProtrusionMm { get; init; } = 2f;      // radial protrusion beyond the flange rim
+    public float LugRadiusMm { get; init; } = 1.5f;        // pin radius
+
+    // O-ring groove on the flange underside (mate the Радом O-ring, CS 1.78 → 02_02 §3.2)
+    public float ORingGrooveDepthMm { get; init; } = 0.9f;
+    public float ORingGrooveWidthMm { get; init; } = 2.0f;
+}

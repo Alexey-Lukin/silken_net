@@ -86,6 +86,11 @@ internal static class Program
                 MechanicalLockCem cem = Cem.Parse<MechanicalLockCem>(strJson);
                 return RunHeadless(cem.VoxelSizeMm, () => Export(MechanicalLock.Build(cem), cem.Name));
             }
+            case "cathode_flange":
+            {
+                CathodeFlangeCem cem = Cem.Parse<CathodeFlangeCem>(strJson);
+                return RunHeadless(cem.VoxelSizeMm, () => Export(CathodeFlange.Build(cem), cem.Name));
+            }
             default:
                 return Fail($"unknown CEM kind: {Cem.Kind(strJson)}");
         }
@@ -115,6 +120,11 @@ internal static class Program
             {
                 MechanicalLockCem cem = Cem.Parse<MechanicalLockCem>(strJson);
                 return RunHeadless(cem.VoxelSizeMm, () => ReportLock(cem, MechanicalLock.Build(cem)));
+            }
+            case "cathode_flange":
+            {
+                CathodeFlangeCem cem = Cem.Parse<CathodeFlangeCem>(strJson);
+                return RunHeadless(cem.VoxelSizeMm, () => ReportFlange(cem, CathodeFlange.Build(cem)));
             }
             default:
                 return Fail($"unknown CEM kind: {Cem.Kind(strJson)}");
@@ -324,6 +334,47 @@ internal static class Program
         return bOk ? 0 : 1;
     }
 
+    // Cathode-flange verify (Деталь 3, 01_01 §1): golden metrics + assembly gates — solidity (a SOLID
+    // flange, not an SDF hollow-shell, gotcha #9), Ø25 frozen, bayonet lugs fused (bbox extends past the
+    // flange rim), barbs present (BoolAdd from the §4.3 lock), bus bore. Cathode side-area is informational.
+    private static int ReportFlange(CathodeFlangeCem cem, Voxels voxFlange)
+    {
+        GeometryMetrics oM = Validation.MeasureFlange(cem, voxFlange);
+
+        Directory.CreateDirectory("out");
+        string strPath = Path.Combine("out", $"{cem.Name}.metrics.json");
+        Validation.WriteJson(oM, strPath);
+
+        Console.WriteLine($"metrics → {strPath}");
+        Console.WriteLine(
+            $"  volume={oM.SolidVolumeMm3:F1} mm^3  " +
+            $"bbox={oM.BboxSizeMm[0]:F1}×{oM.BboxSizeMm[1]:F1}×{oM.BboxSizeMm[2]:F1} mm  tris={oM.TriangleCount}");
+        Console.WriteLine(
+            $"  flange Ø{cem.FlangeDiameterMm:F0} · barbs={oM.BarbCount} · bayonet lugs={oM.BayonetLugCount} · " +
+            $"cathode side={oM.ActiveCathodeAreaCm2:F2} cm²");
+
+        float fFlangeR = cem.FlangeDiameterMm / 2f;
+        // 3 lugs at 120° are ASYMMETRIC → only ONE extends a given axis, so the bbox span is
+        // (flange + one lug tip) ≈ flangeD + protrusion, never + 2·protrusion. Confirm the lugs
+        // push the bbox past the bare flange (≥ half a protrusion, robust to lug count/voxel).
+        float fLugSpanMin = cem.FlangeDiameterMm + (0.5f * cem.LugProtrusionMm);
+        double dFlangeVol = Math.PI * fFlangeR * fFlangeR * cem.FlangeThicknessMm;
+
+        bool bSane = oM.SolidVolumeMm3 > 0 && oM.TriangleCount > 0 && oM.BboxSizeMm.All(d => d > 0);
+        bool bSolid = oM.SolidVolumeMm3 > 0.8 * dFlangeVol;   // a FILLED flange (+shank), not an SDF narrow-band shell
+        double dMaxXY = Math.Max(oM.BboxSizeMm[0], oM.BboxSizeMm[1]);
+        bool bLugs = dMaxXY >= fLugSpanMin && oM.BayonetLugCount == cem.BayonetLugs;
+        bool bBarbs = oM.BarbCount == cem.BarbRows;
+
+        if (!bSolid) Console.WriteLine($"  ⚠ solid volume {oM.SolidVolumeMm3:F0} ≪ flange {dFlangeVol:F0} mm³ — hollow render (SDF narrow-band, gotcha #9)");
+        if (!bLugs) Console.WriteLine($"  ⚠ bayonet lugs not fused (max bbox {dMaxXY:F1} < expected ≥{fLugSpanMin:F1} mm)");
+        if (!bBarbs) Console.WriteLine($"  ⚠ barb count {oM.BarbCount} ≠ rows {cem.BarbRows}");
+
+        bool bOk = bSane && bSolid && bLugs && bBarbs;
+        Console.WriteLine(bOk ? "VERIFY OK" : "VERIFY FAILED");
+        return bOk ? 0 : 1;
+    }
+
     private static int Export(Voxels vox, string strName)
     {
         Directory.CreateDirectory("out");
@@ -338,7 +389,7 @@ internal static class Program
         Console.WriteLine(
             "silkencad — SilkenNet Code-as-CAD (PicoGK)\n" +
             "  smoke             foundation self-test (no output file)\n" +
-            "  build <cem.json>  generate an STL from a CEM manifest (ti_coin | anchor_zone1 | mechanical_lock)\n" +
+            "  build <cem.json>  generate an STL from a CEM manifest (ti_coin | anchor_zone1 | mechanical_lock | cathode_flange)\n" +
             "  verify <cem.json> measure golden-metrics → out/<name>.metrics.json (exit 0/1)\n" +
             "  sweep             generate + verify every cem/anchor_zone1.*.json (5-SKU)\n" +
             "  scan <cem.json>   wallParam working-window scan (anchor) → out/<name>.wallscan.json");

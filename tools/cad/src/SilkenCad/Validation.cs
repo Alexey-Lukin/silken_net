@@ -42,6 +42,10 @@ internal sealed record GeometryMetrics
     public double? BarbBaseMm { get; init; }                // tooth base = h·(cot α + cot β) (§4.3 A: 0.40–0.60)
     public double? GrooveDepthMm { get; init; }             // DIN-471 retaining groove depth (§4.3 B: 0.6)
     public double? SelfSupportFaceDeg { get; init; }        // best-orientation downfacing barb angle from horizontal; ≥45° self-supports (Ti64 LPBF: 60° → Sa≈15µm)
+
+    // Cathode flange measurements (Деталь 3, 01_01 §1, null for non-flange parts). See Validation.MeasureFlange.
+    public int? BayonetLugCount { get; init; }              // radial bayonet lugs (geometric expectation; bbox extent confirms they fused)
+    public double? ActiveCathodeAreaCm2 { get; init; }      // flange side/perimeter catalytic area (O₂ ingress, 02_02 §1.2)
 }
 
 internal static class Validation
@@ -196,6 +200,36 @@ internal static class Validation
             BarbBaseMm = aBaseW.Count > 0 ? aBaseW.Average() : 0.0,
             GrooveDepthMm = fRShank - dGrooveMinR,
             SelfSupportFaceDeg = 90.0 - Math.Min(cem.LeadAngleDeg, cem.TrailAngleDeg),
+        };
+    }
+
+    // Cathode-flange golden metrics (Деталь 3, 01_01 §1): base + barb count (reuses the §4.3 shank SDF
+    // sampler, same as MeasureLock) + the analytic cathode side-area (O₂, 02_02 §1.2) + the bayonet-lug
+    // count. Lug fusion is gated in Program via the bbox extent (flange Ø + 2·lug protrusion).
+    public static GeometryMetrics MeasureFlange(CathodeFlangeCem cem, Voxels voxFlange)
+    {
+        GeometryMetrics oBase = Measure(cem.Name, cem.VoxelSizeMm, voxFlange, null);
+
+        var oSdf = new MechanicalLockShank(CathodeFlange.ShankCem(cem));
+        float fRShank = cem.ShankDiameterMm / 2f;
+        float fZ0 = cem.ContactStartMm, fZ1 = cem.ContactStartMm + cem.ContactLengthMm;
+        int nBarbs = 0;
+        bool bInTooth = false;
+        for (float fZ = fZ0; fZ <= fZ1 + 0.0025f; fZ += 0.005f)
+        {
+            bool bTooth = (oSdf.ProfileRadius(fZ) - fRShank) > 1e-4;
+            if (bTooth && !bInTooth) { nBarbs++; bInTooth = true; }
+            else if (!bTooth && bInTooth) { bInTooth = false; }
+        }
+
+        // Cathode catalytic = the flange side/perimeter (Laccase/ZIF + PTFE-GDL, O₂ from the side, 02_02 §1.2).
+        double dCathodeCm2 = Math.PI * cem.FlangeDiameterMm * cem.FlangeThicknessMm / 100.0;
+
+        return oBase with
+        {
+            BarbCount = nBarbs,
+            BayonetLugCount = cem.BayonetLugs,
+            ActiveCathodeAreaCm2 = dCathodeCm2,
         };
     }
 
