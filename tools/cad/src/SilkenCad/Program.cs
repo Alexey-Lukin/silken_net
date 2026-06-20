@@ -96,6 +96,11 @@ internal static class Program
                 RadomeCem cem = Cem.Parse<RadomeCem>(strJson);
                 return RunHeadless(cem.VoxelSizeMm, () => Export(Radome.Build(cem), cem.Name));
             }
+            case "anchor_assembly":
+            {
+                AnchorAssemblyCem cem = Cem.Parse<AnchorAssemblyCem>(strJson);
+                return RunHeadless(cem.VoxelSizeMm, () => Export(Assembly.Build(cem).Merged, cem.Name));
+            }
             default:
                 return Fail($"unknown CEM kind: {Cem.Kind(strJson)}");
         }
@@ -135,6 +140,11 @@ internal static class Program
             {
                 RadomeCem cem = Cem.Parse<RadomeCem>(strJson);
                 return RunHeadless(cem.VoxelSizeMm, () => ReportRadome(cem, Radome.Build(cem)));
+            }
+            case "anchor_assembly":
+            {
+                AnchorAssemblyCem cem = Cem.Parse<AnchorAssemblyCem>(strJson);
+                return RunHeadless(cem.VoxelSizeMm, () => ReportAssembly(cem, Assembly.Build(cem)));
             }
             default:
                 return Fail($"unknown CEM kind: {Cem.Kind(strJson)}");
@@ -421,6 +431,43 @@ internal static class Program
         return bOk ? 0 : 1;
     }
 
+    // Assembly mate-audit (Деталь 3↔4, 02_02 §4): an AUDIT table, NOT a part pass/fail. The bayonet-Z / RF
+    // / radial mismatches are the real un-reconciled Z-stack (HW.8/HW.17), surfaced as ⚠ + asserted by the
+    // pure xUnit suite — so the exit-code gates ONLY that the merge rendered (catches a broken transform /
+    // Bool), keeping CI green while the findings drive the bench reconcile.
+    private static int ReportAssembly(AnchorAssemblyCem cem, AssemblyVoxels av)
+    {
+        GeometryMetrics oM = Validation.MeasureAssembly(cem, av);
+
+        Directory.CreateDirectory("out");
+        string strPath = Path.Combine("out", $"{cem.Name}.metrics.json");
+        Validation.WriteJson(oM, strPath);
+
+        Console.WriteLine($"metrics → {strPath}  (mate strategy: {cem.MateStrategy})");
+        Console.WriteLine(
+            $"  volume={oM.SolidVolumeMm3:F1} mm^3  " +
+            $"bbox={oM.BboxSizeMm[0]:F1}×{oM.BboxSizeMm[1]:F1}×{oM.BboxSizeMm[2]:F1} mm  tris={oM.TriangleCount}");
+        Console.WriteLine(
+            $"  bayonet-Z mismatch={oM.BayonetZMismatchMm:F2} mm · radial gap={oM.MateRadialGapMm:F2} mm · " +
+            $"RF clearance={oM.RfClearanceMm:F1} mm · interference={oM.MateInterferenceMm3:F0} mm³ · lug Ø{oM.LugTipDiameterMm:F0}");
+
+        // Render sanity — the ONLY exit-gate: a broken transform / Bool yields an empty or degenerate merge.
+        bool bSane = oM.SolidVolumeMm3 > 0 && oM.TriangleCount > 0 && oM.BboxSizeMm.All(d => d > 0);
+
+        // Mate findings (INFORMATIONAL — drive HW.17/HW.8, do NOT fail the audit):
+        if (oM.MateRadialGapMm is < 0)
+            Console.WriteLine($"  ⚠ MATE-Ø: radome cavity Ø{cem.Radome.DomeDiameterMm - (2f * cem.Radome.WallThicknessMm):F0} < flange Ø{cem.Flange.FlangeDiameterMm:F0} — disc fouls the dome (skirt/inboard reconcile, HW.17)");
+        if (oM.RfClearanceMm is { } dRf && dRf < cem.RfClearanceMinMm)
+            Console.WriteLine($"  ⚠ RF: antenna↔Ti {dRf:F1} < {cem.RfClearanceMinMm:F0} mm at the bayonet datum — Z-stack pulls the cavity onto the flange (02_01 §5.3)");
+        if (oM.BayonetZMismatchMm is { } dBz && dBz > 2f * cem.VoxelSizeMm)
+            Console.WriteLine($"  ⚠ bayonet-Z: rim lands {dBz:F2} mm off the O-ring target — Деталь3 lug-Z ↔ Деталь4 lock-groove-Z un-reconciled (HW.8)");
+
+        Console.WriteLine(bSane
+            ? "AUDIT OK — assembly rendered; mate findings above → HW.17 / HW.8 reconcile"
+            : "AUDIT FAILED — merge did not render (broken transform / Bool)");
+        return bSane ? 0 : 1;
+    }
+
     private static int Export(Voxels vox, string strName)
     {
         Directory.CreateDirectory("out");
@@ -435,7 +482,7 @@ internal static class Program
         Console.WriteLine(
             "silkencad — SilkenNet Code-as-CAD (PicoGK)\n" +
             "  smoke             foundation self-test (no output file)\n" +
-            "  build <cem.json>  generate an STL from a CEM manifest (ti_coin | anchor_zone1 | mechanical_lock | cathode_flange | radome)\n" +
+            "  build <cem.json>  generate an STL from a CEM manifest (ti_coin | anchor_zone1 | mechanical_lock | cathode_flange | radome | anchor_assembly)\n" +
             "  verify <cem.json> measure golden-metrics → out/<name>.metrics.json (exit 0/1)\n" +
             "  sweep             generate + verify every cem/anchor_zone1.*.json (5-SKU)\n" +
             "  scan <cem.json>   wallParam working-window scan (anchor) → out/<name>.wallscan.json");

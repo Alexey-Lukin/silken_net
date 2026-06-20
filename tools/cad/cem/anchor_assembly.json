@@ -1,0 +1,6 @@
+{
+  "_note": "Capsule-end ASSEMBLY (Деталь 3 cathode flange ↔ Деталь 4 PEEK radome, 02_02 §4). The first integration artifact: brings both parts into one frame at the bayonet-closed datum (radome lock-groove ↔ flange lugs) and MEASURES the residual mismatch. mate_strategy 'asis' = baseline audit (surfaces the conflict); 'skirt'/'inboard' = the two MATE-Ø candidates (HW.17). Z-stack inputs (o_ring_gap_mm, rf_clearance_min_mm) mirror tools/in_silico/scripts/52_z_stack_tolerance.py. Nested flange/radome inherit the frozen Деталь-3/4 dims. An AUDIT table, not a part pass/fail — known Z-mismatch → HW.17/HW.8 reconcile.",
+  "kind": "anchor_assembly",
+  "name": "anchor_assembly",
+  "mate_strategy": "asis"
+}

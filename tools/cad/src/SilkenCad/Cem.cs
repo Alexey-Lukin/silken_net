@@ -176,3 +176,31 @@ internal sealed record RadomeCem
     public float ORingGrooveDepthMm { get; init; } = 0.9f;
     public float ORingGrooveWidthMm { get; init; } = 1.0f;
 }
+
+// Capsule-end anchor ASSEMBLY (Деталь 3 ↔ Деталь 4, 02_02 §4 — Механізм Фіксації Капсули). The first
+// INTEGRATION artifact: the per-part generators are each verified in isolation, but nothing yet proves
+// they MATE. This CEM drives `Assembly` to bring the cathode flange and the PEEK radome into one
+// coordinate frame at the bayonet-closed datum (radome lock-groove aligned to the flange lugs) and
+// MEASURE the residual mismatch — a failed verify with concrete numbers is the valuable result (HW.17).
+// Reuses the Деталь-3 / Деталь-4 records wholesale (nested), so the assembly inherits their frozen dims
+// and a CEM may override a sub-field or keep the defaults. Z-stack inputs come from the in-silico
+// 1-D tolerance chain (`tools/in_silico/scripts/52_z_stack_tolerance.py`) — the geometry mirror of it.
+internal sealed record AnchorAssemblyCem
+{
+    public string Kind { get; init; } = "anchor_assembly";
+    public string Name { get; init; } = "anchor_assembly";
+    public float VoxelSizeMm { get; init; } = 0.15f;   // assembly-scale (Ø~30 × ~38 mm) — disc/wall/lug interference, not barbs
+
+    // MATE-Ø candidate (HW.17): asis = baseline (surfaces the conflict) · skirt = radome enclosing skirt to
+    // Ø(lug-tip + clearance) · inboard = flange lugs kept within Ø25 (protrusion clamped). asis is the audit.
+    public string MateStrategy { get; init; } = "asis";
+
+    // Z-stack inputs (script 52): O-ring rim↔Zone3 gap target + RF antenna↔Ti floor (02_01 §5.3).
+    public float ORingGapMm { get; init; } = 1.424f;      // GAP_OR = ORING_CS(1.78)·(1−0.20), script 52
+    public float RfClearanceMinMm { get; init; } = 12f;   // antenna↔Ti min Z for VSWR (02_01 §5.3)
+    public float SkirtClearanceMm { get; init; } = 0.5f;  // skirt OD = lug-tip Ø + 2·clearance
+
+    // Components — reuse the per-part records (nested); defaults = the frozen Деталь-3 / Деталь-4 dims.
+    public CathodeFlangeCem Flange { get; init; } = new();
+    public RadomeCem Radome { get; init; } = new();
+}

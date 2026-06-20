@@ -1,0 +1,6 @@
+{
+  "_note": "MATE-Ø candidate A (HW.17): radome enclosing SKIRT — opens the lower cavity to admit the Ø25 disc + Ø29 lugs and wraps it with a structural ring to Ø(lug-tip + clearance); the dome body stays Ø25 above (RF). Resolves MATE-Ø RADIALLY only — the bayonet-Z / RF mismatch is a separate Z-stack reconcile (HW.8). Compare bbox / interference vs anchor_assembly.json (asis) and .inboard.json.",
+  "kind": "anchor_assembly",
+  "name": "anchor_assembly_skirt",
+  "mate_strategy": "skirt"
+}

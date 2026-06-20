@@ -50,6 +50,13 @@ internal sealed record GeometryMetrics
     // Radome measurements (Деталь 4, 02_01 §5.2, null for non-radome parts). See Validation.MeasureRadome.
     public double? HollowFraction { get; init; }            // 1 − solidVol/solidDomeVol; a proper shell ≫ 0.5 (hollow IS intended, gotcha #9 inverted)
     public double? BellRiseMm { get; init; }                // dome top over the body (bbox Z − cavity height) — anti-overgrowth shield (≥3, 01_04 §5.5)
+
+    // Capsule-end assembly mate-audit (Деталь 3↔4, 02_02 §4, null for non-assembly). See MeasureAssembly.
+    public double? BayonetZMismatchMm { get; init; }        // |radome-rim landing − O-ring target| at the bayonet datum (Z-stack reconcile, HW.8)
+    public double? MateRadialGapMm { get; init; }           // radome inner-cavity R − flange R; <0 = the Ø25 disc fouls the cavity (MATE-Ø)
+    public double? RfClearanceMm { get; init; }             // antenna(cavity top)↔Ti(flange face) at the datum — must ≥ 12 (02_01 §5.3)
+    public double? MateInterferenceMm3 { get; init; }       // flange ∩ radome solid overlap (render) — large = parts foul, ~0 = clean mate
+    public double? LugTipDiameterMm { get; init; }          // bayonet lug-tip Ø the radome socket must clear (Ø29 default vs Ø25 dome)
 }
 
 internal static class Validation
@@ -252,6 +259,29 @@ internal static class Validation
         {
             HollowFraction = dHollow,
             BellRiseMm = oBase.BboxSizeMm[2] - cem.CavityHeightMm,
+        };
+    }
+
+    // Capsule-end assembly mate-audit (Деталь 3↔4, 02_02 §4): the base measurement on the MERGED part +
+    // the analytic mate metrics (CEM-only, from Assembly) + the one rendered metric — the flange∩radome
+    // interference volume (BoolIntersect on a copy, the same primitive as MeasureAnchor's shell loop).
+    // The mate metrics are findings, not pass/fail: a big interference / RF < 12 / Z-mismatch is the real
+    // un-reconciled Z-stack (HW.8/HW.17), asserted by the pure xUnit suite, surfaced as ⚠ in the report.
+    public static GeometryMetrics MeasureAssembly(AnchorAssemblyCem cem, AssemblyVoxels av)
+    {
+        GeometryMetrics oBase = Measure(cem.Name, cem.VoxelSizeMm, av.Merged, null);
+
+        Voxels voxOverlap = new(av.Flange);
+        voxOverlap.BoolIntersect(av.Radome);
+        voxOverlap.CalculateProperties(out float fInterVol, out BBox3 _);
+
+        return oBase with
+        {
+            BayonetZMismatchMm = Assembly.BayonetZMismatchMm(cem),
+            MateRadialGapMm = Assembly.MateRadialGapMm(cem),
+            RfClearanceMm = Assembly.RfClearanceMm(cem),
+            MateInterferenceMm3 = fInterVol,
+            LugTipDiameterMm = 2.0 * Assembly.LugTipRadiusMm(cem),
         };
     }
 

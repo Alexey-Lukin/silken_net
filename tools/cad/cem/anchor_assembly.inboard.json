@@ -1,0 +1,6 @@
+{
+  "_note": "MATE-Ø candidate B (HW.17): flange lugs kept INBOARD — protrusion clamped to 0 so the lug tips stay within Ø25 (flush). Keeps the radome Ø25 (no skirt), but trades away radial bayonet grip — a founder/bench call (does the flush lug still hold the bayonet moment?). Compare bbox / interference vs anchor_assembly.json (asis) and .skirt.json.",
+  "kind": "anchor_assembly",
+  "name": "anchor_assembly_inboard",
+  "mate_strategy": "inboard"
+}
