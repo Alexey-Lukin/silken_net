@@ -102,7 +102,7 @@
 
 > ⚠️ Потребують фізичної роботи в лабораторії та/або з підрядниками.
 
-> 🧭 **Анкерний кущ — synergy map (dependency-DAG, NEW 2026-06-20).** Анкер-айтеми зшиті в один граф — виконувати **пакетами, не поштучно**. **[A] Дим-фриз** (HW.33 orient✓/Ø11✓ · HW.8 Ø фланця+пад · HW.26 barb/ring/hex · +PEEK/hole-chain) **→ [B] PicoGK CAD-родина** coin/anode/radome (`tools/cad` — **ЛІНЧПІН**, живить кожну стадію валідації) **→ [D] Staged validation** (HW.24 SLA→coin→anchor→100 · HW.3 aging). **[C] Завод-пакет** (HW.23 HIP · HW.27 bake · HW.2 EAAE · coating-map `01_02 §3.6`) ∥ B. **[E] Збірка** (HW.17 radome · HW.25 PTFE-GDL · HW.28 shield · HW.8 pogo · HW.6 install · HW.22 steril) — після фіз-деталей. Хімія HW.5 → coin/anchor. Аудит-знахідки + founder-рішення → **HW.33**.
+> 🧭 **Анкерний кущ — synergy map (dependency-DAG, 2026-06-20; v2 graded 2026-06-21).** Анкер-айтеми зшиті в один граф — виконувати **пакетами, не поштучно**. **[A] Дим-фриз** (HW.33 orient✓/Ø11✓ · HW.8 Ø фланця+пад · HW.26 barb/ring/hex · +PEEK/hole-chain) **→ [B] PicoGK CAD-родина** coin✅/anode-v2✅/radome+barbs-pending (`tools/cad` — **ЛІНЧПІН**, живить кожну стадію валідації; coin+v1+v2-graded shipped, radome+barbs наступні) **→ [D] Staged validation** (HW.24 SLA→coin→anchor→100 · HW.3 aging). **[C] Завод-пакет** (HW.23 HIP · HW.27 bake · HW.2 EAAE · coating-map `01_02 §3.6`) ∥ B. **[E] Збірка** (HW.17 radome · HW.25 PTFE-GDL · HW.28 shield · HW.8 pogo · HW.6 install · HW.22 steril) — після фіз-деталей. Хімія HW.5 → coin/anchor. Аудит-знахідки + founder-рішення → **HW.33**.
 
 #### HW.1 — nTop model → SLM+HIP factory (Anode Zone 1)
 - **P0** · 👤 · ⚪ · → `01_01`, `01_02 §1.7`
@@ -338,6 +338,7 @@
 - **P1** · 👤 · ⚪ · → `02_01 §5.2`, `01_04 §5.5`
 - **Стан:** Не розпочато — PEEK Radome (Деталь 4) ∅20–30мм на різьбі Zone 3 катод-фланця (НЕ анод): радіопрозорий купол + O-ring EPDM → IP68; керамічна антена ≥8мм Z-clearance + overhang за Ti-периметр (`02_01 §5.3`); anti-overgrowth shield виступ ≥3мм + R≥5мм + super-hydrophobic Fluoropel (`01_04 §5.5`). Блокує antenna protection, RF validation, Zero-Touch, cathode O₂-access. Канон `02_01 §5.2` / `01_04 §5.5`.
 - [ ] 👤 KiCad PCB layout (HW.9) → PEEK radome dimensions
+- [ ] 🤖 PicoGK CAD radome-генератор (`tools/cad`, v2c — третя PicoGK-частина після HW.33 dim-freeze; реле HW.1.PicoGK)
 - [ ] 👤 Визначити тип кріплення: різьба на **Деталь 3 = Катод** (НЕ Анод!) vs байонет
 - [ ] 👤 Визначити матеріал O-ring (EPDM vs FKM) для ксилемного середовища
 - [ ] 👤 **HFSS-симуляція** з 3D-моделями Ti-фланця + PEEK-радома + чіп-антени (нова вимога 02_01 §5.3 revised) — VSWR < 1.8, gain ≥ −2 dBi
@@ -433,7 +434,7 @@
 #### HW.26 — PEEK Cold-Flow Creep: Mechanical Lock (NEW 2026-05-16)
 - **P2** · 👤 · ⚪ · → `01_01 §4.3`
 - **Стан:** Не розпочато — mechanical lock проти PEEK cold-flow creep (barbs h=0.25–0.4mm α30°/β70° + DIN 471 Ti retaining ring ∅0.8×0.6mm + hex ≤0.05mm; press-fit 150°C >T_g); без нього −60% contact pressure за 10р → втрата O-ring seal / вирив Zone 3. ~$0.30/анкер, комплементарний до §4.2 ΔCTE. Блокує 20+ річну надійність (TRL 7→8). Канон `01_01 §4.3`.
-- [ ] 👤 Update nTop CAD-моделі: додати annular barbs на циліндричних частинах Zone 1 та Zone 3
+- [ ] 🤖 PicoGK CAD: додати annular barbs (`ZonedGyroid`-стиль, `tools/cad`) на циліндричних частинах Zone 1 та Zone 3 — v2b, реле HW.1.PicoGK (nTop = опційний escape-hatch)
 - [ ] 👤 Update CNC-чертежі: retaining ring grooves на anchor end Zone 1 + flange end Zone 3
 - [ ] 👤 Закупка DIN 471 internal retaining rings Ti grade 2 (або 316SS) у відповідних розмірах
 - [ ] 👤 Update press-fit процедуру: temp 150°C (>T_g PEEK 143°C для Victrex 450G) + контрольована сила 800–1200 N
@@ -1138,7 +1139,7 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 | ARCH.13 | EigenLayer AVS як альтернатива direct L1 write (~$0.01/week vs $5-15/week) | `05_04` | Research |
 | ARCH.20 | Petri Net PN-модель Rails моноліту: формальна верифікація відсутності deadlock при 10,000 concurrent IoT connections. Sidekiq + Puma + PostgreSQL modeling. Конволюційний метод для зменшення state space explosion у 10-100 разів | `08_02` | R&D (Супруненко, ЧНУ) |
 | ARCH.24 | CE/FCC/RoHS/EMC/IP68 compliance roadmap для EU/NA ринків: CE-RED (868 МГц LoRa), FCC Part 15/90, RoHS-2, IP68 (IEC 60529), REACH. Кожна сертифікація потребує 3-6 місяців та спеціалізованої лабораторії | `08_02` | Pre-mass production (Косенюк, ЧНУ) |
-| ARCH.25 | Gyroid geometric validation scripts: Python/C++ верифікація 65% пористості per-slice, topological integrity mesh, capillary channel connectivity via BFS (breadth-first search). Запускається після кожного nTop build для запобігання помилкам DMLS | `08_02` | Before DMLS factory order |
+| ARCH.25 | Gyroid geometric validation scripts: Python/C++ верифікація 65% пористості per-slice, topological integrity mesh, capillary channel connectivity via BFS (breadth-first search). Запускається після кожного PicoGK/nTop build (PicoGK validation-as-code вже міряє порозність/manifold per `tools/cad`) для запобігання помилкам DMLS | `08_02` | Before DMLS factory order |
 | ARCH.33 | **ECDH P-256 key exchange як альтернатива HKDF-only provisioning** — мерехтливий розгляд: замість per-device HKDF (FW.1) використати ECDH у factory або field provisioning. Plus: Perfect Forward Secrecy без shared master key. Minus: Curve25519/P-256 потребує ~512 байт SRAM + 50 мс CPU на handshake | `08_02` §1B (Ярмілко), `03_05` | Research alternative (узгодити з FW.17 Hash Ratchet) |
 
 ## 🗄️ Архів закритих пунктів (мігровано в канон)
