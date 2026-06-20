@@ -193,6 +193,7 @@
 - [ ] 👤 EIS degradation < 50%
 - [ ] 👤 **V-release Zone 1 mitigation** (відкритий конфлікт, `01_02 §2.5`): голий Ti-6Al-4V ≈ 1.12 µg/cm²/yr V (56× over target), ZnO не можна на Zone 1 → in-vitro тест chitosan-matrix бар'єру (b) ± опція V-free сплав Ti-6Al-7Nb / Ti-5Al-2.5Fe (a)
 - [ ] 👤 HW.3.IS: Prony-series relaxation-fit PEEK 450G (Maxwell-Wiechert, замінює 2-term E∞/τ оцінку script 50) → Гусак (`08_01` Стаття 2)
+- [ ] 🤖 HW.3.IS: sync `script 50` геом під frozen anchor dims (R_interface 5.0→5.5 = вал Ø11; R_outer 8.0→7.5 = стінка 2мм) + re-run — зараз baseline Ø10/3мм, freeze (`01_01 §4.2`) = Ø11/2мм (analytic SF 3.7×, не script); тоді `02_02 §3.5`/`01_01 §4.2` числа = script-output
 - [ ] 👤 HW.3.IS: barb-tip stress-concentration FEA → Гусак (важка механіка аутсорс, `00_02 §4a`; in-silico вже дав аналітичний Lamé-bound)
 - [ ] 🤖 HW.3.IS: MD ion-permeation Ti²⁺/V³⁺ через PEEK-матрицю (MSD, класична MD як script 13) — підтвердити «корозія не отруїть ферменти 20р»; **НЕ DFT** (DFT лише single-jump NEB)
 
