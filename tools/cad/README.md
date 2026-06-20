@@ -37,6 +37,7 @@ geometry** deterministically. Parity is on derived metrics, never the raw STL by
 | `src/SilkenCad/Zone1Anode.cs` | Zone-1 gyroid anode + the custom `CartesianGyroid` SDF |
 | `src/SilkenCad/Validation.cs` | golden-metrics via `Voxels.CalculateProperties` (porosity/bbox/tris) + LEAP `Measure.fGetSurfaceArea` |
 | `src/SilkenCad/Connectivity.cs` | ARCH.25 two-phase topological audit — SDF-sample + flood-fill (open/closed-pore, percolation, solid-island, specific-surface) |
+| `src/SilkenCad/MechanicalLock.cs` | §4.3 mechanical lock — `MechanicalLockShank` ratchet-barb + DIN-471 groove SDF on a hollow shank (Zone-1/Zone-3 demo) + self-support metric |
 | `src/SilkenCad.Leap/` | vendored LEAP source compiled in (relaxed warnings — not ours) |
 | `extern/LEAP71_{ShapeKernel,LatticeLibrary}` | git submodules (source-only; not on NuGet) |
 | `tests/SilkenCad.Tests/` | xUnit scaffold |
@@ -62,6 +63,12 @@ dotnet run --project src/SilkenCad -- verify cem/anchor_zone1.pine.json     # �
   `voxBounding.voxIntersectImplicit(...)`: the latter yields a malformed (background-0)
   OpenVDB level set at fine voxel on thin bored parts → an **uncatchable native abort**
   (`libc++abi … ValueError: expected grid A outside value > 0, got 0`).
+- **A FILLED (solid) body must come from ShapeKernel `voxConstruct`, NOT the SDF ctor.**
+  `new Voxels(IImplicit, BBox3)` builds a **narrow-band** field (voxels near the surface only),
+  so a solid core falls outside the band and renders as a **hollow shell** (measured: a Ø11 shank
+  read ~17 mm³ instead of ~1700). The gyroid escapes this only because it is thin-walled everywhere.
+  Pattern: solid = `BaseCylinder().voxConstruct()`; thin features (barb ridges) = SDF `BoolAdd`
+  (`MechanicalLock.cs`, the Ti-coin split). A `verify` solidity gate guards the regression.
 - **`ImplicitRadialGyroid` is degenerate near r=0** (cylindrical singularity) — use a
   cartesian gyroid for small rods (still bicontinuous).
 - **Gyroid `wallParam` is DIMENSIONLESS** (the gyroid eq ∈ [-1.5, 1.5]), not mm; a clean
@@ -108,7 +115,16 @@ target (`00_07` HW.1.PicoGK).
 axial+radial. Two-phase resolution: **pore** OK at the coarse step, **solid** needs ~period/16 (a coarse
 grid fragments thin walls into false islands — skill `picogk` gotcha #8). Feeds `00_07` HW.33 sheet-vs-network.
 
-**Deferred:** annular barbs (`01_01 §4.3A`, separate session — `00_07`) · PEEK Radome ("шляпа",
+**Mechanical-lock barbs (shipped)** — `MechanicalLock.cs` adds annular asymmetric **ratchet barbs** +
+a **DIN-471 retaining groove** on a hollow shank (`01_01 §4.3 A/B`, HW.26 — the lock against PEEK
+cold-flow creep): own SDF (4th, ratchet `R(z)`), solid `BaseCylinder` + thin barb-ridge `BoolAdd` +
+groove-ring `BoolSubtract` + Ø1.3 bus bore. Golden-metrics MEASURED off the profile (barb count /
+height / base, groove depth) + a **self-support face angle** (Noyron manufacturing-awareness): the
+ratchet self-supports at the `01_02 §1.6` tip-down / leading-ramp-down orientation (Ti64 LPBF 60°
+downface, Sa≈15µm). Zone-1 Ø11 + Zone-3 placeholder Ø (HW.8 dim-freeze). Grounded over canon §4.3:
+tooth over-spec resolved at h=0.28; DIN-471 groove = real shaft dims (was off-spec 0.8×0.6).
+
+**Deferred:** integrating shank+barbs into the full gyroid rod (separate session) · PEEK Radome ("шляпа",
 HW.17) + cathode flange/PEEK Zone 2 as further PicoGK parts (blocked on HW.33 dim-freeze) ·
 a phase-correct strong continuous gradient (period-tensor/conformal).
 

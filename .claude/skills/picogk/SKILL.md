@@ -26,12 +26,13 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 
 | File | Role |
 |------|------|
-| `tools/cad/cem/*.json` | CEM manifests — the Git-SSOT parameter inputs (`kind` discriminator: `ti_coin`, `anchor_zone1`) |
+| `tools/cad/cem/*.json` | CEM manifests — the Git-SSOT parameter inputs (`kind` discriminator: `ti_coin`, `anchor_zone1`, `mechanical_lock`) |
 | `tools/cad/src/SilkenCad/Program.cs` | CLI dispatch (`smoke`/`build`/`verify`) + `RunHeadless` (the `Library.Go` wrapper) |
 | `tools/cad/src/SilkenCad/TiCoin.cs` | Ti-coin coupon — `BaseCylinder` disc + `BaseRing` eyelet, `BoolAdd` |
 | `tools/cad/src/SilkenCad/Zone1Anode.cs` | Zone-1 anode + `CartesianGyroid:IImplicit` (the from-scratch SDF) + `Anode()` render path |
 | `tools/cad/src/SilkenCad/Validation.cs` | golden-metrics via `Voxels.CalculateProperties` (porosity needs an envelope ref) + reuses LEAP `Measure.fGetSurfaceArea` |
 | `tools/cad/src/SilkenCad/Connectivity.cs` | ARCH.25 two-phase topological audit — SDF-sample + 6-conn flood-fill (open/closed-pore, percolation, solid-island, specific-surface); pure-managed, display-less xUnit |
+| `tools/cad/src/SilkenCad/MechanicalLock.cs` | §4.3 mechanical lock — `MechanicalLockShank` asymmetric ratchet-barb + DIN-471 groove SDF on a hollow shank; render = solid `voxConstruct` + thin barb-ridge `BoolAdd`; self-support metric (Noyron manufacturing-awareness) |
 | `tools/cad/src/SilkenCad.Leap/` | vendored LEAP source compiled in (ImplicitUsings ON, warnings relaxed — not ours) |
 | `tools/cad/extern/LEAP71_{ShapeKernel,LatticeLibrary}` | git submodules (source-only; not on NuGet) |
 
@@ -77,6 +78,12 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
    not a defect (don't gate on it). NB `Ex_ImplicitGyroidGenus` is **misleading** (renders a gyroid on
    a genus-torus shape; computes no genus) — LEAP exposes no connectivity, but `Measure.fGetSurfaceArea`
    (surface) + `fGetVolume` exist and are reused, not re-implemented.
+9. **A FILLED (solid) body must come from ShapeKernel `voxConstruct`, NOT `new Voxels(IImplicit, BBox3)`.**
+   The SDF ctor builds a **narrow-band** field (voxels near the surface only), so a solid core falls
+   *outside* the band and renders as a **hollow shell** (`MechanicalLock.cs`: a Ø11 shank measured
+   ~17 mm³ vs ~1700 expected). The gyroid dodges this only because it is thin-walled everywhere.
+   Pattern: solid = `BaseCylinder().voxConstruct()`; thin features (barb ridges) = SDF `BoolAdd` (the
+   Ti-coin split). The `verify` solidity gate (volume > 0.8·annulus) guards the regression.
 
 ## Common Tasks
 
@@ -90,6 +97,11 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   in `Zone1Anode`: `GradedCartesianGyroid` (continuous period+wall taper) + `ZonedGyroid` (stepped
   zones). Pick by goal — continuous-gentle (smooth, ≤~0.8× period ratio), `GyroidWallParamRim`
   porosity gradient, or `topology: stepped` for a STRONG ~2× pore contrast. **MEASURE** porosity.
+- **Mechanical-lock barbs (`MechanicalLock.cs`, SHIPPED)**: asymmetric ratchet `R(z)` on a hollow shank
+  — solid `BaseCylinder().voxConstruct()` + thin barb-ridge `BoolAdd` + groove-ring `BoolSubtract` + Ø1.3
+  bus bore (gotcha #9 — never the SDF ctor for the solid). Tooth is over-specified in `01_01 §4.3` → keep
+  α/β + h, DERIVE base = h·(cotα+cotβ), MEASURE in `verify`. Self-support is orientation-conditional (print
+  leading-ramp-down, `01_02 §1.6`); DIN-471 groove = real shaft dims (not the off-spec canon 0.8×0.6).
 - **Connectivity / validation (ARCH.25)**: `Connectivity.cs` samples the CEM SDF → 3-phase grid →
   6-conn flood-fill → open-pore (Archimedes) / percolation (EAAE flow-through) / solid-island (AM +
   electrical) / specific-surface. Pure-managed → fast display-less xUnit. Two-phase resolution split:

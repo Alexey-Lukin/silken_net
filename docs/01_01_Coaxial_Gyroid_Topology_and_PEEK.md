@@ -189,7 +189,7 @@ Zone 1 анодний вал (вид збоку):
    ◊◊◊◊◊◊◊◊◊◊◊╫▷ <─ barbs (asymmetric, як risun arrow):
    ║gyroid    ║      нахил вперед = легко увійти,
    ║      ════╪═╪═══>  складно вийти (mechanical ratchet)
-   ╫══════════╪═╪═══>  (профіль трикутника, h=0.3 mm, базис 0.5 mm)
+   ╫══════════╪═╪═══>  (asymmetric, h ≈ 0.28 mm, base ≈ 0.59 = h·(cotα+cotβ))
               ╪═╪      
    3–5 рядків barbs на довжині 8–15 mm контактної зони з PEEK
 
@@ -202,13 +202,13 @@ Zone 1 анодний вал (вид збоку):
    3 рядки on flange shank
 ```
 
-- **Геометрія:** трикутні asymmetric barbs, висота h = 0.25–0.4 mm, base b = 0.4–0.6 mm, angle leading-edge α = 30°, trailing-edge β = 70°
-- **DMLS-друкабельність:** barbs друкуються в одному циклі з Zone 1 гіроїдом і Zone 3 фланцем, без додаткової механічної обробки (overhang ≤ 45° допустимий для SLM)
+- **Геометрія:** трикутні asymmetric barbs, висота h = 0.25–0.4 mm, base b = 0.4–0.6 mm, angle leading-edge α = 30°, trailing-edge β = 70°. ⚠️ Ці чотири числа **взаємозалежні** (трикутник має 2 вільні параметри): тримаємо α/β + h, а base **похідна** = h·(cot α + cot β) ≈ 2.1·h. Робоча точка **h = 0.28** → base ≈ 0.59 — усі чотири потрапляють у діапазони (`tools/cad` verify вимірює base проти §4.3)
+- **DMLS-друкабельність (orientation-conditional):** barbs друкуються в одному SLM-циклі з Zone 1 гіроїдом / Zone 3 фланцем — **self-supporting лише за правильної орієнтації**: друк tip-down ([`01_02 §1.6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)) з пологим leading-пандусом донизу → downward-грань ≈ 60° від горизонталі (Ti-6Al-4V LPBF self-support, Sa ≈ 15 µm); крутий trailing (β) тоді facing-up, не overhang. Zone 1 і Zone 3 — **окремі друки** (press-fit), кожна орієнтується вільно; external supports дозволені (§1.6) як запас. Параметричний PicoGK-генератор + self-support-метрика — `tools/cad` ([`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`00_07` HW.26](00_07_Action_Plan_Tracker))
 - **Як це працює при гарячому press-fit:** PEEK 150°C (>T_g) — softened, не tough → barbs ratchet всередину PEEK на ~0.2 mm depth. При охолодженні PEEK твердіє і **заклацується** на barbs. Сила вириву зростає в 3–5× проти чистого friction.
 
 #### B. Retaining Ring Seat (паз під стопорне кільце) — backup-вимога
 
-На зовнішньому торці Zone 3 (там, де фланець виходить з PEEK у бік капсули) — **circumferential groove ∅ 0.8 mm × 0.6 mm depth**. У цей паз під час фінальної збірки клацає **DIN 471 internal retaining ring (Seeger ring) Ti grade 2 або 316SS**, який фізично блокує осьове виходження фланця з PEEK навіть при повній втраті press-fit retention. Аналогічно — для Zone 1 anchor end (де гіроїд виходить у sapwood).
+На зовнішньому торці Zone 3 (там, де фланець виходить з PEEK у бік капсули) — **circumferential groove за таблицею DIN 471 під діаметр shank-вала** (напр. Ø11 → width ≈ 1.1 mm × depth ≈ 0.25 mm; реальні числа беруться з DIN 471 під обраний Ø — умовні «0.8 × 0.6» не відповідали штатному кільцю). У цей паз клацає **DIN 471 external retaining ring (Seeger ring) Ti grade 2 або 316SS** (DIN 471 = зовнішнє, на вал; внутрішнє/в отвір — це DIN 472), який фізично блокує осьове виходження фланця з PEEK навіть при повній втраті press-fit retention. Аналогічно — для Zone 1 anchor end (де гіроїд виходить у sapwood). Груви — CNC post-DMLS; PicoGK-демо моделює їх параметрично (`tools/cad`).
 
 - Cost: ~$0.10/ring × 2 кільця = $0.20/анкер
 - Маса додаткова: ~0.3 г
@@ -228,7 +228,7 @@ Zone 1 анодний вал (вид збоку):
 | Long-term IP67 герметичність | 🟢 Зберігає натяг біля O-ring | — | — |
 
 **Manufacturing impact:**
-- Barbs додаються у nTop CAD-моделі (5 хвилин на пресет)
+- Barbs + груви — параметричний PicoGK-генератор (`tools/cad`, [`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS); nTop — опційний reference)
 - Retaining ring grooves — стандартне CNC-фрезерування post-DMLS (+15 хв на анкер)
 - Hex tolerance tightening — без додаткових операцій (лише оновлення допусків)
 - Сумарний приріст cost: ~$0.30/анкер (negligible проти $15–18 базової DMLS-вартості)
