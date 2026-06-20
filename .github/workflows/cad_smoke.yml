@@ -7,12 +7,12 @@ concurrency:
 permissions:
   contents: read
 
-# Path-filtered to tools/cad. PicoGK is first-party macOS / Win64 only (Linux =
-# community Docker) → macOS Apple-Silicon runner. The geometry `verify` step needs a
-# display context (Library.Go inits a Metal viewer); macOS runners provide a window
-# server. `dotnet build` (compiles the LEAP submodule source vs PicoGK 2.2) is the
-# strongest gate. Local-verify (`dotnet run -- verify`) remains the PRIMARY gate
-# (00_07 HW.1.PicoGK) — this CI is the safety net.
+# Path-filtered to tools/cad. Two gates split by whether they need a render:
+#   • logic  (ubuntu) — the whole xUnit suite is PicoGK-runtime-free (CEM parse, gyroid/mate SDF math,
+#     connectivity flood-fill — no Library.Go / display). Cheap + fast → the HARD regression gate.
+#   • render (macos) — Library.Go voxelisation needs a display; first-party PicoGK = macOS/Win64. Builds
+#     the golden metrics for every CEM (verify exit-code = gate) + publishes metrics/SBOM artifacts.
+# Local-verify (`dotnet run -- verify`) stays the PRIMARY developer gate (00_07 HW.1.PicoGK); CI mirrors it.
 on:
   pull_request:
     paths:
@@ -22,12 +22,13 @@ on:
     branches: [ main ]
     paths:
       - 'tools/cad/**'
+      - '.github/workflows/cad_smoke.yml'
 
 jobs:
-  smoke:
-    runs-on: macos-14
-    timeout-minutes: 25
-
+  logic:
+    name: logic
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout (with LEAP submodules)
         uses: actions/checkout@v7
@@ -42,11 +43,50 @@ jobs:
       - name: Build (LEAP source vs PicoGK 2.2 — 0W/0E gate)
         run: dotnet build tools/cad/SilkenCad.sln -c Release
 
-      - name: Verify golden-metrics (Ti-coin + anchor; exit-code gate)
-        # best-effort until the macOS runner's Metal/display context is confirmed for
-        # Library.Go — `build` above is the hard gate; local-verify is the primary gate.
+      - name: Test (pure-logic xUnit — CEM / SDF / mate math, PicoGK-runtime-free)
+        run: dotnet test tools/cad/SilkenCad.sln -c Release --no-build
+
+  render:
+    name: render
+    runs-on: macos-14
+    timeout-minutes: 30
+    steps:
+      - name: Checkout (with LEAP submodules)
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Set up .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Build
+        run: dotnet build tools/cad/SilkenCad.sln -c Release
+
+      - name: Verify golden-metrics (exit-code gate — coin · anchor · flange · radome · assembly)
+        working-directory: tools/cad
+        run: |
+          for cem in ti_coin anchor_zone1.pine cathode_flange radome anchor_assembly; do
+            echo "::group::verify $cem"
+            dotnet run --project src/SilkenCad -c Release --no-build -- verify "cem/$cem.json"
+            echo "::endgroup::"
+          done
+
+      - name: Generate SBOM (CycloneDX — supply-chain provenance, matches the GHCR SBOM)
         continue-on-error: true
         working-directory: tools/cad
         run: |
-          dotnet run --project src/SilkenCad -c Release --no-build -- verify cem/ti_coin.json
-          dotnet run --project src/SilkenCad -c Release --no-build -- verify cem/anchor_zone1.pine.json
+          dotnet tool install --global CycloneDX
+          dotnet CycloneDX SilkenCad.sln -o sbom -fn cad.sbom.json
+
+      - name: Upload artifacts (golden metrics + SBOM)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cad-golden-metrics
+          path: |
+            tools/cad/out/*.metrics.json
+            tools/cad/sbom/
+          if-no-files-found: warn
+          retention-days: 14
