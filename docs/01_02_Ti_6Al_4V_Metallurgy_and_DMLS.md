@@ -534,7 +534,7 @@ Arrhenius scaling: t_lab = t_field × exp(−Ea/k × (1/T_field − 1/T_lab))
 
 ### nTop — Параметрична Модель (опціональний reference / escape-hatch)
 
-**Статус: 🟡 Ліцензія отримана, але робота в nTop практично не починалась.** PicoGK став **primary** code-CAD шляхом (нижче); nTop лишається як reference для порівняння + escape-hatch на випадок bus-factor (`00_07` HW.33).
+**Статус: 🟡 Ліцензія отримана, але робота в nTop практично не починалась.** PicoGK став **primary** code-CAD шляхом (нижче); nTop лишається як reference для порівняння + escape-hatch на випадок bus-factor ([`00_07`](00_07_Action_Plan_Tracker) HW.33).
 
 nTop — провідний інструмент для генерації мінімальних поверхонь (гіроїди, шварц, тощо) та параметричних DMLS-моделей. **Візуальний node-graph редактор** — інженер працює мишкою через GUI.
 
@@ -591,7 +591,7 @@ nTop — провідний інструмент для генерації мі�
 
 **Чесні застереження (TRL 3, in-silico):**
 - Згенерований STL ≠ фізичний анкер; жоден TRL-claim не рухається ([`00_02 §1`](00_02_AI_Native_Engineering_and_TRL)).
-- **Воксельна стеля:** ~100µm-пора / 0.3мм-стінка → воксель ~25–33µm → ~10⁹-воксель bbox; калібрувати RAM перед градієнтним анкером (`00_07` HW.1.PicoGK).
+- **Воксельна стеля:** ~100µm-пора / 0.3мм-стінка → воксель ~25–33µm → ~10⁹-воксель bbox; калібрувати RAM перед градієнтним анкером ([`00_07`](00_07_Action_Plan_Tracker) HW.1.PicoGK).
 - **Bus-factor:** PicoGK v2.x, single-vendor (LEAP 71), молода спільнота → пінимо версії; nTop лишається задокументованим escape-hatch.
 - **Headless у CI** потребує display-контексту (`Library.Go` піднімає viewer): macOS-runner OK, Linux — лише community Docker + xvfb.
 
