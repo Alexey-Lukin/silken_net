@@ -1,0 +1,17 @@
+{
+  "_note": "Деталь 4 — PEEK Radome v2c (02_01 §5.2 + 01_04 §5.5). Hollow PEEK dome Ø25 (= Zone-3 flange) frozen. Wall 1.5-2.0 (RF vs strength). Cavity for PCB stack (antenna<->Ti >=12mm). Shield bell >=3mm rise / R>=5 (anti-overgrowth, no callus edge). Bayonet socket = L-slot mating Деталь-3 lugs. Cathode O2 = side/perimeter (02_02 §1.2), NOT sealed under the dome.",
+  "kind": "radome",
+  "name": "radome",
+  "voxel_size_mm": 0.1,
+  "dome_diameter_mm": 25.0,
+  "wall_thickness_mm": 2.0,
+  "cavity_height_mm": 13.0,
+  "bell_rise_mm": 3.0,
+  "bell_radius_mm": 5.0,
+  "bayonet_lugs": 3,
+  "lug_radius_mm": 1.5,
+  "slot_clearance_mm": 0.3,
+  "lock_groove_z_mm": 3.5,
+  "o_ring_groove_depth_mm": 0.9,
+  "o_ring_groove_width_mm": 1.0
+}

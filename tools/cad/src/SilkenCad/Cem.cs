@@ -149,3 +149,30 @@ internal sealed record CathodeFlangeCem
     public float ORingGrooveDepthMm { get; init; } = 0.9f;
     public float ORingGrooveWidthMm { get; init; } = 2.0f;
 }
+
+// PEEK Radome (Деталь 4, 02_01 §5.2 + 01_04 §5.5) — the radio-transparent dome that bayonets onto the
+// Zone-3 cathode flange (Деталь 3) and caps the PCB. A HOLLOW PEEK shell (Ø25): a rounded shield bell
+// (≥3 mm over bark, R≥5 — anti-overgrowth, no callus-grip edge) + an internal PCB cavity (antenna↔Ti
+// ≥12 mm) + a bayonet socket (L-slot mating the Деталь-3 lugs) + a rim O-ring groove. The cathode is NOT
+// sealed under the dome — it breathes O₂ from the SIDE/perimeter (02_02 §1.2; gas-phase 5–10× vs dissolved).
+internal sealed record RadomeCem
+{
+    public string Kind { get; init; } = "radome";
+    public string Name { get; init; } = "radome";
+    public float VoxelSizeMm { get; init; } = 0.1f;        // dome ~Ø25, no sub-mm features → 0.1 ok
+    public float DomeDiameterMm { get; init; } = 25f;      // frozen (= Zone-3 flange Ø, 02_02 §1.3)
+    public float WallThicknessMm { get; init; } = 2f;      // 1.5–2.0 (RF vs strength, 02_01 §5.2)
+    public float CavityHeightMm { get; init; } = 13f;      // PCB stack (Power+B2B+RF); antenna↔Ti ≥12
+    public float BellRiseMm { get; init; } = 3f;           // rounded top over the body (≥3, 01_04 §5.5)
+    public float BellRadiusMm { get; init; } = 5f;         // top edge round (≥5 — no callus-grip edge)
+
+    // Bayonet socket (mate Деталь-3 lugs) — L-slot: 3 axial entry slots + a circumferential lock groove
+    public int BayonetLugs { get; init; } = 3;
+    public float LugRadiusMm { get; init; } = 1.5f;        // = Деталь-3 lug radius (mate-fit)
+    public float SlotClearanceMm { get; init; } = 0.3f;    // socket slot clearance over the lug
+    public float LockGrooveZMm { get; init; } = 3.5f;      // z of the circumferential lock groove from the rim
+
+    // O-ring groove on the rim (mate the Деталь-3 O-ring, CS 1.78 → 02_02 §3.2); width ≤ wall (fits the 2 mm wall)
+    public float ORingGrooveDepthMm { get; init; } = 0.9f;
+    public float ORingGrooveWidthMm { get; init; } = 1.0f;
+}

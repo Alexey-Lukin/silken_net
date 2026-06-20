@@ -46,6 +46,10 @@ internal sealed record GeometryMetrics
     // Cathode flange measurements (Деталь 3, 01_01 §1, null for non-flange parts). See Validation.MeasureFlange.
     public int? BayonetLugCount { get; init; }              // radial bayonet lugs (geometric expectation; bbox extent confirms they fused)
     public double? ActiveCathodeAreaCm2 { get; init; }      // flange side/perimeter catalytic area (O₂ ingress, 02_02 §1.2)
+
+    // Radome measurements (Деталь 4, 02_01 §5.2, null for non-radome parts). See Validation.MeasureRadome.
+    public double? HollowFraction { get; init; }            // 1 − solidVol/solidDomeVol; a proper shell ≫ 0.5 (hollow IS intended, gotcha #9 inverted)
+    public double? BellRiseMm { get; init; }                // dome top over the body (bbox Z − cavity height) — anti-overgrowth shield (≥3, 01_04 §5.5)
 }
 
 internal static class Validation
@@ -230,6 +234,24 @@ internal static class Validation
             BarbCount = nBarbs,
             BayonetLugCount = cem.BayonetLugs,
             ActiveCathodeAreaCm2 = dCathodeCm2,
+        };
+    }
+
+    // Radome golden metrics (Деталь 4, 02_01 §5.2): the part is a HOLLOW shell, so the gate is INVERTED —
+    // a high hollow fraction is REQUIRED (not solidity). Hollow fraction = 1 − solidVol / solid-dome vol
+    // (cylinder body + hemispherical cap); bell rise = bbox Z over the cavity height (the shield cap).
+    public static GeometryMetrics MeasureRadome(RadomeCem cem, Voxels voxRadome)
+    {
+        GeometryMetrics oBase = Measure(cem.Name, cem.VoxelSizeMm, voxRadome, null);
+
+        float fR = cem.DomeDiameterMm / 2f;
+        double dSolidDome = (Math.PI * fR * fR * cem.CavityHeightMm) + ((2.0 / 3.0) * Math.PI * fR * fR * fR);
+        double dHollow = dSolidDome > 0 ? 1.0 - (oBase.SolidVolumeMm3 / dSolidDome) : 0.0;
+
+        return oBase with
+        {
+            HollowFraction = dHollow,
+            BellRiseMm = oBase.BboxSizeMm[2] - cem.CavityHeightMm,
         };
     }
 

@@ -91,6 +91,11 @@ internal static class Program
                 CathodeFlangeCem cem = Cem.Parse<CathodeFlangeCem>(strJson);
                 return RunHeadless(cem.VoxelSizeMm, () => Export(CathodeFlange.Build(cem), cem.Name));
             }
+            case "radome":
+            {
+                RadomeCem cem = Cem.Parse<RadomeCem>(strJson);
+                return RunHeadless(cem.VoxelSizeMm, () => Export(Radome.Build(cem), cem.Name));
+            }
             default:
                 return Fail($"unknown CEM kind: {Cem.Kind(strJson)}");
         }
@@ -125,6 +130,11 @@ internal static class Program
             {
                 CathodeFlangeCem cem = Cem.Parse<CathodeFlangeCem>(strJson);
                 return RunHeadless(cem.VoxelSizeMm, () => ReportFlange(cem, CathodeFlange.Build(cem)));
+            }
+            case "radome":
+            {
+                RadomeCem cem = Cem.Parse<RadomeCem>(strJson);
+                return RunHeadless(cem.VoxelSizeMm, () => ReportRadome(cem, Radome.Build(cem)));
             }
             default:
                 return Fail($"unknown CEM kind: {Cem.Kind(strJson)}");
@@ -375,6 +385,42 @@ internal static class Program
         return bOk ? 0 : 1;
     }
 
+    // Radome verify (Деталь 4, 02_01 §5.2): HOLLOW-shell gates (gotcha #9 INVERTED) — hollow fraction
+    // (a real shell, not a solid block), bell rise (shield cap ≥ BellRiseMm, 01_04 §5.5), cavity height
+    // (antenna↔Ti ≥12 mm, 02_01 §5.3), bayonet socket mate-fit (slot ≥ lug + clearance).
+    private static int ReportRadome(RadomeCem cem, Voxels voxRadome)
+    {
+        GeometryMetrics oM = Validation.MeasureRadome(cem, voxRadome);
+
+        Directory.CreateDirectory("out");
+        string strPath = Path.Combine("out", $"{cem.Name}.metrics.json");
+        Validation.WriteJson(oM, strPath);
+
+        Console.WriteLine($"metrics → {strPath}");
+        Console.WriteLine(
+            $"  volume={oM.SolidVolumeMm3:F1} mm^3  " +
+            $"bbox={oM.BboxSizeMm[0]:F1}×{oM.BboxSizeMm[1]:F1}×{oM.BboxSizeMm[2]:F1} mm  tris={oM.TriangleCount}");
+        Console.WriteLine(
+            $"  dome Ø{cem.DomeDiameterMm:F0} · wall {cem.WallThicknessMm:F1} · hollow={oM.HollowFraction:P0} · " +
+            $"bell rise={oM.BellRiseMm:F1} mm · cavity={cem.CavityHeightMm:F0} mm");
+
+        float fSocketSlot = cem.LugRadiusMm + cem.SlotClearanceMm;
+        bool bSane = oM.SolidVolumeMm3 > 0 && oM.TriangleCount > 0 && oM.BboxSizeMm.All(d => d > 0);
+        bool bHollow = oM.HollowFraction is > 0.5;                          // a real shell, NOT a solid block (gotcha #9 inverted)
+        bool bBell = oM.BellRiseMm is { } dB && dB >= cem.BellRiseMm - (2f * cem.VoxelSizeMm);
+        bool bCavity = cem.CavityHeightMm >= 12f;                           // antenna↔Ti RF clearance (02_01 §5.3)
+        bool bMate = fSocketSlot >= cem.LugRadiusMm + 0.1f;                 // socket admits the Деталь-3 lug + clearance
+
+        if (!bHollow) Console.WriteLine($"  ⚠ hollow fraction {oM.HollowFraction:P0} ≤ 50 % — radome rendered solid (cavity subtract failed)");
+        if (!bBell) Console.WriteLine($"  ⚠ bell rise {oM.BellRiseMm:F1} < {cem.BellRiseMm:F1} mm (01_04 §5.5 anti-overgrowth)");
+        if (!bCavity) Console.WriteLine($"  ⚠ cavity height {cem.CavityHeightMm:F0} < 12 mm — antenna↔Ti RF clearance (02_01 §5.3)");
+        if (!bMate) Console.WriteLine($"  ⚠ socket slot {fSocketSlot:F1} < lug {cem.LugRadiusMm:F1} + clearance — bayonet mate-fit");
+
+        bool bOk = bSane && bHollow && bBell && bCavity && bMate;
+        Console.WriteLine(bOk ? "VERIFY OK" : "VERIFY FAILED");
+        return bOk ? 0 : 1;
+    }
+
     private static int Export(Voxels vox, string strName)
     {
         Directory.CreateDirectory("out");
@@ -389,7 +435,7 @@ internal static class Program
         Console.WriteLine(
             "silkencad — SilkenNet Code-as-CAD (PicoGK)\n" +
             "  smoke             foundation self-test (no output file)\n" +
-            "  build <cem.json>  generate an STL from a CEM manifest (ti_coin | anchor_zone1 | mechanical_lock | cathode_flange)\n" +
+            "  build <cem.json>  generate an STL from a CEM manifest (ti_coin | anchor_zone1 | mechanical_lock | cathode_flange | radome)\n" +
             "  verify <cem.json> measure golden-metrics → out/<name>.metrics.json (exit 0/1)\n" +
             "  sweep             generate + verify every cem/anchor_zone1.*.json (5-SKU)\n" +
             "  scan <cem.json>   wallParam working-window scan (anchor) → out/<name>.wallscan.json");
