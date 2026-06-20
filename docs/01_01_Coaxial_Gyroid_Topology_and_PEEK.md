@@ -79,6 +79,7 @@
   2. **Терморозрив** — блокує кондуктивний теплообмін, не дає морозу взимку пройти крізь титан у серцевину дерева та вбити камбій (детальна фізика — §4.1).
   3. **Механічний демпфер** — поглинає мікродеформації від гойдання стовбура.
 - **Структура:** Втулка з внутрішнім шестигранним отвором, що повторює профіль анодного валу, та зовнішнім фланцем-плечем для опори на катодний інтерфейс.
+- **Радіальна геометрія (frozen 2026-06-20, [`00_07` HW.33](00_07_Action_Plan_Tracker)):** стінка втулки **2.0 мм** → зовнішній **OD Ø15 мм = діаметр рани** (вал Ø11 + 2×2). Мінімум товщини задає **не** press-fit hoop (запас великий), а **термічний CTE-mismatch Ti↔PEEK** (worst-case −30°C SF 3.7×, §4.2; тонше 2 мм → SF<3). Рана Ø15 < 25 мм (не уповільнює ріст дерева — CODIT, [`01_04 §3`](01_04_CODIT_and_Xylemointegration)) → придатні дерева **DBH ≥ 38 см** (4%-правило). Осьова довжина (терморозрив) — нижче; фланець-плече Ø20–30 (flush, у корі) рани не лімітує.
 
 ### 🔵 Zone 3: Катод (Зовнішня деталь, Flush Mount)
 
@@ -160,7 +161,7 @@ Ti-6Al-4V має теплопровідність λ_Ti ≈ 6.7 Вт/м·К — 
 - Min натяг — гарантує герметичність при +40°C
 - Max натяг — не перевищує σ_y(PEEK) при −30°C
 
-**FEA-валідація:** ✅ **Lamé analytical solution** (script 50): worst-case -30°C → σ_t=10.1 MPa, **safety factor 9.9×** vs PEEK yield 100 MPa. Press-fit — це **constant strain → stress relaxation, не creep**: контактний тиск P_c релаксує 34.7→22.6 MPa за 20 років (до semicrystalline floor, ≫ тиск соку), а не "відкриває зазор". Зимовий зовнішній інтерфейс: 34.6 µm залишкового натягу (слабка ланка, виживає). **Герметизація — O-ring; барби — лише аксіальне утримання + anti-rotation (§4.3), не ущільнення.** Report: [`protocols/anchor/fea_aging/THERMAL_STRESS_REPORT.md`](protocols/anchor/fea_aging/THERMAL_STRESS_REPORT.md). Prony-fit + FEA barb stress — Stage 2.
+**FEA-валідація:** ✅ **Lamé analytical solution** (script 50): worst-case -30°C → σ_t=10.1 MPa, **safety factor 9.9×** vs PEEK yield 100 MPa (на script-baseline Ø10 вал / 3 мм стінка). **Frozen геометрія (HW.33, 2026-06-20): вал Ø11 + стінка 2 мм → OD/рана Ø15** — thermal worst-case σ_t ≈ 27 МПа, **SF 3.7×** (стелю товщини задає CTE-mismatch Ti↔PEEK, не press-fit hoop; <2 мм → SF<3, на 1 мм σ_t перевищує yield). Script 50 геометрію (R_interface 5.0→5.5, R_outer 8.0→7.5 мм) синхронізувати під freeze + re-run — 🤖 HW.3.IS. Press-fit — це **constant strain → stress relaxation, не creep**: контактний тиск P_c релаксує 34.7→22.6 MPa за 20 років (до semicrystalline floor, ≫ тиск соку), а не "відкриває зазор". Зимовий зовнішній інтерфейс: 34.6 µm залишкового натягу (слабка ланка, виживає). **Герметизація — O-ring; барби — лише аксіальне утримання + anti-rotation (§4.3), не ущільнення.** Report: [`protocols/anchor/fea_aging/THERMAL_STRESS_REPORT.md`](protocols/anchor/fea_aging/THERMAL_STRESS_REPORT.md). Prony-fit + FEA barb stress — Stage 2.
 
 **Annealing PEEK** перед фінальним фрезеруванням — 200–250°C — обов'язковий крок для досягнення мікронних допусків ≤ 0.0005 дюйма; без annealing внутрішні напруження PEEK будуть «гуляти» між обробкою і експлуатацією.
 
