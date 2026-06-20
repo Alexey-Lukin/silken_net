@@ -1,0 +1,13 @@
+{
+  "_note": "v2 POROSITY-gradient demo — graded wallParam (denser core → more porous rim): the founder-opened 'softer rim at the living-tissue interface' option (HW.33), inverting the medical cortical-outside norm. Constant period. Porosity is MEASURED per shell (monotone here, vs flat for the cell-size SKUs); constant-vs-graded porosity is FEA-gated. Numbers illustrate the axis, not a validated spec.",
+  "kind": "anchor_zone1",
+  "name": "anchor_zone1_graded_porosity",
+  "voxel_size_mm": 0.1,
+  "outer_diameter_mm": 11.0,
+  "bore_diameter_mm": 1.6,
+  "length_mm": 40.0,
+  "gyroid_period_mm": 2.0,
+  "gyroid_wall_param": 1.3,
+  "gyroid_wall_param_rim": 0.8,
+  "porosity_target": 0.65
+}

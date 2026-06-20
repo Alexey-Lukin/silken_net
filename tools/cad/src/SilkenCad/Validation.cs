@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Text.Json;
 using PicoGK;
+using Leap71.ShapeKernel;
 
 namespace SilkenCad;
 
@@ -16,7 +17,11 @@ internal sealed record GeometryMetrics
     public required double SolidVolumeMm3 { get; init; }
     public required double[] BboxSizeMm { get; init; }
     public required int TriangleCount { get; init; }
-    public double? Porosity { get; init; }   // null when no envelope is supplied (solid parts)
+    public double? Porosity { get; init; }                  // null when no envelope is supplied (solid parts)
+
+    // v2 graded-anchor measurements (null for non-anchor parts):
+    public double[]? RadialPorosityByShell { get; init; }   // core→rim; ~flat = constant SKU, monotone = graded SKU
+    public double? FinestPeriodMm { get; init; }            // smallest cell period across radius (the rim); wall ≈ 0.1× this — the DMLS-floor proxy (exact wall = µCT, 01_01 §5.6)
 }
 
 internal static class Validation
@@ -50,6 +55,47 @@ internal static class Validation
             BboxSizeMm = [vecSize.X, vecSize.Y, vecSize.Z],
             TriangleCount = voxSolid.mshAsMesh().nTriangleCount(),
             Porosity = dPorosity,
+        };
+    }
+
+    // Anchor-specific golden metrics: the base measurement + porosity measured per concentric
+    // radial shell (proves the porosity PROFILE — flat for a constant SKU, monotone for a graded
+    // one) + the finest cell period (DMLS-floor proxy). Porosity is MEASURED, never derived from
+    // wallParam (gotcha #4): a coarse voxel under-resolves voids → falsely high porosity.
+    public static GeometryMetrics MeasureAnchor(AnchorCem cem, Voxels voxAnode, Voxels voxEnvelope, int nShells = 5)
+    {
+        GeometryMetrics oBase = Measure(cem.Name, cem.VoxelSizeMm, voxAnode, voxEnvelope);
+
+        float fRInner = cem.BoreDiameterMm / 2f;
+        float fROuter = cem.OuterDiameterMm / 2f;
+        float fDr = (fROuter - fRInner) / nShells;
+
+        // Cumulative-diff per shell: a thin ring intersected with distorted (high-gradient) geometry
+        // under-counts metal at the voxel edges, so each shell = the DIFFERENCE of two thick bore→r
+        // pipes. By construction the outermost cumulative pipe = the full envelope ⇒ the shells always
+        // sum back to the global porosity (no thin-ring measurement drift), honest even when distorted.
+        double[] aShellPorosity = new double[nShells];
+        double dPrevSolid = 0, dPrevEnv = 0;
+        for (int i = 0; i < nShells; i++)
+        {
+            BasePipe oCum = new(new LocalFrame(), cem.LengthMm, fRInner, fRInner + ((i + 1) * fDr));
+            Voxels voxCum = oCum.voxConstruct();
+            voxCum.CalculateProperties(out float fCumEnv, out BBox3 _);
+            voxCum.BoolIntersect(voxAnode);
+            voxCum.CalculateProperties(out float fCumSolid, out BBox3 _);
+            double dShellEnv = fCumEnv - dPrevEnv;
+            double dShellSolid = fCumSolid - dPrevSolid;
+            aShellPorosity[i] = dShellEnv > 0 ? 1.0 - (dShellSolid / dShellEnv) : 0.0;
+            dPrevSolid = fCumSolid;
+            dPrevEnv = fCumEnv;
+        }
+
+        float fPeriodRim = cem.GyroidPeriodRimMm > 0f ? cem.GyroidPeriodRimMm : cem.GyroidPeriodMm;
+
+        return oBase with
+        {
+            RadialPorosityByShell = aShellPorosity,
+            FinestPeriodMm = Math.Min(cem.GyroidPeriodMm, fPeriodRim),
         };
     }
 

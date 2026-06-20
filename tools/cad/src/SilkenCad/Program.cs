@@ -102,7 +102,7 @@ internal static class Program
                 {
                     Voxels voxEnv = Zone1Anode.Envelope(cem);
                     Voxels voxAnode = Zone1Anode.Anode(cem, voxEnv);
-                    return Report(cem.Name, cem.VoxelSizeMm, voxAnode, voxEnv, cem.PorosityTarget);
+                    return ReportAnchor(cem, voxAnode, voxEnv);
                 });
             }
             default:
@@ -132,7 +132,7 @@ internal static class Program
                 Voxels voxEnv = Zone1Anode.Envelope(cem);
                 Voxels voxAnode = Zone1Anode.Anode(cem, voxEnv);
                 Export(voxAnode, cem.Name);
-                return Report(cem.Name, cem.VoxelSizeMm, voxAnode, voxEnv, cem.PorosityTarget);
+                return ReportAnchor(cem, voxAnode, voxEnv);
             });
         }
         return iRc == 0 ? 0 : 1;
@@ -156,6 +156,45 @@ internal static class Program
         // v1 sanity gate (CI-ready exit code). Richer asserts (porosity 65±2%, pore
         // gradient, min-wall) land with the graded anchor v2.
         bool bOk = oMetrics.SolidVolumeMm3 > 0 && oMetrics.TriangleCount > 0 && oMetrics.BboxSizeMm.All(d => d > 0);
+        Console.WriteLine(bOk ? "VERIFY OK" : "VERIFY FAILED");
+        return bOk ? 0 : 1;
+    }
+
+    private const float PrintablePeriodFloorMm = 1.0f;  // rim period ≥ ~1 mm ⇒ wall ≥ ~0.1 mm (µ-LPBF floor); 01_01 §5.5
+
+    // Anchor verify: graded-aware golden metrics (per-shell porosity + finest period) → metrics.json,
+    // plus the CI gate (sanity + DMLS floor + sane porosity band). Detailed profile asserts
+    // (flat-vs-monotone, gradient present) live in the xUnit suite, not here.
+    private static int ReportAnchor(AnchorCem cem, Voxels voxAnode, Voxels voxEnvelope)
+    {
+        GeometryMetrics oM = Validation.MeasureAnchor(cem, voxAnode, voxEnvelope);
+
+        Directory.CreateDirectory("out");
+        string strPath = Path.Combine("out", $"{cem.Name}.metrics.json");
+        Validation.WriteJson(oM, strPath);
+
+        string strShells = oM.RadialPorosityByShell is { } aShell
+            ? string.Join(" ", aShell.Select(p => $"{p:P0}"))
+            : "";
+        Console.WriteLine($"metrics → {strPath}");
+        Console.WriteLine(
+            $"  volume={oM.SolidVolumeMm3:F1} mm^3  " +
+            $"bbox={oM.BboxSizeMm[0]:F1}×{oM.BboxSizeMm[1]:F1}×{oM.BboxSizeMm[2]:F1} mm  " +
+            $"tris={oM.TriangleCount}");
+        Console.WriteLine(
+            $"  porosity={oM.Porosity:P1} (target {cem.PorosityTarget:P0})  " +
+            $"finest period={oM.FinestPeriodMm:F2} mm  shells core→rim=[{strShells}]");
+
+        bool bSane = oM.SolidVolumeMm3 > 0 && oM.TriangleCount > 0 && oM.BboxSizeMm.All(d => d > 0);
+        bool bFloor = oM.FinestPeriodMm is { } fFinest && fFinest >= PrintablePeriodFloorMm;
+        bool bPorositySane = oM.Porosity is > 0.40 and < 0.85;
+
+        if (!bFloor)
+            Console.WriteLine($"  ⚠ finest period < printable floor {PrintablePeriodFloorMm:F2} mm (wall < ~0.1 mm — µ-LPBF/nTop only, HW.33)");
+        if (!bPorositySane)
+            Console.WriteLine("  ⚠ porosity outside the sane 40–85 % band");
+
+        bool bOk = bSane && bFloor && bPorositySane;
         Console.WriteLine(bOk ? "VERIFY OK" : "VERIFY FAILED");
         return bOk ? 0 : 1;
     }

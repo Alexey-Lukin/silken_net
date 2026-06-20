@@ -1,0 +1,14 @@
+{
+  "_note": "v2 STEPPED (heterostructure) demo — concentric constant-period zones (core 2.5mm ↔ rim 1.3mm) give a STRONG ~2× pore-size contrast at CONSTANT porosity, which the continuous gradient cannot (phase-distortion collapses porosity above ~0.8× period ratio). Each zone is self-similar → no distortion; a thin phase-mismatch ring sits at the zone boundary. SOTA 'heterostructure gradient' pattern. NOT a validated spec — pore numbers + zone choice are FEA/bio-hub gated (HW.33, 00_08 §1.3).",
+  "kind": "anchor_zone1",
+  "name": "anchor_zone1_stepped",
+  "voxel_size_mm": 0.1,
+  "outer_diameter_mm": 11.0,
+  "bore_diameter_mm": 1.6,
+  "length_mm": 40.0,
+  "gyroid_period_mm": 2.5,
+  "gyroid_period_rim_mm": 1.3,
+  "gyroid_wall_param": 1.0,
+  "topology": "stepped",
+  "porosity_target": 0.65
+}

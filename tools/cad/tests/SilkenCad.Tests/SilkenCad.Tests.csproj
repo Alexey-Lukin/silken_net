@@ -1,8 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Validation-as-code: the geometry golden-metrics suite (porosity, pore
-       gradient, min-wall, manifold) — the .NET peer of `make -C firmware/test`
-       and tools/ml pytest. Package versions come from ../../Directory.Packages.props. -->
+  <!-- Validation-as-code: pure-logic golden tests (CEM parse + gyroid SDF math + generator
+       selection), fast and PicoGK-runtime-free. The rendered-metric gates (porosity, pore
+       gradient, min-wall, manifold) run in the verify/sweep CLI. The .NET peer of
+       `make -C firmware/test`. Package versions come from ../../Directory.Packages.props. -->
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <IsPackable>false</IsPackable>
