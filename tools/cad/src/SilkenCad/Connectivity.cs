@@ -166,6 +166,20 @@ internal static class Connectivity
         return aPorosity;
     }
 
+    // Global porosity of the sampled field: pore / (pore + solid), ignoring Outside. The render-free
+    // companion to Voxels porosity — used by the wallParam scan (WallScan.cs) to map porosity vs wall band.
+    public static double Porosity(in Grid grid)
+    {
+        long nPore = 0, nInside = 0;
+        foreach (Phase p in grid.Cells)
+        {
+            if (p == Phase.Outside) continue;
+            nInside++;
+            if (p == Phase.Pore) nPore++;
+        }
+        return nInside > 0 ? (double)nPore / nInside : 0.0;
+    }
+
     private readonly record struct Cluster(
         int Size, bool TouchesSurface,
         int ILo, int IHi, int JLo, int JHi, int KLo, int KHi);

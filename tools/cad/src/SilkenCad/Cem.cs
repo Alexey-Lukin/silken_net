@@ -31,14 +31,19 @@ internal static class Cem
         ?? throw new InvalidDataException("CEM manifest deserialized to null");
 }
 
-// Flat in-vitro coupon (10x10 mm Ti-monet, 01_01 §6.1) with a suspension eyelet.
+// Flat in-vitro Ti coupon (Stage-2 CV/EIS, 01_01 §6.1). Ø16 disc → 1 face ≈ A_electrode 2 cm²
+// (01_03 §3.5). Disc not square: RDE-ready, uniform radial j, no corner edge-effects. j is
+// normalised on the PROJECTED geometric area (EAAE roughness makes the true area unmeasurable, 01_02 §1.4).
 internal sealed record TiCoinCem
 {
     public string Kind { get; init; } = "ti_coin";
     public string Name { get; init; } = "ti_coin";
     public float VoxelSizeMm { get; init; } = 0.1f;
-    public float DiscDiameterMm { get; init; } = 10f;
+    public float DiscDiameterMm { get; init; } = 16f;     // 1 face = π·(D/2)² ≈ A_electrode 2 cm² (01_03 §3.5)
     public float DiscThicknessMm { get; init; } = 1f;
+    // A lab O-ring / lacquer window can fix exactly 2 cm² INSIDE a larger coupon — decouples A from the coin
+    // edge (same A across drop-cast / masked-window / O-ring cell). 0 ⇒ the whole face is the active area.
+    public float ActiveWindowDiameterMm { get; init; }
     public float LoopRingRadiusMm { get; init; } = 1.6f;  // torus centreline radius
     public float LoopTubeRadiusMm { get; init; } = 0.6f;  // torus tube (wire) radius
 }

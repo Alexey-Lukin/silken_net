@@ -19,6 +19,7 @@ internal static class Program
                 "build" => args.Length >= 2 ? Build(args[1]) : Fail("usage: build <cem.json>"),
                 "verify" => args.Length >= 2 ? Verify(args[1]) : Fail("usage: verify <cem.json>"),
                 "sweep" => Sweep(),
+                "scan" => args.Length >= 2 ? Scan(args[1]) : Fail("usage: scan <cem.json>"),
                 "help" or "--help" or "-h" => Help(),
                 var strCmd => Fail($"unknown command: {strCmd}"),
             };
@@ -98,7 +99,7 @@ internal static class Program
             case "ti_coin":
             {
                 TiCoinCem cem = Cem.Parse<TiCoinCem>(strJson);
-                return RunHeadless(cem.VoxelSizeMm, () => Report(cem.Name, cem.VoxelSizeMm, TiCoin.Build(cem), null));
+                return RunHeadless(cem.VoxelSizeMm, () => ReportCoin(cem, TiCoin.Build(cem)));
             }
             case "anchor_zone1":
             {
@@ -148,24 +149,66 @@ internal static class Program
         return iRc == 0 ? 0 : 1;
     }
 
-    private static int Report(string strName, float fVoxel, Voxels voxSolid, Voxels? voxEnvelope, float fPorosityTarget = 0f)
+    // wallParam critical-threshold scan (ARCH.25 / HW.33): sweep the gyroid wall band → the CEM working
+    // window (the wallParam range that stays printable, open-pore and percolating). Pure (Connectivity is
+    // display-less) → no Library.Go. Output → out/<name>.wallscan.json + a stdout table.
+    private static int Scan(string strCemPath)
     {
-        GeometryMetrics oMetrics = Validation.Measure(strName, fVoxel, voxSolid, voxEnvelope);
+        string strJson = File.ReadAllText(strCemPath);
+        if (Cem.Kind(strJson) != "anchor_zone1")
+            return Fail("scan needs an anchor_zone1 CEM");
+        AnchorCem cem = Cem.Parse<AnchorCem>(strJson);
+
+        WallScanResult oR = WallScan.Run(cem, fLo: 0.2f, fHi: 1.8f, fStep: 0.1f);
 
         Directory.CreateDirectory("out");
-        string strPath = Path.Combine("out", $"{strName}.metrics.json");
-        Validation.WriteJson(oMetrics, strPath);
+        string strPath = Path.Combine("out", $"{cem.Name}.wallscan.json");
+        WallScan.WriteJson(oR, strPath);
 
-        string strPorosity = oMetrics.Porosity is { } dP ? $"  porosity={dP:P1} (target {fPorosityTarget:P0})" : "";
+        Console.WriteLine($"wallParam scan → {strPath}  (topology={cem.Topology}, core period={cem.GyroidPeriodMm} mm)");
+        Console.WriteLine("  wall  porosity  open   solid-disc  perc  window");
+        foreach (WallScanPoint p in oR.Points)
+        {
+            bool[] a = p.PorePercolates;
+            string strPerc = a.Length == 3 ? $"{(a[0] ? "X" : "-")}{(a[1] ? "Y" : "-")}{(a[2] ? "Z" : "-")}" : "?";
+            Console.WriteLine(
+                $"  {p.WallParam:F2}  {p.Porosity,7:P1}  {p.OpenPorosity,5:P0}  {p.SolidDisconnectedFraction,8:P1}   {strPerc}   {(p.InWindow ? "✓" : "")}");
+        }
+
+        if (oR.WallMin is { } dMin && oR.WallMax is { } dMax)
+            Console.WriteLine($"  working window: wallParam ∈ [{dMin:F2}, {dMax:F2}] (porosity 55–75 %, open ≥95 %, solid-disc ≤2 %, percolating)");
+        else
+            Console.WriteLine("  ⚠ no working window in the swept range — widen the scan or revisit period / topology");
+
+        return oR.WallMin is not null ? 0 : 1;
+    }
+
+    // Ti-coin verify (01_01 §6.1): golden metrics + the A_electrode ≈ 2 cm² gate (01_03 §3.5). Area is the
+    // PROJECTED disc face (or the defined active window) — the j = I/A normalisation surface, NOT the rough
+    // wetted area. The coupon must also ENCLOSE the window (a defined area can't exceed the disc).
+    private static int ReportCoin(TiCoinCem cem, Voxels voxCoin)
+    {
+        GeometryMetrics oM = Validation.MeasureCoin(cem, voxCoin);
+
+        Directory.CreateDirectory("out");
+        string strPath = Path.Combine("out", $"{cem.Name}.metrics.json");
+        Validation.WriteJson(oM, strPath);
+
+        float fWindowMm = cem.ActiveWindowDiameterMm > 0f ? cem.ActiveWindowDiameterMm : cem.DiscDiameterMm;
         Console.WriteLine($"metrics → {strPath}");
         Console.WriteLine(
-            $"  volume={oMetrics.SolidVolumeMm3:F1} mm^3  " +
-            $"bbox={oMetrics.BboxSizeMm[0]:F1}×{oMetrics.BboxSizeMm[1]:F1}×{oMetrics.BboxSizeMm[2]:F1} mm  " +
-            $"tris={oMetrics.TriangleCount}{strPorosity}");
+            $"  volume={oM.SolidVolumeMm3:F1} mm^3  " +
+            $"bbox={oM.BboxSizeMm[0]:F1}×{oM.BboxSizeMm[1]:F1}×{oM.BboxSizeMm[2]:F1} mm  tris={oM.TriangleCount}");
+        Console.WriteLine($"  active area={oM.ActiveElectrodeAreaCm2:F2} cm² (window Ø{fWindowMm:F1} mm, target 2.0 cm²)");
 
-        // v1 sanity gate (CI-ready exit code). Richer asserts (porosity 65±2%, pore
-        // gradient, min-wall) land with the graded anchor v2.
-        bool bOk = oMetrics.SolidVolumeMm3 > 0 && oMetrics.TriangleCount > 0 && oMetrics.BboxSizeMm.All(d => d > 0);
+        bool bSane = oM.SolidVolumeMm3 > 0 && oM.TriangleCount > 0 && oM.BboxSizeMm.All(d => d > 0);
+        bool bArea = oM.ActiveElectrodeAreaCm2 is { } dA && Math.Abs(dA - 2.0) <= 0.1;   // A_electrode 2 cm² ±5%
+        bool bEncloses = fWindowMm <= cem.DiscDiameterMm + 1e-4f;                        // coupon contains the window
+
+        if (!bArea) Console.WriteLine("  ⚠ active area outside 2.0 cm² ±0.1 — tune disc / window Ø (01_03 §3.5)");
+        if (!bEncloses) Console.WriteLine($"  ⚠ window Ø{fWindowMm:F1} > disc Ø{cem.DiscDiameterMm:F1} — window must fit on the coupon");
+
+        bool bOk = bSane && bArea && bEncloses;
         Console.WriteLine(bOk ? "VERIFY OK" : "VERIFY FAILED");
         return bOk ? 0 : 1;
     }
@@ -297,7 +340,8 @@ internal static class Program
             "  smoke             foundation self-test (no output file)\n" +
             "  build <cem.json>  generate an STL from a CEM manifest (ti_coin | anchor_zone1 | mechanical_lock)\n" +
             "  verify <cem.json> measure golden-metrics → out/<name>.metrics.json (exit 0/1)\n" +
-            "  sweep             generate + verify every cem/anchor_zone1.*.json (5-SKU)");
+            "  sweep             generate + verify every cem/anchor_zone1.*.json (5-SKU)\n" +
+            "  scan <cem.json>   wallParam working-window scan (anchor) → out/<name>.wallscan.json");
         return 0;
     }
 

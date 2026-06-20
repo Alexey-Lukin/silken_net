@@ -19,6 +19,9 @@ internal sealed record GeometryMetrics
     public required int TriangleCount { get; init; }
     public double? Porosity { get; init; }                  // null when no envelope is supplied (solid parts)
 
+    // Ti-coin coupon (01_01 §6.1, null for non-coin parts): projected geometric working area for j = I/A.
+    public double? ActiveElectrodeAreaCm2 { get; init; }    // 1 disc face or the defined O-ring window — target 2 cm² (01_03 §3.5)
+
     // v2 graded-anchor measurements (null for non-anchor parts):
     public double[]? RadialPorosityByShell { get; init; }   // core→rim; ~flat = constant SKU, monotone = graded SKU
     public double? FinestPeriodMm { get; init; }            // smallest cell period across radius (the rim); wall ≈ 0.1× this — the DMLS-floor proxy (exact wall = µCT, 01_01 §5.6)
@@ -74,6 +77,20 @@ internal static class Validation
             Porosity = dPorosity,
         };
     }
+
+    // Ti-coin golden metrics: base + the projected electrode area for j = I/A. Area is ANALYTIC from the
+    // CEM (a disc face, or the defined active window if set), NOT the mesh wetted-area (which counts both
+    // faces + rim + eyelet + EAAE micro-roughness — not the j-normalisation area). 01_03 §3.5: A ≈ 2 cm².
+    // Projected geometric working area (cm²) for j = I/A — the disc face, or the defined O-ring/lacquer
+    // window if set (01_03 §3.5). Pure (CEM-only) so the area gate is xUnit-testable without a render.
+    public static double CoinAreaCm2(TiCoinCem cem)
+    {
+        float fWindowMm = cem.ActiveWindowDiameterMm > 0f ? cem.ActiveWindowDiameterMm : cem.DiscDiameterMm;
+        return Math.PI * Math.Pow(fWindowMm / 2.0, 2) / 100.0;   // disc face mm² → cm²
+    }
+
+    public static GeometryMetrics MeasureCoin(TiCoinCem cem, Voxels voxCoin)
+        => Measure(cem.Name, cem.VoxelSizeMm, voxCoin, null) with { ActiveElectrodeAreaCm2 = CoinAreaCm2(cem) };
 
     // Anchor-specific golden metrics: the base measurement + porosity measured per concentric
     // radial shell (proves the porosity PROFILE — flat for a constant SKU, monotone for a graded
