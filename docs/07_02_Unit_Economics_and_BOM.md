@@ -340,7 +340,7 @@ Month 44:   +$92   (чиста ліквідність для DAO та власн
 **Дії (👤 операційні):**
 - [ ] Отримати quotes від 2-3 EU підрядників (мінімальна партія 100 шт)
 - [ ] Підписати NDA та framework agreement з Tier-1 кандидатом (без зобов'язання обсягу)
-- [ ] Передати nTop CAD + factory spec (HW.1, HW.2) кожному підряднику для валідації feasibility
+- [ ] Передати **PicoGK CAD-STL** (`tools/cad`, primary) + factory spec (HW.1, HW.2) кожному підряднику для валідації feasibility (nTop — reference)
 - [ ] Замовити пробну партію 10 шт у Tier-1 EU підрядника для quality benchmarking vs UA
 
 ### 8.2. Логістика
