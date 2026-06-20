@@ -32,6 +32,13 @@ internal sealed record GeometryMetrics
     public int? PoreClusterCount { get; init; }             // big pore clusters: network→1, sheet→2 (tricontinuous — a fact, not a defect)
     public double? SpecificSurfaceMm2PerMm3 { get; init; }  // wetted area / bbox volume — EBFC-area proxy (sheet ~2× network), HW.33 trade-off
     public double[]? AxialPorosityProfile { get; init; }    // per-Z porosity; must be ~flat (the radial-gradient axial-uniformity gate)
+
+    // Mechanical-lock shank measurements (01_01 §4.3, null for non-lock parts). See Validation.MeasureLock.
+    public int? BarbCount { get; init; }                    // ratchet teeth counted along R(z) — must == BarbRows
+    public double? MaxBarbHeightMm { get; init; }           // peak ridge height h (§4.3 A: 0.25–0.40)
+    public double? BarbBaseMm { get; init; }                // tooth base = h·(cot α + cot β) (§4.3 A: 0.40–0.60)
+    public double? GrooveDepthMm { get; init; }             // DIN-471 retaining groove depth (§4.3 B: 0.6)
+    public double? SelfSupportFaceDeg { get; init; }        // best-orientation downfacing barb angle from horizontal; ≥45° self-supports (Ti64 LPBF: 60° → Sa≈15µm)
 }
 
 internal static class Validation
@@ -124,6 +131,54 @@ internal static class Validation
             PoreClusterCount = conn.PoreClusterCount,
             SpecificSurfaceMm2PerMm3 = dBboxVol > 0 ? fSurfaceMm2 / dBboxVol : 0.0,
             AxialPorosityProfile = aAxial,
+        };
+    }
+
+    // Mechanical-lock golden metrics (01_01 §4.3): barb count/height/base + groove depth MEASURED off the
+    // R(z) profile (proves the param→geometry math, catches generator bugs), plus a Noyron-style
+    // manufacturability field. A vertical build oriented gentle-ramp-DOWN gives a downface of 90−min(α,β)
+    // from horizontal; ≥45° self-supports (the steep ramp then faces up). Print orientation ≠ assembly
+    // orientation ⇒ this costs no ratchet retention. (Groove = CNC post-DMLS per §4.3 — modelled here only
+    // for the as-assembled envelope, not a printed overhang.)
+    public static GeometryMetrics MeasureLock(MechanicalLockCem cem, Voxels voxShank)
+    {
+        GeometryMetrics oBase = Measure(cem.Name, cem.VoxelSizeMm, voxShank, null);
+
+        var oSdf = new MechanicalLockShank(cem);
+        float fRShank = cem.ShankDiameterMm / 2f;
+        float fZ0 = cem.ContactStartMm, fZ1 = cem.ContactStartMm + cem.ContactLengthMm;
+        const float fDz = 0.005f;
+
+        // Each contiguous run of R(z) > rShank across the contact zone is one tooth → count + base width;
+        // the deepest ridge is the peak height.
+        int nBarbs = 0;
+        double dMaxH = 0;
+        var aBaseW = new List<double>();
+        bool bInTooth = false;
+        double dRunStart = 0, dLastZ = fZ0;
+        for (float fZ = fZ0; fZ <= fZ1 + (fDz / 2f); fZ += fDz)
+        {
+            double dH = oSdf.ProfileRadius(fZ) - fRShank;
+            if (dH > dMaxH) dMaxH = dH;
+            bool bTooth = dH > 1e-4;
+            if (bTooth && !bInTooth) { dRunStart = fZ; bInTooth = true; }
+            else if (!bTooth && bInTooth) { aBaseW.Add(dLastZ - dRunStart); nBarbs++; bInTooth = false; }
+            dLastZ = fZ;
+        }
+        if (bInTooth) { aBaseW.Add(dLastZ - dRunStart); nBarbs++; }
+
+        // Groove depth = deepest cut across the groove band.
+        double dGrooveMinR = fRShank;
+        for (float fZ = cem.GrooveOffsetMm; fZ <= cem.GrooveOffsetMm + cem.GrooveWidthMm; fZ += fDz)
+            dGrooveMinR = Math.Min(dGrooveMinR, oSdf.ProfileRadius(fZ));
+
+        return oBase with
+        {
+            BarbCount = nBarbs,
+            MaxBarbHeightMm = dMaxH,
+            BarbBaseMm = aBaseW.Count > 0 ? aBaseW.Average() : 0.0,
+            GrooveDepthMm = fRShank - dGrooveMinR,
+            SelfSupportFaceDeg = 90.0 - Math.Min(cem.LeadAngleDeg, cem.TrailAngleDeg),
         };
     }
 

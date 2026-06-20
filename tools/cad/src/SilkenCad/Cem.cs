@@ -75,3 +75,34 @@ internal sealed record AnchorCem
     public string Topology { get; init; } = "sheet";
     public float PorosityTarget { get; init; } = 0.65f;    // verify goal only — placeholder, FEA-gated (HW.33)
 }
+
+// Mechanical-lock shank (01_01 §4.3 A/B) — the §4.3 BLOCKER-3 lock against PEEK cold-flow creep
+// (HW.26): annular ratchet barbs + a DIN-471 retaining groove on the solid Ti shank that press-fits
+// into the PEEK sleeve. A self-contained demo part (Zone 1 real Ø11, Zone 3 placeholder Ø) — NOT yet
+// integrated into the gyroid rod (separate session, 00_07). Canon over-specifies the tooth (h, base,
+// α, β all fixed); a triangle has 2 free params, so we keep α/β + h and DERIVE base ≈ 2.1·h — verify
+// MEASURES it against §4.3 [0.40,0.60]. Barbs emit GEOMETRY only: the 3–5× pull-out, the PEEK 150 °C
+// click and friction retention are FEA (Гусак, HW.3.IS) + bench, never asserted here.
+internal sealed record MechanicalLockCem
+{
+    public string Kind { get; init; } = "mechanical_lock";
+    public string Name { get; init; } = "mechanical_lock";
+    public float VoxelSizeMm { get; init; } = 0.05f;       // barb-feature floor (h≈0.28 → ~6 voxels); exact tip = µCT (01_01 §5.6)
+    public float ShankDiameterMm { get; init; } = 11f;     // Zone-1 anode Ø (founder, HW.33); Zone-3 = PLACEHOLDER (HW.8 dim-freeze)
+    public float ShankLengthMm { get; init; } = 18f;
+    public float BoreDiameterMm { get; init; } = 1.3f;     // central bus-conductor channel (§1 — the shank is hollow); 0 ⇒ solid
+    public float ContactStartMm { get; init; } = 2f;       // z where PEEK contact begins
+    public float ContactLengthMm { get; init; } = 12f;     // contact zone 8–15 mm (§4.3 A)
+
+    // Ratchet tooth — keep α/β + h, base is DERIVED = h·(cot α + cot β); MEASURED in verify.
+    public int BarbRows { get; init; } = 4;                // 3–5 rows (§4.3 A)
+    public float BarbHeightMm { get; init; } = 0.28f;      // h 0.25–0.40; base≈0.59 ∈ [0.40,0.60] at α30/β70
+    public float LeadAngleDeg { get; init; } = 30f;        // α leading — shallow ⇒ long ramp ⇒ easy hot insert
+    public float TrailAngleDeg { get; init; } = 70f;       // β trailing — steep ⇒ short ramp ⇒ hard pull-out
+    public int BarbDirection { get; init; } = 1;           // +1 Zone-1 lean; −1 Zone-3 opposite (§4.3 figure)
+
+    // DIN-471 retaining-ring groove (§4.3 B) — ∅0.8 × 0.6 deep, near the outer (capsule-side) end.
+    public float GrooveOffsetMm { get; init; } = 15f;
+    public float GrooveWidthMm { get; init; } = 0.8f;
+    public float GrooveDepthMm { get; init; } = 0.6f;
+}

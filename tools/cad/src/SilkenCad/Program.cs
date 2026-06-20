@@ -80,6 +80,11 @@ internal static class Program
                 AnchorCem cem = Cem.Parse<AnchorCem>(strJson);
                 return RunHeadless(cem.VoxelSizeMm, () => Export(Zone1Anode.Build(cem), cem.Name));
             }
+            case "mechanical_lock":
+            {
+                MechanicalLockCem cem = Cem.Parse<MechanicalLockCem>(strJson);
+                return RunHeadless(cem.VoxelSizeMm, () => Export(MechanicalLock.Build(cem), cem.Name));
+            }
             default:
                 return Fail($"unknown CEM kind: {Cem.Kind(strJson)}");
         }
@@ -104,6 +109,11 @@ internal static class Program
                     Voxels voxAnode = Zone1Anode.Anode(cem, voxEnv);
                     return ReportAnchor(cem, voxAnode, voxEnv);
                 });
+            }
+            case "mechanical_lock":
+            {
+                MechanicalLockCem cem = Cem.Parse<MechanicalLockCem>(strJson);
+                return RunHeadless(cem.VoxelSizeMm, () => ReportLock(cem, MechanicalLock.Build(cem)));
             }
             default:
                 return Fail($"unknown CEM kind: {Cem.Kind(strJson)}");
@@ -221,6 +231,56 @@ internal static class Program
         return bOk ? 0 : 1;
     }
 
+    // Mechanical-lock verify (01_01 §4.3): golden barb metrics → metrics.json + the CI gate. Barb
+    // geometry (count/height/base/groove) is FAIL-gated against §4.3; self-support is INFORMATIONAL —
+    // an orientation/bench call, and Ti64 LPBF self-supports the 60° downface (Sa≈15µm) anyway.
+    private static int ReportLock(MechanicalLockCem cem, Voxels voxShank)
+    {
+        GeometryMetrics oM = Validation.MeasureLock(cem, voxShank);
+
+        Directory.CreateDirectory("out");
+        string strPath = Path.Combine("out", $"{cem.Name}.metrics.json");
+        Validation.WriteJson(oM, strPath);
+
+        Console.WriteLine($"metrics → {strPath}");
+        Console.WriteLine(
+            $"  volume={oM.SolidVolumeMm3:F1} mm^3  " +
+            $"bbox={oM.BboxSizeMm[0]:F1}×{oM.BboxSizeMm[1]:F1}×{oM.BboxSizeMm[2]:F1} mm  tris={oM.TriangleCount}");
+        Console.WriteLine(
+            $"  barbs={oM.BarbCount} (rows {cem.BarbRows})  h={oM.MaxBarbHeightMm:F3} mm  " +
+            $"base={oM.BarbBaseMm:F3} mm  groove={oM.GrooveDepthMm:F3} mm  self-support={oM.SelfSupportFaceDeg:F0}° from horizontal");
+
+        bool bSane = oM.SolidVolumeMm3 > 0 && oM.TriangleCount > 0 && oM.BboxSizeMm.All(d => d > 0);
+        bool bCount = oM.BarbCount == cem.BarbRows;
+        bool bHeight = oM.MaxBarbHeightMm is >= 0.25 and <= 0.40;
+        bool bBase = oM.BarbBaseMm is >= 0.40 and <= 0.60;
+        bool bGroove = oM.GrooveDepthMm is { } dG && Math.Abs(dG - cem.GrooveDepthMm) <= (2f * cem.VoxelSizeMm) + 0.05;
+
+        if (!bCount) Console.WriteLine($"  ⚠ barb count {oM.BarbCount} ≠ rows {cem.BarbRows}");
+        if (!bHeight) Console.WriteLine("  ⚠ barb height outside §4.3 A 0.25–0.40 mm");
+        if (!bBase) Console.WriteLine("  ⚠ barb base outside §4.3 A 0.40–0.60 mm (base = h·(cot α + cot β) — tune h)");
+        if (!bGroove) Console.WriteLine($"  ⚠ groove depth {oM.GrooveDepthMm:F3} ≠ §4.3 B target {cem.GrooveDepthMm:F2} mm");
+
+        // Manufacturability (informational, not FAIL-gated): recommended build orientation + the
+        // integrated-anchor caveat (HW.26). ≥45° ⇒ self-supporting on the gentle-ramp-down orientation.
+        if (oM.SelfSupportFaceDeg is >= 45.0)
+            Console.WriteLine(
+                $"  ℹ print gentle-ramp-DOWN (01_02 §1.6 tip-down) → {oM.SelfSupportFaceDeg:F0}° downface self-supports (Ti64 LPBF Sa≈15µm); " +
+                "Zone-1/Zone-3 are SEPARATE prints (PEEK press-fit) ⇒ each orients freely, no co-orientation conflict");
+        else
+            Console.WriteLine(
+                $"  ⚠ barb not self-supporting either orientation ({oM.SelfSupportFaceDeg:F0}° < 45°) — needs support or a ≤45°-from-axis ramp");
+
+        double dRShank = cem.ShankDiameterMm / 2f, dRBore = cem.BoreDiameterMm / 2f;
+        double dCylVol = Math.PI * ((dRShank * dRShank) - (dRBore * dRBore)) * cem.ShankLengthMm;
+        bool bSolid = oM.SolidVolumeMm3 > 0.8 * dCylVol;   // a FILLED hollow shank (annulus), not an SDF narrow-band shell
+        if (!bSolid) Console.WriteLine($"  ⚠ solid volume {oM.SolidVolumeMm3:F0} ≪ {dCylVol:F0} mm³ expected — hollow render (SDF narrow-band)");
+
+        bool bOk = bSane && bCount && bHeight && bBase && bGroove && bSolid;
+        Console.WriteLine(bOk ? "VERIFY OK" : "VERIFY FAILED");
+        return bOk ? 0 : 1;
+    }
+
     private static int Export(Voxels vox, string strName)
     {
         Directory.CreateDirectory("out");
@@ -235,7 +295,7 @@ internal static class Program
         Console.WriteLine(
             "silkencad — SilkenNet Code-as-CAD (PicoGK)\n" +
             "  smoke             foundation self-test (no output file)\n" +
-            "  build <cem.json>  generate an STL from a CEM manifest (ti_coin | anchor_zone1)\n" +
+            "  build <cem.json>  generate an STL from a CEM manifest (ti_coin | anchor_zone1 | mechanical_lock)\n" +
             "  verify <cem.json> measure golden-metrics → out/<name>.metrics.json (exit 0/1)\n" +
             "  sweep             generate + verify every cem/anchor_zone1.*.json (5-SKU)");
         return 0;

@@ -1,0 +1,19 @@
+{
+  "_note": "01_01 §4.3 mechanical lock — Zone-3 cathode-flange shank: barbs + DIN-471 groove. Shank Ø9 = PLACEHOLDER (HW.8 flange-Ø dim-freeze pending — NOT canon, no-premature-canon). 3 rows, OPPOSITE ratchet lean (barb_direction −1, §4.3 figure). Zone-1 and Zone-3 are SEPARATE Ti prints (PEEK press-fit) ⇒ each orients gentle-ramp-down independently, no co-orientation conflict. Groove = real DIN-471 for an Ø9 shaft (width 1.0 × depth 0.3), CNC post-DMLS.",
+  "kind": "mechanical_lock",
+  "name": "mechanical_lock_zone3",
+  "voxel_size_mm": 0.05,
+  "shank_diameter_mm": 9.0,
+  "shank_length_mm": 14.0,
+  "bore_diameter_mm": 1.3,
+  "contact_start_mm": 2.0,
+  "contact_length_mm": 9.0,
+  "barb_rows": 3,
+  "barb_height_mm": 0.28,
+  "lead_angle_deg": 30.0,
+  "trail_angle_deg": 70.0,
+  "barb_direction": -1,
+  "groove_offset_mm": 12.0,
+  "groove_width_mm": 1.0,
+  "groove_depth_mm": 0.3
+}

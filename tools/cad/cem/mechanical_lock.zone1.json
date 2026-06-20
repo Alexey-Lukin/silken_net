@@ -1,0 +1,19 @@
+{
+  "_note": "01_01 §4.3 mechanical lock — Zone-1 anode shank: annular ratchet barbs (§4.3 A) + DIN-471 retaining groove (§4.3 B). Ø11 = founder anode Ø (HW.33). Ratchet 30°/70° at h=0.28 satisfies all four §4.3 numbers (h, base≈0.59, α, β). PRINT gentle-ramp-DOWN (01_02 §1.6 tip-down) ⇒ 60° downface, Ti64 LPBF self-supporting (Sa≈15µm). Groove = real DIN-471 for an Ø11 shaft (width 1.1 × depth 0.25; canon §4.3 '0.8×0.6' was off-spec), CNC post-DMLS. Pull-out 3–5× / PEEK 150°C click = FEA (Гусак HW.3.IS) + bench, NOT asserted here.",
+  "kind": "mechanical_lock",
+  "name": "mechanical_lock_zone1",
+  "voxel_size_mm": 0.05,
+  "shank_diameter_mm": 11.0,
+  "shank_length_mm": 18.0,
+  "bore_diameter_mm": 1.3,
+  "contact_start_mm": 2.0,
+  "contact_length_mm": 12.0,
+  "barb_rows": 4,
+  "barb_height_mm": 0.28,
+  "lead_angle_deg": 30.0,
+  "trail_angle_deg": 70.0,
+  "barb_direction": 1,
+  "groove_offset_mm": 15.0,
+  "groove_width_mm": 1.1,
+  "groove_depth_mm": 0.25
+}
