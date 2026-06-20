@@ -57,6 +57,15 @@ internal sealed record GeometryMetrics
     public double? RfClearanceMm { get; init; }             // antenna(cavity top)↔Ti(flange face) at the datum — must ≥ 12 (02_01 §5.3)
     public double? MateInterferenceMm3 { get; init; }       // flange ∩ radome solid overlap (render) — large = parts foul, ~0 = clean mate
     public double? LugTipDiameterMm { get; init; }          // bayonet lug-tip Ø the radome socket must clear (Ø29 default vs Ø25 dome)
+
+    // Full axial-stack press-fit mate-audit (Zone 1↔2↔3, 01_01 §1+§3, null for non-stack). See MeasureAxialStack.
+    public double? Zone1SleeveInterferenceMm { get; init; } // (shaft−bore)/2 at Zone-1↔Zone-2; >0 press-fit, ~0 line-to-line, <0 clearance
+    public double? SleeveZone3InterferenceMm { get; init; } // (shank−bore)/2 at Zone-2↔Zone-3; −1.0 = the Ø9-in-Ø11 gap (F1 → HW.8)
+    public double? InsertionBudgetMm { get; init; }         // sleeve bore − (Zone-1 insert + Zone-3 shank); <0 ⇒ shanks collide (F2)
+    public double? OverallStackLengthMm { get; init; }      // anode bottom → flange-disc top — embedded install span (F3, CODIT)
+    public double? Zone1Zone2InterferenceMm3 { get; init; } // render overlap — 0 at nominal Ø11=Ø11 (surfaces touch, volumes don't; press-fit is +interference on bench)
+    public double? Zone2Zone3InterferenceMm3 { get; init; } // render overlap — a thin shell = flange shoulder on the sleeve top face, NOT the shank (Ø9 floats in bore Ø11 = F1)
+    public bool? BusBoreContinuous { get; init; }           // anode bore ≥ flange bore (bus conductor not pinched, F3)
 }
 
 internal static class Validation
@@ -282,6 +291,46 @@ internal static class Validation
             RfClearanceMm = Assembly.RfClearanceMm(cem),
             MateInterferenceMm3 = fInterVol,
             LugTipDiameterMm = 2.0 * Assembly.LugTipRadiusMm(cem),
+        };
+    }
+
+    // Zone-2 sleeve golden metrics (Деталь 2, 01_01 §1): the part is a HOLLOW tube → REUSE the radome's
+    // hollow-fraction (gotcha #9 inverted — hollow is intended). Hollow = 1 − solidVol / solid-rod vol
+    // (π·rOD²·L); the OD / bore / length gates live in Program (analytic against the frozen CEM).
+    public static GeometryMetrics MeasureSleeve(Zone2SleeveCem cem, Voxels voxSleeve)
+    {
+        GeometryMetrics oBase = Measure(cem.Name, cem.VoxelSizeMm, voxSleeve, null);
+        float fROuter = Zone2Sleeve.OuterR(cem);
+        double dSolidRod = Math.PI * fROuter * fROuter * cem.LengthMm;
+        double dHollow = dSolidRod > 0 ? 1.0 - (oBase.SolidVolumeMm3 / dSolidRod) : 0.0;
+        return oBase with { HollowFraction = dHollow };
+    }
+
+    // Full axial-stack mate-audit (01_01 §1+§3): base on the MERGED stack + the analytic press-fit metrics
+    // (CEM-only, from AxialStack) + two rendered interference volumes (BoolIntersect on copies, the same
+    // primitive as MeasureAssembly). Findings, not pass/fail: the Ø9-in-Ø11 clearance (F1) is the real
+    // un-reconciled state (HW.8), asserted by the pure xUnit suite, surfaced as ⚠ in the report.
+    public static GeometryMetrics MeasureAxialStack(AnchorAxialStackCem cem, AxialStackVoxels sv)
+    {
+        GeometryMetrics oBase = Measure(cem.Name, cem.VoxelSizeMm, sv.Merged, null);
+
+        Voxels voxZ1Z2 = new(sv.Zone1);
+        voxZ1Z2.BoolIntersect(sv.Zone2);
+        voxZ1Z2.CalculateProperties(out float fZ1Z2, out BBox3 _);
+
+        Voxels voxZ2Z3 = new(sv.Zone2);
+        voxZ2Z3.BoolIntersect(sv.Capsule);
+        voxZ2Z3.CalculateProperties(out float fZ2Z3, out BBox3 _);
+
+        return oBase with
+        {
+            Zone1SleeveInterferenceMm = AxialStack.Zone1SleeveInterferenceMm(cem),
+            SleeveZone3InterferenceMm = AxialStack.SleeveZone3InterferenceMm(cem),
+            InsertionBudgetMm = AxialStack.InsertionBudgetMm(cem),
+            OverallStackLengthMm = AxialStack.OverallStackLengthMm(cem),
+            Zone1Zone2InterferenceMm3 = fZ1Z2,
+            Zone2Zone3InterferenceMm3 = fZ2Z3,
+            BusBoreContinuous = AxialStack.BusBoreContinuous(cem),
         };
     }
 

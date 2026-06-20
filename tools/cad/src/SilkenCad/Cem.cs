@@ -177,6 +177,27 @@ internal sealed record RadomeCem
     public float ORingGrooveWidthMm { get; init; } = 1.0f;
 }
 
+// Zone 2 PEEK thermal-break sleeve (Деталь 2, 01_01 §1 + §4.1/§4.2) — the MIDDLE part: a plain hollow
+// PEEK tube that press-fits onto the Zone-1 anode shaft (one end) and receives the Zone-3 flange shank
+// (the other end), thermally decoupling the buried anode from the capsule-side cathode. Frozen dims
+// (01_01 §1): bore Ø11 (= Zone-1 shaft, press-fit H7/s6), wall 2.0 mm (CTE-limited Lamé SF 3.7×, NOT
+// press-fit hoop — §4.2), OD Ø15 = the WOUND in the tree (CODIT <25 → DBH ≥38). Length 50 mm (axial
+// thermal break, §4.1). The bore is a plain round hole: anti-rotation is a hex/spline profile in canon
+// (§1 + §4.3 C, ≤0.05 mm clearance) but that is bench-gated and not needed for the mate-audit → deferred
+// (00_07). DIN-471 retaining grooves live on the Ti Zone-1/Zone-3 ends (§3 step 6), NOT the PEEK sleeve;
+// barbs are pressed INTO the bore by the Ti shanks at 150 °C (§3 steps 4–5) → the PEEK bore is smooth
+// here. The bus conductor runs inside the ANODE's own Ø1.6 bore, not the sleeve (the bore holds the shaft).
+internal sealed record Zone2SleeveCem
+{
+    public string Kind { get; init; } = "zone2_sleeve";
+    public string Name { get; init; } = "zone2_sleeve";
+    public float VoxelSizeMm { get; init; } = 0.1f;       // no sub-mm features (a plain tube) → 0.1 ok (as radome)
+    public float BoreDiameterMm { get; init; } = 11f;     // = Zone-1 anode Ø (press-fit), frozen 01_01 §1
+    public float WallThicknessMm { get; init; } = 2f;     // CTE Lamé SF 3.7× (§4.2), frozen — NOT press-fit hoop
+    public float LengthMm { get; init; } = 50f;           // axial thermal break (§4.1), frozen
+    // OD = bore + 2·wall = Ø15 = the wound diameter in the tree (derived in Zone2Sleeve.OuterR, not stored).
+}
+
 // Capsule-end anchor ASSEMBLY (Деталь 3 ↔ Деталь 4, 02_02 §4 — Механізм Фіксації Капсули). The first
 // INTEGRATION artifact: the per-part generators are each verified in isolation, but nothing yet proves
 // they MATE. This CEM drives `Assembly` to bring the cathode flange and the PEEK radome into one
@@ -203,4 +224,32 @@ internal sealed record AnchorAssemblyCem
     // Components — reuse the per-part records (nested); defaults = the frozen Деталь-3 / Деталь-4 dims.
     public CathodeFlangeCem Flange { get; init; } = new();
     public RadomeCem Radome { get; init; } = new();
+}
+
+// Full anchor AXIAL stack (Zone 1 anode → Zone 2 PEEK sleeve → Zone 3 flange → Zone 4 radome, 01_01
+// §1 + §3). The SECOND integration artifact (after the capsule-end Assembly): it brings the WHOLE
+// anchor into one frame along its axis and MEASURES the PRESS-FIT interfaces no prior part ever proved
+// mate — Zone-1↔Zone-2 and Zone-2↔Zone-3. Like Assembly it is an AUDIT table, not a part pass/fail:
+// the press-fit findings are the real un-reconciled state (HW.8), surfaced as ⚠ + asserted by the pure
+// xUnit suite. Reuses the per-part records wholesale (nested) — Zone1 (AnchorCem) + Zone2 (Zone2SleeveCem)
+// + the existing capsule-end Assembly (AnchorAssemblyCem = flange+radome) — so it inherits every frozen
+// dim and the bayonet (Zone-3↔Zone-4) audit comes for free. Render uses the Zone-1 ENVELOPE (a solid
+// Ø11 rod), not the gyroid: a press-fit cares about the OD, not the internal porosity (that lives in
+// anchor_zone1 @0.1) — and it keeps the stack-scale 0.2 mm voxel safe (a ~0.25 mm gyroid wall would
+// fragment at 0.2). Z-datum = tree-side at z=0 (anode bottom) → capsule-side up.
+internal sealed record AnchorAxialStackCem
+{
+    public string Kind { get; init; } = "anchor_axial_stack";
+    public string Name { get; init; } = "anchor_axial_stack";
+    public float VoxelSizeMm { get; init; } = 0.2f;     // stack-scale (Ø15 × ~100 mm) — measures fit/interference, not porosity
+
+    // How deep the Zone-1 anode shaft inserts into the Zone-2 bore (press-fit overlap). The Zone-3 shank
+    // enters the OTHER end by its own shank length → InsertionBudget guards the two shanks don't collide.
+    public float Zone1InsertionMm { get; init; } = 30f;
+
+    // Components — reuse the per-part records (nested); defaults = the frozen Zone-1 / Zone-2 dims + the
+    // capsule-end (flange + radome) sub-assembly (it carries its own mate strategy).
+    public AnchorCem Zone1 { get; init; } = new();
+    public Zone2SleeveCem Zone2 { get; init; } = new();
+    public AnchorAssemblyCem Capsule { get; init; } = new();
 }

@@ -1,0 +1,9 @@
+{
+  "_note": "Деталь 2 — Zone 2 PEEK thermal-break sleeve (01_01 §1 + §4.1/§4.2). Frozen: bore Ø11 (= Zone-1 shaft, press-fit H7/s6), wall 2.0 mm (CTE Lamé SF 3.7×, §4.2 — NOT press-fit hoop), OD Ø15 = wound in tree (CODIT <25 → DBH ≥38), length 50 mm (axial thermal break, §4.1). Plain round bore: hex anti-rotation (§4.3 C, ≤0.05 mm) is bench-gated → deferred (00_07). DIN-471 retaining grooves are on the Ti Zone-1/Zone-3 ends (§3 step 6), not the PEEK sleeve; bore stays smooth (barbs press in at 150 °C, §3 steps 4-5).",
+  "kind": "zone2_sleeve",
+  "name": "zone2_sleeve",
+  "voxel_size_mm": 0.1,
+  "bore_diameter_mm": 11.0,
+  "wall_thickness_mm": 2.0,
+  "length_mm": 50.0
+}

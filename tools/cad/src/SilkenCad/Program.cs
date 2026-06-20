@@ -101,6 +101,16 @@ internal static class Program
                 AnchorAssemblyCem cem = Cem.Parse<AnchorAssemblyCem>(strJson);
                 return RunHeadless(cem.VoxelSizeMm, () => Export(Assembly.Build(cem).Merged, cem.Name));
             }
+            case "zone2_sleeve":
+            {
+                Zone2SleeveCem cem = Cem.Parse<Zone2SleeveCem>(strJson);
+                return RunHeadless(cem.VoxelSizeMm, () => Export(Zone2Sleeve.Build(cem), cem.Name));
+            }
+            case "anchor_axial_stack":
+            {
+                AnchorAxialStackCem cem = Cem.Parse<AnchorAxialStackCem>(strJson);
+                return RunHeadless(cem.VoxelSizeMm, () => Export(AxialStack.Build(cem).Merged, cem.Name));
+            }
             default:
                 return Fail($"unknown CEM kind: {Cem.Kind(strJson)}");
         }
@@ -145,6 +155,16 @@ internal static class Program
             {
                 AnchorAssemblyCem cem = Cem.Parse<AnchorAssemblyCem>(strJson);
                 return RunHeadless(cem.VoxelSizeMm, () => ReportAssembly(cem, Assembly.Build(cem)));
+            }
+            case "zone2_sleeve":
+            {
+                Zone2SleeveCem cem = Cem.Parse<Zone2SleeveCem>(strJson);
+                return RunHeadless(cem.VoxelSizeMm, () => ReportSleeve(cem, Zone2Sleeve.Build(cem)));
+            }
+            case "anchor_axial_stack":
+            {
+                AnchorAxialStackCem cem = Cem.Parse<AnchorAxialStackCem>(strJson);
+                return RunHeadless(cem.VoxelSizeMm, () => ReportAxialStack(cem, AxialStack.Build(cem)));
             }
             default:
                 return Fail($"unknown CEM kind: {Cem.Kind(strJson)}");
@@ -470,6 +490,84 @@ internal static class Program
         return bSane ? 0 : 1;
     }
 
+    // Zone-2 sleeve verify (Деталь 2, 01_01 §1): hollow-tube gates — hollow (a real tube, not a solid
+    // rod), OD = bore + 2·wall (the Ø15 wound, frozen), bore Ø11 (= Zone-1 shaft), length 50 (thermal
+    // break §4.1). A simple part → ordinary pass/fail (unlike the audit-table assembly/stack).
+    private static int ReportSleeve(Zone2SleeveCem cem, Voxels voxSleeve)
+    {
+        GeometryMetrics oM = Validation.MeasureSleeve(cem, voxSleeve);
+
+        Directory.CreateDirectory("out");
+        string strPath = Path.Combine("out", $"{cem.Name}.metrics.json");
+        Validation.WriteJson(oM, strPath);
+
+        float fOd = cem.BoreDiameterMm + (2f * cem.WallThicknessMm);
+        double dMaxXY = Math.Max(oM.BboxSizeMm[0], oM.BboxSizeMm[1]);
+        Console.WriteLine($"metrics → {strPath}");
+        Console.WriteLine(
+            $"  volume={oM.SolidVolumeMm3:F1} mm^3  " +
+            $"bbox={oM.BboxSizeMm[0]:F1}×{oM.BboxSizeMm[1]:F1}×{oM.BboxSizeMm[2]:F1} mm  tris={oM.TriangleCount}");
+        Console.WriteLine(
+            $"  bore Ø{cem.BoreDiameterMm:F0} · wall {cem.WallThicknessMm:F1} · OD Ø{fOd:F0} (wound) · " +
+            $"len {cem.LengthMm:F0} · hollow={oM.HollowFraction:P0}");
+
+        bool bSane = oM.SolidVolumeMm3 > 0 && oM.TriangleCount > 0 && oM.BboxSizeMm.All(d => d > 0);
+        bool bHollow = oM.HollowFraction is > 0.3;                              // a real tube, not a solid rod
+        bool bOd = Math.Abs(dMaxXY - fOd) <= 3f * cem.VoxelSizeMm;              // OD = wound Ø15 (frozen 01_01 §1)
+        bool bLen = Math.Abs(oM.BboxSizeMm[2] - cem.LengthMm) <= 3f * cem.VoxelSizeMm;
+
+        if (!bHollow) Console.WriteLine($"  ⚠ hollow {oM.HollowFraction:P0} ≤ 30 % — sleeve rendered solid (bore subtract failed)");
+        if (!bOd) Console.WriteLine($"  ⚠ OD {dMaxXY:F1} ≠ wound Ø{fOd:F0} (bore + 2·wall, frozen 01_01 §1)");
+        if (!bLen) Console.WriteLine($"  ⚠ length {oM.BboxSizeMm[2]:F1} ≠ {cem.LengthMm:F0} mm (thermal break §4.1)");
+
+        bool bOk = bSane && bHollow && bOd && bLen;
+        Console.WriteLine(bOk ? "VERIFY OK" : "VERIFY FAILED");
+        return bOk ? 0 : 1;
+    }
+
+    // Axial-stack mate-audit (Деталь 1↔2↔3↔4, 01_01 §1+§3): an AUDIT table, NOT a part pass/fail. The
+    // press-fit findings (Zone-3 shank Ø9 ≪ bore Ø11 = clearance F1; insertion budget F2) are the real
+    // un-reconciled state (HW.8), surfaced as ⚠ + asserted by the pure xUnit suite — so the exit-code
+    // gates ONLY that the merge rendered, keeping CI green while the findings drive bench (as ReportAssembly).
+    private static int ReportAxialStack(AnchorAxialStackCem cem, AxialStackVoxels sv)
+    {
+        GeometryMetrics oM = Validation.MeasureAxialStack(cem, sv);
+
+        Directory.CreateDirectory("out");
+        string strPath = Path.Combine("out", $"{cem.Name}.metrics.json");
+        Validation.WriteJson(oM, strPath);
+
+        Console.WriteLine($"metrics → {strPath}");
+        Console.WriteLine(
+            $"  volume={oM.SolidVolumeMm3:F1} mm^3  " +
+            $"bbox={oM.BboxSizeMm[0]:F1}×{oM.BboxSizeMm[1]:F1}×{oM.BboxSizeMm[2]:F1} mm  tris={oM.TriangleCount}");
+        Console.WriteLine(
+            $"  press-fit Zone1↔Zone2={oM.Zone1SleeveInterferenceMm:F2} mm · Zone2↔Zone3={oM.SleeveZone3InterferenceMm:F2} mm (shank-in-bore)");
+        Console.WriteLine(
+            $"  render overlap: Zone1∩Zone2={oM.Zone1Zone2InterferenceMm3:F0} mm³ · sleeve∩capsule={oM.Zone2Zone3InterferenceMm3:F0} mm³ (flange shoulder on sleeve end, not the shank)");
+        Console.WriteLine(
+            $"  insertion budget={oM.InsertionBudgetMm:F1} mm · embedded span={oM.OverallStackLengthMm:F1} mm · " +
+            $"bus-bore continuous={oM.BusBoreContinuous}");
+
+        // Render sanity — the ONLY exit-gate: a broken transform / Bool yields an empty or degenerate merge.
+        bool bSane = oM.SolidVolumeMm3 > 0 && oM.TriangleCount > 0 && oM.BboxSizeMm.All(d => d > 0);
+
+        // Mate findings (INFORMATIONAL — drive HW.8, do NOT fail the audit).
+        if (oM.SleeveZone3InterferenceMm is { } dS && dS < 0)
+            Console.WriteLine($"  ⚠ press-fit F1: Zone-3 shank Ø{cem.Capsule.Flange.ShankDiameterMm:F0} in bore Ø{cem.Zone2.BoreDiameterMm:F0} = {-dS:F1} mm clearance/side — NO press-fit (shank Ø placeholder → HW.8)");
+        if (oM.Zone1SleeveInterferenceMm is { } dZ && dZ <= 0)
+            Console.WriteLine($"  ℹ Zone-1↔Zone-2 nominal line-to-line ({dZ:F2} mm) — real +interference is the H7/s6 band (bench, 01_01 §3)");
+        if (oM.InsertionBudgetMm is { } dB && dB < 0)
+            Console.WriteLine($"  ⚠ press-fit F2: insertion budget {dB:F1} mm < 0 — Zone-1 + Zone-3 shanks collide inside the {cem.Zone2.LengthMm:F0} mm bore");
+        if (oM.BusBoreContinuous is false)
+            Console.WriteLine($"  ⚠ F3: anode bore Ø{cem.Zone1.BoreDiameterMm:F1} < flange bore Ø{cem.Capsule.Flange.BoreDiameterMm:F1} — bus conductor pinched");
+
+        Console.WriteLine(bSane
+            ? "AUDIT OK — stack rendered; press-fit findings above → HW.8 reconcile"
+            : "AUDIT FAILED — merge did not render (broken transform / Bool)");
+        return bSane ? 0 : 1;
+    }
+
     private static int Export(Voxels vox, string strName)
     {
         Directory.CreateDirectory("out");
@@ -484,7 +582,7 @@ internal static class Program
         Console.WriteLine(
             "silkencad — SilkenNet Code-as-CAD (PicoGK)\n" +
             "  smoke             foundation self-test (no output file)\n" +
-            "  build <cem.json>  generate an STL from a CEM manifest (ti_coin | anchor_zone1 | mechanical_lock | cathode_flange | radome | anchor_assembly)\n" +
+            "  build <cem.json>  generate an STL from a CEM manifest (ti_coin | anchor_zone1 | mechanical_lock | cathode_flange | radome | zone2_sleeve | anchor_assembly | anchor_axial_stack)\n" +
             "  verify <cem.json> measure golden-metrics → out/<name>.metrics.json (exit 0/1)\n" +
             "  sweep             generate + verify every cem/anchor_zone1.*.json (5-SKU)\n" +
             "  scan <cem.json>   wallParam working-window scan (anchor) → out/<name>.wallscan.json");

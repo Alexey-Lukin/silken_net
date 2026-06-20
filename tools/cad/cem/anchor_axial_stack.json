@@ -1,0 +1,5 @@
+{
+  "_note": "Full anchor AXIAL stack (Zone 1 anode → Zone 2 PEEK sleeve → Zone 3 flange → Zone 4 radome, 01_01 §1+§3). Second integration artifact after the capsule-end Assembly: MEASURES the PRESS-FIT interfaces Zone-1↔Zone-2 and Zone-2↔Zone-3 that no prior part proved mate. An AUDIT table, not a part pass/fail. Findings at frozen defaults: F1 sleeve_zone3 = −1.0 mm = 1 mm CLEARANCE per side (Zone-3 shank Ø9 placeholder ≪ bore Ø11 → NOT press-fit) → HW.8 shank-Ø reconcile; F2 insertion budget = 50−30−14 = 6 mm; F3 embedded span ~63 mm (anode→flange-top) + radome over bark. Nested Zone1/Zone2/Capsule inherit the frozen dims; render uses the Zone-1 envelope (solid Ø11, press-fit cares about OD). Axial mirror of the capsule-side Z-stack tools/in_silico/scripts/52_z_stack_tolerance.py.",
+  "kind": "anchor_axial_stack",
+  "name": "anchor_axial_stack"
+}
