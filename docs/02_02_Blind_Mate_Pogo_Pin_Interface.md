@@ -296,6 +296,20 @@ Ti (анкер) → Copper (пін)          ← різниця > 0.5 В → к�
 
 > ✅ **Затверджено (Z-stack-driven, 2026-06-20):** **байонет** (НЕ різьба) — bayonet hard-stop дає *детерміновану* Z, що вдвічі знижує CNC-residual у Z-stack (§3.5) і єдиний тримає O-ring у вікні (різьба = continuous engagement → недетермінована Z, FAIL). Залишок 👤: CAD + SLA-прототип фіксації (→ [`00_07` — HW.8](00_07_Action_Plan_Tracker)).
 
+### 4.4. In-silico Mate-Audit (Capsule-End Assembly) — Деталь 3 ↔ Деталь 4
+
+Перша **інтеграційна** верифікація байонетного стику: PicoGK-збірка (`tools/cad`, `anchor_assembly` CEM → `Assembly.cs`, 2026-06-20) зводить катод-фланець (Деталь 3) і радом (Деталь 4) в одну систему координат за **bayonet-замкненим datum** (lock-groove радома ↔ lugs фланця) і МІРЯЄ залишковий mismatch. Кожна деталь до цього верифікувалась **окремо** — збірка перша доводить (чи спростовує) що вони стикуються. Це **аудит-стіл**, не pass/fail виробу: знайдене = реальний стан незведеного Z-stack (→ §3.5, HW.8), а не баг генератора.
+
+**Знахідки (baseline `asis`, voxel 0.15 мм):**
+
+| Вісь | Значення | Причина |
+|---|---|---|
+| MATE-Ø radial | lugs Ø29 (flangeR + protrusion) vs dome Ø25; cavity Ø21 < disc Ø25 → **gap −2.0 мм** (disc fouls) | lug-protrusion 2.0 мм за периметр Ø25 |
+| Bayonet-Z | rim сідає на **6.42 мм** нижче O-ring цілі | Деталь3 lug-Z 15.5 ↔ Деталь4 lock-groove-Z 3.5 **незведені** |
+| RF clearance | antenna↔Ti **8.0 < 12 мм** floor | при datum cavity провалюється на фланець ([`02_01 §5.3`](02_01_Hardware_Architecture_and_BOM)) |
+
+**MATE-Ø кандидати** (Δ для bench-вибору, HW.17): **skirt** — спідниця радома Ø30 охоплює lugs (габарит ↑, bbox 30×30), купол лишається Ø25 для RF; **inboard** — lugs flush у Ø25 (bbox 25×25, втрата radial bayonet grip). Обидва вирішують лише **radial** MATE-Ø — bayonet-Z + RF = глибший Z-stack reconcile (§3.5). Вибір skirt/inboard + Z-reconcile (lock-groove-Z ↔ lug-Z) = 👤 bench (→ [`00_07` — HW.17 / HW.8](00_07_Action_Plan_Tracker)). Регресія чисел — pure xUnit (`AssemblyTests`); рендер-аудит — `verify anchor_assembly`.
+
 ---
 
 ## 🧩 5. Шлях Струму

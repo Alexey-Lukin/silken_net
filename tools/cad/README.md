@@ -41,6 +41,7 @@ geometry** deterministically. Parity is on derived metrics, never the raw STL by
 | `src/SilkenCad/MechanicalLock.cs` | §4.3 mechanical lock — `MechanicalLockShank` ratchet-barb + DIN-471 groove SDF on a hollow shank (Zone-1/Zone-3 demo) + self-support metric |
 | `src/SilkenCad/CathodeFlange.cs` | Деталь 3 — Zone-3 cathode flange (Ø25): reuses the §4.3 shank/barbs + radial bayonet lugs + bus bore + O-ring groove |
 | `src/SilkenCad/Radome.cs` | Деталь 4 — PEEK radome v2c (Ø25): hollow dome + shield bell + bayonet socket + PCB cavity + O-ring groove |
+| `src/SilkenCad/Assembly.cs` | Capsule-end mate-audit (Деталь 3↔4, 02_02 §4.4): bayonet datum + Z/MATE-Ø/RF mismatch + skirt/inboard candidates |
 | `src/SilkenCad.Leap/` | vendored LEAP source compiled in (relaxed warnings — not ours) |
 | `extern/LEAP71_{ShapeKernel,LatticeLibrary}` | git submodules (source-only; not on NuGet) |
 | `tests/SilkenCad.Tests/` | xUnit scaffold |
@@ -94,11 +95,18 @@ dotnet run --project src/SilkenCad -- scan   cem/anchor_zone1.pine.json     # �
 - **`out/` + `imgui.ini` are gitignored** (derived / viewer runtime). Native runtime
   lives in `~/.dotnet` → `export DOTNET_ROOT=$HOME/.dotnet` if running the apphost directly.
 
-## CI (deferred — local-verify first)
+## CI (enterprise 2-job)
 
-The `verify` exit-code is CI-ready. First-party PicoGK = macOS / Win64 only (Linux =
-community Docker + xvfb). A `cad_smoke.yml` on a macOS Apple-Silicon runner is the future
-target (`00_07` HW.1.PicoGK).
+`cad_smoke.yml` — path-gated on `tools/cad/**`:
+- **`logic` (ubuntu)** — `dotnet build` + the full xUnit suite. The suite is PicoGK-runtime-free
+  (CEM parse, gyroid/mate SDF math, connectivity flood-fill — no `Library.Go`), so it runs on a
+  cheap fast Linux runner as the **HARD** regression gate.
+- **`render` (macos-14)** — `dotnet build` (hard, both OSes) + `verify` golden-metrics (best-effort:
+  `Library.Go` SIGSEGVs / exit 139 on the headless hosted runner — no Metal/display context,
+  CI-confirmed 2026-06-20) + a CycloneDX SBOM + metrics artifacts.
+
+Local `dotnet run -- verify` stays the PRIMARY metrics gate (`00_07` HW.1.PicoGK); a self-hosted
+macOS-with-display runner would re-arm render-verify as a hard gate.
 
 ## Status & deferred
 
@@ -151,9 +159,18 @@ bayonet socket (L-slot, mate the Деталь-3 lugs) + PCB cavity (antenna↔Ti
 gates hollow-fraction / bell-rise / cavity / mate-fit. **🏁 Anchor-CAD family complete** (coin→anode-v2→
 ARCH.25→barbs→Деталь3→Деталь4). ⚠ MATE-Ø: Деталь-3 lugs Ø29 ↔ dome Ø25 → enclosing-skirt / lugs-inboard (HW.17 bench).
 
-**Deferred:** integrating all 4 parts into one full-anchor assembly + Z-stack mate (Z-stack already computed,
-`tools/in_silico/scripts/52`) · the MATE-Ø reconcile (Деталь-3 lugs ↔ radome socket Ø, HW.17) · a phase-correct
-strong continuous gradient (period-tensor/conformal) · Euler-χ / tortuosity connectivity cross-checks (ARCH.25 nice-to-have).
+**Capsule-end assembly / mate-audit (shipped)** — `Assembly.cs` + `anchor_assembly` CEM brings Деталь 3 ↔ Деталь 4
+into one frame at the bayonet datum (radome lock-groove ↔ flange lugs) and MEASURES the residual mismatch (radial
+−2.0 · bayonet-Z 6.42 · RF 8<12 mm) + models the two MATE-Ø candidates (`mate_strategy` skirt Ø30 vs inboard Ø25).
+An AUDIT table, NOT a part pass/fail — the mismatch is the real un-reconciled Z-stack (→ HW.17/HW.8), so `verify`
+exits on a broken render only; the numbers are asserted by the pure xUnit suite (`AssemblyTests`). Reuses
+`CathodeFlange.Build` · `Radome.Build` · `MeshUtility.voxApplyTransformation` (lift) · `BoolIntersect`. Z-stack
+inputs mirror `tools/in_silico/scripts/52`. Canon `02_02 §4.4`.
+
+**Deferred:** the FULL axial stack (anode → Zone-2 PEEK sleeve → flange → radome — needs a sleeve generator first;
+press-fit, not bayonet) · the MATE-Ø skirt/inboard CHOICE + Z-reconcile (lock-groove-Z ↔ lug-Z, 👤 bench HW.8) · a
+phase-correct strong continuous gradient (period-tensor/conformal) · Euler-χ / tortuosity connectivity cross-checks
+(ARCH.25 nice-to-have).
 
 ## License
 

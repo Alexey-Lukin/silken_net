@@ -54,6 +54,7 @@
 > | Zone 2 довжина (терморозрив) | **50 мм** | §4.1 + глибина встановлення |
 > | Zone 3 фланець = Radome Ø | **Ø25 мм** | pogo+O-ring+GDL+antenna ([`02_02 §1.3`](02_02_Blind_Mate_Pogo_Pin_Interface)) |
 > | Фіксація Radome↔Zone 3 | **байонет** (НЕ різьба) | Z-stack-детермінізм — дзеркало [`02_02 §3.5`](02_02_Blind_Mate_Pogo_Pin_Interface) |
+> | Mate-audit (Деталь 3↔4) | bayonet-Z / MATE-Ø / RF виміряно | capsule-end assembly [`02_02 §4.4`](02_02_Blind_Mate_Pogo_Pin_Interface) |
 > | O-ring CS / compression | CS 1.78 / 15–30 % | дзеркало [`02_02 §3.2`](02_02_Blind_Mate_Pogo_Pin_Interface) |
 
 ```

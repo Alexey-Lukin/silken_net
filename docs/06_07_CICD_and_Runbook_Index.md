@@ -50,7 +50,7 @@
 | `in_silico_smoke.yml` → **Smoke · In-silico L2** | PR/push `tools/in_silico/**` | EBFC in-silico pipeline smoke (L2) |
 | `docs.yml` → **CI · Docs** | PR/push `docs/**`, `**.md`, lib-docs engines/specs, `.github/**`, `app/models/**` | SSOT doc gates — `docs:check_refs` + `tracker:check` + linter-specs + model↔code sync ([`00_06 §3`](00_06_SSOT_Documentation_Standard)) |
 | `ml_smoke.yml` → **Smoke · ML log-mel** | PR/push `tools/ml/**`, `firmware/common/logmel_*.h` | TinyML/log-mel contract smoke — `emit_c --check` golden-parity ([`00_06 §3`](00_06_SSOT_Documentation_Standard), [`03_03 §3.4`](03_03_TinyML_Acoustic_Inference)) |
-| `cad_smoke.yml` → **Smoke · CAD PicoGK** | PR/push `tools/cad/**` | PicoGK Code-as-CAD smoke — `dotnet build` (LEAP submodule source vs PicoGK 2.2) hard gate + geometry `verify` golden-metrics (best-effort, display-gated); **macOS Apple-Silicon** runner ([`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)) |
+| `cad_smoke.yml` → **Smoke · CAD PicoGK** | PR/push `tools/cad/**` | PicoGK Code-as-CAD — **2-job**: `logic` (Linux) = pure-xUnit **hard-gate** (CEM/SDF/mate math, PicoGK-runtime-free) + `render` (macOS Apple-Silicon) = `dotnet build` **hard** (LEAP source vs PicoGK 2.2) + `verify` golden-metrics best-effort (Library.Go SIGSEGV 139 headless) + CycloneDX SBOM/artifacts ([`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)) |
 
 ### Deploy
 | Workflow (`file` → name) | Trigger | Призначення |
