@@ -39,6 +39,7 @@ geometry** deterministically. Parity is on derived metrics, never the raw STL by
 | `src/SilkenCad/Connectivity.cs` | ARCH.25 two-phase topological audit — SDF-sample + flood-fill (open/closed-pore, percolation, solid-island, specific-surface) |
 | `src/SilkenCad/WallScan.cs` | wallParam critical-threshold scan → the CEM working window (printable + open-pore + percolating); pure-managed, no render |
 | `src/SilkenCad/MechanicalLock.cs` | §4.3 mechanical lock — `MechanicalLockShank` ratchet-barb + DIN-471 groove SDF on a hollow shank (Zone-1/Zone-3 demo) + self-support metric |
+| `src/SilkenCad/CathodeFlange.cs` | Деталь 3 — Zone-3 cathode flange (Ø25): reuses the §4.3 shank/barbs + radial bayonet lugs + bus bore + O-ring groove |
 | `src/SilkenCad.Leap/` | vendored LEAP source compiled in (relaxed warnings — not ours) |
 | `extern/LEAP71_{ShapeKernel,LatticeLibrary}` | git submodules (source-only; not on NuGet) |
 | `tests/SilkenCad.Tests/` | xUnit scaffold |
@@ -126,6 +127,13 @@ ratchet self-supports at the `01_02 §1.6` tip-down / leading-ramp-down orientat
 downface, Sa≈15µm). Zone-1 Ø11 + Zone-3 placeholder Ø (HW.8 dim-freeze). Grounded over canon §4.3:
 tooth over-spec resolved at h=0.28; DIN-471 groove = real shaft dims (was off-spec 0.8×0.6).
 
+**Cathode flange / Деталь 3 (shipped)** — `cathode_flange` CEM → solid Ti flange Ø25 (frozen) reusing the
+§4.3 lock for the barbed Zone-3 shank (`CathodeFlange.ShankCem` mapping, dir −1) + 3 radial **bayonet lugs**
+(`LocalFrame(pos, radialZ)`) + Ø1.3 bus bore + O-ring groove. `verify` gates solidity (NOT hollow-shell,
+gotcha #9), Ø25, lugs-fused (bbox extent past the rim — 3 lugs @120° are asymmetric → span ≈ flangeD +
+protrusion), barb-count. Top face = pogo pads (coating, not geometry); side/perimeter = cathode catalytic
+(O₂ ingress, 02_02 §1.2). **Деталь 4 radome v2c = next phase** (dome + shield bell + bayonet socket + cavity).
+
 **Ti-coin A_electrode (shipped)** — `ti_coin` CEM → Ø16 disc, 1 face ≈ 2 cm² (01_03 §3.5); `verify` gates
 the projected `active_electrode_area_cm2` (|A−2.0|≤0.1) + an optional `active_window_diameter_mm` (an
 O-ring / lacquer defined-area cell — decouples A from the coin edge). Disc not square: RDE-ready, uniform
@@ -136,10 +144,10 @@ radial j, no corner edge-effects (01_01 §6.1).
 67.6 % mid-window). Pure-managed (no Library.Go), `WallScan.cs` + 3 xUnit; feeds HW.33 + the FEA
 sheet-vs-network envelope.
 
-**Deferred:** integrating shank+barbs into the full gyroid rod (separate session) · PEEK Radome ("шляпа",
-HW.17) + cathode flange/PEEK Zone 2 as further PicoGK parts (blocked on HW.33 dim-freeze) ·
-a phase-correct strong continuous gradient (period-tensor/conformal) · Euler-χ / tortuosity connectivity
-cross-checks (ARCH.25 nice-to-have).
+**Deferred:** integrating shank+barbs into the full gyroid rod (separate session) · **Деталь 4 PEEK Radome v2c**
+("шляпа", HW.17) — dome Ø25 + shield bell + bayonet socket + PCB cavity (dim-freeze DONE → next phase;
+cathode-O₂ = perimeter, canon-fix `01_04 §5.5`) · a phase-correct strong continuous gradient
+(period-tensor/conformal) · Euler-χ / tortuosity connectivity cross-checks (ARCH.25 nice-to-have).
 
 ## License
 

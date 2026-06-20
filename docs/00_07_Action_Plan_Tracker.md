@@ -120,7 +120,8 @@
 - [x] 🤖 HW.1.PicoGK: headless `Library.Go(…, bEndAppWithTask:true)` (v1.6 `new Library()` застарів у v2.2) + Ti-coin генератор з «вушком» → валідний binary STL
 - [x] 🤖 HW.1.PicoGK: voxel-калібровка ✅ — «стеля ~0.4мм» виявилась **методом рендеру** (`voxIntersectImplicit` дає malformed level-set), фікс = `new Voxels(IImplicit, BBox3)` + `BoolIntersect` → рендериться при 0.1мм
 - [x] 🤖 HW.1.PicoGK: **анкер v1** ✅ 2026-06-20 (Ø11, 67.6%) + **v2 градієнтний ✅ 2026-06-21** — 3 осі (continuous cell-size / `wallParam`-пористість / stepped-зони), **власний SDF** (НЕ LEAP `ImplicitModular`: `FunctionalScaleTrafo` = хардкодед Z-demo, submodule ~1р застарів), per-shell-порозність, 8 xUnit + 7-SKU green (merged → main); phase-distortion/DMLS-floor/sheet-network → HW.33
-- [x] 🤖 HW.1.PicoGK: **barbs PicoGK (v2b) ✅** (`207d104`, main) — `MechanicalLock.cs` asymmetric ratchet R(z) + DIN-471 groove на hollow shank (Zone-1 Ø11 + Zone-3 placeholder Ø, реле HW.8); self-support метрика (orientation-conditional, `01_02 §1.6`); grounded-fixes над §4.3 → деталі **HW.26**; катод-фланець/PEEK-Radome — після HW.33 dim-freeze
+- [x] 🤖 HW.1.PicoGK: **barbs PicoGK (v2b) ✅** (`207d104`, main) — `MechanicalLock.cs` asymmetric ratchet R(z) + DIN-471 groove на hollow shank (Zone-1 Ø11 + Zone-3 placeholder Ø, реле HW.8); self-support метрика (orientation-conditional, `01_02 §1.6`); grounded-fixes над §4.3 → деталі **HW.26**
+- [x] 🤖 HW.1.PicoGK: **Деталь 3 (Zone 3 катод-фланець) ✅ 2026-06-20** (`CathodeFlange.cs`, main) — solid Ti фланець **Ø25** (frozen) + reuse §4.3 barbs+DIN-471 shank (Ø9 placeholder, ShankCem-mapping) + 3 **bayonet-lugs** (radial) + bus-bore Ø1.3 + O-ring groove; verify OK (solid 2266мм³ · barbs 3 · lugs 3 · cathode-side 2.36см²) + 3 xUnit (28 total). **Деталь 4 radome v2c = наступна фаза**
 - [x] 🤖 HW.1.PicoGK: validation-as-code ✅ (порозність/bbox/manifold → `metrics.json`, exit-code) + per-species 5-SKU sweep ✅ (`00_08 §1.3`)
 - [x] 🤖 HW.1.PicoGK: **ARCH.25 двофазна connectivity** ✅ 2026-06-21 (`a5ed3d9` — open-pore/percolation/solid-island/specific-surface, display-less xUnit; adaptive-resolution gotcha; деталі → секція **ARCH.25**)
 - [x] 🤖 HW.1.PicoGK: `tools/cad` README ✅ + skill `.claude/skills/picogk` ✅ + CI `cad_smoke.yml` ✅ (macOS-runner) + Noyron-методологія в canon ✅
@@ -348,7 +349,8 @@
 - **P1** · 👤 · ⚪ · → `02_01 §5.2`, `01_04 §5.5`
 - **Стан:** Осьова вісь розблокована (freeze 2026-06-20) — PEEK Radome (Деталь 4) **Ø25 на байонеті** Zone 3 катод-фланця (НЕ анод; bayonet, НЕ різьба — §3.5 Z-stack): радіопрозорий купол + O-ring EPDM → IP68; керамічна антена ≥8мм Z-clearance (антена↔Ti ~12мм) + overhang за Ti-периметр (`02_01 §5.3`); anti-overgrowth shield виступ ≥3мм + R≥5мм + super-hydrophobic Fluoropel (`01_04 §5.5`). PicoGK Деталь 3/4 (машинна половина) тепер можлива. Канон `02_01 §5.2` / `01_04 §5.5`.
 - [ ] 👤 KiCad PCB layout (HW.9) → PEEK radome dimensions
-- [ ] 🤖 PicoGK CAD radome-генератор (`tools/cad`, v2c — третя PicoGK-частина після HW.33 dim-freeze; реле HW.1.PicoGK)
+- [x] 🤖 **Деталь 3 катод-фланець PicoGK ✅ 2026-06-20** (`CathodeFlange.cs` — фланець Ø25 + barbs + bayonet-lugs + bore + O-ring groove, HW.1.PicoGK)
+- [ ] 🤖 **Деталь 4 radome v2c** PicoGK-генератор (`tools/cad`, купол Ø25 + shield-дзвін ≥3/R≥5 + bayonet-socket + cavity) = наступна фаза; catode-O₂ = **периметр** (досліджено: gas-phase 5–10× — академ.), canon-fix `01_04 §5.5` ASCII «центр»→периметр pending; реле HW.1.PicoGK
 - [x] 👤 Тип кріплення: **байонет ✅** (НЕ різьба — детермінована Z, Z-stack §3.5 / HW.8.4) на **Деталь 3 = Катод** (НЕ Анод!)
 - [ ] 👤 Визначити матеріал O-ring (EPDM vs FKM) для ксилемного середовища
 - [ ] 👤 **HFSS-симуляція** з 3D-моделями Ti-фланця + PEEK-радома + чіп-антени (нова вимога 02_01 §5.3 revised) — VSWR < 1.8, gain ≥ −2 dBi
