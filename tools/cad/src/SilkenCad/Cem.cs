@@ -42,3 +42,21 @@ internal sealed record TiCoinCem
     public float LoopRingRadiusMm { get; init; } = 1.6f;  // torus centreline radius
     public float LoopTubeRadiusMm { get; init; } = 0.6f;  // torus tube (wire) radius
 }
+
+// Zone-1 gyroid anode (01_01 §5): a radial-gyroid Ti rod with a central bore for the
+// bus conductor. Ø = founder 2026-06-20 (Ø11, HW.33). v1 = CONSTANT radial gyroid;
+// the radial pore gradient (300→100µm at constant porosity) is v2 via ImplicitModular.
+// Porosity is MEASURED, not assumed — Gibson-Ashby n=2 may overstate gyroid stiffness
+// (HW.33), so PorosityTarget is a goal to verify, not a frozen constant.
+internal sealed record AnchorCem
+{
+    public string Kind { get; init; } = "anchor_zone1";
+    public string Name { get; init; } = "anchor_zone1";
+    public float VoxelSizeMm { get; init; } = 0.1f;
+    public float OuterDiameterMm { get; init; } = 11f;    // founder 2026-06-20 (HW.33)
+    public float BoreDiameterMm { get; init; } = 1.6f;    // central bus conductor (~1–2 mm²)
+    public float LengthMm { get; init; } = 40f;           // Zone-1 30–50 mm
+    public float GyroidPeriodMm { get; init; } = 2.5f;     // cartesian gyroid period (mm)
+    public float GyroidWallParam { get; init; } = 1.0f;    // DIMENSIONLESS band: solid where |eq| < 0.5*param (eq ∈ [-1.5,1.5], NOT mm)
+    public float PorosityTarget { get; init; } = 0.65f;
+}

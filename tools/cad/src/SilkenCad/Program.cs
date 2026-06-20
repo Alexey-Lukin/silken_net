@@ -54,8 +54,6 @@ internal static class Program
         return iResult;
     }
 
-    // Foundation self-test: proves the native runtime + ShapeKernel + LatticeLibrary
-    // render an implicit inside the Library.Go context.
     private static int Smoke()
     {
         BasePipe oPipe = new(new LocalFrame(), 20f, 4f, 8f);
@@ -69,48 +67,65 @@ internal static class Program
     private static int Build(string strCemPath)
     {
         string strJson = File.ReadAllText(strCemPath);
-        string strKind = Cem.Kind(strJson);
-        switch (strKind)
+        switch (Cem.Kind(strJson))
         {
             case "ti_coin":
+            {
                 TiCoinCem cem = Cem.Parse<TiCoinCem>(strJson);
                 return RunHeadless(cem.VoxelSizeMm, () => Export(TiCoin.Build(cem), cem.Name));
+            }
+            case "anchor_zone1":
+            {
+                AnchorCem cem = Cem.Parse<AnchorCem>(strJson);
+                return RunHeadless(cem.VoxelSizeMm, () => Export(Zone1Anode.Build(cem), cem.Name));
+            }
             default:
-                return Fail($"unknown CEM kind: {strKind}");
+                return Fail($"unknown CEM kind: {Cem.Kind(strJson)}");
         }
     }
 
     private static int Verify(string strCemPath)
     {
         string strJson = File.ReadAllText(strCemPath);
-        string strKind = Cem.Kind(strJson);
-        switch (strKind)
+        switch (Cem.Kind(strJson))
         {
             case "ti_coin":
+            {
                 TiCoinCem cem = Cem.Parse<TiCoinCem>(strJson);
-                return RunHeadless(cem.VoxelSizeMm, () => VerifyTiCoin(cem));
+                return RunHeadless(cem.VoxelSizeMm, () => Report(cem.Name, cem.VoxelSizeMm, TiCoin.Build(cem), null));
+            }
+            case "anchor_zone1":
+            {
+                AnchorCem cem = Cem.Parse<AnchorCem>(strJson);
+                return RunHeadless(cem.VoxelSizeMm, () =>
+                {
+                    Voxels voxEnv = Zone1Anode.Envelope(cem);
+                    Voxels voxAnode = Zone1Anode.Anode(cem, voxEnv);
+                    return Report(cem.Name, cem.VoxelSizeMm, voxAnode, voxEnv, cem.PorosityTarget);
+                });
+            }
             default:
-                return Fail($"unknown CEM kind: {strKind}");
+                return Fail($"unknown CEM kind: {Cem.Kind(strJson)}");
         }
     }
 
-    private static int VerifyTiCoin(TiCoinCem cem)
+    private static int Report(string strName, float fVoxel, Voxels voxSolid, Voxels? voxEnvelope, float fPorosityTarget = 0f)
     {
-        Voxels vox = TiCoin.Build(cem);
-        GeometryMetrics oMetrics = Validation.Measure(cem.Name, cem.VoxelSizeMm, vox);
+        GeometryMetrics oMetrics = Validation.Measure(strName, fVoxel, voxSolid, voxEnvelope);
 
         Directory.CreateDirectory("out");
-        string strPath = Path.Combine("out", $"{cem.Name}.metrics.json");
+        string strPath = Path.Combine("out", $"{strName}.metrics.json");
         Validation.WriteJson(oMetrics, strPath);
 
+        string strPorosity = oMetrics.Porosity is { } dP ? $"  porosity={dP:P1} (target {fPorosityTarget:P0})" : "";
         Console.WriteLine($"metrics → {strPath}");
         Console.WriteLine(
             $"  volume={oMetrics.SolidVolumeMm3:F1} mm^3  " +
             $"bbox={oMetrics.BboxSizeMm[0]:F1}×{oMetrics.BboxSizeMm[1]:F1}×{oMetrics.BboxSizeMm[2]:F1} mm  " +
-            $"tris={oMetrics.TriangleCount}");
+            $"tris={oMetrics.TriangleCount}{strPorosity}");
 
-        // v1 sanity gate (CI-ready exit code). Richer spec-vs-reference comparison
-        // lands with the graded anchor (porosity 65±2%, pore gradient, min-wall).
+        // v1 sanity gate (CI-ready exit code). Richer asserts (porosity 65±2%, pore
+        // gradient, min-wall) land with the graded anchor v2.
         bool bOk = oMetrics.SolidVolumeMm3 > 0 && oMetrics.TriangleCount > 0 && oMetrics.BboxSizeMm.All(d => d > 0);
         Console.WriteLine(bOk ? "VERIFY OK" : "VERIFY FAILED");
         return bOk ? 0 : 1;
@@ -130,7 +145,7 @@ internal static class Program
         Console.WriteLine(
             "silkencad — SilkenNet Code-as-CAD (PicoGK)\n" +
             "  smoke             foundation self-test (no output file)\n" +
-            "  build <cem.json>  generate an STL from a CEM manifest\n" +
+            "  build <cem.json>  generate an STL from a CEM manifest (ti_coin | anchor_zone1)\n" +
             "  verify <cem.json> measure golden-metrics → out/<name>.metrics.json (exit 0/1)");
         return 0;
     }
