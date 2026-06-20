@@ -305,7 +305,7 @@
 - [ ] 👤 Замінити SMD резистори якщо мисматч
 - [ ] 👤 Задокументувати фінальні номінали
 
-#### HW.8 — Pogo pin specification (7 блокерів)
+#### HW.8 — Pogo pin specification (8 блокерів)
 - **P1** · 👤 · ⚪ · → `02_02`
 - **Стан:** Не розпочато — фіналізація сліпого pogo-інтерфейсу, 7 суб-блокерів: напилення пінів Au + Hard-Gold ENIG на центральній площадці анкера (проти Ti↔Au гальванопари), spring force ~100г, байонет ✅, O-ring/IP-клас, соосність, Z-stack tolerance ✅ (3-spring: Pogo 50–70% ∧ O-ring 15–30% ∧ Sil-Pad 30–40%; spacer+bayonet, HW.8.7). **Capsule-end assembly (`02_02 §4.4`) додав ГЕОМ. Z-нитку** (поза spring-tolerance HW.8.7): Деталь3 lug-Z 15.5 ↔ Деталь4 lock-groove-Z 3.5 **незведені** → при bayonet-datum bayonet-Z 6.42 + RF 8<12 мм → reconcile lock-groove-Z/lug-Z на bench. Канон `02_02` (§Підсумок audit + §1.2 CRITICAL центральна площадка / §3.5 Z-stack / §4.4 mate-audit).
 - [ ] 👤 HW.8.1: Матеріал напилення piн → Gold (Hard Gold, Au 0.76 µm)
@@ -315,6 +315,7 @@
 - [ ] 👤 HW.8.5: O-ring → EPDM, **CS 1.78 мм, 15-30% compression** (Parker static; reconcile drift → home `02_02 §3.2`); цільовий IP (IP67/IP68) — затвердити
 - [ ] 👤 HW.8.6: Допуски соосності (XY-площина) → Lead-in chamfer
 - [x] 🤖+👤 **HW.8.7 Z-stack ✅ обчислено 2026-06-20** (`tools/in_silico/scripts/52_z_stack_tolerance.py`): **3-spring** (Pogo ∥ acoustic Sil-Pad на спільному Power↔Zone3 gap + O-ring окремо) 1D RSS+worst-case. Сирий stack FAIL (RSS ±0.45 ≫ найвужче вікно); **spacer сам теж FAIL** (O-ring→13.7%); **min mitigation = spacer 0.1мм + bayonet hard-stop** → всі 3 вікна тримаються (pogo 55-65% · O-ring 16-24% · pad 28-42%, incl 20-р creep). Канон `02_02 §3.5` (Sil-Pad-gap закрито). **Залишок 👤:** фіз-bench QA-вимір D3+D4 + robot spacer-selection. **P0** freeze → ✅ розблокував Radome/B2B/PCBA.
+- [ ] 👤 **HW.8.8 (NEW 2026-06-20): lug/Z mate reconcile** — capsule-end assembly (`02_02 §4.4`) виявив, що bayonet-геометрія Деталь3↔Деталь4 НЕ зведена (поза spring-tolerance HW.8.7): lug-Z 15.5 ↔ lock-groove-Z 3.5 → bayonet-Z **6.42 мм** off + RF antenna↔Ti **8<12 мм** при bayonet-datum. Bench: переглянути `lug_protrusion` + `lock_groove_z` + `lug_z` **ЦІЛІСНО** (placeholder; HW.8.4 bayonet вже ✅) так, щоб і radial (skirt-напрямок — `02_02 §4.4` рекомендація, → HW.17/HW.33), і Z зійшлися в одному заході; + HFSS на Ø30-overhang. `02_02 §4.4` + §3.5
 
 #### HW.9 — PCB KiCad layouts
 - **P1** · 👤 · ⚪ · → `02_01`
