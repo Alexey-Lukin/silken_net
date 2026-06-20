@@ -68,7 +68,15 @@ dotnet run --project src/SilkenCad -- verify cem/anchor_zone1.pine.json     # �
   coarse voxel under-resolves voids → falsely high porosity).
 - **Voxel-resolution floor:** sub-100 µm pores need voxel ~0.03 mm → huge grids. The Ø11
   anode renders cleanly at 0.1 mm (pores ~2.5 mm); realistic 300→100 µm pores are the
-  HW.33 ceiling.
+  HW.33 ceiling — and **un-printable at 65 %** anyway (SLM wall ~200 µm → min printable pore
+  ≈ 1.2 mm; canonical 100 µm periphery would need a ~26 µm wall).
+- **Continuous radial gradient distorts above ~0.8× period ratio:** a spatially-varying
+  frequency makes the SDF non-Eikonal (`|∇eq| ∝ f`); the parasitic `∇f·coord` term collapses
+  porosity (measured 67→42 % at period 2.5→1.3 mm). Keep continuous gradients gentle. For a
+  STRONG pore contrast use `topology: stepped` (constant-period zones → distortion only at the
+  thin boundary ring). A phase-correct strong continuous gradient needs period-tensor/conformal
+  (Noyron/nTop-level), beyond this demo. **Per-shell porosity uses cumulative-diff** (thin rings
+  under-count metal on distorted geometry).
 - **`ImplicitUsings` must stay ENABLED** for `src/SilkenCad.Leap` (vendored LEAP source
   relies on implicit `using System` / `System.Collections.Generic`).
 - **`out/` + `imgui.ini` are gitignored** (derived / viewer runtime). Native runtime
@@ -80,11 +88,22 @@ The `verify` exit-code is CI-ready. First-party PicoGK = macOS / Win64 only (Lin
 community Docker + xvfb). A `cad_smoke.yml` on a macOS Apple-Silicon runner is the future
 target (`00_07` HW.1.PicoGK).
 
-## Deferred (v2)
+## Status & deferred
 
-Graded gyroid (radial 300→100 µm via `ImplicitModular` + `ICoordinateTrafo` +
-`IBeamThickness`) · annular barbs (`01_01 §4.3A`) · per-species 5-SKU sweep
-(`00_08 §1.3`) · PEEK Radome (the "шляпа", HW.17) as a third PicoGK part.
+**v2 graded anode shipped** — three CEM-driven grading strategies, all MEASURED and FEA/bio-gated
+(the "which is best" answer is open; the generator is unbiased, not opinionated):
+- **continuous cell-size** (`GyroidPeriodRimMm`): gentle only (phase-distortion-limited ~0.8×) —
+  flat porosity, smooth pore taper.
+- **porosity gradient** (`GyroidWallParamRim`): clean monotone profile (the "softer rim").
+- **stepped heterostructure** (`Topology: stepped`, `ZonedGyroid`): strong ~2× pore contrast at
+  constant porosity. Own SDF, not LEAP `ImplicitModular` (`FunctionalScaleTrafo` is a hard-coded
+  Z-demo + the LatticeLibrary submodule is ~1 yr stale).
+
+5-SKU per-species sweep + a porosity-gradient demo + a stepped demo (7 SKU total).
+
+**Deferred:** annular barbs (`01_01 §4.3A`, separate session — `00_07`) · PEEK Radome ("шляпа",
+HW.17) + cathode flange/PEEK Zone 2 as further PicoGK parts (blocked on HW.33 dim-freeze) ·
+a phase-correct strong continuous gradient (period-tensor/conformal).
 
 ## License
 

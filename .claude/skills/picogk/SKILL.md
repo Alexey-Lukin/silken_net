@@ -54,9 +54,13 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
    0.5*wallParam` ⇒ solid; a clean wall needs `wallParam ≪ amplitude`. **Porosity is
    voxel-dependent → MEASURE it** (a coarse voxel under-resolves voids → falsely high
    porosity; at 0.1mm the Ø11 anode reads 67.6% ≈ the 65% target, vs 21–28% at 0.4–0.5mm).
-5. **Voxel-resolution floor** — sub-100µm pores need voxel ~0.03mm → ~10⁹-voxel grids. The
-   Ø11 anode renders cleanly at 0.1mm (pores ~2.5mm); realistic 300→100µm pores are the
-   HW.33 ceiling (may need a tiled/per-cell approach — or keep nTop — for fine pores).
+5. **Voxel-resolution floor + gradient distortion** — sub-100µm pores need voxel ~0.03mm →
+   ~10⁹-voxel grids. The Ø11 anode renders cleanly at 0.1mm (pores ~2.5mm); realistic 300→100µm
+   pores are the HW.33 ceiling (and **un-printable at 65%**: SLM wall ~200µm → min pore ~1.2mm).
+   Separately, a **continuous radial gradient distorts above ~0.8× period ratio** (non-Eikonal
+   `|∇eq|∝f`; the `∇f·coord` term collapses porosity 67→42% at 2.5→1.3mm) → keep continuous gentle,
+   or use `ZonedGyroid` (stepped) for strong contrast. Per-shell porosity = cumulative-diff (thin
+   rings under-count metal on distorted geometry).
 6. **`ImplicitUsings` ENABLED for `src/SilkenCad.Leap`** — vendored LEAP source relies on
    implicit `using System` / `System.Collections.Generic`. Disabling → 200+ CS0246. Strict
    knobs (warnings-as-errors, nullable) are ON for OUR code (`src/SilkenCad`, `tests/`), OFF
@@ -72,9 +76,11 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 - **Change anchor geometry**: edit `cem/anchor_zone1.*.json` (Ø, bore, period, wallParam).
   Geometry numbers are owned in `01_01 §5` + founder decisions in `00_07 HW.33`; **MEASURE
   porosity after** (gotcha #4). Render via `Zone1Anode.Anode` (the ctor route, gotcha #1).
-- **Graded gyroid (v2)**: `ImplicitModular(IBeamThickness, ICoordinateTrafo, IRawTPMSPattern,
-  ISplittingLogic)` — `FunctionalScaleTrafo` for the radial 300→100µm cell-size gradient,
-  `IBeamThickness` to hold ~65% porosity while the cell varies. See `README_ImplicitLibrary.md`.
+- **Graded gyroid (v2, SHIPPED)**: own SDF, **NOT** LEAP `ImplicitModular` (`FunctionalScaleTrafo`
+  is a hard-coded Z-demo, not radial; LatticeLibrary submodule ~1 yr stale). Three CEM-driven axes
+  in `Zone1Anode`: `GradedCartesianGyroid` (continuous period+wall taper) + `ZonedGyroid` (stepped
+  zones). Pick by goal — continuous-gentle (smooth, ≤~0.8× period ratio), `GyroidWallParamRim`
+  porosity gradient, or `topology: stepped` for a STRONG ~2× pore contrast. **MEASURE** porosity.
 - **Local-verify**: `dotnet build SilkenCad.sln` (0W/0E) → `dotnet run --project src/SilkenCad
   -- verify cem/<x>.json` (metrics.json + exit 0/1). This is the gate (CI-ready, macOS-runner deferred).
 - **Update a submodule**: `git -C tools/cad/extern/<repo> pull` + re-pin the gitlink; it stays
