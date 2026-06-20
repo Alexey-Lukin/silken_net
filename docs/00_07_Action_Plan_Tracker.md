@@ -102,24 +102,27 @@
 
 > ⚠️ Потребують фізичної роботи в лабораторії та/або з підрядниками.
 
+> 🧭 **Анкерний кущ — synergy map (dependency-DAG, NEW 2026-06-20).** Анкер-айтеми зшиті в один граф — виконувати **пакетами, не поштучно**. **[A] Дим-фриз** (HW.33 orient✓/Ø11✓ · HW.8 Ø фланця+пад · HW.26 barb/ring/hex · +PEEK/hole-chain) **→ [B] PicoGK CAD-родина** coin/anode/radome (`tools/cad` — **ЛІНЧПІН**, живить кожну стадію валідації) **→ [D] Staged validation** (HW.24 SLA→coin→anchor→100 · HW.3 aging). **[C] Завод-пакет** (HW.23 HIP · HW.27 bake · HW.2 EAAE · coating-map `01_02 §3.6`) ∥ B. **[E] Збірка** (HW.17 radome · HW.25 PTFE-GDL · HW.28 shield · HW.8 pogo · HW.6 install · HW.22 steril) — після фіз-деталей. Хімія HW.5 → coin/anchor. Аудит-знахідки + founder-рішення → **HW.33**.
+
 #### HW.1 — nTop model → SLM+HIP factory (Anode Zone 1)
 - **P0** · 👤 · ⚪ · → `01_01`, `01_02 §1.7`
-- **Стан:** Не розпочато — фабрична генерація тризонного анкера: Zone 1 (анод-гіроїд) SLM+HIP, Zone 3 (катод-фланець) SLM/EBM, Zone 2 (PEEK) CNC + annealing 200–250°C. Канон `01_01 §1/§5.5`, `01_02 §1.6/§1.7/§3.6`. Паралельний code-as-CAD трек **PicoGK** (AI-агент-сумісна альтернатива nTop GUI, Git-friendly SDF; стек/переваги/псевдокод → `01_02 §6`). nTop-ліцензія ПЗ отримана ✅.
+- **Стан:** Фабрична генерація тризонного анкера НЕ розпочата (Zone 1 SLM+HIP, Zone 3 SLM/EBM, Zone 2 CNC+annealing 200–250°C). Канон `01_01 §1/§5.5`, `01_02 §1.6/§1.7/§3.6`. **Code-as-CAD трек PicoGK — scaffold + Ti-coin SHIPPED 2026-06-20** (`tools/cad/`, .NET 9, PicoGK 2.2; пайплайн доведено end-to-end), решта pending (нижче). nTop-ліцензія є, але в nTop реально ~нуль → PicoGK тепер primary code-track. Геометрія-аудит → **HW.33**.
 - [ ] 👤 Генерація TPMS gyroid geometry (65% porosity, **тільки для Zone 1**)
-- [ ] 👤 **Вертикальна орієнтація пор** (`01_01` §5.5): головна вісь TPMS-комірки паралельна осі анкера (паралельно потоку соку)
-- [ ] 👤 **Градієнт розміру пор** (`01_01` §5.5): центр 300–500 µm → периферія 100–150 µm при сталій пористості 65% — параметризація nTop cell size як функція радіуса
+- [ ] 👤 **Орієнтація пор — ⚠️ СУПЕРЕЧНІСТЬ, див. HW.33** (`01_01 §5.5`): «канали ∥ осі стовбура (вертикаль)» vs «∥ осі анкера» несумісні (анкер вставляється радіально, `01_04 §3.2`) — рішення founder + canon-fix перед CAD-орієнтацією гіроїда
+- [ ] 👤 **Градієнт розміру пор** (`01_01 §5.5`): центр 300–500 µm → периферія 100–150 µm при сталій пористості 65% — cell size як функція радіуса
 - [ ] 👤 Окреме креслення Zone 3 (катодний фланець ∅20–30 мм)
-- [ ] 👤 STL/STEP файли → передати на SLM завод (Київ/Дніпро) разом з вимогою HIP-постпроцесу (`01_02` §1.7 + HW.23)
-- [ ] 👤 **Build orientation specification** (`01_02` §1.6): BD ∥ довгій осі анкера, кут до build plate 0° ± 5°, externally only support
-- [ ] 👤 **Карта обмежень покриттів** (`01_02` §3.6): передати заводу інструкцію — ZnO-Ta НЕ наносити на гіроїдні стінки Zone 1
+- [ ] 👤 STL/STEP файли → передати на SLM завод (Київ/Дніпро) разом з вимогою HIP-постпроцесу (`01_02 §1.7` + HW.23)
+- [ ] 👤 **Build orientation specification** (`01_02 §1.6`): BD ∥ довгій осі анкера, кут до build plate 0° ± 5°, externally only support
+- [ ] 👤 **Карта обмежень покриттів** (`01_02 §3.6`): передати заводу інструкцію — ZnO-Ta НЕ наносити на гіроїдні стінки Zone 1
 - [ ] 👤 SEM criteria для приймання партії
 - [ ] 👤 µCT-сканування для верифікації градієнту розміру пор (центр 300–500 → периферія 100–150 µm) при пористості 65 ± 2%
-- [ ] 👤 HW.1.PicoGK: setup C# (.NET 7+, VS2022/Rider) + build PicoGK lib (`github.com/leap71/PicoGK`)
-- [ ] 👤 HW.1.PicoGK: coding-agent пише `Zone1Anode` SDF-гіроїд (формула/псевдокод → `01_02 §6`)
-- [ ] 👤 HW.1.PicoGK: Stage 1 SLA-gen через PicoGK ∥ nTop reference — порівняти STL на topology errors
-- [ ] 👤 HW.1.PicoGK: per-species CEM 5 SKU (pine/oak/broadleaf/mangrove/tropical → [`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap))
-- [ ] 👤 HW.1.PicoGK: migration gate (Q2 2026) — clean STL без BREP → SSOT `.ntop`→`.cs`
-- [ ] 👤 HW.1.PicoGK: annular barbs SDF h=0.3mm для PEEK lock (`01_01 §4.3`, HW.26)
+- [x] 🤖 HW.1.PicoGK: enterprise scaffold `tools/cad/` (.NET 9, PicoGK 2.2 NuGet + ShapeKernel/LatticeLibrary submodules, CPM-пінінг, `.editorconfig`, xUnit) — solution builds 0W/0E
+- [x] 🤖 HW.1.PicoGK: headless `Library.Go(…, bEndAppWithTask:true)` (v1.6 `new Library()` застарів у v2.2) + Ti-coin генератор з «вушком» → валідний binary STL
+- [ ] 🤖 HW.1.PicoGK: voxel-калібровка (RAM-стеля 100µm-пора / 0.3мм-стінка на Mac) → вибір `voxel_size`
+- [ ] 🤖 HW.1.PicoGK: градієнтний `Zone1Anode` — `ImplicitRadialGyroid` + `ICoordinateTrafo` (grading) + `IBeamThickness` (65%) + barbs h=0.3мм (`01_01 §4.3`); **gated HW.33** (орієнтація + Ø стрижня)
+- [ ] 🤖 HW.1.PicoGK: validation-as-code (порозність/градієнт/wall≥0.3/manifold → `metrics.json`, exit-code) + per-species 5-SKU sweep (`00_08 §1.3`)
+- [ ] 🤖 HW.1.PicoGK: `tools/cad` README/docs + skill `.claude/skills/` + CI `cad_smoke.yml` (macOS-runner; Linux PicoGK community-only) + Noyron-методологія в canon
+- [ ] 🤖 HW.1.PicoGK: canon honesty-fix `01_02 §6` (.NET 9, PicoGK v2.2, real API, re-baseline дат, nTop→PicoGK primary)
 
 #### HW.23 — HIP postprocess specification for SLM anode
 - **P0** · 👤 · ⚪ · → `01_02 §1.7`
@@ -141,6 +144,15 @@
 - **P0** · 👤 · 🟡 · → `02_05 §7`
 - **Стан:** Рознесено в каноні — поз.11 wideband LTE-M/NB-IoT (700–2700 МГц, Kyivstar B1/B3/B7/B8/B20, опц. LTE+GNSS) · поз.12 LoRa 868 **tuned** 5 dBi fiberglass omni (OD8-868/ALL.4101); окремі RF-порти SX1262 vs SIM7070G, dual-band SMA відхилено (VSWR>2.5 @868 → −3-5 дБ EIRP). Канон `02_05 §7`.
 - [ ] 👤 freeze поз.11/12 у BOM Королеви при 02_05 BOM freeze
+
+#### HW.33 — Anchor geometry spec audit (PicoGK-gating, NEW 2026-06-20)
+- **P1** · 👤🤖 · 🟡 · → `01_01 §5.5`, `01_04 §3.2`, `02_02 §1.3`
+- **Стан:** Аудит-у-роботі — founder-рішення 2026-06-20 розблокували орієнтацію+Ø; лишилися дим-ланцюг (PEEK/hole) + порозність (FEA). **Анкерний кущ — синергія (dependency-DAG):** критичний шлях **[A] дим-фриз** (HW.33+HW.8+barbs+PEEK-chain) → **[B] PicoGK CAD-родина** coin/anode/radome (лінчпін — живить КОЖНУ стадію) → **[D] staged validation** (HW.24: SLA→coin→anchor→100); **[C] завод-пакет** (HW.23+HW.27+HW.2+coating-map) ∥ B; **[E] збірка** (HW.17/25/28/8/6/22) після фіз-деталей; хімія HW.5 → coin/anchor. **Пов'язані:** HW.8 (Ø фланця+пад), HW.24 (coin A=2см²+вушко), HW.26 (barbs), HW.17 (Radome — теж PicoGK).
+- [x] 👤 **Орієнтація гіроїда — ✅ РІШЕННЯ (б)** (founder 2026-06-20): вертикальність знято, **радіальний гіроїд** (`ImplicitRadialGyroid`, канали ∥ осі стрижня) — бінеперервний + синергія з SLM build-orient (`01_02 §1.6`: канали вертикальні при друку → кращі overhang). Canon-fix `01_01 §5.5`+`01_04 §3.2` (зняти хибну «±30° вертикальність») — pending
+- [x] 👤 **Ø стрижня Zone 1 — ✅ Ø11 мм** (founder 2026-06-20) + Ø центр-отвору під шину ~Ø1.3 мм (1–2 мм²) + hex — pending
+- [ ] 👤 **(нове) Повний радіальний дим-ланцюг НЕ закритий** — Ø11 не вирішує отвір у дереві. Ланцюг: шина Ø1.3 → вал/гіроїд Ø11 → **PEEK bore/wall/OD — НЕ задано** → **канал свердління Ø (=OD PEEK) — НЕ задано** → фланець Ø20–30. Травма = невизначений наслідок (вал Ø11+стінка PEEK ~3мм → канал ~Ø17 ≈ 4% Ø сосни, верхня межа CODIT). Trade-off: тонший PEEK/вал → менша рана vs терморозрив+міцність. **Заморозити PEEK+hole Ø разом з HW.8**
+- [ ] 🤖 **Gibson-Ashby n=2 оптимістичний:** 65% порозність → E≈13.5 ГПа за n=2, але sheet-гіроїд жорсткіший (n≈1.3–1.5 → E~22–28 ГПа > сосна 9–16 ГПа → stress-shielding). CEM-порозність — **параметр до FEA** (НЕ фіксувати 65% наосліп; validation-as-code assert), можливо ↑70–75%. Реле `01_01 §5.6` deferred-FEA
+- [ ] 🤖 **Ti-coin площа (CAD-реалізація спеки HW.24):** канон A_electrode=2 см² (`01_03`/HW.24); диск Ø10мм=0.79 см²/грань → CEM до Ø16мм (1 грань) або 10×10 мм (обидві = 2 см²)
 
 #### HW.32 — BME280 environmental sensing + VPD confounder [ADR `02_01 §3.4`]
 - **P1** · 👤 · 🟢 · → `02_01 §3.4`, `07_02 §1.3`

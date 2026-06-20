@@ -532,9 +532,9 @@ Arrhenius scaling: t_lab = t_field × exp(−Ea/k × (1/T_field − 1/T_lab))
 
 ## 🏭 6. Виробничий Статус
 
-### nTop — Параметрична Модель (поточний baseline)
+### nTop — Параметрична Модель (опціональний reference / escape-hatch)
 
-**Статус: ✅ Ліцензія отримана.**
+**Статус: 🟡 Ліцензія отримана, але робота в nTop практично не починалась.** PicoGK став **primary** code-CAD шляхом (нижче); nTop лишається як reference для порівняння + escape-hatch на випадок bus-factor (`00_07` HW.33).
 
 nTop — провідний інструмент для генерації мінімальних поверхонь (гіроїди, шварц, тощо) та параметричних DMLS-моделей. **Візуальний node-graph редактор** — інженер працює мишкою через GUI.
 
@@ -547,9 +547,9 @@ nTop — провідний інструмент для генерації мі�
 
 **🟡 Архітектурне обмеження nTop:** GUI-only workflow → **AI-агенти сліпі у візуальних інтерфейсах** (coding-agents не можуть "клікати" по нодах). Це блокер для AI-Native Engineering принципу ([`00_02 §2`](00_02_AI_Native_Engineering_and_TRL)). Параметричні моделі зберігаються у бінарних `.ntop` файлах — **не Git-friendly**, без зрозумілого diff'у, без code review. Для масової вибірки per-species геометрій (5 SKU: pine/oak/broadleaf/mangrove/tropical — [`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)) потрібна Code-as-CAD парадигма.
 
-### PicoGK + C# — Code-as-CAD Alternative (паралельний R&D track)
+### PicoGK + C# — Code-as-CAD (primary code-CAD трек)
 
-**Статус: 🟡 Кандидат для evaluation (TRL 3).**
+**Статус: ✅ SHIPPED scaffold + Ti-coin + validation-as-code (2026-06-20, `tools/cad/`)** — pipeline доведено end-to-end (PicoGK 2.2 → LEAP source → headless `Library.Go` → STL + `metrics.json`). **PicoGK = primary code-CAD шлях** (nTop-ліцензія є, але робота в nTop практично не починалась → реального incumbent немає). Реалізаційний стан/залишок → [`00_07` HW.1.PicoGK](00_07_Action_Plan_Tracker); анкер-геометрія + founder-рішення → HW.33.
 
 **PicoGK** ("пікок", павич) — відкритий воксельний SDF-ядро від **LEAP 71** (засновники Lin Kayser, Josefine Lissner, ex-Hyperganic; CEO LEAP 71). Це open-source engine, на якому працює пропрієтарна ШІ-модель LEAP 71 **Noyron** (внутрішній "головний інженер"). Сам Noyron закритий, але PicoGK відкритий на GitHub.
 
@@ -558,49 +558,24 @@ nTop — провідний інструмент для генерації мі�
 - **C# (.NET) як native API** — повністю текстовий, Git-friendly, AI-readable
 - Складні TPMS-структури (гіроїд) рендеряться без помилок топології (non-manifold edges — вічна проблема BREP CAD)
 
-**Стек:**
+**Методологія Noyron — те, що ми переймаємо (не сам Noyron, він закритий):**
+- **CEM (Computational Engineering Model) = детермінований алгоритм, НЕ ML.** Lin Kayser: *«a Computational Engineering Model is an algorithm, not a neural net — closer to an expert system».* Геометрія **обчислюється з наміру** (фізика + інженерні правила + виробничі обмеження, закодовані в коді), а не «малюється» нейромережею → детерміновано, простежувано, рев'юабельно, без галюцинацій.
+- **Уточнює наш «AI-Native»** ([`00_02 §4a`](00_02_AI_Native_Engineering_and_TRL)): «AI генерує геометрію кодом» = **агент пише детермінований генератор** (Git-diffable `.cs`), не LLM, що емітить mesh.
+- **Intent-first:** правило рахує геометрію (`IBeamThickness` тримає 65% порозність при градієнті розміру пори), а не ручні числа.
+- **Одна модель → родина:** per-species 5-SKU = один CEM × 5 спеків анатомії соку ([`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)) — як Noyron робить різні двигуни з одного CEM.
+- **Design↔sim злиті:** validation-as-code (порозність/градієнт/wall/manifold → `metrics.json`) = Noyron-івський «predicted-performance» output генератора.
 
-| Компонент | Інструмент |
+**Реальний стек (підтверджено в `tools/cad`, НЕ псевдокод):**
+
+| Компонент | Реальність |
 |---|---|
-| Мова | C# (.NET 7+) |
-| IDE | Visual Studio 2022 / JetBrains Rider |
-| Geometric engine | PicoGK (open source: `github.com/leap71/PicoGK`) |
-| Repo | C# console project + `PicoGK.dll` як бібліотека |
-| AI-pipeline | coding-agents пишуть SDF-обгортки на основі математичних промптів |
+| Мова / SDK | C# / **.NET 9** (PicoGK 2.2 таргетить `net9.0`) |
+| Geometric engine | **PicoGK 2.2** через NuGet — нативний runtime osx-arm64/win-x64 у пакеті (інсталятор ретирувано) |
+| Вищий рівень | **LEAP71 ShapeKernel + LatticeLibrary** — source-only git-submodules (`tools/cad/extern/`), компілюються в наш build; на NuGet їх немає |
+| Headless | `Library.Go(voxelSize, task, bEndAppWithTask:true)` — batch/CI без блокування на viewer (голий `new Library()` з v1.6-доків у v2.2 застарів) |
+| ОС | офіційно Win64 + **macOS Apple Silicon**; Linux — лише community Docker |
 
-**Концептуальний каркас (псевдокод — реальний API LEAP 71 може дещо відрізнятися):**
-
-```csharp
-using PicoGK;
-
-public class Zone1Anode
-{
-    public static void Generate(float diameter_mm, float length_mm,
-                                float pore_scale_mm, float wall_thickness_mm)
-    {
-        Voxels voxelField = new Voxels();
-
-        // 1. Базовий циліндр (коаксіальна трубка)
-        Implicit cylinder  = new ImplicitCylinder(radius: diameter_mm / 2, height: length_mm);
-        Implicit innerHole = new ImplicitCylinder(radius: 2.5f,             height: length_mm);
-        Implicit pipe      = new ImplicitDifference(cylinder, innerHole);
-
-        // 2. TPMS гіроїд: sin(x)cos(y) + sin(y)cos(z) + sin(z)cos(x) = 0
-        Implicit gyroid = new ImplicitGyroid(scale: pore_scale_mm,
-                                              wallThickness: wall_thickness_mm);
-
-        // 3. Перетин — гіроїд у формі циліндра (без BREP-помилок)
-        Implicit finalAnode = new ImplicitIntersection(pipe, gyroid);
-
-        // 4. Annular barbs для PEEK mechanical lock (§1.3 Крок 4, 01_01 §4.3)
-        // (AI-clone генерує асиметричний трикутник h=0.3mm)
-
-        // 5. Рендер у вокселі + експорт
-        voxelField.RenderImplicit(finalAnode);
-        voxelField.SaveToStl("Zone1_Gyroid_Anode_v1.stl");
-    }
-}
-```
+**Реальний API** (живий код — `tools/cad/src/SilkenCad/`): циліндр+отвір = `BasePipe(frame, length, rInner, rOuter)` · гіроїд = `ImplicitRadialGyroid(unitsPerRound, unitSizeZ, wall)` · радіальний градієнт = `FunctionalScaleTrafo` (`ICoordinateTrafo`) + `IBeamThickness` (порозність) · булеві на `Voxels` (`BoolAdd/Subtract/Intersect`) · рендер `voxBounding.voxIntersectImplicit(gyroid)` · export `vox.mshAsMesh().SaveToStlFile(path)` · метрики `Voxels.CalculateProperties(out vol, out bbox)`. **Градієнтний гіроїд — композиція цих примітивів, не from-scratch SDF** (головний ризик знятий).
 
 **Переваги для Silken Net:**
 
@@ -614,34 +589,17 @@ public class Zone1Anode
 | Ліцензія | Платна (~$25K/year) | Open source (Apache 2.0) |
 | Експорт у DMLS-slicer | STL/3MF | STL/3MF (clean topology) |
 
-**Промпт-template для coding-agents:**
-
-```
-Ти — Senior C# інженер, що працює з бібліотекою PicoGK (voxel SDF engine).
-Напиши клас Zone1Anode, який генерує воксельну сітку для DMLS 3D-друку.
-
-Параметри (CEM — Computational Engineering Model):
-- diameter: 20 мм (зовнішній), 5 мм (внутрішній отвір для шини)
-- length: 40 мм
-- gyroid_scale: 2.5 мм (крок решітки)
-- wall_thickness: 0.8 мм
-- annular_barbs: h=0.3mm, асиметричний трикутник (для PEEK creep lock, 01_01 §4.3)
-
-Логіка: 1) циліндр через SDF, 2) гіроїд через TPMS formula, 3) Intersect,
-4) додати barbs на зовнішній стінці, 5) експорт у .stl.
-```
-
-**Гейт для переходу на PicoGK як primary:**
-- Q1 2026: Setup C# проєкту + PicoGK build з GitHub (1 тиждень)
-- Q1 2026: Генерація Stage 1 SLA-моделі через PicoGK (паралельно з nTop reference)
-- Q2 2026: Якщо PicoGK генерує валідні STL без topology errors → **migration plan з nTop**
-- Q2 2026: Per-species CEM (5 SKU pine/oak/broadleaf/mangrove/tropical) → доводить переваги code-as-CAD для cross-biome roadmap ([`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap))
+**Чесні застереження (TRL 3, in-silico):**
+- Згенерований STL ≠ фізичний анкер; жоден TRL-claim не рухається ([`00_02 §1`](00_02_AI_Native_Engineering_and_TRL)).
+- **Воксельна стеля:** ~100µm-пора / 0.3мм-стінка → воксель ~25–33µm → ~10⁹-воксель bbox; калібрувати RAM перед градієнтним анкером (`00_07` HW.1.PicoGK).
+- **Bus-factor:** PicoGK v2.x, single-vendor (LEAP 71), молода спільнота → пінимо версії; nTop лишається задокументованим escape-hatch.
+- **Headless у CI** потребує display-контексту (`Library.Go` піднімає viewer): macOS-runner OK, Linux — лише community Docker + xvfb.
 
 **Cross-references:**
-- AI-Native Engineering philosophy → [`00_02 §4a`](00_02_AI_Native_Engineering_and_TRL) (In Silico для Hardware Stream)
-- TPMS геометрія анкера → [`01_01 §3`](01_01_Coaxial_Gyroid_Topology_and_PEEK) (поточна nTop-based)
-- Cross-biome generalization → [`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)
-- Noyron AI (LEAP 71 closed, для довідки) — пропрієтарний layer над PicoGK
+- AI-Native Engineering → [`00_02 §4a`](00_02_AI_Native_Engineering_and_TRL)
+- TPMS-геометрія анкера → [`01_01 §5`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
+- Cross-biome 5-SKU → [`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)
+- Реалізація + трекер → `tools/cad` + [`00_07` HW.1.PicoGK / HW.33](00_07_Action_Plan_Tracker)
 
 ### Перша Партія — 100 одиниць (Київ / Дніпро)
 
