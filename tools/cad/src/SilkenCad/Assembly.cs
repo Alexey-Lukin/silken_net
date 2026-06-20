@@ -73,11 +73,12 @@ internal static class Assembly
         return new AssemblyVoxels(voxMerged, voxFlange, voxRadome);
     }
 
-    // skirt candidate (MATE-Ø): open the radome's lower cavity to admit the Ø25 disc + Ø29 lugs, and wrap
-    // it with a structural ring out to Ø(lug-tip + clearance). The dome body stays Ø25 above (RF). Resolves
-    // MATE-Ø RADIALLY only — the bayonet-Z / RF mismatch is a separate Z-stack reconcile (HW.8). NB the ring
-    // is SOLID (no bayonet entry-slots yet) ⇒ a residual lug∩ring interference; cutting the L-slots that
-    // clear the lugs is the next-step detail (the audit measures the gap, doesn't yet close it).
+    // skirt candidate (MATE-Ø): open the radome's lower cavity to admit the Ø25 disc, wrap it with a
+    // structural ring out to Ø(lug-tip + clearance), and cut a proper L-slot bayonet socket in that ring —
+    // a circumferential lock groove at the lug Z (where the lugs sit after the quarter-turn) + axial entry
+    // slots (where the lugs pass down from the rim). Only the INNER band [bore, lug-tip+clearance] is cut,
+    // so the outer rim stays a structural wall (→ lug∩ring interference ≈ 0, the lug rides the groove). The
+    // dome body stays Ø25 above (RF). Resolves MATE-Ø RADIALLY only — bayonet-Z / RF is a separate Z-reconcile.
     private static void ApplyEnclosingSkirt(Voxels voxRadome, AnchorAssemblyCem cem, float fLift)
     {
         float fSkirtTopZ = FlangeTopZMm(cem) + 1f;                       // cover the lugs (15.5) + disc top (17)
@@ -86,10 +87,28 @@ internal static class Assembly
         float fH = fSkirtTopZ - fLift;
         LocalFrame oF = new(new Vector3(0f, 0f, fLift));
 
-        voxRadome.BoolSubtract(new BaseCylinder(oF, fH, fBoreR).voxConstruct());   // open the cavity
+        voxRadome.BoolSubtract(new BaseCylinder(oF, fH, fBoreR).voxConstruct());   // open the cavity for the disc
         Voxels voxRing = new BaseCylinder(oF, fH, fOuterR).voxConstruct();
-        voxRing.BoolSubtract(new BaseCylinder(oF, fH, fBoreR).voxConstruct());
-        voxRadome.BoolAdd(voxRing);                                                // structural wall
+        voxRing.BoolSubtract(new BaseCylinder(oF, fH, fBoreR).voxConstruct());     // → structural ring [bore, outer]
+
+        // L-slot bayonet socket cut into the ring (same primitive as Radome.Build's own socket).
+        float fLugZ = FlangeLugZMm(cem);                                            // lugs sit here (15.5)
+        float fSlot = cem.Radome.LugRadiusMm + cem.Radome.SlotClearanceMm;          // half-height / slot radius
+        float fGrooveOuterR = LugTipRadiusMm(cem) + cem.Radome.SlotClearanceMm;     // cut only up to lug-tip + clearance
+        LocalFrame oGrooveF = new(new Vector3(0f, 0f, fLugZ - fSlot));
+        Voxels voxGroove = new BaseCylinder(oGrooveF, 2f * fSlot, fGrooveOuterR).voxConstruct();
+        voxGroove.BoolSubtract(new BaseCylinder(oGrooveF, 2f * fSlot, fBoreR).voxConstruct());
+        voxRing.BoolSubtract(voxGroove);                                            // circumferential lock groove
+
+        for (int i = 0; i < cem.Flange.BayonetLugs; i++)                            // axial entry slots (lugs pass down)
+        {
+            float fAngle = 2f * MathF.PI * i / cem.Flange.BayonetLugs;
+            Vector3 vecRadial = new(MathF.Cos(fAngle), MathF.Sin(fAngle), 0f);
+            LocalFrame oSlot = new((vecRadial * fBoreR) + new Vector3(0f, 0f, fLift));
+            voxRing.BoolSubtract(new BaseCylinder(oSlot, fLugZ - fLift, fSlot).voxConstruct());
+        }
+
+        voxRadome.BoolAdd(voxRing);
     }
 }
 
