@@ -1,0 +1,20 @@
+<Project>
+
+  <!--
+    Shared build settings for every project under tools/cad/.
+    Strict knobs (warnings-as-errors, nullable) apply to OUR code (src/SilkenCad,
+    tests/) and are deliberately RELAXED in src/SilkenCad.Leap — that project only
+    compiles vendored LEAP 71 submodule source, which we do not own or lint.
+    Mirrors the firmware/extern (vendored) vs firmware/common (ours) split.
+  -->
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- PicoGK ships the native runtime per-RID; keep the build RID-explicit on CI. -->
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+</Project>

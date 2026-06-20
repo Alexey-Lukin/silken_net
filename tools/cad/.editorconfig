@@ -1,0 +1,36 @@
+# C# style + analyzer baseline for tools/cad/ — the .NET analogue of the repo's
+# .rubocop.yml (Ruby) and ruff.toml (Python). Enforced locally via `dotnet format`
+# and at build time (TreatWarningsAsErrors in Directory.Build.props).
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+[*.{cs,csx}]
+indent_size = 4
+# Prefer modern, terse C#
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_prefer_braces = true:warning
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+# Naming: private fields _camelCase, constants PascalCase
+dotnet_naming_rule.private_fields_underscore.severity = suggestion
+dotnet_naming_rule.private_fields_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_underscore.style = underscore_prefix
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_style.underscore_prefix.required_prefix = _
+dotnet_naming_style.underscore_prefix.capitalization = camel_case
+
+[*.{json,yml,yaml,props,csproj,sln}]
+indent_size = 2
+
+# Vendored LEAP 71 submodule source — not ours, do not lint.
+[extern/**.cs]
+generated_code = true

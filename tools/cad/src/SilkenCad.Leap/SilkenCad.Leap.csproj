@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Vendored LEAP 71 geometry libraries. These upstream repos ship NO .csproj of
+    their own (source-only), so the canonical integration is to compile their
+    source directly from the git submodules under tools/cad/extern/ and pull the
+    PicoGK kernel from NuGet. We do NOT own or lint this code → strict knobs off.
+    Pinned commits: ShapeKernel 166a459 (ShapeKernel-v2.1.0+5), LatticeLibrary
+    81c3c7b. See ../../extern + .gitmodules.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <!-- LEAP source relies on implicit global usings (System, Collections.Generic,
+         Linq) — it has no per-file `using System;`. Must stay ENABLED here. -->
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <NoWarn>$(NoWarn);CS0162;CS0168;CS0169;CS0219;CS0414;CS0649;CS1591;CS8019;NU1701</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="PicoGK" />
+  </ItemGroup>
+
+  <ItemGroup Label="LEAP 71 source from submodules (Examples/ deliberately excluded)">
+    <Compile Include="../../extern/LEAP71_ShapeKernel/ShapeKernel/**/*.cs">
+      <Link>ShapeKernel/%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Compile>
+    <Compile Include="../../extern/LEAP71_LatticeLibrary/LatticeLibrary/**/*.cs">
+      <Link>LatticeLibrary/%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Compile>
+    <Compile Include="../../extern/LEAP71_LatticeLibrary/ImplicitLibrary/**/*.cs">
+      <Link>ImplicitLibrary/%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Compile>
+  </ItemGroup>
+
+</Project>

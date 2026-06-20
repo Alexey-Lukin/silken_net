@@ -1,0 +1,25 @@
+<Project>
+
+  <!-- Central Package Management — single source of truth for NuGet versions,
+       the .NET analogue of Gemfile.lock / conda-lock.yml elsewhere in the repo.
+       Projects reference packages WITHOUT a Version attribute. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup Label="Geometry kernel">
+    <!-- PicoGK 2.2.0 (2026-06-05) targets net9.0 and bundles the osx-arm64 / win-x64
+         native runtime inside the NuGet package — the standalone installer was retired
+         in the v1.7.x line. Pulls SkiaSharp transitively. -->
+    <PackageVersion Include="PicoGK" Version="2.2.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Test">
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageVersion Include="xunit" Version="2.9.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.2" />
+  </ItemGroup>
+
+</Project>

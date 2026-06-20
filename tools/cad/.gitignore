@@ -1,0 +1,20 @@
+# .NET build output
+bin/
+obj/
+[Oo]ut/
+
+# Generated geometry artifacts — DERIVED from the .cs generators + cem/*.json
+# manifests, never the SSOT. Regenerate with `dotnet run -- build <cem>`.
+# Parity is on committed cem/*.metrics.json (derived metrics), never these blobs.
+*.stl
+*.vdb
+*.3mf
+
+# IDE / tooling
+.vs/
+.idea/
+*.user
+*.suo
+
+# PicoGK viewer runtime layout (Dear ImGui writes this on Library.Go)
+imgui.ini

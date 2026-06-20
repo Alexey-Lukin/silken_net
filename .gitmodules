@@ -16,3 +16,9 @@
 [submodule "firmware/extern/stm32wlxx-hal-driver"]
 	path = firmware/extern/stm32wlxx-hal-driver
 	url = https://github.com/STMicroelectronics/stm32wlxx-hal-driver
+[submodule "tools/cad/extern/LEAP71_ShapeKernel"]
+	path = tools/cad/extern/LEAP71_ShapeKernel
+	url = https://github.com/leap71/LEAP71_ShapeKernel
+[submodule "tools/cad/extern/LEAP71_LatticeLibrary"]
+	path = tools/cad/extern/LEAP71_LatticeLibrary
+	url = https://github.com/leap71/LEAP71_LatticeLibrary
