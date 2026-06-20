@@ -30,7 +30,8 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 | `tools/cad/src/SilkenCad/Program.cs` | CLI dispatch (`smoke`/`build`/`verify`) + `RunHeadless` (the `Library.Go` wrapper) |
 | `tools/cad/src/SilkenCad/TiCoin.cs` | Ti-coin coupon — `BaseCylinder` disc + `BaseRing` eyelet, `BoolAdd` |
 | `tools/cad/src/SilkenCad/Zone1Anode.cs` | Zone-1 anode + `CartesianGyroid:IImplicit` (the from-scratch SDF) + `Anode()` render path |
-| `tools/cad/src/SilkenCad/Validation.cs` | golden-metrics via `Voxels.CalculateProperties` (porosity needs an envelope ref) |
+| `tools/cad/src/SilkenCad/Validation.cs` | golden-metrics via `Voxels.CalculateProperties` (porosity needs an envelope ref) + reuses LEAP `Measure.fGetSurfaceArea` |
+| `tools/cad/src/SilkenCad/Connectivity.cs` | ARCH.25 two-phase topological audit — SDF-sample + 6-conn flood-fill (open/closed-pore, percolation, solid-island, specific-surface); pure-managed, display-less xUnit |
 | `tools/cad/src/SilkenCad.Leap/` | vendored LEAP source compiled in (ImplicitUsings ON, warnings relaxed — not ours) |
 | `tools/cad/extern/LEAP71_{ShapeKernel,LatticeLibrary}` | git submodules (source-only; not on NuGet) |
 
@@ -68,6 +69,14 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 7. **`DOTNET_ROOT=$HOME/.dotnet`** if the apphost binary is run directly (native runtime is
    in the non-standard `~/.dotnet` install → `libhostfxr.dylib not found` otherwise);
    `dotnet run` is unaffected.
+8. **Connectivity needs WALL-resolution, not pore-resolution** (`Connectivity.cs`, ARCH.25) —
+   the gyroid wall is only ~period/10 thick; sampling the SDF coarser than ~wall/2 fragments thin
+   walls into **false** solid "islands" (measured 24–61% disconnected at 0.3mm → ~0% at period/16).
+   Pore-phase metrics (open/percolation) are fine at any step → `SampleAnchor` ties the step to the
+   finest period. And a **sheet** gyroid is tricontinuous → `PoreClusterCount`==2 is a topology FACT,
+   not a defect (don't gate on it). NB `Ex_ImplicitGyroidGenus` is **misleading** (renders a gyroid on
+   a genus-torus shape; computes no genus) — LEAP exposes no connectivity, but `Measure.fGetSurfaceArea`
+   (surface) + `fGetVolume` exist and are reused, not re-implemented.
 
 ## Common Tasks
 
@@ -81,6 +90,11 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   in `Zone1Anode`: `GradedCartesianGyroid` (continuous period+wall taper) + `ZonedGyroid` (stepped
   zones). Pick by goal — continuous-gentle (smooth, ≤~0.8× period ratio), `GyroidWallParamRim`
   porosity gradient, or `topology: stepped` for a STRONG ~2× pore contrast. **MEASURE** porosity.
+- **Connectivity / validation (ARCH.25)**: `Connectivity.cs` samples the CEM SDF → 3-phase grid →
+  6-conn flood-fill → open-pore (Archimedes) / percolation (EAAE flow-through) / solid-island (AM +
+  electrical) / specific-surface. Pure-managed → fast display-less xUnit. Two-phase resolution split:
+  **pore** OK at the coarse step, **solid** needs ~period/16 (gotcha #8). The `verify` gate adds
+  open≥95% · solid-disc≤2% · percolate axial+radial. Feeds HW.33 sheet-vs-network (topology-agnostic).
 - **Local-verify**: `dotnet build SilkenCad.sln` (0W/0E) → `dotnet run --project src/SilkenCad
   -- verify cem/<x>.json` (metrics.json + exit 0/1). This is the gate (CI-ready, macOS-runner deferred).
 - **Update a submodule**: `git -C tools/cad/extern/<repo> pull` + re-pin the gitlink; it stays

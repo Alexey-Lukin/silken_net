@@ -563,7 +563,7 @@ nTop — провідний інструмент для генерації мі�
 - **Уточнює наш «AI-Native»** ([`00_02 §4a`](00_02_AI_Native_Engineering_and_TRL)): «AI генерує геометрію кодом» = **агент пише детермінований генератор** (Git-diffable `.cs`), не LLM, що емітить mesh.
 - **Intent-first:** правило рахує геометрію (CEM-параметр + `wallParam(r)` тримають порозність при градієнті розміру пори; **вимірюється per-shell**, не хардкод), а не ручні числа.
 - **Одна модель → родина:** per-species 7-SKU (5 видів + porosity-gradient + stepped demo) = один CEM × N спеків ([`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)) — як Noyron робить різні двигуни з одного CEM.
-- **Design↔sim злиті:** validation-as-code (порозність/градієнт/wall/manifold → `metrics.json`) = Noyron-івський «predicted-performance» output генератора.
+- **Design↔sim злиті:** validation-as-code (порозність/градієнт/wall/manifold + **двофазна зв'язність** — open-pore/percolation/solid-island/specific-surface, ARCH.25, [`00_07`](00_07_Action_Plan_Tracker) → `metrics.json`) = Noyron-івський «predicted-performance» output генератора (геометрія емітить власні передбачені фіз-властивості).
 
 **Реальний стек (підтверджено в `tools/cad`, НЕ псевдокод):**
 

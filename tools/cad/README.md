@@ -35,7 +35,8 @@ geometry** deterministically. Parity is on derived metrics, never the raw STL by
 | `src/SilkenCad/Program.cs` | CLI: `smoke` / `build <cem>` / `verify <cem>` (headless `Library.Go`) |
 | `src/SilkenCad/TiCoin.cs` | Stage-2 in-vitro coupon — disc + eyelet (`01_01 §6.1`) |
 | `src/SilkenCad/Zone1Anode.cs` | Zone-1 gyroid anode + the custom `CartesianGyroid` SDF |
-| `src/SilkenCad/Validation.cs` | golden-metrics via `Voxels.CalculateProperties` (porosity/bbox/tris) |
+| `src/SilkenCad/Validation.cs` | golden-metrics via `Voxels.CalculateProperties` (porosity/bbox/tris) + LEAP `Measure.fGetSurfaceArea` |
+| `src/SilkenCad/Connectivity.cs` | ARCH.25 two-phase topological audit — SDF-sample + flood-fill (open/closed-pore, percolation, solid-island, specific-surface) |
 | `src/SilkenCad.Leap/` | vendored LEAP source compiled in (relaxed warnings — not ours) |
 | `extern/LEAP71_{ShapeKernel,LatticeLibrary}` | git submodules (source-only; not on NuGet) |
 | `tests/SilkenCad.Tests/` | xUnit scaffold |
@@ -100,6 +101,12 @@ target (`00_07` HW.1.PicoGK).
   Z-demo + the LatticeLibrary submodule is ~1 yr stale).
 
 5-SKU per-species sweep + a porosity-gradient demo + a stepped demo (7 SKU total).
+
+**ARCH.25 connectivity (shipped)** — `Connectivity.cs` adds a two-phase topological audit
+(open-pore↔Archimedes · percolation↔EAAE flow-through · solid-island↔AM/electrical · specific-surface
+↔EBFC-area) as a fast display-less xUnit gate; `verify` adds open≥95% · solid-disc≤2% · percolate
+axial+radial. Two-phase resolution: **pore** OK at the coarse step, **solid** needs ~period/16 (a coarse
+grid fragments thin walls into false islands — skill `picogk` gotcha #8). Feeds `00_07` HW.33 sheet-vs-network.
 
 **Deferred:** annular barbs (`01_01 §4.3A`, separate session — `00_07`) · PEEK Radome ("шляпа",
 HW.17) + cathode flange/PEEK Zone 2 as further PicoGK parts (blocked on HW.33 dim-freeze) ·
