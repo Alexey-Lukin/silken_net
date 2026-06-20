@@ -26,7 +26,7 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 
 | File | Role |
 |------|------|
-| `tools/cad/cem/*.json` | CEM manifests — the Git-SSOT parameter inputs (`kind` discriminator: `ti_coin`, `anchor_zone1`, `mechanical_lock`, `cathode_flange`, `radome`, `anchor_assembly`) |
+| `tools/cad/cem/*.json` | CEM manifests — the Git-SSOT parameter inputs (`kind` discriminator: `ti_coin`, `anchor_zone1`, `mechanical_lock`, `cathode_flange`, `radome`, `zone2_sleeve`, `anchor_assembly`, `anchor_axial_stack`) |
 | `tools/cad/src/SilkenCad/Program.cs` | CLI dispatch (`smoke`/`build`/`verify`) + `RunHeadless` (the `Library.Go` wrapper) |
 | `tools/cad/src/SilkenCad/TiCoin.cs` | Ti-coin coupon — `BaseCylinder` disc + `BaseRing` eyelet, `BoolAdd` |
 | `tools/cad/src/SilkenCad/Zone1Anode.cs` | Zone-1 anode + `CartesianGyroid:IImplicit` (the from-scratch SDF) + `Anode()` render path |
@@ -36,6 +36,8 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 | `tools/cad/src/SilkenCad/CathodeFlange.cs` | Деталь 3 — Zone-3 cathode flange (Ø25): reuses the §4.3 shank/barbs via `ShankCem` + radial bayonet lugs + bus bore + O-ring groove |
 | `tools/cad/src/SilkenCad/Radome.cs` | Деталь 4 — PEEK radome v2c (Ø25): hollow dome + shield bell + bayonet socket + PCB cavity + O-ring groove (gotcha #9 INVERTED — hollow is intended) |
 | `tools/cad/src/SilkenCad/Assembly.cs` | Capsule-end mate-audit (Деталь 3↔4, `02_02 §4.4`) — bayonet datum via `voxApplyTransformation` lift + Z/MATE-Ø/RF mismatch + skirt/inboard candidates; pure mate-math (xUnit) + render interference (`verify`) |
+| `tools/cad/src/SilkenCad/Zone2Sleeve.cs` | Деталь 2 — Zone-2 PEEK sleeve (bore Ø11 / OD Ø15 / 50 mm): plain hollow tube via `BasePipe` (smooth bore; hex + flange-shoulder deferred, bench-gated) |
+| `tools/cad/src/SilkenCad/AxialStack.cs` | Full axial stack mate-audit (Зони 1↔2↔3↔4, `02_02 §4.5`) — press-fit interference + insertion budget + span; reuses `Assembly.Build` + Zone-1 envelope; pure mate-math (xUnit) + render (`verify`) |
 | `tools/cad/src/SilkenCad.Leap/` | vendored LEAP source compiled in (ImplicitUsings ON, warnings relaxed — not ours) |
 | `tools/cad/extern/LEAP71_{ShapeKernel,LatticeLibrary}` | git submodules (source-only; not on NuGet) |
 
@@ -115,6 +117,15 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   per-part `Build`s stay untouched) and MEASURES the residual mismatch (radial / bayonet-Z / RF) + models
   the skirt/inboard MATE-Ø candidates. An AUDIT table — `verify` exits on a broken render only; the
   mismatch numbers are asserted by pure xUnit. Canon `02_02 §4.4`; reconcile is 👤 bench (HW.17/HW.8).
+- **Full axial stack (`AxialStack.cs`, SHIPPED)**: the SECOND integration artifact — brings ALL FOUR zones
+  (anode → Zone-2 sleeve → flange → radome) into one axis and MEASURES the **press-fit** interfaces the
+  capsule-end never touched: Zone1↔2 line-to-line (real +interference = H7/s6 band on bench) · **Zone2↔3 =
+  −1.0 mm = the Ø9-in-Ø11 clearance = F1, shank Ø placeholder → HW.8.9** · insertion budget · span. AUDIT
+  table; render uses the Zone-1 **envelope** (solid Ø11 — a press-fit cares about OD, not porosity; also
+  keeps the 0.2 mm voxel safe). Reuses `Assembly.Build` + `voxApplyTransformation`. Canon `02_02 §4.5`.
+  🔑 **`BasePipe`/`BaseCylinder` Z-origin = `[0, L]` from the frame** (grows along +localZ; verified in LEAP
+  `Frames.cs` — NOT centred), so stack lifts are absolute; the render overlap sleeve∩capsule is the flange
+  SHOULDER on the sleeve top face, not the shank (the Ø9 floats in the bore).
 - **Local-verify**: `dotnet build SilkenCad.sln` (0W/0E) → `dotnet run --project src/SilkenCad
   -- verify cem/<x>.json` (metrics.json + exit 0/1) → `dotnet test`. CI = enterprise 2-job `cad_smoke.yml`
   (logic = Linux pure-xUnit hard + render = macOS build-hard + verify best-effort, Library.Go 139 headless).

@@ -42,6 +42,8 @@ geometry** deterministically. Parity is on derived metrics, never the raw STL by
 | `src/SilkenCad/CathodeFlange.cs` | Деталь 3 — Zone-3 cathode flange (Ø25): reuses the §4.3 shank/barbs + radial bayonet lugs + bus bore + O-ring groove |
 | `src/SilkenCad/Radome.cs` | Деталь 4 — PEEK radome v2c (Ø25): hollow dome + shield bell + bayonet socket + PCB cavity + O-ring groove |
 | `src/SilkenCad/Assembly.cs` | Capsule-end mate-audit (Деталь 3↔4, 02_02 §4.4): bayonet datum + Z/MATE-Ø/RF mismatch + skirt/inboard candidates |
+| `src/SilkenCad/Zone2Sleeve.cs` | Деталь 2 — Zone-2 PEEK thermal-break sleeve (bore Ø11 / OD Ø15 / 50 mm): plain hollow tube via `BasePipe` (press-fit, smooth bore) |
+| `src/SilkenCad/AxialStack.cs` | Full axial stack mate-audit (Зони 1↔2↔3↔4, 02_02 §4.5): press-fit interference (Zone1↔2 line-to-line · Zone2↔3 = Ø9-in-Ø11 clearance F1) + insertion budget + span |
 | `src/SilkenCad.Leap/` | vendored LEAP source compiled in (relaxed warnings — not ours) |
 | `extern/LEAP71_{ShapeKernel,LatticeLibrary}` | git submodules (source-only; not on NuGet) |
 | `tests/SilkenCad.Tests/` | xUnit scaffold |
@@ -167,10 +169,22 @@ exits on a broken render only; the numbers are asserted by the pure xUnit suite 
 `CathodeFlange.Build` · `Radome.Build` · `MeshUtility.voxApplyTransformation` (lift) · `BoolIntersect`. Z-stack
 inputs mirror `tools/in_silico/scripts/52`. Canon `02_02 §4.4`.
 
-**Deferred:** the FULL axial stack (anode → Zone-2 PEEK sleeve → flange → radome — needs a sleeve generator first;
-press-fit, not bayonet) · the MATE-Ø skirt/inboard CHOICE + Z-reconcile (lock-groove-Z ↔ lug-Z, 👤 bench HW.8) · a
-phase-correct strong continuous gradient (period-tensor/conformal) · Euler-χ / tortuosity connectivity cross-checks
-(ARCH.25 nice-to-have).
+**Zone-2 sleeve / Деталь 2 (shipped)** — `zone2_sleeve` CEM → plain hollow PEEK tube via `BasePipe` (bore Ø11 / OD
+Ø15 wound / 50 mm, frozen `01_01 §1`). The simplest part: no barbs/grooves/hex — the smooth bore receives the Ti
+shanks at 150 °C (hex anti-rotation `§4.3 C` is bench-gated → deferred). `verify` gates hollow + OD = bore+2·wall + length.
+
+**Full axial stack / mate-audit (shipped)** — `AxialStack.cs` + `anchor_axial_stack` CEM brings ALL FOUR zones (anode
+→ Zone-2 sleeve → flange → radome) into one axis and MEASURES the press-fit interfaces the capsule-end never touched:
+**Zone1↔Zone2 = 0.00 mm line-to-line** (real +interference = the H7/s6 band on bench, ISO 286) · **Zone2↔Zone3 = −1.0 mm
+= the Ø9-in-Ø11 clearance (F1, shank Ø placeholder → HW.8.9)** · insertion budget 6 mm · span 63 mm · bus continuous.
+An AUDIT table like the capsule-end — render-sanity exit only, findings asserted by `AxialStackTests`. Render uses the
+Zone-1 envelope (solid Ø11; a press-fit cares about OD, not porosity). The render overlap sleeve∩capsule (~8 mm³) is the
+flange SHOULDER resting on the sleeve top face, NOT the shank (Ø9 floats in bore Ø11). Reuses `Zone1Anode.Envelope` ·
+`Zone2Sleeve.Build` · `Assembly.Build` · `voxApplyTransformation` (Noyron Boolean multi-part). Canon `02_02 §4.5`.
+
+**Deferred:** the MATE-Ø skirt/inboard CHOICE + Z-reconcile (lock-groove-Z ↔ lug-Z, 👤 bench HW.8.8) · the shank-Ø
+press-fit reconcile (Ø9 → H7/s6 under bore Ø11, HW.8.9) · a phase-correct strong continuous gradient (period-tensor/
+conformal) · Euler-χ / tortuosity connectivity cross-checks (ARCH.25 nice-to-have).
 
 ## License
 

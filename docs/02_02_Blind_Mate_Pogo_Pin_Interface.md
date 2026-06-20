@@ -318,6 +318,24 @@ Ti (анкер) → Copper (пін)          ← різниця > 0.5 В → к�
 
 **Інженерна рекомендація — `skirt`:** retention несуча (вітер 5 Гц / вандалізм, §4.1) → потрібен повний bayonet-grip, а inboard у 2 мм PEEK-стінці дає слабкий internal-замок; skirt = промисловий стандарт (male-lugs зовні + female-socket охоплює); **Ø25-frozen стосується КУПОЛА (RF-антена), не основи** — спідниця Ø30 внизу (PCB/lugs) RF не чіпає. Обидва кандидати — лише **radial**; bayonet-Z + RF (8<12) = глибший Z-reconcile (§3.5). 👤 bench: skirt-напрямок + **цілісний lug/Z redesign** (lug-protrusion + lock-groove-Z + lug-Z разом — placeholder/незведені, HW.8) + HFSS на Ø30-overhang. Регресія чисел — pure xUnit (`AssemblyTests`); рендер-аудит — `verify anchor_assembly` (→ [`00_07` — HW.17 / HW.8](00_07_Action_Plan_Tracker)).
 
+### 4.5. In-silico Mate-Audit (Повний осьовий стек) — Деталь 1 ↔ 2 ↔ 3 ↔ 4 (press-fit)
+
+**Другий** інтеграційний артефакт (`tools/cad`, `anchor_axial_stack` CEM → `AxialStack.cs`, 2026-06-20): зводить **усі чотири зони** в одну вісь (анод Zone 1 → PEEK-втулка Zone 2 → катод-фланець Zone 3 → радом Zone 4) і МІРЯЄ **press-fit-інтерфейси**, яких capsule-end (§4.4, bayonet) не торкався — **Zone 1↔Zone 2** і **Zone 2↔Zone 3**. Дзеркалить §4.4: аудит-стіл, не pass/fail виробу — знахідки = реальний стан незведених placeholder-Ø (→ HW.8), асертяться pure xUnit (`AxialStackTests`). Datum: tree-side z=0 (низ аноду) → капсульний бік угору; рендер Zone 1 = envelope (суцільний Ø11 — press-fit стосується OD, не внутрішньої пористості гіроїда). Знак натягу: `+` = interference (press-fit), `−` = зазор (clearance).
+
+**Знахідки (frozen defaults, voxel 0.2 мм):**
+
+| Інтерфейс | Значення | Причина |
+|---|---|---|
+| Zone 1↔Zone 2 (press-fit) | interference **0.00 мм** (line-to-line) | вал Ø11 = bore Ø11 nominal; реальний `+`натяг = tolerance-band **H7/s6** (десятки µm, ISO 286) на bench (§3 Заводська Збірка [`01_01 §3`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) |
+| **Zone 2↔Zone 3 (press-fit)** | interference **−1.00 мм = 1 мм зазор/сторону → НЕ press-fit** (F1) | shank Ø9 (**placeholder**, [`01_01 §1`](01_01_Coaxial_Gyroid_Topology_and_PEEK) / HW.8) у bore Ø11 — промах ~50× від мікронного натягу |
+| Insertion budget | **6.0 мм** (bore 50 − занурення Zone-1 30 − shank 14) (F2) | два вали входять з протилежних кінців 50-мм bore, не зіткнулись |
+| Embedded span | **63 мм** (низ аноду → торець фланця) + радом над корою (F3) | глибина встановлення (CODIT, [`01_04 §3`](01_04_CODIT_and_Xylemointegration)) |
+| Bus-bore continuity | анод Ø1.6 ≥ фланець Ø1.3 ✅ (F3) | провідна шина не защемлена |
+
+**🔑 Render-нюанс (чесно):** при точному Ø11=Ø11 render-overlap Zone1∩Zone2 = **0 мм³** (поверхні дотичні, об'єми не перетинаються — консистентно з line-to-line); render-overlap sleeve∩capsule = тонкий шар = **плече фланця Ø25 сідає на торець втулки Ø15**, а НЕ shank-press-fit (shank Ø9 болтається в bore Ø11 — F1). Тобто **без press-fit на shank осьовий datum Zone 3 тримають shoulder-rest на торці втулки + (майбутні) barbs/DIN-471** (§4.3), не натяг вала.
+
+**👤 bench (HW.8):** shank-Ø reconcile (Ø9 placeholder → press-fit-Ø під bore Ø11, H7/s6 tolerance-band) **разом** із lug/Z (§4.4) — цілісно, в одному заході; занурення Zone-1 vs довжина шини. Рендер-аудит — `verify anchor_axial_stack` (→ [`00_07` — HW.8](00_07_Action_Plan_Tracker)).
+
 ---
 
 ## 🧩 5. Шлях Струму
