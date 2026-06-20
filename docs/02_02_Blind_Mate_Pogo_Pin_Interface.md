@@ -308,7 +308,15 @@ Ti (анкер) → Copper (пін)          ← різниця > 0.5 В → к�
 | Bayonet-Z | rim сідає на **6.42 мм** нижче O-ring цілі | Деталь3 lug-Z 15.5 ↔ Деталь4 lock-groove-Z 3.5 **незведені** |
 | RF clearance | antenna↔Ti **8.0 < 12 мм** floor | при datum cavity провалюється на фланець ([`02_01 §5.3`](02_01_Hardware_Architecture_and_BOM)) |
 
-**MATE-Ø кандидати** (Δ для bench-вибору, HW.17): **skirt** — спідниця радома Ø30 охоплює lugs (габарит ↑, bbox 30×30), купол лишається Ø25 для RF; **inboard** — lugs flush у Ø25 (bbox 25×25, втрата radial bayonet grip). Обидва вирішують лише **radial** MATE-Ø — bayonet-Z + RF = глибший Z-stack reconcile (§3.5). Вибір skirt/inboard + Z-reconcile (lock-groove-Z ↔ lug-Z) = 👤 bench (→ [`00_07` — HW.17 / HW.8](00_07_Action_Plan_Tracker)). Регресія чисел — pure xUnit (`AssemblyTests`); рендер-аудит — `verify anchor_assembly`.
+**MATE-Ø кандидати** (Δ для bench-вибору, HW.17):
+
+| Кандидат | bbox | interference | Стан |
+|---|---|---|---|
+| `asis` (baseline) | 27×26.5 | 45 мм³ | foul: lugs Ø29 + disc Ø25 в Ø21-cavity |
+| **`skirt`** | 30×30 | **0 мм³** | L-slot спідниця Ø30 (lock-groove + axial slots) охоплює lugs **ТА** відкриває cavity → **повна radial-посадка**; купол Ø25 (RF); габарит/PEEK ↑ |
+| `inboard` | 25×25 | 45 мм³ | lugs flush у Ø25, але disc досі fouls Ø21-cavity → **НЕ самодостатній** + втрата radial bayonet-grip |
+
+**Інженерна рекомендація — `skirt`:** retention несуча (вітер 5 Гц / вандалізм, §4.1) → потрібен повний bayonet-grip, а inboard у 2 мм PEEK-стінці дає слабкий internal-замок; skirt = промисловий стандарт (male-lugs зовні + female-socket охоплює); **Ø25-frozen стосується КУПОЛА (RF-антена), не основи** — спідниця Ø30 внизу (PCB/lugs) RF не чіпає. Обидва кандидати — лише **radial**; bayonet-Z + RF (8<12) = глибший Z-reconcile (§3.5). 👤 bench: skirt-напрямок + **цілісний lug/Z redesign** (lug-protrusion + lock-groove-Z + lug-Z разом — placeholder/незведені, HW.8) + HFSS на Ø30-overhang. Регресія чисел — pure xUnit (`AssemblyTests`); рендер-аудит — `verify anchor_assembly` (→ [`00_07` — HW.17 / HW.8](00_07_Action_Plan_Tracker)).
 
 ---
 
