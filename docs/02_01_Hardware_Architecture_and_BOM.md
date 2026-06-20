@@ -363,6 +363,8 @@ STM32WLE5JC
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+> 🔧 **PicoGK-генератор (Деталь 4):** `tools/cad` `Radome.cs` — hollow купол + shield-дзвін + bayonet-socket + PCB cavity + O-ring groove (verify hollow/bell/cavity/mate-fit; анкер-CAD-родина ПОВНА — [`00_07` HW.1.PicoGK](00_07_Action_Plan_Tracker)). ⚠ **MATE-Ø:** Деталь-3 lugs стирчать до Ø29 проти frozen купола Ø25 — ковпак, що насувається, потребує OD>Ø25 (enclosing-skirt) АБО lugs-inboard → bench/founder reconcile (HW.17).
+
 #### Механічна Інтеграція Деталі 4 (Zero-Touch Assembly)
 
 Послідовність польового монтажу:

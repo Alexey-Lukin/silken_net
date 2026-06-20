@@ -40,6 +40,7 @@ geometry** deterministically. Parity is on derived metrics, never the raw STL by
 | `src/SilkenCad/WallScan.cs` | wallParam critical-threshold scan → the CEM working window (printable + open-pore + percolating); pure-managed, no render |
 | `src/SilkenCad/MechanicalLock.cs` | §4.3 mechanical lock — `MechanicalLockShank` ratchet-barb + DIN-471 groove SDF on a hollow shank (Zone-1/Zone-3 demo) + self-support metric |
 | `src/SilkenCad/CathodeFlange.cs` | Деталь 3 — Zone-3 cathode flange (Ø25): reuses the §4.3 shank/barbs + radial bayonet lugs + bus bore + O-ring groove |
+| `src/SilkenCad/Radome.cs` | Деталь 4 — PEEK radome v2c (Ø25): hollow dome + shield bell + bayonet socket + PCB cavity + O-ring groove |
 | `src/SilkenCad.Leap/` | vendored LEAP source compiled in (relaxed warnings — not ours) |
 | `extern/LEAP71_{ShapeKernel,LatticeLibrary}` | git submodules (source-only; not on NuGet) |
 | `tests/SilkenCad.Tests/` | xUnit scaffold |
@@ -144,10 +145,15 @@ radial j, no corner edge-effects (01_01 §6.1).
 67.6 % mid-window). Pure-managed (no Library.Go), `WallScan.cs` + 3 xUnit; feeds HW.33 + the FEA
 sheet-vs-network envelope.
 
-**Deferred:** integrating shank+barbs into the full gyroid rod (separate session) · **Деталь 4 PEEK Radome v2c**
-("шляпа", HW.17) — dome Ø25 + shield bell + bayonet socket + PCB cavity (dim-freeze DONE → next phase;
-cathode-O₂ = perimeter, canon-fix `01_04 §5.5`) · a phase-correct strong continuous gradient
-(period-tensor/conformal) · Euler-χ / tortuosity connectivity cross-checks (ARCH.25 nice-to-have).
+**Radome / Деталь 4 (shipped)** — `radome` CEM → hollow PEEK dome Ø25 (gotcha #9 INVERTED: the hollow IS
+intended → the gate checks the wall, not solidity) + a rounded shield bell (≥3/R≥5, anti-overgrowth) +
+bayonet socket (L-slot, mate the Деталь-3 lugs) + PCB cavity (antenna↔Ti ≥12) + rim O-ring groove. `verify`
+gates hollow-fraction / bell-rise / cavity / mate-fit. **🏁 Anchor-CAD family complete** (coin→anode-v2→
+ARCH.25→barbs→Деталь3→Деталь4). ⚠ MATE-Ø: Деталь-3 lugs Ø29 ↔ dome Ø25 → enclosing-skirt / lugs-inboard (HW.17 bench).
+
+**Deferred:** integrating all 4 parts into one full-anchor assembly + Z-stack mate (Z-stack already computed,
+`tools/in_silico/scripts/52`) · the MATE-Ø reconcile (Деталь-3 lugs ↔ radome socket Ø, HW.17) · a phase-correct
+strong continuous gradient (period-tensor/conformal) · Euler-χ / tortuosity connectivity cross-checks (ARCH.25 nice-to-have).
 
 ## License
 
