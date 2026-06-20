@@ -20,6 +20,7 @@ internal static class Program
                 "verify" => args.Length >= 2 ? Verify(args[1]) : Fail("usage: verify <cem.json>"),
                 "sweep" => Sweep(),
                 "scan" => args.Length >= 2 ? Scan(args[1]) : Fail("usage: scan <cem.json>"),
+                "draw" => args.Length >= 2 ? Draw(args[1]) : Fail("usage: draw <cem.json>"),
                 "help" or "--help" or "-h" => Help(),
                 var strCmd => Fail($"unknown command: {strCmd}"),
             };
@@ -231,6 +232,25 @@ internal static class Program
             Console.WriteLine("  ⚠ no working window in the swept range — widen the scan or revisit period / topology");
 
         return oR.WallMin is not null ? 0 : 1;
+    }
+
+    // CEM-native engineering drawing (tools/cad/docs/drawings_program.md): analytic orthographic SVG
+    // computed from the CEM numbers (no mesh, no Library.Go) — the Noyron "generator documents itself".
+    // PoC = ti_coin (Stage-2 coupon, the most urgent physical part); other kinds → roadmap §7.
+    private static int Draw(string strCemPath)
+    {
+        string strJson = File.ReadAllText(strCemPath);
+        string strKind = Cem.Kind(strJson);
+        if (strKind != "ti_coin")
+            return Fail($"draw: PoC supports ti_coin only (got '{strKind}') — roadmap in tools/cad/docs/drawings_program.md");
+
+        TiCoinCem cem = Cem.Parse<TiCoinCem>(strJson);
+        string strRev = Environment.GetEnvironmentVariable("CAD_REV") ?? "local";
+        Directory.CreateDirectory("out");
+        string strPath = Path.Combine("out", $"{cem.Name}.drawing.svg");
+        File.WriteAllText(strPath, Drawing.TiCoin(cem, strRev));
+        Console.WriteLine($"drawing → {strPath}  (CEM-native SVG — analytic, no mesh)");
+        return 0;
     }
 
     // Ti-coin verify (01_01 §6.1): golden metrics + the A_electrode ≈ 2 cm² gate (01_03 §3.5). Area is the
@@ -585,7 +605,8 @@ internal static class Program
             "  build <cem.json>  generate an STL from a CEM manifest (ti_coin | anchor_zone1 | mechanical_lock | cathode_flange | radome | zone2_sleeve | anchor_assembly | anchor_axial_stack)\n" +
             "  verify <cem.json> measure golden-metrics → out/<name>.metrics.json (exit 0/1)\n" +
             "  sweep             generate + verify every cem/anchor_zone1.*.json (5-SKU)\n" +
-            "  scan <cem.json>   wallParam working-window scan (anchor) → out/<name>.wallscan.json");
+            "  scan <cem.json>   wallParam working-window scan (anchor) → out/<name>.wallscan.json\n" +
+            "  draw <cem.json>   CEM-native engineering drawing → out/<name>.drawing.svg (PoC: ti_coin)");
         return 0;
     }
 
