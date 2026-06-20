@@ -22,6 +22,16 @@ internal sealed record GeometryMetrics
     // v2 graded-anchor measurements (null for non-anchor parts):
     public double[]? RadialPorosityByShell { get; init; }   // core→rim; ~flat = constant SKU, monotone = graded SKU
     public double? FinestPeriodMm { get; init; }            // smallest cell period across radius (the rim); wall ≈ 0.1× this — the DMLS-floor proxy (exact wall = µCT, 01_01 §5.6)
+
+    // ARCH.25 two-phase connectivity + specific-surface (null for non-anchor parts). See Connectivity.cs
+    // for the canon mapping (open-pore↔Archimedes, percolation↔EAAE flow-through, solid-disc↔AM islands).
+    public double? OpenPorosity { get; init; }              // pore reachable from a surface / total pore (~1.0 for a sound gyroid)
+    public double? ClosedPoreFraction { get; init; }        // trapped voids = 1 − open (~0)
+    public double? SolidDisconnectedFraction { get; init; } // metal not in the largest body (floating islands; print + electrical defect, ~0)
+    public bool[]? PorePercolates { get; init; }            // [X,Y,Z] spanning (X,Y rim-to-rim radial; Z end-to-end axial)
+    public int? PoreClusterCount { get; init; }             // big pore clusters: network→1, sheet→2 (tricontinuous — a fact, not a defect)
+    public double? SpecificSurfaceMm2PerMm3 { get; init; }  // wetted area / bbox volume — EBFC-area proxy (sheet ~2× network), HW.33 trade-off
+    public double[]? AxialPorosityProfile { get; init; }    // per-Z porosity; must be ~flat (the radial-gradient axial-uniformity gate)
 }
 
 internal static class Validation
@@ -92,10 +102,28 @@ internal static class Validation
 
         float fPeriodRim = cem.GyroidPeriodRimMm > 0f ? cem.GyroidPeriodRimMm : cem.GyroidPeriodMm;
 
+        // ARCH.25 two-phase topological audit — sampled from the CEM's own SDF (pure-managed,
+        // geometric-intent), independent of the render. Coarser grid (topology is threshold-stable).
+        Connectivity.Grid grid = Connectivity.SampleAnchor(Zone1Anode.Gyroid(cem), cem);
+        ConnectivityMetrics conn = Connectivity.Analyse(grid);
+        double[] aAxial = Connectivity.AxialProfile(grid);
+
+        // Specific surface (EBFC-area proxy) — REUSE LEAP Measure (wetted mesh area), not own, on the
+        // as-rendered anode; normalised by bbox volume so sheet (~2×) vs network is directly comparable.
+        float fSurfaceMm2 = Leap71.ShapeKernel.Measure.fGetSurfaceArea(voxAnode);
+        double dBboxVol = oBase.BboxSizeMm[0] * oBase.BboxSizeMm[1] * oBase.BboxSizeMm[2];
+
         return oBase with
         {
             RadialPorosityByShell = aShellPorosity,
             FinestPeriodMm = Math.Min(cem.GyroidPeriodMm, fPeriodRim),
+            OpenPorosity = conn.OpenPorosity,
+            ClosedPoreFraction = conn.ClosedPoreFraction,
+            SolidDisconnectedFraction = conn.SolidDisconnectedFraction,
+            PorePercolates = conn.PorePercolates,
+            PoreClusterCount = conn.PoreClusterCount,
+            SpecificSurfaceMm2PerMm3 = dBboxVol > 0 ? fSurfaceMm2 / dBboxVol : 0.0,
+            AxialPorosityProfile = aAxial,
         };
     }
 

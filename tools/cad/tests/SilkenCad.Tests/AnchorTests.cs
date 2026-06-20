@@ -70,4 +70,61 @@ public class AnchorTests
         AnchorCem cem = new() { GyroidPeriodMm = fPeriod, GyroidPeriodRimMm = fRim, Topology = strTopology };
         Assert.IsType(expected, Zone1Anode.Gyroid(cem));
     }
+
+    // --- ARCH.25 connectivity (pure-logic, no PicoGK Library.Go) — parity to the numeric experiment ---
+
+    [Fact]
+    public void Sheet_Gyroid_Is_Tricontinuous_Two_Open_Pore_Labyrinths()
+    {
+        // sheet (|eq| < 0.5w) splits the pore space into TWO disjoint labyrinths + one wall —
+        // both open and percolating. 2 clusters is a topology FACT (HW.33), not a defect.
+        Connectivity.Grid grid = Connectivity.SampleBox(new CartesianGyroid(2.5f, 1.0f), fExtentMm: 10f, fStepMm: 0.25f);
+        ConnectivityMetrics m = Connectivity.Analyse(grid);
+
+        Assert.Equal(2, m.PoreClusterCount);
+        Assert.True(m.OpenPorosity > 0.98, $"open={m.OpenPorosity:F3}");
+        Assert.True(m.ClosedPoreFraction < 0.02, $"closed={m.ClosedPoreFraction:F3}");
+        Assert.True(m.PorePercolates is [true, true, true], $"perc=[{string.Join(",", m.PorePercolates)}]");
+    }
+
+    [Fact]
+    public void Network_Gyroid_Is_Bicontinuous_One_Pore_One_Solid()
+    {
+        // network (single-sided eq) is bicontinuous: ONE pore + ONE solid network, both percolating.
+        // Constant period+wall ⇒ the graded SDF reduces to a uniform network gyroid.
+        GradedCartesianGyroid sdf = new(0f, 5f, 2.5f, 2.5f, 1.0f, 1.0f, bNetwork: true);
+        Connectivity.Grid grid = Connectivity.SampleBox(sdf, fExtentMm: 10f, fStepMm: 0.25f);
+        ConnectivityMetrics m = Connectivity.Analyse(grid);
+
+        Assert.Equal(1, m.PoreClusterCount);
+        Assert.True(m.OpenPorosity > 0.98, $"open={m.OpenPorosity:F3}");
+        Assert.True(m.PorePercolates[2], "axial Z must percolate");
+    }
+
+    [Fact]
+    public void Anchor_Envelope_Clips_Pore_Outside_The_Pipe()
+    {
+        // The bbox corner (r = outer·√2 > outer) is outside the pipe wall ⇒ Outside, never Pore;
+        // and the rod's pore still percolates axially through the envelope.
+        AnchorCem cem = new() { OuterDiameterMm = 11f, BoreDiameterMm = 1.6f, LengthMm = 12f };
+        Connectivity.Grid grid = Connectivity.SampleAnchor(Zone1Anode.Gyroid(cem), cem, fStepMm: 0.4f);
+
+        Assert.Equal(Phase.Outside, grid.Cells[grid.Index(0, 0, grid.Nz / 2)]);
+        ConnectivityMetrics m = Connectivity.Analyse(grid);
+        Assert.True(m.OpenPorosity > 0.90, $"open={m.OpenPorosity:F3}");
+        Assert.True(m.PorePercolates[2], "axial Z must percolate through the rod");
+    }
+
+    [Fact]
+    public void Axial_Profile_Is_Flat_For_A_Radial_Gradient()
+    {
+        // The v2 gradient is RADIAL, so porosity along the axis (Z) must be ~uniform — the axial
+        // golden test. A stepped SKU (radial zones) must still be axially flat.
+        AnchorCem cem = new() { OuterDiameterMm = 11f, BoreDiameterMm = 1.6f, LengthMm = 20f, GyroidPeriodRimMm = 1.3f, Topology = "stepped" };
+        Connectivity.Grid grid = Connectivity.SampleAnchor(Zone1Anode.Gyroid(cem), cem, fStepMm: 0.4f);
+        double[] aAxial = Connectivity.AxialProfile(grid);
+
+        double dMin = aAxial.Min(), dMax = aAxial.Max();
+        Assert.True(dMax - dMin < 0.10, $"axial porosity spread {dMax - dMin:F3} (min={dMin:F3} max={dMax:F3}) — should be ~flat");
+    }
 }

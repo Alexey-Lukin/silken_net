@@ -185,16 +185,38 @@ internal static class Program
             $"  porosity={oM.Porosity:P1} (target {cem.PorosityTarget:P0})  " +
             $"finest period={oM.FinestPeriodMm:F2} mm  shells core→rim=[{strShells}]");
 
+        bool[] aPerc = oM.PorePercolates ?? [false, false, false];
+        string strPerc = aPerc.Length == 3
+            ? $"{(aPerc[0] ? "X" : "-")}{(aPerc[1] ? "Y" : "-")}{(aPerc[2] ? "Z" : "-")}"
+            : "?";
+        Console.WriteLine(
+            $"  open={oM.OpenPorosity:P1} closed={oM.ClosedPoreFraction:P1} " +
+            $"solid-disc={oM.SolidDisconnectedFraction:P1} pore-clusters={oM.PoreClusterCount} " +
+            $"percolate=[{strPerc}] surface={oM.SpecificSurfaceMm2PerMm3:F2} mm2/mm3");
+
         bool bSane = oM.SolidVolumeMm3 > 0 && oM.TriangleCount > 0 && oM.BboxSizeMm.All(d => d > 0);
         bool bFloor = oM.FinestPeriodMm is { } fFinest && fFinest >= PrintablePeriodFloorMm;
         bool bPorositySane = oM.Porosity is > 0.40 and < 0.85;
+
+        // ARCH.25 connectivity gate: open pore (Archimedes), no floating metal (AM-print + electrical
+        // continuity), pore percolates axially (Z = EAAE flow-through) AND ≥1 radial axis (sap/rim access).
+        bool bOpen = oM.OpenPorosity is > 0.95;
+        bool bNoIslands = oM.SolidDisconnectedFraction is < 0.02;
+        bool bPercolates = aPerc.Length == 3 && aPerc[2] && (aPerc[0] || aPerc[1]);
+        bool bConnSound = bOpen && bNoIslands && bPercolates;
 
         if (!bFloor)
             Console.WriteLine($"  ⚠ finest period < printable floor {PrintablePeriodFloorMm:F2} mm (wall < ~0.1 mm — µ-LPBF/nTop only, HW.33)");
         if (!bPorositySane)
             Console.WriteLine("  ⚠ porosity outside the sane 40–85 % band");
+        if (!bOpen)
+            Console.WriteLine("  ⚠ open porosity < 95 % — closed/trapped pore (Archimedes-fail; ingrowth + EAAE de-powder risk)");
+        if (!bNoIslands)
+            Console.WriteLine("  ⚠ solid disconnected > 2 % — floating metal islands (DMLS defect / electrically dead anode)");
+        if (!bPercolates)
+            Console.WriteLine("  ⚠ pore does not percolate axially + radially — sap / flow-through blockage");
 
-        bool bOk = bSane && bFloor && bPorositySane;
+        bool bOk = bSane && bFloor && bPorositySane && bConnSound;
         Console.WriteLine(bOk ? "VERIFY OK" : "VERIFY FAILED");
         return bOk ? 0 : 1;
     }
