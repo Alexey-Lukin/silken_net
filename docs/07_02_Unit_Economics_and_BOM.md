@@ -49,13 +49,13 @@
 
 | Компонент | Матеріал / Характеристики | Примітка |
 |---|---|---|
-| **Тризонний анкер** | Ti-6Al-4V Grade 23 (ELI) для Zone 1/Zone 3, Medical Grade PEEK для Zone 2 | Загальна довжина ~80–120 мм. Zone 1 (анод-гіроїд) 30–50 мм. Zone 2 (PEEK-терморозрив) 40–60 мм. Zone 3 (катодний фланець) ∅20–30 мм. Пористість гіроїда Zone 1: 60–70%. Деталі — [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK). |
+| **Тризонний анкер** | Ti-6Al-4V Grade 23 (ELI) для Zone 1/Zone 3, Medical Grade PEEK для Zone 2 | Загальна довжина ~80–120 мм. Zone 1 (анод-гіроїд) 30–50 мм. Zone 2 (PEEK-терморозрив) **50 мм** (frozen). Zone 3 (катодний фланець) **∅25 мм** (frozen, рана Ø15). Пористість гіроїда Zone 1: 60–70%. Деталі — [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK). |
 | **Кріплення модуля** | Болт Titanium SHSC M6 | Крок різьби 1.00 мм для фіксації корпусу. |
 | **Energy Harvesting** | BQ25570 (MPPT Nano-Power) | Прямий запуск від EBFC >500 мВ (LTC3108 видалено). |
 | **Накопичувач енергії** | Supercapacitor 0.47 F / 5.5 В | До 500,000 циклів заряду/розряду. |
 | **MCU & Radio** | STM32WLE5JC (LoRa-E5) | ARM Cortex-M4, LoRa 868 МГц (custom mesh), Edge AI (TinyML). |
 | **Антена** | Ceramic SMD Antenna 868 МГц (LTCC) | Пайка роботом, Keep-Out Zone ≥3 мм. Альтернатива: Ignion Virtual Antenna™. Детально → [`02_01 §5`](02_01_Hardware_Architecture_and_BOM). |
-| **Корпус / Радом** | PEEK Medical Grade (IP68) — окрема деталь IoT-капсули, **НЕ Zone 2** | Радіопрозорий купол (∅20–30 мм), різьба/байонет до катодного фланця Zone 3, O-ring EPDM. Захист від вандалізму та вологи. Детально → [`02_01 §5.2`](02_01_Hardware_Architecture_and_BOM). |
+| **Корпус / Радом** | PEEK Medical Grade (IP68) — окрема деталь IoT-капсули, **НЕ Zone 2** | Радіопрозорий купол (**∅25 мм** frozen), **байонет** (НЕ різьба, §3.5 Z-stack) до катодного фланця Zone 3, O-ring EPDM. Захист від вандалізму та вологи. Детально → [`02_01 §5.2`](02_01_Hardware_Architecture_and_BOM). |
 
 > **Архітектурна зміна (Pivot v2):** 4 титанові голки-електроди (система Кельвіна) та каскад LTC3108 + трансформатор 1:100 **повністю видалено**. Замінено на коаксіальну «Матрьошку» з EBFC, що напряму живить BQ25570 без проміжного підсилення.
 
@@ -71,7 +71,7 @@
 |---|---|---|
 | **Анкер Zone 1 + Zone 3 (Anode + Cathode)** | Ti-6Al-4V Grade 5. SLM+HIP друк (Zone 1) + SLM/EBM (Zone 3). Маса ~9 г сумарно (пористість гіроїда 65%). Включає Hard Gold pogo-площадку та PTFE-GDL катодну мембрану. | $20.00–$25.00 |
 | **Анкер Zone 2 (PEEK-терморозрив)** | Medical Grade PEEK. ЧПУ-фрезерування з annealing 200–250°C, допуски H7/s6. Press-fit з Zone 1 і Zone 3. | $3.00 |
-| **Радом (PCBA housing)** | Medical Grade PEEK купол ∅20–30 мм, термолиття. O-ring EPDM. IP68. Окрема деталь, **НЕ Zone 2**. | $2.50 |
+| **Радом (PCBA housing)** | Medical Grade PEEK купол ∅25 мм (frozen), термолиття. O-ring EPDM. IP68. Окрема деталь, **НЕ Zone 2**. | $2.50 |
 | **Power Deck (PCBA)** | BQ25570 (MPPT) + EDLC Supercapacitor 0.47 F + Pogo Pins + 47µF/25V/X7R/1210 buffer cap ([`02_03 §6.1`](02_03_BQ25570_MPPT_Nano_Power)) + **LTC3108 DNP footprint** для cold-start fallback ([`02_03 §1.5`](02_03_BQ25570_MPPT_Nano_Power)) + пасивна обв'язка 0402. | $6.35 |
 | **RF Deck (PCBA)** | STM32WLE5JC (LoRa SoC) + Ceramic SMD Antenna 868 МГц + TCXO (±1 ppm) + **SE050 DNP footprint** (SEC.6 / SE050-MIGRATION, mass-only post-FW.2 — [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security); +$2.40–3.25 коли populated). | $5.80 |
 | **Біоелектрохімічна функціоналізація (Gen 2.0)** | fMWCNT + Os redox polymer + **dgrFAD-GDH** (Zone 1); fMWCNT + **Laccase/nCoCuCeZIF nanozyme** гібрид (Zone 3); **Genipin-Chitosan-CNC** захисна матриця; **Nafion-g-PSBMA** цвітеріонна мембрана (SI-ATRP). Деталі — [`01_03 §5`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell). | $15.00–$24.50 (1K шт) / $5–$8 (50K+ шт) |
