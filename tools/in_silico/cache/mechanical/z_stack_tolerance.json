@@ -1,0 +1,194 @@
+{
+  "method": "1D linear tolerance chain (RSS + worst-case), 3-spring blind-mate Z-stack",
+  "springs": {
+    "pogo": {
+      "travel_mm": 1.52,
+      "free_mm": 1.562,
+      "window_pct": [
+        0.5,
+        0.7
+      ]
+    },
+    "pad": {
+      "free_mm": 1.0,
+      "window_pct": [
+        0.2,
+        0.5
+      ],
+      "creep_retain_20yr": 0.85,
+      "acoustic_min_pct": 0.2
+    },
+    "oring": {
+      "cs_mm": 1.78,
+      "window_pct": [
+        0.15,
+        0.3
+      ]
+    }
+  },
+  "shared_gap_note": "pogo + pad are parallel springs on the Power\u2194Zone3 gap; O-ring on Radome-rim\u2194Zone3",
+  "nominal_gaps_mm": {
+    "power_zone3": 0.65,
+    "oring": 1.424
+  },
+  "tolerance_mm": {
+    "power_zone3": {
+      "contributors": {
+        "DMLS_Ti": 0.3,
+        "FR4_power": 0.2,
+        "B2B_stack": 0.15,
+        "FR4_rf": 0.2,
+        "CNC_radome": 0.1
+      },
+      "rss": 0.45,
+      "worst_case": 0.95
+    },
+    "oring": {
+      "contributors": {
+        "DMLS_Ti_seat": 0.15,
+        "CNC_radome_rim": 0.1
+      },
+      "rss": 0.18,
+      "worst_case": 0.25
+    }
+  },
+  "unmitigated": {
+    "cases": [
+      {
+        "label": "nominal",
+        "d_pz": 0.0,
+        "d_or": 0.0,
+        "pogo_pct": 0.5999999999999999,
+        "pad_pct": 0.35,
+        "pad_pct_20yr": 0.2975,
+        "oring_pct": 0.19999999999999993,
+        "pass": true
+      },
+      {
+        "label": "RSS +",
+        "d_pz": 0.45,
+        "d_or": 0.18027756377319948,
+        "pogo_pct": 0.30394736842105247,
+        "pad_pct": -0.10000000000000009,
+        "pad_pct_20yr": -0.08500000000000008,
+        "oring_pct": 0.0987204697903373,
+        "pass": false
+      },
+      {
+        "label": "RSS -",
+        "d_pz": -0.45,
+        "d_or": -0.18027756377319948,
+        "pogo_pct": 0.8960526315789473,
+        "pad_pct": 0.8,
+        "pad_pct_20yr": 0.68,
+        "oring_pct": 0.3012795302096625,
+        "pass": false
+      },
+      {
+        "label": "worst-case +",
+        "d_pz": 0.95,
+        "d_or": 0.25,
+        "pogo_pct": -0.025000000000000168,
+        "pad_pct": -0.6000000000000001,
+        "pad_pct_20yr": -0.51,
+        "oring_pct": 0.059550561797752734,
+        "pass": false
+      },
+      {
+        "label": "worst-case -",
+        "d_pz": -0.95,
+        "d_or": -0.25,
+        "pogo_pct": 1.2249999999999999,
+        "pad_pct": 1.2999999999999998,
+        "pad_pct_20yr": 1.1049999999999998,
+        "oring_pct": 0.3404494382022471,
+        "pass": false
+      }
+    ],
+    "pass": false
+  },
+  "mitigation_escalation": [
+    {
+      "label": "L1 spacer only",
+      "residual_pz": 0.112,
+      "residual_or": 0.112,
+      "cases": [
+        {
+          "label": "nominal",
+          "d_pz": 0.0,
+          "d_or": 0.0,
+          "pogo_pct": 0.5999999999999999,
+          "pad_pct": 0.35,
+          "pad_pct_20yr": 0.2975,
+          "oring_pct": 0.19999999999999993,
+          "pass": true
+        },
+        {
+          "label": "residual +",
+          "d_pz": 0.1118033988749895,
+          "d_or": 0.1118033988749895,
+          "pogo_pct": 0.5264451323190857,
+          "pad_pct": 0.2381966011250105,
+          "pad_pct_20yr": 0.20246711095625894,
+          "oring_pct": 0.13718910175562377,
+          "pass": false
+        },
+        {
+          "label": "residual -",
+          "d_pz": -0.1118033988749895,
+          "d_or": -0.1118033988749895,
+          "pogo_pct": 0.673554867680914,
+          "pad_pct": 0.46180339887498945,
+          "pad_pct_20yr": 0.392532889043741,
+          "oring_pct": 0.2628108982443761,
+          "pass": true
+        }
+      ],
+      "pass": false
+    },
+    {
+      "label": "L2 spacer + bayonet hard-stop",
+      "residual_pz": 0.071,
+      "residual_or": 0.071,
+      "cases": [
+        {
+          "label": "nominal",
+          "d_pz": 0.0,
+          "d_or": 0.0,
+          "pogo_pct": 0.5999999999999999,
+          "pad_pct": 0.35,
+          "pad_pct_20yr": 0.2975,
+          "oring_pct": 0.19999999999999993,
+          "pass": true
+        },
+        {
+          "label": "residual +",
+          "d_pz": 0.07071067811865477,
+          "d_or": 0.07071067811865477,
+          "pogo_pct": 0.5534798170272007,
+          "pad_pct": 0.27928932188134525,
+          "pad_pct_20yr": 0.23739592359914347,
+          "oring_pct": 0.1602748999333399,
+          "pass": true
+        },
+        {
+          "label": "residual -",
+          "d_pz": -0.07071067811865477,
+          "d_or": -0.07071067811865477,
+          "pogo_pct": 0.646520182972799,
+          "pad_pct": 0.4207106781186547,
+          "pad_pct_20yr": 0.3576040764008565,
+          "oring_pct": 0.23972510006665995,
+          "pass": true
+        }
+      ],
+      "pass": true
+    }
+  ],
+  "min_mitigation_pass": "L2 spacer + bayonet hard-stop",
+  "rf_constraint": {
+    "antenna_ti_clearance_min_mm": 12.0,
+    "note": "geometric (self-owned); VNA/HFSS lab-side \u0413\u043e\u043d\u0447\u0430\u0440\u043e\u0432 08_02, unresponsive"
+  },
+  "verdict": "3-spring Z-stack holds at 'L2 spacer + bayonet hard-stop' incl. 20yr pad creep"
+}
