@@ -463,13 +463,12 @@
 - [ ] 👤 **Belleville/disc-spring preload** (deferred chem-note triage → tracked тут): тримає clamp force анкер↔ксилема проти 20-річного Ti creep + thermal cycle — комплементарний до barbs+DIN-471; ≠ pogo contact-spring / ≠ capsule Z-stack [`02_02 §3.5`](02_02_Blind_Mate_Pogo_Pin_Interface)
 
 #### HW.28 — Anti-Overgrowth Shield для Zone 3 (NEW 2026-05-16)
-- **P2** · 👤 · ⚪ · → `01_04 §5.5`
-- **Стан:** Захист **(A) виступ-дзвін ✅ machine** (Деталь 4 `Radome.cs`: ≥3 мм/R≥5, verify bell-rise gate); (B) coating + (C) maintenance — pending. Anti-overgrowth shield тримає Zone 3 катод відкритим атмосфері (ORR Laccase+ZIF-nanozyme): без нього за 3–5р кора накриває PTFE-GDL → O₂-дифузія стоп → EBFC мертва. Три захисти: (A) виступ PEEK Radome ≥3мм + R≥5мм, (B) super-hydrophobic coating (CA>150°, Fluoropel) або Cu-сплав, (C) forester maintenance 5–7р. Інтегровано у HW.17; OPEX → `07_02`. Канон `01_04 §5.5`.
-- [x] 🤖 PEEK Radome CAD виступ-конус ✅ 2026-06-20 (Деталь 4 `Radome.cs`: shield-дзвін ≥3/R≥5, HW.17)
-- [ ] 👤 Закупка/тест super-hydrophobic coating (Fluoropel PFC-1601V або аналог)
-- [ ] 👤 Field protocol для forester visit: процедура зачистки приростаючої тканини без traumatic surgery
+- **P2** · 🤖+👤 · 🟡 · → `01_04 §5.5`
+- **Стан:** Захист **(A) виступ-дзвін ✅ machine** (Деталь 4 `Radome.cs`, bell-rise verify-gate; HW.17); (B) coating + (C) maintenance — 👤 pending. Anti-overgrowth shield тримає Zone 3 катод відкритим атмосфері: без нього за 3–5р кора накриває PTFE-GDL → O₂-дифузія стоп → EBFC мертва. Три комплементарні захисти (A виступ-дзвін PEEK Radome + B super-hydrophobic coating / Cu-сплав + C forester maintenance; числа/матеріали/Cu-фітотокс-caveat — канон [`01_04 §5.5`](01_04_CODIT_and_Xylemointegration)). OPEX → `07_02 §6`.
+- [ ] 👤 Закупка/тест super-hydrophobic coating (Fluoropel PFC-1601V або аналог; UV-деградація → Cu-сплав альтернатива, §5.5 B)
+- [ ] 👤 Field protocol для forester visit: зачистка приростаючої тканини без traumatic surgery
 - [ ] 👤 12-місячний польовий тест на тестовому дереві (Черкаський бір)
-- [ ] 👤 Update `07_02` OPEX: 1 visit / 5–7 років × $20/visit = ~$3–4/рік/анкер (форестер у Черкаському борі)
+- [ ] 👤 Update `07_02 §6` OPEX: forester visit раз на 5–7 років (Черкаський бір)
 
 #### HW.30 — SMD Piezo + Acoustic Pad (Zero-Touch Wake) (NEW 2026-05-16)
 - **P2** · 👤 · ⚪ · → `02_01 §6`
