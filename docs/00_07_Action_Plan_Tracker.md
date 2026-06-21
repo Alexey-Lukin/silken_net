@@ -51,7 +51,7 @@
 
 - **Перед польовим деплоєм** (life-safety + security): `SEC.9` · `SEC.3` · `SEC.1`
 - **Перед Web3 mainnet:** `S1.1` (GitHub CI secrets) · prod deploy-ENV → [`06_04`](06_04_Secrets_Checklist) (вкл. `SOLANA_RPC_URL` — інакше USDC на Devnet; guard ✅ E.47) · `S2.1`+`S2.2`+`S2.3` (Grafana після першого `/metrics`)
-- **Hardware-гейт** (TRL 4→6): `HW.31` (BOM Королеви) · `HW.24` (100 DMLS) · `HW.23` (SLM-замовлення)
+- **Hardware-гейт** (TRL 4→6): `HW.1` (анкер-генерація — CAD machine-half ✅, фіз-друк → завод) · `HW.24` (staged validation SLA→coin→anchor→100) · `HW.23` (HIP postprocess) · `HW.31` (BOM Королеви)
 - **Academic:** `UNI.1` (лаб + публікації) · `UNI.8` (MSA / B2B legal)
 
 ## §00 · Process / IaC / SSOT-tooling
@@ -102,7 +102,19 @@
 
 > ⚠️ Потребують фізичної роботи в лабораторії та/або з підрядниками.
 
-> 🧭 **Анкерний кущ — synergy map (dependency-DAG; оновлено 2026-06-20: дим-фриз + CAD-родина ЗАКРИТІ).** Анкер-айтеми зшиті в граф — пакетами, не поштучно. **[A] Дим-фриз ✅ DONE** (радіальний: вал Ø11 · PEEK стінка 2 · рана Ø15; осьовий: Zone 2 = 50 · фланець Ø25 · Z-stack spacer+bayonet · O-ring 15–30 %; HW.33 + HW.8 + HW.26 — Lamé/CODIT/3-spring data-grounded; анти-дрейф guard `00_06 §3`). **[B] PicoGK CAD-родина ✅ COMPLETE** (`tools/cad` — **ЛІНЧПІН**: coin✅/anode-v2✅/ARCH.25✅/barbs✅/Деталь3✅/Деталь4-radome✅/**Zone2-втулка✅/осьовий-стек✅** — in-silico прокси Архімед/µCT/AM-island/EAAE/**press-fit**; **machine-half анкера закрита**). **→ фокус зміщується на ФІЗИЧНЕ:** **[C] Завод-пакет** (HW.23 HIP · HW.27 bake · HW.2 EAAE · coating-map `01_02 §3.6`) · **[D] Staged validation** (HW.24 SLA→coin→anchor→100 · HW.3 aging — bench/потенціостат) · **[E] Збірка** (HW.17 radome HFSS/друк · HW.25 PTFE-GDL · HW.28 shield · HW.8 pogo bench · HW.6 install · HW.22 steril). Хімія HW.5 → coin/anchor. Залишок machine: MATE-Ø + press-fit axial **виміряно** (capsule-end `Assembly.cs` + `AxialStack.cs`, `02_02 §4.4/§4.5`) → 👤 skirt/inboard + Z-reconcile (HW.8.8) + shank-Ø reconcile (HW.8.9) · script 50-sync (HW.3.IS). Аудит-знахідки + founder-рішення → **HW.33**.
+> 🧭 **Анкерний кущ — synergy map (dependency-DAG).** Анкер — система зшитих залежностями деталей; закриваємо **пакетами**, не поштучно. Обидві machine-осі зведені, критичний шлях перейшов на фізику:
+>
+> **✅ Machine-фундамент ЗАКРИТО** (CAD + in-silico, self-owned):
+> - **Дим-фриз** — геометрія frozen (вал Ø11 · PEEK стінка 2 мм · рана Ø15 · Zone 2 50 мм · фланець Ø25 · Z-stack spacer+bayonet · O-ring 15–30 %), data-grounded Lamé+CODIT+3-spring, анти-дрейф guard `00_06 §3` (HW.33 · HW.8 · HW.26).
+> - **PicoGK CAD-родина** (`tools/cad` — **лінчпін**, живить кожну стадію): 6/6 генераторів (coin → anode-v2 → barbs → Деталь 3 → Деталь 4 → Zone-2 втулка) + 2 інтеграційні assembly (capsule-end · осьовий стек) + drawing-program (HW.1).
+> - **In-silico прокси фіз-тестів:** двофазна connectivity ↔ Архімед/µCT/AM-island (ARCH.25) · thermal-stress + press-fit Lamé ↔ aging (HW.3.IS) · Z-stack RSS ↔ tolerance QA (HW.8.7).
+>
+> **→ Фізичний критичний шлях** (👤 завод/bench):
+> - **[C] Завод-пакет:** HW.1 (фінальна STL → SLM-завод) · HW.23 (HIP) · HW.27 (dehydrogenation bake) · HW.2 (dual-roughness EAAE) · coating-map `01_02 §3.6`.
+> - **[D] Staged validation:** HW.24 (SLA → Ti-coin → anchor → 100) · HW.3 (Arrhenius aging, потенціостат).
+> - **[E] Збірка:** HW.17 (radome HFSS/друк) · HW.25 (PTFE-GDL) · HW.28 (shield) · HW.8 (pogo bench) · HW.6 (install) · HW.22 (steril). Хімія HW.5 → coin/anchor.
+>
+> **🔧 Bench-reconcile перед фіз-друком** — assembly mate-audit виявив незведений Z-stack (`02_02 §4.4/§4.5`): MATE-Ø skirt-vs-inboard + Z (HW.8.8) · shank-Ø press-fit (HW.8.9), цілісно в одному заході. Геом-аудит + founder-рішення → **HW.33**.
 
 #### HW.1 — nTop model → SLM+HIP factory (Anode Zone 1)
 - **P0** · 🤖+👤 · 🟡 · → `01_01`, `01_02 §1.7`
