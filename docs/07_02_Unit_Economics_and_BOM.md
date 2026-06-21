@@ -76,7 +76,7 @@
 | **RF Deck (PCBA)** | STM32WLE5JC (LoRa SoC) + Ceramic SMD Antenna 868 МГц + TCXO (±1 ppm) + **SE050 DNP footprint** (SEC.6 / SE050-MIGRATION, mass-only post-FW.2 — [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security); +$2.40–3.25 коли populated). | $5.80 |
 | **Біоелектрохімічна функціоналізація (Gen 2.0)** | fMWCNT + Os redox polymer + **dgrFAD-GDH** (Zone 1); fMWCNT + **Laccase/nCoCuCeZIF nanozyme** гібрид (Zone 3); **Genipin-Chitosan-CNC** захисна матриця; **Nafion-g-PSBMA** цвітеріонна мембрана (SI-ATRP). Деталі — [`01_03 §5`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell). | $15.00–$24.50 (1K шт) / $5–$8 (50K+ шт) |
 | **Стерилізація (no EtO)** | Гамма-опромінення Co-60 25 кГр в запакованому стані, або UV-C + 70% EtOH. Деталі — [`01_04 §6`](01_04_CODIT_and_Xylemointegration). | $0.50–$1.00 |
-| **Герметизація / IP68** | O-Rings EPDM, Sylgard 184 потинг (радом), машинна збірка тризонного анкера. | $1.50 |
+| **Герметизація / IP68** | O-Rings EPDM, Parylene C conformal coating PCBA (Sylgard 184 full-potting відхилено — глушить TinyML акустику, [`02_02 §3.4`](02_02_Blind_Mate_Pogo_Pin_Interface)), машинна збірка тризонного анкера. | $1.50 |
 | **Разом за 1 Soldier (Gen 2.0, партія 1K):** | **Повністю автономний вузол з тризонним анкером (Gen 2.0 хімія)** | **~$54.65–$69.65** |
 | **Разом за 1 Soldier (Gen 2.0, партія 50K+):** | Після scale-up: in-house ферментація + batch coating | **~$44.65–$52.65** |
 
@@ -106,7 +106,7 @@
 Для забезпечення біосумісності та стерильності монтажу використовуються:
 
 - **Асептика:** 2% хлоргексидину біглюконат у 70% ізопропіловому спирті (стерилізація бурового каналу та інструментів) — ~5 мл / вузол.
-- **Герметизація:** Силіконізований акриловий герметик (Remmers Dispertec M-6) для ізоляції точки входу + Sylgard 184 (Dow Corning) для потингу PCBA — ~2 г / вузол.
+- **Герметизація:** Силіконізований акриловий герметик (Remmers Dispertec M-6) для ізоляції точки входу (~2 г / вузол) + Parylene C conformal coating PCBA (CVD-production; Sylgard 184 full-potting відхилено — глушить TinyML акустику, [`02_02 §3.4`](02_02_Blind_Mate_Pogo_Pin_Interface)).
 - **Камуфляж:** Екологічні фарби Zero-VOC на основі органічних олій — ~1 г / вузол.
 
 ---
@@ -315,7 +315,7 @@ Month 44:   +$92   (чиста ліквідність для DAO та власн
 
 1. **Київ (3D Metal Tech):** Основний підрядник. Досвід з медичними імплантами (ISO 13485), обладнання Concept Laser M2. Здатні друкувати партії гіроїдів із заданою пористістю.
 2. **Дніпро (ALT Ukraine):** Власне виробництво принтерів Alfa-280 та лабораторія матеріалознавства. Резервний хаб.
-3. **Черкаси (SVS-ARTA / Місцеві PCBA):** SMD-пайка (роботом), заливка компаундом Sylgard 184, фінальна збірка (**«Marriage»**) плат із титановими анкерами та PEEK-радомами.
+3. **Черкаси (SVS-ARTA / Місцеві PCBA):** SMD-пайка (роботом), conformal coating Parylene C (CVD; Sylgard 184 повне заливання відхилено — глушить TinyML акустику, [`02_02 §3.4`](02_02_Blind_Mate_Pogo_Pin_Interface)), фінальна збірка (**«Marriage»**) плат із титановими анкерами та PEEK-радомами.
 
 ### 8.1.1. Contingency Plan: EU Backup DMLS Hubs (BIZ.6)
 
