@@ -368,6 +368,28 @@ k_DET ~ turnover (§Cathode), with the measured Ti-coin cathode EIS the decisive
 
 ---
 
+## HW.34 — Central Bus Conductor (monolithic; thermal + mechanical)
+
+Spec home → [`01_01 §1.4`](../../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md); decision → `00_07` HW.34.
+
+**Thermal bridge (script 54)** — 1D resistor ladder + 2-node steady state. A **Cu** bus dominates the
+Zone-2 PEEK break (G_anchor ~10× a Ti bus; ~98% of cross-break heat; λ_Cu ~1600× PEEK) → drags the
+Zone-1 anode pocket to ~**−15 °C** (17° below core → living-sapwood freeze-risk) at −30 °C air / +2 °C
+core. A bus **monolithic with the anode** (= the anode alloy) is thermally near-invisible (−1.4 °C ≈
+bare). Per bake-off alloy: alloyed α+β Ti (4V/7Nb/β/15Zr, λ≈7) −1.4…−1.7 °C; CP-Ti (λ17) −3.5; Ta (λ57,
+benchmark) −7.4 — **all ≪ Cu**. Electrically free at µA. (`mechanical/anchor_thermal_bridge.json`)
+
+**Mechanical (script 55)** — slender-beam closed form. Buckling SF **29×** (1 N pogo) even unsupported.
+Sway fatigue: the bore **liner** (= the short-circuit insulation) doubles as lateral support → SF
+**9–26×** (infinite life, all alloys); bare cantilever marginal for soft Ta/CP-Ti. Per-alloy margin
+tracks yield = SAME ranking as the thermal side → leading HW.24 candidates win on both.
+(`mechanical/bus_mechanical.json`)
+
+**Verdict** — 🟢 Monolithic bus (= anode alloy, HW.24-gated) resolves the Cu/Ti dichotomy: thermal
+bridge minimized + Ti↔Cu galvanic joint eliminated + mechanically sound **with the bore liner**.
+
+---
+
 ## Infrastructure
 
 | Component | Location |

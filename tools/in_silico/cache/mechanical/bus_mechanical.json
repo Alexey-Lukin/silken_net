@@ -1,0 +1,112 @@
+{
+  "method": "slender-beam closed form \u2014 Euler buckling (fixed-free) + cantilever tip-load bending + S-N endurance ratio (\u03c3_e \u2248 k\u00b7\u03c3_y, as-printed derate). No FEA.",
+  "geometry_mm": {
+    "bus_dia": 1.3,
+    "free_len_unsupported": 36.0,
+    "free_len_supported": 6.0
+  },
+  "loads": {
+    "pogo_axial_N": 1.0,
+    "friction_mu": 0.3,
+    "lateral_drag_N": 0.3
+  },
+  "fatigue_model": {
+    "endurance_over_yield": 0.45,
+    "as_printed_derate": 0.5
+  },
+  "buckling": {
+    "p_cr_unsupported_N": 29.4,
+    "p_cr_supported_N": 1057.0,
+    "sf_unsupported": 29.4
+  },
+  "bending_stress_MPa": {
+    "unsupported": 50.1,
+    "supported": 8.3
+  },
+  "per_alloy_fatigue": [
+    {
+      "alloy": "Ti-15Zr",
+      "yield_MPa": 950.0,
+      "endurance_MPa": 213.8,
+      "sf_unsupported": 4.27,
+      "sf_supported": 25.61,
+      "unsupported_infinite_life": true
+    },
+    {
+      "alloy": "beta-Ti-13Nb-13Zr",
+      "yield_MPa": 900.0,
+      "endurance_MPa": 202.5,
+      "sf_unsupported": 4.04,
+      "sf_supported": 24.27,
+      "unsupported_infinite_life": true
+    },
+    {
+      "alloy": "Ti-6Al-4V",
+      "yield_MPa": 880.0,
+      "endurance_MPa": 198.0,
+      "sf_unsupported": 3.95,
+      "sf_supported": 23.73,
+      "unsupported_infinite_life": true
+    },
+    {
+      "alloy": "Ti-6Al-7Nb",
+      "yield_MPa": 850.0,
+      "endurance_MPa": 191.2,
+      "sf_unsupported": 3.82,
+      "sf_supported": 22.92,
+      "unsupported_infinite_life": true
+    },
+    {
+      "alloy": "CP-Ti-Gr4",
+      "yield_MPa": 480.0,
+      "endurance_MPa": 108.0,
+      "sf_unsupported": 2.16,
+      "sf_supported": 12.94,
+      "unsupported_infinite_life": true
+    },
+    {
+      "alloy": "Ta",
+      "yield_MPa": 345.0,
+      "endurance_MPa": 77.6,
+      "sf_unsupported": 1.55,
+      "sf_supported": 9.3,
+      "unsupported_infinite_life": false
+    }
+  ],
+  "friction_sweep": [
+    {
+      "mu": 0.2,
+      "f_lat_N": 0.2,
+      "sigma_unsup_MPa": 33.4,
+      "sigma_sup_MPa": 5.6,
+      "sf_unsup_4v": 5.93,
+      "sf_sup_4v": 35.59
+    },
+    {
+      "mu": 0.3,
+      "f_lat_N": 0.3,
+      "sigma_unsup_MPa": 50.1,
+      "sigma_sup_MPa": 8.3,
+      "sf_unsup_4v": 3.95,
+      "sf_sup_4v": 23.73
+    },
+    {
+      "mu": 0.4,
+      "f_lat_N": 0.4,
+      "sigma_unsup_MPa": 66.8,
+      "sigma_sup_MPa": 11.1,
+      "sf_unsup_4v": 2.97,
+      "sf_sup_4v": 17.79
+    },
+    {
+      "mu": 0.5,
+      "f_lat_N": 0.5,
+      "sigma_unsup_MPa": 83.5,
+      "sigma_sup_MPa": 13.9,
+      "sf_unsup_4v": 2.37,
+      "sf_sup_4v": 14.24
+    }
+  ],
+  "verdict": "Monolithic bus is mechanically sound WITH the bore liner: buckling non-issue (SF 29x); the liner doubles as lateral support \u2192 fatigue SF 9-26x (infinite life, all alloys). UNSUPPORTED is marginal for soft Ta/CP-Ti. Liner = insulation + support + fatigue-fix in one (HW.34 sub-2). Per-alloy margin tracks yield = same ranking as thermal \u2192 leading HW.24 candidates win on both.",
+  "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum is bench/field (08_02). Comparative supported-vs-unsupported + per-alloy ranking robust."
+}
