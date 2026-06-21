@@ -54,8 +54,8 @@
 | 34b | `wb97x_speciation` | **② ωB97X cross-check ✅** (B4 dimethyl): chloro↔+2/+3 **bracket functional-robust** (both functionals); internal aqua↔bis-Im order functional-**sensitive** (ωB97X aqua>bis-Im, B3LYP-dimethyl bis-Im>aqua, <0.15 eV) | `dft/wb97x_speciation[_dmbpy].json` |
 | 35 | `dft_metal_reorganization` | **③** computed inner-sphere λ (Nelsen 4-pt): Ru **0.78**, Ce 0.87, Co 3.09 (B3LYP spin-crossover ~2× over-est) | `dft/metal_reorganization.json` |
 | 40 | `validate_vs_experiment` | predictions ready for Ti-coin CV/EIS | `kinetics/validation_report.json` |
-| 50 | `thermal_stress_lame` | safety 9.9× at -30°C; press-fit P_c 34.7→22.6 MPa (stress relaxation, not creep); O-ring seals, barbs axial-only | `kinetics/thermal_stress_lame.json` |
-| 51 | `gusak_degradation_model` | Arrhenius + Kirkendall V=1.12 µg/cm²/yr + H7/s6 | `kinetics/gusak_degradation.json` |
+| 50 | `thermal_stress_lame` | **frozen Ø11/2mm (HW.3.IS sync 2026-06-21)**: σ_t 29.7 MPa SF 3.4× @ -30°C; press-fit P_c (H7/s6 band, contact-radius bug-fixed) 0.49-3.32→0.32-2.16 MPa; O-ring = essential seal, barbs axial-only | `kinetics/thermal_stress_lame.json` |
+| 51 | `gusak_degradation_model` | Arrhenius + Kirkendall V=1.12 µg/cm²/yr + **H7/s6 Ø11 (5-34µm)** | `kinetics/gusak_degradation.json` |
 | 60 | `paper_figures` | Стаття 1 figures Fig 2 (structure+path, DRAFT 2D-proj) / 3 (cascade+LFER) / 4 (cathode DET) / 5 (solvation) + S1 (β·d) — cache+PDB renderer, headline numbers asserted vs SUMMARY at build | `paper/figures/*.png` |
 | 61 | `paper_tables` | Стаття 1 Tables T1–T4 (levels of theory / cascade all-methods / DET hops+λ / mediator series) — cache→markdown, canon-asserted | `paper/06_tables.md` |
 

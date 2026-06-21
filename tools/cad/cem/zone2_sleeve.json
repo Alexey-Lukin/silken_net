@@ -1,5 +1,5 @@
 {
-  "_note": "Деталь 2 — Zone 2 PEEK thermal-break sleeve (01_01 §1 + §4.1/§4.2). Frozen: bore Ø11 (= Zone-1 shaft, press-fit H7/s6), wall 2.0 mm (CTE Lamé SF 3.7×, §4.2 — NOT press-fit hoop), OD Ø15 = wound in tree (CODIT <25 → DBH ≥38), length 50 mm (axial thermal break, §4.1). Plain round bore: hex anti-rotation (§4.3 C, ≤0.05 mm) is bench-gated → deferred (00_07). DIN-471 retaining grooves are on the Ti Zone-1/Zone-3 ends (§3 step 6), not the PEEK sleeve; bore stays smooth (barbs press in at 150 °C, §3 steps 4-5).",
+  "_note": "Деталь 2 — Zone 2 PEEK thermal-break sleeve (01_01 §1 + §4.1/§4.2). Frozen: bore Ø11 (= Zone-1 shaft, press-fit H7/s6), wall 2.0 mm (CTE Lamé SF 3.4×, §4.2 frozen — NOT press-fit hoop), OD Ø15 = wound in tree (CODIT <25 → DBH ≥38), length 50 mm (axial thermal break, §4.1). Plain round bore: hex anti-rotation (§4.3 C, ≤0.05 mm) is bench-gated → deferred (00_07). DIN-471 retaining grooves are on the Ti Zone-1/Zone-3 ends (§3 step 6), not the PEEK sleeve; bore stays smooth (barbs press in at 150 °C, §3 steps 4-5).",
   "kind": "zone2_sleeve",
   "name": "zone2_sleeve",
   "voxel_size_mm": 0.1,
@@ -7,7 +7,9 @@
   "wall_thickness_mm": 2.0,
   "length_mm": 50.0,
   "tolerances": {
-    "fit": "H7/s6 (nominal class only)",
+    "fit": "H7/s6 (ISO 286, O11): 5-34 um diametral interference",
+    "interference_min_um": 5,
+    "interference_max_um": 34,
     "clearance_mm": 0.05,
     "feature": "bore",
     "primary_datum": "bore axis",
@@ -18,8 +20,8 @@
     "process": "CNC from rod; anneal 200-250 C before final micromachining (else internal stress drifts the um tolerances)",
     "surface_finish": "smooth round bore (hex anti-rotation 4.3 C, <=0.05 mm, is bench-gated -> deferred)",
     "extra": [
-      "Press-fit interference is Lame-computed um (E_PEEK-aware, 01_01 4.2), NOT a blind ISO-286 metal lookup; exact um pending HW.3.IS script-50 re-run under frozen O11/2mm",
-      "OD O15 = wound in tree (CODIT <25 -> DBH >=38); wall 2.0 = CTE Lame SF 3.7x (4.2), not press-fit hoop",
+      "Press-fit Lame-computed (HW.3.IS script 50, frozen O11/2mm, E_PEEK 4.0 GPa): contact P_c 0.49-3.32 MPa -> 0.32-2.16 at 20yr; at MIN H7/s6 fit the relaxed P_c <= sap -> the O-ring is the essential seal (PEEK backup marginal)",
+      "OD O15 = wound in tree (CODIT <25 -> DBH >=38); wall 2.0 = CTE Lame SF 3.4x (4.2 frozen), not press-fit hoop",
       "Mechanical retention (barbs + DIN-471) is on the Ti ends, not this PEEK bore (4.3)"
     ]
   }
