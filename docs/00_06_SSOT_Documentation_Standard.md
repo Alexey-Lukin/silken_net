@@ -72,6 +72,12 @@
 | Tokenomics rate / slashing thresholds / insurance pool | `05_03` · `05_05 §3/§4` |
 | Carbon (2000 SCC = 1 tCO₂) | `05_03` + `07_01 §3` (business view) |
 | Financial constants (business) | `07_01 §3` (з рефами на 05_03/00_01) |
+| **Cost-домен — spec-at-source → aggregate-in-07_02 → price.** Component-spec (моделі + per-unit $) живе у технічному домі підсистеми; 07_02 АГРЕГУЄ (rollup→CAPEX→OPEX→ROI) через реф, не дублює spec; ціна — tokenomics | ⬇ розклад нижче |
+| ├ Soldier BOM (component-моделі + per-unit $ + Electronics TOTAL) | `02_01 §3` (component-spec дім). Node-rollup/CAPEX — 07_02 §1.2; інші реферять, не дублюють |
+| ├ Queen BOM (component) | `02_05 §7`. Node CAPEX — 07_02 §4 |
+| ├ Анкер виробничий cost (DMLS друк / HIP) · EBFC biochem cost | `01_02 §6` · `01_03 §5`. Rollup — 07_02 §1.2/§3 |
+| ├ Node $/вузол (Soldier/Queen) · cluster CAPEX (waterfall) · OPEX · ROI/payback (waterfall) | `07_02` §1.2/§4 (node) · §5.3 (cluster CAPEX) · §6 + §8a (OPEX) · §7.3 (ROI). Агрегує component-доми через реф; §5а/§7.2/§8a.4/§9 = дзеркала кривої |
+| └ Vendor-landscape / DMLS-хаби / Frame Agreement (production-procurement) | `07_02 §8` (`protocols/procurement/rfq_registry` реферить рядок, не дублює) |
 | Slashing penalty formula | `05_05 §3` ↔ `BlockchainBurningService` |
 | Lorenz Z↔health ground-truth / de-risk протокол | `05_05 §8` (калібрує пороги §3/§7; партнерський ростер ФОТІУС/ЧНУ → `08_02`) |
 | Governance / DAO params (Governor, Timelock, ProtocolParameters) | `05_06` |

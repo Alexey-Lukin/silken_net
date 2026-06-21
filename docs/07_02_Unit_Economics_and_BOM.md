@@ -63,9 +63,11 @@
 
 > **Архітектурна зміна (Pivot v4, 2026-05-22 — EBFC Gen 2.0 baseline):** Біохімічний стек повністю переписаний. Gen 1.0 (GOx + Catalase + глутаральдегід + PEG) визнана нежиттєздатною та виключена. **Новий baseline:** деглікозильована FAD-GDH на аноді (без H₂O₂) + Laccase/ZIF-nanozyme гібрид на катоді (×10 power density, chloride-tolerant) + Genipin-Chitosan-CNC матриця (нетоксичний зшивач + псевдопластика) + Nafion-g-PSBMA цвітеріонна мембрана (8 H₂O/ланцюг, σ = 45.2 мС/см, UCST winter-lock). Очікуваний термін служби: **20–25 років**. Деталі — [`01_03 §1–3`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell).
 
-### 1.2. Зведений CAPEX Soldier — по підсистемах
+### 1.2. Зведений CAPEX Soldier — node-rollup (канонічний дім)
 
-Завдяки архітектурному аудиту (відмова від LTC3108, перехід на SMD-антену та PEEK-радом) собівартість електроніки радикально знижено. Ціни вказані для партії від **10,000 шт**.
+> 🏠 **One-Home: node $/Soldier живе ТУТ** (агрегація підсистем → вузол). Component-spec живе у своїх домах і **агрегується через реф, не дублюється**: електроніка (Power/RF Deck per-item) — [`02_01 §3`](02_01_Hardware_Architecture_and_BOM); анкер DMLS-друк — [`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS); EBFC biochem — [`01_03 §5`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell). Cost-домен registry — [`00_06 §2`](00_06_SSOT_Documentation_Standard).
+
+Завдяки архітектурному аудиту (відмова від LTC3108, перехід на SMD-антену та PEEK-радом) собівартість електроніки радикально знижено. Ціни — партія **1K-tier** (нижче — 50K+ scale-tier).
 
 | Підсистема | Компоненти / Технологія | Вартість ($) |
 |---|---|---|
@@ -80,24 +82,11 @@
 | **Разом за 1 Soldier (Gen 2.0, партія 1K):** | **Повністю автономний вузол з тризонним анкером (Gen 2.0 хімія)** | **~$54.65–$69.65** |
 | **Разом за 1 Soldier (Gen 2.0, партія 50K+):** | Після scale-up: in-house ферментація + batch coating | **~$44.65–$52.65** |
 
-### 1.3. Детальна розбивка Electronics BOM (10k шт)
+### 1.3. Electronics breakdown — дім [`02_01 §3`](02_01_Hardware_Architecture_and_BOM)
 
-| # | Компонент | Модель | Ціна |
-|---|---|---|---|
-| 1 | MCU + LoRa SoC | Seeed LoRa-E5 (STM32WLE5JC + SX1262) | ~$5.50 |
-| 2 | PMIC | TI BQ25570RGRR | ~$2.80 |
-| 3 | Supercapacitor | Eaton HV0H474AEJ-R (0.47 F / 5.5 В) | ~$1.10 |
-| 4 | Ceramic Antenna | Yageo ANT1608LLC00R2400A, Taoglas FXP73 або Ignion NN02-310 (868 МГц, LTCC/Virtual, SMD) | ~$0.35 |
-| 5 | П'єзоелемент (SMD) | Murata 7BB-15-6L0 / TDK B-Series + acoustic pad (∅15 мм, пасивний тригер) — канон [`02_01 §3`](02_01_Hardware_Architecture_and_BOM) | ~$0.30 |
-| 6 | PCB | FR4, 4 шари, 1.6 мм (Power Deck + RF Deck) | ~$0.65 |
-| 7 | Пасивні | 0402/0603 резистори, конденсатори X5R/C0G | ~$0.20 |
-| 8 | Pogo Pins | Mill-Max 0906 Series (2 шт, spring-loaded) | ~$0.40 |
-| 9 | Buffer cap VOUT | 47 µF / **25V X7R 1210** (Murata GRM32ER71E476ME20), **НЕ 6.3V** — [`02_03 §6.1`](02_03_BQ25570_MPPT_Nano_Power) | ~$0.18 |
-| — | **Electronics TOTAL** | | **~$11.48** |
-| — | _LTC3108 + Coilcraft xfmr 1:100 (DNP footprint)_ | _Cold-start fallback, не populated за замовчуванням — [`02_03 §1.5`](02_03_BQ25570_MPPT_Nano_Power). PCB pads ~$0._ | _$0 / +$1.20 якщо populated після lab R_int test_ |
-| — | _BME280 + TPS22860 gate + PTFE vent (climate add-on)_ | _t°/RH/тиск → VPD confounder (False-Slashing kill, [`05_05 §6/§7`](05_05_Slashing_and_Risk_Policy)) + клімат-оракул NaaS ([`07_01`](07_01_Nature_as_a_Service_Contracts)); ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM), pending bench._ | _+$2.60 якщо populated_ |
+> 🏠 **Component-BOM One-Home:** per-component моделі + ціни + **Electronics TOTAL живуть у [`02_01 §3`](02_01_Hardware_Architecture_and_BOM)** (component-spec дім — cost-домен registry [`00_06 §2`](00_06_SSOT_Documentation_Standard)). Тут НЕ дублюємо — §1.2 бере Electronics-підсумок (Power Deck + RF Deck) звідти; per-item розбивка (MCU/PMIC/supercap/antenna/piezo/pogo/buffer) — у домі.
 
-> **Climate add-on (BME280, ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)):** +$2.60/вузол якщо populated — **НЕ** входить у baseline Electronics TOTAL ($11.48) ані CAPEX §1.2, доки ADR не закрито bench'ем. Перетворює вузол на кліматичний (VPD-confounder + NaaS клімат-оракул) — підвищує цінність D-MRV-даних для агро/страхового ринку.
+> **Climate add-on (BME280 + TPS22860 gate + PTFE vent, ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)):** опційний **+$2.60/вузол** якщо populated — **НЕ** входить у baseline node-cost (§1.2), доки ADR не закрито bench'ем. Перетворює вузол на кліматичний (VPD-confounder False-Slashing kill — [`05_05 §6/§7`](05_05_Slashing_and_Risk_Policy) + NaaS клімат-оракул — [`07_01`](07_01_Nature_as_a_Service_Contracts)) → підвищує D-MRV-цінність для агро/страхового ринку.
 
 ---
 
@@ -114,6 +103,8 @@
 ## 💰 3. Економічний аналіз (Unit Economics) — Анкер
 
 Використання адитивного виробництва (3D-друк) та гіроїдної структури дозволяє радикально знизити собівартість при збереженні міцності.
+
+> 🏠 **Анкер друк-cost (SLM $/шт + HIP $/шт, за обсягом) — дім [`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS);** тут — economics-контекст. ⚠️ **Розрізняти обсяг** (щоб однакове «$15–30» не плутало): серія 1K+ ≈ **$15–30/анкер повністю** (нижче); R&D-партія 100 шт = **$40–80 SLM + окремо $15–30 HIP** ([`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)); прототип-одиниця **$100–250**. Node-агрегат «Анкер Zone1+3 ~$20–25» (1K) → §1.2.
 
 - **Вартість сировини:** Порошок Ti-6Al-4V ELI коштує **$126–$147 за кг**.
 - **Економія маси:** Пористість 70% знижує вагу анкера з 26.5 г до **8–9 г**. Вартість металу на виріб — **~$4.00**.
@@ -133,6 +124,8 @@
 ## 📡 4. CAPEX: Специфікація шлюзу "Queen" (BOM)
 
 Шлюз агрегує дані по LoRa mesh і відправляє їх у хмару/блокчейн. Супутниковий бекхол (Starlink) винесено в окремий "Mother Gateway" (→ [`02_05`](02_05_Queen_Hardware_and_Starlink)), тому стандартна Queen використовує енергоефективний **LTE-M / NB-IoT**.
+
+> 🏠 **One-Home: Queen node-CAPEX живе ТУТ.** Component-spec (моделі/фази: STM32 / SIM7070G / solar / battery / MPPT…) — дім [`02_05 §7`](02_05_Queen_Hardware_and_Starlink); тут — node-rollup $. Cost-домен registry — [`00_06 §2`](00_06_SSOT_Documentation_Standard).
 
 | # | Підсистема | Компоненти / Технологія | Вартість ($) |
 |---|---|---|---|
@@ -168,13 +161,13 @@
 
 Мінімальний життєздатний кластер (**MVFC — Minimum Viable Forest Cluster**) = 100 дерев «Soldier» + 1 шлюз «Queen».
 
-### 5.1. Апаратне забезпечення (CAPEX, v3 — тризонний анкер)
+### 5.1. Апаратне забезпечення (CAPEX, v4 — тризонний анкер + Gen 2.0 EBFC)
 
-- 100 × Soldier v3 ($46 середній; діапазон $42.50–$50 з §1.2) = **$4,600**
+- 100 × Soldier v4 ($62 середній; діапазон $54.65–$69.65 з §1.2, партія 1K) = **$6,200**
 - 1 × Queen = **$80**
-- *Всього CAPEX (hardware):* **$4,680**
+- *Всього CAPEX (hardware):* **$6,280**
 
-> **Примітка про v3 BOM:** середня ціна $46/Soldier включає HIP-обробку Zone 1 (+$15–30), CNC PEEK Zone 2 з annealing 200–250°C та PTFE-GDL мембрану Zone 3. Це чесна Due-Diligence оцінка — не плутати з v2 ($32–35) у §9.
+> **Примітка про v4 BOM:** середня ціна $62/Soldier (партія 1K) включає Gen 2.0 біохімію ($15–24.50, [`01_03 §5`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)), HIP-обробку Zone 1, CNC PEEK Zone 2 з annealing 200–250°C та PTFE-GDL мембрану Zone 3. При scale-up до 50K+ Soldier падає до ~$48 (in-house ферментація) → hardware CAPEX ~$4,880. (v2 $32–35 / v3 $42.50–50 — застарілі, не використовувати у фінмоделях; повна еволюція — §9.)
 
 ### 5.2. Витратні матеріали та Інсталяція
 
@@ -182,9 +175,18 @@
 - Праця арбористів (буріння + монтаж 100 вузлів): ~$220
 - *Всього Інсталяція:* **~$420**
 
-### 5.3. Підсумок
+### 5.3. Cluster CAPEX — Waterfall (канонічний дім)
 
-> **Базова вартість запуску 1 кластера (v3): ~$5,100** — або **~$51 на 1 дерево «під ключ»**. (v2 еталон $4,000 — застарілий, не використовувати у фінмоделях.)
+> 🏠 **One-Home: cluster-CAPEX живе ТУТ** як derivation-водоспад — кожна сходинка тягне вхід зі свого дому, накопичений total = єдине джерело для ROI. §5а / §7 / §8a / §9 **дзеркалять** його (правити тут, [`00_06 §2`](00_06_SSOT_Documentation_Standard)). Так зміна BOM оновлює один рядок, а не сім.
+
+| Сходинка водоспаду | Вхід (дім) | Δ (1K) | Накопичено (1K) | Δ (50K+) | Накопичено (50K+) |
+|---|---|---|---|---|---|
+| 100 × Soldier v4 | $62 / $48 (§1.2) | +$6,200 | $6,200 | +$4,800 | $4,800 |
+| + 1 × Queen | $80 (§4) | +$80 | $6,280 (hardware) | +$80 | $4,880 (hardware) |
+| + Інсталяція | $420 (§5.2) | +$420 | **$6,700** | +$420 | **$5,300** |
+| **= Запуск «під ключ»** | | | **$6,700 · $67/дерево** | | **$5,300 · $53/дерево** |
+
+> **Cluster CAPEX (v4): ~$6,700 (1K) / ~$5,300 (50K+).** (v2 $4,000 / v3 $5,100 — застарілі, не використовувати.) Realistic life-cycle (з replacements/battery) — те саме CAPEX, ширший OPEX → §8a.4.
 
 #### 🤖 5а. Phase 3 (Starlink Mini) Cluster Economics — HW.14
 
@@ -192,16 +194,16 @@
 
 Для ультра-віддалених локацій де LTE-M / Starlink DTC недоступний (Phase 3):
 
-| Статтia CAPEX | Phase 1/2.5 (v3 BOM) | Phase 3 (Starlink Mini, v3 BOM) |
+| Стаття CAPEX | Phase 1/2.5 (v4) | Phase 3 (Starlink Mini, v4) |
 |---|---|---|
-| 100 × Soldier v3 ($46) | $4,600 | $4,600 |
+| 100 × Soldier v4 ($62 ←§1.2) | $6,200 | $6,200 |
 | 1 × Queen hardware | $80 | $825 |
 | Starlink Mini terminal | — | $599 |
 | Інсталяція | $420 | $480 (складніша монтажна точка, сонячна панель) |
-| **Разом Phase 3 CAPEX** | **$5,100** | **$6,504** |
-| **CAPEX на 1 дерево** | **$51** | **$65** |
+| **Разом CAPEX** | **$6,700** (←§5.3) | **$8,104** |
+| **CAPEX на 1 дерево** | **$67** | **$81** |
 
-**Phase 3 OPEX:**
+**Phase 3 OPEX** (Soldier replacements ←§8a.2 one-home):
 
 | Стаття | Phase 1/2.5 | Phase 3 |
 |---|---|---|
@@ -209,29 +211,29 @@
 | Starlink Residential | — | **$150/місяць** |
 | Хмара / RPC | ~$5.00 | ~$5.00 |
 | Амортизація Queen | ~$3.50 | ~$8.00 (складніша компонентна база) |
-| Soldier replacements (BIZ.7) | ~$15.50 | ~$15.50 |
-| **Разом OPEX Phase 3** | **~$25–30** | **~$179/місяць** |
+| Soldier replacements (←§8a.2, v4 1K) | ~$10.70 | ~$10.70 |
+| **Разом OPEX** | **~$21** | **~$174/місяць** |
 
 **Phase 3 ROI @ $0.30/SCC:**
-- Дохід: ~$130/місяць (100 SCC/тижень × $0.30, ідентично Phase 1/2.5)
-- Net: $130 − $179 = **−$49/місяць** 🔴 → **Phase 3 unprofitable при $0.30**
-- Breakeven SCC price: $179 / 433 SCC = **$0.41/SCC**
+- Дохід: ~$130/місяць (433 SCC × $0.30, ідентично Phase 1/2.5)
+- Net: $130 − $174 = **−$44/місяць** 🔴 → **Phase 3 unprofitable при $0.30**
+- Breakeven SCC price: $174 / 433 SCC = **$0.40/SCC**
 
 **Phase 3 ROI @ $1.00/SCC (ReFi premium):**
-- Net: $433 − $179 = **$254/місяць**
-- Payback: $6,504 / $254 ≈ **~26 місяців** (vs ~12 для Phase 1/2.5 v3)
+- Net: $433 − $174 = **$259/місяць**
+- Payback: $8,104 / $259 ≈ **~31 місяців** (vs ~16 для Phase 1/2.5 v4 — §7.3)
 
 **Рекомендації HW.14:**
-1. **Phase 3 viable лише при SCC ≥ $0.41** — вимагає ReFi premium або Blue Carbon market
-2. **Starlink sharing:** розгортати ≥3 кластери на 1 Starlink термінал → Starlink cost per cluster $50/міс → breakeven $0.18/SCC ✅
-3. **Duty cycling:** Starlink 1 хв/год замість 5 хв/год → OPEX $30/міс (близько Phase 1/2.5)
+1. **Phase 3 viable лише при SCC ≥ $0.40** — вимагає ReFi premium або Blue Carbon market
+2. **Starlink sharing:** розгортати ≥3 кластери на 1 Starlink термінал → Starlink cost per cluster $50/міс → breakeven $0.17/SCC ✅
+3. **Duty cycling:** Starlink 1 хв/год замість 5 хв/год → OPEX ~$30/міс
 4. **Альтернатива Helium Network:** ARCH.34 (Queen Helium fallback) — якщо покриття є, кратно нижчий OPEX
 
-| Сценарій Phase 3 | OPEX/міс | Breakeven SCC | Payback @$1.00 (CAPEX $6,504) |
+| Сценарій Phase 3 | OPEX/міс | Breakeven SCC | Payback @$1.00 (CAPEX $8,104) |
 |---|---|---|---|
-| 1 Starlink / 1 cluster (baseline) | $179 | $0.41 | ~26 міс |
-| 1 Starlink / 3 clusters shared | $79 | $0.18 | ~18 міс |
-| Duty cycle 1 хв/год | $30 | $0.07 | ~12 міс |
+| 1 Starlink / 1 cluster (baseline) | $174 | $0.40 | ~31 міс |
+| 1 Starlink / 3 clusters shared | $74 | $0.17 | ~23 міс |
+| Duty cycle 1 хв/год | $30 | $0.07 | ~20 міс |
 
 ---
 
@@ -278,32 +280,34 @@
 
 ### 7.2. Розрахунок ROI
 
-**Baseline: 1 SCC/тиждень/дерево, ціна $0.30/SCC:**
+**Baseline: 1 SCC/тиждень/дерево, ціна $0.30/SCC, baseline OPEX $12 (§6, без replacements):**
 
 - Кластер 100 дерев: 100 SCC/тиждень → **~433 SCC / місяць**
 - Дохід кластера: 433 × $0.30 = **~$130 / місяць**
-- Термін окупності (Payback Period):
+- **Payback = CAPEX (§5.3) / (дохід − OPEX)** = $6,700 / ($130 − $12) = $6,700 / $118 ≈ **~57 місяців**
 
 ```
-CAPEX ($5,100, v3 BOM) / Чистий прибуток ($130 − $12 OPEX) ≈ ~44 місяці
-
-Month  0: −$5,100  (старт)
-Month 22: −$2,504  (половина шляху)
-Month 43:   −$26   (майже окупився)
-Month 44:   +$92   (чиста ліквідність для DAO та власників лісу)
+Month  0: −$6,700  (старт)
+Month 28: −$3,396  (половина шляху)
+Month 56:    −$92  (майже окупився)
+Month 57:    +$26  (чиста ліквідність для DAO та власників лісу)
 ```
 
-### 7.3. Sensitivity Analysis
+> Realistic life-cycle (OPEX $21 з replacements+battery, BIZ.7) → ~61 міс — §8a.4. Повна крива по ціні SCC — §7.3.
 
-| Ціна SCC | Дохід кластера / міс | Net (−$12 OPEX) | Payback Period (CAPEX $5,100 v3) |
+### 7.3. Sensitivity Analysis — ROI Waterfall (канонічний дім payback)
+
+> 🏠 **One-Home: payback-крива живе ТУТ.** Формула: **payback = CAPEX (§5.3) / (дохід − OPEX)**. Вхід: CAPEX **$6,700** (1K, ←§5.3); baseline OPEX **$12** (§6, без replacements); дохід = 433 SCC/міс × ціна. §7.2 / §8a.4 / §9 **дзеркалять** цю криву (правити тут).
+
+| Ціна SCC | Дохід / міс | Net (−$12 OPEX) | Payback (CAPEX $6,700, 1K) |
 |---|---|---|---|
-| $0.15 (bear market) | $65 | $53 | ~96 місяців |
-| **$0.30 (baseline)** | **$130** | **$118** | **~44 місяці** |
-| $0.60 (bull market) | $260 | $248 | ~21 місяць |
-| $1.00 (ReFi premium) | $433 | $421 | ~12 місяців |
-| $5.00 (Blue Carbon) | $2,165 | $2,153 | ~2.4 місяці |
+| $0.15 (bear market) | $65 | $53 | ~126 місяців |
+| **$0.30 (baseline)** | **$130** | **$118** | **~57 місяців** |
+| $0.60 (bull market) | $260 | $248 | ~27 місяців |
+| $1.00 (ReFi premium) | $433 | $421 | ~16 місяців |
+| $5.00 (Blue Carbon) | $2,165 | $2,153 | ~3.1 місяці |
 
-> **Стратегія виходу на прибутковість:** Навіть при консервативній ціні $0.30/SCC кластер окупається менш ніж за 3 роки. Цільовий ReFi ринок ($1–5/SCC) скорочує Payback до 2–10 місяців. Ключовий KPI: **growth_points/day** — прямий індикатор здоров'я лісу та швидкості монетизації.
+> **Стратегія виходу на прибутковість:** при $0.30/SCC кластер окупається ~4.7 року (baseline) / ~5 років (realistic з replacements, §8a.4). Цільовий ReFi ринок ($1–5/SCC) скорочує Payback до 3–16 місяців. Scale 50K+ (CAPEX $5,300) скорочує ще ~20%. Ключовий KPI: **growth_points/day** — прямий індикатор здоров'я лісу та швидкості монетизації.
 
 ---
 
@@ -340,7 +344,7 @@ Month 44:   +$92   (чиста ліквідність для DAO та власн
 **Дії (👤 операційні):**
 - [ ] Отримати quotes від 2-3 EU підрядників (мінімальна партія 100 шт)
 - [ ] Підписати NDA та framework agreement з Tier-1 кандидатом (без зобов'язання обсягу)
-- [ ] Передати **PicoGK CAD-STL + DXF-креслення** (`tools/cad` `draw` — CEM tolerances/notes: fits Lamé-µm / GD&T datums / surface-finish / coating-restriction) + factory spec (HW.1, HW.2) кожному підряднику для валідації feasibility (DXF = CAD-нативне приймання, відкривається AutoCAD/Fusion; **STEP не потрібен** — `drawings_program.md §8`; nTop — reference)
+- [ ] Передати **PicoGK CAD-STL** (`tools/cad` `build` — анкер/катод/радом STL готові; AM-бюро друкують зі STL, **STEP не потрібен**) + factory spec (HW.1, HW.2) кожному підряднику для валідації feasibility. _DXF GD&T-креслення (Lamé-µm / datums / surface-finish / coating-restriction) поки лише **монета** (`draw ti_coin`, відкривається AutoCAD/Fusion); анкер/катод-креслення — Phase 2 заводського контракту (`drawings_program.md §7`). nTop — reference._
 - [ ] Замовити пробну партію 10 шт у Tier-1 EU підрядника для quality benchmarking vs UA
 
 ### 8.2. Логістика
@@ -412,20 +416,22 @@ PCBA + Збірка (Черкаси — SVS-ARTA)
 - При жорстких умовах (-30°C зими, активний charging при низьких температурах без BMS температурного захисту — див. HW.16) lifetime скорочується до 3 років → $1.30/міс
 - **Recommendation:** включити battery health check (`vbat_mv` через GatewayTelemetryWorker) у моніторинг, тригерити preventive replacement при capacity < 85%.
 
-### 8a.4. Оновлена ROI модель
+### 8a.4. Оновлена ROI модель (realistic life-cycle — OPEX дім)
 
-**Baseline (v4 Gen 2.0 BOM, партія 1K, з урахуванням BIZ.7 OPEX):**
+> 🏠 **One-Home: realistic OPEX (replacements §8a.2 + battery §8a.3) живе ТУТ.** CAPEX ←§5.3 ($6,700 1K / $5,300 50K+); метод-крива ←§7.3. Це той самий waterfall, лише ширший OPEX (~$21 vs baseline $12).
+
+**Baseline (v4 Gen 2.0 BOM, партія 1K, realistic OPEX):**
 - Кластер 100 дерев: ~433 SCC/місяць (як §7.2)
 - Дохід: 433 × $0.30 = $130 / місяць
 - OPEX (з replacements + battery): ~$21 / місяць
 - **Net = $130 − $21 = $109 / місяць**
-- **Payback Period: $6,200 / $109 ≈ ~57 місяців** (партія 1K). При scale 50K+: $5,000 / $115 ≈ ~43 місяці.
+- **Payback = CAPEX (§5.3) / net = $6,700 / $109 ≈ ~61 місяців** (партія 1K). Scale 50K+: $5,300 / ($130 − $15 OPEX) = $5,300 / $115 ≈ **~46 місяців**.
 
 **При $1.00/SCC (ReFi premium):**
 - Net = $433 − $21 = $412 / місяць
-- **Payback Period: ~15 місяців** (партія 1K) / **~12 місяців** (scale 50K+) — premium absorbs the Gen 2.0 chemistry premium
+- **Payback: $6,700 / $412 ≈ ~16 місяців** (партія 1K) / $5,300 / $418 ≈ **~13 місяців** (scale 50K+) — premium absorbs the Gen 2.0 chemistry premium
 
-> **Висновок BIZ.7 (v4 актуальний — Gen 2.0 EBFC):** Перехід на Gen 2.0 хімію (FAD-GDH + ZIF nanozymes + Genipin + PSBMA) додав ~$12–$20 до собівартості вузла у партії 1K, але **знизив failure rate до 2%/рік** (у Gen 1.0 очікувалося 10–15%/рік у Years 4–5 через enzyme degradation). Результат: чистий gross margin виріс на 10%, payback скоротився при $1.00/SCC до ~15 міс. Критично — **дочекатися scale-up до 50K+ шт** (in-house *Pichia pastoris* ферментація + batch coating) → біохімія падає до $5–$8/анкер, повний payback повертається до <12 міс. Gen 2.0 — це не просто життєздатність, а **планетарна масштабованість**.
+> **Висновок BIZ.7 (v4 актуальний — Gen 2.0 EBFC):** Перехід на Gen 2.0 хімію (FAD-GDH + ZIF nanozymes + Genipin + PSBMA) додав ~$12–$20 до собівартості вузла у партії 1K, але **знизив failure rate до 2%/рік** (у Gen 1.0 очікувалося 10–15%/рік у Years 4–5 через enzyme degradation). Результат: чистий gross margin виріс на 10%, payback скоротився при $1.00/SCC до ~16 міс. Критично — **дочекатися scale-up до 50K+ шт** (in-house *Pichia pastoris* ферментація + batch coating) → біохімія падає до $5–$8/анкер, повний payback повертається до ~13 міс. Gen 2.0 — це не просто життєздатність, а **планетарна масштабованість**.
 
 
 
@@ -445,8 +451,8 @@ PCBA + Збірка (Черкаси — SVS-ARTA)
 | **Time для cold-start** | складно | ~0.1 с (robot) | ~0.1 с (robot) | **~0.1 с (robot)** |
 | **IP68 герметизація** | Складна | Монолітна | Монолітна | **Монолітна + Hard Gold pogo** |
 | **Annual failure rate (Years 4+)** | ~15% | ~12% | ~10–15% (enzyme deg) | **~2%** (механіка домінує) |
-| **Payback Period @ $0.30/SCC** | >15 міс | ~34 міс | ~52 міс | **~57 міс (1K) / ~43 міс (50K+)** |
-| **Payback Period @ $1.00/SCC** | — | ~10 міс | ~13 міс | **~15 міс (1K) / ~12 міс (50K+)** |
+| **Payback @ $0.30/SCC** _(realistic, v4 ←§8a.4)_ | >15 міс | ~34 міс | ~52 міс | **~61 міс (1K) / ~46 міс (50K+)** |
+| **Payback @ $1.00/SCC** _(realistic, v4 ←§8a.4)_ | — | ~10 міс | ~13 міс | **~16 міс (1K) / ~13 міс (50K+)** |
 | **Маса вузла (electronics)** | ~45 г | ~28 г | ~32 г | **~32 г** |
 | **Zero Instrumental Noise (для Lorenz)** | ❌ | ❌ | ❌ (enzyme drift maskує signal) | **✅ Всі апаратні змінні — константи** |
 

@@ -15,7 +15,7 @@
 - **Ключовий Півот (v3 — тризонний анкер):** Стара «Матрьошка» (моноліт 120 мм з катодом у глибині стовбура) замінена на **тризонний коаксіальний анкер** ([`01_01 §1`](01_01_Coaxial_Gyroid_Topology_and_PEEK)): Zone 1 (анод-гіроїд 30–50 мм у заболоні) + Zone 2 (PEEK-терморозрив 50 мм frozen) + Zone 3 (катодний фланець Ø25 на межі кори/повітря з PTFE-GDL мембраною). Усуває три ранні ризики: (a) тепловий міст крізь титан → некроз камбію взимку; (b) кисневе голодування катода в глибині стовбура; (c) неможливий моноліт-друк Ti+PEEK в одному DMLS-циклі.
 - **Ключовий Півот (v4 — EBFC Gen 2.0 baseline, 2026-05-22):** Біохімічний стек переписаний. Анод — одношаровий **dgrFAD-GDH + Os** (deglycosylated FAD-залежна глюкозодегідрогеназа) у захисній **Genipin-Chitosan-CNC** матриці з **Nafion-g-PSBMA** цвітеріонною мембраною; катод — гібрид **Laccase + ZIF-nanozyme** (nCoCuCeZIF/Lac). Очікуваний термін служби 20–25 років. Gen 1.0 (GOx+CAT+глутаральдегід+PEG) виключена як нежиттєздатна ([`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)).
 - **Антенна Підсистема (v2):** Відмова від зовнішніх U.FL-кабелів та 4 голок-електродів. Прийнято рішення: керамічна SMD-антена 868 МГц + PEEK-радом (детально в розділі 5).
-- **Повна вартість вузла:** ~$32–$35 / шт (при 10k+), з урахуванням анкера + PEEK + герметизації. Детально → [`07_02`](07_02_Unit_Economics_and_BOM).
+- **Повна вартість вузла (node):** дім [`07_02 §1.2`](07_02_Unit_Economics_and_BOM) — v4 ~$54.65–$69.65 (1K) / ~$44.65–$52.65 (50K+); значення дзеркало, правити там. Component-BOM + Electronics TOTAL — §3 нижче.
 - **Відкриті:** conformal coating Parylene C (HW.11), EBFC >5.5V overcharge protection (HW.12/HW.7) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
@@ -179,16 +179,9 @@ STM32WLE5JC
 | 13 | **NXP SE050 Secure Element — DNP footprint** (опційно) | [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) SEC.6 / SE050-MIGRATION: pads + I²C (PB6/PB7, спільна шина з BME280) + pull-ups + **load-switch гейт** (always-on SE sleep з'їдає запас Сценарію C — розрахунок [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) Power impact; окремий TPS22860 чи спільний з BME280 — KiCad-рішення HW.9), **Do Not Populate** на пілоті. Монтується на mass (>10k) ПІСЛЯ FW.2 ([`00_07` — ARCH.43](00_07_Action_Plan_Tracker)) | non-extractable Ed25519 (голос дерева, L2) + AES-128 tamper-storage + монотонні лічильники (FW.2 nonce/panic) + anti-clone serial | $0.00 (pads) / +$2.40–3.25 якщо populated |
 | — | **Electronics TOTAL** | | **Собівартість лише електроніки** | **~$12.05** |
 
-**Повна вартість вузла Soldier (по підсистемах):**
+**Повна вартість вузла Soldier (node-rollup) — дім [`07_02 §1.2`](07_02_Unit_Economics_and_BOM):**
 
-| Підсистема | Вартість (10k шт) |
-|---|---|
-| Анкер Ti-6Al-4V (DMLS 3D-друк, ~9 г) — baseline; V-free Ti-6Al-7Nb pending → [`01_02 §2.5`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) (ціна/маса зрушать) | $15.00–$18.00 |
-| Ізолятор & PEEK Radome (Medical Grade) | $3.50 |
-| Power Deck PCBA | $6.20 |
-| RF Deck PCBA | $5.80 |
-| Герметизація / IP67 (O-rings EPDM, Parylene C conformal coating 10 µm) — Sylgard 184 full-potting відхилено ([`02_02 §3.4`](02_02_Blind_Mate_Pogo_Pin_Interface), конфлікт з TinyML акустикою) | $1.50 |
-| **РАЗОМ за 1 Soldier (Zero-Touch)** | **~$32.00–$35.00** |
+> 🏠 **One-Home:** node $/Soldier (агрегація анкер + PEEK + electronics + **біохімія Gen 2.0** + стерилізація + герметизація → вузол: **v4 ~$54.65–69.65** 1K / ~$44.65–52.65 50K+) живе у [`07_02 §1.2`](07_02_Unit_Economics_and_BOM) (cost-домен registry [`00_06 §2`](00_06_SSOT_Documentation_Standard)). Тут — лише **component-spec** (Electronics BOM вище); node-агрегацію + cluster CAPEX/OPEX/ROI не дублюємо. _(Колишній тут rollup «$32–35» був v2 — без Gen 2.0 біохімії $15–24.50; знято, щоб не дрейфував проти v4-дому.)_
 
 ### 3.2. Виключені / Умовно Виключені Компоненти
 
