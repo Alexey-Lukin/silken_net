@@ -247,10 +247,13 @@ internal static class Program
         TiCoinCem cem = Cem.Parse<TiCoinCem>(strJson);
         string strRev = Environment.GetEnvironmentVariable("CAD_REV") ?? "local";
         Directory.CreateDirectory("out");
-        string strPath = Path.Combine("out", $"{cem.Name}.drawing.svg");
-        File.WriteAllText(strPath, Drawing.TiCoin(cem, strRev));
-        Console.WriteLine($"drawing → {strPath}  (CEM-native SVG — analytic, no mesh)");
-        return 0;
+        string strSvg = Path.Combine("out", $"{cem.Name}.drawing.svg");
+        string strDxf = Path.Combine("out", $"{cem.Name}.drawing.dxf");
+        File.WriteAllText(strSvg, Drawing.TiCoin(cem, strRev));
+        bool bDxf = Drawing.TiCoinDxf(cem, strRev, strDxf);
+        Console.WriteLine($"drawing → {strSvg}  (CEM-native SVG — human / publication / self-review)");
+        Console.WriteLine($"drawing → {strDxf}  (CEM-native DXF — {(bDxf ? "factory deliverable, opens in AutoCAD/Fusion" : "SAVE FAILED")})");
+        return bDxf ? 0 : 1;
     }
 
     // Ti-coin verify (01_01 §6.1): golden metrics + the A_electrode ≈ 2 cm² gate (01_03 §3.5). Area is the

@@ -20,6 +20,7 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 | `docs/00_07_Action_Plan_Tracker.md` HW.1.PicoGK / **HW.33** | Build state + the anchor geometry audit (founder decisions: radial gyroid (б), Ø11; open gaps: PEEK/hole chain, FEA) |
 | `docs/00_08_Beyond_TRL9_Planetary_Roadmap.md §1.3` | Cross-biome 5-SKU (pine/oak/broadleaf/mangrove/tropical) |
 | `docs/00_02_AI_Native_Engineering_and_TRL.md §4a` | Code-as-CAD vs generative-AI; In-Silico for the Hardware stream |
+| `tools/cad/docs/drawings_program.md` | Engineering-drawing program: CEM-native DXF (netDxf) + SVG/PDF, the ASME-Y14.5≠projection fix, lattice-as-inspection-card, phased §7 rollout |
 | `extern/.../README_ImplicitLibrary.md` | LEAP's own implicit/TPMS guide (splitting logic, modular workflow for the graded v2) |
 
 ## Source Files
@@ -27,7 +28,9 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 | File | Role |
 |------|------|
 | `tools/cad/cem/*.json` | CEM manifests — the Git-SSOT parameter inputs (`kind` discriminator: `ti_coin`, `anchor_zone1`, `mechanical_lock`, `cathode_flange`, `radome`, `zone2_sleeve`, `anchor_assembly`, `anchor_axial_stack`) |
-| `tools/cad/src/SilkenCad/Program.cs` | CLI dispatch (`smoke`/`build`/`verify`) + `RunHeadless` (the `Library.Go` wrapper) |
+| `tools/cad/src/SilkenCad/Program.cs` | CLI dispatch (`smoke`/`build`/`verify`/`scan`/`draw`) + `RunHeadless` (the `Library.Go` wrapper); `draw` is pure-managed (no Library.Go) |
+| `tools/cad/src/SilkenCad/Cem.cs` | CEM records + JSON parse (snake_case). Engineering-drawing PMI lives here: optional `ToleranceSpec` (fits / Lamé-µm / GD&T datums) + `NotesSpec` (material/process/surface/coating-restriction/lattice-spec/inspection) on each part record — Noyron-native SSOT, fed to `draw` |
+| `tools/cad/src/SilkenCad/Drawing.cs` | CEM-native engineering drawings (`draw <cem>`): **SVG/PDF (human) + DXF via netDxf (CAD-native factory deliverable, opens in AutoCAD/Fusion)**. Pure-managed string/entity build, no Library.Go. Consumes the CEM `ToleranceSpec`/`NotesSpec` (zero hard-coded eng-text); `DrawingStandard` param (ISO 1st-angle default / ASME). PoC = Ti-coin; rest of §7 deferred (`docs/drawings_program.md`) |
 | `tools/cad/src/SilkenCad/TiCoin.cs` | Ti-coin coupon — `BaseCylinder` disc + `BaseRing` eyelet, `BoolAdd` |
 | `tools/cad/src/SilkenCad/Zone1Anode.cs` | Zone-1 anode + `CartesianGyroid:IImplicit` (the from-scratch SDF) + `Anode()` render path |
 | `tools/cad/src/SilkenCad/Validation.cs` | golden-metrics via `Voxels.CalculateProperties` (porosity needs an envelope ref) + reuses LEAP `Measure.fGetSurfaceArea` |
@@ -126,8 +129,15 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   🔑 **`BasePipe`/`BaseCylinder` Z-origin = `[0, L]` from the frame** (grows along +localZ; verified in LEAP
   `Frames.cs` — NOT centred), so stack lifts are absolute; the render overlap sleeve∩capsule is the flange
   SHOULDER on the sleeve top face, not the shank (the Ø9 floats in the bore).
+- **Generate an engineering drawing (`Drawing.cs` / `draw`, SHIPPED Phase 0+1)**: `draw <cem>` emits
+  **SVG/PDF (human) + DXF via netDxf (factory, opens in AutoCAD/Fusion)** — pure-managed, no Library.Go,
+  consuming the CEM `ToleranceSpec`/`NotesSpec` (zero hard-coded eng-text; `DrawingStandard` ISO/ASME
+  param). Drawing carries fits (Lamé-µm, NOT a blind ISO-286 metal `H7/s6` on a PEEK bore), GD&T datums,
+  post-process + coating-restriction notes, lattice-spec. PoC = Ti-coin; sleeve/flange/radome/gyroid-
+  inspection-card/assembly = Phase 2 deferred to a factory contract. Home: `docs/drawings_program.md`.
 - **Local-verify**: `dotnet build SilkenCad.sln` (0W/0E) → `dotnet run --project src/SilkenCad
-  -- verify cem/<x>.json` (metrics.json + exit 0/1) → `dotnet test`. CI = enterprise 2-job `cad_smoke.yml`
-  (logic = Linux pure-xUnit hard + render = macOS build-hard + verify best-effort, Library.Go 139 headless).
+  -- verify cem/<x>.json` (metrics.json + exit 0/1) → `dotnet run -- draw cem/<x>.json` (SVG+DXF → out/)
+  → `dotnet test`. CI = enterprise 2-job `cad_smoke.yml` (logic = Linux pure-xUnit hard [incl. draw/DXF]
+  + render = macOS build-hard + verify best-effort, Library.Go 139 headless).
 - **Update a submodule**: `git -C tools/cad/extern/<repo> pull` + re-pin the gitlink; it stays
   out of the GitNexus graph (`.gitnexusignore` excludes `tools/cad/extern/`).

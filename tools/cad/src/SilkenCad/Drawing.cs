@@ -1,20 +1,34 @@
 using System.Globalization;
 using System.Text;
+using netDxf;
+using netDxf.Entities;
+using netDxf.Tables;
 
 namespace SilkenCad;
+
+// Drawing standard — TWO orthogonal axes folded into one PoC enum (projection convention + GD&T
+// language; ASME Y14.5 is GD&T, NOT a projection — that's Y14.3, drawings_program.md §8). ISO =
+// 1st-angle (ISO 128-30 / ISO 5456) + ISO 1101. ASME = 3rd-angle (Y14.3) + Y14.5. Default ISO
+// (Ukrainian/EU shops). This replaces the hard-coded `first-angle (ISO)` footer (drift #3).
+internal enum DrawingStandard { Iso, Asme }
 
 // CEM-native engineering drawing (research → tools/cad/docs/drawings_program.md). A drawing is just
 // orthographic views + dimensions + a title block — all computed ANALYTICALLY from the CEM numbers we
 // already own (NOT from the lossy voxel mesh; STL→STEP→drawing loses precision + needs manual rebuild).
-// Pure string-built SVG: deterministic, Git-friendly, no Library.Go, regenerates on a dim change like
-// metrics.json — the Noyron way (the generator documents itself). PoC = Ti-coin (Stage 2, the most
-// urgent physical part, 01_01 §6.1); simple anchor parts follow the same primitives. First-angle / ISO.
+// Two outputs from the same CEM: SVG/PDF (human/publication/self-review) + DXF (CAD-native factory
+// deliverable, opened in AutoCAD/Fusion — netDxf draws the dimensions). Deterministic, Git-friendly, no
+// Library.Go, regenerates on a dim change like metrics.json — the Noyron way (the generator documents
+// itself). PoC = Ti-coin (Stage 2, the most urgent physical part, 01_01 §6.1).
 internal static class Drawing
 {
     private const float Px = 6f;          // scale 6 px/mm (drawing scale 6:1 for a ~Ø16 part)
     private const string Stroke = "#111";
     private const string Dim = "#1166cc";
-    private const string Hidden = "#999";
+
+    // Standard descriptor for the footer/title block (replaces the hard-coded `first-angle (ISO)`).
+    private static string StandardLabel(DrawingStandard std) => std == DrawingStandard.Iso
+        ? "first-angle (ISO 128/5456 · GD&T ISO 1101)"
+        : "third-angle (ASME Y14.3 · GD&T Y14.5)";
 
     private static string N(double d) => d.ToString("0.##", CultureInfo.InvariantCulture);
 
@@ -78,20 +92,61 @@ internal static class Drawing
         }
     }
 
-    private static string Frame(double w, double h, StringBuilder body, string sha)
+    private static string Frame(double w, double h, StringBuilder body, string sha, DrawingStandard std)
     {
         var sb = new StringBuilder();
         sb.AppendLine($"<svg xmlns='http://www.w3.org/2000/svg' width='{N(w)}' height='{N(h)}' viewBox='0 0 {N(w)} {N(h)}'>");
         sb.AppendLine($"<rect x='0' y='0' width='{N(w)}' height='{N(h)}' fill='white'/>");
         sb.AppendLine(Rect(8, 8, w - 16, h - 16, Stroke, 1.2));            // drawing border
         sb.Append(body);
-        sb.AppendLine(Text(w - 14, h - 14, $"SilkenNet · CEM-native drawing · rev {sha} · units mm · scale 6:1 · first-angle (ISO)", 8, "end", "#888"));
+        sb.AppendLine(Text(w - 14, h - 14, $"SilkenNet · CEM-native drawing · rev {sha} · units mm · scale 6:1 · {StandardLabel(std)}", 8, "end", "#888"));
         sb.AppendLine("</svg>");
         return sb.ToString();
     }
 
+    // Notes-block lines — consume the CEM NotesSpec (Noyron-clean: the engineering text lives in the
+    // CEM, not hard-coded here). `lead` is a geometry-derived first line (e.g. the computed active area).
+    // Falls back to a minimal material/process line when the CEM carries no notes.
+    private static List<string> NotesLines(NotesSpec? n, string? lead = null)
+    {
+        var lines = new List<string>();
+        if (lead is not null) lines.Add(lead);
+        if (n is null)
+        {
+            lines.Add("Material: Ti-6Al-4V (Grade 5). Geometry SSOT = the cem/*.json + STL.");
+            return lines;
+        }
+        void Add(string? label, string? v) { if (!string.IsNullOrWhiteSpace(v)) lines.Add($"{label}: {v}"); }
+        Add("Material", n.Material);
+        Add("Process", n.Process);
+        Add("Surface", n.SurfaceFinish);
+        Add("Post-process", n.PostProcess);
+        Add("Coating", n.CoatingRestriction);
+        Add("Lattice", n.LatticeSpec);
+        Add("Inspect", n.Inspection);
+        if (n.Extra is { } extra) lines.AddRange(extra);
+        return lines;
+    }
+
+    // Tolerance-block lines — consume the CEM ToleranceSpec (fits / Lamé-µm / GD&T datums). Null ⇒ empty.
+    private static List<string> ToleranceLines(ToleranceSpec? t)
+    {
+        var lines = new List<string>();
+        if (t is null) return lines;
+        if (t.Fit is { } fit) lines.Add($"Fit: {fit}");
+        if (t.InterferenceMinUm is { } lo && t.InterferenceMaxUm is { } hi) lines.Add($"Interference: {N(lo)}–{N(hi)} µm (Lamé, E_PEEK-aware)");
+        if (t.ClearanceMm is { } cl) lines.Add($"Clearance: ≤{N(cl)} mm");
+        if (t.Feature is { } f && (t.PlusMm is { } || t.MinusMm is { }))
+            lines.Add($"{f}: {N(t.PlusMm ?? 0)}/{N(t.MinusMm ?? 0)} mm");
+        if (t.PrimaryDatum is { } d) lines.Add($"Datum A: {d}");
+        if (t.SecondaryDatum is { } d2) lines.Add($"Datum B: {d2}");
+        if (t.ConcentricityMm is { } cc) lines.Add($"Concentricity: ⌀{cc} (A)");
+        if (t.RunoutMm is { } ro) lines.Add($"Runout: {ro} (A)");
+        return lines;
+    }
+
     // ── Ti-coin (Stage-2 coupon, 01_01 §6.1) — front (Ø disc) + side (thickness) + eyelet + A_electrode ──
-    public static string TiCoin(TiCoinCem cem, string sha)
+    public static string TiCoin(TiCoinCem cem, string sha, DrawingStandard std = DrawingStandard.Iso)
     {
         double r = cem.DiscDiameterMm / 2.0 * Px;
         double t = cem.DiscThicknessMm * Px;
@@ -127,26 +182,24 @@ internal static class Drawing
         VDim(b, sideTop, sideTop + 2 * r, sideX + t + 26, $"Ø{N(cem.DiscDiameterMm)}", sideX + t);
         HDim(b, sideX, sideX + t, sideTop - 14, $"{N(cem.DiscThicknessMm)}", sideTop);
 
-        // NOTES block (AM-specific acceptance contract — drawings_program.md §6)
+        // NOTES + TOLERANCES — consumed from the CEM (Noyron-clean; no hard-coded engineering text).
         double a = Math.PI * Math.Pow(winMm / 2.0, 2) / 100.0;
+        string lead = $"Active electrode area ≈ {N(a)} cm² (1 face; j = I/A projected, 01_03 §3.5)"
+            + (cem.ActiveWindowDiameterMm > 0f ? $"; defined-area window Ø{N(cem.ActiveWindowDiameterMm)} (dashed)" : "");
         double ny = 300;
         b.AppendLine(Text(20, ny, "NOTES:", 10, "start", Stroke, "bold"));
-        string[] notes =
-        {
-            $"1. Material: Ti-6Al-4V (Grade 5), SLM/DMLS.",
-            $"2. Active electrode area ≈ {N(a)} cm² (1 face; j = I/A projected, 01_03 §3.5).",
-            cem.ActiveWindowDiameterMm > 0f
-                ? $"   Defined-area window Ø{N(cem.ActiveWindowDiameterMm)} (dashed) — O-ring / lacquer cell."
-                : "   Whole face is the active area (no defined window).",
-            "3. Post-process: EAAE + dehydrogenation bake 250°C (01_02 §1.3, HW.27);",
-            "   selective Hard-Gold ENIG on the clip tab only (02_02 §1.2) — mask the rest.",
-            "4. Surface: dual-scale roughness Sa (01_02 §1.2). No HIP needed (coupon).",
-            "5. Eyelet = potentiostat-clip feature; keep clear of the active face.",
-            "6. Geometry SSOT = cem/ti_coin.json + STL; inspect Ø/area by optical scan.",
-        };
-        for (int i = 0; i < notes.Length; i++) b.AppendLine(Text(20, ny + 16 + (i * 14), notes[i], 9, "start", "#333"));
+        var notes = NotesLines(cem.Notes, lead);
+        for (int i = 0; i < notes.Count; i++) b.AppendLine(Text(20, ny + 16 + (i * 14), $"{i + 1}. {notes[i]}", 9, "start", "#333"));
 
-        // TITLE BLOCK
+        var tol = ToleranceLines(cem.Tolerances);
+        if (tol.Count > 0)
+        {
+            double ty = ny + 16 + (notes.Count * 14) + 10;
+            b.AppendLine(Text(20, ty, "TOLERANCES / GD&T:", 10, "start", Stroke, "bold"));
+            for (int i = 0; i < tol.Count; i++) b.AppendLine(Text(20, ty + 16 + (i * 14), tol[i], 9, "start", "#333"));
+        }
+
+        // TITLE BLOCK (compact canonical fields; the full material/process/notes live in NOTES above)
         TitleBlock(b, 540, 470, new[]
         {
             ("PART", "Ti-coin"),
@@ -157,6 +210,65 @@ internal static class Drawing
             ("SSOT", "cem/ti_coin.json"),
         });
 
-        return Frame(820, 560, b, sha);
+        return Frame(820, 560, b, sha, std);
     }
+
+    // ── DXF (CAD-native factory deliverable) — the same Ti-coin views in real mm (1:1, Y-up). netDxf
+    // writes a file the shop opens in AutoCAD/Fusion. Dimension geometry is laid out manually (witness +
+    // arrow Lines + a value Text) so the API surface stays Circle/Line/Text/Layer — robust, every CAD
+    // reads it. `%%c` is the DXF single-line code for Ø; DxfSafe maps the few Unicode glyphs to ASCII. ──
+    public static bool TiCoinDxf(TiCoinCem cem, string sha, string path, DrawingStandard std = DrawingStandard.Iso)
+    {
+        var doc = new DxfDocument();
+        var geo = new Layer("GEOMETRY");
+        var dmn = new Layer("DIMENSIONS") { Color = AciColor.Blue };
+        var nte = new Layer("NOTES") { Color = AciColor.Cyan };
+
+        double rr = cem.DiscDiameterMm / 2.0, t = cem.DiscThicknessMm, cx = 0, cy = 0;
+
+        // FRONT — disc + centre cross + eyelet
+        doc.Entities.Add(new Circle(new Vector2(cx, cy), rr) { Layer = geo });
+        doc.Entities.Add(new Line(new Vector2(cx - rr - 2, cy), new Vector2(cx + rr + 2, cy)) { Layer = geo });
+        doc.Entities.Add(new Line(new Vector2(cx, cy - rr - 2), new Vector2(cx, cy + rr + 2)) { Layer = geo });
+        double loopR = cem.LoopRingRadiusMm, tubeR = cem.LoopTubeRadiusMm, eyCy = cy + rr + loopR;
+        doc.Entities.Add(new Circle(new Vector2(cx, eyCy), loopR + tubeR) { Layer = geo });
+        if (loopR - tubeR > 0) doc.Entities.Add(new Circle(new Vector2(cx, eyCy), loopR - tubeR) { Layer = geo });
+        DxfHDim(doc, dmn, cx - rr, cx + rr, cy - rr - 5, $"%%c{N(cem.DiscDiameterMm)}");
+        doc.Entities.Add(new Text("FRONT", new Vector2(cx - rr / 2, cy - rr - 11), 2.0) { Layer = nte });
+
+        // SIDE — thickness rect (4 lines) + thickness dim
+        double sx = rr + 16;
+        var q = new[] { new Vector2(sx, cy - rr), new Vector2(sx + t, cy - rr), new Vector2(sx + t, cy + rr), new Vector2(sx, cy + rr) };
+        for (int i = 0; i < 4; i++) doc.Entities.Add(new Line(q[i], q[(i + 1) % 4]) { Layer = geo });
+        DxfHDim(doc, dmn, sx, sx + t, cy - rr - 5, N(t));
+        doc.Entities.Add(new Text("SIDE", new Vector2(sx, cy - rr - 11), 2.0) { Layer = nte });
+
+        // NOTES + TOLERANCES (stacked text below the views) — consumed from the CEM, same as the SVG
+        double winMm = cem.ActiveWindowDiameterMm > 0f ? cem.ActiveWindowDiameterMm : cem.DiscDiameterMm;
+        double a = Math.PI * Math.Pow(winMm / 2.0, 2) / 100.0;
+        var lines = new List<string> { "NOTES:" };
+        var nl = NotesLines(cem.Notes, $"Active electrode area ~{N(a)} cm2 (1 face, projected; 01_03 3.5)");
+        for (int i = 0; i < nl.Count; i++) lines.Add($"{i + 1}. {nl[i]}");
+        var tl = ToleranceLines(cem.Tolerances);
+        if (tl.Count > 0) { lines.Add("TOLERANCES / GD&T:"); lines.AddRange(tl); }
+        lines.Add($"SilkenNet Ti-coin | rev {sha} | mm 1:1 | {StandardLabel(std)} | SSOT cem/ti_coin.json");
+        double yy = cy - rr - 20;
+        foreach (string ln in lines) { doc.Entities.Add(new Text(DxfSafe(ln), new Vector2(cx - rr, yy), 1.6) { Layer = nte }); yy -= 3.2; }
+
+        return doc.Save(path);
+    }
+
+    // Manual horizontal linear dimension in DXF: two short extension ticks + a dimension line + a value.
+    private static void DxfHDim(DxfDocument doc, Layer layer, double x1, double x2, double y, string label)
+    {
+        doc.Entities.Add(new Line(new Vector2(x1, y + 1.5), new Vector2(x1, y)) { Layer = layer });
+        doc.Entities.Add(new Line(new Vector2(x2, y + 1.5), new Vector2(x2, y)) { Layer = layer });
+        doc.Entities.Add(new Line(new Vector2(x1, y), new Vector2(x2, y)) { Layer = layer });
+        doc.Entities.Add(new Text(DxfSafe(label), new Vector2((x1 + x2) / 2 - 2, y - 3), 2.0) { Layer = layer });
+    }
+
+    // DXF single-line Text is ASCII-friendliest → map the Unicode glyphs we use to DXF/ASCII equivalents.
+    private static string DxfSafe(string s) => s
+        .Replace("Ø", "%%c").Replace("⌀", "%%c").Replace("≈", "~").Replace("≤", "<=").Replace("≥", ">=")
+        .Replace("²", "2").Replace("³", "3").Replace("µ", "u").Replace("·", "-").Replace("–", "-").Replace("°", "deg");
 }

@@ -55,6 +55,7 @@ inventory in THIRD_PARTY_NOTICES (regen via license_finder):
     LEAP 71 ShapeKernel,
       LatticeLibrary ............... Apache-2.0   (tools/cad/extern/ — source-only submodules)
     SkiaSharp (PicoGK dep) ......... MIT          (tools/cad — transitive)
+    netDxf (DXF read/write) ........ MIT          (tools/cad — engineering-drawing DXF export)
     Ruby gems (Rails, Sidekiq=LGPL-3.0, prawn=GPL-3.0 option, ...) per gem
     CARTO basemap tiles ............ CC-BY (attribution) - frontend map
     Small-molecule structures (docs/.../ligands/*.sdf) - public chemical data

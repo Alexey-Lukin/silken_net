@@ -14,6 +14,11 @@
     <ProjectReference Include="../SilkenCad.Leap/SilkenCad.Leap.csproj" />
   </ItemGroup>
 
+  <!-- netDxf: CAD-native DXF export for the `draw` verb (engineering drawings → factory). -->
+  <ItemGroup>
+    <PackageReference Include="netDxf.netstandard" />
+  </ItemGroup>
+
   <!-- Pure-logic tests reach internal generators (Cem / Zone1Anode / *Gyroid). -->
   <ItemGroup>
     <InternalsVisibleTo Include="SilkenCad.Tests" />
