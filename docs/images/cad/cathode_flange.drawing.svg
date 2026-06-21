@@ -1,0 +1,98 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='900' height='700' viewBox='0 0 900 700'>
+<rect x='0' y='0' width='900' height='700' fill='white'/>
+<rect x='8' y='8' width='884' height='684' fill='none' stroke='#111' stroke-width='1.2'/>
+<text x='20' y='30' font-family='monospace' font-size='15' text-anchor='start' fill='#111' font-weight='bold'>CATHODE FLANGE  (Деталь 3 · Zone 3)</text>
+<text x='20' y='46' font-family='monospace' font-size='10' text-anchor='start' fill='#555' font-weight='normal'>Capsule-side anchor end · pogo face + bayonet · 01_01 §1 · 02_02 §1.2</text>
+<circle cx='200' cy='113' r='9' fill='none' stroke='#111' stroke-width='1'/>
+<circle cx='275.34' cy='243.5' r='9' fill='none' stroke='#111' stroke-width='1'/>
+<circle cx='124.66' cy='243.5' r='9' fill='none' stroke='#111' stroke-width='1'/>
+<circle cx='200' cy='200' r='75' fill='none' stroke='#111' stroke-width='1.2'/>
+<circle cx='200' cy='200' r='22.5' fill='none' stroke='#1166cc' stroke-width='0.8' stroke-dasharray='4 2'/>
+<circle cx='200' cy='200' r='13.5' fill='none' stroke='#111' stroke-width='1'/>
+<circle cx='200' cy='200' r='3.9' fill='none' stroke='#111' stroke-width='0.8'/>
+<line x1='121' y1='200' x2='279' y2='200' stroke='#111' stroke-width='0.4' stroke-dasharray='6 3'/>
+<line x1='200' y1='121' x2='200' y2='279' stroke='#111' stroke-width='0.4' stroke-dasharray='6 3'/>
+<text x='200' y='321' font-family='monospace' font-size='10' text-anchor='middle' fill='#555' font-weight='normal'>FRONT (pogo face)</text>
+<line x1='125' y1='275' x2='125' y2='299' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='275' y1='275' x2='275' y2='299' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='125' y1='299' x2='275' y2='299' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='125' y1='299' x2='129' y2='296.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='125' y1='299' x2='129' y2='301.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='275' y1='299' x2='271' y2='296.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='275' y1='299' x2='271' y2='301.5' stroke='#1166cc' stroke-width='0.7'/>
+<text x='200' y='296' font-family='monospace' font-size='10' text-anchor='middle' fill='#1166cc' font-weight='normal'>Ø25</text>
+<text x='218.5' y='197' font-family='monospace' font-size='9' text-anchor='start' fill='#1166cc' font-weight='normal'>Ø4.5 GND pad</text>
+<text x='227.5' y='212' font-family='monospace' font-size='9' text-anchor='start' fill='#1166cc' font-weight='normal'>PEEK iso ring 1.5</text>
+<text x='278' y='101' font-family='monospace' font-size='9' text-anchor='middle' fill='#1166cc' font-weight='normal'>3× bayonet lug</text>
+<rect x='430' y='125' width='18' height='150' fill='none' stroke='#111' stroke-width='1.2'/>
+<rect x='448' y='173' width='84' height='54' fill='none' stroke='#111' stroke-width='1.2'/>
+<rect x='430' y='113' width='18' height='12' fill='none' stroke='#111' stroke-width='0.8'/>
+<rect x='430' y='275' width='18' height='12' fill='none' stroke='#111' stroke-width='0.8'/>
+<line x1='430' y1='200' x2='532' y2='200' stroke='#111' stroke-width='0.4' stroke-dasharray='6 3'/>
+<text x='481' y='321' font-family='monospace' font-size='10' text-anchor='middle' fill='#555' font-weight='normal'>SIDE (section)</text>
+<line x1='430' y1='113' x2='430' y2='101' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='448' y1='113' x2='448' y2='101' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='430' y1='101' x2='448' y2='101' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='430' y1='101' x2='434' y2='98.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='430' y1='101' x2='434' y2='103.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='448' y1='101' x2='444' y2='98.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='448' y1='101' x2='444' y2='103.5' stroke='#1166cc' stroke-width='0.7'/>
+<text x='439' y='98' font-family='monospace' font-size='10' text-anchor='middle' fill='#1166cc' font-weight='normal'>3</text>
+<line x1='448' y1='227' x2='448' y2='249' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='532' y1='227' x2='532' y2='249' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='448' y1='249' x2='532' y2='249' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='448' y1='249' x2='452' y2='246.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='448' y1='249' x2='452' y2='251.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='532' y1='249' x2='528' y2='246.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='532' y1='249' x2='528' y2='251.5' stroke='#1166cc' stroke-width='0.7'/>
+<text x='490' y='246' font-family='monospace' font-size='10' text-anchor='middle' fill='#1166cc' font-weight='normal'>14</text>
+<line x1='532' y1='173' x2='556' y2='173' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='532' y1='227' x2='556' y2='227' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='556' y1='173' x2='556' y2='227' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='556' y1='173' x2='553.5' y2='177' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='556' y1='173' x2='558.5' y2='177' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='556' y1='227' x2='553.5' y2='223' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='556' y1='227' x2='558.5' y2='223' stroke='#1166cc' stroke-width='0.7'/>
+<text x='560' y='203' font-family='monospace' font-size='10' text-anchor='start' fill='#1166cc' font-weight='normal'>Ø9</text>
+<text x='20' y='357' font-family='monospace' font-size='10' text-anchor='start' fill='#111' font-weight='bold'>NOTES:</text>
+<text x='20' y='373' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>1. Cathode catalytic = side/perimeter (O₂ under radome); pogo = top face (02_02 §1.2)</text>
+<text x='20' y='387' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>2. Material: Ti-6Al-4V (Grade 5)</text>
+<text x='20' y='401' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>3. Process: SLM/DMLS or EBM (flat flange — precision less critical, roughness = ECSA advantage, 01_02 1.7)</text>
+<text x='20' y='415' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>4. Post-process: selective Hard-Gold ENIG on central GND pad + outer pogo ring (02_02 1.2, Ti-Au galvanic-trap fix); build tip-down (01_02 1.6)</text>
+<text x='20' y='429' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>5. Coating: ZnO-Ta / HAp / RGD FORBIDDEN on the cathode catalytic side/perimeter active surface (01_02 3.6)</text>
+<text x='20' y='443' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>6. Central GND pad O4-5 (Hard Gold ENIG &gt;=0.76 um Au / 1.27 um Ni) — galvanic-trap fix (02_02 1.2)</text>
+<text x='20' y='457' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>7. PEEK isolation ring &gt;=1.5 mm centre&lt;-&gt;outer (short-circuit guard)</text>
+<text x='20' y='471' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>8. Shank O9 + thickness 3 = HW.8 placeholders — this drawing forces the reconcile</text>
+<text x='20' y='485' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>9. Cathode catalytic = side/perimeter (Laccase/ZIF + PTFE-GDL); pogo = top face</text>
+<text x='20' y='509' font-family='monospace' font-size='10' text-anchor='start' fill='#111' font-weight='bold'>TOLERANCES / GD&amp;T:</text>
+<text x='20' y='525' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Fit: H7/s6 (nominal class only)</text>
+<text x='20' y='539' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Datum A: bore axis</text>
+<text x='20' y='553' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Datum B: flange face</text>
+<text x='20' y='567' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Concentricity: ⌀0.05 (A)</text>
+<text x='20' y='581' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Runout: 0.05 (A)</text>
+<rect x='620' y='470' width='250' height='96' fill='none' stroke='#111' stroke-width='1'/>
+<line x1='710' y1='470' x2='710' y2='486' stroke='#111' stroke-width='0.5'/>
+<text x='625' y='481' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PART</text>
+<text x='715' y='481' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Cathode flange (Деталь 3)</text>
+<line x1='620' y1='486' x2='870' y2='486' stroke='#111' stroke-width='0.5'/>
+<line x1='710' y1='486' x2='710' y2='502' stroke='#111' stroke-width='0.5'/>
+<text x='625' y='497' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>MATERIAL</text>
+<text x='715' y='497' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Ti-6Al-4V (Grade 5)</text>
+<line x1='620' y1='502' x2='870' y2='502' stroke='#111' stroke-width='0.5'/>
+<line x1='710' y1='502' x2='710' y2='518' stroke='#111' stroke-width='0.5'/>
+<text x='625' y='513' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PROCESS</text>
+<text x='715' y='513' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>SLM/DMLS or EBM (flat </text>
+<line x1='620' y1='518' x2='870' y2='518' stroke='#111' stroke-width='0.5'/>
+<line x1='710' y1='518' x2='710' y2='534' stroke='#111' stroke-width='0.5'/>
+<text x='625' y='529' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>UNITS / SCALE</text>
+<text x='715' y='529' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>mm / 6:1</text>
+<line x1='620' y1='534' x2='870' y2='534' stroke='#111' stroke-width='0.5'/>
+<line x1='710' y1='534' x2='710' y2='550' stroke='#111' stroke-width='0.5'/>
+<text x='625' y='545' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
+<text x='715' y='545' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>local</text>
+<line x1='620' y1='550' x2='870' y2='550' stroke='#111' stroke-width='0.5'/>
+<line x1='710' y1='550' x2='710' y2='566' stroke='#111' stroke-width='0.5'/>
+<text x='625' y='561' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
+<text x='715' y='561' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/cathode_flange.json</text>
+<text x='886' y='686' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev local · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101)</text>
+</svg>

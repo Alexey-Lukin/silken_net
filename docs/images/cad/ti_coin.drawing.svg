@@ -1,0 +1,76 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='820' height='560' viewBox='0 0 820 560'>
+<rect x='0' y='0' width='820' height='560' fill='white'/>
+<rect x='8' y='8' width='804' height='544' fill='none' stroke='#111' stroke-width='1.2'/>
+<text x='20' y='30' font-family='monospace' font-size='15' text-anchor='start' fill='#111' font-weight='bold'>Ti-COIN  (Stage-2 in-vitro coupon)</text>
+<text x='20' y='46' font-family='monospace' font-size='10' text-anchor='start' fill='#555' font-weight='normal'>Деталь — EBFC test electrode · 01_01 §6.1</text>
+<circle cx='150' cy='150' r='48' fill='none' stroke='#111' stroke-width='1.2'/>
+<line x1='98' y1='150' x2='202' y2='150' stroke='#111' stroke-width='0.4' stroke-dasharray='6 3'/>
+<line x1='150' y1='98' x2='150' y2='202' stroke='#111' stroke-width='0.4' stroke-dasharray='6 3'/>
+<circle cx='150' cy='92.4' r='13.2' fill='none' stroke='#111' stroke-width='1'/>
+<circle cx='150' cy='92.4' r='6' fill='none' stroke='#111' stroke-width='1'/>
+<text x='150' y='238' font-family='monospace' font-size='10' text-anchor='middle' fill='#555' font-weight='normal'>FRONT</text>
+<line x1='102' y1='198' x2='102' y2='220' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='198' y1='198' x2='198' y2='220' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='102' y1='220' x2='198' y2='220' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='102' y1='220' x2='106' y2='217.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='102' y1='220' x2='106' y2='222.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='198' y1='220' x2='194' y2='217.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='198' y1='220' x2='194' y2='222.5' stroke='#1166cc' stroke-width='0.7'/>
+<text x='150' y='217' font-family='monospace' font-size='10' text-anchor='middle' fill='#1166cc' font-weight='normal'>Ø16</text>
+<rect x='320' y='102' width='6' height='96' fill='none' stroke='#111' stroke-width='1.2'/>
+<rect x='320' y='88.8' width='6' height='7.2' fill='none' stroke='#111' stroke-width='0.8'/>
+<text x='323' y='238' font-family='monospace' font-size='10' text-anchor='middle' fill='#555' font-weight='normal'>SIDE</text>
+<line x1='326' y1='102' x2='352' y2='102' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='326' y1='198' x2='352' y2='198' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='352' y1='102' x2='352' y2='198' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='352' y1='102' x2='349.5' y2='106' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='352' y1='102' x2='354.5' y2='106' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='352' y1='198' x2='349.5' y2='194' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='352' y1='198' x2='354.5' y2='194' stroke='#1166cc' stroke-width='0.7'/>
+<text x='356' y='153' font-family='monospace' font-size='10' text-anchor='start' fill='#1166cc' font-weight='normal'>Ø16</text>
+<line x1='320' y1='102' x2='320' y2='88' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='326' y1='102' x2='326' y2='88' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='320' y1='88' x2='326' y2='88' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='320' y1='88' x2='324' y2='85.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='320' y1='88' x2='324' y2='90.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='326' y1='88' x2='322' y2='85.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='326' y1='88' x2='322' y2='90.5' stroke='#1166cc' stroke-width='0.7'/>
+<text x='323' y='85' font-family='monospace' font-size='10' text-anchor='middle' fill='#1166cc' font-weight='normal'>1</text>
+<text x='20' y='300' font-family='monospace' font-size='10' text-anchor='start' fill='#111' font-weight='bold'>NOTES:</text>
+<text x='20' y='316' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>1. Active electrode area ≈ 2.01 cm² (1 face; j = I/A projected, 01_03 §3.5)</text>
+<text x='20' y='330' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>2. Material: Ti-6Al-4V (Grade 5)</text>
+<text x='20' y='344' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>3. Process: SLM/DMLS (flat coupon — minutes/pennies to print)</text>
+<text x='20' y='358' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>4. Surface: EAAE dual-scale on the active face: micro Sa 0.5-5 um + nano Sv 50-500 nm (01_02 1.2) — raises ECSA for enzyme immobilisation</text>
+<text x='20' y='372' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>5. Inspect: CV / EIS biochem, Stage-2 (01_01 6); j on PROJECTED area (01_02 1.4); ICP-MS V+Al release (toxic baseline, 01_02 2.5)</text>
+<text x='20' y='386' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>6. Active electrode area = 1 face ~= 2.01 cm2 (O16, 01_03 3.5)</text>
+<text x='20' y='400' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>7. Alloy bake-off CONTROL: Ti-6Al-4V baseline; bare V-release ~1.12 ug/cm2/yr = 56x over target (01_02 2.5)</text>
+<text x='20' y='414' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>8. Disc not square: RDE-ready, uniform radial j, no corner edge-effects</text>
+<text x='20' y='428' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>9. Optional O-ring / lacquer window fixes exactly 2 cm2 inside the coupon</text>
+<text x='20' y='452' font-family='monospace' font-size='10' text-anchor='start' fill='#111' font-weight='bold'>TOLERANCES / GD&amp;T:</text>
+<text x='20' y='468' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>disc_dia: 0.1/-0.1 mm</text>
+<rect x='540' y='470' width='250' height='96' fill='none' stroke='#111' stroke-width='1'/>
+<line x1='630' y1='470' x2='630' y2='486' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='481' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PART</text>
+<text x='635' y='481' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Ti-coin</text>
+<line x1='540' y1='486' x2='790' y2='486' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='486' x2='630' y2='502' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='497' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>MATERIAL</text>
+<text x='635' y='497' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Ti-6Al-4V (Grade 5)</text>
+<line x1='540' y1='502' x2='790' y2='502' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='502' x2='630' y2='518' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='513' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PROCESS</text>
+<text x='635' y='513' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>SLM/DMLS (flat coupon — minutes/pennies to print)</text>
+<line x1='540' y1='518' x2='790' y2='518' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='518' x2='630' y2='534' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='529' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>UNITS / SCALE</text>
+<text x='635' y='529' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>mm / 6:1</text>
+<line x1='540' y1='534' x2='790' y2='534' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='534' x2='630' y2='550' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='545' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
+<text x='635' y='545' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>local</text>
+<line x1='540' y1='550' x2='790' y2='550' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='550' x2='630' y2='566' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='561' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
+<text x='635' y='561' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/ti_coin.json</text>
+<text x='806' y='546' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev local · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101)</text>
+</svg>

@@ -259,6 +259,134 @@ internal static class Drawing
         return doc.Save(path);
     }
 
+    // ── Cathode flange (Деталь 3, 01_01 §1 + 02_02 §1.2) — the capsule-side anchor end. FRONT (pogo
+    // face: flange Ø + GND pad + PEEK isolation ring + bore + bayonet lugs) + SIDE (flange↦shank
+    // T-profile, axis horizontal). Same CEM-native pipeline as the Ti-coin; reuses every primitive. ──
+    public static string CathodeFlange(CathodeFlangeCem cem, string sha, DrawingStandard std = DrawingStandard.Iso)
+    {
+        double rFlange = cem.FlangeDiameterMm / 2.0 * Px;
+        double rPad = cem.CentralPadDiameterMm / 2.0 * Px;
+        double rIso = (cem.CentralPadDiameterMm / 2.0 + cem.IsolationRingWidthMm) * Px;
+        double rBore = cem.BoreDiameterMm / 2.0 * Px;
+        double rLug = cem.LugRadiusMm * Px;
+        double lugOut = rFlange + cem.LugProtrusionMm * Px;          // lug centreline radius
+        double t = cem.FlangeThicknessMm * Px;
+        double shD = cem.ShankDiameterMm * Px, shL = cem.ShankLengthMm * Px;
+        double frontCx = 200, cy = 200, sideX = 430;
+        var b = new StringBuilder();
+
+        b.AppendLine(Text(20, 30, "CATHODE FLANGE  (Деталь 3 · Zone 3)", 15, "start", Stroke, "bold"));
+        b.AppendLine(Text(20, 46, "Capsule-side anchor end · pogo face + bayonet · 01_01 §1 · 02_02 §1.2", 10, "start", "#555"));
+
+        // FRONT — bayonet lugs (behind) → flange → PEEK iso ring (dashed) → GND pad → bore → centre
+        for (int i = 0; i < cem.BayonetLugs; i++)
+        {
+            double ang = (Math.PI * 2 * i / cem.BayonetLugs) - Math.PI / 2;     // first lug at top
+            b.AppendLine(Circle(frontCx + lugOut * Math.Cos(ang), cy + lugOut * Math.Sin(ang), rLug, Stroke, 1.0));
+        }
+        b.AppendLine(Circle(frontCx, cy, rFlange, Stroke, 1.2));
+        b.AppendLine(Circle(frontCx, cy, rIso, Dim, 0.8, "4 2"));
+        b.AppendLine(Circle(frontCx, cy, rPad, Stroke, 1.0));
+        b.AppendLine(Circle(frontCx, cy, rBore, Stroke, 0.8));
+        b.AppendLine(Centre(frontCx, cy, rFlange, b));
+        b.AppendLine(Text(frontCx, cy + rFlange + 46, "FRONT (pogo face)", 10, "middle", "#555"));
+        HDim(b, frontCx - rFlange, frontCx + rFlange, cy + rFlange + 24, $"Ø{N(cem.FlangeDiameterMm)}", cy + rFlange);
+        b.AppendLine(Text(frontCx + rPad + 5, cy - 3, $"Ø{N(cem.CentralPadDiameterMm)} GND pad", 9, "start", Dim));
+        b.AppendLine(Text(frontCx + rIso + 5, cy + 12, $"PEEK iso ring {N(cem.IsolationRingWidthMm)}", 9, "start", Dim));
+        b.AppendLine(Text(frontCx + lugOut - rLug, cy - lugOut - rLug - 3, $"{cem.BayonetLugs}× bayonet lug", 9, "middle", Dim));
+
+        // SIDE — flange (thick × Ø) ↦ shank (Ø9 × L), bore axis, bayonet lug edge-on
+        double fTop = cy - rFlange, fBot = cy + rFlange, shTop = cy - shD / 2, shBot = cy + shD / 2;
+        double lugT = cem.LugProtrusionMm * Px;
+        b.AppendLine(Rect(sideX, fTop, t, 2 * rFlange, Stroke, 1.2));
+        b.AppendLine(Rect(sideX + t, shTop, shL, shD, Stroke, 1.2));
+        b.AppendLine(Rect(sideX, fTop - lugT, t, lugT, Stroke, 0.8));        // lug protrusion top
+        b.AppendLine(Rect(sideX, fBot, t, lugT, Stroke, 0.8));              // lug protrusion bottom
+        b.AppendLine(Line(sideX, cy, sideX + t + shL, cy, Stroke, 0.4, "6 3"));   // bore axis
+        b.AppendLine(Text(sideX + (t + shL) / 2, cy + rFlange + 46, "SIDE (section)", 10, "middle", "#555"));
+        HDim(b, sideX, sideX + t, fTop - lugT - 12, $"{N(cem.FlangeThicknessMm)}", fTop - lugT);
+        HDim(b, sideX + t, sideX + t + shL, shBot + 22, $"{N(cem.ShankLengthMm)}", shBot);
+        VDim(b, shTop, shBot, sideX + t + shL + 24, $"Ø{N(cem.ShankDiameterMm)}", sideX + t + shL);
+
+        // NOTES + TOLERANCES — consumed from the CEM (Noyron-clean), same as the coin
+        double ny = cy + rFlange + 82;
+        string lead = "Cathode catalytic = side/perimeter (O₂ under radome); pogo = top face (02_02 §1.2)";
+        b.AppendLine(Text(20, ny, "NOTES:", 10, "start", Stroke, "bold"));
+        var notes = NotesLines(cem.Notes, lead);
+        for (int i = 0; i < notes.Count; i++) b.AppendLine(Text(20, ny + 16 + (i * 14), $"{i + 1}. {notes[i]}", 9, "start", "#333"));
+        var tol = ToleranceLines(cem.Tolerances);
+        if (tol.Count > 0)
+        {
+            double ty = ny + 16 + (notes.Count * 14) + 10;
+            b.AppendLine(Text(20, ty, "TOLERANCES / GD&T:", 10, "start", Stroke, "bold"));
+            for (int i = 0; i < tol.Count; i++) b.AppendLine(Text(20, ty + 16 + (i * 14), tol[i], 9, "start", "#333"));
+        }
+
+        TitleBlock(b, 620, 470, new[]
+        {
+            ("PART", "Cathode flange (Деталь 3)"),
+            ("MATERIAL", cem.Notes?.Material ?? "Ti-6Al-4V"),
+            ("PROCESS", cem.Notes?.Process is { } p ? p[..Math.Min(p.Length, 22)] : "SLM/EBM"),
+            ("UNITS / SCALE", "mm / 6:1"),
+            ("REV", sha),
+            ("SSOT", $"cem/{cem.Name}.json"),
+        });
+
+        return Frame(900, 700, b, sha, std);
+    }
+
+    // ── Cathode-flange DXF (CAD-native factory deliverable, 1:1 mm Y-up) — same views, real mm. ──
+    public static bool CathodeFlangeDxf(CathodeFlangeCem cem, string sha, string path, DrawingStandard std = DrawingStandard.Iso)
+    {
+        var doc = new DxfDocument();
+        var geo = new Layer("GEOMETRY");
+        var dmn = new Layer("DIMENSIONS") { Color = AciColor.Blue };
+        var nte = new Layer("NOTES") { Color = AciColor.Cyan };
+
+        double rF = cem.FlangeDiameterMm / 2.0, rP = cem.CentralPadDiameterMm / 2.0;
+        double rIso = cem.CentralPadDiameterMm / 2.0 + cem.IsolationRingWidthMm, rB = cem.BoreDiameterMm / 2.0;
+        double rL = cem.LugRadiusMm, lugOut = rF + cem.LugProtrusionMm;
+        double t = cem.FlangeThicknessMm, shD = cem.ShankDiameterMm, shL = cem.ShankLengthMm, cx = 0, cy = 0;
+
+        // FRONT — flange + iso ring + pad + bore + centre + lugs
+        doc.Entities.Add(new Circle(new Vector2(cx, cy), rF) { Layer = geo });
+        doc.Entities.Add(new Circle(new Vector2(cx, cy), rIso) { Layer = geo });
+        doc.Entities.Add(new Circle(new Vector2(cx, cy), rP) { Layer = geo });
+        doc.Entities.Add(new Circle(new Vector2(cx, cy), rB) { Layer = geo });
+        doc.Entities.Add(new Line(new Vector2(cx - rF - 2, cy), new Vector2(cx + rF + 2, cy)) { Layer = geo });
+        doc.Entities.Add(new Line(new Vector2(cx, cy - rF - 2), new Vector2(cx, cy + rF + 2)) { Layer = geo });
+        for (int i = 0; i < cem.BayonetLugs; i++)
+        {
+            double ang = (Math.PI * 2 * i / cem.BayonetLugs) + Math.PI / 2;
+            doc.Entities.Add(new Circle(new Vector2(cx + lugOut * Math.Cos(ang), cy + lugOut * Math.Sin(ang)), rL) { Layer = geo });
+        }
+        DxfHDim(doc, dmn, cx - rF, cx + rF, cy - rF - 5, $"%%c{N(cem.FlangeDiameterMm)}");
+        doc.Entities.Add(new Text("FRONT (pogo face)", new Vector2(cx - rF / 2, cy - rF - 11), 2.0) { Layer = nte });
+
+        // SIDE — flange ↦ shank T-profile (axis horizontal) + bore axis
+        double sx = rF + 16;
+        var fl = new[] { new Vector2(sx, cy - rF), new Vector2(sx + t, cy - rF), new Vector2(sx + t, cy + rF), new Vector2(sx, cy + rF) };
+        for (int i = 0; i < 4; i++) doc.Entities.Add(new Line(fl[i], fl[(i + 1) % 4]) { Layer = geo });
+        var sh = new[] { new Vector2(sx + t, cy - shD / 2), new Vector2(sx + t + shL, cy - shD / 2), new Vector2(sx + t + shL, cy + shD / 2), new Vector2(sx + t, cy + shD / 2) };
+        for (int i = 0; i < 4; i++) doc.Entities.Add(new Line(sh[i], sh[(i + 1) % 4]) { Layer = geo });
+        doc.Entities.Add(new Line(new Vector2(sx, cy), new Vector2(sx + t + shL, cy)) { Layer = geo });
+        DxfHDim(doc, dmn, sx + t, sx + t + shL, cy - shD / 2 - 5, N(cem.ShankLengthMm));
+        DxfHDim(doc, dmn, sx, sx + t, cy + rF + 4, N(cem.FlangeThicknessMm));
+        doc.Entities.Add(new Text("SIDE", new Vector2(sx, cy - rF - 11), 2.0) { Layer = nte });
+
+        // NOTES + TOLERANCES stacked below
+        var lines = new List<string> { "NOTES:" };
+        var nl = NotesLines(cem.Notes, "Cathode catalytic = side/perimeter (O2 under radome); pogo = top face (02_02 1.2)");
+        for (int i = 0; i < nl.Count; i++) lines.Add($"{i + 1}. {nl[i]}");
+        var tl = ToleranceLines(cem.Tolerances);
+        if (tl.Count > 0) { lines.Add("TOLERANCES / GD&T:"); lines.AddRange(tl); }
+        lines.Add($"SilkenNet cathode flange | rev {sha} | mm 1:1 | {StandardLabel(std)} | SSOT cem/{cem.Name}.json");
+        double yy = cy - rF - 20;
+        foreach (string ln in lines) { doc.Entities.Add(new Text(DxfSafe(ln), new Vector2(cx - rF, yy), 1.6) { Layer = nte }); yy -= 3.2; }
+
+        return doc.Save(path);
+    }
+
     // Manual horizontal linear dimension in DXF: two short extension ticks + a dimension line + a value.
     private static void DxfHDim(DxfDocument doc, Layer layer, double x1, double x2, double y, string label)
     {

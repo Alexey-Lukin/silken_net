@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Threading;
 using PicoGK;
 using Leap71.ShapeKernel;
 using Leap71.LatticeLibrary;
@@ -21,6 +23,7 @@ internal static class Program
                 "sweep" => Sweep(),
                 "scan" => args.Length >= 2 ? Scan(args[1]) : Fail("usage: scan <cem.json>"),
                 "draw" => args.Length >= 2 ? Draw(args[1]) : Fail("usage: draw <cem.json>"),
+                "render" => args.Length >= 2 ? Render(args[1]) : Fail("usage: render <cem.json>"),
                 "help" or "--help" or "-h" => Help(),
                 var strCmd => Fail($"unknown command: {strCmd}"),
             };
@@ -241,20 +244,91 @@ internal static class Program
     {
         string strJson = File.ReadAllText(strCemPath);
         string strKind = Cem.Kind(strJson);
-        if (strKind != "ti_coin")
-            return Fail($"draw: PoC supports ti_coin only (got '{strKind}') — roadmap in tools/cad/docs/drawings_program.md");
-
-        TiCoinCem cem = Cem.Parse<TiCoinCem>(strJson);
         string strRev = Environment.GetEnvironmentVariable("CAD_REV") ?? "local";
         Directory.CreateDirectory("out");
-        string strSvg = Path.Combine("out", $"{cem.Name}.drawing.svg");
-        string strDxf = Path.Combine("out", $"{cem.Name}.drawing.dxf");
-        File.WriteAllText(strSvg, Drawing.TiCoin(cem, strRev));
-        bool bDxf = Drawing.TiCoinDxf(cem, strRev, strDxf);
-        Console.WriteLine($"drawing → {strSvg}  (CEM-native SVG — human / publication / self-review)");
-        Console.WriteLine($"drawing → {strDxf}  (CEM-native DXF — {(bDxf ? "factory deliverable, opens in AutoCAD/Fusion" : "SAVE FAILED")})");
+
+        // Same CEM-native pipeline per kind: SVG (human / publication / self-review) + DXF (factory
+        // deliverable) computed from the CEM numbers — never the mesh. Add a kind = add a Drawing.X pair.
+        string strName; string strSvg; Func<string, bool> fnDxf;
+        switch (strKind)
+        {
+            case "ti_coin":
+            {
+                TiCoinCem cem = Cem.Parse<TiCoinCem>(strJson);
+                strName = cem.Name; strSvg = Drawing.TiCoin(cem, strRev); fnDxf = p => Drawing.TiCoinDxf(cem, strRev, p);
+                break;
+            }
+            case "cathode_flange":
+            {
+                CathodeFlangeCem cem = Cem.Parse<CathodeFlangeCem>(strJson);
+                strName = cem.Name; strSvg = Drawing.CathodeFlange(cem, strRev); fnDxf = p => Drawing.CathodeFlangeDxf(cem, strRev, p);
+                break;
+            }
+            default:
+                return Fail($"draw: supports ti_coin | cathode_flange (got '{strKind}') — roadmap in tools/cad/docs/drawings_program.md");
+        }
+
+        string strSvgPath = Path.Combine("out", $"{strName}.drawing.svg");
+        string strDxfPath = Path.Combine("out", $"{strName}.drawing.dxf");
+        File.WriteAllText(strSvgPath, strSvg);
+        bool bDxf = fnDxf(strDxfPath);
+        Console.WriteLine($"drawing → {strSvgPath}  (CEM-native SVG — human / publication / self-review)");
+        Console.WriteLine($"drawing → {strDxfPath}  (CEM-native DXF — {(bDxf ? "factory deliverable, opens in AutoCAD/Fusion" : "SAVE FAILED")})");
         return bDxf ? 0 : 1;
     }
+
+    // CEM → PNG via the PicoGK native viewer: build the voxels, apply a Ti-metallic material + a 3/4
+    // presentation camera, screenshot. The enterprise render-as-code path (camera/material in code,
+    // repeatable) — no external renderer. Viewer-window-gated: needs a display (macOS desktop OK; CI = xvfb).
+    private static int Render(string strCemPath)
+    {
+        string strJson = File.ReadAllText(strCemPath);
+        JsonElement root = JsonDocument.Parse(strJson).RootElement;
+        float fVoxel = root.TryGetProperty("voxel_size_mm", out JsonElement ve) ? ve.GetSingle() : 0.2f;
+        string strName = root.TryGetProperty("name", out JsonElement ne) ? ne.GetString() ?? "render" : "render";
+        string strKind = Cem.Kind(strJson);
+        Directory.CreateDirectory("out");
+        // PicoGK's screenshot is TGA (native, regardless of extension) → honest .tga name; the committed
+        // presentation gallery converts it to PNG (GitHub-renderable). See tools/cad/scripts/render_gallery.sh.
+        string strTga = Path.GetFullPath(Path.Combine("out", $"{strName}.tga"));
+        if (File.Exists(strTga)) File.Delete(strTga);   // existence ⇒ fresh success
+
+        Library.Go(fVoxel, () =>
+        {
+            Voxels vox = ConstructVoxels(strKind, strJson);
+            var oV = Library.oViewer();
+            oV.SetBackgroundColor(new ColorFloat(1f, 1f, 1f));
+            oV.SetGroupMaterial(0, new ColorFloat(0.72f, 0.74f, 0.78f), 0.85f, 0.35f);  // Ti-silver metallic
+            oV.Add(vox, 0);
+            oV.RequestUpdate();
+            Thread.Sleep(1500);                           // let the viewer render a frame (default auto-framed view)
+            oV.RequestScreenShot(strTga);
+            oV.RequestUpdate();
+            Thread.Sleep(2000);                           // let the TGA be written before the app exits
+        },
+        strLogFilePath: "", bEndAppWithTask: true, strWindowTitle: "silkencad-render", strLightsFile: "");
+
+        bool bOk = File.Exists(strTga);
+        Console.WriteLine(bOk
+            ? $"render → out/{strName}.tga  (PicoGK native voxel render; TGA → PNG via scripts/render_gallery.sh)"
+            : "render: no screenshot written — viewer/display issue; use f3d on the STL as fallback");
+        return bOk ? 0 : 1;
+    }
+
+    // Per-kind voxel construction (mirrors Build) — shared by render; voxels need the Library.Go runtime,
+    // so this runs INSIDE the task.
+    private static Voxels ConstructVoxels(string strKind, string strJson) => strKind switch
+    {
+        "ti_coin" => TiCoin.Build(Cem.Parse<TiCoinCem>(strJson)),
+        "anchor_zone1" => Zone1Anode.Build(Cem.Parse<AnchorCem>(strJson)),
+        "mechanical_lock" => MechanicalLock.Build(Cem.Parse<MechanicalLockCem>(strJson)),
+        "cathode_flange" => CathodeFlange.Build(Cem.Parse<CathodeFlangeCem>(strJson)),
+        "radome" => Radome.Build(Cem.Parse<RadomeCem>(strJson)),
+        "anchor_assembly" => Assembly.Build(Cem.Parse<AnchorAssemblyCem>(strJson)).Merged,
+        "zone2_sleeve" => Zone2Sleeve.Build(Cem.Parse<Zone2SleeveCem>(strJson)),
+        "anchor_axial_stack" => AxialStack.Build(Cem.Parse<AnchorAxialStackCem>(strJson)).Merged,
+        _ => throw new InvalidDataException($"render: unknown CEM kind {strKind}"),
+    };
 
     // Ti-coin verify (01_01 §6.1): golden metrics + the A_electrode ≈ 2 cm² gate (01_03 §3.5). Area is the
     // PROJECTED disc face (or the defined active window) — the j = I/A normalisation surface, NOT the rough
