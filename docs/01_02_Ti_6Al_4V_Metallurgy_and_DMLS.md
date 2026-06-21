@@ -408,7 +408,7 @@ Arrhenius scaling: t_lab = t_field × exp(−Ea/k × (1/T_field − 1/T_lab))
 > - **(b) Ензимна матриця як бар'єр/хелатор:** хітозан — хелатор важких металів; Genipin-Chitosan-CNC + Nafion-g-PSBMA на Zone 1 можуть зв'язувати/блокувати дифузію V. Тест — ЧМА (Суховой): V-release крізь функціоналізовану vs голу поверхню.
 > - **(c)** ZnO-Ta + 8-HQ — лише на неактивних поверхнях (Zone 3 сорочка, торці PEEK); Zone 1 не розв'язують.
 >
-> **Статус:** V-safety Zone 1 — напрям мітигації **обрано (founder 2026-06-21): (a) V-free сплав Ti-6Al-7Nb** (ASTM F1295 — Nb заміщує цитотоксичний V у джерелі; (b) хітозан-бар'єр / (c) ZnO-на-Zone-3 відкинуто — латали б проблему, яку (a) знімає в корені). ⚠️ **Baseline-сплав у §1 лишається Ti-6Al-4V Grade 5** до **in-vitro coin-валідації** (Stage 2: bare Ti-6Al-7Nb vs Ti-6Al-4V ICP-MS, [`00_07` HW.24](00_07_Action_Plan_Tracker)) — pick ще не зафіксований у BOM/canon (no-premature-canon). Трекінг — [`00_07` — HW.3](00_07_Action_Plan_Tracker).
+> **Статус:** V-safety Zone 1 — напрям **обрано (founder 2026-06-21): (a) V-free** (Nb/Zr заміщують цитотоксичний V у джерелі; (b) хітозан-бар'єр / (c) ZnO-на-Zone-3 відкинуто — латали б проблему, яку (a) знімає в корені). **Конкретний сплав down-select'иться емпірично** Stage-2 **6-сплавним coin bake-off** — не committed на 7Nb з літератури: контроль **Ti-6Al-4V** + **Ti-6Al-7Nb** (F1295) + **CP-Ti Gr4** (F1581) + **β-Ti-13Nb-13Zr** (F1713, low-E) + **Ta** (біоінертний benchmark) + **Ti-15Zr** (Roxolid), усі рівні до coin-даних (CV/EIS + ICP-MS у синт. соку; predicted release/E — `tools/in_silico` script 51/50). 🌳 **Дерево-лінза:** не лише V — **Al³⁺ теж фітотоксичний** у кислому соку ([`01_04 §4.2`](01_04_CODIT_and_Xylemointegration)), тож zero-Al кандидати (CP-Ti/β-Ti/Ta/Ti-15Zr) дерево-чистіші за Al-bearing 7Nb. ⚠️ **Baseline §1 лишається Ti-6Al-4V Grade 5** до coin-валідації (no-premature-canon). Трекінг — [`00_07` HW.3/HW.24](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -517,7 +517,7 @@ Arrhenius scaling: t_lab = t_field × exp(−Ea/k × (1/T_field − 1/T_lab))
 - ✅ Self-healing концепт визначено (§3)
 - ✅ **nTop ліцензія отримана** — параметрична CAD-модель гіроїда
 - **[Stage 1]** 5 SLA-макетів для перевірки form & fit (див. [`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK))
-- **[Stage 2]** 10 Ti-«монет» **Ø16×1 мм диск** (**Ti-6Al-7Nb** V-free + контрольна пара 4V для V-release, §2.5; [`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK): 2.01 см²/грань ≈ A_electrode, frozen — диск, не квадрат) для in vitro біохімії Gen 2.0 — циклічна вольтамперометрія, EIS, перевірка dgrFAD-GDH + Os у Genipin-Chitosan-CNC матриці з Nafion-g-PSBMA + Laccase/ZIF-nanozyme в синтетичному ксилемному соку
+- **[Stage 2]** ~15 Ti-«монет» **Ø16×1 мм диск** (**6-сплавний bake-off** down-select: 4V/7Nb/CP-Ti/β-Ti/Ta/Ti-15Zr, §2.5; [`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK): 2.01 см²/грань ≈ A_electrode, frozen — диск, не квадрат) для in vitro біохімії Gen 2.0 — циклічна вольтамперометрія, EIS, перевірка dgrFAD-GDH + Os у Genipin-Chitosan-CNC матриці з Nafion-g-PSBMA + Laccase/ZIF-nanozyme в синтетичному ксилемному соку
 - **[Factory]** Передати специфікацію дворівневої шорсткості заводу (Sa 0.5–5 µm, Sv 50–500 nm)
 - **[Factory]** Передати специфікацію HIP-постпроцесу (920°C / 100–150 МПа / 2–4 год)
 - **[Factory]** Передати протокол EAAE з §1.3 (Крок 4) + блок виключень §1.3a — заборона Al₂O₃ blasting та static-tank etching для Zone 1
