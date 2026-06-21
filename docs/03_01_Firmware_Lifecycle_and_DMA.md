@@ -397,7 +397,7 @@ Offset | Size | Field            | Значення
 10     | 1    | BioContract      | [PanicFlag:1 bit | Status:2 bits | GrowthPoints:5 bits]
 11     | 1    | TTL byte         | [FW.18b] Бітфілд [thr_invalid:5 | TTL:3] (ttl_byte.h). TTL initial=3 (panic 5); верхні 5 біт — saturating лічильник відкинутих OTA-порогів (wire-кап 31; 03_03 §5.4)
 12-13  | 2    | FirmwareVersionID| FIRMWARE_VERSION_ID (BE uint16)
-14     | 1    | VPD index        | [HW.32] BME280 VPD (non-panic): 0–255 ≈ 0–5.1 kPa @ 0.02 kPa/LSB. Panic-пакет: байт належить SEC.10 frame counter
+14     | 1    | Gossip ts_lsb    | [FW.20-S2 §5] non-panic: soldier_unix_ts & 0xFF (час-gossip піггібек; дім — примітка [HW.32] нижче + 03_02). Panic-пакет: байт належить SEC.10 frame counter
 15     | 1    | Reserved         | Зарезервовано (0). Panic-пакет: SEC.10 frame counter (14-15 BE)
 ```
 
