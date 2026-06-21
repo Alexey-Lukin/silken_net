@@ -110,8 +110,8 @@
 - [ ] 👤 Генерація TPMS gyroid geometry (65% porosity, **тільки для Zone 1**)
 - [x] 👤 **Орієнтація пор — ✅ ВИРІШЕНО (б) + canon-fixed 2026-06-20** (`01_01 §5.5`): орієнтація-агностична (гіроїд бінеперервний); `01_01 §1/§5.5` + `01_04 §3.2` оновлено. Деталі → HW.33
 - [ ] 👤 **Градієнт розміру пор** (`01_01 §5.5`): центр 300–500 µm → периферія 100–150 µm при сталій пористості 65% — cell size як функція радіуса
-- [ ] 👤 Окреме креслення Zone 3 (катодний фланець ∅25 мм frozen)
-- [ ] 👤 STL/STEP файли → передати на SLM завод (Київ/Дніпро) разом з вимогою HIP-постпроцесу (`01_02 §1.7` + HW.23)
+- [ ] 👤 Окреме креслення Zone 3 (катодний фланець ∅25 мм frozen) — машинна половина = Phase 2 `draw cathode_flange` (DXF/SVG з CEM tolerances/notes; central-pad Ø4-5 gap форсить HW.8); deferred до заводського контракту
+- [ ] 👤 **STL + DXF-креслення** → передати на SLM завод (Київ/Дніпро) з вимогою HIP (`01_02 §1.7` + HW.23). **БЕЗ STEP** (drawing-decisions нижче: AM-бюро друкують зі STL; DXF = GD&T/CMM-приймання; STEP = deferred path B)
 - [ ] 👤 **Build orientation specification** (`01_02 §1.6`): BD ∥ довгій осі анкера, кут до build plate 0° ± 5°, externally only support
 - [ ] 👤 **Карта обмежень покриттів** (`01_02 §3.6`): передати заводу інструкцію — ZnO-Ta НЕ наносити на гіроїдні стінки Zone 1
 - [ ] 👤 SEM criteria для приймання партії
@@ -130,7 +130,8 @@
 - [x] 🤖 HW.1.PicoGK: `tools/cad` README ✅ + skill `.claude/skills/picogk` ✅ + Noyron-методологія в canon ✅; CI `cad_smoke.yml` ✅ **enterprise 2-job 2026-06-20** (logic = Linux pure-xUnit hard-gate [PicoGK-runtime-free] + render = macOS build-hard + verify best-effort [Library.Go SIGSEGV 139 headless, CI-confirmed] + CycloneDX SBOM/artifacts)
 - [x] 🤖 HW.1.PicoGK: canon honesty-fix `01_02 §6` ✅ (.NET 9, PicoGK v2.2, real API, дати, nTop→PicoGK primary)
 - [x] 🤖 HW.1.PicoGK: **CEM-native engineering-drawing program + Ti-coin SVG PoC ✅ 2026-06-20** (`26c298e` — `Drawing.cs` + `draw <cem>` verb = чистий аналітичний SVG, без mesh/Library.Go; research `tools/cad/docs/drawings_program.md`: STL→STEP=lossy → креслення з CEM як metrics.json [Noyron]; гіроїд = envelope + spec-callout, не поточково [ISO/ASTM 52900]; креслення несе fits H7/s6 + GD&T datums + post-process нотатки + lattice-spec). Roadmap §7: sleeve/flange/radome → title-block+GD&T+tolerance-CEM-block → Zone-1 envelope+section → assembly-креслення
-- [ ] 👤 HW.1.PicoGK drawing-decisions (`drawings_program.md §8`): (1) чи вимагає SLM/PEEK-завод **STEP** (чи досить SVG/PDF+STL)? (2) **ISO 128** (1-й кут) vs **ASME Y14.5**? (3) tolerances → CEM `tolerances`-блок (раджу — SSOT, живить і креслення, і HW.8.9)?
+- [x] 🤖 HW.1.PicoGK: **CEM tolerances/notes-блок + DXF Ti-coin deliverable ✅ Phase 0+1 2026-06-21** — `Cem.cs` `ToleranceSpec`/`NotesSpec` (Noyron-native PMI: fits Lamé-µm · GD&T datums · surface-finish Sa/Sv · coating-restriction · lattice-spec · inspection) заповнено для ti_coin/zone2_sleeve/cathode_flange (+central-pad Ø4-5/PEEK-ring gap → форсить HW.8); `Drawing.cs` consume-CEM (нуль hardcoded notes) + **DXF через netDxf (MIT, CPM-пін)** = CAD-нативний factory-deliverable (AutoCAD/Fusion) + SVG/PDF human; `DrawingStandard` ISO/ASME параметр (drift: прибрано hardcoded first-angle); +2 xUnit, build 0E. **Заземлення (web) виправило 4 аномалії:** ASME Y14.5 = GD&T-мова ≠ проекція (Y14.3) · H7/s6 = ISO 286 метал-таблиця ≠ PEEK-bore (Lamé-µm E_PEEK-aware) · Ti-coin 10×10→Ø16 (§6) · STL/STEP→STL+DXF. Решта §7 (sleeve/flange/radome/gyroid-inspection-card/assembly) = Phase 2 deferred до заводського контракту
+- [x] 🤖 HW.1.PicoGK drawing-decisions ✅ ВИРІШЕНО 2026-06-21 (`drawings_program.md §8`): (1) формат = **DXF (netDxf, MIT) + SVG/PDF + STL**, БЕЗ STEP (AM-бюро друкують зі STL; креслення = GD&T/CMM-приймання; STEP = deferred path B `IxMilia.Step` недостатній + voxel-STEP = tessellation-loss); (2) стандарт = **ISO**, CEM-параметр — це ДВА ортогональні вибори (conflation fixed): проекція **1-й кут** (ISO 128-30/5456 vs ASME Y14.3 3-й) + GD&T **ISO 1101** (ASME Y14.5 = GD&T-мова, **НЕ** проекція); (3) tolerances → **CEM-блок** (Noyron-native SSOT → креслення + HW.8 central-pad Ø4-5 + HW.8.9). Phase 0+1 active; Phase 2 (решта §7) deferred до заводського контракту
 
 #### HW.23 — HIP postprocess specification for SLM anode
 - **P0** · 👤 · ⚪ · → `01_02 §1.7`
@@ -886,7 +887,7 @@
 - **P1** · 👤 · ⚪ · → `07_02 §8.1.1`
 - **Стан:** Не почато — BIZ.6 ✅ ідентифікував 4 EU кандидати (3D Lab PL, Materialise BE, Sauber/Lithoz, TRUMPF); procurement-трек до Frame Agreement. Канон `07_02 §8.1.1`.
 - [ ] 👤 quotes у 3D Lab PL + Materialise BE → порівняльна таблиця (раніше OPS.5)
-- [ ] 👤 NDA+RFQ зі 3D Lab PL → sample part order (10 шт) quality benchmark → Frame Agreement (+20% premium, 30-day activation)
+- [ ] 👤 NDA+RFQ зі 3D Lab PL → sample part order (10 шт) quality benchmark → Frame Agreement (+20% premium, 30-day activation). **RFQ-deliverable готовий:** sample part = Ti-coin Stage 2 (HW.24) → STL + **DXF-креслення** (`draw ti_coin`, CEM tolerances/notes — HW.1/`drawings_program.md`)
 
 #### BIZ.1 — 1 SCC = ? kg CO₂
 - **P2** · 👤 · 🟡 · → `07_01`, `05_03`
