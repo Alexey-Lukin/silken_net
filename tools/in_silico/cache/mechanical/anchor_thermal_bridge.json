@@ -1,0 +1,577 @@
+{
+  "method": "1D lumped thermal resistance ladder (center: Z3-shank\u2225bus \u2014 gap\u2225bus \u2014 Z1-shank\u2225bus) in parallel with the continuous PEEK sleeve wall; steady-state 2-node anode divider (cold flange via anchor \u2194 warm deep trunk via wood spreading R). No FEA/DFT.",
+  "lambda_W_mK": {
+    "Ti-6Al-4V": 6.7,
+    "Cu": 400.0,
+    "316SS": 15.0,
+    "PEEK-450G": 0.25,
+    "air": 0.026,
+    "wood_wet_sapwood": 0.3
+  },
+  "geometry_mm": {
+    "sleeve_od": 15.0,
+    "sleeve_bore": 11.0,
+    "sleeve_len": 50.0,
+    "z1_shank_od": 11.0,
+    "z3_shank_od": 9.0,
+    "bus_dia_bottleneck": 1.3,
+    "bus_area_mm2": 1.327,
+    "shank_insert_a": 30.0,
+    "shank_insert_c": 14.0,
+    "effective_gap": 6.0
+  },
+  "peek_wall_G_W_K": 0.0004084070449666731,
+  "anchor_conductance": {
+    "none": {
+      "g_total_W_K": 0.0008068162742273056,
+      "r_total_K_W": 1239.4395501723216,
+      "g_center_W_K": 0.0003984092292606325,
+      "g_wall_W_K": 0.0004084070449666731,
+      "x_vs_no_bus": 1.0
+    },
+    "Cu": {
+      "g_total_W_K": 0.019637413223763667,
+      "r_total_K_W": 50.92320401904452,
+      "g_center_W_K": 0.019229006178796994,
+      "g_wall_W_K": 0.0004084070449666731,
+      "x_vs_no_bus": 24.339386612609637
+    },
+    "Ti": {
+      "g_total_W_K": 0.002052360432227504,
+      "r_total_K_W": 487.24385068886875,
+      "g_center_W_K": 0.001643953387260831,
+      "g_wall_W_K": 0.0004084070449666731,
+      "x_vs_no_bus": 2.5437766909115287
+    },
+    "316SS": {
+      "g_total_W_K": 0.003292322522484646,
+      "r_total_K_W": 303.73694957604613,
+      "g_center_W_K": 0.002883915477517973,
+      "g_wall_W_K": 0.0004084070449666731,
+      "x_vs_no_bus": 4.080634746290572
+    }
+  },
+  "cu_vs_ti_conductance_ratio": 9.56820883671512,
+  "electrical_ir_drop_uV": {
+    "at_100uA": {
+      "Cu": 0.06328527914659982,
+      "Ti": 6.705226004818313,
+      "316SS": 2.7875658671716583
+    },
+    "at_1mA": {
+      "Cu": 0.632852791465998,
+      "Ti": 67.05226004818313,
+      "316SS": 27.87565867171658
+    },
+    "ebfc_reference_uV": 500000
+  },
+  "steady_state_baseline": {
+    "t_air_C": -30.0,
+    "t_deep_C": 2.0,
+    "lambda_wood": 0.3,
+    "r_res_mm": 150.0,
+    "r_wood_K_W": 58.460921053323126,
+    "cell_freeze_threshold_C": -2.0,
+    "t_anode_C": {
+      "none": 0.56,
+      "Cu": -15.1,
+      "Ti": -1.43,
+      "316SS": -3.16
+    },
+    "depression_below_core_C": {
+      "none": 1.44,
+      "Cu": 17.1,
+      "Ti": 3.43,
+      "316SS": 5.16
+    },
+    "cell_freeze_risk": {
+      "none": false,
+      "Cu": true,
+      "Ti": false,
+      "316SS": true
+    },
+    "cu_colder_than_none_C": 15.66,
+    "ti_within_of_none_C": 1.99
+  },
+  "robustness_sweep": {
+    "n_points": 48,
+    "dt_cu_ti_min_C": -15.36,
+    "dt_cu_ti_max_C": -4.76,
+    "grid": [
+      {
+        "t_air": -20.0,
+        "t_deep": -5.0,
+        "lambda_wood": 0.2,
+        "r_res_mm": 100.0,
+        "t_cu": -14.03,
+        "t_ti": -7.05,
+        "dt_cu_ti": -6.98
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": -5.0,
+        "lambda_wood": 0.2,
+        "r_res_mm": 150.0,
+        "t_cu": -14.49,
+        "t_ti": -7.29,
+        "dt_cu_ti": -7.2
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": -5.0,
+        "lambda_wood": 0.3,
+        "r_res_mm": 100.0,
+        "t_cu": -12.53,
+        "t_ti": -6.43,
+        "dt_cu_ti": -6.1
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": -5.0,
+        "lambda_wood": 0.3,
+        "r_res_mm": 150.0,
+        "t_cu": -13.02,
+        "t_ti": -6.61,
+        "dt_cu_ti": -6.41
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": -5.0,
+        "lambda_wood": 0.4,
+        "r_res_mm": 100.0,
+        "t_cu": -11.46,
+        "t_ti": -6.1,
+        "dt_cu_ti": -5.36
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": -5.0,
+        "lambda_wood": 0.4,
+        "r_res_mm": 150.0,
+        "t_cu": -11.94,
+        "t_ti": -6.24,
+        "dt_cu_ti": -5.7
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": -5.0,
+        "lambda_wood": 0.5,
+        "r_res_mm": 100.0,
+        "t_cu": -10.65,
+        "t_ti": -5.89,
+        "dt_cu_ti": -4.76
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": -5.0,
+        "lambda_wood": 0.5,
+        "r_res_mm": 150.0,
+        "t_cu": -11.12,
+        "t_ti": -6.01,
+        "dt_cu_ti": -5.11
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": 0.0,
+        "lambda_wood": 0.2,
+        "r_res_mm": 100.0,
+        "t_cu": -12.03,
+        "t_ti": -2.73,
+        "dt_cu_ti": -9.31
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": 0.0,
+        "lambda_wood": 0.2,
+        "r_res_mm": 150.0,
+        "t_cu": -12.65,
+        "t_ti": -3.05,
+        "dt_cu_ti": -9.6
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": 0.0,
+        "lambda_wood": 0.3,
+        "r_res_mm": 100.0,
+        "t_cu": -10.04,
+        "t_ti": -1.9,
+        "dt_cu_ti": -8.13
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": 0.0,
+        "lambda_wood": 0.3,
+        "r_res_mm": 150.0,
+        "t_cu": -10.69,
+        "t_ti": -2.14,
+        "dt_cu_ti": -8.55
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": 0.0,
+        "lambda_wood": 0.4,
+        "r_res_mm": 100.0,
+        "t_cu": -8.61,
+        "t_ti": -1.46,
+        "dt_cu_ti": -7.14
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": 0.0,
+        "lambda_wood": 0.4,
+        "r_res_mm": 150.0,
+        "t_cu": -9.25,
+        "t_ti": -1.65,
+        "dt_cu_ti": -7.6
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": 0.0,
+        "lambda_wood": 0.5,
+        "r_res_mm": 100.0,
+        "t_cu": -7.53,
+        "t_ti": -1.19,
+        "dt_cu_ti": -6.35
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": 0.0,
+        "lambda_wood": 0.5,
+        "r_res_mm": 150.0,
+        "t_cu": -8.16,
+        "t_ti": -1.34,
+        "dt_cu_ti": -6.81
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": 2.0,
+        "lambda_wood": 0.2,
+        "r_res_mm": 100.0,
+        "t_cu": -11.24,
+        "t_ti": -1.0,
+        "dt_cu_ti": -10.24
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": 2.0,
+        "lambda_wood": 0.2,
+        "r_res_mm": 150.0,
+        "t_cu": -11.92,
+        "t_ti": -1.36,
+        "dt_cu_ti": -10.56
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": 2.0,
+        "lambda_wood": 0.3,
+        "r_res_mm": 100.0,
+        "t_cu": -9.04,
+        "t_ti": -0.1,
+        "dt_cu_ti": -8.94
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": 2.0,
+        "lambda_wood": 0.3,
+        "r_res_mm": 150.0,
+        "t_cu": -9.76,
+        "t_ti": -0.36,
+        "dt_cu_ti": -9.4
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": 2.0,
+        "lambda_wood": 0.4,
+        "r_res_mm": 100.0,
+        "t_cu": -7.47,
+        "t_ti": 0.39,
+        "dt_cu_ti": -7.86
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": 2.0,
+        "lambda_wood": 0.4,
+        "r_res_mm": 150.0,
+        "t_cu": -8.18,
+        "t_ti": 0.18,
+        "dt_cu_ti": -8.36
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": 2.0,
+        "lambda_wood": 0.5,
+        "r_res_mm": 100.0,
+        "t_cu": -6.29,
+        "t_ti": 0.69,
+        "dt_cu_ti": -6.98
+      },
+      {
+        "t_air": -20.0,
+        "t_deep": 2.0,
+        "lambda_wood": 0.5,
+        "r_res_mm": 150.0,
+        "t_cu": -6.97,
+        "t_ti": 0.52,
+        "dt_cu_ti": -7.5
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": -5.0,
+        "lambda_wood": 0.2,
+        "r_res_mm": 100.0,
+        "t_cu": -20.04,
+        "t_ti": -8.41,
+        "dt_cu_ti": -11.63
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": -5.0,
+        "lambda_wood": 0.2,
+        "r_res_mm": 150.0,
+        "t_cu": -20.82,
+        "t_ti": -8.81,
+        "dt_cu_ti": -12.0
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": -5.0,
+        "lambda_wood": 0.3,
+        "r_res_mm": 100.0,
+        "t_cu": -17.54,
+        "t_ti": -7.38,
+        "dt_cu_ti": -10.16
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": -5.0,
+        "lambda_wood": 0.3,
+        "r_res_mm": 150.0,
+        "t_cu": -18.36,
+        "t_ti": -7.68,
+        "dt_cu_ti": -10.68
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": -5.0,
+        "lambda_wood": 0.4,
+        "r_res_mm": 100.0,
+        "t_cu": -15.76,
+        "t_ti": -6.83,
+        "dt_cu_ti": -8.93
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": -5.0,
+        "lambda_wood": 0.4,
+        "r_res_mm": 150.0,
+        "t_cu": -16.57,
+        "t_ti": -7.06,
+        "dt_cu_ti": -9.5
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": -5.0,
+        "lambda_wood": 0.5,
+        "r_res_mm": 100.0,
+        "t_cu": -14.42,
+        "t_ti": -6.49,
+        "dt_cu_ti": -7.93
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": -5.0,
+        "lambda_wood": 0.5,
+        "r_res_mm": 150.0,
+        "t_cu": -15.2,
+        "t_ti": -6.68,
+        "dt_cu_ti": -8.52
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": 0.0,
+        "lambda_wood": 0.2,
+        "r_res_mm": 100.0,
+        "t_cu": -18.05,
+        "t_ti": -4.09,
+        "dt_cu_ti": -13.96
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": 0.0,
+        "lambda_wood": 0.2,
+        "r_res_mm": 150.0,
+        "t_cu": -18.98,
+        "t_ti": -4.58,
+        "dt_cu_ti": -14.4
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": 0.0,
+        "lambda_wood": 0.3,
+        "r_res_mm": 100.0,
+        "t_cu": -15.05,
+        "t_ti": -2.86,
+        "dt_cu_ti": -12.2
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": 0.0,
+        "lambda_wood": 0.3,
+        "r_res_mm": 150.0,
+        "t_cu": -16.03,
+        "t_ti": -3.21,
+        "dt_cu_ti": -12.82
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": 0.0,
+        "lambda_wood": 0.4,
+        "r_res_mm": 100.0,
+        "t_cu": -12.91,
+        "t_ti": -2.2,
+        "dt_cu_ti": -10.71
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": 0.0,
+        "lambda_wood": 0.4,
+        "r_res_mm": 150.0,
+        "t_cu": -13.88,
+        "t_ti": -2.48,
+        "dt_cu_ti": -11.4
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": 0.0,
+        "lambda_wood": 0.5,
+        "r_res_mm": 100.0,
+        "t_cu": -11.3,
+        "t_ti": -1.78,
+        "dt_cu_ti": -9.52
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": 0.0,
+        "lambda_wood": 0.5,
+        "r_res_mm": 150.0,
+        "t_cu": -12.24,
+        "t_ti": -2.01,
+        "dt_cu_ti": -10.22
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": 2.0,
+        "lambda_wood": 0.2,
+        "r_res_mm": 100.0,
+        "t_cu": -17.26,
+        "t_ti": -2.36,
+        "dt_cu_ti": -14.89
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": 2.0,
+        "lambda_wood": 0.2,
+        "r_res_mm": 150.0,
+        "t_cu": -18.24,
+        "t_ti": -2.88,
+        "dt_cu_ti": -15.36
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": 2.0,
+        "lambda_wood": 0.3,
+        "r_res_mm": 100.0,
+        "t_cu": -14.06,
+        "t_ti": -1.05,
+        "dt_cu_ti": -13.01
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": 2.0,
+        "lambda_wood": 0.3,
+        "r_res_mm": 150.0,
+        "t_cu": -15.1,
+        "t_ti": -1.43,
+        "dt_cu_ti": -13.67
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": 2.0,
+        "lambda_wood": 0.4,
+        "r_res_mm": 100.0,
+        "t_cu": -11.77,
+        "t_ti": -0.34,
+        "dt_cu_ti": -11.43
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": 2.0,
+        "lambda_wood": 0.4,
+        "r_res_mm": 150.0,
+        "t_cu": -12.81,
+        "t_ti": -0.64,
+        "dt_cu_ti": -12.16
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": 2.0,
+        "lambda_wood": 0.5,
+        "r_res_mm": 100.0,
+        "t_cu": -10.05,
+        "t_ti": 0.1,
+        "dt_cu_ti": -10.15
+      },
+      {
+        "t_air": -30.0,
+        "t_deep": 2.0,
+        "lambda_wood": 0.5,
+        "r_res_mm": 150.0,
+        "t_cu": -11.05,
+        "t_ti": -0.15,
+        "dt_cu_ti": -10.9
+      }
+    ]
+  },
+  "shank_insertion_lever": [
+    {
+      "l_a": 30.0,
+      "l_c": 14.0,
+      "gap": 6.0,
+      "r_anchor_cu": 50.9,
+      "r_anchor_ti": 487.2,
+      "r_anchor_none": 1239.4
+    },
+    {
+      "l_a": 20.0,
+      "l_c": 10.0,
+      "gap": 20.0,
+      "r_anchor_cu": 63.7,
+      "r_anchor_ti": 1042.4,
+      "r_anchor_none": 1882.9
+    },
+    {
+      "l_a": 10.0,
+      "l_c": 8.0,
+      "gap": 32.0,
+      "r_anchor_cu": 74.7,
+      "r_anchor_ti": 1317.1,
+      "r_anchor_none": 2060.1
+    },
+    {
+      "l_a": 6.0,
+      "l_c": 6.0,
+      "gap": 38.0,
+      "r_anchor_cu": 80.1,
+      "r_anchor_ti": 1417.7,
+      "r_anchor_none": 2112.7
+    }
+  ],
+  "transient_tau_min": {
+    "Cu": 17.3,
+    "Ti": 33.1,
+    "none": 35.5,
+    "pocket_C_J_K": 38.1
+  },
+  "verdict": "Cu bus dominates the axial cold path (~10x the Ti-bus anchor) and drives the Zone-1 anode pocket ~16C colder (into a freeze) than a Ti bus, which is thermally invisible. Swap is electrically free at uA. Recommend Ti-6Al-4V bus monolithic with the anode (also kills the Ti-Cu galvanic joint). Material = founder call, 00_07 HW.34.",
+  "caveats": "1D lumped ladder + steady state; absolute T_anode depends on the swept wood reservoir (lambda_wood, R_res, T_deep). The Cu>>Ti ranking is robust across the whole grid. Conjugate 3D FEA + bench validation (Cherkasy winter) refine the absolute numbers."
+}
