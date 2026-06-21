@@ -172,7 +172,7 @@
 - [x] 🤖 **BOM — ✅ уточнено:** шина = частина анодного друку, без окремого Cu-рядка (`07_02 §1.2`).
 - [ ] 🤖+👤 **Ізоляція каналу:** lining крізь катод (PEEK-лайнер / Parylene / анодований TiO₂) — реалізація; = **також бічна опора проти втоми** (in-silico `55`)
 - [ ] 👤 **Друк-vs-звар:** друкований-інтегральний стрижень vs той-самий-сплав приварений Ti-дріт (benign weld — без гальваніки)
-- [ ] 🤖 **CAD-rod + Ø-reconcile:** bore→суцільний стрижень + lining-annulus + F3→`BusRodClearance` (`tools/cad`); звести Ø дім↔CEM
+- [ ] 🤖+👤 **CAD-rod + Ø-reconcile** (`tools/cad`): bore→суцільний стрижень + lining-annulus + F3→`BusRodClearance` + звести Ø дім↔CEM. **Свідомо відкладено з autonomous-проходу** (2026-06-21): тонкий Ø~1.0 стрижень = native-abort зона PicoGK (gotcha #1/#9, process-kill); rod/liner-дими = founder-територія (як HW.33); рендер потребує візуальної верифікації → робити з founder, не наосліп
 - [ ] 👤 **Shank-insertion ↔ розрив (ties HW.8.9):** інсерція = термо↔press-fit важіль; справжній розрив = зазор `L_g` (placeholder F2)
 
 #### HW.2 — Dual-scale roughness spec
