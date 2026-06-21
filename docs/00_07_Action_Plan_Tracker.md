@@ -182,19 +182,17 @@
 - [ ] 👤 Отримати SEM images ×500/×5,000/×50,000
 
 #### HW.3 — Accelerated aging test (Arrhenius)
-- **P1** · 🤖+👤 · ⚪ · → `01_02`
-- **Стан:** Не розпочато — 12-тиж. Arrhenius-старіння у синтетичному ксилемі (ICP-MS Ti<0.1/Al<0.05/V<0.02 µg/cm², EIS<50%); відкритий конфлікт V-release Zone 1 (1.12 µg/cm²/yr, 56× over) — мітигація a/b/c. Блокує seed-раунд, whitepaper (TRL 5→6). Канон `01_02 §2/§2.5`. **In-silico precursor (HW.3.IS):** аналітичний Lamé + stress-relaxation → Ti↔PEEK press-fit виживає 20+ р ✅ та ±5% strain-cycling MD ✅ ([`SUMMARY`](protocols/ebfc/in_silico/SUMMARY.md) §HW.3.IS; strain → `01_03 §2.1`). Важка FEA/Prony → Гусак (`08_01` Стаття 2, `00_02 §4a`).
+- **P1** · 🤖+👤 · 🟡 · → `01_02`
+- **Стан:** Фіз-тест НЕ розпочато — 12-тиж Arrhenius-старіння у синтет. ксилемі (ICP-MS Ti<0.1/V<0.02 µg/cm², EIS<50%); відкритий конфлікт V-release Zone 1 (1.12 µg/cm²/yr, 56× over) — мітигація a/b/c. Блокує seed-раунд, whitepaper (TRL 5→6). Канон `01_02 §2/§2.5`. **In-silico precursor (HW.3.IS) ✅:** аналітичний Lamé + stress-relaxation → Ti↔PEEK press-fit виживає 20+ р (thermal SF 3.4×) + ±5% strain-cycling MD; contact-pressure bug-fixed (R_INNER→R_INTERFACE) → P_c relaxed ≤ соку → **O-ring обов'язковий**. Числа frozen → [`THERMAL_STRESS_REPORT`](protocols/anchor/fea_aging/THERMAL_STRESS_REPORT.md) + `01_01 §4.2` (guard `00_06 §3`); strain → `01_03 §2.1`. Важка FEA/Prony → Гусак (`08_01` Стаття 2, `00_02 §4a`).
 - [ ] 👤 Синтез штучного ксилемного соку (потрібен ботанік)
 - [ ] 👤 Запуск 12-тижневого тесту
 - [ ] 👤 ICP-MS аналіз: Ti < 0.1 µg/cm², V < 0.02 µg/cm²
 - [ ] 👤 EIS degradation < 50%
 - [ ] 👤 **V-release Zone 1 mitigation** (відкритий конфлікт, `01_02 §2.5`): голий Ti-6Al-4V ≈ 1.12 µg/cm²/yr V (56× over target), ZnO не можна на Zone 1 → in-vitro тест chitosan-matrix бар'єру (b) ± опція V-free сплав Ti-6Al-7Nb / Ti-5Al-2.5Fe (a)
-- [x] 🤖 HW.3.IS: **script 50/51 frozen sync ✅ 2026-06-21 — НЕ просто геом, 3 аномалії**: (1) геом 5.0→5.5/8.0→7.5 (Ø11/2мм) + D_SHAFT 10→11; (2) **contact_pressure-баг** — P_c рахувався на хибному радіусі `R_INNER` (бор-гіроїда) замість `R_INTERFACE` (поверхня вала), ~2.6× over (Shigley/RoyMech web-confirmed); (3) натяг 50µm→**H7/s6-band Ø11** (5-34µm ISO 286, консистентно зі script 51); E_PEEK 3.6→4.0 (Victrex). Результат: σ_t 10.1/9.9×→**29.7/3.4×**; P_c **34.7→22.6 (баговий) → 0.49-3.32→0.32-2.16 MPa** (чесний) → при MIN-натягу relaxed P_c ≤ соку → **O-ring ОБОВ'ЯЗКОВИЙ**. Winter outer-leak = baseline-артефакт (рана=дерево, не Ti-shell). Канон-sweep: REPORT/SUMMARY/PIPELINE/`01_01 §4.2/§1/§5.6`/HW.33
-- [x] 🤖 HW.3.IS: **interim literature-Prony ✅** (2-term структура валідована — MDPI Polymers 2021 ISV 2-компоненти; коефіцієнти консервативні: при <Tg 143°C релаксація повільна → retention >0.65, under-states P_c). НЕ Гусак-authoritative
-- [ ] 👤 HW.3.IS: **Prony-series authoritative fit** PEEK 450G (Maxwell-Wiechert, measured creep) → Гусак (`08_01` Стаття 2) — замінює interim 2-term; двері відкриті
-- [ ] 👤🤖 HW.3.IS: **barb-tip stress-concentration FEA** → Гусак (важка mesh-FEA, ANSYS, `00_02 §4a`). **Self-own-кандидат якщо Гусак мовчить** (light analytical bound; in-silico вже дав Lamé-bound) — DEFERRED, зберегти
-- [ ] 🤖 HW.3.IS: **MD ion-permeation Ti²⁺/V³⁺ через PEEK** (MSD, класична MD як script 13) — підтвердити «корозія не отруїть ферменти 20р»; **НЕ DFT** (DFT лише single-jump NEB). DEFERRED — окремий важкий milestone (~2-3 тижні GPU), не частина geom-sync; зберегти
-- [ ] 🤖 HW.3.IS: (nice-to-have) **unified thick-wall Lamé** — об'єднати interference-hoop (script 51) + thermal-mismatch (script 50) в ОДНУ модель (зараз окремо: thermal SF 3.4× ∥ press-fit hoop SF 2.5× @ max-fit; комбінований @ −30°C+max-fit може впасти ~1.4× — варто звірити). Light analytical, не mesh. Деталі → `THERMAL_STRESS_REPORT.md` Remaining Tasks
+- [ ] 👤 HW.3.IS: **Prony-series authoritative fit** PEEK 450G (Maxwell-Wiechert, measured creep) → Гусак (`08_01` Стаття 2) — замінює interim literature-2-term; двері відкриті
+- [ ] 👤🤖 HW.3.IS: **barb-tip stress-concentration FEA** → Гусак (mesh-FEA ANSYS, `00_02 §4a`); self-own якщо Гусак мовчить (light analytical bound, Lamé вже є) — DEFERRED
+- [ ] 🤖 HW.3.IS: **MD ion-permeation Ti²⁺/V³⁺ через PEEK** (класична MD) — «корозія не отруїть ферменти 20р»; НЕ DFT (лише single-jump NEB) — DEFERRED (~2-3 тиж GPU milestone)
+- [ ] 🤖 HW.3.IS: (nice-to-have) **unified thick-wall Lamé** — interference-hoop (51) + thermal-mismatch (50) в ОДНУ модель; комбінований @ −30°C+max-fit може впасти ~1.4× → `THERMAL_STRESS_REPORT.md` Remaining Tasks
 
 #### HW.5 — Enzyme lifespan + Gen 2.0 chemistry stack
 - **P1** · 👤 · 🟡 · → `01_03 §1–3`
