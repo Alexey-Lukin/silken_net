@@ -354,19 +354,14 @@
 - [ ] 🔗 Firmware: додати `AT+CPSMS` + `AT+CEDRXS` (PSM/eDRX, idle ~3 µA) у Queen flush-цикл — `03_02`
 
 #### HW.17 — PEEK radome prototype (Деталь 4)
-- **P1** · 👤 · ⚪ · → `02_01 §5.2`, `01_04 §5.5`
-- **Стан:** Осьова вісь розблокована (freeze 2026-06-20) — PEEK Radome (Деталь 4) **Ø25 на байонеті** Zone 3 катод-фланця (НЕ анод; bayonet, НЕ різьба — §3.5 Z-stack): радіопрозорий купол + O-ring EPDM → IP68; керамічна антена ≥8мм Z-clearance (антена↔Ti ~12мм) + overhang за Ti-периметр (`02_01 §5.3`); anti-overgrowth shield виступ ≥3мм + R≥5мм + super-hydrophobic Fluoropel (`01_04 §5.5`). **PicoGK машинна половина ✅ DONE** (Деталь 3 `CathodeFlange.cs` + Деталь 4 `Radome.cs` + **capsule-end `Assembly.cs`** 2026-06-20). **MATE-Ø кількісно виміряно** (assembly mate-audit, `02_02 §4.4`): radial −2.0 / bayonet-Z 6.42 / RF 8<12 мм; skirt Ø30 ↔ inboard Ø25 Δ-кандидати. 👤-residual: HFSS/VNA (Гончаров, мовчить), фіз-друк, **вибір skirt/inboard + Z-reconcile** (lock-groove-Z↔lug-Z, bench, HW.8). Канон `02_01 §5.2` / `01_04 §5.5` / `02_02 §4.4`.
+- **P1** · 🤖+👤 · 🟡 · → `02_01 §5.2`, `01_04 §5.5`
+- **Стан:** Осьова вісь розблокована (freeze 2026-06-20) — PEEK Radome (Деталь 4) **Ø25 на байонеті** Zone 3 катод-фланця (НЕ анод, НЕ різьба — §3.5 Z-stack): радіопрозорий купол + O-ring EPDM → IP68; керамічна SMD-антена з Z-clearance + overhang (`02_01 §5.2/§5.3`); інтегрований anti-overgrowth shield (`01_04 §5.5`, residual → HW.28). **PicoGK машинна половина ✅ DONE** (`CathodeFlange.cs` + `Radome.cs` + capsule-end `Assembly.cs`; числа/верифи — `tools/cad` + HW.1). **MATE-Ø кількісно виміряно** (`02_02 §4.4`): radial −2.0 / bayonet-Z 6.42 / RF 8<12 мм; skirt Ø30 ↔ inboard Ø25 Δ-кандидати — bench-вибір. Тип кріплення байонет ✅ (HW.8.4). Канон `02_01 §5.2` / `01_04 §5.5` / `02_02 §4.4`.
 - [ ] 👤 KiCad PCB layout (HW.9) → PEEK radome dimensions
-- [x] 🤖 **Деталь 3 катод-фланець PicoGK ✅ 2026-06-20** (`CathodeFlange.cs` — фланець Ø25 + barbs + bayonet-lugs + bore + O-ring groove, HW.1.PicoGK)
-- [x] 🤖 **Деталь 4 radome v2c PicoGK ✅ 2026-06-20** (`Radome.cs`) — hollow PEEK купол Ø25 + shield-дзвін (≥3/R≥5) + bayonet-socket (L-slot) + PCB cavity + rim O-ring groove; verify OK (hollow 71% · bell 12.5 · cavity 13 · mate-fit) + 3 xUnit (31 total). catode-O₂ = **периметр** (canon-fix `01_04 §5.5` ✅). MATE-Ø → **виміряно** capsule-end assembly (нижче)
-- [x] 🤖 **capsule-end assembly mate-audit ✅ 2026-06-20** (`Assembly.cs` + `anchor_assembly` CEM, `02_02 §4.4`) — зводить Деталь 3↔4 за bayonet-datum і МІРЯЄ: radial −2.0 / bayonet-Z 6.42 / RF 8<12 мм; skirt Ø30 ↔ inboard Ø25 Δ-кандидати. CI зелений (logic Linux hard + render macOS build-hard). 👤-residual: вибір skirt/inboard + Z-reconcile (lock-groove-Z↔lug-Z, HW.8)
-- [x] 👤 Тип кріплення: **байонет ✅** (НЕ різьба — детермінована Z, Z-stack §3.5 / HW.8.4) на **Деталь 3 = Катод** (НЕ Анод!)
 - [ ] 👤 Визначити матеріал O-ring (EPDM vs FKM) для ксилемного середовища
-- [ ] 👤 **HFSS-симуляція** з 3D-моделями Ti-фланця + PEEK-радома + чіп-антени (нова вимога 02_01 §5.3 revised) — VSWR < 1.8, gain ≥ −2 dBi
-- [ ] 👤 Замовити PEEK прототип з виступаючим конусом ≥ 3 мм над корою + R заокруглення ≥ 5 мм (anti-overgrowth shield, `01_04 §5.5`)
-- [ ] 👤 Super-hydrophobic coating: контакт із постачальником Fluoropel PFC-1601V або еквівалент, технологія nano-texturing
-- [ ] 👤 Верифікувати RF performance (VSWR, КСВ) з антеною під радомом + з Ti-фланцем нижче (overhang тест)
-- [ ] 👤 12-місячний польовий тест anti-overgrowth shield на тестовому дереві — фотодокументація щоквартально
+- [ ] 👤 **HFSS-симуляція** Ti-фланець + PEEK-радом + чіп-антена (`02_01 §5.3` revised; VNA → Гончаров E.53) — VSWR < 1.8, gain ≥ −2 dBi
+- [ ] 👤 Замовити PEEK прототип (radome + shield-конус ≥3мм/R≥5, `01_04 §5.5`)
+- [ ] 👤 Верифікувати RF performance (VSWR/КСВ) з антеною під радомом + Ti-фланцем (overhang тест)
+- [ ] 👤 MATE-Ø skirt/inboard вибір (radial) + Z-reconcile (lock-groove-Z↔lug-Z) — bench разом (HW.8.8)
 
 #### HW.22 — Sterilization protocol (No EtO, split-cycle, botanical-level)
 - **P1** · 👤 · ⚪ · → `01_04 §6`
