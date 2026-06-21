@@ -163,12 +163,6 @@
 - [ ] 🤖 **LatticeLibrary submodule stale** (2025-07 vs ShapeKernel 2026-06) → `dependency-update` прохід (не блокер — власний SDF не залежить)
 - [x] 🤖 **Ti-coin площа ✅ 2026-06-20 (`tools/cad`):** канон A_electrode=2 см² (`01_03 §3.5`/HW.24) реалізовано — CEM `ti_coin` → **Ø16 disc** (1 грань = π·8² = 2.01 см²), `ActiveElectrodeAreaCm2`-метрика + verify-гейт (`|A−2.0|≤0.1`), опц. `active_window` для O-ring defined-area cell. Форма = **disc, не square** (RDE-сумісність / рівномірна j / без кутових edge-ефектів + ребро-похибки); літ-grounding — `01_01 §6.1`. Square відкинуто
 
-#### ARCH.25 — Gyroid geometric validation scripts (per-slice / topology / BFS connectivity)
-- **P2** · 🤖 · 🟢 · → `01_02 §6`, `08_02 §1B`
-- **Стан:** Машинну половину закрито self-owned (не чекаючи Порубльова/Онищенка) — двофазний топологічний аудит гіроїда (`tools/cad/Connectivity.cs`, pure-managed display-less xUnit): один flood-fill = обчислювальний прокси чотирьох лаб-тестів (open-pore/percolation/solid-island/closed-pore) + adaptive-resolution застереження + робоче вікно `wallParam` — повний design-justification у каноні [`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS). Topology measured, not assumed. Партнерська CFD/польова нога pending — [`08_02 §1B`](08_02_Academic_Institutions_Registry) (Порубльов).
-- [ ] 🔗 C++/CFD topological-integrity mesh + Akash GPU (ARCH.30, Онищенко) — self-own за потреби, партнер pending
-- [ ] 🤖 deferred (nice-to-have): Euler-χ крос-чек · tortuosity (random-walk на percolated cluster) · voxel-cross-check на as-printed grid (не лише SDF-intent)
-
 #### HW.2 — Dual-scale roughness spec
 - **P1** · 👤 · ⚪ · → `01_02`
 - **Стан:** Не розпочато — dual-scale roughness spec (Sa 0.5–5 µm, Sv 50–500 nm) ще не передана на завод; блокує максимальний струм EBFC (TRL 5). Канон `01_02 §1.2/§1.5`.
@@ -233,6 +227,12 @@
 - [ ] 👤 LECO RH404 hot extraction analysis на тестовому купоні з кожної партії
 - [ ] 👤 Втомне тестування Ti-coin Stage 2 (HW.24) — порівняння з/без dehydrogenation bake для підтвердження ефекту
 - [ ] 👤 Ti-coin Stage 2 — замовити пару **bare + ZIF-coated** (chem-note triage 2026-06-06): порівняння деградації струму ізолює ZIF enzyme-stabilization → готовий «ZIF nanozyme as enzyme stabilizer» результат (→ Стаття 2 stability; доповнює, не заміняє, in-silico ET-механізм Стаття 1)
+
+#### ARCH.25 — Gyroid geometric validation scripts (per-slice / topology / BFS connectivity)
+- **P2** · 🤖 · 🟢 · → `01_02 §6`, `08_02 §1B`
+- **Стан:** Машинну половину закрито self-owned (не чекаючи Порубльова/Онищенка) — двофазний топологічний аудит гіроїда (`tools/cad/Connectivity.cs`, pure-managed display-less xUnit): один flood-fill = обчислювальний прокси чотирьох лаб-тестів (open-pore/percolation/solid-island/closed-pore) + adaptive-resolution застереження + робоче вікно `wallParam` — повний design-justification у каноні [`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS). Topology measured, not assumed. Партнерська CFD/польова нога pending — [`08_02 §1B`](08_02_Academic_Institutions_Registry) (Порубльов).
+- [ ] 🔗 C++/CFD topological-integrity mesh + Akash GPU (ARCH.30, Онищенко) — self-own за потреби, партнер pending
+- [ ] 🤖 deferred (nice-to-have): Euler-χ крос-чек · tortuosity (random-walk на percolated cluster) · voxel-cross-check на as-printed grid (не лише SDF-intent)
 
 #### HW.4 — Self-healing coating (NEW: zone-restricted)
 - **P2** · 👤 · ⚪ · → `01_02 §3/§3.6`
@@ -693,16 +693,16 @@
 - **Стан:** Graceful degradation реалізовано — Redis down → DB-backed nonce (Solid Cache, TTL 10хв), шлюзи не отримують 503 (`m2m_auth_controller` [S6.1] + spec). Канон `04_03 §1.4` (M2M replay-nonce + graceful degradation).
 - [ ] 👤 верифікувати Upstash multi-zone replication у production
 
+#### E.41 — Fire-event 48h latency (dClimate obscuration) → immediate-broadcast fallback
+- **P1** · 🤖 · 🔗 · → `04_02 §11`, `05_01`
+- **Стан:** ⚠️ Life-safety — dClimate satellite fire-events можуть запізнюватись ~48h (хмарна обструкція). Ціль (immediate-broadcast) ✅ досягнута двома негайними шляхами, **НЕ** satellite-gated: edge chainsaw→panic-TX (`03_03`/`03_01`, `PANIC_TTL=5`) + backend temp/anomaly alert (`AlertDispatchService`; гейти = Redis silence + SEC.10 rate-limit, dClimate гейтить лише ВИПЛАТУ через `InsurancePayoutWorker`, не тривогу). Відкрите — лише вторинна belt-and-suspenders: Forester Guild fallback-oracle для satellite-obscured wildfire, 🔗 на E.20 (design `04_02 §Forester Guild` — `[PLANNED — blocked by ForestBountyService]`). Канон `04_02 §11` (Dclimate/EWS), `05_01` (dClimate).
+- [ ] 🔗 Forester Guild fallback-oracle (E.20)
+
 #### S6.21 — MFA: TOTP second factor (claimed, not implemented)
 - **P2** · 🤖+👤 · ⚪ · → `04_03 §1`
 - **Стан:** Не розпочато — honesty-gap: CLAUDE.md §9 раніше заявляв «MFA: TOTP» (виправлено 2026-06-19). Реальність (`04_01` User): лише recovery-codes (10 шт., `consume_recovery_code!`) + `otp_required_for_login` булевий флаг + step-up (`current_password`) на disable — **справжнього TOTP-другого-фактора нема** (нема `rotp` gem / `otp_secret` / provisioning_uri). Білд: `rotp` + `otp_secret` (AR-encrypted) + `MfaSetupsController` (provisioning_uri/QR) + verify-on-login + recovery-rotation. Канон `04_03 §1` (Автентифікація) / `04_01` (User).
 - [ ] 🤖 `rotp` + `otp_secret` (encrypted) + `MfaSetupsController` (QR/provisioning_uri) + verify-on-login
 - [ ] 👤 (опц.) WebAuthn / hardware-key як сильніша альтернатива TOTP
-
-#### E.41 — Fire-event 48h latency (dClimate obscuration) → immediate-broadcast fallback
-- **P1** · 🤖 · 🔗 · → `04_02 §11`, `05_01`
-- **Стан:** ⚠️ Life-safety — dClimate satellite fire-events можуть запізнюватись ~48h (хмарна обструкція). Ціль (immediate-broadcast) ✅ досягнута двома негайними шляхами, **НЕ** satellite-gated: edge chainsaw→panic-TX (`03_03`/`03_01`, `PANIC_TTL=5`) + backend temp/anomaly alert (`AlertDispatchService`; гейти = Redis silence + SEC.10 rate-limit, dClimate гейтить лише ВИПЛАТУ через `InsurancePayoutWorker`, не тривогу). Відкрите — лише вторинна belt-and-suspenders: Forester Guild fallback-oracle для satellite-obscured wildfire, 🔗 на E.20 (design `04_02 §Forester Guild` — `[PLANNED — blocked by ForestBountyService]`). Канон `04_02 §11` (Dclimate/EWS), `05_01` (dClimate).
-- [ ] 🔗 Forester Guild fallback-oracle (E.20)
 
 #### E.20 — Forester Guild: ForestBountyService (PoPhW fallback oracle + ranger economy)
 - **P2** · 🤖+👤 · ⚪ · → `04_02 §Forester Guild`
@@ -822,11 +822,6 @@
 - **Стан:** Не розпочато — `192.168.0.1` (`config/deploy.yml`) / `<INGRESS_ANCHOR_IP>` (`config/deploy.canopy.yml`) плейсхолдери; підставити реальну Ingress Anchor IP після `terraform apply` (canopy = той самий IP, диференціюється Akash SDL env). Канон `06_01`.
 - [ ] 👤 підставити реальні IP після `terraform apply` → верифікувати deploy
 
-#### INF.10 — Kamal-proxy healthcheck → `/ready` (readiness-gated cutover)
-- **P3** · 👤 · ⚪ · → `06_01`
-- **Стан:** Не розпочато — `/ready` readiness-проба існує (DB+Redis round-trip, [`06_05`](06_05_Puma_Configuration)), але kamal-proxy за замовчуванням healthcheck'ає `/up` (liveness). Для zero-downtime: додати `proxy: healthcheck: { path: /ready }` у `config/deploy.yml` — kamal не перемикає трафік на новий контейнер, поки DB+Redis не готові. Свідомо НЕ забетоновано зараз (deploy pre-first-run; змінює cutover-поведінку → застосувати+верифікувати на першому деплої, не тихо). Канон `06_01`.
-- [ ] 👤 додати `proxy.healthcheck.path: /ready` у `config/deploy.yml` на першому деплої + верифікувати cutover
-
 #### S2.4 — Observability industrial-grade hardening
 - **P2** · 👤 · 🟡 · → [`06_03 §2.9`](06_03_Prometheus_Observability)
 - **Стан:** industrial-grade hardening канонізовано — `external_labels` (env/service/source/release attribution) + `queue_config`+explicit WAL (backpressure) + cardinality-budget relabel + process/runtime gauges (`sample_process_runtime!`/`sample_connection_pool!`, RSpec-covered; bonus-fix: pool-gauges раніше були stale) + CI-валідація (`alloy_config_validate`). Конкретні значення — `config.alloy` SSOT (не дублюються). Канон [`06_03 §2.9`](06_03_Prometheus_Observability).
@@ -856,6 +851,11 @@
 - **P2** · 🤖 · ⚪ · → `06_08 §1.2`, `02_05 §6.1`
 - **Стан:** Не розпочато — Helium SOS fallback перенесено Soldier→Queen (STM32WLE5JC flash/RAM/topology несумісний): Queen LoRaMac-node + OTAA join + FCntUp persist; SOS-маяк ~12 байт (НЕ телеметрія — SF12 EU868 ~51B cap) → Helium hotspot → LNS → Rails `POST /telemetry/helium`; Soldier лишається raw LoRa P2P AES-128. Implementation Anchor L3. Канон `02_05 §6.1` / `06_08 §1.2`.
 - [ ] 🤖 Queen `queen_helium_lorawan_uplink()`
+
+#### INF.10 — Kamal-proxy healthcheck → `/ready` (readiness-gated cutover)
+- **P3** · 👤 · ⚪ · → `06_01`
+- **Стан:** Не розпочато — `/ready` readiness-проба існує (DB+Redis round-trip, [`06_05`](06_05_Puma_Configuration)), але kamal-proxy за замовчуванням healthcheck'ає `/up` (liveness). Для zero-downtime: додати `proxy: healthcheck: { path: /ready }` у `config/deploy.yml` — kamal не перемикає трафік на новий контейнер, поки DB+Redis не готові. Свідомо НЕ забетоновано зараз (deploy pre-first-run; змінює cutover-поведінку → застосувати+верифікувати на першому деплої, не тихо). Канон `06_01`.
+- [ ] 👤 додати `proxy.healthcheck.path: /ready` у `config/deploy.yml` на першому деплої + верифікувати cutover
 
 #### INF.9 — deploy.yml path-gate (infra-relevant changes only)
 - **P3** · 🤖 · ⚪ · → `06_07`
