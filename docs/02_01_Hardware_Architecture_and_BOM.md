@@ -172,7 +172,7 @@ STM32WLE5JC
 | 6 | **Schottky Clamp** | BAT54S (Dual Schottky, SOT-23) | Захист GPIO від п'єзо-сплесків (0–3.3 В) | ~$0.05 |
 | 7 | **Pogo Pins** | Mill-Max 0906 Series (2 шт, spring-loaded) | Сліпе з'єднання до коаксіального анкера | ~$0.40 |
 | 8 | **PCB** | FR4, 4 шари, 1.6 мм, HASL/ENIG | Power Deck + RF Deck (2-поверховий дизайн) | ~$0.65 |
-| 9 | **Buffer Cap (VOUT)** | 47 µF / **25V X7R 1210** (Murata GRM32ER70J476ME20 або еквівалент) | Buffer для LoRa TX peak; **НЕ 6.3V** ([`02_03 §6.1`](02_03_BQ25570_MPPT_Nano_Power) — DC bias derating) | ~$0.18 |
+| 9 | **Buffer Cap (VOUT)** | 47 µF / **25V X7R 1210** (Murata GRM32ER71E476ME20 або еквівалент) | Buffer для LoRa TX peak; **НЕ 6.3V** ([`02_03 §6.1`](02_03_BQ25570_MPPT_Nano_Power) — DC bias derating) | ~$0.18 |
 | 10 | **Пасивні компоненти** | 0402/0603 резистори (1% E96), C0G/X7R cap; **резистори BQ25570 OV/UV/OK** перепрограмовано на 5.5V supercap ([`02_03 §4`](02_03_BQ25570_MPPT_Nano_Power)) | Фільтрація, розв'язка, MPPT резисторна мережа | ~$0.20 |
 | 11 | **LTC3108 DNP footprint** (опційно) | [`02_03 §1.5`](02_03_BQ25570_MPPT_Nano_Power): pads на PCB для LTC3108 cold-start preboost, **Do Not Populate** за замовчуванням; припаюється тільки якщо lab R_int EBFC > 12 кΩ | Cold-start fallback при високому R_int EBFC | $0.00 (pads) / +$1.20 якщо populated |
 | 12 | **Board-to-Board Connector Pair** | Samtec FTSH/CLT 1.27 мм pitch (10-pin, SMD, vertical, stack height 8–10 мм) — **header на Power Deck + socket на RF Deck**. Альтернативи: Hirose DF40 (0.4 мм, 6 мм stack), Molex SlimStack 0.50/0.635 мм | Mezzanine з'єднання Power Deck ↔ RF Deck (§5.3: standoff 8–10 мм). Передає 3V3, GND, VSTOR_sense, EBFC_sense, piezo_EXTI, BQ25570 enable lines (6–8 сигналів) | ~$0.85 (пара) |

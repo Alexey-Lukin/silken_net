@@ -92,7 +92,7 @@
 | 6 | PCB | FR4, 4 шари, 1.6 мм (Power Deck + RF Deck) | ~$0.65 |
 | 7 | Пасивні | 0402/0603 резистори, конденсатори X5R/C0G | ~$0.20 |
 | 8 | Pogo Pins | Mill-Max 0906 Series (2 шт, spring-loaded) | ~$0.40 |
-| 9 | Buffer cap VOUT | 47 µF / **25V X7R 1210** (Murata GRM32E70J476ME20), **НЕ 6.3V** — [`02_03 §6.1`](02_03_BQ25570_MPPT_Nano_Power) | ~$0.18 |
+| 9 | Buffer cap VOUT | 47 µF / **25V X7R 1210** (Murata GRM32ER71E476ME20), **НЕ 6.3V** — [`02_03 §6.1`](02_03_BQ25570_MPPT_Nano_Power) | ~$0.18 |
 | — | **Electronics TOTAL** | | **~$11.48** |
 | — | _LTC3108 + Coilcraft xfmr 1:100 (DNP footprint)_ | _Cold-start fallback, не populated за замовчуванням — [`02_03 §1.5`](02_03_BQ25570_MPPT_Nano_Power). PCB pads ~$0._ | _$0 / +$1.20 якщо populated після lab R_int test_ |
 | — | _BME280 + TPS22860 gate + PTFE vent (climate add-on)_ | _t°/RH/тиск → VPD confounder (False-Slashing kill, [`05_05 §6/§7`](05_05_Slashing_and_Risk_Policy)) + клімат-оракул NaaS ([`07_01`](07_01_Nature_as_a_Service_Contracts)); ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM), pending bench._ | _+$2.60 якщо populated_ |
