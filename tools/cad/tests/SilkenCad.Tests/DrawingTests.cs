@@ -67,4 +67,15 @@ public class DrawingTests
         }
         finally { if (File.Exists(path)) File.Delete(path); }
     }
+
+    // Alloy bake-off (01_02 §2.5): the title-block MATERIAL + SSOT row are read from the CEM
+    // (Notes.Material + Name), not hard-coded "Ti-6Al-4V" / "cem/ti_coin.json".
+    [Fact]
+    public void TiCoin_Title_Block_And_Ssot_Are_Per_Alloy_From_The_Cem()
+    {
+        var cem = new TiCoinCem { Name = "ti_coin_7nb", Notes = new NotesSpec { Material = "Ti-6Al-7Nb (ASTM F1295, V-free)" } };
+        string svg = Drawing.TiCoin(cem, "t");
+        Assert.Contains("Ti-6Al-7Nb", svg);              // title-block reflects the alloy SKU, not 4V
+        Assert.Contains("cem/ti_coin_7nb.json", svg);    // SSOT row is the per-alloy CEM name
+    }
 }

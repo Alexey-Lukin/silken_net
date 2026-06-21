@@ -17,6 +17,7 @@ internal sealed record GeometryMetrics
     public required double SolidVolumeMm3 { get; init; }
     public required double[] BboxSizeMm { get; init; }
     public required int TriangleCount { get; init; }
+    public string? Material { get; init; }                  // alloy/material from the CEM Notes (traceability; the alloy-bake-off SKU — 01_02 §2.5)
     public double? Porosity { get; init; }                  // null when no envelope is supplied (solid parts)
 
     // Ti-coin coupon (01_01 §6.1, null for non-coin parts): projected geometric working area for j = I/A.
@@ -114,7 +115,8 @@ internal static class Validation
     }
 
     public static GeometryMetrics MeasureCoin(TiCoinCem cem, Voxels voxCoin)
-        => Measure(cem.Name, cem.VoxelSizeMm, voxCoin, null) with { ActiveElectrodeAreaCm2 = CoinAreaCm2(cem) };
+        => Measure(cem.Name, cem.VoxelSizeMm, voxCoin, null)
+            with { ActiveElectrodeAreaCm2 = CoinAreaCm2(cem), Material = cem.Notes?.Material };
 
     // Anchor-specific golden metrics: the base measurement + porosity measured per concentric
     // radial shell (proves the porosity PROFILE — flat for a constant SKU, monotone for a graded

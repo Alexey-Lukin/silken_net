@@ -1,0 +1,26 @@
+{
+  "kind": "ti_coin",
+  "name": "ti_coin_ta",
+  "voxel_size_mm": 0.1,
+  "disc_diameter_mm": 16.0,
+  "disc_thickness_mm": 1.0,
+  "loop_ring_radius_mm": 1.6,
+  "loop_tube_radius_mm": 0.6,
+  "tolerances": {
+    "feature": "disc_dia",
+    "plus_mm": 0.1,
+    "minus_mm": -0.1
+  },
+  "notes": {
+    "material": "Tantalum (bioinert benchmark)",
+    "process": "PBF-LB / SLM (high Tm 3017C, scanning-speed tuned); porous-Ta implant proven",
+    "surface_finish": "EAAE dual-scale on the active face: micro Sa 0.5-5 um + nano Sv 50-500 nm (01_02 1.2); Ta etch chemistry differs from Ti",
+    "inspection": "CV/EIS biochem (Stage-2, 01_01 6); j on PROJECTED area (01_02 1.4); ICP-MS Ta release (bioinert ceiling)",
+    "extra": [
+      "Active electrode area = 1 face ~= 2.01 cm2 (O16, 01_03 3.5)",
+      "Alloy bake-off BENCHMARK: bioinertness ceiling (osteointegration gold-std) -> measures how much EBFC+interface lose vs the inert ideal",
+      "CAVEAT: Ta2O5 more dielectric than TiO2 -> DET risk for the enzyme cathode; heavy 16.6 g/cm3 -> coin-only, NOT an anchor candidate",
+      "Tree-first: bone-proven != tree-proven (01_04 4.2) -> sap CV/EIS decides"
+    ]
+  }
+}

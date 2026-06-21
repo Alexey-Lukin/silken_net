@@ -39,4 +39,15 @@ public class CoinTests
         TiCoinCem cemBare20 = new() { DiscDiameterMm = 20f };
         Assert.True(Validation.CoinAreaCm2(cemBare20) > 3.0);
     }
+
+    [Fact]
+    public void Cem_Parse_Reads_Alloy_Material_From_Notes()
+    {
+        // Alloy bake-off SKU (01_02 §2.5): each ti_coin.<alloy>.json carries its own Notes.Material,
+        // which flows to the drawing title-block + metrics.json (the Stage-2 down-select traceability).
+        const string strJson = """{ "kind": "ti_coin", "name": "ti_coin_7nb", "notes": { "material": "Ti-6Al-7Nb (ASTM F1295, V-free)" } }""";
+        TiCoinCem cem = Cem.Parse<TiCoinCem>(strJson);
+        Assert.Equal("ti_coin_7nb", cem.Name);
+        Assert.Equal("Ti-6Al-7Nb (ASTM F1295, V-free)", cem.Notes?.Material);
+    }
 }

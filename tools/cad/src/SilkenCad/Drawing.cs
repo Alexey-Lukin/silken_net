@@ -199,15 +199,16 @@ internal static class Drawing
             for (int i = 0; i < tol.Count; i++) b.AppendLine(Text(20, ty + 16 + (i * 14), tol[i], 9, "start", "#333"));
         }
 
-        // TITLE BLOCK (compact canonical fields; the full material/process/notes live in NOTES above)
+        // TITLE BLOCK — material/process/SSOT come from the CEM (the alloy-bake-off SKU), not hard-coded:
+        // each ti_coin.<alloy>.json carries its own Notes.Material (01_02 §2.5). Null ⇒ the 4V baseline.
         TitleBlock(b, 540, 470, new[]
         {
             ("PART", "Ti-coin"),
-            ("MATERIAL", "Ti-6Al-4V"),
-            ("PROCESS", "SLM/DMLS"),
+            ("MATERIAL", cem.Notes?.Material ?? "Ti-6Al-4V"),
+            ("PROCESS", cem.Notes?.Process ?? "SLM/DMLS"),
             ("UNITS / SCALE", "mm / 6:1"),
             ("REV", sha),
-            ("SSOT", "cem/ti_coin.json"),
+            ("SSOT", $"cem/{cem.Name}.json"),
         });
 
         return Frame(820, 560, b, sha, std);
@@ -251,7 +252,7 @@ internal static class Drawing
         for (int i = 0; i < nl.Count; i++) lines.Add($"{i + 1}. {nl[i]}");
         var tl = ToleranceLines(cem.Tolerances);
         if (tl.Count > 0) { lines.Add("TOLERANCES / GD&T:"); lines.AddRange(tl); }
-        lines.Add($"SilkenNet Ti-coin | rev {sha} | mm 1:1 | {StandardLabel(std)} | SSOT cem/ti_coin.json");
+        lines.Add($"SilkenNet Ti-coin | rev {sha} | mm 1:1 | {StandardLabel(std)} | SSOT cem/{cem.Name}.json");
         double yy = cy - rr - 20;
         foreach (string ln in lines) { doc.Entities.Add(new Text(DxfSafe(ln), new Vector2(cx - rr, yy), 1.6) { Layer = nte }); yy -= 3.2; }
 

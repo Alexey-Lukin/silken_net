@@ -15,9 +15,10 @@
     "material": "Ti-6Al-4V (Grade 5)",
     "process": "SLM/DMLS (flat coupon — minutes/pennies to print)",
     "surface_finish": "EAAE dual-scale on the active face: micro Sa 0.5-5 um + nano Sv 50-500 nm (01_02 1.2) — raises ECSA for enzyme immobilisation",
-    "inspection": "CV / EIS biochem, Stage-2 (01_01 6); j on PROJECTED area (01_02 1.4)",
+    "inspection": "CV / EIS biochem, Stage-2 (01_01 6); j on PROJECTED area (01_02 1.4); ICP-MS V+Al release (toxic baseline, 01_02 2.5)",
     "extra": [
       "Active electrode area = 1 face ~= 2.01 cm2 (O16, 01_03 3.5)",
+      "Alloy bake-off CONTROL: Ti-6Al-4V baseline; bare V-release ~1.12 ug/cm2/yr = 56x over target (01_02 2.5)",
       "Disc not square: RDE-ready, uniform radial j, no corner edge-effects",
       "Optional O-ring / lacquer window fixes exactly 2 cm2 inside the coupon"
     ]
