@@ -73,7 +73,7 @@ jobs:
         continue-on-error: true
         working-directory: tools/cad
         run: |
-          for cem in ti_coin ti_coin.7nb ti_coin.cpti ti_coin.bti ti_coin.ta ti_coin.tizr anchor_zone1.pine cathode_flange radome anchor_assembly; do
+          for cem in ti_coin ti_coin.7nb ti_coin.cpti ti_coin.bti ti_coin.ta ti_coin.tizr ti_coin.au anchor_zone1.pine cathode_flange radome anchor_assembly; do
             echo "::group::verify $cem"
             dotnet run --project src/SilkenCad -c Release --no-build -- verify "cem/$cem.json"
             echo "::endgroup::"

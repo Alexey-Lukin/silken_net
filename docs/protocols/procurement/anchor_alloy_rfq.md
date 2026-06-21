@@ -30,6 +30,8 @@
 | 5 | **Tantalum** | F560 | 0 / 0 | 186 | benchmark біоінертності (⚠️ Ta₂O₅ DET-ризик; coin-only) | 2 |
 | 6 | **Ti-15Zr** (Roxolid) | F2066-class | 0 / 0 | 100 | high-strength V/Al-free (практичний анкер-кандидат) | 2 |
 
+**+ Au-coated bracket (опц., 7-й купон — `cem/ti_coin.au.json`):** DET-electrical **стеля** (Au = найкращий electron transfer), пара до Ta біоінертної стелі → реальні сплави затиснуті між двома межами. Surface-only (дешевий Ti + thin Au), **НЕ** структурний/анкер-кандидат — лише control-точка bake-off.
+
 **Спільна обробка (усі купони):** SLM/LPBF друк → **HIP** (920°C/100-150МПа Ar/2-4год, §4.B) → **EAAE dual-scale** активація грані (Sa 0.5-5µm + Sv 50-500nm, [`01_02 §1.2`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)) → **dehydrogenation bake** (250°C/10⁻³mbar, <2год після rinse, H<100ppm, §4.B). ⚠️ EAAE-протокол tuned під 4V → β-Ti/CP-Ti/Ta травляться інакше → **per-alloy etch-tuning** (CRO; coin виявить — squeeze-data SEM Sa/Sv).
 
 **QC/acceptance (substrate):** SEM грані (Sa/Sv) · LECO RH404 H<100ppm · ICP-MS промивної води (Al<1ppb для 4V/7Nb).

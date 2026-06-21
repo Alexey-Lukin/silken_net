@@ -1,0 +1,25 @@
+{
+  "kind": "ti_coin",
+  "name": "ti_coin_au",
+  "voxel_size_mm": 0.1,
+  "disc_diameter_mm": 16.0,
+  "disc_thickness_mm": 1.0,
+  "loop_ring_radius_mm": 1.6,
+  "loop_tube_radius_mm": 0.6,
+  "tolerances": {
+    "feature": "disc_dia",
+    "plus_mm": 0.1,
+    "minus_mm": -0.1
+  },
+  "notes": {
+    "material": "Ti base + Au-coating (DET-electrical ceiling, surface-only)",
+    "process": "SLM/DMLS Ti substrate + Hard Gold (ENIG or sputtered Au) on the active face; NOT a structural alloy",
+    "surface_finish": "Au active face (best-case DET); EAAE on the Ti base before coating",
+    "inspection": "CV/EIS biochem (Stage-2, 01_01 6); j on PROJECTED area (01_02 1.4); Au = DET upper bound vs the 6 structural alloys",
+    "extra": [
+      "Active electrode area = 1 face ~= 2.01 cm2 (O16, 01_03 3.5)",
+      "Bracket coupon: DET-electrical CEILING (Au = best electron transfer) — pair to the Ta biocompat ceiling; real alloys sit between",
+      "Surface-only control: cheap Ti substrate + thin Au; NOT an anchor candidate (Au not structural/biostable 20yr in xylem)"
+    ]
+  }
+}
