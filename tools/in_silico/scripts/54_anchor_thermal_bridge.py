@@ -38,7 +38,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import CACHE_DIR, REPO_ROOT
+from lib.constants import ALLOY_PROPERTIES, CACHE_DIR, REPO_ROOT
 from lib.utils import banner
 
 OUT_DIR = CACHE_DIR / "mechanical"
@@ -134,7 +134,9 @@ def g_anchor(bus_lambda: float, l_a: float, l_c: float) -> dict:
       wall:    PEEK annulus Ø11→Ø15, continuous over L_sleeve
     """
     l_g = L_SLEEVE - l_a - l_c
-    g_bus_seg = lambda L: conductance(bus_lambda, A_BUS, L) if bus_lambda > 0 else 0.0
+
+    def g_bus_seg(length_mm: float) -> float:
+        return conductance(bus_lambda, A_BUS, length_mm) if bus_lambda > 0 else 0.0
     # center ladder segments (each = local sheath ∥ bus)
     g_seg_z3 = parallel_G([conductance(LAMBDA_TI, A_TI_Z3, l_c), g_bus_seg(l_c)])
     g_seg_gap = parallel_G([conductance(LAMBDA_AIR, A_GAP_VOID, l_g), g_bus_seg(l_g)])
@@ -230,7 +232,7 @@ def main() -> int:
     print(f"  {'bus material':<32s} {'T_anode (°C)':>12s} {'Δ below core':>13s} {'cell-freeze':>12s}")
     print(f"  {'-'*70}")
     t_base = {}
-    for key, m in BUS_MATERIALS.items():
+    for key in BUS_MATERIALS:
         t_base[key] = t_anode(anchor[key]["g_total"], r_wood_base, t_air_base, t_deep_base)
     for key, m in BUS_MATERIALS.items():
         depress = t_deep_base - t_base[key]
@@ -263,6 +265,28 @@ def main() -> int:
                   f"{s['t_cu']:>7.1f} {s['t_ti']:>7.1f} {s['dt_cu_ti']:>9.1f}")
     print(f"\n  ΔT_anode(Cu−Ti) over the FULL {len(sweep)}-point grid: "
           f"{min(dts):.1f} … {max(dts):.1f}°C colder with Cu (always negative = Cu always worse).")
+
+    # ── 3b. Per-alloy MONOLITHIC bus (bus λ = the anode alloy; the bus decision dissolves into HW.24) ──
+    # If the bus is printed monolithic with the anode, its material is NOT a free choice — it IS whatever
+    # the Stage-2 coin bake-off (HW.24) picks. So the thermal bridge is a (secondary) per-alloy input.
+    banner("Per-alloy monolithic bus — bus λ = anode alloy (ties HW.34 ↔ HW.24 bake-off)")
+    print(f"  {'anode alloy (= bus)':<22s} {'λ':>6s} {'G_anchor':>10s} {'T_anode':>8s} {'Δ<core':>7s} {'risk':>6s}")
+    print(f"  {'-'*64}")
+    alloy_rows = []
+    for name, props in sorted(ALLOY_PROPERTIES.items(), key=lambda kv: kv[1]["lambda_W_mK"]):
+        lam = props["lambda_W_mK"]
+        ga = g_anchor(lam, L_A_INSERT, L_C_INSERT)["g_total"]
+        ta = t_anode(ga, r_wood_base, t_air_base, t_deep_base)
+        risk = "❄ RISK" if ta < CELL_FREEZE_C else "ok"
+        print(f"  {name:<22s} {lam:>6.1f} {ga:>10.2e} {ta:>7.1f}° {t_deep_base-ta:>+6.1f} {risk:>6s}")
+        alloy_rows.append({"alloy": name, "lambda_W_mK": lam, "g_anchor_W_K": ga,
+                           "t_anode_C": round(ta, 2), "depression_below_core_C": round(t_deep_base - ta, 2),
+                           "cell_freeze_risk": bool(ta < CELL_FREEZE_C)})
+    print(f"  {'(reference) separate Cu wire':<22s} {LAMBDA_CU:>6.0f} {anchor['Cu']['g_total']:>10.2e} "
+          f"{t_base['Cu']:>7.1f}° {t_deep_base-t_base['Cu']:>+6.1f} {'❄ RISK':>6s}")
+    print("  → EVERY bake-off alloy monolithic stays ≪ Cu: alloyed α+β (4V/7Nb/β/15Zr, λ~7) keep the")
+    print("    pocket near bare; CP-Ti (λ17) mild; Ta (λ57, coin-only benchmark) the worst Ti but still")
+    print("    far above Cu. Bus-thermal ALIGNS with the other bake-off drivers (low-E/V-free → low-λ).")
 
     # ── 4. Shank-insertion lever (the effective break length is itself a design knob) ──
     banner("Secondary — shank insertion sets the effective break (thermal ↔ press-fit tradeoff)")
@@ -366,6 +390,9 @@ def main() -> int:
                                   "ti_within_of_none_C": round(abs(t_base["Ti"] - t_base["none"]), 2)},
         "robustness_sweep": {"n_points": len(sweep), "dt_cu_ti_min_C": round(min(dts), 2),
                              "dt_cu_ti_max_C": round(max(dts), 2), "grid": sweep},
+        "per_alloy_monolithic_bus": {"note": "bus λ = anode alloy (monolithic); the bus material is NOT "
+                                     "a separate choice — it follows the HW.24 bake-off. All ≪ Cu.",
+                                     "rows": alloy_rows},
         "shank_insertion_lever": insertion_rows,
         "transient_tau_min": {"Cu": round(tau_cu, 1), "Ti": round(tau_ti, 1), "none": round(tau_none, 1),
                               "pocket_C_J_K": round(c_pocket, 1)},

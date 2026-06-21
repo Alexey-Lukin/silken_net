@@ -532,6 +532,59 @@
       }
     ]
   },
+  "per_alloy_monolithic_bus": {
+    "note": "bus \u03bb = anode alloy (monolithic); the bus material is NOT a separate choice \u2014 it follows the HW.24 bake-off. All \u226a Cu.",
+    "rows": [
+      {
+        "alloy": "Ti-6Al-4V",
+        "lambda_W_mK": 6.7,
+        "g_anchor_W_K": 0.002052360432227504,
+        "t_anode_C": -1.43,
+        "depression_below_core_C": 3.43,
+        "cell_freeze_risk": false
+      },
+      {
+        "alloy": "Ti-6Al-7Nb",
+        "lambda_W_mK": 7.0,
+        "g_anchor_W_K": 0.0021023040175005233,
+        "t_anode_C": -1.5,
+        "depression_below_core_C": 3.5,
+        "cell_freeze_risk": false
+      },
+      {
+        "alloy": "beta-Ti-13Nb-13Zr",
+        "lambda_W_mK": 7.5,
+        "g_anchor_W_K": 0.0021845778797187835,
+        "t_anode_C": -1.62,
+        "depression_below_core_C": 3.62,
+        "cell_freeze_risk": false
+      },
+      {
+        "alloy": "Ti-15Zr",
+        "lambda_W_mK": 8.0,
+        "g_anchor_W_K": 0.0022656719230416036,
+        "t_anode_C": -1.74,
+        "depression_below_core_C": 3.74,
+        "cell_freeze_risk": false
+      },
+      {
+        "alloy": "CP-Ti-Gr4",
+        "lambda_W_mK": 17.0,
+        "g_anchor_W_K": 0.0035536655035960226,
+        "t_anode_C": -3.5,
+        "depression_below_core_C": 5.5,
+        "cell_freeze_risk": true
+      },
+      {
+        "alloy": "Ta",
+        "lambda_W_mK": 57.0,
+        "g_anchor_W_K": 0.007159761396563212,
+        "t_anode_C": -7.44,
+        "depression_below_core_C": 9.44,
+        "cell_freeze_risk": true
+      }
+    ]
+  },
   "shank_insertion_lever": [
     {
       "l_a": 30.0,
