@@ -398,6 +398,37 @@ RSpec.describe DocsLinter do
     end
   end
 
+  describe ".thermal_stress_drift" do
+    it "flags a superseded SF 9.9× near a thermal keyword" do
+      hits = described_class.thermal_stress_drift("01_01", "Lamé worst-case SF 9.9× vs PEEK yield\n")
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("SF = 3.4×")
+    end
+
+    it "flags a superseded press-fit P_c value" do
+      expect(described_class.thermal_stress_drift(
+        "01_01", "контактний тиск P_c релаксує 34.7→22.6 MPa\n").size).to be >= 1
+    end
+
+    it "passes the frozen values" do
+      expect(described_class.thermal_stress_drift(
+        "01_01", "SF 3.4× (frozen Ø11/2мм); P_c 0.49-3.32 MPa press-fit\n")).to be_empty
+    end
+
+    it "ignores a bare number with no thermal context" do
+      expect(described_class.thermal_stress_drift("06_01", "version 9.9 released; backup 34.7 GB\n")).to be_empty
+    end
+
+    it "exempts a line marking the value historical (Correction B)" do
+      expect(described_class.thermal_stress_drift(
+        "fea", "the old buggy press-fit P_c 34.7→22.6 MPa (baseline) → 0.32-2.16\n")).to be_empty
+    end
+
+    it "skips fenced code" do
+      expect(described_class.thermal_stress_drift("01_01", "```\nSF 9.9× press-fit\n```\n")).to be_empty
+    end
+  end
+
   describe ".deprecated_terms" do
     it "flags a retired token and gives the replacement hint" do
       hits = described_class.deprecated_terms("03_05", "derive via HKDF info silkennet-v1-aes256 here")

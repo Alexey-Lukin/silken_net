@@ -73,6 +73,7 @@ namespace :docs do
     superseded_fm = [] # hard: superseded term (ATECC608B) in 🎯/Статус front-matter
     src_line_refs = [] # hard: volatile `*.c`/`*.h`/`*.rb` source line-refs (DOC-T.15)
     anchor_dim   = []  # hard: superseded anchor dimension range near part keyword (01_01 §1 freeze)
+    thermal_drift = [] # hard: superseded HW.3.IS thermal-stress/press-fit number (01_01 §4.2 / report)
     graph_docs  = {}  # id "NN_NN" → text, for the #anchor-resolution gate (DocsGraph)
     doc_trls    = {}  # basename → member-TRL int (from ✅ Статус), for the 00_03 §1 band guard
 
@@ -126,6 +127,7 @@ namespace :docs do
       sec_after_link.concat(DocsLinter.section_ref_after_doclink(base, text).map { |h| "#{base}: #{h}" })
       superseded_fm.concat(DocsLinter.superseded_term_in_frontmatter(base, text).map { |h| "#{base}: #{h}" })
       anchor_dim.concat(DocsLinter.anchor_dimension_drift(base, text).map { |h| "#{base}: #{h}" })
+      thermal_drift.concat(DocsLinter.thermal_stress_drift(base, text).map { |h| "#{base}: #{h}" })
       src_line_refs.concat(DocsLinter.source_line_ref_drift(base, text))
     end
 
@@ -321,6 +323,12 @@ namespace :docs do
       puts "  ANCHOR DIM DRIFT (#{anchor_dim.size}) — superseded range near part keyword; collapse to the 01_01 §1 frozen value:"
       anchor_dim.sort.each { |d| puts "    ✗ #{d}" }
     end
+    if thermal_drift.empty?
+      puts "  thermal-stress One-Home: no superseded HW.3.IS SF/P_c number outside 01_01 §4.2 / the report ✓"
+    else
+      puts "  THERMAL-STRESS DRIFT (#{thermal_drift.size}) — superseded baseline SF/P_c near a thermal keyword; use the 01_01 §4.2 frozen value:"
+      thermal_drift.sort.each { |d| puts "    ✗ #{d}" }
+    end
     if trl_missing.empty?
       puts "  TRL presence:   every ✅ Статус doc declares a TRL ✓"
     else
@@ -432,6 +440,7 @@ namespace :docs do
     failed << "retired growth_points clamp `(…,10,63)` (FW.29-PACK → 03_04 §4.3)" unless gp_clamp.empty?
     failed << "deprecated SSOT terms present" unless deprecated.empty?
     failed << "anchor dimension drift (superseded flange/Zone2 range outside 01_01 §1 freeze)" unless anchor_dim.empty?
+    failed << "thermal-stress drift (superseded HW.3.IS SF/P_c number outside 01_01 §4.2 / the report)" unless thermal_drift.empty?
     failed << "superseded term in front-matter (🎯/Статус names a reversed decision)" unless superseded_fm.empty?
     failed << "tokenomics/carbon rate restated outside One-Home (05_03/07_01)" unless rate_drift.empty?
     failed << "solc/pragma version restated outside One-Home (05_03; code = foundry.toml)" unless solc_drift.empty?

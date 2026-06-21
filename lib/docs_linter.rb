@@ -365,6 +365,37 @@ module DocsLinter
     out
   end
 
+  # [SSOT anti-drift] Superseded HW.3.IS thermal-stress / press-fit numbers (One-Home = the report +
+  # 01_01 §4.2). The Lamé press-fit numbers were on the stale baseline (Ø10 / 3 mm) AND carried a
+  # contact_pressure bug (b = R_INNER, not R_INTERFACE); frozen + fixed 2026-06-21 (σ_t SF 9.9×→3.4×;
+  # P_c 34.7→22.6 buggy → 0.49-3.32→0.32-2.16). A value pattern AND a thermal-context keyword on one
+  # line; a line marking the value historical (correction/baseline/buggy/застаріл) is exempt — the
+  # owner's Correction B quotes the old number legitimately. Mirrors anchor_dimension_drift; at the next
+  # re-run that moves these numbers, supersede the patterns here too (like DEPRECATED_TERMS).
+  THERMAL_STRESS_DRIFT = [
+    [ /(?<!\d)9\.9\s*[×x](?!\d)/, /\bSF\b|safety|Lam[ée]|PEEK|σ_?t|press[- ]?fit|thermal|термонапр/i,
+     "thermal-stress SF = 3.4× frozen (01_01 §4.2 / THERMAL_STRESS_REPORT)" ],
+    [ /(?<!\d)(?:34\.7|22\.6)(?!\d)/, /P_c|press[- ]?fit|MPa|МПа|contact|relax|натяг/i,
+     "press-fit P_c = 0.49-3.32→0.32-2.16 MPa frozen+bug-fixed (THERMAL_STRESS_REPORT)" ]
+  ].freeze
+
+  THERMAL_STRESS_HISTORICAL = /correction|baseline|buggy|застаріл|було|\bold\b|superseded|баговий|раніше|historical/i
+
+  def thermal_stress_drift(_basename, text)
+    in_fence = false
+    out = []
+    text.each_line do |line|
+      in_fence = !in_fence if line.start_with?("```")
+      next if in_fence
+      next if line.match?(THERMAL_STRESS_HISTORICAL)
+
+      THERMAL_STRESS_DRIFT.each do |val_re, ctx_re, frozen|
+        out << "superseded thermal-stress value → #{frozen} | #{line.strip[0, 90]}" if line.match?(val_re) && line.match?(ctx_re)
+      end
+    end
+    out
+  end
+
   DEPRECATED_TERMS = {
     "silkennet-v1-aes256" => 'use "silken-aes-128-lora-key" / "silken-aes-256-device-key" (ARCH.42 256→128 HKDF info)',
     "ZP-3" => "retired ∅27mm through-hole piezo SKU → SMD piezo (Murata 7BB-15-6L0 / TDK B-Series), canon 02_01 §3",
