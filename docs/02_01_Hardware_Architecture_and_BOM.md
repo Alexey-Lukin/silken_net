@@ -183,7 +183,7 @@ STM32WLE5JC
 
 | Підсистема | Вартість (10k шт) |
 |---|---|
-| Анкер Ti-6Al-4V (DMLS 3D-друк, ~9 г) | $15.00–$18.00 |
+| Анкер Ti-6Al-4V (DMLS 3D-друк, ~9 г) — baseline; V-free Ti-6Al-7Nb pending → [`01_02 §2.5`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) (ціна/маса зрушать) | $15.00–$18.00 |
 | Ізолятор & PEEK Radome (Medical Grade) | $3.50 |
 | Power Deck PCBA | $6.20 |
 | RF Deck PCBA | $5.80 |

@@ -517,7 +517,7 @@ Arrhenius scaling: t_lab = t_field × exp(−Ea/k × (1/T_field − 1/T_lab))
 - ✅ Self-healing концепт визначено (§3)
 - ✅ **nTop ліцензія отримана** — параметрична CAD-модель гіроїда
 - **[Stage 1]** 5 SLA-макетів для перевірки form & fit (див. [`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK))
-- **[Stage 2]** 10 Ti-«монет» **Ø16×1 мм диск** ([`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK): 2.01 см²/грань ≈ A_electrode, frozen — диск, не квадрат) для in vitro біохімії Gen 2.0 — циклічна вольтамперометрія, EIS, перевірка dgrFAD-GDH + Os у Genipin-Chitosan-CNC матриці з Nafion-g-PSBMA + Laccase/ZIF-nanozyme в синтетичному ксилемному соку
+- **[Stage 2]** 10 Ti-«монет» **Ø16×1 мм диск** (**Ti-6Al-7Nb** V-free + контрольна пара 4V для V-release, §2.5; [`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK): 2.01 см²/грань ≈ A_electrode, frozen — диск, не квадрат) для in vitro біохімії Gen 2.0 — циклічна вольтамперометрія, EIS, перевірка dgrFAD-GDH + Os у Genipin-Chitosan-CNC матриці з Nafion-g-PSBMA + Laccase/ZIF-nanozyme в синтетичному ксилемному соку
 - **[Factory]** Передати специфікацію дворівневої шорсткості заводу (Sa 0.5–5 µm, Sv 50–500 nm)
 - **[Factory]** Передати специфікацію HIP-постпроцесу (920°C / 100–150 МПа / 2–4 год)
 - **[Factory]** Передати протокол EAAE з §1.3 (Крок 4) + блок виключень §1.3a — заборона Al₂O₃ blasting та static-tank etching для Zone 1
