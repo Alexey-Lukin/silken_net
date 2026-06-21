@@ -408,7 +408,7 @@ Arrhenius scaling: t_lab = t_field × exp(−Ea/k × (1/T_field − 1/T_lab))
 > - **(b) Ензимна матриця як бар'єр/хелатор:** хітозан — хелатор важких металів; Genipin-Chitosan-CNC + Nafion-g-PSBMA на Zone 1 можуть зв'язувати/блокувати дифузію V. Тест — ЧМА (Суховой): V-release крізь функціоналізовану vs голу поверхню.
 > - **(c)** ZnO-Ta + 8-HQ — лише на неактивних поверхнях (Zone 3 сорочка, торці PEEK); Zone 1 не розв'язують.
 >
-> **Статус:** V-safety Zone 1 = відкрите питання → in-vitro перевірка матричного бар'єру (b) ± опція V-free сплав (a). Трекінг — [`00_07` — HW.3](00_07_Action_Plan_Tracker).
+> **Статус:** V-safety Zone 1 — напрям мітигації **обрано (founder 2026-06-21): (a) V-free сплав Ti-6Al-7Nb** (ASTM F1295 — Nb заміщує цитотоксичний V у джерелі; (b) хітозан-бар'єр / (c) ZnO-на-Zone-3 відкинуто — латали б проблему, яку (a) знімає в корені). ⚠️ **Baseline-сплав у §1 лишається Ti-6Al-4V Grade 5** до **in-vitro coin-валідації** (Stage 2: bare Ti-6Al-7Nb vs Ti-6Al-4V ICP-MS, [`00_07` HW.24](00_07_Action_Plan_Tracker)) — pick ще не зафіксований у BOM/canon (no-premature-canon). Трекінг — [`00_07` — HW.3](00_07_Action_Plan_Tracker).
 
 ---
 

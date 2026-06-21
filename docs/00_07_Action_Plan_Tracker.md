@@ -54,7 +54,8 @@
 
 - **Перед польовим деплоєм** (life-safety + security): `SEC.9` · `SEC.3` · `SEC.1`
 - **Перед Web3 mainnet:** `S1.1` (GitHub CI secrets) · prod deploy-ENV → [`06_04`](06_04_Secrets_Checklist) (вкл. `SOLANA_RPC_URL` — інакше USDC на Devnet; guard ✅ E.47) · `S2.1`+`S2.2`+`S2.3` (Grafana після першого `/metrics`)
-- **Hardware-гейт** (TRL 4→6): `HW.1` (анкер-генерація — CAD machine-half ✅, фіз-друк → завод) · `HW.24` (staged validation SLA→coin→anchor→100) · `HW.23` (HIP postprocess) · `HW.31` (BOM Королеви)
+- **Найближчий фіз-мілстоун — TRL 3→4 = Ti-coin in-vitro** (founder 2026-06-21; гроші є → блок не фінанси): вузький шлях, що **ОБХОДИТЬ** гіроїд/PEEK/press-fit/mate — `HW.24` Stage 2 (V-free Ti-disc Ø16 → EAAE → Gen 2.0 функціоналізація → CV/EIS у соку) + `HW.5` (хімія-стек) + V-release ICP-MS (`HW.3`). Канал = **гібрид commercial-lab + ЧНУ** (не чекати MoU). Канон [`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
+- **Hardware-гейт** (TRL 4→6, повний анкер — після coin): `HW.1` (анкер-генерація — CAD machine-half ✅, фіз-друк → завод) · `HW.24` (staged validation SLA→coin→anchor→100) · `HW.23` (HIP postprocess) · `HW.31` (BOM Королеви)
 - **Academic:** `UNI.1` (лаб + публікації) · `UNI.8` (MSA / B2B legal)
 
 ## §00 · Process / IaC / SSOT-tooling
@@ -114,10 +115,10 @@
 > - **PicoGK CAD-родина** (`tools/cad` — **лінчпін**, живить кожну стадію): 6/6 генераторів (coin → anode-v2 → barbs → Деталь 3 → Деталь 4 → Zone-2 втулка) + 2 інтеграційні assembly (capsule-end · осьовий стек) + drawing-program (HW.1).
 > - **In-silico прокси фіз-тестів:** двофазна connectivity ↔ Архімед/µCT/AM-island (ARCH.25) · thermal-stress + press-fit Lamé ↔ aging (HW.3.IS) · Z-stack RSS ↔ tolerance QA (HW.8.7).
 >
-> **→ Фізичний критичний шлях** (👤 завод/bench):
-> - **[C] Завод-пакет:** HW.1 (фінальна STL → SLM-завод) · HW.23 (HIP) · HW.27 (dehydrogenation bake) · HW.2 (dual-roughness EAAE) · coating-map `01_02 §3.6`.
-> - **[D] Staged validation:** HW.24 (SLA → Ti-coin → anchor → 100) · HW.3 (Arrhenius aging, потенціостат).
-> - **[E] Збірка:** HW.17 (radome HFSS/друк) · HW.25 (PTFE-GDL) · HW.28 (shield) · HW.8 (pogo bench) · HW.6 (install) · HW.22 (steril). Хімія HW.5 → coin/anchor.
+> **→ Фізичний критичний шлях — ціль TRL 3→4 = Ti-coin in-vitro** (founder 2026-06-21; гроші є → реальний блок не фінанси, а лаб-канал):
+> - **[★ КРИТИЧНИЙ ШЛЯХ до TRL 4] Ti-coin:** HW.24 Stage 2 (V-free Ti-disc Ø16 → EAAE → Gen 2.0 стек → CV/EIS у соку) + HW.5 (хімія) + V-release ICP-MS (HW.3, bare V-free vs 4V). **Обходить** гіроїд/PEEK/press-fit/mate. Канал = **гібрид commercial-lab + ЧНУ** (не чекати MoU).
+> - **[∥ паралельні треки — НЕ блокують coin]:** [C] завод-пакет HW.1/HW.23/HW.27/HW.2 + coating-map `01_02 §3.6` (під майбутню DMLS-партію) · Stage 1 SLA form&fit (HW.24) · mate-reconcile HW.8.8/8.9 · HW.3 Arrhenius aging.
+> - **[E] Збірка — після фіз-деталей:** HW.17 (radome) · HW.25 (PTFE-GDL) · HW.28 (shield) · HW.8 (pogo bench) · HW.6 (install) · HW.22 (steril).
 >
 > **🔧 Bench-reconcile перед фіз-друком** — assembly mate-audit виявив незведений Z-stack (`02_02 §4.4/§4.5`): MATE-Ø skirt-vs-inboard + Z (HW.8.8) · shank-Ø press-fit (HW.8.9), цілісно в одному заході. Геом-аудит + founder-рішення → **HW.33**.
 
@@ -143,9 +144,9 @@
 
 #### HW.24 — Staged validation gate (SLA → Ti-coin → full anchor)
 - **P0** · 👤 · ⚪ · → `01_01 §6.1`
-- **Стан:** Не розпочато — гейт «100 DMLS-анкерів лише після Stage 1 (SLA form&fit) + Stage 2 (Ti-coin in-vitro біохімія)»; передчасна 100-партія = методологічна помилка. Канон `01_01 §6.1`.
+- **Стан:** Не розпочато — гейт «100 DMLS-анкерів лише після Stage 1 (SLA form&fit) + Stage 2 (Ti-coin in-vitro біохімія)»; передчасна 100-партія = методологічна помилка. **Stage 2 = найближча ціль (founder 2026-06-21): фізичний TRL 3→4** (🚦 Critical Path) — критичний шлях обходить гіроїд/PEEK/збірку; канал = **гібрид commercial-lab + ЧНУ** (не чекати MoU); coin-сплав = **Ti-6Al-7Nb** V-free (HW.3). Канон `01_01 §6.1`.
 - [ ] 👤 **Stage 1 — SLA макети (5 шт):** друк прозорого фотополімеру (Form 3 або SLA-сервіс) для перевірки form & fit, ергономіки, Flush Mount step drilling, допусків press-fit «пластик-в-пластик»
-- [ ] 👤 **Stage 2 — Ti-coins (~15 шт, Ø16 disc frozen — A=2 см²/грань, `01_01 §6.1`; CAD `tools/cad`):** SLM-друк + EAAE (з обов'язковим dehydrogenation bake `01_02 §1.3 Крок 5b`) → **Gen 2.0 анодний стек** (одношаровий dgrFAD-GDH + Os polymer в genipin-chitosan-CNC матриці поверх fMWCNT, `01_03 §2.1`) + **Gen 2.0 катодний стек** (Laccase + nCoCuCeZIF nanozyme гібрид DET, `01_03 §2.2`) + **Nafion-g-PSBMA анти-resin coating** → in vitro CV/EIS у синтетичному ксилемному соку (рецептура від біо-хабу ЧНУ, [`08_02`](08_02_Academic_Institutions_Registry)). 30-day stability gate. Chloride tolerance test (0.25 М NaCl). UCST winter-lock тест (-10°C → +25°C цикл). 💡 **Electrode-дизайн:** замовити з «вушком» (отвір/виступ на краю) для кріплення потенціостат-кліпси без пошкодження активної площі (A_electrode = 2 см²). In-silico predictions для порівняння — `40_validate_vs_experiment.py` готовий. (`01_03 §3.7`)
+- [ ] 👤 **Stage 2 — Ti-coins (~15 шт, Ø16 disc frozen — A=2 см²/грань, `01_01 §6.1`; сплав Ti-6Al-7Nb V-free + пара bare 7Nb/4V для V-release ICP-MS HW.3; CAD `tools/cad`):** SLM-друк + EAAE (з обов'язковим dehydrogenation bake `01_02 §1.3 Крок 5b`) → **Gen 2.0 анодний стек** (одношаровий dgrFAD-GDH + Os polymer в genipin-chitosan-CNC матриці поверх fMWCNT, `01_03 §2.1`) + **Gen 2.0 катодний стек** (Laccase + nCoCuCeZIF nanozyme гібрид DET, `01_03 §2.2`) + **Nafion-g-PSBMA анти-resin coating** → in vitro CV/EIS у синтетичному ксилемному соку (**канал = commercial electrochem-lab на критичному шляху + біо-хаб ЧНУ паралельно**, рецептура [`08_02`](08_02_Academic_Institutions_Registry)). 30-day stability gate. Chloride tolerance test (0.25 М NaCl). UCST winter-lock тест (-10°C → +25°C цикл). 💡 **Electrode-дизайн:** замовити з «вушком» (отвір/виступ на краю) для кріплення потенціостат-кліпси без пошкодження активної площі (A_electrode = 2 см²). In-silico predictions для порівняння — `40_validate_vs_experiment.py` готовий. (`01_03 §3.7`)
 - [ ] 👤 **Stage 3 — Full anchor (3–5 шт):** SLM+HIP анодних секцій, CNC PEEK-втулок, SLM/EBM катодних фланців, повний press-fit + EBFC у синтетичному соку
 - [ ] 👤 **Stage 4 — Партія 100 шт:** після підтвердження Stage 3 — оптове замовлення для польових випробувань
 
@@ -177,7 +178,7 @@
 - [ ] 👤 Запуск 12-тижневого тесту
 - [ ] 👤 ICP-MS аналіз: Ti < 0.1 µg/cm², V < 0.02 µg/cm²
 - [ ] 👤 EIS degradation < 50%
-- [ ] 👤 **V-release Zone 1 mitigation** (відкритий конфлікт, `01_02 §2.5`): голий Ti-6Al-4V ≈ 1.12 µg/cm²/yr V (56× over target), ZnO не можна на Zone 1 → in-vitro тест chitosan-matrix бар'єру (b) ± опція V-free сплав Ti-6Al-7Nb / Ti-5Al-2.5Fe (a)
+- [ ] 👤 **V-release Zone 1 — напрям (a) Ti-6Al-7Nb обрано** (founder 2026-06-21, `01_02 §2.5`): голий Ti-6Al-4V ≈ 1.12 µg/cm²/yr V (56× over), бар'єр на Zone 1 заборонений → V-free сплав Ti-6Al-7Nb (ASTM F1295) прибирає V у джерелі. Валідація — Stage 2 coin ICP-MS bare 7Nb vs 4V (HW.24); baseline §1 = 4V до підтвердження
 - [ ] 👤 HW.3.IS: **Prony-series authoritative fit** PEEK 450G (Maxwell-Wiechert, measured creep) → Гусак (`08_01` Стаття 2) — замінює interim literature-2-term; двері відкриті
 - [ ] 👤🤖 HW.3.IS: **barb-tip stress-concentration FEA** → Гусак (mesh-FEA ANSYS, `00_02 §4a`); self-own якщо Гусак мовчить (light analytical bound, Lamé вже є) — DEFERRED
 - [ ] 🤖 HW.3.IS: **MD ion-permeation Ti²⁺/V³⁺ через PEEK** (класична MD) — «корозія не отруїть ферменти 20р»; НЕ DFT (лише single-jump NEB) — DEFERRED (~2-3 тиж GPU milestone)
