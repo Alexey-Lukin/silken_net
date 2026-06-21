@@ -893,6 +893,16 @@
 - [ ] 👤 quotes у 3D Lab PL + Materialise BE → порівняльна таблиця (раніше OPS.5)
 - [ ] 👤 NDA+RFQ зі 3D Lab PL → sample part order (10 шт) quality benchmark → Frame Agreement (+20% premium, 30-day activation). **RFQ-deliverable готовий:** sample part = Ti-coin Stage 2 (HW.24) → STL + **DXF-креслення** (`draw ti_coin`, CEM tolerances/notes — HW.1/`drawings_program.md`)
 
+#### BIZ.17 — Procurement-workflow operational gaps (post-RFQ-layer dig)
+- **P2** · 👤 · ⚪ · → `07_02 §8`
+- **Стан:** RFQ-layer структура ✅ (`protocols/procurement/` — `rfq_registry` + `ebfc_chem_rfq` + `anchor_alloy_rfq`; concern-шар, `00_06 §2`); deep dig (2 Explore-сповзки) виявив 5 operational-gaps без дому + registry-maintenance — консолідовано тут. Канон `07_02 §8` (BOM/хаби) + registry.
+- [ ] 👤 **DMLS vendor-scoring matrix** (lead-time × quality × price × ISO-13485) → живить BIZ.8 Frame Agreement
+- [ ] 👤 **CDA/NDA шаблон** для 5-ВНЗ MoU (блокує UNI.1 → гранти; СЄУ Аблязов legal) — розширює BIZ.10
+- [ ] 👤 **ESG vendor-screening** matrix (репутаційне для climate-проєкту / grant-fonds)
+- [ ] 👤 **SE050 supply-timeline** (NXP availability для mass-population post-FW.2, `03_05 §3.7` / ARCH.43)
+- [ ] 👤 **Синт. сік make-vs-buy** (ЧНУ pilot-stock vs synthesize, `08_02 §1`)
+- [ ] 🤖 (опц.) **completeness-audit гейт** — лінтер «канон-компонент не в `rfq_registry`» (self-maintaining); ~37 stub-аркушів авторяться інкрементально (registry status-col трекає)
+
 #### BIZ.1 — 1 SCC = ? kg CO₂
 - **P2** · 👤 · 🟡 · → `07_01`, `05_03`
 - **Стан:** 2000 SCC = 1 tCO₂ (0.5 кг/SCC), carbon coefficient per-species — канон `07_01`, `05_03`.
