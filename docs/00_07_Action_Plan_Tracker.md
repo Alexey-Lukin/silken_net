@@ -454,13 +454,13 @@
 
 #### HW.26 — PEEK Cold-Flow Creep: Mechanical Lock (NEW 2026-05-16)
 - **P2** · 🤖+👤 · 🟡 · → `01_01 §4.3`
-- **Стан:** 🤖 PicoGK-геометрія SHIPPED (`207d104` — barbs+groove `tools/cad`); 👤 bench-residual (press-fit, FEA, закупка). Mechanical lock проти PEEK cold-flow creep: barbs h=0.28 α30°/β70° (base похідна ≈0.59) + DIN-471 retaining ring (реальні розміри під Ø shank, напр. Ø11→1.1×0.25 — НЕ умовні 0.8×0.6) + hex ≤0.05mm; press-fit 150°C >T_g. Без нього −60% contact pressure за 10р → втрата O-ring seal / вирив Zone 3. Барби = осьове утримання + anti-rotation, **НЕ ущільнення** (герметизує O-ring, `01_01 §4.2`). ~$0.30/анкер, комплементарний до §4.2 ΔCTE. Блокує 20+ річну надійність (TRL 7→8). Канон `01_01 §4.3`.
-- [x] 🤖 PicoGK CAD: annular barbs + DIN-471 groove ✅ (`207d104`, `MechanicalLock.cs`) — власний ratchet-SDF на hollow shank Zone 1 (Ø11) + Zone 3 (placeholder Ø). **Grounded-fixes над §4.3:** over-spec зуба (h=0.28 узгоджує 4 числа) · self-support orientation-conditional (`01_02 §1.6` tip-down/leading-down → 60° downface, Ti64 Sa≈15µm) · DIN-471 = реальні розміри під Ø · hollow-shell render-gotcha. **Альтернатива (нотатка, не зроблено):** helical barb — одна гвинтова фіча = pull-out + torque-out, замінила б §4.3 C hex
+- **Стан:** 🤖 PicoGK-геометрія SHIPPED (`MechanicalLock.cs` — asymmetric ratchet barbs + DIN-471 groove на hollow shank); 👤 bench-residual (press-fit/FEA/закупка). Mechanical lock проти PEEK cold-flow creep — три комплементарні фічі (barbs осьове утримання + DIN-471 retaining ring + hex anti-rotation; числа/геометрія/creep-таблиця — канон [`01_01 §4.3`](01_01_Coaxial_Gyroid_Topology_and_PEEK)). Барби = утримання, **НЕ ущільнення** (герметизує O-ring, `01_01 §4.2`). Без замка contact pressure падає −60% за 10р (§4.3) → втрата O-ring seal / вирив Zone 3. **Design-альтернатива (не зроблено):** helical barb = pull-out + torque-out в одній фічі, замінила б hex (§4.3 C). Блокує 20+ річну надійність.
 - [ ] 👤 Update CNC-чертежі: retaining ring grooves на anchor end Zone 1 + flange end Zone 3
-- [ ] 👤 Закупка DIN 471 **external** retaining rings Ti grade 2 (або 316SS) під обраний Ø shank (DIN 471 = зовнішнє, на вал; «internal» було помилкою — внутрішнє це DIN 472)
-- [ ] 👤 Update press-fit процедуру: temp 150°C (>T_g PEEK 143°C для Victrex 450G) + контрольована сила 800–1200 N
-- [ ] 👤 **FEA-валідація** ANSYS LS-DYNA з visco-elastic PEEK Prony model — simulation 10y creep, residual pull-out > 200 N
-- [ ] 👤 Stage 1 SLA-mock (HW.24): включити barb-detail у фотополімерну збірку для перевірки клацання
+- [ ] 👤 Закупка DIN 471 **external** retaining rings Ti grade 2 (або 316SS) під обраний Ø shank (DIN 471 = зовнішнє, на вал; внутрішнє = DIN 472)
+- [ ] 👤 Update press-fit процедуру: temp 150°C (>T_g PEEK 143°C Victrex 450G) + контрольована сила 800–1200 N
+- [ ] 👤 **FEA-валідація** ANSYS LS-DYNA visco-elastic PEEK Prony — 10y creep, residual pull-out > 200 N
+- [ ] 👤 Stage 1 SLA-mock (HW.24): barb-detail у фотополімерну збірку для перевірки клацання
+- [ ] 👤 **Belleville/disc-spring preload** (deferred chem-note triage → tracked тут): тримає clamp force анкер↔ксилема проти 20-річного Ti creep + thermal cycle — комплементарний до barbs+DIN-471; ≠ pogo contact-spring / ≠ capsule Z-stack [`02_02 §3.5`](02_02_Blind_Mate_Pogo_Pin_Interface)
 
 #### HW.28 — Anti-Overgrowth Shield для Zone 3 (NEW 2026-05-16)
 - **P2** · 👤 · ⚪ · → `01_04 §5.5`
