@@ -159,6 +159,39 @@ def test_kinetics_monte_carlo_json():
     assert len(data["scenarios"]) >= 4
 
 
+ALLOY_SKUS = ("Ti-6Al-4V", "Ti-6Al-7Nb", "CP-Ti-Gr4", "beta-Ti-13Nb-13Zr", "Ta", "Ti-15Zr")
+
+
+def test_gusak_degradation_multi_alloy():
+    """Script 51 outputs V/Al release per candidate alloy (Stage-2 bake-off, 01_02 §2.5).
+    Sanity: 4V control ≈ 1.12 µg/cm²/yr V (the 56× baseline); every V-free alloy releases ~0."""
+    path = KINETICS / "gusak_degradation.json"
+    if not path.exists():
+        pytest.skip("gusak_degradation.json not computed")
+    kd = json.loads(path.read_text())["kirkendall_diffusion"]
+    for alloy in ALLOY_SKUS:
+        assert alloy in kd, f"missing alloy {alloy}"
+        assert "20" in kd[alloy] and "V_ug_cm2" in kd[alloy]["20"]
+    assert abs(kd["Ti-6Al-4V"]["1"]["V_ug_cm2"] - 1.12) < 0.05   # control baseline preserved
+    for vfree in ALLOY_SKUS[1:]:
+        assert kd[vfree]["20"]["V_ug_cm2"] == 0.0, f"{vfree} should release zero V"
+    assert kd["Ti-6Al-7Nb"]["20"]["Al_ug_cm2"] > 0       # 7Nb still leaks Al (phytotoxic)
+    assert kd["CP-Ti-Gr4"]["20"]["Al_ug_cm2"] == 0.0     # zero-Al alloy doesn't
+
+
+def test_lame_alloy_comparative():
+    """Script 50 outputs a per-alloy comparative (E + CTE-mismatch stress, 01_02 §2.5).
+    Sanity: all 6 present; β-Ti lower-E than 4V; press-fit alloy-robust (PEEK SF ≥ 3)."""
+    path = KINETICS / "thermal_stress_lame.json"
+    if not path.exists():
+        pytest.skip("thermal_stress_lame.json not computed")
+    cmp = json.loads(path.read_text())["alloy_comparative"]
+    for alloy in ALLOY_SKUS:
+        assert alloy in cmp, f"missing alloy {alloy}"
+        assert cmp[alloy]["peek_safety_factor"] >= 3.0, f"{alloy} press-fit SF < 3"
+    assert cmp["beta-Ti-13Nb-13Zr"]["E_GPa"] < cmp["Ti-6Al-4V"]["E_GPa"]   # β-Ti is the low-E lever
+
+
 # ── Constants consistency ──
 
 def test_constants_importable():

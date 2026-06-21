@@ -13,6 +13,50 @@
       "yield_MPa": 100.0
     }
   },
+  "alloy_comparative": {
+    "Ti-6Al-4V": {
+      "E_GPa": 110.0,
+      "alpha_1K": 8.6e-06,
+      "yield_MPa": 880.0,
+      "sigma_t_worst_MPa": 29.73,
+      "peek_safety_factor": 3.4
+    },
+    "Ti-6Al-7Nb": {
+      "E_GPa": 103.0,
+      "alpha_1K": 8.4e-06,
+      "yield_MPa": 850.0,
+      "sigma_t_worst_MPa": 29.88,
+      "peek_safety_factor": 3.3
+    },
+    "CP-Ti-Gr4": {
+      "E_GPa": 104.0,
+      "alpha_1K": 8.6e-06,
+      "yield_MPa": 480.0,
+      "sigma_t_worst_MPa": 29.73,
+      "peek_safety_factor": 3.4
+    },
+    "beta-Ti-13Nb-13Zr": {
+      "E_GPa": 80.0,
+      "alpha_1K": 8.8e-06,
+      "yield_MPa": 900.0,
+      "sigma_t_worst_MPa": 29.57,
+      "peek_safety_factor": 3.4
+    },
+    "Ta": {
+      "E_GPa": 186.0,
+      "alpha_1K": 6.5e-06,
+      "yield_MPa": 345.0,
+      "sigma_t_worst_MPa": 31.35,
+      "peek_safety_factor": 3.2
+    },
+    "Ti-15Zr": {
+      "E_GPa": 100.0,
+      "alpha_1K": 8.5e-06,
+      "yield_MPa": 950.0,
+      "sigma_t_worst_MPa": 29.8,
+      "peek_safety_factor": 3.4
+    }
+  },
   "geometry_mm": {
     "r_inner": 0.8,
     "r_interface": 5.5,

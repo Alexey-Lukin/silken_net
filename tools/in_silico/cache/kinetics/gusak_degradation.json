@@ -17,30 +17,167 @@
     }
   },
   "kirkendall_diffusion": {
-    "1": {
-      "V_ug_cm2": 1.118401,
-      "Al_ug_cm2": 8.38801,
-      "V_safe": false
+    "Ti-6Al-4V": {
+      "1": {
+        "V_ug_cm2": 1.118401,
+        "Al_ug_cm2": 8.38801,
+        "V_safe": false
+      },
+      "5": {
+        "V_ug_cm2": 5.592007,
+        "Al_ug_cm2": 41.94005,
+        "V_safe": false
+      },
+      "10": {
+        "V_ug_cm2": 11.184013,
+        "Al_ug_cm2": 83.880101,
+        "V_safe": false
+      },
+      "20": {
+        "V_ug_cm2": 22.368027,
+        "Al_ug_cm2": 167.760202,
+        "V_safe": false
+      },
+      "40": {
+        "V_ug_cm2": 44.736054,
+        "Al_ug_cm2": 335.520403,
+        "V_safe": false
+      }
     },
-    "5": {
-      "V_ug_cm2": 5.592007,
-      "Al_ug_cm2": 41.94005,
-      "V_safe": false
+    "Ti-6Al-7Nb": {
+      "1": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 8.558421,
+        "V_safe": true
+      },
+      "5": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 42.792106,
+        "V_safe": true
+      },
+      "10": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 85.584211,
+        "V_safe": true
+      },
+      "20": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 171.168422,
+        "V_safe": true
+      },
+      "40": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 342.336845,
+        "V_safe": true
+      }
     },
-    "10": {
-      "V_ug_cm2": 11.184013,
-      "Al_ug_cm2": 83.880101,
-      "V_safe": false
+    "CP-Ti-Gr4": {
+      "1": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 0.0,
+        "V_safe": true
+      },
+      "5": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 0.0,
+        "V_safe": true
+      },
+      "10": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 0.0,
+        "V_safe": true
+      },
+      "20": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 0.0,
+        "V_safe": true
+      },
+      "40": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 0.0,
+        "V_safe": true
+      }
     },
-    "20": {
-      "V_ug_cm2": 22.368027,
-      "Al_ug_cm2": 167.760202,
-      "V_safe": false
+    "beta-Ti-13Nb-13Zr": {
+      "1": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 0.0,
+        "V_safe": true
+      },
+      "5": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 0.0,
+        "V_safe": true
+      },
+      "10": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 0.0,
+        "V_safe": true
+      },
+      "20": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 0.0,
+        "V_safe": true
+      },
+      "40": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 0.0,
+        "V_safe": true
+      }
     },
-    "40": {
-      "V_ug_cm2": 44.736054,
-      "Al_ug_cm2": 335.520403,
-      "V_safe": false
+    "Ta": {
+      "1": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 0.0,
+        "V_safe": true
+      },
+      "5": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 0.0,
+        "V_safe": true
+      },
+      "10": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 0.0,
+        "V_safe": true
+      },
+      "20": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 0.0,
+        "V_safe": true
+      },
+      "40": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 0.0,
+        "V_safe": true
+      }
+    },
+    "Ti-15Zr": {
+      "1": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 0.0,
+        "V_safe": true
+      },
+      "5": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 0.0,
+        "V_safe": true
+      },
+      "10": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 0.0,
+        "V_safe": true
+      },
+      "20": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 0.0,
+        "V_safe": true
+      },
+      "40": {
+        "V_ug_cm2": 0.0,
+        "Al_ug_cm2": 0.0,
+        "V_safe": true
+      }
     }
   },
   "press_fit_H7s6": {

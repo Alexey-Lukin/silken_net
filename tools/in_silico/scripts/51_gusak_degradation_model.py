@@ -19,7 +19,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import KINETICS_DIR, REPO_ROOT
+from lib.constants import ALLOY_PROPERTIES, KINETICS_DIR, REPO_ROOT
 from lib.utils import banner
 
 OUT_JSON = KINETICS_DIR / "gusak_degradation.json"
@@ -56,56 +56,53 @@ def arrhenius_aging():
 
 
 def kirkendall_diffusion():
-    """Fick's 2nd law: V³⁺/Al³⁺ diffusion through TiO₂ passive layer."""
-    banner("2. Kirkendall Ion Diffusion (V³⁺/Al³⁺ through TiO₂)")
+    """Fick's 1st law: V/Al diffusion through the passive oxide, PER candidate alloy (Stage-2
+    coin bake-off, 01_02 §2.5). Composition-driven: release ∝ bulk wt%, so 4% V gives the 56×
+    baseline and every V-free alloy gives ~0. The oxide-diffusion D is a SHARED literature constant
+    (per-alloy oxide diffusivity is rarely published; the composition effect dominates the small
+    Nb/Zr/Ta oxide-stability difference). Output is nested {alloy: {year: {...}}}."""
+    banner("2. Kirkendall Ion Diffusion (V/Al through the oxide) — per alloy")
 
-    # Diffusion coefficients through TiO₂ passive layer (literature)
-    D_V = 1e-20    # m²/s — V in TiO₂ (very slow, dense oxide)
-    D_AL = 5e-20   # m²/s — Al in TiO₂ (slightly faster)
-    L_OXIDE = 5e-9  # m — TiO₂ passive layer thickness (5 nm)
-
-    # Bulk concentrations in Ti-6Al-4V
-    C0_V = 4.0     # wt% — vanadium in alloy
-    C0_AL = 6.0    # wt% — aluminum in alloy
-
-    # Surface area and time
-    A = 2e-4        # m² (2 cm²)
-    RHO_TI = 4430   # kg/m³
+    # Diffusion coefficients through the passive oxide (literature; shared across Ti alloys, 01_02 §2.5)
+    D_V = 1e-20     # m²/s — V through TiO₂ (very slow, dense oxide)
+    D_AL = 5e-20    # m²/s — Al through TiO₂ (slightly faster)
+    L_OXIDE = 5e-9  # m — passive layer thickness (5 nm)
+    A = 2e-4        # m² (2 cm² coin face)
+    V_TARGET = 0.02  # µg/cm² — toxicological target (01_02 §2.4)
 
     years = [1, 5, 10, 20, 40]
 
-    print(f"  D(V) = {D_V:.0e} m²/s, D(Al) = {D_AL:.0e} m²/s")
-    print(f"  TiO₂ layer: {L_OXIDE*1e9:.0f} nm")
-    print(f"  Surface area: {A*1e4:.0f} cm²")
-    print()
-    print(f"  {'Years':>6s}  {'V release':>12s}  {'Al release':>12s}  {'V target':>10s}")
-    print(f"  {'-'*45}")
+    print(f"  D(V) = {D_V:.0e} m²/s, D(Al) = {D_AL:.0e} m²/s · oxide {L_OXIDE*1e9:.0f} nm · {A*1e4:.0f} cm²")
+    print(f"  {'alloy':>20s}  {'V wt%':>6s}  {'Al wt%':>6s}  {'V@20yr':>10s}  {'Al@20yr':>10s}  {'V safe':>7s}")
+    print(f"  {'-'*68}")
 
     results = {}
-    for y in years:
-        t = y * 365.25 * 86400  # seconds
+    for alloy, props in ALLOY_PROPERTIES.items():
+        c0_v, c0_al, rho = props["V_wt"], props["Al_wt"], props["rho_kg_m3"]
+        # Steady-state Fick's 1st law flux: J = D · C0 / L  (C0 = wt-fraction · density)
+        j_v = D_V * (c0_v / 100 * rho) / L_OXIDE     # kg/(m²·s)
+        j_al = D_AL * (c0_al / 100 * rho) / L_OXIDE
+        per_year = {}
+        for y in years:
+            t = y * 365.25 * 86400  # seconds
+            m_v = j_v * A * t * 1e6
+            m_al = j_al * A * t * 1e6
+            m_v_cm2 = m_v / (A * 1e4)   # µg/cm²
+            m_al_cm2 = m_al / (A * 1e4)
+            per_year[str(y)] = {
+                "V_ug_cm2": round(m_v_cm2, 6),
+                "Al_ug_cm2": round(m_al_cm2, 6),
+                "V_safe": m_v_cm2 < V_TARGET,
+            }
+        v20 = per_year["20"]["V_ug_cm2"]
+        al20 = per_year["20"]["Al_ug_cm2"]
+        ok = "✅" if per_year["20"]["V_safe"] else "❌"
+        print(f"  {alloy:>20s}  {c0_v:>6.1f}  {c0_al:>6.1f}  {v20:>8.3f}µg  {al20:>8.3f}µg  {ok:>7s}")
+        results[alloy] = per_year
 
-        # Flux through oxide: J = D * C0 / L (steady-state Fick's 1st law)
-        J_V = D_V * (C0_V / 100 * RHO_TI) / L_OXIDE  # kg/(m²·s)
-        J_AL = D_AL * (C0_AL / 100 * RHO_TI) / L_OXIDE
-
-        # Total mass released: m = J * A * t
-        m_V = J_V * A * t * 1e6  # µg
-        m_AL = J_AL * A * t * 1e6
-
-        # Per unit area
-        m_V_cm2 = m_V / (A * 1e4)  # µg/cm²
-        m_AL_cm2 = m_AL / (A * 1e4)
-
-        ok = "✅" if m_V_cm2 < 0.02 else "❌"
-        print(f"  {y:>6d}  {m_V_cm2:>10.4f} µg  {m_AL_cm2:>10.4f} µg  {ok} (<0.02)")
-
-        results[str(y)] = {
-            "V_ug_cm2": round(m_V_cm2, 6),
-            "Al_ug_cm2": round(m_AL_cm2, 6),
-            "V_safe": m_V_cm2 < 0.02,
-        }
-
+    print()
+    print("  Composition dominates: V-free alloys release ZERO V (the 56× toxicity driver gone);")
+    print("  Al-bearing (4V, 7Nb) still leak Al (phytotoxic in acidic sap, 01_04 §4.2 tree-lens).")
     return results
 
 

@@ -34,7 +34,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import KINETICS_DIR, REPO_ROOT
+from lib.constants import ALLOY_PROPERTIES, KINETICS_DIR, REPO_ROOT
 from lib.utils import banner
 
 OUT_DIR = KINETICS_DIR
@@ -129,6 +129,39 @@ def cold_effective_interference(delta_init: float, r: float, dT_cold: float):
     return delta_init - loss, loss
 
 
+def alloy_comparative() -> dict:
+    """Per-alloy comparative for the Stage-2 coin bake-off (01_02 §2.5). Two signals: (1) the
+    worst-case Ti↔PEEK thermal stress driven by the alloy CTE mismatch with PEEK — the Ti CTE
+    barely moves it (PEEK's 47e-6 dominates the mismatch), so this CONFIRMS the press-fit is
+    alloy-ROBUST; (2) the bulk E that sets the gyroid isoelasticity (E_gyroid ≈ E·(1−φ)^n) — the
+    REAL bake-off lever: β-Ti's low 80 GPa pulls E toward wood (9–16), the HW.33 sheet/network knob.
+    Numbers compare against the coin nano-indentation (criterion 4) when in-vitro data lands."""
+    banner("Alloy comparative (Stage-2 bake-off) — CTE-mismatch stress + gyroid-E lever")
+    dT_worst = -30.0 - T_ASSEMBLY            # coldest ΔT (Cherkasy winter)
+    k = R_OUTER / R_INTERFACE
+    print(f"  {'alloy':>20s}  {'E (GPa)':>8s}  {'a (1e-6/K)':>11s}  {'sig_t @-30C':>13s}  {'note':>6s}")
+    print(f"  {'-'*64}")
+    out = {}
+    for alloy, props in ALLOY_PROPERTIES.items():
+        alpha = props["alpha_1K"]
+        delta_r = (ALPHA_PEEK - alpha) * dT_worst * R_INTERFACE
+        sigma_r = E_PEEK * abs(delta_r) / R_INTERFACE / (k**2 - 1)
+        sigma_t = sigma_r * (k**2 + 1) / (k**2 - 1)
+        out[alloy] = {
+            "E_GPa": props["E_GPa"],
+            "alpha_1K": alpha,
+            "yield_MPa": props["yield_MPa"],
+            "sigma_t_worst_MPa": round(sigma_t / 1e6, 2),
+            "peek_safety_factor": round(SIGMA_YIELD_PEEK / max(sigma_t, 1), 1),
+        }
+        flag = "low-E" if props["E_GPa"] < 90 else ""
+        print(f"  {alloy:>20s}  {props['E_GPa']:>8.0f}  {alpha*1e6:>11.1f}  {sigma_t/1e6:>11.2f} MPa  {flag:>6s}")
+    print()
+    print("  Press-fit is alloy-ROBUST (PEEK CTE 47e-6 dominates). The E column is the bake-off signal:")
+    print("  beta-Ti 80 GPa lowers gyroid E toward wood (9-16) -> softens the HW.33 sheet/network call.")
+    return out
+
+
 def main() -> int:
     banner("HW.3.IS — Lamé thermal stress (Ti↔PEEK press-fit)")
 
@@ -181,6 +214,8 @@ def main() -> int:
     print("  but the real outer surface is the wound (wood E≈PEEK + callus), so that is a conservative")
     print("  artifact, not a seal path. Hermetic seal = the AXIAL O-ring at the flange (immune to this).")
 
+    alloy_cmp = alloy_comparative()
+
     banner("Verdict")
     print(f"  Thermal stress: {abs(worst['sigma_t_MPa']):.2f} MPa ≪ PEEK yield {SIGMA_YIELD_PEEK/1e6:.0f} MPa (safety {worst['safety_factor']:.1f}×)")
     print(f"  Press-fit P_c (H7/s6 band): {p0_min/1e6:.2f}-{p0_max/1e6:.2f} → {pc_20_min:.2f}-{pc_20_max:.2f} MPa over 20yr (semicrystalline floor)")
@@ -231,6 +266,7 @@ def main() -> int:
             "Ti-6Al-4V": {"alpha": ALPHA_TI, "E_GPa": E_TI/1e9, "nu": NU_TI},
             "PEEK-450G": {"alpha": ALPHA_PEEK, "E_GPa": E_PEEK/1e9, "nu": NU_PEEK, "yield_MPa": SIGMA_YIELD_PEEK/1e6},
         },
+        "alloy_comparative": alloy_cmp,
         "geometry_mm": {"r_inner": R_INNER*1e3, "r_interface": R_INTERFACE*1e3, "r_outer": R_OUTER*1e3},
         "worst_case": {
             "T_C": worst["T_C"],

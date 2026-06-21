@@ -71,3 +71,44 @@ E_OS_MEDIATOR_MV_NHE = 309        # was a +200 mV under-specified anchor pre-OS-
 E_FAD_GDH_MV_SHE = -265
 OS_DEVICE_MEDIATOR_LIGAND = "4,4'-dimethyl-2,2'-bipyridine"  # os_complex.json identity (21f = sole owner)
 CASCADE_DRIVING_FORCE_MV = E_OS_MEDIATOR_MV_NHE - E_FAD_GDH_MV_SHE   # +574 mV (−0.574 eV downhill)
+
+# ── Structural alloy candidates — Stage-2 coin bake-off (01_02 §2.5, HW.24) ──
+# Composition (wt%) + mechanical/thermal props feeding the V/Al-release (script 51) + Lamé (script 50)
+# comparative. Literature/ASTM implant specs. The oxide-diffusion D_V/D_Al stays a SHARED constant in
+# script 51 (per-alloy oxide-diffusion is rarely published → the COMPOSITION effect dominates: 4% V → V
+# release, 0% V → none). Tree-first (01_04 §4.2): V + Al are phytotoxic in acidic sap; Nb/Zr/Ta are
+# bioinert (their release is informational, not a pass/fail gate). Baseline stays 4V — the coin
+# down-selects the rest (no-premature-canon, 01_02 §2.5).
+ALLOY_BASELINE = "Ti-6Al-4V"
+ALLOY_PROPERTIES = {
+    "Ti-6Al-4V": {
+        "spec": "ASTM F136 (control / print reference)",
+        "V_wt": 4.0, "Al_wt": 6.0, "Nb_wt": 0.0, "Zr_wt": 0.0,
+        "E_GPa": 110.0, "nu": 0.33, "alpha_1K": 8.6e-6, "yield_MPa": 880.0, "rho_kg_m3": 4430.0,
+    },
+    "Ti-6Al-7Nb": {
+        "spec": "ASTM F1295 (V-free, direction a)",
+        "V_wt": 0.0, "Al_wt": 6.0, "Nb_wt": 7.0, "Zr_wt": 0.0,
+        "E_GPa": 103.0, "nu": 0.31, "alpha_1K": 8.4e-6, "yield_MPa": 850.0, "rho_kg_m3": 4520.0,
+    },
+    "CP-Ti-Gr4": {
+        "spec": "ASTM F1581 (zero V/Al, alpha-Ti)",
+        "V_wt": 0.0, "Al_wt": 0.0, "Nb_wt": 0.0, "Zr_wt": 0.0,
+        "E_GPa": 104.0, "nu": 0.34, "alpha_1K": 8.6e-6, "yield_MPa": 480.0, "rho_kg_m3": 4510.0,
+    },
+    "beta-Ti-13Nb-13Zr": {
+        "spec": "ASTM F1713 (low-E V/Al-free)",
+        "V_wt": 0.0, "Al_wt": 0.0, "Nb_wt": 13.0, "Zr_wt": 13.0,
+        "E_GPa": 80.0, "nu": 0.33, "alpha_1K": 8.8e-6, "yield_MPa": 900.0, "rho_kg_m3": 5050.0,
+    },
+    "Ta": {
+        "spec": "ASTM F560 (bioinert benchmark; coin-only, heavy)",
+        "V_wt": 0.0, "Al_wt": 0.0, "Nb_wt": 0.0, "Zr_wt": 0.0,
+        "E_GPa": 186.0, "nu": 0.34, "alpha_1K": 6.5e-6, "yield_MPa": 345.0, "rho_kg_m3": 16650.0,
+    },
+    "Ti-15Zr": {
+        "spec": "ASTM F2066-class (Roxolid; V/Al-free, high-strength)",
+        "V_wt": 0.0, "Al_wt": 0.0, "Nb_wt": 0.0, "Zr_wt": 15.0,
+        "E_GPa": 100.0, "nu": 0.33, "alpha_1K": 8.5e-6, "yield_MPa": 950.0, "rho_kg_m3": 4800.0,
+    },
+}
