@@ -8,61 +8,76 @@
     },
     "PEEK-450G": {
       "alpha": 4.7e-05,
-      "E_GPa": 3.6,
+      "E_GPa": 4.0,
       "nu": 0.4,
       "yield_MPa": 100.0
     }
   },
   "geometry_mm": {
-    "r_inner": 3.0,
-    "r_interface": 5.0,
-    "r_outer": 8.0
+    "r_inner": 0.8,
+    "r_interface": 5.5,
+    "r_outer": 7.5
   },
   "worst_case": {
     "T_C": -30.0,
-    "sigma_t_MPa": -10.111242603550291,
-    "safety_factor": 9.889981273408244
+    "sigma_t_MPa": -29.727337278106493,
+    "safety_factor": 3.3639070685838965
   },
   "press_fit": {
-    "interference_um": 50.0,
-    "P_c_initial_MPa": 34.73684210526315,
+    "fit": "H7/s6 (ISO 286, \u00d811)",
+    "interference_diametral_um": [
+      5.0,
+      34.0
+    ],
+    "contact_radius_mm": 5.5,
+    "P_c_initial_MPa": [
+      0.4878506426494044,
+      3.31738437001595
+    ],
     "relaxation_model": "stress relaxation (constant strain), Maxwell+floor",
     "relax_floor": 0.65,
     "relax_tau_years": 1.0,
-    "P_c_20yr_MPa": 22.578947393480334,
+    "P_c_20yr_MPa": [
+      0.31710291807405017,
+      2.156299842903541
+    ],
     "sap_pressure_MPa": 0.5,
-    "seal_holds_20yr": true,
+    "seal_holds_20yr_min_fit": false,
     "relaxation_series": [
       {
         "years": 0,
-        "P_c_MPa": 34.73684210526315
+        "P_c_min_MPa": 0.4878506426494044,
+        "P_c_max_MPa": 3.31738437001595
       },
       {
         "years": 1,
-        "P_c_MPa": 27.051586890031743
+        "P_c_min_MPa": 0.3799174953496601,
+        "P_c_max_MPa": 2.5834389683776884
       },
       {
         "years": 5,
-        "P_c_MPa": 22.660866618778346
+        "P_c_min_MPa": 0.31825340684288733,
+        "P_c_max_MPa": 2.164123166531634
       },
       {
         "years": 10,
-        "P_c_MPa": 22.579499335988164
+        "P_c_min_MPa": 0.3171106696568317,
+        "P_c_max_MPa": 2.156352553666456
       },
       {
         "years": 20,
-        "P_c_MPa": 22.578947393480334
+        "P_c_min_MPa": 0.31710291807405017,
+        "P_c_max_MPa": 2.156299842903541
       }
     ],
-    "note": "relax_floor/tau are literature-grounded estimates; Prony fit pending (Gusak, 08_01 \u00a71.2)"
+    "note": "P_c uses the bug-fixed contact radius b=R_INTERFACE (was R_INNER -> ~2.6x over-stated) + the H7/s6 band (was a 50um placeholder). At MIN fit the relaxed P_c may be <= sap, so the elastomer O-ring is the ESSENTIAL seal. relax_floor/tau = interim literature-Prony (NOT Gusak-authoritative, 08_01 \u0421\u0442\u0430\u0442\u0442\u044f 2)."
   },
-  "winter_cold_leak": {
+  "winter": {
     "dT_K": -50.0,
-    "outer_radius_mm": 8.0,
-    "interference_loss_um": 15.36,
-    "effective_interference_um": 34.64000000000001,
-    "outer_survives_winter": true,
-    "note": "OUTER interface is the winter weak link (PEEK shrinks from outer Ti shell); inner tightens"
+    "outer_radius_mm": 7.5,
+    "inner_interface": "tightens in cold (PEEK grips the Ti shaft harder) -- good",
+    "hypothetical_outer_shell_loss_um": 14.399999999999999,
+    "note": "frozen anchor PEEK OD (O15) sits in the TREE (compliant wood + callus), NOT a rigid outer Ti shell -> the old outer-Ti cold-leak was a baseline artifact. Seal = axial O-ring at the flange."
   },
   "sealing": "primary hermetic seal = elastomer O-ring (FKM/EPDM); PEEK = structural isolator + residual P_c; barbs = axial pull-out + anti-rotation only (NOT sealing)",
   "verdict": "Ti\u2194PEEK press-fit survives 20+ years seasonal cycling (stress relaxation to semicrystalline floor, not creep collapse)"

@@ -116,17 +116,17 @@ def press_fit_window():
     # Material properties
     ALPHA_TI = 8.6e-6   # 1/K
     ALPHA_PEEK = 47e-6   # 1/K
-    E_PEEK = 3.6e9       # Pa
+    E_PEEK = 4.0e9       # Pa — Victrex 450G datasheet (23°C); was 3.6e9
     SIGMA_Y_PEEK = 100e6 # Pa
 
-    # Nominal dimensions (mm)
-    D_SHAFT = 10.0       # mm — Ti shaft (Zone 1) diameter
-    # H7 hole tolerance: 0 to +15 µm for 10mm
-    # s6 shaft tolerance: +18 to +27 µm for 10mm
+    # Nominal dimensions (mm) — FROZEN Ø11 shaft (HW.33, 2026-06-20). ISO 286 size band 10-18 mm.
+    D_SHAFT = 11.0       # mm — Ti shaft (Zone 1) diameter (frozen Ø11; was Ø10 baseline)
+    # H7 hole tolerance: 0 to +18 µm (10-18 mm band)
+    # s6 shaft tolerance: +23 to +34 µm (10-18 mm band)
     TOL_H7_MIN = 0       # µm
-    TOL_H7_MAX = 15      # µm
-    TOL_S6_MIN = 18      # µm
-    TOL_S6_MAX = 27      # µm
+    TOL_H7_MAX = 18      # µm
+    TOL_S6_MIN = 23      # µm
+    TOL_S6_MAX = 34      # µm
 
     T_ASSEMBLY = 20.0    # °C
     T_RANGE = [-30, -10, 0, 20, 40]
