@@ -202,6 +202,7 @@
 - [ ] 👤 HW.3.IS: **Prony-series authoritative fit** PEEK 450G (Maxwell-Wiechert, measured creep) → Гусак (`08_01` Стаття 2) — замінює interim 2-term; двері відкриті
 - [ ] 👤🤖 HW.3.IS: **barb-tip stress-concentration FEA** → Гусак (важка mesh-FEA, ANSYS, `00_02 §4a`). **Self-own-кандидат якщо Гусак мовчить** (light analytical bound; in-silico вже дав Lamé-bound) — DEFERRED, зберегти
 - [ ] 🤖 HW.3.IS: **MD ion-permeation Ti²⁺/V³⁺ через PEEK** (MSD, класична MD як script 13) — підтвердити «корозія не отруїть ферменти 20р»; **НЕ DFT** (DFT лише single-jump NEB). DEFERRED — окремий важкий milestone (~2-3 тижні GPU), не частина geom-sync; зберегти
+- [ ] 🤖 HW.3.IS: (nice-to-have) **unified thick-wall Lamé** — об'єднати interference-hoop (script 51) + thermal-mismatch (script 50) в ОДНУ модель (зараз окремо: thermal SF 3.4× ∥ press-fit hoop SF 2.5× @ max-fit; комбінований @ −30°C+max-fit може впасти ~1.4× — варто звірити). Light analytical, не mesh. Деталі → `THERMAL_STRESS_REPORT.md` Remaining Tasks
 
 #### HW.5 — Enzyme lifespan + Gen 2.0 chemistry stack
 - **P1** · 👤 · 🟡 · → `01_03 §1–3`
