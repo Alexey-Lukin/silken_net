@@ -291,18 +291,18 @@
 - [ ] 👤 Замінити SMD резистори якщо мисматч
 - [ ] 👤 Задокументувати фінальні номінали
 
-#### HW.8 — Pogo pin specification (8 блокерів)
-- **P1** · 👤 · ⚪ · → `02_02`
-- **Стан:** Не розпочато — фіналізація сліпого pogo-інтерфейсу, 7 суб-блокерів: напилення пінів Au + Hard-Gold ENIG на центральній площадці анкера (проти Ti↔Au гальванопари), spring force ~100г, байонет ✅, O-ring/IP-клас, соосність, Z-stack tolerance ✅ (3-spring: Pogo 50–70% ∧ O-ring 15–30% ∧ Sil-Pad 30–40%; spacer+bayonet, HW.8.7). **Capsule-end assembly (`02_02 §4.4`) додав ГЕОМ. Z-нитку** (поза spring-tolerance HW.8.7): Деталь3 lug-Z 15.5 ↔ Деталь4 lock-groove-Z 3.5 **незведені** → при bayonet-datum bayonet-Z 6.42 + RF 8<12 мм → reconcile lock-groove-Z/lug-Z на bench. Канон `02_02` (§Підсумок audit + §1.2 CRITICAL центральна площадка / §3.5 Z-stack / §4.4 mate-audit).
-- [ ] 👤 HW.8.1: Матеріал напилення piн → Gold (Hard Gold, Au 0.76 µm)
-- [ ] 👤 **HW.8.2 (NEW 2026-05-16): Hard Gold ENIG на центральній площадці анкера** (торець виводу шини Zone 1, ø 4–5 мм) — **обов'язково**, інакше золотий pogo притискається до голого Ti → гальванічна пара Ti↔Au → Rc drift > 500 мОм за 18–36 міс → cold-start fail. Передати specмапу селективного gold-plating заводу (~$0.05/анкер). Деталі — `02_02 §1.2` ⚠️ блок.
+#### HW.8 — Pogo pin specification (sub-blockers 8.1–8.9)
+- **P1** · 🤖+👤 · 🟡 · → `02_02`
+- **Стан:** Pogo-інтерфейс — фіналізація; **machine-вирішено:** bayonet-фіксація ✅ (детермінована Z, різьба=FAIL — `02_02 §4.3`) + Z-stack ✅ обчислено (3-spring RSS, min mitigation spacer 0.1мм + bayonet hard-stop тримає всі вікна — `02_02 §3.5`; freeze розблокував Radome/B2B/PCBA). Решта 👤-bench (нижче): Au-напилення + Hard-Gold central-pad (Ti↔Au гальванопара, `02_02 §1.2`), spring force, O-ring/IP (`02_02 §3.2`), соосність, + 2 MATE-Ø нитки (lug/Z 8.8, shank-Ø 8.9 — mate-audit `02_02 §4.4/§4.5`). Канон `02_02`.
+- [ ] 👤 HW.8.1: Матеріал напилення pin → Gold (Hard Gold, Au 0.76 µm)
+- [ ] 👤 **HW.8.2: Hard Gold ENIG на центральній площадці** (торець шини Zone 1, ø 4–5 мм) — обов'язково (інакше Ti↔Au гальванопара → Rc drift → cold-start fail); передати specмапу selective gold-plating заводу. `02_02 §1.2`
 - [ ] 👤 HW.8.3: Сила пружини → ~100 г/пін, Travel ≥ 1.5 мм
-- [x] 👤 HW.8.4: Механізм фіксації → **Quarter-turn bayonet ✅ ЗАТВЕРДЖЕНО 2026-06-20** (Z-stack-driven: детермінована Z халвить CNC-residual ±0.11→±0.07 → O-ring тримається; різьба = continuous engagement = FAIL). Залишок 👤: CAD + SLA-прототип. `02_02 §4.3`
-- [ ] 👤 HW.8.5: O-ring → EPDM, **CS 1.78 мм, 15-30% compression** (Parker static; reconcile drift → home `02_02 §3.2`); цільовий IP (IP67/IP68) — затвердити
-- [ ] 👤 HW.8.6: Допуски соосності (XY-площина) → Lead-in chamfer
-- [x] 🤖+👤 **HW.8.7 Z-stack ✅ обчислено 2026-06-20** (`tools/in_silico/scripts/52_z_stack_tolerance.py`): **3-spring** (Pogo ∥ acoustic Sil-Pad на спільному Power↔Zone3 gap + O-ring окремо) 1D RSS+worst-case. Сирий stack FAIL (RSS ±0.45 ≫ найвужче вікно); **spacer сам теж FAIL** (O-ring→13.7%); **min mitigation = spacer 0.1мм + bayonet hard-stop** → всі 3 вікна тримаються (pogo 55-65% · O-ring 16-24% · pad 28-42%, incl 20-р creep). Канон `02_02 §3.5` (Sil-Pad-gap закрито). **Залишок 👤:** фіз-bench QA-вимір D3+D4 + robot spacer-selection. **P0** freeze → ✅ розблокував Radome/B2B/PCBA.
-- [ ] 👤 **HW.8.8 (NEW 2026-06-20): lug/Z mate reconcile** — capsule-end assembly (`02_02 §4.4`) виявив, що bayonet-геометрія Деталь3↔Деталь4 НЕ зведена (поза spring-tolerance HW.8.7): lug-Z 15.5 ↔ lock-groove-Z 3.5 → bayonet-Z **6.42 мм** off + RF antenna↔Ti **8<12 мм** при bayonet-datum. Bench: переглянути `lug_protrusion` + `lock_groove_z` + `lug_z` **ЦІЛІСНО** (placeholder; HW.8.4 bayonet вже ✅) так, щоб і radial (skirt-напрямок — `02_02 §4.4` рекомендація, → HW.17/HW.33), і Z зійшлися в одному заході; + HFSS на Ø30-overhang. `02_02 §4.4` + §3.5
-- [ ] 👤 **HW.8.9 (NEW 2026-06-20): press-fit shank-Ø reconcile (осьовий стек)** — `AxialStack.cs` (`02_02 §4.5`) виявив, що Zone 2↔Zone 3 НЕ press-fit'иться: shank Ø9 (placeholder, `cathode_flange` / HW.26) у bore Ø11 = **1 мм зазор/сторону** (interference −1.0; промах ~50× від мікронного H7/s6, ISO 286). Bench: підібрати shank-Ø під bore Ø11 з реальним **H7/s6** tolerance-band (+десятки µm interference) — **разом** із lug/Z (HW.8.8), щоб осьова + bayonet геометрія зійшлися в одному заході. Дотичне: занурення Zone-1 у втулку (зараз 30 мм, budget 6 мм до зустрічі shank'ів) vs довжина шини; осьову опору зараз тримає Zone-3 фланець Ø25 на торець втулки (shoulder-rest), не shank-натяг. `02_02 §4.5`
+- [ ] 👤 HW.8.4: bayonet CAD + SLA-прототип (механізм фіксації ✅ затверджено → `02_02 §4.3`)
+- [ ] 👤 HW.8.5: O-ring → EPDM, CS 1.78 мм, 15-30% compression (`02_02 §3.2`); цільовий IP (IP67/IP68) затвердити
+- [ ] 👤 HW.8.6: Допуски соосності (XY) → Lead-in chamfer
+- [ ] 👤 HW.8.7: фіз-bench QA-вимір D3+D4 + robot spacer-selection (Z-stack ✅ обчислено → `02_02 §3.5`)
+- [ ] 👤 **HW.8.8: lug/Z mate reconcile** — bayonet Деталь3↔4 НЕ зведена (lug-Z 15.5 ↔ lock-groove-Z 3.5 → bayonet-Z 6.42 + RF 8<12мм); bench: lug_protrusion/lock_groove_z/lug_z цілісно + radial skirt (→ HW.17/HW.33) + HFSS Ø30. `02_02 §4.4`
+- [ ] 👤 **HW.8.9: press-fit shank-Ø reconcile** — Zone 2↔3 НЕ press-fit (shank Ø9 placeholder у bore Ø11 = 1мм зазор, ~50× промах H7/s6); bench: shank-Ø під bore Ø11 H7/s6 — разом із 8.8. `02_02 §4.5`
 
 #### HW.9 — PCB KiCad layouts
 - **P1** · 👤 · ⚪ · → `02_01`
