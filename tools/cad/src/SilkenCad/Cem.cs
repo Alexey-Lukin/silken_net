@@ -31,6 +31,50 @@ internal static class Cem
         ?? throw new InvalidDataException("CEM manifest deserialized to null");
 }
 
+// Engineering-drawing PMI (Product Manufacturing Information) — the tolerance + GD&T spec a drawing/DXF
+// carries. Per LEAP 71 Noyron, manufacturing constraints live in the CEM (the computational model), NOT
+// on a one-off drawing — the `draw` verb just renders them. Optional on every part record (null ⇒ no
+// callout). Feeds the factory acceptance contract + the HW.8 / HW.8.9 reconcile.
+internal sealed record ToleranceSpec
+{
+    // Fit / press-fit interference. ⚠ For a Ti shaft in a PEEK bore, `H7/s6` is only the NOMINAL class
+    // label — PEEK E≈4 vs Ti≈114 GPa, so the same geometric interference gives a different contact
+    // pressure. The REAL band is the Lamé-computed µm (01_01 §4.2, script 50, HW.3.IS), NOT a blind
+    // ISO-286 metal-table lookup → put it in InterferenceMin/MaxUm.
+    public string? Fit { get; init; }                  // nominal class label, e.g. "H7/s6"
+    public float? InterferenceMinUm { get; init; }     // Lamé band (E_PEEK-aware), µm
+    public float? InterferenceMaxUm { get; init; }
+    public float? ClearanceMm { get; init; }           // hex/spline anti-rotation ≤0.05 (01_01 §4.3 C)
+
+    // Linear ± on a named feature (e.g. "bore", "flange_dia").
+    public string? Feature { get; init; }
+    public float? PlusMm { get; init; }
+    public float? MinusMm { get; init; }
+
+    // GD&T datums + geometric tolerances (ISO 1101 — the coaxial stack needs concentricity/runout on the
+    // mating bore/flange; the lattice bulk gets no GD&T).
+    public string? PrimaryDatum { get; init; }         // e.g. "bore axis"
+    public string? SecondaryDatum { get; init; }       // e.g. "flange face"
+    public string? ConcentricityMm { get; init; }      // e.g. "0.05"
+    public string? RunoutMm { get; init; }
+}
+
+// Engineering-drawing notes — the AM-specific acceptance half (material, process, surface finish,
+// post-process, coating restrictions, lattice spec, inspection). Plain canon-sourced text the `draw`
+// verb lays into the notes block (replaces the hardcoded Ti-coin lines → Noyron-clean). Optional (null
+// fields skipped). Canon: 01_01 §1 + 01_02 §1.
+internal sealed record NotesSpec
+{
+    public string? Material { get; init; }             // "Ti-6Al-4V (Grade 5)" | "PEEK 450G"
+    public string? Process { get; init; }              // "SLM+HIP" | "CNC (annealed 200–250 °C)" | "EBM"
+    public string? SurfaceFinish { get; init; }        // "micro Sa 0.5–5 µm + nano Sv 50–500 nm (EAAE, 01_02 §1.2)"
+    public string? PostProcess { get; init; }          // "HIP (01_02 §1.7) · dehydrogenation bake · build tip-down §1.6"
+    public string? CoatingRestriction { get; init; }   // "ZnO-Ta/HAp/RGD FORBIDDEN on Zone-1 gyroid (blocks DET) — 01_02 §3.6"
+    public string? LatticeSpec { get; init; }          // "porosity 65±2 % / period … / topology … — inspect Archimedes+µCT (ISO/ASTM 52900)"
+    public string? Inspection { get; init; }           // "SEM ×500/5000/50000 · ICP-MS Al<1 ppb (01_02 §1.5)"
+    public string[]? Extra { get; init; }              // free lines (Ti-coin active-area, RF keep-out, …)
+}
+
 // Flat in-vitro Ti coupon (Stage-2 CV/EIS, 01_01 §6.1). Ø16 disc → 1 face ≈ A_electrode 2 cm²
 // (01_03 §3.5). Disc not square: RDE-ready, uniform radial j, no corner edge-effects. j is
 // normalised on the PROJECTED geometric area (EAAE roughness makes the true area unmeasurable, 01_02 §1.4).
@@ -46,6 +90,8 @@ internal sealed record TiCoinCem
     public float ActiveWindowDiameterMm { get; init; }
     public float LoopRingRadiusMm { get; init; } = 1.6f;  // torus centreline radius
     public float LoopTubeRadiusMm { get; init; } = 0.6f;  // torus tube (wire) radius
+    public ToleranceSpec? Tolerances { get; init; }       // drawing PMI (null ⇒ no callout)
+    public NotesSpec? Notes { get; init; }                // drawing notes block (null ⇒ defaults)
 }
 
 // Zone-1 gyroid anode (01_01 §5): a cartesian-gyroid Ti rod with a central bore for the
@@ -148,6 +194,15 @@ internal sealed record CathodeFlangeCem
     // O-ring groove on the flange underside (mate the Радом O-ring, CS 1.78 → 02_02 §3.2)
     public float ORingGrooveDepthMm { get; init; } = 0.9f;
     public float ORingGrooveWidthMm { get; init; } = 2.0f;
+
+    // Pogo-pad features (02_02 §1.2) — the central GND bus pad (Hard Gold ENIG = the Ti↔Au galvanic-trap
+    // fix) + the PEEK isolation ring guarding the centre↔outer short. Ø = HW.8 placeholders (canon says
+    // «точні Ø фланця/площадки потребують CAD → HW.8»; the flange drawing is that forcing function, §F).
+    public float CentralPadDiameterMm { get; init; } = 4.5f;   // GND bus-exit pad, Hard Gold ENIG (4–5, HW.8)
+    public float IsolationRingWidthMm { get; init; } = 1.5f;   // PEEK ring centre↔outer (≥1.5, short-circuit guard)
+
+    public ToleranceSpec? Tolerances { get; init; }       // drawing PMI (concentricity — coaxial stack)
+    public NotesSpec? Notes { get; init; }                // drawing notes block
 }
 
 // PEEK Radome (Деталь 4, 02_01 §5.2 + 01_04 §5.5) — the radio-transparent dome that bayonets onto the
@@ -196,6 +251,8 @@ internal sealed record Zone2SleeveCem
     public float WallThicknessMm { get; init; } = 2f;     // CTE Lamé SF 3.7× (§4.2), frozen — NOT press-fit hoop
     public float LengthMm { get; init; } = 50f;           // axial thermal break (§4.1), frozen
     // OD = bore + 2·wall = Ø15 = the wound diameter in the tree (derived in Zone2Sleeve.OuterR, not stored).
+    public ToleranceSpec? Tolerances { get; init; }       // drawing PMI (press-fit Lamé-µm, hex clearance)
+    public NotesSpec? Notes { get; init; }                // drawing notes block
 }
 
 // Capsule-end anchor ASSEMBLY (Деталь 3 ↔ Деталь 4, 02_02 §4 — Механізм Фіксації Капсули). The first

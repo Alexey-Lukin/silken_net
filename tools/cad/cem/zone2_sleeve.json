@@ -5,5 +5,22 @@
   "voxel_size_mm": 0.1,
   "bore_diameter_mm": 11.0,
   "wall_thickness_mm": 2.0,
-  "length_mm": 50.0
+  "length_mm": 50.0,
+  "tolerances": {
+    "fit": "H7/s6 (nominal class only)",
+    "clearance_mm": 0.05,
+    "feature": "bore",
+    "primary_datum": "bore axis",
+    "concentricity_mm": "0.05"
+  },
+  "notes": {
+    "material": "PEEK 450G (Victrex or equiv.)",
+    "process": "CNC from rod; anneal 200-250 C before final micromachining (else internal stress drifts the um tolerances)",
+    "surface_finish": "smooth round bore (hex anti-rotation 4.3 C, <=0.05 mm, is bench-gated -> deferred)",
+    "extra": [
+      "Press-fit interference is Lame-computed um (E_PEEK-aware, 01_01 4.2), NOT a blind ISO-286 metal lookup; exact um pending HW.3.IS script-50 re-run under frozen O11/2mm",
+      "OD O15 = wound in tree (CODIT <25 -> DBH >=38); wall 2.0 = CTE Lame SF 3.7x (4.2), not press-fit hoop",
+      "Mechanical retention (barbs + DIN-471) is on the Ti ends, not this PEEK bore (4.3)"
+    ]
+  }
 }

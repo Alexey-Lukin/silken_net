@@ -5,5 +5,21 @@
   "disc_diameter_mm": 16.0,
   "disc_thickness_mm": 1.0,
   "loop_ring_radius_mm": 1.6,
-  "loop_tube_radius_mm": 0.6
+  "loop_tube_radius_mm": 0.6,
+  "tolerances": {
+    "feature": "disc_dia",
+    "plus_mm": 0.1,
+    "minus_mm": -0.1
+  },
+  "notes": {
+    "material": "Ti-6Al-4V (Grade 5)",
+    "process": "SLM/DMLS (flat coupon — minutes/pennies to print)",
+    "surface_finish": "EAAE dual-scale on the active face: micro Sa 0.5-5 um + nano Sv 50-500 nm (01_02 1.2) — raises ECSA for enzyme immobilisation",
+    "inspection": "CV / EIS biochem, Stage-2 (01_01 6); j on PROJECTED area (01_02 1.4)",
+    "extra": [
+      "Active electrode area = 1 face ~= 2.01 cm2 (O16, 01_03 3.5)",
+      "Disc not square: RDE-ready, uniform radial j, no corner edge-effects",
+      "Optional O-ring / lacquer window fixes exactly 2 cm2 inside the coupon"
+    ]
+  }
 }
