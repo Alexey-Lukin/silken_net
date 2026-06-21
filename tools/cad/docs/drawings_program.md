@@ -1,9 +1,10 @@
 # Engineering Drawings from the CEM — Research & Program (anchor + Ti-coin)
 
-> **Status:** research + analysis (2026-06-20, autonomous night session). A *plan*, not yet
-> shipped code. Question from founder: «як отримати креслення анкера + Ti-coin у висновку».
-> This doc is that висновок: the recommended path, why, and a roadmap. Canon refs are pointers,
-> not restated. Decisions that need the founder are collected in §8.
+> **Status:** research + program (2026-06-20 analysis; **2026-06-21 decided + web-grounded**). The
+> recommended path, why, and a **phased** roadmap (§7). Founder decisions (§8) are **resolved** —
+> DXF (netDxf) + SVG/PDF · ISO 1st-angle + ISO 1101 · CEM-`tolerances` SSOT; Phase 0+1 active, Phase 2
+> deferred. Canon refs are pointers, not restated.
+> Question from founder: «як отримати креслення анкера + Ti-coin у висновку».
 
 ---
 
@@ -68,29 +69,36 @@ are computed **analytically from the CEM parameters** we already own — no mesh
 
 ## 5. Technical paths (ranked)
 
-- **A — C# SVG generator inside `tools/cad` (PRIMARY, recommended PoC).** A new `Drawing.cs` +
-  `draw <cem>` verb: compute view rectangles/circles/section-lines from the CEM, emit SVG with
-  dimension lines, a title block, GD&T datums, and a notes block. Pure-managed (no `Library.Go`
-  for analytic parts → runs in CI logic-job; the gyroid cross-section samples the SDF). Zero new
-  runtime deps (SVG is text). Fits the lazy-senior ladder: the numbers already exist, we just lay
-  them out. **This is the path that matches our pipeline.**
-- **B — STL/STEP → FreeCAD TechDraw, headless Python (FALLBACK, only if the shop demands STEP +
-  a full TechDraw sheet).** `mesh2solid`-style headless FreeCAD. Better: feed FreeCAD **analytic
-  primitives** built from the CEM (not the voxel mesh) so the STEP is clean. Heavier (FreeCAD dep,
-  Python, separate toolchain) → only when a STEP deliverable is contractually required.
+- **A — C# generator inside `tools/cad` (PRIMARY, decided).** `Drawing.cs` + `draw <cem>` verb:
+  compute view rectangles/circles/section-lines from the CEM, emit **DXF (factory) + SVG/PDF (human)**
+  with dimension lines, a title block, GD&T datums, and a notes block. **DXF via `netDxf` (MIT, NuGet,
+  .NET) — CAD-native, the shop opens it in AutoCAD/Fusion; native dimension entities (linear/radial/
+  diametric) → the library draws them, not us** (lazy-senior ladder: a maintained library beats a
+  hand-rolled SVG dimension-engine). SVG/PDF stays for human/publication/self-review. Pure-managed
+  (no `Library.Go` for analytic parts → CI logic-job; gyroid cross-section = pure SDF-sample à la
+  `Connectivity.SampleAnchor`, no render). **This is the path that matches our pipeline.**
+- **B — STL/STEP → FreeCAD TechDraw, headless Python (FALLBACK, only if a shop contractually demands
+  STEP).** Feed FreeCAD **analytic primitives** from the CEM (not the voxel mesh) so the STEP is clean.
+  Heavier (FreeCAD dep, Python, separate toolchain). **No light C# path:** `IxMilia.Step` emits only
+  basic curves (no B-rep/AP242/PMI), and STEP from our voxel mesh = tessellation-loss = no better than
+  STL → STEP is **deferred**, not a blocker (AM shops print from STL/3D; the 2D drawing is for GD&T/CMM
+  acceptance, not the print).
 - **C — Manual import into Fusion/SolidWorks (ONE-OFF).** Import STL as reference, draw by hand.
   Acceptable for a single publication figure; not for a maintained, regenerating deliverable.
 
-**Recommendation: A** for the maintained drawings (regenerate on every dim change, like metrics),
-with **B** kept as the STEP escape-hatch for a factory that won't accept SVG/PDF + STL.
+**Decided: A** (DXF via netDxf + SVG/PDF) for the maintained drawings — regenerate on every dim change,
+like `metrics.json`. **B** (FreeCAD STEP) deferred until a factory contractually requires STEP.
 
 ## 6. What an AM drawing must carry (grounded in our canon)
 
 A useful drawing here is **not** a full geometric dump — it's the **acceptance contract**:
 
 - **Envelope + critical mating dims** with **tolerances**: the press-fit Ø11 bore / Ø15 OD, flange
-  Ø25, bayonet. Use the real fits — e.g. **H7/s6** for the Zone-1↔Zone-2 press-fit (ISO 286, tens
-  of µm) — exactly the band `AxialStack` flagged as missing in F1 (shank Ø placeholder, HW.8.9).
+  Ø25, bayonet. ⚠️ **`H7/s6` is the ISO 286 _metal_ hole/shaft table; our press-fits are a Ti shaft
+  in a _PEEK_ bore (E≈4 vs Ti≈114 GPa)** → the same geometric interference gives a different contact
+  pressure. The CEM carries the **Lamé-computed µm** (`01_01 §4.2`, script 50, E_PEEK-aware), with
+  `H7/s6` only as the nominal class label — not a blind ISO-286 lookup. This is the band `AxialStack`
+  flagged as missing in F1 (shank Ø placeholder, HW.8.9).
 - **GD&T datums** on mating features (bore axis, flange face, bayonet) — concentricity/runout matter
   for the coaxial stack; lattice bulk does not get GD&T.
 - **Post-process notes** (the AM-specific half the shop needs): HIP (`01_02 §1.7` / HW.23),
@@ -102,32 +110,57 @@ A useful drawing here is **not** a full geometric dump — it's the **acceptance
 - **Title block**: part name + Деталь №, material **Ti-6Al-4V** (PEEK for Zone 2), scale, units
   (mm), revision = git SHA, "geometry SSOT = `cem/<x>.json` + STL", license (CERN-OHL-S for hw).
 
-## 7. Roadmap
+## 7. Roadmap (phased)
 
-1. **Ti-coin drawing** (path A) — the simplest part and the most urgent (Stage 2). Proves the
-   `Drawing.cs` + `draw` verb + title block + dimension-line primitives. One xUnit on the analytic
-   layout (view extents, dim values = CEM).
-2. **Simple anchor parts** — Zone-2 sleeve, Деталь 3 flange, Деталь 4 radome (analytic sections).
-3. **Title block + GD&T datums + tolerance table** — driven by a `tolerances`/`notes` block added
-   to the CEM (so fits like H7/s6 are SSOT, feeding both the drawing and HW.8.9 reconcile).
-4. **Zone-1 envelope + cross-section + lattice spec** — SDF-sampled section; the AM-correct way.
-5. **Assembly drawings** — capsule-end (`Assembly`) + axial stack (`AxialStack`): the mate-audits,
-   drawn, with the datum chain and the F1/F2 findings annotated.
+> **Phase 0** (canon honesty + CEM `tolerances`/`notes` block) + **Phase 1** (Ti-coin DXF deliverable)
+> are active. **Phase 2** (steps 2/4/5) is deferred until a factory contract — full §7 risks being
+> "packaging for an imagined factory" (no contract yet).
 
-## 8. Open questions for the founder (decide before building)
+1. **Ti-coin drawing** (**Phase 1**) — the simplest + most urgent part (Stage 2, ~15 pcs). Proves
+   `Drawing.cs` + `draw` verb + **DXF (netDxf)** + title block + dimension primitives, consuming the
+   CEM `tolerances`/`notes` block (zero hardcoded). xUnit (DXF well-formed, dim values = CEM, no NaN).
+2. **Simple anchor parts** (**Phase 2**) — Zone-2 sleeve, Деталь 3 flange (**closes the central-pad
+   Ø4-5 / PEEK-ring gap → HW.8**), Деталь 4 radome (analytic sections).
+3. **CEM `tolerances`/`notes` block** (**Phase 0**) — fits (Lamé-µm), GD&T datums, surface-finish,
+   post-process notes, lattice-spec are SSOT in `cem/*.json`, feeding drawing + HW.8 + HW.8.9.
+4. **Zone-1 envelope + lattice spec** (**Phase 2**) — the gyroid is an **inspection-card** (envelope +
+   porosity/period/topology + Archimedes/µCT thresholds), NOT point-by-point (ISO/ASTM 52900). A
+   cross-section, if wanted, = **pure SDF-sample à la `Connectivity.SampleAnchor`** (no `Library.Go`).
+5. **Assembly drawings** (**Phase 2**) — capsule-end (`Assembly`) + axial stack (`AxialStack`): the
+   mate-audits drawn, with the datum chain + F1/F2 findings annotated.
 
-1. **Deliverable format the SLM/PEEK shop will accept** — SVG/PDF drawing + STL enough, or is a
-   **STEP** file contractually required? (Decides whether we need path B at all.)
-2. **Drawing standard** — ISO 128 (European, first-angle) vs ASME Y14.5 (third-angle)? Ukrainian
-   shops typically ISO/ГОСТ → first-angle is the likely default unless a grant/partner says otherwise.
-3. **Tolerance source** — fits (H7/s6 etc.) are currently implicit; should they become a **CEM
-   `tolerances` block** (SSOT, feeds drawing + HW.8.9) — recommended — or live only on the drawing?
-4. **Title-block fields** — company/author/approver, license stamp, the git-SHA-as-revision idea OK?
+## 8. Decided (founder, 2026-06-21)
 
----
+Derived from the canon shops (Київ **3D Metal Tech** ISO 13485 / Дніпро **ALT Ukraine** / EU backup
+hubs — `07_02 §8.1`) + web-grounding (sources below).
 
-## References
+1. **Deliverable format** — **DXF (netDxf) + SVG/PDF + STL**. No STEP for now: AM shops print from
+   STL/3D, and the drawing is for **GD&T/CMM acceptance**, not the print. STEP = deferred path B if a
+   shop contractually requires it.
+2. **Drawing standard** — **ISO**, made a CEM/config parameter (default). ⚠️ **These are TWO orthogonal
+   choices, not one** — the earlier «ISO 128 vs ASME Y14.5 (third-angle)» was a **conflation**:
+   - **Projection convention:** 1st-angle (ISO 128-30 / ISO 5456) vs 3rd-angle (**ASME Y14.3**). → **1st-angle**.
+   - **GD&T language:** **ISO 1101** vs ASME Y14.5. → **ISO 1101**.
 
+   ASME Y14.5 is a **GD&T standard, _not_ a projection method**. ASME (3rd-angle + Y14.5) stays as the
+   non-default parameter value, only if a US partner/grant dictates.
+3. **Tolerance source** — **CEM `tolerances` block** (Noyron-native SSOT; feeds drawing + HW.8.9 +
+   HW.8 central-pad). Per LEAP 71 Noyron, manufacturing constraints live in the computational model,
+   not on a one-off drawing — the drawing/DXF renders them.
+4. **Title-block fields** — git-SHA as revision (provenance) + the SSOT pointer (`cem/<x>.json`); add a
+   human rev-letter when a shop needs one.
+
+## 9. References
+
+**Decision web-grounding (2026-06-21):**
+- ASME Y14.3 (3rd-angle projection) vs ASME Y14.5 (GD&T) vs ISO 128/5456/1101 — the conflation fix:
+  gdandtbasics.com, en.wikipedia.org/wiki/ASME_Y14.5, peachpit (ASME Y14.3).
+- DXF / `netDxf` (MIT): github.com/haplokuon/netDxf. C# STEP `IxMilia.Step` (insufficient — basic
+  curves only): github.com/ixmilia/step. CadQuery/build123d (other-stack 2D export): cadquery.readthedocs.io.
+- MBD / STEP AP242 trend: autodesk.com, sigmetrix.com, spatial.com. PEEK press-fit creep / ISO 286
+  polymer caveat: janeemachining, trelleborg. Noyron / LEAP 71: leap71.com/noyron, 3dprintingindustry.com.
+
+**Methodology:**
 - AM inspection / GD&T: *Optical Inspection Systems for SLM parts* (PMC7308957); *GD&T of AM/PBF
   lattices review* (ResearchGate 360426092) — lattice GD&T is an open problem.
 - STL→STEP loss: holocreators STL-to-STEP, GrabCAD FreeCAD tutorial, `Charles-Garrison/mesh2solid`
