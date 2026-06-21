@@ -564,6 +564,7 @@ nTop — провідний інструмент для генерації мі�
 - **Intent-first:** правило рахує геометрію (CEM-параметр + `wallParam(r)` тримають порозність при градієнті розміру пори; **вимірюється per-shell**, не хардкод), а не ручні числа.
 - **Одна модель → родина:** per-species 7-SKU (5 видів + porosity-gradient + stepped demo) = один CEM × N спеків ([`00_08 §1.3`](00_08_Beyond_TRL9_Planetary_Roadmap)) — як Noyron робить різні двигуни з одного CEM.
 - **Design↔sim злиті:** validation-as-code (порозність/градієнт/wall/manifold + **двофазна зв'язність** — open-pore/percolation/solid-island/specific-surface, ARCH.25, [`00_07`](00_07_Action_Plan_Tracker) → `metrics.json`) = Noyron-івський «predicted-performance» output генератора (геометрія емітить власні передбачені фіз-властивості).
+  - **ARCH.25 двофазний аудит = прокси чотирьох лаб-тестів** (один flood-fill замість окремих стендів): open-pore↔Архімедова порозність, pore-percolation↔µCT + EAAE flow-through (закритий канал ⇒ H₂ gas-lock), solid-island↔AM floating-island + анод-електро-цілісність, closed-pore↔trapped-powder. Pore-фаза стабільна до огрубіння сітки, але **solid-зв'язність вимагає кроку ≈період/16** — грубіша сітка фрагментує тонку гіроїдну стінку у хибні «острівці» (метод-застереження). Робоче вікно стінки CEM (сосна) — `wallParam ∈ [0.80, 1.30]` @ порозності 55–75% (default 1.0 → ~67%). Деталі реалізації — `tools/cad` + skill `picogk`.
 
 **Реальний стек (підтверджено в `tools/cad`, НЕ псевдокод):**
 
