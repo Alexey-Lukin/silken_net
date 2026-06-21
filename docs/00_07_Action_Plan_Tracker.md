@@ -6,7 +6,7 @@
 
 **Правило одного місця (DRY):** редагуєш канон → онови залежні пункти 00_07 (за рефами); закрив пункт → онови канон + познач тут (✅ → **§🗄️ Архів**, вказівник ID→канон). Так апдейт робиться в одному місці, а референси ведуть, де ще синхронізувати.
 
-**Структура:** **🚦 Critical Path** (P0-гейти перед мілстоунами) → **§00–§08 модуль-секції** (реєстр незробленого; **номер секції = канон-модуль першого рефа** — enforced `tracker:check` section-home guard) → **🔀 Cross-cutting** / **📌 Backlog** → **🗄️ Архів**. Документ — живий операційний інструмент.
+**Структура:** **🚦 Critical Path** (P0-гейти перед мілстоунами) → **§00–§08 модуль-секції** (реєстр незробленого; **номер секції = канон-модуль першого рефа** — enforced `tracker:check` section-home guard; великий модуль → під-секції **`§NNa/b/c`** того ж модуля, курація за під-темою — §01a Anchor / §01b EBFC, §02a Node / §02b Gateway, §08a/b/c; **`§NN/§MM`** (§03/§05) = реально крос-модульна) → **🔀 Cross-cutting** / **📌 Backlog** → **🗄️ Архів**. Документ — живий операційний інструмент.
 
 ---
 
@@ -28,16 +28,19 @@
 <!-- TOC:AUTO:START -->
 - [Critical Path — P0-гейти перед мілстоунами](#-critical-path--p0-гейти-перед-мілстоунами)
 - [§00 · Process / IaC / SSOT-tooling](#00--process--iac--ssot-tooling)
-- [§01–§02 · Hardware & Lab](#0102--hardware--lab)
+- [§01a · Anchor — Geometry & Metallurgy](#01a--anchor--geometry--metallurgy)
+- [§01b · EBFC — Chemistry & Bio-electrochemistry](#01b--ebfc--chemistry--bio-electrochemistry)
+- [§02a · Node — Capsule & Electronics](#02a--node--capsule--electronics)
+- [§02b · Gateway — Queen Hardware](#02b--gateway--queen-hardware)
 - [§03 · Firmware](#03--firmware)
 - [§03/§05 · Безпека (Edge crypto + Web3)](#0305--безпека-edge-crypto--web3)
 - [§04 · Backend / API / UI](#04--backend--api--ui)
 - [§05 · Web3 / Економіка / Slashing](#05--web3--економіка--slashing)
 - [§06 · Deploy / Observability / Secrets / Ops](#06--deploy--observability--secrets--ops)
 - [§07 · Юридичні / Бізнес](#07--юридичні--бізнес)
-- [§08 · Академічна інтеграція](#08--академічна-інтеграція)
-- [§08 · External Stakeholders (B2G / B2B / Cultural)](#08--external-stakeholders-b2g--b2b--cultural)
-- [§08 · IP / Grants (BIZ)](#08--ip--grants-biz)
+- [§08a · Академічна інтеграція](#08a--академічна-інтеграція)
+- [§08b · External Stakeholders (B2G / B2B / Cultural)](#08b--external-stakeholders-b2g--b2b--cultural)
+- [§08c · IP / Grants (BIZ)](#08c--ip--grants-biz)
 - [Cross-cutting · Doc-drift (DOC-T) — SSOT doc↔code + tracker form/tooling](#-cross-cutting--doc-drift-doc-t--ssot-doccode--tracker-formtooling)
 - [Backlog (не блокери · довгострокові)](#-backlog-не-блокери--довгострокові)
 - [Архів закритих пунктів (мігровано в канон)](#-архів-закритих-пунктів-мігровано-в-канон)
@@ -98,9 +101,11 @@
 - [ ] 🤖 `step-security/harden-runner` (egress-audit) на CI-джобах
 - [ ] 🤖 OpenSSF Scorecard workflow
 
-## §01–§02 · Hardware & Lab
+## §01a · Anchor — Geometry & Metallurgy
 
 > ⚠️ Потребують фізичної роботи в лабораторії та/або з підрядниками.
+
+> 🧭 **Hardware-стек (§01a→§02b) — одна фіз-система, 4 під-секції.** Конституція [`00_00`](00_00_SSOT_Index) (Системна Карта, 8 рівнів): **The Root** — анкер (§01a) + EBFC (§01b) → **The Capsule** — вузол Soldier (§02a) → **The Veins** — Брама Queen (§02b); енергія й дані течуть угору. Поділ — для навігації; синергію тримає анкерний DAG нижче + ID-крос-рефи між секціями.
 
 > 🧭 **Анкерний кущ — synergy map (dependency-DAG).** Анкер — система зшитих залежностями деталей; закриваємо **пакетами**, не поштучно. Обидві machine-осі зведені, критичний шлях перейшов на фізику:
 >
@@ -144,11 +149,6 @@
 - [ ] 👤 **Stage 3 — Full anchor (3–5 шт):** SLM+HIP анодних секцій, CNC PEEK-втулок, SLM/EBM катодних фланців, повний press-fit + EBFC у синтетичному соку
 - [ ] 👤 **Stage 4 — Партія 100 шт:** після підтвердження Stage 3 — оптове замовлення для польових випробувань
 
-#### HW.31 — Queen Antenna Split (868 LoRa tuned ≠ dual-band)
-- **P0** · 👤 · 🟡 · → `02_05 §7`
-- **Стан:** Рознесено в каноні — поз.11 wideband LTE-M/NB-IoT (700–2700 МГц, Kyivstar B1/B3/B7/B8/B20, опц. LTE+GNSS) · поз.12 LoRa 868 **tuned** 5 dBi fiberglass omni (OD8-868/ALL.4101); окремі RF-порти SX1262 vs SIM7070G, dual-band SMA відхилено (VSWR>2.5 @868 → −3-5 дБ EIRP). Канон `02_05 §7`.
-- [ ] 👤 freeze поз.11/12 у BOM Королеви при 02_05 BOM freeze
-
 #### HW.33 — Anchor geometry spec audit (PicoGK-gating, NEW 2026-06-20)
 - **P1** · 🤖+👤 · 🟡 · → `01_01 §5.5`, `01_04 §3.2`, `02_02 §1.3`
 - **Стан:** Аудит-у-роботі. **v2 PicoGK graded landed 2026-06-21** (`tools/cad`, 3 осі градації) → виявив геометрія-аномалії (checkboxes нижче, кожна = founder-рішення): DMLS-floor (100µm@65% недрукований) · §5.5 cell-conflict (fixed) · sheet/network вісь · 65%-placeholder. **ARCH.25 connectivity-аудит (2026-06-21, `a5ed3d9`)** уточнив термін (sheet=триконтинуальний — 2 pore-лабіринти; network=біконтинуальний) і дав **topology-agnostic вимірювальний стіл** (open-pore/percolation/solid-island/specific-surface) → sheet→network схиляння по 4 осях = **трек, не рішення** (нижче). **Дим-фриз ✅ DONE 2026-06-20** (радіальний: рана Ø15 · осьовий: Zone 2 50 / фланець Ø25 / Z-stack spacer+bayonet / O-ring 15–30 % — Lamé/CODIT/3-spring data-grounded; анти-дрейф guard `00_06 §3`); **PicoGK CAD-родина ✅ COMPLETE** (Деталь 3/4 + **capsule-end assembly mate-audit** `02_02 §4.4`). Залишок: **порозність/E (FEA sheet-vs-network — Гусак)** + фіз-валідація + **MATE-Ø skirt/inboard геом-вибір** (founder, HW.17). **Анкерний кущ — синергія (dependency-DAG):** критичний шлях **[A] дим-фриз** (HW.33+HW.8+barbs+PEEK-chain) → **[B] PicoGK CAD-родина** coin/anode/radome (лінчпін — живить КОЖНУ стадію) → **[D] staged validation** (HW.24: SLA→coin→anchor→100); **[C] завод-пакет** (HW.23+HW.27+HW.2+coating-map) ∥ B; **[E] збірка** (HW.17/25/28/8/6/22) після фіз-деталей; хімія HW.5 → coin/anchor. **Пов'язані:** HW.8 (Ø фланця+пад), HW.24 (coin A=2см²+вушко), HW.26 (barbs), HW.17 (Radome — теж PicoGK).
@@ -169,11 +169,6 @@
 - [ ] 🔗 C++/CFD topological-integrity mesh + Akash GPU (ARCH.30, Онищенко) — self-own за потреби, партнер pending
 - [ ] 🤖 deferred (nice-to-have): Euler-χ крос-чек · tortuosity (random-walk на percolated cluster) · voxel-cross-check на as-printed grid (не лише SDF-intent)
 
-#### HW.32 — BME280 environmental sensing + VPD confounder [ADR `02_01 §3.4`]
-- **P1** · 👤 · 🟢 · → `02_01 §3.4`, `07_02 §1.3`
-- **Стан:** BME280 (t°/RH/тиск, I2C за TPS22860) приземлено host-side — docs + `03_01` SENSE + TelemetryLog cols (structure.sql) + firmware pure-модуль `firmware/common/bme280.h` (datasheet Bosch §8.2 компенсація `Bme280_Compensate_T/P/H` + VPD FAO-56 Tetens `Bme280_Vpd_Index`, host-golden `test_bme280.c`) + VPD-gate/sap-term у backend (inert, ENV-calibration-gated). Wire: VPD = CCM wire-rev2 **byte 19 `vpd_index`** ([`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)). DCI-guard: VPD НЕ в Lorenz-Z. Канон `02_01 §3.4` (формула/шкала/bench-чеклист) · slashing-роль `05_05 §6/§7` · клімат-оракул `07_01` · калібрування ваг `05_05 §8`.
-- [ ] 👤 bench: I2C bring-up `bme280_forced_read`, SENSE call-site вшивається з CCM-флипом, gate-timing, VPD-калібрування + PTFE-мембрана механіка (`02_02`)
-
 #### HW.2 — Dual-scale roughness spec
 - **P1** · 👤 · ⚪ · → `01_02`
 - **Стан:** Не розпочато — dual-scale roughness spec (Sa 0.5–5 µm, Sv 50–500 nm) ще не передана на завод; блокує максимальний струм EBFC (TRL 5). Канон `01_02 §1.2/§1.5`.
@@ -193,6 +188,81 @@
 - [ ] 👤🤖 HW.3.IS: **barb-tip stress-concentration FEA** → Гусак (mesh-FEA ANSYS, `00_02 §4a`); self-own якщо Гусак мовчить (light analytical bound, Lamé вже є) — DEFERRED
 - [ ] 🤖 HW.3.IS: **MD ion-permeation Ti²⁺/V³⁺ через PEEK** (класична MD) — «корозія не отруїть ферменти 20р»; НЕ DFT (лише single-jump NEB) — DEFERRED (~2-3 тиж GPU milestone)
 - [ ] 🤖 HW.3.IS: (nice-to-have) **unified thick-wall Lamé** — interference-hoop (51) + thermal-mismatch (50) в ОДНУ модель; комбінований @ −30°C+max-fit може впасти ~1.4× → `THERMAL_STRESS_REPORT.md` Remaining Tasks
+
+#### HW.6 — Resin barrier + Flush Mount Installation
+- **P1** · 👤 · ⚪ · → `01_04 §3`
+- **Стан:** Не розпочато — резиноза блокує доступ до ферментів; корінь = інструмент свердління, не матеріал. Стратегія: (a) Flush Mount step drilling (анкер врівень, камбій цілий), (b) Microfrezing замість шнека (чистий розріз, без resinosis). Канон `01_04 §3` (+ біоміметичні покриття §4, anti-resin Nafion-g-PSBMA §3.4).
+- [ ] 👤 **Flush Mount step drilling** (`01_04` §3.1): тестування багатоступеневого свердла на калібрувальних колодах сосни (товщина перидерми → ширина широкої ступені)
+- [ ] 👤 **Microfrezing** (`01_04` §3.3): закупити прецизійні кінцеві фрези типу MicroX (карбід вольфраму + TiN-покриття), стендовий тест на колодах vs стандартні шнекові свердла — порівняння resinosis intensity
+- [ ] 👤 30° installation angle verification (узгоджено з Flush Mount)
+- [ ] 👤 Hydrophilic coating test
+- [ ] 👤 **Nafion-g-PSBMA анти-resin coating** (Шар 5 анодного стеку, `01_03 §2.1 Крок 5`, REWRITTEN 2026-05-22): цвітеріонний полі(сульфобетаїн метакрилат) ковалентно прищеплений до Nafion через SI-ATRP; 8 H₂O/ланцюг блокує абієтинову кислоту термодинамічно; протонна провідність зростає до 45.2 мС/см; UCST @ 5°C winter-lock. **PEG (Gen 1.0) повністю виключений** — недостатній гідратаційний шар, окислювальне розщеплення
+- [ ] 👤 Hydrophobic/hydrophilic gradient test (PTFE знизу, гідрофільний верх) — додано в `01_04` §3.4
+- [ ] 👤 Thermal installation test: T° нагріву (150-200°C), час витримки — додано в `01_04` §3.5 (резервний метод, тільки для нефункціоналізованих анкерів)
+- [ ] 👤 FEM-моделювання теплового поля в Ti-6Al-4V анкері (λ = 6.7 W/m·K)
+- [ ] 👤 **Біоміметичні покриття проти CODIT** (`01_04` §4): Zn-HAp + хітозан композит на периферійних стінках пор — лабораторний синтез та in vitro тест адгезії клітин паренхіми Pinus sylvestris (запит до біо-хабу ЧНУ, [`08_02`](08_02_Academic_Institutions_Registry))
+- [ ] 👤 **PEDOT:PSS гідрогель інтерфейс** (`01_02` §1a.2, `01_04` §4.1): тонкий шар (10–50 µm) на стінках периферійних пор для модульного буферу Ti↔калюс — верифікація провідності EBFC після нанесення
+- [ ] 👤 **Лігнін-покриття** (`01_04` §4.1): «свій» полімер для дерева — тест зменшення каскаду CODIT Wall 4
+- [ ] 🔗 **SA reservoir — НЕ інтегрувати без верифікації** (`01_04` §4.2 caveat #2): чи не маскує екзогенна саліцилова кислота природний сигнал стресу, який вимірює Lorenz attractor (запит до біо-хабу, [`08_02`](08_02_Academic_Institutions_Registry))
+
+#### HW.22 — Sterilization protocol (No EtO, split-cycle, botanical-level)
+- **P1** · 👤 · ⚪ · → `01_04 §6`
+- **Стан:** Не розпочато — terminal gamma 25 кГр неможлива (PTFE-GDL chain scission ≥10 кГр → flooding), тому **split-cycle**: ГІЛКА A (Ti+ферменти) UV-C + 70% EtOH → low-dose gamma 15 кГр; ГІЛКА B (PTFE-GDL+O-ring) автоклав/EtO; фінальна ламінація у low-bioburden ламінарі. **Рівень — ботанічний, НЕ медичний** (ціль: знищити дереворуйнівні гриби + зберегти ферменти; ❌ ISO 5 / SAL 10⁻⁶ / LAL = overkill для дерева). Блокує Stage 3→4 (польові). Канон `01_04 §6` (§6.3 pipeline / §6.5 verification).
+- [ ] 👤 ГІЛКА A: тест активності ферментів до/після UV-C + 70% EtOH + gamma 15 кГр — деградація ≤ 20%
+- [ ] 👤 ГІЛКА B: PTFE-GDL bubble-point до/після автоклаву/EtO — Δ ≤ 5%
+- [ ] 👤 CV-вимір EBFC-струму до/після ПОВНОГО циклу (A+B+фінал) — деградація ≤ 25%
+- [ ] 👤 Анти-гниль тест (*Trichoderma*/*Phanerochaete*, 14 діб) — ботанічно релевантний замість USP <71>; + low-bioburden settle plates чистого ламінара (без ISO 5)
+- [ ] 👤 Обладнання: low-dose Co-60 (15 кГр) ГІЛКА A; автоклав/EtO ГІЛКА B; чистий ламінар (не ISO 5 LAF)
+- [ ] 👤 Постачальник Co-60: Чорнобиль НДІ радіаційної медицини / Київ ІРОНЦ — low-dose 15 кГр (не 25)
+
+#### HW.25 — PTFE-GDL membrane (Cathode)
+- **P1** · 👤 · ⚪ · → `01_04 §5`
+- **Стан:** Не розпочато — PTFE-GDL мембрана катода Zone 3 (e/d-PTFE, пори 0.2–1.0 µm, товщ. 20–100 µm, CA >110°): пропускає O₂, блокує воду — інакше катод задихається або flooding. Канон `01_04 §5`.
+- [ ] 👤 Закупка зразків e-PTFE / d-PTFE (Gore-Tex industrial, Donaldson, або український постачальник)
+- [ ] 👤 Стендовий тест breakthrough pressure: H₂O column 30 см → 1 м (повинна витримати ≥ 1 м)
+- [ ] 👤 Електрохімічний тест: ORR-струм катода з PTFE-GDL vs без — порівняння продуктивності
+- [ ] 👤 12-тижневий тест з імітацією дощу/росі — резистентність до flooding
+- [ ] 👤 Сумісність O-ring (EPDM vs FKM) з PTFE та pH 4.5–5.5
+- [ ] 👤 Метод ламінації PTFE на катодний фланець (без клеїв — механічний обтиск по периметру)
+
+#### HW.27 — Dehydrogenation Bake: Hydrogen Embrittlement Mitigation (NEW 2026-05-16)
+- **P1** · 👤 · ⚪ · → `01_02 §1.3`
+- **Стан:** Не розпочато — вакуумний dehydrogenation bake (250°C±25 / 10⁻³ mbar / 3 год, within 2h of rinse) після EAAE: без нього brittle TiH₂ 5–50 µm → втомне руйнування. Контроль LECO RH404 H<100 ppm (ASTM B348 ліміт 150). Блокує втомну міцність гіроїда, 20+ років (TRL 4→5). Канон `01_02 §1.3` (Крок 5b) / §1.3a-C.
+- [ ] 👤 Передати специфікацію Крок 5b заводу-підряднику (Київ/Дніпро) разом із протоколом EAAE
+- [ ] 👤 Перевірити наявність вакуумної печі 200–300°C у заводу-кандидата (або стороннього subcontractor)
+- [ ] 👤 LECO RH404 hot extraction analysis на тестовому купоні з кожної партії
+- [ ] 👤 Втомне тестування Ti-coin Stage 2 (HW.24) — порівняння з/без dehydrogenation bake для підтвердження ефекту
+- [ ] 👤 Ti-coin Stage 2 — замовити пару **bare + ZIF-coated** (chem-note triage 2026-06-06): порівняння деградації струму ізолює ZIF enzyme-stabilization → готовий «ZIF nanozyme as enzyme stabilizer» результат (→ Стаття 2 stability; доповнює, не заміняє, in-silico ET-механізм Стаття 1)
+
+#### HW.4 — Self-healing coating (NEW: zone-restricted)
+- **P2** · 👤 · ⚪ · → `01_02 §3/§3.6`
+- **Стан:** Не розпочато — 8-HQ self-healing мікрокапсули не синтезовані; наносяться **лише на неактивні поверхні** (Zone 3 сорочка, торці PEEK) — НЕ на Zone 1 гіроїд / катодну каталітичну грань (блокує DET). Блокує 20+ річні longevity-claims (TRL 6). Канон `01_02 §3/§3.6`.
+- [ ] 👤 Синтез 8-HQ мікрокапсул (in-situ polymerization)
+- [ ] 👤 Інтеграція в PEO electrolyte або layer-by-layer — ТІЛЬКИ на дозволених зонах
+- [ ] 👤 Тест: 10× вищий Rct
+- [ ] 👤 **Thiol-Michael interphase** (`01_02` §1a.1): тест адгезії self-healing шару при ростовому навантаженні, порівняння з простою APTES-силанізацією — додано в `01_02`
+
+#### HW.26 — PEEK Cold-Flow Creep: Mechanical Lock (NEW 2026-05-16)
+- **P2** · 🤖+👤 · 🟡 · → `01_01 §4.3`
+- **Стан:** 🤖 PicoGK-геометрія SHIPPED (`MechanicalLock.cs` — asymmetric ratchet barbs + DIN-471 groove на hollow shank); 👤 bench-residual (press-fit/FEA/закупка). Mechanical lock проти PEEK cold-flow creep — три комплементарні фічі (barbs осьове утримання + DIN-471 retaining ring + hex anti-rotation; числа/геометрія/creep-таблиця — канон [`01_01 §4.3`](01_01_Coaxial_Gyroid_Topology_and_PEEK)). Барби = утримання, **НЕ ущільнення** (герметизує O-ring, `01_01 §4.2`). Без замка contact pressure падає −60% за 10р (§4.3) → втрата O-ring seal / вирив Zone 3. **Design-альтернатива (не зроблено):** helical barb = pull-out + torque-out в одній фічі, замінила б hex (§4.3 C). Блокує 20+ річну надійність.
+- [ ] 👤 Update CNC-чертежі: retaining ring grooves на anchor end Zone 1 + flange end Zone 3
+- [ ] 👤 Закупка DIN 471 **external** retaining rings Ti grade 2 (або 316SS) під обраний Ø shank (DIN 471 = зовнішнє, на вал; внутрішнє = DIN 472)
+- [ ] 👤 Update press-fit процедуру: temp 150°C (>T_g PEEK 143°C Victrex 450G) + контрольована сила 800–1200 N
+- [ ] 👤 **FEA-валідація** ANSYS LS-DYNA visco-elastic PEEK Prony — 10y creep, residual pull-out > 200 N
+- [ ] 👤 Stage 1 SLA-mock (HW.24): barb-detail у фотополімерну збірку для перевірки клацання
+- [ ] 👤 **Belleville/disc-spring preload** (deferred chem-note triage → tracked тут): тримає clamp force анкер↔ксилема проти 20-річного Ti creep + thermal cycle — комплементарний до barbs+DIN-471; ≠ pogo contact-spring / ≠ capsule Z-stack [`02_02 §3.5`](02_02_Blind_Mate_Pogo_Pin_Interface)
+
+#### HW.28 — Anti-Overgrowth Shield для Zone 3 (NEW 2026-05-16)
+- **P2** · 🤖+👤 · 🟡 · → `01_04 §5.5`
+- **Стан:** Захист **(A) виступ-дзвін ✅ machine** (Деталь 4 `Radome.cs`, bell-rise verify-gate; HW.17); (B) coating + (C) maintenance — 👤 pending. Anti-overgrowth shield тримає Zone 3 катод відкритим атмосфері: без нього за 3–5р кора накриває PTFE-GDL → O₂-дифузія стоп → EBFC мертва. Три комплементарні захисти (A виступ-дзвін PEEK Radome + B super-hydrophobic coating / Cu-сплав + C forester maintenance; числа/матеріали/Cu-фітотокс-caveat — канон [`01_04 §5.5`](01_04_CODIT_and_Xylemointegration)). OPEX → `07_02 §6`.
+- [ ] 👤 Закупка/тест super-hydrophobic coating (Fluoropel PFC-1601V або аналог; UV-деградація → Cu-сплав альтернатива, §5.5 B)
+- [ ] 👤 Field protocol для forester visit: зачистка приростаючої тканини без traumatic surgery
+- [ ] 👤 12-місячний польовий тест на тестовому дереві (Черкаський бір)
+- [ ] 👤 Update `07_02 §6` OPEX: forester visit раз на 5–7 років (Черкаський бір)
+
+## §01b · EBFC — Chemistry & Bio-electrochemistry
+
+> EBFC Gen 2.0 — біоелектрохімія/хімія стека (анод dgrFAD-GDH+Os, катод Laccase/ZIF, цвітеріонна мембрана) + in-silico Zero-Lab. Канон [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell). The Root-рівень стека (огляд — §01a).
 
 #### HW.5 — Enzyme lifespan + Gen 2.0 chemistry stack
 - **P1** · 👤 · 🟡 · → `01_03 §1–3`
@@ -277,21 +347,23 @@
 - [ ] 🏔️ 🔗 **Capstones (Мінаєв):** ④ protein QM-cluster E° (extend 32) · CDFT coupling (> 24b, needs PyCDFT) · QM/MM explicit-water cascade
 - [ ] ⏸️ **Deferred → Стаття 2/3 / on-data:** 11 (20–50 ns MD, reviewer-grade equilibration) · 13 (D_eff model; L4 already uses lit 2e-6) · 16 (PE-drift 1%, bigger box) · 40 re-run vs Ti-coin CV/EIS when in-vitro data lands (40 already has a docstring — the audit's "missing" was a grep-filter artifact)
 
-#### HW.6 — Resin barrier + Flush Mount Installation
-- **P1** · 👤 · ⚪ · → `01_04 §3`
-- **Стан:** Не розпочато — резиноза блокує доступ до ферментів; корінь = інструмент свердління, не матеріал. Стратегія: (a) Flush Mount step drilling (анкер врівень, камбій цілий), (b) Microfrezing замість шнека (чистий розріз, без resinosis). Канон `01_04 §3` (+ біоміметичні покриття §4, anti-resin Nafion-g-PSBMA §3.4).
-- [ ] 👤 **Flush Mount step drilling** (`01_04` §3.1): тестування багатоступеневого свердла на калібрувальних колодах сосни (товщина перидерми → ширина широкої ступені)
-- [ ] 👤 **Microfrezing** (`01_04` §3.3): закупити прецизійні кінцеві фрези типу MicroX (карбід вольфраму + TiN-покриття), стендовий тест на колодах vs стандартні шнекові свердла — порівняння resinosis intensity
-- [ ] 👤 30° installation angle verification (узгоджено з Flush Mount)
-- [ ] 👤 Hydrophilic coating test
-- [ ] 👤 **Nafion-g-PSBMA анти-resin coating** (Шар 5 анодного стеку, `01_03 §2.1 Крок 5`, REWRITTEN 2026-05-22): цвітеріонний полі(сульфобетаїн метакрилат) ковалентно прищеплений до Nafion через SI-ATRP; 8 H₂O/ланцюг блокує абієтинову кислоту термодинамічно; протонна провідність зростає до 45.2 мС/см; UCST @ 5°C winter-lock. **PEG (Gen 1.0) повністю виключений** — недостатній гідратаційний шар, окислювальне розщеплення
-- [ ] 👤 Hydrophobic/hydrophilic gradient test (PTFE знизу, гідрофільний верх) — додано в `01_04` §3.4
-- [ ] 👤 Thermal installation test: T° нагріву (150-200°C), час витримки — додано в `01_04` §3.5 (резервний метод, тільки для нефункціоналізованих анкерів)
-- [ ] 👤 FEM-моделювання теплового поля в Ti-6Al-4V анкері (λ = 6.7 W/m·K)
-- [ ] 👤 **Біоміметичні покриття проти CODIT** (`01_04` §4): Zn-HAp + хітозан композит на периферійних стінках пор — лабораторний синтез та in vitro тест адгезії клітин паренхіми Pinus sylvestris (запит до біо-хабу ЧНУ, [`08_02`](08_02_Academic_Institutions_Registry))
-- [ ] 👤 **PEDOT:PSS гідрогель інтерфейс** (`01_02` §1a.2, `01_04` §4.1): тонкий шар (10–50 µm) на стінках периферійних пор для модульного буферу Ti↔калюс — верифікація провідності EBFC після нанесення
-- [ ] 👤 **Лігнін-покриття** (`01_04` §4.1): «свій» полімер для дерева — тест зменшення каскаду CODIT Wall 4
-- [ ] 🔗 **SA reservoir — НЕ інтегрувати без верифікації** (`01_04` §4.2 caveat #2): чи не маскує екзогенна саліцилова кислота природний сигнал стресу, який вимірює Lorenz attractor (запит до біо-хабу, [`08_02`](08_02_Academic_Institutions_Registry))
+#### HW.21 — Hybrid energy R&D: TEG + Anchor stacking (post-TRL 6)
+- **P3** · 👤 · 🌿 · → `01_03 §6`
+- **Стан:** Far-horizon (post-TRL 6) — два доповнювальні джерела проти зимового енергодефіциту: (a) TEG Bi₂Te₃ ~50–200 µW зимою (ΔT 15–25 K), (b) stacking 3–4 анкерів (V_OC ×3–4, для арктичних/кластерних). Одно-анкерна Gen 2.0 архітектура вже задовольняє BQ25570 cold-start 330 мВ → TRL 7+. NB: SolarBotanic «nano-leaves» не інтегруємо без peer-reviewed per-node даних. Канон `01_03 §6`.
+- [ ] 👤 TEG: вибір модуля Bi₂Te₃ (4×4 см), стендовий тест ΔT-V кривої на тестовому стовбурі
+- [ ] 👤 TEG: інтеграція з BQ25570 multi-input (можливість одночасного MPPT для EBFC + TEG)
+- [ ] 👤 Stacking: 3-анкерна тестова конфігурація на одному дереві з PEEK-ізоляцією (Zone 2)
+- [ ] 👤 Stacking: оцінка впливу на провіженінг (групова реєстрація DID) та Lorenz-аналітику (декомпозиція V_OC)
+- [ ] 🔗 Залежить від HW.13 (P-V крива EBFC) для правильного бюджетування доповнення
+
+## §02a · Node — Capsule & Electronics
+
+> Soldier-капсула: PCB/живлення/сенсори/pogo/conformal-coating — канон [`02_01`](02_01_Hardware_Architecture_and_BOM)/[`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface)/[`02_03`](02_03_BQ25570_MPPT_Nano_Power). The Capsule-рівень стека (огляд — §01a).
+
+#### HW.32 — BME280 environmental sensing + VPD confounder [ADR `02_01 §3.4`]
+- **P1** · 👤 · 🟢 · → `02_01 §3.4`, `07_02 §1.3`
+- **Стан:** BME280 (t°/RH/тиск, I2C за TPS22860) приземлено host-side — docs + `03_01` SENSE + TelemetryLog cols (structure.sql) + firmware pure-модуль `firmware/common/bme280.h` (datasheet Bosch §8.2 компенсація `Bme280_Compensate_T/P/H` + VPD FAO-56 Tetens `Bme280_Vpd_Index`, host-golden `test_bme280.c`) + VPD-gate/sap-term у backend (inert, ENV-calibration-gated). Wire: VPD = CCM wire-rev2 **byte 19 `vpd_index`** ([`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)). DCI-guard: VPD НЕ в Lorenz-Z. Канон `02_01 §3.4` (формула/шкала/bench-чеклист) · slashing-роль `05_05 §6/§7` · клімат-оракул `07_01` · калібрування ваг `05_05 §8`.
+- [ ] 👤 bench: I2C bring-up `bme280_forced_read`, SENSE call-site вшивається з CCM-флипом, gate-timing, VPD-калібрування + PTFE-мембрана механіка (`02_02`)
 
 #### HW.7 — BQ25570 resistors verification
 - **P1** · 👤 · ⚪ · → `02_03`
@@ -336,16 +408,6 @@
 - [ ] 👤 Якщо потрібно — замінити R_OC1/R_OC2 (звіряти з TI Figure 42 та `02_03 §4` SSOT Convention block)
 - [ ] 👤 **Cold-start R_int** (`02_03 §1.5`): виміряти R_int EBFC (V_OC + V@15µA); якщо > 12 кΩ → cold-start oscillation-loop → серійний стек 2× EBFC (A) / паралель (B) / LTC3108 DNP-footprint (C). Не замовляти 100 PCBA без DNP-LTC3108 до перевірки.
 
-#### HW.15 — BMS + VBAT decoupling для SIM7070G
-- **P1** · 👤 · 🟡 · → `02_05 §Пікові струми SIM7070G`, `§2.2.1`
-- **Стан:** Module-level fix зафіксовано — 5-cap VBAT tank bank проти 2A-burst brownout (просадка <20mV, margin >35×; BOM поз.17–20). Лишається system-level: BMS/MPPT моделі в BOM + bench-звірка маркування SIM7070G + firmware PSM/eDRX. Канон `02_05 §2.2.1` (+ §Пікові струми).
-- [ ] 👤 Обрати BMS: мінімум 12V / 20A continuous / 50A peak
-- [ ] 👤 Обрати MPPT: мінімум Victron SmartSolar MPPT 75/15
-- [ ] 👤 PCB layout: розмістити C_BULK ≤ 10 мм від VBAT pin, HF caps впритул
-- [ ] 👤 Оновити BOM (закупка 5 нових компонентів)
-- [ ] 👤 Bench: фізично звірити маркування модему на прототипі = **SIM7070G** (не SIM7000G; найменування у firmware/BOM/`02_05` вже уніфіковано — лишилась лише фізична звірка)
-- [ ] 🔗 Firmware: додати `AT+CPSMS` + `AT+CEDRXS` (PSM/eDRX, idle ~3 µA) у Queen flush-цикл — `03_02`
-
 #### HW.17 — PEEK radome prototype (Деталь 4)
 - **P1** · 🤖+👤 · 🟡 · → `02_01 §5.2`, `01_04 §5.5`
 - **Стан:** Осьова вісь розблокована (freeze 2026-06-20) — PEEK Radome (Деталь 4) **Ø25 на байонеті** Zone 3 катод-фланця (НЕ анод, НЕ різьба — §3.5 Z-stack): радіопрозорий купол + O-ring EPDM → IP68; керамічна SMD-антена з Z-clearance + overhang (`02_01 §5.2/§5.3`); інтегрований anti-overgrowth shield (`01_04 §5.5`, residual → HW.28). **PicoGK машинна половина ✅ DONE** (`CathodeFlange.cs` + `Radome.cs` + capsule-end `Assembly.cs`; числа/верифи — `tools/cad` + HW.1). **MATE-Ø кількісно виміряно** (`02_02 §4.4`): radial −2.0 / bayonet-Z 6.42 / RF 8<12 мм; skirt Ø30 ↔ inboard Ø25 Δ-кандидати — bench-вибір. Тип кріплення байонет ✅ (HW.8.4). Канон `02_01 §5.2` / `01_04 §5.5` / `02_02 §4.4`.
@@ -356,49 +418,12 @@
 - [ ] 👤 Верифікувати RF performance (VSWR/КСВ) з антеною під радомом + Ti-фланцем (overhang тест)
 - [ ] 👤 MATE-Ø skirt/inboard вибір (radial) + Z-reconcile (lock-groove-Z↔lug-Z) — bench разом (HW.8.8)
 
-#### HW.22 — Sterilization protocol (No EtO, split-cycle, botanical-level)
-- **P1** · 👤 · ⚪ · → `01_04 §6`
-- **Стан:** Не розпочато — terminal gamma 25 кГр неможлива (PTFE-GDL chain scission ≥10 кГр → flooding), тому **split-cycle**: ГІЛКА A (Ti+ферменти) UV-C + 70% EtOH → low-dose gamma 15 кГр; ГІЛКА B (PTFE-GDL+O-ring) автоклав/EtO; фінальна ламінація у low-bioburden ламінарі. **Рівень — ботанічний, НЕ медичний** (ціль: знищити дереворуйнівні гриби + зберегти ферменти; ❌ ISO 5 / SAL 10⁻⁶ / LAL = overkill для дерева). Блокує Stage 3→4 (польові). Канон `01_04 §6` (§6.3 pipeline / §6.5 verification).
-- [ ] 👤 ГІЛКА A: тест активності ферментів до/після UV-C + 70% EtOH + gamma 15 кГр — деградація ≤ 20%
-- [ ] 👤 ГІЛКА B: PTFE-GDL bubble-point до/після автоклаву/EtO — Δ ≤ 5%
-- [ ] 👤 CV-вимір EBFC-струму до/після ПОВНОГО циклу (A+B+фінал) — деградація ≤ 25%
-- [ ] 👤 Анти-гниль тест (*Trichoderma*/*Phanerochaete*, 14 діб) — ботанічно релевантний замість USP <71>; + low-bioburden settle plates чистого ламінара (без ISO 5)
-- [ ] 👤 Обладнання: low-dose Co-60 (15 кГр) ГІЛКА A; автоклав/EtO ГІЛКА B; чистий ламінар (не ISO 5 LAF)
-- [ ] 👤 Постачальник Co-60: Чорнобиль НДІ радіаційної медицини / Київ ІРОНЦ — low-dose 15 кГр (не 25)
-
-#### HW.25 — PTFE-GDL membrane (Cathode)
-- **P1** · 👤 · ⚪ · → `01_04 §5`
-- **Стан:** Не розпочато — PTFE-GDL мембрана катода Zone 3 (e/d-PTFE, пори 0.2–1.0 µm, товщ. 20–100 µm, CA >110°): пропускає O₂, блокує воду — інакше катод задихається або flooding. Канон `01_04 §5`.
-- [ ] 👤 Закупка зразків e-PTFE / d-PTFE (Gore-Tex industrial, Donaldson, або український постачальник)
-- [ ] 👤 Стендовий тест breakthrough pressure: H₂O column 30 см → 1 м (повинна витримати ≥ 1 м)
-- [ ] 👤 Електрохімічний тест: ORR-струм катода з PTFE-GDL vs без — порівняння продуктивності
-- [ ] 👤 12-тижневий тест з імітацією дощу/росі — резистентність до flooding
-- [ ] 👤 Сумісність O-ring (EPDM vs FKM) з PTFE та pH 4.5–5.5
-- [ ] 👤 Метод ламінації PTFE на катодний фланець (без клеїв — механічний обтиск по периметру)
-
-#### HW.27 — Dehydrogenation Bake: Hydrogen Embrittlement Mitigation (NEW 2026-05-16)
-- **P1** · 👤 · ⚪ · → `01_02 §1.3`
-- **Стан:** Не розпочато — вакуумний dehydrogenation bake (250°C±25 / 10⁻³ mbar / 3 год, within 2h of rinse) після EAAE: без нього brittle TiH₂ 5–50 µm → втомне руйнування. Контроль LECO RH404 H<100 ppm (ASTM B348 ліміт 150). Блокує втомну міцність гіроїда, 20+ років (TRL 4→5). Канон `01_02 §1.3` (Крок 5b) / §1.3a-C.
-- [ ] 👤 Передати специфікацію Крок 5b заводу-підряднику (Київ/Дніпро) разом із протоколом EAAE
-- [ ] 👤 Перевірити наявність вакуумної печі 200–300°C у заводу-кандидата (або стороннього subcontractor)
-- [ ] 👤 LECO RH404 hot extraction analysis на тестовому купоні з кожної партії
-- [ ] 👤 Втомне тестування Ti-coin Stage 2 (HW.24) — порівняння з/без dehydrogenation bake для підтвердження ефекту
-- [ ] 👤 Ti-coin Stage 2 — замовити пару **bare + ZIF-coated** (chem-note triage 2026-06-06): порівняння деградації струму ізолює ZIF enzyme-stabilization → готовий «ZIF nanozyme as enzyme stabilizer» результат (→ Стаття 2 stability; доповнює, не заміняє, in-silico ET-механізм Стаття 1)
-
 #### HW.29 — Board-to-Board Connector pair: Power Deck ↔ RF Deck (NEW 2026-05-16)
 - **P1** · 👤 · ⚪ · → `02_01 §3.1`, `§5.3`
 - **Стан:** Не розпочато — B2B-конектор Power Deck ↔ RF Deck (Samtec FTSH header + CLT socket, 1.27мм pitch SMD, 8–10мм stack, ~$0.85/пара): без нього RF Deck не отримує 3V3 (Pogo зайняті VIN_DC+GND). Альтернатива — rigid-flex (~+$1.50, усуває механічну точку відмови). Канон `02_01 §5.3` (+ BOM поз.12 §3.1).
 - [ ] 👤 KiCad: place B2B footprints на обидві деки + перевірка signal integrity для 6-8 сигналів (3V3, GND, VSTOR_sense, EBFC_sense, piezo_EXTI, BQ25570 EN)
 - [ ] 👤 Виміряти insertion loss + height variation на 5 зразках першої партії
 - [ ] 👤 Pre-fabrication: B2B stack height (±0.15 мм) уже врахований у HW.8.7 Z-stack RSS ✅; виміряти variation на 5 зразках 1-ї партії для підтвердження ±0.15
-
-#### HW.4 — Self-healing coating (NEW: zone-restricted)
-- **P2** · 👤 · ⚪ · → `01_02 §3/§3.6`
-- **Стан:** Не розпочато — 8-HQ self-healing мікрокапсули не синтезовані; наносяться **лише на неактивні поверхні** (Zone 3 сорочка, торці PEEK) — НЕ на Zone 1 гіроїд / катодну каталітичну грань (блокує DET). Блокує 20+ річні longevity-claims (TRL 6). Канон `01_02 §3/§3.6`.
-- [ ] 👤 Синтез 8-HQ мікрокапсул (in-situ polymerization)
-- [ ] 👤 Інтеграція в PEO electrolyte або layer-by-layer — ТІЛЬКИ на дозволених зонах
-- [ ] 👤 Тест: 10× вищий Rct
-- [ ] 👤 **Thiol-Michael interphase** (`01_02` §1a.1): тест адгезії self-healing шару при ростовому навантаженні, порівняння з простою APTES-силанізацією — додано в `01_02`
 
 #### HW.11 — Conformal Coating (Parylene C; Sylgard rejected — TinyML acoustic)
 - **P2** · 👤 · 🟡 · → `02_01`, `02_02 §3.4`
@@ -407,6 +432,46 @@
 - [ ] 👤 Контакт з CVD-сервісом Parylene-deposition (Київ / Львів — пошукати спеціалізовані PCB-house)
 - [ ] 👤 Верифікувати п'єзо-attenuation: тест 16 kHz tone з/без coating на калібрувальному стенді
 - [ ] 👤 Верифікувати з кварцовим резонатором при -20°C / +60°C (Parylene Shore D ~50, м'якший за air-gap воду)
+
+#### HW.19 — VOC-діагностика деградації конденсатора (ADS1220 + TPS22860)
+- **P2** · 🤖+👤 · 🟡 · → `02_03 §12.4.2`
+- **Стан:** Концепт верифіковано (DCI-safe) — добова VOC EBFC розрізняє «дерево хворіє» vs «конденсатор деградує» (обидва ростять delta_t); корекція живе на **slashing-шарі** (`ContractHealthCheckService`), НЕ в Z-математиці (інакше server-Z≠device-Z → fraud-flag щопакета). Реалізація gated на firmware VOC-вимір + delivery-контракт. TRL 8+. Канон `02_03 §12.4.2`.
+- [ ] 🤖 Валідувати концепт на вбудованому 12-біт ADC (firmware: GPIO disconnect EDLC → measure VOC → reconnect)
+- [ ] 👤 Якщо 12-біт недостатньо — додати ADS1220 + TPS22860 до BOM
+- [ ] 🤖 Backend (gated): `voc_mv` колонка + VOC-корекція у `ContractHealthCheckService` (виключити hardware-confounded дерева зі slashing-підрахунку), **НЕ в `Attractor`**. Чекає firmware VOC-вимір + delivery-контракт.
+
+#### HW.20 — Buffer Cap: Tantalum → MLCC migration
+- **P2** · 👤 · 🟡 · → `02_03 §6`
+- **Стан:** Рішення зафіксовано — MLCC замість тантала (виток 1–10µA вбивав би sleep-бюджет 1.5µA); фінал = **25V X7R 1210** (НЕ 6.3V X5R: DC bias −75…85% при 6.3V знищує ємність), 47µF для +14 dBm Сценарію C (BOM поз.9 `02_01`). Канон `02_03 §6` (§6.1 derating).
+- [ ] 👤 внести фінальний part у KiCad BOM (HW.9)
+
+#### HW.30 — SMD Piezo + Acoustic Pad (Zero-Touch Wake) (NEW 2026-05-16)
+- **P2** · 👤 · ⚪ · → `02_01 §6`
+- **Стан:** Не розпочато — SMD-piezo (Murata 7BB-15-6L0 / TDK / Mallory) на нижній стороні Power Deck + Bergquist Sil-Pad 1500ST acoustic coupling до Ti Zone 3 → сигнал через B2B (HW.29) → BAT54S → EXTI; усе SMD (стара клеєна ∅27мм через-отв. з дротами порушувала Zero-Touch §5.2). **🔑 Sil-Pad = 3-тя пружина Z-stack** (∥ pogo на спільному Power↔Zone3 gap, 30-40% compression + 20-р creep, HW.8.7 / `02_02 §3.5`) — compression-вікно freeze разом із Z-stack. Канон `02_01 §6` (+ BOM поз.5 §3.1).
+- [ ] 👤 Вибрати SMD-piezo з 3 кандидатів (Murata/TDK/Mallory), компроміс sensitivity vs пасивний voltage swing на резонансі ~4 кГц
+- [ ] 👤 Acoustic coupling test: SMD-piezo + Sil-Pad + Ti-coin → подаючи 16 кГц tone через анкер → виміряти voltage spike на p'єзо vs стара ∅27 мм через-отв. архітектура
+- [ ] 👤 Verify EXTI wake-on-vibration latency vs стара через-отв. baseline (target < 5 мс)
+- [ ] 👤 **Interrupt-storm mitigation** (нот.5): амплітудний поріг — hardware comparator/RC АБО software fast-amplitude gate, щоб вітер/дощ/гойдання гілок НЕ будили повний аудіо-цикл → drain-захист 0.47 F supercap (поточно лише `BAT54S` voltage-clamp, без порогу; `03_03 §1.2`)
+- [ ] 👤 Lifecycle test: Sil-Pad creep під 30-40% compression × 20 років (Arrhenius accelerated)
+
+## §02b · Gateway — Queen Hardware
+
+> Брама (Queen): стільниковий/Starlink uplink, BMS, термал IP67, антена — канон [`02_05`](02_05_Queen_Hardware_and_Starlink). The Veins-рівень стека (огляд — §01a).
+
+#### HW.31 — Queen Antenna Split (868 LoRa tuned ≠ dual-band)
+- **P0** · 👤 · 🟡 · → `02_05 §7`
+- **Стан:** Рознесено в каноні — поз.11 wideband LTE-M/NB-IoT (700–2700 МГц, Kyivstar B1/B3/B7/B8/B20, опц. LTE+GNSS) · поз.12 LoRa 868 **tuned** 5 dBi fiberglass omni (OD8-868/ALL.4101); окремі RF-порти SX1262 vs SIM7070G, dual-band SMA відхилено (VSWR>2.5 @868 → −3-5 дБ EIRP). Канон `02_05 §7`.
+- [ ] 👤 freeze поз.11/12 у BOM Королеви при 02_05 BOM freeze
+
+#### HW.15 — BMS + VBAT decoupling для SIM7070G
+- **P1** · 👤 · 🟡 · → `02_05 §Пікові струми SIM7070G`, `§2.2.1`
+- **Стан:** Module-level fix зафіксовано — 5-cap VBAT tank bank проти 2A-burst brownout (просадка <20mV, margin >35×; BOM поз.17–20). Лишається system-level: BMS/MPPT моделі в BOM + bench-звірка маркування SIM7070G + firmware PSM/eDRX. Канон `02_05 §2.2.1` (+ §Пікові струми).
+- [ ] 👤 Обрати BMS: мінімум 12V / 20A continuous / 50A peak
+- [ ] 👤 Обрати MPPT: мінімум Victron SmartSolar MPPT 75/15
+- [ ] 👤 PCB layout: розмістити C_BULK ≤ 10 мм від VBAT pin, HF caps впритул
+- [ ] 👤 Оновити BOM (закупка 5 нових компонентів)
+- [ ] 👤 Bench: фізично звірити маркування модему на прототипі = **SIM7070G** (не SIM7000G; найменування у firmware/BOM/`02_05` вже уніфіковано — лишилась лише фізична звірка)
+- [ ] 🔗 Firmware: додати `AT+CPSMS` + `AT+CEDRXS` (PSM/eDRX, idle ~3 µA) у Queen flush-цикл — `03_02`
 
 #### HW.14 — Winter energy deficit for Queen Phase 3 (Starlink Mini)
 - **P2** · 👤 · ⚪ · → `02_05 §Зимовий енергодефіцит`
@@ -427,54 +492,6 @@
 - [ ] 👤 Підтвердити рішення (рекоменд. ESP32-S3)
 - [ ] 🤖 Оновити 03_02 з рішенням
 - [ ] 🔗 Додати co-processor firmware до `firmware/`
-
-#### HW.19 — VOC-діагностика деградації конденсатора (ADS1220 + TPS22860)
-- **P2** · 🤖+👤 · 🟡 · → `02_03 §12.4.2`
-- **Стан:** Концепт верифіковано (DCI-safe) — добова VOC EBFC розрізняє «дерево хворіє» vs «конденсатор деградує» (обидва ростять delta_t); корекція живе на **slashing-шарі** (`ContractHealthCheckService`), НЕ в Z-математиці (інакше server-Z≠device-Z → fraud-flag щопакета). Реалізація gated на firmware VOC-вимір + delivery-контракт. TRL 8+. Канон `02_03 §12.4.2`.
-- [ ] 🤖 Валідувати концепт на вбудованому 12-біт ADC (firmware: GPIO disconnect EDLC → measure VOC → reconnect)
-- [ ] 👤 Якщо 12-біт недостатньо — додати ADS1220 + TPS22860 до BOM
-- [ ] 🤖 Backend (gated): `voc_mv` колонка + VOC-корекція у `ContractHealthCheckService` (виключити hardware-confounded дерева зі slashing-підрахунку), **НЕ в `Attractor`**. Чекає firmware VOC-вимір + delivery-контракт.
-
-#### HW.20 — Buffer Cap: Tantalum → MLCC migration
-- **P2** · 👤 · 🟡 · → `02_03 §6`
-- **Стан:** Рішення зафіксовано — MLCC замість тантала (виток 1–10µA вбивав би sleep-бюджет 1.5µA); фінал = **25V X7R 1210** (НЕ 6.3V X5R: DC bias −75…85% при 6.3V знищує ємність), 47µF для +14 dBm Сценарію C (BOM поз.9 `02_01`). Канон `02_03 §6` (§6.1 derating).
-- [ ] 👤 внести фінальний part у KiCad BOM (HW.9)
-
-#### HW.26 — PEEK Cold-Flow Creep: Mechanical Lock (NEW 2026-05-16)
-- **P2** · 🤖+👤 · 🟡 · → `01_01 §4.3`
-- **Стан:** 🤖 PicoGK-геометрія SHIPPED (`MechanicalLock.cs` — asymmetric ratchet barbs + DIN-471 groove на hollow shank); 👤 bench-residual (press-fit/FEA/закупка). Mechanical lock проти PEEK cold-flow creep — три комплементарні фічі (barbs осьове утримання + DIN-471 retaining ring + hex anti-rotation; числа/геометрія/creep-таблиця — канон [`01_01 §4.3`](01_01_Coaxial_Gyroid_Topology_and_PEEK)). Барби = утримання, **НЕ ущільнення** (герметизує O-ring, `01_01 §4.2`). Без замка contact pressure падає −60% за 10р (§4.3) → втрата O-ring seal / вирив Zone 3. **Design-альтернатива (не зроблено):** helical barb = pull-out + torque-out в одній фічі, замінила б hex (§4.3 C). Блокує 20+ річну надійність.
-- [ ] 👤 Update CNC-чертежі: retaining ring grooves на anchor end Zone 1 + flange end Zone 3
-- [ ] 👤 Закупка DIN 471 **external** retaining rings Ti grade 2 (або 316SS) під обраний Ø shank (DIN 471 = зовнішнє, на вал; внутрішнє = DIN 472)
-- [ ] 👤 Update press-fit процедуру: temp 150°C (>T_g PEEK 143°C Victrex 450G) + контрольована сила 800–1200 N
-- [ ] 👤 **FEA-валідація** ANSYS LS-DYNA visco-elastic PEEK Prony — 10y creep, residual pull-out > 200 N
-- [ ] 👤 Stage 1 SLA-mock (HW.24): barb-detail у фотополімерну збірку для перевірки клацання
-- [ ] 👤 **Belleville/disc-spring preload** (deferred chem-note triage → tracked тут): тримає clamp force анкер↔ксилема проти 20-річного Ti creep + thermal cycle — комплементарний до barbs+DIN-471; ≠ pogo contact-spring / ≠ capsule Z-stack [`02_02 §3.5`](02_02_Blind_Mate_Pogo_Pin_Interface)
-
-#### HW.28 — Anti-Overgrowth Shield для Zone 3 (NEW 2026-05-16)
-- **P2** · 🤖+👤 · 🟡 · → `01_04 §5.5`
-- **Стан:** Захист **(A) виступ-дзвін ✅ machine** (Деталь 4 `Radome.cs`, bell-rise verify-gate; HW.17); (B) coating + (C) maintenance — 👤 pending. Anti-overgrowth shield тримає Zone 3 катод відкритим атмосфері: без нього за 3–5р кора накриває PTFE-GDL → O₂-дифузія стоп → EBFC мертва. Три комплементарні захисти (A виступ-дзвін PEEK Radome + B super-hydrophobic coating / Cu-сплав + C forester maintenance; числа/матеріали/Cu-фітотокс-caveat — канон [`01_04 §5.5`](01_04_CODIT_and_Xylemointegration)). OPEX → `07_02 §6`.
-- [ ] 👤 Закупка/тест super-hydrophobic coating (Fluoropel PFC-1601V або аналог; UV-деградація → Cu-сплав альтернатива, §5.5 B)
-- [ ] 👤 Field protocol для forester visit: зачистка приростаючої тканини без traumatic surgery
-- [ ] 👤 12-місячний польовий тест на тестовому дереві (Черкаський бір)
-- [ ] 👤 Update `07_02 §6` OPEX: forester visit раз на 5–7 років (Черкаський бір)
-
-#### HW.30 — SMD Piezo + Acoustic Pad (Zero-Touch Wake) (NEW 2026-05-16)
-- **P2** · 👤 · ⚪ · → `02_01 §6`
-- **Стан:** Не розпочато — SMD-piezo (Murata 7BB-15-6L0 / TDK / Mallory) на нижній стороні Power Deck + Bergquist Sil-Pad 1500ST acoustic coupling до Ti Zone 3 → сигнал через B2B (HW.29) → BAT54S → EXTI; усе SMD (стара клеєна ∅27мм через-отв. з дротами порушувала Zero-Touch §5.2). **🔑 Sil-Pad = 3-тя пружина Z-stack** (∥ pogo на спільному Power↔Zone3 gap, 30-40% compression + 20-р creep, HW.8.7 / `02_02 §3.5`) — compression-вікно freeze разом із Z-stack. Канон `02_01 §6` (+ BOM поз.5 §3.1).
-- [ ] 👤 Вибрати SMD-piezo з 3 кандидатів (Murata/TDK/Mallory), компроміс sensitivity vs пасивний voltage swing на резонансі ~4 кГц
-- [ ] 👤 Acoustic coupling test: SMD-piezo + Sil-Pad + Ti-coin → подаючи 16 кГц tone через анкер → виміряти voltage spike на p'єзо vs стара ∅27 мм через-отв. архітектура
-- [ ] 👤 Verify EXTI wake-on-vibration latency vs стара через-отв. baseline (target < 5 мс)
-- [ ] 👤 **Interrupt-storm mitigation** (нот.5): амплітудний поріг — hardware comparator/RC АБО software fast-amplitude gate, щоб вітер/дощ/гойдання гілок НЕ будили повний аудіо-цикл → drain-захист 0.47 F supercap (поточно лише `BAT54S` voltage-clamp, без порогу; `03_03 §1.2`)
-- [ ] 👤 Lifecycle test: Sil-Pad creep під 30-40% compression × 20 років (Arrhenius accelerated)
-
-#### HW.21 — Hybrid energy R&D: TEG + Anchor stacking (post-TRL 6)
-- **P3** · 👤 · 🌿 · → `01_03 §6`
-- **Стан:** Far-horizon (post-TRL 6) — два доповнювальні джерела проти зимового енергодефіциту: (a) TEG Bi₂Te₃ ~50–200 µW зимою (ΔT 15–25 K), (b) stacking 3–4 анкерів (V_OC ×3–4, для арктичних/кластерних). Одно-анкерна Gen 2.0 архітектура вже задовольняє BQ25570 cold-start 330 мВ → TRL 7+. NB: SolarBotanic «nano-leaves» не інтегруємо без peer-reviewed per-node даних. Канон `01_03 §6`.
-- [ ] 👤 TEG: вибір модуля Bi₂Te₃ (4×4 см), стендовий тест ΔT-V кривої на тестовому стовбурі
-- [ ] 👤 TEG: інтеграція з BQ25570 multi-input (можливість одночасного MPPT для EBFC + TEG)
-- [ ] 👤 Stacking: 3-анкерна тестова конфігурація на одному дереві з PEEK-ізоляцією (Zone 2)
-- [ ] 👤 Stacking: оцінка впливу на провіженінг (групова реєстрація DID) та Lorenz-аналітику (декомпозиція V_OC)
-- [ ] 🔗 Залежить від HW.13 (P-V крива EBFC) для правильного бюджетування доповнення
 
 ## §03 · Firmware
 
@@ -909,7 +926,7 @@
 - **Стан:** Core закрито — `SilkenForestCoin.slash()` (SLASHER_ROLE) зменшує voting power при slashing → атака «купити SFC + навмисне порушення NaaS» неможлива. Residual: ~1–5 хв lag (`web3_critical` черга) між SCC-slash і SFC-slash — у вікні учасник технічно ще може проголосувати. Канон `07_01 §8`.
 - [ ] 🔗 Vote-Escrow (veToken) при `breached`-контрактах — опціонально, gated на повний DAO governance launch (BIZ.4)
 
-## §08 · Академічна інтеграція
+## §08a · Академічна інтеграція
 
 > **Поточний стан:** Партнерство з 5+ академічними установами — ChNU (фізико-хімія + ФОТІУС), ChDTU (Data Science + RF + акустика), ChIPB-NUTSU (пожежна безпека), ChMA (біохімія + токсикологія), СЄУ (правова + економічна архітектура). UNI.1-3, UNI.8 — раніше ідентифіковані; нижче — розширення на всі 5 установ.
 
@@ -1006,7 +1023,7 @@
 - **Стан:** Не почато — Хоменко (Заслужений винахідник, 80+ патентів): прецизійна обробка + різьба анкера для живої деревини (`01_01`/`01_02`/`02_02`, deinstall `08_02 §3 Несен`). Канон `08_02 §2`.
 - [ ] 👤 контакт (ChDTU rectorat) + prior-art landscape consult (UNI.15) + прототип різальної геометрії в ЧДТУ machine shop
 
-## §08 · External Stakeholders (B2G / B2B / Cultural)
+## §08b · External Stakeholders (B2G / B2B / Cultural)
 
 > **Поточний стан:** Зовнішні залежності виокремлені в [`08_03`](08_03_External_Stakeholders_Registry) (Cultural Layer) та [`08_03`](08_03_External_Stakeholders_Registry) (B2G/B2B Matrix). Це не операційні залежності hot-path — це outreach pool, що активується за TRL-тригерами у відповідних модулях. Імена нижче — публічна інформація; контакти живуть у gitignored CRM.
 
@@ -1060,7 +1077,7 @@
 - **Стан:** Не почато (trigger: TRL 8 у `05_03`) — 8 національних митців (Марчук, Чебаник, Микита, Сидоренко, Медвідь, Гуменюк, Гуйда, Ковтун), старша когорта (зафіксувати window); hand-off PR-агентству. Канон `08_03 §11.2`.
 - [ ] 👤 verify life/health × 8 → gallery/agent кожному → pitch package (brief+animation)
 
-## §08 · IP / Grants (BIZ)
+## §08c · IP / Grants (BIZ)
 
 #### BIZ.10 — Multi-party co-authorship + open-license MoU framework
 - **P1** · 👤 · ⚪ · → `08_03`, `08_02 §3-07`

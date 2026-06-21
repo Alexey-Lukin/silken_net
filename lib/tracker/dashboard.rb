@@ -34,7 +34,8 @@ module Tracker
 
     Item = Struct.new(:id, :title, :priority, :executors, :stage, :canon, :section_modules, keyword_init: true)
 
-    # `## §NN`-section module set: `§01–§02`→["01","02"], `§03/§05`→["03","05"].
+    # `## §NN`-section module set: `§03/§05`→["03","05"]; sub-letter ignored, so
+    # `§01a`/`§08b`→["01"]/["08"] (multiple sub-sections share a module — §08a/b/c).
     SECTION_NUMS = /§\s*(\d{2})/
     # #### heading ID — tolerates a leading emoji/✅ run (`#### 🌿 UNI.13a — …`),
     # which a bare `[A-Z]`-anchored match silently dropped (UNI.13a / BIZ.12).
@@ -362,7 +363,8 @@ module Tracker
 
     # --- section↔canon-home guard: One-Home for the tracker itself ---
     # A `#### ` item under a `## §NN` registry section must canon-ref module NN — a
-    # `§03/§05` or `§01–§02` header declares a multi-module set, any of which is OK.
+    # `§03/§05` header declares a multi-module set (any OK); a `§NNx` sub-letter
+    # heading (§01a/§08b) is one module NN — several may share it (curation split).
     # Catches the drift that once buried §06 deploy items (S*/INF*) under §04 "DevOps"
     # behind apologetic nav-notes. 🔀 cross-cutting / 📌 backlog / 🗄️ archive sections
     # are module-agnostic (section_modules nil/empty) → exempt. (canon-mirror, 00_06 §4)
