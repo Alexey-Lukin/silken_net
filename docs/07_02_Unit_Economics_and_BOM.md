@@ -71,7 +71,7 @@
 
 | Підсистема | Компоненти / Технологія | Вартість ($) |
 |---|---|---|
-| **Анкер Zone 1 + Zone 3 (Anode + Cathode)** | Ti-6Al-4V Grade 5. SLM+HIP друк (Zone 1) + SLM/EBM (Zone 3). Маса ~9 г сумарно (пористість гіроїда 65%). Включає Hard Gold pogo-площадку та PTFE-GDL катодну мембрану. | $20.00–$25.00 |
+| **Анкер Zone 1 + Zone 3 (Anode + Cathode)** | Ti-6Al-4V Grade 5. SLM+HIP друк (Zone 1) + SLM/EBM (Zone 3). Маса ~9 г сумарно (пористість гіроїда 65%). Включає Hard Gold pogo-площадку, **монолітну шину анода** ([`01_01 §1.4`](01_01_Coaxial_Gyroid_Topology_and_PEEK) — частина анодного друку, без окремого Cu-провідника) та PTFE-GDL катодну мембрану. | $20.00–$25.00 |
 | **Анкер Zone 2 (PEEK-терморозрив)** | Medical Grade PEEK. ЧПУ-фрезерування з annealing 200–250°C, допуски H7/s6. Press-fit з Zone 1 і Zone 3. | $3.00 |
 | **Радом (PCBA housing)** | Medical Grade PEEK купол ∅25 мм (frozen), термолиття. O-ring EPDM. IP68. Окрема деталь, **НЕ Zone 2**. | $2.50 |
 | **Power Deck (PCBA)** | BQ25570 (MPPT) + EDLC Supercapacitor 0.47 F + Pogo Pins + 47µF/25V/X7R/1210 buffer cap ([`02_03 §6.1`](02_03_BQ25570_MPPT_Nano_Power)) + **LTC3108 DNP footprint** для cold-start fallback ([`02_03 §1.5`](02_03_BQ25570_MPPT_Nano_Power)) + пасивна обв'язка 0402. | $6.35 |
@@ -444,7 +444,7 @@ PCBA + Збірка (Черкаси — SVS-ARTA)
 | **EBFC хімія (на анкер)** | GOx+CAT+GA+PEG, $3–5 | GOx+CAT+GA+PEG, $3–5 | GOx+CAT+GA+PEG, $3–5 | **dgrFAD-GDH + ZIF/Lac + Genipin/CNC + PSBMA, $15–24.50 (1K) / $5–8 (50K+)** |
 | **EBFC термін служби** | 3–5 років | 3–5 років | 3–5 років | **20–25 років** |
 | **Зональна архітектура** | Моноліт 120 мм | Моноліт 120 мм | 3-zone | **3-zone (Gen 2.0 chemistry)** |
-| **Тепловий міст анод-катод** | ❌ Прямий контакт | ❌ Прямий контакт | ✅ PEEK Zone 2 | **✅ PEEK Zone 2** |
+| **Тепловий міст анод-катод** | ❌ Прямий контакт | ❌ Прямий контакт | ✅ PEEK Zone 2 | **✅ PEEK Zone 2** (залишк. міст — монолітна шина, мінім., [`01_01 §1.4`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) |
 | **Кисневий доступ до катода** | ❌ | ❌ | ✅ Zone 3 | **✅ Zone 3 + ZIF chloride-tolerance** |
 | **Anti-biofouling (resin)** | Жодний | PEG (термодинамічно недостатній) | PEG | **Nafion-g-PSBMA (8 H₂O/ланцюг, UCST winter-lock)** |
 | **H₂O₂ leak у ксилему** | Так (CODIT trigger) | Так | <5% (з catalase) | **0 (FAD-GDH не виробляє)** |
