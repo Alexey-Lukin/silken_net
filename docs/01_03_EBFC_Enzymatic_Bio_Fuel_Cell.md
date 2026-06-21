@@ -391,6 +391,12 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 - **EIS** — імпедансна спектроскопія для опору границі фермент↔метал.
 - **ICP-MS** після тривалої експозиції — перевірка вимивання Os, металів ZIF.
 
+> 🎯 **Квантитативні acceptance-пороги (Stage-2 gates — дім тут; RFQ реферить):**
+> - **30-day stability:** ≥ **80% retention** j_max (potentiostatic hold @ V_op, 20–25°C); нижче → fail.
+> - **Chloride:** 0.25 М NaCl step-ramp — катод НЕ нижче −10% (ZIF-гібрид ціль **+7.5%**, §2.2).
+> - **UCST recovery:** −10°C → +25°C цикл → струм відновлюється до **100%** (тест відновлення, НЕ вимір при холоді).
+> - **Substrate ICP-MS (6-alloy bake-off, per-alloy):** V ≤ **0.02** / Al ≤ **0.05** µg/cm² (токсичні — 4V/7Nb); Nb/Zr/Ta informational (біоінертні). Down-select сплаву → [`01_02 §2.5`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) + RFQ [anchor_alloy_rfq](protocols/procurement/anchor_alloy_rfq.md). Predicted — `tools/in_silico` 51.
+
 **Гейт TRL 4 → TRL 5:** Стабільні мілівольти/мікроампери протягом **≥ 30 днів** на монетах. Деталі координації з лабораторіями ЧНУ — [`08_02 §2`](08_02_Academic_Institutions_Registry).
 
 ### 3.6. Gen 1.0 → Gen 2.0 — Чому Кожен Компонент Замінено (Decision Record)
