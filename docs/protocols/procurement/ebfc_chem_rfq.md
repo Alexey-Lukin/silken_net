@@ -1,15 +1,16 @@
-# Lab RFQ Spec-Sheets — Gen 2.0 EBFC stack (CRO / supplier-ready)
+# EBFC Chemistry — RFQ Spec-Sheets (Gen 2.0 stack, CRO / supplier-ready)
 
 > **Що це:** дистильовані з канону **специфікації для розсилки RFQ** контрактним лабораторіям (CRO) та
 > постачальникам — щоб не починати листування з нуля. Один аркуш на компонент: що зробити · якість/QC ·
 > кількість · формат поставки · lead time · IP/конфіденційність.
+> **Частина procurement-реєстру** → [`rfq_registry`](rfq_registry.md) (EBFC-хімія рядок · конвенція · hard-constraint доми §4.A).
 > **Статус:** 🟡 робочий артефакт (не канон). **Усі числові значення тут — дзеркало канону**
 > ([`01_03`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) / [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.5 / L1); **правити у домі, не тут** (One-Home, [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)). Цей аркуш реферить,
 > не є джерелом істини про хімію.
 > **Cross-ref:** [`01_03 §2.1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) (анод+матриця+мембрана) ·
 > [`01_03 §2.2`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) (катод) ·
 > [`01_03 §3.7`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) (CRO-нюанси/bottlenecks) ·
-> [`L1`](in_silico/L1_protein_architecture.md) (ген+11 N→Q — **owner послідовності**) ·
+> [`L1`](../ebfc/in_silico/L1_protein_architecture.md) (ген+11 N→Q — **owner послідовності**) ·
 > [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.5 (хімічний стек) / HW.24 (staged-validation) ·
 > [`08_02`](../../08_02_Academic_Institutions_Registry.md) (ЧНУ нанохімія — ZIF за співавторство).
 >
@@ -39,7 +40,7 @@
 | **Походження** | *Glomerella cingulata*, UniProt **G8E4B5** (baseline; *Aspergillus* — альт.) |
 | **Хост експресії** | **Pichia pastoris** (секреторна). **НЕ** *E. coli* (inclusion bodies) — `01_03 §3.7` |
 | **Деглікозилювання** | **Gene-level (preferred):** синтетичний ген із вбудованими **11 N→Q** → *Pichia* фізично не глікозилює → **PNGase F не потрібен**. Fallback: PNGase F / Endo-H **тільки native conditions** (без SDS/DTT) |
-| **Послідовність** | 600 aa, 11 N→Q (N71/100/192/200/249/258/271/355/380/405/463) — **owner [`L1 §2`](in_silico/L1_protein_architecture.md)**; ген синтезувати з L1 (не дублюю рядок тут — single source проти drift) |
+| **Послідовність** | 600 aa, 11 N→Q (N71/100/192/200/249/258/271/355/380/405/463) — **owner [`L1 §2`](../ebfc/in_silico/L1_protein_architecture.md)**; ген синтезувати з L1 (не дублюю рядок тут — single source проти drift) |
 | **Кофактор** | FAD (нативний; expression host забезпечує флавінілювання) |
 | **QC / acceptance** | SDS-PAGE (один бенд ~600 aa, аглікозильований MW), активність (glucose-DH assay, U/mg), відсутність H₂O₂ (O₂-незалежність), MS-підтвердження N→Q-сайтів |
 | **Кількість** | пілот: мг-масштаб для Stage 2 Ti-coins (HW.24); уточнити після квоти |
@@ -47,7 +48,7 @@
 | **IP** | ген відкритий (defensive disclosure / L1); CRO лише експресує; CDA — §IP |
 
 > ⚠️ **Gate перед заморожуванням гена (sequence freeze ≠ now):** два in-silico кроки на dgr-мутанті ще
-> відкриті ([`L1 §2`](in_silico/L1_protein_architecture.md), → [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.5.IS):
+> відкриті ([`L1 §2`](../ebfc/in_silico/L1_protein_architecture.md), → [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.5.IS):
 > - **CHEM.11 (anti-aggregation):** 11 знятих гліканів оголюють гідрофобну поверхню → 4 hotspots
 >   (Gln71/200/258/405). Перед CRO: Aggrescan3D + компенсаторні полярні мутації поруч.
 > - **CHEM.10 (genipin-shield):** Lys109/Lys262 на виході електрона → мутувати **Lys→Arg** (інертний до
@@ -133,7 +134,7 @@
 | [`01_03 §2.1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) | анод · genipin-chitosan-CNC матриця · Nafion-g-PSBMA (Шар 4/5) |
 | [`01_03 §2.2`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) | катод Laccase/nCoCuCeZIF — цільові показники |
 | [`01_03 §3.7`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) | CRO-нюанси: Pichia-not-E.coli, ZIF SEM-gate, мембрана-bottleneck |
-| [`L1 §2`](in_silico/L1_protein_architecture.md) | **owner** мутованої послідовності (600 aa, 11 N→Q) + CHEM.10/11 gate |
+| [`L1 §2`](../ebfc/in_silico/L1_protein_architecture.md) | **owner** мутованої послідовності (600 aa, 11 N→Q) + CHEM.10/11 gate |
 | [`00_07`](../../00_07_Action_Plan_Tracker.md) | HW.5 (хім-стек action items) · HW.24 (staged validation) · HW.5.IS (CHEM.*) |
 | [`08_02`](../../08_02_Academic_Institutions_Registry.md) | ЧНУ нанохімія (ZIF) + біо-хаб (рецептура соку) |
 | [`08_01 §2`](../../08_01_Joint_Publications_and_IP_Strategy.md) | IP-постава (defensive publication) — owner |
