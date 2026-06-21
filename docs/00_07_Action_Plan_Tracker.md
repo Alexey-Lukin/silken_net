@@ -129,6 +129,8 @@
 - [x] 🤖 HW.1.PicoGK: **ARCH.25 двофазна connectivity** ✅ 2026-06-21 (`a5ed3d9` — open-pore/percolation/solid-island/specific-surface, display-less xUnit; adaptive-resolution gotcha; деталі → секція **ARCH.25**)
 - [x] 🤖 HW.1.PicoGK: `tools/cad` README ✅ + skill `.claude/skills/picogk` ✅ + Noyron-методологія в canon ✅; CI `cad_smoke.yml` ✅ **enterprise 2-job 2026-06-20** (logic = Linux pure-xUnit hard-gate [PicoGK-runtime-free] + render = macOS build-hard + verify best-effort [Library.Go SIGSEGV 139 headless, CI-confirmed] + CycloneDX SBOM/artifacts)
 - [x] 🤖 HW.1.PicoGK: canon honesty-fix `01_02 §6` ✅ (.NET 9, PicoGK v2.2, real API, дати, nTop→PicoGK primary)
+- [x] 🤖 HW.1.PicoGK: **CEM-native engineering-drawing program + Ti-coin SVG PoC ✅ 2026-06-20** (`26c298e` — `Drawing.cs` + `draw <cem>` verb = чистий аналітичний SVG, без mesh/Library.Go; research `tools/cad/docs/drawings_program.md`: STL→STEP=lossy → креслення з CEM як metrics.json [Noyron]; гіроїд = envelope + spec-callout, не поточково [ISO/ASTM 52900]; креслення несе fits H7/s6 + GD&T datums + post-process нотатки + lattice-spec). Roadmap §7: sleeve/flange/radome → title-block+GD&T+tolerance-CEM-block → Zone-1 envelope+section → assembly-креслення
+- [ ] 👤 HW.1.PicoGK drawing-decisions (`drawings_program.md §8`): (1) чи вимагає SLM/PEEK-завод **STEP** (чи досить SVG/PDF+STL)? (2) **ISO 128** (1-й кут) vs **ASME Y14.5**? (3) tolerances → CEM `tolerances`-блок (раджу — SSOT, живить і креслення, і HW.8.9)?
 
 #### HW.23 — HIP postprocess specification for SLM anode
 - **P0** · 👤 · ⚪ · → `01_02 §1.7`
