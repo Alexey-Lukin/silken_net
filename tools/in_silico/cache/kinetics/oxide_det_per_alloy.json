@@ -1,0 +1,65 @@
+{
+  "Ti-6Al-4V": {
+    "oxide": "TiO2",
+    "Eg_eV": 3.2,
+    "d_nm": 4.0,
+    "barrier_eV": 1.6,
+    "tunnel_decay": 51.84,
+    "det_vs_tio2": 1.0,
+    "det_flag": "ok"
+  },
+  "Ti-6Al-7Nb": {
+    "oxide": "TiO2(+Nb2O5)",
+    "Eg_eV": 3.3,
+    "d_nm": 4.0,
+    "barrier_eV": 1.65,
+    "tunnel_decay": 52.65,
+    "det_vs_tio2": 1.02,
+    "det_flag": "ok"
+  },
+  "CP-Ti-Gr4": {
+    "oxide": "TiO2",
+    "Eg_eV": 3.2,
+    "d_nm": 3.5,
+    "barrier_eV": 1.6,
+    "tunnel_decay": 45.36,
+    "det_vs_tio2": 0.87,
+    "det_flag": "ok"
+  },
+  "beta-Ti-13Nb-13Zr": {
+    "oxide": "TiO2/Nb2O5/ZrO2",
+    "Eg_eV": 3.6,
+    "d_nm": 4.5,
+    "barrier_eV": 1.8,
+    "tunnel_decay": 61.86,
+    "det_vs_tio2": 1.19,
+    "det_flag": "\u2191"
+  },
+  "Ta": {
+    "oxide": "Ta2O5",
+    "Eg_eV": 4.2,
+    "d_nm": 6.0,
+    "barrier_eV": 2.1,
+    "tunnel_decay": 89.09,
+    "det_vs_tio2": 1.72,
+    "det_flag": "RISK"
+  },
+  "Ti-15Zr": {
+    "oxide": "TiO2/ZrO2",
+    "Eg_eV": 3.7,
+    "d_nm": 4.0,
+    "barrier_eV": 1.85,
+    "tunnel_decay": 55.75,
+    "det_vs_tio2": 1.08,
+    "det_flag": "ok"
+  },
+  "Au-coating": {
+    "oxide": "none (noble)",
+    "Eg_eV": 0.0,
+    "d_nm": 0.0,
+    "barrier_eV": 0.0,
+    "tunnel_decay": 0.0,
+    "det_vs_tio2": 0.0,
+    "det_flag": "ceil"
+  }
+}

@@ -192,6 +192,21 @@ def test_lame_alloy_comparative():
     assert cmp["beta-Ti-13Nb-13Zr"]["E_GPa"] < cmp["Ti-6Al-4V"]["E_GPa"]   # β-Ti is the low-E lever
 
 
+def test_oxide_det_per_alloy():
+    """Script 53: per-alloy native-oxide DET feasibility (Ta DET-risk pre-coin, 01_02 §2.5).
+    Sanity: 4V baseline 1.0; Ta = DET RISK (wider Ta2O5); Au = ceiling (no oxide)."""
+    path = KINETICS / "oxide_det_per_alloy.json"
+    if not path.exists():
+        pytest.skip("oxide_det_per_alloy.json not computed")
+    d = json.loads(path.read_text())
+    for alloy in ("Ti-6Al-4V", "Ta", "Au-coating", "beta-Ti-13Nb-13Zr"):
+        assert alloy in d, f"missing {alloy}"
+    assert d["Ti-6Al-4V"]["det_vs_tio2"] == 1.0          # baseline self-ref
+    assert d["Ta"]["det_flag"] == "RISK"                 # Ta2O5 wider+thicker → DET risk
+    assert d["Au-coating"]["det_flag"] == "ceil"         # metallic, no oxide → DET ceiling
+    assert d["Ta"]["det_vs_tio2"] > d["beta-Ti-13Nb-13Zr"]["det_vs_tio2"]  # Ta worst-case
+
+
 # ── Constants consistency ──
 
 def test_constants_importable():
@@ -447,6 +462,7 @@ EXPECTED_SCRIPTS = [
     "32_pcet_redox_potential.py",
     "50_thermal_stress_lame.py",
     "51_gusak_degradation_model.py",
+    "53_oxide_det_per_alloy.py",
 ]
 
 
