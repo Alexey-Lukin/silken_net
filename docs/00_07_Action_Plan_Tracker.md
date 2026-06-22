@@ -96,13 +96,9 @@
 
 #### OPS.10 — Supply-chain CI hardening residuals (long tail; CI ~90% done)
 - **P3** · 🤖+👤 · 🟡 · → `00_05`
-- **Стан:** Машинна частина ✅ (2026-06-22): усі GitHub Actions запінені на 40-символьний commit-SHA (`# vN`-коментар; Dependabot `github-actions` підтримує SHA+коментар свіжими), `step-security/harden-runner` (egress-audit) — першим кроком кожного Linux-джоба (macOS `render` + no-op `ci-ok` свідомо пропущені), `Sec · Scorecard` (OpenSSF, weekly + push + `branch_protection_rule`) пише SARIF у Security tab. **Аудит 2026-06-19 ВИПРАВЛЕНО** (звірка gh API 2026-06-22): GitHub secret-scanning + push-protection **уже увімкнені** (не «вимкнено/404»); CodeQL default-setup активний → SARIF-upload працює; репо публічне → `publish_results: true`. Лишилися 👤-тумблери (нижче). Політика → [`00_05 §2.7`](00_05_GitHub_Projects_and_IaC_Automation); інвентар workflow → [`06_07 §1`](06_07_CICD_and_Runbook_Index); план signed-commits → [`06_07 §2`](06_07_CICD_and_Runbook_Index).
-- [x] 👤 GitHub secret-scanning + push-protection (verified ON 2026-06-22)
-- [x] 🤖 SHA-pin усіх GitHub Actions
-- [x] 🤖 `step-security/harden-runner` (egress-audit) на Linux CI-джобах
-- [x] 🤖 OpenSSF Scorecard workflow (`Sec · Scorecard`)
-- [ ] 👤 require signed commits (`required_signatures`) — runbook [`06_07 §2`](06_07_CICD_and_Runbook_Index); передумова = локальний SSH signing key
-- [ ] 👤 (опц.) secret-scanning validity-checks + non-provider-patterns toggles · `SCORECARD_TOKEN` PAT ([`06_04 §1.3`](06_04_Secrets_Checklist)) для Branch-Protection/Webhooks Scorecard-перевірок
+- **Стан:** Машинна частина зацементована — SHA-pin усіх Actions + `harden-runner` (egress-audit) + `Sec · Scorecard` (Node-24-pined); GitHub-side звірено (secret-scanning + push-protection + CodeQL ON; стале «вимкнено/404» виправлено). Політика+стан → [`00_05 §2.7`](00_05_GitHub_Projects_and_IaC_Automation); інвентар workflow → [`06_07 §1`](06_07_CICD_and_Runbook_Index). Лишилися 👤-налаштування:
+- [ ] 👤 require signed commits (`required_signatures`) — runbook [`06_07 §2`](06_07_CICD_and_Runbook_Index)
+- [ ] 👤 (опц.) secret-scanning validity-checks + non-provider toggles · `SCORECARD_TOKEN` ([`06_04 §1.3`](06_04_Secrets_Checklist))
 
 ## §01a · Anchor — Geometry & Metallurgy
 
