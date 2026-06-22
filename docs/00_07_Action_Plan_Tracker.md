@@ -732,6 +732,11 @@
 - **Стан:** Архітектурний дизайн готовий — task-assignment matching ranger↔bounty (scoring, `FOR UPDATE NOWAIT`, GPS/EXIF/IPFS→USDC, anti-Sybil). Заблоковано на Forester Guild PoPhW (E.20). Канон `04_02 §Forester Guild`. Ranger-scoring живить reputation-scaling operator-bond (BIZ.13 [`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)).
 - [ ] 🔗 зв'язати з Forester Guild PoPhW (E.20)
 
+#### TEST.2 — Seed-залежний flake telemetry-спеків (full-suite test-pollution)
+- **P3** · 🤖 · ⚪ · → `04_06`
+- **Стан:** Повна RSpec-сюїта під певним random-seed (зловлено CI seed 48720, 2026-06-22) дає ~36 падінь у `telemetry_unpacker_service_spec` + `coap_telemetry_intake_e2e_spec` (`TypeError` у `TelemetryUnpackerService#preload_trees` на `c[0..3].unpack1` + nil-log `NoMethodError` + `logger.error`-expectation не отримано). В **ізоляції спек проходить 136/0**; re-run повної сюїти зеленів → класична order/state-pollution, **НЕ** регресія коду. Прихована path-gating'ом (docs-only коміти скіпають `test`-job → full-suite біжить рідко). Метод — [`04_06 §B.1`](04_06_Testing_Guide_and_Coverage).
+- [ ] 🤖 `rspec --seed 48720 --bisect` → ізолювати полюючий спек + фікс (мок/`travel`/DB-leak cleanup)
+
 ## §05 · Web3 / Економіка / Slashing
 
 > Мультичейн, oracle/chain-конфіг та slashing-механіка — канон `05_xx`.
