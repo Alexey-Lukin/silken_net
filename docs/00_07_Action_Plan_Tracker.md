@@ -920,11 +920,6 @@
 - [ ] 👤 **Синт. сік make-vs-buy** (ЧНУ pilot-stock vs synthesize, `08_02 §1`)
 - [ ] 🤖 (опц.) **completeness-audit гейт** — лінтер «канон-компонент не в `rfq_registry`» (self-maintaining); ~37 stub-аркушів авторяться інкрементально (registry status-col трекає)
 
-#### BIZ.1 — 1 SCC = ? kg CO₂
-- **P2** · 👤 · 🟡 · → `07_01`, `05_03`
-- **Стан:** 2000 SCC = 1 tCO₂ (0.5 кг/SCC), carbon coefficient per-species — канон `07_01`, `05_03`.
-- [ ] 👤 сертифікація методології (Verra/Gold Standard, Post-TRL 7 → BIZ.9)
-
 #### BIZ.3 — B2C ToS / Privacy Policy
 - **P2** · 👤 · ⚪ · → `07_01`
 - **Стан:** Не почато — B2C юр-документи (канон `07_01`).
@@ -1227,6 +1222,7 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 | FW.48 | cppcheck static-analysis gate ("ruff/rubocop for C") — owned firmware C (`soldier`/`queen`/`common`/`sim`); job `firmware_lint` (ci.yml) + єдиний DRY-runner `cppcheck.sh` + Cortex-M4 платформа (`char` unsigned); gating `warning,performance,portability,style` exhaustive; `firmware/test/` свідомо виключено; MISRA advisory (gate-escalation optional far-future) | `03_01 §12.6` |
 | S6.12 | TokenomicsEvaluator oracle-guards audit (KYC all-paths) | `04_02`, `05_02` |
 | BIZ.5 | Патентна заявка → **ВІДХИЛЕНО** (founder 2026-06-07): defensive-publication-first замість патенту-монополії — ядро як prior art (вільне + анти-захоплення), без повіреного/PCT; SilkenNet тримає лише ™ / governance / секрети. Виконання → активні UNI.3 + BIZ.10 | `08_01 §2` |
+| BIZ.1 | 1 SCC ↔ CO₂: **2000 SCC = 1 tCO₂ (0.5 kg/SCC)** done + on-chain — `SystemParameter(:scc_per_tonne_co2)` + `ProtocolParameters.sol#sccPerTonneCo2()` (flat ratio, НЕ per-species). Методологічна сертифікація (Verra/Gold Standard, post-TRL 7) тримає BIZ.9 | `07_01 §3`, `05_03` |
 | BIZ.16 | Naming model **RESOLVED** (founder 2026-06-16): codename «Gaia 2.0» **розчинено** за висотою → **SilkenNet** (лісовий net / продукт) + **GaiaNexus** (планетарна федерація / ноосферний апекс, far-horizon); sphere-таксономія + `PlanetaryNode`-абстракція. ~66-site sweep (docs+code+contracts NatSpec+foundry fuzz-seed) + deprecated-term guard «Gaia 2.0». ™-заявка лишається UNI.3/UNI.15; повна multi-net vision-сторінка відкладена → ARCH.44 | `08_01 §2`, `00_08 §3` |
 | PUMA-RACK-1 | Idempotency write off response path (`rack.response_finished`) | `06_05 §7` |
 | TRL Матриця | Per-module TRL (мігровано з 00_07) | `00_03 §1` |
