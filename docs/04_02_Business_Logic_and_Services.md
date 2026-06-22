@@ -466,7 +466,7 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Публічні методи** | `.violations(env = ENV) → Array<String>` (порожній = безпечно; кожен рядок — людиночитане порушення з префіксом `[chain]`/`[oracle-key]`) |
 | **Тест coverage** | `spec/services/security/web3_network_guard_spec.rb` — testnet-RPC (Amoy/devnet), alnum-boundary false-positive, missing/malformed/`0x` oracle-key |
 | **Інвокери** | `config/initializers/web3_network_guard.rb` (boot-time guard, див. нижче) |
-| **Cross-ref** | [`05_01 §5`](05_01_Multichain_Architecture) (RPC/ENV-конфіг), [`06_04`](06_04_Secrets_Checklist) (ORACLE-ключі), [`00_07` — OPS.10](00_07_Action_Plan_Tracker). Розширює runtime E.47 Solana-guard на boot-time + EVM. |
+| **Cross-ref** | [`05_01 §5`](05_01_Multichain_Architecture) (RPC/ENV-конфіг), [`06_04`](06_04_Secrets_Checklist) (ORACLE-ключі), [`00_07` — E.47](00_07_Action_Plan_Tracker). Розширює runtime E.47 Solana-guard на boot-time + EVM. |
 
 #### Boot-time Web3 network guard (initializer)
 

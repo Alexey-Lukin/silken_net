@@ -33,6 +33,6 @@ Rails.application.config.after_initialize do
         "Refusing to boot (RAILS_ENV=#{Rails.env}, " \
         "WEB3_STRICT_MODE=#{ENV['WEB3_STRICT_MODE'].inspect}):\n  " +
         violations.join("\n  ") +
-        "\nSee docs/00_07 OPS.10 / docs/06_04 §1. For a deliberate rescue boot, " \
+        "\nSee docs/06_04 (Web3 deploy secrets). For a deliberate rescue boot, " \
         "set SILKENNET_SKIP_WEB3_NETWORK_GUARD=1."
 end
