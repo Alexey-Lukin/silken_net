@@ -34,38 +34,47 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import ALLOY_PROPERTIES, KINETICS_DIR, REPO_ROOT
+from lib.constants import (
+    ALLOY_BASELINE,
+    ALLOY_PROPERTIES,
+    ALPHA_PEEK_1K,
+    E_PEEK_PA,
+    H7S6_INTERF_DIA_MAX_UM,
+    H7S6_INTERF_DIA_MIN_UM,
+    KINETICS_DIR,
+    NU_PEEK,
+    R_INTERFACE_M,
+    R_OUTER_M,
+    REPO_ROOT,
+    SIGMA_YIELD_PEEK_PA,
+    T_ASSEMBLY_C,
+)
+from lib.mechanics import thermal_interference, thick_wall_hoop
 from lib.utils import banner
 
 OUT_DIR = KINETICS_DIR
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# Material properties
-ALPHA_TI = 8.6e-6       # 1/K — Ti-6Al-4V CTE
-ALPHA_PEEK = 47e-6       # 1/K — PEEK 450G CTE
-E_TI = 110e9             # Pa — Young's modulus Ti-6Al-4V
-E_PEEK = 4.0e9           # Pa — Young's modulus PEEK 450G (Victrex 450G datasheet, 23°C)
-NU_TI = 0.33             # Poisson's ratio Ti
-NU_PEEK = 0.40           # Poisson's ratio PEEK
-SIGMA_YIELD_PEEK = 100e6 # Pa — PEEK yield stress (Victrex 450G ~98 MPa tensile yield)
-SIGMA_YIELD_TI = 880e6   # Pa — Ti-6Al-4V yield
+# Material / geometry constants live in lib.constants (One-Home, HW.3.IS 2026-06-22); aliased for readability.
+# Ti props from the ALLOY_PROPERTIES baseline; PEEK + frozen geometry from the anchor press-fit block.
+ALPHA_TI = ALLOY_PROPERTIES[ALLOY_BASELINE]["alpha_1K"]   # 1/K — Ti-6Al-4V CTE
+ALPHA_PEEK = ALPHA_PEEK_1K
+E_TI = ALLOY_PROPERTIES[ALLOY_BASELINE]["E_GPa"] * 1e9
+E_PEEK = E_PEEK_PA
+NU_TI = ALLOY_PROPERTIES[ALLOY_BASELINE]["nu"]
+SIGMA_YIELD_PEEK = SIGMA_YIELD_PEEK_PA
 
-# Geometry (coaxial: Zone 1 Ti shaft → Zone 2 PEEK sleeve → outer Ti). FROZEN dims (HW.33, 2026-06-20):
-# Ti shaft Ø11 → interface r 5.5 mm; PEEK wall 2 mm → outer r 7.5 mm (OD/wound Ø15). HW.3.IS geom sync.
-R_INNER = 0.8e-3         # m — Ti shaft central bus bore (~Ø1.6); NOT a press-fit contact surface
-R_INTERFACE = 5.5e-3     # m — Ti↔PEEK interface = the press-fit CONTACT radius (Ø11 shaft / 2)
-R_OUTER = 7.5e-3         # m — PEEK sleeve outer radius (Ø15 wound / 2)
+# Geometry — frozen Ø11/2mm (HW.33). R_INNER (bus bore) stays local — JSON/winter only, not a contact surface.
+R_INNER = 0.8e-3              # m — Ti shaft central bus bore (~Ø1.6); NOT a press-fit contact surface
+R_INTERFACE = R_INTERFACE_M   # m — Ti↔PEEK press-fit CONTACT radius (Ø11 shaft / 2)
+R_OUTER = R_OUTER_M           # m — PEEK sleeve outer radius (Ø15 wound / 2)
 
-# Environment
-T_ASSEMBLY = 20.0        # °C — assembly temperature
-T_RANGE = np.linspace(-30, 40, 71)  # °C sweep
+T_ASSEMBLY = T_ASSEMBLY_C            # °C — assembly temperature
+T_RANGE = np.linspace(-30, 40, 71)   # °C sweep
 
-# Press-fit interference from the H7/s6 fit (ISO 286, Ø11 → 10-18 mm band: H7 0/+18 µm, s6 +23/+34 µm
-# → 5-34 µm DIAMETRAL). The Lamé contact-pressure formula takes RADIAL interference = diametral/2.
-# Min interference governs sealing (worst case); max governs hoop stress. Replaces an earlier 50 µm
-# placeholder that was inconsistent with the H7/s6 fit (script 51) — HW.3.IS reconcile.
-I_DIA_MIN_UM = 5.0           # µm — min diametral interference (H7/s6, Ø11)
-I_DIA_MAX_UM = 34.0          # µm — max diametral interference (H7/s6, Ø11)
+# Press-fit H7/s6 band — diametral 5-34 µm (lib.constants). Radial interference = diametral / 2.
+I_DIA_MIN_UM = H7S6_INTERF_DIA_MIN_UM   # µm — min diametral (governs sealing)
+I_DIA_MAX_UM = H7S6_INTERF_DIA_MAX_UM   # µm — max diametral (governs hoop stress)
 DELTA_RADIAL_MIN = I_DIA_MIN_UM * 1e-6 / 2.0   # m — radial = diametral / 2
 DELTA_RADIAL_MAX = I_DIA_MAX_UM * 1e-6 / 2.0   # m
 P_SAP_MPa = 0.5              # MPa — conservative xylem positive/capillary sap pressure (seal must exceed)
@@ -86,33 +95,29 @@ PEEK_RELAX_TAU_YEARS = 1.0   # relaxation time constant (years) — interim cons
 
 
 def lame_interface_stress(dT: float) -> dict:
-    """Compute interface stress from differential thermal expansion."""
-    d_alpha = ALPHA_PEEK - ALPHA_TI
-    delta_r = d_alpha * dT * R_INTERFACE
+    """Thermal-mismatch interface stress via the consistent rigid-inner thick-wall Lamé (lib.mechanics).
 
-    # Simplified thick-wall: PEEK sleeve under internal (Ti) expansion
-    k = R_OUTER / R_INTERFACE
-    sigma_r = E_PEEK * abs(delta_r) / R_INTERFACE / (k**2 - 1)
-    sigma_t = sigma_r * (k**2 + 1) / (k**2 - 1)
-
-    if dT < 0:
-        sigma_r = -sigma_r
-        sigma_t = -sigma_t
-
+    HW.3.IS fix 2026-06-22: the previous form divided by (k²−1) — a residual of the dropped rigid-outer-
+    shell baseline — which over-stated σ_t ≈ 4.3×. Now routed through thick_wall_hoop (the SAME relation
+    contact_pressure uses), so thermal + press-fit are one consistent model; the combined worst case lives
+    in script 56. Cooling (dT<0) makes the higher-CTE PEEK grip harder → δ_therm>0 → tensile bore hoop.
+    """
+    T_c = T_ASSEMBLY + dT
+    delta_r = thermal_interference(T_c, T_ASSEMBLY, ALPHA_PEEK, ALPHA_TI, R_INTERFACE)
+    s = thick_wall_hoop(delta_r, R_INTERFACE, R_OUTER, E_PEEK, NU_PEEK)
     return {
         "dT_K": dT,
         "delta_r_um": delta_r * 1e6,
-        "sigma_r_MPa": sigma_r / 1e6,
-        "sigma_t_MPa": sigma_t / 1e6,
-        "safety_factor": SIGMA_YIELD_PEEK / max(abs(sigma_t), 1),
+        "sigma_r_MPa": s["sigma_r"] / 1e6,
+        "sigma_t_MPa": s["sigma_t"] / 1e6,
+        "safety_factor": SIGMA_YIELD_PEEK / max(abs(s["sigma_t"]), 1),
     }
 
 
 def contact_pressure(delta: float, b: float, c: float) -> float:
-    """Initial press-fit contact pressure: PEEK hub (b→c) on rigid Ti shaft.
-    Lamé interference fit, rigid inner member (E_Ti ≫ E_PEEK)."""
-    geom = (c**2 + b**2) / (c**2 - b**2) + NU_PEEK
-    return E_PEEK * delta / (b * geom)        # Pa
+    """Initial press-fit contact pressure (rigid-inner Lamé). Delegates to the shared core
+    (lib.mechanics.thick_wall_hoop) so 50/51/56 use ONE formula (HW.3.IS 2026-06-22). Identical result."""
+    return thick_wall_hoop(delta, b, c, E_PEEK, NU_PEEK)["P_c"]        # Pa
 
 
 def relaxed_pressure(p0: float, years: float) -> float:
@@ -137,16 +142,13 @@ def alloy_comparative() -> dict:
     REAL bake-off lever: β-Ti's low 80 GPa pulls E toward wood (9–16), the HW.33 sheet/network knob.
     Numbers compare against the coin nano-indentation (criterion 4) when in-vitro data lands."""
     banner("Alloy comparative (Stage-2 bake-off) — CTE-mismatch stress + gyroid-E lever")
-    dT_worst = -30.0 - T_ASSEMBLY            # coldest ΔT (Cherkasy winter)
-    k = R_OUTER / R_INTERFACE
     print(f"  {'alloy':>20s}  {'E (GPa)':>8s}  {'a (1e-6/K)':>11s}  {'sig_t @-30C':>13s}  {'note':>6s}")
     print(f"  {'-'*64}")
     out = {}
     for alloy, props in ALLOY_PROPERTIES.items():
         alpha = props["alpha_1K"]
-        delta_r = (ALPHA_PEEK - alpha) * dT_worst * R_INTERFACE
-        sigma_r = E_PEEK * abs(delta_r) / R_INTERFACE / (k**2 - 1)
-        sigma_t = sigma_r * (k**2 + 1) / (k**2 - 1)
+        delta_r = thermal_interference(-30.0, T_ASSEMBLY, ALPHA_PEEK, alpha, R_INTERFACE)
+        sigma_t = thick_wall_hoop(delta_r, R_INTERFACE, R_OUTER, E_PEEK, NU_PEEK)["sigma_t"]
         out[alloy] = {
             "E_GPa": props["E_GPa"],
             "alpha_1K": alpha,

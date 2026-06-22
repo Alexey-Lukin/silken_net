@@ -349,14 +349,14 @@ k_DET ~ turnover (§Cathode), with the measured Ti-coin cathode EIS the decisive
 
 ## HW.3.IS — Mechanical Integrity
 
-### Thermal Stress + Stress Relaxation (script 50, Lamé + relaxation)
+### Thermal Stress + Stress Relaxation (scripts 50 + 56, thick-wall Lamé + relaxation)
 | Parameter | Value |
 |-----------|-------|
-| Worst-case stress (-30°C) | σ_t = **29.7 MPa**, safety **3.4×** vs PEEK yield (frozen Ø11/2 mm; E_PEEK 4.0 GPa) |
+| Worst-case stress | **combined** (−30°C + s6-max, unified thick-wall Lamé, script 56): σ_t **17.9 MPa**, SF **5.6×** (von Mises 4.7×); thermal-only 14.6× (frozen Ø11/2 mm) |
 | Press-fit P_c (H7/s6 band, bug-fixed) | **0.49-3.32 → 0.32-2.16 MPa** over 20 yr (was a buggy 34.7→22.6 — `THERMAL_STRESS_REPORT.md` Correction B) |
 | Sealing | elastomer **O-ring = ESSENTIAL** (at MIN fit relaxed P_c ≤ sap 0.5); PEEK = isolator + backup P_c (max fit); barbs = axial only |
 | Winter | inner interface tightens; outer = tree (not a Ti shell) → old cold-leak was a baseline artifact |
-| **Verdict** | ✅ Ti↔PEEK press-fit survives 20+ years (thermal 3.4× margin + O-ring seal; **HW.3.IS frozen sync 2026-06-21**) |
+| **Verdict** | ✅ Ti↔PEEK press-fit survives 20+ years (combined SF 5.6× margin + O-ring seal; **HW.3.IS unified Lamé 2026-06-22**) |
 
 ### Cyclic Strain (script 16, ±5% × 10 cycles)
 | Parameter | Value |

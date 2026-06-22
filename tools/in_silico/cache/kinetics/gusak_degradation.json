@@ -185,35 +185,35 @@
       "delta_I_um": -21.12,
       "eff_min_um": 26.12,
       "eff_max_um": 55.12,
-      "sigma_hoop_MPa": 40.09,
+      "sigma_hoop_MPa": 17.89,
       "safe": true
     },
     "-10": {
       "delta_I_um": -12.67,
       "eff_min_um": 17.67,
       "eff_max_um": 46.67,
-      "sigma_hoop_MPa": 33.94,
+      "sigma_hoop_MPa": 15.15,
       "safe": true
     },
     "0": {
       "delta_I_um": -8.45,
       "eff_min_um": 13.45,
       "eff_max_um": 42.45,
-      "sigma_hoop_MPa": 30.87,
+      "sigma_hoop_MPa": 13.78,
       "safe": true
     },
     "20": {
       "delta_I_um": 0.0,
       "eff_min_um": 5.0,
       "eff_max_um": 34.0,
-      "sigma_hoop_MPa": 24.73,
+      "sigma_hoop_MPa": 11.04,
       "safe": true
     },
     "40": {
       "delta_I_um": 8.45,
       "eff_min_um": -3.45,
       "eff_max_um": 25.55,
-      "sigma_hoop_MPa": 18.58,
+      "sigma_hoop_MPa": 8.29,
       "safe": true
     }
   }

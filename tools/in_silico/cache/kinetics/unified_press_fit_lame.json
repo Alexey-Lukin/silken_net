@@ -1,0 +1,253 @@
+{
+  "method": "Unified rigid-inner / free-outer thick-wall Lam\u00e9 (press-fit + thermal interference, one model)",
+  "geometry_mm": {
+    "bore_d": 11.0,
+    "od_d": 15.0,
+    "interface_r": 5.5,
+    "outer_r": 7.5
+  },
+  "materials": {
+    "PEEK-450G": {
+      "alpha_1K": 4.7e-05,
+      "E_GPa": 4.0,
+      "nu": 0.4,
+      "yield_MPa": 100.0
+    },
+    "Ti-6Al-4V": {
+      "alpha_1K": 8.6e-06
+    }
+  },
+  "h7s6_interference_diametral_um": [
+    5.0,
+    34.0
+  ],
+  "combined_worst_case": {
+    "T_C": -30.0,
+    "fit": "max",
+    "delta_mech_um": 17.0,
+    "delta_therm_um": 10.56,
+    "delta_total_um": 27.56,
+    "P_c_MPa": 5.378,
+    "sigma_t_MPa": 17.892,
+    "sigma_vm_MPa": 21.102,
+    "SF_sigma_t": 5.59,
+    "SF_von_mises": 4.74
+  },
+  "reconciliation": {
+    "unified_thermal_only_sigma_t_MPa": 6.856,
+    "legacy_50_thermal_sigma_t_MPa": 29.73,
+    "script50_overstatement_factor": 4.34,
+    "unified_pressfit_max_sigma_t_MPa": 11.037,
+    "legacy_51_thinwall_hoop_MPa": 40.1,
+    "naive_add_MPa": 69.8,
+    "naive_add_SF": 1.43,
+    "note": "PRE-FIX: 50 lame_interface_stress used E\u00b7\u03b5/(k\u00b2\u22121) (rigid-outer-shell residual) \u2192 overstated thermal \u03c3_t ~4.3\u00d7; 51 hoop was thin-wall. FIXED 2026-06-22 (scope-B): 50/51/56 now share lib.mechanics (rigid-inner thick-wall Lam\u00e9). P_c linear in \u03b4 \u2192 exact superposition."
+  },
+  "sealing_corner": {
+    "T_C": 40.0,
+    "fit": "min",
+    "delta_total_um": -1.724,
+    "P_c_initial_MPa": 0.0,
+    "press_fit_separates": true,
+    "note": "Hot + min-fit: \u03b4_total<0 \u2192 press-fit gaps open \u2192 P_c clamped to 0; O-ring is the only seal. 20-yr relaxation + O-ring-essential conclusion lives in script 50 / THERMAL_STRESS_REPORT \u00a72-3."
+  },
+  "sweep": {
+    "min": [
+      {
+        "P_c": 2.549,
+        "sigma_t": 8.479,
+        "sigma_r": -2.549,
+        "sigma_vm": 10.0,
+        "T_C": -30.0,
+        "delta_mech_um": 2.5,
+        "delta_therm_um": 10.56,
+        "delta_total_um": 13.06,
+        "SF_t": 11.794,
+        "SF_vm": 10.0
+      },
+      {
+        "P_c": 2.136,
+        "sigma_t": 7.108,
+        "sigma_r": -2.136,
+        "sigma_vm": 8.383,
+        "T_C": -20.0,
+        "delta_mech_um": 2.5,
+        "delta_therm_um": 8.448,
+        "delta_total_um": 10.948,
+        "SF_t": 14.069,
+        "SF_vm": 11.93
+      },
+      {
+        "P_c": 1.724,
+        "sigma_t": 5.736,
+        "sigma_r": -1.724,
+        "sigma_vm": 6.765,
+        "T_C": -10.0,
+        "delta_mech_um": 2.5,
+        "delta_therm_um": 6.336,
+        "delta_total_um": 8.836,
+        "SF_t": 17.432,
+        "SF_vm": 14.781
+      },
+      {
+        "P_c": 1.312,
+        "sigma_t": 4.365,
+        "sigma_r": -1.312,
+        "sigma_vm": 5.148,
+        "T_C": 0.0,
+        "delta_mech_um": 2.5,
+        "delta_therm_um": 4.224,
+        "delta_total_um": 6.724,
+        "SF_t": 22.908,
+        "SF_vm": 19.424
+      },
+      {
+        "P_c": 0.9,
+        "sigma_t": 2.994,
+        "sigma_r": -0.9,
+        "sigma_vm": 3.531,
+        "T_C": 10.0,
+        "delta_mech_um": 2.5,
+        "delta_therm_um": 2.112,
+        "delta_total_um": 4.612,
+        "SF_t": 33.398,
+        "SF_vm": 28.318
+      },
+      {
+        "P_c": 0.488,
+        "sigma_t": 1.623,
+        "sigma_r": -0.488,
+        "sigma_vm": 1.914,
+        "T_C": 20.0,
+        "delta_mech_um": 2.5,
+        "delta_therm_um": 0.0,
+        "delta_total_um": 2.5,
+        "SF_t": 61.613,
+        "SF_vm": 52.242
+      },
+      {
+        "P_c": 0.076,
+        "sigma_t": 0.252,
+        "sigma_r": -0.076,
+        "sigma_vm": 0.297,
+        "T_C": 30.0,
+        "delta_mech_um": 2.5,
+        "delta_therm_um": -2.112,
+        "delta_total_um": 0.388,
+        "SF_t": 396.989,
+        "SF_vm": 336.61
+      },
+      {
+        "P_c": -0.336,
+        "sigma_t": -1.119,
+        "sigma_r": 0.336,
+        "sigma_vm": 1.32,
+        "T_C": 40.0,
+        "delta_mech_um": 2.5,
+        "delta_therm_um": -4.224,
+        "delta_total_um": -1.724,
+        "SF_t": 89.346,
+        "SF_vm": 75.757
+      }
+    ],
+    "max": [
+      {
+        "P_c": 5.378,
+        "sigma_t": 17.892,
+        "sigma_r": -5.378,
+        "sigma_vm": 21.102,
+        "T_C": -30.0,
+        "delta_mech_um": 17.0,
+        "delta_therm_um": 10.56,
+        "delta_total_um": 27.56,
+        "SF_t": 5.589,
+        "SF_vm": 4.739
+      },
+      {
+        "P_c": 4.966,
+        "sigma_t": 16.521,
+        "sigma_r": -4.966,
+        "sigma_vm": 19.485,
+        "T_C": -20.0,
+        "delta_mech_um": 17.0,
+        "delta_therm_um": 8.448,
+        "delta_total_um": 25.448,
+        "SF_t": 6.053,
+        "SF_vm": 5.132
+      },
+      {
+        "P_c": 4.554,
+        "sigma_t": 15.15,
+        "sigma_r": -4.554,
+        "sigma_vm": 17.868,
+        "T_C": -10.0,
+        "delta_mech_um": 17.0,
+        "delta_therm_um": 6.336,
+        "delta_total_um": 23.336,
+        "SF_t": 6.601,
+        "SF_vm": 5.597
+      },
+      {
+        "P_c": 4.142,
+        "sigma_t": 13.779,
+        "sigma_r": -4.142,
+        "sigma_vm": 16.251,
+        "T_C": 0.0,
+        "delta_mech_um": 17.0,
+        "delta_therm_um": 4.224,
+        "delta_total_um": 21.224,
+        "SF_t": 7.257,
+        "SF_vm": 6.154
+      },
+      {
+        "P_c": 3.73,
+        "sigma_t": 12.408,
+        "sigma_r": -3.73,
+        "sigma_vm": 14.633,
+        "T_C": 10.0,
+        "delta_mech_um": 17.0,
+        "delta_therm_um": 2.112,
+        "delta_total_um": 19.112,
+        "SF_t": 8.059,
+        "SF_vm": 6.834
+      },
+      {
+        "P_c": 3.317,
+        "sigma_t": 11.037,
+        "sigma_r": -3.317,
+        "sigma_vm": 13.016,
+        "T_C": 20.0,
+        "delta_mech_um": 17.0,
+        "delta_therm_um": 0.0,
+        "delta_total_um": 17.0,
+        "SF_t": 9.061,
+        "SF_vm": 7.683
+      },
+      {
+        "P_c": 2.905,
+        "sigma_t": 9.666,
+        "sigma_r": -2.905,
+        "sigma_vm": 11.399,
+        "T_C": 30.0,
+        "delta_mech_um": 17.0,
+        "delta_therm_um": -2.112,
+        "delta_total_um": 14.888,
+        "SF_t": 10.346,
+        "SF_vm": 8.772
+      },
+      {
+        "P_c": 2.493,
+        "sigma_t": 8.294,
+        "sigma_r": -2.493,
+        "sigma_vm": 9.782,
+        "T_C": 40.0,
+        "delta_mech_um": 17.0,
+        "delta_therm_um": -4.224,
+        "delta_total_um": 12.776,
+        "SF_t": 12.056,
+        "SF_vm": 10.223
+      }
+    ]
+  },
+  "verdict": "Honest combined worst-case (\u221230\u00b0C + s6-max) SF 5.6\u00d7 (\u03c3_t) / 4.7\u00d7 (von Mises); the na\u00efve 1.4\u00d7 was an apples+oranges artifact; script 50's old thermal \u03c3_t was overstated ~4.3\u00d7 \u2192 fixed at source + canon 01_01 \u00a74.2 corrected (2026-06-22)."
+}

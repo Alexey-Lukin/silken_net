@@ -19,7 +19,19 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import ALLOY_PROPERTIES, KINETICS_DIR, REPO_ROOT
+from lib.constants import (
+    ALLOY_PROPERTIES,
+    ALPHA_PEEK_1K,
+    E_PEEK_PA,
+    KINETICS_DIR,
+    NU_PEEK,
+    R_INTERFACE_M,
+    R_OUTER_M,
+    REPO_ROOT,
+    SIGMA_YIELD_PEEK_PA,
+    T_ASSEMBLY_C,
+)
+from lib.mechanics import thick_wall_hoop
 from lib.utils import banner
 
 OUT_JSON = KINETICS_DIR / "gusak_degradation.json"
@@ -110,27 +122,24 @@ def press_fit_window():
     """H7/s6 interference window with ΔCTE for Ti↔PEEK."""
     banner("3. H7/s6 Press-Fit Interference Window")
 
-    # Material properties
-    ALPHA_TI = 8.6e-6   # 1/K
-    ALPHA_PEEK = 47e-6   # 1/K
-    E_PEEK = 4.0e9       # Pa — Victrex 450G datasheet (23°C); was 3.6e9
-    SIGMA_Y_PEEK = 100e6 # Pa
+    # Material props from lib.constants (One-Home, HW.3.IS); ΔCTE drives the temperature term below.
+    ALPHA_TI = ALLOY_PROPERTIES["Ti-6Al-4V"]["alpha_1K"]   # 1/K
+    ALPHA_PEEK = ALPHA_PEEK_1K   # 1/K
 
     # Nominal dimensions (mm) — FROZEN Ø11 shaft (HW.33, 2026-06-20). ISO 286 size band 10-18 mm.
     D_SHAFT = 11.0       # mm — Ti shaft (Zone 1) diameter (frozen Ø11; was Ø10 baseline)
-    # H7 hole tolerance: 0 to +18 µm (10-18 mm band)
-    # s6 shaft tolerance: +23 to +34 µm (10-18 mm band)
+    # H7 hole tolerance: 0 to +18 µm (10-18 mm band); s6 shaft tolerance: +23 to +34 µm
     TOL_H7_MIN = 0       # µm
     TOL_H7_MAX = 18      # µm
     TOL_S6_MIN = 23      # µm
     TOL_S6_MAX = 34      # µm
 
-    T_ASSEMBLY = 20.0    # °C
+    T_ASSEMBLY = T_ASSEMBLY_C   # °C (lib.constants)
     T_RANGE = [-30, -10, 0, 20, 40]
 
-    # Interference range
-    I_MIN = TOL_S6_MIN - TOL_H7_MAX  # µm = 18 - 15 = 3 µm
-    I_MAX = TOL_S6_MAX - TOL_H7_MIN  # µm = 27 - 0 = 27 µm
+    # Interference range (diametral µm)
+    I_MIN = TOL_S6_MIN - TOL_H7_MAX  # = 23 − 18 = 5 µm (governs sealing)
+    I_MAX = TOL_S6_MAX - TOL_H7_MIN  # = 34 − 0 = 34 µm (governs hoop)
 
     print(f"  Shaft: ∅{D_SHAFT:.0f} mm, H7/s6 fit")
     print(f"  Interference: {I_MIN}–{I_MAX} µm")
@@ -150,9 +159,10 @@ def press_fit_window():
         eff_min = I_MIN - delta_I
         eff_max = I_MAX - delta_I
 
-        # Hoop stress from max interference (Lamé, thin-wall approx)
-        sigma_max = E_PEEK * (eff_max * 1e-6) / (D_SHAFT * 1e-3) * 2
-        safe = abs(sigma_max) < SIGMA_Y_PEEK
+        # Hoop stress from max effective interference — consistent thick-wall Lamé (lib.mechanics, HW.3.IS
+        # 2026-06-22; was a thin-wall E·δ/D·2 approx that over-stated ~2×). eff_max is DIAMETRAL → radial = /2.
+        sigma_max = thick_wall_hoop(eff_max * 1e-6 / 2.0, R_INTERFACE_M, R_OUTER_M, E_PEEK_PA, NU_PEEK)["sigma_t"]
+        safe = abs(sigma_max) < SIGMA_YIELD_PEEK_PA
 
         print(f"  {T:>8.0f}  {delta_I:>+10.1f}  {eff_min:>12.1f}  {eff_max:>12.1f}  {sigma_max/1e6:>8.1f} MPa  {'✅' if safe else '❌'}")
 

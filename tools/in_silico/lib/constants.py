@@ -122,3 +122,26 @@ ALLOY_PROPERTIES = {
         "lambda_W_mK": 8.0,   # estimate — Ti-Zr solid-solution scattering, sparse data
     },
 }
+
+# ── Anchor Ti↔PEEK press-fit & thermal stress (HW.3.IS, frozen Ø11/2 mm — 01_01 §4.2) ──
+# PEEK 450G sleeve press-fit on a Ti shaft. Ti props (α/E/ν/yield) live in ALLOY_PROPERTIES
+# (per-alloy, baseline = Ti-6Al-4V); this block is the PEEK counterpart + the frozen coaxial
+# geometry + assembly temp + the H7/s6 band. Consumed by scripts 50/51 (legacy partials) and
+# the unified thick-wall Lamé (script 56 + lib.mechanics).
+ALPHA_PEEK_1K = 47e-6            # 1/K — PEEK 450G CTE (5.5× Ti)
+E_PEEK_PA = 4.0e9               # Pa — PEEK 450G Young's modulus (Victrex 450G datasheet, 23°C)
+NU_PEEK = 0.40                  # — PEEK Poisson's ratio
+SIGMA_YIELD_PEEK_PA = 100e6     # Pa — PEEK 450G tensile yield (~98-100 MPa)
+
+# Frozen coaxial geometry (HW.33, 2026-06-20): Ti shaft Ø11 → interface r 5.5 mm;
+# PEEK wall 2 mm → outer r 7.5 mm (OD = wound Ø15). Outer surface sits in the tree (free).
+R_INTERFACE_M = 5.5e-3          # m — Ti↔PEEK press-fit contact radius (Ø11 shaft / 2)
+R_OUTER_M = 7.5e-3             # m — PEEK sleeve outer radius (Ø15 wound / 2)
+T_ASSEMBLY_C = 20.0            # °C — press-fit assembly temperature
+T_FOREST_MIN_C = -30.0         # °C — Cherkasy winter extreme (worst case for PEEK hoop)
+T_FOREST_MAX_C = 40.0          # °C — summer extreme (worst case for sealing)
+
+# H7/s6 interference band (ISO 286, Ø11 in the 10-18 mm size band: H7 0/+18 µm, s6 +23/+34 µm
+# → 5-34 µm DIAMETRAL). The Lamé contact pressure takes RADIAL interference = diametral / 2.
+H7S6_INTERF_DIA_MIN_UM = 5.0    # µm — min diametral interference (governs sealing)
+H7S6_INTERF_DIA_MAX_UM = 34.0   # µm — max diametral interference (governs hoop stress)

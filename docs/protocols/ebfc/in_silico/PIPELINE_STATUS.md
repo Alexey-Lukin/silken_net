@@ -54,12 +54,13 @@
 | 34b | `wb97x_speciation` | **② ωB97X cross-check ✅** (B4 dimethyl): chloro↔+2/+3 **bracket functional-robust** (both functionals); internal aqua↔bis-Im order functional-**sensitive** (ωB97X aqua>bis-Im, B3LYP-dimethyl bis-Im>aqua, <0.15 eV) | `dft/wb97x_speciation[_dmbpy].json` |
 | 35 | `dft_metal_reorganization` | **③** computed inner-sphere λ (Nelsen 4-pt): Ru **0.78**, Ce 0.87, Co 3.09 (B3LYP spin-crossover ~2× over-est) | `dft/metal_reorganization.json` |
 | 40 | `validate_vs_experiment` | predictions ready for Ti-coin CV/EIS | `kinetics/validation_report.json` |
-| 50 | `thermal_stress_lame` | **frozen Ø11/2mm (HW.3.IS sync 2026-06-21)**: σ_t 29.7 MPa SF 3.4× @ -30°C; press-fit P_c (H7/s6 band, contact-radius bug-fixed) 0.49-3.32→0.32-2.16 MPa; O-ring = essential seal, barbs axial-only | `kinetics/thermal_stress_lame.json` |
+| 50 | `thermal_stress_lame` | **HW.3.IS 2026-06-22 (shared lib.mechanics)**: thermal-only σ_t 6.86 MPa SF 14.6× @ -30°C (was 29.7/3.4× — overstated (k²−1) denominator, fixed at source); press-fit P_c (H7/s6) 0.49-3.32→0.32-2.16 MPa; O-ring = essential seal | `kinetics/thermal_stress_lame.json` |
 | 51 | `gusak_degradation_model` | Arrhenius + Kirkendall V=1.12 µg/cm²/yr + **H7/s6 Ø11 (5-34µm)** | `kinetics/gusak_degradation.json` |
 | 52 | `z_stack_tolerance` | HW.8.7 3-spring blind-mate Z-stack: holds at spacer + bayonet hard-stop (incl. 20yr pad creep) | `mechanical/z_stack_tolerance.json` |
 | 53 | `oxide_det_per_alloy` | HW.24 bake-off: per-alloy native-oxide DET feasibility (Ta DET-risk pre-coin) | `kinetics/oxide_det_per_alloy.json` |
 | 54 | `anchor_thermal_bridge` | **HW.34** bus thermal bridge: Cu bus dominates the PEEK break (G_anchor ~10× Ti-bus → anode pocket ~15°C below core, freeze-risk); Ti monolithic invisible; ALL bake-off alloys ≪ Cu | `mechanical/anchor_thermal_bridge.json` |
 | 55 | `bus_mechanical` | **HW.34** bus rod: buckling SF 29× (pogo); sway-fatigue SF 9-26× WITH liner (= insulation + support); marginal for soft Ta/CP-Ti unsupported | `mechanical/bus_mechanical.json` |
+| 56 | `unified_press_fit_lame` | **HW.3.IS 2026-06-22** combined thick-wall Lamé (press-fit + thermal in ONE model): worst-case −30°C+s6-max SF **5.6×** (von Mises 4.7×); retired the naïve 1.4× artifact + drove the 50/51 source-fix | `kinetics/unified_press_fit_lame.json` |
 | 60 | `paper_figures` | Стаття 1 figures Fig 2 (structure+path, DRAFT 2D-proj) / 3 (cascade+LFER) / 4 (cathode DET) / 5 (solvation) + S1 (β·d) — cache+PDB renderer, headline numbers asserted vs SUMMARY at build | `paper/figures/*.png` |
 | 61 | `paper_tables` | Стаття 1 Tables T1–T4 (levels of theory / cascade all-methods / DET hops+λ / mediator series) — cache→markdown, canon-asserted | `paper/06_tables.md` |
 

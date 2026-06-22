@@ -1,18 +1,29 @@
 # HW.3.IS — Thermal Stress & PEEK Long-Term Integrity Report
 
-> **Date:** 2026-05-28 · **synced to frozen geometry + 3 fixes 2026-06-21** | **Method:** Analytical Lamé
+> **Date:** 2026-05-28 · **synced to frozen geometry + 3 fixes 2026-06-21 · unified thick-wall Lamé 2026-06-22** | **Method:** Analytical Lamé
 > + **stress relaxation** (constant strain) | **Script:** `tools/in_silico/scripts/50_thermal_stress_lame.py`
-> (+ `51_gusak_degradation_model.py` for the H7/s6 window) | **Geometry: FROZEN Ø11 / 2 mm wall (HW.33)**.
+> (+ `51_gusak_degradation_model.py` for the H7/s6 window; `56_unified_press_fit_lame.py` + `lib/mechanics.py` for the combined worst-case) | **Geometry: FROZEN Ø11 / 2 mm wall (HW.33)**.
 
 ## Summary
 
-Ti-6Al-4V ↔ PEEK 450G press-fit survives **20+ years** of seasonal cycling (-30°C to +40°C). Thermal
-mismatch stress stays below PEEK yield (**SF 3.4×** at the 2 mm frozen wall — the wall thickness is
-**CTE-limited**, not press-fit-limited; thinner than 2 mm → SF < 3). The press-fit contact pressure is far
+Ti-6Al-4V ↔ PEEK 450G press-fit survives **20+ years** of seasonal cycling (-30°C to +40°C). The honest
+**combined** worst-case stress (−30 °C + s6-max, unified thick-wall Lamé) stays well below PEEK yield
+(**SF 5.6×**, von Mises 4.7×; thermal-only 14.6×) — the 2 mm wall is a **robust default, not stress-limited**
+(the former "CTE-limited / SF 3.4×" was an over-stated-denominator artifact, Correction C). The press-fit contact pressure is far
 lower than previously reported (see the 2026-06-21 correction): at the **minimum** H7/s6 interference the
 relaxed P_c can fall **at or below** the sap pressure — so the **elastomer O-ring is the ESSENTIAL hermetic
 seal**, not a redundancy. PEEK is a structural/thermal isolator + (at max fit) a backup contact pressure;
 barbs/retaining ring handle axial pull-out + anti-rotation only.
+
+**Unified thick-wall Lamé (2026-06-22, script 56).** The press-fit and the thermal stress are the
+SAME interference and now go through ONE rigid-inner / free-outer thick-wall Lamé. The honest
+**combined** worst case (−30 °C **and** s6-max fit, which stack additively in the cold) is
+**σ_t 17.9 MPa → SF 5.6× (von Mises 4.7×)** — comfortable, *not* the naïve **1.4×** one gets by
+adding the two PRE-FIX legacy numbers (the old 29.7 thermal + 40 thin-wall hoop ≈ 70). That sum was an
+apples+oranges artifact — see **Correction C**: script 50's old *thermal-only* σ_t (29.7 MPa, the
+former "SF 3.4×" headline) was **≈ 4.3× overstated** by a legacy denominator. ✅ Fixed at source
+2026-06-22 (50/51 now share `lib/mechanics`) and the canon mirror `01_01 §4.2` corrected (geometry stays
+frozen, HW.33); the latent "thinner wall = smaller wound" lever is logged in `00_07` HW.33.
 
 > ⚠️ **Correction A (2026-05-28):** earlier used a **Findley creep** model (constant *stress*) reporting a
 > "76 µm gap loss" — wrong physics. A press-fit is **constant *strain*** → **stress relaxation** (σ decays,
@@ -30,6 +41,18 @@ barbs/retaining ring handle axial pull-out + anti-rotation only.
 > Net: the headline P_c fell from a (buggy) **34.7 → 22.6 MPa** to an honest **0.49-3.32 → 0.32-2.16 MPa**.
 > The 20-year verdict still holds (thermal 3.4× margin + the O-ring seal), but the PEEK backup pressure is
 > **marginal at min fit**, not comfortable — which is exactly why the O-ring is primary.
+>
+> ⚠️ **Correction C (unified thick-wall Lamé, 2026-06-22):** §1's thermal σ_t (29.7 MPa, SF 3.4×) comes
+> from `50 lame_interface_stress`, which divides by `(k²−1)` ≈ 0.86 — a residual of the dropped rigid-outer-
+> shell baseline. The consistent rigid-inner / free-outer thick-wall Lamé (the *same* relation
+> `contact_pressure` already uses, denominator `(k²+1)/(k²−1)+ν` ≈ 3.73) gives **thermal-only σ_t ≈ 6.9 MPa
+> (SF ≈ 14.6×)** — i.e. §1 **overstates the thermal stress ≈ 4.3×**. Correction B fixed `contact_pressure`'s
+> radius but **not** this denominator. The honest design number is the **combined** −30 °C + s6-max case:
+> **σ_t 17.9 MPa, SF 5.6× / von Mises 4.7×** (script 56, §4). Consequence: the 2 mm wall is **not**
+> "CTE-limited at 3.4×" — it carries far more thermal margin than §1 / `01_01 §4.2` state. Geometry stays
+> frozen (HW.33). **✅ DONE 2026-06-22:** `50`'s thermal formula fixed at source (50/51/56 now share
+> `lib/mechanics`) + §1 above shows the corrected thermal-only (6.86 MPa / 14.6×) + the `01_01 §4.2`
+> rationale corrected; the "thinner wall = smaller wound" lever logged in `00_07` HW.33.
 
 ## Materials
 
@@ -52,14 +75,15 @@ Zone 3 is the **axial** cathode flange, not a coaxial outer cylinder (see §3).
 
 | Temperature | ΔT (K) | σ_t (MPa) | Safety Factor |
 |-------------|--------|-----------|---------------|
-| -30°C (winter) | -50 | -29.73 | **3.4×** |
-| -10°C | -30 | -17.84 | 5.6× |
+| -30°C (winter) | -50 | +6.86 | **14.6×** |
+| -10°C | -30 | +4.11 | 24.3× |
 | +20°C (assembly) | 0 | 0 | ∞ |
-| +40°C (summer) | +20 | +11.89 | 8.4× |
+| +40°C (summer) | +20 | -2.74 (separation) | 36.5× |
 
-**Worst case:** -30°C → σ_t = 29.7 MPa, SF **3.4×** vs PEEK yield (100 MPa). The 2 mm wall is **CTE-limited**
-(SF must stay > 3); at < 2 mm SF drops below 3. Thermal stress is not a failure mode, but the margin is
-3.4×, not the baseline's 9.9× (which was on the thicker 3 mm wall).
+**Worst case (thermal-only):** -30°C → σ_t = **6.86 MPa, SF 14.6×** vs PEEK yield (100 MPa) — thermal stress
+alone is nowhere near a failure mode. _(The former "29.7 MPa / SF 3.4× / CTE-limited" was an artifact of an
+over-stated `(k²−1)` denominator — see **Correction C**; fixed at source 2026-06-22, `lib/mechanics`.)_ The
+**design** number is the combined thermal + press-fit worst case in **§4** (−30°C + s6-max → SF 5.6×).
 
 ### 2. Press-Fit Contact Pressure — Stress Relaxation (constant strain)
 
@@ -79,8 +103,8 @@ PEEK relaxation is slow → real retention likely > 0.65, so this **under-states
 authoritative multi-term Maxwell-Wiechert fit stays with **школа Гусака** (`08_01 Стаття 2`).
 
 **The H7/s6 band is well-bounded:** at MIN fit the relaxed PEEK P_c (0.32 MPa) ≤ sap → the O-ring is
-essential; at MAX fit the press-fit hoop stress (script 51: σ_hoop ≈ 40 MPa @ -30°C + max interference,
-thin-wall) stays < PEEK yield (SF ≈ 2.5× thin-wall / higher thick-wall). Both ends acceptable.
+essential; at MAX fit the press-fit hoop stress (script 51, thick-wall: σ_hoop ≈ **17.9 MPa** @ -30°C + max
+interference = the combined worst case, §4) stays well < PEEK yield (**SF 5.6×**). Both ends acceptable.
 
 ### 3. Winter behaviour — inner interface tightens; outer = tree
 
@@ -90,9 +114,30 @@ the shaft **tighter** (good; interference increases). A *hypothetical* rigid out
 wood + callus), not a Ti shell, so the old "outer Ti cold-leak" was a **baseline modelling artifact**. The
 hermetic seal is the **axial O-ring at the flange** (immune to this).
 
+### 4. Combined worst-case — unified thick-wall Lamé (−30 °C + s6-max fit)
+
+Scripts 50/51 computed the thermal and the press-fit stress through three different formulas, so they
+could not legitimately be added. Script 56 puts BOTH the mechanical H7/s6 interference **and** the
+thermal-mismatch interference through ONE rigid-inner / free-outer thick-wall Lamé. Contact pressure is
+linear in interference, so the two superpose exactly — the combined number is meaningful.
+
+| Component (−30 °C) | radial interference | σ_t (bore) |
+|--------------------|--------------------:|-----------:|
+| Thermal-only (unified) | 10.6 µm | 6.9 MPa |
+| Press-fit s6-max (unified) | 17.0 µm | 11.0 MPa |
+| **Combined (−30 °C + s6-max)** | **27.6 µm** | **17.9 MPa → SF 5.6× (von Mises 4.7×)** |
+| _naïve add of legacy 50 + 51_ | _—_ | _29.7 + 40 ≈ 70 → SF 1.4× (artifact)_ |
+
+The honest combined worst case is **comfortable** (SF > 4× even on von Mises), not the alarming 1.4×. At
+the hot end (+40 °C + min fit) the effective interference goes **negative** — the press-fit gaps open
+(P_c → 0), so the axial O-ring is the only seal there (consistent with §2-3). Cache:
+`cache/kinetics/unified_press_fit_lame.json`.
+
 ## Conclusions
 
-1. **Thermal stress is not a failure mode** — SF **3.4×** at the frozen 2 mm wall (the wall is CTE-limited).
+1. **Thermal stress is not a failure mode** — the honest **combined** −30 °C + s6-max case is **SF 5.6× /
+   von Mises 4.7×** (§4); thermal-only 14.6×. The former "SF 3.4× / CTE-limited" was a ≈4.3× over-stated
+   denominator (**Correction C**) — **fixed at source 2026-06-22**; `01_01 §4.2` rationale corrected (wall = robust default, not stress-limited).
 2. **Press-fit relaxes, not creeps** — P_c decays toward a semicrystalline floor. But the honest frozen P_c
    (0.49-3.32 → 0.32-2.16 MPa) is **far lower** than the old buggy 34.7→22.6; at MIN fit relaxed P_c ≤ sap.
 3. **Sealing = elastomer O-ring** (FKM/EPDM) — **essential**, not redundant (PEEK backup is marginal at min fit).
@@ -108,13 +153,14 @@ hermetic seal is the **axial O-ring at the flange** (immune to this).
   if Гусак stays unresponsive, a **self-own** light bound is a future-candidate (00_07 HW.3.IS).
 - [ ] **MD ion-permeation** of Ti²⁺/V³⁺ through PEEK via MSD (classical MD, like script 13) — NOT DFT.
   🤖 self-own, ~2-3 weeks GPU (00_07 HW.3.IS); separate milestone, not part of this geometry sync.
-- [ ] **(refinement, future)** a unified thick-wall Lamé combining interference + thermal stress in one model
-  (scripts 50/51 currently compute the two components separately) — a Гусак/future nicety, not blocking.
+- [x] **Unified thick-wall Lamé** combining interference + thermal stress in one model ✅ 2026-06-22
+  (script 56 + `lib/mechanics.py`): combined −30 °C + s6-max **SF 5.6× / von Mises 4.7×**; surfaced + **fixed at
+  source** the ≈4.3× over-stated thermal denominator in `50` (**Correction C**) — 50/51/56 now share `lib/mechanics`; canon corrected.
 
 ## Cross-References
 
 - Coaxial topology + mechanical lock → `docs/01_01 §4.3`
-- Frozen dims + ΔCTE window (SF 3.4×) → `docs/01_01 §1` + `§4.2`
+- Frozen dims + ΔCTE window (combined SF 5.6×) → `docs/01_01 §1` + `§4.2`
 - O-ring seal + Flush Mount → `docs/01_04 §3.1`
 - Prony-series / barb-FEA outsource boundary → `docs/00_02 §4a`, `docs/08_01 Стаття 2` (школа Гусака)
-- Script → `tools/in_silico/scripts/50_thermal_stress_lame.py` + `51_…` · Cache → `cache/kinetics/{thermal_stress_lame,gusak_degradation}.json`
+- Script → `tools/in_silico/scripts/50_thermal_stress_lame.py` + `51_…` + `56_unified_press_fit_lame.py` (core `lib/mechanics.py`) · Cache → `cache/kinetics/{thermal_stress_lame,gusak_degradation,unified_press_fit_lame}.json`

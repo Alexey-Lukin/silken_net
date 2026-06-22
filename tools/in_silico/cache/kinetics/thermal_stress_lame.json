@@ -18,43 +18,43 @@
       "E_GPa": 110.0,
       "alpha_1K": 8.6e-06,
       "yield_MPa": 880.0,
-      "sigma_t_worst_MPa": 29.73,
-      "peek_safety_factor": 3.4
+      "sigma_t_worst_MPa": 6.86,
+      "peek_safety_factor": 14.6
     },
     "Ti-6Al-7Nb": {
       "E_GPa": 103.0,
       "alpha_1K": 8.4e-06,
       "yield_MPa": 850.0,
-      "sigma_t_worst_MPa": 29.88,
-      "peek_safety_factor": 3.3
+      "sigma_t_worst_MPa": 6.89,
+      "peek_safety_factor": 14.5
     },
     "CP-Ti-Gr4": {
       "E_GPa": 104.0,
       "alpha_1K": 8.6e-06,
       "yield_MPa": 480.0,
-      "sigma_t_worst_MPa": 29.73,
-      "peek_safety_factor": 3.4
+      "sigma_t_worst_MPa": 6.86,
+      "peek_safety_factor": 14.6
     },
     "beta-Ti-13Nb-13Zr": {
       "E_GPa": 80.0,
       "alpha_1K": 8.8e-06,
       "yield_MPa": 900.0,
-      "sigma_t_worst_MPa": 29.57,
-      "peek_safety_factor": 3.4
+      "sigma_t_worst_MPa": 6.82,
+      "peek_safety_factor": 14.7
     },
     "Ta": {
       "E_GPa": 186.0,
       "alpha_1K": 6.5e-06,
       "yield_MPa": 345.0,
-      "sigma_t_worst_MPa": 31.35,
-      "peek_safety_factor": 3.2
+      "sigma_t_worst_MPa": 7.23,
+      "peek_safety_factor": 13.8
     },
     "Ti-15Zr": {
       "E_GPa": 100.0,
       "alpha_1K": 8.5e-06,
       "yield_MPa": 950.0,
-      "sigma_t_worst_MPa": 29.8,
-      "peek_safety_factor": 3.4
+      "sigma_t_worst_MPa": 6.87,
+      "peek_safety_factor": 14.5
     }
   },
   "geometry_mm": {
@@ -64,8 +64,8 @@
   },
   "worst_case": {
     "T_C": -30.0,
-    "sigma_t_MPa": -29.727337278106493,
-    "safety_factor": 3.3639070685838965
+    "sigma_t_MPa": 6.855727554179566,
+    "safety_factor": 14.58634393063584
   },
   "press_fit": {
     "fit": "H7/s6 (ISO 286, \u00d811)",
