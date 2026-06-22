@@ -75,6 +75,7 @@
 
 - [ ] `KREDIS_REDIS_URL` — Production Redis (DB 1) для Kredis distributed locks. **Auto-derive:** якщо не встановлено, можна вивести з `REDIS_URL` замінивши `/0` → `/1` (зробити вручну для безпеки).
 - [ ] `RACK_ATTACK_REDIS_URL` — Production Redis (DB 2) для rate limiting. Опціонально (auto-derive із `REDIS_URL`).
+- [ ] `SCORECARD_TOKEN` — fine-grained read-only PAT (repo admin: read) для `Sec · Scorecard` (OpenSSF, OPS.10). **Опціонально:** без нього Scorecard працює, але пропускає Branch-Protection/Webhooks-перевірки (`GITHUB_TOKEN` їх не читає). Дім workflow — [`06_07 §1`](06_07_CICD_and_Runbook_Index).
 
 ---
 

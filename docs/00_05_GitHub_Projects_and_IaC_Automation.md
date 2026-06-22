@@ -309,6 +309,17 @@ jobs:
           sync-labels: true
 ```
 
+### 2.7 Supply-chain hardening (IaC: SHA-pin · harden-runner · Scorecard)
+
+> **Дія/стан — [`OPS.10`](00_07_Action_Plan_Tracker); інвентар workflow — [`06_07 §1`](06_07_CICD_and_Runbook_Index). Тут — IaC-політика (дім).**
+
+Постава supply-chain для `.github/workflows/` як IaC:
+
+- **SHA-pin (обов'язково).** Кожен зовнішній `uses:` запінено на повний 40-символьний commit-SHA з коментарем `# vN` (напр. `actions/checkout@9c091bb… # v7`). Рухомий тег `@vN` — мутабельний покажчик: скомпрометований екшен-репо може мовчки перепнути його (вектор `tj-actions/changed-files`, 2025); SHA незмінний. **Dependabot** (`github-actions` ecosystem, `.github/dependabot.yml`) розуміє SHA-піни й оновлює і SHA, і `# vN` через PR → незмінність без застигання. Локальні `uses: ./…` не пінять (вони в репо).
+- **harden-runner** (`step-security/harden-runner`, `egress-policy: audit`) — перший крок кожного Linux-джоба: пасивний egress/FS-монітор (нічого не блокує), збирає baseline для майбутнього `block`-режиму з allowlist. macOS-джоби (harden-runner Linux-only) та no-op-агрегати (`ci-ok`) свідомо пропущені.
+- **OpenSSF Scorecard** (`Sec · Scorecard`) — щотижневий аудит supply-chain-гігієни (~18 перевірок) → SARIF у Security tab + публічний бейдж (`publish_results: true` — репо публічне). Постійний вартовий замість разового аудиту, що протухає.
+- **GitHub-side** (звірено gh API 2026-06-22): secret-scanning + push-protection **ON**; Dependabot security-updates **ON**; CodeQL default-setup активний (first-party SAST). 👤-залишки (signed-commits, опц. toggles) — [`OPS.10`](00_07_Action_Plan_Tracker).
+
 ---
 
 ## 🗂️ 3. Репозиторій (Monorepo)

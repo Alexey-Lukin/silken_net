@@ -9,6 +9,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 6 — workflows активні; production+canopy deploy налаштовані; **`main` захищено branch-protection** (required status checks = `CI passed` + `Docs passed`, `enforce_admins=false` → owner лишає прямий push, PR-и гейтяться); `coap-smoke` gate заведений, але dormant до host-Variable (INF.6).
+- **Supply-chain (OPS.10, 2026-06-22):** усі Actions SHA-pinned (Dependabot-maintained) · `harden-runner` egress-audit на всіх Linux-джобах · `Sec · Scorecard` weekly · secret-scanning + push-protection + CodeQL ON. 👤-залишки (signed-commits, опц. toggles) → [`00_07`](00_07_Action_Plan_Tracker) OPS.10.
 - **Відкрите:** активація coap-smoke (repo Variables — INF.6) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
@@ -47,10 +48,13 @@
 | `ssot_guard.yml` → **CI · SSOT Guard** | PR (paths: app/models, app/services, firmware/{soldier,queen,bio_contracts}, contracts) | code↔doc drift guard (OPS.2; advisory — path-gated, so NOT a hard required check) |
 | `solidity_audit.yml` → **CI · Solidity** | PR/push `contracts/**` | Smart-contract static audit (forge + Slither) |
 | CodeQL (GitHub **default-setup**) | PR + push `main` + weekly | First-party SAST — `Analyze (<lang>)` checks for actions/c-cpp/js/ts/python/ruby. Configured in the **Security tab** (no workflow file → a file-scan won't see it). |
+| `scorecard.yml` → **Sec · Scorecard** | weekly + push `main` + `branch_protection_rule` + dispatch | OpenSSF supply-chain Scorecard (~18 checks) → SARIF у Security tab + публічний бейдж (`publish_results`, репо публічне). Опц. `SCORECARD_TOKEN` для Branch-Protection/Webhooks-перевірок (OPS.10). |
 | `in_silico_smoke.yml` → **Smoke · In-silico L2** | PR/push `tools/in_silico/**` | EBFC in-silico pipeline smoke (L2) |
 | `docs.yml` → **CI · Docs** | PR/push `docs/**`, `**.md`, lib-docs engines/specs, `.github/**`, `app/models/**` | SSOT doc gates — `docs:check_refs` + `tracker:check` + linter-specs + model↔code sync ([`00_06 §3`](00_06_SSOT_Documentation_Standard)) |
 | `ml_smoke.yml` → **Smoke · ML log-mel** | PR/push `tools/ml/**`, `firmware/common/logmel_*.h` | TinyML/log-mel contract smoke — `emit_c --check` golden-parity ([`00_06 §3`](00_06_SSOT_Documentation_Standard), [`03_03 §3.4`](03_03_TinyML_Acoustic_Inference)) |
 | `cad_smoke.yml` → **Smoke · CAD PicoGK** | PR/push `tools/cad/**` | PicoGK Code-as-CAD — **2-job**: `logic` (Linux) = pure-xUnit **hard-gate** (CEM/SDF/mate math, PicoGK-runtime-free) + `render` (macOS Apple-Silicon) = `dotnet build` **hard** (LEAP source vs PicoGK 2.2) + `verify` golden-metrics best-effort (Library.Go SIGSEGV 139 headless) + CycloneDX SBOM/artifacts ([`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)) |
+
+> **Supply-chain hardening (OPS.10) — cross-cutting (не окремі рядки):** усі зовнішні `uses:` запінені на commit-SHA (`# vN`; Dependabot-maintained) і `step-security/harden-runner` (egress-audit) стоїть першим кроком кожного Linux-джоба (macOS `render` + no-op `ci-ok` свідомо пропущені). IaC-політика (дім, з обґрунтуванням) → [`00_05 §2.7`](00_05_GitHub_Projects_and_IaC_Automation).
 
 ### Deploy
 | Workflow (`file` → name) | Trigger | Призначення |
@@ -84,6 +88,7 @@ release-PR merge ─→ GitHub Release vX.Y.Z ─→ Deploy · Production (verif
 > **Branch-protection (`main`):** required status checks = **`CI passed`** (ci-ok) + **`Docs passed`** (docs-ok), `enforce_admins=false` → owner лишає прямий push, PR-и (вкл. Dependabot / release-please) мерджаться лише на зеленому ci-ok. Налаштування: `gh api -X PUT repos/Alexey-Lukin/silken_net/branches/main/protection` (контексти + `enforce_admins`).
 > **SSOT doc gate (OPS.2, landed):** `CI · Docs` runs on every PR/push; its always-on **`docs-ok` aggregate (check `Docs passed`)** is a **required** check on `main` alongside `CI passed` (path-gated `docs_check` can't be required directly — would block code-only PRs; `docs-ok` `if: always()` never skips). `ssot_guard` stays advisory (path-gated, `type:*` bypass).
 > **Gate-прогалини (tracked):** `coap-smoke` post-deploy gate dormant до host-Variables (`INF.6`).
+> **Signed commits (OPS.10, planned 👤):** `required_signatures` наразі `false`. Порядок ввімкнення: (1) локальний підпис — `git config --global gpg.format ssh` + `user.signingkey <~/.ssh/id_ed25519.pub>` + `commit.gpgsign true`, той самий ключ у GitHub як **Signing Key**; (2) тест-коміт → «Verified»; (3) ЛИШЕ ТОДІ ввімкнути (`gh api -X PUT …/branches/main/protection/required_signatures`). Порядок важливий — інакше тертя на push. Бот-коміти (Dependabot/release-please) GitHub підписує сам; `enforce_admins=false` → owner може обійти, але з локальним підписом усі коміти й так підписані. Дія → [`00_07`](00_07_Action_Plan_Tracker) OPS.10.
 
 ---
 
