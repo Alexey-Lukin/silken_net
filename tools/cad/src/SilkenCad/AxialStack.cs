@@ -51,10 +51,13 @@ internal static class AxialStack
     public static float OverallStackLengthMm(AnchorAxialStackCem cem)
         => SleeveTopZMm(cem) + cem.Capsule.Flange.FlangeThicknessMm;
 
-    // The bus conductor runs through the anode's own bore → it must be ≥ the flange bore to stay
-    // continuous (01_01 §1: Ø1.6 anode ≥ Ø1.3 flange ✓). Pure boolean finding.
-    public static bool BusBoreContinuous(AnchorAxialStackCem cem)
-        => cem.Zone1.BoreDiameterMm >= cem.Capsule.Flange.BoreDiameterMm;
+    // F3 — the monolithic bus rod (01_01 §1.4) must clear the cathode channel WITH its insulation liner:
+    // rod Ø + 2·liner ≤ flange channel Ø. Back-compat: a legacy hollow-bore CEM (rod==0) falls back to the
+    // old "anode bore ≥ flange bore" continuity check. Pure boolean finding (CEM-only → xUnit).
+    public static bool BusRodClears(AnchorAxialStackCem cem)
+        => cem.Zone1.BusRodDiameterMm > 0f
+            ? cem.Zone1.BusRodDiameterMm + (2f * cem.Capsule.Flange.BusLinerThicknessMm) <= cem.Capsule.Flange.BoreDiameterMm
+            : cem.Zone1.BoreDiameterMm >= cem.Capsule.Flange.BoreDiameterMm;
 
     // ── Render: bring all zones into the stack frame for the merged STL + interference measurement ──
     public static AxialStackVoxels Build(AnchorAxialStackCem cem)

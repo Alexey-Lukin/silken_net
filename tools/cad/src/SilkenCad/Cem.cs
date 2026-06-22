@@ -110,7 +110,8 @@ internal sealed record AnchorCem
     public string Name { get; init; } = "anchor_zone1";
     public float VoxelSizeMm { get; init; } = 0.1f;
     public float OuterDiameterMm { get; init; } = 11f;     // founder 2026-06-20 (HW.33)
-    public float BoreDiameterMm { get; init; } = 1.6f;     // central bus conductor (~1–2 mm²)
+    public float BoreDiameterMm { get; init; } = 1.6f;     // legacy hollow bus channel (gyroid inner); superseded by the monolithic rod below when >0
+    public float BusRodDiameterMm { get; init; }           // monolithic SOLID bus rod Ø (01_01 §1.4): >0 ⇒ rod core + gyroid annulus; 0 ⇒ legacy hollow bore
     public float LengthMm { get; init; } = 40f;            // Zone-1 30–50 mm
 
     // Cell-size (pore) axis — period at the core; RimMm tapers it toward the periphery.
@@ -173,7 +174,8 @@ internal sealed record CathodeFlangeCem
     public float FlangeThicknessMm { get; init; } = 3f;    // placeholder (HW.8 dim-freeze)
     public float ShankDiameterMm { get; init; } = 9f;      // placeholder (HW.8); Zone-3 into PEEK
     public float ShankLengthMm { get; init; } = 14f;
-    public float BoreDiameterMm { get; init; } = 1.3f;     // GND bus channel (hollow through flange+shank)
+    public float BoreDiameterMm { get; init; } = 1.3f;     // GND bus channel (hollow through flange+shank) — the monolithic rod threads it, isolated
+    public float BusLinerThicknessMm { get; init; }        // bus-rod insulation liner in the channel (01_01 §1.4); feeds the F3 BusRodClears clearance
 
     // Barbs (§4.3, reuse MechanicalLock; Zone-3 = opposite ratchet lean, dir −1)
     public int BarbRows { get; init; } = 3;

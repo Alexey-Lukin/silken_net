@@ -61,10 +61,36 @@ public class AxialStackTests
     }
 
     [Fact]
-    public void Bus_Bore_Stays_Continuous__Anode_Bore_Ge_Flange_Bore()
+    public void Legacy_Hollow_Bore_Falls_Back__Anode_Bore_Ge_Flange_Bore()
     {
-        // F3: the bus conductor runs through the anode's Ø1.6 bore → must be ≥ the flange Ø1.3 bore (01_01 §1).
+        // Back-compat: a CEM with no monolithic rod (BusRodDiameterMm==0) keeps the old continuity check —
+        // the anode Ø1.6 bore ≥ the flange Ø1.3 bore (01_01 §1).
         AnchorAxialStackCem cem = new();
-        Assert.True(AxialStack.BusBoreContinuous(cem));
+        Assert.True(AxialStack.BusRodClears(cem));
+    }
+
+    [Fact]
+    public void Monolithic_Bus_Rod_Clears_Cathode_Channel__Rod_Plus_2Liner_Le_Bore()
+    {
+        // F3 (01_01 §1.4): the solid rod + its insulation liner must fit the cathode channel.
+        // rod 1.0 + 2·liner 0.15 = 1.30 ≤ channel 1.3 ⇒ clears.
+        AnchorAxialStackCem cem = new()
+        {
+            Zone1 = new AnchorCem { BusRodDiameterMm = 1.0f },
+            Capsule = new AnchorAssemblyCem { Flange = new CathodeFlangeCem { BusLinerThicknessMm = 0.15f } },
+        };
+        Assert.True(AxialStack.BusRodClears(cem));
+    }
+
+    [Fact]
+    public void Monolithic_Bus_Rod_Pinched__Rod_Plus_Liner_Exceeds_Channel()
+    {
+        // rod 1.2 + 2·liner 0.15 = 1.50 > channel 1.3 ⇒ pinched (F3 ⚠).
+        AnchorAxialStackCem cem = new()
+        {
+            Zone1 = new AnchorCem { BusRodDiameterMm = 1.2f },
+            Capsule = new AnchorAssemblyCem { Flange = new CathodeFlangeCem { BusLinerThicknessMm = 0.15f } },
+        };
+        Assert.False(AxialStack.BusRodClears(cem));
     }
 }

@@ -66,7 +66,7 @@ internal sealed record GeometryMetrics
     public double? OverallStackLengthMm { get; init; }      // anode bottom → flange-disc top — embedded install span (F3, CODIT)
     public double? Zone1Zone2InterferenceMm3 { get; init; } // render overlap — 0 at nominal Ø11=Ø11 (surfaces touch, volumes don't; press-fit is +interference on bench)
     public double? Zone2Zone3InterferenceMm3 { get; init; } // render overlap — a thin shell = flange shoulder on the sleeve top face, NOT the shank (Ø9 floats in bore Ø11 = F1)
-    public bool? BusBoreContinuous { get; init; }           // anode bore ≥ flange bore (bus conductor not pinched, F3)
+    public bool? BusRodClears { get; init; }                // F3 — monolithic bus rod + 2·liner ≤ cathode channel (01_01 §1.4); legacy bore≥bore when rod==0
 }
 
 internal static class Validation
@@ -332,7 +332,7 @@ internal static class Validation
             OverallStackLengthMm = AxialStack.OverallStackLengthMm(cem),
             Zone1Zone2InterferenceMm3 = fZ1Z2,
             Zone2Zone3InterferenceMm3 = fZ2Z3,
-            BusBoreContinuous = AxialStack.BusBoreContinuous(cem),
+            BusRodClears = AxialStack.BusRodClears(cem),
         };
     }
 

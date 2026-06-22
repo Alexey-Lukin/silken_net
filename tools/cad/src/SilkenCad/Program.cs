@@ -644,7 +644,7 @@ internal static class Program
             $"  render overlap: Zone1∩Zone2={oM.Zone1Zone2InterferenceMm3:F0} mm³ · sleeve∩capsule={oM.Zone2Zone3InterferenceMm3:F0} mm³ (flange shoulder on sleeve end, not the shank)");
         Console.WriteLine(
             $"  insertion budget={oM.InsertionBudgetMm:F1} mm · embedded span={oM.OverallStackLengthMm:F1} mm · " +
-            $"bus-bore continuous={oM.BusBoreContinuous}");
+            $"bus-rod clears channel={oM.BusRodClears}");
 
         // Render sanity — the ONLY exit-gate: a broken transform / Bool yields an empty or degenerate merge.
         bool bSane = oM.SolidVolumeMm3 > 0 && oM.TriangleCount > 0 && oM.BboxSizeMm.All(d => d > 0);
@@ -656,8 +656,10 @@ internal static class Program
             Console.WriteLine($"  ℹ Zone-1↔Zone-2 nominal line-to-line ({dZ:F2} mm) — real +interference is the H7/s6 band (bench, 01_01 §3)");
         if (oM.InsertionBudgetMm is { } dB && dB < 0)
             Console.WriteLine($"  ⚠ press-fit F2: insertion budget {dB:F1} mm < 0 — Zone-1 + Zone-3 shanks collide inside the {cem.Zone2.LengthMm:F0} mm bore");
-        if (oM.BusBoreContinuous is false)
-            Console.WriteLine($"  ⚠ F3: anode bore Ø{cem.Zone1.BoreDiameterMm:F1} < flange bore Ø{cem.Capsule.Flange.BoreDiameterMm:F1} — bus conductor pinched");
+        if (oM.BusRodClears is false)
+            Console.WriteLine(cem.Zone1.BusRodDiameterMm > 0f
+                ? $"  ⚠ F3: bus rod Ø{cem.Zone1.BusRodDiameterMm:F1} + 2·liner {cem.Capsule.Flange.BusLinerThicknessMm:F2} > cathode channel Ø{cem.Capsule.Flange.BoreDiameterMm:F1} — rod+insulation pinched (01_01 §1.4)"
+                : $"  ⚠ F3: anode bore Ø{cem.Zone1.BoreDiameterMm:F1} < flange bore Ø{cem.Capsule.Flange.BoreDiameterMm:F1} — bus conductor pinched");
 
         Console.WriteLine(bSane
             ? "AUDIT OK — stack rendered; press-fit findings above → HW.8 reconcile"
