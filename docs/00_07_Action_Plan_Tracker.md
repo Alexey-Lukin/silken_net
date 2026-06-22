@@ -1098,10 +1098,10 @@
 ## §08c · IP / Grants (BIZ)
 
 #### BIZ.10 — Multi-party co-authorship + open-license MoU framework
-- **P1** · 👤 · ⚪ · → `08_03`, `08_02 §3-07`
-- **Стан:** Не почато — 5-сторонній фреймворк (ChNU+ChDTU+ChIPB+ChMA+СЄУ+SilkenNet) **спрощено під open-поставою** (`08_01 §2`): tech відкрита всім → немає патентних прав / royalty / tech-NDA до розподілу; лишається co-authorship + open-license acknowledgment (AGPL/CERN-OHL-S/CC-BY-SA) + NDA лише для нерозкритого (ключі / production-дані). Канон `08_03`, `08_02 §3-07`.
+- **P1** · 👤 · ⚪ · → `08_01 §2`, `08_02 §5`
+- **Стан:** Не почато — 5-сторонній фреймворк (ChNU+ChDTU+ChIPB+ChMA+СЄУ+SilkenNet) **спрощено під open-поставою** (`08_01 §2`): tech відкрита всім → немає патентних прав / royalty / tech-NDA до розподілу; лишається co-authorship + open-license acknowledgment (AGPL/CERN-OHL-S/CC-BY-SA) + NDA лише для нерозкритого (ключі / production-дані). Канон `08_01 §2` (open-license/IP-постава), `08_02 §5` (СЄУ Аблязов — legal MoU drafting).
 - [ ] 👤 co-authorship + open-license MoU × 5 (паралельно UNI.4-14) → Master Collaboration Agreement (юрист, не патентний повірений)
-- [ ] 🔗 після UNI.1/8/9/12/13
+- [ ] 🔗 після UNI.1/9/12/13/14
 
 #### 🌿 BIZ.12 — Horizon Europe CLUSTER 6 заявка (Biodiversity Monitoring, Mongabay pivot)
 - **P2** · 👤 · 🌿 · → `08_01 Стаття 24a`, `03_03 §10`
