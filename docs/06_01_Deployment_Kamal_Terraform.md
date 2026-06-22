@@ -621,6 +621,15 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
 
 ☐ 17. Вирішити CSP burn-in: спостерігати violation-репорти 1-2 тижні,
        потім встановити CSP_ENFORCE=true в env.clear для enforced режиму.
+
+☐ 18. [INF.10] Readiness-gated cutover — ПІСЛЯ кроку 12 (коли /ready=200):
+       розкоментувати proxy.healthcheck (path: /ready) у config/deploy.yml
+       (схема Kamal 2.12 готова, закоментована — interval 3 / timeout 5).
+       НЕ раніше: на холодному старті /ready 503-ить, доки БД/Redis не готові
+       → kamal-proxy довбе /ready до deploy_timeout → rollback; дефолт /up
+       (liveness) прощає bring-up. Після фліпу: kamal deploy → новий контейнер
+       бере трафік ЛИШЕ при /ready=200; повільний cold-start → підняти
+       deploy_timeout. Проба = ReadinessController (DB SELECT 1 + Redis PING, 06_05).
 ```
 
 ---

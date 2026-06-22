@@ -870,9 +870,9 @@
 - [ ] 🤖 Queen `queen_helium_lorawan_uplink()`
 
 #### INF.10 — Kamal-proxy healthcheck → `/ready` (readiness-gated cutover)
-- **P3** · 👤 · ⚪ · → `06_01`
-- **Стан:** Не розпочато — `/ready` readiness-проба існує (DB+Redis round-trip, [`06_05`](06_05_Puma_Configuration)), але kamal-proxy за замовчуванням healthcheck'ає `/up` (liveness). Для zero-downtime: додати `proxy: healthcheck: { path: /ready }` у `config/deploy.yml` — kamal не перемикає трафік на новий контейнер, поки DB+Redis не готові. Свідомо НЕ забетоновано зараз (deploy pre-first-run; змінює cutover-поведінку → застосувати+верифікувати на першому деплої, не тихо). Канон `06_01`.
-- [ ] 👤 додати `proxy.healthcheck.path: /ready` у `config/deploy.yml` на першому деплої + верифікувати cutover
+- **P3** · 👤 · 🟡 · → `06_01`
+- **Стан:** Підготовка ✅ (2026-06-22) — у `config/deploy.yml` (+ canopy) лежить закоментований **schema-correct stub** `proxy.healthcheck.path: /ready` (звірено з kamal 2.12: `proxy.healthcheck.{path,interval,timeout}`); runbook фліпу — [`06_01 §Чеклист`](06_01_Deployment_Kamal_Terraform) (крок 18). Лишається лише 👤-фліп на першому деплої. `/ready` (DB+Redis round-trip, [`06_05`](06_05_Puma_Configuration)) уже реалізований; дефолт kamal-proxy = `/up` (liveness). Свідомо НЕ активовано в коді: на холодному старті `/ready` 503-ить, доки БД/Redis не готові → deploy_timeout → rollback; bring-up на `/up` (прощає), фліп на `/ready` — коли `/ready→200`.
+- [ ] 👤 розкоментувати `proxy.healthcheck.path: /ready` на першому деплої (після `/ready→200`) + верифікувати cutover
 
 #### INF.9 — deploy.yml path-gate (infra-relevant changes only)
 - **P3** · 🤖 · ⚪ · → `06_07`

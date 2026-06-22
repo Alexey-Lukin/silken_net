@@ -17,3 +17,5 @@ servers:
 # proxy:
 #   ssl: true
 #   host: canopy.silken.net
+#   # INF.10 readiness cutover (proxy.healthcheck.path: /ready) — same as config/deploy.yml;
+#   # apply on first canopy deploy after /ready→200. Runbook: docs/06_01 §Чеклист (step 18).
