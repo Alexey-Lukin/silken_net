@@ -5,7 +5,7 @@
   "voxel_size_mm": 0.05,
   "shank_diameter_mm": 11.0,
   "shank_length_mm": 18.0,
-  "bore_diameter_mm": 1.3,
+  "bore_diameter_mm": 0,
   "contact_start_mm": 2.0,
   "contact_length_mm": 12.0,
   "barb_rows": 4,

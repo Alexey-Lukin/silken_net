@@ -394,6 +394,22 @@ internal static class Program
             $"solid-disc={oM.SolidDisconnectedFraction:P1} pore-clusters={oM.PoreClusterCount} " +
             $"percolate=[{strPerc}] surface={oM.SpecificSurfaceMm2PerMm3:F2} mm2/mm3");
 
+        // Monolithic bus rod (01_01 §1.4) — MEASURE that the solid rod actually fused into the part
+        // (gotcha #4 — don't assume the BoolAdd landed). voxAnode (the gyroid) is done being measured, so
+        // fuse the rod onto it and re-measure: the rendered rod volume must be ≳ π(rod/2)²·L.
+        bool bRodOk = true;
+        if (cem.BusRodDiameterMm > 0f)
+        {
+            voxAnode.BoolAdd(Zone1Anode.BusRod(cem));
+            voxAnode.CalculateProperties(out float fMonoVol, out BBox3 _);
+            float fExpect = MathF.PI * MathF.Pow(cem.BusRodDiameterMm / 2f, 2f) * cem.LengthMm;
+            float fRod = fMonoVol - (float)oM.SolidVolumeMm3;
+            bRodOk = fRod > 0.5f * fExpect;
+            Console.WriteLine(
+                $"  monolithic bus rod Ø{cem.BusRodDiameterMm:F1}: +{fRod:F1} mm³ measured (expect ~{fExpect:F1}) → " +
+                $"part {fMonoVol:F1} mm³ {(bRodOk ? "✓" : "⚠ rod missing/undersized")}");
+        }
+
         bool bSane = oM.SolidVolumeMm3 > 0 && oM.TriangleCount > 0 && oM.BboxSizeMm.All(d => d > 0);
         bool bFloor = oM.FinestPeriodMm is { } fFinest && fFinest >= PrintablePeriodFloorMm;
         bool bPorositySane = oM.Porosity is > 0.40 and < 0.85;
@@ -416,7 +432,7 @@ internal static class Program
         if (!bPercolates)
             Console.WriteLine("  ⚠ pore does not percolate axially + radially — sap / flow-through blockage");
 
-        bool bOk = bSane && bFloor && bPorositySane && bConnSound;
+        bool bOk = bSane && bFloor && bPorositySane && bConnSound && bRodOk;
         Console.WriteLine(bOk ? "VERIFY OK" : "VERIFY FAILED");
         return bOk ? 0 : 1;
     }

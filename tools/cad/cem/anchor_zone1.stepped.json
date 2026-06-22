@@ -5,6 +5,7 @@
   "voxel_size_mm": 0.1,
   "outer_diameter_mm": 11.0,
   "bore_diameter_mm": 1.6,
+  "bus_rod_diameter_mm": 1.0,
   "length_mm": 40.0,
   "gyroid_period_mm": 2.5,
   "gyroid_period_rim_mm": 1.3,

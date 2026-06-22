@@ -8,6 +8,7 @@
   "shank_diameter_mm": 9.0,
   "shank_length_mm": 14.0,
   "bore_diameter_mm": 1.3,
+  "bus_liner_thickness_mm": 0.15,
   "barb_rows": 3,
   "barb_height_mm": 0.28,
   "lead_angle_deg": 30.0,

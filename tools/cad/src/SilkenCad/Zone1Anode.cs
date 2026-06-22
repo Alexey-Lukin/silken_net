@@ -97,10 +97,17 @@ internal sealed class ZonedGyroid(float fRMidMm, float fPeriodCoreMm, float fPer
 // (01_01 §4.3A) are a separate session (00_07).
 internal static class Zone1Anode
 {
-    // Solid pipe envelope (outer Ø + central bore) — also the porosity reference volume.
+    // The gyroid-annulus inner radius: the monolithic bus-rod surface (01_01 §1.4) when a rod is set,
+    // else the legacy hollow bore. Shared by the envelope (porosity ref + clip) and the gyroid gradient core
+    // so the lattice annulus and the solid rod meet exactly.
+    internal static float InnerRadiusMm(AnchorCem cem)
+        => cem.BusRodDiameterMm > 0f ? cem.BusRodDiameterMm / 2f : cem.BoreDiameterMm / 2f;
+
+    // Solid pipe envelope (outer Ø + inner Ø) — also the porosity reference volume (the gyroid annulus only;
+    // the solid bus rod is added in BuildMonolithic and is NOT part of the porosity measurement).
     public static Voxels Envelope(AnchorCem cem)
     {
-        BasePipe oPipe = new(new LocalFrame(), cem.LengthMm, cem.BoreDiameterMm / 2f, cem.OuterDiameterMm / 2f);
+        BasePipe oPipe = new(new LocalFrame(), cem.LengthMm, InnerRadiusMm(cem), cem.OuterDiameterMm / 2f);
         return oPipe.voxConstruct();
     }
 
@@ -114,14 +121,14 @@ internal static class Zone1Anode
 
         if (cem.Topology.Equals("stepped", StringComparison.OrdinalIgnoreCase))
             return new ZonedGyroid(
-                ((cem.BoreDiameterMm / 2f) + (cem.OuterDiameterMm / 2f)) / 2f,
+                (InnerRadiusMm(cem) + (cem.OuterDiameterMm / 2f)) / 2f,
                 cem.GyroidPeriodMm, fPeriodRim, cem.GyroidWallParam);
 
         bool bGraded = fPeriodRim != cem.GyroidPeriodMm || fWallRim != cem.GyroidWallParam || bNetwork;
 
         return bGraded
             ? new GradedCartesianGyroid(
-                cem.BoreDiameterMm / 2f, cem.OuterDiameterMm / 2f,
+                InnerRadiusMm(cem), cem.OuterDiameterMm / 2f,
                 cem.GyroidPeriodMm, fPeriodRim,
                 cem.GyroidWallParam, fWallRim, bNetwork)
             : new CartesianGyroid(cem.GyroidPeriodMm, cem.GyroidWallParam);
@@ -137,5 +144,23 @@ internal static class Zone1Anode
         return voxGyroid;
     }
 
-    public static Voxels Build(AnchorCem cem) => Anode(cem, Envelope(cem));
+    // The full standalone part = the gyroid annulus (porosity-measured separately, via Anode) PLUS the
+    // solid monolithic bus-rod core (01_01 §1.4). The rod is a SOLID body → ShapeKernel voxConstruct +
+    // BoolAdd (gotcha #9 — never the narrow-band SDF ctor; the same split as MechanicalLock's solid shank).
+    // A rod-less CEM (BusRodDiameterMm==0) returns the bare gyroid → back-compat with the v1 manifests.
+    // The solid monolithic bus-rod core as voxels (01_01 §1.4) — ShapeKernel voxConstruct (gotcha #9,
+    // never the narrow-band SDF ctor for a solid). Shared by BuildMonolithic (the part) + the verify
+    // rod-presence MEASURE (gotcha #4 — don't assume the BoolAdd landed; measure it).
+    public static Voxels BusRod(AnchorCem cem)
+        => new BaseCylinder(new LocalFrame(), cem.LengthMm, cem.BusRodDiameterMm / 2f).voxConstruct();
+
+    public static Voxels BuildMonolithic(AnchorCem cem)
+    {
+        Voxels voxAnode = Anode(cem, Envelope(cem));
+        if (cem.BusRodDiameterMm > 0f)
+            voxAnode.BoolAdd(BusRod(cem));
+        return voxAnode;
+    }
+
+    public static Voxels Build(AnchorCem cem) => BuildMonolithic(cem);
 }

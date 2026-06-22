@@ -127,4 +127,14 @@ public class AnchorTests
         double dMin = aAxial.Min(), dMax = aAxial.Max();
         Assert.True(dMax - dMin < 0.10, $"axial porosity spread {dMax - dMin:F3} (min={dMin:F3} max={dMax:F3}) — should be ~flat");
     }
+
+    [Fact]
+    public void Monolithic_Rod_Sets_The_Gyroid_Inner_Radius__Else_Legacy_Bore()
+    {
+        // 01_01 §1.4: with a solid bus rod the gyroid annulus starts at the rod surface (rod/2); without one
+        // it falls back to the legacy hollow bore (bore/2). The solid rod core itself is voxConstruct-added in
+        // BuildMonolithic — render-verified by `verify` (Voxels need Library.Go), not unit-tested here.
+        Assert.Equal(0.5f, Zone1Anode.InnerRadiusMm(new AnchorCem { BusRodDiameterMm = 1.0f }));
+        Assert.Equal(0.8f, Zone1Anode.InnerRadiusMm(new AnchorCem { BoreDiameterMm = 1.6f }));  // rod==0 ⇒ legacy bore
+    }
 }
