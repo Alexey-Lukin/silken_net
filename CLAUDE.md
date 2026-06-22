@@ -314,6 +314,26 @@ Solana: Ed25519 підпис, SPL Token Transfer, ATA резолюція чер�
 | SENTRY-DSN | `.kamal/secrets` | ✅ Додано: `SENTRY_DSN=$SENTRY_DSN` (потребує ENV at deploy time) |
 | AKASH-SIDEKIQ | `deploy/akash/deploy.yaml` | ✅ Виправлено (PLAN 5.8): `job:` service з Sidekiq entrypoint додано |
 
+---
+
+## 13. Solidity / Foundry (контракти SCC/SFC/Governance/Anchor)
+
+**Дім контрактів:** `contracts/*.sol` + парні тести `contracts/test/{Name}.t.sol`. Конфіг — `contracts/foundry.toml` (профілі `default`/`ci`/`production`); `forge-std` ставиться через `npm ci`. Контракт-спека + ролі → `docs/05_03`; тест-методологія всіх шарів → `docs/04_06 §B`.
+
+**Конвенції тестів (must):**
+- Naming: `test_` (happy-path) · `testRevert_` (expected revert) · `testFuzz_` (property/fuzz).
+- `makeAddr("name")` (НЕ `address(0xN)`) · `vm.prank(caller)` на КОЖЕН виклик (НЕ `startPrank` без `stopPrank`).
+- `vm.expectRevert("exact error string")` — точний рядок, не голий `expectRevert()`.
+- `vm.expectEmit(...) + emit Event(...)` ПЕРЕД викликом · `bound(x,min,max)` > `vm.assume`.
+- `vm.warp` / `vm.roll` для timelock / ERC20Votes-checkpoint (snapshot voting) логіки.
+
+**Інваріант-гейти (обов'язкові тести):**
+- `testRevert_cannotRemoveLastAdmin` — кожен контракт з `AccessControl` (`_adminCount` guard).
+- `test_pause_allowsSlash` — SCC/SFC `slash()` ОБОВ'ЯЗКОВО працює під `pause()` (B-07).
+- `totalSupply() <= MAX_SUPPLY` (1B SCC) після будь-якої послідовності операцій.
+
+**Команди + ролі:** `forge test -vvv --gas-report` · `forge build --sizes` (ліміт EIP-170 = 24KB) · `forge coverage --report lcov` (→ CI Codecov). On-chain адмін-ролі → Timelock (крім `pause`); `slash()` = `SLASHER_ROLE`, `mint()` = `MINTER_ROLE` (фізично розділені ключі, E.2).
+
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 

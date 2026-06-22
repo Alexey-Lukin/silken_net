@@ -1,200 +1,43 @@
 # SilkenNet — Cursor IDE Rules
 
-## Source of Truth (читати у такому порядку)
-1. Wiki: https://github.com/Alexey-Lukin/silken_net/wiki
-2. `docs/00_00_...` -> `docs/09_03_...` (всі docs, не тільки заголовки)
-3. `README.md`
+> **SSOT = `CLAUDE.md` + `docs/` (`00_00`→`08_03`) + [Wiki](https://github.com/Alexey-Lukin/silken_net/wiki). Читай їх ПЕРШИМИ.**
+> Цей файл — лише тонкий pointer + Cursor-specific поведінка + cheat-sheet пасток.
+> **Конфлікт між цим файлом і `CLAUDE.md` → `CLAUDE.md` WINS** (він — єдиний підтримуваний дім; цей файл навмисно тонкий, щоб не дрейфувати).
 
-При конфлікті: docs мають пріоритет над старими правилами в цьому файлі.
-
----
-
-## Оточення та інструменти
-
-```bash
-ruby --version  # must be 4.0.5
-bundle exec rubocop    # завжди перед commit
-bundle exec rspec      # якщо DB/services доступні
-bundle exec brakeman   # при змінах безпеки
-make -C firmware/test  # firmware (x86 host-based)
-# Solidity (Foundry):
-cd contracts && npm ci && forge test -vvv   # тести контрактів
-forge coverage --report summary             # покриття контрактів
-```
+Повний контекст живе в `CLAUDE.md`: архітектура (§3), моделі (§4), Proof-of-Growth (§5), Sidekiq-черги (§6), фронт (§7), API (§8), безпека (§9), деплой (§10), Web3 (§11), активні BLOCKER'и (§12), Solidity/Foundry (§13), стиль «лінивого сеньйора» / YAGNI (§2а). Команди валідації — `CLAUDE.md §2`.
 
 ---
 
-## Жорсткі правила (порушення = баг)
-
-### Ruby / Rails
-1. **Ruby 4.0.5** — єдина версія. Немає `.ruby-version` переключень.
-2. **`db/structure.sql`** — ніколи `schema.rb`. PostgreSQL партиціювання вимагає structure.sql.
-3. **Thin controllers**: параметри + авторизація + рендеринг. Логіка -> `app/services/` або `app/workers/`.
-4. **Sidekiq `:strict: true`** — порядок черг незмінний:
-   `uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5) > web3_critical(6) > web3(7) > web3_low(8) > low(9)`
-5. **Не змінювати чергу воркера** без архітектурного обґрунтування — черга визначає пріоритет і семантику.
-6. **Партиціонування**: `TelemetryLog`, `GatewayTelemetryLog`, `BlockchainTransaction` — завжди передавати `created_at_iso` у воркери. Використовувати `find_with_partition_pruning`.
-7. **AES ключі** не покидають Ruby-процес. `HardwareKey#cached_binary_key` — in-process LRU, без Redis-serialize.
-8. **`oracle_status` enum** має prefix `oracle_status_`. Методи: `oracle_status_fulfilled?` (НЕ `fulfilled?`).
-9. **`TelemetryLog` валідації видалені** з hot path (KENOSIS TITAN). Перевірка тільки в `TelemetryUnpackerService.valid_sensor_data?`. Не додавати AR validations назад.
-10. **Idempotency-Key header** обов'язковий для JSON запитів до `POST /actuators/:id/execute`.
-
-### Firmware (C / STM32)
-11. **LoRa packet = 21 байт**: `[DID:4][RSSI:1][AES-256-ECB payload:16]`. Не порушувати формат без оновлення `TelemetryUnpackerService`.
-12. **StatusByte = `[bio_status:2 | growth_points:6]`**. Маска: `growth_points = status_byte & 0x3F`, `bio_status = status_byte >> 6`.
-13. **AES-256-ECB для LoRa** (1 блок, без IV). **AES-256-CBC для CoAP batch + downlink** (HRNG IV). При зміні режиму — обов'язково відновити ECB після CBC flush (ECB Restoration Pattern).
-14. **BLOCKER'и firmware не закривати** без реального коміту в `firmware/`. Не вважати "виправленими" якщо лише є TODO-коментар.
-15. **mruby BioContract**: `OPTIMAL_Z_TARGET=29.0`, `CRITICAL_Z_MIN=2.0`, `CRITICAL_Z_MAX=45.0`. Не змінювати без оновлення server-side `SilkenNet::Attractor`.
-
-### Frontend (Phlex + Tailwind v4)
-16. **Тільки дизайн-токени** в shared компонентах: `bg-gaia-surface`, `text-gaia-text`, `bg-status-danger text-status-danger-text` тощо. НІКОЛИ `bg-white`, `text-gray-900`, `bg-red-100`.
-17. **`tokens(*static, **conditional)`** — єдиний спосіб складати Tailwind класи (TailwindMerge).
-18. **`config/tailwind.config.js` видалено** — SSOT тільки в `app/assets/tailwind/application.css`.
-19. **Без DB-запитів у `initialize`** Phlex компонентів. Всі дані передаються аргументами.
-20. **`focus-visible:ring-2 focus-visible:ring-gaia-primary`** — стандартний focus ring для всіх інтерактивних елементів. `focus:` заборонено (не відповідає accessibility).
-21. **`*_controller.js`** в `app/javascript/controllers/` автоматично реєструється через `eagerLoadControllersFrom`. Не залишати scaffold-файли.
-
-### Web3 / Blockchain
-22. **Guard clauses для мінтингу** (oracle-driven):
-    ```ruby
-    log.verified_by_iotex? && log.oracle_status_fulfilled? && wallet.hadron_kyc_status == "approved"
-    ```
-23. **`WEB3_STRICT_MODE=true`** у production — стаби вимикаються. Chainlink, Hadron raises при відсутності credentials.
-24. **`oracle_callbacks` endpoint** — публічний (без Bearer). Захист: HMAC-SHA256 `X-Chainlink-Signature`. `ActiveSupport::SecurityUtils.secure_compare` для timing-safe порівняння.
-25. **Dual Computation Integrity**: server Lorenz Z (BigDecimal, 18-digit) vs device Z (Float). Divergence > 30% -> fraud. Не пропускати цю перевірку.
-26. **batchMint dry-run** перед кожним реальним `batchMint`. Binary Search Isolation при revert (не наївний N×mint fallback).
-27. **Blockchain/Web3 логіка** залишається виключно у service layer namespaces (`app/services/chainlink/`, `app/services/solana/`, etc.). Не виносити в controllers або models.
-
-### Solidity / Foundry (контракти)
-28. **Foundry test best practices** — тести в `contracts/test/*.t.sol`:
-    - `test_` prefix для happy-path, `testRevert_` для очікуваного revert, `testFuzz_` для fuzz tests.
-    - `makeAddr("name")` замість `address(0xN)` для labeled, детерміністичних адрес.
-    - `vm.prank(caller)` для кожного виклику — caller isolation per test.
-    - `vm.expectRevert("exact error string")` — завжди перевіряти точне повідомлення помилки.
-    - `vm.expectEmit(true, true, false, true)` + `emit Event()` — перевіряти indexed topics + data.
-    - `bound(value, min, max)` у fuzz тестах замість `vm.assume` (менше відхилень).
-    - Arrange-Act-Assert pattern у кожному тесті.
-29. **Покриття (coverage)**: `forge coverage --report summary` (аналог SimpleCov). CI генерує lcov.info.
-    - `forge coverage --report lcov` → lcov.info для Codecov/Coveralls інтеграції.
-30. **Gas**: `forge test --gas-report` для оцінки газових витрат. `forge build --sizes` для перевірки розміру контрактів (ліміт EIP-170: 24KB).
-31. **Нові контракти**: завжди створювати `contracts/test/{ContractName}.t.sol` паралельно з `.sol` файлом.
-32. **Admin Protection**: всі контракти з `AccessControl` мають `_adminCount` guard — тестувати `testRevert_cannotRemoveLastAdmin`.
-33. **Pause bypass**: SCC та SFC `slash()` ОБОВ'ЯЗКОВО працюють під час `pause()` (B-07). Тест: `test_pause_allowsSlash`.
-
----
-
-## Поведінка в редакторі
+## Поведінка в редакторі (Cursor-specific)
 
 - **Мінімальні, точні зміни.** Не чіпати код поза scope задачі.
-- **Не покладатися на застарілі статуси/лічильники** з instruction-файлів — завжди перевіряти актуальний код та docs.
-- Якщо в docs є секція BLOCKER — вважати її активним обмеженням за замовчуванням.
-- Не ставити статус "виправлено" тільки тому що в docs/коді є TODO або коментар.
-- Firmware (C) та Rails (Ruby) — різні домени. Не переносити Ruby-припущення у C код.
+- **Не довіряй застарілим статусам/лічильникам** із будь-яких instruction-файлів — звіряй ЖИВИЙ код + `docs/`. (Сам цей файл свідомо НЕ тримає чисел/рядків-локацій — вони дрейфують.)
+- **Firmware (C) ≠ Rails (Ruby) ≠ Solidity** — різні домени; не переносити припущення між ними.
+- Секція BLOCKER (`CLAUDE.md §12`) = активне обмеження за замовчуванням. Не ставити «виправлено» лише через TODO/коментар — лише за реальним комітом.
+- SSOT-доки (`docs/NN_NN_*.md`), wiki-sync, doc-лінтери → веди через скіл `ssot-maintenance`.
 
 ---
 
-## Структура репозиторію (ключові директорії)
+## Cheat-sheet пасток (часті хибні припущення → дім за точним фактом)
 
-```
-app/
-  controllers/api/v1/   # тонкі контролери
-  services/             # вся бізнес-логіка
-    silken_net/         # Lorenz attractor, GeoUtils
-    blockchain_*/       # minting, burning, rollback
-    iotex/, chainlink/, peaq/, solana/, celo/, ethereum/
-    filecoin/, streamr/, toucan/, klima_dao/, polygon/
-    dclimate/           # satellite fire verification
-  workers/              # Sidekiq workers
-  views/
-    components/         # domain Phlex components
-    shared/ui/          # StatusBadge, StatCard, DataTable, Pagination...
-    shared/iot/         # MetricValue
-    shared/web3/        # Address
-  javascript/controllers/ # Stimulus
+Це НЕ переказ фактів (вони живуть у `CLAUDE.md`), а перелік пасток + куди дивитись:
 
-firmware/
-  soldier/main.c        # 648 lines, STM32WLE5JC
-  queen/main.c          # 550 lines, STM32WLE5JC + SIM7070G
-  bio_contracts/        # mruby Lorenz attractor
-  test/                 # host-based tests (137 total)
-
-docs/                   # SSOT архітектурні документи
-terraform/              # GCP infrastructure
-deploy/akash/           # Akash SDL manifests
-subgraph/               # The Graph (polygon-amoy)
-contracts/              # Solidity SCC/SFC/Governance (Polygon)
-  test/                 # Foundry test suites (*.t.sol)
-```
+- **LoRa-крипто = AES-`128`-ECB** (НЕ 256 — поширене стале припущення), CoAP = AES-256-CBC → `§3`. Після CBC-flush ОБОВ'ЯЗКОВО відновити ECB+128 (Queen).
+- **Backend Lorenz = Float (IEEE 754 double)**, НЕ BigDecimal (після FW.7, бітово ≡ firmware mruby) → `§3`/`§5`.
+- **StatusByte змінився post-FW.29** = `[PanicFlag:1 | status:2 | growth_points:5]` (НЕ припускай 6-bit GP) → `§3`. Wire unpack: `"N n c C n C C a4"`.
+- **`db/structure.sql`**, ніколи `schema.rb` (Postgres-партиції).
+- **Thin controllers** — логіка лише в `app/services/` / `app/workers/`.
+- **Sidekiq `:strict: true`** — порядок черг незмінний (`§6`); не міняти чергу воркера без обґрунтування.
+- **Партиції** (`TelemetryLog`/`GatewayTelemetryLog`/`BlockchainTransaction`) → завжди `created_at_iso` + `find_with_partition_pruning`.
+- **AES-ключі не покидають Ruby-процес** (`HardwareKey#cached_binary_key`, in-process LRU; без Redis-serialize).
+- **`oracle_status`** має prefix → `oracle_status_fulfilled?` (НЕ `fulfilled?`).
+- **`TelemetryLog` без AR-валідацій** (KENOSIS) — перевірка лише в `TelemetryUnpackerService.valid_sensor_data?`; не додавати назад.
+- **Frontend = лише дизайн-токени** в shared-компонентах (`bg-gaia-surface`…), `tokens(...)`, без DB у Phlex `initialize`, `focus-visible:` (`§7`).
+- **Мінтинг guard-clauses** + `WEB3_STRICT_MODE`; Web3-логіка лише в service-namespaces (`§11`).
+- **Стиль:** драбинка «лінивого сеньйора» / YAGNI-first (`§2а`) — найкращий код той, що не написано.
 
 ---
 
-## Критичні патерни
+## Solidity / Foundry
 
-### TelemetryUnpackerService
-```ruby
-# Ruby unpack format для 21-байтного пакету:
-did, vcap, temp, acoustic, delta_t, status_byte, ttl, fw_id, _pad =
-  chunk.unpack("N n c C n C C a4")
-growth_points = status_byte & 0x3F
-bio_status    = status_byte >> 6
-```
-
-### HardwareKey кеш
-```ruby
-# Правильно: versioned cache (самоінвалідація через updated_at)
-key.cached_binary_key  # LRU in-process, key: "#{did}:v:#{updated_at.to_f}"
-# Неправильно: Rails.cache або Redis для AES ключів
-```
-
-### Partition-aware lookup
-```ruby
-# Правильно:
-TelemetryLog.find_with_partition_pruning(id, created_at_iso)
-# Неправильно:
-TelemetryLog.find(id)  # O(P×log N) global scan
-```
-
-### oracle_status enum
-```ruby
-# Правильно (prefix: oracle_status_):
-log.oracle_status_fulfilled?
-log.oracle_status_dispatched?
-# Неправильно:
-log.fulfilled?  # NoMethodError або неправильний метод
-```
-
-### Phlex компонент
-```ruby
-class Views::Shared::UI::MyComponent < ApplicationComponent
-  def initialize(data:, extra_class: nil)
-    @data = data           # ніяких DB запитів тут
-    @extra_class = extra_class
-  end
-
-  def view_template
-    div(class: tokens("base-classes", @extra_class)) do
-      span(class: "text-gaia-text") { @data.name }  # токени, не raw colors
-    end
-  end
-end
-```
-
----
-
-## Активні BLOCKER'и (зведена таблиця)
-
-| BLOCKER | Локація | Чому важливо |
-|---------|---------|-------------|
-| Hardcoded AES key | `firmware/*/main.c:65-66` | Компрометація 1 вузла -> вся мережа |
-| ECB без MAC | `firmware/soldier/main.c:747` | Replay/bit-flip attack на телеметрію |
-| TinyML закоментована | `firmware/soldier/main.c:355` | `lora_payload[7]` завжди 0, акустика мертва |
-| Lorenz inputs mismatch | `bio_contract.rb` | `delta_t`/`vcap` не входять в attractor |
-| Lorenz state loss | firmware | Кожен цикл — нова траєкторія (не безперервний атрактор) |
-| OPTIMAL_Z comment | `bio_contract.rb:83` | Коментар 20.0 vs константа 29.0 |
-| QUEEN-001 hardcoded | `firmware/queen/main.c` | Factory flashing неможливий |
-| OTA infinite loop | `firmware/queen/main.c` | `ota_is_active` не скидається |
-| AT command blocking | `firmware/queen/main.c:542` | Queen сліпа ~25 сек при flush |
-| HRNG IV reuse | `firmware/queen/main.c:516` | CBC IV=0 при HRNG blackout |
-| Prometheus absent | `terraform/` | Метрики не збираються |
-| SENTRY_DSN absent | `.kamal/secrets` | Помилки production не видно |
-| Sidekiq absent (Akash) | `deploy/akash/deploy.yaml` | Web3/OTA workers не стартують на Akash |
+Конвенції тестів, інваріант-гейти (`test_pause_allowsSlash`, admin-last-guard, `totalSupply<=MAX`), команди — **`CLAUDE.md §13`**. Контракт-спека → `docs/05_03`; тест-методологія → `docs/04_06 §B`.
