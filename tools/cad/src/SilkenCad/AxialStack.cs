@@ -80,7 +80,18 @@ internal static class AxialStack
         Voxels voxMerged = new(voxZone1);
         voxMerged.BoolAdd(voxZone2);
         voxMerged.BoolAdd(voxCapsule);
-        return new AxialStackVoxels(voxMerged, voxZone1, voxZone2, voxCapsule);
+
+        // The FULL monolithic bus rod (01_01 §1.4): a Ø(bus) core from the anode bottom (z=0) up through
+        // the PEEK gap + the cathode channel to the flange-top pogo pad — the actual anode V−/GND path to
+        // the capsule. It is the solid core inside the Ø11 anode, then a free rod threading the cathode
+        // channel (Ø1.3, isolated by the liner). voxConstruct (gotcha #9). Kept apart for the section colour.
+        Voxels? voxBus = null;
+        if (cem.Zone1.BusRodDiameterMm > 0f)
+        {
+            voxBus = new BaseCylinder(new LocalFrame(), OverallStackLengthMm(cem), cem.Zone1.BusRodDiameterMm / 2f).voxConstruct();
+            voxMerged.BoolAdd(voxBus);
+        }
+        return new AxialStackVoxels(voxMerged, voxZone1, voxZone2, voxCapsule, voxBus);
     }
 }
 
@@ -89,4 +100,4 @@ internal static class AxialStack
 // = 0 (anode Ø11 and bore Ø11 are line-to-line → surfaces TOUCH but volumes don't overlap; real press-fit
 // is +interference on the bench); sleeve∩capsule ≈ a thin shell = the flange SHOULDER (Ø25 disc) resting
 // on the sleeve TOP face (Ø15), NOT the shank — the shank Ø9 floats free in the bore Ø11 (the F1 clearance).
-internal sealed record AxialStackVoxels(Voxels Merged, Voxels Zone1, Voxels Zone2, Voxels Capsule);
+internal sealed record AxialStackVoxels(Voxels Merged, Voxels Zone1, Voxels Zone2, Voxels Capsule, Voxels? Bus = null);

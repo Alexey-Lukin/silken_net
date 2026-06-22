@@ -322,10 +322,34 @@ internal static class Program
                 {
                     Voxels voxRod = Zone1Anode.BusRod(acem);
                     voxRod.BoolIntersect(voxHalf);
-                    oV.SetGroupMaterial(1, new ColorFloat(0.92f, 0.62f, 0.13f), 0.9f, 0.3f);  // gold rod core
+                    oV.SetGroupMaterial(1, new ColorFloat(1.0f, 0.72f, 0.05f), 0.25f, 0.7f);  // gold rod core
                     oV.Add(voxRod, 1);
                 }
                 oV.qOrientation = oV.qOrientationRight;   // look straight at the +X cut face
+            }
+            else if (bSection && strKind == "anchor_axial_stack")
+            {
+                // Reveal the FULL bus PATH: cut the assembled stack to the −X half + colour the through-rod
+                // gold → the monolithic bus runs from the anode bottom, up the PEEK gap, through the cathode
+                // channel, to the flange-top pogo pad (01_01 §1.4). Silver stack (zones) + gold through-rod.
+                AxialStackVoxels s = AxialStack.Build(Cem.Parse<AnchorAxialStackCem>(strJson));
+                BBox3 bb = s.Merged.oCalculateBoundingBox();
+                Vector3 sz = bb.vecSize(), ctr = bb.vecCenter();
+                Voxels voxHalf = new BaseBox(new LocalFrame(new Vector3(bb.vecMin.X + (sz.X / 4f), ctr.Y, bb.vecMin.Z)),
+                    sz.Z, sz.X / 2f, sz.Y).voxConstruct();
+                Voxels voxStack = new(s.Zone1);
+                voxStack.BoolAdd(s.Zone2);
+                voxStack.BoolAdd(s.Capsule);
+                voxStack.BoolIntersect(voxHalf);
+                oV.SetGroupMaterial(0, new ColorFloat(0.72f, 0.74f, 0.78f), 0.85f, 0.35f);  // Ti-silver stack
+                oV.Add(voxStack, 0);
+                if (s.Bus is { } voxBus)
+                {
+                    voxBus.BoolIntersect(voxHalf);
+                    oV.SetGroupMaterial(1, new ColorFloat(1.0f, 0.72f, 0.05f), 0.25f, 0.7f);  // gold through-rod
+                    oV.Add(voxBus, 1);
+                }
+                oV.qOrientation = oV.qOrientationRight;
             }
             else
             {

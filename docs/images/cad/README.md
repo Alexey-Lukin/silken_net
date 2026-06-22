@@ -11,7 +11,8 @@ fundraising / README / wiki. Rebuild any time: **`tools/cad/scripts/render_galle
 | [`cathode_flange.drawing.svg`](cathode_flange.drawing.svg) | Деталь 3 cathode flange drawing (Ø25 + GND pad + PEEK iso-ring + 3× bayonet, `02_02 §1.2`) | `draw cem/cathode_flange.json` |
 | `cathode_flange.png` | Cathode flange 3D render | `render cem/cathode_flange.json` |
 | `anchor_zone1_pine.png` | Zone-1 gyroid anode — the ажурна Ti TPMS structure (pine SKU, `01_01 §5`) | `render cem/anchor_zone1.pine.json` |
-| `anchor_zone1_pine_section.png` | Longitudinal **cutaway**: the **monolithic bus rod** (gold core) down the centre of the gyroid annulus (`01_01 §1.4`, HW.34) | `section cem/anchor_zone1.pine.json` |
+| `anchor_zone1_pine_section.png` | Longitudinal **cutaway** (anode close-up): the **monolithic bus rod** (gold core) down the centre of the gyroid annulus (`01_01 §1.4`, HW.34) | `section cem/anchor_zone1.pine.json` |
+| `anchor_axial_stack_section.png` | **Full bus PATH cutaway**: the rod (gold) runs from the anode, up the PEEK gap, through the cathode channel, to the flange-top pogo pad → the capsule (`01_01 §1.4`) | `section cem/anchor_axial_stack.json` |
 | `anchor_assembly.png` | Capsule-end assembly (cathode flange ↔ PEEK radome, `02_02 §4.4`) | `render cem/anchor_assembly.json` |
 
 - **Drawings** = SVG (vector — GitHub renders inline; the factory DXF is produced alongside by `draw`, but
