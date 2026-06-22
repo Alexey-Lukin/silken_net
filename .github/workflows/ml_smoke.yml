@@ -30,12 +30,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
       - name: Set up silken_ml conda env (cached)
         # micromamba caches the whole env keyed on environment.yml hash, so reruns
         # reuse it in ~30 s instead of resolving + downloading each time.
-        uses: mamba-org/setup-micromamba@v3
+        uses: mamba-org/setup-micromamba@d7c9bd84e824b79d2af72a2d4196c7f4300d3476 # v3
         with:
           environment-file: tools/ml/environment.yml
           environment-name: silken_ml

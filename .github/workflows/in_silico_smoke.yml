@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
       - name: Install conda-lock
         run: pipx install conda-lock
       - name: conda-lock.yml in sync with environment.yml (no silent drift)
@@ -57,7 +57,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
       - name: Set up silken_md conda env (cached, pinned lock)
         # Installs the EXACT pinned env from the committed conda-lock.yml
@@ -66,7 +66,7 @@ jobs:
         # environment-name. Cache keys on the lock hash, so it changes only when
         # the lock changes → deterministic, and warm runs reuse the ~2.5 GB env
         # in ~30 s instead of installing for ~8 min.
-        uses: mamba-org/setup-micromamba@v3
+        uses: mamba-org/setup-micromamba@d7c9bd84e824b79d2af72a2d4196c7f4300d3476 # v3
         with:
           environment-file: tools/in_silico/conda-lock.yml
           environment-name: silken_md
