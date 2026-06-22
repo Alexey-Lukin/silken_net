@@ -1,0 +1,57 @@
+name: Sec · Scorecard
+
+# OpenSSF Scorecard — a standing supply-chain-hygiene auditor (OpenSSF / Linux
+# Foundation). Replaces the one-off manual audit (which goes stale) with a weekly
+# automated one: ~18 checks (pinned deps, dangerous workflow patterns, token
+# permissions, branch protection, SAST, …) → a 0-10 score + findings in the
+# Security tab. Catches supply-chain REGRESSIONS automatically (a new action on a
+# moving tag, an over-broad token) instead of waiting for a human to re-audit.
+# Canon: 00_05 §2 (Actions IaC) / 06_07 §1. Tracker: OPS.10 (docs/00_07).
+
+on:
+  # Re-score whenever branch-protection changes (the Branch-Protection check).
+  branch_protection_rule:
+  schedule:
+    - cron: '27 7 * * 1'   # Mon 07:27 UTC, weekly
+  push:
+    branches: [ main ]
+  workflow_dispatch:        # manual run — used to verify the first execution
+
+# Top-level least-privilege; the analysis job elevates only what it needs.
+permissions: read-all
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write   # upload the SARIF result to code-scanning (Security tab)
+      id-token: write          # OIDC — lets publish_results attest to the public OpenSSF API
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false   # Scorecard best-practice: no creds left on disk
+
+      - name: Run Scorecard analysis
+        uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a # v2.4.3
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          # PUBLIC repo → publish to the OpenSSF API (transparency + the README badge).
+          # For the Branch-Protection / Webhooks checks that GITHUB_TOKEN can't read,
+          # add an optional fine-grained PAT as `repo_token: ${{ secrets.SCORECARD_TOKEN }}`
+          # (read-only admin). Without it the rest of the checks still run. → 06_04.
+          publish_results: true
+
+      # SARIF → Security tab. Works because CodeQL default-setup already enabled
+      # code scanning on this repo; Scorecard's SARIF category coexists with CodeQL's.
+      - name: Upload SARIF to code-scanning
+        uses: github/codeql-action/upload-sarif@dd903d2e4f5405488e5ef1422510ee31c8b32357 # v3
+        with:
+          sarif_file: results.sarif
