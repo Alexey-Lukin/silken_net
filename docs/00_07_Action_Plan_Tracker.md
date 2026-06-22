@@ -867,7 +867,7 @@
 
 #### INF.10 — Kamal-proxy healthcheck → `/ready` (readiness-gated cutover)
 - **P3** · 👤 · 🟡 · → `06_01`
-- **Стан:** Підготовка ✅ (2026-06-22) — у `config/deploy.yml` (+ canopy) лежить закоментований **schema-correct stub** `proxy.healthcheck.path: /ready` (звірено з kamal 2.12: `proxy.healthcheck.{path,interval,timeout}`); runbook фліпу — [`06_01 §Чеклист`](06_01_Deployment_Kamal_Terraform) (крок 18). Лишається лише 👤-фліп на першому деплої. `/ready` (DB+Redis round-trip, [`06_05`](06_05_Puma_Configuration)) уже реалізований; дефолт kamal-proxy = `/up` (liveness). Свідомо НЕ активовано в коді: на холодному старті `/ready` 503-ить, доки БД/Redis не готові → deploy_timeout → rollback; bring-up на `/up` (прощає), фліп на `/ready` — коли `/ready→200`.
+- **Стан:** Підготовка зацементована — schema-correct inert stub (`proxy.healthcheck.path: /ready`, звірено з kamal 2.12) у `config/deploy.yml`+canopy; first-deploy cutover-runbook → [`06_01 §Чеклист`](06_01_Deployment_Kamal_Terraform) (крок 18); проба `/ready` (DB+Redis) → [`06_05`](06_05_Puma_Configuration). Свідомо deferred (design): на холодному старті `/ready` 503→deploy_timeout→rollback, тож bring-up на дефолтному `/up`, фліп на `/ready` коли `/ready→200`. Лишається 👤-фліп:
 - [ ] 👤 розкоментувати `proxy.healthcheck.path: /ready` на першому деплої (після `/ready→200`) + верифікувати cutover
 
 #### INF.9 — deploy.yml path-gate (infra-relevant changes only)
