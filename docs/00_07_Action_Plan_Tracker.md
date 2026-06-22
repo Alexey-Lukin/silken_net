@@ -947,7 +947,7 @@
 #### BIZ.14 — SFC Vote-Escrow during breach→slash lag (07_01 SFC vote-escrow residual)
 - **P3** · 🤖 · 🟢 · → `07_01 §8`
 - **Стан:** Core закрито — `SilkenForestCoin.slash()` (SLASHER_ROLE) зменшує voting power при slashing → атака «купити SFC + навмисне порушення NaaS» неможлива. Residual: ~1–5 хв lag (`web3_critical` черга) між SCC-slash і SFC-slash — у вікні учасник технічно ще може проголосувати. Канон `07_01 §8`.
-- [ ] 🔗 Vote-Escrow (veToken) при `breached`-контрактах — опціонально, gated на повний DAO governance launch (BIZ.4)
+- [ ] 🔗 Vote-Escrow (veToken) при `breached`-контрактах — опціонально, gated на mainnet-активацію DAO-governance ([`05_06`](05_06_Governance_and_DAO); самі контракти ✅ зроблено, BIZ.4 archived)
 
 ## §08a · Академічна інтеграція
 
