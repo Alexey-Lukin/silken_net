@@ -743,6 +743,7 @@
 - [x] 🤖 positive-A-guard у `BlockchainBurningService` (`Slashing::CauseEvidence`, default→freeze) + verdict-рефактор health-check/крон + outcome-гілкування воркера + termination-exempt
 - [ ] 👤 DAO/founder перед mainnet: розширити A-сет (scoped-unmaintained / окремий chainsaw-сигнал) + активувати inert `penalty_factor`-uplift (`slash_cause_uplift_enabled`)
 - [ ] 🤖 (secondary) tree-side `streamr_undelivered` сигнал-джерело (guarded→0) + repeat-offence вага
+- [ ] 🤖 (secondary) Field-Audit alert-дедуп: freeze/blackout/slash-failure пишуть cluster-level `system_fault` щоденно при тривалій деградації → потрібен окремий `field_audit` alert_type / dedup-ключ (інакше дедуп конфлатить/маскує сигнали)
 - [ ] 🤖 (backlog) A/B-координація: slash (A) і `ParametricInsurance#evaluate_daily_health!` (B) читають ту саму stress-дату → кандидат на спільний `DailyHealthRouter` (DRY, `04_02 §11`)
 
 #### S3.2 — dClimate Real API verification

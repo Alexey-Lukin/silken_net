@@ -157,13 +157,17 @@ class BlockchainBurningService < ApplicationService
   # алерт (system_fault), НЕ палить і НЕ breach-ить контракт (лишається :active до людської
   # класифікації A/B/C). Burn необоротний, freeze — ні (05_05 §3.2 асиметрія). Повертає :frozen.
   def freeze_for_field_audit!
-    Rails.logger.warn "🧊 [SLASH-1] NaasContract ##{@naas_contract.id}: спалення заблоковано — немає прямого доказу Категорії A (05_05 §3.2) → Field Audit, без burn/breach."
+    # Контекст для аудитора (дзеркало slash-`reason`): конкретне дерево, якщо є джерело,
+    # інакше — кластер. Дає Field-Audit з чого почати C→A класифікацію.
+    context = @source_tree ? "дерево #{@source_tree.did}" : "кластер ##{@cluster.id}"
+
+    Rails.logger.warn "🧊 [SLASH-1] NaasContract ##{@naas_contract.id} (#{context}): спалення заблоковано — немає прямого доказу Категорії A (05_05 §3.2) → Field Audit, без burn/breach."
 
     EwsAlert.create!(
       cluster: @cluster,
       severity: :critical,
       alert_type: :system_fault,
-      message: "Слешинг заблоковано: немає прямого доказу халатності (Категорія A). Кошти НЕ спалено — потрібен Field Audit (Категорія C, 05_05 §3.2/§5)."
+      message: "Слешинг заблоковано (#{context}): немає прямого доказу халатності (Категорія A). Кошти НЕ спалено — потрібен Field Audit (Категорія C, 05_05 §3.2/§5)."
     )
 
     :frozen
