@@ -87,7 +87,7 @@ class TelemetryUnpackerService < ApplicationService
     chunks = @binary_batch.b.scan(/.{1,#{chunk_size}}/m)
 
     # ⚡ [ОПТИМІЗАЦІЯ N+1]: Спершу витягуємо всі DID з батчу
-    preload_trees(chunks)
+    preload_trees(chunks, chunk_size)
 
     chunks.each do |chunk|
       next if chunk.bytesize < chunk_size
@@ -107,8 +107,16 @@ class TelemetryUnpackerService < ApplicationService
   # [SEC.11] Eager-load `hardware_key` так само як `wallet`/`device_calibration`/
   # `tree_family` — нам потрібен `binary_lorenz_seed` для per-tree seed dispatch
   # без додаткового N+1 за пакет.
-  def preload_trees(chunks)
-    dids = chunks.map { |c| format("SNET-%08X", c[0..3].unpack1("N")) }.uniq
+  def preload_trees(chunks, chunk_size)
+    # Дзеркалимо guard із #perform: обрізаний хвостовий chunk (коротший за
+    # chunk_size) там пропускається, тож і тут не витягуємо з нього DID — на
+    # коротшому за uint32 `unpack1("N")` дає nil, і `format` впав би TypeError
+    # ще до того, як perform встиг би його скіпнути.
+    dids = chunks.filter_map do |c|
+      next if c.bytesize < chunk_size
+
+      format("SNET-%08X", c[0..3].unpack1("N"))
+    end.uniq
     @trees_cache = Tree.where(did: dids)
                        .includes(:wallet, :device_calibration, :tree_family, :hardware_key)
                        .index_by(&:did)

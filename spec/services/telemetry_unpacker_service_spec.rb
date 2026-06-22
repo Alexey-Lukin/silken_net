@@ -997,6 +997,16 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
         expect { described_class.call(batch) }.to change(TelemetryLog, :count).by(1)
       end
+
+      it "tolerates a truncated trailing chunk without raising [TEST.2 regression]" do
+        # Обрізана передача: валідний 21-байтний chunk + 2-байтовий хвіст.
+        # preload_trees мусить скіпнути хвіст так само, як головний цикл —
+        # інакше format("SNET-%08X", nil) падає TypeError ще до skip.
+        valid_chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+        batch = valid_chunk + "\xAB\xCD".b
+
+        expect { described_class.call(batch) }.to change(TelemetryLog, :count).by(1)
+      end
     end
 
     describe "RSSI inversion" do
@@ -1327,13 +1337,11 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       # so binary_key returns exactly 16 bytes (matches firmware HKDF output).
       hardware_key.update!(aes_key_hex: lora_key_hex)
       Rails.cache.clear
-      ENV["TELEMETRY_CCM_ENABLED"] = "true"
+      ENV["TELEMETRY_CCM_ENABLED"] = "true" # cleanup: глобальний ENV-snapshot у rails_helper
       allow(SilkenNet::Metrics::TELEMETRY_CCM_DECRYPT_OK_TOTAL).to receive(:increment)
       allow(SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL).to receive(:increment)
       allow(SilkenNet::Metrics::TELEMETRY_CCM_FC_REPLAY_REJECTED_TOTAL).to receive(:increment)
     end
-
-    after { ENV.delete("TELEMETRY_CCM_ENABLED") }
 
     # Thin wrapper around TelemetryChunkHelper#build_ccm_chunk that
     # fills in the two values shared across every example in this block

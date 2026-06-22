@@ -67,6 +67,21 @@ RSpec.configure do |config|
     I18n.locale = I18n.default_locale
   end
 
+  # [TEST.2] Snapshot + restore ENV around every example. Чимало спеків мутують
+  # ENV напряму (feature-флаги, ORACLE-ключі, SOLANA_*, STRESS_*…) без restore
+  # або з restore через `after`/inline — а той біжить РАНІШЕ за тіардаун
+  # `stub_const("ENV", …)`, тож чистить стаблений Hash, а реальна змінна тече в
+  # наступні приклади (саме так утік TELEMETRY_CCM_ENABLED → chunk_size 29 → 21-
+  # байтні пакети тихо скіпались). `around`-ensure відпрацьовує ПІСЛЯ тіардауну
+  # стабу, на реальному ENV, тож `ENV.replace` надійно відкочує per-example
+  # мутації. Змінні з before(:all)/suite живуть далі — вони в snapshot.
+  config.around do |example|
+    env_snapshot = ENV.to_h
+    example.run
+  ensure
+    ENV.replace(env_snapshot)
+  end
+
   # Prosopite: N+1 query detection in request specs.
   # Raises Prosopite::NPlusOneQueriesError when duplicate queries detected.
   config.before(:each, type: :request) do
