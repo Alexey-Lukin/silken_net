@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Text.Json;
 using System.Threading;
 using PicoGK;
@@ -24,6 +25,7 @@ internal static class Program
                 "scan" => args.Length >= 2 ? Scan(args[1]) : Fail("usage: scan <cem.json>"),
                 "draw" => args.Length >= 2 ? Draw(args[1]) : Fail("usage: draw <cem.json>"),
                 "render" => args.Length >= 2 ? Render(args[1]) : Fail("usage: render <cem.json>"),
+                "section" => args.Length >= 2 ? Render(args[1], bSection: true) : Fail("usage: section <cem.json>"),
                 "help" or "--help" or "-h" => Help(),
                 var strCmd => Fail($"unknown command: {strCmd}"),
             };
@@ -279,8 +281,10 @@ internal static class Program
 
     // CEM → PNG via the PicoGK native viewer: build the voxels, apply a Ti-metallic material + a 3/4
     // presentation camera, screenshot. The enterprise render-as-code path (camera/material in code,
-    // repeatable) — no external renderer. Viewer-window-gated: needs a display (macOS desktop OK; CI = xvfb).
-    private static int Render(string strCemPath)
+    // repeatable) — no external renderer. `section` (bSection) keeps the −X half (BoolIntersect a half-bbox
+    // box) so the camera looks at the cut face → reveals INTERNAL structure (e.g. the monolithic bus rod
+    // core inside the gyroid, 01_01 §1.4). Viewer-window-gated: needs a display (macOS desktop OK; CI = xvfb).
+    private static int Render(string strCemPath, bool bSection = false)
     {
         string strJson = File.ReadAllText(strCemPath);
         JsonElement root = JsonDocument.Parse(strJson).RootElement;
@@ -290,16 +294,54 @@ internal static class Program
         Directory.CreateDirectory("out");
         // PicoGK's screenshot is TGA (native, regardless of extension) → honest .tga name; the committed
         // presentation gallery converts it to PNG (GitHub-renderable). See tools/cad/scripts/render_gallery.sh.
-        string strTga = Path.GetFullPath(Path.Combine("out", $"{strName}.tga"));
+        string strSuffix = bSection ? "_section" : "";
+        string strTga = Path.GetFullPath(Path.Combine("out", $"{strName}{strSuffix}.tga"));
         if (File.Exists(strTga)) File.Delete(strTga);   // existence ⇒ fresh success
 
         Library.Go(fVoxel, () =>
         {
-            Voxels vox = ConstructVoxels(strKind, strJson);
             var oV = Library.oViewer();
             oV.SetBackgroundColor(new ColorFloat(1f, 1f, 1f));
-            oV.SetGroupMaterial(0, new ColorFloat(0.72f, 0.74f, 0.78f), 0.85f, 0.35f);  // Ti-silver metallic
-            oV.Add(vox, 0);
+
+            if (bSection && strKind == "anchor_zone1")
+            {
+                // Reveal the monolithic bus rod (01_01 §1.4): CUT both the gyroid and the rod to the −X
+                // half and point the camera at the +X cut face (Right view, deterministic — auto-frame
+                // won't). The SOLID rod core (gold) sits in the centre of the gyroid cross-section (silver),
+                // two opaque groups so it pops. BaseBox: Length=Z (grows +Z from frame), Width=X, Depth=Y.
+                AnchorCem acem = Cem.Parse<AnchorCem>(strJson);
+                Voxels voxGyroid = Zone1Anode.Anode(acem, Zone1Anode.Envelope(acem));
+                BBox3 bb = voxGyroid.oCalculateBoundingBox();
+                Vector3 sz = bb.vecSize(), ctr = bb.vecCenter();
+                Voxels voxHalf = new BaseBox(new LocalFrame(new Vector3(bb.vecMin.X + (sz.X / 4f), ctr.Y, bb.vecMin.Z)),
+                    sz.Z, sz.X / 2f, sz.Y).voxConstruct();
+                voxGyroid.BoolIntersect(voxHalf);
+                oV.SetGroupMaterial(0, new ColorFloat(0.72f, 0.74f, 0.78f), 0.85f, 0.35f);  // Ti-silver gyroid
+                oV.Add(voxGyroid, 0);
+                if (acem.BusRodDiameterMm > 0f)
+                {
+                    Voxels voxRod = Zone1Anode.BusRod(acem);
+                    voxRod.BoolIntersect(voxHalf);
+                    oV.SetGroupMaterial(1, new ColorFloat(0.92f, 0.62f, 0.13f), 0.9f, 0.3f);  // gold rod core
+                    oV.Add(voxRod, 1);
+                }
+                oV.qOrientation = oV.qOrientationRight;   // look straight at the +X cut face
+            }
+            else
+            {
+                Voxels vox = ConstructVoxels(strKind, strJson);
+                if (bSection)
+                {
+                    // Generic cutaway: keep the −X half (cut face = the YZ plane through the axis).
+                    // BaseBox: Length=Z (grows +Z from frame), Width=X (centred), Depth=Y.
+                    BBox3 bb = vox.oCalculateBoundingBox();
+                    Vector3 sz = bb.vecSize(), ctr = bb.vecCenter();
+                    LocalFrame oHalf = new(new Vector3(bb.vecMin.X + (sz.X / 4f), ctr.Y, bb.vecMin.Z));
+                    vox.BoolIntersect(new BaseBox(oHalf, sz.Z, sz.X / 2f, sz.Y).voxConstruct());
+                }
+                oV.SetGroupMaterial(0, new ColorFloat(0.72f, 0.74f, 0.78f), 0.85f, 0.35f);  // Ti-silver metallic
+                oV.Add(vox, 0);
+            }
             oV.RequestUpdate();
             Thread.Sleep(1500);                           // let the viewer render a frame (default auto-framed view)
             oV.RequestScreenShot(strTga);
@@ -310,7 +352,7 @@ internal static class Program
 
         bool bOk = File.Exists(strTga);
         Console.WriteLine(bOk
-            ? $"render → out/{strName}.tga  (PicoGK native voxel render; TGA → PNG via scripts/render_gallery.sh)"
+            ? $"render → out/{strName}{strSuffix}.tga  (PicoGK native voxel render; TGA → PNG via scripts/render_gallery.sh)"
             : "render: no screenshot written — viewer/display issue; use f3d on the STL as fallback");
         return bOk ? 0 : 1;
     }

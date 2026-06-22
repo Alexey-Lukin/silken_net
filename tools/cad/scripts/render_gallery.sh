@@ -28,6 +28,9 @@ for c in ti_coin cathode_flange anchor_zone1.pine anchor_assembly; do
   run render "cem/$c.json"
 done
 
+echo "▸ section reveal (monolithic bus rod inside the gyroid, 01_01 §1.4)…"
+run section "cem/anchor_zone1.pine.json"
+
 echo "▸ TGA → PNG (presentation-sized 1600px)…"
 for t in out/*.tga; do
   b="$(basename "$t" .tga)"
