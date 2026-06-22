@@ -24,7 +24,7 @@
 | [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof of Growth (мінтинг-тригер) |
 | [`07_02` — Unit Economics and BOM](07_02_Unit_Economics_and_BOM) | Юніт-економіка, BOM |
 | [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | MSA / KYC legal (Аблязов) |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | BIZ.1/2/3/4/6/9/11/13/14, UNI.8 |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | BIZ.1/2/3/4/6/9/11/13/14, UNI.14 |
 
 ## 📑 Зміст
 
