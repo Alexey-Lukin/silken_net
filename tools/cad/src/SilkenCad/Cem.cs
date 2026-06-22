@@ -94,8 +94,8 @@ internal sealed record TiCoinCem
     public NotesSpec? Notes { get; init; }                // drawing notes block (null ⇒ defaults)
 }
 
-// Zone-1 gyroid anode (01_01 §5): a cartesian-gyroid Ti rod with a central bore for the
-// bus conductor (Ø = founder 2026-06-20, Ø11, HW.33). v2 = radially GRADED gyroid with three
+// Zone-1 gyroid anode (01_01 §5): a cartesian-gyroid Ti rod with a central SOLID bus-rod core
+// (01_01 §1.4 monolithic; Ø11 founder 2026-06-20, HW.33). v2 = radially GRADED gyroid with three
 // INDEPENDENT, CEM-driven axes (the FEA/bio "which is best" answer is open, so none is hard-coded):
 //   • pore/cell size — GyroidPeriod{Mm core → RimMm} (biology: ingrowth core / transport rim)
 //   • porosity / E   — GyroidWallParam{ core → Rim }  (mechanics: HOLD or GRADE the porosity)
@@ -142,7 +142,7 @@ internal sealed record MechanicalLockCem
     public float VoxelSizeMm { get; init; } = 0.05f;       // barb-feature floor (h≈0.28 → ~6 voxels); exact tip = µCT (01_01 §5.6)
     public float ShankDiameterMm { get; init; } = 11f;     // Zone-1 anode Ø (founder, HW.33); Zone-3 = PLACEHOLDER (HW.8 dim-freeze)
     public float ShankLengthMm { get; init; } = 18f;
-    public float BoreDiameterMm { get; init; } = 1.3f;     // central bus-conductor channel (§1 — the shank is hollow); 0 ⇒ solid
+    public float BoreDiameterMm { get; init; } = 1.3f;     // 0 ⇒ SOLID shank (monolithic anode, the bus IS the metal core, 01_01 §1.4); >0 ⇒ the cathode channel the bus rod threads
     public float ContactStartMm { get; init; } = 2f;       // z where PEEK contact begins
     public float ContactLengthMm { get; init; } = 12f;     // contact zone 8–15 mm (§4.3 A)
 
@@ -243,7 +243,7 @@ internal sealed record RadomeCem
 // (§1 + §4.3 C, ≤0.05 mm clearance) but that is bench-gated and not needed for the mate-audit → deferred
 // (00_07). DIN-471 retaining grooves live on the Ti Zone-1/Zone-3 ends (§3 step 6), NOT the PEEK sleeve;
 // barbs are pressed INTO the bore by the Ti shanks at 150 °C (§3 steps 4–5) → the PEEK bore is smooth
-// here. The bus conductor runs inside the ANODE's own Ø1.6 bore, not the sleeve (the bore holds the shaft).
+// here. The monolithic bus rod (01_01 §1.4) is the ANODE's own solid core, not in the sleeve (the sleeve bore Ø11 holds the Ti shaft).
 internal sealed record Zone2SleeveCem
 {
     public string Kind { get; init; } = "zone2_sleeve";

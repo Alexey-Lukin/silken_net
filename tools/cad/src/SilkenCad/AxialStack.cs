@@ -62,7 +62,7 @@ internal static class AxialStack
     // ── Render: bring all zones into the stack frame for the merged STL + interference measurement ──
     public static AxialStackVoxels Build(AnchorAxialStackCem cem)
     {
-        // Zone-1 ENVELOPE (solid Ø11 rod, hollow Ø1.6 bus bore) — OD is what press-fits; porosity lives
+        // Zone-1 ENVELOPE (solid Ø11 rod; the monolithic bus is the solid core, not a bore) — OD is what press-fits; porosity lives
         // in anchor_zone1. Built z∈[0, LengthMm] from the origin frame (BasePipe, as Zone1Anode.Envelope).
         Voxels voxZone1 = Zone1Anode.Envelope(cem.Zone1);
 

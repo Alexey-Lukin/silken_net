@@ -111,7 +111,8 @@ internal static class MechanicalLock
         voxRing.BoolSubtract(new BaseCylinder(oGroove, cem.GrooveWidthMm, fRShank - cem.GrooveDepthMm).voxConstruct());
         voxShank.BoolSubtract(voxRing);
 
-        // 4. Central bus bore (§1, Ø~1.3) — the shank is hollow, the conductor runs through it to the pogo pad.
+        // 4. Central bore (01_01 §1.4): bore==0 ⇒ SOLID shank (monolithic anode — the bus is the metal core);
+        //    bore>0 ⇒ the cathode (Zone-3) channel the bus rod threads to the pogo pad.
         if (cem.BoreDiameterMm > 0f)
             voxShank.BoolSubtract(new BaseCylinder(new LocalFrame(), cem.ShankLengthMm, cem.BoreDiameterMm / 2f).voxConstruct());
 

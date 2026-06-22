@@ -35,8 +35,8 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 | `tools/cad/src/SilkenCad/Zone1Anode.cs` | Zone-1 anode + `CartesianGyroid:IImplicit` (the from-scratch SDF) + `Anode()` render path |
 | `tools/cad/src/SilkenCad/Validation.cs` | golden-metrics via `Voxels.CalculateProperties` (porosity needs an envelope ref) + reuses LEAP `Measure.fGetSurfaceArea` |
 | `tools/cad/src/SilkenCad/Connectivity.cs` | ARCH.25 two-phase topological audit — SDF-sample + 6-conn flood-fill (open/closed-pore, percolation, solid-island, specific-surface); pure-managed, display-less xUnit |
-| `tools/cad/src/SilkenCad/MechanicalLock.cs` | §4.3 mechanical lock — `MechanicalLockShank` asymmetric ratchet-barb + DIN-471 groove SDF on a hollow shank; render = solid `voxConstruct` + thin barb-ridge `BoolAdd`; self-support metric (Noyron manufacturing-awareness) |
-| `tools/cad/src/SilkenCad/CathodeFlange.cs` | Деталь 3 — Zone-3 cathode flange (Ø25): reuses the §4.3 shank/barbs via `ShankCem` + radial bayonet lugs + bus bore + O-ring groove |
+| `tools/cad/src/SilkenCad/MechanicalLock.cs` | §4.3 mechanical lock — `MechanicalLockShank` asymmetric ratchet-barb + DIN-471 groove SDF on the shank (Zone-1 solid monolithic / Zone-3 channelled); render = solid `voxConstruct` + thin barb-ridge `BoolAdd`; self-support metric (Noyron manufacturing-awareness) |
+| `tools/cad/src/SilkenCad/CathodeFlange.cs` | Деталь 3 — Zone-3 cathode flange (Ø25): reuses the §4.3 shank/barbs via `ShankCem` + radial bayonet lugs + bus channel + O-ring groove |
 | `tools/cad/src/SilkenCad/Radome.cs` | Деталь 4 — PEEK radome v2c (Ø25): hollow dome + shield bell + bayonet socket + PCB cavity + O-ring groove (gotcha #9 INVERTED — hollow is intended) |
 | `tools/cad/src/SilkenCad/Assembly.cs` | Capsule-end mate-audit (Деталь 3↔4, `02_02 §4.4`) — bayonet datum via `voxApplyTransformation` lift + Z/MATE-Ø/RF mismatch + skirt/inboard candidates; pure mate-math (xUnit) + render interference (`verify`) |
 | `tools/cad/src/SilkenCad/Zone2Sleeve.cs` | Деталь 2 — Zone-2 PEEK sleeve (bore Ø11 / OD Ø15 / 50 mm): plain hollow tube via `BasePipe` (smooth bore; hex + flange-shoulder deferred, bench-gated) |
@@ -100,14 +100,22 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 - **Change anchor geometry**: edit `cem/anchor_zone1.*.json` (Ø, bore, period, wallParam).
   Geometry numbers are owned in `01_01 §5` + founder decisions in `00_07 HW.33`; **MEASURE
   porosity after** (gotcha #4). Render via `Zone1Anode.Anode` (the ctor route, gotcha #1).
+- **Monolithic bus rod (`01_01 §1.4`, HW.34, SHIPPED)**: `bus_rod_diameter_mm` > 0 ⇒ a SOLID central
+  rod core. `Zone1Anode.BuildMonolithic` = `Anode` (gyroid, ctor) **+ `BoolAdd(BusRod.voxConstruct())`**
+  (solid via voxConstruct, gotcha #9 — NOT the SDF ctor). 🔑 **Porosity stays a property of the gyroid**
+  (`Anode` + the annulus envelope, `InnerRadiusMm` = rod surface) — the rod is SDF-invisible, so connectivity
+  /porosity gates are untouched; `verify` separately MEASURES the fused rod volume (`ReportAnchor`, ≳π(r)²·L).
+  Cathode keeps its channel (`mechanical_lock.zone3`/flange bore); anode shank `bore→0` (solid). F3 audit =
+  `AxialStack.BusRodClears` (rod + 2·liner ≤ channel).
 - **Graded gyroid (v2, SHIPPED)**: own SDF, **NOT** LEAP `ImplicitModular` (`FunctionalScaleTrafo`
   is a hard-coded Z-demo, not radial; LatticeLibrary submodule ~1 yr stale). Three CEM-driven axes
   in `Zone1Anode`: `GradedCartesianGyroid` (continuous period+wall taper) + `ZonedGyroid` (stepped
   zones). Pick by goal — continuous-gentle (smooth, ≤~0.8× period ratio), `GyroidWallParamRim`
   porosity gradient, or `topology: stepped` for a STRONG ~2× pore contrast. **MEASURE** porosity.
-- **Mechanical-lock barbs (`MechanicalLock.cs`, SHIPPED)**: asymmetric ratchet `R(z)` on a hollow shank
-  — solid `BaseCylinder().voxConstruct()` + thin barb-ridge `BoolAdd` + groove-ring `BoolSubtract` + Ø1.3
-  bus bore (gotcha #9 — never the SDF ctor for the solid). Tooth is over-specified in `01_01 §4.3` → keep
+- **Mechanical-lock barbs (`MechanicalLock.cs`, SHIPPED)**: asymmetric ratchet `R(z)` on the Ti shank
+  — solid `BaseCylinder().voxConstruct()` + thin barb-ridge `BoolAdd` + groove-ring `BoolSubtract` + a
+  central bore (`0` ⇒ SOLID monolithic anode shank, `01_01 §1.4`; `Ø1.3` ⇒ the cathode channel the bus rod
+  threads) (gotcha #9 — never the SDF ctor for the solid). Tooth is over-specified in `01_01 §4.3` → keep
   α/β + h, DERIVE base = h·(cotα+cotβ), MEASURE in `verify`. Self-support is orientation-conditional (print
   leading-ramp-down, `01_02 §1.6`); DIN-471 groove = real shaft dims (not the off-spec canon 0.8×0.6).
 - **Connectivity / validation (ARCH.25)**: `Connectivity.cs` samples the CEM SDF → 3-phase grid →

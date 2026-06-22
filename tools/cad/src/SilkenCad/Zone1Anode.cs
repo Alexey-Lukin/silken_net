@@ -90,8 +90,9 @@ internal sealed class ZonedGyroid(float fRMidMm, float fPeriodCoreMm, float fPer
     }
 }
 
-// Zone-1 gyroid anode (01_01 §5): a gyroid Ti rod (Ø per CEM, founder Ø11) with a central
-// bore for the bus conductor, clipped from a BasePipe envelope. Bicontinuous, orientation-
+// Zone-1 gyroid anode (01_01 §5): a gyroid Ti rod (Ø per CEM, founder Ø11) with a central SOLID
+// bus-rod core (01_01 §1.4 monolithic — BuildMonolithic) inside the gyroid annulus, clipped from a
+// BasePipe envelope. Bicontinuous, orientation-
 // agnostic (founder decision (б), HW.33). v2 = radially graded (period + porosity + topology),
 // CEM-driven; a constant CEM (no Rim fields, sheet) renders the v1 uniform gyroid. Barbs
 // (01_01 §4.3A) are a separate session (00_07).

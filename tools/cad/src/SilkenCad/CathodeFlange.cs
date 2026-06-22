@@ -41,7 +41,7 @@ internal static class CathodeFlange
         float fFlangeR = cem.FlangeDiameterMm / 2f;
         float fThick = cem.FlangeThicknessMm;
 
-        // 1. Barbed Zone-3 shank (reuse §4.3 lock): solid Ø + barbs + DIN-471 groove + bus bore, z∈[0,shankLen].
+        // 1. Barbed Zone-3 shank (reuse §4.3 lock): solid Ø + barbs + DIN-471 groove + bus channel, z∈[0,shankLen].
         Voxels voxPart = MechanicalLock.Build(ShankCem(cem));
 
         // 2. Solid Ø25 flange disc on top — a true filled cylinder (gotcha #9: voxConstruct, NOT the SDF ctor).
@@ -60,7 +60,8 @@ internal static class CathodeFlange
             voxPart.BoolAdd(new BaseCylinder(oLug, cem.LugProtrusionMm + fOverlap, cem.LugRadiusMm).voxConstruct());
         }
 
-        // 4. Bus bore through the flange (the shank is already hollow) — continue Ø1.3 to the pogo face.
+        // 4. Bus channel through the flange (the shank channel continues) — Ø1.3 to the pogo face; the
+        //    monolithic anode bus rod threads it, isolated by the liner (01_01 §1.4).
         voxPart.BoolSubtract(new BaseCylinder(oFlange, fThick, cem.BoreDiameterMm / 2f).voxConstruct());
 
         // 5. O-ring groove — annular subtract on the capsule-side (top) face (mate the Радом O-ring, CS 1.78).

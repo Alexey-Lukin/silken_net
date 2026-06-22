@@ -479,7 +479,7 @@ internal static class Program
 
         double dRShank = cem.ShankDiameterMm / 2f, dRBore = cem.BoreDiameterMm / 2f;
         double dCylVol = Math.PI * ((dRShank * dRShank) - (dRBore * dRBore)) * cem.ShankLengthMm;
-        bool bSolid = oM.SolidVolumeMm3 > 0.8 * dCylVol;   // a FILLED hollow shank (annulus), not an SDF narrow-band shell
+        bool bSolid = oM.SolidVolumeMm3 > 0.8 * dCylVol;   // a FILLED shank (solid, or annulus for a cathode channel), not an SDF narrow-band shell
         if (!bSolid) Console.WriteLine($"  ⚠ solid volume {oM.SolidVolumeMm3:F0} ≪ {dCylVol:F0} mm³ expected — hollow render (SDF narrow-band)");
 
         bool bOk = bSane && bCount && bHeight && bBase && bGroove && bSolid;
@@ -489,7 +489,7 @@ internal static class Program
 
     // Cathode-flange verify (Деталь 3, 01_01 §1): golden metrics + assembly gates — solidity (a SOLID
     // flange, not an SDF hollow-shell, gotcha #9), Ø25 frozen, bayonet lugs fused (bbox extends past the
-    // flange rim), barbs present (BoolAdd from the §4.3 lock), bus bore. Cathode side-area is informational.
+    // flange rim), barbs present (BoolAdd from the §4.3 lock), bus channel. Cathode side-area is informational.
     private static int ReportFlange(CathodeFlangeCem cem, Voxels voxFlange)
     {
         GeometryMetrics oM = Validation.MeasureFlange(cem, voxFlange);

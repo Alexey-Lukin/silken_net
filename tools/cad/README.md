@@ -38,8 +38,8 @@ geometry** deterministically. Parity is on derived metrics, never the raw STL by
 | `src/SilkenCad/Validation.cs` | golden-metrics via `Voxels.CalculateProperties` (porosity/bbox/tris) + LEAP `Measure.fGetSurfaceArea` |
 | `src/SilkenCad/Connectivity.cs` | ARCH.25 two-phase topological audit — SDF-sample + flood-fill (open/closed-pore, percolation, solid-island, specific-surface) |
 | `src/SilkenCad/WallScan.cs` | wallParam critical-threshold scan → the CEM working window (printable + open-pore + percolating); pure-managed, no render |
-| `src/SilkenCad/MechanicalLock.cs` | §4.3 mechanical lock — `MechanicalLockShank` ratchet-barb + DIN-471 groove SDF on a hollow shank (Zone-1/Zone-3 demo) + self-support metric |
-| `src/SilkenCad/CathodeFlange.cs` | Деталь 3 — Zone-3 cathode flange (Ø25): reuses the §4.3 shank/barbs + radial bayonet lugs + bus bore + O-ring groove |
+| `src/SilkenCad/MechanicalLock.cs` | §4.3 mechanical lock — `MechanicalLockShank` ratchet-barb + DIN-471 groove SDF on the shank (Zone-1 solid monolithic / Zone-3 channelled) + self-support metric |
+| `src/SilkenCad/CathodeFlange.cs` | Деталь 3 — Zone-3 cathode flange (Ø25): reuses the §4.3 shank/barbs + radial bayonet lugs + bus channel + O-ring groove |
 | `src/SilkenCad/Radome.cs` | Деталь 4 — PEEK radome v2c (Ø25): hollow dome + shield bell + bayonet socket + PCB cavity + O-ring groove |
 | `src/SilkenCad/Assembly.cs` | Capsule-end mate-audit (Деталь 3↔4, 02_02 §4.4): bayonet datum + Z/MATE-Ø/RF mismatch + skirt/inboard candidates |
 | `src/SilkenCad/Zone2Sleeve.cs` | Деталь 2 — Zone-2 PEEK thermal-break sleeve (bore Ø11 / OD Ø15 / 50 mm): plain hollow tube via `BasePipe` (press-fit, smooth bore) |
@@ -130,9 +130,10 @@ axial+radial. Two-phase resolution: **pore** OK at the coarse step, **solid** ne
 grid fragments thin walls into false islands — skill `picogk` gotcha #8). Feeds `00_07` HW.33 sheet-vs-network.
 
 **Mechanical-lock barbs (shipped)** — `MechanicalLock.cs` adds annular asymmetric **ratchet barbs** +
-a **DIN-471 retaining groove** on a hollow shank (`01_01 §4.3 A/B`, HW.26 — the lock against PEEK
+a **DIN-471 retaining groove** on the Ti shank (`01_01 §4.3 A/B`, HW.26 — the lock against PEEK
 cold-flow creep): own SDF (4th, ratchet `R(z)`), solid `BaseCylinder` + thin barb-ridge `BoolAdd` +
-groove-ring `BoolSubtract` + Ø1.3 bus bore. Golden-metrics MEASURED off the profile (barb count /
+groove-ring `BoolSubtract` + a central bore (`0` ⇒ SOLID monolithic anode shank, `01_01 §1.4`; `Ø1.3` ⇒
+cathode channel the bus rod threads). Golden-metrics MEASURED off the profile (barb count /
 height / base, groove depth) + a **self-support face angle** (Noyron manufacturing-awareness): the
 ratchet self-supports at the `01_02 §1.6` tip-down / leading-ramp-down orientation (Ti64 LPBF 60°
 downface, Sa≈15µm). Zone-1 Ø11 + Zone-3 placeholder Ø (HW.8 dim-freeze). Grounded over canon §4.3:
@@ -140,7 +141,7 @@ tooth over-spec resolved at h=0.28; DIN-471 groove = real shaft dims (was off-sp
 
 **Cathode flange / Деталь 3 (shipped)** — `cathode_flange` CEM → solid Ti flange Ø25 (frozen) reusing the
 §4.3 lock for the barbed Zone-3 shank (`CathodeFlange.ShankCem` mapping, dir −1) + 3 radial **bayonet lugs**
-(`LocalFrame(pos, radialZ)`) + Ø1.3 bus bore + O-ring groove. `verify` gates solidity (NOT hollow-shell,
+(`LocalFrame(pos, radialZ)`) + Ø1.3 bus channel (the monolithic rod threads it) + O-ring groove. `verify` gates solidity (NOT hollow-shell,
 gotcha #9), Ø25, lugs-fused (bbox extent past the rim — 3 lugs @120° are asymmetric → span ≈ flangeD +
 protrusion), barb-count. Top face = pogo pads (coating, not geometry); side/perimeter = cathode catalytic
 (O₂ ingress, 02_02 §1.2). **Деталь 4 radome v2c = next phase** (dome + shield bell + bayonet socket + cavity).
