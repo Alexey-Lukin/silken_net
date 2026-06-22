@@ -978,7 +978,7 @@
 
 #### UNI.4 — ChNU школа Мінаєва: DFT-моделювання EBFC
 - **P1** · 👤 · ⚪ · → `08_01 Стаття 1`, `08_03 §1`
-- **Стан:** Не почато — квантово-хім. симуляція streaming potential на TiO₂-гіроїді + адсорбція кислот ксилеми (школа Мінаєва, світовий DFT); ціль Q1 *Electrochimica Acta*, блокує seed credibility. Канон `08_01 Стаття 1`, `08_03 §1`.
+- **Стан:** Не почато — DFT електрон-трансферна енергетика EBFC Gen 2.0 (dgrFAD-GDH/Os, Laccase-ZIF, PSBMA; школа Мінаєва, світовий DFT); ціль Q1 *Electrochimica Acta*. Стаття 1 submission-ready як defensive-pub (own in-silico, `L3_quantum_chemistry`) — Мінаєв = co-validation/co-authorship credibility, НЕ блокер (стара Gen 1.0 «streaming potential» відкинута). Канон `08_01 Стаття 1`, `08_03 §1`.
 - [ ] 👤 зустріч (через декана хімії) + NDA/IP (BIZ.10) + спільний грант MES/Horizon
 
 #### UNI.5 — ChNU школа Гусака: дифузійна деградація 20-років (Kirkendall effect)
