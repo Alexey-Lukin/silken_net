@@ -52,6 +52,6 @@ jobs:
       # SARIF → Security tab. Works because CodeQL default-setup already enabled
       # code scanning on this repo; Scorecard's SARIF category coexists with CodeQL's.
       - name: Upload SARIF to code-scanning
-        uses: github/codeql-action/upload-sarif@dd903d2e4f5405488e5ef1422510ee31c8b32357 # v3
+        uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4
         with:
           sarif_file: results.sarif
