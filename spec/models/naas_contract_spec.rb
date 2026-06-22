@@ -64,7 +64,7 @@ RSpec.describe NaasContract, type: :model do
     end
 
     context "when critical anomalies exceed 20% threshold" do
-      it "activates slashing protocol" do
+      it "routes to the chokepoint (:degraded) without pre-breaching [SLASH-1]" do
         trees = create_list(:tree, 10, cluster: cluster, status: :active)
 
         # 3 out of 10 trees with stress >= 1.0 (30% > 20% threshold)
@@ -76,9 +76,9 @@ RSpec.describe NaasContract, type: :model do
         end
 
         cluster.reload
-        contract.check_cluster_health!(target_date)
 
-        expect(contract.reload).to be_status_breached
+        expect(contract.check_cluster_health!(target_date)).to eq(:degraded)
+        expect(contract.reload).to be_status_active # breach is async (chokepoint), not pre-set
       end
     end
 
@@ -459,37 +459,35 @@ RSpec.describe NaasContract, type: :model do
     end
   end
 
-  describe "activate_slashing_protocol! (via ContractHealthCheckService)" do
+  describe "cluster health verdict (via ContractHealthCheckService)" do
     let(:organization) { create(:organization) }
     let(:cluster) { create(:cluster, organization: organization) }
 
-    it "handles error during update! and does not enqueue worker" do
+    it "routes absence-of-data to Field Audit (:blackout) without enqueuing a burn" do
       contract = create(:naas_contract, organization: organization, cluster: cluster, status: :active)
       create(:tree, cluster: cluster, status: :active)
       cluster.reload
 
-      allow_any_instance_of(described_class).to receive(:update!).and_raise(ActiveRecord::RecordInvalid.new(contract))
-
-      contract.check_cluster_health!(Time.current.utc.to_date - 1)
+      expect(contract.check_cluster_health!(Time.current.utc.to_date - 1)).to eq(:blackout)
 
       expect(BurnCarbonTokensWorker.jobs.size).to eq(0)
       expect(contract.reload).to be_status_active
     end
 
-    it "enqueues worker when slashing succeeds" do
+    it "enqueues the burn worker (:degraded) on >20% critical stress, without pre-breaching" do
       contract = create(:naas_contract, organization: organization, cluster: cluster, status: :active)
       trees = create_list(:tree, 10, cluster: cluster, status: :active)
-      # [SLASH-1] >20% critical stress = legitimate slash (data present, NOT a
-      # blackout — absence-of-data now routes to Field Audit instead).
+      # [SLASH-1] >20% critical stress (data present, NOT a blackout) → chokepoint adjudicates
+      # slash-vs-freeze. Breach is async (set only by a real positive-A slash), so NOT pre-set.
       target = Time.current.utc.to_date - 1
       trees[0..2].each { |t| create(:ai_insight, analyzable: t, target_date: target, stress_index: 1.0) }
       trees[3..9].each { |t| create(:ai_insight, analyzable: t, target_date: target, stress_index: 0.1) }
       cluster.reload
 
-      contract.check_cluster_health!(target)
+      expect(contract.check_cluster_health!(target)).to eq(:degraded)
 
-      expect(contract.reload).to be_status_breached
       expect(BurnCarbonTokensWorker.jobs.size).to eq(1)
+      expect(contract.reload).to be_status_active
     end
   end
 

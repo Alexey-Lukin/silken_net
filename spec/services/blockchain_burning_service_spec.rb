@@ -36,7 +36,14 @@ RSpec.describe BlockchainBurningService do
     allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
     allow_any_instance_of(EwsAlert).to receive(:broadcast_status_change)
+    allow_any_instance_of(EwsAlert).to receive(:broadcast_new_alert)
     allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
+
+    # [SLASH-1 §3.2] Default: positive-A evidence present, so the existing burn-mechanics
+    # specs exercise the slash path. CauseEvidence's own logic is unit-tested in
+    # spec/services/slashing/cause_evidence_spec.rb; here we stub the collaborator and
+    # test the GATE WIRING explicitly below.
+    allow_any_instance_of(Slashing::CauseEvidence).to receive(:positive_a?).and_return(true)
   end
 
   describe ".call" do
@@ -153,6 +160,46 @@ RSpec.describe BlockchainBurningService do
           expect(amount_in_wei).to eq(expected_wei)
         end
       end
+    end
+  end
+
+  describe "positive-A-evidence gate (SLASH-1 §3.2)" do
+    let!(:tree) { create(:tree, cluster: cluster) }
+
+    before do
+      tree.wallet.blockchain_transactions.create!(
+        amount: 1000, token_type: :carbon_coin, status: :confirmed,
+        to_address: organization.crypto_public_address, tx_hash: "0x#{'a' * 64}"
+      )
+    end
+
+    it "FREEZES (no burn, no breach, Field-Audit alert) without direct Category-A evidence" do
+      allow_any_instance_of(Slashing::CauseEvidence).to receive(:positive_a?).and_return(false)
+
+      result = nil
+      expect {
+        result = described_class.call(organization.id, naas_contract.id, source_tree: tree)
+      }.to change { EwsAlert.where(alert_type: :system_fault).count }.by(1)
+
+      expect(result).to eq(:frozen)
+      expect(mock_client).not_to have_received(:transact)
+      expect(naas_contract.reload.status).not_to eq("breached")
+    end
+
+    it "SLASHES (returns :slashed, burns, breaches) when Category-A evidence is present" do
+      result = described_class.call(organization.id, naas_contract.id, source_tree: tree)
+
+      expect(result).to eq(:slashed)
+      expect(mock_client).to have_received(:transact)
+      expect(naas_contract.reload.status).to eq("breached")
+    end
+
+    it "BYPASSES the gate for a contractual burn even without Category-A evidence" do
+      allow_any_instance_of(Slashing::CauseEvidence).to receive(:positive_a?).and_return(false)
+
+      described_class.call(organization.id, naas_contract.id, source_tree: tree, contractual: true)
+
+      expect(mock_client).to have_received(:transact)
     end
   end
 

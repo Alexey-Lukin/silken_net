@@ -201,7 +201,7 @@ RSpec.describe "Wallet tokenomics flow end-to-end" do
       expect(result[:burned]).to be true
       expect(contract.reload.status).to eq("cancelled")
       expect(BurnCarbonTokensWorker).to have_received(:perform_async)
-        .with(organization.id, contract.id)
+        .with(organization.id, contract.id, nil, true)
     end
 
     it "prevents termination of non-active contract" do

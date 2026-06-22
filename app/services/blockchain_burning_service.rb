@@ -24,11 +24,15 @@ class BlockchainBurningService < ApplicationService
   PF_STREAMR_GAP    = 0.25  # comms-correlated: tree-side Streamr gap (guarded hook)
   PF_NO_MAINTENANCE = 0.5   # independent: critical EwsAlert без MaintenanceRecord
 
-  def initialize(organization_id, naas_contract_id, source_tree: nil)
+  # @param contractual [Boolean] true — це погоджена контрактна форфейтура (early-exit
+  #   `burn_accrued_points`, `ContractTerminationService`), НЕ slash-за-провину → гейт
+  #   positive-A пропускається (інвестор сам розірвав, burn — погоджена умова, не Кат-A).
+  def initialize(organization_id, naas_contract_id, source_tree: nil, contractual: false)
     @organization = Organization.find(organization_id)
     @naas_contract = NaasContract.find(naas_contract_id)
     @cluster = @naas_contract.cluster
     @source_tree = source_tree
+    @contractual = contractual
   end
 
   def perform
@@ -55,6 +59,14 @@ class BlockchainBurningService < ApplicationService
                           .sum(:amount)
 
     return if total_minted_amount.zero?
+
+    # [SLASH-1 §3.2] Positive-A-evidence gate — на чокпоінті, накриває всі тригери burn.
+    # Необоротний slash() лише за прямого доказу Кат-A (tamper); інакше freeze (Field Audit,
+    # Кат-C) — відновлює канон-дефолт §2 «freeze-поки-не-A», а не палить-поки-не-відведено.
+    # Контрактна форфейтура (early-exit) — свідомий виняток. Freeze дзеркалить flag_data_blackout!.
+    unless @contractual || positive_a_evidence?
+      return freeze_for_field_audit!
+    end
 
     # [КОЕФІЦІЄНТ ВТРАТ]: Спалюємо лише ту частку токенів, що відповідає
     # відсотку пошкодженої біомаси (розрахунок через AiInsight).
@@ -84,6 +96,7 @@ class BlockchainBurningService < ApplicationService
 
     begin
       tx_hash = nil
+      outcome = nil
       reason = @source_tree ? "загибель дерева #{@source_tree.did}" : "порушення умов кластера"
 
       Rails.logger.warn "🔥 [Slashing] Вилучення #{burn_amount}/#{total_minted_amount} SCC (damage #{(damage_ratio * 100).round(1)}% → slash #{(slash_ratio * 100).round(1)}%, 05_05 §3 γ=#{slash_gamma}) у #{@organization.name}. Причина: #{reason}."
@@ -117,7 +130,10 @@ class BlockchainBurningService < ApplicationService
         SilkenNet::Metrics::SCC_SLASHED_TOTAL.increment(by: burn_amount)
 
         Rails.logger.info "✅ [Slashing] Виконано. TX: #{tx_hash}"
+        outcome = :slashed
       end
+
+      outcome
 
     rescue StandardError => e
       # Контракт розривається в БД миттєво, навіть якщо блокчейн "лагає"
@@ -128,6 +144,30 @@ class BlockchainBurningService < ApplicationService
   end
 
   private
+
+  # [SLASH-1 §3.2] Чи є прямий доказ Категорії A для цього кластера. Дім сигналів —
+  # Slashing::CauseEvidence (фаза-1 = tamper). source_tree пробрасується для майбутнього
+  # per-tree звуження.
+  def positive_a_evidence?
+    Slashing::CauseEvidence.new(@cluster, source_tree: @source_tree).positive_a?
+  end
+
+  # [SLASH-1 §3.2] Freeze (Категорія C) — спалення заблоковано, бо немає прямого доказу A.
+  # Дзеркалить ContractHealthCheckService#flag_data_blackout!: піднімає critical Field-Audit
+  # алерт (system_fault), НЕ палить і НЕ breach-ить контракт (лишається :active до людської
+  # класифікації A/B/C). Burn необоротний, freeze — ні (05_05 §3.2 асиметрія). Повертає :frozen.
+  def freeze_for_field_audit!
+    Rails.logger.warn "🧊 [SLASH-1] NaasContract ##{@naas_contract.id}: спалення заблоковано — немає прямого доказу Категорії A (05_05 §3.2) → Field Audit, без burn/breach."
+
+    EwsAlert.create!(
+      cluster: @cluster,
+      severity: :critical,
+      alert_type: :system_fault,
+      message: "Слешинг заблоковано: немає прямого доказу халатності (Категорія A). Кошти НЕ спалено — потрібен Field Audit (Категорія C, 05_05 §3.2/§5)."
+    )
+
+    :frozen
+  end
 
   def create_audit_transaction(tx_hash, amount, reason)
     # Пастка "Останнього дерева": якщо весь кластер мертвий, audit_wallet буде nil.

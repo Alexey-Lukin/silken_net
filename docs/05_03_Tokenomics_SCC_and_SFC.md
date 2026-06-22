@@ -587,11 +587,12 @@ NaasContract#check_cluster_health!
         ↓
 > 20% дерев з stress_index >= 1.0?
         ↓
-activate_slashing_protocol! → status = :breached
+flag_degradation! → verdict :degraded (БЕЗ pre-breach; крон гейтить Celo за verdict)
         ↓
 BurnCarbonTokensWorker [queue: critical]
         ↓
-BlockchainBurningService#call
+BlockchainBurningService#call → positive-A gate (SLASH-1, 05_05 §3.2):
+   доказ Кат-A є → slash + status = :breached  |  нема → :frozen + Field Audit (no burn)
         ↓
 SCC: slash(investor, amount)   ← SLASHER_ROLE (`ORACLE_SLASHER_PRIVATE_KEY`)
         ↓

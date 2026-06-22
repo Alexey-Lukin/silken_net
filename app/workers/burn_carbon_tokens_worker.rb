@@ -6,12 +6,13 @@ class BurnCarbonTokensWorker
   # щоб запобігти виводу токенів інвестором.
   sidekiq_options queue: "critical", retry: 5
 
-  def perform(organization_id, naas_contract_id, tree_id = nil)
+  def perform(organization_id, naas_contract_id, tree_id = nil, contractual = false)
     naas_contract = NaasContract.find_by(id: naas_contract_id)
     return Rails.logger.error "🛑 [Slashing] Контракт ##{naas_contract_id} не знайдено." unless naas_contract
 
-    # [ІДЕМПОТЕНТНІСТЬ]: Якщо контракт вже розірвано (наприклад, попередній ретрай виконав
-    # спалювання, але впав на створенні MaintenanceRecord), виходимо без повторного виклику.
+    # [ІДЕМПОТЕНТНІСТЬ]: Якщо контракт вже розірвано (попередній ретрай виконав слешинг, але
+    # впав на створенні MaintenanceRecord) — виходимо без повторного виклику. Коректно й після
+    # SLASH-1: breach тепер ставить ЛИШЕ сервіс на РЕАЛЬНОМУ слешингу → :breached = «вже слешено».
     return Rails.logger.warn "⚠️ [Slashing] Контракт ##{naas_contract_id} вже розірвано. Пропускаємо." if naas_contract.status_breached?
 
     organization = Organization.find(organization_id)
@@ -21,14 +22,24 @@ class BurnCarbonTokensWorker
     Rails.logger.warn "🔥 [Slashing Protocol] Виконання вироку для #{organization.name} (Кластер: #{cluster.name})."
 
     # 1. WEB3 ЕКЗЕКУЦІЯ (The Judgment Stroke)
-    # Передаємо source_tree як доказ порушення для логування в блокчейні.
-    # Сервіс сам розрахує суму на основі підтвердженого гомеостазу.
-    with_web3_error_handling("Polygon", "Slashing Contract ##{naas_contract_id}") do
+    # source_tree — доказ порушення для on-chain логу; contractual — early-exit форфейтура
+    # пропускає positive-A gate. Сервіс повертає :slashed (реальний burn) / :frozen (cause-gate
+    # freeze, SLASH-1 §3.2) / nil (no-op: нема minted або zero burn).
+    outcome = with_web3_error_handling("Polygon", "Slashing Contract ##{naas_contract_id}") do
       BlockchainBurningService.call(
         organization_id,
         naas_contract_id,
-        source_tree: source_tree
+        source_tree: source_tree,
+        contractual: contractual
       )
+    end
+
+    # [SLASH-1] Лише реальний slash тягне «надгробок» + CONTRACT_SLASHED-трансляцію. Freeze
+    # (нема прямого доказу Кат-A) / no-op → НЕ розриваємо контракт і НЕ б'ємо на сполох:
+    # Field-Audit алерт уже піднято сервісом (Категорія C), кошти не спалено.
+    unless outcome == :slashed
+      Rails.logger.info "🧊 [Slashing Protocol] Контракт ##{naas_contract_id}: outcome=#{outcome.inspect} (freeze/no-op) — без розриву й трансляції."
+      return
     end
 
     # [S2.4] Track slashing event by reason for Prometheus monitoring

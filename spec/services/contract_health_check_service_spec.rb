@@ -63,77 +63,42 @@ RSpec.describe ContractHealthCheckService do
       end
     end
 
+    # [SLASH-1] >20% критичних → :degraded + enqueue burn-воркера, БЕЗ pre-breach.
+    # Breach ставить лише BlockchainBurningService на реальному positive-A слешингу;
+    # cause-gate чокпоінта вирішує slash-vs-freeze. Це й полагодило латентний баг
+    # (раніше pre-breach коротко-замикав воркер → daily ніколи не палив).
     context "when critical anomalies exceed 20% threshold" do
-      it "activates slashing protocol" do
-        trees = create_list(:tree, 10, cluster: cluster, status: :active)
-
-        trees[0..2].each do |tree|
-          create(:ai_insight, analyzable: tree, target_date: target_date, stress_index: 1.0)
-        end
-        trees[3..9].each do |tree|
-          create(:ai_insight, analyzable: tree, target_date: target_date, stress_index: 0.1)
-        end
-
-        cluster.reload
-        described_class.call(contract, target_date)
-
-        expect(contract.reload).to be_status_breached
-      end
-
-      it "activates slashing protocol when stress_index is at RF confidence boundary (0.83)" do
-        trees = create_list(:tree, 10, cluster: cluster, status: :active)
-
-        trees[0..2].each do |tree|
-          create(:ai_insight, analyzable: tree, target_date: target_date, stress_index: 0.83)
-        end
-        trees[3..9].each do |tree|
-          create(:ai_insight, analyzable: tree, target_date: target_date, stress_index: 0.1)
-        end
-
-        cluster.reload
-        described_class.call(contract, target_date)
-
-        expect(contract.reload).to be_status_breached
-      end
-
-      it "does not trigger slashing when stress_index is below RF boundary (0.82)" do
-        trees = create_list(:tree, 10, cluster: cluster, status: :active)
-
-        trees[0..2].each do |tree|
-          create(:ai_insight, analyzable: tree, target_date: target_date, stress_index: 0.82)
-        end
-        trees[3..9].each do |tree|
-          create(:ai_insight, analyzable: tree, target_date: target_date, stress_index: 0.1)
-        end
-
-        cluster.reload
-        described_class.call(contract, target_date)
-
-        expect(contract.reload).to be_status_active
-      end
-    end
-
-    context "when activate_slashing_protocol! encounters a database error" do
-      # Trigger the REAL slash path (>20% critical insights — data present), since
-      # absence-of-data now routes to Field Audit instead of slashing [SLASH-1].
-      before do
+      it "routes to the chokepoint (:degraded) + enqueues the burn worker WITHOUT pre-breaching" do
         trees = create_list(:tree, 10, cluster: cluster, status: :active)
         trees[0..2].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 1.0) }
         trees[3..9].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.1) }
         cluster.reload
-        allow(contract).to receive(:update!).and_raise(StandardError, "DB lock timeout")
+
+        expect {
+          expect(described_class.call(contract, target_date)).to eq(:degraded)
+        }.to change { BurnCarbonTokensWorker.jobs.size }.by(1)
+
+        expect(contract.reload).to be_status_active # no pre-breach — chokepoint owns the verdict
       end
 
-      it "does not enqueue BurnCarbonTokensWorker when update! fails" do
-        described_class.call(contract, target_date)
+      it "treats the RF confidence boundary (0.83) as critical (:degraded)" do
+        trees = create_list(:tree, 10, cluster: cluster, status: :active)
+        trees[0..2].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.83) }
+        trees[3..9].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.1) }
+        cluster.reload
 
+        expect(described_class.call(contract, target_date)).to eq(:degraded)
+      end
+
+      it "does not flag when stress_index is below the RF boundary (0.82) → :healthy" do
+        trees = create_list(:tree, 10, cluster: cluster, status: :active)
+        trees[0..2].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.82) }
+        trees[3..9].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.1) }
+        cluster.reload
+
+        expect(described_class.call(contract, target_date)).to eq(:healthy)
+        expect(contract.reload).to be_status_active
         expect(BurnCarbonTokensWorker.jobs.size).to eq(0)
-      end
-
-      it "logs the slashing activation failure" do
-        expect(Rails.logger).to receive(:error).with(/Провал активації Slashing/)
-
-        described_class.call(contract, target_date)
       end
     end
   end

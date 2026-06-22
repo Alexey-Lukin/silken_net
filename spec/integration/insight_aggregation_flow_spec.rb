@@ -158,9 +158,10 @@ RSpec.describe "Insight generation and daily aggregation flow" do
 
       # Reload contract so it picks up fresh cluster state
       contract.reload
-      contract.check_cluster_health!(yesterday)
+      # [SLASH-1] >20% → :degraded (chokepoint adjudicates slash-vs-freeze); breach is async.
+      expect(contract.check_cluster_health!(yesterday)).to eq(:degraded)
 
-      expect(contract.reload.status).to eq("breached")
+      expect(contract.reload.status).to eq("active")
       expect(BurnCarbonTokensWorker).to have_received(:perform_async)
     end
 

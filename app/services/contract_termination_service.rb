@@ -39,7 +39,9 @@ class ContractTerminationService < ApplicationService
     # При rollback контракт повертається до :active, але burn-job вже в Redis —
     # BurnCarbonTokensWorker виконає Slashing на активному контракті. Фінансова катастрофа.
     if should_burn
-      BurnCarbonTokensWorker.perform_async(@contract.organization_id, @contract.id)
+      # [SLASH-1] contractual: true (4-й арг) — early-exit форфейтура (погоджена умова
+      # burn_accrued_points), НЕ slash-за-провину → пропускає positive-A gate чокпоінта (§3.2).
+      BurnCarbonTokensWorker.perform_async(@contract.organization_id, @contract.id, nil, true)
     end
 
     { refund: refund, fee: @contract.calculate_early_exit_fee, burned: should_burn }

@@ -978,7 +978,7 @@ active/draft ──cancel──► cancelled
 
 | Метод | Опис |
 |-------|------|
-| `check_cluster_health!` | Оцінює здоров'я кластера (викликається Worker) |
+| `check_cluster_health!` | Оцінює здоров'я кластера (Worker); делегує в `ContractHealthCheckService`, повертає verdict `:healthy`/`:degraded`/`:blackout`/`:skipped` (SLASH-1 — breach асинхронний, не тут) |
 | `calculate_early_exit_fee` | Штраф за дострокове розірвання |
 | `calculate_prorated_refund` | Пропорційне повернення |
 | `terminate_early!` | Дострокове розірвання |

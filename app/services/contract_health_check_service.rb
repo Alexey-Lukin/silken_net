@@ -19,12 +19,16 @@ class ContractHealthCheckService < ApplicationService
     @target_date = target_date || @cluster.local_yesterday
   end
 
+  # Повертає verdict-символ для крона (`ClusterHealthCheckWorker` гілкує Celo-винагороду
+  # за verdict, а НЕ за `status_breached?` — breach тепер асинхронний, лише на реальному
+  # слешингу у `BlockchainBurningService`): `:skipped` · `:blackout` · `:degraded`
+  # (>20% → чокпоінт слешингу, cause-gate вирішить slash/freeze) · `:healthy`.
   def perform
-    return unless @contract.status_active?
+    return :skipped unless @contract.status_active?
 
     # [Counter Cache]: Використовуємо денормалізований лічильник замість COUNT(*).
     total_active_count = @cluster.active_trees_count
-    return if total_active_count.zero?
+    return :skipped if total_active_count.zero?
 
     # [SQL Optimization]: Підзапит замість масиву об'єктів (The Polymorphic IN Trap).
     daily_insights = AiInsight.daily_health_summary.where(
@@ -39,37 +43,30 @@ class ContractHealthCheckService < ApplicationService
     # NEVER auto-burn on absence of data (05_05 §6 correlated comms-loss guard,
     # §7). Route to Field Audit / peer-review (Category C); a human classifies
     # A (negligence → slash) vs B (force-majeure → insurance).
-    if daily_insights.empty?
-      flag_data_blackout!
-      return
-    end
+    return flag_data_blackout! if daily_insights.empty?
 
     # Математична межа порушення — 20% від активної біомаси.
     # Поріг 0.83 відповідає порогу впевненості Random Forest (замість детерміністичного 1.0)
     critical_insights_count = daily_insights.where("stress_index >= 0.83").count
 
     if critical_insights_count > total_active_count * Rational(1, 5)
-      activate_slashing_protocol!
+      flag_degradation!
+    else
+      :healthy
     end
   end
 
   private
 
-  # [ВИПРАВЛЕНО]: Ліквідація Race Condition.
-  # BurnCarbonTokensWorker гарантовано бачить статус :breached у базі.
-  def activate_slashing_protocol!
-    breach_confirmed = @contract.transaction do
-      @contract.update!(status: :breached)
-      true
-    rescue StandardError => e
-      Rails.logger.error "🛑 [D-MRV] Провал активації Slashing для контракту ##{@contract.id}: #{e.message}"
-      false
-    end
-
-    if breach_confirmed
-      Rails.logger.warn "🚨 [D-MRV] NaasContract ##{@contract.id} РОЗІРВАНО. Сигнал на Slashing відправлено."
-      BurnCarbonTokensWorker.perform_async(@contract.organization_id, @contract.id)
-    end
+  # [SLASH-1] >20% критичних аномалій → на чокпоінт слешингу. БЕЗ pre-breach: breach
+  # тепер ставить ЛИШЕ BlockchainBurningService на РЕАЛЬНОМУ (positive-A) слешингу, а
+  # cause-gate чокпоінта вирішує slash-vs-freeze (§3.2). Це й полагодило латентний баг:
+  # раніше pre-breach коротко-замикав воркер (`return if status_breached?`) → daily-шлях
+  # ніколи реально не палив. Тепер не пре-маркуємо → daily нарешті доходить до burn/freeze.
+  def flag_degradation!
+    Rails.logger.warn "🚨 [D-MRV] NaasContract ##{@contract.id}: >20% критичних аномалій — на чокпоінт слешингу (cause-gate вирішить slash/freeze)."
+    BurnCarbonTokensWorker.perform_async(@contract.organization_id, @contract.id)
+    :degraded
   end
 
   # [SLASH-1] Absence-of-data → freeze for Field Audit, NEVER slash. A
@@ -86,5 +83,7 @@ class ContractHealthCheckService < ApplicationService
       alert_type: :system_fault,
       message: "Cluster-wide data blackout (#{@target_date}): можлива відмова шлюзу / Starlink-блекаут (force-majeure). Slashing НЕ застосовано — потрібен Field Audit (Category C, 05_05 §5)."
     )
+
+    :blackout
   end
 end

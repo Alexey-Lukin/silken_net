@@ -135,8 +135,10 @@ RSpec.describe "Parametric insurance payout flow" do
 
       ClusterHealthCheckWorker.new.perform(yesterday.to_s)
 
-      # 100% critical > 20% threshold → breach
-      expect(contract.reload.status).to eq("breached")
+      # [SLASH-1] 100% critical > 20% → :degraded → enqueues burn worker (chokepoint adjudicates);
+      # contract is NOT pre-breached. The orchestration iterated this active contract.
+      expect(BurnCarbonTokensWorker).to have_received(:perform_async)
+      expect(contract.reload.status).to eq("active")
     end
   end
 end

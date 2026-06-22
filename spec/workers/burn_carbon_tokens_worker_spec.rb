@@ -10,7 +10,9 @@ RSpec.describe BurnCarbonTokensWorker, type: :worker do
   let!(:admin_user) { create(:user, :admin, organization: organization) }
 
   before do
-    allow(BlockchainBurningService).to receive(:call)
+    # [SLASH-1] Сервіс тепер повертає outcome (:slashed/:frozen/nil); за замовч. :slashed,
+    # щоб тести «надгробка»/broadcast/метрики йшли slash-шляхом. Freeze-шлях — окремо нижче.
+    allow(BlockchainBurningService).to receive(:call).and_return(:slashed)
     allow(ActionCable.server).to receive(:broadcast)
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
   end
@@ -22,7 +24,8 @@ RSpec.describe BurnCarbonTokensWorker, type: :worker do
       expect(BlockchainBurningService).to have_received(:call).with(
         organization.id,
         naas_contract.id,
-        source_tree: tree
+        source_tree: tree,
+        contractual: false
       )
     end
 
@@ -76,6 +79,30 @@ RSpec.describe BurnCarbonTokensWorker, type: :worker do
       expect {
         described_class.new.perform(organization.id, naas_contract.id)
       }.to raise_error(StandardError, "RPC timeout")
+    end
+
+    # [SLASH-1 §3.2] Freeze: cause-gate found no Category-A evidence → service returns
+    # :frozen (Field-Audit alert raised THERE). The worker must NOT write the
+    # decommissioning tombstone nor broadcast CONTRACT_SLASHED.
+    it "does NOT write a tombstone or broadcast when the service freezes (:frozen)" do
+      allow(BlockchainBurningService).to receive(:call).and_return(:frozen)
+
+      expect {
+        described_class.new.perform(organization.id, naas_contract.id, tree.id)
+      }.not_to change(MaintenanceRecord, :count)
+
+      expect(ActionCable.server).not_to have_received(:broadcast)
+    end
+
+    it "passes the contractual flag through to the service (early-exit forfeiture)" do
+      described_class.new.perform(organization.id, naas_contract.id, nil, true)
+
+      expect(BlockchainBurningService).to have_received(:call).with(
+        organization.id,
+        naas_contract.id,
+        source_tree: nil,
+        contractual: true
+      )
     end
   end
 

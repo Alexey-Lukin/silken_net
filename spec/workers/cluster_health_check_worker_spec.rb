@@ -39,12 +39,10 @@ RSpec.describe ClusterHealthCheckWorker, type: :worker do
       expect { described_class.new.perform }.not_to raise_error
     end
 
-    it "logs breached contracts" do
-      allow_any_instance_of(NaasContract).to receive(:check_cluster_health!) do |contract, _date|
-        contract.update_column(:status, :breached)
-      end
+    it "logs flagged (degraded) contracts" do
+      allow_any_instance_of(NaasContract).to receive(:check_cluster_health!).and_return(:degraded)
 
-      expect(Rails.logger).to receive(:warn).with(/ПОРУШЕНО/).at_least(:once)
+      expect(Rails.logger).to receive(:warn).with(/ФЛАГОВАНО/).at_least(:once)
 
       described_class.new.perform
     end
@@ -61,19 +59,35 @@ RSpec.describe ClusterHealthCheckWorker, type: :worker do
       end
     end
 
-    context "when contract becomes breached after health check" do
-      it "counts breached contract in summary" do
-        allow_any_instance_of(NaasContract).to receive(:check_cluster_health!) do |contract, _date|
-          contract.update_column(:status, :breached)
-        end
+    context "when branching on the health verdict (SLASH-1)" do
+      before { allow(CeloRewardWorker).to receive(:perform_async) }
 
+      it "counts a flagged (:degraded) contract and does NOT reward it" do
+        allow_any_instance_of(NaasContract).to receive(:check_cluster_health!).and_return(:degraded)
         allow(Rails.logger).to receive(:info).and_call_original
         allow(Rails.logger).to receive(:warn).and_call_original
 
         described_class.new.perform
 
-        expect(Rails.logger).to have_received(:warn).with(/ПОРУШЕНО/).at_least(:once)
-        expect(Rails.logger).to have_received(:info).with(/Розірвано: 1/)
+        expect(Rails.logger).to have_received(:warn).with(/ФЛАГОВАНО/).at_least(:once)
+        expect(Rails.logger).to have_received(:info).with(/Флаговано: 1/)
+        expect(CeloRewardWorker).not_to have_received(:perform_async)
+      end
+
+      it "rewards a :healthy cluster via CeloRewardWorker" do
+        allow_any_instance_of(NaasContract).to receive(:check_cluster_health!).and_return(:healthy)
+
+        described_class.new.perform
+
+        expect(CeloRewardWorker).to have_received(:perform_async).with(cluster.id, anything)
+      end
+
+      it "does NOT reward a :blackout cluster (force-majeure under audit)" do
+        allow_any_instance_of(NaasContract).to receive(:check_cluster_health!).and_return(:blackout)
+
+        described_class.new.perform
+
+        expect(CeloRewardWorker).not_to have_received(:perform_async)
       end
     end
   end

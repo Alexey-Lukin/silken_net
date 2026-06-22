@@ -137,6 +137,8 @@ RSpec.describe "Blockchain minting and burning pipeline" do
       allow(mock_client).to receive(:transact).and_return("0xburn_hash")
       allow(Eth::Contract).to receive(:from_abi).and_return(double("contract"))
       allow(BlockchainConfirmationWorker).to receive(:perform_in)
+      # [SLASH-1] Slash-path tests assume direct Category-A evidence (gate passes).
+      allow_any_instance_of(Slashing::CauseEvidence).to receive(:positive_a?).and_return(true)
     end
 
     it "burns tokens proportionally to damage ratio" do
@@ -187,6 +189,21 @@ RSpec.describe "Blockchain minting and burning pipeline" do
       BlockchainBurningService.call(organization.id, naas_contract.id, source_tree: tree)
       naas_contract.reload
       expect(naas_contract.status).to eq("breached")
+    end
+
+    # [SLASH-1 §3.2] End-to-end with the REAL CauseEvidence (not stubbed): no tamper alert →
+    # no Category-A → freeze (Field Audit), never burn. Closes the false-slash on a natural
+    # event (e.g. planned tree-death / drought-as-fraud / natural fire).
+    it "freezes (no burn, no breach) end-to-end when there is no Category-A evidence" do
+      allow_any_instance_of(Slashing::CauseEvidence).to receive(:positive_a?).and_call_original
+      allow_any_instance_of(EwsAlert).to receive(:broadcast_new_alert)
+      allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
+
+      result = BlockchainBurningService.call(organization.id, naas_contract.id, source_tree: tree)
+
+      expect(result).to eq(:frozen)
+      expect(mock_client).not_to have_received(:transact)
+      expect(naas_contract.reload.status).not_to eq("breached")
     end
   end
 
@@ -243,18 +260,19 @@ RSpec.describe "Blockchain minting and burning pipeline" do
 
     before do
       executioner # ensure user exists
-      allow(BlockchainBurningService).to receive(:call)
+      # [SLASH-1] outcome :slashed → воркер пише «надгробок» + транслює CONTRACT_SLASHED.
+      allow(BlockchainBurningService).to receive(:call).and_return(:slashed)
       allow(ActionCable.server).to receive(:broadcast)
       allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
     end
 
     it "calls burning service and creates maintenance record" do
-      expect(BlockchainBurningService).to receive(:call)
-        .with(organization.id, naas.id, source_tree: nil)
-
       expect {
         BurnCarbonTokensWorker.new.perform(organization.id, naas.id)
       }.to change(MaintenanceRecord, :count).by(1)
+
+      expect(BlockchainBurningService).to have_received(:call)
+        .with(organization.id, naas.id, source_tree: nil, contractual: false)
 
       record = MaintenanceRecord.last
       expect(record.action_type).to eq("decommissioning")
@@ -262,10 +280,10 @@ RSpec.describe "Blockchain minting and burning pipeline" do
     end
 
     it "includes source tree info when tree_id provided" do
-      expect(BlockchainBurningService).to receive(:call)
-        .with(organization.id, naas.id, source_tree: tree)
-
       BurnCarbonTokensWorker.new.perform(organization.id, naas.id, tree.id)
+
+      expect(BlockchainBurningService).to have_received(:call)
+        .with(organization.id, naas.id, source_tree: tree, contractual: false)
 
       record = MaintenanceRecord.last
       expect(record.notes).to include(tree.did)

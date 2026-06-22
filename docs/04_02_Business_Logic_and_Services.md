@@ -1010,9 +1010,9 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Черга** | `critical` |
 | **Retry** | 5 |
 | **Тригер** | `ContractHealthCheckService`, `Dclimate::VerificationService` (fraud), `ContractTerminationService` |
-| **Вхід** | `organization_id`, `naas_contract_id`, `tree_id` (опціонально) |
-| **Сервіси** | `BlockchainBurningService.call` |
-| **Side Effects** | Створює `MaintenanceRecord` (decommissioning). ActionCable + Turbo Stream broadcast. |
+| **Вхід** | `organization_id`, `naas_contract_id`, `tree_id` (опц.), `contractual` (опц., default false — early-exit форфейтура пропускає positive-A gate) |
+| **Сервіси** | `BlockchainBurningService.call` (повертає `:slashed`/`:frozen`/`nil`) |
+| **Side Effects** | **Лише на `:slashed`:** `MaintenanceRecord` (decommissioning) + ActionCable/Turbo `CONTRACT_SLASHED`. На `:frozen` (positive-A gate, SLASH-1 §3.2) — без надгробка/broadcast (Field-Audit алерт уже піднято сервісом). |
 
 #### `InsurancePayoutWorker`
 
@@ -1149,8 +1149,8 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Retry** | 3 |
 | **Тригер** | (1) `InsightBatchCallbacks#on_success` — після успішного завершення всіх `GenerateClusterInsightWorker` чанків (real-time після ≈01:00 UTC batch); (2) Sidekiq cron `0 2 * * *` (`cluster_health_arbitration` у `config/sidekiq.yml`) — захисний fallback, відпрацьовує навіть коли denний batch мав нуль кластерів з даними і callback не спрацював. |
 | **Вхід** | `date_string` (String ISO8601, опціонально). Якщо `nil` — кожен кластер бере `cluster.local_yesterday` (per-tenant timezone). |
-| **Сервіси** | `contract.check_cluster_health!(target_date)` → `ContractHealthCheckService` |
-| **Side Effects** | При healthy → `CeloRewardWorker.perform_async`. При breached → `ContractHealthCheckService` → `BurnCarbonTokensWorker.perform_async`. Оновлює `cluster.health_index`. **⚠️ Double-trigger caveat:** callback + cron можуть викликати worker двічі на день для тих самих кластерів — `recalculate_health_index!` ідемпотентний, але `CeloRewardWorker.perform_async` без advisory lock може відправити cUSD двічі. Захист — на рівні `Celo::CommunityRewardService` (Kredis.lock), див. §10. |
+| **Сервіси** | `contract.check_cluster_health!(target_date)` → `ContractHealthCheckService` (повертає verdict `:healthy`/`:degraded`/`:blackout`/`:skipped`) |
+| **Side Effects** | [SLASH-1] Гілкує за **verdict** (не за `status_breached?` — breach тепер асинхронний, лише на реальному positive-A слешингу): `:healthy` → `CeloRewardWorker.perform_async`; `:degraded`/`:blackout` → лог, **без винагороди** (деградований/blackout кластер на адъюдикації cause-gate). Enqueue burn на `:degraded` робить сам `ContractHealthCheckService`. Оновлює `cluster.health_index`. **⚠️ Double-trigger caveat:** callback + cron можуть викликати worker двічі на день для тих самих кластерів — `recalculate_health_index!` ідемпотентний, але `CeloRewardWorker.perform_async` без advisory lock може відправити cUSD двічі. Захист — на рівні `Celo::CommunityRewardService` (Kredis.lock), див. §10. |
 
 #### `TokenomicsEvaluatorWorker`
 
@@ -1615,7 +1615,7 @@ Financial action
 
 **Механічна частина — ✅ enforced by `scripts/model_doc_sync.rb`** (CI `docs.yml`): кожен `app/services/**` / `app/workers/**` клас згаданий у цьому реєстрі — зловив би сервіс, повністю відсутній у доку (як `FactoryFlashing::*`-пропуск, що цей гейт і закрив). Семантику (сигнатури/ENV/guard-clauses/queue-розміщення) скрипт НЕ перевіряє — ручний cool-down аудит ([`00_04 §5.3`](00_04_Shape_Up_Operations_and_RnD_Clusters)).
 
-**Відкриті drift-айтеми живуть у [`00_07`](00_07_Action_Plan_Tracker)** (One-Home для backlog — не датований лог у каноні): cron-missing воркери ([`00_07` — S6.20](00_07_Action_Plan_Tracker)), slashing A/B/C `cause_classification` + uplift-активація ([`00_07` — SLASH-1](00_07_Action_Plan_Tracker); convex-формула + blackout ✅ у картках §6).
+**Відкриті drift-айтеми живуть у [`00_07`](00_07_Action_Plan_Tracker)** (One-Home для backlog — не датований лог у каноні): cron-missing воркери ([`00_07` — S6.20](00_07_Action_Plan_Tracker)), slashing — positive-A-guard + convex-формула + blackout ✅ (картки §6); відкрите → A-сет-розширення + `penalty_factor`-uplift-активація ([`00_07` — SLASH-1](00_07_Action_Plan_Tracker)).
 
 > **«Planned» (Forester Guild / Cross-Registry / Federated Learning)** — design-RFC, у коді **відсутні** (Post-TRL 6/7, нормально — не code-drift, тому не у `model_doc_sync`).
 
@@ -1835,13 +1835,13 @@ end
 
 При `EwsAlert :critical` + `:obscured_by_clouds` (супутник не може verify) — `ForestBountyService.create_bounty!(ews_alert, type: :drone_verification)` стає **Резервним Оракулом**: ranger летить з дроном, фотографує/знімає відео, IPFS upload → `EwsAlert.resolve_via_bounty!(bounty)` закриває тривогу швидше за наступний clear satellite pass (24-48 год).
 
-#### 🏦 Економічний шар + Codex: Operator-Bond · Guild-Sponsor · Positive-A-Guard (Planned — BIZ.13/SLASH-1)
+#### 🏦 Економічний шар + Codex: Positive-A-Guard (✅ SLASH-1 фаза 1) · Operator-Bond · Guild-Sponsor (Planned — BIZ.13)
 
-> **Статус: design-RFC, НЕ збудовано · DAO-gated.** Політика — [`05_05 §3.1`](05_05_Slashing_and_Risk_Policy) (bond/sponsor) + [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy) (positive-A-guard). Тут — implementation-карта на наявних патернах + Codex-інтеграція. Економічні параметри = DAO (`ProtocolParameters`), не baseline-канон.
+> **Статус: positive-A-guard ✅ збудовано (фаза 1); operator-bond/guild-sponsor — design-RFC, DAO-gated.** Політика — [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy) (positive-A-guard) + [`05_05 §3.1`](05_05_Slashing_and_Risk_Policy) (bond/sponsor). Тут — implementation-карта на наявних патернах + Codex-інтеграція. Економічні параметри = DAO (`ProtocolParameters`), не baseline-канон.
 
 **Економічна модель A→B.** Сьогодні (**Модель A**) `Forester` = `User` у складі investor-`Organization` (вертикальна інтеграція) → org інтерналізує ризик власного оператора. Operator-bond вимагає **Моделі B**: `Forester` як first-class економічний актор (власний bond/reputation, привʼязаний до кластера, який доглядає — operator↔cluster assignment, якого зараз НЕМАЄ). Тож economic-шар будується РАЗОМ з guild-маркетплейсом (E.20), greenfield, не ретрофітом.
 
-**Фаза 1 (зараз, Модель A і B) — Positive-A-Guard.** `BlockchainBurningService` перед `slash()` → `has_direct_A_evidence?` (reuse `HardwareKey.tamper_detected_at` / chainsaw-acoustic / `critical_unmaintained?`); немає → freeze + Field-Audit (як `flag_data_blackout!`), НЕ burn. Один guard на чокпоінті накриває всі 4 тригери burn. Деталі — [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy).
+**Фаза 1 (✅ landed, Модель A і B) — Positive-A-Guard.** `BlockchainBurningService` перед `slash()` → `Slashing::CauseEvidence#positive_a?`; немає → `:frozen` + Field-Audit (дзеркало `flag_data_blackout!`), НЕ burn. Один guard на чокпоінті накриває всі 4 тригери. A-сет фази-1 свідомо КОНСЕРВАТИВНИЙ = лише tamper (`EwsAlert vandalism_breach`; **НЕ** `HardwareKey.tamper_detected_at` — колонки не існує; chainsaw зашитий у `fire_detected`, `critical_unmaintained?` заширокий → обидва на 👤 DAO-розширення). Супутнє: `ContractHealthCheckService` повертає verdict (не пре-breach); крон `ClusterHealthCheckWorker` гейтить Celo за verdict; `BurnCarbonTokensWorker` пише «надгробок» лише на `:slashed`; `ContractTerminationService`→`contractual: true`. Деталі — [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy).
 
 **Фаза 2 (з guild-маркетплейсом) — нові моделі (дзеркало наявних патернів):**
 

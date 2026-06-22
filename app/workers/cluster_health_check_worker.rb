@@ -21,7 +21,7 @@ class ClusterHealthCheckWorker
     # Кожен кластер використовує свій часовий пояс для визначення "вчора".
     Cluster.find_each { |c| c.recalculate_health_index!(target_date || c.local_yesterday) }
 
-    summary = { checked: 0, breached: 0, errors: 0 }
+    summary = { checked: 0, flagged: 0, errors: 0 }
 
     # 2. ПЕРЕВІРКА ПОРУШЕНЬ (The Slashing Protocol)
     # find_each захищає пам'ять сервера при великій кількості контрактів
@@ -29,19 +29,22 @@ class ClusterHealthCheckWorker
       summary[:checked] += 1
 
       begin
-        # Виконуємо Slashing Protocol, передаючи конкретну дату для аналізу
-        # Якщо target_date nil — метод використає cluster.local_yesterday
-        contract.check_cluster_health!(target_date || contract.cluster.local_yesterday)
+        # [SLASH-1] Гілкуємо за VERDICT сервісу, а не за status_breached? — breach тепер
+        # асинхронний (ставиться лише на реальному positive-A слешингу в чокпоінті).
+        # Celo-винагорода йде ЛИШЕ здоровому кластеру: деградований/blackout (на адъюдикації
+        # cause-gate) винагороди не отримує — закриває reward-leak деградованому кластеру.
+        audit_date = target_date || contract.cluster.local_yesterday
+        verdict = contract.check_cluster_health!(audit_date)
 
-        if contract.status_breached?
-          summary[:breached] += 1
-          Rails.logger.warn "🚨 [D-MRV] Контракт ##{contract.id} (Кластер: #{contract.cluster.name}) ПОРУШЕНО за станом на #{target_date}!"
-        else
-          # [Celo ReFi]: Позитивний зворотний зв'язок — якщо кластер здоровий,
-          # нагороджуємо громаду cUSD через Celo.
-          reward_date = target_date || contract.cluster.local_yesterday
-          CeloRewardWorker.perform_async(contract.cluster_id, reward_date.to_s)
+        case verdict
+        when :degraded, :blackout
+          summary[:flagged] += 1
+          Rails.logger.warn "🚨 [D-MRV] Контракт ##{contract.id} (Кластер: #{contract.cluster.name}) ФЛАГОВАНО (#{verdict}) за станом на #{audit_date} — на адъюдикацію слешингу."
+        when :healthy
+          # [Celo ReFi]: Позитивний зворотний зв'язок — здоровому кластеру cUSD через Celo.
+          CeloRewardWorker.perform_async(contract.cluster_id, audit_date.to_s)
         end
+        # :skipped (неактивний / без активних дерев) — без дії
 
       rescue StandardError => e
         summary[:errors] += 1
@@ -51,6 +54,6 @@ class ClusterHealthCheckWorker
       end
     end
 
-    Rails.logger.info "✅ [D-MRV Audit] Завершено. Оброблено: #{summary[:checked]}, Розірвано: #{summary[:breached]}, Помилок: #{summary[:errors]}"
+    Rails.logger.info "✅ [D-MRV Audit] Завершено. Оброблено: #{summary[:checked]}, Флаговано: #{summary[:flagged]}, Помилок: #{summary[:errors]}"
   end
 end

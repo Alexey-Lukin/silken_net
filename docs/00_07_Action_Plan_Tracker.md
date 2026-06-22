@@ -737,11 +737,13 @@
 
 > Мультичейн, oracle/chain-конфіг та slashing-механіка — канон `05_xx`.
 
-#### SLASH-1 — Slashing cause-gate (positive-A-evidence) 🔴
+#### SLASH-1 — Slashing cause-gate (positive-A-evidence)
 - **P0** · 🤖+👤 · 🟡 · → `05_05 §3.2/§6` (divergence `04_02 §11`)
-- **Стан:** Deep-audit (2026-06-16): **4 ЖИВІ тригери burn** (daily-health stress>20% · dClimate clear_sky · tree-death bulk `after_update_commit` · contract-termination) — усі через чокпоінт `BlockchainBurningService`, але **лише `flag_data_blackout!` перевіряє причину**; решта 3 палять БЕЗ верифікації Кат-A → 3 false-slash діри (природна пожежа / хвороба-посуха як «фрод» / природна смерть). Код **інвертує власний C-дефолт §2** (палить-поки-не-відведено замість freeze-поки-не-A). Supporting-механіка coded+INERT (convex §3 · blackout no-burn · de-correlation uplift за `slash_cause_uplift_enabled`-off). Рекомендація (founder-схвалено): **positive-A-evidence guard** на чокпоінті (burn лише за доведеної A — tamper/chainsaw/`critical_unmaintained?`, сигнали вже в коді; інакше freeze), **потрібен ЗАРАЗ** (фаза 1; bond §3.1 — пізніше з guild). Канон [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy).
-- [ ] 👤 DAO/founder перед mainnet: ратифікувати positive-A-guard (які сигнали = доказ A) + активувати uplift
-- [ ] 🤖 positive-A-guard у `BlockchainBurningService` (reuse tamper/`critical_unmaintained?`/chainsaw як ворота, default→freeze) + tree-side `streamr_undelivered` (guarded→0) + repeat-offence вага
+- **Стан:** ✅ **Фаза 1 (код) реалізована** — positive-A-evidence guard на чокпоінті `BlockchainBurningService` (`Slashing::CauseEvidence#positive_a?`): необоротний `slash()` лише за прямого доказу Кат-A, інакше `:frozen` + Field Audit (дзеркало `flag_data_blackout!`), відновлює C-дефолт §2. Закрито 3 false-slash діри (природна пожежа / посуха-як-«фрод» / планова смерть дерева — biomass-extraction/decommissioning) **+ латентний баг** «daily ніколи не палив» (pre-breach коротко-замикав воркер). Супутнє: `ContractHealthCheckService` → verdict (не пре-breach); крон гейтить Celo за verdict; воркер гілкує `:slashed`/`:frozen`; termination → `contractual: true`. A-сет фази-1 свідомо КОНСЕРВАТИВНИЙ = лише tamper (`vandalism_breach`); chainsaw (зашитий у `fire_detected`) + заширокий `critical_unmaintained?` — поза воротами. Канон [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy).
+- [x] 🤖 positive-A-guard у `BlockchainBurningService` (`Slashing::CauseEvidence`, default→freeze) + verdict-рефактор health-check/крон + outcome-гілкування воркера + termination-exempt
+- [ ] 👤 DAO/founder перед mainnet: розширити A-сет (scoped-unmaintained / окремий chainsaw-сигнал) + активувати inert `penalty_factor`-uplift (`slash_cause_uplift_enabled`)
+- [ ] 🤖 (secondary) tree-side `streamr_undelivered` сигнал-джерело (guarded→0) + repeat-offence вага
+- [ ] 🤖 (backlog) A/B-координація: slash (A) і `ParametricInsurance#evaluate_daily_health!` (B) читають ту саму stress-дату → кандидат на спільний `DailyHealthRouter` (DRY, `04_02 §11`)
 
 #### S3.2 — dClimate Real API verification
 - **P1** · 👤 · 🟢 · → `05_01`
