@@ -4,7 +4,7 @@
 > Цей файл — лише тонкий pointer + Cursor-specific поведінка + cheat-sheet пасток.
 > **Конфлікт між цим файлом і `CLAUDE.md` → `CLAUDE.md` WINS** (він — єдиний підтримуваний дім; цей файл навмисно тонкий, щоб не дрейфувати).
 
-Повний контекст живе в `CLAUDE.md`: архітектура (§3), моделі (§4), Proof-of-Growth (§5), Sidekiq-черги (§6), фронт (§7), API (§8), безпека (§9), деплой (§10), Web3 (§11), активні BLOCKER'и (§12), Solidity/Foundry (§13), стиль «лінивого сеньйора» / YAGNI (§2а). Команди валідації — `CLAUDE.md §2`.
+`CLAUDE.md` короткий (orientation+routing): що-це §1 · **skill-routing таблиця §2** (домен→скіл→doc-дім) · команди §3 · стиль/YAGNI §4 · критичні інваріанти §5 (черги, AES, Lorenz/StatusByte) · gotchas §6 · repo-map §7 · Solidity/Foundry §8. Глибина — у `docs/NN_NN` (скіл маршрутизує) + `docs/00_07` (відкрите/блокери).
 
 ---
 
@@ -13,7 +13,7 @@
 - **Мінімальні, точні зміни.** Не чіпати код поза scope задачі.
 - **Не довіряй застарілим статусам/лічильникам** із будь-яких instruction-файлів — звіряй ЖИВИЙ код + `docs/`. (Сам цей файл свідомо НЕ тримає чисел/рядків-локацій — вони дрейфують.)
 - **Firmware (C) ≠ Rails (Ruby) ≠ Solidity** — різні домени; не переносити припущення між ними.
-- Секція BLOCKER (`CLAUDE.md §12`) = активне обмеження за замовчуванням. Не ставити «виправлено» лише через TODO/коментар — лише за реальним комітом.
+- Відкрите/блокери = `docs/00_07` — активне обмеження за замовчуванням; не «виправлено» лише через TODO/коментар (лише за реальним комітом).
 - SSOT-доки (`docs/NN_NN_*.md`), wiki-sync, doc-лінтери → веди через скіл `ssot-maintenance`.
 
 ---
@@ -22,22 +22,27 @@
 
 Це НЕ переказ фактів (вони живуть у `CLAUDE.md`), а перелік пасток + куди дивитись:
 
-- **LoRa-крипто = AES-`128`-ECB** (НЕ 256 — поширене стале припущення), CoAP = AES-256-CBC → `§3`. Після CBC-flush ОБОВ'ЯЗКОВО відновити ECB+128 (Queen).
-- **Backend Lorenz = Float (IEEE 754 double)**, НЕ BigDecimal (після FW.7, бітово ≡ firmware mruby) → `§3`/`§5`.
-- **StatusByte змінився post-FW.29** = `[PanicFlag:1 | status:2 | growth_points:5]` (НЕ припускай 6-bit GP) → `§3`. Wire unpack: `"N n c C n C C a4"`.
-- **`db/structure.sql`**, ніколи `schema.rb` (Postgres-партиції).
+- **LoRa-крипто = AES-`128`-ECB** (НЕ 256 — поширене стале припущення), CoAP = AES-256-CBC → `§5`. Після CBC-flush ОБОВ'ЯЗКОВО відновити ECB+128 (Queen) → `§6`.
+- **Backend Lorenz = Float (IEEE 754 double)**, НЕ BigDecimal (після FW.7, бітово ≡ firmware mruby) → `§6`.
+- **StatusByte post-FW.29** = `[PanicFlag:1 | status:2 | growth_points:5]` (НЕ припускай 6-bit GP) → `§5`. Wire unpack: `"N n c C n C C a4"`.
+- **`db/structure.sql`**, ніколи `schema.rb` (Postgres-партиції; dump = pg17 + strip `transaction_timeout`).
 - **Thin controllers** — логіка лише в `app/services/` / `app/workers/`.
-- **Sidekiq `:strict: true`** — порядок черг незмінний (`§6`); не міняти чергу воркера без обґрунтування.
-- **Партиції** (`TelemetryLog`/`GatewayTelemetryLog`/`BlockchainTransaction`) → завжди `created_at_iso` + `find_with_partition_pruning`.
+- **Sidekiq `:strict: true`** — порядок черг незмінний (`§5`); не міняти чергу воркера без обґрунтування.
+- **Партиції** (`TelemetryLog`/`GatewayTelemetryLog`/`BlockchainTransaction`) → завжди `created_at_iso` + `find_with_partition_pruning` (`§6`).
 - **AES-ключі не покидають Ruby-процес** (`HardwareKey#cached_binary_key`, in-process LRU; без Redis-serialize).
 - **`oracle_status`** має prefix → `oracle_status_fulfilled?` (НЕ `fulfilled?`).
-- **`TelemetryLog` без AR-валідацій** (KENOSIS) — перевірка лише в `TelemetryUnpackerService.valid_sensor_data?`; не додавати назад.
-- **Frontend = лише дизайн-токени** в shared-компонентах (`bg-gaia-surface`…), `tokens(...)`, без DB у Phlex `initialize`, `focus-visible:` (`§7`).
-- **Мінтинг guard-clauses** + `WEB3_STRICT_MODE`; Web3-логіка лише в service-namespaces (`§11`).
-- **Стиль:** драбинка «лінивого сеньйора» / YAGNI-first (`§2а`) — найкращий код той, що не написано.
+- **`TelemetryLog` без AR-валідацій** (KENOSIS) — перевірка лише в `TelemetryUnpackerService.valid_sensor_data?`; не додавати назад (`§6`).
+- **Frontend = лише дизайн-токени** в shared-компонентах (`bg-gaia-surface`…), `tokens(...)`, без DB у Phlex `initialize`, `focus-visible:` (`§6`).
+- **Мінтинг guard-clauses** + `WEB3_STRICT_MODE`; Web3-логіка лише в service-namespaces (`§6`).
+- **Стиль:** драбинка «лінивого сеньйора» / YAGNI-first (`§4`) — найкращий код той, що не написано.
 
 ---
 
 ## Solidity / Foundry
 
-Конвенції тестів, інваріант-гейти (`test_pause_allowsSlash`, admin-last-guard, `totalSupply<=MAX`), команди — **`CLAUDE.md §13`**. Контракт-спека → `docs/05_03`; тест-методологія → `docs/04_06 §B`.
+Конвенції тестів, інваріант-гейти (`test_pause_allowsSlash`, admin-last-guard, `totalSupply<=MAX`), команди — **`CLAUDE.md §8`**. Контракт-спека → `docs/05_03`; тест-методологія → `docs/04_06 §B`.
+
+---
+
+## Команди валідації
+Див. **`CLAUDE.md §3`** (ruby/rubocop/rspec/brakeman/firmware-test/forge/ruff).
