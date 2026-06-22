@@ -172,7 +172,7 @@
 - [x] 🤖 **BOM — ✅ уточнено:** шина = частина анодного друку, без окремого Cu-рядка (`07_02 §1.2`).
 - [ ] 🤖+👤 **Ізоляція каналу:** lining крізь катод (PEEK-лайнер / Parylene / анодований TiO₂) — реалізація; = **також бічна опора проти втоми** (in-silico `55`)
 - [ ] 👤 **Друк-vs-звар:** друкований-інтегральний стрижень vs той-самий-сплав приварений Ti-дріт (benign weld — без гальваніки)
-- [ ] 🤖+👤 **CAD-rod + Ø-reconcile** (`tools/cad`): bore→суцільний стрижень + lining-annulus + F3→`BusRodClearance` + звести Ø дім↔CEM. **Свідомо відкладено з autonomous-проходу** (2026-06-21): тонкий Ø~1.0 стрижень = native-abort зона PicoGK (gotcha #1/#9, process-kill); rod/liner-дими = founder-територія (як HW.33); рендер потребує візуальної верифікації → робити з founder, не наосліп
+- [x] 🤖+👤 **CAD-rod + Ø-reconcile — ✅ DONE 2026-06-22** (`tools/cad`, з founder): bore→суцільне осердя (`Zone1Anode.BuildMonolithic`, voxConstruct gotcha #9 — нічний native-abort страх знятий: solid-rod безпечний, рендер чистий) + F3→`BusRodClears` (rod+2×liner ≤ канал) + **measured rod-volume гейт** (gotcha #4; pine +34.4/oak +32.1 мм³) + CEM-родина (7 anchors rod 1.0 · cathode liner 0.15 · lock.zone1 bore→0). Дими: стрижень Ø1.0 / канал Ø1.3 / lining 0.15. 55 тестів + verify зелені
 - [ ] 👤 **Shank-insertion ↔ розрив (ties HW.8.9):** інсерція = термо↔press-fit важіль; справжній розрив = зазор `L_g` (placeholder F2)
 
 #### HW.2 — Dual-scale roughness spec

@@ -330,7 +330,7 @@ Ti (анкер) → Copper (пін)          ← різниця > 0.5 В → к�
 | **Zone 2↔Zone 3 (press-fit)** | interference **−1.00 мм = 1 мм зазор/сторону → НЕ press-fit** (F1) | shank Ø9 (**placeholder**, [`01_01 §1`](01_01_Coaxial_Gyroid_Topology_and_PEEK) / HW.8) у bore Ø11 — промах ~50× від мікронного натягу |
 | Insertion budget | **6.0 мм** (bore 50 − занурення Zone-1 30 − shank 14) (F2) | два вали входять з протилежних кінців 50-мм bore, не зіткнулись |
 | Embedded span | **63 мм** (низ аноду → торець фланця) + радом над корою (F3) | глибина встановлення (CODIT, [`01_04 §3`](01_04_CODIT_and_Xylemointegration)) |
-| Bus-rod clearance | стрижень + 2×lining ≤ катодний канал Ø1.3 (F3, monolithic reframe) | шина монолітна з анодом ([`01_01 §1.4`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) → стрижень проходить катодний канал з ізоляцією; CAD-гейт `BusRodClearance` (rod/liner-дими + render — **планується, HW.34**; нинішній CAD-аудит ще на bore-моделі) |
+| Bus-rod clearance | стрижень Ø1.0 + 2×lining 0.15 ≤ катодний канал Ø1.3 ✅ (F3) | шина монолітна з анодом ([`01_01 §1.4`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) → стрижень проходить катодний канал з ізоляцією; CAD-гейт `BusRodClears` **реалізовано** + solid-rod render з measured-volume (`tools/cad`, HW.34) |
 
 **🔑 Render-нюанс (чесно):** при точному Ø11=Ø11 render-overlap Zone1∩Zone2 = **0 мм³** (поверхні дотичні, об'єми не перетинаються — консистентно з line-to-line); render-overlap sleeve∩capsule = тонкий шар = **плече фланця Ø25 сідає на торець втулки Ø15**, а НЕ shank-press-fit (shank Ø9 болтається в bore Ø11 — F1). Тобто **без press-fit на shank осьовий datum Zone 3 тримають shoulder-rest на торці втулки + (майбутні) barbs/DIN-471** (§4.3), не натяг вала.
 
