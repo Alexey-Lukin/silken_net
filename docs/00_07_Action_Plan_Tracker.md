@@ -732,11 +732,6 @@
 - **Стан:** Архітектурний дизайн готовий — task-assignment matching ranger↔bounty (scoring, `FOR UPDATE NOWAIT`, GPS/EXIF/IPFS→USDC, anti-Sybil). Заблоковано на Forester Guild PoPhW (E.20). Канон `04_02 §Forester Guild`. Ranger-scoring живить reputation-scaling operator-bond (BIZ.13 [`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)).
 - [ ] 🔗 зв'язати з Forester Guild PoPhW (E.20)
 
-#### TEST.2 — Seed-залежний flake telemetry-спеків (full-suite test-pollution)
-- **P3** · 🤖 · ⚪ · → `04_06`
-- **Стан:** Повна RSpec-сюїта під певним random-seed (зловлено CI seed 48720, 2026-06-22) дає ~36 падінь у `telemetry_unpacker_service_spec` + `coap_telemetry_intake_e2e_spec` (`TypeError` у `TelemetryUnpackerService#preload_trees` на `c[0..3].unpack1` + nil-log `NoMethodError` + `logger.error`-expectation не отримано). В **ізоляції спек проходить 136/0**; re-run повної сюїти зеленів → класична order/state-pollution, **НЕ** регресія коду. Прихована path-gating'ом (docs-only коміти скіпають `test`-job → full-suite біжить рідко). Метод — [`04_06 §B.1`](04_06_Testing_Guide_and_Coverage).
-- [ ] 🤖 `rspec --seed 48720 --bisect` → ізолювати полюючий спек + фікс (мок/`travel`/DB-leak cleanup)
-
 ## §05 · Web3 / Економіка / Slashing
 
 > Мультичейн, oracle/chain-конфіг та slashing-механіка — канон `05_xx`.
@@ -1259,6 +1254,7 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 | DOC-T.22 | §01-02 HW під-регіон стандартизовано (form-decision: фасетні під-блокери інлайн HW.8-стилем, standalone-програма → `####`): HW.5 Gen 2.0-блок → pointer `01_03 §1–3`; HW.1.PicoGK + HW.3.IS згорнуто інлайн; HW.5.IS → `####` (CHEM.N + in-silico = `#####` working-backlog діти, kept per no-premature-canon). Drift-fixes по нитці: HW.3.IS creep→stress-relaxation + DFT→MD-permeation + Trek-C heavy-FEA→Гусак; `00_02 §4a` reconcile (аналітичний Lamé-bound легіт, відкладає важку FEA Гусаку); Стаття 28→Стаття 1; `01_03` HW.5a→HW.5 | `00_07`, `01_03 §1–3` |
 | DOC-T.21 | 18 tracker-family `[ID]` cited у коді/доках без 00_07-дому → per-ID verify resolved-in-code + §🗄️ orphan-rows (OBS.1/SEC.5/SEC.8 pattern): S6.4/6/8/9/13/15/16/17/19 · FW.6/10/16/28 · E.46 · HW.10 · INF.5/7 = resolved code-annotations; FW.45 = dup→ARCH.18 (firmware-тег) | `00_07` |
 | TEST.1 | Solidity contract coverage: низький forge `--ir-minimum` branch%/окремі line = артефакт виміру (require-reverts/`pause`/override-делегації тестовані+проходять; гейт на line/func), Governor `_cancel` func-геп закрито `test_cancel_byProposerWhilePending`. RSpec gate + firmware coverage-lane (раніше теж під TEST.1) — done | `04_06 §B.1.2`, §B.3 |
+| TEST.2 | Seed-залежний telemetry-flake (order/state-pollution, не регресія): CCM-блок витікав `TELEMETRY_CCM_ENABLED` — user-`after { ENV.delete }` біжить ДО тіардауну `stub_const("ENV")` → чистить стаблений Hash → флаг лишався в реальному ENV → `chunk_size` 21→29 → 21-байтні пакети тихо скіпались → падіння в SEC.10/unpacker/CoAP-e2e (CI seed 48720). Фікс: глобальний ENV-snapshot `config.around` у `rails_helper` (закрив весь клас ENV-витоків) + `preload_trees` дзеркалить `perform`-skip коротких chunk (TypeError на обрізаному хвості) + regression-тест; урок канонізовано | `04_06 §B.2`, §B.4 |
 | E.45 | SCC/SFC subgraph zero-address fail-fast guard (`subgraph/validate_addresses.sh`); real-address swap → S3.5 | `05_03` |
 | E.65 | `piezo_voltage_mv` фантом ВИДАЛЕНО (Ruthless Prune): колонка (всі партиції) + scope `seismic_activity` + btree-індекс — жоден wire-формат не ніс piezo, нічого не писало колонку. П'єзо = пасивний EXTI акустик-тригер ([`02_01 §3`](02_01_Hardware_Architecture_and_BOM)), не mV-датчик; сейсміка через `acoustic_events` | `04_01 §3` |
 | OPS.5 | Projects V2 TRL field schema (1-9 + Readiness Horizon SRL/MRL; `lib/github_bootstrap.rb`); live-board bootstrap-run → OPS.6 | `00_05 §1.1` |
