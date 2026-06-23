@@ -726,6 +726,12 @@
 - **Стан:** Архітектурний дизайн готовий — task-assignment matching ranger↔bounty (scoring, `FOR UPDATE NOWAIT`, GPS/EXIF/IPFS→USDC, anti-Sybil). Заблоковано на Forester Guild PoPhW (E.20). Канон `04_02 §Forester Guild`. Ranger-scoring живить reputation-scaling operator-bond (BIZ.13 [`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)).
 - [ ] 🔗 зв'язати з Forester Guild PoPhW (E.20)
 
+#### TEST.4 — Backend AASM/Wallet concurrency tests (deferred)
+- **P2** · 🤖 · ⚪ · → `04_06 §B.1.3`
+- **Стан:** Race conditions у `BlockchainTransaction` AASM-переходах не тестуються (потребують multi-thread test) — `04_06 §B.1.3` Concurrent State. Finding: переходи `confirm!`/`fail!`/`escalate_to_review!` (`blockchain_transaction.rb`) **без** `requires_lock` — double-spend *запобігається* Wallet-песимістик-локом (`Wallet#lock_funds!`/`lock_and_mint!` `with_lock`/`lock!`) + Kredis per-oracle локом; `manual_review` = recovery-backstop. М'яка robustness-діра (самозагоюється в бік безпеки), НЕ money-loss. Flake-safe дизайн готовий: non-transactional fixtures + ручний `delete_all` + `with_connection` + order-independent інваріант.
+- [ ] 🤖 multi-thread test: `lock_funds!`/`lock_and_mint!` під N конкурентних тредів на одному wallet — інваріант «сумарний locked ≤ balance»; + конкурентні AASM-переходи
+- [ ] 🤖 (опційно) hardening: `requires_lock true` на confirm/fail/escalate — рішення з founder перед зміною money-path
+
 ## §05 · Web3 / Економіка / Slashing
 
 > Мультичейн, oracle/chain-конфіг та slashing-механіка — канон `05_xx`.
