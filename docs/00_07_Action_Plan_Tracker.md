@@ -905,15 +905,15 @@
 - [ ] 🤖 Queen `queen_helium_lorawan_uplink()`
 
 #### INF.13 — Deploy runtime config-баги (mailer host · DB pool · entrypoint · Canopy job)
-- **P2** · 🤖 · ⚪ · → `06_05`
-- **Стан:** Не розпочато — реальні config-баги, що кусають ПІСЛЯ деплою (READ-verified): (1) `action_mailer.default_url_options host: "example.com"` (`config/environments/production.rb`) → биті лінки в усіх email (password-reset/alert); (2) `DB_POOL` не виставлено в deploy → default 5 vs Sidekiq concurrency 15 (`config/sidekiq.yml`) → `ConnectionTimeoutError` під навантаженням (фікс у `database.yml`-коментарі, не застосовано); (3) `bin/docker-entrypoint` `pg_isready 2>/dev/null` → тихий DB-fail проходить далі, Rails стартує без БД; (4) `config/deploy.canopy.yml` без `job:`-секції → Canopy web-only, нема Sidekiq. Канон `06_05`.
-- [ ] 🤖 mailer host ← `ENV.fetch("APP_HOST", …)` + `APP_HOST` у deploy env
-- [ ] 🤖 `DB_POOL: 17` у deploy env (web+job); entrypoint pg_isready → fail-loud; Canopy `job:`-секція (або задокументувати web-only)
+- **P2** · 🤖 · 🟢 · → `06_05`
+- **Стан:** Machine-half ✅ — (1) mailer host `example.com` → `ENV.fetch("APP_HOST", "silkennet.com")`+https (`production.rb`), `APP_HOST` заведено в Kamal `env.clear` + Akash web/job; (2) `DB_POOL=17` для Sidekiq/job-ролі (Kamal job-env + Akash job; web лишається default-pool); (3) entrypoint Cloud-SQL-proxy readiness → fail-loud (`exit 1`, не тихий boot без БД); (4) Canopy задокументовано web-only-by-design (Sidekiq через Akash primary, не відсутня `job:`-секція). Чекає верифікації на першому реальному деплої. Канон `06_05`.
+- [x] 🤖 mailer host ← `ENV.fetch("APP_HOST", …)` + `APP_HOST` у deploy env
+- [x] 🤖 `DB_POOL: 17` (Sidekiq/job-роль); entrypoint pg_isready → fail-loud; Canopy web-only задокументовано
 
 #### INF.14 — Observability pipeline wiring: метрики/алерти не «доїдуть»
-- **P2** · 🤖+👤 · ⚪ · → `06_03`
-- **Стан:** Не розпочато — стек реалізований, але pipeline-провідка має діри (READ-verified, окрім Akash-DNS): (1) circuit-breaker alert поріг `gt 1`, а gauge = `1.0` (`silkennet-alerts.yaml:299` vs gauge `circuit_breaker_open` у `web3/resilient_client.rb`) → alert НІКОЛИ не firing; (2) ⚠️ Akash alloy→`web:80` без `to: service:` route у SDL → scrape впирається в публічний ingress → `PrometheusCollector` IP-allowlist 403 → 0 метрик (Akash-DNS-inferred); (3) `grafana/alloy:latest` unpinned у CI+deploy → CI валідує іншу версію ніж біжить; (4) stale `gaia2`-tag у dashboard (`silkennet-overview.json:31`, BIZ.16 dissolved). Канон `06_03`.
-- [ ] 🤖 alert поріг `gt 0`; pin `grafana/alloy`; зняти `gaia2`-tag
+- **P2** · 🤖+👤 · 🟡 · → `06_03`
+- **Стан:** Machine-half ✅ — (1) circuit-breaker alert поріг `gt 1`→`gt 0` (gauge=`1.0` при open через `set_circuit_breaker_gauge`; `gt 1` ніколи не firing) + коментар проти регресії; (2) `grafana/alloy` запінено `:latest`→`v1.16.3` (`deploy.yaml`/`.tpl`/`ci.yml` — CI валідує ту саму River-версію, що біжить); (3) знято stale `gaia2`-tag (BIZ.16 dissolved). Лишається 👤 (deploy-gated): Akash alloy→`web:80` internal route (`to: service:`) — інакше scrape впирається в публічний ingress → IP-allowlist 403. Канон `06_03`.
+- [x] 🤖 alert поріг `gt 0`; pin `grafana/alloy`; зняти `gaia2`-tag
 - [ ] 👤 alloy→web internal route (Akash `to: service:`) → верифікувати scrape на деплої
 
 #### INF.15 — Terraform GCP `apply`-блокери (IAM ролі · firewall · tfvars · image-path)
