@@ -63,6 +63,7 @@ class Wallet < ApplicationRecord
 
   # Фіналізація витрати після підтвердження транзакції в блокчейні.
   # Списуємо кошти з balance та знімаємо блокування.
+  # [E.66] DEAD у проді — mint-flow не викликає (locked = «сконвертовано назавжди» by design); доля → 00_07 E.66.
   def finalize_spend!(amount)
     transaction do
       lock!
@@ -153,6 +154,7 @@ class Wallet < ApplicationRecord
   # Блокування SCC для бриджингу в Toucan Protocol (TCO2).
   # Переводить кошти з balance → locked_balance та створює BlockchainTransaction
   # зі статусом :pending для подальшої обробки ToucanBridgeWorker.
+  # [E.66] Toucan flow DEAD/не-активований; failure-path несиметричний (rollback не відновлює balance) — gate перед активацією → 00_07 E.66.
   def lock_for_toucan_bridge!(amount)
     transaction do
       lock!

@@ -2,6 +2,7 @@
 
 class ToucanBridgeWorker
   include ApplicationWeb3Worker
+  # [E.66] retry БЕЗ sidekiq_retries_exhausted — остаточний крах лишає tx pending + кошти заморожені; симетричний rollback перед активацією → 00_07 E.66.
   sidekiq_options queue: "web3_critical", retry: 5
 
   # [COMPOSITE PK]: blockchain_transactions партиціоновано по created_at.
