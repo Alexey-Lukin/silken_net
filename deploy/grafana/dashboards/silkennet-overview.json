@@ -28,7 +28,7 @@
   "links": [],
   "refresh": "30s",
   "schemaVersion": 38,
-  "tags": ["silkennet", "gaia2", "overview"],
+  "tags": ["silkennet", "overview"],
   "templating": { "list": [] },
   "time": { "from": "now-1h", "to": "now" },
   "timepicker": {},

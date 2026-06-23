@@ -296,7 +296,8 @@ groups:
               type: threshold
               refId: C
               conditions:
-                - evaluator: { params: [1], type: gt }
+                # gauge = 1.0 when breaker open (resilient_client set_circuit_breaker_gauge); gt 0 fires, gt 1 never would
+                - evaluator: { params: [0], type: gt }
                   operator: { type: and }
                   query: { params: [A] }
                   reducer: { params: [], type: last }

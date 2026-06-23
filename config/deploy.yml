@@ -14,6 +14,11 @@ servers:
     hosts:
       - 192.168.0.1
     cmd: bundle exec sidekiq -C config/sidekiq.yml
+    env:
+      clear:
+        # Sidekiq concurrency=15 (config/sidekiq.yml); DB pool must match + headroom.
+        # Without this, database.yml falls back to RAILS_MAX_THREADS+2=5 → pool starvation at 15.
+        DB_POOL: 17
 
 # Kamal proxy configuration.
 # SSL auto-certification via Let's Encrypt. Requires config.assume_ssl and config.force_ssl in production.rb.
@@ -81,6 +86,8 @@ env:
     - CHAINLINK_HMAC_SECRET
     - CHAINLINK_DON_ID
   clear:
+    # Mailer link host (config/environments/production.rb action_mailer.default_url_options).
+    APP_HOST: silkennet.com
     # Puma clustered mode — number of forked worker processes.
     # GCP n2-standard-2 has 2 vCPUs, so 2 workers saturate both cores.
     # Combined with preload_app! + jemalloc, CoW sharing cuts memory ~30-40%.

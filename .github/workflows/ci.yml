@@ -446,7 +446,7 @@ jobs:
       - name: Validate Alloy config (River parse — deploy/akash/config.alloy)
         run: |
           docker run --rm -v "${{ github.workspace }}/deploy/akash:/cfg" \
-            grafana/alloy:latest fmt /cfg/config.alloy > /dev/null
+            grafana/alloy:v1.16.3 fmt /cfg/config.alloy > /dev/null
           echo "✅ config.alloy parses (River syntax valid)"
 
   test:

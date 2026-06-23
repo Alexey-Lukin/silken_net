@@ -12,6 +12,9 @@
 servers:
   web:
     - <INGRESS_ANCHOR_IP>
+# No `job:` section by design — this Kamal fallback path is web-only (developer use).
+# Sidekiq workers run via the Akash primary deployment (deploy/akash/deploy.yaml `job`
+# service). Do NOT rely on `kamal deploy -d canopy` for background-job testing.
 
 # Proxy: no SSL on canopy (HTTP only for developer use).
 # proxy:

@@ -115,7 +115,7 @@ services:
       - CHAINLINK_CALLBACK_GAS_LIMIT=300000
 
   alloy:
-    image: grafana/alloy:latest
+    image: grafana/alloy:v1.16.3
     env:
       - GRAFANA_REMOTE_WRITE_URL=${grafana_remote_write_url}
       - GRAFANA_REMOTE_WRITE_USERNAME=${grafana_remote_write_username}

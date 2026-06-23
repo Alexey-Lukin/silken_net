@@ -115,6 +115,8 @@ services:
 
       # Puma concurrency — adjust based on 4 vCPU allocation.
       - WEB_CONCURRENCY=4
+      # Mailer link host (production.rb action_mailer.default_url_options).
+      - APP_HOST=silkennet.com
 
       # ════════════════════════════════════════════════════════════════════════
       # 🛑 BOOT-CRITICAL — Rails refuses to boot in production without this
@@ -264,6 +266,10 @@ services:
       - REDIS_URL=REQUIRED_SECRET_NOT_SET
       - KREDIS_REDIS_URL=REQUIRED_SECRET_NOT_SET
       - RAILS_MAX_THREADS=3
+      # Sidekiq concurrency=15 (config/sidekiq.yml) → DB pool must match + headroom (default 5 starves).
+      - DB_POOL=17
+      # Mailer link host (production.rb) — deliver_later runs in Sidekiq.
+      - APP_HOST=silkennet.com
 
       # --- 🛑 BOOT-CRITICAL: master_key_strength_check.rb raises without this ---
       - PROVISIONING_MASTER_KEY=REQUIRED_SECRET_NOT_SET
@@ -309,7 +315,7 @@ services:
   # Config is injected via base64-encoded env var (decoded at startup).
   # Source: deploy/akash/config.alloy
   alloy:
-    image: grafana/alloy:latest
+    image: grafana/alloy:v1.16.3
     env:
       # REQUIRED: Grafana Cloud Prometheus remote_write endpoint.
       # Format: https://prometheus-prod-XX-prod-XX.grafana.net/api/prom/push
