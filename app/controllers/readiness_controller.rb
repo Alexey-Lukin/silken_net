@@ -24,6 +24,10 @@ class ReadinessController < ActionController::Base
   private
 
   def database_ok?
+    # Primary connection. cache/queue/cable share host+credentials with primary
+    # (config/database.yml component style), so a reachable primary is a strong proxy
+    # for the whole Cloud SQL instance; per-DB probing is omitted to keep /ready fast
+    # and non-flaky.
     ActiveRecord::Base.connection.execute("SELECT 1")
     true
   rescue StandardError
@@ -31,7 +35,12 @@ class ReadinessController < ActionController::Base
   end
 
   def redis_ok?
-    Sidekiq.redis { |conn| conn.call("PING") } == "PONG"
+    sidekiq_ok = Sidekiq.redis { |conn| conn.call("PING") } == "PONG"
+    # Kredis (Redis DB 1) holds Web3 nonce + mint/burn locks — a money-path dependency
+    # separate from the Sidekiq queue DB (DB 0). /ready must 503 if these are unreachable,
+    # so the orchestrator stops routing to a node that cannot safely mint/burn.
+    kredis_ok = Kredis.redis(config: :shared).ping == "PONG"
+    sidekiq_ok && kredis_ok
   rescue StandardError
     false
   end

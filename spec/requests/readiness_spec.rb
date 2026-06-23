@@ -34,5 +34,16 @@ RSpec.describe "Readiness probe", type: :request do
       expect(response).to have_http_status(:service_unavailable)
       expect(response.parsed_body.dig("checks", "redis")).to be(false)
     end
+
+    it "returns 503 not_ready when Kredis (Web3 locks) does not respond" do
+      # Kredis (Redis DB 1) backs the mint/burn nonce locks — a money-path dependency
+      # distinct from the Sidekiq queue Redis. A node that can't reach it must not serve.
+      allow(Kredis).to receive(:redis).and_raise("kredis down")
+
+      get "/ready"
+
+      expect(response).to have_http_status(:service_unavailable)
+      expect(response.parsed_body.dig("checks", "redis")).to be(false)
+    end
   end
 end
