@@ -1185,7 +1185,6 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 
 | ID | Пункт | Канон |
 |----|-------|-------|
-| DOC-T.30 | **М06 канон↔deploy-реальність drift** (виявлено при INF.11 deep-read; 🤖, не блокер): (1) `06_01` має ДВА ілюстративні env-блоки (env.clear ~§Kamal + Web3-ENV bash §«Змінні Середовища»), що дублюють і розходяться з реальним `config/deploy.yml` (env.clear показує `RAILS_ALLOWED_HOSTS`, якого нема; не показує `RELEASE_VERSION`/`CHAINLINK_DATA_VERSION`/`CHAINLINK_CALLBACK_GAS_LIMIT`; обидва omit `WEB3_STRICT_MODE`) → замінити на pointer до `06_04 §2.1` (one-home); (2) `06_01` Canopy-таблиця каже Canopy на Akash, реальний `deploy.yml` workflow = Kamal/GCP; (3) `06_03` Sentry-environments таблиця передбачає окремий `canopy` Rails-env, якого немає (canopy = `RAILS_ENV=production`). *(RAILS_ALLOWED_HOSTS deploy-gap — НЕ тут: дім `S6.18`.)* | `06_01`, `06_03`, `06_04` |
 
 _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tooling знахідки → додавати рядком сюди._
 
@@ -1340,6 +1339,7 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 | HW.10 | PSM + eDRX idle-power for NB-IoT/LTE-M (`queen/main.c`) — resolved code-annotation | `03_02`, `02_05` |
 | INF.5 | `PROMETHEUS_ALLOWED_IPS` CIDR allowlist for /metrics — resolved code-annotation | `06_03`, `06_04` |
 | INF.7 | `ALLOY_CONFIG_BASE64` manual SDL deploy encoding — resolved code-annotation | `06_02` |
+| DOC-T.30 | М06 канон↔deploy drift (INF.11/INF.16 sweep): `06_01` env-блоки (env.clear + §13 Web3) → one-home pointer `06_04 §2.1` (+ `POSTGRES_*`/`WEB3_STRICT_MODE`/`RELEASE_VERSION`; `RAILS_ALLOWED_HOSTS`=operator-set S6.18); Canopy-таблиця Akash-intended-vs-Kamal-workflow + DB-ізоляція (`POSTGRES_DATABASE`); `06_03` Sentry canopy=`RAILS_ENV=production` (не окремий env); `KLIMA_*_ADDRESS` doc-bug прибрано | `06_01`, `06_03`, `06_04` |
 | DOC-T.23 | STAGE/WHO re-audit (7 WHO fixes, open-work semantic) + meta-line form std (combo `🤖+👤`, no tails) + AI-advanceability (S6.20/E.41 advanced); NEW guard `meta_form_violations` HARD | `00_07`, `00_06 §3` |
 | DOC-T.24 | Priority re-assess (P1 73→59, un-flattened by TRL-horizon/blocking-impact) + stable in-section sort by priority (P0 gates surface on top); tools `tracker_set_meta.rb` + `tracker_sort.rb` | `00_07` |
 | DOC-T.25 | 🚦 Dashboard refreshed from current items (UNI.13/14 priority drift fixed; 🤖-note S6.20/E.41) — human-curated do-now roadmap. (Superseded by DOC-T.16: Dashboard → slim 🚦 Critical Path; the unused auto-render code `Tracker::Dashboard.render`/`regenerate`/`check` pruned.) | `00_07` |

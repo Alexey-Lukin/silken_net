@@ -181,11 +181,11 @@ terraform apply
 |---------|-----------|--------------|
 | **Тригер деплою** | Push в `main` після успішного CI (continuous) | GitHub Release (`v*.*.*`) — створюється **release-please** (`Ops · Release`) з conventional commits → канон [`06_07 §1`](06_07_CICD_and_Runbook_Index) |
 | **Workflow** | `.github/workflows/deploy.yml` (`Deploy · Canopy`) | `.github/workflows/deploy-production.yml` (`Deploy · Production`) |
-| **Платформа** | Akash Network (окремий SDL або namespace) | Akash Network |
+| **Платформа** | Akash (intended primary SDL) — але CI `deploy.yml` наразі робить `kamal deploy -d canopy` (Kamal/GCP-fallback, web-only) | Akash Network |
 | **GCP ресурси** | Cloud SQL (спільна або окрема БД) + Ingress Anchor (`e2-micro`) | Cloud SQL (HA) + Ingress Anchor (`e2-micro`) |
 | **Redis** | Upstash Serverless Redis (TLS, `rediss://`) | Upstash Serverless Redis (TLS, `rediss://`) |
 | **SSL/HTTPS** | ✅ `force_ssl` + HSTS (1рік, subdomains, preload). `DISABLE_SSL=true` для override | ✅ `force_ssl` + HSTS (1рік, subdomains, preload) |
-| **DB** | Окрема або спільна Cloud SQL | `silken_net_production` (HA) |
+| **DB** | `silken_net_canopy*` — ізольований набір на тому ж Cloud SQL інстансі (`POSTGRES_DATABASE` override; INF.16) | `silken_net_production` (HA) |
 | **Puma workers** | `WEB_CONCURRENCY: 4` (Akash SDL; `2` на Kamal/GCP-fallback) | `WEB_CONCURRENCY: 4` (Akash SDL; `2` на Kamal/GCP-fallback) |
 
 ---
@@ -415,12 +415,17 @@ env:
     - CHAINLINK_HMAC_SECRET
     - CHAINLINK_DON_ID
   clear:
+    POSTGRES_HOST: <CLOUD_SQL_PRIVATE_IP>    # component style (config/database.yml; INF.16)
+    POSTGRES_USER: silken_net
+    POSTGRES_DATABASE: silken_net_production  # canopy override → silken_net_canopy (deploy.canopy.yml)
     WEB_CONCURRENCY: 2
-    APP_HOST: silkennet.com  # Action Mailer default_url_options host (INF.13)
-    RAILS_ALLOWED_HOSTS: api.silkennet.com,.silkennet.com  # DNS rebinding protection
-    # DISABLE_SSL: "true"   # розкоментувати якщо Akash ingress або Cloudflare термінує TLS
-    # CSP_ENFORCE: "true"   # розкоментувати після burn-in спостереження CSP violation репортів
+    APP_HOST: silkennet.com                   # Action Mailer host (INF.13)
+    WEB3_STRICT_MODE: "true"                  # Web3 fail-closed (INF.11)
+    RELEASE_VERSION: "${RELEASE_VERSION}"     # Sentry release tag (CI-set)
+    # RAILS_ALLOWED_HOSTS: …  # ⚠️ operator-set, НЕ комітити (хибне значення = 403 block-all; S6.18 + INF.4)
+    # DISABLE_SSL / CSP_ENFORCE — операторські тогли
 ```
+> **One-home:** це ілюстрація структури. **Повний інвентар ENV** (secret + clear, контракт-адреси, RPC, credentials) — лише [`06_04 §2.1`](06_04_Secrets_Checklist); не дублювати тут.
 
 > **🔴 Boot-time guard rationale:** Container injects ТІЛЬКИ ті secrets, що явно перелічені у `env: secret:`. Відсутність `PROVISIONING_MASTER_KEY` → `SecurityError` від `config/initializers/master_key_strength_check.rb` → Puma crash до accept. Відсутність `ORACLE_*_PRIVATE_KEY` → `KeyError` від `ENV.fetch` у `BlockchainMintingService`/`BlockchainBurningService` → web3-критичні воркери у DeadSet. Відсутність `ALCHEMY_ETHEREUM_RPC_URL` → `StateAnchorService` падає при tижневому anchor TX → `EthereumAnchor.status = failed`. **Bind these in `.kamal/secrets` first**, потім додавай у `env: secret:` блок.
 
@@ -712,74 +717,7 @@ Series D архітектура (>1M вузлів):
 
 ## 🔑 Змінні Середовища: Web3 та Мультичейн
 
-### Обов'язкові (Polygon)
-
-```bash
-# Polygon RPC (Alchemy)
-ALCHEMY_POLYGON_RPC_URL=https://polygon-mainnet.g.alchemy.com/v2/YOUR_KEY
-
-# Oracle-гаманець (керує мінтингом/слешингом)
-ORACLE_PRIVATE_KEY=0x...  # ⚠️ Зберігати в Rails credentials або Vault, НІКОЛИ не в .env
-
-# Адреси смарт-контрактів (Polygon)
-CARBON_COIN_CONTRACT_ADDRESS=0x...  # SCC
-FOREST_COIN_CONTRACT_ADDRESS=0x...  # SFC
-```
-
-### Мультичейн (SilkenNet)
-
-```bash
-# Ethereum L1 (State Anchoring) — SSOT name expected by app/services/ethereum/state_anchor_service.rb та app/services/treasury/monitor_service.rb.
-ALCHEMY_ETHEREUM_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY
-ETHEREUM_ANCHOR_PRIVATE_KEY=0x...  # Окремий гаманець для тижневого state-root anchoring (НЕ дорівнює ORACLE_PRIVATE_KEY).
-
-# IoTeX W3bstream (ZK Verification)
-W3BSTREAM_API_URL=https://w3bstream-api.iotex.io
-W3BSTREAM_PROJECT_ID=silken_net_dmrv
-
-# Chainlink Functions Router v1 (Oracle DON)
-CHAINLINK_FUNCTIONS_ROUTER=0x...
-CHAINLINK_SUBSCRIPTION_ID=...
-CHAINLINK_HMAC_SECRET=...
-CHAINLINK_DON_ID=fun-polygon-mainnet-1
-CHAINLINK_DATA_VERSION=1
-CHAINLINK_CALLBACK_GAS_LIMIT=300000
-
-# peaq DID (Machine Identity)
-PEAQ_NODE_URL=https://peaq-node.example.com
-
-# Solana (Micro-Rewards)
-SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
-SOLANA_WALLET_KEYPAIR=...
-
-# Celo (Community Rewards)
-CELO_RPC_URL=https://forno.celo.org
-CELO_CUSD_CONTRACT_ADDRESS=0x...
-
-# KlimaDAO (Carbon Retirement)
-KLIMA_RETIREMENT_CONTRACT_ADDRESS=0x...
-
-# Polygon Hadron (RWA Compliance)
-HADRON_API_URL=https://api.hadron.polygon.technology
-HADRON_API_KEY=...
-
-# Streamr (P2P Data)
-STREAMR_API_URL=https://streamr.network/api/v2
-STREAMR_STREAM_ID=silken_net/forest_telemetry
-
-# Filecoin/IPFS (Archive)
-PINATA_API_KEY=...
-PINATA_SECRET_KEY=...
-
-# The Graph (Indexing)
-THE_GRAPH_SUBGRAPH_URL=https://api.thegraph.com/subgraphs/name/silken-net/carbon
-
-# Akash Network (Deployment)
-AKASH_WALLET_ADDRESS=...
-
-# CoAP listener
-COAP_PORT=5683
-```
+> **One-home:** повний інвентар Web3/мультичейн ENV — secret + clear, RPC (`ALCHEMY_*` + окремі `POLYGON_RPC_URL`/`CELO_RPC_URL`), контракт-адреси (post-`forge deploy` placeholders), Solana/Chainlink, Active-Storage `aws`/`gcs` + credentials-only ключі (peaq/iotex/streamr/the_graph/hadron/filecoin) — живе в [`06_04 §2.1`](06_04_Secrets_Checklist) (+ §2.2 credentials), НЕ дублюється тут. ⚠️ `CELO_RPC_URL` порожній → Alfajores TESTNET (E.49; mainnet обов'язковий); контракт-адреси відомі лише після `forge deploy`.
 
 ### Деплой контрактів (Foundry)
 

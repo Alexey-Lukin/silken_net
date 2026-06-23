@@ -145,7 +145,7 @@ Gem `sentry-sidekiq` автоматично додає Sentry middleware до Si
 |-------------|-----------|
 | `development` | Інертний (немає `SENTRY_DSN`) |
 | `test` | Інертний (немає `SENTRY_DSN`) |
-| `canopy` (staging) | Активний при наявності `SENTRY_DSN` |
+| Canopy (staging) | Працює під `RAILS_ENV=production` (НЕ окремий Rails-env); активний, `SENTRY_DSN` присутній — розрізняється `external_labels` env/release (§2.9) |
 | `production` | Активний (✅ `SENTRY_DSN` додано у `.kamal/secrets`) |
 
 ---
