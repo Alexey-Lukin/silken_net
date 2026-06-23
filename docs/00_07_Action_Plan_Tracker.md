@@ -862,8 +862,7 @@
 
 #### INF.15 — Terraform GCP `apply`-блокери (IAM ролі · firewall · tfvars · image-path)
 - **P1** · 🤖+👤 · 🟢 · → `06_01`
-- **Стан:** Machine-half ✅ — (1) `iam.tf` +`roles/storage.objectAdmin` (scoped до `silken-net-terraform-state` bucket, не project-wide) +`iam.serviceAccountUser`; (2) firewall `allow_ssh` `count`-guard на порожній `ssh_source_ranges` (порожній → правило не створюється; GCP не відхиляє apply); (3) `terraform.tfvars.example` `ssh_source_ranges` → CIDR-placeholder (не `0.0.0.0/0`); (4) Kamal `image` → `<GCP_PROJECT_ID>/silken-net/silken_net` (повний AR-шлях). `terraform fmt` clean; `allow_ssh` без інших refs (count-safe). ⚠️ provider/Kamal-behavior inferred. Канон `06_01`.
-- [x] 🤖 iam ролі (objectAdmin scoped + serviceAccountUser) + firewall count-guard + tfvars CIDR + image AR-path
+- **Стан:** Machine-half ✅ — `iam.tf` +`storage.objectAdmin`(scoped до state-bucket)+`iam.serviceAccountUser`; firewall `allow_ssh` `count`-guard на порожній CIDR (GCP не відхиляє apply); `tfvars.example` CIDR-placeholder (не `0.0.0.0/0`); Kamal `image`→повний AR-шлях. `terraform fmt` clean, count-safe. ⚠️ provider/Kamal-behavior inferred → 👤 verify на реальному apply. Канон [`06_01`](06_01_Deployment_Kamal_Terraform).
 - [ ] 👤 верифікувати `terraform apply` + Kamal push end-to-end (підтвердити inferred-пункти)
 
 #### INF.16 — Production multi-DB connection (database.yml component style)
