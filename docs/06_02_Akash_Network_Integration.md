@@ -64,7 +64,7 @@
 |-----|-----------|------------------------|
 | `RAILS_MASTER_KEY` | `config/credentials.yml.enc` | Rails refuses to load credentials |
 | `DATABASE_URL` | `config/database.yml` | `ActiveRecord::AdapterNotSpecified` |
-| `CLOUD_SQL_INSTANCE_CONNECTION_NAME` | `bin/docker-entrypoint` | Cloud SQL Auth Proxy не стартує → `127.0.0.1:5432` недоступний |
+| `CLOUD_SQL_INSTANCE_CONNECTION_NAME` | `bin/docker-entrypoint` | Cloud SQL Auth Proxy не стартує → entrypoint чекає 15 с → `exit 1` (fail-loud, INF.13; Rails не стартує замість мовчазного boot без БД) |
 | `GCP_SA_KEY_BASE64` | `bin/docker-entrypoint` | Auth Proxy не може автентифікуватися до Google Cloud API |
 | `REDIS_URL` | `config/initializers/sidekiq.rb` | Sidekiq client не підключиться |
 | `KREDIS_REDIS_URL` | `config/initializers/kredis.rb` | Distributed locks не працюють |
@@ -599,6 +599,8 @@ ENV-блоки `web` та `job` сервісів **дзеркалюють** од
 | `KREDIS_REDIS_URL` | `REQUIRED_SECRET_NOT_SET` | **boot** | Distributed locks (DB 1) |
 | `RACK_ATTACK_REDIS_URL` | — (auto-derive з `REDIS_URL` → `/2`) | runtime | Rate-limiting (опц.) |
 | `RAILS_MAX_THREADS` | `3` | runtime | Puma threads/worker — узгоджено з `database.yml` pool |
+| `DB_POOL` | `17` (лише job) | runtime | ActiveRecord pool для job-сервісу — Sidekiq concurrency 15 проти дефолтного pool 5 (INF.13); web лишається default |
+| `APP_HOST` | `silkennet.com` | runtime | Action Mailer `default_url_options` host (`production.rb`); web+job (INF.13) |
 | `WEB_CONCURRENCY` | `4` | runtime | Puma worker processes (web only) |
 
 ### 2.2 🛑 Boot-critical security guards
@@ -962,6 +964,8 @@ Mapping між конфігурацією Kamal (`config/deploy.yml` + `.kamal/s
 | `env.clear RAILS_ENV=production` | `env: RAILS_ENV=production` |
 | `env.clear WEB_CONCURRENCY=2` | `env: WEB_CONCURRENCY=4` (більше CPU на Akash) |
 | `env.clear RAILS_MAX_THREADS=3` | `env: RAILS_MAX_THREADS=3` |
+| `env.clear APP_HOST=silkennet.com` | `env: APP_HOST=silkennet.com` (web+job) |
+| `(job) DB_POOL=17` | `env: DB_POOL=17` (job-сервіс — Sidekiq pool) |
 | `volumes: silken_net_storage:/rails/storage` | `params.storage.data.mount: /rails/storage` |
 | `builder.arch: amd64` | `profiles.compute.web.resources.cpu.units: 4` |
 | — | ✅ `alloy` сервіс (OBS.1 — Grafana Cloud sidecar) |
@@ -1051,7 +1055,7 @@ L2  Hardware Capsule      BQ25570, EDLC             (не залежить ві�
 L1  Biophysics            Ti-6Al-4V EBFC            (не залежить від Akash)
 ```
 
-**Висновок:** SDL визначає три сервіси: `web` (Rails API + CoAP), `job` (Sidekiq workers), та `alloy` (Grafana Alloy → Grafana Cloud). Cloud SQL Auth Proxy (in-container) забезпечує доступ до PostgreSQL через HTTPS тунель, Upstash serverless Redis (TLS) замінює GCP Memorystore. `job` сервіс використовує entrypoint (`/rails/bin/docker-entrypoint bundle exec sidekiq ...`) для запуску Cloud SQL Proxy і для Sidekiq. `alloy` сервіс скрейпить `/metrics` endpoint `web` сервісу кожні 15 секунд та пушить метрики у Grafana Cloud через remote_write — вирішуючи BLOCKER'и спостережуваності (06_03). Ingress Anchor (`e2-micro` зі статичним IP) проксіює CoAP-трафік від Queens до Akash. Multi-replica ActionCable працює без sticky sessions завдяки Solid Cable adapter — всі репліки `web` підключені до спільної Cloud SQL БД `silken_net_production_cable`, PostgreSQL `LISTEN/NOTIFY` забезпечує крос-реплікову доставку Turbo Stream broadcasts.
+**Висновок:** SDL визначає три сервіси: `web` (Rails API + CoAP), `job` (Sidekiq workers), та `alloy` (Grafana Alloy → Grafana Cloud). Cloud SQL Auth Proxy (in-container) забезпечує доступ до PostgreSQL через HTTPS тунель, Upstash serverless Redis (TLS) замінює GCP Memorystore. `job` сервіс використовує entrypoint (`/rails/bin/docker-entrypoint bundle exec sidekiq ...`) для запуску Cloud SQL Proxy і для Sidekiq. `alloy` сервіс (образ запінено `grafana/alloy:v1.16.3` — синхронно з `deploy.yaml.tpl`/`ci.yml`, INF.14) скрейпить `/metrics` endpoint `web` сервісу кожні 15 секунд та пушить метрики у Grafana Cloud через remote_write — вирішуючи BLOCKER'и спостережуваності (06_03). Ingress Anchor (`e2-micro` зі статичним IP) проксіює CoAP-трафік від Queens до Akash. Multi-replica ActionCable працює без sticky sessions завдяки Solid Cable adapter — всі репліки `web` підключені до спільної Cloud SQL БД `silken_net_production_cable`, PostgreSQL `LISTEN/NOTIFY` забезпечує крос-реплікову доставку Turbo Stream broadcasts.
 
 ---
 

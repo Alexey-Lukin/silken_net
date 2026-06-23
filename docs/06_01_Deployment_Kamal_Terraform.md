@@ -353,7 +353,7 @@ ENV.fetch("RACK_ATTACK_REDIS_URL") {
 | Файл | Опис |
 |------|------|
 | `config/deploy.yml` | Production-конфіг (основний) |
-| `config/deploy.canopy.yml` | Canopy-перевизначення (`-d canopy`) |
+| `config/deploy.canopy.yml` | Canopy-перевизначення (`-d canopy`). **Web-only за дизайном** — без `job:`-ролі; Sidekiq для Canopy іде через Akash primary `deploy.yaml` job-сервіс (INF.13). |
 | `.kamal/secrets` | Runtime секрети (читаються при деплої) |
 | `.kamal/hooks/` | Хуки ЖЦ (тільки sample-файли) |
 
@@ -416,6 +416,7 @@ env:
     - CHAINLINK_DON_ID
   clear:
     WEB_CONCURRENCY: 2
+    APP_HOST: silkennet.com  # Action Mailer default_url_options host (INF.13)
     RAILS_ALLOWED_HOSTS: api.silkennet.com,.silkennet.com  # DNS rebinding protection
     # DISABLE_SSL: "true"   # розкоментувати якщо Akash ingress або Cloudflare термінує TLS
     # CSP_ENFORCE: "true"   # розкоментувати після burn-in спостереження CSP violation репортів
@@ -505,7 +506,7 @@ Service Account: silken-net-deploy@<project>.iam.gserviceaccount.com
 | Компонент | З'єднання (піковий checkout) |
 |-----------|------------|
 | Akash web | `WEB_CONCURRENCY` (4) × pool (5) × 4 бази = **~80** |
-| Akash job (Sidekiq) | `:concurrency` (15) → `DB_POOL ≥ 15` = **~15–60** |
+| Akash job (Sidekiq) | `:concurrency` (15) → `DB_POOL=17` (встановлено в job env, INF.13) = **~68** (17 × 4 бази) |
 | Cloud SQL Auth Proxy + admin/console | **~8** |
 
 Навіть за пікового checkout усіх пулів — суттєво нижче `400`; запас закладено під read-репліки та canopy-репліки на спільному Cloud SQL інстансі. Адекватно.
@@ -520,7 +521,7 @@ Stage 2: build         — bundle install, bootsnap, assets:precompile
 Stage 3: final         — COPY gems + app + Cloud SQL Auth Proxy, USER rails:1000, CMD: thrust ./bin/rails server
 ```
 
-> **Cloud SQL Auth Proxy** вбудовано у фінальний Docker-образ. Proxy запускається автоматично як фоновий процес при наявності ENV `CLOUD_SQL_INSTANCE_CONNECTION_NAME`. Він тунелює PostgreSQL-трафік через Google Cloud API (вихідний HTTPS на порт 443), тому Cloud SQL не потребує публічної IP.
+> **Cloud SQL Auth Proxy** вбудовано у фінальний Docker-образ. Proxy запускається автоматично як фоновий процес при наявності ENV `CLOUD_SQL_INSTANCE_CONNECTION_NAME`. Він тунелює PostgreSQL-трафік через Google Cloud API (вихідний HTTPS на порт 443), тому Cloud SQL не потребує публічної IP. **Fail-loud (INF.13):** `bin/docker-entrypoint` чекає готовності proxy до 15 с; якщо не відповідає — `exit 1` (Rails не стартує, замість мовчазного boot без БД).
 
 ---
 

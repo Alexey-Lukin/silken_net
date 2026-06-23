@@ -103,18 +103,34 @@
 - [ ] `ORACLE_PRIVATE_KEY` — приватний ключ EVM oracle wallet для мінтингу SCC/SFC. **Критичний.** Гаманець потребує MATIC для газу.
 - [ ] `ETHEREUM_ANCHOR_PRIVATE_KEY` — приватний ключ для тижневого SHA-256 state root anchoring на L1. Потребує ETH для газу.
 - [ ] `ALCHEMY_POLYGON_RPC_URL` — Alchemy/Infura RPC для Polygon (Primary). `Web3::ResilientClient` підтримує fallback cascade — також встанови `ALCHEMY_POLYGON_RPC_URL_FALLBACK_*` за потреби.
+- [ ] `POLYGON_RPC_URL` — **окремий** Polygon RPC для `PriceOracleService` (`Web3::RpcConnectionPool.client_for("POLYGON_RPC_URL")`, `ENV.fetch` без fallback → `KeyError` якщо відсутній). Може дорівнювати `ALCHEMY_POLYGON_RPC_URL` або public endpoint (`https://polygon-rpc.com`). ⚠️ ще не в deploy env-декларації → [`00_07`](00_07_Action_Plan_Tracker) **INF.12**.
 - [ ] `ALCHEMY_ETHEREUM_RPC_URL` — Alchemy RPC для Ethereum L1
 - [ ] `CELO_RPC_URL` — Celo RPC endpoint (без значення — `Forno`-public; для production — Infura/Alchemy)
 - [ ] `SOLANA_RPC_URL` — Solana RPC. ⚠️ **БЕЗ цього ENV дефолт = Solana Devnet** — мікро-винагороди USDC підуть на тестову мережу (`E.47` у [`00_07`](00_07_Action_Plan_Tracker))! Mainnet: Helius/QuickNode.
-- [ ] `CARBON_COIN_CONTRACT_ADDRESS` — адреса SCC контракту після deploy
+- [ ] `CARBON_COIN_CONTRACT_ADDRESS` — адреса SCC контракту після deploy (`BlockchainMintingService`, `ENV.fetch` без default → `KeyError` на першому SCC mint)
+- [ ] `FOREST_COIN_CONTRACT_ADDRESS` — адреса SFC контракту після deploy (той самий `ENV.fetch`-патерн → `KeyError` на першому SFC mint). ⚠️ ще не в deploy env-декларації → [`00_07`](00_07_Action_Plan_Tracker) **INF.12**.
 - [ ] `KLIMA_RETIREMENT_CONTRACT` — адреса KlimaDAO Retirement Aggregator
 - [ ] `SOLANA_USDC_MINT_ADDRESS` — SPL Token mint USDC (mainnet: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`)
 - [ ] `FILECOIN_PINNING_API_URL` — Pinata IPFS pinning service URL
 - [ ] `WEB3_STRICT_MODE` — `true` у production. Якщо `true`, Web3 stubs (Chainlink, Hadron) raise при відсутності ENV.
 - [ ] `RAILS_ALLOWED_HOSTS` — comma-separated allowlist хостів для захисту від DNS-rebinding атак (підтримує leading `.` для subdomain wildcard, напр. `api.silkennet.com,.silkennet.com`). Якщо не встановлено — Rails логує попередження `[SECURITY]` при кожному старті контейнера. Встановлюється через Kamal `env.clear` або Akash SDL. **⚠️ Обов'язково для production.**
+- [ ] `APP_HOST` — хост для Action Mailer `default_url_options` (`config/environments/production.rb`; `ENV.fetch("APP_HOST", "silkennet.com")`). Дефолт `silkennet.com`; override для іншого домену. Заведено в `config/deploy.yml` env.clear + Akash web/job (INF.13) — замінив хардкоджений `example.com`.
 - [ ] `DISABLE_SSL` — встановлювати лише `true` якщо TLS термінується зовнішнім проксі (Cloudflare Full-Strict, Akash ingress) і Rails сам не повинен форсувати HTTPS. За замовчуванням (`false` або відсутнє) `force_ssl` та `assume_ssl` активні. Встановлюється через Kamal `env.clear`.
 - [ ] `ALLOW_ALL_HOSTS` — встановлювати `true` щоб заглушити попередження `[SECURITY]` про відсутній `RAILS_ALLOWED_HOSTS` (наприклад, якщо хости динамічні на Akash deployment). Не рекомендується без явного RAILS_ALLOWED_HOSTS.
 - [ ] `CSP_ENFORCE` — встановлювати `true` щоб перевести Content Security Policy з `report-only` у `enforced` режим. Рекомендується після спостереження CSP violation-репортів протягом 1–2 тижнів у production.
+
+### 2.2. `credentials.yml.enc` ключі (Rails encrypted credentials — розшифровуються `RAILS_MASTER_KEY`)
+
+> Встановлюються через `bin/rails credentials:edit` (НЕ ENV). Відсутність → `nil`-помилки або explicit raise у відповідному сервісі **при виклику** (не на boot). `RAILS_MASTER_KEY` (§1) лише розшифровує файл — його вмісту не інвентаризує. Перевірено grep'ом `credentials.*` по `app/`+`config/`.
+
+- [ ] `peaq_signing_key` / `peaq_node_url` — Ed25519 ключ + RPC для peaq DID (ротація 90д → §5.4)
+- [ ] `iotex_w3bstream_url` / `iotex_api_key` — IoTeX W3bStream верифікація
+- [ ] `streamr_stream_id` / `streamr_api_key` — Streamr broadcast
+- [ ] `hadron_api_key` — Hadron KYC compliance
+- [ ] `filecoin_api_key` — Pinata/Filecoin архівація
+- [ ] `puro_earth.api_key` — Puro.earth registry · `dclimate.api_key` — dClimate верифікація
+- [ ] `the_graph_api_url` — The Graph query endpoint
+- [ ] `smtp.user_name` / `smtp.password` — SMTP для Action Mailer (разом з `APP_HOST` ENV — §2.1)
 
 ---
 
@@ -178,6 +194,7 @@
 ### 3.2. Job (Sidekiq) service env
 
 - [ ] **Усе з §3.1** (Sidekiq потребує boot-critical guards так само як Puma) — окрім `PORT` / `WEB_CONCURRENCY`.
+- [ ] `DB_POOL` — **лише job-роль.** Sidekiq concurrency=15 (`config/sidekiq.yml`); дефолтна `database.yml` формула (`RAILS_MAX_THREADS+2 = 5`) → `ActiveRecord::ConnectionTimeoutError` під навантаженням. Встанови `DB_POOL=17` (concurrency + 2 headroom). Заведено в `config/deploy.yml` job env + Akash `deploy.yaml` job (INF.13). **НЕ** виставляй на web-ролі (Puma threads = `RAILS_MAX_THREADS+2`, коректно).
 
 > **⚠️ AKASH ENV plaintext exposure:** Akash не шифрує ENV-блок SDL — значення видимі провайдеру через `lease-logs`/kubectl. Mitigation: scoped on-chain roles (MINTER/SLASHER only, ніколи DEFAULT_ADMIN), 90-day key rotation, audited providers (`signedBy.anyOf`). Детальніше: [`06_02 §Секрети SDL (Akash ENV plaintext)`](06_02_Akash_Network_Integration).
 
