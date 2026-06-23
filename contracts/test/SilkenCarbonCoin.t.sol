@@ -3,6 +3,9 @@ pragma solidity 0.8.35;
 
 import "forge-std/Test.sol";
 import "../SilkenCarbonCoin.sol";
+import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./helpers/Eip712SigUtils.sol";
 
 /**
  * @title SilkenCarbonCoin (SCC) Test Suite
@@ -20,7 +23,7 @@ import "../SilkenCarbonCoin.sol";
  *  9. Gas snapshots via forge test --gas-report
  * 10. Edge case coverage: zero address, zero amount, MAX_SUPPLY boundary
  */
-contract SilkenCarbonCoinTest is Test {
+contract SilkenCarbonCoinTest is Eip712SigUtils {
     SilkenCarbonCoin public scc;
 
     address public admin = makeAddr("admin");
@@ -31,6 +34,10 @@ contract SilkenCarbonCoinTest is Test {
     address public user2 = makeAddr("user2");
     address public unauthorized = makeAddr("unauthorized");
 
+    // [permit] EIP-2612 signer — needs the private key, so assigned in setUp (makeAddrAndKey).
+    address public permitOwner;
+    uint256 public permitOwnerPk;
+
     string public constant TREE_DID = "SNET-1A2B3C4D";
 
     event CarbonMinted(address indexed investor, uint256 amount, bytes32 indexed treeDidHash, string treeDid);
@@ -38,6 +45,7 @@ contract SilkenCarbonCoinTest is Test {
 
     function setUp() public {
         scc = new SilkenCarbonCoin(admin, pauser, minter, slasher);
+        (permitOwner, permitOwnerPk) = makeAddrAndKey("permitOwner");
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -418,6 +426,89 @@ contract SilkenCarbonCoinTest is Test {
         // Verify DOMAIN_SEPARATOR exists (EIP-712)
         bytes32 ds = scc.DOMAIN_SEPARATOR();
         assertTrue(ds != bytes32(0));
+    }
+
+    /// @dev Happy path: a valid signature sets the allowance and burns exactly one nonce.
+    function test_permit_setsAllowanceAndIncrementsNonce() public {
+        uint256 value = 1_000e18;
+        uint256 deadline = block.timestamp + 1 hours;
+        assertEq(scc.nonces(permitOwner), 0);
+
+        bytes32 digest = _permitDigest(address(scc), permitOwner, user1, value, deadline);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(permitOwnerPk, digest);
+
+        vm.expectEmit(true, true, false, true, address(scc));
+        emit IERC20.Approval(permitOwner, user1, value);
+        scc.permit(permitOwner, user1, value, deadline, v, r, s);
+
+        assertEq(scc.allowance(permitOwner, user1), value);
+        assertEq(scc.nonces(permitOwner), 1);
+    }
+
+    /// @dev A signature presented after its deadline is rejected (exact error + arg).
+    function testRevert_permit_expiredDeadline() public {
+        uint256 deadline = block.timestamp + 1 hours;
+        bytes32 digest = _permitDigest(address(scc), permitOwner, user1, 1e18, deadline);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(permitOwnerPk, digest);
+
+        vm.warp(deadline + 1); // now past the deadline
+        vm.expectRevert(abi.encodeWithSelector(ERC20Permit.ERC2612ExpiredSignature.selector, deadline));
+        scc.permit(permitOwner, user1, 1e18, deadline, v, r, s);
+    }
+
+    /// @dev Replaying a consumed signature fails: the nonce already advanced, so the
+    ///      recovered signer no longer matches the owner. Proves nonce-based replay safety.
+    function testRevert_permit_replayConsumesNonce() public {
+        uint256 value = 5e18;
+        uint256 deadline = block.timestamp + 1 hours;
+        bytes32 digest = _permitDigest(address(scc), permitOwner, user1, value, deadline);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(permitOwnerPk, digest);
+
+        scc.permit(permitOwner, user1, value, deadline, v, r, s); // consumes nonce 0
+        assertEq(scc.nonces(permitOwner), 1);
+
+        vm.expectPartialRevert(ERC20Permit.ERC2612InvalidSigner.selector);
+        scc.permit(permitOwner, user1, value, deadline, v, r, s); // same sig, now nonce 1 → mismatch
+    }
+
+    /// @dev Cross-chain replay: a permit signed for THIS chain is rejected on another chain.
+    ///      OZ rebuilds the EIP-712 domain separator when `block.chainid` changes, so the
+    ///      recovered signer no longer matches the owner. SCC is Polygon-only — this locks the
+    ///      invariant against a future regression (e.g. a hardcoded/cached domain separator).
+    function testRevert_permit_crossChainReplay() public {
+        uint256 value = 5e18;
+        uint256 deadline = block.timestamp + 1 hours;
+        bytes32 digest = _permitDigest(address(scc), permitOwner, user1, value, deadline);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(permitOwnerPk, digest);
+
+        vm.chainId(999); // simulate the same contract/key on a different chain
+        vm.expectPartialRevert(ERC20Permit.ERC2612InvalidSigner.selector);
+        scc.permit(permitOwner, user1, value, deadline, v, r, s);
+    }
+
+    /// @dev An owner-bound digest signed by a DIFFERENT key is rejected (forged signature).
+    function testRevert_permit_wrongSigner() public {
+        (, uint256 attackerPk) = makeAddrAndKey("permitAttacker");
+        uint256 value = 5e18;
+        uint256 deadline = block.timestamp + 1 hours;
+
+        bytes32 digest = _permitDigest(address(scc), permitOwner, user1, value, deadline);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(attackerPk, digest); // wrong key
+
+        vm.expectPartialRevert(ERC20Permit.ERC2612InvalidSigner.selector);
+        scc.permit(permitOwner, user1, value, deadline, v, r, s);
+    }
+
+    /// @dev Property: any value / future deadline yields a valid allowance + single nonce burn.
+    function testFuzz_permit_setsAllowance(uint256 value, uint64 deadlineOffset) public {
+        uint256 deadline = block.timestamp + bound(deadlineOffset, 1, 365 days);
+        bytes32 digest = _permitDigest(address(scc), permitOwner, user1, value, deadline);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(permitOwnerPk, digest);
+
+        scc.permit(permitOwner, user1, value, deadline, v, r, s);
+
+        assertEq(scc.allowance(permitOwner, user1), value);
+        assertEq(scc.nonces(permitOwner), 1);
     }
 
     // ═══════════════════════════════════════════════════════════════════

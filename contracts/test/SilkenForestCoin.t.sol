@@ -3,6 +3,11 @@ pragma solidity 0.8.35;
 
 import "forge-std/Test.sol";
 import "../SilkenForestCoin.sol";
+import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
+import {Nonces} from "@openzeppelin/contracts/utils/Nonces.sol";
+import "./helpers/Eip712SigUtils.sol";
 
 /**
  * @title SilkenForestCoin (SFC) Test Suite
@@ -16,7 +21,7 @@ import "../SilkenForestCoin.sol";
  *  5. Invariant: totalSupply <= MAX_SUPPLY after any operation
  *  6. Edge cases: auto-delegation, voting power after slash, pause bypass
  */
-contract SilkenForestCoinTest is Test {
+contract SilkenForestCoinTest is Eip712SigUtils {
     SilkenForestCoin public sfc;
 
     address public admin = makeAddr("admin");
@@ -27,6 +32,10 @@ contract SilkenForestCoinTest is Test {
     address public user2 = makeAddr("user2");
     address public unauthorized = makeAddr("unauthorized");
 
+    // [permit/delegateBySig] EIP-712 signer — needs the private key (assigned in setUp).
+    address public permitOwner;
+    uint256 public permitOwnerPk;
+
     string public constant CLUSTER_ID = "cluster-alpha-1";
 
     event ForestMinted(address indexed investor, uint256 amount, bytes32 indexed clusterIdHash, string clusterId);
@@ -34,6 +43,7 @@ contract SilkenForestCoinTest is Test {
 
     function setUp() public {
         sfc = new SilkenForestCoin(admin, pauser, minter, slasher);
+        (permitOwner, permitOwnerPk) = makeAddrAndKey("permitOwner");
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -457,6 +467,161 @@ contract SilkenForestCoinTest is Test {
 
     function test_nonces_returnsZeroForNewAddress() public view {
         assertEq(sfc.nonces(user1), 0);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ERC-2612 PERMIT (EIP-712 gasless approvals)
+    // ═══════════════════════════════════════════════════════════════════
+
+    function test_permit_setsAllowanceAndIncrementsNonce() public {
+        uint256 value = 1_000e18;
+        uint256 deadline = block.timestamp + 1 hours;
+        assertEq(sfc.nonces(permitOwner), 0);
+
+        bytes32 digest = _permitDigest(address(sfc), permitOwner, user1, value, deadline);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(permitOwnerPk, digest);
+
+        vm.expectEmit(true, true, false, true, address(sfc));
+        emit IERC20.Approval(permitOwner, user1, value);
+        sfc.permit(permitOwner, user1, value, deadline, v, r, s);
+
+        assertEq(sfc.allowance(permitOwner, user1), value);
+        assertEq(sfc.nonces(permitOwner), 1);
+    }
+
+    function testRevert_permit_expiredDeadline() public {
+        uint256 deadline = block.timestamp + 1 hours;
+        bytes32 digest = _permitDigest(address(sfc), permitOwner, user1, 1e18, deadline);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(permitOwnerPk, digest);
+
+        vm.warp(deadline + 1);
+        vm.expectRevert(abi.encodeWithSelector(ERC20Permit.ERC2612ExpiredSignature.selector, deadline));
+        sfc.permit(permitOwner, user1, 1e18, deadline, v, r, s);
+    }
+
+    function testRevert_permit_replayConsumesNonce() public {
+        uint256 value = 5e18;
+        uint256 deadline = block.timestamp + 1 hours;
+        bytes32 digest = _permitDigest(address(sfc), permitOwner, user1, value, deadline);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(permitOwnerPk, digest);
+
+        sfc.permit(permitOwner, user1, value, deadline, v, r, s);
+        assertEq(sfc.nonces(permitOwner), 1);
+
+        vm.expectPartialRevert(ERC20Permit.ERC2612InvalidSigner.selector);
+        sfc.permit(permitOwner, user1, value, deadline, v, r, s);
+    }
+
+    /// @dev SFC is governance-critical; lock the cross-chain replay invariant for its permit too.
+    function testRevert_permit_crossChainReplay() public {
+        uint256 value = 5e18;
+        uint256 deadline = block.timestamp + 1 hours;
+        bytes32 digest = _permitDigest(address(sfc), permitOwner, user1, value, deadline);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(permitOwnerPk, digest);
+
+        vm.chainId(999);
+        vm.expectPartialRevert(ERC20Permit.ERC2612InvalidSigner.selector);
+        sfc.permit(permitOwner, user1, value, deadline, v, r, s);
+    }
+
+    function testRevert_permit_wrongSigner() public {
+        (, uint256 attackerPk) = makeAddrAndKey("permitAttacker");
+        uint256 value = 5e18;
+        uint256 deadline = block.timestamp + 1 hours;
+
+        bytes32 digest = _permitDigest(address(sfc), permitOwner, user1, value, deadline);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(attackerPk, digest);
+
+        vm.expectPartialRevert(ERC20Permit.ERC2612InvalidSigner.selector);
+        sfc.permit(permitOwner, user1, value, deadline, v, r, s);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ERC20Votes delegateBySig (EIP-712 gasless delegation)
+    // ═══════════════════════════════════════════════════════════════════
+
+    /// @dev Happy path: a valid delegation signature moves voting power and burns one nonce.
+    function test_delegateBySig_delegatesVotingPower() public {
+        vm.prank(minter);
+        sfc.mint(permitOwner, 1_000e18, CLUSTER_ID); // auto-delegates to self on first mint
+        assertEq(sfc.getVotes(permitOwner), 1_000e18);
+
+        uint256 nonce = sfc.nonces(permitOwner);
+        uint256 expiry = block.timestamp + 1 hours;
+        bytes32 digest = _delegationDigest(address(sfc), user2, nonce, expiry);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(permitOwnerPk, digest);
+
+        sfc.delegateBySig(user2, nonce, expiry, v, r, s);
+
+        assertEq(sfc.delegates(permitOwner), user2);
+        assertEq(sfc.getVotes(user2), 1_000e18);
+        assertEq(sfc.getVotes(permitOwner), 0);
+        assertEq(sfc.nonces(permitOwner), nonce + 1);
+    }
+
+    function testRevert_delegateBySig_expired() public {
+        uint256 nonce = sfc.nonces(permitOwner);
+        uint256 expiry = block.timestamp + 1 hours;
+        bytes32 digest = _delegationDigest(address(sfc), user2, nonce, expiry);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(permitOwnerPk, digest);
+
+        vm.warp(expiry + 1);
+        vm.expectRevert(abi.encodeWithSelector(IVotes.VotesExpiredSignature.selector, expiry));
+        sfc.delegateBySig(user2, nonce, expiry, v, r, s);
+    }
+
+    function testRevert_delegateBySig_replayConsumesNonce() public {
+        uint256 nonce = sfc.nonces(permitOwner);
+        uint256 expiry = block.timestamp + 1 hours;
+        bytes32 digest = _delegationDigest(address(sfc), user2, nonce, expiry);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(permitOwnerPk, digest);
+
+        sfc.delegateBySig(user2, nonce, expiry, v, r, s); // consumes the nonce
+        // Replay: signer recovers to permitOwner again, but the nonce counter advanced →
+        // _useCheckedNonce reverts InvalidAccountNonce(permitOwner, nonce + 1).
+        vm.expectPartialRevert(Nonces.InvalidAccountNonce.selector);
+        sfc.delegateBySig(user2, nonce, expiry, v, r, s);
+    }
+
+    /// @dev delegateBySig has NO "recovered == owner" check (unlike permit), so a cross-chain
+    ///      signature does not revert — it recovers a garbage address and delegates from it
+    ///      (zero voting power). The invariant under test: the intended signer's delegation is
+    ///      untouched, so no real voting power can be moved by a foreign-chain signature.
+    function test_delegateBySig_crossChainDoesNotAffectIntendedSigner() public {
+        vm.prank(minter);
+        sfc.mint(permitOwner, 1_000e18, CLUSTER_ID);
+        assertEq(sfc.delegates(permitOwner), permitOwner);
+
+        uint256 expiry = block.timestamp + 1 hours;
+        bytes32 digest = _delegationDigest(address(sfc), user2, 0, expiry); // nonce 0 on this chain
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(permitOwnerPk, digest);
+
+        vm.chainId(999);
+        sfc.delegateBySig(user2, 0, expiry, v, r, s); // delegates from a powerless recovered addr
+
+        assertEq(sfc.delegates(permitOwner), permitOwner); // intended signer untouched
+        assertEq(sfc.getVotes(permitOwner), 1_000e18);
+    }
+
+    /// @dev Diamond override (`nonces()` over ERC20Permit + Nonces): permit and delegateBySig
+    ///      share ONE per-account nonce sequence. A permit burns nonce 0, so the next
+    ///      delegateBySig must use nonce 1. Exercises SilkenForestCoin.nonces() override.
+    function test_nonce_sharedBetweenPermitAndDelegation() public {
+        assertEq(sfc.nonces(permitOwner), 0);
+
+        uint256 deadline = block.timestamp + 1 hours;
+        bytes32 pDigest = _permitDigest(address(sfc), permitOwner, user1, 1e18, deadline);
+        (uint8 pv, bytes32 pr, bytes32 ps) = vm.sign(permitOwnerPk, pDigest);
+        sfc.permit(permitOwner, user1, 1e18, deadline, pv, pr, ps); // burns nonce 0
+        assertEq(sfc.nonces(permitOwner), 1);
+
+        uint256 expiry = block.timestamp + 1 hours;
+        bytes32 dDigest = _delegationDigest(address(sfc), user2, 1, expiry); // must be nonce 1
+        (uint8 dv, bytes32 dr, bytes32 ds) = vm.sign(permitOwnerPk, dDigest);
+        sfc.delegateBySig(user2, 1, expiry, dv, dr, ds);
+
+        assertEq(sfc.nonces(permitOwner), 2);
+        assertEq(sfc.delegates(permitOwner), user2);
     }
 
     // ═══════════════════════════════════════════════════════════════════
