@@ -659,7 +659,7 @@ ENV-блоки `web` та `job` сервісів **дзеркалюють** од
 
 | Змінна | Значення | Required for | Опис |
 |--------|---------|-------------|------|
-| `WEB3_STRICT_MODE` | `true` | boot / web3-worker | Hadron KYC/RWA + Chainlink dispatch/callback fail-closed на missing creds (перевіряють ЛИШЕ цей прапор, не `Rails.env`); web+job (INF.11) |
+| `WEB3_STRICT_MODE` | `true` | web3-worker | Hadron KYC/RWA + Chainlink dispatch/callback fail-closed на missing creds (ці сервіси перевіряють ЛИШЕ цей прапор, не `Rails.env`; boot-guard/W3bstream вже строгі через `RAILS_ENV=production`); web+job (INF.11) |
 | `RAILS_ALLOWED_HOSTS` | *(потрібно встановити)* | runtime ⚠️ | Comma-separated allowlist (DNS-rebinding захист) — напр. `api.silkennet.com,.silkennet.com` |
 | `DISABLE_SSL` | *(не встановлювати)* | runtime | `true` лише якщо Akash ingress / Cloudflare термінує TLS |
 | `CSP_ENFORCE` | *(не встановлювати)* | runtime | `true` після burn-in CSP report-only (1–2 тижні) |
