@@ -808,8 +808,8 @@
 
 #### S1.1 — GitHub Secrets заповнення
 - **P0** · 👤 · 🟢 · → `06_04`
-- **Стан:** Checklist + інвентаризація 4 місць секретів готові. Лишається заповнити GitHub repo secrets. Канон `06_04`.
-- [ ] 👤 заповнити GitHub repository secrets (P0-blocking перелік — `06_04 §1.1`) → верифікувати CI
+- **Стан:** Checklist + інвентаризація 4 місць секретів готові. **[B1/INF.19]** CI Kamal deploy тепер мапить увесь `env.secret` набір → GitHub Secrets = P0 (`§1.1`) + Web3/runtime (`§1.4`). Лишається заповнити. Канон `06_04`.
+- [ ] 👤 заповнити GitHub repository secrets (повний набір — `06_04 §1.1` + §1.4) → верифікувати CI
 
 #### S2.1 — Верифікація метрик після deploy
 - **P0** · 👤 · 🟢 · → `06_03`
@@ -877,9 +877,14 @@
 - [ ] 🤖 Akash `coap` service + Kamal `coap` role (dedicated process, expose 5683/udp) — на Queen-bring-up
 
 #### INF.18 — Solid Queue: dead scaffold vs planned (research)
-- **P3** · 👤 · ⚪ · → `06_01`, `04_02`
-- **Стан:** Не розпочато (research) — Solid Queue присутній (gem + `config/queue.yml` + `db/queue_schema.rb` + `queue` база в `database.yml`/terraform), АЛЕ не активний: `config.active_job.queue_adapter = :sidekiq`, `recurring.yml` сам каже «unused — Sidekiq». Наразі мертвий Rails-8 scaffold. Founder: НЕ видаляти (може плануватись). Рішення: підтвердити used/planned vs scaffold → лишити dormant чи прибрати (gem+config+schema+`queue` база+terraform). `queue` база коректно конфігурована (INF.16). Канон `06_01`.
-- [ ] 👤 рішення: Solid Queue planned (dormant) чи cleanup (remove)
+- **P3** · 👤 · 🟢 · → `06_01`, `04_02`
+- **Стан:** Research closed (2026-06-23, 8-agent canon-audit + verify) — **dead-scaffold verdict.** Докази: adapter=`:sidekiq` (`config/environments/production.rb`), `recurring.yml` каже «unused — all handled by Sidekiq», 13 живих cron у `sidekiq.yml`, нема `mission_control`, `queue`-база порожня. Footprint (8 місць): gem · `config/queue.yml` · `recurring.yml` · `db/queue_schema.rb` · `database.yml` queue-блок · terraform queue-база · `bin/jobs` · `rails_schema.rb`. Cleanup = zero production-risk, АЛЕ **рішення founder = лишити dormant** (може плануватись). Канон `06_01`.
+- [ ] 👤 (опц.) revisit dormant→cleanup, якщо Solid Queue остаточно не входить у плани
+
+#### INF.19 — CI Kamal secret-starvation (env-mapping) + KREDIS/POSTGRES drift [B1/H2]
+- **P0** · 🤖+👤 · 🟢 · → `06_04 §1`
+- **Стан:** Machine-half ✅ (commit `c3ed3019` + canon `06_04 §1.4`) — **корінь, чому перший deploy ніколи не виживав** (pre-deploy consistency audit, 8-agent). Обидва deploy-workflow передавали в `kamal deploy` лише 5 із 24 секретів; `.kamal/secrets` читає всі 24 з shell-ENV → решта інжектились порожніми → boot-crash (`RAILS_MASTER_KEY` decrypt / `PROVISIONING_MASTER_KEY` guard / oracle KeyError) або web3-strict raise. `verify-secrets` перевіряв лише 1-2 → зелений CI над зламаним деплоєм (без секретів `configured=false` → skip → шлях ніколи не біг live, тож діра не спливала). Fix: повний env-mapping в обидва workflow + `verify-secrets` гейтить повний boot-critical набір (fail-loud prod / skip-clean canopy) + warn на lazy. Супутнє: `KREDIS_REDIS_URL` виведено з усіх deploy-surface (auto-derive DB 1 з `REDIS_URL`); `RAILS_MASTER_KEY` ENV-first; H2 — Akash explicit `POSTGRES_DATABASE`. Канон `06_04 §1.4` + drift-guard.
+- [ ] 👤 завести повний deploy-secret набір у GitHub Secrets (`06_04 §1.1` + §1.4) → верифікувати fail-loud `verify-secrets` + boot на першому деплої
 
 #### S4.3 — Akash SDL secrets
 - **P1** · 👤 · ⚪ · → `06_02`

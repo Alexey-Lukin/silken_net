@@ -50,12 +50,15 @@
 >
 > **Перевірка покриття:** `grep -rh "secrets\." .github/workflows/ | grep -oP "secrets\.[A-Z_]+" | sort -u`
 >
-> Поточно у workflows використовуються: `POSTGRES_PASSWORD` (живить Kamal + `TF_VAR_db_password`), `CANOPY_REDIS_URL`, `GCP_PROJECT_ID`, `GCP_SA_KEY`, `GITHUB_TOKEN` (auto), `KAMAL_MASTER_KEY`, `PROJECT_PAT`, `RAILS_MASTER_KEY`, `REDIS_URL`, `SSH_KNOWN_HOSTS`, `SSH_PRIVATE_KEY`, `SSH_PUBLIC_KEY`. (`DATABASE_URL`/`DATABASE_PASSWORD`/`CANOPY_DATABASE_URL` виведені — component style, INF.16.)
+> **[B1] CI Kamal deploy мапить увесь `env.secret` набір.** `deploy.yml`/`deploy-production.yml` у кроці `kamal deploy` передають **весь** `config/deploy.yml env.secret` набір із GitHub Secrets у shell-ENV — `.kamal/secrets` читає кожну як `$VAR`. Пропущена тут = порожній інжект → boot-crash (`RAILS_MASTER_KEY` decrypt / `PROVISIONING_MASTER_KEY` guard / oracle KeyError) або web3-strict raise. Тому **і P0-набір (§1.1), і Web3/runtime-набір (§1.4) = GitHub Secrets.** `verify-secrets` гейтить повний boot-critical набір (fail-loud на production, skip-clean на canopy).
+>
+> `DATABASE_URL`/`DATABASE_PASSWORD`/`CANOPY_DATABASE_URL` виведені — component style, INF.16. `KREDIS_REDIS_URL` виведений — Kredis auto-derive DB 1 із `REDIS_URL` (`config/redis/shared.yml`, §2.1).
 
 ### 1.1. P0 — Blocking (без цих secrets CI/CD не запуститься)
 
-- [ ] `RAILS_MASTER_KEY` — Rails credentials decryption key (`config/master.key`)
+- [ ] `RAILS_MASTER_KEY` — Rails credentials decryption key. **[B1]** CI читає його як GitHub Secret; `.kamal/secrets` тепер ENV-first (`${RAILS_MASTER_KEY:-$(cat config/master.key)}`) — `config/master.key` gitignored, відсутній у CI checkout, тож GitHub Secret мусить перемогти, інакше boot-decrypt падає.
 - [ ] `KAMAL_MASTER_KEY` — Kamal-encrypted secrets master key
+- [ ] `PROVISIONING_MASTER_KEY` — HKDF root для per-device AES-деривації (boot-critical: `config/initializers/master_key_strength_check.rb` raise при відсутності в production). **[B1]** `verify-secrets` перевіряє присутність + довжину ≥64; обидва deploy-workflow маплять його у `kamal deploy`. Генерувати: `ruby -e "require 'securerandom'; puts SecureRandom.hex(32)"`. (Runtime-роль — §2.)
 - [ ] `GCP_SA_KEY` — GCP Service Account JSON ключ (raw або base64). Дозволи: `roles/artifactregistry.writer`, `roles/cloudsql.client`. Створюється в GCP IAM → Service Accounts → Keys.
 - [ ] `GCP_PROJECT_ID` — ID GCP проєкту (наприклад, `silken-net-prod`)
 - [ ] `POSTGRES_PASSWORD` — пароль Cloud SQL `silken_net` user (≥16 символів, password manager). **Component style** (`config/database.yml`): host/user/database — non-secret (`config/deploy.yml env.clear`), лише пароль = секрет. Один секрет живить Kamal `POSTGRES_PASSWORD` **і** Terraform `TF_VAR_db_password`. Той самий для production + canopy — ізоляція через `POSTGRES_DATABASE` (canopy = `silken_net_canopy`), НЕ окремий URL. (Замінив `DATABASE_URL`/`DATABASE_PASSWORD`/`CANOPY_DATABASE_URL` — INF.16.)
@@ -71,9 +74,24 @@
 
 ### 1.3. P2 — Опціонально / Auto-derived
 
-- [ ] `KREDIS_REDIS_URL` — Production Redis (DB 1) для Kredis distributed locks. **Auto-derive:** якщо не встановлено, можна вивести з `REDIS_URL` замінивши `/0` → `/1` (зробити вручну для безпеки).
+- [ ] `KREDIS_REDIS_URL` — **[B1] виведено з усіх deploy-surface.** Kredis auto-derive DB 1 із `REDIS_URL` (`config/redis/shared.yml`: `/0`→`/1`). Не оголошений у Kamal / Akash / Terraform. Заводь GitHub Secret лише щоб указати на **окремий** Redis-інстанс (рідко).
 - [ ] `RACK_ATTACK_REDIS_URL` — Production Redis (DB 2) для rate limiting. Опціонально (auto-derive із `REDIS_URL`).
 - [ ] `SCORECARD_TOKEN` — fine-grained read-only PAT (repo admin: read) для `Sec · Scorecard` (OpenSSF, OPS.10). **Опціонально:** без нього Scorecard працює, але пропускає Branch-Protection/Webhooks-перевірки (`GITHUB_TOKEN` їх не читає). Дім workflow — [`06_07 §1`](06_07_CICD_and_Runbook_Index).
+
+### 1.4. Web3 / runtime secrets — GitHub Secrets для CI Kamal deploy [B1]
+
+> Раніше ці жили лише у `.kamal/secrets` (§2) / Akash SDL (§3) / Terraform (§4). **Після B1** обидва deploy-workflow маплять їх із GitHub Secrets у крок `kamal deploy`, тож для CI-деплою вони **мусять існувати як GitHub Repository Secrets**. Повний опис кожного — §2.1 (one-home); тут лише перелік + boot-vs-lazy клас (`verify-secrets` гейтить boot-critical, warn на lazy).
+
+**Boot-critical** (порожній → контейнер падає на boot; `verify-secrets` блокує):
+- [ ] `ORACLE_MINTER_PRIVATE_KEY` · `ORACLE_SLASHER_PRIVATE_KEY` — `web3_network_guard` raise при boot, якщо немає ні specific-ключа, ні `ORACLE_PRIVATE_KEY`-fallback для minting/slashing.
+
+**Lazy runtime** (порожній → фіча degraded на першому use, НЕ boot-crash; `verify-secrets` warn):
+- [ ] `SENTRY_DSN` · `ETHEREUM_ANCHOR_PRIVATE_KEY` · `ORACLE_PRIVATE_KEY` (legacy fallback)
+- [ ] RPC: `ALCHEMY_POLYGON_RPC_URL` · `ALCHEMY_ETHEREUM_RPC_URL` · `SOLANA_RPC_URL` · `POLYGON_RPC_URL` · `CELO_RPC_URL` (порожній RPC `web3_network_guard` толерує; testnet-marker — raise)
+- [ ] Solana: `SOLANA_WALLET_KEYPAIR` · `SOLANA_FEE_PAYER_PUBKEY` · `SOLANA_FEE_PAYER_TOKEN_ACCOUNT` · `SOLANA_USDC_MINT_ADDRESS`
+- [ ] Chainlink: `CHAINLINK_FUNCTIONS_ROUTER` · `CHAINLINK_SUBSCRIPTION_ID` · `CHAINLINK_HMAC_SECRET` · `CHAINLINK_DON_ID`
+
+> **🔴 Drift guard:** цей набір = `config/deploy.yml env.secret` = `.kamal/secrets` = deploy-workflow `env:` блок. Розбіжність у будь-яку сторону → порожній інжект → boot-crash. Канонічний список — `config/deploy.yml env.secret` (SSOT).
 
 ---
 
@@ -81,12 +99,13 @@
 
 > **Шлях:** `.kamal/secrets` (НЕ комітити!). Файл уже існує у репо і містить **посилання на ENV** (`$VARIABLE`), не raw values. Перед `kamal deploy` встанови ці змінні у shell або CI environment.
 
-- [ ] `RAILS_MASTER_KEY` — `$(cat config/master.key)` (читається локально під час деплою)
+- [ ] `RAILS_MASTER_KEY` — **[B1]** ENV-first: `${RAILS_MASTER_KEY:-$(cat config/master.key)}`. CI бере з GitHub Secret (§1.1; `config/master.key` gitignored → відсутній у checkout); локально fallback на файл.
 - [ ] `GCP_ARTIFACT_REGISTRY_KEY` — base64-encoded GCP Service Account JSON для pull Docker images з Artifact Registry. У CI підставляється з `GCP_SA_KEY`.
 - [ ] `POSTGRES_PASSWORD` — те саме значення що й GitHub Secret (host/user/database → `env.clear`, не secret)
 - [ ] `REDIS_URL` — те саме значення
-- [ ] `KREDIS_REDIS_URL` — Redis DB 1 (Kredis locks для Web3 nonce)
 - [ ] `SENTRY_DSN` — Sentry project DSN. Без цього Sentry **інертний** — production помилки не репортуються (BLOCKER у [`00_07`](00_07_Action_Plan_Tracker)). Отримати: Sentry → Project Settings → Client Keys (DSN).
+
+> **`KREDIS_REDIS_URL` виведено [B1]** — Kredis auto-derive DB 1 із `REDIS_URL` (`config/redis/shared.yml`). Не оголошуй у `.kamal/secrets` / `env.secret`: порожній або placeholder-інжект truthy для `ENV.fetch` і перебив би derive → Kredis конектиться до сміття. Override лише вказівкою на окремий Redis-інстанс.
 - [ ] `PROVISIONING_MASTER_KEY` — HKDF master key для per-device AES key derivation. Генерувати: `ruby -e "require 'securerandom'; puts SecureRandom.hex(32)"`. ⚠️ **Production guard:** provisioning endpoint **MUST** raise/refuse при відсутності ENV у production (`Rails.env.production?`) — будь-який fallback на raw AES key є **критичною security regression** і допустимий ТІЛЬКИ у TRL4 lab mode (`RAILS_ENV=development|test`). Recommended controller-level guard: `raise "PROVISIONING_MASTER_KEY required in production" if Rails.env.production? && ENV["PROVISIONING_MASTER_KEY"].blank?`
 - [ ] `CHAINLINK_FUNCTIONS_ROUTER` — адреса Chainlink Functions Router contract на Polygon
 - [ ] `CHAINLINK_SUBSCRIPTION_ID` — ID Chainlink Functions subscription (з https://functions.chain.link)
@@ -153,11 +172,10 @@
 
 **Application core (boot):**
 - [ ] `RAILS_MASTER_KEY` — те саме що в Kamal
-- [ ] `POSTGRES_HOST`=`127.0.0.1` / `POSTGRES_USER`=`silken_net` / `POSTGRES_PASSWORD` — Cloud SQL через Auth Proxy sidecar (component style; host/user non-secret, лише пароль секрет)
+- [ ] `POSTGRES_HOST`=`127.0.0.1` / `POSTGRES_USER`=`silken_net` / `POSTGRES_PASSWORD` / `POSTGRES_DATABASE`=`silken_net_production` — Cloud SQL через Auth Proxy sidecar (component style; host/user/database non-secret, лише пароль секрет). **[H2]** `POSTGRES_DATABASE` тепер explicit у SDL (web+job) — canopy-on-Akash render override на `silken_net_canopy`.
 - [ ] `CLOUD_SQL_INSTANCE_CONNECTION_NAME` — `<project>:<region>:<instance>`
 - [ ] `GCP_SA_KEY_BASE64` — base64-encoded GCP SA JSON (роль `roles/cloudsql.client` only)
-- [ ] `REDIS_URL` — Upstash Redis DB 0 (`rediss://`)
-- [ ] `KREDIS_REDIS_URL` — Upstash Redis DB 1 (`rediss://`)
+- [ ] `REDIS_URL` — Upstash Redis DB 0 (`rediss://`). **[B1]** `KREDIS_REDIS_URL` НЕ в SDL — Kredis auto-derive DB 1 (`config/redis/shared.yml`).
 - [ ] `RAILS_ENV` — `production` або `canopy`
 - [ ] `RAILS_MAX_THREADS` — типово `3` (узгоджено з `database.yml` pool)
 - [ ] `WEB_CONCURRENCY` — кількість Puma workers (web only, типово `4`)
@@ -231,7 +249,7 @@
 
 **Akash deployment app/infra (`terraform/akash/terraform.tfvars` рендериться у `deploy.yaml.tpl`):**
 
-> Mirror зі списку `env.secret` Kamal — повний breakdown див. [`06_02 §3.2 Змінні Terraform`](06_02_Akash_Network_Integration). 29 sensitive variables нижче.
+> Mirror зі списку `env.secret` Kamal — повний breakdown див. [`06_02 §3.2 Змінні Terraform`](06_02_Akash_Network_Integration). Sensitive variables нижче.
 
 *Application core:*
 - [ ] `rails_master_key`
@@ -239,7 +257,7 @@
 - [ ] `cloud_sql_instance_connection_name` — `terraform output database_connection_name`
 - [ ] `gcp_sa_key_base64` — base64-encoded SA JSON (роль `roles/cloudsql.client` only, див. [`06_02 §Security Exception`](06_02_Akash_Network_Integration))
 - [ ] `redis_url` — Upstash `rediss://...:6379` (DB 0)
-- [ ] `kredis_redis_url` — Upstash DB 1 (опц. — auto-derive з `redis_url` коли empty)
+> **[B1]** `kredis_redis_url` variable видалено з `terraform/akash/variables.tf` + `main.tf` — Kredis auto-derive DB 1 із `redis_url` (`config/redis/shared.yml`); SDL більше не інжектить `KREDIS_REDIS_URL`.
 
 *🛑 Boot-critical:*
 - [ ] `provisioning_master_key` — `SecureRandom.hex(32)`, валідація `length >= 32`

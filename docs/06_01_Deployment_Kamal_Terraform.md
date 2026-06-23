@@ -61,7 +61,7 @@
 | # | Перевірка | Деталі |
 |---|-----------|--------|
 | **1** | **DNS / TLS до `kamal setup`** | Після `terraform apply` скопіюй IP та створи A-запис (`api.silkennet.com → <IP>`). Дочекайся: `dig api.silkennet.com` → правильний IP. **Тільки тоді** запускай `kamal setup`. Причина: при ввімкненому `proxy.ssl` (зараз **закоментований** у `config/deploy.yml`) **kamal-proxy** (Kamal 2.x — НЕ Traefik 1.x) робить Let's Encrypt ACME-challenge — без живого DNS сертифікат не видасться і проксі не підніметься. Поточно `proxy.ssl` вимкнено → TLS термінується зовні (Cloudflare / Akash hostname, рішення `[INF.4]`); DNS усе одно потрібен для маршрутизації трафіку. |
-| **2** | **`.kamal/secrets` файл існує + повний** | Kamal читає секрети з `.kamal/secrets` (не з environment). Заповни **усі** змінні з `config/deploy.yml env.secret` (drift = boot crash або silent Web3 failure): **(a) Application core:** `RAILS_MASTER_KEY`, `POSTGRES_PASSWORD` (host/user/database — non-secret `env.clear`, component style `config/database.yml`), `REDIS_URL`, `KREDIS_REDIS_URL`, `GCP_ARTIFACT_REGISTRY_KEY`. **(b) 🛑 Boot-critical:** `PROVISIONING_MASTER_KEY` (`master_key_strength_check.rb` raises `SecurityError` без неї). **(c) Observability:** `SENTRY_DSN`. **(d) Web3 oracle keys:** `ORACLE_PRIVATE_KEY`, `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY`, `ETHEREUM_ANCHOR_PRIVATE_KEY`. **(e) RPC endpoints:** `ALCHEMY_POLYGON_RPC_URL`, `ALCHEMY_ETHEREUM_RPC_URL`, `SOLANA_RPC_URL`. **(f) Solana minting:** `SOLANA_WALLET_KEYPAIR`, `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS`. **(g) Chainlink:** `CHAINLINK_FUNCTIONS_ROUTER`, `CHAINLINK_SUBSCRIPTION_ID`, `CHAINLINK_HMAC_SECRET`, `CHAINLINK_DON_ID`. **Той самий список застосовується для Akash SDL** (`deploy/akash/deploy.yaml` + `deploy.yaml.tpl`) та Terraform (`terraform/akash/terraform.tfvars`) — див. [`06_02 §2 ENV (Секрети SDL)`](06_02_Akash_Network_Integration). |
+| **2** | **`.kamal/secrets` файл існує + повний** | Kamal читає секрети з `.kamal/secrets` (не з environment). Заповни **усі** змінні з `config/deploy.yml env.secret` (drift = boot crash або silent Web3 failure): **(a) Application core:** `RAILS_MASTER_KEY`, `POSTGRES_PASSWORD` (host/user/database — non-secret `env.clear`, component style `config/database.yml`), `REDIS_URL`, `GCP_ARTIFACT_REGISTRY_KEY` (registry pull). `KREDIS_REDIS_URL` — **не** додавати: Kredis auto-derive DB 1 з `REDIS_URL` (`config/redis/shared.yml`), порожній інжект перебив би derive [B1]. **(b) 🛑 Boot-critical:** `PROVISIONING_MASTER_KEY` (`master_key_strength_check.rb` raises `SecurityError` без неї). **(c) Observability:** `SENTRY_DSN`. **(d) Web3 oracle keys:** `ORACLE_PRIVATE_KEY`, `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY`, `ETHEREUM_ANCHOR_PRIVATE_KEY`. **(e) RPC endpoints:** `ALCHEMY_POLYGON_RPC_URL`, `ALCHEMY_ETHEREUM_RPC_URL`, `SOLANA_RPC_URL`. **(f) Solana minting:** `SOLANA_WALLET_KEYPAIR`, `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS`. **(g) Chainlink:** `CHAINLINK_FUNCTIONS_ROUTER`, `CHAINLINK_SUBSCRIPTION_ID`, `CHAINLINK_HMAC_SECRET`, `CHAINLINK_DON_ID`. **Той самий список застосовується для Akash SDL** (`deploy/akash/deploy.yaml` + `deploy.yaml.tpl`) та Terraform (`terraform/akash/terraform.tfvars`) — див. [`06_02 §2 ENV (Секрети SDL)`](06_02_Akash_Network_Integration). |
 | **3** | **Gas на Web3-гаманцях** | Воркери потребують нативної крипто: **MATIC** (Polygon), **ETH** (L1), **SOL** (Solana), **CELO** (Celo). Без газу → "Insufficient Funds" на кожній транзакції → Sidekiq потоне у ретраях. |
 | **4** | **LoRa-антена підключена** | **КРИТИЧНО.** Ніколи не подавай живлення без антени на SMA/U.FL порту. SX1262 відбиває RF назад у чип (high VSWR) — радіотракт згоряє за мілісекунди. Незворотно. Правило: антена → живлення. |
 | **5** | **HKDF AES-ключів (post-FW.1 + ARCH.42)** | Кожен Soldier має **per-device унікальний AES-128 LoRa ключ** (`aes_key[4]`, 16 bytes), а Queen — окремий **AES-256 CoAP ключ** для batch flush до Rails (`coap_key[8]`, 32 bytes). Обидва деривуються з `PROVISIONING_MASTER_KEY` через HKDF з різними info-strings (`"silken-aes-128-lora-key"` / `"silken-aes-256-device-key"`). Перевіряй на factory bench, що backend і firmware повертають той самий байтовий ключ за тим самим `device_uid`. Симптом mismatch: Queen бачить щойно декриптований пакет як сміття. Детальніше: [`03_06 §2`](03_06_Factory_Flashing_and_Key_Provisioning). |
@@ -111,8 +111,8 @@ terraform apply
 #
 # Application core:
 #   RAILS_MASTER_KEY, POSTGRES_HOST, POSTGRES_USER, POSTGRES_PASSWORD, CLOUD_SQL_INSTANCE_CONNECTION_NAME,
-#   GCP_SA_KEY_BASE64, REDIS_URL=rediss://<upstash>:6379,
-#   KREDIS_REDIS_URL=rediss://<upstash>:6379/1
+#   GCP_SA_KEY_BASE64, REDIS_URL=rediss://<upstash>:6379
+#   (KREDIS_REDIS_URL — НЕ задавати: Kredis auto-derive DB 1 з REDIS_URL, config/redis/shared.yml) [B1]
 # 🛑 Boot-critical (інакше Puma crash):
 #   PROVISIONING_MASTER_KEY=$(ruby -e "require 'securerandom'; puts SecureRandom.hex(32)")
 # Observability:
@@ -297,7 +297,7 @@ terraform apply
 | Підсистема | Сховище | Redis DB | ENV змінна | Конфігурація | TTL / Eviction |
 |-----------|---------|----------|------------|--------------|----------------|
 | **Sidekiq** (9 черг, scheduler) | Upstash Redis | **DB 0** | `REDIS_URL` | `config/initializers/sidekiq.rb` | Persistent (no eviction) |
-| **Kredis** (distributed locks) | Upstash Redis | **DB 1** | `KREDIS_REDIS_URL` | `config/redis/shared.yml` | 1–300 sec (lock TTL) |
+| **Kredis** (distributed locks) | Upstash Redis | **DB 1** | auto-derive з `REDIS_URL` [B1] | `config/redis/shared.yml` | 1–300 sec (lock TTL) |
 | **Rack::Attack** (rate limiting) | Upstash Redis | **DB 2** | `RACK_ATTACK_REDIS_URL` | `config/initializers/rack_attack.rb` | 10 min |
 | **Rails.cache** (Solid Cache) | PostgreSQL | — | — | `config/cache.yml` + `config/environments/production.rb` | Per-entry max_age |
 | **ActionCable** (Solid Cable) | PostgreSQL | — | — | `config/cable.yml` | 1 day message retention |
@@ -308,10 +308,10 @@ terraform apply
 ```bash
 # Обов'язкові:
 REDIS_URL=rediss://default:password@endpoint.upstash.io:6379/0       # Sidekiq (DB 0)
-KREDIS_REDIS_URL=rediss://default:password@endpoint.upstash.io:6379/1 # Kredis (DB 1)
 
-# Опціональні (автоматично деривуються з REDIS_URL):
-# RACK_ATTACK_REDIS_URL — якщо не вказано, auto-derive: замінює /0 → /2 в REDIS_URL
+# Опціональні (auto-derive з REDIS_URL — НЕ задавати без потреби, інакше перебиває derive):
+# KREDIS_REDIS_URL      — Kredis locks; auto-derive /0 → /1 у config/redis/shared.yml [B1]
+# RACK_ATTACK_REDIS_URL — rate-limit; auto-derive /0 → /2 у config/initializers/rack_attack.rb
 ```
 
 Логіка auto-derive у `config/initializers/rack_attack.rb`:
@@ -390,7 +390,7 @@ env:
     - RAILS_MASTER_KEY
     - POSTGRES_PASSWORD
     - REDIS_URL
-    - KREDIS_REDIS_URL
+    # KREDIS_REDIS_URL omitted — Kredis auto-derives DB 1 from REDIS_URL (config/redis/shared.yml). [B1]
     # --- Observability ---
     - SENTRY_DSN
     # --- Hardware provisioning gate (config/initializers/master_key_strength_check.rb) ---
@@ -595,7 +595,7 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
       api.silkennet.com → $(terraform output -raw ingress_ip)
       dig api.silkennet.com → правильний IP
 
-☑ 6. KREDIS_REDIS_URL в .kamal/secrets ← ВИПРАВЛЕНО
+☑ 6. Kredis DB 1 auto-derive з REDIS_URL ← ВИПРАВЛЕНО (B1 — свідомо НЕ в .kamal/secrets/SDL)
 
 ☑ 7. Cloud SQL доступний з Akash ← ВИПРАВЛЕНО (Cloud SQL Auth Proxy)
 
@@ -605,7 +605,7 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
 
 ☐ 10. Налаштувати Upstash Redis (заміна GCP Memorystore)
        Створити Upstash інстанс, отримати rediss:// URL
-       Вказати REDIS_URL та KREDIS_REDIS_URL в Akash SDL
+       Вказати REDIS_URL в Akash SDL (Kredis DB 1 auto-derive з нього)
 
 ☐ 11. Деплой на Akash Network
        cd terraform/akash && terraform apply

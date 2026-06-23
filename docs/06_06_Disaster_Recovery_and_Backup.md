@@ -136,7 +136,7 @@ gsutil cp gs://silken-net-terraform-state/default.tfstate#<GEN> \
 6. Оновити DNS A-запис → новий `ingress_ip`.
 
 ### 5.4 Redis (Upstash) loss
-Не потребує restore: Sidekiq jobs re-enqueue з БД-стану, Kredis locks re-acquire, Rack::Attack лічильники скидаються. Достатньо вказати новий `REDIS_URL`/`KREDIS_REDIS_URL` + redeploy.
+Не потребує restore: Sidekiq jobs re-enqueue з БД-стану, Kredis locks re-acquire, Rack::Attack лічильники скидаються. Достатньо вказати новий `REDIS_URL` + redeploy (Kredis DB 1 auto-derive з нього — `config/redis/shared.yml`; `KREDIS_REDIS_URL` окремо **не** задавати, перебило б derive).
 
 ---
 

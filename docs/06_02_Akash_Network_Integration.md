@@ -67,8 +67,9 @@
 | `CLOUD_SQL_INSTANCE_CONNECTION_NAME` | `bin/docker-entrypoint` | Cloud SQL Auth Proxy не стартує → entrypoint чекає 15 с → `exit 1` (fail-loud, INF.13; Rails не стартує замість мовчазного boot без БД) |
 | `GCP_SA_KEY_BASE64` | `bin/docker-entrypoint` | Auth Proxy не може автентифікуватися до Google Cloud API |
 | `REDIS_URL` | `config/initializers/sidekiq.rb` | Sidekiq client не підключиться |
-| `KREDIS_REDIS_URL` | `config/initializers/kredis.rb` | Distributed locks не працюють |
 | `PROVISIONING_MASTER_KEY` | `config/initializers/master_key_strength_check.rb` | **`SecurityError` у `after_initialize` → Puma crash до accept loop** |
+
+> **[B1]** `KREDIS_REDIS_URL` свідомо **не** boot-critical і не в SDL — Kredis auto-derive DB 1 з `REDIS_URL` (`config/redis/shared.yml`); placeholder/порожній інжект був би truthy для `ENV.fetch` і перебив би derive. Інвентар секретів — [`06_04 §2.1`](06_04_Secrets_Checklist).
 
 #### Категорія B — Web3 worker DeadSet (всі Sidekiq-воркери `web3_critical`)
 
@@ -598,7 +599,7 @@ ENV-блоки `web` та `job` сервісів **дзеркалюють** од
 | `CLOUD_SQL_INSTANCE_CONNECTION_NAME` | `REQUIRED_SECRET_NOT_SET` | **boot** | Cloud SQL instance connection (`project:region:instance`) |
 | `GCP_SA_KEY_BASE64` | `REQUIRED_SECRET_NOT_SET` | **boot** | Base64 SA JSON для Auth Proxy |
 | `REDIS_URL` | `REQUIRED_SECRET_NOT_SET` | **boot** | Sidekiq + ActionCable (Upstash `rediss://`) |
-| `KREDIS_REDIS_URL` | `REQUIRED_SECRET_NOT_SET` | **boot** | Distributed locks (DB 1) |
+| `KREDIS_REDIS_URL` | — (auto-derive з `REDIS_URL` → `/1`) | runtime | Kredis distributed locks — **не** задавати в SDL [B1] |
 | `RACK_ATTACK_REDIS_URL` | — (auto-derive з `REDIS_URL` → `/2`) | runtime | Rate-limiting (опц.) |
 | `RAILS_MAX_THREADS` | `3` | runtime | Puma threads/worker — узгоджено з `database.yml` pool |
 | `DB_POOL` | `17` (лише job) | runtime | ActiveRecord pool для job-сервісу — Sidekiq concurrency 15 проти дефолтного pool 5 (INF.13); web лишається default |
@@ -987,7 +988,7 @@ Mapping між конфігурацією Kamal (`config/deploy.yml` + `.kamal/s
 | `POSTGRES_PASSWORD` | `POSTGRES_PASSWORD=${db_password}` | `var.db_password` |
 | — (non-secret literals у SDL) | `POSTGRES_HOST=127.0.0.1` · `POSTGRES_USER=silken_net` | — |
 | `REDIS_URL` | `REDIS_URL=${redis_url}` | `var.redis_url` |
-| `KREDIS_REDIS_URL` | `KREDIS_REDIS_URL=${kredis_redis_url}` | `var.kredis_redis_url` (auto-derive) |
+| `KREDIS_REDIS_URL` | — (не в SDL — auto-derive DB 1) | — (variable видалено, B1) |
 | — (Cloud SQL Auth Proxy) | `CLOUD_SQL_INSTANCE_CONNECTION_NAME=...` | `var.cloud_sql_instance_connection_name` |
 | — (Cloud SQL Auth Proxy) | `GCP_SA_KEY_BASE64=...` | `var.gcp_sa_key_base64` |
 

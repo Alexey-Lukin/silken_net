@@ -326,7 +326,7 @@ jobs:
 
 Уся система живе в **одному репозиторії `silken_net`** (monorepo) — єдині правила контекстного управління та один CI на всі шари:
 
-- **`app/` · `lib/` · `config/` · `db/`** — Rails 8.1 ядро (PostgreSQL, Sidekiq, Solid Queue/Cable).
+- **`app/` · `lib/` · `config/` · `db/`** — Rails 8.1 ядро (PostgreSQL, Sidekiq, Solid Cache/Cable; Solid Queue — dormant scaffold, adapter=`:sidekiq`, INF.18).
 - **`contracts/`** — смарт-контракти (Solidity, Foundry toolchain + Slither CI).
 - **`firmware/`** — прошивка Soldier/Queen (C, mruby) для STM32WLE5JC + LoRa (host-тести `make -C firmware/test`).
 - **`tools/`** — in-silico (EBFC: PySCF/OpenMM) + ML (TinyML/log-mel) + CAD (PicoGK Code-as-CAD `tools/cad`, .NET 9; [`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)) пайплайни.
