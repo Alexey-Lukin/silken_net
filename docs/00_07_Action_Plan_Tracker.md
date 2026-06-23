@@ -726,12 +726,6 @@
 - **Стан:** Архітектурний дизайн готовий — task-assignment matching ranger↔bounty (scoring, `FOR UPDATE NOWAIT`, GPS/EXIF/IPFS→USDC, anti-Sybil). Заблоковано на Forester Guild PoPhW (E.20). Канон `04_02 §Forester Guild`. Ranger-scoring живить reputation-scaling operator-bond (BIZ.13 [`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)).
 - [ ] 🔗 зв'язати з Forester Guild PoPhW (E.20)
 
-#### TEST.4 — Backend AASM/Wallet concurrency tests (deferred)
-- **P2** · 🤖 · ⚪ · → `04_06 §B.1.3`
-- **Стан:** Race conditions у `BlockchainTransaction` AASM-переходах не тестуються (потребують multi-thread test) — `04_06 §B.1.3` Concurrent State. Finding: переходи `confirm!`/`fail!`/`escalate_to_review!` (`blockchain_transaction.rb`) **без** `requires_lock` — double-spend *запобігається* Wallet-песимістик-локом (`Wallet#lock_funds!`/`lock_and_mint!` `with_lock`/`lock!`) + Kredis per-oracle локом; `manual_review` = recovery-backstop. М'яка robustness-діра (самозагоюється в бік безпеки), НЕ money-loss. Flake-safe дизайн готовий: non-transactional fixtures + ручний `delete_all` + `with_connection` + order-independent інваріант.
-- [ ] 🤖 multi-thread test: `lock_funds!`/`lock_and_mint!` під N конкурентних тредів на одному wallet — інваріант «сумарний locked ≤ balance»; + конкурентні AASM-переходи
-- [ ] 🤖 (опційно) hardening: `requires_lock true` на confirm/fail/escalate — рішення з founder перед зміною money-path
-
 ## §05 · Web3 / Економіка / Slashing
 
 > Мультичейн, oracle/chain-конфіг та slashing-механіка — канон `05_xx`.
@@ -1260,6 +1254,7 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 | TEST.1 | Solidity contract coverage: низький forge `--ir-minimum` branch%/окремі line = артефакт виміру (require-reverts/`pause`/override-делегації тестовані+проходять; гейт на line/func), Governor `_cancel` func-геп закрито `test_cancel_byProposerWhilePending`. RSpec gate + firmware coverage-lane (раніше теж під TEST.1) — done | `04_06 §B.1.2`, §B.3 |
 | TEST.2 | Seed-залежний telemetry-flake (order/state-pollution, не регресія): CCM-блок витікав `TELEMETRY_CCM_ENABLED` — user-`after { ENV.delete }` біжить ДО тіардауну `stub_const("ENV")` → чистить стаблений Hash → флаг лишався в реальному ENV → `chunk_size` 21→29 → 21-байтні пакети тихо скіпались → падіння в SEC.10/unpacker/CoAP-e2e (CI seed 48720). Фікс: глобальний ENV-snapshot `config.around` у `rails_helper` (закрив весь клас ENV-витоків) + `preload_trees` дзеркалить `perform`-skip коротких chunk (TypeError на обрізаному хвості) + regression-тест; урок канонізовано | `04_06 §B.2`, §B.4 |
 | TEST.3 | Solidity test-hardening (закрив §B.1.2 ERC20Permit + Governor Integration): повна EIP-712 сюїта — `permit()` (happy/expired/replay/cross-chain `vm.chainId`/wrong-signer, SCC+SFC) + SFC `delegateBySig` + спільний-nonce diamond, shared helper `test/helpers/Eip712SigUtils.sol`; Governor↔SCC role-management end-to-end (DAO видає/ротує `MINTER_ROLE`/`SLASHER_ROLE` через 48h-Timelock + non-Timelock grant reverts) = pre-mainnet валідація BIZ.4. Cross-chain replay = інваріант (SCC лише Polygon), не жива загроза | `04_06 §B.1.2`, `05_06` |
+| TEST.4 | Backend AASM/Wallet concurrency — won't-do (свідоме рішення, не геп): money-safety тримає Postgres pessimistic-lock (`with_lock`/`lock!` = `SELECT … FOR UPDATE`, регресію ловить mock-сюїта `wallet_spec`); AASM-переходи `BlockchainTransaction` без `requires_lock` = robustness-only self-heal, НЕ money-loss (не чіпають wallet-money); без `lock_version` multi-thread тест AASM-гонки vacuous (last-write-wins, нуль raise) + був би перший flake-схильний non-txn thread-DB файл (клас TEST.2) → не пишемо | `04_06 §B.1.3` |
 | E.45 | SCC/SFC subgraph zero-address fail-fast guard (`subgraph/validate_addresses.sh`); real-address swap → S3.5 | `05_03` |
 | E.48 | The Graph subgraph на testnet `polygon-amoy` → потребує mainnet re-deploy; складено в **S3.5** (mainnet-cutover residual) — не окремий трек | `05_03` |
 | DIFF.1 | `Wallet#lock_and_mint!` conversion threshold = runtime-param (governance-tunable tokenomics rate, не hardcoded) — doc↔code diff-check, no action | `04_02`, `05_06` |

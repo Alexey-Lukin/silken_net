@@ -382,8 +382,9 @@ it "test that status works" do
 
 | Ризик | Серйозність | Опис |
 |-------|------------|------|
-| Concurrent State | 🟡 MEDIUM | Race conditions у AASM transitions не тестуються (потребують multi-thread test) |
 | Live Web3 RPC | 🟡 MEDIUM | Всі Web3 виклики заглушені; live RPC тестування потребує staging env |
+
+**Concurrent State — закрито (свідоме рішення, не геп).** Money-path money-safety тримає **Postgres pessimistic-lock**, не наш код: `Wallet#lock_funds!`/`lock_and_mint!`/`release_locked_funds!`/`credit!` беруть `with_lock`/`lock!` (`SELECT … FOR UPDATE`) — регресію «лок прибрано» ловить mock-сюїта (`wallet_spec` «uses with_lock/lock!»). AASM-переходи `BlockchainTransaction` (`confirm!`/`fail!`/`escalate_to_review!`) **без** `requires_lock` = м'яка robustness-діра, що самозагоюється в бік безпеки — **НЕ** money-loss: переходи не чіпають wallet-money (`finalize_spend!` поза mint-flow), а `manual_review` = double-spend-backstop. Реальний multi-thread тест свідомо **не пишемо**: (1) перевіряв би серіалізацію `FOR UPDATE` самого Postgres, не нашу логіку; (2) без `lock_version` на money-таблицях гонка AASM-переходів vacuous (кожен потік бачить свіжий дозволений from-state → last-write-wins, нуль raise); (3) був би перший non-transactional thread-DB файл = непропорційний flake-ризик (клас TEST.2). Цемент у [`00_07`](00_07_Action_Plan_Tracker) (TEST.4).
 
 ---
 
