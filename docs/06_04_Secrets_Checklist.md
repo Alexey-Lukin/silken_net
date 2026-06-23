@@ -50,7 +50,7 @@
 >
 > **Перевірка покриття:** `grep -rh "secrets\." .github/workflows/ | grep -oP "secrets\.[A-Z_]+" | sort -u`
 >
-> Поточно у workflows використовуються: `CANOPY_DATABASE_URL`, `CANOPY_REDIS_URL`, `DATABASE_PASSWORD`, `DATABASE_URL`, `GCP_PROJECT_ID`, `GCP_SA_KEY`, `GITHUB_TOKEN` (auto), `KAMAL_MASTER_KEY`, `PROJECT_PAT`, `RAILS_MASTER_KEY`, `REDIS_URL`, `SSH_KNOWN_HOSTS`, `SSH_PRIVATE_KEY`, `SSH_PUBLIC_KEY`.
+> Поточно у workflows використовуються: `POSTGRES_PASSWORD` (живить Kamal + `TF_VAR_db_password`), `CANOPY_REDIS_URL`, `GCP_PROJECT_ID`, `GCP_SA_KEY`, `GITHUB_TOKEN` (auto), `KAMAL_MASTER_KEY`, `PROJECT_PAT`, `RAILS_MASTER_KEY`, `REDIS_URL`, `SSH_KNOWN_HOSTS`, `SSH_PRIVATE_KEY`, `SSH_PUBLIC_KEY`. (`DATABASE_URL`/`DATABASE_PASSWORD`/`CANOPY_DATABASE_URL` виведені — component style, INF.16.)
 
 ### 1.1. P0 — Blocking (без цих secrets CI/CD не запуститься)
 
@@ -58,9 +58,7 @@
 - [ ] `KAMAL_MASTER_KEY` — Kamal-encrypted secrets master key
 - [ ] `GCP_SA_KEY` — GCP Service Account JSON ключ (raw або base64). Дозволи: `roles/artifactregistry.writer`, `roles/cloudsql.client`. Створюється в GCP IAM → Service Accounts → Keys.
 - [ ] `GCP_PROJECT_ID` — ID GCP проєкту (наприклад, `silken-net-prod`)
-- [ ] `DATABASE_PASSWORD` — пароль Cloud SQL `silken_net` user (≥16 символів, генерується одноразово, зберігається у password manager)
-- [ ] `DATABASE_URL` — Production DB URL: `postgres://silken_net:<DATABASE_PASSWORD>@<cloud-sql-private-ip>:5432/silken_net_production` (отримується через `terraform output database_url`)
-- [ ] `CANOPY_DATABASE_URL` — Canopy DB URL (окрема БД або схема: `silken_net_canopy`)
+- [ ] `POSTGRES_PASSWORD` — пароль Cloud SQL `silken_net` user (≥16 символів, password manager). **Component style** (`config/database.yml`): host/user/database — non-secret (`config/deploy.yml env.clear`), лише пароль = секрет. Один секрет живить Kamal `POSTGRES_PASSWORD` **і** Terraform `TF_VAR_db_password`. Той самий для production + canopy — ізоляція через `POSTGRES_DATABASE` (canopy = `silken_net_canopy`), НЕ окремий URL. (Замінив `DATABASE_URL`/`DATABASE_PASSWORD`/`CANOPY_DATABASE_URL` — INF.16.)
 - [ ] `REDIS_URL` — Production Redis (DB 0, Upstash): `rediss://default:<password>@<endpoint>.upstash.io:6379/0`
 - [ ] `CANOPY_REDIS_URL` — Canopy Redis (DB 0): `rediss://default:<password>@<endpoint>.upstash.io:6379/0`
 - [ ] `SSH_PRIVATE_KEY` — приватний SSH ключ для Kamal deploy на VM (`ssh-keygen -t ed25519`)
@@ -85,7 +83,7 @@
 
 - [ ] `RAILS_MASTER_KEY` — `$(cat config/master.key)` (читається локально під час деплою)
 - [ ] `GCP_ARTIFACT_REGISTRY_KEY` — base64-encoded GCP Service Account JSON для pull Docker images з Artifact Registry. У CI підставляється з `GCP_SA_KEY`.
-- [ ] `DATABASE_URL` — те саме значення що й GitHub Secret
+- [ ] `POSTGRES_PASSWORD` — те саме значення що й GitHub Secret (host/user/database → `env.clear`, не secret)
 - [ ] `REDIS_URL` — те саме значення
 - [ ] `KREDIS_REDIS_URL` — Redis DB 1 (Kredis locks для Web3 nonce)
 - [ ] `SENTRY_DSN` — Sentry project DSN. Без цього Sentry **інертний** — production помилки не репортуються (BLOCKER у [`00_07`](00_07_Action_Plan_Tracker)). Отримати: Sentry → Project Settings → Client Keys (DSN).
@@ -110,6 +108,13 @@
 - [ ] `CARBON_COIN_CONTRACT_ADDRESS` — адреса SCC контракту після deploy (`BlockchainMintingService`, `ENV.fetch` без default → `KeyError` на першому SCC mint)
 - [ ] `FOREST_COIN_CONTRACT_ADDRESS` — адреса SFC контракту після deploy (той самий `ENV.fetch`-патерн → `KeyError` на першому SFC mint). ⚠️ ще не в deploy env-декларації → [`00_07`](00_07_Action_Plan_Tracker) **INF.12**.
 - [ ] `KLIMA_RETIREMENT_CONTRACT` — адреса KlimaDAO Retirement Aggregator
+- [ ] `DAO_TREASURY_ADDRESS` — DAO Treasury (Dynamic Tax 2% · `BlockchainMintingService`)
+- [ ] `CELO_CUSD_CONTRACT_ADDRESS` — cUSD на Celo (`CommunityRewardService`)
+- [ ] `TOUCAN_BRIDGE_CONTRACT_ADDRESS` · `ETHERISC_DIP_CONTRACT_ADDRESS` · `PURO_EARTH_REGISTRY_CONTRACT_ADDRESS` — bridge / параметричне страхування / D-MRV registry
+- [ ] `ETHEREUM_ANCHOR_CONTRACT` — StateRootAnchor (Ethereum L1, weekly anchor)
+- [ ] `PROTOCOL_PARAMETERS_CONTRACT_ADDRESS` — ProtocolParameters.sol (governance sync; `ENV[]` nil-safe → skip-sync)
+- [ ] `CELO_RPC_URL` — Celo RPC. ⚠️ **БЕЗ значення → код fallback на Alfajores TESTNET** (реальні cUSD на testnet, обходить `web3_network_guard`; E.49). Mainnet: Forno/Alchemy.
+> Усі контракт-адреси вище = **post-`forge deploy`** (deploy-order): у Kamal `env.clear` + Akash SDL як `REQUIRED_SECRET_NOT_SET` placeholder, fill після деплою контрактів (INF.12). Публічні on-chain → не секрети, але fail-loud на use поки не задані.
 - [ ] `SOLANA_USDC_MINT_ADDRESS` — SPL Token mint USDC (mainnet: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`)
 - [ ] `FILECOIN_PINNING_API_URL` — Pinata IPFS pinning service URL
 - [ ] `WEB3_STRICT_MODE` — `true` у production. Якщо `true`, Web3 stubs (Chainlink, Hadron) raise при відсутності ENV. Заведено в `config/deploy.yml` env.clear + Akash `deploy.yaml`/`.tpl` (web+job) (INF.11); canopy успадковує (`RAILS_ENV=production`). Інвентар Akash — §3.1 + [`06_02 §2.8`](06_02_Akash_Network_Integration).
@@ -123,6 +128,8 @@
 
 > Встановлюються через `bin/rails credentials:edit` (НЕ ENV). Відсутність → `nil`-помилки або explicit raise у відповідному сервісі **при виклику** (не на boot). `RAILS_MASTER_KEY` (§1) лише розшифровує файл — його вмісту не інвентаризує. Перевірено grep'ом `credentials.*` по `app/`+`config/`.
 
+- [ ] `aws.access_key_id` / `aws.secret_access_key` — S3 Active Storage (`config/storage.yml` `amazon`; `credentials.dig(:aws, …)`)
+- [ ] `gcs` — GCS keyfile JSON-hash (Active Storage mirror, `config/storage.yml` `google`; `credentials.dig(:gcs)`)
 - [ ] `peaq_signing_key` / `peaq_node_url` — Ed25519 ключ + RPC для peaq DID (ротація 90д → §5.4)
 - [ ] `iotex_w3bstream_url` / `iotex_api_key` — IoTeX W3bStream верифікація
 - [ ] `streamr_stream_id` / `streamr_api_key` — Streamr broadcast
@@ -146,7 +153,7 @@
 
 **Application core (boot):**
 - [ ] `RAILS_MASTER_KEY` — те саме що в Kamal
-- [ ] `DATABASE_URL` — Cloud SQL (через Cloud SQL Auth Proxy sidecar)
+- [ ] `POSTGRES_HOST`=`127.0.0.1` / `POSTGRES_USER`=`silken_net` / `POSTGRES_PASSWORD` — Cloud SQL через Auth Proxy sidecar (component style; host/user non-secret, лише пароль секрет)
 - [ ] `CLOUD_SQL_INSTANCE_CONNECTION_NAME` — `<project>:<region>:<instance>`
 - [ ] `GCP_SA_KEY_BASE64` — base64-encoded GCP SA JSON (роль `roles/cloudsql.client` only)
 - [ ] `REDIS_URL` — Upstash Redis DB 0 (`rediss://`)
@@ -228,7 +235,7 @@
 
 *Application core:*
 - [ ] `rails_master_key`
-- [ ] `database_url` — `postgres://...@127.0.0.1:5432/silken_net_production`
+- [ ] `db_password` — Cloud SQL пароль (host=`127.0.0.1` proxy + user `silken_net` — non-secret SDL-літерали; component style, INF.16)
 - [ ] `cloud_sql_instance_connection_name` — `terraform output database_connection_name`
 - [ ] `gcp_sa_key_base64` — base64-encoded SA JSON (роль `roles/cloudsql.client` only, див. [`06_02 §Security Exception`](06_02_Akash_Network_Integration))
 - [ ] `redis_url` — Upstash `rediss://...:6379` (DB 0)
@@ -289,7 +296,7 @@
 ### 5.2. Ротація секретів
 
 - **AES master key** (`PROVISIONING_MASTER_KEY`): ротація потребує перевипуску всіх per-device ключів через provisioning. Несумісно зі вже зашитими пристроями. Plan: `FW.17` (Hash Ratchet KDF) у майбутньому циклі.
-- **Database password**: змінити Cloud SQL → оновити `DATABASE_URL`/`DATABASE_PASSWORD` GitHub Secret → `kamal redeploy`.
+- **Database password**: змінити Cloud SQL → оновити `POSTGRES_PASSWORD` GitHub Secret (живить Kamal `POSTGRES_PASSWORD` + Terraform `TF_VAR_db_password`) → `kamal redeploy`.
 - **Sentry DSN**: rotate у Sentry UI → оновити `SENTRY_DSN` → redeploy.
 - **Chainlink HMAC**: координовано з backend deploy (зміна на льоту викличе rejected callbacks).
 - **Oracle/Anchor private keys**: deploy новий гаманець → revoke старий → перевести залишок газу → redeploy.

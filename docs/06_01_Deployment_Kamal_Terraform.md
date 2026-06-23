@@ -61,7 +61,7 @@
 | # | Перевірка | Деталі |
 |---|-----------|--------|
 | **1** | **DNS / TLS до `kamal setup`** | Після `terraform apply` скопіюй IP та створи A-запис (`api.silkennet.com → <IP>`). Дочекайся: `dig api.silkennet.com` → правильний IP. **Тільки тоді** запускай `kamal setup`. Причина: при ввімкненому `proxy.ssl` (зараз **закоментований** у `config/deploy.yml`) **kamal-proxy** (Kamal 2.x — НЕ Traefik 1.x) робить Let's Encrypt ACME-challenge — без живого DNS сертифікат не видасться і проксі не підніметься. Поточно `proxy.ssl` вимкнено → TLS термінується зовні (Cloudflare / Akash hostname, рішення `[INF.4]`); DNS усе одно потрібен для маршрутизації трафіку. |
-| **2** | **`.kamal/secrets` файл існує + повний** | Kamal читає секрети з `.kamal/secrets` (не з environment). Заповни **усі** змінні з `config/deploy.yml env.secret` (drift = boot crash або silent Web3 failure): **(a) Application core:** `RAILS_MASTER_KEY`, `DATABASE_URL`, `REDIS_URL`, `KREDIS_REDIS_URL`, `GCP_ARTIFACT_REGISTRY_KEY`. **(b) 🛑 Boot-critical:** `PROVISIONING_MASTER_KEY` (`master_key_strength_check.rb` raises `SecurityError` без неї). **(c) Observability:** `SENTRY_DSN`. **(d) Web3 oracle keys:** `ORACLE_PRIVATE_KEY`, `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY`, `ETHEREUM_ANCHOR_PRIVATE_KEY`. **(e) RPC endpoints:** `ALCHEMY_POLYGON_RPC_URL`, `ALCHEMY_ETHEREUM_RPC_URL`, `SOLANA_RPC_URL`. **(f) Solana minting:** `SOLANA_WALLET_KEYPAIR`, `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS`. **(g) Chainlink:** `CHAINLINK_FUNCTIONS_ROUTER`, `CHAINLINK_SUBSCRIPTION_ID`, `CHAINLINK_HMAC_SECRET`, `CHAINLINK_DON_ID`. **Той самий список застосовується для Akash SDL** (`deploy/akash/deploy.yaml` + `deploy.yaml.tpl`) та Terraform (`terraform/akash/terraform.tfvars`) — див. [`06_02 §2 ENV (Секрети SDL)`](06_02_Akash_Network_Integration). |
+| **2** | **`.kamal/secrets` файл існує + повний** | Kamal читає секрети з `.kamal/secrets` (не з environment). Заповни **усі** змінні з `config/deploy.yml env.secret` (drift = boot crash або silent Web3 failure): **(a) Application core:** `RAILS_MASTER_KEY`, `POSTGRES_PASSWORD` (host/user/database — non-secret `env.clear`, component style `config/database.yml`), `REDIS_URL`, `KREDIS_REDIS_URL`, `GCP_ARTIFACT_REGISTRY_KEY`. **(b) 🛑 Boot-critical:** `PROVISIONING_MASTER_KEY` (`master_key_strength_check.rb` raises `SecurityError` без неї). **(c) Observability:** `SENTRY_DSN`. **(d) Web3 oracle keys:** `ORACLE_PRIVATE_KEY`, `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY`, `ETHEREUM_ANCHOR_PRIVATE_KEY`. **(e) RPC endpoints:** `ALCHEMY_POLYGON_RPC_URL`, `ALCHEMY_ETHEREUM_RPC_URL`, `SOLANA_RPC_URL`. **(f) Solana minting:** `SOLANA_WALLET_KEYPAIR`, `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS`. **(g) Chainlink:** `CHAINLINK_FUNCTIONS_ROUTER`, `CHAINLINK_SUBSCRIPTION_ID`, `CHAINLINK_HMAC_SECRET`, `CHAINLINK_DON_ID`. **Той самий список застосовується для Akash SDL** (`deploy/akash/deploy.yaml` + `deploy.yaml.tpl`) та Terraform (`terraform/akash/terraform.tfvars`) — див. [`06_02 §2 ENV (Секрети SDL)`](06_02_Akash_Network_Integration). |
 | **3** | **Gas на Web3-гаманцях** | Воркери потребують нативної крипто: **MATIC** (Polygon), **ETH** (L1), **SOL** (Solana), **CELO** (Celo). Без газу → "Insufficient Funds" на кожній транзакції → Sidekiq потоне у ретраях. |
 | **4** | **LoRa-антена підключена** | **КРИТИЧНО.** Ніколи не подавай живлення без антени на SMA/U.FL порту. SX1262 відбиває RF назад у чип (high VSWR) — радіотракт згоряє за мілісекунди. Незворотно. Правило: антена → живлення. |
 | **5** | **HKDF AES-ключів (post-FW.1 + ARCH.42)** | Кожен Soldier має **per-device унікальний AES-128 LoRa ключ** (`aes_key[4]`, 16 bytes), а Queen — окремий **AES-256 CoAP ключ** для batch flush до Rails (`coap_key[8]`, 32 bytes). Обидва деривуються з `PROVISIONING_MASTER_KEY` через HKDF з різними info-strings (`"silken-aes-128-lora-key"` / `"silken-aes-256-device-key"`). Перевіряй на factory bench, що backend і firmware повертають той самий байтовий ключ за тим самим `device_uid`. Симптом mismatch: Queen бачить щойно декриптований пакет як сміття. Детальніше: [`03_06 §2`](03_06_Factory_Flashing_and_Key_Provisioning). |
@@ -110,7 +110,7 @@ terraform apply
 # (рекомендовано — Terraform: cp terraform.tfvars.example terraform.tfvars)
 #
 # Application core:
-#   RAILS_MASTER_KEY, DATABASE_URL, CLOUD_SQL_INSTANCE_CONNECTION_NAME,
+#   RAILS_MASTER_KEY, POSTGRES_HOST, POSTGRES_USER, POSTGRES_PASSWORD, CLOUD_SQL_INSTANCE_CONNECTION_NAME,
 #   GCP_SA_KEY_BASE64, REDIS_URL=rediss://<upstash>:6379,
 #   KREDIS_REDIS_URL=rediss://<upstash>:6379/1
 # 🛑 Boot-critical (інакше Puma crash):
@@ -361,7 +361,7 @@ ENV.fetch("RACK_ATTACK_REDIS_URL") {
 
 ```yaml
 service: silken_net
-image:  silken_net
+image: <GCP_PROJECT_ID>/silken-net/silken_net   # повний AR-шлях (registry.server prepend; INF.15)
 
 servers:
   web:
@@ -386,9 +386,9 @@ registry:
 
 env:
   secret:
-    # --- Application core ---
+    # --- Application core (host/user/database → env.clear, component style) ---
     - RAILS_MASTER_KEY
-    - DATABASE_URL
+    - POSTGRES_PASSWORD
     - REDIS_URL
     - KREDIS_REDIS_URL
     # --- Observability ---
@@ -544,7 +544,7 @@ cd terraform/akash
 #   cp terraform.tfvars.example terraform.tfvars
 # Повний набір змінних (мірор .kamal/secrets, ~25 sensitive):
 #   akash_key_name, docker_image
-#   rails_master_key, database_url, cloud_sql_instance_connection_name,
+#   rails_master_key, db_password, cloud_sql_instance_connection_name,
 #     gcp_sa_key_base64, redis_url, kredis_redis_url
 #   provisioning_master_key  ← 🛑 BOOT-CRITICAL
 #   sentry_dsn, prometheus_auth_user/password
@@ -581,7 +581,7 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
       project_id, db_password, ssh_source_ranges=[<your-ip>]
 
 ☐ 3. Заповнити всі GitHub Secrets (00_07 S1.1)
-      GCP_SA_KEY, GCP_PROJECT_ID, DATABASE_PASSWORD, DATABASE_URL, ...
+      GCP_SA_KEY, GCP_PROJECT_ID, POSTGRES_PASSWORD (host/user/database non-secret), REDIS_URL, ...
 
 ☐ 4. terraform init && terraform plan && terraform apply
       Перевірити outputs: ingress_ip, database_url

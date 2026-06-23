@@ -63,7 +63,7 @@
 | ENV | Файл-guard | Поведінка без значення |
 |-----|-----------|------------------------|
 | `RAILS_MASTER_KEY` | `config/credentials.yml.enc` | Rails refuses to load credentials |
-| `DATABASE_URL` | `config/database.yml` | `ActiveRecord::AdapterNotSpecified` |
+| `POSTGRES_HOST` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | `config/database.yml` | `ActiveRecord::AdapterNotSpecified` (component style; host=`127.0.0.1` proxy + user `silken_net` non-secret, лише пароль секрет) |
 | `CLOUD_SQL_INSTANCE_CONNECTION_NAME` | `bin/docker-entrypoint` | Cloud SQL Auth Proxy не стартує → entrypoint чекає 15 с → `exit 1` (fail-loud, INF.13; Rails не стартує замість мовчазного boot без БД) |
 | `GCP_SA_KEY_BASE64` | `bin/docker-entrypoint` | Auth Proxy не може автентифікуватися до Google Cloud API |
 | `REDIS_URL` | `config/initializers/sidekiq.rb` | Sidekiq client не підключиться |
@@ -539,7 +539,7 @@ Queen Gateway (STM32 + SIM7070G)
 │  └─────────────────────────────────┘    │
 │                                         │
 │  REDIS_URL = rediss://upstash (TLS) ✅  │
-│  DATABASE_URL = 127.0.0.1:5432    ✅    │
+│  POSTGRES_HOST = 127.0.0.1:5432   ✅    │
 └─────────────────────────────────────────┘
                     │
                     │ remote_write (HTTPS)
@@ -592,7 +592,9 @@ ENV-блоки `web` та `job` сервісів **дзеркалюють** од
 | `PORT` | `80` | runtime | Порт Thruster |
 | `RAILS_ENV` | `production` | boot | Rails environment |
 | `RAILS_MASTER_KEY` | `REQUIRED_SECRET_NOT_SET` | **boot** | Ключ розшифровки `config/credentials.yml.enc` |
-| `DATABASE_URL` | `REQUIRED_SECRET_NOT_SET` | **boot** | PostgreSQL URL → Cloud SQL Auth Proxy `127.0.0.1:5432` |
+| `POSTGRES_HOST` | `127.0.0.1` | boot | Cloud SQL Auth Proxy endpoint (non-secret literal) |
+| `POSTGRES_USER` | `silken_net` | boot | DB user (non-secret literal) |
+| `POSTGRES_PASSWORD` | `REQUIRED_SECRET_NOT_SET` | **boot** | Cloud SQL пароль (секрет; `POSTGRES_PORT` default 5432) |
 | `CLOUD_SQL_INSTANCE_CONNECTION_NAME` | `REQUIRED_SECRET_NOT_SET` | **boot** | Cloud SQL instance connection (`project:region:instance`) |
 | `GCP_SA_KEY_BASE64` | `REQUIRED_SECRET_NOT_SET` | **boot** | Base64 SA JSON для Auth Proxy |
 | `REDIS_URL` | `REQUIRED_SECRET_NOT_SET` | **boot** | Sidekiq + ActionCable (Upstash `rediss://`) |
@@ -671,7 +673,7 @@ ENV-блоки `web` та `job` сервісів **дзеркалюють** од
 resource "local_file" "akash_sdl" {
   content = templatefile("deploy/akash/deploy.yaml.tpl", {
     rails_master_key                    = var.rails_master_key    # sensitive = true
-    database_url                        = var.database_url         # sensitive = true
+    db_password                         = var.db_password          # sensitive = true
     redis_url                           = var.redis_url            # sensitive = true
     cloud_sql_instance_connection_name  = var.cloud_sql_instance_connection_name  # sensitive = true
     gcp_sa_key_base64                   = var.gcp_sa_key_base64   # sensitive = true
@@ -746,7 +748,7 @@ silken-net-terraform-state/ (GCS bucket)
 | Змінна | Валідація |
 |--------|-----------|
 | `rails_master_key` | — |
-| `database_url` | Must start with `postgres://` or `postgresql://` |
+| `db_password` | Length ≥ 16 chars (host=127.0.0.1 proxy + user silken_net — non-secret SDL literals) |
 | `redis_url` | Must start with `redis://` or `rediss://` |
 | `kredis_redis_url` | — (auto-derived if empty) |
 | `cloud_sql_instance_connection_name` | Формат: `project:region:instance` |
@@ -982,7 +984,8 @@ Mapping між конфігурацією Kamal (`config/deploy.yml` + `.kamal/s
 | Kamal `env.secret` | Akash SDL (web + job) | Terraform variable |
 |-------------------|----------------------|---------------------|
 | `RAILS_MASTER_KEY` | `RAILS_MASTER_KEY=${rails_master_key}` | `var.rails_master_key` |
-| `DATABASE_URL` | `DATABASE_URL=${database_url}` | `var.database_url` |
+| `POSTGRES_PASSWORD` | `POSTGRES_PASSWORD=${db_password}` | `var.db_password` |
+| — (non-secret literals у SDL) | `POSTGRES_HOST=127.0.0.1` · `POSTGRES_USER=silken_net` | — |
 | `REDIS_URL` | `REDIS_URL=${redis_url}` | `var.redis_url` |
 | `KREDIS_REDIS_URL` | `KREDIS_REDIS_URL=${kredis_redis_url}` | `var.kredis_redis_url` (auto-derive) |
 | — (Cloud SQL Auth Proxy) | `CLOUD_SQL_INSTANCE_CONNECTION_NAME=...` | `var.cloud_sql_instance_connection_name` |

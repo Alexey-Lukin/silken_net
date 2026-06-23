@@ -205,9 +205,9 @@ curl -fsS http://[::1]:3000/up               # health-check IPv6 loopback
 | Endpoint | Перевіряє | Код | Роль |
 |---|---|---|---|
 | `GET /up` | процес живий (Rails `rails/health#show`, без залежностей) | 200 | **liveness** — рестарт-сигнал оркестратора (k8s / Akash / Kamal) |
-| `GET /ready` | DB + Redis round-trip (`ReadinessController`) | 200 `ready` / 503 `not_ready` | **readiness** — оркестратор гейтить трафік, поки залежність недоступна |
+| `GET /ready` | DB (primary) + Sidekiq Redis (DB 0) + Kredis (DB 1, mint/burn locks) round-trip (`ReadinessController`) | 200 `ready` / 503 `not_ready` | **readiness** — оркестратор гейтить трафік, поки залежність недоступна (обидва Redis мають відповісти — money-path safety) |
 
-Обидва неавтентифіковані й виключені (production.rb) з `force_ssl`-redirect + host-authorization + Rack::Attack throttle — внутрішні HTTP/IP-проби працюють, часті проби не ловлять 429. Оркестратор (kamal-proxy / k8s) має вказувати `/ready` як healthcheck-ціль для readiness-gated cutover (не перемикати трафік, поки DB+Redis не готові); `/up` = liveness-рестарт. Багатий human-dashboard лишається admin-only `Api::V1::SystemHealthController` (CoAP / Sidekiq / DB; [`04_03 §4`](04_03_REST_API_v1_Reference)).
+Обидва неавтентифіковані й виключені (production.rb) з `force_ssl`-redirect + host-authorization + Rack::Attack throttle — внутрішні HTTP/IP-проби працюють, часті проби не ловлять 429. Оркестратор (kamal-proxy / k8s) має вказувати `/ready` як healthcheck-ціль для readiness-gated cutover (не перемикати трафік, поки DB + Sidekiq-Redis + Kredis не готові); `/up` = liveness-рестарт. Багатий human-dashboard лишається admin-only `Api::V1::SystemHealthController` (CoAP / Sidekiq / DB; [`04_03 §4`](04_03_REST_API_v1_Reference)).
 
 ---
 

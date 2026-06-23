@@ -856,22 +856,39 @@
 - [ ] 👤 money-path рішення + верифікувати fail-closed на першому деплої
 
 #### INF.12 — Deploy ENV-injection drift: код `ENV.fetch` без default ∉ deploy-декларації
-- **P1** · 🤖+👤 · ⚪ · → `06_04`
-- **Стан:** Не розпочато — код `ENV.fetch(...)` без default для змінних, ВІДСУТНІХ у `config/deploy.yml env.secret`/`.kamal/secrets`/Akash SDL → `KeyError` на першому worker / crash at boot (про цей клас попереджає сам `config/deploy.yml:50`). Code-verified: `CARBON_COIN_CONTRACT_ADDRESS`+`FOREST_COIN_CONTRACT_ADDRESS` (`blockchain_minting_service.rb#process_token_group`), `POLYGON_RPC_URL` ≠ задеклар. `ALCHEMY_POLYGON_RPC_URL` (`price_oracle_service.rb` via `Web3::RpcConnectionPool`), `KLIMA_RETIREMENT_CONTRACT`. ⚠️ `RAILS_MASTER_KEY=$(cat config/master.key)` (`.kamal/secrets:6`) — файл gitignored, нема в CI (CI-inferred). + вміст `credentials.yml.enc` (aws/gcs/peaq/iotex/streamr/dclimate/puro) ніде не задокументовано → перший file-upload/oracle-виклик впаде. Канон `06_04`.
-- [ ] 🤖 audit: grep усіх `ENV.fetch`/`credentials.dig` без fallback vs deploy env-декларації → список відсутніх
-- [ ] 🤖 додати відсутні ENV у `env.secret` + Akash SDL (contract-адреси = deploy-order: лише після `forge deploy`)
-- [ ] 👤 задокументувати required `credentials.yml.enc` keys у `06_04`
+- **P1** · 🤖+👤 · 🟢 · → `06_04`
+- **Стан:** Machine-half ✅ — повний set-diff (код `ENV.fetch`/`credentials.dig` без fallback vs deploy-декларації). Контракт-адреси (`CARBON_COIN`/`FOREST_COIN`/`DAO_TREASURY`/`ETHEREUM_ANCHOR_CONTRACT`/`PROTOCOL_PARAMETERS` + `CELO_CUSD`/`TOUCAN_BRIDGE`/`KLIMA_RETIREMENT`/`ETHERISC_DIP`/`PURO_EARTH_REGISTRY`) + `POLYGON_RPC_URL`/`CELO_RPC_URL` заведено в Kamal + Akash web/job (`deploy.yaml`+`.tpl`): контракт-адреси як `REQUIRED_SECRET_NOT_SET` (public + deploy-order → не terraform-vars, fill post-`forge deploy`), RPC = terraform akash vars. `06_04 §2.2` тепер містить `aws`/`gcs` (storage.yml credentials) — третій чекбокс закрито. ⚠️ `CELO_RPC_URL` без значення → код fallback на Alfajores TESTNET (обходить web3_network_guard, E.49) → mainnet обов'язковий. Лишається 👤: provision на деплої. Канон `06_04 §2.1`.
+- [x] 🤖 audit set-diff `ENV.fetch`/`credentials.dig` vs deploy-декларації
+- [x] 🤖 contract-addresses (placeholder) + `POLYGON_RPC_URL`/`CELO_RPC_URL` у Kamal/Akash/terraform
+- [x] 🤖 `credentials.yml.enc` keys у `06_04 §2.2` (+`aws`/`gcs`)
+- [ ] 👤 fill contract addresses post-`forge deploy` + provision RPC/secrets
 
 #### INF.15 — Terraform GCP `apply`-блокери (IAM ролі · firewall · tfvars · image-path)
-- **P1** · 🤖+👤 · ⚪ · → `06_01`
-- **Стан:** Не розпочато — блокери першого `terraform apply`/`kamal deploy` (iam.tf code-verified; provider/Kamal-behavior ⚠️ inferred): (1) `terraform/iam.tf` нема `roles/storage.objectAdmin` → deploy-SA не пише в GCS TF-state bucket, + нема `iam.serviceAccountUser`; (2) ⚠️ firewall `var.ssh_source_ranges` default `[]` (`variables.tf`) → `source_ranges=[]` (`vpc.tf:57`) → GCP provider може відхилити apply; (3) `terraform.tfvars.example` `ssh_source_ranges=["0.0.0.0/0"]` відхиляється ВЛАСНОЮ валідацією `variables.tf`; (4) ⚠️ Kamal `image: silken_net` (`config/deploy.yml:5`) без `<project>/silken-net/` → GCP Artifact Registry push може впасти (Kamal-2.12-inferred). Канон `06_01`.
-- [ ] 🤖 iam.tf +`storage.objectAdmin`(scoped)+`iam.serviceAccountUser`; firewall `count`-guard на порожній CIDR; tfvars.example → CIDR-placeholder
+- **P1** · 🤖+👤 · 🟢 · → `06_01`
+- **Стан:** Machine-half ✅ — (1) `iam.tf` +`roles/storage.objectAdmin` (scoped до `silken-net-terraform-state` bucket, не project-wide) +`iam.serviceAccountUser`; (2) firewall `allow_ssh` `count`-guard на порожній `ssh_source_ranges` (порожній → правило не створюється; GCP не відхиляє apply); (3) `terraform.tfvars.example` `ssh_source_ranges` → CIDR-placeholder (не `0.0.0.0/0`); (4) Kamal `image` → `<GCP_PROJECT_ID>/silken-net/silken_net` (повний AR-шлях). `terraform fmt` clean; `allow_ssh` без інших refs (count-safe). ⚠️ provider/Kamal-behavior inferred. Канон `06_01`.
+- [x] 🤖 iam ролі (objectAdmin scoped + serviceAccountUser) + firewall count-guard + tfvars CIDR + image AR-path
 - [ ] 👤 верифікувати `terraform apply` + Kamal push end-to-end (підтвердити inferred-пункти)
+
+#### INF.16 — Production multi-DB connection (database.yml component style)
+- **P0** · 🤖+👤 · 🟢 · → `06_01`, `06_04`
+- **Стан:** Machine-half ✅ — **корінь first-deploy fail.** Production `database.yml` давав host+creds лише `primary` (Rails ллє `DATABASE_URL` тільки в primary); `cache`/`queue`/`cable` лишались без host і пароля → `db:prepare` падав на першому web-boot, Solid Cache/Cable не конектились. Fix = Rails-8 component style: `POSTGRES_HOST/USER/PASSWORD` у `&default` (як dev/test), 4 бази ділять creds, override лише `database:`. Deploy мігровано `DATABASE_URL`→`POSTGRES_*` (Kamal env.secret/clear + `.kamal/secrets` + Akash web/job + `.tpl` + terraform akash + CI workflows). Canopy ізоляція через `POSTGRES_DATABASE=silken_net_canopy` (той самий інстанс). `terraform fmt` clean; config-resolve verified (prod + canopy набори). Канон `config/database.yml` + `06_04`.
+- [ ] 👤 terraform provision canopy-баз (`silken_net_canopy` + `_cache`/`_queue`/`_cable` на тому ж Cloud SQL інстансі) — `database.tf` наразі створює лише production-набір
+- [ ] 👤 верифікувати `db:prepare` проходить усі 4 бази на першому деплої
+
+#### INF.17 — CoAP daemon: немає prod-процесу (Queen telemetry intake)
+- **P2** · 🤖+👤 · ⚪ · → `06_01`, `03_02 §4`
+- **Стан:** Не розпочато — `lib/daemons/coap_listener` (UDP 5683 → `UnpackTelemetryWorker`) стартує лише в dev (`Procfile.dev`). У prod НЕ стартує: Akash services = web(puma)/job(sidekiq)/alloy, Kamal roles = web/job — окремого CoAP-процесу нема (UDP 5683 expose є, слухача нема). HTTP-fallback intake (`telemetry_controller`) існує → backend сам не зламаний; CoAP/UDP-шлях Queen→backend без слухача. Потрібен на Queen-bring-up (firmware TRL 6, Queen ще не в полі), НЕ для першого backend-деплою. **Рекомендація (B7):** виділений процес — Akash `coap` service (той самий образ, entrypoint→`ruby lib/daemons/coap_listener`, expose 5683/udp, Redis+Cloud-SQL-proxy env) + Kamal `coap` role; НЕ puma-thread (UDP у web-процесі сплітає lifecycle + ризик). Канон `06_01`/`03_02 §4`.
+- [ ] 🤖 Akash `coap` service + Kamal `coap` role (dedicated process, expose 5683/udp) — на Queen-bring-up
+
+#### INF.18 — Solid Queue: dead scaffold vs planned (research)
+- **P3** · 👤 · ⚪ · → `06_01`, `04_02`
+- **Стан:** Не розпочато (research) — Solid Queue присутній (gem + `config/queue.yml` + `db/queue_schema.rb` + `queue` база в `database.yml`/terraform), АЛЕ не активний: `config.active_job.queue_adapter = :sidekiq`, `recurring.yml` сам каже «unused — Sidekiq». Наразі мертвий Rails-8 scaffold. Founder: НЕ видаляти (може плануватись). Рішення: підтвердити used/planned vs scaffold → лишити dormant чи прибрати (gem+config+schema+`queue` база+terraform). `queue` база коректно конфігурована (INF.16). Канон `06_01`.
+- [ ] 👤 рішення: Solid Queue planned (dormant) чи cleanup (remove)
 
 #### S4.3 — Akash SDL secrets
 - **P1** · 👤 · ⚪ · → `06_02`
-- **Стан:** Не розпочато — Akash = primary prod deploy → SDL (`deploy/akash/deploy.yaml`) тримає `REQUIRED_SECRET_NOT_SET` плейсхолдери для **повного дзеркала** Kamal `env.secret` (обидва сервіси web+job); без них boot-crash (категорія A) — той самий prod-deploy-ENV клас, що `S1.1`. ⚠️ placeholder ≠ disabled: `REQUIRED_SECRET_NOT_SET` для `PROMETHEUS_AUTH_*` НЕ-порожній → basic-auth активна з відомим-публічним значенням (`PrometheusCollector#authorized?`), а Alloy remote_write на літерал → тихо нічого не пушить (INF.14 sibling). Канон `06_02 §2` (категорії A/B/C — boot-critical / web3 / observability).
-- [ ] 👤 заповнити в `deploy/akash/deploy.yaml` → верифікувати startup (observability creds = security, не лише startup)
+- **Стан:** Не розпочато — Akash = primary prod deploy → SDL (`deploy/akash/deploy.yaml`) тримає `REQUIRED_SECRET_NOT_SET` плейсхолдери для **повного дзеркала** Kamal `env.secret` (обидва сервіси web+job); без них boot-crash (категорія A) — той самий prod-deploy-ENV клас, що `S1.1`. ⚠️ placeholder ≠ disabled: `REQUIRED_SECRET_NOT_SET` для `PROMETHEUS_AUTH_*` НЕ-порожній → basic-auth активна з відомим-публічним значенням (`PrometheusCollector#authorized?`), а Alloy remote_write на літерал → тихо нічого не пушить (INF.14 sibling). **B6 рекомендація:** provision реальні random `PROMETHEUS_AUTH_USER/PASSWORD` (НЕ placeholder — `REQUIRED_SECRET_NOT_SET` непорожній = known-value bypass); порожнє → skip-auth + IP-allowlist (прийнятно для internal-only Alloy scrape, але реальні creds = defense-in-depth). Канон `06_02 §2` (категорії A/B/C — boot-critical / web3 / observability) + `06_03`.
+- [ ] 👤 заповнити в `deploy/akash/deploy.yaml` → верифікувати startup (real `PROMETHEUS_AUTH_*`, не placeholder; observability creds = security)
 
 #### S6.14 — peaq_signing_key: rotation & revocation
 - **P2** · 👤 · 🟡 · → `06_04 §5.4`, `04_02 §S6.14`

@@ -115,7 +115,7 @@
 # Відновити у НОВИЙ інстанс на момент ДО інциденту (не перезаписує prod):
 gcloud sql instances clone silken-db silken-db-restored \
   --point-in-time '2026-05-29T02:55:00Z'
-# Перевірити дані → за потреби переключити DATABASE_URL на restored → redeploy.
+# Перевірити дані → за потреби оновити `POSTGRES_HOST` (GitHub secret / env.clear) на приватний IP restored-інстансу → redeploy (component style, config/database.yml).
 ```
 
 ### 5.2 Terraform state recovery

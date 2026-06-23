@@ -186,7 +186,10 @@ end
     │   ✓ PROMETHEUS_ALLOWED_IPS env (custom CIDR список)
     │
     └─ HTTP Basic Auth → 403 Forbidden (якщо credentials невірні)
-        Лише при наявності PROMETHEUS_AUTH_USER + PROMETHEUS_AUTH_PASSWORD
+        Активний ЛИШЕ коли обидва PROMETHEUS_AUTH_USER + PROMETHEUS_AUTH_PASSWORD непорожні.
+        Порожні → auth skip (лише IP-allowlist). ⚠️ НІКОЛИ не лишати placeholder
+        REQUIRED_SECRET_NOT_SET (непорожній = known-value bypass, B6) — provision реальні
+        random creds (defense-in-depth) або лишити порожніми (internal-only Alloy scrape).
 ```
 
 ### 2.3 Реєстр кастомних бізнес-метрик (повний)
