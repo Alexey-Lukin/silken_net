@@ -93,6 +93,8 @@ TokenomicsEvaluatorWorker (dynamic conversion rate)
 - Використовує `Timeout.timeout(10s)` на кожен RPC-запит
 - 13 параметрів: 8 Lorenz (σ/ρ/β/dt/iterations/z_min/z_max/z_target), 3 tokenomics, 2 slashing
 
+**Друга governance-поверхня — ролі контрактів (не лише параметри).** Той самий шлях Governor → Timelock у production тримає `DEFAULT_ADMIN_ROLE` над токенами та `StateRootAnchor`, тож DAO може видавати/відкликати `MINTER_ROLE`/`SLASHER_ROLE`/`ANCHOR_ROLE` — **ротувати oracle-адреси** — теж лише за 48h-затримкою (`pause` лишається миттєвим у Safe, [SEC.1]). Це і є незворотний крок «transfer admin-ролей → Timelock» (BIZ.4). Розкладка ролей/власників живе в [`05_03`](05_03_Tokenomics_SCC_and_SFC) (токени) + [`05_04`](05_04_Ethereum_L1_State_Anchor) (anchor) — тут лише вказівник.
+
 ## 3. Пріоритет та Залежності
 
 | Аспект | Деталі |

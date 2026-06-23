@@ -374,10 +374,7 @@ it "test that status works" do
 
 ### B.1.2 Solidity
 
-| Ризик | Серйозність | Опис |
-|-------|------------|------|
-| ERC20Permit | 🟡 MEDIUM | Permit/signature tests є базовими; cross-chain replay не тестується |
-| Governor Integration | 🟡 MEDIUM | Governor + SCC mint interaction тестується окремо |
+Відкритих ризиків немає. ERC20Permit (повна EIP-712 сюїта: `permit()` + SFC `delegateBySig` + cross-chain інваріант) та Governor↔SCC integration (DAO керує/ротує `MINTER_ROLE`/`SLASHER_ROLE` через 48h-Timelock) — закрито; цемент у [`00_07`](00_07_Action_Plan_Tracker) (TEST.3).
 
 **Гілкове/рядкове покриття під `forge coverage --ir-minimum` = артефакт виміру, не геп.** `--ir-minimum` обов'язковий (без оптимізатора OZ `P256.sol` → stack-too-deep, `foundry.toml`), а під ним forge недо-інструментує: `require`-revert гілки, single-statement тіла (`pause()`/`unpause()`) та override-делегації (`return super._x()`) звітуються «непокритими», хоча `testRevert_`/`expectRevert` їх виконують і проходять. Тому контрактний гейт спирається на **line/func**, не на branch% (звірено по токенах + StateRootAnchor + ProtocolParameters: кожна непокрита гілка має тест). Єдиний справжній func-геп — Governor `_cancel` (proposer-cancel flow) — закрито `test_cancel_byProposerWhilePending`.
 
