@@ -76,6 +76,9 @@ env:
     - ALCHEMY_POLYGON_RPC_URL
     - ALCHEMY_ETHEREUM_RPC_URL
     - SOLANA_RPC_URL
+    # PriceOracleService (POLYGON_RPC_URL) + Celo rewards (CELO_RPC_URL) — separate from ALCHEMY_*.
+    - POLYGON_RPC_URL
+    - CELO_RPC_URL
     # --- Solana minting (Solana::MintingService raises without these) ---
     - SOLANA_WALLET_KEYPAIR
     - SOLANA_FEE_PAYER_PUBKEY
@@ -93,6 +96,9 @@ env:
     # database_private_ip` after apply. POSTGRES_PASSWORD is in env.secret above.
     POSTGRES_HOST: <CLOUD_SQL_PRIVATE_IP>
     POSTGRES_USER: silken_net
+    # Database SET selector (config/database.yml). Production default; Canopy overrides to
+    # silken_net_canopy in config/deploy.canopy.yml (same instance, isolated DB names).
+    POSTGRES_DATABASE: silken_net_production
     # Mailer link host (config/environments/production.rb action_mailer.default_url_options).
     APP_HOST: silkennet.com
     # Puma clustered mode — number of forked worker processes.
@@ -114,6 +120,20 @@ env:
     # Web3 fail-closed: Hadron KYC / Chainlink raise on missing creds, not silent stub (INF.11).
     # Gates HadronComplianceService / OracleDispatchService (they check ONLY this flag, not Rails.env).
     WEB3_STRICT_MODE: "true"
+
+    # --- Web3 contract addresses (post-`forge deploy`; fill before first mint) ---
+    # Public on-chain addresses (not secrets) but unknown until contracts deploy → placeholder.
+    # Fail-loud on use until provisioned. Canon docs/06_04 §2.1.
+    CARBON_COIN_CONTRACT_ADDRESS: REQUIRED_SECRET_NOT_SET
+    FOREST_COIN_CONTRACT_ADDRESS: REQUIRED_SECRET_NOT_SET
+    DAO_TREASURY_ADDRESS: REQUIRED_SECRET_NOT_SET
+    ETHEREUM_ANCHOR_CONTRACT: REQUIRED_SECRET_NOT_SET
+    PROTOCOL_PARAMETERS_CONTRACT_ADDRESS: REQUIRED_SECRET_NOT_SET
+    CELO_CUSD_CONTRACT_ADDRESS: REQUIRED_SECRET_NOT_SET
+    TOUCAN_BRIDGE_CONTRACT_ADDRESS: REQUIRED_SECRET_NOT_SET
+    KLIMA_RETIREMENT_CONTRACT: REQUIRED_SECRET_NOT_SET
+    ETHERISC_DIP_CONTRACT_ADDRESS: REQUIRED_SECRET_NOT_SET
+    PURO_EARTH_REGISTRY_CONTRACT_ADDRESS: REQUIRED_SECRET_NOT_SET
 
     # Log everything from Rails
     # RAILS_LOG_LEVEL: debug

@@ -23,6 +23,9 @@ services:
       - KREDIS_REDIS_URL=${kredis_redis_url}
       - RAILS_MAX_THREADS=${rails_max_threads}
       - WEB_CONCURRENCY=${web_concurrency}
+      # Mailer link host (production.rb) + Sentry release tag (config/initializers/sentry.rb).
+      - APP_HOST=silkennet.com
+      - RELEASE_VERSION=
       # --- 🛑 BOOT-CRITICAL: master_key_strength_check.rb ---
       - PROVISIONING_MASTER_KEY=${provisioning_master_key}
       # --- Observability ---
@@ -38,6 +41,9 @@ services:
       - ALCHEMY_POLYGON_RPC_URL=${alchemy_polygon_rpc_url}
       - ALCHEMY_ETHEREUM_RPC_URL=${alchemy_ethereum_rpc_url}
       - SOLANA_RPC_URL=${solana_rpc_url}
+      # Separate from ALCHEMY_*: PriceOracleService (POLYGON_RPC_URL) + Celo rewards (CELO_RPC_URL).
+      - POLYGON_RPC_URL=${polygon_rpc_url}
+      - CELO_RPC_URL=${celo_rpc_url}
       # --- Solana minting ---
       - SOLANA_WALLET_KEYPAIR=${solana_wallet_keypair}
       - SOLANA_FEE_PAYER_PUBKEY=${solana_fee_payer_pubkey}
@@ -52,6 +58,19 @@ services:
       - CHAINLINK_CALLBACK_GAS_LIMIT=300000
       # Web3 fail-closed: Hadron KYC / Chainlink raise on missing creds (INF.11).
       - WEB3_STRICT_MODE=true
+      # --- Web3 contract addresses (post-`forge deploy`; fill before first mint) ---
+      # Public on-chain addresses (not secrets) but unknown until contracts deploy, so
+      # NOT terraform-managed (deploy-order). Placeholder → fail-loud on use. docs/06_04 §2.1.
+      - CARBON_COIN_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - FOREST_COIN_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - DAO_TREASURY_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - ETHEREUM_ANCHOR_CONTRACT=REQUIRED_SECRET_NOT_SET
+      - PROTOCOL_PARAMETERS_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - CELO_CUSD_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - TOUCAN_BRIDGE_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - KLIMA_RETIREMENT_CONTRACT=REQUIRED_SECRET_NOT_SET
+      - ETHERISC_DIP_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - PURO_EARTH_REGISTRY_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
     expose:
       - port: 80
         as: 80
@@ -93,6 +112,11 @@ services:
       - REDIS_URL=${redis_url}
       - KREDIS_REDIS_URL=${kredis_redis_url}
       - RAILS_MAX_THREADS=${rails_max_threads}
+      # Sidekiq concurrency=15 → DB pool must match + headroom (config/sidekiq.yml).
+      - DB_POOL=17
+      # Mailer link host (production.rb — deliver_later runs here) + Sentry release tag.
+      - APP_HOST=silkennet.com
+      - RELEASE_VERSION=
       # --- 🛑 BOOT-CRITICAL: master_key_strength_check.rb ---
       - PROVISIONING_MASTER_KEY=${provisioning_master_key}
       # --- Observability ---
@@ -107,6 +131,9 @@ services:
       - ALCHEMY_POLYGON_RPC_URL=${alchemy_polygon_rpc_url}
       - ALCHEMY_ETHEREUM_RPC_URL=${alchemy_ethereum_rpc_url}
       - SOLANA_RPC_URL=${solana_rpc_url}
+      # Separate from ALCHEMY_*: PriceOracleService (POLYGON_RPC_URL) + Celo rewards (CELO_RPC_URL).
+      - POLYGON_RPC_URL=${polygon_rpc_url}
+      - CELO_RPC_URL=${celo_rpc_url}
       # --- Solana minting (SolanaMicroRewardWorker) ---
       - SOLANA_WALLET_KEYPAIR=${solana_wallet_keypair}
       - SOLANA_FEE_PAYER_PUBKEY=${solana_fee_payer_pubkey}
@@ -121,6 +148,19 @@ services:
       - CHAINLINK_CALLBACK_GAS_LIMIT=300000
       # Web3 fail-closed: Hadron KYC / Chainlink raise on missing creds (INF.11).
       - WEB3_STRICT_MODE=true
+      # --- Web3 contract addresses (post-`forge deploy`; fill before first mint) ---
+      # Public on-chain addresses (not secrets) but unknown until contracts deploy, so
+      # NOT terraform-managed (deploy-order). Placeholder → fail-loud on use. docs/06_04 §2.1.
+      - CARBON_COIN_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - FOREST_COIN_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - DAO_TREASURY_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - ETHEREUM_ANCHOR_CONTRACT=REQUIRED_SECRET_NOT_SET
+      - PROTOCOL_PARAMETERS_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - CELO_CUSD_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - TOUCAN_BRIDGE_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - KLIMA_RETIREMENT_CONTRACT=REQUIRED_SECRET_NOT_SET
+      - ETHERISC_DIP_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - PURO_EARTH_REGISTRY_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
 
   alloy:
     image: grafana/alloy:v1.16.3

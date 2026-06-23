@@ -16,6 +16,14 @@ servers:
 # Sidekiq workers run via the Akash primary deployment (deploy/akash/deploy.yaml `job`
 # service). Do NOT rely on `kamal deploy -d canopy` for background-job testing.
 
+# Canopy uses an ISOLATED database set on the same Cloud SQL instance: silken_net_canopy
+# (+ _cache/_queue/_cable). Same host/user/password as production (inherited from
+# config/deploy.yml env); only POSTGRES_DATABASE differs. See config/database.yml.
+# (Terraform provisioning of the silken_net_canopy* databases is tracked in 00_07.)
+env:
+  clear:
+    POSTGRES_DATABASE: silken_net_canopy
+
 # Proxy: no SSL on canopy (HTTP only for developer use).
 # proxy:
 #   ssl: true

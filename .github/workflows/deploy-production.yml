@@ -143,7 +143,9 @@ jobs:
         env:
           KAMAL_MASTER_KEY: ${{ secrets.KAMAL_MASTER_KEY }}
           GCP_ARTIFACT_REGISTRY_KEY: ${{ secrets.GCP_SA_KEY }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Component style (config/database.yml): only the password is a secret; host/user/
+          # database are non-secret env.clear in config/deploy.yml.
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           REDIS_URL: ${{ secrets.REDIS_URL }}
           RELEASE_VERSION: ${{ github.event.release.tag_name || github.sha }}
 

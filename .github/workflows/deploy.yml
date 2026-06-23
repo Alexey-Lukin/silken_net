@@ -146,7 +146,9 @@ jobs:
         env:
           KAMAL_MASTER_KEY: ${{ secrets.KAMAL_MASTER_KEY }}
           GCP_ARTIFACT_REGISTRY_KEY: ${{ secrets.GCP_SA_KEY }}
-          DATABASE_URL: ${{ secrets.CANOPY_DATABASE_URL }}
+          # Component style: same Cloud SQL user/password as production; Canopy isolates
+          # via POSTGRES_DATABASE=silken_net_canopy (config/deploy.canopy.yml). REDIS stays separate.
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           REDIS_URL: ${{ secrets.CANOPY_REDIS_URL }}
           RELEASE_VERSION: ${{ github.sha }}
 

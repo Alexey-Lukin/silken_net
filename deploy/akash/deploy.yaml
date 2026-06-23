@@ -163,6 +163,9 @@ services:
       - ALCHEMY_POLYGON_RPC_URL=REQUIRED_SECRET_NOT_SET
       - ALCHEMY_ETHEREUM_RPC_URL=REQUIRED_SECRET_NOT_SET
       - SOLANA_RPC_URL=REQUIRED_SECRET_NOT_SET
+      # Separate from ALCHEMY_*: PriceOracleService (POLYGON_RPC_URL) + Celo rewards (CELO_RPC_URL).
+      - POLYGON_RPC_URL=REQUIRED_SECRET_NOT_SET
+      - CELO_RPC_URL=REQUIRED_SECRET_NOT_SET
 
       # ════════════════════════════════════════════════════════════════════════
       # Solana minting (Solana::MintingService raises explicit errors)
@@ -187,6 +190,19 @@ services:
       - CHAINLINK_CALLBACK_GAS_LIMIT=300000
       # Web3 fail-closed: Hadron KYC / Chainlink raise on missing creds (INF.11).
       - WEB3_STRICT_MODE=true
+      # --- Web3 contract addresses (post-`forge deploy`; fill before first mint) ---
+      # Public on-chain addresses (not secrets) but unknown until contracts deploy, so
+      # NOT terraform-managed (deploy-order). Placeholder → fail-loud on use. docs/06_04 §2.1.
+      - CARBON_COIN_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - FOREST_COIN_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - DAO_TREASURY_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - ETHEREUM_ANCHOR_CONTRACT=REQUIRED_SECRET_NOT_SET
+      - PROTOCOL_PARAMETERS_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - CELO_CUSD_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - TOUCAN_BRIDGE_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - KLIMA_RETIREMENT_CONTRACT=REQUIRED_SECRET_NOT_SET
+      - ETHERISC_DIP_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - PURO_EARTH_REGISTRY_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
 
     # --- Exposed Ports -------------------------------------------------------
     # Maps to: config/deploy.yml → boot.proxy.publish
@@ -295,6 +311,9 @@ services:
       - ALCHEMY_POLYGON_RPC_URL=REQUIRED_SECRET_NOT_SET
       - ALCHEMY_ETHEREUM_RPC_URL=REQUIRED_SECRET_NOT_SET
       - SOLANA_RPC_URL=REQUIRED_SECRET_NOT_SET
+      # Separate from ALCHEMY_*: PriceOracleService (POLYGON_RPC_URL) + Celo rewards (CELO_RPC_URL).
+      - POLYGON_RPC_URL=REQUIRED_SECRET_NOT_SET
+      - CELO_RPC_URL=REQUIRED_SECRET_NOT_SET
 
       # --- Solana minting (SolanaMicroRewardWorker → Solana::MintingService) ---
       - SOLANA_WALLET_KEYPAIR=REQUIRED_SECRET_NOT_SET
@@ -311,6 +330,19 @@ services:
       - CHAINLINK_CALLBACK_GAS_LIMIT=300000
       # Web3 fail-closed: Hadron KYC / Chainlink raise on missing creds (INF.11).
       - WEB3_STRICT_MODE=true
+      # --- Web3 contract addresses (post-`forge deploy`; fill before first mint) ---
+      # Public on-chain addresses (not secrets) but unknown until contracts deploy, so
+      # NOT terraform-managed (deploy-order). Placeholder → fail-loud on use. docs/06_04 §2.1.
+      - CARBON_COIN_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - FOREST_COIN_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - DAO_TREASURY_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - ETHEREUM_ANCHOR_CONTRACT=REQUIRED_SECRET_NOT_SET
+      - PROTOCOL_PARAMETERS_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - CELO_CUSD_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - TOUCAN_BRIDGE_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - KLIMA_RETIREMENT_CONTRACT=REQUIRED_SECRET_NOT_SET
+      - ETHERISC_DIP_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+      - PURO_EARTH_REGISTRY_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
 
   # ---------------------------------------------------------------------------
   # Alloy Service — Grafana Alloy Metrics Agent (OBS.1)
