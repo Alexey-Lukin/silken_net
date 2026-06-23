@@ -953,6 +953,18 @@
 - **Стан:** Не розпочато — GCS bucket для remote TF state створюється вручну перед `terraform init` (chicken-and-egg). Канон `06_02 §GCS bucket`.
 - [ ] 👤 `gsutil mb` → верифікувати `terraform init`
 
+#### E.5 — CoAP listener scale ceiling (~10k вузлів)
+- **P3** · 🤖 · 🌿 · → `06_01`
+- **Стан:** Ruby CoAP listener (`lib/daemons/coap_listener`) масштабується до ~10k вузлів; за межею → Rust/Go Ingress Proxy (ARCH.2). Far-horizon (Series D). Дотично INF.17 (prod-процес того ж демона).
+
+#### ARCH.2 — Ingress Proxy (Rust/Go) + Kafka (>1M packets/hour)
+- **P3** · 🤖 · 🌿 · → `06_01`, `00_01`
+- **Стан:** Scale-tier понад Ruby CoAP listener (E.5, ~10k вузлів): Rust/Go proxy + Kafka для >1M packets/hour. Far-horizon (Series D). Дотично INF.6 (Ingress Anchor) + E.5.
+
+#### E.27 — Chaos Engineering (Chaos Mesh / kill-scripts)
+- **P3** · 👤 · 🌿 · → `06_08`
+- **Стан:** Chaos Mesh (Akash) або kill-scripts (Kamal) для відмовостійкості — post-TRL 7 production hardening. Дотично DR.1 (DR drill) + `06_08` resilience policy.
+
 ## §07 · Юридичні / Бізнес
 
 > Юридично-бізнесовий work-stream — канон `07_xx`. NB: пов'язані BIZ-айтеми за канон-домом живуть у `§05` (BIZ.13 slashing) та `§08` (BIZ.10 IP, BIZ.12 Horizon-biodiv).
@@ -1202,7 +1214,6 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 | ARCH.26 | **Синхронні Вікна (TDMA) та CAD Preamble Detection — вирішення Проблеми Рандеву для mesh relay.** Поточна архітектура: Queen always-on (`Radio.Rx(LORA_RX_INFINITE)`), Soldier має лише 600 мс post-TX RX window — mesh relay між Солдатами стохастичний і ненадійний за межами прямої видимості Queen. **Три рівні рішення:** (L1) Queen always-on ✅ реалізовано; (L2) TDMA Sync Windows — Queen транслює beacon з точним часом (NTP через LTE), Солдати синхронізують RTC, кожні 15 хвилин координоване 2-секундне RX-вікно для mesh relay. Залежить від FW.20 (LoRa Time Sync); (L3) CAD — SX1262 `Radio.StartCad()` дозволяє wake на ~2 мс/секунду для детекції LoRa-преамбули без повного RX. Критично для PANIC mode: Солдат при chainsaw detection посилає довгу преамбулу (~1 сек), сусідні Провідники ловлять через CAD навіть між TDMA-вікнами. **Firmware зміни:** Soldier: CAD periodic wakeup (LPTIM або RTC sub-second alarm), beacon RX handler, RTC sync logic. Queen: beacon TX (periodic broadcast з UTC timestamp + network schedule). **Енергобюджет:** CAD wake 1/сек × 2 мс × 4.5 мА = ~9 µA середнє — допустимо для Провідників (дерева з високим vcap), неприйнятно для слабких Солдатів. Рольова диференціація: Солдат (TX-only, глухий) vs Провідник (TX+CAD, еліта з надлишком енергії). | `00_01`, `03_01`, `03_02` | Post-TRL 6 (Firmware + Queen beacon) |
 | ARCH.43 | **Per-device-key ↔ opaque-relay/demux суперечність + стеля «N дерев через одну Queen».** Релей чужого пакета (`soldier/main.c` Сценарій Б: decrypt власним ключем → `TTL--` → re-encrypt) і власне demux Queen (`queen/main.c` decrypt **перед** читанням DID) опираються на **спільний** LoRa-ключ, але канон вимагає **per-device** ключ (`03_06 §1`, ізоляція «злам одного ≠ розкриття сусідів») + DID лежить **усередині** шифроблоку (немає cleartext air-header — Soldier шле рівно 16 B). За справжніх per-device ключів Солдат B розшифровує пакет A у сміття → релеїть сміття; Queen/backend не знають, яким ключем демультиплексувати relayed-фрейм. **Очікування «>1000 дерев пересилають через Queen, навіть недосяжні» НЕ підтримується** на 4 незалежних рівнях: (1) крипто/demux — цей пункт; (2) `DEFAULT_TTL=3` → ≤3 хопи ≈ ≤~450–600 м reach; (3) один relay-буфер (1×16 B/пробудження) + store-and-forward на наступному wake → нема агрегації, втрати/латентність множаться; (4) Queen CIFO ~100 baseline/~200 roadmap, overflow за ~30 хв при 100 без Starlink (`02_05 §2.1`) — не 1000. **Резолюція:** або cleartext addressing-шар (LoRaWAN-style DevAddr у відкритому + per-device session-key) для співіснування opaque-relay з per-device payload; або прийняти star-only на поточному TRL (mesh = страховка для одиничних stragglers у межах TTL, **не** механізм масштабування). Масштаб до тисяч = більше Queen (ARCH.1 fractal/L2 Conductor, ARCH.10 Q2Q). Залежить від ARCH.26 (рандеву) | `03_01`, `03_02`, `03_05`, `06_08` | Post-TRL 6 (addressing-шар; cross-ref ARCH.26) |
 | ARCH.29 | **RTOS Deadlock-Free верифікація через Petri Nets** — формальна PN-модель firmware tasks (Sensing/Compute/TX/OTA/WDT) на Soldier + reachability graph аналіз для доведення відсутності circular wait. Відрізняється від ARCH.20 (Petri Net Rails моноліт) тим що моделює embedded RTOS scheduling | `08_02` §1B (Ярмілко) | Post-TRL 6 (R&D — Ярмілко, ЧНУ) |
-| E.27 | Chaos Engineering: Chaos Mesh для Akash або kill-scripts для Kamal | Legacy | Post-TRL 7, production hardening |
 | E.30 | InsightGenerator: кліматичні базлайни per region | `04_02` | Post-TRL 7 |
 | E.50 | **Edge fuzzy_distance dedup function** на STM32WLE5JC: <1 мс CPU, <128 байт RAM, ціль — 30-40% TX зниження за рахунок suppression near-duplicate пакетів | `08_02` §1B (Ярмілко) | Post-TRL 7 (R&D — Ярмілко) |
 | E.52 | **GA-оптимізація ваг `silken_forest.marshal`** ML моделі на Akash GPU кластері — генетичний алгоритм для `InsightGeneratorService` stress_index класифікації | `08_02` §1B (Любченко) | Post-TRL 7 |
@@ -1227,7 +1238,6 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 | ARCH.17 | Bonding Curves для dynamic SCC pricing | `05_03` | TRL 9+ |
 | ARCH.44 | **GaiaNexus multi-net vision page** (BIZ.16 level-3, founder-deferred) — опційний повний vision/manifesto планетарної федерації (Cryo/Abyssal/Litho/Myco + ноосферна економіка). Тонка far-horizon рамка вже є ([`00_08 §3`](00_08_Beyond_TRL9_Planetary_Roadmap)); повний 17-net каталог лишається в нотатках founder'а (no-premature-canon). Будувати лише на founder go | `00_08 §3`, `08_01 §2` | Post-TRL 9 (vision; founder-gated) |
 | E.3 | Breadboard video відсутнє (для грантів) | `07_03` | Зняти відео |
-| E.5 | CoAP listener Ruby — масштабується до ~10k вузлів | `06_01` | Series D: Rust/Go proxy |
 | E.9 | DMA SPI optimization — зменшення енергоспоживання (Vector 1 — Ярмілко) | `08_02` | R&D partnership |
 | E.10 | Kalman/EMA filtering для delta_t noise suppression (±8% → ±1.2%) | `08_02` | R&D partnership |
 | E.12 | Boolean minimization TX decision conditions (Karnaugh/Quine-McCluskey) | `08_02` | Потребує Любченко |
@@ -1237,7 +1247,6 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 | E.29 | Альтернативні EBFC медіатори (ferrocene, methylene blue) | `01_03` | R&D alternatives |
 | E.37 | TimescaleDB для telemetry_logs: hypertables + continuous aggregates | `04_01` | >100M рядків/місяць |
 | E.40 | **Ignion Virtual Antenna™:** NN02-310 як альтернатива Yageo/Taoglas 868 МГц | `02_01` §5 | Evaluation kit + VSWR тест |
-| ARCH.2 | Ingress Proxy (Rust/Go) + Kafka для >1M packets/hour | `00_01`, `06_01` | Series D |
 | ARCH.20 | Petri Net PN-модель Rails моноліту: формальна верифікація відсутності deadlock при 10,000 concurrent IoT connections. Sidekiq + Puma + PostgreSQL modeling. Конволюційний метод для зменшення state space explosion у 10-100 разів | `08_02` | R&D (Супруненко, ЧНУ) |
 | ARCH.24 | CE/FCC/RoHS/EMC/IP68 compliance roadmap для EU/NA ринків: CE-RED (868 МГц LoRa), FCC Part 15/90, RoHS-2, IP68 (IEC 60529), REACH. Кожна сертифікація потребує 3-6 місяців та спеціалізованої лабораторії | `08_02` | Pre-mass production (Косенюк, ЧНУ) |
 | ARCH.33 | **ECDH P-256 key exchange як альтернатива HKDF-only provisioning** — мерехтливий розгляд: замість per-device HKDF (FW.1) використати ECDH у factory або field provisioning. Plus: Perfect Forward Secrecy без shared master key. Minus: Curve25519/P-256 потребує ~512 байт SRAM + 50 мс CPU на handshake | `08_02` §1B (Ярмілко), `03_05` | Research alternative (узгодити з FW.17 Hash Ratchet) |
