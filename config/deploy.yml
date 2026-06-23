@@ -104,6 +104,10 @@ env:
     CHAINLINK_DATA_VERSION: 1
     CHAINLINK_CALLBACK_GAS_LIMIT: 300000
 
+    # Web3 fail-closed: Hadron KYC / Chainlink raise on missing creds, not silent stub (INF.11).
+    # Gates HadronComplianceService / OracleDispatchService (they check ONLY this flag, not Rails.env).
+    WEB3_STRICT_MODE: "true"
+
     # Log everything from Rails
     # RAILS_LOG_LEVEL: debug
 

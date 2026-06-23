@@ -850,11 +850,11 @@
 - [ ] 👤 quarterly DR-drill (PITR-clone + TF-state rollback на staging, зафіксувати факт. RTO/RPO vs цілі)
 - [ ] 👤 master-ключі (`RAILS_MASTER_KEY`/`PROVISIONING_MASTER_KEY`) → vault + offline-копія (незамінні, поза backup)
 
-#### INF.11 — `WEB3_STRICT_MODE` відсутній у deploy-конфігах (KYC fail-closed off + canon drift)
-- **P1** · 🤖+👤 · ⚪ · → `06_04`
-- **Стан:** Не розпочато — `WEB3_STRICT_MODE` відсутній у `config/deploy.yml`/`deploy.canopy.yml`/`deploy/akash/deploy.yaml`/`.kamal/secrets` (grep=0), хоча `06_04 §2.1` декларує «required for production». READ-verified наслідок: Hadron KYC fail-closed (`hadron_compliance_service.rb#check_kyc_status`/`#register_rwa_asset` — `raise` лише коли `WEB3_STRICT_MODE=true` **І** нема `hadron_api_key`) вимкнено → захист тримається ВИКЛЮЧНО на наявності `hadron_api_key` credential; забудеш ключ → тиха `simulate_kyc_check` → mint проти fake-KYC. Money + honesty (canon твердить, deploy не має). Канон `06_04 §2.1`.
-- [ ] 🤖 `WEB3_STRICT_MODE=true` у `config/deploy.yml env.clear` + Akash SDL web+job
-- [ ] 👤 рішення money-path + верифікувати fail-closed на першому деплої
+#### INF.11 — `WEB3_STRICT_MODE` у deploy-конфігах (KYC fail-closed)
+- **P1** · 🤖+👤 · 🟢 · → `06_04`
+- **Стан:** Machine-half ✅ — `WEB3_STRICT_MODE="true"` заведено в `config/deploy.yml` env.clear + Akash `deploy.yaml`/`deploy.yaml.tpl` (web+job); canopy успадковує (Kamal `deploy.canopy.yml` env-less; canopy = `RAILS_ENV=production` → strict скрізь консистентно). `.kamal/secrets` НЕ чіпано (non-secret). Закриває READ-verified діру: Hadron KYC/RWA + Chainlink dispatch/callback перевіряють ЛИШЕ `WEB3_STRICT_MODE=="true"` (не `Rails.env`) → без прапора відсутній credential тихо падав у `simulate_*` (fake-KYC mint). Канон-інвентар синхронізовано: `06_04 §2.1` · `06_02 §2.8/§6`. Лишається 👤 (deploy-gated). Канон `06_04 §2.1`.
+- [x] 🤖 `WEB3_STRICT_MODE="true"` у `config/deploy.yml` env.clear + Akash `deploy.yaml`+`.tpl` (web+job) + канон-sync
+- [ ] 👤 money-path рішення + верифікувати fail-closed на першому деплої
 
 #### INF.12 — Deploy ENV-injection drift: код `ENV.fetch` без default ∉ deploy-декларації
 - **P1** · 🤖+👤 · ⚪ · → `06_04`
@@ -1174,6 +1174,7 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 
 | ID | Пункт | Канон |
 |----|-------|-------|
+| DOC-T.30 | **М06 канон↔deploy-реальність drift** (виявлено при INF.11 deep-read; 🤖, не блокер): (1) `06_01` env.clear ілюстративний блок дублює й розходиться з реальним `config/deploy.yml` (показує `RAILS_ALLOWED_HOSTS`, якого нема; не показує `RELEASE_VERSION`/`CHAINLINK_DATA_VERSION`/`CHAINLINK_CALLBACK_GAS_LIMIT`) → замінити на pointer до `06_04 §2.1` (one-home); (2) `06_01` Canopy-таблиця каже Canopy на Akash, реальний `deploy.yml` workflow = Kamal/GCP; (3) `06_03` Sentry-environments таблиця передбачає окремий `canopy` Rails-env, якого немає (canopy = `RAILS_ENV=production`); (4) `RAILS_ALLOWED_HOSTS` «обов'язковий у production» (`06_04 §2.1`/`06_01`) відсутній у реальному `config/deploy.yml` env.clear (INF.12-sibling). | `06_01`, `06_03`, `06_04` |
 
 _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tooling знахідки → додавати рядком сюди._
 

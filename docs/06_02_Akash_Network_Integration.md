@@ -659,6 +659,7 @@ ENV-блоки `web` та `job` сервісів **дзеркалюють** од
 
 | Змінна | Значення | Required for | Опис |
 |--------|---------|-------------|------|
+| `WEB3_STRICT_MODE` | `true` | boot / web3-worker | Hadron KYC/RWA + Chainlink dispatch/callback fail-closed на missing creds (перевіряють ЛИШЕ цей прапор, не `Rails.env`); web+job (INF.11) |
 | `RAILS_ALLOWED_HOSTS` | *(потрібно встановити)* | runtime ⚠️ | Comma-separated allowlist (DNS-rebinding захист) — напр. `api.silkennet.com,.silkennet.com` |
 | `DISABLE_SSL` | *(не встановлювати)* | runtime | `true` лише якщо Akash ingress / Cloudflare термінує TLS |
 | `CSP_ENFORCE` | *(не встановлювати)* | runtime | `true` після burn-in CSP report-only (1–2 тижні) |
@@ -965,6 +966,7 @@ Mapping між конфігурацією Kamal (`config/deploy.yml` + `.kamal/s
 | `env.clear WEB_CONCURRENCY=2` | `env: WEB_CONCURRENCY=4` (більше CPU на Akash) |
 | `env.clear RAILS_MAX_THREADS=3` | `env: RAILS_MAX_THREADS=3` |
 | `env.clear APP_HOST=silkennet.com` | `env: APP_HOST=silkennet.com` (web+job) |
+| `env.clear WEB3_STRICT_MODE=true` | `env: WEB3_STRICT_MODE=true` (web+job) |
 | `(job) DB_POOL=17` | `env: DB_POOL=17` (job-сервіс — Sidekiq pool) |
 | `volumes: silken_net_storage:/rails/storage` | `params.storage.data.mount: /rails/storage` |
 | `builder.arch: amd64` | `profiles.compute.web.resources.cpu.units: 4` |

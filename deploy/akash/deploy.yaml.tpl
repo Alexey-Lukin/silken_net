@@ -48,6 +48,8 @@ services:
       - CHAINLINK_HMAC_SECRET=${chainlink_hmac_secret}
       - CHAINLINK_DATA_VERSION=1
       - CHAINLINK_CALLBACK_GAS_LIMIT=300000
+      # Web3 fail-closed: Hadron KYC / Chainlink raise on missing creds (INF.11).
+      - WEB3_STRICT_MODE=true
     expose:
       - port: 80
         as: 80
@@ -113,6 +115,8 @@ services:
       - CHAINLINK_HMAC_SECRET=${chainlink_hmac_secret}
       - CHAINLINK_DATA_VERSION=1
       - CHAINLINK_CALLBACK_GAS_LIMIT=300000
+      # Web3 fail-closed: Hadron KYC / Chainlink raise on missing creds (INF.11).
+      - WEB3_STRICT_MODE=true
 
   alloy:
     image: grafana/alloy:v1.16.3

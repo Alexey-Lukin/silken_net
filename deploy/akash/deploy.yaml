@@ -184,6 +184,8 @@ services:
       - CHAINLINK_HMAC_SECRET=REQUIRED_SECRET_NOT_SET
       - CHAINLINK_DATA_VERSION=1
       - CHAINLINK_CALLBACK_GAS_LIMIT=300000
+      # Web3 fail-closed: Hadron KYC / Chainlink raise on missing creds (INF.11).
+      - WEB3_STRICT_MODE=true
 
     # --- Exposed Ports -------------------------------------------------------
     # Maps to: config/deploy.yml → boot.proxy.publish
@@ -303,6 +305,8 @@ services:
       - CHAINLINK_HMAC_SECRET=REQUIRED_SECRET_NOT_SET
       - CHAINLINK_DATA_VERSION=1
       - CHAINLINK_CALLBACK_GAS_LIMIT=300000
+      # Web3 fail-closed: Hadron KYC / Chainlink raise on missing creds (INF.11).
+      - WEB3_STRICT_MODE=true
 
   # ---------------------------------------------------------------------------
   # Alloy Service — Grafana Alloy Metrics Agent (OBS.1)
