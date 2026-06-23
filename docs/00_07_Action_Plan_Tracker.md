@@ -834,14 +834,14 @@
 
 #### INF.4 — Akash TLS strategy decision: hostname operator vs Cloudflare
 - **P1** · 🤖+👤 · 🟡 · → `06_02 §TLS термінація`
-- **Стан:** runbook готовий — Опція A (Cloudflare HTTPS + direct UDP CoAP) рекоменд. + pre-flight + fallback B (Cloudflare НЕ proxies UDP → CoAP потребує direct ingress).
+- **Стан:** runbook готовий — Опція A (Cloudflare HTTPS + direct UDP CoAP) рекоменд. + pre-flight + fallback B (Cloudflare НЕ proxies UDP → CoAP потребує direct ingress). Рішення фіксує публічний домен → розблоковує `INF.3` (TLS termination) + `S6.18` (`RAILS_ALLOWED_HOSTS` allowlist).
 - [ ] 👤 прийняти рішення (рекоменд. A)
 - [ ] 🤖 якщо Akash hostname — automation у `terraform/`
 
 #### S6.18 — Rails web security hardening
 - **P1** · 👤 · 🟢 · → `06_04 §2.1`
-- **Стан:** production.rb (force_ssl/HSTS/hosts) + CSP (report-only) + security_headers.rb + session_store.
-- [ ] 👤 `RAILS_ALLOWED_HOSTS` у Kamal/Akash перед prod
+- **Стан:** Код готовий — production.rb (force_ssl/HSTS + host-auth з probe-exclusions `/up`/`/ready`/`/metrics`) + CSP (report-only) + security_headers.rb + session_store. `RAILS_ALLOWED_HOSTS` значення свідомо НЕ закомічено (на відміну від `APP_HOST`/`WEB3_STRICT_MODE`): порожнє → warn-and-allow (degraded, не fatal), а закомічене **неправильне** → 403 block-all; публічний домен ще за `INF.4` (Cloudflare `silkennet.app` vs direct silkennet.com). Тому operator-set перед prod із реальним доменом — безпечніше за передчасний commit. Канон `06_04 §2.1`.
+- [ ] 👤 `RAILS_ALLOWED_HOSTS` у Kamal/Akash env.clear із фінальним публічним доменом (після `INF.4`) — інакше 403 block-all
 - [ ] 👤 після 1-2 тиж CSP-репортів → `CSP_ENFORCE=true`
 
 #### DR.1 — Disaster Recovery drill + master-key backup
@@ -862,6 +862,17 @@
 - [ ] 🤖 audit: grep усіх `ENV.fetch`/`credentials.dig` без fallback vs deploy env-декларації → список відсутніх
 - [ ] 🤖 додати відсутні ENV у `env.secret` + Akash SDL (contract-адреси = deploy-order: лише після `forge deploy`)
 - [ ] 👤 задокументувати required `credentials.yml.enc` keys у `06_04`
+
+#### INF.15 — Terraform GCP `apply`-блокери (IAM ролі · firewall · tfvars · image-path)
+- **P1** · 🤖+👤 · ⚪ · → `06_01`
+- **Стан:** Не розпочато — блокери першого `terraform apply`/`kamal deploy` (iam.tf code-verified; provider/Kamal-behavior ⚠️ inferred): (1) `terraform/iam.tf` нема `roles/storage.objectAdmin` → deploy-SA не пише в GCS TF-state bucket, + нема `iam.serviceAccountUser`; (2) ⚠️ firewall `var.ssh_source_ranges` default `[]` (`variables.tf`) → `source_ranges=[]` (`vpc.tf:57`) → GCP provider може відхилити apply; (3) `terraform.tfvars.example` `ssh_source_ranges=["0.0.0.0/0"]` відхиляється ВЛАСНОЮ валідацією `variables.tf`; (4) ⚠️ Kamal `image: silken_net` (`config/deploy.yml:5`) без `<project>/silken-net/` → GCP Artifact Registry push може впасти (Kamal-2.12-inferred). Канон `06_01`.
+- [ ] 🤖 iam.tf +`storage.objectAdmin`(scoped)+`iam.serviceAccountUser`; firewall `count`-guard на порожній CIDR; tfvars.example → CIDR-placeholder
+- [ ] 👤 верифікувати `terraform apply` + Kamal push end-to-end (підтвердити inferred-пункти)
+
+#### S4.3 — Akash SDL secrets
+- **P1** · 👤 · ⚪ · → `06_02`
+- **Стан:** Не розпочато — Akash = primary prod deploy → SDL (`deploy/akash/deploy.yaml`) тримає `REQUIRED_SECRET_NOT_SET` плейсхолдери для **повного дзеркала** Kamal `env.secret` (обидва сервіси web+job); без них boot-crash (категорія A) — той самий prod-deploy-ENV клас, що `S1.1`. ⚠️ placeholder ≠ disabled: `REQUIRED_SECRET_NOT_SET` для `PROMETHEUS_AUTH_*` НЕ-порожній → basic-auth активна з відомим-публічним значенням (`PrometheusCollector#authorized?`), а Alloy remote_write на літерал → тихо нічого не пушить (INF.14 sibling). Канон `06_02 §2` (категорії A/B/C — boot-critical / web3 / observability).
+- [ ] 👤 заповнити в `deploy/akash/deploy.yaml` → верифікувати startup (observability creds = security, не лише startup)
 
 #### S6.14 — peaq_signing_key: rotation & revocation
 - **P2** · 👤 · 🟡 · → `06_04 §5.4`, `04_02 §S6.14`
@@ -901,8 +912,9 @@
 
 #### ARCH.34 — Queen-side LoRaWAN Helium SOS fallback
 - **P2** · 🤖 · ⚪ · → `06_08 §1.2`, `02_05 §6.1`
-- **Стан:** Не розпочато — Helium SOS fallback перенесено Soldier→Queen (STM32WLE5JC flash/RAM/topology несумісний): Queen LoRaMac-node + OTAA join + FCntUp persist; SOS-маяк ~12 байт (НЕ телеметрія — SF12 EU868 ~51B cap) → Helium hotspot → LNS → Rails `POST /telemetry/helium`; Soldier лишається raw LoRa P2P AES-128. Implementation Anchor L3. Канон `02_05 §6.1` / `06_08 §1.2`.
-- [ ] 🤖 Queen `queen_helium_lorawan_uplink()`
+- **Стан:** Не розпочато — **2-half scope** (аудит: маркер раніше приховував backend-half). Firmware wire-spec ✅ готова в каноні (`02_05 §6.1`: Queen LoRaMac-node + OTAA + FCntUp persist; SOS-маяк ~12 байт — НЕ телеметрія, SF12 EU868 ~51B cap; AES-128 CMAC/CTR). АЛЕ **backend-half відсутній**: Rails `POST /api/v1/telemetry/helium` route + worker не існують (`grep helium app/` = 0) → firmware-emit нема куди слати. Обидві half 🤖-doable; backend = передумова e2e. Soldier лишається raw LoRa P2P AES-128. Implementation Anchor L3, resilience Phase 2. Канон `02_05 §6.1` / `06_08 §1.2`.
+- [ ] 🤖 backend: `POST /api/v1/telemetry/helium` route + HMAC + `EwsAlert(queen_uplink_lost)` worker (передумова firmware-half)
+- [ ] 🤖 Queen `queen_helium_lorawan_uplink()` (після backend endpoint)
 
 #### INF.13 — Deploy runtime config-баги (mailer host · DB pool · entrypoint · Canopy job)
 - **P2** · 🤖 · 🟢 · → `06_05`
@@ -911,16 +923,10 @@
 - [x] 🤖 `DB_POOL: 17` (Sidekiq/job-роль); entrypoint pg_isready → fail-loud; Canopy web-only задокументовано
 
 #### INF.14 — Observability pipeline wiring: метрики/алерти не «доїдуть»
-- **P2** · 🤖+👤 · 🟡 · → `06_03`
+- **P2** · 🤖+👤 · 🟢 · → `06_03`
 - **Стан:** Machine-half ✅ — (1) circuit-breaker alert поріг `gt 1`→`gt 0` (gauge=`1.0` при open через `set_circuit_breaker_gauge`; `gt 1` ніколи не firing) + коментар проти регресії; (2) `grafana/alloy` запінено `:latest`→`v1.16.3` (`deploy.yaml`/`.tpl`/`ci.yml` — CI валідує ту саму River-версію, що біжить); (3) знято stale `gaia2`-tag (BIZ.16 dissolved). Лишається 👤 (deploy-gated): Akash alloy→`web:80` internal route (`to: service:`) — інакше scrape впирається в публічний ingress → IP-allowlist 403. Канон `06_03`.
 - [x] 🤖 alert поріг `gt 0`; pin `grafana/alloy`; зняти `gaia2`-tag
 - [ ] 👤 alloy→web internal route (Akash `to: service:`) → верифікувати scrape на деплої
-
-#### INF.15 — Terraform GCP `apply`-блокери (IAM ролі · firewall · tfvars · image-path)
-- **P2** · 🤖+👤 · ⚪ · → `06_01`
-- **Стан:** Не розпочато — блокери першого `terraform apply`/`kamal deploy` (iam.tf code-verified; provider/Kamal-behavior ⚠️ inferred): (1) `terraform/iam.tf` нема `roles/storage.objectAdmin` → deploy-SA не пише в GCS TF-state bucket, + нема `iam.serviceAccountUser`; (2) ⚠️ firewall `var.ssh_source_ranges` default `[]` (`variables.tf`) → `source_ranges=[]` (`vpc.tf:57`) → GCP provider може відхилити apply; (3) `terraform.tfvars.example` `ssh_source_ranges=["0.0.0.0/0"]` відхиляється ВЛАСНОЮ валідацією `variables.tf`; (4) ⚠️ Kamal `image: silken_net` (`config/deploy.yml:5`) без `<project>/silken-net/` → GCP Artifact Registry push може впасти (Kamal-2.12-inferred). Канон `06_01`.
-- [ ] 🤖 iam.tf +`storage.objectAdmin`(scoped)+`iam.serviceAccountUser`; firewall `count`-guard на порожній CIDR; tfvars.example → CIDR-placeholder
-- [ ] 👤 верифікувати `terraform apply` + Kamal push end-to-end (підтвердити inferred-пункти)
 
 #### INF.10 — Kamal-proxy healthcheck → `/ready` (readiness-gated cutover)
 - **P3** · 👤 · 🟡 · → `06_01`
@@ -931,11 +937,6 @@
 - **P3** · 🤖 · ⚪ · → `06_07`
 - **Стан:** Не розпочато — `Deploy · Canopy` (`deploy.yml`) стріляє на КОЖЕН main CI-success; коли деплой стане живим (реальні секрети), загейтити на infra-шляхи (`terraform/**`/`Dockerfile`/`config/deploy.yml`/`.kamal/**`) тим самим changes-діфом, що `Deploy · GHCR Mirror`. Зараз premature — deploy і так no-op'иться без секретів. Канон `06_07 §1`.
 - [ ] 🤖 path-gate `deploy.yml` коли deploy стане живим
-
-#### S4.3 — Akash SDL secrets
-- **P3** · 👤 · ⚪ · → `06_02`
-- **Стан:** Не розпочато — SDL (`deploy/akash/deploy.yaml`) тримає `REQUIRED_SECRET_NOT_SET` плейсхолдери для **повного дзеркала** Kamal `env.secret` (обидва сервіси web+job). ⚠️ placeholder ≠ disabled: `REQUIRED_SECRET_NOT_SET` для `PROMETHEUS_AUTH_*` НЕ-порожній → basic-auth активна з відомим-публічним значенням (`PrometheusCollector#authorized?`), а Alloy remote_write на літерал → тихо нічого не пушить (INF.14 sibling). Канон `06_02 §2` (категорії A/B/C — boot-critical / web3 / observability).
-- [ ] 👤 заповнити в `deploy/akash/deploy.yaml` → верифікувати startup (observability creds = security, не лише startup)
 
 #### S5.6 — GCS bucket для Terraform state (chicken-and-egg)
 - **P3** · 👤 · ⚪ · → `06_02 §GCS bucket`
@@ -1174,7 +1175,7 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 
 | ID | Пункт | Канон |
 |----|-------|-------|
-| DOC-T.30 | **М06 канон↔deploy-реальність drift** (виявлено при INF.11 deep-read; 🤖, не блокер): (1) `06_01` має ДВА ілюстративні env-блоки (env.clear ~§Kamal + Web3-ENV bash §«Змінні Середовища»), що дублюють і розходяться з реальним `config/deploy.yml` (env.clear показує `RAILS_ALLOWED_HOSTS`, якого нема; не показує `RELEASE_VERSION`/`CHAINLINK_DATA_VERSION`/`CHAINLINK_CALLBACK_GAS_LIMIT`; обидва omit `WEB3_STRICT_MODE`) → замінити на pointer до `06_04 §2.1` (one-home); (2) `06_01` Canopy-таблиця каже Canopy на Akash, реальний `deploy.yml` workflow = Kamal/GCP; (3) `06_03` Sentry-environments таблиця передбачає окремий `canopy` Rails-env, якого немає (canopy = `RAILS_ENV=production`); (4) `RAILS_ALLOWED_HOSTS` «обов'язковий у production» (`06_04 §2.1`/`06_01`) відсутній у реальному `config/deploy.yml` env.clear (INF.12-sibling). | `06_01`, `06_03`, `06_04` |
+| DOC-T.30 | **М06 канон↔deploy-реальність drift** (виявлено при INF.11 deep-read; 🤖, не блокер): (1) `06_01` має ДВА ілюстративні env-блоки (env.clear ~§Kamal + Web3-ENV bash §«Змінні Середовища»), що дублюють і розходяться з реальним `config/deploy.yml` (env.clear показує `RAILS_ALLOWED_HOSTS`, якого нема; не показує `RELEASE_VERSION`/`CHAINLINK_DATA_VERSION`/`CHAINLINK_CALLBACK_GAS_LIMIT`; обидва omit `WEB3_STRICT_MODE`) → замінити на pointer до `06_04 §2.1` (one-home); (2) `06_01` Canopy-таблиця каже Canopy на Akash, реальний `deploy.yml` workflow = Kamal/GCP; (3) `06_03` Sentry-environments таблиця передбачає окремий `canopy` Rails-env, якого немає (canopy = `RAILS_ENV=production`). *(RAILS_ALLOWED_HOSTS deploy-gap — НЕ тут: дім `S6.18`.)* | `06_01`, `06_03`, `06_04` |
 
 _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tooling знахідки → додавати рядком сюди._
 
