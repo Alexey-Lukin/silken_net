@@ -1,8 +1,10 @@
 # Name of your application. Used to uniquely configure containers.
 service: silken_net
 
-# Name of the container image.
-image: silken_net
+# Name of the container image. registry.server (below) is prepended, so the final ref is
+# europe-west1-docker.pkg.dev/<GCP_PROJECT_ID>/silken-net/silken_net. Replace <GCP_PROJECT_ID>
+# after `terraform apply` (matches `terraform output artifact_registry_url`). [INF.15]
+image: <GCP_PROJECT_ID>/silken-net/silken_net
 
 # Deploy to these servers (Ingress Anchor IP from Terraform: `terraform output ingress_ip`).
 # After infrastructure pivot, GCP hosts only the Ingress Anchor (e2-micro) — Rails runs on Akash.

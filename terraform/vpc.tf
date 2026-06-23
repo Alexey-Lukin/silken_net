@@ -45,6 +45,10 @@ resource "google_compute_router_nat" "nat" {
 
 # Firewall: Allow SSH (port 22) — restricted to specified source ranges
 resource "google_compute_firewall" "allow_ssh" {
+  # Skip the rule entirely when no SSH CIDR is configured — an empty source_ranges makes
+  # the GCP provider reject the apply. Set var.ssh_source_ranges (VPN/office CIDR) to enable
+  # SSH; otherwise reach instances via IAP / OS Login / gcloud. [INF.15]
+  count       = length(var.ssh_source_ranges) > 0 ? 1 : 0
   name        = "silken-net-allow-ssh"
   network     = google_compute_network.silken_net_vpc.name
   description = "Allow SSH access from specified CIDR ranges to web nodes"

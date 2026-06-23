@@ -14,10 +14,12 @@ db_read_replica_count = 0
 # Protection
 enable_deletion_protection = true
 
-# SSH Access — IMPORTANT: restrict to your IP/VPN CIDR in production
-ssh_user           = "deploy"
-ssh_public_key     = "ssh-ed25519 AAAA... deploy@silken-net"
-ssh_source_ranges  = ["0.0.0.0/0"]
+# SSH Access — IMPORTANT: restrict to your IP/VPN CIDR in production.
+# 0.0.0.0/0 is rejected by variable validation. Leave [] to skip the SSH firewall
+# entirely (reach instances via IAP / OS Login / gcloud).
+ssh_user          = "deploy"
+ssh_public_key    = "ssh-ed25519 AAAA... deploy@silken-net"
+ssh_source_ranges = ["203.0.113.0/24"] # CHANGE_ME to your VPN/office CIDR (or [] to skip)
 
 # Redis — REMOVED from GCP (Memorystore has no public IP).
 # Use Upstash (serverless Redis with TLS public endpoints) instead.

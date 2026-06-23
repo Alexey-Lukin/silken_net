@@ -53,3 +53,21 @@ resource "google_project_iam_member" "deploy_cloudsql_client" {
   role    = "roles/cloudsql.client"
   member  = "serviceAccount:${google_service_account.deploy.email}"
 }
+
+# Storage Object Admin — scoped to the Terraform state bucket so the deploy SA can
+# read/write `terraform/state` objects (the GCS backend in main.tf). Bucket is created
+# out-of-band by bootstrap.sh (chicken-and-egg before `terraform init`). Scoped to the
+# bucket, NOT project-wide, so the SA cannot touch Active Storage / other buckets. [INF.15]
+resource "google_storage_bucket_iam_member" "deploy_tf_state" {
+  bucket = "silken-net-terraform-state"
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_service_account.deploy.email}"
+}
+
+# Service Account User — the deploy SA must "act as" the runtime SA when it creates
+# compute instances that run under that SA (Ingress Anchor service_account block). [INF.15]
+resource "google_service_account_iam_member" "deploy_act_as" {
+  service_account_id = google_service_account.deploy.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.deploy.email}"
+}
