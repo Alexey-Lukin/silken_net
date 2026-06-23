@@ -853,7 +853,6 @@
 #### INF.11 — `WEB3_STRICT_MODE` у deploy-конфігах (KYC fail-closed)
 - **P1** · 🤖+👤 · 🟢 · → `06_04`
 - **Стан:** Machine-half ✅ — `WEB3_STRICT_MODE="true"` заведено в `config/deploy.yml` env.clear + Akash `deploy.yaml`/`deploy.yaml.tpl` (web+job); canopy успадковує (Kamal `deploy.canopy.yml` env-less; canopy = `RAILS_ENV=production` → strict скрізь консистентно). `.kamal/secrets` НЕ чіпано (non-secret). Закриває READ-verified діру: Hadron KYC/RWA + Chainlink dispatch/callback перевіряють ЛИШЕ `WEB3_STRICT_MODE=="true"` (не `Rails.env`) → без прапора відсутній credential тихо падав у `simulate_*` (fake-KYC mint). Канон-інвентар синхронізовано: `06_04 §2.1` · `06_02 §2.8/§6`. Лишається 👤 (deploy-gated). Канон `06_04 §2.1`.
-- [x] 🤖 `WEB3_STRICT_MODE="true"` у `config/deploy.yml` env.clear + Akash `deploy.yaml`+`.tpl` (web+job) + канон-sync
 - [ ] 👤 money-path рішення + верифікувати fail-closed на першому деплої
 
 #### INF.12 — Deploy ENV-injection drift: код `ENV.fetch` без default ∉ deploy-декларації
@@ -919,13 +918,11 @@
 #### INF.13 — Deploy runtime config-баги (mailer host · DB pool · entrypoint · Canopy job)
 - **P2** · 🤖 · 🟢 · → `06_05`
 - **Стан:** Machine-half ✅ — (1) mailer host `example.com` → `ENV.fetch("APP_HOST", "silkennet.com")`+https (`production.rb`), `APP_HOST` заведено в Kamal `env.clear` + Akash web/job; (2) `DB_POOL=17` для Sidekiq/job-ролі (Kamal job-env + Akash job; web лишається default-pool); (3) entrypoint Cloud-SQL-proxy readiness → fail-loud (`exit 1`, не тихий boot без БД); (4) Canopy задокументовано web-only-by-design (Sidekiq через Akash primary, не відсутня `job:`-секція). Чекає верифікації на першому реальному деплої. Канон `06_05`.
-- [x] 🤖 mailer host ← `ENV.fetch("APP_HOST", …)` + `APP_HOST` у deploy env
-- [x] 🤖 `DB_POOL: 17` (Sidekiq/job-роль); entrypoint pg_isready → fail-loud; Canopy web-only задокументовано
+- [ ] 👤 верифікувати на першому деплої (mailer host · `DB_POOL` · entrypoint fail-loud · Canopy web-only)
 
 #### INF.14 — Observability pipeline wiring: метрики/алерти не «доїдуть»
 - **P2** · 🤖+👤 · 🟢 · → `06_03`
 - **Стан:** Machine-half ✅ — (1) circuit-breaker alert поріг `gt 1`→`gt 0` (gauge=`1.0` при open через `set_circuit_breaker_gauge`; `gt 1` ніколи не firing) + коментар проти регресії; (2) `grafana/alloy` запінено `:latest`→`v1.16.3` (`deploy.yaml`/`.tpl`/`ci.yml` — CI валідує ту саму River-версію, що біжить); (3) знято stale `gaia2`-tag (BIZ.16 dissolved). Лишається 👤 (deploy-gated): Akash alloy→`web:80` internal route (`to: service:`) — інакше scrape впирається в публічний ingress → IP-allowlist 403. Канон `06_03`.
-- [x] 🤖 alert поріг `gt 0`; pin `grafana/alloy`; зняти `gaia2`-tag
 - [ ] 👤 alloy→web internal route (Akash `to: service:`) → верифікувати scrape на деплої
 
 #### INF.10 — Kamal-proxy healthcheck → `/ready` (readiness-gated cutover)
