@@ -857,11 +857,8 @@
 
 #### INF.12 — Deploy ENV-injection drift: код `ENV.fetch` без default ∉ deploy-декларації
 - **P1** · 🤖+👤 · 🟢 · → `06_04`
-- **Стан:** Machine-half ✅ — повний set-diff (код `ENV.fetch`/`credentials.dig` без fallback vs deploy-декларації). Контракт-адреси (`CARBON_COIN`/`FOREST_COIN`/`DAO_TREASURY`/`ETHEREUM_ANCHOR_CONTRACT`/`PROTOCOL_PARAMETERS` + `CELO_CUSD`/`TOUCAN_BRIDGE`/`KLIMA_RETIREMENT`/`ETHERISC_DIP`/`PURO_EARTH_REGISTRY`) + `POLYGON_RPC_URL`/`CELO_RPC_URL` заведено в Kamal + Akash web/job (`deploy.yaml`+`.tpl`): контракт-адреси як `REQUIRED_SECRET_NOT_SET` (public + deploy-order → не terraform-vars, fill post-`forge deploy`), RPC = terraform akash vars. `06_04 §2.2` тепер містить `aws`/`gcs` (storage.yml credentials) — третій чекбокс закрито. ⚠️ `CELO_RPC_URL` без значення → код fallback на Alfajores TESTNET (обходить web3_network_guard, E.49) → mainnet обов'язковий. Лишається 👤: provision на деплої. Канон `06_04 §2.1`.
-- [x] 🤖 audit set-diff `ENV.fetch`/`credentials.dig` vs deploy-декларації
-- [x] 🤖 contract-addresses (placeholder) + `POLYGON_RPC_URL`/`CELO_RPC_URL` у Kamal/Akash/terraform
-- [x] 🤖 `credentials.yml.enc` keys у `06_04 §2.2` (+`aws`/`gcs`)
-- [ ] 👤 fill contract addresses post-`forge deploy` + provision RPC/secrets
+- **Стан:** Machine-half ✅ — set-diff `ENV.fetch`/`credentials.dig` vs deploy закрито: 10 контракт-адрес + `POLYGON_RPC_URL`/`CELO_RPC_URL` заведено в Kamal + Akash web/job (контракт-адреси = `REQUIRED_SECRET_NOT_SET` placeholder, deploy-order → не terraform-vars); `06_04 §2.2` +`aws`/`gcs`. ⚠️ `CELO_RPC_URL` порожній → fallback Alfajores TESTNET (обходить `web3_network_guard`; E.49) → mainnet обов'язковий. Інвентар — [`06_04 §2.1`](06_04_Secrets_Checklist).
+- [ ] 👤 fill contract addresses post-`forge deploy` + provision RPC / secrets
 
 #### INF.15 — Terraform GCP `apply`-блокери (IAM ролі · firewall · tfvars · image-path)
 - **P1** · 🤖+👤 · 🟢 · → `06_01`
