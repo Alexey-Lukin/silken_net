@@ -338,7 +338,7 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 | **Черга** | `web3` (пріоритет 7) |
 | **Retry** | 3 |
 | **Тригер** | `ClusterHealthCheckWorker` (щоденно о 02:00 UTC) — для здорових кластерів |
-| **ENV** | `CELO_RPC_URL` (з fallback), `ORACLE_PRIVATE_KEY`, `CELO_CUSD_CONTRACT_ADDRESS` |
+| **ENV** | `CELO_RPC_URL` ⚠️ без значення → fallback на Alfajores **TESTNET** (реальні cUSD на testnet, обходить `web3_network_guard`; E.49 → mainnet endpoint обов'язковий), `ORACLE_PRIVATE_KEY`, `CELO_CUSD_CONTRACT_ADDRESS` |
 | **Спека** | `spec/services/celo/community_reward_service_spec.rb` |
 
 **Умови нарахування:**

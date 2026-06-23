@@ -608,7 +608,7 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
 
 ☐ 12. Верифікувати Ingress Anchor маршрутизацію
        curl https://api.silkennet.com/up    → 200
-       curl https://api.silkennet.com/ready → 200 {"status":"ready"}  (DB+Redis; 503 = not_ready)
+       curl https://api.silkennet.com/ready → 200 {"status":"ready"}  (DB+Redis+Kredis; 503 = not_ready)
 
 ☐ 13. Oracle гаманці поповнені газом (MATIC/ETH/SOL/CELO) (Pre-Flight #3)
 
@@ -626,7 +626,7 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
 ☐ 18. [INF.10] Readiness-gated cutover — ПІСЛЯ кроку 12 (коли /ready=200):
        розкоментувати proxy.healthcheck (path: /ready) у config/deploy.yml
        (схема Kamal 2.12 готова, закоментована — interval 3 / timeout 5).
-       НЕ раніше: на холодному старті /ready 503-ить, доки БД/Redis не готові
+       НЕ раніше: на холодному старті /ready 503-ить, доки БД/Redis/Kredis не готові
        → kamal-proxy довбе /ready до deploy_timeout → rollback; дефолт /up
        (liveness) прощає bring-up. Після фліпу: kamal deploy → новий контейнер
        бере трафік ЛИШЕ при /ready=200; повільний cold-start → підняти
