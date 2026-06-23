@@ -54,7 +54,6 @@ resource "local_file" "akash_sdl" {
     cloud_sql_instance_connection_name = var.cloud_sql_instance_connection_name
     gcp_sa_key_base64                  = var.gcp_sa_key_base64
     redis_url                          = var.redis_url
-    kredis_redis_url                   = var.kredis_redis_url != "" ? var.kredis_redis_url : "${trimsuffix(var.redis_url, "/0")}/1"
     web_cpu_units                      = var.web_cpu_units
     web_memory_size                    = var.web_memory_size
     web_storage_size                   = var.web_storage_size

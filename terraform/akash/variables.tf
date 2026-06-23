@@ -82,12 +82,9 @@ variable "redis_url" {
   }
 }
 
-variable "kredis_redis_url" {
-  description = "Redis connection URL for Kredis distributed locks (DB 1). If empty, derived from redis_url by replacing the DB suffix with /1."
-  type        = string
-  default     = ""
-  sensitive   = true
-}
+# kredis_redis_url variable removed [B1] — Kredis auto-derives DB 1 from REDIS_URL in
+# config/redis/shared.yml, so the SDL no longer injects KREDIS_REDIS_URL (a non-empty
+# inject would override the Rails-side derive). Re-add only to point at a separate instance.
 
 # -----------------------------------------------------------------------------
 # 🛑 BOOT-CRITICAL Secrets — Rails refuses to boot in production without these

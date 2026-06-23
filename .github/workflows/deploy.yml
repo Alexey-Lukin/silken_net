@@ -31,29 +31,69 @@ jobs:
         uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: audit
-      - name: Check PROVISIONING_MASTER_KEY
+      - name: Verify deploy secrets [B1]
         id: check
         env:
+          # Boot-critical: empty → container crashes on boot or kamal can't decrypt.
+          # Mirror config/deploy.yml env.secret (the kamal-deploy env: block below).
+          KAMAL_MASTER_KEY: ${{ secrets.KAMAL_MASTER_KEY }}
+          RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           PROVISIONING_MASTER_KEY: ${{ secrets.PROVISIONING_MASTER_KEY }}
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          CANOPY_REDIS_URL: ${{ secrets.CANOPY_REDIS_URL }}
+          ORACLE_MINTER_PRIVATE_KEY: ${{ secrets.ORACLE_MINTER_PRIVATE_KEY }}
+          ORACLE_SLASHER_PRIVATE_KEY: ${{ secrets.ORACLE_SLASHER_PRIVATE_KEY }}
+          # Runtime (lazy): feature degraded until provisioned, not a boot crash. Warn only.
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          ETHEREUM_ANCHOR_PRIVATE_KEY: ${{ secrets.ETHEREUM_ANCHOR_PRIVATE_KEY }}
+          ALCHEMY_POLYGON_RPC_URL: ${{ secrets.ALCHEMY_POLYGON_RPC_URL }}
+          ALCHEMY_ETHEREUM_RPC_URL: ${{ secrets.ALCHEMY_ETHEREUM_RPC_URL }}
+          SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
+          POLYGON_RPC_URL: ${{ secrets.POLYGON_RPC_URL }}
+          CELO_RPC_URL: ${{ secrets.CELO_RPC_URL }}
+          SOLANA_WALLET_KEYPAIR: ${{ secrets.SOLANA_WALLET_KEYPAIR }}
+          SOLANA_FEE_PAYER_PUBKEY: ${{ secrets.SOLANA_FEE_PAYER_PUBKEY }}
+          SOLANA_FEE_PAYER_TOKEN_ACCOUNT: ${{ secrets.SOLANA_FEE_PAYER_TOKEN_ACCOUNT }}
+          SOLANA_USDC_MINT_ADDRESS: ${{ secrets.SOLANA_USDC_MINT_ADDRESS }}
+          CHAINLINK_FUNCTIONS_ROUTER: ${{ secrets.CHAINLINK_FUNCTIONS_ROUTER }}
+          CHAINLINK_SUBSCRIPTION_ID: ${{ secrets.CHAINLINK_SUBSCRIPTION_ID }}
+          CHAINLINK_HMAC_SECRET: ${{ secrets.CHAINLINK_HMAC_SECRET }}
+          CHAINLINK_DON_ID: ${{ secrets.CHAINLINK_DON_ID }}
         run: |
-          # Absent key → not a failure: this repo simply has no deploy secrets
-          # configured. Emit configured=false so the deploy jobs skip cleanly
-          # (green run, no red noise) instead of asserting and going red.
-          if [ -z "$PROVISIONING_MASTER_KEY" ]; then
-            echo "::notice::PROVISIONING_MASTER_KEY not set — Canopy deploy skipped" \
-                 "(no deploy secrets configured for this repo). See SEC.11 in docs/00_08."
+          # B1: gate the FULL boot-critical set, not just PROVISIONING_MASTER_KEY — else the
+          # deploy step injects empties for the rest and the container crashes AFTER a green
+          # verify (false safety). Boot-critical = crashes boot (master-key decrypt /
+          # PROVISIONING guard / oracle KeyError per web3_network_guard) or blocks kamal.
+          # Runtime = lazy-fail on first use (warn, don't block). Canon: docs/06_04 §1+§2.
+          BOOT_CRITICAL="KAMAL_MASTER_KEY RAILS_MASTER_KEY PROVISIONING_MASTER_KEY GCP_SA_KEY POSTGRES_PASSWORD CANOPY_REDIS_URL ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY"
+          RUNTIME="SENTRY_DSN ETHEREUM_ANCHOR_PRIVATE_KEY ALCHEMY_POLYGON_RPC_URL ALCHEMY_ETHEREUM_RPC_URL SOLANA_RPC_URL POLYGON_RPC_URL CELO_RPC_URL SOLANA_WALLET_KEYPAIR SOLANA_FEE_PAYER_PUBKEY SOLANA_FEE_PAYER_TOKEN_ACCOUNT SOLANA_USDC_MINT_ADDRESS CHAINLINK_FUNCTIONS_ROUTER CHAINLINK_SUBSCRIPTION_ID CHAINLINK_HMAC_SECRET CHAINLINK_DON_ID"
+
+          missing=""
+          for v in $BOOT_CRITICAL; do
+            [ -z "${!v}" ] && missing="$missing $v"
+          done
+
+          # Absent boot-critical → this repo has no deploy secrets configured. Skip cleanly
+          # (configured=false → deploy jobs no-op), no red noise, instead of asserting.
+          if [ -n "$missing" ]; then
+            echo "::notice::Canopy deploy skipped — boot-critical secrets not configured:$missing. See docs/06_04 §1 (SEC.11)."
             echo "configured=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          # Key IS set → still validate it (a present-but-malformed key is a real
-          # misconfiguration and must stay loud).
-          KEY_LEN=${#PROVISIONING_MASTER_KEY}
-          if [ "$KEY_LEN" -lt 64 ]; then
-            echo "::error::PROVISIONING_MASTER_KEY is suspiciously short ($KEY_LEN chars)." \
-                 "Expected: >=64 hex characters (256-bit key)."
+
+          # Present-but-malformed is a real misconfig → stay loud (red).
+          if [ "${#PROVISIONING_MASTER_KEY}" -lt 64 ]; then
+            echo "::error::PROVISIONING_MASTER_KEY too short (${#PROVISIONING_MASTER_KEY} chars; expected >=64 hex). See SEC.11/SEC.9."
             exit 1
           fi
-          echo "PROVISIONING_MASTER_KEY present (length: $KEY_LEN chars). OK."
+
+          # Runtime secrets: feature-degraded if absent, but not a boot crash → warn, don't block.
+          for v in $RUNTIME; do
+            [ -z "${!v}" ] && echo "::warning::$v not set — its Web3/observability feature is degraded until provisioned (docs/06_04 §2.1)."
+          done
+
+          echo "All boot-critical deploy secrets present. Proceeding."
           echo "configured=true" >> "$GITHUB_OUTPUT"
 
   terraform:
@@ -143,14 +183,46 @@ jobs:
 
       - name: Kamal Deploy to Canopy
         run: kamal deploy -d canopy
+        # ⚠️ Drift guard: this env: block MUST mirror config/deploy.yml env.secret (which
+        # .kamal/secrets reads as $VAR from THIS shell). Any env.secret entry missing here is
+        # injected EMPTY → boot crash (RAILS_MASTER_KEY decrypt / PROVISIONING_MASTER_KEY guard)
+        # or web3-strict raise. KREDIS_REDIS_URL is intentionally omitted (auto-derives from
+        # REDIS_URL). Canon: docs/06_04 §1 + §2.
         env:
           KAMAL_MASTER_KEY: ${{ secrets.KAMAL_MASTER_KEY }}
           GCP_ARTIFACT_REGISTRY_KEY: ${{ secrets.GCP_SA_KEY }}
+          # --- Application core ---
+          RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           # Component style: same Cloud SQL user/password as production; Canopy isolates
           # via POSTGRES_DATABASE=silken_net_canopy (config/deploy.canopy.yml). REDIS stays separate.
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           REDIS_URL: ${{ secrets.CANOPY_REDIS_URL }}
           RELEASE_VERSION: ${{ github.sha }}
+          # --- Observability ---
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          # --- Hardware provisioning gate (master_key_strength_check.rb — boot-critical) ---
+          PROVISIONING_MASTER_KEY: ${{ secrets.PROVISIONING_MASTER_KEY }}
+          # --- Web3 oracle keys (dual-key split, B-02) — web3_network_guard fail-closes at boot ---
+          ORACLE_PRIVATE_KEY: ${{ secrets.ORACLE_PRIVATE_KEY }}
+          ORACLE_MINTER_PRIVATE_KEY: ${{ secrets.ORACLE_MINTER_PRIVATE_KEY }}
+          ORACLE_SLASHER_PRIVATE_KEY: ${{ secrets.ORACLE_SLASHER_PRIVATE_KEY }}
+          ETHEREUM_ANCHOR_PRIVATE_KEY: ${{ secrets.ETHEREUM_ANCHOR_PRIVATE_KEY }}
+          # --- RPC endpoints (Web3::RpcConnectionPool; testnet-marker boot guard) ---
+          ALCHEMY_POLYGON_RPC_URL: ${{ secrets.ALCHEMY_POLYGON_RPC_URL }}
+          ALCHEMY_ETHEREUM_RPC_URL: ${{ secrets.ALCHEMY_ETHEREUM_RPC_URL }}
+          SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
+          POLYGON_RPC_URL: ${{ secrets.POLYGON_RPC_URL }}
+          CELO_RPC_URL: ${{ secrets.CELO_RPC_URL }}
+          # --- Solana minting (Solana::MintingService) ---
+          SOLANA_WALLET_KEYPAIR: ${{ secrets.SOLANA_WALLET_KEYPAIR }}
+          SOLANA_FEE_PAYER_PUBKEY: ${{ secrets.SOLANA_FEE_PAYER_PUBKEY }}
+          SOLANA_FEE_PAYER_TOKEN_ACCOUNT: ${{ secrets.SOLANA_FEE_PAYER_TOKEN_ACCOUNT }}
+          SOLANA_USDC_MINT_ADDRESS: ${{ secrets.SOLANA_USDC_MINT_ADDRESS }}
+          # --- Chainlink Functions Router v1 (Proof of Growth) ---
+          CHAINLINK_FUNCTIONS_ROUTER: ${{ secrets.CHAINLINK_FUNCTIONS_ROUTER }}
+          CHAINLINK_SUBSCRIPTION_ID: ${{ secrets.CHAINLINK_SUBSCRIPTION_ID }}
+          CHAINLINK_HMAC_SECRET: ${{ secrets.CHAINLINK_HMAC_SECRET }}
+          CHAINLINK_DON_ID: ${{ secrets.CHAINLINK_DON_ID }}
 
   # [INF.6] Post-deploy gate: FW.56 freeze-contract probes through the real
   # UDP boundary (Ingress Anchor → Akash → coap_listener). HTTP health checks

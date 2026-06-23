@@ -17,10 +17,13 @@ services:
       - POSTGRES_HOST=127.0.0.1
       - POSTGRES_USER=silken_net
       - POSTGRES_PASSWORD=${db_password}
+      # DB SET selector (config/database.yml; defaults to silken_net_production if unset).
+      # Explicit so a canopy-on-Akash render just overrides to silken_net_canopy. [INF.16]
+      - POSTGRES_DATABASE=silken_net_production
       - CLOUD_SQL_INSTANCE_CONNECTION_NAME=${cloud_sql_instance_connection_name}
       - GCP_SA_KEY_BASE64=${gcp_sa_key_base64}
       - REDIS_URL=${redis_url}
-      - KREDIS_REDIS_URL=${kredis_redis_url}
+      # KREDIS_REDIS_URL omitted — auto-derives from REDIS_URL (config/redis/shared.yml). [B1]
       - RAILS_MAX_THREADS=${rails_max_threads}
       - WEB_CONCURRENCY=${web_concurrency}
       # Mailer link host (production.rb) + Sentry release tag (config/initializers/sentry.rb).
@@ -107,10 +110,13 @@ services:
       - POSTGRES_HOST=127.0.0.1
       - POSTGRES_USER=silken_net
       - POSTGRES_PASSWORD=${db_password}
+      # DB SET selector (config/database.yml; defaults to silken_net_production if unset).
+      # Explicit so a canopy-on-Akash render just overrides to silken_net_canopy. [INF.16]
+      - POSTGRES_DATABASE=silken_net_production
       - CLOUD_SQL_INSTANCE_CONNECTION_NAME=${cloud_sql_instance_connection_name}
       - GCP_SA_KEY_BASE64=${gcp_sa_key_base64}
       - REDIS_URL=${redis_url}
-      - KREDIS_REDIS_URL=${kredis_redis_url}
+      # KREDIS_REDIS_URL omitted — auto-derives from REDIS_URL (config/redis/shared.yml). [B1]
       - RAILS_MAX_THREADS=${rails_max_threads}
       # Sidekiq concurrency=15 → DB pool must match + headroom (config/sidekiq.yml).
       - DB_POOL=17

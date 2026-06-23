@@ -92,6 +92,9 @@ services:
       - POSTGRES_HOST=127.0.0.1
       - POSTGRES_USER=silken_net
       - POSTGRES_PASSWORD=REQUIRED_SECRET_NOT_SET
+      # DB SET selector (config/database.yml; defaults to silken_net_production if unset).
+      # Explicit here so a canopy-on-Akash SDL just overrides to silken_net_canopy. [INF.16]
+      - POSTGRES_DATABASE=silken_net_production
 
       # Cloud SQL Auth Proxy — connection name for the proxy to target.
       # Format: project-id:region:instance-name
@@ -106,10 +109,9 @@ services:
       # Maps to: Kamal env.secret REDIS_URL
       - REDIS_URL=REQUIRED_SECRET_NOT_SET
 
-      # Redis URL for Kredis distributed locks (Web3 nonce management).
-      # Same Upstash instance, DB 1 to isolate locks from Sidekiq queue data.
-      # Maps to: Kamal env.secret KREDIS_REDIS_URL
-      - KREDIS_REDIS_URL=REQUIRED_SECRET_NOT_SET
+      # KREDIS_REDIS_URL intentionally omitted — Kredis auto-derives it from REDIS_URL (DB 1)
+      # via config/redis/shared.yml. A placeholder here ("REQUIRED_SECRET_NOT_SET") is truthy
+      # to ENV.fetch and would override the derive → Kredis connects to garbage. [B1]
 
       # Puma thread count per worker — keep low (3-5) to limit GVL contention.
       - RAILS_MAX_THREADS=3
@@ -283,10 +285,13 @@ services:
       - POSTGRES_HOST=127.0.0.1
       - POSTGRES_USER=silken_net
       - POSTGRES_PASSWORD=REQUIRED_SECRET_NOT_SET
+      # DB SET selector (config/database.yml; defaults to silken_net_production if unset).
+      # Explicit here so a canopy-on-Akash SDL just overrides to silken_net_canopy. [INF.16]
+      - POSTGRES_DATABASE=silken_net_production
       - CLOUD_SQL_INSTANCE_CONNECTION_NAME=REQUIRED_SECRET_NOT_SET
       - GCP_SA_KEY_BASE64=REQUIRED_SECRET_NOT_SET
       - REDIS_URL=REQUIRED_SECRET_NOT_SET
-      - KREDIS_REDIS_URL=REQUIRED_SECRET_NOT_SET
+      # KREDIS_REDIS_URL omitted — auto-derives from REDIS_URL (config/redis/shared.yml). [B1]
       - RAILS_MAX_THREADS=3
       # Sidekiq concurrency=15 (config/sidekiq.yml) → DB pool must match + headroom (default 5 starves).
       - DB_POOL=17

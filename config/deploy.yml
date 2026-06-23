@@ -64,7 +64,9 @@ env:
     # Cloud SQL password (host/user are non-secret → env.clear). Component style: config/database.yml.
     - POSTGRES_PASSWORD
     - REDIS_URL
-    - KREDIS_REDIS_URL
+    # KREDIS_REDIS_URL intentionally absent — Kredis auto-derives it from REDIS_URL (DB 1)
+    # via config/redis/shared.yml. Declaring it here would inject an empty string that
+    # overrides the derive (see .kamal/secrets note). Add back only for a separate instance.
     # --- Observability ---
     - SENTRY_DSN
     # --- Hardware provisioning gate (config/initializers/master_key_strength_check.rb) ---
