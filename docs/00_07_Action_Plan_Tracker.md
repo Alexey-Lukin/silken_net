@@ -790,17 +790,17 @@
 - [ ] 🤖 якщо активувати — `ToucanBridgeWorker.sidekiq_retries_exhausted` → симетричний rollback (дзеркало lock: `balance↑`+`locked↓`) + тест failure-path + in-flight інваріант `locked ≤ balance`
 - [ ] 👤 доля `finalize_spend!` (dead): видалити (Ruthless Prune, [`04_06 §B.2`](04_06_Testing_Guide_and_Coverage)) чи лишити з `[target]`-marker для майбутнього confirm-finalize
 
-#### ARCH.13 — EigenLayer AVS як дешевша L1-anchor альтернатива
-- **P3** · 🤖 · 🌿 · → `05_04`
-- **Стан:** Scale-time cost-opt (research): EigenLayer AVS (~$0.01/тиждень) замість direct L1 write (~$5-15/тиждень) для weekly `StateRootAnchor`. **Чесна рамка:** при 1 tx/тиждень ($5-15 ≈ $260-780/рік) economics не тисне, а AVS = реальна operational-складність (operators/slashing/restaked-ETH security) → виграш на scale/gas-spikes, не на launch; direct-L1 лишається baseline. Sibling ARCH.12 (Merkle root — той самий 05_04 anchor). Канон [`05_04`](05_04_Ethereum_L1_State_Anchor).
-- [ ] 🤖 оцінити AVS feasibility + security перед mainnet anchor-arch lock-in (low urgency)
-
 #### ARCH.45 — Money-path воркери: `retries_exhausted`→rollback аудит (recovery-симетрія)
 - **P2** · 🤖+👤 · ⚪ · → `05_02`
 - **Стан:** Системний reliability-патерн: лише mint-flow (`MintCarbonCoinWorker` + `BlockchainConfirmationWorker`) має `sidekiq_retries_exhausted` → `MintingRollbackService` recovery. Решта money-path воркерів — **без** exhausted-handler: `SolanaBatchPayoutWorker`, `BurnCarbonTokensWorker`, `InsurancePayoutWorker`, `EvaluateTreeBatchWorker` (+ `ToucanBridgeWorker` = E.66). На остаточному краху після retry кошти/стан можуть зависнути без відкату. Потрібен аудит-перш: класифікувати кожен (real money-loss / double-pay / slash-miss / idempotent-safe / downstream-recovered — напр. `EvaluateTreeBatchWorker` pending-tx підхоплює mint-cron) → handler/idempotency-guard лише де реальна діра (НЕ blanket). НЕ горить (потребує retry-exhaustion + деякі self-heal), але money-path → варто пройти. Канон [`05_02`](05_02_Proof_of_Growth_Pipeline) (rollback recovery) + [`04_02`](04_02_Business_Logic_and_Services) (Sidekiq воркери).
 - [ ] 🤖 аудит 4 money-path воркерів (Solana payout / burn / insurance / evaluate-batch): класифікувати exhausted-семантику (money-loss / double-pay / slash-miss / safe)
 - [ ] 🤖 `sidekiq_retries_exhausted` → rollback / idempotency-guard там, де аудит виявив реальну діру
 - [ ] 👤 payout double-spend policy (Solana/insurance): re-attempt vs freeze — рішення перед money-path зміною
+
+#### ARCH.13 — EigenLayer AVS як дешевша L1-anchor альтернатива
+- **P3** · 🤖 · 🌿 · → `05_04`
+- **Стан:** Scale-time cost-opt (research): EigenLayer AVS (~$0.01/тиждень) замість direct L1 write (~$5-15/тиждень) для weekly `StateRootAnchor`. **Чесна рамка:** при 1 tx/тиждень ($5-15 ≈ $260-780/рік) economics не тисне, а AVS = реальна operational-складність (operators/slashing/restaked-ETH security) → виграш на scale/gas-spikes, не на launch; direct-L1 лишається baseline. Sibling ARCH.12 (Merkle root — той самий 05_04 anchor). Канон [`05_04`](05_04_Ethereum_L1_State_Anchor).
+- [ ] 🤖 оцінити AVS feasibility + security перед mainnet anchor-arch lock-in (low urgency)
 
 ## §06 · Deploy / Observability / Secrets / Ops
 
