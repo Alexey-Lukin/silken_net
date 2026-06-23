@@ -59,7 +59,8 @@ env:
   secret:
     # --- Application core ---
     - RAILS_MASTER_KEY
-    - DATABASE_URL
+    # Cloud SQL password (host/user are non-secret → env.clear). Component style: config/database.yml.
+    - POSTGRES_PASSWORD
     - REDIS_URL
     - KREDIS_REDIS_URL
     # --- Observability ---
@@ -86,6 +87,12 @@ env:
     - CHAINLINK_HMAC_SECRET
     - CHAINLINK_DON_ID
   clear:
+    # PostgreSQL connection (component style — config/database.yml; port defaults to 5432).
+    # Kamal deploys inside the GCP VPC → connect to the Cloud SQL PRIVATE IP directly
+    # (no Auth Proxy — that is Akash-only). Set POSTGRES_HOST to `terraform output
+    # database_private_ip` after apply. POSTGRES_PASSWORD is in env.secret above.
+    POSTGRES_HOST: <CLOUD_SQL_PRIVATE_IP>
+    POSTGRES_USER: silken_net
     # Mailer link host (config/environments/production.rb action_mailer.default_url_options).
     APP_HOST: silkennet.com
     # Puma clustered mode — number of forked worker processes.

@@ -14,7 +14,9 @@ services:
       - PORT=80
       - RAILS_ENV=production
       - RAILS_MASTER_KEY=${rails_master_key}
-      - DATABASE_URL=${database_url}
+      - POSTGRES_HOST=127.0.0.1
+      - POSTGRES_USER=silken_net
+      - POSTGRES_PASSWORD=${db_password}
       - CLOUD_SQL_INSTANCE_CONNECTION_NAME=${cloud_sql_instance_connection_name}
       - GCP_SA_KEY_BASE64=${gcp_sa_key_base64}
       - REDIS_URL=${redis_url}
@@ -83,7 +85,9 @@ services:
       # --- Application core ---
       - RAILS_ENV=production
       - RAILS_MASTER_KEY=${rails_master_key}
-      - DATABASE_URL=${database_url}
+      - POSTGRES_HOST=127.0.0.1
+      - POSTGRES_USER=silken_net
+      - POSTGRES_PASSWORD=${db_password}
       - CLOUD_SQL_INSTANCE_CONNECTION_NAME=${cloud_sql_instance_connection_name}
       - GCP_SA_KEY_BASE64=${gcp_sa_key_base64}
       - REDIS_URL=${redis_url}

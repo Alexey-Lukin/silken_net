@@ -16,7 +16,9 @@ rails_master_key = "CHANGE_ME"
 
 # Cloud SQL Auth Proxy — connects to Cloud SQL via Google Cloud API (HTTPS)
 # No public IP on Cloud SQL required. No VPN/Tailscale needed.
-database_url                       = "postgres://silken_net:CHANGE_ME@127.0.0.1:5432/silken_net_production"
+# Component style (config/database.yml): host=127.0.0.1 + user=silken_net are non-secret
+# literals in the SDL; only the password is injected here.
+db_password                        = "CHANGE_ME_use_a_strong_password_16_chars_minimum"
 cloud_sql_instance_connection_name = "your-project:europe-west1:silken-db"
 gcp_sa_key_base64                  = "CHANGE_ME_base64_encoded_sa_key_json"
 

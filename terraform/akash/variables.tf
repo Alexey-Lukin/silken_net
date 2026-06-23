@@ -49,14 +49,14 @@ variable "rails_master_key" {
   sensitive   = true
 }
 
-variable "database_url" {
-  description = "PostgreSQL connection URL (via Cloud SQL Auth Proxy at 127.0.0.1). Format: postgres://user:pass@127.0.0.1:5432/db_name"
+variable "db_password" {
+  description = "Cloud SQL PostgreSQL password (component style — config/database.yml). host=127.0.0.1 (Auth Proxy) and user=silken_net are non-secret literals in the SDL; only the password is injected as a secret. Mirror of terraform/variables.tf db_password."
   type        = string
   sensitive   = true
 
   validation {
-    condition     = can(regex("^postgres(ql)?://", var.database_url))
-    error_message = "DATABASE_URL must start with postgres:// or postgresql://"
+    condition     = length(var.db_password) >= 16
+    error_message = "db_password must be at least 16 characters."
   }
 }
 

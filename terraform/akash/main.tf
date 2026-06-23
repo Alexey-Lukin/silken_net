@@ -50,7 +50,7 @@ resource "local_file" "akash_sdl" {
   content = templatefile("${path.module}/../../deploy/akash/deploy.yaml.tpl", {
     docker_image                       = var.docker_image
     rails_master_key                   = var.rails_master_key
-    database_url                       = var.database_url
+    db_password                        = var.db_password
     cloud_sql_instance_connection_name = var.cloud_sql_instance_connection_name
     gcp_sa_key_base64                  = var.gcp_sa_key_base64
     redis_url                          = var.redis_url

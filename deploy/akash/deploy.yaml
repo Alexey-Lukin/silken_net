@@ -85,12 +85,13 @@ services:
       # Maps to: Kamal env.secret RAILS_MASTER_KEY
       - RAILS_MASTER_KEY=REQUIRED_SECRET_NOT_SET
 
-      # PostgreSQL connection URL — connects through Cloud SQL Auth Proxy at 127.0.0.1.
-      # The proxy runs inside the container (started by bin/docker-entrypoint) and
-      # tunnels traffic through Google Cloud API (outbound HTTPS — Akash allows this).
-      # Format: postgres://silken_net:<password>@127.0.0.1:5432/silken_net_production
-      # Maps to: Kamal env.secret DATABASE_URL
-      - DATABASE_URL=REQUIRED_SECRET_NOT_SET
+      # PostgreSQL connection components (Rails-8 component style — config/database.yml).
+      # Akash reaches Cloud SQL through the Auth Proxy at 127.0.0.1 (started by
+      # bin/docker-entrypoint; tunnels via Google Cloud API — Akash allows outbound HTTPS).
+      # host/user are non-secret; only POSTGRES_PASSWORD is injected as a secret. Port → 5432 default.
+      - POSTGRES_HOST=127.0.0.1
+      - POSTGRES_USER=silken_net
+      - POSTGRES_PASSWORD=REQUIRED_SECRET_NOT_SET
 
       # Cloud SQL Auth Proxy — connection name for the proxy to target.
       # Format: project-id:region:instance-name
@@ -262,7 +263,10 @@ services:
       # --- Application core ---
       - RAILS_ENV=production
       - RAILS_MASTER_KEY=REQUIRED_SECRET_NOT_SET
-      - DATABASE_URL=REQUIRED_SECRET_NOT_SET
+      # PostgreSQL components (config/database.yml). Auth Proxy → 127.0.0.1; only password is a secret.
+      - POSTGRES_HOST=127.0.0.1
+      - POSTGRES_USER=silken_net
+      - POSTGRES_PASSWORD=REQUIRED_SECRET_NOT_SET
       - CLOUD_SQL_INSTANCE_CONNECTION_NAME=REQUIRED_SECRET_NOT_SET
       - GCP_SA_KEY_BASE64=REQUIRED_SECRET_NOT_SET
       - REDIS_URL=REQUIRED_SECRET_NOT_SET
