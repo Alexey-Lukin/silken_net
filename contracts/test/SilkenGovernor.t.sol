@@ -5,7 +5,9 @@ import "forge-std/Test.sol";
 import "../SilkenGovernor.sol";
 import "../SilkenTimelock.sol";
 import "../SilkenForestCoin.sol";
+import "../SilkenCarbonCoin.sol";
 import "../ProtocolParameters.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 
 /**
  * @title SilkenGovernor Test Suite
@@ -23,6 +25,7 @@ contract SilkenGovernorTest is Test {
     SilkenTimelock public timelock;
     SilkenGovernor public governor;
     ProtocolParameters public protocolParams;
+    SilkenCarbonCoin public scc; // [BIZ.4] governance-controlled token (admin = Timelock)
 
     address public admin = address(0xA);
     address public minter = address(0xB);
@@ -51,6 +54,10 @@ contract SilkenGovernorTest is Test {
 
         // 4. Deploy ProtocolParameters (timelock is governance)
         protocolParams = new ProtocolParameters(admin, address(timelock));
+
+        // 4b. Deploy SCC with admin = Timelock (mirrors Deploy.s.sol) so the DAO — and only the
+        // DAO, via the 48h Timelock — can manage SCC roles (MINTER/SLASHER oracle rotation).
+        scc = new SilkenCarbonCoin(address(timelock), admin, minter, slasher);
 
         // 5. Grant governor PROPOSER and CANCELLER roles on timelock
         vm.startPrank(admin);
@@ -249,6 +256,65 @@ contract SilkenGovernorTest is Test {
         assertEq(uint256(governor.state(proposalId)), uint256(IGovernor.ProposalState.Canceled));
     }
 
+    // ─── Governor ↔ SCC Integration [BIZ.4] ───────────────────────────
+    // The existing fullPipeline test only drives ProtocolParameters. These prove the DAO can,
+    // end-to-end, manage the SCC token itself — the real pre-mainnet validation for the
+    // irreversible "transfer admin-roles → Timelock" hand-over (BIZ.4): after the hand-over the
+    // ONLY way to rotate the minting/slashing oracles is a 48h governance proposal.
+
+    /// @dev Full DAO lifecycle grants SCC MINTER_ROLE to a new oracle; the oracle can then mint.
+    function test_governanceGrantsMinterRoleOnSCC() public {
+        address newMinter = makeAddr("newMinterOracle");
+        address recipient = makeAddr("daoTreeOwner");
+        assertFalse(scc.hasRole(scc.MINTER_ROLE(), newMinter));
+
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) = _createGrantRoleProposal(
+            address(scc), scc.MINTER_ROLE(), newMinter, "GIP-2: grant SCC MINTER_ROLE to new oracle"
+        );
+        _runFullPipeline(targets, values, calldatas, description);
+
+        // The DAO (via the 48h Timelock) now controls SCC minting authority...
+        assertTrue(scc.hasRole(scc.MINTER_ROLE(), newMinter));
+        // ...and the newly-authorized oracle can actually mint.
+        vm.prank(newMinter);
+        scc.mint(recipient, 1_000e18, "SNET-DAO-1");
+        assertEq(scc.balanceOf(recipient), 1_000e18);
+    }
+
+    /// @dev Full DAO lifecycle rotates the SCC SLASHER_ROLE oracle; the new slasher can burn.
+    function test_governanceGrantsSlasherRoleOnSCC() public {
+        address newSlasher = makeAddr("newSlasherOracle");
+        address holder = makeAddr("daoHolder");
+
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) = _createGrantRoleProposal(
+            address(scc), scc.SLASHER_ROLE(), newSlasher, "GIP-3: rotate SCC SLASHER_ROLE oracle"
+        );
+        _runFullPipeline(targets, values, calldatas, description);
+
+        assertTrue(scc.hasRole(scc.SLASHER_ROLE(), newSlasher));
+        // Prove the rotated slasher is functional end-to-end (mint via the genesis oracle, then slash).
+        vm.prank(minter);
+        scc.mint(holder, 1_000e18, "SNET-DAO-2");
+        vm.prank(newSlasher);
+        scc.slash(holder, 400e18);
+        assertEq(scc.balanceOf(holder), 600e18);
+    }
+
+    /// @dev No shortcut around the DAO: a non-Timelock caller cannot grant SCC roles directly.
+    function testRevert_directGrantMinterRole_byNonTimelock() public {
+        address attacker = makeAddr("roleAttacker");
+        bytes32 minterRole = scc.MINTER_ROLE();
+        // Read the admin role BEFORE prank — a contract call inside the expectRevert args would
+        // otherwise consume the prank, making the test contract (not `attacker`) the caller.
+        bytes32 adminRole = scc.DEFAULT_ADMIN_ROLE();
+
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, attacker, adminRole)
+        );
+        vm.prank(attacker);
+        scc.grantRole(minterRole, attacker);
+    }
+
     // ─── Helpers ──────────────────────────────────────────────────────
 
     function _mintAndDelegate(address to, uint256 amount, string memory clusterId) internal {
@@ -275,5 +341,48 @@ contract SilkenGovernorTest is Test {
         calldatas[0] = abi.encodeWithSelector(ProtocolParameters.setParameter.selector, paramKey, paramValue);
 
         desc = description;
+    }
+
+    /// @dev Build a single-call `grantRole(role, account)` proposal targeting any AccessControl contract.
+    function _createGrantRoleProposal(address target, bytes32 role, address account, string memory description)
+        internal
+        pure
+        returns (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory desc)
+    {
+        targets = new address[](1);
+        targets[0] = target;
+
+        values = new uint256[](1);
+        values[0] = 0;
+
+        calldatas = new bytes[](1);
+        calldatas[0] = abi.encodeWithSelector(IAccessControl.grantRole.selector, role, account);
+
+        desc = description;
+    }
+
+    /// @dev Drive a proposal through the full DAO lifecycle: propose → votingDelay → vote
+    ///      (voter1 + voter2 For) → votingPeriod → queue → 48h Timelock → execute.
+    function _runFullPipeline(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        string memory description
+    ) internal {
+        vm.roll(block.number + 1);
+        vm.prank(voter1);
+        uint256 proposalId = governor.propose(targets, values, calldatas, description);
+
+        vm.roll(block.number + VOTING_DELAY + 1);
+        vm.prank(voter1);
+        governor.castVote(proposalId, 1);
+        vm.prank(voter2);
+        governor.castVote(proposalId, 1);
+
+        vm.roll(block.number + VOTING_PERIOD + 1);
+        bytes32 descriptionHash = keccak256(bytes(description));
+        governor.queue(targets, values, calldatas, descriptionHash);
+        vm.warp(block.timestamp + 48 hours + 1);
+        governor.execute(targets, values, calldatas, descriptionHash);
     }
 }
