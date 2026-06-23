@@ -746,7 +746,7 @@
 #### S3.5 — Subgraph contract address
 - **P1** · 👤 · 🟢 · → `05_03`
 - **Стан:** SFC events (ForestMinted, GovernanceSlashed) у subgraph + zero-address fail-fast guard `subgraph/validate_addresses.sh` ✅ (раніше E.45); SFC-адреса = placeholder до mainnet-деплою. Канон `05_03`.
-- [ ] 👤 замінити `0x0000…` на реальну SFC-адресу у `subgraph.yaml` (після контракт-деплою)
+- [ ] 👤 mainnet-cutover subgraph (раніше E.48): `network: polygon-amoy` → mainnet + замінити `0x0000…` на реальну SFC-адресу у `subgraph.yaml` (після контракт-деплою)
 
 #### E.63 — метаболічний сигнал: розв'язано від хаосу (Option A) [2026-06-08]
 - **P1** · 🤖+👤 · 🟢 · → `05_02`
@@ -754,6 +754,13 @@
 - [ ] 👤 bench: реальна P_ebfc (`HW.13`) + E_cycle + recharge-крива (`03_power_profile.py`, RUNBOOK §3.2-3.3)
 - [ ] 🤖 калібрування `DELTA_T_FAST_S`/`DELTA_T_SLOW_S` (placeholder 600/7200с) під зміряну recharge-криву — per-deployment/species
 - [ ] 🔗 B (на FW.2) — точний stateless GP↔delta_t recompute (wire=raw delta_t, GP=EMA device-RTC; wire-rev2 28B не додав EMA-delta_t → rev3-кандидат у wire-budget ledger [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)) — механіка [`03_01 §13.6`](03_01_Firmware_Lifecycle_and_DMA)
+
+#### E.32 — Smart Contract Audit (pre-mainnet security gate)
+- **P1** · 🤖+👤 · 🟡 · → `05_03`
+- **Стан:** Static + test-легс закрито — Slither CI (`solidity_audit.yml` `slither:` job, fail-on high) + Foundry suite (fmt/build/test/coverage; permit + Governor↔SCC hardening — TEST.3) ✅; scope = 6 deployable контрактів. Roadmap-легс (Mythril/Hacken/CertiK) відкриті ↓. Канон [`05_03`](05_03_Tokenomics_SCC_and_SFC) §Smart Contract Audit Roadmap.
+- [ ] 🤖 Mythril symbolic-execution CI step (`myth analyze … --solv 0.8.35`, free) — поряд `slither:` job
+- [ ] 👤 Hacken/Hashlock manual audit (платний) — pre-Amoy→Mainnet HARD gate
+- [ ] 👤 CertiK Skynet runtime monitoring — post-mainnet deploy
 
 #### BIZ.13 — Slashing principal-agent: investor capital vs operator-bond
 - **P2** · 🤖+👤 · 🔗 · → `05_05 §3.1`, `05_03 §Slashing`, `04_02`
@@ -775,6 +782,11 @@
 - **P2** · 🤖+👤 · 🟢 · → [`05_05 §7`](05_05_Slashing_and_Risk_Policy)
 - **Стан:** E.63-лінза — окрім delta_t, решта bio→economy була слабка → виправлено: **anomaly ρ-відносна** (`z > ρ + (CRITICAL_Z_MAX−BASE_RHO)`, =45 при ρ=28 — ambient-temp більше не тригерить хибну аномалію) + **stress_index conformance** (Z-anomaly bounded ≪ slash-поріг «Z alone never slashes»; degenerate `avg_z`/weather-`temp` прибрано; `max_status` слешить лише tamper). Throughline: Лоренц-оракул здоров'я **декоративний** → реальна цінність = DCI anti-fraud (device-Z≡server-Z); здоров'я ведуть ПРЯМІ сигнали (metabolism E.63 · sap · VPD · acoustic). Нічого не задеплоєно → correctness перед деплоєм. Канон [`03_04 §4`](03_04_mruby_Lorenz_Attractor) · [`05_05 §7`](05_05_Slashing_and_Risk_Policy) · [`05_05 §8`](05_05_Slashing_and_Risk_Policy).
 - [ ] 🔗 real-signal activation (sap/VPD/acoustic stress_index + per-species/season пороги) — ground-truth calibration (bench, [`08_02`](08_02_Academic_Institutions_Registry)). Cross-ref: E.63, FW.8, FW.50.
+
+#### ARCH.13 — EigenLayer AVS як дешевша L1-anchor альтернатива
+- **P3** · 🤖 · 🌿 · → `05_04`
+- **Стан:** Scale-time cost-opt (research): EigenLayer AVS (~$0.01/тиждень) замість direct L1 write (~$5-15/тиждень) для weekly `StateRootAnchor`. **Чесна рамка:** при 1 tx/тиждень ($5-15 ≈ $260-780/рік) economics не тисне, а AVS = реальна operational-складність (operators/slashing/restaked-ETH security) → виграш на scale/gas-spikes, не на launch; direct-L1 лишається baseline. Sibling ARCH.12 (Merkle root — той самий 05_04 anchor). Канон [`05_04`](05_04_Ethereum_L1_State_Anchor).
+- [ ] 🤖 оцінити AVS feasibility + security перед mainnet anchor-arch lock-in (low urgency)
 
 ## §06 · Deploy / Observability / Secrets / Ops
 
@@ -1166,13 +1178,9 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 | E.15 | Reed-Solomon FEC або Hamming для LoRa error correction | `08_02` | Потребує Косенюк |
 | E.18 | 10 запланованих Q1 публікацій — blocked by lab data | `08_03` | Blocked by UNI.1-3 |
 | E.29 | Альтернативні EBFC медіатори (ferrocene, methylene blue) | `01_03` | R&D alternatives |
-| E.32 | ✅ (Slither + Foundry) Smart Contract Audit: Slither в CI (`.github/workflows/solidity_audit.yml`). Foundry toolchain (`contracts/foundry.toml`): solc 0.8.35, EVM cancun, optimizer 200 runs, CI/production profiles. 6 test suites (`contracts/test/*.t.sol`; к-сть — `forge test`). Coverage via `forge coverage --ir-minimum`. Mythril + Hacken — окремі етапи pre-mainnet | `05_03` | Slither CI ✅ (Сесія 19-20), Foundry tests ✅ (Сесія 22-23), Mythril + Hacken TODO |
 | E.37 | TimescaleDB для telemetry_logs: hypertables + continuous aggregates | `04_01` | >100M рядків/місяць |
 | E.40 | **Ignion Virtual Antenna™:** NN02-310 як альтернатива Yageo/Taoglas 868 МГц | `02_01` §5 | Evaluation kit + VSWR тест |
-| DIFF.1 | `Wallet#lock_and_mint!` threshold = runtime param (не hardcoded) | `04_02` | Informational, no action |
-| E.48 | **The Graph subgraph на testnet `polygon-amoy`** — потребує mainnet deploy перед production | `05_01` | Post mainnet deploy |
 | ARCH.2 | Ingress Proxy (Rust/Go) + Kafka для >1M packets/hour | `00_01`, `06_01` | Series D |
-| ARCH.13 | EigenLayer AVS як альтернатива direct L1 write (~$0.01/week vs $5-15/week) | `05_04` | Research |
 | ARCH.20 | Petri Net PN-модель Rails моноліту: формальна верифікація відсутності deadlock при 10,000 concurrent IoT connections. Sidekiq + Puma + PostgreSQL modeling. Конволюційний метод для зменшення state space explosion у 10-100 разів | `08_02` | R&D (Супруненко, ЧНУ) |
 | ARCH.24 | CE/FCC/RoHS/EMC/IP68 compliance roadmap для EU/NA ринків: CE-RED (868 МГц LoRa), FCC Part 15/90, RoHS-2, IP68 (IEC 60529), REACH. Кожна сертифікація потребує 3-6 місяців та спеціалізованої лабораторії | `08_02` | Pre-mass production (Косенюк, ЧНУ) |
 | ARCH.33 | **ECDH P-256 key exchange як альтернатива HKDF-only provisioning** — мерехтливий розгляд: замість per-device HKDF (FW.1) використати ECDH у factory або field provisioning. Plus: Perfect Forward Secrecy без shared master key. Minus: Curve25519/P-256 потребує ~512 байт SRAM + 50 мс CPU на handshake | `08_02` §1B (Ярмілко), `03_05` | Research alternative (узгодити з FW.17 Hash Ratchet) |
@@ -1247,6 +1255,8 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 | TEST.2 | Seed-залежний telemetry-flake (order/state-pollution, не регресія): CCM-блок витікав `TELEMETRY_CCM_ENABLED` — user-`after { ENV.delete }` біжить ДО тіардауну `stub_const("ENV")` → чистить стаблений Hash → флаг лишався в реальному ENV → `chunk_size` 21→29 → 21-байтні пакети тихо скіпались → падіння в SEC.10/unpacker/CoAP-e2e (CI seed 48720). Фікс: глобальний ENV-snapshot `config.around` у `rails_helper` (закрив весь клас ENV-витоків) + `preload_trees` дзеркалить `perform`-skip коротких chunk (TypeError на обрізаному хвості) + regression-тест; урок канонізовано | `04_06 §B.2`, §B.4 |
 | TEST.3 | Solidity test-hardening (закрив §B.1.2 ERC20Permit + Governor Integration): повна EIP-712 сюїта — `permit()` (happy/expired/replay/cross-chain `vm.chainId`/wrong-signer, SCC+SFC) + SFC `delegateBySig` + спільний-nonce diamond, shared helper `test/helpers/Eip712SigUtils.sol`; Governor↔SCC role-management end-to-end (DAO видає/ротує `MINTER_ROLE`/`SLASHER_ROLE` через 48h-Timelock + non-Timelock grant reverts) = pre-mainnet валідація BIZ.4. Cross-chain replay = інваріант (SCC лише Polygon), не жива загроза | `04_06 §B.1.2`, `05_06` |
 | E.45 | SCC/SFC subgraph zero-address fail-fast guard (`subgraph/validate_addresses.sh`); real-address swap → S3.5 | `05_03` |
+| E.48 | The Graph subgraph на testnet `polygon-amoy` → потребує mainnet re-deploy; складено в **S3.5** (mainnet-cutover residual) — не окремий трек | `05_03` |
+| DIFF.1 | `Wallet#lock_and_mint!` conversion threshold = runtime-param (governance-tunable tokenomics rate, не hardcoded) — doc↔code diff-check, no action | `04_02`, `05_06` |
 | E.65 | `piezo_voltage_mv` фантом ВИДАЛЕНО (Ruthless Prune): колонка (всі партиції) + scope `seismic_activity` + btree-індекс — жоден wire-формат не ніс piezo, нічого не писало колонку. П'єзо = пасивний EXTI акустик-тригер ([`02_01 §3`](02_01_Hardware_Architecture_and_BOM)), не mV-датчик; сейсміка через `acoustic_events` | `04_01 §3` |
 | OPS.5 | Projects V2 TRL field schema (1-9 + Readiness Horizon SRL/MRL; `lib/github_bootstrap.rb`); live-board bootstrap-run → OPS.6 | `00_05 §1.1` |
 | E.61 | Solana micro-rewards batch payouts (Kredis-акумуляція → `transferChecked`, годинний cron, поріг-gated) | `05_01 §8`, `04_02 §10` |
