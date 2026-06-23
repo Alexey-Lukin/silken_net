@@ -850,6 +850,19 @@
 - [ ] 👤 quarterly DR-drill (PITR-clone + TF-state rollback на staging, зафіксувати факт. RTO/RPO vs цілі)
 - [ ] 👤 master-ключі (`RAILS_MASTER_KEY`/`PROVISIONING_MASTER_KEY`) → vault + offline-копія (незамінні, поза backup)
 
+#### INF.11 — `WEB3_STRICT_MODE` відсутній у deploy-конфігах (KYC fail-closed off + canon drift)
+- **P1** · 🤖+👤 · ⚪ · → `06_04`
+- **Стан:** Не розпочато — `WEB3_STRICT_MODE` відсутній у `config/deploy.yml`/`deploy.canopy.yml`/`deploy/akash/deploy.yaml`/`.kamal/secrets` (grep=0), хоча `06_04 §2.1` декларує «required for production». READ-verified наслідок: Hadron KYC fail-closed (`polygon/hadron_compliance_service.rb:61,74` — `raise` лише коли `WEB3_STRICT_MODE=true` **І** нема `hadron_api_key`) вимкнено → захист тримається ВИКЛЮЧНО на наявності `hadron_api_key` credential; забудеш ключ → тиха `simulate_kyc_check` → mint проти fake-KYC. Money + honesty (canon твердить, deploy не має). Канон `06_04 §2.1`.
+- [ ] 🤖 `WEB3_STRICT_MODE=true` у `config/deploy.yml env.clear` + Akash SDL web+job
+- [ ] 👤 рішення money-path + верифікувати fail-closed на першому деплої
+
+#### INF.12 — Deploy ENV-injection drift: код `ENV.fetch` без default ∉ deploy-декларації
+- **P1** · 🤖+👤 · ⚪ · → `06_04`
+- **Стан:** Не розпочато — код `ENV.fetch(...)` без default для змінних, ВІДСУТНІХ у `config/deploy.yml env.secret`/`.kamal/secrets`/Akash SDL → `KeyError` на першому worker / crash at boot (про цей клас попереджає сам `config/deploy.yml:50`). Code-verified: `CARBON_COIN_CONTRACT_ADDRESS`+`FOREST_COIN_CONTRACT_ADDRESS` (`blockchain_minting_service.rb:139-140`), `POLYGON_RPC_URL` ≠ задеклар. `ALCHEMY_POLYGON_RPC_URL` (`price_oracle_service.rb:33`), `KLIMA_RETIREMENT_CONTRACT`. ⚠️ `RAILS_MASTER_KEY=$(cat config/master.key)` (`.kamal/secrets:6`) — файл gitignored, нема в CI (CI-inferred). + вміст `credentials.yml.enc` (aws/gcs/peaq/iotex/streamr/dclimate/puro) ніде не задокументовано → перший file-upload/oracle-виклик впаде. Канон `06_04`.
+- [ ] 🤖 audit: grep усіх `ENV.fetch`/`credentials.dig` без fallback vs deploy env-декларації → список відсутніх
+- [ ] 🤖 додати відсутні ENV у `env.secret` + Akash SDL (contract-адреси = deploy-order: лише після `forge deploy`)
+- [ ] 👤 задокументувати required `credentials.yml.enc` keys у `06_04`
+
 #### S6.14 — peaq_signing_key: rotation & revocation
 - **P2** · 👤 · 🟡 · → `06_04 §5.4`, `04_02 §S6.14`
 - **Стан:** Rotation policy готова — dual-key grace 72h + планова ротація 90д + emergency revocation runbook. Лишається vault-store production-ключа. Канон `06_04 §5.4` (revocation runbook) · `04_02 §S6.14` (policy + код-стан).
@@ -857,8 +870,9 @@
 
 #### S1.5 — Kamal IP placeholders
 - **P2** · 👤 · ⚪ · → `06_01`
-- **Стан:** Не розпочато — `192.168.0.1` (`config/deploy.yml`) / `<INGRESS_ANCHOR_IP>` (`config/deploy.canopy.yml`) плейсхолдери; підставити реальну Ingress Anchor IP після `terraform apply` (canopy = той самий IP, диференціюється Akash SDL env). Канон `06_01`.
+- **Стан:** Не розпочато — `192.168.0.1` (`config/deploy.yml`) / `<INGRESS_ANCHOR_IP>` (`config/deploy.canopy.yml`) плейсхолдери; підставити реальну Ingress Anchor IP після `terraform apply` (canopy = той самий IP, диференціюється Akash SDL env). ⚠️ той самий клас: Ingress Anchor metadata `akash-deployment-ip="AKASH_IP_NOT_SET"` (`compute.tf:189`) → HAProxy back-end black-hole поки руками не оновиш + reset; нема автоматичного glue `terraform output -raw ingress_ip` → config/CI, крок лише в code-коментарі. Канон `06_01`.
 - [ ] 👤 підставити реальні IP після `terraform apply` → верифікувати deploy
+- [ ] 👤 оновити Ingress Anchor `akash-deployment-ip` metadata після Akash deploy (`compute.tf:189`) + внести обидва кроки в pre-flight чеклист `06_01`
 
 #### S2.4 — Observability industrial-grade hardening
 - **P2** · 👤 · 🟡 · → [`06_03 §2.9`](06_03_Prometheus_Observability)
@@ -890,6 +904,24 @@
 - **Стан:** Не розпочато — Helium SOS fallback перенесено Soldier→Queen (STM32WLE5JC flash/RAM/topology несумісний): Queen LoRaMac-node + OTAA join + FCntUp persist; SOS-маяк ~12 байт (НЕ телеметрія — SF12 EU868 ~51B cap) → Helium hotspot → LNS → Rails `POST /telemetry/helium`; Soldier лишається raw LoRa P2P AES-128. Implementation Anchor L3. Канон `02_05 §6.1` / `06_08 §1.2`.
 - [ ] 🤖 Queen `queen_helium_lorawan_uplink()`
 
+#### INF.13 — Deploy runtime config-баги (mailer host · DB pool · entrypoint · Canopy job)
+- **P2** · 🤖 · ⚪ · → `06_05`
+- **Стан:** Не розпочато — реальні config-баги, що кусають ПІСЛЯ деплою (READ-verified): (1) `action_mailer ... host: "example.com"` (`config/environments/production.rb:108`) → биті лінки в усіх email (password-reset/alert); (2) `DB_POOL` не виставлено в deploy → default 5 vs Sidekiq concurrency 15 (`config/sidekiq.yml`) → `ConnectionTimeoutError` під навантаженням (фікс у `database.yml`-коментарі, не застосовано); (3) `bin/docker-entrypoint` `pg_isready 2>/dev/null` → тихий DB-fail проходить далі, Rails стартує без БД; (4) `config/deploy.canopy.yml` без `job:`-секції → Canopy web-only, нема Sidekiq. Канон `06_05`.
+- [ ] 🤖 mailer host ← `ENV.fetch("APP_HOST", …)` + `APP_HOST` у deploy env
+- [ ] 🤖 `DB_POOL: 17` у deploy env (web+job); entrypoint pg_isready → fail-loud; Canopy `job:`-секція (або задокументувати web-only)
+
+#### INF.14 — Observability pipeline wiring: метрики/алерти не «доїдуть»
+- **P2** · 🤖+👤 · ⚪ · → `06_03`
+- **Стан:** Не розпочато — стек реалізований, але pipeline-провідка має діри (READ-verified, окрім Akash-DNS): (1) circuit-breaker alert поріг `gt 1`, а gauge = `1.0` (`deploy/grafana/alerts/silkennet-alerts.yaml:299` vs `web3/resilient_client.rb:198`) → alert НІКОЛИ не firing; (2) ⚠️ Akash alloy→`web:80` без `to: service:` route у SDL → scrape впирається в публічний ingress → `PrometheusCollector` IP-allowlist 403 → 0 метрик (Akash-DNS-inferred); (3) `grafana/alloy:latest` unpinned у CI+deploy → CI валідує іншу версію ніж біжить; (4) stale `gaia2`-tag у dashboard (`silkennet-overview.json:31`, BIZ.16 dissolved). Канон `06_03`.
+- [ ] 🤖 alert поріг `gt 0`; pin `grafana/alloy`; зняти `gaia2`-tag
+- [ ] 👤 alloy→web internal route (Akash `to: service:`) → верифікувати scrape на деплої
+
+#### INF.15 — Terraform GCP `apply`-блокери (IAM ролі · firewall · tfvars · image-path)
+- **P2** · 🤖+👤 · ⚪ · → `06_01`
+- **Стан:** Не розпочато — блокери першого `terraform apply`/`kamal deploy` (iam.tf code-verified; provider/Kamal-behavior ⚠️ inferred): (1) `terraform/iam.tf` нема `roles/storage.objectAdmin` → deploy-SA не пише в GCS TF-state bucket, + нема `iam.serviceAccountUser`; (2) ⚠️ firewall `var.ssh_source_ranges` default `[]` (`variables.tf`) → `source_ranges=[]` (`vpc.tf:57`) → GCP provider може відхилити apply; (3) `terraform.tfvars.example` `ssh_source_ranges=["0.0.0.0/0"]` відхиляється ВЛАСНОЮ валідацією `variables.tf`; (4) ⚠️ Kamal `image: silken_net` (`config/deploy.yml:5`) без `<project>/silken-net/` → GCP Artifact Registry push може впасти (Kamal-2.12-inferred). Канон `06_01`.
+- [ ] 🤖 iam.tf +`storage.objectAdmin`(scoped)+`iam.serviceAccountUser`; firewall `count`-guard на порожній CIDR; tfvars.example → CIDR-placeholder
+- [ ] 👤 верифікувати `terraform apply` + Kamal push end-to-end (підтвердити inferred-пункти)
+
 #### INF.10 — Kamal-proxy healthcheck → `/ready` (readiness-gated cutover)
 - **P3** · 👤 · 🟡 · → `06_01`
 - **Стан:** Підготовка зацементована — schema-correct inert stub (`proxy.healthcheck.path: /ready`, звірено з kamal 2.12) у `config/deploy.yml`+canopy; first-deploy cutover-runbook → [`06_01 §Чеклист`](06_01_Deployment_Kamal_Terraform) (крок 18); проба `/ready` (DB+Redis) → [`06_05`](06_05_Puma_Configuration). Свідомо deferred (design): на холодному старті `/ready` 503→deploy_timeout→rollback, тож bring-up на дефолтному `/up`, фліп на `/ready` коли `/ready→200`. Лишається 👤-фліп:
@@ -902,8 +934,8 @@
 
 #### S4.3 — Akash SDL secrets
 - **P3** · 👤 · ⚪ · → `06_02`
-- **Стан:** Не розпочато — SDL (`deploy/akash/deploy.yaml`) тримає `REQUIRED_SECRET_NOT_SET` плейсхолдери для **повного дзеркала** Kamal `env.secret` (обидва сервіси web+job). Канон `06_02 §2` (категорії A/B/C — boot-critical / web3 / observability).
-- [ ] 👤 заповнити в `deploy/akash/deploy.yaml` → верифікувати startup
+- **Стан:** Не розпочато — SDL (`deploy/akash/deploy.yaml`) тримає `REQUIRED_SECRET_NOT_SET` плейсхолдери для **повного дзеркала** Kamal `env.secret` (обидва сервіси web+job). ⚠️ placeholder ≠ disabled: `REQUIRED_SECRET_NOT_SET` для `PROMETHEUS_AUTH_*` НЕ-порожній → basic-auth активна з відомим-публічним значенням (`PrometheusCollector#authorized?`), а Alloy remote_write на літерал → тихо нічого не пушить (INF.14 sibling). Канон `06_02 §2` (категорії A/B/C — boot-critical / web3 / observability).
+- [ ] 👤 заповнити в `deploy/akash/deploy.yaml` → верифікувати startup (observability creds = security, не лише startup)
 
 #### S5.6 — GCS bucket для Terraform state (chicken-and-egg)
 - **P3** · 👤 · ⚪ · → `06_02 §GCS bucket`
