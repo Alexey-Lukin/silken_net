@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
+
 #
 # scripts/wiki_sync.rb — run `wiki:sync` WITHOUT booting Rails (CI / pre-commit).
 #
