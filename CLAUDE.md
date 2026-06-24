@@ -39,6 +39,7 @@ bundle exec rspec         # backend suite
 bundle exec brakeman      # security
 bundle exec bundler-audit check
 make -C firmware/test     # firmware host-tests (x86, без ARM)
+make -C firmware/test asan # + ASan/UBSan memory-safety смуга (TEST.5)
 cd contracts && forge test -vvv --gas-report   # Solidity (Foundry; §8)
 ruff check                # Python (in-silico/ml), root ruff.toml
 ```
