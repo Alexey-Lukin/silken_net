@@ -7,9 +7,11 @@
 
 # For a containerized dev environment, see Dev Containers: https://guides.rubyonrails.org/getting_started_with_devcontainer.html
 
-# Make sure RUBY_VERSION matches the Ruby version in .ruby-version
-ARG RUBY_VERSION=4.0.5
-FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
+# Base image pinned by digest for supply-chain integrity. Dependabot (docker
+# ecosystem, .github/dependabot.yml) bumps the tag AND the digest together — it
+# cannot do that through an ARG-indirected FROM (dependabot-core #4597), so the
+# tag is literal here. Keep the version in sync with .ruby-version.
+FROM docker.io/library/ruby:4.0.5-slim@sha256:1d0c7f972f28c127b37a9ef24404c1fd26549919bfbe8d360b506e2e799ea13b AS base
 
 # Rails app lives here
 WORKDIR /rails

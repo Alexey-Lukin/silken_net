@@ -12,6 +12,11 @@ updates:
   schedule:
     interval: weekly
   open-pull-requests-limit: 10
+- package-ecosystem: docker       # Dockerfile base image (ruby) — tag + digest
+  directory: "/"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 10
 - package-ecosystem: github-actions
   directory: "/"
   schedule:
