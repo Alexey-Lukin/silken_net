@@ -60,6 +60,21 @@ In addition:
 - Write a clear commit message; AI-assisted commits should carry the appropriate
   `Co-Authored-By` trailer.
 
+## Developer Certificate of Origin (DCO)
+
+To certify that you are legally entitled to submit your contribution, this project
+uses the [Developer Certificate of Origin 1.1](https://developercertificate.org/). By
+signing off a commit you assert that you wrote the patch (or otherwise have the right
+to submit it) and that it may be distributed under the project's licenses. Sign off
+with the `-s` flag, which adds a `Signed-off-by: Your Name <you@example.com>` trailer:
+
+```bash
+git commit -s -m "your message"
+```
+
+(AI-assisted commits are signed off by the human contributor who directs and owns the
+change.)
+
 ## License of contributions
 
 By contributing, you agree that your contributions are licensed under the
