@@ -48,6 +48,9 @@ the domain you changed before opening a PR:
 
 In addition:
 
+- **Add or update automated tests** when you add or change functionality — major
+  new functionality should land with tests in the relevant suite (RSpec /
+  Foundry `forge` / firmware host tests).
 - Match the style of the code around you (naming, comments, idiom). Keep comments
   minimal and free of drift-prone numbers.
 - The `docs/NN_NN_*.md` files are the single source of truth. If you change
