@@ -50,7 +50,7 @@ lt:
         early_exit_value: "%{value}%"
         min_days: Min. dienos prieš išėjimą
         title: Išmaniosios sutarties duomenys
-        verified: Patikrinta Silken Net Oracle. Našumas indeksuotas pagal LorentzA atraktoriaus stabilumą.
+        verified: Patikrinta Silken Net Oracle. Našumas indeksuotas pagal Lorenz atraktoriaus stabilumą.
       organization: 'Organizacija: %{name}'
       period: 'Laikotarpis: %{start} → %{end}'
       status: 'Būsena: %{value}'

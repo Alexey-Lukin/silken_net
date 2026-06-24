@@ -50,7 +50,7 @@ en:
         early_exit_value: "%{value}%"
         min_days: Min Days Before Exit
         title: Smart Contract Data
-        verified: Verified by Silken Net Oracle. Performance indexed to LorentzA attractor stability.
+        verified: Verified by Silken Net Oracle. Performance indexed to Lorenz attractor stability.
       organization: 'Organization: %{name}'
       period: 'Period: %{start} → %{end}'
       status: 'Status: %{value}'

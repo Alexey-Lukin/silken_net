@@ -50,7 +50,7 @@ uk:
         early_exit_value: "%{value}%"
         min_days: Мін. днів до виходу
         title: Дані смартконтракту
-        verified: Перевірено Silken Net Oracle. Ефективність індексована до стабільності атрактора LorentzA.
+        verified: Перевірено Silken Net Oracle. Ефективність індексована до стабільності атрактора Lorenz.
       organization: 'Організація: %{name}'
       period: 'Період: %{start} → %{end}'
       status: 'Статус: %{value}'
