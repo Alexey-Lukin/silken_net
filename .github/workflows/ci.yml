@@ -37,6 +37,7 @@ jobs:
       python: ${{ steps.filter.outputs.python }}
       alloy: ${{ steps.filter.outputs.alloy }}
       ci: ${{ steps.filter.outputs.ci }}
+      workflows: ${{ steps.filter.outputs.workflows }}
     steps:
       - name: Harden runner (egress audit)
         uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
@@ -52,6 +53,9 @@ jobs:
             ci:
               - '.github/workflows/ci.yml'
               - '.github/actions/setup-rails-test/**'
+            workflows:
+              - '.github/workflows/**'
+              - '.github/actions/**'
             firmware:
               - 'firmware/**'
               - 'tools/firmware/**'
@@ -378,6 +382,34 @@ jobs:
       - name: Lint Python tooling (tools/**)
         run: ruff check . --output-format=github
 
+  workflow_lint:
+    needs: changes
+    if: ${{ needs.changes.outputs.workflows == 'true' }}
+    # actionlint — статичний аналіз GitHub Actions workflow'ів (синтаксис, ${{ }}
+    # вирази, типи подій, permissions-скоупи, glob'и) + shellcheck кожного `run:`.
+    # Pinned-binary + sha256-verify (OPS.10 supply-chain-стандарт; runner вже має
+    # shellcheck → shell-блоки лінтяться автоматично).
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        with:
+          egress-policy: audit
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - name: Run actionlint (pinned binary + sha256-verify)
+        env:
+          ACTIONLINT_VERSION: 1.7.12
+          ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+        run: |
+          curl -fsSL -o actionlint.tar.gz \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          echo "${ACTIONLINT_SHA256}  actionlint.tar.gz" | sha256sum -c -
+          tar xzf actionlint.tar.gz actionlint
+          ./actionlint -color
+
   i18n_check:
     needs: changes
     if: ${{ needs.changes.outputs.ruby == 'true' || needs.changes.outputs.ci == 'true' }}
@@ -570,6 +602,7 @@ jobs:
       - scan_js
       - lint
       - python_lint
+      - workflow_lint
       - i18n_check
       - alloy_config_validate
       - test
