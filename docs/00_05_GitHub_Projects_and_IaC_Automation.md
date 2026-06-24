@@ -93,7 +93,7 @@ done
 |----------|------|--------|--------|
 | TRL Auto-Advancement | `.github/workflows/trl_sync.yml` | `issues: [closed]` | ✅ Workflow + TRL≥5 architect-approval gate реалізовані (OPS.1/OPS.9); чекає `PROJECT_PAT` provision (OPS.1, 00_07) |
 | Labels Sync (IaC) | `.github/workflows/labels_sync.yml` | `push` на `.github/labels.yml` | ✅ Реалізовано |
-| PR Auto-Labeler | `.github/workflows/labeler.yml` | `pull_request` | ✅ Реалізовано |
+| PR Auto-Labeler | `.github/workflows/labeler.yml` | `pull_request_target` | ✅ Реалізовано (fork-PR write-token → top-level `permissions: {}`, job піднімає лише `pull-requests:write`, §2.7) |
 | SSOT Integrity Guard | `.github/workflows/ssot_guard.yml` | `pull_request` | ✅ Реалізовано (OPS.2; semantic `type:*` bypass — §2.3) |
 | Solidity Audit | `.github/workflows/solidity_audit.yml` | `push` / PR з `contracts/**` | ✅ Реалізовано |
 | CoAP Smoke Test | `.github/workflows/coap_smoke.yml` | `workflow_dispatch` / `workflow_call` із `deploy.yml`+`deploy-production.yml` (post-deploy gate; активується repo Variable `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST` — INF.6) | ✅ Реалізовано — freeze-contract зонди `bin/coap_smoke` (точні байти FW.56 golden-векторів; loopback-довід `spec/lib/coap_smoke_spec.rb`) |
@@ -290,11 +290,12 @@ Routes PRs автоматично у відповідні кластери на 
 ```
 
 ```yaml
-# .github/workflows/labeler.yml  (відображає реальний файл)
+# .github/workflows/labeler.yml  (skeleton — реальний файл SHA-пінить `uses:` + має harden-runner першим кроком, §2.7)
 name: Ops · PR Labeler
 on:
   pull_request_target:
     types: [opened, reopened, synchronize]
+permissions: {}          # top-level least-privilege floor (§2.7); job піднімає лише потрібне
 jobs:
   label:
     runs-on: ubuntu-latest
@@ -309,14 +310,16 @@ jobs:
           sync-labels: true
 ```
 
-### 2.7 Supply-chain hardening (IaC: SHA-pin · harden-runner · Scorecard)
+### 2.7 Supply-chain hardening (IaC: pin-by-digest · token-least-privilege · harden-runner · actionlint · Scorecard)
 
 > **Дія/стан — [`OPS.10`](00_07_Action_Plan_Tracker); інвентар workflow — [`06_07 §1`](06_07_CICD_and_Runbook_Index). Тут — IaC-політика (дім).**
 
 Постава supply-chain для `.github/workflows/` як IaC:
 
-- **SHA-pin (обов'язково).** Кожен зовнішній `uses:` запінено на повний 40-символьний commit-SHA з коментарем `# vN` (напр. `actions/checkout@9c091bb… # v7`). Рухомий тег `@vN` — мутабельний покажчик: скомпрометований екшен-репо може мовчки перепнути його (вектор `tj-actions/changed-files`, 2025); SHA незмінний. **Dependabot** (`github-actions` ecosystem, `.github/dependabot.yml`) розуміє SHA-піни й оновлює і SHA, і `# vN` через PR → незмінність без застигання. Локальні `uses: ./…` не пінять (вони в репо).
+- **SHA-pin (обов'язково).** Кожен зовнішній `uses:` запінено на повний 40-символьний commit-SHA з коментарем `# vN` (напр. `actions/checkout@9c091bb… # v7`). Рухомий тег `@vN` — мутабельний покажчик: скомпрометований екшен-репо може мовчки перепнути його (вектор `tj-actions/changed-files`, 2025); SHA незмінний. **Dependabot** (`github-actions` ecosystem, `.github/dependabot.yml`) розуміє SHA-піни й оновлює і SHA, і `# vN` через PR → незмінність без застигання. Локальні `uses: ./…` не пінять (вони в репо). **Базовий Docker-образ** (`Dockerfile` `FROM`) теж запінено по digest (`ruby:…@sha256:…`); тег **literal** (не через `ARG` — Dependabot не резолвить ARG'd FROM, dependabot-core #4597), а `docker`-ecosystem у Dependabot оновлює тег і digest разом → pin без застигання.
+- **Token-permissions (least-privilege).** Кожен workflow має **top-level** `permissions:`-поверх із read-floor (`{}` або `contents: read`); write-скоупи піднімає **лише той job**, якому вони потрібні (`packages:write` у GHCR-build-джобі; `contents`+`pull-requests:write` у release-please). Без top-level-поверху новий job успадкував би широкий дефолт. **Критичний інваріант:** workflow на `workflow_run`/`pull_request_target` (write-token + секрети) **не checkout-ить** untrusted head-ref — GHCR-mirror бере список змінених файлів через `gh api commits/{sha}`, а не checkout події (Scorecard DangerousWorkflow).
 - **harden-runner** (`step-security/harden-runner`, `egress-policy: audit`) — перший крок кожного Linux-джоба: пасивний egress/FS-монітор (нічого не блокує), збирає baseline для майбутнього `block`-режиму з allowlist. macOS-джоби (harden-runner Linux-only) та no-op-агрегати (`ci-ok`) свідомо пропущені.
+- **actionlint** (CI-джоб `workflow_lint` у `ci.yml`, path-gated на `.github/workflows/**` + `.github/actions/**`) — статичний аналіз самих workflow-файлів (синтаксис, `${{ }}`-вирази, типи подій, permissions-скоупи, glob'и) + shellcheck кожного `run:`. Встановлюється як pinned-release-binary з sha256-verify (не moving-tag) → ловить regression-и, яких YAML-parse не бачить. Інвентар → [`06_07 §1`](06_07_CICD_and_Runbook_Index).
 - **OpenSSF Scorecard** (`Sec · Scorecard`) — щотижневий аудит supply-chain-гігієни (~18 перевірок) → SARIF у Security tab + публічний бейдж (`publish_results: true` — репо публічне). Постійний вартовий замість разового аудиту, що протухає.
 - **GitHub-side** (звірено gh API 2026-06-22): secret-scanning + push-protection **ON**; Dependabot security-updates **ON**; CodeQL default-setup активний (first-party SAST). 👤-залишки (signed-commits, опц. toggles) — [`OPS.10`](00_07_Action_Plan_Tracker).
 
