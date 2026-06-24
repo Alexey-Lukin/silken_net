@@ -262,6 +262,7 @@ asan:
 	 UBSAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_stacktrace=1 \
 	 $(MAKE) all CFLAGS="$(ASAN_CFLAGS)"
 	@echo "✅ TEST.5: уся host-сюїта чиста під AddressSanitizer + UBSanitizer."
+	@$(MAKE) clean >/dev/null   # ASAN shadow/redzone роздуває .bss/.data → прибрати за собою, інакше наступний size-check міряє інструментовані бінарники й рве 50KB-бюджет
 
 SIZE_TOOL ?= size
 
