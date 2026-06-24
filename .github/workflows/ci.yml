@@ -117,6 +117,16 @@ jobs:
       - name: Run firmware host-based tests
         run: make -C firmware/test
 
+      - name: '[TEST.5] Firmware host ASan+UBSan memory-safety lane'
+        # Динамічна пара до статичного cppcheck (firmware_lint): уся host-сюїта
+        # перебудовується й проганяється під AddressSanitizer + UBSanitizer
+        # (heap/stack/global overflow, UAF/UAR, double-free, signed-overflow,
+        # OOB-shift, misalign/null-deref) — закриває OpenSSF dynamic_analysis_unsafe
+        # для memory-unsafe C. detect_leaks=0: OpenSSL one-time global init = хибний
+        # leak, не buffer-баг (04_06 §B.1.1). Той самий re-instrumented-rebuild
+        # ідіом, що й coverage-lane.
+        run: make -C firmware/test asan
+
       - name: '[FW.26] Static RAM budget gate (host build placeholder)'
         # Host gcc build size як placeholder gate доки arm-none-eabi
         # cross-compile pipeline не активний. Той самий 50 KB threshold;

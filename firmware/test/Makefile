@@ -19,7 +19,7 @@ BINDIR   = .
 OPENSSL_CFLAGS = $(shell pkg-config --cflags openssl 2>/dev/null)
 OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
-.PHONY: all queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet cmd_queue fauna bme280 coverage size-check clean
+.PHONY: all queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet cmd_queue fauna bme280 coverage size-check asan clean
 
 all: queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet cmd_queue fauna bme280
 
@@ -238,6 +238,30 @@ coverage:
 	     coverage_raw.txt | sort -k4
 	@echo "─────────────────────────────────────────────────────────────"
 	@echo "Анотовані *.gcov поряд (рядок-у-рядок); прибрати: make clean."
+
+# [TEST.5] Динамічна memory-safety смуга — ASan + UBSan re-instrumented rebuild.
+# Закриває OpenSSF `dynamic_analysis_unsafe`: проєкт везе memory-unsafe C, тож
+# статичного cppcheck (firmware_lint) + `-Wall` НЕ досить — ця смуга реально
+# ВИКОНУЄ кожен host-тест під AddressSanitizer (heap/stack/global overflow,
+# use-after-free/return, double-free) + UBSanitizer (signed-overflow, OOB-shift,
+# misalign/null-deref). Той самий re-instrumented-rebuild ідіом, що й `coverage:`
+# — оверрайд CFLAGS на рекурсивному $(MAKE) all (libcrypto/-I монокіфера
+# дописуються per-target, тому sanitizer-CFLAGS компонуються чисто).
+# detect_leaks=0 свідомо: OpenSSL one-time global init (test_encryption,
+# test_queen_attest) ніколи не звільняється за дизайном (короткоживучі тести не
+# кличуть OPENSSL_cleanup) → LSAN-«still reachable» = хибнопозитив, не buffer-баг;
+# критерій цілить overwrites/UAF/UB, які ASan+UBSan покривають (Monocypher heap
+# не алокує). macOS clang без LSAN → прапор no-op локально, дієвий на Linux CI.
+ASAN_CFLAGS = -Wall -Wextra -Wpedantic -std=c11 -I. -O1 -g \
+              -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer
+
+asan:
+	@$(MAKE) clean >/dev/null
+	@echo "[TEST.5] ASan+UBSan re-instrumented build + прогін усієї host-сюїти…"
+	@ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:detect_leaks=0 \
+	 UBSAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_stacktrace=1 \
+	 $(MAKE) all CFLAGS="$(ASAN_CFLAGS)"
+	@echo "✅ TEST.5: уся host-сюїта чиста під AddressSanitizer + UBSanitizer."
 
 SIZE_TOOL ?= size
 
