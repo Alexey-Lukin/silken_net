@@ -1221,6 +1221,7 @@ make -C firmware/test soldier     # Soldier-only
 make -C firmware/test bio_contract # Bio-Contract
 make -C firmware/test tinyml      # TinyML pipeline (включно з FW.18 OTA invalid-counter)
 make -C firmware/test encryption  # AES encryption
+make -C firmware/test asan        # ASan+UBSan dynamic memory-safety lane (TEST.5; канон 04_06 §B.1.1)
 ```
 
 **CI:** Firmware тести інтегровані в GitHub Actions (`firmware_test` job у `.github/workflows/ci.yml`).
