@@ -333,7 +333,7 @@ jobs:
 - **`contracts/`** — смарт-контракти (Solidity, Foundry toolchain + Slither CI).
 - **`firmware/`** — прошивка Soldier/Queen (C, mruby) для STM32WLE5JC + LoRa (host-тести `make -C firmware/test`).
 - **`tools/`** — in-silico (EBFC: PySCF/OpenMM) + ML (TinyML/log-mel) + CAD (PicoGK Code-as-CAD `tools/cad`, .NET 9; [`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)) пайплайни.
-- **`docs/`** — SSOT-канон (дзеркалиться у GitHub Wiki — [`00_06`](00_06_SSOT_Documentation_Standard)).
+- **`docs/`** — SSOT-канон (**авто-дзеркалиться** у GitHub Wiki на кожен push у `main`, що чіпає `docs/` — `wiki.yml` → `scripts/wiki_sync.rb`; 00_00 → `Home`; off-switch — репо-змінна `DISABLE_WIKI_AUTOSYNC`; інвентар [`06_07 §1`](06_07_CICD_and_Runbook_Index) — [`00_06`](00_06_SSOT_Documentation_Standard)).
 
 > **Історія:** колишні окремі репо `silken-soldier-fw` (прошивка) та `silken-contracts` (контракти) **консолідовані в monorepo** — активні джерела тепер тут, під спільним CI; старі репо архівні.
 
