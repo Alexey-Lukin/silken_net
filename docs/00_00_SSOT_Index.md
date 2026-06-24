@@ -1,5 +1,8 @@
 # 🌍 SilkenNet — Single Source of Truth (SSOT)
 
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13358/badge)](https://www.bestpractices.dev/projects/13358)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/Alexey-Lukin/silken_net/badge)](https://securityscorecards.dev/viewer/?uri=github.com/Alexey-Lukin/silken_net)
+
 > _"Ми не просто спостерігаємо за лісом. Ми даємо йому цифрову волю."_
 
 Ласкаво просимо до Головного Архітектурного Реєстру проєкту **Silken Net**. Ця Wiki є Єдиним Джерелом Істини (SSOT) для розробки кіберфізичної D-MRV системи планетарного масштабу.
