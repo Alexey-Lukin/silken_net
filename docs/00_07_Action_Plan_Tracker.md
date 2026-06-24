@@ -98,7 +98,7 @@
 - **P3** · 🤖+👤 · 🟡 · → `00_05`
 - **Стан:** Машинна частина зацементована — SHA-pin усіх Actions + базовий Docker-образ digest-pinned (Dependabot `docker`-ecosystem) + top-level **token-permissions** least-privilege (job-рівневий write-elevation; critical `workflow_run`/`pull_request_target` untrusted-checkout прибрано → `gh api commits`) + **actionlint**-гейт (`workflow_lint`) + `harden-runner` (egress-audit) + `Sec · Scorecard` (Node-24-pined); GitHub-side звірено (secret-scanning + push-protection + CodeQL ON; стале «вимкнено/404» виправлено). Scorecard-findings оброблено: token/checkout/pin — fixed-in-code; solo-структурні (CodeReview/SAST/Fuzzing) + internal-stage false-positive — dismissed-with-reason. Політика+стан → [`00_05 §2.7`](00_05_GitHub_Projects_and_IaC_Automation); інвентар workflow → [`06_07 §1`](06_07_CICD_and_Runbook_Index). Лишилися 👤-налаштування:
 - [ ] 👤 require signed commits (`required_signatures`) — runbook [`06_07 §2`](06_07_CICD_and_Runbook_Index)
-- [ ] 👤 OpenSSF Best Practices badge (bestpractices.dev self-cert → закриє Scorecard CIIBestPractices) — більшість критеріїв уже виконано (FLOSS-ліцензія · CI · тести · `SECURITY.md` · SAST)
+- [ ] 👤 OpenSSF Best Practices badge — заведено (проєкт [13358](https://www.bestpractices.dev/projects/13358), статус `in_progress`; плашка в README). Лишилось: добити passing-критерії на bestpractices.dev → `in_progress`→`passing` (закриє Scorecard `CIIBestPractices`, 2→5+). Більшість уже виконано (FLOSS-ліцензія · CI · тести · `SECURITY.md` · SAST)
 - [ ] 👤 (опц.) secret-scanning validity-checks + non-provider toggles · `SCORECARD_TOKEN` ([`06_04 §1.3`](06_04_Secrets_Checklist))
 
 ## §01a · Anchor — Geometry & Metallurgy
