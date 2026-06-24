@@ -10,6 +10,11 @@ Report it privately through
 acknowledge within **72 hours** and to ship a fix or mitigation for high-severity
 issues within **14 days**.
 
+## Credit
+
+When a reported vulnerability is fixed, we credit the reporter(s) in the security
+advisory and/or the release notes, unless the reporter asks to remain anonymous.
+
 ## Scope
 
 In scope: the Rails backend (`app/`, `lib/`), the smart contracts (`contracts/`),
