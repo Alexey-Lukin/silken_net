@@ -371,16 +371,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
-      - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
-        with:
-          python-version: '3.12'
-
-      - name: Install ruff (pinned for reproducibility)
-        run: pip install ruff==0.15.16
-
       - name: Lint Python tooling (tools/**)
-        run: ruff check . --output-format=github
+        uses: astral-sh/ruff-action@0ce1b0bf8b818ef400413f810f8a11cdbda0034b # v4.0.0
+        with:
+          version: "0.15.16"
+          args: "check --output-format=github"
 
   workflow_lint:
     needs: changes
