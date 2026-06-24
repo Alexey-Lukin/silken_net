@@ -58,6 +58,29 @@ RSpec.describe WikiLinkNormalizer do
     end
   end
 
+  describe "home slug → wiki Home landing page" do
+    let(:normalizer) do
+      described_class.new(
+        canon_slugs: %w[00_00_SSOT_Index 05_02_Proof_of_Growth_Pipeline],
+        repo: "Alexey-Lukin/silken_net",
+        exists: ->(_rel) { false },
+        home_slug: "00_00_SSOT_Index"
+      )
+    end
+
+    it "rewrites a link to the home doc as `Home`" do
+      expect(body_of("[idx](00_00_SSOT_Index.md)")).to eq("[idx](Home)")
+    end
+
+    it "preserves the #anchor on a home-doc link" do
+      expect(body_of("[idx](../docs/00_00_SSOT_Index#reading-order)")).to eq("[idx](Home#reading-order)")
+    end
+
+    it "still rewrites other canonical docs normally" do
+      expect(body_of("[p](05_02_Proof_of_Growth_Pipeline.md)")).to eq("[p](05_02_Proof_of_Growth_Pipeline)")
+    end
+  end
+
   describe "non-canonical repo files → absolute blob URLs" do
     it "rewrites a docs-relative path" do
       expect(body_of("[s](protocols/ebfc/in_silico/SUMMARY.md)"))

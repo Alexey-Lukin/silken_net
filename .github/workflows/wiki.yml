@@ -1,0 +1,53 @@
+name: Docs · Wiki Sync
+
+# Auto-publish the canonical SSOT docs (docs/NN_NN_*.md) to the GitHub wiki on every
+# push to main that touches docs/. The wiki landing page `Home` mirrors 00_00.
+# Runs the pure-Ruby scripts/wiki_sync.rb — no Rails boot, no bundle (stdlib + git only).
+#
+# Disable WITHOUT deleting this file: set repo variable DISABLE_WIKI_AUTOSYNC=true
+# (Settings → Secrets and variables → Actions → Variables). Useful once several people
+# work in Shape-Up cycles and a per-cycle / manual publish is preferred over on-merge.
+# Manual run any time: Actions → "Docs · Wiki Sync" → Run workflow (workflow_dispatch).
+
+on:
+  push:
+    branches: [main]
+    paths: ["docs/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write # push to the repo's sibling wiki git repo
+
+concurrency:
+  group: wiki-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Publish docs → wiki
+    if: ${{ vars.DISABLE_WIKI_AUTOSYNC != 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - name: Set up Ruby
+        # stdlib-only script (rake + tmpdir + fileutils + the pure normalizer) → a
+        # plain pinned Ruby, no bundler-cache; decoupled from the app's Ruby/Gemfile.
+        uses: ruby/setup-ruby@9eb537ca036ebaed86729dcb9309076e4c5c3b74 # v1
+        with:
+          ruby-version: "3.3"
+
+      - name: Publish docs to the wiki
+        env:
+          # HTTPS x-access-token remote — GITHUB_TOKEN (contents:write) can push the
+          # repo's sibling wiki. Actions auto-redacts the token from logs.
+          WIKI_REMOTE: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git
+          PUSH: "1"
+        run: ruby scripts/wiki_sync.rb

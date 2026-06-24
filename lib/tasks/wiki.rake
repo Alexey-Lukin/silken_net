@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 # [OPS] `rake wiki:sync` — publish the canonical SSOT docs (docs/NN_NN_*.md) to
-# the GitHub wiki (a separate git repo whose pages are named after the docs).
-# MANUAL / on-demand — run it whenever the docs change:
+# the GitHub wiki (a separate git repo whose pages are named after the docs;
+# 00_00 → the `Home` landing page). Auto-runs on docs-change pushes to main via
+# `.github/workflows/wiki.yml` (gated by repo var DISABLE_WIKI_AUTOSYNC); also by hand:
 #
 #   bin/rails wiki:sync          # DRY-RUN: clone wiki, transform, show diff, do NOT push
 #   bin/rails wiki:sync PUSH=1   # commit + push the changes to the wiki
@@ -10,8 +11,8 @@
 # Only NN_NN_*.md canonical docs are synced (manifest.md and everything else is
 # left out). Links are normalised for the wiki (see lib/wiki_link_normalizer.rb):
 # canonical cross-refs → bare wiki links, other repo files → absolute github.com
-# blob URLs, embedded images carried into the wiki under images/. Uses your
-# existing git credentials over SSH — no CI secret, no third-party action.
+# blob URLs, embedded images carried into the wiki under images/. Local runs use
+# SSH; CI (wiki.yml) passes an HTTPS x-access-token remote via WIKI_REMOTE.
 #
 # Pure file/git I/O (no Rails boot needed). Engine: lib/wiki_link_normalizer.rb.
 require_relative "../wiki_link_normalizer"
@@ -24,7 +25,10 @@ namespace :wiki do
   desc "Publish canonical docs/NN_NN_*.md to the GitHub wiki (dry-run unless PUSH=1)"
   task :sync do
     repo_slug   = "Alexey-Lukin/silken_net"
-    wiki_remote = "git@github.com:#{repo_slug}.wiki.git"
+    # SSH by default (local dev); CI passes an HTTPS x-access-token remote via WIKI_REMOTE.
+    wiki_remote = ENV.fetch("WIKI_REMOTE") { "git@github.com:#{repo_slug}.wiki.git" }
+    # The 00_00 SSOT index is published as the wiki landing page `Home`, not a `00_00…` page.
+    home_doc    = "00_00_SSOT_Index.md"
     repo_root   = File.expand_path("../../", __dir__)
     docs_dir    = File.join(repo_root, "docs")
     canon_glob  = "[0-9][0-9]_[0-9][0-9]_*.md"
@@ -36,7 +40,8 @@ namespace :wiki do
 
     head = `git -C #{repo_root} rev-parse --short HEAD`.strip
     exists = ->(rel) { File.exist?(File.join(repo_root, rel)) }
-    normalizer = WikiLinkNormalizer.new(canon_slugs: slugs, repo: repo_slug, exists: exists)
+    normalizer = WikiLinkNormalizer.new(canon_slugs: slugs, repo: repo_slug, exists: exists,
+                                        home_slug: File.basename(home_doc, ".md"))
 
     Dir.mktmpdir("silken-wiki-") do |tmp|
       wiki = File.join(tmp, "wiki")
@@ -51,12 +56,18 @@ namespace :wiki do
         File.delete(File.join(wiki, orphan))
         puts "  − removed orphaned wiki page: #{orphan}"
       end
+      # 00_00 is now published as `Home`; drop any stale 00_00_SSOT_Index page.
+      if File.exist?(File.join(wiki, home_doc))
+        File.delete(File.join(wiki, home_doc))
+        puts "  − removed #{home_doc} (now published as Home)"
+      end
 
       # 2. Transform + write each canonical doc; carry referenced images over.
       unresolved = {}
       canon.each do |fname|
         res = normalizer.call(File.read(File.join(docs_dir, fname)))
-        File.write(File.join(wiki, fname), res.body)
+        page = fname == home_doc ? "Home.md" : fname
+        File.write(File.join(wiki, page), res.body)
         res.images.each do |img|
           FileUtils.cp(File.join(repo_root, img), File.join(wiki, "images", File.basename(img)))
         end

@@ -41,11 +41,14 @@ class WikiLinkNormalizer
   # @param repo        [String] "owner/name"
   # @param exists      [#call]  ->(repo_relative_path) => Boolean
   # @param branch      [String] default branch the blob/raw URLs point at
-  def initialize(canon_slugs:, repo:, exists:, branch: "main")
-    @slugs  = canon_slugs.to_set
-    @repo   = repo
-    @exists = exists
-    @branch = branch
+  # @param home_slug [String, nil] the canonical doc slug that is published as the
+  #   wiki landing page `Home` (links to it are rewritten to `Home`, not the slug).
+  def initialize(canon_slugs:, repo:, exists:, branch: "main", home_slug: nil)
+    @slugs     = canon_slugs.to_set
+    @repo      = repo
+    @exists    = exists
+    @branch    = branch
+    @home_slug = home_slug
   end
 
   def call(body)
@@ -117,6 +120,7 @@ class WikiLinkNormalizer
     end
 
     slug = File.basename(path).delete_suffix(".md")
+    return "Home#{anchor}" if slug == @home_slug          # 00_00 SSOT index → wiki landing page
     return "#{slug}#{anchor}" if @slugs.include?(slug)
 
     repo_path = resolve(path)
