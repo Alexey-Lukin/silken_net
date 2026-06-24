@@ -39,6 +39,27 @@ is of course free to fork.
 | Maintainer / Lead | Oleksii Lukin ([@Alexey-Lukin](https://github.com/Alexey-Lukin)) | Final decisions, code review, releases, security response |
 | Contributors | anyone | Propose changes via pull requests (see `CONTRIBUTING.md`) |
 
+## Continuity
+
+Silken Net is a fully free/open-source project (AGPL-3.0-or-later code,
+CERN-OHL-S-2.0 hardware, CC-BY-SA-4.0 docs). All source, history, issues, pull
+requests and releases are public on GitHub, the documentation is mirrored to the
+wiki, and the smart contracts/telemetry live on public chains. **Nothing required
+to continue the project is held in a private silo.**
+
+Consequently, if the sole maintainer dies, is incapacitated, or otherwise stops
+supporting the project, it can continue with minimal interruption: any contributor
+can fork the public repository and immediately create/close issues, accept proposed
+changes, and cut releases (the release flow — release-please + standard GitHub
+Releases — needs no private key), well within a week of confirmed loss of support.
+The AGPL-3.0-or-later licence grants every legal right needed to do so; only the
+`SilkenNet`/`GaiaNexus`/`SCC` trademarks and the GitHub *account* are not transferable
+by fork, and neither is required to continue the software.
+
+As the project grows beyond a single maintainer, additional maintainers with
+direct review/merge/release rights on **this** repository will be added (raising the
+bus factor and removing the need to fork on loss of the original maintainer).
+
 ## Evolution
 
 As the contributor base grows, the project intends to move toward **shared
