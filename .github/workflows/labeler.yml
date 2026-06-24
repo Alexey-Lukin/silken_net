@@ -10,6 +10,9 @@ on:
   pull_request_target:
     types: [opened, reopened, synchronize]
 
+# Top-level least-privilege floor; the job elevates only pull-requests:write.
+permissions: {}
+
 jobs:
   label:
     runs-on: ubuntu-latest

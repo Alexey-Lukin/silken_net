@@ -10,9 +10,8 @@ on:
   push:
     branches: [main]
 
-permissions:
-  contents: write
-  pull-requests: write
+# Top-level least-privilege floor; the job elevates the writes release-please needs.
+permissions: {}
 
 concurrency:
   group: release-please-${{ github.ref }}
@@ -21,6 +20,9 @@ concurrency:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write        # tag + CHANGELOG commit
+      pull-requests: write   # the standing release PR
     steps:
       - name: Harden runner (egress audit)
         uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4

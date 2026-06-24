@@ -16,6 +16,9 @@ on:
       - '.github/workflows/labels_sync.yml'
   workflow_dispatch:
 
+# Top-level least-privilege floor; the job elevates only issues:write.
+permissions: {}
+
 jobs:
   sync:
     runs-on: ubuntu-latest
