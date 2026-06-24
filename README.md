@@ -9,6 +9,12 @@
 
 ---
 
+## 🌐 English overview
+
+**Silken Net** is the world's first trustless **D-MRV** (Digital Measurement, Reporting & Verification) platform for planetary-scale forest-health monitoring. Each tree gets a machine identity (peaq DID), becomes an economic agent, and earns carbon tokens (**SCC**) for verified biomass growth. A titanium gyroid anchor with an enzymatic biofuel cell (EBFC — "zero-grid", >500 mV from xylem sap) powers an STM32 *Soldier* node that senses → runs TinyML → computes a Lorenz-attractor homeostasis signal → encrypts → transmits over LoRa 868 MHz to a *Queen* gateway, which relays via CoAP to a Rails 8 / PostgreSQL / Sidekiq backend and a 12-chain Web3 *Proof-of-Growth* pipeline (10,000 growth_points = 1 SCC). The rest of this README and the `docs/` canon are primarily in Ukrainian — English contributors should start with [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`SECURITY.md`](SECURITY.md), and are welcome to open issues and pull requests in English.
+
+---
+
 ## 🏛️ Архітектура (8 Рівнів SilkenNet)
 
 ```
