@@ -358,6 +358,12 @@ kamal deploy
 
 ---
 
+## 🤝 Внесок (Contributing)
+
+Баги та пропозиції — через [GitHub Issues](https://github.com/Alexey-Lukin/silken_net/issues); вразливості — приватно за [`SECURITY.md`](SECURITY.md). Процес внеску (fork → branch → PR), локальні перевірки та вимоги до коду — у [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+---
+
 ## 📜 Ліцензія та IP-постава
 
 SilkenNet — **mission-first, defensive-publication-first**: ми **не патентуємо** цю роботу, а публікуємо її як prior art, щоб вона лишалась вільною для всіх лісів і її **не можна було захопити**. Канон постави — [`08_01 §2`](docs/08_01_Joint_Publications_and_IP_Strategy.md); повна мапа зон і винятків — [`NOTICE`](NOTICE).
