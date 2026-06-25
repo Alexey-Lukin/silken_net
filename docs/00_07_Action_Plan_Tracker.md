@@ -791,12 +791,11 @@
 - [ ] 🤖 якщо активувати — `ToucanBridgeWorker.sidekiq_retries_exhausted` → симетричний rollback (дзеркало lock: `balance↑`+`locked↓`) + тест failure-path + in-flight інваріант `locked ≤ balance`
 - [ ] 👤 доля `finalize_spend!` (dead): видалити (Ruthless Prune, [`04_06 §B.2`](04_06_Testing_Guide_and_Coverage)) чи лишити з `[target]`-marker для майбутнього confirm-finalize
 
-#### ARCH.45 — Money-path воркери: `retries_exhausted`→rollback аудит (recovery-симетрія)
-- **P2** · 🤖+👤 · ⚪ · → `05_02`
-- **Стан:** Системний reliability-патерн: лише mint-flow (`MintCarbonCoinWorker` + `BlockchainConfirmationWorker`) має `sidekiq_retries_exhausted` → `MintingRollbackService` recovery. Решта money-path воркерів — **без** exhausted-handler: `SolanaBatchPayoutWorker`, `BurnCarbonTokensWorker`, `InsurancePayoutWorker`, `EvaluateTreeBatchWorker` (+ `ToucanBridgeWorker` = E.66). На остаточному краху після retry кошти/стан можуть зависнути без відкату. Потрібен аудит-перш: класифікувати кожен (real money-loss / double-pay / slash-miss / idempotent-safe / downstream-recovered — напр. `EvaluateTreeBatchWorker` pending-tx підхоплює mint-cron) → handler/idempotency-guard лише де реальна діра (НЕ blanket). НЕ горить (потребує retry-exhaustion + деякі self-heal), але money-path → варто пройти. Канон [`05_02`](05_02_Proof_of_Growth_Pipeline) (rollback recovery) + [`04_02`](04_02_Business_Logic_and_Services) (Sidekiq воркери).
-- [ ] 🤖 аудит 4 money-path воркерів (Solana payout / burn / insurance / evaluate-batch): класифікувати exhausted-семантику (money-loss / double-pay / slash-miss / safe)
-- [ ] 🤖 `sidekiq_retries_exhausted` → rollback / idempotency-guard там, де аудит виявив реальну діру
-- [ ] 👤 payout double-spend policy (Solana/insurance): re-attempt vs freeze — рішення перед money-path зміною
+#### ARCH.45 — Money-path crash-window idempotency (intent-marker + in-flight guard)
+- **P2** · 🤖+👤 · 🟢 · → [`05_02`](05_02_Proof_of_Growth_Pipeline)
+- **Стан:** Закрито — code + observability + canon. **Аудит перевизначив проблему:** pending-tx stranding самозагоюється через cron (`mint_batch_collector` / `insurance_payout_recovery` / `tokenomics`), тож blanket `retries_exhausted`-handler НЕ потрібен; справжня діра — idempotency на **on-chain↔DB crash-window**, де cron-self-heal сам стає механізмом подвійної дії. 3 діри закрито durable intent-marker + `BlockchainTransaction.in_flight` guard (дзеркало EthereumAnchor DOUBLE-ANCHOR): **Solana batch double-pay** (signature до broadcast + reconcile + confirm-gated Kredis-settle), **burn double-burn** (intent перед slash, ПІСЛЯ positive-A gate, не для freeze), **Etherisc double-claim** (recovery `:pending` → `manual_review`, не сліпий re-claim). + observability: slash/payout success-rate SLO counters + `sidekiq_dead_set_size` gauge + Grafana DeadSet alert. `EvaluateTreeBatch` / `TokenomicsEvaluator` / `MintBatchCollector` — idempotent-safe / cron-recovered (підтверджено, без змін). Канон [`04_02 §4/§10`](04_02_Business_Logic_and_Services) · [`05_02`](05_02_Proof_of_Growth_Pipeline) · [`06_03 §2.3`](06_03_Prometheus_Observability).
+- [x] 👤 payout double-spend policy — **DECIDED:** intent-marker + in-flight guard (reconcile/escalate, не re-attempt-наосліп), повний scope (code + observability + canon).
+- [ ] 🤖 (nice-to-have) точніша Etherisc DIP claim-status звірка (`getClaim` ABI) замість conservative recovery-`manual_review`; ToucanBridge idempotency → E.66 (окремий трекер).
 
 #### ARCH.13 — EigenLayer AVS як дешевша L1-anchor альтернатива
 - **P3** · 🤖 · 🌿 · → `05_04`
