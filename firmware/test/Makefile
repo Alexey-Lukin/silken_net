@@ -197,6 +197,7 @@ clean:
 	      $(BINDIR)/test_fauna_session \
 	      $(BINDIR)/test_bme280 $(BINDIR)/test_audio_model \
 	      *.gcno *.gcda *.gcov coverage_raw.txt
+	rm -rf $(BINDIR)/*.dSYM
 
 # [FW.26] CI gate — Static RAM budget check (.bss + .data ≤ 50 KB).
 #

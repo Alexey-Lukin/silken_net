@@ -115,6 +115,8 @@ coverage/
 /firmware/test/test_soldier_cmd_queue
 /firmware/test/test_fauna_session
 /firmware/test/test_bme280
+# macOS clang debug-symbol bundles (the -g ASan/coverage lanes emit these)
+/firmware/test/*.dSYM/
 # [TEST.1] coverage-lane artifacts (make -C firmware/test coverage)
 /firmware/test/*.gcno
 /firmware/test/*.gcda
