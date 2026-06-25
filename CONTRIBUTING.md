@@ -42,7 +42,7 @@ Contributions are expected to pass the same checks CI enforces. Run the ones for
 the domain you changed before opening a PR:
 
 - **Ruby (Rails):** `bin/rubocop -a` · `bundle exec rspec` · `bundle exec brakeman` · `bundle exec bundler-audit check`
-- **Python (in-silico / ML):** `ruff check` (config: `ruff.toml`)
+- **Python (in-silico / ML):** `pytest tools/ml/tests` · `pytest tools/in_silico/tests` (tests) · `ruff check` (lint, config: `ruff.toml`)
 - **Firmware (STM32):** `make -C firmware/test` (host x86 — no ARM toolchain needed)
 - **Solidity (Foundry):** `cd contracts && npm ci && forge build --sizes && forge test -vvv`
 
