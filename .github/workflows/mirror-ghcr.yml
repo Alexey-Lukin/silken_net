@@ -91,7 +91,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write   # push the mirrored image to GHCR
+      packages: write       # push the mirrored image to GHCR
+      id-token: write       # OIDC → Fulcio (keyless signing for the build-provenance attestation)
+      attestations: write   # upload the SLSA build-provenance attestation
     steps:
       - name: Harden runner (egress audit)
         uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
@@ -122,6 +124,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'release' }}
 
       - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7
         with:
           context: .
@@ -131,8 +134,19 @@ jobs:
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          # SLSA build provenance + SBOM attestations, pushed alongside the image so
-          # an Akash provider (or anyone) can verify origin + contents:
-          #   gh attestation verify oci://ghcr.io/alexey-lukin/silken_net:latest --owner Alexey-Lukin
+          # BuildKit SLSA provenance + SBOM, attached to the image (build metadata).
+          # The cryptographic SIGNATURE is the Sigstore attestation in the next step;
+          # the user-facing verify process is homed in SECURITY.md ("Verifying release
+          # artifacts"): gh attestation verify oci://… --owner Alexey-Lukin.
           provenance: mode=max
           sbom: true
+
+      - name: Lowercase the image name for the attestation subject
+        run: echo "IMAGE_NAME_LC=${IMAGE_NAME,,}" >> "$GITHUB_ENV"
+
+      - name: Attest build provenance (Sigstore keyless → GHCR)
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
