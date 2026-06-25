@@ -282,7 +282,7 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
         expect(Turbo::StreamsChannel).to have_received(:broadcast_prepend_to)
       end
 
-      context "when Etherisc claim succeeded but tx.update! failed on previous attempt (P1 fix)" do
+      context "when an orphaned :pending Etherisc tx is recovered (claim may already be sent) [ARCH.45]" do
         let!(:orphaned_tx) do
           etherisc_insurance.update!(status: :paid, paid_at: Time.current)
           create(:blockchain_transaction,
@@ -301,13 +301,14 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
           allow(etherisc_insurance).to receive_messages(blockchain_transaction: orphaned_tx, uses_etherisc?: true, cluster: cluster)
         end
 
-        it "recovers orphaned TX and calls Etherisc::ClaimService" do
+        it "escalates to manual_review WITHOUT re-claiming (double-pay guard)" do
+          # [ARCH.45] Сліпий re-claim тут = можлива подвійна зовнішня USDC-виплата (claim! міг
+          # пройти до краху tx.update). Замість повтору — manual_review для ручної звірки DIP.
+          expect(Etherisc::ClaimService).not_to receive(:new)
+
           described_class.new.perform(etherisc_insurance.id)
 
-          orphaned_tx.reload
-          expect(orphaned_tx.status).to eq("sent")
-          expect(orphaned_tx.tx_hash).to eq(fake_tx_hash)
-          expect(BlockchainConfirmationWorker).to have_received(:perform_in).with(30.seconds, fake_tx_hash)
+          expect(orphaned_tx.reload.status).to eq("manual_review")
         end
       end
 

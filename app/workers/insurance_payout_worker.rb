@@ -67,12 +67,26 @@ class InsurancePayoutWorker
     # [P1 FIX]: при recovery insurance вже :paid → підхоплюємо orphaned pending TX.
     # (`if status_paid?` прибрано — AASM має лише triggered→paid, тож після transaction-блоку
     # статус ЗАВЖДИ :paid; умова була завжди-true → мертва гілка.)
+    # [ARCH.45] recovered_tx — transaction-блок не створив tx (insurance вже :paid) → ми на
+    # recovery-шляху (Sidekiq retry / InsurancePayoutRecoveryWorker), підхопили orphaned TX.
+    recovered_tx = tx.nil?
     tx ||= insurance.blockchain_transaction
 
     if tx
       broadcast_insurance_update(insurance, tx)
 
       if insurance.uses_etherisc?
+        # [ARCH.45] Double-claim crash-window guard: recovery-шлях + :pending = claim! міг бути
+        # надісланий до краху tx.update(:sent) (зовнішній USDC payout). Сліпий re-claim = можливий
+        # double-pay — DIP claim-once захищає, але ми НЕ контролюємо зовнішній контракт. Ескалюємо
+        # в manual_review (як mint double-spend guard): людина звіряє DIP перед повтором. Точніша
+        # on-chain claim-status звірка — майбутнє (потребує DIP getClaim ABI).
+        if recovered_tx && tx.status_pending?
+          tx.escalate_to_review!("Etherisc claim міг бути надісланий до краху update — ручна звірка DIP перед повтором (ARCH.45)")
+          Rails.logger.warn "🛡️ [Insurance] ##{insurance.id}: orphaned :pending Etherisc TX → manual_review (можливий вже-надісланий claim)."
+          return
+        end
+
         Rails.logger.info "🛡️ [Insurance] Triggering Etherisc DIP claim for policy " \
                           "#{insurance.etherisc_policy_id} (insurance ##{insurance.id})..."
 
