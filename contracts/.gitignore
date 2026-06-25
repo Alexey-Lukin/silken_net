@@ -1,0 +1,17 @@
+# Foundry build artifacts (also covered by root .gitignore; kept here for a self-contained contracts/)
+out/
+cache/
+
+# crytic-compile / Medusa
+crytic-export/
+.crytic_compile/
+medusa-corpus-scc/
+medusa-corpus-sfc/
+
+# Aderyn generated reports (produced in CI, never committed)
+aderyn-report.json
+aderyn-report.sarif
+
+# Halmos solver cache
+.halmos_cache/
+halmos-cache/
