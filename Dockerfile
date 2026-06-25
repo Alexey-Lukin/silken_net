@@ -11,7 +11,7 @@
 # ecosystem, .github/dependabot.yml) bumps the tag AND the digest together — it
 # cannot do that through an ARG-indirected FROM (dependabot-core #4597), so the
 # tag is literal here. Keep the version in sync with .ruby-version.
-FROM docker.io/library/ruby:4.0.5-slim@sha256:1d0c7f972f28c127b37a9ef24404c1fd26549919bfbe8d360b506e2e799ea13b AS base
+FROM docker.io/library/ruby:4.0.5-slim@sha256:2726c400123eedf50d49696f27bcb01e90758ebd2a8e3bc73b9f18f75f3b87f5 AS base
 
 # Rails app lives here
 WORKDIR /rails
