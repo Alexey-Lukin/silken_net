@@ -9,6 +9,9 @@ RSpec.describe Solana::BatchPayoutService do
   let(:wallet) { tree.wallet }
   let(:recipient_solana_address) { "7EcDhSYGxXyscszYEp35KHN8vvw3svAuLKTzXwCFLtV" }
   let(:pending_key) { Solana::MintingService::PENDING_PAYOUT_WALLETS_KEY }
+  # Мутабельний RPC-стан у let-hash (RSpec/InstanceVariable — не тримаємо @-змінні):
+  # sends = лічильник sendTransaction; sig = керована відповідь getSignatureStatuses.
+  let(:rpc) { { sends: 0, sig: "confirmed" } }
 
   before do
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
@@ -23,8 +26,6 @@ RSpec.describe Solana::BatchPayoutService do
 
     allow(Ed25519Crypto::SigningService).to receive(:sign).and_return("ab" * 64)
 
-    @send_count = 0
-    @sig_status = "confirmed" # відповідь getSignatureStatuses на reconcile-циклі
     stub_solana_rpc
 
     wallet.update!(solana_public_address: recipient_solana_address)
@@ -61,7 +62,7 @@ RSpec.describe Solana::BatchPayoutService do
       expect(tx.status).to eq("sent")
       expect(tx.tx_hash).to be_present
       expect(tx.amount).to eq(0.025)
-      expect(@send_count).to eq(1)
+      expect(rpc[:sends]).to eq(1)
     end
 
     it "is confirm-gated: does NOT drain Kredis until on-chain confirm" do
@@ -79,27 +80,27 @@ RSpec.describe Solana::BatchPayoutService do
     end
 
     it "on confirmed: settles Kredis + confirms tx, WITHOUT re-paying" do
-      @sig_status = "confirmed"
+      rpc[:sig] = "confirmed"
       described_class.call # 2-й цикл: reconcile
 
       expect(BlockchainTransaction.where(blockchain_network: "solana").count).to eq(1) # без нової tx
-      expect(@send_count).to eq(1) # без 2-го sendTransaction
+      expect(rpc[:sends]).to eq(1) # без 2-го sendTransaction
       expect(BlockchainTransaction.last.status).to eq("confirmed")
       expect(pending_lamports(wallet.id)).to eq(0)
       expect(Kredis.set(pending_key).members).not_to include(wallet.id.to_s)
     end
 
     it "on not_found: fails the tx and RETAINS pending for re-pay" do
-      @sig_status = "not_found"
+      rpc[:sig] = "not_found"
       described_class.call
 
       expect(BlockchainTransaction.last.status).to eq("failed")
-      expect(@send_count).to eq(1) # не re-paid у тому ж циклі (tx тепер :failed, не in-flight)
+      expect(rpc[:sends]).to eq(1) # не re-paid у тому ж циклі (tx тепер :failed, не in-flight)
       expect(pending_lamports(wallet.id)).to eq(25_000)
     end
 
     it "on processing: skips and leaves the tx in-flight" do
-      @sig_status = "processing"
+      rpc[:sig] = "processing"
       described_class.call
 
       expect(BlockchainTransaction.last.status).to eq("sent")
@@ -107,11 +108,11 @@ RSpec.describe Solana::BatchPayoutService do
     end
 
     it "re-pays with a fresh tx only after the failed one is no longer in-flight" do
-      @sig_status = "not_found"
+      rpc[:sig] = "not_found"
       described_class.call # 2-й цикл: :failed, pending retained
-      @sig_status = "confirmed"
+      rpc[:sig] = "confirmed"
       expect { described_class.call }.to change(BlockchainTransaction, :count).by(1) # свіжа виплата
-      expect(@send_count).to eq(2)
+      expect(rpc[:sends]).to eq(2)
     end
   end
 
@@ -120,13 +121,13 @@ RSpec.describe Solana::BatchPayoutService do
 
     it "never double-pays even if Kredis was never drained after the first send" do
       described_class.call            # 1-й цикл: on-chain send + :sent intent, БЕЗ drain (симуляція краху до confirm)
-      expect(@send_count).to eq(1)
+      expect(rpc[:sends]).to eq(1)
       expect(pending_lamports(wallet.id)).to eq(25_000) # лічильник не занулено
 
       # 2-й цикл: pending усе ще ≥ поріг, але in-flight guard звіряє замість сліпої виплати.
-      @sig_status = "confirmed"
+      rpc[:sig] = "confirmed"
       described_class.call
-      expect(@send_count).to eq(1)    # ВСЕ ОДНЕ — подвійної виплати немає
+      expect(rpc[:sends]).to eq(1)    # ВСЕ ОДНЕ — подвійної виплати немає
       expect(BlockchainTransaction.where(blockchain_network: "solana").count).to eq(1)
       expect(pending_lamports(wallet.id)).to eq(0)
     end
@@ -135,11 +136,11 @@ RSpec.describe Solana::BatchPayoutService do
       described_class.call # 1-й цикл: створює :sent intent (broadcast відбувся)
       # Симулюємо краху ПІСЛЯ broadcast, ДО mark_as_sent: tx лишилась :pending з signature.
       BlockchainTransaction.last.update_columns(status: BlockchainTransaction.statuses[:pending])
-      @sig_status = "confirmed" # on-chain виплата насправді пройшла
-      send_before = @send_count
+      rpc[:sig] = "confirmed" # on-chain виплата насправді пройшла
+      send_before = rpc[:sends]
 
       described_class.call # reconcile :pending → on-chain confirmed → settle
-      expect(@send_count).to eq(send_before) # НЕ re-broadcast
+      expect(rpc[:sends]).to eq(send_before) # НЕ re-broadcast
       expect(BlockchainTransaction.last.status).to eq("confirmed")
       expect(pending_lamports(wallet.id)).to eq(0)
     end
@@ -153,7 +154,7 @@ RSpec.describe Solana::BatchPayoutService do
       Kredis.counter("solana_pending_payouts:#{wallet.id}").increment(by: 5_000) # подія у польоті
       Kredis.counter("solana_pending_payout_count:#{wallet.id}").increment(by: 1)
 
-      @sig_status = "confirmed"
+      rpc[:sig] = "confirmed"
       described_class.call # reconcile settle by tx amount (25_000), не за поточним pending (30_000)
 
       expect(pending_lamports(wallet.id)).to eq(5_000)
@@ -216,12 +217,12 @@ RSpec.describe Solana::BatchPayoutService do
       when "getLatestBlockhash"
         resp({ "value" => { "blockhash" => "EkSnNWid2cvwEVnVx9aBqawnmiCNiDgp3gUdkDPTKN1N" } })
       when "sendTransaction"
-        @send_count += 1
+        rpc[:sends] += 1
         resp("5UfDuX7hXbLMKnPRqHxJgpPh6W9y3m4Nk7v2zKQ1YdCE")
       when "getBalance"
         resp({ "value" => 1_000_000_000 })
       when "getSignatureStatuses"
-        val = case @sig_status
+        val = case rpc[:sig]
         when "confirmed" then [ { "confirmationStatus" => "finalized", "err" => nil } ]
         when "processing" then [ { "confirmationStatus" => "processed", "err" => nil } ]
         else [ nil ] # not_found
