@@ -219,6 +219,8 @@ kamal setup
 kamal deploy
 ```
 
+> 🔏 **Signed releases:** the production image mirrored to GHCR carries a Sigstore-signed SLSA build-provenance attestation — verify it before pulling per [`SECURITY.md`](SECURITY.md) (`gh attestation verify oci://ghcr.io/alexey-lukin/silken_net:<tag> --owner Alexey-Lukin`).
+
 ---
 
 ## 📡 Ідентифікатори Вузлів
