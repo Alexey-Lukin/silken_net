@@ -68,6 +68,17 @@ class BlockchainBurningService < ApplicationService
       return freeze_for_field_audit!
     end
 
+    # [ARCH.45] In-flight guard ПІСЛЯ positive-A gate (лише slash-шлях, НЕ freeze — інакше
+    # intent-сміття для заморожених). :sent = slash уже broadcast → :slashed без повтору
+    # (ConfirmationWorker дорезолвить); :pending = крах ДО broadcast → старий intent у :failed,
+    # перепускаємо. Закриває double-burn при non-StandardError краху, що обходить rescue-breach.
+    existing_slash = BlockchainTransaction.where(sourceable: @naas_contract).in_flight.order(created_at: :desc).first
+    if existing_slash
+      return :slashed if existing_slash.status_sent?
+
+      existing_slash.fail!("Superseded — re-slash після pre-broadcast краху (ARCH.45)")
+    end
+
     # [КОЕФІЦІЄНТ ВТРАТ]: Спалюємо лише ту частку токенів, що відповідає
     # відсотку пошкодженої біомаси (розрахунок через AiInsight).
     # Це запобігає повній ануляції контракту при загибелі одного дерева з тисячі.
@@ -94,12 +105,17 @@ class BlockchainBurningService < ApplicationService
     # 3. ВИКОНАННЯ (The Verdict)
     lock_key = "lock:web3:oracle:#{oracle_key.address}"
 
+    audit = nil
     begin
       tx_hash = nil
       outcome = nil
       reason = @source_tree ? "загибель дерева #{@source_tree.did}" : "порушення умов кластера"
 
       Rails.logger.warn "🔥 [Slashing] Вилучення #{burn_amount}/#{total_minted_amount} SCC (damage #{(damage_ratio * 100).round(1)}% → slash #{(slash_ratio * 100).round(1)}%, 05_05 §3 γ=#{slash_gamma}) у #{@organization.name}. Причина: #{reason}."
+
+      # [ARCH.45] Durable intent-marker (:pending, sourceable: contract) ПЕРЕД on-chain slash.
+      # На краху retry бачить його через in-flight guard (вгорі) і не палить удруге.
+      audit = create_slash_intent!(burn_amount, reason)
 
       # [ВИПРАВЛЕНО: Lock Duration]: 30 секунд достатньо для transact() (fire-and-forget,
       # повертається миттєво після відправки TX у мемпул). Операції всередині локу:
@@ -117,10 +133,11 @@ class BlockchainBurningService < ApplicationService
 
       # 4. ФІКСАЦІЯ (Immutable Audit)
       if tx_hash.present?
+        # [ARCH.45] Intent → :sent (BlockchainConfirmationWorker дорезолвить :confirmed/:failed).
+        audit.mark_as_sent!(tx_hash)
+
         # Маркуємо контракт як розірваний. Це автоматично блокує майбутні виплати.
         @naas_contract.update!(status: :breached)
-
-        create_audit_transaction(tx_hash, burn_amount, reason)
 
         # [ВИПРАВЛЕНО]: Запускаємо воркер-підтверджувач для відстеження квитанції
         # (аналогічно BlockchainMintingService — transact + confirm pattern).
@@ -138,6 +155,9 @@ class BlockchainBurningService < ApplicationService
     rescue StandardError => e
       # Контракт розривається в БД миттєво, навіть якщо блокчейн "лагає"
       @naas_contract.update!(status: :breached)
+      # [ARCH.45] Intent у :failed, якщо broadcast не підтвердився — не лишаємо in-flight orphan
+      # (інакше наступний retry хибно вважав би slash «у польоті» й пропустив би його).
+      audit&.fail!("Slash error: #{e.message}") if audit&.status_pending?
       handle_slashing_failure(e.message, total_minted_amount)
       raise e
     end
@@ -173,7 +193,10 @@ class BlockchainBurningService < ApplicationService
     :frozen
   end
 
-  def create_audit_transaction(tx_hash, amount, reason)
+  # [ARCH.45] Intent-marker :pending ДО on-chain slash (sourceable: contract = ключ in-flight
+  # guard). mark_as_sent! проставить tx_hash після broadcast; BlockchainConfirmationWorker
+  # дорезолвить :sent→:confirmed/:failed. Раніше створювався одразу :confirmed за фактом слешу.
+  def create_slash_intent!(amount, reason)
     # Пастка "Останнього дерева": якщо весь кластер мертвий, audit_wallet буде nil.
     # У такому разі прив'язуємо запис до самого кластера, а не до дерева-носія.
     audit_wallet = @source_tree&.wallet || @cluster.trees.active.first&.wallet
@@ -185,8 +208,7 @@ class BlockchainBurningService < ApplicationService
       to_address: @organization.crypto_public_address,
       amount:     amount,
       token_type: :carbon_coin,
-      status:     :confirmed,
-      tx_hash:    tx_hash,
+      status:     :pending,
       notes:      "🚨 SLASHING: Кошти вилучено. Причина: #{reason}."
     )
   end

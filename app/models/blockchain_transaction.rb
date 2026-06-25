@@ -101,7 +101,7 @@ class BlockchainTransaction < ApplicationRecord
   # [ARCH.45] In-flight money-path tx — intent-marker idempotency guard (дзеркало
   # EthereumAnchor.in_flight). Recent :pending/:sent = ще не фіналізована виплата/burn;
   # на retry ловить crash-window між on-chain broadcast і DB-записом (double-pay/double-burn).
-  # Вікно 2 год >> retry-exhaustion (~хвилини), покриває годинний Solana-cron цикл.
+  # Recent-відсічка не дає давно-застряглим tx блокувати свіжі цикли (ті йдуть у manual_review).
   scope :in_flight, -> { where(status: [ :pending, :sent ]).where("created_at > ?", 2.hours.ago) }
 
   # --- ДЕЛЕГУВАННЯ ---

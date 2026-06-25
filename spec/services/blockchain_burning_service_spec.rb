@@ -112,7 +112,8 @@ RSpec.describe BlockchainBurningService do
 
         audit_tx = BlockchainTransaction.last
         expect(audit_tx.tx_hash).to eq(fake_tx_hash)
-        expect(audit_tx.status).to eq("confirmed")
+        # [ARCH.45] intent → :sent; BlockchainConfirmationWorker дорезолвить до :confirmed/:failed.
+        expect(audit_tx.status).to eq("sent")
         expect(audit_tx.to_address).to eq(organization.crypto_public_address)
         expect(audit_tx.sourceable).to eq(naas_contract)
       end
@@ -121,6 +122,46 @@ RSpec.describe BlockchainBurningService do
         expect(BlockchainConfirmationWorker).to receive(:perform_in).with(30.seconds, fake_tx_hash)
 
         described_class.call(organization.id, naas_contract.id)
+      end
+
+      # [ARCH.45] Double-burn crash-window guard — slash() необоротний; на повторному виклику
+      # (non-StandardError крах, що обходить rescue-breach) intent-marker не дає палити вдруге.
+      context "when an in-flight slash already exists" do
+        it "does NOT re-slash when an in-flight :sent slash already exists for the contract" do
+          BlockchainTransaction.create!(
+            sourceable: naas_contract, cluster: cluster, amount: 500, token_type: :carbon_coin,
+            status: :sent, to_address: organization.crypto_public_address, tx_hash: fake_tx_hash,
+            notes: "prior in-flight slash"
+          )
+
+          result = described_class.call(organization.id, naas_contract.id)
+
+          expect(result).to eq(:slashed)
+          expect(mock_client).not_to have_received(:transact) # без повторного on-chain slash
+        end
+
+        it "re-slashes after a :pending intent (crash before broadcast), failing the stale one" do
+          stale = BlockchainTransaction.create!(
+            sourceable: naas_contract, cluster: cluster, amount: 500, token_type: :carbon_coin,
+            status: :pending, to_address: organization.crypto_public_address,
+            notes: "pre-broadcast crash intent"
+          )
+
+          described_class.call(organization.id, naas_contract.id)
+
+          expect(stale.reload.status).to eq("failed")
+          expect(mock_client).to have_received(:transact) # свіжий slash виконано
+        end
+
+        it "fails the intent (no in-flight orphan) when the slash broadcast raises" do
+          allow(mock_client).to receive(:transact).and_raise(StandardError, "RPC down")
+
+          expect { described_class.call(organization.id, naas_contract.id) }
+            .to raise_error(StandardError, /RPC down/)
+
+          intent = BlockchainTransaction.where(sourceable: naas_contract).last
+          expect(intent.status).to eq("failed") # не лишився :pending → не хибний in-flight на retry
+        end
       end
 
       it "sets contract to breached and creates EwsAlert on blockchain failure" do
