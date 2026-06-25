@@ -523,6 +523,71 @@
       ],
       "title": "DB Pool: Waiting + Idle Threads",
       "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 43 },
+      "id": 600,
+      "title": "💰 Money-Path Reliability [ARCH.45]",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Success-rate SLO (success/attempts) money-path: mint / slash / Solana payout. <1.0 = частина транзакцій не дійшла до мережі (06_03 §2.8). Чисельник→sent після broadcast.",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "percentunit", "min": 0, "max": 1 },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 44 },
+      "id": 601,
+      "options": { "legend": { "calcs": ["min", "mean"], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum(silkennet_mint_success_total) / sum(silkennet_mint_attempts_total)",
+          "legendFormat": "Mint",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "silkennet_slash_success_total / silkennet_slash_attempts_total",
+          "legendFormat": "Slash",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "silkennet_solana_payout_success_total / silkennet_solana_payout_attempts_total",
+          "legendFormat": "Solana payout",
+          "refId": "C"
+        }
+      ],
+      "title": "Money-Path Success Rate (SLO)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Sidekiq DeadSet — job-и, що вичерпали retry. Money-path тут = stranded funds/tx без авто-відновлення (in-flight guard не діє — job не в черзі). >0 → Sidekiq Web UI → Dead. ARCH.45.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "red", "mode": "fixed" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 44 },
+      "id": 602,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "silkennet_sidekiq_dead_set_size",
+          "legendFormat": "DeadSet size",
+          "refId": "A"
+        }
+      ],
+      "title": "Sidekiq DeadSet (exhausted jobs)",
+      "type": "stat"
     }
 
   ]

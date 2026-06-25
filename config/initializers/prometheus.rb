@@ -52,6 +52,29 @@ module SilkenNet
       docstring: "Total tokens slashed (burned due to cluster stress)"
     )
 
+    # [ARCH.45] Slash attempts vs successes → slash success-rate SLO (06_03 §2.8),
+    # вимірюване як silkennet_slash_success_total / silkennet_slash_attempts_total.
+    SLASH_ATTEMPTS_TOTAL = REGISTRY.counter(
+      :silkennet_slash_attempts_total,
+      docstring: "Slash transactions attempted by BlockchainBurningService (SLO denominator)"
+    )
+
+    SLASH_SUCCESS_TOTAL = REGISTRY.counter(
+      :silkennet_slash_success_total,
+      docstring: "Slash transactions successfully broadcast — status→sent (SLO numerator)"
+    )
+
+    # [ARCH.45] Solana batch payout attempts vs successes → payout success-rate SLO (06_03 §2.8).
+    SOLANA_PAYOUT_ATTEMPTS_TOTAL = REGISTRY.counter(
+      :silkennet_solana_payout_attempts_total,
+      docstring: "Solana batch payouts attempted by BatchPayoutService (SLO denominator)"
+    )
+
+    SOLANA_PAYOUT_SUCCESS_TOTAL = REGISTRY.counter(
+      :silkennet_solana_payout_success_total,
+      docstring: "Solana batch payouts successfully broadcast — status→sent (SLO numerator)"
+    )
+
     # Web3 RPC errors (labeled by network and error type)
     RPC_ERRORS_TOTAL = REGISTRY.counter(
       :silkennet_rpc_errors_total,
@@ -158,6 +181,14 @@ module SilkenNet
       :silkennet_sidekiq_queue_latency_seconds,
       docstring: "Latency (age of oldest job) in a Sidekiq queue",
       labels: [ :queue ]
+    )
+
+    # [ARCH.45] Sidekiq DeadSet size — money-path job, що вичерпав retry, осідає тут зі
+    # stranded-станом (locked funds / pending tx) і потребує операторської уваги. Без цього
+    # сигналу застрягла виплата/burn лишалися б непоміченими (06_03 §2.8 — money-path SLO).
+    SIDEKIQ_DEAD_SET_SIZE = REGISTRY.gauge(
+      :silkennet_sidekiq_dead_set_size,
+      docstring: "Current size of the Sidekiq DeadSet (jobs that exhausted all retries)"
     )
 
     # Legacy aliases for backward compatibility with existing Grafana dashboards.

@@ -262,4 +262,45 @@ RSpec.describe SilkenNet::Metrics do
       expect { described_class.sample_puma_pool! }.not_to raise_error
     end
   end
+
+  # -----------------------------------------------------------------------
+  # ARCH.45: money-path idempotency observability (slash/payout SLO + DeadSet)
+  # -----------------------------------------------------------------------
+  describe "ARCH.45 — money-path idempotency observability" do
+    %i[
+      silkennet_slash_attempts_total
+      silkennet_slash_success_total
+      silkennet_solana_payout_attempts_total
+      silkennet_solana_payout_success_total
+    ].each do |name|
+      it "registers #{name} counter" do
+        expect(described_class::REGISTRY.get(name)).to be_a(Prometheus::Client::Counter)
+      end
+    end
+
+    it "registers sidekiq_dead_set_size gauge" do
+      expect(described_class::REGISTRY.get(:silkennet_sidekiq_dead_set_size)).to be_a(Prometheus::Client::Gauge)
+    end
+
+    it "increments slash attempts/success counters" do
+      [ described_class::SLASH_ATTEMPTS_TOTAL, described_class::SLASH_SUCCESS_TOTAL ].each do |m|
+        before_val = m.get
+        m.increment
+        expect(m.get).to eq(before_val + 1.0)
+      end
+    end
+
+    it "increments Solana payout attempts/success counters" do
+      [ described_class::SOLANA_PAYOUT_ATTEMPTS_TOTAL, described_class::SOLANA_PAYOUT_SUCCESS_TOTAL ].each do |m|
+        before_val = m.get
+        m.increment
+        expect(m.get).to eq(before_val + 1.0)
+      end
+    end
+
+    it "sets the dead_set_size gauge" do
+      described_class::SIDEKIQ_DEAD_SET_SIZE.set(3)
+      expect(described_class::SIDEKIQ_DEAD_SET_SIZE.get).to eq(3.0)
+    end
+  end
 end

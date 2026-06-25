@@ -27,8 +27,8 @@ GRAFANA_API_TOKEN=<token> \
 
 Скрипт сам: знаходить UID Prometheus datasource (або `DATASOURCE_UID` env),
 створює folder «SilkenNet» (або `GRAFANA_FOLDER`), імпортує дашборд із
-правильним `inputs`-wrapper'ом і робить ідемпотентний upsert 14 alert rules
-через Alerting Provisioning API (`X-Disable-Provenance` — рулі лишаються
+правильним `inputs`-wrapper'ом і робить ідемпотентний upsert усіх alert rules
+(кількість — `rule_count`, import.rb рахує з yaml) через Alerting Provisioning API (`X-Disable-Provenance` — рулі лишаються
 редагованими в UI). Плейсхолдер `${DATASOURCE_UID}` підставляється в
 пам'яті — файл у репо не змінюється. Повторний запуск безпечний.
 

@@ -155,6 +155,13 @@ RSpec.describe PrometheusCollector, type: :request do
         expect(response.body).to include("silkennet_sidekiq_queue_size")
         expect(response.body).to include("silkennet_sidekiq_queue_latency_seconds")
       end
+
+      it "includes the DeadSet size gauge [ARCH.45]" do
+        get "/metrics", headers: { "REMOTE_ADDR" => "127.0.0.1" }
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("silkennet_sidekiq_dead_set_size")
+      end
     end
 
     context "when IP address is invalid" do

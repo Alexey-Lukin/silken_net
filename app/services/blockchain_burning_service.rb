@@ -116,6 +116,7 @@ class BlockchainBurningService < ApplicationService
       # [ARCH.45] Durable intent-marker (:pending, sourceable: contract) ПЕРЕД on-chain slash.
       # На краху retry бачить його через in-flight guard (вгорі) і не палить удруге.
       audit = create_slash_intent!(burn_amount, reason)
+      SilkenNet::Metrics::SLASH_ATTEMPTS_TOTAL.increment
 
       # [ВИПРАВЛЕНО: Lock Duration]: 30 секунд достатньо для transact() (fire-and-forget,
       # повертається миттєво після відправки TX у мемпул). Операції всередині локу:
@@ -135,6 +136,7 @@ class BlockchainBurningService < ApplicationService
       if tx_hash.present?
         # [ARCH.45] Intent → :sent (BlockchainConfirmationWorker дорезолвить :confirmed/:failed).
         audit.mark_as_sent!(tx_hash)
+        SilkenNet::Metrics::SLASH_SUCCESS_TOTAL.increment
 
         # Маркуємо контракт як розірваний. Це автоматично блокує майбутні виплати.
         @naas_contract.update!(status: :breached)

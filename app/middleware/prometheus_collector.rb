@@ -109,6 +109,9 @@ class PrometheusCollector
       SilkenNet::Metrics::SIDEKIQ_QUEUE_SIZE.set(queue.size, labels: { queue: queue_name })
       SilkenNet::Metrics::SIDEKIQ_QUEUE_LATENCY.set(queue.latency, labels: { queue: queue_name })
     end
+
+    # [ARCH.45] DeadSet — job-и, що вичерпали retry (money-path → stranded funds/tx).
+    SilkenNet::Metrics::SIDEKIQ_DEAD_SET_SIZE.set(Sidekiq::DeadSet.new.size)
   rescue => e
     # Don't let Sidekiq/Redis errors break the metrics endpoint
     Rails.logger.warn "[Prometheus] Failed to refresh Sidekiq gauges: #{e.message}"

@@ -62,7 +62,9 @@ module Solana
       return reconcile_in_flight(service, wallet_id, existing) if existing
 
       event_count = count_counter(wallet_id).value.to_i
+      SilkenNet::Metrics::SOLANA_PAYOUT_ATTEMPTS_TOTAL.increment
       service.batch_payout!(pending, event_count)
+      SilkenNet::Metrics::SOLANA_PAYOUT_SUCCESS_TOTAL.increment
       # [ARCH.45] Kredis НЕ decrement тут — лише після on-chain confirm (reconcile наступного
       # циклу). Тримання pending зайвий цикл безпечне: in-flight guard не дасть повторну виплату.
     end
