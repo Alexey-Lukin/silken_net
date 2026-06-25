@@ -328,7 +328,7 @@ ENV.fetch("RACK_ATTACK_REDIS_URL") {
 ### Чому саме ця архітектура
 
 1. **Sidekiq (DB 0)**: Найбільший обсяг даних — мільйони телеметричних job'ів щогодини. Ізоляція на DB 0 запобігає витісненню Web3 locks.
-2. **Kredis (DB 1)**: Критичні distributed locks для Web3 nonce management (`BlockchainMintingService`, `BlockchainBurningService`, `CeloRewardService`), M2M nonce anti-replay. Lock TTL 30 sec — якщо lock витіснений, це double-spend vulnerability.
+2. **Kredis (DB 1)**: Критичні distributed locks для Web3 nonce management (`BlockchainMintingService`, `BlockchainBurningService`, `CeloRewardService`), M2M nonce anti-replay. Lock TTL 30 sec = **concurrent** guard; **[ARCH.45]** durable money-path idempotency тепер тримає DB intent-marker + `BlockchainTransaction.in_flight` guard (не лише ephemeral lock) для slash/Solana payout — витіснення локу більше не єдина лінія проти double-spend ([`04_02 §4/§10`](04_02_Business_Logic_and_Services)).
 3. **Rack::Attack (DB 2)**: Rate-limit counters з TTL 10 min. Менший обсяг, але потребує ізоляції від Sidekiq щоб counters не губились при spike-ах.
 4. **Solid Cache (PostgreSQL)**: Rails.cache для Web3 circuit breaker state, dashboard stats, alert silence windows. PostgreSQL гарантує durability — circuit breaker state не зникає при Redis restart.
 5. **Solid Cable (PostgreSQL)**: ActionCable через PostgreSQL LISTEN/NOTIFY — zero Redis dependency, multi-replica safe без sticky sessions.

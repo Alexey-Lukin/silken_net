@@ -289,7 +289,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 **Два режими виплати:**
 
 1. **Internal mode (default):** `InsurancePayoutWorker` → `BlockchainMintingService` → SCC/SFC емісія на Polygon.
-2. **Oracle mode (Etherisc DIP):** Якщо `etherisc_policy_id` присутній, система переключається в режим Oracle: `Etherisc::ClaimService` → `triggerClaim()` → виплата USDC з децентралізованого пулу ліквідності Etherisc. Це запобігає інфляційному тиску на внутрішню токеноміку.
+2. **Oracle mode (Etherisc DIP):** Якщо `etherisc_policy_id` присутній, система переключається в режим Oracle: `Etherisc::ClaimService` → `triggerClaim()` → виплата USDC з децентралізованого пулу ліквідності Etherisc. Це запобігає інфляційному тиску на внутрішню токеноміку. **[ARCH.45]** `triggerClaim` НЕ idempotent на нашому боці → orphaned `:pending` recovery-tx ескалює в `manual_review` (не сліпий re-claim) проти double-pay ([`04_02 §4`](04_02_Business_Logic_and_Services)).
 
 **Guard clauses перед виплатою:**
 - `required_confirmations` (default: 3) незалежних D-MRV підтверджень.

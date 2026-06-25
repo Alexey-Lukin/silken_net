@@ -124,6 +124,8 @@ PENALTY_FACTOR_MAX = 2.0   # стеля застосовується до МНО
 
 **Проти монолітного `cause_classification`-поля:** single point of failure + новий drift-стейт; розподілені діверсії (blackout→C §6, fire→B §4) + один positive-A-guard = defense-in-depth, що відновлює канонічний C-дефолт. **Фазування:** guard потрібен **зараз** (захищає поточні investor-org'и незалежно від моделі оператора); operator-bond (§3.1) — **пізніше, з guild-маркетплейсом**. Tracked → [`00_07` SLASH-1](00_07_Action_Plan_Tracker).
 
+> **[ARCH.45] Cause-gate ≠ idempotency-guard (окремі шари).** Positive-A gate вирішує **КОЛИ** слешити (cause); він НЕ захищає від **повторного виконання** `slash()` на крах між on-chain-викликом і DB-breach. Double-burn crash-window закрито окремо — durable intent-marker + `BlockchainTransaction.in_flight` guard ПІСЛЯ gate (лише slash-шлях, не freeze) у `BlockchainBurningService` ([`04_02 §4`](04_02_Business_Logic_and_Services)). Slash success-rate SLO — `silkennet_slash_success/attempts_total` ([`06_03 §2.3`](06_03_Prometheus_Observability)).
+
 ## 4. Insurance Payout (тільки для категорії B)
 
 ```

@@ -725,7 +725,7 @@ Sidekiq::Limiter.window("web3_rpc", 50, :second, wait: 5)  # 50 RPC/sec global
 ```
 
 **Rollback:** `MintingRollbackService.call(transactions:)` при вичерпанні 10 retry `BlockchainConfirmationWorker`
-через `sidekiq_retries_exhausted` (~15-20 хвилин поллінгу мемпулу).
+через `sidekiq_retries_exhausted` (~15-20 хвилин поллінгу мемпулу) — покриває **confirmation-failure** (tx застрягла в мемпул-лімбі). **[ARCH.45]** broadcast↔DB crash-window (on-chain пройшов, DB-запис впав до фіксації) — окремий клас, закритий durable intent-marker + `in_flight` guard (Solana payout / burn / Etherisc; [`04_02 §4/§10`](04_02_Business_Logic_and_Services)).
 
 ---
 
@@ -815,7 +815,7 @@ total = base + bonus    # max: 10_000 + 62×100 = 16_200 lamports = 0.0162 USDC
 | Rate limit (per wallet, anti-DoS) | ✅ Sidekiq уніфікований | ✅ cron | ⚠️ unbounded (admin-driven) | ⚠️ unbounded | Sidekiq + Pundit |
 | WEB3_STRICT_MODE respected (raises на missing Web3 ENV) | ✅ | ✅ | ✅ | ✅ | shared `web3_strict_check!` |
 
-> **PATH 4 (Solana) НЕ викликає `lock_and_mint!`** — Solana — паралельна рейка з прямим SPL Transfer без локування growth_points. growth_points і SCC mint обробляються Path 1, Solana — окрема мікро-винагорода, що не торкається balance/locked_balance.
+> **PATH 4 (Solana) НЕ викликає `lock_and_mint!`** — Solana — паралельна рейка з прямим SPL Transfer без локування growth_points. growth_points і SCC mint обробляються Path 1, Solana — окрема мікро-винагорода, що не торкається balance/locked_balance. **[ARCH.45]** batch payout (поріг > 0) має власну idempotency поза цією таблицею (Wallet-lock не застосовний): durable intent-marker (`BlockchainTransaction` `:pending`→`:sent`, signature обчислено до broadcast) + `in_flight` reconcile + confirm-gated Kredis-settle ([`04_02 §10`](04_02_Business_Logic_and_Services)).
 
 > **TokenomicsEvaluatorWorker bypass [S6.12] — фактичний інваріант:** Path 2 НЕ перевіряє `verified_by_iotex?` / `oracle_status_fulfilled?`. Це **навмисно**, але обґрунтування потребує точності:
 >

@@ -938,6 +938,7 @@ any ──report_fault──► faulty
 - `confirm(block_num, gas_cost)` (sent/processing→confirmed)
 - `fail(reason)` (any→failed)
 - `escalate_to_review(reason)` (pending/processing/sent/failed→manual_review) — **[DOUBLE-SPEND GUARD]**: tx_hash вже існує або стан на блокчейні невідомий; кошти залишаються у `locked_balance` до ручної звірки
+- `scope :in_flight` (recent `:pending`/`:sent`) — **[ARCH.45]** intent-marker idempotency guard (дзеркало `EthereumAnchor.in_flight`): на retry ловить on-chain↔DB crash-window для slash / Solana payout проти double-pay / double-burn ([`04_02 §4/§10`](04_02_Business_Logic_and_Services))
 
 **Методи:** `find_with_partition_pruning(id, created_at = nil)` _(клас)_, `explorer_url`, `solana_network?`, `celo_network?`, `broadcast_status_change`.
 

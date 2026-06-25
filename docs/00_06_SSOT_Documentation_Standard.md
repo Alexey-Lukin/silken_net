@@ -80,6 +80,7 @@
 | └ Vendor-landscape / DMLS-хаби / Frame Agreement (production-procurement) | `07_02 §8` (`protocols/procurement/rfq_registry` реферить рядок, не дублює) |
 | Центральна провідна шина анкера (топологія · матеріал · ізоляція каналу · термінус · реалізація) | `01_01 §1.4` — monolithic = сплав анода (HW.24-gated); Ø → frozen-dims `01_01 §1`; термоміст → `01_01 §4.1` + in-silico `54`; механіка → in-silico `55`; матеріал/реалізація-рішення → `00_07` HW.34. Інші доки реферять, не дублюють |
 | Slashing penalty formula | `05_05 §3` ↔ `BlockchainBurningService` |
+| Money-path crash-window idempotency (intent-marker + `in_flight` guard) | `04_02 §4/§10` ↔ `BlockchainBurningService` / `Solana::BatchPayoutService` |
 | Lorenz Z↔health ground-truth / de-risk протокол | `05_05 §8` (калібрує пороги §3/§7; партнерський ростер ФОТІУС/ЧНУ → `08_02`) |
 | Governance / DAO params (Governor, Timelock, ProtocolParameters) | `05_06` |
 | Secrets inventory | `06_04` (canonical = `config/deploy.yml env.secret`) |

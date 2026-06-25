@@ -9,7 +9,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 — System Qualified / Mainnet Ready.
-- **Обґрунтування:** Всі заглушки (dClimate, Puro.earth) замінено на бойові Web3/HTTP інтеграції. Бізнес-логіка пройшла параноїдальний AI-аудит: повністю усунуто пастки `Network-in-Transaction`, витоки пам'яті (OOM) та ризики подвійної витрати (Double-Spend). Воркери ідемпотентні та fault-tolerant. **Примітка:** Chainlink dispatch має dev/test stub-режим (ENV-gated: при відсутності `CHAINLINK_FUNCTIONS_ROUTER` генерується локальний request ID); production вимагає `CHAINLINK_FUNCTIONS_ROUTER` та `CHAINLINK_SUBSCRIPTION_ID`.
+- **Обґрунтування:** Всі заглушки (dClimate, Puro.earth) замінено на бойові Web3/HTTP інтеграції. Бізнес-логіка пройшла параноїдальний AI-аудит: повністю усунуто пастки `Network-in-Transaction`, витоки пам'яті (OOM) та ризики подвійної витрати (Double-Spend). Воркери fault-tolerant; money-path idempotency **шарова** — status guards / pessimistic lock (concurrent) + [ARCH.45] durable intent-marker + in-flight guard на on-chain↔DB crash-window (§4 / §10 / §11). **Примітка:** Chainlink dispatch має dev/test stub-режим (ENV-gated: при відсутності `CHAINLINK_FUNCTIONS_ROUTER` генерується локальний request ID); production вимагає `CHAINLINK_FUNCTIONS_ROUTER` та `CHAINLINK_SUBSCRIPTION_ID`.
 - **Відкрите:** Drift Register моніторинг (§13b); Planned-сервіси (Forester Guild, Cross-Registry, Federated Learning) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
@@ -218,9 +218,9 @@
 |---|---|
 | **Файл** | `app/services/blockchain_burning_service.rb` |
 | **Вхід** | `organization_id`, `naas_contract_id`, `source_tree:` (опціонально) |
-| **Що робить** | Slashing Protocol. Розраховує `damage_ratio` через `AiInsight` (% критично стресованих дерев кластера). Викликає `slash(investor_address, amount_wei)` на Polygon. Маркує `NaasContract.status = :breached`. Prometheus metric `SCC_SLASHED_TOTAL`. |
+| **Що робить** | Slashing Protocol. Розраховує `damage_ratio` через `AiInsight` (% критично стресованих дерев кластера). Викликає `slash(investor_address, amount_wei)` на Polygon. Маркує `NaasContract.status = :breached`. **[ARCH.45]** durable intent-marker (`BlockchainTransaction` `:pending`→`:sent`, `sourceable:` contract) ПЕРЕД on-chain slash + `in_flight` guard ПІСЛЯ positive-A gate (`:sent` → не re-slash; `:pending` → старий intent у `:failed`) — закриває double-burn crash-window. Prometheus: `SCC_SLASHED_TOTAL` + `SLASH_ATTEMPTS/SUCCESS_TOTAL` (success-rate SLO). |
 | **Зовнішні виклики** | Polygon RPC, `BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)`, `EwsAlert.create!` (при помилці) |
-| **Вихід** | `tx_hash` (String) або raise StandardError. Створює `BlockchainTransaction` (audit). |
+| **Вихід** | `:slashed` / `:frozen` (positive-A gate, no burn) / `nil` (no-op). Створює `BlockchainTransaction` intent (audit, `:pending`→`:sent`); rescue завершує intent у `:failed` (без in-flight orphan). |
 
 ### `ChainAuditService`
 
@@ -266,7 +266,7 @@
 |---|---|
 | **Файл** | `app/services/etherisc/claim_service.rb` |
 | **Вхід** | `insurance` (ParametricInsurance AR instance) |
-| **Що робить** | Oracle-mode виплата через Etherisc DIP на Polygon. Викликає `triggerClaim(policyId)`. Виплата в USDC з децентралізованого пулу (усуває інфляційний тиск на SCC). |
+| **Що робить** | Oracle-mode виплата через Etherisc DIP на Polygon. Викликає `triggerClaim(policyId)`. Виплата в USDC з децентралізованого пулу (усуває інфляційний тиск на SCC). **[ARCH.45]** `triggerClaim` НЕ idempotent на нашому боці → `InsurancePayoutWorker` ескалює orphaned `:pending` recovery-tx у `manual_review` (не сліпий re-claim) проти double-pay; точніша on-chain DIP claim-status звірка — майбутнє (`getClaim` ABI). |
 | **Зовнішні виклики** | Polygon RPC, `ETHERISC_DIP_CONTRACT_ADDRESS` |
 | **Вихід** | `tx_hash` (String). |
 
@@ -532,7 +532,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 |---|---|
 | **Файл** | `app/services/solana/batch_payout_service.rb` |
 | **Вхід** | — (cron-driven через `SolanaBatchPayoutWorker`) |
-| **Що робить** | Gas Optimizer для Solana мікро-винагород. Обходить акумульовані в Kredis гаманці (`solana_pending_payouts:<wallet_id>`) і виплачує тих, чия сума перетнула `solana_batch_threshold_usdc`, одним `transferChecked` ATA→ATA через `Solana::MintingService#batch_payout!`. Per-wallet `Kredis.lock` + decrement-not-clear (concurrent incrby не губиться); ізоляція збоїв per-wallet; залишок зниклого гаманця скидається. Поріг 0 → no-op (власник виплат — per-event шлях). Scale-обґрунтування — [`05_01 §8`](05_01_Multichain_Architecture). |
+| **Що робить** | Gas Optimizer для Solana мікро-винагород. Обходить акумульовані в Kredis гаманці (`solana_pending_payouts:<wallet_id>`) і виплачує тих, чия сума перетнула `solana_batch_threshold_usdc`, одним `transferChecked` ATA→ATA через `Solana::MintingService#batch_payout!`. Per-wallet `Kredis.lock`; ізоляція збоїв per-wallet; залишок зниклого гаманця скидається. Поріг 0 → no-op (власник виплат — per-event шлях). **[ARCH.45]** durable intent-marker (`:pending`→`:sent`, signature обчислено до broadcast) + `in_flight` guard: на наступному циклі `reconcile_in_flight` звіряє on-chain (`getSignatureStatuses`) замість сліпої повторної виплати; Kredis-settle **confirm-gated** (decrement лише після on-chain confirm, за сумою самої tx → concurrent надбавки виживають). Закриває double-pay crash-window. Scale-обґрунтування — [`05_01 §8`](05_01_Multichain_Architecture). |
 | **Зовнішні виклики** | `Solana::MintingService#batch_payout!` → Solana RPC (`transferChecked`) |
 | **Вихід** | — (side-effect: `BlockchainTransaction` `:sent` + Kredis decrement) |
 
@@ -1011,7 +1011,7 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Retry** | 5 |
 | **Тригер** | `ContractHealthCheckService`, `Dclimate::VerificationService` (fraud), `ContractTerminationService` |
 | **Вхід** | `organization_id`, `naas_contract_id`, `tree_id` (опц.), `contractual` (опц., default false — early-exit форфейтура пропускає positive-A gate) |
-| **Сервіси** | `BlockchainBurningService.call` (повертає `:slashed`/`:frozen`/`nil`) |
+| **Сервіси** | `BlockchainBurningService.call` (повертає `:slashed`/`:frozen`/`nil`; **[ARCH.45]** intent-marker + in-flight slash guard проти double-burn — деталі §4) |
 | **Side Effects** | **Лише на `:slashed`:** `MaintenanceRecord` (decommissioning) + ActionCable/Turbo `CONTRACT_SLASHED`. На `:frozen` (positive-A gate, SLASH-1 §3.2) — без надгробка/broadcast (Field-Audit алерт уже піднято сервісом). |
 
 #### `InsurancePayoutWorker`
@@ -1023,7 +1023,7 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Тригер** | `Dclimate::VerificationService` (fire_confirmed) + `ParametricInsurance` (при triggered, подієво); recovery sweep `InsurancePayoutRecoveryWorker` (cron `15,45 * * * *`) |
 | **Вхід** | `insurance_id` (Integer) |
 | **Сервіси** | `Etherisc::ClaimService.new(insurance).claim!` (при `uses_etherisc?`) або `BlockchainMintingService.call` |
-| **Side Effects** | `insurance.pay!`, `BlockchainConfirmationWorker.perform_in(30.seconds, ...)`. Перевіряє супутниковий консенсус (Cosmic Eye guard). |
+| **Side Effects** | `insurance.pay!`, `BlockchainConfirmationWorker.perform_in(30.seconds, ...)`. Перевіряє супутниковий консенсус (Cosmic Eye guard). **[ARCH.45]** recovery-шлях + orphaned `:pending` Etherisc → `manual_review` (не сліпий re-claim) проти double-pay. |
 
 #### `InsurancePayoutRecoveryWorker`
 
@@ -1302,7 +1302,7 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Includes** | `Web3CircuitBreaker` — `with_circuit_breaker("solana_spl")`; `lock: :until_executed` |
 | **Тригер** | Sidekiq cron `20 * * * *` (щогодини) |
 | **Вхід** | — |
-| **Сервіси** | `Solana::BatchPayoutService.call` → виплата накопиченого (поріг `solana_batch_threshold_usdc` > 0) |
+| **Сервіси** | `Solana::BatchPayoutService.call` → виплата накопиченого (поріг `solana_batch_threshold_usdc` > 0; **[ARCH.45]** in-flight reconcile + confirm-gated settle проти double-pay — деталі §10) |
 
 #### `PuroEarthPassportWorker`
 
@@ -1997,7 +1997,7 @@ $$\begin{cases} \dot{x} = \sigma(y - x) \\ \dot{y} = x(\rho - z) - y \\ \dot{z} 
 ### Принципи Безпеки
 
 1. **Zero-Trust:** Кожен пакет шифрується hardware-bound AES ключем у `HardwareKey` (LoRa AES-128 для Tree↔Queen, CoAP AES-256 для Queen↔Rails — domain separation — [`03_06 §2`](03_06_Factory_Flashing_and_Key_Provisioning)).
-2. **Idempotency:** Всі фінансові воркери мають захист від повторного виконання (status guards / pessimistic lock).
+2. **Idempotency (шарова):** Фінансові воркери захищені від повторного виконання — status guards + pessimistic lock (concurrent) **+ [ARCH.45]** durable intent-marker + `BlockchainTransaction.in_flight` guard на on-chain↔DB crash-window (mint/anchor — DOUBLE-ANCHOR pattern; Solana batch / burn / Etherisc — reconcile/escalate замість сліпого повтору).
 3. **Resilience:** Система підтримує 10+ ретраїв для Web3 операцій та 3–5 для апаратних команд.
 4. **Float Determinism:** Розрахунки Атрактора виконуються з Float (IEEE 754 double) ідентично firmware mruby для Dual Computation Integrity (BigDecimal вилучено — давав розбіжність Z після 250 ітерацій хаотичної системи).
 5. **ZK-Proof Guard:** Мінтинг токенів неможливий без IoTeX W3bstream верифікації (`verified_by_iotex? == true`).

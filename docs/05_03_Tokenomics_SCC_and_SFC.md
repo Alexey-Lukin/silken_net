@@ -328,9 +328,10 @@ function slash(address investor, uint256 amount)
 
 - **Модифікатор:** `onlyRole(SLASHER_ROLE)`, `nonReentrant`
 - **Валідація:** `investor != address(0)`, `amount > 0`, `balanceOf(investor) >= amount` (revert: `"SCC: insufficient balance"`) — явна перевірка замість generic OZ помилки
-- **Тригер:** `BurnCarbonTokensWorker → BlockchainBurningService → slash(investor, amount)` при >20% аномальних дерев у кластері
+- **Тригер:** `BurnCarbonTokensWorker → BlockchainBurningService → slash(investor, amount)` — health-check `>20%` аномальних дерев лише **ініціює** перевірку; реальний slash проходить тільки за positive-A-evidence gate ([`05_05 §3.2`](05_05_Slashing_and_Risk_Policy)), інакше `:frozen` + Field Audit.
 - **Guard on pause:** Слешинг **НЕ блокується** при паузі — `_update` дозволяє `_burn()` (to == address(0)) навіть коли контракт призупинено. Це запобігає governance attack vector де адмін захищає порушників від слешингу.
 - **Подія:** `TokenSlashed(address indexed investor, uint256 amount)`
+- **[ARCH.45] Idempotency на crash-window:** on-chain `require(balanceOf >= amount)` — лише **латентний частковий** захист (повторний slash на ту саму суму ревертне, якщо перший зменшив баланс; але при `damage_ratio < 1` баланс може лишитись достатнім → частковий double-burn). Exactly-once гарантує backend: durable intent-marker + `BlockchainTransaction.in_flight` guard у `BlockchainBurningService` ([`04_02 §4`](04_02_Business_Logic_and_Services)), не явний on-chain nonce/marker.
 
 > **Страхова премія — НЕ on-chain SCC-подія (знято [SEC.1], 2026-06-15).** Премія NaaS-контракту (5% від funding) — **off-chain USDC-факт** у БД (`NaasContract`; концепт-дім [`07_01`](07_01_Nature_as_a_Service_Contracts), ризик-політика [`05_05`](05_05_Slashing_and_Risk_Policy)). Колишній `recordPremiumPaid()` + `PremiumPaid`-event на SCC-токені був **never-fed** (жоден backend-виклик) і архітектурно чужорідним (SCC-event для USDC-факту) → видалено з контракту/тестів/subgraph. Real-Yield звіт бере премію з БД (`NaasContract.total_insurance_premiums`, [`04_03`](04_03_REST_API_v1_Reference) `reports#financial_summary`). Не плутати з **Dynamic-Tax SCC-пулом** — окремий on-chain механізм поповнення страхового пулу ([`05_02`](05_02_Proof_of_Growth_Pipeline)).
 

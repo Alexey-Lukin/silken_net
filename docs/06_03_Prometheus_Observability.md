@@ -206,6 +206,10 @@ end
 | `silkennet_telemetry_processed_total` | `SilkenNet::Metrics::TELEMETRY_PROCESSED_TOTAL` | — | `TelemetryUnpackerService` | Кожен успішно оброблений telemetry chunk |
 | `silkennet_telemetry_fraud_detected_total` | `SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL` | — | `TelemetryUnpackerService` (2 точки) | Відхилені пакети (sensor noise, unknown DID, tamper) |
 | `silkennet_panic_replay_rejected_total` | `SilkenNet::Metrics::PANIC_REPLAY_REJECTED_TOTAL` | — | `TelemetryUnpackerService` (SEC.10 panic Frame Counter) | **[SEC.10]** Panic-пакети відкинуті як replay через Redis SETNX nonce. Сторожовий пес панічного каналу — кожен сплеск тут означає або legitimate retransmission (LoRa mesh duplicate) або replay-attack. Grafana alert при різкому стрибку → можливий attacker injection forged panic packets. |
+| `silkennet_slash_attempts_total` | `SilkenNet::Metrics::SLASH_ATTEMPTS_TOTAL` | — | `BlockchainBurningService` (intent created) | **[ARCH.45]** Спроби slash — знаменник slash success-rate SLO |
+| `silkennet_slash_success_total` | `SilkenNet::Metrics::SLASH_SUCCESS_TOTAL` | — | `BlockchainBurningService` (status→sent) | **[ARCH.45]** Успішні broadcast slash — чисельник того ж SLO |
+| `silkennet_solana_payout_attempts_total` | `SilkenNet::Metrics::SOLANA_PAYOUT_ATTEMPTS_TOTAL` | — | `Solana::BatchPayoutService` | **[ARCH.45]** Спроби Solana batch payout — знаменник payout success-rate SLO |
+| `silkennet_solana_payout_success_total` | `SilkenNet::Metrics::SOLANA_PAYOUT_SUCCESS_TOTAL` | — | `Solana::BatchPayoutService` (status→sent) | **[ARCH.45]** Успішні Solana batch payout — чисельник того ж SLO |
 
 #### Gauges (поточне значення — оновлюються при кожному scrape)
 
@@ -213,6 +217,7 @@ end
 |-------------|--------------|--------|----------------|-----------------|
 | `silkennet_sidekiq_queue_size` | `SilkenNet::Metrics::SIDEKIQ_QUEUE_SIZE` | `queue` (всі 9 черг) | `PrometheusCollector#refresh_sidekiq_gauges` | Поточна кількість задач у кожній Sidekiq черзі |
 | `silkennet_sidekiq_queue_latency_seconds` | `SilkenNet::Metrics::SIDEKIQ_QUEUE_LATENCY` | `queue` (всі 9 черг) | `PrometheusCollector#refresh_sidekiq_gauges` | Вік найстарішої задачі в черзі (секунди) |
+| `silkennet_sidekiq_dead_set_size` | `SilkenNet::Metrics::SIDEKIQ_DEAD_SET_SIZE` | — | `PrometheusCollector#refresh_sidekiq_gauges` | **[ARCH.45]** Розмір Sidekiq DeadSet (job-и, що вичерпали retry) — money-path тут = stranded funds/tx без авто-відновлення |
 
 > Проміжний підсумок видалено — див. фінальну цифру у §2.8 (SSOT).
 
@@ -303,9 +308,9 @@ end
 > При зміні реєстру в коді — **регенерувати ЛИШЕ цю таблицю** (команда в кінці).
 > Де інкрементується/оновлюється кожна — `grep -rn "SilkenNet::Metrics::<CONST>" app/`.
 >
-> **Разом: 49 метрик = 28 counters + 19 gauges + 2 histograms.**
+> **Разом: 54 метрики = 32 counters + 20 gauges + 2 histograms.**
 
-**Counters (28):**
+**Counters (32):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
@@ -325,7 +330,11 @@ end
 | `silkennet_rpc_errors_total` | `network`, `error_type` | Total Web3 RPC errors |
 | `silkennet_scc_minted_total` | `token_type` | Total SCC (SilkenCarbonCoin) tokens minted |
 | `silkennet_scc_slashed_total` | — | Total tokens slashed (burned due to cluster stress) |
+| `silkennet_slash_attempts_total` | — | [ARCH.45] Slash transactions attempted by BlockchainBurningService (success-rate SLO denominator) |
+| `silkennet_slash_success_total` | — | [ARCH.45] Slash transactions broadcast — status→sent (success-rate SLO numerator) |
 | `silkennet_slashing_events_total` | `reason` | Total slashing (burn) events by reason |
+| `silkennet_solana_payout_attempts_total` | — | [ARCH.45] Solana batch payouts attempted by BatchPayoutService (success-rate SLO denominator) |
+| `silkennet_solana_payout_success_total` | — | [ARCH.45] Solana batch payouts broadcast — status→sent (success-rate SLO numerator) |
 | `silkennet_streamr_broadcast_failures_total` | — | Total Streamr broadcast failures (P2P real-time telemetry delivery) |
 | `silkennet_telemetry_acoustic_overflow_total` | — | Total telemetry packets with acoustic_events=255 (uint8 saturation) |
 | `silkennet_telemetry_ccm_decrypt_ok_total` | — | FW.2 CCM packets successfully decrypted with valid MIC |
@@ -338,7 +347,7 @@ end
 | `silkennet_treasury_check_errors_total` | `network`, `error_type` | Total treasury monitoring RPC errors |
 | `silkennet_w3bstream_signature_fallback_total` | `reason` | Total W3bstream verifications using SHA256 fallback instead of Ed25519 hardware signature |
 
-**Gauges (19):**
+**Gauges (20):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
@@ -359,6 +368,7 @@ end
 | `silkennet_ruby_gc_heap_live_slots` | — | Live objects on the Ruby heap (GC.stat[:heap_live_slots]); sustained growth = leak |
 | `silkennet_ruby_gc_major_count` | — | Major Ruby GC runs since process start (GC.stat[:major_gc_count]) |
 | `silkennet_ruby_threads` | — | Live Ruby threads in the process (Thread.list.size); sustained growth = thread leak |
+| `silkennet_sidekiq_dead_set_size` | — | [ARCH.45] Sidekiq DeadSet size (jobs that exhausted retries — money-path = stranded funds/tx) |
 | `silkennet_sidekiq_queue_latency_seconds` | `queue` | Latency (age of oldest job) in a Sidekiq queue |
 | `silkennet_sidekiq_queue_size` | `queue` | Current size of a Sidekiq queue |
 

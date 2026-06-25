@@ -13,7 +13,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — політика затверджена, **6 з 10 Implementation Anchors ✅ Реалізовано** (Web3CircuitBreaker, Multi-RPC fallback, Queen self-telemetry, CoAP retry, Chainlink router probe, Manual review terminal state — див. §3). Залишаються 🟡 (→ [`00_07`](00_07_Action_Plan_Tracker)): Queen-to-Queen Backhaul Mesh + Flash overflow tier (ARCH.35), Helium Queen-side LoRaWAN (ARCH.34), TDMA/CAD sync (ARCH.26), Ingress Proxy (INF.4/INF.6), Conductor L2 (ARCH.1, formerly "Sergeant"). Production-rollout — Phase 2 ([`00_03`](00_03_TRL_Matrix_HIL_and_Beyond)).
+- **Поточний TRL:** TRL 6 — політика затверджена, **7 з 11 Implementation Anchors ✅ Реалізовано** (Web3CircuitBreaker, Multi-RPC fallback, Queen self-telemetry, CoAP retry, Chainlink router probe, Manual review terminal state, Money-path crash-window idempotency [ARCH.45] — див. §3). Залишаються 🟡 (→ [`00_07`](00_07_Action_Plan_Tracker)): Queen-to-Queen Backhaul Mesh + Flash overflow tier (ARCH.35), Helium Queen-side LoRaWAN (ARCH.34), TDMA/CAD sync (ARCH.26), Ingress Proxy (INF.4/INF.6), Conductor L2 (ARCH.1, formerly "Sergeant"). Production-rollout — Phase 2 ([`00_03`](00_03_TRL_Matrix_HIL_and_Beyond)).
 
 ---
 
@@ -174,6 +174,7 @@ end
 | CoAP retry loop on Queen (`COAP_MAX_RETRIES`) | `firmware/queen/main.c`; host-tests `test_at_engine.c` (conversation-fail) + `test_fw51_*` (fail→retry→no-loss), FW.9 | ✅ Реалізовано |
 | Chainlink router version probe | `Web3::ChainlinkRouterVersion` [S6.15] | ✅ Реалізовано |
 | Manual review terminal state | `BlockchainTransaction` AASM | ✅ Реалізовано |
+| Money-path crash-window idempotency (intent-marker + `in_flight` guard) | `BlockchainBurningService` / `Solana::BatchPayoutService` ([ARCH.45], [`04_02 §4/§10`](04_02_Business_Logic_and_Services)) | ✅ Реалізовано |
 | Queen-to-Queen Backhaul Mesh | Concept у [`02_05`](02_05_Queen_Hardware_and_Starlink) | 🟡 Concept, planned Phase 2 |
 | Helium fallback emit (Queen-side LoRaWAN) | Queen firmware `queen_helium_lorawan_uplink()` | 🟡 ARCH.34 planned (Soldier-side `helium_compat_emit` відкинуто — Soldier не несе LoRaWAN MAC stack) |
 | Ingress Proxy (CoAP buffer) | INF.4 / INF.6 | 🟡 Planned (P1) |
