@@ -45,7 +45,7 @@ RSpec.describe Firmwares::Index do
     it "renders table column headers" do
       expect(html).to include("Version")
       expect(html).to include("Target Hardware")
-      expect(html).to include("Checksum (MD5)")
+      expect(html).to include("Checksum (SHA-256)")
       expect(html).to include("Uploaded")
       expect(html).to include("Command")
     end
