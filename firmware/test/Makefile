@@ -9,8 +9,14 @@
 #   make soldier  — build & run soldier tests only
 #   make clean    — remove binaries
 
-CC       = gcc
-CFLAGS   = -Wall -Wextra -Wpedantic -std=c11 -I. -O2
+# [build_standard_variables] Honour env/CLI compiler+linker vars (`?=`/`+=`), never
+# replace them: a packager/distro can pass e.g.
+#   CFLAGS="-g -fstack-protector-strong -D_FORTIFY_SOURCE=2 -Wl,-z,relro" CC=clang
+# and the project EXTENDS with its mandatory flags (-std=c11 -I.) on top. These are
+# single-invocation gcc compile+link recipes, so CFLAGS-borne linker flags (-Wl,…)
+# reach the linker too. Makes ASAN / distro-hardening easy to turn on (OpenSSF silver).
+CC      ?= gcc
+CFLAGS  += -Wall -Wextra -Wpedantic -std=c11 -I. -O2
 BINDIR   = .
 
 # [FW.2] OpenSSL flags via pkg-config (portable across macOS/Homebrew + Linux).
