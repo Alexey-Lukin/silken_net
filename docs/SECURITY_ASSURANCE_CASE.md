@@ -13,8 +13,9 @@
 > their misbehaviour.
 >
 > **Status.** Living document — last reviewed 2026-06-25. This is a *synthesis*: it argues and points to the
-> canonical homes (`docs/NN_NN`) for mechanism detail rather than restating them (one-home, `00_06 §2`).
-> Open items are tracked in `docs/00_07_Action_Plan_Tracker.md` (`SEC.*` / `FW.*` IDs).
+> canonical homes for mechanism detail rather than restating them (one-home, registered in
+> [`00_06`](00_06_SSOT_Documentation_Standard)). Open items are tracked in
+> [`00_07`](00_07_Action_Plan_Tracker) (`SEC.*` / `FW.*` IDs).
 
 ---
 
@@ -44,10 +45,10 @@ Each claim is backed by the trust-boundary guards (§3), the secure-design argum
 
 | Asset | Where it lives | Why it matters |
 |---|---|---|
-| **Telemetry integrity** (sensor → mint) | `app/services/telemetry_unpacker_service.rb`, firmware sense path; canon `03_04`, `05_02` | Forged/replayed telemetry inflates `growth_points` → false SCC mint → economic fraud. |
-| **SCC funds & minting authority** | `contracts/*.sol` (`MINTER_ROLE`), `app/services/blockchain_minting_service.rb`; canon `05_03` | Unauthorized minting drains collateral / commits carbon-credit fraud (RWA). |
-| **Cryptographic keys** | LoRa AES (per-device, `firmware/common/`), CoAP AES-256 (Queen Flash), Ed25519 device identity (`HardwareKey`), Rails `master.key`, oracle secp256k1 keys (ENV); canon `03_05`, `03_06` | Key compromise → decrypt history, impersonate device, or mint without authority. |
-| **DCI anti-fraud signal** (Lorenz Z) | backend `app/services/silken_net/attractor.rb` ⟷ device `firmware/bio_contracts/bio_contract.rb`; canon `05_02`, `03_04` | The cross-check that detects device tampering; its integrity is the fraud tripwire. |
+| **Telemetry integrity** (sensor → mint) | `app/services/telemetry_unpacker_service.rb`, firmware sense path; canon [`03_04`](03_04_mruby_Lorenz_Attractor), [`05_02`](05_02_Proof_of_Growth_Pipeline) | Forged/replayed telemetry inflates `growth_points` → false SCC mint → economic fraud. |
+| **SCC funds & minting authority** | `contracts/*.sol` (`MINTER_ROLE`), `app/services/blockchain_minting_service.rb`; canon [`05_03`](05_03_Tokenomics_SCC_and_SFC) | Unauthorized minting drains collateral / commits carbon-credit fraud (RWA). |
+| **Cryptographic keys** | LoRa AES (per-device, `firmware/common/`), CoAP AES-256 (Queen Flash), Ed25519 device identity (`HardwareKey`), Rails `master.key`, oracle secp256k1 keys (ENV); canon [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security), [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning) | Key compromise → decrypt history, impersonate device, or mint without authority. |
+| **DCI anti-fraud signal** (Lorenz Z) | backend `app/services/silken_net/attractor.rb` ⟷ device `firmware/bio_contracts/bio_contract.rb`; canon [`05_02`](05_02_Proof_of_Growth_Pipeline), [`03_04`](03_04_mruby_Lorenz_Attractor) | The cross-check that detects device tampering; its integrity is the fraud tripwire. |
 | **Audit-log integrity** | `app/models/audit_log.rb` (per-org SHA-256 hash chain) | A tamper-evident record for forensic reconstruction and dispute resolution. |
 | **User credentials & session tokens** | `app/models/user.rb` (Argon2id digest), Rails 8 `generates_token_for` | Theft → impersonation; bounded by hashing + token expiry/invalidation. |
 
@@ -80,33 +81,38 @@ the guard that enforces it.
 *Guards:*
 - **AES-128 link encryption** — shipping build is AES-128-**ECB** (transitional); the authenticated
   AES-128-**CCM** path (8-byte MIC + 24-bit monotonic Frame Counter) is implemented and bench-gated
-  (`FW2_CCM_ENABLED` / `TELEMETRY_CCM_ENABLED`). Canon `03_05`, `firmware/common/lora_ccm.h`.
+  (`FW2_CCM_ENABLED` / `TELEMETRY_CCM_ENABLED`). Canon [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security),
+  `firmware/common/lora_ccm.h`.
 - **Per-device keys** — each Soldier's LoRa key is HKDF-derived, so a compromise is not cluster-wide
-  (`03_06`).
+  ([`03_06`](03_06_Factory_Flashing_and_Key_Provisioning)).
 - **Replay protection** — CCM Frame Counter + a backend `SETNX` dedup window; for the interim panic path,
-  a monotonic panic counter + `SETNX` (SEC.10). Canon `03_05`, `05_02`.
+  a monotonic panic counter + `SETNX` (SEC.10). Canon [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security),
+  [`05_02`](05_02_Proof_of_Growth_Pipeline).
 - **Sanity bounds + DCI** — `TelemetryUnpackerService#valid_sensor_data?` rejects out-of-range ADC/temp;
-  `check_z_divergence!` rejects a device whose Z disagrees with the backend recomputation (`05_02 §SEC.11`).
+  `check_z_divergence!` rejects a device whose Z disagrees with the backend recomputation (DCI, SEC.11 in
+  [`05_02`](05_02_Proof_of_Growth_Pipeline)).
 
 ### Boundary B — Queen → Rails (CoAP)
 *Crosses:* an AES-256-CBC batch of per-device-encrypted records.
 *Trust shift:* gateway buffer → persisted, auditable backend state.
 *Guards:*
-- **AES-256-CBC transport** with a per-batch random (HRNG) IV (`03_05`).
+- **AES-256-CBC transport** with a per-batch random (HRNG) IV ([`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security)).
 - **Machine-to-machine auth** — `app/controllers/api/v1/m2m_auth_controller.rb`: gateway authenticates with
   an Ed25519 signature; a `SETNX` nonce + timestamp window blocks replay.
 - **L1 gateway attestation** — Ed25519 batch signature verified against the `HardwareKey` registry
   (`firmware/common/queen_attest.h`).
 - **KENOSIS ingestion boundary** — `TelemetryLog` carries no ActiveRecord validations by design; the single
-  validation home is `valid_sensor_data?` in the unpacker service (`CLAUDE.md`, `05_02`).
+  validation home is `valid_sensor_data?` in the unpacker service (`CLAUDE.md`,
+  [`05_02`](05_02_Proof_of_Growth_Pipeline)).
 
 ### Boundary C — Telemetry → IoTeX W3bstream verification
 *Crosses:* the device Z-value + DID + chaotic data.
 *Trust shift:* backend-unpacked data → externally attested proof.
 *Guard:* **Dual-Computation Integrity** — backend (`SilkenNet::Attractor`, IEEE-754 double) and device
-(mruby Float) compute Z from the same persisted state with identical constants (`03_04 §4.1`); a divergence
-beyond tolerance flags tampering (`05_02 §SEC.11`). Per-device signing strengthens along the trust-origin
-ladder (L0 custodial → L1 gateway → L2 SE050 device).
+(mruby Float) compute Z from the same persisted state with identical Lorenz constants (owned in
+[`03_04`](03_04_mruby_Lorenz_Attractor)); a divergence beyond tolerance flags tampering (DCI, SEC.11 in
+[`05_02`](05_02_Proof_of_Growth_Pipeline)). Per-device signing strengthens along the trust-origin ladder
+(L0 custodial → L1 gateway → L2 SE050 device).
 
 ### Boundary D — Chainlink callback → minting trigger
 *Crosses:* the oracle result + `request_id`.
@@ -131,7 +137,7 @@ ladder (L0 custodial → L1 gateway → L2 SE050 device).
 ### Boundary F — Slashing gate (cluster degradation → irreversible burn)
 *Crosses:* cluster stress signal, locked investor balance.
 *Trust shift:* an unauthenticated stress index → an irreversible burn.
-*Guards* (canon `05_05`, `app/services/slashing/`):
+*Guards* (canon [`05_05`](05_05_Slashing_and_Risk_Policy), `app/services/slashing/`):
 - **Positive-A-evidence gate (SLASH-1)** — a burn requires proven operator-fault evidence (a critical,
   unresolved tamper alert); absent that, the default-safe action is **freeze** (Field Audit), never burn.
 - **Force-majeure separation** — confirmed natural disasters (dClimate/FIRMS) route to insurance, not
@@ -142,7 +148,8 @@ ladder (L0 custodial → L1 gateway → L2 SE050 device).
 ## 4. Secure-design principles applied (Saltzer–Schroeder)
 
 The principles are implemented in code, not just asserted. This is summarized here and detailed (with the
-exact crypto modes and the deployment hardening) in `SECURITY.md` and canon `03_05`:
+exact crypto modes and the deployment hardening) in `SECURITY.md` and canon
+[`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security):
 
 - **Fail-safe / deny-by-default** — minting and slashing refuse unless every precondition holds (§3 E/F);
   in production `WEB3_STRICT_MODE` turns missing security config into a hard failure rather than a silent
@@ -155,7 +162,7 @@ exact crypto modes and the deployment hardening) in `SECURITY.md` and canon `03_
 - **Defense in depth** — anomaly/tamper telemetry is zeroed for minting in *both* firmware and backend; the
   `manual_review` double-spend guard; no weak crypto anywhere (no MD5/SHA-1/DES/RC4).
 - **Economy of mechanism** — the project's explicit YAGNI "lazy-senior" ladder and Ruthless Pruning
-  (`CLAUDE.md §4`) keep mechanisms minimal; input is validated at trust boundaries.
+  (`CLAUDE.md`) keep mechanisms minimal; input is validated at trust boundaries.
 
 Secure-by-default deployment (`config/environments/production.rb`): `force_ssl` + HSTS preload, a strict CSP
 with a per-request nonce, a full security-header set, and `httponly`/`secure`/`same_site:lax` cookies.
@@ -167,7 +174,7 @@ with a per-request nonce, a full security-header set, and `httponly`/`secure`/`s
 | # | Category | How it is countered | Where |
 |---|---|---|---|
 | **A01** | Broken Access Control | Per-resource **Pundit** policies + role gates (`authorize_admin!/forester!`); on-chain **AccessControl** roles + 48h **Timelock**; org scoping | `app/policies/`, `app/controllers/api/v1/base_controller.rb`, `contracts/*.sol` |
-| **A02** | Cryptographic Failures | **Argon2id** passwords; AES-256-CBC/AES-128-CCM, HMAC-SHA256, HKDF, **Ed25519**; **no MD5/SHA-1/DES/RC4**; `force_ssl`+HSTS; secret scrubbing | `app/models/concerns/has_argon2_password.rb`, `03_05`, `config/initializers/{filter_parameter_logging,sentry}.rb` |
+| **A02** | Cryptographic Failures | **Argon2id** passwords; AES-256-CBC/AES-128-CCM, HMAC-SHA256, HKDF, **Ed25519**; **no MD5/SHA-1/DES/RC4**; `force_ssl`+HSTS; secret scrubbing | `app/models/concerns/has_argon2_password.rb`, `config/initializers/{filter_parameter_logging,sentry}.rb` |
 | **A03** | Injection | Strong-parameter **allowlists**; ActiveRecord parameterized queries; **SafeListSanitizer** + HTML-escape for rendered markdown; URI allowlist | `app/controllers/**`, `app/services/codex/markdown_renderer.rb` |
 | **A04** | Insecure Design | Fail-safe minting guard clauses; `manual_review` double-spend guard; boot-time `Web3NetworkGuard`; positive-A-evidence slashing gate | `app/services/blockchain_minting_service.rb`, `app/services/security/web3_network_guard.rb`, `app/services/slashing/` |
 | **A05** | Security Misconfiguration | Strict **CSP** (nonce, `frame-ancestors 'none'`, `object-src 'none'`); `X-Frame-Options: DENY`, nosniff, Referrer/COOP/CORP/Permissions-Policy; secure cookies; HSTS preload; `RAILS_ALLOWED_HOSTS` | `config/initializers/{content_security_policy,security_headers,session_store}.rb`, `config/environments/production.rb` |
@@ -182,15 +189,15 @@ with a per-request nonce, a full security-header set, and `httponly`/`secure`/`s
 ## 6. Residual risks & assumptions
 
 An assurance case is credible because it states what is **not** yet fully closed. These are tracked in
-`docs/00_07_Action_Plan_Tracker.md`:
+[`00_07`](00_07_Action_Plan_Tracker):
 
 - **Transitional LoRa AES-128-ECB (no MIC).** The shipping link mode is ECB: deterministic and
   unauthenticated, so a whole-block replay of an old "healthy" packet is possible at the link layer. It is
   bounded today by DCI divergence + sanity bounds + the panic replay counter, and closed by the
-  bench-gated **AES-128-CCM** path (`FW.2`). Canon `03_05`.
+  bench-gated **AES-128-CCM** path (`FW.2`). Canon [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security).
 - **L0-custodial device signing.** Until the per-device hardware key (L2, SE050) is provisioned, device
   attestation is custodial/gateway-level (L1) — the backend is part of the trust base for device identity.
-  Roadmap: `00_07` SE050-MIGRATION.
+  Roadmap: SE050-MIGRATION in [`00_07`](00_07_Action_Plan_Tracker).
 - **RDP Level 2** (firmware read-out protection) is **pending** (SEC.2) — physical extraction of a deployed
   MCU is not yet locked out.
 - **MFA is incomplete.** There is an `otp_required_for_login` flag and one-time recovery codes, but **no
@@ -225,10 +232,10 @@ The claims above are backed by enforced, automated evidence — not by assertion
 ## References (canonical homes — one-home)
 
 - `SECURITY.md` — vulnerability reporting, scope, known limitations, release-artifact verification.
-- `03_05` Hardware Symmetric Crypto and Security — AES modes, key management, IV, SE050, PQC roadmap.
-- `03_06` Factory Flashing and Key Provisioning — per-device key derivation.
-- `05_02` Proof of Growth Pipeline — telemetry → verification → mint, DCI (SEC.11), replay (SEC.10).
-- `05_03` Tokenomics SCC and SFC — token contracts, roles, supply cap.
-- `05_05` Slashing and Risk Policy — slashing categories, positive-A-evidence gate, insurance.
-- `00_05 §2.7` — supply-chain hardening (IaC policy) · `06_07 §1` — CI/CD inventory.
-- `00_07_Action_Plan_Tracker.md` — open `SEC.*` / `FW.*` items and their status.
+- [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security) — AES modes, key management, IV, SE050, PQC roadmap.
+- [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning) — per-device key derivation.
+- [`05_02`](05_02_Proof_of_Growth_Pipeline) — telemetry → verification → mint, DCI (SEC.11), replay (SEC.10).
+- [`05_03`](05_03_Tokenomics_SCC_and_SFC) — token contracts, roles, supply cap.
+- [`05_05`](05_05_Slashing_and_Risk_Policy) — slashing categories, positive-A-evidence gate, insurance.
+- [`00_05`](00_05_GitHub_Projects_and_IaC_Automation) — supply-chain hardening (IaC policy); CI/CD inventory in [`06_07`](06_07_CICD_and_Runbook_Index).
+- [`00_07`](00_07_Action_Plan_Tracker) — open `SEC.*` / `FW.*` items and their status.
