@@ -46,6 +46,17 @@ the domain you changed before opening a PR:
 - **Firmware (STM32):** `make -C firmware/test` (host x86 — no ARM toolchain needed)
 - **Solidity (Foundry):** `cd contracts && npm ci && forge build --sizes && forge test -vvv`
 
+**Coding standards (style guides).** Each primary language follows a specific,
+FLOSS-enforced style guide: Ruby uses the **Rails Omakase** RuboCop style
+([`.rubocop.yml`](.rubocop.yml) inherits `rubocop-rails-omakase`); Python uses
+**Ruff** ([`ruff.toml`](ruff.toml) — pycodestyle/pyflakes/isort/pyupgrade/bugbear/…);
+firmware C compiles with **`-Wall -Wextra -Wpedantic`** plus **cppcheck**
+(MISRA C:2012 advisory); Solidity is formatted with **`forge fmt`**; C# follows
+[`.editorconfig`](tools/cad/.editorconfig) (.NET conventions). All are enforced
+automatically in CI (RuboCop, Ruff, cppcheck, forge), so contributions must comply;
+the rare style exception must be documented in the code at its location (e.g.
+`// cppcheck-suppress`).
+
 In addition:
 
 - **Add or update automated tests** when you add or change functionality — major
