@@ -59,9 +59,11 @@ the rare style exception must be documented in the code at its location (e.g.
 
 In addition:
 
-- **Add or update automated tests** when you add or change functionality — major
-  new functionality should land with tests in the relevant suite (RSpec /
-  Foundry `forge` / firmware host tests).
+- **Tests are mandatory for new functionality (project policy).** When you add or
+  change functionality you MUST add or update automated tests; as major new
+  functionality is added, tests for it MUST be added to the relevant automated
+  suite (RSpec / Foundry `forge` / firmware host tests). A pull request that adds
+  major new functionality without accompanying tests will not be merged.
 - Match the style of the code around you (naming, comments, idiom). Keep comments
   minimal and free of drift-prone numbers.
 - The `docs/NN_NN_*.md` files are the single source of truth. If you change
