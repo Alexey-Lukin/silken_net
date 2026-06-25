@@ -35,6 +35,13 @@ Good-faith security research — testing against your own deployment, not access
 or exfiltrating other users' data, and not degrading the service — will not be
 pursued. Thank you for helping keep SilkenNet and the forests it watches safe.
 
+## Security assurance case
+
+A structured argument that SilkenNet's security requirements are met — the threat model, the trust
+boundaries and the guard enforcing each, the secure-design principles applied, an OWASP Top 10 (2021)
+countermeasure map, and an honest residual-risk section — is maintained in
+[`docs/SECURITY_ASSURANCE_CASE.md`](docs/SECURITY_ASSURANCE_CASE.md).
+
 ## Verifying release artifacts
 
 The project's public release deliverable is the production **container image** mirrored to the

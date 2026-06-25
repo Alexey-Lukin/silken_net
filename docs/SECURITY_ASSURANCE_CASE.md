@@ -1,0 +1,234 @@
+# SilkenNet — Security Assurance Case
+
+> **Purpose.** A documented, structured argument that SilkenNet's security requirements are adequately
+> justified for its environment. It states the top-level security **claims**, the **threat model**, the
+> **trust boundaries** and the guard that enforces each, the **secure-design principles** applied, how
+> **common implementation weaknesses** are countered, and — honestly — the **residual risks** that are not
+> yet fully closed.
+>
+> **Scope.** The software produced by the project: the Rails backend (`app/`, `lib/`, `config/`), the STM32
+> firmware (`firmware/`), the Solidity contracts (`contracts/`), and the CI/CD + deploy configuration
+> (`.github/`, `deploy/`, `terraform/`). It excludes third-party infrastructure operated by others
+> (Postgres, Redis, the chains, Chainlink DON, Akash providers) except where SilkenNet code defends against
+> their misbehaviour.
+>
+> **Status.** Living document — last reviewed 2026-06-25. This is a *synthesis*: it argues and points to the
+> canonical homes (`docs/NN_NN`) for mechanism detail rather than restating them (one-home, `00_06 §2`).
+> Open items are tracked in `docs/00_07_Action_Plan_Tracker.md` (`SEC.*` / `FW.*` IDs).
+
+---
+
+## 1. Security claims
+
+The argument below justifies these top-level claims:
+
+1. **Telemetry cannot be forged or replayed into a token mint without detection.** A device cannot inflate
+   `growth_points` (and therefore SCC) by spoofing firmware, replaying old packets, or tampering on the
+   radio link, without tripping at least one independent guard.
+2. **Funds cannot be double-minted or double-spent.** A single verified telemetry event mints at most once;
+   an ambiguous on-chain state freezes rather than retries.
+3. **Signing keys are appropriately separated.** Release-signing keys are ephemeral and never on the
+   distribution registry; on-chain `mint()` and `slash()` use physically separate keys; the device-key
+   roadmap targets non-extractable hardware keys.
+4. **The web tier resists the common web-application weakness classes** (OWASP Top 10, 2021).
+5. **Released artifacts are reproducible and cryptographically verifiable** (signed build provenance).
+
+Each claim is backed by the trust-boundary guards (§3), the secure-design argument (§4), the weakness map
+(§5), and the verification evidence (§7) — bounded by the residual risks honestly stated in §6.
+
+---
+
+## 2. Threat model
+
+### 2.1 Assets
+
+| Asset | Where it lives | Why it matters |
+|---|---|---|
+| **Telemetry integrity** (sensor → mint) | `app/services/telemetry_unpacker_service.rb`, firmware sense path; canon `03_04`, `05_02` | Forged/replayed telemetry inflates `growth_points` → false SCC mint → economic fraud. |
+| **SCC funds & minting authority** | `contracts/*.sol` (`MINTER_ROLE`), `app/services/blockchain_minting_service.rb`; canon `05_03` | Unauthorized minting drains collateral / commits carbon-credit fraud (RWA). |
+| **Cryptographic keys** | LoRa AES (per-device, `firmware/common/`), CoAP AES-256 (Queen Flash), Ed25519 device identity (`HardwareKey`), Rails `master.key`, oracle secp256k1 keys (ENV); canon `03_05`, `03_06` | Key compromise → decrypt history, impersonate device, or mint without authority. |
+| **DCI anti-fraud signal** (Lorenz Z) | backend `app/services/silken_net/attractor.rb` ⟷ device `firmware/bio_contracts/bio_contract.rb`; canon `05_02`, `03_04` | The cross-check that detects device tampering; its integrity is the fraud tripwire. |
+| **Audit-log integrity** | `app/models/audit_log.rb` (per-org SHA-256 hash chain) | A tamper-evident record for forensic reconstruction and dispute resolution. |
+| **User credentials & session tokens** | `app/models/user.rb` (Argon2id digest), Rails 8 `generates_token_for` | Theft → impersonation; bounded by hashing + token expiry/invalidation. |
+
+### 2.2 Threat actors & goals
+
+- **LoRa/CoAP MITM** — eavesdrop or forge/replay telemetry on the 868 MHz link or the CoAP backhaul.
+- **Malicious Akash provider** — tamper with the container or host that runs the backend.
+- **Replay attacker** — retransmit recorded packets (telemetry or panic) to re-trigger effects.
+- **Double-spender** — exploit an RPC reorg/race to mint the same growth twice.
+- **Telemetry forger / DCI fraud** — run hacked firmware or spoof a device to fake growth and mint SCC.
+- **Compromised RPC / wrong chain** — point the backend at a testnet or hostile RPC to misdirect mints.
+- **Credential thief / insider** — exfiltrate an oracle key or issue fake machine tokens.
+
+### 2.3 Attack surfaces
+
+The LoRa radio link · the CoAP backhaul · the public web/API · outbound RPC/oracle calls · the on-chain
+contracts · the deploy/supply-chain · physical hardware tamper.
+
+---
+
+## 3. Trust boundaries and their guards
+
+A *trust boundary* is where data or execution changes trust level. The pipeline is
+**Soldier → Queen → Rails → chain**, with two on-chain economic gates (mint, slash). Each boundary names
+the guard that enforces it.
+
+### Boundary A — Soldier → Queen (LoRa)
+*Crosses:* the encrypted sensor packet (vcap, temp, acoustic, Δt, status, growth_points, device-Z, DID).
+*Trust shift:* untrusted device output → gateway buffer.
+*Guards:*
+- **AES-128 link encryption** — shipping build is AES-128-**ECB** (transitional); the authenticated
+  AES-128-**CCM** path (8-byte MIC + 24-bit monotonic Frame Counter) is implemented and bench-gated
+  (`FW2_CCM_ENABLED` / `TELEMETRY_CCM_ENABLED`). Canon `03_05`, `firmware/common/lora_ccm.h`.
+- **Per-device keys** — each Soldier's LoRa key is HKDF-derived, so a compromise is not cluster-wide
+  (`03_06`).
+- **Replay protection** — CCM Frame Counter + a backend `SETNX` dedup window; for the interim panic path,
+  a monotonic panic counter + `SETNX` (SEC.10). Canon `03_05`, `05_02`.
+- **Sanity bounds + DCI** — `TelemetryUnpackerService#valid_sensor_data?` rejects out-of-range ADC/temp;
+  `check_z_divergence!` rejects a device whose Z disagrees with the backend recomputation (`05_02 §SEC.11`).
+
+### Boundary B — Queen → Rails (CoAP)
+*Crosses:* an AES-256-CBC batch of per-device-encrypted records.
+*Trust shift:* gateway buffer → persisted, auditable backend state.
+*Guards:*
+- **AES-256-CBC transport** with a per-batch random (HRNG) IV (`03_05`).
+- **Machine-to-machine auth** — `app/controllers/api/v1/m2m_auth_controller.rb`: gateway authenticates with
+  an Ed25519 signature; a `SETNX` nonce + timestamp window blocks replay.
+- **L1 gateway attestation** — Ed25519 batch signature verified against the `HardwareKey` registry
+  (`firmware/common/queen_attest.h`).
+- **KENOSIS ingestion boundary** — `TelemetryLog` carries no ActiveRecord validations by design; the single
+  validation home is `valid_sensor_data?` in the unpacker service (`CLAUDE.md`, `05_02`).
+
+### Boundary C — Telemetry → IoTeX W3bstream verification
+*Crosses:* the device Z-value + DID + chaotic data.
+*Trust shift:* backend-unpacked data → externally attested proof.
+*Guard:* **Dual-Computation Integrity** — backend (`SilkenNet::Attractor`, IEEE-754 double) and device
+(mruby Float) compute Z from the same persisted state with identical constants (`03_04 §4.1`); a divergence
+beyond tolerance flags tampering (`05_02 §SEC.11`). Per-device signing strengthens along the trust-origin
+ladder (L0 custodial → L1 gateway → L2 SE050 device).
+
+### Boundary D — Chainlink callback → minting trigger
+*Crosses:* the oracle result + `request_id`.
+*Trust shift:* off-chain oracle computation → on-chain trigger.
+*Guards:*
+- **HMAC-SHA256 signature verification** — `app/controllers/api/v1/oracle_callbacks_controller.rb`
+  (`verify_chainlink_signature!`); under `WEB3_STRICT_MODE` a missing secret fails closed.
+- **Atomic, idempotent state machine** — the callback transitions `oracle_status` only `WHERE
+  oracle_status = 'dispatched'`; a replayed callback updates zero rows → 409 (no double-trigger).
+
+### Boundary E — Minting gate (verified telemetry → on-chain mint)
+*Crosses:* growth_points, recipient, amount.
+*Trust shift:* backend-verified data → irreversible token issuance.
+*Guards* (`app/services/blockchain_minting_service.rb`):
+- **All-must-hold guard clauses** — mint refuses unless `verified_by_iotex?` **and**
+  `oracle_status_fulfilled?` **and** `hadron_kyc_status == "approved"`; a compromised peaq DID is skipped.
+- **Signer separation** — minting uses a different secp256k1 key from slashing (E.2); a leaked minter key
+  does not enable slashing.
+- **Double-spend guard** — `BlockchainTransaction` AASM `manual_review` state freezes funds when a tx state
+  is ambiguous (reorg/race) for human review, instead of auto-retrying (`app/models/blockchain_transaction.rb`).
+
+### Boundary F — Slashing gate (cluster degradation → irreversible burn)
+*Crosses:* cluster stress signal, locked investor balance.
+*Trust shift:* an unauthenticated stress index → an irreversible burn.
+*Guards* (canon `05_05`, `app/services/slashing/`):
+- **Positive-A-evidence gate (SLASH-1)** — a burn requires proven operator-fault evidence (a critical,
+  unresolved tamper alert); absent that, the default-safe action is **freeze** (Field Audit), never burn.
+- **Force-majeure separation** — confirmed natural disasters (dClimate/FIRMS) route to insurance, not
+  slashing.
+
+---
+
+## 4. Secure-design principles applied (Saltzer–Schroeder)
+
+The principles are implemented in code, not just asserted. This is summarized here and detailed (with the
+exact crypto modes and the deployment hardening) in `SECURITY.md` and canon `03_05`:
+
+- **Fail-safe / deny-by-default** — minting and slashing refuse unless every precondition holds (§3 E/F);
+  in production `WEB3_STRICT_MODE` turns missing security config into a hard failure rather than a silent
+  fallback; `Security::Web3NetworkGuard` refuses to boot against a testnet/misconfigured RPC.
+- **Complete mediation** — per-resource Pundit policies (`app/policies/`) + role gates in the API base
+  controller; thin controllers and AASM state machines make state changes non-bypassable.
+- **Least privilege / separation of privilege** — on-chain roles gated by `onlyRole(...)`, admin actions
+  routed through `SilkenTimelock` (48h delay; flash-loan defense, E.35), `mint()`/`slash()` on separate
+  keys.
+- **Defense in depth** — anomaly/tamper telemetry is zeroed for minting in *both* firmware and backend; the
+  `manual_review` double-spend guard; no weak crypto anywhere (no MD5/SHA-1/DES/RC4).
+- **Economy of mechanism** — the project's explicit YAGNI "lazy-senior" ladder and Ruthless Pruning
+  (`CLAUDE.md §4`) keep mechanisms minimal; input is validated at trust boundaries.
+
+Secure-by-default deployment (`config/environments/production.rb`): `force_ssl` + HSTS preload, a strict CSP
+with a per-request nonce, a full security-header set, and `httponly`/`secure`/`same_site:lax` cookies.
+
+---
+
+## 5. Common implementation weaknesses countered (OWASP Top 10, 2021)
+
+| # | Category | How it is countered | Where |
+|---|---|---|---|
+| **A01** | Broken Access Control | Per-resource **Pundit** policies + role gates (`authorize_admin!/forester!`); on-chain **AccessControl** roles + 48h **Timelock**; org scoping | `app/policies/`, `app/controllers/api/v1/base_controller.rb`, `contracts/*.sol` |
+| **A02** | Cryptographic Failures | **Argon2id** passwords; AES-256-CBC/AES-128-CCM, HMAC-SHA256, HKDF, **Ed25519**; **no MD5/SHA-1/DES/RC4**; `force_ssl`+HSTS; secret scrubbing | `app/models/concerns/has_argon2_password.rb`, `03_05`, `config/initializers/{filter_parameter_logging,sentry}.rb` |
+| **A03** | Injection | Strong-parameter **allowlists**; ActiveRecord parameterized queries; **SafeListSanitizer** + HTML-escape for rendered markdown; URI allowlist | `app/controllers/**`, `app/services/codex/markdown_renderer.rb` |
+| **A04** | Insecure Design | Fail-safe minting guard clauses; `manual_review` double-spend guard; boot-time `Web3NetworkGuard`; positive-A-evidence slashing gate | `app/services/blockchain_minting_service.rb`, `app/services/security/web3_network_guard.rb`, `app/services/slashing/` |
+| **A05** | Security Misconfiguration | Strict **CSP** (nonce, `frame-ancestors 'none'`, `object-src 'none'`); `X-Frame-Options: DENY`, nosniff, Referrer/COOP/CORP/Permissions-Policy; secure cookies; HSTS preload; `RAILS_ALLOWED_HOSTS` | `config/initializers/{content_security_policy,security_headers,session_store}.rb`, `config/environments/production.rb` |
+| **A06** | Vulnerable & Outdated Components | **Dependabot** (5 ecosystems), **bundler-audit** + **Brakeman** in CI, **Slither**, **OpenSSF Scorecard**, **CodeQL** | `.github/dependabot.yml`, `.github/workflows/{ci,solidity_audit,scorecard}.yml` |
+| **A07** | Identification & Auth Failures | **Argon2id**; M2M **Ed25519** + `SETNX` nonce replay guard; one-time **recovery codes**; Rails 8 token expiry/invalidation; **Rack::Attack** Fail2Ban on 401/404 + per-IP throttle | `app/controllers/api/v1/m2m_auth_controller.rb`, `app/models/user.rb`, `config/initializers/rack_attack.rb` |
+| **A08** | Software & Data Integrity | `Marshal.load` guarded by **SHA-256** verification; **audit-log SHA-256 hash chain**; firmware **OTA HMAC-SHA256 + CRC**; firmware `binary_sha256`; **Sigstore build-provenance** on the release image | `app/services/insight_generator_service.rb`, `app/models/audit_log.rb`, `app/services/ota_packager_service.rb`, `.github/workflows/mirror-ghcr.yml` |
+| **A09** | Logging & Monitoring Failures | Tamper-evident **AuditLog**; Prometheus metrics; **Sentry** with PII disabled + secret scrubbing; `filter_parameters`; Rack::Attack notifications; structured JSON logs | `app/models/audit_log.rb`, `config/initializers/{sentry,filter_parameter_logging,prometheus}.rb` |
+| **A10** | SSRF | Open-redirect **referer sanitizer** (scheme + host allowlist); markdown link scheme allowlist; outbound RPC via an ENV-configured connection pool (no caller-supplied URLs) + `Web3NetworkGuard` | `app/controllers/api/v1/locales_controller.rb`, `app/services/web3/rpc_connection_pool.rb` |
+
+---
+
+## 6. Residual risks & assumptions
+
+An assurance case is credible because it states what is **not** yet fully closed. These are tracked in
+`docs/00_07_Action_Plan_Tracker.md`:
+
+- **Transitional LoRa AES-128-ECB (no MIC).** The shipping link mode is ECB: deterministic and
+  unauthenticated, so a whole-block replay of an old "healthy" packet is possible at the link layer. It is
+  bounded today by DCI divergence + sanity bounds + the panic replay counter, and closed by the
+  bench-gated **AES-128-CCM** path (`FW.2`). Canon `03_05`.
+- **L0-custodial device signing.** Until the per-device hardware key (L2, SE050) is provisioned, device
+  attestation is custodial/gateway-level (L1) — the backend is part of the trust base for device identity.
+  Roadmap: `00_07` SE050-MIGRATION.
+- **RDP Level 2** (firmware read-out protection) is **pending** (SEC.2) — physical extraction of a deployed
+  MCU is not yet locked out.
+- **MFA is incomplete.** There is an `otp_required_for_login` flag and one-time recovery codes, but **no
+  TOTP/secret implementation yet** — MFA must not be relied on as a control until built (`S6.21`).
+- **Pre-mainnet.** No production deployment has run yet; the deploy-time guards (`verify-secrets`, force_ssl,
+  HSTS) are configured and CI-verified but not yet exercised live.
+- **External-trust assumptions.** The argument assumes the Chainlink DON behaves per its own fraud-proof
+  model, that the chains finalize honestly, and that an Akash provider cannot defeat container attestation —
+  defended where code can (HMAC on callbacks, signed images, multi-RPC fallback) but not eliminated.
+
+---
+
+## 7. Verification & evidence
+
+The claims above are backed by enforced, automated evidence — not by assertion:
+
+- **Tests.** RSpec with a hard SimpleCov gate (line 99% / branch 95%, plus per-group floors); Foundry
+  contract tests including the security invariants (`testRevert_cannotRemoveLastAdmin`,
+  `test_pause_allowsSlash`, `totalSupply() <= MAX_SUPPLY`); the firmware host suite run additionally under
+  **AddressSanitizer + UndefinedBehaviorSanitizer** on every CI run.
+- **Static analysis (SAST).** Brakeman (Rails), Slither (Solidity), CodeQL (6 languages), cppcheck (MISRA) —
+  all gating CI.
+- **Composition analysis (SCA).** Dependabot (weekly), bundler-audit (every CI), OpenSSF Scorecard (weekly).
+- **Supply chain.** Sigstore-signed SLSA build-provenance on the released container — verifiable per
+  `SECURITY.md` ("Verifying release artifacts").
+- **This badge.** The OpenSSF Best Practices criteria (`crypto_*`, `input_validation`, `hardening`,
+  `static_analysis_*`, `dynamic_analysis_*`, `signed_releases`, `implement_secure_design`) corroborate
+  individual claims here.
+
+---
+
+## References (canonical homes — one-home)
+
+- `SECURITY.md` — vulnerability reporting, scope, known limitations, release-artifact verification.
+- `03_05` Hardware Symmetric Crypto and Security — AES modes, key management, IV, SE050, PQC roadmap.
+- `03_06` Factory Flashing and Key Provisioning — per-device key derivation.
+- `05_02` Proof of Growth Pipeline — telemetry → verification → mint, DCI (SEC.11), replay (SEC.10).
+- `05_03` Tokenomics SCC and SFC — token contracts, roles, supply cap.
+- `05_05` Slashing and Risk Policy — slashing categories, positive-A-evidence gate, insurance.
+- `00_05 §2.7` — supply-chain hardening (IaC policy) · `06_07 §1` — CI/CD inventory.
+- `00_07_Action_Plan_Tracker.md` — open `SEC.*` / `FW.*` items and their status.
