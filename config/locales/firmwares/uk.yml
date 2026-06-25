@@ -13,7 +13,7 @@ uk:
       version_placeholder: напр. 1.4.2
     index:
       columns:
-        checksum: Контрольна сума (MD5)
+        checksum: Контрольна сума (SHA-256)
         command: Команда
         target_hardware: Цільове обладнання
         uploaded: Завантажено

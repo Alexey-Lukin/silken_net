@@ -13,7 +13,7 @@ en:
       version_placeholder: e.g. 1.4.2
     index:
       columns:
-        checksum: Checksum (MD5)
+        checksum: Checksum (SHA-256)
         command: Command
         target_hardware: Target Hardware
         uploaded: Uploaded

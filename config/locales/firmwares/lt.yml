@@ -13,7 +13,7 @@ lt:
       version_placeholder: pvz. 1.4.2
     index:
       columns:
-        checksum: Kontrolinė suma (MD5)
+        checksum: Kontrolinė suma (SHA-256)
         command: Komanda
         target_hardware: Tikslinė aparatūra
         uploaded: Įkelta

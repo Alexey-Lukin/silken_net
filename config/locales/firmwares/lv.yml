@@ -13,7 +13,7 @@ lv:
       version_placeholder: piem. 1.4.2
     index:
       columns:
-        checksum: Kontrolsumma (MD5)
+        checksum: Kontrolsumma (SHA-256)
         command: Komanda
         target_hardware: Mērķa aparatūra
         uploaded: Augšupielādēts
