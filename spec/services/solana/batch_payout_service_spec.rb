@@ -90,12 +90,12 @@ RSpec.describe Solana::BatchPayoutService do
       expect(Kredis.set(pending_key).members).not_to include(wallet.id.to_s)
     end
 
-    it "on not_found: fails the tx and RETAINS pending for re-pay" do
+    it "on not_found: escalates to manual_review WITHOUT re-pay (RPC-lag double-pay guard)" do
       rpc[:sig] = "not_found"
       described_class.call
 
-      expect(BlockchainTransaction.last.status).to eq("failed")
-      expect(rpc[:sends]).to eq(1) # не re-paid у тому ж циклі (tx тепер :failed, не in-flight)
+      expect(BlockchainTransaction.last.status).to eq("manual_review")
+      expect(rpc[:sends]).to eq(1) # без авто-re-pay — :not_found неавторитетне (можливо landed)
       expect(pending_lamports(wallet.id)).to eq(25_000)
     end
 
@@ -107,12 +107,22 @@ RSpec.describe Solana::BatchPayoutService do
       expect(pending_lamports(wallet.id)).to eq(25_000)
     end
 
-    it "re-pays with a fresh tx only after the failed one is no longer in-flight" do
+    it "manual_review tx keeps blocking re-pay (no double-pay even if RPC lagged)" do
       rpc[:sig] = "not_found"
-      described_class.call # 2-й цикл: :failed, pending retained
+      described_class.call # → manual_review
+      rpc[:sig] = "not_found"
+      expect { described_class.call }.not_to change(BlockchainTransaction, :count) # без свіжої виплати
+      expect(rpc[:sends]).to eq(1) # ВСЕ ОДНЕ — manual_review блокує сліпий re-pay
+      expect(BlockchainTransaction.last.status).to eq("manual_review")
+    end
+
+    it "auto-heals a manual_review tx when the payout later confirms on-chain" do
+      rpc[:sig] = "not_found"
+      described_class.call # → manual_review
       rpc[:sig] = "confirmed"
-      expect { described_class.call }.to change(BlockchainTransaction, :count).by(1) # свіжа виплата
-      expect(rpc[:sends]).to eq(2)
+      described_class.call # reconcile → confirmed → settle, без re-pay
+      expect(rpc[:sends]).to eq(1)
+      expect(pending_lamports(wallet.id)).to eq(0)
     end
   end
 

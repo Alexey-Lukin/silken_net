@@ -74,7 +74,12 @@ class BlockchainBurningService < ApplicationService
     # перепускаємо. Закриває double-burn при non-StandardError краху, що обходить rescue-breach.
     existing_slash = BlockchainTransaction.where(sourceable: @naas_contract).in_flight.order(created_at: :desc).first
     if existing_slash
-      return :slashed if existing_slash.status_sent?
+      if existing_slash.status_sent?
+        # Re-arm confirmation worker — на випадок краху до його планування на
+        # першій спробі (ConfirmationWorker сам дедуплікує за tx_hash через unique_for).
+        BlockchainConfirmationWorker.perform_in(30.seconds, existing_slash.tx_hash) if existing_slash.tx_hash.present?
+        return :slashed
+      end
 
       existing_slash.fail!("Superseded — re-slash після pre-broadcast краху (ARCH.45)")
     end
@@ -138,12 +143,13 @@ class BlockchainBurningService < ApplicationService
         audit.mark_as_sent!(tx_hash)
         SilkenNet::Metrics::SLASH_SUCCESS_TOTAL.increment
 
+        # [ARCH.45] Воркер-підтверджувач планується ОДРАЗУ після mark_as_sent —
+        # ДО breach-update. Інакше крах на breach-update лишав би :sent tx без жодного
+        # confirmation-воркера (orphan), а retry рано-повертав би через in-flight guard.
+        BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)
+
         # Маркуємо контракт як розірваний. Це автоматично блокує майбутні виплати.
         @naas_contract.update!(status: :breached)
-
-        # [ВИПРАВЛЕНО]: Запускаємо воркер-підтверджувач для відстеження квитанції
-        # (аналогічно BlockchainMintingService — transact + confirm pattern).
-        BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)
 
         # [OBSERVABILITY]: Track slashed tokens for Prometheus/Grafana
         SilkenNet::Metrics::SCC_SLASHED_TOTAL.increment(by: burn_amount)

@@ -70,7 +70,13 @@ class InsurancePayoutWorker
     # [ARCH.45] recovered_tx — transaction-блок не створив tx (insurance вже :paid) → ми на
     # recovery-шляху (Sidekiq retry / InsurancePayoutRecoveryWorker), підхопили orphaned TX.
     recovered_tx = tx.nil?
-    tx ||= insurance.blockchain_transaction
+    # Явний live-tx lookup замість has_one (повертає найстаріший рядок за id): money-path
+    # idempotency не сміє спиратись на ORDER BY id — stale :failed-рядок дав би false на
+    # status_pending? і пропустив escalation → re-claim. `unsettled_within` (модель) prunes
+    # RANGE-партиції. Fallback на has_one лишається для не-recovery шляхів.
+    tx ||= BlockchainTransaction.where(sourceable: insurance)
+                                .unsettled_within(7.days)
+                                .order(created_at: :desc).first || insurance.blockchain_transaction
 
     if tx
       broadcast_insurance_update(insurance, tx)

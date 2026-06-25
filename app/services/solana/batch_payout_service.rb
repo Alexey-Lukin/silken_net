@@ -53,13 +53,15 @@ module Solana
     def pay_wallet(wallet, wallet_id, pending)
       service = Solana::MintingService.new(nil, wallet: wallet)
 
-      # [ARCH.45] In-flight guard — попередня виплата ще не фіналізована: звіряємо on-chain,
-      # НЕ платимо наосліп. Закриває crash-window double-pay (краш між broadcast і Kredis →
-      # наступний годинний cron бачив незанулений лічильник і платив удруге).
-      existing = wallet.blockchain_transactions
-                       .where(blockchain_network: "solana").in_flight
-                       .order(created_at: :desc).first
-      return reconcile_in_flight(service, wallet_id, existing) if existing
+      # [ARCH.45] Будь-яка незавершена Solana-виплата звіряється on-chain, НЕ платимо наосліп.
+      # 7-денне вікно `unsettled_within` (модель) prunes RANGE-партиції + дає ~168 reconcile-шансів
+      # (вузьке 2h дало б лише один → window-expiry double-pay). `:manual_review` теж блокує re-pay
+      # (можливо-landed виплата під ручною звіркою).
+      unsettled = wallet.blockchain_transactions
+                        .where(blockchain_network: "solana")
+                        .unsettled_within(7.days)
+                        .order(created_at: :desc).first
+      return reconcile_in_flight(service, wallet_id, unsettled) if unsettled
 
       event_count = count_counter(wallet_id).value.to_i
       SilkenNet::Metrics::SOLANA_PAYOUT_ATTEMPTS_TOTAL.increment
@@ -69,17 +71,23 @@ module Solana
       # циклу). Тримання pending зайвий цикл безпечне: in-flight guard не дасть повторну виплату.
     end
 
-    # [ARCH.45] Звіряє in-flight виплату й завершує облік детермінованим Kredis-settle.
+    # [ARCH.45] Звіряє незавершену виплату on-chain і завершує облік (НЕ платить наосліп).
     def reconcile_in_flight(service, wallet_id, tx)
       case service.signature_status(tx.tx_hash)
       when :confirmed
+        # Виплата landed → settle Kredis (блокує re-pay) + перевести у :confirmed, де дозволено.
         tx.mark_as_sent!(tx.tx_hash) if tx.status_pending?
-        tx.confirm! unless tx.status_confirmed?
+        tx.confirm! if tx.may_confirm?
         settle_kredis(wallet_id, tx)
+        SilkenNet::Metrics::SOLANA_PAYOUT_SUCCESS_TOTAL.increment # reconcile-confirmed payout
         Rails.logger.info "🌊 [Solana BatchPayout] Wallet ##{wallet_id}: виплату #{tx.tx_hash} підтверджено on-chain — Kredis узгоджено."
       when :not_found
-        tx.fail!("Solana batch payout відсутня on-chain — re-pay наступного циклу (ARCH.45)")
-        Rails.logger.warn "🌊 [Solana BatchPayout] Wallet ##{wallet_id}: tx #{tx.tx_hash} не дійшла — pending лишається на re-pay."
+        # getSignatureStatuses :not_found НЕ авторитетне (RPC-лаг / history
+        # retention) — сліпий re-pay = double-pay, якщо tx насправді landed. Ескалюємо в
+        # manual_review (double-spend guard), НЕ авто-re-pay; наступні цикли re-звіряють
+        # (auto-heal якщо нода наздожене), інакше людина закриває.
+        tx.escalate_to_review!("Solana payout не знайдено on-chain — ручна звірка перед re-pay (можливий RPC-лаг; ARCH.45)") if tx.may_escalate_to_review?
+        Rails.logger.warn "🌊 [Solana BatchPayout] Wallet ##{wallet_id}: tx #{tx.tx_hash} не знайдено on-chain → manual_review (без авто-re-pay)."
       else # :processing — ще в мережі, чекаємо наступного циклу
         Rails.logger.info "🌊 [Solana BatchPayout] Wallet ##{wallet_id}: tx #{tx.tx_hash} ще в польоті — пропускаємо цикл."
       end

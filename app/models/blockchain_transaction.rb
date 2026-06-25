@@ -104,6 +104,12 @@ class BlockchainTransaction < ApplicationRecord
   # Recent-відсічка не дає давно-застряглим tx блокувати свіжі цикли (ті йдуть у manual_review).
   scope :in_flight, -> { where(status: [ :pending, :sent ]).where("created_at > ?", 2.hours.ago) }
 
+  # [ARCH.45] Незавершена money-path tx у `window` (включно з `:manual_review` — можливо-landed
+  # виплата під ручною звіркою блокує re-pay). `window`-bound prunes RANGE-партиції. Для шляхів зі
+  # slow-confirm (Solana payout / Etherisc), де in_flight (2h) дав би лише один reconcile-шанс
+  # (window-expiry double-pay). DRY-джерело lookup-патерну для BatchPayoutService + InsurancePayoutWorker.
+  scope :unsettled_within, ->(window) { where(status: [ :pending, :sent, :manual_review ]).where("created_at > ?", window.ago) }
+
   # --- ДЕЛЕГУВАННЯ ---
   # Навігація через wallet (може бути nil для slashing-аудиту — тоді через cluster)
   delegate :organization, to: :wallet, allow_nil: true
