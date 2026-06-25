@@ -88,6 +88,10 @@ module Solana
 
     # [E.61] Виплата акумульованої суми одним TransferChecked (cron-driven).
     # Викликається з Solana::BatchPayoutService під per-wallet Kredis-локом.
+    # [ARCH.45] Idempotent crash-window guard: durable intent-marker BlockchainTransaction
+    # :pending з детермінованим signature створюється ДО broadcast. На краху між мережею і
+    # DB BatchPayoutService бачить in-flight запис і звіряє on-chain (#signature_status),
+    # замість сліпо платити вдруге. Повертає створений BlockchainTransaction (:sent).
     def batch_payout!(amount_lamports, event_count)
       raise "🛑 [Solana] batch_payout! потребує wallet" if @wallet.nil?
       return if amount_lamports.to_i.zero?
@@ -95,12 +99,31 @@ module Solana
       recipient_address = resolve_recipient_address
       raise "🛑 [Solana] Missing Solana address for batch payout (Wallet ##{@wallet.id})" if recipient_address.blank?
 
-      tx_signature = send_transfer_checked_request(recipient_address, amount_lamports)
-      record_batch_transaction!(recipient_address, amount_lamports, event_count, tx_signature)
+      # sign-first: signature відомий до мережі → пишемо intent ДО broadcast.
+      prepared = prepare_transfer(recipient_address, amount_lamports, checked: true)
+      tx = record_batch_intent!(recipient_address, amount_lamports, event_count, prepared[:signature])
+
+      broadcast_prepared(prepared)
+      tx.mark_as_sent!(prepared[:signature])
 
       Rails.logger.info "🌊 [Solana] Batch-виплата #{format_usdc(amount_lamports)} USDC → #{recipient_address} (#{event_count} подій, Wallet ##{@wallet.id})"
 
-      tx_signature
+      tx
+    end
+
+    # [ARCH.45] On-chain статус Solana-підпису через getSignatureStatuses.
+    # → :confirmed (виконано) · :processing (ще в мережі) · :not_found (не дійшло/помилка — безпечно re-pay).
+    def signature_status(tx_signature)
+      rpc_url = ENV.fetch("SOLANA_RPC_URL", DEVNET_RPC_URL)
+      payload = {
+        jsonrpc: "2.0", id: SecureRandom.uuid, method: "getSignatureStatuses",
+        params: [ [ tx_signature ], { searchTransactionHistory: true } ]
+      }
+      info = execute_rpc_call(rpc_url, payload)&.dig("result", "value")&.first
+      return :not_found if info.nil?            # підпис не знайдено → не дійшло
+      return :not_found if info["err"].present? # виконано з помилкою → кошти не пішли, безпечно re-pay
+
+      %w[confirmed finalized].include?(info["confirmationStatus"]) ? :confirmed : :processing
     end
 
     private
@@ -156,6 +179,14 @@ module Solana
     # Формує бінарну Solana-транзакцію, підписує Ed25519 і відправляє через sendTransaction.
     # `checked:` обирає інструкцію — спільний транспорт, різниться лише серіалізація (Крок 2).
     def dispatch_transfer(recipient, amount_lamports, checked:)
+      broadcast_prepared(prepare_transfer(recipient, amount_lamports, checked: checked))
+    end
+
+    # [ARCH.45] Будує+підписує транзакцію БЕЗ broadcast. Solana tx_signature детермінований
+    # після підпису (= base58 першого підпису), тож batch-виплата може записати durable
+    # intent-marker з ним ДО мережі — на retry бачимо намір і не платимо наосліп (crash-window
+    # double-pay). Solana дедуплікує повторний broadcast того ж підписаного tx у вікні blockhash.
+    def prepare_transfer(recipient, amount_lamports, checked:)
       if ENV["SOLANA_RPC_URL"].blank? && Rails.env.production?
         raise "🛑 [Solana] SOLANA_RPC_URL is required in production — refusing Devnet fallback"
       end
@@ -200,8 +231,15 @@ module Solana
       # Підпис Message bytes приватним ключем Treasury-гаманця DAO.
       signature_bytes = sign_transaction_message(keypair_hex, message_bytes)
 
-      # Крок 4: Формування повної транзакції (signatures + message) та broadcast
-      broadcast_signed_transaction(rpc_url, signature_bytes, message_bytes)
+      # [ARCH.45] tx_signature (base58 першого підпису) відомий ТУТ, до broadcast —
+      # повертаємо все потрібне, broadcast виконує broadcast_prepared окремо.
+      { rpc_url:, signature_bytes:, message_bytes:, signature: encode_base58(signature_bytes) }
+    end
+
+    # [ARCH.45] Broadcast попередньо підготованої (підписаної) транзакції — спільний хвіст
+    # для per-event (dispatch_transfer) і batch (batch_payout!) шляхів.
+    def broadcast_prepared(prepared)
+      broadcast_signed_transaction(prepared[:rpc_url], prepared[:signature_bytes], prepared[:message_bytes])
     end
 
     # =========================================================================
@@ -509,6 +547,21 @@ module Solana
       raw.rjust(32, "\x00")
     end
 
+    # [ARCH.45] Base58 encode (Solana/Bitcoin alphabet) — зворотний до decode_base58.
+    # 64-байтний Ed25519 підпис → base58 tx_signature (те саме, що повертає sendTransaction),
+    # обчислене локально ДО broadcast для durable intent-marker.
+    def encode_base58(bytes)
+      num = bytes.bytes.inject(0) { |acc, b| (acc * 256) + b }
+      enc = +""
+      while num.positive?
+        num, rem = num.divmod(58)
+        enc.prepend(BASE58_ALPHABET[rem])
+      end
+      # Провідні нульові байти → провідні '1' (інваріант Base58).
+      leading_zeros = bytes.bytes.take_while(&:zero?).length
+      ("1" * leading_zeros) + enc
+    end
+
     # Solana compact-u16 encoding (variable-length unsigned integer)
     def encode_compact_u16(value)
       raise ArgumentError, "compact-u16 value out of range: #{value}" if value > 0xFFFF || value.negative?
@@ -544,18 +597,19 @@ module Solana
       nil
     end
 
-    # Аудит-запис агрегованої batch-виплати (статус :sent — очікує підтвердження блоку).
-    def record_batch_transaction!(recipient, amount_lamports, event_count, tx_signature)
-      return unless @wallet
-
+    # [ARCH.45] Intent-marker: :pending запис із детермінованим signature ДО broadcast.
+    # batch_payout! переведе :pending→:sent через mark_as_sent! після успішної мережі.
+    # `events:N` у notes — для детермінованого Kredis-settle на reconcile (BatchPayoutService),
+    # щоб concurrent надбавки між виплатою й підтвердженням не загубились.
+    def record_batch_intent!(recipient, amount_lamports, event_count, signature)
       @wallet.blockchain_transactions.create!(
         amount: format_usdc(amount_lamports).to_f,
         token_type: :carbon_coin,
-        status: :sent,
+        status: :pending,
         to_address: recipient,
-        tx_hash: tx_signature,
+        tx_hash: signature,
         blockchain_network: "solana",
-        notes: "Solana batch micro-reward: #{format_usdc(amount_lamports)} USDC (#{event_count} подій акумульовано) [E.61]"
+        notes: "Solana batch micro-reward: #{format_usdc(amount_lamports)} USDC (#{event_count} подій акумульовано) [E.61] events:#{event_count}"
       )
     end
   end

@@ -98,6 +98,12 @@ class BlockchainTransaction < ApplicationRecord
   # [MULTICHAIN]: blockchain_network визначає мережу транзакції
   validates :blockchain_network, inclusion: { in: %w[evm solana celo] }
 
+  # [ARCH.45] In-flight money-path tx — intent-marker idempotency guard (дзеркало
+  # EthereumAnchor.in_flight). Recent :pending/:sent = ще не фіналізована виплата/burn;
+  # на retry ловить crash-window між on-chain broadcast і DB-записом (double-pay/double-burn).
+  # Вікно 2 год >> retry-exhaustion (~хвилини), покриває годинний Solana-cron цикл.
+  scope :in_flight, -> { where(status: [ :pending, :sent ]).where("created_at > ?", 2.hours.ago) }
+
   # --- ДЕЛЕГУВАННЯ ---
   # Навігація через wallet (може бути nil для slashing-аудиту — тоді через cluster)
   delegate :organization, to: :wallet, allow_nil: true

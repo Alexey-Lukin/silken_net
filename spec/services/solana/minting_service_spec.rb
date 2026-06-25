@@ -612,7 +612,9 @@ RSpec.describe Solana::MintingService do
       expect(tx.to_address).to eq(recipient_solana_address)
       expect(tx.status).to eq("sent")
       expect(tx.notes).to include("batch", "3 подій")
-      expect(result).to eq("5UfDuX7hXbLMKnPRqHxJgpPh6W9y3m4Nk7v2zKQ1YdCE")
+      # [ARCH.45] batch_payout! повертає intent-marker tx (не signature-рядок) для in-flight звірки.
+      expect(result).to be_a(BlockchainTransaction)
+      expect(result.tx_hash).to be_present
     end
 
     it "raises without a wallet" do

@@ -22,7 +22,10 @@ RSpec.describe Solana::BatchPayoutService do
     ENV["SOLANA_DEST_TOKEN_ACCOUNT"] = "DeSt1nAt1oNaTa111111111111111111111111111111"
 
     allow(Ed25519Crypto::SigningService).to receive(:sign).and_return("ab" * 64)
-    stub_solana_rpc_success
+
+    @send_count = 0
+    @sig_status = "confirmed" # відповідь getSignatureStatuses на reconcile-циклі
+    stub_solana_rpc
 
     wallet.update!(solana_public_address: recipient_solana_address)
 
@@ -43,113 +46,189 @@ RSpec.describe Solana::BatchPayoutService do
     Kredis.set(pending_key).add(wallet_id.to_s)
   end
 
-  describe ".call" do
-    context "when a wallet's pending crossed the threshold" do
-      before { seed_pending(wallet.id, 25_000, 2) }
+  def pending_lamports(wallet_id)
+    Kredis.counter("solana_pending_payouts:#{wallet_id}").value.to_i
+  end
 
-      it "pays out via one transaction and drains the Kredis keys" do
-        expect { described_class.call }.to change(BlockchainTransaction, :count).by(1)
+  describe ".call — fresh payout (no in-flight)" do
+    before { seed_pending(wallet.id, 25_000, 2) }
 
-        tx = BlockchainTransaction.last
-        expect(tx.blockchain_network).to eq("solana")
-        expect(tx.amount).to eq(0.025)
-        expect(tx.to_address).to eq(recipient_solana_address)
+    it "creates an intent-marker tx (:sent) and sends exactly one transaction" do
+      expect { described_class.call }.to change(BlockchainTransaction, :count).by(1)
 
-        expect(Kredis.counter("solana_pending_payouts:#{wallet.id}").value.to_i).to eq(0)
-        expect(Kredis.set(pending_key).members).not_to include(wallet.id.to_s)
-      end
+      tx = BlockchainTransaction.last
+      expect(tx.blockchain_network).to eq("solana")
+      expect(tx.status).to eq("sent")
+      expect(tx.tx_hash).to be_present
+      expect(tx.amount).to eq(0.025)
+      expect(@send_count).to eq(1)
     end
 
-    context "when pending is below the threshold" do
-      before { seed_pending(wallet.id, 5_000, 1) }
+    it "is confirm-gated: does NOT drain Kredis until on-chain confirm" do
+      described_class.call
+      # Kredis тримається до reconcile-підтвердження (запобігає втраті при краху до confirm).
+      expect(pending_lamports(wallet.id)).to eq(25_000)
+      expect(Kredis.set(pending_key).members).to include(wallet.id.to_s)
+    end
+  end
 
-      it "does not pay out and leaves the pending balance intact" do
-        expect { described_class.call }.not_to change(BlockchainTransaction, :count)
-        expect(Kredis.counter("solana_pending_payouts:#{wallet.id}").value.to_i).to eq(5_000)
-        expect(Kredis.set(pending_key).members).to include(wallet.id.to_s)
-      end
+  describe ".call — reconcile in-flight payout" do
+    before do
+      seed_pending(wallet.id, 25_000, 2)
+      described_class.call # 1-й цикл: створює :sent intent
     end
 
-    context "when the threshold is zero (batch disabled)" do
-      before do
-        allow(SystemParameter).to receive(:current)
-          .with(:solana_batch_threshold_usdc, default: 0).and_return(0)
-        seed_pending(wallet.id, 25_000, 2)
-      end
+    it "on confirmed: settles Kredis + confirms tx, WITHOUT re-paying" do
+      @sig_status = "confirmed"
+      described_class.call # 2-й цикл: reconcile
 
-      it "is a no-op (backward-compat — per-event path owns payouts)" do
-        expect { described_class.call }.not_to change(BlockchainTransaction, :count)
-      end
+      expect(BlockchainTransaction.where(blockchain_network: "solana").count).to eq(1) # без нової tx
+      expect(@send_count).to eq(1) # без 2-го sendTransaction
+      expect(BlockchainTransaction.last.status).to eq("confirmed")
+      expect(pending_lamports(wallet.id)).to eq(0)
+      expect(Kredis.set(pending_key).members).not_to include(wallet.id.to_s)
     end
 
-    context "with a concurrent increment during payout" do
-      before { seed_pending(wallet.id, 25_000, 2) }
+    it "on not_found: fails the tx and RETAINS pending for re-pay" do
+      @sig_status = "not_found"
+      described_class.call
 
-      it "decrements (not clears) so the concurrent reward survives" do
-        # Імітуємо подію, що надійшла поки виплата у польоті.
-        allow_any_instance_of(Solana::MintingService).to receive(:batch_payout!) do
-          Kredis.counter("solana_pending_payouts:#{wallet.id}").increment(by: 5_000)
-          "sig"
-        end
-
-        described_class.call
-
-        expect(Kredis.counter("solana_pending_payouts:#{wallet.id}").value.to_i).to eq(5_000)
-        expect(Kredis.set(pending_key).members).to include(wallet.id.to_s)
-      end
+      expect(BlockchainTransaction.last.status).to eq("failed")
+      expect(@send_count).to eq(1) # не re-paid у тому ж циклі (tx тепер :failed, не in-flight)
+      expect(pending_lamports(wallet.id)).to eq(25_000)
     end
 
-    context "when one wallet's payout fails" do
-      let(:tree2) { create(:tree, cluster: cluster) }
-      let(:wallet2) { tree2.wallet }
+    it "on processing: skips and leaves the tx in-flight" do
+      @sig_status = "processing"
+      described_class.call
 
-      before do
-        wallet2.update!(solana_public_address: recipient_solana_address)
-        seed_pending(wallet.id, 25_000, 1)
-        seed_pending(wallet2.id, 25_000, 1)
-
-        allow_any_instance_of(Solana::MintingService).to receive(:batch_payout!) do |instance, *_args|
-          raise "boom" if instance.instance_variable_get(:@wallet).id == wallet.id
-
-          "sig"
-        end
-      end
-
-      it "isolates the failure and still drains the healthy wallet" do
-        expect { described_class.call }.not_to raise_error
-
-        # Healthy wallet drained; failed wallet retains pending for the next cycle.
-        expect(Kredis.set(pending_key).members).to include(wallet.id.to_s)
-        expect(Kredis.set(pending_key).members).not_to include(wallet2.id.to_s)
-      end
+      expect(BlockchainTransaction.last.status).to eq("sent")
+      expect(pending_lamports(wallet.id)).to eq(25_000)
     end
 
-    context "when a pending wallet no longer exists in the DB" do
-      let(:orphan_id) { 999_999 }
+    it "re-pays with a fresh tx only after the failed one is no longer in-flight" do
+      @sig_status = "not_found"
+      described_class.call # 2-й цикл: :failed, pending retained
+      @sig_status = "confirmed"
+      expect { described_class.call }.to change(BlockchainTransaction, :count).by(1) # свіжа виплата
+      expect(@send_count).to eq(2)
+    end
+  end
 
-      before { seed_pending(orphan_id, 30_000, 1) }
+  describe ".call — crash-window double-pay protection [ARCH.45]" do
+    before { seed_pending(wallet.id, 25_000, 2) }
 
-      it "discards the orphan pending balance" do
-        expect { described_class.call }.not_to change(BlockchainTransaction, :count)
-        expect(Kredis.set(pending_key).members).not_to include(orphan_id.to_s)
-        expect(Kredis.counter("solana_pending_payouts:#{orphan_id}").value.to_i).to eq(0)
+    it "never double-pays even if Kredis was never drained after the first send" do
+      described_class.call            # 1-й цикл: on-chain send + :sent intent, БЕЗ drain (симуляція краху до confirm)
+      expect(@send_count).to eq(1)
+      expect(pending_lamports(wallet.id)).to eq(25_000) # лічильник не занулено
+
+      # 2-й цикл: pending усе ще ≥ поріг, але in-flight guard звіряє замість сліпої виплати.
+      @sig_status = "confirmed"
+      described_class.call
+      expect(@send_count).to eq(1)    # ВСЕ ОДНЕ — подвійної виплати немає
+      expect(BlockchainTransaction.where(blockchain_network: "solana").count).to eq(1)
+      expect(pending_lamports(wallet.id)).to eq(0)
+    end
+
+    it "resumes a :pending intent (crash between broadcast and mark_as_sent) without re-broadcasting" do
+      described_class.call # 1-й цикл: створює :sent intent (broadcast відбувся)
+      # Симулюємо краху ПІСЛЯ broadcast, ДО mark_as_sent: tx лишилась :pending з signature.
+      BlockchainTransaction.last.update_columns(status: BlockchainTransaction.statuses[:pending])
+      @sig_status = "confirmed" # on-chain виплата насправді пройшла
+      send_before = @send_count
+
+      described_class.call # reconcile :pending → on-chain confirmed → settle
+      expect(@send_count).to eq(send_before) # НЕ re-broadcast
+      expect(BlockchainTransaction.last.status).to eq("confirmed")
+      expect(pending_lamports(wallet.id)).to eq(0)
+    end
+  end
+
+  describe ".call — concurrent reward survival" do
+    before { seed_pending(wallet.id, 25_000, 2) }
+
+    it "settles only the paid amount so a concurrent increment survives" do
+      described_class.call # :sent для 25_000
+      Kredis.counter("solana_pending_payouts:#{wallet.id}").increment(by: 5_000) # подія у польоті
+      Kredis.counter("solana_pending_payout_count:#{wallet.id}").increment(by: 1)
+
+      @sig_status = "confirmed"
+      described_class.call # reconcile settle by tx amount (25_000), не за поточним pending (30_000)
+
+      expect(pending_lamports(wallet.id)).to eq(5_000)
+      expect(Kredis.set(pending_key).members).to include(wallet.id.to_s)
+    end
+  end
+
+  describe ".call — edge cases" do
+    it "does not pay when pending is below the threshold" do
+      seed_pending(wallet.id, 5_000, 1)
+      expect { described_class.call }.not_to change(BlockchainTransaction, :count)
+      expect(pending_lamports(wallet.id)).to eq(5_000)
+    end
+
+    it "is a no-op when the threshold is zero (per-event path owns payouts)" do
+      allow(SystemParameter).to receive(:current)
+        .with(:solana_batch_threshold_usdc, default: 0).and_return(0)
+      seed_pending(wallet.id, 25_000, 2)
+      expect { described_class.call }.not_to change(BlockchainTransaction, :count)
+    end
+
+    it "discards the orphan pending balance when the wallet no longer exists" do
+      orphan_id = 999_999
+      seed_pending(orphan_id, 30_000, 1)
+      expect { described_class.call }.not_to change(BlockchainTransaction, :count)
+      expect(Kredis.set(pending_key).members).not_to include(orphan_id.to_s)
+      expect(Kredis.counter("solana_pending_payouts:#{orphan_id}").value.to_i).to eq(0)
+    end
+
+    it "isolates a per-wallet failure and still processes healthy wallets" do
+      tree2 = create(:tree, cluster: cluster)
+      wallet2 = tree2.wallet
+      wallet2.update!(solana_public_address: recipient_solana_address)
+      seed_pending(wallet.id, 25_000, 1)
+      seed_pending(wallet2.id, 25_000, 1)
+
+      allow_any_instance_of(Solana::MintingService).to receive(:batch_payout!) do |instance|
+        raise "boom" if instance.instance_variable_get(:@wallet).id == wallet.id
+
+        instance.instance_variable_get(:@wallet).blockchain_transactions.create!(
+          amount: 0.025, token_type: :carbon_coin, status: :sent, to_address: recipient_solana_address,
+          tx_hash: "sig2", blockchain_network: "solana", notes: "events:1"
+        )
       end
+
+      expect { described_class.call }.not_to raise_error
+      expect(Kredis.set(pending_key).members).to include(wallet.id.to_s) # failed wallet retained
     end
   end
 
   private
 
-  def stub_solana_rpc_success
+  def resp(result)
+    Web3::HttpClient::Response.new({ "jsonrpc" => "2.0", "result" => result }.to_json)
+  end
+
+  def stub_solana_rpc
     allow(Web3::HttpClient).to receive(:post) do |_url, **kwargs|
       case kwargs[:body][:method]
       when "getLatestBlockhash"
-        Web3::HttpClient::Response.new({ "jsonrpc" => "2.0", "result" => { "value" => { "blockhash" => "EkSnNWid2cvwEVnVx9aBqawnmiCNiDgp3gUdkDPTKN1N" } } }.to_json)
+        resp({ "value" => { "blockhash" => "EkSnNWid2cvwEVnVx9aBqawnmiCNiDgp3gUdkDPTKN1N" } })
       when "sendTransaction"
-        Web3::HttpClient::Response.new({ "jsonrpc" => "2.0", "result" => "5UfDuX7hXbLMKnPRqHxJgpPh6W9y3m4Nk7v2zKQ1YdCE" }.to_json)
+        @send_count += 1
+        resp("5UfDuX7hXbLMKnPRqHxJgpPh6W9y3m4Nk7v2zKQ1YdCE")
       when "getBalance"
-        Web3::HttpClient::Response.new({ "jsonrpc" => "2.0", "result" => { "value" => 1_000_000_000 } }.to_json)
+        resp({ "value" => 1_000_000_000 })
+      when "getSignatureStatuses"
+        val = case @sig_status
+        when "confirmed" then [ { "confirmationStatus" => "finalized", "err" => nil } ]
+        when "processing" then [ { "confirmationStatus" => "processed", "err" => nil } ]
+        else [ nil ] # not_found
+        end
+        resp({ "value" => val })
       else
-        Web3::HttpClient::Response.new({ "jsonrpc" => "2.0", "result" => {} }.to_json)
+        resp({})
       end
     end
   end

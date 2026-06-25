@@ -51,13 +51,44 @@ module Solana
     end
 
     def pay_wallet(wallet, wallet_id, pending)
+      service = Solana::MintingService.new(nil, wallet: wallet)
+
+      # [ARCH.45] In-flight guard — попередня виплата ще не фіналізована: звіряємо on-chain,
+      # НЕ платимо наосліп. Закриває crash-window double-pay (краш між broadcast і Kredis →
+      # наступний годинний cron бачив незанулений лічильник і платив удруге).
+      existing = wallet.blockchain_transactions
+                       .where(blockchain_network: "solana").in_flight
+                       .order(created_at: :desc).first
+      return reconcile_in_flight(service, wallet_id, existing) if existing
+
       event_count = count_counter(wallet_id).value.to_i
+      service.batch_payout!(pending, event_count)
+      # [ARCH.45] Kredis НЕ decrement тут — лише після on-chain confirm (reconcile наступного
+      # циклу). Тримання pending зайвий цикл безпечне: in-flight guard не дасть повторну виплату.
+    end
 
-      Solana::MintingService.new(nil, wallet: wallet).batch_payout!(pending, event_count)
+    # [ARCH.45] Звіряє in-flight виплату й завершує облік детермінованим Kredis-settle.
+    def reconcile_in_flight(service, wallet_id, tx)
+      case service.signature_status(tx.tx_hash)
+      when :confirmed
+        tx.mark_as_sent!(tx.tx_hash) if tx.status_pending?
+        tx.confirm! unless tx.status_confirmed?
+        settle_kredis(wallet_id, tx)
+        Rails.logger.info "🌊 [Solana BatchPayout] Wallet ##{wallet_id}: виплату #{tx.tx_hash} підтверджено on-chain — Kredis узгоджено."
+      when :not_found
+        tx.fail!("Solana batch payout відсутня on-chain — re-pay наступного циклу (ARCH.45)")
+        Rails.logger.warn "🌊 [Solana BatchPayout] Wallet ##{wallet_id}: tx #{tx.tx_hash} не дійшла — pending лишається на re-pay."
+      else # :processing — ще в мережі, чекаємо наступного циклу
+        Rails.logger.info "🌊 [Solana BatchPayout] Wallet ##{wallet_id}: tx #{tx.tx_hash} ще в польоті — пропускаємо цикл."
+      end
+    end
 
-      # decrement (НЕ clear) — concurrent incrby з нової події між read і тут не загубиться.
-      pending_counter(wallet_id).decrement(by: pending)
-      count_counter(wallet_id).decrement(by: event_count)
+    # Детермінований decrement саме тих сум, що виплатила ця tx (concurrent надбавки виживають).
+    def settle_kredis(wallet_id, tx)
+      lamports = (tx.amount.to_d * 1_000_000).to_i
+      events   = tx.notes.to_s[/events:(\d+)/, 1].to_i
+      pending_counter(wallet_id).decrement(by: lamports) if lamports.positive?
+      count_counter(wallet_id).decrement(by: events) if events.positive?
       drain_set_if_empty(wallet_id)
     end
 
