@@ -758,8 +758,9 @@
 
 #### E.32 — Smart Contract Audit (pre-mainnet security gate)
 - **P1** · 🤖+👤 · 🟡 · → `05_03`
-- **Стан:** Static + test-легс закрито — Slither CI (`solidity_audit.yml` `slither:` job, fail-on high) + Foundry suite (fmt/build/test/coverage; permit + Governor↔SCC hardening — TEST.3) ✅; scope = 6 deployable контрактів. Roadmap-легс (Mythril/Hacken/CertiK) відкриті ↓. Канон [`05_03`](05_03_Tokenomics_SCC_and_SFC) §Smart Contract Audit Roadmap.
-- [ ] 🤖 Mythril symbolic-execution CI step (`myth analyze … --solv 0.8.35`, free) — поряд `slither:` job
+- **Стан:** Усі automated-леги закрито — `solidity_audit.yml` ганяє Slither (fail-on high) + **Aderyn** (2-й static, gate на high + SARIF → Security tab) + **Halmos** (symbolic proof-и cap/last-admin/pause-allows-slash у `test/symbolic/`) + **Medusa** property-fuzz (`test/medusa/`) поряд із Foundry invariant; scope = 6 deployable контрактів. **Mythril знято** (занедбаний v0.24.8/2024, без EVM cancun, зависає на OZ → заміна Halmos foundry-native). Лишаються manual/runtime леги (👤) ↓. Канон [`05_03`](05_03_Tokenomics_SCC_and_SFC) §Smart Contract Audit Roadmap.
+- [x] 🤖 Halmos + Aderyn + Medusa CI-леги (replace dead Mythril) — local-verified (halmos 7/7 proof, aderyn 0-high, medusa SCC 8 + SFC 9)
+- [ ] 🤖 promote Halmos/Medusa `continue-on-error:false` (gating) після кількох зелених CI-прогонів
 - [ ] 👤 Hacken/Hashlock manual audit (платний) — pre-Amoy→Mainnet HARD gate
 - [ ] 👤 CertiK Skynet runtime monitoring — post-mainnet deploy
 

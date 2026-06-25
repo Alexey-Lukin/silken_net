@@ -112,7 +112,7 @@ deploy/akash · terraform · subgraph       # infra / The Graph
 **Дім контрактів:** `contracts/*.sol` + парні тести `contracts/test/{Name}.t.sol`. Конфіг — `contracts/foundry.toml` (профілі `default`/`ci`/`production`); `forge-std` через `npm ci`. Контракт-спека + ролі → `docs/05_03`; тест-методологія всіх шарів → `docs/04_06 §B`.
 
 **Конвенції тестів (must):**
-- Naming: `test_` (happy-path) · `testRevert_` (expected revert) · `testFuzz_` (property/fuzz).
+- Naming: `test_` (happy-path) · `testRevert_` (expected revert) · `testFuzz_` (property/fuzz) · `check_` (Halmos symbolic, `test/symbolic/`) · `property_` (Medusa fuzz, `test/medusa/`).
 - `makeAddr("name")` (НЕ `address(0xN)`) · `vm.prank(caller)` на КОЖЕН виклик (НЕ `startPrank` без `stopPrank`).
 - `vm.expectRevert("exact error string")` — точний рядок, не голий `expectRevert()`.
 - `vm.expectEmit(...) + emit Event(...)` ПЕРЕД викликом · `bound(x,min,max)` > `vm.assume`.
@@ -122,8 +122,9 @@ deploy/akash · terraform · subgraph       # infra / The Graph
 - `testRevert_cannotRemoveLastAdmin` — кожен контракт з `AccessControl` (`_adminCount` guard).
 - `test_pause_allowsSlash` — SCC/SFC `slash()` ОБОВ'ЯЗКОВО працює під `pause()` (B-07).
 - `totalSupply() <= MAX_SUPPLY` (1B SCC) після будь-якої послідовності операцій.
+- Ці 3 гейти **доведені Halmos** (`check_*` у `test/symbolic/` — symbolically, не семпл; loop-bound `--loop 3`) + **fuzz-Medusa** (`property_*` у `test/medusa/`), не лише unit-тести.
 
-**Команди + ролі:** `forge test -vvv --gas-report` · `forge build --sizes` (ліміт EIP-170 = 24KB) · `forge coverage --report lcov` (→ CI Codecov). On-chain адмін-ролі → Timelock (крім `pause`); `slash()` = `SLASHER_ROLE`, `mint()` = `MINTER_ROLE` (фізично розділені ключі, E.2).
+**Команди + ролі:** `forge test -vvv --gas-report` · `forge build --sizes` (ліміт EIP-170 = 24KB) · `forge coverage --report lcov` (→ CI Codecov). **CI-аудит** (`solidity_audit.yml`, CI-gated не локально): Slither + `aderyn .` **gate-на-high** (static); `halmos --function "^check_"` (symbolic) + `medusa fuzz --config medusa-{scc,sfc}.json` (fuzz) — **advisory** (`continue-on-error`) до tune. On-chain адмін-ролі → Timelock (крім `pause`); `slash()` = `SLASHER_ROLE`, `mint()` = `MINTER_ROLE` (фізично розділені ключі, E.2).
 
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence

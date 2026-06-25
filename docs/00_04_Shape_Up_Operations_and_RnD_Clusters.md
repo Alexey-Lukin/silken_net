@@ -94,7 +94,7 @@ Week 7-8 (Cool-down, 2 тижні) — рефакторинг, SSOT-аудит, 
 | **TRL 3-4** (PoC / Breadboard) | Лід кластера + Required CI checks — тепер **enforced** на захищеному `main` через агрегат `CI passed` (ci-ok: rubocop/rspec/brakeman/bundler-audit/host-firmware/solidity + CodeQL default-setup; [`06_07 §2`](06_07_CICD_and_Runbook_Index)). Для Atoms **підписаний фізичний лаб-звіт (in-vitro) = hard-тригер гейту 3→4** (in-silico сам по собі дає лише TRL 3, [`00_02 §5`](00_02_AI_Native_Engineering_and_TRL)). | Тільки на TRL Gate (перехід з 4 → 5). |
 | **TRL 5-6** (Prototype / Pilot) | Лід кластера + Architect approval **required** + повний `SSOT Integrity Guard`. | Always. |
 | **TRL 7-8** (Field / Qualification) | Architect + DAO governance proposal (`SilkenGovernor.sol`) + Quality Gate (Codex ADR-CDX-1..7). | Always + multisig (`Gnosis Safe`). |
-| **TRL 9** (Operational) | **SFC-голдери через DAO-vote**, на основі незалежного аудиторського звіту (ISO / D-MRV-аудит — Гедз, [`08_02 §5`](08_02_Academic_Institutions_Registry)). *Інструмент* переходу (НЕ суб'єкт рев'ю): Multi-sig + DAO Timelock 48h; Slither/Foundry — CI-гейти етапу коду, а не TRL-9-рев'ю. | Always + production sign-off. |
+| **TRL 9** (Operational) | **SFC-голдери через DAO-vote**, на основі незалежного аудиторського звіту (ISO / D-MRV-аудит — Гедз, [`08_02 §5`](08_02_Academic_Institutions_Registry)). *Інструмент* переходу (НЕ суб'єкт рев'ю): Multi-sig + DAO Timelock 48h; Slither/Aderyn/Halmos/Medusa/Foundry — CI-гейти етапу коду, а не TRL-9-рев'ю. | Always + production sign-off. |
 
 **TRL Gate Events** (єдині точки, де Архітектор **гарантовано** втручається):
 - 4 → 5: перехід з лабораторії до pilot (потребує HIL-валідації, [`00_03`](00_03_TRL_Matrix_HIL_and_Beyond)).

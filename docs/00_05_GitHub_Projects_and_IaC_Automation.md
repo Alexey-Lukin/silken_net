@@ -215,10 +215,16 @@ jobs:
 - **Job 2: Slither Static Analysis** (`slither`, timeout: 10 хв):
   - Install Foundry + `npm ci` → `forge build --build-info` (компілюємо самі), далі `crytic/slither-action@v0.4.2` з `ignore-compile: true` — crytic читає Foundry build-info, а власний `forge install` екшена **не** запускається (deps з npm, не `lib/`-сабмодулі — рішення FW.47, [`03_01`](03_01_Firmware_Lifecycle_and_DMA))
   - `slither-config: contracts/slither.config.json` (фільтр `node_modules|test/` → аудит лише деплойних контрактів), solc (версія → [`05_03`](05_03_Tokenomics_SCC_and_SFC)), `fail-on: high`
+- **Job 3: Halmos Symbolic Proofs** (`halmos`, timeout: 30 хв, non-gating до tune):
+  - `setup-python` + `pip install halmos` → `halmos --function "^check_" --solver-threads 1 --loop 3` — symbolic proof-и money-path інваріантів (`test/symbolic/*`; symbolic params + `vm.assume`, без halmos-cheatcodes) — доводить cap / last-admin / pause-allows-slash symbolically (не семпл)
+- **Job 4: Aderyn Static Analysis** (`aderyn`, timeout: 10 хв) — 2-й static-прохід, комплементарний до Slither:
+  - `npm ci` (OZ remappings) → `npm i -g @cyfrin/aderyn` → `aderyn .` (JSON-gate на high + SARIF → GitHub Security tab через `upload-sarif`); foundry-native (читає `foundry.toml` solc/cancun), `aderyn.toml` фільтрує `node_modules|test|lib`
+- **Job 5: Medusa Property Fuzzing** (`medusa`, timeout: 15 хв, non-gating до tune):
+  - `pip install crytic-compile` + medusa binary → `medusa fuzz --config medusa-{scc,sfc}.json` (`test/medusa/*`); **single-file target** тримає crytic-compile поза forge-std (його `LibVariable` ABI crytic-compile не парсить), corpus persist у `actions/cache`
 - **Конфігурація Foundry** (`contracts/foundry.toml`):
   - solc (версія → [`05_03`](05_03_Tokenomics_SCC_and_SFC)), EVM cancun, optimizer 200 runs (default), 1000 runs (production profile)
   - Gas reports: SCC, SFC, StateRootAnchor, SilkenGovernor, SilkenTimelock, ProtocolParameters
-  - Fuzz: 512 runs (default), 256 (ci profile). Invariant: 128 runs, depth 64
+  - Fuzz: 512 runs (default), 256 (ci profile). Invariant: 128 runs, depth 64 (+ Medusa coverage-guided property-fuzz — `medusa` job, `test/medusa/*`)
 - **Тестове покриття:** 6 test suites (`contracts/test/*.t.sol`; точна к-сть тестів — `forge test`)
 
 ### 2.5 Labels Sync (IaC) — `.github/labels.yml` + `labels_sync.yml`
@@ -317,6 +323,7 @@ jobs:
 Постава supply-chain для `.github/workflows/` як IaC:
 
 - **SHA-pin (обов'язково).** Кожен зовнішній `uses:` запінено на повний 40-символьний commit-SHA з коментарем `# vN` (напр. `actions/checkout@9c091bb… # v7`). Рухомий тег `@vN` — мутабельний покажчик: скомпрометований екшен-репо може мовчки перепнути його (вектор `tj-actions/changed-files`, 2025); SHA незмінний. **Dependabot** (`github-actions` ecosystem, `.github/dependabot.yml`) розуміє SHA-піни й оновлює і SHA, і `# vN` через PR → незмінність без застигання. Локальні `uses: ./…` не пінять (вони в репо). **Базовий Docker-образ** (`Dockerfile` `FROM`) теж запінено по digest (`ruby:…@sha256:…`); тег **literal** (не через `ARG` — Dependabot не резолвить ARG'd FROM, dependabot-core #4597), а `docker`-ecosystem у Dependabot оновлює тег і digest разом → pin без застигання.
+- **Inline-pinned CLI-аналізатори.** Тулзи, що ставляться в job як CLI (не `uses:`-екшен) — `halmos`/`crytic-compile` (`pip install …==X`), `medusa` (release-binary `vX`), `aderyn` (`npm i -g @cyfrin/aderyn@X`) у `solidity_audit.yml`, як і `ruff`-version — запінені **inline** на точну версію. Поза Dependabot-ecosystem'ами (ті охоплюють `uses:` + `contracts/package.json`); bump — вручну на `dependency-update`-проході.
 - **Token-permissions (least-privilege).** Кожен workflow має **top-level** `permissions:`-поверх із read-floor (`{}` або `contents: read`); write-скоупи піднімає **лише той job**, якому вони потрібні (`packages:write` у GHCR-build-джобі; `contents`+`pull-requests:write` у release-please). Без top-level-поверху новий job успадкував би широкий дефолт. **Критичний інваріант:** workflow на `workflow_run`/`pull_request_target` (write-token + секрети) **не checkout-ить** untrusted head-ref — GHCR-mirror бере список змінених файлів через `gh api commits/{sha}`, а не checkout події (Scorecard DangerousWorkflow).
 - **harden-runner** (`step-security/harden-runner`, `egress-policy: audit`) — перший крок кожного Linux-джоба: пасивний egress/FS-монітор (нічого не блокує), збирає baseline для майбутнього `block`-режиму з allowlist. macOS-джоби (harden-runner Linux-only) та no-op-агрегати (`ci-ok`) свідомо пропущені.
 - **actionlint** (CI-джоб `workflow_lint` у `ci.yml`, path-gated на `.github/workflows/**` + `.github/actions/**`) — статичний аналіз самих workflow-файлів (синтаксис, `${{ }}`-вирази, типи подій, permissions-скоупи, glob'и) + shellcheck кожного `run:`. Встановлюється як pinned-release-binary з sha256-verify (не moving-tag) → ловить regression-и, яких YAML-parse не бачить. Інвентар → [`06_07 §1`](06_07_CICD_and_Runbook_Index).
@@ -331,7 +338,7 @@ jobs:
 Уся система живе в **одному репозиторії `silken_net`** (monorepo) — єдині правила контекстного управління та один CI на всі шари:
 
 - **`app/` · `lib/` · `config/` · `db/`** — Rails 8.1 ядро (PostgreSQL, Sidekiq, Solid Cache/Cable; Solid Queue — dormant scaffold, adapter=`:sidekiq`, INF.18).
-- **`contracts/`** — смарт-контракти (Solidity, Foundry toolchain + Slither CI).
+- **`contracts/`** — смарт-контракти (Solidity, Foundry toolchain + Slither/Aderyn/Halmos/Medusa CI).
 - **`firmware/`** — прошивка Soldier/Queen (C, mruby) для STM32WLE5JC + LoRa (host-тести `make -C firmware/test`).
 - **`tools/`** — in-silico (EBFC: PySCF/OpenMM) + ML (TinyML/log-mel) + CAD (PicoGK Code-as-CAD `tools/cad`, .NET 9; [`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)) пайплайни.
 - **`docs/`** — SSOT-канон (**авто-дзеркалиться** у GitHub Wiki на кожен push у `main`, що чіпає `docs/` — `wiki.yml` → `scripts/wiki_sync.rb`; 00_00 → `Home`; off-switch — репо-змінна `DISABLE_WIKI_AUTOSYNC`; інвентар [`06_07 §1`](06_07_CICD_and_Runbook_Index) — [`00_06`](00_06_SSOT_Documentation_Standard)).

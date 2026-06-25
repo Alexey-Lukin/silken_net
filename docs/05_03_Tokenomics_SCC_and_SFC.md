@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 8 (Module 05 Web3 — канон-матриця [`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond): поточний 8, ціль 9, гейт «SFC address»). Контракти code-complete, Foundry-tested, Slither у CI — **готові до** testnet→mainnet deploy + зовнішнього аудиту. TRL 9 = mainnet-deployed ([`00_03`](00_03_TRL_Matrix_HIL_and_Beyond): «TRL 9 → mainnet») — ще не досягнуто (placeholder-адреси, manual audit + Gnosis multisig = TODO).
+- **Поточний TRL:** TRL 8 (Module 05 Web3 — канон-матриця [`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond): поточний 8, ціль 9, гейт «SFC address»). Контракти code-complete, Foundry-tested, Slither + Aderyn + Halmos + Medusa у CI — **готові до** testnet→mainnet deploy + зовнішнього аудиту. TRL 9 = mainnet-deployed ([`00_03`](00_03_TRL_Matrix_HIL_and_Beyond): «TRL 9 → mainnet») — ще не досягнуто (placeholder-адреси, manual audit + Gnosis multisig = TODO).
 - **SCC контракт:** ✅ Production-ready (MAX_SUPPLY=1B, MINTER/SLASHER split, ReentrancyGuard, NatSpec, mintForTree alias, audit hardening, slash bypasses pause, admin protection, locked pragma)
 - **SFC контракт:** ✅ Production-ready (MAX_SUPPLY=100M, SLASHER_ROLE + slash(), ReentrancyGuard, NatSpec, slash bypasses pause, auto-delegation, admin protection, locked pragma)
 - **Аудит-зміцнення:** ✅ Явна перевірка балансу в `slash()`, валідація нульових значень у `mint()`/`slash()`, перевірка порожнього батчу у `batchMint()`, NatSpec, захист від The Graph DoS (`treeDid`/`clusterId` length ≤256 bytes), per-element string validation у `batchMint()` для обох контрактів
@@ -754,10 +754,14 @@ On-chain governance (SFC-голосування за протокольні па
 
 | Фаза | Інструмент / Постачальник | Тип | Коли | Статус |
 |------|--------------------------|-----|------|--------|
-| **1. Automated Static Analysis** | [Slither](https://github.com/crytic/slither) | Безкоштовний open-source | Зараз (CI/CD) | ✅ Реалізовано: `.github/workflows/solidity_audit.yml` |
-| **1b. Symbolic Execution** | [Mythril](https://github.com/Consensys/mythril) | Безкоштовний open-source | Зараз (CI/CD) | 🟡 TODO |
+| **1. Static Analysis** | [Slither](https://github.com/crytic/slither) | Безкоштовний open-source | Зараз (CI/CD) | ✅ Реалізовано: `solidity_audit.yml` `slither` job (fail-on high) |
+| **1a. Static Analysis (2-й прохід)** | [Aderyn](https://github.com/Cyfrin/aderyn) | Безкоштовний open-source | Зараз (CI/CD) | ✅ Реалізовано: `aderyn` job (gate на high + SARIF → Security tab) |
+| **1b. Property Fuzzing** | Foundry invariant + [Medusa](https://github.com/crytic/medusa) | Безкоштовний open-source | Зараз (CI/CD) | ✅ Реалізовано: `medusa` job (`test/medusa/`) + `forge` invariant (`test/invariant/`) |
+| **1c. Symbolic Execution** | [Halmos](https://github.com/a16z/halmos) | Безкоштовний open-source | Зараз (CI/CD) | ✅ Реалізовано: `halmos` job (proof-и money-path інваріантів — `test/symbolic/`) |
 | **2. Manual Audit (Pre-Testnet)** | [Hacken](https://hacken.io/) або [Hashlock](https://hashlock.com/) | Платний аудит | Перед Amoy → Mainnet | 🔴 TODO |
 | **3. Runtime Monitoring** | [CertiK Skynet](https://skynet.certik.com/) | 24/7 моніторинг | Після Mainnet deploy | 🔴 TODO |
+
+> **Mythril знято** (раніше планований symbolic-tool, 1b): занедбаний (остання версія v0.24.8 / 2024, без EVM cancun, зависає на OZ-важких контрактах) → замінений на **Halmos** (foundry-native, читає наш `foundry.toml` solc 0.8.35 / cancun). 2025-26 enterprise-стек = static (Slither + Aderyn) → property-fuzz (Foundry + Medusa) → symbolic (Halmos) → manual audit (Hacken) → runtime (CertiK).
 
 **Scope аудиту (6 контрактів):**
 1. `SilkenCarbonCoin.sol` — mint/burn/batchMint, MINTER/SLASHER roles
@@ -786,9 +790,14 @@ On-chain governance (SFC-голосування за протокольні па
 # Broadcast: FOUNDRY_PROFILE=production forge script script/Deploy.s.sol --rpc-url $RPC_URL --broadcast --verify
 ```
 
-**Mythril (TODO):**
+**Halmos · Aderyn · Medusa (✅ Реалізовано):**
 ```bash
-myth analyze contracts/SilkenCarbonCoin.sol --solv 0.8.35
+# Symbolic proofs of money-path invariants (cap / last-admin / pause-allows-slash):
+halmos --function "^check_" --solver-threads 1 --loop 3        # test/symbolic/*
+# 2nd static pass (gate on high; SARIF → Security tab):
+aderyn . --skip-update-check -o aderyn-report.sarif            # aderyn.toml
+# Property fuzzing (single-file target keeps crytic-compile off forge-std/LibVariable):
+medusa fuzz --config medusa-scc.json && medusa fuzz --config medusa-sfc.json
 ```
 
 **Operational Security (production) [SEC.1] — деталі §Admin-Role Split вище:**

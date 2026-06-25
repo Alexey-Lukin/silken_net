@@ -178,7 +178,7 @@ with a per-request nonce, a full security-header set, and `httponly`/`secure`/`s
 | **A03** | Injection | Strong-parameter **allowlists**; ActiveRecord parameterized queries; **SafeListSanitizer** + HTML-escape for rendered markdown; URI allowlist | `app/controllers/**`, `app/services/codex/markdown_renderer.rb` |
 | **A04** | Insecure Design | Fail-safe minting guard clauses; `manual_review` double-spend guard; boot-time `Web3NetworkGuard`; positive-A-evidence slashing gate | `app/services/blockchain_minting_service.rb`, `app/services/security/web3_network_guard.rb`, `app/services/slashing/` |
 | **A05** | Security Misconfiguration | Strict **CSP** (nonce, `frame-ancestors 'none'`, `object-src 'none'`); `X-Frame-Options: DENY`, nosniff, Referrer/COOP/CORP/Permissions-Policy; secure cookies; HSTS preload; `RAILS_ALLOWED_HOSTS` | `config/initializers/{content_security_policy,security_headers,session_store}.rb`, `config/environments/production.rb` |
-| **A06** | Vulnerable & Outdated Components | **Dependabot** (5 ecosystems), **bundler-audit** + **Brakeman** in CI, **Slither**, **OpenSSF Scorecard**, **CodeQL** | `.github/dependabot.yml`, `.github/workflows/{ci,solidity_audit,scorecard}.yml` |
+| **A06** | Vulnerable & Outdated Components | **Dependabot** (5 ecosystems), **bundler-audit** + **Brakeman** in CI, **Slither** + **Aderyn**, **OpenSSF Scorecard**, **CodeQL** | `.github/dependabot.yml`, `.github/workflows/{ci,solidity_audit,scorecard}.yml` |
 | **A07** | Identification & Auth Failures | **Argon2id**; M2M **Ed25519** + `SETNX` nonce replay guard; one-time **recovery codes**; Rails 8 token expiry/invalidation; **Rack::Attack** Fail2Ban on 401/404 + per-IP throttle | `app/controllers/api/v1/m2m_auth_controller.rb`, `app/models/user.rb`, `config/initializers/rack_attack.rb` |
 | **A08** | Software & Data Integrity | `Marshal.load` guarded by **SHA-256** verification; **audit-log SHA-256 hash chain**; firmware **OTA HMAC-SHA256 + CRC**; firmware `binary_sha256`; **Sigstore build-provenance** on the release image | `app/services/insight_generator_service.rb`, `app/models/audit_log.rb`, `app/services/ota_packager_service.rb`, `.github/workflows/mirror-ghcr.yml` |
 | **A09** | Logging & Monitoring Failures | Tamper-evident **AuditLog**; Prometheus metrics; **Sentry** with PII disabled + secret scrubbing; `filter_parameters`; Rack::Attack notifications; structured JSON logs | `app/models/audit_log.rb`, `config/initializers/{sentry,filter_parameter_logging,prometheus}.rb` |
@@ -218,8 +218,9 @@ The claims above are backed by enforced, automated evidence — not by assertion
   contract tests including the security invariants (`testRevert_cannotRemoveLastAdmin`,
   `test_pause_allowsSlash`, `totalSupply() <= MAX_SUPPLY`); the firmware host suite run additionally under
   **AddressSanitizer + UndefinedBehaviorSanitizer** on every CI run.
-- **Static analysis (SAST).** Brakeman (Rails), Slither (Solidity), CodeQL (6 languages), cppcheck (MISRA) —
-  all gating CI.
+- **Static analysis (SAST).** Brakeman (Rails), Slither + Aderyn (Solidity), CodeQL (6 languages), cppcheck (MISRA) —
+  all gating CI. **Halmos** symbolic proofs (`test/symbolic/`) and **Foundry + Medusa** property-fuzzing
+  (`test/invariant/`, `test/medusa/`) add depth on the token/governance contracts (advisory / non-gating until tuned).
 - **Composition analysis (SCA).** Dependabot (weekly), bundler-audit (every CI), OpenSSF Scorecard (weekly).
 - **Supply chain.** Sigstore-signed SLSA build-provenance on the released container — verifiable per
   `SECURITY.md` ("Verifying release artifacts").
