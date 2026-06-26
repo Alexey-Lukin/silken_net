@@ -12,6 +12,12 @@ medusa-corpus-sfc/
 aderyn-report.json
 aderyn-report.sarif
 
+# CI tool-install artifacts (downloaded by the audit jobs)
+aderyn.tar.xz
+aderyn.sha256
+aderyn-x86_64-unknown-linux-gnu/
+medusa.tar.gz
+
 # Halmos solver cache
 .halmos_cache/
 halmos-cache/

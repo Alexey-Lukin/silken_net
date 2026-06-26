@@ -139,13 +139,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Install contract dependencies
         run: npm ci
 
-      - name: Install Halmos
-        run: pip install halmos==0.3.3
+      - name: Install Halmos (hash-pinned)
+        run: pip install --require-hashes -r requirements-halmos.txt
 
       - name: Build contracts
         run: forge build
@@ -179,8 +179,17 @@ jobs:
       - name: Install contract dependencies
         run: npm ci
 
-      - name: Install Aderyn
-        run: npm i -g @cyfrin/aderyn@0.6.8
+      - name: Install Aderyn (release binary + sha256 verify)
+        run: |
+          ver=aderyn-v0.6.8
+          asset=aderyn-x86_64-unknown-linux-gnu.tar.xz
+          base=https://github.com/Cyfrin/aderyn/releases/download/$ver
+          curl -sSfL "$base/$asset" -o aderyn.tar.xz
+          curl -sSfL "$base/$asset.sha256" -o aderyn.sha256
+          echo "$(awk '{print $1}' aderyn.sha256)  aderyn.tar.xz" | sha256sum -c -
+          tar -xf aderyn.tar.xz
+          sudo mv aderyn-x86_64-unknown-linux-gnu/aderyn /usr/local/bin/aderyn
+          aderyn --version
 
       - name: Run Aderyn (JSON gate + SARIF report)
         run: |
@@ -227,13 +236,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Install contract dependencies
         run: npm ci
 
-      - name: Install crytic-compile
-        run: pip install crytic-compile==0.4.1
+      - name: Install crytic-compile (hash-pinned)
+        run: pip install --require-hashes -r requirements-crytic.txt
 
       - name: Install Medusa
         run: |
