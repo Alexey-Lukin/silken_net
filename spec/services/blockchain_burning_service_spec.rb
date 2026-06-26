@@ -96,18 +96,93 @@ RSpec.describe BlockchainBurningService do
         end
       end
 
-      it "falls back to full burn when no AiInsight data and no source_tree" do
+      it "FREEZES (no burn) when no AiInsight data and no source_tree — ARCH.46 magnitude indeterminate" do
+        result = nil
+        expect {
+          result = described_class.call(organization.id, naas_contract.id)
+        }.to change { EwsAlert.where(alert_type: :system_fault).count }.by(1)
+
+        expect(result).to eq(:frozen)
+        expect(mock_client).not_to have_received(:transact)
+        expect(naas_contract.reload.status).not_to eq("breached")
+      end
+
+      # [ARCH.46] Threshold fix: moderate stress (0.83 ≤ s < 1.0) now counts as damage (was 1.0-only).
+      it "counts moderate stress (stress_index 0.9) as damage — proportional, not 100% (ARCH.46)" do
+        other_tree = create(:tree, cluster: cluster)
+        other_tree.wallet.blockchain_transactions.create!(
+          amount: 1000, token_type: :carbon_coin, status: :confirmed,
+          to_address: organization.crypto_public_address, tx_hash: "0x#{'c' * 64}"
+        )
+        # 1 of 2 trees at 0.9 (below the retired 1.0 ceiling) → damage 0.5, NOT critical=0 → 100%.
+        create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
+               target_date: cluster.local_yesterday, stress_index: 0.9)
+
         described_class.call(organization.id, naas_contract.id)
 
         expect(mock_client).to have_received(:transact) do |_contract, _method, _addr, amount_in_wei, **_opts|
-          expected_wei = (1000.0 * (10**18)).to_i
+          burn_amount = (2000 * (0.5**1.3)).ceil # convex on 0.5, not 2000 (full)
+          expect(amount_in_wei).to eq((burn_amount.to_f * (10**18)).to_i)
+        end
+      end
+
+      # [ARCH.46] Data present + forest healthy (0 trees ≥0.83) + no source_tree → 0 damage → no burn.
+      it "does NOT burn when data exists but the forest is healthy and there is no source_tree (ARCH.46)" do
+        create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
+               target_date: cluster.local_yesterday, stress_index: 0.5)
+
+        result = described_class.call(organization.id, naas_contract.id)
+
+        expect(result).to be_nil
+        expect(mock_client).not_to have_received(:transact)
+      end
+
+      # [ARCH.46] Date threading: damage is queried on the PASSED target_date, not a re-derived local_yesterday.
+      it "queries AiInsight on the passed target_date, not local_yesterday (ARCH.46 date-threading)" do
+        explicit_date = cluster.local_yesterday - 1.day
+        create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
+               target_date: explicit_date, stress_index: 1.0)
+
+        # Default (local_yesterday) would find nothing → freeze; the passed date finds it → burns.
+        result = described_class.call(organization.id, naas_contract.id, target_date: explicit_date)
+
+        expect(result).to eq(:slashed)
+        expect(mock_client).to have_received(:transact)
+      end
+
+      # [ARCH.46] Contractual early-exit forfeiture MUST still full-burn on no-data (NOT freeze).
+      it "still full-burns a contractual forfeiture with no data and no source_tree (ARCH.46 exempts contractual)" do
+        described_class.call(organization.id, naas_contract.id, contractual: true)
+
+        expect(mock_client).to have_received(:transact) do |_contract, _method, _addr, amount_in_wei, **_opts|
+          expected_wei = (1000.0 * (10**18)).to_i # full forfeiture
+          expect(amount_in_wei).to eq(expected_wei)
+        end
+      end
+
+      # [ARCH.46] Contractual is checked FIRST → full forfeiture even with stressed trees (not
+      # short-circuited to proportional by critical_count, the code-review fix).
+      it "full-burns a contractual forfeiture even with stressed trees (contractual-first, not proportional)" do
+        other_tree = create(:tree, cluster: cluster)
+        other_tree.wallet.blockchain_transactions.create!(
+          amount: 1000, token_type: :carbon_coin, status: :confirmed,
+          to_address: organization.crypto_public_address, tx_hash: "0x#{'d' * 64}"
+        )
+        # 1 of 2 trees stressed → without the contractual-first guard this would size to 0.5.
+        create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
+               target_date: cluster.local_yesterday, stress_index: 0.9)
+
+        described_class.call(organization.id, naas_contract.id, contractual: true)
+
+        expect(mock_client).to have_received(:transact) do |_contract, _method, _addr, amount_in_wei, **_opts|
+          expected_wei = (2000.0 * (10**18)).to_i # full forfeiture of both, not proportional 0.5
           expect(amount_in_wei).to eq(expected_wei)
         end
       end
 
       it "creates audit BlockchainTransaction on success" do
         expect {
-          described_class.call(organization.id, naas_contract.id)
+          described_class.call(organization.id, naas_contract.id, source_tree: tree)
         }.to change(BlockchainTransaction, :count).by(1)
 
         audit_tx = BlockchainTransaction.last
@@ -121,7 +196,7 @@ RSpec.describe BlockchainBurningService do
       it "schedules BlockchainConfirmationWorker after sending transaction" do
         expect(BlockchainConfirmationWorker).to receive(:perform_in).with(30.seconds, fake_tx_hash)
 
-        described_class.call(organization.id, naas_contract.id)
+        described_class.call(organization.id, naas_contract.id, source_tree: tree)
       end
 
       # [ARCH.45] Double-burn crash-window guard — slash() необоротний; на повторному виклику
@@ -147,7 +222,7 @@ RSpec.describe BlockchainBurningService do
             notes: "pre-broadcast crash intent"
           )
 
-          described_class.call(organization.id, naas_contract.id)
+          described_class.call(organization.id, naas_contract.id, source_tree: tree)
 
           expect(stale.reload.status).to eq("failed")
           expect(mock_client).to have_received(:transact) # свіжий slash виконано
@@ -156,7 +231,7 @@ RSpec.describe BlockchainBurningService do
         it "fails the intent (no in-flight orphan) when the slash broadcast raises" do
           allow(mock_client).to receive(:transact).and_raise(StandardError, "RPC down")
 
-          expect { described_class.call(organization.id, naas_contract.id) }
+          expect { described_class.call(organization.id, naas_contract.id, source_tree: tree) }
             .to raise_error(StandardError, /RPC down/)
 
           intent = BlockchainTransaction.where(sourceable: naas_contract).last
@@ -168,7 +243,7 @@ RSpec.describe BlockchainBurningService do
         allow(mock_client).to receive(:transact).and_raise(StandardError, "RPC timeout")
 
         expect {
-          described_class.call(organization.id, naas_contract.id)
+          described_class.call(organization.id, naas_contract.id, source_tree: tree)
         }.to raise_error(StandardError, "RPC timeout")
                 .and change(EwsAlert, :count).by(1)
 
@@ -428,8 +503,8 @@ RSpec.describe BlockchainBurningService do
       end
     end
 
-    context "when no AiInsight and no source_tree" do
-      it "returns damage_ratio of 1.0 (full burn)" do
+    context "when no AiInsight and no source_tree (ARCH.46)" do
+      it "FREEZES for Field Audit instead of burning 100%" do
         tree = create(:tree, cluster: cluster)
         tree.wallet.blockchain_transactions.create!(
           amount: 200,
@@ -439,13 +514,11 @@ RSpec.describe BlockchainBurningService do
           tx_hash: "0x#{'a' * 64}"
         )
 
-        # No AiInsight records, no source_tree
-        described_class.call(organization.id, naas_contract.id)
+        # No AiInsight records, no source_tree → magnitude indeterminate → freeze (not 100% burn).
+        result = described_class.call(organization.id, naas_contract.id)
 
-        expect(mock_client).to have_received(:transact) do |_contract, _method, _addr, amount_in_wei, **_opts|
-          expected_wei = (200.0 * (10**18)).to_i
-          expect(amount_in_wei).to eq(expected_wei)
-        end
+        expect(result).to eq(:frozen)
+        expect(mock_client).not_to have_received(:transact)
       end
     end
   end
@@ -498,6 +571,9 @@ RSpec.describe BlockchainBurningService do
 
     it "uses cluster.trees.active.first wallet as audit_wallet" do
       create(:blockchain_transaction, wallet: wallet_burn, amount: 100, status: :confirmed)
+      # [ARCH.46] critical AiInsight → damage via critical_count (no source_tree path still burns).
+      create(:ai_insight, analyzable: tree_burn, insight_type: :daily_health_summary,
+             target_date: cluster.local_yesterday, stress_index: 1.0)
 
       allow(mock_client).to receive(:transact).and_return("0xabc123")
 
@@ -514,6 +590,9 @@ RSpec.describe BlockchainBurningService do
 
     it "creates transaction with cluster instead of wallet when all trees dead" do
       create(:blockchain_transaction, wallet: wallet_burn, amount: 100, status: :confirmed)
+      # [ARCH.46] critical AiInsight → burns via critical_count (no source_tree).
+      create(:ai_insight, analyzable: tree_burn, insight_type: :daily_health_summary,
+             target_date: cluster.local_yesterday, stress_index: 1.0)
       tree_burn.update_columns(status: Tree.statuses[:deceased])
 
       allow(mock_client).to receive(:transact).and_return("0xdead")

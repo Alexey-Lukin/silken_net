@@ -46,8 +46,9 @@ class ContractHealthCheckService < ApplicationService
     return flag_data_blackout! if daily_insights.empty?
 
     # Математична межа порушення — 20% від активної біомаси.
-    # Поріг 0.83 відповідає порогу впевненості Random Forest (замість детерміністичного 1.0)
-    critical_insights_count = daily_insights.where("stress_index >= 0.83").count
+    # [ARCH.46] Спільний slash-поріг (= damage-сайзинг у BlockchainBurningService) — одна константа,
+    # щоб тригер і розмір не розходились (= поріг впевненості Random Forest, не детерм. 1.0).
+    critical_insights_count = daily_insights.where("stress_index >= ?", AiInsight::SLASH_STRESS_THRESHOLD).count
 
     if critical_insights_count > total_active_count * Rational(1, 5)
       flag_degradation!
@@ -65,7 +66,9 @@ class ContractHealthCheckService < ApplicationService
   # ніколи реально не палив. Тепер не пре-маркуємо → daily нарешті доходить до burn/freeze.
   def flag_degradation!
     Rails.logger.warn "🚨 [D-MRV] NaasContract ##{@contract.id}: >20% критичних аномалій — на чокпоінт слешингу (cause-gate вирішить slash/freeze)."
-    BurnCarbonTokensWorker.perform_async(@contract.organization_id, @contract.id)
+    # [ARCH.46] Прокидаємо @target_date у burn (5-й позиц. арг), щоб damage-ratio рахувався за ТУ Ж
+    # добу, що тут — інакше burn перевираховує local_yesterday у свій момент → інша дата → 100%.
+    BurnCarbonTokensWorker.perform_async(@contract.organization_id, @contract.id, nil, false, @target_date.to_s)
     :degraded
   end
 

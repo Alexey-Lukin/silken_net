@@ -25,7 +25,8 @@ RSpec.describe BurnCarbonTokensWorker, type: :worker do
         organization.id,
         naas_contract.id,
         source_tree: tree,
-        contractual: false
+        contractual: false,
+        target_date: nil
       )
     end
 
@@ -101,7 +102,8 @@ RSpec.describe BurnCarbonTokensWorker, type: :worker do
         organization.id,
         naas_contract.id,
         source_tree: nil,
-        contractual: true
+        contractual: true,
+        target_date: nil
       )
     end
   end

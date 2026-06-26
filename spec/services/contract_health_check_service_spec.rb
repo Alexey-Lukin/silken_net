@@ -78,6 +78,12 @@ RSpec.describe ContractHealthCheckService do
           expect(described_class.call(contract, target_date)).to eq(:degraded)
         }.to change { BurnCarbonTokensWorker.jobs.size }.by(1)
 
+        # [ARCH.46] burn-воркер МУСИТЬ отримати прокинутий target_date (5-й арг) — інакше burn
+        # перевираховує local_yesterday у момент виконання → date-mismatch over-burn (regression guard).
+        expect(BurnCarbonTokensWorker.jobs.last["args"]).to eq(
+          [ contract.organization_id, contract.id, nil, false, target_date.to_s ]
+        )
+
         expect(contract.reload).to be_status_active # no pre-breach — chokepoint owns the verdict
       end
 

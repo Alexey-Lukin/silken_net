@@ -217,10 +217,10 @@
 | | |
 |---|---|
 | **Файл** | `app/services/blockchain_burning_service.rb` |
-| **Вхід** | `organization_id`, `naas_contract_id`, `source_tree:` (опціонально) |
-| **Що робить** | Slashing Protocol. Розраховує `damage_ratio` через `AiInsight` (% критично стресованих дерев кластера). Викликає `slash(investor_address, amount_wei)` на Polygon. Маркує `NaasContract.status = :breached`. **[ARCH.45]** durable intent-marker (`BlockchainTransaction` `:pending`→`:sent`, `sourceable:` contract) ПЕРЕД on-chain slash + `in_flight` guard ПІСЛЯ positive-A gate (`:sent` → не re-slash; `:pending` → старий intent у `:failed`) — закриває double-burn crash-window. Prometheus: `SCC_SLASHED_TOTAL` + `SLASH_ATTEMPTS/SUCCESS_TOTAL` (success-rate SLO). |
+| **Вхід** | `organization_id`, `naas_contract_id`, `source_tree:` (опц.), `target_date:` (опц. Date — прокидається з `ContractHealthCheckService` через `BurnCarbonTokensWorker`; nil → `cluster.local_yesterday`) |
+| **Що робить** | Slashing Protocol. Розраховує `damage_ratio` через `AiInsight` (частка дерев зі `stress_index ≥ AiInsight::SLASH_STRESS_THRESHOLD` — **той самий поріг, що тригерить** слеш у health-check). **[ARCH.46]** genuine no-data (нема AiInsight за `target_date`) → `:frozen` (freeze, НЕ breach/burn), а не worst-case 100%; `target_date` прокинутий від health-check (без перерахунку `local_yesterday` → інакше інша доба → хибне 100%); `contractual`-форфейтура — виняток (повне погоджене вилучення). Викликає `slash(investor_address, amount_wei)` на Polygon. Маркує `NaasContract.status = :breached`. **[ARCH.45]** durable intent-marker (`BlockchainTransaction` `:pending`→`:sent`, `sourceable:` contract) ПЕРЕД on-chain slash + `in_flight` guard ПІСЛЯ positive-A gate (`:sent` → не re-slash; `:pending` → старий intent у `:failed`) — закриває double-burn crash-window. Prometheus: `SCC_SLASHED_TOTAL` + `SLASH_ATTEMPTS/SUCCESS_TOTAL` (success-rate SLO). |
 | **Зовнішні виклики** | Polygon RPC, `BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)`, `EwsAlert.create!` (при помилці) |
-| **Вихід** | `:slashed` / `:frozen` (positive-A gate, no burn) / `nil` (no-op). Створює `BlockchainTransaction` intent (audit, `:pending`→`:sent`); rescue завершує intent у `:failed` (без in-flight orphan). |
+| **Вихід** | `:slashed` / `:frozen` (positive-A gate АБО no-data magnitude [ARCH.46], no burn) / `nil` (no-op або healthy-data 0-damage). Створює `BlockchainTransaction` intent (audit, `:pending`→`:sent`); rescue завершує intent у `:failed` (без in-flight orphan). |
 
 ### `ChainAuditService`
 
@@ -364,9 +364,9 @@ peaq_node_url: "https://peaq-node.example.com"
 |---|---|
 | **Файл** | `app/services/contract_health_check_service.rb` |
 | **Вхід** | `naas_contract` (NaasContract), `target_date` (Date, default: `cluster.local_yesterday`) |
-| **Що робить** | Перевіряє здоров'я кластера: якщо > 20% активних дерев мають `stress_index >= 0.83` → Slashing. Відсутність даних > 24 год = автоматичне порушення. |
-| **Зовнішні виклики** | `BurnCarbonTokensWorker.perform_async` (при breach) |
-| **Вихід** | `nil`. Side effect: `naas_contract.update!(status: :breached)`. |
+| **Що робить** | Перевіряє здоров'я кластера: > 20% активних дерев зі `stress_index ≥ AiInsight::SLASH_STRESS_THRESHOLD` → `:degraded` → чокпоінт слешингу (cause-gate вирішує slash/freeze). Cluster-wide порожні AiInsight → `flag_data_blackout!` (freeze + Field Audit, force-majeure — no burn). **[ARCH.46]** поріг = той самий, що сайзить damage у `BlockchainBurningService`; прокидає `target_date` у burn. |
+| **Зовнішні виклики** | `BurnCarbonTokensWorker.perform_async(org, contract, nil, false, target_date)` (на `:degraded` — з `target_date` [ARCH.46]) |
+| **Вихід** | Verdict-символ `:healthy`/`:degraded`/`:blackout`/`:skipped`. **НЕ** breach-ить тут (SLASH-1: breach асинхронний, лише на реальному positive-A слешингу в `BlockchainBurningService`). |
 
 ### `ContractTerminationService`
 
@@ -1010,9 +1010,9 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Черга** | `critical` |
 | **Retry** | 5 |
 | **Тригер** | `ContractHealthCheckService`, `Dclimate::VerificationService` (fraud), `ContractTerminationService` |
-| **Вхід** | `organization_id`, `naas_contract_id`, `tree_id` (опц.), `contractual` (опц., default false — early-exit форфейтура пропускає positive-A gate) |
+| **Вхід** | `organization_id`, `naas_contract_id`, `tree_id` (опц.), `contractual` (опц., default false — early-exit форфейтура пропускає positive-A gate), `target_date` (опц. String ISO8601 — прокидається з `ContractHealthCheckService`, парситься назад у Date + forward у сервіс для damage за ту ж добу [ARCH.46]) |
 | **Сервіси** | `BlockchainBurningService.call` (повертає `:slashed`/`:frozen`/`nil`; **[ARCH.45]** intent-marker + in-flight slash guard проти double-burn — деталі §4) |
-| **Side Effects** | **Лише на `:slashed`:** `MaintenanceRecord` (decommissioning) + ActionCable/Turbo `CONTRACT_SLASHED`. На `:frozen` (positive-A gate, SLASH-1 §3.2) — без надгробка/broadcast (Field-Audit алерт уже піднято сервісом). |
+| **Side Effects** | **Лише на `:slashed`:** `MaintenanceRecord` (decommissioning) + ActionCable/Turbo `CONTRACT_SLASHED`. На `:frozen` (positive-A gate АБО no-data magnitude [ARCH.46], SLASH-1 §3.2) — без надгробка/broadcast (Field-Audit алерт уже піднято сервісом). |
 
 #### `InsurancePayoutWorker`
 

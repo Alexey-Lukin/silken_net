@@ -730,7 +730,8 @@
 - **Стан:** ✅ **Фаза 1 (код) реалізована** — positive-A-evidence guard на чокпоінті `BlockchainBurningService` (`Slashing::CauseEvidence#positive_a?`): необоротний `slash()` лише за прямого доказу Кат-A (tamper), інакше `:frozen` + Field Audit — відновлює C-дефолт §2. Закрив 3 false-slash діри (природна пожежа / посуха-як-«фрод» / планова смерть — biomass/decommission) **+ латентний баг** «daily ніколи не палив». A-сет фази-1 свідомо КОНСЕРВАТИВНИЙ = лише tamper; повний опис + supporting-зміни (verdict-рефактор health-check / крон-Celo-gate / воркер-outcome / termination-exempt) — [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy). Відкрите ↓.
 - [ ] 👤 DAO/founder перед mainnet: розширити A-сет (scoped-unmaintained / окремий chainsaw-сигнал) + активувати inert `penalty_factor`-uplift (`slash_cause_uplift_enabled`)
 - [ ] 🤖 (secondary) tree-side `streamr_undelivered` сигнал-джерело (guarded→0) + repeat-offence вага
-- [ ] 🤖 (secondary) Field-Audit alert-дедуп: freeze/blackout/slash-failure пишуть cluster-level `system_fault` щоденно при тривалій деградації → потрібен окремий `field_audit` alert_type / dedup-ключ (інакше дедуп конфлатить/маскує сигнали)
+- [ ] 🤖 (secondary) Field-Audit alert-дедуп: freeze/blackout/slash-failure пишуть cluster-level `system_fault` щоденно при тривалій деградації → окремий `field_audit` alert_type / dedup-ключ (інакше дедуп конфлатить/маскує сигнали; **+ ARCH.46:** окремий тип також виключить freeze-алерт із `comms_no_ack?` — інакше при DAO-uplift freeze самонакручує `penalty_factor`, gap D)
+- [ ] 🤖 (backlog) поріг «critical stress» зведений 0.8↔0.83: slash-шлях = `AiInsight::SLASH_STRESS_THRESHOLD` (0.83, ARCH.46), але `AiInsight.critical_stress`-scope / `contract_breach?` / `ParametricInsurance` = 0.8 (insurance/UI) → звести в іменований концепт або задокументувати свідомий розрив
 - [ ] 🤖 (backlog) A/B-координація: slash (A) і `ParametricInsurance#evaluate_daily_health!` (B) читають ту саму stress-дату → кандидат на спільний `DailyHealthRouter` (DRY, `04_02 §11`)
 
 #### SEC.1 — Multisig Gnosis Safe + PAUSER⊥admin split (production admin role)
@@ -763,13 +764,19 @@
 - [ ] 👤 CertiK Skynet runtime monitoring — post-mainnet deploy
 
 #### ARCH.46 — Damage-ratio over-burn → 100% fallback (threshold/date/no-data)
-- **P1** · 🤖 · 🟡 · → [`05_05 §3`](05_05_Slashing_and_Risk_Policy)
-- **Стан:** Рішення прийнято (founder, deep-dive) — **(b): freeze на genuine no-data + пропорційний slash на наявних даних, НЕ worst-case 100%** — по філософії проєкту («не карати жертву»; асиметрія незворотності — burn необоротний, freeze ні; «дані недостатні → freeze, не max» — код це інвертував; жоден зрілий протокол не палить max за відсутності magnitude-даних). Дип-дайв: гілка `else → 1.0` у `calculate_damage_ratio` — не рідкісний coincidence, а **3 баги**, два детерміновані. **(1) threshold mismatch:** `ContractHealthCheckService` тригерить слеш при `stress_index ≥ 0.83`, а `calculate_damage_ratio` міряє damage лише при `≥ 1.0` → помірний стрес 0.83–0.99 → `critical_count = 0` → `else → 100%` замість пропорційного (б'є КОЖЕН легітимний слеш без мертвого дерева на стелі; канон: damage = «stressed + dead» → має рахувати від 0.83). **(2) date mismatch:** health-check рахує на `target_date`, але `BurnCarbonTokensWorker` його не приймає, а burn перевираховує `@cluster.local_yesterday` → інша дата → нуль записів → 100% (щоночі для західних TZ). **(3) genuine no-data** (оригінальний ARCH.46). Worst-case (verified): легітимний оператор + 1 tamper + AI-hiccup → 100% burn усього кластера, необоротно. `freeze_for_field_audit!` reusable (slash на цій точці ще не комічений). Pre-mainnet must-fix; план ↓.
-- [x] 👤 рішення: **(b)** — freeze на нуль-даних + пропорційний (canon-aligned поріг) на наявних, НЕ worst-case
-- [ ] 🤖 узгодити поріг `calculate_damage_ratio` (`≥ 0.83` stressed+dead, як health-check + канон), не лише `≥ 1.0`
-- [ ] 🤖 прокинути `target_date` наскрізь (health-check → `BurnCarbonTokensWorker` → `BlockchainBurningService`), прибрати незалежний `@cluster.local_yesterday`-перерахунок
-- [ ] 🤖 genuine no-data (нуль записів) → `freeze_for_field_audit!` (дзеркало `flag_data_blackout!`) + диференційований EwsAlert (positive-A є, magnitude indeterminate)
-- [ ] 🤖 канонізувати рішення в [`05_05 §3`](05_05_Slashing_and_Risk_Policy) + RSpec на всі 3 гілки
+- **P1** · 🤖 · 🟢 · → [`05_05 §3`](05_05_Slashing_and_Risk_Policy)
+- **Стан:** Shipped — 3-баговий over-burn закрито (code + canon + RSpec на 3 гілки): damage-поріг `calculate_damage_ratio` зведено до спільної `AiInsight::SLASH_STRESS_THRESHOLD` (= health-check тригер; було хибне `≥ 1.0` → 100% over-burn помірного стресу легітимного оператора); `target_date` прокинутий health-check → `BurnCarbonTokensWorker` → `BlockchainBurningService` (без перерахунку `local_yesterday`); genuine no-data → `freeze_for_field_audit!(reason:)`, не worst-case 100% (`contractual`-форфейтура — виняток, повне погоджене вилучення). Рішення (founder, 10-агентний deep-dive): (b) по філософії «не карати жертву» + асиметрія незворотності + індустрія-прецедент. Канон [`05_05 §3`](05_05_Slashing_and_Risk_Policy) (ARCH.46-нота + §6 divergence-(5)) · картки [`04_02`](04_02_Business_Logic_and_Services) · поріг-fix [`05_03`](05_03_Tokenomics_SCC_and_SFC). Scale (десятки-сотні млрд дерев): per-cluster + composite-індекс → safe; planetary `ai_insights`-партиціонування — окремий infra-item ([`00_07` — E.37](00_07_Action_Plan_Tracker)). Spin-off: INS.1 + SLASH-1 (0.8↔0.83-unify, comms_no_ack-self-ref).
+- [x] 🤖 damage-поріг ≡ health-check ≡ канон (спільна `AiInsight::SLASH_STRESS_THRESHOLD`, не `≥ 1.0`)
+- [x] 🤖 `target_date` threading (health-check → worker → burn)
+- [x] 🤖 genuine no-data → `freeze_for_field_audit!` (диференц. EwsAlert)
+- [x] 🤖 канон [`05_05 §3`](05_05_Slashing_and_Risk_Policy) + RSpec на 3 гілки
+
+#### INS.1 — Parametric insurance oracle: dead pipeline + no-data under-pay
+- **P2** · 🤖+👤 · ⚪ · → [`05_05 §4`](05_05_Slashing_and_Risk_Policy)
+- **Стан:** Знахідка (ARCH.46 deep-dive, verified grep) — `ParametricInsurance#evaluate_daily_health!` (B-шлях, force-majeure payout) має **0 prod-callerів** (коментар «викликається `DailyAggregationWorker`» хибний; повний grep чистий) → уся parametric-insurance-oracle-труба **не активна** в проді (ні daily-AiInsight-оракул, ні dClimate-confirmation, що шукає `:triggered`-записи, яких ніхто не створює). Суміжно — дзеркало ARCH.46 у протилежний бік: на no-data метод тихо рахує `damage_ratio = 0` → **недоплата жертві** (катастрофа нищить сенсори → нема AiInsight → 0 виплата + 0 escalation), що порушує C-дефолт «escalate, не auto-resolve». НЕ горить (мертвий код), але HARD-gate до активації insurance. Канон [`05_05 §2/§4`](05_05_Slashing_and_Risk_Policy).
+- [ ] 🤖 під'єднати `evaluate_daily_health!` у daily-ланцюг (`ClusterHealthCheckWorker` чи новий `InsuranceOracleWorker`) + виправити хибний коментар
+- [ ] 🤖 no-data guard: порожні AiInsight за `target_date` → escalate (EwsAlert/Field-Audit), не тихий `damage_ratio = 0` (дзеркало `flag_data_blackout!`)
+- [ ] 👤 design: послідовність daily-oracle (`:triggered`) ↔ dClimate-confirmation ↔ `InsurancePayoutWorker` + integration-тест
 
 #### BIZ.13 — Slashing principal-agent: investor capital vs operator-bond
 - **P2** · 🤖+👤 · 🔗 · → `05_05 §3.1`, `05_03 §Slashing`, `04_02`

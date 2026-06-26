@@ -1,6 +1,14 @@
 # frozen_string_literal: true
 
 class AiInsight < ApplicationRecord
+  # [ARCH.46] Поріг stress_index, за якого дерево рахується критично стресованим на SLASH-шляху —
+  # спільний для ТРИГЕРА (ContractHealthCheckService: >20% дерев ≥ цього) і РОЗМІРУ
+  # (BlockchainBurningService#calculate_damage_ratio: damage = частка дерев ≥ цього). Одна
+  # константа, щоб тригер і damage не розходились (був баг: тригер 0.83 vs damage 1.0 → 100% over-burn).
+  # Канон-дім порога — 05_06 STRESS_THRESHOLD + 05_05 §3/§7. ⚠️ НЕ плутати з `critical_stress`-scope /
+  # `contract_breach?` (0.8 — ширший insurance/UI-концепт, свідомо окремий від slash-порога).
+  SLASH_STRESS_THRESHOLD = 0.83
+
   # --- ЗВ'ЯЗКИ ---
   # Прогноз/Звіт може стосуватися Cluster (Кластер), Tree (Дерево) або Organization
   belongs_to :analyzable, polymorphic: true

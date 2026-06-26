@@ -580,14 +580,14 @@ Telemetry → Lorenz Z-value → growth_points++
 
 ## 🔥 Потік Slashing (Поточний Стан)
 
-> **Політика slashing** — коли/чи взагалі палити (cause-classification A/B/C, поріг «>20% дерев stress≥1.0», convex-формула `damage_ratio^GAMMA`, de-risk-інваріант «не лише Z») — канон [`05_05`](05_05_Slashing_and_Risk_Policy) (§3 формула, §7 multi-signal). Нижче — лише контрактно-воркерна механіка потоку (`slash()` — дім цього доку).
+> **Політика slashing** — коли/чи взагалі палити (cause-classification A/B/C, поріг «>20% дерев stress≥0.83», convex-формула `damage_ratio^GAMMA`, de-risk-інваріант «не лише Z») — канон [`05_05`](05_05_Slashing_and_Risk_Policy) (§3 формула, §7 multi-signal). Нижче — лише контрактно-воркерна механіка потоку (`slash()` — дім цього доку).
 
 ```
 ClusterHealthCheckWorker (02:00 UTC) [queue: default]
         ↓
 NaasContract#check_cluster_health!
         ↓
-> 20% дерев з stress_index >= 1.0?
+> 20% дерев з stress_index >= 0.83?
         ↓
 flag_degradation! → verdict :degraded (БЕЗ pre-breach; крон гейтить Celo за verdict)
         ↓

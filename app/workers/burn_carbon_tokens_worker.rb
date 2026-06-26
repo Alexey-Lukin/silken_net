@@ -6,7 +6,7 @@ class BurnCarbonTokensWorker
   # щоб запобігти виводу токенів інвестором.
   sidekiq_options queue: "critical", retry: 5
 
-  def perform(organization_id, naas_contract_id, tree_id = nil, contractual = false)
+  def perform(organization_id, naas_contract_id, tree_id = nil, contractual = false, target_date = nil)
     naas_contract = NaasContract.find_by(id: naas_contract_id)
     return Rails.logger.error "🛑 [Slashing] Контракт ##{naas_contract_id} не знайдено." unless naas_contract
 
@@ -30,7 +30,10 @@ class BurnCarbonTokensWorker
         organization_id,
         naas_contract_id,
         source_tree: source_tree,
-        contractual: contractual
+        contractual: contractual,
+        # [ARCH.46] target_date прокинутий від ContractHealthCheckService (Sidekiq → String ISO8601);
+        # nil/blank → сервіс дефолтить на cluster.local_yesterday (tree-death/dClimate/contractual).
+        target_date: (Date.parse(target_date) if target_date.present?)
       )
     end
 

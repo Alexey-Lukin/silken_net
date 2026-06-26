@@ -27,12 +27,17 @@ class BlockchainBurningService < ApplicationService
   # @param contractual [Boolean] true — це погоджена контрактна форфейтура (early-exit
   #   `burn_accrued_points`, `ContractTerminationService`), НЕ slash-за-провину → гейт
   #   positive-A пропускається (інвестор сам розірвав, burn — погоджена умова, не Кат-A).
-  def initialize(organization_id, naas_contract_id, source_tree: nil, contractual: false)
+  def initialize(organization_id, naas_contract_id, source_tree: nil, contractual: false, target_date: nil)
     @organization = Organization.find(organization_id)
     @naas_contract = NaasContract.find(naas_contract_id)
     @cluster = @naas_contract.cluster
     @source_tree = source_tree
     @contractual = contractual
+    # [ARCH.46] Дата для damage-ratio — прокинута від ContractHealthCheckService (де порахована
+    # й де відбувся blackout-guard), щоб burn НЕ перевираховував local_yesterday у свій момент
+    # (date-mismatch → запит на іншу добу → нуль записів → хибне 100%). Інші тригери
+    # (tree-death/dClimate/contractual) дати не передають → дефолт local_yesterday (їх поведінка).
+    @target_date = target_date
   end
 
   def perform
@@ -90,6 +95,13 @@ class BlockchainBurningService < ApplicationService
     # [05_05 §3] Progressive convex slash curve (damage_ratio^GAMMA × min(pf, MAX)),
     # NOT the old linear total × damage_ratio. See #calculate_slash_ratio.
     damage_ratio = calculate_damage_ratio
+
+    # [ARCH.46] Genuine no-data (нуль AiInsight-записів за дату, fault-шлях без конкретного дерева)
+    # → magnitude indeterminate → freeze (Кат-C), НЕ worst-case 100%. positive-A довів ПРИЧИНУ
+    # (tamper), але РОЗМІР шкоди потребує власних даних (§3.2: burn необоротний, freeze — ні).
+    # Дзеркало flag_data_blackout!; contractual-форфейтура сюди не доходить (damage_ratio → 1.0).
+    return freeze_for_field_audit!(reason: :indeterminate_magnitude) if damage_ratio.nil?
+
     slash_ratio  = calculate_slash_ratio(damage_ratio, calculate_penalty_factor)
     burn_amount  = (total_minted_amount * slash_ratio).ceil
 
@@ -184,18 +196,27 @@ class BlockchainBurningService < ApplicationService
   # Дзеркалить ContractHealthCheckService#flag_data_blackout!: піднімає critical Field-Audit
   # алерт (system_fault), НЕ палить і НЕ breach-ить контракт (лишається :active до людської
   # класифікації A/B/C). Burn необоротний, freeze — ні (05_05 §3.2 асиметрія). Повертає :frozen.
-  def freeze_for_field_audit!
+  def freeze_for_field_audit!(reason: :no_category_a_evidence)
     # Контекст для аудитора (дзеркало slash-`reason`): конкретне дерево, якщо є джерело,
     # інакше — кластер. Дає Field-Audit з чого почати C→A класифікацію.
     context = @source_tree ? "дерево #{@source_tree.did}" : "кластер ##{@cluster.id}"
 
-    Rails.logger.warn "🧊 [SLASH-1] NaasContract ##{@naas_contract.id} (#{context}): спалення заблоковано — немає прямого доказу Категорії A (05_05 §3.2) → Field Audit, без burn/breach."
+    # [ARCH.46] Два приводи для freeze (обидва → Кат-C, no burn/breach): немає прямого доказу A
+    # (positive-A gate) АБО доказ A є, але РОЗМІР шкоди невизначений (нема AiInsight-даних). Меседж
+    # диференціюємо, щоб Field-Audit мав чіткий triage-контекст (дедуп — 00_07 SLASH-1).
+    detail = if reason == :indeterminate_magnitude
+               "доказ Категорії A є, але РОЗМІР шкоди невизначений (нема AiInsight-даних за дату)"
+    else
+               "немає прямого доказу Категорії A"
+    end
+
+    Rails.logger.warn "🧊 [SLASH-1] NaasContract ##{@naas_contract.id} (#{context}): спалення заблоковано — #{detail} (05_05 §3.2) → Field Audit, без burn/breach."
 
     EwsAlert.create!(
       cluster: @cluster,
       severity: :critical,
       alert_type: :system_fault,
-      message: "Слешинг заблоковано (#{context}): немає прямого доказу халатності (Категорія A). Кошти НЕ спалено — потрібен Field Audit (Категорія C, 05_05 §3.2/§5)."
+      message: "Слешинг заблоковано (#{context}): #{detail}. Кошти НЕ спалено — потрібен Field Audit (Категорія C, 05_05 §3.2/§5)."
     )
 
     :frozen
@@ -221,32 +242,42 @@ class BlockchainBurningService < ApplicationService
     )
   end
 
-  # Розраховує частку біомаси, що підлягає вилученню.
-  # Використовує денні AiInsight-звіти, щоб не карати інвесторів за загибель
-  # одного дерева з тисячі (Дракон vs. реальність).
+  # Розраховує частку біомаси, що підлягає вилученню (damage_ratio ∈ [0,1], або nil). Гілки:
+  #   • contractual          → погоджене повне вилучення (early-exit форфейтура; ПЕРШОЮ — не damage-based)
+  #   • critical>0           → пропорційно (stressed+dead / total — канон §3)
+  #   • source_tree          → загибель конкретного дерева (1/total)
+  #   • дані Є, 0 critical    → ліс здоровий → 0 шкоди → 0 slash
+  #   • genuine no-data → nil → magnitude indeterminate → `perform` робить freeze (§3.2 асиметрія,
+  #     дзеркало `flag_data_blackout!`), НЕ 100% worst-case
+  # [ARCH.46] Поріг = `AiInsight::SLASH_STRESS_THRESHOLD` (= той самий, що ТРИГЕРИТЬ слеш у
+  # `ContractHealthCheckService`; раніше хибне `≥ 1.0` → помірний стрес давав critical=0 → 100%
+  # over-burn). Дата прокинута від health-check (`effective_target_date`), без перерахунку.
   def calculate_damage_ratio
     total_trees = @cluster.trees.count
     return 1.0 if total_trees.zero?
+    # Contractual — ПЕРШОЮ: повне погоджене вилучення, не залежить від damage; AiInsight-запит зайвий.
+    return 1.0 if @contractual
 
-    # Намагаємось отримати кількість критично стресованих дерев з AiInsight
     # [SQL Optimization]: Підзапит замість масиву об'єктів (The Polymorphic IN Trap).
-    # [Cluster TZ]: Використовуємо часовий пояс кластера замість серверного Date.yesterday.
-    critical_count = AiInsight
-                     .daily_health_summary
-                     .where(analyzable_type: "Tree", analyzable_id: @cluster.trees.select(:id), target_date: @cluster.local_yesterday)
-                     .where("stress_index >= 1.0")
-                     .count
+    daily_insights = AiInsight.daily_health_summary.where(
+      analyzable_type: "Tree", analyzable_id: @cluster.trees.select(:id), target_date: effective_target_date
+    )
+    critical_count = daily_insights.where("stress_index >= ?", AiInsight::SLASH_STRESS_THRESHOLD).count
 
     if critical_count.positive?
-      # Частка пошкодженої біомаси (max 100%)
-      [ critical_count.to_f / total_trees, 1.0 ].min
+      [ critical_count.to_f / total_trees, 1.0 ].min   # пропорційно (stressed+dead / total)
     elsif @source_tree.present?
-      # Загибель одного конкретного дерева → пропорційна частка
-      [ 1.0 / total_trees, 1.0 ].min
-    else
-      # Немає даних від AiInsight і немає конкретного дерева → повне вилучення
-      1.0
+      [ 1.0 / total_trees, 1.0 ].min                   # загибель конкретного дерева
+    elsif daily_insights.exists?
+      0.0                                              # дані Є, ліс здоровий → 0 шкоди → 0 slash
     end
+    # else: нуль AiInsight-записів → nil (genuine no-data) → perform → freeze_for_field_audit!
+  end
+
+  # [ARCH.46] Дата для AiInsight-запиту: прокинута від `ContractHealthCheckService` (де порахована
+  # й де відпрацював blackout-guard), інакше дефолт `local_yesterday` (tree-death/dClimate/contractual).
+  def effective_target_date
+    @target_date || @cluster.local_yesterday
   end
 
   # [05_05 §3 Slashing curve] Progressive CONVEX penalty:
