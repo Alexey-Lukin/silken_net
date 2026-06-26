@@ -49,6 +49,9 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @dev Зменшено з 200 до 100 для гарантії gas safety з максимальними рядками (256 bytes).
     uint256 public constant MAX_BATCH_SIZE = 100;
 
+    /// @notice [B-15] Максимальна довжина `clusterId` у байтах (The Graph indexing safety).
+    uint256 public constant MAX_STRING_BYTES = 256;
+
     /// @dev Лічильник адміністраторів для запобігання видаленню останнього DEFAULT_ADMIN_ROLE.
     uint256 private _adminCount;
 
@@ -95,11 +98,11 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @param amount Кількість токенів (wei).
     /// @param clusterId ID кластера лісу.
     /// @dev Reverts if totalSupply() + amount > MAX_SUPPLY.
-    function mint(address to, uint256 amount, string calldata clusterId) external onlyRole(MINTER_ROLE) nonReentrant {
+    function mint(address to, uint256 amount, string calldata clusterId) external nonReentrant onlyRole(MINTER_ROLE) {
         require(to != address(0), "SFC: zero recipient");
         require(amount > 0, "SFC: zero amount");
         require(bytes(clusterId).length > 0, "SFC: empty clusterId");
-        require(bytes(clusterId).length <= 256, "SFC: clusterId too long");
+        require(bytes(clusterId).length <= MAX_STRING_BYTES, "SFC: clusterId too long");
         require(totalSupply() + amount <= MAX_SUPPLY, "SFC: cap exceeded");
         _mint(to, amount);
         // Auto-delegate to self if not yet delegated — ensures voting power is immediately active.
@@ -117,8 +120,8 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @param clusterIds Масив ID кластерів.
     function batchMint(address[] calldata recipients, uint256[] calldata amounts, string[] calldata clusterIds)
         external
-        onlyRole(MINTER_ROLE)
         nonReentrant
+        onlyRole(MINTER_ROLE)
     {
         uint256 length = recipients.length;
         require(length > 0, "SFC: empty batch");
@@ -132,7 +135,7 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
             require(amounts[i] > 0, "SFC: zero amount");
             uint256 cidLen = bytes(clusterIds[i]).length;
             require(cidLen > 0, "SFC: empty clusterId");
-            require(cidLen <= 256, "SFC: clusterId too long");
+            require(cidLen <= MAX_STRING_BYTES, "SFC: clusterId too long");
             batchTotal += amounts[i];
         }
         require(totalSupply() + batchTotal <= MAX_SUPPLY, "SFC: cap exceeded");
@@ -152,7 +155,7 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @param investor Адреса, з якої спалюються governance токени.
     /// @param amount Кількість токенів для спалювання (wei).
     /// @dev Reverts if investor balance < amount ("SFC: insufficient balance").
-    function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE) nonReentrant {
+    function slash(address investor, uint256 amount) external nonReentrant onlyRole(SLASHER_ROLE) {
         require(investor != address(0), "SFC: zero investor");
         require(amount > 0, "SFC: zero amount");
         require(balanceOf(investor) >= amount, "SFC: insufficient balance");

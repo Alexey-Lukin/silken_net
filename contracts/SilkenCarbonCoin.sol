@@ -47,6 +47,9 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @dev Зменшено з 200 до 100 для гарантії gas safety з максимальними рядками (256 bytes).
     uint256 public constant MAX_BATCH_SIZE = 100;
 
+    /// @notice [B-15] Максимальна довжина `treeDid` у байтах (The Graph indexing safety).
+    uint256 public constant MAX_STRING_BYTES = 256;
+
     /// @dev Лічильник адміністраторів для запобігання видаленню останнього DEFAULT_ADMIN_ROLE.
     uint256 private _adminCount;
 
@@ -95,8 +98,8 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @dev Reverts if totalSupply() + amount > MAX_SUPPLY.
     function mintForTree(address to, uint256 amount, string calldata treeDid)
         external
-        onlyRole(MINTER_ROLE)
         nonReentrant
+        onlyRole(MINTER_ROLE)
     {
         _mintSCC(to, amount, treeDid);
     }
@@ -106,7 +109,7 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @param amount Кількість токенів (wei).
     /// @param treeDid DID дерева-джерела.
     /// @dev Reverts if totalSupply() + amount > MAX_SUPPLY.
-    function mint(address to, uint256 amount, string calldata treeDid) external onlyRole(MINTER_ROLE) nonReentrant {
+    function mint(address to, uint256 amount, string calldata treeDid) external nonReentrant onlyRole(MINTER_ROLE) {
         _mintSCC(to, amount, treeDid);
     }
 
@@ -117,7 +120,7 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         require(to != address(0), "SCC: zero recipient");
         require(amount > 0, "SCC: zero amount");
         require(bytes(treeDid).length > 0, "SCC: empty treeDid");
-        require(bytes(treeDid).length <= 256, "SCC: treeDid too long");
+        require(bytes(treeDid).length <= MAX_STRING_BYTES, "SCC: treeDid too long");
         require(totalSupply() + amount <= MAX_SUPPLY, "SCC: cap exceeded");
         _mint(to, amount);
         emit CarbonMinted(to, amount, keccak256(bytes(treeDid)), treeDid);
@@ -129,8 +132,8 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @param treeDids Масив DID дерев-джерел.
     function batchMint(address[] calldata recipients, uint256[] calldata amounts, string[] calldata treeDids)
         external
-        onlyRole(MINTER_ROLE)
         nonReentrant
+        onlyRole(MINTER_ROLE)
     {
         uint256 length = recipients.length;
         require(length > 0, "SCC: empty batch");
@@ -144,7 +147,7 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
             require(amounts[i] > 0, "SCC: zero amount");
             uint256 didLen = bytes(treeDids[i]).length;
             require(didLen > 0, "SCC: empty treeDid");
-            require(didLen <= 256, "SCC: treeDid too long");
+            require(didLen <= MAX_STRING_BYTES, "SCC: treeDid too long");
             batchTotal += amounts[i];
         }
         require(totalSupply() + batchTotal <= MAX_SUPPLY, "SCC: cap exceeded");
@@ -159,7 +162,7 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @param investor Адреса, з якої спалюються токени.
     /// @param amount Кількість токенів для спалювання (wei).
     /// @dev Reverts if investor balance < amount ("SCC: insufficient balance").
-    function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE) nonReentrant {
+    function slash(address investor, uint256 amount) external nonReentrant onlyRole(SLASHER_ROLE) {
         require(investor != address(0), "SCC: zero investor");
         require(amount > 0, "SCC: zero amount");
         require(balanceOf(investor) >= amount, "SCC: insufficient balance");
