@@ -12,7 +12,7 @@
 - **SCC контракт:** ✅ Production-ready (MAX_SUPPLY=1B, MINTER/SLASHER split, ReentrancyGuard, NatSpec, mintForTree alias, audit hardening, slash bypasses pause, admin protection, locked pragma)
 - **SFC контракт:** ✅ Production-ready (MAX_SUPPLY=100M, SLASHER_ROLE + slash(), ReentrancyGuard, NatSpec, slash bypasses pause, auto-delegation, admin protection, locked pragma)
 - **Аудит-зміцнення:** ✅ Явна перевірка балансу в `slash()`, валідація нульових значень у `mint()`/`slash()`, перевірка порожнього батчу у `batchMint()`, NatSpec, захист від The Graph DoS (`treeDid`/`clusterId` length ≤256 bytes), per-element string validation у `batchMint()` для обох контрактів
-- **Зовнішній аудит (19 findings):** ✅ Аналіз 19 знахідок: 9 виправлено on-chain (slash bypass pause, admin protection, auto-delegate, batch size 100, anchor interval, locked pragma, mint dedup, rootHistory, timestamp NatSpec), 10 задокументовано як operational/by-design
+- **Внутрішній аудит-розбір (self-review — НЕ платний зовнішній; Hacken/Hashlock ще 👤 TODO ↓):** ✅ знахідки самоаудиту опрацьовано — частину виправлено on-chain (slash-bypass-pause, admin-protection, auto-delegate, batch-size, anchor-interval, locked-pragma, mint-dedup, rootHistory, timestamp-NatSpec), решту задокументовано як operational/by-design (деталі → §Smart Contract Audit Roadmap)
 - **Backend інтеграція:** ✅ `BlockchainMintingService` + `BlockchainBurningService`
 - **The Graph subgraph:** ✅ `TokenSlashed` виправлено, `treeDidHash` (bytes32) додано. ✅ SFC: `ForestMintEvent` + `GovernanceSlashEvent` + handlers додано (S3.5). ⚠️ SFC contract address — placeholder до Mainnet deploy.
 - **Відкрите:** SFC contract address placeholder до Mainnet deploy; зовнішній аудит execution → [`00_07`](00_07_Action_Plan_Tracker).
@@ -253,7 +253,7 @@ function mint(address to, uint256 amount, string calldata treeDid)
 - **Модифікатор:** `onlyRole(MINTER_ROLE)`, `nonReentrant`
 - **Делегує до:** `_mintSCC()` — внутрішня реалізація, спільна з `mintForTree()`
 - **Guard on pause:** Опосередковано через `_update` — мінтинг блокується при паузі, слешинг дозволений
-- **Виклик з бекенду:** `BlockchainMintingService` → `client.transact(contract, "mintForTree", to, amount, identifier)` (також доступний `"mint"` alias)
+- **Виклик з бекенду:** `BlockchainMintingService` → `client.transact(contract, "mint", to, amount, identifier)` — контракт експонує і `mintForTree()`, і `mint()` alias, але бекенд-ABI (`CONTRACT_ABI`) реєструє лише `"mint"` + `"batchMint"`
 
 #### `_mintSCC(address to, uint256 amount, string calldata treeDid)` — internal
 
@@ -338,11 +338,11 @@ function slash(address investor, uint256 amount)
 #### `pause()` / `unpause()`
 
 ```solidity
-function pause() external onlyRole(DEFAULT_ADMIN_ROLE) { _pause(); }
-function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) { _unpause(); }
+function pause() external onlyRole(PAUSER_ROLE) { _pause(); }
+function unpause() external onlyRole(PAUSER_ROLE) { _unpause(); }
 ```
 
-- **Operational Security:** Для production deployment `DEFAULT_ADMIN_ROLE` має бути призначено Gnosis Safe multisig (3/5 або 2/3) замість EOA (Externally Owned Account). `pause()` — це аварійний механізм для негайної зупинки при exploits, тому timelock **не** додається (під час хаку потрібна реакція за хвилини, а не дні)
+- **Operational Security [SEC.1]:** `pause()`/`unpause()` гейтяться `PAUSER_ROLE` — у production = Gnosis Safe multisig (3/5 або 2/3), миттєва реакція на exploit ПОЗА Timelock (під час хаку потрібна реакція за хвилини, а не дні). `DEFAULT_ADMIN_ROLE` (видача ролей, у т.ч. `MINTER_ROLE`) у production = `SilkenTimelock` (48h-затримка) — НЕ той самий ключ, що pause (див. таблицю ролей вище). Жоден не EOA.
 
 #### `_update(address from, address to, uint256 value)` — internal hook
 
@@ -521,15 +521,16 @@ end
 
 ```ruby
 def insurance_pool_requires_funding?
-  # On-chain query: балансOf DAO Treasury < INSURANCE_POOL_THRESHOLD (100_000 SCC)
-  # Кешується 15 хв. Failsafe: true при збої RPC.
+  # On-chain query: балансOf DAO Treasury < INSURANCE_POOL_THRESHOLD (default 100_000 SCC)
+  # Кешується 15 хв. [E.46] Failsafe: FALSE при збої RPC — НЕ штрафуємо мінтинг
+  # під час деградації мережі (пропущений внесок безпечніший за постійний 2% податок).
   Rails.cache.fetch(TREASURY_CACHE_KEY, expires_in: TREASURY_CACHE_TTL) do
     fetch_treasury_balance_wei < INSURANCE_POOL_THRESHOLD_WEI
   end
 end
 ```
 
-**Наслідок:** Dynamic Tax (2%) застосовується коли баланс DAO Treasury < 100,000 SCC. Одиночний `mint()` (не `batchMint`) Dynamic Tax **не застосовує**.
+**Наслідок:** Dynamic Tax застосовується коли баланс DAO Treasury < порогу. **[S6.17]** Ставка (default 2%) і поріг (default 100,000 SCC) — **governance-aware** через `SystemParameter` ← on-chain `ProtocolParameters.sol` (не хардкод-константи). Одиночний `mint()` (не `batchMint`) Dynamic Tax **не застосовує**.
 
 ---
 

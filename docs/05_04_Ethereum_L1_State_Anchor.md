@@ -9,7 +9,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 — Механізм якорування повністю імплементовано.
-- **Цільовий TRL:** TRL 9 — Production-ready з повним gas management та аудит-трейлом у БД.
+- **Цільовий TRL:** TRL 9 = mainnet deploy (контракт на Ethereum Mainnet + перший щотижневий anchor підтверджено), per [`00_03`](00_03_TRL_Matrix_HIL_and_Beyond). Поточні gas-management + аудит-трейл у БД вже на рівні TRL 8.
 - **Відкрите:** Production gas-management tuning + Mainnet contract deploy → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---

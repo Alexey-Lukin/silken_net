@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Зафіксувати повний trustless консенсусний пайплайн SilkenNet — від фізичних біосигналів дерева (Lorenz Z-координата гомеостазу) до верифікованих on-chain активів (SilkenCarbonCoin / SCC). Включає опис прошивок Солдата й Королеви, всіх кроків верифікації (peaq DID → IoTeX ZK → Chainlink → Polygon + Solana) та відкритих блокерів.
+Зафіксувати повний trustless консенсусний пайплайн SilkenNet — від фізичних біосигналів дерева (Lorenz Z як DCI/anti-fraud сигнал; гомеостаз-інтерпретація — недоведена гіпотеза, ⚠️ нижче) до верифікованих on-chain активів (SilkenCarbonCoin / SCC). Включає опис прошивок Солдата й Королеви, всіх кроків верифікації (peaq DID → IoTeX ZK → Chainlink → Polygon + Solana) та відкритих блокерів.
 
 > **⚠️ [Lorenz de-risk]** Інтерпретація «Z-координата = гомеостаз/здоров'я» — недоведена гіпотеза ([`05_05 §8`](05_05_Slashing_and_Risk_Policy)); slashing вимагає ≥1 прямого сигналу (sap_flow / VPD / acoustic), не лише Z ([`05_05 §7`](05_05_Slashing_and_Risk_Policy)). Lorenz-DCI (anti-fraud) валідний незалежно — пайплайн нижче коректний як механіка, навіть якщо роль Z демоутиться до DCI-only.
 
@@ -892,7 +892,7 @@ blockchain_transactions
 | Шар | Зміна | Файл / артефакт |
 |-----|-------|----------|
 | Schema | Нові колонки `hardware_keys.lorenz_seed_hex` (NOT NULL), `telemetry_logs.lorenz_state_x/y/z`, `telemetry_logs.cold_start_flag` | `db/migrate/20260502090000_add_lorenz_seed_provenance_columns.rb` |
-| Crypto core | `SilkenNet::SeedDerivation` — HKDF-SHA256 + HMAC-SHA256 + signed-unit-float unpack; raises `SecurityError` без `PROVISIONING_MASTER_KEY` (no fallback) | `app/services/silken_net/seed_derivation.rb` (17 specs) |
+| Crypto core | `SilkenNet::SeedDerivation` — HKDF-SHA256 + HMAC-SHA256 + signed-unit-float unpack; raises `SecurityError` без `PROVISIONING_MASTER_KEY` (no fallback) | `app/services/silken_net/seed_derivation.rb` |
 | Provisioning | `HardwareKeyService.provision` атомарно деривує AES key + K_seed одним викликом | `app/services/hardware_key_service.rb` |
 | Attractor | Sole entry-point `Attractor.calculate_z_from_state(x_prev, y_prev, z_prev, …)`; legacy `calculate_z(seed, …)` ВИДАЛЕНО | `app/services/silken_net/attractor.rb` |
 | Unpacker | Per-tree dispatch: warm tail з попереднього `TelemetryLog.lorenz_state_*`, cold start з `K_seed/epoch_day` + `cold_start_flag = true`; persist tail | `app/services/telemetry_unpacker_service.rb` |

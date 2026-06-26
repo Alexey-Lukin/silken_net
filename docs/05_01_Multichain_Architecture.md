@@ -192,7 +192,7 @@ did:peaq:0x{SHA256(hardware_identifier + tree_id + created_at)[0:40]}
 
 #### 4. IoTeX W3bstream (ZK-Proofs)
 
-Генерація Zero-Knowledge доказів. Гарантує, що телеметрія надійшла з реального кремнієвого обладнання (Trusted Execution Environment), а не була згенерована скриптом хакера на сервері.
+Генерація Zero-Knowledge доказів цілісності pipeline + прив'язки до peaq DID (W3bstream — **НЕ** TEE). ⚠️ **Чесно про trust:** поточний рівень = L0 custodial (`hardware_signature` = backend-HKDF-derived — підтверджує цілісність шляху, але **не** доводить кремнієве походження); hardware-origin — true-DePIN North-Star (L2 trust-ladder → [`05_02`](05_02_Proof_of_Growth_Pipeline)). ZK ускладнює підробку скриптом, але origin-гарантію дає лише L2.
 
 | Параметр | Значення |
 |----------|----------|
@@ -426,7 +426,7 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 
 ## ⚙️ 2. Консенсус "Proof of Growth" (Трубопровід Верифікації)
 
-Процес перетворення фізичного життя дерева на токен (SCC) є багатоетапним і не потребує довіри (Trustless). Жодна людина чи адміністратор не може втрутитися в цей потік:
+Процес перетворення фізичного життя дерева на токен (SCC) — багатоетапний, спроектований як trustless oracle-pipeline. ⚠️ **Точніше:** основний (oracle-driven) шлях мінімізує довіру, але існують **свідомі відступи** — адмінські обходи (PATH 2 tokenomics-конвертація / PATH 5 manual mint → [`05_02`](05_02_Proof_of_Growth_Pipeline)) і поточний L0-custodial trust-origin (§ IoTeX вище). Кроки основного шляху:
 
 ### Крок 1: Збір (Hardware → Backend)
 
