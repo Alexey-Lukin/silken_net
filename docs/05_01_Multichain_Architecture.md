@@ -261,7 +261,7 @@ type SlashingEvent @entity { ... }
 | **Сервіси** | `BlockchainMintingService`, `BlockchainBurningService`, `ChainAuditService`, `PriceOracleService`, `MintingRollbackService` |
 | **Воркери** | `MintCarbonCoinWorker`, `BurnCarbonTokensWorker`, `BlockchainConfirmationWorker`, `TokenomicsEvaluatorWorker`, `Governance::ParameterSyncWorker` |
 | **Черги** | `web3_critical` (мінтинг, підтвердження), `critical` (спалювання), `default` (токеноміка), `web3_low` (governance sync) |
-| **ENV** | `ALCHEMY_POLYGON_RPC_URL`, `ORACLE_PRIVATE_KEY`, `CARBON_COIN_CONTRACT_ADDRESS`, `PROTOCOL_PARAMETERS_CONTRACT_ADDRESS` |
+| **ENV** | `ALCHEMY_POLYGON_RPC_URL`, `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY` (обидва fallback на `ORACLE_PRIVATE_KEY`; [E.2] розділені ключі mint/slash, blast-radius), `ORACLE_PRIVATE_KEY` (Chainlink-dispatch), `CARBON_COIN_CONTRACT_ADDRESS`, `PROTOCOL_PARAMETERS_CONTRACT_ADDRESS` |
 | **Спеки** | `spec/services/blockchain_minting_service_spec.rb`, `spec/services/blockchain_burning_service_spec.rb`, `spec/services/chain_audit_service_spec.rb`, `spec/services/price_oracle_service_spec.rb`, `spec/services/minting_rollback_service_spec.rb`, `spec/workers/governance/parameter_sync_worker_spec.rb` |
 
 **Governance DAO (✅ ARCH.4):**

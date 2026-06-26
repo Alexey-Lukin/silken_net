@@ -69,7 +69,7 @@
 | Secure Element part (SE050) + slot-map | `03_05 §3.7` (SE = **SE050**; AES-128 = вибір, не SE-constraint; slot-map; ladder → `05_02`). Міграція — `00_07` SE050-MIGRATION |
 | L1 QATT batch-конверт (wire + повідомлення підпису + anti-replay) | `03_05 §2.2` (firmware-дзеркало розкладки: `firmware/common/queen_attest.h`; ladder-статус → `05_02`). Інші доки реферять, не дублюють формат |
 | Lorenz константи | `03_04 §4.1` |
-| Tokenomics rate / slashing thresholds / insurance pool | `05_03` · `05_05 §3/§4` |
+| Tokenomics rate / slashing thresholds / insurance pool / **Dynamic Tax** (ставка+поріг, S6.17 — governance-aware via `SystemParameter` ← `ProtocolParameters.sol`) | `05_03` · `05_05 §3/§4` |
 | Carbon (2000 SCC = 1 tCO₂) | `05_03` + `07_01 §3` (business view) |
 | Financial constants (business) | `07_01 §3` (з рефами на 05_03/00_01) |
 | **Cost-домен — spec-at-source → aggregate-in-07_02 → price.** Component-spec (моделі + per-unit $) живе у технічному домі підсистеми; 07_02 АГРЕГУЄ (rollup→CAPEX→OPEX→ROI) через реф, не дублює spec; ціна — tokenomics | ⬇ розклад нижче |

@@ -44,7 +44,8 @@
 ## 💡 Огляд
 
 "Proof of Growth" — це trustless консенсусний пайплайн SilkenNet, що перетворює
-фізичні біосигнали дерева (Lorenz Z-координата гомеостазу) на верифіковані
+фізичні біосигнали дерева (Lorenz Z як DCI/anti-fraud сигнал; гомеостаз —
+недоведена гіпотеза, ⚠️ §Мета) на верифіковані
 on-chain активи (SilkenCarbonCoin / SCC). Пайплайн складається з двох
 взаємопов'язаних частин:
 
@@ -59,7 +60,7 @@ on-chain активи (SilkenCarbonCoin / SCC). Пайплайн складає�
 tree.peaq_did ≠ nil                        ← peaq Machine Identity
   && telemetry_log.verified_by_iotex       ← IoTeX W3bstream ZK-proof
     && telemetry_log.zk_proof_ref ≠ nil
-      && telemetry_log.oracle_status == "fulfilled"  ← Chainlink DON consensus
+      && telemetry_log.oracle_status_fulfilled?      ← Chainlink DON consensus
         → blockchain_transaction.status == :sent     ← Polygon EVM mint
           → solana micro-reward sent                 ← Solana SPL reward
 ```
@@ -186,7 +187,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║    └──► SolanaMicroRewardWorker.perform_async (Solana USDC)         ║
 ║                                                                      ║
 ║  ─────────── КРОК E: BlockchainMintingService (EVM) ─────────────── ║
-║    Guard: verified_by_iotex? && oracle_status=="fulfilled"           ║
+║    Guard: verified_by_iotex? && oracle_status_fulfilled?             ║
 ║    Guard: wallet.hadron_kyc_status == "approved"                     ║
 ║    [batchMint path]:                                                 ║
 ║      eth_call dry-run → batch_dry_run_reverts?                       ║
@@ -198,7 +199,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║    → BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)   ║
 ║                                                                      ║
 ║  ─────────── КРОК F: Solana Micro-Reward (паралельно) ────────────── ║
-║    Guard: verified_by_iotex? && oracle_status=="fulfilled"           ║
+║    Guard: verified_by_iotex? && oracle_status_fulfilled?             ║
 ║    POST {SOLANA_RPC_URL} sendTransaction (Ed25519-signed, base64)    ║
 ║    SPL Token Program: TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA  ║
 ╚══════════════════════════════════════════════════════════════════════╝
@@ -805,7 +806,7 @@ total = base + bonus    # max: 10_000 + 62×100 = 16_200 lamports = 0.0162 USDC
                        directly, NOT lock_and_mint!)
 ```
 
-> **[SEC.13] `peaq_did_compromised` mint-skip** (cross-path guard у `BlockchainMintingService`, після `lock_and_mint!`): дерево з `tree.peaq_did_compromised?` **пропускається** (SKIP, не raise — одне скомпрометоване дерево не зриває весь батч; решта мінтиться) перед on-chain mint. Підроблений peaq signing-key міг би замінтити для фейкового DID. Застосовується до Path 1 + Path 2 (обидва через `BlockchainMintingService`); дім revocation-runbook — `06_04 §5.4`.
+> **[SEC.13] `peaq_did_compromised` mint-skip** (cross-path guard у `BlockchainMintingService`, після `lock_and_mint!`): дерево з `tree.peaq_did_compromised?` **пропускається** (SKIP, не raise — одне скомпрометоване дерево не зриває весь батч; решта мінтиться) перед on-chain mint. Підроблений peaq signing-key міг би замінтити для фейкового DID. Застосовується до Path 1 + Path 2 (обидва через `BlockchainMintingService`); дім revocation-runbook — [`06_04 §5.4`](06_04_Secrets_Checklist).
 
 ### Інваріанти для всіх шляхів
 
