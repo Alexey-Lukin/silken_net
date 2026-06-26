@@ -215,11 +215,11 @@ jobs:
 - **Job 2: Slither Static Analysis** (`slither`, timeout: 10 хв):
   - Install Foundry + `npm ci` → `forge build --build-info` (компілюємо самі), далі `crytic/slither-action@v0.4.2` з `ignore-compile: true` — crytic читає Foundry build-info, а власний `forge install` екшена **не** запускається (deps з npm, не `lib/`-сабмодулі — рішення FW.47, [`03_01`](03_01_Firmware_Lifecycle_and_DMA))
   - `slither-config: contracts/slither.config.json` (фільтр `node_modules|test/` → аудит лише деплойних контрактів), solc (версія → [`05_03`](05_03_Tokenomics_SCC_and_SFC)), `fail-on: high`
-- **Job 3: Halmos Symbolic Proofs** (`halmos`, timeout: 30 хв, non-gating до tune):
+- **Job 3: Halmos Symbolic Proofs** (`halmos`, timeout: 30 хв, **gating**):
   - `setup-python` (3.13) + `pip install --require-hashes -r requirements-halmos.txt` (hash-pinned) → `halmos --function "^check_" --solver-threads 1 --loop 3` — symbolic proof-и money-path інваріантів (`test/symbolic/*`; symbolic params + `vm.assume`, без halmos-cheatcodes) — доводить cap / last-admin / pause-allows-slash symbolically (не семпл)
 - **Job 4: Aderyn Static Analysis** (`aderyn`, timeout: 10 хв) — 2-й static-прохід, комплементарний до Slither:
   - `npm ci` (OZ remappings) → aderyn **release-бінарник із sha256-verify** (не npm-global) → `aderyn .` (JSON-gate на high + SARIF → GitHub Security tab через `upload-sarif`); foundry-native (читає `foundry.toml` solc/cancun), `aderyn.toml` фільтрує `node_modules|test|lib` + виключає 6 by-design low-детекторів (centralization-risk / costly-loop / require-in-loop / large-literal / unchecked-return-in-ctor / OZ-ctor-shadow — архітектурні false-positive на AccessControl+Governor+batch). 2 fixable low-notes пофіксено **в коді** (magic-256 → `MAX_STRING_BYTES`; `nonReentrant`-first modifier order)
-- **Job 5: Medusa Property Fuzzing** (`medusa`, timeout: 15 хв, non-gating до tune):
+- **Job 5: Medusa Property Fuzzing** (`medusa`, timeout: 15 хв, **gating**):
   - `pip install --require-hashes -r requirements-crytic.txt` (hash-pinned) + medusa binary → `medusa fuzz --config medusa-{scc,sfc}.json` (`test/medusa/*`); **single-file target** тримає crytic-compile поза forge-std (його `LibVariable` ABI crytic-compile не парсить), corpus persist у `actions/cache`
 - **Конфігурація Foundry** (`contracts/foundry.toml`):
   - solc (версія → [`05_03`](05_03_Tokenomics_SCC_and_SFC)), EVM cancun, optimizer 200 runs (default), 1000 runs (production profile)

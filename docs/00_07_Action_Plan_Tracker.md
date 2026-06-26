@@ -757,9 +757,8 @@
 - [ ] 🔗 B (на FW.2) — точний stateless GP↔delta_t recompute (wire=raw delta_t, GP=EMA device-RTC; wire-rev2 28B не додав EMA-delta_t → rev3-кандидат у wire-budget ledger [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)) — механіка [`03_01 §13.6`](03_01_Firmware_Lifecycle_and_DMA)
 
 #### E.32 — Smart Contract Audit (pre-mainnet security gate)
-- **P1** · 🤖+👤 · 🟡 · → `05_03`
-- **Стан:** Automated-леги закрито (CI-green) — `solidity_audit.yml`: static (Slither + Aderyn, gate на high) · symbolic (Halmos, `test/symbolic/`) · property-fuzz (Medusa + Foundry invariant, `test/medusa/`); scope 6 deployable контрактів; Mythril знято (занедбаний/без cancun → Halmos foundry-native). Roadmap [`05_03`](05_03_Tokenomics_SCC_and_SFC); CI-інвентар [`06_07 §1`](06_07_CICD_and_Runbook_Index). Відкрите ↓.
-- [ ] 🤖 promote Halmos/Medusa `continue-on-error:false` (gating) після кількох зелених CI-прогонів
+- **P1** · 👤 · 🟢 · → `05_03`
+- **Стан:** Automated-аудит повністю **gating** (CI-green) — `solidity_audit.yml`: static (Slither + Aderyn) · symbolic (Halmos, `test/symbolic/`) · property-fuzz (Medusa + Foundry invariant, `test/medusa/`), усі fail-on; scope 6 deployable контрактів; Mythril знято (→ Halmos foundry-native). Roadmap [`05_03`](05_03_Tokenomics_SCC_and_SFC); CI-інвентар [`06_07 §1`](06_07_CICD_and_Runbook_Index). Лишається paid manual + runtime audit (👤) ↓.
 - [ ] 👤 Hacken/Hashlock manual audit (платний) — pre-Amoy→Mainnet HARD gate
 - [ ] 👤 CertiK Skynet runtime monitoring — post-mainnet deploy
 

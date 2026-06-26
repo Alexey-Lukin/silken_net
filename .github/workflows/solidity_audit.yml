@@ -116,8 +116,6 @@ jobs:
     name: Halmos Symbolic Proofs
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Non-gating until the check_ baselines are tuned across a few runs (then drop this).
-    continue-on-error: true
 
     defaults:
       run:
@@ -213,8 +211,6 @@ jobs:
     name: Medusa Property Fuzzing
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # Non-gating until the campaign budget is tuned across a few runs (then drop this).
-    continue-on-error: true
 
     defaults:
       run:

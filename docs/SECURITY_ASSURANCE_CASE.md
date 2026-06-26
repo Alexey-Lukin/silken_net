@@ -220,7 +220,7 @@ The claims above are backed by enforced, automated evidence — not by assertion
   **AddressSanitizer + UndefinedBehaviorSanitizer** on every CI run.
 - **Static analysis (SAST).** Brakeman (Rails), Slither + Aderyn (Solidity), CodeQL (6 languages), cppcheck (MISRA) —
   all gating CI. **Halmos** symbolic proofs (`test/symbolic/`) and **Foundry + Medusa** property-fuzzing
-  (`test/invariant/`, `test/medusa/`) add depth on the token/governance contracts (advisory / non-gating until tuned).
+  (`test/invariant/`, `test/medusa/`) add depth on the token/governance contracts — all gating in CI.
 - **Composition analysis (SCA).** Dependabot (weekly), bundler-audit (every CI), OpenSSF Scorecard (weekly).
 - **Supply chain.** Sigstore-signed SLSA build-provenance on the released container — verifiable per
   `SECURITY.md` ("Verifying release artifacts").
