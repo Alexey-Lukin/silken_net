@@ -6,7 +6,7 @@
 
 **Правило одного місця (DRY):** редагуєш канон → онови залежні пункти 00_07 (за рефами); закрив пункт → онови канон + познач тут (✅ → **§🗄️ Архів**, вказівник ID→канон). Так апдейт робиться в одному місці, а референси ведуть, де ще синхронізувати.
 
-**Структура:** **🚦 Critical Path** (P0-гейти перед мілстоунами) → **§00–§08 модуль-секції** (реєстр незробленого; **номер секції = канон-модуль першого рефа** — enforced `tracker:check` section-home guard; великий модуль → під-секції **`§NNa/b/c`** того ж модуля, курація за під-темою — §01a Anchor / §01b EBFC, §02a Node / §02b Gateway, §08a/b/c; **`§NN/§MM`** (§03/§05) = реально крос-модульна) → **🔀 Cross-cutting** / **📌 Backlog** → **🗄️ Архів**. Документ — живий операційний інструмент.
+**Структура:** **🚦 Critical Path** (P0-гейти перед мілстоунами) → **§00–§08 модуль-секції** (реєстр незробленого; **номер секції = канон-модуль першого рефа** — enforced `tracker:check` section-home guard; великий модуль → під-секції **`§NNa/b/c`** того ж модуля, курація за під-темою — §01a Anchor / §01b EBFC, §02a Node / §02b Gateway, §03a Firmware / §03b Edge-crypto, §08a/b/c) → **🔀 Cross-cutting** / **📌 Backlog** → **🗄️ Архів**. Документ — живий операційний інструмент.
 
 ---
 
@@ -32,8 +32,8 @@
 - [§01b · EBFC — Chemistry & Bio-electrochemistry](#01b--ebfc--chemistry--bio-electrochemistry)
 - [§02a · Node — Capsule & Electronics](#02a--node--capsule--electronics)
 - [§02b · Gateway — Queen Hardware](#02b--gateway--queen-hardware)
-- [§03 · Firmware](#03--firmware)
-- [§03/§05 · Безпека (Edge crypto + Web3)](#0305--безпека-edge-crypto--web3)
+- [§03a · Firmware](#03a--firmware)
+- [§03b · Edge crypto](#03b--edge-crypto)
 - [§04 · Backend / API / UI](#04--backend--api--ui)
 - [§05 · Web3 / Економіка / Slashing](#05--web3--економіка--slashing)
 - [§06 · Deploy / Observability / Secrets / Ops](#06--deploy--observability--secrets--ops)
@@ -499,7 +499,7 @@
 - [ ] 🤖 Оновити 03_02 з рішенням
 - [ ] 🔗 Додати co-processor firmware до `firmware/`
 
-## §03 · Firmware
+## §03a · Firmware
 
 #### FW.2 — AES-128-ECB → AES-128-CCM (28B packet, wire-rev2) [post-ARCH.42]
 - **P0** · 👤 · 🟢 · → `03_05 §2.1`
@@ -634,13 +634,7 @@
 - [ ] 👤 bench: HAL_FLASH glue + ECCD-політика + вимір 300nA + persist-roundtrip
 - [ ] 🔗 SEC.3: завести `DidDerivation.wire_did` у фабричний транскрипт (UID по SWD → Tree+K_seed до прошивки)
 
-## §03/§05 · Безпека (Edge crypto + Web3)
-
-#### SEC.1 — Multisig Gnosis Safe + PAUSER⊥admin split (production admin role)
-- **P0** · 👤 · 🟢 · → [`05_03` — Admin-Role Split](05_03_Tokenomics_SCC_and_SFC)
-- **Стан:** Code-complete + verified (`Deploy.t.sol` пінить матрицю ролей + закритий bypass); **нічого не задеплоєно**. Кожен economic-vector admin (SCC/SFC токени + `ProtocolParameters` + `StateRootAnchor`) = `SilkenTimelock` 48h; `pause`/`unpause`=Gnosis Safe (миттєво) — єдине правило «admin=Timelock, окрім pause». Закрито: instant-`grantRole(MINTER)` + Safe-`grantRole(GOVERNANCE_ROLE,self)`-bypass ([E.35]); `REQUIRE_SAFE_ADMIN` + last-admin guards. forge build/test/fmt зелені. Канон [`05_03` — Admin-Role Split](05_03_Tokenomics_SCC_and_SFC) (+ StateRootAnchor [`05_04`](05_04_Ethereum_L1_State_Anchor)).
-- [ ] 👤 створити Gnosis Safe (3/5|2/3) на Polygon + деплой з `ADMIN_ADDRESS=<Safe>` `REQUIRE_SAFE_ADMIN=true`
-- [ ] 👤 реальні зовнішні co-signer'и Safe — solo-founder: усі ключі в однієї особи = театр (HW-wallet'и + social recovery); renounce Timelock-admin + Safe-PROPOSER→`address(0)` post-DAO
+## §03b · Edge crypto
 
 #### SEC.3 — Factory Flashing pipeline
 - **P0** · 👤 · 🟡 · → [`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning)
@@ -739,6 +733,12 @@
 - [ ] 🤖 (secondary) Field-Audit alert-дедуп: freeze/blackout/slash-failure пишуть cluster-level `system_fault` щоденно при тривалій деградації → потрібен окремий `field_audit` alert_type / dedup-ключ (інакше дедуп конфлатить/маскує сигнали)
 - [ ] 🤖 (backlog) A/B-координація: slash (A) і `ParametricInsurance#evaluate_daily_health!` (B) читають ту саму stress-дату → кандидат на спільний `DailyHealthRouter` (DRY, `04_02 §11`)
 
+#### SEC.1 — Multisig Gnosis Safe + PAUSER⊥admin split (production admin role)
+- **P0** · 👤 · 🟢 · → [`05_03` — Admin-Role Split](05_03_Tokenomics_SCC_and_SFC)
+- **Стан:** Code-complete + verified (`Deploy.t.sol` пінить матрицю ролей + закритий bypass); **нічого не задеплоєно**. Кожен economic-vector admin (SCC/SFC токени + `ProtocolParameters` + `StateRootAnchor`) = `SilkenTimelock` 48h; `pause`/`unpause`=Gnosis Safe (миттєво) — єдине правило «admin=Timelock, окрім pause». Закрито: instant-`grantRole(MINTER)` + Safe-`grantRole(GOVERNANCE_ROLE,self)`-bypass ([E.35]); `REQUIRE_SAFE_ADMIN` + last-admin guards. forge build/test/fmt зелені. Канон [`05_03` — Admin-Role Split](05_03_Tokenomics_SCC_and_SFC) (+ StateRootAnchor [`05_04`](05_04_Ethereum_L1_State_Anchor)).
+- [ ] 👤 створити Gnosis Safe (3/5|2/3) на Polygon + деплой з `ADMIN_ADDRESS=<Safe>` `REQUIRE_SAFE_ADMIN=true`
+- [ ] 👤 реальні зовнішні co-signer'и Safe — solo-founder: усі ключі в однієї особи = театр (HW-wallet'и + social recovery); renounce Timelock-admin + Safe-PROPOSER→`address(0)` post-DAO
+
 #### S3.2 — dClimate Real API verification
 - **P1** · 👤 · 🟢 · → `05_01`
 - **Стан:** Реалізовано — `Dclimate::VerificationService` (NASA FIRMS, FRP≥10MW, cloud fallback) + `DclimateVerificationWorker`. Лишається verify з реальним API key у staging. Канон `05_01`.
@@ -791,7 +791,7 @@
 - [ ] 👤 доля `finalize_spend!` (dead): видалити (Ruthless Prune, [`04_06 §B.2`](04_06_Testing_Guide_and_Coverage)) чи лишити з `[target]`-marker для майбутнього confirm-finalize
 
 #### ARCH.45 — Money-path crash-window idempotency (intent-marker + in-flight guard)
-- **P2** · 🤖+👤 · 🟢 · → [`05_02`](05_02_Proof_of_Growth_Pipeline)
+- **P2** · 🤖 · 🟢 · → [`05_02`](05_02_Proof_of_Growth_Pipeline)
 - **Стан:** Закрито — code + observability + canon + adversarial code-review hardening. **Аудит перевизначив проблему:** pending-tx stranding самозагоюється через cron (`mint_batch_collector` / `insurance_payout_recovery` / `tokenomics`), тож blanket `retries_exhausted`-handler НЕ потрібен; справжня діра — idempotency на **on-chain↔DB crash-window**, де cron-self-heal сам стає механізмом подвійної дії. 3 діри закрито durable intent-marker + in-flight reconcile guard (`in_flight` для burn / `unsettled_within` для Solana+Etherisc — дзеркало EthereumAnchor DOUBLE-ANCHOR): **Solana batch double-pay** (signature до broadcast + reconcile + confirm-gated Kredis-settle; `:not_found`→`manual_review` проти RPC-лаг re-pay), **burn double-burn** (intent перед slash ПІСЛЯ positive-A gate, не для freeze; ConfirmationWorker до breach), **Etherisc double-claim** (recovery `:pending`→`manual_review`, явний live-tx lookup). + observability: slash/payout success-rate SLO counters + `sidekiq_dead_set_size` gauge + Grafana DeadSet alert. `EvaluateTreeBatch` / `TokenomicsEvaluator` / `MintBatchCollector` — idempotent-safe / cron-recovered (підтверджено, без змін). **Policy (👤 DECIDED):** reconcile/escalate, НЕ re-attempt-наосліп; повний scope (code + observability + canon). Канон [`04_02 §4/§10`](04_02_Business_Logic_and_Services) · [`05_02`](05_02_Proof_of_Growth_Pipeline) · [`06_03 §2.3`](06_03_Prometheus_Observability).
 - [ ] 🤖 (nice-to-have) точніша Etherisc DIP claim-status звірка (`getClaim` ABI) замість conservative recovery-`manual_review`; ToucanBridge idempotency → E.66 (окремий трекер).
 - [ ] 🤖 (nice-to-have) EVM-mint `:processing`-orphan reconcile: non-StandardError крах між `transact("mint")` і `mark_as_sent` лишає tx у `:processing` (on-chain minted, DB ніколи не `:confirmed`). Double-mint **неможливий** — усі mint-шляхи (`MintBatchCollector`/`MintCarbonCoinWorker`) фільтрують `status: :pending`, а orphan застрягає в `:processing` → ніхто його не re-mint-ить; тому це reconciliation/observability-залишок, НЕ втрата коштів (на відміну від burn, де intent-marker закриває вікно). Дзеркало Etherisc `getClaim`-звірки.
@@ -805,7 +805,8 @@
 #### ARCH.47 — Kredis oracle lock-collision (mint↔slash) при спільному fallback-ключі
 - **P3** · 🤖+👤 · ⚪ · → [`05_02`](05_02_Proof_of_Growth_Pipeline)
 - **Стан:** Знахідка (verified F1+F2) — lock-ключі мінту й слешу колізять при спільному fallback. `BlockchainMintingService` бере `lock:web3:oracle:#{addr}` (`addr` = `ORACLE_MINTER_PRIVATE_KEY`, fallback `ORACLE_PRIVATE_KEY`; expires 120s); `BlockchainBurningService` — той самий патерн з `ORACLE_SLASHER_PRIVATE_KEY` (fallback `ORACLE_PRIVATE_KEY`; 30s). Обидва ключі відсутні → однакова адреса → ОДНАКОВИЙ lock-key → конкурентний mint (120s) блокує slash (`after_timeout: :raise` через 30s → retry/backoff) і навпаки. НЕ deadlock (один Redis-lock, без вкладеності); bounded liveness (slash затримується ≤120s, recover через Sidekiq retry), але race-вікно проти investor-withdrawal у time-sensitive слешингу. Prod із розділеними ключами (E.2) колізії НЕМАЄ — self-resolving провіжном обох ключів ([INF.19] / [S1.1]).
-- [ ] 👤 deploy-чеклист (вже в обсязі [INF.19]/[S1.1]): `ORACLE_MINTER_PRIVATE_KEY` ≠ `ORACLE_SLASHER_PRIVATE_KEY` перед prod; опц. boot-guard fail-fast при відсутності одного під `WEB3_STRICT_MODE`.
+- [ ] 👤 deploy-чеклист (вже в обсязі [INF.19]/[S1.1]): `ORACLE_MINTER_PRIVATE_KEY` ≠ `ORACLE_SLASHER_PRIVATE_KEY` перед prod
+- [ ] 🤖 (опц.) boot-guard fail-fast при відсутності/збігу oracle-ключів під `WEB3_STRICT_MODE`
 
 #### ARCH.13 — EigenLayer AVS як дешевша L1-anchor альтернатива
 - **P3** · 🤖 · 🌿 · → `05_04`

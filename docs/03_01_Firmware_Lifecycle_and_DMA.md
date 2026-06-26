@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — увесь C-код Soldier+Queen реалізований, host-based тести зелені (`make -C firmware/test`). Відкриті обмеження (чому не вище): async UART DMA flush (`FW.3` AT-blind), key-rotation (`FW.17`), RDP-2 (`SEC.2`) — реєстр у [`00_07 §03`](00_07_Action_Plan_Tracker)
+- **Поточний TRL:** TRL 6 — увесь C-код Soldier+Queen реалізований, host-based тести зелені (`make -C firmware/test`). Відкриті обмеження (чому не вище): async UART DMA flush (`FW.3` AT-blind), key-rotation (`FW.17`), RDP-2 (`SEC.2`) — реєстр у [`00_07 §03a`](00_07_Action_Plan_Tracker)
 
 ---
 
@@ -1110,7 +1110,7 @@ HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
 |----------|--------|-----|
 | `OnRxDone(payload, size, rssi, snr)` | LoRa RX (рівно 16 байт) | RSSI clamp → `LoRa_Rx_Ring_Push` (FIFO 15-slot, FW.3) → лічильник `lora_rx_drops` при переповненні |
 
-Queen не має PVD, EXTI, DMA або IWDG ISR. Мінімальний ISR-footprint + **single-producer ring buffer** дозволяють Queen залишатися "завжди активною" без race conditions і без втрати голосів рою під час 25-секундного CoAP-flush'у (FW.3 — закрито архітектурно host-рівнем: ring buffer + circular-DMA RX; silicon-bench residual → [`00_07 §03`](00_07_Action_Plan_Tracker)).
+Queen не має PVD, EXTI, DMA або IWDG ISR. Мінімальний ISR-footprint + **single-producer ring buffer** дозволяють Queen залишатися "завжди активною" без race conditions і без втрати голосів рою під час 25-секундного CoAP-flush'у (FW.3 — закрито архітектурно host-рівнем: ring buffer + circular-DMA RX; silicon-bench residual → [`00_07 §03a`](00_07_Action_Plan_Tracker)).
 
 ---
 

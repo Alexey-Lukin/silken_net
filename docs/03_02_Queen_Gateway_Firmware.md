@@ -12,7 +12,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — C-код шлюзу написаний, host-based тести зелені (`make -C firmware/test queen`). Відкрите: FW.3 silicon-bench (AT/UART DMA RX закрито host-рівнем) → [`00_07 §03`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 6 — C-код шлюзу написаний, host-based тести зелені (`make -C firmware/test queen`). Відкрите: FW.3 silicon-bench (AT/UART DMA RX закрито host-рівнем) → [`00_07 §03a`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -935,7 +935,7 @@ Soldier — gossip-uplift (3-hop reach)
 - **Hot-path виклик** `Soldier_Pack_Gossip_Ts_Byte` у Phase 2 normal-telemetry pack + RX-обробник для прийому. (Дім у CCM-кадрі вже зарезервовано — AAD byte 4, wire-rev2: gossip переживає per-Soldier ключі; CCM-фліп вшиває pack-половину автоматично через параметр `Soldier_Build_CCM_LoRa_Packet`)
 - **Drift compensation** при ΔT = ±60°C lab-вимірювання (потребує термокамери, відсутня @ TRL-6)
 
-> **Закриття 00_07:** після цього хабу записи `FW.20`, `FW.20-S2 (1/5..5/5)` у [`00_07 §03`](00_07_Action_Plan_Tracker#03--firmware) шорткозамкнено — лишилося лише посилання сюди для аудиту прогресу.
+> **Закриття 00_07:** після цього хабу записи `FW.20`, `FW.20-S2 (1/5..5/5)` у [`00_07 §03a`](00_07_Action_Plan_Tracker#03a--firmware) шорткозамкнено — лишилося лише посилання сюди для аудиту прогресу.
 
 ---
 
