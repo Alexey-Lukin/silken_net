@@ -18,7 +18,9 @@
 
 | Ресурс | Опис |
 |--------|------|
+| [`05_01` — Multichain Architecture](05_01_Multichain_Architecture) | Де governance-контракти живуть у 12-chain стеку |
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | SFC `ERC20Votes`/`ERC20Permit` база; SCC/SFC контракти |
+| [`05_04` — Ethereum L1 State Anchor](05_04_Ethereum_L1_State_Anchor) | Timelock керує `ANCHOR_ROLE`-ротацією (admin=Timelock) |
 | [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) | Slashing DAO peer-review (категорія C) користується цим governance |
 | [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz σ/ρ/β — governance-керовані параметри (per-climate-zone) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `SystemParameter` model, `Governance::ParameterSyncWorker` |

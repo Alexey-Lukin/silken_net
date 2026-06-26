@@ -21,6 +21,8 @@
 | [`05_01` — Multichain Architecture](05_01_Multichain_Architecture) | Мультичейн (L1 у стеку фіналізації) |
 | [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Pipeline (джерело state даних) |
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (total_scc/total_sfc у root) |
+| [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) | Slashing/burn змінює total_supply між anchor-вікнами |
+| [`05_06` — Governance and DAO](05_06_Governance_and_DAO) | Timelock керує `ANCHOR_ROLE`-ротацією (admin=Timelock) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (Mainnet deploy, gas) |
 
 ## 📑 Зміст

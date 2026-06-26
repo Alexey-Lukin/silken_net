@@ -20,6 +20,8 @@
 | [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof of Growth (consensus, верифікація) |
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (SCC/SFC контракти) |
 | [`05_04` — Ethereum L1 State Anchor](05_04_Ethereum_L1_State_Anchor) | Ethereum L1 фіналізація (state root) |
+| [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) | Slashing/burn-політика (що тригерить вилучення SCC) |
+| [`05_06` — Governance and DAO](05_06_Governance_and_DAO) | DAO governance (Governor/Timelock у стеку контрактів) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Chain-сервіси (`Blockchain::Orchestrator`) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (S3.2 dClimate real-API, DR §8) |
 
@@ -276,10 +278,10 @@ type SlashingEvent @entity { ... }
 
 **Guard Clauses (BlockchainMintingService):**
 1. `verified_by_iotex? == true` — ZK-proof з IoTeX
-2. `oracle_status == "fulfilled"` — Chainlink Oracle підтвердив
+2. `oracle_status_fulfilled?` (enum method, prefix) — Chainlink Oracle підтвердив
 3. `hadron_kyc_status == "approved"` — KYC пройдено (для інституційних інвесторів)
-4. Oracle balance ≥ `0.05 MATIC` — достатньо газу
-5. Kredis distributed lock (30s expiration) — запобігає подвійному мінтингу
+4. Oracle balance ≥ `0.05 MATIC` (default; `oracle_min_balance_matic` — governance-aware [E.51]) — достатньо газу
+5. Kredis distributed lock (**120s** expiration — покриває dry-run + binary-search worst-case ~130s, [S6.5]) — запобігає подвійному мінтингу
 
 **HYBRID PROTOCOL GAIA:** 2% Dynamic Tax на carbon\_coin мінтинг, коли insurance pool потребує поповнення (розділяє recipients між forester та DAO Treasury).
 
@@ -543,7 +545,7 @@ TokenomicsEvaluatorWorker (щогодини, cron: 0 * * * *)
 |----------|----------|
 | **Файл** | `contracts/SilkenCarbonCoin.sol` |
 | **Стандарт** | ERC-20 + `AccessControl` + `Pausable` + `ERC20Permit` |
-| **Ролі** | `DEFAULT_ADMIN_ROLE`, `MINTER_ROLE`, `SLASHER_ROLE` |
+| **Ролі** | `DEFAULT_ADMIN_ROLE`, `MINTER_ROLE`, `SLASHER_ROLE`, `PAUSER_ROLE` (SEC.1 — повна таблиця [`05_03`](05_03_Tokenomics_SCC_and_SFC)) |
 
 **Ключові функції:**
 - `mint(address to, uint256 amount, string memory treeDid)` — Базовий мінтинг. Емітує `CarbonMinted`.
@@ -559,7 +561,7 @@ TokenomicsEvaluatorWorker (щогодини, cron: 0 * * * *)
 |----------|----------|
 | **Файл** | `contracts/SilkenForestCoin.sol` |
 | **Стандарт** | ERC-20 + `AccessControl` + `Pausable` + `ERC20Permit` + `ERC20Votes` |
-| **Ролі** | `DEFAULT_ADMIN_ROLE`, `MINTER_ROLE` |
+| **Ролі** | `DEFAULT_ADMIN_ROLE`, `MINTER_ROLE`, `SLASHER_ROLE`, `PAUSER_ROLE` (SEC.1 — повна таблиця [`05_03`](05_03_Tokenomics_SCC_and_SFC)) |
 
 **Ключові функції:**
 - `mint(address to, uint256 amount, string memory clusterId)` — Мінтинг з прив'язкою до кластера.

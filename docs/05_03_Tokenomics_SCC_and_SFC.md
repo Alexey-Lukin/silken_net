@@ -555,7 +555,7 @@ Telemetry → Lorenz Z-value → growth_points++
                                     ↓
                     BlockchainMintingService#perform
                     ├── Oracle balance ≥ 0.05 MATIC
-                    ├── Kredis lock (30s) — запобігає подвійному мінтингу
+                    ├── Kredis lock (120s) — запобігає подвійному мінтингу
                     ├── Dynamic Tax: 2% до DAO_TREASURY (якщо batchMint + insurance_pool_requires_funding?)
                     └── [batchMint] eth_call dry-run (batch_dry_run_reverts?)
                          ├── ok  → batchMint() — атомарна пакетна емісія

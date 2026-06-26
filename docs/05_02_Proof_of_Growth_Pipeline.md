@@ -805,6 +805,8 @@ total = base + bonus    # max: 10_000 + 62×100 = 16_200 lamports = 0.0162 USDC
                        directly, NOT lock_and_mint!)
 ```
 
+> **[SEC.13] `peaq_did_compromised` mint-skip** (cross-path guard у `BlockchainMintingService`, після `lock_and_mint!`): дерево з `tree.peaq_did_compromised?` **пропускається** (SKIP, не raise — одне скомпрометоване дерево не зриває весь батч; решта мінтиться) перед on-chain mint. Підроблений peaq signing-key міг би замінтити для фейкового DID. Застосовується до Path 1 + Path 2 (обидва через `BlockchainMintingService`); дім revocation-runbook — `06_04 §5.4`.
+
 ### Інваріанти для всіх шляхів
 
 | Інваріант | Path 1 | Path 2 | Path 3 | Path 5 | Контроль |
@@ -869,7 +871,9 @@ blockchain_transactions
 | `credentials.iotex_api_key` | `Iotex::W3bstreamVerificationService` | ✅ Так |
 | `ENV["CHAINLINK_FUNCTIONS_ROUTER"]` | `Chainlink::OracleDispatchService` | ⚠️ PROD only |
 | `ENV["CHAINLINK_SUBSCRIPTION_ID"]` | `Chainlink::OracleDispatchService` | ⚠️ PROD only |
-| `ENV["ORACLE_PRIVATE_KEY"]` | Chainlink dispatch + BlockchainMintingService | ✅ Так |
+| `ENV["ORACLE_MINTER_PRIVATE_KEY"]` | `BlockchainMintingService` (MINTER_ROLE, [E.2]) | ✅ Так (fallback → `ORACLE_PRIVATE_KEY`) |
+| `ENV["ORACLE_SLASHER_PRIVATE_KEY"]` | `BlockchainBurningService` (SLASHER_ROLE, [E.2] — окремий ключ, blast-radius) | ✅ Так (fallback → `ORACLE_PRIVATE_KEY`) |
+| `ENV["ORACLE_PRIVATE_KEY"]` | Chainlink dispatch + backward-compat fallback для MINTER/SLASHER | ✅ Так |
 | `ENV["ALCHEMY_POLYGON_RPC_URL"]` | `Web3::RpcConnectionPool` | ✅ Так |
 | `ENV["CARBON_COIN_CONTRACT_ADDRESS"]` | `BlockchainMintingService` | ✅ Так |
 | `ENV["FOREST_COIN_CONTRACT_ADDRESS"]` | `BlockchainMintingService` | ✅ Так |

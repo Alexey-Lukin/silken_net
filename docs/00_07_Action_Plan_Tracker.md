@@ -758,7 +758,7 @@
 
 #### E.32 — Smart Contract Audit (pre-mainnet security gate)
 - **P1** · 👤 · 🟢 · → `05_03`
-- **Стан:** Automated-аудит повністю **gating** (CI-green) — `solidity_audit.yml`: static (Slither + Aderyn) · symbolic (Halmos, `test/symbolic/`) · property-fuzz (Medusa + Foundry invariant, `test/medusa/`), усі fail-on; scope 6 deployable контрактів; Mythril знято (→ Halmos foundry-native). Roadmap [`05_03`](05_03_Tokenomics_SCC_and_SFC); CI-інвентар [`06_07 §1`](06_07_CICD_and_Runbook_Index). Лишається paid manual + runtime audit (👤) ↓.
+- **Стан:** Automated-аудит повністю **gating** (CI-green) — `solidity_audit.yml`: static (Slither + Aderyn) · symbolic (Halmos, `test/symbolic/`) · property-fuzz (Medusa `test/medusa/` + Foundry invariant `test/invariant/`), усі fail-on; scope 6 deployable контрактів; Mythril знято (→ Halmos foundry-native). Roadmap [`05_03`](05_03_Tokenomics_SCC_and_SFC); CI-інвентар [`06_07 §1`](06_07_CICD_and_Runbook_Index). Лишається paid manual + runtime audit (👤) ↓.
 - [ ] 👤 Hacken/Hashlock manual audit (платний) — pre-Amoy→Mainnet HARD gate
 - [ ] 👤 CertiK Skynet runtime monitoring — post-mainnet deploy
 
@@ -770,7 +770,7 @@
 
 #### BIZ.4 — DAO Governance mainnet-активація (SilkenGovernor + Timelock)
 - **P2** · 👤 · 🟢 · → `05_06`, `07_01`
-- **Стан:** Контракти + backend готові-інертно (`SilkenGovernor.sol` + `SilkenTimelock.sol` + `ProtocolParameters.sol` + `Governance::ParameterSyncWorker` + `SystemParameter`, Foundry+RSpec-покрито) — чекають mainnet go-live + передачу влади. Канон [`05_06`](05_06_Governance_and_DAO), [`07_01`](07_01_Nature_as_a_Service_Contracts).
+- **Стан:** Контракти + backend готові-інертно (`SilkenGovernor.sol` + `SilkenTimelock.sol` + `ProtocolParameters.sol` + `Governance::ParameterSyncWorker` — має активний daily cron, але self-skips без `PROTOCOL_PARAMETERS_CONTRACT_ADDRESS` → реально no-op до mainnet-деплою — + `SystemParameter`, Foundry+RSpec-покрито) — чекають mainnet go-live + передачу влади. Канон [`05_06`](05_06_Governance_and_DAO), [`07_01`](07_01_Nature_as_a_Service_Contracts).
 - [ ] 👤 mainnet deploy Governor/Timelock + Gnosis multisig council + transfer admin-ролей → Timelock (крім `pause`, E.2) + активація on-chain governance
 
 #### E.60 — Merkle CID-witness: Polygon ↔ Filecoin integrity bridge

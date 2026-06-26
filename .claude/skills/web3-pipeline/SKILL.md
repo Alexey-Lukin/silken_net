@@ -1,6 +1,6 @@
 ---
 name: web3-pipeline
-description: "Use when working on the silken_net Web3 / on-chain surface — the 12-chain Proof-of-Growth pipeline (app/services/ + workers): SCC/SFC Solidity contracts, batchMint + Binary-Search poisoned-record isolation, the BlockchainTransaction AASM (incl. manual_review double-spend guard), minting guard-clauses (IoTeX / Chainlink / Hadron KYC), Dynamic Tax, slashing / penalty-factor de-correlation, Solana micro-rewards (Ed25519, batch payouts), DAO / Governor / Timelock, WEB3_STRICT_MODE. Routes to CLAUDE.md §11 + the 05_01..05_06 canon (solc One-Home = 05_03), does not restate. Examples: \"add a chain integration\", \"change the minting threshold\", \"why is a tx stuck in manual_review\", \"batchMint reverts on dry-run\", \"edit the slashing penalty\", \"Solana reward formula / batch payout\"."
+description: "Use when working on the silken_net Web3 / on-chain surface — the 12-chain Proof-of-Growth pipeline (app/services/ + workers): SCC/SFC Solidity contracts, batchMint + Binary-Search poisoned-record isolation, the BlockchainTransaction AASM (incl. manual_review double-spend guard), minting guard-clauses (IoTeX / Chainlink / Hadron KYC), Dynamic Tax, slashing / penalty-factor de-correlation, Solana micro-rewards (Ed25519, batch payouts), DAO / Governor / Timelock, WEB3_STRICT_MODE. Routes to CLAUDE.md §1 (12-chain overview) + §6 (web3 gotchas) + the 05_01..05_06 canon (solc One-Home = 05_03), does not restate. Examples: \"add a chain integration\", \"change the minting threshold\", \"why is a tx stuck in manual_review\", \"batchMint reverts on dry-run\", \"edit the slashing penalty\", \"Solana reward formula / batch payout\"."
 ---
 
 # Web3 Pipeline
@@ -9,10 +9,10 @@ description: "Use when working on the silken_net Web3 / on-chain surface — the
 
 | Document | What it covers |
 |----------|---------------|
-| `CLAUDE.md §11` | 12-chain overview, guard clauses, batchMint, Solana |
-| `docs/05_01_Multichain_Architecture.md` | DePIN core/expansion stack, multichain rails, Solana, WEB3_STRICT_MODE (§10) |
-| `docs/05_02_Proof_of_Growth_Pipeline.md` | Minting sequence, oracle callbacks, Dynamic Tax |
-| `docs/05_03_Tokenomics_SCC_and_SFC.md` | Solidity contracts (SCC ERC-20, SFC), roles, batchMint |
+| `CLAUDE.md §1` + `§6` | 12-chain overview (§1); web3 gotchas (§6: manual_review, mint guards, partition-pruning) |
+| `docs/05_01_Multichain_Architecture.md` | DePIN core/expansion stack, multichain rails, Solana, WEB3_STRICT_MODE (§5 boot-guard + per-service cards) |
+| `docs/05_02_Proof_of_Growth_Pipeline.md` | Minting sequence, oracle callbacks, `[DOC.7]` guard inventory, trust-origin ladder L0/L1/L2 |
+| `docs/05_03_Tokenomics_SCC_and_SFC.md` | Solidity contracts (SCC ERC-20, SFC), roles, batchMint, **Dynamic Tax** (S6.17 governance-aware — home) |
 | `docs/05_04_Ethereum_L1_State_Anchor.md` | Weekly SHA-256 state-root → Ethereum L1; `StateRootAnchor` + the DOUBLE-ANCHOR intent-marker pattern that ARCH.45 idempotency reuses; ARCH.13 EigenLayer-AVS cost-opt |
 | `docs/05_05_Slashing_and_Risk_Policy.md` | Slashing/risk: cause A/B/C, positive-A evidence gate, convex penalty formula + `penalty_factor` de-correlation, insurance |
 | `docs/05_06_Governance_and_DAO.md` | DAO Treasury, SilkenGovernor / Timelock, ProtocolParameters |
@@ -33,6 +33,6 @@ description: "Use when working on the silken_net Web3 / on-chain surface — the
 
 ## Common Tasks
 
-- **Add new chain integration**: service in `app/services/`, worker, ENV vars, guard clause check → update `docs/05_02` + `CLAUDE.md §11`
-- **Change minting threshold**: `Wallet#lock_and_mint!` (10k points = 1 SCC) → update `docs/05_01`
+- **Add new chain integration**: service in `app/services/`, worker, ENV vars, guard clause check → update `docs/05_02` + `CLAUDE.md §2` (routing table)
+- **Change minting threshold**: `Wallet#lock_and_mint!` (10k points = 1 SCC) → update `docs/05_03` (Конверсія — the one-home per 00_06 §2) + verify `05_01`/`05_02` mirrors
 - **Edit / test a contract (`contracts/*.sol`)**: Foundry conventions + invariant gates → `CLAUDE.md §8`; spec/roles → `docs/05_03`. The CI audit gates (all **gating**) live in `.github/workflows/solidity_audit.yml`: Slither + Aderyn (static) · Halmos (symbolic, `test/symbolic/` `check_`) · Medusa + Foundry (fuzz/invariant, `test/medusa/` `property_` + `test/invariant/` `invariant_`). Tooling detail / gotchas → `reference_solidity_audit_stack` memory.

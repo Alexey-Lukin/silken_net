@@ -21,8 +21,10 @@
 | Ресурс | Опис |
 |--------|------|
 | [`00_01` — Vision Mission and Roadmap](00_01_Vision_Mission_and_Roadmap) | Vision-рівень: місія, NaaS, філософія negligence-vs-force-majeure |
+| [`05_01` — Multichain Architecture](05_01_Multichain_Architecture) | Upstream guard-clause pipeline + 12-chain стек, що передує slash-тригеру |
 | [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Anti-fraud DCI (`SEC.11`, `check_z_divergence!`); `stress_index` pipeline |
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | `slash()` контракт; Dynamic Tax (insurance-pool funding); `ProtocolParameters` (GAMMA, PENALTY_FACTOR_MAX) |
+| [`05_04` — Ethereum L1 State Anchor](05_04_Ethereum_L1_State_Anchor) | Slash-burn змінює total_supply, що фіналізується в L1 state-root |
 | [`05_06` — Governance and DAO](05_06_Governance_and_DAO) | DAO peer-review (категорія C): `SilkenGovernor`/`SilkenTimelock`/quorum |
 | [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) | Insurance Layer mechanics (Etherisc, два режими); NaaS breach terms; SFC voting after slash |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `BlockchainBurningService`, `ContractHealthCheckService`, `InsightGeneratorService#stress_index`; divergence registry §11 |
