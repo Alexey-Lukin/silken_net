@@ -32,7 +32,8 @@ geometry** deterministically. Parity is on derived metrics, never the raw STL by
 | Path | What |
 |---|---|
 | `cem/*.json` | CEM manifests (Git-SSOT inputs) — e.g. `ti_coin`, `anchor_zone1.pine` |
-| `src/SilkenCad/Program.cs` | CLI: `smoke` / `build <cem>` / `verify <cem>` (headless `Library.Go`) · `scan <cem>` (wallParam window, pure) |
+| `src/SilkenCad/Program.cs` | CLI: `smoke` / `build <cem>` / `verify <cem>` (headless `Library.Go`) · `scan <cem>` (wallParam window, pure) · `draw <cem>` (engineering drawing SVG+DXF, pure-managed) · `render` / `section <cem>` (PicoGK native-viewer screenshot / cutaway → `out/*.png`) |
+| `src/SilkenCad/Drawing.cs` | CEM-native engineering drawings (`draw`): SVG/PDF (human) + DXF via netDxf (factory, opens in AutoCAD/Fusion). Pure-managed; consumes the CEM `ToleranceSpec`/`NotesSpec` (zero hard-coded eng-text) |
 | `src/SilkenCad/TiCoin.cs` | Stage-2 in-vitro coupon — disc + eyelet (`01_01 §6.1`) |
 | `src/SilkenCad/Zone1Anode.cs` | Zone-1 gyroid anode + the custom `CartesianGyroid` SDF |
 | `src/SilkenCad/Validation.cs` | golden-metrics via `Voxels.CalculateProperties` (porosity/bbox/tris) + LEAP `Measure.fGetSurfaceArea` |
@@ -59,6 +60,8 @@ dotnet run --project src/SilkenCad -- smoke                                 # fo
 dotnet run --project src/SilkenCad -- build  cem/anchor_zone1.pine.json     # → out/*.stl
 dotnet run --project src/SilkenCad -- verify cem/anchor_zone1.pine.json     # → out/*.metrics.json (exit 0/1)
 dotnet run --project src/SilkenCad -- scan   cem/anchor_zone1.pine.json     # → out/*.wallscan.json (wallParam working window)
+dotnet run --project src/SilkenCad -- draw   cem/ti_coin.json               # → out/*.svg + *.dxf (engineering drawing, pure-managed)
+dotnet run --project src/SilkenCad -- render cem/anchor_zone1.pine.json     # → out/*.png (PicoGK viewer; needs a display — macOS desktop, not headless CI)
 ```
 
 ## Gotchas (hard-won — read before touching the generators)
@@ -96,6 +99,12 @@ dotnet run --project src/SilkenCad -- scan   cem/anchor_zone1.pine.json     # �
   relies on implicit `using System` / `System.Collections.Generic`).
 - **`out/` + `imgui.ini` are gitignored** (derived / viewer runtime). Native runtime
   lives in `~/.dotnet` → `export DOTNET_ROOT=$HOME/.dotnet` if running the apphost directly.
+- **`render`/`section` need a display** (PicoGK native viewer): macOS desktop OK, headless
+  CI = `Library.Go` SIGSEGV/139. The screenshot is **TGA** regardless of a `.png` name
+  (`RequestScreenShot` is native) → convert TGA→PNG via `sips` (mac). The managed `Viewer`
+  exposes `qOrientation` + view-cube presets (instance, not static) but NOT `SetViewAngles`/
+  `RequestClose` (drop explicit camera → auto-frame; `bEndAppWithTask` exits). `ColorFloat`
+  alpha does NOT show a rod through a dense gyroid → use `section` (cutaway) + a gold material.
 
 ## CI (enterprise 2-job)
 
@@ -182,6 +191,19 @@ An AUDIT table like the capsule-end — render-sanity exit only, findings assert
 Zone-1 envelope (solid Ø11; a press-fit cares about OD, not porosity). The render overlap sleeve∩capsule (~8 mm³) is the
 flange SHOULDER resting on the sleeve top face, NOT the shank (Ø9 floats in bore Ø11). Reuses `Zone1Anode.Envelope` ·
 `Zone2Sleeve.Build` · `Assembly.Build` · `voxApplyTransformation` (Noyron Boolean multi-part). Canon `02_02 §4.5`.
+
+**Monolithic bus rod (shipped, `01_01 §1.4` / HW.34)** — `bus_rod_diameter_mm` > 0 ⇒ `Zone1Anode.BuildMonolithic`
+adds a SOLID central rod (`BusRod.voxConstruct()` `BoolAdd`, gotcha #9 — not the SDF ctor); porosity stays a property
+of the gyroid (the rod is SDF-invisible → connectivity/porosity gates untouched), `verify` separately MEASURES the
+fused rod. Full anode→cathode-channel→flange-pad through-rod; `AxialStack.BusRodClears` audits rod + 2·liner ≤ channel.
+
+**Engineering drawings + render (shipped)** — `draw <cem>` → SVG/PDF (human) + **DXF via netDxf** (factory-native, opens
+in AutoCAD/Fusion), pure-managed, consuming the CEM `ToleranceSpec`/`NotesSpec` (fits as Lamé-µm, NOT a blind ISO-286
+metal `H7/s6` on a PEEK bore; GD&T datums; coating-restriction; lattice-spec). §7/§8 DECIDED: DXF+SVG / ISO 1st-angle /
+CEM-tolerances; Phase 2 (sleeve/flange/radome DXF, gyroid inspection-card, assembly drawing) deferred to a real factory
+contract (`docs/drawings_program.md`). `render` / `section <cem>` → PicoGK native-viewer PNG (presentation gallery
+`docs/images/cad/`, rebuilt by `scripts/render_gallery.sh`, NOT SSOT). LEAP 71 ships metal engines WITHOUT 2D drawings —
+code is the engineering intent.
 
 **Deferred:** the MATE-Ø skirt/inboard CHOICE + Z-reconcile (lock-groove-Z ↔ lug-Z, 👤 bench HW.8.8) · the shank-Ø
 press-fit reconcile (Ø9 → H7/s6 under bore Ø11, HW.8.9) · a phase-correct strong continuous gradient (period-tensor/

@@ -28,7 +28,7 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 | File | Role |
 |------|------|
 | `tools/cad/cem/*.json` | CEM manifests — the Git-SSOT parameter inputs (`kind` discriminator: `ti_coin`, `anchor_zone1`, `mechanical_lock`, `cathode_flange`, `radome`, `zone2_sleeve`, `anchor_assembly`, `anchor_axial_stack`) |
-| `tools/cad/src/SilkenCad/Program.cs` | CLI dispatch (`smoke`/`build`/`verify`/`scan`/`draw`) + `RunHeadless` (the `Library.Go` wrapper); `draw` is pure-managed (no Library.Go) |
+| `tools/cad/src/SilkenCad/Program.cs` | CLI dispatch (`smoke`/`build`/`verify`/`scan`/`draw`/`render`/`section`) + `RunHeadless` (the `Library.Go` wrapper); `draw` is pure-managed (no Library.Go), `render`/`section` drive the native viewer |
 | `tools/cad/src/SilkenCad/Cem.cs` | CEM records + JSON parse (snake_case). Engineering-drawing PMI lives here: optional `ToleranceSpec` (fits / Lamé-µm / GD&T datums) + `NotesSpec` (material/process/surface/coating-restriction/lattice-spec/inspection) on each part record — Noyron-native SSOT, fed to `draw` |
 | `tools/cad/src/SilkenCad/Drawing.cs` | CEM-native engineering drawings (`draw <cem>`): **SVG/PDF (human) + DXF via netDxf (CAD-native factory deliverable, opens in AutoCAD/Fusion)**. Pure-managed string/entity build, no Library.Go. Consumes the CEM `ToleranceSpec`/`NotesSpec` (zero hard-coded eng-text); `DrawingStandard` param (ISO 1st-angle default / ASME). PoC = Ti-coin; rest of §7 deferred (`docs/drawings_program.md`) |
 | `tools/cad/src/SilkenCad/TiCoin.cs` | Ti-coin coupon — `BaseCylinder` disc + `BaseRing` eyelet, `BoolAdd` |
@@ -92,6 +92,13 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
    ~17 mm³ vs ~1700 expected). The gyroid dodges this only because it is thin-walled everywhere.
    Pattern: solid = `BaseCylinder().voxConstruct()`; thin features (barb ridges) = SDF `BoolAdd` (the
    Ti-coin split). The `verify` solidity gate (volume > 0.8·annulus) guards the regression.
+10. **`render`/`section` (presentation) need a display + the screenshot is TGA.** The PicoGK native
+    viewer (`Library.oViewer()…RequestScreenShot` inside `Library.Go`) renders only with a display
+    (macOS desktop OK; headless CI = `Library.Go` SIGSEGV/139). The frame is **TGA** regardless of a
+    `.png` name → convert TGA→PNG via `sips` (mac). The managed `Viewer` exposes `qOrientation` +
+    view-cube presets (instance, not static) but NOT `SetViewAngles`/`RequestClose` (drop explicit
+    camera → auto-frame; `bEndAppWithTask` exits). `ColorFloat` alpha does NOT show a rod through a
+    dense gyroid → use `section` (cutaway) + a gold material.
 
 ## Common Tasks
 
@@ -143,6 +150,10 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   param). Drawing carries fits (Lamé-µm, NOT a blind ISO-286 metal `H7/s6` on a PEEK bore), GD&T datums,
   post-process + coating-restriction notes, lattice-spec. PoC = Ti-coin; sleeve/flange/radome/gyroid-
   inspection-card/assembly = Phase 2 deferred to a factory contract. Home: `docs/drawings_program.md`.
+- **Render / section for presentation (`render`/`section`, SHIPPED)**: `render <cem>` = a PicoGK native-viewer
+  screenshot (gold Ti-metallic material); `section <cem>` = a −X cutaway (shows the bus rod through a dense gyroid
+  where `ColorFloat` alpha can't). Display-gated (gotcha #10); output → `out/*.png` (native TGA → `sips`). The
+  presentation gallery `docs/images/cad/` is NOT SSOT (`scripts/render_gallery.sh` rebuilds it).
 - **Local-verify**: `dotnet build SilkenCad.sln` (0W/0E) → `dotnet run --project src/SilkenCad
   -- verify cem/<x>.json` (metrics.json + exit 0/1) → `dotnet run -- draw cem/<x>.json` (SVG+DXF → out/)
   → `dotnet test`. CI = enterprise 2-job `cad_smoke.yml` (logic = Linux pure-xUnit hard [incl. draw/DXF]
