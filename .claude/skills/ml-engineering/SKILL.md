@@ -92,6 +92,13 @@ The `contract_hash` + `emit_c --check` catch any side left behind. **Audit inbou
 ESC-50 per-frame baseline (40 log-mel → hidden → 5, INT8). Method + honesty home is
 `tools/ml/docs/baseline_model_program.md`; TF lives in the `silken_ml` env (PTQ + parity only).
 
+**Runtime = a fixed-topology INT8 forward pass in pure C** (host≡ARM, the `logmel.c` idiom), zero new
+vendoring — **NOT TFLM**. 🔑 TFLM is an *interpreter that delegates to CMSIS-NN* on Cortex-M (two layers,
+not alternatives — a common category-error in the docs); its ~16-20 KB Flash + 4 KB SRAM framework sits on
+TOP of the arena → marginal on the post-FW.55 budget (38 KB mruby → a ~7-15 KB arena ceiling) → documented
+as a fallback only IF OTA-graph-flexibility is needed AND a measured footprint fits. The per-frame contract
+`Run_Inference(float[40], float*)` keeps `MODEL_INPUT_SIZE=40` exact so a partner model = a drop-in header swap.
+
 **Export pipeline** (`silken_ml.export`): fold Normalization→fc1 → INT8 PTQ (`TFLiteConverter`,
 real-log-mel representative set) → extract per-channel params → **QUANTIZATION-PARITY gate**
 (numpy int-ref == TFLite interpreter; `raise` if `argmax_mismatch≠0 || max|Δlogit|>1`) → emit
