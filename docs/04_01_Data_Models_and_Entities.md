@@ -960,7 +960,7 @@ any ──report_fault──► faulty
 
 ```
 draft ──activate──► active ──fulfill──► fulfilled
-active ──breach──► breached    (якщо > 20% дерев deceased/removed → Slashing)
+active ──breach──► breached    (positive-A slash — cluster >20% stress-деградація АБО per-tree deceased/removed)
 active/draft ──cancel──► cancelled
 ```
 
