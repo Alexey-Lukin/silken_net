@@ -718,7 +718,7 @@
 
 #### I18N.1 — alert_type i18n локалізація (усі типи × 4 мови)
 - **P3** · 🤖 · 🌿 · → `04_02`, `04_04`
-- **Стан:** Знахідка (INS.1, 2026-06-27) — `EwsAlert.message` (усі creator'и) + `TextFormatter#alert_title`/`#alert_icon` = **hardcoded-рядки**; `config/locales/alerts/*.yml` (uk/en/lv/lt) покривають лише UI-хром (badge/index/table-headers), БЕЗ per-alert-type value-labels чи message-ключів (`grep alert_types` → порожньо). Маркер на майбутнє вже стоїть (`text_formatter.rb:9`). Поточно безпечно (`.humanize`/hardcoded-case з `else`-fallback), але не локалізовано для 4 мов — і свідомо НЕ робили по одному типу (`field_audit` додано в ряд із 7 сиблінгами, жоден не i18n-нутий). Канон `04_02` (TextFormatter card), UI-токени `04_04`.
+- **Стан:** Знахідка (INS.1, 2026-06-27) — `EwsAlert.message` (усі creator'и) + `TextFormatter#alert_title`/`#alert_icon` = **hardcoded-рядки**; `config/locales/alerts/*.yml` (uk/en/lv/lt) покривають лише UI-хром (badge/index/table-headers), БЕЗ per-alert-type value-labels чи message-ключів (`grep alert_types` → порожньо). Маркер на майбутнє вже стоїть (i18n-коментар у `TextFormatter`). Поточно безпечно (`.humanize`/hardcoded-case з `else`-fallback), але не локалізовано для 4 мов — і свідомо НЕ робили по одному типу (`field_audit` додано в ряд із 7 сиблінгами, жоден не i18n-нутий). Канон `04_02` (TextFormatter card), UI-токени `04_04`.
 - [ ] 🤖 i18n-ключі per-alert-type (8 типів × 4 мови: title + icon) → `TextFormatter` через `I18n.t`; опц. `EwsAlert.message`-builder через i18n — усі типи РАЗОМ, не по одному
 
 #### S6.10 — MaintenanceRecord — лише лог
