@@ -60,7 +60,7 @@ Bridge:
 
 1. **Shared lib is SSOT** — all constants, paths, banner() from `lib/`. Never redefine locally (19 local banners eliminated in refactoring).
 2. **SMILES fixes cascade** — fixing a SMILES in 02-08 → rerun ALL downstream MD using that ligand. Check GAFF cache too.
-3. **DFT: NEVER two heavy jobs on same CPU** — cache thrashing makes both 2× slower. Small molecules (H₂O, lumiflavin) OK to parallelize.
+3. **DFT: NEVER two heavy jobs on same CPU** — cache thrashing makes both 2× slower (observed: a 92-min solo job took 190+ min alongside another). Small molecules (H₂O, lumiflavin) OK to parallelize; MD-on-GPU alongside a CPU DFT job is fine (different hardware) — the hazard is two CPU-bound DFT jobs sharing cache.
 4. **No density_fit() for Os/Ce** — auto-generated aux basis for heavy metals is 3× SLOWER than standard integrals.
 5. **level_shift=0.3 for open-shell transition metals** — UKS on Os(III), Co-Ce, Ce without it → SCF oscillates forever (60h+ observed).
 6. **MD NaN at NVT ramp** — 10K pre-relaxation (1000 steps at 10K) + start NVT from 50K + ramp step 10K (not 5K). Especially at high T (313K) and with many ligands. Use `maxIterations=10000` for minimization.
