@@ -731,7 +731,7 @@
 - [ ] 👤 DAO/founder перед mainnet: розширити A-сет (scoped-unmaintained / окремий chainsaw-сигнал) + активувати inert `penalty_factor`-uplift (`slash_cause_uplift_enabled`)
 - [ ] 🤖 (secondary) tree-side `streamr_undelivered` сигнал-джерело (guarded→0) + repeat-offence вага
 - [ ] 🤖 (secondary) Field-Audit alert-дедуп: freeze/blackout/slash-failure пишуть cluster-level `system_fault` щоденно при тривалій деградації → окремий `field_audit` alert_type / dedup-ключ (інакше дедуп конфлатить/маскує сигнали; **+ ARCH.46:** окремий тип також виключить freeze-алерт із `comms_no_ack?` — інакше при DAO-uplift freeze самонакручує `penalty_factor`, gap D)
-- [ ] 🤖 (backlog) поріг «critical stress» зведений 0.8↔0.83: slash-шлях = `AiInsight::SLASH_STRESS_THRESHOLD` (0.83, ARCH.46), але `AiInsight.critical_stress`-scope / `contract_breach?` / `ParametricInsurance` = 0.8 (insurance/UI) → звести в іменований концепт або задокументувати свідомий розрив
+- [ ] 🤖 (backlog) поріг «critical stress» зведений 0.8↔0.83: slash-шлях = `AiInsight::SLASH_STRESS_THRESHOLD` (0.83, ARCH.46), але `AiInsight.critical_stress`-scope / `contract_breach?` / `ParametricInsurance` = 0.8 (insurance/UI) → звести в іменований концепт або задокументувати свідомий розрив; + опц. міграція slash-порога (+ 20%-тригер `Rational(1,5)`) у `SystemParameter` як `slash_gamma`/`slash_penalty_factor_max` (governance-tunable per `05_06` STRESS_THRESHOLD/SLASH_THRESHOLD — founder-flagged)
 - [ ] 🤖 (backlog) A/B-координація: slash (A) і `ParametricInsurance#evaluate_daily_health!` (B) читають ту саму stress-дату → кандидат на спільний `DailyHealthRouter` (DRY, `04_02 §11`)
 
 #### SEC.1 — Multisig Gnosis Safe + PAUSER⊥admin split (production admin role)
