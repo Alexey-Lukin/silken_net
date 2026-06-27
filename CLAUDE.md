@@ -10,13 +10,14 @@
 
 ## 2. Як тут працювати
 
-**Скіли авто-інвокуються за доменом і маршрутизують у точний canon-doc. НЕ читай усі docs наосліп — дай скілу привести тебе.**
+**Скіли авто-інвокуються за доменом і маршрутизують у точний canon-doc. НЕ читай усі docs наосліп — дай скілу привести тебе.** Канон-bird's-eye (🎯/TRL/секції 00→08, без читання всього) → `ruby scripts/doc_structure_map.rb`.
 
 | Домен | Скіл (авто) | Дім-canon |
 |-------|-------------|-----------|
 | STM32 firmware (Soldier/Queen, mruby, `firmware/common`) | `firmware` | `03_01`–`03_05` |
 | Web3 / контракти / minting / slashing | `web3-pipeline` | `05_01`–`05_06` |
 | Telemetry / Proof-of-Growth / Sidekiq-черги | `telemetry-pipeline` | `05_02` (+§5) |
+| Frontend (Phlex / Tailwind v4 / Stimulus / Turbo) | `frontend` | `04_04` (+`04_06 §A`) |
 | TinyML / log-mel / INT8 | `ml-engineering` | `03_03` + `tools/ml` |
 | EBFC DFT/MD in-silico | `in-silico` | `01_03` + `protocols/ebfc/in_silico` |
 | Code-as-CAD (анкер/coin/radome) | `picogk` | `01_01/01_02/02_01/02_02` + `tools/cad` |
@@ -35,9 +36,9 @@
 ```bash
 ruby --version            # 4.0.5
 bin/rubocop -a            # lint (binstub; -a = автофікс)
-bundle exec rspec         # backend suite
-bundle exec brakeman      # security
-bundle exec bundler-audit check
+bin/rspec                 # backend suite (binstub; full ~1.5min)
+bin/brakeman              # security
+bin/bundler-audit check
 make -C firmware/test     # firmware host-tests (x86, без ARM)
 make -C firmware/test asan # + ASan/UBSan memory-safety смуга (TEST.5)
 cd contracts && forge test -vvv --gas-report   # Solidity (Foundry; §8)
