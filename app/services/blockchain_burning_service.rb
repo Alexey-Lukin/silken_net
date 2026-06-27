@@ -212,10 +212,13 @@ class BlockchainBurningService < ApplicationService
 
     Rails.logger.warn "🧊 [SLASH-1] NaasContract ##{@naas_contract.id} (#{context}): спалення заблоковано — #{detail} (05_05 §3.2) → Field Audit, без burn/breach."
 
+    # [SLASH-1] :field_audit (не :system_fault): freeze — це НАШ вирок «слухай, не карай»,
+    # а не доказ «вузол offline». Окремий тип не дає freeze самонакручувати penalty_factor
+    # через comms_no_ack? (ARCH.46 gap-D) і не конфлатить аудит із comms-fault при дедупі.
     EwsAlert.create!(
       cluster: @cluster,
       severity: :critical,
-      alert_type: :system_fault,
+      alert_type: :field_audit,
       message: "Слешинг заблоковано (#{context}): #{detail}. Кошти НЕ спалено — потрібен Field Audit (Категорія C, 05_05 §3.2/§5)."
     )
 
@@ -333,8 +336,10 @@ class BlockchainBurningService < ApplicationService
 
   # [comms-correlated] «No ack»: критичний EwsAlert лишається непідтвердженим (status_active —
   # scope `critical` = severity_critical.unresolved).
+  # [SLASH-1 gap-D] Виключаємо :field_audit — це НАШ вирок «слухай, не карай» (freeze/blackout),
+  # а не доказ «вузол offline». Інакше freeze самонакручував би penalty_factor на тій самій жертві.
   def comms_no_ack?
-    @cluster.ews_alerts.critical.exists?
+    @cluster.ews_alerts.critical.where.not(alert_type: :field_audit).exists?
   end
 
   # [comms-correlated] Tree-side Streamr broadcast gap (05_05 §6 нот.12 — ЛИШЕ tree-side;
@@ -347,7 +352,11 @@ class BlockchainBurningService < ApplicationService
   # [independent] Фізична халатність: критичний EwsAlert без жодного MaintenanceRecord по спливу
   # вікна реакції (оператора алертнули, але він не виїхав). Незалежний від comms-loss → additive.
   def critical_unmaintained?
-    stale_critical = @cluster.ews_alerts.severity_critical.where(created_at: ..30.minutes.ago)
+    # [SLASH-1 gap-D] Виключаємо :field_audit — наш власний audit-виклик «слухай» без
+    # MaintenanceRecord ≠ операторська недбалість; рахуємо лише реальні tree/hardware-алерти.
+    stale_critical = @cluster.ews_alerts.severity_critical
+                             .where.not(alert_type: :field_audit)
+                             .where(created_at: ..30.minutes.ago)
     return false unless stale_critical.exists?
 
     stale_critical.where.not(

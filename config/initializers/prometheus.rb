@@ -75,6 +75,18 @@ module SilkenNet
       docstring: "Solana batch payouts successfully broadcast — status→sent (SLO numerator)"
     )
 
+    # [INS.1] Insurance payout attempts vs successes → insurance payout success-rate SLO (06_03 §2.8).
+    # Закриває observability-діру: на відміну від slash/Solana, страхова виплата раніше SLO не мала.
+    INSURANCE_PAYOUT_ATTEMPTS_TOTAL = REGISTRY.counter(
+      :silkennet_insurance_payout_attempts_total,
+      docstring: "Parametric insurance payouts attempted by InsurancePayoutWorker (SLO denominator)"
+    )
+
+    INSURANCE_PAYOUT_SUCCESS_TOTAL = REGISTRY.counter(
+      :silkennet_insurance_payout_success_total,
+      docstring: "Parametric insurance payouts executed — Etherisc claim sent / mint initiated (SLO numerator)"
+    )
+
     # Web3 RPC errors (labeled by network and error type)
     RPC_ERRORS_TOTAL = REGISTRY.counter(
       :silkennet_rpc_errors_total,

@@ -26,31 +26,22 @@ class ContractHealthCheckService < ApplicationService
   def perform
     return :skipped unless @contract.status_active?
 
-    # [Counter Cache]: Використовуємо денормалізований лічильник замість COUNT(*).
-    total_active_count = @cluster.active_trees_count
-    return :skipped if total_active_count.zero?
+    # [SLASH-1] Спільне денне читання (DRY з insurance-шляхом B) + blackout-рішення в ОДНОМУ домі.
+    router = DailyHealthRouter.new(@cluster, @target_date)
+    return :skipped if router.skipped?
 
-    # [SQL Optimization]: Підзапит замість масиву об'єктів (The Polymorphic IN Trap).
-    daily_insights = AiInsight.daily_health_summary.where(
-      analyzable_type: "Tree",
-      analyzable_id: @cluster.trees.active.select(:id),
-      target_date: @target_date
-    )
-
-    # [SLASH-1, 2026-05-29] Cluster-wide data blackout (zero insights for the
-    # WHOLE cluster) is a gateway-fault / force-majeure signature (stolen or
-    # destroyed gateway, Starlink outage, storm) — NOT per-tree negligence.
-    # NEVER auto-burn on absence of data (05_05 §6 correlated comms-loss guard,
-    # §7). Route to Field Audit / peer-review (Category C); a human classifies
-    # A (negligence → slash) vs B (force-majeure → insurance).
-    return flag_data_blackout! if daily_insights.empty?
+    # [SLASH-1 / 05_05 §6] Cluster-wide data blackout (нуль інсайтів на ВЕСЬ кластер) — сигнатура
+    # gateway-fault / force-majeure (вкрадений/знищений шлюз, Starlink-блекаут, шторм), НЕ per-tree
+    # недбалість. НІКОЛИ авто-burn на відсутність даних → Field Audit / peer-review (Категорія C);
+    # людина класифікує A (недбалість → slash) vs B (форс-мажор → insurance).
+    return flag_data_blackout! if router.blackout?
 
     # Математична межа порушення — 20% від активної біомаси.
     # [ARCH.46] Спільний slash-поріг (= damage-сайзинг у BlockchainBurningService) — одна константа,
     # щоб тригер і розмір не розходились (= поріг впевненості Random Forest, не детерм. 1.0).
-    critical_insights_count = daily_insights.where("stress_index >= ?", AiInsight::SLASH_STRESS_THRESHOLD).count
+    critical_insights_count = router.critical_count(AiInsight::SLASH_STRESS_THRESHOLD)
 
-    if critical_insights_count > total_active_count * Rational(1, 5)
+    if critical_insights_count > router.total_active_trees * Rational(1, 5)
       flag_degradation!
     else
       :healthy
@@ -75,15 +66,18 @@ class ContractHealthCheckService < ApplicationService
   # [SLASH-1] Absence-of-data → freeze for Field Audit, NEVER slash. A
   # cluster-wide blackout (stolen/destroyed gateway, Starlink outage, storm) is
   # force-majeure, not the forester's negligence — burning investor tokens on it
-  # would be a false slash (05_05 §1/§6). Raise a gateway-fault (system_fault)
-  # alert; the contract stays :active pending human classification (Category C).
+  # would be a false slash (05_05 §1/§6). Raise a :field_audit escalation (NOT
+  # :system_fault — see gap-D); the contract stays :active pending human
+  # classification (Category C). «Тиша замовклого дерева — теж його голос».
   def flag_data_blackout!
     Rails.logger.warn "🌐 [D-MRV] NaasContract ##{@contract.id}: cluster-wide data blackout (#{@target_date}) — gateway-fault signature → Field Audit, NO slash (05_05 §6)."
 
+    # [SLASH-1] :field_audit (не :system_fault): дерево замовкло — це НАШ виклик «слухай», окремий
+    # від comms-fault, щоб не накручувати penalty_factor (gap-D) і не маскувати сигнали при дедупі.
     EwsAlert.create!(
       cluster: @cluster,
       severity: :critical,
-      alert_type: :system_fault,
+      alert_type: :field_audit,
       message: "Cluster-wide data blackout (#{@target_date}): можлива відмова шлюзу / Starlink-блекаут (force-majeure). Slashing НЕ застосовано — потрібен Field Audit (Category C, 05_05 §5)."
     )
 

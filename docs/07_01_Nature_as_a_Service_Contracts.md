@@ -114,7 +114,7 @@ NaaS — це модель підписки, де клієнти (Організ
 | **Пакетна емісія** (ціла лісова ділянка) | Batch з ≤100 дерев | `MintCarbonCoinWorker` (Gas Saving Mode) | `SilkenCarbonCoin.sol` | `batchMint(recipients[], amounts[], treeDids[])` | Масова емісія для всього кластера |
 | **Дерево під стресом** (`stress_index ≥ 0.83`) | AiInsight.stress_index | `ClusterHealthCheckWorker` | — | Облік у D-MRV арбітражі | Якщо >20% кластера — тригер слешингу |
 | **Порушення контракту** (>20% дерев аномальні) | `critical_insights_count > total_active_count / 5` | `ClusterHealthCheckWorker` (тригериться через `InsightBatchCallbacks#on_success` — коли всі `GenerateClusterInsightWorker` за добу зелені) → `BurnCarbonTokensWorker` | `SilkenCarbonCoin.sol` | `slash(investor, amount)` (gated) | [SLASH-1] **positive-A gate** ([`05_05 §3.2`](05_05_Slashing_and_Risk_Policy)): прямий доказ Кат-A (tamper `vandalism_breach`) → SCC спалюються + `status = :breached`; інакше → `:frozen` + Field-Audit `EwsAlert` (no burn, контракт лишається активним до C→A класифікації) |
-| **Відсутність даних** (cluster-wide blackout — Starlink/шлюз) | `AiInsight.empty?` для кластера | `ContractHealthCheckService#flag_data_blackout!` | — (no on-chain дія) | `EwsAlert(:system_fault)` | **Force-majeure-сигнатура** (вкрадений/знищений шлюз, блекаут) → Field Audit (Category C), **НЕ** slash — карати лісника за збитий шлюз = false slash ([`05_05 §6`](05_05_Slashing_and_Risk_Policy)) |
+| **Відсутність даних** (cluster-wide blackout — Starlink/шлюз) | `AiInsight.empty?` для кластера | `ContractHealthCheckService#flag_data_blackout!` | — (no on-chain дія) | `EwsAlert(:field_audit)` | **Force-majeure-сигнатура** (вкрадений/знищений шлюз, блекаут) → Field Audit (Category C), **НЕ** slash — карати лісника за збитий шлюз = false slash ([`05_05 §6`](05_05_Slashing_and_Risk_Policy)) |
 | **Дерево згоріло** (`AiInsight.insight_type = :critical_fire`) | TinyML: `fire` клас | `EcosystemHealingWorker` → `InsurancePayoutWorker` | `SilkenCarbonCoin.sol` або Etherisc DIP | `mint(to, payout)` або `triggerClaim()` | Параметричне страхування активується |
 | **Посуха** (`extreme_drought`) | `AiInsight.insight_type = :extreme_drought` | `InsurancePayoutWorker` | `SilkenCarbonCoin.sol` або Etherisc DIP | `mint(to, payout)` або `triggerClaim()` | Параметрична виплата |
 | **Шкідники** (`insect_epidemic`) | `AiInsight.insight_type = :insect_epidemic` | `InsurancePayoutWorker` | `SilkenCarbonCoin.sol` або Etherisc DIP | `mint(to, payout)` або `triggerClaim()` | Параметрична виплата |
@@ -284,7 +284,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 
 ## 🛡️ 7. Параметричне Страхування (Insurance Layer)
 
-Страхування надається паралельно з NaaS контрактом і активується автоматично при настанні страхових подій.
+Страхування надається паралельно з NaaS контрактом. **[INS.1] Dual-trigger:** денний AI-оракул (`ParametricInsurance#evaluate_daily_health!` через `InsuranceOracleWorker`, за прапором `:parametric_insurance_oracle_enabled`) лише ОЗБРОЮЄ кандидата (`:triggered`); виплата йде ЛИШЕ за НЕЗАЛЕЖНИМ підтвердженням (dClimate satellite / Field-Audit) — політика-дім [`05_05 §4`](05_05_Slashing_and_Risk_Policy).
 
 **Два режими виплати:**
 
@@ -292,8 +292,11 @@ NaasContract (status: cancelled, cancelled_at: now)
 2. **Oracle mode (Etherisc DIP):** Якщо `etherisc_policy_id` присутній, система переключається в режим Oracle: `Etherisc::ClaimService` → `triggerClaim()` → виплата USDC з децентралізованого пулу ліквідності Etherisc. Це запобігає інфляційному тиску на внутрішню токеноміку. **[ARCH.45]** `triggerClaim` НЕ idempotent на нашому боці → orphaned `:pending` recovery-tx ескалює в `manual_review` (не сліпий re-claim) проти double-pay ([`04_02 §4`](04_02_Business_Logic_and_Services)).
 
 **Guard clauses перед виплатою:**
-- `required_confirmations` (default: 3) незалежних D-MRV підтверджень.
+- `required_confirmations` (default: 3) незалежних D-MRV підтверджень (Trigger-1 oracle-consensus).
 - `ParametricInsurance.status = :active` (ще не тригернуто раніше).
+- **[INS.1] Незалежне підтвердження (Trigger-2):** `InsurancePayoutWorker#awaiting_independent_confirmation?` — payout лише за verified fire/drought (dClimate); без нього → hold (basis-risk guard).
+- **[INS.1] No-data guard:** активні дерева Є, нуль AiInsight (катастрофа знищила сенсори) → `escalate_no_data_field_audit!` (Field Audit), а НЕ тихий `damage_ratio = 0` («не карати жертву», [`05_05 §6`](05_05_Slashing_and_Risk_Policy)).
+- Майстер-прапор `:parametric_insurance_oracle_enabled` (kill-switch, default off → інертно до DAO/founder-активації).
 
 ---
 

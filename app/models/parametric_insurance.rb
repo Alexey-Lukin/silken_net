@@ -69,37 +69,41 @@ class ParametricInsurance < ApplicationRecord
   has_one :blockchain_transaction, as: :sourceable
 
   # =========================================================================
-  # АВТОНОМНИЙ ОРАКУЛ (D-MRV Integration)
+  # АВТОНОМНИЙ ОРАКУЛ (D-MRV) — Trigger-1 двотригерного страхування
   # =========================================================================
-  # Цей метод викликається воркером DailyAggregationWorker
-  # [Cluster TZ]: Використовуємо часовий пояс кластера для детермінованості арбітражу.
+  # [INS.1] Викликається `InsuranceOracleWorker` (per-cluster fan-out з денного
+  # ланцюга, за прапором :parametric_insurance_oracle_enabled). НЕ платить сам:
+  # AI `stress_index` — це НАШ сигнал (Trigger-1, loss-proximate); за dual-trigger
+  # (05_05 §6 «ніколи лише за одним внутрішнім сигналом») гроші рухає лише
+  # НЕЗАЛЕЖНЕ підтвердження (Trigger-2: dClimate satellite / Field-Audit людина).
+  # Тому тут — лише arm-кандидат + field_audit; settlement — InsurancePayoutWorker.
+  # [Cluster TZ]: часовий пояс кластера для детермінованості арбітражу.
   def evaluate_daily_health!(target_date = cluster.local_yesterday)
     return unless status_active?
 
-    # 1. Отримуємо вердикт від нашого ШІ-Оракула (AiInsight)
-    # [Counter Cache]: Використовуємо денормалізований лічильник замість COUNT(*) на мільйонах дерев.
-    total_trees = cluster.active_trees_count
-    return if total_trees.zero?
+    # [SLASH-1] Спільне денне читання (DRY зі slash-шляхом A) + blackout-рішення.
+    router = DailyHealthRouter.new(cluster, target_date)
+    return if router.skipped? # немає активних дерев
 
-    # [SQL Optimization]: Підзапит замість масиву об'єктів (The Polymorphic IN Trap).
-    # [СИНХРОНІЗОВАНО]: Використовуємо target_date та insight_type
-    tree_scope = cluster.trees.select(:id)
-    anomalous_insights = AiInsight.daily_health_summary.where(
-      analyzable_type: "Tree",
-      analyzable_id: tree_scope,
-      target_date: target_date,
-      stress_index: 0.8..1.0 # Поріг критичного стану / пожежі
-    )
+    # [INS.1 no-data guard / «не карати жертву»] Катастрофа знищила сенсори → дерево
+    # замовкло (blackout). НЕ рахуємо тихо damage_ratio = 0 (це кривдило б жертву
+    # мовчанням) → ескалюємо у Field Audit (дзеркало flag_data_blackout!, 05_05 §6).
+    # «Тиша замовклого дерева — теж його голос».
+    return escalate_no_data_field_audit!(target_date) if router.blackout?
+
+    # Аномальні дерева у вікні критичного стану. Insurance-поріг 0.8 свідомо ШИРШИЙ за
+    # slash-поріг 0.83 — РІЗНІ концепти (кандидат на виплату vs slash-тригер), не
+    # дублікат значення (00_07 SLASH-1 — задокументований spread).
+    anomalous_insights = router.insights.where(stress_index: 0.8..1.0)
 
     # =========================================================================
     # ORACLE CONSENSUS (Захист від помилки одиночного Оракула)
     # =========================================================================
-    # Виплата тригериться лише якщо required_confirmations незалежних джерел
-    # (різних AI-моделей) підтвердили катастрофу для кожного аномального дерева.
-    # Це запобігає хибним виплатам через помилку одного Оракула.
+    # Кандидат озброюється лише якщо required_confirmations незалежних AI-джерел
+    # (різних моделей) підтвердили аномалію для кожного дерева — внутрішній multi-signal
+    # проти помилки одного Оракула. Це Trigger-1; payout усе одно чекає Trigger-2.
     min_sources = required_confirmations
 
-    # Рахуємо дерева, де аномалію підтвердили >= required_confirmations незалежних джерел
     confirmed_anomalous_count = if min_sources <= 1
       anomalous_insights.select(:analyzable_id).distinct.count
     else
@@ -112,15 +116,10 @@ class ParametricInsurance < ApplicationRecord
         .size
     end
 
-    # Математика тригера:
-    # $$ \text{damage\_ratio} = \frac{\text{confirmed\_anomalous\_count}}{\text{total\_trees}} \times 100 $$
-    # [BigDecimal]: Використовуємо точну арифметику — для страхування мікропохибка Float неприпустима.
-    damage_ratio = (BigDecimal(confirmed_anomalous_count.to_s) / total_trees * 100).round(2)
+    # [BigDecimal]: точна арифметика — для страхування мікропохибка Float неприпустима.
+    damage_ratio = (BigDecimal(confirmed_anomalous_count.to_s) / router.total_active_trees * 100).round(2)
 
-    # 2. Перевірка тригера
-    if damage_ratio >= threshold_value
-      activate_payout!(damage_ratio)
-    end
+    arm_candidate!(damage_ratio) if damage_ratio >= threshold_value
   end
 
   # [НОВЕ]: Визначаємо гаманець отримувача (Власника лісу)
@@ -130,19 +129,40 @@ class ParametricInsurance < ApplicationRecord
 
   private
 
-  def activate_payout!(percentage)
-    payout_triggered = transaction do
-      update!(status: :triggered)
-
-      # Створюємо системний запис для аудиторів та патрульних
-      Rails.logger.warn "💸 [INSURANCE] Тригер ##{id} активовано! Пошкодження сектора: #{percentage}%."
-
-      true
+  # [INS.1 dual-trigger] AI-оракул перетнув поріг → озброюємо КАНДИДАТА (Trigger-1
+  # спрацював), але НЕ платимо: гроші чекають НЕЗАЛЕЖНОГО підтвердження (Trigger-2 —
+  # dClimate satellite для пожежі / Field-Audit людина для решти). Settlement —
+  # InsurancePayoutWorker, коли незалежний тригер підтвердить. Закриває basis-risk /
+  # moral-hazard: не рухаємо гроші лише за власним сигналом (05_05 §6).
+  def arm_candidate!(percentage)
+    # [INS.1] `trigger!` + field_audit-ескалація АТОМАРНО в одній транзакції: якщо алерт не
+    # створиться, `:triggered` відкочується → наступний прогін переозброїть (без orphaned-
+    # кандидата без audit-сигналу). Тут немає Redis-enqueue (на відміну від старого
+    # `activate_payout!`), тож PG↔Redis race відсутній — обидва DB-writes у транзакції.
+    transaction do
+      trigger! # AASM :active → :triggered (кандидат, ще НЕ payout)
+      EwsAlert.create!(
+        cluster: cluster,
+        severity: :critical,
+        alert_type: :field_audit,
+        message: "Страховий кандидат ##{id}: AI-оракул бачить #{percentage}% критичних дерев — потрібне НЕЗАЛЕЖНЕ підтвердження (dClimate satellite / Field Audit) перед виплатою (dual-trigger, 05_05 §6)."
+      )
+      Rails.logger.warn "🎯 [INSURANCE] Кандидат ##{id} озброєно (#{percentage}% за AI-оракулом) — чекаємо НЕЗАЛЕЖНОГО підтвердження (Trigger-2); payout НЕ запускаємо."
     end
+  end
 
-    # ЗАПУСК WEB3 ВОРКЕРА ПІСЛЯ УСПІШНОГО COMMIT
-    # [Transaction Safety]: Запускаємо воркер тільки після завершення транзакції,
-    # щоб уникнути Race Condition між Redis і PostgreSQL COMMIT.
-    InsurancePayoutWorker.perform_async(id) if payout_triggered
+  # [INS.1 no-data guard] Активні дерева Є, інсайтів немає (катастрофа знищила сенсори).
+  # Ескалюємо у Field Audit замість тихого damage_ratio = 0 — щоб не кривдити жертву
+  # мовчанням, і щоб «знищ сенсори → заяви катастрофу» не давав авто-виплати (ескалація
+  # НЕ платить; 05_05 §5: going-dark-після-P0 = tamper, а не безумовна виплата).
+  def escalate_no_data_field_audit!(target_date)
+    Rails.logger.warn "🌐 [INSURANCE] Кластер ##{cluster.id} / страховка ##{id}: data blackout (#{target_date}) — дерево замовкло. Ескалюємо у Field Audit; НЕ платимо й НЕ обнуляємо."
+
+    EwsAlert.create!(
+      cluster: cluster,
+      severity: :critical,
+      alert_type: :field_audit,
+      message: "Страховий оракул ##{id}: за #{target_date} нуль AiInsight при активних деревах (можлива катастрофа / знищені сенсори). Виплату НЕ обнулено — потрібен Field Audit (Категорія C, 05_05 §5/§6)."
+    )
   end
 end

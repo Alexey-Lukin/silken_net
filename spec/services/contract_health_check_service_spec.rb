@@ -39,12 +39,12 @@ RSpec.describe ContractHealthCheckService do
         expect(BurnCarbonTokensWorker.jobs.size).to eq(0)
       end
 
-      it "raises a system_fault Field-Audit alert for the cluster" do
+      it "raises a :field_audit escalation for the cluster (NOT :system_fault — gap-D)" do
         create(:tree, cluster: cluster, status: :active)
         cluster.reload
 
         expect { described_class.call(contract, target_date) }
-          .to change { EwsAlert.where(cluster: cluster, alert_type: :system_fault).count }.by(1)
+          .to change { EwsAlert.where(cluster: cluster, alert_type: :field_audit).count }.by(1)
       end
     end
 

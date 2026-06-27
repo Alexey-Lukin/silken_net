@@ -32,5 +32,32 @@ RSpec.describe InsightBatchCallbacks do
 
       described_class.new.on_success(status, options)
     end
+
+    # [INS.1] Страховий оракул — per-cluster fan-out, за майстер-прапором (kill-switch).
+    context "with the insurance oracle fan-out (gated)" do
+      let(:org)        { create(:organization) }
+      let(:cluster)    { create(:cluster, organization: org) }
+      let!(:insurance) { create(:parametric_insurance, organization: org, cluster: cluster, status: :active) }
+      let(:status)     { Sidekiq::Batch::Status.new("test-bid") }
+      let(:options)    { { "date" => "2026-03-06" } }
+
+      before { allow(InsightGeneratorService).to receive(:cleanup_old_logs!) }
+
+      it "enqueues InsuranceOracleWorker per active-insurance cluster when the flag is on" do
+        allow(SystemParameter).to receive(:current).and_call_original
+        allow(SystemParameter).to receive(:current)
+          .with(:parametric_insurance_oracle_enabled, default: false).and_return(true)
+
+        expect { described_class.new.on_success(status, options) }
+          .to change { InsuranceOracleWorker.jobs.size }.by(1)
+
+        expect(InsuranceOracleWorker.jobs.first["args"]).to eq([ cluster.id, "2026-03-06" ])
+      end
+
+      it "does NOT enqueue the insurance oracle when the flag is off (default)" do
+        expect { described_class.new.on_success(status, options) }
+          .not_to change { InsuranceOracleWorker.jobs.size }
+      end
+    end
   end
 end

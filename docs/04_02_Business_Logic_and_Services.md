@@ -218,7 +218,7 @@
 |---|---|
 | **Файл** | `app/services/blockchain_burning_service.rb` |
 | **Вхід** | `organization_id`, `naas_contract_id`, `source_tree:` (опц.), `target_date:` (опц. Date — прокидається з `ContractHealthCheckService` через `BurnCarbonTokensWorker`; nil → `cluster.local_yesterday`) |
-| **Що робить** | Slashing Protocol. Розраховує `damage_ratio` через `AiInsight` (частка дерев зі `stress_index ≥ AiInsight::SLASH_STRESS_THRESHOLD` — **той самий поріг, що тригерить** слеш у health-check). **[ARCH.46]** genuine no-data (нема AiInsight за `target_date`) → `:frozen` (freeze, НЕ breach/burn), а не worst-case 100%; `target_date` прокинутий від health-check (без перерахунку `local_yesterday` → інакше інша доба → хибне 100%); `contractual`-форфейтура — виняток (повне погоджене вилучення). Викликає `slash(investor_address, amount_wei)` на Polygon. Маркує `NaasContract.status = :breached`. **[ARCH.45]** durable intent-marker (`BlockchainTransaction` `:pending`→`:sent`, `sourceable:` contract) ПЕРЕД on-chain slash + `in_flight` guard ПІСЛЯ positive-A gate (`:sent` → не re-slash; `:pending` → старий intent у `:failed`) — закриває double-burn crash-window. Prometheus: `SCC_SLASHED_TOTAL` + `SLASH_ATTEMPTS/SUCCESS_TOTAL` (success-rate SLO). |
+| **Що робить** | Slashing Protocol. Розраховує `damage_ratio` через `AiInsight` (частка дерев зі `stress_index ≥ AiInsight::SLASH_STRESS_THRESHOLD` — **той самий поріг, що тригерить** слеш у health-check). **[ARCH.46]** genuine no-data (нема AiInsight за `target_date`) → `:frozen` (freeze, НЕ breach/burn), а не worst-case 100%; `target_date` прокинутий від health-check (без перерахунку `local_yesterday` → інакше інша доба → хибне 100%); `contractual`-форфейтура — виняток (повне погоджене вилучення). Викликає `slash(investor_address, amount_wei)` на Polygon. Маркує `NaasContract.status = :breached`. **[ARCH.45]** durable intent-marker (`BlockchainTransaction` `:pending`→`:sent`, `sourceable:` contract) ПЕРЕД on-chain slash + `in_flight` guard ПІСЛЯ positive-A gate (`:sent` → не re-slash; `:pending` → старий intent у `:failed`) — закриває double-burn crash-window. **[SLASH-1 gap-D]** freeze піднімає `EwsAlert(:field_audit)` (не `:system_fault`); `comms_no_ack?`/`critical_unmaintained?` виключають `:field_audit` → freeze більше не самонакручує `penalty_factor`. Prometheus: `SCC_SLASHED_TOTAL` + `SLASH_ATTEMPTS/SUCCESS_TOTAL` (success-rate SLO). |
 | **Зовнішні виклики** | Polygon RPC, `BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)`, `EwsAlert.create!` (при помилці) |
 | **Вихід** | `:slashed` / `:frozen` (positive-A gate АБО no-data magnitude [ARCH.46], no burn) / `nil` (no-op або healthy-data 0-damage). Створює `BlockchainTransaction` intent (audit, `:pending`→`:sent`); rescue завершує intent у `:failed` (без in-flight orphan). |
 
@@ -358,13 +358,22 @@ peaq_node_url: "https://peaq-node.example.com"
 
 ## 📜 6. Домен: NaaS Контракти (Contract Management)
 
+### `DailyHealthRouter`
+
+| | |
+|---|---|
+| **Файл** | `app/services/daily_health_router.rb` |
+| **Вхід** | `cluster`, `target_date` |
+| **Що робить** | **[SLASH-1]** One-Home спільного денного читання `AiInsight.daily_health_summary` за (cluster, активні дерева, дата) — споживають ОБИДВА денні шляхи: A (`ContractHealthCheckService`, slash-поріг 0.83) і B (`ParametricInsurance#evaluate_daily_health!`, insurance-поріг 0.8). `blackout?` (активні дерева Є, інсайтів немає) — спільне force-majeure-рішення «дерево замовкло» → Field Audit, НІКОЛИ авто-burn/payout ([`05_05 §6`](05_05_Slashing_and_Risk_Policy)). Пороги 0.83/0.8 свідомо per-consumer (РІЗНІ концепти — НЕ уніфікуємо, задокументований spread). |
+| **Вихід** | `insights` (relation), `total_active_trees`, `blackout?`, `skipped?`, `critical_count(threshold)`. |
+
 ### `ContractHealthCheckService`
 
 | | |
 |---|---|
 | **Файл** | `app/services/contract_health_check_service.rb` |
 | **Вхід** | `naas_contract` (NaasContract), `target_date` (Date, default: `cluster.local_yesterday`) |
-| **Що робить** | Перевіряє здоров'я кластера: > 20% активних дерев зі `stress_index ≥ AiInsight::SLASH_STRESS_THRESHOLD` → `:degraded` → чокпоінт слешингу (cause-gate вирішує slash/freeze). Cluster-wide порожні AiInsight → `flag_data_blackout!` (freeze + Field Audit, force-majeure — no burn). **[ARCH.46]** поріг = той самий, що сайзить damage у `BlockchainBurningService`; прокидає `target_date` у burn. |
+| **Що робить** | Спільне денне читання — через `DailyHealthRouter` (DRY з insurance-шляхом B). Перевіряє здоров'я кластера: > 20% активних дерев зі `stress_index ≥ AiInsight::SLASH_STRESS_THRESHOLD` → `:degraded` → чокпоінт слешингу (cause-gate вирішує slash/freeze). Cluster-wide порожні AiInsight (`router.blackout?`) → `flag_data_blackout!` (**`EwsAlert(:field_audit)`** + Field Audit, force-majeure — no burn; gap-D). **[ARCH.46]** поріг = той самий, що сайзить damage у `BlockchainBurningService`; прокидає `target_date` у burn. |
 | **Зовнішні виклики** | `BurnCarbonTokensWorker.perform_async(org, contract, nil, false, target_date)` (на `:degraded` — з `target_date` [ARCH.46]) |
 | **Вихід** | Verdict-символ `:healthy`/`:degraded`/`:blackout`/`:skipped`. **НЕ** breach-ить тут (SLASH-1: breach асинхронний, лише на реальному positive-A слешингу в `BlockchainBurningService`). |
 
@@ -1020,10 +1029,10 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 |----------|----------|
 | **Черга** | `critical` |
 | **Retry** | 10 |
-| **Тригер** | `Dclimate::VerificationService` (fire_confirmed) + `ParametricInsurance` (при triggered, подієво); recovery sweep `InsurancePayoutRecoveryWorker` (cron `15,45 * * * *`) |
+| **Тригер** | **[INS.1 dual-trigger]** Daily-оракул (`InsuranceOracleWorker`) лише ОЗБРОЮЄ кандидата (`:triggered`), payout НЕ enqueue. Settlement (Trigger-2) — `Dclimate::VerificationService` (fire_confirmed → знаходить `:triggered`) + recovery sweep `InsurancePayoutRecoveryWorker` (cron `15,45 * * * *`) |
 | **Вхід** | `insurance_id` (Integer) |
 | **Сервіси** | `Etherisc::ClaimService.new(insurance).claim!` (при `uses_etherisc?`) або `BlockchainMintingService.call` |
-| **Side Effects** | `insurance.pay!`, `BlockchainConfirmationWorker.perform_in(30.seconds, ...)`. Перевіряє супутниковий консенсус (Cosmic Eye guard). **[ARCH.45]** recovery-шлях + orphaned `:pending` Etherisc → `manual_review` (не сліпий re-claim) проти double-pay. |
+| **Side Effects** | **[INS.1]** Майстер-прапор `:parametric_insurance_oracle_enabled` (kill-switch, default off → no-op). **Dual-trigger gate** `awaiting_independent_confirmation?` — payout лише за НЕЗАЛЕЖНИМ verified fire/drought-підтвердженням, без нього → hold (basis-risk guard, [`05_05 §6`](05_05_Slashing_and_Risk_Policy)). `insurance.pay!`, `BlockchainConfirmationWorker.perform_in(30.seconds, ...)`. Prometheus `INSURANCE_PAYOUT_ATTEMPTS/SUCCESS_TOTAL` (success-rate SLO). **[ARCH.45]** recovery-шлях + orphaned `:pending` Etherisc → `manual_review` (не сліпий re-claim) проти double-pay. |
 
 #### `InsurancePayoutRecoveryWorker`
 
@@ -1139,7 +1148,7 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Файл** | `app/callbacks/insight_batch_callbacks.rb` |
 | **Тип** | Sidekiq Pro Batch callback клас (не Worker; живе у `app/callbacks/`, не `app/workers/`) |
 | **Тригер** | `InsightGeneratorOrchestratorWorker` (реєструє через `batch.on(:success, InsightBatchCallbacks, "date" => ...)`) |
-| **`on_success`** | Спрацьовує тільки якщо **всі** `GenerateClusterInsightWorker` jobs завершились успішно. Запускає: 1) `ClusterHealthCheckWorker.perform_async(date_string)` — аудит NaaS-контрактів; 2) `InsightGeneratorService.cleanup_old_logs!` — видаляє `TelemetryLog` старше 7 днів (крім `oracle_status='dispatched'`). |
+| **`on_success`** | Спрацьовує тільки якщо **всі** `GenerateClusterInsightWorker` jobs завершились успішно. Запускає: 1) `ClusterHealthCheckWorker.perform_async(date_string)` — аудит NaaS-контрактів; **1b) [INS.1]** `enqueue_insurance_oracle` — per-cluster fan-out `InsuranceOracleWorker` по кластерах з активними страховками, за прапором `:parametric_insurance_oracle_enabled` (kill-switch, default off → no-op); 2) `InsightGeneratorService.cleanup_old_logs!` — видаляє `TelemetryLog` старше 7 днів (крім `oracle_status='dispatched'`). |
 
 #### `ClusterHealthCheckWorker`
 
@@ -1151,6 +1160,17 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Вхід** | `date_string` (String ISO8601, опціонально). Якщо `nil` — кожен кластер бере `cluster.local_yesterday` (per-tenant timezone). |
 | **Сервіси** | `contract.check_cluster_health!(target_date)` → `ContractHealthCheckService` (повертає verdict `:healthy`/`:degraded`/`:blackout`/`:skipped`) |
 | **Side Effects** | [SLASH-1] Гілкує за **verdict** (не за `status_breached?` — breach тепер асинхронний, лише на реальному positive-A слешингу): `:healthy` → `CeloRewardWorker.perform_async`; `:degraded`/`:blackout` → лог, **без винагороди** (деградований/blackout кластер на адъюдикації cause-gate). Enqueue burn на `:degraded` робить сам `ContractHealthCheckService`. Оновлює `cluster.health_index`. **⚠️ Double-trigger caveat:** callback + cron можуть викликати worker двічі на день для тих самих кластерів — `recalculate_health_index!` ідемпотентний, але `CeloRewardWorker.perform_async` без advisory lock може відправити cUSD двічі. Захист — на рівні `Celo::CommunityRewardService` (Kredis.lock), див. §10. |
+
+#### `InsuranceOracleWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `default` |
+| **Retry** | 3 |
+| **Тригер** | **[INS.1]** `InsightBatchCallbacks#on_success` (per-cluster fan-out за прапором `:parametric_insurance_oracle_enabled`) |
+| **Вхід** | `cluster_id`, `date_string` (опц.) |
+| **Сервіси** | `ParametricInsurance#evaluate_daily_health!` (Trigger-1 — **arm-кандидат**, НЕ payout) для кожної активної страховки кластера |
+| **Side Effects** | Озброює `:triggered`-кандидатів + `EwsAlert(:field_audit)`; per-insurance-збій ізольований (`rescue` → log → next). Kill-switch re-check на вході. Per-cluster fan-out тримає планетарний масштаб (як `InsightGeneratorOrchestratorWorker`). |
 
 #### `TokenomicsEvaluatorWorker`
 
@@ -1852,7 +1872,7 @@ end
 | `GuildSponsorship` | web-of-trust | `belongs_to sponsor, sponsored (Forester)`; `collateral_amount`; AASM `active→graduated/called`; per-sponsor cap |
 | `Forester` (промоція ролі) | `ForesterGuild`-реєстр (§Нові компоненти) | `reputation` (=`reputation_score` §Task Assignment), `bond_balance`, certifications, operator-of-cluster |
 
-**Waterfall** (після positive-A-guard підтвердив A): holdback (`forester_share`-escrow) → operator-bond → sponsor-bond → investor `locked_balance` (excess). **Уніфікація A/B:** `ParametricInsurance#evaluate_daily_health!` (B→payout) і slashing daily-health (A→bond-slash) — паралельні евалуатори; cause-route = розвилка A→bond-waterfall / B→payout / C→freeze (кандидат на спільний `DailyHealthRouter`, DRY).
+**Waterfall** (після positive-A-guard підтвердив A): holdback (`forester_share`-escrow) → operator-bond → sponsor-bond → investor `locked_balance` (excess). **Уніфікація A/B:** `ParametricInsurance#evaluate_daily_health!` (B→payout) і slashing daily-health (A→bond-slash) — паралельні евалуатори; cause-route = розвилка A→bond-waterfall / B→payout / C→freeze (спільне денне читання реалізовано як `DailyHealthRouter` — [INS.1], DRY).
 
 **Codex-інтеграція (04_05) — narrative/audit overlay, НЕ control.** 🔴 **ADR-CDX-4: Codex НІКОЛИ не в hot path** (гейміфікація не голодує телеметрію) → інтеграція збагачує, не гейтить:
 - **Cause-forensic слід (вхід Field-Audit).** `Codex::Citation` цитує архетип-`Node` (`chainsaw_protocol`/vandalism) на `EwsAlert` (citable-allow-list включає `EwsAlert`, ADR-CDX-9), атрибутований forester-ом (`created_by_user`) + нотатка → людино-атестований lore-forensic запис Кат-A події = **доказова база Field-Audit** (C→A апгрейд, [`05_05 §5`](05_05_Slashing_and_Risk_Policy)). Але guard (control) НЕ залежить від citations (операційні сигнали); citation — downstream overlay.

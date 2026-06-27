@@ -3,15 +3,15 @@
 # = ===================================================================
 # 🛡️ INSURANCE PAYOUT RECOVERY (страхувальна сітка) [S6.20]
 # = ===================================================================
-# Підбирає страховки, що залипли у стані :triggered. ПЕРВИННИЙ тригер
-# лишається подієвим (ParametricInsurance#evaluate_trigger! та
-# Dclimate::VerificationService → InsurancePayoutWorker.perform_async); якщо
-# той enqueue загубився (напр. Dclimate-воркер упав ПІСЛЯ AASM-переходу
-# triggered), виплата зависла б назавжди — кошти не дійшли б до інвестора.
+# Підбирає страховки, що залипли у стані :triggered. [INS.1] Кандидати озброює денний
+# `InsuranceOracleWorker` → `ParametricInsurance#arm_candidate!` (БЕЗ enqueue payout — dual-
+# trigger); settlement enqueue йде подієво з `Dclimate::VerificationService` (fire_confirmed)
+# → `InsurancePayoutWorker.perform_async`. Якщо той enqueue загубився (Dclimate-воркер упав
+# після AASM-переходу), виплата зависла б — ця сітка перепоставляє.
 #
 # Re-enqueue безпечний: InsurancePayoutWorker ідемпотентний (pessimistic lock +
-# `status_triggered?` guard + double-spend захист), тож повторна постановка
-# вже-обробленої страховки = no-op. Canon: 04_02 §11.
+# `status_triggered?` guard + dual-trigger gate + double-spend захист), тож повторна постановка
+# вже-обробленої АБО ще-не-підтвердженої (held) страховки = no-op. Canon: 04_02 §11.
 class InsurancePayoutRecoveryWorker
   include Sidekiq::Job
 

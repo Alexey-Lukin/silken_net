@@ -51,6 +51,7 @@ module TreeChronicle
       when "vandalism_breach"  then "\u{1F6A8}"
       when "seismic_anomaly"   then "\u{1F30D}"
       when "system_fault"      then "\u26A0"
+      when "field_audit"       then "\u{1F50D}"
       else "\u26A0"
       end
     end
@@ -63,6 +64,7 @@ module TreeChronicle
       when "vandalism_breach"  then "Vandalism Breach"
       when "seismic_anomaly"   then "Seismic Anomaly"
       when "system_fault"      then "System Fault"
+      when "field_audit"       then "Field Audit"
       else alert.alert_type.to_s.humanize
       end
     end

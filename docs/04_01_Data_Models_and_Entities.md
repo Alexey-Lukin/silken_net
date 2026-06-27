@@ -1021,7 +1021,7 @@ active/draft ──cancel──► cancelled
 | `required_confirmations` | integer | Кількість підтверджень |
 | `etherisc_policy_id` | string | ID страхового контракту Etherisc Oracle (nullable) |
 
-**Ключові методи:** `evaluate_daily_health!(target_date)`, `activate_payout!(percentage)`, `recipient_wallet_address`, `uses_etherisc?` (`etherisc_policy_id.present?`).
+**Ключові методи:** `evaluate_daily_health!(target_date)` — Trigger-1 dual-trigger оракула (викликається `InsuranceOracleWorker` per-cluster fan-out за прапором `:parametric_insurance_oracle_enabled`; **arm-кандидат, НЕ payout**), `arm_candidate!(percentage)` (`:triggered` + `field_audit`; settlement окремо за НЕЗАЛЕЖНИМ підтвердженням — [`05_05 §6`](05_05_Slashing_and_Risk_Policy)), `escalate_no_data_field_audit!` (no-data «не карати жертву»-guard — дзеркало `flag_data_blackout!`), `recipient_wallet_address`, `uses_etherisc?` (`etherisc_policy_id.present?`).
 
 ---
 
@@ -1082,7 +1082,7 @@ active/draft ──cancel──► cancelled
 |------|----------|
 | `status` | `active(0) / resolved(1) / ignored(2)` |
 | `severity` | `low(0) / medium(1) / critical(2)` |
-| `alert_type` | `severe_drought(0) / insect_epidemic(1) / vandalism_breach(2) / fire_detected(3) / seismic_anomaly(4) / system_fault(5) / entropy_anomaly(6)` (prefix: true) |
+| `alert_type` | `severe_drought(0) / insect_epidemic(1) / vandalism_breach(2) / fire_detected(3) / seismic_anomaly(4) / system_fault(5) / entropy_anomaly(6) / field_audit(7)` (prefix: true) — `field_audit` = аудит на місці (причина невизначена: no-data blackout / freeze без прямого доказу A / insurance-кандидат), свідомо окремий від `system_fault` (поломка заліза/зв'язку), щоб не накручувати penalty_factor через `comms_no_ack?` (gap-D) і не конфлатити дедуп ([SLASH-1](00_07_Action_Plan_Tracker)) |
 | `satellite_status` | `unverified(0) / verified(1) / rejected_fraud(2) / inconclusive(3)` (prefix: :satellite) |
 
 **AASM:** `mark_resolved`, `ignore`, `reopen` (resolved/ignored→active).

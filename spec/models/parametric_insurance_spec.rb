@@ -152,6 +152,22 @@ RSpec.describe ParametricInsurance, type: :model do
       end
     end
 
+    # [INS.1 no-data guard / «не карати жертву»] Активні дерева Є, але інсайтів немає
+    # (катастрофа знищила сенсори → дерево замовкло). Замість тихого damage_ratio = 0
+    # (кривда жертві мовчанням) — ескалюємо у Field Audit і НЕ обнуляємо/НЕ платимо.
+    context "when trees exist but no insights for the date (the tree fell silent)" do
+      it "escalates a :field_audit instead of silently under-paying the victim" do
+        create_list(:tree, 5, cluster: cluster, status: :active)
+        cluster.reload
+
+        expect { insurance.evaluate_daily_health!(target_date) }
+          .to change { EwsAlert.where(cluster: cluster, alert_type: :field_audit).count }.by(1)
+
+        expect(insurance.reload).to be_status_active
+        expect(InsurancePayoutWorker).not_to have_received(:perform_async)
+      end
+    end
+
     context "when anomalous trees are below the threshold" do
       it "does not trigger the insurance" do
         # 2 out of 10 trees anomalous = 20%, threshold is 30%
@@ -179,15 +195,20 @@ RSpec.describe ParametricInsurance, type: :model do
         expect(insurance.reload).to be_status_triggered
       end
 
-      it "enqueues InsurancePayoutWorker" do
+      # [INS.1 dual-trigger] Оракул лише ОЗБРОЮЄ кандидата (Trigger-1) — НЕ платить.
+      # Гроші чекають незалежного підтвердження (Trigger-2). Закриває basis-risk.
+      it "arms a candidate WITHOUT paying — dual-trigger awaits independent confirmation" do
         trees = create_list(:tree, 10, cluster: cluster, status: :active)
         trees[0..3].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.95) }
         trees[4..9].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.1) }
 
         cluster.reload
-        insurance.evaluate_daily_health!(target_date)
 
-        expect(InsurancePayoutWorker).to have_received(:perform_async).with(insurance.id)
+        expect { insurance.evaluate_daily_health!(target_date) }
+          .to change { EwsAlert.where(cluster: cluster, alert_type: :field_audit).count }.by(1)
+
+        expect(insurance.reload).to be_status_triggered
+        expect(InsurancePayoutWorker).not_to have_received(:perform_async)
       end
     end
 
@@ -306,8 +327,10 @@ RSpec.describe ParametricInsurance, type: :model do
     end
   end
 
-  describe "payout worker enqueue" do
-    it "enqueues InsurancePayoutWorker when payout is triggered" do
+  describe "arm-candidate (dual-trigger)" do
+    # [INS.1] Перетин порога ОЗБРОЮЄ кандидата (:triggered + field_audit), але НЕ
+    # запускає payout — гроші чекають незалежного підтвердження (Trigger-2, 05_05 §6).
+    it "arms the candidate (triggered + field_audit) without enqueuing the payout worker" do
       Prosopite.pause if defined?(Prosopite)
 
       org = create(:organization)
@@ -330,10 +353,11 @@ RSpec.describe ParametricInsurance, type: :model do
                stress_index: 0.95, insight_type: :daily_health_summary)
       end
 
-      insurance.evaluate_daily_health!(target_date)
+      expect { insurance.evaluate_daily_health!(target_date) }
+        .to change { EwsAlert.where(cluster: cluster, alert_type: :field_audit).count }.by(1)
 
       expect(insurance.reload).to be_status_triggered
-      expect(InsurancePayoutWorker).to have_received(:perform_async).with(insurance.id)
+      expect(InsurancePayoutWorker).not_to have_received(:perform_async)
     ensure
       Prosopite.resume if defined?(Prosopite)
     end

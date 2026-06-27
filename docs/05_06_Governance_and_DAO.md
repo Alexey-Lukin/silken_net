@@ -195,5 +195,5 @@ SystemParameter.set("lorenz_sigma", "12.0", updated_by: admin, source: "governan
 - Type coercion: `integer`, `float`, `decimal`, `string`, `boolean`, `json`
 - Bounds validation (`min_value` / `max_value`)
 - Audit trail (`updated_by` → User FK, `source`: default/admin/governance)
-- seed-параметри: Lorenz (σ/ρ/β/dt/iterations/z_min/z_max/z_target), tokenomics, alerts, hardware
+- seed-параметри: Lorenz (σ/ρ/β/dt/iterations/z_min/z_max/z_target), tokenomics, alerts, hardware, **insurance** (feature-flag `parametric_insurance_oracle_enabled` — kill-switch money-path параметричного страхування, default false; [INS.1] — admin/governance, НЕ on-chain `ProtocolParameters`)
 - Синхронізація з `ProtocolParameters.sol` через The Graph — `Governance::ParameterSyncWorker` (§2)

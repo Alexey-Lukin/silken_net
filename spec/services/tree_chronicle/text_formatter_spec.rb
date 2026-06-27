@@ -102,7 +102,8 @@ RSpec.describe TreeChronicle::TextFormatter do
       "insect_epidemic"  => "🐛",
       "vandalism_breach" => "🚨",
       "seismic_anomaly"  => "🌍",
-      "system_fault"     => "⚠"
+      "system_fault"     => "⚠",
+      "field_audit"      => "🔍"
     }.each do |alert_type, expected_icon|
       it "returns #{expected_icon} for #{alert_type}" do
         expect(described_class.alert_icon(alert_type)).to eq(expected_icon)
@@ -125,7 +126,8 @@ RSpec.describe TreeChronicle::TextFormatter do
       "insect_epidemic"  => "Insect Epidemic",
       "vandalism_breach" => "Vandalism Breach",
       "seismic_anomaly"  => "Seismic Anomaly",
-      "system_fault"     => "System Fault"
+      "system_fault"     => "System Fault",
+      "field_audit"      => "Field Audit"
     }.each do |alert_type, expected_title|
       it "returns '#{expected_title}' for #{alert_type}" do
         alert = OpenStruct.new(alert_type: alert_type)

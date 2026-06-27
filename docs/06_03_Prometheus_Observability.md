@@ -210,6 +210,8 @@ end
 | `silkennet_slash_success_total` | `SilkenNet::Metrics::SLASH_SUCCESS_TOTAL` | — | `BlockchainBurningService` (status→sent) | **[ARCH.45]** Успішні broadcast slash — чисельник того ж SLO |
 | `silkennet_solana_payout_attempts_total` | `SilkenNet::Metrics::SOLANA_PAYOUT_ATTEMPTS_TOTAL` | — | `Solana::BatchPayoutService` | **[ARCH.45]** Спроби Solana batch payout — знаменник payout success-rate SLO |
 | `silkennet_solana_payout_success_total` | `SilkenNet::Metrics::SOLANA_PAYOUT_SUCCESS_TOTAL` | — | `Solana::BatchPayoutService` (status→sent) | **[ARCH.45]** Успішні Solana batch payout — чисельник того ж SLO |
+| `silkennet_insurance_payout_attempts_total` | `SilkenNet::Metrics::INSURANCE_PAYOUT_ATTEMPTS_TOTAL` | — | `InsurancePayoutWorker` (payout attempt) | **[INS.1]** Спроби страхової виплати — знаменник insurance payout success-rate SLO |
+| `silkennet_insurance_payout_success_total` | `SilkenNet::Metrics::INSURANCE_PAYOUT_SUCCESS_TOTAL` | — | `InsurancePayoutWorker` (Etherisc claim sent / mint initiated) | **[INS.1]** Успішні страхові виплати — чисельник того ж SLO |
 
 #### Gauges (поточне значення — оновлюються при кожному scrape)
 
@@ -310,14 +312,14 @@ end
 >
 > **Разом: 54 метрики = 32 counters + 20 gauges + 2 histograms.**
 
-**Counters (32):**
+**Counters (34):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
 | `silkennet_anchor_missed_weeks_total` | — | Total missed Ethereum L1 anchor weeks detected (gap > 8 days) |
 | `silkennet_circuit_breaker_rejections_total` | `service` | Web3 requests fast-failed because a provider circuit breaker was open |
 | `silkennet_coap_packets_received_total` | `status` | Total CoAP UDP packets received by the telemetry daemon |
-| `silkennet_ews_alerts_total` | `alert_type` | Total EWS alerts dispatched (fire, drought, pest, storm) |
+| `silkennet_ews_alerts_total` | `alert_type` | Total EWS alerts dispatched (fire, drought, pest, storm, field_audit) |
 | `silkennet_fauna_skip_reports_total` | — | FW.42 telemetry packets reporting a fauna session skipped on low Vcap (per-DID attribution in logs) |
 | `silkennet_fw2_fc_degraded_reports_total` | — | FW.2 telemetry packets reporting a lost FC high-water invariant (Flash refusing writes; per-DID attribution in logs) |
 | `silkennet_m2m_nonce_fallback_total` | — | Total M2M nonce checks falling back from Redis to DB-backed cache (Redis outage indicator) |
@@ -335,6 +337,8 @@ end
 | `silkennet_slashing_events_total` | `reason` | Total slashing (burn) events by reason |
 | `silkennet_solana_payout_attempts_total` | — | [ARCH.45] Solana batch payouts attempted by BatchPayoutService (success-rate SLO denominator) |
 | `silkennet_solana_payout_success_total` | — | [ARCH.45] Solana batch payouts broadcast — status→sent (success-rate SLO numerator) |
+| `silkennet_insurance_payout_attempts_total` | — | [INS.1] Parametric insurance payouts attempted by InsurancePayoutWorker (success-rate SLO denominator) |
+| `silkennet_insurance_payout_success_total` | — | [INS.1] Parametric insurance payouts executed — Etherisc claim sent / mint initiated (success-rate SLO numerator) |
 | `silkennet_streamr_broadcast_failures_total` | — | Total Streamr broadcast failures (P2P real-time telemetry delivery) |
 | `silkennet_telemetry_acoustic_overflow_total` | — | Total telemetry packets with acoustic_events=255 (uint8 saturation) |
 | `silkennet_telemetry_ccm_decrypt_ok_total` | — | FW.2 CCM packets successfully decrypted with valid MIC |

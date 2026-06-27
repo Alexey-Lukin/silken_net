@@ -695,7 +695,7 @@
 
 #### E.41 — Fire-event 48h latency (dClimate obscuration) → immediate-broadcast fallback
 - **P1** · 🤖 · 🔗 · → `04_02 §11`, `05_01`
-- **Стан:** ⚠️ Life-safety — dClimate satellite fire-events можуть запізнюватись ~48h (хмарна обструкція). Ціль (immediate-broadcast) ✅ досягнута двома негайними шляхами, **НЕ** satellite-gated: edge chainsaw→panic-TX (`03_03`/`03_01`, `PANIC_TTL=5`) + backend temp/anomaly alert (`AlertDispatchService`; гейти = Redis silence + SEC.10 rate-limit, dClimate гейтить лише ВИПЛАТУ через `InsurancePayoutWorker`, не тривогу). Відкрите — лише вторинна belt-and-suspenders: Forester Guild fallback-oracle для satellite-obscured wildfire, 🔗 на E.20 (design `04_02 §Forester Guild` — `[PLANNED — blocked by ForestBountyService]`). Канон `04_02 §11` (Dclimate/EWS), `05_01` (dClimate).
+- **Стан:** ⚠️ Life-safety — dClimate satellite fire-events можуть запізнюватись ~48h (хмарна обструкція). Ціль (immediate-broadcast) ✅ досягнута двома негайними шляхами, **НЕ** satellite-gated: edge chainsaw→panic-TX (`03_03`/`03_01`, `PANIC_TTL=5`) + backend temp/anomaly alert (`AlertDispatchService`; гейти = Redis silence + SEC.10 rate-limit, dClimate гейтить лише ВИПЛАТУ через `InsurancePayoutWorker`, не тривогу; **[INS.1]** insurance-оракул тепер живий — arm-кандидат за прапором → dClimate-payout-шлях оживлено, тож Forester-Guild fallback для satellite-obscured стає живою дірою, не dead-code). Відкрите — лише вторинна belt-and-suspenders: Forester Guild fallback-oracle для satellite-obscured wildfire, 🔗 на E.20 (design `04_02 §Forester Guild` — `[PLANNED — blocked by ForestBountyService]`). Канон `04_02 §11` (Dclimate/EWS), `05_01` (dClimate).
 - [ ] 🔗 Forester Guild fallback-oracle (E.20)
 
 #### S6.21 — MFA: TOTP second factor (claimed, not implemented)
@@ -712,9 +712,14 @@
 
 #### ARCH.31 — SOP-в-Phlex inline UI для EwsAlert
 - **P2** · 🤖+👤 · 🔗 · → `04_02`, `08_02 §3`
-- **Стан:** 7 SOP-runbook'ів (drought/epidemic/vandalism/fire/seismic/fault/entropy) як inline-інструкції при кліку на EwsAlert у дашборді — forester отримує немедіане runbook замість пошуку в документах. 🔗 на E.54 (самі SOP-документи UA+EN, joint ChIPB-NUTSU UNI.12). Канон `04_02` (EwsAlert/EWS), `08_02 §3` (SOP-джерело). SOP-compliance = зворотний бік Кат-A negligence-evidence (no-firebreak-after-alert = недотримання fire-SOP — SLASH-1/BIZ.13 міряють саме його відсутність).
+- **Стан:** 8 SOP-runbook'ів (drought/epidemic/vandalism/fire/seismic/fault/entropy/**field_audit** [INS.1]) як inline-інструкції при кліку на EwsAlert у дашборді — forester отримує немедіане runbook замість пошуку в документах. 🔗 на E.54 (самі SOP-документи UA+EN, joint ChIPB-NUTSU UNI.12). Канон `04_02` (EwsAlert/EWS), `08_02 §3` (SOP-джерело). SOP-compliance = зворотний бік Кат-A negligence-evidence (no-firebreak-after-alert = недотримання fire-SOP — SLASH-1/BIZ.13 міряють саме його відсутність).
 - [ ] 🔗 E.54 — 7 SOP-документів (UNI.12)
 - [ ] 🤖 Phlex inline-SOP компонент на EwsAlert dashboard
+
+#### I18N.1 — alert_type i18n локалізація (усі типи × 4 мови)
+- **P3** · 🤖 · 🌿 · → `04_02`, `04_04`
+- **Стан:** Знахідка (INS.1, 2026-06-27) — `EwsAlert.message` (усі creator'и) + `TextFormatter#alert_title`/`#alert_icon` = **hardcoded-рядки**; `config/locales/alerts/*.yml` (uk/en/lv/lt) покривають лише UI-хром (badge/index/table-headers), БЕЗ per-alert-type value-labels чи message-ключів (`grep alert_types` → порожньо). Маркер на майбутнє вже стоїть (`text_formatter.rb:9`). Поточно безпечно (`.humanize`/hardcoded-case з `else`-fallback), але не локалізовано для 4 мов — і свідомо НЕ робили по одному типу (`field_audit` додано в ряд із 7 сиблінгами, жоден не i18n-нутий). Канон `04_02` (TextFormatter card), UI-токени `04_04`.
+- [ ] 🤖 i18n-ключі per-alert-type (8 типів × 4 мови: title + icon) → `TextFormatter` через `I18n.t`; опц. `EwsAlert.message`-builder через i18n — усі типи РАЗОМ, не по одному
 
 #### S6.10 — MaintenanceRecord — лише лог
 - **P3** · 🤖 · 🔗 · → `04_02 §Forester Guild`
@@ -730,9 +735,9 @@
 - **Стан:** ✅ **Фаза 1 (код) реалізована** — positive-A-evidence guard на чокпоінті `BlockchainBurningService` (`Slashing::CauseEvidence#positive_a?`): необоротний `slash()` лише за прямого доказу Кат-A (tamper), інакше `:frozen` + Field Audit — відновлює C-дефолт §2. Закрив 3 false-slash діри (природна пожежа / посуха-як-«фрод» / планова смерть — biomass/decommission) **+ латентний баг** «daily ніколи не палив». A-сет фази-1 свідомо КОНСЕРВАТИВНИЙ = лише tamper; повний опис + supporting-зміни (verdict-рефактор health-check / крон-Celo-gate / воркер-outcome / termination-exempt) — [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy). Відкрите ↓.
 - [ ] 👤 DAO/founder перед mainnet: розширити A-сет (scoped-unmaintained / окремий chainsaw-сигнал) + активувати inert `penalty_factor`-uplift (`slash_cause_uplift_enabled`)
 - [ ] 🤖 (secondary) tree-side `streamr_undelivered` сигнал-джерело (guarded→0) + repeat-offence вага
-- [ ] 🤖 (secondary) Field-Audit alert-дедуп: freeze/blackout/slash-failure пишуть cluster-level `system_fault` щоденно при тривалій деградації → окремий `field_audit` alert_type / dedup-ключ (інакше дедуп конфлатить/маскує сигнали; **+ ARCH.46:** окремий тип також виключить freeze-алерт із `comms_no_ack?` — інакше при DAO-uplift freeze самонакручує `penalty_factor`, gap D)
-- [ ] 🤖 (backlog) поріг «critical stress» зведений 0.8↔0.83: slash-шлях = `AiInsight::SLASH_STRESS_THRESHOLD` (0.83, ARCH.46), але `AiInsight.critical_stress`-scope / `contract_breach?` / `ParametricInsurance` = 0.8 (insurance/UI) → звести в іменований концепт або задокументувати свідомий розрив; + опц. міграція slash-порога (+ 20%-тригер `Rational(1,5)`) у `SystemParameter` як `slash_gamma`/`slash_penalty_factor_max` (governance-tunable per `05_06` STRESS_THRESHOLD/SLASH_THRESHOLD — founder-flagged)
-- [ ] 🤖 (backlog) A/B-координація: slash (A) і `ParametricInsurance#evaluate_daily_health!` (B) читають ту саму stress-дату → кандидат на спільний `DailyHealthRouter` (DRY, `04_02 §11`)
+- [x] 🤖 Field-Audit alert-тип ✅ **SHIPPED [INS.1]** — окремий `EwsAlert.alert_type :field_audit` (=7); `flag_data_blackout!` + `freeze_for_field_audit!` пишуть `:field_audit` (не `:system_fault`); `comms_no_ack?`/`critical_unmaintained?` виключають `:field_audit` → **gap-D закрито** (freeze більше не накручує `penalty_factor`). Залишок: dedup-**ключ** (уникнути щоденних дублів cluster-level field_audit при тривалій деградації) — менший residual; type-розділення вже знімає конфляцію з comms-fault. `system_fault` свідомо лишається на DailyAggregationWorker глобальному блекауті + `handle_slashing_failure` (справжні tech/comms-fault).
+- [ ] 🤖 (backlog) поріг «critical stress» 0.8↔0.83: slash = `AiInsight::SLASH_STRESS_THRESHOLD` (0.83), insurance/UI = 0.8. **[INS.1]** spread тепер ЖИВИЙ (insurance-оракул озброюється за 0.8, slash триггерить за 0.83) — задокументований свідомий розрив у `DailyHealthRouter` + [`05_05 §4`](05_05_Slashing_and_Risk_Policy) (РІЗНІ концепти: insurance-кандидат vs slash-тригер). Опц.: уніфікувати в іменований концепт АБО міграція slash-порога (+ 20%-тригер `Rational(1,5)`) у `SystemParameter` як `slash_gamma`/`slash_penalty_factor_max` (governance-tunable per `05_06` — founder-flagged)
+- [x] 🤖 A/B-координація ✅ **SHIPPED [INS.1]** — `DailyHealthRouter` (`app/services/daily_health_router.rb`): One-Home спільного денного читання `AiInsight.daily_health_summary` + `blackout?`; споживають ОБИДВА шляхи (A `ContractHealthCheckService` / B `evaluate_daily_health!`). DRY-картка [`04_02 §6`](04_02_Business_Logic_and_Services).
 
 #### SEC.1 — Multisig Gnosis Safe + PAUSER⊥admin split (production admin role)
 - **P0** · 👤 · 🟢 · → [`05_03` — Admin-Role Split](05_03_Tokenomics_SCC_and_SFC)
@@ -764,11 +769,13 @@
 - [ ] 👤 CertiK Skynet runtime monitoring — post-mainnet deploy
 
 #### INS.1 — Parametric insurance oracle: dead pipeline + no-data under-pay
-- **P2** · 🤖+👤 · ⚪ · → [`05_05 §4`](05_05_Slashing_and_Risk_Policy)
-- **Стан:** Знахідка (ARCH.46 deep-dive, verified grep) — `ParametricInsurance#evaluate_daily_health!` (B-шлях, force-majeure payout) має **0 prod-callerів** (коментар «викликається `DailyAggregationWorker`» хибний; повний grep чистий) → уся parametric-insurance-oracle-труба **не активна** в проді (ні daily-AiInsight-оракул, ні dClimate-confirmation, що шукає `:triggered`-записи, яких ніхто не створює). Суміжно — дзеркало ARCH.46 у протилежний бік: на no-data метод тихо рахує `damage_ratio = 0` → **недоплата жертві** (катастрофа нищить сенсори → нема AiInsight → 0 виплата + 0 escalation), що порушує C-дефолт «escalate, не auto-resolve». НЕ горить (мертвий код), але HARD-gate до активації insurance. Канон [`05_05 §2/§4`](05_05_Slashing_and_Risk_Policy).
-- [ ] 🤖 під'єднати `evaluate_daily_health!` у daily-ланцюг (`ClusterHealthCheckWorker` чи новий `InsuranceOracleWorker`) + виправити хибний коментар
-- [ ] 🤖 no-data guard: порожні AiInsight за `target_date` → escalate (EwsAlert/Field-Audit), не тихий `damage_ratio = 0` (дзеркало `flag_data_blackout!`)
-- [ ] 👤 design: послідовність daily-oracle (`:triggered`) ↔ dClimate-confirmation ↔ `InsurancePayoutWorker` + integration-тест
+- **P2** · 🤖+👤 · 🟡 · → [`05_05 §4`](05_05_Slashing_and_Risk_Policy)
+- **Стан:** Знахідка (ARCH.46 deep-dive, verified grep) — `ParametricInsurance#evaluate_daily_health!` (B-шлях) мала **0 prod-callerів** (хибний коментар) → труба мертва; + no-data `damage_ratio = 0` = недоплата жертві. **✅ SHIPPED [dual-trigger, minimal] 2026-06-27:** оракул оживлено за enterprise-коректним **dual-trigger** (founder-confirmed via AskUserQuestion): AI = Trigger-1 (`evaluate_daily_health!` → `arm_candidate!`: `:triggered` + field_audit, **НЕ** payout); settlement лише за НЕЗАЛЕЖНИМ Trigger-2 (dClimate satellite / Field-Audit людина) через `InsurancePayoutWorker#awaiting_independent_confirmation?` — закриває basis-risk/moral-hazard (textbook dual-trigger; index-insurance independence; UMA-OO confirm-window). **No-data guard** (`escalate_no_data_field_audit!` замість тихого 0 — «не карати жертву»; «знищ сенсори→заяви катастрофу» не дає авто-виплати, §5 going-dark=tamper). Усе за **kill-switch** `:parametric_insurance_oracle_enabled` (default off → інертно, як `slash_cause_uplift_enabled`). + `DailyHealthRouter` (DRY) + `field_audit`-тип (gap-D) + insurance-payout SLO. Wiring: `InsuranceOracleWorker` per-cluster fan-out з `InsightBatchCallbacks#on_success`. Канон 04_01/04_02 §6/05_05 §4/07_01 §7/06_03/05_06. Suite 7097/0, brakeman 0. Філософія: «почути дерева, без людського фрауду» (00_01 §1/§2/§6; 00_08 §1 forest-collective North-Star). Канон [`05_05 §4`](05_05_Slashing_and_Risk_Policy).
+- [x] 🤖 ✅ під'єднано `evaluate_daily_health!` у daily-ланцюг — `InsuranceOracleWorker` per-cluster fan-out з `InsightBatchCallbacks#on_success` (за прапором); хибний коментар виправлено.
+- [x] 🤖 ✅ no-data guard — `escalate_no_data_field_audit!` (порожні AiInsight за `target_date` при активних деревах → Field Audit, не тихий `damage_ratio = 0`; дзеркало `flag_data_blackout!`).
+- [ ] 👤/🔗 design-послідовність — **рішення прийнято + fire-шлях landed [INS.1]:** dual-trigger (arm → dClimate satellite-confirm → payout) + integration-тест ✅. Залишок = multi-peril auto-Trigger-2 ↓.
+- [ ] 🤖 (deferred) multi-peril auto-Trigger-2: dClimate `drought_index` confirmation (зараз verification fire-centric → **latent drought-bug**: drought→no-FRP→clear_sky→хибний slash) + acoustic-pest + чистий armed-vs-confirmed payout-gate. North-Star = голос самого лісу (sap/VPD/acoustic [`05_05 §7`](05_05_Slashing_and_Risk_Policy); forest-collective [`00_08 §1`](00_08_Beyond_TRL9_Planetary_Roadmap)).
+- [ ] 🤖 (deferred, gated) Auto-Immune Sentinel hook ([`00_08 §1.4`](00_08_Beyond_TRL9_Planetary_Roadmap) Gap #4): proactive cluster-fingerprint + decoy-DID tripwire як ще одне джерело незалежного підтвердження, коли money-path live + cap зросте.
 
 #### BIZ.13 — Slashing principal-agent: investor capital vs operator-bond
 - **P2** · 🤖+👤 · 🔗 · → `05_05 §3.1`, `05_03 §Slashing`, `04_02`
@@ -1093,7 +1100,7 @@
 
 #### UNI.12 — ChIPB-NUTSU: пожежна безпека + параметричне страхування
 - **P1** · 👤 · ⚪ · → `08_02 §3`
-- **Стан:** Не почато — ChIPB + НУЦЗУ: (1) валідація тригерів параметричного страхування (FRP/confidence з dClimate), (2) SOP для 7 EwsAlert-типів (drought/insect/vandalism/fire/seismic/fault/entropy), (3) ДСНС API. Канон `08_02 §3`.
+- **Стан:** Не почато — ChIPB + НУЦЗУ: (1) валідація тригерів параметричного страхування (FRP/confidence з dClimate), (2) SOP для 8 EwsAlert-типів (drought/insect/vandalism/fire/seismic/fault/entropy/field_audit [INS.1]), (3) ДСНС API. Канон `08_02 §3`.
 - [ ] 👤 cold contact ректорат + презентація fire-safety stack + joint SOP workshop (ARCH.31)
 - [ ] 🔗 залежить UNI.14 (СЄУ legal) для structuring страхування
 
@@ -1223,7 +1230,7 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 | ID | Опис | Джерело | Note / Milestone |
 |----|------|---------|------------------|
 | E.53 | **VNA-вимір SMD-антени під PEEK радомом** — VSWR <1.5 на 868 МГц для 3-5 варіантів товщини PEEK (1.5/2.0/2.5 мм) у вологому/сухому стані + **3D Keep-Out з Ti-фланцем нижче** (Z-clearance 5/8/12 мм, з/без overhang за периметр Ti). Лабораторна задача (cross-ref UNI.10 ChDTU Гончаров, нова вимога `02_01 §5.3` revised) | `08_02` §2 (Гончаров) + `02_01` | P1, blocked by HW.17 + UNI.10 |
-| E.54 | **SOP документи для 7 типів EwsAlert** — стандартизовані інструкції UA+EN: severe_drought, insect_epidemic, vandalism_breach, fire_detected, seismic_anomaly, system_fault, entropy_anomaly. Інтеграція як inline UI у Phlex (cross-ref ARCH.31) | `08_02 §3` | P1, joint with ChIPB-NUTSU (UNI.12) |
+| E.54 | **SOP документи для 8 типів EwsAlert** — стандартизовані інструкції UA+EN: severe_drought, insect_epidemic, vandalism_breach, fire_detected, seismic_anomaly, system_fault, entropy_anomaly, field_audit ([INS.1]). Інтеграція як inline UI у Phlex (cross-ref ARCH.31) | `08_02 §3` | P1, joint with ChIPB-NUTSU (UNI.12) |
 | E.19 | 8 магістерських — blocked by TRL 4 advancement | `08_03` | Post-TRL 4 |
 | E.26 | `health_trend` field для TelemetryLog — predictive degradation | Legacy | Post-TRL 6, потребує E.10 (Kalman) |
 | E.34 | dClimate fallback → ForestBountyService (drone/ranger PoPhW) | `04_02` | Post-TRL 6 |
@@ -1263,7 +1270,7 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 | E.15 | Reed-Solomon FEC або Hamming для LoRa error correction | `08_02` | Потребує Косенюк |
 | E.18 | 10 запланованих Q1 публікацій — blocked by lab data | `08_03` | Blocked by UNI.1-3 |
 | E.29 | Альтернативні EBFC медіатори (ferrocene, methylene blue) | `01_03` | R&D alternatives |
-| E.37 | TimescaleDB для telemetry_logs: hypertables + continuous aggregates | `04_01` | >100M рядків/місяць |
+| E.37 | TimescaleDB для telemetry_logs: hypertables + continuous aggregates (+ **[INS.1]** `ai_insights` — co-partition кандидат: `DailyHealthRouter` подвоює daily-read A+B) | `04_01` | >100M рядків/місяць |
 | E.40 | **Ignion Virtual Antenna™:** NN02-310 як альтернатива Yageo/Taoglas 868 МГц | `02_01` §5 | Evaluation kit + VSWR тест |
 | ARCH.20 | Petri Net PN-модель Rails моноліту: формальна верифікація відсутності deadlock при 10,000 concurrent IoT connections. Sidekiq + Puma + PostgreSQL modeling. Конволюційний метод для зменшення state space explosion у 10-100 разів | `08_02` | R&D (Супруненко, ЧНУ) |
 | ARCH.24 | CE/FCC/RoHS/EMC/IP68 compliance roadmap для EU/NA ринків: CE-RED (868 МГц LoRa), FCC Part 15/90, RoHS-2, IP68 (IEC 60529), REACH. Кожна сертифікація потребує 3-6 місяців та спеціалізованої лабораторії | `08_02` | Pre-mass production (Косенюк, ЧНУ) |

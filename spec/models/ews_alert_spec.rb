@@ -59,6 +59,7 @@ RSpec.describe EwsAlert, type: :model do
       expect(alert).to respond_to(:alert_type_severe_drought?)
       expect(alert).to respond_to(:alert_type_fire_detected?)
       expect(alert).to respond_to(:alert_type_system_fault?)
+      expect(alert).to respond_to(:alert_type_field_audit?)
     end
 
     it "defines satellite_status enum with satellite prefix" do

@@ -9,10 +9,38 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
   let!(:wallet) { create(:wallet, tree: tree) }
   let(:insurance) { create(:parametric_insurance, :triggered, cluster: cluster, organization: organization) }
 
+  # [INS.1 dual-trigger] За замовчуванням НЕЗАЛЕЖНЕ підтвердження присутнє (cluster-level verified
+  # fire — Trigger-2), тож happy-path виплата проходить gate. Cluster-level (tree: nil), щоб не
+  # конфліктувати з per-tree fire-алертами сателітних тестів. Тести «без підтвердження → тримаємо»
+  # прибирають `confirmation`.
+  let!(:confirmation) do
+    create(:ews_alert, :fire, cluster: cluster, tree: nil, satellite_status: :verified)
+  end
+
   before do
     allow(BlockchainMintingService).to receive(:call)
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
     allow(Turbo::StreamsChannel).to receive(:broadcast_prepend_to)
+    # [INS.1 kill-switch] Прапор УВІМКНЕНО за замовчуванням (інакше воркер no-op); окремий тест нижче перевіряє flip-off.
+    allow(SystemParameter).to receive(:current).and_call_original
+    allow(SystemParameter).to receive(:current)
+      .with(:parametric_insurance_oracle_enabled, default: false).and_return(true)
+    # EwsAlert-колбеки (after_create_commit не фаєрить у транзакційних тестах — стабимо про всяк).
+    allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
+    allow_any_instance_of(EwsAlert).to receive(:broadcast_new_alert)
+    allow_any_instance_of(EwsAlert).to receive(:broadcast_alert_update)
+    allow_any_instance_of(EwsAlert).to receive(:schedule_satellite_verification!)
+  end
+
+  # [INS.1 kill-switch] Прапор OFF → money-path не виконується (кандидат тримається).
+  it "is an inert no-op when the kill-switch flag is off (default)" do
+    allow(SystemParameter).to receive(:current)
+      .with(:parametric_insurance_oracle_enabled, default: false).and_return(false)
+
+    described_class.new.perform(insurance.id)
+
+    expect(BlockchainMintingService).not_to have_received(:call)
+    expect(insurance.reload.status).to eq("triggered")
   end
 
   describe "#perform" do
@@ -101,12 +129,27 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
         }.to change(BlockchainTransaction, :count).by(1)
       end
 
-      it "proceeds with payout when no fire/drought alerts exist" do
+      # [INS.1] rejected_fraud = dClimate ВІДХИЛИВ подію (не confirmation) → HOLD, не pay —
+      # інакше severe_drought→FIRMS→no-fire→rejected_fraud давав би slash + payout одночасно.
+      it "holds payout when the only independent alert is satellite_rejected_fraud (not verified)" do
+        confirmation.destroy # прибираємо global verified
+        create(:ews_alert, cluster: cluster, tree: tree, alert_type: :severe_drought,
+                           severity: :critical, satellite_status: :rejected_fraud)
+
+        described_class.new.perform(insurance.id)
+
+        expect(BlockchainMintingService).not_to have_received(:call)
+      end
+
+      # [INS.1 dual-trigger] Без незалежного fire/drought-підтвердження (Trigger-2) — ТРИМАЄМО,
+      # навіть якщо є інші алерти. Це й є замок проти basis-risk (не платимо за нашим сигналом).
+      it "holds payout when no independent fire/drought confirmation exists (basis-risk guard)" do
+        confirmation.destroy
         create(:ews_alert, cluster: cluster, tree: tree, alert_type: :vandalism_breach)
 
-        expect {
-          described_class.new.perform(insurance.id)
-        }.to change(BlockchainTransaction, :count).by(1)
+        described_class.new.perform(insurance.id)
+
+        expect(BlockchainMintingService).not_to have_received(:call)
       end
 
       it "logs satellite pending message for unverified alerts" do
@@ -125,9 +168,10 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
     end
 
     it "returns early when no trees exist in cluster" do
-      # Створюємо порожній кластер без дерев
+      # Порожній кластер без дерев, але з незалежним підтвердженням (щоб дійти до wallet-перевірки).
       empty_cluster = create(:cluster, organization: organization)
       empty_insurance = create(:parametric_insurance, :triggered, cluster: empty_cluster, organization: organization)
+      create(:ews_alert, :fire, cluster: empty_cluster, tree: nil, satellite_status: :verified)
 
       expect(Rails.logger).to receive(:error).with(/без жодного дерева/)
 

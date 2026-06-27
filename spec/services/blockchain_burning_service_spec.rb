@@ -100,7 +100,7 @@ RSpec.describe BlockchainBurningService do
         result = nil
         expect {
           result = described_class.call(organization.id, naas_contract.id)
-        }.to change { EwsAlert.where(alert_type: :system_fault).count }.by(1)
+        }.to change { EwsAlert.where(alert_type: :field_audit).count }.by(1)
 
         expect(result).to eq(:frozen)
         expect(mock_client).not_to have_received(:transact)
@@ -295,7 +295,7 @@ RSpec.describe BlockchainBurningService do
       result = nil
       expect {
         result = described_class.call(organization.id, naas_contract.id, source_tree: tree)
-      }.to change { EwsAlert.where(alert_type: :system_fault).count }.by(1)
+      }.to change { EwsAlert.where(alert_type: :field_audit).count }.by(1)
 
       expect(result).to eq(:frozen)
       expect(mock_client).not_to have_received(:transact)
@@ -450,6 +450,20 @@ RSpec.describe BlockchainBurningService do
         alert = create(:ews_alert, cluster: cluster, severity: :critical,
                                    alert_type: :vandalism_breach, status: :active, created_at: 1.hour.ago)
         create(:maintenance_record, ews_alert: alert)
+        expect(service.send(:critical_unmaintained?)).to be(false)
+      end
+
+      # [SLASH-1 gap-D] Наш власний :field_audit (freeze/blackout) НЕ рахується як comms-loss —
+      # інакше freeze самонакручував би penalty_factor на тій самій жертві.
+      it "excludes our own :field_audit escalation from comms_no_ack? (gap-D)" do
+        create(:ews_alert, cluster: cluster, severity: :critical,
+                           alert_type: :field_audit, tree: nil, status: :active)
+        expect(service.send(:comms_no_ack?)).to be(false)
+      end
+
+      it "excludes :field_audit from critical_unmaintained? (our audit-call ≠ operator negligence)" do
+        create(:ews_alert, cluster: cluster, severity: :critical, alert_type: :field_audit,
+                           tree: nil, status: :active, created_at: 1.hour.ago)
         expect(service.send(:critical_unmaintained?)).to be(false)
       end
     end

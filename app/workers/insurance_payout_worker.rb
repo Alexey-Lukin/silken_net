@@ -11,6 +11,10 @@ class InsurancePayoutWorker
     insurance = ParametricInsurance.includes(cluster: :organization).find_by(id: insurance_id)
     return unless insurance
 
+    # [INS.1 kill-switch] Майстер-прапор money-path (default false). Стандарт = national-grid
+    # SCADA (00_08 §1.4): flip off → виплати миттєво зупиняються, кандидати тримаються.
+    return unless oracle_enabled?
+
     # 1. ПЕРЕВІРКА ТРИГЕРА
     # Виконуємо лише якщо Оракул активував тригер, але виплата ще не зафіксована як завершена.
     # [P1 FIX]: Також дозволяємо :paid для recovery orphaned Etherisc TX —
@@ -18,10 +22,11 @@ class InsurancePayoutWorker
     # а tx залишається :pending без BlockchainConfirmationWorker.
     return unless insurance.status_triggered? || insurance.status_paid?
 
-    # [COSMIC EYE]: Перевірка супутникового консенсусу для пожежних алертів.
-    # Якщо в кластері є активні fire_detected/severe_drought алерти, вони повинні
-    # бути підтверджені супутником перед виплатою.
-    return if satellite_verification_pending?(insurance.cluster)
+    # [INS.1 dual-trigger / COSMIC EYE] Trigger-2: гроші рухає лише НЕЗАЛЕЖНЕ verified-
+    # підтвердження (dClimate satellite fire/drought). Кандидат, озброєний AI-оракулом
+    # (Trigger-1), тримається, поки незалежне джерело не підтвердить — закриває basis-risk
+    # (не платимо лише за нашим сигналом, 05_05 §6).
+    return if awaiting_independent_confirmation?(insurance.cluster)
 
     organization = insurance.cluster.organization
 
@@ -79,6 +84,8 @@ class InsurancePayoutWorker
                                 .order(created_at: :desc).first || insurance.blockchain_transaction
 
     if tx
+      # [INS.1 SLO] Лічимо спробу виплати (знаменник success-rate SLO, 06_03 §2.8).
+      SilkenNet::Metrics::INSURANCE_PAYOUT_ATTEMPTS_TOTAL.increment
       broadcast_insurance_update(insurance, tx)
 
       if insurance.uses_etherisc?
@@ -103,6 +110,7 @@ class InsurancePayoutWorker
             Etherisc::ClaimService.new(insurance).claim!
           end
           tx.update!(status: :sent, tx_hash: etherisc_tx_hash)
+          SilkenNet::Metrics::INSURANCE_PAYOUT_SUCCESS_TOTAL.increment
         end
 
         BlockchainConfirmationWorker.perform_in(30.seconds, tx.tx_hash) if tx.tx_hash.present?
@@ -112,6 +120,7 @@ class InsurancePayoutWorker
         within_rpc_limit do
           BlockchainMintingService.call(tx.id)
         end
+        SilkenNet::Metrics::INSURANCE_PAYOUT_SUCCESS_TOTAL.increment
       end
     end
 
@@ -124,16 +133,31 @@ class InsurancePayoutWorker
 
   private
 
-  # [COSMIC EYE]: Перевіряє, чи дозволяє супутниковий консенсус виплату.
-  # Повертає true (блокує виплату) якщо:
-  # - unverified алерти: виплата ще не підтверджена супутником, чекаємо
-  # - inconclusive алерти: потрібен ручний DAO-аудит
-  def satellite_verification_pending?(cluster)
+  # [INS.1 kill-switch] Майстер-прапор money-path (default false). defined?-memo (не ||=),
+  # бо легітимне значення — false. Дзеркалить BlockchainBurningService#cause_uplift_enabled?.
+  def oracle_enabled?
+    return @oracle_enabled if defined?(@oracle_enabled)
+
+    @oracle_enabled = ActiveModel::Type::Boolean.new.cast(
+      SystemParameter.current(:parametric_insurance_oracle_enabled, default: false)
+    )
+  end
+
+  # [INS.1 dual-trigger / COSMIC EYE] Trigger-2: payout лише за НЕЗАЛЕЖНИМ verified-підтвердженням.
+  # Кандидат, озброєний AI-оракулом (Trigger-1), НЕ платиться, поки незалежне джерело (dClimate
+  # satellite fire/drought) не підтвердить. Повертає true (ТРИМАТИ виплату) якщо:
+  # - жодного незалежного fire/drought-алерту → Trigger-2 не спрацював (basis-risk guard);
+  # - unverified → супутник ще не підтвердив, чекаємо;
+  # - inconclusive → потрібен ручний DAO / Field-Audit.
+  def awaiting_independent_confirmation?(cluster)
     fire_alerts = cluster.ews_alerts
                          .where(alert_type: [ :fire_detected, :severe_drought ])
                          .where(status: :active)
 
-    return false if fire_alerts.none?
+    if fire_alerts.none?
+      Rails.logger.info "🛡️ [Insurance] Кластер ##{cluster.id}: кандидат без незалежного підтвердження (Trigger-2) — тримаємо, payout НЕ запущено."
+      return true
+    end
 
     if fire_alerts.exists?(satellite_status: :unverified)
       Rails.logger.info "🛰️ [Insurance] Виплата відкладена — очікуємо супутникову верифікацію для кластера ##{cluster.id}."
@@ -145,7 +169,14 @@ class InsurancePayoutWorker
       return true
     end
 
-    false
+    # [INS.1] Платимо ЛИШЕ за VERIFIED незалежним підтвердженням. `:rejected_fraud` (dClimate
+    # відхилив подію — напр. severe_drought пройшов FIRMS і вогню не знайшов → clear_sky) — це
+    # ВІДМОВА, а не confirmation → тримаємо (інакше drought→rejected_fraud давав би ОДНОЧАСНО
+    # slash + payout). Немає verified → не підтверджено → hold.
+    return false if fire_alerts.exists?(satellite_status: :verified)
+
+    Rails.logger.info "🛡️ [Insurance] Кластер ##{cluster.id}: незалежний алерт є, але НЕ verified (можливо rejected) — тримаємо, payout НЕ запущено."
+    true
   end
 
   def broadcast_insurance_update(insurance, transaction)

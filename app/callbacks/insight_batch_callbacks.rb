@@ -29,8 +29,27 @@ class InsightBatchCallbacks
     # 1. Аудит NaaS-контрактів (Slashing Protocol / Celo Rewards)
     ClusterHealthCheckWorker.perform_async(date_string)
 
+    # 1b. [INS.1] Страховий оракул (Trigger-1, arm-кандидат) — per-cluster fan-out за майстер-
+    # прапором :parametric_insurance_oracle_enabled (kill-switch, default off → інертно).
+    # Settlement окремо за НЕЗАЛЕЖНИМ підтвердженням (dClimate / Field-Audit), 05_05 §6.
+    enqueue_insurance_oracle(date_string)
+
     # 2. КЕНОЗИС: Очищення сирих логів старше 7 днів
     # Ідемпотентна операція на іншому діапазоні дат.
     InsightGeneratorService.cleanup_old_logs!
+  end
+
+  private
+
+  # [INS.1] Fan-out лише по кластерах з активними страховками; за прапором (kill-switch).
+  def enqueue_insurance_oracle(date_string)
+    return unless ActiveModel::Type::Boolean.new.cast(
+      SystemParameter.current(:parametric_insurance_oracle_enabled, default: false)
+    )
+
+    Cluster.joins(:parametric_insurances).merge(ParametricInsurance.status_active)
+           .distinct.find_each do |cluster|
+      InsuranceOracleWorker.perform_async(cluster.id, date_string)
+    end
   end
 end
