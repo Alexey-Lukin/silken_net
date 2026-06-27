@@ -98,7 +98,7 @@ To eliminate double-counting, replay attacks, and oracle manipulation, Silken Ne
 
 ```
 L1: Identity      peaq         — WHO is this?      (machine DID, tree passport)
-L2: Verification  IoTeX        — is it TRUE?       (W3bstream ZK-proof of hardware origin)
+L2: Verification  IoTeX        — is it TRUE?       (W3bstream ZK-proof of pipeline integrity)
 L3: Oracle/Bridge Chainlink    — to CONNECT        (DON consensus, CCIP cross-chain delivery)
 L4: Execution     Solana       — to PAY            (Ed25519 micro-rewards, high TPS)
 L5: Memory        Filecoin     — to REMEMBER       (immutable raw-telemetry archive)
@@ -109,7 +109,7 @@ Concretely:
 
 - **Hardware authentication:** every LoRa frame is encrypted and authenticated on the STM32's CRYP module with **AES-128-CCM** — the same AEAD construction standardized by IEEE 802.15.4, Zigbee, Thread, and BLE for low-power constrained-radio links. CCM delivers confidentiality, integrity, and replay resistance in a single hardware-accelerated primitive, at bandwidth and energy costs appropriate to a sub-milliwatt budget and a sub-30-byte LoRa frame. Per-device keys are derived via HKDF from a Protected-Flash master seed and never leave the Ruby process boundary in plaintext.
 - **Machine identity:** at provisioning, every Soldier is registered on **peaq** as a Substrate-native DID (`did:peaq:0x{40 hex}`), Ed25519-signed by the deployment operator. The DID is the canonical machine passport across all twelve networks.
-- **Zero-knowledge verification:** each batch of telemetry is verified by an **IoTeX W3bstream** ZK circuit, which proves that the data originated from registered hardware running the expected firmware bytecode — *without* revealing the raw sensor stream. The proof reference is anchored back into the telemetry log as `zk_proof_ref`.
+- **Zero-knowledge verification:** each batch of telemetry is verified by an **IoTeX W3bstream** ZK circuit, which proves the batch passed unaltered through the registered pipeline and binds it to the machine's on-chain DID — *without* revealing the raw sensor stream. (Cryptographic proof of *physical origin* — that this exact silicon signed its own data — is the true-DePIN North-Star we are climbing toward; today that origin is custodially attested, with metrological ground-truth complementing it.) The proof reference is anchored back into the telemetry log as `zk_proof_ref`.
 - **Oracle consensus:** the verified result is then dispatched to a **Chainlink DON** for cross-validation against external climate oracles (dClimate, NASA FIRMS) before being relayed to the minting contract. Replay protection uses an HMAC-SHA256 nonce with a Redis TTL of 10 minutes; timing-safe comparison is enforced.
 - **Permanent memory:** raw telemetry is daily archived to **Filecoin/IPFS** so that ten years from now, any institutional holder of an SCC can audit the second-by-second physiological history of the tree their token represents.
 
@@ -138,7 +138,7 @@ This matters. A protocol that burns its investors' tokens because lightning stru
 
 We are not announcing a finished product. We are announcing an architecture in which each layer is honestly readable on the NASA Technology Readiness Level scale:
 
-- **Backend (Rails 8.1, Sidekiq, 12-chain orchestration, dual-token contracts):** TRL 8. Production-grade, RSpec-covered, externally audited contracts on Polygon.
+- **Backend (Rails 8.1, Sidekiq, 12-chain orchestration, dual-token contracts):** TRL 8. Production-grade, RSpec-covered; the Solidity contracts are code-complete and pass a CI audit-stack (Slither, Aderyn, Halmos, Medusa), Polygon-targeted and pre-mainnet (external audit + mainnet deployment are the TRL-9 gate).
 - **Firmware (STM32WLE5JC Soldier, mruby Lorenz Bio-Contract, LoRa mesh, Queen gateway):** TRL 6. Running on hardware, parity-verified server-side, with named open blockers — AES-CCM migration, TinyML inference call-site, OTA-deployable acoustic model.
 - **Hardware capsule, BQ25570 MPPT power chain, EDLC buffer:** TRL 6. Specified, prototyped, and pre-flight checklists drafted.
 - **Tri-zone coaxial anchor and Gen-2.0 EBFC enzymatic stack:** TRL 3. Zero-Lab in-silico pipeline (L1-L4) PASSED 2026-05-25 — validated protein architecture, matrix stability (6 tree species), electron cascade, and kinetics entirely in silico (analytical PoC; per NASA/ISO 16290 in-silico = TRL 3). Next (physical TRL 4): in-vitro titanium-coin biochemistry in synthetic xylem sap, then full SLM-printed anchors.
