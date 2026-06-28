@@ -172,6 +172,14 @@ end
 
 **Тригер flip'у (зараз НЕ потрібен — TRL-3, firehose ще немає).** Single-process baseline (`deploy.yml` job-role + Akash `count: 1`) коректний поки intake малий. Розділяти, коли: (а) `uplink`-backlog росте необмежено, АБО (б) mint-availability SLO (§2.4 `silkennet_mint_success_total / attempts`) пробиває ≥80%. Механізм flip'у = `sidekiq -q`-прапори per-процес у deploy-конфізі (reversible, без коду). ⚠️ Drift-ризик: список черг дублюється у deploy-місцях ([`06_02`](06_02_Akash_Network_Integration)). Розвиває §2.3 Phase-2 per-chain queue-split (та сама вісь — окремі процеси/черги).
 
+### 2.6 Partition-prune scope (ARCH.52 — money-path hot-path queries)
+
+`BlockchainTransaction` RANGE-партиційовано по `created_at` (композитний PK `(id, created_at)`). Запит без `created_at`-предиката → full-scan усіх партицій (O(P × log N)). Два РІЗНІ інструменти прунингу — за формою запиту:
+
+- **Known-row lookup (id/tx_hash відомий) → `created_at`-вікно.** `BlockchainConfirmationWorker` несе `created_at_iso` (7 enqueue-сайтів прокидають) і фільтрує **LOWER-bound** `created_at >= earliest-1h`. ⚠️ Чому lower-bound, не симетричне ±1h: batchMint ділить ОДИН `tx_hash` на ≤100 рядків з РІЗНИМИ `created_at` (collector акумулює pending з широким span; reset-to-pending тримає старий `created_at`) → симетричне вікно виключило б рядки, новіші за earliest+1h → stuck `:sent`. Дзеркало `CeloConfirmationWorker` (ARCH.50).
+- **Status-scan (множина невідома, може містити старі рядки) → partial index, НЕ `created_at`-вікно.** Pending-discovery (`Treasury::MintBatchCollectorService`, `MintCarbonCoinWorker`) НЕ може взяти `created_at` нижню межу: `MintCarbonCoinWorker` на RPC-error робить raw `update_all(:processing → :pending)` (зберігає старий `created_at`), а `MAX_PENDING_AGE_MINUTES` робить старі pending *urgent* (їх ТРЕБА знайти) → межа осиротила б stranded funds. Прунинг = **partial index** `index_blockchain_transactions_in_flight` `(status, created_at) WHERE status IN (0,1)` (pending+processing — крихітна частка all-time рядків) → full-scan стає index range-scan.
+- **Свідомо НЕ прунимо (design):** slash `total_minted` sum (`BlockchainBurningService`) + anchor SFC-supply sum (`Ethereum::StateAnchorService`) = **all-time aggregates**, семантично unprunable (потребують усієї історії); long-term cost-opt = denormalized counter / on-chain `totalSupply` (як `ChainAuditService`), не partition-prune. `BlockchainMintingService#initialize` `where(id:)` вже index-served по PK leading-колонці `id` per-partition (partition-count = малий обмежений constant, НЕ O(all-history)).
+
 ---
 
 ## 3. 🧰 Реалізаційні Якорі (Implementation Anchors)
