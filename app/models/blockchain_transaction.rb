@@ -98,16 +98,13 @@ class BlockchainTransaction < ApplicationRecord
   # [MULTICHAIN]: blockchain_network визначає мережу транзакції
   validates :blockchain_network, inclusion: { in: %w[evm solana celo] }
 
-  # [ARCH.45] In-flight money-path tx — intent-marker idempotency guard (дзеркало
-  # EthereumAnchor.in_flight). Recent :pending/:sent = ще не фіналізована виплата/burn;
-  # на retry ловить crash-window між on-chain broadcast і DB-записом (double-pay/double-burn).
-  # Recent-відсічка не дає давно-застряглим tx блокувати свіжі цикли (ті йдуть у manual_review).
-  scope :in_flight, -> { where(status: [ :pending, :sent ]).where("created_at > ?", 2.hours.ago) }
-
-  # [ARCH.45] Незавершена money-path tx у `window` (включно з `:manual_review` — можливо-landed
-  # виплата під ручною звіркою блокує re-pay). `window`-bound prunes RANGE-партиції. Для шляхів зі
-  # slow-confirm (Solana payout / Etherisc), де in_flight (2h) дав би лише один reconcile-шанс
-  # (window-expiry double-pay). DRY-джерело lookup-патерну для BatchPayoutService + InsurancePayoutWorker.
+  # [ARCH.45 / ARCH.51] ЄДИНИЙ живий money-path intent-marker guard: незавершена tx у `window`
+  # (включно з `:manual_review` — можливо-landed виплата під ручною звіркою блокує re-pay).
+  # `window`-bound prunes RANGE-партиції. Покриває всю родину (burn 2h · Solana payout / insurance /
+  # Etherisc 7d); `:manual_review` + configurable window роблять його суворо потужнішим за колишній
+  # flat `in_flight`-scope (видалено в ARCH.51 як dead code — 0 callerів). DRY-джерело lookup-патерну
+  # для BatchPayoutService + InsurancePayoutWorker + BurningService. Anchor має власний
+  # `EthereumAnchor.in_flight` (окремий live scope, 1-week вікно).
   scope :unsettled_within, ->(window) { where(status: [ :pending, :sent, :manual_review ]).where("created_at > ?", window.ago) }
 
   # --- ДЕЛЕГУВАННЯ ---

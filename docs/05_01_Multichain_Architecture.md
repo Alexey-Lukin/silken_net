@@ -325,7 +325,7 @@ type SlashingEvent @entity { ... }
 
 **Мікро-винагорода:** Base reward + bonus per growth\_point, конвертовано в lamports → USDC
 
-> **⚠️ Scale (нот.4):** per-event Solana tx на КОЖЕН fulfilled telemetry на planetary-scale (мільйони verified-подій/добу) зрівнює fees з винагородою + RPC-навантаження. **Закрито batch payouts [E.61]:** при ненульовому порозі `solana_batch_threshold_usdc` (governance-aware `SystemParameter`, в USDC) `SolanaMicroRewardWorker` акумулює винагороду per-wallet у Kredis замість окремої tx; годинний `SolanaBatchPayoutWorker` (`Solana::BatchPayoutService`) виплачує накопичене одним `transferChecked` ATA→ATA, щойно сума перетне поріг. **[ARCH.45] idempotency:** durable intent-marker (signature обчислено до broadcast) + `in_flight` reconcile + **confirm-gated** Kredis-settle (decrement лише після on-chain confirm, за сумою самої tx → concurrent надбавки виживають) закривають double-pay crash-window — наступний годинний цикл звіряє on-chain замість сліпої повторної виплати. **Backward-compat:** поріг 0 → миттєва per-event виплата (поведінка за замовчуванням).
+> **⚠️ Scale (нот.4):** per-event Solana tx на КОЖЕН fulfilled telemetry на planetary-scale (мільйони verified-подій/добу) зрівнює fees з винагородою + RPC-навантаження. **Закрито batch payouts [E.61]:** при ненульовому порозі `solana_batch_threshold_usdc` (governance-aware `SystemParameter`, в USDC) `SolanaMicroRewardWorker` акумулює винагороду per-wallet у Kredis замість окремої tx; годинний `SolanaBatchPayoutWorker` (`Solana::BatchPayoutService`) виплачує накопичене одним `transferChecked` ATA→ATA, щойно сума перетне поріг. **[ARCH.45] idempotency:** durable intent-marker (signature обчислено до broadcast) + `reconcile_in_flight` (on-chain звірка `unsettled_within`) + **confirm-gated** Kredis-settle (decrement лише після on-chain confirm, за сумою самої tx → concurrent надбавки виживають) закривають double-pay crash-window — наступний годинний цикл звіряє on-chain замість сліпої повторної виплати. **Backward-compat:** поріг 0 → миттєва per-event виплата (поведінка за замовчуванням).
 
 Solana `Solana::MintingService` використовує `sendTransaction` з Ed25519-підписом. ATA отримувача резолюється динамічно через `getTokenAccountsByOwner`.
 
@@ -682,7 +682,7 @@ state_root = Digest::SHA256.hexdigest("#{total_scc}|#{total_sfc}|#{active_tree_c
 **Поточні захисти:**
 - `Web3::ResilientClient` з MAX_FAILURES=3, CIRCUIT_OPEN_DURATION=60s, fallback cascade Primary→Secondary→Public RPC.
 - Sidekiq retry з exponential backoff (5 retries для `web3_critical`).
-- `BlockchainTransaction` AASM має стан `manual_review` коли tx_hash отримано але стан невідомий — кошти заблоковано до ручної звірки (no double-spend). **[ARCH.45]** той самий клас on-chain↔DB crash-window закрито durable intent-marker + `in_flight` guard для Solana payout / burn / Etherisc (дзеркало EthereumAnchor DOUBLE-ANCHOR; [`04_02 §4/§10`](04_02_Business_Logic_and_Services)).
+- `BlockchainTransaction` AASM має стан `manual_review` коли tx_hash отримано але стан невідомий — кошти заблоковано до ручної звірки (no double-spend). **[ARCH.45]** той самий клас on-chain↔DB crash-window закрито durable intent-marker + `unsettled_within` reconcile-guard для Solana payout / burn / Etherisc (дзеркало EthereumAnchor DOUBLE-ANCHOR; [`04_02 §4/§10`](04_02_Business_Logic_and_Services)).
 - `MintBatchCollectorWorker` агрегує до 100 мінтів у `batchMint` — якщо один payload poisoned, Binary Search isolation дозволяє відрахувати решту валідних.
 
 **Graceful degradation при Polygon down:**
