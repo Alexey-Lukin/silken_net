@@ -77,7 +77,8 @@
 
 | ENV | Сервіс / Worker | Поведінка |
 |-----|-----------------|-----------|
-| `ORACLE_PRIVATE_KEY` | `Celo::CommunityRewardService`, `Toucan::BridgeService`, `Klima::RetirementService`, `Etherisc::ClaimService`, `PuroEarth::PassportService`, fallback для minter/slasher | `KeyError` при першому виклику |
+| `ORACLE_PRIVATE_KEY` | `Celo::CommunityRewardService` (fallback), `Toucan::BridgeService`, `Klima::RetirementService`, `Etherisc::ClaimService`, `PuroEarth::PassportService`, fallback для minter/slasher | `KeyError` при першому виклику |
+| `ORACLE_CELO_PRIVATE_KEY` | `Celo::CommunityRewardService` (dedicated cUSD-підписант) — **[ARCH.50]** ізолює Celo blast-radius від спільного base-EOA (ARCH.49) | fallback на `ORACLE_PRIVATE_KEY` |
 | `ORACLE_MINTER_PRIVATE_KEY` | `BlockchainMintingService` (MINTER_ROLE) | SCC/SFC mint неможливий |
 | `ORACLE_SLASHER_PRIVATE_KEY` | `BlockchainBurningService` (SLASHER_ROLE) | Slashing зривається |
 | `ETHEREUM_ANCHOR_PRIVATE_KEY` | `Ethereum::StateAnchorService` | Weekly state-root anchor падає |
@@ -626,6 +627,7 @@ ENV-блоки `web` та `job` сервісів **дзеркалюють** од
 | Змінна | Значення в SDL | Required for | Сервіс |
 |--------|---------------|-------------|--------|
 | `ORACLE_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | Legacy fallback (Celo/Toucan/Klima/PuroEarth/Etherisc) |
+| `ORACLE_CELO_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | **[ARCH.50]** Dedicated Celo cUSD-підписант (fallback `ORACLE_PRIVATE_KEY`) |
 | `ORACLE_MINTER_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | `BlockchainMintingService` (MINTER_ROLE) |
 | `ORACLE_SLASHER_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | `BlockchainBurningService` (SLASHER_ROLE) |
 | `ETHEREUM_ANCHOR_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | `Ethereum::StateAnchorService` (окремий гаманець!) |
@@ -1012,6 +1014,7 @@ Mapping між конфігурацією Kamal (`config/deploy.yml` + `.kamal/s
 | Kamal `env.secret` | Akash SDL (web + job) | Terraform variable |
 |-------------------|----------------------|---------------------|
 | `ORACLE_PRIVATE_KEY` | `ORACLE_PRIVATE_KEY=${oracle_private_key}` | `var.oracle_private_key` |
+| `ORACLE_CELO_PRIVATE_KEY` | `ORACLE_CELO_PRIVATE_KEY=${oracle_celo_private_key}` | `var.oracle_celo_private_key` |
 | `ORACLE_MINTER_PRIVATE_KEY` | `ORACLE_MINTER_PRIVATE_KEY=${oracle_minter_private_key}` | `var.oracle_minter_private_key` |
 | `ORACLE_SLASHER_PRIVATE_KEY` | `ORACLE_SLASHER_PRIVATE_KEY=${oracle_slasher_private_key}` | `var.oracle_slasher_private_key` |
 | `ETHEREUM_ANCHOR_PRIVATE_KEY` | `ETHEREUM_ANCHOR_PRIVATE_KEY=${ethereum_anchor_private_key}` | `var.ethereum_anchor_private_key` |

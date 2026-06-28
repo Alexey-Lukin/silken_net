@@ -419,7 +419,8 @@ CREATE TABLE public.blockchain_transactions (
     confirmed_at timestamp(6) without time zone,
     chainlink_request_id character varying,
     zk_proof_ref character varying,
-    blockchain_network character varying DEFAULT 'evm'::character varying
+    blockchain_network character varying DEFAULT 'evm'::character varying,
+    reward_date date
 )
 PARTITION BY RANGE (created_at);
 
@@ -472,7 +473,8 @@ CREATE TABLE public.blockchain_transactions_default (
     confirmed_at timestamp(6) without time zone,
     chainlink_request_id character varying,
     zk_proof_ref character varying,
-    blockchain_network character varying DEFAULT 'evm'::character varying
+    blockchain_network character varying DEFAULT 'evm'::character varying,
+    reward_date date
 );
 
 
@@ -505,7 +507,8 @@ CREATE TABLE public.blockchain_transactions_y2026m01 (
     confirmed_at timestamp(6) without time zone,
     chainlink_request_id character varying,
     zk_proof_ref character varying,
-    blockchain_network character varying DEFAULT 'evm'::character varying
+    blockchain_network character varying DEFAULT 'evm'::character varying,
+    reward_date date
 );
 
 
@@ -538,7 +541,8 @@ CREATE TABLE public.blockchain_transactions_y2026m02 (
     confirmed_at timestamp(6) without time zone,
     chainlink_request_id character varying,
     zk_proof_ref character varying,
-    blockchain_network character varying DEFAULT 'evm'::character varying
+    blockchain_network character varying DEFAULT 'evm'::character varying,
+    reward_date date
 );
 
 
@@ -571,7 +575,8 @@ CREATE TABLE public.blockchain_transactions_y2026m03 (
     confirmed_at timestamp(6) without time zone,
     chainlink_request_id character varying,
     zk_proof_ref character varying,
-    blockchain_network character varying DEFAULT 'evm'::character varying
+    blockchain_network character varying DEFAULT 'evm'::character varying,
+    reward_date date
 );
 
 
@@ -604,7 +609,8 @@ CREATE TABLE public.blockchain_transactions_y2026m04 (
     confirmed_at timestamp(6) without time zone,
     chainlink_request_id character varying,
     zk_proof_ref character varying,
-    blockchain_network character varying DEFAULT 'evm'::character varying
+    blockchain_network character varying DEFAULT 'evm'::character varying,
+    reward_date date
 );
 
 
@@ -637,7 +643,8 @@ CREATE TABLE public.blockchain_transactions_y2026m05 (
     confirmed_at timestamp(6) without time zone,
     chainlink_request_id character varying,
     zk_proof_ref character varying,
-    blockchain_network character varying DEFAULT 'evm'::character varying
+    blockchain_network character varying DEFAULT 'evm'::character varying,
+    reward_date date
 );
 
 
@@ -670,7 +677,8 @@ CREATE TABLE public.blockchain_transactions_y2026m06 (
     confirmed_at timestamp(6) without time zone,
     chainlink_request_id character varying,
     zk_proof_ref character varying,
-    blockchain_network character varying DEFAULT 'evm'::character varying
+    blockchain_network character varying DEFAULT 'evm'::character varying,
+    reward_date date
 );
 
 

@@ -192,6 +192,7 @@
 
 **Web3 oracle keys (dual-key split, B-02 — без них Sidekiq DeadSet):**
 - [ ] `ORACLE_PRIVATE_KEY` — legacy fallback (Celo/Toucan/Klima/PuroEarth/Etherisc)
+- [ ] `ORACLE_CELO_PRIVATE_KEY` — **[ARCH.50]** dedicated Celo cUSD-підписант (fallback `ORACLE_PRIVATE_KEY`); ізолює blast-radius Celo від спільного Polygon base-key (ARCH.49)
 - [ ] `ORACLE_MINTER_PRIVATE_KEY` — MINTER_ROLE на SCC/SFC (`BlockchainMintingService`)
 - [ ] `ORACLE_SLASHER_PRIVATE_KEY` — SLASHER_ROLE (`BlockchainBurningService`)
 - [ ] `ETHEREUM_ANCHOR_PRIVATE_KEY` — окремий wallet для weekly L1 anchor (`Ethereum::StateAnchorService`)

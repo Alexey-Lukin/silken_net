@@ -9,8 +9,8 @@
       "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is used for the Redis key name in blockchain minting service (S6.5: lock timeout increased from 30s to 120s)."
     },
     {
-      "fingerprint": "0c1519d2874e131a0d3637e0f8decbf761243e5a1d34323ff2ca3ed1f3141cf7",
-      "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is used for the Redis key name in Celo reward service."
+      "fingerprint": "f7830eea388a42824997c17be873af414cbb1e3c60fa116e4c69c7153a57a189",
+      "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is the Redis key name in Celo reward service (ARCH.50: chain-prefixed lock + dedicated ORACLE_CELO_PRIVATE_KEY; the key derives from Eth::Key.address, never user input)."
     },
     {
       "fingerprint": "e20e6bdeb0ca4f73c441c913ba78b013155d0e5a5b0cf7c3499f255f5219941e",

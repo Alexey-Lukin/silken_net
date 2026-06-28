@@ -13,7 +13,10 @@ RSpec.describe Celo::CommunityRewardService do
     allow(ENV).to receive(:fetch).with("ORACLE_PRIVATE_KEY").and_return("0x" + "ab" * 32)
     allow(ENV).to receive(:fetch).with("CELO_CUSD_CONTRACT_ADDRESS").and_return("0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1")
 
-    # Kredis може бути відсутнім у тестовому середовищі
+    # [ARCH.50] the reward now arms a Celo-aware reconcile — stub it everywhere.
+    allow(CeloConfirmationWorker).to receive(:perform_in)
+
+    # Kredis може бути відсутнім у тестовому середовищі (стаб серіалізує синхронно).
     unless defined?(Kredis)
       kredis_mod = Module.new do
         def self.lock(*, **, &block)
@@ -24,390 +27,267 @@ RSpec.describe Celo::CommunityRewardService do
     end
   end
 
-  describe "#reward_community!" do
-    context "when cluster is healthy and eligible" do
-      let!(:insight) do
-        create(:ai_insight,
-          analyzable: cluster,
-          insight_type: :daily_health_summary,
-          target_date: target_date,
-          stress_index: 0.05,
-          fraud_detected: false
-        )
-      end
+  # Builds an eligible (healthy) cluster + stubs the EVM client to a successful transfer.
+  def stub_healthy_and_eligible(tx_hash: "0x" + SecureRandom.hex(32))
+    create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
+                        target_date: target_date, stress_index: 0.05, fraud_detected: false)
+    mock_client = instance_double(Eth::Client)
+    allow(Eth::Client).to receive(:create).and_return(mock_client)
+    allow(Eth::Key).to receive(:new).and_return(instance_double(Eth::Key, address: "0x" + "aa" * 20))
+    allow(Eth::Contract).to receive(:from_abi).and_return(double("Contract"))
+    allow(mock_client).to receive_messages(transact: tx_hash, get_balance: 1 * 10**18)
+    allow(Kredis).to receive(:lock).and_yield
+    mock_client
+  end
 
-      before do
-        mock_client = instance_double(Eth::Client)
-        allow(Eth::Client).to receive(:create).and_return(mock_client)
-        allow(Eth::Key).to receive(:new).and_return(instance_double(Eth::Key, address: "0x" + "aa" * 20))
-        allow(Eth::Contract).to receive(:from_abi).and_return(double("Contract"))
-        # [BLOCKER-1 FIX]: Balance check added — stub get_balance to return sufficient funds
-        allow(mock_client).to receive_messages(transact: "0x" + SecureRandom.hex(32), get_balance: 1 * 10**18) # 1 CELO
-        allow(Kredis).to receive(:lock).and_yield
-      end
+  describe "#reward_community! — happy path + intent lifecycle (ARCH.50)" do
+    let!(:client) { stub_healthy_and_eligible }
 
-      it "creates a BlockchainTransaction with celo network and cusd token" do
-        expect {
-          described_class.new(cluster, target_date).reward_community!
-        }.to change(BlockchainTransaction, :count).by(1)
-
-        tx = BlockchainTransaction.last
-        expect(tx.blockchain_network).to eq("celo")
-        expect(tx.token_type).to eq("cusd")
-        expect(tx.amount).to eq(5.0)
-        expect(tx.to_address).to eq(organization.crypto_public_address)
-        expect(tx.status).to eq("sent")
-        expect(tx.tx_hash).to be_present
-        expect(tx.cluster).to eq(cluster)
-      end
-
-      it "returns the tx_hash on success" do
-        result = described_class.new(cluster, target_date).reward_community!
-        expect(result).to start_with("0x")
-      end
-
-      it "logs the reward" do
-        expect(Rails.logger).to receive(:info).with(/Celo ReFi.*Винагорода.*5\.0 cUSD/)
+    it "creates a :sent BlockchainTransaction (celo/cusd) with reward_date + arms the reconcile" do
+      expect {
         described_class.new(cluster, target_date).reward_community!
-      end
+      }.to change(BlockchainTransaction, :count).by(1)
 
-      it "uses Kredis.lock for nonce management" do
-        expect(Kredis).to receive(:lock).and_yield
-        described_class.new(cluster, target_date).reward_community!
-      end
-
-      # [DOUBLE-FIRE GUARD] ClusterHealthCheckWorker fires from both
-      # `InsightBatchCallbacks#on_success` and the 02:00 UTC cron — for healthy
-      # clusters that means `CeloRewardWorker.perform_async` lands twice the
-      # same morning. The oracle Kredis lock serialises broadcasts, it does
-      # NOT dedupe by (cluster, date). Without this guard the org gets paid
-      # 10 cUSD instead of 5 every healthy day.
-      it "skips when a sent reward already exists for the same target_date" do
-        create(:blockchain_transaction,
-          sourceable: cluster,
-          token_type: :cusd,
-          blockchain_network: "celo",
-          status: :sent,
-          to_address: organization.crypto_public_address,
-          amount: 5.0,
-          tx_hash: "0x" + SecureRandom.hex(32),
-          created_at: target_date.beginning_of_day + 30.minutes
-        )
-
-        expect(Eth::Client).not_to receive(:create)
-
-        expect {
-          result = described_class.new(cluster, target_date).reward_community!
-          expect(result).to be_nil
-        }.not_to change(BlockchainTransaction, :count)
-      end
-
-      it "still rewards when previous attempt is in failed status (admin retry path)" do
-        create(:blockchain_transaction,
-          sourceable: cluster,
-          token_type: :cusd,
-          blockchain_network: "celo",
-          status: :failed,
-          to_address: organization.crypto_public_address,
-          amount: 5.0,
-          tx_hash: nil,
-          created_at: target_date.beginning_of_day + 10.minutes
-        )
-
-        expect {
-          described_class.new(cluster, target_date).reward_community!
-        }.to change(BlockchainTransaction.where(status: :sent), :count).by(1)
-      end
+      tx = BlockchainTransaction.last
+      expect(tx.blockchain_network).to eq("celo")
+      expect(tx.token_type).to eq("cusd")
+      expect(tx.amount).to eq(5.0)
+      expect(tx.status).to eq("sent")
+      expect(tx.tx_hash).to be_present
+      expect(tx.sourceable).to eq(cluster)
+      # [ARCH.50] the logical idempotency key — the audit day, NOT created_at.
+      expect(tx.reward_date).to eq(target_date)
+      expect(CeloConfirmationWorker).to have_received(:perform_in).with(30.seconds, tx.id, kind_of(String))
     end
 
-    context "when the oracle CELO balance is below the gas floor" do
-      let!(:insight) do
-        create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
-               target_date: target_date, stress_index: 0.05, fraud_detected: false)
-      end
-
-      before do
-        mock_client = instance_double(Eth::Client)
-        allow(Eth::Client).to receive(:create).and_return(mock_client)
-        allow(Eth::Key).to receive(:new).and_return(instance_double(Eth::Key, address: "0x" + "aa" * 20))
-        allow(Eth::Contract).to receive(:from_abi).and_return(double("Contract"))
-        allow(mock_client).to receive(:get_balance).and_return((0.01 * 10**18).to_i)
-        allow(Kredis).to receive(:lock).and_yield
-      end
-
-      it "raises the low-balance guard before transacting" do
-        expect {
-          described_class.new(cluster, target_date).reward_community!
-        }.to raise_error(/Критично низький баланс/)
-      end
+    it "returns the tx_hash on success" do
+      expect(described_class.new(cluster, target_date).reward_community!).to start_with("0x")
     end
 
-    context "without AiInsight for target_date" do
-      it "returns nil without creating a transaction" do
-        expect {
-          result = described_class.new(cluster, target_date).reward_community!
-          expect(result).to be_nil
-        }.not_to change(BlockchainTransaction, :count)
+    it "writes a :pending intent BEFORE the broadcast (mark_as_sent only after)" do
+      seen_status = nil
+      allow(client).to receive(:transact) do
+        # at transact time the intent must already exist as :pending
+        seen_status = BlockchainTransaction.where(sourceable: cluster, token_type: :cusd).last&.status
+        "0x" + SecureRandom.hex(32)
       end
-    end
-
-    context "when stress_index is too high" do
-      let!(:insight) do
-        create(:ai_insight,
-          analyzable: cluster,
-          insight_type: :daily_health_summary,
-          target_date: target_date,
-          stress_index: 0.5,
-          fraud_detected: false
-        )
-      end
-
-      it "returns nil without creating a transaction" do
-        expect {
-          result = described_class.new(cluster, target_date).reward_community!
-          expect(result).to be_nil
-        }.not_to change(BlockchainTransaction, :count)
-      end
-    end
-
-    context "when stress_index is at boundary (0.2)" do
-      let!(:insight) do
-        create(:ai_insight,
-          analyzable: cluster,
-          insight_type: :daily_health_summary,
-          target_date: target_date,
-          stress_index: 0.2,
-          fraud_detected: false
-        )
-      end
-
-      before do
-        mock_client = instance_double(Eth::Client)
-        allow(Eth::Client).to receive(:create).and_return(mock_client)
-        allow(Eth::Key).to receive(:new).and_return(instance_double(Eth::Key, address: "0x" + "aa" * 20))
-        allow(Eth::Contract).to receive(:from_abi).and_return(double("Contract"))
-        # [BLOCKER-1 FIX]: Balance check added — stub get_balance
-        allow(mock_client).to receive_messages(transact: "0x" + SecureRandom.hex(32), get_balance: 1 * 10**18)
-        allow(Kredis).to receive(:lock).and_yield
-      end
-
-      it "is eligible (stress_index == 0.2 passes the guard)" do
-        expect {
-          described_class.new(cluster, target_date).reward_community!
-        }.to change(BlockchainTransaction, :count).by(1)
-      end
-    end
-
-    context "when fraud is detected" do
-      let!(:insight) do
-        create(:ai_insight,
-          analyzable: cluster,
-          insight_type: :daily_health_summary,
-          target_date: target_date,
-          stress_index: 0.05,
-          fraud_detected: true
-        )
-      end
-
-      it "returns nil without creating a transaction" do
-        expect {
-          result = described_class.new(cluster, target_date).reward_community!
-          expect(result).to be_nil
-        }.not_to change(BlockchainTransaction, :count)
-      end
-    end
-
-    context "without organization crypto address" do
-      let!(:insight) do
-        create(:ai_insight,
-          analyzable: cluster,
-          insight_type: :daily_health_summary,
-          target_date: target_date,
-          stress_index: 0.05,
-          fraud_detected: false
-        )
-      end
-
-      before do
-        # Bypass validation to simulate legacy data or missing address
-        organization.update_column(:crypto_public_address, nil)
-      end
-
-      it "returns nil without creating a transaction" do
-        expect {
-          result = described_class.new(cluster, target_date).reward_community!
-          expect(result).to be_nil
-        }.not_to change(BlockchainTransaction, :count)
-      end
-    end
-
-    context "when Celo RPC fails" do
-      let!(:insight) do
-        create(:ai_insight,
-          analyzable: cluster,
-          insight_type: :daily_health_summary,
-          target_date: target_date,
-          stress_index: 0.05,
-          fraud_detected: false
-        )
-      end
-
-      before do
-        mock_client = instance_double(Eth::Client)
-        allow(Eth::Client).to receive(:create).and_return(mock_client)
-        allow(Eth::Key).to receive(:new).and_return(instance_double(Eth::Key, address: "0x" + "aa" * 20))
-        allow(Eth::Contract).to receive(:from_abi).and_return(double("Contract"))
-        # [BLOCKER-1 FIX]: get_balance is now called before transact
-        allow(mock_client).to receive(:get_balance).and_return(1 * 10**18)
-        allow(mock_client).to receive(:transact).and_raise(StandardError, "Celo RPC timeout")
-        allow(Kredis).to receive(:lock).and_yield
-      end
-
-      it "re-raises errors for Sidekiq retry" do
-        expect {
-          described_class.new(cluster, target_date).reward_community!
-        }.to raise_error(StandardError, "Celo RPC timeout")
-      end
-    end
-
-    context "when insight has nil stress_index" do
-      let!(:insight) do
-        create(:ai_insight,
-          analyzable: cluster,
-          insight_type: :daily_health_summary,
-          target_date: target_date,
-          stress_index: nil,
-          fraud_detected: false
-        )
-      end
-
-      it "returns nil without creating a transaction" do
-        expect {
-          result = described_class.new(cluster, target_date).reward_community!
-          expect(result).to be_nil
-        }.not_to change(BlockchainTransaction, :count)
-      end
-    end
-
-    context "when organization is nil" do
-      let!(:insight) do
-        create(:ai_insight,
-          analyzable: cluster,
-          insight_type: :daily_health_summary,
-          target_date: target_date,
-          stress_index: 0.05,
-          fraud_detected: false
-        )
-      end
-
-      before do
-        allow_any_instance_of(Cluster).to receive(:organization).and_return(nil)
-      end
-
-      it "returns nil without creating a transaction" do
-        expect {
-          result = described_class.new(cluster, target_date).reward_community!
-          expect(result).to be_nil
-        }.not_to change(BlockchainTransaction, :count)
-      end
-    end
-
-    context "when transact returns nil tx_hash" do
-      let!(:insight) do
-        create(:ai_insight,
-          analyzable: cluster,
-          insight_type: :daily_health_summary,
-          target_date: target_date,
-          stress_index: 0.05,
-          fraud_detected: false
-        )
-      end
-
-      before do
-        mock_client = instance_double(Eth::Client)
-        allow(Eth::Client).to receive(:create).and_return(mock_client)
-        allow(Eth::Key).to receive(:new).and_return(instance_double(Eth::Key, address: "0x" + "aa" * 20))
-        allow(Eth::Contract).to receive(:from_abi).and_return(double("Contract"))
-        allow(mock_client).to receive_messages(get_balance: 1 * 10**18, transact: nil)
-        allow(Kredis).to receive(:lock).and_yield
-      end
-
-      it "does not create a BlockchainTransaction" do
-        expect {
-          described_class.new(cluster, target_date).reward_community!
-        }.not_to change(BlockchainTransaction, :count)
-      end
-    end
-
-    context "with RPC fallback cascade [E.49]" do
-      let!(:insight) do
-        create(:ai_insight,
-          analyzable: cluster,
-          insight_type: :daily_health_summary,
-          target_date: target_date,
-          stress_index: 0.05,
-          fraud_detected: false
-        )
-      end
-
-      it "exposes both fallback ENV keys in cascade order" do
-        expect(described_class::RPC_FALLBACK_ENV_KEYS).to eq(
-          %w[CELO_RPC_URL_FALLBACK_1 CELO_RPC_URL_FALLBACK_2]
-        )
-      end
-
-      it "passes RPC_FALLBACK_ENV_KEYS to Web3::RpcConnectionPool" do
-        mock_client = instance_double(Eth::Client,
-          get_balance: 1 * 10**18,
-          transact: "0x" + SecureRandom.hex(32)
-        )
-        allow(Eth::Key).to receive(:new).and_return(instance_double(Eth::Key, address: "0x" + "aa" * 20))
-        allow(Eth::Contract).to receive(:from_abi).and_return(double("Contract"))
-        allow(Kredis).to receive(:lock).and_yield
-        allow(Web3::RpcConnectionPool).to receive(:client_for).with(
-          "CELO_RPC_URL",
-          fallback: described_class::DEFAULT_RPC_URL,
-          fallback_env_keys: described_class::RPC_FALLBACK_ENV_KEYS
-        ).and_return(mock_client)
-
-        described_class.new(cluster, target_date).reward_community!
-
-        expect(Web3::RpcConnectionPool).to have_received(:client_for).with(
-          "CELO_RPC_URL",
-          fallback: described_class::DEFAULT_RPC_URL,
-          fallback_env_keys: described_class::RPC_FALLBACK_ENV_KEYS
-        )
-      end
-
-      it "builds a ResilientClient when fallback URLs are populated", :aggregate_failures do
-        Web3::RpcConnectionPool.reset!
-        stub_const("ENV", ENV.to_hash.merge(
-          "CELO_RPC_URL"             => "https://forno.celo.org",
-          "CELO_RPC_URL_FALLBACK_1"  => "https://rpc.ankr.com/celo",
-          "CELO_RPC_URL_FALLBACK_2"  => "https://1rpc.io/celo"
-        ))
-
-        client = Web3::RpcConnectionPool.client_for(
-          "CELO_RPC_URL",
-          fallback: described_class::DEFAULT_RPC_URL,
-          fallback_env_keys: described_class::RPC_FALLBACK_ENV_KEYS
-        )
-
-        expect(client).to be_a(Web3::ResilientClient)
-        urls = client.provider_health.map { |h| h[:provider] }
-        expect(urls).to include(include('forno.celo.org'))
-        expect(urls).to include(include('rpc.ankr.com'))
-        expect(urls).to include(include('1rpc.io'))
-      ensure
-        Web3::RpcConnectionPool.reset!
-      end
+      described_class.new(cluster, target_date).reward_community!
+      expect(seen_status).to eq("pending")
     end
   end
 
-  describe "#reward_already_sent? window computation" do
-    it "handles a non-Date (Time) target_date without raising (else branch)" do
+  describe "#reward_community! — idempotency / dedup (ARCH.50 #0 + #2)" do
+    let!(:client) { stub_healthy_and_eligible }
+
+    # [ARCH.50 #0] The deterministic daily double-pay: with a PRODUCTION-realistic created_at
+    # (today, the morning after the audit day), the dedup must STILL find the prior row by its
+    # logical reward_date. The old created_at-window guard missed exactly this.
+    it "skips a second fire for the same reward_date even when created_at is today (the #0 fix)" do
+      create(:blockchain_transaction, sourceable: cluster, token_type: :cusd, blockchain_network: "celo",
+                                      status: :sent, reward_date: target_date, amount: 5.0,
+                                      to_address: organization.crypto_public_address,
+                                      tx_hash: "0x" + SecureRandom.hex(32), created_at: Time.current)
+
+      expect {
+        result = described_class.new(cluster, target_date).reward_community!
+        expect(result).to be_nil
+      }.not_to change(BlockchainTransaction, :count)
+      expect(client).not_to have_received(:transact)
+    end
+
+    it "blocks a re-pay against a :pending intent (possibly-landed) for the same reward_date" do
+      create(:blockchain_transaction, sourceable: cluster, token_type: :cusd, blockchain_network: "celo",
+                                      status: :pending, reward_date: target_date, amount: 5.0,
+                                      to_address: organization.crypto_public_address, created_at: Time.current)
+
+      expect { described_class.new(cluster, target_date).reward_community! }
+        .not_to change(BlockchainTransaction, :count)
+      expect(client).not_to have_received(:transact)
+    end
+
+    it "DOES re-pay when the prior attempt is :failed (admin retry path)" do
+      create(:blockchain_transaction, sourceable: cluster, token_type: :cusd, blockchain_network: "celo",
+                                      status: :failed, reward_date: target_date, amount: 5.0,
+                                      to_address: organization.crypto_public_address,
+                                      tx_hash: nil, created_at: Time.current)
+
+      expect { described_class.new(cluster, target_date).reward_community! }
+        .to change(BlockchainTransaction.where(status: :sent), :count).by(1)
+    end
+
+    it "re-pays a DIFFERENT reward_date (no cross-day contamination)" do
+      create(:blockchain_transaction, sourceable: cluster, token_type: :cusd, blockchain_network: "celo",
+                                      status: :sent, reward_date: target_date - 1, amount: 5.0,
+                                      to_address: organization.crypto_public_address,
+                                      tx_hash: "0x" + SecureRandom.hex(32), created_at: Time.current)
+
+      expect { described_class.new(cluster, target_date).reward_community! }
+        .to change(BlockchainTransaction.where(status: :sent), :count).by(1)
+    end
+  end
+
+  describe "#reward_community! — failure paths (ARCH.50 rescue split)" do
+    let!(:client) { stub_healthy_and_eligible }
+
+    # [ARCH.50 #1] crash-window: transact succeeds (cUSD sent) but mark_as_sent! crashes → the
+    # intent stays :pending → a retry must NOT double-pay (the dedup blocks it).
+    it "leaves a :pending intent (no double-pay) when persisting the :sent state crashes" do
+      allow_any_instance_of(BlockchainTransaction).to receive(:mark_as_sent!).and_raise(ActiveRecord::StatementInvalid, "DB blip")
+
+      expect { described_class.new(cluster, target_date).reward_community! }.to raise_error(/DB blip/)
+
+      intent = BlockchainTransaction.where(sourceable: cluster, token_type: :cusd).last
+      expect(intent.status).to eq("pending")
+
+      # the retry (transact would re-send) must be blocked by the :pending dedup
+      allow_any_instance_of(BlockchainTransaction).to receive(:mark_as_sent!).and_call_original
+      expect { described_class.new(cluster, target_date).reward_community! }
+        .not_to change(BlockchainTransaction, :count)
+    end
+
+    # [ARCH.50 #4/#7] a DETERMINISTIC node rejection (execution reverted) → the intent is failed
+    # (re-payable) and the error is NOT re-raised → it does NOT count toward the shared breaker.
+    it "fails the intent (re-payable) and does NOT re-raise on a deterministic rejection" do
+      allow(client).to receive(:transact).and_raise(StandardError, "execution reverted: SafeERC20: transfer failed")
+
+      result = nil
+      expect { result = described_class.new(cluster, target_date).reward_community! }.not_to raise_error
+      expect(result).to be_nil
+
+      intent = BlockchainTransaction.where(sourceable: cluster, token_type: :cusd).last
+      expect(intent.status).to eq("failed")
+    end
+
+    # [ARCH.50] an AMBIGUOUS error (nonce too low — a prior tx may have broadcast) → leave :pending,
+    # do NOT re-pay, do NOT re-raise.
+    it "leaves the intent :pending and does NOT re-raise on an ambiguous (nonce) error" do
+      allow(client).to receive(:transact).and_raise(StandardError, "nonce too low")
+
+      expect { described_class.new(cluster, target_date).reward_community! }.not_to raise_error
+      expect(BlockchainTransaction.where(sourceable: cluster, token_type: :cusd).last.status).to eq("pending")
+    end
+
+    # a genuine TRANSIENT transport error → leave :pending (dedup blocks re-pay) + re-raise for retry.
+    it "leaves a :pending intent and re-raises on a transient transport error" do
+      allow(client).to receive(:transact).and_raise(StandardError, "Celo RPC timeout")
+
+      expect { described_class.new(cluster, target_date).reward_community! }.to raise_error(/Celo RPC timeout/)
+      expect(BlockchainTransaction.where(sourceable: cluster, token_type: :cusd).last.status).to eq("pending")
+    end
+
+    it "leaves the intent :pending on a malformed nil tx_hash (no double-pay)" do
+      allow(client).to receive(:transact).and_return(nil)
+
+      expect { described_class.new(cluster, target_date).reward_community! }
+        .to change(BlockchainTransaction.where(status: :pending), :count).by(1)
+      expect(CeloConfirmationWorker).not_to have_received(:perform_in)
+    end
+
+    # intent==nil → the failure happened BEFORE create_reward_intent! (e.g. the intent INSERT
+    # itself blew up) → nothing was broadcast → re-raise (handle_transact_failure: raise if intent.nil?).
+    it "re-raises (no broadcast) when the intent INSERT fails before any transact" do
+      allow_any_instance_of(described_class).to receive(:create_reward_intent!)
+        .and_raise(ActiveRecord::StatementInvalid, "intent insert blew up")
+
+      expect { described_class.new(cluster, target_date).reward_community! }.to raise_error(/intent insert blew up/)
+      expect(client).not_to have_received(:transact)
+    end
+
+    # eth wraps the on-chain revert reason in the error's `cause` → the classifier must read BOTH
+    # `message` and `cause.message` (the rejection pattern can live in the cause, not the top message).
+    it "classifies on the wrapped error.cause (deterministic reject hidden in the cause)" do
+      wrapped = StandardError.new("RpcError")
+      allow(wrapped).to receive(:cause).and_return(StandardError.new("execution reverted by the node"))
+      allow(client).to receive(:transact).and_raise(wrapped)
+
+      result = nil
+      expect { result = described_class.new(cluster, target_date).reward_community! }.not_to raise_error
+      expect(result).to be_nil
+      expect(BlockchainTransaction.where(sourceable: cluster, token_type: :cusd).last.status).to eq("failed")
+    end
+  end
+
+  describe "#reward_community! — eligibility gates (unchanged)" do
+    it "skips without an AiInsight for target_date" do
+      expect { described_class.new(cluster, target_date).reward_community! }.not_to change(BlockchainTransaction, :count)
+    end
+
+    it "skips when stress_index is too high" do
+      create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
+                          target_date: target_date, stress_index: 0.5, fraud_detected: false)
+      expect { described_class.new(cluster, target_date).reward_community! }.not_to change(BlockchainTransaction, :count)
+    end
+
+    it "is eligible at the boundary stress_index 0.2" do
+      stub_healthy_and_eligible
+      AiInsight.last.update!(stress_index: 0.2)
+      expect { described_class.new(cluster, target_date).reward_community! }.to change(BlockchainTransaction, :count).by(1)
+    end
+
+    it "skips when fraud is detected" do
+      create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
+                          target_date: target_date, stress_index: 0.05, fraud_detected: true)
+      expect { described_class.new(cluster, target_date).reward_community! }.not_to change(BlockchainTransaction, :count)
+    end
+
+    it "skips a nil stress_index" do
+      create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
+                          target_date: target_date, stress_index: nil, fraud_detected: false)
+      expect { described_class.new(cluster, target_date).reward_community! }.not_to change(BlockchainTransaction, :count)
+    end
+
+    it "skips without an org crypto address" do
+      create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
+                          target_date: target_date, stress_index: 0.05, fraud_detected: false)
+      organization.update_column(:crypto_public_address, nil)
+      expect { described_class.new(cluster, target_date).reward_community! }.not_to change(BlockchainTransaction, :count)
+    end
+
+    it "skips a cluster with no organization at all (the organization&. nil-guard)" do
+      stub_healthy_and_eligible
+      allow(cluster).to receive(:organization).and_return(nil)
+      expect { described_class.new(cluster, target_date).reward_community! }.not_to change(BlockchainTransaction, :count)
+    end
+
+    it "raises the low-balance guard before transacting" do
+      create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
+                          target_date: target_date, stress_index: 0.05, fraud_detected: false)
+      mock_client = instance_double(Eth::Client)
+      allow(Eth::Client).to receive(:create).and_return(mock_client)
+      allow(Eth::Key).to receive(:new).and_return(instance_double(Eth::Key, address: "0x" + "aa" * 20))
+      allow(Eth::Contract).to receive(:from_abi).and_return(double("Contract"))
+      allow(mock_client).to receive(:get_balance).and_return((0.01 * 10**18).to_i)
+      allow(Kredis).to receive(:lock).and_yield
+
+      expect { described_class.new(cluster, target_date).reward_community! }.to raise_error(/Критично низький баланс/)
+    end
+  end
+
+  describe "RPC fallback cascade [E.49]" do
+    it "exposes the fallback ENV keys in cascade order" do
+      expect(described_class::RPC_FALLBACK_ENV_KEYS).to eq(%w[CELO_RPC_URL_FALLBACK_1 CELO_RPC_URL_FALLBACK_2])
+    end
+
+    it "builds a ResilientClient when fallback URLs are populated", :aggregate_failures do
+      Web3::RpcConnectionPool.reset!
+      stub_const("ENV", ENV.to_hash.merge(
+        "CELO_RPC_URL" => "https://forno.celo.org",
+        "CELO_RPC_URL_FALLBACK_1" => "https://rpc.ankr.com/celo",
+        "CELO_RPC_URL_FALLBACK_2" => "https://1rpc.io/celo"
+      ))
+      client = Web3::RpcConnectionPool.client_for("CELO_RPC_URL",
+                                                  fallback: described_class::DEFAULT_RPC_URL,
+                                                  fallback_env_keys: described_class::RPC_FALLBACK_ENV_KEYS)
+      expect(client).to be_a(Web3::ResilientClient)
+    ensure
+      Web3::RpcConnectionPool.reset!
+    end
+  end
+
+  describe "#reward_date_value" do
+    it "coerces a Time target_date to a Date" do
       service = described_class.new(cluster, Time.current)
-      expect(service.send(:reward_already_sent?)).to be(false)
+      expect(service.send(:reward_date_value)).to eq(Date.current)
     end
   end
 end

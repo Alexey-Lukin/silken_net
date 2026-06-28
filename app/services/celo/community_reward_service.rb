@@ -3,15 +3,20 @@
 require "eth"
 
 module Celo
-  # =========================================================================
+  # = ===================================================================
   # 🌿 CELO COMMUNITY REWARD SERVICE (Позитивний зворотний зв'язок)
-  # =========================================================================
+  # = ===================================================================
   # Якщо BurnCarbonTokensWorker — це "Батіг" (Slashing за смерть лісу),
   # то Celo — це "Пряник" (cUSD на смартфон лісника за ідеальне здоров'я лісу).
   #
   # Використовує стандартний ERC-20 інтерфейс для переказу cUSD (Celo Dollar)
   # з системного казначейства на гаманець організації.
-  # =========================================================================
+  #
+  # [ARCH.50] Money-path-hardened (4-й ARCH.45 сиблінг): durable `:pending` intent
+  # ПЕРЕД broadcast + dedup на ЛОГІЧНИЙ `reward_date` (не `created_at`) ВСЕРЕДИНІ
+  # lock + Celo-aware reconcile + deterministic-vs-transient error split. Дзеркало
+  # Solana-BatchPayout (auto-heal), не slash (escalate-flood — зайве на reward-обсязі).
+  # = ===================================================================
   class CommunityRewardService
     # Мінімальний ERC-20 ABI — лише transfer(address,uint256)
     ERC20_TRANSFER_ABI = [
@@ -34,10 +39,7 @@ module Celo
 
     # [E.49] RPC FALLBACK CASCADE для Celo. Якщо `CELO_RPC_URL` недоступний
     # (Net::ReadTimeout / HTTP 429 / Errno::ECONNREFUSED), Web3::ResilientClient
-    # автоматично переключиться на наступний URL з цього списку. Циркуіт-брейкер
-    # вимикає провайдера після 3 послідовних збоїв на 60 секунд
-    # (див. `Web3::ResilientClient`). Адміністратор заповнює відповідні ENV-змінні
-    # реальними endpoint'ами (Ankr / 1RPC / OnFinality / приватний node).
+    # автоматично переключиться на наступний URL з цього списку.
     RPC_FALLBACK_ENV_KEYS = %w[
       CELO_RPC_URL_FALLBACK_1
       CELO_RPC_URL_FALLBACK_2
@@ -53,8 +55,15 @@ module Celo
     MAX_STRESS_INDEX = 0.2
 
     # Мінімальний баланс оракула (CELO) для оплати газу транзакцій.
-    # Аналог перевірки 0.05 MATIC у BlockchainMintingService.
     MIN_ORACLE_BALANCE_WEI = 0.05 * (10**18)
+
+    # [ARCH.50] eth-gem error messages that mean the node DEFINITELY rejected the tx —
+    # it never entered the mempool → safe to fail the intent and re-pay next cycle.
+    REJECTED_PATTERNS = /execution reverted|insufficient funds|intrinsic gas|gas required exceeds|invalid sender|out of gas/i
+
+    # Messages that mean a tx with this nonce was ALREADY submitted (the prior attempt
+    # MAY have broadcast) → AMBIGUOUS: do NOT re-pay, leave the intent for reconcile.
+    AMBIGUOUS_PATTERNS = /nonce too low|already known|replacement transaction underpriced|already imported/i
 
     def initialize(cluster, target_date)
       @cluster = cluster
@@ -70,65 +79,63 @@ module Celo
       organization = @cluster.organization
       return unless organization&.crypto_public_address.present?
 
-      # Guard Clause 3 — Idempotency for cluster_health_arbitration double-fire.
-      # `ClusterHealthCheckWorker` runs both from `InsightBatchCallbacks#on_success`
-      # AND from the 02:00 UTC `cluster_health_arbitration` cron — for healthy
-      # clusters that means `CeloRewardWorker.perform_async` is enqueued twice
-      # per day. The oracle Kredis lock serialises Celo TX broadcasts but does
-      # NOT dedupe by (cluster, date), so without this check the org would be
-      # paid 10 cUSD instead of 5 on every healthy day. We look at the audit
-      # ledger we just wrote (`BlockchainTransaction` with `sourceable=cluster`,
-      # `token_type=cusd`, status in `[:sent, :confirmed]`) for `@target_date`
-      # and short-circuit if found.
-      if reward_already_sent?
-        Rails.logger.info "🌿 [Celo ReFi] Пропускаю — кластер #{@cluster.name} вже отримав cUSD за #{@target_date}."
-        return
-      end
-
       # Підключення до Celo RPC — Thread-cached RPC client з fallback cascade [E.49]
       client = Web3::RpcConnectionPool.client_for(
         "CELO_RPC_URL",
         fallback: DEFAULT_RPC_URL,
         fallback_env_keys: RPC_FALLBACK_ENV_KEYS
       )
-      oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
+      # [ARCH.50] Виділений Celo-підписант (fallback на спільний base) — ізолює blast-radius
+      # від Polygon-флоту (ARCH.49). Чейни мають незалежні nonce-простори, тож ключ — лише security.
+      oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_CELO_PRIVATE_KEY") { ENV.fetch("ORACLE_PRIVATE_KEY") })
 
-      # [BLOCKER-1 FIX]: Guard clause — перевірка балансу оракула перед відправкою транзакції.
-      # Аналог BlockchainMintingService: raise if balance < 0.05 CELO.
+      # [BLOCKER-1 FIX]: Guard clause — перевірка балансу оракула перед відправкою.
       balance = client.get_balance(oracle_key.address)
       raise "🚨 [Celo] Критично низький баланс Оракула: #{balance}" if balance < MIN_ORACLE_BALANCE_WEI
 
       cusd_contract_address = ENV.fetch("CELO_CUSD_CONTRACT_ADDRESS")
-      contract = Eth::Contract.from_abi(
-        name: "CeloUSD",
-        address: cusd_contract_address,
-        abi: ERC20_TRANSFER_ABI
-      )
+      contract = Eth::Contract.from_abi(name: "CeloUSD", address: cusd_contract_address, abi: ERC20_TRANSFER_ABI)
 
       amount_in_wei = Web3::WeiConverter.to_wei(REWARD_AMOUNT, TOKEN_DECIMALS)
       recipient = organization.crypto_public_address
-      lock_key = "lock:web3:oracle:#{oracle_key.address}"
+      # [ARCH.49/ARCH.50] Chain-prefixed lock key → Celo не контендить хибно з Polygon base-key.
+      lock_key = "lock:web3:celo:oracle:#{oracle_key.address}"
 
+      intent = nil
       begin
-        tx_hash = nil
-
         Kredis.lock(lock_key, expires_in: 30.seconds, after_timeout: :raise) do
+          # [ARCH.50] dedup + intent + broadcast ВСЕ всередині lock (серіалізовано):
+          #   - dedup на ЛОГІЧНИЙ reward_date закриває детермінований #0 (target_date≠created_at);
+          #   - dedup всередині lock закриває pre-lock TOCTOU #2;
+          #   - `:pending` intent ПЕРЕД transact закриває crash-window #1.
+          return if reward_already_sent?
+
+          intent = create_reward_intent!(recipient)
           tx_hash = client.transact(
             contract, "transfer", recipient, amount_in_wei,
             sender_key: oracle_key, legacy: false
           )
+          intent.mark_as_sent!(tx_hash) if tx_hash.present?
         end
 
-        if tx_hash.present?
-          create_reward_transaction(tx_hash, recipient)
-
+        # Пост-lock: блок завершився (не dedup-return, не виняток) → intent створено.
+        if intent.status_sent?
+          # [ARCH.50] Озброюємо Celo-aware reconcile (revert→re-payable; confirm→done).
+          CeloConfirmationWorker.perform_in(30.seconds, intent.id, intent.created_at.iso8601)
           Rails.logger.info "🌿 [Celo ReFi] Винагорода #{REWARD_AMOUNT} cUSD → #{organization.name} (Кластер: #{@cluster.name}, Дата: #{@target_date})"
+          intent.tx_hash
+        else
+          # transact повернув порожній hash БЕЗ винятку (malformed ack) → intent лишається
+          # `:pending` (dedup блокує re-pay); reconcile / stale-escalate розрулить on-chain.
+          Rails.logger.warn "⚠️ [Celo ReFi] Порожній tx_hash для кластера #{@cluster.name} — intent ##{intent.id} лишається :pending."
+          nil
         end
-
-        tx_hash
-      rescue StandardError => e
-        Rails.logger.error "🛑 [Celo ReFi] Помилка переказу cUSD для кластера #{@cluster.name}: #{e.message}"
+      rescue Kredis::LockTimeout => e
+        # [ARCH.50] Lock не взято → блок (dedup+intent+transact) НЕ виконувався → intent немає →
+        # безпечно retry-ити. Не CIRCUIT_BREAKER_ERROR; re-raise для Sidekiq retry.
         raise e
+      rescue StandardError => e
+        handle_transact_failure(intent, e)
       end
     end
 
@@ -150,24 +157,29 @@ module Celo
       true
     end
 
-    # True if we already wrote an audit-ledger entry for this cluster on the
-    # same target_date for cUSD. Uses the date window `[target_date 00:00,
-    # target_date+1 00:00)` against `created_at` so partition pruning kicks
-    # in (`blockchain_transactions` is RANGE-partitioned by `created_at`).
-    # `manual_review` and `failed` states do NOT count as a sent reward —
-    # an admin retry must be able to deliver them.
+    # [ARCH.50] reward_date = логічний audit-день (Date), розв'язаний від `created_at`
+    # (час запису). target_date може бути Time (адмінський виклик) → `.to_date`.
+    def reward_date_value
+      @target_date.to_date
+    end
+
+    # [ARCH.50] Dedup на ЛОГІЧНИЙ reward_date (коректність), created_at-вікно — ЛИШЕ
+    # partition-pruning підказка (рядок пишеться ~reward_date+1день; same-day double-fire
+    # обидва в [reward_date, reward_date+2д)). Статус-сет = усе, ОКРІМ :failed (failed →
+    # re-payable). Вкл. :pending/:manual_review → можливо-landed спроба блокує re-pay.
     def reward_already_sent?
-      window_start = @target_date.is_a?(Date) ? @target_date.beginning_of_day : @target_date
-      window_end   = window_start + 1.day
+      rdate = reward_date_value
 
       BlockchainTransaction
-        .where(sourceable: @cluster, token_type: :cusd, blockchain_network: "celo")
-        .where(status: [ :sent, :confirmed, :processing ])
-        .where(created_at: window_start...window_end)
+        .where(sourceable: @cluster, token_type: :cusd, blockchain_network: "celo", reward_date: rdate)
+        .where(status: [ :pending, :processing, :sent, :confirmed, :manual_review ])
+        .where(created_at: rdate.beginning_of_day...(rdate + 2.days).beginning_of_day)
         .exists?
     end
 
-    def create_reward_transaction(tx_hash, recipient)
+    # [ARCH.50] Durable `:pending` intent ПЕРЕД broadcast (sourceable: cluster, reward_date:
+    # logical day). tx_hash проставить mark_as_sent! ПІСЛЯ broadcast.
+    def create_reward_intent!(recipient)
       BlockchainTransaction.create!(
         cluster: @cluster,
         sourceable: @cluster,
@@ -175,10 +187,36 @@ module Celo
         amount: REWARD_AMOUNT,
         token_type: :cusd,
         blockchain_network: "celo",
-        status: :sent,
-        tx_hash: tx_hash,
+        reward_date: reward_date_value,
+        status: :pending,
         notes: "🌿 Celo ReFi: Винагорода #{REWARD_AMOUNT} cUSD за ідеальне здоров'я кластера #{@cluster.name} (#{@target_date})."
       )
+    end
+
+    # [ARCH.50] Розрізняє збій `transact` — критично проти #4 (shared celo_cusd breaker
+    # blast-radius) та #7 (reset-trap: CeloRewardWorker INCLUDE-ить Web3CircuitBreaker).
+    def handle_transact_failure(intent, error)
+      # intent==nil → виняток ДО створення intent (setup/balance) → нічого не broadcast.
+      raise error if intent.nil?
+
+      msg = "#{error.message} #{error.cause&.message}".downcase
+
+      if msg.match?(REJECTED_PATTERNS)
+        # Node відхилив tx (НЕ в мемпулі) → fail intent (re-payable). НЕ re-raise: детермінований
+        # RpcError (`< IOError`) інакше рахується shared-breaker'ом і відкриває його (#4).
+        intent.fail!("Celo rejected: #{error.message}".truncate(500)) if intent.status_pending?
+        Rails.logger.error "🛑 [Celo ReFi] Tx відхилено мережею (intent ##{intent.id} → :failed, re-payable): #{error.message}"
+        nil
+      elsif msg.match?(AMBIGUOUS_PATTERNS)
+        # Tx із цим nonce вже подавався → попередня спроба МОГЛА broadcast → AMBIGUOUS.
+        # Лишаємо intent `:pending` (dedup блокує re-pay), reconcile/stale-escalate. НЕ re-raise.
+        Rails.logger.warn "⚠️ [Celo ReFi] Ambiguous tx-стан (intent ##{intent.id} :pending — можливо-landed, без re-pay): #{error.message}"
+        nil
+      else
+        # Справжній transient transport (timeout/connection) → intent `:pending` (dedup блокує
+        # re-pay), re-raise → breaker рахує реальний transport + Sidekiq retry → dedup-skip.
+        raise error
+      end
     end
   end
 end

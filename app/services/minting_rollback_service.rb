@@ -140,28 +140,8 @@ class MintingRollbackService < ApplicationService
       fallback_env_keys: fallback_env_keys
     )
     envelope = client.eth_get_transaction_receipt(tx.tx_hash)
-    classify_evm_receipt(envelope)
-  end
-
-  # Translates an Ethereum JSON-RPC envelope into our internal tri-state.
-  # Accepts both shapes for resilience:
-  #   - Wrapped (production / real gem): `{ "result" => { "status" => "0x1" } }`
-  #   - Flat (legacy fixtures / direct unwrap): `{ "status" => "0x1" }`
-  # Returns :pending when result is nil/empty (TX still in mempool).
-  def classify_evm_receipt(envelope)
-    return :pending if envelope.nil? || envelope == {}
-
-    receipt = envelope.is_a?(Hash) && envelope.key?("result") ? envelope["result"] : envelope
-    return :pending if receipt.nil? || receipt == {}
-
-    status = receipt["status"]
-    if status == "0x1" || status == 1 || status == "0x01"
-      :confirmed
-    elsif status.nil?
-      :pending
-    else
-      :reverted
-    end
+    # [ARCH.50] tri-state classification extracted to the shared One-Home classifier.
+    Web3::EvmReceiptClassifier.classify(envelope)
   end
 
   # Solana: JSON-RPC getTransaction

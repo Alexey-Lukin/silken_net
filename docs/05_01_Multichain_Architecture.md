@@ -340,7 +340,7 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 | **Черга** | `web3` (пріоритет 7) |
 | **Retry** | 3 |
 | **Тригер** | `ClusterHealthCheckWorker` (щоденно о 02:00 UTC) — для здорових кластерів |
-| **ENV** | `CELO_RPC_URL` ⚠️ без значення → fallback на Alfajores **TESTNET** (реальні cUSD на testnet, обходить `web3_network_guard`; E.49 → mainnet endpoint обов'язковий), `ORACLE_PRIVATE_KEY`, `CELO_CUSD_CONTRACT_ADDRESS` |
+| **ENV** | `CELO_RPC_URL` ⚠️ без значення → fallback на Alfajores **TESTNET** (реальні cUSD на testnet, обходить `web3_network_guard`; E.49 → mainnet endpoint обов'язковий), **[ARCH.50]** `ORACLE_CELO_PRIVATE_KEY` (dedicated Celo-підписант, fallback `ORACLE_PRIVATE_KEY` — ізолює blast-radius від Polygon-флоту), `CELO_CUSD_CONTRACT_ADDRESS` |
 | **Спека** | `spec/services/celo/community_reward_service_spec.rb` |
 
 **Умови нарахування:**
@@ -350,7 +350,7 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 
 **Сума:** 5 cUSD на здоровий кластер на день
 
-**Особливості:** Kredis distributed lock для атомарності ERC-20 transfer + BlockchainTransaction запис.
+**Особливості:** **[ARCH.50]** Money-path-hardened — durable `:pending` intent ПЕРЕД broadcast + dedup на ЛОГІЧНИЙ `reward_date` ВСЕРЕДИНІ chain-prefix Kredis-lock (`lock:web3:celo:oracle:`) + Celo-aware reconcile (`CeloConfirmationWorker`, бо `BlockchainConfirmationWorker` хардкоднутий на Polygon) + deterministic-vs-transient rescue split (dedicated `ORACLE_CELO_PRIVATE_KEY`). Закрив детермінований daily double-pay (логічний ключ ≠ `created_at`-партиція).
 
 #### 10. KlimaDAO (ESG Carbon Retirement)
 
