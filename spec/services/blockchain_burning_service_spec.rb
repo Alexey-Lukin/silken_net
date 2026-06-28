@@ -275,6 +275,21 @@ RSpec.describe BlockchainBurningService do
         expect(mock_client).to have_received(:transact).once # only the first (failed) call
       end
 
+      # [ARCH.51-family] If the durable intent INSERT (create_slash_intent!) itself raises, `audit`
+      # stays nil → the StandardError rescue must degrade gracefully via the `audit&.`-nil guards:
+      # no breach, nothing broadcast, return :manual_review. Mirrors the Celo/insurance
+      # intent-creation-failure path; this is the previously-untested audit-nil branch.
+      it "returns :manual_review without breaching when the slash intent INSERT fails (audit nil)" do
+        allow_any_instance_of(described_class).to receive(:create_slash_intent!)
+          .and_raise(ActiveRecord::StatementInvalid, "intent insert failed")
+
+        result = described_class.call(organization.id, naas_contract.id, source_tree: tree)
+
+        expect(result).to eq(:manual_review)
+        expect(naas_contract.reload.status).to eq("active") # not breached — nothing reached the chain
+        expect(mock_client).not_to have_received(:transact) # failed before the lock/broadcast
+      end
+
       # [ARCH.48] A LockTimeout means the lock was never acquired → transact never ran → the tx is
       # definitely NOT in the mempool → safe to retry. It must NOT breach; a retry re-executes the slash.
       it "re-executes the slash on retry after a LockTimeout (ARCH.48 — lock contention)" do

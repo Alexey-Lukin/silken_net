@@ -73,6 +73,22 @@ RSpec.describe Solana::BatchPayoutService do
     end
   end
 
+  describe ".call — under-lock TOCTOU re-check (L40)" do
+    before { seed_pending(wallet.id, 25_000, 2) } # passes the cheap pre-check (≥ 20_000 lamports)
+
+    it "does NOT pay when another process drains the counter between the pre-check and the lock" do
+      # simulate the race: the counter falls below threshold the instant the lock is acquired,
+      # so the in-lock re-read (`next if pending < threshold`) must skip the payout.
+      allow(Kredis).to receive(:lock).and_wrap_original do |orig, *args, **kwargs, &blk|
+        Kredis.counter("solana_pending_payouts:#{wallet.id}").decrement(by: 25_000) # → 0, below threshold
+        orig.call(*args, **kwargs, &blk)
+      end
+
+      expect { described_class.call }.not_to change(BlockchainTransaction, :count)
+      expect(rpc[:sends]).to eq(0)
+    end
+  end
+
   describe ".call — reconcile in-flight payout" do
     before do
       seed_pending(wallet.id, 25_000, 2)
