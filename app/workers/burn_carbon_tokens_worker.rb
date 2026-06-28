@@ -10,9 +10,10 @@ class BurnCarbonTokensWorker
     naas_contract = NaasContract.find_by(id: naas_contract_id)
     return Rails.logger.error "🛑 [Slashing] Контракт ##{naas_contract_id} не знайдено." unless naas_contract
 
-    # [ІДЕМПОТЕНТНІСТЬ]: Якщо контракт вже розірвано (попередній ретрай виконав слешинг, але
-    # впав на створенні MaintenanceRecord) — виходимо без повторного виклику. Коректно й після
-    # SLASH-1: breach тепер ставить ЛИШЕ сервіс на РЕАЛЬНОМУ слешингу → :breached = «вже слешено».
+    # [ІДЕМПОТЕНТНІСТЬ]: Якщо контракт вже розірвано (попередній ретрай виконав слешинг, але впав
+    # на створенні MaintenanceRecord) — виходимо без повторного виклику. [ARCH.48] Інваріант тепер
+    # ТОЧНИЙ: `:breached` ставить ЛИШЕ happy-path сервісу на РЕАЛЬНОМУ слешингу (rescue на збої більше
+    # НЕ breach-ить) → :breached ≡ «вже слешено», тож цей skip не маскує тихий burn-abort на RPC-збої.
     return Rails.logger.warn "⚠️ [Slashing] Контракт ##{naas_contract_id} вже розірвано. Пропускаємо." if naas_contract.status_breached?
 
     organization = Organization.find(organization_id)

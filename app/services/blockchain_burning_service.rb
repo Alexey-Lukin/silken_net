@@ -73,17 +73,26 @@ class BlockchainBurningService < ApplicationService
       return freeze_for_field_audit!
     end
 
-    # [ARCH.45] In-flight guard ПІСЛЯ positive-A gate (лише slash-шлях, НЕ freeze — інакше
-    # intent-сміття для заморожених). :sent = slash уже broadcast → :slashed без повтору
-    # (ConfirmationWorker дорезолвить); :pending = крах ДО broadcast → старий intent у :failed,
-    # перепускаємо. Закриває double-burn при non-StandardError краху, що обходить rescue-breach.
-    existing_slash = BlockchainTransaction.where(sourceable: @naas_contract).in_flight.order(created_at: :desc).first
+    # [ARCH.45/ARCH.48] In-flight guard ПІСЛЯ positive-A gate (лише slash-шлях, НЕ freeze — інакше
+    # intent-сміття для заморожених). `unsettled_within` (вкл. :manual_review), бо ambiguous slash
+    # (broadcast невідомий) ескалюється у :manual_review і МУСИТЬ блокувати re-slash:
+    #   :sent          → slash уже broadcast → :slashed без повтору (ConfirmationWorker дорезолвить);
+    #   :manual_review → ambiguous (можливо-landed, ARCH.48) → НЕ повторюємо до ручної звірки;
+    #   :pending       → крах ДО broadcast → старий intent у :failed, перепускаємо й re-slash-имо.
+    existing_slash = BlockchainTransaction.where(sourceable: @naas_contract).unsettled_within(2.hours).order(created_at: :desc).first
     if existing_slash
       if existing_slash.status_sent?
         # Re-arm confirmation worker — на випадок краху до його планування на
         # першій спробі (ConfirmationWorker сам дедуплікує за tx_hash через unique_for).
         BlockchainConfirmationWorker.perform_in(30.seconds, existing_slash.tx_hash) if existing_slash.tx_hash.present?
         return :slashed
+      end
+
+      if existing_slash.status_manual_review?
+        # [ARCH.48] Попередній slash міг потрапити в мемпул до RPC-збою (intent escalate-нуто) —
+        # blind re-slash = double-burn. Чекаємо ручну звірку на Polygonscan, не повторюємо.
+        Rails.logger.warn "⚠️ [Slashing] ##{@naas_contract.id}: попередній slash у manual_review (можливо-landed) — НЕ повторюємо."
+        return :manual_review
       end
 
       existing_slash.fail!("Superseded — re-slash після pre-broadcast краху (ARCH.45)")
@@ -172,14 +181,34 @@ class BlockchainBurningService < ApplicationService
 
       outcome
 
-    rescue StandardError => e
-      # Контракт розривається в БД миттєво, навіть якщо блокчейн "лагає"
-      @naas_contract.update!(status: :breached)
-      # [ARCH.45] Intent у :failed, якщо broadcast не підтвердився — не лишаємо in-flight orphan
-      # (інакше наступний retry хибно вважав би slash «у польоті» й пропустив би його).
-      audit&.fail!("Slash error: #{e.message}") if audit&.status_pending?
+    rescue Kredis::LockTimeout => e
+      # [ARCH.48] Лок НЕ взято → `transact` НЕ виконувався → tx НЕ у мемпулі → безпечно retry-ити.
+      # Саме той мовчазний-abort, який ARCH.48 лікує: раніше rescue breach-ив контракт, а worker-guard
+      # `return if status_breached?` глушив кожен retry → on-chain `slash()` ніколи не транслювався.
+      # Тепер контракт лишається `:active`, intent → :failed (НЕ in-flight) → re-raise → Sidekiq retry re-slash-ить.
+      # audit гарантовано створено (ПЕРЕД локом) і `:pending` (transact не виконувався).
+      audit&.fail!("Slash lock-timeout: #{e.message}")
       handle_slashing_failure(e.message, total_minted_amount)
       raise e
+    rescue StandardError => e
+      if audit&.status_sent?
+        # [ARCH.45] Broadcast УЖЕ стався (tx_hash отримано) — крах ПІСЛЯ `mark_as_sent` (ConfirmationWorker
+        # / breach-update). Slash потрапить у ланцюг → контракт МАЄ бути `:breached` (як і раніше); re-arm
+        # confirmation (`:sent` ⇒ tx_hash присутній — model-validated). Retry безпечний — guard побачить :sent.
+        @naas_contract.update!(status: :breached)
+        BlockchainConfirmationWorker.perform_in(30.seconds, audit.tx_hash)
+        handle_slashing_failure(e.message, total_minted_amount)
+        raise e
+      end
+
+      # [ARCH.48] Помилка З `transact`, intent ще `:pending` — AMBIGUOUS: tx міг піти в мемпул до того,
+      # як RPC-відповідь загубилась (RPC-лаг) → blind retry = double-burn (свіжий nonce, другий
+      # необоротний slash). ARCH.45-інваріант: ескалюй у manual_review, НІКОЛИ не re-attempt наосліп.
+      # Контракт лишається `:active` (НЕ :breached); :manual_review блокує re-slash (in-flight guard вгорі).
+      # НЕ raise → без Sidekiq retry; повертаємо :manual_review → людська звірка на Polygonscan.
+      audit&.escalate_to_review!("Slash міг піти в мемпул до збою — звір на Polygonscan ПЕРЕД повтором: #{e.message}")
+      handle_slashing_failure("AMBIGUOUS (можливо-landed — НЕ авто-повтор): #{e.message}", total_minted_amount)
+      :manual_review
     end
   end
 

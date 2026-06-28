@@ -169,7 +169,7 @@ RSpec.describe "Blockchain minting and burning pipeline" do
       }.not_to change(BlockchainTransaction, :count)
     end
 
-    it "creates EWS alert on slashing failure" do
+    it "creates EWS alert on slashing failure WITHOUT breaching (ARCH.48 — retry can re-execute)" do
       allow(mock_client).to receive(:transact).and_raise(StandardError, "EVM Failure")
 
       expect {
@@ -181,7 +181,9 @@ RSpec.describe "Blockchain minting and burning pipeline" do
       }.to change(EwsAlert, :count).by(1)
 
       naas_contract.reload
-      expect(naas_contract.status).to eq("breached")
+      # [ARCH.48] a failed slash must NOT breach — that would make the worker's status_breached?
+      # guard skip every retry (silent burn-abort). The contract stays :active for the retry.
+      expect(naas_contract.status).not_to eq("breached")
     end
 
     it "calculates damage ratio from single tree death" do

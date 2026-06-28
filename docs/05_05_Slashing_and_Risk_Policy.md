@@ -130,6 +130,8 @@ PENALTY_FACTOR_MAX = 2.0   # стеля застосовується до МНО
 
 > **[ARCH.45] Cause-gate ≠ idempotency-guard (окремі шари).** Positive-A gate вирішує **КОЛИ** слешити (cause); він НЕ захищає від **повторного виконання** `slash()` на крах між on-chain-викликом і DB-breach. Double-burn crash-window закрито окремо — durable intent-marker + `BlockchainTransaction.in_flight` guard ПІСЛЯ gate (лише slash-шлях, не freeze) у `BlockchainBurningService` ([`04_02 §4`](04_02_Business_Logic_and_Services)). Slash success-rate SLO — `silkennet_slash_success/attempts_total` ([`06_03 §2.3`](06_03_Prometheus_Observability)).
 
+> **[ARCH.48] Збій slash більше не ставить хибно `:breached`.** Раніше rescue breach-ив на БУДЬ-ЯКОМУ `StandardError` → worker-guard `return if status_breached?` глушив кожен Sidekiq-retry → on-chain `slash()` тихо не транслювався (silent abort, reachable на правильно-keyed prod через RPC-лаг). Тепер rescue розрізняє три випадки: **`LockTimeout`** (lock не взято → `transact` не виконувався → tx не в мемпулі) → контракт `:active`, intent `:failed`, retry re-slash-ить; **помилка з `transact`** (broadcast невідомий) → `escalate_to_review!` (`:manual_review`; in-flight guard `unsettled_within` блокує blind re-slash — інакше double-burn свіжим nonce); **крах ПІСЛЯ broadcast** (`:sent`) → `:breached` як раніше. Тобто `:breached` ≡ «slash підтверджено-broadcast».
+
 ## 4. Insurance Payout (тільки для категорії B)
 
 ```

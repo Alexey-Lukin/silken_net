@@ -228,31 +228,92 @@ RSpec.describe BlockchainBurningService do
           expect(mock_client).to have_received(:transact) # свіжий slash виконано
         end
 
-        it "fails the intent (no in-flight orphan) when the slash broadcast raises" do
+        it "escalates the intent to manual_review (not :failed) when the slash broadcast raises (ARCH.48)" do
           allow(mock_client).to receive(:transact).and_raise(StandardError, "RPC down")
 
-          expect { described_class.call(organization.id, naas_contract.id, source_tree: tree) }
-            .to raise_error(StandardError, /RPC down/)
+          result = described_class.call(organization.id, naas_contract.id, source_tree: tree)
 
+          # [ARCH.48] An error from transact is ambiguous (the tx may have broadcast) → escalate to
+          # :manual_review so the in-flight guard blocks a blind re-slash; the service does NOT re-raise.
+          expect(result).to eq(:manual_review)
           intent = BlockchainTransaction.where(sourceable: naas_contract).last
-          expect(intent.status).to eq("failed") # не лишився :pending → не хибний in-flight на retry
+          expect(intent.status).to eq("manual_review")
         end
       end
 
-      it "sets contract to breached and creates EwsAlert on blockchain failure" do
+      # [ARCH.48] An AMBIGUOUS slash failure — an error FROM client.transact, where the tx may have
+      # reached the mempool before the RPC response was lost — must NOT breach and must NOT auto-retry
+      # (a blind re-slash would double-burn with a fresh nonce). It escalates the intent to
+      # :manual_review (human reconciles on Polygonscan) and returns it, leaving the contract :active.
+      it "escalates to manual_review WITHOUT breaching on an ambiguous transact failure (ARCH.48)" do
         allow(mock_client).to receive(:transact).and_raise(StandardError, "RPC timeout")
 
+        result = nil
         expect {
-          described_class.call(organization.id, naas_contract.id, source_tree: tree)
-        }.to raise_error(StandardError, "RPC timeout")
-                .and change(EwsAlert, :count).by(1)
+          result = described_class.call(organization.id, naas_contract.id, source_tree: tree)
+        }.to change(EwsAlert, :count).by(1)
 
+        expect(result).to eq(:manual_review)
+        expect(naas_contract.reload.status).to eq("active") # NOT breached — slash unconfirmed
+
+        audit = BlockchainTransaction.where(sourceable: naas_contract).last
+        expect(audit.status).to eq("manual_review")
+        expect(EwsAlert.last.alert_type).to eq("system_fault")
+      end
+
+      # [ARCH.48] Anti-double-burn invariant: once an ambiguous slash sits in :manual_review, a later
+      # attempt (e.g. the next cron cycle) must NOT re-slash — the in-flight guard short-circuits it.
+      it "does NOT re-slash a manual_review (possibly-landed) slash on a later attempt (ARCH.48)" do
+        allow(mock_client).to receive(:transact).and_raise(StandardError, "RPC timeout")
+        described_class.call(organization.id, naas_contract.id, source_tree: tree)
+
+        # Even if the RPC "recovers", the guard must short-circuit on the manual_review intent.
+        allow(mock_client).to receive(:transact).and_return(fake_tx_hash)
+        result = described_class.call(organization.id, naas_contract.id, source_tree: tree)
+
+        expect(result).to eq(:manual_review)
+        expect(mock_client).to have_received(:transact).once # only the first (failed) call
+      end
+
+      # [ARCH.48] A LockTimeout means the lock was never acquired → transact never ran → the tx is
+      # definitely NOT in the mempool → safe to retry. It must NOT breach; a retry re-executes the slash.
+      it "re-executes the slash on retry after a LockTimeout (ARCH.48 — lock contention)" do
+        call_count = 0
+        allow(Kredis).to receive(:lock) do |*_args, **_kwargs, &blk|
+          call_count += 1
+          raise Kredis::LockTimeout, "contended" if call_count == 1
+
+          blk.call
+        end
+
+        expect { described_class.call(organization.id, naas_contract.id, source_tree: tree) }
+          .to raise_error(Kredis::LockTimeout)
+        expect(naas_contract.reload.status).to eq("active") # not breached → retry can run
+
+        result = described_class.call(organization.id, naas_contract.id, source_tree: tree)
+        expect(result).to eq(:slashed)
         expect(naas_contract.reload.status).to eq("breached")
+      end
 
-        alert = EwsAlert.last
-        expect(alert.severity).to eq("critical")
-        expect(alert.alert_type).to eq("system_fault")
-        expect(alert.cluster).to eq(cluster)
+      # [ARCH.48 / ARCH.45 case-2] If the crash happens AFTER a successful broadcast (audit already
+      # :sent — e.g. the confirmation-worker enqueue or the breach-update fails), the slash WILL land,
+      # so the contract MUST still breach (NOT escalate). The :sent guard then makes a retry idempotent.
+      it "still breaches when a crash occurs AFTER a successful broadcast (ARCH.48 case-2)" do
+        allow(mock_client).to receive(:transact).and_return(fake_tx_hash)
+        call = 0
+        allow(BlockchainConfirmationWorker).to receive(:perform_in) do
+          call += 1
+          raise StandardError, "Redis down" if call == 1 # crash right after mark_as_sent
+
+          nil
+        end
+
+        expect { described_class.call(organization.id, naas_contract.id, source_tree: tree) }
+          .to raise_error(StandardError, "Redis down")
+
+        expect(naas_contract.reload.status).to eq("breached") # broadcast happened → slash will land
+        audit = BlockchainTransaction.where(sourceable: naas_contract).last
+        expect(audit.status).to eq("sent")
       end
 
       it "uses proportional damage ratio for single source_tree death" do
