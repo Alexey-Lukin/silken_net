@@ -132,6 +132,19 @@ PENALTY_FACTOR_MAX = 2.0   # стеля застосовується до МНО
 
 > **[ARCH.48] Збій slash більше не ставить хибно `:breached`.** Раніше rescue breach-ив на БУДЬ-ЯКОМУ `StandardError` → worker-guard `return if status_breached?` глушив кожен Sidekiq-retry → on-chain `slash()` тихо не транслювався (silent abort, reachable на правильно-keyed prod через RPC-лаг). Тепер rescue розрізняє три випадки: **`LockTimeout`** (lock не взято → `transact` не виконувався → tx не в мемпулі) → контракт `:active`, intent `:failed`, retry re-slash-ить; **помилка з `transact`** (broadcast невідомий) → `escalate_to_review!` (`:manual_review`; in-flight guard `unsettled_within` блокує blind re-slash — інакше double-burn свіжим nonce); **крах ПІСЛЯ broadcast** (`:sent`) → `:breached` як раніше. Тобто `:breached` ≡ «slash підтверджено-broadcast».
 
+### 3.3 L2 device-voice reconcile/clawback [SLASH-1 × E.60]
+
+**Контекст (true-DePIN North-Star).** Поки trust-походження телеметрії на рунгу L0 (custodial) чи L1 (Queen-attest), backend/Queen технічно могли б підробити голос дерева. Рунг L2 ([`05_02`](05_02_Proof_of_Growth_Pipeline) trust-origin ladder) дає **операторо-непідробний** голос: дерево саме підписує власну телеметрію non-extractable SE050-Ed25519. Та 21-байтний LoRa-кадр не вміщає Ed25519-підпис (64 Б) на кожен запис → дерево підписує **щотижневий Merkle-корінь** над своїми записами (амортизація одного підпису на багато листя; leaf-формула — One-Home [`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline), структура кореня — [`05_04`](05_04_Ethereum_L1_State_Anchor)).
+
+**Design-gap і рішення — ex-post optimistic, НЕ pre-mint.** Тижневий device-корінь підписується **після** того, як L1-relay (Queen) уже намінтив за внутрішньо-тижневі uplink'и → сам по собі device-підпис був би лише *ex-post* доказом, не *pre-mint* захистом. Закриваємо це **reconcile + clawback** (фаза 1):
+- щотижня backend звіряє підписаний **device-root** vs набір записів, з яких **намінтовано** за вікно;
+- **mismatch** (дерево не підтверджує намінтований запис або підтверджує інший) = прямий **tamper-доказ Категорії A** (§3.2 positive-A) — хтось вставив запис, якого дерево не підписувало;
+- наслідок = **clawback** намінтованого через наявний `slash()` (`BlockchainBurningService` палить намінтований SCC; той самий positive-A gate §3.2 + idempotency-guard [ARCH.45] §3.2 — **реюз, не нова механіка**).
+
+**Чесний trade-off (чому не pre-mint двофазний).** Pre-mint захист (зібрати device-підписи → лише тоді мінт) сильніший, але вимагає **daily-cadence** device-підпису, що фізично **energy-gated** (тижневий device-корінь влазить у Scenario C, daily потребує Scenario D / 2× anchor — енергобюджет [`05_02`](05_02_Proof_of_Growth_Pipeline) ladder) + eval-kit-gated (SE050) + ламає real-time per-uplink мінт. Тому pre-mint — задокументований **North-Star**, ex-post+clawback — реалістична фаза 1. Та сама optimistic-логіка, що INS.1 dual-trigger (§4) і §6/§7: незворотний фінансовий наслідок — лише за прямим, підтвердженим сигналом.
+
+> **One-Home:** *policy* clawback-при-mismatch — тут (§3.3); *механізм* Merkle-кореня/leaf — [`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline) + [`05_04`](05_04_Ethereum_L1_State_Anchor); *SE050 / ladder* — [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) + [`00_07`](00_07_Action_Plan_Tracker) SE050-MIGRATION. Стан/фазування — [`00_07`](00_07_Action_Plan_Tracker) ARCH.12.
+
 ## 4. Insurance Payout (тільки для категорії B)
 
 ```

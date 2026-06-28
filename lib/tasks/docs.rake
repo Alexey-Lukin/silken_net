@@ -59,6 +59,7 @@ namespace :docs do
     rtc_drift   = []  # hard: RTC register availability claimed outside 03_01 owner
     rtc_phantom = []  # hard: phantom RTC register DR>19 (chip has only DR0..DR19)
     lorenz_drift = [] # hard: Lorenz β formula re-stated outside 03_04 owner
+    tl_chain_hash = [] # hard: telemetry_logs has no chain_hash column (Merkle leaf = 05_02 §E.60)
     gp_clamp     = [] # hard: retired growth_points clamp `(…,10,63)` (pre-FW.29-PACK)
     deprecated  = []  # hard: retired SSOT term reappeared (DocsLinter::DEPRECATED_TERMS)
     label_drift = []  # hard: link label leads with a different NN_NN than its href resolves to
@@ -114,6 +115,7 @@ namespace :docs do
       # non-existent hardware (caught phantom DR20-DR31 Edge-RL + DR20-DR21 ring + DR24-DR26).
       rtc_phantom.concat(DocsLinter.rtc_register_out_of_range(text).map { |h| "#{base}: #{h}" })
       lorenz_drift.concat(DocsLinter.lorenz_formula_drift(base, text).map { |h| "#{base}: #{h}" })
+      tl_chain_hash.concat(DocsLinter.telemetry_log_chain_hash_drift(text).map { |h| "#{base}: #{h}" })
       gp_clamp.concat(DocsLinter.growth_points_clamp_drift(base, text).map { |h| "#{base}: #{h}" })
       deprecated.concat(DocsLinter.deprecated_terms(base, text).map { |h| "#{base}: #{h}" })
       label_drift.concat(DocsLinter.link_label_target_mismatch(text).map { |h| "#{base}: #{h}" })
@@ -389,6 +391,12 @@ namespace :docs do
       puts "  LORENZ-FORMULA DRIFT (#{lorenz_drift.size}) — σ/ρ/β values are owned by 03_04 §4.1:"
       lorenz_drift.sort.each { |d| puts "    ✗ #{d}" }
     end
+    if tl_chain_hash.empty?
+      puts "  TL chain_hash: no false telemetry_logs.chain_hash claim (Merkle leaf = 05_02 §E.60) ✓"
+    else
+      puts "  TELEMETRY_LOGS.CHAIN_HASH DRIFT (#{tl_chain_hash.size}) — no such column; Merkle leaf is Z-based (05_02 §E.60):"
+      tl_chain_hash.sort.each { |d| puts "    ✗ #{d}" }
+    end
     if gp_clamp.empty?
       puts "  growth_points:  no retired GP formula (`10,63` / `reward / 2` / `50 - deviation`) outside owner (03_04 §4.3) ✓"
     else
@@ -437,6 +445,7 @@ namespace :docs do
     failed << "RTC register-map drift (availability claimed outside 03_01)" unless rtc_drift.empty?
     failed << "phantom RTC register DR>19 (STM32WLE5JC has only DR0..DR19)" unless rtc_phantom.empty?
     failed << "Lorenz-formula drift (β re-stated outside 03_04 §4.1)" unless lorenz_drift.empty?
+    failed << "telemetry_logs.chain_hash drift (no such column; Merkle leaf = 05_02 §E.60)" unless tl_chain_hash.empty?
     failed << "retired growth_points clamp `(…,10,63)` (FW.29-PACK → 03_04 §4.3)" unless gp_clamp.empty?
     failed << "deprecated SSOT terms present" unless deprecated.empty?
     failed << "anchor dimension drift (superseded flange/Zone2 range outside 01_01 §1 freeze)" unless anchor_dim.empty?

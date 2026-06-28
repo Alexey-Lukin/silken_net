@@ -210,6 +210,25 @@ module DocsLinter
     end
   end
 
+  # [SSOT anti-drift] telemetry_logs has NO chain_hash column (it lives in audit_logs /
+  # ethereum_anchors). The Merkle-anchor (ARCH.12) leaf-formula is Z-based (05_02 §E.60),
+  # NOT a tree over TelemetryLog.chain_hash — a plausible-but-false recipe that drifted in
+  # 05_04. Catches the POSITIVE claim; negation/explanation lines (the drift-fix itself,
+  # which must name the wrong token to forbid it) are exempt. No owner doc — the column
+  # never exists anywhere, so stating it is always drift. HARD.
+  TL_CHAIN_HASH_RE = %r{TelemetryLog\s*\.?\s*chain_hash|telemetry_logs?\b[^\n]{0,40}\bchain_hash|\bchain_hash\b[^\n]{0,40}\btelemetry_logs?\b}i
+  TL_CHAIN_HASH_EXEMPT = %r{нема|не існ|не має|відсут|такої колонк|drift|нікол|\bНЕ\b|does not|doesn't|no .{0,20}column}i
+
+  def telemetry_log_chain_hash_drift(text)
+    text.each_line.filter_map do |line|
+      next if line.lstrip.start_with?("|") # skip tables (illustrative rows)
+      next unless line.match?(TL_CHAIN_HASH_RE)
+      next if line.match?(TL_CHAIN_HASH_EXEMPT)
+
+      "telemetry_logs has no chain_hash column — Merkle leaf = Z-based (05_02 §E.60), not TelemetryLog.chain_hash → #{line.strip[0, 100]}"
+    end
+  end
+
   # [SSOT anti-drift] Retired growth_points formula (HARD). TWO generations are now dead:
   #   (1) pre-FW.29-PACK 6-bit wire clamp `clamp(reward, 10, 63)`;
   #   (2) pre-E.63 chaos-derived reward `(reward / 2).clamp(5, 31)` from `50 - deviation`

@@ -221,7 +221,7 @@ Result:   "7f4a9b2c1e8d3f6a0b5c8e2d7a4f1b9e3c6d0a7f4b1e8d5c2a9f6b3e0d7a4c1"  (64
 | Timestamp виконання (збережений в БД) | |
 | `REPEATABLE READ` snapshot isolation | |
 
-> **Примітка:** Це SHA-256 flat commitment, а не повноцінний Merkle Root. Для TRL 9 можна розглянути справжній Merkle Tree над `TelemetryLog.chain_hash` значеннями за тиждень. Незалежна верифікація: `EthereumAnchor#verify_state_root` відтворює хеш з збережених компонентів.
+> **Примітка:** Це SHA-256 flat commitment, а не повноцінний Merkle Root — майбутній Merkle-якір (часткова верифікація) описано у §Перспективи нижче ([ARCH.12]). Незалежна верифікація: `EthereumAnchor#verify_state_root` відтворює хеш з збережених компонентів.
 
 ---
 
@@ -551,28 +551,31 @@ bundle exec rspec spec/services/ethereum/ spec/workers/ethereum_anchor_worker_sp
 
 ## 🔬 Перспективи Розвитку L1 Якоріння
 
-### Merkle Tree замість Flat SHA-256 (TRL 9)
+### Merkle Tree замість Flat SHA-256 [ARCH.12]
 
-Поточна реалізація використовує SHA-256 flat commitment (конкатенація `total_scc|chain_hash|timestamp`). Це не дозволяє **часткову верифікацію** — аудитор мусить відтворити весь стан, щоб перевірити хеш.
+Поточна реалізація (TRL 8) — SHA-256 flat commitment над агрегатами (`total_scc|total_sfc|active_tree_count|chain_hash|timestamp`). Це не дозволяє **часткову верифікацію**: аудитор мусить відтворити весь агрегат, щоб перевірити хеш — не можна довести один запис одного дерева.
 
-**Покращення:** Генерувати Merkle Root із усіх `TelemetryLog.chain_hash` значень за тиждень:
+**Покращення (ARCH.12):** anchor-ити **Merkle-корінь**, де `leaves[0]` = поточний агрегат-хеш (зберігає supply-finality + наявний `verify_state_root`), а `leaves[1..n]` = per-record телеметрія-листя за вікно. Один корінь дає inclusion-proof для будь-якого листа:
 
 ```
                    state_root (Merkle Root)
                   /                         \
-            hash(AB)                    hash(CD)
-           /        \                 /        \
-    hash(logA)  hash(logB)    hash(logC)  hash(logD)
+         leaves[0] = aggregate        subtree (per-record)
+                                      /                    \
+                              leaf(logA)              leaf(logB)
 ```
 
-**Переваги Merkle Tree:**
-- **Часткова верифікація (Merkle Proof):** Аудитор може криптографічно довести наявність конкретного показника (наприклад, вологості дерева `SNET-A1B2C3D4` від 14 квітня 2026) без перевірки всієї бази — маючи лише Merkle Proof (O(log N) хешів) та корінь в L1.
-- **ISO 14064 compliance:** Посиленна доказовість для carbon credit аудиторів.
-- **Незалежна верифікація:** Будь-який вузол може перевірити свій внесок у state root.
+**Архітектурний контракт (рішення Фази 0 — leaf-формула One-Home [`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline)):**
+- **leaf = Z-based per-record** — та сама canonical leaf-формула, що E.60 (`{telemetry_log_id, device_uid, z_value, bio_status, created_at}` → `Filecoin::CidGenerator`), **НЕ** `TelemetryLog.chain_hash` (такої колонки немає; агрегатний AuditLog `chain_hash` лишається всередині `leaves[0]`).
+- **Паралель E.60, не вкладеність:** цей Eth-L1 weekly state-root і Polygon per-batch `archive_root` ([`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline)) — **два незалежні якорі**, що ділять ОДИН `MerkleTree` primitive; нуль крос-чейн зчеплення.
+- **hash = sha256** (One-Home з наявним anchor + Filecoin CID; keccak / OZ-`MerkleProof` — upgrade-path лише за on-chain-verify споживача, YAGNI).
+- **Ієрархія (cluster-subtree → weekly-global-root)** — мапиться на фрактал L1/L2/L3 ([`00_08 §2`](00_08_Beyond_TRL9_Planetary_Roadmap)); один плоский Merkle над усією телеметрією на planetary-scale не feasible ([`00_07`](00_07_Action_Plan_Tracker) ARCH.52 — той самий partition-prune hot-path).
 
-**Реалізація:** `EthereumAnchorService#generate_merkle_root` — побудова бінарного дерева хешів із `TelemetryLog.where(created_at: week_range).pluck(:chain_hash)`. Бібліотека: `merkle-tree` gem або нативний Ruby (SHA-256 пари).
+**Переваги:** часткова верифікація (Merkle Proof, O(log N)) для ISO 14064 / Verra-аудиту; кожен вузол доводить власний внесок; **фундамент L2 device-voice** ([`05_05 §3.3`](05_05_Slashing_and_Risk_Policy) — дерево підписує цей корінь).
 
-**Статус:** Не реалізовано. Пріоритет TRL 9. Поточний flat commitment достатній для TRL 8.
+**Контракт НЕ міняється:** `storeStateRoot(bytes32)` приймає Merkle-корінь так само, як flat-хеш (sha256 → 64-hex `bytes32`).
+
+**Статус:** Фаза 0 — рішення канонізовано; Фаза 1 (`MerkleTree` primitive + застосування) будується **з першим споживачем** inclusion-proof (зараз prod-споживача немає — нема proof-endpoint в API/UI/subgraph/ISO-звіті; будувати раніше = built-but-unused). Поточний flat commitment достатній для TRL 8. Стан/фазування — [`00_07`](00_07_Action_Plan_Tracker) ARCH.12.
 
 ### EigenLayer / AVS як Альтернатива Прямому L1 Запису (Дослідження)
 
@@ -590,4 +593,6 @@ bundle exec rspec spec/services/ethereum/ spec/workers/ethereum_anchor_worker_sp
 
 **Висновок:** EigenLayer AVS — перспективний варіант для зниження gas costs при масштабуванні до мільйонів дерев. Для поточного TRL 8 пряме L1 якоріння залишається оптимальним вибором (простота + максимальна довіра аудиторів).
 
-**Статус:** Дослідження. Не планується до масштабування за межі 10,000+ кластерів.
+**Ортогональна вісь до ARCH.12:** ARCH.13 — це *транспорт* кореня (**куди** писати: direct-L1 vs AVS), ARCH.12 — *структура* кореня (**що** корінь комітить: flat vs Merkle). Дві незалежні осі, не змішувати в одну роботу.
+
+**Статус:** Дослідження (low-urgency). Не планується до масштабування за межі 10,000+ кластерів. Стан — [`00_07`](00_07_Action_Plan_Tracker) ARCH.13.

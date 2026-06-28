@@ -553,6 +553,10 @@ ChainlinkDispatchWorker.perform_async(telemetry_log_id, created_at_iso)
 
 > **Статус:** частково реалізовано (2026-06-03). ✅ `Filecoin::CidGenerator` (детермінований CIDv1: codec raw + sha2-256 → base32 multibase, golden-vector проти `ipfs add --raw-leaves --cid-version 1`) + content-CID guard у потоці архівації AuditLog: `ArchiveService` вбудовує самоописовий `content_cid`, `VerificationService` незалежно перераховує його (локально vs віддалено) і fail-fast при розбіжності → детект ex-post підміни архіву. 🔗 **Залишок (follow-on):** per-tree Merkle-witness нижче (leaf_cid → `archive_root` → Polygon `mint(bytes32)`) для телеметрія-батчу — потребує `MerkleTree`, колонок `archive_cid`/`merkle_leaf` на партиційованому `TelemetryLog` (міграція) та Solidity `mint(bytes32)`; саме там worker-guard з `manual_review`. Розширює Крок B (IoTeX W3bstream witness) і змикає його з кроком архівації Filecoin ([`05_01 §Рівень 1`](05_01_Multichain_Architecture)). Трекер: [`00_07` — E.60](00_07_Action_Plan_Tracker).
 
+> **🧭 Архітектурний контракт (Фаза 0 — ARCH.12 × E.60 × L2).** Ця секція — **One-Home leaf-формули** (нижче) і структури Merkle-кореня для всіх трьох застосувань. (1) **Паралель, не вкладеність:** E.60 `archive_root` (Polygon, per-batch, archive-integrity) і тижневий `state_root` (Eth L1, [`05_04`](05_04_Ethereum_L1_State_Anchor) ARCH.12, supply-finality) — **два незалежні якорі**, що ділять ОДИН `MerkleTree` primitive + цю leaf-формулу; нуль крос-чейн зчеплення. (2) **leaf = Z** (не λ — λ many-to-one → слабший DCI, Beyond-TRL-9 [`00_08 §2.3`](00_08_Beyond_TRL9_Planetary_Roadmap)). (3) **hash = sha256** (One-Home з anchor + Filecoin CID; keccak/OZ-`MerkleProof` — upgrade-path лише за on-chain-verify споживача, YAGNI). (4) Примітив **ієрархічний** (cluster-subtree → root) — мапиться на L1/L2/L3 ([`00_08 §2`](00_08_Beyond_TRL9_Planetary_Roadmap)) і не впирається у scale ([`00_07`](00_07_Action_Plan_Tracker) ARCH.52). L2 device-voice clawback-policy при mismatch — [`05_05 §3.3`](05_05_Slashing_and_Risk_Policy).
+>
+> **⚠️ Наявний leaf-guard dead-in-prod:** `FilecoinArchiveWorker` викликає лише `ArchiveService#archive!`, **ніколи** `VerificationService#verify!` → content-CID guard збудований, але у проді **не озброєний** (нічого не звіряє з намінтованим). Озброєння (cron / on-read verify) = Фаза-1 follow-on ([`00_07`](00_07_Action_Plan_Tracker) E.60).
+
 **Проблема (data-integrity gap):** Раніше Filecoin/IPFS pin відбувався **після** мінту в Polygon — блокчейн-транзакція не мала криптографічного зв'язку з архівом. Зловмисник міг ex-post підмінити archive у Pinata (новий CID), і ніхто би не помітив, що SCC-token посилається на інший набір даних.
 
 > **⚠️ Чому batch-CID НЕ може бути witness для per-device ZK-proof:** W3bstream доводить ZK-факт для **окремого** пристрою (`device_uid`, його Z). Якщо witness — це CID цілого batch (з `telemetry_log_ids` багатьох дерев), то: (а) CID змінюється, щойно в batch потрапляє будь-який інший лог; (б) per-device proof з batch-CID не доводить криптографічно, що payload **саме цього** дерева включений в архів — лише що пристрій «знав» CID.
@@ -561,7 +565,9 @@ ChainlinkDispatchWorker.perform_async(telemetry_log_id, created_at_iso)
 
 ```ruby
 # Iotex::W3bstreamVerificationService — пропозиція E.60 (revised)
-# 1) Per-tree leaf — детермінований CID індивідуального payload
+# [FUTURE — Фаза 1]: MerkleTree primitive + telemetry_logs.{archive_cid,merkle_leaf} (міграція)
+#                    + Solidity mint(bytes32) ще НЕ існують — це цільовий дизайн, не поточний код.
+# 1) Per-tree leaf — детермінований CID індивідуального payload (canonical leaf-формула, One-Home)
 leaf_payload = {
   telemetry_log_id: log.id,
   device_uid: tree.device_uid,
@@ -589,7 +595,7 @@ proof = Iotex.generate_zk_proof(zk_witness)
 log.update!(zk_proof_ref: proof.id, archive_cid: archive_root, merkle_leaf: leaf_cid)
 ```
 
-На **Кроці E** (Polygon mint) `archive_root` передається у `mint()` як `bytes32` metadata. На кроці архівації (`FilecoinArchiveWorker`) пінить масив листя — обчислений Merkle Root має збігатися з `archive_root`, інакше worker fail-fast і запис іде в `manual_review`. Кожне дерево лишається незалежно верифіковним через `merkle_proof` (O(log n)); додавання інших логів змінює лише корінь — усі proof'и одного батча посилаються на той самий `archive_root`. Це форсує **bidirectional integrity** між Polygon SCC і Filecoin archive **на рівні окремого дерева**. (Узгоджується з batch-Merkle підходом тижневого state-root — [`05_04 §Merkle Tree`](05_04_Ethereum_L1_State_Anchor).)
+На **Кроці E** (Polygon mint) `archive_root` передається у `mint()` як `bytes32` metadata. На кроці архівації (`FilecoinArchiveWorker`) пінить масив листя — обчислений Merkle Root має збігатися з `archive_root`, інакше worker fail-fast і запис іде в `manual_review`. Кожне дерево лишається незалежно верифіковним через `merkle_proof` (O(log n)); додавання інших логів змінює лише корінь — усі proof'и одного батча посилаються на той самий `archive_root`. Це форсує **bidirectional integrity** між Polygon SCC і Filecoin archive **на рівні окремого дерева**. (**Паралельний** якір тому самому `MerkleTree` primitive — тижневий state-root [`05_04`](05_04_Ethereum_L1_State_Anchor) ARCH.12: окремий чейн/таймскейл, не вкладений — архітектурний контракт вище.)
 
 ---
 

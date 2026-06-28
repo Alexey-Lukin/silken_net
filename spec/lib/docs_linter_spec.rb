@@ -232,6 +232,27 @@ RSpec.describe DocsLinter do
     end
   end
 
+  describe ".telemetry_log_chain_hash_drift" do
+    it "flags the positive false claim that telemetry_logs has a chain_hash column" do
+      hits = described_class.telemetry_log_chain_hash_drift(
+        "Merkle Tree над `TelemetryLog.chain_hash` значеннями за тиждень\n"
+      )
+      expect(hits.size).to eq(1)
+      expect(hits.first).to include("05_02 §E.60")
+    end
+
+    it "exempts negation/explanation lines (the drift-fix must name the wrong token to forbid it)" do
+      expect(described_class.telemetry_log_chain_hash_drift(
+        "leaf = Z-based, НЕ `TelemetryLog.chain_hash` (такої колонки немає)\n"
+      )).to be_empty
+    end
+
+    it "does not flag the legit chain_hash homes (audit_logs / ethereum_anchors)" do
+      expect(described_class.telemetry_log_chain_hash_drift("AuditLog.chain_hash chains the audit log\n")).to be_empty
+      expect(described_class.telemetry_log_chain_hash_drift("ethereum_anchors.chain_hash component of state_root\n")).to be_empty
+    end
+  end
+
   describe ".growth_points_clamp_drift" do
     it "flags the retired `clamp(reward, 10, 63)` wire range outside the owner" do
       hits = described_class.growth_points_clamp_drift("05_02_Pipeline", "growth_points = clamp(reward, 10, 63)\n")
