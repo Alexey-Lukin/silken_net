@@ -222,8 +222,10 @@ class BlockchainMintingService < ApplicationService
           SilkenNet::Metrics::MINT_SUCCESS_TOTAL.increment(labels: { token_type: token_type })
         end
 
-        # Запускаємо воркер-підтверджувач, який прийде через 30 секунд перевірити квитанцію
-        BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)
+        # Запускаємо воркер-підтверджувач, який прийде через 30 секунд перевірити квитанцію.
+        # [ARCH.52] earliest батч-created_at → ConfirmationWorker partition-prune (батч ділить
+        # один tx_hash, рядки span до MAX_PENDING_AGE; ±1h вікно у воркері покриває весь батч).
+        BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash, txs.min_by(&:created_at).created_at.iso8601)
 
         Rails.logger.info "🛰️ [Web3] Пакет відправлено в мемпул. TX: #{tx_hash}"
       end
@@ -398,7 +400,10 @@ class BlockchainMintingService < ApplicationService
       sender_key: oracle_key, legacy: false
     )
 
-    txs.each { |tx| finalize_sent_transaction(tx, tx_hash, token_type) }
+    # [ARCH.52] Спільний earliest created_at → усі finalize шлють ІДЕНТИЧНІ ConfirmationWorker-args
+    # на спільний batchMint tx_hash → unique_for дедуплікує до 1 воркера (не N).
+    batch_confirm_at = txs.min_by(&:created_at).created_at
+    txs.each { |tx| finalize_sent_transaction(tx, tx_hash, token_type, batch_confirm_at) }
 
     Rails.logger.info "✅ [Web3] Clean sub-batch of #{txs.size} sent via batchMint. TX: #{tx_hash}"
   rescue StandardError => e
@@ -421,7 +426,9 @@ class BlockchainMintingService < ApplicationService
   end
 
   # Фіналізує транзакцію після успішної відправки (shared logic для batch та individual).
-  def finalize_sent_transaction(tx, tx_hash, token_type)
+  # [ARCH.52] `confirm_at` = СПІЛЬНИЙ earliest created_at батчу (усі рядки ділять tx_hash) →
+  # усі N finalize дають ІДЕНТИЧНІ ConfirmationWorker-args → unique_for дедуплікує до 1.
+  def finalize_sent_transaction(tx, tx_hash, token_type, confirm_at = nil)
     update_attrs = { status: :sent, tx_hash: tx_hash }
     if @telemetry_log
       update_attrs[:chainlink_request_id] = @telemetry_log.chainlink_request_id
@@ -434,8 +441,9 @@ class BlockchainMintingService < ApplicationService
     # SLO numerator (06_08 §2.4) — successful broadcast (status→sent).
     SilkenNet::Metrics::MINT_SUCCESS_TOTAL.increment(labels: { token_type: token_type })
 
-    # Запускаємо підтверджувач для кожної індивідуальної транзакції
-    BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)
+    # [ARCH.52] СПІЛЬНИЙ confirm_at для batch (інакше per-tx created_at ламає unique_for → N воркерів);
+    # mint_individual → confirm_at=nil → tx.created_at (унікальний tx_hash, дедуп не потрібен).
+    BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash, (confirm_at || tx.created_at).iso8601)
   end
 
   def identifier_for(tx)

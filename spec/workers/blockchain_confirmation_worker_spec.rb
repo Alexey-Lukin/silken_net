@@ -142,4 +142,24 @@ RSpec.describe BlockchainConfirmationWorker, type: :worker do
       end
     end
   end
+
+  describe ".confirmation_scope [ARCH.52 partition-prune]" do
+    it "bounds the lookup to a created_at window (excludes a same-hash tx outside ±1h)" do
+      out_of_window = create(:blockchain_transaction, wallet: wallet, tx_hash: tx_hash, status: :sent, created_at: 3.hours.ago)
+      scope = described_class.confirmation_scope(tx_hash, transaction.created_at.iso8601)
+
+      expect(scope).to include(transaction)
+      expect(scope).not_to include(out_of_window) # poza ±1h vikном → не сканується
+    end
+
+    it "falls back to unscoped tx_hash lookup when created_at_iso is nil (legacy/puro enqueue)" do
+      out = create(:blockchain_transaction, wallet: wallet, tx_hash: tx_hash, status: :sent, created_at: 3.hours.ago)
+
+      expect(described_class.confirmation_scope(tx_hash, nil)).to include(transaction, out)
+    end
+
+    it "is resilient to a malformed created_at_iso (falls back, still finds the tx)" do
+      expect(described_class.confirmation_scope(tx_hash, "not-a-date")).to include(transaction)
+    end
+  end
 end

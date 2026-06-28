@@ -348,7 +348,7 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
       it "enqueues BlockchainConfirmationWorker for receipt polling" do
         described_class.new.perform(etherisc_insurance.id)
 
-        expect(BlockchainConfirmationWorker).to have_received(:perform_in).with(30.seconds, fake_tx_hash)
+        expect(BlockchainConfirmationWorker).to have_received(:perform_in).with(30.seconds, fake_tx_hash, kind_of(String)) # [ARCH.52] +created_at
       end
 
       it "broadcasts insurance update via Turbo" do
@@ -416,7 +416,7 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
         it "still enqueues confirmation for the existing tx_hash" do
           described_class.new.perform(etherisc_insurance.id)
 
-          expect(BlockchainConfirmationWorker).to have_received(:perform_in).with(30.seconds, fake_tx_hash)
+          expect(BlockchainConfirmationWorker).to have_received(:perform_in).with(30.seconds, fake_tx_hash, kind_of(String)) # [ARCH.52] +created_at
         end
       end
     end

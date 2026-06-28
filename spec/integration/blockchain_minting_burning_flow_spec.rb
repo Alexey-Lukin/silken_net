@@ -113,7 +113,7 @@ RSpec.describe "Blockchain minting and burning pipeline" do
     end
 
     it "schedules confirmation worker after successful send" do
-      expect(BlockchainConfirmationWorker).to receive(:perform_in).with(30.seconds, "0xfake_tx_hash")
+      expect(BlockchainConfirmationWorker).to receive(:perform_in).with(30.seconds, "0xfake_tx_hash", kind_of(String))
       BlockchainMintingService.call(tx.id)
     end
   end

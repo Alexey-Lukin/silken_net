@@ -20,14 +20,31 @@ class BlockchainConfirmationWorker
   #   - Перевіряє receipt ще раз (можливо, мережа відновилась)
   #   - Підтверджує on-chain якщо receipt з'явився
   #   - Ескалює до manual_review якщо receipt все ще pending/unknown
+  # [ARCH.52] tx_hash-query + created_at LOWER-bound → partition-prune (RANGE по created_at).
+  # batchMint групує pending tx БЕЗ верхньої age-межі (urgent-batch span необмежений — reset-to-
+  # pending тримає старий created_at) одним tx_hash → рядки мають РІЗНІ created_at у [earliest,
+  # broadcast]. `created_at >= earliest-1h` покриває ВСІ рядки батчу (всі ≥ earliest) і прунить
+  # партиції, старші за earliest-1h. ⚠️ Симетричне ±1h ВИКЛЮЧИЛО б рядки >1h новіші за earliest →
+  # stuck :sent. Дзеркало CeloConfirmationWorker/ARCH.50 (по tx_hash, не id — batch ділить хеш;
+  # lower-bound, не 1-sec — batch span). Fallback (created_at_iso=nil) → unscoped (legacy/puro).
+  def self.confirmation_scope(tx_hash, created_at_iso = nil)
+    scope = BlockchainTransaction.where(tx_hash: tx_hash)
+    return scope if created_at_iso.blank?
+
+    t = Time.iso8601(created_at_iso.to_s)
+    scope.where("created_at >= ?", t - 1.hour)
+  rescue ArgumentError, TypeError
+    BlockchainTransaction.where(tx_hash: tx_hash)
+  end
+
   sidekiq_retries_exhausted do |msg, _ex|
-    tx_hash = msg["args"].first
+    tx_hash, created_at_iso = msg["args"]
     next unless tx_hash
 
     Rails.logger.error "🚨 [Web3] Confirmation polling exhausted for TX: #{tx_hash}. " \
                        "Escalating stuck transactions to MintingRollbackService."
 
-    txs = BlockchainTransaction.where(tx_hash: tx_hash, status: :sent)
+    txs = confirmation_scope(tx_hash, created_at_iso).where(status: :sent)
     if txs.any?
       MintingRollbackService.call(transactions: txs)
     else
@@ -36,7 +53,7 @@ class BlockchainConfirmationWorker
     end
   end
 
-  def perform(tx_hash)
+  def perform(tx_hash, created_at_iso = nil)
     # [RATE LIMITED]: RPC виклик захищений глобальним лімітером.
     # Тільки eth_get_transaction_receipt є RPC-операцією;
     # обробка результату — це DB-операції, що не потребують лімітування.
@@ -54,7 +71,8 @@ class BlockchainConfirmationWorker
       status = receipt["result"]["status"]
 
       # Знаходимо всі транзакції (батч або одну), пов'язані з цим хешем
-      txs = BlockchainTransaction.where(tx_hash: tx_hash)
+      # [ARCH.52] partition-pruned по created_at вікну (fallback unscoped якщо created_at_iso=nil).
+      txs = self.class.confirmation_scope(tx_hash, created_at_iso)
 
       if txs.empty?
         Rails.logger.warn "⚠️ [Web3] Знайдено квитанцію для невідомого хешу: #{tx_hash}. Ігноруємо."

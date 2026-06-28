@@ -26,7 +26,7 @@ class ToucanBridgeWorker
         tx.wallet.increment!(:toucan_bridged_balance, tx.locked_points)
       end
 
-      BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)
+      BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash, tx.created_at.iso8601) # [ARCH.52] partition-prune
 
       Rails.logger.info "🌉 [Toucan] Bridge TX ##{tx.id} відправлено: #{tx_hash}"
     end

@@ -84,7 +84,7 @@ class BlockchainBurningService < ApplicationService
       if existing_slash.status_sent?
         # Re-arm confirmation worker — на випадок краху до його планування на
         # першій спробі (ConfirmationWorker сам дедуплікує за tx_hash через unique_for).
-        BlockchainConfirmationWorker.perform_in(30.seconds, existing_slash.tx_hash) if existing_slash.tx_hash.present?
+        BlockchainConfirmationWorker.perform_in(30.seconds, existing_slash.tx_hash, existing_slash.created_at.iso8601) if existing_slash.tx_hash.present? # [ARCH.52] partition-prune
         return :slashed
       end
 
@@ -167,7 +167,7 @@ class BlockchainBurningService < ApplicationService
         # [ARCH.45] Воркер-підтверджувач планується ОДРАЗУ після mark_as_sent —
         # ДО breach-update. Інакше крах на breach-update лишав би :sent tx без жодного
         # confirmation-воркера (orphan), а retry рано-повертав би через in-flight guard.
-        BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)
+        BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash, audit.created_at.iso8601) # [ARCH.52] partition-prune
 
         # Маркуємо контракт як розірваний. Це автоматично блокує майбутні виплати.
         @naas_contract.update!(status: :breached)
@@ -196,7 +196,7 @@ class BlockchainBurningService < ApplicationService
         # / breach-update). Slash потрапить у ланцюг → контракт МАЄ бути `:breached` (як і раніше); re-arm
         # confirmation (`:sent` ⇒ tx_hash присутній — model-validated). Retry безпечний — guard побачить :sent.
         @naas_contract.update!(status: :breached)
-        BlockchainConfirmationWorker.perform_in(30.seconds, audit.tx_hash)
+        BlockchainConfirmationWorker.perform_in(30.seconds, audit.tx_hash, audit.created_at.iso8601) # [ARCH.52] partition-prune
         handle_slashing_failure(e.message, total_minted_amount)
         raise e
       end

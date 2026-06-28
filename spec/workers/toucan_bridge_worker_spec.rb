@@ -65,7 +65,7 @@ RSpec.describe ToucanBridgeWorker, type: :worker do
       it "schedules BlockchainConfirmationWorker in 30 seconds" do
         described_class.new.perform(tx.id)
 
-        expect(BlockchainConfirmationWorker).to have_received(:perform_in).with(30.seconds, fake_tx_hash)
+        expect(BlockchainConfirmationWorker).to have_received(:perform_in).with(30.seconds, fake_tx_hash, kind_of(String)) # [ARCH.52] +created_at
       end
     end
 

@@ -194,7 +194,7 @@ RSpec.describe BlockchainBurningService do
       end
 
       it "schedules BlockchainConfirmationWorker after sending transaction" do
-        expect(BlockchainConfirmationWorker).to receive(:perform_in).with(30.seconds, fake_tx_hash)
+        expect(BlockchainConfirmationWorker).to receive(:perform_in).with(30.seconds, fake_tx_hash, kind_of(String)) # [ARCH.52] +created_at
 
         described_class.call(organization.id, naas_contract.id, source_tree: tree)
       end

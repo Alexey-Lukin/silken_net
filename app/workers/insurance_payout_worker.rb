@@ -113,7 +113,7 @@ class InsurancePayoutWorker
           SilkenNet::Metrics::INSURANCE_PAYOUT_SUCCESS_TOTAL.increment
         end
 
-        BlockchainConfirmationWorker.perform_in(30.seconds, tx.tx_hash) if tx.tx_hash.present?
+        BlockchainConfirmationWorker.perform_in(30.seconds, tx.tx_hash, tx.created_at.iso8601) if tx.tx_hash.present? # [ARCH.52] partition-prune
       else
         # [ARCH.51] Internal-mint double-mint guard. `BlockchainMintingService.initialize`
         # filters ONLY `.where.not(status: :confirmed)`; this DIRECT `.call` bypasses the
