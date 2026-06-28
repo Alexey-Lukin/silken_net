@@ -225,6 +225,14 @@ RSpec.describe EwsAlert, type: :model do
         create(:ews_alert, :drought)
       end
 
+      # [INS.1] insect — теж страховий перил → планує незалежну Trigger-2-перевірку (сервіс її
+      # маршрутизує у Field Audit, бо fire-супутник не адьюдикує шкідника).
+      it "enqueues DclimateVerificationWorker for insect_epidemic" do
+        allow_any_instance_of(described_class).to receive(:schedule_satellite_verification!).and_call_original
+        expect(DclimateVerificationWorker).to receive(:perform_in).with(1.hour, kind_of(Integer))
+        create(:ews_alert, alert_type: :insect_epidemic, severity: :medium)
+      end
+
       it "does not enqueue DclimateVerificationWorker for vandalism_breach" do
         allow_any_instance_of(described_class).to receive(:schedule_satellite_verification!).and_call_original
         expect(DclimateVerificationWorker).not_to receive(:perform_in)
@@ -383,9 +391,11 @@ RSpec.describe EwsAlert, type: :model do
       expect(alert.requires_satellite_consensus?).to be false
     end
 
-    it "returns false for insect_epidemic" do
+    # [INS.1] insect — теж страховий перил → потребує незалежного Trigger-2 (маршрут — Field Audit,
+    # бо fire-супутник не адьюдикує шкідника; раніше false → peril висів без Trigger-2 = Potemkin).
+    it "returns true for insect_epidemic" do
       alert = build(:ews_alert, alert_type: :insect_epidemic)
-      expect(alert.requires_satellite_consensus?).to be false
+      expect(alert.requires_satellite_consensus?).to be true
     end
 
     it "returns false for system_fault" do

@@ -159,36 +159,34 @@ class InsurancePayoutWorker
   end
 
   # [INS.1 dual-trigger / COSMIC EYE] Trigger-2: payout лише за НЕЗАЛЕЖНИМ verified-підтвердженням.
-  # Кандидат, озброєний AI-оракулом (Trigger-1), НЕ платиться, поки незалежне джерело (dClimate
-  # satellite fire/drought) не підтвердить. Повертає true (ТРИМАТИ виплату) якщо:
-  # - жодного незалежного fire/drought-алерту → Trigger-2 не спрацював (basis-risk guard);
-  # - unverified → супутник ще не підтвердив, чекаємо;
-  # - inconclusive → потрібен ручний DAO / Field-Audit.
+  # Кандидат, озброєний AI-оракулом (Trigger-1), НЕ платиться, поки незалежне джерело не підтвердить.
+  # Повертає true (ТРИМАТИ виплату) якщо: жодного незалежного перил-алерту (basis-risk guard); unverified
+  # (ще не підтверджено); inconclusive (потрібен ручний DAO / Field-Audit — сюди йдуть УСІ не-пожежні
+  # перили: fire-супутник їх не адьюдикує, Dclimate::VerificationService).
   def awaiting_independent_confirmation?(cluster)
-    fire_alerts = cluster.ews_alerts
-                         .where(alert_type: [ :fire_detected, :severe_drought ])
-                         .where(status: :active)
+    peril_alerts = cluster.ews_alerts
+                          .where(alert_type: [ :fire_detected, :severe_drought, :insect_epidemic ])
+                          .where(status: :active)
 
-    if fire_alerts.none?
+    if peril_alerts.none?
       Rails.logger.info "🛡️ [Insurance] Кластер ##{cluster.id}: кандидат без незалежного підтвердження (Trigger-2) — тримаємо, payout НЕ запущено."
       return true
     end
 
-    if fire_alerts.exists?(satellite_status: :unverified)
-      Rails.logger.info "🛰️ [Insurance] Виплата відкладена — очікуємо супутникову верифікацію для кластера ##{cluster.id}."
+    if peril_alerts.exists?(satellite_status: :unverified)
+      Rails.logger.info "🛰️ [Insurance] Виплата відкладена — очікуємо незалежну верифікацію для кластера ##{cluster.id}."
       return true
     end
 
-    if fire_alerts.exists?(satellite_status: :inconclusive)
-      Rails.logger.warn "☁️ [Insurance] Виплата заблокована — потрібен ручний DAO-аудит для кластера ##{cluster.id}."
+    if peril_alerts.exists?(satellite_status: :inconclusive)
+      Rails.logger.warn "☁️ [Insurance] Виплата заблокована — потрібен ручний DAO / Field-Audit для кластера ##{cluster.id}."
       return true
     end
 
-    # [INS.1] Платимо ЛИШЕ за VERIFIED незалежним підтвердженням. `:rejected_fraud` (dClimate
-    # відхилив подію — напр. severe_drought пройшов FIRMS і вогню не знайшов → clear_sky) — це
-    # ВІДМОВА, а не confirmation → тримаємо (інакше drought→rejected_fraud давав би ОДНОЧАСНО
-    # slash + payout). Немає verified → не підтверджено → hold.
-    return false if fire_alerts.exists?(satellite_status: :verified)
+    # [INS.1] Платимо ЛИШЕ за VERIFIED незалежним підтвердженням. `:rejected_fraud` буває лише для
+    # fire-алерту (заявлено пожежу, супутник вогню не бачить) — ВІДМОВА, не confirmation → hold.
+    # Не-пожежні перили (посуха/шкідник) ідуть у :inconclusive (Field Audit), НІКОЛИ rejected_fraud.
+    return false if peril_alerts.exists?(satellite_status: :verified)
 
     Rails.logger.info "🛡️ [Insurance] Кластер ##{cluster.id}: незалежний алерт є, але НЕ verified (можливо rejected) — тримаємо, payout НЕ запущено."
     true

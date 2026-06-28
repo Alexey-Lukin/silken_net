@@ -129,12 +129,12 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
         }.to change(BlockchainTransaction, :count).by(1)
       end
 
-      # [INS.1] rejected_fraud = dClimate ВІДХИЛИВ подію (не confirmation) → HOLD, не pay —
-      # інакше severe_drought→FIRMS→no-fire→rejected_fraud давав би slash + payout одночасно.
+      # [INS.1] rejected_fraud = dClimate ВІДХИЛИВ FIRE-подію (заявлено пожежу, супутник вогню не бачить) —
+      # ВІДМОВА, не confirmation → HOLD. Після peril-чесного роутингу не-пожежні перили НЕ доходять до
+      # rejected_fraud (вони → :inconclusive); тест тримає саме fire-rejected → hold інваріант.
       it "holds payout when the only independent alert is satellite_rejected_fraud (not verified)" do
         confirmation.destroy # прибираємо global verified
-        create(:ews_alert, cluster: cluster, tree: tree, alert_type: :severe_drought,
-                           severity: :critical, satellite_status: :rejected_fraud)
+        create(:ews_alert, :fire, cluster: cluster, tree: tree, satellite_status: :rejected_fraud)
 
         described_class.new.perform(insurance.id)
 
@@ -154,16 +154,28 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
 
       it "logs satellite pending message for unverified alerts" do
         create(:ews_alert, :fire, cluster: cluster, tree: tree, satellite_status: :unverified)
-        expect(Rails.logger).to receive(:info).with(/\[Insurance\] Виплата відкладена — очікуємо супутникову верифікацію для кластера ##{cluster.id}/)
+        expect(Rails.logger).to receive(:info).with(/\[Insurance\] Виплата відкладена — очікуємо незалежну верифікацію для кластера ##{cluster.id}/)
 
         described_class.new.perform(insurance.id)
       end
 
       it "logs manual audit message for inconclusive alerts" do
         create(:ews_alert, :fire, cluster: cluster, tree: tree, satellite_status: :inconclusive)
-        expect(Rails.logger).to receive(:warn).with(/\[Insurance\] Виплата заблокована — потрібен ручний DAO-аудит для кластера ##{cluster.id}/)
+        expect(Rails.logger).to receive(:warn).with(/\[Insurance\] Виплата заблокована — потрібен ручний DAO \/ Field-Audit для кластера ##{cluster.id}/)
 
         described_class.new.perform(insurance.id)
+      end
+
+      # [INS.1] Не-пожежні перили (посуха/шкідник) → :inconclusive (Field Audit) → HOLD, консистентно з fire.
+      [ :severe_drought, :insect_epidemic ].each do |peril|
+        it "holds payout when the only independent alert is #{peril} at :inconclusive" do
+          confirmation.destroy
+          create(:ews_alert, cluster: cluster, tree: tree, alert_type: peril, severity: :critical, satellite_status: :inconclusive)
+
+          described_class.new.perform(insurance.id)
+
+          expect(BlockchainMintingService).not_to have_received(:call)
+        end
       end
     end
 

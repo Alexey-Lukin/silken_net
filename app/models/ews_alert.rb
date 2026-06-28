@@ -139,10 +139,11 @@ class EwsAlert < ApplicationRecord
     severity_critical? && (alert_type_fire_detected? || alert_type_severe_drought?)
   end
 
-  # [COSMIC EYE]: Чи потребує цей алерт подвійного консенсусу через супутник?
-  # Пожежі та посухи є страховими подіями, тому вимагають верифікації dClimate.
+  # [COSMIC EYE / INS.1]: Чи потребує цей алерт НЕЗАЛЕЖНОГО Trigger-2-підтвердження (поза нашим AI)?
+  # Усі 3 страхові перили — так (пожежа/посуха/шкідник). Маршрут РІЗНИЙ (Dclimate::VerificationService):
+  # fire → dClimate FIRMS-супутник; не-пожежа → Field Audit (fire-супутник не адьюдикує посуху/шкідника).
   def requires_satellite_consensus?
-    alert_type_fire_detected? || alert_type_severe_drought?
+    alert_type_fire_detected? || alert_type_severe_drought? || alert_type_insect_epidemic?
   end
 
   private
@@ -151,8 +152,8 @@ class EwsAlert < ApplicationRecord
     AlertNotificationWorker.perform_async(self.id)
   end
 
-  # [COSMIC EYE]: Планує верифікацію через супутник dClimate з затримкою 1 годину
-  # (час на орбітальний проліт). Тільки для страхових подій (fire/drought).
+  # [COSMIC EYE / INS.1]: Планує незалежну Trigger-2-перевірку з затримкою 1 годину (орбітальний проліт)
+  # для всіх 3 страхових перилів. Сервіс маршрутизує: fire → FIRMS-вердикт; не-пожежа → Field Audit.
   def schedule_satellite_verification!
     return unless requires_satellite_consensus?
 

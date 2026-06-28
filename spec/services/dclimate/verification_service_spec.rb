@@ -130,6 +130,42 @@ RSpec.describe Dclimate::VerificationService, type: :service do
         expect { service.perform }.not_to raise_error
       end
     end
+
+    # [INS.1] Не-пожежний перил (посуха/шкідник): fire-супутник не може його ні підтвердити, ні
+    # спростувати → ескалація у Field Audit (:inconclusive), НІКОЛИ rejected_fraud/slashing. Раніше
+    # severe_drought йшов крізь fire-двигун → no-fire → rejected_fraud → trigger_slashing (Potemkin-peril).
+    context "when alert is a non-fire peril (fire-satellite cannot adjudicate)" do
+      [ :severe_drought, :insect_epidemic ].each do |peril|
+        context "when the peril is #{peril}" do
+          let(:alert) { create(:ews_alert, cluster: cluster, tree: tree, alert_type: peril, severity: :medium) }
+          let(:service) { described_class.new(alert) }
+
+          it "escalates to satellite_status :inconclusive (Field Audit, Cat-C)" do
+            service.perform
+            expect(alert.reload).to be_satellite_inconclusive
+          end
+
+          it "never marks rejected_fraud and never queries the FIRMS fire-API" do
+            expect(service).not_to receive(:query_dclimate_api)
+            service.perform
+            expect(alert.reload).not_to be_satellite_rejected_fraud
+          end
+
+          it "does not trigger slashing or payout" do
+            create(:naas_contract, cluster: cluster, organization: organization, status: :active)
+            create(:parametric_insurance, :triggered, cluster: cluster, organization: organization)
+            service.perform
+            expect(BurnCarbonTokensWorker).not_to have_received(:perform_async)
+            expect(InsurancePayoutWorker).not_to have_received(:perform_async)
+          end
+
+          it "records a Field-Audit reason in resolution_notes" do
+            service.perform
+            expect(alert.reload.resolution_notes).to include("Field Audit")
+          end
+        end
+      end
+    end
   end
 
   # ---------------------------------------------------------------

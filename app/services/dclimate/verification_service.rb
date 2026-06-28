@@ -55,6 +55,11 @@ module Dclimate
     end
 
     def perform
+      # [INS.1] Cosmic Eye = FIRMS fire-супутник → верифікує ЛИШЕ пожежу. Не-пожежний перил
+      # (посуха/шкідник) НЕ спростовується відсутністю вогню → НІКОЛИ rejected_fraud/trigger_slashing;
+      # ескалюємо у незалежний Field Audit (Кат-C, 05_05 §5). Дзеркало SLASH-1 (indeterminate → Field Audit).
+      return escalate_non_fire_to_field_audit! unless @alert.alert_type_fire_detected?
+
       outcome = query_dclimate_api
 
       case outcome
@@ -231,6 +236,24 @@ module Dclimate
 
       raise Dclimate::OrbitalLagError,
             "Satellite pass obscured by clouds/canopy for alert ##{@alert.id}. Retrying on next orbit."
+    end
+
+    # [INS.1] Не-пожежний перил (посуха/шкідник): FIRMS fire-супутник не може його ні підтвердити,
+    # ні спростувати → ескалюємо у незалежний Field Audit (Кат-C DAO peer-review, 05_05 §5), а НЕ
+    # rejected_fraud (це таврувало б жертву force-majeure фродом і слало у trigger_slashing). Вердикт
+    # :inconclusive — наявний стан «потрібен людський/DAO-аудит», на якому InsurancePayoutWorker уже
+    # HOLD-ить. Фізичний дрон-fallback = ForestBountyService (E.20/E.34) [PLANNED]; реальний
+    # drought/pest-оракул = North-Star (S3.2 / ДСНС-API UNI.12). Без FIRMS-запиту (нерелевантний).
+    def escalate_non_fire_to_field_audit!
+      note = "[#{Time.current.iso8601}] FIRMS fire-супутник не верифікує не-пожежний перил " \
+             "'#{@alert.alert_type}' → Field Audit (Кат-C, 05_05 §5); реального drought/pest-оракула " \
+             "ще нема (S3.2 North-Star / E.20-E.34 fallback)."
+      combined = [ @alert.resolution_notes.presence, note ].compact.join("\n")
+
+      @alert.update!(satellite_status: :inconclusive, resolution_notes: combined)
+
+      Rails.logger.info "🛰️ [Cosmic Eye] Алерт ##{@alert.id} (#{@alert.alert_type}) — не-пожежний перил, " \
+                        "fire-супутник не адьюдикує → Field Audit (Кат-C, 05_05 §5)."
     end
 
     # Генерує dclimate_ref з метаданими супутника для аудит-трейлу.
