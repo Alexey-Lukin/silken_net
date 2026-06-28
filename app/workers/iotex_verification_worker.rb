@@ -8,7 +8,19 @@ class IotexVerificationWorker
   def perform(telemetry_log_id, created_at_iso)
     log = find_log(telemetry_log_id, created_at_iso)
     return unless log
-    return Rails.logger.info "✅ [IoTeX] TelemetryLog ##{telemetry_log_id} вже верифіковано." if log.verified_by_iotex?
+
+    # [ARCH.53/B1] Recover lost Chainlink-dispatch enqueue: краш між update!(verified) і
+    # ChainlinkDispatchWorker.perform_async лишав би лог застрендженим — цей guard на retry
+    # робив early-return → dispatch ніколи не enqueue (recovery-крони нема). Якщо верифіковано,
+    # але dispatch не стартував (chainlink_request_id nil + oracle pending) → переenqueue
+    # (ідемпотентно: ChainlinkDispatchWorker guard'иться на chainlink_request_id.present?).
+    if log.verified_by_iotex?
+      if log.chainlink_request_id.blank? && log.oracle_status_pending?
+        ChainlinkDispatchWorker.perform_async(telemetry_log_id, created_at_iso)
+        return Rails.logger.warn "🔁 [IoTeX] TelemetryLog ##{telemetry_log_id} верифіковано, але dispatch загубився — переenqueue."
+      end
+      return Rails.logger.info "✅ [IoTeX] TelemetryLog ##{telemetry_log_id} вже верифіковано."
+    end
 
     with_circuit_breaker("iotex_w3bstream") do
       with_web3_error_handling("IoTeX", "TelemetryLog ##{telemetry_log_id}") do

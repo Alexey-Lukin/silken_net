@@ -39,8 +39,9 @@ RSpec.describe IotexVerificationWorker, type: :worker do
       ])
     end
 
-    it "skips verification when telemetry_log is already verified" do
-      telemetry_log.update_columns(verified_by_iotex: true, zk_proof_ref: "existing-proof")
+    it "skips re-processing when telemetry_log is already verified and dispatched" do
+      telemetry_log.update_columns(verified_by_iotex: true, zk_proof_ref: "existing-proof",
+                                   chainlink_request_id: "existing-req", oracle_status: "dispatched")
 
       expect(Iotex::W3bstreamVerificationService).not_to receive(:new)
 
@@ -48,6 +49,24 @@ RSpec.describe IotexVerificationWorker, type: :worker do
 
       telemetry_log.reload
       expect(telemetry_log.zk_proof_ref).to eq("existing-proof")
+      expect(ChainlinkDispatchWorker.jobs).to be_empty
+    end
+
+    # [ARCH.53/B1] Recover the verify→dispatch enqueue-after-commit gap: a log left
+    # verified_by_iotex=true with chainlink_request_id nil + oracle pending (crash between
+    # update! and perform_async) is re-enqueued instead of stranded.
+    it "re-enqueues ChainlinkDispatchWorker when verified but dispatch was stranded (crash recovery)" do
+      telemetry_log.update_columns(verified_by_iotex: true, zk_proof_ref: "existing-proof",
+                                   chainlink_request_id: nil, oracle_status: "pending")
+
+      expect(Iotex::W3bstreamVerificationService).not_to receive(:new)
+
+      described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+
+      expect(ChainlinkDispatchWorker.jobs.size).to eq(1)
+      expect(ChainlinkDispatchWorker.jobs.first["args"]).to eq([
+        telemetry_log.id_value, telemetry_log.created_at.iso8601(6)
+      ])
     end
 
     it "returns early when telemetry_log is not found" do
@@ -101,7 +120,8 @@ RSpec.describe IotexVerificationWorker, type: :worker do
   # -----------------------------------------------------------------------
   describe "guard clauses (S3.1)" do
     it "rejects already-verified logs without calling W3bstream" do
-      telemetry_log.update_columns(verified_by_iotex: true, zk_proof_ref: "existing-proof")
+      telemetry_log.update_columns(verified_by_iotex: true, zk_proof_ref: "existing-proof",
+                                   chainlink_request_id: "existing-req", oracle_status: "dispatched")
 
       expect(Iotex::W3bstreamVerificationService).not_to receive(:new)
       described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
