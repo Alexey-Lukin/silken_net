@@ -405,6 +405,8 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 
 > **Режими роботи:** `WEB3_STRICT_MODE=true` → raises `DispatchError` при відсутності `CHAINLINK_FUNCTIONS_ROUTER`. Без strict mode — stub `request_id` для dev/test.
 
+> **[ARCH.49] Nonce-serialization:** on-chain `transact` (цей гарячий per-uplink шлях + `PuroEarth::PassportService` + `Etherisc::ClaimService`) обгорнуто у спільний `Kredis.lock("lock:web3:oracle:#{addr}")` — весь Polygon base-EOA флот (mint/burn + ці три) серіалізується на одному локі (eth-gem бере nonce per-call → конкурентні підписи без локу колізять nonce → orphan tx). Celo — окремий chain-prefixed лок + dedicated key (ARCH.50, §9). Key-topology дім — [`06_02`](06_02_Akash_Network_Integration).
+
 #### 12. Ethereum L1 (State Root Anchoring)
 
 Абсолютна істина. Раз на тиждень весь стан лісу та економіки хешується (SHA-256) і записується в Mainnet Ethereum.

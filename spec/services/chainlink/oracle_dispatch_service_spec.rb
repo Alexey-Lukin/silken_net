@@ -9,6 +9,7 @@ RSpec.describe Chainlink::OracleDispatchService do
 
   before do
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    allow(Kredis).to receive(:lock).and_yield # [ARCH.49] lock серіалізує підпис; стаб yield-ить синхронно
   end
 
   describe "#dispatch!" do
@@ -111,7 +112,7 @@ RSpec.describe Chainlink::OracleDispatchService do
       service = described_class.new(telemetry_log_local)
 
       mock_client = double("Eth::Client")
-      mock_key = double("Eth::Key")
+      mock_key = double("Eth::Key", address: "0x#{"ab" * 20}")
       mock_contract = double("Eth::Contract")
 
       allow(Web3::RpcConnectionPool).to receive(:client_for).and_return(mock_client)
@@ -121,6 +122,51 @@ RSpec.describe Chainlink::OracleDispatchService do
 
       request_id = service.dispatch!
       expect(request_id).to eq("0xtx_hash_123")
+    end
+
+    it "[ARCH.49] wraps the on-chain transact in the shared base-EOA Kredis lock" do
+      stub_const("ENV", ENV.to_h.merge(
+        "CHAINLINK_FUNCTIONS_ROUTER" => "0x1234567890abcdef1234567890abcdef12345678",
+        "CHAINLINK_SUBSCRIPTION_ID" => "42",
+        "CHAINLINK_DON_ID" => "0x#{"d" * 64}",
+        "ALCHEMY_POLYGON_RPC_URL" => "https://polygon-rpc.example.com",
+        "ORACLE_PRIVATE_KEY" => "a" * 64,
+        "CHAINLINK_ROUTER_BYTECODE_CHECK" => "false"
+      ))
+      service = described_class.new(telemetry_log_local)
+      mock_client = double("Eth::Client")
+      mock_key = double("Eth::Key", address: "0x#{"ab" * 20}")
+      allow(Web3::RpcConnectionPool).to receive(:client_for).and_return(mock_client)
+      allow(Eth::Key).to receive(:new).and_return(mock_key)
+      allow(Eth::Contract).to receive(:from_abi).and_return(double("Eth::Contract"))
+      allow(mock_client).to receive(:transact).and_return("0xtx_hash_123")
+
+      service.dispatch!
+
+      expect(Kredis).to have_received(:lock).with(
+        "lock:web3:oracle:#{mock_key.address}", expires_in: 30.seconds, after_timeout: :raise
+      )
+    end
+
+    it "[ARCH.49] re-raises Kredis::LockTimeout (NOT DispatchError) — lock not acquired → clean retry" do
+      stub_const("ENV", ENV.to_h.merge(
+        "CHAINLINK_FUNCTIONS_ROUTER" => "0x1234567890abcdef1234567890abcdef12345678",
+        "CHAINLINK_SUBSCRIPTION_ID" => "42",
+        "CHAINLINK_DON_ID" => "0x#{"d" * 64}",
+        "ALCHEMY_POLYGON_RPC_URL" => "https://polygon-rpc.example.com",
+        "ORACLE_PRIVATE_KEY" => "a" * 64,
+        "CHAINLINK_ROUTER_BYTECODE_CHECK" => "false"
+      ))
+      service = described_class.new(telemetry_log_local)
+      mock_client = double("Eth::Client")
+      allow(Web3::RpcConnectionPool).to receive(:client_for).and_return(mock_client)
+      allow(Eth::Key).to receive(:new).and_return(double("Eth::Key", address: "0x#{"ab" * 20}"))
+      allow(Eth::Contract).to receive(:from_abi).and_return(double("Eth::Contract"))
+      allow(mock_client).to receive(:transact)
+      allow(Kredis).to receive(:lock).and_raise(Kredis::LockTimeout)
+
+      expect { service.dispatch! }.to raise_error(Kredis::LockTimeout)
+      expect(mock_client).not_to have_received(:transact)
     end
 
     it "wraps on-chain errors in DispatchError" do
@@ -177,7 +223,7 @@ RSpec.describe Chainlink::OracleDispatchService do
       service = described_class.new(telemetry_log_local)
 
       mock_client = double("Eth::Client")
-      mock_key = double("Eth::Key")
+      mock_key = double("Eth::Key", address: "0x#{"ab" * 20}")
       mock_contract = double("Eth::Contract")
 
       allow(Web3::RpcConnectionPool).to receive(:client_for).and_return(mock_client)
@@ -263,7 +309,7 @@ RSpec.describe Chainlink::OracleDispatchService do
     let(:bytecode_without_v1) { "0x6080604052deadbeef1461004f" }
 
     let(:mock_client) { double("Eth::Client") }
-    let(:mock_key) { double("Eth::Key") }
+    let(:mock_key) { double("Eth::Key", address: "0x#{"ab" * 20}") }
     let(:mock_contract) { double("Eth::Contract") }
 
     before do

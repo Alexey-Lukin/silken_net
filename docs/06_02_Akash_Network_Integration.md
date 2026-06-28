@@ -94,6 +94,8 @@
 | `CHAINLINK_DON_ID` | `Chainlink::OracleDispatchService` | Raises `DispatchError` для on-chain dispatch |
 | `CHAINLINK_HMAC_SECRET` | `Api::V1::OracleCallbacksController` | Підпис callback не перевіряється |
 
+> **[ARCH.49] Nonce-serialization спільної base-EOA.** Усі Polygon-підписанти на спільному `ORACLE_PRIVATE_KEY` (mint/burn + `Chainlink::OracleDispatchService`/`PuroEarth::PassportService`/`Etherisc::ClaimService`) серіалізують `transact` через спільний `Kredis.lock("lock:web3:oracle:#{addr}", expires_in: 30.seconds, after_timeout: :raise)` — eth-gem бере nonce per-call (`eth_getTransactionCount(pending)`), тож без локу конкурентні підписи на одній адресі колізять nonce → orphan «sent-but-never-mined» tx. Celo ізольовано власним chain-prefixed локом + dedicated key (ARCH.50, рядок вище). Chain-prefix свідомо **не** для Polygon: base-EOA = єдиний чейн після Celo-split, а `polygon:`-prefix вимагав би перейменувати й mint/burn lock-key (інакше Polygon-флот розколовся б на дві lock-групи, що не серіалізуються) — money-path-ризик без виграшу. Toucan/Klima той самий патерн, але DEAD (0 enqueue) → lock при активації (E.66).
+
 #### Категорія C — Observability (silent failures)
 
 | ENV | Файл | Поведінка без значення |

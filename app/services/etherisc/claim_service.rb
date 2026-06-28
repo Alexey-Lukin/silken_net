@@ -54,10 +54,17 @@ module Etherisc
       Rails.logger.info "🛡️ [Etherisc] Triggering DIP claim for policy #{@insurance.etherisc_policy_id} " \
                         "(insurance ##{@insurance.id})..."
 
-      tx_hash = client.transact(
-        contract, "triggerClaim", policy_id,
-        sender_key: oracle_key, legacy: false
-      )
+      # [ARCH.49] Серіалізуємо підпис на спільній base-EOA (той самий lock, що mint/burn/celo):
+      # eth-gem бере nonce per-call → конкурентні підписи на одній адресі колізять nonce.
+      # after_timeout: :raise → lock не взято → transact не виконувався → LockTimeout
+      # пробрасується для Sidekiq-retry (idempotency double-claim уже закрита ARCH.45 у воркері).
+      tx_hash = nil
+      Kredis.lock("lock:web3:oracle:#{oracle_key.address}", expires_in: 30.seconds, after_timeout: :raise) do
+        tx_hash = client.transact(
+          contract, "triggerClaim", policy_id,
+          sender_key: oracle_key, legacy: false
+        )
+      end
 
       Rails.logger.info "🛡️ [Etherisc] Claim TX sent: #{tx_hash}"
 

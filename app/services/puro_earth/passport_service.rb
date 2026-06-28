@@ -68,6 +68,8 @@ module PuroEarth
                         "Tree: #{@payload[:tree_did]}, hash: #{payload_hash}, TX: #{tx_hash}"
 
       tx_hash
+    rescue Kredis::LockTimeout
+      raise # lock не взято → transact не виконувався → чистий Sidekiq-retry, НЕ AnchoringError
     rescue StandardError => e
       raise AnchoringError, "Puro.earth passport anchoring failed: #{e.message}"
     end
@@ -101,10 +103,17 @@ module PuroEarth
       tree_did = @payload[:tree_did].to_s
       hash_bytes32 = "0x#{payload_hash}"
 
-      client.transact(
-        contract, "anchorPassport", tree_did, hash_bytes32,
-        sender_key: signing_key, legacy: false
-      )
+      # [ARCH.49] Серіалізуємо підпис на спільній base-EOA (той самий lock, що mint/burn/celo):
+      # eth-gem бере nonce per-call → конкурентні підписи колізять nonce. LockTimeout
+      # пробрасується крізь anchor! (re-raise перед StandardError) для чистого Sidekiq-retry.
+      tx_hash = nil
+      Kredis.lock("lock:web3:oracle:#{signing_key.address}", expires_in: 30.seconds, after_timeout: :raise) do
+        tx_hash = client.transact(
+          contract, "anchorPassport", tree_did, hash_bytes32,
+          sender_key: signing_key, legacy: false
+        )
+      end
+      tx_hash
     end
 
     # Extracts payload fields in alphabetical key order with explicit ABI types.

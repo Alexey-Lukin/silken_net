@@ -25,6 +25,7 @@ RSpec.describe Etherisc::ClaimService do
     allow(ENV).to receive(:fetch).with("ORACLE_PRIVATE_KEY").and_return("0x" + "ff" * 32)
     allow(ENV).to receive(:fetch).with("ETHERISC_DIP_CONTRACT_ADDRESS").and_return("0x" + "ee" * 20)
     allow(mock_client).to receive(:transact).and_return(fake_tx_hash)
+    allow(Kredis).to receive(:lock).and_yield # [ARCH.49] lock серіалізує підпис; стаб yield-ить синхронно
   end
 
   describe "#claim!" do
@@ -36,6 +37,21 @@ RSpec.describe Etherisc::ClaimService do
         sender_key: mock_key, legacy: false
       )
       expect(result).to eq(fake_tx_hash)
+    end
+
+    it "[ARCH.49] wraps the transact in the shared base-EOA Kredis lock (nonce-serialization)" do
+      described_class.new(insurance).claim!
+
+      expect(Kredis).to have_received(:lock).with(
+        "lock:web3:oracle:#{mock_key.address}", expires_in: 30.seconds, after_timeout: :raise
+      )
+    end
+
+    it "[ARCH.49] re-raises Kredis::LockTimeout (lock not acquired → transact never ran → clean retry)" do
+      allow(Kredis).to receive(:lock).and_raise(Kredis::LockTimeout)
+
+      expect { described_class.new(insurance).claim! }.to raise_error(Kredis::LockTimeout)
+      expect(mock_client).not_to have_received(:transact)
     end
 
     it "connects to Polygon via RPC connection pool" do

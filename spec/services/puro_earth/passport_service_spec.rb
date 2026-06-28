@@ -17,7 +17,7 @@ RSpec.describe PuroEarth::PassportService do
   end
 
   let(:mock_client) { instance_double(Eth::Client) }
-  let(:mock_key) { instance_double(Eth::Key) }
+  let(:mock_key) { instance_double(Eth::Key, address: "0x#{"ab" * 20}") }
   let(:mock_contract) { instance_double(Eth::Contract) }
   let(:fake_tx_hash) { "0x#{"fa" * 32}" }
 
@@ -29,6 +29,7 @@ RSpec.describe PuroEarth::PassportService do
     allow(ENV).to receive(:fetch).with("ORACLE_PRIVATE_KEY").and_return("0x#{"ff" * 32}")
     allow(ENV).to receive(:fetch).with("PURO_EARTH_REGISTRY_CONTRACT_ADDRESS").and_return("0x#{"ee" * 20}")
     allow(mock_client).to receive(:transact).and_return(fake_tx_hash)
+    allow(Kredis).to receive(:lock).and_yield # [ARCH.49] lock серіалізує підпис; стаб yield-ить синхронно
   end
 
   describe "#anchor!" do
@@ -36,6 +37,21 @@ RSpec.describe PuroEarth::PassportService do
       result = described_class.new(payload).anchor!
 
       expect(result).to eq(fake_tx_hash)
+    end
+
+    it "[ARCH.49] wraps the transact in the shared base-EOA Kredis lock (nonce-serialization)" do
+      described_class.new(payload).anchor!
+
+      expect(Kredis).to have_received(:lock).with(
+        "lock:web3:oracle:#{mock_key.address}", expires_in: 30.seconds, after_timeout: :raise
+      )
+    end
+
+    it "[ARCH.49] re-raises Kredis::LockTimeout (NOT AnchoringError) — lock not acquired → clean retry" do
+      allow(Kredis).to receive(:lock).and_raise(Kredis::LockTimeout)
+
+      expect { described_class.new(payload).anchor! }.to raise_error(Kredis::LockTimeout)
+      expect(mock_client).not_to have_received(:transact)
     end
 
     it "connects to Polygon via RPC connection pool" do

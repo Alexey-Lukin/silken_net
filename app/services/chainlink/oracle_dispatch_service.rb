@@ -94,22 +94,31 @@ module Chainlink
       callback_gas_limit = ENV.fetch("CHAINLINK_CALLBACK_GAS_LIMIT", "300000").to_i
       don_id = ENV.fetch("CHAINLINK_DON_ID") { raise DispatchError, "CHAINLINK_DON_ID обов'язковий для on-chain dispatch" }
 
-      tx_hash = client.transact(
-        contract, "sendRequest",
-        subscription_id.to_i,
-        payload.to_json,
-        data_version,
-        callback_gas_limit,
-        don_id,
-        sender_key: oracle_key,
-        legacy: false
-      )
+      # [ARCH.49] Серіалізуємо підпис на спільній base-EOA (той самий lock, що mint/burn/celo):
+      # eth-gem бере nonce per-call → конкурентні підписи колізять nonce. Це гарячий per-uplink
+      # шлях, тож контенція реальна. LockTimeout re-raise нижче (перед StandardError) — інакше
+      # lock-не-взято хибно став би DispatchError замість чистого retry.
+      tx_hash = nil
+      Kredis.lock("lock:web3:oracle:#{oracle_key.address}", expires_in: 30.seconds, after_timeout: :raise) do
+        tx_hash = client.transact(
+          contract, "sendRequest",
+          subscription_id.to_i,
+          payload.to_json,
+          data_version,
+          callback_gas_limit,
+          don_id,
+          sender_key: oracle_key,
+          legacy: false
+        )
+      end
 
       Rails.logger.info "🔗 [Chainlink] On-chain request submitted (router=#{version}). TX: #{tx_hash}"
       tx_hash
     rescue Web3::ChainlinkRouterVersion::UnsupportedVersionError,
            Web3::ChainlinkRouterVersion::MissingAbiError => e
       raise DispatchError, "Chainlink router ABI registry error: #{e.message}"
+    rescue Kredis::LockTimeout
+      raise # lock не взято → transact не виконувався → чистий Sidekiq-retry, НЕ DispatchError
     rescue StandardError => e
       raise DispatchError, "Chainlink on-chain dispatch failed: #{e.message}"
     end
