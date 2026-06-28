@@ -32,21 +32,31 @@ class PuroEarthPassportWorker
 
     payload = build_passport_payload(record, tree)
 
-    # Phase 1: On-chain anchoring (Polygon D-MRV Registry)
-    tx_hash = with_web3_error_handling("Polygon", "Puro.earth Passport for Tree #{tree.did}") do
-      PuroEarth::PassportService.new(payload).anchor!
+    # Phase 1: On-chain anchoring (Polygon D-MRV Registry).
+    # [ARCH.53/PuroEarth] Ідемпотентно: skip re-anchor якщо tx_hash вже є (double-anchor guard
+    # на retry-after-persist). Вузький residual — краш МІЖ broadcast і persist (tx_hash ще nil) →
+    # retry re-anchor; payloadHash детермінований → це ІДЕНТИЧНИЙ дубль-proof (registry-noise, не
+    # double-CORC, бо Phase 2 guard'иться corc_ref) — reconcile-only, як EVM :processing-orphan.
+    if record.biomass_passport_tx_hash.blank?
+      tx_hash = with_web3_error_handling("Polygon", "Puro.earth Passport for Tree #{tree.did}") do
+        PuroEarth::PassportService.new(payload).anchor!
+      end
+      record.update!(biomass_passport_tx_hash: tx_hash)
     end
 
-    record.update!(biomass_passport_tx_hash: tx_hash)
-    BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)
+    # [ARCH.53/B5] Confirmation-планування ПОЗА anchor-guard → краш між persist і enqueue
+    # відновлюється на retry (BlockchainConfirmationWorker `unique_for` дедуплікує повторне).
+    BlockchainConfirmationWorker.perform_in(30.seconds, record.biomass_passport_tx_hash)
 
-    # Phase 2: REST API submission to Puro.earth for CORC issuance
-    corc_ref = submit_to_puro_earth_api(payload, tx_hash)
-    record.update!(puro_earth_corc_ref: corc_ref) if corc_ref
+    # Phase 2: REST API submission to Puro.earth for CORC issuance (idempotent — skip if issued).
+    if record.puro_earth_corc_ref.blank?
+      corc_ref = submit_to_puro_earth_api(payload, record.biomass_passport_tx_hash)
+      record.update!(puro_earth_corc_ref: corc_ref) if corc_ref
+    end
 
     Rails.logger.info "🌿 [Puro.earth] Biomass Passport generated. " \
                       "Tree #{tree.did}, yield: #{record.biomass_yield_kg} kg, " \
-                      "tx: #{tx_hash}, CORC: #{corc_ref || "pending"}"
+                      "tx: #{record.biomass_passport_tx_hash}, CORC: #{record.puro_earth_corc_ref || "pending"}"
 
     payload
   end

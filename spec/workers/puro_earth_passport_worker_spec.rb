@@ -51,6 +51,41 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
         expect(BlockchainConfirmationWorker).to have_received(:perform_in).with(30.seconds, fake_tx_hash)
       end
 
+      # [ARCH.53/PuroEarth] Idempotency + crash-recovery on Sidekiq retry.
+      it "does NOT re-anchor when a passport tx_hash already exists (double-anchor guard)" do
+        tree = create(:tree, status: :deceased)
+        record = create(:maintenance_record, :biomass_extraction, maintainable: tree,
+                                                                   biomass_passport_tx_hash: fake_tx_hash)
+
+        expect_any_instance_of(PuroEarth::PassportService).not_to receive(:anchor!)
+
+        described_class.new.perform(record.id)
+      end
+
+      it "re-schedules confirmation on retry even when anchoring is skipped (B5 gap recovery)" do
+        tree = create(:tree, status: :deceased)
+        record = create(:maintenance_record, :biomass_extraction, maintainable: tree,
+                                                                   biomass_passport_tx_hash: fake_tx_hash)
+
+        # Anchoring is skipped (tx_hash present) — fails on pre-fix code where anchor! always ran.
+        expect_any_instance_of(PuroEarth::PassportService).not_to receive(:anchor!)
+
+        described_class.new.perform(record.id)
+
+        expect(BlockchainConfirmationWorker).to have_received(:perform_in).with(30.seconds, fake_tx_hash)
+      end
+
+      it "does NOT re-submit to the CORC API when corc_ref already exists (double-CORC guard)" do
+        tree = create(:tree, status: :deceased)
+        record = create(:maintenance_record, :biomass_extraction, maintainable: tree,
+                                                                   biomass_passport_tx_hash: fake_tx_hash,
+                                                                   puro_earth_corc_ref: fake_corc_ref)
+
+        expect_any_instance_of(PuroEarth::RegistryApiService).not_to receive(:submit!)
+
+        described_class.new.perform(record.id)
+      end
+
       it "returns the D-MRV passport payload with correct fields" do
         tree = create(:tree, status: :deceased, latitude: 49.4285, longitude: 32.0620)
         record = create(:maintenance_record, :biomass_extraction, :with_gps, maintainable: tree)
