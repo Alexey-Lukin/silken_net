@@ -106,7 +106,7 @@ SilkenNet не обирає один блокчейн. Система викор
 | 8 | Solana | `Solana::MintingService` | ✅ Real | Ed25519-signed `sendTransaction` (base64). Balance guard: 0.05 SOL |
 | 9 | Celo | `Celo::CommunityRewardService` | ✅ Real | ERC-20 transfer cUSD через Celo RPC |
 | 10 | KlimaDAO | `KlimaDao::RetirementService` | ✅ Real | Approve + Retire (два ERC-20 виклики) |
-| 11 | Chainlink | `Chainlink::OracleDispatchService` | ⚠️ Hybrid | Реальний Chainlink Functions Router + stub коли credentials відсутні |
+| 11 | Chainlink | `Chainlink::OracleDispatchService` | ⚠️ Hybrid | On-chain `sendRequest` реальний (+stub без credentials); ⚠️ **callback-нога DON→Rails unwired** — нема Functions JS-source / consumer `fulfillRequest` / relayer → PATH 1 не замикається у проді (мінт іде tokenomics-шляхом) → [`00_07`](00_07_Action_Plan_Tracker) ARCH.53 |
 | 12 | Ethereum L1 | `Ethereum::StateAnchorService` | ✅ Real | `storeStateRoot(bytes32)` через Alchemy Ethereum RPC |
 
 **Легенда:** ✅ Real = Бойова імплементація з реальними RPC-викликами · ⚠️ Hybrid = Працює в реальному режимі з credentials, fallback до симуляції без них · ⚠️ Devnet = Бойова логіка, але транзакції йдуть на Devnet (simulateTransaction)

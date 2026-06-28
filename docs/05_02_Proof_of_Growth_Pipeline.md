@@ -43,7 +43,7 @@
 
 ## 💡 Огляд
 
-"Proof of Growth" — це trustless консенсусний пайплайн SilkenNet, що перетворює
+"Proof of Growth" — це консенсусний пайплайн SilkenNet (trustless — цільовий намір; поточна модель довіри — §Модель довіри нижче), що перетворює
 фізичні біосигнали дерева (Lorenz Z як DCI/anti-fraud сигнал; гомеостаз —
 недоведена гіпотеза, ⚠️ §Мета) на верифіковані
 on-chain активи (SilkenCarbonCoin / SCC). Пайплайн складається з двох
@@ -54,7 +54,11 @@ on-chain активи (SilkenCarbonCoin / SCC). Пайплайн складає�
 2. **Backend (Rails 8.1 + Sidekiq)** — сервер розпаковує, перевіряє, надсилає
    до peaq / IoTeX / Chainlink і мінтить токени на Polygon та Solana.
 
-### Ключовий інваріант пайплайну
+### Модель довіри пайплайну (trust model)
+
+> **Чесна рамка** (verify-by-data 2026-06-28 → [`00_07`](00_07_Action_Plan_Tracker) ARCH.53). Мінт SCC **оптимістичний**: `growth_points` зараховуються при розпакуванні телеметрії (`credit!`), а pending-мінт створює tokenomics-шлях за порогом `balance ≥ EMISSION_THRESHOLD` (PATH 2, §DOC.7 нижче). IoTeX-ZK + Chainlink-DON — це **асинхронна anti-fraud-провенанс-перевірка** (Lorenz Z = anti-fraud-сигнал, не health/gate — E.63), а **НЕ** синхронний gate перед кожним мінтом. Enforcement проти фроду = **ex-post reconcile + clawback** (device-Merkle-корінь ↔ намінтоване → `slash()`; політика [`05_05 §3.3`](05_05_Slashing_and_Risk_Policy)) — **наразі не збудований** (energy-gated L2). Trust-origin per-packet — драбина **L0** (приймається беззастережно) / **L1** (Queen-attest = soft-marker, не gate) / **L2** (per-tree device-voice, North-Star).
+
+**Oracle-driven gate (PATH 1) — повний trustless-ланцюг, що діє ЛИШЕ на цьому шляху (з `telemetry_log`):**
 
 ```
 tree.peaq_did ≠ nil                        ← peaq Machine Identity
@@ -65,7 +69,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
           → solana micro-reward sent                 ← Solana SPL reward
 ```
 
-Порушення будь-якого кроку заблоковує мінтинг.
+⚠️ **PATH 1 наразі НЕ виконується у проді**: DON Functions JS-source / consumer-контракт `fulfillRequest` / relayer відсутні → callback не приходить (зберігаємо EVM `tx_hash`, а DON ключить `requestId`). Tokenomics-шлях (PATH 2) і `MintBatchCollector` мінтять **без** цього gate (KYC + balance + active-tree enforced; oracle — ні). Цей ланцюг — **намір** (intended gate), а не поточний інваріант; його доля (замкнути / демоутити) → [`00_07`](00_07_Action_Plan_Tracker) ARCH.53.
 
 ---
 
@@ -704,7 +708,9 @@ log.update!(oracle_status: "failed")
 raise "Security Breach: Data not verified by IoTeX"               unless telemetry_log.verified_by_iotex?
 raise "Security Breach: Chainlink Oracle consensus not fulfilled"  unless telemetry_log.oracle_status_fulfilled?  # enum method
 raise "Compliance Breach: Wallet is not Hadron KYC approved"      unless wallet.hadron_kyc_status == "approved"
-# TokenomicsEvaluatorWorker без log — growth_points вже верифіковані pipeline'ом.
+# TokenomicsEvaluatorWorker без log — оптимістичний мінт: growth_points зараховані
+# credit! ДО/паралельно verify (НЕ downstream від нього), цей gate НЕ діє на
+# tokenomics-шляху (anti-fraud = ex-post clawback) → §Модель довіри + ARCH.53.
 ```
 
 **Oracle Balance Check:**

@@ -551,7 +551,8 @@ Telemetry → Lorenz Z-value → growth_points++
                     ├── verified_by_iotex? == true
                     ├── oracle_status_fulfilled? (enum method)
                     └── hadron_kyc_status == "approved"
-                    (TokenomicsEvaluatorWorker без log → growth_points вже верифіковані pipeline'ом)
+                    (TokenomicsEvaluatorWorker без log → guard НЕ діє: оптимістичний мінт,
+                     anti-fraud = ex-post clawback, не цей gate — 05_02 §Модель довіри / 00_07 ARCH.53)
                                     ↓
                     BlockchainMintingService#perform
                     ├── Oracle balance ≥ 0.05 MATIC
