@@ -75,15 +75,23 @@ module Solana
       # поріг. Backward-compat: поріг 0 → миттєва виплата (як було).
       return accumulate_pending_payout!(reward_lamports) if batch_threshold_lamports.positive?
 
-      # Формуємо, підписуємо та відправляємо реальну Solana-транзакцію
-      tx_signature = send_transfer_request(recipient_address, reward_lamports)
+      # [ARCH.51] Reconcile перед broadcast: на retry після broadcast↔DB crash звіряємо цю
+      # незавершену винагороду on-chain замість сліпого re-pay (дзеркало BatchPayoutService).
+      existing = unsettled_event_tx
+      return reconcile_event_in_flight(existing) if existing
 
-      # Створюємо запис у blockchain_transactions для аудиту (статус :sent — очікує підтвердження)
-      record_transaction!(recipient_address, reward_lamports, tx_signature)
+      # [ARCH.51] sign-first → durable :pending intent ДО broadcast → broadcast → mark_as_sent!.
+      # Solana tx_signature детермінований після підпису, тож intent несе його до мережі: на краху
+      # між broadcast і DB наступний retry бачить намір і звіряє (вище), не платить вдруге.
+      # (Раніше per-event робив broadcast-ПОТІМ-record — єдиний money-path crash-window double-pay.)
+      prepared = prepare_transfer(recipient_address, reward_lamports, checked: false)
+      tx = record_event_intent!(recipient_address, reward_lamports, prepared[:signature])
+      broadcast_prepared(prepared)
+      tx.mark_as_sent!(prepared[:signature])
 
       Rails.logger.info "🌊 [Solana] Мікро-винагорода #{format_usdc(reward_lamports)} USDC → #{recipient_address} (TelemetryLog ##{@telemetry_log.id_value})"
 
-      tx_signature
+      prepared[:signature]
     end
 
     # [E.61] Виплата акумульованої суми одним TransferChecked (cron-driven).
@@ -163,25 +171,12 @@ module Solana
         wallet.organization&.solana_public_address.presence
     end
 
-    # Per-event шлях — «сліпий» SPL Transfer (idx 3). Backward-compat.
-    def send_transfer_request(recipient, amount_lamports)
-      dispatch_transfer(recipient, amount_lamports, checked: false)
-    end
-
-    # [E.61] Batch шлях — SPL TransferChecked (idx 12): валідує mint+decimals on-chain.
-    def send_transfer_checked_request(recipient, amount_lamports)
-      dispatch_transfer(recipient, amount_lamports, checked: true)
-    end
-
     # =========================================================================
     # PRODUCTION TRANSACTION FLOW (getLatestBlockhash → build → sign → send)
     # =========================================================================
-    # Формує бінарну Solana-транзакцію, підписує Ed25519 і відправляє через sendTransaction.
-    # `checked:` обирає інструкцію — спільний транспорт, різниться лише серіалізація (Крок 2).
-    def dispatch_transfer(recipient, amount_lamports, checked:)
-      broadcast_prepared(prepare_transfer(recipient, amount_lamports, checked: checked))
-    end
-
+    # `checked:` обирає інструкцію (per-event SPL Transfer idx 3 / batch TransferChecked idx 12) —
+    # спільний транспорт, різниться лише серіалізація (Крок 2). Per-event і batch однаково:
+    # prepare_transfer (sign-first) → record intent (:pending) → broadcast_prepared → mark_as_sent!.
     # [ARCH.45] Будує+підписує транзакцію БЕЗ broadcast. Solana tx_signature детермінований
     # після підпису (= base58 першого підпису), тож batch-виплата може записати durable
     # intent-marker з ним ДО мережі — на retry бачимо намір і не платимо наосліп (crash-window
@@ -462,21 +457,49 @@ module Solana
     end
 
     # =========================================================================
-    # AUDIT RECORD
+    # [ARCH.51] PER-EVENT IDEMPOTENCY (intent-before-broadcast + reconcile)
     # =========================================================================
-    # Зберігаємо Solana-транзакцію в blockchain_transactions для єдиного аудиту.
-    # Статус :sent — транзакцію відправлено в мережу, очікує підтвердження блоку.
-    # BlockchainConfirmationWorker підтвердить/відхилить пізніше.
-    def record_transaction!(recipient, amount_lamports, tx_signature)
-      wallet = @wallet
-      return unless wallet
+    # Дзеркало batch-шляху (record_batch_intent! + BatchPayoutService#reconcile_in_flight)
+    # для per-event винагороди: закриває broadcast↔DB crash-window double-pay.
 
-      wallet.blockchain_transactions.create!(
+    # Незавершена per-event Solana-винагорода ЦІЄЇ телеметрії. Ключ — `chainlink_request_id`
+    # (унікальний per-reward, 1 винагорода/telemetry_log) + solana network; 7-денне вікно
+    # `unsettled_within` (як batch) prunes RANGE-партиції + дає ~168 reconcile-шансів.
+    def unsettled_event_tx
+      return nil if @wallet.nil? || @telemetry_log&.chainlink_request_id.blank?
+
+      @wallet.blockchain_transactions
+             .where(blockchain_network: "solana", chainlink_request_id: @telemetry_log.chainlink_request_id)
+             .unsettled_within(7.days)
+             .order(created_at: :desc).first
+    end
+
+    # [ARCH.51] Звіряє незавершену per-event виплату on-chain (НЕ платить наосліп) — дзеркало
+    # BatchPayoutService#reconcile_in_flight. :confirmed → landed; :not_found → manual_review
+    # (можливо-landed RPC-лаг, double-spend guard); :processing → ще в мережі. Повертає підпис.
+    def reconcile_event_in_flight(tx)
+      case signature_status(tx.tx_hash)
+      when :confirmed
+        tx.confirm! if tx.may_confirm?
+        Rails.logger.info "🌊 [Solana] Per-event #{tx.tx_hash} підтверджено on-chain — re-pay пропущено."
+      when :not_found
+        tx.escalate_to_review!("Solana per-event payout не знайдено on-chain — ручна звірка перед re-pay (можливий RPC-лаг; ARCH.51)") if tx.may_escalate_to_review?
+        Rails.logger.warn "🌊 [Solana] Per-event #{tx.tx_hash} не знайдено on-chain → manual_review (без авто-re-pay)."
+      else # :processing — ще в польоті
+        Rails.logger.info "🌊 [Solana] Per-event #{tx.tx_hash} ще в польоті — re-pay пропущено."
+      end
+      tx.tx_hash
+    end
+
+    # [ARCH.51] Durable :pending intent ДО broadcast (per-event дзеркало record_batch_intent!).
+    # Несе chainlink_request_id/zk_proof_ref телеметрії (dedup-ключ + аудит); mark_as_sent! після broadcast.
+    def record_event_intent!(recipient, amount_lamports, signature)
+      @wallet.blockchain_transactions.create!(
         amount: format_usdc(amount_lamports).to_f,
         token_type: :carbon_coin,
-        status: :sent,
+        status: :pending,
         to_address: recipient,
-        tx_hash: tx_signature,
+        tx_hash: signature,
         blockchain_network: "solana",
         chainlink_request_id: @telemetry_log.chainlink_request_id,
         zk_proof_ref: @telemetry_log.zk_proof_ref,

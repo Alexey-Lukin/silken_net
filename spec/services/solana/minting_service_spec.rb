@@ -106,7 +106,8 @@ RSpec.describe Solana::MintingService do
         expect(tx.blockchain_network).to eq("solana")
         expect(tx.to_address).to eq(recipient_solana_address)
         expect(tx.status).to eq("sent")
-        expect(tx.tx_hash).to eq("5UfDuX7hXbLMKnPRqHxJgpPh6W9y3m4Nk7v2zKQ1YdCE")
+        # [ARCH.51] tx_hash = intent-signature (base58, обчислений ДО broadcast), не sendTransaction-стаб.
+        expect(tx.tx_hash).to be_present
       end
 
       it "stores chainlink_request_id and zk_proof_ref for audit" do
@@ -125,10 +126,12 @@ RSpec.describe Solana::MintingService do
         expect(tx.amount).to eq(0.015)
       end
 
-      it "returns the real transaction signature from sendTransaction" do
+      it "[ARCH.51] returns the deterministic intent-signature (computed before broadcast)" do
         result = described_class.new(log).mint_micro_reward!
 
-        expect(result).to eq("5UfDuX7hXbLMKnPRqHxJgpPh6W9y3m4Nk7v2zKQ1YdCE")
+        # Per-event тепер sign-first: повертає prepared[:signature] (= tx_hash інтенту), не broadcast-стаб.
+        expect(result).to be_present
+        expect(result).to eq(BlockchainTransaction.last.tx_hash)
       end
 
       it "includes growth_points in transaction notes" do
@@ -368,12 +371,44 @@ RSpec.describe Solana::MintingService do
       end
     end
 
-    context "when record_transaction! wallet is nil" do
-      it "does not create a transaction when wallet is nil" do
-        service = described_class.new(nil, wallet: nil)
+    context "when a per-event reward retries [ARCH.51 crash-window idempotency]" do
+      let(:log) { create(:telemetry_log, :verified_telemetry, tree: tree, growth_points: 10) }
 
-        result = service.send(:record_transaction!, "recipient", 10_000, "sig")
-        expect(result).to be_nil
+      before { wallet.update!(solana_public_address: recipient_solana_address) }
+
+      it "writes a :pending intent BEFORE broadcast (durable crash-marker)" do
+        # На момент broadcast intent уже мусить існувати у :pending (sign-first дзеркало batch).
+        allow_any_instance_of(described_class).to receive(:broadcast_prepared) do
+          tx = BlockchainTransaction.last
+          expect(tx.status).to eq("pending")
+          expect(tx.blockchain_network).to eq("solana")
+          "sig"
+        end
+
+        described_class.new(log).mint_micro_reward!
+      end
+
+      it "reconciles on retry instead of re-broadcasting (no double-pay)" do
+        described_class.new(log).mint_micro_reward!
+        expect(BlockchainTransaction.where(blockchain_network: "solana").count).to eq(1)
+
+        # Retry тієї ж телеметрії: unsettled intent існує → reconcile (signature_status), НЕ другий broadcast.
+        allow_any_instance_of(described_class).to receive(:signature_status).and_return(:confirmed)
+        expect_any_instance_of(described_class).not_to receive(:broadcast_prepared)
+
+        described_class.new(log).mint_micro_reward!
+        expect(BlockchainTransaction.where(blockchain_network: "solana").count).to eq(1)
+      end
+
+      it "escalates to manual_review on :not_found (possible RPC lag — no blind re-pay)" do
+        described_class.new(log).mint_micro_reward!
+        tx = BlockchainTransaction.last
+
+        allow_any_instance_of(described_class).to receive(:signature_status).and_return(:not_found)
+        expect_any_instance_of(described_class).not_to receive(:broadcast_prepared)
+
+        described_class.new(log).mint_micro_reward!
+        expect(tx.reload.status).to eq("manual_review")
       end
     end
 
@@ -422,7 +457,8 @@ RSpec.describe Solana::MintingService do
         end
 
         result = described_class.new(log).mint_micro_reward!
-        expect(result).to eq("5UfDuX7hXbLMKnPRqHxJgpPh6W9y3m4Nk7v2zKQ1YdCE")
+        # [ARCH.51] intent-signature (sign-first), не sendTransaction-стаб; dest-ATA резолюція ще тестується через getTokenAccountsByOwner-стаб у prepare_transfer.
+        expect(result).to be_present
       end
 
       it "raises error when recipient has no USDC token account" do
