@@ -882,6 +882,8 @@ blockchain_transactions
 | `ENV["SOLANA_RPC_URL"]` | `Solana::MintingService` | ✅ Так |
 | `ENV["PROVISIONING_MASTER_KEY"]` [SEC.11] | `SilkenNet::SeedDerivation`, `HardwareKeyService` | ✅ Так — без неї `SecurityError` (no SecureRandom fallback ANYWHERE; pre-prod hard cutover) |
 
+> **[ARCH.47]** `ORACLE_MINTER_PRIVATE_KEY` і `ORACLE_SLASHER_PRIVATE_KEY` мусять резолвитися в РІЗНІ адреси: спільний `ORACLE_PRIVATE_KEY`-fallback (або однакові ключі) дав би їм один Kredis-lock `lock:web3:oracle:<addr>` → mint стопорив би time-sensitive slash (а `LockTimeout` там тихо обриває burn). Під `WEB3_STRICT_MODE` `Security::Web3NetworkGuard` boot-енфорсить розділення (canon B-02 — [`07_01`](07_01_Nature_as_a_Service_Contracts)).
+
 ---
 
 ## 🔬 SEC.11 — Lorenz Seed Provenance & Dual Computation Integrity
