@@ -77,6 +77,21 @@ RSpec.describe Dclimate::VerificationService, type: :service do
         expect(BurnCarbonTokensWorker).to have_received(:perform_async)
           .with(organization.id, contract.id, tree.id)
       end
+
+      # [ARCH.53/B2] Slash enqueue ПЕРЕД update!: якщо commit вердикту падає (краш-проксі),
+      # burn УЖЕ enqueue'нуто, а alert лишається :satellite_unverified → worker-retry переграє
+      # ідемпотентно. Раніше update! йшов першим → краш до enqueue → guard early-return → slash
+      # застрягав назавжди.
+      it "enqueues slashing BEFORE persisting the rejected_fraud verdict (crash-window safety)" do
+        contract = create(:naas_contract, cluster: cluster, organization: organization)
+        allow(alert).to receive(:update!).and_raise(ActiveRecord::StatementInvalid, "simulated crash")
+
+        expect { service.perform }.to raise_error(ActiveRecord::StatementInvalid)
+
+        expect(BurnCarbonTokensWorker).to have_received(:perform_async)
+          .with(organization.id, contract.id, tree.id)
+        expect(alert.reload).to be_satellite_unverified
+      end
     end
 
     context "when satellite is obscured by clouds (obscured_by_clouds)" do

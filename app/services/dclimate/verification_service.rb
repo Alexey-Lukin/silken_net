@@ -215,19 +215,28 @@ module Dclimate
 
       Rails.logger.info "🛰️ [Cosmic Eye] Алерт ##{@alert.id} підтверджено супутником. Ініціація виплати."
 
+      # [ARCH.53] update!-first тут СВІДОМО (на відміну від handle_clear_sky_no_fire slash-reorder):
+      # загублений payout-enqueue відновлює InsurancePayoutRecoveryWorker (sweep :triggered). Slashing
+      # такої крони не має → там reorder. Asymmetry навмисна, не баг.
       trigger_insurance_payout
     end
 
     # Супутник бачить ясне небо без пожежі → шахрайство → slashing
     def handle_clear_sky_no_fire
+      Rails.logger.warn "🚨 [Cosmic Eye] Алерт ##{@alert.id} відхилено — ясне небо. Slashing Protocol."
+
+      # [ARCH.53/B2] Slash enqueue ПЕРЕД update!: інакше краш між update!(:rejected_fraud)
+      # і trigger_slashing лишав би slash застрендженим — worker-guard `satellite_unverified?`
+      # на retry робить early-return, burn ніколи не enqueue (recovery-крони нема). Slash
+      # першим → guard лишається «unverified» доки update! не закомітиться → retry переграє
+      # enqueue ідемпотентно (BurnCarbonTokensWorker skip :breached); вичерпані 15 retry →
+      # :inconclusive → DAO-аудит (sidekiq_retries_exhausted), не тиха втрата.
+      trigger_slashing
+
       @alert.update!(
         satellite_status: :rejected_fraud,
         dclimate_ref: generate_dclimate_ref
       )
-
-      Rails.logger.warn "🚨 [Cosmic Eye] Алерт ##{@alert.id} відхилено — ясне небо. Slashing Protocol."
-
-      trigger_slashing
     end
 
     # Хмарність/кронопокрив → ретрай через Sidekiq
