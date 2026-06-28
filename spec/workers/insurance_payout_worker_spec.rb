@@ -228,6 +228,38 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
       end
     end
 
+    context "when recovering an orphaned non-:pending internal-mint TX (ARCH.51 double-mint guard)" do
+      it "escalates to manual_review and does NOT re-mint a recovered :sent tx" do
+        # recovery path: insurance already :paid, an orphaned :sent mint TX from a prior attempt.
+        insurance.update_columns(status: "paid", paid_at: Time.current)
+        orphan = insurance.create_blockchain_transaction!(
+          wallet: wallet, amount: insurance.payout_amount, token_type: insurance.token_type,
+          to_address: organization.crypto_public_address, status: :sent,
+          tx_hash: "0x#{SecureRandom.hex(32)}"
+        )
+
+        described_class.new.perform(insurance.id)
+
+        # the broken guard would have RE-MINTED (BlockchainMintingService excludes only :confirmed).
+        expect(BlockchainMintingService).not_to have_received(:call)
+        expect(orphan.reload.status).to eq("manual_review")
+      end
+
+      it "skips a recovered :confirmed tx (no re-mint, no escalate — already terminal)" do
+        insurance.update_columns(status: "paid", paid_at: Time.current)
+        orphan = insurance.create_blockchain_transaction!(
+          wallet: wallet, amount: insurance.payout_amount, token_type: insurance.token_type,
+          to_address: organization.crypto_public_address, status: :confirmed,
+          tx_hash: "0x#{SecureRandom.hex(32)}"
+        )
+
+        described_class.new.perform(insurance.id)
+
+        expect(BlockchainMintingService).not_to have_received(:call)
+        expect(orphan.reload.status).to eq("confirmed")
+      end
+    end
+
     context "when no active trees exist but non-active trees have wallets" do
       it "falls back to non-active tree wallet for audit" do
         # Remove the active tree so no active trees exist

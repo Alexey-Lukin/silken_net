@@ -115,6 +115,21 @@ class InsurancePayoutWorker
 
         BlockchainConfirmationWorker.perform_in(30.seconds, tx.tx_hash) if tx.tx_hash.present?
       else
+        # [ARCH.51] Internal-mint double-mint guard. `BlockchainMintingService.initialize`
+        # filters ONLY `.where.not(status: :confirmed)`; this DIRECT `.call` bypasses the
+        # batch paths' `:pending`-only filter, so a recovered `:sent`/`:processing` orphan
+        # would be RE-MINTED. The mint flips `:pending`→`:processing` INSIDE its own lock
+        # BEFORE broadcast → only a `:pending` tx is unambiguously un-minted. Invariant: we
+        # (re-)submit ONLY a `:pending` tx; any non-`:pending` recovered tx may already be
+        # on-chain → escalate (double-spend guard, mirrors the Etherisc branch), never
+        # blindly re-mint. (`:pending` = fresh non-recovery tx OR a recovery where the mint
+        # never entered its lock.)
+        unless tx.status_pending?
+          tx.escalate_to_review!("Internal insurance mint вже :#{tx.status} на попередній спробі — звір on-chain ПЕРЕД повтором (ARCH.51 double-mint guard)") if tx.may_escalate_to_review?
+          Rails.logger.warn "🛡️ [Insurance] ##{insurance.id}: non-:pending internal-mint TX (:#{tx.status}) → no re-mint (можливий вже-надісланий mint)."
+          return
+        end
+
         Rails.logger.info "🚀 [Insurance] Ініціація виплати #{tx.amount} SCC для #{organization.name}..."
         # [RATE LIMITED]: RPC виклик захищений глобальним лімітером.
         within_rpc_limit do
