@@ -107,7 +107,8 @@ module PuroEarth
       # eth-gem бере nonce per-call → конкурентні підписи колізять nonce. LockTimeout
       # пробрасується крізь anchor! (re-raise перед StandardError) для чистого Sidekiq-retry.
       tx_hash = nil
-      Kredis.lock("lock:web3:oracle:#{signing_key.address}", expires_in: 30.seconds, after_timeout: :raise) do
+      lock_key = "lock:web3:oracle:#{signing_key.address}"
+      Kredis.lock(lock_key, expires_in: 30.seconds, after_timeout: :raise) do
         tx_hash = client.transact(
           contract, "anchorPassport", tree_did, hash_bytes32,
           sender_key: signing_key, legacy: false

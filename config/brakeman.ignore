@@ -13,6 +13,18 @@
       "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is the Redis key name in Celo reward service (ARCH.50: chain-prefixed lock + dedicated ORACLE_CELO_PRIVATE_KEY; the key derives from Eth::Key.address, never user input)."
     },
     {
+      "fingerprint": "f23993754214e1f821289a73dda2aff60e23475408c0c9ef0410e69c0891f80e",
+      "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is the Redis key name in Chainlink oracle-dispatch service (ARCH.49: nonce-serialization on the shared base-EOA; the key derives from Eth::Key.address, never user input)."
+    },
+    {
+      "fingerprint": "2ecd371c4d80d2cf5545b129ef51af471bd61046766da8633f905114fabe109b",
+      "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is the Redis key name in Etherisc claim service (ARCH.49: nonce-serialization on the shared base-EOA; the key derives from Eth::Key.address, never user input)."
+    },
+    {
+      "fingerprint": "66697997a14e718b9366ee18859d15ffe215bbff1db3b8f5e80d37dd8d9ba7b9",
+      "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is the Redis key name in PuroEarth passport service (ARCH.49: nonce-serialization on the shared base-EOA; the key derives from Eth::Key.address, never user input)."
+    },
+    {
       "fingerprint": "e20e6bdeb0ca4f73c441c913ba78b013155d0e5a5b0cf7c3499f255f5219941e",
       "note": "Marshal.load is guarded by SHA256 integrity verification (verify_model_integrity!). The .marshal file is generated exclusively by the internal ai:train rake task, never from external input."
     }

@@ -59,7 +59,8 @@ module Etherisc
       # after_timeout: :raise → lock не взято → transact не виконувався → LockTimeout
       # пробрасується для Sidekiq-retry (idempotency double-claim уже закрита ARCH.45 у воркері).
       tx_hash = nil
-      Kredis.lock("lock:web3:oracle:#{oracle_key.address}", expires_in: 30.seconds, after_timeout: :raise) do
+      lock_key = "lock:web3:oracle:#{oracle_key.address}"
+      Kredis.lock(lock_key, expires_in: 30.seconds, after_timeout: :raise) do
         tx_hash = client.transact(
           contract, "triggerClaim", policy_id,
           sender_key: oracle_key, legacy: false

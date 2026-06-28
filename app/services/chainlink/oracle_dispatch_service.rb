@@ -99,7 +99,8 @@ module Chainlink
       # шлях, тож контенція реальна. LockTimeout re-raise нижче (перед StandardError) — інакше
       # lock-не-взято хибно став би DispatchError замість чистого retry.
       tx_hash = nil
-      Kredis.lock("lock:web3:oracle:#{oracle_key.address}", expires_in: 30.seconds, after_timeout: :raise) do
+      lock_key = "lock:web3:oracle:#{oracle_key.address}"
+      Kredis.lock(lock_key, expires_in: 30.seconds, after_timeout: :raise) do
         tx_hash = client.transact(
           contract, "sendRequest",
           subscription_id.to_i,
