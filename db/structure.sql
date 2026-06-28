@@ -3455,6 +3455,20 @@ CREATE INDEX blockchain_transactions_default_confirmed_at_idx ON public.blockcha
 
 
 --
+-- Name: index_blockchain_transactions_in_flight; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_blockchain_transactions_in_flight ON ONLY public.blockchain_transactions USING btree (status, created_at) WHERE (status = ANY (ARRAY[0, 1]));
+
+
+--
+-- Name: blockchain_transactions_default_status_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_default_status_created_at_idx ON public.blockchain_transactions_default USING btree (status, created_at) WHERE (status = ANY (ARRAY[0, 1]));
+
+
+--
 -- Name: index_blockchain_transactions_on_tx_hash; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3567,6 +3581,13 @@ CREATE INDEX blockchain_transactions_y2026m01_confirmed_at_idx ON public.blockch
 
 
 --
+-- Name: blockchain_transactions_y2026m01_status_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m01_status_created_at_idx ON public.blockchain_transactions_y2026m01 USING btree (status, created_at) WHERE (status = ANY (ARRAY[0, 1]));
+
+
+--
 -- Name: blockchain_transactions_y2026m01_tx_hash_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3613,6 +3634,13 @@ CREATE INDEX blockchain_transactions_y2026m02_cluster_id_idx ON public.blockchai
 --
 
 CREATE INDEX blockchain_transactions_y2026m02_confirmed_at_idx ON public.blockchain_transactions_y2026m02 USING btree (confirmed_at);
+
+
+--
+-- Name: blockchain_transactions_y2026m02_status_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m02_status_created_at_idx ON public.blockchain_transactions_y2026m02 USING btree (status, created_at) WHERE (status = ANY (ARRAY[0, 1]));
 
 
 --
@@ -3665,6 +3693,13 @@ CREATE INDEX blockchain_transactions_y2026m03_confirmed_at_idx ON public.blockch
 
 
 --
+-- Name: blockchain_transactions_y2026m03_status_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m03_status_created_at_idx ON public.blockchain_transactions_y2026m03 USING btree (status, created_at) WHERE (status = ANY (ARRAY[0, 1]));
+
+
+--
 -- Name: blockchain_transactions_y2026m03_tx_hash_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3711,6 +3746,13 @@ CREATE INDEX blockchain_transactions_y2026m04_cluster_id_idx ON public.blockchai
 --
 
 CREATE INDEX blockchain_transactions_y2026m04_confirmed_at_idx ON public.blockchain_transactions_y2026m04 USING btree (confirmed_at);
+
+
+--
+-- Name: blockchain_transactions_y2026m04_status_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m04_status_created_at_idx ON public.blockchain_transactions_y2026m04 USING btree (status, created_at) WHERE (status = ANY (ARRAY[0, 1]));
 
 
 --
@@ -3763,6 +3805,13 @@ CREATE INDEX blockchain_transactions_y2026m05_confirmed_at_idx ON public.blockch
 
 
 --
+-- Name: blockchain_transactions_y2026m05_status_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m05_status_created_at_idx ON public.blockchain_transactions_y2026m05 USING btree (status, created_at) WHERE (status = ANY (ARRAY[0, 1]));
+
+
+--
 -- Name: blockchain_transactions_y2026m05_tx_hash_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3809,6 +3858,13 @@ CREATE INDEX blockchain_transactions_y2026m06_cluster_id_idx ON public.blockchai
 --
 
 CREATE INDEX blockchain_transactions_y2026m06_confirmed_at_idx ON public.blockchain_transactions_y2026m06 USING btree (confirmed_at);
+
+
+--
+-- Name: blockchain_transactions_y2026m06_status_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m06_status_created_at_idx ON public.blockchain_transactions_y2026m06 USING btree (status, created_at) WHERE (status = ANY (ARRAY[0, 1]));
 
 
 --
@@ -5429,6 +5485,13 @@ ALTER INDEX public.index_blockchain_transactions_on_confirmed_at ATTACH PARTITIO
 
 
 --
+-- Name: blockchain_transactions_default_status_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_in_flight ATTACH PARTITION public.blockchain_transactions_default_status_created_at_idx;
+
+
+--
 -- Name: blockchain_transactions_default_tx_hash_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -5520,6 +5583,13 @@ ALTER INDEX public.index_blockchain_transactions_on_confirmed_at ATTACH PARTITIO
 
 
 --
+-- Name: blockchain_transactions_y2026m01_status_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_in_flight ATTACH PARTITION public.blockchain_transactions_y2026m01_status_created_at_idx;
+
+
+--
 -- Name: blockchain_transactions_y2026m01_tx_hash_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -5566,6 +5636,13 @@ ALTER INDEX public.index_blockchain_transactions_on_cluster_id ATTACH PARTITION 
 --
 
 ALTER INDEX public.index_blockchain_transactions_on_confirmed_at ATTACH PARTITION public.blockchain_transactions_y2026m02_confirmed_at_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m02_status_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_in_flight ATTACH PARTITION public.blockchain_transactions_y2026m02_status_created_at_idx;
 
 
 --
@@ -5618,6 +5695,13 @@ ALTER INDEX public.index_blockchain_transactions_on_confirmed_at ATTACH PARTITIO
 
 
 --
+-- Name: blockchain_transactions_y2026m03_status_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_in_flight ATTACH PARTITION public.blockchain_transactions_y2026m03_status_created_at_idx;
+
+
+--
 -- Name: blockchain_transactions_y2026m03_tx_hash_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -5664,6 +5748,13 @@ ALTER INDEX public.index_blockchain_transactions_on_cluster_id ATTACH PARTITION 
 --
 
 ALTER INDEX public.index_blockchain_transactions_on_confirmed_at ATTACH PARTITION public.blockchain_transactions_y2026m04_confirmed_at_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m04_status_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_in_flight ATTACH PARTITION public.blockchain_transactions_y2026m04_status_created_at_idx;
 
 
 --
@@ -5716,6 +5807,13 @@ ALTER INDEX public.index_blockchain_transactions_on_confirmed_at ATTACH PARTITIO
 
 
 --
+-- Name: blockchain_transactions_y2026m05_status_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_in_flight ATTACH PARTITION public.blockchain_transactions_y2026m05_status_created_at_idx;
+
+
+--
 -- Name: blockchain_transactions_y2026m05_tx_hash_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -5762,6 +5860,13 @@ ALTER INDEX public.index_blockchain_transactions_on_cluster_id ATTACH PARTITION 
 --
 
 ALTER INDEX public.index_blockchain_transactions_on_confirmed_at ATTACH PARTITION public.blockchain_transactions_y2026m06_confirmed_at_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m06_status_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_in_flight ATTACH PARTITION public.blockchain_transactions_y2026m06_status_created_at_idx;
 
 
 --
@@ -7039,5 +7144,6 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260628151759'),
 ('20260509120000');
 
