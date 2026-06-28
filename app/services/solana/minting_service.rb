@@ -464,7 +464,9 @@ module Solana
 
     # Незавершена per-event Solana-винагорода ЦІЄЇ телеметрії. Ключ — `chainlink_request_id`
     # (унікальний per-reward, 1 винагорода/telemetry_log) + solana network; 7-денне вікно
-    # `unsettled_within` (як batch) prunes RANGE-партиції + дає ~168 reconcile-шансів.
+    # `unsettled_within` (як batch) prunes RANGE-партиції. ⚠️ На відміну від batch (cron re-drive
+    # SolanaBatchPayoutWorker), per-event reconcile спрацьовує лише на retry ЦІЄЇ job (retry:3) —
+    # crash-after-broadcast звіряється на наступному retry, а 7д-вікно захищає від re-pay при reprocess.
     def unsettled_event_tx
       return nil if @wallet.nil? || @telemetry_log&.chainlink_request_id.blank?
 
@@ -480,6 +482,10 @@ module Solana
     def reconcile_event_in_flight(tx)
       case signature_status(tx.tx_hash)
       when :confirmed
+        # [ARCH.51-fix] :pending intent (крах ДО mark_as_sent!) → спершу :sent, тоді confirm!
+        # (AASM confirm лише з [:sent,:processing]; інакше :pending застряг би → 7d aging out
+        # unsettled_within → наступний reprocess re-pay → double-pay). Дзеркало BatchPayout reconcile.
+        tx.mark_as_sent!(tx.tx_hash) if tx.status_pending?
         tx.confirm! if tx.may_confirm?
         Rails.logger.info "🌊 [Solana] Per-event #{tx.tx_hash} підтверджено on-chain — re-pay пропущено."
       when :not_found

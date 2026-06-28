@@ -400,6 +400,24 @@ RSpec.describe Solana::MintingService do
         expect(BlockchainTransaction.where(blockchain_network: "solana").count).to eq(1)
       end
 
+      it "confirms a :pending intent stranded by a pre-mark_as_sent crash (review-fix: no stuck :pending → no eventual double-pay)" do
+        # Крах ПІСЛЯ broadcast, ДО mark_as_sent! → intent лишився :pending. reconcile :confirmed
+        # МУСИТЬ спершу mark_as_sent!, інакше confirm! (з [:sent,:processing]) пропуститься → stuck.
+        intent = wallet.blockchain_transactions.create!(
+          amount: 0.015, token_type: :carbon_coin, status: :pending, blockchain_network: "solana",
+          to_address: recipient_solana_address, tx_hash: "stuck-sig",
+          chainlink_request_id: log.chainlink_request_id
+        )
+
+        allow_any_instance_of(described_class).to receive(:signature_status).and_return(:confirmed)
+        expect_any_instance_of(described_class).not_to receive(:broadcast_prepared)
+
+        described_class.new(log).mint_micro_reward!
+
+        expect(intent.reload.status).to eq("confirmed") # mark_as_sent!→confirm!, не застрягло :pending
+        expect(BlockchainTransaction.where(blockchain_network: "solana").count).to eq(1)
+      end
+
       it "escalates to manual_review on :not_found (possible RPC lag — no blind re-pay)" do
         described_class.new(log).mint_micro_reward!
         tx = BlockchainTransaction.last
