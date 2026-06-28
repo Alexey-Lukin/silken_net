@@ -162,6 +162,16 @@ end
 | Recovery to full pipeline after multi-chain outage | < 4 год once external chains restore | Backfill workers drain rate (`IotexBackfillWorker`, `FilecoinReconcileWorker`) |
 | No data loss when all external chains down for ≤ 24 год | 100% — все буферизується | `TelemetryLog.count`, `BlockchainTransaction.where(state: :pending).count` зростання без втрат |
 
+### 2.5 Money-path Queue Topology (ARCH.52 — anti-starvation at planetary scale)
+
+**Проблема (planetary-обсяг, ~100 млрд дерев).** `config/sidekiq.yml` має `:strict: true` — у межах процесу черги дренажаться згори-вниз, нижча НІКОЛИ не випереджає вищу. Money-черги стоять НИЖЧЕ за intake: `uplink`(1) > `alerts`(2) > `critical`-slash(3) > … > `web3_critical`-mint(6) > `web3`(7). На planetary-обсязі `uplink` = вічний firehose телеметрії → під strict він дренажиться першим, а mint / slash / insurance / `BlockchainConfirmationWorker` **голодують** (money-throughput → 0; clawback-race на затриманому slash). Це НЕ priority-inversion — це коректний strict; money просто стоїть за intake. Перестановка черг лік не дає (підняти money над uplink = пожертвувати intake-SLO §2.4 ≥95%).
+
+**Рішення — process-рівнева ізоляція (deploy-config, НЕ код).** Запускати **виділений money-path Sidekiq-процес** на черги `critical, web3_critical, web3, alerts` ФІЗИЧНО окремо від процесу intake (`uplink, downlink, default, …`). Кожен процес дренажить свій strict-ланцюг незалежно → firehose в `uplink` більше не може випередити mint/slash (детерміновано unstarvable thread-reservation). Обидва SLO §2.4 задоволені одночасно: intake-процес тримає intake ≥95%, money-процес тримає mint-availability ≥80%.
+
+**Чому НЕ weighted-черги (drop `:strict`).** Weighted = probabilistic: під firehose не *гарантує* money-throughput І жертвує true critical-precedence (slash МУСИТЬ вигравати детерміновано). Strict + process-ізоляція > weighted на обох вимірах.
+
+**Тригер flip'у (зараз НЕ потрібен — TRL-3, firehose ще немає).** Single-process baseline (`deploy.yml` job-role + Akash `count: 1`) коректний поки intake малий. Розділяти, коли: (а) `uplink`-backlog росте необмежено, АБО (б) mint-availability SLO (§2.4 `silkennet_mint_success_total / attempts`) пробиває ≥80%. Механізм flip'у = `sidekiq -q`-прапори per-процес у deploy-конфізі (reversible, без коду). ⚠️ Drift-ризик: список черг дублюється у deploy-місцях ([`06_02`](06_02_Akash_Network_Integration)). Розвиває §2.3 Phase-2 per-chain queue-split (та сама вісь — окремі процеси/черги).
+
 ---
 
 ## 3. 🧰 Реалізаційні Якорі (Implementation Anchors)

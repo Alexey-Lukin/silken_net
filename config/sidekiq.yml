@@ -2,12 +2,18 @@
 :strict: true
 :queues:
   # Strict ordering: queues are drained top-to-bottom. No lower-priority job
-  # runs while higher-priority work is waiting. Prevents priority inversion.
+  # runs while higher-priority work is waiting. Prevents priority inversion
+  # WITHIN one process (a lower queue never preempts a higher one).
   #
   # [STRICTLY ISOLATED]: Черги обробляються у строгому порядку пріоритету.
   # Жодна задача з низькопріоритетної черги НЕ буде оброблена, поки є завдання вище.
-  # Це запобігає "priority inversion" — коли критична fire_shutdown команда
-  # застрягне за мільйоном telemetry_logs.
+  # Це гарантує, що нижча черга НІКОЛИ не випередить вищу В МЕЖАХ одного процесу.
+  #
+  # [ARCH.52 ⚠️] Strict НЕ захищає money-черги (`web3_critical`(6) … `critical`-slash(3))
+  # від firehose у ВИЩІЙ `uplink`(1): на planetary-обсязі мільйон telemetry в `uplink`
+  # дренажиться ПЕРШИМ → mint/slash/insurance/ConfirmationWorker голодують. Це не
+  # «інверсія», а коректний strict — money стоїть нижче за intake. Лік = process-рівнева
+  # ізоляція (виділений money-path процес), НЕ перестановка черг → [`06_08 §2.5`].
   #
   # [КРИТИЧНО]: Вхідний потік від Sanctum. Кожна мс на рахунку.
   - uplink    
