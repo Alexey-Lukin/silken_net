@@ -5,7 +5,7 @@ FactoryBot.define do
     sequence(:device_uid, 900_000) { |n| "SNET-%08X" % n }
     # Post-ARCH.42: default — Gateway shape (32 bytes / 64 hex / AES-256 CoAP),
     # бо більшість legacy specs створюють :hardware_key без owner-traits. Trait :for_tree
-    # перепакує до 16 bytes / 32 hex / AES-128 LoRa (ATECC608B Secure Element constraint).
+    # перепакує до 16 bytes / 32 hex / AES-128 LoRa (вибір ARCH.42; SE = SE050 — 03_05 §3.7).
     aes_key_hex { SecureRandom.hex(32).upcase }
     # [SEC.11] K_seed is required by the model. Random hex is fine for
     # factory-built records — specs that need an HKDF-derived value

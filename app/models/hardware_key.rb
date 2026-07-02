@@ -48,8 +48,8 @@ class HardwareKey < ApplicationRecord
   validates :device_uid, presence: true, uniqueness: true
 
   # Post-ARCH.42 (2026-05-23, Variant B): aes_key_hex має conditional length за owner type.
-  #   • Tree (Soldier LoRa channel) → 32 HEX chars (AES-128, 16 bytes) — ATECC608B SE constraint.
-  #   • Gateway (Queen CoAP-to-Rails channel) → 64 HEX chars (AES-256, 32 bytes) — без SE constraint.
+  #   • Tree (Soldier LoRa channel) → 32 HEX chars (AES-128, 16 bytes) — вибір ARCH.42, не SE-constraint (SE = SE050 — 03_05 §3.7).
+  #   • Gateway (Queen CoAP-to-Rails channel) → 64 HEX chars (AES-256, 32 bytes).
   # Format gate тільки на HEX-чарах; custom validator enforce довжину {32, 64} + owner-узгодженість.
   validates :aes_key_hex, presence: true,
                           format: { with: /\A[0-9A-F]+\z/i }

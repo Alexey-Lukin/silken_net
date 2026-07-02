@@ -136,7 +136,7 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
 
         # Firmware-equivalence assertion: re-derive independently and compare.
         # Post-ARCH.42 Variant B (2026-05-23): Tree LoRa channel — AES-128 (16 bytes,
-        # info "silken-aes-128-lora-key"). Узгоджено з ATECC608B Secure Element Slot 0.
+        # info "silken-aes-128-lora-key"); вибір ARCH.42, не SE-constraint (SE = SE050 — 03_05 §3.7).
         # If this ever fails, backend ↔ firmware AES keys would diverge silently
         # and decryption of telemetry would break in production. See SEC.11 + ARCH.42.
         expected_key = HardwareKeyService.derive_lora_key(expected_did)

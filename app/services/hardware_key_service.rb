@@ -9,7 +9,7 @@ class HardwareKeyService
   COAP_HKDF_INFO      = "silken-aes-256-device-key"
 
   # Tree LoRa channel (Soldier ↔ Queen): AES-128-CCM (post-ARCH.42 Variant B, 2026-05-23).
-  # Узгоджено з ATECC608B Secure Element apparatної AES-engine constraint.
+  # AES-128 = свідомий вибір ARCH.42, не SE-constraint (SE = SE050 — 03_05 §3.7).
   LORA_KEY_SIZE_BYTES = 16
   LORA_HKDF_INFO      = "silken-aes-128-lora-key"
 
@@ -87,7 +87,7 @@ class HardwareKeyService
   end
 
   # Tree LoRa AES-128 key — post-ARCH.42 Variant B (16 bytes).
-  # HKDF info: "silken-aes-128-lora-key". Узгоджено з ATECC608B SE Slot 0.
+  # HKDF info: "silken-aes-128-lora-key". AES-128 = вибір (SE = SE050 — 03_05 §3.7).
   def self.derive_lora_key(device_uid)
     hkdf_derive(device_uid, info: LORA_HKDF_INFO, length: LORA_KEY_SIZE_BYTES)
   end

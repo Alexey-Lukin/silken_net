@@ -1152,7 +1152,7 @@ make -C firmware/test at_engine   # [FW.3/FW.56] AT-двигун + CoAP PDU + р
 | CIFO Cache | Insert, dedup, priority eviction (всі 4 bio_status), fallback, edge RSSI |
 | Batch Packing | 21-байтний формат, ендіанність, RSSI -128, round-trip |
 | **[FW.51] Flush Lifecycle** | fail→кеш збережено, success→очищено, retry без втрат, dedup-refresh найсвіжішого |
-| **[L1 QATT] Attestation конверт** (`test_queen_attest.c`) | layout-інваріанти (residue/зсуви/префікс), crypto-parity Monocypher↔OpenSSL (pubkey + детермінований підпис байт-у-байт + tamper-fail), end-to-end збірка→backend-розбір, golden-KAT (дзеркало RSpec `unpack_telemetry_worker_attest_spec.rb` — три незалежні реалізації) |
+| **[L1 QATT] Attestation конверт** (`test_queen_attest.c`) | layout-інваріанти (residue/зсуви/префікс), crypto-parity Monocypher↔OpenSSL (pubkey + детермінований підпис байт-у-байт + tamper-fail), end-to-end збірка→backend-розбір, golden-KAT (дзеркало RSpec `unpack_telemetry_worker_attest_spec.rb`; чотири незалежні реалізації: Monocypher ↔ OpenSSL ↔ worker-spec ↔ HIL `queen_simulator` signed-режим, e2e `qatt_hil_e2e_spec.rb`) |
 | OTA Chunk Builder | First/last chunk, reassembly, out-of-range index |
 | OTA Assembly (CoAP→RAM) | Multi-chunk, duplicate ignore via bitmap, buffer overflow, invalid marker |
 | RSSI Clamp | Normal, edge values, overflow proof, int16→int8 truncation demo |
