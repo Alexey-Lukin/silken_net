@@ -691,7 +691,7 @@ Fallback на `ROLE_SOLDIER` безпечний — переважна біль�
 
 **Тести.** 5 host-тестів (`test_arch27_*` у `firmware/test/test_soldier_logic.c`): `"SOLD"` / `"PROV"` / unprovisioned `0xFFFFFFFF` / zero / corrupted magic → коректний fallback.
 
-**Cross-ref:** ARCH.26 ([`00_01`](00_01_Vision_Mission_and_Roadmap); §1.9 RX-вікно), [SEC.11] K_seed Flash layout, §2.1 (чому роль у Flash, не RTC).
+**Cross-ref:** ARCH.26 ([`00_07` — ARCH.26](00_07_Action_Plan_Tracker); §1.9 RX-вікно), [SEC.11] K_seed Flash layout, §2.1 (чому роль у Flash, не RTC).
 
 ---
 
