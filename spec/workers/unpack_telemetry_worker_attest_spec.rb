@@ -171,6 +171,110 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       expect(TelemetryUnpackerService).to have_received(:call)
         .with(anything, gateway.id, gateway_attested: false)
     end
+
+    # Двофазний owner-nonce (crash-window, патерн ARCH.45): claim(jid) ДО
+    # unpack, finalize("done") ПІСЛЯ. Crash-retry (той самий jid) = resume;
+    # чужий jid / "done" / легасі "1" = replay.
+    describe "двофазний owner-nonce (crash-window)" do
+      let(:worker_jid) { "a" * 24 }
+
+      def perform_with_jid(jid)
+        worker = described_class.new
+        worker.jid = jid
+        worker.perform(encoded, "10.0.0.1", gateway.uid)
+      end
+
+      def unpacker_raises_once!
+        calls = 0
+        allow(TelemetryUnpackerService).to receive(:call) do
+          calls += 1
+          raise ActiveRecord::ConnectionTimeoutError, "crash mid-unpack" if calls == 1
+        end
+      end
+
+      it "crash до unpack → retry тим самим jid → resume: батч НЕ втрачено" do
+        unpacker_raises_once!
+        allow(SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL).to receive(:increment)
+
+        expect { perform_with_jid(worker_jid) }.to raise_error(ActiveRecord::ConnectionTimeoutError)
+        perform_with_jid(worker_jid)
+
+        expect(TelemetryUnpackerService).to have_received(:call).twice
+        expect(gateway.reload.last_attested_at).to be_present
+        expect(SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL)
+          .not_to have_received(:increment).with(labels: { status: "attest_replay" })
+      end
+
+      it "in-flight claim чужим jid → reject як replay (CoAP-ретрансміт без подвійного unpack)" do
+        unpacker_raises_once!
+        allow(SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL).to receive(:increment)
+
+        expect { perform_with_jid("b" * 24) }.to raise_error(ActiveRecord::ConnectionTimeoutError)
+        perform_with_jid("c" * 24)
+
+        expect(TelemetryUnpackerService).to have_received(:call).once
+        expect(SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL)
+          .to have_received(:increment).with(labels: { status: "attest_replay" })
+      end
+
+      it "post-success retry того самого jid → reject (done-маркер)" do
+        allow(SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL).to receive(:increment)
+
+        perform_with_jid(worker_jid)
+        perform_with_jid(worker_jid)
+
+        expect(TelemetryUnpackerService).to have_received(:call).once
+        expect(SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL)
+          .to have_received(:increment).with(labels: { status: "attest_replay" })
+      end
+
+      it "після успіху nonce-ключ тримає done (контракт-пін фіналізації)" do
+        perform_with_jid(worker_jid)
+
+        digest = Digest::SHA256.hexdigest(payload.byteslice(-64, 64))
+        stored = Kredis.redis(config: :shared).get(Kredis.namespaced_key("qatt_nonce:#{digest}"))
+        expect(stored).to eq(described_class::QATT_NONCE_DONE)
+      end
+
+      it "легасі значення 1 у Redis (rolling deploy) → reject, як до фікса" do
+        digest = Digest::SHA256.hexdigest(payload.byteslice(-64, 64))
+        Kredis.redis(config: :shared).set(Kredis.namespaced_key("qatt_nonce:#{digest}"), "1")
+        allow(SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL).to receive(:increment)
+
+        perform_with_jid(worker_jid)
+
+        expect(TelemetryUnpackerService).not_to have_received(:call)
+        expect(SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL)
+          .to have_received(:increment).with(labels: { status: "attest_replay" })
+      end
+
+      context "when Redis лежить (degraded mode → Solid-Cache fallback)" do
+        before do
+          allow(Kredis).to receive(:redis).and_raise(Redis::BaseConnectionError, "Connection refused")
+          allow(SilkenNet::Metrics::QATT_NONCE_FALLBACK_TOTAL).to receive(:increment)
+        end
+
+        it "crash-retry тим самим jid → resume через Solid Cache" do
+          unpacker_raises_once!
+
+          expect { perform_with_jid(worker_jid) }.to raise_error(ActiveRecord::ConnectionTimeoutError)
+          perform_with_jid(worker_jid)
+
+          expect(TelemetryUnpackerService).to have_received(:call).twice
+        end
+
+        it "post-success retry → done-маркер у Solid Cache → reject" do
+          allow(SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL).to receive(:increment)
+
+          perform_with_jid(worker_jid)
+          perform_with_jid(worker_jid)
+
+          expect(TelemetryUnpackerService).to have_received(:call).once
+          expect(SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL)
+            .to have_received(:increment).with(labels: { status: "attest_replay" })
+        end
+      end
+    end
   end
 
   describe "#perform з legacy-батчем (L0, незмінна поведінка)" do

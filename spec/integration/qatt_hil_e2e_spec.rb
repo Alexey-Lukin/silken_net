@@ -111,6 +111,31 @@ RSpec.describe "QATT HIL end-to-end" do
     expect(gateway.reload.last_attested_at).to be_nil
   end
 
+  it "recovers an attested batch after a mid-unpack crash — Sidekiq retry with the same jid resumes" do
+    simulator.tick(scenario: :healthy)
+    package = intercepted
+
+    calls = 0
+    allow(TelemetryUnpackerService).to receive(:call).and_wrap_original do |original, *args, **kwargs|
+      calls += 1
+      raise ActiveRecord::ConnectionTimeoutError, "crash mid-unpack" if calls == 1
+      original.call(*args, **kwargs)
+    end
+
+    crashed = UnpackTelemetryWorker.new
+    crashed.jid = "hil-crash-jid"
+    expect { crashed.perform(package[:encoded], gateway.ip_address, package[:uid]) }
+      .to raise_error(ActiveRecord::ConnectionTimeoutError)
+
+    retried = UnpackTelemetryWorker.new
+    retried.jid = "hil-crash-jid"
+    retried.perform(package[:encoded], gateway.ip_address, package[:uid])
+
+    expect(gateway.reload.last_attested_at).to be_present
+    # The REAL unpacker ran on the retry: the sentinel chunk reached the queue.
+    expect(GatewayTelemetryWorker.jobs.size).to eq(1)
+  end
+
   it "keeps the legacy (unsigned) path at L0 untouched" do
     legacy = Hil::QueenSimulator.new(gateway, mode: :wire)
     legacy.tick(scenario: :healthy)

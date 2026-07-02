@@ -8,6 +8,7 @@ class UnpackTelemetryWorker
   # [SIDEKIQ PRO EXPIRES_IN]: Якщо база даних впала або черга переповнена,
   # телеметрія старша за 5 хвилин стає «застарілою» і лише витрачає CPU.
   # Sidekiq Pro автоматично відкидає такі джоби при dequeue.
+  # У OSS-редакції (поточній) опція інертна — активується лише з Sidekiq Pro.
   sidekiq_options queue: "uplink", retry: 3, expires_in: 5.minutes
 
   # Розмір IV для AES-256-CBC (один AES-блок = 16 байт)
@@ -32,6 +33,10 @@ class UnpackTelemetryWorker
   # в межах TTL; replay ПІСЛЯ вікна — задокументований residual (03_05 §2.2),
   # строго кращий за «replay будь-коли» на L0.
   QATT_NONCE_TTL  = 30.days
+  # Finalize-маркер двофазного nonce: батч розпаковано, будь-який повтор
+  # (свій чи чужий) = replay. Колізія з owner-token структурно неможлива:
+  # jid = 24 hex-символи, random-token = 16.
+  QATT_NONCE_DONE = "done"
 
   # Сигнатура perform: encoded_payload, sender_ip, gateway_uid (необов'язково).
   # gateway_uid — незашифрований UID з CoAP URI-Path (/telemetry/batch/<UID>).
@@ -105,6 +110,9 @@ class UnpackTelemetryWorker
     # [L1 QATT] gateway_attested протягується до кожного TelemetryLog-рядка.
     TelemetryUnpackerService.call(decrypted_data, gateway.id, gateway_attested: gateway_attested)
 
+    # [L1 QATT] Фаза 2: батч розпаковано — nonce стає незворотним ("done").
+    finalize_qatt_nonce! if @qatt_nonce_digest
+
     # [S2.4] Track successful CoAP packet processing for Prometheus
     SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "success" })
 
@@ -165,7 +173,12 @@ class UnpackTelemetryWorker
       return :reject
     end
 
-    return :reject unless qatt_nonce_unique?(signature, gateway)
+    case claim_qatt_nonce(signature, gateway)
+    when :replay
+      return :reject
+    when :resumed
+      Rails.logger.info "🔁 [L1 QATT] #{gateway.uid}: crash-retry власного батча (#{qatt_owner_token}) — resume без спалення nonce."
+    end
 
     _ver, unix_ts, flush_seq = payload.unpack("CNN")
     gateway.update_column(:last_attested_at, Time.current)
@@ -180,30 +193,73 @@ class UnpackTelemetryWorker
   end
 
   # [L1 QATT] Anti-replay: SHA256(sig) як природний nonce (підпис детермінований
-  # над унікальним повідомленням — HRNG IV свіжий щофлешу). Точний M2M/S6.1
-  # патерн: Redis SET NX (атомарно) → Solid-Cache fallback при Redis-аутеджі
-  # (свідоме TOCTOU-вікно у degraded mode).
-  def qatt_nonce_unique?(signature, gateway)
+  # над унікальним повідомленням — HRNG IV свіжий щофлешу). Двофазний
+  # інтент-маркер (патерн ARCH.45): claim ДО unpack тримає owner-token,
+  # finalize ПІСЛЯ успішного unpack перезаписує на "done" — інакше краш
+  # TelemetryUnpackerService + Sidekiq-retry спалював би nonce і губив
+  # атестований батч назавжди (Королева кеш уже звільнила по ACK 2.04).
+  #
+  # Фаза 1 (claim): Redis SET NX (атомарно, патерн M2M/S6.1) → Solid-Cache
+  # fallback при Redis-аутеджі (свідоме TOCTOU-вікно у degraded mode).
+  # Ключ зайнятий → GET: наш token = crash-retry цього ж джоба (:resumed);
+  # будь-що інше ("done" / чужий jid / легасі "1") = :replay.
+  def claim_qatt_nonce(signature, gateway)
     digest = Digest::SHA256.hexdigest(signature)
+    @qatt_nonce_digest = digest
 
-    begin
-      nonce_key = Kredis.namespaced_key("qatt_nonce:#{digest}")
-      acquired = Kredis.redis(config: :shared).set(nonce_key, "1", nx: true, ex: QATT_NONCE_TTL.to_i)
-    rescue Redis::BaseConnectionError, RedisClient::ConnectionError => e
-      SilkenNet::Metrics::QATT_NONCE_FALLBACK_TOTAL.increment
-      Rails.logger.warn "⚠️ [L1 QATT] Redis недоступний, nonce через Solid Cache: #{e.message}"
+    status =
+      begin
+        redis     = Kredis.redis(config: :shared)
+        nonce_key = Kredis.namespaced_key("qatt_nonce:#{digest}")
+        if redis.set(nonce_key, qatt_owner_token, nx: true, ex: QATT_NONCE_TTL.to_i)
+          :acquired
+        else
+          redis.get(nonce_key) == qatt_owner_token ? :resumed : :replay
+        end
+      rescue Redis::BaseConnectionError, RedisClient::ConnectionError => e
+        SilkenNet::Metrics::QATT_NONCE_FALLBACK_TOTAL.increment
+        Rails.logger.warn "⚠️ [L1 QATT] Redis недоступний, nonce через Solid Cache: #{e.message}"
+        claim_qatt_nonce_fallback(digest)
+      end
 
-      fallback_key = "qatt_nonce_fallback:#{digest}"
-      acquired = !Rails.cache.exist?(fallback_key)
-      Rails.cache.write(fallback_key, true, expires_in: QATT_NONCE_TTL) if acquired
-    end
-
-    unless acquired
+    if status == :replay
       Rails.logger.warn "⚠️ [L1 QATT] #{gateway.uid}: REPLAY підписаного батча заблоковано."
       SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "attest_replay" })
     end
 
-    !!acquired
+    status
+  end
+
+  # Дзеркало claim у degraded mode (read→compare→write не атомарні — як і було).
+  def claim_qatt_nonce_fallback(digest)
+    fallback_key = "qatt_nonce_fallback:#{digest}"
+    existing = Rails.cache.read(fallback_key)
+    return :resumed if existing == qatt_owner_token
+    return :replay unless existing.nil?
+
+    Rails.cache.write(fallback_key, qatt_owner_token, expires_in: QATT_NONCE_TTL)
+    :acquired
+  end
+
+  # [L1 QATT] Фаза 2 (finalize): після успішного unpack і чужі replay, і
+  # власний post-success retry ріжуться однаково. Безумовний SET безпечний:
+  # NX у claim гарантує, що ключ тримає саме наш token. Rescue обов'язковий —
+  # без нього Redis-аутедж ПІСЛЯ успішного unpack ішов би в retry → resume →
+  # подвійний unpack (over-credit growth_points).
+  def finalize_qatt_nonce!
+    nonce_key = Kredis.namespaced_key("qatt_nonce:#{@qatt_nonce_digest}")
+    Kredis.redis(config: :shared).set(nonce_key, QATT_NONCE_DONE, ex: QATT_NONCE_TTL.to_i)
+  rescue Redis::BaseConnectionError, RedisClient::ConnectionError => e
+    Rails.logger.warn "⚠️ [L1 QATT] Redis недоступний на finalize, done-маркер у Solid Cache: #{e.message}"
+    Rails.cache.write("qatt_nonce_fallback:#{@qatt_nonce_digest}", QATT_NONCE_DONE, expires_in: QATT_NONCE_TTL)
+  end
+
+  # Owner-token: jid стабільний крізь Sidekiq-retry (retry re-push'ить той
+  # самий job hash) → retry впізнає власний claim. Прямий виклик
+  # (.new.perform — консоль, спеки) отримує випадковий токен: resume
+  # неможливий, лише claim/reject (fail-closed).
+  def qatt_owner_token
+    @qatt_owner_token ||= jid.presence || SecureRandom.hex(8)
   end
 
   # Логіка "М'якої Ротації": пробуємо новий ключ, потім старий
