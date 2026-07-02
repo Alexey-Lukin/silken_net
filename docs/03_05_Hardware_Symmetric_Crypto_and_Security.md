@@ -980,7 +980,7 @@ atca_status_t status = atcab_aes_encrypt(
 **Power impact** (cross-check проти канонічного Сценарію C, [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power) / дзеркало [`02_01 §2`](02_01_Hardware_Architecture_and_BOM) — active НЕ блокер, sleep-floor БЕЗ гейта перевертає баланс):
 - **Active** (1.5 мс): 14 мА × 3.3 В = 46 мВт → ~69 мкДж/пакет на VOUT (~79 мкДж з VSTOR, η_buck 0.88). Проти Сценарію C: **≈0.3% LoRa-TX** (+14 dBm SF9, 21.8 мДж на VOUT) і **≈0.2% повного active-циклу** (33.7 мДж); у годинному вимірі (1 TX/1.77 год) ≈0.04 мДж/год ≈ 3% запасу Сценарію C (+1.4 мДж/год). Проти 0.47 F EDLC (≈7 Дж) — не «вбивця іоністора». Per-packet active-енергія SE **мала** — і саме тому вона **не** головний критерій вибору ролі (див. підрозділ нижче). ⚠️ Не рахувати % проти «TX ~39 мДж» — то E_TX @ +22 dBm зі *списаного* сценарію ([`02_03 §9.4`](02_03_BQ25570_MPPT_Nano_Power)).
 - **Sleep: 150 нА — НЕ нехтовно** (інверсія попередньої подачі, що спиралась на застарілий бюджет ~1.5 мкА): у канонічному Сценарії C (300 нА RTC-only) always-on SE = 150 нА × 3.3 В / η_buck 0.50 (нанострумовий режим) ≈ **3.6 мДж/год з VSTOR — більше за весь запас Сценарію C (+1.4 мДж/год)** → баланс −2.2 мДж/год, supercap повільно розряджається. **Вимога-висновок:** SE сидить за load-switch гейтом (патерн TPS22860, як BME280 — [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)); живлення лише в active-вікні. Сумісно з обома ролями: per-packet вмикає SE на кожен wake, provisioning-only — лише при ротації/фабриці. З гейтом sleep-внесок ~0.
-- Числа — ATECC608B (порядок величини); SE050 active/standby струми — datasheet-verify при eval-kit ([`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker), no-premature-canon).
+- Числа — ATECC608B (порядок величини); **SE050 — paper-verified 2026-07-02** (таблиця datasheet-verify нижче): active той самий клас (AES-coproc 6.5 мА; PK/Ed25519 14.4 мА), але **сон СУТТЄВО гірший за ATECC-проксі — Deep-Power-Down 3–5 µA (НЕ 150 нА, ~20–30×)**, PD-I2C 450 µA → інверсія-висновок вище ПІДСИЛЮЄТЬСЯ: навіть DPD (≈10–16 µВт) з'їдає запас Сценарію C, load-switch = **повне зняття живлення**, не DPD-надія; головне eval-питання стає **cold-boot заряд** (датащит його не специфікує). Silicon-confirm при eval-kit ([`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker)).
 
 **Footprint (PCB):**
 - UDFN-8: 2×3 мм
@@ -1006,7 +1006,7 @@ atca_status_t status = atcab_aes_encrypt(
 
 **Чому per-packet (Варіант B) теж defensible:** для urban / high-value розгортань, де фізичний доступ до вузла ймовірний, tamper-resistance *самого LoRa-ключа* може бути вартий 1.5 мс. Це рішення про threat model, а не технічна необхідність.
 
-**FW.2-CCM зміщує дефолт ще далі в бік provisioning-only:** trade-off вище зважено в ECB-рамці (`atcab_aes_encrypt`, ~1.5 мс/блок). FW.2 переводить inline-шлях на **AES-128-CCM** (`CRYP_AES_CCM`) — режим, для якого radio-AES SoC і створений (один inline-прохід, апаратний). Ганяти кожен CCM-кадр через I²C у SE per-packet — **важче** за ECB-число вище (CCM = encrypt + CBC-MAC, два проходи + nonce/MIC-менеджмент через шину). Тобто прихід CCM не просто лишає built-in AES ідіоматичним, а **підсилює** provisioning-only-дефолт; per-packet SE лишається опцією лише для urban/high-value threat-model з імовірним фізичним доступом.
+**FW.2-CCM зміщує дефолт ще далі в бік provisioning-only:** trade-off вище зважено в ECB-рамці (`atcab_aes_encrypt`, ~1.5 мс/блок). FW.2 переводить inline-шлях на **AES-128-CCM** (`CRYP_AES_CCM`) — режим, для якого radio-AES SoC і створений (один inline-прохід, апаратний). Ганяти кожен CCM-кадр через I²C у SE per-packet — **важче** за ECB-число вище (CCM = encrypt + CBC-MAC, два проходи + nonce/MIC-менеджмент через шину). **Datasheet-verify 2026-07-02 радикалізує це до факту: SE050 ВЗАГАЛІ НЕ МАЄ CCM/GCM on-chip** (DS Rev 3.3 Table 2 «AES Modes: CBC, ECB, CTR») — per-packet FW.2-CCM через SE050 = не «повільніший виклик», а **композиція кількох APDU** (CTR-encrypt + CMAC) власноруч. Тобто прихід CCM не просто лишає built-in AES ідіоматичним, а **підсилює** provisioning-only-дефолт уже не смаком, а апаратним фактом; per-packet SE лишається опцією лише для urban/high-value threat-model (і там чесніше дивитись на **SE051** — applet 7.x має CCM/GCM on-chip).
 
 **Статус:** SEC.6 (чи заводити SE + який) → **RESOLVED 2026-06-07: SE = SE050, soft-freeze + true-DePIN ladder (ADR угорі §3.7)**. SEC.14 (роль *per-packet* vs *provisioning-only*) лишається **відкритим** — обидва шляхи сумісні з ARCH.42 (AES-128 — тепер вибір, не SE-constraint: SE050 вміє 128/256); вибір при bench eval, з **явним** вибором осі. Cross-ref [`00_07` — SEC.6](00_07_Action_Plan_Tracker), [`00_07` — SEC.14](00_07_Action_Plan_Tracker), [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker).
 
@@ -1020,7 +1020,24 @@ atca_status_t status = atcab_aes_encrypt(
 | **OPTIGA Trust M** | Infineon | TPM 2.0 features, X.509 PKI heavy; P-256/384 | Overkill + без Ed25519 |
 | **NXP A71CH** | NXP | EOL announced 2024 | ❌ Не використовувати |
 
-**Обрано: SE050** — true-DePIN вимагає non-extractable Ed25519 («голос дерева», крива peaq/Solana), і лише SE050 його вміє (решта — P-256-only). ATECC slot-provisioning-механіка лишається reusable для SE050 (SE05x = object-model замість 16 slots — §3.7 callout угорі). Deep SE05x-механіка (API, object-model, latency/power, footprint/I²C) + final BOM — **eval-kit-gated, no-premature-canon** → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker).
+**Обрано: SE050** — true-DePIN вимагає non-extractable Ed25519 («голос дерева», крива peaq/Solana), і лише SE050 його вміє (решта — P-256-only). ATECC slot-provisioning-механіка лишається reusable для SE050 (SE05x = object-model замість 16 slots — §3.7 callout угорі). Deep SE05x-механіка (повне API-переписування) + final BOM — **eval-kit-gated** → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker); paper-половина datasheet-verify закрита нижче.
+
+#### SE050 datasheet-verify — paper-половина (2026-07-02) [📐 paper-verified · silicon-confirm → eval-kit]
+
+> Звірено посторінково проти **SE050 DS Rev 3.3** (док. 504933; Table 2/11/12/13/14), FIPS SP 140sp3840, AN12436 (через індекс), DigiKey (ціни = зріз 2026-07-02). Замінює ATECC-проксі-плейсхолдери цього §; числа кремнієво підтверджуються на eval-kit.
+
+| Факт (paper-verified) | Значення | Наслідок для нас |
+|---|---|---|
+| **AES-режими on-chip** | **CBC / ECB / CTR — CCM/GCM НЕМАЄ** (Table 2) | per-packet FW.2-CCM ≠ один виклик → SEC.14 provisioning-only підсилений апаратно; CCM/GCM вміє **SE051** (applet 7.x) |
+| **Струми** (Table 12) | active: PK-coproc (Ed25519) **14.4/16.1 мА** typ/max · AES-coproc 6.5/7.5 мА · CPU 4.4/7 мА · concurrent max 19 мА; сон: **DPD 3/5 µA** · PD-I2C 450/500 µА · PD-ISO7816 430/480 µА | «150 нА sleep» = хибний ATECC-проксі (~20–30×); load-switch = повне зняття живлення (Power impact вище) |
+| **Ed25519 по варіантах** | конфіг **C** (єдиний з A/B/C/D), **E** (applet 7.2), SE051; **SE050F (FIPS): Ed25519 ВІДСУТНІЙ у approved-режимі** (FIPS SP Table 7 — лише ECDSA P-криві/RSA) | F-варіант відпадає для «голосу дерева»; цифра 1/2 у назві = температурний клас (2 = −40…105 °C), не крипто → ліс = **C2 / E2** |
+| **Object-model** | динамічна ФС **50 kB** (100 M write / 25 р.): Symmetric/ECC/RSA/HMAC key · Binary · UserID · **Counter 1–8 B, inc-only** · PCR; policy per-object; T1oI2C @ 0x48, HS 3.4 МГц (clock-stretch) | «Slot 4–15 reserved» ATECC-патерну не існує як обмеження — об'єкти іменовані, ліміт = пам'ять |
+| **Wake vs cold-boot** | wake-from-PD 67/97 µs (Table 14); Flash program 2.3 мс (Table 13); **cold-boot з повного вимкнення — НЕ специфіковано** | за load-switch SE щоразу холодний → **cold-boot час+заряд = головне eval-питання** (може стати домінантою бюджету) |
+| **Ціна** (DigiKey, зріз) | SE050C2HQ1/Z01SDZ: **$4.50/1 · $2.84/100 · $2.50/1k**; сток ~20k, HX2QFN20 3×3 мм | плейсхолдер «$2.40–3.25» тримається лише @1k+ |
+| **Eval-kit** | **OM-SE050ARD-E** (SE050E — найчистіший EdDSA-шлях, Arduino-header → Nucleo) + опц. OM-SE050ARD (C-конфіг = mass-BOM дефолт); **НЕ** -F | 👤 замовлення (SE050-MIGRATION) |
+| **Host-стек** | Plug&Trust **nano-package**: bare-metal ок (клейм ~10 kB), портів під STM32WLE5 нема (I²C-shim наш); **mbedTLS-ALT дає лише ECDSA-sign** → EdDSA через `sss`/`Se05x` API; ліцензії mixed (nano = Apache-2.0, звірити per-file) | інтеграційні residuals → SE050-MIGRATION |
+
+**Open-for-eval (папери НЕ закрили):** cold-boot час+заряд · латентності Ed25519-sign / AES-APDU через T1oI2C · applet-3.x EdDSA erratum (Errata sheet недоступний онлайн) · SE050E CCM-статус (SE051 — підтверджено, SE050E — ні) · точний nano-package footprint на Cortex-M.
 
 **Factory Flashing impact (cross-ref 03_06 §1):**
 
@@ -1051,7 +1068,7 @@ atca_status_t status = atcab_aes_encrypt(
 - [x] 🤖 Update 03_06 §1 Factory Flashing pipeline з SE-варіантом — ✅ Виконано: 03_06 §1 розділено на Гілку A (Protected Flash, TRL 6/7) та Гілку B (ATECC608B/STSAFE-A110, mass production > 10k); додано двошаровий defense-in-depth (data zone lock + RDP), latency/power/cost impact, criteria для вибору гілки, та irreversibility note (B → A неможливо)
 - [ ] 🤖 Інтеграція з Backend `Provisioning::HardwareKeyService` (генерація ECC keypair + cert)
 - [ ] 🤖 Firmware HAL: drop-in replacement `Crypto_AES_Encrypt_Block()` що внутрішньо викликає SE050 або HAL_CRYP залежно від `#define USE_SECURE_ELEMENT` (gated SEC.14 role + eval-kit)
-- [ ] 👤 Замовити SE050 evaluation kit для bench-test → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker)
+- [ ] 👤 Замовити eval-kit: **OM-SE050ARD-E** (+ опц. OM-SE050ARD; **НЕ** -F — FIPS-режим без Ed25519) — вибір обґрунтовано в datasheet-verify таблиці вище → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker)
 - [ ] 👤 Прийняти final BOM рішення перед першим mass production batch (>1000 unit)
 
 **Пріоритет:** P2 — для TRL 6/7 RDP Level 2 (§3.6) є достатнім захистом. Secure Element — обов'язковий перед mass production (>10 000 unit) або для high-value deployments (urban / commercial sites).
