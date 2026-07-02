@@ -834,7 +834,8 @@ static uint8_t Soldier_Acoustic_Wire_Value(uint8_t snapshot, uint8_t time_uncert
 // Wire-формат relayed beacon (16 байт ECB plaintext, дзеркало Queen):
 //   Byte 0     : BEACON_MARKER (0x9C)
 //   Byte 1..4  : unix_ts_be — original_ts + (now_tick - rx_tick)/1000 (sec)
-//   Byte 5..8  : резерв TDMA (ARCH.26) — копіюємо as-is з вхідного маяка
+//   Byte 5..8  : TDMA слот-розкладка (ARCH.26 L2, wire-дім 03_02 §5а.2а) —
+//                копіюємо as-is: Провідник ретранслює розклад, не переписує
 //   Byte 9     : [auth=0 | TTL_decremented:7] — auth-біт ОБОВ'ЯЗКОВО гасимо
 //   Byte 10    : BEACON_MAGIC_BYTE ('B' = 0x42)
 //   Byte 11..15: padding — копіюємо as-is (зараз 0; майбутні поля переживуть

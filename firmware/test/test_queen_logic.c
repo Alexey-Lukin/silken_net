@@ -2018,7 +2018,9 @@ TEST(test_time_beacon_plaintext_layout) {
     ASSERT_EQ(out[2], 0xBB);
     ASSERT_EQ(out[3], 0xCC);
     ASSERT_EQ(out[4], 0xDD);
-    /* reserved bytes 5..8 must be zero (TDMA slot space) */
+    /* bytes 5..8 = TDMA slot schedule (ARCH.26 L2, 03_02 §5а.2а): this
+     * builder mirrors the gate-OFF contract (ARCH26_TDMA_ENABLED=0) —
+     * zeros on the wire mean "TDMA off" for legacy Soldiers. */
     for (int i = 5; i <= 8; i++) ASSERT_EQ(out[i], 0);
     ASSERT_EQ(out[9],  BEACON_BYTE9_AUTHORITATIVE);  /* [FW.20-S2] auth=1 | ttl=2 */
     ASSERT_EQ(out[10], (uint8_t)BEACON_MAGIC_BYTE); /* 'B' */
