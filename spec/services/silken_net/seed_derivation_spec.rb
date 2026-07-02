@@ -58,6 +58,15 @@ RSpec.describe SilkenNet::SeedDerivation do
         }.to raise_error(SecurityError, /PROVISIONING_MASTER_KEY/)
       end
     end
+
+    # [SEC.3 DI] Явний master_key: живить HKDF замість ENV.
+    context "with explicit master_key: param [SEC.3 DI]" do
+      it "derives from the param, not ENV" do
+        via_param = described_class.derive_seed(device_uid, master_key: "di-alive-proof-master-key-distinct")
+        expect(via_param).to match(/\A[0-9A-F]{64}\z/)
+        expect(via_param).not_to eq(described_class.derive_seed(device_uid))
+      end
+    end
   end
 
   describe ".initial_state" do

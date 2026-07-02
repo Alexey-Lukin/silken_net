@@ -25,8 +25,10 @@ require "openssl"
 # (включно з цим OTA HMAC) залишаються непохитними.
 #
 # Шифрові виклики (HKDF) тут слідують тому самому патерну, що й
-# HardwareKeyService: `SecurityError` без master key (SEC.11 hard cutover,
-# no SecureRandom fallback in production).
+# HardwareKeyService: master key = явний `master_key:` параметр (фабричний
+# конвеєр несе його від MasterKeySource — SEC.3 DI) або ENV-fallback для
+# runtime-викликачів; `SecurityError` без жодного з них (SEC.11 hard
+# cutover, no SecureRandom fallback in production).
 #
 # Див. docs/03_06 §4 для повного протоколу.
 class OtaHmacKeyService
@@ -34,10 +36,10 @@ class OtaHmacKeyService
   HKDF_INFO      = "silken-ota-hmac-v1"
 
   # Повертає K_ota як 64-символьний HEX-рядок (32 байти, верхній регістр).
-  def self.fetch_for(cluster_id)
+  def self.fetch_for(cluster_id, master_key: nil)
     raise ArgumentError, "cluster_id is required" if cluster_id.blank?
 
-    master_key = ENV["PROVISIONING_MASTER_KEY"]
+    master_key ||= ENV["PROVISIONING_MASTER_KEY"]
 
     if master_key.blank?
       raise SecurityError,
@@ -59,7 +61,7 @@ class OtaHmacKeyService
 
   # Той самий ключ, але як binary-string (32 байти) — для прямого використання
   # у `OpenSSL::HMAC.digest("SHA256", binary_key, message)`.
-  def self.fetch_binary_for(cluster_id)
-    [ fetch_for(cluster_id) ].pack("H*")
+  def self.fetch_binary_for(cluster_id, master_key: nil)
+    [ fetch_for(cluster_id, master_key: master_key) ].pack("H*")
   end
 end

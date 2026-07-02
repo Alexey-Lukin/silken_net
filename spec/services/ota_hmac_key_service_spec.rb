@@ -42,6 +42,21 @@ RSpec.describe OtaHmacKeyService do
       end
     end
 
+    # [SEC.3 DI] Явний master_key: живить HKDF замість ENV.
+    context "with explicit master_key: param [SEC.3 DI]" do
+      it "derives from the param, not ENV (independent HKDF oracle)" do
+        di_key = "di-alive-proof-master-key-distinct"
+        via_param = described_class.fetch_for("cluster-A", master_key: di_key)
+        expect(via_param).not_to eq(described_class.fetch_for("cluster-A"))
+
+        oracle = OpenSSL::KDF.hkdf(
+          di_key, salt: "cluster:cluster-A", info: described_class::HKDF_INFO,
+          length: described_class::KEY_SIZE_BYTES, hash: "SHA256"
+        ).unpack1("H*").upcase
+        expect(via_param).to eq(oracle)
+      end
+    end
+
     context "without PROVISIONING_MASTER_KEY [SEC.11 hard cutover]" do
       around do |example|
         original = ENV["PROVISIONING_MASTER_KEY"]

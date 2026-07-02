@@ -340,4 +340,31 @@ RSpec.describe HardwareKeyService, type: :service do
       expect(KeyRotationDownlinkWorker).to have_received(:perform_async).with(tree_device.did, 1)
     end
   end
+
+  # [SEC.3 DI] Явний master_key: живить HKDF замість ENV — інакше non-ENV
+  # adapter (Bitwarden/HSM) був би мертвим кодом.
+  describe "master_key DI [SEC.3]" do
+    let(:di_key) { "di-alive-proof-master-key-distinct" }
+
+    it "derive_device_key honours the param (independent HKDF oracle)" do
+      via_param = described_class.derive_device_key(tree.did, master_key: di_key)
+      expect(via_param).not_to eq(described_class.derive_device_key(tree.did))
+
+      oracle = OpenSSL::KDF.hkdf(
+        di_key, salt: tree.did, info: described_class::COAP_HKDF_INFO,
+        length: described_class::COAP_KEY_SIZE_BYTES, hash: "SHA256"
+      ).unpack1("H*").upcase
+      expect(via_param).to eq(oracle)
+    end
+
+    it "provision threads the param into both the AES key and Lorenz K_seed" do
+      described_class.provision(tree, master_key: di_key)
+      row = HardwareKey.find_by!(device_uid: tree.did)
+
+      expect(row.aes_key_hex).to eq(described_class.derive_lora_key(tree.did, master_key: di_key))
+      expect(row.aes_key_hex).not_to eq(described_class.derive_lora_key(tree.did))
+      expect(row.lorenz_seed_hex).to eq(SilkenNet::SeedDerivation.derive_seed(tree.did, master_key: di_key))
+      expect(row.lorenz_seed_hex).not_to eq(SilkenNet::SeedDerivation.derive_seed(tree.did))
+    end
+  end
 end

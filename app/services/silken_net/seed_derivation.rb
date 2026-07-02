@@ -4,17 +4,17 @@ module SilkenNet
   # [SEC.11] Lorenz Seed Provenance — derivation primitives.
   #
   # Two operations:
-  #   1. derive_seed(device_uid)
+  #   1. derive_seed(device_uid, master_key: nil)
   #        K_seed = HKDF-SHA256(
-  #          ikm    = ENV["PROVISIONING_MASTER_KEY"],
+  #          ikm    = master_key || ENV["PROVISIONING_MASTER_KEY"],
   #          salt   = "silken-lorenz-v1",
   #          info   = device_uid,
   #          length = 32 bytes
   #        )
-  #      Used at provisioning. Production raises if the master key is
-  #      missing (see SEC.11 production guard); lab/dev mode falls back
-  #      to SecureRandom for the same reason as HardwareKeyService — so
-  #      the first integration test on a TRL-4 bench is not blocked.
+  #      Used at provisioning. The factory pipeline threads the key from
+  #      FactoryFlashing::MasterKeySource (SEC.3 DI); runtime callers rely
+  #      on the ENV fallback. Raises unconditionally when both are blank
+  #      (SEC.11 hard cutover — no SecureRandom fallback).
   #
   #   2. initial_state(seed_bytes, epoch_day)
   #        digest = HMAC-SHA256(seed_bytes, "init|" || epoch_day_be8)
@@ -46,11 +46,12 @@ module SilkenNet
 
     # Derive a 32-byte K_seed for a device. Returns the upper-cased HEX
     # representation (64 chars) so it can be stored in the same column
-    # shape as `aes_key_hex`. Always requires PROVISIONING_MASTER_KEY —
-    # there is no SecureRandom fallback (SEC.11 hard cutover, see
-    # docs/03_06 §2).
-    def derive_seed(device_uid)
-      master_key = ENV["PROVISIONING_MASTER_KEY"]
+    # shape as `aes_key_hex`. Always requires a master key — the explicit
+    # `master_key:` param (factory pipeline, SEC.3 DI) or the
+    # PROVISIONING_MASTER_KEY ENV fallback; no SecureRandom fallback
+    # (SEC.11 hard cutover, see docs/03_06 §2).
+    def derive_seed(device_uid, master_key: nil)
+      master_key ||= ENV["PROVISIONING_MASTER_KEY"]
 
       if master_key.blank?
         raise SecurityError,

@@ -51,7 +51,10 @@ class HardwareKeyService
   #   • Gateway → derive_device_key (32 bytes, info "silken-aes-256-device-key")
   #
   # Обидві сторони знають:
-  #   1. PROVISIONING_MASTER_KEY (встановлюється в env, прошивається при Factory Flashing)
+  #   1. Master key: явний `master_key:` параметр (фабричний конвеєр несе
+  #      його від FactoryFlashing::MasterKeySource — SEC.3 DI) або
+  #      PROVISIONING_MASTER_KEY з env (runtime-fallback; прошивається при
+  #      Factory Flashing)
   #   2. device_uid (унікальний серійник STM32)
   #
   # [SEC.11] Provisioning тепер також деривує Lorenz K_seed через
@@ -60,10 +63,10 @@ class HardwareKeyService
   # K_seed читається з створеного `HardwareKey.lorenz_seed_hex`.
   #
   # Ключ НІКОЛИ не передається по мережі.
-  def self.provision(device)
+  def self.provision(device, master_key: nil)
     device_uid  = device.respond_to?(:did) ? device.did : device.uid
-    new_hex_key = derive_key_for(device)
-    lorenz_seed = SilkenNet::SeedDerivation.derive_seed(device_uid)
+    new_hex_key = derive_key_for(device, master_key: master_key)
+    lorenz_seed = SilkenNet::SeedDerivation.derive_seed(device_uid, master_key: master_key)
 
     HardwareKey.create!(
       device_uid: device_uid,
@@ -77,41 +80,44 @@ class HardwareKeyService
   # Post-ARCH.42 (2026-05-23): обираємо derivation за device type.
   #   Tree    → LoRa AES-128 (16 bytes)
   #   Gateway → CoAP AES-256 (32 bytes)
-  def self.derive_key_for(device)
+  def self.derive_key_for(device, master_key: nil)
     device_uid = device.respond_to?(:did) ? device.did : device.uid
     if device.is_a?(Tree) || device.respond_to?(:did)
-      derive_lora_key(device_uid)
+      derive_lora_key(device_uid, master_key: master_key)
     else
-      derive_device_key(device_uid)
+      derive_device_key(device_uid, master_key: master_key)
     end
   end
 
   # Tree LoRa AES-128 key — post-ARCH.42 Variant B (16 bytes).
   # HKDF info: "silken-aes-128-lora-key". AES-128 = вибір (SE = SE050 — 03_05 §3.7).
-  def self.derive_lora_key(device_uid)
-    hkdf_derive(device_uid, info: LORA_HKDF_INFO, length: LORA_KEY_SIZE_BYTES)
+  def self.derive_lora_key(device_uid, master_key: nil)
+    hkdf_derive(device_uid, info: LORA_HKDF_INFO, length: LORA_KEY_SIZE_BYTES, master_key: master_key)
   end
 
   # Iotex W3bstream Ed25519 seed (post-ARCH.42) — derived on-demand для signature
   # attestation. Returns 64-char HEX (32 bytes). Domain-separated from AES/Lorenz keys.
-  def self.derive_iotex_seed(device_uid)
-    hkdf_derive(device_uid, info: IOTEX_HKDF_INFO, length: IOTEX_SEED_SIZE_BYTES)
+  def self.derive_iotex_seed(device_uid, master_key: nil)
+    hkdf_derive(device_uid, info: IOTEX_HKDF_INFO, length: IOTEX_SEED_SIZE_BYTES, master_key: master_key)
   end
 
   # Gateway CoAP AES-256 key — без змін після ARCH.42 (32 bytes).
   # HKDF info: "silken-aes-256-device-key". Зберігається у Queen Protected Flash.
   #
-  # [SEC.11] Always requires PROVISIONING_MASTER_KEY — there is no
-  # SecureRandom fallback. Without master_key the backend would generate
-  # values that do NOT match firmware HKDF derivation → silent system
-  # breakage. Tests pin a stable value in spec/rails_helper.rb.
-  def self.derive_device_key(device_uid)
-    hkdf_derive(device_uid, info: COAP_HKDF_INFO, length: COAP_KEY_SIZE_BYTES)
+  # [SEC.11] Always requires a master key — the explicit `master_key:`
+  # param (factory pipeline, SEC.3 DI), else the PROVISIONING_MASTER_KEY
+  # ENV fallback; there is no SecureRandom fallback. Without it the
+  # backend would generate values that do NOT match firmware HKDF
+  # derivation → silent system breakage. Tests pin a stable value in
+  # spec/rails_helper.rb.
+  def self.derive_device_key(device_uid, master_key: nil)
+    hkdf_derive(device_uid, info: COAP_HKDF_INFO, length: COAP_KEY_SIZE_BYTES, master_key: master_key)
   end
 
   # Private HKDF helper — shared by both LoRa та CoAP derivation paths.
-  def self.hkdf_derive(device_uid, info:, length:)
-    master_key = ENV["PROVISIONING_MASTER_KEY"]
+  # `master_key:` = ключ від Session/MasterKeySource (SEC.3 DI); nil → ENV.
+  def self.hkdf_derive(device_uid, info:, length:, master_key: nil)
+    master_key ||= ENV["PROVISIONING_MASTER_KEY"]
 
     if master_key.blank?
       raise SecurityError,

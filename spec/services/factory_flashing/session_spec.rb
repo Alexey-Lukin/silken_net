@@ -144,6 +144,45 @@ RSpec.describe FactoryFlashing::Session do
     end
   end
 
+  # [SEC.3 DI] Доказ, що адаптерний ключ реально живить деривацію: до
+  # DI-рефакторингу деривація читала ENV-пін, ігноруючи MasterKeySource.
+  describe "master-key DI — adapter key feeds derivation [SEC.3]" do
+    let(:di_key) { "di-alive-proof-master-key-distinct" }
+    let(:di_source) do
+      instance_double(FactoryFlashing::MasterKeySource::EnvAdapter).tap do |dbl|
+        allow(dbl).to receive(:fetch_master_key).and_return(di_key)
+      end
+    end
+
+    it "Гілка A: HardwareKey ключі деривовані з адаптерного ключа, не з ENV" do
+      session = make_session(gilka: "A")
+      outcome = described_class.run(
+        session: session, executor: executor, master_key_source: di_source
+      )
+
+      hw = outcome.hardware_key
+      expect(hw.aes_key_hex).not_to eq(HardwareKeyService.derive_lora_key(tree.did))
+      oracle = OpenSSL::KDF.hkdf(
+        di_key, salt: tree.did, info: HardwareKeyService::LORA_HKDF_INFO,
+        length: HardwareKeyService::LORA_KEY_SIZE_BYTES, hash: "SHA256"
+      ).unpack1("H*").upcase
+      expect(hw.aes_key_hex).to eq(oracle)
+
+      expect(hw.lorenz_seed_hex).not_to eq(SilkenNet::SeedDerivation.derive_seed(tree.did))
+      expect(hw.lorenz_seed_hex).to eq(
+        SilkenNet::SeedDerivation.derive_seed(tree.did, master_key: di_key)
+      )
+    end
+
+    it "Гілка B: обидва OTA call-sites отримують адаптерний ключ" do
+      session = make_session(gilka: "B", atecc_serial_hex: "0123456789ABCDEF01")
+      expect(OtaHmacKeyService).to receive(:fetch_for)
+        .with(tree.cluster_id, master_key: di_key).at_least(:once).and_call_original
+
+      described_class.run(session: session, executor: executor, master_key_source: di_source)
+    end
+  end
+
   describe "Гілка B + Gateway device — ATCA provisioning skipped" do
     let(:gateway) { create(:gateway) }
     let!(:session) do

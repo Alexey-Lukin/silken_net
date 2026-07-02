@@ -7,7 +7,9 @@
 # Responsibilities (in execution order):
 #
 #   1. Fetch master key (MasterKeySource) and refuse to proceed if the
-#      WeakKeyDetector flags it.
+#      WeakKeyDetector flags it; the fetched key is then threaded into
+#      every HKDF derivation below (SEC.3 DI — so a non-ENV adapter is
+#      honoured, not bypassed).
 #   2. Materialize the HardwareKey row through HardwareKeyService.provision
 #      (single source of truth for HKDF — same derivation firmware will run).
 #   3. Generate the STM32CubeProgrammer command sequence (CommandBuilder).
@@ -82,8 +84,10 @@ module FactoryFlashing
       raise PreflightError, "session must be supervisor_approved (got #{@session.state})" unless @session.may_start?
       raise PreflightError, "device #{@session.device_uid} not found" if @device.nil?
       # Surface UnavailableError / NotImplementedError early so we never enter
-      # the transaction with a missing or rejected master key.
-      @master_key_source.fetch_master_key
+      # the transaction with a missing or rejected master key. The result is
+      # retained and threaded into every derivation below — the point of the
+      # adapter (SEC.3 DI): vault-sourced keys must actually feed HKDF.
+      @master_key = @master_key_source.fetch_master_key
     end
 
     def locate_device!
@@ -91,11 +95,12 @@ module FactoryFlashing
     end
 
     def ensure_hardware_key
-      # HardwareKeyService.provision raises if PROVISIONING_MASTER_KEY is
-      # blank (SEC.11 hard cutover). Re-fetching the row is safe because
-      # provision creates a new HardwareKey atomically.
+      # HardwareKeyService.provision raises if the master key is blank
+      # (тут @master_key — уже провалідований адаптером; SEC.11 hard
+      # cutover). Re-fetching the row is safe because provision creates
+      # a new HardwareKey atomically.
       HardwareKey.find_by(device_uid: @session.device_uid) || begin
-        HardwareKeyService.provision(@device)
+        HardwareKeyService.provision(@device, master_key: @master_key)
         HardwareKey.find_by!(device_uid: @session.device_uid)
       end
     end
@@ -116,7 +121,7 @@ module FactoryFlashing
     # ATECC-гілка B → реальні дерева лишались із вічно fail-closed OTA).
     def tree_ota_hmac
       return nil unless @device.is_a?(Tree)
-      OtaHmacKeyService.fetch_for(@device.cluster_id)
+      OtaHmacKeyService.fetch_for(@device.cluster_id, master_key: @master_key)
     end
 
     # [L1 QATT] Сім'я голосу Королеви (Gateway, Гілка A). КРИТИЧНО: НЕ
@@ -140,7 +145,7 @@ module FactoryFlashing
       return nil unless @session.gilka == "B"
       return nil unless @device.is_a?(Tree)
 
-      ota_hmac_hex = OtaHmacKeyService.fetch_for(@device.cluster_id)
+      ota_hmac_hex = OtaHmacKeyService.fetch_for(@device.cluster_id, master_key: @master_key)
       AteccProvisioner.new(
         session:      @session,
         aes_key_hex:  hw_key.aes_key_hex,
