@@ -37,6 +37,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #include "../common/adc_convert.h" // [FW.50] VREFINT-калібровані мВ (One-Home з host-тестами)
 #include "../common/wall_time.h"   // [FW.49] wall-clock guards + civil-інверсія (One-Home)
 #include "../common/tdma_schedule.h" // [ARCH.26 L2] розклад синхронних вікон з маяка (One-Home)
+#include "../common/cad_sniff.h"     // [ARCH.26 L3] CAD-нюх + PANIC-преамбула (One-Home)
 
 // Підключаємо скомпільовану нейромережу TinyML.
 // Якщо реальної моделі ще немає (модель ще не #include'нута → fallback; docs/03_03 §4) на
@@ -438,6 +439,29 @@ volatile uint32_t soldier_unix_ts_local_tick = 0;
 #define ARCH26_TDMA_ENABLED       0
 #if ARCH26_TDMA_ENABLED
 static TdmaSchedule g_tdma_schedule = {0u, 0u, 0u, 0u};
+#endif
+
+// [ARCH.26 L3] CAD-нюх Провідника + PANIC extended-preamble. Політика —
+// 03_01 §1.9; енерго-double-bind — 02_03 §9.10: async-зловлення несумісне
+// з чистим EBFC (нюх ≥ одиниці Дж/добу проти харвесту ~1.3), тому нюх =
+// привілей surplus-Провідника (ARCH.27, роль-гейт у cad_sniff.h), а
+// EBFC-відправник мінімізує СВІЙ бік — преамбула 4 с ≈ 0.6 Дж («останній
+// зойк», ~23% EDLC) за дворівневим Vcap-гейтом (FW.42-патерн; поріг 4500 >
+// стелі VREFINT-тракту → до FW.50 extended-half чесно fail-closed).
+// Гейт INERT (окремий від L2 — фліпи незалежні): фліп = bench WUT-армінг
+// @ T_sniff + PPK2 CAD-профіль (00_07 ARCH.26). OnCadDone стрельне лише
+// після реєстрації RadioEvents_t на HAL-фазі (FW.46, доля OnRxDone).
+#define ARCH26_CAD_ENABLED        0
+#if ARCH26_CAD_ENABLED
+// Модуляція PANIC-TX = Scenario C (02_03 §9.8): SF9 / BW125 / CR4-5 / +14 дБм.
+// Semtech SetTxConfig LoRa-кодування: bandwidth 0 = 125 кГц, coderate 1 = 4/5.
+#define LORA_PANIC_TX_POWER_DBM   14
+#define LORA_PANIC_BW_125K        0u
+#define LORA_PANIC_SF             9u
+#define LORA_PANIC_CR_4_5         1u
+static uint32_t g_last_cad_sniff_wall = 0u;  // RAM-only маркер (як g_tdma_schedule)
+volatile uint8_t g_cad_activity = 0u;        // ставить OnCadDone; читач = bench
+                                             // WUT-цикл «нюх-замість-RX» (RUNBOOK)
 #endif
 
 // [FW.8] CMD_SET_THRESHOLDS (0x9A) — пер-деревні Z-пороги Лоренца, що приходять
@@ -2194,6 +2218,19 @@ int main(void)
 
     // Слухаємо ефір ТІЛЬКИ якщо ми багаті на енергію (напруга > 2.8В)
     if (vcap_voltage > VCAP_LISTEN_THRESHOLD) {
+#if ARCH26_CAD_ENABLED
+        // [ARCH.26 L3] Нюх Провідника: кожні CAD_SNIFF_PERIOD_S — мс-CAD.
+        // Host-half wiring: справжня економія (нюх-ЗАМІСТЬ-повного-RX у
+        // WUT-циклі, g_cad_activity як воротар вуха) — bench; тут глю
+        // під тим самим vcap-гейтом, що й вухо, яке нюх відкриває.
+        if (Cad_Sniff_Due((uint8_t)(g_node_role == ROLE_PROVISIONER),
+                          Wall_Seconds_Now(), g_last_cad_sniff_wall,
+                          CAD_SNIFF_PERIOD_S_DEFAULT)) {
+            g_cad_activity = 0u;
+            Radio.StartCad();                 // вердикт прийде в OnCadDone
+            g_last_cad_sniff_wall = Wall_Seconds_Now();
+        }
+#endif
         lora_rx_flag = 0;
         Radio.Rx(LORA_RX_TIMEOUT_MS);
 
@@ -2732,6 +2769,18 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
     }
 }
 
+#if ARCH26_CAD_ENABLED
+// =========================================================================
+// АПАРАТНИЙ РЕФЛЕКС НЮХУ (Ніс Провідника) — ARCH.26 L3
+// =========================================================================
+// bool диктує callback-контракт Semtech RadioEvents_t.CadDone (як OnRxDone
+// вище); інертний до реєстрації events-таблиці на HAL-фазі (FW.46).
+void OnCadDone(bool channelActivityDetected)
+{
+    g_cad_activity = Cad_Should_Open_Rx((uint8_t)channelActivityDetected);
+}
+#endif
+
 // =========================================================================
 // АПАРАТНИЙ РЕФЛЕКС (Голос Дерева)
 // =========================================================================
@@ -2832,10 +2881,38 @@ void Trigger_Emergency_LoRa_TX(void)
 
     // 4. Шифруємо AES-128 (post-ARCH.42) і миттєво вистрілюємо
     HAL_CRYP_Encrypt(&hcryp, (uint32_t*)panic_payload, 4, (uint32_t*)encrypted_panic, 1000);
+
+#if ARCH26_CAD_ENABLED
+    // [ARCH.26 L3] «Останній зойк»: преамбула довша за період нюху
+    // Провідника (гарантія T_pre > T_sniff — 02_03 §9.10), щоб PANIC
+    // ловили й поза зоною Королеви. Дворівневий Vcap-гейт (EMA-оцінка
+    // заряду, DR12): нижче порога — дефолтні 8 симв, бо brownout ПОСЕРЕД
+    // преамбули = не вилетіло НІЧОГО, а короткий зойк Королева (L1) ще
+    // зловить. Контекст: main-loop Path-B (EXTI лише ставить
+    // vibration_detected) — блокуючий SetTxConfig/HAL_Delay безпечні;
+    // НЕ кликати цю функцію з ISR.
+    Radio.SetTxConfig(MODEM_LORA, LORA_PANIC_TX_POWER_DBM, 0u,
+                      LORA_PANIC_BW_125K, LORA_PANIC_SF, LORA_PANIC_CR_4_5,
+                      Cad_Panic_Preamble_Symbols(
+                          EMA_Get_Vcap_Mv(), CAD_PANIC_PREAMBLE_VCAP_MIN_MV,
+                          Cad_Preamble_Symbols_For_Ms(CAD_PANIC_PREAMBLE_MS,
+                                                      CAD_T_SYM_SF9_BW125_US)),
+                      false, true, false, 0u, false, 0u);
+#endif
     Radio.Send(encrypted_panic, 16);
 
     // 5. Мікро-пауза, щоб радіомодуль встиг фізично випромінити пакет
     HAL_Delay(100);
+
+#if ARCH26_CAD_ENABLED
+    // Обов'язкове відновлення дефолтної преамбули (дисципліна
+    // Restore_ECB_Mode): липкі ~973 симв на наступному звичайному TX
+    // мовчки з'їли б ~40× airtime і енергобюджет циклу.
+    Radio.SetTxConfig(MODEM_LORA, LORA_PANIC_TX_POWER_DBM, 0u,
+                      LORA_PANIC_BW_125K, LORA_PANIC_SF, LORA_PANIC_CR_4_5,
+                      CAD_PREAMBLE_DEFAULT_SYMBOLS,
+                      false, true, false, 0u, false, 0u);
+#endif
 
     // 6. Примусово присипляємо радіо, щоб не садити батарею
     Radio.Sleep();

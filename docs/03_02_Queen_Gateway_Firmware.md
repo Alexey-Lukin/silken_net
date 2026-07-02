@@ -145,7 +145,7 @@
 
 ## 📡 1. LoRa Reception та ISR
 
-> **Роль у вирішенні Проблеми Рандеву:** Королева є **єдиним always-on listener** у мережі. Її SX1262 завжди в `Radio.Rx(LORA_RX_INFINITE)` — нескінченний таймаут прийому. Це вирішує фундаментальну Проблему Рандеву (Rendezvous Problem) для всіх вузлів у прямій видимості (150–200 м): Солдат може "вистрілити" пакетом у будь-яку мілісекунду — Королева завжди зловить. Це можливо завдяки зовнішньому живленню (сонячна панель / акумулятор), на відміну від Солдатів з EBFC біобатарейкою. Для вузлів за межами прямої видимості Queen потрібні Синхронні Вікна (TDMA, L2 — 🟡 host-half: розкладка в маяку INERT до bench, §5а.2а) та CAD (L3 — ❌) ([ARCH.26](00_07_Action_Plan_Tracker), деталі — [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA)).
+> **Роль у вирішенні Проблеми Рандеву:** Королева є **єдиним always-on listener** у мережі. Її SX1262 завжди в `Radio.Rx(LORA_RX_INFINITE)` — нескінченний таймаут прийому. Це вирішує фундаментальну Проблему Рандеву (Rendezvous Problem) для всіх вузлів у прямій видимості (150–200 м): Солдат може "вистрілити" пакетом у будь-яку мілісекунду — Королева завжди зловить. Це можливо завдяки зовнішньому живленню (сонячна панель / акумулятор), на відміну від Солдатів з EBFC біобатарейкою. Для вузлів за межами прямої видимості Queen потрібні Синхронні Вікна (TDMA, L2 — 🟡 host-half: розкладка в маяку INERT до bench, §5а.2а) та CAD (L3 — 🟡 host-half: Soldier-side нюх/преамбула, Queen-wire не додає) ([ARCH.26](00_07_Action_Plan_Tracker), деталі — [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA)).
 
 ### OnRxDone (Апаратне переривання)
 
@@ -945,6 +945,7 @@ Soldier — gossip-uplift (3-hop reach)
 | Журнал 0x20 persistence | roundtrip/window-slide/big-jump/wear-дисципліна/program-fail/garbage/compact — поверх реального Flash-KV з power-cut | `firmware/test/test_flash_kv.c` |
 | Soldier gossip-piggyback (freeze) | pack/apply, cold-boot, drift cap, window selection | `firmware/test/test_soldier_logic.c` |
 | TDMA слот-розкладка (ARCH.26 L2, §5а.2а) | pack↔parse roundtrip, all-zero=off, fail-closed сміття, next-window сітка/строго-майбутнє, in-window межі, DID-слот детермінізм, wire-екстремуми | `firmware/test/test_tdma_schedule.c` (`make -C firmware/test tdma`) |
+| CAD-нюх + PANIC-преамбула (ARCH.26 L3 — Soldier-side, [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA)) | роль-гейт (лише Провідник), каденція wall-guards, чверть-символьна математика (мінімальність/floor-8/сатурація-65535), дворівневий V_cap-гейт, інваріант T_pre > T_sniff | `firmware/test/test_cad_sniff.c` (`make -C firmware/test cad`) |
 
 ### 5а.6 Що ще лежить як freeze-contract (deferred TRL-7)
 
