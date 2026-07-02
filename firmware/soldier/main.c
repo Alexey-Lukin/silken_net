@@ -36,6 +36,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #include "did_derive.h"           // [FW.54 Вісь 2] DID = f(UID), recompute на boot
 #include "../common/adc_convert.h" // [FW.50] VREFINT-калібровані мВ (One-Home з host-тестами)
 #include "../common/wall_time.h"   // [FW.49] wall-clock guards + civil-інверсія (One-Home)
+#include "../common/tdma_schedule.h" // [ARCH.26 L2] розклад синхронних вікон з маяка (One-Home)
 
 // Підключаємо скомпільовану нейромережу TinyML.
 // Якщо реальної моделі ще немає (модель ще не #include'нута → fallback; docs/03_03 §4) на
@@ -428,6 +429,16 @@ static inline float uint32_to_float(uint32_t u) {
 // фолбек на застарілу RTC-date-апроксимацію.
 volatile uint32_t soldier_unix_ts            = 0;
 volatile uint32_t soldier_unix_ts_local_tick = 0;
+
+// [ARCH.26 L2] Кеш TDMA-розкладки з байтів 5..8 маяка. RAM-only derived
+// state (як soldier_unix_ts): гине з SRAM у RTC-only STOP2 / VBAT-loss і
+// відновлюється наступним маяком (≤15 хв) — RTC DR і Flash-KV не потрібні
+// (бюджет DR повний, 03_01 §2). Гейт INERT: фліп = bench WUT-армінг
+// (SEC.15/FW.49); математика вікон/слотів — common/tdma_schedule.h.
+#define ARCH26_TDMA_ENABLED       0
+#if ARCH26_TDMA_ENABLED
+static TdmaSchedule g_tdma_schedule = {0u, 0u, 0u, 0u};
+#endif
 
 // [FW.8] CMD_SET_THRESHOLDS (0x9A) — пер-деревні Z-пороги Лоренца, що приходять
 // через OTA. Формат на дроті виробляється бекендом
@@ -2223,6 +2234,15 @@ int main(void)
                     // upper layers (CAD relay) могли консультуватись.
                     time_source_authoritative =
                         (decrypted_rx_payload[9] & BEACON_AUTH_FLAG) ? 1 : 0;
+
+#if ARCH26_TDMA_ENABLED
+                    // [ARCH.26 L2] Байти 5..8 — слот-розкладка синхронних
+                    // вікон. Parse fail-closed (нулі/сміття → disabled);
+                    // наступне вікно = Tdma_Next_Window_Start(&g_tdma_schedule,
+                    // Wall_Seconds_Now()) → вхід для WUT-армінгу (bench).
+                    (void)Tdma_Parse_Beacon_Bytes(&decrypted_rx_payload[5],
+                                                  &g_tdma_schedule);
+#endif
 
 #if FW20_MESH_RELAY_ENABLED
                     // [FW.20-S2 4/5] Провідник несе голос далі. Енергогейт

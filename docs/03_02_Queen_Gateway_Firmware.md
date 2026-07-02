@@ -860,9 +860,26 @@ Soldier — gossip-uplift (3-hop reach)
 | Опкод | Маркер | Напрямок | Формат | Розмір | Cross-ref |
 |-------|--------|----------|--------|--------|-----------|
 | CMD_TIME_SYNC envelope | `0x9C` | Rails→Queen (CoAP) | `[0x9C][unix_ts_be:4][inner_payload]` | 5+N байт | FW.20 §1, `app/workers/concerns/coap_encryption.rb` |
-| Time Beacon | `0x9C` + magic `'B'` | Queen→Soldier (LoRa ECB) | `[0x9C][ts:4][reserved:4][AUTH\|TTL][magic 'B'][PAD:5]` | 16 байт | FW.20 §2 |
+| Time Beacon | `0x9C` + magic `'B'` | Queen→Soldier (LoRa ECB) | `[0x9C][ts:4][TDMA:4 →§5а.2а][AUTH\|TTL][magic 'B'][PAD:5]` | 16 байт | FW.20 §2 |
 | SYNC_REQUEST | `0x56` + magic `'S'` | Soldier→Queen (LoRa ECB) | `[0x56][DID:4][secs_since_sync:4][PANIC_TTL][magic 'S' = 0x53][PAD:5]` | 16 байт | FW.20-S2 §3, `firmware/soldier/main.c:Build_Time_Sync_Request_Payload` |
 | Gossip ts_lsb (freeze) | — | Soldier→Soldier (piggyback у telemetry) | 21B ECB: plaintext byte 14 = `(soldier_unix_ts & 0xFFu)`, valid коли `StatusByte & PANIC_FLAG_BIT == 0`. **CCM wire-rev2: AAD byte 4** (cleartext навмисно — сусід читає без per-Soldier ключа, бекенд автентифікує MIC'ом; [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security) wire-budget ledger) | 1 байт задарма обома форматами | FW.20-S2 §5 |
+
+#### 5а.2а TDMA слот-розкладка маяка — байти 5..8 (ARCH.26 L2) — 📐 wire-дім
+
+> **Статус:** 🟡 host-half (2026-07-02) — pack/parse/математика вікон написані обабіч і INERT за дзеркальними гейтами `ARCH26_TDMA_ENABLED 0` (queen + soldier); фліп = bench WUT-армінг ([SEC.15](00_07_Action_Plan_Tracker)/[FW.49](00_07_Action_Plan_Tracker)). One-Home математики — `firmware/common/tdma_schedule.h` (обидва main.c + host-тести компілюють одне джерело). Рандеву-контекст + енерго-політика ролей — [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA) (тут лише wire).
+
+| Байт | Поле | Семантика |
+|------|------|-----------|
+| 5 | `period_min` | Період синхронних вікон, хвилини. **`0` = TDMA off** — нинішній нульовий ефір означає «вимкнено» за конструкцією, старі прошивки сумісні без фліпу |
+| 6 | `window_100ms` | Довжина вікна у 100-мс квантах (Queen шле `20` = 2.0 с) |
+| 7 | `slot_count` | TX-слоти всередині вікна для uplink'ів (FW.27-A); `0` = unslotted. Слот вузла = `DID % slot_count` — детерміновано, без реєстрації у Королеви |
+| 8 | `phase_4s` | Фазовий зсув сітки у 4-с квантах — розводить сусідні кластери/Queen |
+
+- **Сітка вікон:** вікно відкривається коли `unix_ts % (period_min×60) == phase_4s×4`; членство `[start, start+window)`, наступний старт — `Tdma_Next_Window_Start` (строго майбутній момент — готовий вхід RTC-WUT-армінгу).
+- **Parse fail-closed:** `period=0` (легальний off) / `window=0` / `phase ≥ period` (сміття, бітфліп) → schedule disabled; невалідний маяк **затирає** попередній валідний кеш.
+- **Кеш Солдата — RAM-only derived state** (як `soldier_unix_ts`): гине з SRAM у RTC-only STOP2 / VBAT-loss, відновлюється наступним маяком ≤ 15 хв → **нуль нових RTC DR / Flash-KV ключів** ([`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA) бюджет повний). Провідник ретранслює байти 5..8 as-is (relay-тест тримає транзит).
+- **Стеля точності (позначена):** маяк несе цілі секунди → фазова похибка вузла ≈ ±1 с (округлення + encrypt/airtime); слоти коротші за ~2 с розкидають популяцію **статистично** (фазові групи + FW.10 jitter), не ізолюють детерміновано. Шлях апгрейду: `ts_frac` (1/256 с) у **байті 11** (перший PAD) → ±4 мс → 100-мс слоти; байт зарезервовано, не реалізовано.
+- **Queen-константи** (`queen/main.c`): `TDMA_PERIOD_MIN 15` (= такт маяка) · `TDMA_WINDOW_100MS 20` · `TDMA_SLOT_COUNT 4` · `TDMA_PHASE_4S 0`.
 
 ### 5а.3 Опкод-карта (SSOT)
 
@@ -927,6 +944,7 @@ Soldier — gossip-uplift (3-hop reach)
 | Soldier mesh-relay anti-storm (4/5) | журнал поколінь: auth=0 unlock, подвійний маяк у такті, пінг-понг при TTL=4, out-of-order у вікні, stale-відмова, DUPLICATE-останнім | `firmware/test/test_soldier_logic.c` |
 | Журнал 0x20 persistence | roundtrip/window-slide/big-jump/wear-дисципліна/program-fail/garbage/compact — поверх реального Flash-KV з power-cut | `firmware/test/test_flash_kv.c` |
 | Soldier gossip-piggyback (freeze) | pack/apply, cold-boot, drift cap, window selection | `firmware/test/test_soldier_logic.c` |
+| TDMA слот-розкладка (ARCH.26 L2, §5а.2а) | pack↔parse roundtrip, all-zero=off, fail-closed сміття, next-window сітка/строго-майбутнє, in-window межі, DID-слот детермінізм, wire-екстремуми | `firmware/test/test_tdma_schedule.c` (`make -C firmware/test tdma`) |
 
 ### 5а.6 Що ще лежить як freeze-contract (deferred TRL-7)
 

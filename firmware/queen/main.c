@@ -32,6 +32,8 @@
 #include "ota_window.h"   // [FW.52б] воскресіння OTA-вікна запізнілою печаткою
 // [L1 QATT] Розкладка підписаного батч-конверта (pure, host-tested) — 03_05 §2.2
 #include "../common/queen_attest.h"
+// [ARCH.26 L2] TDMA слот-розкладка маяка (байти 5..8) — One-Home математика
+#include "../common/tdma_schedule.h"
 // [L1 QATT] Ed25519 (Monocypher, pinned submodule — 03_01 §12.5): голос Королеви
 #include "monocypher-ed25519.h"
 /* USER CODE END Includes */
@@ -140,6 +142,17 @@
 #define BEACON_AUTH_FLAG           0x80
 #define BEACON_BYTE9_AUTHORITATIVE ((uint8_t)(BEACON_AUTH_FLAG | BEACON_TTL))
 #define TIME_BEACON_INTERVAL_MS    900000U              // 15 хвилин
+
+// [ARCH.26 L2] Розкладка синхронних вікон у байтах 5..8 маяка (wire-дім
+// 03_02 §5а.2). Гейт INERT до bench (WUT-армінг Солдата = SEC.15/FW.49):
+// period=0 ⇔ off на дроті, тож вимкнений гейт лишає байти нульовими —
+// старий ефір байт-у-байт. Слоти при ±1с фазовій точності розкидають
+// популяцію статистично (стеля позначена у tdma_schedule.h).
+#define ARCH26_TDMA_ENABLED        0
+#define TDMA_PERIOD_MIN            15u   // період вікон = такт маяка
+#define TDMA_WINDOW_100MS          20u   // 2.0 с — RX Провідника / TX-мітка
+#define TDMA_SLOT_COUNT            4u    // фазові групи uplink'ів (FW.27-A)
+#define TDMA_PHASE_4S              0u    // зсув сітки (розводити кластери)
 
 // [FW.1] Flash-based AES key provisioning — per-device unique key via HKDF.
 // Factory Flashing writes device_key to protected Flash sector 0x0803E000
@@ -2114,7 +2127,12 @@ static void Broadcast_Time_Beacon(void)
     plaintext[2] = (uint8_t)(now >> 16);
     plaintext[3] = (uint8_t)(now >> 8);
     plaintext[4] = (uint8_t)(now & 0xFFu);
-    // байти 5..8 зарезервовано під майбутню розкладку TDMA-слотів (ARCH.26)
+#if ARCH26_TDMA_ENABLED
+    // [ARCH.26 L2] Байти 5..8 — слот-розкладка синхронних вікон (03_02 §5а.2).
+    Tdma_Pack_Beacon_Bytes(TDMA_PERIOD_MIN, TDMA_WINDOW_100MS,
+                           TDMA_SLOT_COUNT, TDMA_PHASE_4S, &plaintext[5]);
+#endif
+    // при вимкненому ARCH26_TDMA_ENABLED байти 5..8 лишаються 0x00 = TDMA off
     // [FW.20-S2] Байт 9: біт 7 = authoritativeness (Королева=1), нижні 7
     // біт = TTL (BEACON_TTL=2 — Провідник несе на 1 хоп далі). Соціолог-
     // Солдат зчитує біт 7 у time_source_authoritative для mesh-арбітрації.
