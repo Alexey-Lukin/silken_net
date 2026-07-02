@@ -257,22 +257,25 @@ STEP 4: Queen — знає ключі ВСІХ своїх Soldiers
 ### Rails Backend — API та зберігання (post-ARCH.42)
 
 ```ruby
-# app/services/hardware_key_service.rb — два derivation methods:
+# app/services/hardware_key_service.rb — два derivation methods.
+# Master key: явний `master_key:` параметр — фабрична Session несе його від
+# MasterKeySource (SEC.3 DI, vault-ключ реально живить HKDF); nil → ENV
+# PROVISIONING_MASTER_KEY (runtime-fallback: register API, IoTeX seed).
 
 LORA_KEY_INFO = "silken-aes-128-lora-key".freeze   # ARCH.42 — Tree LoRa channel (16 bytes)
 COAP_KEY_INFO = "silken-aes-256-device-key".freeze # Gateway CoAP-to-Rails channel (32 bytes)
 
 # LoRa AES-128 ключ (Tree або Gateway LoRa-сесія)
-def self.derive_lora_key(device_uid)
-  master_key = fetch_master_key_from_vault!
+def self.derive_lora_key(device_uid, master_key: nil)
+  master_key ||= ENV["PROVISIONING_MASTER_KEY"]  # SecurityError якщо blank (SEC.11)
   prk  = OpenSSL::HMAC.digest("SHA256", master_key, device_uid)
   okm  = OpenSSL::HMAC.digest("SHA256", prk, LORA_KEY_INFO + "\x01")
   okm[0, 16]  # 128 bits — AES-128
 end
 
 # CoAP AES-256 ключ (тільки Gateway — для batch flush до Rails)
-def self.derive_device_key(device_uid)
-  master_key = fetch_master_key_from_vault!
+def self.derive_device_key(device_uid, master_key: nil)
+  master_key ||= ENV["PROVISIONING_MASTER_KEY"]
   prk  = OpenSSL::HMAC.digest("SHA256", master_key, device_uid)
   okm  = OpenSSL::HMAC.digest("SHA256", prk, COAP_KEY_INFO + "\x01")
   okm[0, 32]  # 256 bits — AES-256
@@ -541,7 +544,7 @@ log.update!(lorenz_state_x: x_f, lorenz_state_y: y_f, lorenz_state_z: z_f,
 
 | Шар | Файл | Що зроблено |
 |-----|------|-------------|
-| Backend (HKDF) | `app/services/ota_hmac_key_service.rb` | `OtaHmacKeyService.fetch_for(cluster_id)` — HKDF-SHA256, info `"silken-ota-hmac-v1"`, raise `SecurityError` без `PROVISIONING_MASTER_KEY` (SEC.11 hard cutover) |
+| Backend (HKDF) | `app/services/ota_hmac_key_service.rb` | `OtaHmacKeyService.fetch_for(cluster_id, master_key: nil)` — HKDF-SHA256, info `"silken-ota-hmac-v1"`; ikm = `master_key:` параметр (фабрична Session, SEC.3 DI) або ENV-fallback, raise `SecurityError` без жодного (SEC.11 hard cutover) |
 | Backend (signing) | `app/services/ota_packager_service.rb` | `compute_hmac_tag(bytecode, version_id, lora_total_chunks, cluster_id:)` + `build_hmac_trailer_chunks(tag, lora_total_chunks, version_id)` (3× `[0x9B][seg_idx:2 BE][total:2 BE][hmac:11]` + seg 4 `[0x9B][0x0004][total:2 BE][version_id:4 BE][PAD:7]`) + `prepare(..., cluster_id:)` opt-in з `manifest[:hmac_signed/lora_total_chunks/total_packages/hmac_cluster_id]` |
 | Firmware Queen | `firmware/queen/main.c` | Stateless relay: `Handle_CoAP_Command` зберігає 4 trailer-блоки (3 печатки + версія) у `pending_ota_hmac_chunks[4][16]`, ready-bitmask = `0x0F`; reflex broadcast loop додає Phase 1 (trailer) після Phase 0 (bytecode); 60 ms pacing |
 | Firmware Soldier | `firmware/soldier/main.c` | `Load_Ota_Hmac_Key` (K_ota з Protected Flash `0x0803E800`, magic "KOTA"; fail-safe `ota_hmac_key_valid=0`) + `Parse_HMAC_Trailer_Chunk` (seg 1..3 → `received_hmac_tag`, seg 4 → `received_ota_version`) + `OTA_Try_Finalize` (**реальний** `Silken_Hmac_Sha256_Concat(K_ota, body‖version_be‖total_be)` → `OTA_Verify_Dual_Gate`: Gate 1 magic "RITE" + Gate 2 constant-time HMAC) — фіналізація з обох гілок (тіло 0x99 / печатка 0x9B), бо печатка приходить ПІСЛЯ тіла; APPLY лише при всіх 4 трейлер-чанках; fail-safe magic-wipe при REJECT |
@@ -636,7 +639,7 @@ hmac_tag = OpenSSL::HMAC.digest("SHA256", K_ota, hmac_input)  # 32 bytes
 
 ```
 K_ota = HKDF-SHA256(
-  ikm:    PROVISIONING_MASTER_KEY,
+  ikm:    master_key,                  # фабрика: параметр від Session (SEC.3 DI); runtime: ENV PROVISIONING_MASTER_KEY
   salt:   "cluster:#{cluster_id}",
   info:   "silken-ota-hmac-v1",        # ← ВІДМІННЕ від "silken-aes-256-device-key"
   length: 32
@@ -764,12 +767,12 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 | Шар | Файл | Статус |
 |-----|------|--------|
 | Session AASM | `app/models/provisioning_session.rb` | ✅ `pending → supervisor_approved → active → completed \| failed`; 2-Person Rule = `supervisor_id != operator_id` (валідація) **+ `approve` guard `credentials_verified?` (true лише через `approve_with_credentials!` — Argon2id-пароль супервайзера); сирий `approve!` з console відмовляється → оператор, що лише *назвав* супервайзера, схвалити сам НЕ може** |
-| Master key source | `app/services/factory_flashing/master_key_source.rb` | ✅ `EnvAdapter` (з `Security::WeakKeyDetector` SEC.9), `BitwardenAdapter` skeleton (raise `NotImplementedError` — TODO live `bw` API) |
+| Master key source | `app/services/factory_flashing/master_key_source.rb` | ✅ `EnvAdapter` (з `Security::WeakKeyDetector` SEC.9), `BitwardenAdapter` skeleton (raise `NotImplementedError` — TODO live `bw` API). Fetched ключ **наскрізно живить деривацію** (SEC.3 DI): Session тримає його у `@master_key` і передає параметром — non-ENV adapter підключається без правок сервісів |
 | Command emission | `app/services/factory_flashing/command_builder.rb` | ✅ Гілка A — `STM32_Programmer_CLI -w32` per word для `KEYL`/`LSED`/`KEYC`/`EDSK` slots (EDSK = L1 QATT сім'я голосу Королеви, Gateway-only; генерується `Session`'ом на фабричному хості — НЕ HKDF, у БД лише pubkey), RDP level 1/2 config; Гілка B — skip key writes (keys через ATCA), only firmware connect + RDP lock |
 | Subprocess executor | `app/services/factory_flashing/executor.rb` | ✅ dry-run default (`[dry-run] cmd`); `dry_run: false` → `Open3.capture3` з `ProgrammerMissingError` коли CLI відсутній у PATH; `CommandFailedError` зупиняє на першому non-zero exit |
 | ATECC provisioning | `app/services/factory_flashing/atecc_provisioner.rb` | ✅ Гілка B skeleton — emit `atcab_init` + `atcab_read_serial_number` + slot writes (0/1/2/3) + `atcab_lock_config_zone` + `atcab_lock_data_zone`; raw key bytes scrubbed (`/* NB elided */`) |
 | Audit trail | `app/services/factory_flashing/audit_trail.rb` | ✅ `AuditLog(action: "factory_flash")` chain-hashed + `MaintenanceRecord(action_type: :installation, skip_photo_validation: true)`; metadata містить `operator_id`/`supervisor_id`/`batch_id`/`flash_addr`/`rdp_level`/`atecc_serial_hex`/`firmware_version`/`command_count`/`dry_run` |
-| Orchestrator | `app/services/factory_flashing/session.rb` | ✅ `ActiveRecord::Base.transaction` — failure rolls back HardwareKey + audit writes разом; `PreflightError` для non-approved sessions / missing device / unavailable master key |
+| Orchestrator | `app/services/factory_flashing/session.rb` | ✅ `ActiveRecord::Base.transaction` — failure rolls back HardwareKey + audit writes разом; `PreflightError` для non-approved sessions / missing device / unavailable master key. Preflight-ключ НЕ відкидається: `@master_key` → `HardwareKeyService.provision` / `OtaHmacKeyService.fetch_for` / `SeedDerivation.derive_seed` параметром (SEC.3 DI; runtime-викликачі цих сервісів лишаються на ENV-fallback) |
 | Operator CLI | `lib/tasks/factory.rake` | ✅ `factory:flash[device_uid,batch_id,gilka,operator_id,supervisor_id,firmware_version]` (`ATECC_SERIAL` env для Гілки B, `RDP_LEVEL` env override) → `factory:approve[session_id]` (**mandatory `SUPERVISOR_PASSWORD` env — супервайзер автентифікується власним паролем, SEC.3**) → `factory:execute[session_id]` (`EXECUTE=1` для real subprocess) |
 
 > **[SEC.3] Authenticated 2-Person approval:** `factory:approve` вимагає `SUPERVISOR_PASSWORD` — `ProvisioningSession#approve_with_credentials!` верифікує його через `supervisor.authenticate` (Argon2id). Оператор може *назвати* супервайзера, але НЕ схвалить сесію без того, щоб супервайзер фізично ввів власний пароль (закрито колишній skippable `SUPERVISOR_ID` env-match). **Сирий `approve!` (Rails console) теж закрито кодом (2026-06-15):** перехід `approve` має guard `credentials_verified?`, що true лише всередині `approve_with_credentials!` після успішної Argon2id-автентифікації → console self-approve неможливий (`AASM::InvalidTransition`). **Залишок — суто операційний:** raw-SQL / object-manipulation (`update_column` / `instance_variable_set`) обходить будь-який in-process guard → межа §5.A access-control (master-key лише `super_admin` + MFA), не код.
@@ -807,7 +810,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 | `admin` | Спостерігати за прогресом | Read-only audit view |
 | Factory Operator (без Rails-ролі) | Виконувати фізичне підключення | Лише після авторизації supervisor'а; UI показує тільки статус, не ключ |
 
-**Як master key потрапляє до інструменту (три варіанти, від кращого до гіршого):**
+**Як master key потрапляє до інструменту (три варіанти, від кращого до гіршого).** Після SEC.3 DI деривація приймає ключ параметром від `MasterKeySource` — варіанти 1–2 підключаються новим адаптером без правок derivation-сервісів (до DI non-ENV adapter був би мертвим кодом — деривація однаково читала ENV):
 
 1. **HSM injection (рекомендовано для > 1 000 unit):** `PROVISIONING_MASTER_KEY` ніколи не покидає HSM (AWS CloudHSM / Thales Luna). Інструмент викликає HSM API для деривації `device_key = HKDF(master_key, device_uid)` всередині апаратного модуля → отримує лише готовий `device_key`. `master_key` у RAM інструменту не з'являється жодного разу.
 

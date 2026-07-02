@@ -12,18 +12,18 @@ Navigation aid — the **SSOT is the code + docs below**; this skill points, it 
 
 | Document | What it covers |
 |----------|---------------|
-| `docs/03_05_Hardware_Symmetric_Crypto_and_Security.md` | §3.4 Factory Flashing threat model, HKDF per-device derivation, ATECC608B, RDP |
-| `docs/00_07_Action_Plan_Tracker.md` | `SEC.3` (real `STM32_Programmer_CLI` on bench — residual), `SEC.2` (RDP Level 2), `FW.1` (HKDF) |
-| `CLAUDE.md §9–§10, §12` | Security model, pre-flight (antenna before power), BLOCKER table (HW-AES-KEY → SEC.3) |
+| `docs/03_06_Factory_Flashing_and_Key_Provisioning.md` | THE factory home (split from 03_05 §3.4): pipeline Гілки A/B, HKDF per-device derivation, K_ota, §5 ops-security (2-Person Rule, master-key delivery variants, SEC.3 status) |
+| `docs/03_05_Hardware_Symmetric_Crypto_and_Security.md` | Crypto modes, SE050 (SEC.6), key rotation, RDP (SEC.2) |
+| `docs/00_07_Action_Plan_Tracker.md` | `SEC.3` (bench SWD + Bitwarden live — residuals), `SEC.2` (RDP Level 2) |
 
 ## Pipeline (entry → exit)
 
 Entry: **`FactoryFlashing::Session.run`** (invoked by `lib/tasks/factory.rake` after a
 `ProvisioningSession` is **supervisor-approved**). One `ActiveRecord::Base.transaction`:
 
-1. **Preflight** — session `may_start?` + device exists + master key fetchable (fail fast before the tx).
-2. **Master key** — `MasterKeySource` (Env or Bitwarden adapter); `WeakKeyDetector` refuses a weak key.
-3. **HardwareKey** — `HardwareKeyService.provision` (the SINGLE HKDF source — same derivation the firmware runs; never derive keys elsewhere).
+1. **Preflight** — session `may_start?` + device exists + master key fetched into `@master_key` (fail fast before the tx; the result is NOT discarded — SEC.3 DI).
+2. **Master key** — `MasterKeySource` (Env or Bitwarden adapter); `WeakKeyDetector` refuses a weak key. The fetched key threads as `master_key:` param into every derivation below (runtime callers of the same services use the ENV fallback instead).
+3. **HardwareKey** — `HardwareKeyService.provision(device, master_key:)` (the SINGLE HKDF source — same derivation the firmware runs; never derive keys elsewhere).
 4. **ATECC (Гілка B + Tree only)** — `AteccProvisioner` emits the I²C ATCA write-zone transcript.
 5. **Commands** — `CommandBuilder` emits the `STM32_Programmer_CLI` sequence.
 6. **Execute** — `Executor` (dry-run prints; `--execute` spawns subprocesses).
@@ -37,9 +37,9 @@ Entry: **`FactoryFlashing::Session.run`** (invoked by `lib/tasks/factory.rake` a
 | `factory_flashing/command_builder.rb` | `STM32_Programmer_CLI` emission (`gilka_a_commands` / `gilka_b_commands`, `write_block`, `rdp_command`) |
 | `factory_flashing/atecc_provisioner.rb` | ATECC608B data-zone provisioning (Гілка B) |
 | `factory_flashing/executor.rb` | dry-run vs live subprocess (`programmer_available?`) |
-| `factory_flashing/master_key_source.rb` | `Base` / `EnvAdapter` / `BitwardenAdapter` master-key fetch |
+| `factory_flashing/master_key_source.rb` | `Base` / `EnvAdapter` / `BitwardenAdapter` master-key fetch — the fetched key feeds HKDF via `Session` (SEC.3 DI), not just the preflight gate |
 | `factory_flashing/audit_trail.rb` | chain-hashed audit log record |
-| `ota_hmac_key_service.rb` | per-cluster OTA HMAC key (consumed by ATECC provisioning) |
+| `ota_hmac_key_service.rb` | per-cluster OTA HMAC key `fetch_for(cluster_id, master_key: nil)` (Гілка A KOTA block + Гілка B ATECC provisioning) |
 
 > Line numbers drift every commit — `gitnexus_context({name: "Session"})` for live locations rather than a hardcoded table (`[[feedback_no_volatile_counts]]`).
 
