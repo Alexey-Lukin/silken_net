@@ -27,6 +27,12 @@ module Hil
   #             CoAP listener at /telemetry/batch/<queen_uid>. Mirrors the
   #             real Queen flush path through TelemetryUnpackerService.
   #
+  # `signed: true` (wire-only) wraps every flush in the L1 QATT envelope —
+  # the Ed25519-attested batch exactly as a provisioned Queen emits it
+  # (wire home: docs/03_05 §2.2; firmware mirror: common/queen_attest.h).
+  # The keypair is minted eagerly from `rng` and its pubkey registered on
+  # the gateway's HardwareKey, mirroring the factory provisioning path.
+  #
   # Scenarios (composable knobs):
   #
   #   :healthy        — nominal voltage / temp / CSQ
@@ -67,21 +73,34 @@ module Hil
     # firmware test `QUEEN_HEALTH_GP_MAX`.
     QUEEN_HEALTH_GP_MAX = 31
 
+    # [L1 QATT] Envelope constants — mirror of firmware/common/queen_attest.h
+    # (wire home: docs/03_05 §2.2). Deliberately an INDEPENDENT (fourth)
+    # implementation of the envelope: Monocypher (firmware) ↔ OpenSSL (C KAT)
+    # ↔ worker attest-spec ↔ this simulator must agree byte-for-byte.
+    QATT_VERSION_1 = 0x01
+    QATT_DOMAIN_TAG = "SLKN-QATT1"
+
     attr_reader :gateway, :mode
 
     def initialize(gateway, mode: :direct, coap_host: DEFAULT_COAP_HOST,
-                   coap_timeout: DEFAULT_COAP_TIMEOUT, rng: Random.new)
+                   coap_timeout: DEFAULT_COAP_TIMEOUT, rng: Random.new,
+                   signed: false)
       raise ArgumentError, "gateway is required" if gateway.nil?
       raise ArgumentError, "unsupported mode #{mode.inspect} (expected :direct or :wire)" \
         unless %i[direct wire].include?(mode)
+      raise ArgumentError, "signed: true requires mode: :wire (QATT envelopes ride the wire path)" \
+        if signed && mode != :wire
 
       @gateway = gateway
       @mode = mode
       @coap_host = coap_host
       @coap_timeout = coap_timeout
       @rng = rng
+      @signed = signed
       @uptime_s = 0
       @cifo_fill = 0
+      @flush_seq = 0
+      register_attestation_key! if signed
     end
 
     # Emit a single Queen Sentinel beacon.
@@ -136,6 +155,7 @@ module Hil
     # bin/forest_simulator, but with DID == 0 sentinel chunks.
     def dispatch_wire(stats)
       payload = encrypted_sentinel_payload(stats)
+      payload = signed_envelope(payload) if @signed
       url = "#{@coap_host}/telemetry/batch/#{@gateway.uid}"
       require "coap_client" unless defined?(CoapClient)
       CoapClient.put(url, payload, timeout: @coap_timeout)
@@ -189,6 +209,31 @@ module Hil
         0,                                    # TTL (local)
         "\x00\x00\x00\x00".b                  # 4-byte pad
       ].pack("N n c C n C C a4")
+    end
+
+    # Eagerly mint the simulator's Ed25519 identity and register its pubkey
+    # on the gateway's HardwareKey — the same slot the factory pipeline
+    # fills at provisioning (FactoryFlashing::Session). Eager so `run!`
+    # never performs a DB write mid-loop.
+    def register_attestation_key!
+      @attest_seed_hex = @rng.bytes(32).unpack1("H*")
+      pubkey_hex = Ed25519Crypto::SigningService.public_key_from_seed(@attest_seed_hex)
+      @gateway.hardware_key.update!(ed25519_public_key_hex: pubkey_hex)
+    end
+
+    # Wrap a legacy [IV][ct] flush in the QATT v1 envelope:
+    #   [ver:1][unix_ts:4 BE][flush_seq:4 BE][IV:16][ct:N×16][sig:64]
+    # signed over "SLKN-QATT1" ‖ uid_len ‖ uid ‖ <body>. The signature comes
+    # back as hex from SigningService — pack("H*") is load-bearing: appending
+    # the hex string instead would still leave bytesize ≡ 9 (mod 16), so the
+    # residue check alone would not catch that slip.
+    def signed_envelope(iv_ct)
+      @flush_seq += 1
+      body = [ QATT_VERSION_1, Time.current.to_i, @flush_seq ].pack("CNN") + iv_ct
+      uid = @gateway.uid.to_s
+      message = QATT_DOMAIN_TAG + [ uid.bytesize ].pack("C") + uid.b + body
+      sig_hex = Ed25519Crypto::SigningService.sign(@attest_seed_hex, message)
+      body + [ sig_hex ].pack("H*")
     end
 
     def next_cifo_fill(scenario)

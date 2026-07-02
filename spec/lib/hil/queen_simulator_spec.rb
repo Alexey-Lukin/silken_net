@@ -147,6 +147,93 @@ RSpec.describe Hil::QueenSimulator do
     end
   end
 
+  describe "#initialize (signed)" do
+    it "rejects signed: true with :direct mode" do
+      expect { described_class.new(gateway, mode: :direct, signed: true) }
+        .to raise_error(ArgumentError, /signed: true requires mode: :wire/)
+    end
+
+    it "eagerly registers the attestation pubkey on the gateway HardwareKey" do
+      expect { described_class.new(gateway, mode: :wire, signed: true) }
+        .to change { gateway.hardware_key.reload.ed25519_public_key_hex }.from(nil)
+    end
+
+    it "derives a deterministic keypair from the injected rng" do
+      described_class.new(gateway, mode: :wire, signed: true, rng: Random.new(11))
+      first = gateway.hardware_key.reload.ed25519_public_key_hex
+      described_class.new(gateway, mode: :wire, signed: true, rng: Random.new(11))
+      expect(gateway.hardware_key.reload.ed25519_public_key_hex).to eq(first)
+    end
+  end
+
+  describe "#tick (signed wire mode)" do
+    subject(:simulator) do
+      described_class.new(gateway, mode: :wire, signed: true, rng: Random.new(11))
+    end
+
+    before do
+      stub_const("CoapClient", Class.new do
+        def self.put(url, payload, **)
+          @calls ||= []
+          @calls << { url: url, payload: payload }
+          true
+        end
+
+        def self.calls
+          @calls ||= []
+        end
+      end)
+    end
+
+    it "emits an envelope with the signed-vs-legacy residue (≡ 9 mod 16)" do
+      simulator.tick(scenario: :healthy)
+      expect(CoapClient.calls.last[:payload].bytesize % 16).to eq(9)
+    end
+
+    it "builds a parseable v1 envelope whose signature verifies against the registered pubkey" do
+      simulator.tick(scenario: :healthy)
+      payload = CoapClient.calls.last[:payload]
+
+      version, unix_ts, flush_seq = payload.unpack("CNN")
+      signature = payload.byteslice(-64, 64)
+      body = payload.byteslice(0, payload.bytesize - 64)
+      message = "SLKN-QATT1" + [ gateway.uid.bytesize ].pack("C") + gateway.uid.b + body
+
+      expect(version).to eq(0x01)
+      expect(unix_ts).to be > 0
+      expect(flush_seq).to eq(1)
+      expect(
+        Ed25519Crypto::SigningService.verify(
+          gateway.hardware_key.reload.ed25519_public_key_hex,
+          signature.unpack1("H*"),
+          message
+        )
+      ).to be(true)
+    end
+
+    it "increments flush_seq once per dispatched envelope" do
+      simulator.tick(scenario: :healthy)
+      simulator.tick(scenario: :healthy)
+      seqs = CoapClient.calls.map { |c| c[:payload].unpack("CNN").last }
+      expect(seqs).to eq([ 1, 2 ])
+    end
+
+    it "still wraps a decryptable legacy [IV][ct] inside the envelope" do
+      simulator.tick(scenario: :brownout, voltage_mv: 3100)
+      payload = CoapClient.calls.last[:payload]
+      iv_ct = payload.byteslice(9, payload.bytesize - 9 - 64)
+
+      cipher = OpenSSL::Cipher.new("aes-256-cbc")
+      cipher.decrypt
+      cipher.key = gateway.hardware_key.binary_key
+      cipher.iv  = iv_ct[0, 16]
+      cipher.padding = 0
+      plain = cipher.update(iv_ct[16..]) + cipher.final
+
+      expect(plain[0, 21].unpack1("N")).to eq(0) # sentinel DID inside the envelope
+    end
+  end
+
   describe "#run!" do
     subject(:simulator) { described_class.new(gateway, mode: :direct, rng: Random.new(1)) }
 
