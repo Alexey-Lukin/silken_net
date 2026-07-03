@@ -58,6 +58,20 @@
 - **Hardware-гейт** (TRL 4→6, повний анкер — після coin): `HW.1` (анкер-генерація — CAD machine-half ✅, фіз-друк → завод) · `HW.24` (staged validation SLA→coin→anchor→100) · `HW.23` (HIP postprocess) · `HW.31` (BOM Королеви)
 - **Academic:** `UNI.1` (лаб + публікації) · `UNI.14` (MSA / B2B legal)
 
+### ⛓️ Гейт-кластери — одна дія відкриває кластер (міжсекційна синергія)
+
+> Друга вісь зрізу (доповнює мілстоун-рядки ↑): **сім «ключів»** — вузьких дій/подій, на які трекер сходиться across секції (звірено item-by-item 2026-07-03, §03a/§03b/§04/§05/§06). Тонкі ID-вказівники; деталь у пунктах.
+
+| 🔑 Ключ (WHO) | Відкриває (кластер) |
+|---|---|
+| **FW.46 board-freeze** `.ioc` (👤) | повний `.elf` → увесь bench-день: `FW.2`-фліп · `FW.3/8/17/20/23/31/49/50/52/54/55` · `ARCH.26/41` · `SEC.2`-OTA-verify · `SEC.15`-WUT · `SEC.3`-SWD · `ARCH.35`-розводка; суміжно `ARCH.34`-firmware (той самий middleware-клас) |
+| **Перший live-деплой** = секрети (`S1.1`+`INF.19`+`S4.3`) → deploy (👤) | верифікації `INF.11/12/13/14/15/16` · `PUMA-IPV6-1` · `INF.10`-фліп · `S5.2` · `S3.2`-staging · `S6.1`-Upstash · Grafana-сесія (`S2.1→S2.2→S2.3` + `S2.4`-SLO + `FW.18b` + `ARCH.54`-alert) |
+| **INF.4 TLS-рішення** (👤, рекоменд. A) | `INF.3` TLS · `S6.18` `RAILS_ALLOWED_HOSTS` (публічний домен) |
+| **SE051 eval-пара** замовлення (👤) | `SE050-MIGRATION` silicon-confirm + rename-каскад · `SEC.3` Гілка-B real-I²C |
+| **E.20 ForestBountyService** (🤖 за founder-go) | `E.41` satellite-obscured fallback · `S6.10` task-assignment · `BIZ.13` Модель-B operator-bond · `INS.1` drought/pest Trigger-2-джерело |
+| **E.63 bench-шкала** = `HW.13` P-V + recharge-крива (👤) | `E.63`-калібрування + строгість-фліп · `FW.49`-S2 · `E.64` real-signal пороги (wire-rev2.1 носій уже готовий) |
+| **Downlink-wire-ревізія** MAC/FC (🤖+👤 дизайн, пост-CCM) | `FW.17`-активація (гейти i/ii) · `ARCH.43` wire-rev3 mesh-return (з `ARCH.26`-фліпом) |
+
 ## §00 · Process / IaC / SSOT-tooling
 
 > Process-automation, Projects-V2/IaC та SSOT-tooling — канон `00_04`/`00_05`. P0-гейти — у 🚦 Critical Path.
