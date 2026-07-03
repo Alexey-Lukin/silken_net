@@ -17,7 +17,7 @@ points, it does not restate (so it can't drift). Verify a fact at its home befor
 | `docs/03_02_Queen_Gateway_Firmware.md` | Queen: LoRa RX → CIFO dedup → CoAP flush, OTA broadcast, AES mode transitions |
 | `docs/03_03_TinyML_Acoustic_Inference.md` | Audio DMA, CMSIS-NN, decision logic, confidence thresholds (DR13/DR14) |
 | `docs/03_04_mruby_Lorenz_Attractor.md` | Lorenz constants (§4.1), Float-not-BigDecimal parity, RTC continuation vs cold-start (§2.1), Status-byte packing |
-| `docs/03_05_Hardware_Symmetric_Crypto_and_Security.md` | AES modes, key rotation (FW.17), SE050 secure element (SEC.6; ATECC608B = banner-legacy pattern), IV, QATT wire (§2.2), PQC roadmap |
+| `docs/03_05_Hardware_Symmetric_Crypto_and_Security.md` | AES modes, key rotation (FW.17), SE05x secure element (baseline SE051C2; SEC.6 + SEC.14 provisioning-only — KEYL stays in Protected Flash; ATECC608B = banner-legacy pattern), IV, QATT wire (§2.2), PQC roadmap |
 | `docs/03_06_Factory_Flashing_and_Key_Provisioning.md` | Factory home (split from 03_05 §3.4): HKDF per-device derivation, K_seed, K_ota (FW.23 §4), flashing pipeline + ops-security (SEC.3 §5) |
 | `docs/00_07_Action_Plan_Tracker.md` | FW.*/SEC.* task status, open items (canonical home of blockers) |
 

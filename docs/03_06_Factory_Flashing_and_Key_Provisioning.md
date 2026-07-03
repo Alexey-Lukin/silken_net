@@ -38,7 +38,7 @@
 
 ## 1. Стратегія Масового Виробництва (Factory Flashing Pipeline)
 
-При переході від прототипу до партії 10 000+ вузлів конвеєр на заводі виглядає так. **Дві альтернативні гілки:** (A) ключ у protected Flash sector STM32 (TRL 6/7, mass production до ~10k unit), (B) ключ у Secure Element ATECC608B/STSAFE-A110 (mass production > 10k або high-value urban deployments — див. 03_05 §3.7 для повної оцінки SE).
+При переході від прототипу до партії 10 000+ вузлів конвеєр на заводі виглядає так. **Дві гілки:** (A) ключі у protected Flash sector STM32 (TRL 6/7, baseline), (B) = A + Secure Element SE05x, baseline SE051C2 (mass production > 10k / high-value urban — оцінка SE у 03_05 §3.7). **Post-SEC.14 (provisioning-only, 2026-07-03):** LoRa-ключ KEYL живе у Protected Flash в **обох** гілках; SE у Гілці B додає лише ідентичність/provisioning (Ed25519 «голос дерева», cert, anti-clone serial) — «Гілка A + identity-chip», graceful degradation (мертвий SE ≠ мертва телеметрія).
 
 ### Гілка A — Protected Flash Sector (TRL 6/7, baseline)
 
@@ -68,7 +68,7 @@
      Нанести лак → Пакет → Ліс (shipping-mode ✂️ не потрібен — 03_05 §3.5)
 ```
 
-### Гілка B — ATECC608B / STSAFE-A110 Secure Element (mass production > 10k, SEC.6)
+### Гілка B — Secure Element SE05x, baseline SE051C2 (mass production > 10k, SEC.6; скетч нижче = legacy ATECC-патерн)
 
 ```
 [Завод]
@@ -89,12 +89,14 @@
        - ECC keypair + X.509 device cert (peaq DID signing, ARCH.27 evolution)
      Жоден ключ не летить мережею — усе входить у ATCA-транскрипт (AteccProvisioner)
 
-  4. STM32 → ATECC608B: write keys per slot mapping (cross-ref 03_05 §3.7):
-     atcab_write_zone(SLOT 0, aes_key,  32B)    # AES LoRa session key
-     atcab_write_zone(SLOT 1, ecc_priv, 32B)    # ECC P-256 private (peaq DID signing)
+  4. STM32 → SE: write keys per slot mapping (legacy ATECC-скетч; cross-ref 03_05 §3.7):
+     # SLOT 0 (AES LoRa) — ✂️ НЕ пишеться post-SEC.14 (provisioning-only):
+     #   KEYL → Protected Flash як у Гілці A; slot reserved (urban-варіант)
+     atcab_write_zone(SLOT 1, ecc_priv, 32B)    # Ed25519 private (голос дерева; SE05x → on-chip keygen)
      atcab_write_zone(SLOT 2, cert_der, 64B)    # X.509 device cert
      atcab_write_zone(SLOT 3, ota_hmac, 32B)    # FW.23 OTA image HMAC verification
-     # Slot 4..15 — reserved for key rotation (FW.17 Hash Ratchet KDF)
+     # Slot 4..15 — reserved (legacy ATECC-нумерація; SE05x = object-model, не slots;
+     #   FW.17-ратчет ротує session на MCU — 03_05 §3.8, НЕ в SE)
 
   5. Lock (irreversible на ASIC рівні):
      atcab_lock_config_zone()    # Config (slot policies) → permanent
@@ -120,7 +122,7 @@
 
 **Latency impact (Гілка B vs A):** ATECC608B AES-ECB ~1.5 мс/блок vs MCU HAL_CRYP ~10 µs. Для одного 16/30-байтного LoRa пакета — нехтовно. Для CBC batch 50 × 16 байт = 800 байт — додаткові ~75 мс на flush (CoAP flush триває кілька секунд у будь-якому разі).
 
-**Power impact (Гілка B):** ATECC active ~69 мкДж/пакет → ≈0.2% active-циклу Soldier (точні числа — 03_05 §3.7, дзеркало SSOT там). ⚠️ Sleep 150 нА always-on **з'їдає весь запас Сценарію C** → SE обов'язково за load-switch гейтом (розрахунок і вимога — 03_05 §3.7). Енергія active **мала, але не вирішальна**: чи робить SE AES щопакета, чи лише provisioning (а streaming AES — на вбудованому radio-AES STM32) — окрема вісь компромісу (tamper-resistance LoRa-ключа ⟷ latency/ідіом), повний розбір — 03_05 §3.7 (SEC.14).
+**Power impact (Гілка B):** ATECC active ~69 мкДж/пакет → ≈0.2% active-циклу Soldier (точні числа — 03_05 §3.7, дзеркало SSOT там). ⚠️ Sleep 150 нА always-on **з'їдає весь запас Сценарію C** → SE обов'язково за load-switch гейтом (розрахунок і вимога — 03_05 §3.7). Енергія active **мала, але не вирішальна**; сама вісь «SE AES щопакета vs лише provisioning» — **ВИРІШЕНО (SEC.14, 2026-07-03): provisioning-only**, streaming AES = вбудований radio-AES STM32; розбір осей і наслідки — 03_05 §3.7 (Статус).
 
 **Cost impact (Гілка B):** +$0.60/unit (ATECC608B 10k MOQ) або +$0.85/unit (STSAFE-A110). Cross-ref [`07_02`](07_02_Unit_Economics_and_BOM) unit economics.
 
@@ -430,7 +432,7 @@ STM32CubeProgrammer → Option Bytes → Write Protection:
 | Output key size | **128 bits (16 bytes)** — ARCH.42 | 256 bits (32 bytes) | LoRa: AES-128 (свідомий вибір, **не** SE-constraint — SE050 вміє 256, 03_05 §3.7); CoAP: AES-256 (Queen Flash, no SE constraint) |
 | Info string | `"silken-aes-128-lora-key"` (session) · `"silken-aes-128-broadcast-key"` (KEYB cluster, salt=`"cluster:<id>"` — FW.2 (в)) | `"silken-aes-256-device-key"` | Domain separation — усі KDF outputs ortho (вкл. `"silken-ota-hmac-v1"` §4) |
 | Master key storage | Rails Vault (AR Encryption) + HSM у production | Same | Never in-repo |
-| Device key storage | Protected Flash (LoRa magic `"KEYL"`) → SE050 Slot 0 (Гілка B, 03_05 §3.7) | Protected Flash (CoAP magic `"KEYC"`) — Queen MCU only | Фізичний захист; AES-128 на LoRa — свідомий вибір, не SE-constraint (ADR 03_05 §3.7); CoAP-key лишається у MCU Flash (канал не через SE) |
+| Device key storage | Protected Flash (LoRa magic `"KEYL"`) — **обидві гілки** (SEC.14 provisioning-only; SE Slot 0 reserved для urban-варіанту — 03_05 §3.7) | Protected Flash (CoAP magic `"KEYC"`) — Queen MCU only | Фізичний захист; AES-128 на LoRa — свідомий вибір, не SE-constraint (ADR 03_05 §3.7); CoAP-key лишається у MCU Flash (канал не через SE) |
 | Backup/rotate | Session: dual-key grace period (HardwareKey#previous_aes_key_hex — закривається неявним uplink-ACK). **KEYB: re-provision only** — grace незастосовний (broadcast-ключ не має власного uplink'а для ACK; клас K_ota) | Same (grace) | Zero-downtime rotation (session); cluster-ключі ротуються фізичним re-flash 125-ї сторінки |
 | Post-quantum margin | $2^{128}$ (post-Grover ≈ $2^{64}$ — захищається ratchet `[FW.17]` + PQC bridge 03_05 §10) | $2^{256}$ (post-Grover ≈ $2^{128}$ — абсолютний квантовий імунітет) | Чому CoAP залишається 256: інфраструктурне TLS-termination через Cloudflare X25519+Kyber вже доступне (post-quantum hybrid) |
 

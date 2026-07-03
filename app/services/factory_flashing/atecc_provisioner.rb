@@ -12,8 +12,10 @@
 # Гілка B writes per-device keys into the Secure Element via I²C instead of STM32
 # Protected Flash. Slot map (canonical SSOT — docs/03_05 §3.7):
 #
-#   Slot 0 → AES-128 LoRa session key   (16B)
-#   Slot 1 → Ed25519 private key        (32B, tree-voice L2 + peaq/Solana; SE050 on-chip keygen)
+#   Slot 0 → AES-128 LoRa session key   (16B) ⚠️ SEC.14 provisioning-only (2026-07-03):
+#            KEYL stays in Protected Flash on BOTH branches (Slot 0 = reserved, urban
+#            variant only) — drop this write in the bundled SE05x rewrite
+#   Slot 1 → Ed25519 private key        (32B, tree-voice L2 + peaq/Solana; SE05x on-chip keygen)
 #   Slot 2 → X.509 device certificate   (≤64B, DER)
 #   Slot 3 → HMAC-SHA256 OTA verify key (32B, K_ota — FW.23)
 #

@@ -883,9 +883,9 @@ STM32_Programmer_CLI -c port=SWD -ob RDP=0xCC
 
 ---
 
-### 3.7 Secure Element — NXP EdgeLock SE050 (ARCH.42 + SEC.6 + true-DePIN)
+### 3.7 Secure Element — NXP EdgeLock SE05x, baseline SE051C2 (ARCH.42 + SEC.6 + true-DePIN)
 
-**Cross-ref:** [`00_07` — SEC.6](00_07_Action_Plan_Tracker), [`00_07` — ARCH.42](00_07_Action_Plan_Tracker), [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker) — **SE = SE050 (RESOLVED 2026-06-07)**, §3.2 «Secure Element після ARCH.42».
+**Cross-ref:** [`00_07` — SEC.6](00_07_Action_Plan_Tracker), [`00_07` — ARCH.42](00_07_Action_Plan_Tracker), [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker) — **SE = SE05x (SEC.6 RESOLVED 2026-06-07; baseline SE051C2 — founder 2026-07-02)**, §3.2 «Secure Element після ARCH.42».
 
 > ✅ **SE = NXP EdgeLock SE050 (SEC.6 RESOLVED 2026-06-07; supersedes the 2026-05-23 ATECC608B pick):** коли SilkenNet зобов'язався дати деревам **власний криптографічний голос** (true-DePIN: дерево підписує свої дані ключем, що не покидає кремній і якого не підробить навіть оператор), SE-частина мусила вміти **non-extractable Ed25519** (крива peaq/Solana). **ATECC608B (P-256 only) цього не вміє** → SE = **SE050** (Ed25519/EdDSA + AES-128/256 + monotonic counters + secure storage — суперсет ATECC). Trust-напрям + ladder — у SEC.6 ADR нижче.
 >
@@ -1017,7 +1017,15 @@ atca_status_t status = atcab_aes_encrypt(
 
 **FW.2-CCM зміщує дефолт ще далі в бік provisioning-only:** trade-off вище зважено в ECB-рамці (`atcab_aes_encrypt`, ~1.5 мс/блок). FW.2 переводить inline-шлях на **AES-128-CCM** (`CRYP_AES_CCM`) — режим, для якого radio-AES SoC і створений (один inline-прохід, апаратний). Ганяти кожен CCM-кадр через I²C у SE per-packet — **важче** за ECB-число вище (CCM = encrypt + CBC-MAC, два проходи + nonce/MIC-менеджмент через шину). **Datasheet-verify 2026-07-02 радикалізує це до факту: SE050 ВЗАГАЛІ НЕ МАЄ CCM/GCM on-chip** (DS Rev 3.3 Table 2 «AES Modes: CBC, ECB, CTR») — per-packet FW.2-CCM через SE050 = не «повільніший виклик», а **композиція кількох APDU** (CTR-encrypt + CMAC) власноруч. Тобто прихід CCM не просто лишає built-in AES ідіоматичним, а **підсилює** provisioning-only-дефолт уже не смаком, а апаратним фактом; per-packet SE лишається опцією лише для urban/high-value threat-model (і там чесніше дивитись на **SE051** — applet 7.x має CCM/GCM on-chip).
 
-**Статус:** SEC.6 (чи заводити SE + який) → **RESOLVED 2026-06-07: SE = SE050, soft-freeze + true-DePIN ladder (ADR угорі §3.7)**. SEC.14 (роль *per-packet* vs *provisioning-only*) лишається **відкритим** — обидва шляхи сумісні з ARCH.42 (AES-128 — тепер вибір, не SE-constraint: SE050 вміє 128/256); вибір при bench eval, з **явним** вибором осі. Cross-ref [`00_07` — SEC.6](00_07_Action_Plan_Tracker), [`00_07` — SEC.14](00_07_Action_Plan_Tracker), [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker).
+**Статус:** SEC.6 (чи заводити SE + який) → **RESOLVED 2026-06-07: SE = SE05x, soft-freeze + true-DePIN ladder (ADR угорі §3.7; baseline SE051C2 — callout 2026-07-02)**. SEC.14 (роль *per-packet* vs *provisioning-only*) → **RESOLVED 2026-07-03 (founder): provisioning-only = design-default** для forest-baseline. Вирішальні осі — СЕ-агностичні (тримаються і з CCM-on-chip SE051, коли APDU-композиційний аргумент розчинився):
+
+1. **Load-switch-інверсія** (Power impact вище): per-packet = cold-boot SE щоциклу, а cold-boot заряд датащитом **не специфікований** — незв'язаний невідомий на найтугішому бюджеті системи; provisioning-only тримає SE знеструмленим у steady-state.
+2. **FW.17-ратчет** рахує K_{v+1} на MCU (§3.8 freeze-contract, golden-KAT обабіч) → session-ключ **MCU-резидентний за дизайном**; per-packet вимагав би переносити ратчет у SE05x або ключ однаково транзитить I²C.
+3. **Двоключова модель FW.2 (в)** (§3.1) уже обмежила blast-radius: KEYL per-device HKDF → злам 1 вузла ≠ мережа.
+4. **Латентність/ідіом:** inline radio-AES ~10 µs vs мс-клас T1oI2C APDU-раунд (MCU awake увесь раунд) на вузлі, що спить 99%+ часу.
+5. **L2-форма:** SE = орган **ідентичності** (рідкісні Ed25519-підписи: тижневий Merkle-корінь, provisioning, атестація), CRYP = орган потокової симетрики.
+
+**Наслідки рішення:** KEYL лишається у Protected Flash в **обох** фабричних гілках ([`03_06 §1`](03_06_Factory_Flashing_and_Key_Provisioning) — Гілка B стає «Гілка A + identity-chip»; graceful degradation: мертвий SE ≠ мертва телеметрія); SE Slot 0 (AES) = **reserved**, populate лише в задокументованому **urban/high-value варіанті** (per-packet; з SE051-baseline CCM on-chip він нативний); ARCH.42-формула «AES-128-ключ у Slot 0» щодо LoRa session-ключа **superseded** цим рішенням (сам вибір AES-128 — стоїть). Eval-residual звузився з «обрати роль» до **silicon-confirm** чисел обраної ролі (cold-boot заряд, T1oI2C латентності) → SE050-MIGRATION. Cross-ref [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker) (SEC.14 — §🗄️ архів).
 
 **Розглянуті SE-чипи (історичне порівняння; SE050 обрано — true-DePIN, ADR угорі §3.7):**
 
@@ -1074,10 +1082,10 @@ atca_status_t status = atcab_aes_encrypt(
 - [ ] 🤖 SE050 footprint + I²C placement у KiCad floorplan (soft-freeze DNP — ADR угорі §3.7) → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker)
 - [x] 🤖 (SEC.14) Перефреймувати latency/power → чесний trade-off «per-packet AES vs provisioning-only» — ✅ Виконано (підрозділ вище): енерго-аргумент перевірено = малий, але не вирішальний; справжня вісь = tamper-resistance LoRa-ключа ⟷ latency/ідіом; role-split альтернатива подана
 - [x] 🤖 (SEC.14, 2026-06-12) Cross-check проти Сценарію C ([`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power)) — точні %: active ≈0.3% TX / ≈0.2% циклу / ≈3% годинного запасу (підтверджує «малий»); **знахідка-інверсія**: always-on sleep 150 нА ≈ 3.6 мДж/год > запас Сценарію C → **load-switch гейт SE обов'язковий** (Power impact вище; стосується обох ролей)
-- [ ] 👤/🤖 (SEC.14) Обрати роль SE — per-packet SE050 AES (Варіант B) vs built-in AES + SE050 provisioning-only — за віссю trade-off вище, при bench eval + BOM freeze (не за замовчуванням)
+- [x] 👤 (SEC.14) Роль SE обрано — ✅ RESOLVED 2026-07-03: **provisioning-only** design-default (Статус вище); eval-residual = silicon-confirm чисел → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker)
 - [x] 🤖 Update 03_06 §1 Factory Flashing pipeline з SE-варіантом — ✅ Виконано: 03_06 §1 розділено на Гілку A (Protected Flash, TRL 6/7) та Гілку B (ATECC608B/STSAFE-A110, mass production > 10k); додано двошаровий defense-in-depth (data zone lock + RDP), latency/power/cost impact, criteria для вибору гілки, та irreversibility note (B → A неможливо)
 - [ ] 🤖 Інтеграція з Backend `Provisioning::HardwareKeyService` (генерація ECC keypair + cert)
-- [ ] 🤖 Firmware HAL: drop-in replacement `Crypto_AES_Encrypt_Block()` що внутрішньо викликає SE050 або HAL_CRYP залежно від `#define USE_SECURE_ELEMENT` (gated SEC.14 role + eval-kit)
+- [ ] 🤖 (лише якщо колись обрано urban/high-value варіант) drop-in `Crypto_AES_Encrypt_Block()` SE-шлях за `#define USE_SECURE_ELEMENT` — **N/A для forest-baseline** (SEC.14 provisioning-only: LoRa AES = HAL_CRYP завжди)
 - [ ] 👤 Замовити eval-пару: **SE051-кіт** (звірити офіційний OM-SE051ARD; fallback = Mikroe SE051 Plug&Trust Click) + **OM-SE050ARD-E** companion для порівняльного bench (**НЕ** -F — FIPS-режим без Ed25519) — baseline-рішення й обґрунтування в datasheet-verify таблиці вище → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker)
 - [ ] 👤 Прийняти final BOM рішення перед першим mass production batch (>1000 unit)
 
