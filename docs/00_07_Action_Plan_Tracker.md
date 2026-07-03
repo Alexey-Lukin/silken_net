@@ -53,7 +53,7 @@
 > Крос-модульний зріз **P0-блокерів** перед ключовими мілстоунами (тонкі ID-вказівники; повний опис кожного — у §модулі, **one place**). P1/P2 — у §модулях (DOC-T.24 виносить пріоритет нагору в секціях). 🤖-роботи — у 🔀 `DOC-T`.
 
 - **Перед польовим деплоєм** (life-safety + security): `SEC.9` · `SEC.3` · `SEC.1` · `FW.2`-фліп (ухвала (а): CCM-cutover ДО першого field-deploy — rollback до поля = хвилини, після = SWD-візити)
-- **Перед Web3 mainnet:** `S1.1` (GitHub CI secrets) · prod deploy-ENV → [`06_04`](06_04_Secrets_Checklist) (вкл. `SOLANA_RPC_URL` — інакше USDC на Devnet; guard ✅ E.47) · `S2.1`+`S2.2`+`S2.3` (Grafana після першого `/metrics`)
+- **Перед Web3 mainnet:** `S1.1` (GitHub CI secrets) · prod deploy-ENV → [`06_04`](06_04_Secrets_Checklist) (вкл. `SOLANA_RPC_URL` — інакше USDC на Devnet; guard ✅ E.47) · `S2.1`+`S2.2`+`S2.3` (Grafana після першого `/metrics`) · `E.32` (paid manual audit — HARD) · `SLASH-1` (розширення A-сету + uplift-фліп) · `BIZ.4` (Governor/Timelock активація + transfer admin) · `S3.5` (subgraph cutover)
 - **Найближчий фіз-мілстоун — TRL 3→4 = Ti-coin in-vitro** (founder 2026-06-21; гроші є → блок не фінанси): вузький шлях, що **ОБХОДИТЬ** гіроїд/PEEK/press-fit/mate — `HW.24` Stage 2 (**6-alloy coin bake-off** Ø16 → EAAE → Gen 2.0 функціоналізація → CV/EIS у соку) + `HW.5` (хімія-стек) + V-release ICP-MS (`HW.3`). Канал = **гібрид commercial-lab + ЧНУ** (не чекати MoU). Канон [`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
 - **Hardware-гейт** (TRL 4→6, повний анкер — після coin): `HW.1` (анкер-генерація — CAD machine-half ✅, фіз-друк → завод) · `HW.24` (staged validation SLA→coin→anchor→100) · `HW.23` (HIP postprocess) · `HW.31` (BOM Королеви)
 - **Academic:** `UNI.1` (лаб + публікації) · `UNI.14` (MSA / B2B legal)
@@ -754,7 +754,7 @@
 - [ ] 👤 CertiK Skynet runtime monitoring — post-mainnet deploy
 
 #### INS.1 — Parametric insurance oracle: dead pipeline + no-data under-pay
-- **P2** · 🤖+👤 · 🟡 · → [`05_05 §4`](05_05_Slashing_and_Risk_Policy)
+- **P2** · 🤖+👤 · 🟢 · → [`05_05 §4`](05_05_Slashing_and_Risk_Policy)
 - **Стан:** Dual-trigger oracle **SHIPPED** (minimal, INERT за kill-switch `:parametric_insurance_oracle_enabled` default off — `f6deb5ad`) — мертву `evaluate_daily_health!` (0 prod-callerів) оживлено: AI = Trigger-1 (`arm_candidate!` → `:triggered` + `field_audit`, **НЕ** payout), settlement лише за НЕЗАЛЕЖНИМ Trigger-2 (dClimate verified / Field-Audit) через `InsurancePayoutWorker#awaiting_independent_confirmation?` — закриває basis-risk/moral-hazard; no-data guard (`escalate_no_data_field_audit!` замість тихого 0 — «не карати жертву»); fire-шлях + integration-тест landed. + `DailyHealthRouter` (DRY) + `field_audit`/gap-D + insurance SLO. Філософія «почути дерева, без людського фрауду» (`00_01 §1/§2/§6`; North-Star = forest-collective `00_08 §1`). **[peril-honest routing SHIPPED]** verify-by-data (deep-audit) переписав drought-задачу: хибний-slash УЖЕ закритий SLASH-1 Cat-A гейтом; справжня діра — **Potemkin-peril** (Cosmic Eye обіцяв 3 перили, fire-FIRMS-двигун верифікує 1). `Dclimate::VerificationService` адьюдикує ЛИШЕ fire; не-пожежа (посуха/шкідник) → `escalate_non_fire_to_field_audit!` (`:inconclusive`/Field-Audit, НІКОЛИ `rejected_fraud`/slash; +insect у `requires_satellite_consensus?`/`awaiting_independent_confirmation?`) → прибрано «тавро жертви фраудом» + canon-drift (неіснуючий `dClimate.drought_index` у `05_05 §2/§4`). Дзеркало SLASH-1/E.63. `trigger_event` НЕ мертвий (= застрахований перил при створенні полісу — фабрика/`:drought` трейт; «оживлення» відкинуто verify-by-data як non-problem). 🔗 Зшито: **E.41** (satellite-obscured fire = той самий Field-Audit-клас) · **E.20/E.34** (`ForestBountyService` дрон-fallback) · **UNI.12** (Field-Audit SOP + ДСНС-API) · **S3.2** (real-API gate). Дім [`05_05 §4`](05_05_Slashing_and_Risk_Policy) (+ [`04_02 §6`](04_02_Business_Logic_and_Services) · [`07_01 §7`](07_01_Nature_as_a_Service_Contracts) · `04_01` · [`06_03 §2.8`](06_03_Prometheus_Observability) · [`05_06`](05_06_Governance_and_DAO)). Відкрите ↓.
 - [ ] 🤖 (deferred, 👤-API-gated) **реальний** drought/pest Trigger-2-оракул — misroute уже закрито (peril-honest routing ↑); лишається ДЖЕРЕЛО verified-підтвердження: dClimate `drought_index`/soil-moisture (S3.2) / ДСНС-API (UNI.12) / `ForestBountyService` дрон (E.20/E.34) + acoustic-pest; чистий armed-vs-confirmed payout-gate. North-Star = голос самого лісу (sap/VPD/acoustic [`05_05 §7`](05_05_Slashing_and_Risk_Policy); forest-collective [`00_08 §1`](00_08_Beyond_TRL9_Planetary_Roadmap))
 - [ ] 🤖 (deferred, gated) Auto-Immune Sentinel hook ([`00_08 §1.4`](00_08_Beyond_TRL9_Planetary_Roadmap) Gap #4): proactive cluster-fingerprint + decoy-DID tripwire (+ Merkle inclusion-witness ARCH.12/E.60 як крипто-доказ включення запису) як джерела незалежного підтвердження, коли money-path live + cap зросте
@@ -805,16 +805,15 @@
 - [ ] 🤖 A9 Chainlink double-request intent-marker — КОЛИ PATH 1 замкнено (зараз latent: LINK-only, replay-capped)
 
 #### ARCH.52 — Money-path scale-death @ 100B дерев: queue-starvation + partition-scan hot-paths
-- **P2** · 🤖+👤 · 🟡 · → [`05_02`](05_02_Proof_of_Growth_Pipeline)
+- **P2** · 🤖+👤 · 🟢 · → [`05_02`](05_02_Proof_of_Growth_Pipeline)
 - **Стан:** Code-half SHIPPED (2026-06-28); живий 👤-residual = deploy-flip (НЕ горить — TRL-3). Канон scale-hardening → [`06_08 §2.5`](06_08_Resilience_and_Failover_Policy)/[`§2.6`](06_08_Resilience_and_Failover_Policy). **(1) Queue-starvation** канонізовано як deploy-рішення [`06_08 §2.5`](06_08_Resilience_and_Failover_Policy): виділений money-path Sidekiq-процес поза uplink-strict-ланцюгом (strict ізолює лише В МЕЖАХ процесу — money-черги нижче за `uplink`-firehose голодують; weighted-черги відкинуто) + sidekiq.yml коментар-фікс. **(2) Partition-scan hot-paths** — `BlockchainConfirmationWorker` `created_at_iso` lower-bound (7 enqueue, дзеркало ARCH.50) + partial index `index_blockchain_transactions_in_flight` для pending-discovery; scope + свідомі skip'и (#3 PK-served, #4/#5 unprunable all-time aggregates, чому partial-index-а-не-created_at-вікно для reset-to-pending) → [`06_08 §2.6`](06_08_Resilience_and_Failover_Policy). [ARCH.12] майбутній weekly Merkle = ще один partition-scan hot-path (ієрархічний обов'язковий).
 - [ ] 👤 deploy-flip на виділений money-path процес — КОЛИ uplink-firehose / mint-SLO breach (не зараз; TRL-3)
 - [ ] 🤖 (NICE, scale-time) bench: EXPLAIN partition-elimination на hot-path запитах (потребує даних — RUNBOOK)
 
 #### ARCH.12 — Merkle Tree state-root (partial verification / ISO 14064 / L2 device-voice foundation)
-- **P2** · 🤖+👤 · 🟡 · → [`05_04`](05_04_Ethereum_L1_State_Anchor)
+- **P2** · 🤖+👤 · 🔗 · → [`05_04`](05_04_Ethereum_L1_State_Anchor)
 - **Стан:** Підвищено з backlog-рядка (deep-audit 2026-06-28). **Дві осі, не три задачі:** ARCH.12 (структура кореня) + [E.60] follow-on — обидва будують Merkle над per-record телеметрія-листям; спільний відсутній блок = Ruby `MerkleTree` primitive. Реальний сенс — носій **true-DePIN L2 «голос дерева»** ([`05_02`](05_02_Proof_of_Growth_Pipeline) trust-origin ladder + SE050-MIGRATION): 21-Б LoRa-кадр не вміщає Ed25519-підпис → періодичний Merkle-корінь амортизує підпис на багато записів. **4 рішення (founder-схвалено, Фаза 0 канонізовано):** (1) E.60 `archive_root` (Polygon) ‖ `state_root` (Eth L1) = **паралельні** якорі, спільний примітив; (2) **leaf=Z** (не λ — Beyond-TRL-9); (3) **hash=sha256** (+keccak upgrade-path); (4) примітив **ієрархічний** (cluster-subtree→root, мапиться L1/L2/L3). aggregate-хеш = `leaves[0]` → контракт `storeStateRoot(bytes32)` НЕ міняється. **Vacuity-чесність:** prod-споживача inclusion-proof немає (API/UI/subgraph/ISO-звіт — нуль; навіть E.60 `VerificationService` 0 prod-callerів) → примітив будувати з ПЕРШИМ споживачем, не раніше. Канон [`05_04`](05_04_Ethereum_L1_State_Anchor) §Merkle (drift-fix: `TelemetryLog.chain_hash` не існує) + leaf One-Home [`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline) + L2 clawback [`05_05 §3.3`](05_05_Slashing_and_Risk_Policy). Cross-ref: E.60, ARCH.13 (окрема транспорт-вісь), SE050-MIGRATION (L2 device-voice), ARCH.52 (scale).
-- [ ] 🤖 Фаза 1 (з першим споживачем): `MerkleTree` primitive (sha256, RFC-6962 domain-sep, ієрархічний, golden-vector) + застосування до L1 state-anchor та E.60 `archive_root`
-- [ ] 🤖 озброїти dead E.60 `VerificationService` (cron / on-read verify; зараз 0 prod-callerів — guard не перевіряє намінтоване)
+- [ ] 🤖 Фаза 1 (з першим споживачем): `MerkleTree` primitive (sha256, RFC-6962 domain-sep, ієрархічний, golden-vector) + застосування до L1 state-anchor та E.60 `archive_root` (озброєння dead `VerificationService` — дім E.60)
 
 #### ARCH.13 — EigenLayer AVS як дешевша L1-anchor альтернатива
 - **P3** · 🤖 · 🌿 · → `05_04`
@@ -845,6 +844,17 @@
 - **Стан:** alert rules IaC готові (`deploy/grafana/alerts/silkennet-alerts.yaml`, P0/P1/P2; зведення `deploy/grafana/README.md`) + counter `silkennet_telemetry_acoustic_overflow_total`.
 - [ ] 👤 замінити `${DATASOURCE_UID}` + notification channel (Email/PagerDuty)
 
+#### INF.16 — Production multi-DB connection (database.yml component style)
+- **P0** · 👤 · 🟢 · → `06_01`, `06_04`
+- **Стан:** Machine-half ✅ — **корінь first-deploy fail.** Production `database.yml` давав host+creds лише `primary` (Rails ллє `DATABASE_URL` тільки в primary); `cache`/`queue`/`cable` лишались без host і пароля → `db:prepare` падав на першому web-boot, Solid Cache/Cable не конектились. Fix = Rails-8 component style: `POSTGRES_HOST/USER/PASSWORD` у `&default` (як dev/test), 4 бази ділять creds, override лише `database:`. Deploy мігровано `DATABASE_URL`→`POSTGRES_*` (Kamal env.secret/clear + `.kamal/secrets` + Akash web/job + `.tpl` + terraform akash + CI workflows). Canopy ізоляція через `POSTGRES_DATABASE=silken_net_canopy` (той самий інстанс). `terraform fmt` clean; config-resolve verified (prod + canopy набори). Канон `config/database.yml` + `06_04`.
+- [ ] 👤 terraform provision canopy-баз (`silken_net_canopy` + `_cache`/`_queue`/`_cable` на тому ж Cloud SQL інстансі) — `database.tf` наразі створює лише production-набір
+- [ ] 👤 верифікувати `db:prepare` проходить усі 4 бази на першому деплої
+
+#### INF.19 — CI Kamal secret-starvation (env-mapping) + KREDIS/POSTGRES drift [B1/H2]
+- **P0** · 👤 · 🟢 · → `06_04 §1`
+- **Стан:** Machine-half ✅ (commit `c3ed3019` + canon `06_04 §1.4`) — **корінь, чому перший deploy ніколи не виживав** (pre-deploy consistency audit, 8-agent). Обидва deploy-workflow передавали в `kamal deploy` лише 5 із 24 секретів; `.kamal/secrets` читає всі 24 з shell-ENV → решта інжектились порожніми → boot-crash (`RAILS_MASTER_KEY` decrypt / `PROVISIONING_MASTER_KEY` guard / oracle KeyError) або web3-strict raise. `verify-secrets` перевіряв лише 1-2 → зелений CI над зламаним деплоєм (без секретів `configured=false` → skip → шлях ніколи не біг live, тож діра не спливала). Fix: повний env-mapping в обидва workflow + `verify-secrets` гейтить повний boot-critical набір (fail-loud prod / skip-clean canopy) + warn на lazy. Супутнє: `KREDIS_REDIS_URL` виведено з усіх deploy-surface (auto-derive DB 1 з `REDIS_URL`); `RAILS_MASTER_KEY` ENV-first; H2 — Akash explicit `POSTGRES_DATABASE`. Канон `06_04 §1.4` + drift-guard.
+- [ ] 👤 завести повний deploy-secret набір у GitHub Secrets (`06_04 §1.1` + §1.4) → верифікувати fail-loud `verify-secrets` + boot на першому деплої
+
 #### INF.6 — CoAP UDP smoke test через Ingress Anchor (post-deploy gate)
 - **P1** · 👤 · 🟢 · → `06_01`, `06_02`, `06_08 §1.2`
 - **Стан:** UDP-smoke gate проти silent CoAP-failure (Queen→Ingress Anchor→Akash) — workflow `coap_smoke.yml` (`workflow_dispatch`+`workflow_call`); зонди = freeze-contract `bin/coap_smoke`/`lib/coap_smoke.rb` (точні байти, регресія фантомної доставки FW.56); виклик = post-deploy gate у `deploy.yml`+`deploy-production.yml` (job `coap-smoke`, `needs: deploy`); поки repo Variable host не задана — job skipped (не silent).
@@ -852,7 +862,7 @@
 - [ ] 👤 перший boundary smoke з Queen/`bin/forest_simulator`
 
 #### INF.4 — Akash TLS strategy decision: hostname operator vs Cloudflare
-- **P1** · 🤖+👤 · 🟡 · → `06_02 §TLS термінація`
+- **P1** · 🤖+👤 · 🟢 · → `06_02 §TLS термінація`
 - **Стан:** runbook готовий — Опція A (Cloudflare HTTPS + direct UDP CoAP) рекоменд. + pre-flight + fallback B (Cloudflare НЕ proxies UDP → CoAP потребує direct ingress). Рішення фіксує публічний домен → розблоковує `INF.3` (TLS termination) + `S6.18` (`RAILS_ALLOWED_HOSTS` allowlist).
 - [ ] 👤 прийняти рішення (рекоменд. A)
 - [ ] 🤖 якщо Akash hostname — automation у `terraform/`
@@ -870,48 +880,40 @@
 - [ ] 👤 master-ключі (`RAILS_MASTER_KEY`/`PROVISIONING_MASTER_KEY`) → vault + offline-копія (незамінні, поза backup)
 
 #### INF.11 — `WEB3_STRICT_MODE` у deploy-конфігах (KYC fail-closed)
-- **P1** · 🤖+👤 · 🟢 · → `06_04`
+- **P1** · 👤 · 🟢 · → `06_04`
 - **Стан:** Machine-half ✅ — `WEB3_STRICT_MODE="true"` заведено в `config/deploy.yml` env.clear + Akash `deploy.yaml`/`deploy.yaml.tpl` (web+job); canopy успадковує (Kamal `deploy.canopy.yml` env-less; canopy = `RAILS_ENV=production` → strict скрізь консистентно). `.kamal/secrets` НЕ чіпано (non-secret). Закриває READ-verified діру: Hadron KYC/RWA + Chainlink dispatch/callback перевіряють ЛИШЕ `WEB3_STRICT_MODE=="true"` (не `Rails.env`) → без прапора відсутній credential тихо падав у `simulate_*` (fake-KYC mint). Канон-інвентар синхронізовано: `06_04 §2.1` · `06_02 §2.8/§6`. Лишається 👤 (deploy-gated). Канон `06_04 §2.1`.
 - [ ] 👤 money-path рішення + верифікувати fail-closed на першому деплої
 
 #### INF.12 — Deploy ENV-injection drift: код `ENV.fetch` без default ∉ deploy-декларації
-- **P1** · 🤖+👤 · 🟢 · → `06_04`
+- **P1** · 👤 · 🟢 · → `06_04`
 - **Стан:** Machine-half ✅ — set-diff `ENV.fetch`/`credentials.dig` vs deploy закрито: 10 контракт-адрес + `POLYGON_RPC_URL`/`CELO_RPC_URL` заведено в Kamal + Akash web/job (контракт-адреси = `REQUIRED_SECRET_NOT_SET` placeholder, deploy-order → не terraform-vars); `06_04 §2.2` +`aws`/`gcs`. ⚠️ `CELO_RPC_URL` порожній → fallback Alfajores TESTNET (обходить `web3_network_guard`; E.49) → mainnet обов'язковий. Інвентар — [`06_04 §2.1`](06_04_Secrets_Checklist).
 - [ ] 👤 fill contract addresses post-`forge deploy` + provision RPC / secrets
 
 #### INF.15 — Terraform GCP `apply`-блокери (IAM ролі · firewall · tfvars · image-path)
-- **P1** · 🤖+👤 · 🟢 · → `06_01`
+- **P1** · 👤 · 🟢 · → `06_01`
 - **Стан:** Machine-half ✅ — `iam.tf` +`storage.objectAdmin`(scoped до state-bucket)+`iam.serviceAccountUser`; firewall `allow_ssh` `count`-guard на порожній CIDR (GCP не відхиляє apply); `tfvars.example` CIDR-placeholder (не `0.0.0.0/0`); Kamal `image`→повний AR-шлях. `terraform fmt` clean, count-safe. ⚠️ provider/Kamal-behavior inferred → 👤 verify на реальному apply. Канон [`06_01`](06_01_Deployment_Kamal_Terraform).
 - [ ] 👤 верифікувати `terraform apply` + Kamal push end-to-end (підтвердити inferred-пункти)
-
-#### INF.16 — Production multi-DB connection (database.yml component style)
-- **P0** · 🤖+👤 · 🟢 · → `06_01`, `06_04`
-- **Стан:** Machine-half ✅ — **корінь first-deploy fail.** Production `database.yml` давав host+creds лише `primary` (Rails ллє `DATABASE_URL` тільки в primary); `cache`/`queue`/`cable` лишались без host і пароля → `db:prepare` падав на першому web-boot, Solid Cache/Cable не конектились. Fix = Rails-8 component style: `POSTGRES_HOST/USER/PASSWORD` у `&default` (як dev/test), 4 бази ділять creds, override лише `database:`. Deploy мігровано `DATABASE_URL`→`POSTGRES_*` (Kamal env.secret/clear + `.kamal/secrets` + Akash web/job + `.tpl` + terraform akash + CI workflows). Canopy ізоляція через `POSTGRES_DATABASE=silken_net_canopy` (той самий інстанс). `terraform fmt` clean; config-resolve verified (prod + canopy набори). Канон `config/database.yml` + `06_04`.
-- [ ] 👤 terraform provision canopy-баз (`silken_net_canopy` + `_cache`/`_queue`/`_cable` на тому ж Cloud SQL інстансі) — `database.tf` наразі створює лише production-набір
-- [ ] 👤 верифікувати `db:prepare` проходить усі 4 бази на першому деплої
-
-#### INF.17 — CoAP daemon: немає prod-процесу (Queen telemetry intake)
-- **P2** · 🤖+👤 · ⚪ · → `06_01`, `03_02 §4`
-- **Стан:** Не розпочато — `lib/daemons/coap_listener` (UDP 5683 → `UnpackTelemetryWorker`) стартує лише в dev (`Procfile.dev`). У prod НЕ стартує: Akash services = web(puma)/job(sidekiq)/alloy, Kamal roles = web/job — окремого CoAP-процесу нема (UDP 5683 expose є, слухача нема). HTTP-fallback intake (`telemetry_controller`) існує → backend сам не зламаний; CoAP/UDP-шлях Queen→backend без слухача. Потрібен на Queen-bring-up (firmware TRL 6, Queen ще не в полі), НЕ для першого backend-деплою. **Рекомендація (B7):** виділений процес — Akash `coap` service (той самий образ, entrypoint→`ruby lib/daemons/coap_listener`, expose 5683/udp, Redis+Cloud-SQL-proxy env) + Kamal `coap` role; НЕ puma-thread (UDP у web-процесі сплітає lifecycle + ризик). Канон `06_01`/`03_02 §4`.
-- [ ] 🤖 Akash `coap` service + Kamal `coap` role (dedicated process, expose 5683/udp) — на Queen-bring-up
-
-#### INF.18 — Solid Queue: dead scaffold vs planned (research)
-- **P3** · 👤 · 🟢 · → `06_01`, `04_02`
-- **Стан:** Research closed (2026-06-23, 8-agent canon-audit + verify) — **dead-scaffold verdict.** Докази: adapter=`:sidekiq` (`config/environments/production.rb`), `recurring.yml` каже «unused — all handled by Sidekiq», 13 живих cron у `sidekiq.yml`, нема `mission_control`, `queue`-база порожня. Footprint (8 місць): gem · `config/queue.yml` · `recurring.yml` · `db/queue_schema.rb` · `database.yml` queue-блок · terraform queue-база · `bin/jobs` · `rails_schema.rb`. Cleanup = zero production-risk, АЛЕ **рішення founder = лишити dormant** (може плануватись). Канон `06_01`.
-- [ ] 👤 (опц.) revisit dormant→cleanup, якщо Solid Queue остаточно не входить у плани
-
-#### INF.19 — CI Kamal secret-starvation (env-mapping) + KREDIS/POSTGRES drift [B1/H2]
-- **P0** · 🤖+👤 · 🟢 · → `06_04 §1`
-- **Стан:** Machine-half ✅ (commit `c3ed3019` + canon `06_04 §1.4`) — **корінь, чому перший deploy ніколи не виживав** (pre-deploy consistency audit, 8-agent). Обидва deploy-workflow передавали в `kamal deploy` лише 5 із 24 секретів; `.kamal/secrets` читає всі 24 з shell-ENV → решта інжектились порожніми → boot-crash (`RAILS_MASTER_KEY` decrypt / `PROVISIONING_MASTER_KEY` guard / oracle KeyError) або web3-strict raise. `verify-secrets` перевіряв лише 1-2 → зелений CI над зламаним деплоєм (без секретів `configured=false` → skip → шлях ніколи не біг live, тож діра не спливала). Fix: повний env-mapping в обидва workflow + `verify-secrets` гейтить повний boot-critical набір (fail-loud prod / skip-clean canopy) + warn на lazy. Супутнє: `KREDIS_REDIS_URL` виведено з усіх deploy-surface (auto-derive DB 1 з `REDIS_URL`); `RAILS_MASTER_KEY` ENV-first; H2 — Akash explicit `POSTGRES_DATABASE`. Канон `06_04 §1.4` + drift-guard.
-- [ ] 👤 завести повний deploy-secret набір у GitHub Secrets (`06_04 §1.1` + §1.4) → верифікувати fail-loud `verify-secrets` + boot на першому деплої
 
 #### S4.3 — Akash SDL secrets
 - **P1** · 👤 · ⚪ · → `06_02`
 - **Стан:** Не розпочато — Akash = primary prod deploy → SDL (`deploy/akash/deploy.yaml`) тримає `REQUIRED_SECRET_NOT_SET` плейсхолдери для **повного дзеркала** Kamal `env.secret` (обидва сервіси web+job); без них boot-crash (категорія A) — той самий prod-deploy-ENV клас, що `S1.1`. ⚠️ placeholder ≠ disabled: `REQUIRED_SECRET_NOT_SET` для `PROMETHEUS_AUTH_*` НЕ-порожній → basic-auth активна з відомим-публічним значенням (`PrometheusCollector#authorized?`), а Alloy remote_write на літерал → тихо нічого не пушить (INF.14 sibling). **B6 рекомендація:** provision реальні random `PROMETHEUS_AUTH_USER/PASSWORD` (НЕ placeholder — `REQUIRED_SECRET_NOT_SET` непорожній = known-value bypass); порожнє → skip-auth + IP-allowlist (прийнятно для internal-only Alloy scrape, але реальні creds = defense-in-depth). Канон `06_02 §2` (категорії A/B/C — boot-critical / web3 / observability) + `06_03`.
 - [ ] 👤 заповнити в `deploy/akash/deploy.yaml` → верифікувати startup (real `PROMETHEUS_AUTH_*`, не placeholder; observability creds = security)
 
+#### ARCH.54 — Queen health program: dead-man switch · QATT-v2 пульс · SOS-роздільність
+- **P1** · 🤖+👤 · 🟢 · → [`06_08 §1.3`](06_08_Resilience_and_Failover_Policy), [`03_02 §7`](03_02_Queen_Gateway_Firmware), [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security)
+- **Стан:** Рішення №1 founder-пакета (2026-07-03: «A + 12B SOS-only + всі три шари») — **machine-half трьох шарів ✅ одним заходом**. Діагноз, що змінив рамку: DID=0-канал брехав байтами (uptime→voltage, cache→CSQ, дроп під навантаженням; циркулярний e2e), алерту «Королева мовчить» не існувало ніде, а `06_08 §1.3` описував бажане як факт. **Шар 0** — `GatewayStalenessSweepWorker` (offline→`report_fault!`+`EwsAlert(queen_offline)` анти-спам; online→`recover!`+auto-resolve; attest-lapse читає `last_attested_at`; gauge+P0-Grafana). **Шар 1** — пульс у ПІДПИСАНОМУ QATT-**v2** header'і (8B health; v1 вилучено повністю — redefine, бо флоту нема; residue 1, `SLKN-QATT2`; empty-flush heartbeat; DID=0-тракт вбитий обабіч; CSQ = нове AT-читання; golden-парність 4 реалізацій). **Шар 2** — ARCH.34 backend-half (дім деталей там). Закрив FW.2-фліп-гейт (б) by design. Канони переписані на факт (06_08 §1.2/§1.3 · 03_02 §7 · 03_05 §2.2 · 02_05 §6.1 · 04_03 · 06_04).
+- [ ] 👤 Grafana Cloud: `deploy/grafana/import.rb` підхопить `sn-alert-gateway-faulty` разом з існуючим пакетом правил (та сама 👤-сесія, що FW.18b/S2.2)
+- [ ] 🔗 attest-lapse: окремий alert-тип замість warn-метрики — коли L1 QATT стане mandatory (зараз L0 приймається; свідома стеля)
+- [ ] 🔗 vcap/температура Королеви у health-блоці — при ADC-тракті на платі (wire має headroom: rsv-байти конверта; не брешемо нулями до заліза)
+- [ ] 🌿 DePIN-місток: підписана health-історія = evidence для operator-bond/uptime-SLA (BIZ.13; не блокер)
+
+#### INF.17 — CoAP daemon: немає prod-процесу (Queen telemetry intake)
+- **P2** · 🤖 · ⚪ · → `06_01`, `03_02 §4`
+- **Стан:** Не розпочато — `lib/daemons/coap_listener` (UDP 5683 → `UnpackTelemetryWorker`) стартує лише в dev (`Procfile.dev`). У prod НЕ стартує: Akash services = web(puma)/job(sidekiq)/alloy, Kamal roles = web/job — окремого CoAP-процесу нема (UDP 5683 expose є, слухача нема). HTTP-fallback intake (`telemetry_controller`) існує → backend сам не зламаний; CoAP/UDP-шлях Queen→backend без слухача. Потрібен на Queen-bring-up (firmware TRL 6, Queen ще не в полі), НЕ для першого backend-деплою. **Рекомендація (B7):** виділений процес — Akash `coap` service (той самий образ, entrypoint→`ruby lib/daemons/coap_listener`, expose 5683/udp, Redis+Cloud-SQL-proxy env) + Kamal `coap` role; НЕ puma-thread (UDP у web-процесі сплітає lifecycle + ризик). Канон `06_01`/`03_02 §4`.
+- [ ] 🤖 Akash `coap` service + Kamal `coap` role (dedicated process, expose 5683/udp) — на Queen-bring-up
+
 #### S6.14 — peaq_signing_key: rotation & revocation
-- **P2** · 👤 · 🟡 · → `06_04 §5.4`, `04_02 §S6.14`
+- **P2** · 👤 · 🟢 · → `06_04 §5.4`, `04_02 §S6.14`
 - **Стан:** Rotation policy готова — dual-key grace 72h + планова ротація 90д + emergency revocation runbook. Лишається vault-store production-ключа. Канон `06_04 §5.4` (revocation runbook) · `04_02 §S6.14` (policy + код-стан).
 - [ ] 👤 vault-store production `peaq_signing_key`
 
@@ -922,7 +924,7 @@
 - [ ] 👤 оновити Ingress Anchor `akash-deployment-ip` metadata після Akash deploy (`compute.tf:189`) + внести обидва кроки в pre-flight чеклист `06_01`
 
 #### S2.4 — Observability industrial-grade hardening
-- **P2** · 👤 · 🟡 · → [`06_03 §2.9`](06_03_Prometheus_Observability)
+- **P2** · 👤 · 🟢 · → [`06_03 §2.9`](06_03_Prometheus_Observability)
 - **Стан:** industrial-grade hardening канонізовано — `external_labels` (env/service/source/release attribution) + `queue_config`+explicit WAL (backpressure) + cardinality-budget relabel + process/runtime gauges (`sample_process_runtime!`/`sample_connection_pool!`, RSpec-covered; bonus-fix: pool-gauges раніше були stale) + CI-валідація (`alloy_config_validate`). Конкретні значення — `config.alloy` SSOT (не дублюються). Канон [`06_03 §2.9`](06_03_Prometheus_Observability).
 - [ ] 👤 `up`-scrape alert + SLO/error-budget (§2.9 #6 — ingest availability, mint/slash success) — Grafana Cloud
 
@@ -953,26 +955,23 @@
 - [ ] 👤 Helium Console: реєстрація Королев (DevEUI/AppEUI/AppKey) + HTTP Integration (URL + `HELIUM_WEBHOOK_SECRET` — [`06_04`](06_04_Secrets_Checklist)) + заповнити `gateways.helium_dev_eui`
 - [ ] 🔗 `GatewayLoraWanCredentials` (AppKey, AR Encryption) — при живій Console-інтеграції (зараз YAGNI: інтейку досить dev_eui)
 
-#### ARCH.54 — Queen health program: dead-man switch · QATT-v2 пульс · SOS-роздільність
-- **P1** · 🤖+👤 · 🟢 · → [`06_08 §1.3`](06_08_Resilience_and_Failover_Policy), [`03_02 §7`](03_02_Queen_Gateway_Firmware), [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security)
-- **Стан:** Рішення №1 founder-пакета (2026-07-03: «A + 12B SOS-only + всі три шари») — **machine-half трьох шарів ✅ одним заходом**. Діагноз, що змінив рамку: DID=0-канал брехав байтами (uptime→voltage, cache→CSQ, дроп під навантаженням; циркулярний e2e), алерту «Королева мовчить» не існувало ніде, а `06_08 §1.3` описував бажане як факт. **Шар 0** — `GatewayStalenessSweepWorker` (offline→`report_fault!`+`EwsAlert(queen_offline)` анти-спам; online→`recover!`+auto-resolve; attest-lapse читає `last_attested_at`; gauge+P0-Grafana). **Шар 1** — пульс у ПІДПИСАНОМУ QATT-**v2** header'і (8B health; v1 вилучено повністю — redefine, бо флоту нема; residue 1, `SLKN-QATT2`; empty-flush heartbeat; DID=0-тракт вбитий обабіч; CSQ = нове AT-читання; golden-парність 4 реалізацій). **Шар 2** — ARCH.34 backend-half (дім деталей там). Закрив FW.2-фліп-гейт (б) by design. Канони переписані на факт (06_08 §1.2/§1.3 · 03_02 §7 · 03_05 §2.2 · 02_05 §6.1 · 04_03 · 06_04).
-- [ ] 👤 Grafana Cloud: `deploy/grafana/import.rb` підхопить `sn-alert-gateway-faulty` разом з існуючим пакетом правил (та сама 👤-сесія, що FW.18b/S2.2)
-- [ ] 🔗 attest-lapse: окремий alert-тип замість warn-метрики — коли L1 QATT стане mandatory (зараз L0 приймається; свідома стеля)
-- [ ] 🔗 vcap/температура Королеви у health-блоці — при ADC-тракті на платі (wire має headroom: rsv-байти конверта; не брешемо нулями до заліза)
-- [ ] 🌿 DePIN-місток: підписана health-історія = evidence для operator-bond/uptime-SLA (BIZ.13; не блокер)
-
 #### INF.13 — Deploy runtime config-баги (mailer host · DB pool · entrypoint · Canopy job)
-- **P2** · 🤖 · 🟢 · → `06_05`
+- **P2** · 👤 · 🟢 · → `06_05`
 - **Стан:** Machine-half ✅ — (1) mailer host `example.com` → `ENV.fetch("APP_HOST", "silkennet.com")`+https (`production.rb`), `APP_HOST` заведено в Kamal `env.clear` + Akash web/job; (2) `DB_POOL=17` для Sidekiq/job-ролі (Kamal job-env + Akash job; web лишається default-pool); (3) entrypoint Cloud-SQL-proxy readiness → fail-loud (`exit 1`, не тихий boot без БД); (4) Canopy задокументовано web-only-by-design (Sidekiq через Akash primary, не відсутня `job:`-секція). Чекає верифікації на першому реальному деплої. Канон `06_05`.
 - [ ] 👤 верифікувати на першому деплої (mailer host · `DB_POOL` · entrypoint fail-loud · Canopy web-only)
 
 #### INF.14 — Observability pipeline wiring: метрики/алерти не «доїдуть»
-- **P2** · 🤖+👤 · 🟢 · → `06_03`
+- **P2** · 👤 · 🟢 · → `06_03`
 - **Стан:** Machine-half ✅ — (1) circuit-breaker alert поріг `gt 1`→`gt 0` (gauge=`1.0` при open через `set_circuit_breaker_gauge`; `gt 1` ніколи не firing) + коментар проти регресії; (2) `grafana/alloy` запінено `:latest`→`v1.16.3` (`deploy.yaml`/`.tpl`/`ci.yml` — CI валідує ту саму River-версію, що біжить); (3) знято stale `gaia2`-tag (BIZ.16 dissolved). Лишається 👤 (deploy-gated): Akash alloy→`web:80` internal route (`to: service:`) — інакше scrape впирається в публічний ingress → IP-allowlist 403. Канон `06_03`.
 - [ ] 👤 alloy→web internal route (Akash `to: service:`) → верифікувати scrape на деплої
 
+#### INF.18 — Solid Queue: dead scaffold vs planned (research)
+- **P3** · 👤 · 🟢 · → `06_01`, `04_02`
+- **Стан:** Research closed (2026-06-23, 8-agent canon-audit + verify) — **dead-scaffold verdict.** Докази: adapter=`:sidekiq` (`config/environments/production.rb`), `recurring.yml` каже «unused — all handled by Sidekiq», 13 живих cron у `sidekiq.yml`, нема `mission_control`, `queue`-база порожня. Footprint (8 місць): gem · `config/queue.yml` · `recurring.yml` · `db/queue_schema.rb` · `database.yml` queue-блок · terraform queue-база · `bin/jobs` · `rails_schema.rb`. Cleanup = zero production-risk, АЛЕ **рішення founder = лишити dormant** (може плануватись). Канон `06_01`.
+- [ ] 👤 (опц.) revisit dormant→cleanup, якщо Solid Queue остаточно не входить у плани
+
 #### INF.10 — Kamal-proxy healthcheck → `/ready` (readiness-gated cutover)
-- **P3** · 👤 · 🟡 · → `06_01`
+- **P3** · 👤 · 🟢 · → `06_01`
 - **Стан:** Підготовка зацементована — schema-correct inert stub (`proxy.healthcheck.path: /ready`, звірено з kamal 2.12) у `config/deploy.yml`+canopy; first-deploy cutover-runbook → [`06_01 §Чеклист`](06_01_Deployment_Kamal_Terraform) (крок 18); проба `/ready` (DB+Redis+Kredis) → [`06_05`](06_05_Puma_Configuration). Свідомо deferred (design): на холодному старті `/ready` 503→deploy_timeout→rollback, тож bring-up на дефолтному `/up`, фліп на `/ready` коли `/ready→200`. Лишається 👤-фліп:
 - [ ] 👤 розкоментувати `proxy.healthcheck.path: /ready` на першому деплої (після `/ready→200`) + верифікувати cutover
 
