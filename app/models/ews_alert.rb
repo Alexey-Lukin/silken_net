@@ -27,7 +27,18 @@ class EwsAlert < ApplicationRecord
     # підтвердження. Свідомо ОКРЕМИЙ від system_fault (поломка заліза/зв'язку), щоб дедуп не
     # конфлатив сигнали і freeze-алерт не накручував penalty_factor через comms_no_ack? (gap-D).
     # «Тиша замовклого дерева — теж його голос» — ескалюємо слухати, не караємо наосліп.
-    field_audit: 7
+    field_audit: 7,
+    # [ARCH.54 Шар 0] Rails сам помітив тишу шлюзу (dead-man switch,
+    # GatewayStalenessSweepWorker): last_seen_at прострочив sleep-інтервал з
+    # люфтом → кластер осліп, permanence-моніторинг NaaS провис. ОКРЕМИЙ від
+    # system_fault (там Королева ДОПОВІЛА про свій збій; тут вона МОВЧИТЬ —
+    # протилежні сигнали для тріажу лісника).
+    queen_offline: 8,
+    # [ARCH.34 Шар 2] Королева САМА кричить через Helium LoRaWAN, що втратила
+    # всі власні uplink'и (Starlink/LTE + Q2Q) — телеметрія буферизується у
+    # Flash-ринг, потрібна ескалація (виїзд). Дзеркальний до queen_offline:
+    # там мовчання, тут — крик через чужі hotspot'и (06_08 §1.2 L3).
+    queen_uplink_lost: 9
   }, prefix: true
 
   # [COSMIC EYE]: Статус супутникової верифікації через dClimate.

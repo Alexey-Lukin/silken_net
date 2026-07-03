@@ -85,6 +85,12 @@ class Gateway < ApplicationRecord
     event :report_fault do
       transitions from: [ :idle, :active, :updating, :maintenance ], to: :faulty
     end
+
+    # [ARCH.54 Шар 0] Повернення в ефір після faulty: sweeper бачить свіжий
+    # last_seen_at і повертає шлюз у стрій (idle — wake підніме в active).
+    event :recover do
+      transitions from: :faulty, to: :idle
+    end
   end
 
   # --- КОНСТАНТИ ---

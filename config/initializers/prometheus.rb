@@ -203,6 +203,23 @@ module SilkenNet
       docstring: "Current size of the Sidekiq DeadSet (jobs that exhausted all retries)"
     )
 
+    # [ARCH.54 Шар 0] Dead-man switch Королеви (GatewayStalenessSweepWorker):
+    # переходи offline→faulty (counter) + поточний стан флоту (gauges).
+    GATEWAYS_OFFLINE_TOTAL = REGISTRY.counter(
+      :silkennet_gateways_offline_total,
+      docstring: "Total gateway offline transitions detected by the staleness sweeper (queen_offline alerts)"
+    )
+
+    GATEWAYS_FAULTY = REGISTRY.gauge(
+      :silkennet_gateways_faulty,
+      docstring: "Current number of gateways in the faulty state (set on each staleness sweep)"
+    )
+
+    GATEWAY_ATTEST_LAPSED = REGISTRY.gauge(
+      :silkennet_gateway_attest_lapsed,
+      docstring: "Online QATT-capable gateways whose last Ed25519-attested batch is older than the lapse window"
+    )
+
     # Legacy aliases for backward compatibility with existing Grafana dashboards.
     WEB3_QUEUE_SIZE = SIDEKIQ_QUEUE_SIZE
     WEB3_QUEUE_LATENCY = SIDEKIQ_QUEUE_LATENCY

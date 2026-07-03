@@ -133,3 +133,12 @@
     insurance_payout_recovery:
       cron: '15,45 * * * *' # Кожні 30 хв (:15/:45)
       class: InsurancePayoutRecoveryWorker
+
+    # --- [ARCH.54 Шар 0] DEAD-MAN SWITCH КОРОЛЕВИ (The Silence Watcher) ---
+    # Тиша шлюзу = кластер осліп (permanence-сторож NaaS, 06_08 §1.3):
+    # offline→faulty + EwsAlert(queen_offline), симетричне recover при
+    # поверненні в ефір, attest-lapse спостереження. 5 хв — дрібно проти
+    # sleep-інтервалів (≥60с×1.2), дешево для черги alerts.
+    gateway_staleness_sweep:
+      cron: '*/5 * * * *'
+      class: GatewayStalenessSweepWorker
