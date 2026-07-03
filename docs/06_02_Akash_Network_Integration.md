@@ -189,7 +189,7 @@ SDL визначає порти `80`, `443` та `5683`. Порт `443` прис
 
 #### Runbook: TLS Termination Strategy [INF.4]
 
-> **Архітектурне рішення (рекомендоване):** **Cloudflare Proxy для HTTPS + direct UDP для CoAP**. Cloudflare DOES NOT proxy UDP у безкоштовному/Pro тарифах — для CoAP/UDP:5683 потрібен **окремий шлях через Ingress Anchor (статичний GCP IP)**, який і так уже існує в архітектурі. Akash hostname operator + Let's Encrypt — fallback варіант, якщо Cloudflare недоступний для проекту (санкції, gov-policy).
+> **Архітектурне рішення ✅ ОБРАНО (founder 2026-07-03): Опція A — Cloudflare Proxy для HTTPS + direct UDP для CoAP** (публічний домен `silkennet.app`). Cloudflare DOES NOT proxy UDP у безкоштовному/Pro тарифах — для CoAP/UDP:5683 потрібен **окремий шлях через Ingress Anchor (статичний GCP IP)**, який і так уже існує в архітектурі. Akash hostname operator + Let's Encrypt (домен `silkennet.com`) — fallback варіант, якщо Cloudflare недоступний для проекту (санкції, gov-policy).
 >
 > Cross-ref: 00_07 INF.4 (P1), INF.6 (CoAP Proxy verification).
 

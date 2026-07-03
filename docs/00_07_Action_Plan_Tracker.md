@@ -704,7 +704,7 @@
 
 #### E.20 — Forester Guild: ForestBountyService (PoPhW fallback oracle + ranger economy)
 - **P2** · 🤖+👤 · ⚪ · → `04_02 §Forester Guild`
-- **Стан:** Резервний Оракул через фізичний PoPhW (рейнджер+дрон) + ranger bounty-економіка (GPS/EXIF/IPFS→USDC, anti-Sybil). **Блокер** для S6.10 (task-assignment) + E.41 (satellite-obscured fire fallback, = E.34). Гейт — `ForestBountyService` ще не збудовано (bounty matching ranger↔alert) + реальна ranger-мережа. Канон `04_02 §Forester Guild` (Dclimate-hook `04_02 §11`). **Enabler BIZ.13:** PoPhW→earned operator-bond + `ForesterGuild`-реєстр→guild-sponsor ([`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)).
+- **Стан:** ⏸️ **DEFER до Phase 2 (founder 2026-07-03):** YAGNI — реальної ranger-мережі нема, `ForestBountyService` без неї = код попереду реальності (guild-маркетплейс = Phase 2 «мобільний додаток для лісників», `00_01 §4`). Резервний Оракул через фізичний PoPhW (рейнджер+дрон) + bounty-економіка (GPS/EXIF/IPFS→USDC, anti-Sybil); design готовий (`04_02 §Forester Guild`). **Блокер** для S6.10 + E.41-satellite-fallback + BIZ.13-Модель-B. ⚠️ E.41-фікс OrbitalLagError НЕ чекає на E.20 (Field-Audit-ескалація незалежна — див. E.41). Enabler BIZ.13: PoPhW→operator-bond + guild-sponsor ([`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)). **Зчеплено:** E.66 `finalize_spend!`-prune (escrow-примітив, що E.20 реюзнув би) — при E.20-go воскресає з `[E.20]`-маркером.
 - [ ] 🤖 `ForestBountyService` — bounty matching ranger↔alert + USDC payout
 - [ ] 👤 онбординг рейнджерів Forester Guild
 
@@ -874,14 +874,14 @@
 
 #### INF.4 — Akash TLS strategy decision: hostname operator vs Cloudflare
 - **P1** · 🤖+👤 · 🟢 · → `06_02 §TLS термінація`
-- **Стан:** runbook готовий — Опція A (Cloudflare HTTPS + direct UDP CoAP) рекоменд. + pre-flight + fallback B (Cloudflare НЕ proxies UDP → CoAP потребує direct ingress). Рішення фіксує публічний домен → розблоковує `INF.3` (TLS termination) + `S6.18` (`RAILS_ALLOWED_HOSTS` allowlist).
-- [ ] 👤 прийняти рішення (рекоменд. A)
-- [ ] 🤖 якщо Akash hostname — automation у `terraform/`
+- **Стан:** ✅ **Рішення прийнято (founder 2026-07-03): Опція A — Cloudflare Proxy** (HTTPS:443 termination + direct UDP CoAP через Ingress Anchor; публічний домен `silkennet.app`). Cloudflare НЕ proxies UDP → CoAP окремим шляхом (уже в архітектурі). Розблоковує `INF.3` (TLS = Cloudflare) + `S6.18` (`RAILS_ALLOWED_HOSTS=silkennet.app`). Fallback B (Akash hostname + Let's Encrypt, домен `silkennet.com`) — лише якщо Cloudflare недоступний. Канон `06_02 §TLS термінація`.
+- [ ] 👤 при деплої: Cloudflare pre-flight (9 кроків `06_02` Опція A) — акаунт/домен/Full-strict SSL/CNAME→Akash ingress/Queens на Ingress-IP:5683
+- [ ] 🤖 (лише якщо fallback B) Akash hostname-operator automation `terraform/akash/hostname-operator.tf`
 
 #### S6.18 — Rails web security hardening
 - **P1** · 👤 · 🟢 · → `06_04 §2.1`
-- **Стан:** Код готовий — production.rb (force_ssl/HSTS + host-auth з probe-exclusions `/up`/`/ready`/`/metrics`) + CSP (report-only) + security_headers.rb + session_store. `RAILS_ALLOWED_HOSTS` значення свідомо НЕ закомічено (на відміну від `APP_HOST`/`WEB3_STRICT_MODE`): порожнє → warn-and-allow (degraded, не fatal), а закомічене **неправильне** → 403 block-all; публічний домен ще за `INF.4` (Cloudflare `silkennet.app` vs direct silkennet.com). Тому operator-set перед prod із реальним доменом — безпечніше за передчасний commit. Канон `06_04 §2.1`.
-- [ ] 👤 `RAILS_ALLOWED_HOSTS` у Kamal/Akash env.clear із фінальним публічним доменом (після `INF.4`) — інакше 403 block-all
+- **Стан:** Код готовий — production.rb (force_ssl/HSTS + host-auth з probe-exclusions `/up`/`/ready`/`/metrics`) + CSP (report-only) + security_headers.rb + session_store. `RAILS_ALLOWED_HOSTS` значення свідомо НЕ закомічено (на відміну від `APP_HOST`/`WEB3_STRICT_MODE`): порожнє → warn-and-allow (degraded, не fatal), а закомічене **неправильне** → 403 block-all. Публічний домен зафіксовано INF.4 (Опція A Cloudflare, 07-03) = **`silkennet.app`**; operator-set перед prod. Канон `06_04 §2.1`.
+- [ ] 👤 `RAILS_ALLOWED_HOSTS=silkennet.app` у Kamal/Akash env.clear при деплої — інакше 403 block-all
 - [ ] 👤 після 1-2 тиж CSP-репортів → `CSP_ENFORCE=true`
 
 #### DR.1 — Disaster Recovery drill + master-key backup
@@ -940,9 +940,9 @@
 - [ ] 👤 `up`-scrape alert + SLO/error-budget (§2.9 #6 — ingest availability, mint/slash success) — Grafana Cloud
 
 #### INF.3 — TLS termination
-- **P2** · 👤 · 🔗 · → `06_02 §TLS термінація`
-- **Стан:** Заблоковано на INF.4 (рішення стратегії TLS — Cloudflare vs Akash hostname). SDL відкриває 80/443/CoAP-UDP 5683, але TLS termination не налаштовано (browsers block WS HTTPS→HTTP); конфігурація залежить від обраного шляху. Канон `06_02 §TLS термінація`.
-- [ ] 👤 налаштувати TLS (Akash ingress або Cloudflare)
+- **P2** · 👤 · 🟢 · → `06_02 §TLS термінація`
+- **Стан:** Розблоковано — INF.4 вирішено (Опція A Cloudflare, founder 07-03) → TLS = **Cloudflare Full-strict termination** (HTTPS:443) + direct UDP CoAP через Ingress Anchor. SDL відкриває 80/443/CoAP-UDP 5683; лишається налаштувати Cloudflare при деплої (разом з INF.4 pre-flight). Канон `06_02 §TLS термінація`.
+- [ ] 👤 налаштувати Cloudflare TLS termination при деплої (INF.4 pre-flight крок)
 
 #### S5.2 — RELEASE_VERSION ENV для Sentry
 - **P2** · 👤 · 🟢 · → `06_03`

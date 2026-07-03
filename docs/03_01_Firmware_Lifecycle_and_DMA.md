@@ -1466,10 +1466,11 @@ toolchain-файлів помилково пінила апаратний FPv4 h
 | Monocypher | [L1 QATT] software-Ed25519 — підпис CoAP-батчів Queen ([`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security)) | ✅ завендорено (2026-06-07) | `extern/monocypher`@4.0.2 (+ optional `monocypher-ed25519` — стандартний SHA-512 EdDSA, parity з ruby `ed25519` gem host-tested) |
 | OpenSSL | host-тест crypto (AES/HKDF/HMAC) | system host-dep; НЕ target | host-build, не вендориться |
 | ~~mbedTLS~~ | target HMAC-SHA256 | ✅ **не потрібен** — FW.30 cold-start seed-HMAC закрито pure-C `silken_sha256.h` (byte-parity vs OpenSSL, KAT FIPS/RFC 4231); FW.23 OTA HMAC compute теж може цей шлях (pure-C, без bench-лінку) | own-code `firmware/common/silken_sha256.h` |
-| STM32 HAL + CMSIS-Device-WL | HAL · SUBGHZ/SX1262-радіо · CRYP | 🔴 assumed (CubeMX, поза репо); host = `hal_mock.h` | STM32CubeWL@tag — `-DSILKEN_WITH_HAL=ON` |
+| STM32 HAL + CMSIS-Device-WL | HAL · SUBGHZ/SX1262-периферія · CRYP | 🔴 assumed (CubeMX, поза репо); host = `hal_mock.h` | STM32CubeWL@tag — `-DSILKEN_WITH_HAL=ON` |
+| **SubGHz_Phy (Radio_s middleware)** | `Radio.Init/Rx/Send` + `RadioEvents_t` (radio.c/radio_driver.c/radio_fw.c) — те, що кличуть обидва `main.c` | 🔴 **НЕ завендорено** (owned-stub `hal_glue/radio.h`; латентний `Radio.Init(NULL)`-баг) | **вендорити `extern/subghz-phy`@v1.5.0** (`stm32-mw-subghz-phy`, BSD-3-Clause, 496 KB; SHA `7dc059f3` = трійка з HAL v1.6.0+CMSIS v1.4.0; Шлях A — [`00_07` SubGHz](00_07_Action_Plan_Tracker)) |
 | CMSIS-NN | TinyML `Run_Inference` (опц. ARM-прискорення) | ✅ baseline = pure-C forward pass (FW.4, нуль нового vendoring) | `extern/CMSIS-NN`@tag — ЛИШЕ якщо більша модель захоче ARM-kernels ([`00_07` — FW.4](00_07_Action_Plan_Tracker)) |
 
-> SX1262-радіо = HAL SUBGHZ-периферія (`SUBGHZ_HandleTypeDef`), не окремий Semtech-драйвер → у HAL-submodule, не окрема залежність.
+> **SX1262 — два шари, не плутати:** низькорівнева HAL SUBGHZ-периферія (`HAL_SUBGHZ_*`, `SUBGHZ_HandleTypeDef`) живе у HAL-submodule ✅; але `Radio_s` API (`Radio.Init/Rx/Send`), який реально кличуть `main.c`, — це окремий **SubGHz_Phy middleware** (`radio.c` кличе `HAL_SUBGHZ_*` під собою), НЕ в HAL і НЕ завендорений (виправлено 2026-07-03: рання версія цього note хибно вважала його «не окремою залежністю»). Chip-драйвера `sx126x.c` для радіо-на-кристалі НЕ існує (це для зовнішніх SX126x по SPI). Вендоринг = Шлях A (↑ таблиця).
 
 **Toolchain (окрема вісь):** ARM GCC + newlib у CI = apt (unpinned); bytecode-детермінізм рідить на pinned mruby submodule, не на toolchain. Pin через ARM-tarball (як локально) — far-future build-attestation ([`00_07` — FW.46](00_07_Action_Plan_Tracker)).
 
