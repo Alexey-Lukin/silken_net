@@ -48,6 +48,20 @@
  *   — БАЙТ-У-БАЙТ як у rev1: gossip-байт у нонс НЕ входить (унікальність
  *   гарантує сам FC), тож nonce-математика і Redis replay-guard незмінні.
  *
+ * CCM HAL invocation shape — WL-ІСТИНА (знахідка 2026-07-03):
+ *   У STM32WLxx HAL НЕМАЄ HAL_CRYPEx_AESCCM_Encrypt/Decrypt (то API
+ *   старших родин F4/F7/L4) — є лише двофазний флоу:
+ *     1. Init: Algorithm=CRYP_AES_CCM + Init.B0 (форматований B0-блок,
+ *        Build_CCM_B0 нижче) + Init.Header/HeaderSize (AAD) +
+ *        DataWidthUnit/HeaderWidthUnit = BYTE + DataType = 8B
+ *        (байтопотік без word-swap двозначностей; silicon-звірку
+ *        DataType-комбінації робить ccm_selftest KAT на bench).
+ *     2. Payload-фаза: HAL_CRYP_Encrypt/Decrypt (Size у БАЙТАХ — 12).
+ *     3. Тег-фаза: HAL_CRYPEx_AESCCM_GenerateAuthTAG → перші 8 байт = MIC.
+ *   На decrypt HAL тег НЕ звіряє — порівняння робить ВИКЛИКАЧ
+ *   константним часом (Fw2_Ccm_Tag_Equal). Host-мок (hal_mock.h)
+ *   віддзеркалює цей самий флоу і ВАЛІДУЄ B0 проти цього білдера.
+ *
  * Frame Counter persistence (RTC_BKP_DR15):
  *   DR15 packed = [FW2_FC_MAGIC:8 | frame_counter:24]
  *   Magic = 0x46 ("F"). Invalid magic on cold boot → Flash high-water
@@ -67,6 +81,13 @@
 #define FW2_CCM_PLAINTEXT_LEN      12  /* sensor payload (wire-rev2) */
 #define FW2_CCM_MIC_LEN            8   /* tag */
 #define FW2_CCM_NONCE_LEN          12  /* DID + FC32 + 4 zero bytes */
+#define FW2_CCM_B0_LEN             16  /* NIST 800-38C B0: flags‖nonce‖Q */
+
+/* B0 flags (NIST SP 800-38C §A.2.1): Adata=1 (маємо AAD), M'=(t-2)/2 при
+ * t=8, L'=q-1 при q=15-nonce_len=3 → 0x40 | 0x18 | 0x02 = 0x5A. Байт
+ * зашитий константою (не рахується в рантаймі): зміна t/q = зміна wire,
+ * а wire ревізується лише пакетом rev3 (budget-ledger 03_05 §2.1). */
+#define FW2_CCM_B0_FLAGS           0x5Au
 
 /* RTC_BKP_DR15 magic marker (high 8 bits). Distinct from
  * LORENZ_STATE_MAGIC (DR19) to keep slot-marker grep'able. */
@@ -143,6 +164,37 @@ static inline void Build_CCM_Nonce(uint32_t did, uint32_t frame_counter,
     nonce[9]  = 0x00;
     nonce[10] = 0x00;
     nonce[11] = 0x00;
+}
+
+/* B0-блок із ГОТОВОГО нонса (KAT-вектори носять nonce напряму):
+ * [flags:1][nonce:12][Q:3 BE] — Q = довжина plaintext'а (12).
+ * Це єдине місце, де форматується B0; кремній і мок їдять той самий байт-ряд. */
+static inline void Build_CCM_B0_From_Nonce(const uint8_t nonce[FW2_CCM_NONCE_LEN],
+                                           uint16_t payload_len,
+                                           uint8_t b0[FW2_CCM_B0_LEN]) {
+    b0[0] = FW2_CCM_B0_FLAGS;
+    memcpy(&b0[1], nonce, FW2_CCM_NONCE_LEN);
+    b0[13] = 0x00;
+    b0[14] = (uint8_t)(payload_len >> 8);
+    b0[15] = (uint8_t)(payload_len);
+}
+
+/* Польовий шлях: B0 прямо з DID/FC (нонс той самий, що Build_CCM_Nonce). */
+static inline void Build_CCM_B0(uint32_t did, uint32_t frame_counter,
+                                uint8_t b0[FW2_CCM_B0_LEN]) {
+    uint8_t nonce[FW2_CCM_NONCE_LEN];
+    Build_CCM_Nonce(did, frame_counter, nonce);
+    Build_CCM_B0_From_Nonce(nonce, FW2_CCM_PLAINTEXT_LEN, b0);
+}
+
+/* Константний час порівняння MIC (WL-флоу: decrypt НЕ звіряє тег сам —
+ * привратник дивиться однаково довго на істину і на лжесвідчення).
+ * 1 = теги рівні. */
+static inline int Fw2_Ccm_Tag_Equal(const uint8_t a[FW2_CCM_MIC_LEN],
+                                    const uint8_t b[FW2_CCM_MIC_LEN]) {
+    uint8_t diff = 0;
+    for (unsigned i = 0; i < FW2_CCM_MIC_LEN; i++) diff |= (uint8_t)(a[i] ^ b[i]);
+    return diff == 0;
 }
 
 /* Квантування device_z для дроту. valid=0 (Лоренц не рахувався) →

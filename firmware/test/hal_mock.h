@@ -37,26 +37,35 @@ typedef struct {
         int KeySize;
         uint32_t* pKey;
         int Algorithm;
-        uint32_t* pInitVect;  /* For CCM (mock): 12-byte nonce. Real STM32 HAL uses B0 block. */
-        /* [FW.2 / ARCH.42] CCM-specific fields. Real STM32 HAL also has
-         * Init.B0 (16-byte formatted nonce+length block). Mock skips B0
-         * formatting and reads pInitVect directly as the raw 12-byte
-         * nonce — firmware code that calls HAL_CRYPEx_AESCCM_Encrypt on
-         * real hardware must construct B0 from the same nonce (TODO at
-         * HW bench day). */
-        uint8_t* Header;
-        uint32_t HeaderSize;  /* bytes */
+        uint32_t* pInitVect;  /* ECB/CBC IV. Для CCM НЕ використовується — WL бере нонс із B0. */
+        /* [FW.2 / ARCH.42] CCM-поля — ДЗЕРКАЛО справжнього WL CRYP_ConfigTypeDef
+         * (stm32wlxx_hal_cryp.h): B0 = форматований 16B-блок (flags‖nonce‖Q,
+         * будує lora_ccm.h::Build_CCM_B0 — мок його ВАЛІДУЄ, не пропускає),
+         * Header/HeaderSize = AAD, width-unit'и = семантика Size-параметрів.
+         * WL-флоу двофазний: HAL_CRYP_Encrypt/Decrypt (payload) →
+         * HAL_CRYPEx_AESCCM_GenerateAuthTAG (тег окремо); AESCCM_Encrypt/
+         * Decrypt як у F4/F7/L4 у WL-HAL НЕ ІСНУЮТЬ. */
+        uint32_t* B0;
+        uint32_t* Header;
+        uint32_t HeaderSize;   /* одиниця = HeaderWidthUnit */
+        uint32_t DataWidthUnit;
+        uint32_t HeaderWidthUnit;
     } Init;
 } CRYP_HandleTypeDef;
 
 /* ── Constants ─────────────────────────────────────────────────────── */
 #define RNG             ((void*)0x58001000UL) /* RNG peripheral base (mock) */
 #define CRYP_DATATYPE_32B   0
+#define CRYP_DATATYPE_8B    2   /* байтопотік без word-swap — CCM-контекст (lora_ccm.h) */
 #define CRYP_KEYSIZE_256B   1   /* CoAP-канал AES-256 (Queen↔Rails) */
 #define CRYP_KEYSIZE_128B   2   /* LoRa-канал AES-128 (Soldier↔Queen) — post-ARCH.42 Variant B */
 #define CRYP_AES_ECB        0
 #define CRYP_AES_CBC        1
 #define CRYP_AES_CCM        2   /* FW.2 target: AES-128-CCM з 8-byte MIC (post-ARCH.42) */
+#define CRYP_DATAWIDTHUNIT_WORD    0x00000000U
+#define CRYP_DATAWIDTHUNIT_BYTE    0x00000001U
+#define CRYP_HEADERWIDTHUNIT_WORD  0x00000000U
+#define CRYP_HEADERWIDTHUNIT_BYTE  0x00000001U
 
 #define PWR_PVDLEVEL_7              7
 #define PWR_PVD_MODE_IT_RISING_FALLING 0
@@ -155,20 +164,145 @@ static inline int HAL_ADC_Stop_DMA(ADC_HandleTypeDef *h) { (void)h; return HAL_O
 static inline int HAL_TIM_Base_Start(TIM_HandleTypeDef *h) { (void)h; return HAL_OK; }
 static inline int HAL_TIM_Base_Stop(TIM_HandleTypeDef *h) { (void)h; return HAL_OK; }
 
+/* ── [FW.2] AES-128-CCM мок: WL-true ДВОФАЗНИЙ флоу через OpenSSL EVP ──
+ *
+ * Дзеркалить справжній STM32WLxx HAL (НЕ F4/F7-стиль AESCCM_Encrypt —
+ * його у WL нема): payload-фаза HAL_CRYP_Encrypt/Decrypt(CCM) + окрема
+ * тег-фаза HAL_CRYPEx_AESCCM_GenerateAuthTAG. На decrypt тег НЕ
+ * звіряється моком — як і кремній, він лише віддає ОБЧИСЛЕНИЙ тег, а
+ * порівняння (константним часом) робить викликач (Fw2_Ccm_Tag_Equal).
+ *
+ * B0 тут ВАЛІДУЄТЬСЯ проти lora_ccm.h::Build_CCM_B0 (flags 0x5A, Q =
+ * Size) — старий мок його пропускав і TODO висів до bench; тепер
+ * байт-ряд B0 доведений host-тестами, bench лишає тільки silicon.
+ *
+ * Decrypt-емуляція без сирої AES: CTR-симетрія CCM — EVP-*encrypt*
+ * шифротексту тим самим нонсом повертає plaintext (C=P⊕S ⇒ P=C⊕S);
+ * тег того проходу хибний (рахований над ct-як-pt), тому другий
+ * encrypt-прохід над відновленим pt дає чесний tag(pt) для тег-фази.
+ *
+ * Enable per-test: #define HAL_MOCK_CCM_ENABLED ДО включення hal_mock.h;
+ * бінарник лінкує -lcrypto. */
+#ifdef HAL_MOCK_CCM_ENABLED
+#include <openssl/evp.h>
+
+#define CCM_MOCK_NONCE_LEN  12
+#define CCM_MOCK_TAG_LEN    8
+#define CCM_MOCK_MAX_PAYLOAD 64
+
+static uint8_t _ccm_mock_tag[CCM_MOCK_TAG_LEN];
+static int     _ccm_mock_tag_valid = 0;
+
+/* B0-привратник: flags/Q мусять збігатися з Build_CCM_B0, нонс — назовні. */
+static inline int _ccm_mock_parse_b0(const CRYP_HandleTypeDef *h, uint16_t size_bytes,
+                                     uint8_t nonce_out[CCM_MOCK_NONCE_LEN]) {
+    const uint8_t *b0 = (const uint8_t *)h->Init.B0;
+    if (!b0) return 0;
+    if (b0[0] != 0x5Au) return 0;  /* FW2_CCM_B0_FLAGS: Adata=1, t=8, q=3 */
+    if (b0[13] != 0x00u) return 0;
+    if ((uint16_t)(((uint16_t)b0[14] << 8) | b0[15]) != size_bytes) return 0;
+    memcpy(nonce_out, &b0[1], CCM_MOCK_NONCE_LEN);
+    return 1;
+}
+
+/* Один EVP-CCM-encrypt прохід: out=шифропотік(in), tag_out=tag(in). */
+static inline int _ccm_mock_evp_pass(const CRYP_HandleTypeDef *h,
+                                     const uint8_t *nonce,
+                                     const uint8_t *in, uint16_t size_bytes,
+                                     uint8_t *out, uint8_t tag_out[CCM_MOCK_TAG_LEN]) {
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) return 0;
+    int ok = 1, len = 0, final_len = 0;
+    ok &= EVP_EncryptInit_ex(ctx, EVP_aes_128_ccm(), NULL, NULL, NULL);
+    ok &= EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_CCM_SET_IVLEN, CCM_MOCK_NONCE_LEN, NULL);
+    ok &= EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_CCM_SET_TAG, CCM_MOCK_TAG_LEN, NULL);
+    ok &= EVP_EncryptInit_ex(ctx, NULL, NULL,
+                             (const unsigned char *)h->Init.pKey, nonce);
+    ok &= EVP_EncryptUpdate(ctx, NULL, &len, NULL, (int)size_bytes);
+    if (h->Init.Header && h->Init.HeaderSize > 0) {
+        ok &= EVP_EncryptUpdate(ctx, NULL, &len,
+                                (const unsigned char *)h->Init.Header,
+                                (int)h->Init.HeaderSize);
+    }
+    ok &= EVP_EncryptUpdate(ctx, out, &len, in, (int)size_bytes);
+    ok &= EVP_EncryptFinal_ex(ctx, out + len, &final_len);
+    ok &= EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_CCM_GET_TAG, CCM_MOCK_TAG_LEN, tag_out);
+    EVP_CIPHER_CTX_free(ctx);
+    return ok;
+}
+
+/* Payload-фаза (спільна для encrypt/decrypt). Size — у БАЙТАХ:
+ * контракт lora_ccm.h вимагає DataWidthUnit=BYTE + HeaderWidthUnit=BYTE
+ * (мок фейлить інакше — ловить неправильно зібраний Init до bench). */
+static inline int _ccm_mock_payload(CRYP_HandleTypeDef *h, int encrypt,
+                                    uint32_t *in, uint16_t size_bytes, uint32_t *out) {
+    uint8_t nonce[CCM_MOCK_NONCE_LEN];
+    /* Будь-яка спроба payload-фази інвалідовує стешований тег ДО привратників —
+     * інакше провалений виклик лишав би живим тег ПОПЕРЕДНЬОЇ операції і
+     * GenerateAuthTAG віддавав би сталу істину (кремній так не милосердний). */
+    _ccm_mock_tag_valid = 0;
+    if (!h || !in || !out) return HAL_ERROR;
+    if (h->Init.KeySize != CRYP_KEYSIZE_128B) return HAL_ERROR;
+    if (h->Init.DataWidthUnit != CRYP_DATAWIDTHUNIT_BYTE) return HAL_ERROR;
+    if (h->Init.HeaderWidthUnit != CRYP_HEADERWIDTHUNIT_BYTE) return HAL_ERROR;
+    if (size_bytes > CCM_MOCK_MAX_PAYLOAD) return HAL_ERROR;
+    if (!_ccm_mock_parse_b0(h, size_bytes, nonce)) return HAL_ERROR;
+
+    if (encrypt) {
+        if (!_ccm_mock_evp_pass(h, nonce, (const uint8_t *)in, size_bytes,
+                                (uint8_t *)out, _ccm_mock_tag)) return HAL_ERROR;
+    } else {
+        uint8_t scratch_tag[CCM_MOCK_TAG_LEN];
+        uint8_t ct_scratch[CCM_MOCK_MAX_PAYLOAD];
+        /* CTR-симетрія: encrypt(ct) → pt; тег цього проходу — сміття. */
+        if (!_ccm_mock_evp_pass(h, nonce, (const uint8_t *)in, size_bytes,
+                                (uint8_t *)out, scratch_tag)) return HAL_ERROR;
+        /* Другий прохід над відновленим pt → чесний tag(pt) для тег-фази. */
+        if (!_ccm_mock_evp_pass(h, nonce, (const uint8_t *)out, size_bytes,
+                                ct_scratch, _ccm_mock_tag)) return HAL_ERROR;
+    }
+    _ccm_mock_tag_valid = 1;
+    return HAL_OK;
+}
+
+/* Тег-фаза. Пише CCM_MOCK_TAG_LEN=8 байт (MIC). Викликач тримає
+ * uint32_t tag_w[4] (16B): справжній WL HAL пише повний 16B-блок,
+ * контракт lora_ccm.h — «перші 8 байт = MIC» — валідний обабіч.
+ * const у сигнатурі — wart справжнього HAL-прототипу (він теж пише). */
+static inline int HAL_CRYPEx_AESCCM_GenerateAuthTAG(CRYP_HandleTypeDef *h,
+                                                    const uint32_t *AuthTag,
+                                                    uint32_t Timeout) {
+    (void)Timeout;
+    if (!h || !AuthTag) return HAL_ERROR;
+    if (!_ccm_mock_tag_valid) return HAL_ERROR; /* тег без payload-фази = помилка порядку */
+    memcpy((void *)AuthTag, _ccm_mock_tag, CCM_MOCK_TAG_LEN);
+    return HAL_OK;
+}
+#endif /* HAL_MOCK_CCM_ENABLED */
+
 /* AES encrypt/decrypt stubs: just copy data through (no actual crypto).
  * [ARCH.42] Гардовано: test_sym_selftest визначає HAL_MOCK_SYM_ENABLED
- * і отримує OpenSSL-backed реалізацію (нижче, біля CCM-mock) — байтопотокова
- * семантика = контракт бекенду. */
+ * і отримує OpenSSL-backed реалізацію (нижче) — байтопотокова
+ * семантика = контракт бекенду. CCM-гілка (якщо ввімкнена) має
+ * пріоритет за Algorithm — обидва варіанти диспетчеризують у неї. */
 #ifndef HAL_MOCK_SYM_ENABLED
 static inline int HAL_CRYP_Encrypt(CRYP_HandleTypeDef *h, uint32_t *in, uint16_t sz,
                                     uint32_t *out, uint32_t to) {
-    (void)h; (void)to;
+    (void)to;
+#ifdef HAL_MOCK_CCM_ENABLED
+    if (h->Init.Algorithm == CRYP_AES_CCM) return _ccm_mock_payload(h, 1, in, sz, out);
+#endif
+    (void)h;
     memcpy(out, in, sz * 4);
     return HAL_OK;
 }
 static inline int HAL_CRYP_Decrypt(CRYP_HandleTypeDef *h, uint32_t *in, uint16_t sz,
                                     uint32_t *out, uint32_t to) {
-    (void)h; (void)to;
+    (void)to;
+#ifdef HAL_MOCK_CCM_ENABLED
+    if (h->Init.Algorithm == CRYP_AES_CCM) return _ccm_mock_payload(h, 0, in, sz, out);
+#endif
+    (void)h;
     memcpy(out, in, sz * 4);
     return HAL_OK;
 }
@@ -296,105 +430,6 @@ static inline int HAL_RTC_GetDate(RTC_HandleTypeDef *h, RTC_DateTypeDef *d, int 
     return HAL_OK;
 }
 
-/* ── [FW.2 / ARCH.42 Variant B] AES-128-CCM mock via OpenSSL libcrypto ──
- *
- * Real STM32WLE5JC HAL_CRYPEx_AESCCM_Encrypt/Decrypt use the on-chip
- * CRYP peripheral; the mock here calls OpenSSL EVP_CIPHER aes-128-ccm
- * so host tests can verify byte-level parity with the Rails-side
- * `Cryptography::LoraCcm` helper (which also uses OpenSSL). HW bench
- * day verifies that the silicon HAL produces the same ciphertext+MIC.
- *
- * Enable per-test by `#define HAL_MOCK_CCM_ENABLED` BEFORE including
- * hal_mock.h. Only test binaries that need CCM link `-lcrypto`.
- *
- * API contract intentionally mirrors the STM32 HAL_CRYPEx surface so
- * firmware code reads identically on host vs target. The only mock
- * simplification: pInitVect is the raw 12-byte nonce (skip B0 block
- * formatting — production firmware will add Build_CCM_B0_Block helper
- * at HW bench day, gated under FW2_CCM_ENABLED #define).
- */
-#ifdef HAL_MOCK_CCM_ENABLED
-#include <openssl/evp.h>
-
-#define CCM_MOCK_NONCE_LEN  12
-#define CCM_MOCK_TAG_LEN    8
-#define CCM_MOCK_AAD_LEN    8
-
-/* Encrypt: input=plaintext (Size bytes), output buffer must hold
- * Size + CCM_MOCK_TAG_LEN bytes (ciphertext || tag). Returns HAL_OK
- * on success, HAL_ERROR on EVP failure. */
-static inline int HAL_CRYPEx_AESCCM_Encrypt(CRYP_HandleTypeDef *hcryp,
-                                            uint8_t *Input, uint16_t Size,
-                                            uint8_t *Output, uint32_t Timeout) {
-    (void)Timeout;
-    if (!hcryp || !Input || !Output) return HAL_ERROR;
-    if (hcryp->Init.Algorithm != CRYP_AES_CCM) return HAL_ERROR;
-    if (hcryp->Init.KeySize != CRYP_KEYSIZE_128B) return HAL_ERROR;
-
-    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
-    if (!ctx) return HAL_ERROR;
-
-    int ok = 1;
-    int len = 0;
-    ok &= EVP_EncryptInit_ex(ctx, EVP_aes_128_ccm(), NULL, NULL, NULL);
-    ok &= EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_CCM_SET_IVLEN, CCM_MOCK_NONCE_LEN, NULL);
-    ok &= EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_CCM_SET_TAG, CCM_MOCK_TAG_LEN, NULL);
-    ok &= EVP_EncryptInit_ex(ctx, NULL, NULL,
-                             (const unsigned char *)hcryp->Init.pKey,
-                             (const unsigned char *)hcryp->Init.pInitVect);
-    /* Required for CCM: provide total plaintext length before AAD. */
-    ok &= EVP_EncryptUpdate(ctx, NULL, &len, NULL, (int)Size);
-    if (hcryp->Init.Header && hcryp->Init.HeaderSize > 0) {
-        ok &= EVP_EncryptUpdate(ctx, NULL, &len,
-                                hcryp->Init.Header, (int)hcryp->Init.HeaderSize);
-    }
-    ok &= EVP_EncryptUpdate(ctx, Output, &len, Input, (int)Size);
-    int final_len = 0;
-    ok &= EVP_EncryptFinal_ex(ctx, Output + len, &final_len);
-    ok &= EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_CCM_GET_TAG, CCM_MOCK_TAG_LEN,
-                              Output + Size);
-    EVP_CIPHER_CTX_free(ctx);
-    return ok ? HAL_OK : HAL_ERROR;
-}
-
-/* Decrypt: input=ciphertext (Size bytes) followed by Size+CCM_MOCK_TAG_LEN
- * region of tag bytes; expected layout is Input[0..Size-1] = ciphertext,
- * Input[Size..Size+7] = tag (matches HAL_CRYPEx behaviour where caller
- * provides one buffer). Output (Size bytes) = plaintext. Returns HAL_OK
- * on MIC verify, HAL_ERROR on tamper or invalid params. */
-static inline int HAL_CRYPEx_AESCCM_Decrypt(CRYP_HandleTypeDef *hcryp,
-                                            uint8_t *Input, uint16_t Size,
-                                            uint8_t *Output, uint32_t Timeout) {
-    (void)Timeout;
-    if (!hcryp || !Input || !Output) return HAL_ERROR;
-    if (hcryp->Init.Algorithm != CRYP_AES_CCM) return HAL_ERROR;
-    if (hcryp->Init.KeySize != CRYP_KEYSIZE_128B) return HAL_ERROR;
-
-    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
-    if (!ctx) return HAL_ERROR;
-
-    int ok = 1;
-    int len = 0;
-    ok &= EVP_DecryptInit_ex(ctx, EVP_aes_128_ccm(), NULL, NULL, NULL);
-    ok &= EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_CCM_SET_IVLEN, CCM_MOCK_NONCE_LEN, NULL);
-    /* Tag must be set BEFORE key/iv during decrypt-init for CCM. */
-    ok &= EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_CCM_SET_TAG, CCM_MOCK_TAG_LEN,
-                              Input + Size);
-    ok &= EVP_DecryptInit_ex(ctx, NULL, NULL,
-                             (const unsigned char *)hcryp->Init.pKey,
-                             (const unsigned char *)hcryp->Init.pInitVect);
-    ok &= EVP_DecryptUpdate(ctx, NULL, &len, NULL, (int)Size);
-    if (hcryp->Init.Header && hcryp->Init.HeaderSize > 0) {
-        ok &= EVP_DecryptUpdate(ctx, NULL, &len,
-                                hcryp->Init.Header, (int)hcryp->Init.HeaderSize);
-    }
-    /* For CCM, EVP_DecryptUpdate returns 1 on MIC OK, 0 on tamper. */
-    int verify = EVP_DecryptUpdate(ctx, Output, &len, Input, (int)Size);
-    EVP_CIPHER_CTX_free(ctx);
-    return (ok && verify == 1) ? HAL_OK : HAL_ERROR;
-}
-#endif /* HAL_MOCK_CCM_ENABLED */
-
 /* ── [ARCH.42] OpenSSL-backed ECB/CBC mock ──────────────────────
  * Дзеркало CCM-mock'а для ТРАНЗИТНИХ шляхів ARCH.42: рахує справжній AES
  * через EVP з БАЙТОПОТОКОВОЮ семантикою (sz — у 32-бітних словах, як у
@@ -441,11 +476,17 @@ static inline int _sym_mock_run(CRYP_HandleTypeDef *h, int encrypt,
 static inline int HAL_CRYP_Encrypt(CRYP_HandleTypeDef *h, uint32_t *in, uint16_t sz,
                                     uint32_t *out, uint32_t to) {
     (void)to;
+#ifdef HAL_MOCK_CCM_ENABLED
+    if (h->Init.Algorithm == CRYP_AES_CCM) return _ccm_mock_payload(h, 1, in, sz, out);
+#endif
     return _sym_mock_run(h, 1, in, sz, out);
 }
 static inline int HAL_CRYP_Decrypt(CRYP_HandleTypeDef *h, uint32_t *in, uint16_t sz,
                                     uint32_t *out, uint32_t to) {
     (void)to;
+#ifdef HAL_MOCK_CCM_ENABLED
+    if (h->Init.Algorithm == CRYP_AES_CCM) return _ccm_mock_payload(h, 0, in, sz, out);
+#endif
     return _sym_mock_run(h, 0, in, sz, out);
 }
 #endif /* HAL_MOCK_SYM_ENABLED */

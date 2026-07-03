@@ -8,20 +8,23 @@
  *   1. Golden vector parity vs Rails Cryptography::LoraCcm
  *   2. RTC_BKP_DR15 Frame Counter pack/unpack with magic marker
  *   3. Cold-boot FC reseed (HRNG)
- *   4. FC monotonic increment + saturating wrap
+ *   4. B0-блок: голден-байти + мок-привратник проти кривого B0
  *   5. Sensor payload pack/unpack roundtrip
  *   6. Soldier build → Queen parse roundtrip
- *   7. MIC tamper detection (Queen drops packet)
- *   8. AAD tamper detection (DID/FC flip → MIC fail)
+ *   7. MIC tamper detection (кінцева звірка Fw2_Ccm_Tag_Equal)
+ *   8. AAD tamper detection (DID/FC/gossip flip → MIC fail)
  *   9. Ciphertext tamper detection
  *  10. Wrong key on Queen → MIC fail
  *  11. Panic flag inside encrypted payload (MIC covers it)
  *  12. mesh_ctrl bitfield roundtrip (TTL + fw_epoch_nibble)
  *
- * Mock HAL_CRYPEx_AESCCM_* are libcrypto-backed (OpenSSL EVP), so
- * byte-level parity here is the same guarantee Rails-side spec gives.
- * Only `HAL_CRYPEx_AESCCM_Encrypt` on real STM32WLE5JC silicon is
- * unverified — that's the one item that genuinely needs HW bench.
+ * Мок = WL-true ДВОФАЗНИЙ флоу (hal_mock.h): HAL_CRYP_Encrypt/Decrypt
+ * (payload) + HAL_CRYPEx_AESCCM_GenerateAuthTAG (тег), B0 валідується
+ * проти lora_ccm.h::Build_CCM_B0 — F4-стильного AESCCM_Encrypt у WL-HAL
+ * НЕ ІСНУЄ (знахідка 2026-07-03), тож і тести, і польовий код живуть
+ * на одному real-API shape. Байт-рівність із OpenSSL = та сама
+ * гарантія, що дає Rails-side spec; на bench лишається лише silicon
+ * (ccm_selftest.h ганяє ці ж вектори через живий CRYP).
  */
 
 #define HAL_MOCK_CCM_ENABLED
@@ -66,14 +69,74 @@ static void Reset_Mock_State(void) {
     memset(&hcryp, 0, sizeof(hcryp));
 }
 
-/* Set up CCM context the same way Soldier_Build_CCM_LoRa_Packet does. */
-static void Cryp_Init_For_Encrypt(uint32_t key[4], uint8_t *nonce, uint8_t *aad) {
-    hcryp.Init.KeySize    = CRYP_KEYSIZE_128B;
-    hcryp.Init.pKey       = key;
-    hcryp.Init.Algorithm  = CRYP_AES_CCM;
-    hcryp.Init.pInitVect  = (uint32_t*)nonce;
-    hcryp.Init.Header     = aad;
-    hcryp.Init.HeaderSize = FW2_CCM_AAD_LEN;
+/* CCM-конфіг у стилі MX_CRYP_Init_CCM обох main.c: B0 + AAD + BYTE-юніти.
+ * Вказівники лишаються на буферах викликача — тримати їх живими до кінця
+ * обох фаз (усі хелпери нижче так і роблять). */
+static void Cryp_Init_For_Ccm(uint32_t key_w[4], uint32_t b0_w[4], uint32_t aad_w[2]) {
+    hcryp.Init.KeySize         = CRYP_KEYSIZE_128B;
+    hcryp.Init.Algorithm       = CRYP_AES_CCM;
+    hcryp.Init.DataType        = CRYP_DATATYPE_8B;
+    hcryp.Init.pKey            = key_w;
+    hcryp.Init.B0              = b0_w;
+    hcryp.Init.Header          = aad_w;
+    hcryp.Init.HeaderSize      = FW2_CCM_AAD_LEN;
+    hcryp.Init.DataWidthUnit   = CRYP_DATAWIDTHUNIT_BYTE;
+    hcryp.Init.HeaderWidthUnit = CRYP_HEADERWIDTHUNIT_BYTE;
+    HAL_CRYP_Init(&hcryp);
+}
+
+/* Двофазний encrypt (payload → тег), дзеркало Soldier_Build_CCM_LoRa_Packet. */
+static int Ccm_Encrypt_TwoPhase(uint32_t key_w[4],
+                                const uint8_t nonce[FW2_CCM_NONCE_LEN],
+                                const uint8_t aad[FW2_CCM_AAD_LEN],
+                                const uint8_t pt[FW2_CCM_PLAINTEXT_LEN],
+                                uint8_t out_ct[FW2_CCM_PLAINTEXT_LEN],
+                                uint8_t out_mic[FW2_CCM_MIC_LEN]) {
+    uint32_t b0_w[FW2_CCM_B0_LEN / 4];
+    uint32_t aad_w[FW2_CCM_AAD_LEN / 4];
+    uint32_t pt_w[FW2_CCM_PLAINTEXT_LEN / 4];
+    uint32_t ct_w[FW2_CCM_PLAINTEXT_LEN / 4];
+    uint32_t tag_w[4];
+    Build_CCM_B0_From_Nonce(nonce, FW2_CCM_PLAINTEXT_LEN, (uint8_t *)b0_w);
+    memcpy(aad_w, aad, FW2_CCM_AAD_LEN);
+    memcpy(pt_w, pt, FW2_CCM_PLAINTEXT_LEN);
+    Cryp_Init_For_Ccm(key_w, b0_w, aad_w);
+    if (HAL_CRYP_Encrypt(&hcryp, pt_w, FW2_CCM_PLAINTEXT_LEN, ct_w, 1000) != HAL_OK)
+        return HAL_ERROR;
+    if (HAL_CRYPEx_AESCCM_GenerateAuthTAG(&hcryp, tag_w, 1000) != HAL_OK)
+        return HAL_ERROR;
+    memcpy(out_ct, ct_w, FW2_CCM_PLAINTEXT_LEN);
+    memcpy(out_mic, tag_w, FW2_CCM_MIC_LEN);
+    return HAL_OK;
+}
+
+/* Двофазний decrypt + caller-side MIC-звірка (дзеркало Queen_Parse_CCM):
+ * HAL_OK ЛИШЕ якщо computed tag == wire MIC — тобто семантика «HAL_ERROR
+ * на tamper» збережена для всіх tamper-тестів, але живе там, де на WL
+ * насправді: у константній звірці викликача. */
+static int Ccm_Decrypt_TwoPhase(uint32_t key_w[4],
+                                const uint8_t nonce[FW2_CCM_NONCE_LEN],
+                                const uint8_t aad[FW2_CCM_AAD_LEN],
+                                const uint8_t ct[FW2_CCM_PLAINTEXT_LEN],
+                                const uint8_t mic[FW2_CCM_MIC_LEN],
+                                uint8_t out_pt[FW2_CCM_PLAINTEXT_LEN]) {
+    uint32_t b0_w[FW2_CCM_B0_LEN / 4];
+    uint32_t aad_w[FW2_CCM_AAD_LEN / 4];
+    uint32_t ct_w[FW2_CCM_PLAINTEXT_LEN / 4];
+    uint32_t pt_w[FW2_CCM_PLAINTEXT_LEN / 4];
+    uint32_t tag_w[4];
+    Build_CCM_B0_From_Nonce(nonce, FW2_CCM_PLAINTEXT_LEN, (uint8_t *)b0_w);
+    memcpy(aad_w, aad, FW2_CCM_AAD_LEN);
+    memcpy(ct_w, ct, FW2_CCM_PLAINTEXT_LEN);
+    Cryp_Init_For_Ccm(key_w, b0_w, aad_w);
+    if (HAL_CRYP_Decrypt(&hcryp, ct_w, FW2_CCM_PLAINTEXT_LEN, pt_w, 1000) != HAL_OK)
+        return HAL_ERROR;
+    if (HAL_CRYPEx_AESCCM_GenerateAuthTAG(&hcryp, tag_w, 1000) != HAL_OK)
+        return HAL_ERROR;
+    if (!Fw2_Ccm_Tag_Equal((const uint8_t *)tag_w, mic))
+        return HAL_ERROR;
+    memcpy(out_pt, pt_w, FW2_CCM_PLAINTEXT_LEN);
+    return HAL_OK;
 }
 
 /* ── tests ───────────────────────────────────────────────────────────── */
@@ -84,17 +147,15 @@ static int test_golden_vector_encrypt(void) {
 
     uint8_t nonce[FW2_CCM_NONCE_LEN];
     uint8_t aad[FW2_CCM_AAD_LEN];
-    uint8_t out[FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN];
+    uint8_t ct[FW2_CCM_PLAINTEXT_LEN];
+    uint8_t mic[FW2_CCM_MIC_LEN];
 
     Build_CCM_Nonce(G_DID, G_FC, nonce);
     Build_CCM_AAD(G_DID, G_GOSSIP, G_FC, aad);
-    Cryp_Init_For_Encrypt(key_words, nonce, aad);
 
-    int rc = HAL_CRYPEx_AESCCM_Encrypt(&hcryp, (uint8_t*)G_PT,
-                                       FW2_CCM_PLAINTEXT_LEN, out, 1000);
-    ASSERT_EQ(rc, HAL_OK);
-    ASSERT_MEM_EQ(out, G_CT, FW2_CCM_PLAINTEXT_LEN);
-    ASSERT_MEM_EQ(out + FW2_CCM_PLAINTEXT_LEN, G_TAG, FW2_CCM_MIC_LEN);
+    ASSERT_EQ(Ccm_Encrypt_TwoPhase(key_words, nonce, aad, G_PT, ct, mic), HAL_OK);
+    ASSERT_MEM_EQ(ct, G_CT, FW2_CCM_PLAINTEXT_LEN);
+    ASSERT_MEM_EQ(mic, G_TAG, FW2_CCM_MIC_LEN);
     printf("  test_golden_vector_encrypt                                 ✅\n");
     return 0;
 }
@@ -105,20 +166,69 @@ static int test_golden_vector_decrypt(void) {
 
     uint8_t nonce[FW2_CCM_NONCE_LEN];
     uint8_t aad[FW2_CCM_AAD_LEN];
-    uint8_t ct_and_tag[FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN];
     uint8_t out[FW2_CCM_PLAINTEXT_LEN];
 
     Build_CCM_Nonce(G_DID, G_FC, nonce);
     Build_CCM_AAD(G_DID, G_GOSSIP, G_FC, aad);
-    memcpy(ct_and_tag, G_CT, FW2_CCM_PLAINTEXT_LEN);
-    memcpy(ct_and_tag + FW2_CCM_PLAINTEXT_LEN, G_TAG, FW2_CCM_MIC_LEN);
 
-    Cryp_Init_For_Encrypt(key_words, nonce, aad);
-    int rc = HAL_CRYPEx_AESCCM_Decrypt(&hcryp, ct_and_tag,
-                                       FW2_CCM_PLAINTEXT_LEN, out, 1000);
-    ASSERT_EQ(rc, HAL_OK);
+    ASSERT_EQ(Ccm_Decrypt_TwoPhase(key_words, nonce, aad, G_CT, G_TAG, out), HAL_OK);
     ASSERT_MEM_EQ(out, G_PT, FW2_CCM_PLAINTEXT_LEN);
     printf("  test_golden_vector_decrypt                                 ✅\n");
+    return 0;
+}
+
+static int test_b0_block_format(void) {
+    /* B0 = [0x5A][nonce:12][0x00 0x00 0x0C] — NIST 800-38C: Adata=1,
+     * t=8 → M'=3, q=3 → L'=2; Q(=12) big-endian у хвості. Байт-ряд
+     * зашитий у Build_CCM_B0* і валідується моком — розійтися з
+     * кремнієвим B0 тепер можна лише свідомо. */
+    uint8_t nonce[FW2_CCM_NONCE_LEN];
+    uint8_t b0[FW2_CCM_B0_LEN];
+    Build_CCM_Nonce(G_DID, G_FC, nonce);
+    Build_CCM_B0(G_DID, G_FC, b0);
+
+    ASSERT_EQ(b0[0], FW2_CCM_B0_FLAGS);
+    ASSERT_EQ(b0[0], 0x5Au);
+    ASSERT_MEM_EQ(&b0[1], nonce, FW2_CCM_NONCE_LEN);
+    ASSERT_EQ(b0[13], 0x00);
+    ASSERT_EQ(b0[14], 0x00);
+    ASSERT_EQ(b0[15], FW2_CCM_PLAINTEXT_LEN);
+    printf("  test_b0_block_format                                       ✅\n");
+    return 0;
+}
+
+static int test_b0_gatekeeper_rejects_malformed(void) {
+    /* Мок-привратник: криві flags або Q ≠ Size → payload-фаза HAL_ERROR
+     * (ловить неправильно зібраний Init до bench-дня). Плюс порядок фаз:
+     * тег без payload-фази — теж помилка. */
+    uint32_t key_w[4] = {0};
+    uint32_t b0_w[FW2_CCM_B0_LEN / 4];
+    uint32_t aad_w[FW2_CCM_AAD_LEN / 4];
+    uint32_t pt_w[FW2_CCM_PLAINTEXT_LEN / 4] = {0};
+    uint32_t ct_w[FW2_CCM_PLAINTEXT_LEN / 4];
+    uint32_t tag_w[4];
+    uint8_t  nonce[FW2_CCM_NONCE_LEN];
+    uint8_t  aad[FW2_CCM_AAD_LEN];
+
+    Build_CCM_Nonce(G_DID, G_FC, nonce);
+    Build_CCM_AAD(G_DID, G_GOSSIP, G_FC, aad);
+    memcpy(aad_w, aad, FW2_CCM_AAD_LEN);
+
+    /* Криві flags (0x59 ≠ 0x5A). */
+    Build_CCM_B0_From_Nonce(nonce, FW2_CCM_PLAINTEXT_LEN, (uint8_t *)b0_w);
+    ((uint8_t *)b0_w)[0] = 0x59u;
+    Cryp_Init_For_Ccm(key_w, b0_w, aad_w);
+    ASSERT_EQ(HAL_CRYP_Encrypt(&hcryp, pt_w, FW2_CCM_PLAINTEXT_LEN, ct_w, 1000), HAL_ERROR);
+
+    /* Q-поле бреше про довжину. */
+    Build_CCM_B0_From_Nonce(nonce, FW2_CCM_PLAINTEXT_LEN, (uint8_t *)b0_w);
+    ((uint8_t *)b0_w)[15] = FW2_CCM_PLAINTEXT_LEN + 1;
+    Cryp_Init_For_Ccm(key_w, b0_w, aad_w);
+    ASSERT_EQ(HAL_CRYP_Encrypt(&hcryp, pt_w, FW2_CCM_PLAINTEXT_LEN, ct_w, 1000), HAL_ERROR);
+
+    /* Тег-фаза без payload-фази (провалена вище) = помилка порядку. */
+    ASSERT_EQ(HAL_CRYPEx_AESCCM_GenerateAuthTAG(&hcryp, tag_w, 1000), HAL_ERROR);
+    printf("  test_b0_gatekeeper_rejects_malformed                       ✅\n");
     return 0;
 }
 
@@ -182,8 +292,6 @@ static int test_soldier_to_queen_roundtrip(void) {
     /* Encrypt as Soldier (manual — replicates Soldier_Build_CCM_LoRa_Packet). */
     uint32_t key_words[4];
     for (int i = 0; i < 4; i++) key_words[i] = 0xDEAD0000u | (uint32_t)i;
-    uint8_t key_bytes[16];
-    memcpy(key_bytes, key_words, 16);
 
     const uint32_t did = 0x534E4554u; /* "SNET" */
     const uint32_t fc  = 9001;
@@ -191,21 +299,21 @@ static int test_soldier_to_queen_roundtrip(void) {
     uint8_t nonce[FW2_CCM_NONCE_LEN];
     uint8_t aad[FW2_CCM_AAD_LEN];
     uint8_t pt[FW2_CCM_PLAINTEXT_LEN];
-    uint8_t ct_tag[FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN];
+    uint8_t ct[FW2_CCM_PLAINTEXT_LEN];
+    uint8_t mic[FW2_CCM_MIC_LEN];
 
     Build_CCM_Nonce(did, fc, nonce);
     Build_CCM_AAD(did, 0x00, fc, aad);
     Pack_CCM_Sensor_Payload(4200, 22, 7, 600, 0x00, 0x53,
                             Pack_FW2_Device_Z(28.731f, 1), 0x00, 0x00, pt);
 
-    Cryp_Init_For_Encrypt(key_words, nonce, aad);
-    ASSERT_EQ(HAL_CRYPEx_AESCCM_Encrypt(&hcryp, pt, FW2_CCM_PLAINTEXT_LEN, ct_tag, 1000), HAL_OK);
+    ASSERT_EQ(Ccm_Encrypt_TwoPhase(key_words, nonce, aad, pt, ct, mic), HAL_OK);
 
-    /* Assemble 24B on-air packet. */
+    /* Assemble 28B on-air packet. */
     uint8_t air[FW2_CCM_AIR_PACKET_LEN];
     memcpy(&air[0],  aad, FW2_CCM_AAD_LEN);
-    memcpy(&air[FW2_CCM_AAD_LEN], ct_tag, FW2_CCM_PLAINTEXT_LEN);
-    memcpy(&air[FW2_CCM_AAD_LEN + FW2_CCM_PLAINTEXT_LEN], ct_tag + FW2_CCM_PLAINTEXT_LEN, FW2_CCM_MIC_LEN);
+    memcpy(&air[FW2_CCM_AAD_LEN], ct, FW2_CCM_PLAINTEXT_LEN);
+    memcpy(&air[FW2_CCM_AAD_LEN + FW2_CCM_PLAINTEXT_LEN], mic, FW2_CCM_MIC_LEN);
 
     /* Parse as Queen (manual — replicates Queen_Parse_CCM_LoRa_Packet). */
     uint8_t recv_nonce[FW2_CCM_NONCE_LEN];
@@ -219,36 +327,28 @@ static int test_soldier_to_queen_roundtrip(void) {
     Build_CCM_Nonce(recv_did, recv_fc, recv_nonce);
     Build_CCM_AAD(recv_did, recv_gossip, recv_fc, recv_aad);
 
-    uint8_t recv_ct_tag[FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN];
-    memcpy(recv_ct_tag, &air[8], FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN);
-
     uint8_t recv_pt[FW2_CCM_PLAINTEXT_LEN];
-    Cryp_Init_For_Encrypt(key_words, recv_nonce, recv_aad);
-    int rc = HAL_CRYPEx_AESCCM_Decrypt(&hcryp, recv_ct_tag, FW2_CCM_PLAINTEXT_LEN, recv_pt, 1000);
-    ASSERT_EQ(rc, HAL_OK);
+    ASSERT_EQ(Ccm_Decrypt_TwoPhase(key_words, recv_nonce, recv_aad,
+                                   &air[8], &air[20], recv_pt), HAL_OK);
     ASSERT_EQ(recv_did, did);
     ASSERT_EQ(recv_fc, fc);
     ASSERT_MEM_EQ(recv_pt, pt, FW2_CCM_PLAINTEXT_LEN);
-
-    /* Use key_bytes to assure mock truly reads pKey. */
-    (void)key_bytes;
     printf("  test_soldier_to_queen_roundtrip                            ✅\n");
     return 0;
 }
 
-/* Helper: build a fully-encrypted 24B packet for tamper tests. */
+/* Helper: build a fully-encrypted 28B packet for tamper tests. */
 static void Build_Reference_Packet(uint32_t key_words[4], uint32_t did, uint32_t fc,
                                    uint8_t out[FW2_CCM_AIR_PACKET_LEN]) {
     uint8_t nonce[FW2_CCM_NONCE_LEN], aad[FW2_CCM_AAD_LEN];
     uint8_t pt[FW2_CCM_PLAINTEXT_LEN] = {1,2,3,4,5,6,7,8,9,10,11,12};
-    uint8_t ct_tag[FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN];
+    uint8_t ct[FW2_CCM_PLAINTEXT_LEN], mic[FW2_CCM_MIC_LEN];
     Build_CCM_Nonce(did, fc, nonce);
     Build_CCM_AAD(did, 0x00, fc, aad);
-    Cryp_Init_For_Encrypt(key_words, nonce, aad);
-    HAL_CRYPEx_AESCCM_Encrypt(&hcryp, pt, FW2_CCM_PLAINTEXT_LEN, ct_tag, 1000);
+    Ccm_Encrypt_TwoPhase(key_words, nonce, aad, pt, ct, mic);
     memcpy(&out[0],  aad, FW2_CCM_AAD_LEN);
-    memcpy(&out[FW2_CCM_AAD_LEN], ct_tag, FW2_CCM_PLAINTEXT_LEN);
-    memcpy(&out[FW2_CCM_AAD_LEN + FW2_CCM_PLAINTEXT_LEN], ct_tag + FW2_CCM_PLAINTEXT_LEN, FW2_CCM_MIC_LEN);
+    memcpy(&out[FW2_CCM_AAD_LEN], ct, FW2_CCM_PLAINTEXT_LEN);
+    memcpy(&out[FW2_CCM_AAD_LEN + FW2_CCM_PLAINTEXT_LEN], mic, FW2_CCM_MIC_LEN);
 }
 
 static int Try_Decrypt(uint32_t key_words[4],
@@ -263,11 +363,7 @@ static int Try_Decrypt(uint32_t key_words[4],
         ((uint32_t)in[5] << 16) | ((uint32_t)in[6] << 8) | (uint32_t)in[7];
     Build_CCM_Nonce(did, fc, nonce);
     Build_CCM_AAD(did, gossip, fc, aad);
-
-    uint8_t ct_tag[FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN];
-    memcpy(ct_tag, &in[8], FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN);
-    Cryp_Init_For_Encrypt(key_words, nonce, aad);
-    return HAL_CRYPEx_AESCCM_Decrypt(&hcryp, ct_tag, FW2_CCM_PLAINTEXT_LEN, out_pt, 1000);
+    return Ccm_Decrypt_TwoPhase(key_words, nonce, aad, &in[8], &in[20], out_pt);
 }
 
 static int test_mic_tamper_detected(void) {
@@ -332,7 +428,7 @@ static int test_wrong_key_rejected(void) {
 
 static int test_panic_flag_inside_encrypted_payload(void) {
     /* FW.29 panic flag (bit 7 of status_byte) now lives at offset 14 within
-     * the 24B packet (= offset 6 of the encrypted payload). Flipping it
+     * the 28B packet (= offset 6 of the encrypted payload). Flipping it
      * on the wire breaks MIC, so an attacker cannot forge a panic alert
      * from a benign packet. This was an explicit FW.29 design goal. */
     uint32_t key[4] = {0xCAFE0000, 0xCAFE0001, 0xCAFE0002, 0xCAFE0003};
@@ -341,16 +437,15 @@ static int test_panic_flag_inside_encrypted_payload(void) {
     /* Build a benign packet (status_byte = 0, no panic). */
     uint8_t nonce[FW2_CCM_NONCE_LEN], aad[FW2_CCM_AAD_LEN];
     uint8_t pt[FW2_CCM_PLAINTEXT_LEN];
-    uint8_t ct_tag[FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN];
+    uint8_t ct[FW2_CCM_PLAINTEXT_LEN], mic[FW2_CCM_MIC_LEN];
     Build_CCM_Nonce(0xAABBCCDD, 42, nonce);
     Build_CCM_AAD(0xAABBCCDD, 0x00, 42, aad);
     Pack_CCM_Sensor_Payload(3500, 25, 5, 100, 0x00 /* no panic */, 0x33,
                             FW2_DEVICE_Z_NONE, 0x00, 0x00, pt);
-    Cryp_Init_For_Encrypt(key, nonce, aad);
-    ASSERT_EQ(HAL_CRYPEx_AESCCM_Encrypt(&hcryp, pt, FW2_CCM_PLAINTEXT_LEN, ct_tag, 1000), HAL_OK);
+    ASSERT_EQ(Ccm_Encrypt_TwoPhase(key, nonce, aad, pt, ct, mic), HAL_OK);
     memcpy(&pkt[0],  aad, FW2_CCM_AAD_LEN);
-    memcpy(&pkt[FW2_CCM_AAD_LEN], ct_tag, FW2_CCM_PLAINTEXT_LEN);
-    memcpy(&pkt[FW2_CCM_AAD_LEN + FW2_CCM_PLAINTEXT_LEN], ct_tag + FW2_CCM_PLAINTEXT_LEN, FW2_CCM_MIC_LEN);
+    memcpy(&pkt[FW2_CCM_AAD_LEN], ct, FW2_CCM_PLAINTEXT_LEN);
+    memcpy(&pkt[FW2_CCM_AAD_LEN + FW2_CCM_PLAINTEXT_LEN], mic, FW2_CCM_MIC_LEN);
 
     /* Attacker flips PANIC_FLAG_BIT on byte 14 of the on-air packet. */
     pkt[14] ^= FW2_STATUS_PANIC_BIT;
@@ -418,6 +513,117 @@ static int test_diag_byte_pack(void) {
     return 0;
 }
 
+static int test_phase4_marshalling_e2e_to_backend_bytes(void) {
+    /* e2e дзеркало Фази 4 → ефір → 29B-запис Королеви: аргументи складені
+     * РІВНО як call-site у soldier/main.c (mesh_ctrl = TTL|fw-nibble, diag =
+     * Pack_FW2_Diag(thr,0,0,fc_degraded), dt-сатурація, сирий vcap), а
+     * розкладка на виході — та, яку читає process_ccm_chunk. */
+    enum { DEFAULT_TTL_M = 3, FIRMWARE_VERSION_ID_M = 0x0001 };
+    uint32_t key[4] = {0x11110000, 0x22220000, 0x33330000, 0x44440000};
+    const uint32_t did = 0x00C0FFEE;
+    const uint32_t fc  = 77;
+
+    /* Джерела Фази 4 (імена дзеркалять main.c): */
+    uint16_t vcap_voltage = 3300;                     /* сирий, НЕ EMA */
+    int8_t   temp_c       = -7;
+    uint8_t  acoustic     = 0xFD;                     /* ARCH.41-B кап реального 0xFE */
+    uint32_t delta_t_raw  = 200000;                   /* зимова доба > 0xFFFF */
+    uint32_t dt_wire      = (delta_t_raw > 0xFFFFu) ? 0xFFFFu : delta_t_raw;
+    uint8_t  status_byte  = 0x25 & (uint8_t)~0x80u;   /* після FW.29-маски */
+    uint8_t  mesh_ctrl    = (uint8_t)(((DEFAULT_TTL_M & FW2_MESH_TTL_MASK)
+                                       << FW2_MESH_TTL_SHIFT) |
+                                      (FIRMWARE_VERSION_ID_M & FW2_MESH_FW_NIBBLE_MASK));
+    uint8_t  diag         = Pack_FW2_Diag(7, 0, 0, 1);
+    uint16_t device_z     = Pack_FW2_Device_Z(28.5f, 1);
+    uint8_t  gossip       = (uint8_t)(0x66554433u & 0xFFu); /* unix_ts LSB */
+
+    uint8_t nonce[FW2_CCM_NONCE_LEN], aad[FW2_CCM_AAD_LEN];
+    uint8_t pt[FW2_CCM_PLAINTEXT_LEN], ct[FW2_CCM_PLAINTEXT_LEN], mic[FW2_CCM_MIC_LEN];
+    Build_CCM_Nonce(did, fc, nonce);
+    Build_CCM_AAD(did, gossip, fc, aad);
+    Pack_CCM_Sensor_Payload(vcap_voltage, temp_c, acoustic, (uint16_t)dt_wire,
+                            status_byte, mesh_ctrl, device_z, diag, 0x00, pt);
+    ASSERT_EQ(Ccm_Encrypt_TwoPhase(key, nonce, aad, pt, ct, mic), HAL_OK);
+
+    uint8_t air[FW2_CCM_AIR_PACKET_LEN];
+    memcpy(&air[0], aad, FW2_CCM_AAD_LEN);
+    memcpy(&air[8], ct, FW2_CCM_PLAINTEXT_LEN);
+    memcpy(&air[20], mic, FW2_CCM_MIC_LEN);
+
+    /* Королева: 29B-запис [DID][|RSSI|][air 4..27] (rx_route-контракт). */
+    uint8_t rec[29];
+    memcpy(&rec[0], &air[0], 4);
+    rec[4] = 91; /* |-91| */
+    memcpy(&rec[5], &air[4], 24);
+
+    /* «Rails»: поля з запису → decrypt+verify → unpack-звірка джерел. */
+    uint32_t r_did = ((uint32_t)rec[0] << 24) | ((uint32_t)rec[1] << 16) |
+                     ((uint32_t)rec[2] << 8)  | (uint32_t)rec[3];
+    uint8_t  r_gossip = rec[5];
+    uint32_t r_fc = ((uint32_t)rec[6] << 16) | ((uint32_t)rec[7] << 8) | (uint32_t)rec[8];
+    ASSERT_EQ(r_did, did);
+    ASSERT_EQ(r_gossip, gossip);
+    ASSERT_EQ(r_fc, fc);
+
+    uint8_t r_nonce[FW2_CCM_NONCE_LEN], r_aad[FW2_CCM_AAD_LEN], r_pt[FW2_CCM_PLAINTEXT_LEN];
+    Build_CCM_Nonce(r_did, r_fc, r_nonce);
+    Build_CCM_AAD(r_did, r_gossip, r_fc, r_aad);
+    ASSERT_EQ(Ccm_Decrypt_TwoPhase(key, r_nonce, r_aad, &rec[9], &rec[21], r_pt), HAL_OK);
+
+    uint16_t u_vcap, u_dt, u_dz; int8_t u_temp;
+    uint8_t u_ac, u_st, u_mc, u_diag, u_vpd;
+    Unpack_CCM_Sensor_Payload(r_pt, &u_vcap, &u_temp, &u_ac, &u_dt, &u_st, &u_mc,
+                              &u_dz, &u_diag, &u_vpd);
+    ASSERT_EQ(u_vcap, vcap_voltage);
+    ASSERT_EQ((uint32_t)(int32_t)u_temp, (uint32_t)(int32_t)temp_c);
+    ASSERT_EQ(u_ac, acoustic);
+    ASSERT_EQ(u_dt, 0xFFFF);                   /* сатурація доїхала */
+    ASSERT_EQ(u_st, status_byte);
+    ASSERT_EQ((u_mc >> FW2_MESH_TTL_SHIFT) & FW2_MESH_TTL_MASK, DEFAULT_TTL_M);
+    ASSERT_EQ(u_mc & FW2_MESH_FW_NIBBLE_MASK, FIRMWARE_VERSION_ID_M & 0x0F);
+    ASSERT_EQ(u_dz, device_z);
+    ASSERT_EQ(u_diag, diag);
+    ASSERT_EQ(u_vpd, 0x00);
+    printf("  test_phase4_marshalling_e2e_to_backend_bytes               ✅\n");
+    return 0;
+}
+
+static int test_panic_marshalling_ccm(void) {
+    /* Дзеркало CCM-гілки Trigger_Emergency_LoRa_TX: нулі vcap/temp/dt
+     * (legacy-parity), acoustic=0xFF, status=PANIC_FLAG, TTL=PANIC(5). */
+    enum { PANIC_TTL_M = 5, FIRMWARE_VERSION_ID_M = 0x0001 };
+    uint32_t key[4] = {0x51CC0000, 0x51CC0001, 0x51CC0002, 0x51CC0003};
+    const uint32_t did = 0x0BAD5EED;
+    const uint32_t fc  = 4242;
+
+    uint8_t mesh_ctrl = (uint8_t)(((PANIC_TTL_M & FW2_MESH_TTL_MASK)
+                                   << FW2_MESH_TTL_SHIFT) |
+                                  (FIRMWARE_VERSION_ID_M & FW2_MESH_FW_NIBBLE_MASK));
+    uint8_t nonce[FW2_CCM_NONCE_LEN], aad[FW2_CCM_AAD_LEN];
+    uint8_t pt[FW2_CCM_PLAINTEXT_LEN], ct[FW2_CCM_PLAINTEXT_LEN], mic[FW2_CCM_MIC_LEN];
+    Build_CCM_Nonce(did, fc, nonce);
+    Build_CCM_AAD(did, 0x00, fc, aad);
+    Pack_CCM_Sensor_Payload(0, 0, 0xFF, 0, FW2_STATUS_PANIC_BIT, mesh_ctrl,
+                            Pack_FW2_Device_Z(31.2f, 1), Pack_FW2_Diag(0, 0, 0, 0),
+                            0x00, pt);
+    ASSERT_EQ(Ccm_Encrypt_TwoPhase(key, nonce, aad, pt, ct, mic), HAL_OK);
+
+    uint8_t r_pt[FW2_CCM_PLAINTEXT_LEN];
+    ASSERT_EQ(Ccm_Decrypt_TwoPhase(key, nonce, aad, ct, mic, r_pt), HAL_OK);
+
+    uint16_t u_vcap, u_dt, u_dz; int8_t u_temp;
+    uint8_t u_ac, u_st, u_mc, u_diag, u_vpd;
+    Unpack_CCM_Sensor_Payload(r_pt, &u_vcap, &u_temp, &u_ac, &u_dt, &u_st, &u_mc,
+                              &u_dz, &u_diag, &u_vpd);
+    ASSERT_EQ(u_ac, 0xFF);                                 /* код паніки */
+    ASSERT_EQ(u_st & FW2_STATUS_PANIC_BIT, FW2_STATUS_PANIC_BIT);
+    ASSERT_EQ((u_st & FW2_STATUS_GROWTH_MASK), 0);         /* панічний зойк не мінтить */
+    ASSERT_EQ((u_mc >> FW2_MESH_TTL_SHIFT) & FW2_MESH_TTL_MASK, PANIC_TTL_M);
+    ASSERT_EQ(u_vcap, 0); ASSERT_EQ(u_dt, 0);
+    printf("  test_panic_marshalling_ccm                                 ✅\n");
+    return 0;
+}
+
 #define RUN(test) do { \
     if (test()) { failed++; } else { passed++; } \
 } while (0)
@@ -433,6 +639,8 @@ int main(void) {
 
     RUN(test_golden_vector_encrypt);
     RUN(test_golden_vector_decrypt);
+    RUN(test_b0_block_format);
+    RUN(test_b0_gatekeeper_rejects_malformed);
     RUN(test_fc_pack_unpack);
     RUN(test_fc_cold_boot_invalid_magic);
     RUN(test_fc_reseed_clamps_boundary);
@@ -448,6 +656,8 @@ int main(void) {
     RUN(test_gossip_byte_is_mic_protected);
     RUN(test_device_z_quantization);
     RUN(test_diag_byte_pack);
+    RUN(test_phase4_marshalling_e2e_to_backend_bytes);
+    RUN(test_panic_marshalling_ccm);
 
     printf("════════════════════════════════════════════════════════════════════\n");
     printf("Passed: %d   Failed: %d\n", passed, failed);
