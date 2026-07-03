@@ -71,9 +71,9 @@ class GatewayStalenessSweepWorker
   # Дедуп по кластеру: EwsAlert-валідація uniqueness тримає лише tree_id-алерти
   # (tree_id тут nil), тому анти-спам guard — руками. Стеля: друга Королева
   # того ж кластера, що впала ПІД активним алертом першої, окремого алерту не
-  # отримає (uid — у message; кластер сьогодні ~1 Queen).
+  # отримає (uid — у message; кластер сьогодні ~1 Queen). cluster_id завжди
+  # present — Gateway#belongs_to :cluster обов'язковий.
   def create_offline_alert(gateway)
-    return if gateway.cluster_id.blank?
     return if EwsAlert.unresolved.alert_type_queen_offline
                       .exists?(cluster_id: gateway.cluster_id)
 
@@ -89,12 +89,10 @@ class GatewayStalenessSweepWorker
   end
 
   def resolve_offline_alert(gateway)
-    return if gateway.cluster_id.blank?
-
     EwsAlert.unresolved.alert_type_queen_offline
             .where(cluster_id: gateway.cluster_id).find_each do |alert|
       alert.resolve!(notes: "Королева #{gateway.uid} повернулась в ефір " \
-                            "(#{gateway.last_seen_at&.utc&.iso8601}).")
+                            "(#{gateway.last_seen_at.utc.iso8601}).") # online ⇒ present
     end
   end
 

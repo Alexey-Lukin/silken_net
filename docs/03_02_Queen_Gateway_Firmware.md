@@ -40,7 +40,7 @@
 - [5а. Time Sync (FW.20, FW.20-S2) — Канонічний хаб](#-5а-time-sync-fw20-fw20-s2--канонічний-хаб)
 - [5б. Soldier Command Relay (FW.20-Q2) — черга рефлекторних пострілів](#-5б-soldier-command-relay-fw20-q2--черга-рефлекторних-пострілів)
 - [6. Actuator Command Dedup (Idempotency Ring Buffer)](#-6-actuator-command-dedup-idempotency-ring-buffer)
-- [7. Queen Health Sentinel (DID = 0x00000000)](#-7-queen-health-sentinel-did--0x00000000)
+- [7. Пульс Королеви — health-блок QATT-v2](#-7-пульс-королеви--health-блок-qatt-v2-arch54-did0-sentinel-retired)
 - [8. Шифрування: Режими та Переходи](#-8-шифрування-режими-та-переходи)
 - [9. RAM Бюджет Королеви](#-9-ram-бюджет-королеви)
 - [10. HAL Периферія Королеви](#-10-hal-периферія-королеви)
@@ -89,7 +89,7 @@
 ║    │    └── Radio.Rx(LORA_RX_INFINITE) → next pop            │          ║
 ║    │                                                         │          ║
 ║    │  if (cache_count >= 45 OR time >= 1h + jitter)         │          ║
-║    │    ├── Inject Queen Health Sentinel (DID=0)            │          ║
+║    │    ├── Health-блок у QATT-v2 header (ARCH.54)          │          ║
 ║    │    ├── Flush_Cache_To_Rails()                          │          ║
 ║    │    │     Pack → CBC Encrypt → CoAP PUT                │          ║
 ║    │    └── Regenerate jitter (HRNG)                        │          ║
@@ -1011,48 +1011,21 @@ Cmd_Dedup_Check(hash):
 
 ---
 
-## 👑 7. Queen Health Sentinel (DID = 0x00000000)
+## 👑 7. Пульс Королеви — health-блок QATT-v2 [ARCH.54; DID=0-sentinel retired]
 
-> **[FW.2, INERT]** У CCM-ері health-інсерт **пропускається** (гейтований skip у `Flush_Cache_To_Rails`): 16B-легасі запис зламав би однорідний 29B-stride, а `process_ccm_chunk` DID=0 однаково дропає («use dedicated CoAP channel» — канал ще не існує). Видимість шлюзу після фліпа = свідомий blackout до dedicated-каналу; фліп-гейт + природний дім рішення (ARCH.34 Queen-Sentinel backend) → [`00_07`](00_07_Action_Plan_Tracker) FW.2.
+### Було (retired 2026-07-03)
 
-### Проблема
+DID=0-псевдодерево у батчі: 16B-пакет маскував health під телеметрію. Байтова звірка викрила подвійну брехню — бекенд читав його Солдатськими офсетами (uptime→`voltage_mv`, `0x00`→temperature, cache_count→CSQ), `battery_critical?` хибно горів ~5% життя (uptime-wrap 18.2 год), а при size-flush (cache 45..50 > CSQ-валідного 0..31) пульс мовчки дропався САМЕ під навантаженням; у CCM-ері 16B-запис ще й ламав 29B-stride. e2e був циркулярним (Ruby↔Ruby, без golden проти firmware-байтів).
 
-Без власного health packet сервер не знає стан шлюзу: чи жива Королева, скільки дерев вона бачить, яка завантаженість.
+### Стало
 
-### Рішення
+Пульс живе у **header'і підписаного QATT-v2 конверта** (кожен flush; wire-дім — [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security), бітова розкладка One-Home `firmware/common/queen_attest.h`):
 
-Перед кожним flush Королева інжектує власний пакет з `DID = 0x00000000` (sentinel):
-
-```c
-uint8_t queen_health[16] = {0};
-// Bytes 0-3: DID = 0x00000000 — зарезервований sentinel (не є деревом)
-// Bytes 4-5: uptime proxy — тік / 1000 (uint16, wraps кожні ~18.2 год = 65535 с)
-uint16_t uptime_sec = (uint16_t)(HAL_GetTick() / 1000);
-queen_health[4] = (uint8_t)(uptime_sec >> 8);
-queen_health[5] = (uint8_t)(uptime_sec & 0xFF);
-// Byte 6:  зарезервовано (0x00) — майбутнє: температура корпусу Queen
-// Byte 7:  кількість дерев у кеші (навантаження шлюзу, 0–50)
-queen_health[7] = cache_count;
-// Bytes 8-9: зарезервовано (0x00) — майбутнє: CSQ модему (0–31)
-// [FW.29-PACK] Byte 10: growth_points = cache_count (cap at 31, QUEEN_HEALTH_GP_MAX)
-queen_health[10] = (cache_count < QUEEN_HEALTH_GP_MAX) ? cache_count : QUEEN_HEALTH_GP_MAX;
-// Bytes 11-15: зарезервовано (0x00) — майбутнє: напруга батареї, версія прошивки
-Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пакет)
-```
-
-**Повна структура Queen Health Sentinel (16 байт payload):**
-
-| Байт(и) | Поле | Значення | Опис |
-|---------|------|----------|------|
-| 0–3 | DID | `0x00000000` | Sentinel — "це Королева, не дерево" |
-| 4–5 | Uptime | `HAL_GetTick() / 1000` | Uptime proxy в секундах (uint16, wraps ~18.2 год = 65535 с) |
-| 6 | Reserved | `0x00` | Майбутнє: температура корпусу (°C) |
-| 7 | Cache load | `cache_count` (0–50) | Кількість дерев у кеші |
-| 8–9 | Reserved | `0x00` | Майбутнє: CSQ модему (0–31) |
-| 10 | GP / Status | `cache_count` (cap `QUEEN_HEALTH_GP_MAX`) | Proxy навантаження — 5-біт wire [FW.29-PACK], дзеркало коду вище |
-| 11–15 | Reserved | `0x00` | Майбутнє: V_bat, fw_version |
-
-**Маршрутизація на сервері:** Backend `TelemetryUnpackerService` детектує `DID == 0` і направляє до `GatewayTelemetryWorker` замість створення `TelemetryLog`. Контракт enqueue — JSON-нативні (String) ключі stats-хеша: Sidekiq strict_args відкидає Symbol-ключі, і до 2026-06-10 цей `ArgumentError` мовчки ковтав broad-rescue `process_chunk` — Sentinel гинув на реальному wire-шляху (HIL `:direct` маскував через `stringify_keys`). Контракт запіннено e2e (`spec/integration/coap_telemetry_intake_e2e_spec.rb`, §4 e2e-парність).
+- **Джерела в `main.c`:** `g_uptime_minutes` (sw-extended лічильник — `HAL_GetTick` вмирає на 49.7-й добі), `cache_count`, `lora_rx_drops` (сатурація u8), `g_coap_fail_count` (всі-retry-впали + DNS-fail), `g_last_csq` (`Sim7070_Read_Csq` перед flush-розмовою; 0xFF до першого успіху → бекенд пише NULL), `flags` (CCM-ера / ARCH.35-ринг).
+- **Empty-flush heartbeat:** порожній CIFO при таймерному тику → конверт без записів (`header+IV+sig`, ~97 Б LTE) — пульс за тихої години; гейт `ed25519_ready` (legacy-плата без сім'ї не палить DC даремно). Backend legально скипає unpack (ct=0 — лише під конвертом).
+- **Masking-attack закритий конструкцією:** health без валідного Ed25519 не існує (`UnpackTelemetryWorker` енкʼює пульс ЛИШЕ з `:attested`-гілки).
+- **Маршрутизація на сервері:** `enqueue_envelope_health` → `GatewayTelemetryWorker` (черга uplink) → `GatewayTelemetryLog` (нові колонки `uptime_min/cifo_fill/lora_rx_drops/coap_fail_count/health_flags`; `voltage_mv`/`temperature_c` — nullable до ADC-тракту, не брешемо нулями). Dead-man switch і алерти — [`06_08 §1.3`](06_08_Resilience_and_Failover_Policy).
+- **Golden-парність чотирьох реалізацій:** Monocypher (`test_queen_attest.c`) ↔ OpenSSL ↔ RSpec (`unpack_telemetry_worker_attest_spec.rb`) ↔ HIL-симулятор (`lib/hil/queen_simulator.rb`) — байт-у-байт (клас mirror-drift, що вбив DID=0, закритий назавжди).
 
 ---
 
@@ -1162,7 +1135,7 @@ make -C firmware/test at_engine   # [FW.3/FW.56] AT-двигун + CoAP PDU + р
 | OTA Chunk Builder | First/last chunk, reassembly, out-of-range index |
 | OTA Assembly (CoAP→RAM) | Multi-chunk, duplicate ignore via bitmap, buffer overflow, invalid marker |
 | RSSI Clamp | Normal, edge values, overflow proof, int16→int8 truncation demo |
-| Queen Health Sentinel | DID=0, uptime packing, cache integration, dedup |
+| Пульс QATT-v2 (ARCH.54) | health-блок у header, empty-flush heartbeat, CSQ-читання, golden-парність 4 реалізацій |
 | ECB Restoration | CRYP mode state після CBC→ECB transition |
 | HRNG IV Generation | All 4 words filled, 16-byte size, power mgmt deinit |
 | CBC Command Decrypt | ECB restored після CBC decrypt, sequence correctness |

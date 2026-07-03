@@ -94,4 +94,14 @@ RSpec.describe HeliumSosWorker, type: :worker do
     described_class.new.perform(gateway.helium_dev_eui, sos_payload(err: 4))
     expect(EwsAlert.last.message).to include("buffer_pressure")
   end
+
+  it "вшиває reported_at Console'а у message (доказовий час крику)" do
+    described_class.new.perform(gateway.helium_dev_eui, sos_payload, "1750000000000")
+    expect(EwsAlert.last.message).to include("reported_at=1750000000000")
+  end
+
+  it "невідомий error-code віддає сирий code_N (майбутні прошивки)" do
+    described_class.new.perform(gateway.helium_dev_eui, sos_payload(err: 9))
+    expect(EwsAlert.last.message).to include("code_9")
+  end
 end

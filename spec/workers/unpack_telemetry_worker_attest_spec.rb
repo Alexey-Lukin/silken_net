@@ -40,8 +40,10 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
   # [ver:1][ts:4 BE][seq:4 BE][health:8][IV][ct][sig:64];
   # message = TAG ‖ uid_len ‖ uid ‖ <усе без хвостового sig>.
   # Health-дефолти = golden-входи C-дзеркала (test_queen_attest.c).
-  GOLDEN_HEALTH = { uptime_min: 5310, cifo_fill: 42, lora_rx_drops: 3,
-                    coap_fail: 1, csq: 17, flags: 0 }.freeze
+  def golden_health
+    { uptime_min: 5310, cifo_fill: 42, lora_rx_drops: 3,
+      coap_fail: 1, csq: 17, flags: 0 }
+  end
 
   def pack_health(h)
     up = h[:uptime_min]
@@ -50,8 +52,8 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
   end
 
   def build_signed_payload(seed_hex:, uid:, iv_ct:, ts: 1_750_000_000, seq: 7,
-                           version: 0x02, health: GOLDEN_HEALTH)
-    header = [ version, ts, seq ].pack("CNN") + pack_health(health)
+                           version: 0x02, health: golden_health)
+    header = [ version, ts, seq ].pack("CNN") + pack_health(health || golden_health)
     body = header + iv_ct
     message = described_class::QATT_DOMAIN_TAG + [ uid.bytesize ].pack("C") + uid.b + body
     sig_hex = Ed25519Crypto::SigningService.sign(seed_hex, message)
@@ -119,7 +121,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
     it "[ARCH.54] csq-сентинель 0xFF → nil (модем не відповів — не брешемо нулем)" do
       hb = build_signed_payload(
         seed_hex: keypair[:seed_hex], uid: gateway.uid, iv_ct: iv_ct,
-        health: GOLDEN_HEALTH.merge(csq: 0xFF)
+        health: golden_health.merge(csq: 0xFF)
       )
       expect(GatewayTelemetryWorker).to receive(:perform_async).with(
         gateway.uid, hash_including("cellular_signal_csq" => nil)

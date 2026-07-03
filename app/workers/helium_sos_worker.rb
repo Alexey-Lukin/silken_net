@@ -60,8 +60,6 @@ class HeliumSosWorker
 
     create_sos_alert(gateway, sos, reported_at)
     SilkenNet::Metrics::HELIUM_SOS_RECEIVED_TOTAL.increment(labels: { outcome: "accepted" })
-  rescue ActiveRecord::RecordNotFound
-    Rails.logger.error "🛑 [Helium] Gateway зник під час обробки SOS (dev_eui=#{dev_eui})."
   end
 
   private
@@ -84,8 +82,8 @@ class HeliumSosWorker
   # Ідемпотентність: один активний queen_uplink_lost на кластер (SOS
   # ретрансмітиться Королевою, поки uplink мертвий — не плодимо дублікати;
   # resolve зробить лісник або sweeper-recovery після повернення батчів).
+  # cluster_id завжди present (Gateway#belongs_to :cluster обов'язковий).
   def create_sos_alert(gateway, sos, reported_at)
-    return if gateway.cluster_id.blank?
     return if EwsAlert.unresolved.alert_type_queen_uplink_lost
                       .exists?(cluster_id: gateway.cluster_id)
 

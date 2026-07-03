@@ -94,6 +94,18 @@ RSpec.describe GatewayStalenessSweepWorker, type: :worker do
       sweep
     end
 
+    it "рахує QATT-шлюз, що НІКОЛИ не атестувався (attested nil при pubkey)" do
+      gateway = create(:gateway, cluster: cluster, state: :active,
+                                 config_sleep_interval_s: 3600,
+                                 last_seen_at: 1.minute.ago, last_attested_at: nil)
+      create(:hardware_key, device_uid: gateway.uid,
+                            ed25519_public_key_hex: "b" * 64)
+
+      expect(SilkenNet::Metrics::GATEWAY_ATTEST_LAPSED).to receive(:set).with(1)
+      allow(SilkenNet::Metrics::GATEWAYS_FAULTY).to receive(:set)
+      sweep
+    end
+
     it "не рахує L0-шлюз без pubkey" do
       create(:gateway, cluster: cluster, state: :active,
                        config_sleep_interval_s: 3600,

@@ -97,6 +97,14 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
         }.not_to change(EwsAlert, :count)
       end
 
+      it "fallback-повідомлення для critical_fault поза csq/uplink-гілками (майбутній ADC-шлях)" do
+        # Пульс v2 напруги не несе, але модель дозволяє legacy/ADC-рядки
+        # (insert_all-ера): voltage-critical лог мусить дати чесний вердикт.
+        log = gateway.gateway_telemetry_logs.create!(gateway_id: gateway.id, voltage_mv: 3000)
+        message = described_class.new.send(:format_health_message, gateway, log)
+        expect(message).to include("Апаратний збій")
+      end
+
       it "no_signal (csq 99) не тригерить алерт (за специфікацією 3GPP)" do
         stats = valid_stats.merge("cellular_signal_csq" => 99)
 
@@ -130,6 +138,14 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
           described_class.new.perform(gateway.uid, stats)
         }.not_to change(GatewayTelemetryLog, :count)
       end
+    end
+
+    it "re-raises unexpected errors for Sidekiq retry (broad-rescue не ковтає)" do
+      allow(Gateway).to receive(:find_by!).and_raise(ActiveRecord::ConnectionTimeoutError, "db hiccup")
+
+      expect {
+        described_class.new.perform(gateway.uid, valid_stats)
+      }.to raise_error(ActiveRecord::ConnectionTimeoutError)
     end
 
     it "logs error for phantom gateway without raising" do

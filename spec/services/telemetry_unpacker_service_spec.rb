@@ -173,21 +173,19 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     end
   end
 
-  describe "queen health routing" do
+  describe "[ARCH.54] DID=0 у батчі — retired" do
     let!(:gateway) { create(:gateway) }
 
-    it "routes DID=0x00000000 packets to GatewayTelemetryWorker when gateway is present" do
-      # БЕЗ стаба perform_async: стаб перехоплював виклик ДО strict_args-валідації
-      # Sidekiq і роками ховав ArgumentError від Symbol-ключів (його ковтав broad
-      # rescue process_chunk). Fake-mode enqueue валідує контракт по-справжньому.
+    it "дропає DID=0x00000000 без TelemetryLog і без GatewayTelemetryWorker" do
+      # Пульс Королеви живе у ПІДПИСАНОМУ QATT-v2 header'і
+      # (UnpackTelemetryWorker#enqueue_envelope_health), не псевдодеревом:
+      # стара милиця читалась Солдатськими офсетами і брехала полями.
       chunk = build_chunk("00000000", -70, 3500, 25, 5, 100, 0, 3)
+      before_jobs = GatewayTelemetryWorker.jobs.size
 
       expect { described_class.call(chunk, gateway.id) }.not_to change(TelemetryLog, :count)
 
-      job = GatewayTelemetryWorker.jobs.last
-      expect(job).to be_present
-      expect(job["args"][0]).to eq(gateway.uid)
-      expect(job["args"][1]).to include("voltage_mv", "temperature_c", "cellular_signal_csq")
+      expect(GatewayTelemetryWorker.jobs.size).to eq(before_jobs)
     end
   end
 

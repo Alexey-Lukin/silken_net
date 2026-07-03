@@ -73,13 +73,10 @@ class GatewayTelemetryWorker
 
   def check_system_health(gateway, log)
     # Використовуємо метод моделі для визначення деградації заліза
-    return unless log.respond_to?(:critical_fault?) && log.critical_fault?
+    return unless log.critical_fault?
 
     # Формуємо вердикт для патрульного
     message = format_health_message(gateway, log)
-
-    # Створюємо тривогу (EwsAlert)
-    return unless gateway.cluster_id
 
     # Анти-спам: активний system_fault кластера вже кличе патрульного —
     # кожен наступний пульс не повинен плодити дублікати (log-створення

@@ -117,9 +117,9 @@ RSpec.describe "QATT HIL end-to-end" do
     expect(GatewayTelemetryWorker.jobs).to be_empty
   end
 
-  it "recovers an attested BATCH after a mid-unpack crash — Sidekiq retry with the same jid resumes" do
-    # Crash-вікно живе на шляху з НЕПОРОЖНІМ ct (unpack реально біжить):
-    # будуємо конверт з батчем руками (симулятор емить лише heartbeat).
+  # Конверт v2 з НЕПОРОЖНІМ ct руками (симулятор емить лише heartbeat) —
+  # для crash-вікна, де unpack мусить реально бігти.
+  def signed_batch_envelope!(payload_str)
     seed_hex = SecureRandom.hex(32)
     gateway.hardware_key.update!(
       ed25519_public_key_hex: Ed25519Crypto::SigningService.public_key_from_seed(seed_hex)
@@ -129,13 +129,18 @@ RSpec.describe "QATT HIL end-to-end" do
     cipher.key = gateway.hardware_key.binary_key
     iv = cipher.random_iv
     cipher.padding = 0
-    iv_ct = iv + cipher.update("BATCH_PAYLOAD_16".b) + cipher.final
+    iv_ct = iv + cipher.update(payload_str.b) + cipher.final
     health = [ 0, 0, 60, 5, 0, 0, 20, 0 ].pack("C8")
     body = [ 0x02, Time.current.to_i, 3 ].pack("CNN") + health + iv_ct
     message = UnpackTelemetryWorker::QATT_DOMAIN_TAG +
               [ gateway.uid.bytesize ].pack("C") + gateway.uid.b + body
-    payload = body + [ Ed25519Crypto::SigningService.sign(seed_hex, message) ].pack("H*")
-    encoded = Base64.strict_encode64(payload)
+    Base64.strict_encode64(
+      body + [ Ed25519Crypto::SigningService.sign(seed_hex, message) ].pack("H*")
+    )
+  end
+
+  it "recovers an attested BATCH after a mid-unpack crash — Sidekiq retry with the same jid resumes" do
+    encoded = signed_batch_envelope!("BATCH_PAYLOAD_16")
 
     calls = 0
     allow(TelemetryUnpackerService).to receive(:call).and_wrap_original do |original, *args, **kwargs|

@@ -910,5 +910,4 @@ class TelemetryUnpackerService < ApplicationService
                                              .order(id: :desc)
                                              .pick(:id)
   end
-
 end

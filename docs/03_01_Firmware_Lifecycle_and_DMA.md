@@ -924,7 +924,7 @@ Init → Radio.Init → Radio.Rx(0xFFFFFF) [infinite]
 │    5. Radio.Rx(0xFFFFFF) → next pop                    │
 │                                                         │
 │  if cache_count >= 45 OR timer >= 1hour + jitter:      │
-│    Inject Queen Health Sentinel (DID=0x00000000)       │
+│    Health-блок у QATT-v2 header (ARCH.54; DID=0 retired)│
 │    [MX_CRYP re-init → CRYP_KEYSIZE_256B + coap_key]   │
 │    Flush_Cache_To_Rails() → CoAP PUT (AES-256-CBC)     │
 │    [restore → CRYP_KEYSIZE_128B + LoRa aes_key — SEC.8]│

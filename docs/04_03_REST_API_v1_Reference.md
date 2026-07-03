@@ -77,6 +77,7 @@ Authorization: Bearer <token>
 | `/api/v1/forgot_password` | GET, POST | Запит скидання пароля |
 | `/api/v1/reset_password` | GET, PATCH | Форма та обробка нового пароля |
 | `/api/v1/oracle_callbacks` | POST | Chainlink DON callback (HMAC-SHA256 валідація через `X-Chainlink-Signature`) |
+| `/api/v1/telemetry/helium` | POST | [ARCH.34 L3] Helium SOS webhook (HMAC-SHA256 через `X-Helium-Signature`, ENV `HELIUM_WEBHOOK_SECRET`; той самий SEC.5-патерн: dev-пропуск з warn, `WEB3_STRICT_MODE=true` → fail-fast) → `HeliumSosWorker` → `EwsAlert(queen_uplink_lost)`. Wire 12B — [`06_08 §1.2`](06_08_Resilience_and_Failover_Policy) |
 | `/api/v1/auth/m2m_token` | POST | M2M автентифікація (Ed25519-підпис, без Bearer token) |
 | `/up` | GET | Liveness — Rails `rails/health#show` (процес живий, без перевірки залежностей) |
 | `/ready` | GET | Readiness — `ReadinessController` (root-level); DB + Redis (Sidekiq + Kredis) round-trip → 200 `ready` / 503 `not_ready` (ops/семантика: [`06_05`](06_05_Puma_Configuration)) |

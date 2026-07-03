@@ -250,6 +250,7 @@ RSpec.describe "Rack::Attack", type: :request do
       # forester+ workflow.
       expect(Rack::Attack.throttles.keys).to contain_exactly(
         "req/ip", "telemetry/uid", "logins/ip", "m2m_auth/ip", "oracle_callbacks/ip",
+        "helium_sos/ip",
         "codex/comments", "codex/attunements", "codex/fractions", "codex/matches/create"
       )
     end

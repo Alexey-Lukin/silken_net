@@ -19,103 +19,66 @@ RSpec.describe "Gateway telemetry relay and alert notification pipeline" do
   # GatewayTelemetryWorker
   # ---------------------------------------------------------------------------
   describe "GatewayTelemetryWorker" do
-    it "creates telemetry log and updates gateway" do
+    # [ARCH.54] stats = пульс v2 з ПІДПИСАНОГО QATT-header'а
+    # (enqueue_envelope_health); voltage/temp у пульсі відсутні (нема ADC).
+    def pulse(overrides = {})
+      {
+        uptime_min: 5310, cifo_fill: 12, lora_rx_drops: 0,
+        coap_fail_count: 0, cellular_signal_csq: 15, flags: 0,
+        ip_address: "10.0.0.2"
+      }.merge(overrides)
+    end
+
+    it "creates pulse log and updates gateway" do
       expect {
-        GatewayTelemetryWorker.new.perform(gateway.uid, {
-          voltage_mv: 4200,
-          temperature_c: 25.0,
-          cellular_signal_csq: 15,
-          ip_address: "10.0.0.2"
-        })
+        GatewayTelemetryWorker.new.perform(gateway.uid, pulse)
       }.to change(GatewayTelemetryLog, :count).by(1)
 
       gateway.reload
       expect(gateway.ip_address).to eq("10.0.0.2")
       expect(gateway.last_seen_at).to be_present
+      expect(GatewayTelemetryLog.last.uptime_min).to eq(5310)
     end
 
-    it "creates critical alert for low battery" do
-      allow(AlertNotificationWorker).to receive(:perform_async)
-
-      GatewayTelemetryWorker.new.perform(gateway.uid, {
-        voltage_mv: 2800,
-        temperature_c: 25.0,
-        cellular_signal_csq: 15,
-        ip_address: "10.0.0.1"
-      })
+    it "creates critical alert for weak signal" do
+      GatewayTelemetryWorker.new.perform(gateway.uid, pulse(cellular_signal_csq: 2))
 
       alert = EwsAlert.last
       expect(alert).to be_present
       expect(alert.severity).to eq("critical")
       expect(alert.alert_type).to eq("system_fault")
-      expect(alert.message).to include("виснажена")
-    end
-
-    it "creates critical alert for overheated gateway" do
-      GatewayTelemetryWorker.new.perform(gateway.uid, {
-        voltage_mv: 4200,
-        temperature_c: 70.0,
-        cellular_signal_csq: 15,
-        ip_address: "10.0.0.1"
-      })
-
-      alert = EwsAlert.last
-      expect(alert).to be_present
-      expect(alert.message).to include("перегріта")
-    end
-
-    it "creates critical alert for weak signal" do
-      GatewayTelemetryWorker.new.perform(gateway.uid, {
-        voltage_mv: 4200,
-        temperature_c: 25.0,
-        cellular_signal_csq: 2,
-        ip_address: "10.0.0.1"
-      })
-
-      alert = EwsAlert.last
-      expect(alert).to be_present
       expect(alert.message).to include("Слабкий сигнал")
     end
 
-    it "rejects invalid sensor data" do
+    it "creates critical alert for degraded uplink (coap_fail ≥ поріг)" do
+      GatewayTelemetryWorker.new.perform(gateway.uid, pulse(coap_fail_count: 12))
+
+      alert = EwsAlert.last
+      expect(alert).to be_present
+      expect(alert.message).to include("провалених")
+    end
+
+    it "rejects pulse without uptime_min (KENOSIS-гейт)" do
       expect {
-        GatewayTelemetryWorker.new.perform(gateway.uid, {
-          voltage_mv: nil,
-          temperature_c: 25.0,
-          cellular_signal_csq: 15
-        })
+        GatewayTelemetryWorker.new.perform(gateway.uid, pulse(uptime_min: nil))
       }.not_to change(GatewayTelemetryLog, :count)
     end
 
-    it "does not create alert for normal telemetry data" do
+    it "does not create alert for a healthy pulse" do
       expect {
-        GatewayTelemetryWorker.new.perform(gateway.uid, {
-          voltage_mv: 4200,
-          temperature_c: 25.0,
-          cellular_signal_csq: 15,
-          ip_address: "10.0.0.1"
-        })
+        GatewayTelemetryWorker.new.perform(gateway.uid, pulse)
       }.not_to change(EwsAlert, :count)
     end
 
     it "handles unknown gateway UID" do
       expect {
-        GatewayTelemetryWorker.new.perform("UNKNOWN-GW", {
-          voltage_mv: 4200,
-          temperature_c: 25.0,
-          cellular_signal_csq: 15
-        })
+        GatewayTelemetryWorker.new.perform("UNKNOWN-GW", pulse)
       }.not_to change(GatewayTelemetryLog, :count)
     end
 
     it "accepts CSQ value 99 as valid (undetermined signal)" do
       expect {
-        GatewayTelemetryWorker.new.perform(gateway.uid, {
-          voltage_mv: 4200,
-          temperature_c: 25.0,
-          cellular_signal_csq: 99,
-          ip_address: "10.0.0.1"
-        })
+        GatewayTelemetryWorker.new.perform(gateway.uid, pulse(cellular_signal_csq: 99))
       }.to change(GatewayTelemetryLog, :count).by(1)
     end
   end

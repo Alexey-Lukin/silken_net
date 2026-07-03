@@ -645,9 +645,11 @@ Queen переходить у Helium режим автоматично коли:
 if (uplink_down_minutes >= HELIUM_FALLBACK_THRESHOLD_MIN &&
     q2q_backhaul_unavailable &&
     buffer_fill_pct >= 50) {
-    // Стиснути batch до lambda-summary (ARCH.22) для вписування в обмежений LoRaWAN payload
+    // [ARCH.54-рішення 2026-07-03] SOS-only: 12B-кадр про СЕБЕ (wire 📐 —
+    // 06_08 §1.2), НЕ телеметрія кластера (лямбда-агрегат відкинуто:
+    // фізика SF12/51B + Fair Use — ⚠️-блок 06_08; дані чекають у ринзі)
     HAL_IWDG_Refresh(&hiwdg);                           // refresh ДО входу в сліпу зону
-    queen_helium_lorawan_uplink(aggregated_lambda_summary, count);  // multi-channel hop, OTAA
+    queen_helium_lorawan_uplink(sos_frame_12b);         // multi-channel hop, OTAA
     Radio_Reinit_RawLoRa_868MHz();                      // повернути PHY у raw LoRa P2P 868.0 MHz, AES-128-ECB (post-ARCH.42)
     Radio.Rx(LORA_RX_INFINITE);                         // одразу примусово відкрити RX-вікно
     HAL_IWDG_Refresh(&hiwdg);                           // та одразу після виходу
@@ -662,13 +664,13 @@ if (uplink_down_minutes >= HELIUM_FALLBACK_THRESHOLD_MIN &&
 > 4. **Бюджет сліпоти:** `helium_session_elapsed = HAL_GetTick() - helium_session_start_tick` має бути `< HELIUM_BLIND_WINDOW_MAX_MS (20 с)`. Перевищення → форсований hardware reset через IWDG (~26.6 с), оскільки кластер краще перезавантажити, ніж довго не слухати.
 > 5. **AES контекст (post-ARCH.42):** Helium uplink використовує LoRaWAN AES-128 CMAC/CTR (інший ключ — `AppSKey`/`NwkSKey`). Наш raw LoRa тепер також AES-128-ECB (ARCH.42 Variant B). Після виходу з Helium-сесії `hcryp` має бути перевипадково ініціалізований у `CRYP_KEYSIZE_128B` + `CRYP_AES_ECB` режим з нашим LoRa-ключем (`aes_key[4]`) для `radio_decrypt_lora()`. Спрощений context-switch — обидві сесії на тій самій key-size.
 >
-> Втрата chainsaw-пакета у Helium-вікні — прийнятний ризик (Edge Data Fusion агрегує lambda-summary, а Soldier ретрансмітить панік-пакет з TTL=5 reflex broadcast). Цей risk acceptance задокументований як ALARP — At-Least-As-Reasonably-Practical mitigation: коротке вікно (≤ 20 с) + soldier-side TTL retry + IWDG fallback.
+> Втрата chainsaw-пакета у Helium-вікні — прийнятний ризик (Soldier ретрансмітить панік-пакет з TTL=5 reflex broadcast). Цей risk acceptance задокументований як ALARP — At-Least-As-Reasonably-Practical mitigation: коротке вікно (≤ 20 с) + soldier-side TTL retry + IWDG fallback.
 
 ### Економіка Helium
 
 - **Вартість:** кожен переданий LoRaWAN frame (Data Credit, DC) = $0.00001 USD
 - **Оплата:** з Treasury DAO — Queen, що звертається до Helium, оплачує DC токенами IOT з гаманця кластера
-- **Формат пакету:** агрегований lambda-summary 11 байт замість повного 21-байтного Lorenz payload (ARCH.22 Edge Data Fusion). 1 LoRaWAN frame несе summary 50+ Soldier'ів за останні хвилини.
+- **Формат пакету:** **12-байтний SOS про саму Королеву** (wire 📐 One-Home — [`06_08 §1.2`](06_08_Resilience_and_Failover_Policy) L3): це «я втратила uplink», НЕ телеметрія кластера — лямбда-агрегат попередньої редакції відкинуто рішенням 2026-07-03 (фізика SF12 + Fair Use, ⚠️-блок 06_08; телеметрія чекає у Flash-ринзі ARCH.35).
 
 ### Що потрібно для реалізації
 
@@ -677,8 +679,8 @@ if (uplink_down_minutes >= HELIUM_FALLBACK_THRESHOLD_MIN &&
 | LoRaWAN MAC-stack | Інтегрувати LoRaMac-node (Semtech BSD-3) у Queen firmware | `firmware/queen/lorawan/` (новий) |
 | DevEUI / AppEUI / AppKey | Зареєструвати **кожну Queen** (не Soldier!) у [Helium Console](https://console.helium.com/) | Helium |
 | HTTP Integration | Налаштувати webhook → `https://api.silkennet.com/api/v1/telemetry/helium` | Helium Console |
-| Rails endpoint | `POST /api/v1/telemetry/helium` → `UnpackHeliumLambdaSummaryWorker` (HMAC-signed) | Rails API |
-| BOM | Queen Helium credentials у новій моделі `GatewayLoraWanCredentials` (AR Encryption) | Backend |
+| Rails endpoint | `POST /api/v1/telemetry/helium` → `HeliumSosWorker` (HMAC `X-Helium-Signature`, патерн oracle_callbacks) | ✅ Rails API (ARCH.34 backend-half, 2026-07-03) |
+| dev_eui-мапінг | `gateways.helium_dev_eui` (unique) + cross-check `queen_did` у кадрі проти hex-частини uid | ✅ Backend; повна `GatewayLoraWanCredentials` (AppKey, AR Encryption) — при живій Console-інтеграції (YAGNI зараз) |
 | OTAA join state | Persistent зберігання у Queen Flash (FCntUp counter survives reboot) | `firmware/queen/main.c` |
 
 ### Статус Helium Fallback
@@ -686,13 +688,13 @@ if (uplink_down_minutes >= HELIUM_FALLBACK_THRESHOLD_MIN &&
 | Компонент | Стан |
 |-----------|------|
 | Концепт і архітектура (Queen-side LoRaWAN) | ✅ Визначено |
-| LoRaWAN MAC-stack у Queen firmware | 🔴 Не реалізовано (ARCH.34) |
-| Rails endpoint `/api/v1/telemetry/helium` | 🔴 Не реалізовано |
-| Реєстрація Queen у Helium Console | 🔴 Не виконано |
-| GatewayLoraWanCredentials model | 🔴 Не створено |
+| LoRaWAN MAC-stack у Queen firmware | 🔴 Не реалізовано (ARCH.34 firmware-half, bench-ера) |
+| Rails endpoint `/api/v1/telemetry/helium` | ✅ Реалізовано (2026-07-03: `HeliumSosController` + `HeliumSosWorker` + `EwsAlert(queen_uplink_lost)`) |
+| Реєстрація Queen у Helium Console + заповнення `gateways.helium_dev_eui` | 🔴 Не виконано (👤) |
+| GatewayLoraWanCredentials model | 🟡 Відкладено до живої Console-інтеграції (зараз досить `helium_dev_eui`) |
 | Soldier-side `helium_compat_emit()` (попередній план) | ❌ **Відкинуто** — фундаментально несумісно з flash/RAM/topology constraints STM32WLE5JC у Soldier |
 
-> **Стратегічна цінність:** Helium перетворює систему на фізично невбивану мережу. Навіть якщо всі власні Starlink-канали Queen упадуть одночасно з Q2Q backhaul — Queen продовжуватиме викидати агрегований lambda-summary через чужі Helium hotspot-и. Для pitch deck: _"The forest cannot go dark — even when our own sky falls, the Helium hotspots of strangers keep the canopy alive."_
+> **Стратегічна цінність:** Helium перетворює систему на фізично невбивану мережу. Навіть якщо всі власні Starlink-канали Queen упадуть одночасно з Q2Q backhaul — Queen продовжуватиме кричати SOS через чужі Helium hotspot-и, а телеметрія чекатиме у Flash-ринзі. Для pitch deck: _"The forest cannot go dark — even when our own sky falls, the Helium hotspots of strangers keep the canopy alive."_
 
 ---
 
