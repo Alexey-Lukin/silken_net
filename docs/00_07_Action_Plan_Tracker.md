@@ -383,12 +383,12 @@
 
 #### HW.8 — Pogo pin specification (sub-blockers 8.1–8.9)
 - **P1** · 👤 · 🟡 · → `02_02`
-- **Стан:** Pogo-інтерфейс — фіналізація; **machine-вирішено:** bayonet-фіксація ✅ (детермінована Z, різьба=FAIL — `02_02 §4.3`) + Z-stack ✅ обчислено (3-spring RSS, min mitigation spacer 0.1мм + bayonet hard-stop тримає всі вікна — `02_02 §3.5`; freeze розблокував Radome/B2B/PCBA). Решта 👤-bench (нижче): Au-напилення + Hard-Gold central-pad (Ti↔Au гальванопара, `02_02 §1.2`), spring force, O-ring/IP (`02_02 §3.2`), соосність, + 2 MATE-Ø нитки (lug/Z 8.8, shank-Ø 8.9 — mate-audit `02_02 §4.4/§4.5`). Канон `02_02`.
-- [ ] 👤 HW.8.1: Матеріал напилення pin → Gold (Hard Gold, Au 0.76 µm)
+- **Стан:** Pogo-інтерфейс — фіналізація; **machine-вирішено:** bayonet-фіксація ✅ (детермінована Z, різьба=FAIL — `02_02 §4.3`) + Z-stack ✅ обчислено (3-spring RSS, min mitigation spacer 0.1мм + bayonet hard-stop тримає всі вікна — `02_02 §3.5`; freeze розблокував Radome/B2B/PCBA). **Spec-freeze (founder 2026-07-03):** напилення Au 0.76µm ✅ · spring ~98–100г ✅ · O-ring EPDM 70A/CS1.78/20% ✅ · **IP68 ✅** (`02_02 §3.2/§3.3`) — лишається фіз-вимір цих на bench (Rc, spring force, IP-тест) + Hard-Gold central-pad мапа заводу (8.2, Ti↔Au гальванопара `02_02 §1.2`), соосність, + 2 MATE-Ø нитки (lug/Z 8.8, shank-Ø 8.9 — mate-audit `02_02 §4.4/§4.5`). Канон `02_02`.
+- [ ] 👤 HW.8.1: напилення pin ✅ spec Hard Gold Au 0.76 µm over Ni (founder 07-03) — лишається P/N при HW.9 BOM + Rc-вимір bench
 - [ ] 👤 **HW.8.2: Hard Gold ENIG на центральній площадці** (торець шини Zone 1, ø 4–5 мм) — обов'язково (інакше Ti↔Au гальванопара → Rc drift → cold-start fail); передати specмапу selective gold-plating заводу. `02_02 §1.2`
-- [ ] 👤 HW.8.3: Сила пружини → ~100 г/пін, Travel ≥ 1.5 мм
+- [ ] 👤 HW.8.3: сила пружини ✅ spec ~98–100 г/пін @ повний хід, Travel ≥ 1.5 мм (founder 07-03) — лишається фіз-вимір spring force + Rc bench
 - [ ] 👤 HW.8.4: bayonet CAD + SLA-прототип (механізм фіксації ✅ затверджено → `02_02 §4.3`)
-- [ ] 👤 HW.8.5: O-ring → EPDM, CS 1.78 мм, 15-30% compression (`02_02 §3.2`); цільовий IP (IP67/IP68) затвердити
+- [ ] 👤 HW.8.5: O-ring ✅ spec EPDM 70 Shore A, CS 1.78 мм, 20% compression + **IP68 затверджено** (founder 07-03, `02_02 §3.2/§3.3`) — лишається фіз IP-верифікація bench
 - [ ] 👤 HW.8.6: Допуски соосності (XY) → Lead-in chamfer
 - [ ] 👤 HW.8.7: фіз-bench QA-вимір D3+D4 + robot spacer-selection (Z-stack ✅ обчислено → `02_02 §3.5`)
 - [ ] 👤 **HW.8.8: lug/Z mate reconcile** — bayonet Деталь3↔4 НЕ зведена (lug-Z 15.5 ↔ lock-groove-Z 3.5 → bayonet-Z 6.42 + RF 8<12мм); bench: lug_protrusion/lock_groove_z/lug_z цілісно + radial skirt (→ HW.17/HW.33) + HFSS Ø30. `02_02 §4.4`
@@ -442,7 +442,7 @@
 
 #### HW.11 — Conformal Coating (Parylene C; Sylgard rejected — TinyML acoustic)
 - **P2** · 👤 · 🟡 · → `02_01`, `02_02 §3.4`
-- **Стан:** Рішення зафіксовано — **Parylene C 10 µm (CVD)** для серії + acrylic Humiseal 1A33 для прототипів; повний Sylgard-184 potting відхилено (акустичний демпфер 15–25 dB @ 16 kHz глушить TinyML-п'єзо). Acoustically transparent + IP67 з O-ring. Лишається вибір coating + verify. Канон `02_02 §3.4` (+ BOM `02_01 §3`).
+- **Стан:** Рішення зафіксовано — **Parylene C 10 µm (CVD)** для серії + acrylic Humiseal 1A33 для прототипів; повний Sylgard-184 potting відхилено (акустичний демпфер 15–25 dB @ 16 kHz глушить TinyML-п'єзо). Acoustically transparent + IP68 з O-ring (HW.8.5 ✅ 07-03). Лишається вибір coating + verify. Канон `02_02 §3.4` (+ BOM `02_01 §3`).
 - [ ] 👤 Контакт з CVD-сервісом Parylene-deposition (Київ / Львів — пошукати спеціалізовані PCB-house)
 - [ ] 👤 Верифікувати п'єзо-attenuation: тест 16 kHz tone з/без coating на калібрувальному стенді
 - [ ] 👤 Верифікувати з кварцовим резонатором при -20°C / +60°C (Parylene Shore D ~50, м'якший за air-gap воду)
