@@ -28,7 +28,7 @@ module Api
 
         if dev_eui.blank? || payload.blank?
           return render json: { error: "dev_eui and payload are required" },
-                        status: :unprocessable_entity
+                        status: :unprocessable_content
         end
 
         HeliumSosWorker.perform_async(dev_eui.to_s, payload.to_s,

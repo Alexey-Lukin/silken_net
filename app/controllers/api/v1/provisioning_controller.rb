@@ -41,7 +41,7 @@ module Api
             tree_did = SilkenNet::DidDerivation.wire_did_from_uid_hex(normalized_uid)
           rescue ArgumentError
             render json: { error: I18n.t("flash.provisioning.invalid_uid", uid: normalized_uid) },
-                   status: :unprocessable_entity
+                   status: :unprocessable_content
             return
           end
         end

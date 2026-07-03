@@ -71,7 +71,7 @@ RSpec.describe "POST /api/v1/telemetry/helium", type: :request do
       post "/api/v1/telemetry/helium", params: empty,
            headers: headers.merge("X-Helium-Signature" => empty_sig)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(HeliumSosWorker.jobs).to be_empty
     end
   end
