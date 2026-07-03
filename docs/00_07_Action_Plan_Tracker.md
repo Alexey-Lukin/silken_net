@@ -479,13 +479,12 @@
 
 #### HW.15 — BMS + VBAT decoupling для SIM7070G
 - **P1** · 👤 · 🟡 · → `02_05 §Пікові струми SIM7070G`, `§2.2.1`
-- **Стан:** Module-level fix зафіксовано — 5-cap VBAT tank bank проти 2A-burst brownout (просадка <20mV, margin >35×; BOM поз.17–20). Лишається system-level: BMS/MPPT моделі в BOM + bench-звірка маркування SIM7070G + firmware PSM/eDRX. Канон `02_05 §2.2.1` (+ §Пікові струми).
+- **Стан:** Module-level fix зафіксовано — 5-cap VBAT tank bank проти 2A-burst brownout (просадка <20mV, margin >35×; BOM поз.17–20). PSM/eDRX ✅ shipped (init-тракт Queen `main.c` [HW.10]; дім AT-граматики — [`03_02 §4`](03_02_Queen_Gateway_Firmware); live-звірка таймінгів — RUNBOOK §5.2, разом з FW.3). Лишається system-level: BMS/MPPT моделі в BOM + bench-звірка маркування SIM7070G. Канон `02_05 §2.2.1` (+ §Пікові струми).
 - [ ] 👤 Обрати BMS: мінімум 12V / 20A continuous / 50A peak
 - [ ] 👤 Обрати MPPT: мінімум Victron SmartSolar MPPT 75/15
 - [ ] 👤 PCB layout: розмістити C_BULK ≤ 10 мм від VBAT pin, HF caps впритул
 - [ ] 👤 Оновити BOM (закупка 5 нових компонентів)
 - [ ] 👤 Bench: фізично звірити маркування модему на прототипі = **SIM7070G** (не SIM7000G; найменування у firmware/BOM/`02_05` вже уніфіковано — лишилась лише фізична звірка)
-- [ ] 🔗 Firmware: додати `AT+CPSMS` + `AT+CEDRXS` (PSM/eDRX, idle ~3 µA) у Queen flush-цикл — `03_02`
 
 #### HW.14 — Winter energy deficit for Queen Phase 3 (Starlink Mini)
 - **P2** · 👤 · ⚪ · → `02_05 §Зимовий енергодефіцит`
