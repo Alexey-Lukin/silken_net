@@ -30,6 +30,9 @@
 
 #include "uart_rx_ring.h"
 #include "ota_window.h"   // [FW.52б] воскресіння OTA-вікна запізнілою печаткою
+// [FW.2] Маршрутизація RX (16B ECB / 28B CCM / шум) + 29B CoAP-запис —
+// pure-контракт blind-forward'а (Королева CCM не розшифровує; rx_route.h).
+#include "rx_route.h"
 // [L1 QATT] Розкладка підписаного батч-конверта (pure, host-tested) — 03_05 §2.2
 #include "../common/queen_attest.h"
 // [ARCH.26 L2] TDMA слот-розкладка маяка (байти 5..8) — One-Home математика
@@ -84,6 +87,14 @@
 // сторожовим псом дрейфу. Відповідь — негайна перемотка маяка.
 #define SYNC_REQ_MARKER            0x56
 #define SYNC_REQ_MAGIC_BYTE        0x53  /* 'S' */
+
+// [FW.2] Гейт CCM-тракту Королеви (RX 28B + 29B-батч). Живе ТУТ (не біля
+// freeze-contract секції внизу), бо ринг/CIFO/flush вище споживають його.
+// #ifndef — щоб CI compile-варіант міг зібрати гілку `-DFW2_CCM_ENABLED=1`
+// проти справжнього WL-HAL, не чіпаючи бойового дефолту 0.
+#ifndef FW2_CCM_ENABLED
+#define FW2_CCM_ENABLED  0  // freeze-contract — flip після HAL verification
+#endif
 
 // [FIX: AUDIT MISRA] Іменовані константи замість магічних чисел
 #define LORA_RX_INFINITE      0xFFFFFF  // Нескінченний таймаут прийому LoRa
@@ -292,8 +303,19 @@ static uint8_t Read_Queen_UID_From_Flash(void)
 #define LORA_RX_RING_SIZE      16U                   // степінь двійки → дешеве modulo
 #define LORA_RX_RING_MASK      (LORA_RX_RING_SIZE - 1U)
 
+// [FW.2] Ширина слота гейтована: у CCM-ері кадр 28B (wire-rev2), у
+// ECB-ері — 16B, і бойовий .bss не платить за інертний гейт (+192B
+// приходять лише з фліпом; budget-ledger 03_05 §2.1). `len` — фактична
+// довжина кадру (16 | 28): один код-шлях ринга для обох ер (+16B живих).
+#if FW2_CCM_ENABLED
+#define LORA_RX_SLOT_PAYLOAD_MAX  FW2_CCM_AIR_PACKET_LEN
+#else
+#define LORA_RX_SLOT_PAYLOAD_MAX  16u
+#endif
+
 typedef struct {
-    uint8_t  payload[16];
+    uint8_t  payload[LORA_RX_SLOT_PAYLOAD_MAX];
+    uint8_t  len;   // [FW.2] фактична довжина кадру в payload
     int8_t   rssi;
     int8_t   snr;   // [E.8] SX1262 SNR (dB, signed). Used as CIFO eviction tiebreaker.
 } LoRaRxSlot;
@@ -302,6 +324,14 @@ static volatile LoRaRxSlot lora_rx_ring[LORA_RX_RING_SIZE];
 static volatile uint8_t    lora_rx_head  = 0;     // Куди ISR кладе наступний голос
 static volatile uint8_t    lora_rx_tail  = 0;     // Звідки main loop забирає
 static volatile uint16_t   lora_rx_drops = 0;     // Лічильник переповнень рингу
+
+#if FW2_CCM_ENABLED
+// [FW.2] Сліди дропів CCM-ери (патерн lora_rx_drops — SWD/діагностика;
+// wire-транспорт у gateway-health = разом з dedicated-каналом, 00_07 FW.2):
+static uint16_t ccm_spoof_drops            = 0; // 28B з DID=0 — спуф Sentinel
+static uint16_t ccm_legacy_telemetry_drops = 0; // 16B-телеметрія старих Солдатів
+                                                // (atomic-cutover: у 29B-батч не сміє)
+#endif
 
 uint8_t decrypted_payload[16];          // Розшифрований пакет від Солдата
 volatile int8_t current_rssi = 0;       // RSSI поточного оброблюваного пакета (для downstream-кешу)
@@ -338,13 +368,15 @@ static inline uint8_t LoRa_Rx_Ring_Count(void) {
     return (uint8_t)((lora_rx_head - lora_rx_tail) & LORA_RX_RING_MASK);
 }
 
-// ISR-сторона: прийняти 16-байтний шифроблок + RSSI + SNR у пам'ять рою.
-// Якщо ринг наповнено по вінця (next == tail) — мовчазного переповнення
-// не дозволяємо: існуючі голоси недоторкані, лише інкрементуємо
+// ISR-сторона: прийняти шифроблок (16B ECB / 28B CCM) + RSSI + SNR у
+// пам'ять рою. Якщо ринг наповнено по вінця (next == tail) — мовчазного
+// переповнення не дозволяємо: існуючі голоси недоторкані, лише інкрементуємо
 // `lora_rx_drops`, щоб ця жертва залишила слід.
 // [E.8] SNR (Signal-to-Noise Ratio) тепер плюметься повз ISR — використовується
 // як tiebreaker у CIFO eviction коли два non-critical записи мають однаковий RSSI.
-static inline void LoRa_Rx_Ring_Push(const uint8_t *payload, int8_t rssi, int8_t snr) {
+// [FW.2] len ≤ LORA_RX_SLOT_PAYLOAD_MAX гарантує OnRxDone-гейт (єдиний продюсер).
+static inline void LoRa_Rx_Ring_Push(const uint8_t *payload, uint8_t len,
+                                     int8_t rssi, int8_t snr) {
     uint8_t next = (uint8_t)((lora_rx_head + 1U) & LORA_RX_RING_MASK);
     if (next == lora_rx_tail) {
         // Ринг повний — голос лісу не вмістився. Backend дізнається про
@@ -354,7 +386,8 @@ static inline void LoRa_Rx_Ring_Push(const uint8_t *payload, int8_t rssi, int8_t
     }
     // memcpy на volatile-вказівник: каст знімає volatile, але це безпечно,
     // бо тільки ISR пише в head-слот (single-producer інваріант).
-    memcpy((void*)lora_rx_ring[lora_rx_head].payload, payload, 16);
+    memcpy((void*)lora_rx_ring[lora_rx_head].payload, payload, len);
+    lora_rx_ring[lora_rx_head].len  = len;
     lora_rx_ring[lora_rx_head].rssi = rssi;
     lora_rx_ring[lora_rx_head].snr  = snr;
     lora_rx_head = next;
@@ -362,9 +395,13 @@ static inline void LoRa_Rx_Ring_Push(const uint8_t *payload, int8_t rssi, int8_t
 
 // Main-loop сторона: витягти один голос (snapshot у локальні non-volatile
 // буфери), просунути tail. Повертає 1 якщо є пакет, 0 — якщо ринг порожній.
-static inline uint8_t LoRa_Rx_Ring_Pop(uint8_t *out_payload, int8_t *out_rssi, int8_t *out_snr) {
+// out_payload мусить вміщати LORA_RX_SLOT_PAYLOAD_MAX байт.
+static inline uint8_t LoRa_Rx_Ring_Pop(uint8_t *out_payload, uint8_t *out_len,
+                                       int8_t *out_rssi, int8_t *out_snr) {
     if (lora_rx_head == lora_rx_tail) return 0;
-    memcpy(out_payload, (const void*)lora_rx_ring[lora_rx_tail].payload, 16);
+    uint8_t len = lora_rx_ring[lora_rx_tail].len;
+    memcpy(out_payload, (const void*)lora_rx_ring[lora_rx_tail].payload, len);
+    *out_len  = len;
     *out_rssi = lora_rx_ring[lora_rx_tail].rssi;
     *out_snr  = lora_rx_ring[lora_rx_tail].snr;
     lora_rx_tail = (uint8_t)((lora_rx_tail + 1U) & LORA_RX_RING_MASK);
@@ -376,12 +413,27 @@ static inline uint8_t LoRa_Rx_Ring_Pop(uint8_t *out_payload, int8_t *out_rssi, i
 // =========================================================================
 #define CACHE_MAX_ENTRIES 50 // Максимальна місткість нашого кешу
 
+// [FW.2] Формат слота: ECB-ера тримає РОЗШИФРОВАНІ 16B (Королева = ключ
+// кластера); CCM-ера тримає ОПАКОВИЙ 24B-хвіст ефіру (gossip‖FC‖ct‖MIC) —
+// інверсія довіри wire-rev2: розшифрує лише Rails per-DID (rx_route.h).
+// Ширина payload гейтована — бойовий .bss інертного гейта не платить
+// (+400B прийдуть з фліпом; budget-ledger 03_05 §2.1); fmt-байт живе
+// завжди (+50B) заради одного код-шляху CIFO/flush.
+#define EDGE_FMT_ECB16   0u  // payload[0..15] = розшифрований legacy-блок
+#define EDGE_FMT_CCM24   1u  // payload[0..23] = air[4..27] як є (опак)
+#if FW2_CCM_ENABLED
+#define EDGE_SLOT_PAYLOAD_MAX  24u
+#else
+#define EDGE_SLOT_PAYLOAD_MAX  16u
+#endif
+
 typedef struct {
     uint32_t uid;               // DID дерева
-    uint8_t payload[16];        // Останні розшифровані дані
+    uint8_t payload[EDGE_SLOT_PAYLOAD_MAX]; // Розкладку диктує fmt (EDGE_FMT_*)
     int8_t rssi;                // Сила сигналу
     int8_t snr;                 // [E.8] SNR — tiebreaker у CIFO eviction
     uint8_t is_active;          // 1 - якщо слот зайнятий
+    uint8_t fmt;                // [FW.2] EDGE_FMT_ECB16 | EDGE_FMT_CCM24
 } EdgeCache;
 
 EdgeCache forest_cache[CACHE_MAX_ENTRIES];
@@ -500,6 +552,9 @@ static uint8_t   ring_inflight = 0;
 
 // Слот CIFO → 21-байтний wire-запис (бітове дзеркало пакувальника
 // Flush_Cache_To_Rails: DID:4 BE + |RSSI| + payload:16).
+// ⚠️ [FW.2] При спільному фліпі з CCM: запис 21B → 29B (fmt-aware,
+// rx_route.h Queen_Ccm_Build_Record_From_Cache) + FLASH_RING_RECORD_SIZE —
+// ревізувати ДО фліпа ARCH35_RING_ENABLED у CCM-ері (00_07 FW.2).
 static void Ring_Serialize_Slot(const EdgeCache *slot, uint8_t out[FLASH_RING_RECORD_SIZE])
 {
     out[0] = (uint8_t)(slot->uid >> 24);
@@ -517,6 +572,7 @@ static void Ring_Deserialize_Slot(const uint8_t rec[FLASH_RING_RECORD_SIZE], Edg
     slot->rssi = (int8_t)(-(int16_t)rec[4]);
     slot->snr  = 0; // SNR не їде у wire-записі — лише evict-tiebreaker, 0 чесний
     memcpy(slot->payload, &rec[5], 16);
+    slot->fmt  = EDGE_FMT_ECB16; // 21B-запис = legacy-розкладка (див. ⚠️ FW.2 вище)
     slot->is_active = 2; // 2 = перелитий з ring'а (flash-копія ще не consumed)
 }
 #endif // ARCH35_RING_ENABLED
@@ -635,7 +691,8 @@ static void MX_USART1_RX_DMA_Init(void); // [FW.3] circular-DMA вухо мод�
 /* USER CODE BEGIN PFP */
 // Функції-обгортки для роботи з модемом та транзитом
 static AtTxResult SIM7070_Transact(const char* command, uint32_t budget_ms);
-void Process_And_Cache_Data(uint32_t uid, const uint8_t* payload, int8_t rssi, int8_t snr);
+void Process_And_Cache_Data(uint32_t uid, const uint8_t* payload, int8_t rssi, int8_t snr,
+                            uint8_t fmt);
 void Flush_Cache_To_Rails(void);
 // [СИНХРОНІЗОВАНО з Rails]: Обробка вхідних CoAP-команд від сервера
 static uint32_t djb2_hash(const char* str, uint8_t len);
@@ -782,14 +839,34 @@ int main(void)
     // потреби) reflex OTA-постріл. Якщо ринг порожній — while-петля
     // мовчки пропускається.
     {
-        uint8_t  rx_payload[16];
+        uint8_t  rx_payload[LORA_RX_SLOT_PAYLOAD_MAX];
+        uint8_t  rx_len  = 0;
         int8_t   rx_rssi = 0;
         int8_t   rx_snr  = 0;
 
-        while (LoRa_Rx_Ring_Pop(rx_payload, &rx_rssi, &rx_snr))
+        while (LoRa_Rx_Ring_Pop(rx_payload, &rx_len, &rx_rssi, &rx_snr))
         {
             current_rssi = rx_rssi;  // зберігаємо для downstream-кешу та логів
             current_snr  = rx_snr;   // [E.8] SNR-tiebreaker у CIFO
+
+#if FW2_CCM_ENABLED
+            // [FW.2] 28B CCM-телеметрія — СЛІПИЙ КУР'ЄР: жодного декрипту
+            // (per-DID ключі живуть лише на Rails — 03_05 §3.1), демукс за
+            // cleartext DID з AAD, у CIFO лягає опаковий 24B-хвіст як є.
+            // MIC верифікує process_ccm_chunk; DID=0 = спуф Sentinel — дроп
+            // ще тут (rx_route.h; бекенд теж дропнув би, але батч-місце шкода).
+            if (Queen_Rx_Classify(rx_len) == QUEEN_RX_CCM_28B) {
+                uint32_t ccm_did = Queen_Ccm_Frame_Did(rx_payload);
+                if (ccm_did == 0u) {
+                    if (ccm_spoof_drops < 0xFFFFu) ccm_spoof_drops++;
+                } else {
+                    Process_And_Cache_Data(ccm_did, &rx_payload[4],
+                                           rx_rssi, rx_snr, EDGE_FMT_CCM24);
+                }
+                Radio.Rx(LORA_RX_INFINITE);
+                continue;
+            }
+#endif
 
             // 1. РОЗШИФРОВУЄМО ПАКЕТ
             // 4 слова × 32 біти = 16 байт = один AES-128-ECB блок (post-ARCH.42 LoRa).
@@ -986,8 +1063,19 @@ int main(void)
                              ((uint32_t)decrypted_payload[2] << 8)  |
                              (uint32_t)decrypted_payload[3];
 
+#if FW2_CCM_ENABLED
+        // [FW.2] Змішана ера (atomic-cutover): 16B-телеметрія ще-не-прошитого
+        // Солдата НЕ сміє лягти у 29B-батч — Rails тримає ОДИН stride на весь
+        // батч (process_ccm_chunk), один чужий запис = каскадна корупція
+        // вирівнювання решти. Control-frames (0x55/0x56) перехоплені вище;
+        // сюди долітає лише legacy-телеметрія → дроп зі слідом.
+        (void)sender_id;
+        if (ccm_legacy_telemetry_drops < 0xFFFFu) ccm_legacy_telemetry_drops++;
+#else
         // Замість миттєвої відправки, складаємо в CIFO-кеш
-        Process_And_Cache_Data(sender_id, decrypted_payload, current_rssi, current_snr);
+        Process_And_Cache_Data(sender_id, decrypted_payload, current_rssi, current_snr,
+                               EDGE_FMT_ECB16);
+#endif
 
         // Re-arm RX перед забором наступного голосу з рингу
         Radio.Rx(LORA_RX_INFINITE);
@@ -1001,6 +1089,13 @@ int main(void)
     // АБО пройшло достатньо часу (FLUSH_INTERVAL_MS + джиттер для десинхронізації)
     if (cache_count >= (CACHE_MAX_ENTRIES - FLUSH_HEADROOM) || (HAL_GetTick() - last_flush_time > FLUSH_INTERVAL_MS + current_jitter)) {
         if (cache_count > 0) {
+#if FW2_CCM_ENABLED
+            // [FW.2] Health-запис DID=0 у CCM-ері НЕ пакується: 16B-легасі
+            // формат зламав би однорідний 29B-stride, а process_ccm_chunk
+            // все одно дропає DID=0 («use dedicated CoAP channel»). Видимість
+            // шлюзу до появи dedicated-каналу = свідомий фліп-гейт
+            // (00_07 FW.2; природний дім рішення — ARCH.34 Queen-Sentinel).
+#else
             // [FIX: Queen Health Blind Spot]
             // Перед скиданням кешу додаємо власний пакет здоров'я Королеви.
             // DID=0 — зарезервований sentinel, backend розпізнає як gateway health.
@@ -1017,8 +1112,9 @@ int main(void)
                 queen_health[7] = cache_count;
                 // Byte 10: Status = homeostasis (0), growth_points = cache_count (proxy for health)
                 queen_health[10] = (cache_count < QUEEN_HEALTH_GP_MAX) ? cache_count : QUEEN_HEALTH_GP_MAX;
-                Process_And_Cache_Data(0, queen_health, 0, 0); // RSSI=0, SNR=0 (локальний пакет)
+                Process_And_Cache_Data(0, queen_health, 0, 0, EDGE_FMT_ECB16); // RSSI=0, SNR=0 (локальний пакет)
             }
+#endif
             Flush_Cache_To_Rails();
             last_flush_time = HAL_GetTick(); // Оновлюємо таймер
 
@@ -1085,8 +1181,16 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
     // як tiebreaker у CIFO eviction (Process_And_Cache_Data) коли два non-critical
     // записи мають однаковий RSSI. Нижчий SNR = шумніший канал = preferred to evict.
 
+    // [FW.2] Легальні розміри ефіру: 16B (ECB-світ) та — лише у CCM-ері —
+    // 28B (wire-rev2 телеметрія). Решта гине ще тут: ані ECB-декрипту
+    // сміття, ані слоту рингу для чужого формату (rx_route.h — та сама
+    // класифікація, що у main-loop; ISR тримає лише size-гейт).
+#if FW2_CCM_ENABLED
+    if (size != 16 && size != FW2_CCM_AIR_PACKET_LEN) return;
+#else
     // Очікуємо рівно 16 байт (повний зашифрований AES блок; post-ARCH.42 LoRa AES-128)
     if (size != 16) return;
+#endif
 
     // [FIX: RSSI Truncation] SX1262 може повернути RSSI < -128.
     // Clamp до int8_t діапазону перед приведенням, щоб запобігти
@@ -1094,7 +1198,7 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
     if (rssi < -128) rssi = -128;
     if (rssi > 127)  rssi = 127;
 
-    LoRa_Rx_Ring_Push(payload, (int8_t)rssi, snr);
+    LoRa_Rx_Ring_Push(payload, (uint8_t)size, (int8_t)rssi, snr);
 }
 
 // =========================================================================
@@ -1106,15 +1210,22 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 // прийшов через інтерференцію → preferred for eviction. Це покращує якість
 // кешу під час grueling LoRa-collision storms (емерджентний rain-attenuation,
 // сусідні шлюзи на тому ж SF).
-void Process_And_Cache_Data(uint32_t uid, const uint8_t* payload, int8_t rssi, int8_t snr)
+// [FW.2] fmt диктує і розкладку, і ДОВЖИНУ payload: ECB16 = 16B
+// розшифрованих, CCM24 = 24B опакового air-хвоста (rx_route.h). Дедуп
+// оновлює й fmt — перепрошите дерево міняє формат між пробудженнями.
+void Process_And_Cache_Data(uint32_t uid, const uint8_t* payload, int8_t rssi, int8_t snr,
+                            uint8_t fmt)
 {
+    uint8_t plen = (fmt == EDGE_FMT_CCM24) ? 24u : 16u;
+
     // 1. ДЕДУПЛІКАЦІЯ: Шукаємо, чи є вже це дерево в кеші
     for(int i = 0; i < CACHE_MAX_ENTRIES; i++) {
         if(forest_cache[i].is_active && forest_cache[i].uid == uid) {
             // Оновлюємо дані на найсвіжіші (бо дерево могло надіслати новий статус)
-            memcpy(forest_cache[i].payload, payload, 16);
+            memcpy(forest_cache[i].payload, payload, plen);
             forest_cache[i].rssi = rssi;
             forest_cache[i].snr  = snr;
+            forest_cache[i].fmt  = fmt;
             return;
         }
     }
@@ -1124,11 +1235,11 @@ void Process_And_Cache_Data(uint32_t uid, const uint8_t* payload, int8_t rssi, i
         for(int i = 0; i < CACHE_MAX_ENTRIES; i++) {
             if(!forest_cache[i].is_active) {
                 forest_cache[i].uid = uid;
-                memcpy(forest_cache[i].payload, payload, 16);
+                memcpy(forest_cache[i].payload, payload, plen);
                 forest_cache[i].rssi = rssi;
                 forest_cache[i].snr  = snr;
                 forest_cache[i].is_active = 1;
-                cache_count++;
+                forest_cache[i].fmt  = fmt;
                 return;
             }
         }
@@ -1156,7 +1267,14 @@ void Process_And_Cache_Data(uint32_t uid, const uint8_t* payload, int8_t rssi, i
             // після того як FW.29 PANIC_FLAG_BIT займає бит 7. Старий `>> 6`
             // видавав bits [7:6], що тихо демотувало status=2/3 у
             // нормальних пакетах через `lora_payload[10] &= ~PANIC_FLAG_BIT`.
-            uint8_t bio_status = (forest_cache[i].payload[10] >> 5) & 0x03;
+            // [FW.2] РОЗКЛАДКА ДІЙСНА ЛИШЕ ДЛЯ ECB16: у CCM24-слоті ці байти
+            // — опаковий шифртекст (статус видно лише Rails'у; byte 10 там
+            // взагалі diag). Сліпий кур'єр чесно ставить 0 → CCM-записи в
+            // пулі preferred-evict за RSSI/SNR; свідома стеля, довгий лік —
+            // ARCH.35 overflow-ринг (00_07 FW.2 фліп-гейти).
+            uint8_t bio_status = (forest_cache[i].fmt == EDGE_FMT_ECB16)
+                                     ? (uint8_t)((forest_cache[i].payload[10] >> 5) & 0x03)
+                                     : 0u;
 
             // Абсолютний fallback — найгірший RSSI (з SNR tiebreaker) серед усіх
             if (forest_cache[i].rssi < fallback_rssi ||
@@ -1358,6 +1476,28 @@ void Flush_Cache_To_Rails(void)
     // а дані ще нікуди не дійшли.
     for(int i = 0; i < CACHE_MAX_ENTRIES; i++) {
         if(forest_cache[i].is_active) {
+#if FW2_CCM_ENABLED
+            // [FW.2] CCM-ера: батч ОДНОРІДНИЙ 29B (Rails тримає один stride
+            // на весь буфер — process_ccm_chunk). Не-CCM слот тут неможливий
+            // за конструкцією (health skip, legacy-телеметрія дропнута до
+            // кешу); defensive-гілка звільняє слот замість вічного клину:
+            // такий запис не буде відправлений НІКОЛИ, а лишений active він
+            // збив би FW.51-очистку (клірились би чужі слоти замість нього).
+            if (forest_cache[i].fmt != EDGE_FMT_CCM24) {
+                forest_cache[i].is_active = 0;
+                cache_count--;
+                continue;
+            }
+            if ((size_t)(offset + QUEEN_CCM_RECORD_LEN) > sizeof(binary_batch_buffer)) break;
+            // 29B-запис: DID ‖ |RSSI| ‖ опаковий 24B-хвіст (rx_route.h —
+            // той самий білдер, що host-тести звіряють проти golden-KAT).
+            Queen_Ccm_Build_Record_From_Cache(forest_cache[i].uid,
+                                              forest_cache[i].payload,
+                                              forest_cache[i].rssi,
+                                              &binary_batch_buffer[offset]);
+            offset += QUEEN_CCM_RECORD_LEN;
+            packed_count++;  // [FW.51] слот лишається активним до успіху send
+#else
             if ((size_t)(offset + 21) > sizeof(binary_batch_buffer)) break;
             // Копіюємо 4 байти DID (великоендіанний формат мережі)
             binary_batch_buffer[offset++] = (uint8_t)(forest_cache[i].uid >> 24);
@@ -1375,6 +1515,7 @@ void Flush_Cache_To_Rails(void)
             offset += 16;
 
             packed_count++;  // [FW.51] слот лишається активним до успіху send
+#endif
         }
     }
 
@@ -1989,29 +2130,52 @@ static void MX_CRYP_Init(void)
 }
 
 // ============================================================================
-// [FW.2 / ARCH.42 Variant B] AES-128-CCM 24-byte LoRa packet — freeze-contract
+// [FW.2 / ARCH.42 Variant B] AES-128-CCM 28-byte LoRa packet — freeze-contract
 // ============================================================================
-// Шлях розшифровування Королеви — дзеркало `Soldier_Build_CCM_LoRa_Packet`.
-// Замкнено (`#define FW2_CCM_ENABLED 0`) до bench-атестації `CRYP_AES_CCM` HAL
-// на кремнії. Host-тести у `firmware/test/test_ccm.c` верифікують через
-// mock HAL CCM (libcrypto-backed).
+// Замкнено (`#define FW2_CCM_ENABLED 0`) до bench-атестації CCM-двигуна на
+// кремнії. Host-тести у `firmware/test/test_ccm.c` верифікують через mock
+// HAL CCM (libcrypto-backed, той самий двофазний WL-shape — lora_ccm.h;
+// F4-стильних HAL_CRYPEx_AESCCM_Encrypt/Decrypt у WL-HAL НЕ існує).
+//
+// РОЛЬ ЦІЄЇ ФУНКЦІЇ (post-2026-07-03, інверсія довіри wire-rev2):
+// hot path Королеви CCM-кадри НЕ розшифровує — DID/FC читаються з
+// cleartext-AAD, сирий пакет їде бекенду 29B-записом, MIC верифікує Rails
+// per-DID ключем (`process_ccm_chunk`; per-device ключі несумісні з
+// decrypt-на-Королеві — 03_05 §3.1). Queen_Parse_CCM_LoRa_Packet лишається
+// для (а) bench-атестації RX-тракту на кремнії, (б) епохи спільного
+// транзит-ключа як опційний ранній валідатор — обидва поза hot path.
 //
 // SSOT для packet layout та packing helpers — `firmware/common/lora_ccm.h`.
+// (FW2_CCM_ENABLED визначений угорі, біля LORA_RX_INFINITE — його споживає
+// весь RX/CIFO/flush-тракт, не лише ця секція.)
 #include "../common/lora_ccm.h"
 
-#define FW2_CCM_ENABLED  0  // freeze-contract — flip після HAL verification
-
 #if FW2_CCM_ENABLED || defined(HAL_MOCK_CCM_ENABLED)
-// Reconfigure hcryp для CCM-режиму (LoRa decrypt). Викликається перед
-// HAL_CRYPEx_AESCCM_Decrypt; після завершення слід викликати `MX_CRYP_Init()`
-// для повернення у дефолтний ECB-режим LoRa control frame relay.
-static void MX_CRYP_Init_CCM_Decrypt(uint8_t *nonce_12b, uint8_t *aad_8b)
+// Reconfigure hcryp для CCM-режиму (LoRa decrypt) — WL-істинний двофазний
+// флоу: нонс усередині B0, AAD окремо, Size у БАЙТАХ, DataType=8B.
+// Після завершення — MX_CRYP_Restore_From_CCM() (ECB + без висячих B0/Header).
+static void MX_CRYP_Init_CCM_Decrypt(uint32_t *b0_4w, uint32_t *aad_2w)
 {
-    hcryp.Init.Algorithm  = CRYP_AES_CCM;
-    hcryp.Init.pInitVect  = (uint32_t*)nonce_12b;
-    hcryp.Init.Header     = aad_8b;
-    hcryp.Init.HeaderSize = FW2_CCM_AAD_LEN;
+    hcryp.Init.Algorithm       = CRYP_AES_CCM;
+    hcryp.Init.DataType        = CRYP_DATATYPE_8B;
+    hcryp.Init.B0              = b0_4w;
+    hcryp.Init.Header          = aad_2w;
+    hcryp.Init.HeaderSize      = FW2_CCM_AAD_LEN;
+    hcryp.Init.DataWidthUnit   = CRYP_DATAWIDTHUNIT_BYTE;
+    hcryp.Init.HeaderWidthUnit = CRYP_HEADERWIDTHUNIT_BYTE;
     HAL_CRYP_Init(&hcryp);
+}
+
+// Гігієна після CCM (дзеркало Солдата): width-unit'и назад у WORD — ECB/CBC
+// шляхи Королеви рахують Size у словах; B0/Header жили на стеку викликача.
+static void MX_CRYP_Restore_From_CCM(void)
+{
+    hcryp.Init.B0              = NULL;
+    hcryp.Init.Header          = NULL;
+    hcryp.Init.HeaderSize      = 0;
+    hcryp.Init.DataWidthUnit   = CRYP_DATAWIDTHUNIT_WORD;
+    hcryp.Init.HeaderWidthUnit = CRYP_HEADERWIDTHUNIT_WORD;
+    MX_CRYP_Init();
 }
 
 // Розшифрувати 28-байтний CCM LoRa-пакет (wire-rev2) від Солдата.
@@ -2020,8 +2184,9 @@ static void MX_CRYP_Init_CCM_Decrypt(uint8_t *nonce_12b, uint8_t *aad_8b)
 //   out_sensor[12]              — розшифрований сенсорний payload
 // (gossip-байт AAD[4] Королеві не потрібен — вона має власний LTE-час;
 //  він адресований Солдатам-сусідам і їде у CoAP-chunk як є.)
-// Якщо MIC не б'ється, формат кривий або HAL захрип — повертає HAL_ERROR;
-// ловець зобов'язаний дропнути пакет: ні ретрансляції, ні бекенду.
+// WL-флоу: HAL тег НЕ звіряє — payload-фаза + тег-фаза, а вирок виносить
+// константна звірка Fw2_Ccm_Tag_Equal тут. MIC не б'ється / формат кривий /
+// HAL захрип → HAL_ERROR; ловець зобов'язаний дропнути пакет.
 //
 // Монотонність FC тут НЕ перевіряється — ця варта стоїть на Rails
 // (`Cryptography::LoraCcm` + Redis SETNX per-DID). Queen-side dedup
@@ -2040,22 +2205,31 @@ int Queen_Parse_CCM_LoRa_Packet(const uint8_t in_packet[FW2_CCM_AIR_PACKET_LEN],
         ((uint32_t)in_packet[5] << 16) | ((uint32_t)in_packet[6] << 8) |
         (uint32_t)in_packet[7];
 
-    uint8_t nonce[FW2_CCM_NONCE_LEN];
-    uint8_t aad[FW2_CCM_AAD_LEN];
-    Build_CCM_Nonce(did, fc, nonce);
-    Build_CCM_AAD(did, gossip, fc, aad);
+    // Word-aligned плоть — CRYP HAL споживає uint32_t*.
+    uint32_t b0_w[FW2_CCM_B0_LEN / 4];
+    uint32_t aad_w[FW2_CCM_AAD_LEN / 4];
+    uint32_t ct_w[FW2_CCM_PLAINTEXT_LEN / 4];
+    uint32_t pt_w[FW2_CCM_PLAINTEXT_LEN / 4];
+    uint32_t tag_w[4]; // 16B: WL HAL пише повний блок, MIC = перші 8 байт
+    Build_CCM_AAD(did, gossip, fc, (uint8_t *)aad_w);
+    Build_CCM_B0(did, fc, (uint8_t *)b0_w);
+    memcpy(ct_w, &in_packet[FW2_CCM_AAD_LEN], FW2_CCM_PLAINTEXT_LEN);
 
-    // HAL_CRYPEx_AESCCM_Decrypt потребує одного буфера: шифротекст || MIC-тег.
-    uint8_t ct_and_tag[FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN];
-    memcpy(ct_and_tag, &in_packet[8], FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN);
-
-    MX_CRYP_Init_CCM_Decrypt(nonce, aad);
-    int status = HAL_CRYPEx_AESCCM_Decrypt(&hcryp, ct_and_tag, FW2_CCM_PLAINTEXT_LEN,
-                                           out_sensor, 1000);
-    MX_CRYP_Init(); // Повертаємо ECB-режим: LoRa control-frames чекають свого ключа.
+    MX_CRYP_Init_CCM_Decrypt(b0_w, aad_w);
+    int status = HAL_CRYP_Decrypt(&hcryp, ct_w, FW2_CCM_PLAINTEXT_LEN, pt_w, 1000);
+    if (status == HAL_OK) {
+        status = HAL_CRYPEx_AESCCM_GenerateAuthTAG(&hcryp, tag_w, 1000);
+    }
+    MX_CRYP_Restore_From_CCM(); // ECB назад: LoRa control-frames чекають свого ключа.
 
     if (status != HAL_OK) return HAL_ERROR;
 
+    // Вирок MIC — константним часом, проти wire-байтів 20..27.
+    if (!Fw2_Ccm_Tag_Equal((const uint8_t *)tag_w,
+                           &in_packet[FW2_CCM_AAD_LEN + FW2_CCM_PLAINTEXT_LEN]))
+        return HAL_ERROR;
+
+    memcpy(out_sensor, pt_w, FW2_CCM_PLAINTEXT_LEN);
     *out_did = did;
     *out_fc  = fc;
     return HAL_OK;

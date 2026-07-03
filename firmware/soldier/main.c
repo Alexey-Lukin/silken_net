@@ -610,8 +610,22 @@ static uint8_t Soldier_Handle_CMD_SET_THRESHOLDS(const uint8_t* frame,
 // [FW.2] Гейт усієї CCM-гілки (сама гілка — секція внизу файла). Define
 // живе тут, бо KV-mount спільний: FC high-water (TRL-7 монотонна межа,
 // політика 03_05 §2.1) їде у Flash-KV ключем 0x14 і мусить вмикати mount.
+// #ifndef — щоб CI compile-варіант міг зібрати гілку `-DFW2_CCM_ENABLED=1`
+// проти справжнього WL-HAL, не чіпаючи бойового дефолту 0.
+#ifndef FW2_CCM_ENABLED
 #define FW2_CCM_ENABLED  0  // freeze-contract — flip після HAL verification (RUNBOOK §2)
+#endif
 #include "../common/fc_hiwater.h"
+
+#if FW2_CCM_ENABLED || defined(HAL_MOCK_CCM_ENABLED)
+// Прототип: тіло живе у freeze-contract секції внизу файла, а call-sites
+// (Фаза 4 TX + Trigger_Emergency_LoRa_TX) — вище за течією.
+int Soldier_Build_CCM_LoRa_Packet(
+    uint32_t did, uint16_t vcap_mv, int8_t temp_c, uint8_t acoustic,
+    uint16_t delta_t_s, uint8_t status_byte, uint8_t mesh_ctrl,
+    uint16_t device_z, uint8_t diag, uint8_t vpd_index, uint8_t gossip_ts_lsb,
+    uint8_t out_packet[FW2_CCM_AIR_PACKET_LEN]);
+#endif
 
 #if FW2_CCM_ENABLED
 static uint32_t fc_hiwater_cache    = 0; // RAM-кеш межі; істина — Flash-KV 0x14
@@ -2208,8 +2222,40 @@ int main(void)
         // (замість телеметрії — Королеві потрібен uplink для OTA-рефлексу);
         // cooldown належить сплячому drift-watchdog'у (0x56 ПОВЕРХ телеметрії).
     } else {
+#if FW2_CCM_ENABLED
+        // [FW.2] Wire-rev2: телеметрія = 28B CCM замість 16B ECB. Джерела —
+        // ті САМІ живі значення, що вже лягли в lora_payload (байт-парність
+        // семантики): сирий vcap_voltage (wire завжди носив сирий, EMA — то
+        // їжа Лоренца), dt_wire із сатурацією 0xFFFF, StatusByte після
+        // FW.29-маски, acoustic з ARCH.41-B sentinel-логікою. mesh_ctrl =
+        // [TTL:4|fw_low:4] (розкладка 03_05 §2.1; low-nibble версії — 16-епох
+        // ротація через OTA-config). fauna-біти (0,0) до FW.4 fauna-pivot
+        // (FW.42 ставить їх при вживленні call-site'а). Збій збірки (HAL
+        // захрип) → мовчимо цей цикл: 16B-фолбек у CCM-ері Королева однаково
+        // дропне (atomic-cutover), то був би спалений airtime, не телеметрія.
+        uint8_t ccm_air[FW2_CCM_AIR_PACKET_LEN];
+        uint8_t ccm_mesh_ctrl = (uint8_t)(((DEFAULT_TTL & FW2_MESH_TTL_MASK)
+                                           << FW2_MESH_TTL_SHIFT) |
+                                          (FIRMWARE_VERSION_ID & FW2_MESH_FW_NIBBLE_MASK));
+        uint8_t ccm_diag = Pack_FW2_Diag(tinyml_threshold_invalid_count,
+                                         0u, 0u, fc_hiwater_degraded);
+        if (Soldier_Build_CCM_LoRa_Packet(tree_did, vcap_voltage,
+                                          (int8_t)lora_payload[6],
+                                          lora_payload[7],
+                                          (uint16_t)dt_wire,
+                                          lora_payload[10],
+                                          ccm_mesh_ctrl,
+                                          Pack_FW2_Device_Z(lorenz_z, lorenz_state_valid),
+                                          ccm_diag,
+                                          0x00 /* vpd_index — до BME280 (HW.32) */,
+                                          Soldier_Pack_Gossip_Ts_Byte(soldier_unix_ts),
+                                          ccm_air) == HAL_OK) {
+            Radio.Send(ccm_air, FW2_CCM_AIR_PACKET_LEN);
+        }
+#else
         HAL_CRYP_Encrypt(&hcryp, (uint32_t*)lora_payload, 4, (uint32_t*)encrypted_payload, 1000);
         Radio.Send(encrypted_payload, 16);
+#endif
     }
 
     // =========================================================================
@@ -2237,6 +2283,17 @@ int main(void)
         uint32_t rx_start_time = HAL_GetTick();
         while((HAL_GetTick() - rx_start_time) < LORA_RX_LOOP_MS) {
             if(lora_rx_flag == 1) {
+                // [FW.2] Чужий формат ефіру гине ДО декрипту (ungated — вірно
+                // в обох ерах): усі легальні кадри Солдата = рівно 16B ECB
+                // (beacon/OTA/печатка/CMD/mesh). 28B CCM-кадр сусіда, прогнаний
+                // ECB'ом, давав ~1/256 шанс хибно зійтися на 0x99/0x9B і
+                // отруїти ota_buffer/печатку. CCM-телеметрію Солдат свідомо НЕ
+                // ретранслює: mesh-TTL живе у шифртексті — рішення відкладено
+                // до ARCH.26 (03_05 §2.1 «Відкриті спостереження»).
+                if (incoming_lora_size != 16) {
+                    break; // не наш формат — спати (re-request Фази 4.5 живий)
+                }
+
                 // МИ ЗЛОВИЛИ ПАКЕТ! Розшифровуємо його.
                 uint16_t blocks = incoming_lora_size / 4;
                 HAL_CRYP_Decrypt(&hcryp, (uint32_t*)incoming_lora_payload, blocks, (uint32_t*)decrypted_rx_payload, 1000);
@@ -2838,6 +2895,27 @@ void HAL_PWR_PVDCallback(void)
 // =========================================================================
 void Trigger_Emergency_LoRa_TX(void)
 {
+#if FW2_CCM_ENABLED
+    // [FW.2] Panic їде тим САМИМ CCM-потоком, що телеметрія: FC у нонсі =
+    // anti-replay для ВСІХ кадрів (03_05 §2.1 — SEC.10 DR0[31:16]-лічильник
+    // звільнено фліпом), а MIC не дає зліпити зойк із чужих байтів. Поля
+    // дзеркалять legacy-паніку (нулі vcap/temp/dt — ECB-кадр теж їх не ніс),
+    // acoustic=0xFF = код паніки, + чесний device_z поточного стану.
+    uint8_t panic_air[FW2_CCM_AIR_PACKET_LEN];
+    uint8_t panic_mesh_ctrl = (uint8_t)(((PANIC_TTL & FW2_MESH_TTL_MASK)
+                                         << FW2_MESH_TTL_SHIFT) |
+                                        (FIRMWARE_VERSION_ID & FW2_MESH_FW_NIBBLE_MASK));
+    uint8_t panic_diag = Pack_FW2_Diag(tinyml_threshold_invalid_count,
+                                       0u, 0u, fc_hiwater_degraded);
+    int panic_built = Soldier_Build_CCM_LoRa_Packet(tree_did,
+                          0u /* vcap: legacy-parity */, 0 /* temp */,
+                          0xFFu /* акустика: код паніки */, 0u /* dt */,
+                          FW2_STATUS_PANIC_BIT, panic_mesh_ctrl,
+                          Pack_FW2_Device_Z(lorenz_z, lorenz_state_valid),
+                          panic_diag, 0x00,
+                          Soldier_Pack_Gossip_Ts_Byte(soldier_unix_ts),
+                          panic_air);
+#else
     uint8_t panic_payload[16] = {0};
     uint8_t encrypted_panic[16] = {0};
 
@@ -2881,6 +2959,7 @@ void Trigger_Emergency_LoRa_TX(void)
 
     // 4. Шифруємо AES-128 (post-ARCH.42) і миттєво вистрілюємо
     HAL_CRYP_Encrypt(&hcryp, (uint32_t*)panic_payload, 4, (uint32_t*)encrypted_panic, 1000);
+#endif
 
 #if ARCH26_CAD_ENABLED
     // [ARCH.26 L3] «Останній зойк»: преамбула довша за період нюху
@@ -2899,7 +2978,15 @@ void Trigger_Emergency_LoRa_TX(void)
                                                       CAD_T_SYM_SF9_BW125_US)),
                       false, true, false, 0u, false, 0u);
 #endif
+#if FW2_CCM_ENABLED
+    // Збій збірки (HAL захрип) → мовчимо: підроблений/битий зойк гірший за
+    // тишу, а L1-Королева все одно слухає наступне пробудження.
+    if (panic_built == HAL_OK) {
+        Radio.Send(panic_air, FW2_CCM_AIR_PACKET_LEN);
+    }
+#else
     Radio.Send(encrypted_panic, 16);
+#endif
 
     // 5. Мікро-пауза, щоб радіомодуль встиг фізично випромінити пакет
     HAL_Delay(100);
@@ -3178,8 +3265,9 @@ static void Derive_Cold_Start_State(float *x0, float *y0, float *z0)
 
 // Функція конфігурації апаратного AES (Створюється автоматично CubeMX)
 // Post-ARCH.42 Variant B (2026-05-23): LoRa-канал на AES-128 (вибір; SE = SE050 — 03_05 §3.7).
-// FW.2 target — `CRYP_AES_CCM` з 24-byte packet + 8-byte MIC; потребує hardware bench
-// для верифікації `HAL_CRYPEx_AESCCM_Encrypt` на STM32WLE5JC RM0461 §27.4.
+// FW.2 target — `CRYP_AES_CCM` 28B wire-rev2 двофазним WL-флоу (B0 +
+// HAL_CRYP_Encrypt + GenerateAuthTAG — lora_ccm.h); bench верифікує кремній
+// проти OpenSSL (ccm_selftest, RM0461 §27.4).
 static void MX_CRYP_Init(void)
 {
   hcryp.Instance = AES;
@@ -3191,13 +3279,13 @@ static void MX_CRYP_Init(void)
 }
 
 // ============================================================================
-// [FW.2 / ARCH.42 Variant B] AES-128-CCM 24-byte LoRa packet — freeze-contract
+// [FW.2 / ARCH.42 Variant B] AES-128-CCM 28-byte LoRa packet — freeze-contract
 // ============================================================================
 // Гілка вмикається `#define FW2_CCM_ENABLED 1` після hardware bench
-// підтвердження `HAL_CRYPEx_AESCCM_Encrypt` на STM32WLE5JC. До flip — функції
+// атестації CCM-двигуна (ccm_selftest KAT) на STM32WLE5JC. До flip — функції
 // нижче не викликаються з production cycle (Build_LoRa_Payload + ECB
 // продовжує жити), але host-тести у `firmware/test/test_ccm.c` верифікують
-// логіку через mock HAL CCM (libcrypto-backed).
+// логіку через mock HAL CCM (libcrypto-backed, той самий двофазний shape).
 //
 // Структура пакета, packing helpers, та RTC_BKP_DR15 layout — SSOT у
 // `firmware/common/lora_ccm.h`. Тут лише: (a) CRYP_AES_CCM реконфігурація,
@@ -3208,16 +3296,38 @@ static void MX_CRYP_Init(void)
 // (TRL-7) вмикає спільний KV-mount, тож define мусить жити до нього.
 
 #if FW2_CCM_ENABLED || defined(HAL_MOCK_CCM_ENABLED)
-// Reconfigure hcryp для CCM-режиму. Викликається перед HAL_CRYPEx_AESCCM_Encrypt;
-// після завершення CCM операції слід викликати `MX_CRYP_Init()` для повернення
-// у дефолтний ECB-режим (LoRa control frames, mesh relay).
-static void MX_CRYP_Init_CCM(uint8_t *nonce_12b, uint8_t *aad_8b)
+// Reconfigure hcryp для CCM-режиму — WL-ІСТИННИЙ двофазний флоу (знахідка
+// 2026-07-03: HAL_CRYPEx_AESCCM_Encrypt/Decrypt у WL-HAL НЕ існують, то
+// F4/F7/L4-API; shape-дім — lora_ccm.h). Нонс живе всередині B0-блоку
+// (Build_CCM_B0), AAD — окремим Header; Size обох фаз — у БАЙТАХ
+// (DataWidthUnit=BYTE), DataType=8B — байтопотік без word-swap
+// двозначностей (32B-swap клас ловить ccm_selftest KAT на bench).
+// Після CCM-операції ОБОВ'ЯЗКОВО MX_CRYP_Init() (ECB restore) + занулити
+// B0/Header — інакше в Init лишаються вказівники на мертвий стек-фрейм.
+static void MX_CRYP_Init_CCM(uint32_t *b0_4w, uint32_t *aad_2w)
 {
-    hcryp.Init.Algorithm  = CRYP_AES_CCM;
-    hcryp.Init.pInitVect  = (uint32_t*)nonce_12b;  // mock semantic — see hal_mock.h
-    hcryp.Init.Header     = aad_8b;
-    hcryp.Init.HeaderSize = FW2_CCM_AAD_LEN;
+    hcryp.Init.Algorithm       = CRYP_AES_CCM;
+    hcryp.Init.DataType        = CRYP_DATATYPE_8B;
+    hcryp.Init.B0              = b0_4w;
+    hcryp.Init.Header          = aad_2w;
+    hcryp.Init.HeaderSize      = FW2_CCM_AAD_LEN;
+    hcryp.Init.DataWidthUnit   = CRYP_DATAWIDTHUNIT_BYTE;
+    hcryp.Init.HeaderWidthUnit = CRYP_HEADERWIDTHUNIT_BYTE;
     HAL_CRYP_Init(&hcryp);
+}
+
+// Гігієна після CCM: ECB-контекст назад (дисципліна Restore_ECB_Mode) і
+// жодного висячого вказівника у Init — B0/Header жили на стеку викликача.
+// Width-unit'и ОБОВ'ЯЗКОВО назад у WORD: MX_CRYP_Init їх не чіпає, а
+// production-ECB передає Size у словах — липкий BYTE зламав би decrypt.
+static void MX_CRYP_Restore_From_CCM(void)
+{
+    hcryp.Init.B0              = NULL;
+    hcryp.Init.Header          = NULL;
+    hcryp.Init.HeaderSize      = 0;
+    hcryp.Init.DataWidthUnit   = CRYP_DATAWIDTHUNIT_WORD;
+    hcryp.Init.HeaderWidthUnit = CRYP_HEADERWIDTHUNIT_WORD;
+    MX_CRYP_Init();
 }
 
 // Load / Save Frame Counter to RTC_BKP_DR15.
@@ -3312,31 +3422,37 @@ int Soldier_Build_CCM_LoRa_Packet(
     }
 #endif
 
-    uint8_t nonce[FW2_CCM_NONCE_LEN];
-    uint8_t aad[FW2_CCM_AAD_LEN];
-    uint8_t plaintext[FW2_CCM_PLAINTEXT_LEN];
-    uint8_t ct_and_tag[FW2_CCM_PLAINTEXT_LEN + FW2_CCM_MIC_LEN];
+    // Word-aligned плоть: STM32 CRYP HAL споживає uint32_t* — байтові
+    // масиви на стеку такого вирівнювання не обіцяють.
+    uint32_t aad_w[FW2_CCM_AAD_LEN / 4];
+    uint32_t b0_w[FW2_CCM_B0_LEN / 4];
+    uint32_t pt_w[FW2_CCM_PLAINTEXT_LEN / 4];
+    uint32_t ct_w[FW2_CCM_PLAINTEXT_LEN / 4];
+    uint32_t tag_w[4]; // 16B: WL HAL пише повний блок, MIC = перші 8 байт
 
-    Build_CCM_Nonce(did, next_fc, nonce);
-    Build_CCM_AAD(did, gossip_ts_lsb, next_fc, aad);
+    Build_CCM_AAD(did, gossip_ts_lsb, next_fc, (uint8_t *)aad_w);
+    Build_CCM_B0(did, next_fc, (uint8_t *)b0_w); // нонс живе всередині B0
     Pack_CCM_Sensor_Payload(vcap_mv, temp_c, acoustic, delta_t_s,
                             status_byte, mesh_ctrl,
-                            device_z, diag, vpd_index, plaintext);
+                            device_z, diag, vpd_index, (uint8_t *)pt_w);
 
-    MX_CRYP_Init_CCM(nonce, aad);
-    int status = HAL_CRYPEx_AESCCM_Encrypt(&hcryp, plaintext, FW2_CCM_PLAINTEXT_LEN,
-                                           ct_and_tag, 1000);
+    // Двофазний WL-флоу: payload-фаза → тег-фаза (invocation shape — lora_ccm.h).
+    MX_CRYP_Init_CCM(b0_w, aad_w);
+    int status = HAL_CRYP_Encrypt(&hcryp, pt_w, FW2_CCM_PLAINTEXT_LEN, ct_w, 1000);
+    if (status == HAL_OK) {
+        status = HAL_CRYPEx_AESCCM_GenerateAuthTAG(&hcryp, tag_w, 1000);
+    }
     // Відновлюємо ECB-режим негайно — LoRa control-frames чекають свого ключа.
-    MX_CRYP_Init();
+    MX_CRYP_Restore_From_CCM();
     if (status != HAL_OK) {
         return HAL_ERROR; // Збій шифрування — лічильник кадрів не просуваємо.
     }
 
     // Складаємо пакет до ефіру: AAD-заголовок || шифротекст || MIC-печатка.
-    memcpy(&out_packet[0], aad, FW2_CCM_AAD_LEN);
-    memcpy(&out_packet[FW2_CCM_AAD_LEN], ct_and_tag, FW2_CCM_PLAINTEXT_LEN);
+    memcpy(&out_packet[0], aad_w, FW2_CCM_AAD_LEN);
+    memcpy(&out_packet[FW2_CCM_AAD_LEN], ct_w, FW2_CCM_PLAINTEXT_LEN);
     memcpy(&out_packet[FW2_CCM_AAD_LEN + FW2_CCM_PLAINTEXT_LEN],
-           ct_and_tag + FW2_CCM_PLAINTEXT_LEN, FW2_CCM_MIC_LEN);
+           tag_w, FW2_CCM_MIC_LEN);
 
     Save_Frame_Counter(next_fc);
     return HAL_OK;

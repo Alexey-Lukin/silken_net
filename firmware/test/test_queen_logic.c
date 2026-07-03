@@ -32,12 +32,18 @@ static void Error_Handler(void) { _mock_error_handler_called++; }
 static uint32_t aes_key[4] = {0};  /* AES-128 LoRa (ARCH.42 Variant B) */
 
 /* ── Data structures (from queen/main.c) ────────────────────────────── */
+/* [FW.2] Дзеркало тримає СУПЕРСЕТ фліп-світу: payload 24B (CCM-хвіст) +
+ * fmt-тег; ECB-ера живе у перших 16 байтах з fmt=ECB16 (у main.c ширина
+ * гейтована FW2_CCM_ENABLED — тут завжди 24, щоб тестувати обидві ери). */
+#define EDGE_FMT_ECB16  0u
+#define EDGE_FMT_CCM24  1u
 typedef struct {
     uint32_t uid;
-    uint8_t  payload[16];
+    uint8_t  payload[24];
     int8_t   rssi;
     int8_t   snr;          /* [E.8] SNR — CIFO eviction tiebreaker */
     uint8_t  is_active;
+    uint8_t  fmt;          /* [FW.2] EDGE_FMT_* — розкладка payload */
 } EdgeCache;
 
 /* ── Globals for testable functions ─────────────────────────────────── */
@@ -149,15 +155,22 @@ static uint8_t Cmd_Dedup_Check(uint32_t hash)
 }
 
 /* CIFO cache — with priority-aware eviction FIX (Risk 3) and
- * [E.8] SNR-aware tiebreaker for non-critical entries with equal RSSI. */
-static void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi, int8_t snr)
+ * [E.8] SNR-aware tiebreaker for non-critical entries with equal RSSI.
+ * [FW.2] fmt-aware дзеркало: ECB16 = 16B розшифрованих (bio_status видно),
+ * CCM24 = 24B опакового хвоста (статус у шифртексті → сліпий кур'єр чесно
+ * ставить 0 і CCM-запис живе у пулі preferred-evict — свідома стеля). */
+static void Process_And_Cache_Data_Fmt(uint32_t uid, const uint8_t* payload,
+                                       int8_t rssi, int8_t snr, uint8_t fmt)
 {
+    uint8_t plen = (fmt == EDGE_FMT_CCM24) ? 24u : 16u;
+
     /* 1. DEDUP */
     for (int i = 0; i < CACHE_MAX_ENTRIES; i++) {
         if (forest_cache[i].is_active && forest_cache[i].uid == uid) {
-            memcpy(forest_cache[i].payload, payload, 16);
+            memcpy(forest_cache[i].payload, payload, plen);
             forest_cache[i].rssi = rssi;
             forest_cache[i].snr  = snr;
+            forest_cache[i].fmt  = fmt;
             return;
         }
     }
@@ -167,10 +180,11 @@ static void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi, 
         for (int i = 0; i < CACHE_MAX_ENTRIES; i++) {
             if (!forest_cache[i].is_active) {
                 forest_cache[i].uid = uid;
-                memcpy(forest_cache[i].payload, payload, 16);
+                memcpy(forest_cache[i].payload, payload, plen);
                 forest_cache[i].rssi = rssi;
                 forest_cache[i].snr  = snr;
                 forest_cache[i].is_active = 1;
+                forest_cache[i].fmt  = fmt;
                 cache_count++;
                 return;
             }
@@ -182,7 +196,9 @@ static void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi, 
      * Fall back to absolute worst RSSI if ALL are critical.
      * [E.8] When two candidates have EQUAL RSSI, lower SNR wins eviction
      *       (noisier link → packet more likely stale/unreliable).
-     * [FIX: AUDIT] Only consider is_active entries for eviction. */
+     * [FIX: AUDIT] Only consider is_active entries for eviction.
+     * [FW.2] bio_status читається ЛИШЕ з ECB16-розкладки (byte 10 у CCM =
+     * зашифрований diag, не статус — офсет-колізія!). */
     int best_evict_idx = -1;
     int8_t best_evict_rssi = 127;
     int8_t best_evict_snr  = 127;
@@ -193,7 +209,9 @@ static void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi, 
     for (int i = 0; i < CACHE_MAX_ENTRIES; i++) {
         if (!forest_cache[i].is_active) continue; /* [FIX] skip inactive */
 
-        uint8_t bio_status = (forest_cache[i].payload[10] >> 5) & 0x03;  /* [FW.29-PACK] bits 6..5 */
+        uint8_t bio_status = (forest_cache[i].fmt == EDGE_FMT_ECB16)
+                                 ? (uint8_t)((forest_cache[i].payload[10] >> 5) & 0x03)
+                                 : 0u;  /* [FW.29-PACK] bits 6..5, ECB16-only */
 
         if (forest_cache[i].rssi < fallback_rssi ||
             (forest_cache[i].rssi == fallback_rssi && forest_cache[i].snr < fallback_snr)) {
@@ -214,9 +232,16 @@ static void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi, 
     int evict = (best_evict_idx >= 0) ? best_evict_idx : fallback_idx;
 
     forest_cache[evict].uid = uid;
-    memcpy(forest_cache[evict].payload, payload, 16);
+    memcpy(forest_cache[evict].payload, payload, plen);
     forest_cache[evict].rssi = rssi;
     forest_cache[evict].snr  = snr;
+    forest_cache[evict].fmt  = fmt;
+}
+
+/* Legacy 4-арг обгортка — існуючі ECB-тести живуть без churn'у. */
+static void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi, int8_t snr)
+{
+    Process_And_Cache_Data_Fmt(uid, payload, rssi, snr, EDGE_FMT_ECB16);
 }
 
 /* Batch packing — mirrors the Flush_Cache_To_Rails packing step.
@@ -822,6 +847,81 @@ TEST(test_cache_uid_zero) {
     ASSERT_EQ(cache_count, 1);
     Process_And_Cache_Data(0, p, -30, 0);
     ASSERT_EQ(cache_count, 1);
+}
+
+/* ── [FW.2] fmt-aware CIFO: CCM24-слоти (опаковий шифртекст) ─────────── */
+
+TEST(test_fw2_ccm_slot_stores_24_bytes_and_fmt) {
+    reset_cache();
+    uint8_t tail[24];
+    for (unsigned i = 0; i < sizeof tail; i++) tail[i] = (uint8_t)(0xB0u + i);
+    Process_And_Cache_Data_Fmt(0xC0FFEE01, tail, -66, 3, EDGE_FMT_CCM24);
+    ASSERT_EQ(cache_count, 1);
+    ASSERT_EQ(forest_cache[0].fmt, EDGE_FMT_CCM24);
+    ASSERT_EQ(memcmp(forest_cache[0].payload, tail, 24), 0);
+}
+
+TEST(test_fw2_ccm_dedup_can_flip_format) {
+    /* Перепрошитий Солдат: ECB-запис учора, CCM-запис сьогодні — дедуп
+     * оновлює і байти, і fmt (інакше flush пакував би CCM-хвіст як ECB). */
+    reset_cache();
+    uint8_t ecb[16] = {0};
+    uint8_t tail[24] = {0xAA};
+    Process_And_Cache_Data_Fmt(0x77, ecb, -50, 0, EDGE_FMT_ECB16);
+    ASSERT_EQ(forest_cache[0].fmt, EDGE_FMT_ECB16);
+    Process_And_Cache_Data_Fmt(0x77, tail, -48, 0, EDGE_FMT_CCM24);
+    ASSERT_EQ(cache_count, 1);
+    ASSERT_EQ(forest_cache[0].fmt, EDGE_FMT_CCM24);
+    ASSERT_EQ(forest_cache[0].payload[0], 0xAA);
+}
+
+TEST(test_fw2_ccm_offset10_not_read_as_status) {
+    /* Офсет-колізія (пастка FW.2): у CCM24 byte 10 = зашифрований diag.
+     * Слот зі "статусом-виглядом" 0xFF у byte 10 НЕ сміє отримати
+     * критичний імунітет — CCM-запис лишається preferred-evict. */
+    reset_cache();
+    uint8_t tail[24] = {0};
+    tail[10] = 0xFF; /* у ECB-світі це був би status=3 tamper */
+    Process_And_Cache_Data_Fmt(0xCC1, tail, -90, 0, EDGE_FMT_CCM24);
+
+    uint8_t healthy[16] = {0};
+    for (uint32_t i = 1; i < 50; i++)
+        Process_And_Cache_Data(i + 400, healthy, -50, 0);
+
+    Process_And_Cache_Data(0xEE2, healthy, -20, 0);
+
+    int found_ccm = 0, found_new = 0;
+    for (int i = 0; i < CACHE_MAX_ENTRIES; i++) {
+        if (forest_cache[i].uid == 0xCC1) found_ccm = 1;
+        if (forest_cache[i].uid == 0xEE2) found_new = 1;
+    }
+    ASSERT_EQ(found_ccm, 0); /* евіктнутий: bio-статусу сліпий кур'єр не бачить */
+    ASSERT_EQ(found_new, 1);
+}
+
+TEST(test_fw2_ecb_critical_still_protected_beside_ccm) {
+    /* Змішаний кеш: ECB-tamper лишається недоторканим, CCM іде першим. */
+    reset_cache();
+    uint8_t tamper[16] = {0};
+    tamper[10] = (3 << 5);
+    Process_And_Cache_Data(0xE1, tamper, -100, 0);
+
+    uint8_t tail[24] = {0};
+    Process_And_Cache_Data_Fmt(0xCC2, tail, -95, 0, EDGE_FMT_CCM24);
+
+    uint8_t healthy[16] = {0};
+    for (uint32_t i = 2; i < 50; i++)
+        Process_And_Cache_Data(i + 500, healthy, -55, 0);
+
+    Process_And_Cache_Data(0xFF3, healthy, -15, 0);
+
+    int found_tamper = 0, found_ccm = 0;
+    for (int i = 0; i < CACHE_MAX_ENTRIES; i++) {
+        if (forest_cache[i].uid == 0xE1)  found_tamper = 1;
+        if (forest_cache[i].uid == 0xCC2) found_ccm = 1;
+    }
+    ASSERT_EQ(found_tamper, 1); /* ECB-статус видно → захищений */
+    ASSERT_EQ(found_ccm, 0);    /* CCM (гірший RSSI серед non-critical) — жертва */
 }
 
 TEST(test_cache_rssi_minus128) {
@@ -2587,6 +2687,12 @@ int main(void)
     RUN(test_cache_cifo_protects_tamper);
     RUN(test_cache_cifo_fallback_all_critical);
     RUN(test_cache_uid_zero);
+
+    printf("\n  CIFO fmt-aware (FW.2 CCM24):\n");
+    RUN(test_fw2_ccm_slot_stores_24_bytes_and_fmt);
+    RUN(test_fw2_ccm_dedup_can_flip_format);
+    RUN(test_fw2_ccm_offset10_not_read_as_status);
+    RUN(test_fw2_ecb_critical_still_protected_beside_ccm);
     RUN(test_cache_rssi_minus128);
     RUN(test_cache_rssi_zero);
     RUN(test_cache_eviction_preserves_count);

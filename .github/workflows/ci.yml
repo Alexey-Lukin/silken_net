@@ -225,12 +225,14 @@ jobs:
         # stm32wlxx-hal-driver/cmsis-device-wl. Реконфіг тут (не в кроці вище),
         # бо hal_check потребує build-generated mruby ARM include з кроку
         # mruby cross-compile. docs/03_01 §12.4.
+        # hal_check_ccm = ті самі TU з FW2_CCM_ENABLED=1: гейтований CCM-тракт
+        # компілюється проти WL-HAL (клас «API не існує у WL» — FW.2).
         run: |
           cmake -B firmware/build -S firmware -G Ninja \
             -DCMAKE_TOOLCHAIN_FILE="$PWD/firmware/cmake/arm-none-eabi.cmake" \
             -DCMSISCORE="$PWD/firmware/extern/CMSIS_6/CMSIS/Core" \
             -DSILKEN_WITH_HAL=ON
-          cmake --build firmware/build --target hal_check
+          cmake --build firmware/build --target hal_check hal_check_ccm
 
       - name: '[FW.26] ARM static-RAM gate — реальні .data+.bss обох main.c проти леджера'
         # Перший НЕ-плацхолдерний RAM-гейт: arm-none-eabi-size на hal_check .obj

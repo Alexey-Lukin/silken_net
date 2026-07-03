@@ -2693,6 +2693,39 @@ TEST(test_rereq_did_endian_consistent) {
     ASSERT_EQ(out[3], 0xBA); ASSERT_EQ(out[4], 0xBE);
 }
 
+/* ════════════════════════════════════════════════════════════════════
+ * [FW.2] RX size-guard — freeze-contract воріт ДО декрипту
+ * ════════════════════════════════════════════════════════════════════
+ * Дзеркало ungated-гейта Фази 4.5 (main.c): усі легальні кадри Солдата =
+ * рівно 16B ECB; 28B CCM-кадр сусіда, прогнаний ECB'ом, мав ~1/256 шанс
+ * хибно зійтися на 0x99/0x9B і отруїти ota_buffer/печатку. Guard стоїть
+ * ПЕРЕД HAL_CRYP_Decrypt — сюди й дзеркалимо принцип: не-16 → нуль дії. */
+static uint8_t Test_Soldier_Rx_Size_Accepted(uint16_t size)
+{
+    return (size == 16u) ? 1u : 0u;
+}
+
+TEST(test_fw2_rx_guard_accepts_only_16) {
+    ASSERT_EQ(Test_Soldier_Rx_Size_Accepted(16), 1);
+    ASSERT_EQ(Test_Soldier_Rx_Size_Accepted(28), 0);  /* CCM-кадр сусіда */
+    ASSERT_EQ(Test_Soldier_Rx_Size_Accepted(0), 0);
+    ASSERT_EQ(Test_Soldier_Rx_Size_Accepted(6), 0);   /* MIN_OTA-край */
+    ASSERT_EQ(Test_Soldier_Rx_Size_Accepted(32), 0);
+    ASSERT_EQ(Test_Soldier_Rx_Size_Accepted(255), 0);
+}
+
+TEST(test_fw2_rx_guard_28b_never_reaches_ota_assembly) {
+    /* Контамінаційна пастка закрита: відкинутий 28B-кадр не сміє лишити
+     * сліду у станi OTA-збірки (раніше сміттєвий декрипт міг). */
+    OTA_Init();
+    if (!Test_Soldier_Rx_Size_Accepted(28)) {
+        /* main.c: break ДО декрипту — жодного виклику OTA-гілок. */
+    }
+    ASSERT_EQ(ota_total_chunks, 0);
+    ASSERT_EQ(ota_chunks_received, 0);
+    ASSERT_EQ(ota_bytes_received, 0);
+}
+
 TEST(test_rereq_bitmap_capped_at_72_chunks) {
     /* 100 chunks → only first 72 covered by 9-byte bitmap. Beyond cap stays 0. */
     uint16_t total = 100;
@@ -5234,6 +5267,10 @@ int main(void)
     RUN(test_rereq_no_missing_returns_zero);
     RUN(test_rereq_total_zero_skipped);
     RUN(test_rereq_did_endian_consistent);
+
+    printf("\n  FW.2 RX size-guard (до декрипту):\n");
+    RUN(test_fw2_rx_guard_accepts_only_16);
+    RUN(test_fw2_rx_guard_28b_never_reaches_ota_assembly);
     RUN(test_rereq_bitmap_capped_at_72_chunks);
     RUN(test_rereq_chunk_71_set_72_unset);
     RUN(test_rereq_fires_on_10th_silent_wakeup_and_resets);

@@ -118,6 +118,31 @@ if(CMAKE_CROSSCOMPILING)
       STM32WLE5xx USE_HAL_DRIVER
       MRB_NO_STDIO MRB_CONSTRAINED_BASELINE_PROFILE MRB_NO_BOXING)
     target_compile_options(hal_check PRIVATE -Wall -Wextra -Os)
+
+    # [FW.2] CCM compile-варіант: ті самі два TU з -DFW2_CCM_ENABLED=1 —
+    # гейтований CCM-тракт (двофазний CRYP-флоу, B0, GenerateAuthTAG,
+    # 29B-flush, CCM RX-гілки) компілюється проти справжнього WL-HAL.
+    # Раніше цей код НЕ бачив залізного HAL ніколи (гейт вирізав його і з
+    # compile-lane) — саме так пережив рев'ю неіснуючий у WL
+    # HAL_CRYPEx_AESCCM_Encrypt (знахідка 2026-07-03). Окремий таргет, щоб
+    # [FW.26] RAM-гейт міряв БОЙОВИЙ hal_check (гейти 0), не фліпнутий.
+    add_library(hal_check_ccm OBJECT
+      hal_glue/soldier_hal_check.c
+      hal_glue/queen_hal_check.c)
+    target_include_directories(hal_check_ccm PRIVATE
+      hal_glue common
+      ${SILKEN_EXTERN}/cmsis-device-wl/Include
+      ${SILKEN_EXTERN}/stm32wlxx-hal-driver/Inc
+      ${CMSISCORE}/Include
+      ${SILKEN_EXTERN}/mruby/include
+      ${SILKEN_MRUBY_ARM_INC}
+      ${SILKEN_EXTERN}/monocypher/src
+      ${SILKEN_EXTERN}/monocypher/src/optional)
+    target_compile_definitions(hal_check_ccm PRIVATE
+      STM32WLE5xx USE_HAL_DRIVER
+      MRB_NO_STDIO MRB_CONSTRAINED_BASELINE_PROFILE MRB_NO_BOXING
+      FW2_CCM_ENABLED=1)
+    target_compile_options(hal_check_ccm PRIVATE -Wall -Wextra -Os)
   endif()
 else()
   # Host build: FFT packing-parity harness (Phase 4) — proves the CMSIS RFFT
