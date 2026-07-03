@@ -69,13 +69,13 @@ ruff check                # Python (in-silico/ml), root ruff.toml
 uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5) > web3_critical(6) > web3(7) > web3_low(8) > low(9)
 ```
 
-**AES-режими** (post-ARCH.42 Variant B; дім `03_05 §3.7`):
+**AES-режими + двоключова модель** (post-FW.2 (в), 2026-07-03; дім `03_05 §3.1`+`§6`):
 
-| Напрямок | Режим |
-|----------|-------|
-| Soldier → Queen (LoRa) | AES-**128**-ECB [transitional] → AES-128-CCM [FW.2 target] |
-| Queen → Soldier (OTA) | AES-128-ECB |
-| Queen → Rails (CoAP) / downlink | AES-256-CBC (HRNG IV) |
+| Напрямок | Режим · ключ (CCM-ера) |
+|----------|------------------------|
+| Soldier → Queen: телеметрія/panic | AES-**128**-ECB [transitional] → AES-128-CCM [FW.2, bench-gated] · **session KEYL per-device** |
+| Soldier ↔ Queen: control-plane (downlink OTA/beacon/CMD + uplink 0x55/0x56) | AES-128-ECB · **cluster KEYB** (Queen'ин єдиний LoRa-ключ = KEYB-значення) |
+| Queen → Rails (CoAP) / downlink | AES-256-CBC (HRNG IV) · KEYC per-gateway |
 
 **Lorenz / StatusByte** (дім `03_04` + `firmware`-скіл — точну bit-розкладку бери ТАМ, не звідси):
 - Константи (Float!): `BASE_SIGMA=10.0 · BASE_RHO=28.0 · BASE_BETA=8.0/3.0 · DT=0.01 · ITERATIONS=250 · CRITICAL_Z_MIN=2.0`; anomaly_ceiling **ρ-relative** (E.64), growth_points = метаболічна `m(delta_t)` (E.63, β фіксований).
@@ -85,6 +85,7 @@ uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5) > web3_critical(6
 
 - **Backend Lorenz = Float (IEEE 754 double)**, НЕ BigDecimal (FW.7 — бітово ≡ firmware mruby; DCI divergence>30% → fraud) → `05_02`/`03_04`.
 - **ECB-restore:** Queen після CBC-flush ОБОВ'ЯЗКОВО відновлює `CRYP_KEYSIZE_128B`+LoRa-key, інакше LoRa-decrypt ламається → `firmware`-скіл.
+- **Key-scoping CCM-ери (FW.2 (в)):** амбієнтний `hcryp` Солдата = **KEYB** (control-plane); session KEYL живе ЛИШЕ в CCM-скоупі — `MX_CRYP_Init_CCM` ставить `pKey` ЯВНО, Restore повертає KEYB (липкий session = Rails MIC-fail'ить кожен кадр). Ратчет FW.17 ротує лише session. Mesh-Сценарій Б у CCM-збірці гейтовано геть (star-only) → `firmware`-скіл / `03_05 §3.1`.
 - **`Load_AES_Key` ПЕРЕД `MX_CRYP_Init`**; **`vcap` = мВ VDDA (VREFINT-cal, FW.50), НЕ Vcap іоністора** (fauna-гейт 4500 свідомо fail-closed до Vcap-каналу); **`HAL_GetTick` заморожений у STOP2** (wall-time через RTC) → `firmware`-скіл / `03_01`.
 - **KENOSIS:** `TelemetryLog` без AR-валідацій — перевірка лише в `TelemetryUnpackerService.valid_sensor_data?`; не додавай назад.
 - **Queen-пульс = ПІДПИСАНИЙ QATT-v2 header (ARCH.54):** DID=0-запис у телеметрії-батчі МЕРТВИЙ обабіч (дропається) — gateway-метрики НЕ пакуються псевдодеревом; дім health = 8B-блок конверта (`queen_attest.h`) → `enqueue_envelope_health`; dead-man switch = `GatewayStalenessSweepWorker` → `06_08 §1.3` / `03_02 §7`.
