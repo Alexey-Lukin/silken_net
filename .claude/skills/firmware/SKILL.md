@@ -26,7 +26,8 @@ points, it does not restate (so it can't drift). Verify a fact at its home befor
 | File | Role |
 |------|------|
 | `firmware/soldier/main.c` | Sensor node: sense → TinyML → Lorenz → encrypt → TX (multi-phase STOP2 loop) |
-| `firmware/queen/main.c` | Gateway: RX → decrypt → CIFO cache → batch flush via CoAP |
+| `firmware/queen/main.c` | Gateway: RX → decrypt → CIFO cache → batch flush via CoAP (CCM-ера gated: blind courier — 28B НЕ розшифровується, 29B-record via `rx_route.h`) |
+| `firmware/queen/*.h` | Queen-only pure headers (host-tested): `at_engine`/`coap_pdu`/`sim7070_coap` (FW.3/FW.56 модем-труба + `Sim7070_Read_Csq`), `uart_rx_ring`, `ota_window` (FW.52б), `rx_route` (FW.2 роутер 16/28 + 29B-запис), `soldier_cmd_queue` (FW.20-Q2), `coap_iv` (SEC.12) |
 | `firmware/bio_contracts/bio_contract.rb` | mruby Lorenz attractor (runs on MCU); `calculate_state` is the sole entry-point |
 | `firmware/common/*.h` | Shared header-only One-Home libs (compile into BOTH firmware + host tests — kill the mirror-drift pattern): `silken_sha256.h` (SHA-256/HMAC, FIPS/RFC KAT), `lorenz_seed.h` (FW.30 cold-start deriv), `silken_crc.h` (CRC16-CCITT, OTA), `lora_ccm.h` (CCM packet), `adc_convert.h` (FW.50 VREFINT-cal ADC→mV; wired: `vcap_voltage = Adc_Vdda_Mv(...)` — VDDA-mV, not EDLC-Vcap), `queen_attest.h` (L1 QATT **v2** signed-batch envelope + 8B health-блок пульсу — ARCH.54; wire home `03_05 §2.2`; residue 1, ct=0 heartbeat легальний), `*_selftest.h` + `*_kat_vectors.h` (bench POST) |
 | `firmware/test/` | x86 host-based tests — `make -C firmware/test` (host gate; not gcov-instrumented). **`make -C firmware/test asan`** = ASan+UBSan dynamic memory-safety lane (TEST.5, CI-gating in `firmware_test` — keep it green; canon `04_06 §B.1.1`). New crypto in `common/` ⇒ add a parity test vs OpenSSL, don't re-copy logic into the test file. |

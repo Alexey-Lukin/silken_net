@@ -1,6 +1,6 @@
 ---
 name: telemetry-pipeline
-description: "Use when working on the silken_net telemetry / Proof-of-Growth pipeline — the uplink→verification→minting flow (CoAP intake → UnpackTelemetryWorker / TelemetryUnpackerService → IoTeX verify → Chainlink oracle → mint), the Sidekiq strict-priority queues, TelemetryLog (RANGE-partitioned, KENOSIS — validations live in valid_sensor_data?, not the model), and the dual-computation integrity (server Float Lorenz ≡ firmware mruby). Knows the gotchas — Queen Sentinel DID 0x0 → GatewayTelemetryWorker, oracle_status_*? enum methods, strict queue drain (uplink fully before alerts), find_with_partition_pruning. Routes to CLAUDE.md §5/§6 + the 05_02 canon, does not restate. Examples: \"add a telemetry field\", \"change minting logic / guards\", \"why is an alert delayed\", \"decode the uplink packet\", \"why does server Z differ from device Z\"."
+description: "Use when working on the silken_net telemetry / Proof-of-Growth pipeline — the uplink→verification→minting flow (CoAP intake → UnpackTelemetryWorker / TelemetryUnpackerService → IoTeX verify → Chainlink oracle → mint), the Sidekiq strict-priority queues, TelemetryLog (RANGE-partitioned, KENOSIS — validations live in valid_sensor_data?, not the model), and the dual-computation integrity (server Float Lorenz ≡ firmware mruby). Knows the gotchas — DID=0 in a batch is DEAD (ARCH.54: Queen pulse rides the signed QATT-v2 header → enqueue_envelope_health, both eras drop DID=0), oracle_status_*? enum methods, strict queue drain (uplink fully before alerts), find_with_partition_pruning. Routes to CLAUDE.md §5/§6 + the 05_02 canon, does not restate. Examples: \"add a telemetry field\", \"change minting logic / guards\", \"why is an alert delayed\", \"decode the uplink packet\", \"why does server Z differ from device Z\"."
 ---
 
 # Telemetry Pipeline
@@ -17,7 +17,7 @@ description: "Use when working on the silken_net telemetry / Proof-of-Growth pip
 
 ## Gotchas Not Obvious From Docs
 
-1. **Queen Sentinel** — DID `0x00000000` routes to `GatewayTelemetryWorker`, NOT `TelemetryLog`. Easy to miss when adding telemetry processing logic.
+1. **DID `0x00000000` in a batch is DEAD (ARCH.54, 2026-07-03)** — the old Queen-Sentinel pseudo-tree is dropped on BOTH paths (ECB and CCM): the pulse rides the SIGNED QATT-v2 envelope header (8B health block, `firmware/common/queen_attest.h`) → `UnpackTelemetryWorker#enqueue_envelope_health` → `GatewayTelemetryWorker`. Never re-add gateway metrics as a fake tree — it eats a CIFO slot, breaks the CCM stride, and health without a valid Ed25519 must not exist (masking-attack). Canon: `03_02 §7` + `06_08 §1.3`.
 2. **oracle_status prefix** — call `log.oracle_status_fulfilled?` not `log.oracle_status == "fulfilled"`. String-backed enum with `oracle_status_` prefix.
 3. **Dual computation** — server Lorenz (Float) must match firmware mruby (Float). Was BigDecimal before FW.7 — old `to_d` code is a bug now.
 4. **Queue drain is strict** — `uplink` (#1) drains COMPLETELY before `alerts` (#2). Telemetry flood blocks alerts. By design.

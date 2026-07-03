@@ -87,6 +87,7 @@ uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5) > web3_critical(6
 - **ECB-restore:** Queen після CBC-flush ОБОВ'ЯЗКОВО відновлює `CRYP_KEYSIZE_128B`+LoRa-key, інакше LoRa-decrypt ламається → `firmware`-скіл.
 - **`Load_AES_Key` ПЕРЕД `MX_CRYP_Init`**; **`vcap` = мВ VDDA (VREFINT-cal, FW.50), НЕ Vcap іоністора** (fauna-гейт 4500 свідомо fail-closed до Vcap-каналу); **`HAL_GetTick` заморожений у STOP2** (wall-time через RTC) → `firmware`-скіл / `03_01`.
 - **KENOSIS:** `TelemetryLog` без AR-валідацій — перевірка лише в `TelemetryUnpackerService.valid_sensor_data?`; не додавай назад.
+- **Queen-пульс = ПІДПИСАНИЙ QATT-v2 header (ARCH.54):** DID=0-запис у телеметрії-батчі МЕРТВИЙ обабіч (дропається) — gateway-метрики НЕ пакуються псевдодеревом; дім health = 8B-блок конверта (`queen_attest.h`) → `enqueue_envelope_health`; dead-man switch = `GatewayStalenessSweepWorker` → `06_08 §1.3` / `03_02 §7`.
 - **Партиції** (`TelemetryLog` / `GatewayTelemetryLog` / `BlockchainTransaction`): завжди передавай `created_at_iso` + `find_with_partition_pruning`.
 - **`oracle_status`** має prefix → `oracle_status_fulfilled?` (НЕ `fulfilled?`).
 - **AES-ключі не покидають Ruby-процес** (`HardwareKey#cached_binary_key` — in-process LRU, без Redis-serialize).
