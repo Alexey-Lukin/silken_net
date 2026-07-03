@@ -95,23 +95,37 @@ RSpec.describe Dclimate::VerificationService, type: :service do
     end
 
     context "when satellite is obscured by clouds (obscured_by_clouds)" do
-      let(:alert) { create(:ews_alert, :fire, cluster: cluster, tree: tree) }
-      let(:service) { described_class.new(alert) }
-
       before do
         allow(service).to receive(:query_dclimate_api).and_return(:obscured_by_clouds)
       end
 
-      it "raises Dclimate::OrbitalLagError" do
-        expect { service.perform }.to raise_error(
-          Dclimate::OrbitalLagError, /Satellite pass obscured/
-        )
+      context "when critical fire alert [E.41] (no 48h wait)" do
+        let(:alert) { create(:ews_alert, :fire, cluster: cluster, tree: tree) } # severity: critical
+        let(:service) { described_class.new(alert) }
+
+        it "escalates to immediate Field Audit (:inconclusive) instead of raising for retry" do
+          expect { service.perform }.not_to raise_error
+          expect(alert.reload).to be_satellite_inconclusive
+          expect(alert.resolution_notes).to include("негайний Field Audit")
+        end
       end
 
-      it "does not change satellite_status" do
-        expect { service.perform }.to raise_error(Dclimate::OrbitalLagError)
-        alert.reload
-        expect(alert).to be_satellite_unverified
+      context "when non-critical fire alert (orbital retry OK)" do
+        let(:alert) do
+          create(:ews_alert, alert_type: :fire_detected, severity: :medium, cluster: cluster, tree: tree)
+        end
+        let(:service) { described_class.new(alert) }
+
+        it "raises Dclimate::OrbitalLagError for the 48h orbital window" do
+          expect { service.perform }.to raise_error(
+            Dclimate::OrbitalLagError, /Satellite pass obscured/
+          )
+        end
+
+        it "does not change satellite_status (retry pending)" do
+          expect { service.perform }.to raise_error(Dclimate::OrbitalLagError)
+          expect(alert.reload).to be_satellite_unverified
+        end
       end
     end
 

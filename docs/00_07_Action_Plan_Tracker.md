@@ -692,9 +692,9 @@
 - [ ] 👤 верифікувати Upstash multi-zone replication у production
 
 #### E.41 — Fire-event 48h latency (dClimate obscuration) → immediate-broadcast fallback
-- **P1** · 🤖 · 🔗 · → `04_02 §11`, `05_01`
-- **Стан:** ⚠️ Life-safety — dClimate satellite fire-events можуть запізнюватись ~48h (хмарна обструкція). Ціль (immediate-broadcast) ✅ досягнута двома негайними шляхами, **НЕ** satellite-gated: edge chainsaw→panic-TX (`03_03`/`03_01`, `PANIC_TTL=5`) + backend temp/anomaly alert (`AlertDispatchService`; гейти = Redis silence + SEC.10 rate-limit, dClimate гейтить лише ВИПЛАТУ через `InsurancePayoutWorker`, не тривогу; **[INS.1]** insurance-оракул тепер живий — arm-кандидат за прапором → dClimate-payout-шлях оживлено, тож Forester-Guild fallback для satellite-obscured стає живою дірою, не dead-code). Відкрите — лише вторинна belt-and-suspenders: Forester Guild fallback-oracle для satellite-obscured wildfire, 🔗 на E.20 (design `04_02 §Forester Guild` — `[PLANNED — blocked by ForestBountyService]`). Канон `04_02 §11` (Dclimate/EWS), `05_01` (dClimate).
-- [ ] 🔗 Forester Guild fallback-oracle (E.20)
+- **P1** · 🤖+👤 · 🟢 · → `04_02 §11`, `05_01`
+- **Стан:** ✅ **Severity-гілка shipped (2026-07-03, [E.41]-фікс):** критичний fire-алерт, затемнений хмарами/кронами → `escalate_obscured_critical_fire!` (негайний Field-Audit, `satellite_status: :inconclusive` HOLD-ить payout, fail-safe) замість сліпого 48h orbital retry (`handle_obscured_by_clouds` раніше raise'ив `OrbitalLagError` для ВСІХ severity — implementation gap `04_02 §11` закрито; non-critical → retry лишається). Дзеркало non-fire/INS.1 peril-honest. Life-safety не чекає орбіти — тривога вже пішла окремо (edge panic-TX + backend alert, **НЕ** satellite-gated). Основа: immediate-broadcast ✅ (edge chainsaw→panic-TX `PANIC_TTL=5` + backend temp/anomaly `AlertDispatchService`; dClimate гейтить лише ВИПЛАТУ, не тривогу). Канон `04_02 §11` (Dclimate/EWS), `05_01`.
+- [ ] 🔗 upgrade Field-Audit → ForestBounty-дрон (фізична перевірка замість людського вердикту) — North-Star коли E.20 (`04_02 §Forester Guild` `[PLANNED]`)
 
 #### S6.21 — MFA: TOTP second factor (claimed, not implemented)
 - **P2** · 🤖+👤 · ⚪ · → `04_03 §1`

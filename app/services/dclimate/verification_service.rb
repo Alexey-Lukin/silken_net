@@ -239,12 +239,35 @@ module Dclimate
       )
     end
 
-    # Хмарність/кронопокрив → ретрай через Sidekiq
+    # Хмарність/кронопокрив → ретрай через Sidekiq (48h orbital window), АЛЕ:
+    # [E.41] критичний fire-алерт НЕ може чекати повні 48h retry — це life-safety
+    # (пожежа спалить ліс раніше). Дизайн передбачав ForestBounty-дрон для негайної
+    # фізичної перевірки (04_02 §11), але він deferred (E.20). Тому критичний obscured
+    # fire → негайний Field Audit (дзеркало escalate_non_fire_to_field_audit! / INS.1:
+    # :inconclusive = HOLD, людський/DAO-вердикт, fail-safe — НЕ авто-payout/slash).
+    # Non-critical obscured → retry (48h вікно прийнятне; exhaustion → worker
+    # sidekiq_retries_exhausted теж кладе :inconclusive).
     def handle_obscured_by_clouds
+      return escalate_obscured_critical_fire! if @alert.severity_critical?
+
       Rails.logger.info "☁️ [Cosmic Eye] Алерт ##{@alert.id} — хмарність/кронопокрив. Очікуємо наступний проліт."
 
       raise Dclimate::OrbitalLagError,
             "Satellite pass obscured by clouds/canopy for alert ##{@alert.id}. Retrying on next orbit."
+    end
+
+    # [E.41] Критичний fire-алерт затемнений → негайний Field Audit замість 48h orbital
+    # retry. :inconclusive HOLD-ить InsurancePayoutWorker (людський вердикт), тривога вже
+    # пішла окремо (edge panic-TX + backend alert, 04_02 §11), тож life-safety не чекає орбіти.
+    def escalate_obscured_critical_fire!
+      note = "[#{Time.current.iso8601}] Критичний fire-алерт затемнений (хмара/кронопокрив) — " \
+             "негайний Field Audit замість 48h orbital retry (life-safety; ForestBounty-дрон deferred E.20)."
+      combined = [ @alert.resolution_notes.presence, note ].compact.join("\n")
+
+      @alert.update!(satellite_status: :inconclusive, resolution_notes: combined)
+
+      Rails.logger.warn "🛰️ [Cosmic Eye] Алерт ##{@alert.id} — критичний obscured fire → негайний Field Audit " \
+                        "(Кат-C, 05_05 §5), без 48h orbital retry."
     end
 
     # [INS.1] Не-пожежний перил (посуха/шкідник): FIRMS fire-супутник не може його ні підтвердити,
