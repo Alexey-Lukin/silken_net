@@ -19,7 +19,7 @@ These are the canonical homes. Read them before acting; never copy their content
 | `docs/00_06 §3` | **Drift-prevention tooling** — the CI-enforced guard table. Add new guards here. |
 | `docs/00_00` | SSOT index + reading order. |
 
-**State** (what's done / next) lives in memory, not here: `[[ssot-stabilization-campaign]]`, `[[post-sweep-backlog]]`, plus `[[feedback_no_volatile_counts]]`, `[[feedback_ssot_review_workflow]]`, `[[project_wiki_sync]]`.
+**State** (what's done / next) lives in memory, not here: `[[project_ssot_campaign_history]]`, plus `[[feedback_no_volatile_counts]]`, `[[feedback_ssot_review_workflow]]`, `[[project_wiki_sync]]`.
 
 ## When to use
 
@@ -55,7 +55,7 @@ A heavier, specialised loop for *retiring* a tracker item. Walk **every** code/d
 
 ## Commands
 
-All via binstubs — **`bin/rails` / `bin/rspec`**, never `bundle exec` (`[[feedback_rubocop_binstub]]`).
+All via binstubs — **`bin/rails` / `bin/rspec`**, never `bundle exec` (`[[feedback_local_verify]]`).
 
 | Command | Does | Engine |
 |---|---|---|
@@ -145,11 +145,11 @@ GATE per-phase docs:check_refs + tracker:check + zero-loss set-diff + wiki dry-r
 
 ## Gotchas (hard-won)
 
-- **Subset `bin/rspec` runs trip the SimpleCov coverage gate** ("Models 0% < 90%" / `minimum_coverage`). That's an **artifact** of a partial resultset, not a real failure. The linter/ToC specs are pure units (`spec_helper`, no Rails/DB) — run them gate-free with `COVERAGE=0 bin/rspec spec/lib/docs_*_spec.rb`; for app-coverage truth run the full `bin/rspec` (`[[project_post_sweep_backlog]]`).
+- **Subset `bin/rspec` runs trip the SimpleCov coverage gate** ("Models 0% < 90%" / `minimum_coverage`). That's an **artifact** of a partial resultset, not a real failure. The linter/ToC specs are pure units (`spec_helper`, no Rails/DB) — run them gate-free with `COVERAGE=0 bin/rspec spec/lib/docs_*_spec.rb`; for app-coverage truth run the full `bin/rspec` (`[[feedback_local_verify]]`).
 - **`db/structure.sql`**: never stage drive-by Postgres-version line diffs — restore from HEAD (`[[feedback_structure_sql]]`).
 - **No volatile counts in prose** (test/line tallies drift every commit). Reference the source or generate it (`[[feedback_no_volatile_counts]]`).
 - **`wiki:sync` needs SSH access** to the `*.wiki.git` repo; **always dry-run first**; read its "unresolved links" — they're often stale source links worth fixing.
-- **`.c` firmware comments stay Ukrainian + the file's poetic house style** (`[[feedback_c_comments_ukrainian]]`).
+- **`.c` firmware comments stay Ukrainian + the file's poetic house style** (`[[feedback_comment_style]]`).
 - **zsh**: `status` is read-only; quote globs (`[[feedback_zsh_bash_gotchas]]`).
 - **Required-check caveat**: if `ci.yml` jobs are *required* status checks, also mark `docs.yml`'s gate required — else a docs-only PR (which skips `ci.yml`) could merge without the gate enforced.
 
