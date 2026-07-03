@@ -85,7 +85,7 @@ uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5) > web3_critical(6
 
 - **Backend Lorenz = Float (IEEE 754 double)**, НЕ BigDecimal (FW.7 — бітово ≡ firmware mruby; DCI divergence>30% → fraud) → `05_02`/`03_04`.
 - **ECB-restore:** Queen після CBC-flush ОБОВ'ЯЗКОВО відновлює `CRYP_KEYSIZE_128B`+LoRa-key, інакше LoRa-decrypt ламається → `firmware`-скіл.
-- **`Load_AES_Key` ПЕРЕД `MX_CRYP_Init`**; **`vcap` = raw-ADC (не мВ)**; **`HAL_GetTick` заморожений у STOP2** (wall-time через RTC) → `firmware`-скіл / `03_01`.
+- **`Load_AES_Key` ПЕРЕД `MX_CRYP_Init`**; **`vcap` = мВ VDDA (VREFINT-cal, FW.50), НЕ Vcap іоністора** (fauna-гейт 4500 свідомо fail-closed до Vcap-каналу); **`HAL_GetTick` заморожений у STOP2** (wall-time через RTC) → `firmware`-скіл / `03_01`.
 - **KENOSIS:** `TelemetryLog` без AR-валідацій — перевірка лише в `TelemetryUnpackerService.valid_sensor_data?`; не додавай назад.
 - **Партиції** (`TelemetryLog` / `GatewayTelemetryLog` / `BlockchainTransaction`): завжди передавай `created_at_iso` + `find_with_partition_pruning`.
 - **`oracle_status`** має prefix → `oracle_status_fulfilled?` (НЕ `fulfilled?`).
@@ -134,8 +134,6 @@ deploy/akash · terraform · subgraph       # infra / The Graph
 This project is indexed by GitNexus as **silken_net**. Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
->
-> MCP-тули недоступні в сесії (ToolSearch їх не бачить = сервер не піднявся)? Fallback: ручний blast-radius ПЕРЕД правками (grep усіх call-sites кожного торканого символу) + скажи про це явно; `analyze` прожени наприкінці, щоб індекс не відставав.
 
 ## Always Do
 
