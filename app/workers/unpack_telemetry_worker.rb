@@ -17,18 +17,26 @@ class UnpackTelemetryWorker
   # === [L1 QATT] Trust-origin L1 — Queen-attestation батч-конверта ===
   # Канон: 05_02 «Trust-origin ladder» (рунг L1) + 03_05 §2.2 (wire);
   # firmware-дзеркало розкладки — firmware/common/queen_attest.h.
-  # Підписаний payload: [ver:1][unix_ts:4 BE][flush_seq:4 BE][IV:16][ct][sig:64]
+  # Підписаний payload (v2, [ARCH.54] — health-блок у header; v1 вилучено
+  # ПОВНІСТЮ: флоту в полі нема, redefine дешевший за дуал-версію):
+  #   [ver:1=0x02][unix_ts:4 BE][flush_seq:4 BE][health:8][IV:16][ct][sig:64]
   # Encrypt-then-sign: підпис верифікується ДО decrypt (без padding-оракулів).
   # Повідомлення = DOMAIN_TAG ‖ uid_len ‖ uid ‖ <payload без хвостового sig> —
   # UID з CoAP URI вшито у підпис (батч не сплайснути між шлюзами).
+  # Health 8B: [uptime_min:u24 BE][cifo_fill][lora_rx_drops][coap_fail][csq][flags]
+  # — пульс Королеви ПІДПИСАНИЙ разом з батчем (masking-attack закритий);
+  # wire-дім: firmware/common/queen_attest.h (One-Home розкладки).
   QATT_SIG_LEN    = 64
-  QATT_HEADER_LEN = 9
-  QATT_VERSION_1  = 0x01
-  QATT_DOMAIN_TAG = "SLKN-QATT1".b.freeze
-  # Residue-дискримінатор: legacy [IV][ct] ≡ 0 (mod 16), підписаний ≡ 9 —
+  QATT_HEALTH_LEN = 8
+  QATT_HEADER_LEN = 17
+  QATT_VERSION_2  = 0x02
+  QATT_DOMAIN_TAG = "SLKN-QATT2".b.freeze
+  QATT_CSQ_NOT_READ = 0xFF
+  # Residue-дискримінатор: legacy [IV][ct] ≡ 0 (mod 16), підписаний ≡ 1 —
   # довжини ніколи не перетинаються, magic-вгадування проти random-IV не треба.
+  # ct = 0 легальний ([ARCH.54] empty-flush heartbeat — конверт без записів).
   QATT_RESIDUE    = (QATT_HEADER_LEN + AES_IV_SIZE + QATT_SIG_LEN) % 16
-  QATT_MIN_SIZE   = QATT_HEADER_LEN + AES_IV_SIZE + 16 + QATT_SIG_LEN
+  QATT_MIN_SIZE   = QATT_HEADER_LEN + AES_IV_SIZE + QATT_SIG_LEN
   # Replay-вікно: дубль підпису (SHA256-nonce, патерн M2M/S6.1) ріжеться
   # в межах TTL; replay ПІСЛЯ вікна — задокументований residual (03_05 §2.2),
   # строго кращий за «replay будь-коли» на L0.
@@ -92,6 +100,16 @@ class UnpackTelemetryWorker
       binary_payload = binary_payload.byteslice(
         QATT_HEADER_LEN, binary_payload.bytesize - QATT_HEADER_LEN - QATT_SIG_LEN
       )
+
+      # [ARCH.54] Empty-flush heartbeat: конверт без записів (лише IV,
+      # ct = 0). Пульс уже енкʼюнутий у :attested-гілці; батча нема —
+      # decrypt/unpack пропускаємо чесно (легально ЛИШЕ під конвертом:
+      # голий 16B-legacy без ct лишається сміттям, як і був).
+      if binary_payload.bytesize == AES_IV_SIZE
+        SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "success" })
+        finalize_qatt_nonce! if @qatt_nonce_digest
+        return
+      end
     end
 
     decrypted_data = attempt_decryption(binary_payload, key_record)
@@ -148,7 +166,7 @@ class UnpackTelemetryWorker
     end
 
     version = payload.getbyte(0)
-    unless version == QATT_VERSION_1
+    unless version == QATT_VERSION_2
       # Невідома версія конверта = невідома розкладка → чесний drop, гучна
       # метрика. Backend деплоїться ПЕРЕД firmware (Kamal vs OTA/bench).
       Rails.logger.error "🚨 [L1 QATT] #{gateway.uid}: невідома версія конверта 0x#{version.to_s(16)}."
@@ -182,6 +200,7 @@ class UnpackTelemetryWorker
 
     _ver, unix_ts, flush_seq = payload.unpack("CNN")
     gateway.update_column(:last_attested_at, Time.current)
+    enqueue_envelope_health(gateway, payload)
     Rails.logger.info "🛡️ [L1 QATT] #{gateway.uid}: батч атестовано (ts=#{unix_ts}, seq=#{flush_seq})."
     :attested
   rescue Ed25519Crypto::SigningService::SigningError => e
@@ -260,6 +279,24 @@ class UnpackTelemetryWorker
   # неможливий, лише claim/reject (fail-closed).
   def qatt_owner_token
     @qatt_owner_token ||= jid.presence || SecureRandom.hex(8)
+  end
+
+  # [ARCH.54 Шар 1] Пульс Королеви з ПІДПИСАНОГО header'а (байти 9..16) →
+  # GatewayTelemetryWorker. Викликається ЛИШЕ з :attested-гілки — health без
+  # валідного Ed25519 не існує (masking-attack закритий конструкцією).
+  # csq=0xFF («модем не відповів») → nil: не брешемо нулем у БД.
+  def enqueue_envelope_health(gateway, payload)
+    up_hi, up_mid, up_lo, cifo, drops, coap_fail, csq, flags =
+      payload.byteslice(9, QATT_HEALTH_LEN).unpack("C8")
+
+    GatewayTelemetryWorker.perform_async(gateway.uid, {
+      "uptime_min"      => (up_hi << 16) | (up_mid << 8) | up_lo,
+      "cifo_fill"       => cifo,
+      "lora_rx_drops"   => drops,
+      "coap_fail_count" => coap_fail,
+      "cellular_signal_csq" => (csq == QATT_CSQ_NOT_READ ? nil : csq),
+      "flags"           => flags
+    })
   end
 
   # Логіка "М'якої Ротації": пробуємо новий ключ, потім старий

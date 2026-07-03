@@ -13,7 +13,9 @@ RSpec.describe "QATT HIL end-to-end" do
   let(:gateway) { create(:gateway, ip_address: "10.7.0.1") }
   # Fresh keypair per example (simulator mints it eagerly) → fresh signature
   # → fresh anti-replay nonce; no Redis cleanup needed between runs.
-  let(:simulator) { Hil::QueenSimulator.new(gateway, mode: :wire, signed: true) }
+  # [ARCH.54] wire-mode = підписаний v2 empty-flush heartbeat (health у
+  # header'і) — unsigned wire health у протоколі більше не існує.
+  let(:simulator) { Hil::QueenSimulator.new(gateway, mode: :wire) }
 
   around do |example|
     Sidekiq::Testing.fake! { example.run }
@@ -52,25 +54,27 @@ RSpec.describe "QATT HIL end-to-end" do
       raw: call[:payload] }
   end
 
-  it "attests a simulator-signed batch end-to-end down to the DB markers" do
+  it "attests a simulator-signed heartbeat end-to-end down to the DB markers" do
     simulator.tick(scenario: :healthy)
     package = intercepted
 
-    expect(TelemetryUnpackerService).to receive(:call)
-      .with(anything, gateway.id, gateway_attested: true).and_call_original
+    # [ARCH.54] Heartbeat ct=0: unpack легально скипається — батча нема,
+    # пульс іде з ПІДПИСАНОГО header'а (enqueue_envelope_health).
+    expect(TelemetryUnpackerService).not_to receive(:call)
 
     UnpackTelemetryWorker.new.perform(package[:encoded], gateway.ip_address, package[:uid])
 
     expect(gateway.reload.last_attested_at).to be_present
-    # The REAL unpacker ran: the DID=0 sentinel chunk reached route_queen_health.
     expect(GatewayTelemetryWorker.jobs.size).to eq(1)
+    stats = GatewayTelemetryWorker.jobs.last["args"].last
+    expect(stats).to include("uptime_min", "cifo_fill", "cellular_signal_csq")
   end
 
   it "rejects a tampered ciphertext with the bad-signature metric" do
     simulator.tick(scenario: :healthy)
     package = intercepted
     tampered = package[:raw].dup
-    tampered.setbyte(30, tampered.getbyte(30) ^ 0x01) # inside IV/ct, past the 9-byte header
+    tampered.setbyte(30, tampered.getbyte(30) ^ 0x01) # inside IV, past the 17-byte header
     allow(SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL).to receive(:increment)
 
     expect(TelemetryUnpackerService).not_to receive(:call)
@@ -85,15 +89,15 @@ RSpec.describe "QATT HIL end-to-end" do
     simulator.tick(scenario: :healthy)
     package = intercepted
     allow(SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL).to receive(:increment)
-    allow(TelemetryUnpackerService).to receive(:call).and_call_original
 
     UnpackTelemetryWorker.new.perform(package[:encoded], gateway.ip_address, package[:uid])
     expect(gateway.reload.last_attested_at).to be_present
-    expect(TelemetryUnpackerService).to have_received(:call).once
+    expect(GatewayTelemetryWorker.jobs.size).to eq(1)
 
     UnpackTelemetryWorker.new.perform(package[:encoded], gateway.ip_address, package[:uid])
 
-    expect(TelemetryUnpackerService).to have_received(:call).once
+    # Replay не подвоює пульс — nonce ріже ДО health-енкʼю.
+    expect(GatewayTelemetryWorker.jobs.size).to eq(1)
     expect(SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL)
       .to have_received(:increment).with(labels: { status: "attest_replay" })
   end
@@ -103,17 +107,35 @@ RSpec.describe "QATT HIL end-to-end" do
     package = intercepted
     gateway.hardware_key.update!(ed25519_public_key_hex: nil)
 
-    expect(TelemetryUnpackerService).to receive(:call)
-      .with(anything, gateway.id, gateway_attested: false).and_call_original
+    # :unverified → конверт зрізано, але heartbeat ct=0 без атестації не
+    # несе НІЧОГО (нема ні батча, ні довіреного пульсу) — чесний no-op.
+    expect(TelemetryUnpackerService).not_to receive(:call)
 
     UnpackTelemetryWorker.new.perform(package[:encoded], gateway.ip_address, package[:uid])
 
     expect(gateway.reload.last_attested_at).to be_nil
+    expect(GatewayTelemetryWorker.jobs).to be_empty
   end
 
-  it "recovers an attested batch after a mid-unpack crash — Sidekiq retry with the same jid resumes" do
-    simulator.tick(scenario: :healthy)
-    package = intercepted
+  it "recovers an attested BATCH after a mid-unpack crash — Sidekiq retry with the same jid resumes" do
+    # Crash-вікно живе на шляху з НЕПОРОЖНІМ ct (unpack реально біжить):
+    # будуємо конверт з батчем руками (симулятор емить лише heartbeat).
+    seed_hex = SecureRandom.hex(32)
+    gateway.hardware_key.update!(
+      ed25519_public_key_hex: Ed25519Crypto::SigningService.public_key_from_seed(seed_hex)
+    )
+    cipher = OpenSSL::Cipher.new("aes-256-cbc")
+    cipher.encrypt
+    cipher.key = gateway.hardware_key.binary_key
+    iv = cipher.random_iv
+    cipher.padding = 0
+    iv_ct = iv + cipher.update("BATCH_PAYLOAD_16".b) + cipher.final
+    health = [ 0, 0, 60, 5, 0, 0, 20, 0 ].pack("C8")
+    body = [ 0x02, Time.current.to_i, 3 ].pack("CNN") + health + iv_ct
+    message = UnpackTelemetryWorker::QATT_DOMAIN_TAG +
+              [ gateway.uid.bytesize ].pack("C") + gateway.uid.b + body
+    payload = body + [ Ed25519Crypto::SigningService.sign(seed_hex, message) ].pack("H*")
+    encoded = Base64.strict_encode64(payload)
 
     calls = 0
     allow(TelemetryUnpackerService).to receive(:call).and_wrap_original do |original, *args, **kwargs|
@@ -124,28 +146,37 @@ RSpec.describe "QATT HIL end-to-end" do
 
     crashed = UnpackTelemetryWorker.new
     crashed.jid = "hil-crash-jid"
-    expect { crashed.perform(package[:encoded], gateway.ip_address, package[:uid]) }
+    expect { crashed.perform(encoded, gateway.ip_address, gateway.uid) }
       .to raise_error(ActiveRecord::ConnectionTimeoutError)
 
     retried = UnpackTelemetryWorker.new
     retried.jid = "hil-crash-jid"
-    retried.perform(package[:encoded], gateway.ip_address, package[:uid])
+    retried.perform(encoded, gateway.ip_address, gateway.uid)
 
     expect(gateway.reload.last_attested_at).to be_present
-    # The REAL unpacker ran on the retry: the sentinel chunk reached the queue.
-    expect(GatewayTelemetryWorker.jobs.size).to eq(1)
+    expect(TelemetryUnpackerService).to have_received(:call).twice
+    # [ARCH.54] Пульс енкʼюється у :attested-гілці (до unpack) — crash в
+    # unpack'у НЕ губить його; resume не дублює батч, пульс іде щопроходу.
+    expect(GatewayTelemetryWorker.jobs.size).to eq(2)
   end
 
   it "keeps the legacy (unsigned) path at L0 untouched" do
-    legacy = Hil::QueenSimulator.new(gateway, mode: :wire)
-    legacy.tick(scenario: :healthy)
-    package = intercepted
+    # [ARCH.54] Симулятор unsigned більше не емить (health = лише attested);
+    # legacy-БАТЧ (телеметрія без конверта) будуємо руками — pre-QATT Королева.
+    cipher = OpenSSL::Cipher.new("aes-256-cbc")
+    cipher.encrypt
+    cipher.key = gateway.hardware_key.binary_key
+    iv = cipher.random_iv
+    cipher.padding = 0
+    legacy = iv + cipher.update("LEGACY_BATCH_16B") + cipher.final
 
     expect(TelemetryUnpackerService).to receive(:call)
       .with(anything, gateway.id, gateway_attested: false).and_call_original
 
-    UnpackTelemetryWorker.new.perform(package[:encoded], gateway.ip_address, package[:uid])
+    UnpackTelemetryWorker.new.perform(Base64.strict_encode64(legacy),
+                                      gateway.ip_address, gateway.uid)
 
     expect(gateway.reload.last_attested_at).to be_nil
+    expect(GatewayTelemetryWorker.jobs).to be_empty
   end
 end

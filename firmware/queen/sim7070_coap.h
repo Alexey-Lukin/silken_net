@@ -57,6 +57,28 @@ static inline int Sim7070_Resolve_Host(Sim7070Io *m, AtEngine *e,
     return At_Extract_Quoted(t.urc, 2, ip, ip_max);
 }
 
+/* [ARCH.54 Шар 1] AT+CSQ → `+CSQ: <rssi>,<ber>` — сила стільникового
+ * сигналу для health-блоку QATT-v2. 3GPP: 0..31 = -113..-51 дБм,
+ * 99 = невідомо/нема мережі. Повертає 1 + *csq_out при успіху; 0 =
+ * розмова провалилась (модем спить/ефір мовчить) — викликач лишає
+ * попереднє значення (сентинель 0xFF до першого успіху). CSQ — рядок
+ * ВІДПОВІДІ (не URC-подія), тож він приходить ДО фіналу OK і читається
+ * з capture-слоту тим самим механізмом, що +CDNSGIP/+CCOAPNEW. */
+static inline int Sim7070_Read_Csq(Sim7070Io *m, AtEngine *e, uint8_t *csq_out)
+{
+    if (!Sim7070_Send_Str(m, "AT+CSQ\r\n")) return 0;
+
+    AtTransact t;
+    At_Transact_Init(&t, "+CSQ:");
+    if (At_Transact_Run(e, &t, m->src, m->io) != AT_TX_OK) return 0;
+    if (!t.urc_seen) return 0;
+
+    int32_t rssi = At_Int_After_Colon(t.urc, 0);
+    if (rssi < 0 || rssi > 99) return 0; /* поза 3GPP-довідником = сміття */
+    *csq_out = (uint8_t)rssi;
+    return 1;
+}
+
 /* Повна PUT-розмова. Повертає 1 лише при підтвердженій доставці (2.xx,
  * наш MID). CCOAPDEL — best-effort: сесію прибираємо, але вердикт уже є. */
 static inline int Sim7070_Coap_Put(Sim7070Io *m, AtEngine *e,

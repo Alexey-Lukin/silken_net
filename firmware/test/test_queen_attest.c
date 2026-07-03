@@ -71,6 +71,13 @@ static const uint8_t GOLDEN_SEED[32] = {
 static const char     GOLDEN_UID[]   = "SNET-Q-A1B2C3D4";
 static const uint32_t GOLDEN_TS      = 1750000000u;
 static const uint32_t GOLDEN_SEQ     = 7u;
+/* [ARCH.54] health-блок v2 (8 байт у header) — заморожені входи KAT */
+static const uint32_t GOLDEN_UPTIME  = 5310u;   /* хвилин ≈ 3.7 доби */
+static const uint8_t  GOLDEN_CIFO    = 42u;
+static const uint8_t  GOLDEN_DROPS   = 3u;
+static const uint8_t  GOLDEN_COAPF   = 1u;
+static const uint8_t  GOLDEN_CSQ     = 17u;
+static const uint8_t  GOLDEN_FLAGS   = 0x00u;
 static const uint8_t  GOLDEN_IV[16]  = {
     0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
     0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF
@@ -87,8 +94,8 @@ static const uint8_t  GOLDEN_CT[32]  = {
  * деривує ту саму пару з тих самих входів через ruby `ed25519`):
  *   GOLDEN_PUB = 963058b4a0e2686c7dfcd823bd59643f941aebffbba13336ed2d41d2fd22d2b0 */
 static const char GOLDEN_SIG_HEX[129] =
-    "d3648e0d4c233782d3d8510a4d582d8e110d15a62b7d609807c2f722a040db12"
-    "ee6359dd44cd6efac0f2c670f44062eae35fa996b84589977cb04791ef24a50b";
+    "c7b5e07db501233eed0a43d10a1988f4ba0b0a3a59ac2d39cf0c542b7be2d266"
+    "82bf0a1d31533b3405ae2f691648308e7ddbfd0e507934ce235161f572c2b40f";
 
 /* ── Helpers ────────────────────────────────────────────────────────── */
 
@@ -158,7 +165,9 @@ static uint16_t build_signed_payload(uint8_t *buf /* QATT_BUFFER_SIZE */,
 
     memcpy(buf + QATT_IV_OFFSET, iv, QATT_IV_LEN);
     memcpy(buf + QATT_CT_OFFSET, ct, ct_len);
-    Qatt_Write_Header(buf + QATT_HDR_OFFSET, ts, seq);
+    Qatt_Write_Header(buf + QATT_HDR_OFFSET, ts, seq,
+                      GOLDEN_UPTIME, GOLDEN_CIFO, GOLDEN_DROPS,
+                      GOLDEN_COAPF, GOLDEN_CSQ, GOLDEN_FLAGS);
 
     uint16_t prefix_len = Qatt_Compose_Prefix(buf, QATT_HDR_OFFSET, uid);
     if (prefix_len == 0u) return 0u;
@@ -177,12 +186,13 @@ static uint16_t build_signed_payload(uint8_t *buf /* QATT_BUFFER_SIZE */,
 
 TEST(test_layout_residue_discriminates_signed_from_legacy)
 {
-    /* Підписаний хвіст (header+IV+sig) ≡ 9 (mod 16); legacy ≡ 0 — їхні
-     * довжини НІКОЛИ не перетинаються, скільки б ct-блоків не їхало. */
-    ASSERT_EQ(QATT_RESIDUE, 9u);
-    for (uint16_t blocks = 1; blocks <= 4; blocks++) {
+    /* Підписаний хвіст (header+IV+sig) ≡ 1 (mod 16); legacy ≡ 0 — їхні
+     * довжини НІКОЛИ не перетинаються, скільки б ct-блоків не їхало.
+     * [ARCH.54] ct=0 (empty-flush heartbeat) — теж legальний signed. */
+    ASSERT_EQ(QATT_RESIDUE, 1u);
+    for (uint16_t blocks = 0; blocks <= 4; blocks++) {
         uint16_t ct = (uint16_t)(blocks * 16u);
-        ASSERT_EQ((QATT_HEADER_LEN + QATT_IV_LEN + ct + QATT_SIG_LEN) % 16u, 9u);
+        ASSERT_EQ((QATT_HEADER_LEN + QATT_IV_LEN + ct + QATT_SIG_LEN) % 16u, 1u);
         ASSERT_EQ((QATT_IV_LEN + ct) % 16u, 0u);
     }
 }
@@ -198,12 +208,27 @@ TEST(test_layout_offsets_contiguous_and_aligned)
 TEST(test_header_packs_big_endian)
 {
     uint8_t hdr[QATT_HEADER_LEN];
-    Qatt_Write_Header(hdr, 0x01020304u, 0xAABBCCDDu);
-    ASSERT_EQ(hdr[0], QATT_VERSION_1);
+    Qatt_Write_Header(hdr, 0x01020304u, 0xAABBCCDDu,
+                      0x00112233u /* > u24 → клемп */, 50u, 7u, 2u, 31u, 0x03u);
+    ASSERT_EQ(hdr[0], QATT_VERSION_2);
     ASSERT_EQ(hdr[1], 0x01); ASSERT_EQ(hdr[2], 0x02);
     ASSERT_EQ(hdr[3], 0x03); ASSERT_EQ(hdr[4], 0x04);
     ASSERT_EQ(hdr[5], 0xAA); ASSERT_EQ(hdr[6], 0xBB);
     ASSERT_EQ(hdr[7], 0xCC); ASSERT_EQ(hdr[8], 0xDD);
+    /* [ARCH.54] health: uptime u24 BE (клемп зі старшого байта), решта — 1:1 */
+    ASSERT_EQ(hdr[9], 0x11); ASSERT_EQ(hdr[10], 0x22); ASSERT_EQ(hdr[11], 0x33);
+    ASSERT_EQ(hdr[12], 50u); ASSERT_EQ(hdr[13], 7u);
+    ASSERT_EQ(hdr[14], 2u);  ASSERT_EQ(hdr[15], 31u);
+    ASSERT_EQ(hdr[16], 0x03u);
+}
+
+TEST(test_header_uptime_clamps_at_u24)
+{
+    uint8_t hdr[QATT_HEADER_LEN];
+    Qatt_Write_Header(hdr, 0u, 0u, 0xFFFFFFFFu, 0u, 0u, 0u,
+                      QATT_CSQ_NOT_READ, 0u);
+    ASSERT_EQ(hdr[9], 0xFF); ASSERT_EQ(hdr[10], 0xFF); ASSERT_EQ(hdr[11], 0xFF);
+    ASSERT_EQ(hdr[15], QATT_CSQ_NOT_READ);
 }
 
 TEST(test_prefix_right_aligned_with_len_byte)
@@ -301,14 +326,22 @@ TEST(test_envelope_roundtrip_backend_view)
     ASSERT_TRUE(openssl_ed25519_pub(pub, GOLDEN_SEED));
     ASSERT_TRUE(openssl_ed25519_verify(sig, pub, msg, off));
 
-    /* header розпаковується назад у (ver, ts, seq) */
-    ASSERT_EQ(payload[0], QATT_VERSION_1);
+    /* header розпаковується назад у (ver, ts, seq, health) */
+    ASSERT_EQ(payload[0], QATT_VERSION_2);
     uint32_t ts = ((uint32_t)payload[1] << 24) | ((uint32_t)payload[2] << 16)
                 | ((uint32_t)payload[3] << 8)  |  (uint32_t)payload[4];
     uint32_t sq = ((uint32_t)payload[5] << 24) | ((uint32_t)payload[6] << 16)
                 | ((uint32_t)payload[7] << 8)  |  (uint32_t)payload[8];
     ASSERT_EQ(ts, GOLDEN_TS);
     ASSERT_EQ(sq, GOLDEN_SEQ);
+    uint32_t up = ((uint32_t)payload[9] << 16) | ((uint32_t)payload[10] << 8)
+                |  (uint32_t)payload[11];
+    ASSERT_EQ(up, GOLDEN_UPTIME);
+    ASSERT_EQ(payload[12], GOLDEN_CIFO);
+    ASSERT_EQ(payload[13], GOLDEN_DROPS);
+    ASSERT_EQ(payload[14], GOLDEN_COAPF);
+    ASSERT_EQ(payload[15], GOLDEN_CSQ);
+    ASSERT_EQ(payload[16], GOLDEN_FLAGS);
     ASSERT_MEMEQ(payload + QATT_HEADER_LEN, GOLDEN_IV, QATT_IV_LEN);
 
     /* підпис НЕ переживає підміну UID (anti-splice між шлюзами) */
@@ -345,6 +378,7 @@ int main(void)
     RUN(test_layout_residue_discriminates_signed_from_legacy);
     RUN(test_layout_offsets_contiguous_and_aligned);
     RUN(test_header_packs_big_endian);
+    RUN(test_header_uptime_clamps_at_u24);
     RUN(test_prefix_right_aligned_with_len_byte);
     RUN(test_prefix_rejects_empty_and_oversized_uid);
 

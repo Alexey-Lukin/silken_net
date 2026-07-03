@@ -36,11 +36,22 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
     iv + cipher.update(data + ("\x00" * padding)) + cipher.final
   end
 
-  # Підписаний конверт РІВНО як Flush_Cache_To_Rails:
-  # [ver:1][ts:4 BE][seq:4 BE][IV][ct][sig:64];
+  # Підписаний конверт v2 РІВНО як Flush_Cache_To_Rails ([ARCH.54]):
+  # [ver:1][ts:4 BE][seq:4 BE][health:8][IV][ct][sig:64];
   # message = TAG ‖ uid_len ‖ uid ‖ <усе без хвостового sig>.
-  def build_signed_payload(seed_hex:, uid:, iv_ct:, ts: 1_750_000_000, seq: 7, version: 0x01)
-    header = [ version, ts, seq ].pack("CNN")
+  # Health-дефолти = golden-входи C-дзеркала (test_queen_attest.c).
+  GOLDEN_HEALTH = { uptime_min: 5310, cifo_fill: 42, lora_rx_drops: 3,
+                    coap_fail: 1, csq: 17, flags: 0 }.freeze
+
+  def pack_health(h)
+    up = h[:uptime_min]
+    [ (up >> 16) & 0xFF, (up >> 8) & 0xFF, up & 0xFF,
+      h[:cifo_fill], h[:lora_rx_drops], h[:coap_fail], h[:csq], h[:flags] ].pack("C8")
+  end
+
+  def build_signed_payload(seed_hex:, uid:, iv_ct:, ts: 1_750_000_000, seq: 7,
+                           version: 0x02, health: GOLDEN_HEALTH)
+    header = [ version, ts, seq ].pack("CNN") + pack_health(health)
     body = header + iv_ct
     message = described_class::QATT_DOMAIN_TAG + [ uid.bytesize ].pack("C") + uid.b + body
     sig_hex = Ed25519Crypto::SigningService.sign(seed_hex, message)
@@ -57,8 +68,8 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
     end
     let(:golden_pub_hex) { "963058b4a0e2686c7dfcd823bd59643f941aebffbba13336ed2d41d2fd22d2b0" }
     let(:golden_sig_hex) do
-      "d3648e0d4c233782d3d8510a4d582d8e110d15a62b7d609807c2f722a040db12" \
-        "ee6359dd44cd6efac0f2c670f44062eae35fa996b84589977cb04791ef24a50b"
+      "c7b5e07db501233eed0a43d10a1988f4ba0b0a3a59ac2d39cf0c542b7be2d266" \
+        "82bf0a1d31533b3405ae2f691648308e7ddbfd0e507934ce235161f572c2b40f"
     end
 
     it "derives the same public key as Monocypher/OpenSSL" do
@@ -71,7 +82,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
         seed_hex: golden_seed_hex, uid: golden_uid, iv_ct: golden_iv + golden_ct
       )
       expect(payload.byteslice(-64, 64).unpack1("H*")).to eq(golden_sig_hex)
-      # residue-дискримінатор: підписаний ≡ 9 (mod 16), legacy ≡ 0
+      # residue-дискримінатор: підписаний ≡ 1 (mod 16), legacy ≡ 0
       expect(payload.bytesize % 16).to eq(described_class::QATT_RESIDUE)
     end
   end
@@ -92,6 +103,46 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
     it "ставить gateways.last_attested_at" do
       expect { described_class.new.perform(encoded, "10.0.0.1", gateway.uid) }
         .to change { gateway.reload.last_attested_at }.from(nil)
+    end
+
+    it "[ARCH.54] енкʼює пульс з ПІДПИСАНОГО health-блоку (byte-parity з wire)" do
+      expect(GatewayTelemetryWorker).to receive(:perform_async).with(
+        gateway.uid,
+        hash_including(
+          "uptime_min" => 5310, "cifo_fill" => 42, "lora_rx_drops" => 3,
+          "coap_fail_count" => 1, "cellular_signal_csq" => 17, "flags" => 0
+        )
+      )
+      described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
+    end
+
+    it "[ARCH.54] csq-сентинель 0xFF → nil (модем не відповів — не брешемо нулем)" do
+      hb = build_signed_payload(
+        seed_hex: keypair[:seed_hex], uid: gateway.uid, iv_ct: iv_ct,
+        health: GOLDEN_HEALTH.merge(csq: 0xFF)
+      )
+      expect(GatewayTelemetryWorker).to receive(:perform_async).with(
+        gateway.uid, hash_including("cellular_signal_csq" => nil)
+      )
+      described_class.new.perform(Base64.strict_encode64(hb), "10.0.0.1", gateway.uid)
+    end
+
+    it "[ARCH.54] empty-flush heartbeat (ct=0) верифікується і несе пульс" do
+      iv_only = OpenSSL::Random.random_bytes(16)
+      hb = build_signed_payload(seed_hex: keypair[:seed_hex], uid: gateway.uid, iv_ct: iv_only)
+      expect(GatewayTelemetryWorker).to receive(:perform_async)
+        .with(gateway.uid, hash_including("uptime_min" => 5310))
+
+      described_class.new.perform(Base64.strict_encode64(hb), "10.0.0.1", gateway.uid)
+      expect(gateway.reload.last_attested_at).to be_present
+    end
+
+    it "[ARCH.54] пульс НЕ енкʼюється без валідного підпису (masking закрито)" do
+      tampered = payload.dup
+      tampered.setbyte(12, tampered.getbyte(12) ^ 0x01) # байт усередині health
+      expect(GatewayTelemetryWorker).not_to receive(:perform_async)
+
+      described_class.new.perform(Base64.strict_encode64(tampered), "10.0.0.1", gateway.uid)
     end
 
     it "передає сервісу РІВНО legacy-байти [IV][ct] (конверт зрізано)" do
@@ -129,9 +180,13 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       expect(SilkenNet::Metrics::QATT_NONCE_FALLBACK_TOTAL).to have_received(:increment).twice
     end
 
-    it "відкидає конверт невідомої версії (чесний drop, гучна метрика)" do
-      v2 = build_signed_payload(seed_hex: keypair[:seed_hex], uid: gateway.uid, iv_ct: iv_ct, version: 0x02)
-      described_class.new.perform(Base64.strict_encode64(v2), "10.0.0.1", gateway.uid)
+    it "відкидає конверт невідомої/retired версії (чесний drop, гучна метрика)" do
+      # 0x01 = вилучений v1 (без health): та сама довжина, що v2 бути не може —
+      # але version-гейт ріже ДО будь-якої розкладки; 0x03 = майбутнє.
+      [ 0x01, 0x03 ].each do |ver|
+        bad = build_signed_payload(seed_hex: keypair[:seed_hex], uid: gateway.uid, iv_ct: iv_ct, version: ver)
+        described_class.new.perform(Base64.strict_encode64(bad), "10.0.0.1", gateway.uid)
+      end
 
       expect(TelemetryUnpackerService).not_to have_received(:call)
     end

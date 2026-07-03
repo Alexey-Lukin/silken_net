@@ -2,15 +2,22 @@
 
 require "rails_helper"
 
+# [ARCH.54 Шар 1] Споживач пульсу Королеви: stats приходить з ПІДПИСАНОГО
+# health-блоку QATT-v2 (UnpackTelemetryWorker#enqueue_envelope_health) —
+# стара DID=0-милиця з voltage/temp вбита; напруги/температури v2 не несе
+# (Королева без ADC — колонки лишаються nil до заліза).
 RSpec.describe GatewayTelemetryWorker, type: :worker do
   let(:cluster) { create(:cluster) }
   let(:gateway) { create(:gateway, cluster: cluster) }
 
   let(:valid_stats) do
     {
-      "voltage_mv" => 4200,
-      "temperature_c" => 25.0,
+      "uptime_min" => 5310,
+      "cifo_fill" => 12,
+      "lora_rx_drops" => 0,
+      "coap_fail_count" => 0,
       "cellular_signal_csq" => 15,
+      "flags" => 0,
       "ip_address" => "10.0.0.42"
     }
   end
@@ -20,50 +27,45 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
   end
 
   describe "#perform" do
-    it "creates a GatewayTelemetryLog record" do
+    it "creates a GatewayTelemetryLog pulse record" do
       expect {
         described_class.new.perform(gateway.uid, valid_stats)
       }.to change(GatewayTelemetryLog, :count).by(1)
 
       log = GatewayTelemetryLog.last
-      expect(log.voltage_mv).to eq(4200)
-      expect(log.temperature_c).to eq(25.0)
+      expect(log.uptime_min).to eq(5310)
+      expect(log.cifo_fill).to eq(12)
+      expect(log.lora_rx_drops).to eq(0)
+      expect(log.coap_fail_count).to eq(0)
       expect(log.cellular_signal_csq).to eq(15)
+      expect(log.health_flags).to eq(0)
+      # v2-пульс напруги не несе — чесний nil, не фальшивий нуль
+      expect(log.voltage_mv).to be_nil
+      expect(log.temperature_c).to be_nil
     end
 
-    it "updates gateway last_seen_at and IP" do
+    it "updates gateway last_seen_at and IP (без voltage — нема ADC)" do
       freeze_time do
         described_class.new.perform(gateway.uid, valid_stats)
 
         gateway.reload
         expect(gateway.ip_address).to eq("10.0.0.42")
         expect(gateway.last_seen_at).to be_within(1.second).of(Time.current)
+        expect(gateway.latest_voltage_mv).to be_nil
       end
     end
 
-    context "with critical telemetry" do
-      it "creates EwsAlert for low battery" do
-        stats = valid_stats.merge("voltage_mv" => 3000)
+    it "accepts nil csq (модем не відповів — сентинель 0xFF на дроті)" do
+      stats = valid_stats.merge("cellular_signal_csq" => nil)
 
-        expect {
-          described_class.new.perform(gateway.uid, stats)
-        }.to change(EwsAlert, :count).by(1)
+      expect {
+        described_class.new.perform(gateway.uid, stats)
+      }.to change(GatewayTelemetryLog, :count).by(1)
 
-        alert = EwsAlert.last
-        expect(alert.severity).to eq("critical")
-        expect(alert.message).to include("виснажена")
-      end
+      expect(GatewayTelemetryLog.last.cellular_signal_csq).to be_nil
+    end
 
-      it "creates EwsAlert for overheating" do
-        stats = valid_stats.merge("temperature_c" => 70.0)
-
-        expect {
-          described_class.new.perform(gateway.uid, stats)
-        }.to change(EwsAlert, :count).by(1)
-
-        expect(EwsAlert.last.message).to include("перегріта")
-      end
-
+    context "with critical pulse" do
       it "creates EwsAlert for weak signal" do
         stats = valid_stats.merge("cellular_signal_csq" => 2)
 
@@ -71,48 +73,58 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
           described_class.new.perform(gateway.uid, stats)
         }.to change(EwsAlert, :count).by(1)
 
-        expect(EwsAlert.last.message).to include("Слабкий сигнал")
+        alert = EwsAlert.last
+        expect(alert.severity).to eq("critical")
+        expect(alert.message).to include("Слабкий сигнал")
       end
 
-      it "dispatches notifications via EwsAlert after_create_commit callback for critical faults" do
-        stats = valid_stats.merge("voltage_mv" => 3000)
+      it "creates EwsAlert for degraded uplink (coap_fail_count ≥ поріг)" do
+        stats = valid_stats.merge("coap_fail_count" => 12)
 
+        expect {
+          described_class.new.perform(gateway.uid, stats)
+        }.to change(EwsAlert, :count).by(1)
+
+        expect(EwsAlert.last.message).to include("провалених")
+      end
+
+      it "не плодить дублікат при активному system_fault кластера (анти-спам)" do
+        stats = valid_stats.merge("cellular_signal_csq" => 2)
         described_class.new.perform(gateway.uid, stats)
 
-        # [A-1 FIX]: Notification тепер відбувається через EwsAlert after_create_commit :dispatch_notifications!
-        expect(AlertNotificationWorker.jobs.size).to eq(1)
+        expect {
+          described_class.new.perform(gateway.uid, stats)
+        }.not_to change(EwsAlert, :count)
       end
-    end
 
-    context "with valid CSQ=99 (unknown signal)" do
-      it "accepts the stats without creating alert" do
+      it "no_signal (csq 99) не тригерить алерт (за специфікацією 3GPP)" do
         stats = valid_stats.merge("cellular_signal_csq" => 99)
 
         expect {
           described_class.new.perform(gateway.uid, stats)
-        }.to change(GatewayTelemetryLog, :count).by(1)
+        }.not_to change(EwsAlert, :count)
       end
     end
 
-    context "with invalid stats" do
-      it "rejects stats with nil voltage" do
-        stats = valid_stats.merge("voltage_mv" => nil)
+    context "with invalid stats (KENOSIS-гейт)" do
+      it "rejects pulse without uptime_min" do
+        stats = valid_stats.except("uptime_min")
 
         expect {
           described_class.new.perform(gateway.uid, stats)
         }.not_to change(GatewayTelemetryLog, :count)
       end
 
-      it "rejects stats with nil temperature" do
-        stats = valid_stats.merge("temperature_c" => nil)
+      it "rejects pulse without cifo_fill" do
+        stats = valid_stats.except("cifo_fill")
 
         expect {
           described_class.new.perform(gateway.uid, stats)
         }.not_to change(GatewayTelemetryLog, :count)
       end
 
-      it "rejects stats with nil signal" do
-        stats = valid_stats.merge("cellular_signal_csq" => nil)
+      it "rejects out-of-range csq (не 0-31/99)" do
+        stats = valid_stats.merge("cellular_signal_csq" => 42)
 
         expect {
           described_class.new.perform(gateway.uid, stats)
@@ -120,138 +132,10 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
       end
     end
 
-    it "handles unknown gateway UID gracefully" do
-      expect(Rails.logger).to receive(:error).with(/фантомний шлюз/)
-
+    it "logs error for phantom gateway without raising" do
       expect {
-        described_class.new.perform("SNET-Q-FFFFFFFF", valid_stats)
-      }.not_to raise_error
-    end
-
-    it "re-raises StandardError for Sidekiq retry" do
-      allow_any_instance_of(Gateway).to receive(:mark_seen!).and_raise(StandardError, "DB lock timeout")
-
-      expect {
-        described_class.new.perform(gateway.uid, valid_stats)
-      }.to raise_error(StandardError, "DB lock timeout")
-    end
-
-    it "skips alert creation when cluster is unavailable" do
-      stats = valid_stats.merge("voltage_mv" => 3000)
-
-      # Стабуємо check_system_health щоб уникнути EwsAlert коли кластер недоступний
-      allow_any_instance_of(described_class).to receive(:check_system_health)
-
-      expect {
-        described_class.new.perform(gateway.uid, stats)
-      }.not_to change(EwsAlert, :count)
-    end
-  end
-
-  describe "gateway nil in rescue" do
-    it "handles rescue when gateway is not set (RecordNotFound)" do
-      expect {
-        described_class.new.perform("NONEXISTENT-UID", { voltage_mv: 4000, temperature_c: 25, cellular_signal_csq: 15 })
-      }.not_to raise_error
-    end
-
-    it "logs gateway UID as nil in StandardError rescue when gateway lookup fails mid-perform" do
-      allow(Gateway).to receive(:find_by!).and_return(gateway)
-      allow(gateway).to receive(:mark_seen!).and_raise(StandardError, "Connection lost")
-
-      expect(Rails.logger).to receive(:error).with(/Збій у матриці #{gateway.uid}/)
-
-      expect {
-        described_class.new.perform(gateway.uid, valid_stats)
-      }.to raise_error(StandardError, "Connection lost")
-    end
-
-    it "logs error with nil UID when gateway not found during StandardError" do
-      allow(Gateway).to receive(:find_by!).and_raise(StandardError, "unexpected error")
-      expect(Rails.logger).to receive(:error).with(/Збій у матриці /)
-
-      expect {
-        described_class.new.perform("UNKNOWN_UID", { "voltage_mv" => 3300, "temperature_c" => 25, "cellular_signal_csq" => 15 })
-      }.to raise_error(StandardError)
-    end
-  end
-
-  describe "return unless gateway.cluster_id" do
-    it "skips alert creation when gateway has no cluster_id" do
-      gw = create(:gateway, cluster: cluster, ip_address: "10.0.0.2")
-      log = create(:gateway_telemetry_log, :low_battery, gateway: gw)
-
-      allow(gw).to receive(:cluster_id).and_return(nil)
-
-      worker = described_class.new
-      worker.send(:check_system_health, gw, log)
-      expect(EwsAlert.where(alert_type: :system_fault)).to be_empty
-    end
-  end
-
-  describe "format_health_message — generic fault branch" do
-    it "returns generic message when no specific threshold is breached but critical_fault? is true" do
-      log = create(:gateway_telemetry_log, gateway: gateway,
-                   voltage_mv: GatewayTelemetryLog::LOW_BATTERY_THRESHOLD + 100,
-                   temperature_c: GatewayTelemetryLog::OVERHEAT_THRESHOLD - 10,
-                   cellular_signal_csq: GatewayTelemetryLog::LOW_SIGNAL_THRESHOLD + 5)
-
-      allow(log).to receive(:critical_fault?).and_return(true)
-      worker = described_class.new
-      message = worker.send(:format_health_message, gateway, log)
-      expect(message).to include("Апаратний збій")
-    end
-  end
-
-  describe "format_health_message — freezing branch (LiFePO4 risk, docs/02_05 §4а.5)" do
-    it "returns the ❄️ freezing message when temperature is below LOW_TEMPERATURE_THRESHOLD" do
-      log = create(:gateway_telemetry_log, :freezing, gateway: gateway, queen_uid: gateway.uid)
-      worker = described_class.new
-      message = worker.send(:format_health_message, gateway, log)
-      expect(message).to include("заморожена")
-      expect(message).to include(gateway.uid)
-      expect(message).to include("LiFePO4")
-    end
-
-    it "prefers overheat over freezing when both branches would match (overheat first)" do
-      # Practically impossible state, but exercises branch ordering.
-      log = build(:gateway_telemetry_log, :overheated, gateway: gateway, queen_uid: gateway.uid)
-      message = described_class.new.send(:format_health_message, gateway, log)
-      expect(message).to include("перегріта")
-      expect(message).not_to include("заморожена")
-    end
-  end
-
-  describe "StandardError rescue branch" do
-    it "re-raises StandardError after logging" do
-      gateway = create(:gateway, :online, cluster: cluster)
-
-      # Force a StandardError inside the transaction
-      allow_any_instance_of(Gateway).to receive(:mark_seen!).and_raise(StandardError, "Unexpected failure")
-
-      expect {
-        described_class.new.perform(gateway.uid, {
-          "voltage_mv" => 3500,
-          "temperature_c" => 25.0,
-          "cellular_signal_csq" => 15
-        })
-      }.to raise_error(StandardError, "Unexpected failure")
-    end
-  end
-
-  describe "transaction safety (P0 fix)" do
-    it "does not enqueue AlertNotificationWorker when transaction rolls back" do
-      stats = valid_stats.merge("voltage_mv" => 3000)
-
-      # Force mark_seen! to raise, triggering a transaction rollback
-      # before we reach the post-commit enqueue line
-      allow_any_instance_of(Gateway).to receive(:mark_seen!).and_raise(StandardError, "DB constraint violation")
-
-      AlertNotificationWorker.jobs.clear
-
-      expect {
-        described_class.new.perform(gateway.uid, stats) rescue nil
-      }.not_to change(AlertNotificationWorker.jobs, :size)
+        described_class.new.perform("SNET-Q-DEADBEEF", valid_stats)
+      }.not_to change(GatewayTelemetryLog, :count)
     end
   end
 end

@@ -8,8 +8,10 @@ require "coap_client"
 # (golden-parity: spec/lib/coap_server_pdu_spec.rb ↔ test_at_engine.c),
 # проходить вердикт Брами (CoapServerPdu = pure-ядро lib/daemons/coap_listener)
 # і РЕАЛЬНИЙ конвеєр UnpackTelemetryWorker → AES-256-CBC decrypt →
-# TelemetryUnpackerService → route_queen_health. MID = 0x00FF навмисно:
-# пін-кейс бага старого парсера (data.index маркера ловив 0xFF у заголовку).
+# TelemetryUnpackerService. MID = 0x00FF навмисно: пін-кейс бага старого
+# парсера (data.index маркера ловив 0xFF у заголовку).
+# [ARCH.54] DID=0-sentinel МЕРТВИЙ (health їде QATT-v2 конвертом) — кейси
+# нижче пінять ОБИДВІ нові поведінки: drop псевдодерева + пульс з header'а.
 RSpec.describe "CoAP intake e2e: Queen PDU grammar → Rails pipeline", type: :integration do
   let(:cluster)    { create(:cluster) }
   let(:gateway)    { create(:gateway, cluster: cluster, ip_address: "10.7.0.7") }
@@ -39,7 +41,7 @@ RSpec.describe "CoAP intake e2e: Queen PDU grammar → Rails pipeline", type: :i
     allow(ActionCable.server).to receive(:broadcast)
   end
 
-  it "проводить батч від байтів C-граматики до GatewayTelemetryWorker" do
+  it "проводить батч крізь Браму; DID=0-псевдодерево ДРОПАЄТЬСЯ (ARCH.54)" do
     pdu = CoapClient.build_put(
       message_id: 0x00FF,
       path: "/telemetry/batch/#{gateway.uid}",
@@ -59,18 +61,50 @@ RSpec.describe "CoAP intake e2e: Queen PDU grammar → Rails pipeline", type: :i
     #    "604400FF") і лише після яких Королева чистить CIFO (FW.51).
     expect(result.reply.unpack1("H*").upcase).to eq("604400FF")
 
-    # 3. Реальний конвеєр: decrypt → unpack → sentinel-маршрут.
+    # 3. Реальний конвеєр: decrypt → unpack → DID=0 drop (пін ARCH.54:
+    #    health більше не маскується під дерево; TelemetryLog теж не росте).
     worker_args = [ Base64.strict_encode64(result.payload),
                     "10.7.0.7", result.gateway_uid ]
     expect do
-      UnpackTelemetryWorker.new.perform(*worker_args)
+      expect do
+        UnpackTelemetryWorker.new.perform(*worker_args)
+      end.not_to change { GatewayTelemetryWorker.jobs.size }
+    end.not_to change(TelemetryLog, :count)
+  end
+
+  it "[ARCH.54] проводить v2-heartbeat крізь Браму до пульсу GatewayTelemetryWorker" do
+    seed_hex = SecureRandom.hex(32)
+    key_record.update!(
+      ed25519_public_key_hex: Ed25519Crypto::SigningService.public_key_from_seed(seed_hex)
+    )
+
+    health = [ 0, 20, 190, 12, 0, 0, 22, 0 ].pack("C8") # uptime 5310, cifo 12, csq 22
+    body = [ 0x02, Time.current.to_i, 1 ].pack("CNN") + health +
+           OpenSSL::Random.random_bytes(16) # IV; ct = 0 (empty-flush)
+    message = UnpackTelemetryWorker::QATT_DOMAIN_TAG +
+              [ gateway.uid.bytesize ].pack("C") + gateway.uid.b + body
+    heartbeat = body + [ Ed25519Crypto::SigningService.sign(seed_hex, message) ].pack("H*")
+
+    pdu = CoapClient.build_put(
+      message_id: 0x0042,
+      path: "/telemetry/batch/#{gateway.uid}",
+      payload: heartbeat
+    )
+    result = CoapServerPdu.handle_telemetry_datagram(pdu)
+    expect(result.status).to eq(:telemetry_batch)
+
+    expect do
+      UnpackTelemetryWorker.new.perform(
+        Base64.strict_encode64(result.payload), "10.7.0.7", result.gateway_uid
+      )
     end.to change { GatewayTelemetryWorker.jobs.size }.by(1)
 
     job_args = GatewayTelemetryWorker.jobs.last["args"]
     expect(job_args[0]).to eq(gateway.uid)
     expect(job_args[1]).to include(
-      "voltage_mv" => 4_100, "temperature_c" => 25, "cellular_signal_csq" => 22
+      "uptime_min" => 5310, "cifo_fill" => 12, "cellular_signal_csq" => 22
     )
+    expect(gateway.reload.last_attested_at).to be_present
   end
 
   it "не пускає в конвеєр сміття: RST замість ACK → Королева тримає кеш" do

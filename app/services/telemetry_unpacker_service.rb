@@ -137,10 +137,13 @@ class TelemetryUnpackerService < ApplicationService
     payload = chunk[5..20]
     parsed_data = payload.unpack(PAYLOAD_FORMAT)
 
-    # [СЕНТИНЕЛ]: DID = 0x00000000 — це "нульовий" пакет Королеви з її власною телеметрією.
-    # Маршрутизуємо дані в GatewayTelemetryWorker замість створення TelemetryLog.
-    if raw_did.zero? && @gateway
-      route_queen_health(parsed_data)
+    # [ARCH.54] DID = 0x00000000 у батчі — БІЛЬШЕ НЕ легальний запис:
+    # пульс Королеви живе у підписаному header'і QATT-v2 конверта
+    # (UnpackTelemetryWorker#enqueue_envelope_health), не псевдодеревом у
+    # телеметрії. Стара милиця персистила uptime як voltage і cache_count
+    # як CSQ (Солдатські окуляри) — 28B-запис з нулем тут = спуф/легасі.
+    if raw_did.zero?
+      Rails.logger.info "👑 [ARCH.54] Drop DID=0 запису на ECB-шляху — health їде QATT-v2 конвертом."
       return
     end
 
@@ -908,21 +911,4 @@ class TelemetryUnpackerService < ApplicationService
                                              .pick(:id)
   end
 
-  # [СЕНТИНЕЛ КОРОЛЕВИ]: Маршрутизація "нульового" пакета з власною телеметрією Королеви
-  # до GatewayTelemetryWorker. Формат Payload однаковий: Vcap(2B), Temp(1B), Acoustic→CSQ(1B).
-  def route_queen_health(parsed_data)
-    # Ключі — String: Sidekiq strict_args відкидає Symbol-ключі ArgumentError'ом,
-    # який broad rescue process_chunk мовчки ковтав — Sentinel-телеметрія
-    # гинула на реальному wire-шляху (ловить e2e spec/integration/
-    # coap_telemetry_intake_e2e_spec.rb; HIL :direct маскував stringify_keys).
-    GatewayTelemetryWorker.perform_async(
-      @gateway.uid,
-      {
-        "voltage_mv" => parsed_data[1],           # Vcap Королеви (2 байти, мілівольти)
-        "temperature_c" => parsed_data[2],        # Температура корпусу Королеви (1 байт)
-        "cellular_signal_csq" => parsed_data[3]   # CSQ модему (1 байт, використовує поле Acoustic)
-      }
-    )
-    Rails.logger.info "👑 [Sentinel] Королева #{@gateway.uid} повідомляє: #{parsed_data[1]}mV, #{parsed_data[2]}°C, CSQ=#{parsed_data[3]}"
-  end
 end

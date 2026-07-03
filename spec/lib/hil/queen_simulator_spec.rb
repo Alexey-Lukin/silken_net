@@ -3,11 +3,14 @@
 require "rails_helper"
 require "hil/queen_simulator"
 
+# [ARCH.54] Симулятор пульсу Королеви (v2): :direct = stats-hash напряму,
+# :wire = підписаний empty-flush heartbeat (QATT-v2, health у header'і).
+# Unsigned wire health у протоколі не існує — wire-режим мінтить Ed25519
+# eagerly, як фабричний provisioning.
 RSpec.describe Hil::QueenSimulator do
   let(:gateway) { create(:gateway) }
 
   before do
-    # Each gateway needs a HardwareKey for AES-CBC wire-mode encryption.
     create(:hardware_key, device_uid: gateway.uid, gateway: gateway)
     gateway.reload
   end
@@ -25,6 +28,22 @@ RSpec.describe Hil::QueenSimulator do
     it "accepts :direct and :wire modes" do
       expect { described_class.new(gateway, mode: :direct) }.not_to raise_error
       expect { described_class.new(gateway, mode: :wire) }.not_to raise_error
+    end
+
+    it "wire-mode eagerly registers the attestation pubkey on the HardwareKey" do
+      expect {
+        described_class.new(gateway, mode: :wire, rng: Random.new(1))
+      }.to change { gateway.hardware_key.reload.ed25519_public_key_hex }.from(nil)
+    end
+
+    it "derives a deterministic keypair from the injected rng" do
+      described_class.new(gateway, mode: :wire, rng: Random.new(99))
+      first = gateway.hardware_key.reload.ed25519_public_key_hex
+
+      gateway.hardware_key.update!(ed25519_public_key_hex: nil)
+      described_class.new(gateway, mode: :wire, rng: Random.new(99))
+
+      expect(gateway.hardware_key.reload.ed25519_public_key_hex).to eq(first)
     end
   end
 
@@ -44,21 +63,28 @@ RSpec.describe Hil::QueenSimulator do
       expect(job["args"].first).to eq(gateway.uid)
     end
 
-    it "passes scenario-driven stats to the worker" do
+    it "passes scenario-driven pulse stats to the worker" do
       simulator.tick(scenario: :healthy)
       stats = GatewayTelemetryWorker.jobs.last["args"].last
-      expect(stats["voltage_mv"]).to eq(4100)
-      expect(stats["temperature_c"]).to eq(25)
       expect(stats["cellular_signal_csq"]).to eq(22)
+      expect(stats["lora_rx_drops"]).to eq(0)
+      expect(stats["coap_fail_count"]).to eq(0)
+      expect(stats["uptime_min"]).to be > 0
       expect(stats["ip_address"]).to eq(gateway.ip_address)
     end
 
     it "honours per-call overrides" do
-      simulator.tick(voltage_mv: 2950, temperature_c: 80, cellular_signal_csq: 1)
+      simulator.tick(cellular_signal_csq: 1, coap_fail_count: 12, lora_rx_drops: 200)
       stats = GatewayTelemetryWorker.jobs.last["args"].last
-      expect(stats["voltage_mv"]).to eq(2950)
-      expect(stats["temperature_c"]).to eq(80)
       expect(stats["cellular_signal_csq"]).to eq(1)
+      expect(stats["coap_fail_count"]).to eq(12)
+      expect(stats["lora_rx_drops"]).to eq(200)
+    end
+
+    it ":no_signal scenario carries nil csq (сентинель 0xFF на дроті)" do
+      simulator.tick(scenario: :no_signal)
+      stats = GatewayTelemetryWorker.jobs.last["args"].last
+      expect(stats["cellular_signal_csq"]).to be_nil
     end
 
     it "rejects unknown scenarios" do
@@ -67,33 +93,32 @@ RSpec.describe Hil::QueenSimulator do
     end
 
     it "returns the resolved stats with scenario metadata" do
-      result = simulator.tick(scenario: :brownout)
+      result = simulator.tick(scenario: :uplink_degraded)
       expect(result).to include(
-        scenario: :brownout,
-        voltage_mv: 3100,
-        temperature_c: 22
+        "scenario" => :uplink_degraded,
+        "coap_fail_count" => 12
       )
-      expect(result[:uptime_s]).to be > 0
-      expect(result[:cifo_fill]).to be_a(Integer)
+      expect(result["uptime_min"]).to be > 0
+      expect(result["cifo_fill"]).to be_a(Integer)
     end
 
     it "advances uptime monotonically across ticks" do
       first  = simulator.tick
       second = simulator.tick
-      expect(second[:uptime_s]).to be > first[:uptime_s]
+      expect(second["uptime_min"]).to be > first["uptime_min"]
     end
 
     describe ":cifo_filling scenario" do
       it "climbs toward the 50-slot capacity" do
         results = 30.times.map { simulator.tick(scenario: :cifo_filling) }
-        max_fill = results.map { |s| s[:cifo_fill] }.max
+        max_fill = results.map { |s| s["cifo_fill"] }.max
         expect(max_fill).to be > 20
         expect(max_fill).to be <= 50
       end
     end
   end
 
-  describe "#tick (wire mode)" do
+  describe "#tick (wire mode — signed v2 heartbeat)" do
     subject(:simulator) { described_class.new(gateway, mode: :wire, rng: Random.new(7)) }
 
     before do
@@ -110,132 +135,66 @@ RSpec.describe Hil::QueenSimulator do
       end)
     end
 
-    it "POSTs an encrypted 21-byte chunk to /telemetry/batch/<uid>" do
+    it "POSTs the empty-flush heartbeat envelope to /telemetry/batch/<uid>" do
       simulator.tick(scenario: :healthy)
       call = CoapClient.calls.last
       expect(call[:url]).to eq("coap://127.0.0.1:5683/telemetry/batch/#{gateway.uid}")
-      # IV (16 B) + 1 AES-CBC encrypted block of the 21-byte chunk
-      # padded to 32 B = total 48 B.
-      expect(call[:payload].bytesize).to eq(48)
+      # header 17 + IV 16 + ct 0 + sig 64 = 97 B
+      expect(call[:payload].bytesize).to eq(97)
     end
 
-    it "produces a chunk that decrypts back into a sentinel inner payload" do
-      simulator.tick(scenario: :brownout, voltage_mv: 3100)
-      ciphertext = CoapClient.calls.last[:payload]
-      iv = ciphertext[0, 16]
-      body = ciphertext[16..]
-
-      cipher = OpenSSL::Cipher.new("aes-256-cbc")
-      cipher.decrypt
-      cipher.key = gateway.hardware_key.binary_key
-      cipher.iv  = iv
-      cipher.padding = 0
-      plain = cipher.update(body) + cipher.final
-
-      # The first 21 bytes are the LoRa-shaped chunk.
-      chunk = plain[0, 21]
-      did = chunk.unpack1("N")
-      rssi = chunk[4].unpack1("C")
-      inner = chunk[5, 16].unpack("N n c C n C C a4")
-
-      expect(did).to eq(0)        # Queen sentinel DID
-      expect(rssi).to eq(0)       # local packet
-      expect(inner[0]).to eq(0)   # inner DID slot zero too
-      expect(inner[1]).to eq(3100) # Vcap → voltage_mv
-      # Inner temperature_c sits at index 2 (int8, signed)
-      expect(inner[2]).to eq(22)
-    end
-  end
-
-  describe "#initialize (signed)" do
-    it "rejects signed: true with :direct mode" do
-      expect { described_class.new(gateway, mode: :direct, signed: true) }
-        .to raise_error(ArgumentError, /signed: true requires mode: :wire/)
-    end
-
-    it "eagerly registers the attestation pubkey on the gateway HardwareKey" do
-      expect { described_class.new(gateway, mode: :wire, signed: true) }
-        .to change { gateway.hardware_key.reload.ed25519_public_key_hex }.from(nil)
-    end
-
-    it "derives a deterministic keypair from the injected rng" do
-      described_class.new(gateway, mode: :wire, signed: true, rng: Random.new(11))
-      first = gateway.hardware_key.reload.ed25519_public_key_hex
-      described_class.new(gateway, mode: :wire, signed: true, rng: Random.new(11))
-      expect(gateway.hardware_key.reload.ed25519_public_key_hex).to eq(first)
-    end
-  end
-
-  describe "#tick (signed wire mode)" do
-    subject(:simulator) do
-      described_class.new(gateway, mode: :wire, signed: true, rng: Random.new(11))
-    end
-
-    before do
-      stub_const("CoapClient", Class.new do
-        def self.put(url, payload, **)
-          @calls ||= []
-          @calls << { url: url, payload: payload }
-          true
-        end
-
-        def self.calls
-          @calls ||= []
-        end
-      end)
-    end
-
-    it "emits an envelope with the signed-vs-legacy residue (≡ 9 mod 16)" do
+    it "emits an envelope with the signed-vs-legacy residue (≡ 1 mod 16)" do
       simulator.tick(scenario: :healthy)
-      expect(CoapClient.calls.last[:payload].bytesize % 16).to eq(9)
+      payload = CoapClient.calls.last[:payload]
+      expect(payload.bytesize % 16).to eq(UnpackTelemetryWorker::QATT_RESIDUE)
+      expect(payload.getbyte(0)).to eq(described_class::QATT_VERSION_2)
     end
 
-    it "builds a parseable v1 envelope whose signature verifies against the registered pubkey" do
+    it "signature verifies against the registered pubkey (v2 domain tag)" do
       simulator.tick(scenario: :healthy)
       payload = CoapClient.calls.last[:payload]
 
-      version, unix_ts, flush_seq = payload.unpack("CNN")
-      signature = payload.byteslice(-64, 64)
+      sig  = payload.byteslice(-64, 64)
       body = payload.byteslice(0, payload.bytesize - 64)
-      message = "SLKN-QATT1" + [ gateway.uid.bytesize ].pack("C") + gateway.uid.b + body
+      uid  = gateway.uid
+      message = described_class::QATT_DOMAIN_TAG + [ uid.bytesize ].pack("C") + uid.b + body
 
-      expect(version).to eq(0x01)
-      expect(unix_ts).to be > 0
-      expect(flush_seq).to eq(1)
       expect(
         Ed25519Crypto::SigningService.verify(
           gateway.hardware_key.reload.ed25519_public_key_hex,
-          signature.unpack1("H*"),
-          message
+          sig.unpack1("H*"), message
         )
       ).to be(true)
     end
 
-    it "increments flush_seq once per dispatched envelope" do
-      simulator.tick(scenario: :healthy)
-      simulator.tick(scenario: :healthy)
-      seqs = CoapClient.calls.map { |c| c[:payload].unpack("CNN").last }
-      expect(seqs).to eq([ 1, 2 ])
+    it "packs the pulse into the signed header (byte-parity with tick stats)" do
+      stats = simulator.tick(scenario: :uplink_degraded, uptime_min: 5310, cifo_fill: 42)
+      payload = CoapClient.calls.last[:payload]
+
+      up = (payload.getbyte(9) << 16) | (payload.getbyte(10) << 8) | payload.getbyte(11)
+      expect(up).to eq(5310)
+      expect(payload.getbyte(12)).to eq(42)                       # cifo_fill
+      expect(payload.getbyte(13)).to eq(stats["lora_rx_drops"])   # 4
+      expect(payload.getbyte(14)).to eq(stats["coap_fail_count"]) # 12
+      expect(payload.getbyte(15)).to eq(18)                       # csq
     end
 
-    it "still wraps a decryptable legacy [IV][ct] inside the envelope" do
-      simulator.tick(scenario: :brownout, voltage_mv: 3100)
+    it "nil csq rides as the 0xFF wire sentinel" do
+      simulator.tick(scenario: :no_signal)
       payload = CoapClient.calls.last[:payload]
-      iv_ct = payload.byteslice(9, payload.bytesize - 9 - 64)
+      expect(payload.getbyte(15)).to eq(described_class::QATT_CSQ_NOT_READ)
+    end
 
-      cipher = OpenSSL::Cipher.new("aes-256-cbc")
-      cipher.decrypt
-      cipher.key = gateway.hardware_key.binary_key
-      cipher.iv  = iv_ct[0, 16]
-      cipher.padding = 0
-      plain = cipher.update(iv_ct[16..]) + cipher.final
-
-      expect(plain[0, 21].unpack1("N")).to eq(0) # sentinel DID inside the envelope
+    it "increments flush_seq once per dispatched envelope" do
+      simulator.tick
+      simulator.tick
+      seqs = CoapClient.calls.map { |c| c[:payload].byteslice(5, 4).unpack1("N") }
+      expect(seqs).to eq([ 1, 2 ])
     end
   end
 
   describe "#run!" do
-    subject(:simulator) { described_class.new(gateway, mode: :direct, rng: Random.new(1)) }
+    subject(:simulator) { described_class.new(gateway, mode: :direct, rng: Random.new(3)) }
 
     around do |example|
       Sidekiq::Testing.fake! { example.run }
@@ -243,25 +202,15 @@ RSpec.describe Hil::QueenSimulator do
 
     before { GatewayTelemetryWorker.clear }
 
-    it "emits N beacons" do
-      results = simulator.run!(count: 7, interval: 0)
-      expect(results.size).to eq(7)
-      expect(GatewayTelemetryWorker.jobs.size).to eq(7)
+    it "emits `count` pulses and returns their stats" do
+      results = simulator.run!(scenario: :healthy, count: 4)
+      expect(results.size).to eq(4)
+      expect(GatewayTelemetryWorker.jobs.size).to eq(4)
     end
 
     it "applies the same scenario across the run" do
-      simulator.run!(scenario: :overheat, count: 3, interval: 0)
-      jobs = GatewayTelemetryWorker.jobs.last(3)
-      jobs.each do |job|
-        expect(job["args"].last["temperature_c"]).to eq(72)
-      end
-    end
-
-    it "sleeps between ticks when interval is positive" do
-      paced = described_class.new(gateway, mode: :direct, rng: Random.new(99))
-      allow(paced).to receive(:sleep)
-      paced.run!(count: 2, interval: 0.5)
-      expect(paced).to have_received(:sleep).with(0.5).once
+      results = simulator.run!(scenario: :uplink_degraded, count: 3)
+      expect(results.map { |s| s["coap_fail_count"] }.uniq).to eq([ 12 ])
     end
   end
 end

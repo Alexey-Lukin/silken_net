@@ -10,6 +10,13 @@ class GatewayTelemetryLog < ApplicationRecord
   # момент (зимова буря — коли HIL-симуляція не врятує). Hardware
   # доповнення (NTC + charge MOSFET cut-off) — HW.16 у docs/00_07.
   LOW_TEMPERATURE_THRESHOLD = -20   # °C: нижче — ризик відмови LiFePO4 / brownout
+  # [ARCH.54] Стільки провалених flush-розмов у пульсі = LTE/Starlink
+  # деградує системно (лічильник сатурований, скидається power-cycle'ом).
+  COAP_FAIL_ALERT_THRESHOLD = 10
+
+  # [ARCH.54] health_flags бітфілд (wire-дім: queen_attest.h QATT_HFLAG_*)
+  HFLAG_CCM_ERA = 0x01
+  HFLAG_RING    = 0x02
 
   # --- ЗВ'ЯЗКИ ---
   # Зв'язок через UID дозволяє зберігати логіку ідентифікації заліза
@@ -23,11 +30,15 @@ class GatewayTelemetryLog < ApplicationRecord
   # ActiveRecord валідації на кожному INSERT (зокрема при insert_all) — зайві цикли CPU.
 
   # --- СКОУПИ ---
+  # [ARCH.54] Пульс v2 напруги/температури НЕ несе (Королева без ADC) —
+  # battery/thermal-скоупи лишаються для ери залізного тракту (nil-рядки
+  # ці WHERE природно відсіюють), джерело даних сьогодні = health-блок.
   scope :recent, -> { order(created_at: :desc) }
   scope :critical_battery, -> { where("voltage_mv < ?", LOW_BATTERY_THRESHOLD) }
   scope :overheated, -> { where("temperature_c > ?", OVERHEAT_THRESHOLD) }
   scope :freezing, -> { where("temperature_c < ?", LOW_TEMPERATURE_THRESHOLD) }
   scope :weak_signal, -> { where("cellular_signal_csq < ? AND cellular_signal_csq != 99", LOW_SIGNAL_THRESHOLD) }
+  scope :uplink_degraded, -> { where("coap_fail_count >= ?", COAP_FAIL_ALERT_THRESHOLD) }
 
   # --- МЕТОДИ (Health Intelligence) ---
 
@@ -45,15 +56,20 @@ class GatewayTelemetryLog < ApplicationRecord
     (2 * cellular_signal_csq) - 113
   end
 
+  # [ARCH.54] Прапорці ери з пульсу (wire: queen_attest.h)
+  def ccm_era?  = health_flags.to_i.anybits?(HFLAG_CCM_ERA)
+  def ring_mounted? = health_flags.to_i.anybits?(HFLAG_RING)
+
   # [НОВЕ]: Швидка перевірка на критичний стан заліза
   # Використовується GatewayTelemetryWorker для ініціації EwsAlert.
-  # Nil-safe: без AR-валідацій поля можуть бути nil при direct insert_all.
+  # Nil-safe: пульс v2 не несе напруги/температури (nil = «не виміряно»,
+  # НЕ «нуль») — кожен критерій перевіряє власне поле незалежно.
   def critical_fault?
-    return false if voltage_mv.nil? || temperature_c.nil? || cellular_signal_csq.nil?
-
-    voltage_mv < LOW_BATTERY_THRESHOLD ||
-      temperature_c > OVERHEAT_THRESHOLD ||
-      temperature_c < LOW_TEMPERATURE_THRESHOLD ||
-      (cellular_signal_csq != 99 && cellular_signal_csq < LOW_SIGNAL_THRESHOLD)
+    (voltage_mv.present? && voltage_mv < LOW_BATTERY_THRESHOLD) ||
+      (temperature_c.present? && temperature_c > OVERHEAT_THRESHOLD) ||
+      (temperature_c.present? && temperature_c < LOW_TEMPERATURE_THRESHOLD) ||
+      (cellular_signal_csq.present? && cellular_signal_csq != 99 &&
+        cellular_signal_csq < LOW_SIGNAL_THRESHOLD) ||
+      coap_fail_count.to_i >= COAP_FAIL_ALERT_THRESHOLD
   end
 end

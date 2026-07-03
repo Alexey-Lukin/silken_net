@@ -1335,7 +1335,12 @@ CREATE TABLE public.gateway_telemetry_logs (
     cellular_signal_csq integer,
     temperature_c numeric,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    uptime_min integer,
+    cifo_fill integer,
+    lora_rx_drops integer,
+    coap_fail_count integer,
+    health_flags integer
 )
 PARTITION BY RANGE (created_at);
 
@@ -1371,7 +1376,12 @@ CREATE TABLE public.gateway_telemetry_logs_default (
     cellular_signal_csq integer,
     temperature_c numeric,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    uptime_min integer,
+    cifo_fill integer,
+    lora_rx_drops integer,
+    coap_fail_count integer,
+    health_flags integer
 );
 
 
@@ -1387,7 +1397,12 @@ CREATE TABLE public.gateway_telemetry_logs_y2026m01 (
     cellular_signal_csq integer,
     temperature_c numeric,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    uptime_min integer,
+    cifo_fill integer,
+    lora_rx_drops integer,
+    coap_fail_count integer,
+    health_flags integer
 );
 
 
@@ -1403,7 +1418,12 @@ CREATE TABLE public.gateway_telemetry_logs_y2026m02 (
     cellular_signal_csq integer,
     temperature_c numeric,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    uptime_min integer,
+    cifo_fill integer,
+    lora_rx_drops integer,
+    coap_fail_count integer,
+    health_flags integer
 );
 
 
@@ -1419,7 +1439,12 @@ CREATE TABLE public.gateway_telemetry_logs_y2026m03 (
     cellular_signal_csq integer,
     temperature_c numeric,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    uptime_min integer,
+    cifo_fill integer,
+    lora_rx_drops integer,
+    coap_fail_count integer,
+    health_flags integer
 );
 
 
@@ -1435,7 +1460,12 @@ CREATE TABLE public.gateway_telemetry_logs_y2026m04 (
     cellular_signal_csq integer,
     temperature_c numeric,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    uptime_min integer,
+    cifo_fill integer,
+    lora_rx_drops integer,
+    coap_fail_count integer,
+    health_flags integer
 );
 
 
@@ -1451,7 +1481,12 @@ CREATE TABLE public.gateway_telemetry_logs_y2026m05 (
     cellular_signal_csq integer,
     temperature_c numeric,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    uptime_min integer,
+    cifo_fill integer,
+    lora_rx_drops integer,
+    coap_fail_count integer,
+    health_flags integer
 );
 
 
@@ -1467,7 +1502,12 @@ CREATE TABLE public.gateway_telemetry_logs_y2026m06 (
     cellular_signal_csq integer,
     temperature_c numeric,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    uptime_min integer,
+    cifo_fill integer,
+    lora_rx_drops integer,
+    coap_fail_count integer,
+    health_flags integer
 );
 
 
@@ -7152,6 +7192,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260703075130'),
 ('20260703043753'),
 ('20260628151759'),
 ('20260509120000');

@@ -617,6 +617,37 @@ uint16_t current_ota_chunk_idx = 0;
 // boot even if HAL_GetTick() barely advances between flushes.
 static uint32_t coap_flush_seq = 0;
 
+// =========================================================================
+// [ARCH.54 Шар 1] Health-джерела конверта QATT-v2 (раз на flush, підписані)
+// =========================================================================
+// Пульс Королеви живе у header'і підписаного конверта — НЕ фальшивим
+// деревом DID=0 у батчі (та милиця вбита: контрол-плейн маскувався під
+// дата-плейн, їв CIFO-слот, ламав CCM-stride і брехав полями — бекенд
+// читав uptime як напругу, cache_count як CSQ).
+//
+// uptime: sw-extended лічильник хвилин — HAL_GetTick сам умирає на 49.7
+// добі; тут modular-дельта тіків складається у u32-хвилини (стеля wire
+// u24 ≈ 31.9 років — клемп у Qatt_Write_Header).
+static uint32_t g_uptime_minutes    = 0;
+static uint32_t g_uptime_ms_residue = 0;  // недоміряні мс між викликами
+static uint32_t g_uptime_last_tick  = 0;
+
+static void Uptime_Minutes_Tick(void)
+{
+    uint32_t now = HAL_GetTick();
+    g_uptime_ms_residue += (uint32_t)(now - g_uptime_last_tick); // wrap-safe
+    g_uptime_last_tick = now;
+    if (g_uptime_ms_residue >= 60000u) {
+        g_uptime_minutes    += g_uptime_ms_residue / 60000u;
+        g_uptime_ms_residue %= 60000u;
+    }
+}
+
+// Сатуровані сліди відмов (u8 на дроті; RAM-стеля та сама — діагностика
+// перезапускається power-cycle'ом, як інші Queen-лічильники).
+static uint8_t g_coap_fail_count = 0;   // провалені flush-розмови (усі retry)
+static uint8_t g_last_csq = QATT_CSQ_NOT_READ; // AT+CSQ перед flush; 0xFF до першого читання
+
 // Динамічний RAM-буфер для збирання OTA-байткоду з Rails через Handle_CoAP_Command.
 // Королева отримує 512-байтні чанки від сервера і складає їх сюди.
 // Після прийому всіх чанків — автоматично запускає LoRa-бродкаст на Солдатів.
@@ -1086,35 +1117,17 @@ int main(void)
     // СКИДАННЯ КЕШУ НА СЕРВЕР (GCCS Batching -> UDP/CoAP)
     // =========================================================================
     // Відправляємо пакет даних, якщо кеш заповнений майже повністю (залишилось 5 вільних слотів)
-    // АБО пройшло достатньо часу (FLUSH_INTERVAL_MS + джиттер для десинхронізації)
+    // АБО пройшло достатньо часу (FLUSH_INTERVAL_MS + джиттер для десинхронізації).
+    //
+    // [ARCH.54 Шар 1] DID=0-інжект ВБИТО: пульс Королеви живе у підписаному
+    // header'і QATT-v2 конверта (Flush нижче), не фальшивим деревом у батчі —
+    // стара милиця їла CIFO-слот, ламала CCM-stride, а бекенд читав її поля
+    // Солдатськими окулярами (uptime→voltage, cache→CSQ). Порожній кеш при
+    // таймерному тику = empty-flush heartbeat (лише для QATT-Королеви:
+    // legacy-конверт без підпису не несе health — пульс без цінності).
+    Uptime_Minutes_Tick();
     if (cache_count >= (CACHE_MAX_ENTRIES - FLUSH_HEADROOM) || (HAL_GetTick() - last_flush_time > FLUSH_INTERVAL_MS + current_jitter)) {
-        if (cache_count > 0) {
-#if FW2_CCM_ENABLED
-            // [FW.2] Health-запис DID=0 у CCM-ері НЕ пакується: 16B-легасі
-            // формат зламав би однорідний 29B-stride, а process_ccm_chunk
-            // все одно дропає DID=0 («use dedicated CoAP channel»). Видимість
-            // шлюзу до появи dedicated-каналу = свідомий фліп-гейт
-            // (00_07 FW.2; природний дім рішення — ARCH.34 Queen-Sentinel).
-#else
-            // [FIX: Queen Health Blind Spot]
-            // Перед скиданням кешу додаємо власний пакет здоров'я Королеви.
-            // DID=0 — зарезервований sentinel, backend розпізнає як gateway health.
-            // Це дозволяє серверу бачити стан шлюзу (температура, рівень сигналу CSQ)
-            // без окремого протоколу.
-            {
-                uint8_t queen_health[16] = {0};
-                // DID = 0x00000000 (sentinel — "це Королева, не дерево")
-                // Bytes 4-5: Тік як proxy для uptime (wraps кожні ~65 секунд при /1000)
-                uint16_t uptime_sec = (uint16_t)(HAL_GetTick() / 1000);
-                queen_health[4] = (uint8_t)(uptime_sec >> 8);
-                queen_health[5] = (uint8_t)(uptime_sec & 0xFF);
-                // Byte 7: Кількість дерев у кеші (навантаження на шлюз)
-                queen_health[7] = cache_count;
-                // Byte 10: Status = homeostasis (0), growth_points = cache_count (proxy for health)
-                queen_health[10] = (cache_count < QUEEN_HEALTH_GP_MAX) ? cache_count : QUEEN_HEALTH_GP_MAX;
-                Process_And_Cache_Data(0, queen_health, 0, 0, EDGE_FMT_ECB16); // RSSI=0, SNR=0 (локальний пакет)
-            }
-#endif
+        if (cache_count > 0 || ed25519_ready) {
             Flush_Cache_To_Rails();
             last_flush_time = HAL_GetTick(); // Оновлюємо таймер
 
@@ -1519,7 +1532,11 @@ void Flush_Cache_To_Rails(void)
         }
     }
 
-    if (offset == 0) return;
+    // [ARCH.54 Шар 1] Порожній батч = empty-flush heartbeat: підписаний
+    // конверт без записів (ct=0) несе пульс за тихої години. Легальний
+    // ЛИШЕ для QATT-Королеви — legacy-[IV][0×ct] не несе нічого, крім
+    // спалених DC (викликач гейтить на ed25519_ready; це друга лінія).
+    if (offset == 0 && !ed25519_ready) return;
 
     // =========================================================================
     // ШИФРУВАННЯ БАТЧА AES-256-CBC
@@ -1581,7 +1598,7 @@ void Flush_Cache_To_Rails(void)
     HAL_CRYP_Init(&hcryp);
 
     // 4. Шифруємо батч. Довжина в 32-бітних словах = padded_size / 4.
-    //    Буфер [L1 QATT]: [prefix-зона][header 9][IV 16][ct][sig 64] — один
+    //    Буфер [L1 QATT]: [prefix-зона][header 17][IV 16][ct][sig 64] — один
     //    static-конверт (розкладка: common/queen_attest.h, канон 03_05 §2.2).
     //    IV+ct лягають на свої зсуви ОДРАЗУ — legacy і signed шляхи ділять
     //    ті самі байти, різняться лише вікном payload'а.
@@ -1589,23 +1606,54 @@ void Flush_Cache_To_Rails(void)
     // call chain — переповнення стеку.
     static uint8_t batch_attest_buffer[QATT_BUFFER_SIZE] __attribute__((aligned(4)));
     memcpy(batch_attest_buffer + QATT_IV_OFFSET, batch_iv, QATT_IV_LEN);
-    HAL_CRYP_Encrypt(&hcryp, (uint32_t*)binary_batch_buffer, padded_size / 4,
-                     (uint32_t*)(batch_attest_buffer + QATT_CT_OFFSET), 2000);
+    // [ARCH.54] padded_size == 0 (heartbeat) → CBC нема чого жувати; IV
+    // лишається у конверті (residue-контракт рахує його завжди).
+    if (padded_size > 0) {
+        HAL_CRYP_Encrypt(&hcryp, (uint32_t*)binary_batch_buffer, padded_size / 4,
+                         (uint32_t*)(batch_attest_buffer + QATT_CT_OFFSET), 2000);
+    }
 
     // [FIX FW.16 → FW.3] CRYP назад у LoRa-ECB ОДРАЗУ після CBC-шифрування:
     // модемна розмова попереду довга, а вікно чужого CRYP-режиму має бути
     // нульовим — інакше наступні HAL_CRYP_Decrypt() LoRa-пакетів жували б CBC.
     Restore_ECB_Mode();
 
+    // [ARCH.54 Шар 1] Свіжий CSQ — раз на flush, ДО побудови header'а:
+    // модем уже прокинутий до розмови, одна коротка AT-транзакція.
+    // Провал (сплячий модем/тиша) → тримаємо попереднє значення (сентинель
+    // 0xFF до першого успіху — бекенд пише NULL, не бреше нулем).
+    {
+        UartAtIo csq_io = { HAL_GetTick() + AT_INIT_BUDGET_MS };
+        Sim7070Io csq_m = { Uart_At_Source, Uart_At_Sink, &csq_io };
+        Uart_Rx_Drain_Stale();
+        (void)Sim7070_Read_Csq(&csq_m, &at_engine_state, &g_last_csq);
+    }
+
     // [L1 QATT] Голос Королеви: header → право-вирівняний префікс домену+UID →
     // Ed25519 над prefix‖header‖IV‖ct (encrypt-then-sign), підпис лягає хвостом.
     // Бекенд верифікує проти HardwareKey.ed25519_public_key_hex ДО decrypt.
     // Сім'я не прошита (ready==0) чи UID битий → legacy [IV][ct], як завжди.
+    // [ARCH.54] Header v2 несе health-блок — пульс підписаний разом з батчем
+    // (masking-attack закритий: підробка health = зламаний Ed25519).
     const uint8_t *coap_payload = batch_attest_buffer + QATT_IV_OFFSET;
     uint16_t total_size         = (uint16_t)(QATT_IV_LEN + padded_size);
     if (ed25519_ready) {
+        Uptime_Minutes_Tick();
+        uint8_t health_flags = 0u;
+#if FW2_CCM_ENABLED
+        health_flags |= QATT_HFLAG_CCM_ERA;
+#endif
+#if ARCH35_RING_ENABLED
+        if (queen_ring_mounted) health_flags |= QATT_HFLAG_RING;
+#endif
         Qatt_Write_Header(batch_attest_buffer + QATT_HDR_OFFSET,
-                          Get_Current_Unix_Ts(), coap_flush_seq);
+                          Get_Current_Unix_Ts(), coap_flush_seq,
+                          g_uptime_minutes,
+                          cache_count,
+                          (lora_rx_drops > 255u) ? 255u : (uint8_t)lora_rx_drops,
+                          g_coap_fail_count,
+                          g_last_csq,
+                          health_flags);
         uint16_t prefix_len = Qatt_Compose_Prefix(batch_attest_buffer,
                                                   QATT_HDR_OFFSET, queen_uid);
         if (prefix_len != 0u) {
@@ -1639,6 +1687,8 @@ void Flush_Cache_To_Rails(void)
         if (!Sim7070_Resolve_Host(&dns_m, &at_engine_state, COAP_SERVER_HOST,
                                   coap_server_ip, sizeof coap_server_ip)) {
             coap_server_ip[0] = '\0';
+            // [ARCH.54] DNS-провал = flush не відбувся — слід у health.
+            if (g_coap_fail_count < 255u) g_coap_fail_count++;
             return; // [FW.51] слоти живі — наступний флеш повторить і DNS
         }
     }
@@ -1660,6 +1710,10 @@ void Flush_Cache_To_Rails(void)
                                                  coap_server_ip, COAP_SERVER_PORT,
                                                  coap_pdu_buf, pdu_len, coap_mid);
     }
+
+    // [ARCH.54 Шар 1] Слід провалу — у НАСТУПНИЙ health-блок (цей конверт
+    // уже підписаний): сатурований лічильник розмов, де всі retry впали.
+    if (!send_success && g_coap_fail_count < 255u) g_coap_fail_count++;
 
     // [FW.51] Звільняємо кеш ЛИШЕ після підтвердженого send. Якщо всі retry
     // впали — слоти лишаються активними, наступний флеш повторить спробу
