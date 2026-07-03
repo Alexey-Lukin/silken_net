@@ -119,9 +119,13 @@ drops a class → ≥1 cavitation/chainsaw frame for the `03_03 §8` #6/#7 smoke
 (`model.keras`, PTQ `*.npz`, TF SavedModel temp) stay ignored.
 
 **Honesty (don't conflate the two halves):** per-class field-validity is canon in `docs/03_03 §4.2` —
-silence + cavitation are **synthetic placeholders** (cavitation NOT field-validated); baseline
-accuracy is a **pipeline-integrity** metric, NOT field accuracy. A future partner CNN is a drop-in
-header swap (the `_stub.h` `__has_include` fallback stays).
+silence + cavitation are **synthetic placeholders**; baseline accuracy is a **pipeline-integrity**
+metric, NOT field accuracy. ⚠️ cavitation is deeper than "not validated" — it's an **audible-proxy,
+not the real signal**: true xylem-cavitation acoustic emission is ultrasonic 25–150 kHz (Tyree&Dixon
+1983; `UNI.11`), **beyond this chain's 16 kHz / Nyquist-8**, so `gen_cavitation` synthesises 5–8 kHz
+clicks *under the Nyquist ceiling*, not from physics — the class trains a low-freq structural proxy,
+never true AE (real detection needs a dedicated high-rate channel / v3). A future partner CNN is a
+drop-in header swap (the `_stub.h` `__has_include` fallback stays).
 
 ## Two ML domains — keep the boundary
 
