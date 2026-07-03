@@ -1582,6 +1582,12 @@ void Write_OTA_Contract_To_Flash(const uint8_t* data, uint16_t size);
 // Викликається в main() ПЕРЕД MX_CRYP_Init().
 static void Load_AES_Key(void);
 
+#if FW2_CCM_ENABLED || defined(HAL_MOCK_CCM_ENABLED)
+// [FW.2 (в)] Cluster control-plane KEYB — викликається в main() ПІСЛЯ
+// Load_AES_Key (fallback читає K0) і ПЕРЕД MX_CRYP_Init (амбієнт = bcast).
+static void Load_Broadcast_Key(void);
+#endif
+
 // [SEC.11 / FW.30] Завантаження Lorenz K_seed з Protected Flash Sector.
 // Викликається в main() при ініціалізації. K_seed використовується для
 // cold-start деривації (x₀,y₀,z₀) через HMAC-SHA256.
