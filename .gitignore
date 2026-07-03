@@ -95,6 +95,7 @@ coverage/
 # Platform-specific (macOS Mach-O vs Linux ELF) — CI rebuilds them per run.
 # The .c source files are tracked; the compiled outputs are not.
 /firmware/test/test_queen
+/firmware/test/test_queen_rx_route
 /firmware/test/test_soldier
 /firmware/test/test_bio_contract
 /firmware/test/test_tinyml
