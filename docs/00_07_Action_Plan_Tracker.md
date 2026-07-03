@@ -60,10 +60,11 @@
 
 ### ⛓️ Гейт-кластери — одна дія відкриває кластер (міжсекційна синергія)
 
-> Друга вісь зрізу (доповнює мілстоун-рядки ↑): **сім «ключів»** — вузьких дій/подій, на які трекер сходиться across секції (звірено item-by-item 2026-07-03, §03a/§03b/§04/§05/§06). Тонкі ID-вказівники; деталь у пунктах.
+> Друга вісь зрізу (доповнює мілстоун-рядки ↑): **вісім «ключів»** — вузьких дій/подій, на які трекер сходиться across секції (звірено item-by-item 2026-07-03, §02a/§02b/§03a/§03b/§04/§05/§06). Тонкі ID-вказівники; деталь у пунктах.
 
 | 🔑 Ключ (WHO) | Відкриває (кластер) |
 |---|---|
+| **HW.9 KiCad PCB** (👤; сам ← BOM-фіналізація `HW.7/12/13/20` + RF Keep-Out) | `HW.17`-dimensions · `HW.29`-footprints · `HW.20`-BOM-part · SE050 DNP-footprint · `ARCH.35` W25Q32-розводка · пін-мапа → **FW.46 `.ioc`** (ланцюг до bench-дня ↓) |
 | **FW.46 board-freeze** `.ioc` (👤) | повний `.elf` → увесь bench-день: `FW.2`-фліп · `FW.3/8/17/20/23/31/49/50/52/54/55` · `ARCH.26/41` · `SEC.2`-OTA-verify · `SEC.15`-WUT · `SEC.3`-SWD · `ARCH.35`-розводка; суміжно `ARCH.34`-firmware (той самий middleware-клас) |
 | **Перший live-деплой** = секрети (`S1.1`+`INF.19`+`S4.3`) → deploy (👤) | верифікації `INF.11/12/13/14/15/16` · `PUMA-IPV6-1` · `INF.10`-фліп · `S5.2` · `S3.2`-staging · `S6.1`-Upstash · Grafana-сесія (`S2.1→S2.2→S2.3` + `S2.4`-SLO + `FW.18b` + `ARCH.54`-alert) |
 | **INF.4 TLS-рішення** (👤, рекоменд. A) | `INF.3` TLS · `S6.18` `RAILS_ALLOWED_HOSTS` (публічний домен) |
@@ -380,15 +381,8 @@
 - [ ] 👤 Замінити SMD резистори якщо мисматч
 - [ ] 👤 Задокументувати фінальні номінали
 
-#### HW.35 — Гілка-А навчальний breadboard-стенд (legacy 44 мВ LTC3108) (NEW 2026-07-03)
-- **P2** · 👤 · 🟡 · → [`02_04`](02_04_Legacy_Breadboard_Appendix)
-- **Стан:** BOM вивірений повний (4 острови: AA-дільник 44 мВ → LTC3108 + LPR6235 1:100 → CJMCU-2557 → storage cap → LoRa-E5 mini), закупівля і збірка НЕ зроблені. Продакшн-незалежний (LTC3108-каскад викинутий post-pivot — [`02_03 §1`](02_03_BQ25570_MPPT_Nano_Power)); цінність = навчальний bring-up harvester-ланцюга + жива платформа для HW.7-перевірки резисторів. Канон стенда [`02_04`](02_04_Legacy_Breadboard_Appendix).
-- [ ] 👤 замовити BOM (storage-кап: 1000µF/25V алюміній + 1000µF/6.3V полімер — обидва варіанти)
-- [ ] 👤 зібрати інкрементально по островах 1→4 (мультиметр на кожному; антена 868 МГц ПЕРЕД живленням Острова 4)
-- [ ] 👤 зняти bring-up відео стенда для грантів (ex-E.3)
-
 #### HW.8 — Pogo pin specification (sub-blockers 8.1–8.9)
-- **P1** · 🤖+👤 · 🟡 · → `02_02`
+- **P1** · 👤 · 🟡 · → `02_02`
 - **Стан:** Pogo-інтерфейс — фіналізація; **machine-вирішено:** bayonet-фіксація ✅ (детермінована Z, різьба=FAIL — `02_02 §4.3`) + Z-stack ✅ обчислено (3-spring RSS, min mitigation spacer 0.1мм + bayonet hard-stop тримає всі вікна — `02_02 §3.5`; freeze розблокував Radome/B2B/PCBA). Решта 👤-bench (нижче): Au-напилення + Hard-Gold central-pad (Ti↔Au гальванопара, `02_02 §1.2`), spring force, O-ring/IP (`02_02 §3.2`), соосність, + 2 MATE-Ø нитки (lug/Z 8.8, shank-Ø 8.9 — mate-audit `02_02 §4.4/§4.5`). Канон `02_02`.
 - [ ] 👤 HW.8.1: Матеріал напилення pin → Gold (Hard Gold, Au 0.76 µm)
 - [ ] 👤 **HW.8.2: Hard Gold ENIG на центральній площадці** (торець шини Zone 1, ø 4–5 мм) — обов'язково (інакше Ti↔Au гальванопара → Rc drift → cold-start fail); передати specмапу selective gold-plating заводу. `02_02 §1.2`
@@ -423,7 +417,7 @@
 - [ ] 👤 **Cold-start R_int** (`02_03 §1.5`): виміряти R_int EBFC (V_OC + V@15µA); якщо > 12 кΩ → cold-start oscillation-loop → серійний стек 2× EBFC (A) / паралель (B) / LTC3108 DNP-footprint (C). Не замовляти 100 PCBA без DNP-LTC3108 до перевірки.
 
 #### HW.17 — PEEK radome prototype (Деталь 4)
-- **P1** · 🤖+👤 · 🟡 · → `02_01 §5.2`, `01_04 §5.5`
+- **P1** · 👤 · 🟡 · → `02_01 §5.2`, `01_04 §5.5`
 - **Стан:** Осьова вісь розблокована (freeze 2026-06-20) — PEEK Radome (Деталь 4) **Ø25 на байонеті** Zone 3 катод-фланця (НЕ анод, НЕ різьба — §3.5 Z-stack): радіопрозорий купол + O-ring EPDM → IP68; керамічна SMD-антена з Z-clearance + overhang (`02_01 §5.2/§5.3`); інтегрований anti-overgrowth shield (`01_04 §5.5`, residual → HW.28). **PicoGK машинна половина ✅ DONE** (`CathodeFlange.cs` + `Radome.cs` + capsule-end `Assembly.cs`; числа/верифи — `tools/cad` + HW.1). **MATE-Ø кількісно виміряно** (`02_02 §4.4`): radial −2.0 / bayonet-Z 6.42 / RF 8<12 мм; skirt Ø30 ↔ inboard Ø25 Δ-кандидати — bench-вибір. Тип кріплення байонет ✅ (HW.8.4). Канон `02_01 §5.2` / `01_04 §5.5` / `02_02 §4.4`.
 - [ ] 👤 KiCad PCB layout (HW.9) → PEEK radome dimensions
 - [ ] 👤 Визначити матеріал O-ring (EPDM vs FKM) для ксилемного середовища
@@ -439,23 +433,29 @@
 - [ ] 👤 Виміряти insertion loss + height variation на 5 зразках першої партії
 - [ ] 👤 Pre-fabrication: B2B stack height (±0.15 мм) уже врахований у HW.8.7 Z-stack RSS ✅; виміряти variation на 5 зразках 1-ї партії для підтвердження ±0.15
 
+#### HW.35 — Гілка-А навчальний breadboard-стенд (legacy 44 мВ LTC3108) (NEW 2026-07-03)
+- **P2** · 👤 · 🟡 · → [`02_04`](02_04_Legacy_Breadboard_Appendix)
+- **Стан:** BOM вивірений повний (4 острови: AA-дільник 44 мВ → LTC3108 + LPR6235 1:100 → CJMCU-2557 → storage cap → LoRa-E5 mini), закупівля і збірка НЕ зроблені. Продакшн-незалежний (LTC3108-каскад викинутий post-pivot — [`02_03 §1`](02_03_BQ25570_MPPT_Nano_Power)); цінність = навчальний bring-up harvester-ланцюга + жива платформа для HW.7-перевірки резисторів. Канон стенда [`02_04`](02_04_Legacy_Breadboard_Appendix).
+- [ ] 👤 замовити BOM (storage-кап: 1000µF/25V алюміній + 1000µF/6.3V полімер — обидва варіанти)
+- [ ] 👤 зібрати інкрементально по островах 1→4 (мультиметр на кожному; антена 868 МГц ПЕРЕД живленням Острова 4)
+- [ ] 👤 зняти bring-up відео стенда для грантів (ex-E.3)
+
 #### HW.11 — Conformal Coating (Parylene C; Sylgard rejected — TinyML acoustic)
 - **P2** · 👤 · 🟡 · → `02_01`, `02_02 §3.4`
 - **Стан:** Рішення зафіксовано — **Parylene C 10 µm (CVD)** для серії + acrylic Humiseal 1A33 для прототипів; повний Sylgard-184 potting відхилено (акустичний демпфер 15–25 dB @ 16 kHz глушить TinyML-п'єзо). Acoustically transparent + IP67 з O-ring. Лишається вибір coating + verify. Канон `02_02 §3.4` (+ BOM `02_01 §3`).
-- [ ] 👤 Обрати coating: Parylene C (production) + Humiseal 1A33 (prototypes)
 - [ ] 👤 Контакт з CVD-сервісом Parylene-deposition (Київ / Львів — пошукати спеціалізовані PCB-house)
 - [ ] 👤 Верифікувати п'єзо-attenuation: тест 16 kHz tone з/без coating на калібрувальному стенді
 - [ ] 👤 Верифікувати з кварцовим резонатором при -20°C / +60°C (Parylene Shore D ~50, м'якший за air-gap воду)
 
 #### HW.19 — VOC-діагностика деградації конденсатора (ADS1220 + TPS22860)
-- **P2** · 🤖+👤 · 🟡 · → `02_03 §12.4.2`
+- **P2** · 🤖+👤 · 🟢 · → `02_03 §12.4.2`
 - **Стан:** Концепт верифіковано (DCI-safe) — добова VOC EBFC розрізняє «дерево хворіє» vs «конденсатор деградує» (обидва ростять delta_t); корекція живе на **slashing-шарі** (`ContractHealthCheckService`), НЕ в Z-математиці (інакше server-Z≠device-Z → fraud-flag щопакета). Реалізація gated на firmware VOC-вимір + delivery-контракт. TRL 8+. Канон `02_03 §12.4.2`.
 - [ ] 🤖 Валідувати концепт на вбудованому 12-біт ADC (firmware: GPIO disconnect EDLC → measure VOC → reconnect)
 - [ ] 👤 Якщо 12-біт недостатньо — додати ADS1220 + TPS22860 до BOM
 - [ ] 🤖 Backend (gated): `voc_mv` колонка + VOC-корекція у `ContractHealthCheckService` (виключити hardware-confounded дерева зі slashing-підрахунку), **НЕ в `Attractor`**. Чекає firmware VOC-вимір + delivery-контракт.
 
 #### HW.20 — Buffer Cap: Tantalum → MLCC migration
-- **P2** · 👤 · 🟡 · → `02_03 §6`
+- **P2** · 👤 · 🟢 · → `02_03 §6`
 - **Стан:** Рішення зафіксовано — MLCC замість тантала (виток 1–10µA вбивав би sleep-бюджет 1.5µA); фінал = **25V X7R 1210** (НЕ 6.3V X5R: DC bias −75…85% при 6.3V знищує ємність), 47µF для +14 dBm Сценарію C (BOM поз.9 `02_01`). Канон `02_03 §6` (§6.1 derating).
 - [ ] 👤 внести фінальний part у KiCad BOM (HW.9)
 
@@ -473,7 +473,7 @@
 > Брама (Queen): стільниковий/Starlink uplink, BMS, термал IP67, антена — канон [`02_05`](02_05_Queen_Hardware_and_Starlink). The Veins-рівень стека (огляд — §01a).
 
 #### HW.31 — Queen Antenna Split (868 LoRa tuned ≠ dual-band)
-- **P0** · 👤 · 🟡 · → `02_05 §7`
+- **P0** · 👤 · 🟢 · → `02_05 §7`
 - **Стан:** Рознесено в каноні — поз.11 wideband LTE-M/NB-IoT (700–2700 МГц, Kyivstar B1/B3/B7/B8/B20, опц. LTE+GNSS) · поз.12 LoRa 868 **tuned** 5 dBi fiberglass omni (OD8-868/ALL.4101); окремі RF-порти SX1262 vs SIM7070G, dual-band SMA відхилено (VSWR>2.5 @868 → −3-5 дБ EIRP). Канон `02_05 §7`.
 - [ ] 👤 freeze поз.11/12 у BOM Королеви при 02_05 BOM freeze
 
@@ -501,7 +501,7 @@
 - [ ] 👤 Реалізувати hardware charge protection при T < 0°C
 
 #### HW.18 — Starlink DTC: ESP32-S3 vs SIM8200G-M2 WiFi co-processor
-- **P2** · 🤖+👤 · 🟡 · → `02_05 §Starlink DTC vs Mini`
+- **P2** · 🤖+👤 · 🟢 · → `02_05 §Starlink DTC vs Mini`
 - **Стан:** Decision memo зроблено — рекомендація **ESP32-S3** (~$3, near-zero sleep) над SIM8200G-M2 (5G марнується в лісі, ~20× дорожчий) для WiFi-мосту STM32→Starlink Mini (Phase 3 only). Лишається confirm + 03_02 firmware-контракт + co-proc прошивка. Канон `02_05 §Starlink DTC` (memo HW.18).
 - [ ] 👤 Підтвердити рішення (рекоменд. ESP32-S3)
 - [ ] 🤖 Оновити 03_02 з рішенням
