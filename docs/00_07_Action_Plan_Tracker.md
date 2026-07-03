@@ -428,7 +428,7 @@
 
 #### HW.29 — Board-to-Board Connector pair: Power Deck ↔ RF Deck (NEW 2026-05-16)
 - **P1** · 👤 · ⚪ · → `02_01 §3.1`, `§5.3`
-- **Стан:** Не розпочато — B2B-конектор Power Deck ↔ RF Deck (Samtec FTSH header + CLT socket, 1.27мм pitch SMD, 8–10мм stack, ~$0.85/пара): без нього RF Deck не отримує 3V3 (Pogo зайняті VIN_DC+GND). Альтернатива — rigid-flex (~+$1.50, усуває механічну точку відмови). Канон `02_01 §5.3` (+ BOM поз.12 §3.1).
+- **Стан:** ✅ **Конектор обрано (founder 2026-07-03): Samtec FTSH header + CLT socket** (1.27мм pitch SMD, 8–10мм stack, ~$0.85/пара) — без нього RF Deck не отримує 3V3 (Pogo зайняті VIN_DC+GND). Rigid-flex (~+$1.50) **deferred**: механічна точка відмови B2B прийнятна при TRL-3, перегляд лише якщо польова надійність вимагатиме. Лишається KiCad placement (HW.9) + фіз-вимір. Канон `02_01 §5.3` (+ BOM поз.12 §3.1).
 - [ ] 👤 KiCad: place B2B footprints на обидві деки + перевірка signal integrity для 6-8 сигналів (3V3, GND, VSTOR_sense, EBFC_sense, piezo_EXTI, BQ25570 EN)
 - [ ] 👤 Виміряти insertion loss + height variation на 5 зразках першої партії
 - [ ] 👤 Pre-fabrication: B2B stack height (±0.15 мм) уже врахований у HW.8.7 Z-stack RSS ✅; виміряти variation на 5 зразках 1-ї партії для підтвердження ±0.15
@@ -461,7 +461,7 @@
 
 #### HW.30 — SMD Piezo + Acoustic Pad (Zero-Touch Wake) (NEW 2026-05-16)
 - **P2** · 👤 · ⚪ · → `02_01 §6`
-- **Стан:** Не розпочато — SMD-piezo (Murata 7BB-15-6L0 / TDK / Mallory) на нижній стороні Power Deck + Bergquist Sil-Pad 1500ST acoustic coupling до Ti Zone 3 → сигнал через B2B (HW.29) → BAT54S → EXTI; усе SMD (стара клеєна ∅27мм через-отв. з дротами порушувала Zero-Touch §5.2). **🔑 Sil-Pad = 3-тя пружина Z-stack** (∥ pogo на спільному Power↔Zone3 gap, 30-40% compression + 20-р creep, HW.8.7 / `02_02 §3.5`) — compression-вікно freeze разом із Z-stack. Канон `02_01 §6` (+ BOM поз.5 §3.1).
+- **Стан:** Не розпочато — SMD-piezo (живі кандидати `02_01 §6`: **Mallory AST1240/AST1109** 4.0–4.1 кГц активні + **Murata PKMCS0909E4000-R1** 4.0 кГц ⚠️LTB-2027; мертві 7BB-obsolete-THT-6кГц + TDK-SMD-неіснує викинуто канон-фіксом 07-03; вибір = bench receive-V, фаворит Mallory-AST) на нижній стороні Power Deck + Bergquist Sil-Pad 1500ST acoustic coupling до Ti Zone 3 → сигнал через B2B (HW.29) → BAT54S → EXTI; усе SMD (стара клеєна ∅27мм через-отв. з дротами порушувала Zero-Touch §5.2). **🔑 Sil-Pad = 3-тя пружина Z-stack** (∥ pogo на спільному Power↔Zone3 gap, 30-40% compression + 20-р creep, HW.8.7 / `02_02 §3.5`) — compression-вікно freeze разом із Z-stack. Канон `02_01 §6` (+ BOM поз.5 §3.1).
 - [ ] 👤 Вибрати SMD-piezo з 3 кандидатів (Murata/TDK/Mallory), компроміс sensitivity vs пасивний voltage swing на резонансі ~4 кГц
 - [ ] 👤 Acoustic coupling test: SMD-piezo + Sil-Pad + Ti-coin → подаючи 16 кГц tone через анкер → виміряти voltage spike на p'єзо vs стара ∅27 мм через-отв. архітектура
 - [ ] 👤 Verify EXTI wake-on-vibration latency vs стара через-отв. baseline (target < 5 мс)
@@ -480,8 +480,8 @@
 #### HW.15 — BMS + VBAT decoupling для SIM7070G
 - **P1** · 👤 · 🟡 · → `02_05 §Пікові струми SIM7070G`, `§2.2.1`
 - **Стан:** Module-level fix зафіксовано — 5-cap VBAT tank bank проти 2A-burst brownout (просадка <20mV, margin >35×; BOM поз.17–20). PSM/eDRX ✅ shipped (init-тракт Queen `main.c` [HW.10]; дім AT-граматики — [`03_02 §4`](03_02_Queen_Gateway_Firmware); live-звірка таймінгів — RUNBOOK §5.2, разом з FW.3). Лишається system-level: BMS/MPPT моделі в BOM + bench-звірка маркування SIM7070G. Канон `02_05 §2.2.1` (+ §Пікові струми).
-- [ ] 👤 Обрати BMS: мінімум 12V / 20A continuous / 50A peak
-- [ ] 👤 Обрати MPPT: мінімум Victron SmartSolar MPPT 75/15
+- [ ] 👤 Обрати BMS: мінімум 12V / 20A continuous / 50A peak — рекоменд. **JBD/Jiabaida-клас** (найменші SKU 60-120A перекривають вимогу; відкритий протокол `esphome-jbd-bms` = телеметрія); self-drain верифікувати при закупівлі за per-SKU datasheet
+- [ ] 👤 Обрати MPPT: **Victron SmartSolar 75/15** (research-підтверджено 2026-07-03 по всіх осях: LiFePO4-пресет, LVD, VE.Direct, quiescent 20мА, −30…+60°C з дератингом >40°C; альт. EPEVER Tracer-AN / Renogy Rover-Li, дешевші, але quiescent/temp неверифіковані)
 - [ ] 👤 PCB layout: розмістити C_BULK ≤ 10 мм від VBAT pin, HF caps впритул
 - [ ] 👤 Оновити BOM (закупка 5 нових компонентів)
 - [ ] 👤 Bench: фізично звірити маркування модему на прототипі = **SIM7070G** (не SIM7000G; найменування у firmware/BOM/`02_05` вже уніфіковано — лишилась лише фізична звірка)
@@ -500,11 +500,9 @@
 - [ ] 👤 Реалізувати hardware charge protection при T < 0°C
 
 #### HW.18 — Starlink DTC: ESP32-S3 vs SIM8200G-M2 WiFi co-processor
-- **P2** · 🤖+👤 · 🟢 · → `02_05 §Starlink DTC vs Mini`
-- **Стан:** Decision memo зроблено — рекомендація **ESP32-S3** (~$3, near-zero sleep) над SIM8200G-M2 (5G марнується в лісі, ~20× дорожчий) для WiFi-мосту STM32→Starlink Mini (Phase 3 only). Лишається confirm + 03_02 firmware-контракт + co-proc прошивка. Канон `02_05 §Starlink DTC` (memo HW.18).
-- [ ] 👤 Підтвердити рішення (рекоменд. ESP32-S3)
-- [ ] 🤖 Оновити 03_02 з рішенням
-- [ ] 🔗 Додати co-processor firmware до `firmware/`
+- **P2** · 🤖+👤 · 🔗 · → `02_05 §Starlink DTC vs Mini`
+- **Стан:** ✅ **Рішення підтверджено (founder 2026-07-03): ESP32-S3** для WiFi-мосту STM32→Starlink Mini (~$3, near-zero sleep; SIM8200G-M2 відхилено — 5G марнується в лісі, ~20× дорожчий). Phase 3 only (Starlink Mini). 03_02 firmware-контракт + co-proc прошивка = Phase-3-gated (co-proc ще не будується — порожній контракт зараз = premature). Канон `02_05 §Starlink DTC` (memo HW.18).
+- [ ] 🔗 Phase 3: co-processor firmware-контракт (STM32↔ESP32-S3 UART/SPI) у `03_02` + прошивка у `firmware/` — разом при Starlink-Mini bring-up
 
 ## §03a · Firmware
 
