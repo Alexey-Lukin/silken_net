@@ -799,37 +799,21 @@ Device Memory → Option Bytes → Read Out Protection → RDP: Level 1 (або 
 >
 > Тут (03_05) лишаються крипто-режими (§1–§2), джерело ключа при старті + RDP (§3.1–§3.3), SE050 (§3.7), ротація ключа (§3.8), генерація IV (§4) та аудит/PQC (§6–§10).
 
-### 3.5 Режим Транспортування — Shipping Mode (Геркон / Reed Switch)
+### 3.5 Режим Транспортування — Shipping Mode (✂️ не потрібен — SEC.4 RESOLVED 2026-07-03)
 
-**Проблема:** Між заводом та лісом Солдат лежить у коробці тижнями. Якщо він прокинеться від вібрації під час перевезення — марно витратить енергію іоністора (якого може не вистачити для першого TX).
+**Рішення [SEC.4]:** shipping-mode-компонента у BOM Солдата **немає** — питання «чи потрібен взагалі» (воно передувало вибору pull-tab vs геркон) вирішено фізикою проти компонента:
 
-**Рішення — Shipping Mode на основі геркону (магнітного датчика):**
+1. **У коробці нема джерела** (zero-grid EBFC) — захищати можна лише factory-заряд supercap.
+2. **Factory-заряд не переживає логістику незалежно від вимикача:** власний витік EDLC 1–2 µА ([`02_03 §12.1`](02_03_BQ25570_MPPT_Nano_Power)) з'їдає робоче вікно 5.5→3.4 В (≈1 Кл) за ~6–8 діб; вимикач відрізає лише MCU-споживання того самого порядку → максимум подвоює вікно. Преміса «лежить у коробці тижнями» мертва обабіч вимикача.
+3. **Cold-start з 0 В — штатний дизайн-шлях, не аварія:** EBFC ≥500 мВ > 330 мВ порогу BQ25570 ([`02_03 §1`](02_03_BQ25570_MPPT_Nano_Power)); ризик R_int-осциляції має власну драбину мітигацій (HW.13, [`02_03 §1.5`](02_03_BQ25570_MPPT_Nano_Power)), якої shipping-mode не торкається.
+4. Стара преміса «прокинеться від вібрації у коробці» — stale: wake-джерело = RTC WUT + Vcap-енергогейт ([`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)), вібраційного wake не існує.
+5. **Ціна для 20–25-річного вузла ненульова:** зайвий послідовний елемент power-path; pull-tab до того ж проколює герметизацію (potting — [`02_02 §3.4`](02_02_Blind_Mate_Pogo_Pin_Interface)).
 
-```
-[Коробка]  Магніт прикріплений до корпусу → STM32 фізично відключений від живлення
-                         ↓
-[Монтажник у лісі]  Забиває анкер → Сканує QR-код → Знімає магніт
-                         ↓
-[Перший вдих] Солдат стартує main.c → реєструється на сервері → ліс "прокидається"
-```
+**«Перший вдих» (наратив/UX)** живе краще без транспорт-компонента: якщо pilot захоче same-day перший TX — підзарядка в день інсталяції через наявний pogo-інтерфейс ([`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface)): інструмент монтажника подає «сильне дерево» на штатні піни, BQ25570 сам заряджає VSTOR за хвилини. Нуль BOM, працює за будь-якої тривалості логістики.
 
-**Апаратна реалізація:**
-- Компонент: **геркон (reed switch)** — копійчаний магнітний датчик (нормально-розімкнений або нормально-замкнений)
-- Підключення: між лінією живлення (`VBAT`) та MCU через P-MOSFET або між GND та `ENABLE` піном DC-DC конвертора
-- Логіка: поки магніт **притиснутий** → ланцюг розімкнений → живлення відсутнє → нульове споживання
-- Зрив магніту → контакти замикаються → MCU отримує живлення → `main()` стартує
+**Decision-record (на випадок reopen):** дефолтом був би **pull-tab** (one-shot, не спуфиться магнітом, дешевший); геркон (Hamlin 59140-1-T-00-A + N52 ∅6×3 мм) — **лише** з latching first-boot: геркон гейтить тільки перший boot, далі софт латчить power-on (set-and-hold GPIO/load-switch) і ігнорує геркон, інакше **magnet-DoS** — зловмисник сильним магнітом глушить security-сенсор (реальний вектор проти anti-illegal-logging вузла). Latching-патерн «one-shot arm замість continuous power-cut» — reusable інсайт для будь-якого магнітного інтерфейсу на security-пристрої.
 
-**Переваги:**
-- Нульове споживання під час транспортування (фізичний розрив кола)
-- Простота: 1 компонент, ~$0.05/шт, без програмного коду
-- Маркетингова цінність: "The node takes its first breath the moment the anchor enters the tree"
-
-**⚠️ Ризик і дизайн-вимога [SEC.4]:**
-- **Magnet-DoS на security-сенсорі:** геркон, що **безперервно** розриває живлення, можна повторно тригернути в полі — зловмисник (напр. лісоруб) із сильним магнітом вимикає сусідній вузол. Для анти-illegal-logging сенсора це реальний вектор глушіння.
-- **Фікс — latching first-boot:** геркон гейтить лише **перший** boot; далі софт латчить power-on (set-and-hold через GPIO/load-switch) і **ігнорує** подальший стан геркону → польовий магніт уже не вимкне вузол. Переносить shipping-mode з «continuous power-cut» у «one-shot arm».
-- **Спершу — чи потрібен shipping-mode взагалі (це питання передує вибору pull-tab vs геркон):** Солдат живиться від EBFC дерева — у коробці дерева нема, отже й живлення нема. Єдина цінність будь-якого shipping-mode = зберегти factory-заряд supercap до інсталяції (швидший first-breath). Це **anchor-TRL-gated**: поки час cold-start EBFC не виміряний (anchor TRL-3), невідомо, чи економія варта компонента → shipping-mode цілком Ruthless-Prune-кандидат. **Якщо потрібен** — дефолт **pull-tab** (security: не спуфиться магнітом, дешевший, one-shot за природою → домінує над герконом); геркон лише з latching first-boot і якщо потрібен «перший вдих»-наратив. Рішення при BOM-freeze.
-
-**BOM Солдата (лише якщо shipping-mode потрібен — див. вище):** дефолт **pull-tab** (механічний/друкований, без партномера, не спуфиться). Геркон Hamlin 59140-1-T-00-A + N52 ∅6×3 мм — **лише** якщо свідомо обрано «перший вдих»-наратив із latching first-boot (анти-magnet-DoS).
+**Reopen-умови (усі одночасно):** bench показує патологічний EBFC cold-start (R_int > 12 кΩ без мітигацій HW.13) × логістика ≤ тижня (заряд частково доживає) × pilot вимагає same-day TX — і навіть тоді перший кандидат = pogo-підзарядка вище, не транспорт-вимикач.
 
 ---
 
@@ -1078,7 +1062,7 @@ atca_status_t status = atcab_aes_encrypt(
   5. STM32 → ATECC608B: write Slot 0 (AES), Slot 1 (ECC), Slot 2 (cert)
   6. STM32 → ATECC608B: LOCK config zone + data zone (irreversible на ASIC рівні)
   7. STM32CubeProgrammer → RDP Level 1 (на самому MCU)
-  8. Final: пакування, shipping mode, лак
+  8. Final: пакування, лак (shipping-mode ✂️ не потрібен — §3.5)
 ```
 
 **Подвійний lock (defense in depth):**
@@ -1326,7 +1310,7 @@ HAL_CRYP_Init(&hcryp);
 | **CoAP batch origin + integrity** | 🟡 **L1 QATT shipped** (2026-06-07) | Ed25519 batch-підпис Королеви (§2.2): закриває CBC-malleability/injection + anti-replay у nonce-вікні; legacy L0 без підпису ще приймається (fleet-перехід); 👤 bench: EDSK на кремнії. Ladder → [`05_02`](05_02_Proof_of_Growth_Pipeline) |
 | **RDP Protection** | 🟡 OPEN | Level 0 (розробка). Level 1/2 — фінальний крок Factory Flashing (розділ 3.3). Pre-flight checklist та незворотна процедура задокументовані у §3.6 🤖 |
 | **Factory Flashing Pipeline** | 🟡 PARTIAL (SEC.3) | ✅ Архітектура (03_06 §1) + HKDF (03_06 §2) + Operations Security threat model + tool implementation + master-key DI + one-pass UID→DID (FW.54: `TreeResolver` + wrong-board guard) (03_06 §5 — `app/services/factory_flashing/*`, `lib/tasks/factory.rake`, RSpec-покрито, dry-run default). Residuals → [`00_07`](00_07_Action_Plan_Tracker) SEC.3 (bench SWD + `-r32`-формат · Bitwarden live · ATCA I²C) |
-| **Shipping Mode (Геркон)** | 🟡 OPEN | Концепт визначено (розділ 3.5); компонент не доданий до BOM |
+| **Shipping Mode (Геркон)** | ✂️ PRUNED | Не потрібен (SEC.4 RESOLVED 2026-07-03) — фізика проти компонента; decision-record + reopen-умови → розділ 3.5 |
 | **Secure Element (SE050)** | ✅ SEC.6 RESOLVED (true-DePIN) | §3.7 ADR — SE = **SE050** (Ed25519 on-chip keygen; реверс ATECC), soft-freeze DNP, populate post-FW.2; slot-map §3.7. Residuals → [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker) |
 | **Key Rotation** | 🟡 host-готово | Hash-Ratchet freeze-contract §3.8 (backward secrecy, ключ не летить ефіром); активація CCM-gated — `[FW.17]` |
 | **HRNG Fallback** | ✅ Harden (2026-05-29) | `coap_fallback_iv_word` (pure, `coap_iv.h`) — унікальність across device/reboot/flush; §4.2 |

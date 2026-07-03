@@ -65,7 +65,7 @@
      → активація WRPROT на key sector + seed sector + role sector
 
   4. Пакування
-     Нанести лак → Встановити магніт Shipping Mode → Пакет → Ліс
+     Нанести лак → Пакет → Ліс (shipping-mode ✂️ не потрібен — 03_05 §3.5)
 ```
 
 ### Гілка B — ATECC608B / STSAFE-A110 Secure Element (mass production > 10k, SEC.6)
@@ -107,7 +107,7 @@
      → SWD заблоковано → firmware не змінити
 
   7. Пакування (як у Гілці A):
-     Лак → Shipping Mode магніт → Box → Field
+     Лак → Box → Field (shipping-mode ✂️ не потрібен — 03_05 §3.5)
 ```
 
 **Подвійний lock (defense in depth, тільки Гілка B):**

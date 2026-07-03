@@ -666,11 +666,6 @@
 - [ ] 🔗 L2 design-gap — **підхід вирішено** (Фаза 0, deep-audit 2026-06-28), реалізація post-anchor-TRL: тижневий device-Merkle-корінь підписується ПІСЛЯ intra-week мінтингу (Queen-relay L1) → **ex-post reconcile + clawback** (device-root vs намінтоване; mismatch = positive-A tamper → наявний `slash()`); pre-mint двофазний = North-Star (energy-gated). Дім політики [`05_05 §3.3`](05_05_Slashing_and_Risk_Policy); механізм Merkle = ARCH.12 / E.60
 - Cross-ref: SEC.6, SEC.14, ARCH.42, ARCH.43 (mesh-вісь; uplink-ізоляція ✅ FW.2 (в) двоключова — SE-era: session KEYL → Slot 0, cluster KEYB лишається у Flash як K_ota), E.60 (Merkle), FW.2, FW.23, ARCH.33 (firmware-Ed25519 feasibility), STK.4 (ЗВТ), BIZ.13 (operator-bond).
 
-#### SEC.4 — Reed Switch shipping mode (not in BOM)
-- **P2** · 👤 · 🟢 · → [`03_05 §3.5`](03_05_Hardware_Symmetric_Crypto_and_Security)
-- **Стан:** Дизайн + рекомендація канонізовані (BOM не заморожено). Питання «чи потрібен shipping-mode взагалі» (self-powered, anchor-TRL-gated → Ruthless-Prune-кандидат) передує вибору компонента; якщо потрібен — pull-tab дефолт (геркон = magnet-DoS на security-сенсорі без latching first-boot). Канон [`03_05 §3.5`](03_05_Hardware_Symmetric_Crypto_and_Security).
-- [ ] 👤 BOM-freeze (§3.5): спершу чи потрібен shipping-mode (anchor-TRL); якщо так — **pull-tab дефолт** (нема magnet-DoS, дешевший, one-shot → домінує над герконом) + KiCad; геркон Hamlin+N52 лише з latching first-boot + «перший вдих»-наратив ([`03_05 §3.5`](03_05_Hardware_Symmetric_Crypto_and_Security))
-
 #### SEC.14 — SE role-split re-examination — per-packet AES vs provisioning-only (ARCH.42 honesty)
 - **P2** · 👤 · 🟢 · → [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)
 - **Стан:** re-examine done — чесний trade-off канонізовано. Справжня вісь = tamper-resistance LoRa session-ключа ⟷ latency/ідіоматичність (НЕ енергія — мала з обох боків; окрема знахідка-інверсія: always-on SE sleep 150нА ≈ 3.6 мДж/год > запас Сценарію C → SE обовʼязково за load-switch гейтом). **Рекомендація: provisioning-only дефолт** (built-in radio-AES ідіоматичний для inline-LoRa; datasheet-verify 2026-07-02: **SE050 без CCM/GCM on-chip** → FW.2-CCM per-packet = композиція APDU, підсилення вже апаратне, не смакове; per-device HKDF → злам 1 вузла ≠ мережа); per-packet SE — лише urban/high-value threat-model (там дивитись SE051). Канон [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security).
@@ -1293,6 +1288,7 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 |----|-------|-------|
 | ARCH.42 | AES-128 LoRa — DECIDED (Variant B); SE-частина ATECC→**SE050** (true-DePIN — SE050-MIGRATION) | `03_05 §3.7` |
 | SEC.6 | SE = **SE050** — ✅ RESOLVED 2026-06-07 (true-DePIN: голос дерева потребує non-extractable Ed25519 → SE050, не ATECC; soft-freeze DNP, populate post-FW.2). Деталі + усі residuals → SE050-MIGRATION | `03_05 §3.7`, §3.4 |
+| SEC.4 | Shipping-mode — ✂️ RESOLVED «не потрібен» 2026-07-03 (Ruthless-Prune): factory-заряд не переживає логістику незалежно від вимикача (власний витік EDLC), cold-start з 0 В = дизайн-шлях BQ25570, вібраційного wake не існує; «перший вдих»-UX → pogo-підзарядка в день інсталяції; decision-record (pull-tab > геркон, magnet-DoS → latching first-boot) + reopen-умови збережені в каноні | `03_05 §3.5` |
 | SEC.10 | Emergency-TX anti-replay frame counter (DR0 packing) | `03_02`, `03_01 §2` |
 | SEC.11 | Lorenz Seed Provenance (DCI hardening, K_seed HKDF) | `03_04`, `03_06 §2`, `04_02`, `05_02` |
 | SEC.7 | OTA image authentication — **дубль FW.23** (HMAC-SHA256 dual-gate: `OtaHmacKeyService` + `OtaPackagerService` 0x9B trailer + Queen relay + Soldier dual-gate, live-compute ✅ зашито 2026-06-11). Residuals (bench K_ota Protected Flash; ECDSA P-256 post-TRL7 migration path) тримає FW.23 — One-Home | `03_06 §4` (= FW.23) |
