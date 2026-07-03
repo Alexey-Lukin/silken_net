@@ -371,6 +371,7 @@
 - **Стан:** BOM вивірений повний (4 острови: AA-дільник 44 мВ → LTC3108 + LPR6235 1:100 → CJMCU-2557 → storage cap → LoRa-E5 mini), закупівля і збірка НЕ зроблені. Продакшн-незалежний (LTC3108-каскад викинутий post-pivot — [`02_03 §1`](02_03_BQ25570_MPPT_Nano_Power)); цінність = навчальний bring-up harvester-ланцюга + жива платформа для HW.7-перевірки резисторів. Канон стенда [`02_04`](02_04_Legacy_Breadboard_Appendix).
 - [ ] 👤 замовити BOM (storage-кап: 1000µF/25V алюміній + 1000µF/6.3V полімер — обидва варіанти)
 - [ ] 👤 зібрати інкрементально по островах 1→4 (мультиметр на кожному; антена 868 МГц ПЕРЕД живленням Острова 4)
+- [ ] 👤 зняти bring-up відео стенда для грантів (ex-E.3)
 
 #### HW.8 — Pogo pin specification (sub-blockers 8.1–8.9)
 - **P1** · 🤖+👤 · 🟡 · → `02_02`
@@ -704,8 +705,8 @@
 
 #### ARCH.31 — SOP-в-Phlex inline UI для EwsAlert
 - **P2** · 🤖+👤 · 🔗 · → `04_02`, `08_02 §3`
-- **Стан:** 8 SOP-runbook'ів (drought/epidemic/vandalism/fire/seismic/fault/entropy/**field_audit** [INS.1]) як inline-інструкції при кліку на EwsAlert у дашборді — forester отримує немедіане runbook замість пошуку в документах. 🔗 на E.54 (самі SOP-документи UA+EN, joint ChIPB-NUTSU UNI.12). Канон `04_02` (EwsAlert/EWS), `08_02 §3` (SOP-джерело). SOP-compliance = зворотний бік Кат-A negligence-evidence (no-firebreak-after-alert = недотримання fire-SOP — SLASH-1/BIZ.13 міряють саме його відсутність).
-- [ ] 🔗 E.54 — 7 SOP-документів (UNI.12)
+- **Стан:** 8 SOP-runbook'ів (drought/epidemic/vandalism/fire/seismic/fault/entropy/**field_audit** [INS.1]) як inline-інструкції при кліку на EwsAlert у дашборді — forester отримує немедіане runbook замість пошуку в документах. 🔗 на UNI.12 (самі SOP-документи UA+EN — joint ChIPB-NUTSU; ex-E.54). Канон `04_02` (EwsAlert/EWS), `08_02 §3` (SOP-джерело). SOP-compliance = зворотний бік Кат-A negligence-evidence (no-firebreak-after-alert = недотримання fire-SOP — SLASH-1/BIZ.13 міряють саме його відсутність).
+- [ ] 🔗 UNI.12 — SOP-документи (8 alert-типів × UA+EN)
 - [ ] 🤖 Phlex inline-SOP компонент на EwsAlert dashboard
 
 #### I18N.1 — alert_type i18n локалізація (усі типи × 4 мови)
@@ -1108,7 +1109,7 @@
 #### UNI.10 — ChDTU Гончаров (ФЕТР): RF верифікація + EMC pre-compliance
 - **P1** · 👤 · ⚪ · → `08_02 §2`
 - **Стан:** Не почато — А.А. Гончаров (ФЕТР): VNA + анехоїчна камера для (a) SMD-антена під PEEK (HW.17), (b) Link Budget у лісі (SF7-9, 50-250м), (c) EMC pre-compliance CE/FCC (E.11). Канон `08_02 §2`.
-- [ ] 👤 зустріч + RF-лаб access + VNA-вимір PEEK-кришки (1.5/2.0/2.5мм) + Link Budget field test
+- [ ] 👤 зустріч + RF-лаб access + VNA-вимір PEEK-кришки (1.5/2.0/2.5 мм; ціль VSWR <1.5 @ 868 МГц, сухий/вологий стан + 3D Keep-Out з Ti-фланцем: Z-clearance 5/8/12 мм, з/без overhang — ex-E.53, вимога [`02_01 §5.3`](02_01_Hardware_Architecture_and_BOM)) + Link Budget field test
 - [ ] 🔗 залежить HW.9 + HW.17
 
 #### UNI.12 — ChIPB-NUTSU: пожежна безпека + параметричне страхування
@@ -1242,13 +1243,10 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 
 | ID | Опис | Джерело | Note / Milestone |
 |----|------|---------|------------------|
-| E.53 | **VNA-вимір SMD-антени під PEEK радомом** — VSWR <1.5 на 868 МГц для 3-5 варіантів товщини PEEK (1.5/2.0/2.5 мм) у вологому/сухому стані + **3D Keep-Out з Ti-фланцем нижче** (Z-clearance 5/8/12 мм, з/без overhang за периметр Ti). Лабораторна задача (cross-ref UNI.10 ChDTU Гончаров, нова вимога `02_01 §5.3` revised) | `08_02` §2 (Гончаров) + `02_01` | P1, blocked by HW.17 + UNI.10 |
-| E.54 | **SOP документи для 8 типів EwsAlert** — стандартизовані інструкції UA+EN: severe_drought, insect_epidemic, vandalism_breach, fire_detected, seismic_anomaly, system_fault, entropy_anomaly, field_audit ([INS.1]). Інтеграція як inline UI у Phlex (cross-ref ARCH.31) | `08_02 §3` | P1, joint with ChIPB-NUTSU (UNI.12) |
 | E.19 | 8 магістерських — blocked by TRL 4 advancement | `08_03` | Post-TRL 4 |
 | E.26 | `health_trend` field для TelemetryLog — predictive degradation | Legacy | Post-TRL 6, потребує E.10 (Kalman) |
-| E.34 | dClimate fallback → ForestBountyService (drone/ranger PoPhW) | `04_02` | Post-TRL 6 |
 | E.51 | **Monte Carlo TTL-flood симуляція** для обґрунтування `PANIC_TTL=5` та `DEFAULT_TTL=3`: цільовий P_delivery ≥ 0.99 при 20-30% одночасних відмов вузлів. Виходи: math-обґрунтування для seed deck | `08_02` §1B (Порубльов) | Post-TRL 6 (Порубльов, ЧНУ) |
-| ARCH.8 | Event-Triggered Reporting: heartbeat 1/day normal, continuous on anomaly | `00_01` | Post-TRL 6 |
+| ARCH.8 | **Event-Triggered Reporting** («тиша = здоров'я»): heartbeat 1/добу в нормі + continuous streaming на аномалії (~24× трафік-економія). Подієвий негайний panic-TX вже існує (chainsaw → `PANIC_TTL=5`, `03_01`) — ARCH.8 = систематична cadence-політика зверху; передумови ділить з ARCH.22 (рідкий Z послаблює DCI → challenge-sampling) + cadence чіпає `delta_t`→`m(delta_t)` GP-економіку (E.63) | [`00_08 §2.3`](00_08_Beyond_TRL9_Planetary_Roadmap) + `02_03` (зимовий режим) | Post-TRL 6 |
 | ARCH.29 | **RTOS Deadlock-Free верифікація через Petri Nets** — формальна PN-модель firmware tasks (Sensing/Compute/TX/OTA/WDT) на Soldier + reachability graph аналіз для доведення відсутності circular wait. Відрізняється від ARCH.20 (Petri Net Rails моноліт) тим що моделює embedded RTOS scheduling | `08_02` §1B (Ярмілко) | Post-TRL 6 (R&D — Ярмілко, ЧНУ) |
 | E.30 | InsightGenerator: кліматичні базлайни per region | `04_02` | Post-TRL 7 |
 | E.50 | **Edge fuzzy_distance dedup function** на STM32WLE5JC: <1 мс CPU, <128 байт RAM, ціль — 30-40% TX зниження за рахунок suppression near-duplicate пакетів | `08_02` §1B (Ярмілко) | Post-TRL 7 (R&D — Ярмілко) |
@@ -1272,7 +1270,6 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 | ARCH.10 | Queen-to-Queen Backhaul Mesh: LoRa SF12 inter-Queen relay (Starlink fallback) | `00_01` | Post-TRL 8 |
 | ARCH.17 | Bonding Curves для dynamic SCC pricing | `05_03` | TRL 9+ |
 | ARCH.44 | **GaiaNexus multi-net vision page** (BIZ.16 level-3, founder-deferred) — опційний повний vision/manifesto планетарної федерації (Cryo/Abyssal/Litho/Myco + ноосферна економіка). Тонка far-horizon рамка вже є ([`00_08 §3`](00_08_Beyond_TRL9_Planetary_Roadmap)); повний 17-net каталог лишається в нотатках founder'а (no-premature-canon). Будувати лише на founder go | `00_08 §3`, `08_01 §2` | Post-TRL 9 (vision; founder-gated) |
-| E.3 | Breadboard video відсутнє (для грантів) | `07_03` | Зняти відео |
 | E.9 | DMA SPI optimization — зменшення енергоспоживання (Vector 1 — Ярмілко) | `08_02` | R&D partnership |
 | E.10 | Kalman/EMA filtering для delta_t noise suppression (±8% → ±1.2%) | `08_02` | R&D partnership |
 | E.12 | Boolean minimization TX decision conditions (Karnaugh/Quine-McCluskey) | `08_02` | Потребує Любченко |
@@ -1404,4 +1401,8 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 | DOC-T.28 | code→doc §-ref audit `scripts/code_doc_section_refs.rb` (app/spec/lib код-коментарі, report-only, 0 stale зараз) + 15-реф backlog виправлено → нові доми 04_02 §2/§11 (Outbox/Batch), 04_01 §7b (Codex moderation/lifecycle), 04_02 §10b (PairSelector), 03_02 §7 (Queen-Sentinel), 00_08 §1 (Beyond-TRL-9). Резолвер hardened: `heading_anchors` parent-aware літерні підсекції (Lat+Cyr → точний `§5.A`/`§4.А` резолвиться сам, без правки доку) + run-резолвер їсть `,;`+backtick → список перевіряє КОЖЕН член (`§2.9, §6`), не лише перший. NEW HARD canon-wide §-ref gate (`docs:check_refs` над усім каноном, не лише 00_07/protocols) — закрив `08_02 §1.x`-collapse / 05_03 line-number-as-section / `02_03 §4.А` Cyrillic-letter drift | `00_06 §3`, `lib/tracker/dashboard.rb` |
 | DOC-T.9 | LoRa TX energy у 02_03: стара «15mA/50ms» → datasheet-correct «118mA × 0.1s = 38.94 мДж» — **doc-drift вже виправлено** + «тривалості = оцінки-стелі, консервативно (завищені vs виміряних)»-caveat inline `02_03 §9.4` (§9.5–9.7 = нижня межа запасу). Живий залишок «лаб-вимір TX» = **НЕ doc-drift** (mis-placed у DOC-T) → bench-вимір active-cycle енергії канонічно у `firmware/scripts/bench/RUNBOOK.md §3.2` (`03_power_profile.py --mode cycle` → E.63). Resolved + redundant + 0 inbound → archived | `02_03 §9.4` (+ RUNBOOK §3.2) |
 | DOC-T.29 | doc→code volatile line-ref — **2 guard-сліпі діалекти** (path-form `source_line_ref_drift` бачив лише `*.c/.rb:N`): (1) Ruby-symbol `ClassName:NNN`, (2) укр-проза `(р.162)`/`(рядок 31)`. §06-аудит знайшов 18 `ClassName:NNN` (06_02/06_04) + prose (06_03 File Map + 07_01 `.sol`) — частина дуже stale (`BlockchainMintingService:107`→120, `(рядок 31)`→41, `slash()` рядок 148→155; частина випадково ще точна — мікс = доказ дрейфу). Sweep → symbol-only ref + `source_line_ref_drift` розширено (3-й/4-й діалект + `.sol`-ext; `Payload:16` wire-field НЕ FP; 02_04 breadboard «рядок 10» exempt) + 2 specs. Те саме лікування, що DOC-T.15/17 | `00_06 §3`, `lib/docs_linter.rb` |
+| E.34 | dClimate fallback → ForestBountyService: вісь жива як E.20 (+ E.41 fire-fallback), дизайн канонізовано («Інтеграція з dClimate Fallback (E.34)») — беклог-рядок був дублем | `04_02 §Forester Guild` |
+| E.3 | Breadboard-відео для грантів → злито чекбоксом у HW.35 (стенд Гілки-А) | [`02_04`](02_04_Legacy_Breadboard_Appendix) |
+| E.53 | state_root: `total_sfc` (сума confirmed SFC-мінтів) у формулі EthereumAnchor — migration applied; `[E.53]`-теги в `04_01`/`05_01`/`05_04` = ця робота. ID був помилково перевикористаний у беклозі під VNA-вимір антени → та вісь тепер чекбокс UNI.10 | [`05_04`](05_04_Ethereum_L1_State_Anchor) |
+| E.54 | state_root: `active_tree_count` (метрика покриття екосистеми) — migration applied; `[E.54]`-теги = ця робота. ID був помилково перевикористаний у беклозі під SOP-документи EwsAlert → та вісь тепер UNI.12 (контент) + ARCH.31 (inline UI) | [`05_04`](05_04_Ethereum_L1_State_Anchor) |
 
