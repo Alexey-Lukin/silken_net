@@ -15,12 +15,43 @@
 #     → runs FactoryFlashing::Session.run (dry-run by default,
 #       EXECUTE=1 spawns real subprocesses).
 namespace :factory do
-  desc "Create a Factory-Flashing session (status=pending). Args: device_uid, batch_id, gilka, operator_id, supervisor_id, firmware_version. Set ATECC_SERIAL=… for gilka=B."
+  desc "Create a Factory-Flashing session (status=pending). Args: device_uid (Tree = 24-hex silicon UID; Gateway = uid), batch_id, gilka, operator_id, supervisor_id, firmware_version. Tree-create: CLUSTER_ID + TREE_FAMILY_ID env. Set ATECC_SERIAL=… for gilka=B."
   task :flash, %i[device_uid batch_id gilka operator_id supervisor_id firmware_version] => :environment do |_t, args|
     abort "Usage: rake factory:flash[device_uid,batch_id,gilka,operator_id,supervisor_id,firmware_version]" if args.values_at(:device_uid, :batch_id, :gilka, :operator_id, :supervisor_id, :firmware_version).any?(&:blank?)
 
+    # [FW.54] Tree-провіженінг однопрохідний: у позиції device_uid — 24-hex
+    # кремнієвий UID (SWD-read: `STM32_Programmer_CLI -r32 0x1FFF7590 12`);
+    # DID деривується тут (murmur3-fmix32, 03_01 §7), Tree resolve'иться
+    # (create → CLUSTER_ID + TREE_FAMILY_ID env). Голий "SNET-" DID
+    # приймається лише для дерева, що ВЖЕ має кремнієвий паспорт (re-flash),
+    # та для Gateway (як досі).
+    identifier = args[:device_uid].to_s.strip.upcase
+    device_uid =
+      if SilkenNet::DidDerivation::UID_HEX_FORMAT.match?(identifier)
+        begin
+          tree = FactoryFlashing::TreeResolver.resolve!(
+            uid_hex:        identifier,
+            cluster_id:     ENV["CLUSTER_ID"],
+            tree_family_id: ENV["TREE_FAMILY_ID"]
+          )
+        rescue FactoryFlashing::TreeResolver::CollisionError,
+               FactoryFlashing::TreeResolver::MissingAttributesError,
+               ArgumentError => e
+          abort "⛔ #{e.message}"
+        end
+        puts "🌳 UID #{identifier} → DID #{tree.did}#{tree.previously_new_record? ? ' (Tree створено)' : ''}"
+        tree.did
+      else
+        tree = Tree.find_by(did: identifier)
+        if tree && tree.silicon_uid_hex.blank?
+          abort "⛔ Tree #{identifier} без кремнієвого паспорта: post-FW.54 кремній оголосить " \
+                "деривований DID, не цей. Передай 24-hex UID плати замість DID."
+        end
+        identifier
+      end
+
     session = ProvisioningSession.create!(
-      device_uid:       args[:device_uid],
+      device_uid:       device_uid,
       batch_id:         args[:batch_id],
       gilka:            args[:gilka],
       operator_id:      Integer(args[:operator_id]),

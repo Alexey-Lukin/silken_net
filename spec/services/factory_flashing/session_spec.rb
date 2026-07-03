@@ -114,6 +114,22 @@ RSpec.describe FactoryFlashing::Session do
     end
   end
 
+  # [FW.54] verify_silicon_uid! parse-fail: маємо що звіряти (паспорт є,
+  # live-режим), але read не розпарсився — відмова записом, не пишемо наосліп.
+  describe "wrong-board guard: UID-read не розпарсився" do
+    it "raises WrongBoardError (порожні results / stdout без адресного рядка)" do
+      passport_tree = create(:tree, silicon_uid_hex: "0039002F3138511538323634")
+      session = make_session(device_uid: passport_tree.did)
+      live_executor = instance_double(FactoryFlashing::Executor, dry_run?: false, results: [])
+      service = described_class.new(session: session, device: passport_tree,
+                                    executor: live_executor, master_key_source: master_key_source)
+
+      expect {
+        service.send(:verify_silicon_uid!)
+      }.to raise_error(described_class::WrongBoardError, /не розпарсився/)
+    end
+  end
+
   describe "failure recovery" do
     let!(:session) { make_session(gilka: "A") }
 

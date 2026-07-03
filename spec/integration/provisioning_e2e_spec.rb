@@ -81,8 +81,9 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
     end
 
     context "when device_type is tree" do
-      let(:hardware_uid) { "AABBCCDD11223344" }
-      let(:expected_did) { "SNET-11223344" }
+      # [FW.54] 24-hex кремнієвий UID (golden g1) → деривований DID
+      let(:hardware_uid) { "0039002F3138511538323634" }
+      let(:expected_did) { "SNET-80B12004" }
       let(:tree_params) do
         {
           provisioning: {
@@ -213,7 +214,7 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
     let(:tree_params) do
       {
         provisioning: {
-          hardware_uid: "AABBCCDD99887766",
+          hardware_uid: "0039002F313851150000AA01",
           device_type: "tree",
           cluster_id: cluster.id,
           family_id: tree_family.id,
@@ -256,7 +257,7 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
     let(:magic_params) do
       {
         provisioning: {
-          hardware_uid: "AABBCCDD511CEE01",
+          hardware_uid: "0039002F31385115511CEE01",
           device_type: "tree",
           cluster_id: cluster.id,
           family_id: tree_family.id,
@@ -286,9 +287,12 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
       allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return("e2e-master-key-32bytes-hkdf-test")
     end
 
+    # [FW.54] Guard живе на ДЕРИВОВАНОМУ DID (до FW.54 перевіряв сирий
+    # hardware_uid — для дерев ніколи не спрацьовував: provision пише "SNET-…").
+    let(:dup_uid) { "0039002F3138511538323634" } # golden g1
     let!(:existing) do
       HardwareKey.create!(
-        device_uid: "DUPE0000DDEE11FF",
+        device_uid: SilkenNet::DidDerivation.wire_did_from_uid_hex(dup_uid),
         aes_key_hex: SecureRandom.hex(32).upcase,
         lorenz_seed_hex: SecureRandom.hex(32).upcase
       )
@@ -297,7 +301,7 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
     let(:dup_params) do
       {
         provisioning: {
-          hardware_uid: "DUPE0000DDEE11FF",
+          hardware_uid: dup_uid,
           device_type: "tree",
           cluster_id: cluster.id,
           family_id: tree_family.id,

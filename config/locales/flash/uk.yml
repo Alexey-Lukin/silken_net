@@ -31,6 +31,7 @@ uk:
     oracle:
       simulation_started: Оракул почав симуляцію.
     provisioning:
+      invalid_uid: Невалідний hardware UID %{uid} — очікуються 24 hex символи (три 32-бітні слова кремнієвого UID STM32).
       node_initiated: 'Ініціація вузла завершена. DID: %{did}. Hardware UID: %{uid}'
       uid_taken: Пристрій з UID %{uid} вже зареєстрований в системі.
     sessions:

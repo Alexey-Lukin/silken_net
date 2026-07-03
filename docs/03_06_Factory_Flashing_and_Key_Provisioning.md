@@ -44,13 +44,20 @@
 
 ```
 [Завод]
-  1. Прошивка: масив aes_key[8] = {0,0,...,0} (порожній placeholder)
+  0. Ідентичність (one-pass, FW.54): SWD-read 96-біт UID ДО прошивки
+     STM32_Programmer_CLI -r32 0x1FFF7590 12  → три %08X-слова
+     host деривує DID = murmur3-fmix32(UID) (03_01 §7; SilkenNet::DidDerivation)
+     TreeResolver: Tree create / re-flash (паспорт silicon_uid_hex збігся) /
+     bind (legacy без паспорта) / DID-колізія → QUARANTINE юніта
+
+  1. Прошивка: масив aes_key[4] = {0,0,0,0} (порожній placeholder)
      Robot Programmer → Flash firmware → Board
 
-  2. Provisioning: унікальний ключ для конкретного MCU
-     Rails Backend → POST /api/v1/provisioning/register → {device_uid}
-     Backend → генерує unique_key (HKDF від master_key + device_uid)
-     Robot → записує unique_key у захищений сектор Flash (0x0803E000)
+  2. Provisioning: rake-тріо §5 (2-Person Rule) — ключі від ПРАВИЛЬНОГО DID
+     factory:flash[UID,…] → approve → execute:
+     Backend деривує unique_key (HKDF від master_key + DID; жоден ключ не
+     летить мережею) → транскрипт: connect → -r32 UID-read (wrong-board
+     guard: чужа плата = жодного -w32) → -w32 у Flash (0x0803E000)
 
   3. Lock: апаратне блокування
      STM32CubeProgrammer (CLI) → Set RDP Level 1 (або Level 2)
@@ -72,18 +79,15 @@
      STM32 → I²C ping ATECC608B → перевірити serial_number (унікальний 9 байт)
      Якщо ATECC608B не відповідає → fail → reject board (заводський QC)
 
-  3. Provisioning (один HTTPS round-trip):
-     STM32 → POST /api/v1/provisioning/register
-       { device_uid: HAL_GetUID(), atecc_serial: <9-byte hex>, firmware_version: <ver> }
-     Rails Backend:
-       - Зберігає (device_uid, atecc_serial) у HardwareKey (для tamper-detect: підміна
-         чіпа на іншому boards тригерить mismatch при наступному провіженінгу)
-       - Деривує HKDF як у §2:
-           aes_key  = HKDF_SHA256(master_key, device_uid, "silken-aes-128-lora-key")
-           ota_hmac = HKDF_SHA256(master_key, device_uid, "silken-ota-hmac-v1")
-       - Генерує ECC P-256 keypair (для майбутнього peaq DID signing, ARCH.27 evolution)
-       - Видає device cert (X.509, підписаний intermediate CA Silken Net)
-     Response: { aes_key, ota_hmac_key, ecc_priv, ecc_pub_cert_pem }
+  3. Provisioning (host-side, one-pass FW.54 — БЕЗ network round-trip):
+     host уже знає UID (SWD-read крок 0 Гілки A той самий) → DID (03_01 §7)
+     → TreeResolver → Rails-host деривує локально:
+           aes_key  = HKDF_SHA256(master_key, DID, "silken-aes-128-lora-key")
+           ota_hmac = per-cluster HKDF (FW.23, "silken-ota-hmac-v1")
+       - Зберігає (DID → HardwareKey, silicon_uid_hex → Tree; tamper-detect:
+         підміна чіпа → wrong-board guard / паспорт-mismatch)
+       - ECC keypair + X.509 device cert (peaq DID signing, ARCH.27 evolution)
+     Жоден ключ не летить мережею — усе входить у ATCA-транскрипт (AteccProvisioner)
 
   4. STM32 → ATECC608B: write keys per slot mapping (cross-ref 03_05 §3.7):
      atcab_write_zone(SLOT 0, aes_key,  32B)    # AES LoRa session key
@@ -162,7 +166,10 @@ CoAP-магістраль (Queen ↔ Rails) — тільки на Gateway-ряд
 
 Де:
   master_key  = 32-байтний секрет (генерується HRNG, зберігається у Rails Vault)
-  device_uid  = 8-байтний унікальний ідентифікатор пристрою (STM32 UID96 або DID)
+  device_uid  = wire-ідентифікатор пристрою: Tree → DID "SNET-XXXXXXXX"
+                (ДЕРИВОВАНИЙ з 96-біт silicon UID, murmur3-fmix32 — 03_01 §7;
+                сирий 24-hex UID живе окремо у trees.silicon_uid_hex);
+                Gateway → uid "SNET-Q-XXXXXXXX"
   info        = ASCII string (domain separation — два різні KDF outputs з одного master)
   output len  = 16 байт (LoRa) АБО 32 байти (CoAP)
 ```
@@ -192,33 +199,38 @@ Backend (Rails):
 STEP 2: Factory Flashing (конвеєр на заводі)
 ═══════════════════════════════════════════════════════════════════════
 
-[Заводський стенд]
-  a) Прошивка базового firmware:
-     STM32CubeProgrammer --write firmware_base.hex   # aes_key[8] = {0,0,...,0}
-     Firmware reads device_uid = HAL_GetUID() → 12 bytes (STM32 unique ID)
-     DID = "SNET-" + hex(CRC32(device_uid))
+[Заводський стенд — rake-тріо §5, one-pass FW.54]
+  a) SWD-read кремнієвого паспорта ДО прошивки (host-first, НЕ device-first):
+     STM32_Programmer_CLI -r32 0x1FFF7590 12      # 96-біт UID, три %08X-слова
+     DID = SilkenNet::DidDerivation.wire_did_from_uid_hex(UID)
+     # murmur3-fmix32 (03_01 §7) — байт-у-байт той самий DID плата порахує
+     # собі на boot (firmware/soldier/did_derive.h, golden-вектори обабіч)
 
-  b) Provisioning запит (UART або WiFi через тестовий стенд):
-     POST /api/v1/provisioning/register
-       { device_uid: "<hex_uid>", firmware_version: <ver> }
+  b) factory:flash[UID,…] → FactoryFlashing::TreeResolver:
+     Tree create (CLUSTER_ID + TREE_FAMILY_ID env; координати — полю) /
+     re-flash (trees.silicon_uid_hex збігся) / bind (legacy без паспорта) /
+     DID-колізія (інший чип, той самий DID) → QUARANTINE юніта (03_01 §7)
 
-  c) Backend: ProvisioningController#register (Zero-Trust — keys НЕ повертаються в response)
-     # LoRa key (Tree або Gateway):
-     lora_key  = HKDF_SHA256(master_key, device_uid, "silken-aes-128-lora-key")  # 16 bytes
-     # CoAP key (тільки Gateway — для batch flush до Rails):
-     coap_key  = HKDF_SHA256(master_key, device_uid, "silken-aes-256-device-key") # 32 bytes  [Gateway only]
-     HardwareKey.create!(device_uid:, aes_key_hex: lora_key.unpack1("H*"))   # 32 hex для Tree
-     # Gateway: HardwareKey.create!(aes_key_hex: coap_key.unpack1("H*"))     # 64 hex для Gateway
-     Response: { did: "SNET-XXXXXXXX" }   # Zero-Trust — NO keys у response
+  c) Backend деривує ключі від ПРАВИЛЬНОГО DID (Zero-Trust — нічого мережею):
+     lora_key = HKDF_SHA256(master_key, DID, "silken-aes-128-lora-key")   # Tree, 16B
+     k_seed   = SeedDerivation (§3, info "silken-lorenz-seed|<DID>")      # Tree, 32B
+     k_ota    = per-cluster HKDF (§4, FW.23)                              # Tree, 32B
+     coap_key = HKDF_SHA256(master_key, uid, "silken-aes-256-device-key") # Gateway, 32B
+     HardwareKey.create!(device_uid: DID, aes_key_hex: …)
 
-  d) Заводський стенд записує унікальний ключ (Гілка A — Protected Flash):
-     STM32CubeProgrammer --write-option-bytes key_address=0x0803E000 key=<hex>
-     # 0x0803E000 = FLASH_KEY_ADDR (Protected Flash Sector, perma-protected)
-     # АБО ATECC608B Slot 0 (Гілка B після ARCH.42 — Secure Element 03_05 §3.7)
+  d) factory:execute (після 2-Person approve; live) — транскрипт:
+     connect → -r32 UID-read → wrong-board guard (Session звіряє паспорт
+     плати з trees.silicon_uid_hex; чужа плата → WrongBoardError, жодного
+     -w32) → -w32 KEYL/LSED/KOTA per-word → RDP → disconnect
+     # 0x0803E000 = FLASH_KEY_ADDR; Гілка B: ключі через ATCA (§1)
 
   e) Lock:
-     STM32CubeProgrammer --set-rdp-level 1    # Pilot batch
+     STM32_Programmer_CLI -ob RDP=1    # Pilot batch
      # (Level 2 після верифікації OTA — SEC.2)
+
+  # Польова альтернатива (одно-вузловий шлях форестера, НЕ фабрика):
+  # POST /api/v1/provisioning/register (04_03 §5.2) — той самий wire_did
+  # від 24-hex UID; координати + peaq DID заводяться там.
 
 ═══════════════════════════════════════════════════════════════════════
 STEP 3: Runtime — Soldier читає свій LoRa AES-128 ключ
@@ -768,20 +780,23 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 |-----|------|--------|
 | Session AASM | `app/models/provisioning_session.rb` | ✅ `pending → supervisor_approved → active → completed \| failed`; 2-Person Rule = `supervisor_id != operator_id` (валідація) **+ `approve` guard `credentials_verified?` (true лише через `approve_with_credentials!` — Argon2id-пароль супервайзера); сирий `approve!` з console відмовляється → оператор, що лише *назвав* супервайзера, схвалити сам НЕ може** |
 | Master key source | `app/services/factory_flashing/master_key_source.rb` | ✅ `EnvAdapter` (з `Security::WeakKeyDetector` SEC.9), `BitwardenAdapter` skeleton (raise `NotImplementedError` — TODO live `bw` API). Fetched ключ **наскрізно живить деривацію** (SEC.3 DI): Session тримає його у `@master_key` і передає параметром — non-ENV adapter підключається без правок сервісів |
-| Command emission | `app/services/factory_flashing/command_builder.rb` | ✅ Гілка A — `STM32_Programmer_CLI -w32` per word для `KEYL`/`LSED`/`KEYC`/`EDSK` slots (EDSK = L1 QATT сім'я голосу Королеви, Gateway-only; генерується `Session`'ом на фабричному хості — НЕ HKDF, у БД лише pubkey), RDP level 1/2 config; Гілка B — skip key writes (keys через ATCA), only firmware connect + RDP lock |
+| UID→DID resolver | `app/services/factory_flashing/tree_resolver.rb` | ✅ [FW.54] one-pass прив'язка: 24-hex UID → `DidDerivation.wire_did` → Tree create (`CLUSTER_ID`+`TREE_FAMILY_ID`) / re-flash (`trees.silicon_uid_hex` збігся) / bind (legacy) / **DID-колізія → `CollisionError` = quarantine юніта** (03_01 §7). Peaq свідомо НЕ enqueue'иться (offline-фабрика; peaq — за польовим register) |
+| UID-readout parser | `app/services/factory_flashing/uid_readout.rb` | ✅ [FW.54] толерантний парсер `-r32 0x1FFF7590`-виводу (keyed на адресу) → три слова → 24-hex; точний формат live-CLI = bench-confirm (RUNBOOK 1.3) |
+| Command emission | `app/services/factory_flashing/command_builder.rb` | ✅ `preflight_commands` (connect + `-r32 0x1FFF7590 12` UID-read, обидві гілки) + Гілка A — `STM32_Programmer_CLI -w32` per word для `KEYL`/`LSED`/`KEYC`/`EDSK` slots (EDSK = L1 QATT сім'я голосу Королеви, Gateway-only; генерується `Session`'ом на фабричному хості — НЕ HKDF, у БД лише pubkey), RDP level 1/2 config; Гілка B — skip key writes (keys через ATCA), only RDP lock + disconnect |
 | Subprocess executor | `app/services/factory_flashing/executor.rb` | ✅ dry-run default (`[dry-run] cmd`); `dry_run: false` → `Open3.capture3` з `ProgrammerMissingError` коли CLI відсутній у PATH; `CommandFailedError` зупиняє на першому non-zero exit |
 | ATECC provisioning | `app/services/factory_flashing/atecc_provisioner.rb` | ✅ Гілка B skeleton — emit `atcab_init` + `atcab_read_serial_number` + slot writes (0/1/2/3) + `atcab_lock_config_zone` + `atcab_lock_data_zone`; raw key bytes scrubbed (`/* NB elided */`) |
 | Audit trail | `app/services/factory_flashing/audit_trail.rb` | ✅ `AuditLog(action: "factory_flash")` chain-hashed + `MaintenanceRecord(action_type: :installation, skip_photo_validation: true)`; metadata містить `operator_id`/`supervisor_id`/`batch_id`/`flash_addr`/`rdp_level`/`atecc_serial_hex`/`firmware_version`/`command_count`/`dry_run` |
-| Orchestrator | `app/services/factory_flashing/session.rb` | ✅ `ActiveRecord::Base.transaction` — failure rolls back HardwareKey + audit writes разом; `PreflightError` для non-approved sessions / missing device / unavailable master key. Preflight-ключ НЕ відкидається: `@master_key` → `HardwareKeyService.provision` / `OtaHmacKeyService.fetch_for` / `SeedDerivation.derive_seed` параметром (SEC.3 DI; runtime-викликачі цих сервісів лишаються на ENV-fallback) |
-| Operator CLI | `lib/tasks/factory.rake` | ✅ `factory:flash[device_uid,batch_id,gilka,operator_id,supervisor_id,firmware_version]` (`ATECC_SERIAL` env для Гілки B, `RDP_LEVEL` env override) → `factory:approve[session_id]` (**mandatory `SUPERVISOR_PASSWORD` env — супервайзер автентифікується власним паролем, SEC.3**) → `factory:execute[session_id]` (`EXECUTE=1` для real subprocess) |
+| Orchestrator | `app/services/factory_flashing/session.rb` | ✅ `ActiveRecord::Base.transaction` — failure rolls back HardwareKey + audit writes разом; `PreflightError` для non-approved sessions / missing device / unavailable master key. **[FW.54] Wrong-board guard**: live-режим ганяє `preflight_commands` і звіряє паспорт плати (`UidReadout`) з `trees.silicon_uid_hex` ДО деривації/першого `-w32` — чужа плата → `WrongBoardError`, навіть HardwareKey не матеріалізується (dry-run/безпаспортні: skip). Preflight-ключ НЕ відкидається: `@master_key` → `HardwareKeyService.provision` / `OtaHmacKeyService.fetch_for` / `SeedDerivation.derive_seed` параметром (SEC.3 DI; runtime-викликачі цих сервісів лишаються на ENV-fallback) |
+| Operator CLI | `lib/tasks/factory.rake` | ✅ `factory:flash[device_uid,batch_id,gilka,operator_id,supervisor_id,firmware_version]` — **[FW.54] Tree: device_uid = 24-hex silicon UID** (→ `TreeResolver`; create-гілка = `CLUSTER_ID`+`TREE_FAMILY_ID` env; голий `SNET-` DID лише для дерева з уже прив'язаним паспортом); Gateway: uid як досі (`ATECC_SERIAL` env для Гілки B, `RDP_LEVEL` env override) → `factory:approve[session_id]` (**mandatory `SUPERVISOR_PASSWORD` env — супервайзер автентифікується власним паролем, SEC.3**) → `factory:execute[session_id]` (`EXECUTE=1` для real subprocess) |
 
 > **[SEC.3] Authenticated 2-Person approval:** `factory:approve` вимагає `SUPERVISOR_PASSWORD` — `ProvisioningSession#approve_with_credentials!` верифікує його через `supervisor.authenticate` (Argon2id). Оператор може *назвати* супервайзера, але НЕ схвалить сесію без того, щоб супервайзер фізично ввів власний пароль (закрито колишній skippable `SUPERVISOR_ID` env-match). **Сирий `approve!` (Rails console) теж закрито кодом (2026-06-15):** перехід `approve` має guard `credentials_verified?`, що true лише всередині `approve_with_credentials!` після успішної Argon2id-автентифікації → console self-approve неможливий (`AASM::InvalidTransition`). **Залишок — суто операційний:** raw-SQL / object-manipulation (`update_column` / `instance_variable_set`) обходить будь-який in-process guard → межа §5.A access-control (master-key лише `super_admin` + MFA), не код.
 
-**Test coverage:** RSpec — `spec/models/provisioning_session_spec.rb` (AASM/validations + `approve_with_credentials!`), `spec/services/factory_flashing/*`, `spec/integration/factory_flashing_e2e_spec.rb` (Rake trio, firmware-equivalent HKDF). Counts → suite.
+**Test coverage:** RSpec — `spec/models/provisioning_session_spec.rb` (AASM/validations + `approve_with_credentials!`), `spec/services/factory_flashing/*` (вкл. `tree_resolver_spec` — чотири долі кремнію; execute-path шим з UID-verify pass/wrong-board), `spec/integration/factory_flashing_e2e_spec.rb` (Rake trio: one-pass UID→Tree→ключі, firmware-equivalent HKDF, legacy-DID abort). Counts → suite.
 
 **Зразок dry-run вивода** (Tree, Гілка A, RDP=1):
 ```
 [dry-run] STM32_Programmer_CLI -c port=SWD reset=HWrst
+[dry-run] STM32_Programmer_CLI -r32 0x1FFF7590 12               # [FW.54] UID-read (wrong-board guard)
 [dry-run] STM32_Programmer_CLI -w32 0x0803E000 0x4B45594C       # KEYL magic
 [dry-run] STM32_Programmer_CLI -w32 0x0803E004 0xAABBCCDD       # AES key word 0
 [dry-run] STM32_Programmer_CLI -w32 0x0803E008 0xEEFF0011       # AES key word 1
@@ -794,7 +809,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 ```
 
 **Hardware-gated TODO:**
-- 👤 Реальний `STM32_Programmer_CLI` execution на STM32WLE5JC bench (зараз `EXECUTE=1` raise'ить `ProgrammerMissingError` без CLI у PATH). ✅ (2026-06-07) Software-половина доведена шим-інтеграцією: fake-CLI на PATH → повна Session через реальні subprocess'и (ok/verify-fail/rdp-fail, stop-on-fail, transcript) — `spec/services/factory_flashing/session_run_execute_path_spec.rb`; на bench лишається фізика SWD
+- 👤 Реальний `STM32_Programmer_CLI` execution на STM32WLE5JC bench (зараз `EXECUTE=1` raise'ить `ProgrammerMissingError` без CLI у PATH). ✅ (2026-06-07) Software-половина доведена шим-інтеграцією: fake-CLI на PATH → повна Session через реальні subprocess'и (ok/verify-fail/rdp-fail + [FW.54] UID-verify pass/wrong-board, stop-on-fail, transcript) — `spec/services/factory_flashing/session_run_execute_path_spec.rb`; на bench лишається фізика SWD **+ звірити реальний формат `-r32`-виводу проти `UidReadout` парсера (RUNBOOK 1.3)**
 - 👤 Bitwarden Secrets Manager live API (`BitwardenAdapter#fetch_master_key` placeholder)
 - 🔗 Live `cryptoauthlib` I²C call в `AteccProvisioner` — після SEC.6 PCBA з ATECC608B
 

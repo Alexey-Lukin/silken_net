@@ -48,4 +48,30 @@ RSpec.describe SilkenNet::DidDerivation do
         .to eq("SNET-80B12004")
     end
   end
+
+  describe ".uid_words / .wire_did_from_uid_hex — канонічний 24-hex UID-рядок" do
+    it "ріже рядок на три %08X-слова у порядку регістрів (golden g1)" do
+      expect(described_class.uid_words("0039002F3138511538323634"))
+        .to eq([ 0x0039002F, 0x31385115, 0x38323634 ])
+    end
+
+    it "деривує той самий wire-DID, що й пословний виклик (golden g1)" do
+      expect(described_class.wire_did_from_uid_hex("0039002F3138511538323634"))
+        .to eq("SNET-80B12004")
+    end
+
+    it "нормалізує регістр і краї" do
+      expect(described_class.wire_did_from_uid_hex(" 0039002f3138511538323634\n"))
+        .to eq("SNET-80B12004")
+    end
+
+    it "відкидає не-24-hex вхід голосно (ArgumentError, не сміттєвий DID)" do
+      expect { described_class.uid_words("SNET-80B12004") }
+        .to raise_error(ArgumentError, /24 hex/)
+      expect { described_class.uid_words("0039002F31385115383236") }
+        .to raise_error(ArgumentError)
+      expect { described_class.uid_words(nil) }
+        .to raise_error(ArgumentError)
+    end
+  end
 end

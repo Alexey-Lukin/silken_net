@@ -31,6 +31,10 @@ module FactoryFlashing
     # Raised when the prerequisites (session state, device, master key) are not met.
     class PreflightError < StandardError; end
 
+    # [FW.54] Live wrong-board guard: кремнієвий паспорт плати на джизі
+    # не збігається з деревом сесії — жоден -w32 не виконується.
+    class WrongBoardError < StandardError; end
+
     def self.run(session:, device: nil, executor: nil, master_key_source: MasterKeySource.default)
       new(
         session: session,
@@ -52,10 +56,14 @@ module FactoryFlashing
 
       ActiveRecord::Base.transaction do
         @session.start!
+        # [FW.54] Wrong-board guard ПЕРЕД будь-якою деривацією/записом:
+        # connect + SWD-read UID → live-звірка паспорта плати (dry-run: skip).
+        # Чужа плата → навіть HardwareKey-рядок не матеріалізується.
+        @executor.run(CommandBuilder.preflight_commands)
+        verify_silicon_uid!
         hw_key = ensure_hardware_key
         atecc_transcript = run_atecc_if_needed(hw_key)
-        commands = build_commands(hw_key)
-        @executor.run(commands)
+        @executor.run(build_commands(hw_key))
         audit = AuditTrail.new(
           session:      @session,
           device:       @device,
@@ -113,7 +121,33 @@ module FactoryFlashing
         lorenz_seed_hex:  hw_key.lorenz_seed_hex,
         ota_hmac_hex:     tree_ota_hmac,
         ed25519_seed_hex: gateway_voice_seed(hw_key)
-      ).commands
+      ).flash_commands
+    end
+
+    # [FW.54] Live wrong-board guard. Порівнюємо сирі UID (не деривовані
+    # DID) — ловить навіть теоретичну DID-колізію двох чипів. Skip: dry-run
+    # (заліза нема) та пристрої без паспорта (Gateway, legacy-Tree — нові
+    # Tree-потоки rake вже не пускає без UID). Парс-відмова = теж відмова
+    # записом: якщо мали що звіряти і не змогли — не пишемо наосліп.
+    def verify_silicon_uid!
+      return if @executor.dry_run?
+      return unless @device.is_a?(Tree) && @device.silicon_uid_hex.present?
+
+      stdout = @executor.results.last&.stdout
+      words  = UidReadout.words(stdout)
+      if words.nil?
+        raise WrongBoardError,
+              "UID-read не розпарсився — запис заборонено (bench: звір формат " \
+              "`-r32`-виводу, RUNBOOK 1.3): #{stdout.to_s.strip.truncate(120)}"
+      end
+
+      board_uid = UidReadout.uid_hex(words)
+      return if board_uid == @device.silicon_uid_hex
+
+      raise WrongBoardError,
+            "На джизі чип #{board_uid} (DID #{SilkenNet::DidDerivation.wire_did(*words)}), " \
+            "сесія для #{@session.device_uid} (#{@device.silicon_uid_hex}) — " \
+            "чужа плата, жоден -w32 не виконано"
     end
 
     # [FW.23] Per-cluster K_ota для OTA dual-gate — Гілка A пише його у

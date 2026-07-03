@@ -41,5 +41,27 @@ module SilkenNet
     def wire_did(w0, w1, w2)
       format("#{WIRE_PREFIX}%08X", did_from_uid_words(w0, w1, w2))
     end
+
+    # Канонічна hex-форма 96-біт UID: три %08X-слова у порядку регістрів
+    # (0x1FFF7590 перше), конкатеновані = 24 hex — так їх віддає SWD-read
+    # (`-r32 0x1FFF7590`) і так їх бачить firmware через `*(uint32_t*)`.
+    UID_HEX_FORMAT = /\A[0-9A-F]{24}\z/
+
+    # "0039002F3138511538323634" → [0x0039002F, 0x31385115, 0x38323634].
+    # Невалідний вхід → ArgumentError: фабрика мусить впасти голосно, а не
+    # деривувати DID від сміття (одрук у UID = чужі ключі запечені мовчки).
+    def uid_words(uid_hex)
+      normalized = uid_hex.to_s.strip.upcase
+      unless UID_HEX_FORMAT.match?(normalized)
+        raise ArgumentError,
+              "UID must be 24 hex chars (three %08X words, register order), got #{uid_hex.inspect}"
+      end
+      normalized.scan(/.{8}/).map { |w| Integer(w, 16) }
+    end
+
+    # 24-hex UID-рядок → канонічний `trees.did`.
+    def wire_did_from_uid_hex(uid_hex)
+      wire_did(*uid_words(uid_hex))
+    end
   end
 end

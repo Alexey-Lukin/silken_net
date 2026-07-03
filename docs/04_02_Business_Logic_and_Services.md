@@ -490,9 +490,9 @@ peaq_node_url: "https://peaq-node.example.com"
 | | |
 |---|---|
 | **Файл** | `app/services/silken_net/did_derivation.rb` |
-| **Що робить** | DID = f(96-біт UID) — Ruby-дзеркало firmware `did_derive.h` (murmur3-fmix32 ланцюгом по трьох словах STM32-UID; **біт-у-біт**, golden-вектори заморожені обабіч). Споживач — фабричний провіженінг (SEC.3): host читає UID по SWD **ДО** прошивки, деривує той самий DID, що пристрій порахує на boot → однопрохідне `Tree + HardwareKey + K_seed`. `DID==0` зарезервовано під Queen-Sentinel (нуль-хеш → SEED-константа). Колізію 32-біт ловить DB-unique на `trees.did` до поля. Канон механізму — [`03_01 §7`](03_01_Firmware_Lifecycle_and_DMA). |
+| **Що робить** | DID = f(96-біт UID) — Ruby-дзеркало firmware `did_derive.h` (murmur3-fmix32 ланцюгом по трьох словах STM32-UID; **біт-у-біт**, golden-вектори заморожені обабіч). `wire_did_from_uid_hex` парсить канонічний 24-hex UID-рядок (три %08X-слова у порядку регістрів). Два споживачі: фабричний провіженінг (SEC.3 — `TreeResolver`, host читає UID по SWD **ДО** прошивки → однопрохідне `Tree + HardwareKey + K_seed`) і польовий `ProvisioningController#register`. `DID==0` зарезервовано під Queen-Sentinel (нуль-хеш → SEED-константа). Колізію 32-біт ловить DB-unique на `trees.did` до поля. Канон механізму — [`03_01 §7`](03_01_Firmware_Lifecycle_and_DMA). |
 | **Вихід** | DID-рядок (детермінований per-UID). |
-| **Викликається з** | `FactoryFlashing::Session` / provisioning (SEC.3) |
+| **Викликається з** | `FactoryFlashing::TreeResolver` / `FactoryFlashing::Session` (wrong-board guard) / `Api::V1::ProvisioningController#register` |
 
 ### `FactoryFlashing::*` — Factory Flashing Pipeline (SEC.3)
 
@@ -500,9 +500,11 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 
 | Сервіс | Роль |
 |--------|------|
-| `FactoryFlashing::Session` | Orchestrator — `ActiveRecord::Base.transaction` (провіжен `HardwareKey` + audit з rollback разом); `PreflightError` для non-approved сесій; preflight-ключ тримається у `@master_key` і йде параметром у деривацію (SEC.3 DI) |
+| `FactoryFlashing::Session` | Orchestrator — `ActiveRecord::Base.transaction` (провіжен `HardwareKey` + audit з rollback разом); `PreflightError` для non-approved сесій; **[FW.54] wrong-board guard** — live-режим звіряє UID плати (preflight `-r32` → `UidReadout`) з `trees.silicon_uid_hex` ДО деривації/`-w32`, чужа плата → `WrongBoardError`; preflight-ключ тримається у `@master_key` і йде параметром у деривацію (SEC.3 DI) |
+| `FactoryFlashing::TreeResolver` | [FW.54] one-pass UID→DID→Tree: create (`CLUSTER_ID`+`TREE_FAMILY_ID`) / re-flash (паспорт збігся) / bind (legacy) / DID-колізія → `CollisionError` (quarantine, [`03_01 §7`](03_01_Firmware_Lifecycle_and_DMA)); peaq НЕ enqueue'ить (offline-фабрика) |
+| `FactoryFlashing::UidReadout` | [FW.54] толерантний парсер `-r32 0x1FFF7590`-виводу → три UID-слова / 24-hex (формат live-CLI = bench-confirm) |
 | `FactoryFlashing::MasterKeySource` | Джерело master-ключа: `EnvAdapter` (з `Security::WeakKeyDetector`), `BitwardenAdapter` skeleton; fetched ключ живить HKDF через `Session` (не лише preflight-гейт) |
-| `FactoryFlashing::CommandBuilder` | Емісія `STM32_Programmer_CLI` команд per гілка A/B (KEYL/LSED/KEYC/EDSK slots, RDP level) |
+| `FactoryFlashing::CommandBuilder` | Емісія `STM32_Programmer_CLI` команд: `preflight_commands` (connect + UID-read, обидві гілки) + per гілка A/B (KEYL/LSED/KEYC/EDSK slots, RDP level) |
 | `FactoryFlashing::Executor` | Subprocess-запуск: dry-run за замовч.; `Open3.capture3` при `dry_run: false`, stop-on-first-fail |
 | `FactoryFlashing::AteccProvisioner` | Гілка B skeleton: `atcab_*` slot-writes + config/data-zone lock (raw key bytes scrubbed; rename → SE050 у SE050-MIGRATION) |
 | `FactoryFlashing::AuditTrail` | `AuditLog(action:"factory_flash")` chain-hashed + `MaintenanceRecord(:installation)` |

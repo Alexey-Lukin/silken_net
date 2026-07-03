@@ -31,6 +31,7 @@ en:
     oracle:
       simulation_started: The Oracle has started the simulation.
     provisioning:
+      invalid_uid: Invalid hardware UID %{uid} — expected 24 hex chars (three 32-bit words of the STM32 silicon UID).
       node_initiated: 'Node initiation complete. DID: %{did}. Hardware UID: %{uid}'
       uid_taken: Device with UID %{uid} is already registered in the system.
     sessions:

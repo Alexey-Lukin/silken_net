@@ -19,6 +19,7 @@ module FactoryFlashing
   class CommandBuilder
     FLASH_OTA_KEY_ADDR  = "0x0803E800"   # Сторінка 125 за KEYL-сторінкою — FW.23 per-cluster K_ota (firmware: FLASH_OTA_KEY_ADDR)
     FLASH_KEY_ADDR      = "0x0803E000"
+    UID_BASE_ADDR       = "0x1FFF7590"   # 96-біт silicon UID — ті самі три слова читає firmware did_derive.h
     FLASH_SEED_ADDR     = "0x0803E014"   # FLASH_KEY_ADDR + 4 (magic) + 16 (key)
     FLASH_COAP_KEY_ADDR = "0x0803E040"   # After K_seed (4 magic + 32 = 36 bytes) — see Queen flash layout
     FLASH_EDSK_ADDR     = "0x0803E064"   # After CoAP key (4 magic + 32) — L1 QATT голос Королеви
@@ -52,8 +53,23 @@ module FactoryFlashing
       validate!
     end
 
-    # Returns Array<String> — ordered shell commands.
+    # Returns Array<String> — повний транскрипт: preflight + flash-тіло гілки.
     def commands
+      self.class.preflight_commands + flash_commands
+    end
+
+    # [FW.54] Відкриття транскрипта обох гілок: connect + SWD-read кремнієвого
+    # паспорта. Клас-метод свідомо — не потребує ключів, тож Session ганяє
+    # його (і wrong-board guard) ДО деривації та будь-якого -w32.
+    def self.preflight_commands
+      [
+        "#{PROGRAMMER} -c port=SWD reset=HWrst",
+        "#{PROGRAMMER} -r32 #{UID_BASE_ADDR} 12"
+      ]
+    end
+
+    # Тіло гілки: key-writes + RDP + disconnect (без preflight).
+    def flash_commands
       case @session.gilka
       when "A" then gilka_a_commands
       when "B" then gilka_b_commands
@@ -83,7 +99,7 @@ module FactoryFlashing
     end
 
     def gilka_a_commands
-      out = [ connect_command ]
+      out = []
 
       if @device.is_a?(Tree)
         # Tree: 16-byte LoRa AES-128 key + 32-byte Lorenz K_seed + 32-byte K_ota.
@@ -111,18 +127,12 @@ module FactoryFlashing
     def gilka_b_commands
       # Гілка B routes the key through I²C ATCA write-zone instead of SWD writes.
       # AteccProvisioner emits those statements; CommandBuilder only handles
-      # the surrounding STM32 firmware-flash + RDP-lock pair. The intermediate
-      # ATCA sequence is appended by Session#run via AteccProvisioner.
+      # the surrounding RDP-lock pair (connect живе у preflight_commands).
       [
-        connect_command,
         # No SWD key writes — keys live in ATECC608B data zone.
         rdp_command(@session.rdp_level),
         disconnect_command
       ]
-    end
-
-    def connect_command
-      "#{PROGRAMMER} -c port=SWD reset=HWrst"
     end
 
     def disconnect_command

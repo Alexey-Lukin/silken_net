@@ -402,7 +402,7 @@ POST /api/v1/auth/m2m_token
 ```json
 {
   "provisioning": {
-    "hardware_uid": "STM32-UID-A1B2C3D4",
+    "hardware_uid": "0039002F3138511538323634",
     "device_type": "tree",
     "cluster_id": 7,
     "family_id": 3,
@@ -428,7 +428,7 @@ POST /api/v1/auth/m2m_token
 
 | Параметр | Тип | Обов'язковий | Опис |
 |---|---|---|---|
-| `hardware_uid` | String | ✅ | Унікальний UID мікроконтролера STM32 |
+| `hardware_uid` | String | ✅ | Tree: **24-hex кремнієвий UID** (три %08X-слова регістрів `0x1FFF7590/94/98`) — DID деривується murmur3-fmix32 ([`03_01 §7`](03_01_Firmware_Lifecycle_and_DMA)), не-24-hex → `422 invalid_uid`; Gateway: uid як є (`SNET-Q-…`) |
 | `device_type` | String | ✅ | `"tree"` або `"gateway"` |
 | `cluster_id` | Integer | ✅ | ID кластера для прив'язки |
 | `family_id` | Integer | Лише для `tree` | ID породи дерева (TreeFamily) |
@@ -440,16 +440,21 @@ POST /api/v1/auth/m2m_token
 
 ```json
 {
-  "did": "SNET-A1B2C3D4",
+  "did": "SNET-80B12004",
   "key_derivation": "hkdf-sha256",
   "device": {
     "id": 156,
-    "did": "SNET-A1B2C3D4",
+    "did": "SNET-80B12004",
     "status": "active",
     "cluster_id": 7
   }
 }
 ```
+
+> `did` — **деривований** (murmur3-fmix32 від `hardware_uid`; golden-пара
+> `0039002F3138511538323634 → SNET-80B12004`): плата порахує собі той самий
+> DID на кожному boot (`did_derive.h`). Сирий UID зберігається у
+> `trees.silicon_uid_hex` (re-flash vs DID-колізія).
 
 > **Zero-Trust: жодних секретів у відповіді.** Бекенд та прошивка незалежно деривують однаковий 32-байтний AES-ключ через `HKDF-SHA256(ikm: PROVISIONING_MASTER_KEY, salt: device_uid, info: "silken-aes-256-device-key")` (cross-ref: [`03_06 §2`](03_06_Factory_Flashing_and_Key_Provisioning)) **та** 32-байтний `K_seed` для атрактора Лоренца через `HKDF-SHA256(ikm: PROVISIONING_MASTER_KEY, salt: "silken-lorenz-v1", info: "silken-lorenz-seed|<DID>")` ([SEC.11], cross-ref: [`03_06 §3`](03_06_Factory_Flashing_and_Key_Provisioning)). Обидва секрети зберігаються в `HardwareKey` (AR Encryption non-deterministic) і **ніколи не передаються** через HTTP/мережу. `PROVISIONING_MASTER_KEY` повинен бути встановлений у ENV — інакше endpoint повертає `503 Service Unavailable` (no fallback). Прошивка отримує обидва секрети під час physical Factory Flashing через окремий захищений канал (UART/JTAG, поза цим API).
 

@@ -31,6 +31,7 @@ lv:
     oracle:
       simulation_started: Oracle ir sācis simulāciju.
     provisioning:
+      invalid_uid: Nederīgs aparatūras UID %{uid} — gaidīti 24 hex simboli (trīs STM32 silīcija UID 32 bitu vārdi).
       node_initiated: 'Mezgla iniciācija pabeigta. DID: %{did}. Aparatūras UID: %{uid}'
       uid_taken: Ierīce ar UID %{uid} jau ir reģistrēta sistēmā.
     sessions:

@@ -35,6 +35,9 @@ RSpec.describe FactoryFlashing::Session, ".run", type: :service do
     <<~SH
       #!/bin/sh
       echo "$@" >> "$FAKE_STM32_LOG"
+      case "$@" in
+        *"-r32 0x1FFF7590"*) echo "0x1FFF7590 : 0039002F 31385115 38323634";;
+      esac
       case "$FAKE_STM32_MODE" in
         verify_fail)
           case "$@" in
@@ -101,6 +104,43 @@ RSpec.describe FactoryFlashing::Session, ".run", type: :service do
       expect(log.last).to include("--quietMode")
 
       expect(outcome.audit_log).to be_persisted
+    end
+  end
+
+  # [FW.54] Wrong-board guard: шим завжди віддає g1-UID (0039002F…3634) на
+  # -r32 — долю сесії вирішує кремнієвий паспорт дерева.
+  describe "UID-verify (live wrong-board guard, FW.54)" do
+    let(:g1_uid) { "0039002F3138511538323634" }
+
+    it "паспорт збігається → completed, транскрипт містить -r32" do
+      passport_tree = create(:tree, did: "SNET-80B12004", silicon_uid_hex: g1_uid)
+      session = make_session(device_uid: passport_tree.did)
+
+      described_class.run(
+        session: session,
+        executor: FactoryFlashing::Executor.new(dry_run: false, io: StringIO.new),
+        master_key_source: master_key_source
+      )
+
+      expect(session.reload).to be_completed
+      expect(shim_invocations).to include(a_string_matching(/-r32 0x1FFF7590/))
+    end
+
+    it "чужа плата → WrongBoardError ДО першого -w32, сесія failed, ключі не матеріалізовані" do
+      passport_tree = create(:tree, did: "SNET-0BADF00D", silicon_uid_hex: "AAAAAAAABBBBBBBBCCCCCCCC")
+      session = make_session(device_uid: passport_tree.did)
+
+      expect {
+        described_class.run(
+          session: session,
+          executor: FactoryFlashing::Executor.new(dry_run: false, io: StringIO.new),
+          master_key_source: master_key_source
+        )
+      }.to raise_error(FactoryFlashing::Session::WrongBoardError, /чужа плата/)
+
+      expect(session.reload).to be_failed
+      expect(shim_invocations.grep(/-w32/)).to be_empty
+      expect(HardwareKey.where(device_uid: passport_tree.did)).to be_empty
     end
   end
 

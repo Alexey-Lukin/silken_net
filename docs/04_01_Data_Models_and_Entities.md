@@ -249,7 +249,8 @@ normalize_identifier :device_uid  # HardwareKey
 
 | Поле | Тип | Опис |
 |------|-----|------|
-| `did` | string | `SNET-[8 HEX]` — апаратний ідентифікатор STM32 |
+| `did` | string | `SNET-[8 HEX]` — ДЕРИВОВАНИЙ з 96-біт silicon UID (murmur3-fmix32, [`03_01 §7`](03_01_Firmware_Lifecycle_and_DMA)); НЕ сирий апаратний ідентифікатор |
+| `silicon_uid_hex` | string | [FW.54] 24-hex кремнієвий паспорт (три %08X-слова UID); unique-nullable — відрізняє re-flash від DID-колізії (quarantine); nil = legacy-дерево до one-pass провіженінгу |
 | `status` | enum | `active(0) / dormant(1) / removed(2) / deceased(3)` |
 | `firmware_update_status` | enum | OTA lifecycle (via Firmwareable) |
 | `latitude`, `longitude` | decimal | WGS-84 координати (via GeoLocatable) |
@@ -1281,7 +1282,7 @@ active/draft ──cancel──► cancelled
 
 | Поле | Тип | Опис |
 |------|-----|------|
-| `device_uid` | string | Пристрій, що провіжиниться (presence) |
+| `device_uid` | string | Wire-ідентифікатор пристрою, що провіжиниться (presence): Tree → деривований DID (rake приймає 24-hex UID і сам деривує, [FW.54]); Gateway → uid |
 | `batch_id` | string | Ідентифікатор партії (presence) |
 | `gilka` | string | Гілка провіжинингу: `"A"` (Protected Flash + RDP) / `"B"` (Secure Element; `atecc_serial_hex` обов'язковий) — `GILKAS = %w[A B]` |
 | `rdp_level` | integer | Рівень RDP після flash — `RDP_LEVELS = [0, 1, 2]` |

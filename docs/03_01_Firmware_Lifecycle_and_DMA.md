@@ -1150,9 +1150,15 @@ golden-вектори заморожені обабіч (`test_soldier_logic.c` 
 > впаде на тій самій фабричній перевірці. «Самонародження» без фабрики було
 > ілюзією: без SEC.3-провіженінгу пристрій не має ні AES-ключа, ні K_seed.
 
-**Потім:** фабрика (SEC.3) читає UID по SWD ще **до** прошивки → деривує той
-самий DID → створює Tree + HardwareKey + запікає K_seed **однопрохідно**;
-`POST /api/v1/provisioning/register` реєструє DID у Rails backend.
+**Зшито обабіч (2026-07-03):** фабрика (SEC.3) читає UID по SWD ще **до**
+прошивки → `FactoryFlashing::TreeResolver` (create / re-flash / bind;
+`trees.silicon_uid_hex` відрізняє re-flash того самого чипа від
+birthday-колізії → quarantine) → Tree + HardwareKey + K_seed
+**однопрохідно**; live wrong-board guard звіряє паспорт плати до першого
+`-w32`. Польовий `POST /api/v1/provisioning/register` — той самий
+`wire_did` від 24-hex UID (старий `last(8)`-DID, якого кремній ніколи не
+оголосив би, і мертвий для дерев double-init guard — виправлено).
+Механіка конвеєра — [`03_06 §2/§5`](03_06_Factory_Flashing_and_Key_Provisioning).
 
 ---
 

@@ -25,18 +25,34 @@ module Api
       # --- РИТУАЛ ПРИВ'ЯЗКИ ---
       def register
         # [SEC] Normalize hardware_uid ONCE — every downstream check
-        # (double-init check, DID generation) must operate on the same
+        # (double-init check, DID derivation) must operate on the same
         # canonical form (історичний bypass: `.strip` в одному шляху і ні —
-        # в іншому). FW.24-guard (магічний суфікс 511CEE01) знято разом зі
-        # старою random-схемою DID [FW.54 Вісь 2]: firmware більше не емітує
-        # цю константу, а під DID=f(UID) вона — легітимна точка простору;
-        # колізії тепер ловить DB-unique на trees.did.
+        # в іншому).
         normalized_uid = provisioning_params[:hardware_uid].to_s.strip.upcase
-        normalized_suffix = normalized_uid.last(8)
 
-        # [ЗАХИСТ ВІД ПОДВІЙНОЇ ІНІЦІАЦІЇ]: hardware_uid already provisioned?
-        if HardwareKey.exists?(device_uid: normalized_uid)
-          render json: { error: I18n.t("flash.provisioning.uid_taken", uid: normalized_uid) }, status: :conflict
+        # [FW.54] Tree: hardware_uid = 24-hex кремнієвий UID (три %08X-слова,
+        # порядок регістрів 0x1FFF7590/94/98) → DID деривується murmur3-fmix32
+        # (03_01 §7) — той самий, що плата порахує собі на boot. До FW.54 тут
+        # стояв `last(8)`-суфікс: кожне UI-дерево отримувало DID, якого його
+        # кремній ніколи не оголосить. Gateway: uid як введено (SNET-Q-…).
+        tree_did = nil
+        if provisioning_params[:device_type] == "tree"
+          begin
+            tree_did = SilkenNet::DidDerivation.wire_did_from_uid_hex(normalized_uid)
+          rescue ArgumentError
+            render json: { error: I18n.t("flash.provisioning.invalid_uid", uid: normalized_uid) },
+                   status: :unprocessable_entity
+            return
+          end
+        end
+
+        # [ЗАХИСТ ВІД ПОДВІЙНОЇ ІНІЦІАЦІЇ]: перевіряємо той ідентифікатор, під
+        # яким provision реально пише HardwareKey (Tree → derived DID; Gateway
+        # → uid). До FW.54 тут стояв сирий hardware_uid — для дерев guard був
+        # мертвий (provision зберігає "SNET-…", не 24-hex вхід).
+        guard_identifier = tree_did || normalized_uid
+        if HardwareKey.exists?(device_uid: guard_identifier)
+          render json: { error: I18n.t("flash.provisioning.uid_taken", uid: guard_identifier) }, status: :conflict
           return
         end
 
@@ -44,7 +60,8 @@ module Api
           @device = build_device(provisioning_params)
 
           if @device.is_a?(Tree)
-            @device.did ||= "SNET-#{normalized_suffix}"
+            @device.did             = tree_did
+            @device.silicon_uid_hex = normalized_uid
             device_identifier = @device.did
           else
             device_identifier = @device.uid

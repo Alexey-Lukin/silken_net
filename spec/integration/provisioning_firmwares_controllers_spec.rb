@@ -27,7 +27,7 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
         post "/api/v1/provisioning/register",
              params: {
                provisioning: {
-                 hardware_uid: "ABCDEF1234567890",
+                 hardware_uid: "0039002F313851150000BB02", # [FW.54] 24-hex UID
                  device_type: "tree",
                  cluster_id: cluster.id,
                  family_id: tree_family.id,
@@ -67,12 +67,13 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
     end
 
     it "rejects duplicate hardware UID" do
-      create(:hardware_key, device_uid: "DUPLICATE-UID-001")
+      # [FW.54] guard живе на деривованому DID
+      create(:hardware_key, device_uid: SilkenNet::DidDerivation.wire_did_from_uid_hex("0039002F3138511538323634"))
 
       post "/api/v1/provisioning/register",
            params: {
              provisioning: {
-               hardware_uid: "DUPLICATE-UID-001",
+               hardware_uid: "0039002F3138511538323634",
                device_type: "tree",
                cluster_id: cluster.id,
                family_id: tree_family.id,

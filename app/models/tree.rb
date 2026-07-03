@@ -88,6 +88,15 @@ class Tree < ApplicationRecord
   validates :did, presence: true, uniqueness: true,
             format: { with: DID_FORMAT, message: "має відповідати апаратному формату (SNET-XXXXXXXX)" }
 
+  # [FW.54/SEC.3] Кремнієвий паспорт (96-біт STM32 UID, три %08X-слова у
+  # порядку регістрів): DID деривується з нього (SilkenNet::DidDerivation),
+  # а збережений оригінал відрізняє re-flash того самого чипа від
+  # birthday-колізії DID двох різних чипів (03_01 §7 → quarantine).
+  # nil = legacy-дерево, створене до one-pass провіженінгу.
+  normalize_identifier :silicon_uid_hex
+  validates :silicon_uid_hex, uniqueness: true, allow_nil: true,
+            format: { with: SilkenNet::DidDerivation::UID_HEX_FORMAT, allow_nil: true }
+
   # --- КОЛБЕКИ ---
   after_create :build_default_wallet
   after_create :ensure_calibration

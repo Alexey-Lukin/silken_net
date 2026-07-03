@@ -2315,7 +2315,8 @@ CREATE TABLE public.trees (
     firmware_update_status integer DEFAULT 0 NOT NULL,
     peaq_did character varying,
     peaq_did_compromised boolean DEFAULT false NOT NULL,
-    latest_stress_index numeric(4,3) DEFAULT 0.0 NOT NULL
+    latest_stress_index numeric(4,3) DEFAULT 0.0 NOT NULL,
+    silicon_uid_hex character varying
 );
 
 
@@ -5030,6 +5031,13 @@ CREATE UNIQUE INDEX index_trees_on_peaq_did ON public.trees USING btree (peaq_di
 
 
 --
+-- Name: index_trees_on_silicon_uid_hex; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_trees_on_silicon_uid_hex ON public.trees USING btree (silicon_uid_hex) WHERE (silicon_uid_hex IS NOT NULL);
+
+
+--
 -- Name: index_trees_on_status; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7144,6 +7152,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260703043753'),
 ('20260628151759'),
 ('20260509120000');
 

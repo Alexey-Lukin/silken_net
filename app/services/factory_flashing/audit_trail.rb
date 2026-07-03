@@ -59,6 +59,7 @@ module FactoryFlashing
         session_id:        @session.id,
         device_uid:        @session.device_uid,
         device_type:       @device.class.name,
+        silicon_uid_hex:   (@device.silicon_uid_hex if @device.is_a?(Tree)),
         gilka:             @session.gilka,
         operator_id:       @session.operator_id,
         supervisor_id:     @session.supervisor_id,

@@ -28,6 +28,8 @@ RSpec.describe FactoryFlashing::CommandBuilder do
     it "opens SWD, writes KEYL+AES16, LSED+seed32, KOTA+k_ota32 (FW.23), then sets RDP" do
       expect(commands).to eq([
         "STM32_Programmer_CLI -c port=SWD reset=HWrst",
+        # [FW.54] SWD-read кремнієвого паспорта — wrong-board guard (Session)
+        "STM32_Programmer_CLI -r32 0x1FFF7590 12",
         # KEYL magic + 4 AES words at 0x0803E000..0x0803E010
         "STM32_Programmer_CLI -w32 0x0803E000 0x4B45594C",
         "STM32_Programmer_CLI -w32 0x0803E004 0x01234567",
@@ -145,6 +147,15 @@ RSpec.describe FactoryFlashing::CommandBuilder do
         )
       }.to raise_error(ArgumentError, /64 hex/)
     end
+
+    it "rejects a 64-char but non-hex seed" do
+      expect {
+        described_class.new(
+          session: session, device: gateway,
+          aes_key_hex: aes_coap_hex, ed25519_seed_hex: "Z" * 64
+        )
+      }.to raise_error(ArgumentError, /hexadecimal/)
+    end
   end
 
   describe "Гілка B" do
@@ -159,9 +170,10 @@ RSpec.describe FactoryFlashing::CommandBuilder do
 
     let(:session) { build(:provisioning_session, :gilka_b, rdp_level: 1) }
 
-    it "skips SWD key writes — only firmware connect + RDP lock + disconnect" do
+    it "skips SWD key writes — only connect + UID-read + RDP lock + disconnect" do
       expect(commands).to eq([
         "STM32_Programmer_CLI -c port=SWD reset=HWrst",
+        "STM32_Programmer_CLI -r32 0x1FFF7590 12",
         "STM32_Programmer_CLI -ob RDP=1",
         "STM32_Programmer_CLI -c port=SWD --quietMode"
       ])
@@ -203,6 +215,13 @@ RSpec.describe FactoryFlashing::CommandBuilder do
       expect {
         described_class.new(session: session, device: tree, aes_key_hex: aes_lora_hex, lorenz_seed_hex: "Z" * 64)
       }.to raise_error(ArgumentError, /lorenz_seed_hex must be hexadecimal/)
+    end
+
+    it "rejects non-hex ota_hmac_hex (64 chars but with Z's)" do
+      expect {
+        described_class.new(session: session, device: tree, aes_key_hex: aes_lora_hex,
+                            lorenz_seed_hex: k_seed_hex, ota_hmac_hex: "Z" * 64)
+      }.to raise_error(ArgumentError, /ota_hmac_hex must be hexadecimal/)
     end
 
     it "raises on unknown gilka value at #commands" do

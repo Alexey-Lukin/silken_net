@@ -121,10 +121,11 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
     end
 
     context "when registering a new tree" do
+      # [FW.54] hardware_uid = 24-hex кремнієвий UID (golden g1 → SNET-80B12004)
       let(:tree_params) do
         {
           provisioning: {
-            hardware_uid: "AABB11223344CCDD",
+            hardware_uid: "0039002F3138511538323634",
             device_type: "tree",
             cluster_id: own_cluster.id,
             family_id: tree_family.id,
@@ -134,15 +135,18 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
         }
       end
 
-      it "successfully registers a tree device with auto-generated DID" do
+      it "реєструє дерево з ДЕРИВОВАНИМ DID (murmur3-fmix32) + кремнієвим паспортом" do
         post "/api/v1/provisioning/register", params: tree_params, headers: headers, as: :json
 
         expect(response).to have_http_status(:created)
         body = response.parsed_body
-        expect(body["did"]).to eq("SNET-3344CCDD")
+        expect(body["did"]).to eq("SNET-80B12004")
         # [SEC.11] AES key is never returned in the response — firmware
         # derives it independently from PROVISIONING_MASTER_KEY.
         expect(body).not_to have_key("aes_key")
+
+        tree = Tree.find_by!(did: "SNET-80B12004")
+        expect(tree.silicon_uid_hex).to eq("0039002F3138511538323634")
       end
 
       it "enqueues PeaqRegistrationWorker for tree registration" do
@@ -150,6 +154,17 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
 
         expect(response).to have_http_status(:created)
         expect(PeaqRegistrationWorker).to have_received(:perform_async).with(Tree.last.id)
+      end
+
+      it "відкидає не-24-hex hardware_uid (422, жодних рядків)" do
+        bad = tree_params.deep_merge(provisioning: { hardware_uid: "AABB11223344CCDD" })
+
+        expect {
+          post "/api/v1/provisioning/register", params: bad, headers: headers, as: :json
+        }.not_to change(Tree, :count)
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.parsed_body["error"]).to include("24 hex")
       end
     end
 
