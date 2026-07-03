@@ -33,15 +33,16 @@
 } while (0)
 
 static int test_classify_sizes(void) {
-    /* Єдині два легальні розміри ефіру; все інше — шум. */
+    /* Єдині два легальні розміри ефіру; все інше — шум. Сусіди air-довжини
+     * (±1) — похідні, щоб тест переживав wire-ревізії. */
     ASSERT_EQ(Queen_Rx_Classify(16), QUEEN_RX_CONTROL_16B);
-    ASSERT_EQ(Queen_Rx_Classify(FW2_CCM_AIR_PACKET_LEN), QUEEN_RX_CCM_28B);
+    ASSERT_EQ(Queen_Rx_Classify(FW2_CCM_AIR_PACKET_LEN), QUEEN_RX_CCM_AIR);
     ASSERT_EQ(Queen_Rx_Classify(0), QUEEN_RX_DROP);
     ASSERT_EQ(Queen_Rx_Classify(1), QUEEN_RX_DROP);
     ASSERT_EQ(Queen_Rx_Classify(15), QUEEN_RX_DROP);
     ASSERT_EQ(Queen_Rx_Classify(17), QUEEN_RX_DROP);
-    ASSERT_EQ(Queen_Rx_Classify(27), QUEEN_RX_DROP);
-    ASSERT_EQ(Queen_Rx_Classify(29), QUEEN_RX_DROP);
+    ASSERT_EQ(Queen_Rx_Classify(FW2_CCM_AIR_PACKET_LEN - 1), QUEEN_RX_DROP);
+    ASSERT_EQ(Queen_Rx_Classify(FW2_CCM_AIR_PACKET_LEN + 1), QUEEN_RX_DROP);
     ASSERT_EQ(Queen_Rx_Classify(255), QUEEN_RX_DROP);
     printf("  test_classify_sizes                                        ✅\n");
     return 0;
@@ -103,10 +104,10 @@ static int test_record_builders_equivalent(void) {
 }
 
 static int test_record_golden_vs_backend_contract(void) {
-    /* e2e-зерно: air-кадр з golden-вектора → 29B-запис мусить лягти РІВНО
+    /* e2e-зерно: air-кадр з golden-вектора → запис (air+1) мусить лягти РІВНО
      * у розкладку, яку читає process_ccm_chunk (telemetry_unpacker):
      *   chunk[0..3]=DID, [4]=|RSSI|, [5]=gossip, [6..8]=FC24,
-     *   [9..20]=ciphertext, [21..28]=MIC.
+     *   [9..9+PT-1]=ciphertext, [9+PT..кінець]=MIC (rev2.1: [9..22] + [23..30]).
      * G_* — ті самі байти, що у spec/services/cryptography/lora_ccm_spec.rb. */
     uint8_t aad[FW2_CCM_AAD_LEN];
     uint8_t air[FW2_CCM_AIR_PACKET_LEN];
@@ -124,8 +125,8 @@ static int test_record_golden_vs_backend_contract(void) {
     ASSERT_EQ(rec[4], 77);
     ASSERT_EQ(rec[5], G_GOSSIP);
     ASSERT_EQ(((uint32_t)rec[6] << 16) | ((uint32_t)rec[7] << 8) | (uint32_t)rec[8], G_FC);
-    ASSERT_MEM_EQ(&rec[9],  G_CT,  FW2_CCM_PLAINTEXT_LEN);
-    ASSERT_MEM_EQ(&rec[21], G_TAG, FW2_CCM_MIC_LEN);
+    ASSERT_MEM_EQ(&rec[9], G_CT, FW2_CCM_PLAINTEXT_LEN);
+    ASSERT_MEM_EQ(&rec[9 + FW2_CCM_PLAINTEXT_LEN], G_TAG, FW2_CCM_MIC_LEN);
     printf("  test_record_golden_vs_backend_contract                     ✅\n");
     return 0;
 }

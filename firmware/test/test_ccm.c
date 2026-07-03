@@ -131,8 +131,8 @@ static int Ccm_Encrypt_TwoPhase(uint32_t key_w[4],
                                 uint8_t out_mic[FW2_CCM_MIC_LEN]) {
     uint32_t b0_w[FW2_CCM_B0_LEN / 4];
     uint32_t aad_w[FW2_CCM_AAD_LEN / 4];
-    uint32_t pt_w[FW2_CCM_PLAINTEXT_LEN / 4];
-    uint32_t ct_w[FW2_CCM_PLAINTEXT_LEN / 4];
+    uint32_t pt_w[(FW2_CCM_PLAINTEXT_LEN + 3) / 4];
+    uint32_t ct_w[(FW2_CCM_PLAINTEXT_LEN + 3) / 4];
     uint32_t tag_w[4];
     Build_CCM_B0_From_Nonce(nonce, FW2_CCM_PLAINTEXT_LEN, (uint8_t *)b0_w);
     memcpy(aad_w, aad, FW2_CCM_AAD_LEN);
@@ -159,8 +159,8 @@ static int Ccm_Decrypt_TwoPhase(uint32_t key_w[4],
                                 uint8_t out_pt[FW2_CCM_PLAINTEXT_LEN]) {
     uint32_t b0_w[FW2_CCM_B0_LEN / 4];
     uint32_t aad_w[FW2_CCM_AAD_LEN / 4];
-    uint32_t ct_w[FW2_CCM_PLAINTEXT_LEN / 4];
-    uint32_t pt_w[FW2_CCM_PLAINTEXT_LEN / 4];
+    uint32_t ct_w[(FW2_CCM_PLAINTEXT_LEN + 3) / 4];
+    uint32_t pt_w[(FW2_CCM_PLAINTEXT_LEN + 3) / 4];
     uint32_t tag_w[4];
     Build_CCM_B0_From_Nonce(nonce, FW2_CCM_PLAINTEXT_LEN, (uint8_t *)b0_w);
     memcpy(aad_w, aad, FW2_CCM_AAD_LEN);
@@ -241,8 +241,8 @@ static int test_b0_gatekeeper_rejects_malformed(void) {
     uint32_t key_w[4] = {0};
     uint32_t b0_w[FW2_CCM_B0_LEN / 4];
     uint32_t aad_w[FW2_CCM_AAD_LEN / 4];
-    uint32_t pt_w[FW2_CCM_PLAINTEXT_LEN / 4] = {0};
-    uint32_t ct_w[FW2_CCM_PLAINTEXT_LEN / 4];
+    uint32_t pt_w[(FW2_CCM_PLAINTEXT_LEN + 3) / 4] = {0};
+    uint32_t ct_w[(FW2_CCM_PLAINTEXT_LEN + 3) / 4];
     uint32_t tag_w[4];
     uint8_t  nonce[FW2_CCM_NONCE_LEN];
     uint8_t  aad[FW2_CCM_AAD_LEN];
@@ -304,11 +304,12 @@ static int test_fc_reseed_clamps_boundary(void) {
 static int test_sensor_payload_pack_roundtrip(void) {
     uint8_t buf[FW2_CCM_PLAINTEXT_LEN];
     Pack_CCM_Sensor_Payload(3500, -15, 99, 1234, 0x5A, 0x37,
-                            0x2E00 /* z=23.0 x512 */, 0xAD, 0x42, buf);
+                            0x2E00 /* z=23.0 x512 */, 0xAD, 0x42,
+                            4321 /* [E.63 (г)] ema */, buf);
     uint16_t vcap; int8_t temp; uint8_t acoustic; uint16_t dt;
-    uint8_t status, ctrl, diag, vpd; uint16_t dz;
+    uint8_t status, ctrl, diag, vpd; uint16_t dz; uint16_t ema;
     Unpack_CCM_Sensor_Payload(buf, &vcap, &temp, &acoustic, &dt, &status, &ctrl,
-                              &dz, &diag, &vpd);
+                              &dz, &diag, &vpd, &ema);
     ASSERT_EQ(vcap, 3500);
     ASSERT_EQ((uint32_t)(int32_t)temp, (uint32_t)(int32_t)-15);
     ASSERT_EQ(acoustic, 99);
@@ -321,6 +322,7 @@ static int test_sensor_payload_pack_roundtrip(void) {
     ASSERT_EQ(dz, 0x2E00);
     ASSERT_EQ(diag, 0xAD);
     ASSERT_EQ(vpd, 0x42);
+    ASSERT_EQ(ema, 4321); /* [E.63 (г)] wire-rev2.1 bytes 12..13 плейну */
     printf("  test_sensor_payload_pack_roundtrip                         ✅\n");
     return 0;
 }
@@ -342,7 +344,8 @@ static int test_soldier_to_queen_roundtrip(void) {
     Build_CCM_Nonce(did, fc, nonce);
     Build_CCM_AAD(did, 0x00, fc, aad);
     Pack_CCM_Sensor_Payload(4200, 22, 7, 600, 0x00, 0x53,
-                            Pack_FW2_Device_Z(28.731f, 1), 0x00, 0x00, pt);
+                            Pack_FW2_Device_Z(28.731f, 1), 0x00, 0x00,
+                            550 /* ema */, pt);
 
     ASSERT_EQ(Ccm_Encrypt_TwoPhase(key_words, nonce, aad, pt, ct, mic), HAL_OK);
 
@@ -366,7 +369,9 @@ static int test_soldier_to_queen_roundtrip(void) {
 
     uint8_t recv_pt[FW2_CCM_PLAINTEXT_LEN];
     ASSERT_EQ(Ccm_Decrypt_TwoPhase(key_words, recv_nonce, recv_aad,
-                                   &air[8], &air[20], recv_pt), HAL_OK);
+                                   &air[FW2_CCM_AAD_LEN],
+                                   &air[FW2_CCM_AAD_LEN + FW2_CCM_PLAINTEXT_LEN],
+                                   recv_pt), HAL_OK);
     ASSERT_EQ(recv_did, did);
     ASSERT_EQ(recv_fc, fc);
     ASSERT_MEM_EQ(recv_pt, pt, FW2_CCM_PLAINTEXT_LEN);
@@ -378,7 +383,7 @@ static int test_soldier_to_queen_roundtrip(void) {
 static void Build_Reference_Packet(uint32_t key_words[4], uint32_t did, uint32_t fc,
                                    uint8_t out[FW2_CCM_AIR_PACKET_LEN]) {
     uint8_t nonce[FW2_CCM_NONCE_LEN], aad[FW2_CCM_AAD_LEN];
-    uint8_t pt[FW2_CCM_PLAINTEXT_LEN] = {1,2,3,4,5,6,7,8,9,10,11,12};
+    uint8_t pt[FW2_CCM_PLAINTEXT_LEN] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14};
     uint8_t ct[FW2_CCM_PLAINTEXT_LEN], mic[FW2_CCM_MIC_LEN];
     Build_CCM_Nonce(did, fc, nonce);
     Build_CCM_AAD(did, 0x00, fc, aad);
@@ -400,7 +405,9 @@ static int Try_Decrypt(uint32_t key_words[4],
         ((uint32_t)in[5] << 16) | ((uint32_t)in[6] << 8) | (uint32_t)in[7];
     Build_CCM_Nonce(did, fc, nonce);
     Build_CCM_AAD(did, gossip, fc, aad);
-    return Ccm_Decrypt_TwoPhase(key_words, nonce, aad, &in[8], &in[20], out_pt);
+    return Ccm_Decrypt_TwoPhase(key_words, nonce, aad, &in[FW2_CCM_AAD_LEN],
+                                &in[FW2_CCM_AAD_LEN + FW2_CCM_PLAINTEXT_LEN],
+                                out_pt);
 }
 
 static int test_mic_tamper_detected(void) {
@@ -408,7 +415,7 @@ static int test_mic_tamper_detected(void) {
     uint8_t pkt[FW2_CCM_AIR_PACKET_LEN];
     Build_Reference_Packet(key, 0xAABBCCDD, 42, pkt);
 
-    pkt[20] ^= 0x01; /* flip a bit in the MIC */
+    pkt[FW2_CCM_AAD_LEN + FW2_CCM_PLAINTEXT_LEN] ^= 0x01; /* flip a bit in the MIC */
     uint8_t pt[FW2_CCM_PLAINTEXT_LEN];
     ASSERT_EQ(Try_Decrypt(key, pkt, pt), HAL_ERROR);
     printf("  test_mic_tamper_detected                                   ✅\n");
@@ -478,7 +485,7 @@ static int test_panic_flag_inside_encrypted_payload(void) {
     Build_CCM_Nonce(0xAABBCCDD, 42, nonce);
     Build_CCM_AAD(0xAABBCCDD, 0x00, 42, aad);
     Pack_CCM_Sensor_Payload(3500, 25, 5, 100, 0x00 /* no panic */, 0x33,
-                            FW2_DEVICE_Z_NONE, 0x00, 0x00, pt);
+                            FW2_DEVICE_Z_NONE, 0x00, 0x00, 90 /* ema */, pt);
     ASSERT_EQ(Ccm_Encrypt_TwoPhase(key, nonce, aad, pt, ct, mic), HAL_OK);
     memcpy(&pkt[0],  aad, FW2_CCM_AAD_LEN);
     memcpy(&pkt[FW2_CCM_AAD_LEN], ct, FW2_CCM_PLAINTEXT_LEN);
@@ -573,25 +580,31 @@ static int test_phase4_marshalling_e2e_to_backend_bytes(void) {
     uint8_t  diag         = Pack_FW2_Diag(7, 0, 0, 1);
     uint16_t device_z     = Pack_FW2_Device_Z(28.5f, 1);
     uint8_t  gossip       = (uint8_t)(0x66554433u & 0xFFu); /* unix_ts LSB */
+    uint16_t wire_ema     = 3600; /* [E.63 (г)] контракт «wire = вхід GP» */
 
     uint8_t nonce[FW2_CCM_NONCE_LEN], aad[FW2_CCM_AAD_LEN];
     uint8_t pt[FW2_CCM_PLAINTEXT_LEN], ct[FW2_CCM_PLAINTEXT_LEN], mic[FW2_CCM_MIC_LEN];
     Build_CCM_Nonce(did, fc, nonce);
     Build_CCM_AAD(did, gossip, fc, aad);
     Pack_CCM_Sensor_Payload(vcap_voltage, temp_c, acoustic, (uint16_t)dt_wire,
-                            status_byte, mesh_ctrl, device_z, diag, 0x00, pt);
+                            status_byte, mesh_ctrl, device_z, diag, 0x00,
+                            wire_ema, pt);
     ASSERT_EQ(Ccm_Encrypt_TwoPhase(key, nonce, aad, pt, ct, mic), HAL_OK);
 
     uint8_t air[FW2_CCM_AIR_PACKET_LEN];
     memcpy(&air[0], aad, FW2_CCM_AAD_LEN);
-    memcpy(&air[8], ct, FW2_CCM_PLAINTEXT_LEN);
-    memcpy(&air[20], mic, FW2_CCM_MIC_LEN);
+    memcpy(&air[FW2_CCM_AAD_LEN], ct, FW2_CCM_PLAINTEXT_LEN);
+    memcpy(&air[FW2_CCM_AAD_LEN + FW2_CCM_PLAINTEXT_LEN], mic, FW2_CCM_MIC_LEN);
 
-    /* Королева: 29B-запис [DID][|RSSI|][air 4..27] (rx_route-контракт). */
-    uint8_t rec[29];
+    /* Королева: запис air+1 [DID][|RSSI|][air-хвіст] (rx_route-контракт;
+     * offsets ПОХІДНІ — статичний 29/9/21 дрейфив би з wire-ревізією). */
+    enum { REC_LEN  = FW2_CCM_AIR_PACKET_LEN + 1,
+           REC_CT   = 1 + FW2_CCM_AAD_LEN,                          /* 9  */
+           REC_MIC  = REC_CT + FW2_CCM_PLAINTEXT_LEN };             /* 23 */
+    uint8_t rec[REC_LEN];
     memcpy(&rec[0], &air[0], 4);
     rec[4] = 91; /* |-91| */
-    memcpy(&rec[5], &air[4], 24);
+    memcpy(&rec[5], &air[4], FW2_CCM_AIR_PACKET_LEN - 4);
 
     /* «Rails»: поля з запису → decrypt+verify → unpack-звірка джерел. */
     uint32_t r_did = ((uint32_t)rec[0] << 24) | ((uint32_t)rec[1] << 16) |
@@ -605,12 +618,12 @@ static int test_phase4_marshalling_e2e_to_backend_bytes(void) {
     uint8_t r_nonce[FW2_CCM_NONCE_LEN], r_aad[FW2_CCM_AAD_LEN], r_pt[FW2_CCM_PLAINTEXT_LEN];
     Build_CCM_Nonce(r_did, r_fc, r_nonce);
     Build_CCM_AAD(r_did, r_gossip, r_fc, r_aad);
-    ASSERT_EQ(Ccm_Decrypt_TwoPhase(key, r_nonce, r_aad, &rec[9], &rec[21], r_pt), HAL_OK);
+    ASSERT_EQ(Ccm_Decrypt_TwoPhase(key, r_nonce, r_aad, &rec[REC_CT], &rec[REC_MIC], r_pt), HAL_OK);
 
     uint16_t u_vcap, u_dt, u_dz; int8_t u_temp;
-    uint8_t u_ac, u_st, u_mc, u_diag, u_vpd;
+    uint8_t u_ac, u_st, u_mc, u_diag, u_vpd; uint16_t u_ema;
     Unpack_CCM_Sensor_Payload(r_pt, &u_vcap, &u_temp, &u_ac, &u_dt, &u_st, &u_mc,
-                              &u_dz, &u_diag, &u_vpd);
+                              &u_dz, &u_diag, &u_vpd, &u_ema);
     ASSERT_EQ(u_vcap, vcap_voltage);
     ASSERT_EQ((uint32_t)(int32_t)u_temp, (uint32_t)(int32_t)temp_c);
     ASSERT_EQ(u_ac, acoustic);
@@ -621,6 +634,7 @@ static int test_phase4_marshalling_e2e_to_backend_bytes(void) {
     ASSERT_EQ(u_dz, device_z);
     ASSERT_EQ(u_diag, diag);
     ASSERT_EQ(u_vpd, 0x00);
+    ASSERT_EQ(u_ema, wire_ema); /* [E.63 (г)] EMA доїхав до «Rails» байт-точно */
     printf("  test_phase4_marshalling_e2e_to_backend_bytes               ✅\n");
     return 0;
 }
@@ -642,16 +656,17 @@ static int test_panic_marshalling_ccm(void) {
     Build_CCM_AAD(did, 0x00, fc, aad);
     Pack_CCM_Sensor_Payload(0, 0, 0xFF, 0, FW2_STATUS_PANIC_BIT, mesh_ctrl,
                             Pack_FW2_Device_Z(31.2f, 1), Pack_FW2_Diag(0, 0, 0, 0),
-                            0x00, pt);
+                            0x00, 0 /* ema: panic ≠ homeostasis */, pt);
     ASSERT_EQ(Ccm_Encrypt_TwoPhase(key, nonce, aad, pt, ct, mic), HAL_OK);
 
     uint8_t r_pt[FW2_CCM_PLAINTEXT_LEN];
     ASSERT_EQ(Ccm_Decrypt_TwoPhase(key, nonce, aad, ct, mic, r_pt), HAL_OK);
 
     uint16_t u_vcap, u_dt, u_dz; int8_t u_temp;
-    uint8_t u_ac, u_st, u_mc, u_diag, u_vpd;
+    uint8_t u_ac, u_st, u_mc, u_diag, u_vpd; uint16_t u_ema;
     Unpack_CCM_Sensor_Payload(r_pt, &u_vcap, &u_temp, &u_ac, &u_dt, &u_st, &u_mc,
-                              &u_dz, &u_diag, &u_vpd);
+                              &u_dz, &u_diag, &u_vpd, &u_ema);
+    ASSERT_EQ(u_ema, 0);                                   /* panic: ema=0 */
     ASSERT_EQ(u_ac, 0xFF);                                 /* код паніки */
     ASSERT_EQ(u_st & FW2_STATUS_PANIC_BIT, FW2_STATUS_PANIC_BIT);
     ASSERT_EQ((u_st & FW2_STATUS_GROWTH_MASK), 0);         /* панічний зойк не мінтить */
@@ -679,7 +694,7 @@ static int test_two_key_scoping_contract(void) {
     /* Фаза-4 CCM TX: session у скоупі */
     uint8_t nonce[FW2_CCM_NONCE_LEN], aad[FW2_CCM_AAD_LEN];
     uint32_t b0_w[FW2_CCM_B0_LEN / 4], aad_w[FW2_CCM_AAD_LEN / 4];
-    uint32_t pt_w[FW2_CCM_PLAINTEXT_LEN / 4], ct_w[FW2_CCM_PLAINTEXT_LEN / 4];
+    uint32_t pt_w[(FW2_CCM_PLAINTEXT_LEN + 3) / 4], ct_w[(FW2_CCM_PLAINTEXT_LEN + 3) / 4];
     uint32_t tag_w[4];
     Build_CCM_Nonce(G_DID, G_FC, nonce);
     Build_CCM_AAD(G_DID, G_GOSSIP, G_FC, aad);

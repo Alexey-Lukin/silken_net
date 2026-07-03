@@ -583,7 +583,7 @@ _rx_payload[0] == OTA_MARKER (0x99)
 
 Mesh-relay у §1.9 повторює прийнятий 16-байтний шифрований пакет від іншого Солдата, але **тільки якщо** його DID не "вже бачили" у недавньому минулому. Без цього два Солдати у радіусі прямої видимості один одного утворюють `pingpong`-цикл (TTL зменшується до 0, але кожна сторона ретранслює ту саму DID нескінченно за рахунок дрейфу годинника).
 
-> **⚠️ Передумова (per-device crypto):** релей розшифровує чужий пакет → `TTL--` → перешифровує — коректно лише за **спільного** LoRa-ключа (ECB-ера). **CCM-ера (FW.2 (в), 2026-07-03): Сценарій Б гейтовано `#if !FW2_CCM_ENABLED`** — телеметрія/panic сусідів = 28B на per-device session-ключах (гинуть на RX-guard до декрипту), TTL живе у ciphertext → **star-only прийнято** (ухвала гейту (а), [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)); mesh повертається лише з wire-rev3-класом (cleartext TTL/адресація + opaque pass-through) → [`00_07` — ARCH.43](00_07_Action_Plan_Tracker) (mesh-вісь).
+> **⚠️ Передумова (per-device crypto):** релей розшифровує чужий пакет → `TTL--` → перешифровує — коректно лише за **спільного** LoRa-ключа (ECB-ера). **CCM-ера (FW.2 (в), 2026-07-03): Сценарій Б гейтовано `#if !FW2_CCM_ENABLED`** — телеметрія/panic сусідів = air-кадри (30B rev2.1) на per-device session-ключах (гинуть на RX-guard до декрипту), TTL живе у ciphertext → **star-only прийнято** (ухвала гейту (а), [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)); mesh повертається лише з wire-rev3-класом (cleartext TTL/адресація + opaque pass-through) → [`00_07` — ARCH.43](00_07_Action_Plan_Tracker) (mesh-вісь).
 
 **Структура кешу (LIFO, 3 слоти, FW.21):**
 
@@ -1003,7 +1003,7 @@ Chunk-розмір для LoRa OTA: **11 байт** корисного коду 
 
 > **Політика розширення:** перед додаванням нового опкоду — (1) перевірити цю таблицю, (2) обрати наступний вільний з `0x9E..0x9F`, (3) задокументувати тут І у відповідному функціональному документі (03_02/03_05/05_02). Якщо `0x9E..0x9F` вичерпано — обговорити перепакування або новий безпечний діапазон.
 >
-> **Ключ LoRa-шару (CCM-ера, FW.2 (в)):** усі опкоди цієї карти — і downlink-broadcast (`0x99..0x9E`), і uplink-запити (`0x55`/`0x56`) — їдуть 16B ECB на **cluster control-plane KEYB** ([`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security) двоключова модель); session KEYL носить лише телеметрію/panic (28B CCM). ECB-ера — єдиний спільний ключ, як і було.
+> **Ключ LoRa-шару (CCM-ера, FW.2 (в)):** усі опкоди цієї карти — і downlink-broadcast (`0x99..0x9E`), і uplink-запити (`0x55`/`0x56`) — їдуть 16B ECB на **cluster control-plane KEYB** ([`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security) двоключова модель); session KEYL носить лише телеметрію/panic (30B CCM rev2.1). ECB-ера — єдиний спільний ключ, як і було.
 
 ### 4.6 CoAP Downlink → OTA RAM Assembly
 
@@ -1680,7 +1680,7 @@ EMA_Update(delta_t_seconds, vcap_voltage);
 - Бачити реальний raw `delta_t` для діагностики
 - Самостійно рахувати EMA server-side якщо потрібно (через TimescaleDB continuous aggregates, E.37)
 
-**Dual Computation Integrity (метаболічний канал):** [E.63] FW.5 B+ β-пертурбацію **реверсовано** — raw `delta_t` більше не входить у Z. Wire несе **raw** `delta_t`, а `growth_points` пакуються з **EMA-згладженого** (firmware-internal) → backend **не може** точно перерахувати GP з одного пакета. Тому метаболічний DCI зараз — **структурний** `check_metabolic_divergence!` (wire-GP↔статус conformance, observational; [`04_02`](04_02_Business_Logic_and_Services) / [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor)). Точний stateless `m(wire_dT)==GP` відкладено: wire мусить понести EMA `delta_t` — **wire-rev2 (28B CCM) цього свідомо не додав**, кандидат rev3 у wire-budget ledger ([`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)). Трекер — [`00_07` — E.63](00_07_Action_Plan_Tracker).
+**Dual Computation Integrity (метаболічний канал):** [E.63] FW.5 B+ β-пертурбацію **реверсовано** — raw `delta_t` більше не входить у Z. Wire несе **raw** `delta_t` (діагностика + server-side EMA), а `growth_points` пакуються з **EMA-згладженого**. **✅ Розрив закрито wire-rev2.1 (30B CCM, founder 2026-07-03, E.63 гейт (г)):** wire ДОДАТКОВО несе `ema_delta_t_s` (bytes 20..21) за контрактом **«wire = вхід GP»** — Soldier сатурує EMA до wire-u16 ПЕРЕД викликом mruby (Фаза 3, до гілкування — VM_ERROR-кадр теж несе чесне поточне значення) і пакує ТЕ САМЕ число → backend `Attractor.expected_homeostasis_gp(ema)` перераховує GP **stateless байт-точно**. Гілка у `check_metabolic_divergence!` — **observational** (warn+метрика) до bench-калібрування порогів; структурний band-check лишається для ECB-шляху (ema відсутній). Wire-дім + ухвала — [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security); трекер — [`00_07` — E.63](00_07_Action_Plan_Tracker).
 
 ### 13.7 Тести (`firmware/test/test_soldier_logic.c` — секція FW.21)
 

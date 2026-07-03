@@ -11,12 +11,14 @@
  *   - firmware/queen/main.c    (decrypt path, gated #if FW2_CCM_ENABLED)
  *   - firmware/test/test_ccm.c (host tests, libcrypto-backed HAL mock)
  *
- * Wire format (28 bytes on the air; Queen prepends RSSI byte before
- * forwarding the 29-byte chunk over CoAP to Rails). Airtime note:
- * at SF10/125kHz/CR4:5 a 28B frame costs one symbol block more than
- * 24B (493.6 ms vs 452.7 ms, +12 mJ/TX) — approved against the
- * wire-budget ledger (docs/03_05): it homes EVERY known wire claimant
- * (device_z, diag bits, VPD, gossip) so no second field migration.
+ * Wire format (30 bytes on the air — rev2.1, founder decision 2026-07-03
+ * [E.63 гейт (г)]; Queen prepends RSSI byte before forwarding the 31-byte
+ * chunk over CoAP to Rails). Airtime note: at SF10/125kHz/CR4:5 the
+ * 28..31B frames share ONE symbol block (48 symbols, 493.6 ms) — the
+ * +2B EMA field rides airtime-free inside the block rev2 already paid
+ * for (wire-budget ledger, docs/03_05): the frame homes EVERY known
+ * claimant (device_z, diag bits, VPD, gossip, EMA-delta_t) so no field
+ * migration is pending.
  *
  *   ┌─ AAD (cleartext, MIC-protected) ─────────────────────────────┐
  *   │ Byte 0..3 : DID (uint32 BE)                                  │
@@ -30,7 +32,8 @@
  *   │ Byte 8..9 : Vcap (uint16 BE, mV)                             │
  *   │ Byte 10   : temp_c (int8, °C)                                │
  *   │ Byte 11   : acoustic_events (uint8, saturating)              │
- *   │ Byte 12..13: delta_t_s (uint16 BE, seconds)                  │
+ *   │ Byte 12..13: delta_t_s (uint16 BE, seconds — RAW останнього  │
+ *   │             циклу; діагностика + server-side EMA, 03_01 §13.6)│
  *   │ Byte 14   : status_byte [panic:1 | status:2 | growth:5]      │
  *   │ Byte 15   : mesh_ctrl  [ttl:4 | fw_epoch_nibble:4]           │
  *   │ Byte 16..17: device_z (uint16 BE, z × 512; 0xFFFF = «не      │
@@ -40,8 +43,15 @@
  *   │             fauna_skip:1 | fc_degraded:1] (FW.18b/FW.42/FW.2)│
  *   │ Byte 19   : vpd_index (uint8; 0x00 = немає BME280 — резерв   │
  *   │             під HW.32, шкала визначається при калібруванні)  │
+ *   │ Byte 20..21: ema_delta_t_s (uint16 BE, seconds — [E.63 (г)]  │
+ *   │             КОНТРАКТ «wire = вхід GP»: це САМЕ число пішло у │
+ *   │             mruby metabolic_health цього циклу (сатуроване   │
+ *   │             min(EMA,0xFFFF); не-warmed → BASELINE 60; panic  │
+ *   │             → 0). Stateless GP-recompute: backend рахує      │
+ *   │             m(ema) з нього ж — observational до bench-       │
+ *   │             калібрування порогів. Transient (не персистить). │
  *   ├─ MIC (AES-CCM tag) ──────────────────────────────────────────┤
- *   │ Byte 20..27: MIC (8 bytes = 64-bit MAC)                      │
+ *   │ Byte 22..29: MIC (8 bytes = 64-bit MAC)                      │
  *   └──────────────────────────────────────────────────────────────┘
  *
  * Nonce (12 bytes) = DID(4) || FrameCounter(4 BE, top byte 0) || 0x00 × 4
@@ -76,9 +86,9 @@
 #include <stdint.h>
 #include <string.h>
 
-#define FW2_CCM_AIR_PACKET_LEN     28
+#define FW2_CCM_AIR_PACKET_LEN     30  /* rev2.1: +2B EMA (E.63 гейт (г), 2026-07-03) */
 #define FW2_CCM_AAD_LEN            8   /* DID(4) + gossip(1) + FC24(3) */
-#define FW2_CCM_PLAINTEXT_LEN      12  /* sensor payload (wire-rev2) */
+#define FW2_CCM_PLAINTEXT_LEN      14  /* sensor payload (wire-rev2.1) */
 #define FW2_CCM_MIC_LEN            8   /* tag */
 #define FW2_CCM_NONCE_LEN          12  /* DID + FC32 + 4 zero bytes */
 #define FW2_CCM_B0_LEN             16  /* NIST 800-38C B0: flags‖nonce‖Q */
@@ -223,7 +233,7 @@ static inline void Pack_CCM_Sensor_Payload(uint16_t vcap_mv, int8_t temp_c,
                                            uint8_t acoustic, uint16_t delta_t_s,
                                            uint8_t status_byte, uint8_t mesh_ctrl,
                                            uint16_t device_z, uint8_t diag,
-                                           uint8_t vpd_index,
+                                           uint8_t vpd_index, uint16_t ema_delta_t_s,
                                            uint8_t out[FW2_CCM_PLAINTEXT_LEN]) {
     out[0]  = (uint8_t)(vcap_mv >> 8);
     out[1]  = (uint8_t)(vcap_mv);
@@ -237,6 +247,8 @@ static inline void Pack_CCM_Sensor_Payload(uint16_t vcap_mv, int8_t temp_c,
     out[9]  = (uint8_t)(device_z);
     out[10] = diag;
     out[11] = vpd_index;
+    out[12] = (uint8_t)(ema_delta_t_s >> 8);
+    out[13] = (uint8_t)(ema_delta_t_s);
 }
 
 static inline void Unpack_CCM_Sensor_Payload(const uint8_t in[FW2_CCM_PLAINTEXT_LEN],
@@ -244,16 +256,17 @@ static inline void Unpack_CCM_Sensor_Payload(const uint8_t in[FW2_CCM_PLAINTEXT_
                                              uint8_t *acoustic, uint16_t *delta_t_s,
                                              uint8_t *status_byte, uint8_t *mesh_ctrl,
                                              uint16_t *device_z, uint8_t *diag,
-                                             uint8_t *vpd_index) {
-    *vcap_mv     = (uint16_t)((in[0] << 8) | in[1]);
-    *temp_c      = (int8_t)in[2];
-    *acoustic    = in[3];
-    *delta_t_s   = (uint16_t)((in[4] << 8) | in[5]);
-    *status_byte = in[6];
-    *mesh_ctrl   = in[7];
-    *device_z    = (uint16_t)((in[8] << 8) | in[9]);
-    *diag        = in[10];
-    *vpd_index   = in[11];
+                                             uint8_t *vpd_index, uint16_t *ema_delta_t_s) {
+    *vcap_mv       = (uint16_t)((in[0] << 8) | in[1]);
+    *temp_c        = (int8_t)in[2];
+    *acoustic      = in[3];
+    *delta_t_s     = (uint16_t)((in[4] << 8) | in[5]);
+    *status_byte   = in[6];
+    *mesh_ctrl     = in[7];
+    *device_z      = (uint16_t)((in[8] << 8) | in[9]);
+    *diag          = in[10];
+    *vpd_index     = in[11];
+    *ema_delta_t_s = (uint16_t)((in[12] << 8) | in[13]);
 }
 
 /* ----- RTC_BKP_DR15 Frame Counter packing -----

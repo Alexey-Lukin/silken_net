@@ -643,6 +643,7 @@ int Soldier_Build_CCM_LoRa_Packet(
     uint32_t did, uint16_t vcap_mv, int8_t temp_c, uint8_t acoustic,
     uint16_t delta_t_s, uint8_t status_byte, uint8_t mesh_ctrl,
     uint16_t device_z, uint8_t diag, uint8_t vpd_index, uint8_t gossip_ts_lsb,
+    uint16_t ema_delta_t_s,
     uint8_t out_packet[FW2_CCM_AIR_PACKET_LEN]);
 #endif
 
@@ -663,6 +664,12 @@ static uint8_t  fc_hiwater_degraded = 0; // TX перетнув межу, Flash 
 uint32_t bcast_key[4] = {0};
 uint8_t  bcast_key_is_fallback = 0; // 1 = KEYB-слот порожній → живемо на KEYL
                                     // (bench-плата, прошита до KEYB-ери)
+
+// [E.63 (г)] Wire-байти 20..21: EMA-delta_t, ЯК він пішов у metabolic_health
+// цього циклу (контракт «wire = вхід GP» — Фаза 3 виставляє ДО гілкування,
+// VM_ERROR-кадр несе чесне поточне значення). Panic-шлях шле 0 (не-homeostasis,
+// recompute скипається бекендом).
+static uint16_t wire_ema_delta_t_s = 0;
 #endif
 
 // [FW.20-S2 4/5] Гейт повного mesh-relay Time Beacon'а: Провідник несе далі
@@ -2124,8 +2131,25 @@ int main(void)
     // [SEC.11 / FW.30] Єдина сигнатура: calculate_state(x, y, z, temp, acoustic, delta_t_s, vcap_mv)
     // Warm path: (x,y,z) з RTC DR16-DR18 (FW.6 state continuation).
     // Cold path: (x₀,y₀,z₀) з K_seed via HKDF/HMAC (SEC.11 seed derivation).
-    // delta_t_s/vcap_mv: defaults 60/3300; реальне EMA-передавання — FW.49/FW.50 (bench).
+    // delta_t_s/vcap_mv у mruby: EMA-згладжені після прогріву (FW.49-S1 wired),
+    // до прогріву — baseline 60/3300 (03_01 §13.3).
     // =========================================================================
+
+    // [E.63 (г)] КОНТРАКТ «wire = вхід GP»: одне число на обидва споживачі —
+    // сатуроване до wire-u16 EMA (чи baseline до прогріву) йде і в mruby
+    // metabolic_health, і у wire-байти 20..21. Обчислюється ДО гілкування:
+    // VM_ERROR-кадр (mruby скип) теж мусить нести чесне поточне значення,
+    // а не залишок минулого циклу.
+    uint32_t delta_t_for_lorenz = BASELINE_DELTA_T_S;
+    uint16_t vcap_for_lorenz    = 3300u;     // nominal (NOMINAL_VCAP_MV; reserved)
+    if (EMA_Is_Warmed_Up()) {
+        uint32_t ema_s = EMA_Get_DeltaT_Sec();
+        delta_t_for_lorenz = (ema_s > 0xFFFFu) ? 0xFFFFu : ema_s;
+        vcap_for_lorenz    = EMA_Get_Vcap_Mv();
+    }
+#if FW2_CCM_ENABLED
+    wire_ema_delta_t_s = (uint16_t)delta_t_for_lorenz;
+#endif
 
     if (grace_hello) {
       // [ARCH.41-C] Лоренц відкладено до першого beacon'а: cold-start
@@ -2153,19 +2177,11 @@ int main(void)
       if (lorenz_state_valid) {
           // [SEC.11 / FW.30] Єдиний виклик calculate_state з 7 аргументами.
           // Повертає [payload_byte, x_final, y_final, z_final].
-          // [E.63] EMA-згладжені delta_t_s / vcap_mv передаються в args[5..6]
-          // лише після прогріву фільтра (EMA_Is_Warmed_Up — count ≥
-          // EMA_WARMUP_CYCLES). До цього — нейтральні defaults (60 с, 3300 мВ),
-          // що відповідають baseline (BASELINE_DELTA_T_S=60, NOMINAL_VCAP_MV=3300).
-          // delta_t живить growth_points напряму (metabolic_health, 03_04 §4.3);
-          // β лишається фіксованим (BASE_BETA) — стара FW.5 β-перетурбація реверсована.
-          uint32_t delta_t_for_lorenz = BASELINE_DELTA_T_S;
-          uint16_t vcap_for_lorenz    = 3300u;     // nominal (NOMINAL_VCAP_MV; reserved)
-          if (EMA_Is_Warmed_Up()) {
-              delta_t_for_lorenz = EMA_Get_DeltaT_Sec();
-              vcap_for_lorenz    = EMA_Get_Vcap_Mv();
-          }
-
+          // [E.63] delta_t_for_lorenz/vcap_for_lorenz обчислені над гілкуванням
+          // Фази 3 (контракт «wire = вхід GP» — те саме сатуроване число йде
+          // у wire-байти 20..21). delta_t живить growth_points напряму
+          // (metabolic_health, 03_04 §4.3); β лишається фіксованим (BASE_BETA) —
+          // стара FW.5 β-перетурбація реверсована.
           mrb_value args[7];
           args[0] = mrb_float_value(mrb, (double)lorenz_x);
           args[1] = mrb_float_value(mrb, (double)lorenz_y);
@@ -2289,6 +2305,7 @@ int main(void)
                                           ccm_diag,
                                           0x00 /* vpd_index — до BME280 (HW.32) */,
                                           Soldier_Pack_Gossip_Ts_Byte(soldier_unix_ts),
+                                          wire_ema_delta_t_s /* [E.63 (г)] = вхід GP */,
                                           ccm_air) == HAL_OK) {
             Radio.Send(ccm_air, FW2_CCM_AIR_PACKET_LEN);
         }
@@ -2969,6 +2986,7 @@ void Trigger_Emergency_LoRa_TX(void)
                           Pack_FW2_Device_Z(lorenz_z, lorenz_state_valid),
                           panic_diag, 0x00,
                           Soldier_Pack_Gossip_Ts_Byte(soldier_unix_ts),
+                          0u /* ema: panic ≠ homeostasis, recompute скип */,
                           panic_air);
 #else
     uint8_t panic_payload[16] = {0};
@@ -3489,11 +3507,11 @@ static void Save_Frame_Counter(uint32_t fc_24bit)
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR15, Pack_FW2_Frame_Counter(fc_24bit));
 }
 
-// Зібрати повний 28-байтний CCM LoRa-пакет (wire-rev2) та просунути
-// лічильник кадрів. Успіх: out_packet[0..27] — готовий до ефіру, HAL_OK.
+// Зібрати повний 30-байтний CCM LoRa-пакет (wire-rev2.1) та просунути
+// лічильник кадрів. Успіх: out_packet[0..29] — готовий до ефіру, HAL_OK.
 // Збій HAL_CRYPEx: повертає HAL_ERROR — TX заборонено, лічильник не рухаємо.
 //
-// Нові поля rev2 (джерела на боці викликача при фліп-вшиванні):
+// Нові поля rev2/rev2.1 (джерела на боці викликача при фліп-вшиванні):
 //   device_z   — Pack_FW2_Device_Z(lorenz_z, lorenz_state_valid): сирий Z
 //                для FW.31 numeric DCI (сентинель NONE коли Лоренц спав)
 //   diag       — Pack_FW2_Diag(tinyml_threshold_invalid_count, fauna_mode,
@@ -3501,10 +3519,13 @@ static void Save_Frame_Counter(uint32_t fc_24bit)
 //   vpd_index  — 0x00 до приходу BME280 (HW.32)
 //   gossip_ts_lsb — Soldier_Pack_Gossip_Ts_Byte(soldier_unix_ts): їде у
 //                cleartext-AAD, сусіди читають без ключа (FW.20-S2 #5)
+//   ema_delta_t_s — [E.63 (г)] wire_ema_delta_t_s: САМЕ те число, що пішло
+//                у metabolic_health цього циклу (контракт «wire = вхід GP»)
 int Soldier_Build_CCM_LoRa_Packet(
     uint32_t did, uint16_t vcap_mv, int8_t temp_c, uint8_t acoustic,
     uint16_t delta_t_s, uint8_t status_byte, uint8_t mesh_ctrl,
     uint16_t device_z, uint8_t diag, uint8_t vpd_index, uint8_t gossip_ts_lsb,
+    uint16_t ema_delta_t_s,
     uint8_t out_packet[FW2_CCM_AIR_PACKET_LEN])
 {
     uint32_t fc = Load_Frame_Counter();
@@ -3532,18 +3553,21 @@ int Soldier_Build_CCM_LoRa_Packet(
 #endif
 
     // Word-aligned плоть: STM32 CRYP HAL споживає uint32_t* — байтові
-    // масиви на стеку такого вирівнювання не обіцяють.
+    // масиви на стеку такого вирівнювання не обіцяють. Розмір — заокруглення
+    // ВГОРУ до слова (rev2.1: PT=14 Б → 4 слова; цілочисельне /4 дало б 3
+    // і зрізало б хвіст EMA-поля).
     uint32_t aad_w[FW2_CCM_AAD_LEN / 4];
     uint32_t b0_w[FW2_CCM_B0_LEN / 4];
-    uint32_t pt_w[FW2_CCM_PLAINTEXT_LEN / 4];
-    uint32_t ct_w[FW2_CCM_PLAINTEXT_LEN / 4];
+    uint32_t pt_w[(FW2_CCM_PLAINTEXT_LEN + 3u) / 4];
+    uint32_t ct_w[(FW2_CCM_PLAINTEXT_LEN + 3u) / 4];
     uint32_t tag_w[4]; // 16B: WL HAL пише повний блок, MIC = перші 8 байт
 
     Build_CCM_AAD(did, gossip_ts_lsb, next_fc, (uint8_t *)aad_w);
     Build_CCM_B0(did, next_fc, (uint8_t *)b0_w); // нонс живе всередині B0
     Pack_CCM_Sensor_Payload(vcap_mv, temp_c, acoustic, delta_t_s,
                             status_byte, mesh_ctrl,
-                            device_z, diag, vpd_index, (uint8_t *)pt_w);
+                            device_z, diag, vpd_index, ema_delta_t_s,
+                            (uint8_t *)pt_w);
 
     // Двофазний WL-флоу: payload-фаза → тег-фаза (invocation shape — lora_ccm.h).
     MX_CRYP_Init_CCM(b0_w, aad_w);

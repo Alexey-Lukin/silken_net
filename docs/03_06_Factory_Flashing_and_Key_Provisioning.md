@@ -118,7 +118,7 @@
 | **STM32 RDP Level 1/2** | SWD flash dump | Прямий read firmware через debug port |
 | **Backend (atecc_serial pin)** | ATECC swap на іншому board | Адверсар викрадає ATECC з одного board і ставить на інший — backend reject при провіженінгу через mismatch (device_uid, atecc_serial) пари |
 
-**Latency impact (Гілка B vs A):** ATECC608B AES-ECB ~1.5 мс/блок vs MCU HAL_CRYP ~10 µs. Для одного 16/28-байтного LoRa пакета — нехтовно. Для CBC batch 50 × 16 байт = 800 байт — додаткові ~75 мс на flush (CoAP flush триває кілька секунд у будь-якому разі).
+**Latency impact (Гілка B vs A):** ATECC608B AES-ECB ~1.5 мс/блок vs MCU HAL_CRYP ~10 µs. Для одного 16/30-байтного LoRa пакета — нехтовно. Для CBC batch 50 × 16 байт = 800 байт — додаткові ~75 мс на flush (CoAP flush триває кілька секунд у будь-якому разі).
 
 **Power impact (Гілка B):** ATECC active ~69 мкДж/пакет → ≈0.2% active-циклу Soldier (точні числа — 03_05 §3.7, дзеркало SSOT там). ⚠️ Sleep 150 нА always-on **з'їдає весь запас Сценарію C** → SE обов'язково за load-switch гейтом (розрахунок і вимога — 03_05 §3.7). Енергія active **мала, але не вирішальна**: чи робить SE AES щопакета, чи лише provisioning (а streaming AES — на вбудованому radio-AES STM32) — окрема вісь компромісу (tamper-resistance LoRa-ключа ⟷ latency/ідіом), повний розбір — 03_05 §3.7 (SEC.14).
 

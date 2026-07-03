@@ -10,10 +10,11 @@ class TelemetryUnpackerService < ApplicationService
   # Enabled via ENV `TELEMETRY_CCM_ENABLED=true`; defaults to ECB so the
   # production wire format is unchanged until firmware ships CCM emission.
   # Rev2 rationale + повна розкладка: docs/03_05 wire-budget ledger.
-  CCM_CHUNK_SIZE             = 29
-  # Vcap(2BE) Temp(i8) Acoustic(u8) dt(2BE) Status(u8) MeshCtrl(u8)
+  CCM_CHUNK_SIZE             = 31 # wire-rev2.1: air 30B + Queen |RSSI| (E.63 (г))
+  # Vcap(2BE) Temp(i8) Acoustic(u8) dt(2BE, RAW) Status(u8) MeshCtrl(u8)
   # DeviceZ(2BE ×512, 0xFFFF=none) Diag(u8) VpdIndex(u8)
-  CCM_SENSOR_PAYLOAD_FORMAT  = "n c C n C C n C C"
+  # EmaDeltaT(2BE — «wire = вхід GP», E.63 (г): stateless recompute)
+  CCM_SENSOR_PAYLOAD_FORMAT  = "n c C n C C n C C n"
   CCM_DEVICE_Z_NONE          = 0xFFFF
   CCM_DEVICE_Z_SCALE         = 512.0
   CCM_FC_NONCE_TTL           = 25.hours
@@ -283,12 +284,12 @@ class TelemetryUnpackerService < ApplicationService
     Rails.logger.error "🛑 [Telemetry Error] DID #{hex_did || 'UNKNOWN'}: #{e.message}\n#{trace}"
   end
 
-  # [FW.2 wire-rev2] AES-128-CCM 29-byte chunk path. Activated via
+  # [FW.2 wire-rev2.1] AES-128-CCM 31-byte chunk path. Activated via
   # `TELEMETRY_CCM_ENABLED=true`. Chunk layout:
   #
-  #   [DID:4][RSSI:1][gossip_ts_lsb:1][FrameCounter:3 BE][ciphertext:12][MIC:8]
+  #   [DID:4][RSSI:1][gossip_ts_lsb:1][FrameCounter:3 BE][ciphertext:14][MIC:8]
   #
-  # Queen prepends RSSI(1) to the 28B LoRa air packet — RSSI is NOT
+  # Queen prepends RSSI(1) to the 30B LoRa air packet — RSSI is NOT
   # covered by the CCM MIC (it's receiver-side metadata); DID, gossip byte
   # and FrameCounter form the 8-byte AAD which IS authenticated. The
   # gossip byte is addressed to neighbouring Soldiers (FW.20-S2 #5) —
@@ -300,8 +301,8 @@ class TelemetryUnpackerService < ApplicationService
     did_bytes     = chunk[0..3]
     gossip_ts_lsb = chunk[5].unpack1("C")
     frame_counter = ("\x00".b + chunk[6..8]).unpack1("N")
-    ciphertext    = chunk[9..20]
-    mic           = chunk[21..28]
+    ciphertext    = chunk[9..22]
+    mic           = chunk[23..30]
 
     # Queen sentinel — see ECB path. In CCM mode the Queen does not
     # encrypt its own self-telemetry as a fake Soldier (different key
@@ -351,7 +352,7 @@ class TelemetryUnpackerService < ApplicationService
 
     sensor   = plaintext.unpack(CCM_SENSOR_PAYLOAD_FORMAT)
     vcap_mv, temp_c, acoustic, delta_t_s, status_byte, mesh_ctrl,
-      device_z_raw, diag_byte, vpd_index = sensor
+      device_z_raw, diag_byte, vpd_index, ema_delta_t_s = sensor
 
     unless SAFE_VOLTAGE_RANGE.cover?(vcap_mv) && SAFE_TEMP_RANGE.cover?(temp_c)
       Rails.logger.warn "📡 [CCM Sensor Noise] DID #{hex_did}: vcap=#{vcap_mv} temp=#{temp_c} — out of physical bounds."
@@ -395,6 +396,12 @@ class TelemetryUnpackerService < ApplicationService
     if device_z_raw != CCM_DEVICE_Z_NONE
       log_attributes[:device_z] = device_z_raw / CCM_DEVICE_Z_SCALE
     end
+
+    # [E.63 (г)] EMA-delta_t з шифртексту (wire-rev2.1 bytes 20..21) —
+    # контракт «wire = вхід GP»: живить точний stateless recompute у
+    # check_metabolic_divergence!. Транзієнт (не персистить, KENOSIS) —
+    # server-side EMA-аналітику покриває raw dT (03_01 §13.6 / E.37).
+    log_attributes[:ema_delta_t_s] = ema_delta_t_s
 
     # [FW.18b] diag-байт (wire-rev2 byte 18): [thr_invalid:5 | fauna_mode:1 |
     # fauna_skip:1 | fc_degraded:1] — дзеркало Pack_FW2_Diag (lora_ccm.h).
@@ -597,7 +604,29 @@ class TelemetryUnpackerService < ApplicationService
       else
         true # anomaly/tamper GP already neutralised by emission_eligible_growth_points
       end
-    return if conformant
+
+    if conformant
+      # [E.63 (г), wire-rev2.1] ТОЧНА гілка: кадр несе EMA-delta_t — САМЕ те
+      # число, що з'їла metabolic_health на пристрої (контракт «wire = вхід
+      # GP», Soldier Фаза-3) → stateless recompute мусить збігтися БАЙТ-точно.
+      # OBSERVATIONAL до bench-калібрування порогів (placeholder 600/7200 —
+      # 03_04 §4.3): warn + метрика, мінт НЕ гейтиться (клас z-DCI: ловить
+      # баги/десинк, не anti-fraud — консистентну брехню обома полями CCM+MIC
+      # однаково не ловить). ECB-шлях ema не несе (nil) — гілка скипається.
+      ema = attributes[:ema_delta_t_s]
+      return if ema.nil? || attributes[:bio_status] != :homeostasis
+
+      expected_gp = SilkenNet::Attractor.expected_homeostasis_gp(ema)
+      return if wire_gp == expected_gp
+
+      Rails.logger.warn(
+        "🔍 [Metabolic Divergence · exact] DID #{tree.did}: wire_gp=#{wire_gp} ≠ " \
+        "recompute(ema=#{ema}s)=#{expected_gp}. Contract «wire = вхід GP» broken " \
+        "(threshold desync / EMA-state corruption / firmware bug)."
+      )
+      SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL.increment
+      return
+    end
 
     Rails.logger.warn(
       "🔍 [Metabolic Divergence] DID #{tree.did}: status=#{attributes[:bio_status]}, " \
@@ -786,7 +815,7 @@ class TelemetryUnpackerService < ApplicationService
       # not a column — strip it before persisting (calibrated temperature_c stays).
       # [FW.31] :device_z (wire-rev2) — той самий транзієнт-клас: вхід numeric
       # DCI, серверна істина z_value вже зберігається окремо.
-      record = tree.telemetry_logs.create!(attributes.except(:lorenz_temperature_c, :device_z))
+      record = tree.telemetry_logs.create!(attributes.except(:lorenz_temperature_c, :device_z, :ema_delta_t_s))
 
       # [OBSERVABILITY]: Count successfully committed telemetry chunks
       SilkenNet::Metrics::TELEMETRY_PROCESSED_TOTAL.increment

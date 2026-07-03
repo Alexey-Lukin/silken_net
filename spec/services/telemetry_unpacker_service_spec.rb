@@ -603,7 +603,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       # `GAIA_DCI_NUMERIC_TOLERANCE=true` AND `device_z` is present in
       # the attributes hash. Wire-home для device_z існує з FW.2 wire-rev2
       # (CCM bytes 16..17, ×512; сентинель 0xFFFF → атрибут відсутній) —
-      # e2e-шлях покритий у describe "FW.2 CCM 29-byte path".
+      # e2e-шлях покритий у describe "FW.2 CCM path".
       describe "[FW.31] numeric tolerance band" do
         let(:service) { described_class.new("", nil) }
 
@@ -1326,7 +1326,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
   #   [DID:4][RSSI:1][gossip_ts_lsb:1][FrameCounter:3 BE][ciphertext:12][MIC:8]
   #
   # Defaults stay on the 21B ECB path until firmware ships CCM emission.
-  describe "FW.2 CCM 29-byte path [TELEMETRY_CCM_ENABLED=true]" do
+  describe "FW.2 CCM path [TELEMETRY_CCM_ENABLED=true]" do
     let(:lora_key_hex) { SecureRandom.hex(16).upcase }
     let(:lora_key_bin) { [ lora_key_hex ].pack("H*") }
 
@@ -1349,7 +1349,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       super(did_hex: did_hex_arg, key: key, **kwargs)
     end
 
-    it "decrypts a 29-byte CCM chunk and creates a telemetry log" do
+    it "decrypts a CCM chunk (air+1) and creates a telemetry log" do
       chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
                               dt: 100, status: 0, ttl: 3, fc: 42)
 
@@ -1520,7 +1520,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       expect(SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL).not_to have_received(:increment)
     end
 
-    it "skips a chunk shorter than the 29-byte CCM stride" do
+    it "skips a chunk shorter than the CCM stride" do
       chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
                               dt: 100, status: 0, ttl: 3, fc: 1)
       expect { described_class.call(chunk[0..23]) }.not_to change(TelemetryLog, :count)
@@ -1611,6 +1611,51 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
       expect { described_class.call(chunk, gateway.id) }.to change(TelemetryLog, :count).by(1)
       expect(TelemetryLog.last.queen_uid).to eq(gateway.uid)
+    end
+
+    # [E.63 (г), wire-rev2.1] Точний stateless GP-recompute з wire-EMA —
+    # контракт «wire = вхід GP» (observational до bench-калібрування порогів).
+    describe "exact metabolic recompute (ema_delta_t_s, E.63 (г))" do
+      it "passes silently when wire GP matches m(ema) byte-exactly" do
+        ema = 3600
+        gp  = SilkenNet::Attractor.expected_homeostasis_gp(ema)
+        allow(Rails.logger).to receive(:warn)
+        chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                                dt: 200, status: gp, ttl: 3, fc: 41, ema: ema)
+
+        expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+        expect(Rails.logger).not_to have_received(:warn)
+          .with(a_string_matching(/Metabolic Divergence/))
+      end
+
+      it "warns + flags fraud metric when wire GP diverges from m(ema) — contract broken" do
+        ema = 3600
+        gp  = SilkenNet::Attractor.expected_homeostasis_gp(ema)
+        bad_gp = gp == SilkenNet::Attractor::GP_HOMEO_MAX ? gp - 1 : gp + 1
+        allow(Rails.logger).to receive(:warn)
+        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
+                                dt: 200, status: bad_gp, ttl: 3, fc: 42, ema: ema)
+
+        # Observational: запис СТВОРЮЄТЬСЯ (мінт-гейт не чіпаємо до калібрування).
+        expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+        expect(Rails.logger).to have_received(:warn)
+          .with(a_string_matching(/Metabolic Divergence · exact.*recompute\(ema=3600s\)=#{gp}/))
+        # at_least: фонова z-DCI фікстури (cold-start server-Z) теж може смикнути
+        # цю ж метрику — точна гілка доведена специфічним лог-рядком вище.
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL)
+          .to have_received(:increment).at_least(:once)
+      end
+
+      it "skips the exact branch for non-homeostasis frames (panic ema=0)" do
+        allow(Rails.logger).to receive(:warn)
+        chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 0xFF,
+                                dt: 0, status: 0x80, ttl: 5, fc: 43, ema: 0) # 0x80 = PanicFlag
+
+        expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+        expect(Rails.logger).not_to have_received(:warn)
+          .with(a_string_matching(/Metabolic Divergence · exact/))
+      end
     end
 
     it "stores the firmware version nibble when fw_nibble is positive" do

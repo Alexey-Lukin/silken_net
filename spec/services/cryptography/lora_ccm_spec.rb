@@ -6,18 +6,20 @@ RSpec.describe Cryptography::LoraCcm, type: :service do
   let(:zero_key)      { ("\x00".b * 16).b }
   let(:did_bytes)     { "\x01\x02\x03\x04".b }
   let(:frame_counter) { 5 }
-  let(:plaintext)     { "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c".b }
+  let(:plaintext)     { "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e".b }
 
-  # Golden vector (wire-rev2, 12B payload) — produced by OpenSSL aes-128-ccm:
+  # Golden vector (wire-rev2.1, 14B payload — E.63 (г) +2B EMA) — produced by
+  # OpenSSL aes-128-ccm:
   #   key   = 00 × 16
   #   nonce = DID(01020304) || FC32(00000005) || 00 × 4
   #   aad   = DID || gossip(00) || FC24(000005) (8 bytes)
-  #   pt    = 01..0c
+  #   pt    = 01..0e
   # Mirror: firmware/common/ccm_kat_vectors.h (G_CT/G_TAG). If OpenSSL ever
   # changes its CCM internals, this guards the contract the firmware
-  # HAL_CRYPEx_AESCCM_Encrypt is expected to match bit-for-bit.
-  let(:expected_ciphertext) { [ "08ceca97bbf4fdc5aa2a365e" ].pack("H*") }
-  let(:expected_mic)        { [ "2e68947871a505c4" ].pack("H*") }
+  # two-phase CCM flow is expected to match bit-for-bit. (First 12 CT bytes
+  # equal the rev2 vector — same CTR keystream under an unchanged nonce.)
+  let(:expected_ciphertext) { [ "08ceca97bbf4fdc5aa2a365edde4" ].pack("H*") }
+  let(:expected_mic)        { [ "d9f62e0b417a5d98" ].pack("H*") }
 
   describe ".encrypt" do
     it "produces the documented golden ciphertext and 8-byte MIC" do
@@ -54,7 +56,7 @@ RSpec.describe Cryptography::LoraCcm, type: :service do
         mic: expected_mic
       )
       expect(pt).to eq(plaintext)
-      expect(pt.bytesize).to eq(12)
+      expect(pt.bytesize).to eq(described_class::PLAINTEXT_LEN)
     end
 
     it "raises AuthError when the MIC is tampered" do
@@ -159,11 +161,12 @@ RSpec.describe Cryptography::LoraCcm, type: :service do
       }.to raise_error(Cryptography::LoraCcm::InputError, /gossip_ts_lsb/)
     end
 
-    it "rejects a payload that is not 12 bytes" do
+    it "rejects a payload that is not PLAINTEXT_LEN bytes" do
       expect {
         described_class.encrypt(key: zero_key, did_bytes: did_bytes,
                                 frame_counter: 1, plaintext: "\x00".b * 4)
-      }.to raise_error(Cryptography::LoraCcm::InputError, /payload must be 12 bytes/)
+      }.to raise_error(Cryptography::LoraCcm::InputError,
+                       /payload must be #{described_class::PLAINTEXT_LEN} bytes/)
     end
 
     it "rejects a MIC that is not 8 bytes during decrypt" do

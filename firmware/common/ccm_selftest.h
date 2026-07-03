@@ -73,8 +73,8 @@ static inline int Ccm_Kat_Run_One(CRYP_HandleTypeDef *hcryp,
     } while (0)
 
     /* (1) Encrypt KAT: payload-фаза + тег-фаза проти oracle. */
-    uint32_t pt_w[FW2_CCM_PLAINTEXT_LEN / 4];
-    uint32_t ct_w[FW2_CCM_PLAINTEXT_LEN / 4];
+    uint32_t pt_w[(FW2_CCM_PLAINTEXT_LEN + 3u) / 4];
+    uint32_t ct_w[(FW2_CCM_PLAINTEXT_LEN + 3u) / 4];
     uint32_t tag_w[4]; /* 16B: WL HAL пише повний блок, MIC = перші 8 байт */
     memcpy(pt_w, pt, FW2_CCM_PLAINTEXT_LEN);
     CCM_KAT_SETUP();
@@ -84,8 +84,8 @@ static inline int Ccm_Kat_Run_One(CRYP_HandleTypeDef *hcryp,
     if (memcmp(tag_w, tag, FW2_CCM_MIC_LEN) != 0) return 0;
 
     /* (2) Decrypt roundtrip: plaintext назад + computed MIC == oracle. */
-    uint32_t ct_in_w[FW2_CCM_PLAINTEXT_LEN / 4];
-    uint32_t rec_w[FW2_CCM_PLAINTEXT_LEN / 4];
+    uint32_t ct_in_w[(FW2_CCM_PLAINTEXT_LEN + 3u) / 4];
+    uint32_t rec_w[(FW2_CCM_PLAINTEXT_LEN + 3u) / 4];
     memcpy(ct_in_w, ct, FW2_CCM_PLAINTEXT_LEN);
     CCM_KAT_SETUP();
     if (HAL_CRYP_Decrypt(hcryp, ct_in_w, FW2_CCM_PLAINTEXT_LEN, rec_w, 1000) != HAL_OK) return 0;

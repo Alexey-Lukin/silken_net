@@ -43,13 +43,29 @@ module SilkenNet
     # [E.63/E.64] growth_points wire-band guaranteed by firmware pack_status_byte
     # (bio_contracts/bio_contract.rb) — mirrored here for the stateless conformance
     # check TelemetryUnpackerService#check_metabolic_divergence!: homeostasis →
-    # GP ∈ [GP_HOMEO_MIN, GP_HOMEO_MAX]; stress → GP_STRESS. The wire dT carries
-    # the RAW delta_t but firmware packs GP from the EMA-smoothed delta_t
-    # (device-only RTC state), so the exact GP↔delta_t recompute is deferred to
-    # FW.2 (wire to carry EMA delta_t). 00_07 E.63.
+    # GP ∈ [GP_HOMEO_MIN, GP_HOMEO_MAX]; stress → GP_STRESS.
+    # [E.63 (г), wire-rev2.1 2026-07-03] The wire now ALSO carries the
+    # EMA-smoothed delta_t — the exact number metabolic_health consumed on
+    # the device (contract «wire = GP input») → the exact stateless recompute
+    # below (expected_homeostasis_gp) is possible; it stays OBSERVATIONAL
+    # (warn+metric, no gate) until the bench calibrates the placeholder
+    # thresholds. Raw dT keeps riding bytes 12..13 for diagnostics (03_01 §13.6).
     GP_HOMEO_MIN = 5
     GP_HOMEO_MAX = 31
     GP_STRESS    = 1
+
+    # [E.63 (г)] Byte-identical mirror of firmware BioContract.metabolic_health →
+    # growth_points quantization (bio_contract.rb §4.3 — the One-Home of the
+    # formula and the calibration-pending thresholds; edit THERE first).
+    DELTA_T_FAST_S = 600
+    DELTA_T_SLOW_S = 7200
+
+    def self.expected_homeostasis_gp(ema_delta_t_s)
+      m  = (DELTA_T_SLOW_S - ema_delta_t_s).to_f / (DELTA_T_SLOW_S - DELTA_T_FAST_S)
+      m  = m.clamp(0.0, 1.0)
+      gp = (GP_HOMEO_MIN + (m * (GP_HOMEO_MAX - GP_HOMEO_MIN))).round
+      gp.clamp(GP_HOMEO_MIN, GP_HOMEO_MAX)
+    end
 
     # [SEC.11] Sole entry-point for Z-axis computation. Both branches —
     # cold start (initial coords from K_seed via SilkenNet::SeedDerivation)

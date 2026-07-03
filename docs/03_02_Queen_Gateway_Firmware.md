@@ -1015,7 +1015,7 @@ Cmd_Dedup_Check(hash):
 
 ### Було (retired 2026-07-03)
 
-DID=0-псевдодерево у батчі: 16B-пакет маскував health під телеметрію. Байтова звірка викрила подвійну брехню — бекенд читав його Солдатськими офсетами (uptime→`voltage_mv`, `0x00`→temperature, cache_count→CSQ), `battery_critical?` хибно горів ~5% життя (uptime-wrap 18.2 год), а при size-flush (cache 45..50 > CSQ-валідного 0..31) пульс мовчки дропався САМЕ під навантаженням; у CCM-ері 16B-запис ще й ламав 29B-stride. e2e був циркулярним (Ruby↔Ruby, без golden проти firmware-байтів).
+DID=0-псевдодерево у батчі: 16B-пакет маскував health під телеметрію. Байтова звірка викрила подвійну брехню — бекенд читав його Солдатськими офсетами (uptime→`voltage_mv`, `0x00`→temperature, cache_count→CSQ), `battery_critical?` хибно горів ~5% життя (uptime-wrap 18.2 год), а при size-flush (cache 45..50 > CSQ-валідного 0..31) пульс мовчки дропався САМЕ під навантаженням; у CCM-ері 16B-запис ще й ламав CCM-stride. e2e був циркулярним (Ruby↔Ruby, без golden проти firmware-байтів).
 
 ### Стало
 

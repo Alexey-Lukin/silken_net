@@ -80,19 +80,22 @@ module TelemetryChunkHelper
   end
 
   # ---------------------------------------------------------------------
-  # 29-byte AES-128-CCM chunk (FW.2 wire-rev2, founder decision 2026-06-12).
+  # 31-byte AES-128-CCM chunk (FW.2 wire-rev2.1: rev2 2026-06-12 +
+  # 2B EMA-delta_t 2026-07-03, E.63 (г)).
   #
-  #   [DID:4][RSSI:1][gossip_ts_lsb:1][FrameCounter:3 BE][ciphertext:12][MIC:8]
+  #   [DID:4][RSSI:1][gossip_ts_lsb:1][FrameCounter:3 BE][ciphertext:14][MIC:8]
   #
-  # Plaintext sensor layout (12 bytes, `CCM_SENSOR_PAYLOAD_FORMAT`):
-  #   vcap_mv(2), temp_c(1), acoustic(1), delta_t_s(2),
+  # Plaintext sensor layout (14 bytes, `CCM_SENSOR_PAYLOAD_FORMAT`):
+  #   vcap_mv(2), temp_c(1), acoustic(1), delta_t_s(2, RAW),
   #   status_byte(1), mesh_ctrl(1), device_z(2 BE, ×512; 0xFFFF = none),
-  #   diag(1), vpd_index(1)
+  #   diag(1), vpd_index(1), ema_delta_t_s(2 BE — «wire = вхід GP»)
   #
   # `mesh_ctrl` packs `[ttl:4 high | fw_nibble:4 low]`;
   # `diag` packs `[thr_invalid:5 | fauna_mode:1 | fauna_skip:1 | fc_degraded:1]`.
   # `device_z:` приймає Float (квантується тут, дзеркало Pack_FW2_Device_Z)
   # або `nil` → сентинель 0xFFFF («Лоренц не рахувався»).
+  # `ema:` дефолтить у `dt` — контракт «wire = вхід GP» для спек, яким EMA
+  # неважливий; точна metabolic-гілка тестується явним `ema:`.
   #
   # `did_hex:` and `key:` are required — no implicit lookup from
   # surrounding `let` bindings. Specs that share a fixed key/DID
@@ -101,7 +104,7 @@ module TelemetryChunkHelper
   # ---------------------------------------------------------------------
   def build_ccm_chunk(did_hex:, key:, rssi:, vcap:, temp:, acoustic:, dt:, status:, ttl:,
                       fw_nibble: 0, fc: 1, device_z: nil, diag: 0, vpd_index: 0,
-                      gossip_ts_lsb: 0)
+                      gossip_ts_lsb: 0, ema: nil)
     did_int      = did_hex.to_i(16)
     did_bytes    = [ did_int ].pack("N")
     mesh_ctrl    = ((ttl & 0x0F) << 4) | (fw_nibble & 0x0F)
@@ -112,7 +115,7 @@ module TelemetryChunkHelper
         [ (device_z * TelemetryUnpackerService::CCM_DEVICE_Z_SCALE + 0.5).floor, 0xFFFE ].min
       end
     plaintext = [ vcap, temp, acoustic, dt, status, mesh_ctrl,
-                  device_z_raw, diag, vpd_index ].pack("n c C n C C n C C")
+                  device_z_raw, diag, vpd_index, ema || dt ].pack("n c C n C C n C C n")
     ct, mic   = Cryptography::LoraCcm.encrypt(
       key: key, did_bytes: did_bytes, frame_counter: fc,
       gossip_ts_lsb: gossip_ts_lsb, plaintext: plaintext

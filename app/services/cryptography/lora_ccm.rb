@@ -2,18 +2,21 @@
 
 require "openssl"
 
-# [FW.2 / ARCH.42 Variant B; wire-rev2 28B, founder decision 2026-06-12]
+# [FW.2 / ARCH.42 Variant B; wire-rev2.1 30B — rev2 founder 2026-06-12,
+# +2B EMA rev2.1 founder 2026-07-03 (E.63 гейт (г))]
 # AES-128-CCM authenticated decrypt + encrypt for the Soldier ↔ Queen LoRa
 # channel.
 #
-# Wire format on the air (28 bytes) — see docs/03_05 §2.1 (CCM wire) +
-# wire-budget ledger (the rev2 rationale):
+# Wire format on the air (30 bytes) — see docs/03_05 §2.1 (CCM wire) +
+# wire-budget ledger (the rev2/rev2.1 rationale):
 #
 #   ┌─ AAD (cleartext, MIC-protected) ──────────────────────────────────┐
 #   │ DID[4] │ gossip_ts_lsb[1] │ FrameCounter[3 BE — справжня ширина]   │
-#   ├─ Ciphertext (sensor payload, encrypted, 12B) ─────────────────────┤
-#   │ Vcap[2 BE] │ temp[1] │ acoustic[1] │ dt[2 BE] │ status[1] │ ctrl[1]│
-#   │ device_z[2 BE, ×512; 0xFFFF = none] │ diag[1] │ vpd_index[1]      │
+#   ├─ Ciphertext (sensor payload, encrypted, 14B) ─────────────────────┤
+#   │ Vcap[2 BE] │ temp[1] │ acoustic[1] │ dt[2 BE, RAW] │ status[1]    │
+#   │ ctrl[1] │ device_z[2 BE, ×512; 0xFFFF = none] │ diag[1] │ vpd[1]  │
+#   │ ema_delta_t_s[2 BE — «wire = вхід GP»: САМЕ це число з'їла        │
+#   │   metabolic_health на пристрої; stateless GP-recompute]           │
 #   ├─ MIC (CCM authentication tag, 64-bit) ────────────────────────────┤
 #   │ tag[8]                                                             │
 #   └────────────────────────────────────────────────────────────────────┘
@@ -40,7 +43,7 @@ module Cryptography
     NONCE_LEN     = 12 # bytes
     TAG_LEN       = 8  # MIC length (CCM allows {4,6,8,10,12,14,16}; we pick 8)
     AAD_LEN       = 8  # DID(4) + gossip(1) + FrameCounter(3 BE)
-    PLAINTEXT_LEN = 12 # sensor payload size — FW.2 wire-rev2
+    PLAINTEXT_LEN = 14 # sensor payload size — FW.2 wire-rev2.1 (+2B EMA, E.63 (г))
 
     class AuthError < StandardError; end
     class InputError < ArgumentError; end
