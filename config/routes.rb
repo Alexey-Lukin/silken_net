@@ -158,6 +158,12 @@ Rails.application.routes.draw do
       resources :oracle_callbacks, only: [ :create ]
 
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+      # 🆘 HELIUM SOS (ARCH.34 L3 — Королева кричить через чужі hotspot'и)
+      # Webhook Helium Console HTTP Integration; HMAC-патерн oracle_callbacks.
+      # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+      post "telemetry/helium", to: "helium_sos#create"
+
+      # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # 🔔 НЕЙРОННА ПАВУТИНА (The Neural Web — Notifications)
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       get "notifications/settings",  to: "notifications#settings",        as: :notifications_settings

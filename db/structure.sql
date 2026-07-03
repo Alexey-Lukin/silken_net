@@ -1531,7 +1531,8 @@ CREATE TABLE public.gateways (
     firmware_version character varying,
     latest_voltage_mv integer,
     firmware_update_status integer DEFAULT 0 NOT NULL,
-    last_attested_at timestamp without time zone
+    last_attested_at timestamp without time zone,
+    helium_dev_eui character varying
 );
 
 
@@ -4840,6 +4841,13 @@ CREATE INDEX index_gateways_on_cluster_id ON public.gateways USING btree (cluste
 
 
 --
+-- Name: index_gateways_on_helium_dev_eui; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_gateways_on_helium_dev_eui ON public.gateways USING btree (helium_dev_eui);
+
+
+--
 -- Name: index_gateways_on_uid; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7192,6 +7200,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260703080407'),
 ('20260703075130'),
 ('20260703043753'),
 ('20260628151759'),

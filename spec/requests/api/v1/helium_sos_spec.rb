@@ -1,0 +1,107 @@
+# frozen_string_literal: true
+
+require "rails_helper"
+
+# [ARCH.34 L3] Helium SOS webhook — auth-клон oracle_callbacks-патерну:
+# публічний POST + HMAC-SHA256(raw_body) у X-Helium-Signature +
+# WEB3_STRICT_MODE fail-fast. Тонкий контролер: валідне → 202 + enqueue.
+RSpec.describe "POST /api/v1/telemetry/helium", type: :request do
+  let(:secret)  { "helium-shared-secret" }
+  let(:body)    { { dev_eui: "AABBCCDDEEFF0011", payload: Base64.strict_encode64("x" * 12) } }
+  let(:raw)     { body.to_json }
+  let(:sig)     { OpenSSL::HMAC.hexdigest("SHA256", secret, raw) }
+  let(:headers) { { "CONTENT_TYPE" => "application/json", "X-Helium-Signature" => sig } }
+
+  around do |example|
+    Sidekiq::Testing.fake! { example.run }
+  end
+
+  before { HeliumSosWorker.clear }
+
+  context "with HELIUM_WEBHOOK_SECRET set" do
+    around do |example|
+      old = ENV["HELIUM_WEBHOOK_SECRET"]
+      ENV["HELIUM_WEBHOOK_SECRET"] = secret
+      example.run
+    ensure
+      ENV["HELIUM_WEBHOOK_SECRET"] = old
+    end
+
+    it "accepts a valid HMAC-signed SOS and enqueues the worker" do
+      post "/api/v1/telemetry/helium", params: raw, headers: headers
+
+      expect(response).to have_http_status(:accepted)
+      expect(HeliumSosWorker.jobs.size).to eq(1)
+      args = HeliumSosWorker.jobs.last["args"]
+      expect(args[0]).to eq("AABBCCDDEEFF0011")
+      expect(args[1]).to eq(body[:payload])
+    end
+
+    it "accepts the Console camelCase devEUI key" do
+      camel = { devEUI: "AABBCCDDEEFF0011", payload: body[:payload] }.to_json
+      camel_sig = OpenSSL::HMAC.hexdigest("SHA256", secret, camel)
+
+      post "/api/v1/telemetry/helium", params: camel,
+           headers: headers.merge("X-Helium-Signature" => camel_sig)
+
+      expect(response).to have_http_status(:accepted)
+      expect(HeliumSosWorker.jobs.size).to eq(1)
+    end
+
+    it "rejects a missing signature header" do
+      post "/api/v1/telemetry/helium", params: raw,
+           headers: { "CONTENT_TYPE" => "application/json" }
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(HeliumSosWorker.jobs).to be_empty
+    end
+
+    it "rejects an invalid signature" do
+      post "/api/v1/telemetry/helium", params: raw,
+           headers: headers.merge("X-Helium-Signature" => "0" * 64)
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(HeliumSosWorker.jobs).to be_empty
+    end
+
+    it "rejects a body without dev_eui/payload (після валідного HMAC)" do
+      empty = {}.to_json
+      empty_sig = OpenSSL::HMAC.hexdigest("SHA256", secret, empty)
+
+      post "/api/v1/telemetry/helium", params: empty,
+           headers: headers.merge("X-Helium-Signature" => empty_sig)
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(HeliumSosWorker.jobs).to be_empty
+    end
+  end
+
+  context "without HELIUM_WEBHOOK_SECRET" do
+    around do |example|
+      old_secret = ENV["HELIUM_WEBHOOK_SECRET"]
+      old_strict = ENV["WEB3_STRICT_MODE"]
+      ENV["HELIUM_WEBHOOK_SECRET"] = nil
+      example.run
+    ensure
+      ENV["HELIUM_WEBHOOK_SECRET"] = old_secret
+      ENV["WEB3_STRICT_MODE"] = old_strict
+    end
+
+    it "passes with a warning in dev/test (без підпису)" do
+      ENV["WEB3_STRICT_MODE"] = nil
+      post "/api/v1/telemetry/helium", params: raw,
+           headers: { "CONTENT_TYPE" => "application/json" }
+
+      expect(response).to have_http_status(:accepted)
+    end
+
+    it "fail-fast у WEB3_STRICT_MODE (endpoint без HMAC не живе в prod)" do
+      ENV["WEB3_STRICT_MODE"] = "true"
+
+      expect {
+        post "/api/v1/telemetry/helium", params: raw,
+             headers: { "CONTENT_TYPE" => "application/json" }
+      }.to raise_error(SecurityError, /HELIUM_WEBHOOK_SECRET/)
+    end
+  end
+end

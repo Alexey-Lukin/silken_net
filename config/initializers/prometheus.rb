@@ -220,6 +220,14 @@ module SilkenNet
       docstring: "Online QATT-capable gateways whose last Ed25519-attested batch is older than the lapse window"
     )
 
+    # [ARCH.34 L3] Helium SOS intake (HeliumSosWorker):
+    # accepted / unknown_dev_eui / did_mismatch / malformed.
+    HELIUM_SOS_RECEIVED_TOTAL = REGISTRY.counter(
+      :silkennet_helium_sos_received_total,
+      docstring: "Queen SOS frames received via the Helium webhook, by processing outcome",
+      labels: [ :outcome ]
+    )
+
     # Legacy aliases for backward compatibility with existing Grafana dashboards.
     WEB3_QUEUE_SIZE = SIDEKIQ_QUEUE_SIZE
     WEB3_QUEUE_LATENCY = SIDEKIQ_QUEUE_LATENCY

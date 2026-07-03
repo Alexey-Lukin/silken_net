@@ -107,6 +107,17 @@ Rack::Attack.throttle("oracle_callbacks/ip", limit: 60, period: 1.minute) do |re
 end
 
 # ---------------------------------------------------------------------------
+# 5b'. HELIUM SOS THROTTLE — [ARCH.34 L3] webhook Helium Console.
+# Легітимний трафік = поодинокі SOS-ретрансміти аварійної Королеви (частки
+# кадру/хв на шлюз); 30/хв на IP душить flood ще до HMAC-перевірки.
+# ---------------------------------------------------------------------------
+Rack::Attack.throttle("helium_sos/ip", limit: 30, period: 1.minute) do |request|
+  if request.path == "/api/v1/telemetry/helium" && request.post?
+    request.ip
+  end
+end
+
+# ---------------------------------------------------------------------------
 # 5c. CODEX SOCIAL THROTTLES — anti-spam for community endpoints (Phase 2).
 #
 # Per docs/04_05 §12 — "120 attunements / 1 hour / user". Throttle on the
