@@ -23,6 +23,7 @@ description: "Use when working on the silken_net telemetry / Proof-of-Growth pip
 4. **Queue drain is strict** — `uplink` (#1) drains COMPLETELY before `alerts` (#2). Telemetry flood blocks alerts. By design.
 5. **Validations removed from TelemetryLog** — KENOSIS TITAN. Check is in `TelemetryUnpackerService.valid_sensor_data?`. Don't add validations back to model.
 6. **Partition-aware lookups** — `TelemetryLog` RANGE-partitioned by `created_at`. Always use `find_with_partition_pruning(id, created_at)`.
+7. **«Wire = вхід GP» contract (E.63 (г), wire-rev2.1)** — the CCM frame carries BOTH dT fields: raw (bytes 12..13, diagnostics/server-EMA) and `ema_delta_t_s` (bytes 20..21) = the EXACT number `metabolic_health` consumed on the device → `check_metabolic_divergence!` recomputes GP statelessly via `Attractor.expected_homeostasis_gp(ema)` (byte-identical mirror of `bio_contract.rb` §4.3 — edit the formula/thresholds THERE first, mirror second, regen `lorenz_bytecode.h`). The branch is **observational** (warn+metric) until the bench calibrates `DELTA_T_FAST_S`/`DELTA_T_SLOW_S`; `ema_delta_t_s` is transient (stripped pre-persist, like `lorenz_temperature_c`/`device_z`). ECB frames carry no ema → branch honestly skips. Canon: `03_04 §4.3` + `03_01 §13.6`.
 
 ## Common Tasks
 
