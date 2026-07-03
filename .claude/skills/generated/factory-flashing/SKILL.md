@@ -18,23 +18,33 @@ Navigation aid — the **SSOT is the code + docs below**; this skill points, it 
 
 ## Pipeline (entry → exit)
 
-Entry: **`FactoryFlashing::Session.run`** (invoked by `lib/tasks/factory.rake` after a
-`ProvisioningSession` is **supervisor-approved**). One `ActiveRecord::Base.transaction`:
+Entry: **`lib/tasks/factory.rake`** → **[FW.54] one-pass UID→DID at `factory:flash`**:
+for a Tree the `device_uid` arg = **24-hex silicon UID** (NOT a DID) →
+`SilkenNet::DidDerivation.wire_did_from_uid_hex` → `TreeResolver.resolve!`
+(create with `CLUSTER_ID`+`TREE_FAMILY_ID` env / re-flash / bind legacy /
+DID-collision → `CollisionError` = **quarantine**, `03_01 §7`); the session's
+`device_uid` = derived wire-DID. Bare `SNET-` DID accepted only for a Tree
+that already has `trees.silicon_uid_hex`; Gateway path unchanged.
+
+Then **`FactoryFlashing::Session.run`** (after **supervisor-approved**). One `ActiveRecord::Base.transaction`:
 
 1. **Preflight** — session `may_start?` + device exists + master key fetched into `@master_key` (fail fast before the tx; the result is NOT discarded — SEC.3 DI).
-2. **Master key** — `MasterKeySource` (Env or Bitwarden adapter); `WeakKeyDetector` refuses a weak key. The fetched key threads as `master_key:` param into every derivation below (runtime callers of the same services use the ENV fallback instead).
-3. **HardwareKey** — `HardwareKeyService.provision(device, master_key:)` (the SINGLE HKDF source — same derivation the firmware runs; never derive keys elsewhere).
-4. **ATECC (Гілка B + Tree only)** — `AteccProvisioner` emits the I²C ATCA write-zone transcript.
-5. **Commands** — `CommandBuilder` emits the `STM32_Programmer_CLI` sequence.
-6. **Execute** — `Executor` (dry-run prints; `--execute` spawns subprocesses).
-7. **Audit** — `AuditTrail.record!` → chain-hashed `AuditLog` + `MaintenanceRecord`; `complete!` (or `fail_with!` + rollback).
+2. **Wrong-board guard [FW.54]** — `CommandBuilder.preflight_commands` (connect + `-r32 0x1FFF7590 12`) runs FIRST; live mode parses stdout via `UidReadout` and compares the board's UID to `trees.silicon_uid_hex` **before any derivation or `-w32`** — mismatch/unparseable → `WrongBoardError` (not even a HardwareKey row materializes). dry-run or passport-less device → skip.
+3. **Master key** — `MasterKeySource` (Env or Bitwarden adapter); `WeakKeyDetector` refuses a weak key. The fetched key threads as `master_key:` param into every derivation below (runtime callers of the same services use the ENV fallback instead).
+4. **HardwareKey** — `HardwareKeyService.provision(device, master_key:)` (the SINGLE HKDF source — same derivation the firmware runs; never derive keys elsewhere).
+5. **ATECC (Гілка B + Tree only)** — `AteccProvisioner` emits the I²C ATCA write-zone transcript.
+6. **Commands** — `CommandBuilder#flash_commands` (key writes + RDP + disconnect; connect/UID-read already ran as preflight).
+7. **Execute** — `Executor` (dry-run prints; `--execute` spawns subprocesses).
+8. **Audit** — `AuditTrail.record!` → chain-hashed `AuditLog` (metadata incl. `silicon_uid_hex`) + `MaintenanceRecord`; `complete!` (or `fail_with!` + rollback).
 
 ## Key Components
 
 | Component | Role |
 |-----------|------|
-| `factory_flashing/session.rb` | Orchestrator (`run`, `preflight!`, AASM start!/complete!/fail_with!) |
-| `factory_flashing/command_builder.rb` | `STM32_Programmer_CLI` emission (`gilka_a_commands` / `gilka_b_commands`, `write_block`, `rdp_command`) |
+| `factory_flashing/session.rb` | Orchestrator (`run`, `preflight!`, `verify_silicon_uid!` wrong-board guard, AASM start!/complete!/fail_with!) |
+| `factory_flashing/tree_resolver.rb` | [FW.54] UID→DID→Tree: create / re-flash / bind / collision→quarantine; deliberately does NOT enqueue peaq (offline factory) |
+| `factory_flashing/uid_readout.rb` | [FW.54] tolerant `-r32` stdout parser (keyed on `1FFF7590`); live format = bench-confirm (RUNBOOK 1.3) |
+| `factory_flashing/command_builder.rb` | `STM32_Programmer_CLI` emission (`preflight_commands` class-method: connect+UID-read; `flash_commands` per гілка, `write_block`, `rdp_command`) |
 | `factory_flashing/atecc_provisioner.rb` | ATECC608B data-zone provisioning (Гілка B) |
 | `factory_flashing/executor.rb` | dry-run vs live subprocess (`programmer_available?`) |
 | `factory_flashing/master_key_source.rb` | `Base` / `EnvAdapter` / `BitwardenAdapter` master-key fetch — the fetched key feeds HKDF via `Session` (SEC.3 DI), not just the preflight gate |
@@ -52,6 +62,9 @@ Entry: **`FactoryFlashing::Session.run`** (invoked by `lib/tasks/factory.rake` a
 5. **Transaction + chain-hash integrity** — the whole run is one AR transaction; a downstream raise rolls back HardwareKey + audit rows together, so rolled-back rows never enter the chain-hashed `AuditLog` (the chain stays intact).
 6. **Supervisor gate** — `Session` refuses to run unless the `ProvisioningSession` is `supervisor_approved` (preflight `may_start?`).
 7. **Never add WeakKeyDetector to the ENV-fallback branch** of the derivation services — the rails_helper test pin (`silken-net-test-master-key-32b!!`) is itself a placeholder *needle* in the detector, so validating inside `hkdf_derive`/`fetch_for`/`derive_seed` fails the whole suite. Coverage is already two-layer by design: `EnvAdapter` guards the factory path, the boot initializer (`master_key_strength_check.rb`) guards runtime.
+8. **[FW.54] UID wire-form is frozen** — 24 hex = three `%08X` words in register order (`0x1FFF7590` first), exactly how firmware `did_derive.h` reads them; golden pair `0039002F3138511538323634 → SNET-80B12004` frozen in `did_derivation_spec` ↔ `test_did_derive.c`. Reordering/re-endianing the parse = a different DID on backend vs silicon (keys diverge silently).
+9. **DID is derived EVERYWHERE by one function** — `wire_did_from_uid_hex` feeds both the factory (`TreeResolver`) and the field `ProvisioningController#register` (the old `last(8)`-suffix DID + the dead tree double-init guard were a real prod bug, fixed 2026-07-03). Never invent a third derivation path.
+10. **Collision ≠ re-flash** — same derived DID + different `silicon_uid_hex` = birthday collision or wrong chip → `CollisionError`, unit goes to quarantine (`03_01 §7`); same UID = legit re-flash (idempotent no-op).
 
 ## How to Explore
 

@@ -29,7 +29,7 @@
 
 **SSOT one-home (`00_06 §2`):** `docs/NN_NN_*.md` = canon; **`docs/00_07` = дім УСІХ відкритих робіт + блокерів** — ніколи не вважай «resolved» без реального code+canon (не вір TODO/коментарю). Канон / drift / wiki — лише через `ssot-maintenance`. Не дублюй факти між домами.
 
-**Verify / commit:** тести (§3) перед коммітом, full-suite перед push. `db/structure.sql` (НЕ `schema.rb`); dump потребує **pg17 `pg_dump`** + **strip pg17-only `transaction_timeout` рядок** (CI-Postgres <17 інакше падає). Коміт-меседж → `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`; гілка від `main` лише якщо просять. gitnexus: `impact` перед edit символу, `detect_changes` перед commit.
+**Verify / commit:** тести (§3) перед коммітом, full-suite перед push. `db/structure.sql` (НЕ `schema.rb`); dump потребує **pg17 `pg_dump`** + **strip pg17-only `transaction_timeout` рядок** (CI-Postgres <17 інакше падає). Коміт-меседж → `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`; гілка від `main` лише якщо просять. gitnexus: `impact` перед edit символу, `detect_changes` перед commit.
 
 ## 3. Середовище
 
@@ -134,6 +134,8 @@ deploy/akash · terraform · subgraph       # infra / The Graph
 This project is indexed by GitNexus as **silken_net**. Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
+>
+> MCP-тули недоступні в сесії (ToolSearch їх не бачить = сервер не піднявся)? Fallback: ручний blast-radius ПЕРЕД правками (grep усіх call-sites кожного торканого символу) + скажи про це явно; `analyze` прожени наприкінці, щоб індекс не відставав.
 
 ## Always Do
 
