@@ -78,7 +78,7 @@
 > Process-automation, Projects-V2/IaC та SSOT-tooling — канон `00_04`/`00_05`. P0-гейти — у 🚦 Critical Path.
 
 #### OPS.1 — TRL Auto-Advancement GitHub Action
-- **P1** · 👤 · 🟡 · → `00_05`
+- **P1** · 👤 · 🟢 · → `00_05`
 - **Стан:** `trl_sync.yml` реалізовано — GraphQL Projects v2 + TRL≥5 architect-approval gate (OPS.9); чекає лише secret-provision, канон `00_05 §2.2`.
 - [ ] 👤 створити `PROJECT_PAT` (project:write) + тест з issues
 - [ ] 👤 (security) мігрувати `PROJECT_PAT` → GitHub App installation token (`GITHUB_TOKEN` не вміє Projects V2; `00_05 §2.2`)
@@ -89,12 +89,12 @@
 - [ ] 👤 (опц.) увімкнути "Require review from Code Owners" коли зʼявиться другий рев'юер (CODEOWNERS уже на місці)
 
 #### OPS.3 — R&D Portfolio Management: Shape Up + cluster routing
-- **P1** · 👤 · 🟡 · → `00_04 §5`, `00_05 §6`
+- **P1** · 👤 · 🟢 · → `00_04 §5`, `00_05 §6`
 - **Стан:** Shape Up template + Projects V2 kanban-mapping реалізовано (R&D Cluster/Stage/Cycle + auto-routing; 4 кластери A/B/C/D) — `00_04 §5`, `00_05 §6`.
 - [ ] 👤 перший betting cycle після UNI.1/UNI.14
 
 #### OPS.4 — GitHub Projects V2: семестрова синхронізація з ChNU/ChDTU
-- **P2** · 👤 · 🟡 · → `00_05 §5`
+- **P2** · 👤 · 🟢 · → `00_05 §5`
 - **Стан:** семестр-мапінг реалізовано (Fall/Spring + TRL milestones + 15.VI; `trl_sync.yml` стемпить `Academic Semester`) — `00_05 §5`.
 - [ ] 👤 узгодити календар з ФОТІУС (UNI.2) + створити `Academic Semester` single-select field у Projects V2
 
@@ -110,7 +110,7 @@
 - [ ] 👤 прогін проти живого Projects V2
 
 #### OPS.10 — Supply-chain CI hardening residuals (long tail; CI ~90% done)
-- **P3** · 🤖+👤 · 🟡 · → `00_05`
+- **P3** · 🤖+👤 · 🟢 · → `00_05`
 - **Стан:** Машинна частина зацементована — SHA-pin усіх Actions + базовий Docker-образ digest-pinned (Dependabot `docker`-ecosystem) + top-level **token-permissions** least-privilege (job-рівневий write-elevation; critical `workflow_run`/`pull_request_target` untrusted-checkout прибрано → `gh api commits`) + **actionlint**-гейт (`workflow_lint`) + `harden-runner` (egress-audit) + `Sec · Scorecard` (Node-24-pined); GitHub-side звірено (secret-scanning + push-protection + CodeQL ON; стале «вимкнено/404» виправлено). Scorecard-findings оброблено: token/checkout/pin — fixed-in-code; solo-структурні (CodeReview/SAST/Fuzzing) + internal-stage false-positive — dismissed-with-reason. Політика+стан → [`00_05 §2.7`](00_05_GitHub_Projects_and_IaC_Automation); інвентар workflow → [`06_07 §1`](06_07_CICD_and_Runbook_Index). **Signed releases (2026-06-25):** GHCR-образ криптографічно підписаний Sigstore-keyless SLSA build-provenance (`actions/attest-build-provenance` у `mirror-ghcr.yml`, OIDC→Fulcio/Rekor, ефемерний ключ не на registry) → closes OpenSSF `signed_releases`; verify-процес у `SECURITY.md`. **Security assurance case (2026-06-25):** структурований `SECURITY_ASSURANCE_CASE.md` (security-claims · threat model · 6 trust-boundaries A–F + guard кожної · Saltzer-Schroeder secure-design · OWASP Top 10 (2021) countermeasure-map · чесні residuals: ECB-no-MIC/L0-custodial/RDP-L2/MFA-incomplete-S6.21/pre-mainnet) → closes OpenSSF `assurance_case`; synthesis-дім реферить canon, не дублює. Лишилися 👤-налаштування:
 - [ ] 👤 require signed commits (`required_signatures`) — runbook [`06_07 §2`](06_07_CICD_and_Runbook_Index)
 - [x] ✅ **OpenSSF Best Practices — `silver` earned 2026-06-25** (проєкт [13358](https://www.bestpractices.dev/projects/13358); динамічна плашка в README + `00_00` авто-рендерить рівень — markdown без змін). Passing + silver критерії всі Met (FLOSS · CI · тести · `SECURITY.md` · SAST/DAST ASan+UBSan · `crypto_*` · `input_validation` · `hardening` · `signed_releases` Sigstore build-provenance · `assurance_case` → `SECURITY_ASSURANCE_CASE.md`). Закриває Scorecard `CIIBestPractices` (→ silver-level). **Gold не цілимо** (вимагає bus-factor ≥2 maintainers — solo-структурний бар'єр, як `CodeReview`/`SAST`-Scorecard)
@@ -137,7 +137,7 @@
 > **🔧 Bench-reconcile перед фіз-друком** — assembly mate-audit виявив незведений Z-stack (`02_02 §4.4/§4.5`): MATE-Ø skirt-vs-inboard + Z (HW.8.8) · shank-Ø press-fit (HW.8.9), цілісно в одному заході. Геом-аудит + founder-рішення → **HW.33**.
 
 #### HW.1 — nTop model → SLM+HIP factory (Anode Zone 1)
-- **P0** · 🤖+👤 · 🟡 · → `01_01`, `01_02 §1.7`
+- **P0** · 👤 · 🟡 · → `01_01`, `01_02 §1.7`
 - **Стан:** Фабрична генерація тризонного анкера НЕ розпочата (Zone 1 SLM+HIP, Zone 3 SLM/EBM, Zone 2 CNC+annealing 200–250°C; канон `01_01 §1/§5.5`, `01_02 §1.6/§1.7/§3.6`). **🏁 Code-as-CAD machine-half ЗАКРИТА** — PicoGK трек (`tools/cad/`, .NET 9, primary; nTop-ліцензія є, але робота ~нуль): повна анкер-родина (coin→anode-v2-graded→ARCH.25→barbs→Деталь3→Деталь4→Zone2-втулка→осьовий-стек; 6/6 генераторів + capsule-end/axial assembly) + engineering-drawing program (DXF/CEM-tolerances Phase 0/1, `tools/cad/docs/drawings_program.md`; Phase 2 креслення → заводський контракт). Канон-методологія [`01_02 §6`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS); геометрія-аудит + sheet→network + DMLS-floor → **HW.33**; assembly-mismatch → HW.8.8/8.9. 👤-residual: фіз-друк/HIP + factory-deliverable нижче.
 - [ ] 👤 Фінальна factory-ready Zone-1 gyroid STL (65% porosity; CAD-demo ✅, геом-рішення sheet/network + DMLS-floor → HW.33)
 - [ ] 👤 **Градієнт розміру пор** (`01_01 §5.5`): центр 300–500 µm → периферія 100–150 µm при сталій 65% (DMLS-floor → HW.33)
@@ -264,7 +264,7 @@
 - [ ] 👤 **Thiol-Michael interphase** (`01_02` §1a.1): тест адгезії self-healing шару при ростовому навантаженні, порівняння з простою APTES-силанізацією — додано в `01_02`
 
 #### HW.26 — PEEK Cold-Flow Creep: Mechanical Lock (NEW 2026-05-16)
-- **P2** · 🤖+👤 · 🟡 · → `01_01 §4.3`
+- **P2** · 👤 · 🟡 · → `01_01 §4.3`
 - **Стан:** 🤖 PicoGK-геометрія SHIPPED (`MechanicalLock.cs` — asymmetric ratchet barbs + DIN-471 groove на hollow shank); 👤 bench-residual (press-fit/FEA/закупка). Mechanical lock проти PEEK cold-flow creep — три комплементарні фічі (barbs осьове утримання + DIN-471 retaining ring + hex anti-rotation; числа/геометрія/creep-таблиця — канон [`01_01 §4.3`](01_01_Coaxial_Gyroid_Topology_and_PEEK)). Барби = утримання, **НЕ ущільнення** (герметизує O-ring, `01_01 §4.2`). Без замка contact pressure падає −60% за 10р (§4.3) → втрата O-ring seal / вирив Zone 3. **Design-альтернатива (не зроблено):** helical barb = pull-out + torque-out в одній фічі, замінила б hex (§4.3 C). Блокує 20+ річну надійність.
 - [ ] 👤 Update CNC-чертежі: retaining ring grooves на anchor end Zone 1 + flange end Zone 3
 - [ ] 👤 Закупка DIN 471 **external** retaining rings Ti grade 2 (або 316SS) під обраний Ø shank (DIN 471 = зовнішнє, на вал; внутрішнє = DIN 472)
@@ -274,7 +274,7 @@
 - [ ] 👤 **Belleville/disc-spring preload** (deferred chem-note triage → tracked тут): тримає clamp force анкер↔ксилема проти 20-річного Ti creep + thermal cycle — комплементарний до barbs+DIN-471; ≠ pogo contact-spring / ≠ capsule Z-stack [`02_02 §3.5`](02_02_Blind_Mate_Pogo_Pin_Interface)
 
 #### HW.28 — Anti-Overgrowth Shield для Zone 3 (NEW 2026-05-16)
-- **P2** · 🤖+👤 · 🟡 · → `01_04 §5.5`
+- **P2** · 👤 · 🟡 · → `01_04 §5.5`
 - **Стан:** Захист **(A) виступ-дзвін ✅ machine** (Деталь 4 `Radome.cs`, bell-rise verify-gate; HW.17); (B) coating + (C) maintenance — 👤 pending. Anti-overgrowth shield тримає Zone 3 катод відкритим атмосфері: без нього за 3–5р кора накриває PTFE-GDL → O₂-дифузія стоп → EBFC мертва. Три комплементарні захисти (A виступ-дзвін PEEK Radome + B super-hydrophobic coating / Cu-сплав + C forester maintenance; числа/матеріали/Cu-фітотокс-caveat — канон [`01_04 §5.5`](01_04_CODIT_and_Xylemointegration)). OPEX → `07_02 §6`.
 - [ ] 👤 Закупка/тест super-hydrophobic coating (Fluoropel PFC-1601V або аналог; UV-деградація → Cu-сплав альтернатива, §5.5 B)
 - [ ] 👤 Field protocol для forester visit: зачистка приростаючої тканини без traumatic surgery
