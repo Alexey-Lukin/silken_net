@@ -206,6 +206,10 @@ RSpec.describe Dclimate::VerificationService, type: :service do
     let(:api_key) { "test-dclimate-api-key-123" }
 
     before do
+      # [DOC-T.31] default and_call_original: ActiveStorage lazy-init (storage.yml)
+      # дигає credentials(:aws, …) при першій blob-валідації під цим before — без
+      # default вузький .with(:dclimate) stub кидає "unexpected arguments".
+      allow(Rails.application.credentials).to receive(:dig).and_call_original
       allow(Rails.application.credentials).to receive(:dig).with(:dclimate, :api_key).and_return(api_key)
     end
 
