@@ -52,7 +52,7 @@
 
 > Крос-модульний зріз **P0-блокерів** перед ключовими мілстоунами (тонкі ID-вказівники; повний опис кожного — у §модулі, **one place**). P1/P2 — у §модулях (DOC-T.24 виносить пріоритет нагору в секціях). 🤖-роботи — у 🔀 `DOC-T`.
 
-- **Перед польовим деплоєм** (life-safety + security): `SEC.9` · `SEC.3` · `SEC.1`
+- **Перед польовим деплоєм** (life-safety + security): `SEC.9` · `SEC.3` · `SEC.1` · `FW.2`-фліп (ухвала (а): CCM-cutover ДО першого field-deploy — rollback до поля = хвилини, після = SWD-візити)
 - **Перед Web3 mainnet:** `S1.1` (GitHub CI secrets) · prod deploy-ENV → [`06_04`](06_04_Secrets_Checklist) (вкл. `SOLANA_RPC_URL` — інакше USDC на Devnet; guard ✅ E.47) · `S2.1`+`S2.2`+`S2.3` (Grafana після першого `/metrics`)
 - **Найближчий фіз-мілстоун — TRL 3→4 = Ti-coin in-vitro** (founder 2026-06-21; гроші є → блок не фінанси): вузький шлях, що **ОБХОДИТЬ** гіроїд/PEEK/press-fit/mate — `HW.24` Stage 2 (**6-alloy coin bake-off** Ø16 → EAAE → Gen 2.0 функціоналізація → CV/EIS у соку) + `HW.5` (хімія-стек) + V-release ICP-MS (`HW.3`). Канал = **гібрид commercial-lab + ЧНУ** (не чекати MoU). Канон [`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
 - **Hardware-гейт** (TRL 4→6, повний анкер — після coin): `HW.1` (анкер-генерація — CAD machine-half ✅, фіз-друк → завод) · `HW.24` (staged validation SLA→coin→anchor→100) · `HW.23` (HIP postprocess) · `HW.31` (BOM Королеви)
@@ -507,17 +507,11 @@
 - [ ] 🔗 ARM `arm-none-eabi-size` реальної arena — CI hal_check lane після board-freeze (FW.46)
 - [ ] 👤 bench-формальність: silicon float32-confirm CMSIS-шляху (один прогін на платі)
 - [ ] 👤 (опц.) польова/партнерська модель замінює header (Бушин CNN + Любченко NSGA-II + Cherkasy soundscape) — апгрейд, НЕ блокер
+- [ ] 🔗 fallback Path C (TFLM runtime) — лише після повторного FW.26-заміру з TFLM-обвісом ([`03_03 §3.2`](03_03_TinyML_Acoustic_Inference) противага; ex-FW.25 residual)
 - [ ] 🌿 FW.4-EXT (post-TRL 7): 5-й клас `fauna_activity` dawn/dusk ([`03_03 §10`](03_03_TinyML_Acoustic_Inference)), залежить від UNI.11+UNI.13a
 
-#### FW.25 — TinyML DSP-path: Path B (log-mel) SELECTED [DECISION 2026-05-22]
-- **P0** · 🤖+👤 · 🟢 · → [`03_03 §3.4`](03_03_TinyML_Acoustic_Inference)
-- **Стан:** Path B (log-mel) обрано + DSP-фронтенд реалізовано self-owned (ML-партнера нема, контракт наш end-to-end): `Compute_LogMel` (`firmware/common/logmel.c`) + 3-way parity librosa≡stdlib≡C (`contract_hash` tripwire) + golden-vector host-тести + auto-gen таблиці (`silken_ml.codegen`). Контракт доукомплектовано бюджет-конвертом моделі (arena target ≤ 10 КБ, тверда стеля 7–15 КБ §6, INT8 обов'язковий, «топологію під стелю»; Path C-фолбек звузився під тим самим леджером); baseline приземлено (FW.4) → DSP-фронтенд живить реальний інференс. Канон: decision-matrix [`03_03 §3.2`](03_03_TinyML_Acoustic_Inference) · контракт + бюджет-конверт [`03_03 §3.4`](03_03_TinyML_Acoustic_Inference).
-- [ ] 👤 опційний апгрейд: ML-партнер (Бушин/Любченко) тренує 5-class CNN на §3.4 (крос-чек, не гейт)
-- [ ] 🌿 UNI.11+UNI.13a soundscape dataset (dawn/dusk fauna 5-й клас)
-- [ ] 🤖 fallback Path C (TFLM) — лише після повторного FW.26-заміру з TFLM-обвісом ([`03_03 §3.2`](03_03_TinyML_Acoustic_Inference) противага)
-
 #### FW.49 — Tick-time ≠ wall-time у STOP2: системна семантика таймерів Soldier
-- **P0** · 🤖+👤 · 🟡 · → [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)
+- **P0** · 🤖+👤 · 🟢 · → [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)
 - **Стан:** wake-source ADR вирішено + S1-wiring host-shipped. `HAL_GetTick` заморожений у STOP2 (tick-`delta_t` міряв лише active-час → over-mint Proof-of-Growth); лік = RTC WUT + Vcap-енергогейт + RTC-календар timebase. Host: `Wall_Seconds_Now`/`Wall_Calendar_Set` (`wall_time.h`, civil↔unix roundtrip, free-running до синку), delta_t мігровано на wall-секунди (guard-и cold-start/назад/стрибок-епохи → baseline), cold-start epoch_day wall-first, wire `dT:2` сатурація @0xFFFF (wall-дельти бувають добами). Канон [`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA) (S1 + tick≠wall) + [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA) (wake-source ADR). ⚠️ **bench-gated residual:** LSE/RTC clock-tree (`MX_RTC_Init`) у repo відсутній — `Wall_Seconds_Now` на кремнії поверне 0 (чесна відмова → baseline) до bring-up.
 - [ ] 🔗 **S2:** RTC-WUT-tick + Vcap-енергогейт → delta_t = справжній час перезаряду (чекає шкали ↓).
 - [ ] 👤 **bench bring-up:** LSE 32.768 кГц + `MX_RTC_Init` (календар + WUT-IRQ STOP2-wake) + верифікувати `Wall_Seconds_Now`/recharge-інтервал (RUNBOOK §3-4: `04_lse_drift.py`, `03_power_profile.py`).
@@ -528,6 +522,13 @@
 - **Стан:** знахідка + helper канонізовано. Сирий 12-bit VREFINT-відлік (~1500; канал = VDDA за buck'ом, не Vcap EDLC) трактувався скрізь як мВ → RX-вікно (`VCAP_LISTEN_THRESHOLD=2800`) глухе НАЗАВЖДИ (OTA/mesh/time-sync/ротація мертві на кремнії) + Vcap-енергогейти з фейкових величин. Лік (рішення founder): `vcap_voltage = Adc_Vdda_Mv()` = чесні мВ VDDA (≈3300 поки buck живий) через factory VREFINT-cal (`adc_convert.h`, One-Home + host-тести); вухо відкрите, fauna-гейт (`FAUNA_VCAP_MIN_MV=4500`) чесно зачинений до живого Vcap-каналу; попутно знято VSTOR↔VBAT_SEC дрейф у [`02_03`](02_03_BQ25570_MPPT_Nano_Power). Канон [`03_01 §1.4`](03_01_Firmware_Lifecycle_and_DMA).
 - [ ] 👤 схемна вилка: розводка Vcap на окремий ADC-пін (цільовий тракт BQ25570 **VBAT_SEC** — [`02_01 §7.1`](02_01_Hardware_Architecture_and_BOM); дільник-номінали — [`02_03`](02_03_BQ25570_MPPT_Nano_Power): десятки МОм bleed vs TPS22860-гейт).
 - [ ] 👤 bench-калібрування (DMM-точки vs `Adc_Raw_To_Mv` — RUNBOOK §3.4).
+
+#### FW.46 — Enterprise-grade ARM firmware build (committed, reproducible, CI cross-compile)
+- **P0** · 🤖+👤 · 🟢 · → [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA)
+- **Стан:** owned-code foundation host/CI-готова (`ci.yml › firmware_arm_build` зелений) — відтворюваний CMake крос-компайл того, чим володіємо: `cmake/arm-none-eabi.cmake` (Cortex-M4 **soft-float** — WLE5 без FPU, FPU-міф знято), `logmel.c` під ARM (~6.3KB), **mrbc** `bio_contract.rb`→`lorenz_bytecode.h` + drift-gate + minimal-VM harness, host↔target RFFT parity, mruby minimal-gembox (double + NO_BOXING-пін, ~117KB Flash). **HAL compile-lane** (`-DSILKEN_WITH_HAL=ON`): pinned WL-HAL submodules + `hal_glue/` wrapper-TU компілюють обидва `main.c` проти справжнього HAL — зловив одразу `__HAL_RCC_CRYP_*`→`__HAL_RCC_AES_*` (F4-стиль не існує на WL → Soldier STOP2-цикл + Queen `Restore_ECB_Mode` впали б на лінку). 🔴 повний HAL-лінкований `.elf` ще НЕ зібрано (board-freeze поза репо). **P0-обґрунтування: board-freeze = пре-реквізит УСЬОГО bench-дня секції** (без повного `.elf` жоден silicon-confirm, вкл. FW.2-фліп, фізично не виконується). Канон [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA).
+- [ ] 👤 board-freeze → `.ioc` (CubeMX): тіла `MX_*`/`SystemClock_Config` (пін-мапа/клок/ADC/LSE — FW.49/FW.50) + SubGHz_Phy middleware (з реєстрацією `RadioEvents_t`! зараз `Radio.Init(NULL)` — латентний баг Queen RX) + startup/ld → повний Soldier/Queen `.elf` + bench flash-verify
+- [ ] 🤖 flip FW.26 на повний `.elf` після HAL
+- [ ] 🤖 (optional, far-future) toolchain pin via ARM-tarball ([`00_08`](00_08_Beyond_TRL9_Planetary_Roadmap))
 
 #### FW.3 — Queen AT Command Blocking
 - **P1** · 👤 · 🟢 · → `03_02 §4`
@@ -544,13 +545,6 @@
 - **Стан:** TENSOR_ARENA верифіковано — реальний ARM static-RAM CI-гейт `[FW.26]` (`check_ram_budget.sh --hal-objects` через FW.46 compile-lane, per-TU бюджети 8 192/20 480; arena ляже у `.bss` і зірве гейт → свідома ревізія) над виміряним RAM-леджером (mruby 38 392 — FW.55-вимір зняв «~4КБ»-міф → **стеля tensor arena ≈ 7–15 КБ**; стара умова «>46KB→overflow» була на міфі; бриф ML-партнерам arena ≤ 10 КБ). FW.4 baseline приземлено: forward-pass **972 B Flash / 0 .bss / 76 B стек** << стелі (prune/кап не знадобились). Канон леджера [`03_03 §6`](03_03_TinyML_Acoustic_Inference) + arena-оцінка [`03_03 §4.3`](03_03_TinyML_Acoustic_Inference) + build [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA).
 - [ ] 🔗 ARM `arm-none-eabi-size` на повному `.elf` (`.bss+.data` після HAL-link; ELF-режим гейта готовий, per-target 14 800/40 960) — після FW.46 board-freeze
 
-#### FW.46 — Enterprise-grade ARM firmware build (committed, reproducible, CI cross-compile)
-- **P1** · 🤖+👤 · 🟢 · → [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA)
-- **Стан:** owned-code foundation host/CI-готова (`ci.yml › firmware_arm_build` зелений) — відтворюваний CMake крос-компайл того, чим володіємо: `cmake/arm-none-eabi.cmake` (Cortex-M4 **soft-float** — WLE5 без FPU, FPU-міф знято), `logmel.c` під ARM (~6.3KB), **mrbc** `bio_contract.rb`→`lorenz_bytecode.h` + drift-gate + minimal-VM harness, host↔target RFFT parity, mruby minimal-gembox (double + NO_BOXING-пін, ~117KB Flash). **HAL compile-lane** (`-DSILKEN_WITH_HAL=ON`): pinned WL-HAL submodules + `hal_glue/` wrapper-TU компілюють обидва `main.c` проти справжнього HAL — зловив одразу `__HAL_RCC_CRYP_*`→`__HAL_RCC_AES_*` (F4-стиль не існує на WL → Soldier STOP2-цикл + Queen `Restore_ECB_Mode` впали б на лінку). 🔴 повний HAL-лінкований `.elf` ще НЕ зібрано (board-freeze поза репо). Канон [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA).
-- [ ] 👤 board-freeze → `.ioc` (CubeMX): тіла `MX_*`/`SystemClock_Config` (пін-мапа/клок/ADC/LSE — FW.49/FW.50) + SubGHz_Phy middleware (з реєстрацією `RadioEvents_t`! зараз `Radio.Init(NULL)` — латентний баг Queen RX) + startup/ld → повний Soldier/Queen `.elf` + bench flash-verify
-- [ ] 🤖 flip FW.26 на повний `.elf` після HAL
-- [ ] 🤖 (optional, far-future) toolchain pin via ARM-tarball ([`00_08`](00_08_Beyond_TRL9_Planetary_Roadmap))
-
 #### FW.55 — QEMU-M4 bit-parity lane: ARM↔x86 mruby double residual → CI
 - **P1** · 👤 · 🟢 · → [`03_01 §12.7`](03_01_Firmware_Lifecycle_and_DMA)
 - **Стан:** QEMU-M4 bit-parity lane (`qemu-system-arm -M mps2-an386`, той самий `libmruby.a` + software-double `__aeabi_d*`, що піде на WLE5) ганяє committed-байткод реальним Cortex-M4 код-шляхом → **byte-exact** проти host-голдена (зчеплені кейси — хаос ампліфікує ULP), закриває FW.7/FW.19 ARM↔x86 Float-drift до тонкого silicon-confirm. Дві ноги (mruby + log-mel CMSIS, обидві soft-float) + заскриптована кремнієва нога `wle5_bench` (`05_parity_dump.py`). **64КБ фіт-гейт у CI зловив 4 девайс-знахідки** до кремнію (червоний 102400 → плато sbrk 38392 Б): ① runner arena save/restore; ② `MRB_CONSTRAINED_BASELINE_PROFILE`; ③ newlib-nano; ④ **`MRB_NO_BOXING` явний пін** — канон FW.19 «дефолт=NO_BOXING» був ХИБНИЙ (mruby 4.0 дефолт = `MRB_WORD_BOXING` → ~20.5КБ RFloat-транзієнту/виклик на ARM32), фіт-гейт тепер = CI-enforcement FW.19; + бонус per-wakeup `mrb_full_gc`. RAM-леджер виведено у FW.26 / [`03_03 §6`](03_03_TinyML_Acoustic_Inference). Канон [`03_01 §12.7`](03_01_Firmware_Lifecycle_and_DMA) (lane) + §12.4 (піни); межі ISA≠кремній = клас C (bench).
@@ -563,9 +557,9 @@
 - [ ] 🔗 staging-smoke прогін проти задеплоєної Брами (`coap_smoke.yml` post-deploy gate; `bin/coap_smoke` + pure `lib/coap_smoke.rb` freeze-contract готовий — байт-звірка golden-векторів e2e: RST на сміття, 4.04 з 0xFF-MID піном, 2.04-після-enqueue; loopback-довід `coap_smoke_spec.rb`)
 
 #### E.59 — Mongabay biodiversity D-MRV pivot (acoustic fauna) [strategic]
-- **P1** · 🤖+👤 · 🟡 · → `03_03 §10`, `08_01 §1`
-- **Стан:** Стратегічний pivot carbon-MRV → biodiversity D-MRV (acoustic), після Delgado et al. (Nicoya, 119 ділянок, 16000 год аудіо; Mongabay, тр. 2026). Defensible moat проти Pachama/Sylvera/NCX (єдиний micro-acoustic verification layer). Координує вже-трековані: FW.4-EXT (5-class TinyML + `fauna_activity`), FW.25 (log-mel P1→P0), UNI.11+UNI.13a (Cherkasy Soundscape Library), BIZ.12 (Horizon CLUSTER 6 grant), 08_01 Стаття 24a. Канон `03_03 §10` + `08_01 §1/§2` + `08_02 §1B`.
-- [ ] 🤖 FW.4-EXT: 5-class модель з `fauna_activity` (розширення FW.4)
+- **P1** · 🤖+👤 · 🟢 · → `03_03 §10`, `08_01 §1`
+- **Стан:** Стратегічний pivot carbon-MRV → biodiversity D-MRV (acoustic), після Delgado et al. (Nicoya, 119 ділянок, 16000 год аудіо; Mongabay, тр. 2026). Defensible moat проти Pachama/Sylvera/NCX (єдиний micro-acoustic verification layer). Firmware-фундамент pivot'а вже shipped 🟢 (log-mel FW.25 → §🗄️; fauna-інфра FW.42/ARCH.40 host-done) — відкрите gated датасетом/академіками. Координує вже-трековані: FW.4-EXT (5-class TinyML + `fauna_activity`), UNI.11+UNI.13a (Cherkasy Soundscape Library), BIZ.12 (Horizon CLUSTER 6 grant), 08_01 Стаття 24a. Канон `03_03 §10` + `08_01 §1/§2` + `08_02 §1B`.
+- [ ] 🔗 FW.4-EXT 5-class `fauna_activity` — дім = FW.4 (🌿-чекбокс); gated UNI.11+UNI.13a dataset
 - [ ] 👤 AiInsight#biodiversity_trend → ForestNFT metadata "biodiversity_score" (`04_02`)
 - [ ] 🔗 координація UNI.11/UNI.13a (soundscape) + BIZ.12 (Horizon) + 08_01 Стаття 24a
 
@@ -608,7 +602,7 @@
 - [ ] 🔗 Grafana-панель — після перших живих інкрементів (мертва панель без джерела = передчасний dashboard)
 
 #### ARCH.26 — Синхронні вікна (TDMA) + CAD preamble detection (Проблема Рандеву mesh relay)
-- **P2** · 🤖+👤 · 🟢 · → [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA), [`03_02 §5.1.4`](03_02_Queen_Gateway_Firmware)
+- **P2** · 👤 · 🟢 · → [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA), [`03_02 §5.1.4`](03_02_Queen_Gateway_Firmware)
 - **Стан:** Рандеву-драбина host-half ПОВНА (2026-07-02): L1 Queen always-on ✅ · L2 TDMA-вікна 🟡 · L3 CAD 🟡 — обидві половини INERT за незалежними гейтами `ARCH26_TDMA_ENABLED`/`ARCH26_CAD_ENABLED`. Дім драбини + енерго-політика ролей (full-RX/нюх лише Провідник ARCH.27; PANIC = extended-preamble відправника) = [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA); wire-дім розкладки + стелі точності (±1 с, `ts_frac`-апгрейд, sync-бюджет ±10 мс) = [`03_02 §5а.2а`](03_02_Queen_Gateway_Firmware); CAD-енерго-double-bind (нюх ≠ EBFC → surplus-Провідник; baseline-пара 3 с ↔ 4 с) = [`02_03 §9.10`](02_03_BQ25570_MPPT_Nano_Power). Розблоковує: FW.27 Design A ([`03_02 §5.1.4`](03_02_Queen_Gateway_Firmware)) · ARCH.43 (рандеву-передумова) · mesh-TTL rev2-рішення ([`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)) · stigmergy-зворотний шлях ([`00_08 §1`](00_08_Beyond_TRL9_Planetary_Roadmap)). Активація post-TRL 6.
 - [ ] 👤 bench: LSE drift проти ±10 мс sync-бюджету + RTC sub-second/LPTIM wake + CAD енергопрофіль (PPK2) + фліп обох гейтів (WUT-армінг — спільний bench з FW.49/FW.20/SEC.15)
 
@@ -661,7 +655,7 @@
 - [ ] 👤 field batch → RDP **L1** (зворотний); L2 — лише фінальний mass-deploy
 
 #### SEC.15 — IWDG freeze у STOP2 (option byte `IWDG_STOP=0`)
-- **P1** · 👤 · 🟢 · → [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)
+- **P1** · 🤖+👤 · 🟢 · → [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)
 - **Стан:** freeze-rationale + PVD-кома side-path канонізовано — `IWDG_STOP=0`+`IWDG_STDBY=0` (LSI-пес лічить у STOP2 max ~32.7с → spurious reset посеред багатогодинного сну) заскриптовано поряд з RDP у `firmware/scripts/bench/01_option_bytes.sh` (RUNBOOK §1.2). Канон [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA).
 - [ ] 👤 застосувати на платі при factory flashing
 - [ ] 👤 bench-верифікація: сон 1 год без spurious reset (RUNBOOK §4.4)
@@ -1405,4 +1399,5 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 | E.3 | Breadboard-відео для грантів → злито чекбоксом у HW.35 (стенд Гілки-А) | [`02_04`](02_04_Legacy_Breadboard_Appendix) |
 | E.53 | state_root: `total_sfc` (сума confirmed SFC-мінтів) у формулі EthereumAnchor — migration applied; `[E.53]`-теги в `04_01`/`05_01`/`05_04` = ця робота. ID був помилково перевикористаний у беклозі під VNA-вимір антени → та вісь тепер чекбокс UNI.10 | [`05_04`](05_04_Ethereum_L1_State_Anchor) |
 | E.54 | state_root: `active_tree_count` (метрика покриття екосистеми) — migration applied; `[E.54]`-теги = ця робота. ID був помилково перевикористаний у беклозі під SOP-документи EwsAlert → та вісь тепер UNI.12 (контент) + ARCH.31 (inline UI) | [`05_04`](05_04_Ethereum_L1_State_Anchor) |
+| FW.25 | TinyML DSP-path: Path B (log-mel) SELECTED + shipped self-owned — `Compute_LogMel` + 3-way parity + `contract_hash` tripwire + бюджет-конверт (arena ≤ 10 КБ); живить FW.4 baseline. Residual'и мігрували: Path C-fallback + опц. партнер-апгрейд + 🌿 dataset → FW.4 | [`03_03 §3.2`](03_03_TinyML_Acoustic_Inference) (decision-matrix) + [`03_03 §3.4`](03_03_TinyML_Acoustic_Inference) (контракт) |
 
