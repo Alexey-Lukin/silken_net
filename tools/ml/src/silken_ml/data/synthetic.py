@@ -31,7 +31,14 @@ def gen_silence(idx: int, cfg: DataConfig) -> np.ndarray:
 
 
 def gen_cavitation(idx: int, cfg: DataConfig) -> np.ndarray:
-    """One synthetic cavitation clip — sparse decaying 5–8 kHz acoustic-emission clicks."""
+    """One synthetic cavitation clip — sparse decaying 5–8 kHz clicks.
+
+    5–8 kHz is an audible-band PROXY bounded by the 16 kHz Nyquist, NOT the physical
+    acoustic-emission frequency of xylem cavitation (ultrasonic 25–150 kHz; Tyree &
+    Dixon 1983). This trains a low-frequency structural-slough proxy, not true AE
+    detection — the current chain cannot observe the real signal. See docs 03_03 §4.2;
+    true ultrasonic detection needs a dedicated high-rate channel (UNI.11 / v3).
+    """
     n = int(cfg.sr * cfg.clip_seconds)
     r = _rng(cfg.seed + 202, idx)
     sig = np.zeros(n, dtype=np.float64)
