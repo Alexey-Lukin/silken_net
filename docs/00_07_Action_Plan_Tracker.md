@@ -632,6 +632,12 @@
 - [ ] 👤 рішення: RTC-реклемація (§2.3.2) vs Flash-KV persist vs SRAM2-retain — свідомо відкладено до bench (приймати з виміряним 300nA floor PPK2/JS220, RUNBOOK 3.1, не з моделлю)
 - [ ] 👤 bench: HAL_FLASH glue + ECCD-політика + вимір 300nA + persist-roundtrip
 
+#### ARCH.43 — Mesh-relay повернення: wire-rev3 addressing (post-CCM star-only)
+- **P3** · 🤖+👤 · 🔗 · → [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA)
+- **Стан:** Звужено — FW.2 гейт (в) закрив uplink/demux-вісь двоключовою моделлю (session KEYL per-device + cluster KEYB, [`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security)); лишається mesh-вісь. У CCM-еру Сценарій Б мертвий by construction (`#if !FW2_CCM_ENABLED`: air-кадр гине на RX-guard сусіда, TTL у ciphertext) → **star-only прийнято** (ухвала FW.2 (а)); стеля масштабу однієї Queen (TTL=3 · relay-буфер без агрегації · CIFO) + масштаб-відповідь «більше Queen» (ARCH.1/ARCH.10) = [`03_01 §1.9.1`](03_01_Firmware_Lifecycle_and_DMA). Повернення mesh = wire-rev3-клас: cleartext TTL/адресація (mesh-TTL rev2-рішення) + opaque pass-through relay без декрипту + `0x9E` DID-таргет (FW.17 gate (ii), [`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security)). Активація post-TRL 6, на масштаб-тригер.
+- [ ] 🔗 передумови: ARCH.26 рандеву-фліп + downlink-wire-ревізія (MAC/FC, [`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security))
+- [ ] 🤖+👤 wire-rev3 addressing-дизайн (cleartext TTL/DID + opaque relay + DID-таргетований downlink)
+
 ## §03b · Edge crypto
 
 #### SEC.3 — Factory Flashing pipeline
@@ -1243,7 +1249,6 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 | E.34 | dClimate fallback → ForestBountyService (drone/ranger PoPhW) | `04_02` | Post-TRL 6 |
 | E.51 | **Monte Carlo TTL-flood симуляція** для обґрунтування `PANIC_TTL=5` та `DEFAULT_TTL=3`: цільовий P_delivery ≥ 0.99 при 20-30% одночасних відмов вузлів. Виходи: math-обґрунтування для seed deck | `08_02` §1B (Порубльов) | Post-TRL 6 (Порубльов, ЧНУ) |
 | ARCH.8 | Event-Triggered Reporting: heartbeat 1/day normal, continuous on anomaly | `00_01` | Post-TRL 6 |
-| ARCH.43 | **ЗВУЖЕНО 2026-07-03 (FW.2 гейт (в) забрав uplink/demux-вісь): лишається mesh-relay + downlink-адресація.** ✅ Вирішене двоключовою моделлю ([`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security)): uplink-ізоляція = session KEYL per-device (CCM, cleartext DID/FC в AAD — Queen demux без ключа, «сліпий кур'єр»); Queen-demux суперечність зникла; downlink-broadcast структурність задовольняє KEYB (клас K_ota). **Лишається (ця вісь):** mesh-relay у CCM-еру мертвий by construction — Сценарій Б гейтовано `#if !FW2_CCM_ENABLED` (air-кадр гине на RX-guard сусіда `size!=16`; TTL живе у ciphertext → relay-декремент неможливий без ключа) → **star-only прийнято на поточному TRL** (свідома ціна фліпа, ухвала (а)). Повернення mesh = wire-rev3-клас робота: TTL/адресація у cleartext (mesh-TTL rev2-рішення), opaque pass-through relay без декрипту, + `0x9E` DID-таргет (FW.17 gate (ii)). Стеля «>1000 дерев через одну Queen» НЕ підтримується незалежно: (1) `DEFAULT_TTL=3` → ≤3 хопи ≈ ≤~450–600 м; (2) один relay-буфер + store-and-forward → нема агрегації; (3) Queen CIFO ~100/~200, overflow ~30 хв без Starlink (`02_05 §2.1`). Масштаб до тисяч = більше Queen (ARCH.1 fractal/L2 Conductor, ARCH.10 Q2Q). Залежить від ARCH.26 (рандеву) | `03_01`, `03_02`, `03_05`, `06_08` | Post-TRL 6 (mesh-вісь; cross-ref ARCH.26) |
 | ARCH.29 | **RTOS Deadlock-Free верифікація через Petri Nets** — формальна PN-модель firmware tasks (Sensing/Compute/TX/OTA/WDT) на Soldier + reachability graph аналіз для доведення відсутності circular wait. Відрізняється від ARCH.20 (Petri Net Rails моноліт) тим що моделює embedded RTOS scheduling | `08_02` §1B (Ярмілко) | Post-TRL 6 (R&D — Ярмілко, ЧНУ) |
 | E.30 | InsightGenerator: кліматичні базлайни per region | `04_02` | Post-TRL 7 |
 | E.50 | **Edge fuzzy_distance dedup function** на STM32WLE5JC: <1 мс CPU, <128 байт RAM, ціль — 30-40% TX зниження за рахунок suppression near-duplicate пакетів | `08_02` §1B (Ярмілко) | Post-TRL 7 (R&D — Ярмілко) |

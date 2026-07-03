@@ -585,6 +585,8 @@ Mesh-relay у §1.9 повторює прийнятий 16-байтний шиф
 
 > **⚠️ Передумова (per-device crypto):** релей розшифровує чужий пакет → `TTL--` → перешифровує — коректно лише за **спільного** LoRa-ключа (ECB-ера). **CCM-ера (FW.2 (в), 2026-07-03): Сценарій Б гейтовано `#if !FW2_CCM_ENABLED`** — телеметрія/panic сусідів = air-кадри (30B rev2.1) на per-device session-ключах (гинуть на RX-guard до декрипту), TTL живе у ciphertext → **star-only прийнято** (ухвала гейту (а), [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)); mesh повертається лише з wire-rev3-класом (cleartext TTL/адресація + opaque pass-through) → [`00_07` — ARCH.43](00_07_Action_Plan_Tracker) (mesh-вісь).
 
+> **⚠️ Стеля масштабу (незалежна від crypto-ери):** «>1000 дерев через одну Queen» mesh НЕ дає навіть в ECB-ері: (1) `DEFAULT_TTL=3` → ≤3 хопи ≈ ~450–600 м ефективного радіусу; (2) один relay-буфер store-and-forward — релей повторює кадри поштучно, агрегації немає; (3) Queen CIFO ~100/~200 записів, overflow ~30 хв без Starlink ([`02_05 §2.1`](02_05_Queen_Hardware_and_Starlink)). Масштаб до тисяч дерев = більше Queen, не довший mesh ([`00_07` — ARCH.1](00_07_Action_Plan_Tracker) fractal L2 / ARCH.10 Q2Q).
+
 **Структура кешу (LIFO, 3 слоти, FW.21):**
 
 | Слот | RTC регістр | Заповнюється коли |
