@@ -211,6 +211,8 @@ EdgeCache forest_cache[CACHE_MAX_ENTRIES]; // 50 × 23 байти = 1150 бай�
 uint8_t cache_count = 0;
 ```
 
+> **[FW.2, INERT за `FW2_CCM_ENABLED`]** У CCM-ері слот несе `payload[24]` (опаковий air-хвіст — Королева НЕ розшифровує, інверсія довіри [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)) + `fmt`-тег (`EDGE_FMT_ECB16|CCM24`); `len`-тегований RX-ринг приймає 16|28. bio_status для евікції видно лише в ECB16-слотах (у CCM ті байти — шифртекст; офсет-колізія — firmware-скіл gotcha #7); CCM-записи евіктяться за RSSI/SNR — свідома стеля сліпого кур'єра, довгий лік = ARCH.35-ринг. RAM-ціна фліпа — леджер [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security) (One-Home чисел).
+
 ### Алгоритм `Process_And_Cache_Data(uid, payload, rssi)`
 
 ```
@@ -283,6 +285,8 @@ evict_idx = (best_evict_idx >= 0) ? best_evict_idx : fallback_idx
 Максимум: 50 записів × 21 = 1050 байт
 Buffer size: binary_batch_buffer[2048] — достатньо з запасом
 ```
+
+> **[FW.2, INERT]** CCM-ера: запис = **29 Б** (розкладка — 📐 [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security) cross-ref; білдер `firmware/queen/rx_route.h`, golden-звірений), 50 × 29 = 1450 ≤ 2048 — запас лишається. Батч ОДНОРІДНИЙ (Rails тримає один stride): 16B-телеметрія не-прошитих Солдатів дропається з лічильником, health-запис DID=0 не пакується (фліп-гейти → [`00_07`](00_07_Action_Plan_Tracker) FW.2).
 
 **RSSI інверсія:** `(uint8_t)(-(int16_t)rssi)` — `int16_t` cast запобігає UB при rssi == −128 (мінімум int8_t).
 
@@ -1008,6 +1012,8 @@ Cmd_Dedup_Check(hash):
 ---
 
 ## 👑 7. Queen Health Sentinel (DID = 0x00000000)
+
+> **[FW.2, INERT]** У CCM-ері health-інсерт **пропускається** (гейтований skip у `Flush_Cache_To_Rails`): 16B-легасі запис зламав би однорідний 29B-stride, а `process_ccm_chunk` DID=0 однаково дропає («use dedicated CoAP channel» — канал ще не існує). Видимість шлюзу після фліпа = свідомий blackout до dedicated-каналу; фліп-гейт + природний дім рішення (ARCH.34 Queen-Sentinel backend) → [`00_07`](00_07_Action_Plan_Tracker) FW.2.
 
 ### Проблема
 

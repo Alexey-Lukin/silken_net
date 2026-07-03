@@ -1522,7 +1522,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       expect(SilkenNet::Metrics::TELEMETRY_CCM_MIC_FAIL_TOTAL).not_to have_received(:increment)
     end
 
-    it "skips a chunk shorter than 25 bytes" do
+    it "skips a chunk shorter than the 29-byte CCM stride" do
       chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
                               dt: 100, status: 0, ttl: 3, fc: 1)
       expect { described_class.call(chunk[0..23]) }.not_to change(TelemetryLog, :count)

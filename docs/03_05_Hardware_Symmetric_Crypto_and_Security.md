@@ -217,18 +217,29 @@ nonce[12] = DID[0..3] || FC32[0..3 BE, top-байт 0] || 0x00 × 4
 
 > ✅ **DR15 resource-conflict — ВИРІШЕНО (2026-05-30):** FW.2 FC **володіє** `RTC_BKP_DR15` (реалізовано — `lora_ccm.h` + `firmware/soldier/main.c`; канонічно у [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA)). FW.20-S2 anti-storm dedup-bitmap (ARCH.28) переходить на **Flash-KV store** ([`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)), бо всі 20 RTC backup-регістрів (DR0–DR19) зайняті. Стале-формулювання «DR15 наразі резерв» у [`00_07`](00_07_Action_Plan_Tracker)/[`03_02`](03_02_Queen_Gateway_Firmware) виправлено на цей вердикт.
 
-**Конфігурація `hcryp` для CCM (AES-128):**
+**Конфігурація `hcryp` для CCM (AES-128) — WL-істинний двофазний флоу:**
+
+> ⚠️ **WL-HAL знахідка (2026-07-03, зловлено compile-варіантом hal_check_ccm):** `HAL_CRYPEx_AESCCM_Encrypt/Decrypt` у STM32WLxx HAL **НЕ ІСНУЮТЬ** — то API старших родин (F4/F7/L4). WL дає лише `HAL_CRYP_Encrypt/Decrypt` (payload-фаза, CCM-алгоритм конфігом) + `HAL_CRYPEx_AESCCM_GenerateAuthTAG` (тег-фаза окремо); на decrypt HAL тег **не звіряє** — вирок виносить викликач константним порівнянням (`Fw2_Ccm_Tag_Equal`). Первісний freeze-contract кликав неіснуючий API і впав би на першому ж залізному лінку. Shape-дім: `firmware/common/lora_ccm.h` (шапка + `Build_CCM_B0*`); обидва call-sites (`Soldier_Build_CCM_LoRa_Packet` / `Queen_Parse_CCM_LoRa_Packet`) вже на двофазному флоу, host-мок дзеркалить його і **валідує B0** проти білдера.
 
 ```c
-hcryp.Init.KeySize      = CRYP_KEYSIZE_128B;   // ARCH.42 — AES-128 LoRa (SE = SE050 — §3.7)
-hcryp.Init.pKey         = aes_key;             // uint32_t aes_key[4] (16 bytes, AES-128)
-hcryp.Init.Algorithm    = CRYP_AES_CCM;
-hcryp.Init.HeaderSize   = 8;                   // AAD = DID(4) + gossip(1) + FC24(3)
-hcryp.Init.Header       = (uint32_t*)header;   // bytes [0..7] of packet
-hcryp.Init.B0           = b0_block;            // CCM B0 (formatted nonce + length flags)
-// Encrypt: input = sensor_payload[12], output = ciphertext[12] + MIC[8]
-HAL_CRYPEx_AESCCM_Encrypt(&hcryp, sensor_payload, 12, ciphertext_with_mic, 100);
-// → ciphertext_with_mic[0..11] = encrypted sensor, [12..19] = MIC
+// Фаза 0 (конфіг): нонс живе всередині B0-блоку (NIST 800-38C: flags 0x5A ‖
+// nonce[12] ‖ Q=12), AAD — окремим Header; Size обох фаз — у БАЙТАХ.
+hcryp.Init.KeySize         = CRYP_KEYSIZE_128B;   // ARCH.42 — AES-128 LoRa (SE = SE050 — §3.7)
+hcryp.Init.pKey            = aes_key;             // uint32_t aes_key[4] (16 bytes)
+hcryp.Init.Algorithm       = CRYP_AES_CCM;
+hcryp.Init.DataType        = CRYP_DATATYPE_8B;    // байтопотік (32B word-swap клас — KAT на bench)
+hcryp.Init.B0              = b0_w;                // Build_CCM_B0(did, fc, …) — 16B
+hcryp.Init.Header          = aad_w;               // AAD = DID(4)+gossip(1)+FC24(3)
+hcryp.Init.HeaderSize      = 8;
+hcryp.Init.DataWidthUnit   = CRYP_DATAWIDTHUNIT_BYTE;
+hcryp.Init.HeaderWidthUnit = CRYP_HEADERWIDTHUNIT_BYTE;
+HAL_CRYP_Init(&hcryp);
+// Фаза 1 (payload): 12B sensor → 12B ciphertext
+HAL_CRYP_Encrypt(&hcryp, pt_w, 12, ct_w, 1000);
+// Фаза 2 (тег): повний 16B-блок, MIC = перші 8 байт
+HAL_CRYPEx_AESCCM_GenerateAuthTAG(&hcryp, tag_w, 1000);
+// Після CCM: MX_CRYP_Restore_From_CCM() — ECB назад + width-units у WORD
+// (липкий BYTE зламав би word-Size усіх ECB/CBC шляхів) + NULL B0/Header.
 ```
 
 > **Примітка airtime:** 28-байтний пакет коштує 493.6 мс (+20% vs 21B, +9% vs 24B-rev1; SF10/DR2) — у межах duty-cycle бюджету EU868 (< 0.014% при 1 TX/година, запас 72×). Ключовий факт символьної квантизації: 24..27B коштують ОДНАКОВО (43 символи), 28-й байт відкриває новий блок (48 символів) — тому перші +3B claimants безкоштовні, а четвертий (VPD) оплачено свідомо (+12 мДж/TX), щоб не платити другий польовий міграційний цикл при приході BME280. Детальний розрахунок + wire-budget ledger — нижче.
@@ -237,7 +248,7 @@ HAL_CRYPEx_AESCCM_Encrypt(&hcryp, sensor_payload, 12, ciphertext_with_mic, 100);
 
 > **Cross-ref для firmware (✅ 2026-05-24 doc-fix + freeze-contract impl):** RTC Backup Domain розширення — Frame Counter у DR15 (єдиний вільний слот; DR2 ❌ був помилково вказаний — насправді DR2 зайнято `has_mesh_relay`). Magic marker `FW2_FC_MAGIC_BYTE = 0x46` ('F') у high 8 бітах захищає cold-boot. Реалізовано freeze-contract у `firmware/soldier/main.c` (`Load_Frame_Counter` / `Save_Frame_Counter` / `Soldier_Build_CCM_LoRa_Packet`) та `firmware/queen/main.c` (`Queen_Parse_CCM_LoRa_Packet`) під `#define FW2_CCM_ENABLED 0` — production cycle не активний до hardware bench. Host-тести у `firmware/test/test_ccm.c` + спільні KAT-вектори `firmware/common/ccm_kat_vectors.h` (wire-rev2, регенеровано 2026-06-12) забезпечують byte-level parity з OpenSSL CCM (linked via `-lcrypto`); єдине, що залишається для HW bench — підтвердити що STM32WLE5JC `HAL_CRYPEx_AESCCM_Encrypt` дає байт-точну відповідність до OpenSSL.
 
-> **📋 FW.2 flip-checklist (НЕ забути при `FW2_CCM_ENABLED 1`):** окрім самого дефайна і bench-атестації (`ccm_selftest` + `sym_selftest` через SWD), Queen потребує трьох RX-правок, які freeze-contract НЕ покриває: (1) `OnRxDone` жорстко відкидає `size != 16` → 28-байтні CCM-кадри впадуть ще в ISR; (2) `LoRaRxSlot.payload[16]` замалий для 28B — ринг треба розширити; (3) `Queen_Parse_CCM_LoRa_Packet` ніде не викликається з main-loop RX-гілки — треба call-site з маршрутизацією 28B-телеметрія vs 16B-control-frames (OTA/re-request лишаються ECB). Soldier-сторона: call-site `Soldier_Build_CCM_LoRa_Packet` у Фазі TX (джерела rev2-полів — шапка функції у `main.c`: `Pack_FW2_Device_Z(lorenz_z, lorenz_state_valid)` + `Pack_FW2_Diag(...)` + gossip). Бекенд-сторона flip — `TELEMETRY_CCM_ENABLED=true` (вже feature-flagged, rev2-ready). CCM-flip також РОЗГЕЙТЛЮЄ (не фліпає автоматично) пов'язані гейти — FW.17-ротація (`FW17_RATCHET_ENABLED` + Queen `FW20_Q2_CMD_RELAY_ENABLED` + backend ENV, §3.8) фліпається окремим кроком з власним e2e (bench RUNBOOK §2.6).
+> **📋 FW.2 flip-checklist (стан post-pre-authoring 2026-07-03 — інтеграція ЗАШИТА за гейтами, фліп = верифікація):** уся integration-half, яку попередня версія цього чекліста веліла «написати на bench-дні», **вже authored** обабіч за `FW2_CCM_ENABLED` (Queen: OnRxDone 16|28 + `rx_route.h` маршрутизація + fmt-aware CIFO + 29B-flush; Soldier: Фаза-4 CCM TX + panic-CCM у `Trigger_Emergency_LoRa_TX` + ungated RX-guard `size!=16`-до-декрипту; господар-CI: compile-варіант `hal_check_ccm` доводить збірку гейтованого тракту проти справжнього WL-HAL щопушу). **Архітектура hot path Королеви — сліпий кур'єр** (інверсія довіри цього ж §: DID/FC з cleartext-AAD, сирий 24B-хвіст → 29B-запис, MIC верифікує лише Rails per-DID; `Queen_Parse_CCM_LoRa_Packet` = bench-атестація RX-тракту, НЕ hot path). Фліп-день лишає: (1) bench-атестацію (`ccm_selftest`+`sym_selftest` через SWD — RUNBOOK §2.1) + e2e uplink-day; (2) фліп трьох прапорів (`FW2_CCM_ENABLED` обабіч + `TELEMETRY_CCM_ENABLED`); (3) **три свідомі фліп-гейти** (дім рішень — [`00_07`](00_07_Action_Plan_Tracker) FW.2): (а) **atomic-cutover кластера** — Rails тримає ОДИН stride на батч, 16B-телеметрію не-прошитих Солдатів Королева ДРОПАЄ з лічильником (`ccm_legacy_telemetry_drops`); (б) **Queen-health blackout** — DID=0 запис у 29B-батч не пакується (бекенд його дропав би), видимість шлюзу до dedicated CoAP-каналу (природний дім — ARCH.34); (в) **key-model кластера** — фабрика на фліп-день лишає спільне значення LoRa-ключа (справжні per-device зламали б downlink-broadcast — §3.1 вище; ізоляція приїде з addressing-шаром ARCH.43). CCM-flip також РОЗГЕЙТЛЮЄ (не фліпає автоматично) пов'язані гейти — FW.17-ротація (`FW17_RATCHET_ENABLED` + Queen `FW20_Q2_CMD_RELAY_ENABLED` + backend ENV, §3.8) фліпається окремим кроком з власним e2e (bench RUNBOOK §2.6); ARCH.35-ринг у CCM-ері потребує 29B-запису (`FLASH_RING_RECORD_SIZE` — позначено в коді).
 
 #### 📒 Wire-budget ledger (SSOT черги на байти LoRa-кадру)
 
@@ -247,6 +258,7 @@ HAL_CRYPEx_AESCCM_Encrypt(&hcryp, sensor_payload, 12, ciphertext_with_mic, 100);
 - Символьна квантизація SF10/125kHz/CR4:5: кадри **24..27B коштують однаково** (43 символи, 452.7 мс); 28B відкриває новий блок (48 символів, 493.6 мс); наступний поріг — 32B.
 - Top-байт старого FC32-поля був **завжди 0x00** (лічильник 24-бітний) — 1 безкоштовний cleartext-байт в AAD.
 - Headroom після rev2: **+3 байти безкоштовно** (28..31B — той самий 48-символьний блок; 32B відкриває наступний). Біти: `mesh_ctrl.ttl:4` тримає max 15 hop при потребі 0..5 (1 біт можна реклемувати), `vpd_index` до HW.32-калібрування = de-facto резервний байт.
+- **RAM-ціна фліпа (виміряно `arm-none-eabi-size` на hal_check-TU, 2026-07-03):** Soldier `.bss` +20 Б (5 724 / 8 192 TU-бюджету), Queen `.bss` +596 Б (18 980 / 20 480 — ринг 16×len-слоти 28B + CIFO 50×fmt-теговані 24B-слоти). Обидва в леджері; бойовий білд (гейти 0) цієї ціни НЕ платить — ширини гейтовані, [FW.26]-гейт міряє бойовий `hal_check`.
 
 **Розв'язана черга (wire-rev2, 2026-06-12):**
 
@@ -578,7 +590,9 @@ Legacy (L0):    [IV:16][Encrypted Data: N×16]                  довжина %
 +------------------+------------------+------------------+-----+------------------+
 ```
 
-**Кожен "Encrypted Block" містить один або кілька 21-байтних записів телеметрії** (вирівняних padding нулями до кратного 16):
+> **[FW.2] CCM-ера батча (INERT за гейтами):** після фліпа записи стають **29-байтними** (розкладка — 📐 §2.1 cross-ref для backend, One-Home; білдер `firmware/queen/rx_route.h`) — Королева НЕ розшифровує (сліпий кур'єр, §2.1), MIC верифікує Rails per-DID; один stride на весь батч. Queen-health DID=0 у CCM-батч не пакується (фліп-гейт — [`00_07`](00_07_Action_Plan_Tracker) FW.2). CBC-конверт + L1 QATT-підпис поверх — незмінні.
+
+**Кожен "Encrypted Block" містить один або кілька 21-байтних записів телеметрії** (вирівняних padding нулями до кратного 16; розкладка запису — [`03_01 §8`](03_01_Firmware_Lifecycle_and_DMA) One-Home):
 
 ```
 21-byte Telemetry Record (before encryption):
@@ -1239,6 +1253,7 @@ Handle_CoAP_Command():
 |-------|----------|-------|-----------|---------|---------|
 | **Soldier → Queen** (LoRa, 16B) | AES-128 | ECB | ❌ Відсутній | ❌ Відсутній | ⚠️ Replay вразливість |
 | **EwsAlert / Panic → Queen** (LoRa, 16B) | AES-128 | ECB | ❌ Відсутній | ❌ Відсутній | ⚠️ Критичні пакети без автентифікації |
+| **Soldier → Queen** (LoRa, 28B — target FW.2, INERT за `FW2_CCM_ENABLED`) | AES-128 | CCM | ✅ Nonce = DID‖FC24 (DR15 + Flash high-water) | ✅ 8B MIC (64-bit) | wire-rev2 §2.1; integration authored 2026-07-03, фліп = bench-атестація |
 | **Queen → Rails** (CoAP Batch) | AES-256 | CBC | ✅ HRNG (128-bit) | 🟡 **Ed25519 batch-sig (L1 QATT, §2.2)** — detached, encrypt-then-sign; legacy L0 без підпису приймається | IV prepend; sig хвостом |
 | **Rails → Queen** (CoAP Command) | AES-256 | CBC | ✅ Від Backend | ❌ Відсутній | IV в перших 16 байтах |
 | **Queen → Soldier** (OTA LoRa) | AES-128 | ECB | ❌ Відсутній | ❌ Відсутній | ⚠️ Прошивка без автентифікації |
@@ -1277,7 +1292,8 @@ HAL_CRYP_Init(&hcryp);
 | Emergency TX format | `firmware/test/` | ⚠️ Не верифіковано |
 | HRNG fallback behavior | Відсутній | 🔴 Не покрито |
 | Key hardcoding detection | `app/services/security/weak_key_detector.rb` + boot guard | ✅ Backend |
-| **AES-128-CCM encrypt + MIC verify [FW.2 target]** | TBD — STM32 hardware bench | 🟡 Pending |
+| **AES-128-CCM encrypt + MIC verify [FW.2 target]** | `firmware/test/test_ccm.c` (двофазний WL-флоу + B0-валідація + tamper-bank + Phase-4/panic маршалінг e2e) + `test_ccm_selftest.c` (POST) + `spec/services/cryptography/lora_ccm_spec.rb` — KAT-parity з OpenSSL | ✅ host / 🟡 bench silicon-confirm |
+| **Queen RX-роутинг + 29B CoAP-запис [FW.2]** | `firmware/test/test_queen_rx_route.c` (класифікація 16/28/шум, cleartext-DID, golden-звірка запису проти backend-контракту) + fmt-aware CIFO у `test_queen_logic.c` + RX size-guard у `test_soldier_logic.c` | ✅ host |
 
 **Загальний статус:** host-based тести проходять (`make -C firmware/test`). Але тестове покриття **криптографічного пайплайну** є неповним — зокрема HRNG fallback, EwsAlert panic TX та **FW.2 CCM mode** не тестуються (CCM потребує hardware bench для верифікації `CRYP_AES_CCM` HAL модуля).
 
