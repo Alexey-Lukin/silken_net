@@ -36,11 +36,20 @@
 #define FLASH_SEED_MAGIC           0x4C534544UL  /* "LSED" */
 #define EPOCH_SECONDS              86400UL
 
+/* [FW.2 (в)] Flash-based cluster broadcast key (KEYB) provisioning constants */
+#define FLASH_BCAST_KEY_ADDR       ((uintptr_t)_mock_flash_bcast_region)
+#define FLASH_BCAST_KEY_WORDS      4
+#define FLASH_BCAST_KEY_MAGIC      0x4B455942UL  /* "KEYB" */
+
 /* [FW.1] Error_Handler mock for Load_AES_Key tests */
 static void Error_Handler(void) { _mock_error_handler_called++; }
 
 /* [FW.1] AES key array (same as in soldier/main.c) */
 static uint32_t aes_key[4] = {0};  /* AES-128 LoRa (ARCH.42 Variant B) */
+
+/* [FW.2 (в)] Cluster control-plane key mirror (same as in soldier/main.c) */
+static uint32_t bcast_key[4] = {0};
+static uint8_t  bcast_key_is_fallback = 0;
 
 /* [SEC.11 / FW.30] K_seed + validity flag (same as in soldier/main.c) */
 static uint8_t lorenz_seed[32] = {0};
@@ -76,6 +85,34 @@ static void Load_AES_Key(void)
     for (int i = 0; i < FLASH_KEY_WORDS; i++) {
         aes_key[i] = flash_ptr[1 + i];
     }
+}
+
+/* ---------- [FW.2 (в)] Load cluster broadcast key (KEYB) from Flash ----------
+ * Mirror of soldier/main.c Load_Broadcast_Key: fail-open (НЕ Error_Handler) —
+ * порожній KEYB = bench-плата до KEYB-ери → fallback на session (KEYL). */
+static void Load_Broadcast_Key(void)
+{
+    const uint32_t *flash_ptr = (const uint32_t *)FLASH_BCAST_KEY_ADDR;
+    uint32_t key_or = 0;
+
+    if (flash_ptr[0] == FLASH_BCAST_KEY_MAGIC) {
+        for (int i = 0; i < FLASH_BCAST_KEY_WORDS; i++) {
+            key_or |= flash_ptr[1 + i];
+        }
+    }
+
+    if (key_or != 0) {
+        for (int i = 0; i < FLASH_BCAST_KEY_WORDS; i++) {
+            bcast_key[i] = flash_ptr[1 + i];
+        }
+        bcast_key_is_fallback = 0;
+        return;
+    }
+
+    for (int i = 0; i < FLASH_BCAST_KEY_WORDS; i++) {
+        bcast_key[i] = aes_key[i];
+    }
+    bcast_key_is_fallback = 1;
 }
 
 /* ---------- [SEC.11 / FW.30] Load Lorenz Seed from Flash ---------- */
@@ -2033,6 +2070,89 @@ TEST(test_load_key_second_load_overwrites) {
     Load_AES_Key();
     ASSERT_EQ(aes_key[0], 0x11111111);
     ASSERT_EQ(aes_key[3], 0x44444444);  /* Останнє слово AES-128 LoRa (post-ARCH.42) */
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * [FW.2 (в)] CLUSTER BROADCAST KEY (KEYB) LOADING TESTS
+ * ════════════════════════════════════════════════════════════════════ */
+
+static const uint32_t _test_bcast_key[4] = {
+    0xB0B1B2B3, 0xC0C1C2C3, 0xD0D1D2D3, 0xE0E1E2E3
+};
+
+/* Спільна підготовка: session-ключ уже в RAM (Load_Broadcast_Key
+   викликається ПІСЛЯ Load_AES_Key — порядок несучий, main.c). */
+static void _bcast_test_arrange_session(void) {
+    _mock_flash_key_reset();
+    _mock_error_handler_reset();
+    _mock_flash_key_provision(FLASH_KEY_MAGIC, _test_provisioned_key);
+    Load_AES_Key();
+    memset(bcast_key, 0, sizeof(bcast_key));
+    bcast_key_is_fallback = 0xFF; /* мітка «ще не виставлено» */
+}
+
+TEST(test_load_bcast_provisioned_success) {
+    /* KEYB прошито → bcast_key = KEYB-значення, НЕ fallback */
+    _bcast_test_arrange_session();
+    _mock_flash_bcast_reset();
+    _mock_flash_bcast_provision(FLASH_BCAST_KEY_MAGIC, _test_bcast_key);
+
+    Load_Broadcast_Key();
+
+    ASSERT_EQ(bcast_key_is_fallback, 0);
+    for (int i = 0; i < FLASH_BCAST_KEY_WORDS; i++) {
+        ASSERT_EQ(bcast_key[i], _test_bcast_key[i]);
+    }
+    /* Session недоторканий — двоключовість реальна */
+    ASSERT_EQ(aes_key[0], 0xAABBCCDD);
+    ASSERT_NE(bcast_key[0], aes_key[0]);
+}
+
+TEST(test_load_bcast_unprovisioned_falls_back_to_session) {
+    /* KEYB відсутній (0xFF-стертий Flash) → fail-open: bcast = KEYL,
+       прапорець піднято, Error_Handler НЕ кликано (bench-плата живе) */
+    _bcast_test_arrange_session();
+    _mock_flash_bcast_reset();
+
+    Load_Broadcast_Key();
+
+    ASSERT_EQ(_mock_error_handler_called, 0);
+    ASSERT_EQ(bcast_key_is_fallback, 1);
+    for (int i = 0; i < FLASH_BCAST_KEY_WORDS; i++) {
+        ASSERT_EQ(bcast_key[i], aes_key[i]);
+    }
+}
+
+TEST(test_load_bcast_wrong_magic_falls_back) {
+    /* Чужий magic → та сама fail-open деградація */
+    _bcast_test_arrange_session();
+    _mock_flash_bcast_reset();
+    _mock_flash_bcast_provision(0xDEADBEEF, _test_bcast_key);
+
+    Load_Broadcast_Key();
+
+    ASSERT_EQ(bcast_key_is_fallback, 1);
+    ASSERT_EQ(bcast_key[0], aes_key[0]);
+}
+
+TEST(test_load_bcast_zero_key_falls_back) {
+    /* Magic є, ключ нульовий (битий provisioning) → fallback, не нулі:
+       нульовий амбієнт-ключ зробив би downlink тихо-нечитним */
+    _bcast_test_arrange_session();
+    _mock_flash_bcast_reset();
+    const uint32_t zero_key[4] = {0, 0, 0, 0};
+    _mock_flash_bcast_provision(FLASH_BCAST_KEY_MAGIC, zero_key);
+
+    Load_Broadcast_Key();
+
+    ASSERT_EQ(bcast_key_is_fallback, 1);
+    ASSERT_EQ(bcast_key[0], aes_key[0]);
+    ASSERT_NE(bcast_key[0], 0);
+}
+
+TEST(test_load_bcast_magic_value_correct) {
+    /* "KEYB" = 0x4B455942 — дзеркало FLASH_BCAST_KEY_MAGIC у main.c */
+    ASSERT_EQ(FLASH_BCAST_KEY_MAGIC, 0x4B455942UL);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -5218,6 +5338,13 @@ int main(void)
     RUN(test_load_key_preserves_all_4_words);  /* post-ARCH.42: AES-128 LoRa = 4 words */
     RUN(test_load_key_magic_value_correct);
     RUN(test_load_key_second_load_overwrites);
+
+    printf("\n  [FW.2 (в)] Cluster Broadcast Key (KEYB) Loading:\n");
+    RUN(test_load_bcast_provisioned_success);
+    RUN(test_load_bcast_unprovisioned_falls_back_to_session);
+    RUN(test_load_bcast_wrong_magic_falls_back);
+    RUN(test_load_bcast_zero_key_falls_back);
+    RUN(test_load_bcast_magic_value_correct);
 
     printf("\n  Flash-Based Lorenz Seed Loading (SEC.11 / FW.30):\n");
     RUN(test_load_seed_provisioned_success);

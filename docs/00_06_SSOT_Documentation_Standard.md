@@ -65,6 +65,7 @@
 | Beyond-TRL-9 / SRL-MRL R&D-агенда (Planetary Intelligence gaps + фрактальне масштабування) | `00_08` |
 | AI-Native метод (AI Pipeline + 🚦 Validation Gate, Intent-First, Triple Stream, Agent Handoff) + AI-ростер (інстанси) | `00_02` (§2 ростер-знімок ролей frontier-LLM/coding-agent + §3–§4 метод; операційний потік→кластер mapping → `00_04`). Інші доки реферять **роль**, не вендора (guard §3) |
 | AES per-channel modes | `03_05 §6` (зведена channel-таблиця) + `§3.7` (ключі/ARCH.42). Firmware-доки `03_01 §9` / `03_02 §8` реферять цю таблицю, не дублюють (DOC-T.14) |
+| Двоключова LoRa key-model — session KEYL (per-device) · cluster control-plane KEYB (FW.2 (в)) | `03_05 §3.1` (модель/слоти/ротаційна семантика; ухвала — §2.1 flip-checklist). Фабрична деривація/запис → `03_06 §2`; інші доки реферять модель, не перелічують ключі |
 | DePIN trust-origin ladder (L0→L1→L2) | `05_02` (Trust-origin ladder — рунги/гейти/статус; L2-механізм §E.60). SE/крипто-частина → `03_05 §3.7`. Інші доки реферять, не дублюють ladder |
 | Merkle leaf-формула + anchor-структура (ARCH.12/E.60) | `05_02 §E.60` (canonical leaf = Z-based per-record CID; hash=sha256; паралельні якорі Polygon `archive_root` ‖ Eth-L1 `state_root`). Eth-L1 anchor-структура → `05_04 §Merkle`; L2 clawback-policy → `05_05 §3.3`. Інші доки реферять, не дублюють leaf (guard §3 — `telemetry_logs.chain_hash` ≠ leaf) |
 | Secure Element part (SE050) + slot-map | `03_05 §3.7` (SE = **SE050**; AES-128 = вибір, не SE-constraint; slot-map; ladder → `05_02`). Міграція — `00_07` SE050-MIGRATION |

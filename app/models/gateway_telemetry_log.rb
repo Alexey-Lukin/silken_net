@@ -15,8 +15,12 @@ class GatewayTelemetryLog < ApplicationRecord
   COAP_FAIL_ALERT_THRESHOLD = 10
 
   # [ARCH.54] health_flags бітфілд (wire-дім: queen_attest.h QATT_HFLAG_*)
-  HFLAG_CCM_ERA = 0x01
-  HFLAG_RING    = 0x02
+  HFLAG_CCM_ERA      = 0x01
+  HFLAG_RING         = 0x02
+  # [FW.2 гейт (а)] Wire-видимість atomic-cutover'а: Королева бачила
+  # 16B-легасі-телеметрію (непрошиті Солдати поруч) / DID=0 CCM-спуфи.
+  HFLAG_LEGACY_DROPS = 0x04
+  HFLAG_CCM_SPOOF    = 0x08
 
   # --- ЗВ'ЯЗКИ ---
   # Зв'язок через UID дозволяє зберігати логіку ідентифікації заліза
@@ -59,6 +63,9 @@ class GatewayTelemetryLog < ApplicationRecord
   # [ARCH.54] Прапорці ери з пульсу (wire: queen_attest.h)
   def ccm_era?  = health_flags.to_i.anybits?(HFLAG_CCM_ERA)
   def ring_mounted? = health_flags.to_i.anybits?(HFLAG_RING)
+  # [FW.2 гейт (а)] Cutover-вікно: поруч дихають непрошиті Солдати / спуфи
+  def legacy_drops_seen? = health_flags.to_i.anybits?(HFLAG_LEGACY_DROPS)
+  def ccm_spoof_seen?    = health_flags.to_i.anybits?(HFLAG_CCM_SPOOF)
 
   # [НОВЕ]: Швидка перевірка на критичний стан заліза
   # Використовується GatewayTelemetryWorker для ініціації EwsAlert.

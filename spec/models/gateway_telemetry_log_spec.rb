@@ -214,4 +214,27 @@ RSpec.describe GatewayTelemetryLog, type: :model do
       expect(log.critical_fault?).to be false
     end
   end
+
+  # [FW.2 гейт (а)] Wire-видимість atomic-cutover'а (wire: queen_attest.h
+  # QATT_HFLAG_LEGACY_DROPS/QATT_HFLAG_CCM_SPOOF — біти 2/3 health_flags)
+  describe "cutover visibility flags" do
+    it "decodes legacy-drops bit (0x04)" do
+      log = build(:gateway_telemetry_log, health_flags: 0x04)
+      expect(log.legacy_drops_seen?).to be true
+      expect(log.ccm_spoof_seen?).to be false
+    end
+
+    it "decodes ccm-spoof bit (0x08) alongside ccm_era (0x01)" do
+      log = build(:gateway_telemetry_log, health_flags: 0x09)
+      expect(log.ccm_spoof_seen?).to be true
+      expect(log.ccm_era?).to be true
+      expect(log.legacy_drops_seen?).to be false
+    end
+
+    it "is nil-safe (KENOSIS: insert_all може лишити nil)" do
+      log = build(:gateway_telemetry_log, health_flags: nil)
+      expect(log.legacy_drops_seen?).to be false
+      expect(log.ccm_spoof_seen?).to be false
+    end
+  end
 end

@@ -446,7 +446,7 @@ firmware/soldier/main.c → LoRa TX → Queen → CoAP PUT → UnpackTelemetryWo
 | Прошивка Королеви | `firmware/queen/main.c` |
 | mruby Lorenz (on-device) | `firmware/bio_contracts/bio_contract.rb` |
 | Воркер розпакування | `UnpackTelemetryWorker` (черга: `uplink`, пріоритет 1) |
-| Сервіс розпакування | `TelemetryUnpackerService` (21-байт binary decoding) |
+| Сервіс розпакування | `TelemetryUnpackerService` (binary decoding: 21B ECB / 29B CCM за `TELEMETRY_CCM_ENABLED`) |
 
 ### Крок 2: Обчислення (Lorenz Attractor)
 

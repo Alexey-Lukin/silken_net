@@ -85,6 +85,43 @@ static void Cryp_Init_For_Ccm(uint32_t key_w[4], uint32_t b0_w[4], uint32_t aad_
     HAL_CRYP_Init(&hcryp);
 }
 
+/* ── [FW.2 (в)] Key-scoping mirror (двоключова модель) ──────────────────
+ * Точні дзеркала CRYP-ініціалізаторів soldier/main.c CCM-ери: амбієнт-ECB
+ * живе на cluster-plane (bcast), CCM-фаза явно бере session (aes) і
+ * Restore повертає амбієнт. Тест нижче тримає контракт: липкий session
+ * в амбієнті = downlink Королеви декриптувався б чужим ключем. */
+static uint32_t scoping_aes_key[4];   /* session (KEYL) */
+static uint32_t scoping_bcast_key[4]; /* cluster-plane (KEYB) */
+
+static void Scoping_MX_CRYP_Init(void) {
+    hcryp.Init.DataType = CRYP_DATATYPE_32B;
+    hcryp.Init.KeySize  = CRYP_KEYSIZE_128B;
+    hcryp.Init.pKey     = scoping_bcast_key;  /* FW2-гілка main.c */
+    hcryp.Init.Algorithm = CRYP_AES_ECB;
+    HAL_CRYP_Init(&hcryp);
+}
+
+static void Scoping_MX_CRYP_Init_CCM(uint32_t *b0_4w, uint32_t *aad_2w) {
+    hcryp.Init.Algorithm       = CRYP_AES_CCM;
+    hcryp.Init.DataType        = CRYP_DATATYPE_8B;
+    hcryp.Init.pKey            = scoping_aes_key;  /* session — явний, не успадкований */
+    hcryp.Init.B0              = b0_4w;
+    hcryp.Init.Header          = aad_2w;
+    hcryp.Init.HeaderSize      = FW2_CCM_AAD_LEN;
+    hcryp.Init.DataWidthUnit   = CRYP_DATAWIDTHUNIT_BYTE;
+    hcryp.Init.HeaderWidthUnit = CRYP_HEADERWIDTHUNIT_BYTE;
+    HAL_CRYP_Init(&hcryp);
+}
+
+static void Scoping_MX_CRYP_Restore_From_CCM(void) {
+    hcryp.Init.B0              = NULL;
+    hcryp.Init.Header          = NULL;
+    hcryp.Init.HeaderSize      = 0;
+    hcryp.Init.DataWidthUnit   = CRYP_DATAWIDTHUNIT_WORD;
+    hcryp.Init.HeaderWidthUnit = CRYP_HEADERWIDTHUNIT_WORD;
+    Scoping_MX_CRYP_Init();
+}
+
 /* Двофазний encrypt (payload → тег), дзеркало Soldier_Build_CCM_LoRa_Packet. */
 static int Ccm_Encrypt_TwoPhase(uint32_t key_w[4],
                                 const uint8_t nonce[FW2_CCM_NONCE_LEN],
@@ -624,6 +661,50 @@ static int test_panic_marshalling_ccm(void) {
     return 0;
 }
 
+static int test_two_key_scoping_contract(void) {
+    /* [FW.2 (в)] Контракт двоключової моделі (дзеркала Scoping_MX_* вгорі):
+     * амбієнт-ECB = cluster-plane (bcast), CCM-скоуп явно бере session,
+     * Restore повертає амбієнт + WORD-юніти + жодних висячих B0/Header.
+     * Функціональний доказ: session = golden-KAT ключ, bcast — інший;
+     * якби Init_CCM успадкував «липкий» амбієнт (клас регресії, який цей
+     * тест сторожує), CT/MIC розійшлися б із golden-вектором. */
+    memcpy(scoping_aes_key, G_ZERO_KEY, 16);                 /* session (KEYL) */
+    for (int i = 0; i < 4; i++) scoping_bcast_key[i] = 0xB0B0B0B0u; /* KEYB */
+
+    /* Boot-стан: амбієнт = bcast */
+    Scoping_MX_CRYP_Init();
+    ASSERT_EQ((void *)hcryp.Init.pKey, (void *)scoping_bcast_key);
+    ASSERT_EQ(hcryp.Init.Algorithm, CRYP_AES_ECB);
+
+    /* Фаза-4 CCM TX: session у скоупі */
+    uint8_t nonce[FW2_CCM_NONCE_LEN], aad[FW2_CCM_AAD_LEN];
+    uint32_t b0_w[FW2_CCM_B0_LEN / 4], aad_w[FW2_CCM_AAD_LEN / 4];
+    uint32_t pt_w[FW2_CCM_PLAINTEXT_LEN / 4], ct_w[FW2_CCM_PLAINTEXT_LEN / 4];
+    uint32_t tag_w[4];
+    Build_CCM_Nonce(G_DID, G_FC, nonce);
+    Build_CCM_AAD(G_DID, G_GOSSIP, G_FC, aad);
+    Build_CCM_B0_From_Nonce(nonce, FW2_CCM_PLAINTEXT_LEN, (uint8_t *)b0_w);
+    memcpy(aad_w, aad, FW2_CCM_AAD_LEN);
+    memcpy(pt_w, G_PT, FW2_CCM_PLAINTEXT_LEN);
+
+    Scoping_MX_CRYP_Init_CCM(b0_w, aad_w);
+    ASSERT_EQ((void *)hcryp.Init.pKey, (void *)scoping_aes_key);
+    ASSERT_EQ(HAL_CRYP_Encrypt(&hcryp, pt_w, FW2_CCM_PLAINTEXT_LEN, ct_w, 1000), HAL_OK);
+    ASSERT_EQ(HAL_CRYPEx_AESCCM_GenerateAuthTAG(&hcryp, tag_w, 1000), HAL_OK);
+    ASSERT_MEM_EQ(ct_w, G_CT, FW2_CCM_PLAINTEXT_LEN);  /* session діяв, не bcast */
+    ASSERT_MEM_EQ(tag_w, G_TAG, FW2_CCM_MIC_LEN);
+
+    /* Гігієна Restore: амбієнт знову cluster-plane, RX-вікно готове */
+    Scoping_MX_CRYP_Restore_From_CCM();
+    ASSERT_EQ((void *)hcryp.Init.pKey, (void *)scoping_bcast_key);
+    ASSERT_EQ(hcryp.Init.Algorithm, CRYP_AES_ECB);
+    ASSERT_EQ((void *)hcryp.Init.B0, NULL);
+    ASSERT_EQ((void *)hcryp.Init.Header, NULL);
+    ASSERT_EQ(hcryp.Init.DataWidthUnit, CRYP_DATAWIDTHUNIT_WORD);
+    printf("  test_two_key_scoping_contract                              ✅\n");
+    return 0;
+}
+
 #define RUN(test) do { \
     if (test()) { failed++; } else { passed++; } \
 } while (0)
@@ -658,6 +739,7 @@ int main(void) {
     RUN(test_diag_byte_pack);
     RUN(test_phase4_marshalling_e2e_to_backend_bytes);
     RUN(test_panic_marshalling_ccm);
+    RUN(test_two_key_scoping_contract);
 
     printf("════════════════════════════════════════════════════════════════════\n");
     printf("Passed: %d   Failed: %d\n", passed, failed);

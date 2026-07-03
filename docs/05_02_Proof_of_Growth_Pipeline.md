@@ -313,7 +313,7 @@ OTA Batch Downlink Format (розширений):
 8–9    checksum               uint16 CRC16 байтів 0..7
 ```
 
-**LoRa-канал (Soldier→Queen):** розшифровується **AES-128-CCM** (FW.2 target, post-ARCH.42) або AES-128-ECB (transitional). **CoAP-магістраль (Queen→Rails):** AES-256-CBC (без змін).
+**LoRa-канал (Queen→Soldier, downlink `0x9A` — напрямок-фікс 2026-07-03):** 16B AES-128-**ECB** в обидві ери; ключ CCM-ери = cluster control-plane **KEYB** (двоключова модель — [`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security); CCM належить лише uplink-телеметрії на session-KEYL). **CoAP-магістраль (Queen→Rails):** AES-256-CBC (без змін).
 
 ##### 4а.2 Firmware-persist (Flash-KV)
 

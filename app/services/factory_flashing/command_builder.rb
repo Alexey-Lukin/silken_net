@@ -7,11 +7,19 @@
 # chip. The flash layout MUST match firmware constants
 # (firmware/soldier/main.c §FLASH_KEY_ADDR — post-ARCH.42):
 #
-#   0x0803E000  [magic "KEYL" :4 ][ aes_lora_key :16 ]
+#   0x0803E000  [magic "KEYL" :4 ][ aes_lora_key :16 ]                 # Tree = session (per-device); Gateway = broadcast-значення (див. нижче)
 #   0x0803E014  [magic "LSED" :4 ][ k_seed       :32 ]                 # Tree only
 #   0x0803E040  [magic "KEYC" :4 ][ aes_coap_key :32 ]                 # Gateway only
 #   0x0803E064  [magic "EDSK" :4 ][ ed25519_seed :32 ]                 # Gateway only — L1 QATT
 #   0x0803E800  [magic "KOTA" :4 ][ k_ota        :32 ]                 # Tree only — FW.23 OTA dual-gate (стор. 125; 0x0803D000 належить Flash-KV)
+#   0x0803E828  [magic "KEYB" :4 ][ bcast_key    :16 ]                 # Tree only — FW.2 (в) cluster control-plane; +40 (не +36): dw-вирівнювання WL
+#
+# [FW.2 гейт (в), двоключова модель] Gateway KEYL-слот прошивається
+# BROADCAST-значенням (HKDF cluster-домену, derive_broadcast_key) — Королева
+# живе цим ключем як єдиним LoRa-ключем (шифрує downlink, читає 0x55/0x56).
+# До 2026-07-03 Gateway-гілка КЕYL не писала взагалі («LoRa slot unused»),
+# а Queen Load_AES_Key() без magic = Error_Handler → фабрична Королева
+# цеглилась на першому boot. Tree KEYL лишається session (per-device).
 #
 # Output is an Array<String> — one shell command per element. Callers pipe it
 # through Executor (dry-run prints to stdout; --execute spawns subprocesses).
@@ -23,8 +31,10 @@ module FactoryFlashing
     FLASH_SEED_ADDR     = "0x0803E014"   # FLASH_KEY_ADDR + 4 (magic) + 16 (key)
     FLASH_COAP_KEY_ADDR = "0x0803E040"   # After K_seed (4 magic + 32 = 36 bytes) — see Queen flash layout
     FLASH_EDSK_ADDR     = "0x0803E064"   # After CoAP key (4 magic + 32) — L1 QATT голос Королеви
+    FLASH_BCAST_KEY_ADDR = "0x0803E828"  # K_ota (36B) + 4B dw-паддінг — FW.2 (в) KEYB (firmware: FLASH_BCAST_KEY_ADDR)
 
     KOTA_MAGIC = "0x4B4F5441" # "KOTA" OTA HMAC key magic (firmware: FLASH_OTA_KEY_MAGIC) — FW.23
+    KEYB_MAGIC = "0x4B455942" # "KEYB" cluster broadcast key magic (firmware: FLASH_BCAST_KEY_MAGIC) — FW.2 (в)
     KEYL_MAGIC = "0x4B45594C" # "KEYL" LoRa key magic (firmware: FLASH_KEY_MAGIC)
     LSED_MAGIC = "0x4C534544" # "LSED" Lorenz K_seed magic (firmware: FLASH_SEED_MAGIC)
     KEYC_MAGIC = "0x4B455943" # "KEYC" CoAP key magic (firmware: FLASH_COAP_KEY_MAGIC)
@@ -43,13 +53,18 @@ module FactoryFlashing
     # @param ed25519_seed_hex [String, nil] 64 hex; Gateway-only (L1 QATT) —
     #   генерується Session'ом на фабричному хості (SecureRandom, НЕ HKDF),
     #   у БД персиститься лише деривований pubkey. nil → Queen лишається L0.
-    def initialize(session:, device:, aes_key_hex:, lorenz_seed_hex: nil, ota_hmac_hex: nil, ed25519_seed_hex: nil)
+    # @param bcast_key_hex [String, nil] 32 hex; required Гілка A (обидва
+    #   типи) — FW.2 (в) cluster control-plane ключ (derive_broadcast_key):
+    #   Tree → KEYB-слот, Gateway → її KEYL-слот (без нього Королева цеглиться
+    #   на boot, а Солдат CCM-ери глухне до downlink'а).
+    def initialize(session:, device:, aes_key_hex:, lorenz_seed_hex: nil, ota_hmac_hex: nil, ed25519_seed_hex: nil, bcast_key_hex: nil)
       @session = session
       @device = device
       @aes_key_hex = aes_key_hex.to_s
       @lorenz_seed_hex = lorenz_seed_hex.to_s
       @ota_hmac_hex = ota_hmac_hex.to_s
       @ed25519_seed_hex = ed25519_seed_hex.to_s
+      @bcast_key_hex = bcast_key_hex.to_s
       validate!
     end
 
@@ -84,6 +99,13 @@ module FactoryFlashing
       raise ArgumentError, "aes_key_hex must be 32 or 64 hex chars" unless [ 32, 64 ].include?(@aes_key_hex.length)
       raise ArgumentError, "aes_key_hex must be hexadecimal" unless @aes_key_hex.match?(/\A[0-9A-Fa-f]+\z/)
 
+      if @session.gilka == "A"
+        # [FW.2 (в)] Обидва типи: без KEYB-значення транскрипт дає або цеглу
+        # (Queen без KEYL), або downlink-глухого Солдата в CCM-еру.
+        raise ArgumentError, "bcast_key_hex is required for Gilka A (32 hex, FW.2 broadcast key)" unless @bcast_key_hex.length == 32
+        raise ArgumentError, "bcast_key_hex must be hexadecimal" unless @bcast_key_hex.match?(/\A[0-9A-Fa-f]+\z/)
+      end
+
       if @ed25519_seed_hex.present?
         raise ArgumentError, "ed25519_seed_hex is Gateway-only (L1 QATT)" if @device.is_a?(Tree)
         raise ArgumentError, "ed25519_seed_hex must be 64 hex chars" unless @ed25519_seed_hex.length == 64
@@ -109,10 +131,17 @@ module FactoryFlashing
         # [FW.23] K_ota — окрема сторінка 0x0803E800; без нього Load_Ota_Hmac_Key
         # лишає dual-gate fail-closed і жоден OTA не застосовується.
         out.concat(write_block(FLASH_OTA_KEY_ADDR, KOTA_MAGIC, @ota_hmac_hex))
+        # [FW.2 (в)] KEYB — cluster control-plane (та сама стор. 125, +40):
+        # без нього Солдат CCM-ери деградує у fallback (амбієнт = KEYL) і
+        # downlink Королеви для нього нечитний.
+        out.concat(write_block(FLASH_BCAST_KEY_ADDR, KEYB_MAGIC, @bcast_key_hex))
       else
-        # Gateway: 32-byte CoAP AES-256 key. LoRa AES-128 slot intentionally
-        # unused (CoAP only); firmware loads coap_key from FLASH_COAP_KEY_ADDR.
+        # Gateway: 32-byte CoAP AES-256 key + LoRa KEYL = broadcast-значення
+        # (FW.2 (в)): Королева шифрує ним downlink і читає 0x55/0x56; без
+        # KEYL її Load_AES_Key() = Error_Handler → цегла на першому boot
+        # (діра «LoRa slot intentionally unused» — закрито 2026-07-03).
         raise ArgumentError, "Gateway requires 64-hex AES-256 key" unless @aes_key_hex.length == 64
+        out.concat(write_block(FLASH_KEY_ADDR, KEYL_MAGIC, @bcast_key_hex))
         out.concat(write_block(FLASH_COAP_KEY_ADDR, KEYC_MAGIC, @aes_key_hex))
         # [L1 QATT] Голос Королеви: сім'я підпису батчів. Відсутня → Queen
         # свідомо лишається на L0 (legacy-батчі без підпису).

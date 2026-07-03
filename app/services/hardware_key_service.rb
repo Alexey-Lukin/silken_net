@@ -13,6 +13,17 @@ class HardwareKeyService
   LORA_KEY_SIZE_BYTES = 16
   LORA_HKDF_INFO      = "silken-aes-128-lora-key"
 
+  # [FW.2 гейт (в), двоключова модель] Cluster control-plane ключ (KEYB):
+  # спільний AES-128 кластера для downlink-broadcast Королеви (OTA/beacon/
+  # команди — один TX на всіх → один ключ by construction) + uplink 0x55/0x56.
+  # Per-cluster з тієї ж причини, що K_ota (OtaHmacKeyService — broadcast за
+  # визначенням; cluster = природна одиниця ізоляції). Соло-домен info-string;
+  # ротація = re-provision (FW.17-ратчет цього ключа не торкається).
+  # Прошивається: Tree → KEYB-слот (стор. 125), Gateway → її KEYL-слот
+  # (Королева живе цим ключем як єдиним LoRa-ключем). Канон: 03_05 §2.1 (в).
+  BROADCAST_KEY_SIZE_BYTES = 16
+  BROADCAST_HKDF_INFO      = "silken-aes-128-broadcast-key"
+
   # Iotex W3bstream Ed25519 attestation seed (post-ARCH.42). Окремий 32-byte seed
   # для підпису telemetry attestation, derived через HKDF з різним info-string
   # для domain separation з AES (LoRa) та Lorenz K_seed. До ARCH.42 використовував
@@ -93,6 +104,15 @@ class HardwareKeyService
   # HKDF info: "silken-aes-128-lora-key". AES-128 = вибір (SE = SE050 — 03_05 §3.7).
   def self.derive_lora_key(device_uid, master_key: nil)
     hkdf_derive(device_uid, info: LORA_HKDF_INFO, length: LORA_KEY_SIZE_BYTES, master_key: master_key)
+  end
+
+  # [FW.2 гейт (в)] Cluster control-plane ключ (KEYB) — salt-домен той самий,
+  # що K_ota ("cluster:<id>"), info-string власний. Повертає 32-hex (16 байт).
+  def self.derive_broadcast_key(cluster_id, master_key: nil)
+    raise ArgumentError, "cluster_id is required" if cluster_id.blank?
+
+    hkdf_derive("cluster:#{cluster_id}", info: BROADCAST_HKDF_INFO,
+                length: BROADCAST_KEY_SIZE_BYTES, master_key: master_key)
   end
 
   # Iotex W3bstream Ed25519 seed (post-ARCH.42) — derived on-demand для signature

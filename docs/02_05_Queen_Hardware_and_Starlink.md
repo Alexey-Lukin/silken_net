@@ -253,7 +253,7 @@ EdgeCache forest_cache[50]; // 50 × 22 байти = 1.1 KB
 Дизайн (уточнений на імплементації відносно первісного ескізу):
 
 - **Ring по СЕКТОРАХ:** NOR не вміє 0→1 без erase, erase — цілим сектором 4 КБ; повний ring → FIFO-drop найстарішого сектора (durable consume-all без erase).
-- **Слот = 21-байтний wire-запис батча** (DID:4 BE + |RSSI| + payload:16) — бітово той самий формат, що пакує `Flush_Cache_To_Rails`: спіл/дрейн не перекодовують.
+- **Слот = wire-запис батча як є** (ECB-ера: 21B `DID:4 BE + |RSSI| + payload:16`; CCM-ера: 29B — `FLASH_RING_RECORD_SIZE` fmt-aware при спільному фліпі з FW.2, позначено в коді) — бітово той самий формат, що пакує `Flush_Cache_To_Rails`: спіл/дрейн не перекодовують.
 - **In-band заголовки замість RTC-покажчиків** (ADR, замінив ескізні `write_sector/read_sector/slot_in_sector` у DR-регістрах): покажчики у RTC гинуть з VBAT і вміють розійтися зі вмістом флешу. Кожен сектор несе `[magic|seq:u32]` + два NOR-бітмапи (used/consumed, програмуються 1→0 без erase) → mount-scan відновлює head/tail/count після будь-якого знеструмлення, Queen не витрачає жодного DR. Ціна — 56 Б/сектор: **192 слоти/сектор → ~197k слотів** (4 МБ).
 - **Power-cut-інваріанти:** дані → used-біт (сирота невидима; NOT-перезаписувана сирота tombstone'иться used+consumed); consume — лише після підтвердженої доставки батча → **at-least-once** (дубль можливий, втрата — ні).
 - **Drain — через CIFO-refill,** не паралельним CoAP-шляхом: після send-success найстаріші недоставлені переливаються у звільнені RAM-слоти (`is_active=2`), наступний flush везе їх наявною FW.51-машинерією; consume їхніх flash-копій — після наступного send-success.
@@ -597,7 +597,7 @@ Starlink Mini — компактний термінал LEO-супутника �
 
 **Рішення:** [Helium Network](https://www.helium.com/) — найбільша у світі децентралізована мережа **LoRaWAN**. Сотні тисяч hotspot-ів у 180+ країнах, встановлених звичайними людьми на балконах та дахах.
 
-> ⚠️ **Архітектурне уточнення (post-ARCH.42):** Helium працює на протоколі **LoRaWAN MAC-layer**, а Soldier використовує **raw LoRa P2P** (фізичний рівень) з **AES-128-ECB** (ARCH.42; transitional) → AES-128-CCM (FW.2 target) поверх 21-байтного binary payload. Helium hotspot **не прийме** прямий пакет з Soldier — для валідного uplink потрібен LoRaWAN frame з DevEUI/AppEUI/AppKey, FCntUp counter, MIC та OTAA/ABP join state. Однак LoRaWAN нативно використовує саме AES-128 (AppSKey/NwkSKey), тому ARCH.42 спрощує future Helium bridging — той самий ключ-розмір. Helium fallback архітектурно **переноситься з Soldier на Queen**.
+> ⚠️ **Архітектурне уточнення (post-ARCH.42):** Helium працює на протоколі **LoRaWAN MAC-layer**, а Soldier використовує **raw LoRa P2P** (фізичний рівень) з **AES-128-ECB** (ARCH.42; transitional, 16B wire) → AES-128-CCM (FW.2 target, 28B wire-rev2). Helium hotspot **не прийме** прямий пакет з Soldier — для валідного uplink потрібен LoRaWAN frame з DevEUI/AppEUI/AppKey, FCntUp counter, MIC та OTAA/ABP join state. Однак LoRaWAN нативно використовує саме AES-128 (AppSKey/NwkSKey), тому ARCH.42 спрощує future Helium bridging — той самий ключ-розмір. Helium fallback архітектурно **переноситься з Soldier на Queen**.
 
 ### Архітектура Helium Fallback (правильна)
 

@@ -386,6 +386,25 @@ static inline void _mock_flash_key_provision(uint32_t magic, const uint32_t key[
     }
 }
 
+/* ── [FW.2 (в)] Flash Broadcast Key (KEYB) Region Mock ────────────────
+ * Cluster control-plane ключ двоключової моделі — стор. 125 на кремнії
+ * (FLASH_BCAST_KEY_ADDR = FLASH_OTA_KEY_ADDR + 40, dw-aligned). Тест
+ * переозначує адресу на цей масив; Load_Broadcast_Key читає [magic:1][key:4].
+ */
+#define MOCK_FLASH_BCAST_REGION_WORDS  5  /* 1 magic + 4 key words (AES-128) */
+static uint32_t _mock_flash_bcast_region[MOCK_FLASH_BCAST_REGION_WORDS] = {0};
+
+static inline void _mock_flash_bcast_reset(void) {
+    memset(_mock_flash_bcast_region, 0xFF, sizeof(_mock_flash_bcast_region));
+}
+
+static inline void _mock_flash_bcast_provision(uint32_t magic, const uint32_t key[4]) {
+    _mock_flash_bcast_region[0] = magic;
+    for (int i = 0; i < 4; i++) {
+        _mock_flash_bcast_region[1 + i] = key[i];
+    }
+}
+
 /* Error_Handler mock — trackable for tests */
 static int _mock_error_handler_called = 0;
 static inline void _mock_error_handler_reset(void) { _mock_error_handler_called = 0; }

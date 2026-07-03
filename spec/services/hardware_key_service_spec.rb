@@ -209,6 +209,51 @@ RSpec.describe HardwareKeyService, type: :service do
     end
   end
 
+  # [FW.2 гейт (в)] Cluster control-plane ключ (KEYB) — двоключова модель
+  describe ".derive_broadcast_key" do
+    before do
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return("test-master-key-for-hkdf-derive!")
+    end
+
+    it "derives a deterministic 16-byte (32-hex) key per cluster" do
+      k1 = described_class.derive_broadcast_key(cluster.id)
+      k2 = described_class.derive_broadcast_key(cluster.id)
+
+      expect(k1).to eq(k2)
+      expect(k1.length).to eq(32) # AES-128
+      expect(k1).to match(/\A[0-9A-F]+\z/)
+    end
+
+    it "isolates clusters — різні cluster_id дають різні KEYB" do
+      expect(described_class.derive_broadcast_key(1)).not_to eq(described_class.derive_broadcast_key(2))
+    end
+
+    it "is domain-separated from the per-device session key on the same salt input" do
+      # Навіть якби DID текстуально збігся з "cluster:<id>", info-string розводить домени
+      collision_salt = "cluster:#{cluster.id}"
+      session_key = described_class.derive_lora_key(collision_salt)
+      expect(described_class.derive_broadcast_key(cluster.id)).not_to eq(session_key)
+    end
+
+    it "is domain-separated from K_ota (same salt domain, different info)" do
+      k_ota = OtaHmacKeyService.fetch_for(cluster.id)
+      keyb  = described_class.derive_broadcast_key(cluster.id)
+      expect(k_ota).not_to start_with(keyb)
+    end
+
+    it "raises without cluster_id" do
+      expect { described_class.derive_broadcast_key(nil) }.to raise_error(ArgumentError, /cluster_id/)
+    end
+
+    it "raises SecurityError without a master key [SEC.11]" do
+      allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return(nil)
+      expect {
+        described_class.derive_broadcast_key(cluster.id)
+      }.to raise_error(SecurityError, /PROVISIONING_MASTER_KEY/)
+    end
+  end
+
   describe ".rotate" do
     let!(:hardware_key) do
       HardwareKey.create!(

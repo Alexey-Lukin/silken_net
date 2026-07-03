@@ -212,10 +212,14 @@ STEP 2: Factory Flashing (конвеєр на заводі)
      DID-колізія (інший чип, той самий DID) → QUARANTINE юніта (03_01 §7)
 
   c) Backend деривує ключі від ПРАВИЛЬНОГО DID (Zero-Trust — нічого мережею):
-     lora_key = HKDF_SHA256(master_key, DID, "silken-aes-128-lora-key")   # Tree, 16B
-     k_seed   = SeedDerivation (§3, info "silken-lorenz-seed|<DID>")      # Tree, 32B
-     k_ota    = per-cluster HKDF (§4, FW.23)                              # Tree, 32B
-     coap_key = HKDF_SHA256(master_key, uid, "silken-aes-256-device-key") # Gateway, 32B
+     lora_key  = HKDF_SHA256(master_key, DID, "silken-aes-128-lora-key")  # Tree, 16B — session KEYL
+     k_seed    = SeedDerivation (§3, info "silken-lorenz-seed|<DID>")     # Tree, 32B
+     k_ota     = per-cluster HKDF (§4, FW.23)                             # Tree, 32B
+     bcast_key = HardwareKeyService.derive_broadcast_key(cluster_id)      # ОБИДВА, 16B — KEYB
+                 # = HKDF(master, "cluster:<id>", "silken-aes-128-broadcast-key")
+                 # Tree → KEYB-слот (стор. 125, +40); Gateway → її KEYL-слот
+                 # (єдиний LoRa-ключ Королеви — FW.2 (в), 03_05 §3.1)
+     coap_key  = HKDF_SHA256(master_key, uid, "silken-aes-256-device-key") # Gateway, 32B
      HardwareKey.create!(device_uid: DID, aes_key_hex: …)
 
   d) factory:execute (після 2-Person approve; live) — транскрипт:
@@ -245,25 +249,21 @@ firmware/soldier/main.c (післі ARCH.42):
   MX_CRYP_Init();              // hcryp.Init.KeySize = CRYP_KEYSIZE_128B; hcryp.Init.pKey = aes_key;
 
 ═══════════════════════════════════════════════════════════════════════
-STEP 4: Queen — знає ключі ВСІХ своїх Soldiers
+STEP 4: Queen і ключі Soldiers — ✅ ВИРІШЕНО (FW.2 (в), 2026-07-03)
 ═══════════════════════════════════════════════════════════════════════
 
-Варіант A (рекомендований для TRL 7):
-  Queen теж provisioned із ключем:
-    queen_key = HKDF_SHA256(master_key, queen_uid, "silken-aes-128-lora-key")
-  Але для декриптування Soldier-пакетів потрібна інша стратегія.
+Рішення: Queen НЕ ЗНАЄ session-ключів Солдатів взагалі.
+  CCM-ера: Королева — сліпий кур'єр (queen/rx_route.h) — demux по
+  cleartext DID з AAD, MIC верифікує Rails per-DID. Єдиний LoRa-ключ
+  Королеви = cluster control-plane KEYB (її KEYL-слот несе
+  broadcast-значення) — ним вона шифрує downlink і читає 0x55/0x56.
+  Канон моделі: 03_05 §3.1.
 
-Варіант B (production-ready):
-  Queen зберігає ALL keys у своїй Flash (CIFO-based key table):
-    key_table[50] → 50 × 32 bytes = 1600 bytes (допустимо для 64KB Flash)
-    Завантажуються через CoAP downlink від Rails після provisioning
-
-Варіант C (альтернатива, ATECC608B):
-  Queen містить ATECC608B → Queen знає master_key у захищеному чіпі →
-  обчислює HKDF(master_key, incoming_DID) on-the-fly під час decrypt
-
-  ⚠️ Варіант C потребує завантаження master_key у ATECC608B на заводі —
-  одна точка компрометації, але захищена апаратно.
+Історичні варіанти (розглянуто, відхилено):
+  A. queen_key = HKDF(master, queen_uid) — лишав ECB-demux нерозв'язаним;
+  B. key table 50×ключів у Flash — RAM/Flash-ціна + сervice downlink-канал;
+  C. master_key у SE Королеви (HKDF on-the-fly) — master на кожному
+     гейтвеї = концентрація ризику, яку blind-courier усуває безкоштовно.
 ```
 
 ### Rails Backend — API та зберігання (post-ARCH.42)
@@ -410,12 +410,16 @@ void Load_Node_Role(void)
 
 ```
 STM32CubeProgrammer → Option Bytes → Write Protection:
-  Сектор 0x0803E000 (Page 127, якщо 4KB sectors) → Write-Protected ON
+  Сторінки 124-125 (0x0803E000 + 0x0803E800; WLE5 = 2KB-сторінки,
+  дзеркало firmware-арифметики FLASH_KEY_ADDR/FLASH_OTA_KEY_ADDR)
+  → Write-Protected ON
 
 Результат: навіть якщо SWD відкритий (RDP Level 0 у R&D) —
-  запис у ключовий сектор неможливий без зняття WRPROT
+  запис у ключові сторінки неможливий без зняття WRPROT
   (зняття стирає відповідну сторінку Flash!)
 ```
+
+> **Семантика двох сторінок (FW.2 (в)):** 124 = **per-device identity** (KEYL session · LSED · ROLE; Queen: KEYC · EDSK), 125 = **cluster membership** (KOTA · KEYB @+40, dw-align) — переїзд дерева між кластерами стирає/пише лише 125-ту, per-device ключі недоторкані.
 
 ### Безпекові параметри (post-ARCH.42)
 
@@ -424,10 +428,10 @@ STM32CubeProgrammer → Option Bytes → Write Protection:
 | KDF алгоритм | HKDF-SHA256 (RFC 5869) | HKDF-SHA256 | Стандарт NIST SP 800-56C; SHA256 — software (backend OpenSSL / Soldier pure-C `silken_sha256.h`) |
 | Master key size | 256 bits | 256 bits | Master input — однаковий 256-bit secret для обох KDF-outputs |
 | Output key size | **128 bits (16 bytes)** — ARCH.42 | 256 bits (32 bytes) | LoRa: AES-128 (свідомий вибір, **не** SE-constraint — SE050 вміє 256, 03_05 §3.7); CoAP: AES-256 (Queen Flash, no SE constraint) |
-| Info string | `"silken-aes-128-lora-key"` | `"silken-aes-256-device-key"` | Domain separation — два різні KDF outputs ortho |
+| Info string | `"silken-aes-128-lora-key"` (session) · `"silken-aes-128-broadcast-key"` (KEYB cluster, salt=`"cluster:<id>"` — FW.2 (в)) | `"silken-aes-256-device-key"` | Domain separation — усі KDF outputs ortho (вкл. `"silken-ota-hmac-v1"` §4) |
 | Master key storage | Rails Vault (AR Encryption) + HSM у production | Same | Never in-repo |
 | Device key storage | Protected Flash (LoRa magic `"KEYL"`) → SE050 Slot 0 (Гілка B, 03_05 §3.7) | Protected Flash (CoAP magic `"KEYC"`) — Queen MCU only | Фізичний захист; AES-128 на LoRa — свідомий вибір, не SE-constraint (ADR 03_05 §3.7); CoAP-key лишається у MCU Flash (канал не через SE) |
-| Backup/rotate | Dual-key grace period (HardwareKey#previous_aes_key_hex) | Same | Zero-downtime rotation |
+| Backup/rotate | Session: dual-key grace period (HardwareKey#previous_aes_key_hex — закривається неявним uplink-ACK). **KEYB: re-provision only** — grace незастосовний (broadcast-ключ не має власного uplink'а для ACK; клас K_ota) | Same (grace) | Zero-downtime rotation (session); cluster-ключі ротуються фізичним re-flash 125-ї сторінки |
 | Post-quantum margin | $2^{128}$ (post-Grover ≈ $2^{64}$ — захищається ratchet `[FW.17]` + PQC bridge 03_05 §10) | $2^{256}$ (post-Grover ≈ $2^{128}$ — абсолютний квантовий імунітет) | Чому CoAP залишається 256: інфраструктурне TLS-termination через Cloudflare X25519+Kyber вже доступне (post-quantum hybrid) |
 
 > **Cross-ref:** SEC.3 Factory Flashing pipeline, SEC.6 Secure Element (SE050, 03_05 §3.7), SEC.2 RDP Level 2, **ARCH.42 ✅ resolved 2026-05-23 (Variant B)**, **03_05 §10 PQC Migration Roadmap**.

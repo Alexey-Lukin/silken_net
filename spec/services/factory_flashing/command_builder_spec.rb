@@ -11,6 +11,8 @@ RSpec.describe FactoryFlashing::CommandBuilder do
   let(:aes_coap_hex) { "F" * 64 }                                                          # 32 bytes
   let(:k_seed_hex)   { "00112233445566778899AABBCCDDEEFF" + "FFEEDDCCBBAA99887766554433221100" }
   let(:k_ota_hex)    { "A1B2C3D4E5F60718293A4B5C6D7E8F90" + "0F1E2D3C4B5A69788796A5B4C3D2E1F0" }
+  # [FW.2 (в)] Cluster control-plane ключ (KEYB): Tree → KEYB-слот, Gateway → її KEYL
+  let(:bcast_hex)    { "B0B1B2B3C0C1C2C3D0D1D2D3E0E1E2E3" }                                # 16 bytes
 
   describe "Гілка A — Tree" do
     subject(:commands) do
@@ -19,13 +21,16 @@ RSpec.describe FactoryFlashing::CommandBuilder do
         device: tree,
         aes_key_hex: aes_lora_hex,
         lorenz_seed_hex: k_seed_hex,
-        ota_hmac_hex: k_ota_hex
+        ota_hmac_hex: k_ota_hex,
+        bcast_key_hex: bcast_hex
       ).commands
     end
 
     let(:session) { build(:provisioning_session, gilka: "A", rdp_level: 1) }
 
-    it "opens SWD, writes KEYL+AES16, LSED+seed32, KOTA+k_ota32 (FW.23), then sets RDP" do
+    # Golden-транскрипт атомарний (один eq-масив = повний фабричний контракт) —
+    # різати на шматки шкідливо для читабельності діфа при зміні layout'у.
+    it "opens SWD, writes KEYL+AES16, LSED+seed32, KOTA+k_ota32 (FW.23), KEYB+bcast16 (FW.2 (в)), then sets RDP" do # rubocop:disable RSpec/ExampleLength
       expect(commands).to eq([
         "STM32_Programmer_CLI -c port=SWD reset=HWrst",
         # [FW.54] SWD-read кремнієвого паспорта — wrong-board guard (Session)
@@ -58,9 +63,29 @@ RSpec.describe FactoryFlashing::CommandBuilder do
         "STM32_Programmer_CLI -w32 0x0803E818 0x4B5A6978",
         "STM32_Programmer_CLI -w32 0x0803E81C 0x8796A5B4",
         "STM32_Programmer_CLI -w32 0x0803E820 0xC3D2E1F0",
+        # [FW.2 (в)] KEYB magic + 4 broadcast words — та сама стор. 125,
+        # старт 0x0803E828 (+40, НЕ +36: dw-вирівнювання WL Flash — друга
+        # половина K_ota-хвостового doubleword'а недоторкана)
+        "STM32_Programmer_CLI -w32 0x0803E828 0x4B455942",
+        "STM32_Programmer_CLI -w32 0x0803E82C 0xB0B1B2B3",
+        "STM32_Programmer_CLI -w32 0x0803E830 0xC0C1C2C3",
+        "STM32_Programmer_CLI -w32 0x0803E834 0xD0D1D2D3",
+        "STM32_Programmer_CLI -w32 0x0803E838 0xE0E1E2E3",
         "STM32_Programmer_CLI -ob RDP=1",
         "STM32_Programmer_CLI -c port=SWD --quietMode"
       ])
+    end
+
+    it "refuses Gilka A without bcast_key_hex — Солдат CCM-ери глухне до downlink'а (FW.2 (в))" do
+      expect {
+        described_class.new(
+          session: session,
+          device: tree,
+          aes_key_hex: aes_lora_hex,
+          lorenz_seed_hex: k_seed_hex,
+          ota_hmac_hex: k_ota_hex
+        )
+      }.to raise_error(ArgumentError, /bcast_key_hex/)
     end
 
     it "refuses a Tree without ota_hmac_hex — інакше OTA вічно fail-closed (FW.23)" do
@@ -69,7 +94,8 @@ RSpec.describe FactoryFlashing::CommandBuilder do
           session: session,
           device: tree,
           aes_key_hex: aes_lora_hex,
-          lorenz_seed_hex: k_seed_hex
+          lorenz_seed_hex: k_seed_hex,
+          bcast_key_hex: bcast_hex
         )
       }.to raise_error(ArgumentError, /ota_hmac_hex/)
     end
@@ -85,7 +111,8 @@ RSpec.describe FactoryFlashing::CommandBuilder do
       described_class.new(
         session: session,
         device: gateway,
-        aes_key_hex: aes_coap_hex
+        aes_key_hex: aes_coap_hex,
+        bcast_key_hex: bcast_hex
       ).commands
     end
 
@@ -94,8 +121,22 @@ RSpec.describe FactoryFlashing::CommandBuilder do
     it "writes KEYC magic + 8 AES-256 words at FLASH_COAP_KEY_ADDR" do
       expect(commands.first).to eq("STM32_Programmer_CLI -c port=SWD reset=HWrst")
       expect(commands).to include("STM32_Programmer_CLI -w32 0x0803E040 0x4B455943")
-      expect(commands.count { |c| c.include?("-w32") }).to eq(9) # magic + 8 key words
+      # KEYL(broadcast, 5) + KEYC(9) — FW.2 (в)
+      expect(commands.count { |c| c.include?("-w32") }).to eq(14)
       expect(commands.last(2).first).to eq("STM32_Programmer_CLI -ob RDP=1")
+    end
+
+    it "writes KEYL slot with the BROADCAST value — фікс фабричної цегли (FW.2 (в))" do
+      # До 2026-07-03 Gateway KEYL не писався взагалі → Queen Load_AES_Key()
+      # без magic = Error_Handler → reset-петля на першому boot.
+      expect(commands).to include("STM32_Programmer_CLI -w32 0x0803E000 0x4B45594C")
+      expect(commands).to include("STM32_Programmer_CLI -w32 0x0803E004 0xB0B1B2B3")
+    end
+
+    it "refuses Gilka A Gateway without bcast_key_hex — інакше Королева цеглиться на boot" do
+      expect {
+        described_class.new(session: session, device: gateway, aes_key_hex: aes_coap_hex)
+      }.to raise_error(ArgumentError, /bcast_key_hex/)
     end
 
     it "does NOT write the Lorenz K_seed slot (gateway has no Lorenz attractor)" do
@@ -114,7 +155,8 @@ RSpec.describe FactoryFlashing::CommandBuilder do
         session: session,
         device: gateway,
         aes_key_hex: aes_coap_hex,
-        ed25519_seed_hex: ed25519_seed_hex
+        ed25519_seed_hex: ed25519_seed_hex,
+        bcast_key_hex: bcast_hex
       ).commands
     end
 
@@ -123,8 +165,8 @@ RSpec.describe FactoryFlashing::CommandBuilder do
 
     it "writes EDSK magic + 8 seed words right after the KEYC block" do
       expect(commands).to include("STM32_Programmer_CLI -w32 0x0803E064 0x4544534B")
-      # KEYC (9) + EDSK (9) word-команд
-      expect(commands.count { |c| c.include?("-w32") }).to eq(18)
+      # KEYL-broadcast (5) + KEYC (9) + EDSK (9) word-команд — FW.2 (в)
+      expect(commands.count { |c| c.include?("-w32") }).to eq(23)
       # перше seed-слово BE — firmware розгортає word→BE-байти (FW.30-конвенція)
       expect(commands).to include("STM32_Programmer_CLI -w32 0x0803E068 0x53494C4B")
     end
@@ -134,7 +176,7 @@ RSpec.describe FactoryFlashing::CommandBuilder do
         described_class.new(
           session: session, device: tree,
           aes_key_hex: aes_lora_hex, lorenz_seed_hex: k_seed_hex,
-          ed25519_seed_hex: ed25519_seed_hex
+          ed25519_seed_hex: ed25519_seed_hex, bcast_key_hex: bcast_hex
         )
       }.to raise_error(ArgumentError, /Gateway-only/)
     end
@@ -143,7 +185,8 @@ RSpec.describe FactoryFlashing::CommandBuilder do
       expect {
         described_class.new(
           session: session, device: gateway,
-          aes_key_hex: aes_coap_hex, ed25519_seed_hex: "BEEF"
+          aes_key_hex: aes_coap_hex, ed25519_seed_hex: "BEEF",
+          bcast_key_hex: bcast_hex
         )
       }.to raise_error(ArgumentError, /64 hex/)
     end
@@ -152,7 +195,8 @@ RSpec.describe FactoryFlashing::CommandBuilder do
       expect {
         described_class.new(
           session: session, device: gateway,
-          aes_key_hex: aes_coap_hex, ed25519_seed_hex: "Z" * 64
+          aes_key_hex: aes_coap_hex, ed25519_seed_hex: "Z" * 64,
+          bcast_key_hex: bcast_hex
         )
       }.to raise_error(ArgumentError, /hexadecimal/)
     end
@@ -197,31 +241,45 @@ RSpec.describe FactoryFlashing::CommandBuilder do
 
     it "Tree requires K_seed of 64 hex" do
       expect {
-        described_class.new(session: session, device: tree, aes_key_hex: aes_lora_hex, lorenz_seed_hex: "00")
+        described_class.new(session: session, device: tree, aes_key_hex: aes_lora_hex, lorenz_seed_hex: "00", bcast_key_hex: bcast_hex)
       }.to raise_error(ArgumentError, /lorenz_seed_hex/)
     end
 
     it "Tree with 64-hex AES (wrong size for LoRa) raises in #commands" do
-      builder = described_class.new(session: session, device: tree, aes_key_hex: aes_coap_hex, lorenz_seed_hex: k_seed_hex, ota_hmac_hex: k_ota_hex)
+      builder = described_class.new(session: session, device: tree, aes_key_hex: aes_coap_hex, lorenz_seed_hex: k_seed_hex, ota_hmac_hex: k_ota_hex, bcast_key_hex: bcast_hex)
       expect { builder.commands }.to raise_error(ArgumentError, /AES-128/)
     end
 
     it "Gateway with 32-hex AES raises in #commands" do
-      builder = described_class.new(session: session, device: gateway, aes_key_hex: aes_lora_hex)
+      builder = described_class.new(session: session, device: gateway, aes_key_hex: aes_lora_hex, bcast_key_hex: bcast_hex)
       expect { builder.commands }.to raise_error(ArgumentError, /AES-256/)
     end
 
     it "rejects non-hex lorenz_seed_hex (64 chars but with Z's)" do
       expect {
-        described_class.new(session: session, device: tree, aes_key_hex: aes_lora_hex, lorenz_seed_hex: "Z" * 64)
+        described_class.new(session: session, device: tree, aes_key_hex: aes_lora_hex, lorenz_seed_hex: "Z" * 64, bcast_key_hex: bcast_hex)
       }.to raise_error(ArgumentError, /lorenz_seed_hex must be hexadecimal/)
     end
 
     it "rejects non-hex ota_hmac_hex (64 chars but with Z's)" do
       expect {
         described_class.new(session: session, device: tree, aes_key_hex: aes_lora_hex,
-                            lorenz_seed_hex: k_seed_hex, ota_hmac_hex: "Z" * 64)
+                            lorenz_seed_hex: k_seed_hex, ota_hmac_hex: "Z" * 64, bcast_key_hex: bcast_hex)
       }.to raise_error(ArgumentError, /ota_hmac_hex must be hexadecimal/)
+    end
+
+    it "rejects non-hex bcast_key_hex (32 chars but with Z's) — FW.2 (в)" do
+      expect {
+        described_class.new(session: session, device: tree, aes_key_hex: aes_lora_hex,
+                            lorenz_seed_hex: k_seed_hex, ota_hmac_hex: k_ota_hex, bcast_key_hex: "Z" * 32)
+      }.to raise_error(ArgumentError, /bcast_key_hex must be hexadecimal/)
+    end
+
+    it "does not require bcast_key_hex on Gilka B (ключі живуть у SE, не SWD)" do
+      gilka_b = build(:provisioning_session, :gilka_b)
+      expect {
+        described_class.new(session: gilka_b, device: tree, aes_key_hex: aes_lora_hex, lorenz_seed_hex: k_seed_hex)
+      }.not_to raise_error
     end
 
     it "raises on unknown gilka value at #commands" do

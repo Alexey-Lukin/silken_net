@@ -23,8 +23,11 @@
 //   [4]    lora_rx_drops u8    — сатурований лічильник переповнень RX-рингу
 //   [5]    coap_fail  u8       — сатурований лічильник провалених flush-розмов
 //   [6]    csq        u8       — 3GPP 0..31 | 99=no-signal | 0xFF=не читали
-//   [7]    flags      u8       — bit0: CCM-ера (FW2), bit1: ring (ARCH.35);
-//                                 bit2..7 rsv=0
+//   [7]    flags      u8       — bit0: CCM-ера (FW2), bit1: ring (ARCH.35),
+//                                 bit2: були 16B-легасі-дропи цей аптайм
+//                                 (atomic-cutover видимість, FW.2 гейт (а)),
+//                                 bit3: були DID=0 CCM-спуф-дропи;
+//                                 bit4..7 rsv=0
 //   Поля vcap_mv / temp — СВІДОМО відсутні: Королева без ADC-тракту, брехати
 //   нулями не будемо (чесність до заліза; резерв → wire-ревізія при HW).
 //
@@ -65,8 +68,14 @@
 #define QATT_PREFIX_MAX      (QATT_DOMAIN_TAG_LEN + 1u + QATT_UID_MAX)
 
 /* Health-flags (byte 7 health-блоку) */
-#define QATT_HFLAG_CCM_ERA   0x01u
-#define QATT_HFLAG_RING      0x02u
+#define QATT_HFLAG_CCM_ERA      0x01u
+#define QATT_HFLAG_RING         0x02u
+/* [FW.2 гейт (а)] Wire-видимість вікна atomic-cutover'а: до цих бітів
+   ccm_legacy_telemetry_drops/ccm_spoof_drops жили лише в RAM (SWD-only) —
+   оператор не бачив, чи лишились непрошиті Солдати. Біт, не лічильник:
+   геометрія header'а (residue==1) недоторкана; точне число — SWD. */
+#define QATT_HFLAG_LEGACY_DROPS 0x04u
+#define QATT_HFLAG_CCM_SPOOF    0x08u
 
 /* csq-сентинелі (byte 6) */
 #define QATT_CSQ_NO_SIGNAL   99u

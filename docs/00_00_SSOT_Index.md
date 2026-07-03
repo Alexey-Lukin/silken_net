@@ -117,7 +117,7 @@ _Логіка STM32WLE5JC: STOP2 / DMA / TinyML / mruby Lorenz / апаратн�
 - [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) (CMSIS-NN: класифікація пилки/кавітації/тиші)
 - [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) (mruby VM атрактор хаосу — гомеостаз дерева; канон Lorenz-констант)
 - [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) (LoRa AES-128-CCM + CoAP AES-256-CBC + SE050 Secure Element + Flash Key + RDP + PQC roadmap)
-- [`03_06` — Factory Flashing and Key Provisioning](03_06_Factory_Flashing_and_Key_Provisioning) (фабричний флешинг Гілки A/B + HKDF per-device ключі + Lorenz K_seed SEC.11 + OTA-HMAC FW.23 + factory-ops SEC.3)
+- [`03_06` — Factory Flashing and Key Provisioning](03_06_Factory_Flashing_and_Key_Provisioning) (фабричний флешинг Гілки A/B + HKDF per-device ключі + per-cluster K_ota/KEYB + Lorenz K_seed SEC.11 + OTA-HMAC FW.23 + factory-ops SEC.3)
 
 ## 🗄️ Модуль 04: Серверне Ядро (Web2 Backend)
 

@@ -316,7 +316,7 @@
 
 ### 5.2. Ротація секретів
 
-- **AES master key** (`PROVISIONING_MASTER_KEY`): ротація потребує перевипуску всіх per-device ключів через provisioning. Несумісно зі вже зашитими пристроями. Plan: `FW.17` (Hash Ratchet KDF) у майбутньому циклі.
+- **AES master key** (`PROVISIONING_MASTER_KEY`): ротація потребує перевипуску всіх деривованих ключів через provisioning — per-device (KEYL session, K_seed, KEYC) і per-cluster (K_ota, KEYB — FW.2 (в)). Несумісно зі вже зашитими пристроями. Plan: `FW.17` (Hash Ratchet KDF, лише session) у майбутньому циклі.
 - **Database password**: змінити Cloud SQL → оновити `POSTGRES_PASSWORD` GitHub Secret (живить Kamal `POSTGRES_PASSWORD` + Terraform `TF_VAR_db_password`) → `kamal redeploy`.
 - **Sentry DSN**: rotate у Sentry UI → оновити `SENTRY_DSN` → redeploy.
 - **Chainlink HMAC**: координовано з backend deploy (зміна на льоту викличе rejected callbacks).

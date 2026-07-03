@@ -161,6 +161,25 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #define FLASH_OTA_KEY_WORDS       8             // 8 × uint32_t = 32 bytes = 256-bit HMAC key
 #define FLASH_OTA_KEY_MAGIC       0x4B4F5441UL  // "KOTA" — OTA HMAC key magic marker
 
+// [FW.2 гейт (в), двоключова модель] Cluster control-plane ключ (KEYB) —
+// спільний AES-128 всього кластера для ВСЬОГО, що не є телеметрією/panic:
+// downlink-broadcast Королеви (0x99/0x9A/0x9B/0x9C/0x9D/0x9E — один TX на
+// всіх → один ключ by construction) + uplink-запити 0x55/0x56 (Королева
+// читає їх сама, session-ключів вона не тримає — 03_05 §3.1). Телеметрія й
+// panic натомість їдуть CCM'ом на per-device session-ключі (KEYL вище).
+// Сторінка 125 = cluster-membership (KOTA+KEYB): переїзд дерева між
+// кластерами стирає/пише ЛИШЕ її, per-device identity (стор. 124) живе.
+// Зсув +40, не +36: K_ota займає 36 Б, а WL програмує Flash 64-бітними
+// doubleword'ами — старт KEYB у другій половині недописаного dw
+// спричинив би ECC-fault при фабричному -w32. Деривація —
+// HKDF(master, "cluster:<id>", "silken-aes-128-broadcast-key") — дзеркало
+// HardwareKeyService.derive_broadcast_key; ротація = re-provision (як
+// K_ota; FW.17-ратчет цього ключа СВІДОМО не торкається). Канон: 03_05 §2.1
+// flip-checklist (в) + §3.1.
+#define FLASH_BCAST_KEY_ADDR      (FLASH_OTA_KEY_ADDR + 40)  // після K_ota (36 Б) + dw-паддінг
+#define FLASH_BCAST_KEY_WORDS     4             // 4 × uint32_t = 16 bytes = AES-128
+#define FLASH_BCAST_KEY_MAGIC     0x4B455942UL  // "KEYB" — cluster broadcast/control key
+
 // [ARCH.27] Node Role Differentiation — плоть і кров mesh-розшарування.
 // Один і той самий бінарник прошивки тече венами Солдата та Провідника;
 // роль розрізняється єдиним 32-бітним словом у тій самій Protected Flash
@@ -632,6 +651,18 @@ static uint32_t fc_hiwater_cache    = 0; // RAM-кеш межі; істина �
 static uint8_t  fc_hiwater_degraded = 0; // TX перетнув межу, Flash мовчить —
                                          // діагностика; wire-транспорту поки
                                          // нема (PAD повний — патерн FW.42)
+#endif
+
+#if FW2_CCM_ENABLED || defined(HAL_MOCK_CCM_ENABLED)
+// [FW.2 гейт (в), двоключова модель] Cluster control-plane ключ (KEYB,
+// стор. 125) — амбієнтний ECB-ключ CCM-ери: RX-decrypt всього downlink'а +
+// TX 0x55/0x56 (Королева читає їх сама — session-ключів вона не тримає).
+// Телеметрія й panic беруть session (aes_key) всередині
+// Soldier_Build_CCM_LoRa_Packet. За гейтом: бойовий .bss ECB-ери незмінний
+// (+17 Б лише з фліпом). Канон: 03_05 §2.1 flip-checklist (в).
+uint32_t bcast_key[4] = {0};
+uint8_t  bcast_key_is_fallback = 0; // 1 = KEYB-слот порожній → живемо на KEYL
+                                    // (bench-плата, прошита до KEYB-ери)
 #endif
 
 // [FW.20-S2 4/5] Гейт повного mesh-relay Time Beacon'а: Провідник несе далі
@@ -1636,10 +1667,13 @@ int main(void)
   MX_RTC_Init();
   MX_SUBGHZ_Init();
   Load_AES_Key();  // [FW.1] Завантажити per-device ключ з Flash ПЕРЕД ініціалізацією CRYP
+#if FW2_CCM_ENABLED
+  Load_Broadcast_Key(); // [FW.2 (в)] Cluster-plane KEYB (після KEYL — fallback читає aes_key)
+#endif
   Load_Lorenz_Seed();  // [SEC.11 / FW.30] Завантажити K_seed для cold-start Lorenz derivation
   Load_Ota_Hmac_Key(); // [FW.23] Завантажити K_ota для OTA dual-gate (per-cluster HMAC)
   Load_Node_Role();    // [ARCH.27] Завантажити роль вузла (Soldier/Provisioner) з Flash
-  MX_CRYP_Init(); // Вмикаємо апаратний AES (використовує aes_key, вже завантажений)
+  MX_CRYP_Init(); // Вмикаємо апаратний AES (CCM-ера: амбієнт = bcast_key; ECB-ера: aes_key)
 
 #if defined(CCM_SELFTEST)
   // [FW.2] POST: бенч-атестація CCM-двигуна на реальному кремнії. Результат у
@@ -2405,7 +2439,13 @@ int main(void)
                         if (Key_Ratchet_Advance(key_bytes, &lora_key_version,
                                                 rotate_target, tree_did)) {
                             Key_Ratchet_Bytes_To_Words(key_bytes, aes_key);
-                            MX_CRYP_Init();             // re-key: CRYP тепер на K_v
+                            // [FW.2 (в)] Ратчет ротує ЛИШЕ session (KEYL):
+                            // MX_CRYP_Init повертає амбієнт = bcast_key, тож
+                            // downlink НЕ глухне від ротації (двоключова
+                            // розв'язка); новий K_v застосує наступний
+                            // MX_CRYP_Init_CCM. KEYB ратчет НЕ торкається —
+                            // його ротація = re-provision (як K_ota).
+                            MX_CRYP_Init();             // re-key контексту
                             lora_key_version_dirty = 1; // Flash-KV — у КЕНОЗИСІ
                         }
                     }
@@ -2572,7 +2612,15 @@ int main(void)
                         // OTA_FINALIZE_WAIT: тіло зібране, печатка ще летить — чекаємо.
                     }
                 }
+#if !FW2_CCM_ENABLED
                 // Сценарій Б: Mesh Естафета (Чужі дані на 16 байт)
+                // [FW.2 (в)] CCM-ера ховає естафету ЗА ГЕЙТ: телеметрія й
+                // panic сусідів стають 28B (гинуть на RX-guard вище до
+                // декрипту), а session-ключі per-device — чужий кадр однаково
+                // нечитний. 16B тут лишився б тільки легасі/чужий ефір —
+                // релей сміття марнує мДж. Star-only = свідома ціна фліпа
+                // (ARCH.43 резолюція «прийняти на поточному TRL»); mesh
+                // повертається лише з addressing-шаром ARCH.43.
                 else if (incoming_lora_size == 16) {
                     // [FW.18b] Байт 11 — бітфілд: живість пакета = лише
                     // нижні 3 біти TTL, верхні 5 — лічильник origin-Солдата
@@ -2618,6 +2666,7 @@ int main(void)
                         }
                     }
                 }
+#endif // !FW2_CCM_ENABLED — Сценарій Б (естафета) живе лише в ECB-еру
 
                 break; // Виходимо з циклу
             }
@@ -3069,6 +3118,44 @@ static void Load_AES_Key(void)
     }
 }
 
+#if FW2_CCM_ENABLED || defined(HAL_MOCK_CCM_ENABLED)
+// [FW.2 гейт (в)] Завантаження cluster control-plane ключа (KEYB, стор. 125).
+// НЕ Error_Handler(): відсутній KEYB — законна bench-плата, прошита до
+// KEYB-ери, вона деградує до односхемної поведінки (амбієнт = KEYL, як
+// ECB-ера) і чесно позначає це прапорцем. Fail-open тут безпечний, бо
+// fallback-ключ — той самий, на якому такий кластер і живе; фабрика
+// CCM-ери пише обидва слоти (command_builder), тож у полі прапорець
+// мусить бути 0. Патерн — Load_Ota_Hmac_Key (fail-open + valid-флаг),
+// НЕ Load_AES_Key (fatal). Порядок у main() несучий: виклик ПЕРЕДУЄ
+// FW17_Restore_Key_Version — fallback бере K0, ратчений session не сміє
+// текти в амбієнт. Канон: 03_05 §2.1 (в) + §3.1.
+static void Load_Broadcast_Key(void)
+{
+    const uint32_t *flash_ptr = (const uint32_t *)FLASH_BCAST_KEY_ADDR;
+    uint32_t key_or = 0;
+
+    if (flash_ptr[0] == FLASH_BCAST_KEY_MAGIC) {
+        for (int i = 0; i < FLASH_BCAST_KEY_WORDS; i++) {
+            key_or |= flash_ptr[1 + i];
+        }
+    }
+
+    if (key_or != 0) {
+        for (int i = 0; i < FLASH_BCAST_KEY_WORDS; i++) {
+            bcast_key[i] = flash_ptr[1 + i];
+        }
+        bcast_key_is_fallback = 0;
+        return;
+    }
+
+    // Magic відсутній або ключ нульовий → fallback на session (KEYL).
+    for (int i = 0; i < FLASH_BCAST_KEY_WORDS; i++) {
+        bcast_key[i] = aes_key[i];
+    }
+    bcast_key_is_fallback = 1;
+}
+#endif
+
 // [SEC.11 / FW.30] Завантаження Lorenz K_seed з Protected Flash Sector.
 // Flash layout: [FLASH_SEED_MAGIC:4][seed_word[0]:4]...[seed_word[7]:4] = 36 bytes.
 // Якщо seed не provisioned — lorenz_seed_valid = 0 (пристрій працює, але cold-start
@@ -3273,7 +3360,14 @@ static void MX_CRYP_Init(void)
   hcryp.Instance = AES;
   hcryp.Init.DataType = CRYP_DATATYPE_32B;
   hcryp.Init.KeySize = CRYP_KEYSIZE_128B; // ARCH.42 Variant B — AES-128 LoRa (вибір; SE = SE050 — 03_05 §3.7)
-  hcryp.Init.pKey = aes_key;              // 4 × uint32_t = 16 bytes (post-ARCH.42)
+#if FW2_CCM_ENABLED
+  // [FW.2 гейт (в)] Амбієнтний ECB CCM-ери = cluster-plane (KEYB): RX-decrypt
+  // downlink'а Королеви + TX 0x55/0x56. Session (aes_key) живе ЛИШЕ всередині
+  // CCM-скоупа (MX_CRYP_Init_CCM → Restore повертає сюди). 03_05 §2.1 (в).
+  hcryp.Init.pKey = bcast_key;
+#else
+  hcryp.Init.pKey = aes_key;              // односхемна ECB-ера: один ключ на все
+#endif
   hcryp.Init.Algorithm = CRYP_AES_ECB;    // ECB transitional → TARGET: CRYP_AES_CCM (FW.2)
   HAL_CRYP_Init(&hcryp);
 }
@@ -3308,6 +3402,12 @@ static void MX_CRYP_Init_CCM(uint32_t *b0_4w, uint32_t *aad_2w)
 {
     hcryp.Init.Algorithm       = CRYP_AES_CCM;
     hcryp.Init.DataType        = CRYP_DATATYPE_8B;
+    // [FW.2 гейт (в)] CCM = session per-device (KEYL): телеметрія/panic — то
+    // money-path, ізольований per-device; амбієнт-ECB натомість живе на
+    // cluster-plane KEYB (MX_CRYP_Init). Явний pKey тут ОБОВ'ЯЗКОВИЙ —
+    // успадкований амбієнт дав би bcast_key, і Rails (per-DID lookup)
+    // MIC-fail'ив би кожен кадр.
+    hcryp.Init.pKey            = aes_key;
     hcryp.Init.B0              = b0_4w;
     hcryp.Init.Header          = aad_2w;
     hcryp.Init.HeaderSize      = FW2_CCM_AAD_LEN;
@@ -3320,6 +3420,9 @@ static void MX_CRYP_Init_CCM(uint32_t *b0_4w, uint32_t *aad_2w)
 // жодного висячого вказівника у Init — B0/Header жили на стеку викликача.
 // Width-unit'и ОБОВ'ЯЗКОВО назад у WORD: MX_CRYP_Init їх не чіпає, а
 // production-ECB передає Size у словах — липкий BYTE зламав би decrypt.
+// [FW.2 (в)] Вкладений MX_CRYP_Init повертає й КЛЮЧ: session (aes_key)
+// скоупований CCM-фазою, амбієнт знову cluster-plane (bcast_key) — RX-вікно
+// Фази 4.5 декриптує downlink Королеви правильним ключем автоматично.
 static void MX_CRYP_Restore_From_CCM(void)
 {
     hcryp.Init.B0              = NULL;

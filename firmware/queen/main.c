@@ -219,6 +219,13 @@ IWDG_HandleTypeDef hiwdg; // [PLAN 2.6] Independent Watchdog для auto-recover
 // [FLASH_KEY_MAGIC:4][key[0]:4]...[key[3]:4] = 20 байт (post-ARCH.42; було 36 для AES-256).
 // Якщо ключ не provisioned — Error_Handler() (пристрій не може працювати без ключа).
 // Ініціалізація нулями — значення перезаписується Load_AES_Key() перед MX_CRYP_Init().
+// [FW.2 гейт (в), двоключова модель] Семантика цього слота в CCM-еру:
+// значення = cluster control-plane ключ (KEYB-деривація,
+// HKDF(master, "cluster:<id>", "silken-aes-128-broadcast-key")) — Королева
+// шифрує ним увесь downlink-broadcast і читає uplink 0x55/0x56; session-
+// ключів Солдатів вона НЕ тримає (сліпий кур'єр, rx_route.h). Фабрика
+// CCM-ери пише сюди broadcast-значення (command_builder Gateway-гілка);
+// сам код нижче незмінний — міняється лише ЩО прошивається.
 uint32_t aes_key[4] = {0};   // 16 bytes = AES-128 LoRa (SE = SE050 — 03_05 §3.7)
 
 // [ARCH.42] CoAP AES-256 key — для batch flush Queen↔Rails (AES-256-CBC).
@@ -326,8 +333,9 @@ static volatile uint8_t    lora_rx_tail  = 0;     // Звідки main loop за
 static volatile uint16_t   lora_rx_drops = 0;     // Лічильник переповнень рингу
 
 #if FW2_CCM_ENABLED
-// [FW.2] Сліди дропів CCM-ери (патерн lora_rx_drops — SWD/діагностика;
-// wire-транспорт у gateway-health = разом з dedicated-каналом, 00_07 FW.2):
+// [FW.2] Сліди дропів CCM-ери (патерн lora_rx_drops). Wire-видимість =
+// QATT_HFLAG_LEGACY_DROPS / QATT_HFLAG_CCM_SPOOF у health-flags (гейт (а):
+// оператор бачить cutover-вікно без SWD); точні числа лишаються SWD-only.
 static uint16_t ccm_spoof_drops            = 0; // 28B з DID=0 — спуф Sentinel
 static uint16_t ccm_legacy_telemetry_drops = 0; // 16B-телеметрія старих Солдатів
                                                 // (atomic-cutover: у 29B-батч не сміє)
@@ -1642,6 +1650,11 @@ void Flush_Cache_To_Rails(void)
         uint8_t health_flags = 0u;
 #if FW2_CCM_ENABLED
         health_flags |= QATT_HFLAG_CCM_ERA;
+        // [FW.2 гейт (а)] Wire-видимість cutover-вікна: біти замість
+        // SWD-only лічильників — оператор бачить у health, що поруч ще
+        // дихають непрошиті Солдати (legacy) або DID=0-спуфи.
+        if (ccm_legacy_telemetry_drops > 0u) health_flags |= QATT_HFLAG_LEGACY_DROPS;
+        if (ccm_spoof_drops > 0u)            health_flags |= QATT_HFLAG_CCM_SPOOF;
 #endif
 #if ARCH35_RING_ENABLED
         if (queen_ring_mounted) health_flags |= QATT_HFLAG_RING;

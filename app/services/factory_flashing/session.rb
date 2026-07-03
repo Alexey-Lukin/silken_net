@@ -120,7 +120,8 @@ module FactoryFlashing
         aes_key_hex:      hw_key.aes_key_hex,
         lorenz_seed_hex:  hw_key.lorenz_seed_hex,
         ota_hmac_hex:     tree_ota_hmac,
-        ed25519_seed_hex: gateway_voice_seed(hw_key)
+        ed25519_seed_hex: gateway_voice_seed(hw_key),
+        bcast_key_hex:    cluster_broadcast_key
       ).flash_commands
     end
 
@@ -156,6 +157,13 @@ module FactoryFlashing
     def tree_ota_hmac
       return nil unless @device.is_a?(Tree)
       OtaHmacKeyService.fetch_for(@device.cluster_id, master_key: @master_key)
+    end
+
+    # [FW.2 гейт (в)] Cluster control-plane ключ (KEYB) — ОБИДВА типи:
+    # Tree отримує його в KEYB-слот, Gateway — у свій KEYL (Королева живе
+    # ним як єдиним LoRa-ключем). Той самий salt-домен, що K_ota.
+    def cluster_broadcast_key
+      HardwareKeyService.derive_broadcast_key(@device.cluster_id, master_key: @master_key)
     end
 
     # [L1 QATT] Сім'я голосу Королеви (Gateway, Гілка A). КРИТИЧНО: НЕ
