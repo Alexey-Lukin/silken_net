@@ -137,9 +137,9 @@ contract SilkenGovernor is Governor, GovernorSettings, GovernorCountingSimple,
     constructor(IVotes _token, TimelockController _timelock)
         Governor("Silken Governor")
         GovernorSettings(
-            43200,   // votingDelay: ~1 day on Polygon (block time ~2s)
-            302400,  // votingPeriod: ~7 days on Polygon
-            100e18   // proposalThreshold: 100 SFC to propose
+            43200,     // votingDelay: ~1 day on Polygon (block time ~2s)
+            302400,    // votingPeriod: ~7 days on Polygon
+            10_000e18  // [CONTRACT.1] proposalThreshold: 10 000 SFC = 0.01% MAX_SUPPLY (anti-spam)
         )
         GovernorVotesQuorumFraction(4)  // 4% quorum
         GovernorTimelockControl(_timelock)

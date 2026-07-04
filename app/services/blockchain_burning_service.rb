@@ -11,7 +11,8 @@ class BlockchainBurningService < ApplicationService
   CONTRACT_ABI = [
     {
       "inputs" => [ { "internalType" => "address", "name" => "investor", "type" => "address" },
-                    { "internalType" => "uint256", "name" => "maxAmount", "type" => "uint256" } ],
+                    { "internalType" => "uint256", "name" => "maxAmount", "type" => "uint256" },
+                    { "internalType" => "bytes32", "name" => "contextHash", "type" => "bytes32" } ],
       "name" => "slashUpTo",
       "outputs" => [ { "internalType" => "uint256", "name" => "slashed", "type" => "uint256" } ],
       "stateMutability" => "nonpayable",
@@ -189,8 +190,11 @@ class BlockchainBurningService < ApplicationService
         # transact_and_wait, який блокує Sidekiq-потік нескінченно при перевантаженні Polygon.
         # Підтвердження транзакції делеговано BlockchainConfirmationWorker (як у BlockchainMintingService).
         # [SLASH.2] slashUpTo (не slash): on-chain clamp до balanceOf → без тихого revert/evasion.
+        # [CONTRACT.1] contextHash = bytes32(intent tx id) — subgraph/аудитор атрибутує
+        # on-chain подію прямо до BlockchainTransaction (manual DAO-slash емітить нуль).
+        context_hash = "0x" + audit.id.to_i.to_s(16).rjust(64, "0")
         tx_hash = client.transact(
-          contract, "slashUpTo", investor_address, amount_in_wei,
+          contract, "slashUpTo", investor_address, amount_in_wei, context_hash,
           sender_key: oracle_key, legacy: false
         )
       end

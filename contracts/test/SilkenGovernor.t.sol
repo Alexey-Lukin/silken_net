@@ -36,7 +36,7 @@ contract SilkenGovernorTest is Test {
 
     uint256 public constant VOTING_DELAY = 43200; // ~1 day on Polygon
     uint256 public constant VOTING_PERIOD = 302400; // ~7 days on Polygon
-    uint256 public constant PROPOSAL_THRESHOLD = 100e18; // 100 SFC
+    uint256 public constant PROPOSAL_THRESHOLD = 10_000e18; // [CONTRACT.1] 10 000 SFC = 0.01% MAX_SUPPLY (anti-spam)
 
     function setUp() public {
         // 1. Deploy SFC (governance token)

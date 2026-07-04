@@ -58,6 +58,7 @@ export function handleTokenSlashed(event: TokenSlashed): void {
 
   entity.target = event.params.investor;
   entity.amount = event.params.amount;
+  entity.contextHash = event.params.contextHash; // [CONTRACT.1] DB-attribution
   entity.timestamp = event.block.timestamp;
 
   entity.save();
@@ -102,6 +103,7 @@ export function handleGovernanceSlashed(event: GovernanceSlashed): void {
 
   entity.target = event.params.investor;
   entity.amount = event.params.amount;
+  entity.contextHash = event.params.contextHash; // [CONTRACT.1] DB-attribution
   entity.timestamp = event.block.timestamp;
   entity.blockNumber = event.block.number;
   entity.transactionHash = event.transaction.hash;

@@ -26,6 +26,7 @@ type GovernanceSlashEvent @entity {
   id: ID!
   target: Bytes!
   amount: BigInt!
+  contextHash: Bytes! # [CONTRACT.1] bytes32(intent BlockchainTransaction.id); 0x0 = manual DAO slash
   timestamp: BigInt!
   blockNumber: BigInt!
   transactionHash: Bytes!
@@ -43,5 +44,6 @@ type SlashingEvent @entity {
   id: ID!
   target: Bytes!
   amount: BigInt!
+  contextHash: Bytes! # [CONTRACT.1] bytes32(intent BlockchainTransaction.id); 0x0 = manual DAO slash
   timestamp: BigInt!
 }

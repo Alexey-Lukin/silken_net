@@ -65,7 +65,10 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @notice [B-06] Емітується при спалюванні governance токенів через slashing protocol.
     /// @param investor Адреса, з якої спалюються governance токени.
     /// @param amount Кількість спалених токенів (wei).
-    event GovernanceSlashed(address indexed investor, uint256 amount);
+    /// @param contextHash [CONTRACT.1] Атрибуція події: bytes32(intent BlockchainTransaction.id)
+    ///        бекенда (прямий DB-вказівник для subgraph/аудитора; bytes32(0) = manual
+    ///        DAO/Timelock slash без бекенд-інтенту).
+    event GovernanceSlashed(address indexed investor, uint256 amount, bytes32 contextHash);
 
     /// @notice [B-03][SEC.1] Конструктор з розділеними ролями.
     /// @param admin Адміністратор (DEFAULT_ADMIN_ROLE) — у production = `SilkenTimelock`
@@ -160,7 +163,8 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         require(amount > 0, "SFC: zero amount");
         require(balanceOf(investor) >= amount, "SFC: insufficient balance");
         _burn(investor, amount);
-        emit GovernanceSlashed(investor, amount);
+        // Manual DAO/Timelock-шлях — без бекенд-інтенту, contextHash порожній.
+        emit GovernanceSlashed(investor, amount, bytes32(0));
     }
 
     /// @notice [SLASH.2] Спалювання до maxAmount, клампнуте до фактичного балансу (anti-evasion).
@@ -169,9 +173,10 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     ///      min(maxAmount, balanceOf) обчислюється атомарно; виведення лише зменшує спалюване.
     /// @param investor Адреса, з якої спалюються governance токени.
     /// @param maxAmount Верхня межа спалення (wei) — запитана бекендом сума.
+    /// @param contextHash [CONTRACT.1] Атрибуція: bytes32(intent BlockchainTransaction.id).
     /// @return slashed Фактично спалена сума (wei) — її ж несе event GovernanceSlashed.
     /// @dev Reverts if investor holds nothing ("SFC: nothing to slash").
-    function slashUpTo(address investor, uint256 maxAmount)
+    function slashUpTo(address investor, uint256 maxAmount, bytes32 contextHash)
         external
         nonReentrant
         onlyRole(SLASHER_ROLE)
@@ -185,7 +190,7 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         }
         require(slashed > 0, "SFC: nothing to slash");
         _burn(investor, slashed);
-        emit GovernanceSlashed(investor, slashed);
+        emit GovernanceSlashed(investor, slashed, contextHash);
     }
 
     /// @notice [SEC.1] Призупинення всіх трансферів (emergency) — PAUSER_ROLE (Safe),

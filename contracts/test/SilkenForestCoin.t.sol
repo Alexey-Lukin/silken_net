@@ -39,7 +39,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
     string public constant CLUSTER_ID = "cluster-alpha-1";
 
     event ForestMinted(address indexed investor, uint256 amount, bytes32 indexed clusterIdHash, string clusterId);
-    event GovernanceSlashed(address indexed investor, uint256 amount);
+    event GovernanceSlashed(address indexed investor, uint256 amount, bytes32 contextHash);
 
     function setUp() public {
         sfc = new SilkenForestCoin(admin, pauser, minter, slasher);
@@ -283,7 +283,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
 
         vm.prank(slasher);
         vm.expectEmit(true, false, false, true);
-        emit GovernanceSlashed(user1, 400e18);
+        emit GovernanceSlashed(user1, 400e18, bytes32(0));
         sfc.slash(user1, 400e18);
     }
 
@@ -340,7 +340,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
         sfc.mint(user1, 1000e18, CLUSTER_ID);
 
         vm.prank(slasher);
-        uint256 slashed = sfc.slashUpTo(user1, 400e18);
+        uint256 slashed = sfc.slashUpTo(user1, 400e18, bytes32(0));
 
         assertEq(slashed, 400e18);
         assertEq(sfc.balanceOf(user1), 600e18);
@@ -356,7 +356,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
         sfc.transfer(user2, 1); // 1-wei evasion attempt
 
         vm.prank(slasher);
-        uint256 slashed = sfc.slashUpTo(user1, 1000e18);
+        uint256 slashed = sfc.slashUpTo(user1, 1000e18, bytes32(0));
         vm.roll(block.number + 1);
 
         assertEq(slashed, 1000e18 - 1);
@@ -370,8 +370,8 @@ contract SilkenForestCoinTest is Eip712SigUtils {
 
         vm.prank(slasher);
         vm.expectEmit(true, false, false, true);
-        emit GovernanceSlashed(user1, 100e18); // clamped: balance < requested 500
-        sfc.slashUpTo(user1, 500e18);
+        emit GovernanceSlashed(user1, 100e18, bytes32(uint256(42))); // clamped + contextHash attribution
+        sfc.slashUpTo(user1, 500e18, bytes32(uint256(42)));
     }
 
     function testRevert_slashUpTo_unauthorizedCaller() public {
@@ -380,25 +380,25 @@ contract SilkenForestCoinTest is Eip712SigUtils {
 
         vm.prank(unauthorized);
         vm.expectRevert();
-        sfc.slashUpTo(user1, 100e18);
+        sfc.slashUpTo(user1, 100e18, bytes32(0));
     }
 
     function testRevert_slashUpTo_zeroInvestor() public {
         vm.prank(slasher);
         vm.expectRevert("SFC: zero investor");
-        sfc.slashUpTo(address(0), 100e18);
+        sfc.slashUpTo(address(0), 100e18, bytes32(0));
     }
 
     function testRevert_slashUpTo_zeroAmount() public {
         vm.prank(slasher);
         vm.expectRevert("SFC: zero amount");
-        sfc.slashUpTo(user1, 0);
+        sfc.slashUpTo(user1, 0, bytes32(0));
     }
 
     function testRevert_slashUpTo_nothingToSlash() public {
         vm.prank(slasher);
         vm.expectRevert("SFC: nothing to slash");
-        sfc.slashUpTo(user1, 100e18);
+        sfc.slashUpTo(user1, 100e18, bytes32(0));
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -448,7 +448,7 @@ contract SilkenForestCoinTest is Eip712SigUtils {
         sfc.pause();
 
         vm.prank(slasher);
-        uint256 slashed = sfc.slashUpTo(user1, 2000e18); // clamps to full balance
+        uint256 slashed = sfc.slashUpTo(user1, 2000e18, bytes32(0)); // clamps to full balance
 
         assertEq(slashed, 1000e18);
         assertEq(sfc.balanceOf(user1), 0);

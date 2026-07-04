@@ -73,7 +73,7 @@ contract SFCMedusaTest {
         if (bal == 0) return;
         maxAmount = (maxAmount % (bal * 2)) + 1; // [1, 2×bal] → exercises both branches
         vm.prank(SLASHER);
-        uint256 slashed = sfc.slashUpTo(from, maxAmount);
+        uint256 slashed = sfc.slashUpTo(from, maxAmount, bytes32(0));
         ghostSlashed += slashed;
     }
 

@@ -56,7 +56,10 @@ contract SilkenGovernor is
         GovernorSettings(
             43200, // votingDelay: ~1 день на Polygon (86400s / 2s per block)
             302400, // votingPeriod: ~7 днів на Polygon (604800s / 2s per block)
-            100e18 // proposalThreshold: 100 SFC для створення пропозиції
+            // [CONTRACT.1] proposalThreshold: 10 000 SFC (0.01% MAX_SUPPLY) — anti-spam
+            // (було 100 SFC = 0.0001%, spam-griefing вектор); founder-рішення 2026-07-04.
+            // Змінюється DAO-голосом через GovernorSettings.setProposalThreshold.
+            10_000e18
         )
         GovernorVotes(_token)
         GovernorVotesQuorumFraction(4) // 4% quorum від totalSupply для прийняття

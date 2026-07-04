@@ -41,7 +41,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
     string public constant TREE_DID = "SNET-1A2B3C4D";
 
     event CarbonMinted(address indexed investor, uint256 amount, bytes32 indexed treeDidHash, string treeDid);
-    event TokenSlashed(address indexed investor, uint256 amount);
+    event TokenSlashed(address indexed investor, uint256 amount, bytes32 contextHash);
 
     function setUp() public {
         scc = new SilkenCarbonCoin(admin, pauser, minter, slasher);
@@ -284,7 +284,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
 
         vm.prank(slasher);
         vm.expectEmit(true, false, false, true);
-        emit TokenSlashed(user1, 300e18);
+        emit TokenSlashed(user1, 300e18, bytes32(0));
         scc.slash(user1, 300e18);
     }
 
@@ -327,7 +327,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
         scc.mint(user1, 1000e18, TREE_DID);
 
         vm.prank(slasher);
-        uint256 slashed = scc.slashUpTo(user1, 300e18);
+        uint256 slashed = scc.slashUpTo(user1, 300e18, bytes32(0));
 
         assertEq(slashed, 300e18);
         assertEq(scc.balanceOf(user1), 700e18);
@@ -344,7 +344,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
         scc.transfer(user2, 1); // 1-wei evasion attempt
 
         vm.prank(slasher);
-        uint256 slashed = scc.slashUpTo(user1, 1000e18);
+        uint256 slashed = scc.slashUpTo(user1, 1000e18, bytes32(0));
 
         assertEq(slashed, 1000e18 - 1);
         assertEq(scc.balanceOf(user1), 0);
@@ -356,8 +356,8 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
 
         vm.prank(slasher);
         vm.expectEmit(true, false, false, true);
-        emit TokenSlashed(user1, 100e18); // clamped: balance < requested 500
-        scc.slashUpTo(user1, 500e18);
+        emit TokenSlashed(user1, 100e18, bytes32(uint256(42))); // clamped + contextHash attribution
+        scc.slashUpTo(user1, 500e18, bytes32(uint256(42)));
     }
 
     function testRevert_slashUpTo_unauthorizedCaller() public {
@@ -366,19 +366,19 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
 
         vm.prank(unauthorized);
         vm.expectRevert();
-        scc.slashUpTo(user1, 100e18);
+        scc.slashUpTo(user1, 100e18, bytes32(0));
     }
 
     function testRevert_slashUpTo_zeroInvestor() public {
         vm.prank(slasher);
         vm.expectRevert("SCC: zero investor");
-        scc.slashUpTo(address(0), 100e18);
+        scc.slashUpTo(address(0), 100e18, bytes32(0));
     }
 
     function testRevert_slashUpTo_zeroAmount() public {
         vm.prank(slasher);
         vm.expectRevert("SCC: zero amount");
-        scc.slashUpTo(user1, 0);
+        scc.slashUpTo(user1, 0, bytes32(0));
     }
 
     /// @notice [SLASH.2] Fully-drained wallet → loud revert, NOT a silent zero-burn: the
@@ -386,7 +386,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
     function testRevert_slashUpTo_nothingToSlash() public {
         vm.prank(slasher);
         vm.expectRevert("SCC: nothing to slash");
-        scc.slashUpTo(user1, 100e18);
+        scc.slashUpTo(user1, 100e18, bytes32(0));
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -437,7 +437,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
         scc.pause();
 
         vm.prank(slasher);
-        uint256 slashed = scc.slashUpTo(user1, 2000e18); // Should NOT revert; clamps
+        uint256 slashed = scc.slashUpTo(user1, 2000e18, bytes32(0)); // Should NOT revert; clamps
 
         assertEq(slashed, 1000e18);
         assertEq(scc.balanceOf(user1), 0);
@@ -638,7 +638,7 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
         uint256 remaining = mintAmt - drainAmt;
 
         vm.prank(slasher);
-        uint256 slashed = scc.slashUpTo(user1, maxAmount);
+        uint256 slashed = scc.slashUpTo(user1, maxAmount, bytes32(0));
 
         assertEq(slashed, remaining < maxAmount ? remaining : maxAmount);
         assertEq(scc.balanceOf(user1), remaining - slashed);

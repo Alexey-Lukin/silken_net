@@ -372,11 +372,14 @@ RSpec.describe BlockchainBurningService do
       )
     end
 
-    it "calls slashUpTo (not slash) on-chain" do
+    it "calls slashUpTo (not slash) on-chain with the intent-id contextHash" do
       described_class.call(organization.id, naas_contract.id, source_tree: tree)
 
+      intent = BlockchainTransaction.order(:id).last
+      expected_context = "0x" + intent.id.to_i.to_s(16).rjust(64, "0")
       expect(mock_client).to have_received(:transact)
-        .with(mock_contract, "slashUpTo", organization.crypto_public_address, anything, hash_including(sender_key: mock_key))
+        .with(mock_contract, "slashUpTo", organization.crypto_public_address, anything,
+              expected_context, hash_including(sender_key: mock_key))
     end
 
     it "reads balanceOf before slashing" do

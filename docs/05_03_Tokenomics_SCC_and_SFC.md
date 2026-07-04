@@ -63,7 +63,7 @@
 | **Файл** | `contracts/SilkenCarbonCoin.sol` | `contracts/SilkenForestCoin.sol` |
 | **ENV адреса** | `CARBON_COIN_CONTRACT_ADDRESS` | `FOREST_COIN_CONTRACT_ADDRESS` |
 | **Pragma** | `0.8.35` (locked) | `0.8.35` (locked) |
-| **Максимальна емісія** | ✅ `MAX_SUPPLY = 1_000_000_000 SCC` | ✅ `MAX_SUPPLY = 100_000_000 SFC` |
+| **Максимальна емісія** | ✅ `MAX_SUPPLY = 1_000_000_000 SCC` — [CONTRACT.1] деривація: 10k GP=1 SCC · 2k SCC=1 tCO2 → ≈500k tCO2 ≈ 20M дерево-років (≈2M дерев × 10 р.) = свідомо-скромна launch-стеля pilot-горизонту; планетарний масштаб = новий деплой/L2, не підняття константи | ✅ `MAX_SUPPLY = 100_000_000 SFC` |
 | **Slash / Burn** | ✅ `slash()` + `slashUpTo()` [SLASH.2] через `SLASHER_ROLE` | ✅ `slash()` + `slashUpTo()` [SLASH.2] через `SLASHER_ROLE` (B-06 виправлено) |
 | **Gasless approvals** | ✅ EIP-2612 / EIP-712 (PR #253) | ✅ EIP-2612 / EIP-712 |
 | **DAO голосування** | ❌ | ✅ `ERC20Votes` |
@@ -333,10 +333,10 @@ function slash(address investor, uint256 amount)
 - **Подія:** `TokenSlashed(address indexed investor, uint256 amount)`
 - **[ARCH.45] Idempotency на crash-window:** on-chain `require(balanceOf >= amount)` — лише **латентний частковий** захист (повторний slash на ту саму суму ревертне, якщо перший зменшив баланс; але при `damage_ratio < 1` баланс може лишитись достатнім → частковий double-burn). Exactly-once гарантує backend: durable intent-marker + `BlockchainTransaction.in_flight` guard у `BlockchainBurningService` ([`04_02 §4`](04_02_Business_Logic_and_Services)), не явний on-chain nonce/marker.
 
-#### `slashUpTo(address investor, uint256 maxAmount) → uint256 slashed` [SLASH.2]
+#### `slashUpTo(address investor, uint256 maxAmount, bytes32 contextHash) → uint256 slashed` [SLASH.2]
 
 ```solidity
-function slashUpTo(address investor, uint256 maxAmount)
+function slashUpTo(address investor, uint256 maxAmount, bytes32 contextHash)
     external
     onlyRole(SLASHER_ROLE)
     nonReentrant
@@ -348,13 +348,14 @@ function slashUpTo(address investor, uint256 maxAmount)
     if (slashed > maxAmount) slashed = maxAmount;
     require(slashed > 0, "SCC: nothing to slash");
     _burn(investor, slashed);
-    emit TokenSlashed(investor, slashed);
+    emit TokenSlashed(investor, slashed, contextHash);
 }
 ```
 
 - **Навіщо (SLASH.2):** бекенд рахує `burn_amount` з **pre-tax** суми намінтованого, а порушник on-chain тримає менше (DynamicTax пішов у treasury; SCC вільно переказуваний). Строгий `slash(amount)` тоді **revert-ив** (`balanceOf < amount`) — покарання тихо не застосовувалось; переказ 1 wei перед транзакцією Оракула скасовував би **повний** slash (evasion). `slashUpTo` палить `min(maxAmount, balanceOf)` **атомарно** — clamp замість revert, TOCTOU-safe (дрейф балансу лише зменшує спалене).
 - **Виконавець (backend):** `BlockchainBurningService` кличе `slashUpTo` (не `slash`) + pre-read `balanceOf` для (1) чесного обліку (`effective_burn = min(burn, balance)` в intent/метриці) і (2) tripwire на **повне** виведення (balance ≈ 0 → `escalate_evasion!` → `:evaded` + Field Audit, юридичний трек, БЕЗ приреченої revert-tx). Дім — [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy).
-- **Валідація:** `investor != address(0)`, `maxAmount > 0`, `balanceOf > 0` (revert: `"SCC: nothing to slash"` — повне виведення бекенд ескалює як evasion). **Пауза не блокує** (той самий `_burn`-bypass, що `slash()`). Подія — `TokenSlashed(investor, slashed)` з **фактично** спаленою сумою. Доведено Halmos (`check_slashUpTo_clampsToBalance`) + Medusa (`property_supplyAccounting`).
+- **Валідація:** `investor != address(0)`, `maxAmount > 0`, `balanceOf > 0` (revert: `"SCC: nothing to slash"` — повне виведення бекенд ескалює як evasion). **Пауза не блокує** (той самий `_burn`-bypass, що `slash()`). Подія — `TokenSlashed(investor, slashed, contextHash)` з **фактично** спаленою сумою. Доведено Halmos (`check_slashUpTo_clampsToBalance`) + Medusa (`property_supplyAccounting`).
+- **[CONTRACT.1] `contextHash`-атрибуція:** `bytes32(intent BlockchainTransaction.id)` — subgraph/аудитор атрибутує on-chain slash-подію прямо до backend-інтенту (ARCH.45 durable marker створюється ДО broadcast, тож id уже існує); manual DAO/Timelock `slash()` емітить `bytes32(0)`. Subgraph: `SlashingEvent.contextHash` / `GovernanceSlashEvent.contextHash` (`subgraph/schema.graphql`).
 
 > **Страхова премія — НЕ on-chain SCC-подія (знято [SEC.1], 2026-06-15).** Премія NaaS-контракту (5% від funding) — **off-chain USDC-факт** у БД (`NaasContract`; концепт-дім [`07_01`](07_01_Nature_as_a_Service_Contracts), ризик-політика [`05_05`](05_05_Slashing_and_Risk_Policy)). Колишній `recordPremiumPaid()` + `PremiumPaid`-event на SCC-токені був **never-fed** (жоден backend-виклик) і архітектурно чужорідним (SCC-event для USDC-факту) → видалено з контракту/тестів/subgraph. Real-Yield звіт бере премію з БД (`NaasContract.total_insurance_premiums`, [`04_03`](04_03_REST_API_v1_Reference) `reports#financial_summary`). Не плутати з **Dynamic-Tax SCC-пулом** — окремий on-chain механізм поповнення страхового пулу ([`05_02`](05_02_Proof_of_Growth_Pipeline)).
 

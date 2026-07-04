@@ -100,7 +100,7 @@ contract SFCSymbolicTest is Test {
         uint256 remaining = mintAmount - drained;
 
         vm.prank(slasher);
-        uint256 slashed = sfc.slashUpTo(holder, maxAmount);
+        uint256 slashed = sfc.slashUpTo(holder, maxAmount, bytes32(0));
 
         assert(slashed == (remaining < maxAmount ? remaining : maxAmount));
         assert(sfc.balanceOf(holder) == remaining - slashed);

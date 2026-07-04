@@ -90,7 +90,7 @@ contract SCCSymbolicTest is Test {
         uint256 remaining = mintAmount - drained;
 
         vm.prank(slasher);
-        uint256 slashed = scc.slashUpTo(holder, maxAmount);
+        uint256 slashed = scc.slashUpTo(holder, maxAmount, bytes32(0));
 
         assert(slashed == (remaining < maxAmount ? remaining : maxAmount));
         assert(scc.balanceOf(holder) == remaining - slashed);

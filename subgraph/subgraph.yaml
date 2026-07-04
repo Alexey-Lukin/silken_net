@@ -36,7 +36,7 @@ dataSources:
       eventHandlers:
         - event: CarbonMinted(indexed address,uint256,indexed bytes32,string)
           handler: handleCarbonMinted
-        - event: TokenSlashed(indexed address,uint256)
+        - event: TokenSlashed(indexed address,uint256,bytes32)
           handler: handleTokenSlashed
       file: ./src/mapping.ts
 
@@ -64,6 +64,6 @@ dataSources:
       eventHandlers:
         - event: ForestMinted(indexed address,uint256,indexed bytes32,string)
           handler: handleForestMinted
-        - event: GovernanceSlashed(indexed address,uint256)
+        - event: GovernanceSlashed(indexed address,uint256,bytes32)
           handler: handleGovernanceSlashed
       file: ./src/mapping.ts

@@ -41,6 +41,10 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
 
     /// @notice [B-01] Максимальна емісія SCC: 1 мільярд токенів (18 decimals).
     /// @dev Once MAX_SUPPLY is reached, mint/batchMint revert with "SCC: cap exceeded".
+    /// @dev [CONTRACT.1] Деривація: 10 000 GP = 1 SCC · 2 000 SCC = 1 tCO2 → 1B SCC ≈
+    ///      500 000 tCO2 ≈ 20M дерево-років (≈50 SCC/дерево/рік) ≈ 2M дерев × 10 років.
+    ///      Свідомо-скромна launch-стеля pilot-горизонту (immutable) — планетарний
+    ///      масштаб = новий деплой / L2-емісія, НЕ підняття цієї константи.
     uint256 public constant MAX_SUPPLY = 1_000_000_000 * 1e18;
 
     /// @notice [B-04] Максимальна кількість елементів у batchMint для gas safety.
@@ -63,7 +67,10 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @notice Емітується при спалюванні токенів через slashing protocol.
     /// @param investor Адреса, з якої спалюються токени.
     /// @param amount Кількість спалених токенів (wei).
-    event TokenSlashed(address indexed investor, uint256 amount);
+    /// @param contextHash [CONTRACT.1] Атрибуція події: bytes32(intent BlockchainTransaction.id)
+    ///        бекенда (прямий DB-вказівник для subgraph/аудитора; bytes32(0) = manual
+    ///        DAO/Timelock slash без бекенд-інтенту).
+    event TokenSlashed(address indexed investor, uint256 amount, bytes32 contextHash);
 
     /// @notice [B-02][B-03][SEC.1] Конструктор з розділеними ролями.
     /// @param admin Адміністратор (DEFAULT_ADMIN_ROLE) — у production = `SilkenTimelock`
@@ -167,7 +174,8 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         require(amount > 0, "SCC: zero amount");
         require(balanceOf(investor) >= amount, "SCC: insufficient balance");
         _burn(investor, amount);
-        emit TokenSlashed(investor, amount);
+        // Manual DAO/Timelock-шлях — без бекенд-інтенту, contextHash порожній.
+        emit TokenSlashed(investor, amount, bytes32(0));
     }
 
     /// @notice [SLASH.2] Спалювання до maxAmount, клампнуте до фактичного балансу (anti-evasion).
@@ -178,10 +186,11 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     ///      переказом» не існує; виведення коштів лише зменшує спалюване до залишку.
     /// @param investor Адреса, з якої спалюються токени.
     /// @param maxAmount Верхня межа спалення (wei) — запитана бекендом сума.
+    /// @param contextHash [CONTRACT.1] Атрибуція: bytes32(intent BlockchainTransaction.id).
     /// @return slashed Фактично спалена сума (wei) — її ж несе event TokenSlashed.
     /// @dev Reverts if investor holds nothing ("SCC: nothing to slash") — повне виведення
     ///      коштів бекенд ескалює як evasion окремим (юридичним) треком.
-    function slashUpTo(address investor, uint256 maxAmount)
+    function slashUpTo(address investor, uint256 maxAmount, bytes32 contextHash)
         external
         nonReentrant
         onlyRole(SLASHER_ROLE)
@@ -195,7 +204,7 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         }
         require(slashed > 0, "SCC: nothing to slash");
         _burn(investor, slashed);
-        emit TokenSlashed(investor, slashed);
+        emit TokenSlashed(investor, slashed, contextHash);
     }
 
     /// @notice [SEC.1] Призупинення всіх трансферів (emergency) — PAUSER_ROLE (Safe),
