@@ -28,4 +28,4 @@ description: "Use when working on the silken_net telemetry / Proof-of-Growth pip
 ## Common Tasks
 
 - **Add telemetry field**: firmware pack → `TelemetryUnpackerService` unpack → DB migration → Phlex dashboard component → update `docs/05_02`
-- **Change minting logic**: `BlockchainMintingService` → check 3 guards (IoTeX + Chainlink + Hadron) → update `docs/05_01`
+- **Change minting logic**: `BlockchainMintingService` → the 3-guard chain (IoTeX + oracle_status + Hadron) protects PATH 1 only (latent — ARCH.53: dispatch = local marker, DON-callback unwired); the live PATH 2 tokenomics mint is optimistic (KYC-only guard; L0-custodial + ex-post clawback) → update `docs/05_01`/`05_02`

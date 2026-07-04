@@ -65,7 +65,7 @@
 | 🔑 Ключ (WHO) | Відкриває (кластер) |
 |---|---|
 | **HW.9 KiCad PCB** (👤; сам ← BOM-фіналізація `HW.7/12/13/20` + RF Keep-Out) | `HW.17`-dimensions · `HW.29`-footprints · `HW.20`-BOM-part · SE050 DNP-footprint · `ARCH.35` W25Q32-розводка · пін-мапа → **FW.46 `.ioc`** (ланцюг до bench-дня ↓) |
-| **FW.46 board-freeze** `.ioc` (👤) | повний `.elf` → увесь bench-день: `FW.2`-фліп · `FW.3/8/17/20/23/31/49/50/52/54/55` · `ARCH.26/41` · `SEC.2`-OTA-verify · `SEC.15`-WUT · `SEC.3`-SWD · `ARCH.35`-розводка; суміжно `ARCH.34`-firmware (той самий middleware-клас) |
+| **FW.46 board-freeze** `.ioc` (👤) | повний `.elf` → увесь bench-день: `FW.2`-фліп · `FW.3/8/17/20/23/31/49/50/52/54/55` · `ARCH.26/41` · `SEC.2`-OTA-verify · `SEC.15`-WUT · `SEC.3`-SWD · `ARCH.35`-розводка · `radio_conf.h` → компіляція `radio.c` (SubGHz Шлях A ✅ 07-04: submodule+`RadioEvents_t` уже в репо — це останній radio-гейт); суміжно `ARCH.34`-firmware (LoRaMac-node ВЖЕ vendored у `extern/subghz-phy/lorawan` — лишилась glue-робота) |
 | **Перший live-деплой** = секрети (`S1.1`+`INF.19`+`S4.3`) → deploy (👤) | верифікації `INF.11/12/13/14/15/16` · `PUMA-IPV6-1` · `INF.10`-фліп · `S5.2` · `S3.2`-staging · `S6.1`-Upstash · Grafana-сесія (`S2.1→S2.2→S2.3` + `S2.4`-SLO + `FW.18b` + `ARCH.54`-alert) |
 | **INF.4 TLS-рішення** (👤, рекоменд. A) | `INF.3` TLS · `S6.18` `RAILS_ALLOWED_HOSTS` (публічний домен) |
 | **SE051 eval-пара** замовлення (👤) | `SE050-MIGRATION` silicon-confirm + rename-каскад · `SEC.3` Гілка-B real-I²C |
@@ -885,7 +885,7 @@
 
 #### INF.11 — `WEB3_STRICT_MODE` у deploy-конфігах (KYC fail-closed)
 - **P1** · 👤 · 🟢 · → `06_04`
-- **Стан:** Machine-half ✅ — `WEB3_STRICT_MODE="true"` заведено в `config/deploy.yml` env.clear + Akash `deploy.yaml`/`deploy.yaml.tpl` (web+job); canopy успадковує (Kamal `deploy.canopy.yml` env-less; canopy = `RAILS_ENV=production` → strict скрізь консистентно). `.kamal/secrets` НЕ чіпано (non-secret). Закриває READ-verified діру: Hadron KYC/RWA + Chainlink dispatch/callback перевіряють ЛИШЕ `WEB3_STRICT_MODE=="true"` (не `Rails.env`) → без прапора відсутній credential тихо падав у `simulate_*` (fake-KYC mint). Канон-інвентар синхронізовано: `06_04 §2.1` · `06_02 §2.8/§6`. Лишається 👤 (deploy-gated). Канон `06_04 §2.1`.
+- **Стан:** Machine-half ✅ — `WEB3_STRICT_MODE="true"` заведено в `config/deploy.yml` env.clear + Akash `deploy.yaml`/`deploy.yaml.tpl` (web+job); canopy успадковує (Kamal `deploy.canopy.yml` env-less; canopy = `RAILS_ENV=production` → strict скрізь консистентно). `.kamal/secrets` НЕ чіпано (non-secret). Закриває READ-verified діру: Hadron KYC/RWA + oracle-callback HMAC (SEC.5) перевіряють ЛИШЕ `WEB3_STRICT_MODE=="true"` (не `Rails.env`) → без прапора відсутній credential тихо падав у `simulate_*` (fake-KYC mint). (Chainlink-dispatch вибув зі STRICT-скоупу — ARCH.53 демоут: local marker без credentials.) Канон-інвентар синхронізовано: `06_04 §2.1` · `06_02 §2.8/§6`. Лишається 👤 (deploy-gated). Канон `06_04 §2.1`.
 - [ ] 👤 money-path рішення + верифікувати fail-closed на першому деплої
 
 #### INF.12 — Deploy ENV-injection drift: код `ENV.fetch` без default ∉ deploy-декларації

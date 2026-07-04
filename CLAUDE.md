@@ -93,7 +93,7 @@ uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5) > web3_critical(6
 - **`oracle_status`** має prefix → `oracle_status_fulfilled?` (НЕ `fulfilled?`).
 - **AES-ключі не покидають Ruby-процес** (`HardwareKey#cached_binary_key` — in-process LRU, без Redis-serialize).
 - **`manual_review`** (`BlockchainTransaction` AASM) = double-spend guard (tx_hash є, стан невідомий, кошти заблоковані); не авто-резолвити.
-- **Мінтинг guard-clauses:** `verified_by_iotex? && oracle_status_fulfilled? && hadron_kyc_status == "approved"`; `WEB3_STRICT_MODE=true` (prod) → стаби-raises (lazy at-call; IoTeX-fallback + Solana-creds raise у prod незалежно від прапора) → `05_02` / `web3-pipeline`.
+- **Мінтинг guard-clauses:** `verified_by_iotex? && oracle_status_fulfilled? && hadron_kyc_status == "approved"` = PATH 1 (latent — ARCH.53-демоут: Chainlink-dispatch = local marker без RPC, callback unwired); живий PATH 2 tokenomics мінтить оптимістично (guard = KYC; чесна L0-custodial + ex-post clawback). `WEB3_STRICT_MODE=true` (prod) → Hadron-стаб raises + callback-HMAC fail-fast (lazy at-call; IoTeX-fallback + Solana-creds raise у prod незалежно від прапора) → `05_02` / `web3-pipeline`.
 - **SLASH-1 positive-A gate:** необоротний `slash()` (`BlockchainBurningService`) лише за прямого доказу Кат-A (tamper, `Slashing::CauseEvidence#positive_a?`), інакше `:frozen` + Field-Audit → `05_05 §3.2`.
 - **Frontend:** лише дизайн-токени (`bg-gaia-surface`…) у shared-компонентах, `tokens(...)`, без DB у Phlex `initialize`, `focus-visible:` → `04_04`.
 - **Thin controllers** — логіка в `app/services/` / `app/workers/` (контролер = params + authz + render).
