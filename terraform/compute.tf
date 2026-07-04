@@ -1,17 +1,22 @@
 # =============================================================================
-# Ingress Anchor — Lightweight Static IP Proxy for IoT Queens
+# Ingress Anchor — Static IP entry + PRIMARY CoAP intake host (INF.17)
 # =============================================================================
 #
 # With Rails and Sidekiq running on Akash Network (decentralized compute),
-# GCP no longer hosts heavy application servers. Instead, this e2-micro instance
-# serves as a "Static Anchor" — a fixed IP address that IoT Queen gateways
-# (SIM7070G / Starlink) can reach reliably.
+# GCP hosts no heavy application servers. This e2-small instance is the fixed
+# IP that IoT Queen gateways (SIM7070G / Starlink) reach, and — since the
+# founder decision of 2026-07-04 — it RUNS the CoAP intake daemon itself:
 #
-# The Ingress Anchor runs HAProxy to forward:
-#   - UDP 5683 (CoAP telemetry from Queens) → Akash deployment
-#   - TCP 80/443 (HTTP/HTTPS web traffic)   → Akash deployment
+#   - UDP 5683: CoAP daemon (docker, lib/daemons/coap_listener) — PRIMARY.
+#       Same VPC as Cloud SQL → private IP, no Auth Proxy; Upstash over TLS.
+#       Removes one hop + the socat/Akash-IP chase from the hot path.
+#       FALLBACK = socat relay → Akash `coap` service (kept deployed, idle);
+#       switch: systemctl stop coap-daemon && systemctl start coap-relay.
+#   - TCP 80/443: HAProxy → Akash deployment (web stays decentralized —
+#       money-path/web remain on Akash by design, censorship-resistance).
 #
-# Cost: ~$7/month in europe-west1 (the Always Free e2-micro applies to US regions only)
+# Cost: ~$13/month e2-small in europe-west1 (Always Free e2-micro is US-only;
+# micro's 1 GB cannot hold the Rails daemon ~0.5 GB + HAProxy + OS headroom)
 # Purpose: Stable IP for IoT devices that cannot discover dynamic Akash IPs
 #
 # The AKASH_DEPLOYMENT_IP must be updated when the Akash deployment migrates
@@ -26,16 +31,19 @@ resource "google_compute_address" "ingress_ip" {
 }
 
 resource "google_compute_instance" "ingress_anchor" {
-  name         = "silken-net-ingress"
-  machine_type = "e2-micro"
+  name = "silken-net-ingress"
+  # e2-small (2 GB): the CoAP daemon is a full Rails boot (~0.5 GB RSS) next
+  # to HAProxy + OS — e2-micro's 1 GB has no headroom (INF.17 anchor-primary).
+  machine_type = "e2-small"
   zone         = var.zone
   tags         = ["web-nodes"]
 
   boot_disk {
     initialize_params {
       image = "debian-cloud/debian-12"
-      size  = 10
-      type  = "pd-standard"
+      # 20 GB: docker + the ghcr Rails image (~2 GB unpacked) + logs.
+      size = 20
+      type = "pd-standard"
     }
   }
 
@@ -177,14 +185,86 @@ RestartSec=5
 WantedBy=multi-user.target
 SYSTEMD_UNIT
 
-    if [ "$AKASH_IP" != "AKASH_IP_NOT_SET" ]; then
-      systemctl daemon-reload
-      systemctl enable coap-relay
-      systemctl restart coap-relay
-      logger -t ingress-anchor "CoAP UDP relay started: :5683 → $AKASH_IP:5683"
+    # (enable/start of coap-relay moved to the bring-up priority block below —
+    # the unit stays created so the FALLBACK activates by a single systemctl.)
+
+    # =========================================================================
+    # 6. CoAP daemon on the Anchor — PRIMARY intake path (INF.17, 2026-07-04)
+    # =========================================================================
+    # The daemon runs HERE: same VPC as Cloud SQL (private IP, NO Auth Proxy),
+    # Upstash over public TLS. The Akash `coap` service stays deployed as the
+    # documented FALLBACK behind the socat relay above.
+    # Secrets NEVER live in this startup script (instance metadata is world-
+    # readable to the project): /etc/silkennet/coap.env is created once as a
+    # 0600 placeholder — the operator fills real values; until then the daemon
+    # does not start and the script falls back to socat (if AKASH_IP is set).
+
+    if ! command -v docker &> /dev/null; then
+      apt-get update -qq && apt-get install -y -qq docker.io
     fi
 
-    logger -t ingress-anchor "HAProxy configured: HTTP/HTTPS/CoAP → $AKASH_IP"
+    mkdir -p /etc/silkennet
+    if [ ! -f /etc/silkennet/coap.env ]; then
+      cat > /etc/silkennet/coap.env << 'COAP_ENV'
+RAILS_ENV=production
+# Cloud SQL over the VPC private IP — no Auth Proxy on the Anchor.
+POSTGRES_HOST=${google_sql_database_instance.silken_db.private_ip_address}
+POSTGRES_USER=silken_net
+POSTGRES_PASSWORD=REQUIRED_SECRET_NOT_SET
+POSTGRES_DATABASE=silken_net_production
+# Upstash Redis (TLS) — Sidekiq enqueue target (UnpackTelemetryWorker).
+REDIS_URL=REQUIRED_SECRET_NOT_SET
+RAILS_MASTER_KEY=REQUIRED_SECRET_NOT_SET
+PROVISIONING_MASTER_KEY=REQUIRED_SECRET_NOT_SET
+SENTRY_DSN=REQUIRED_SECRET_NOT_SET
+WEB3_STRICT_MODE=true
+COAP_ENV
+      chmod 600 /etc/silkennet/coap.env
+    fi
+
+    cat > /etc/systemd/system/coap-daemon.service << 'SYSTEMD_DAEMON'
+[Unit]
+Description=SilkenNet CoAP intake daemon (primary path — INF.17)
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+ExecStartPre=-/usr/bin/docker rm -f silkennet-coap
+ExecStart=/usr/bin/docker run --name silkennet-coap --network host \
+  --env-file /etc/silkennet/coap.env \
+  ghcr.io/alexey-lukin/silken_net:latest \
+  /rails/bin/docker-entrypoint bundle exec ruby lib/daemons/coap_listener
+ExecStop=/usr/bin/docker stop silkennet-coap
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+SYSTEMD_DAEMON
+
+    systemctl daemon-reload
+
+    # ------------------------------------------------------------------------
+    # Bring-up priority: daemon (env filled) > socat fallback (AKASH_IP set)
+    # > loud warn. Both units always exist; exactly one binds UDP 5683.
+    # ------------------------------------------------------------------------
+    if ! grep -q REQUIRED_SECRET_NOT_SET /etc/silkennet/coap.env; then
+      docker pull ghcr.io/alexey-lukin/silken_net:latest || true
+      systemctl disable coap-relay 2>/dev/null || true
+      systemctl stop coap-relay 2>/dev/null || true
+      systemctl enable coap-daemon
+      systemctl restart coap-daemon
+      logger -t ingress-anchor "CoAP daemon (PRIMARY) started on :5683; socat fallback disabled"
+    elif [ "$AKASH_IP" != "AKASH_IP_NOT_SET" ]; then
+      systemctl enable coap-relay
+      systemctl restart coap-relay
+      logger -t ingress-anchor "CoAP socat FALLBACK started: :5683 → $AKASH_IP:5683 (coap.env not filled)"
+    else
+      logger -t ingress-anchor "CoAP intake NOT started: coap.env has placeholders AND akash-deployment-ip unset"
+    fi
+
+    logger -t ingress-anchor "Anchor configured: HTTP/HTTPS → $AKASH_IP; CoAP per bring-up priority above"
   EOF
 
   metadata = {

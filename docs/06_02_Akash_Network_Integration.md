@@ -198,8 +198,9 @@ Browser / API client                Queen Gateway (LoRa→CoAP)
         │                                   │
         ▼ HTTPS :443 (Cloudflare termin.)   ▼ CoAP/UDP :5683 (NO TLS)
 ┌───────────────────────────────┐    ┌───────────────────────────────┐
-│ Cloudflare Edge (Proxy ON,    │    │ Ingress Anchor (e2-micro,     │
-│ TLS termination, DDoS/WAF)    │    │ статичний GCP IP, HAProxy)    │
+│ Cloudflare Edge (Proxy ON,    │    │ Ingress Anchor (e2-small,     │
+│ TLS termination, DDoS/WAF)    │    │ статичний IP, CoAP-демон      │
+│                               │    │ PRIMARY тут — INF.17)         │
 └────────┬──────────────────────┘    └──────────┬────────────────────┘
          │ HTTPS / Cloudflare Tunnel*           │ UDP forward
          │ (origin: Akash deployment)           │
@@ -312,7 +313,7 @@ coap-client -m get coap://$INGRESS_IP:5683/health -v 6
 
 - [`00_07` — INF.4](00_07_Action_Plan_Tracker) — оригінальна задача.
 - [`00_07` — INF.6](00_07_Action_Plan_Tracker) — CoAP Proxy verification (Ingress Anchor лежить у тій же площині, бо CoAP UDP не йде через Cloudflare).
-- [`06_01`](06_01_Deployment_Kamal_Terraform) — Ingress Anchor (e2-micro, статичний IP, HAProxy).
+- [`06_01`](06_01_Deployment_Kamal_Terraform) — Ingress Anchor (e2-small, статичний IP: CoAP-демон PRIMARY + HAProxy 80/443).
 - [`06_04`](06_04_Secrets_Checklist) — `DISABLE_SSL` ENV (небезпечний override; canonical secrets-home + [`06_01`](06_01_Deployment_Kamal_Terraform) env-table).
 
 ---
@@ -398,7 +399,7 @@ services:
 
 > ✅ GHCR образ — публічний, доступний Akash-провайдерам без credentials. Дзеркалюється автоматично `.github/workflows/mirror-ghcr.yml` (`Deploy · GHCR Mirror`) — несе **Sigstore-signed SLSA build-provenance** (keyless OIDC→Fulcio/Rekor) + BuildKit SBOM, тож недовірений Akash-провайдер (або будь-хто) може криптографічно верифікувати походження+вміст образу перед pull. Команда верифікації + деталі — `SECURITY.md` (§Verifying release artifacts). Kamal паралельно пушить у GCP Artifact Registry для GCP деплою.
 
-> **Ingress Anchor:** Важкі GCP web VM замінені легковажним `e2-micro` інстансом зі статичним IP. HAProxy/socat на Ingress Anchor перенаправляє трафік до Akash deployment. Queen шлюзи надсилають CoAP на цей статичний IP, який проксіює до Akash-контейнера.
+> **Ingress Anchor:** Важкі GCP web VM замінені `e2-small` інстансом зі статичним IP. Queen шлюзи надсилають CoAP на цей статичний IP, де його приймає **демон прямо на анкорі** (PRIMARY — INF.17, founder 2026-07-04: та сама VPC, що Cloud SQL → приватний IP без Auth Proxy, −1 хоп); HAProxy проксює лише HTTP/HTTPS 80/443 до Akash. Socat-релей → Akash `coap`-сервіс лишається задокументованим fallback'ом (перемикання — `systemctl stop coap-daemon && systemctl start coap-relay`).
 
 ---
 
@@ -519,24 +520,29 @@ Queen Gateway (STM32 + SIM7070G)
     │ CoAP/UDP → статичний IP Ingress Anchor :5683
     ▼
 ┌─────────────────────────────────────────┐
-│  GCP Ingress Anchor (e2-micro)          │
-│  Статичний IP, HAProxy/socat            │
-│  CoAP/UDP :5683 → forward to Akash     │
-│  HTTP :80 → forward to Akash           │
+│  GCP Ingress Anchor (e2-small)          │
+│  Статичний IP                           │
+│  ✅ CoAP-демон :5683 — PRIMARY інтейк   │
+│     (docker, coap_listener; VPC →       │
+│     Cloud SQL приват-IP БЕЗ Auth Proxy; │
+│     Upstash TLS; INF.17 2026-07-04)     │
+│  HTTP/HTTPS :80/:443 → HAProxy → Akash │
+│  (socat :5683 → Akash = FALLBACK, off)  │
 └─────────────┬───────────────────────────┘
-              │ (forward)
-              ▼
+              │ (HTTP/S forward; CoAP далі не йде —
+              ▼  приймається на анкорі)
 ┌─────────────────────────────────────────┐
 │  Akash Provider (децентралізований)     │
 │  web:  HTTP :80 (Rails 8.1 + Puma)      │
 │        HTTPS :443 (TLS терм. — INF.4)   │
-│  coap: UDP :5683 (окремий контейнер,    │
-│        lib/daemons/coap_listener)       │
+│  coap: UDP :5683 (fallback-сервіс,      │
+│        idle поки socat вимкнений)       │
 │                                         │
 │  ┌─────────────────────────────────┐    │
 │  │ Cloud SQL Auth Proxy (in-container)│  │
 │  │ 127.0.0.1:5432 → Cloud SQL     │    │
-│  │ (HTTPS tunnel, no public IP)    │    │
+│  │ (auth через Google API; сокет → │    │
+│  │  ПУБЛІЧНИЙ IP інстанса)         │    │
 │  └─────────────────────────────────┘    │
 │                                         │
 │  ┌─────────────────────────────────┐    │

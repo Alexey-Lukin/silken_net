@@ -29,6 +29,9 @@ prometheus.scrape "silken_net_scraper" {
   // increments, so every Ruby process is its own target (06_03 §2.9).
   // job:9394 / coap:9395 are exposed service-scope only (`to: service:
   // alloy` in the SDL) — not reachable from outside the deployment.
+  // NOTE: coap:9395 is the Akash FALLBACK service (idle → honest daemon-level
+  // zeros); the PRIMARY daemon lives on the Ingress Anchor, outside this
+  // deployment's scrape reach — ceiling documented in 06_03 §2.9(б).
   // The `process` label makes sum/max by (process) queries readable;
   // `instance` (auto-set from __address__) already disambiguates.
   targets = [

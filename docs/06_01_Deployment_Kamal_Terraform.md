@@ -65,7 +65,7 @@
 | **3** | **Gas на Web3-гаманцях** | Воркери потребують нативної крипто: **MATIC** (Polygon), **ETH** (L1), **SOL** (Solana), **CELO** (Celo). Без газу → "Insufficient Funds" на кожній транзакції → Sidekiq потоне у ретраях. |
 | **4** | **LoRa-антена підключена** | **КРИТИЧНО.** Ніколи не подавай живлення без антени на SMA/U.FL порту. SX1262 відбиває RF назад у чип (high VSWR) — радіотракт згоряє за мілісекунди. Незворотно. Правило: антена → живлення. |
 | **5** | **HKDF AES-ключів (post-FW.1 + ARCH.42 + FW.2 (в))** | Кожен Soldier має **per-device session AES-128 LoRa ключ** (`aes_key[4]`, 16 bytes) + **cluster control-plane KEYB** (`bcast_key[4]`, 16 bytes — двоключова модель [`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security)); Queen — той самий KEYB як єдиний LoRa-ключ + окремий **AES-256 CoAP ключ** (`coap_key[8]`, 32 bytes). Усі деривуються з `PROVISIONING_MASTER_KEY` через HKDF з domain-separated info-strings (`"silken-aes-128-lora-key"` / `"silken-aes-128-broadcast-key"` / `"silken-aes-256-device-key"`). Перевіряй на factory bench, що backend і firmware повертають той самий байтовий ключ за тим самим salt. Симптом mismatch: сміття після декрипту (телеметрія на Rails / downlink на Солдаті). Детальніше: [`03_06 §2`](03_06_Factory_Flashing_and_Key_Provisioning). |
-| **6** | **CoAP UDP smoke test через Ingress Anchor** | **[INF.6]** Перевір end-to-end UDP-шлях `Queen → Ingress Anchor (HAProxy/socat) → Akash → CoAP daemon` ПЕРЕД першим прошиванням Queen. Без цього silent UDP failure не помітний з HTTP-only health checks. **Автоматизовано:** `.github/workflows/coap_smoke.yml` (`workflow_dispatch` для ad-hoc запуску; `workflow_call` — заведений post-deploy gate'ом у `deploy.yml`/`deploy-production.yml`, job `coap-smoke`, активується repo Variable `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST`); inputs: `host` / `port` (default `5683`) / `timeout_seconds` (default `10`) / `retries` (default `3`). **Ручна команда (з машини за межами VPC, що імітує Queen; stdlib-only Ruby, без libcoap):** <br>`bin/coap_smoke --host api.silkennet.com` <br>Зонди = freeze-contract FW.56 (точні байти: RST на сміття, `4.04` на невідомий маршрут з 0xFF-MID-піном, `2.04` лише після enqueue батча — НЕ generic liveness; семантика — [`03_02 §4`](03_02_Queen_Gateway_Firmware)). Якщо timeout: перевір (a) GCP firewall `allow-coap` UDP 5683 = `0.0.0.0/0`; (b) Ingress Anchor `socat UDP-LISTEN:5683,fork UDP:<akash-pod-ip>:5683`; (c) Akash SDL expose `5683/udp`; (d) `lib/daemons/coap_listener.rb` запущений у Sidekiq. Швидка перевірка «чи взагалі слухає UDP» через `nc`: `echo -ne '\x40\x02\x00\x01' \| nc -u -w2 api.silkennet.com 5683 \| xxd` — повертає бінарний CoAP response якщо daemon приймає UDP. |
+| **6** | **CoAP UDP smoke test через Ingress Anchor** | **[INF.6]** Перевір end-to-end UDP-шлях `Queen → Ingress Anchor → CoAP daemon` (PRIMARY: демон бере UDP прямо на анкорі — INF.17 2026-07-04; FALLBACK: socat-релей → Akash `coap`-сервіс) ПЕРЕД першим прошиванням Queen. Без цього silent UDP failure не помітний з HTTP-only health checks. **Автоматизовано:** `.github/workflows/coap_smoke.yml` (`workflow_dispatch` для ad-hoc запуску; `workflow_call` — заведений post-deploy gate'ом у `deploy.yml`/`deploy-production.yml`, job `coap-smoke`, активується repo Variable `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST`); inputs: `host` / `port` (default `5683`) / `timeout_seconds` (default `10`) / `retries` (default `3`). **Ручна команда (з машини за межами VPC, що імітує Queen; stdlib-only Ruby, без libcoap):** <br>`bin/coap_smoke --host api.silkennet.com` <br>Зонди = freeze-contract FW.56 (точні байти: RST на сміття, `4.04` на невідомий маршрут з 0xFF-MID-піном, `2.04` лише після enqueue батча — НЕ generic liveness; семантика — [`03_02 §4`](03_02_Queen_Gateway_Firmware)). Якщо timeout: перевір (a) GCP firewall `allow-coap` UDP 5683 = `0.0.0.0/0`; (b) на анкорі `systemctl status coap-daemon` (PRIMARY; env-file `/etc/silkennet/coap.env` заповнений?) АБО, у fallback-режимі, `coap-relay` (socat → `<akash-pod-ip>:5683`) + (c) Akash SDL expose `5683/udp` (`coap`-сервіс); (d) rescue-логи демона: `docker logs silkennet-coap`. Швидка перевірка «чи взагалі слухає UDP» через `nc`: `echo -ne '\x40\x02\x00\x01' \| nc -u -w2 api.silkennet.com 5683 \| xxd` — повертає бінарний CoAP response якщо daemon приймає UDP. |
 | **7** | **Schema bootstrap від squashed init_consolidated** | **[INF.7 — Phase 7]** На свіжій базі деплой `bin/rails db:setup` (= `db:create` + `db:schema:load` + `db:seed`). Ми **НЕ** використовуємо `db:migrate` в продакшні до першого деплою — всі pre-launch міграції згорнуті в `db/migrate/20260509120000_init_consolidated.rb`, а схема живе в `db/structure.sql` (включно з усіма 9 Codex-таблицями + 4 RANGE-партиційними таблицями + початковими партиціями `_default` + `y2026m04..m09`). `schema_migrations` містить рівно ОДИН рядок `20260509120000`. Якщо хтось додає incremental міграцію після цього — `StrongMigrations.start_after = 20260509120000` змусить її пройти всі checks. **НЕ** робіть squash повторно після першого деплою (втратите history) без zero-downtime плану. |
 | **8** | **PartitionMaintenanceWorker cron у Sidekiq** | **[INF.8 — Phase 7]** `30 0 * * *` UTC, `PARTITIONED_TABLES = %w[telemetry_logs gateway_telemetry_logs blockchain_transactions codex_matches]`. На день-1 нового місяця партиція повинна вже існувати — інакше `INSERT` падає з `no partition of relation`. Перевір через `psql -c "\d+ telemetry_logs"` що партиція на наступний місяць є. Якщо worker silent-fails — перевір Sentry alert (Phase 7 додав `Sentry.capture_exception` у rescue блок). |
 
@@ -99,7 +99,7 @@ terraform init
 terraform plan
 terraform apply
 # → outputs: ingress_ip, database_url
-# GCP тепер містить: Cloud SQL PostgreSQL (приватна IP) + Ingress Anchor (e2-micro, статична IP)
+# GCP тепер містить: Cloud SQL PostgreSQL (приватна IP) + Ingress Anchor (e2-small, статична IP, CoAP-демон PRIMARY)
 
 # Крок 4: Створити DNS A-запис
 # api.silkennet.com → $(terraform output -raw ingress_ip)
@@ -143,7 +143,8 @@ terraform apply
 
 # Крок 7: Верифікація
 # Коли в логах: "Listening on coap://0.0.0.0:5683" — ліс може говорити.
-# Ingress Anchor (HAProxy/socat) проксює HTTP/HTTPS/CoAP з GCP IP на Akash deployment.
+# Ingress Anchor: CoAP приймає демон ПРЯМО на анкорі (PRIMARY — INF.17);
+# HAProxy проксює HTTP/HTTPS з GCP IP на Akash deployment (socat = CoAP-fallback → Akash).
 ```
 
 ---
@@ -181,7 +182,7 @@ terraform apply
 | **Тригер деплою** | Push в `main` після успішного CI (continuous) | GitHub Release (`v*.*.*`) — створюється **release-please** (`Ops · Release`) з conventional commits → канон [`06_07 §1`](06_07_CICD_and_Runbook_Index) |
 | **Workflow** | `.github/workflows/deploy.yml` (`Deploy · Canopy`) | `.github/workflows/deploy-production.yml` (`Deploy · Production`) |
 | **Платформа** | Akash (intended primary SDL) — але CI `deploy.yml` наразі робить `kamal deploy -d canopy` (Kamal/GCP-fallback, web-only) | Akash Network |
-| **GCP ресурси** | Cloud SQL (спільна або окрема БД) + Ingress Anchor (`e2-micro`) | Cloud SQL (HA) + Ingress Anchor (`e2-micro`) |
+| **GCP ресурси** | Cloud SQL (спільна або окрема БД) + Ingress Anchor (`e2-small`) | Cloud SQL (HA) + Ingress Anchor (`e2-small`, CoAP-демон PRIMARY — INF.17) |
 | **Redis** | Upstash Serverless Redis (TLS, `rediss://`) | Upstash Serverless Redis (TLS, `rediss://`) |
 | **SSL/HTTPS** | ✅ `force_ssl` + HSTS (1рік, subdomains, preload). `DISABLE_SSL=true` для override | ✅ `force_ssl` + HSTS (1рік, subdomains, preload) |
 | **DB** | `silken_net_canopy*` — ізольований набір на тому ж Cloud SQL інстансі (`POSTGRES_DATABASE` override; INF.16) | `silken_net_production` (HA) |
@@ -195,8 +196,8 @@ terraform apply
 ┌─────────────────────────────────────────────────────────────┐
 │                    Google Cloud Platform (GCP)              │
 │  ┌──────────────────────────────────────────────────────┐   │
-│  │  Ingress Anchor (e2-micro, silken-net-ingress)      │   │
-│  │    — статична IP, HAProxy/socat                     │   │
+│  │  Ingress Anchor (e2-small, silken-net-ingress)      │   │
+│  │    — статична IP, CoAP-демон (PRIMARY) + HAProxy/socat│   │
 │  │    — проксює HTTP/HTTPS/CoAP на Akash deployment   │   │
 │  │  Cloud SQL PostgreSQL 17 (4 бази, HA, приватна IP)  │   │
 │  │  Artifact Registry (Docker images)                   │   │
@@ -243,12 +244,12 @@ terraform apply
 | **Rails web (Puma + Thruster)** | ❌ | ✅ | — | — | Повністю на Akash |
 | **Sidekiq (job role)** | ❌ | ✅ | — | — | `job` сервіс в Akash SDL |
 | **Grafana Alloy (metrics agent)** | ❌ | ✅ | — | — | `alloy` сервіс в Akash SDL, пушить у Grafana Cloud |
-| **CoAP UDP daemon (:5683)** | proxy | ✅ | — | — | Виділений `coap` сервіс в Akash SDL + Kamal `coap`-роль (INF.17); Ingress Anchor проксює UDP. Свідомо НЕ puma-thread — UDP у web-процесі сплітає lifecycle |
+| **CoAP UDP daemon (:5683)** | ✅ **PRIMARY** | fallback | — | — | **PRIMARY = демон на Ingress Anchor** (docker + systemd `coap-daemon`, VPC → Cloud SQL приватним IP без Auth Proxy — founder 2026-07-04); fallback = socat-релей → Akash `coap`-сервіс (лишається задеплоєним) + Kamal `coap`-роль. Свідомо НЕ puma-thread — UDP у web-процесі сплітає lifecycle (INF.17) |
 | **Cloud SQL PostgreSQL 17** | ✅ | — | — | — | Приватна IP, доступ через Auth Proxy |
 | **ActionCable (Solid Cable)** | ✅ | ✅ | — | — | Спільна Cloud SQL БД `cable`, LISTEN/NOTIFY (без sticky sessions) |
 | **Redis** | ❌ | — | ✅ | — | Upstash Serverless, TLS (`rediss://`) |
 | **Prometheus + Grafana + Alerting** | ❌ | — | — | ✅ | SaaS, Alloy → remote_write |
-| **Ingress Anchor** | ✅ | — | — | — | `e2-micro`, HAProxy/socat, статична IP |
+| **Ingress Anchor** | ✅ | — | — | — | `e2-small`, статична IP: CoAP-демон (PRIMARY) + HAProxy 80/443→Akash + socat (fallback) |
 | **Artifact Registry (Docker)** | ✅ | — | — | — | Kamal пушить у GCP AR |
 | **GHCR (Docker mirror)** | — | ✅ | — | — | `.github/workflows/mirror-ghcr.yml`, публічний для Akash |
 
@@ -455,7 +456,7 @@ kamal logs -f -d canopy
 terraform/
 ├── main.tf       # Provider (google ~> 7.0), GCP APIs, Artifact Registry
 ├── vpc.tf        # VPC, subnet (10.0.0.0/20), Cloud Router, Cloud NAT, Firewall
-├── compute.tf    # Ingress Anchor (e2-micro, silken-net-ingress), Static IP
+├── compute.tf    # Ingress Anchor (e2-small, silken-net-ingress), Static IP + CoAP-демон (PRIMARY)
 ├── database.tf   # Cloud SQL PostgreSQL 17, 4 databases, Private Service Access
 ├── iam.tf        # Service Account silken-net-deploy + 7 IAM roles
 ├── variables.tf  # Всі input variables з валідацією
@@ -467,7 +468,7 @@ terraform/akash/
 └── outputs.tf    # SDL path, deployment notes
 ```
 
-> **Примітка:** `redis.tf` видалено — Redis тепер обслуговується Upstash (serverless, зовнішній сервіс, не GCP). `compute.tf` більше не містить web/canopy VMs — лише Ingress Anchor (`e2-micro`) з HAProxy/socat для проксування трафіку на Akash. Grafana Alloy `config.alloy` знаходиться в `deploy/akash/config.alloy` і кодується в Base64 через `filebase64()` при рендерингу SDL шаблону.
+> **Примітка:** `redis.tf` видалено — Redis тепер обслуговується Upstash (serverless, зовнішній сервіс, не GCP). `compute.tf` більше не містить web/canopy VMs — лише Ingress Anchor (`e2-small`): CoAP-демон (PRIMARY інтейк, docker + systemd, секрети в `/etc/silkennet/coap.env` 0600 — НЕ в metadata) + HAProxy 80/443 → Akash + socat-fallback. Grafana Alloy `config.alloy` знаходиться в `deploy/akash/config.alloy` і кодується в Base64 через `filebase64()` при рендерингу SDL шаблону.
 
 ### GCP Region та Zone
 
@@ -697,21 +698,21 @@ Series D архітектура (>1M вузлів):
 | Компонент | Поточний стан | Необхідна дія |
 |-----------|--------------|--------------|
 | CoAP Listener | `lib/daemons/coap_listener.rb` (Ruby) | Достатньо до ~10k вузлів |
-| Ingress Anchor (`e2-micro`) | ✅ Виправлено (`terraform/compute.tf`) | Bottleneck при >10M дерев — див. нижче |
+| Ingress Anchor (`e2-small`) | ✅ Виправлено (`terraform/compute.tf`) | Bottleneck при >10M дерев — див. нижче |
 | Ingress Proxy (Rust/Go) | 🔴 Не реалізовано | Series D milestone |
 | Kafka / Pub-Sub | 🔴 Не реалізовано | Series D milestone |
 | Read-Only Replicas | 🔴 Не налаштовано | Terraform: `google_sql_database_instance` replica |
 | conntrack + UDP rate limit | ✅ Виправлено | `terraform/compute.tf` startup_script |
 
-#### 🌍 Front-Door Bottleneck — Ingress Anchor на `e2-micro` (Series D)
+#### 🌍 Front-Door Bottleneck — Ingress Anchor на `e2-small` (Series D)
 
-**Проблема.** Ingress Anchor (`compute.tf`, `silken-net-ingress`) — це один `e2-micro` (2 vCPU shared, 1 GB RAM, обмежений egress). HAProxy/socat на ньому проксують UDP/5683 на Akash. При >10M дерев → мільйони Queens → один процесор стає вузьким горлом для CoAP/UDP.
+**Проблема.** Ingress Anchor (`compute.tf`, `silken-net-ingress`) — це один `e2-small` (2 vCPU shared, 2 GB RAM, обмежений egress). CoAP-демон приймає UDP/5683 прямо на ньому (PRIMARY, INF.17); HAProxy проксює 80/443 на Akash. При >10M дерев → мільйони Queens → один VM стає вузьким горлом для CoAP/UDP (демонова стеля ~10k вузлів — E.5 — настане раніше за мережеву).
 
 **Опції еволюції (упорядковані за зростанням інвазивності):**
 
 | # | Підхід | Що дає | Що потрібно |
 |---|--------|--------|-------------|
-| 1 | **GCP L4 Network Load Balancer + MIG `e2-small`** | Горизонтальний autoscaling, безмежний throughput, та сама статична IP (forwarding rule) | Terraform: `google_compute_forwarding_rule` (L4 UDP) + `google_compute_region_instance_group_manager` з autoscaler; стартап-скрипт ідентичний існуючому (socat → Akash). DNS A не змінюється. |
+| 1 | **GCP L4 Network Load Balancer + MIG `e2-small`** | Горизонтальний autoscaling, безмежний throughput, та сама статична IP (forwarding rule) | Terraform: `google_compute_forwarding_rule` (L4 UDP) + `google_compute_region_instance_group_manager` з autoscaler; стартап-скрипт ідентичний існуючому (CoAP-демон на кожному інстансі MIG; за стелею демона — ARCH.2 Rust/Go proxy). DNS A не змінюється. |
 | 2 | **Cloudflare Spectrum (UDP forwarding)** | Глобальний anycast → найближча PoP-нода, DDoS-фільтрація, без власної VM-інфраструктури | Cloudflare Enterprise (Spectrum — paid add-on); CNAME `api.silkennet.com` на Spectrum endpoint; whitelist Akash origin IP. GCP Ingress Anchor можна вимкнути. |
 | 3 | **Ingress Proxy (Rust/Go) + Kafka** (нижче) | Stateless дешифрування AES-CBC + батч у Kafka до того, як Rails побачить пакет | Власна розробка (див. наступний підрозділ). Поєднується з #1 або #2 — L4/Spectrum дають мережевий шар, Proxy дає прикладний. |
 

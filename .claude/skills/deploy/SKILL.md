@@ -32,6 +32,10 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 
 - **Akash + GCP — failover, не «або-або».** Rails-ворклоад на Akash; GCP тримає
   Cloud SQL + є failover-ціллю (Redis — зовнішній **Upstash** Serverless TLS, не GCP). → `06_01` / `06_02`.
+- **CoAP-інтейк: PRIMARY = демон на Ingress Anchor** (e2-small; docker+systemd,
+  VPC → Cloud SQL приватним IP БЕЗ Auth Proxy; секрети `/etc/silkennet/coap.env`,
+  НЕ в metadata). Akash `coap`-сервіс = задеплоєний idle-**fallback** за socat;
+  перемикання = 2×systemctl. Money/web лишаються на Akash (цензуростійкість). → `06_01` / `06_02`.
 - **Cloud SQL Auth Proxy авторизує через Google API, але СОКЕТ іде на IP інстанса** —
   з Akash (поза VPC) досяжний лише ПУБЛІЧНИЙ IP → `ipv4_enabled = true` обов'язковий
   (authorized_networks порожній — доступ тільки IAM-proxy; ENCRYPTED_ONLY). private-only
