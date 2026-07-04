@@ -1397,6 +1397,17 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Вхід** | `naas_contract_id` (Integer) |
 | **Сервіси** | `Polygon::HadronComplianceService.new.register_asset!(naas_contract)` |
 
+#### `HadronKycVerificationWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `web3_low` |
+| **Retry** | 5 |
+| **Тригер** | [KYC.1] `after_commit` на біндингу/зміні `crypto_public_address` (Organization / Wallet) |
+| **Вхід** | `subject_type` ("Wallet"/"Organization" — whitelist), `subject_id` |
+| **Сервіси** | `Polygon::HadronComplianceService` → `verify_investor!` (wallet із власною адресою) / `verify_organization!` (custodial-бенефіціар) |
+| **Side Effects** | Пише `hadron_kyc_status` (approved/rejected) на суб'єкті; custodial-wallet без власної адреси — skip (успадковує org-статус через `Wallet#kyc_approved_for_minting?`). Dev/no-key = simulate-approve; prod strict = реальний Hadron API. Канон-гейт: [`05_02` — Крок E](05_02_Proof_of_Growth_Pipeline). |
+
 #### `TreasuryMonitorWorker`
 
 | Параметр | Значення |
@@ -1452,6 +1463,17 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Тригер** | `AuditLogWorker` |
 | **Вхід** | `audit_log_id` (Integer) |
 | **Сервіси** | `Filecoin::ArchiveService.new(audit_log).archive!` |
+
+#### `FilecoinVerificationSweepWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `low` |
+| **Retry** | 2 |
+| **Тригер** | Sidekiq cron: `40 4 * * *` (щодня 04:40 UTC) |
+| **Вхід** | — |
+| **Сервіси** | `Filecoin::VerificationService.new(audit_log).verify!` |
+| **Side Effects** | [E.60] Озброєний content-CID guard: звіряє свіжо-заархівовані (24h) + random-вибірку старших архівів з IPFS. Mismatch → ERROR-лог + `FILECOIN_VERIFICATION_FAILURES_TOTAL{reason}`; gateway-флейк = unreachable (skip, без raise). Канон: [`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline). |
 
 #### `StreamrBroadcastWorker`
 

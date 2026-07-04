@@ -92,6 +92,48 @@ RSpec.describe Polygon::HadronComplianceService do
     end
   end
 
+  # [KYC.1] KYC організації-бенефіціара (custodial-мінт успадковує цей статус).
+  describe "#verify_organization!" do
+    let(:organization) { create(:organization) }
+
+    context "when simulation mode (no API key)" do
+      before do
+        allow(Rails.application.credentials).to receive(:hadron_api_key).and_return(nil)
+      end
+
+      it "approves the organization KYC status" do
+        result = described_class.new.verify_organization!(organization)
+
+        expect(result).to eq("approved")
+        expect(organization.reload.hadron_kyc_status).to eq("approved")
+      end
+    end
+
+    context "when Hadron API returns rejected" do
+      before do
+        allow(Rails.application.credentials).to receive(:hadron_api_key).and_return("test-hadron-key")
+        stub_request_with_response({ "status" => "rejected" })
+      end
+
+      it "sets organization status to rejected" do
+        result = described_class.new.verify_organization!(organization)
+
+        expect(result).to eq("rejected")
+        expect(organization.reload.hadron_kyc_status).to eq("rejected")
+      end
+    end
+
+    context "when organization has a blank crypto address" do
+      it "raises ComplianceError" do
+        organization.crypto_public_address = ""
+
+        expect {
+          described_class.new.verify_organization!(organization)
+        }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /crypto_public_address/)
+      end
+    end
+  end
+
   describe "#register_asset!" do
     let(:naas_contract) { create(:naas_contract) }
 

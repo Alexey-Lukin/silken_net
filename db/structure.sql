@@ -1730,7 +1730,8 @@ CREATE TABLE public.organizations (
     alert_threshold_critical_z numeric(5,2) DEFAULT 2.5,
     ai_sensitivity numeric(3,2) DEFAULT 0.7,
     data_region character varying DEFAULT 'eu-west'::character varying,
-    solana_public_address character varying
+    solana_public_address character varying,
+    hadron_kyc_status character varying DEFAULT 'pending'::character varying NOT NULL
 );
 
 
@@ -7199,5 +7200,5 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
-('20260704070000');
+('20260704210000');
 

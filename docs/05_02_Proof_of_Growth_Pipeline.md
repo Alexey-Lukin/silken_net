@@ -667,14 +667,23 @@ log.update!(oracle_status: "failed")
 - `app/workers/mint_carbon_coin_worker.rb` — queue: `web3_critical` (prio 6), retry: 5
 - `app/services/blockchain_minting_service.rb`
 
-**Trustless Guard Clauses (лише при oracle-driven flow з telemetry_log):**
+**Trustless Guard Clauses (oracle-гілки — лише при flow з telemetry_log):**
 ```ruby
 raise "Security Breach: Data not verified by IoTeX"               unless telemetry_log.verified_by_iotex?
 raise "Security Breach: Chainlink Oracle consensus not fulfilled"  unless telemetry_log.oracle_status_fulfilled?  # enum method
-raise "Compliance Breach: Wallet is not Hadron KYC approved"      unless wallet.hadron_kyc_status == "approved"
 # TokenomicsEvaluatorWorker без log — оптимістичний мінт: growth_points зараховані
-# credit! ДО/паралельно verify (НЕ downstream від нього), цей gate НЕ діє на
+# credit! ДО/паралельно verify (НЕ downstream від нього), oracle-gate НЕ діє на
 # tokenomics-шляху (anti-fraud = ex-post clawback) → §Модель довіри + ARCH.53.
+
+# [KYC.1] KYC-гейт діє на ОБОХ шляхах, per-tx SKIP (S2 — не raise на весь батч;
+# skipped tx лишається :pending до верифікації). Гейт = статус БЕНЕФІЦІАРА адреси:
+@wallet_mapping.select { |_id, tx| !tx.wallet.kyc_approved_for_minting? }  # → skip
+# Wallet#kyc_approved_for_minting?: власна адреса → власний hadron_kyc_status;
+# custodial (без власної адреси, мінт на адресу організації) → успадковує
+# organizations.hadron_kyc_status. Approval-шлях: біндинг/зміна crypto_public_address
+# (Organization АБО Wallet) → after_commit → HadronKycVerificationWorker →
+# HadronComplianceService (dev/no-key = simulate-approve; prod strict = реальний API);
+# зміна адреси скидає статус у pending (KYC чіпляється до адреси, ре-верифікація).
 ```
 
 **Oracle Balance Check:**
@@ -800,7 +809,7 @@ total = base + bonus    # max: 10_000 + 62×100 = 16_200 lamports = 0.0162 USDC
 >
 > - `growth_points` зараховуються у `wallet.balance` через `Wallet#credit!` у `TelemetryUnpackerService.commit_telemetry` **до** проходження пакетом IoTeX/Chainlink. Тобто upstream-перевірка для Path 2 — це **AES-256-CBC decrypt CoAP batch (Gateway key) → AES-128-ECB decrypt per-record (Tree LoRa key) + `valid_sensor_data?`** (per-packet integrity perimeter, post-ARCH.42), а **не** повний oracle pipeline.
 > - Path 1 (oracle-driven mint per-telemetry) і Path 2 (hourly tokenomics aggregate) — **окремі шляхи мінтингу для тих самих growth_points**: Path 1 мінтить за конкретним verified `telemetry_log`, Path 2 агрегує накопичений `wallet.balance`. Без розмежування — циклічна залежність "не можна нарахувати tokenomics-bonus, доки oracle не підтвердив сам bonus".
-> - **Hadron KYC є справжнім security perimeter Path 2** — `BlockchainMintingService` raise `Compliance Breach` для будь-якого `hadron_kyc_status != "approved"` незалежно від присутності `telemetry_log`. Це блокує ескалацію fake-`growth_points` (з compromised AES-key) у мінт через non-KYC wallet.
+> - **Hadron KYC є справжнім security perimeter Path 2** — `BlockchainMintingService` per-tx SKIP (S2; tx лишається `:pending`) для будь-якого гаманця з `!kyc_approved_for_minting?` незалежно від присутності `telemetry_log`; гейт = статус **бенефіціара** адреси (власний або успадкований від custodial-організації — [KYC.1], Крок E). Це блокує ескалацію fake-`growth_points` (з compromised AES-key) у мінт через non-KYC wallet.
 > - Spec coverage: `spec/services/blockchain_minting_service_spec.rb` → context "tokenomics flow without telemetry_log [S6.12]".
 > - **Залишковий ризик (документований):** компрометація per-device LoRa AES-128 ключа конкретного дерева → fake `growth_points` зараховуються `Wallet#credit!` → Path 2 щогодини мінтить SCC якщо wallet KYC-approved. Mitigation track: per-device HKDF key provisioning (FW.1 / SEC.3) + **AES-128-CCM** з 8-byte MIC + Frame Counter (FW.2 post-ARCH.42) + Hash Ratchet KDF rotation (FW.17) — обидва P0 у roadmap до польового deploy.
 

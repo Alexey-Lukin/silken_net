@@ -254,6 +254,39 @@ end
         expect(good_tx.reload.status).to eq("sent")     # approved minted
         expect(bad_tx.reload.status).to eq("pending")   # non-approved left waiting, NOT rolled back
       end
+
+      # [KYC.1] Custodial-гаманець (без власної адреси) мінтить на адресу організації
+      # → KYC-гейт = статус БЕНЕФІЦІАРА (org), не мертвий wallet-pending.
+      it "mints a custodial wallet (no own address) when its ORGANIZATION is KYC-approved" do
+        tree = create(:tree)
+        wallet = tree.wallet
+        wallet.update_column(:crypto_public_address, nil)
+        wallet.organization.update!(hadron_kyc_status: "approved")
+
+        tx = wallet.blockchain_transactions.create!(
+          amount: 100, token_type: :carbon_coin, status: :pending,
+          to_address: wallet.organization.crypto_public_address, locked_points: 1000
+        )
+
+        expect { described_class.call_batch([ tx.id ]) }.not_to raise_error
+        expect(tx.reload.status).to eq("sent")
+      end
+
+      it "skips a custodial wallet while its organization is still pending" do
+        tree = create(:tree)
+        wallet = tree.wallet
+        wallet.update_column(:crypto_public_address, nil)
+        wallet.organization.update!(hadron_kyc_status: "pending")
+
+        tx = wallet.blockchain_transactions.create!(
+          amount: 100, token_type: :carbon_coin, status: :pending,
+          to_address: wallet.organization.crypto_public_address, locked_points: 1000
+        )
+
+        expect(mock_client).not_to receive(:transact)
+        expect { described_class.call_batch([ tx.id ]) }.not_to raise_error
+        expect(tx.reload.status).to eq("pending")
+      end
     end
   end
 

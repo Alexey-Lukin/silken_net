@@ -766,6 +766,7 @@ any ──report_fault──► faulty
 | `name` | string | Унікальна назва |
 | `billing_email` | string | Нормалізований (lowercase) |
 | `crypto_public_address` | string | Ethereum/Polygon-адреса (EIP-55, strip without downcase) |
+| `hadron_kyc_status` | string | [KYC.1] KYC бенефіціара custodial-мінту (default `pending`; успадковується гаманцями без власної адреси через `Wallet#kyc_approved_for_minting?`); біндинг/зміна адреси → reset у `pending` + enqueue `HadronKycVerificationWorker` |
 | `data_region` | string | `eu-west / eu-central / us-east / us-west / ap-southeast` (GDPR sharding) |
 | `alert_threshold_critical_z` | decimal | Поріг Z для власних тривог (0..10) |
 | `ai_sensitivity` | decimal | Чутливість AI (0..1) |
@@ -881,7 +882,7 @@ any ──report_fault──► faulty
 | `esg_retired_balance` | decimal | Списані балансом ESG-retired |
 | `crypto_public_address` | string | Polygon/Ethereum-адреса гаманця (EIP-55) |
 | `solana_public_address` | string | Solana Base58-адреса (для мікро-нагород) |
-| `hadron_kyc_status` | string | KYC статус Polygon Hadron (default: `pending`) |
+| `hadron_kyc_status` | string | KYC статус Polygon Hadron (default: `pending`); [KYC.1] зміна `crypto_public_address` скидає у `pending` + enqueue `HadronKycVerificationWorker` (KYC чіпляється до адреси) |
 
 **Ключові методи:**
 
@@ -892,6 +893,7 @@ any ──report_fault──► faulty
 | `release_locked_funds!(amount)` | Повертає до `balance` |
 | `credit!(points)` | Зараховує з урахуванням `carbon_sequestration_coefficient` породи |
 | `lock_and_mint!(points_to_lock, threshold, token_type)` | Повний цикл емісії SCC (курс — [`05_03`](05_03_Tokenomics_SCC_and_SFC)) |
+| `kyc_approved_for_minting?` | [KYC.1] Гейт мінтингу = статус БЕНЕФІЦІАРА адреси: власна адреса → власний статус; custodial (без власної) → успадковує `organizations.hadron_kyc_status` (гейт — [`05_02` — Крок E](05_02_Proof_of_Growth_Pipeline)) |
 | `broadcast_balance_update` | Turbo Stream оновлення UI |
 
 > **[E.66] Toucan-prune:** `lock_for_toucan_bridge!` / `finalize_spend!` / `toucan_bridged_balance` видалено (flow DEAD, 0 enqueue-callerів; failure-path мав money-integrity діру — несиметричний rollback). Escrow-примітив воскресає з git при E.20-go (locked у mint-flow = «сконвертовано назавжди» by design — finalize не потрібен).

@@ -68,7 +68,7 @@ class BlockchainMintingService < ApplicationService
   def initialize(transaction_ids, telemetry_log: nil)
     @transactions = BlockchainTransaction.where(id: transaction_ids)
                                          .where.not(status: :confirmed)
-    @wallet_mapping = @transactions.includes(wallet: :tree).index_by(&:id)
+    @wallet_mapping = @transactions.includes(wallet: [ :tree, :organization ]).index_by(&:id)
     @telemetry_log = telemetry_log
   end
 
@@ -105,7 +105,9 @@ class BlockchainMintingService < ApplicationService
       missing_wallet.each_key { |id| @wallet_mapping.delete(id) }
     end
 
-    unapproved = @wallet_mapping.select { |_id, tx| tx.wallet.hadron_kyc_status != "approved" }
+    # [KYC.1] Гейт = статус БЕНЕФІЦІАРА адреси (власний АБО успадкований від
+    # custodial-організації — Wallet#kyc_approved_for_minting?).
+    unapproved = @wallet_mapping.select { |_id, tx| !tx.wallet.kyc_approved_for_minting? }
     if unapproved.any?
       Rails.logger.warn "🚫 [Compliance] Mint skipped for #{unapproved.size} non-Hadron-KYC-approved wallet(s)."
       unapproved.each_key { |id| @wallet_mapping.delete(id) }

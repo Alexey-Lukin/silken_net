@@ -218,4 +218,39 @@ RSpec.describe Organization, type: :model do
       )
     end
   end
+
+  # [KYC.1] KYC чіпляється до адреси-бенефіціара — зміна адреси = ре-верифікація.
+  describe "Hadron KYC lifecycle" do
+    it "defaults to pending and validates the status set" do
+      org = create(:organization)
+      expect(org.hadron_kyc_status).to eq("pending")
+
+      org.hadron_kyc_status = "weird"
+      expect(org).not_to be_valid
+    end
+
+    it "enqueues verification on create (address bound at birth)" do
+      expect {
+        create(:organization)
+      }.to change { HadronKycVerificationWorker.jobs.size }.by(1)
+    end
+
+    it "resets approved → pending and re-enqueues when the address changes" do
+      org = create(:organization, hadron_kyc_status: "approved")
+
+      expect {
+        org.update!(crypto_public_address: "0x" + "e" * 40)
+      }.to change { HadronKycVerificationWorker.jobs.size }.by(1)
+
+      expect(org.reload.hadron_kyc_status).to eq("pending")
+      expect(HadronKycVerificationWorker.jobs.last["args"]).to eq([ "Organization", org.id ])
+    end
+
+    it "keeps an explicitly-set status when address and status change together" do
+      org = create(:organization)
+      org.update!(crypto_public_address: "0x" + "f" * 40, hadron_kyc_status: "approved")
+
+      expect(org.reload.hadron_kyc_status).to eq("approved")
+    end
+  end
 end

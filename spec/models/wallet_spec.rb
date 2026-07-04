@@ -368,4 +368,54 @@ RSpec.describe Wallet, type: :model do
       end
     end
   end
+
+  # [KYC.1] KYC бенефіціара: власна адреса → власний статус; custodial → org.
+  describe "#kyc_approved_for_minting?" do
+    let(:wallet) { create(:tree).wallet }
+
+    it "uses the wallet's own status when it has its own address" do
+      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
+      expect(wallet.kyc_approved_for_minting?).to be true
+
+      wallet.update!(hadron_kyc_status: "pending")
+      expect(wallet.kyc_approved_for_minting?).to be false
+    end
+
+    it "inherits the organization's status for a custodial wallet (no own address)" do
+      wallet.update_column(:crypto_public_address, nil)
+
+      wallet.organization.update!(hadron_kyc_status: "approved")
+      expect(wallet.reload.kyc_approved_for_minting?).to be true
+
+      wallet.organization.update!(hadron_kyc_status: "pending")
+      expect(wallet.reload.kyc_approved_for_minting?).to be false
+    end
+
+    it "is false for a custodial wallet without an organization" do
+      wallet.update_column(:crypto_public_address, nil)
+      wallet.update_column(:organization_id, nil)
+
+      expect(wallet.reload.kyc_approved_for_minting?).to be false
+    end
+  end
+
+  describe "KYC re-verification on address change (KYC.1)" do
+    let(:wallet) { create(:tree).wallet }
+
+    it "resets status to pending and enqueues verification when the address changes" do
+      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
+
+      expect {
+        wallet.update!(crypto_public_address: "0x" + "c" * 40)
+      }.to change { HadronKycVerificationWorker.jobs.size }.by(1)
+
+      expect(wallet.reload.hadron_kyc_status).to eq("pending")
+      expect(HadronKycVerificationWorker.jobs.last["args"]).to eq([ "Wallet", wallet.id ])
+    end
+
+    it "keeps an explicitly-set status when address and status change together" do
+      wallet.update!(crypto_public_address: "0x" + "d" * 40, hadron_kyc_status: "approved")
+      expect(wallet.reload.hadron_kyc_status).to eq("approved")
+    end
+  end
 end

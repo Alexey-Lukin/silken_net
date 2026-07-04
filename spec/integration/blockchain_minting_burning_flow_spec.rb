@@ -7,7 +7,13 @@ RSpec.describe "Blockchain minting and burning pipeline" do
   let(:cluster) { create(:cluster, organization: organization) }
   let(:tree_family) { create(:tree_family) }
   let!(:tree) { create(:tree, cluster: cluster, tree_family: tree_family) }
-  let!(:wallet) { (tree.wallet || create(:wallet, tree: tree)).tap { |w| w.update_column(:hadron_kyc_status, "approved") } }
+  # [KYC.1] Власна адреса + approved: гейт = статус бенефіціара адреси
+  # (без власної адреси правив би org-статус — kyc_approved_for_minting?).
+  let!(:wallet) do
+    (tree.wallet || create(:wallet, tree: tree)).tap do |w|
+      w.update_columns(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
+    end
+  end
   let(:naas_contract) { create(:naas_contract, organization: organization, cluster: cluster) }
 
   before do

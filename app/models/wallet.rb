@@ -26,6 +26,23 @@ class Wallet < ApplicationRecord
   # Стандартний формат Ethereum/Polygon адреси для On-Chain операцій
   validates_eth_address :crypto_public_address, allow_blank: true
 
+  # [KYC.1] KYC чіпляється до адреси-бенефіціара: власна адреса → власний статус;
+  # зміна адреси = новий суб'єкт → скидання у pending + ре-верифікація.
+  before_update :reset_hadron_kyc_on_address_change
+  after_commit :enqueue_hadron_kyc_verification,
+               if: -> { saved_change_to_crypto_public_address? && crypto_public_address.present? }
+
+  # [KYC.1] Ефективний KYC-гейт мінтингу — статус БЕНЕФІЦІАРА адреси призначення
+  # (дзеркало lock_and_mint!: власна адреса АБО custodial-адреса організації).
+  # Custodial-гаманець (без власної адреси) успадковує статус організації.
+  def kyc_approved_for_minting?
+    if crypto_public_address.present?
+      hadron_kyc_status == "approved"
+    else
+      organization&.hadron_kyc_status == "approved"
+    end
+  end
+
   # Троттлінг трансляції: оновлюємо UI не частіше ніж раз на N секунд,
   # щоб уникнути "шторму" WebSocket-повідомлень при масовій телеметрії.
   BROADCAST_THROTTLE_SECONDS = 10
@@ -154,5 +171,17 @@ class Wallet < ApplicationRecord
 
     Rails.cache.write(cache_key, true, expires_in: BROADCAST_THROTTLE_SECONDS.seconds)
     true
+  end
+
+  # [KYC.1] Явний одночасний сет статусу (verify-воркер / seeds) має пріоритет.
+  def reset_hadron_kyc_on_address_change
+    return unless will_save_change_to_crypto_public_address?
+    return if will_save_change_to_hadron_kyc_status?
+
+    self.hadron_kyc_status = "pending"
+  end
+
+  def enqueue_hadron_kyc_verification
+    HadronKycVerificationWorker.perform_async("Wallet", id)
   end
 end

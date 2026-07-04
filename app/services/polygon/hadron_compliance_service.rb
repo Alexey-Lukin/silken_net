@@ -34,6 +34,22 @@ module Polygon
       new_status
     end
 
+    # [KYC.1] KYC організації-бенефіціара: custodial-гаманці (без власної адреси)
+    # мінтять на адресу організації → її статус успадковується
+    # (Wallet#kyc_approved_for_minting?).
+    def verify_organization!(organization)
+      raise ComplianceError, "Organization must have a crypto_public_address" if organization.crypto_public_address.blank?
+
+      response = check_kyc_status(organization.crypto_public_address)
+
+      new_status = response[:approved] ? "approved" : "rejected"
+      organization.update!(hadron_kyc_status: new_status)
+
+      Rails.logger.info "🛡️ [Hadron] KYC #{new_status} for Organization ##{organization.id} (#{organization.crypto_public_address})"
+
+      new_status
+    end
+
     # Реєструє фізичну лісову ділянку (NaaSContract) як RWA на Hadron.
     # Зберігає отриманий asset_id у NaaSContract.
     def register_asset!(naas_contract)

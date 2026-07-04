@@ -107,16 +107,20 @@ puts "   ⚙️  Системні параметри:   #{SystemParameter.count}
 # =========================================================================
 # 1. МАКРОЕКОНОМІКА ТА ЛЮДИ
 # =========================================================================
+# [KYC.1] Явний approved: dev-сіди детерміновані без Sidekiq-прогону
+# (у проді статус ставить HadronKycVerificationWorker на біндингу адреси).
 active_bridge = Organization.create!(
   name: "ActiveBridge",
   crypto_public_address: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
-  billing_email: "finance@activebridge.org"
+  billing_email: "finance@activebridge.org",
+  hadron_kyc_status: "approved"
 )
 
 eco_future_fund = Organization.create!(
   name: "EcoFuture Fund",
   crypto_public_address: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
-  billing_email: "investments@ecofuture.fund"
+  billing_email: "investments@ecofuture.fund",
+  hadron_kyc_status: "approved"
 )
 
 puts "👤 Створення Патрульних..."
