@@ -25,9 +25,9 @@ BINDIR   = .
 OPENSSL_CFLAGS = $(shell pkg-config --cflags openssl 2>/dev/null)
 OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
-.PHONY: all queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet cmd_queue fauna bme280 tdma cad coverage size-check asan clean
+.PHONY: all queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet cmd_queue fauna bme280 tdma helium cad coverage size-check asan clean
 
-all: queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet cmd_queue fauna bme280 tdma cad
+all: queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota attest key_ratchet cmd_queue fauna bme280 tdma helium cad
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -69,6 +69,10 @@ sym_selftest: $(BINDIR)/test_sym_selftest
 # [FW.2] Queen RX-маршрутизація + 29B CoAP-запис — pure байти, без OpenSSL.
 rx_route: $(BINDIR)/test_queen_rx_route
 	@./$(BINDIR)/test_queen_rx_route
+
+# [ARCH.34] Helium SOS pure-половина: wire-парність з HeliumSosWorker + тригер.
+helium: $(BINDIR)/test_helium_sos
+	@./$(BINDIR)/test_helium_sos
 
 at_engine: $(BINDIR)/test_at_engine
 	@./$(BINDIR)/test_at_engine
@@ -202,6 +206,9 @@ $(BINDIR)/test_ccm_selftest: test_ccm_selftest.c hal_mock.h ../common/lora_ccm.h
 $(BINDIR)/test_queen_rx_route: test_queen_rx_route.c ../queen/rx_route.h ../common/lora_ccm.h ../common/ccm_kat_vectors.h
 	$(CC) $(CFLAGS) -o $@ test_queen_rx_route.c
 
+$(BINDIR)/test_helium_sos: test_helium_sos.c ../queen/helium_sos.h
+	$(CC) $(CFLAGS) -o $@ test_helium_sos.c
+
 # [ARCH.42] On-target ECB/CBC self-test (ARCH.42 transitional paths) —
 # host verification via OpenSSL mock (HAL_MOCK_SYM_ENABLED).
 $(BINDIR)/test_sym_selftest: test_sym_selftest.c hal_mock.h ../common/sym_selftest.h ../common/sym_kat_vectors.h
@@ -212,7 +219,7 @@ clean:
 	      $(BINDIR)/test_tinyml $(BINDIR)/test_logmel $(BINDIR)/test_encryption \
 	      $(BINDIR)/test_seed_derivation $(BINDIR)/test_ccm $(BINDIR)/test_ccm_selftest \
 	      $(BINDIR)/test_sym_selftest $(BINDIR)/test_queen_attest \
-	      $(BINDIR)/test_queen_rx_route \
+	      $(BINDIR)/test_queen_rx_route $(BINDIR)/test_helium_sos \
 	      $(BINDIR)/test_at_engine $(BINDIR)/test_uart_rx_ring \
 	      $(BINDIR)/test_flash_kv $(BINDIR)/test_flash_ring $(BINDIR)/test_flash_ota \
 	      $(BINDIR)/test_key_ratchet $(BINDIR)/test_soldier_cmd_queue \

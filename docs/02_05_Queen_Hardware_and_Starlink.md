@@ -637,24 +637,26 @@ Queen переходить у Helium режим автоматично коли:
 3. CIFO + Flash Ring Buffer fill > 50% (загроза втрати даних, якщо все ще нема uplink)
 
 ```c
-// firmware/queen/main.c — пропозиція ARCH.34
-#define HELIUM_FALLBACK_THRESHOLD_MIN  30   // хв без uplink перед активацією
-#define HELIUM_PAYLOAD_AGGREGATE_MAX   11   // байт корисного payload у LoRaWAN frame
-#define HELIUM_BLIND_WINDOW_MAX_MS     20000  // верхній ліміт сліпоти (< IWDG ~26.6 с)
-
-if (uplink_down_minutes >= HELIUM_FALLBACK_THRESHOLD_MIN &&
-    q2q_backhaul_unavailable &&
-    buffer_fill_pct >= 50) {
-    // [ARCH.54-рішення 2026-07-03] SOS-only: 12B-кадр про СЕБЕ (wire 📐 —
-    // 06_08 §1.2), НЕ телеметрія кластера (лямбда-агрегат відкинуто:
-    // фізика SF12/51B + Fair Use — ⚠️-блок 06_08; дані чекають у ринзі)
-    HAL_IWDG_Refresh(&hiwdg);                           // refresh ДО входу в сліпу зону
-    queen_helium_lorawan_uplink(sos_frame_12b);         // multi-channel hop, OTAA
-    Radio_Reinit_RawLoRa_868MHz();                      // повернути PHY у raw LoRa P2P 868.0 MHz, AES-128-ECB (post-ARCH.42)
-    Radio.Rx(LORA_RX_INFINITE);                         // одразу примусово відкрити RX-вікно
-    HAL_IWDG_Refresh(&hiwdg);                           // та одразу після виходу
+// firmware/queen/main.c + queen/helium_sos.h — SHIPPED (owned-обв'язка, 2026-07-04).
+// Константи/предикат/wire-pack — pure у helium_sos.h (host-тести test_helium_sos.c);
+// SOS-only 12B про СЕБЕ (wire 📐 — 06_08 §1.2), лямбда-агрегат відкинуто 2026-07-03.
+uint8_t fill_pct = (uint8_t)(((uint32_t)cache_count * 100u) / CACHE_MAX_ENTRIES);
+if (Helium_Sos_Should_Fire(min_since_uplink_ok, min_since_last_sos,
+                           fill_pct, /*q2q_unavailable=*/1)) {
+    uint32_t did = Helium_Did_From_Uid(queen_uid); // 0 (UNPROV) не кричить
+    if (did != 0u) {
+        uint8_t sos[HELIUM_SOS_WIRE_LEN];
+        Helium_Sos_Pack(sos, did, 0u /*vcap: ADC-канал = board-freeze*/,
+                        Helium_Sos_Error_Code(fill_pct), g_uptime_minutes, 0u);
+        queen_helium_lorawan_uplink(sos); // ВСЯ hard-rule обв'язка всередині:
+        // pre-IWDG → [гейт ARCH34_HELIUM_ENABLED] Helium_Mac_SendSos(sos, 20000)
+        // → Radio_Reinit_RawLoRa_868MHz() → Restore_ECB_Mode() → бюджет-вирок
+        // (перевищення свідомо НЕ годує IWDG — reset ~26.6 с повертає вуха).
+    }
 }
 ```
+
+> **[transitional] fill-стеля:** джерело `fill_pct` сьогодні — дедуплікований CIFO (запис/DID), тож кластер < 25 Солдатів фізично не набере 50% і SOS не стрельне; чесний append-fill дасть ARCH.35-ринг (гейтований). Відкрите питання формули — [`00_07` ARCH.34](00_07_Action_Plan_Tracker).
 
 > **🔴 Hard Rule (Radio-blindness mitigation, ARCH.34):**
 > Будь-який виклик `queen_helium_lorawan_uplink()` ОБОВ'ЯЗКОВО супроводжується:
@@ -676,19 +678,21 @@ if (uplink_down_minutes >= HELIUM_FALLBACK_THRESHOLD_MIN &&
 
 | Крок | Дія | Де |
 |------|-----|----|
-| LoRaWAN MAC-stack | Інтегрувати LoRaMac-node (Semtech BSD-3) у Queen firmware | `firmware/queen/lorawan/` (новий) |
+| Owned-обв'язка + wire + тригер | ✅ 2026-07-04: `helium_sos.h` (pure, host-tested) + `queen_helium_lorawan_uplink()` hard-rule скелет | `firmware/queen/` |
+| LoRaWAN MAC-stack | Завендорити ST-форк LoRaMac-node submodule@v2.6.2 (⚠️ `subghz-phy/lorawan/` — то LBM radio-шар, НЕ MAC; команда — [`00_07` ARCH.34](00_07_Action_Plan_Tracker)) + adapter-TU `Helium_Mac_SendSos` | `firmware/extern/stm32-mw-lorawan` |
 | DevEUI / AppEUI / AppKey | Зареєструвати **кожну Queen** (не Soldier!) у [Helium Console](https://console.helium.com/) | Helium |
 | HTTP Integration | Налаштувати webhook → `https://api.silkennet.com/api/v1/telemetry/helium` | Helium Console |
 | Rails endpoint | `POST /api/v1/telemetry/helium` → `HeliumSosWorker` (HMAC `X-Helium-Signature`, патерн oracle_callbacks) | ✅ Rails API (ARCH.34 backend-half, 2026-07-03) |
 | dev_eui-мапінг | `gateways.helium_dev_eui` (unique) + cross-check `queen_did` у кадрі проти hex-частини uid | ✅ Backend; повна `GatewayLoraWanCredentials` (AppKey, AR Encryption) — при живій Console-інтеграції (YAGNI зараз) |
-| OTAA join state | Persistent зберігання у Queen Flash (FCntUp counter survives reboot) | `firmware/queen/main.c` |
+| OTAA join state | FCntUp survives reboot: LoRaMac NVM → Queen `flash_kv` (ключі 0x30+ зарезервовано; adapter-TU) | `firmware/queen/main.c` |
 
 ### Статус Helium Fallback
 
 | Компонент | Стан |
 |-----------|------|
 | Концепт і архітектура (Queen-side LoRaWAN) | ✅ Визначено |
-| LoRaWAN MAC-stack у Queen firmware | 🔴 Не реалізовано (ARCH.34 firmware-half, bench-ера) |
+| Owned-обв'язка: wire-pack (парність з бекендом) + тригер + hard-rule скелет `queen_helium_lorawan_uplink()` | ✅ 2026-07-04 (host-тести `test_helium_sos.c`; гейт `ARCH34_HELIUM_ENABLED 0`) |
+| LoRaWAN MAC-stack у Queen firmware | 🔴 submodule `stm32-mw-lorawan` + adapter `Helium_Mac_SendSos` (ARCH.34; ефір/OTAA = bench-ера) |
 | Rails endpoint `/api/v1/telemetry/helium` | ✅ Реалізовано (2026-07-03: `HeliumSosController` + `HeliumSosWorker` + `EwsAlert(queen_uplink_lost)`) |
 | Реєстрація Queen у Helium Console + заповнення `gateways.helium_dev_eui` | 🔴 Не виконано (👤) |
 | GatewayLoraWanCredentials model | 🟡 Відкладено до живої Console-інтеграції (зараз досить `helium_dev_eui`) |

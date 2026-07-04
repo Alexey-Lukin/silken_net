@@ -716,6 +716,20 @@ volatile uint32_t queen_unix_ts_local_tick = 0;  // HAL_GetTick() в момен�
 static SoldierCmdQueue soldier_cmd_queue;
 #endif
 
+// =========================================================================
+// [ARCH.34 L3] HELIUM SOS-МАЯК — крик через чужі hotspot'и, коли всі власні
+// uplink'и мертві. Pure-половина (wire/тригер/бюджет сліпоти) — helium_sos.h,
+// host-тести test_helium_sos.c; hard-rule дисципліна radio-сліпоти — 02_05
+// §6.1. За гейтом — ЛИШЕ MAC-шов (Helium_Mac_SendSos: OTAA + uplink поверх
+// vendored LoRaMac-node); уся обв'язка компілюється завжди, щоб компілятор
+// бачив її кожною збіркою (урок неіснуючого HAL_CRYPEx_AESCCM).
+#include "helium_sos.h"
+
+#define ARCH34_HELIUM_ENABLED  0   // 🟡 фліп після vendored LoRaMac-node + bench OTAA
+
+static uint32_t g_last_uplink_ok_tick;   // останній ПІДТВЕРДЖЕНИЙ CoAP-flush
+static uint32_t g_last_helium_sos_tick;  // пауза SOS-ретрансміту
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -733,6 +747,9 @@ static AtTxResult SIM7070_Transact(const char* command, uint32_t budget_ms);
 void Process_And_Cache_Data(uint32_t uid, const uint8_t* payload, int8_t rssi, int8_t snr,
                             uint8_t fmt);
 void Flush_Cache_To_Rails(void);
+// [ARCH.34] SOS-обв'язка + повернення вух у raw-LoRa після LoRaWAN-детуру
+static void Radio_Reinit_RawLoRa_868MHz(void);
+static void queen_helium_lorawan_uplink(const uint8_t sos_frame[HELIUM_SOS_WIRE_LEN]);
 // [СИНХРОНІЗОВАНО з Rails]: Обробка вхідних CoAP-команд від сервера
 static uint32_t djb2_hash(const char* str, uint8_t len);
 static uint32_t djb2_hash_bytes(const uint8_t* buf, uint8_t len);
@@ -847,6 +864,12 @@ int main(void)
 
   uint32_t last_flush_time = HAL_GetTick();
   uint32_t last_beacon_time = HAL_GetTick();  // [FW.20-Q2] позначка для періодичного маяка
+
+  // [ARCH.34] SOS-годинники: uplink «щойно був ok» (30-хв відлік від boot —
+  // Королева, що ні разу не доповілась, теж має право кричати), а от штучної
+  // паузи ретрансміту на старті нема (wrap-safe віднімання дає рівно поріг).
+  g_last_uplink_ok_tick  = HAL_GetTick();
+  g_last_helium_sos_tick = HAL_GetTick() - HELIUM_SOS_REPEAT_MIN * 60000u;
 
   // [FIX: Thundering Herd] Джиттер для десинхронізації скидання кешу.
   // Після одночасного перезавантаження (blackout) кожна Королева отримує
@@ -1170,6 +1193,33 @@ int main(void)
     }
 
     // =========================================================================
+    // [ARCH.34 L3] HELIUM SOS: усі власні uplink'и мертві + буфер тисне →
+    // один 12Б-крик про СЕБЕ через чужі hotspot'и (НЕ телеметрія кластера).
+    // =========================================================================
+    // Q2Q backhaul у прошивці ще не існує (ARCH.35-Q2Q 🟡) — умова канону
+    // «сусіди недоступні» істинна порожньо. [transitional] fill-джерело =
+    // дедуплікований CIFO (стеля: кластер < 25 Солдатів не набере 50% —
+    // чесний fill дасть ARCH.35-ринг, він append-only; → 00_07 ARCH.34).
+    {
+        uint32_t now_tick = HAL_GetTick();
+        uint8_t  fill_pct = (uint8_t)(((uint32_t)cache_count * 100u) / CACHE_MAX_ENTRIES);
+        if (Helium_Sos_Should_Fire((uint32_t)(now_tick - g_last_uplink_ok_tick) / 60000u,
+                                   (uint32_t)(now_tick - g_last_helium_sos_tick) / 60000u,
+                                   fill_pct, /*q2q_unavailable=*/1)) {
+            uint32_t did = Helium_Did_From_Uid(queen_uid);
+            if (did != 0u) { // UNPROV-сміття не кричить: бекенд дропне cross-check'ом
+                uint8_t sos[HELIUM_SOS_WIRE_LEN];
+                // vcap_mv=0 — чесне «не виміряно»: власного ADC-каналу батареї
+                // Королева ще не має (board-freeze); flags=0 (rsv).
+                Helium_Sos_Pack(sos, did, 0u, Helium_Sos_Error_Code(fill_pct),
+                                g_uptime_minutes, 0u);
+                queen_helium_lorawan_uplink(sos);
+                g_last_helium_sos_tick = HAL_GetTick();
+            }
+        }
+    }
+
+    // =========================================================================
     // [FW.20-Q2] ПЕРІОДИЧНА ТРАНСЛЯЦІЯ МАЯКА СИНХРОНІЗАЦІЇ ЧАСУ
     // =========================================================================
     // Кожні TIME_BEACON_INTERVAL_MS (≈15 хв) Королева транслює UTC-секунди
@@ -1379,6 +1429,48 @@ static void Restore_ECB_Mode(void)
         if (HAL_CRYP_Init(&hcryp) != HAL_OK) {
             NVIC_SystemReset();
         }
+    }
+}
+
+// =========================================================================
+// [ARCH.34] Повернення вух: PHY назад у raw-LoRa P2P 868.0 МГц після
+// LoRaWAN-детуру (hard-rule post-condition — 02_05 §6.1 п.3). Поки Королева
+// говорила LoRaWAN на 868.1/.3/.5, панічний preamble Солдата на 868.0 був
+// нечутний апаратно — тому повернення вух БЕЗУМОВНЕ і негайне.
+// =========================================================================
+static void Radio_Reinit_RawLoRa_868MHz(void)
+{
+    Radio.SetChannel(868000000);
+    Radio.SetModem(MODEM_LORA);
+    Radio.Rx(LORA_RX_INFINITE);
+}
+
+// [ARCH.34] SOS-обв'язка: уся hard-rule дисципліна сліпоти (02_05 §6.1)
+// живе тут і компілюється КОЖНОЮ збіркою — за гейтом лише сам MAC-виклик.
+// Порядок пунктів канону: (1) пес ситий до сліпої зони → (2) MAC-сесія з
+// дедлайном → (3) вуха назад → (5) AES-контекст назад → (4) вирок бюджету.
+static void queen_helium_lorawan_uplink(const uint8_t sos_frame[HELIUM_SOS_WIRE_LEN])
+{
+    HAL_IWDG_Refresh(&hiwdg);
+    uint32_t session_start = HAL_GetTick();
+
+#if ARCH34_HELIUM_ENABLED
+    // OTAA join + один unconfirmed uplink 12 Б; канальний hop і FCntUp —
+    // усередині LoRaMac-node, дедлайн ріже сесію ДО стелі бюджету.
+    (void)Helium_Mac_SendSos(sos_frame, HELIUM_BLIND_WINDOW_MAX_MS);
+#else
+    (void)sos_frame; // стек ще не vendored — сесії нема, сліпота нульова
+#endif
+
+    Radio_Reinit_RawLoRa_868MHz();
+    // LoRaWAN-крипто живе у soft-SE стека, та hcryp не вгадуємо — Restore
+    // ідемпотентний і дешевий проти ціни глухого AES (02_05 §6.1 п.5).
+    Restore_ECB_Mode();
+
+    // Вклались у бюджет — годуємо пса. Перевищили — свідомо НЕ годуємо:
+    // IWDG докусає (~26.6 с) і поверне Королеву цілою (ALARP, канон п.4).
+    if (Helium_Blind_Budget_Ok(session_start, HAL_GetTick())) {
+        HAL_IWDG_Refresh(&hiwdg);
     }
 }
 
@@ -1744,6 +1836,8 @@ void Flush_Cache_To_Rails(void)
     // packed_count активних): якщо пакування обірвалось по місткості буфера,
     // решта мусить пережити флеш.
     if (send_success) {
+        // [ARCH.34] Живий uplink — SOS-годинник назад на нуль.
+        g_last_uplink_ok_tick = HAL_GetTick();
         uint8_t cleared = 0;
         for (int i = 0; i < CACHE_MAX_ENTRIES && cleared < packed_count; i++) {
             if (forest_cache[i].is_active) {
