@@ -123,6 +123,14 @@
       cron: '30 3 * * *' # Щодня о 03:30 UTC
       class: Governance::ParameterSyncWorker
 
+    # --- ЦИКЛ ВІЧНОЇ ПАМ'ЯТІ (The Archive Witness) [E.60] ---
+    # Звіряє Filecoin/IPFS-архіви з локальним hash-ланцюгом: свіжі (24h) +
+    # випадкова вибірка старших (ex-post підміна можлива будь-коли).
+    # Mismatch → ERROR + silkennet_filecoin_verification_failures_total.
+    filecoin_verification_sweep:
+      cron: '40 4 * * *' # Щодня о 04:40 UTC, після нічних money-циклів
+      class: FilecoinVerificationSweepWorker
+
     # --- ЦИКЛ ЕНТРОПІЇ (The Pre-Stress Sentinel) [S6.20] ---
     # Погодинний fan-out ClusterEntropyAnalyzerWorker на кожен кластер. Без нього
     # gauge silkennet_cluster_entropy_score мертвий і entropy_anomaly EWS-тривоги

@@ -379,6 +379,15 @@ module SilkenNet
       labels: [ :parameter ]
     )
 
+    # [E.60] Провал звірки archive-цілісності Filecoin/IPFS (sweep-воркер):
+    # cid_mismatch = ex-post підміна вмісту; chain_hash_mismatch = розбіжність
+    # з локальним hash-ланцюгом. Ненульове = MRV-докази під загрозою → Grafana-алерт.
+    FILECOIN_VERIFICATION_FAILURES_TOTAL = REGISTRY.counter(
+      :silkennet_filecoin_verification_failures_total,
+      docstring: "Filecoin archive integrity verification failures (E.60 sweep)",
+      labels: [ :reason ]
+    )
+
     # [E.50]: Streamr broadcast failures counter — раніше помилки мовчки логувались без метрик.
     # Streamr — потік присутності (не фінансовий консенсус), але масові збої потребують alerting.
     STREAMR_BROADCAST_FAILURES_TOTAL = REGISTRY.counter(

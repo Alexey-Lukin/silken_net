@@ -306,15 +306,16 @@ end
 
 > **ЄДИНЕ авторитетне джерело переліку + кількості метрик** — згенеровано з
 > `SilkenNet::Metrics::REGISTRY`, verified vs `config/initializers/prometheus.rb`
-> 2026-07-04 (додано ARCH.54 dead-man-switch + ARCH.34 Helium-SOS четвірку). Усі інші
+> 2026-07-04 (додано GOV.1 bounds-reject + E.60 sweep counters; дожим 3 gauge-дрейфів
+> money-limbo/manual_review/chain_audit із §05-сесій). Усі інші
 > згадки (CLAUDE.md, `config.alloy`, підсекції §2.3–2.7 з обґрунтуванням/alert-прикладами)
 > **рефлять сюди**, не дублюють число/перелік.
 > При зміні реєстру в коді — **регенерувати ЛИШЕ цю таблицю** (команда в кінці).
 > Де інкрементується/оновлюється кожна — `grep -rn "SilkenNet::Metrics::<CONST>" app/`.
 >
-> **Разом: 60 метрик = 36 counters + 22 gauges + 2 histograms** (звірено регенерацією нижче).
+> **Разом: 65 метрик = 38 counters + 25 gauges + 2 histograms** (звірено регенерацією нижче).
 
-**Counters (36):**
+**Counters (38):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
@@ -323,8 +324,10 @@ end
 | `silkennet_coap_packets_received_total` | `status` | Total CoAP UDP packets received by the telemetry daemon |
 | `silkennet_ews_alerts_total` | `alert_type` | Total EWS alerts dispatched (fire, drought, pest, storm) |
 | `silkennet_fauna_skip_reports_total` | — | FW.42 telemetry packets reporting a fauna session skipped on low Vcap (per-DID attribution in logs) |
+| `silkennet_filecoin_verification_failures_total` | `reason` | Filecoin archive integrity verification failures (E.60 sweep) |
 | `silkennet_fw2_fc_degraded_reports_total` | — | FW.2 telemetry packets reporting a lost FC high-water invariant (Flash refusing writes; per-DID attribution in logs) |
 | `silkennet_gateways_offline_total` | — | Total gateway offline transitions detected by the staleness sweeper (queen_offline alerts) |
+| `silkennet_governance_param_rejected_total` | `parameter` | Governance parameter syncs rejected by bounds validation |
 | `silkennet_helium_sos_received_total` | `outcome` | Queen SOS frames received via the Helium webhook, by processing outcome |
 | `silkennet_insurance_payout_attempts_total` | — | Parametric insurance payouts attempted by InsurancePayoutWorker (SLO denominator) |
 | `silkennet_insurance_payout_success_total` | — | Parametric insurance payouts executed — Etherisc claim sent / mint initiated (SLO numerator) |
@@ -355,10 +358,13 @@ end
 | `silkennet_treasury_check_errors_total` | `network`, `error_type` | Total treasury monitoring RPC errors |
 | `silkennet_w3bstream_signature_fallback_total` | `reason` | Total W3bstream verifications using SHA256 fallback instead of Ed25519 hardware signature |
 
-**Gauges (22):**
+**Gauges (25):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
+| `silkennet_blockchain_limbo_locked_total` | — | Sum of locked_points on unsettled (:sent/:manual_review) tx older than 1h (funds in limbo) |
+| `silkennet_blockchain_manual_review_depth` | — | Count of BlockchainTransaction rows stuck in :manual_review (double-spend guard queue) |
+| `silkennet_chain_audit_delta` | — | Absolute delta between DB SCC total (mints−burns) and on-chain totalSupply |
 | `silkennet_cluster_entropy_score` | `cluster_id` | Normalized Shannon entropy of Z-value distribution per cluster (0.0-1.0) |
 | `silkennet_db_pool_connections` | `database` | Number of active (checked out) database connections |
 | `silkennet_db_pool_idle` | `database` | Number of idle database connections in the pool |
