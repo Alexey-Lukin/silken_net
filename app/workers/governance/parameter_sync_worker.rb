@@ -9,7 +9,7 @@ module Governance
   # Синхронізує параметри протоколу з on-chain ProtocolParameters.sol
   # у локальну SystemParameter модель Rails.
   #
-  # Запускається 1×/день (cron: 0 3 * * *), зчитує поточні параметри
+  # Запускається 1×/день (cron: 30 3 * * *), зчитує поточні параметри
   # з Polygon через RPC, порівнює з SystemParameter та оновлює змінені
   # значення з source: "governance".
   #
@@ -20,34 +20,43 @@ module Governance
   #   - Web3::RpcConnectionPool (Alchemy/Infura RPC)
   #   - SystemParameter model (ARCH.15)
   #
-  # Див: docs/05_03 § Governance-Aware Backend, ARCH.4
+  # Див: docs/05_06 §7, ARCH.4, GOV.1
   class ParameterSyncWorker
     include ApplicationWeb3Worker
 
     sidekiq_options queue: "web3_low", retry: 3, unique_for: 24.hours
 
-    # Маппінг on-chain параметрів до SystemParameter ключів.
+    # Маппінг on-chain параметрів до SystemParameter ключів — дзеркало
+    # Well-Known Keys у ProtocolParameters.sol; value_type/category/bounds
+    # узгоджені з db/seeds.rb (той самий запис, та сама валідація).
     # On-chain значення зберігаються як uint256 з 18 decimals (1e18 = 1.0).
-    # Всі значення конвертуються: raw_uint256 / 1e18 → Ruby number.
-    # Тип value_type визначає як SystemParameter зберігає результат.
+    # min/max — safety-межі проти мис-скейлу (18-decimals slip / нонсенс-голос,
+    # напр. tax=2e18 «200%» → forester_amount<0 → mint-halt): out-of-bounds
+    # значення НЕ записується (bounds-валідація SystemParameter), чинним
+    # лишається попереднє + ERROR-лог + метрика → коригувальний DAO-голос.
     PARAMETER_MAP = {
-      # Lorenz attractor
-      lorenz_sigma:              { value_type: "float",   category: "lorenz"     },
-      lorenz_rho:                { value_type: "float",   category: "lorenz"     },
-      lorenz_beta:               { value_type: "float",   category: "lorenz"     },
-      lorenz_dt:                 { value_type: "float",   category: "lorenz"     },
-      lorenz_iterations:         { value_type: "integer", category: "lorenz"     },
-      lorenz_z_min:              { value_type: "float",   category: "lorenz"     },
-      lorenz_z_max:              { value_type: "float",   category: "lorenz"     },
-      lorenz_z_target:           { value_type: "float",   category: "lorenz"     },
       # Tokenomics
-      emission_threshold:        { value_type: "integer", category: "tokenomics" },
-      dynamic_tax_rate:          { value_type: "float",   category: "tokenomics" },
-      insurance_pool_threshold:  { value_type: "integer", category: "tokenomics" },
-      # Slashing
-      slash_threshold:           { value_type: "float",   category: "alerts"     },
-      stress_threshold:          { value_type: "float",   category: "alerts"     }
+      emission_threshold:        { value_type: "integer", category: "tokenomics", min: 1_000,  max: 100_000 },
+      dynamic_tax_rate:          { value_type: "decimal", category: "minting",    min: 0,      max: 0.10 },
+      insurance_pool_threshold:  { value_type: "integer", category: "insurance",  min: 10_000, max: 1_000_000 },
+      scc_per_tonne_co2:         { value_type: "integer", category: "tokenomics", min: 100,    max: 100_000 },
+      scc_fallback_price_usd:    { value_type: "float",   category: "tokenomics", min: 0.01,   max: 1000.0 },
+      # Slashing (05_05 §3) + slash/stress пороги
+      slash_threshold:           { value_type: "float",   category: "alerts",     min: 0.05,   max: 1.0 },
+      stress_threshold:          { value_type: "float",   category: "alerts",     min: 0.5,    max: 1.0 },
+      slash_gamma:               { value_type: "float",   category: "alerts",     min: 1.0,    max: 3.0 },
+      slash_penalty_factor_max:  { value_type: "float",   category: "alerts",     min: 1.0,    max: 5.0 }
     }.freeze
+
+    # [GOV.1] Lorenz-ключі СВІДОМО не синхронізуються: константи биті-в-біт
+    # спільні з прошитим firmware (FW.7 DCI) — governance-зміна зламала б
+    # device↔server parity. Tripwire нижче: якщо DAO таки проголосував такий
+    # ключ — гучний WARN (ефект нульовий до координованого fleet-reflash),
+    # НЕ тихе ігнорування. Дім: 03_04 + 05_06 §7.
+    DCI_LOCKED_KEYS = %i[
+      lorenz_sigma lorenz_rho lorenz_beta lorenz_dt
+      lorenz_iterations lorenz_z_min lorenz_z_max lorenz_z_target
+    ].freeze
 
     # Мінімальний ABI для читання ProtocolParameters.sol.
     # getParameter(bytes32) → uint256, isParameterSet(bytes32) → bool.
@@ -87,6 +96,7 @@ module Governance
 
       synced = 0
       skipped = 0
+      rejected = 0
 
       with_web3_error_handling("Polygon", "ProtocolParameters sync") do
         client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
@@ -123,25 +133,55 @@ module Governance
             next
           end
 
-          # Update SystemParameter
-          SystemParameter.set(
-            param_key,
-            converted_value.to_s,
-            updated_by: system_bot,
-            value_type: config[:value_type],
-            category: config[:category],
-            source: "governance"
-          )
+          begin
+            SystemParameter.set(
+              param_key,
+              converted_value.to_s,
+              updated_by: system_bot,
+              value_type: config[:value_type],
+              category: config[:category],
+              min_value: config[:min],
+              max_value: config[:max],
+              source: "governance"
+            )
+          rescue ActiveRecord::RecordInvalid => e
+            rejected += 1
+            Rails.logger.error "🛑 [Governance] REJECTED #{param_key}=#{converted_value} " \
+                               "(bounds #{config[:min]}..#{config[:max]}): " \
+                               "#{e.record.errors.full_messages.join('; ')}. " \
+                               "Чинним лишається попереднє значення — потрібен коригувальний DAO-голос."
+            SilkenNet::Metrics::GOVERNANCE_PARAM_REJECTED_TOTAL.increment(labels: { parameter: param_key.to_s })
+            next
+          end
 
           Rails.logger.info "🏛️ [Governance] Updated #{param_key}: #{current} → #{converted_value}"
           synced += 1
         end
+
+        warn_dci_locked_votes(client, contract)
       end
 
-      Rails.logger.info "🏛️ [Governance] Sync complete: #{synced} updated, #{skipped} skipped."
+      Rails.logger.info "🏛️ [Governance] Sync complete: #{synced} updated, #{skipped} skipped, #{rejected} rejected."
     end
 
     private
+
+    # [GOV.1] Tripwire: DCI-locked ключ проголосовано on-chain → гучний WARN,
+    # без запису в SystemParameter (жоден споживач не сміє його читати).
+    def warn_dci_locked_votes(client, contract)
+      DCI_LOCKED_KEYS.each do |param_key|
+        on_chain_key = solidity_keccak256(param_key.to_s)
+
+        is_set = Timeout.timeout(RPC_TIMEOUT_SECONDS) do
+          client.call(contract, "isParameterSet", on_chain_key)
+        end
+        next unless is_set
+
+        Rails.logger.warn "⚠️ [Governance] DCI-locked #{param_key} проголосовано on-chain — " \
+                          "свідомо НЕ синхронізується (FW.7 bit-parity з прошитим firmware; " \
+                          "набуття ефекту = координований fleet-reflash — 03_04, 05_06 §7)."
+      end
+    end
 
     # Type-aware comparison to avoid false updates due to string representation differences.
     # e.g., BigDecimal('10.0').to_s vs Integer(10).to_s → '10.0' vs '10'.
@@ -157,15 +197,15 @@ module Governance
     end
 
     # Compute Solidity-compatible keccak256 hash of a string for mapping key.
-    # Returns bytes32 hex string matching Solidity: keccak256("lorenz_sigma").
+    # Returns bytes32 hex string matching Solidity: keccak256("slash_gamma").
     def solidity_keccak256(str)
       Eth::Util.keccak256(str)
     end
 
     # Convert raw uint256 (18-decimal fixed-point) to Ruby value.
     # All on-chain values use 18 decimals: 10.0 → 10_000000000000000000.
-    # Integer-typed params (iterations=250, emission_threshold=10000) are also
-    # stored as 250e18 / 10000e18 on-chain and converted back to integers here.
+    # Integer-typed params (emission_threshold=10000, scc_per_tonne_co2=2000) are
+    # also stored as 10000e18 / 2000e18 on-chain and converted back to integers here.
     def convert_from_fixed_point(raw_uint256, value_type)
       decimal_value = BigDecimal(raw_uint256.to_s) / FIXED_POINT_DIVISOR
 

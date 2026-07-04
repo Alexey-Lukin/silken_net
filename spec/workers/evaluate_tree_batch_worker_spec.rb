@@ -127,9 +127,15 @@ RSpec.describe EvaluateTreeBatchWorker, type: :worker do
     end
   end
 
-  describe "EMISSION_THRESHOLD" do
-    it "matches TokenomicsEvaluatorWorker threshold" do
-      expect(described_class::EMISSION_THRESHOLD).to eq(TokenomicsEvaluatorWorker::EMISSION_THRESHOLD)
+  describe "emission threshold (GOV.1 one-home)" do
+    it "mints at the DAO-live threshold from TokenomicsEvaluatorWorker" do
+      tree = create(:tree, status: :active)
+      wallet = create(:wallet, tree: tree, balance: 6_000)
+      allow(TokenomicsEvaluatorWorker).to receive(:emission_threshold).and_return(5_000)
+
+      expect_any_instance_of(Wallet).to receive(:lock_and_mint!).with(5_000, 5_000)
+
+      described_class.new.perform([ wallet.id ], "gov-cycle")
     end
   end
 end

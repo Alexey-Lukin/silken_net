@@ -283,10 +283,11 @@ end
 | **Sidekiq Queue** | `silkennet_sidekiq_queue_size{queue="web3_low"}` | Gauge, вже покрито `refresh_sidekiq_gauges` |
 | **Sidekiq Latency** | `silkennet_sidekiq_queue_latency_seconds{queue="web3_low"}` | Gauge, вже покрито |
 | **RPC Errors** | `silkennet_rpc_errors_total{network="polygon"}` | Counter, через `ApplicationWeb3Worker` |
-| **Sync Logging** | `Rails.logger.info` | `synced: N, skipped: M` per run (structured JSON в production) |
+| **Bounds Rejections** | `silkennet_governance_param_rejected_total{parameter}` | Counter [GOV.1]: DAO-значення поза safety-межами → відхилено (чинним лишилось попереднє), потрібен коригувальний голос |
+| **Sync Logging** | `Rails.logger.info` / `.warn` / `.error` | `synced/skipped/rejected` per run + WARN на DCI-locked Lorenz-голос (tripwire) + ERROR на кожен reject |
 | **Failure Alerts** | Sentry + Sidekiq retry exhaustion | 3 retries, unique_for 24h |
 
-> **Перспектива:** Коли обсяг governance-операцій зростатиме, можна додати dedicated counter `silkennet_governance_params_synced_total` з label `status` (synced/skipped/error) та histogram `silkennet_governance_sync_duration_seconds`.
+> **Перспектива:** Коли обсяг governance-операцій зростатиме, можна додати histogram `silkennet_governance_sync_duration_seconds` (rejected-counter уже live ↑).
 
 ### 2.8 Circuit Breaker та Acoustic Overflow метрики (S2.2/S2.3/FW.22)
 

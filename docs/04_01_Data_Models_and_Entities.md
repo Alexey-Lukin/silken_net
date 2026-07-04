@@ -1263,7 +1263,7 @@ active/draft ──cancel──► cancelled
 
 **Кешування:** `after_commit :invalidate_cache`. Ключ: `"system_parameter:#{key}"`. TTL: 24 години.
 
-**Використовується:** `SilkenNet::Attractor` (Lorenz параметри), `ContractHealthCheckService` (slashing threshold), `TokenomicsEvaluatorWorker` (emission threshold), `BlockchainMintingService` (dynamic_tax_rate, insurance_pool_threshold — читаються через `SystemParameter.current` для on-chain параметрів мінтингу), `Governance::ParameterSyncWorker` (sync on-chain → DB).
+**Використовується (GOV.1 read-path):** `TokenomicsEvaluatorWorker.emission_threshold` (курс конверсії; One-Home для `EvaluateTreeBatchWorker`/`OracleVisionsController`), `ContractHealthCheckService` (`slash_threshold`-частка) + `AiInsight.slash_stress_threshold` (спільний slash/damage-поріг, ARCH.46), `BlockchainBurningService` (`slash_gamma`/`slash_penalty_factor_max`), `BlockchainMintingService` (`dynamic_tax_rate`, `insurance_pool_threshold`), `PriceOracleService` (`scc_fallback_price_usd`), `Governance::ParameterSyncWorker` (sync on-chain → DB, bounds-clamp). ⚠️ `SilkenNet::Attractor` свідомо НЕ читає (Lorenz = DCI-locked константи, FW.7 — [`05_06 §7`](05_06_Governance_and_DAO)).
 
 ---
 

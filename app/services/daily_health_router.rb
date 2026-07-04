@@ -52,7 +52,7 @@ class DailyHealthRouter
   end
 
   # Кількість критично стресованих дерев за заданим порогом (consumer-specific:
-  # A передає AiInsight::SLASH_STRESS_THRESHOLD = 0.83).
+  # A передає AiInsight.slash_stress_threshold — DAO-live, default 0.83; GOV.1).
   def critical_count(threshold)
     insights.where("stress_index >= ?", threshold).count
   end

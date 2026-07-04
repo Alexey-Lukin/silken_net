@@ -8,9 +8,17 @@ class TokenomicsEvaluatorWorker
   # новий буде відхилено замість створення конкурентного батчу.
   sidekiq_options queue: "default", retry: 3, unique_for: 60.minutes
 
-  # [СИНХРОНІЗОВАНО]: 1 SCC (Silken Carbon Coin) = 10,000 балів гомеостазу.
-  # Ця константа є фундаментом нашої токеноміки.
+  # Дефолт конверсії: 1 SCC (Silken Carbon Coin) = 10,000 балів гомеостазу.
+  # Живе значення DAO-керується → .emission_threshold (GOV.1 read-path).
   EMISSION_THRESHOLD = 10_000
+
+  # [GOV.1] One-Home читання порогу емісії: SystemParameter ← ProtocolParameters.sol
+  # (ParameterSyncWorker, bounds 1_000..100_000). Не-позитивне значення (мис-скейл
+  # повз bounds) → дефолт: на цей поріг ділить EvaluateTreeBatchWorker.
+  def self.emission_threshold
+    value = SystemParameter.current(:emission_threshold, default: EMISSION_THRESHOLD).to_i
+    value.positive? ? value : EMISSION_THRESHOLD
+  end
 
   # [МАСШТАБ]: Кількість гаманців в одному EvaluateTreeBatchWorker.
   # При 10M дерев = 10,000 чанків, при 1B = 1,000,000 чанків.
@@ -50,6 +58,6 @@ class TokenomicsEvaluatorWorker
   def eligible_wallets
     Wallet.joins(:tree)
           .where(trees: { status: :active })
-          .where("balance >= ?", EMISSION_THRESHOLD)
+          .where("balance >= ?", self.class.emission_threshold)
   end
 end

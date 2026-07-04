@@ -342,9 +342,9 @@ class BlockchainBurningService < ApplicationService
   #   • дані Є, 0 critical    → ліс здоровий → 0 шкоди → 0 slash
   #   • genuine no-data → nil → magnitude indeterminate → `perform` робить freeze (§3.2 асиметрія,
   #     дзеркало `flag_data_blackout!`), НЕ 100% worst-case
-  # [ARCH.46] Поріг = `AiInsight::SLASH_STRESS_THRESHOLD` (= той самий, що ТРИГЕРИТЬ слеш у
-  # `ContractHealthCheckService`; раніше хибне `≥ 1.0` → помірний стрес давав critical=0 → 100%
-  # over-burn). Дата прокинута від health-check (`effective_target_date`), без перерахунку.
+  # [ARCH.46] Поріг = `AiInsight.slash_stress_threshold` (той САМИЙ DAO-live поріг, що ТРИГЕРИТЬ
+  # слеш у `ContractHealthCheckService` — GOV.1; раніше хибне `≥ 1.0` → помірний стрес давав
+  # critical=0 → 100% over-burn). Дата прокинута від health-check (`effective_target_date`).
   def calculate_damage_ratio
     total_trees = @cluster.trees.count
     return 1.0 if total_trees.zero?

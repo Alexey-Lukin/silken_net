@@ -95,7 +95,7 @@ module Api
       # keyed by org id; the inner Tree scope is also restricted to the org.
       def calculate_expected_yield(org)
         Rails.cache.fetch("oracle_expected_yield_24h_org_#{org.id}", expires_in: 1.hour) do
-          threshold = TokenomicsEvaluatorWorker::EMISSION_THRESHOLD
+          threshold = TokenomicsEvaluatorWorker.emission_threshold
           total_potential = 0.0
 
           org.trees.active.includes(:ai_insights).find_each(batch_size: 1000) do |tree|

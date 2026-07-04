@@ -9,6 +9,13 @@ class AiInsight < ApplicationRecord
   # `contract_breach?` (0.8 — ширший insurance/UI-концепт, свідомо окремий від slash-порога).
   SLASH_STRESS_THRESHOLD = 0.83
 
+  # [GOV.1] DAO-live поріг: SystemParameter(:stress_threshold) ← ProtocolParameters.sol
+  # (bounds 0.5..1.0 у ParameterSyncWorker). Обидва споживачі (тригер ContractHealthCheckService
+  # + damage-сайзинг BlockchainBurningService, ARCH.46) читають ЦЕЙ метод — спільність збережена.
+  def self.slash_stress_threshold
+    SystemParameter.current(:stress_threshold, default: SLASH_STRESS_THRESHOLD).to_f
+  end
+
   # --- ЗВ'ЯЗКИ ---
   # Прогноз/Звіт може стосуватися Cluster (Кластер), Tree (Дерево) або Organization
   belongs_to :analyzable, polymorphic: true

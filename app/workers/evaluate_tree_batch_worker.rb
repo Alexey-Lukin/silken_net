@@ -15,23 +15,23 @@ class EvaluateTreeBatchWorker
   # Та сама черга, що й TokenomicsEvaluatorWorker — фінансовий аудит.
   sidekiq_options queue: "default", retry: 3
 
-  # [СИНХРОНІЗОВАНО]: 1 SCC = 10,000 балів гомеостазу.
-  EMISSION_THRESHOLD = 10_000
-
   # @param wallet_ids [Array<Integer>] масив ID гаманців для обробки
   # @param cycle_id [String] UUID циклу токеноміки (для аудиту та логування)
   def perform(wallet_ids, cycle_id)
     stats = { processed: 0, minted: 0, errors: 0 }
+    # [GOV.1] Один поріг на весь чанк (One-Home: TokenomicsEvaluatorWorker.emission_threshold,
+    # DAO-live) — mid-batch governance-зміна не розщеплює чанк на два курси конверсії.
+    threshold = TokenomicsEvaluatorWorker.emission_threshold
 
     Wallet.where(id: wallet_ids).find_each do |wallet|
       stats[:processed] += 1
 
       begin
-        tokens_to_mint = (wallet.balance / EMISSION_THRESHOLD).to_i
+        tokens_to_mint = (wallet.balance / threshold).to_i
         next if tokens_to_mint.zero?
 
-        points_to_lock = tokens_to_mint * EMISSION_THRESHOLD
-        tx = wallet.lock_and_mint!(points_to_lock, EMISSION_THRESHOLD)
+        points_to_lock = tokens_to_mint * threshold
+        tx = wallet.lock_and_mint!(points_to_lock, threshold)
 
         stats[:minted] += tokens_to_mint if tx&.persisted?
       rescue StandardError => e

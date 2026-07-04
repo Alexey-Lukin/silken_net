@@ -30,22 +30,10 @@ puts "⚙️  Ініціалізація системних параметрів
 
 system_params = [
   # --- Lorenz Attractor (03_04) ---
-  { key: "lorenz_sigma", value: "10.0", value_type: "float", category: "lorenz",
-    min_value: 5.0, max_value: 30.0, description: "Lorenz σ (Prandtl number) — sap viscosity" },
-  { key: "lorenz_rho", value: "28.0", value_type: "float", category: "lorenz",
-    min_value: 10.0, max_value: 50.0, description: "Lorenz ρ (Rayleigh number) — thermal gradient" },
-  { key: "lorenz_beta", value: (8.0 / 3.0).to_s, value_type: "float", category: "lorenz",
-    min_value: 1.0, max_value: 5.0, description: "Lorenz β (geometry) — 8.0/3.0" },
-  { key: "lorenz_dt", value: "0.01", value_type: "float", category: "lorenz",
-    min_value: 0.001, max_value: 0.1, description: "Euler integration time step" },
-  { key: "lorenz_iterations", value: "250", value_type: "integer", category: "lorenz",
-    min_value: 50, max_value: 1000, description: "Number of Lorenz iterations per cycle" },
-  { key: "critical_z_min", value: "2.0", value_type: "float", category: "lorenz",
-    min_value: 0.0, max_value: 10.0, description: "Z below this → stress (bio_status=1)" },
-  { key: "critical_z_max", value: "45.0", value_type: "float", category: "lorenz",
-    min_value: 30.0, max_value: 60.0, description: "Z above this → anomaly (bio_status=2)" },
-  { key: "optimal_z_target", value: "29.0", value_type: "float", category: "lorenz",
-    min_value: 15.0, max_value: 40.0, description: "Ideal Z for maximum growth_points" },
+  # [GOV.1] СВІДОМО НЕ сідируються: константи DCI-locked у SilkenNet::Attractor
+  # (FW.7 bit-parity з прошитим firmware; zmin/zmax — per-species у TreeFamily).
+  # SystemParameter-запис, якого жоден споживач не читає, був би пасткою —
+  # ParameterSyncWorker ці ключі теж не синхронізує (лише tripwire-WARN).
 
   # --- Tokenomics (05_03) ---
   { key: "emission_threshold", value: "10000", value_type: "integer", category: "tokenomics",
@@ -72,6 +60,16 @@ system_params = [
     min_value: 1.0, max_value: 50.0, description: "NASA FIRMS FRP threshold (MW) for fire detection" },
   { key: "fire_confidence_threshold", value: "50", value_type: "integer", category: "alerts",
     min_value: 20, max_value: 100, description: "Minimum satellite fire detection confidence (%)" },
+
+  # --- Slashing (05_05 §3, GOV.1 — DAO-live через ProtocolParameters.sol) ---
+  { key: "slash_threshold", value: "0.2", value_type: "float", category: "alerts",
+    min_value: 0.05, max_value: 1.0, description: "Cluster degradation fraction that triggers the slashing checkpoint" },
+  { key: "stress_threshold", value: "0.83", value_type: "float", category: "alerts",
+    min_value: 0.5, max_value: 1.0, description: "RF-confidence stress threshold for slash trigger + damage sizing (ARCH.46)" },
+  { key: "slash_gamma", value: "1.3", value_type: "float", category: "alerts",
+    min_value: 1.0, max_value: 3.0, description: "Convex slash curve exponent (05_05 §3)" },
+  { key: "slash_penalty_factor_max", value: "2.0", value_type: "float", category: "alerts",
+    min_value: 1.0, max_value: 5.0, description: "Ceiling on the slash penalty multiplier (not final ratio)" },
 
   # --- Hardware (02_03) ---
   { key: "vcap_min_mv", value: "2800", value_type: "integer", category: "hardware",

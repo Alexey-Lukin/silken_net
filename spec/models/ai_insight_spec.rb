@@ -145,6 +145,18 @@ RSpec.describe AiInsight, type: :model do
     end
   end
 
+  describe ".slash_stress_threshold" do
+    it "defaults to SLASH_STRESS_THRESHOLD" do
+      expect(described_class.slash_stress_threshold).to eq(0.83)
+    end
+
+    it "reads the governance value from SystemParameter (GOV.1)" do
+      create(:system_parameter, key: "stress_threshold", value: "0.9",
+                                value_type: "float", category: "alerts")
+      expect(described_class.slash_stress_threshold).to eq(0.9)
+    end
+  end
+
   # =========================================================================
   # EVIDENCE PERSISTENCE (source_log_ids)
   # =========================================================================

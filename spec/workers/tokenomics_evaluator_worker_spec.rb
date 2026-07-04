@@ -104,4 +104,21 @@ RSpec.describe TokenomicsEvaluatorWorker, type: :worker do
       expect(described_class::BATCH_CHUNK_SIZE).to eq(1_000)
     end
   end
+
+  describe ".emission_threshold" do
+    it "defaults to EMISSION_THRESHOLD" do
+      expect(described_class.emission_threshold).to eq(10_000)
+    end
+
+    it "reads the governance value from SystemParameter (GOV.1)" do
+      create(:system_parameter, :emission_threshold, value: "12000")
+      expect(described_class.emission_threshold).to eq(12_000)
+    end
+
+    it "falls back to the default on a non-positive value (mis-scale guard)" do
+      create(:system_parameter, key: "emission_threshold", value: "0",
+                                value_type: "integer", category: "tokenomics")
+      expect(described_class.emission_threshold).to eq(10_000)
+    end
+  end
 end

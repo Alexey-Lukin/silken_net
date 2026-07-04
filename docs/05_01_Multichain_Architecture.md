@@ -272,7 +272,7 @@ type SlashingEvent @entity { ... }
 |----------|------|------|
 | `SilkenGovernor` | `contracts/SilkenGovernor.sol` | OZ Governor + GovernorVotes + GovernorTimelockControl + GovernorCountingSimple + GovernorVotesQuorumFraction (4%). votingDelay=43200 blocks (~1 day), votingPeriod=302400 blocks (~7 days), proposalThreshold=100 SFC |
 | `SilkenTimelock` | `contracts/SilkenTimelock.sol` | TimelockController з 48h мінімальною затримкою. Proposer: Governor, Executor: address(0) (permissionless після delay) |
-| `ProtocolParameters` | `contracts/ProtocolParameters.sol` | On-chain registry з GOVERNANCE_ROLE. 13 well-known keys (Lorenz σ/ρ/β/dt/iterations/z_min/z_max/z_target, emission_threshold, dynamic_tax_rate, insurance_pool_threshold, slash_threshold, stress_threshold). Fixed-point 18 decimals |
+| `ProtocolParameters` | `contracts/ProtocolParameters.sol` | On-chain registry з GOVERNANCE_ROLE. Well-known keys: 8 Lorenz (σ/ρ/β/dt/iterations/z_min/z_max/z_target — **DCI-locked**, backend свідомо не синхронізує; FW.7) + 9 економічних (emission_threshold, dynamic_tax_rate, insurance_pool_threshold, scc_per_tonne_co2, scc_fallback_price_usd, slash_threshold, stress_threshold, slash_gamma, slash_penalty_factor_max — GOV.1 read-path у [`05_06 §7`](05_06_Governance_and_DAO)). Fixed-point 18 decimals |
 
 **Flash Loan Defense:** snapshot voting (`getPastVotes`), 1-day voting delay, 4% quorum, 48h timelock.
 

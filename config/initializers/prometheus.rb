@@ -370,6 +370,15 @@ module SilkenNet
       docstring: "Total missed Ethereum L1 anchor weeks detected (gap > 8 days)"
     )
 
+    # [GOV.1] Governance-параметр відхилено bounds-валідацією sync-воркера
+    # (мис-скейл / нонсенс-голос). Ненульове = DAO проголосував значення поза
+    # safety-межами → чинним лишилось попереднє, потрібен коригувальний голос.
+    GOVERNANCE_PARAM_REJECTED_TOTAL = REGISTRY.counter(
+      :silkennet_governance_param_rejected_total,
+      docstring: "Governance parameter syncs rejected by bounds validation",
+      labels: [ :parameter ]
+    )
+
     # [E.50]: Streamr broadcast failures counter — раніше помилки мовчки логувались без метрик.
     # Streamr — потік присутності (не фінансовий консенсус), але масові збої потребують alerting.
     STREAMR_BROADCAST_FAILURES_TOTAL = REGISTRY.counter(

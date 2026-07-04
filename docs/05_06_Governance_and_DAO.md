@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Канонічний дім **on-chain governance**: як SFC-голдери змінюють протокольні параметри (Lorenz σ/ρ/β, slashing-пороги, tokenomics-курс) через DAO замість хардкоду + redeploy/reflash. Описує `SilkenGovernor` / `SilkenTimelock` / `ProtocolParameters`, Flash-Loan-захист, governance-aware backend (`SystemParameter` / `ParameterSyncWorker`) та проактивну оборону (Auto-Immune Sentinel, beyond TRL 9). Виокремлено з [`05_03`](05_03_Tokenomics_SCC_and_SFC) (емісія токенів) — це **законодавча гілка**, концептуально окрема від token-spec.
+Канонічний дім **on-chain governance**: як SFC-голдери змінюють протокольні параметри (slashing-пороги/криву, tokenomics-курс, ціни; Lorenz-ключі — DCI-locked резерв OTA-ери, §7) через DAO замість хардкоду + redeploy. Описує `SilkenGovernor` / `SilkenTimelock` / `ProtocolParameters`, Flash-Loan-захист, governance-aware backend (`SystemParameter` / `ParameterSyncWorker`) та проактивну оборону (Auto-Immune Sentinel, beyond TRL 9). Виокремлено з [`05_03`](05_03_Tokenomics_SCC_and_SFC) (емісія токенів) — це **законодавча гілка**, концептуально окрема від token-spec.
 
 ---
 
@@ -73,14 +73,19 @@ GovernorContract.sol (OpenZeppelin Governor + TimelockController)
         │ after 48h timelock
         ▼
 ProtocolParameters.sol (on-chain registry)
-        │ read via TheGraph
+        │ read via RPC eth_call (Web3::RpcConnectionPool)
         ▼
 Governance::ParameterSyncWorker (Sidekiq, queue: web3_low)
-        │ scheduled 1x/day
+        │ 1×/день · bounds-clamp · DCI-tripwire (§7)
         ▼
-SilkenNet::Attractor (dynamic params instead of constants)
-ContractHealthCheckService (dynamic slash threshold)
-TokenomicsEvaluatorWorker (dynamic conversion rate)
+SystemParameter (source: "governance")
+        │ SystemParameter.current(…)
+        ▼
+TokenomicsEvaluatorWorker.emission_threshold (курс конверсії)
+ContractHealthCheckService (slash_threshold-частка) + AiInsight.slash_stress_threshold
+BlockchainBurningService (slash_gamma / slash_penalty_factor_max)
+BlockchainMintingService (dynamic_tax_rate / insurance_pool_threshold)
+PriceOracleService (scc_fallback_price_usd)
 ```
 
 **Нові смарт-контракти (✅ Реалізовано):**
@@ -93,7 +98,7 @@ TokenomicsEvaluatorWorker (dynamic conversion rate)
 - Зчитує поточні параметри з `ProtocolParameters.sol` через `Web3::RpcConnectionPool` + `Eth::Contract`
 - Порівнює з поточними значеннями `SystemParameter` та оновлює змінені з `source: "governance"`
 - Використовує `Timeout.timeout(10s)` на кожен RPC-запит
-- 13 параметрів: 8 Lorenz (σ/ρ/β/dt/iterations/z_min/z_max/z_target), 3 tokenomics, 2 slashing
+- 9 економічних параметрів (tokenomics/minting/insurance + slashing/alerts) з bounds-clamp (§7); 8 Lorenz-ключів контракту — **DCI-locked**, свідомо НЕ синхронізуються (tripwire-WARN на голос — §7)
 
 **Друга governance-поверхня — ролі контрактів (не лише параметри).** Той самий шлях Governor → Timelock у production тримає `DEFAULT_ADMIN_ROLE` над токенами та `StateRootAnchor`, тож DAO може видавати/відкликати `MINTER_ROLE`/`SLASHER_ROLE`/`ANCHOR_ROLE` — **ротувати oracle-адреси** — теж лише за 48h-затримкою (`pause` лишається миттєвим у Safe, [SEC.1]). Це і є незворотний крок «transfer admin-ролей → Timelock» ([`00_07` SEC.1](00_07_Action_Plan_Tracker) — поглинув BIZ.4). Розкладка ролей/власників живе в [`05_03`](05_03_Tokenomics_SCC_and_SFC) (токени) + [`05_04`](05_04_Ethereum_L1_State_Anchor) (anchor) — тут лише вказівник.
 
@@ -169,33 +174,35 @@ contract SilkenGovernor is Governor, GovernorSettings, GovernorCountingSimple,
 
 **Статус:** Перспективна ідея. Не планується до TRL 9+.
 
-## 7. Governance-Aware Backend (⚠️ sync-pipeline готовий · read-path частковий)
+## 7. Governance-Aware Backend (✅ read-path + bounds; Lorenz = DCI-locked)
 
 ```ruby
-# Цільовий патерн (НЕ поточний факт для всіх — див. ⚠️ нижче):
-# Замість: SIGMA = 10.0
-sigma = SystemParameter.current(:lorenz_sigma, default: 10.0)
+# Живий патерн (GOV.1, 2026-07-04):
+# Замість: EMISSION_THRESHOLD = 10_000 (хардкод)
+threshold = TokenomicsEvaluatorWorker.emission_threshold  # SystemParameter ← ProtocolParameters.sol
 
-# Замість: SLASH_THRESHOLD = 0.20
-# Тепер:
-threshold = SystemParameter.current(:slash_threshold, default: 0.20)
+# Замість: Rational(1, 5) — точна десяткова частка без IEEE-похибки:
+slash_fraction = Rational(SystemParameter.current(:slash_threshold, default: 0.2).to_s)
 
-# Bulk fetch:
-params = SystemParameter.current_values(lorenz_sigma: 10.0, lorenz_rho: 28.0)
+# Спільний slash/damage-поріг (тригер + сайзинг, ARCH.46):
+AiInsight.slash_stress_threshold  # default 0.83
 
 # Admin/Governance update:
-SystemParameter.set("lorenz_sigma", "12.0", updated_by: admin, source: "governance")
+SystemParameter.set("slash_gamma", "1.5", updated_by: admin, source: "governance")
 ```
 
-> Значення-дефолти у прикладах (`10.0` / `0.20` / `28.0`) — лише `default:`-fallback, що дзеркалить канон-доми (примітка §1 вище має посилання: Lorenz / slash / курс); governance/admin override має пріоритет.
+> Значення-дефолти у прикладах (`10_000` / `0.2` / `0.83`) — лише `default:`-fallback, що дзеркалить канон-доми (примітка §1 вище має посилання: slash / курс); governance/admin override має пріоритет.
 
-> ⚠️ **Стан read-path (deep-audit 2026-07-04 — [`00_07` GOV.1](00_07_Action_Plan_Tracker)):** sync-**pipeline** (`ProtocolParameters.sol` → `ParameterSyncWorker` → `SystemParameter`) реалізований і синхронізує 13 параметрів. АЛЕ приклад вище — **цільовий патерн, не поточний факт для всіх споживачів**: (1) **8 Lorenz-параметрів** свідомо лишаються хардкод-константами в `SilkenNet::Attractor` (`BASE_SIGMA`/`BASE_RHO`/`BASE_BETA`…) — **Dual Computation Integrity** вимагає bit-identical Float з прошитим firmware, тож governance-зміна σ/ρ/β **зламала б** device↔server parity → їх sync = mirror, НЕ живий важіль (радше пастка — не читати назад); (2) `emission_threshold`/`slash_threshold`/`stress_threshold` наразі читаються з констант (`TokenomicsEvaluatorWorker::EMISSION_THRESHOLD`, `ContractHealthCheckService` `Rational(1,5)`, `AiInsight::SLASH_STRESS_THRESHOLD`) — недороблений read-path (НЕ DCI-обмежений, має бути governance-aware); (3) `slash_gamma`/`slash_penalty_factor_max` читаються з `SystemParameter` у `BlockchainBurningService` ✅, але їх НЕМАЄ в `ProtocolParameters.sol` keys / `PARAMETER_MAP` → змінні лише admin, не DAO. Живий governance-read-path сьогодні: kill-switches (`parametric_insurance_oracle_enabled`, `slash_cause_uplift_enabled`), `dynamic_tax_rate`/`insurance_pool_threshold` (mint-tax), oracle-balance пороги. Дороблення + узгодження ключів → [`00_07` GOV.1](00_07_Action_Plan_Tracker).
+**Стан read-path ([GOV.1] закрито 2026-07-04):**
+- **Синхронізуються + читаються назад (повний DAO-ефект):** `emission_threshold` → `TokenomicsEvaluatorWorker.emission_threshold` (One-Home: селектор, `EvaluateTreeBatchWorker`-конверсія, `OracleVisionsController`; `MintingRollbackService` legacy-fallback свідомо на дефолт-константі — історичний refund не переоцінюється) · `slash_threshold` → `ContractHealthCheckService` (Rational-точність) · `stress_threshold` → `AiInsight.slash_stress_threshold` (спільний для тригера й damage-сайзингу — ARCH.46) · `slash_gamma`/`slash_penalty_factor_max` → `BlockchainBurningService` · `dynamic_tax_rate`/`insurance_pool_threshold` → `BlockchainMintingService` · `scc_fallback_price_usd` → `PriceOracleService` · `scc_per_tonne_co2` (синхронізується; прод-споживач прийде з carbon-registry інтеграцією — BIZ.1). Поза on-chain: kill-switches (`parametric_insurance_oracle_enabled`, `slash_cause_uplift_enabled`) та oracle-balance пороги (E.51) — admin-only за дизайном.
+- **Bounds-clamp:** sync-воркер пише `min_value`/`max_value` (One-Home меж = `PARAMETER_MAP` ↔ `db/seeds.rb`) — out-of-bounds DAO-значення (клас «18-decimals мис-скейл», напр. tax=2e18 «200%» → `forester_amount<0` → mint-halt) **відхиляється**: чинним лишається попереднє, `silkennet_governance_param_rejected_total` + ERROR-лог → потрібен коригувальний голос ([`06_03 §2.7`](06_03_Prometheus_Observability)).
+- **8 Lorenz-ключів = DCI-locked** (σ/ρ/β/dt/iterations/z_min/z_max/z_target): `SilkenNet::Attractor` тримає bit-identical Float-константи з прошитим firmware (FW.7 — Dual Computation Integrity), governance-зміна зламала б device↔server parity. Ключі лишаються в контракті як резерв OTA-ери; `ParameterSyncWorker` їх НЕ тягне, `db/seeds.rb` НЕ сідирує (запис без читача = пастка), лише **tripwire**: голос за DCI-locked ключ → WARN «набуття ефекту = координований fleet-reflash» ([`03_04`](03_04_mruby_Lorenz_Attractor)).
 
 **`SystemParameter` model** (`app/models/system_parameter.rb`):
 - Кеш поточних значень з TTL 24h (invalidation через `after_commit`)
 - Fallback на `default:` при відсутності запису
 - Type coercion: `integer`, `float`, `decimal`, `string`, `boolean`, `json`
-- Bounds validation (`min_value` / `max_value`)
+- Bounds validation (`min_value` / `max_value`) — governance-safety-межі (↑)
 - Audit trail (`updated_by` → User FK, `source`: default/admin/governance)
-- seed-параметри: Lorenz (σ/ρ/β/dt/iterations/z_min/z_max/z_target), tokenomics, alerts, hardware, **insurance** (feature-flag `parametric_insurance_oracle_enabled` — kill-switch money-path параметричного страхування, default false; [INS.1] — admin/governance, НЕ on-chain `ProtocolParameters`)
-- Синхронізація з `ProtocolParameters.sol` через The Graph — `Governance::ParameterSyncWorker` (§2)
+- seed-параметри: tokenomics/minting/insurance + slashing/alerts (slash_threshold/stress_threshold/slash_gamma/slash_penalty_factor_max) + fraud/fire/hardware + **insurance kill-switch** (`parametric_insurance_oracle_enabled` — kill-switch money-path параметричного страхування, default false; [INS.1] — admin/governance, НЕ on-chain `ProtocolParameters`); Lorenz свідомо НЕ сідирується (DCI ↑)
+- Синхронізація з `ProtocolParameters.sol` через RPC eth_call — `Governance::ParameterSyncWorker` (§2)

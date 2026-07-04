@@ -24,28 +24,33 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
   end
 
   describe "PARAMETER_MAP" do
-    it "defines 13 parameters" do
-      expect(described_class::PARAMETER_MAP.size).to eq(13)
-    end
-
-    it "includes all Lorenz parameters" do
-      lorenz_keys = described_class::PARAMETER_MAP.select { |_, v| v[:category] == "lorenz" }.keys
-      expect(lorenz_keys).to contain_exactly(
-        :lorenz_sigma, :lorenz_rho, :lorenz_beta, :lorenz_dt,
-        :lorenz_iterations, :lorenz_z_min, :lorenz_z_max, :lorenz_z_target
-      )
+    it "defines 9 economic parameters" do
+      expect(described_class::PARAMETER_MAP.size).to eq(9)
     end
 
     it "includes tokenomics parameters" do
       tokenomics_keys = described_class::PARAMETER_MAP.select { |_, v| v[:category] == "tokenomics" }.keys
       expect(tokenomics_keys).to contain_exactly(
-        :emission_threshold, :dynamic_tax_rate, :insurance_pool_threshold
+        :emission_threshold, :scc_per_tonne_co2, :scc_fallback_price_usd
       )
+    end
+
+    it "keeps dynamic_tax_rate and insurance_pool_threshold in their seeded categories" do
+      expect(described_class::PARAMETER_MAP[:dynamic_tax_rate])
+        .to include(value_type: "decimal", category: "minting")
+      expect(described_class::PARAMETER_MAP[:insurance_pool_threshold])
+        .to include(value_type: "integer", category: "insurance")
     end
 
     it "includes slashing parameters" do
       alerts_keys = described_class::PARAMETER_MAP.select { |_, v| v[:category] == "alerts" }.keys
-      expect(alerts_keys).to contain_exactly(:slash_threshold, :stress_threshold)
+      expect(alerts_keys).to contain_exactly(
+        :slash_threshold, :stress_threshold, :slash_gamma, :slash_penalty_factor_max
+      )
+    end
+
+    it "contains NO Lorenz keys (DCI-locked, GOV.1)" do
+      expect(described_class::PARAMETER_MAP.keys.grep(/lorenz/)).to be_empty
     end
 
     it "has valid value_types for all parameters" do
@@ -60,6 +65,25 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
         expect(config[:category]).to be_in(SystemParameter::CATEGORIES),
           "#{key} has invalid category: #{config[:category]}"
       end
+    end
+
+    it "has sane bounds (min < max) for all parameters" do
+      described_class::PARAMETER_MAP.each do |key, config|
+        expect(config[:min]).to be < config[:max], "#{key} has min >= max"
+      end
+    end
+  end
+
+  describe "DCI_LOCKED_KEYS" do
+    it "lists all 8 firmware-parity Lorenz keys" do
+      expect(described_class::DCI_LOCKED_KEYS).to contain_exactly(
+        :lorenz_sigma, :lorenz_rho, :lorenz_beta, :lorenz_dt,
+        :lorenz_iterations, :lorenz_z_min, :lorenz_z_max, :lorenz_z_target
+      )
+    end
+
+    it "does not overlap with the synced PARAMETER_MAP" do
+      expect(described_class::DCI_LOCKED_KEYS & described_class::PARAMETER_MAP.keys).to be_empty
     end
   end
 
@@ -79,6 +103,7 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
       allow(Web3::RpcConnectionPool).to receive(:client_for).and_return(mock_client)
       allow(Eth::Contract).to receive(:from_abi).and_return(mock_contract)
       allow(SilkenNet::Metrics::RPC_ERRORS_TOTAL).to receive(:increment)
+      allow(SilkenNet::Metrics::GOVERNANCE_PARAM_REJECTED_TOTAL).to receive(:increment)
     end
 
     context "when PROTOCOL_PARAMETERS_CONTRACT_ADDRESS is not set" do
@@ -131,22 +156,23 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
 
           worker.perform
 
-          expect(Rails.logger).to have_received(:info).with(/13 skipped/)
+          expect(Rails.logger).to have_received(:info).with(/9 skipped/)
         end
       end
 
       context "when a parameter is set on-chain" do
         before do
           stub_all_parameters_unset
-          # Override: lorenz_sigma is set on-chain with value 12.0 (12e18)
-          stub_parameter_set(:lorenz_sigma, 12_000_000_000_000_000_000)
+          # Override: slash_gamma is set on-chain with value 1.5 (1.5e18)
+          stub_parameter_set(:slash_gamma, 1_500_000_000_000_000_000)
         end
 
-        it "updates SystemParameter with governance source" do
+        it "updates SystemParameter with governance source and bounds" do
           expect(SystemParameter).to receive(:set).with(
-            :lorenz_sigma,
+            :slash_gamma,
             anything,
-            hash_including(source: "governance", value_type: "float", category: "lorenz")
+            hash_including(source: "governance", value_type: "float", category: "alerts",
+                           min_value: 1.0, max_value: 3.0)
           )
 
           worker.perform
@@ -154,8 +180,8 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
 
         it "converts 18-decimal fixed-point to Ruby float" do
           expect(SystemParameter).to receive(:set).with(
-            :lorenz_sigma,
-            "12.0",
+            :slash_gamma,
+            "1.5",
             anything
           )
 
@@ -168,17 +194,18 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
 
           worker.perform
 
-          expect(Rails.logger).to have_received(:info).with(/Updated lorenz_sigma/)
+          expect(Rails.logger).to have_received(:info).with(/Updated slash_gamma/)
           expect(Rails.logger).to have_received(:info).with(/1 updated/)
         end
       end
 
       context "when on-chain value matches current SystemParameter" do
         before do
-          create(:system_parameter, :lorenz_sigma) # value: "10.0"
+          create(:system_parameter, key: "slash_threshold", value: "0.2",
+                                    value_type: "float", category: "alerts")
           stub_all_parameters_unset
-          # Set on-chain value to 10.0 (matches current)
-          stub_parameter_set(:lorenz_sigma, 10_000_000_000_000_000_000)
+          # Set on-chain value to 0.2 (matches current)
+          stub_parameter_set(:slash_threshold, 200_000_000_000_000_000)
         end
 
         it "skips the parameter (no update)" do
@@ -206,28 +233,60 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
         end
       end
 
-      context "when lorenz_beta is set (fractional value)" do
+      context "when an on-chain value is outside the safety bounds" do
         before do
           stub_all_parameters_unset
-          # beta = 8/3 ≈ 2.666666666666666667 stored as 2_666_666_666_666_666_667
-          stub_parameter_set(:lorenz_beta, 2_666_666_666_666_666_667)
+          # dynamic_tax_rate = 2.0 (200%!) — the 18-decimals mis-scale class; max is 0.10
+          stub_parameter_set(:dynamic_tax_rate, 2_000_000_000_000_000_000)
         end
 
-        it "preserves BigDecimal precision" do
-          expect(SystemParameter).to receive(:set) do |key, value, **_opts|
-            expect(key).to eq(:lorenz_beta)
-            parsed = BigDecimal(value)
-            expect(parsed).to be_within(BigDecimal("0.000000000000000001")).of(BigDecimal("2.666666666666666667"))
-          end
+        it "rejects the value and keeps no record" do
+          allow(Rails.logger).to receive(:error)
+          allow(Rails.logger).to receive(:info)
 
           worker.perform
+
+          expect(Rails.logger).to have_received(:error).with(/REJECTED dynamic_tax_rate/)
+          expect(SystemParameter.find_by(key: "dynamic_tax_rate")).to be_nil
+          expect(Rails.logger).to have_received(:info).with(/1 rejected/)
+        end
+
+        it "keeps the previous value when the record already exists" do
+          create(:system_parameter, :dynamic_tax_rate) # value 0.02, bounds 0..0.10
+
+          worker.perform
+
+          expect(SystemParameter.find_by(key: "dynamic_tax_rate").value).to eq("0.02")
+        end
+
+        it "increments the rejected-parameters metric" do
+          expect(SilkenNet::Metrics::GOVERNANCE_PARAM_REJECTED_TOTAL)
+            .to receive(:increment).with(labels: { parameter: "dynamic_tax_rate" })
+
+          worker.perform
+        end
+      end
+
+      context "when a DCI-locked Lorenz key is voted on-chain" do
+        before do
+          stub_all_parameters_unset
+          stub_parameter_set(:lorenz_sigma, 12_000_000_000_000_000_000)
+        end
+
+        it "does NOT sync it into SystemParameter (tripwire only)" do
+          allow(Rails.logger).to receive(:warn)
+          expect(SystemParameter).not_to receive(:set)
+
+          worker.perform
+
+          expect(Rails.logger).to have_received(:warn).with(/DCI-locked lorenz_sigma/)
         end
       end
 
       context "when multiple parameters change" do
         before do
           stub_all_parameters_unset
-          stub_parameter_set(:lorenz_sigma, 12_000_000_000_000_000_000)
+          stub_parameter_set(:slash_gamma, 1_500_000_000_000_000_000)
           stub_parameter_set(:slash_threshold, 250_000_000_000_000_000) # 0.25
         end
 
@@ -243,7 +302,7 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
 
           worker.perform
 
-          expect(Rails.logger).to have_received(:info).with(/2 updated, 11 skipped/)
+          expect(Rails.logger).to have_received(:info).with(/2 updated, 7 skipped, 0 rejected/)
         end
       end
 
@@ -256,12 +315,12 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
 
         before do
           stub_all_parameters_unset
-          stub_parameter_set(:lorenz_sigma, 15_000_000_000_000_000_000)
+          stub_parameter_set(:slash_gamma, 1_500_000_000_000_000_000)
         end
 
         it "passes User.oracle_executioner as updated_by" do
           expect(SystemParameter).to receive(:set).with(
-            :lorenz_sigma,
+            :slash_gamma,
             anything,
             hash_including(updated_by: oracle_user)
           )
@@ -273,12 +332,12 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
       context "when system_bot user does not exist" do
         before do
           stub_all_parameters_unset
-          stub_parameter_set(:lorenz_sigma, 15_000_000_000_000_000_000)
+          stub_parameter_set(:slash_gamma, 1_500_000_000_000_000_000)
         end
 
         it "passes nil as updated_by" do
           expect(SystemParameter).to receive(:set).with(
-            :lorenz_sigma,
+            :slash_gamma,
             anything,
             hash_including(updated_by: nil)
           )
@@ -329,9 +388,9 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
   describe "#convert_from_fixed_point" do
     let(:worker) { described_class.new }
 
-    it "converts integer type: 250e18 → 250" do
-      result = worker.send(:convert_from_fixed_point, 250_000_000_000_000_000_000, "integer")
-      expect(result).to eq(250)
+    it "converts integer type: 2000e18 → 2000" do
+      result = worker.send(:convert_from_fixed_point, 2_000_000_000_000_000_000_000, "integer")
+      expect(result).to eq(2000)
       expect(result).to be_a(Integer)
     end
 
@@ -351,7 +410,7 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
       expect(result).to eq(BigDecimal("0.02"))
     end
 
-    it "converts beta: 2.666...e18 → ~2.666..." do
+    it "preserves 18-decimal precision on repeating fractions (8/3)" do
       raw = 2_666_666_666_666_666_667
       result = worker.send(:convert_from_fixed_point, raw, "float")
       expect(result).to be_within(BigDecimal("1e-18")).of(BigDecimal("2.666666666666666667"))
@@ -414,14 +473,14 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
     let(:worker) { described_class.new }
 
     it "produces consistent hashes for the same input" do
-      hash1 = worker.send(:solidity_keccak256, "lorenz_sigma")
-      hash2 = worker.send(:solidity_keccak256, "lorenz_sigma")
+      hash1 = worker.send(:solidity_keccak256, "slash_gamma")
+      hash2 = worker.send(:solidity_keccak256, "slash_gamma")
       expect(hash1).to eq(hash2)
     end
 
     it "produces different hashes for different inputs" do
-      hash1 = worker.send(:solidity_keccak256, "lorenz_sigma")
-      hash2 = worker.send(:solidity_keccak256, "lorenz_rho")
+      hash1 = worker.send(:solidity_keccak256, "slash_gamma")
+      hash2 = worker.send(:solidity_keccak256, "slash_threshold")
       expect(hash1).not_to eq(hash2)
     end
   end
@@ -442,7 +501,7 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
 
   private
 
-  # Stub all 13 parameters as "not set" on-chain.
+  # Stub every parameter (economic map + DCI tripwire keys) as "not set" on-chain.
   def stub_all_parameters_unset
     allow(mock_client).to receive(:call).with(mock_contract, "isParameterSet", anything).and_return(false)
   end

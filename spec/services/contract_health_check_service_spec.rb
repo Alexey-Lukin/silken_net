@@ -107,5 +107,32 @@ RSpec.describe ContractHealthCheckService do
         expect(BurnCarbonTokensWorker.jobs.size).to eq(0)
       end
     end
+
+    # [GOV.1] Обидва пороги DAO-live через SystemParameter (← ProtocolParameters.sol).
+    context "when governance overrides the thresholds (GOV.1)" do
+      it "respects a raised slash_threshold: 30% critical < 50% → :healthy" do
+        create(:system_parameter, key: "slash_threshold", value: "0.5",
+                                  value_type: "float", category: "alerts")
+        trees = create_list(:tree, 10, cluster: cluster, status: :active)
+        trees[0..2].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 1.0) }
+        trees[3..9].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.1) }
+        cluster.reload
+
+        expect(described_class.call(contract, target_date)).to eq(:healthy)
+        expect(BurnCarbonTokensWorker.jobs.size).to eq(0)
+      end
+
+      it "respects a raised stress_threshold: stress 0.85 no longer counts as critical" do
+        create(:system_parameter, key: "stress_threshold", value: "0.9",
+                                  value_type: "float", category: "alerts")
+        trees = create_list(:tree, 10, cluster: cluster, status: :active)
+        trees[0..2].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.85) }
+        trees[3..9].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.1) }
+        cluster.reload
+
+        expect(described_class.call(contract, target_date)).to eq(:healthy)
+        expect(BurnCarbonTokensWorker.jobs.size).to eq(0)
+      end
+    end
   end
 end

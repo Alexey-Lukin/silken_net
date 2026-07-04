@@ -174,6 +174,9 @@ class MintingRollbackService < ApplicationService
 
     ActiveRecord::Base.transaction do
       tx.wallet.with_lock do
+        # Legacy-fallback (rows до locked_points-ери мінтились на 10k-дефолті) —
+        # свідомо КОНСТАНТА-дефолт, не DAO-live значення (GOV.1): governance-зміна
+        # порогу не має переоцінювати історичний refund.
         refund_points = tx.locked_points || (tx.amount * TokenomicsEvaluatorWorker::EMISSION_THRESHOLD).to_i
 
         if tx.wallet.locked_balance >= refund_points

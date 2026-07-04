@@ -775,7 +775,7 @@ contracts/foundry.toml               # ✅ Foundry config: solc 0.8.35, EVM canc
 
 ## 🗳️ Governance DAO (Законодавча Гілка Влади) → 05_06
 
-On-chain governance (SFC-голосування за протокольні параметри: Lorenz σ/ρ/β, slashing-пороги, tokenomics-курс) виокремлено у власний дім — [`05_06` — Governance & DAO](05_06_Governance_and_DAO). Там: `SilkenGovernor` / `SilkenTimelock` / `ProtocolParameters`, Flash-Loan-захист, Auto-Immune Sentinel, governance-aware backend (`SystemParameter` / `Governance::ParameterSyncWorker`). База — SFC `ERC20Votes` (§SFC — Ролі вище).
+On-chain governance (SFC-голосування за протокольні параметри: slashing-пороги/криву, tokenomics-курс, ціни; Lorenz-ключі контракту — DCI-locked резерв OTA-ери, GOV.1) виокремлено у власний дім — [`05_06` — Governance & DAO](05_06_Governance_and_DAO). Там: `SilkenGovernor` / `SilkenTimelock` / `ProtocolParameters`, Flash-Loan-захист, Auto-Immune Sentinel, governance-aware backend (`SystemParameter` / `Governance::ParameterSyncWorker`). База — SFC `ERC20Votes` (§SFC — Ролі вище).
 
 ## 🔍 Smart Contract Audit Roadmap
 

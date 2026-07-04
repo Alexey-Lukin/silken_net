@@ -1419,7 +1419,7 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Вхід** | — |
 | **Сервіси** | `Eth::Contract` (ProtocolParameters ABI) через `Web3::RpcConnectionPool` |
 | **ENV** | `PROTOCOL_PARAMETERS_CONTRACT_ADDRESS`, `ALCHEMY_POLYGON_RPC_URL` |
-| **Side Effects** | Зчитує 13 on-chain параметрів (8 Lorenz + 3 tokenomics + 2 slashing) з `ProtocolParameters.sol`. Fixed-point conversion (uint256/1e18 → BigDecimal). Порівнює з `SystemParameter` і оновлює змінені (source: `"governance"`, updated_by: `User.oracle_executioner`). Timeout 10s per RPC call. |
+| **Side Effects** | [GOV.1] Зчитує 9 економічних on-chain параметрів (tokenomics/minting/insurance + slashing/alerts) з `ProtocolParameters.sol`. Fixed-point conversion (uint256/1e18 → BigDecimal). Порівнює з `SystemParameter` і оновлює змінені (source: `"governance"`, updated_by: `User.oracle_executioner`, `min_value`/`max_value` bounds) — out-of-bounds відхиляється (лог + `silkennet_governance_param_rejected_total`). 8 Lorenz-ключів — DCI-tripwire: WARN на голос, НЕ синхронізуються (FW.7 — [`05_06 §7`](05_06_Governance_and_DAO)). Timeout 10s per RPC call. |
 
 ---
 
@@ -1544,10 +1544,11 @@ Sidekiq Cron Monday 03:00 UTC
 Sidekiq Cron 03:30 UTC (щоденно)
   └─→ Governance::ParameterSyncWorker [web3_low]
         └─→ Eth::Contract (ProtocolParameters.sol) via Web3::RpcConnectionPool
-              ├─→ isParameterSet(key) × 13 параметрів (Timeout 10s per call)
+              ├─→ isParameterSet(key) × 9 економічних + 8 DCI-tripwire (Timeout 10s per call)
               ├─→ getParameter(key) для встановлених параметрів
               ├─→ Fixed-point conversion (uint256 / 1e18 → BigDecimal)
-              └─→ SystemParameter.set(key, value, source: "governance")
+              ├─→ bounds-clamp: out-of-bounds → reject + governance_param_rejected_total [GOV.1]
+              └─→ SystemParameter.set(key, value, source: "governance", min/max bounds)
 ```
 
 ### ⏰ Цикл Казначейства (кожні 15 хвилин)

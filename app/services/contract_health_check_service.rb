@@ -36,12 +36,15 @@ class ContractHealthCheckService < ApplicationService
     # людина класифікує A (недбалість → slash) vs B (форс-мажор → insurance).
     return flag_data_blackout! if router.blackout?
 
-    # Математична межа порушення — 20% від активної біомаси.
-    # [ARCH.46] Спільний slash-поріг (= damage-сайзинг у BlockchainBurningService) — одна константа,
-    # щоб тригер і розмір не розходились (= поріг впевненості Random Forest, не детерм. 1.0).
-    critical_insights_count = router.critical_count(AiInsight::SLASH_STRESS_THRESHOLD)
+    # Математична межа порушення — частка активної біомаси (default 20%).
+    # [ARCH.46] Спільний slash-поріг (= damage-сайзинг у BlockchainBurningService) — одне
+    # читання AiInsight.slash_stress_threshold, щоб тригер і розмір не розходились.
+    # [GOV.1] Обидва пороги DAO-live (SystemParameter ← ProtocolParameters.sol); Rational
+    # із to_s — точна десяткова частка без IEEE-похибки на межі (спадок Rational(1,5)).
+    critical_insights_count = router.critical_count(AiInsight.slash_stress_threshold)
 
-    if critical_insights_count > router.total_active_trees * Rational(1, 5)
+    slash_fraction = Rational(SystemParameter.current(:slash_threshold, default: 0.2).to_s)
+    if critical_insights_count > router.total_active_trees * slash_fraction
       flag_degradation!
     else
       :healthy
