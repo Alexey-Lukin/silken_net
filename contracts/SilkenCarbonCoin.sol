@@ -170,6 +170,34 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         emit TokenSlashed(investor, amount);
     }
 
+    /// @notice [SLASH.2] Спалювання до maxAmount, клампнуте до фактичного балансу (anti-evasion).
+    /// @dev Бекенд рахує burn з pre-tax БД-сум, а on-chain баланс менший (DynamicTax у treasury,
+    ///      SCC вільно переказуваний) — строгий slash() тоді revert-ить, і переказ 1 wei
+    ///      перед транзакцією Оракула скасовував би повний slash. Тут min(maxAmount, balanceOf)
+    ///      обчислюється атомарно в одній транзакції — гонки «прочитали баланс → front-run
+    ///      переказом» не існує; виведення коштів лише зменшує спалюване до залишку.
+    /// @param investor Адреса, з якої спалюються токени.
+    /// @param maxAmount Верхня межа спалення (wei) — запитана бекендом сума.
+    /// @return slashed Фактично спалена сума (wei) — її ж несе event TokenSlashed.
+    /// @dev Reverts if investor holds nothing ("SCC: nothing to slash") — повне виведення
+    ///      коштів бекенд ескалює як evasion окремим (юридичним) треком.
+    function slashUpTo(address investor, uint256 maxAmount)
+        external
+        nonReentrant
+        onlyRole(SLASHER_ROLE)
+        returns (uint256 slashed)
+    {
+        require(investor != address(0), "SCC: zero investor");
+        require(maxAmount > 0, "SCC: zero amount");
+        slashed = balanceOf(investor);
+        if (slashed > maxAmount) {
+            slashed = maxAmount;
+        }
+        require(slashed > 0, "SCC: nothing to slash");
+        _burn(investor, slashed);
+        emit TokenSlashed(investor, slashed);
+    }
+
     /// @notice [SEC.1] Призупинення всіх трансферів (emergency) — PAUSER_ROLE (Safe),
     ///         навмисно ШВИДКЕ (поза Timelock) для негайної реакції на exploit.
     function pause() external onlyRole(PAUSER_ROLE) {

@@ -3,8 +3,28 @@
 require "eth"
 
 class BlockchainBurningService < ApplicationService
-  # ABI для функції вилучення/спалювання (Sovereign Slashing)
-  CONTRACT_ABI = '[{"inputs":[{"internalType":"address","name":"investor","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"slash","outputs":[],"stateMutability":"nonpayable","type":"function"}]'
+  # ABI для Sovereign Slashing. [SLASH.2] `slashUpTo(investor, maxAmount)` замість `slash`:
+  # спалює min(maxAmount, balanceOf) АТОМАРНО on-chain → строгий slash() тихо revert-ив, коли
+  # бекенд рахував pre-tax БД-суму > on-chain балансу (DynamicTax пішов у treasury, SCC вільно
+  # переказуваний), і переказ 1 wei перед транзакцією Оракула скасовував би повний slash. Плюс
+  # `balanceOf` — pre-read для чесного обліку (intent/метрика) + tripwire на повне виведення.
+  CONTRACT_ABI = [
+    {
+      "inputs" => [ { "internalType" => "address", "name" => "investor", "type" => "address" },
+                    { "internalType" => "uint256", "name" => "maxAmount", "type" => "uint256" } ],
+      "name" => "slashUpTo",
+      "outputs" => [ { "internalType" => "uint256", "name" => "slashed", "type" => "uint256" } ],
+      "stateMutability" => "nonpayable",
+      "type" => "function"
+    },
+    {
+      "inputs" => [ { "internalType" => "address", "name" => "account", "type" => "address" } ],
+      "name" => "balanceOf",
+      "outputs" => [ { "internalType" => "uint256", "name" => "", "type" => "uint256" } ],
+      "stateMutability" => "view",
+      "type" => "function"
+    }
+  ].to_json
 
   # Кількість десяткових знаків токена (ERC-20 стандарт = 18).
   # Змініть тут, якщо почнемо підтримувати стейблкоіни з іншою розрядністю (напр. USDC = 6).
@@ -125,8 +145,22 @@ class BlockchainBurningService < ApplicationService
     contract_address = ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS")
     contract = Eth::Contract.from_abi(name: "SilkenCarbonCoin", address: contract_address, abi: CONTRACT_ABI)
 
-    amount_in_wei = Web3::WeiConverter.to_wei(burn_amount, TOKEN_DECIMALS)
     investor_address = @organization.crypto_public_address
+
+    # [SLASH.2] Pre-read on-chain балансу: (1) tripwire на ПОВНЕ виведення (нема чого палити →
+    # escalate, НЕ транслюємо приречену `slashUpTo`-revert tx + не лишаємо :breached-брехню);
+    # (2) intent/метрика записують РЕАЛІСТИЧНУ суму `effective_burn = min(burn_amount, balance)`,
+    # а не pre-tax БД-суму (яка > балансу). Сам burn робить slashUpTo(maxAmount) — clamp до
+    # balanceOf АТОМАРНО, тож дрейф балансу між цим читанням і виконанням лише зменшує спалене
+    # (без revert; TOCTOU-safe). Floor до цілих SCC (dust < 1 SCC не істотний, консервативно).
+    investor_balance_wei = client.call(contract, "balanceOf", investor_address)
+    return escalate_evasion!(burn_amount) if investor_balance_wei.zero?
+
+    balance_whole = investor_balance_wei / (10**TOKEN_DECIMALS)
+    effective_burn = [ burn_amount, balance_whole ].min
+    return escalate_evasion!(burn_amount) if effective_burn.zero? # балансу < 1 SCC — теж evasion
+
+    amount_in_wei = Web3::WeiConverter.to_wei(effective_burn, TOKEN_DECIMALS)
 
     # 3. ВИКОНАННЯ (The Verdict)
     lock_key = "lock:web3:oracle:#{oracle_key.address}"
@@ -137,11 +171,13 @@ class BlockchainBurningService < ApplicationService
       outcome = nil
       reason = @source_tree ? "загибель дерева #{@source_tree.did}" : "порушення умов кластера"
 
-      Rails.logger.warn "🔥 [Slashing] Вилучення #{burn_amount}/#{total_minted_amount} SCC (damage #{(damage_ratio * 100).round(1)}% → slash #{(slash_ratio * 100).round(1)}%, 05_05 §3 γ=#{slash_gamma}) у #{@organization.name}. Причина: #{reason}."
+      clamp_note = effective_burn < burn_amount ? " (clamp з #{burn_amount} до on-chain балансу)" : ""
+      Rails.logger.warn "🔥 [Slashing] Вилучення #{effective_burn}/#{total_minted_amount} SCC#{clamp_note} (damage #{(damage_ratio * 100).round(1)}% → slash #{(slash_ratio * 100).round(1)}%, 05_05 §3 γ=#{slash_gamma}) у #{@organization.name}. Причина: #{reason}."
 
       # [ARCH.45] Durable intent-marker (:pending, sourceable: contract) ПЕРЕД on-chain slash.
       # На краху retry бачить його через in-flight guard (вгорі) і не палить удруге.
-      audit = create_slash_intent!(burn_amount, reason)
+      # [SLASH.2] Записуємо effective_burn (on-chain-реалістичний), не pre-tax burn_amount.
+      audit = create_slash_intent!(effective_burn, reason)
       SilkenNet::Metrics::SLASH_ATTEMPTS_TOTAL.increment
 
       # [ВИПРАВЛЕНО: Lock Duration]: 30 секунд достатньо для transact() (fire-and-forget,
@@ -152,8 +188,9 @@ class BlockchainBurningService < ApplicationService
         # [ВИПРАВЛЕНО: The 429 Trap]: Використовуємо transact (fire-and-forget) замість
         # transact_and_wait, який блокує Sidekiq-потік нескінченно при перевантаженні Polygon.
         # Підтвердження транзакції делеговано BlockchainConfirmationWorker (як у BlockchainMintingService).
+        # [SLASH.2] slashUpTo (не slash): on-chain clamp до balanceOf → без тихого revert/evasion.
         tx_hash = client.transact(
-          contract, "slash", investor_address, amount_in_wei,
+          contract, "slashUpTo", investor_address, amount_in_wei,
           sender_key: oracle_key, legacy: false
         )
       end
@@ -172,8 +209,9 @@ class BlockchainBurningService < ApplicationService
         # Маркуємо контракт як розірваний. Це автоматично блокує майбутні виплати.
         @naas_contract.update!(status: :breached)
 
-        # [OBSERVABILITY]: Track slashed tokens for Prometheus/Grafana
-        SilkenNet::Metrics::SCC_SLASHED_TOTAL.increment(by: burn_amount)
+        # [OBSERVABILITY]: Track slashed tokens for Prometheus/Grafana.
+        # [SLASH.2] effective_burn (on-chain-реалістичний upper-bound), не pre-tax burn_amount.
+        SilkenNet::Metrics::SCC_SLASHED_TOTAL.increment(by: effective_burn)
 
         Rails.logger.info "✅ [Slashing] Виконано. TX: #{tx_hash}"
         outcome = :slashed
@@ -252,6 +290,29 @@ class BlockchainBurningService < ApplicationService
     )
 
     :frozen
+  end
+
+  # [SLASH.2] Повне виведення коштів (balanceOf ≈ 0) до слешу: positive-A ВЖЕ довів провину
+  # (tamper), але палити нічого — токени переказані/продані. НЕ транслюємо приречену slashUpTo
+  # (revert "nothing to slash" → приземлився б хибний :failed при оптимістичному :breached).
+  # Піднімаємо critical :field_audit (evasion-контекст) для юридично-ручного треку; контракт
+  # лишається :active до людського рішення (позов / clawback-роадмеп ARCH.12). Повертає :evaded
+  # → BurnCarbonTokensWorker трактує як non-slash (без надгробка/трансляції). Метрика attempts
+  # НЕ інкрементиться (спроби on-chain не було). Клас той самий, що freeze, але причина інша:
+  # тут доказ A Є, бракує АКТИВІВ (не magnitude/evidence). Дзеркало freeze_for_field_audit!.
+  def escalate_evasion!(requested_burn)
+    context = @source_tree ? "дерево #{@source_tree.did}" : "кластер ##{@cluster.id}"
+
+    Rails.logger.warn "🏃 [SLASH.2] NaasContract ##{@naas_contract.id} (#{context}): on-chain баланс порушника ≈0 — активи виведено ПЕРЕД слешем (запит #{requested_burn} SCC). Slash не транслюємо (нема чого палити) → Field Audit / юридичний трек."
+
+    EwsAlert.create!(
+      cluster: @cluster,
+      severity: :critical,
+      alert_type: :field_audit,
+      message: "Slash-ухилення (#{context}): доказ Категорії A є, але порушник вивів усі SCC до виконання вироку (запит #{requested_burn} SCC, on-chain баланс ≈0). Спалення неможливе — потрібен юридичний/ручний трек (позов, off-chain clawback; 05_05 §3.2)."
+    )
+
+    :evaded
   end
 
   # [ARCH.45] Intent-marker :pending ДО on-chain slash (sourceable: contract = ключ in-flight

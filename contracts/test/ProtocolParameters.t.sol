@@ -342,15 +342,29 @@ contract ProtocolParametersTest is Test {
         assertEq(params.sccPerTonneCo2(), 0);
     }
 
-    function test_namedGetter_sccFallbackPriceUsdCents() public {
-        // [S6.9] $25.50 = 2550 cents — governance-controlled fallback price
+    function test_namedGetter_sccFallbackPriceUsd() public {
+        // [S6.9][GOV.1] $25.50 as 18-decimal USD (matches SystemParameter :scc_fallback_price_usd)
         vm.prank(timelock);
-        params.setParameter(keccak256("scc_fallback_price_usd_cents"), 2550e18);
-        assertEq(params.sccFallbackPriceUsdCents(), 2550e18);
+        params.setParameter(keccak256("scc_fallback_price_usd"), 25.5e18);
+        assertEq(params.sccFallbackPriceUsd(), 25.5e18);
     }
 
-    function test_namedGetter_sccFallbackPriceUsdCents_defaultIsZero() public view {
-        assertEq(params.sccFallbackPriceUsdCents(), 0);
+    function test_namedGetter_sccFallbackPriceUsd_defaultIsZero() public view {
+        assertEq(params.sccFallbackPriceUsd(), 0);
+    }
+
+    function test_namedGetter_slashGamma() public {
+        // [GOV.1] convex slash-curve exponent (05_05 §3), default 1.3
+        vm.prank(timelock);
+        params.setParameter(keccak256("slash_gamma"), 1.3e18);
+        assertEq(params.slashGamma(), 1.3e18);
+    }
+
+    function test_namedGetter_slashPenaltyFactorMax() public {
+        // [GOV.1] ceiling on the penalty multiplier (05_05 §3), default 2.0
+        vm.prank(timelock);
+        params.setParameter(keccak256("slash_penalty_factor_max"), 2e18);
+        assertEq(params.slashPenaltyFactorMax(), 2e18);
     }
 
     // ─── Well-Known Key Constants ─────────────────────────────────────
@@ -370,7 +384,9 @@ contract ProtocolParametersTest is Test {
         assertEq(params.KEY_SLASH_THRESHOLD(), keccak256("slash_threshold"));
         assertEq(params.KEY_STRESS_THRESHOLD(), keccak256("stress_threshold"));
         assertEq(params.KEY_SCC_PER_TONNE_CO2(), keccak256("scc_per_tonne_co2"));
-        assertEq(params.KEY_SCC_FALLBACK_PRICE_USD_CENTS(), keccak256("scc_fallback_price_usd_cents"));
+        assertEq(params.KEY_SCC_FALLBACK_PRICE_USD(), keccak256("scc_fallback_price_usd"));
+        assertEq(params.KEY_SLASH_GAMMA(), keccak256("slash_gamma"));
+        assertEq(params.KEY_SLASH_PENALTY_FACTOR_MAX(), keccak256("slash_penalty_factor_max"));
     }
 
     function test_governanceRoleConstant() public view {

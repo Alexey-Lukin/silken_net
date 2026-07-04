@@ -31,7 +31,11 @@ RSpec.describe BlockchainBurningService do
     allow(Eth::Key).to receive(:new).and_return(mock_key)
     allow(Eth::Contract).to receive(:from_abi).and_return(mock_contract)
     allow(Kredis).to receive(:lock).and_yield
-    allow(mock_client).to receive(:transact).and_return(fake_tx_hash)
+
+    # [SLASH.2] transact + slashUpTo balanceOf pre-read. Дефолтний баланс 10_000 SCC ≫ усі burn-суми
+    # цих специв → effective_burn = burn_amount, clamp inert (існуючі amount_in_wei-очікування
+    # лишаються дійсні). Clamp/evasion-гілки перевизначають :call локально.
+    allow(mock_client).to receive_messages(transact: fake_tx_hash, call: 10_000 * (10**18))
 
     allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
@@ -351,6 +355,80 @@ RSpec.describe BlockchainBurningService do
           expected_wei = (burn_amount.to_f * (10**18)).to_i
           expect(amount_in_wei).to eq(expected_wei)
         end
+      end
+    end
+  end
+
+  # =========================================================================
+  # SLASH.2 — slashUpTo (on-chain clamp) + evasion tripwire
+  # =========================================================================
+  describe "SLASH.2 — on-chain balance clamp + evasion" do
+    let!(:tree) { create(:tree, cluster: cluster) }
+
+    before do
+      tree.wallet.blockchain_transactions.create!(
+        amount: 1000, token_type: :carbon_coin, status: :confirmed,
+        to_address: organization.crypto_public_address, tx_hash: "0x#{'a' * 64}"
+      )
+    end
+
+    it "calls slashUpTo (not slash) on-chain" do
+      described_class.call(organization.id, naas_contract.id, source_tree: tree)
+
+      expect(mock_client).to have_received(:transact)
+        .with(mock_contract, "slashUpTo", organization.crypto_public_address, anything, hash_including(sender_key: mock_key))
+    end
+
+    it "reads balanceOf before slashing" do
+      described_class.call(organization.id, naas_contract.id, source_tree: tree)
+
+      expect(mock_client).to have_received(:call).with(mock_contract, "balanceOf", organization.crypto_public_address)
+    end
+
+    it "clamps the burn to the on-chain balance when it is below the pre-tax DB sum" do
+      # Pre-tax burn = 1000 (single tree, damage 1.0); on-chain holds only 600 (tax + market moves).
+      allow(mock_client).to receive(:call).and_return(600 * (10**18))
+
+      described_class.call(organization.id, naas_contract.id, source_tree: tree)
+
+      expect(mock_client).to have_received(:transact) do |_c, _m, _addr, amount_in_wei, **_o|
+        expect(amount_in_wei).to eq(600 * (10**18)) # clamped to balance, not the 1000 pre-tax sum
+      end
+      # Intent-marker records the realistic (clamped) amount, not the pre-tax 1000.
+      expect(BlockchainTransaction.where(sourceable: naas_contract).last.amount).to eq(600)
+    end
+
+    it "still records the full requested burn when the balance exceeds it (no clamp)" do
+      allow(mock_client).to receive(:call).and_return(5_000 * (10**18))
+
+      described_class.call(organization.id, naas_contract.id, source_tree: tree)
+
+      expect(BlockchainTransaction.where(sourceable: naas_contract).last.amount).to eq(1000)
+    end
+
+    context "when the violator has drained all tokens before the slash (evasion)" do
+      it "escalates to Field Audit WITHOUT breaching or broadcasting, returns :evaded" do
+        allow(mock_client).to receive(:call).and_return(0)
+
+        result = nil
+        expect {
+          result = described_class.call(organization.id, naas_contract.id, source_tree: tree)
+        }.to change { EwsAlert.where(alert_type: :field_audit).count }.by(1)
+
+        expect(result).to eq(:evaded)
+        expect(mock_client).not_to have_received(:transact)
+        expect(naas_contract.reload.status).to eq("active") # NOT breached — nothing burned
+        # No intent-marker created (no on-chain attempt was made).
+        expect(BlockchainTransaction.where(sourceable: naas_contract)).to be_empty
+      end
+
+      it "also escalates when the residual balance is below 1 whole SCC (sub-unit dust)" do
+        allow(mock_client).to receive(:call).and_return((10**18) - 1) # 0.999… SCC
+
+        result = described_class.call(organization.id, naas_contract.id, source_tree: tree)
+
+        expect(result).to eq(:evaded)
+        expect(mock_client).not_to have_received(:transact)
       end
     end
   end

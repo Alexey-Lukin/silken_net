@@ -319,6 +319,77 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
     }
 
     // ═══════════════════════════════════════════════════════════════════
+    // SLASH UP TO [SLASH.2]
+    // ═══════════════════════════════════════════════════════════════════
+
+    function test_slashUpTo_burnsRequestedWhenBalanceSufficient() public {
+        vm.prank(minter);
+        scc.mint(user1, 1000e18, TREE_DID);
+
+        vm.prank(slasher);
+        uint256 slashed = scc.slashUpTo(user1, 300e18);
+
+        assertEq(slashed, 300e18);
+        assertEq(scc.balanceOf(user1), 700e18);
+        assertEq(scc.totalSupply(), 700e18);
+    }
+
+    /// @notice [SLASH.2] The evasion scenario: transferring even 1 wei away made the strict
+    ///         slash() revert; slashUpTo burns the entire remaining balance instead.
+    function test_slashUpTo_clampsToBalanceAfterEvasionTransfer() public {
+        vm.prank(minter);
+        scc.mint(user1, 1000e18, TREE_DID);
+
+        vm.prank(user1);
+        scc.transfer(user2, 1); // 1-wei evasion attempt
+
+        vm.prank(slasher);
+        uint256 slashed = scc.slashUpTo(user1, 1000e18);
+
+        assertEq(slashed, 1000e18 - 1);
+        assertEq(scc.balanceOf(user1), 0);
+    }
+
+    function test_slashUpTo_emitsActualSlashedAmount() public {
+        vm.prank(minter);
+        scc.mint(user1, 100e18, TREE_DID);
+
+        vm.prank(slasher);
+        vm.expectEmit(true, false, false, true);
+        emit TokenSlashed(user1, 100e18); // clamped: balance < requested 500
+        scc.slashUpTo(user1, 500e18);
+    }
+
+    function testRevert_slashUpTo_unauthorizedCaller() public {
+        vm.prank(minter);
+        scc.mint(user1, 1000e18, TREE_DID);
+
+        vm.prank(unauthorized);
+        vm.expectRevert();
+        scc.slashUpTo(user1, 100e18);
+    }
+
+    function testRevert_slashUpTo_zeroInvestor() public {
+        vm.prank(slasher);
+        vm.expectRevert("SCC: zero investor");
+        scc.slashUpTo(address(0), 100e18);
+    }
+
+    function testRevert_slashUpTo_zeroAmount() public {
+        vm.prank(slasher);
+        vm.expectRevert("SCC: zero amount");
+        scc.slashUpTo(user1, 0);
+    }
+
+    /// @notice [SLASH.2] Fully-drained wallet → loud revert, NOT a silent zero-burn: the
+    ///         backend escalates this as evasion (legal track).
+    function testRevert_slashUpTo_nothingToSlash() public {
+        vm.prank(slasher);
+        vm.expectRevert("SCC: nothing to slash");
+        scc.slashUpTo(user1, 100e18);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
     // PAUSE / UNPAUSE
     // ═══════════════════════════════════════════════════════════════════
 
@@ -355,6 +426,21 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
         scc.slash(user1, 500e18); // Should NOT revert
 
         assertEq(scc.balanceOf(user1), 500e18);
+    }
+
+    function test_pause_allowsSlashUpTo() public {
+        // [B-07][SLASH.2] slashUpTo is the same security mechanism — must bypass pause too
+        vm.prank(minter);
+        scc.mint(user1, 1000e18, TREE_DID);
+
+        vm.prank(pauser);
+        scc.pause();
+
+        vm.prank(slasher);
+        uint256 slashed = scc.slashUpTo(user1, 2000e18); // Should NOT revert; clamps
+
+        assertEq(slashed, 1000e18);
+        assertEq(scc.balanceOf(user1), 0);
     }
 
     function test_unpause_allowsTransfersAgain() public {
@@ -533,6 +619,29 @@ contract SilkenCarbonCoinTest is Eip712SigUtils {
         scc.slash(user1, slashAmt);
 
         assertEq(scc.balanceOf(user1), mintAmt - slashAmt);
+    }
+
+    /// @notice [SLASH.2] Property: for any balance / drain / request, slashUpTo burns exactly
+    ///         min(remaining, requested) — never more than the holder has, never zero.
+    function testFuzz_slashUpTo_burnsExactlyMinOfBalanceAndRequest(uint256 mintAmt, uint256 drainAmt, uint256 maxAmount)
+        public
+    {
+        mintAmt = bound(mintAmt, 2, scc.MAX_SUPPLY());
+        drainAmt = bound(drainAmt, 0, mintAmt - 1); // leave a nonzero remainder
+        maxAmount = bound(maxAmount, 1, type(uint256).max);
+
+        vm.prank(minter);
+        scc.mint(user1, mintAmt, TREE_DID);
+        vm.prank(user1);
+        scc.transfer(user2, drainAmt);
+
+        uint256 remaining = mintAmt - drainAmt;
+
+        vm.prank(slasher);
+        uint256 slashed = scc.slashUpTo(user1, maxAmount);
+
+        assertEq(slashed, remaining < maxAmount ? remaining : maxAmount);
+        assertEq(scc.balanceOf(user1), remaining - slashed);
     }
 
     function testFuzz_mint_treeDidMaxLength(uint8 len) public {

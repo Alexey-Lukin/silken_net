@@ -81,4 +81,29 @@ contract SFCSymbolicTest is Test {
 
         assert(sfc.getVotes(holder) == sfc.balanceOf(holder));
     }
+
+    /// @notice INV-5 [SLASH.2]: slashUpTo burns exactly min(remaining, maxAmount) — an evasion
+    ///         transfer can only shrink the burn, never void it — and voting power still tracks
+    ///         the post-burn balance (no phantom DAO votes survive the clamped slash).
+    function check_slashUpTo_clampsToBalance(uint256 mintAmount, uint256 drained, uint256 maxAmount) public {
+        address holder = makeAddr("sym_holder");
+        address sink = makeAddr("sym_sink");
+        vm.assume(mintAmount > 1 && mintAmount <= sfc.MAX_SUPPLY());
+        vm.assume(drained < mintAmount); // leave a nonzero remainder
+        vm.assume(maxAmount > 0);
+
+        vm.prank(minter);
+        sfc.mint(holder, mintAmount, "SNET-CLUSTER-SYM");
+        vm.prank(holder);
+        sfc.transfer(sink, drained); // the evasion attempt
+
+        uint256 remaining = mintAmount - drained;
+
+        vm.prank(slasher);
+        uint256 slashed = sfc.slashUpTo(holder, maxAmount);
+
+        assert(slashed == (remaining < maxAmount ? remaining : maxAmount));
+        assert(sfc.balanceOf(holder) == remaining - slashed);
+        assert(sfc.getVotes(holder) == sfc.balanceOf(holder));
+    }
 }

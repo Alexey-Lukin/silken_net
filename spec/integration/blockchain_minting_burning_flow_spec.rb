@@ -141,7 +141,8 @@ RSpec.describe "Blockchain minting and burning pipeline" do
     before do
       allow(Eth::Client).to receive(:create).and_return(mock_client)
       allow(Eth::Key).to receive(:new).and_return(mock_key)
-      allow(mock_client).to receive(:transact).and_return("0xburn_hash")
+      # [SLASH.2] transact + slashUpTo balanceOf pre-read (1000 SCC ≫ burn ≤100, clamp inert).
+      allow(mock_client).to receive_messages(transact: "0xburn_hash", call: 1000 * (10**18))
       allow(Eth::Contract).to receive(:from_abi).and_return(double("contract"))
       allow(BlockchainConfirmationWorker).to receive(:perform_in)
       # [SLASH-1] Slash-path tests assume direct Category-A evidence (gate passes).

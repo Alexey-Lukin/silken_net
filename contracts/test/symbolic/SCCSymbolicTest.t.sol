@@ -71,4 +71,29 @@ contract SCCSymbolicTest is Test {
         assert(scc.balanceOf(holder) == mintAmount - slashAmount);
         assert(scc.totalSupply() == mintAmount - slashAmount);
     }
+
+    /// @notice INV-4 [SLASH.2]: for ANY balance / drain / request, slashUpTo burns exactly
+    ///         min(remaining, maxAmount) — an evasion transfer can only shrink the burn to
+    ///         what is left, never void the penalty (the strict slash() would revert instead).
+    function check_slashUpTo_clampsToBalance(uint256 mintAmount, uint256 drained, uint256 maxAmount) public {
+        address holder = makeAddr("sym_holder");
+        address sink = makeAddr("sym_sink");
+        vm.assume(mintAmount > 1 && mintAmount <= scc.MAX_SUPPLY());
+        vm.assume(drained < mintAmount); // leave a nonzero remainder
+        vm.assume(maxAmount > 0);
+
+        vm.prank(minter);
+        scc.mint(holder, mintAmount, "SNET-SYM");
+        vm.prank(holder);
+        scc.transfer(sink, drained); // the evasion attempt
+
+        uint256 remaining = mintAmount - drained;
+
+        vm.prank(slasher);
+        uint256 slashed = scc.slashUpTo(holder, maxAmount);
+
+        assert(slashed == (remaining < maxAmount ? remaining : maxAmount));
+        assert(scc.balanceOf(holder) == remaining - slashed);
+        assert(scc.totalSupply() == mintAmount - slashed);
+    }
 }

@@ -64,6 +64,19 @@ contract SFCMedusaTest {
         ghostSlashed += amount;
     }
 
+    /// @dev [SLASH.2] maxAmount may EXCEED the balance (up to 2×) — the clamp is the point.
+    ///      Ghost accounting uses the RETURNED actual, so property_supplyAccounting +
+    ///      property_votingPowerMatchesSupply prove the clamped burn stays consistent.
+    function slashUpTo(uint256 actorSeed, uint256 maxAmount) external {
+        address from = _actor(actorSeed);
+        uint256 bal = sfc.balanceOf(from);
+        if (bal == 0) return;
+        maxAmount = (maxAmount % (bal * 2)) + 1; // [1, 2×bal] → exercises both branches
+        vm.prank(SLASHER);
+        uint256 slashed = sfc.slashUpTo(from, maxAmount);
+        ghostSlashed += slashed;
+    }
+
     function transferTokens(uint256 fromSeed, uint256 toSeed, uint256 amount) external {
         address from = _actor(fromSeed);
         uint256 bal = sfc.balanceOf(from);

@@ -332,6 +332,76 @@ contract SilkenForestCoinTest is Eip712SigUtils {
     }
 
     // ═══════════════════════════════════════════════════════════════════
+    // SLASH UP TO [SLASH.2]
+    // ═══════════════════════════════════════════════════════════════════
+
+    function test_slashUpTo_burnsRequestedWhenBalanceSufficient() public {
+        vm.prank(minter);
+        sfc.mint(user1, 1000e18, CLUSTER_ID);
+
+        vm.prank(slasher);
+        uint256 slashed = sfc.slashUpTo(user1, 400e18);
+
+        assertEq(slashed, 400e18);
+        assertEq(sfc.balanceOf(user1), 600e18);
+    }
+
+    /// @notice [SLASH.2] Voting power of a drained-then-slashed violator goes to ZERO —
+    ///         a 1-wei evasion transfer no longer lets governance power survive the slash.
+    function test_slashUpTo_clampsAndZeroesVotingPower() public {
+        vm.prank(minter);
+        sfc.mint(user1, 1000e18, CLUSTER_ID);
+
+        vm.prank(user1);
+        sfc.transfer(user2, 1); // 1-wei evasion attempt
+
+        vm.prank(slasher);
+        uint256 slashed = sfc.slashUpTo(user1, 1000e18);
+        vm.roll(block.number + 1);
+
+        assertEq(slashed, 1000e18 - 1);
+        assertEq(sfc.balanceOf(user1), 0);
+        assertEq(sfc.getVotes(user1), 0);
+    }
+
+    function test_slashUpTo_emitsActualSlashedAmount() public {
+        vm.prank(minter);
+        sfc.mint(user1, 100e18, CLUSTER_ID);
+
+        vm.prank(slasher);
+        vm.expectEmit(true, false, false, true);
+        emit GovernanceSlashed(user1, 100e18); // clamped: balance < requested 500
+        sfc.slashUpTo(user1, 500e18);
+    }
+
+    function testRevert_slashUpTo_unauthorizedCaller() public {
+        vm.prank(minter);
+        sfc.mint(user1, 1000e18, CLUSTER_ID);
+
+        vm.prank(unauthorized);
+        vm.expectRevert();
+        sfc.slashUpTo(user1, 100e18);
+    }
+
+    function testRevert_slashUpTo_zeroInvestor() public {
+        vm.prank(slasher);
+        vm.expectRevert("SFC: zero investor");
+        sfc.slashUpTo(address(0), 100e18);
+    }
+
+    function testRevert_slashUpTo_zeroAmount() public {
+        vm.prank(slasher);
+        vm.expectRevert("SFC: zero amount");
+        sfc.slashUpTo(user1, 0);
+    }
+
+    function testRevert_slashUpTo_nothingToSlash() public {
+        vm.prank(slasher);
+        vm.expectRevert("SFC: nothing to slash");
+        sfc.slashUpTo(user1, 100e18);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
     // PAUSE — [B-07] SLASH MUST BYPASS PAUSE
     // ═══════════════════════════════════════════════════════════════════
 
@@ -367,6 +437,21 @@ contract SilkenForestCoinTest is Eip712SigUtils {
         vm.prank(slasher);
         sfc.slash(user1, 500e18);
         assertEq(sfc.balanceOf(user1), 500e18);
+    }
+
+    function test_pause_allowsSlashUpTo() public {
+        // [B-07][SLASH.2] slashUpTo is the same security mechanism — must bypass pause too
+        vm.prank(minter);
+        sfc.mint(user1, 1000e18, CLUSTER_ID);
+
+        vm.prank(pauser);
+        sfc.pause();
+
+        vm.prank(slasher);
+        uint256 slashed = sfc.slashUpTo(user1, 2000e18); // clamps to full balance
+
+        assertEq(slashed, 1000e18);
+        assertEq(sfc.balanceOf(user1), 0);
     }
 
     function test_unpause_resumesOperations() public {

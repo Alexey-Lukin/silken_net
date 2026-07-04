@@ -62,6 +62,19 @@ contract SCCMedusaTest {
         ghostSlashed += amount;
     }
 
+    /// @dev [SLASH.2] maxAmount may EXCEED the balance (up to 2×) — the clamp is the point.
+    ///      Ghost accounting uses the RETURNED actual, so property_supplyAccounting proves
+    ///      the emitted/returned amount matches what was really burned.
+    function slashUpTo(uint256 actorSeed, uint256 maxAmount) external {
+        address from = _actor(actorSeed);
+        uint256 bal = scc.balanceOf(from);
+        if (bal == 0) return;
+        maxAmount = (maxAmount % (bal * 2)) + 1; // [1, 2×bal] → exercises both branches
+        vm.prank(SLASHER);
+        uint256 slashed = scc.slashUpTo(from, maxAmount);
+        ghostSlashed += slashed;
+    }
+
     function transferTokens(uint256 fromSeed, uint256 toSeed, uint256 amount) external {
         address from = _actor(fromSeed);
         uint256 bal = scc.balanceOf(from);

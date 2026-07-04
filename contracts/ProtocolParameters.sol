@@ -35,7 +35,11 @@ contract ProtocolParameters is AccessControl {
     mapping(bytes32 => bool) private _parameterSet;
 
     // ─── Well-Known Parameter Keys ────────────────────────────────────
-    // Lorenz attractor
+    // Lorenz attractor — ⚠️ [GOV.1] DCI-locked: бекенд НАВМИСНО не синхронізує ці ключі.
+    // Константи Лоренца биті-в-біт спільні між прошитим firmware (mruby) і сервером (FW.7);
+    // зміна = координований reflash усього флоту, НЕ DAO-голос. Reserved для майбутньої
+    // OTA-ери: setParameter їх приймає, але ефект на протокол сьогодні нульовий
+    // (Governance::ParameterSyncWorker свідомо їх не тягне — див. docs/05_06 §7).
     bytes32 public constant KEY_LORENZ_SIGMA = keccak256("lorenz_sigma");
     bytes32 public constant KEY_LORENZ_RHO = keccak256("lorenz_rho");
     bytes32 public constant KEY_LORENZ_BETA = keccak256("lorenz_beta");
@@ -57,8 +61,15 @@ contract ProtocolParameters is AccessControl {
     bytes32 public constant KEY_SLASH_THRESHOLD = keccak256("slash_threshold");
     bytes32 public constant KEY_STRESS_THRESHOLD = keccak256("stress_threshold");
 
+    // Slashing curve (05_05 §3 — convex penalty; споживач: BlockchainBurningService) [GOV.1]
+    bytes32 public constant KEY_SLASH_GAMMA = keccak256("slash_gamma");
+    bytes32 public constant KEY_SLASH_PENALTY_FACTOR_MAX = keccak256("slash_penalty_factor_max");
+
     // Pricing (S6.9 — governance-controlled fallback price)
-    bytes32 public constant KEY_SCC_FALLBACK_PRICE_USD_CENTS = keccak256("scc_fallback_price_usd_cents");
+    // [GOV.1] Одиниця — USD у 18-decimal fixed-point (25.5e18 = $25.50); ключ = бекендовому
+    // SystemParameter(:scc_fallback_price_usd). Раніше "…_usd_cents" — 100× units-mismatch
+    // зі споживачем PriceOracleService, усунено на джерелі pre-deploy.
+    bytes32 public constant KEY_SCC_FALLBACK_PRICE_USD = keccak256("scc_fallback_price_usd");
 
     /// @notice Емітується при зміні будь-якого параметра.
     /// @param key Keccak256 хеш назви параметра.
@@ -211,16 +222,30 @@ contract ProtocolParameters is AccessControl {
         return _parameters[KEY_SCC_PER_TONNE_CO2];
     }
 
-    /// @notice Поріг стресу для дерева. Default: 0.30 (0.3e18 = 30%).
+    /// @notice Поріг критичного стресу дерева для slash-тригера. Default: 0.83 (0.83e18).
+    /// @dev [GOV.1] Це RF-confidence поріг `AiInsight.slash_stress_threshold` (бекенд-default
+    ///      0.83); страховий поріг 0.8 — ОКРЕМИЙ концепт (05_05 §4), не цей ключ. Попередній
+    ///      NatSpec «Default: 0.30» описував неіснуючий концепт — сет за ним упустив би
+    ///      slash-тригер з 0.83 до 0.30 і залив би Field-Audit шумом.
     function stressThreshold() external view returns (uint256) {
         return _parameters[KEY_STRESS_THRESHOLD];
     }
 
-    /// @notice Fallback ціна SCC у центах USD при недоступності Uniswap/RPC.
-    ///         Default: 2550 (= $25.50). Governance-controlled щоб уникнути
+    /// @notice [GOV.1] Показник γ опуклої slash-кривої (05_05 §3). Default: 1.3 (1.3e18).
+    function slashGamma() external view returns (uint256) {
+        return _parameters[KEY_SLASH_GAMMA];
+    }
+
+    /// @notice [GOV.1] Стеля penalty-МНОЖНИКА slash-кривої (не фінального ratio). Default: 2.0 (2e18).
+    function slashPenaltyFactorMax() external view returns (uint256) {
+        return _parameters[KEY_SLASH_PENALTY_FACTOR_MAX];
+    }
+
+    /// @notice Fallback ціна SCC у USD при недоступності Uniswap/RPC.
+    ///         Default: 25.5e18 (= $25.50). Governance-controlled щоб уникнути
     ///         фінансового ризику від hardcoded значення. [S6.9]
-    function sccFallbackPriceUsdCents() external view returns (uint256) {
-        return _parameters[KEY_SCC_FALLBACK_PRICE_USD_CENTS];
+    function sccFallbackPriceUsd() external view returns (uint256) {
+        return _parameters[KEY_SCC_FALLBACK_PRICE_USD];
     }
 
     // ─── Admin Protection ─────────────────────────────────────────────
