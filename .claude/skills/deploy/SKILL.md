@@ -48,9 +48,15 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   реєстр і кількість метрик — `06_03 §2.8` (regen з REGISTRY, **не хардкодь**).
 - **Секрети One-Home:** канонічний дім — `config/deploy.yml env.secret`; повний
   інвентар + checklist — `06_04`. CI-гейт `verify-secrets`.
+- **SSH на Ingress Anchor = IAP-тунель + OS Login, keyless (INF.20 (в), 2026-07-04).**
+  Порт 22 в інтернет НЕ відкритий (firewall лише 35.235.240.0/20); metadata ssh-keys
+  ІГНОРУЮТЬСЯ (`enable-oslogin=TRUE`); SSH-секретів у deploy-наборі НЕМАЄ. Вхід:
+  `gcloud compute ssh silken-net-ingress --tunnel-through-iap` (доступ = tf-var
+  `iap_admin_members` → osAdminLogin+tunnelResourceAccessor). CI-Kamal-нога dormant
+  до (б)-клею (`ssh.proxy_command` через `start-iap-tunnel`). → `06_01` / 00_07 INF.20.
 - **Akash SDL ENV — plaintext, видимий провайдеру.** Реальні ключі **ніколи** не в
   `deploy/akash/deploy.yaml`; інжектити через Akash Console / `env.secret`. **Money/signing-
-  п'ятірка (`ORACLE_*`×3 + `ETHEREUM_ANCHOR` + `SOLANA_WALLET_KEYPAIR`) = JOB-ONLY** —
+  шістка (`ORACLE_*`×4 вкл. `CELO` + `ETHEREUM_ANCHOR` + `SOLANA_WALLET_KEYPAIR`) = JOB-ONLY** —
   web/coap бутяться keyless (guard scoped `signer_process: Sidekiq.server?`). → `06_02` / `06_04 §1.1`.
 - **Deploy/release ланцюг (2026-06-19).** Canopy = кожен push у `main` після CI (continuous);
   Production = GitHub Release, який тримає **release-please** (`Ops · Release`: semver+CHANGELOG із
