@@ -880,7 +880,7 @@
 - **Стан:** повний IaC готовий: дашборд (`deploy/grafana/dashboards/`, 6 секцій вкл. Money-Path SLO) + alert rules (`deploy/grafana/alerts/silkennet-alerts.yaml` — вкл. up-alert 3 таргети, mint-SLO, `sn-alert-gateway-faulty` ARCH.54) — один захід `deploy/grafana/import.rb` (auto-UID, ідемпотентний upsert; README). ⚠️ Без contact point УСІ P0-алерти летять у нікуди (O3-MUST).
 - [ ] 👤 `import.rb` з токеном → dashboards + всі alert rules одним заходом
 - [ ] 👤 contact point (Email/Telegram) + default notification policy — ДО того, як алерти вважати живими
-- [ ] 🤖 dashboard-gap'и перед/під час імпорту: панелі runtime-gauges (RSS/GC/Puma) · insurance-SLO ratio · gateways_faulty/attest_lapsed/helium_sos · flapping-alert на `gateways_offline_total` (S3-аудит 2026-07-04)
+- [ ] 🤖 dashboard-gap'и перед/під час імпорту: панелі runtime-gauges (RSS/GC/Puma) · insurance-SLO ratio · gateways_faulty/attest_lapsed/helium_sos · flapping-alert на `gateways_offline_total` (S3-аудит 2026-07-04) + **[code-review 2026-07-04]** 3 нові money-path gauges (manual_review_depth/limbo_locked/chain_audit_delta) без dashboard-панелі (додати у «💰 Money-Path Reliability»-рядок) · `deploy/grafana/README.md` таблиця алертів дрейфнула (5 місць: severity/for/count 18→21, 2 нові rules відсутні) · CI-гейт `import.rb --dry-run` для alerts/dashboards (є профіль, ніде не викликається)
 
 #### INF.16 — Production multi-DB connection (database.yml component style)
 - **P0** · 👤 · 🟢 · → `06_01`, `06_04`
