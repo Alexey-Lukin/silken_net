@@ -115,7 +115,7 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     }
 
     /// @notice [B-04] Пакетна емісія governance токенів з обмеженням розміру масиву.
-    /// @param recipients Масив адрес отримувачів (max 200).
+    /// @param recipients Масив адрес отримувачів (max MAX_BATCH_SIZE = 100).
     /// @param amounts Масив сум для кожного отримувача.
     /// @param clusterIds Масив ID кластерів.
     function batchMint(address[] calldata recipients, uint256[] calldata amounts, string[] calldata clusterIds)

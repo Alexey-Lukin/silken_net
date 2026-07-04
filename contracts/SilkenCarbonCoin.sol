@@ -127,7 +127,7 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     }
 
     /// @notice [B-04] Масовий мінтинг токенів для економії газу при обробці всього сектора.
-    /// @param recipients Масив адрес отримувачів (max 200).
+    /// @param recipients Масив адрес отримувачів (max MAX_BATCH_SIZE = 100).
     /// @param amounts Масив сум для кожного отримувача.
     /// @param treeDids Масив DID дерев-джерел.
     function batchMint(address[] calldata recipients, uint256[] calldata amounts, string[] calldata treeDids)

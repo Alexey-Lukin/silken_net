@@ -363,12 +363,17 @@ class BlockchainBurningService < ApplicationService
     )
   end
 
-  # [comms-correlated] «No ack»: критичний EwsAlert лишається непідтвердженим (status_active —
-  # scope `critical` = severity_critical.unresolved).
-  # [SLASH-1 gap-D] Виключаємо :field_audit — це НАШ вирок «слухай, не карай» (freeze/blackout),
-  # а не доказ «вузол offline». Інакше freeze самонакручував би penalty_factor на тій самій жертві.
+  # [comms-correlated] «No ack»: критичний node/gateway-offline алерт лишається непідтвердженим
+  # (scope `critical` = severity_critical.unresolved).
+  # [P1-3] Whitelist саме node-offline типів (§6 root-cause «вузол/шлюз offline»): `queen_offline`
+  # (dead-man switch), `queen_uplink_lost` (Helium-крик), `system_fault` (шлюз доповів про збій).
+  # Раніше рахувався БУДЬ-який critical (крім field_audit), включно з `vandalism_breach`, що ВЖЕ дав
+  # `positive_a?` → той самий tamper-алерт накручував penalty на СОБІ (self-ref → множник завжди
+  # сідав на стелю). tamper/fire/chainsaw = не comms-loss (свій root-cause), сюди не рахуємо.
   def comms_no_ack?
-    @cluster.ews_alerts.critical.where.not(alert_type: :field_audit).exists?
+    @cluster.ews_alerts.critical
+            .where(alert_type: [ :queen_offline, :queen_uplink_lost, :system_fault ])
+            .exists?
   end
 
   # [comms-correlated] Tree-side Streamr broadcast gap (05_05 §6 нот.12 — ЛИШЕ tree-side;
@@ -383,8 +388,11 @@ class BlockchainBurningService < ApplicationService
   def critical_unmaintained?
     # [SLASH-1 gap-D] Виключаємо :field_audit — наш власний audit-виклик «слухай» без
     # MaintenanceRecord ≠ операторська недбалість; рахуємо лише реальні tree/hardware-алерти.
+    # [P1-3] Виключаємо і :vandalism_breach — коли він дав `positive_a?` (єдиний шлях до Cat-A
+    # slash), «не виїхав на tamper» вже покарано НЕОБОРОТНИМ slash → накручувати penalty на тому
+    # самому алерті = self-ref подвійне. Незалежна фізична недбалість = реальні tree/hardware-алерти.
     stale_critical = @cluster.ews_alerts.severity_critical
-                             .where.not(alert_type: :field_audit)
+                             .where.not(alert_type: [ :field_audit, :vandalism_breach ])
                              .where(created_at: ..30.minutes.ago)
     return false unless stale_critical.exists?
 

@@ -502,30 +502,44 @@ RSpec.describe BlockchainBurningService do
         expect(service.send(:calculate_penalty_factor)).to eq(1.0)
       end
 
-      it "sources no-ack from an active critical EwsAlert and applies the uplift" do
+      it "sources no-ack from an active critical node-offline EwsAlert and applies the uplift" do
         create(:ews_alert, cluster: cluster, severity: :critical,
-                           alert_type: :vandalism_breach, status: :active)
+                           alert_type: :queen_offline, status: :active)
         expect(service.send(:calculate_penalty_factor)).to eq(1.5)
       end
     end
 
     context "when sourcing signals from real records" do
-      it "does not flag no-ack once the critical alert is resolved (acknowledged)" do
+      it "does not flag no-ack once the critical node-offline alert is resolved (acknowledged)" do
         create(:ews_alert, cluster: cluster, severity: :critical,
-                           alert_type: :vandalism_breach, status: :resolved)
+                           alert_type: :queen_offline, status: :resolved)
         expect(service.send(:comms_no_ack?)).to be(false)
       end
 
       it "flags physical negligence: aged critical alert with no MaintenanceRecord" do
         create(:ews_alert, cluster: cluster, severity: :critical,
-                           alert_type: :vandalism_breach, status: :active, created_at: 1.hour.ago)
+                           alert_type: :fire_detected, status: :active, created_at: 1.hour.ago)
         expect(service.send(:critical_unmaintained?)).to be(true)
       end
 
       it "clears physical negligence once a MaintenanceRecord exists for the alert" do
         alert = create(:ews_alert, cluster: cluster, severity: :critical,
-                                   alert_type: :vandalism_breach, status: :active, created_at: 1.hour.ago)
+                                   alert_type: :fire_detected, status: :active, created_at: 1.hour.ago)
         create(:maintenance_record, ews_alert: alert)
+        expect(service.send(:critical_unmaintained?)).to be(false)
+      end
+
+      # [P1-3] vandalism_breach = сам positive-A доказ Cat-A slash → НЕ рахується у comms/unmaintained
+      # (self-ref: той самий tamper-алерт накручував penalty на СОБІ → множник завжди сідав на стелю).
+      it "excludes vandalism_breach (the positive-A evidence) from comms_no_ack? (P1-3 self-ref)" do
+        create(:ews_alert, cluster: cluster, severity: :critical,
+                           alert_type: :vandalism_breach, status: :active)
+        expect(service.send(:comms_no_ack?)).to be(false)
+      end
+
+      it "excludes vandalism_breach from critical_unmaintained? (P1-3 self-ref)" do
+        create(:ews_alert, cluster: cluster, severity: :critical,
+                           alert_type: :vandalism_breach, status: :active, created_at: 1.hour.ago)
         expect(service.send(:critical_unmaintained?)).to be(false)
       end
 
