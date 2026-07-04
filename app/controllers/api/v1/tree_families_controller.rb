@@ -4,6 +4,13 @@ module Api
   module V1
     class TreeFamiliesController < BaseController
       before_action :authorize_admin!
+      # [SEC]: TreeFamily = ГЛОБАЛЬНА довідкова таблиця (не org-scoped), її поля
+      # живлять money+fraud-математику (carbon_sequestration_coefficient → mint;
+      # critical_z_min/max → anti-fraud смуга). Мутація будь-яким org-admin
+      # інфлейтила б мінтинг / послаблювала fraud-детект для ВСІХ org → мутації
+      # лише super_admin (on-chain параметри вже Timelock-governed, off-chain
+      # константи заслуговують на еквівалентний захист).
+      before_action :authorize_super_admin!, only: [ :new, :create, :edit, :update ]
       before_action :set_family, only: [ :show, :edit, :update ]
 
       # --- РЕЄСТР ГЕНОМІВ ---

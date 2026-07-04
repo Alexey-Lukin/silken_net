@@ -68,7 +68,7 @@
 | **FW.46 board-freeze** `.ioc` (👤) | повний `.elf` → увесь bench-день: `FW.2`-фліп · `FW.3/8/17/20/23/31/49/50/52/54/55` · `ARCH.26/41` · `SEC.2`-OTA-verify · `SEC.15`-WUT · `SEC.3`-SWD · `ARCH.35`-розводка · `radio_conf.h` → компіляція `radio.c` (SubGHz Шлях A ✅ 07-04: submodule+`RadioEvents_t` уже в репо — це останній radio-гейт); суміжно `ARCH.34`-firmware (LoRaMac-node ВЖЕ vendored у `extern/subghz-phy/lorawan` — лишилась glue-робота) |
 | **Перший live-деплой** = акаунти/значення Фази −1 + секрети (`S1.1`+`S4.3`) + `OPS.11`-FinOps → deploy фазами [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform) (👤; SSH-нога wired — INF.20 (в) ✅) | верифікації `INF.11/12/13/14/15/16` · `INF.20`-IAP-вхід · `PUMA-IPV6-1` · `INF.10`-фліп · `S5.2` · `S3.2`-staging · `S6.1`-Upstash · `INF.21`-pin · Grafana-сесія (`S2.1→S2.2` + `S2.4`-SLO + `FW.18b`) · розгейтовує `OPS.11`-🤖 (escrow-watch) + `INF.9`-🤖 (path-gate) |
 | **SE051 eval-пара** замовлення (👤) | `SE050-MIGRATION` silicon-confirm + rename-каскад · `SEC.3` Гілка-B real-I²C |
-| **E.20 ForestBountyService** (🤖 за founder-go) | `E.41` satellite-obscured fallback · `S6.10` task-assignment · `BIZ.13` Модель-B operator-bond · `INS.1` drought/pest Trigger-2-джерело |
+| **E.20 ForestBountyService** (🤖 за founder-go) | `E.41` satellite-obscured fallback · task-assignment (ex-`S6.10`) · `BIZ.13` Модель-B operator-bond · `INS.1` drought/pest Trigger-2-джерело |
 | **E.63 bench-шкала** = `HW.13` P-V + recharge-крива (👤) | `E.63`-калібрування + строгість-фліп · `FW.49`-S2 · `E.64` real-signal пороги (wire-rev2.1 носій уже готовий) |
 | **Downlink-wire-ревізія** MAC/FC (🤖+👤 дизайн, пост-CCM) | `FW.17`-активація (гейти i/ii) · `ARCH.43` wire-rev3 mesh-return (з `ARCH.26`-фліпом) |
 | **Web3 mainnet-деплой** = Gnosis Safe + `Deploy.s.sol` + transfer admin→Timelock (👤; `SEC.1`, поглинув BIZ.4) | `GOV.1`-read-path (ParameterSyncWorker no-op доти — активується цим деплоєм) · `SLASH.2`-slashUpTo (якщо on-chain-варіант) · `E.32`-Hacken post-deploy · `S3.5`-subgraph cutover · `ARCH.4`-governance (архів) |
@@ -705,16 +705,18 @@
 - **Стан:** ✅ **Severity-гілка shipped (2026-07-03, [E.41]-фікс):** критичний fire-алерт, затемнений хмарами/кронами → `escalate_obscured_critical_fire!` (негайний Field-Audit, `satellite_status: :inconclusive` HOLD-ить payout, fail-safe) замість сліпого 48h orbital retry (`handle_obscured_by_clouds` раніше raise'ив `OrbitalLagError` для ВСІХ severity — implementation gap `04_02 §11` закрито; non-critical → retry лишається). Дзеркало non-fire/INS.1 peril-honest. Life-safety не чекає орбіти — тривога вже пішла окремо (edge panic-TX + backend alert, **НЕ** satellite-gated). Основа: immediate-broadcast ✅ (edge chainsaw→panic-TX `PANIC_TTL=5` + backend temp/anomaly `AlertDispatchService`; dClimate гейтить лише ВИПЛАТУ, не тривогу). Канон `04_02 §11` (Dclimate/EWS), `05_01`.
 - [ ] 🔗 upgrade Field-Audit → ForestBounty-дрон (фізична перевірка замість людського вердикту) — North-Star коли E.20 (`04_02 §Forester Guild` `[PLANNED]`)
 
-#### S6.21 — MFA: TOTP second factor (claimed, not implemented)
+#### S6.21 — MFA: TOTP second factor (claimed, not implemented + не enforced at login)
 - **P2** · 🤖+👤 · ⚪ · → `04_03 §1`
-- **Стан:** Не розпочато — honesty-gap: CLAUDE.md §9 раніше заявляв «MFA: TOTP» (виправлено 2026-06-19). Реальність (`04_01` User): лише recovery-codes (10 шт., `consume_recovery_code!`) + `otp_required_for_login` булевий флаг + step-up (`current_password`) на disable — **справжнього TOTP-другого-фактора нема** (нема `rotp` gem / `otp_secret` / provisioning_uri). Білд: `rotp` + `otp_secret` (AR-encrypted) + `MfaSetupsController` (provisioning_uri/QR) + verify-on-login + recovery-rotation. Канон `04_03 §1` (Автентифікація) / `04_01` (User).
+- **Стан:** Не розпочато — honesty-gap. Реальність (`04_01` User): лише recovery-codes (10 шт.) + `otp_required_for_login` булевий флаг + step-up (`current_password`) на disable — **справжнього TOTP нема** (нема `rotp`/`otp_secret`-колонки/provisioning_uri). Audit §04 (2026-07-04) поглибив: навіть наявний recovery-code-«MFA» **не enforced на login взагалі** — `sessions#create` ніколи не читає `otp_required_for_login`, `consume_recovery_code!` = dead code (0 callers), нема route для second-factor challenge. Тобто «Увімкнути MFA» (04_03 §4 #9/#10) виставляє прапорець + step-up-захист на disable контролю, що НІЧОГО не захищає (компрометація пароля = повний доступ). Білд: `rotp` + `otp_secret` (AR-encrypted) + `MfaSetupsController` (QR) + verify-on-login + recovery-rotation. Канон `04_03 §1` (Автентифікація) / `04_01` (User).
+- [ ] 🤖 interim: hide MFA-toggle АБО inline-caveat «recovery-codes only, no login-challenge» (04_03 §4 #9/#10) — контроль зараз security-theatre
 - [ ] 🤖 `rotp` + `otp_secret` (encrypted) + `MfaSetupsController` (QR/provisioning_uri) + verify-on-login
 - [ ] 👤 (опц.) WebAuthn / hardware-key як сильніша альтернатива TOTP
 
 #### E.20 — Forester Guild: ForestBountyService (PoPhW fallback oracle + ranger economy)
 - **P2** · 🤖+👤 · ⚪ · → `04_02 §Forester Guild`
-- **Стан:** ⏸️ **DEFER до Phase 2 (founder 2026-07-03):** YAGNI — реальної ranger-мережі нема, `ForestBountyService` без неї = код попереду реальності (guild-маркетплейс = Phase 2 «мобільний додаток для лісників», `00_01 §4`). Резервний Оракул через фізичний PoPhW (рейнджер+дрон) + bounty-економіка (GPS/EXIF/IPFS→USDC, anti-Sybil); design готовий (`04_02 §Forester Guild`). **Блокер** для S6.10 + E.41-satellite-fallback + BIZ.13-Модель-B. ⚠️ E.41-фікс OrbitalLagError НЕ чекає на E.20 (Field-Audit-ескалація незалежна — див. E.41). Enabler BIZ.13: PoPhW→operator-bond + guild-sponsor ([`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)). **Зчеплено:** E.66 `finalize_spend!`-prune (escrow-примітив, що E.20 реюзнув би) — при E.20-go воскресає з `[E.20]`-маркером.
+- **Стан:** ⏸️ **DEFER до Phase 2 (founder 2026-07-03):** YAGNI — реальної ranger-мережі нема, `ForestBountyService` без неї = код попереду реальності (guild-маркетплейс = Phase 2 «мобільний додаток для лісників», `00_01 §4`). Резервний Оракул через фізичний PoPhW (рейнджер+дрон) + bounty-економіка (GPS/EXIF/IPFS→USDC, anti-Sybil); design готовий (`04_02 §Forester Guild`). **Поглинув S6.10** (audit §04 2026-07-04 merge — MaintenanceRecord ranger↔bounty task-matching = фасет тієї ж guild-роботи, той самий блокер/виконавець). **Блокер** для E.41-satellite-fallback + BIZ.13-Модель-B. ⚠️ E.41-фікс OrbitalLagError НЕ чекає на E.20 (Field-Audit-ескалація незалежна — див. E.41). Enabler BIZ.13: PoPhW→operator-bond + guild-sponsor ([`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)). **Зчеплено:** E.66 `finalize_spend!`-prune (escrow-примітив, що E.20 реюзнув би) — при E.20-go воскресає з `[E.20]`-маркером.
 - [ ] 🤖 `ForestBountyService` — bounty matching ranger↔alert + USDC payout
+- [ ] 🤖 [ex-S6.10] ranger↔bounty task-assignment matching + scoring (`FOR UPDATE NOWAIT`, GPS/EXIF/IPFS→USDC, anti-Sybil) — `MaintenanceRecord`-driven; reputation-scaling operator-bond (BIZ.13 [`05_05 §3.1`](05_05_Slashing_and_Risk_Policy))
 - [ ] 👤 онбординг рейнджерів Forester Guild
 
 #### ARCH.31 — SOP-в-Phlex inline UI для EwsAlert
@@ -723,15 +725,65 @@
 - [ ] 🔗 UNI.12 — SOP-документи (8 alert-типів × UA+EN)
 - [ ] 🤖 Phlex inline-SOP компонент на EwsAlert dashboard
 
-#### I18N.1 — alert_type i18n локалізація (усі типи × 4 мови)
+#### I18N.1 — alert_type i18n + ширша i18n-повнота (CI-parity + hardcoded-рядки)
 - **P3** · 🤖 · 🌿 · → `04_02`, `04_04`
-- **Стан:** Знахідка (INS.1, 2026-06-27) — `EwsAlert.message` (усі creator'и) + `TextFormatter#alert_title`/`#alert_icon` = **hardcoded-рядки**; `config/locales/alerts/*.yml` (uk/en/lv/lt) покривають лише UI-хром (badge/index/table-headers), БЕЗ per-alert-type value-labels чи message-ключів (`grep alert_types` → порожньо). Маркер на майбутнє вже стоїть (i18n-коментар у `TextFormatter`). Поточно безпечно (`.humanize`/hardcoded-case з `else`-fallback), але не локалізовано для 4 мов — і свідомо НЕ робили по одному типу (`field_audit` додано в ряд із 7 сиблінгами, жоден не i18n-нутий). Канон `04_02` (TextFormatter card), UI-токени `04_04`.
-- [ ] 🤖 i18n-ключі per-alert-type (8 типів × 4 мови: title + icon) → `TextFormatter` через `I18n.t`; опц. `EwsAlert.message`-builder через i18n — усі типи РАЗОМ, не по одному
+- **Стан:** Знахідка (INS.1, 2026-06-27) — `EwsAlert.message` + `TextFormatter#alert_title`/`#alert_icon` = **hardcoded-рядки**; `config/locales/alerts/*.yml` покривають лише UI-хром, БЕЗ per-alert-type value-labels. Audit §04 (2026-07-04, S4/O4) розширив контекст: (a) **CI-parity діра** — `config/i18n-tasks.yml locales: [en, uk]` тільки → `lv`/`lt` НІКОЛИ не перевіряються на missing/interpolation (контент СЬОГОДНІ чистий — ручна звірка 0 mismatch — але наступний PR, що зламає lv/lt, пройде CI зеленим; +Gemfile-claim «health» vs CI-`missing` drift); (b) hardcoded-рядки поза alert_type — `shared/web3/address` (SHARED-компонент, поза CI-гейтом `components/**`), `maintenance/index` aria-labels ×4, `blockchain_transactions` dup, `alerts/row` `alert_type.humanize` (locale-blind). Поточно безпечно (`.humanize`/`else`-fallback), enum тепер 11 типів (не 8). Канон `04_02` (TextFormatter), `04_04` (i18n-CI §12.1).
+- [ ] 🤖 `config/i18n-tasks.yml locales:` → `[en, uk, lv, lt]` (CI-parity для всіх shipped-локалей) + reconcile Gemfile-claim
+- [ ] 🤖 i18n-ключі per-alert-type (11 типів × 4 мови: title + icon) → `TextFormatter` через `I18n.t` — усі типи РАЗОМ, не по одному
+- [ ] 🤖 hardcoded-рядки → i18n: `shared/web3/address`, maintenance aria-labels (SHARED поза `components/**`-гейтом)
 
-#### S6.10 — MaintenanceRecord — лише лог
-- **P3** · 🤖 · 🔗 · → `04_02 §Forester Guild`
-- **Стан:** Архітектурний дизайн готовий — task-assignment matching ranger↔bounty (scoring, `FOR UPDATE NOWAIT`, GPS/EXIF/IPFS→USDC, anti-Sybil). Заблоковано на Forester Guild PoPhW (E.20). Канон `04_02 §Forester Guild`. Ranger-scoring живить reputation-scaling operator-bond (BIZ.13 [`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)).
-- [ ] 🔗 зв'язати з Forester Guild PoPhW (E.20)
+#### SEC.16 — Backend auth/authz hardening (session-revoke · M2M-scope · Pundit deny-default)
+- **P1** · 🤖 · ⚪ · → `04_03 §1`
+- **Стан:** Audit §04 (2026-07-04) — чотири auth-hardening діри поза shipped-IDOR-пакетом. (1) **Session-revoke = no-op:** dashboard-auth читає signed-cookie `session[:user_id]` без консультації з `Session`-таблицею → `change_password`'s `sessions.destroy_all` («revoke every other session») НЕ ревокує нічого (викрадений cookie живе 14 днів крізь password-reset; api_access-токени коректно горять — salt-bound, cookie ні). (2) **M2M-токен = повний org-admin scope:** `m2m_auth#create` видає `organization.users.role_admin.first`-`api_access`-токен пристрою → compromised gateway = повний admin API. (3) **Pundit deny-default:** `ApplicationPolicy#index?/#show?` = `true` (треба `false`) + 10 dead policy-класів + нема `verify_authorized` backstop. (4) `account_security`-мутації без dedicated rate-limit. Канон `04_03 §1` (auth), `04_03 §3` (RBAC).
+- [ ] 🤖 session-revoke: stamp `session[:pw_version]` vs `password_changed_at` у `authenticate_user!` АБО DB-backed session-gate
+- [ ] 🤖 `:m2m_access`-token purpose + endpoint-allowlist у BaseController (машина ≠ human-admin scope)
+- [ ] 🤖 Pundit deny-default (`index?/show?`→`false`, спершу верифікувати 4 live-policy override) + виполоти 10 dead policies + `verify_authorized` backstop
+- [ ] 🤖 rack_attack throttle на `account_security` (keyed на actor)
+
+#### ARCH.56 — DB-level integrity backstops (unique-index · CHECK · enum-default · composite-PK · EIP-55)
+- **P1** · 🤖 · ⚪ · → `04_01 §0`
+- **Стан:** Audit §04 (2026-07-04, 2 model-агенти) — систематична прогалина «Ruby-валідація без DB-backstop». (a) **uniqueness без unique index** (race→дублі): `organizations.name`+`crypto_public_address` (нуль secondary-індексів на tenant-root!), `clusters.name`, `tree_families.name`, `identities (provider,uid)` (OAuth-linking race), `actuators (gateway_id,endpoint)`, `tinyml/biocontract .version`, `wallets.tree_id`, `device_calibrations.tree_id`. (b) **near-zero CHECK** (1 у схемі) — `wallets.balance/locked_balance ≥ 0` лише в Ruby (bypass через `update_all`→phantom SCC); `blockchain_transactions.amount` bare `numeric`. (c) `gateways.state` без DB-default+NOT NULL (AASM nil-state footgun). (d) **composite-PK `.id`-баг:** `TelemetryLog`/`GatewayTelemetryLog` без `self.primary_key = "id"` → `record.id` = масив `[id,created_at]` (live-баг: `chainlink/oracle_dispatch_service` лог друкує масив). (e) `EthAddressValidatable` = shape-only regex, НЕ EIP-55 checksum (кожне fund-destination поле; `eth`-gem уже в Gemfile). Канон `04_01 §0` (Postgres-інфра), `04_01 §1` (concerns).
+- [ ] 🤖 unique-індекси (dedup existing first) + `wallets` CHECK `(balance≥0 AND locked_balance≥0 AND locked_balance≤balance)` + `amount`→`numeric(24,6)`
+- [ ] 🤖 `self.primary_key = "id"` у Telemetry/GatewayTelemetry + `.id`→`.id_value` в oracle_dispatch
+- [ ] 🤖 EthAddress → EIP-55 checksum (mixed-case verify; all-same-case accept unchecksummed)
+
+#### ARCH.57 — Financial/audit retention + AuditLog compliance
+- **P1** · 🤖+👤 · ⚪ · → `04_01 §7`
+- **Стан:** Audit §04 (2026-07-04, O4-governance) — carbon-registry-compliance-діри у незмінних журналах. (1) **AuditLog coverage:** привілейовані дії (slash, contract-terminate, key-access/rotate, actuator-fire, role-change, SystemParameter-change) НЕ пишуться в hash-chain; `record_async!`/`bulk_record!` = dead entrypoints (0 callers). (2) **Не append-only:** нема `readonly?`/`before_destroy` (програмний `update`/`delete_all` проходить) + `organization dependent: :delete_all` на audit_logs → знищення Org стирає журнал (User коректно `restrict_with_error` — неузгоджено). (3) **Cascade стирає фінанси:** `tree→wallet→blockchain_transactions delete_all` — decommission дерева вбиває його mint/reward/slash-ledger. (4) **GDPR:** нема erasure для User/Org PII (EU-лісники); `identities.auth_data`/`access_token` plaintext (vs encrypted hardware_keys). (5) chain-payload без `created_at`/`ip` → timestamp-tamper непомітний. Канон `04_01 §7` (AuditLog/EthereumAnchor).
+- [ ] 🤖 wire `record_async!` у привілейовані шляхи (Auditable-concern) + `created_at`/`ip` у chain-payload
+- [ ] 🤖 append-only (`readonly?` post-persist + org `restrict_with_error`) + archive-before-destroy для blockchain_transactions/audit_logs
+- [ ] 👤 GDPR erasure-процедура (pre-mainnet перед EU-PII scale) + encrypt `identities` secrets
+
+#### ARCH.58 — Actuator stuck-open safety-sweep (physical-safety residual)
+- **P1** · 🤖 · 🟡 · → `04_02 §7`
+- **Стан:** Audit §04 (2026-07-04, O1-adversarial). ✅ **dispatch-guard shipped:** `command.dispatch! if command.may_dispatch?` — retry після втраченого CoAP-ACK більше не згорає на `AASM::InvalidTransition` без реальної повторної доставки сирени/клапана (Queen дедуплікує re-PUT за `idempotency_token`). **Residual (orphaned-open):** CoAP PUT відкриває клапан ДО ack-транзакції + `ResetActuatorStateWorker`-планування — crash/OOM між ними лишає клапан ФІЗИЧНО відкритим, reset не заплановано, а row відкочується в `:idle` (розбіжність DB↔реальність). Нема safety-sweep для застряглих `:sent`/`:acknowledged`. Канон `04_02 §7` (EmergencyResponse/Actuator).
+- [ ] 🤖 планувати `ResetActuatorStateWorker` НЕзалежно/до ack-транзакції (post-PUT close гарантований)
+- [ ] 🤖 periodic safety-sweep: force-idle актуатора, чий newest `:sent`/`:acknowledged`-command старший за `duration_seconds`+margin
+
+#### ARCH.59 — Non-money worker resilience (OTA watchdog · redelivery idempotency · fan-out)
+- **P2** · 🤖 · ⚪ · → `04_02 §11`
+- **Стан:** Audit §04 (2026-07-04, A4/S2/O1). (1) **OTA stuck-`:updating` назавжди:** `OtaTransmissionWorker retry: false` → `sidekiq_retries_exhausted`-блок = мертвий код (JobRetry прокидає raise до death_handlers, минаючи exhausted-block); виняток поза вузьким CoAP-rescue лишає gateway `:updating` → блокує ВСІ downlink (сирена/полив), staleness-sweep ловить лише OFFLINE. (2) **Redelivery non-idempotency:** `Codex::EloRecomputeWorker` additive `update_all` + `AuditLogWorker`/`FractionAuditWorker` `create!` → crash-after-commit-before-ack подвоює; `KeyRotationDownlinkWorker.perform_async` ВСЕРЕДИНІ `HardwareKey.transaction` (commit-fail→key-desync, dormant до FW.2). (3) **Unbounded fan-out:** `ClusterEntropySweep`/`ClusterHealthCheck` `find_each{perform_async}` (1 Redis-RTT/кластер @100K) — сусіди юзають `push_bulk`/`Batch`. `unique_for` = no-op шим (Sidekiq Enterprise, ARCH.53-decision). Канон `04_02 §11` (Workers).
+- [ ] 🤖 OTA `ota_started_at`+watchdog (fold у GatewayStalenessSweep або новий cron)
+- [ ] 🤖 KeyRotation enqueue ПІСЛЯ transaction-commit (дзеркало P1-7-фіксу) + redelivery-guards при купівлі Enterprise
+- [ ] 🤖 `push_bulk`/`Batch`-chunk для ClusterEntropySweep + ClusterHealthCheck fan-out
+
+#### UI.1 — Theme-token migration + gaia:lint CI gate
+- **P2** · 🤖 · ⚪ · → `04_04 §3`
+- **Стан:** Audit §04 (2026-07-04, S4-frontend). ~20 з 29 domain-компонент-директорій суттєво на raw-палітрі замість design-токенів (8 з нулем токенів: audit_logs/organizations/oracle_visions/settings/provisioning/system_health/notifications/system_audits) — hardcoded `bg-black`/`text-emerald-*` без `dark:` → світла тема ламається (канон §1 «light = secondary toggle» + TRL-8-SSOT overclaim). `gaia:lint_tokens` (`lib/tasks/gaia_lint.rake`) РЕАЛЬНО існує, але НЕ в CI + regex вужчий за реальний словник (не ловить zinc/red/emerald-100/300). Канон `04_04 §3` (токени), `04_04 §16` (lint).
+- [ ] 🤖 прогнати `bin/migrate-tailwind-tokens` на 0%-домени + розширити raw-regex
+- [ ] 🤖 wire `gaia:lint_tokens` HARD-гейтом у CI (стоп-регрес)
+
+#### UI.2 — Codex real-time UI broadcasts dead-on-arrival
+- **P2** · 🤖 · ⚪ · → `04_05`
+- **Стан:** Audit §04 (2026-07-04, A5-Codex). Чотири Codex «live»-фічі (attunement-counter, live-comments, citation-pills, discovery-toast) шлють `ActionCable.server.broadcast` у порожнечу — нема `@rails/actioncable` importmap-pin, нема `app/channels/`, нуль `subscriptions.create` у репо → браузер НІКОЛИ не отримує payload (робочий патерн — pair з `Turbo::StreamsChannel.broadcast_*_to`, як telemetry/burn; Codex робить лише raw-half). `Discoveries::Toast` взагалі ніде не інстанціюється; docstring'и стверджують протилежне shipped-поведінці. Канон `04_05` (ADR-CDX-8).
+- [ ] 🤖 design-рішення: wire `Turbo::StreamsChannel.broadcast_*_to` (+ server-render Phlex) АБО descope «live» з docstring'ів/ADR-CDX-8 (page-reload-only чесно)
+
+#### UI.3 — a11y enforcement + Phlex query-hygiene
+- **P2** · 🤖 · ⚪ · → `04_04 §9`
+- **Стан:** Audit §04 (2026-07-04, S4 + a11y-sweep). (a) **a11y aspirational, не enforced:** нема axe-gem/CI-job/contrast-тестів (04_04 §9 сам зізнається); конкретні дефекти — `matrix_rain_controller.js` ігнорує `prefers-reduced-motion` (JS-canvas, CSS-gate не тримає), `gaia-text-subtle #9ca3af` ≈2.4:1 FAILS AA (34×), 14/15 watermark-`div` без `aria-hidden`, ~8 Turbo-регіонів без `aria-live`, `theme_switcher` `focus:` замість `focus-visible:`, codex-leaderboard `th` без `scope`, sidebar `aria-label` з'їдає EWS-badge. §9 overclaim «100% focus-visible». (b) **Phlex query-hygiene:** live-query в `view_template`/initialize — `trees/show`+`clusters/show`+`oracle_visions/forecast_card` (citations) + `clusters/show` (active_contract); канон §6.4 суперечить сам собі (approve vs N+1-forbid). Канон `04_04 §9` (a11y), `04_04 §6` (N+1).
+- [ ] 🤖 trivial-batch: matrix-rain reduced-motion + theme_switcher focus-visible + aria-hidden watermarks + th-scope
+- [ ] 🤖 citations/active_contract → конструктор-параметри + controller eager-load (дзеркало `alerts/row`); resolve §6.4 canon-суперечність
+- [ ] 👤 (опц.) axe-core CI-job + contrast-фікс gaia-text-subtle
 
 ## §05 · Web3 / Економіка / Slashing
 
@@ -1290,6 +1342,7 @@ DOC-T трекає SSOT doc-drift (узгодження docs↔код) **та** 
 
 | ID | Пункт | Канон |
 |----|-------|-------|
+| DOC-T.32 | §04 canon↔code drift sweep (audit 2026-07-04): `04_01` archetypes «79»→реєстр `Codex::ARCHETYPES` (no-volatile-count) · ADR-CDX-3/5 `body_md_uk/en`→монолінг `context/cyber/lore_md` + subtitle 200ch (не «2КіБ») · Citation citable-list (drop BlockchainTransaction, add AiInsight/NaasContract) · `04_03 §3` «patrol» role-фантом · `04_03 §4` +`locale`/`helium` endpoint-rows · partition-cron 02:30→00:30 · `04_04 §7` Stimulus 4/8 · HKDF 5→6 · WeakKeyDetector 3→4 · dclimate «48h»→35.5h+`after_create_commit` · `04_04` LocaleSwitcher Popover self-contradict · `reveal_controller` doc'd-live-but-dead · Gateway `recover`-event + 5 model-columns undoc'd | `04_01` · `04_03` · `04_04` · `04_05` · `04_02` |
 
 _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tooling знахідки → додавати рядком сюди._
 

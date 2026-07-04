@@ -19,12 +19,16 @@ class EcosystemHealingWorker
       target.mark_seen! if target.respond_to?(:mark_seen!)
 
       # 2. РЕАНІМАЦІЯ АКТУАТОРІВ
-      if target.is_a?(Actuator) && record.action_type_repair?
+      # [SAFETY]: guard may_deactivate? — repair-запис на вже-idle актуаторі
+      # (preventive maintenance) інакше кидав AASM::InvalidTransition (mark_idle! =
+      # deactivate!, валідний лише from active/offline/maintenance_needed) →
+      # транзакція відкочувалась → alert.resolve! (крок 4) недосяжний → retry→dead.
+      if target.is_a?(Actuator) && record.action_type_repair? && target.may_deactivate?
         target.mark_idle!
       end
 
       # 3. ЖИТТЄВИЙ ЦИКЛ ДЕРЕВА
-      if target.is_a?(Tree) && record.action_type_decommissioning?
+      if target.is_a?(Tree) && record.action_type_decommissioning? && target.may_decommission?
         target.decommission!
       end
 

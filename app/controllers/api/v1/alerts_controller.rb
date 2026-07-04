@@ -4,6 +4,11 @@ module Api
   module V1
     class AlertsController < BaseController
       before_action :set_alert, only: [ :show, :resolve ]
+      # [SEC]: resolve = операційна дія (закрити бойову тривогу пожежі/tamper) —
+      # лише forester+. EwsAlertPolicy#resolve? декларував саме цей намір, але
+      # контролер його не викликав, тож investor (read-only роль) міг гасити
+      # активну EWS-тривогу.
+      before_action :authorize_forester!, only: :resolve
 
       # GET /api/v1/alerts
       def index

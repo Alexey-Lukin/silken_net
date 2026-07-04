@@ -88,7 +88,9 @@ RSpec.describe Api::V1::SystemHealthController, type: :request do
         expect(response).to have_http_status(:ok)
         coap = response.parsed_body["coap_listener"]
         expect(coap["alive"]).to be(false)
-        expect(coap["error"]).to include("port config error")
+        # [SEC]: сирий текст винятку більше не тече клієнту — лише generic-маркер.
+        expect(coap["error"]).to eq("check_failed")
+        expect(coap["error"]).not_to include("port config error")
       end
     end
   end

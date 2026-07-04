@@ -10,6 +10,9 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
   let(:investor_token) { investor.generate_token_for(:api_access) }
   let(:headers) { { "Authorization" => "Bearer #{admin_token}" } }
   let(:investor_headers) { { "Authorization" => "Bearer #{investor_token}" } }
+  # Мутації TreeFamily = глобальні money/fraud-константи → лише super_admin (SEC).
+  let(:super_admin) { create(:user, :super_admin, organization: organization) }
+  let(:super_admin_headers) { { "Authorization" => "Bearer #{super_admin.generate_token_for(:api_access)}" } }
 
   let!(:scots_pine) { create(:tree_family, :scots_pine) }
   let!(:common_oak) { create(:tree_family, :common_oak) }
@@ -66,7 +69,9 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
   end
 
   describe "GET /api/v1/tree_families/new" do
-    it "renders the new family form for admin" do
+    let(:headers) { super_admin_headers }
+
+    it "renders the new family form for super_admin" do
       get "/api/v1/tree_families/new", headers: headers
       expect(response).to have_http_status(:ok)
     end
@@ -78,6 +83,8 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
   end
 
   describe "POST /api/v1/tree_families" do
+    let(:headers) { super_admin_headers }
+
     let(:valid_params) do
       {
         tree_family: {
@@ -139,10 +146,18 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
       post "/api/v1/tree_families", params: valid_params, headers: investor_headers
       expect(response).to have_http_status(:forbidden)
     end
+
+    it "returns 403 for a plain org admin — species mutations require super_admin" do
+      post "/api/v1/tree_families", params: valid_params,
+           headers: { "Authorization" => "Bearer #{admin_token}" }
+      expect(response).to have_http_status(:forbidden)
+    end
   end
 
   describe "GET /api/v1/tree_families/:id/edit" do
-    it "renders the edit form for admin" do
+    let(:headers) { super_admin_headers }
+
+    it "renders the edit form for super_admin" do
       get "/api/v1/tree_families/#{scots_pine.id}/edit", headers: headers
       expect(response).to have_http_status(:ok)
     end
@@ -154,6 +169,8 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
   end
 
   describe "PATCH /api/v1/tree_families/:id" do
+    let(:headers) { super_admin_headers }
+
     it "updates the tree family with valid params" do
       patch "/api/v1/tree_families/#{scots_pine.id}",
             params: { tree_family: { name: "Updated Pine" } },

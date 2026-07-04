@@ -76,9 +76,11 @@ RSpec.describe TreeChronicle::TextFormatter do
 
   describe ".fraud_description" do
     context "when deviation_from_baseline is present" do
-      let(:insight) { OpenStruct.new(deviation_from_baseline: 47.2) }
+      # deviation_from_baseline — частка 0.0..1.0 (InsightGeneratorService#calculate_deviation);
+      # раніше стаб був pre-scaled 47.2 і маскував рендер "0.35%" замість "35%".
+      let(:insight) { OpenStruct.new(deviation_from_baseline: 0.472) }
 
-      it "includes the deviation value" do
+      it "renders the deviation fraction as a percentage" do
         result = described_class.fraud_description(insight)
         expect(result).to include("47.2%")
         expect(result).to include("AI Guard detected anomaly")

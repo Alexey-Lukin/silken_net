@@ -46,12 +46,13 @@ RSpec.describe Codex::Comments::Thread do
       body_md: "Great tree!",
       hidden?: false,
       created_at: Time.utc(2026, 5, 10, 8, 0, 0),
-      user: OpenStruct.new(email_address: "user@example.com")
+      user: OpenStruct.new(email_address: "user@example.com", full_name: "Tree Fan")
     )
     html = render_thread(node: node, comments: [ comment ], current_user: nil)
     expect(html).not_to include("Be the first to share")
     expect(html).to include("Great tree!")
-    expect(html).to include("user@example.com")
+    expect(html).to include("Tree Fan")
+    expect(html).not_to include("user@example.com")
   end
 
   it "omits the composer when there is no current_user" do

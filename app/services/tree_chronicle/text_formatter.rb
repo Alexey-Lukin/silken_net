@@ -38,8 +38,13 @@ module TreeChronicle
     end
 
     def fraud_description(insight)
-      deviation = insight.deviation_from_baseline || "N/A"
-      "AI Guard detected anomaly: sap_flow deviation from baseline > #{deviation}%"
+      # deviation_from_baseline — частка 0.0..1.0 (напр. 0.35 = 35%), як
+      # повертає InsightGeneratorService#calculate_deviation. Масштабуємо ×100,
+      # як робить stress_description для stress_index — раніше рендерилось "0.35%"
+      # замість "35%" (заниження fraud-сигналу інвесторам на два порядки).
+      deviation = insight.deviation_from_baseline
+      deviation_pct = deviation ? (deviation.to_f * 100).round(1) : "N/A"
+      "AI Guard detected anomaly: sap_flow deviation from baseline > #{deviation_pct}%"
     end
 
     # --- EwsAlert ---

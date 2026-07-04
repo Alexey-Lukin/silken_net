@@ -60,6 +60,17 @@ RSpec.describe ActuatorCommandWorker, type: :worker do
       expect(CoapClient).not_to have_received(:put)
     end
 
+    it "re-delivers a :sent command on retry without re-raising dispatch (may_dispatch? guard)" do
+      command.update_column(:status, :sent)
+
+      expect { described_class.new.perform(command.id) }.not_to raise_error
+
+      command.reload
+      expect(command.status).to eq("acknowledged")
+      # re-PUT happens; the Queen dedupes by idempotency_token, so it is safe
+      expect(CoapClient).to have_received(:put)
+    end
+
     it "fails expired commands" do
       command.update_column(:expires_at, 1.minute.ago)
 

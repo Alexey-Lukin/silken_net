@@ -85,7 +85,12 @@ class ActuatorCommandWorker
 
     begin
       # 3. ФІЗИЧНА ПЕРЕДАЧА (CoAP Protocol)
-      command.dispatch!
+      # [SAFETY]: на retry після втраченого CoAP-ACK команда вже :sent —
+      # may_dispatch? хибний, тож пропускаємо перехід і одразу повторюємо PUT
+      # (Queen дедуплікує за idempotency_token). Без гарду dispatch! з :sent кидав
+      # AASM::InvalidTransition → усі ретраї згорали БЕЗ реальної повторної
+      # доставки сирени/клапана (валідний перехід лише from: :issued).
+      command.dispatch! if command.may_dispatch?
       broadcast_command_state(command)
 
       gateway.mark_seen!

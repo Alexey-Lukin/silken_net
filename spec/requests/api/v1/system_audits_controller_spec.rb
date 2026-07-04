@@ -4,7 +4,8 @@ require "rails_helper"
 
 RSpec.describe Api::V1::SystemAuditsController, type: :request do
   let(:organization) { create(:organization) }
-  let(:user) { create(:user, organization: organization) }
+  # ChainAuditService = платформо-глобальний db↔chain сигнал → лише admin+ (SEC).
+  let(:user) { create(:user, :admin, organization: organization) }
   let(:api_token) { user.generate_token_for(:api_access) }
   let(:headers) { { "Authorization" => "Bearer #{api_token}" } }
 

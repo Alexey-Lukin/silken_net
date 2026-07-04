@@ -37,7 +37,8 @@ module Api
 
         { alive: alive, port: port }
       rescue => e
-        { alive: false, port: port, error: e.message }
+        Rails.logger.warn "[SystemHealth] CoAP-перевірка впала: #{e.message}"
+        { alive: false, port: port, error: "check_failed" }
       end
 
       # Статистика черг Sidekiq
@@ -52,14 +53,16 @@ module Api
           queues: stats.queues
         }
       rescue => e
-        { error: e.message }
+        Rails.logger.warn "[SystemHealth] Sidekiq-статистика недоступна: #{e.message}"
+        { error: "check_failed" }
       end
 
       # Перевірка з'єднання з базою даних
       def database_status
         { connected: ActiveRecord::Base.connection.active? }
       rescue => e
-        { connected: false, error: e.message }
+        Rails.logger.warn "[SystemHealth] Перевірка БД впала: #{e.message}"
+        { connected: false, error: "check_failed" }
       end
 
       def port_open?(host, port)

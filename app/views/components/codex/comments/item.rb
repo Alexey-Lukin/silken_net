@@ -18,7 +18,7 @@ module Codex
           )
         ) do
           header(class: "flex items-center justify-between text-tiny font-mono text-gaia-text-muted") do
-            span { @comment.user&.email_address.to_s }
+            span { @comment.user&.full_name.to_s }
             time(datetime: @comment.created_at.iso8601) { @comment.created_at.utc.strftime("%Y-%m-%d %H:%M UTC") }
           end
 

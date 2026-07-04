@@ -277,5 +277,17 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
             headers: html_headers
       expect(response.status).to be_in([ 200, 422, 500 ])
     end
+
+    it "rejects creating a record against another organization's tree (IDOR)" do
+      expect {
+        post "/api/v1/maintenance_records", headers: headers, as: :json, params: {
+          maintenance_record: {
+            maintainable_type: "Tree", maintainable_id: other_tree.id,
+            action_type: :inspection, performed_at: Time.current
+          }
+        }
+      }.not_to change(MaintenanceRecord, :count)
+      expect(response).to have_http_status(:not_found)
+    end
   end
 end

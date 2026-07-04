@@ -3,6 +3,12 @@
 module Api
   module V1
     class SystemAuditsController < BaseController
+      # [SEC]: ChainAuditService рахує ПЛАТФОРМО-ГЛОБАЛЬНИЙ db↔chain reconcile
+      # (+critical fraud-flag) — не org-scoped. Лише admin+ (дзеркало
+      # SystemHealthController), інакше будь-який investor будь-якої org бачить
+      # у реальному часі сигнал десинхронізації/можливого фроду всієї платформи.
+      before_action :authorize_admin!
+
       # GET /api/v1/system_audits
       def index
         @audit = ChainAuditService.call

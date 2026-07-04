@@ -16,7 +16,7 @@ RSpec.describe Codex::Comments::Item do
       body_md: "Hello **world**.",
       hidden?: false,
       created_at: Time.utc(2026, 5, 9, 13, 0, 0),
-      user: OpenStruct.new(email_address: "ranger@example.com")
+      user: OpenStruct.new(email_address: "ranger@example.com", full_name: "Ranger Rick")
     }
     OpenStruct.new(base.merge(overrides))
   end
@@ -31,9 +31,10 @@ RSpec.describe Codex::Comments::Item do
     expect(html).to include("<strong>world</strong>")
   end
 
-  it "shows the author's email and an ISO timestamp" do
+  it "shows the author's display name (never the email — cross-org PII) and an ISO timestamp" do
     html = render_item(fake_comment)
-    expect(html).to include("ranger@example.com")
+    expect(html).to include("Ranger Rick")
+    expect(html).not_to include("ranger@example.com")
     expect(html).to include("2026-05-09 13:00 UTC")
   end
 

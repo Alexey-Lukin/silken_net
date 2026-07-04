@@ -68,15 +68,18 @@ module Api
         hmac_secret = ENV["CHAINLINK_HMAC_SECRET"]
 
         if hmac_secret.blank?
-          # [SEC.5 FIX]: Fail-fast у production — не дозволяти bypass HMAC верифікації.
-          if ENV["WEB3_STRICT_MODE"] == "true"
+          # [SEC.5 FIX]: Fail-closed у production. Коментар раніше стверджував
+          # "БЛОКУЄ Production", але код блокував ЛИШЕ під WEB3_STRICT_MODE — тобто
+          # prod-деплой, що забув прапор, лишав mint-triggering endpoint відкритим.
+          # Тепер raise і в prod незалежно від прапора.
+          if ENV["WEB3_STRICT_MODE"] == "true" || Rails.env.production?
             raise SecurityError,
-                  "CHAINLINK_HMAC_SECRET обов'язковий при WEB3_STRICT_MODE=true. " \
+                  "CHAINLINK_HMAC_SECRET обов'язковий у production / WEB3_STRICT_MODE. " \
                   "Oracle callback endpoint незахищений без HMAC верифікації."
           end
 
-          Rails.logger.warn "⚠️ [Oracle Security] CHAINLINK_HMAC_SECRET не встановлено. " \
-                            "HMAC-верифікація вимкнена. БЛОКУЄ Production."
+          Rails.logger.warn "⚠️ [Oracle Security] CHAINLINK_HMAC_SECRET не встановлено " \
+                            "(dev/test — bypass із попередженням)."
           return
         end
 

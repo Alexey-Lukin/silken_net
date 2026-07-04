@@ -74,6 +74,7 @@ module Api
       # --- ФІКСАЦІЯ ЗЦІЛЕННЯ ---
       def create
         @record = current_user.maintenance_records.build(maintenance_params)
+        verify_maintainable_within_organization!(@record)
 
         if @record.save
           respond_to do |format|
@@ -222,6 +223,33 @@ module Api
           Tree.where(cluster_id: org_cluster_ids).select(:id),
           Gateway.where(cluster_id: org_cluster_ids).select(:id)
         )
+      end
+
+      # [SEC IDOR]: maintainable_id/ews_alert_id надходять клієнтом через
+      # mass-assignment — без перевірки форестер org-A подавав би
+      # decommissioning/biomass_extraction на дерево org-B (→ EcosystemHealingWorker
+      # ретайрить/оголошує мертвим чуже дерево + каскад slashing) або гасив би
+      # чужу ews-тривогу. Дзеркало organization_scoped_records, застосоване ДО save.
+      def verify_maintainable_within_organization!(record)
+        target = record.maintainable
+        # Відсутній/неіснуючий maintainable — НЕ security-кейс: хай модельна
+        # валідація (`belongs_to :maintainable` required) поверне 422, не 404.
+        # Гард ловить лише ІСНУЮЧИЙ-але-чужий maintainable (cross-tenant IDOR).
+        return if target.nil?
+
+        owned =
+          case target
+          when Tree, Gateway
+            current_user.organization.clusters.exists?(id: target.cluster_id)
+          else
+            false
+          end
+        raise ActiveRecord::RecordNotFound unless owned
+
+        if record.ews_alert_id.present? &&
+           !current_user.organization.ews_alerts.exists?(id: record.ews_alert_id)
+          raise ActiveRecord::RecordNotFound
+        end
       end
 
       def maintenance_params

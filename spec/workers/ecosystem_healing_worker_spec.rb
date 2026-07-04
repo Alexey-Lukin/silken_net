@@ -24,6 +24,28 @@ RSpec.describe EcosystemHealingWorker, type: :worker do
       end
     end
 
+    context "when target is an already-idle Actuator with repair (preventive)" do
+      it "skips deactivate (may_deactivate? false) without AASM::InvalidTransition" do
+        actuator = create(:actuator, state: :idle)
+        record = build(:maintenance_record, :repair, maintainable: actuator)
+        record.photos.attach(io: StringIO.new("fake"), filename: "photo.jpg", content_type: "image/jpeg")
+        record.save!
+
+        expect { described_class.new.perform(record.id) }.not_to raise_error
+        expect(actuator.reload.state).to eq("idle")
+      end
+    end
+
+    context "when target is an already-removed Tree with decommissioning" do
+      it "skips decommission (may_decommission? false) without raising" do
+        tree = create(:tree, status: :removed)
+        record = create(:maintenance_record, maintainable: tree, action_type: :decommissioning)
+
+        expect { described_class.new.perform(record.id) }.not_to raise_error
+        expect(tree.reload.status).to eq("removed")
+      end
+    end
+
     context "when target is a Tree with decommissioning" do
       it "sets tree status to removed" do
         tree = create(:tree, status: :active)

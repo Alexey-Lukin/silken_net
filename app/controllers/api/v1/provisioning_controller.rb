@@ -56,6 +56,15 @@ module Api
           return
         end
 
+        # [SEC IDOR]: cluster_id надходить від клієнта — переконуємось, що він
+        # належить організації форестера (дзеркало firmwares#deploy /
+        # oracle_visions#simulate, які цей клас багу вже закрили). Без цього
+        # форестер org-A провізіонить пристрій + HardwareKey + DID у кластер org-B.
+        unless current_user.organization.clusters.exists?(id: provisioning_params[:cluster_id])
+          render json: { error: I18n.t("errors.api.not_found", model: "Cluster") }, status: :not_found
+          return
+        end
+
         ActiveRecord::Base.transaction do
           @device = build_device(provisioning_params)
 

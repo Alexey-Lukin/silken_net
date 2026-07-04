@@ -47,14 +47,16 @@ module Api
         hmac_secret = ENV["HELIUM_WEBHOOK_SECRET"]
 
         if hmac_secret.blank?
-          if ENV["WEB3_STRICT_MODE"] == "true"
+          # [SEC.5]: fail-closed і в prod (не лише під прапором) — mint/SOS
+          # endpoint без HMAC не сміє жити, якщо WEB3_STRICT_MODE забули виставити.
+          if ENV["WEB3_STRICT_MODE"] == "true" || Rails.env.production?
             raise SecurityError,
-                  "HELIUM_WEBHOOK_SECRET обов'язковий при WEB3_STRICT_MODE=true. " \
+                  "HELIUM_WEBHOOK_SECRET обов'язковий у production / WEB3_STRICT_MODE. " \
                   "Helium SOS endpoint незахищений без HMAC верифікації."
           end
 
-          Rails.logger.warn "⚠️ [Helium Security] HELIUM_WEBHOOK_SECRET не встановлено. " \
-                            "HMAC-верифікація вимкнена. БЛОКУЄ Production."
+          Rails.logger.warn "⚠️ [Helium Security] HELIUM_WEBHOOK_SECRET не встановлено " \
+                            "(dev/test — bypass із попередженням)."
           return
         end
 

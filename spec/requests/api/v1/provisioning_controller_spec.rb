@@ -37,6 +37,14 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
       }
     end
 
+    it "rejects registration into another organization's cluster (IDOR)" do
+      params = valid_params.deep_merge(provisioning: { cluster_id: other_cluster.id })
+      expect {
+        post "/api/v1/provisioning/register", params: params, headers: headers, as: :json
+      }.not_to change(Gateway, :count)
+      expect(response).to have_http_status(:not_found)
+    end
+
     it "rejects duplicate hardware_uid registration" do
       HardwareKey.create!(
         device_uid: "AABBCCDD11223344",

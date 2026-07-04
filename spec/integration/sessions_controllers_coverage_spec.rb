@@ -492,7 +492,9 @@ RSpec.describe "Controller coverage — uncovered paths" do
         expect(response).to have_http_status(:ok)
         json = response.parsed_body
         expect(json["database"]["connected"]).to be false
-        expect(json["database"]["error"]).to eq("DB down")
+        # [SEC]: сирий текст винятку не тече клієнту — лише generic-маркер.
+        expect(json["database"]["error"]).to eq("check_failed")
+        expect(json["database"]["error"]).not_to include("DB down")
       end
 
       it "handles CoAP port check — port open path" do

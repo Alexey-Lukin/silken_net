@@ -1706,11 +1706,11 @@ FilecoinArchiveWorker → immutable proof archive
 
 **Пріоритет:** Post-TRL 6. Не блокує прототип.
 
-### Архітектурний дизайн: Task Assignment Algorithm 🤖 (S6.10)
+### Архітектурний дизайн: Task Assignment Algorithm 🤖 (E.20)
 
-> **Cross-ref:** [`00_07` — S6.10](00_07_Action_Plan_Tracker), [`00_07` — E.20](00_07_Action_Plan_Tracker), [`00_07` — E.34](00_07_Action_Plan_Tracker) (dClimate fallback → Forester Guild).
+> **Cross-ref:** [`00_07` — E.20](00_07_Action_Plan_Tracker), [`00_07` — E.34](00_07_Action_Plan_Tracker) (Forester Guild task-assignment + dClimate fallback).
 
-Workflow вище показує **створення** bounty та **claim**, але **алгоритм матчингу ranger↔bounty** і пріоритезація не визначені. Без цього система деградує до first-come-first-served race (далекий ranger може вкрасти bounty у локального) або silent expiry (життєво-критична `EwsAlert :critical` залишається без виконавця, бо нікому не повідомили). Цей розділ закриває S6.10.
+Workflow вище показує **створення** bounty та **claim**, але **алгоритм матчингу ranger↔bounty** і пріоритезація не визначені. Без цього система деградує до first-come-first-served race (далекий ranger може вкрасти bounty у локального) або silent expiry (життєво-критична `EwsAlert :critical` залишається без виконавця, бо нікому не повідомили). Цей розділ закриває E.20 (Forester Guild task-assignment).
 
 #### Етап 1 — Bounty Creation (з `EwsAlert`)
 
@@ -1885,7 +1885,7 @@ end
 - **Гейміфікація forester-економіки.** Новий DAO-editable `Codex::DiscoveryRule.condition_type` (bond-milestone / sponsorship-graduated / clean-record-streak) → `DiscoveryProbeWorker` (fire-and-forget, `default`-черга) розблоковує lore-`Discovery` форестеру при PoPhW/bond-подіях — гейміфікує bond/reputation-шлях (як «нудну середину» спостереження). DAO-tunable без редеплою — консистентно з bond-params.
 - **Breach→lore.** Slashing/breach-подія → citable lore-forensic запис (Operations→Lore). *(Speculative, не форсуємо: reputation↔Codex-Elo уніфікація · fraction↔guild membership · breach-lore у cultural state-root anchor (Codex future [`04_05 §3`](04_05_Codex_Lore_Module)).)*
 
-**DAO-параметри + передумови.** bond-sizing `max(BOND_FLOOR, k×expected_cluster_reward)`, holdback-%, sponsor-cap, reputation-scaling (`ProtocolParameters`/`SystemParameter`). Передумови: operator↔cluster assignment (S6.10) + forester-payout disbursement (зараз computed-only) + DAO-ратифікація. Tracked → [`00_07` BIZ.13/SLASH-1](00_07_Action_Plan_Tracker).
+**DAO-параметри + передумови.** bond-sizing `max(BOND_FLOOR, k×expected_cluster_reward)`, holdback-%, sponsor-cap, reputation-scaling (`ProtocolParameters`/`SystemParameter`). Передумови: operator↔cluster assignment (E.20) + forester-payout disbursement (зараз computed-only) + DAO-ратифікація. Tracked → [`00_07` BIZ.13/SLASH-1](00_07_Action_Plan_Tracker).
 
 ---
 
