@@ -30,7 +30,7 @@
  * vs OpenSSL in firmware/test/test_encryption.c. Canon: 03_05 §HRNG Fallback.
  */
 static inline void coap_fallback_iv(uint8_t out_iv[16],
-                                    const uint8_t *coap_key, size_t key_len,
+                                    const uint8_t *iv_key, size_t key_len,
                                     uint32_t tick, uint32_t uid_hash,
                                     uint32_t unix_ts, uint32_t flush_seq)
 {
@@ -51,7 +51,7 @@ static inline void coap_fallback_iv(uint8_t out_iv[16],
     /* Concat variant streams label || ctx without a combined buffer; it is
        byte-identical to a one-shot HMAC over label||ctx (proven in
        test_seed_derivation.c), which is itself OpenSSL-parity-proven. */
-    Silken_Hmac_Sha256_Concat(coap_key, key_len,
+    Silken_Hmac_Sha256_Concat(iv_key, key_len,
                               label, sizeof(label) - 1u,  /* exclude trailing NUL */
                               ctx, sizeof(ctx),
                               digest);

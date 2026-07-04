@@ -2898,7 +2898,7 @@ int main(void)
 // =========================================================================
 // payload лишається не-const: сигнатуру диктує callback-контракт радіо
 // (Semtech RadioEvents_t.RxDone, uint8_t*) — const зламав би тип реєстрації.
-// cppcheck-suppress constParameterPointer
+// cppcheck-suppress constParameterCallback
 void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 {
     // [FIX: AUDIT] size > 0 && size <= buffer: виправлено off-by-one (було size < 255)

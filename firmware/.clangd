@@ -31,6 +31,7 @@ CompileFlags:
     - -std=c11
     - -I../hal_glue
     - -I../common
+    - -I../extern/subghz-phy/radio_driver
     - -I../extern/cmsis-device-wl/Include
     - -I../extern/stm32wlxx-hal-driver/Inc
     - -I../extern/CMSIS_6/CMSIS/Core/Include

@@ -105,7 +105,7 @@ _Static_assert((QATT_CT_OFFSET % 16u) == 0u, "ct must stay 16-aligned for HAL_CR
 static inline void Qatt_Write_Header(uint8_t *hdr, uint32_t unix_ts,
                                      uint32_t flush_seq,
                                      uint32_t uptime_min, uint8_t cifo_fill,
-                                     uint8_t lora_rx_drops, uint8_t coap_fail,
+                                     uint8_t rx_drops, uint8_t coap_fail,
                                      uint8_t csq, uint8_t flags)
 {
     hdr[0]  = QATT_VERSION_2;
@@ -125,7 +125,7 @@ static inline void Qatt_Write_Header(uint8_t *hdr, uint32_t unix_ts,
     hdr[10] = (uint8_t)(up >> 8);
     hdr[11] = (uint8_t)(up & 0xFFu);
     hdr[12] = cifo_fill;
-    hdr[13] = lora_rx_drops;
+    hdr[13] = rx_drops;
     hdr[14] = coap_fail;
     hdr[15] = csq;
     hdr[16] = flags;

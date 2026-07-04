@@ -1203,7 +1203,7 @@ int main(void)
 // emergency-сигнал не зникає в кенозисі CoAP-flush'у.
 // payload не-const: сигнатуру диктує callback-контракт радіо
 // (Semtech RadioEvents_t.RxDone, uint8_t*) — const зламав би тип реєстрації.
-// cppcheck-suppress constParameterPointer
+// cppcheck-suppress constParameterCallback
 void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 {
     // [E.8] SNR більше не відкидається — він плюметься у ринг і використовується

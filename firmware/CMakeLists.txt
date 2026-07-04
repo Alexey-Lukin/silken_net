@@ -87,12 +87,15 @@ if(CMAKE_CROSSCOMPILING)
     LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/sim/qemu_m4/mps2_an386.ld")
 
   # [FW.46] HAL compile-lane — перший справжній компайл soldier/queen main.c
-  # проти PINNED stm32wlxx-hal-driver + cmsis-device-wl (firmware/extern/).
-  # Це ще НЕ повний .elf: тіла MX_*-init згенерує .ioc на board-freeze (👤,
-  # wrapper-TU у hal_glue/ докладають порожні заглушки в той самий TU) — але
-  # всі виклики/типи/HAL-API обох main.c верифікуються компілятором у CI.
-  # Уже зловив: __HAL_RCC_CRYP_* (F4-стиль) ≠ WL __HAL_RCC_AES_*.
-  # Повний link (startup/ld/radio middleware) — HAL-фаза. docs/03_01 §12.4.
+  # проти PINNED stm32wlxx-hal-driver + cmsis-device-wl + subghz-phy
+  # (firmware/extern/). Це ще НЕ повний .elf: тіла MX_*-init згенерує .ioc на
+  # board-freeze (👤, wrapper-TU у hal_glue/ докладають порожні заглушки в той
+  # самий TU) — але всі виклики/типи/HAL-API обох main.c верифікуються
+  # компілятором у CI. Уже зловив: __HAL_RCC_CRYP_* (F4-стиль) ≠ WL
+  # __HAL_RCC_AES_*. [Шлях A] radio.h тепер СПРАВЖНІЙ Semtech-header із
+  # stm32-mw-subghz-phy @v1.5.0 (owned-стаб hal_glue/radio.h видалено);
+  # radio.c/radio_driver.c НЕ компілюються (потребують radio_conf.h — .ioc).
+  # Повний link (startup/ld/radio middleware .c) — HAL-фаза. docs/03_01 §12.4.
   option(SILKEN_WITH_HAL "HAL compile-lane: soldier/queen main.c vs vendored WL HAL" OFF)
   if(SILKEN_WITH_HAL)
     message(STATUS "[FW.46] SILKEN_WITH_HAL=ON — HAL compile-lane (docs/03_01 §12.4)")
@@ -106,6 +109,7 @@ if(CMAKE_CROSSCOMPILING)
       hal_glue/queen_hal_check.c)
     target_include_directories(hal_check PRIVATE
       hal_glue common
+      ${SILKEN_EXTERN}/subghz-phy/radio_driver
       ${SILKEN_EXTERN}/cmsis-device-wl/Include
       ${SILKEN_EXTERN}/stm32wlxx-hal-driver/Inc
       ${CMSISCORE}/Include
@@ -131,6 +135,7 @@ if(CMAKE_CROSSCOMPILING)
       hal_glue/queen_hal_check.c)
     target_include_directories(hal_check_ccm PRIVATE
       hal_glue common
+      ${SILKEN_EXTERN}/subghz-phy/radio_driver
       ${SILKEN_EXTERN}/cmsis-device-wl/Include
       ${SILKEN_EXTERN}/stm32wlxx-hal-driver/Inc
       ${CMSISCORE}/Include

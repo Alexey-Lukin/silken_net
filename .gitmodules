@@ -22,3 +22,6 @@
 [submodule "tools/cad/extern/LEAP71_LatticeLibrary"]
 	path = tools/cad/extern/LEAP71_LatticeLibrary
 	url = https://github.com/leap71/LEAP71_LatticeLibrary
+[submodule "firmware/extern/subghz-phy"]
+	path = firmware/extern/subghz-phy
+	url = https://github.com/STMicroelectronics/stm32-mw-subghz-phy
