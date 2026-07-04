@@ -472,6 +472,8 @@ jobs:
     # deploy (06_02 §debug). `alloy fmt` parses the River AST and exits non-zero on a
     # malformed config; it does NOT evaluate sys.env()/coalesce(), so it needs no
     # secrets and is environment-independent. Image tag matches deploy/akash/deploy.yaml.
+    # Also dry-run-validates the Grafana IaC (dashboards + alert rules under
+    # deploy/grafana/) — same no-secrets discipline (S2.2).
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -494,6 +496,13 @@ jobs:
         # Akash provider — the INF.17 dead-path class at the manifest level.
         # Pure ruby+yaml, no bundle needed.
         run: ruby scripts/sdl_consistency_check.rb
+
+      - name: Validate Grafana IaC (dashboards + alerts, no credentials — S2.2)
+        # `--dry-run` parses both artifacts (JSON dashboard + YAML alert rules),
+        # checks the DS_PROMETHEUS input / datasourceUid placeholders and uid
+        # uniqueness, then exits 0 — no GRAFANA_URL/GRAFANA_API_TOKEN needed.
+        # Pure stdlib (json/yaml/net/http/uri), no bundle needed.
+        run: ruby deploy/grafana/import.rb --dry-run
 
   test:
     needs: changes

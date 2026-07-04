@@ -533,7 +533,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "description": "Success-rate SLO (success/attempts) money-path: mint / slash / Solana payout. <1.0 = частина транзакцій не дійшла до мережі (06_03 §2.8). Чисельник→sent після broadcast.",
+      "description": "Success-rate SLO (success/attempts) money-path: mint / slash / Solana payout / insurance payout. <1.0 = частина транзакцій не дійшла до мережі (06_03 §2.8). Чисельник→sent після broadcast.",
       "fieldConfig": {
         "defaults": { "color": { "mode": "palette-classic" }, "unit": "percentunit", "min": 0, "max": 1 },
         "overrides": []
@@ -559,6 +559,12 @@
           "expr": "sum(silkennet_solana_payout_success_total) / sum(silkennet_solana_payout_attempts_total)",
           "legendFormat": "Solana payout",
           "refId": "C"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum(silkennet_insurance_payout_success_total) / sum(silkennet_insurance_payout_attempts_total)",
+          "legendFormat": "Insurance payout",
+          "refId": "D"
         }
       ],
       "title": "Money-Path Success Rate (SLO)",
@@ -588,6 +594,297 @@
       ],
       "title": "Sidekiq DeadSet (exhausted jobs)",
       "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "BlockchainTransaction у :manual_review — double-spend guard, кошти заблоковані до ручної звірки. >0 = потребує уваги. [G1]",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "orange", "mode": "fixed" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 1 }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 52 },
+      "id": 603,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "max(silkennet_blockchain_manual_review_depth)",
+          "legendFormat": "manual_review depth",
+          "refId": "A"
+        }
+      ],
+      "title": "Manual Review Depth (funds locked) [G1]",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "locked_points на :sent/:manual_review tx старше 1h — growth_points форестера ні витрачені, ні звільнені. >0 = зламаний reconcile. [G1]",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "orange", "mode": "fixed" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 1 }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 52 },
+      "id": 604,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "max(silkennet_blockchain_limbo_locked_total)",
+          "legendFormat": "limbo locked",
+          "refId": "A"
+        }
+      ],
+      "title": "Money-Path Limbo (locked growth_points) [G1]",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "|Σmints−Σburns (DB) − totalSupply (on-chain)| — ChainAuditService. >0.0001 = ledger-баг або несанкціонований on-chain mint/burn. [G2]",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "red", "mode": "fixed" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 0.0001 }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 52 },
+      "id": 605,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "max(silkennet_chain_audit_delta)",
+          "legendFormat": "chain audit delta",
+          "refId": "A"
+        }
+      ],
+      "title": "SCC Ledger Drift (DB vs on-chain) [G2]",
+      "type": "stat"
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 58 },
+      "id": 700,
+      "title": "⚙️ Process / Runtime Health",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "RSS (Resident Set Size) кожного скрейпленого процесу (Linux /proc; 0 поза Linux/dev). Стійке зростання = memory leak.",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "bytes" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 59 },
+      "id": 701,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "silkennet_process_resident_memory_bytes",
+          "legendFormat": "{{process}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Process RSS (Resident Memory)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "GC.stat[:count] / [:major_gc_count] з моменту старту процесу.",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 59 },
+      "id": 702,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "silkennet_ruby_gc_count",
+          "legendFormat": "GC runs ({{process}})",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "silkennet_ruby_gc_major_count",
+          "legendFormat": "Major GC ({{process}})",
+          "refId": "B"
+        }
+      ],
+      "title": "Ruby GC Runs (total / major)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Живі об'єкти на Ruby heap (GC.stat[:heap_live_slots]). Стійке зростання = leak.",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 59 },
+      "id": 703,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "silkennet_ruby_gc_heap_live_slots",
+          "legendFormat": "{{process}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Ruby Heap Live Slots",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Живі Ruby-треди в процесі (Thread.list.size). Стійке зростання = thread leak.",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 67 },
+      "id": 704,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "silkennet_ruby_threads",
+          "legendFormat": "{{process}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Ruby Threads",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Puma worker-треди: running/max — зайнятість пулу; pool_capacity=0 = насичення (запити чекають); backlog>0 стійко = недостатньо тредів.",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 67 },
+      "id": 705,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "silkennet_puma_running_threads",
+          "legendFormat": "Running ({{process}})",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "silkennet_puma_max_threads",
+          "legendFormat": "Max ({{process}})",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "silkennet_puma_pool_capacity",
+          "legendFormat": "Free capacity ({{process}})",
+          "refId": "C"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "silkennet_puma_backlog",
+          "legendFormat": "Backlog ({{process}})",
+          "refId": "D"
+        }
+      ],
+      "title": "Puma Thread Pool (running / max / capacity / backlog)",
+      "type": "timeseries"
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 73 },
+      "id": 800,
+      "title": "👑 Gateway / Queen Fleet Health [ARCH.54]",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Кількість шлюзів (Queen) у стані faulty (ARCH.54 dead-man switch). >0 = кластер(и) без uplink.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "red", "mode": "fixed" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 74 },
+      "id": 801,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "max(silkennet_gateways_faulty)",
+          "legendFormat": "Faulty gateways",
+          "refId": "A"
+        }
+      ],
+      "title": "Gateways Faulty",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Online QATT-шлюзи без свіжого ed25519-підпису > 24h (можлива підміна прошивки/деградація L1). Поки лише метрика+лог, не окремий alert (ARCH.54).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "orange", "mode": "fixed" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 1 }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 78 },
+      "id": 802,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "max(silkennet_gateway_attest_lapsed)",
+          "legendFormat": "Attest lapsed",
+          "refId": "A"
+        }
+      ],
+      "title": "Gateway Attest Lapsed (QATT)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "SOS-фрейми через Helium webhook (ARCH.34 L3), розбиті by outcome: accepted / unknown_dev_eui / did_mismatch / malformed.",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "reqps" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 18, "x": 6, "y": 74 },
+      "id": 803,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "right" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum by (outcome) (rate(silkennet_helium_sos_received_total[5m]))",
+          "legendFormat": "{{outcome}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Helium SOS Received (by outcome)",
+      "type": "timeseries"
     }
 
   ]
