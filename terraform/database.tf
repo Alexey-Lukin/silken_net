@@ -93,12 +93,6 @@ resource "google_sql_database" "cache" {
   instance = google_sql_database_instance.silken_db.name
 }
 
-# Solid Queue database
-resource "google_sql_database" "queue" {
-  name     = "silken_net_production_queue"
-  instance = google_sql_database_instance.silken_db.name
-}
-
 # Solid Cable database
 resource "google_sql_database" "cable" {
   name     = "silken_net_production_cable"
@@ -108,8 +102,8 @@ resource "google_sql_database" "cable" {
 # ---------------------------------------------------------------------------
 # Canopy database set — isolated DB names on the SAME instance (INF.16).
 # Canopy shares host/user/password with production (config/deploy.canopy.yml
-# overrides only POSTGRES_DATABASE); `db:prepare` expects all four databases
-# of the set to exist, so the full quartet is provisioned.
+# overrides only POSTGRES_DATABASE); `db:prepare` expects all three databases
+# of the set to exist (primary + cache + cable — Solid Queue pruned, INF.18).
 # ---------------------------------------------------------------------------
 resource "google_sql_database" "canopy" {
   name     = "silken_net_canopy"
@@ -118,11 +112,6 @@ resource "google_sql_database" "canopy" {
 
 resource "google_sql_database" "canopy_cache" {
   name     = "silken_net_canopy_cache"
-  instance = google_sql_database_instance.silken_db.name
-}
-
-resource "google_sql_database" "canopy_queue" {
-  name     = "silken_net_canopy_queue"
   instance = google_sql_database_instance.silken_db.name
 }
 

@@ -46,14 +46,15 @@ test:
   <<: *default
   database: silken_net_test
 
-# Production: 4 logical DBs on one Cloud SQL instance. primary + the Solid trifecta
-# (Cache / Queue / Cable). All inherit host+credentials from &default; each owns only
-# its database name + (for the secondaries) its Solid migrations path.
+# Production: 3 logical DBs on one Cloud SQL instance. primary + Solid Cache / Cable.
+# All inherit host+credentials from &default; each owns only its database name +
+# (for the secondaries) its Solid migrations path.
+# (Solid Queue pruned 2026-07-04 — Sidekiq is the job backend, INF.18; resurrect from git.)
 #
 # POSTGRES_DATABASE selects the database SET (default: production). Canopy/staging sets
 # POSTGRES_DATABASE=silken_net_canopy to get an isolated set (silken_net_canopy +
-# _cache/_queue/_cable) on the SAME Cloud SQL instance — same host/user/password, only
-# the name differs. The secondaries derive their suffix from it so one var switches all 4.
+# _cache/_cable) on the SAME Cloud SQL instance — same host/user/password, only
+# the name differs. The secondaries derive their suffix from it so one var switches all 3.
 production:
   primary:
     <<: *default
@@ -62,10 +63,6 @@ production:
     <<: *default
     database: <%= "#{ENV.fetch("POSTGRES_DATABASE", "silken_net_production")}_cache" %>
     migrations_paths: db/cache_migrate
-  queue:
-    <<: *default
-    database: <%= "#{ENV.fetch("POSTGRES_DATABASE", "silken_net_production")}_queue" %>
-    migrations_paths: db/queue_migrate
   cable:
     <<: *default
     database: <%= "#{ENV.fetch("POSTGRES_DATABASE", "silken_net_production")}_cable" %>

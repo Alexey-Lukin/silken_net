@@ -20,7 +20,6 @@ Rails::Schema.configure do |config|
     "ActionMailbox::*",
     "ActionText::*",
     "SolidCache::*",
-    "SolidQueue::*",
     "SolidCable::*"
   ]
 end

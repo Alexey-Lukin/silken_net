@@ -1,7 +1,0 @@
-# Solid Queue recurring tasks.
-# Currently unused — all background processing is handled by Sidekiq.
-# See config/sidekiq.yml :scheduler for cron schedules.
-#
-# If Solid Queue is re-enabled in the future, add recurring jobs here.
-# https://github.com/rails/solid_queue#recurring-tasks
-{}

@@ -856,10 +856,10 @@
 
 #### INF.16 — Production multi-DB connection (database.yml component style)
 - **P0** · 👤 · 🟢 · → `06_01`, `06_04`
-- **Стан:** Machine-half ✅ — **корінь first-deploy fail.** Production `database.yml` давав host+creds лише `primary` (Rails ллє `DATABASE_URL` тільки в primary); `cache`/`queue`/`cable` лишались без host і пароля → `db:prepare` падав на першому web-boot, Solid Cache/Cable не конектились. Fix = Rails-8 component style: `POSTGRES_HOST/USER/PASSWORD` у `&default` (як dev/test), 4 бази ділять creds, override лише `database:`. Deploy мігровано `DATABASE_URL`→`POSTGRES_*` (Kamal env.secret/clear + `.kamal/secrets` + Akash web/job + `.tpl` + terraform akash + CI workflows). Canopy ізоляція через `POSTGRES_DATABASE=silken_net_canopy` (той самий інстанс). `terraform fmt` clean; config-resolve verified (prod + canopy набори). Канон `config/database.yml` + `06_04`.
-- [x] 🤖 tf-ресурси canopy-баз ✅ 2026-07-04 — `database.tf` canopy-квартет (`silken_net_canopy` + `_cache`/`_queue`/`_cable`, той самий інстанс)
+- **Стан:** Machine-half ✅ — **корінь first-deploy fail.** Production `database.yml` давав host+creds лише `primary` (Rails ллє `DATABASE_URL` тільки в primary); `cache`/`queue`/`cable` лишались без host і пароля → `db:prepare` падав на першому web-boot, Solid Cache/Cable не конектились. Fix = Rails-8 component style: `POSTGRES_HOST/USER/PASSWORD` у `&default` (як dev/test), бази набору ділять creds (з INF.18-prune — 3: primary/cache/cable), override лише `database:`. Deploy мігровано `DATABASE_URL`→`POSTGRES_*` (Kamal env.secret/clear + `.kamal/secrets` + Akash web/job + `.tpl` + terraform akash + CI workflows). Canopy ізоляція через `POSTGRES_DATABASE=silken_net_canopy` (той самий інстанс). `terraform fmt` clean; config-resolve verified (prod + canopy набори). Канон `config/database.yml` + `06_04`.
+- [x] 🤖 tf-ресурси canopy-баз ✅ 2026-07-04 — `database.tf` canopy-тріо (`silken_net_canopy` + `_cache`/`_cable`; queue-бази зняті INF.18-prune'ом, той самий інстанс)
 - [ ] 👤 `terraform apply` canopy-баз при провіжні (ресурси готові, лишається apply)
-- [ ] 👤 верифікувати `db:prepare` проходить усі 4 бази на першому деплої
+- [ ] 👤 верифікувати `db:prepare` проходить усі 3 бази набору на першому деплої
 
 #### INF.19 — CI Kamal secret-starvation (env-mapping) + KREDIS/POSTGRES drift [B1/H2]
 - **P0** · 👤 · 🟢 · → `06_04 §1`
@@ -910,6 +910,7 @@
 - **P1** · 👤 · ⚪ · → `06_02`
 - **Стан:** Не розпочато — Akash = primary prod deploy → SDL (`deploy/akash/deploy.yaml`) тримає `REQUIRED_SECRET_NOT_SET` плейсхолдери (сервіси web+job+coap; **з 2026-07-04 signing-п'ятірка `ORACLE_*`×3+`ETHEREUM_ANCHOR`+`SOLANA_WALLET_KEYPAIR` = job-only** — web/coap keyless by design, `06_04 §1.1`); без них boot-crash (категорія A) — той самий prod-deploy-ENV клас, що `S1.1`. ⚠️ placeholder ≠ disabled: `REQUIRED_SECRET_NOT_SET` для `PROMETHEUS_AUTH_*` НЕ-порожній → basic-auth активна з відомим-публічним значенням (`PrometheusCollector#authorized?`), а Alloy remote_write на літерал → тихо нічого не пушить (INF.14 sibling). **B6 рекомендація:** provision реальні random `PROMETHEUS_AUTH_USER/PASSWORD` (НЕ placeholder — `REQUIRED_SECRET_NOT_SET` непорожній = known-value bypass); порожнє → skip-auth + IP-allowlist (прийнятно для internal-only Alloy scrape, але реальні creds = defense-in-depth). Канон `06_02 §2` (категорії A/B/C — boot-critical / web3 / observability) + `06_03`.
 - [ ] 👤 заповнити в `deploy/akash/deploy.yaml` → верифікувати startup (real `PROMETHEUS_AUTH_*`, не placeholder; observability creds = security)
+- [ ] 👤 **перший Akash-деплой = canopy-render** (founder 2026-07-04): `terraform apply -var deployment_slot=canopy -var postgres_database=silken_net_canopy` → smoke → лише потім production-render (чеклист `06_01` крок 11)
 
 #### ARCH.54 — Queen health program: dead-man switch · QATT-v2 пульс · SOS-роздільність
 - **P1** · 🤖+👤 · 🟢 · → [`06_08 §1.3`](06_08_Resilience_and_Failover_Policy), [`03_02 §7`](03_02_Queen_Gateway_Firmware), [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security)
@@ -977,11 +978,6 @@
 - **P2** · 👤 · 🟢 · → `06_03`
 - **Стан:** Machine-half ✅ — (1) circuit-breaker alert поріг `gt 1`→`gt 0` (gauge=`1.0` при open через `set_circuit_breaker_gauge`; `gt 1` ніколи не firing) + коментар проти регресії; (2) `grafana/alloy` запінено `:latest`→`v1.16.3` (`deploy.yaml`/`.tpl`/`ci.yml` — CI валідує ту саму River-версію, що біжить); (3) знято stale `gaia2`-tag (BIZ.16 dissolved); (4) **2026-07-04: internal routes + multi-process scrape ✅** — web:80 `- service: alloy` (закрито ingress-403), job:9394/coap:9395 service-scope, три таргети з `process`-лейблом, embedded-експортери (`SilkenNet::MetricsExporter`), `refresh_sidekiq_gauges if Sidekiq.server?` проти потрійних серій, `DEPLOYMENT_SLOT` external-label (canopy≢production у Grafana). До цього **всі** job-інкрементовані метрики (money-path SLO, CCM/QATT-security, dead-man switch) були вічними нулями web-процесу — жоден P0-алерт не міг спрацювати. Дім механіки [`06_03 §2.9`](06_03_Prometheus_Observability). Канон `06_03`.
 - [ ] 👤 верифікувати scrape ТРЬОХ таргетів на деплої (web:80 · job:9394 · coap:9395; `sum by (process)`)
-
-#### INF.18 — Solid Queue: dead scaffold vs planned (research)
-- **P3** · 👤 · 🟢 · → `06_01`, `04_02`
-- **Стан:** Research closed (2026-06-23, 8-agent canon-audit + verify) — **dead-scaffold verdict.** Докази: adapter=`:sidekiq` (`config/environments/production.rb`), `recurring.yml` каже «unused — all handled by Sidekiq», 13 живих cron у `sidekiq.yml`, нема `mission_control`, `queue`-база порожня. Footprint (8 місць): gem · `config/queue.yml` · `recurring.yml` · `db/queue_schema.rb` · `database.yml` queue-блок · terraform queue-база · `bin/jobs` · `rails_schema.rb`. Cleanup = zero production-risk, АЛЕ **рішення founder = лишити dormant** (може плануватись). Канон `06_01`.
-- [ ] 👤 (опц.) revisit dormant→cleanup, якщо Solid Queue остаточно не входить у плани
 
 #### INF.10 — Kamal-proxy healthcheck → `/ready` (readiness-gated cutover)
 - **P3** · 👤 · 🟢 · → `06_01`
@@ -1398,6 +1394,7 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 | E.46 | Mint-during-RPC-fail = no slash (`BlockchainMintingService`) — resolved code-annotation | `05_05`, `04_02` |
 | HW.10 | PSM + eDRX idle-power for NB-IoT/LTE-M (`queen/main.c`) — resolved code-annotation | `03_02`, `02_05` |
 | INF.5 | `PROMETHEUS_ALLOWED_IPS` CIDR allowlist for /metrics — resolved code-annotation | `06_03`, `06_04` |
+| INF.18 | Solid Queue dead scaffold → **PRUNED** (founder 2026-07-04, E.66-патерн «воскресає з git»): gem+lock · `queue.yml` · `recurring.yml` · `queue_schema.rb` · `database.yml` queue-блок (4→3 бази) · terraform queue-бази (prod+canopy) · `bin/jobs` · `rails_schema.rb` — Sidekiq = єдиний job-backend (strict-drain+cron+`unique_for` зацементували; Redis лишається через Kredis → мотив «прибрати Upstash» недосяжний) | `06_01`, `04_02` |
 | INF.7 | `ALLOY_CONFIG_BASE64` manual SDL deploy encoding — resolved code-annotation | `06_02` |
 | DOC-T.30 | М06 канон↔deploy drift (INF.11/INF.16 sweep): `06_01` env-блоки (env.clear + §13 Web3) → one-home pointer `06_04 §2.1` (+ `POSTGRES_*`/`WEB3_STRICT_MODE`/`RELEASE_VERSION`; `RAILS_ALLOWED_HOSTS`=operator-set S6.18); Canopy-таблиця Akash-intended-vs-Kamal-workflow + DB-ізоляція (`POSTGRES_DATABASE`); `06_03` Sentry canopy=`RAILS_ENV=production` (не окремий env); `KLIMA_*_ADDRESS` doc-bug прибрано | `06_01`, `06_03`, `06_04` |
 | DOC-T.23 | STAGE/WHO re-audit (7 WHO fixes, open-work semantic) + meta-line form std (combo `🤖+👤`, no tails) + AI-advanceability (S6.20/E.41 advanced); NEW guard `meta_form_violations` HARD | `00_07`, `00_06 §3` |
