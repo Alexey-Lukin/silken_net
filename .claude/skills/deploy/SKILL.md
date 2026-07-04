@@ -18,7 +18,7 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 | Що треба | Канон-дім |
 |---|---|
 | Деплой **Kamal + Terraform GCP**, Canopy vs Production | `06_01` ← read-first для деплою |
-| **Akash** SDL (`web` + `job` + `alloy`), multi-provider failover | `06_02` |
+| **Akash** SDL (`web` + `job` + `coap` + `alloy`), multi-provider failover | `06_02` |
 | **Observability** — метрики / Alloy → Grafana Cloud / alerting | `06_03` (реєстр метрик — `06_03 §2.8`) |
 | **Секрети** — інвентар + checklist (GitHub / Kamal / Akash / Terraform) | `06_04` (canonical = `config/deploy.yml env.secret`) |
 | **Puma 8** config + cluster hooks + runbook'и | `06_05` |
@@ -32,17 +32,22 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 
 - **Akash + GCP — failover, не «або-або».** Rails-ворклоад на Akash; GCP тримає
   Cloud SQL + є failover-ціллю (Redis — зовнішній **Upstash** Serverless TLS, не GCP). → `06_01` / `06_02`.
-- **Cloud SQL Auth Proxy тунелює Postgres через outbound HTTPS** (Google Cloud API) —
-  без публічного IP чи VPN. Запечений у Docker-образ; активується **лише** коли
-  `CLOUD_SQL_INSTANCE_CONNECTION_NAME` заданий у ENV. → `06_02`.
+- **Cloud SQL Auth Proxy авторизує через Google API, але СОКЕТ іде на IP інстанса** —
+  з Akash (поза VPC) досяжний лише ПУБЛІЧНИЙ IP → `ipv4_enabled = true` обов'язковий
+  (authorized_networks порожній — доступ тільки IAM-proxy; ENCRYPTED_ONLY). private-only
+  = crash-loop усіх сервісів у entrypoint-гейті. Проксі активується **лише** коли
+  `CLOUD_SQL_INSTANCE_CONNECTION_NAME` заданий у ENV; Kamal-шлях (у VPC) — приватний IP напряму. → `06_02`.
 - **Observability: Alloy → Grafana Cloud SaaS. Self-hosted Prometheus НЕ потрібен — за дизайном (OBS.1).**
-  `/metrics` (`SilkenNet::Metrics::REGISTRY`) скрейпить Grafana Alloy sidecar (Akash SDL,
-  `deploy/akash/config.alloy`) → `remote_write` → Grafana Cloud (storage + dashboards +
-  alerting). Реєстр і кількість метрик — `06_03 §2.8` (regen з REGISTRY, **не хардкодь**).
+  Prometheus-реєстр — **in-process** → Alloy скрейпить **три таргети** (`web:80` +
+  `job:9394` + `coap:9395` embedded-експортери, лейбл `process`; порти 9394/9395 —
+  service-scope only) → `remote_write` → Grafana Cloud. Механіка/стелі — `06_03 §2.9`;
+  реєстр і кількість метрик — `06_03 §2.8` (regen з REGISTRY, **не хардкодь**).
 - **Секрети One-Home:** канонічний дім — `config/deploy.yml env.secret`; повний
   інвентар + checklist — `06_04`. CI-гейт `verify-secrets`.
 - **Akash SDL ENV — plaintext, видимий провайдеру.** Реальні ключі **ніколи** не в
-  `deploy/akash/deploy.yaml`; інжектити через Akash Console / `env.secret`. → `06_02` / `06_04`.
+  `deploy/akash/deploy.yaml`; інжектити через Akash Console / `env.secret`. **Money/signing-
+  п'ятірка (`ORACLE_*`×3 + `ETHEREUM_ANCHOR` + `SOLANA_WALLET_KEYPAIR`) = JOB-ONLY** —
+  web/coap бутяться keyless (guard scoped `signer_process: Sidekiq.server?`). → `06_02` / `06_04 §1.1`.
 - **Deploy/release ланцюг (2026-06-19).** Canopy = кожен push у `main` після CI (continuous);
   Production = GitHub Release, який тримає **release-please** (`Ops · Release`: semver+CHANGELOG із
   conventional commits → `release: published`); GHCR-mirror path-gated + пушить SLSA provenance+SBOM
