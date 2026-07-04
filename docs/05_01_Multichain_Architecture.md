@@ -65,7 +65,7 @@ SilkenNet не обирає один блокчейн. Система викор
 |---|---|---|---|
 | **Ідентичність** | **peaq** | Паспорт дерева — Machine DID | Найкраще заточений під економіку машин (DePIN). Кожне дерево при провізіонінгу отримує незмінний `did:peaq:0x...` — ідентифікатор, що впізнається у будь-якій мережі |
 | **Верифікація** | **IoTeX (W3bstream)** | Детектор брехні — ZK-proof | Hardware-to-Cloud довіра через ZK-proof. **Чесно (TRL):** сьогодні доводить цілісність pipeline + прив'язку до on-chain peaq DID (master-backed атестація), а НЕ криптодоказ «саме цей STM32». Доказ фізичного походження = true-DePIN North-Star по ladder ([`05_02` — Trust-origin ladder](05_02_Proof_of_Growth_Pipeline)); RWA-легітимність доповнює ЗВТ-метрологія (STK.4). «Дані з заліза» — мета, до якої будуємось |
-| **Оракул/Міст** | **Chainlink** | Нервова система — CCIP/Functions | "Швейцарія" крипто. Забирає ZK-proof і верифіковані дані атрактора Лоренца з Rails backend та "розливає" по Solana, Polygon, Ethereum одночасно через CCIP |
+| **Оракул/Міст** | **Chainlink** | Нервова система — CCIP/Functions | "Швейцарія" крипто. **Vision-шар, unwired (ARCH.53-демоут):** on-chain dispatch прибрано (LINK-cost без DON-callback'а); сьогодні мінт іде PATH 2 tokenomics (чесна L0-custodial модель + ex-post clawback — [`05_02` — Trust-origin ladder](05_02_Proof_of_Growth_Pipeline)). Замикання PATH 1 (DON-інженерія) = post-TRL-3 рішення |
 | **Виконання** | **Solana** | Швидкі гроші — мікроплатежі | Єдина мережа, яка витримає потік від 100M+ дерев без захмарних комісій. Proof of Growth відбувається тут: кожен мм росту = транзакція |
 | **Зберігання** | **Filecoin/IPFS** | Вічна пам'ять | `AuditLogWorker` щодня архівує всі сирі дані телеметрії в IPFS/Filecoin. Через 10 років інституційний інвестор може перевірити кожну секунду життя дерева за яке він купив SCC |
 | **Фіналізація** | **Polygon + Ethereum L1** | Юридична фіксація — RWA | Polygon: SCC/SFC мінтинг (ERC-20), параметричне страхування (ERC-3643 для KYC). Ethereum L1: щотижневий SHA-256 state root anchoring — рівень безпеки вартістю сотні млрд $ |
@@ -106,7 +106,7 @@ SilkenNet не обирає один блокчейн. Система викор
 | 8 | Solana | `Solana::MintingService` | ✅ Real | Ed25519-signed `sendTransaction` (base64). Balance guard: 0.05 SOL |
 | 9 | Celo | `Celo::CommunityRewardService` | ✅ Real | ERC-20 transfer cUSD через Celo RPC |
 | 10 | KlimaDAO | `KlimaDao::RetirementService` | ✅ Real | Approve + Retire (два ERC-20 виклики) |
-| 11 | Chainlink | `Chainlink::OracleDispatchService` | ⚠️ Hybrid | On-chain `sendRequest` реальний (+stub без credentials); ⚠️ **callback-нога DON→Rails unwired** — нема Functions JS-source / consumer `fulfillRequest` / relayer → PATH 1 не замикається у проді (мінт іде tokenomics-шляхом) → [`00_07`](00_07_Action_Plan_Tracker) ARCH.53 |
+| 11 | Chainlink | `Chainlink::OracleDispatchService` | ⚪ Demoted | **[ARCH.53]** On-chain `sendRequest` ВИЛУЧЕНО (LINK-cost за callback, що не прилетить: DON-нога unwired — нема Functions JS-source / consumer / relayer, tx_hash≠requestId). `dispatch!` = internal correlation-marker (`chainlink_request_id` живе dedup-ключем Solana + idempotency-guard'ом); мінт іде PATH 2 tokenomics. Callback-endpoint (`/oracle_callbacks`, HMAC) лишається live для майбутнього PATH 1 / manual-fulfillment |
 | 12 | Ethereum L1 | `Ethereum::StateAnchorService` | ✅ Real | `storeStateRoot(bytes32)` через Alchemy Ethereum RPC |
 
 **Легенда:** ✅ Real = Бойова імплементація з реальними RPC-викликами · ⚠️ Hybrid = Працює в реальному режимі з credentials, fallback до симуляції без них · ⚠️ Devnet = Бойова логіка, але транзакції йдуть на Devnet (simulateTransaction)
@@ -376,36 +376,25 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 
 ### Рівень 4: Мости та Фіналізація (Bridging & Finality)
 
-#### 11. Chainlink (DON — Decentralized Oracle Network)
+#### 11. Chainlink (DON) — ⚪ demoted до internal correlation-marker [ARCH.53]
 
-Децентралізована мережа оракулів. Працює як міст між Web2-бекендом (Rails) та смарт-контрактами Polygon. Оракул має жорстке правило (Guard Clause): він не передасть транзакцію на мінтинг токенів, поки не отримає підтвердження від IoTeX W3bstream.
+**Чесна модель довіри:** on-chain `sendRequest` **вилучено** — DON-нога (Functions JS-source / consumer `fulfillRequest` / relayer) ніколи не існувала, тож кожен on-chain запит платив би LINK за callback, що не прилетить (ба більше, повертався `tx_hash`, а callback-lookup шукає `requestId` — вони б не збіглись). Мінт іде **PATH 2 tokenomics** (оптимістичний, L0-custodial + ex-post clawback — [`05_02` — Trust-origin ladder](05_02_Proof_of_Growth_Pipeline)). Замикання PATH 1 справжньою DON-інженерією = свідомо відкинуто при TRL-3; on-chain гілка (Router ABI registry + bytecode probe) воскресає з git.
 
 | Параметр | Значення |
 |----------|----------|
-| **Сервіс** | `Chainlink::OracleDispatchService` |
+| **Сервіс** | `Chainlink::OracleDispatchService` — local correlation-marker (без RPC) |
 | **Воркер** | `ChainlinkDispatchWorker` |
 | **Черга** | `web3_critical` (пріоритет 6) |
 | **Retry** | 5 |
 | **Тригер** | Після успішної IoTeX ZK-верифікації |
-| **ENV** | `CHAINLINK_FUNCTIONS_ROUTER`, `CHAINLINK_SUBSCRIPTION_ID`, `ORACLE_PRIVATE_KEY` |
-| **RPC** | `ALCHEMY_POLYGON_RPC_URL` |
+| **ENV** | `CHAINLINK_HMAC_SECRET` (лише callback-endpoint) |
 | **Спека** | `spec/services/chainlink/oracle_dispatch_service_spec.rb` |
 
 **Guard Clause:** `validate_iotex_verification!` — dispatch ЗАБОРОНЕНО якщо `verified_by_iotex? == false`.
 
-**Chainlink Payload:**
-```ruby
-{
-  peaq_did: tree.peaq_did,
-  lorenz_state: attractor_z_value,
-  zk_proof_ref: telemetry.zk_proof_ref,
-  tree_did: tree.device_uid
-}
-```
+**Що робить `dispatch!`:** генерує `chainlink-req-<hex>` маркер + `oracle_status: "dispatched"`. Маркер = dedup-ключ Solana-винагород ([ARCH.51] `unsettled_event_tx`) та idempotency-guard dispatch/callback-шляхів — тому колонка `chainlink_request_id` жива й після демоуту. Демоут-інваріант закріплено тестом: dispatch не сміє торкатись `Web3::RpcConnectionPool` (regression-guard проти воскресіння LINK-cost).
 
-> **Режими роботи:** `WEB3_STRICT_MODE=true` → raises `DispatchError` при відсутності `CHAINLINK_FUNCTIONS_ROUTER`. Без strict mode — stub `request_id` для dev/test.
-
-> **[ARCH.49] Nonce-serialization:** on-chain `transact` (цей гарячий per-uplink шлях + `PuroEarth::PassportService` + `Etherisc::ClaimService`) обгорнуто у спільний `Kredis.lock("lock:web3:oracle:#{addr}")` — весь Polygon base-EOA флот (mint/burn + ці три) серіалізується на одному локі (eth-gem бере nonce per-call → конкурентні підписи без локу колізять nonce → orphan tx). Celo — окремий chain-prefixed лок + dedicated key (ARCH.50, §9). Key-topology дім — [`06_02`](06_02_Akash_Network_Integration).
+**Callback-endpoint** (`POST /api/v1/oracle_callbacks`, HMAC-SHA256) лишається live — це двері для майбутнього PATH 1 або manual-fulfillment (§8.3).
 
 #### 12. Ethereum L1 (State Root Anchoring)
 
@@ -478,15 +467,15 @@ W3bstream формує ZK-proof того, що дані не були підро
 TelemetryUnpackerService → IotexVerificationWorker → Iotex::W3bstreamVerificationService → zk_proof_ref
 ```
 
-### Крок 5: Транспортування (Chainlink DON)
+### Крок 5: Oracle-маркування (Chainlink demoted — ARCH.53)
 
-Оракул забирає ZK-proof та наказ на нарахування балів з нашого сервера і передає їх у смарт-контракт на Polygon.
+Після IoTeX-верифікації лог маркується `dispatched` (internal correlation-marker; on-chain Router-запит вилучено — LINK-cost без DON-callback'а). PATH 1 далі latent; мінт реально йде PATH 2 tokenomics (Крок 7, Шлях Б).
 
 ```
-ChainlinkDispatchWorker → Chainlink::OracleDispatchService → Chainlink Functions Router → Polygon
+ChainlinkDispatchWorker → Chainlink::OracleDispatchService → chainlink-req-<hex> (local marker)
 ```
 
-**Guard:** `validate_iotex_verification!` — No ZK-proof, no oracle. No oracle, no minting.
+**Guard:** `validate_iotex_verification!` — No ZK-proof, no oracle-marker.
 
 ### Крок 6: Аудит особи (Polygon Hadron)
 
@@ -500,7 +489,7 @@ HadronAssetRegistrationWorker → Polygon::HadronComplianceService → hadron_ky
 
 SCC мінтинг ініціюється двома незалежними шляхами — в обох випадках за фіксованим курсом емісії ([`05_03`](05_03_Tokenomics_SCC_and_SFC)). Детально: [`05_02 §DOC.7`](05_02_Proof_of_Growth_Pipeline).
 
-**Шлях A — Oracle-driven (ініціюється `OracleCallbacksController`):**
+**Шлях A — Oracle-driven (ініціюється `OracleCallbacksController`) — ⚪ latent [ARCH.53]:** callback сьогодні не прилітає (DON unwired, dispatch = local marker); шлях лишається збудованим і guard'ованим для майбутнього PATH 1 / manual-fulfillment.
 
 ```
 OracleCallbacksController → oracle_status = "fulfilled"
@@ -608,15 +597,14 @@ state_root = Digest::SHA256.hexdigest("#{total_scc}|#{total_sfc}|#{active_tree_c
 
 | Variable | Сервіс |
 |----------|--------|
-| `ALCHEMY_POLYGON_RPC_URL` | Polygon, Chainlink, KlimaDAO |
+| `ALCHEMY_POLYGON_RPC_URL` | Polygon, KlimaDAO |
 | `ALCHEMY_ETHEREUM_RPC_URL` | Ethereum L1 |
 | `CELO_RPC_URL` | Celo |
 | `SOLANA_RPC_URL` | Solana |
 | `ORACLE_PRIVATE_KEY` | EVM oracle wallet |
 | `ETHEREUM_ANCHOR_PRIVATE_KEY` | L1 anchoring wallet |
 | `CARBON_COIN_CONTRACT_ADDRESS` | SCC contract |
-| `CHAINLINK_FUNCTIONS_ROUTER` | Chainlink |
-| `CHAINLINK_SUBSCRIPTION_ID` | Chainlink |
+| `CHAINLINK_HMAC_SECRET` | Oracle-callback endpoint (dispatch-секрети вилучено — ARCH.53) |
 | `KLIMA_RETIREMENT_CONTRACT` | KlimaDAO |
 | `SOLANA_USDC_MINT_ADDRESS` | Solana USDC |
 | `FILECOIN_PINNING_API_URL` | Pinata |
@@ -651,7 +639,7 @@ state_root = Digest::SHA256.hexdigest("#{total_scc}|#{total_sfc}|#{active_tree_c
 | 8 | Solana | Finance | `SolanaMicroRewardWorker` | `web3` | 3 | — |
 | 9 | Celo | Finance | `CeloRewardWorker` | `web3` | 3 | — |
 | 10 | KlimaDAO | Finance | `KlimaRetirementWorker` | `web3_low` | 3 | — |
-| 11 | Chainlink | Finality | `ChainlinkDispatchWorker` + `Web3CircuitBreaker` | `web3_critical` | 5 | — |
+| 11 | Chainlink ⚪ | Marker (demoted ARCH.53) | `ChainlinkDispatchWorker` + `Web3CircuitBreaker` | `web3_critical` | 5 | — |
 | 12 | Ethereum L1 | Finality | `EthereumAnchorWorker` | `web3_low` | 3 | `0 3 * * 1` |
 | 13 | Cross-chain | Treasury | `TreasuryMonitorWorker` | `web3_low` | 3 | `*/15 * * * *` |
 | 14 | Polygon | Gas Optimization | `MintBatchCollectorWorker` | `web3` | 3 | `*/5 * * * *` |
@@ -669,7 +657,8 @@ state_root = Digest::SHA256.hexdigest("#{total_scc}|#{total_sfc}|#{active_tree_c
 
 | Tier | Критерій | Мережі |
 |---|---|---|
-| **🔴 Critical Path** | Якщо мережа `down` — Proof of Growth pipeline зупиняється, нові SCC не мінтяться, користувачі не отримують винагороду | **Polygon, Chainlink, IoTeX** |
+| **🔴 Critical Path** | Якщо мережа `down` — Proof of Growth pipeline зупиняється, нові SCC не мінтяться, користувачі не отримують винагороду | **Polygon, IoTeX** |
+| **⚪ Unwired** | Не на critical path: dispatch = local marker, DON-callback не прилітає; мінт іде PATH 2 tokenomics | **Chainlink** [ARCH.53] |
 | **🟠 Important** | Outage блокує конкретний use case (винагороди, KYC), але core economics працює | **Solana, Hadron, peaq** |
 | **🟢 Nice-to-have** | Outage не впливає на користувацький досвід; дані зберігаються в backend та відправляються після відновлення | **Streamr, Filecoin, The Graph, Celo, KlimaDAO, Ethereum L1** |
 
@@ -698,23 +687,15 @@ state_root = Digest::SHA256.hexdigest("#{total_scc}|#{total_sfc}|#{active_tree_c
 - Дочекатись ясності: yкий fork буде canonical (community+exchanges).
 - Replay queue після стабілізації; перевірити, що contract addresses не змінились.
 
-### 8.3. Critical Path: Chainlink (Functions / DON)
+### 8.3. Chainlink (Functions / DON) — ⚪ unwired, поза critical path [ARCH.53]
 
-**Роль:** Oracle dispatch trigger — без Chainlink callback `MintCarbonCoinWorker` не виконується (guard clause `oracle_status_fulfilled?`).
+**Чесна роль:** dispatch = local correlation-marker (без RPC/LINK-cost) → **Chainlink-outage не існує як клас відмови** — мінт іде PATH 2 tokenomics незалежно. Колишній claim «без Chainlink callback pipeline зупиняється» був aspiration-drift: callback і так ніколи не прилітав (DON-нога unwired), а «Subscription balance моніториться через TreasuryMonitorWorker» не відповідав коду (сервіс моніторить MATIC/SOL/CELO/ETH-газ, LINK-subscription — ні).
 
-**Причини outage:** DON node majority offline, Functions Router upgrade, subscription зашпілений.
+**Що лишається live:**
+- `oracle_callbacks` ендпоінт (HMAC-SHA256, replay-guard) — двері для майбутнього PATH 1 / manual-fulfillment; будь-який підписант з валідним HMAC може викликати.
+- **DOC.8-інваріант діє:** cleanup НЕ видаляє `oracle_status: dispatched` записи — вони приймуть callback, якщо/коли PATH 1 замкнеться.
 
-**Поточні захисти:**
-- `ChainlinkDispatchWorker` retry 5 з backoff на `web3_critical`.
-- Subscription balance моніториться через `TreasuryMonitorWorker` (`*/15 * * * *`).
-- `oracle_callbacks` ендпоінт публічний — будь-який Chainlink node з валідним HMAC може викликати; не залежить від конкретного node-id.
-
-**Graceful degradation при Chainlink down:**
-
-1. **`web3_critical` queue зростає** — Grafana alert.
-2. **TelemetryLog accumulate з `oracle_status: dispatched`** — і `E.42` гарантує: **cleanup job НЕ видаляє dispatched records**, callbacks гарантовано приймуться після відновлення.
-3. **Manual oracle bypass** (тільки super_admin): **планується створення** `OracleManualFulfillmentService` (не реалізовано — окремий ARCH-todo) для ручного просування `dispatched → fulfilled` при доведеному multi-day Chainlink outage. **Юридично:** використовувати ТІЛЬКИ з реліз-тегом для аудиту та письмовим narrowing у runbook.
-4. **Альтернативний Oracle Provider:** UMA (Optimistic Oracle), Pyth, RedStone — **архітектурний задаток**, не реалізовано. Дизайн потребує redundancy шляху в `Chainlink::OracleDispatchService` (ARCH-todo).
+**Шлях до PATH 1 (якщо DAO вирішить, post-TRL-3):** Functions JS-source + consumer `fulfillRequest` + relayer + повернення on-chain гілки з git (Router ABI registry + bytecode probe + ARCH.49 nonce-lock). Manual bypass (`OracleManualFulfillmentService`, super_admin, реліз-тег для аудиту) — так само майбутнє, не реалізовано.
 
 ### 8.4. Critical Path: IoTeX W3bstream
 
@@ -729,7 +710,7 @@ state_root = Digest::SHA256.hexdigest("#{total_scc}|#{total_sfc}|#{active_tree_c
 **Graceful degradation при IoTeX down:**
 
 1. **TelemetryLog `verified_by_iotex: false`** залишається unverified.
-2. **ChainlinkDispatchWorker не запускається** (раннє виходить через `return unless log.verified_by_iotex?`) — Oracle-driven гілка Path 1 [DOC.7] зупиняється на початку pipeline, до того як `MintCarbonCoinWorker.perform_async(log.id_value, ...)` (oracle callback) встигне поставитись у чергу. Це **бажана поведінка**: краще нульова емісія, ніж unverified мінтинг.
+2. **ChainlinkDispatchWorker не запускається** (dispatch-guard `verified_by_iotex?`) — oracle-маркування (latent Path 1 [DOC.7], ARCH.53) зупиняється на початку pipeline. Це **бажана поведінка**: unverified лог не отримує навіть correlation-marker.
 3. **Tokenomics-flow Path 2 продовжує працювати** (`TokenomicsEvaluatorWorker` → `EvaluateTreeBatchWorker` → `Wallet#lock_and_mint!` → `BlockchainMintingService.call(batch, telemetry_log: nil)`) — для цього шляху guards `verified_by_iotex?` / `oracle_status_fulfilled?` **свідомо пропускаються** (per-packet integrity perimeter забезпечується AES-256-CBC decrypt + `valid_sensor_data?` у `TelemetryUnpackerService`, а **єдиний обов'язковий guard** — `hadron_kyc_status == "approved"`). Cross-ref: [`05_02 §Усі Шляхи до lock_and_mint! [DOC.7]`](05_02_Proof_of_Growth_Pipeline) + [`04_02` — BlockchainMintingService](04_02_Business_Logic_and_Services).
 4. **Multi-day outage policy:** для збереження user trust розглянути **temporary reduced minting** через альтернативну верифікацію (наприклад, server-side attestation + Forester Guild Proof-of-Physical-Work, E.20). Реалізація — post-TRL 7.
 
@@ -764,7 +745,7 @@ Outage цих мереж **не блокує** core flow:
 | Мережа | Tier | Single Point of Failure? | Auto-recovery? | Manual escalation |
 |---|---|---|---|---|
 | Polygon | 🔴 Critical | Mitigated by `Web3::ResilientClient` cascade | Yes (RPC fallback + Sidekiq retry) | Multi-day outage → admin investigation |
-| Chainlink | 🔴 Critical | Yes (single Oracle provider) | Partial (DON-internal redundancy) | Multi-day → manual fulfillment OR alt Oracle (UMA/Pyth) |
+| Chainlink | ⚪ Unwired [ARCH.53] | — (local marker, без зовнішньої залежності) | — | PATH 1 замикання = DAO-рішення post-TRL-3 |
 | IoTeX | 🔴 Critical | Yes | Sidekiq retry | Multi-day → temporary minting freeze |
 | Solana | 🟠 Important | RPC fallback potencial | Yes | Catchup worker after restore |
 | Hadron | 🟠 Important | Yes | No | Strict-mode override (emergency) |

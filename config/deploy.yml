@@ -88,11 +88,8 @@ env:
     - SOLANA_FEE_PAYER_PUBKEY
     - SOLANA_FEE_PAYER_TOKEN_ACCOUNT
     - SOLANA_USDC_MINT_ADDRESS
-    # --- Chainlink Functions Router v1 (Proof of Growth pipeline) ---
-    - CHAINLINK_FUNCTIONS_ROUTER
-    - CHAINLINK_SUBSCRIPTION_ID
+    # --- Chainlink oracle-callback HMAC (endpoint live; on-chain dispatch removed — ARCH.53) ---
     - CHAINLINK_HMAC_SECRET
-    - CHAINLINK_DON_ID
   clear:
     # PostgreSQL connection (component style — config/database.yml; port defaults to 5432).
     # Kamal deploys inside the GCP VPC → connect to the Cloud SQL PRIVATE IP directly
@@ -115,14 +112,8 @@ env:
     # See: config/initializers/sentry.rb → config.release
     RELEASE_VERSION: "${RELEASE_VERSION}"
 
-    # Chainlink Functions Router v1 configuration.
-    # DATA_VERSION: Functions API version (default: 1).
-    # CALLBACK_GAS_LIMIT: gas limit for oracle callback response (default: 300000).
-    CHAINLINK_DATA_VERSION: 1
-    CHAINLINK_CALLBACK_GAS_LIMIT: 300000
-
-    # Web3 fail-closed: Hadron KYC / Chainlink raise on missing creds, not silent stub (INF.11).
-    # Gates HadronComplianceService / OracleDispatchService (they check ONLY this flag, not Rails.env).
+    # Web3 fail-closed: Hadron KYC raises on missing creds + oracle-callback HMAC fail-fast (SEC.5), not silent stub (INF.11).
+    # Gates HadronComplianceService / OracleCallbacksController (they check ONLY this flag, not Rails.env).
     WEB3_STRICT_MODE: "true"
 
     # --- Web3 contract addresses (post-`forge deploy`; fill before first mint) ---

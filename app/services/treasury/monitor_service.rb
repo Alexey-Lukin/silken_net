@@ -8,7 +8,7 @@ module Treasury
   # 💰 TREASURY MONITOR SERVICE (Централізований моніторинг Oracle Wallets)
   # =========================================================================
   # Перевіряє баланси Oracle-гаманців на ВСІХ мережах одночасно:
-  #   - Polygon (MATIC) → мінтинг SCC/SFC, слешинг, Chainlink dispatch
+  #   - Polygon (MATIC) → мінтинг SCC/SFC, слешинг
   #   - Solana (SOL) → мікро-винагороди USDC
   #   - Celo (CELO) → community rewards cUSD
   #   - Ethereum L1 (ETH) → state root anchoring (щотижня)

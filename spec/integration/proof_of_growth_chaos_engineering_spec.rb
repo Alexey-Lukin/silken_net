@@ -155,9 +155,9 @@ RSpec.describe "Chaos Engineering: Proof of Growth Pipeline" do
   end
 
   # ---------------------------------------------------------------
-  # Сценарій 3: Chainlink Oracle Timeout
+  # Сценарій 3: Chainlink dispatch — local marker (ARCH.53 демоут)
   # ---------------------------------------------------------------
-  describe "when Chainlink Oracle returns timeout" do
+  describe "Chainlink dispatch resilience" do
     let(:telemetry_log) do
       create(:telemetry_log, tree: tree,
         verified_by_iotex: true,
@@ -165,7 +165,9 @@ RSpec.describe "Chaos Engineering: Proof of Growth Pipeline" do
         zk_proof_ref: "zk-proof-valid-456")
     end
 
-    it "dispatch service raises DispatchError on RPC timeout" do
+    # [ARCH.53]: регресія проти воскресіння on-chain шляху — навіть із legacy
+    # ENV dispatch НЕ сміє торкатись RPC (LINK-cost за callback, що не прилетить).
+    it "never touches RPC even when legacy on-chain ENV is present" do
       stub_const("ENV", ENV.to_h.merge(
         "CHAINLINK_FUNCTIONS_ROUTER" => "0x#{"1" * 40}",
         "CHAINLINK_SUBSCRIPTION_ID" => "42",
@@ -173,22 +175,17 @@ RSpec.describe "Chaos Engineering: Proof of Growth Pipeline" do
         "ALCHEMY_POLYGON_RPC_URL" => "https://polygon-rpc.example.com",
         "ORACLE_PRIVATE_KEY" => "a" * 64
       ))
+      expect(Web3::RpcConnectionPool).not_to receive(:client_for)
+      expect(Eth::Client).not_to receive(:create)
 
-      allow(Eth::Client).to receive(:create).and_raise(
-        Net::ReadTimeout, "execution expired"
-      )
+      request_id = Chainlink::OracleDispatchService.new(telemetry_log).dispatch!
 
-      service = Chainlink::OracleDispatchService.new(telemetry_log)
-
-      expect {
-        service.dispatch!
-      }.to raise_error(Chainlink::OracleDispatchService::DispatchError, /dispatch failed/)
+      expect(request_id).to start_with("chainlink-req-")
     end
 
-    it "telemetry log state is not corrupted by timeout" do
+    it "telemetry log state transitions to dispatched with a marker" do
       service = Chainlink::OracleDispatchService.new(telemetry_log)
 
-      # Stub mode succeeds — просто перевіряємо нормальний flow
       service.dispatch!
       telemetry_log.reload
 

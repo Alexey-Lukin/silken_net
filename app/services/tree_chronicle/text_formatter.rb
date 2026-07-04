@@ -109,7 +109,7 @@ module TreeChronicle
     def minting_description(tx)
       amount = tx.amount
       network = tx.blockchain_network || "Polygon"
-      "Verified by Chainlink Oracle. Minted #{amount} tokens on #{network.capitalize}"
+      "Minted #{amount} tokens on #{network.capitalize}"
     end
   end
 end

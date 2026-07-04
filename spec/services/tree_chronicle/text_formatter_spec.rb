@@ -311,7 +311,8 @@ RSpec.describe TreeChronicle::TextFormatter do
         result = described_class.minting_description(tx)
         expect(result).to include("Minted 5 tokens")
         expect(result).to include("Solana")
-        expect(result).to include("Verified by Chainlink Oracle")
+        # [ARCH.53]: жодних oracle-verified claim'ів у юзер-хроніці — мінт оптимістичний (L0-custodial)
+        expect(result).not_to include("Chainlink")
       end
     end
 

@@ -9,7 +9,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 — System Qualified / Mainnet Ready.
-- **Обґрунтування:** Всі заглушки (dClimate, Puro.earth) замінено на бойові Web3/HTTP інтеграції. Бізнес-логіка пройшла параноїдальний AI-аудит: повністю усунуто пастки `Network-in-Transaction`, витоки пам'яті (OOM) та ризики подвійної витрати (Double-Spend). Воркери fault-tolerant; money-path idempotency **шарова** — status guards / pessimistic lock (concurrent) + [ARCH.45] durable intent-marker + in-flight guard на on-chain↔DB crash-window (§4 / §10 / §11). **Примітка:** Chainlink dispatch має dev/test stub-режим (ENV-gated: при відсутності `CHAINLINK_FUNCTIONS_ROUTER` генерується локальний request ID); production вимагає `CHAINLINK_FUNCTIONS_ROUTER` та `CHAINLINK_SUBSCRIPTION_ID`.
+- **Обґрунтування:** Всі заглушки (dClimate, Puro.earth) замінено на бойові Web3/HTTP інтеграції. Бізнес-логіка пройшла параноїдальний AI-аудит: повністю усунуто пастки `Network-in-Transaction`, витоки пам'яті (OOM) та ризики подвійної витрати (Double-Spend). Воркери fault-tolerant; money-path idempotency **шарова** — status guards / pessimistic lock (concurrent) + [ARCH.45] durable intent-marker + in-flight guard на on-chain↔DB crash-window (§4 / §10 / §11). **Примітка:** Chainlink dispatch демоутнуто до local correlation-marker **[ARCH.53]** — on-chain `sendRequest` вилучено (DON-callback unwired; LINK-cost без відповіді); мінт іде PATH 2 tokenomics, callback-endpoint live для майбутнього PATH 1.
 - **Відкрите:** Drift Register моніторинг (§13b); Planned-сервіси (Forester Guild, Cross-Registry, Federated Learning) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
@@ -341,8 +341,8 @@ peaq_node_url: "https://peaq-node.example.com"
 |---|---|
 | **Файл** | `app/services/chainlink/oracle_dispatch_service.rb` |
 | **Вхід** | `telemetry_log` (TelemetryLog AR instance) |
-| **Що робить** | Відправляє верифіковану телеметрію до Chainlink Functions DON. Guard clause: `verified_by_iotex? == true`. Payload: `peaq_did`, `lorenz_state` (σ,ρ,β,z), `zk_proof_ref`, `tree_did`, `created_at` (partition key). **[BLOCKER-09 / S6.15 ✅]** ABI делегований у `Web3::ChainlinkRouterVersion` registry (`app/services/web3/chainlink_router_version.rb`) — `VERSION_ORDER = [:v1]`, кожна версія тримає `:abi`, canonical `:signature` та pre-computed keccak256 `:selector` (v1 = `sendRequest(uint64,bytes,uint16,uint32,bytes32)` → `0x461d2762`). Перед on-chain dispatch виконується `pick_router_version`: (a) читає `CHAINLINK_ROUTER_VERSION` ENV (default `:v1`); (b) `eth_getCode(router_address)` + `selector_present_in_code?` — якщо активний selector відсутній у байт-коді Router'а, пробує `fallback_for(version)` (одна крок назад); (c) raises `DispatchError` якщо ні активна, ні fallback версія не підтверджена; (d) `CHAINLINK_ROUTER_BYTECODE_CHECK=false` вимикає probe для staging/RPC без `eth_getCode`. **Процес upgrade ABI:** додати новий запис у `REGISTRY` (наприклад `:v2`), додати `:v2` у `VERSION_ORDER` (наприкінці — chronological order), пере-обчислити selector через `Eth::Util.keccak256(canonical_signature)`, потім перемкнути `CHAINLINK_ROUTER_VERSION=v2` у Kamal/Akash env coordinated з deploy нового Router'а — попередня версія залишається як автоматичний fallback. **[BLOCKER-04]** `WEB3_STRICT_MODE=true` → raises `DispatchError` при відсутності credentials замість stub mode. **[ARCH.49]** on-chain `transact` обгорнуто у спільний `Kredis.lock("lock:web3:oracle:#{addr}")` (nonce-serialization base-EOA; гарячий per-uplink шлях; `LockTimeout` re-raise перед `StandardError` → не мапиться у `DispatchError`). |
-| **Зовнішні виклики** | Polygon RPC → `FunctionsRouter.sendRequest` |
+| **Що робить** | **⚪ Demoted [ARCH.53]:** генерує local correlation-marker `chainlink-req-<hex>` + `oracle_status: "dispatched"` — БЕЗ RPC. Guard clause: `verified_by_iotex? == true`. On-chain `sendRequest` вилучено (DON-нога unwired — нема Functions JS-source / consumer / relayer; повертався tx_hash, а callback-lookup ключить requestId → не збіглись би; кожен запит = LINK-cost без відповіді). Маркер = dedup-ключ Solana [ARCH.51] + idempotency-guard dispatch/callback-шляхів; демоут-інваріант (жодного `Web3::RpcConnectionPool`) закріплено спеком. Вилучена on-chain машинерія (S6.15 `Web3::ChainlinkRouterVersion` ABI-registry + bytecode probe · BLOCKER-04/09 strict-raise + Router-параметри · ARCH.49 nonce-lock цього шляху) воскресає з git при замиканні PATH 1. |
+| **Зовнішні виклики** | — (local-only) |
 | **Вихід** | `request_id` (String). Оновлює `TelemetryLog.chainlink_request_id`, `oracle_status = "dispatched"`. |
 
 ### `Ed25519Crypto::SigningService`
@@ -1633,13 +1633,13 @@ Financial action
 
 | Сервіс | Мережа/Протокол | ENV / Credential | Воркер/Сервіс |
 |--------|----------------|-------------------|---------------|
-| **Polygon RPC** (Alchemy) | EVM JSON-RPC | `ALCHEMY_POLYGON_RPC_URL` | BlockchainMintingService, BlockchainBurningService, ChainAuditService, ChainlinkDispatchService, KlimaDao, ToucanBridgeService, PriceOracleService |
+| **Polygon RPC** (Alchemy) | EVM JSON-RPC | `ALCHEMY_POLYGON_RPC_URL` | BlockchainMintingService, BlockchainBurningService, ChainAuditService, KlimaDao, ToucanBridgeService, PriceOracleService |
 | **Ethereum L1 RPC** | EVM JSON-RPC | `ALCHEMY_ETHEREUM_RPC_URL` | StateAnchorService |
 | **Solana RPC** | JSON-RPC 2.0 | `SOLANA_RPC_URL`, `SOLANA_WALLET_KEYPAIR` (mandatory), `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS` | Solana::MintingService |
 | **Celo RPC** | EVM JSON-RPC | `CELO_RPC_URL` (primary) + опц. `CELO_RPC_URL_FALLBACK_1`, `CELO_RPC_URL_FALLBACK_2` (E.49 cascade через `Web3::ResilientClient`) | Celo::CommunityRewardService, MintingRollbackService |
 | **IoTeX W3bstream** | HTTPS REST | `iotex_w3bstream_url`, `iotex_api_key` | Iotex::W3bstreamVerificationService |
 | **peaq Network** | HTTPS REST | `peaq_node_url`, `peaq_signing_key` | Peaq::DidRegistryService |
-| **Chainlink Functions** | On-chain (Polygon) | `CHAINLINK_FUNCTIONS_ROUTER`, `CHAINLINK_SUBSCRIPTION_ID` | Chainlink::OracleDispatchService |
+| **Chainlink callback** | Webhook (HMAC-SHA256) | `CHAINLINK_HMAC_SECRET` (dispatch-секрети вилучено — ARCH.53) | Api::V1::OracleCallbacksController |
 | **dClimate API** | HTTPS REST | `DCLIMATE_BASE_URL` (default: `https://api.dclimate.net`), `DCLIMATE_FIRMS_DATASET` (default: `firms_nrt_global-area_v2`), `Rails.credentials.dclimate.api_key` (Bearer) | Dclimate::VerificationService |
 | **Streamr Network** | HTTPS REST | `streamr_stream_id`, `streamr_api_key` | Streamr::BroadcasterService |
 | **Filecoin/IPFS** (Pinata) | HTTPS REST | `filecoin_api_key` / `FILECOIN_PINNING_API_URL` | Filecoin::ArchiveService, VerificationService |

@@ -771,6 +771,8 @@ POST /api/v1/auth/m2m_token
 
 **Доступ:** 🌐 Публічний (без Bearer token — machine-to-machine, захищено HMAC-SHA256).
 
+> **⚪ Latent [ARCH.53]:** сьогодні callback не прилітає (Chainlink dispatch демоутнуто до local correlation-marker — DON-нога unwired; [`05_01` картка №11](05_01_Multichain_Architecture)). Endpoint лишається live як двері для майбутнього PATH 1 / manual-fulfillment — контракт нижче незмінний.
+
 > **Безпека:** `OracleCallbacksController` має `before_action :verify_chainlink_signature!` — перевіряє `HMAC-SHA256(raw_body, CHAINLINK_HMAC_SECRET)` та порівнює з `X-Chainlink-Signature` через `ActiveSupport::SecurityUtils.secure_compare` (timing-safe). Якщо `CHAINLINK_HMAC_SECRET` не встановлено — HMAC пропускається з попередженням у логах (dev/test mode).
 >
 > **🔴 SECURITY REQUIREMENT (SEC.5):** При `WEB3_STRICT_MODE=true` (production) відсутність `CHAINLINK_HMAC_SECRET` викликає `SecurityError` (fail-fast). Це запобігає ситуації, коли misconfigured production залишає oracle callback endpoint без HMAC-захисту, що дозволило б зловмиснику фальсифікувати `oracle_status_fulfilled?` та ініціювати неавторизований мінтинг SCC. Перед mainnet deploy **обов'язково** встановити `CHAINLINK_HMAC_SECRET` та `WEB3_STRICT_MODE=true` в ENV.

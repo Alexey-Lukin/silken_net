@@ -61,7 +61,7 @@
 | # | Перевірка | Деталі |
 |---|-----------|--------|
 | **1** | **DNS / TLS до `kamal setup`** | Після `terraform apply` скопіюй IP та створи A-запис (`api.silkennet.com → <IP>`). Дочекайся: `dig api.silkennet.com` → правильний IP. **Тільки тоді** запускай `kamal setup`. Причина: при ввімкненому `proxy.ssl` (зараз **закоментований** у `config/deploy.yml`) **kamal-proxy** (Kamal 2.x — НЕ Traefik 1.x) робить Let's Encrypt ACME-challenge — без живого DNS сертифікат не видасться і проксі не підніметься. Поточно `proxy.ssl` вимкнено → TLS термінується зовні (Cloudflare / Akash hostname, рішення `[INF.4]`); DNS усе одно потрібен для маршрутизації трафіку. |
-| **2** | **`.kamal/secrets` файл існує + повний** | Kamal читає секрети з `.kamal/secrets` (не з environment). Заповни **усі** змінні з `config/deploy.yml env.secret` (drift = boot crash або silent Web3 failure): **(a) Application core:** `RAILS_MASTER_KEY`, `POSTGRES_PASSWORD` (host/user/database — non-secret `env.clear`, component style `config/database.yml`), `REDIS_URL`, `GCP_ARTIFACT_REGISTRY_KEY` (registry pull). `KREDIS_REDIS_URL` — **не** додавати: Kredis auto-derive DB 1 з `REDIS_URL` (`config/redis/shared.yml`), порожній інжект перебив би derive [B1]. **(b) 🛑 Boot-critical:** `PROVISIONING_MASTER_KEY` (`master_key_strength_check.rb` raises `SecurityError` без неї). **(c) Observability:** `SENTRY_DSN`. **(d) Web3 oracle keys:** `ORACLE_PRIVATE_KEY`, `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY`, `ETHEREUM_ANCHOR_PRIVATE_KEY`. **(e) RPC endpoints:** `ALCHEMY_POLYGON_RPC_URL`, `ALCHEMY_ETHEREUM_RPC_URL`, `SOLANA_RPC_URL`. **(f) Solana minting:** `SOLANA_WALLET_KEYPAIR`, `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS`. **(g) Chainlink:** `CHAINLINK_FUNCTIONS_ROUTER`, `CHAINLINK_SUBSCRIPTION_ID`, `CHAINLINK_HMAC_SECRET`, `CHAINLINK_DON_ID`. **Той самий список застосовується для Akash SDL** (`deploy/akash/deploy.yaml` + `deploy.yaml.tpl`) та Terraform (`terraform/akash/terraform.tfvars`) — див. [`06_02 §2 ENV (Секрети SDL)`](06_02_Akash_Network_Integration). |
+| **2** | **`.kamal/secrets` файл існує + повний** | Kamal читає секрети з `.kamal/secrets` (не з environment). Заповни **усі** змінні з `config/deploy.yml env.secret` (drift = boot crash або silent Web3 failure): **(a) Application core:** `RAILS_MASTER_KEY`, `POSTGRES_PASSWORD` (host/user/database — non-secret `env.clear`, component style `config/database.yml`), `REDIS_URL`, `GCP_ARTIFACT_REGISTRY_KEY` (registry pull). `KREDIS_REDIS_URL` — **не** додавати: Kredis auto-derive DB 1 з `REDIS_URL` (`config/redis/shared.yml`), порожній інжект перебив би derive [B1]. **(b) 🛑 Boot-critical:** `PROVISIONING_MASTER_KEY` (`master_key_strength_check.rb` raises `SecurityError` без неї). **(c) Observability:** `SENTRY_DSN`. **(d) Web3 oracle keys:** `ORACLE_PRIVATE_KEY`, `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY`, `ETHEREUM_ANCHOR_PRIVATE_KEY`. **(e) RPC endpoints:** `ALCHEMY_POLYGON_RPC_URL`, `ALCHEMY_ETHEREUM_RPC_URL`, `SOLANA_RPC_URL`. **(f) Solana minting:** `SOLANA_WALLET_KEYPAIR`, `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS`. **(g) Chainlink:** `CHAINLINK_HMAC_SECRET` (лише callback-endpoint; dispatch-секрети вилучено — ARCH.53). **Той самий список застосовується для Akash SDL** (`deploy/akash/deploy.yaml` + `deploy.yaml.tpl`) та Terraform (`terraform/akash/terraform.tfvars`) — див. [`06_02 §2 ENV (Секрети SDL)`](06_02_Akash_Network_Integration). |
 | **3** | **Gas на Web3-гаманцях** | Воркери потребують нативної крипто: **MATIC** (Polygon), **ETH** (L1), **SOL** (Solana), **CELO** (Celo). Без газу → "Insufficient Funds" на кожній транзакції → Sidekiq потоне у ретраях. |
 | **4** | **LoRa-антена підключена** | **КРИТИЧНО.** Ніколи не подавай живлення без антени на SMA/U.FL порту. SX1262 відбиває RF назад у чип (high VSWR) — радіотракт згоряє за мілісекунди. Незворотно. Правило: антена → живлення. |
 | **5** | **HKDF AES-ключів (post-FW.1 + ARCH.42 + FW.2 (в))** | Кожен Soldier має **per-device session AES-128 LoRa ключ** (`aes_key[4]`, 16 bytes) + **cluster control-plane KEYB** (`bcast_key[4]`, 16 bytes — двоключова модель [`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security)); Queen — той самий KEYB як єдиний LoRa-ключ + окремий **AES-256 CoAP ключ** (`coap_key[8]`, 32 bytes). Усі деривуються з `PROVISIONING_MASTER_KEY` через HKDF з domain-separated info-strings (`"silken-aes-128-lora-key"` / `"silken-aes-128-broadcast-key"` / `"silken-aes-256-device-key"`). Перевіряй на factory bench, що backend і firmware повертають той самий байтовий ключ за тим самим salt. Симптом mismatch: сміття після декрипту (телеметрія на Rails / downlink на Солдаті). Детальніше: [`03_06 §2`](03_06_Factory_Flashing_and_Key_Provisioning). |
@@ -126,9 +126,8 @@ terraform apply
 # Solana minting:
 #   SOLANA_WALLET_KEYPAIR, SOLANA_FEE_PAYER_PUBKEY,
 #   SOLANA_FEE_PAYER_TOKEN_ACCOUNT, SOLANA_USDC_MINT_ADDRESS
-# Chainlink Functions Router v1:
-#   CHAINLINK_FUNCTIONS_ROUTER, CHAINLINK_SUBSCRIPTION_ID,
-#   CHAINLINK_DON_ID, CHAINLINK_HMAC_SECRET
+# Chainlink oracle-callback HMAC (dispatch-секрети вилучено — ARCH.53):
+#   CHAINLINK_HMAC_SECRET
 #
 # ⚠️ AKASH SECURITY NOTE: ENV vars видимі провайдеру у plaintext.
 # Ротуй keys кожні 90 днів. Akash-deployment keys — тільки з MINTER_ROLE/
@@ -409,11 +408,8 @@ env:
     - SOLANA_FEE_PAYER_PUBKEY
     - SOLANA_FEE_PAYER_TOKEN_ACCOUNT
     - SOLANA_USDC_MINT_ADDRESS
-    # --- Chainlink Functions Router v1 (Proof of Growth pipeline) ---
-    - CHAINLINK_FUNCTIONS_ROUTER
-    - CHAINLINK_SUBSCRIPTION_ID
+    # --- Chainlink oracle-callback HMAC (endpoint live; dispatch removed — ARCH.53) ---
     - CHAINLINK_HMAC_SECRET
-    - CHAINLINK_DON_ID
   clear:
     POSTGRES_HOST: <CLOUD_SQL_PRIVATE_IP>    # component style (config/database.yml; INF.16)
     POSTGRES_USER: silken_net
@@ -559,8 +555,7 @@ cd terraform/akash
 #   alchemy_polygon_rpc_url, alchemy_ethereum_rpc_url, solana_rpc_url
 #   solana_wallet_keypair, solana_fee_payer_pubkey,
 #     solana_fee_payer_token_account, solana_usdc_mint_address
-#   chainlink_functions_router, chainlink_subscription_id,
-#     chainlink_don_id, chainlink_hmac_secret
+#   chainlink_hmac_secret (dispatch-секрети вилучено — ARCH.53)
 
 terraform init
 terraform apply

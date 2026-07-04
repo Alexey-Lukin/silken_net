@@ -208,26 +208,8 @@ variable "solana_usdc_mint_address" {
 }
 
 # -----------------------------------------------------------------------------
-# Chainlink Functions Router v1 (ChainlinkDispatchWorker — S6.2)
+# Chainlink oracle-callback HMAC (on-chain dispatch removed — ARCH.53)
 # -----------------------------------------------------------------------------
-
-variable "chainlink_functions_router" {
-  description = "Chainlink Functions Router v1 contract address on Polygon (mainnet or Amoy testnet). Without it Chainlink::OracleDispatchService falls back to stubbed mode (or raises in WEB3_STRICT_MODE)."
-  type        = string
-  sensitive   = true
-}
-
-variable "chainlink_subscription_id" {
-  description = "Chainlink Functions subscription ID (numeric). Required alongside CHAINLINK_FUNCTIONS_ROUTER for on-chain dispatch."
-  type        = string
-  sensitive   = true
-}
-
-variable "chainlink_don_id" {
-  description = "Chainlink Functions DON ID (bytes32 identifier, e.g. \"fun-polygon-mainnet-1\"). Required for on-chain dispatch — Chainlink::OracleDispatchService:95 raises without it."
-  type        = string
-  sensitive   = true
-}
 
 variable "chainlink_hmac_secret" {
   description = "HMAC-SHA256 secret for verifying X-Chainlink-Signature header in /api/v1/oracle_callbacks (replay protection)."

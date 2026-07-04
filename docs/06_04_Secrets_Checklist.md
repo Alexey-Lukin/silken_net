@@ -90,7 +90,7 @@
 - [ ] `SENTRY_DSN` · `ETHEREUM_ANCHOR_PRIVATE_KEY` · `ORACLE_PRIVATE_KEY` (legacy fallback)
 - [ ] RPC: `ALCHEMY_POLYGON_RPC_URL` · `ALCHEMY_ETHEREUM_RPC_URL` · `SOLANA_RPC_URL` · `POLYGON_RPC_URL` · `CELO_RPC_URL` (порожній RPC `web3_network_guard` толерує; testnet-marker — raise)
 - [ ] Solana: `SOLANA_WALLET_KEYPAIR` · `SOLANA_FEE_PAYER_PUBKEY` · `SOLANA_FEE_PAYER_TOKEN_ACCOUNT` · `SOLANA_USDC_MINT_ADDRESS`
-- [ ] Chainlink: `CHAINLINK_FUNCTIONS_ROUTER` · `CHAINLINK_SUBSCRIPTION_ID` · `CHAINLINK_HMAC_SECRET` · `CHAINLINK_DON_ID`
+- [ ] Chainlink: `CHAINLINK_HMAC_SECRET` (лише callback-endpoint; dispatch-секрети вилучено — ARCH.53)
 
 > **🔴 Drift guard:** цей набір = `config/deploy.yml env.secret` = `.kamal/secrets` = deploy-workflow `env:` блок. Розбіжність у будь-яку сторону → порожній інжект → boot-crash. Канонічний список — `config/deploy.yml env.secret` (SSOT).
 
@@ -108,11 +108,8 @@
 
 > **`KREDIS_REDIS_URL` виведено [B1]** — Kredis auto-derive DB 1 із `REDIS_URL` (`config/redis/shared.yml`). Не оголошуй у `.kamal/secrets` / `env.secret`: порожній або placeholder-інжект truthy для `ENV.fetch` і перебив би derive → Kredis конектиться до сміття. Override лише вказівкою на окремий Redis-інстанс.
 - [ ] `PROVISIONING_MASTER_KEY` — HKDF master key для per-device AES key derivation. Генерувати: `ruby -e "require 'securerandom'; puts SecureRandom.hex(32)"`. ⚠️ **Production guard:** provisioning endpoint **MUST** raise/refuse при відсутності ENV у production (`Rails.env.production?`) — будь-який fallback на raw AES key є **критичною security regression** і допустимий ТІЛЬКИ у TRL4 lab mode (`RAILS_ENV=development|test`). Recommended controller-level guard: `raise "PROVISIONING_MASTER_KEY required in production" if Rails.env.production? && ENV["PROVISIONING_MASTER_KEY"].blank?`
-- [ ] `CHAINLINK_FUNCTIONS_ROUTER` — адреса Chainlink Functions Router contract на Polygon
-- [ ] `CHAINLINK_SUBSCRIPTION_ID` — ID Chainlink Functions subscription (з https://functions.chain.link)
-- [ ] `CHAINLINK_HMAC_SECRET` — HMAC-SHA256 секрет для верифікації `X-Chainlink-Signature` header у `/api/v1/oracle_callbacks`. Генерувати як `SecureRandom.hex(32)`.
+- [ ] `CHAINLINK_HMAC_SECRET` — HMAC-SHA256 секрет для верифікації `X-Chainlink-Signature` header у `/api/v1/oracle_callbacks`. Генерувати як `SecureRandom.hex(32)`. (Dispatch-секрети `ROUTER`/`SUBSCRIPTION_ID`/`DON_ID` вилучено — ARCH.53 демоут.)
 - [ ] `HELIUM_WEBHOOK_SECRET` — [ARCH.34] HMAC-SHA256 секрет `X-Helium-Signature` для `/api/v1/telemetry/helium` (SOS Королеви; той самий рецепт `SecureRandom.hex(32)`; вписується і у Helium Console HTTP Integration). `WEB3_STRICT_MODE=true` → відсутність = SecurityError.
-- [ ] `CHAINLINK_DON_ID` — DON ID (bytes32, наприклад `fun-polygon-mainnet-1`)
 
 ### 2.1. ENV-only змінні (НЕ у `.kamal/secrets`, потрібні воркерам)
 
@@ -138,7 +135,7 @@
 > Усі контракт-адреси вище = **post-`forge deploy`** (deploy-order): у Kamal `env.clear` + Akash SDL як `REQUIRED_SECRET_NOT_SET` placeholder, fill після деплою контрактів (INF.12). Публічні on-chain → не секрети, але fail-loud на use поки не задані.
 - [ ] `SOLANA_USDC_MINT_ADDRESS` — SPL Token mint USDC (mainnet: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`)
 - [ ] `FILECOIN_PINNING_API_URL` — Pinata IPFS pinning service URL
-- [ ] `WEB3_STRICT_MODE` — `true` у production. Якщо `true`, Web3 stubs (Chainlink, Hadron) raise при відсутності ENV. Заведено в `config/deploy.yml` env.clear + Akash `deploy.yaml`/`.tpl` (web+job) (INF.11); canopy успадковує (`RAILS_ENV=production`). Інвентар Akash — §3.1 + [`06_02 §2.8`](06_02_Akash_Network_Integration).
+- [ ] `WEB3_STRICT_MODE` — `true` у production. Якщо `true`, Hadron-stub raise при відсутності ENV + oracle-callback HMAC fail-fast (SEC.5; Chainlink-dispatch більше не STRICT-gated — local marker, ARCH.53). Заведено в `config/deploy.yml` env.clear + Akash `deploy.yaml`/`.tpl` (web+job) (INF.11); canopy успадковує (`RAILS_ENV=production`). Інвентар Akash — §3.1 + [`06_02 §2.8`](06_02_Akash_Network_Integration).
 - [ ] `RAILS_ALLOWED_HOSTS` — comma-separated allowlist хостів для захисту від DNS-rebinding атак (підтримує leading `.` для subdomain wildcard, напр. `api.silkennet.com,.silkennet.com`). Якщо не встановлено — Rails логує попередження `[SECURITY]` при кожному старті контейнера. Встановлюється через Kamal `env.clear` або Akash SDL. **⚠️ Обов'язково для production.**
 - [ ] `APP_HOST` — хост для Action Mailer `default_url_options` (`config/environments/production.rb`; `ENV.fetch("APP_HOST", "silkennet.com")`). Дефолт `silkennet.com`; override для іншого домену. Заведено в `config/deploy.yml` env.clear + Akash web/job (INF.13) — замінив хардкоджений `example.com`.
 - [ ] `DISABLE_SSL` — встановлювати лише `true` якщо TLS термінується зовнішнім проксі (Cloudflare Full-Strict, Akash ingress) і Rails сам не повинен форсувати HTTPS. За замовчуванням (`false` або відсутнє) `force_ssl` та `assume_ssl` активні. Встановлюється через Kamal `env.clear`.
@@ -211,13 +208,8 @@
 - [ ] `SOLANA_FEE_PAYER_TOKEN_ACCOUNT` — USDC ATA, base58
 - [ ] `SOLANA_USDC_MINT_ADDRESS` — base58 (mainnet: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`)
 
-**Chainlink Functions Router v1 (Proof of Growth — S6.2):**
-- [ ] `CHAINLINK_FUNCTIONS_ROUTER` — Polygon contract address
-- [ ] `CHAINLINK_SUBSCRIPTION_ID` — numeric subscription ID
-- [ ] `CHAINLINK_DON_ID` — bytes32, наприклад `fun-polygon-mainnet-1`
+**Chainlink oracle-callback HMAC (dispatch вилучено — ARCH.53):**
 - [ ] `CHAINLINK_HMAC_SECRET` — HMAC-SHA256 для callback signature verification
-- [ ] `CHAINLINK_DATA_VERSION` — default `1` (не sensitive)
-- [ ] `CHAINLINK_CALLBACK_GAS_LIMIT` — default `300000` (не sensitive)
 
 ### 3.2. Job (Sidekiq) service env
 
@@ -291,10 +283,7 @@
 - [ ] `solana_fee_payer_token_account`
 - [ ] `solana_usdc_mint_address`
 
-*Chainlink Functions Router v1:*
-- [ ] `chainlink_functions_router`
-- [ ] `chainlink_subscription_id`
-- [ ] `chainlink_don_id`
+*Chainlink oracle-callback HMAC (dispatch вилучено — ARCH.53):*
 - [ ] `chainlink_hmac_secret`
 
 > **🔴 Drift guard:** Кожен sensitive у `terraform.tfvars` **обов'язково** на момент `terraform apply` — без нього `templatefile()` рендерить порожні рядки → SDL отримує `=` без value → Rails отримує `nil` ENV. Для boot-critical (`provisioning_master_key`) це Puma crash; для Web3 — Sidekiq DeadSet; для Alloy — німі метрики. Drift у будь-яку сторону між `.kamal/secrets`, Kamal `env.secret`, SDL (`web` + `job`), `deploy.yaml.tpl`, `variables.tf`, та `main.tf` `templatefile()` — критичний bug. **Single source of truth: `config/deploy.yml env.secret` блок** (Kamal canonical list).

@@ -69,7 +69,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
           → solana micro-reward sent                 ← Solana SPL reward
 ```
 
-⚠️ **PATH 1 наразі НЕ виконується у проді**: DON Functions JS-source / consumer-контракт `fulfillRequest` / relayer відсутні → callback не приходить (зберігаємо EVM `tx_hash`, а DON ключить `requestId`). Tokenomics-шлях (PATH 2) і `MintBatchCollector` мінтять **без** цього gate (KYC + balance + active-tree enforced; oracle — ні). Цей ланцюг — **намір** (intended gate), а не поточний інваріант; його доля (замкнути / демоутити) → [`00_07`](00_07_Action_Plan_Tracker) ARCH.53.
+⚠️ **PATH 1 наразі НЕ виконується у проді — ДЕМОУТНУТО [ARCH.53]** (founder-рішення 2026-07-03): on-chain `sendRequest` вилучено з `Chainlink::OracleDispatchService` (LINK-cost за callback, що не прилетить: DON Functions JS-source / consumer `fulfillRequest` / relayer відсутні; ще й tx_hash≠requestId — lookup не збігся б). Dispatch = local correlation-marker (Крок C); tokenomics-шлях (PATH 2) і `MintBatchCollector` мінтять **без** цього gate (KYC + balance + active-tree enforced; oracle — ні). Цей ланцюг — **latent gate** для майбутнього PATH 1 (замикання = DON-інженерія, свідомо відкинута при TRL-3); guard'и й callback-endpoint збережені.
 
 ---
 
@@ -603,7 +603,7 @@ log.update!(zk_proof_ref: proof.id, archive_cid: archive_root, merkle_leaf: leaf
 
 ---
 
-### Крок C: Chainlink Oracle Dispatch
+### Крок C: Oracle-маркування (Chainlink demoted — ARCH.53)
 
 **Тригер:** `ChainlinkDispatchWorker.perform_async` з `IotexVerificationWorker`
 
@@ -611,65 +611,29 @@ log.update!(zk_proof_ref: proof.id, archive_cid: archive_root, merkle_leaf: leaf
 - `app/workers/chainlink_dispatch_worker.rb` — queue: `web3_critical` (prio 6), retry: 5
 - `app/services/chainlink/oracle_dispatch_service.rb`
 
-**Статус:** ✅ Real — Chainlink Functions Router v1 ABI. `WEB3_STRICT_MODE=true` вимагає `CHAINLINK_FUNCTIONS_ROUTER` + `CHAINLINK_SUBSCRIPTION_ID` в Production.
-credentials, stub без них.
+**Статус:** ⚪ Demoted **[ARCH.53]** — on-chain `sendRequest` вилучено (LINK-cost за callback, що не прилетить: DON-нога unwired, tx_hash≠requestId). `dispatch!` = local correlation-marker, без RPC; єдиний ENV Chainlink-родини = `CHAINLINK_HMAC_SECRET` (callback-endpoint). On-chain гілка (Router ABI registry + bytecode probe + payload-builder) воскресає з git при замиканні PATH 1. Огляд моделі довіри — «Чесна рамка» вище + [`05_01` картка №11](05_01_Multichain_Architecture).
 
 **Guard-перевірка:**
 ```ruby
 raise DispatchError unless @log.verified_by_iotex?
 ```
 
-**Payload до Chainlink DON:**
-```json
-{
-  "peaq_did":    "did:peaq:0x{40hex}",
-  "lorenz_state": {
-    "sigma": 10.0,
-    "rho":   28.0,
-    "beta":  2.6666666666666665,
-    "z_value": 23.4521
-  },
-  "zk_proof_ref":     "zk-proof-abc123",
-  "tree_did":         "SNET-XXXXXXXX",
-  "telemetry_log_id": 12345,
-  "created_at":       "2026-03-23T06:00:00.000000Z",
-  "timestamp":        "2026-03-23T06:00:01Z"
-}
-```
-
-> σ/ρ/β у `lorenz_state` — дзеркало [`03_04 §4.1`](03_04_mruby_Lorenz_Attractor) (правити ТАМ); тут лише ілюстрація форми payload, не другий дім констант.
-
-**Режим PROD (CHAINLINK_FUNCTIONS_ROUTER + CHAINLINK_SUBSCRIPTION_ID задані):**
+**Що робить:**
 ```ruby
-client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
-oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
-contract = Eth::Contract.from_abi(name: "FunctionsRouter", address: router_address, abi: abi)
-# ABI v1 — 5 параметрів: subscriptionId, data, dataVersion, callbackGasLimit, donId
-tx_hash = client.transact(contract, "sendRequest",
-                           subscription_id.to_i, payload.to_json,
-                           data_version, callback_gas_limit, don_id,
-                           sender_key: oracle_key, legacy: false)
-```
-
-**Режим DEV (відсутні ENV):**
-```ruby
-"chainlink-req-#{SecureRandom.hex(16)}"  # ⚠️ LOCAL STUB
-# WEB3_STRICT_MODE=true → raises DispatchError (Production mode)
-```
-
-**Оновлення БД:**
-```ruby
+request_id = "chainlink-req-#{SecureRandom.hex(16)}"  # local correlation-marker
 # oracle_status — enum з prefix (oracle_status_dispatched?, oracle_status_fulfilled? тощо)
 log.update!(chainlink_request_id: request_id, oracle_status: "dispatched")
 ```
+
+Маркер — dedup-ключ Solana-винагород ([ARCH.51]) + idempotency-guard dispatch/callback-шляхів; тому колонка жива й після демоуту. Демоут-інваріант пінить тест: dispatch не торкається `Web3::RpcConnectionPool`.
 
 **Ідемпотентність:** `return if log.chainlink_request_id.present?` в воркері.
 
 ---
 
-### Крок D: Oracle Callback
+### Крок D: Oracle Callback — ⚪ latent [ARCH.53]
 
-**Тригер:** Chainlink DON → `POST /api/v1/oracle_callbacks`
+**Тригер:** `POST /api/v1/oracle_callbacks` (сьогодні не прилітає — DON unwired, dispatch = local marker; endpoint live для майбутнього PATH 1 / manual-fulfillment)
 
 **Файл:** `app/controllers/api/v1/oracle_callbacks_controller.rb`
 
@@ -882,11 +846,10 @@ blockchain_transactions
 | `credentials.peaq_signing_key` | `Peaq::DidRegistryService` (Ed25519) | ✅ Так (raises `RegistrationError` при відсутності) |
 | `credentials.iotex_w3bstream_url` | `Iotex::W3bstreamVerificationService` | ✅ Так |
 | `credentials.iotex_api_key` | `Iotex::W3bstreamVerificationService` | ✅ Так |
-| `ENV["CHAINLINK_FUNCTIONS_ROUTER"]` | `Chainlink::OracleDispatchService` | ⚠️ PROD only |
-| `ENV["CHAINLINK_SUBSCRIPTION_ID"]` | `Chainlink::OracleDispatchService` | ⚠️ PROD only |
+| `ENV["CHAINLINK_HMAC_SECRET"]` | `OracleCallbacksController` (callback-endpoint; dispatch-секрети вилучено — ARCH.53) | ⚠️ PROD only |
 | `ENV["ORACLE_MINTER_PRIVATE_KEY"]` | `BlockchainMintingService` (MINTER_ROLE, [E.2]) | ✅ Так (fallback → `ORACLE_PRIVATE_KEY`) |
 | `ENV["ORACLE_SLASHER_PRIVATE_KEY"]` | `BlockchainBurningService` (SLASHER_ROLE, [E.2] — окремий ключ, blast-radius) | ✅ Так (fallback → `ORACLE_PRIVATE_KEY`) |
-| `ENV["ORACLE_PRIVATE_KEY"]` | Chainlink dispatch + backward-compat fallback для MINTER/SLASHER | ✅ Так |
+| `ENV["ORACLE_PRIVATE_KEY"]` | Legacy base-EOA (PuroEarth/Etherisc/Klima) + backward-compat fallback для MINTER/SLASHER | ✅ Так |
 | `ENV["ALCHEMY_POLYGON_RPC_URL"]` | `Web3::RpcConnectionPool` | ✅ Так |
 | `ENV["CARBON_COIN_CONTRACT_ADDRESS"]` | `BlockchainMintingService` | ✅ Так |
 | `ENV["FOREST_COIN_CONTRACT_ADDRESS"]` | `BlockchainMintingService` | ✅ Так |

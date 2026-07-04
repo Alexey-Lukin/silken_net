@@ -83,11 +83,8 @@ resource "local_file" "akash_sdl" {
     solana_fee_payer_pubkey        = var.solana_fee_payer_pubkey
     solana_fee_payer_token_account = var.solana_fee_payer_token_account
     solana_usdc_mint_address       = var.solana_usdc_mint_address
-    # Chainlink Functions Router v1 (ChainlinkDispatchWorker — S6.2)
-    chainlink_functions_router = var.chainlink_functions_router
-    chainlink_subscription_id  = var.chainlink_subscription_id
-    chainlink_don_id           = var.chainlink_don_id
-    chainlink_hmac_secret      = var.chainlink_hmac_secret
+    # Chainlink oracle-callback HMAC (on-chain dispatch removed — ARCH.53)
+    chainlink_hmac_secret = var.chainlink_hmac_secret
     # OBS.1: Grafana Alloy observability sidecar
     grafana_remote_write_url      = var.grafana_remote_write_url
     grafana_remote_write_username = var.grafana_remote_write_username

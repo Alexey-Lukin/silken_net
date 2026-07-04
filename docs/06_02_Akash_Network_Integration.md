@@ -89,12 +89,9 @@
 | `SOLANA_FEE_PAYER_PUBKEY` | `Solana::MintingService` | Raises `🛑 [Solana] SOLANA_FEE_PAYER_PUBKEY is required` |
 | `SOLANA_FEE_PAYER_TOKEN_ACCOUNT` | `Solana::MintingService` | Raises explicit error |
 | `SOLANA_USDC_MINT_ADDRESS` | `Solana::MintingService` | Raises explicit error |
-| `CHAINLINK_FUNCTIONS_ROUTER` | `Chainlink::OracleDispatchService` | Fallback на stub (або raise у `WEB3_STRICT_MODE`) |
-| `CHAINLINK_SUBSCRIPTION_ID` | `Chainlink::OracleDispatchService` | Те саме |
-| `CHAINLINK_DON_ID` | `Chainlink::OracleDispatchService` | Raises `DispatchError` для on-chain dispatch |
-| `CHAINLINK_HMAC_SECRET` | `Api::V1::OracleCallbacksController` | Підпис callback не перевіряється |
+| `CHAINLINK_HMAC_SECRET` | `Api::V1::OracleCallbacksController` | Підпис callback не перевіряється (dev/test); `WEB3_STRICT_MODE` → `SecurityError`. Dispatch-секрети (`ROUTER`/`SUBSCRIPTION_ID`/`DON_ID`) вилучено — ARCH.53 |
 
-> **[ARCH.49] Nonce-serialization спільної base-EOA.** Усі Polygon-підписанти на спільному `ORACLE_PRIVATE_KEY` (mint/burn + `Chainlink::OracleDispatchService`/`PuroEarth::PassportService`/`Etherisc::ClaimService`) серіалізують `transact` через спільний `Kredis.lock("lock:web3:oracle:#{addr}", expires_in: 30.seconds, after_timeout: :raise)` — eth-gem бере nonce per-call (`eth_getTransactionCount(pending)`), тож без локу конкурентні підписи на одній адресі колізять nonce → orphan «sent-but-never-mined» tx. Celo ізольовано власним chain-prefixed локом + dedicated key (ARCH.50, рядок вище). Chain-prefix свідомо **не** для Polygon: base-EOA = єдиний чейн після Celo-split, а `polygon:`-prefix вимагав би перейменувати й mint/burn lock-key (інакше Polygon-флот розколовся б на дві lock-групи, що не серіалізуються) — money-path-ризик без виграшу. Toucan/Klima той самий патерн, але DEAD (0 enqueue) → lock при активації (E.66).
+> **[ARCH.49] Nonce-serialization спільної base-EOA.** Усі Polygon-підписанти на спільному `ORACLE_PRIVATE_KEY` (mint/burn + `PuroEarth::PassportService`/`Etherisc::ClaimService`; Chainlink-dispatch вибув з флоту — ARCH.53 демоут прибрав його on-chain `transact`) серіалізують `transact` через спільний `Kredis.lock("lock:web3:oracle:#{addr}", expires_in: 30.seconds, after_timeout: :raise)` — eth-gem бере nonce per-call (`eth_getTransactionCount(pending)`), тож без локу конкурентні підписи на одній адресі колізять nonce → orphan «sent-but-never-mined» tx. Celo ізольовано власним chain-prefixed локом + dedicated key (ARCH.50, рядок вище). Chain-prefix свідомо **не** для Polygon: base-EOA = єдиний чейн після Celo-split, а `polygon:`-prefix вимагав би перейменувати й mint/burn lock-key (інакше Polygon-флот розколовся б на дві lock-групи, що не серіалізуються) — money-path-ризик без виграшу. Toucan/Klima той самий патерн, але DEAD (0 enqueue) → lock при активації (E.66).
 
 #### Категорія C — Observability (silent failures)
 
@@ -651,22 +648,17 @@ ENV-блоки `web` та `job` сервісів **дзеркалюють** од
 | `SOLANA_FEE_PAYER_TOKEN_ACCOUNT` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | USDC ATA |
 | `SOLANA_USDC_MINT_ADDRESS` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | Base58 mint (mainnet USDC) |
 
-### 2.7 Chainlink Functions Router v1 (Proof of Growth — S6.2)
+### 2.7 Chainlink oracle-callback HMAC (dispatch вилучено — ARCH.53)
 
 | Змінна | Значення в SDL | Required for | Опис |
 |--------|---------------|-------------|------|
-| `CHAINLINK_FUNCTIONS_ROUTER` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | Router contract address |
-| `CHAINLINK_SUBSCRIPTION_ID` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | Functions subscription |
-| `CHAINLINK_DON_ID` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | bytes32, наприклад `fun-polygon-mainnet-1` |
-| `CHAINLINK_HMAC_SECRET` | `REQUIRED_SECRET_NOT_SET` | runtime (web) | Перевірка `X-Chainlink-Signature` у callback |
-| `CHAINLINK_DATA_VERSION` | `1` | runtime | Functions API version |
-| `CHAINLINK_CALLBACK_GAS_LIMIT` | `300000` | runtime | Gas limit для callback |
+| `CHAINLINK_HMAC_SECRET` | `REQUIRED_SECRET_NOT_SET` | runtime (web) | Перевірка `X-Chainlink-Signature` у callback (єдиний Chainlink-ENV після демоуту; Router/subscription/DON-ID вилучено разом з on-chain dispatch) |
 
 ### 2.8 Security knobs (Rails hardening)
 
 | Змінна | Значення | Required for | Опис |
 |--------|---------|-------------|------|
-| `WEB3_STRICT_MODE` | `true` | web3-worker | Hadron KYC/RWA + Chainlink dispatch/callback fail-closed на missing creds (ці сервіси перевіряють ЛИШЕ цей прапор, не `Rails.env`; boot-guard/W3bstream вже строгі через `RAILS_ENV=production`); web+job (INF.11) |
+| `WEB3_STRICT_MODE` | `true` | web3-worker | Hadron KYC/RWA + Chainlink-callback HMAC fail-closed на missing creds (ці сервіси перевіряють ЛИШЕ цей прапор, не `Rails.env`; boot-guard/W3bstream вже строгі через `RAILS_ENV=production`; dispatch більше не STRICT-gated — local marker, ARCH.53); web+job (INF.11) |
 | `RAILS_ALLOWED_HOSTS` | *(потрібно встановити)* | runtime ⚠️ | Comma-separated allowlist (DNS-rebinding захист) — напр. `api.silkennet.com,.silkennet.com` |
 | `DISABLE_SSL` | *(не встановлювати)* | runtime | `true` лише якщо Akash ingress / Cloudflare термінує TLS |
 | `CSP_ENFORCE` | *(не встановлювати)* | runtime | `true` після burn-in CSP report-only (1–2 тижні) |
@@ -799,13 +791,10 @@ silken-net-terraform-state/ (GCS bucket)
 | `solana_fee_payer_token_account` | Base58 USDC ATA |
 | `solana_usdc_mint_address` | Base58 (mainnet: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`) |
 
-**Chainlink Functions Router v1:**
+**Chainlink oracle-callback HMAC (dispatch вилучено — ARCH.53):**
 
 | Змінна | Валідація |
 |--------|-----------|
-| `chainlink_functions_router` | Polygon contract address `0x…` |
-| `chainlink_subscription_id` | Numeric subscription ID |
-| `chainlink_don_id` | bytes32 (e.g. `fun-polygon-mainnet-1`) |
 | `chainlink_hmac_secret` | HMAC-SHA256 secret для callback signature |
 
 **Observability — Grafana Cloud (OBS.1):**
@@ -1038,14 +1027,11 @@ Mapping між конфігурацією Kamal (`config/deploy.yml` + `.kamal/s
 | `SOLANA_FEE_PAYER_TOKEN_ACCOUNT` | `SOLANA_FEE_PAYER_TOKEN_ACCOUNT=${solana_fee_payer_token_account}` | `var.solana_fee_payer_token_account` |
 | `SOLANA_USDC_MINT_ADDRESS` | `SOLANA_USDC_MINT_ADDRESS=${solana_usdc_mint_address}` | `var.solana_usdc_mint_address` |
 
-**Chainlink Functions Router v1:**
+**Chainlink oracle-callback HMAC (dispatch вилучено — ARCH.53):**
 
 | Kamal `env.secret` | Akash SDL (web + job) | Terraform variable |
 |-------------------|----------------------|---------------------|
-| `CHAINLINK_FUNCTIONS_ROUTER` | `CHAINLINK_FUNCTIONS_ROUTER=${chainlink_functions_router}` | `var.chainlink_functions_router` |
-| `CHAINLINK_SUBSCRIPTION_ID` | `CHAINLINK_SUBSCRIPTION_ID=${chainlink_subscription_id}` | `var.chainlink_subscription_id` |
 | `CHAINLINK_HMAC_SECRET` | `CHAINLINK_HMAC_SECRET=${chainlink_hmac_secret}` | `var.chainlink_hmac_secret` |
-| `CHAINLINK_DON_ID` | `CHAINLINK_DON_ID=${chainlink_don_id}` | `var.chainlink_don_id` |
 
 > **🔴 Drift guard:** при додаванні нового ENV у Kamal `env.secret` **ОБОВ'ЯЗКОВО** додати у всі 5 локацій вище. Інакше Akash deployment отримає boot crash (категорія A) або тиху Web3 відмову (категорія B). Див. також §Секрети SDL (категорії A/B/C) вище.
 

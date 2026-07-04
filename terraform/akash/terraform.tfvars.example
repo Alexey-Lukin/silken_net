@@ -95,10 +95,6 @@ solana_fee_payer_token_account = "CHANGE_ME_base58_usdc_ata_for_fee_payer"
 solana_usdc_mint_address = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 
 # =============================================================================
-# Chainlink Functions Router v1 (Proof of Growth pipeline — S6.2)
+# Chainlink oracle-callback HMAC (on-chain dispatch removed — ARCH.53)
 # =============================================================================
-# From: https://docs.chain.link/chainlink-functions/supported-networks
-chainlink_functions_router = "0xCHANGE_ME_polygon_router_address"
-chainlink_subscription_id  = "CHANGE_ME_numeric_subscription_id"
-chainlink_don_id           = "fun-polygon-mainnet-1"
-chainlink_hmac_secret      = "CHANGE_ME_hmac_secret_for_callback_signature_verification"
+chainlink_hmac_secret = "CHANGE_ME_hmac_secret_for_callback_signature_verification"
