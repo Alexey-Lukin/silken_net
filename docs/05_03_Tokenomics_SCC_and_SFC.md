@@ -322,7 +322,8 @@ function slash(address investor, uint256 amount)
     require(amount > 0, "SCC: zero amount");
     require(balanceOf(investor) >= amount, "SCC: insufficient balance");
     _burn(investor, amount);
-    emit TokenSlashed(investor, amount);
+    // Manual DAO/Timelock-шлях — без бекенд-інтенту, contextHash порожній.
+    emit TokenSlashed(investor, amount, bytes32(0));
 }
 ```
 
@@ -330,7 +331,7 @@ function slash(address investor, uint256 amount)
 - **Валідація:** `investor != address(0)`, `amount > 0`, `balanceOf(investor) >= amount` (revert: `"SCC: insufficient balance"`) — явна перевірка замість generic OZ помилки
 - **Тригер:** `BurnCarbonTokensWorker → BlockchainBurningService → slash(investor, amount)` — health-check `>20%` аномальних дерев лише **ініціює** перевірку; реальний slash проходить тільки за positive-A-evidence gate ([`05_05 §3.2`](05_05_Slashing_and_Risk_Policy)), інакше `:frozen` + Field Audit.
 - **Guard on pause:** Слешинг **НЕ блокується** при паузі — `_update` дозволяє `_burn()` (to == address(0)) навіть коли контракт призупинено. Це запобігає governance attack vector де адмін захищає порушників від слешингу.
-- **Подія:** `TokenSlashed(address indexed investor, uint256 amount)`
+- **Подія:** `TokenSlashed(address indexed investor, uint256 amount, bytes32 contextHash)` — manual `slash()` емітить `bytes32(0)`; [CONTRACT.1]-атрибуція живе у `slashUpTo` ↓
 - **[ARCH.45] Idempotency на crash-window:** on-chain `require(balanceOf >= amount)` — лише **латентний частковий** захист (повторний slash на ту саму суму ревертне, якщо перший зменшив баланс; але при `damage_ratio < 1` баланс може лишитись достатнім → частковий double-burn). Exactly-once гарантує backend: durable intent-marker + `BlockchainTransaction.in_flight` guard у `BlockchainBurningService` ([`04_02 §4`](04_02_Business_Logic_and_Services)), не явний on-chain nonce/marker.
 
 #### `slashUpTo(address investor, uint256 maxAmount, bytes32 contextHash) → uint256 slashed` [SLASH.2]
@@ -449,7 +450,8 @@ function slash(address investor, uint256 amount)
     require(amount > 0, "SFC: zero amount");
     require(balanceOf(investor) >= amount, "SFC: insufficient balance");
     _burn(investor, amount);
-    emit GovernanceSlashed(investor, amount);
+    // Manual DAO/Timelock-шлях — без бекенд-інтенту, contextHash порожній.
+    emit GovernanceSlashed(investor, amount, bytes32(0));
 }
 ```
 
@@ -457,11 +459,11 @@ function slash(address investor, uint256 amount)
 - **Валідація:** `investor != address(0)`, `amount > 0`, `balanceOf(investor) >= amount` (revert: `"SFC: insufficient balance"`)
 - **Тригер:** `BurnCarbonTokensWorker → BlockchainBurningService → slash(investor, amount)` при порушенні NaaS контракту
 - **Guard on pause:** Слешинг **НЕ блокується** при паузі — `_update` дозволяє `_burn()` навіть коли контракт призупинено. Видалення voting power у порушників має бути завжди можливим.
-- **Подія:** `GovernanceSlashed(address indexed investor, uint256 amount)`
+- **Подія:** `GovernanceSlashed(address indexed investor, uint256 amount, bytes32 contextHash)` — manual `slash()` емітить `bytes32(0)`
 
-#### `slashUpTo(address investor, uint256 maxAmount) → uint256 slashed` [SLASH.2]
+#### `slashUpTo(address investor, uint256 maxAmount, bytes32 contextHash) → uint256 slashed` [SLASH.2]
 
-Дзеркало SCC `slashUpTo`: палить `min(maxAmount, balanceOf)` атомарно (revert замінено clamp), тож переказ 1 wei до транзакції Оракула більше не рятує **voting power** порушника від slash. Валідація як SCC (`"SFC: nothing to slash"` при повному виведенні); подія — `GovernanceSlashed(investor, slashed)` з фактично спаленою сумою; `getVotes` падає в lockstep (Halmos `check_slashUpTo_clampsToBalance` доводить, що після clamped-slash voting power == post-burn balance).
+Дзеркало SCC `slashUpTo`: палить `min(maxAmount, balanceOf)` атомарно (revert замінено clamp), тож переказ 1 wei до транзакції Оракула більше не рятує **voting power** порушника від slash. Валідація як SCC (`"SFC: nothing to slash"` при повному виведенні); подія — `GovernanceSlashed(investor, slashed, contextHash)` з фактично спаленою сумою та [CONTRACT.1]-атрибуцією (`bytes32(intent BlockchainTransaction.id)` — як у SCC); `getVotes` падає в lockstep (Halmos `check_slashUpTo_clampsToBalance` доводить, що після clamped-slash voting power == post-burn balance).
 
 #### `_update(address from, address to, uint256 value)` — internal override
 
@@ -507,23 +509,23 @@ function nonces(address owner)
 | Подія | Сигнатура | Indexed поля | Subgraph |
 |---|---|---|---|
 | `CarbonMinted` | `CarbonMinted(address indexed investor, uint256 amount, bytes32 indexed treeDidHash, string treeDid)` | `investor`, `treeDidHash` | ✅ `handleCarbonMinted` |
-| `TokenSlashed` | `TokenSlashed(address indexed investor, uint256 amount)` | `investor` | ✅ `handleTokenSlashed` |
+| `TokenSlashed` | `TokenSlashed(address indexed investor, uint256 amount, bytes32 contextHash)` | `investor` | ✅ `handleTokenSlashed` (пише `contextHash` — CONTRACT.1) |
 
 ### SFC
 
 | Подія | Сигнатура | Indexed поля | Subgraph |
 |---|---|---|---|
 | `ForestMinted` | `ForestMinted(address indexed investor, uint256 amount, bytes32 indexed clusterIdHash, string clusterId)` | `investor`, `clusterIdHash` (bytes32 keccak256) | ✅ `handleForestMinted` (⚠️ contract address placeholder `0x0000...`) |
-| `GovernanceSlashed` | `GovernanceSlashed(address indexed investor, uint256 amount)` | `investor` | ✅ `handleGovernanceSlashed` (⚠️ contract address placeholder) |
+| `GovernanceSlashed` | `GovernanceSlashed(address indexed investor, uint256 amount, bytes32 contextHash)` | `investor` | ✅ `handleGovernanceSlashed` (пише `contextHash`; ⚠️ contract address placeholder) |
 
 ### Subgraph vs Контракт — Повна Матриця
 
 | Event у subgraph.yaml | Подія у контракті | Статус |
 |---|---|---|
 | `CarbonMinted(indexed address,uint256,indexed bytes32,string)` | `CarbonMinted` | ✅ `treeDidHash` (bytes32) |
-| `TokenSlashed(indexed address,uint256)` | `TokenSlashed` | ✅ Синхронізовано |
+| `TokenSlashed(indexed address,uint256,bytes32)` | `TokenSlashed` | ✅ Синхронізовано (contextHash — CONTRACT.1) |
 | `ForestMinted(indexed address,uint256,indexed bytes32,string)` | `ForestMinted` (SFC) | ✅ Handler додано (S3.5) |
-| `GovernanceSlashed(indexed address,uint256)` | `GovernanceSlashed` (SFC) | ✅ Handler додано (S3.5) |
+| `GovernanceSlashed(indexed address,uint256,bytes32)` | `GovernanceSlashed` (SFC) | ✅ Handler додано (S3.5; contextHash — CONTRACT.1) |
 
 > ⚠️ SFC data source в `subgraph.yaml` використовує placeholder `0x0000000000000000000000000000000000000000` — блокує deploy subgraph до Mainnet. Замінити після деплою SFC контракту.
 
@@ -575,12 +577,13 @@ Telemetry → Lorenz Z-value → growth_points++
                                     ↓
                     MintCarbonCoinWorker [queue: web3_critical]
                                     ↓
-                    Guards (лише якщо telemetry_log переданий, oracle-driven flow):
+                    Oracle-guards (лише якщо telemetry_log переданий, Path 1):
                     ├── verified_by_iotex? == true
-                    ├── oracle_status_fulfilled? (enum method)
-                    └── hadron_kyc_status == "approved"
-                    (TokenomicsEvaluatorWorker без log → guard НЕ діє: оптимістичний мінт,
+                    └── oracle_status_fulfilled? (enum method)
+                    (TokenomicsEvaluatorWorker без log → oracle-guard НЕ діє: оптимістичний мінт,
                      anti-fraud = ex-post clawback, не цей gate — 05_02 §Модель довіри / 00_07 ARCH.53)
+                    KYC-guard (УСІ шляхи, поза telemetry_log-гілкою — KYC.1):
+                    └── wallet.kyc_approved_for_minting? (бенефіціар; non-approved → per-tx SKIP, :pending)
                                     ↓
                     BlockchainMintingService#perform
                     ├── Oracle balance ≥ 0.05 MATIC
@@ -672,15 +675,15 @@ FilecoinArchiveWorker → IPFS/Filecoin permanent record
 - event: CarbonMinted(indexed address,uint256,indexed bytes32,string)
   handler: handleCarbonMinted           # ✅ treeDidHash як bytes32
 
-- event: TokenSlashed(indexed address,uint256)
-  handler: handleTokenSlashed           # ✅ Синхронізовано з контрактом
+- event: TokenSlashed(indexed address,uint256,bytes32)
+  handler: handleTokenSlashed           # ✅ Синхронізовано (contextHash — CONTRACT.1)
 
 # SFC data source (додано S3.5)
 - event: ForestMinted(indexed address,uint256,indexed bytes32,string)
   handler: handleForestMinted           # ✅ clusterIdHash як bytes32
 
-- event: GovernanceSlashed(indexed address,uint256)
-  handler: handleGovernanceSlashed      # ✅ Governance slashing tracking
+- event: GovernanceSlashed(indexed address,uint256,bytes32)
+  handler: handleGovernanceSlashed      # ✅ Governance slashing tracking (contextHash)
 ```
 
 **GraphQL Entities:**

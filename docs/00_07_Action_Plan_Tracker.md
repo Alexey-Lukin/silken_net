@@ -60,18 +60,19 @@
 
 ### ⛓️ Гейт-кластери — одна дія відкриває кластер (міжсекційна синергія)
 
-> Друга вісь зрізу (доповнює мілстоун-рядки ↑): вузькі «ключі»-дії, на які трекер сходиться across секції (звірено item-by-item 2026-07-03; §06-пас 2026-07-04 — INF.4-ключ ВІДКРИТО рішенням 07-03 і знято з таблиці, INF.20 вирішено (в)+wired того ж дня; §05-пас 2026-07-04 — SEC.1←BIZ.4 merge зробив Web3-mainnet-деплой ЄДИНИМ ключем governance-кластера + dClimate-сесія). Тонкі ID-вказівники; деталь у пунктах.
+> Друга вісь зрізу (доповнює мілстоун-рядки ↑): вузькі «ключі»-дії, на які трекер сходиться across секції. Рядок живе, поки кластер має відкриті пункти; закритий елемент ВИПАДАЄ з рядка (історія — git + §🗄️, не ✅-и тут). Тонкі ID-вказівники; деталь у пунктах. Порядок: hardware-ланцюг → деплой → домен-ключі.
 
 | 🔑 Ключ (WHO) | Відкриває (кластер) |
 |---|---|
 | **HW.9 KiCad PCB** (👤; сам ← BOM-фіналізація `HW.7/12/13/20` + RF Keep-Out) | `HW.17`-dimensions · `HW.29`-footprints · `HW.20`-BOM-part · SE050 DNP-footprint · `ARCH.35` W25Q32-розводка · пін-мапа → **FW.46 `.ioc`** (ланцюг до bench-дня ↓) |
-| **FW.46 board-freeze** `.ioc` (👤) | повний `.elf` → увесь bench-день: `FW.2`-фліп · `FW.3/8/17/20/23/31/49/50/52/54/55` · `ARCH.26/41` · `SEC.2`-OTA-verify · `SEC.15`-WUT · `SEC.3`-SWD · `ARCH.35`-розводка · `radio_conf.h` → компіляція `radio.c` (SubGHz Шлях A ✅ 07-04: submodule+`RadioEvents_t` уже в репо — це останній radio-гейт); суміжно `ARCH.34`-firmware (LoRaMac-node ВЖЕ vendored у `extern/subghz-phy/lorawan` — лишилась glue-робота) |
-| **Перший live-деплой** = акаунти/значення Фази −1 + секрети (`S1.1`+`S4.3`) + `OPS.11`-FinOps → deploy фазами [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform) (👤; SSH-нога wired — INF.20 (в) ✅) | верифікації `INF.11/12/13/14/15/16` · `INF.20`-IAP-вхід · `PUMA-IPV6-1` · `INF.10`-фліп · `S5.2` · `S3.2`-staging · `S6.1`-Upstash · `INF.21`-pin · Grafana-сесія (`S2.1→S2.2` + `S2.4`-SLO + `FW.18b`) · розгейтовує `OPS.11`-🤖 (escrow-watch) + `INF.9`-🤖 (path-gate) |
+| **FW.46 board-freeze** `.ioc` (👤) | повний `.elf` → увесь bench-день: `FW.2`-фліп · `FW.3/8/17/20/23/31/49/50/52/54/55` · `ARCH.26/41` · `SEC.2`-OTA-verify · `SEC.15`-WUT · `SEC.3`-SWD · `ARCH.35`-розводка · `radio_conf.h` → компіляція `radio.c` (SubGHz submodule + `RadioEvents_t` уже в репо — останній radio-гейт); суміжно `ARCH.34`-firmware (LoRaMac-node уже vendored у `extern/subghz-phy/lorawan` — лишилась glue-робота) |
+| **Перший live-деплой** = акаунти/значення Фази −1 + секрети (`S1.1`+`S4.3`) + `OPS.11`-FinOps → deploy фазами [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform) (👤; SSH-нога wired — INF.20 (в)) | верифікації `INF.11/12/13/14/15/16` · `INF.20`-IAP-вхід · `PUMA-IPV6-1` · `INF.10`-фліп · `S5.2` · `S3.2`-staging · `S6.1`-Upstash · `INF.21`-pin · Grafana-сесія (`S2.1→S2.2` + `S2.4`-SLO + `FW.18b`) · розгейтовує `OPS.11`-🤖 (escrow-watch) + `INF.9`-🤖 (path-gate) |
+| **Web3 mainnet-деплой** = Gnosis Safe + `Deploy.s.sol` + transfer admin→Timelock (👤; `SEC.1`, поглинув BIZ.4) | активує on-chain governance (read-path готовий, `ParameterSyncWorker` no-op доти — GOV.1 §🗄️) · `E.32`-Hacken post-deploy · `S3.5`-subgraph cutover |
 | **SE051 eval-пара** замовлення (👤) | `SE050-MIGRATION` silicon-confirm + rename-каскад · `SEC.3` Гілка-B real-I²C |
 | **E.20 ForestBountyService** (🤖 за founder-go) | `E.41` satellite-obscured fallback · task-assignment (ex-`S6.10`) · `BIZ.13` Модель-B operator-bond · `INS.1` drought/pest Trigger-2-джерело |
 | **E.63 bench-шкала** = `HW.13` P-V + recharge-крива (👤) | `E.63`-калібрування + строгість-фліп · `FW.49`-S2 · `E.64` real-signal пороги (wire-rev2.1 носій уже готовий) |
 | **Downlink-wire-ревізія** MAC/FC (🤖+👤 дизайн, пост-CCM) | `FW.17`-активація (гейти i/ii) · `ARCH.43` wire-rev3 mesh-return (з `ARCH.26`-фліпом) |
-| **Web3 mainnet-деплой** = Gnosis Safe + `Deploy.s.sol` + transfer admin→Timelock (👤; `SEC.1`, поглинув BIZ.4) | `GOV.1` ✅ §🗄️ (read-path готовий; ParameterSyncWorker no-op до цього деплою) · `E.32`-Hacken post-deploy · `S3.5`-subgraph cutover · `ARCH.4`-governance (архів) |
+| **Перший inclusion-proof-споживач** (🤖+👤 — рішення ЩО ним стає: ISO-звіт / API / UI) | `ARCH.12` Фаза-1 `MerkleTree` primitive · `E.60` follow-on (`archive_root` + per-tree witness) · `MRV.1`-residual PATH-2 lineage (credit→measurements) — три пункти, ОДИН відсутній блок |
 | **dClimate real API-сесія** (👤; `S3.2`) | `S3.2` fire e2e-verify + у ТІЙ САМІЙ сесії — розвідка `INS.1` drought_index/soil-moisture endpoint-доступності (той самий API-ключ; не merge, операційна синергія) |
 
 ## §00 · Process / IaC / SSOT-tooling

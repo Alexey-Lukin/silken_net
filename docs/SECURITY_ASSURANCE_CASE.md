@@ -131,8 +131,10 @@ the guard that enforces it.
 *Crosses:* growth_points, recipient, amount.
 *Trust shift:* backend-verified data → irreversible token issuance.
 *Guards* (`app/services/blockchain_minting_service.rb`):
-- **All-must-hold guard clauses** — mint refuses unless `verified_by_iotex?` **and**
-  `oracle_status_fulfilled?` **and** `hadron_kyc_status == "approved"`; a compromised peaq DID is skipped.
+- **Guard clauses** — Path 1 (telemetry-driven) refuses unless `verified_by_iotex?` **and**
+  `oracle_status_fulfilled?`; the KYC gate applies to **ALL paths**: `Wallet#kyc_approved_for_minting?`
+  (beneficiary of the destination address — own status, or the custodial organization's; KYC.1) —
+  non-approved wallets are per-tx SKIPPED (stay `:pending`); a compromised peaq DID is skipped.
 - **Signer separation** — minting uses a different secp256k1 key from slashing (E.2); a leaked minter key
   does not enable slashing.
 - **Double-spend guard** — `BlockchainTransaction` AASM `manual_review` state freezes funds when a tx state

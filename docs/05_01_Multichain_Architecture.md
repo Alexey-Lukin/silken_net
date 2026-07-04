@@ -270,16 +270,16 @@ type SlashingEvent @entity { ... }
 
 | Контракт | Файл | Роль |
 |----------|------|------|
-| `SilkenGovernor` | `contracts/SilkenGovernor.sol` | OZ Governor + GovernorVotes + GovernorTimelockControl + GovernorCountingSimple + GovernorVotesQuorumFraction (4%). votingDelay=43200 blocks (~1 day), votingPeriod=302400 blocks (~7 days), proposalThreshold=100 SFC |
+| `SilkenGovernor` | `contracts/SilkenGovernor.sol` | OZ Governor + GovernorVotes + GovernorTimelockControl + GovernorCountingSimple + GovernorVotesQuorumFraction (4%). votingDelay=43200 blocks (~1 day), votingPeriod=302400 blocks (~7 days), proposalThreshold=10 000 SFC (0.01% MAX_SUPPLY, anti-spam — CONTRACT.1) |
 | `SilkenTimelock` | `contracts/SilkenTimelock.sol` | TimelockController з 48h мінімальною затримкою. Proposer: Governor, Executor: address(0) (permissionless після delay) |
 | `ProtocolParameters` | `contracts/ProtocolParameters.sol` | On-chain registry з GOVERNANCE_ROLE. Well-known keys: 8 Lorenz (σ/ρ/β/dt/iterations/z_min/z_max/z_target — **DCI-locked**, backend свідомо не синхронізує; FW.7) + 9 економічних (emission_threshold, dynamic_tax_rate, insurance_pool_threshold, scc_per_tonne_co2, scc_fallback_price_usd, slash_threshold, stress_threshold, slash_gamma, slash_penalty_factor_max — GOV.1 read-path у [`05_06 §7`](05_06_Governance_and_DAO)). Fixed-point 18 decimals |
 
 **Flash Loan Defense:** snapshot voting (`getPastVotes`), 1-day voting delay, 4% quorum, 48h timelock.
 
 **Guard Clauses (BlockchainMintingService):**
-1. `verified_by_iotex? == true` — ZK-proof з IoTeX
-2. `oracle_status_fulfilled?` (enum method, prefix) — Chainlink Oracle підтвердив
-3. `hadron_kyc_status == "approved"` — KYC пройдено (для інституційних інвесторів)
+1. `verified_by_iotex? == true` — ZK-proof з IoTeX (**лише Path 1**, oracle-driven з `telemetry_log`)
+2. `oracle_status_fulfilled?` (enum method, prefix) — Chainlink Oracle підтвердив (**лише Path 1**)
+3. `wallet.kyc_approved_for_minting?` [KYC.1] — KYC бенефіціара адреси (власна → власний статус; custodial → успадковує org), **усі шляхи**; non-approved → per-tx SKIP
 4. Oracle balance ≥ `0.05 MATIC` (default; `oracle_min_balance_matic` — governance-aware [E.51]) — достатньо газу
 5. Kredis distributed lock (**120s** expiration — покриває dry-run + binary-search worst-case ~130s, [S6.5]) — запобігає подвійному мінтингу
 
@@ -494,7 +494,7 @@ SCC мінтинг ініціюється двома незалежними шл
 ```
 OracleCallbacksController → oracle_status = "fulfilled"
   → MintCarbonCoinWorker → BlockchainMintingService
-  → Guard: verified_by_iotex? + oracle_status_fulfilled? + hadron_kyc_status
+  → Guard: verified_by_iotex? + oracle_status_fulfilled? + wallet.kyc_approved_for_minting?
   → Polygon: mint(to_address, amount, tree_did)
   → BlockchainConfirmationWorker (+30s) → confirm!(tx_hash)
 ```
@@ -505,7 +505,7 @@ OracleCallbacksController → oracle_status = "fulfilled"
 TokenomicsEvaluatorWorker (щогодини, cron: 0 * * * *)
   → EvaluateTreeBatchWorker → Wallet.balance >= 10,000? → lock_and_mint!
   → BlockchainMintingService.call(batch, telemetry_log: nil)
-  → Guard: hadron_kyc_status (тільки)
+  → Guard: wallet.kyc_approved_for_minting? (тільки; бенефіціар — KYC.1)
          (verified_by_iotex? + oracle_status свідомо пропускаються —
           per-packet integrity вже забезпечена AES-CBC decrypt + valid_sensor_data?)
   → Polygon: mint(to_address, amount, tree_did)
