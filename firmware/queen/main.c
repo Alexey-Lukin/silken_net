@@ -752,6 +752,9 @@ static void Broadcast_Time_Beacon(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+// [FW.46 Шлях A] Прототип radio-колбека для events-реєстрації в main():
+// тіло внизу файла (ISR-зона), Semtech-драйвер кличе через таблицю.
+void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr);
 /* USER CODE END 0 */
 
 /**
@@ -784,8 +787,13 @@ int main(void)
   // [PLAN 2.4] Must be done before any CoAP communication that uses queen_uid
   Read_Queen_UID_From_Flash();
 
-  // 1. Ініціалізація низькорівневого радіо
-  Radio.Init(NULL);
+  // 1. Ініціалізація низькорівневого радіо.
+  // [FW.46 Шлях A] Events-таблиця (static — Semtech-драйвер тримає вказівник):
+  // Королева ЖИВЕ з OnRxDone — з NULL реальний драйвер не стрельнув би жодного
+  // кадру, і весь RX-конвеєр (CIFO → CoAP) лишився б глухим. Решта полів NULL.
+  static RadioEvents_t radio_events;
+  radio_events.RxDone = OnRxDone;
+  Radio.Init(&radio_events);
   Radio.SetChannel(868000000); // 868 МГц (Європа / Україна)
 
   // 2. Ініціалізація Кешу нулями

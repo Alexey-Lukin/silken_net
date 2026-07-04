@@ -1656,6 +1656,11 @@ void Write_OTA_Contract_To_Flash(const uint8_t *data, uint16_t size)
     Flash_Write_Contract(&g_ota_flash_ops, (void *)0, data, size);
 }
 
+// [FW.46 Шлях A] Прототипи radio-колбеків для events-реєстрації в main():
+// тіла живуть унизу файла (ISR-зона), Semtech-драйвер кличе їх через таблицю.
+void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr);
+void OnCadDone(bool channelActivityDetected);
+
 /* USER CODE END 0 */
 
 /**
@@ -1879,8 +1884,16 @@ int main(void)
   // 3. Калібрування АЦП (Встановлюємо абсолютний фізичний нуль)
   HAL_ADCEx_Calibration_Start(&hadc);
 
-  // 4. Ініціалізація низькорівневого радіодрайвера
-  Radio.Init(NULL); // Передаємо NULL, бо ми не використовуємо складні колбеки
+  // 4. Ініціалізація низькорівневого радіодрайвера.
+  // [FW.46 Шлях A] Events-таблиця (static — Semtech-драйвер тримає вказівник
+  // довше за цей скоуп): реальний драйвер кличе колбеки ЧЕРЕЗ неї — з NULL
+  // вухо OnRxDone (беакон/OTA/downlink) і вердикт OnCadDone (ARCH.26 CAD-нюх)
+  // не стрельнули б ніколи. Поля, яких Солдат не слухає, — NULL (драйвер
+  // перевіряє перед викликом).
+  static RadioEvents_t radio_events;
+  radio_events.RxDone  = OnRxDone;
+  radio_events.CadDone = OnCadDone;
+  Radio.Init(&radio_events);
   Radio.SetChannel(868000000); // Налаштовуємо на 868 МГц
 
   // 5. Вибір контракту: Перевіряємо, чи є в Flash-пам'яті оновлений код

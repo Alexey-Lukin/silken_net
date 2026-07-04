@@ -6,12 +6,12 @@
  * (та сама ABI-фіксація, що тримає OnRxDone non-const — див. коментарі
  * у main.c обох прошивок).
  *
- * ⚠️ Латентний баг для HAL-фази (зафіксовано в 00_07 FW.46): обидва main.c
- * кличуть Radio.Init(NULL), але Queen ЖИВЕ з OnRxDone — реальний Semtech
- * driver кличе колбеки ЧЕРЕЗ events-таблицю, з NULL OnRxDone не стрельне
- * ніколи. Реєстрацію RadioEvents_t треба додати при інтеграції middleware.
- * [ARCH.26 L3] CadDone ділить ту саму долю: OnCadDone Солдата інертний до
- * реєстрації events-таблиці.
+ * [FW.46 Шлях A] Латентний Radio.Init(NULL)-баг ЗАКРИТО: обидва main.c
+ * реєструють static RadioEvents_t (Queen: RxDone; Soldier: RxDone + CadDone
+ * ARCH.26) — реальний Semtech-драйвер кличе колбеки через цю таблицю.
+ * Лишилось: замінити цей стаб реальним radio.h із submodule
+ * stm32-mw-subghz-phy @v1.5.0 (extern/subghz-phy) + include-path у
+ * hal_check-lane — 00_07 FW.46.
  */
 #ifndef SILKEN_RADIO_H
 #define SILKEN_RADIO_H
