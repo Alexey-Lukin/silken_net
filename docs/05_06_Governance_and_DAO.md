@@ -22,11 +22,11 @@
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | SFC `ERC20Votes`/`ERC20Permit` база; SCC/SFC контракти |
 | [`05_04` — Ethereum L1 State Anchor](05_04_Ethereum_L1_State_Anchor) | Timelock керує `ANCHOR_ROLE`-ротацією (admin=Timelock) |
 | [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) | Slashing DAO peer-review (категорія C) користується цим governance |
-| [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz σ/ρ/β — governance-керовані параметри (per-climate-zone) |
+| [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz σ/ρ/β — DCI-locked константи (FW.7); on-chain ключі = резерв OTA-ери, НЕ живий важіль (§7) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `SystemParameter` model, `Governance::ParameterSyncWorker` |
 | [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | TRL-матриця + beyond-TRL-9 контекст для §5 (Auto-Immune Sentinel R&D) |
 | [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) | DAO Agreement (тип контракту §1.3) |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкрите** (SSOT): mainnet DAO activation → `SEC.1` (поглинув BIZ.4); governance read-path → `GOV.1` |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкрите** (SSOT): mainnet DAO activation → `SEC.1` (поглинув BIZ.4); read-path ✅ GOV.1 (§🗄️) |
 
 ## 📑 Зміст
 
@@ -37,7 +37,7 @@
 - [4. ⚠️ Flash Loan Attack Vector (Критичний)](#4--flash-loan-attack-vector-критичний)
 - [5. Beyond TRL 9: Auto-Immune Sentinel — Проактивний Захист від AI-Driven Economic Attack](#5-beyond-trl-9-auto-immune-sentinel--проактивний-захист-від-ai-driven-economic-attack)
 - [6. Bonding Curves — Динамічне Ціноутворення (Перспектива TRL 9+)](#6-bonding-curves--динамічне-ціноутворення-перспектива-trl-9)
-- [7. Governance-Aware Backend (⚠️ sync-pipeline готовий · read-path частковий)](#7-governance-aware-backend--sync-pipeline-готовий--read-path-частковий)
+- [7. Governance-Aware Backend (✅ read-path + bounds; Lorenz = DCI-locked)](#7-governance-aware-backend--read-path--bounds-lorenz--dci-locked)
 <!-- TOC:AUTO:END -->
 
 ---
