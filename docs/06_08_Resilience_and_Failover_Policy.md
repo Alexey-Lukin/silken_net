@@ -37,6 +37,7 @@
 - [1. ☂️ Queen Gateway Failover Protocol](#1--queen-gateway-failover-protocol)
 - [2. 🪜 Web3 Chain Fallback Matrix (Anti-Lego Tower)](#2--web3-chain-fallback-matrix-anti-lego-tower)
 - [3. 🧰 Реалізаційні Якорі (Implementation Anchors)](#3--реалізаційні-якорі-implementation-anchors)
+- [4. 📖 Web3 Incident & Contract-Ops Runbooks](#4--web3-incident--contract-ops-runbooks)
 <!-- TOC:AUTO:END -->
 
 ---
@@ -187,6 +188,74 @@ end
 | Helium fallback emit (Queen-side LoRaWAN) | Queen firmware `queen_helium_lorawan_uplink()` | 🟡 ARCH.34 firmware-half (backend ✅); Soldier-side відкинуто — Soldier не несе LoRaWAN MAC stack |
 | Ingress Proxy (Rust/Go CoAP buffer, Series D) | ARCH.2 / E.5 | 🟡 far-horizon |
 | Conductor L2 cluster heads (formerly "Sergeant") | [`00_08 §2.1`](00_08_Beyond_TRL9_Planetary_Roadmap) | 🟡 Concept (HW.27, TRL 1) |
+
+---
+
+## 4. 📖 Web3 Incident & Contract-Ops Runbooks
+
+> [CONTRACT.1(5)] + [MRV.1(4)]: web3-специфічні інциденти й one-shot contract-операції — незворотні або фінансово-критичні, тому крок-за-кроком ТУТ, а не в голові оператора. Загальний DR (БД/інфра) — [`06_05`](06_05_Disaster_Recovery); секрет-компрометація peaq — [`06_04 §5.4`](06_04_Secrets_Checklist). Резолюція `manual_review` — свідомо **console-рецепт, не admin-UI** (founder-рішення 2026-07-04: один оператор, UI до першої реальної ops-потреби не будуємо; compliance вимагає ПРОЦЕС).
+
+### 4.1 Chain reorg (Polygon): `:confirmed` tx зник з ланцюга
+
+**Симптом:** `sn-alert-chain-audit-drift` (`silkennet_chain_audit_delta > 0`) АБО `eth_getTransactionReceipt(tx_hash) → null` для tx зі статусом `:confirmed`.
+
+1. НЕ ре-мінтити вручну. Зафіксувати scope: `BlockchainTransaction.confirmed.where(confirmed_at: reorg_window)` + звірити кожен `tx_hash` через RPC.
+2. Receipt відсутній ПІСЛЯ finality-вікна (~256 блоків Polygon) → `tx.escalate_to_review!` (кошти назад у `locked_balance`-охорону, двозначність = manual_review за дизайном).
+3. Receipt з'явився в іншому блоці → false alarm (RPC-лаг), нічого не робити.
+4. Масовий reorg (>10 tx) → `pause()` з Safe на час розбору; slash навмисно працює під паузою (B-07).
+5. Постмортем: тижневий L1-anchor ([`05_04`](05_04_Ethereum_L1_State_Anchor)) = зовнішня точка звірки, якщо reorg глибший за локальні дані.
+
+### 4.2 Підозра double-mint / rogue MINTER
+
+**Симптом:** `chain_audit_delta > 0` стабільно 30+ хв (alert) АБО subgraph `CarbonMinted`-події без відповідного `BlockchainTransaction`-інтенту.
+
+1. `Treasury::MonitorService`-зріз: `ChainAuditService.call` → який знак delta (on-chain > DB = зайвий мінт; DB > on-chain = недолік/rollback-дірка).
+2. Атрибуція: subgraph-запит подій за вікно → зіставити `contextHash` ([CONTRACT.1] = `bytes32(intent tx id)`; порожній contextHash у `TokenSlashed` = manual-slash, у mint-подій інтент шукати по `to`+`amount`+блок-вікну).
+3. Подія БЕЗ інтенту = ознака compromised MINTER-ключа → негайно §4.3.
+4. Зайвий мінт підтверджено → clawback-трек: `slashUpTo` на суму over-mint (SLASHER-ключ незалежний) + інцидент у `AuditLog`.
+
+### 4.3 Компрометація money-ключа (MINTER / SLASHER EOA)
+
+> Ролі фізично розділені (E.2): компрометація одного ключа НЕ дає другого. `pause()` = Safe (миттєво); `revokeRole` = Timelock (48h) — **slash оминає паузу (B-07), тож для SLASHER-компрометації 48h-revoke = єдиний повний стоп**; для MINTER — пауза зупиняє мінт одразу.
+
+1. `pause()` з Gnosis Safe (зупиняє mint/transfer; slash лишається живим — це свідомо).
+2. Одночасно: Timelock-proposal `revokeRole(<COMPROMISED_ROLE>, <oldOracle>)` + `grantRole(<ROLE>, <newOracle>)` — годинник 48h пішов.
+3. Ротація бекенда: новий ключ у `ORACLE_MINTER_PRIVATE_KEY` / `ORACLE_SLASHER_PRIVATE_KEY` (GitHub Secrets → redeploy; [`06_04 §5`](06_04_Secrets_Checklist)); до set-часу воркери молотять у revert → черга `web3_critical` тримає (retry+DeadSet, [`04_02`](04_02_Business_Logic_and_Services)).
+4. SLASHER-кейс: 48h-вікно — моніторити `TokenSlashed`/`GovernanceSlashed` (масовий slash = атака; `sn-alert`-метрики `SCC_SLASHED_TOTAL`); постраждалі суми = clawback/re-mint ПІСЛЯ revoke.
+5. `unpause()` лише після: revoke виконано + нові ключі верифіковані smoke-мінтом на 1 wei-екв.
+
+### 4.4 `manual_review`-резолюція (console-рецепт — двозначні money-tx)
+
+> `manual_review` = double-spend guard (tx_hash є, on-chain доля невідома; age-unbounded — блокує re-fire назавжди, [`04_02 §4`](04_02_Business_Logic_and_Services)). НЕ авто-резолвити. Кожна резолюція — з on-chain доказом.
+
+```ruby
+tx = BlockchainTransaction.manual_review.find(<id>)
+receipt = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
+            .eth_get_transaction_receipt(tx.tx_hash)   # Solana → getSignatureStatuses
+
+# (а) Receipt SUCCESS → гроші пішли: фіналізуй як confirmed
+tx.confirm!   # AASM-хук звільнить locked_points дискримінатором
+
+# (б) Receipt REVERTED → безпечно провалити: fail! поверне locked_balance (M2-хук)
+tx.fail!
+
+# (в) Receipt null ПІСЛЯ finality-вікна → tx не існує on-chain: fail! + за потреби
+#     re-enqueue штатним шляхом (MintBatchCollector підбере :pending)
+```
+
+Після резолюції: запис в `AuditLog` (`action: "manual_review_resolved"`, metadata: tx_hash + рішення + receipt-статус) — tamper-evident слід для MRV-аудитора ([MRV.1]).
+
+### 4.5 Contract-ops one-shot (незворотні операції)
+
+**Deploy-smoke (Amoy → Mainnet, до трансферу ролей):**
+1. `forge script script/Deploy.s.sol --rpc-url $AMOY` → зафіксувати адреси.
+2. Роль-матриця: `Deploy.t.sol`-пін виконується і на живому деплої — прогнати `test_*_adminIsTimelock_notSafe`-еквіваленти читанням `hasRole` по кожному контракту.
+3. Smoke: mint 1 SCC → transfer → `pause()` → переконатись mint revert → `slashUpTo(1, ctx)` під паузою ✅ → `unpause()`.
+4. ЛИШЕ після зеленого smoke: transfer admin → Timelock ([`00_07` SEC.1](00_07_Action_Plan_Tracker)) — незворотний крок.
+
+**Migration (контракти immutable):** «міграція» = новий деплой + supply-cutover: `pause()` старого → snapshot балансів (subgraph/`ChainAuditService`) → batchMint у новому за snapshot → анонс + оновлення адрес у ENV/subgraph (S3.5-процедура). Старий контракт лишається paused назавжди (історичний ланцюг доказів для MRV).
+
+**Pause/unpause:** тільки Gnosis Safe (PAUSER_ROLE, миттєво, поза Timelock); причина + timestamp → `AuditLog`; slash працює під паузою (B-07) — це фіча, не баг.
 
 ---
 
