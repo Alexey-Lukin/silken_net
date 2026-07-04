@@ -151,14 +151,22 @@ contract DeploySilkenNet is Script {
     }
 
     /// @dev [SEC.1] Governor = PROPOSER+CANCELLER (DAO path). Safe = PROPOSER (bootstrap: can
-    ///      schedule token grantRole(MINTER) with the 48h delay pre-DAO) + timelock admin.
-    ///      Deployer renounces the timelock admin → ends with no power.
+    ///      schedule token grantRole(MINTER) with the 48h delay pre-DAO) + CANCELLER (guardian)
+    ///      + timelock admin. Deployer renounces the timelock admin → ends with no power.
+    /// @dev [CONTRACT.1] Safe holds CANCELLER_ROLE so the 48h timelock window is an ACTIONABLE
+    ///      veto: a guardian can cancel a queued (malicious-but-passed OR compromised) operation
+    ///      in one tx. Without it, only Governor could cancel — which needs a fresh DAO cycle
+    ///      (votingDelay+period+timelock ≫ 48h), so the "48h gives time to organise a veto"
+    ///      NatSpec was hollow. Safe is already Timelock admin, so this grants no new ultimate
+    ///      power (it could self-grant CANCELLER anyway) — it just makes the guardian path a
+    ///      documented 1-tx action instead of an undocumented 2-tx one.
     function _wireTimelock(SilkenTimelock timelock, address governor, address safe, address deployer) internal {
         timelock.grantRole(timelock.PROPOSER_ROLE(), governor);
         timelock.grantRole(timelock.CANCELLER_ROLE(), governor);
         timelock.grantRole(timelock.PROPOSER_ROLE(), safe);
+        timelock.grantRole(timelock.CANCELLER_ROLE(), safe);
         timelock.grantRole(timelock.DEFAULT_ADMIN_ROLE(), safe);
         timelock.renounceRole(timelock.DEFAULT_ADMIN_ROLE(), deployer);
-        console.log("Timelock wired: Governor PROPOSER+CANCELLER, Safe PROPOSER(bootstrap)+admin; deployer renounced");
+        console.log("Timelock wired: Governor PROPOSER+CANCELLER, Safe PROPOSER(bootstrap)+CANCELLER(guardian)+admin; deployer renounced");
     }
 }

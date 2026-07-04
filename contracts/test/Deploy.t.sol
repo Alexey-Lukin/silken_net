@@ -87,6 +87,28 @@ contract DeployWiringTest is Test {
         assertTrue(d.timelock.hasRole(d.timelock.PROPOSER_ROLE(), address(d.governor)), "Governor PROPOSER");
         assertTrue(d.timelock.hasRole(d.timelock.CANCELLER_ROLE(), address(d.governor)), "Governor CANCELLER");
         assertTrue(d.timelock.hasRole(d.timelock.PROPOSER_ROLE(), safe), "Safe bootstrap PROPOSER");
+        // [CONTRACT.1] Safe = guardian CANCELLER → the 48h veto window is actionable in 1 tx.
+        assertTrue(d.timelock.hasRole(d.timelock.CANCELLER_ROLE(), safe), "Safe guardian CANCELLER");
+    }
+
+    // [CONTRACT.1] Guardian veto: Safe can cancel a queued Timelock operation within the 48h delay
+    // (a malicious-but-passed proposal OR a compromised proposer) — the property that makes the
+    // "48h gives time to organise a veto" NatSpec real.
+    function test_safeGuardianCanCancelQueuedOperation() public {
+        // Queue a no-op operation via the Safe (bootstrap PROPOSER).
+        bytes memory data = "";
+        bytes32 salt = keccak256("guardian-veto-test");
+        uint256 delay = d.timelock.getMinDelay();
+        vm.prank(safe);
+        d.timelock.schedule(address(0xdead), 0, data, bytes32(0), salt, delay);
+
+        bytes32 id = d.timelock.hashOperation(address(0xdead), 0, data, bytes32(0), salt);
+        assertTrue(d.timelock.isOperationPending(id), "queued");
+
+        // Guardian (Safe) cancels within the window — before the delay elapses.
+        vm.prank(safe);
+        d.timelock.cancel(id);
+        assertFalse(d.timelock.isOperation(id), "cancelled by guardian");
     }
 
     // ─── The bypass that #1 closes (would FAIL under the old admin=Safe) ──
