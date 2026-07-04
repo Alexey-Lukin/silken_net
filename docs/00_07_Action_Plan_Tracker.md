@@ -868,7 +868,7 @@
 
 #### INF.6 — CoAP UDP smoke test через Ingress Anchor (post-deploy gate)
 - **P1** · 👤 · 🟢 · → `06_01`, `06_02`, `06_08 §1.2`
-- **Стан:** UDP-smoke gate проти silent CoAP-failure (Queen→Ingress Anchor→Akash) — workflow `coap_smoke.yml` (`workflow_dispatch`+`workflow_call`); зонди = freeze-contract `bin/coap_smoke`/`lib/coap_smoke.rb` (точні байти, регресія фантомної доставки FW.56); виклик = post-deploy gate у `deploy.yml`+`deploy-production.yml` (job `coap-smoke`, `needs: deploy`); поки repo Variable host не задана — job skipped (не silent).
+- **Стан:** UDP-smoke gate проти silent CoAP-failure (Queen→Ingress Anchor: PRIMARY-демон на анкорі / fallback socat→Akash) — workflow `coap_smoke.yml` (`workflow_dispatch`+`workflow_call`+**`schedule` кожні 30хв** — безперервний liveness анкора-SPOF, S2.4 2026-07-04); зонди = freeze-contract `bin/coap_smoke`/`lib/coap_smoke.rb` (точні байти, регресія фантомної доставки FW.56); виклик = post-deploy gate у `deploy.yml`+`deploy-production.yml` (job `coap-smoke`, `needs: deploy`); поки repo Variable host не задана — job skipped (не silent, notice-крок).
 - [ ] 👤 задати repo Variables `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST` коли Ingress Anchor існує → gate активний
 - [ ] 👤 перший boundary smoke з Queen/`bin/forest_simulator`
 
@@ -934,13 +934,14 @@
 #### S1.5 — Kamal IP placeholders
 - **P2** · 👤 · ⚪ · → `06_01`
 - **Стан:** Не розпочато — `192.168.0.1` (`config/deploy.yml`) / `<INGRESS_ANCHOR_IP>` (`config/deploy.canopy.yml`) плейсхолдери; підставити реальну Ingress Anchor IP після `terraform apply` (canopy = той самий IP, диференціюється Akash SDL env). ⚠️ той самий клас: Ingress Anchor metadata `akash-deployment-ip="AKASH_IP_NOT_SET"` → HAProxy 80/443 black-hole поки руками не оновиш + reset (з INF.17 anchor-primary metadata живить лише HTTP/S + socat-**fallback**; primary CoAP-демон від неї НЕ залежить — обидва стартап-гейти тепер sentinel-guarded, гучний logger замість тихого нестарту); нема автоматичного glue `terraform output -raw ingress_ip` → config/CI, крок лише в code-коментарі. Канон `06_01`.
-- [ ] 👤 підставити реальні IP після `terraform apply` → верифікувати deploy
-- [ ] 👤 оновити Ingress Anchor `akash-deployment-ip` metadata після Akash deploy (`compute.tf:189`) + внести обидва кроки в pre-flight чеклист `06_01`
+- [ ] 👤 підставити реальні IP після `terraform apply` → верифікувати deploy (крок = Pre-Flight #9 `06_01` ✅ внесено 2026-07-04)
+- [ ] 👤 оновити Ingress Anchor `akash-deployment-ip` metadata після Akash deploy (крок = Pre-Flight #10 `06_01` ✅ внесено; живить HTTP/S + socat-fallback, PRIMARY-демон не залежить)
 
 #### S2.4 — Observability industrial-grade hardening
 - **P2** · 👤 · 🟢 · → [`06_03 §2.9`](06_03_Prometheus_Observability)
-- **Стан:** industrial-grade hardening канонізовано — `external_labels` (env/service/source/release attribution) + `queue_config`+explicit WAL (backpressure) + cardinality-budget relabel + process/runtime gauges (`sample_process_runtime!`/`sample_connection_pool!`, RSpec-covered; bonus-fix: pool-gauges раніше були stale) + CI-валідація (`alloy_config_validate`). Конкретні значення — `config.alloy` SSOT (не дублюються). Канон [`06_03 §2.9`](06_03_Prometheus_Observability).
-- [ ] 👤 `up`-scrape alert + SLO/error-budget (§2.9 #6 — ingest availability, mint/slash success) — Grafana Cloud
+- **Стан:** industrial-grade hardening канонізовано — `external_labels` (env/service/source/release attribution) + `queue_config`+explicit WAL (backpressure) + cardinality-budget relabel + process/runtime gauges (`sample_process_runtime!`/`sample_connection_pool!`, RSpec-covered; bonus-fix: pool-gauges раніше були stale) + CI-валідація (`alloy_config_validate`). **IaC-half §2.9 #5/#6 ✅ 2026-07-04:** `sn-alert-scrape-target-down` (per-process `min by (process) (up)` — 3 таргети, NoData→Alerting = сам Alloy впав) + `sn-alert-mint-slo-breach` (<0.8/1h, канон-ціль `06_08 §2.4`; PromQL-guard `and attempts>0` — тихий ліс ≠ breach) + dashboards `silkennet-overview.json` пройдено під 3-таргетну топологію (histogram_quantile → `sum by (le)`, голі counters → `sum(rate)`, ratio → `sum/sum`) + `sn-alert-gateway-faulty` перенесено p2-info→p0-critical (жив у неправильній групі) + smoke-schedule (`coap_smoke.yml` кожні 30хв — безперервний UDP-liveness анкора, skip-clean без Variables). Конкретні значення — `config.alloy`/`silkennet-alerts.yaml` SSOT. Канон [`06_03 §2.9`](06_03_Prometheus_Observability).
+- [ ] 👤 імпорт у Grafana Cloud (`deploy/grafana/import.rb` — та сама сесія, що S2.2/S2.3) → верифікувати up-alert бачить 3 process-таргети
+- [ ] 👤 SLO-пороги slash/payout/insurance — калібрувати з перших live-вікон (канон цілі поки має лише mint ≥80%; не вигадуємо)
 
 #### INF.3 — TLS termination
 - **P2** · 👤 · 🟢 · → `06_02 §TLS термінація`

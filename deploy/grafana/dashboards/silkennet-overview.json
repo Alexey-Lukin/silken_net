@@ -58,19 +58,19 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "rate(silkennet_telemetry_processed_total[1m])",
+          "expr": "sum(rate(silkennet_telemetry_processed_total[1m]))",
           "legendFormat": "Processed",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "rate(silkennet_telemetry_fraud_detected_total[1m])",
+          "expr": "sum(rate(silkennet_telemetry_fraud_detected_total[1m]))",
           "legendFormat": "Fraud detected",
           "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "rate(silkennet_coap_packets_received_total[1m])",
+          "expr": "sum by (status) (rate(silkennet_coap_packets_received_total[1m]))",
           "legendFormat": "CoAP received ({{status}})",
           "refId": "C"
         }
@@ -96,7 +96,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "increase(silkennet_panic_replay_rejected_total[5m])",
+          "expr": "sum(increase(silkennet_panic_replay_rejected_total[5m]))",
           "legendFormat": "Panic replay (5m)",
           "refId": "A"
         }
@@ -121,7 +121,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "increase(silkennet_telemetry_acoustic_overflow_total[5m])",
+          "expr": "sum(increase(silkennet_telemetry_acoustic_overflow_total[5m]))",
           "legendFormat": "Overflow (5m)",
           "refId": "A"
         }
@@ -180,7 +180,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "increase(silkennet_tinyml_threshold_invalid_reports_total[15m])",
+          "expr": "sum(increase(silkennet_tinyml_threshold_invalid_reports_total[15m]))",
           "legendFormat": "Invalid thresholds (15m)",
           "refId": "A"
         }
@@ -281,7 +281,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "rate(silkennet_rpc_errors_total[5m])",
+          "expr": "sum by (network, error_type) (rate(silkennet_rpc_errors_total[5m]))",
           "legendFormat": "{{network}} / {{error_type}}",
           "refId": "A"
         }
@@ -332,13 +332,13 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "rate(silkennet_scc_minted_total[5m])",
+          "expr": "sum by (token_type) (rate(silkennet_scc_minted_total[5m]))",
           "legendFormat": "Minted ({{token_type}})",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "rate(silkennet_scc_slashed_total[5m])",
+          "expr": "sum(rate(silkennet_scc_slashed_total[5m]))",
           "legendFormat": "Slashed",
           "refId": "B"
         }
@@ -359,19 +359,19 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.50, rate(silkennet_oracle_dispatch_duration_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(silkennet_oracle_dispatch_duration_seconds_bucket[5m])))",
           "legendFormat": "p50",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.95, rate(silkennet_oracle_dispatch_duration_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(silkennet_oracle_dispatch_duration_seconds_bucket[5m])))",
           "legendFormat": "p95",
           "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.99, rate(silkennet_oracle_dispatch_duration_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(silkennet_oracle_dispatch_duration_seconds_bucket[5m])))",
           "legendFormat": "p99",
           "refId": "C"
         }
@@ -550,13 +550,13 @@
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "silkennet_slash_success_total / silkennet_slash_attempts_total",
+          "expr": "sum(silkennet_slash_success_total) / sum(silkennet_slash_attempts_total)",
           "legendFormat": "Slash",
           "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "silkennet_solana_payout_success_total / silkennet_solana_payout_attempts_total",
+          "expr": "sum(silkennet_solana_payout_success_total) / sum(silkennet_solana_payout_attempts_total)",
           "legendFormat": "Solana payout",
           "refId": "C"
         }

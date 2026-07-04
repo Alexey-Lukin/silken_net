@@ -1,8 +1,9 @@
 name: Smoke · CoAP UDP
 
 # [INF.6/FW.56] Post-deploy smoke that exercises the end-to-end CoAP UDP
-# path: Queen-equivalent client → Ingress Anchor (HAProxy/socat or
-# Akash UDP expose) → CoAP daemon (`lib/daemons/coap_listener`).
+# path: Queen-equivalent client → Ingress Anchor → CoAP daemon
+# (`lib/daemons/coap_listener` — PRIMARY runs on the Anchor itself, INF.17;
+# fallback = socat relay → Akash coap service).
 #
 # Without this probe a silent UDP failure (closed firewall, missing
 # socat fork, daemon not running, SDL `5683/udp` not exposed) is not
@@ -24,12 +25,19 @@ name: Smoke · CoAP UDP
 #                       PRODUCTION_COAP_HOST; while unset the gate is visibly
 #                       skipped (Ingress Anchor not yet deployed). Fails the
 #                       parent workflow if the CoAP path is broken.
+#   - `schedule` — continuous UDP-liveness probe of the Anchor (S2.4/INF.6):
+#                  the Anchor is the telemetry SPOF and otherwise blind
+#                  between deploys (primary daemon sits outside Alloy scrape —
+#                  06_03 §2.9(б)). Host resolves PRODUCTION_COAP_HOST →
+#                  CANOPY_COAP_HOST; skips cleanly while both are unset.
 #
 # This workflow is intentionally NOT triggered on `push` / `pull_request`
 # — it would never be able to reach a real Ingress Anchor from a CI
 # runner unless one already exists.
 
 on:
+  schedule:
+    - cron: "17,47 * * * *" # every 30 min, offset from round hours (GH load spikes)
   workflow_dispatch:
     inputs:
       host:
@@ -96,12 +104,18 @@ jobs:
 
       - name: Freeze-contract probes
         env:
-          COAP_HOST: ${{ inputs.host }}
-          COAP_PORT: ${{ inputs.port }}
-          COAP_TIMEOUT: ${{ inputs.timeout_seconds }}
-          COAP_RETRIES: ${{ inputs.retries }}
+          # dispatch/call pass inputs; schedule falls back to repo Variables
+          # (production first, canopy while production does not exist yet).
+          COAP_HOST: ${{ inputs.host || vars.PRODUCTION_COAP_HOST || vars.CANOPY_COAP_HOST }}
+          COAP_PORT: ${{ inputs.port || '5683' }}
+          COAP_TIMEOUT: ${{ inputs.timeout_seconds || '10' }}
+          COAP_RETRIES: ${{ inputs.retries || '3' }}
         run: |
           set -euo pipefail
+          if [ -z "${COAP_HOST}" ]; then
+            echo "::notice::CoAP liveness probe SKIPPED — neither PRODUCTION_COAP_HOST nor CANOPY_COAP_HOST repo Variable is set (Ingress Anchor not deployed yet). Not silent: this notice is the skip."
+            exit 0
+          fi
           echo "::group::CoAP smoke target"
           echo "Host: ${COAP_HOST}:${COAP_PORT} (timeout ${COAP_TIMEOUT}s × ${COAP_RETRIES} retries/probe)"
           echo "::endgroup::"
@@ -111,10 +125,9 @@ jobs:
             echo "::error::CoAP freeze-contract smoke FAILED (see probe verdicts above)"
             echo "::error::Troubleshooting checklist (06_01 Pre-Flight #6):"
             echo "::error::  (a) GCP firewall: allow UDP 5683 from 0.0.0.0/0"
-            echo "::error::  (b) Ingress Anchor: socat UDP-LISTEN:5683,fork UDP:<akash-pod-ip>:5683"
-            echo "::error::  (c) Akash SDL: expose 5683 as protocol: udp"
-            echo "::error::  (d) lib/daemons/coap_listener running in Sidekiq/job container"
-            echo "::error::  (e) wire-граматика: bin/coap_smoke verdicts vs spec/lib/coap_server_pdu_spec.rb"
+            echo "::error::  (b) Anchor PRIMARY: systemctl status coap-daemon + docker logs silkennet-coap (/etc/silkennet/coap.env filled?)"
+            echo "::error::  (c) fallback path only: coap-relay (socat) up + Akash SDL coap service exposes 5683/udp"
+            echo "::error::  (d) wire-граматика: bin/coap_smoke verdicts vs spec/lib/coap_server_pdu_spec.rb"
             exit 1
           fi
 
