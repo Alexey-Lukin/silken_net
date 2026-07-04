@@ -245,12 +245,29 @@ class BlockchainMintingService < ApplicationService
       end
 
     rescue StandardError => e
+      # [P0-1/M6] Стан-обізнаний rescue: голий `fail!` + M2-release на ambiguous broadcast =
+      # DOUBLE-MINT (batchMint/mint МІГ приземлитись, а fail! звільняє locked_points → наступний
+      # tokenomics-цикл re-lock+re-mint). Розрізняємо (дзеркало send_clean_batch M6 + burn ARCH.48):
+      #   :sent-tx (finalize-крах ПІСЛЯ mark_as_sent) → broadcast стався → escalate, НЕ fail!;
+      #   Kredis::LockTimeout / pre-broadcast transact-error (revert/nonce/known/underpriced/
+      #     insufficient) → tx НЕ полетіла → безпечний fail! (retry/tokenomics re-mint);
+      #   ambiguous transact (timeout/connection ПІСЛЯ можливого broadcast) → escalate manual_review.
+      lock_timeout = e.is_a?(Kredis::LockTimeout)
+      safe_fail = lock_timeout || transact_error_pre_broadcast?(e)
       txs.each do |tx|
-        tx.fail!(e.message.truncate(200))
+        if tx.status_sent?
+          # :sent → escalate завжди легальний (from-state дозволяє) → без may_escalate-guard.
+          tx.escalate_to_review!("Крах після broadcast — звір Polygonscan ПЕРЕД re-mint: #{e.message}")
+        elsif safe_fail
+          tx.fail!(e.message.truncate(200))
+        else
+          # ambiguous: tx у :processing (переведений перед dry-run) → escalate завжди легальний.
+          tx.escalate_to_review!("Ambiguous batchMint broadcast — звір Polygonscan ПЕРЕД re-mint: #{e.message}")
+        end
         broadcast_tx_update(tx)
       end
-      Rails.logger.error "🛑 [Web3 Failure] Пакетна помилка: #{e.message}"
-      raise e
+      Rails.logger.error "🛑 [Web3 Failure] Пакетна помилка (#{safe_fail ? 'pre-broadcast' : 'AMBIGUOUS→manual_review'}): #{e.message}"
+      raise e if safe_fail # retry лише safe-класи; ambiguous escalate без retry (як burn ARCH.48)
     end
   end
 
@@ -452,18 +469,17 @@ class BlockchainMintingService < ApplicationService
     end
   end
 
-  # [M6/ARCH.45] Чи означає помилка transact, що tx ТОЧНО НЕ полетіла в мемпул (безпечно
-  # re-mint / fail). EVM revert + вузол відхилив ДО broadcast (nonce/known/underpriced/
-  # insufficient) — pre-broadcast. Мережева невизначеність (timeout/connection/EOF) → false
-  # → ambiguous → escalate manual_review (сліпий re-mint = double-mint). Дзеркало burn ARCH.48.
+  # [M6/ARCH.45] Чи означає помилка transact, що tx ТОЧНО НЕ полетіла в мемпул (безпечно re-mint /
+  # fail). Лише коли вузол ВІДХИЛИВ tx до включення: EVM revert (executed+reverted / out-of-gas —
+  # НЕ minted) або `insufficient funds` (oracle-balance, rejected). Мережева невизначеність
+  # (timeout/connection/EOF) → false → ambiguous → escalate.
+  # [P2-4] `nonce too low` / `already known` / `replacement underpriced` НЕ pre-broadcast — вони
+  # означають, що tx (наша попередня чи ця) ВЖЕ у мемпулі/блоці → сліпий individual re-mint =
+  # DOUBLE-MINT → їх лишаємо ambiguous (escalate). Дзеркало burn ARCH.48.
   def transact_error_pre_broadcast?(error)
     return true if evm_revert?(error)
 
-    msg = error.message.to_s.downcase
-    msg.include?("nonce too low") ||
-      msg.include?("already known") ||
-      msg.include?("replacement transaction underpriced") ||
-      msg.include?("insufficient funds")
+    error.message.to_s.downcase.include?("insufficient funds")
   end
 
   # Мінтить одну транзакцію індивідуально з обробкою помилок.

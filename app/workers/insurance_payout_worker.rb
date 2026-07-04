@@ -94,9 +94,16 @@ class InsurancePayoutWorker
         # double-pay — DIP claim-once захищає, але ми НЕ контролюємо зовнішній контракт. Ескалюємо
         # в manual_review (як mint double-spend guard): людина звіряє DIP перед повтором. Точніша
         # on-chain claim-status звірка — майбутнє (потребує DIP getClaim ABI).
-        if recovered_tx && tx.status_pending?
-          tx.escalate_to_review!("Etherisc claim міг бути надісланий до краху update — ручна звірка DIP перед повтором (ARCH.45)")
-          Rails.logger.warn "🛡️ [Insurance] ##{insurance.id}: orphaned :pending Etherisc TX → manual_review (можливий вже-надісланий claim)."
+        # [P1-2] recovered + :pending → escalate (claim! міг бути надісланий); recovered +
+        # :manual_review → вже під ручною звіркою (попередній recovery) → НЕ re-claim, НЕ re-arm.
+        # Інакше age-unbounded `unsettled_within` знаходить старий :manual_review → повторний
+        # `claim!` (double-pay-експозиція) + `mark_as_sent!` whiny-raise (:manual_review не в
+        # from-state) → retry×10 циклить claim!.
+        if recovered_tx && (tx.status_pending? || tx.status_manual_review?)
+          if tx.may_escalate_to_review?
+            tx.escalate_to_review!("Etherisc claim міг бути надісланий до краху update — ручна звірка DIP перед повтором (ARCH.45)")
+          end
+          Rails.logger.warn "🛡️ [Insurance] ##{insurance.id}: orphaned :#{tx.status} Etherisc TX → manual_review (можливий вже-надісланий claim; без re-claim)."
           return
         end
 

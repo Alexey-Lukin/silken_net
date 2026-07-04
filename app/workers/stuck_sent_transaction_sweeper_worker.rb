@@ -45,7 +45,12 @@ class StuckSentTransactionSweeperWorker
   def perform
     cutoff = STUCK_THRESHOLD.ago
 
+    # [P2-3] ТІЛЬКИ EVM: BlockchainConfirmationWorker полить Polygon RPC. Solana/Celo теж ставлять
+    # `sent_at` (mark_as_sent!) + мають ВЛАСНІ reconcile-крони (solana_batch_payout / CeloConfirmationWorker)
+    # → без цього фільтра Solana-payout летів би у Polygon-поллер → 15-20хв wasted RPC + передчасний
+    # manual_review (Polygon не має Solana-signature).
     stuck = BlockchainTransaction.status_sent
+                                 .where(blockchain_network: "evm")
                                  .where("sent_at < ?", cutoff)
                                  .order(:created_at)
                                  .limit(BATCH_LIMIT)

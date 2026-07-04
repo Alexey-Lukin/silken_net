@@ -278,8 +278,8 @@ end
   end
 
   describe "blockchain error handling" do
-    it "marks transactions as failed on blockchain error" do
-      allow(mock_client).to receive(:transact).and_raise(StandardError, "RPC connection failed")
+    it "marks transactions as failed on a pre-broadcast blockchain error (revert)" do
+      allow(mock_client).to receive(:transact).and_raise(StandardError, "execution reverted: gas")
 
       tree = create(:tree)
       wallet = tree.wallet
@@ -293,10 +293,54 @@ end
         locked_points: 1000
       )
 
-      expect { described_class.call(tx.id) }.to raise_error(StandardError, "RPC connection failed")
+      expect { described_class.call(tx.id) }.to raise_error(StandardError, /execution reverted/)
 
       tx.reload
       expect(tx.status).to eq("failed")
+    end
+
+    # [P0-1] Ambiguous broadcast error on the PRIMARY path (dry-run passes → transact) must escalate
+    # to manual_review, NOT fail! (which now releases locked_points via M2 → double-mint if the tx
+    # actually landed). The hot path had a bare fail! before this fix.
+    it "escalates to manual_review on an ambiguous broadcast error (no fail!+release → no double-mint)" do
+      allow(mock_client).to receive(:transact).and_raise(Net::ReadTimeout, "connection reset after broadcast")
+
+      tree = create(:tree)
+      wallet = tree.wallet
+      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved", locked_balance: 1000)
+
+      tx = wallet.blockchain_transactions.create!(
+        amount: 100, token_type: :carbon_coin, status: :pending,
+        to_address: wallet.crypto_public_address, locked_points: 1000
+      )
+
+      expect { described_class.call(tx.id) }.not_to raise_error  # ambiguous → no retry
+      expect(tx.reload.status).to eq("manual_review")            # NOT failed
+      expect(wallet.reload.locked_balance).to eq(1000)           # locked NOT released (no double-mint)
+    end
+
+    # [P0-1] A crash AFTER mark_as_sent! (tx already :sent = broadcast landed) → escalate, never
+    # fail! (the tokens are on-chain; fail!+release would set up a re-mint).
+    it "escalates an already-:sent tx to manual_review on a post-broadcast finalize crash" do
+      tree = create(:tree)
+      wallet = tree.wallet
+      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved", locked_balance: 1000)
+      tx = wallet.blockchain_transactions.create!(
+        amount: 100, token_type: :carbon_coin, status: :pending,
+        to_address: wallet.crypto_public_address, locked_points: 1000
+      )
+      allow(mock_client).to receive(:transact).and_return(fake_tx_hash) # mint lands
+      # broadcast_tx_update fires on :processing (call 1) then on finalize after mark_as_sent!
+      # (call 2 = tx already :sent) → crash there to hit the :sent-branch of the rescue.
+      call_n = 0
+      allow_any_instance_of(described_class).to receive(:broadcast_tx_update) do
+        call_n += 1
+        raise StandardError, "broadcast crash" if call_n == 2
+      end
+
+      expect { described_class.call(tx.id) }.not_to raise_error
+      expect(tx.reload.status).to eq("manual_review")   # :sent → escalate (not fail!)
+      expect(wallet.reload.locked_balance).to eq(1000)  # NOT released
     end
   end
 
@@ -1071,7 +1115,7 @@ end
         allow(mock_client).to receive(:transact) do |_c, method, *_args, **_opts|
           transact_count += 1
           if method == "batchMint"
-            raise StandardError, "nonce too low" # pre-broadcast: tx did NOT land → safe re-mint
+            raise StandardError, "execution reverted: gas" # pre-broadcast: tx did NOT land → safe re-mint
           end
           "0x" + "f" * 64 # individual mints succeed
         end
@@ -1082,6 +1126,22 @@ end
         transactions.each do |tx|
           expect(tx.reload.status).to eq("sent")
         end
+      end
+
+      # [P2-4] `nonce too low` is NOT pre-broadcast (our prior tx may have landed) → ambiguous →
+      # escalate, NOT a blind individual re-mint (which would double-mint).
+      it "escalates the sub-batch to manual_review on a nonce-too-low batchMint error" do
+        individual_calls = 0
+        allow(mock_client).to receive(:transact) do |_c, method, *_args, **_opts|
+          raise StandardError, "nonce too low" if method == "batchMint"
+          individual_calls += 1
+          "0x" + "f" * 64
+        end
+
+        described_class.call_batch(transactions.map(&:id))
+
+        expect(individual_calls).to eq(0)
+        transactions.each { |tx| expect(tx.reload.status).to eq("manual_review") }
       end
 
       # [M6] Ambiguous batchMint broadcast (may have landed) → escalate the whole sub-batch to
@@ -1375,7 +1435,7 @@ end
     end
 
     it "releases lock even when RPC call fails (no lock leak)" do
-      allow(mock_client).to receive(:transact).and_raise(StandardError, "Slow RPC timeout")
+      allow(mock_client).to receive(:transact).and_raise(StandardError, "execution reverted: slow")
 
       tree = create(:tree)
       wallet = tree.wallet
@@ -1398,7 +1458,7 @@ end
         raise
       end
 
-      expect { described_class.call(tx.id) }.to raise_error(StandardError, "Slow RPC timeout")
+      expect { described_class.call(tx.id) }.to raise_error(StandardError, /execution reverted/)
       expect(lock_released).to be true
     end
   end

@@ -89,12 +89,19 @@ RSpec.describe "Blockchain minting and burning pipeline" do
       expect(tx.status).to eq("confirmed")
     end
 
-    it "marks transactions as failed on error" do
-      allow(mock_client).to receive(:transact).and_raise(StandardError, "RPC Error")
+    it "marks transactions as failed on a pre-broadcast error (revert)" do
+      allow(mock_client).to receive(:transact).and_raise(StandardError, "execution reverted: RPC")
 
       expect { BlockchainMintingService.call(tx.id) }.to raise_error(StandardError)
       tx.reload
       expect(tx.status).to eq("failed")
+    end
+
+    it "escalates to manual_review on an ambiguous broadcast error (P0-1 double-mint guard)" do
+      allow(mock_client).to receive(:transact).and_raise(Net::ReadTimeout, "reset after broadcast")
+
+      expect { BlockchainMintingService.call(tx.id) }.not_to raise_error
+      expect(tx.reload.status).to eq("manual_review")
     end
 
     it "raises when oracle balance is critically low" do

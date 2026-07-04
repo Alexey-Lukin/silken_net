@@ -270,6 +270,26 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
         expect(BlockchainMintingService).not_to have_received(:call)
         expect(orphan.reload.status).to eq("confirmed")
       end
+
+      # [P1-2] recovered + :manual_review Etherisc tx must NOT re-claim (age-unbounded unsettled_within
+      # finds it) — else double-pay-exposure + mark_as_sent! whiny-raise cycles claim!.
+      it "does NOT re-claim a recovered :manual_review Etherisc tx" do
+        claim = instance_double(Etherisc::ClaimService, claim!: "0x#{SecureRandom.hex(32)}")
+        allow(Etherisc::ClaimService).to receive(:new).and_return(claim)
+        allow(BlockchainConfirmationWorker).to receive(:perform_in)
+        etherisc = create(:parametric_insurance, :triggered,
+                          cluster: cluster, organization: organization, etherisc_policy_id: "42")
+        etherisc.update_columns(status: "paid", paid_at: Time.current)
+        orphan = etherisc.create_blockchain_transaction!(
+          wallet: wallet, amount: etherisc.payout_amount, token_type: etherisc.token_type,
+          to_address: organization.crypto_public_address, status: :manual_review,
+          tx_hash: "0x#{SecureRandom.hex(32)}"
+        )
+
+        expect { described_class.new.perform(etherisc.id) }.not_to raise_error
+        expect(claim).not_to have_received(:claim!)
+        expect(orphan.reload.status).to eq("manual_review")
+      end
     end
 
     context "when no active trees exist but non-active trees have wallets" do

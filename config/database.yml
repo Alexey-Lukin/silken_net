@@ -15,8 +15,8 @@ default: &default
   # Pool size per process per database.
   # ---------------------------------------------------------------------------
   # Every thread that touches the database needs its own connection checkout.
-  # With 4 databases (primary, cache, queue, cable), each process opens
-  # up to pool × 4 connections to Cloud SQL.
+  # With 3 databases (primary, cache, cable — queue pruned, INF.18), each process
+  # opens up to pool × 3 connections to Cloud SQL.
   #
   # Connection consumers inside a Puma worker:
   #   1. Puma request threads ............ RAILS_MAX_THREADS  (default 3)
@@ -27,7 +27,7 @@ default: &default
   #
   # Total connections per database across all Puma workers:
   #   WEB_CONCURRENCY × pool  (e.g., 2 × 5 = 10 per database on GCP)
-  #   4 databases × 10 = 40 connections total (well within Cloud SQL's 400)
+  #   3 databases × 10 = 30 connections total (well within Cloud SQL's 400)
   #
   # For Sidekiq workers (separate process), override DB_POOL >= 15
   # in the worker container's environment to match sidekiq.yml :concurrency.
