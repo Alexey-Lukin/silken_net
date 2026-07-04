@@ -76,8 +76,9 @@ resource "local_file" "akash_sdl" {
     provisioning_master_key = var.provisioning_master_key
     # Observability
     sentry_dsn = var.sentry_dsn
-    # Web3 oracle keys (dual-key split, B-02)
+    # Web3 oracle keys (dual-key split, B-02; Celo dedicated signer — ARCH.50)
     oracle_private_key          = var.oracle_private_key
+    oracle_celo_private_key     = var.oracle_celo_private_key
     oracle_minter_private_key   = var.oracle_minter_private_key
     oracle_slasher_private_key  = var.oracle_slasher_private_key
     ethereum_anchor_private_key = var.ethereum_anchor_private_key
@@ -92,8 +93,9 @@ resource "local_file" "akash_sdl" {
     solana_fee_payer_pubkey        = var.solana_fee_payer_pubkey
     solana_fee_payer_token_account = var.solana_fee_payer_token_account
     solana_usdc_mint_address       = var.solana_usdc_mint_address
-    # Chainlink oracle-callback HMAC (on-chain dispatch removed — ARCH.53)
+    # Webhook HMACs: Chainlink callback (dispatch removed — ARCH.53) + Helium SOS (ARCH.34)
     chainlink_hmac_secret = var.chainlink_hmac_secret
+    helium_webhook_secret = var.helium_webhook_secret
     # OBS.1: Grafana Alloy observability sidecar
     grafana_remote_write_url      = var.grafana_remote_write_url
     grafana_remote_write_username = var.grafana_remote_write_username

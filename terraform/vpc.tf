@@ -90,10 +90,10 @@ resource "google_compute_firewall" "allow_web" {
 # UDP DDoS amplification mitigation is handled at two levels:
 #   1. Application level: CoAP daemon validates packet structure (21-byte aligned, AES-256 encrypted)
 #      — invalid packets are dropped before touching Sidekiq/DB.
-#   2. GCP Cloud Armor: when using external Application Load Balancer, add Cloud Armor security
-#      policy with rate limiting (see google_compute_security_policy below).
-# For direct UDP (no ALB), consider: iptables rate limiting in compute startup script,
-# or deploying a CoAP Ingress Proxy (Rust/Go) with built-in rate limiting.
+#   2. Kernel level: iptables hashlimit per source IP — IMPLEMENTED in the Ingress Anchor
+#      startup script (compute.tf, 100 pkt/s + burst 200); see the note further below.
+# Beyond that (Series D): Cloud Armor needs an external ALB we don't run; a Rust/Go
+# CoAP Ingress Proxy with built-in rate limiting is the ARCH.2 tier.
 resource "google_compute_firewall" "allow_coap" {
   name        = "silken-net-allow-coap"
   network     = google_compute_network.silken_net_vpc.name

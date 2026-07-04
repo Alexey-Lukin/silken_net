@@ -127,10 +127,14 @@ end
 `actuators#execute` зберігає Idempotency-Key через `Rails.cache.write(cache_key, response_body, expires_in: 24.hours)` у Solid Cache (PostgreSQL). Запис перенесено у `rack.response_finished` callback (Puma 7.0+):
 
 ```ruby
-env["rack.response_finished"] << -> { Rails.cache.write(cache_key, response_body, expires_in: 24.hours) }
+env["rack.response_finished"] << ->(_env, _status, _headers, _error) {
+  Rails.cache.write(cache_key, response_body, expires_in: 24.hours)
+}
 ```
 
-Кеш пишеться **після** flush відповіді клієнту → зменшує p50 latency на ~1-2 мс. TTL та логіка незмінні; spec coverage оновлено. *(Мігровано з [`00_07`](00_07_Action_Plan_Tracker) PUMA-RACK-1.)*
+> ⚠️ **Сигнатура несуча (Rack SPEC):** Puma викликає кожен callback з **чотирма** аргументами `(env, status, headers, error)`. Вужча лямбда (`->(_env)`, як у першій редакції) кидає `ArgumentError`, який Puma **мовчки** ковтає у debug-лог — кеш ніколи не пишеться, а мережевий retry дублює фізичну актуацію. Зловлено аудитом 2026-07-04 (код+спека+цей канон утрьох носили ту саму хибну сигнатуру; спека симулювала виклик 1-аргументно і була зелена). Спека тепер симулює справжній 4-arity виклик.
+
+Кеш пишеться **після** flush відповіді клієнту → зменшує p50 latency на ~1-2 мс. TTL та логіка незмінні. *(Мігровано з [`00_07`](00_07_Action_Plan_Tracker) PUMA-RACK-1.)*
 
 > **Майбутнє (planetary scale):** при > 1M actuator-команд/добу — переглянути на користь batched cache writes.
 

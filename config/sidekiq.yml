@@ -1,4 +1,9 @@
 :concurrency: 15
+# Explicit graceful-shutdown window (was the implicit default). On SIGTERM Sidekiq
+# re-enqueues jobs still running after this deadline — the orchestrator's grace
+# period (Akash/k8s default ~30s) MUST stay ≥ this value or in-flight jobs die by
+# SIGKILL instead (money-path then relies on the intent-marker/reconcile crons).
+:timeout: 25
 :strict: true
 :queues:
   # Strict ordering: queues are drained top-to-bottom. No lower-priority job

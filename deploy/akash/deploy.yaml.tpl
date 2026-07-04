@@ -50,8 +50,10 @@ services:
       - SOLANA_FEE_PAYER_PUBKEY=${solana_fee_payer_pubkey}
       - SOLANA_FEE_PAYER_TOKEN_ACCOUNT=${solana_fee_payer_token_account}
       - SOLANA_USDC_MINT_ADDRESS=${solana_usdc_mint_address}
-      # --- Chainlink oracle-callback HMAC (dispatch secrets removed — ARCH.53) ---
+      # --- Webhook HMACs: Chainlink callback (dispatch removed — ARCH.53) +
+      #     Helium SOS (ARCH.34; strict mode raises per-request without it) ---
       - CHAINLINK_HMAC_SECRET=${chainlink_hmac_secret}
+      - HELIUM_WEBHOOK_SECRET=${helium_webhook_secret}
       # Web3 fail-closed: Hadron KYC raises on missing creds + callback HMAC fail-fast (INF.11/SEC.5).
       - WEB3_STRICT_MODE=true
       # --- Web3 contract addresses (post-`forge deploy`; fill before first mint) ---
@@ -122,6 +124,8 @@ services:
       # --- Web3 oracle keys (BlockchainMintingService, BlockchainBurningService,
       #     Ethereum::StateAnchorService — all Sidekiq workers) ---
       - ORACLE_PRIVATE_KEY=${oracle_private_key}
+      # Dedicated Celo cUSD signer (ARCH.50; falls back to ORACLE_PRIVATE_KEY).
+      - ORACLE_CELO_PRIVATE_KEY=${oracle_celo_private_key}
       - ORACLE_MINTER_PRIVATE_KEY=${oracle_minter_private_key}
       - ORACLE_SLASHER_PRIVATE_KEY=${oracle_slasher_private_key}
       - ETHEREUM_ANCHOR_PRIVATE_KEY=${ethereum_anchor_private_key}
@@ -207,6 +211,8 @@ services:
     env:
       # Slot label for external_labels (canopy vs production — config.alloy).
       - DEPLOYMENT_SLOT=${deployment_slot}
+%{ if release_version != "" }      - RELEASE_VERSION=${release_version}
+%{ endif ~}
       - GRAFANA_REMOTE_WRITE_URL=${grafana_remote_write_url}
       - GRAFANA_REMOTE_WRITE_USERNAME=${grafana_remote_write_username}
       - GRAFANA_REMOTE_WRITE_TOKEN=${grafana_remote_write_token}

@@ -88,11 +88,14 @@ module Api
             # [PUMA-RACK-1]: Store in idempotency cache AFTER response is flushed to client.
             # rack.response_finished callback (Puma 7.0+) executes after the response body
             # is sent, saving ~1-2ms from the critical path.
+            # Rack SPEC: callables are invoked with (env, status, headers, error) — a
+            # narrower lambda raises ArgumentError that Puma swallows into debug logs,
+            # silently skipping the cache write (retry would double-actuate hardware).
             if idempotency_key.present?
               cached_key = cache_key
               cached_body = response_body
               request.env["rack.response_finished"] ||= []
-              request.env["rack.response_finished"] << ->(_env) {
+              request.env["rack.response_finished"] << ->(_env, _status, _headers, _error) {
                 Rails.cache.write(cached_key, cached_body, expires_in: 24.hours)
               }
             end

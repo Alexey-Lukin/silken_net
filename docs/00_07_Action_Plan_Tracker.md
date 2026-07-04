@@ -66,7 +66,7 @@
 |---|---|
 | **HW.9 KiCad PCB** (👤; сам ← BOM-фіналізація `HW.7/12/13/20` + RF Keep-Out) | `HW.17`-dimensions · `HW.29`-footprints · `HW.20`-BOM-part · SE050 DNP-footprint · `ARCH.35` W25Q32-розводка · пін-мапа → **FW.46 `.ioc`** (ланцюг до bench-дня ↓) |
 | **FW.46 board-freeze** `.ioc` (👤) | повний `.elf` → увесь bench-день: `FW.2`-фліп · `FW.3/8/17/20/23/31/49/50/52/54/55` · `ARCH.26/41` · `SEC.2`-OTA-verify · `SEC.15`-WUT · `SEC.3`-SWD · `ARCH.35`-розводка · `radio_conf.h` → компіляція `radio.c` (SubGHz Шлях A ✅ 07-04: submodule+`RadioEvents_t` уже в репо — це останній radio-гейт); суміжно `ARCH.34`-firmware (LoRaMac-node ВЖЕ vendored у `extern/subghz-phy/lorawan` — лишилась glue-робота) |
-| **Перший live-деплой** = секрети (`S1.1`+`INF.19`+`S4.3`) → deploy (👤) | верифікації `INF.11/12/13/14/15/16` · `PUMA-IPV6-1` · `INF.10`-фліп · `S5.2` · `S3.2`-staging · `S6.1`-Upstash · Grafana-сесія (`S2.1→S2.2→S2.3` + `S2.4`-SLO + `FW.18b` + `ARCH.54`-alert) |
+| **Перший live-деплой** = секрети (`S1.1`+`S4.3`) + `INF.20`-SSH (Kamal-нога) + `OPS.11`-FinOps → deploy фазами [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform) (👤) | верифікації `INF.11/12/13/14/15/16` · `PUMA-IPV6-1` · `INF.10`-фліп · `S5.2` · `S3.2`-staging · `S6.1`-Upstash · `INF.21`-pin · Grafana-сесія (`S2.1→S2.2` + `S2.4`-SLO + `FW.18b`) |
 | **INF.4 TLS-рішення** (👤, рекоменд. A) | `INF.3` TLS · `S6.18` `RAILS_ALLOWED_HOSTS` (публічний домен) |
 | **SE051 eval-пара** замовлення (👤) | `SE050-MIGRATION` silicon-confirm + rename-каскад · `SEC.3` Гілка-B real-I²C |
 | **E.20 ForestBountyService** (🤖 за founder-go) | `E.41` satellite-obscured fallback · `S6.10` task-assignment · `BIZ.13` Модель-B operator-bond · `INS.1` drought/pest Trigger-2-джерело |
@@ -835,25 +835,22 @@
 
 > Деплой, спостережуваність, секрети, DR — канон `06_xx`.
 
-#### S1.1 — GitHub Secrets заповнення
-- **P0** · 👤 · 🟢 · → `06_04`
-- **Стан:** Checklist + інвентаризація 4 місць секретів готові. **[B1/INF.19]** CI Kamal deploy тепер мапить увесь `env.secret` набір → GitHub Secrets = P0 (`§1.1`) + Web3/runtime (`§1.4`). Лишається заповнити. Канон `06_04`.
-- [ ] 👤 заповнити GitHub repository secrets (повний набір — `06_04 §1.1` + §1.4) → верифікувати CI
+#### S1.1 — GitHub deploy-secret set (заповнення + верифікація) [поглинув INF.19 2026-07-04]
+- **P0** · 👤 · 🟢 · → [`06_04 §1`](06_04_Secrets_Checklist), [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform)
+- **Стан:** Machine-half ✅ повністю (INF.19/B1 — корінь 4-місячного deploy-блоку: workflows мапили 5 із 24 секретів → порожній інжект → boot-crash за зеленим verify; тепер обидва workflow маплять весь `env.secret`-набір, `verify-secrets` гейтить повний boot-critical сет fail-loud prod / skip-clean canopy + warn на lazy). **2026-07-04 аудит-дожим:** `KAMAL_MASTER_KEY` вирізано (фантом — Kamal 2.x не має такого механізму, а гейт блокував prod на неіснуючу залежність); гейт розширено інфра-передумовами `GCP_PROJECT_ID`+`SSH_PRIVATE_KEY`/`SSH_KNOWN_HOSTS`; заведено наскрізно `ORACLE_CELO_PRIVATE_KEY` (ARCH.50 — був відсутній у ВСІХ 7 deploy-поверхнях) + `HELIUM_WEBHOOK_SECRET` (був ніде → кожен деплой 500-ив Queen-SOS endpoint). Заповнення = дві партії Batch A/B (порядок: [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform) Фази 0-1; секрет-специфіка `06_04 §5.1`).
+- [ ] 👤 завести повний набір GitHub Secrets (Batch A → apply → Batch B) → верифікувати fail-loud `verify-secrets` + перший boot
 
 #### S2.1 — Верифікація метрик після deploy
 - **P0** · 👤 · 🟢 · → `06_03`
 - **Стан:** `/metrics` (реєстр — `06_03 §2.8`) + Alloy sidecar → Grafana Cloud налаштовано; з 2026-07-04 таргетів ТРИ (web/job/coap — multi-process топологія `06_03 §2.9`); чекає першого Akash deploy для верифікації збору.
 - [ ] 👤 верифікувати збір метрик після першого Akash deploy (усі 3 `process`-таргети живі; job-метрики ≠ нулі)
 
-#### S2.2 — Grafana Cloud dashboards
+#### S2.2 — Grafana Cloud import-сесія: dashboards + alerts + contact point [поглинув S2.3 2026-07-04]
 - **P0** · 👤 · 🟢 · → `06_03`
-- **Стан:** dashboard IaC готовий (`deploy/grafana/dashboards/`, секції/панелі — `deploy/grafana/README.md`).
-- [ ] 👤 імпортувати у Grafana Cloud (інструкції `deploy/grafana/README.md`)
-
-#### S2.3 — Grafana Cloud alerting rules
-- **P0** · 👤 · 🟢 · → `06_03`
-- **Стан:** alert rules IaC готові (`deploy/grafana/alerts/silkennet-alerts.yaml`, P0/P1/P2; зведення `deploy/grafana/README.md`) + counter `silkennet_telemetry_acoustic_overflow_total`.
-- [ ] 👤 замінити `${DATASOURCE_UID}` + notification channel (Email/PagerDuty)
+- **Стан:** повний IaC готовий: дашборд (`deploy/grafana/dashboards/`, 6 секцій вкл. Money-Path SLO) + alert rules (`deploy/grafana/alerts/silkennet-alerts.yaml` — вкл. up-alert 3 таргети, mint-SLO, `sn-alert-gateway-faulty` ARCH.54) — один захід `deploy/grafana/import.rb` (auto-UID, ідемпотентний upsert; README). ⚠️ Без contact point УСІ P0-алерти летять у нікуди (O3-MUST).
+- [ ] 👤 `import.rb` з токеном → dashboards + всі alert rules одним заходом
+- [ ] 👤 contact point (Email/Telegram) + default notification policy — ДО того, як алерти вважати живими
+- [ ] 🤖 dashboard-gap'и перед/під час імпорту: панелі runtime-gauges (RSS/GC/Puma) · insurance-SLO ratio · gateways_faulty/attest_lapsed/helium_sos · flapping-alert на `gateways_offline_total` (S3-аудит 2026-07-04)
 
 #### INF.16 — Production multi-DB connection (database.yml component style)
 - **P0** · 👤 · 🟢 · → `06_01`, `06_04`
@@ -862,10 +859,12 @@
 - [ ] 👤 `terraform apply` canopy-баз при провіжні (ресурси готові, лишається apply)
 - [ ] 👤 верифікувати `db:prepare` проходить усі 3 бази набору на першому деплої
 
-#### INF.19 — CI Kamal secret-starvation (env-mapping) + KREDIS/POSTGRES drift [B1/H2]
-- **P0** · 👤 · 🟢 · → `06_04 §1`
-- **Стан:** Machine-half ✅ (commit `c3ed3019` + canon `06_04 §1.4`) — **корінь, чому перший deploy ніколи не виживав** (pre-deploy consistency audit, 8-agent). Обидва deploy-workflow передавали в `kamal deploy` лише 5 із 24 секретів; `.kamal/secrets` читає всі 24 з shell-ENV → решта інжектились порожніми → boot-crash (`RAILS_MASTER_KEY` decrypt / `PROVISIONING_MASTER_KEY` guard / oracle KeyError) або web3-strict raise. `verify-secrets` перевіряв лише 1-2 → зелений CI над зламаним деплоєм (без секретів `configured=false` → skip → шлях ніколи не біг live, тож діра не спливала). Fix: повний env-mapping в обидва workflow + `verify-secrets` гейтить повний boot-critical набір (fail-loud prod / skip-clean canopy) + warn на lazy. Супутнє: `KREDIS_REDIS_URL` виведено з усіх deploy-surface (auto-derive DB 1 з `REDIS_URL`); `RAILS_MASTER_KEY` ENV-first; H2 — Akash explicit `POSTGRES_DATABASE`. Канон `06_04 §1.4` + drift-guard.
-- [ ] 👤 завести повний deploy-secret набір у GitHub Secrets (`06_04 §1.1` + §1.4) → верифікувати fail-loud `verify-secrets` + boot на першому деплої
+#### INF.20 — Kamal SSH-транспорт на Ingress Anchor МЕРТВИЙ (oslogin ⊕ мертві tf-vars ⊕ CI-firewall)
+- **P0** · 🤖+👤 · 🟢 · → [`06_01`](06_01_Deployment_Kamal_Terraform)
+- **Стан:** Аудит 2026-07-04 (клас B1 «конфіг повний, шлях мертвий»): секрети замаплені бездоганно, а SSH-нога, якою `kamal deploy` має зайти на анкор, не існує з ТРЬОХ незалежних причин: (1) `compute.tf` metadata має `enable-oslogin=TRUE` — OS Login **ігнорує** metadata ssh-keys і деривує POSIX-юзернейм з IAM (НЕ `deploy`); (2) `var.ssh_public_key`/`var.ssh_user` **не споживаються жодним tf-ресурсом** (workflow сумлінно передає `TF_VAR_ssh_public_key` у нікуди); (3) CI не передає `TF_VAR_ssh_source_ranges` → default `[]` + count-guard → firewall `allow_ssh` взагалі не створюється (а GitHub-раннер IP динамічний — у CIDR-allowlist не вкладається; tfvars.example CIDR = TEST-NET-3 doc-placeholder). Наслідок: CI-Kamal-шлях структурно недосяжний; локальний — теж (нема ні юзера, ні ключа на VM). Akash-шлях (перший деплой) від SSH НЕ залежить; verify-secrets тепер гейтить SSH-набір (S1.1). Варіанти: **(а)** `enable-oslogin=FALSE` + metadata `ssh-keys="deploy:${var.ssh_public_key}"` — класика, kamal працює as-is (рекоменд. для соло-простоти); **(б)** лишити OS Login → kamal `ssh.user` = OS Login-ім'я + IAP-tunnel для CI (безпечніше, більше клею). CI-доступ до 22: IAP / GitHub-ranges / «перший деплой локально зі свого CIDR».
+- [ ] 👤 рішення (а)/(б) + модель CI-доступу (рекомендація: (а) + перший деплой локально; CI-Kamal увімкнути пізніше через IAP)
+- [ ] 🤖 tf-wiring за рішенням (metadata ssh-keys АБО oslogin-flow) + прибрати мертвість vars
+- [ ] 👤 `terraform.tfvars`: реальний CIDR замість TEST-NET-3 → верифікувати `kamal proxy reboot`+`deploy` на свіжому хості (перший запуск без `kamal setup` — inferred, звірити)
 
 #### INF.6 — CoAP UDP smoke test через Ingress Anchor (post-deploy gate)
 - **P1** · 👤 · 🟢 · → `06_01`, `06_02`, `06_08 §1.2`
@@ -873,10 +872,10 @@
 - [ ] 👤 задати repo Variables `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST` коли Ingress Anchor існує → gate активний
 - [ ] 👤 перший boundary smoke з Queen/`bin/forest_simulator`
 
-#### INF.4 — Akash TLS strategy decision: hostname operator vs Cloudflare
+#### INF.4 — TLS/Cloudflare termination [поглинув INF.3 2026-07-04]
 - **P1** · 🤖+👤 · 🟢 · → `06_02 §TLS термінація`
-- **Стан:** ✅ **Рішення прийнято (founder 2026-07-03): Опція A — Cloudflare Proxy** (HTTPS:443 termination + direct UDP CoAP через Ingress Anchor; публічний домен `silkennet.app`). Cloudflare НЕ proxies UDP → CoAP окремим шляхом (уже в архітектурі). Розблоковує `INF.3` (TLS = Cloudflare) + `S6.18` (`RAILS_ALLOWED_HOSTS=silkennet.app`). Fallback B (Akash hostname + Let's Encrypt, домен `silkennet.com`) — лише якщо Cloudflare недоступний. Канон `06_02 §TLS термінація`.
-- [ ] 👤 при деплої: Cloudflare pre-flight (9 кроків `06_02` Опція A) — акаунт/домен/Full-strict SSL/CNAME→Akash ingress/Queens на Ingress-IP:5683
+- **Стан:** ✅ **Рішення прийнято (founder 2026-07-03): Опція A — Cloudflare Proxy** (HTTPS:443 termination + direct UDP CoAP через Ingress Anchor). ⚠️ Red-team 2026-07-04: потрібні **ДВА домени** — `silkennet.app` (HTTPS, proxied) **і** `silkennet.com` (його піддомен `api.silkennet.com` — CoAP **DNS-only**: firmware Queen хардкодить `COAP_SERVER_HOST="api.silkennet.com"`, а APP_HOST mailer = `silkennet.com`); 06_01-кроки узгоджено на цю пару (health → `silkennet.app`, `RAILS_ALLOWED_HOSTS=silkennet.app,api.silkennet.com`). Fallback B (Akash hostname + Let's Encrypt) — лише якщо Cloudflare недоступний. Канон `06_02 §TLS термінація` + [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform) Фаза 1.
+- [ ] 👤 при деплої: Cloudflare pre-flight (9 кроків `06_02` Опція A) — обидва домени/Full-strict SSL/CNAME→Akash ingress/`api.silkennet.com` A→Ingress-IP DNS-only (сіра хмарка!)
 - [ ] 🤖 (лише якщо fallback B) Akash hostname-operator automation `terraform/akash/hostname-operator.tf`
 - [ ] 🔗 CNAME-origin lease-прив'язаний (re-lease/failover = ручний CF-крок; канонізовано `06_02` §Automation note 2026-07-04) → автоматизація (CF API/terraform) лише коли multi-provider failover стане живим
 
@@ -909,17 +908,35 @@
 
 #### S4.3 — Akash SDL secrets
 - **P1** · 👤 · ⚪ · → `06_02`
-- **Стан:** Не розпочато — Akash = primary prod deploy → SDL (`deploy/akash/deploy.yaml`) тримає `REQUIRED_SECRET_NOT_SET` плейсхолдери (сервіси web+job+coap; **з 2026-07-04 signing-п'ятірка `ORACLE_*`×3+`ETHEREUM_ANCHOR`+`SOLANA_WALLET_KEYPAIR` = job-only** — web/coap keyless by design, `06_04 §1.1`); без них boot-crash (категорія A) — той самий prod-deploy-ENV клас, що `S1.1`. ⚠️ placeholder ≠ disabled: `REQUIRED_SECRET_NOT_SET` для `PROMETHEUS_AUTH_*` НЕ-порожній → basic-auth активна з відомим-публічним значенням (`PrometheusCollector#authorized?`), а Alloy remote_write на літерал → тихо нічого не пушить (INF.14 sibling). **B6 рекомендація:** provision реальні random `PROMETHEUS_AUTH_USER/PASSWORD` (НЕ placeholder — `REQUIRED_SECRET_NOT_SET` непорожній = known-value bypass); порожнє → skip-auth + IP-allowlist (прийнятно для internal-only Alloy scrape, але реальні creds = defense-in-depth). Канон `06_02 §2` (категорії A/B/C — boot-critical / web3 / observability) + `06_03`.
-- [ ] 👤 заповнити в `deploy/akash/deploy.yaml` → верифікувати startup (real `PROMETHEUS_AUTH_*`, не placeholder; observability creds = security)
-- [ ] 👤 **перший Akash-деплой = canopy-render** (founder 2026-07-04): `terraform apply -var deployment_slot=canopy -var postgres_database=silken_net_canopy` → smoke → лише потім production-render (чеклист `06_01` крок 11)
+- **Стан:** Не розпочато (значення) — Akash = primary prod deploy → SDL тримає `REQUIRED_SECRET_NOT_SET` плейсхолдери (web+job+coap; **signing-шістка `ORACLE_*`×4 вкл. CELO + `ETHEREUM_ANCHOR` + `SOLANA_WALLET_KEYPAIR` = job-only** — web/coap keyless, `06_04 §1.1`); без них boot-crash (категорія A) — той самий клас, що `S1.1`. **B6 ✅ ЗАКРИТО файлово 2026-07-04:** `PROMETHEUS_AUTH_*` placeholder-рядки ВИРІЗАНО зі static SDL (web+alloy) — непорожній placeholder = basic-auth з публічно відомим значенням (known-value bypass); тепер unset = чесний auth-skip + IP-allowlist; реальні random-creds інжектити через Console у ОБИДВА сервіси одночасно (defense-in-depth, опц.). Canopy-пара `deployment_slot`/`postgres_database` тепер у tfvars.example (закоментована — розкоментувати для першого render'а; захист більше не тримається лише на пам'яті). `HELIUM_WEBHOOK_SECRET` + `ORACLE_CELO_PRIVATE_KEY` заведені в SDL/tpl/tf-vars (S1.1-дожим). Канон `06_02 §2` + `06_03`.
+- [ ] 👤 заповнити `terraform/akash/terraform.tfvars` (або Console) → верифікувати startup
+- [ ] 👤 **перший Akash-деплой = canopy-render** (founder 2026-07-04): розкоментувати canopy-пару в tfvars → `terraform apply` → smoke → лише потім production-render ([`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform) Фаза 3)
 
 #### ARCH.54 — Queen health program: dead-man switch · QATT-v2 пульс · SOS-роздільність
 - **P1** · 🤖+👤 · 🟢 · → [`06_08 §1.3`](06_08_Resilience_and_Failover_Policy), [`03_02 §7`](03_02_Queen_Gateway_Firmware), [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security)
 - **Стан:** Рішення №1 founder-пакета (2026-07-03: «A + 12B SOS-only + всі три шари») — **machine-half трьох шарів ✅ одним заходом**. Діагноз, що змінив рамку: DID=0-канал брехав байтами (uptime→voltage, cache→CSQ, дроп під навантаженням; циркулярний e2e), алерту «Королева мовчить» не існувало ніде, а `06_08 §1.3` описував бажане як факт. **Шар 0** — `GatewayStalenessSweepWorker` (offline→`report_fault!`+`EwsAlert(queen_offline)` анти-спам; online→`recover!`+auto-resolve; attest-lapse читає `last_attested_at`; gauge+P0-Grafana). **Шар 1** — пульс у ПІДПИСАНОМУ QATT-**v2** header'і (8B health; v1 вилучено повністю — redefine, бо флоту нема; residue 1, `SLKN-QATT2`; empty-flush heartbeat; DID=0-тракт вбитий обабіч; CSQ = нове AT-читання; golden-парність 4 реалізацій). **Шар 2** — ARCH.34 backend-half (дім деталей там). Закрив FW.2-фліп-гейт (б) by design. Канони переписані на факт (06_08 §1.2/§1.3 · 03_02 §7 · 03_05 §2.2 · 02_05 §6.1 · 04_03 · 06_04).
-- [ ] 👤 Grafana Cloud: `deploy/grafana/import.rb` підхопить `sn-alert-gateway-faulty` разом з існуючим пакетом правил (та сама 👤-сесія, що FW.18b/S2.2)
+- [x] 👤→S2.2: `sn-alert-gateway-faulty` імпортується разом з усім пакетом правил (чекбокс переїхав у злиту Grafana-сесію S2.2, 2026-07-04)
 - [ ] 🔗 attest-lapse: окремий alert-тип замість warn-метрики — коли L1 QATT стане mandatory (зараз L0 приймається; свідома стеля)
 - [ ] 🔗 vcap/температура Королеви у health-блоці — при ADC-тракті на платі (wire має headroom: rsv-байти конверта; не брешемо нулями до заліза)
 - [ ] 🌿 DePIN-місток: підписана health-історія = evidence для operator-bond/uptime-SLA (BIZ.13; не блокер)
+
+#### INF.21 — Image-pin: SDL + анкор-systemd тягнуть мутабельний `:latest`
+- **P1** · 🤖+👤 · 🟢 · → [`06_02`](06_02_Akash_Network_Integration)
+- **Стан:** Аудит 2026-07-04 (O3-MUST): web/job/coap у static SDL + `docker_image` tf-var default + `coap-daemon` systemd-юніт на анкорі (`compute.tf`) — усі на `ghcr.io/…:latest`, який `mirror-ghcr` перезаписує кожним push у main → будь-який container-restart / provider-міграція / VM-reboot підтягне ІНШИЙ образ, ніж тестований, і немає rollback-цілі (мутабельний тег не відкотиш). Контраст: alloy запінено `v1.16.3` (INF.14), base-образ digest-pinned. Mirror вже пушить іммутабельні `sha-<commit>`-теги + semver на release — лишилося споживати їх. Суміжне: Cloud SQL proxy `ADD` у Dockerfile — version-pinned URL без `--checksum` (та сама пін-непослідовність, дрібно).
+- [ ] 👤 при кожному render/bring-up: підставляти конкретний `sha-<commit>`/`vX.Y.Z` у tfvars `docker_image` + анкор-юніт (до 🤖-параметризації — руками)
+- [ ] 🤖 параметризувати образ анкор-юніта tf-var'ом (замість літерала в startup-script) + `docker_image` example → sha-приклад; опц. `--checksum` на proxy-ADD
+
+#### OPS.11 — FinOps guards: GCP billing budget + AKT escrow watch
+- **P1** · 👤 · ⚪ · → [`06_02`](06_02_Akash_Network_Integration)
+- **Стан:** Не розпочато (O3-MUST ×2): (1) жодного `google_billing_budget`/alert — `disk_autoresize=true` + egress можуть тихо рости в рахунок на особисту карту; (2) Akash lease живе з escrow, який ВИГОРАЄ — на нулі lease закривається (web+job+coap помирають разом), і ніщо runway не моніторить; `scrape-target-down` алерт при цьому летить у неналаштований contact point (S2.2). Мінімум дня-1: over-fund депозит + календарне нагадування.
+- [ ] 👤 GCP billing budget + email-пороги (50/90/100%)
+- [ ] 👤 AKT: initial over-fund (≥2× місячна оцінка) + календар поповнення
+- [ ] 🤖 scheduled workflow `akash query market lease` → runway-check + fail-notify (після першого lease; патерн coap_smoke)
+
+#### ARCH.55 — stuck-`:sent` mint re-arm sweeper (єдиний money-residual OSS-fetch)
+- **P1** · 🤖 · 🟢 · → [`06_08 §2.2`](06_08_Resilience_and_Failover_Policy), [`04_02`](04_02_Business_Logic_and_Services)
+- **Стан:** O4-аудит 2026-07-04: money-path загалом recovery-детермінованіший за Sidekiq Pro (intent-marker + per-rail cron-reconcile: slash/Solana/Celo/insurance ✅), АЛЕ mint має діру: OOM/евікшн контейнера ПІД ЧАС `BlockchainConfirmationWorker`-поллінгу → tx застигає у `:sent` НАЗАВЖДИ (pending-discovery дивиться лише pending/processing; `MintingRollbackService` кличеться тільки з `retries_exhausted`, не з cron) → `locked_balance` завис (не double-spend — stranded). Механізм: крихітний cron-sweep `BlockchainTransaction.status_sent.where(created_at: ..15.minutes.ago)` → re-enqueue `BlockchainConfirmationWorker` (з `created_at_iso` — партиції!); ~15 рядків + спека.
+- [ ] 🤖 sweeper + спека (окрема сесія — money-path, з повним контекстом ARCH.45/ARCH.52)
 
 #### INF.17 — CoAP daemon prod-процес (Queen telemetry intake)
 - **P2** · 👤 · 🟢 · → `06_01`, `06_02 §1.4`, `03_02 §4`
@@ -944,15 +961,10 @@
 - [ ] 👤 імпорт у Grafana Cloud (`deploy/grafana/import.rb` — та сама сесія, що S2.2/S2.3) → верифікувати up-alert бачить 3 process-таргети
 - [ ] 👤 SLO-пороги slash/payout/insurance — калібрувати з перших live-вікон (канон цілі поки має лише mint ≥80%; не вигадуємо)
 
-#### INF.3 — TLS termination
-- **P2** · 👤 · 🟢 · → `06_02 §TLS термінація`
-- **Стан:** Розблоковано — INF.4 вирішено (Опція A Cloudflare, founder 07-03) → TLS = **Cloudflare Full-strict termination** (HTTPS:443) + direct UDP CoAP через Ingress Anchor. SDL відкриває 80/443/CoAP-UDP 5683; лишається налаштувати Cloudflare при деплої (разом з INF.4 pre-flight). Канон `06_02 §TLS термінація`.
-- [ ] 👤 налаштувати Cloudflare TLS termination при деплої (INF.4 pre-flight крок)
-
-#### S5.2 — RELEASE_VERSION ENV для Sentry
+#### S5.2 — RELEASE_VERSION ENV для Sentry + Grafana release-лейбл
 - **P2** · 👤 · 🟢 · → `06_03`
-- **Стан:** Kamal — `env.clear` `${RELEASE_VERSION}` з CI ✅. Akash static SDL — рядок **свідомо ВІДСУТНІЙ** (2026-07-04, B1-клас: порожній-присутній ключ глушить Sentry-autodetect) → інжект реального git-SHA при деплої через Console; `.tpl` — умовний `%{ if }` + tf-var `release_version` (порожньо = рядок омітиться). Канон `06_03`.
-- [ ] 👤 верифікувати Sentry release tracking (Kamal-шлях авто; Akash — після інжекту значення при деплої)
+- **Стан:** Kamal — `env.clear` `${RELEASE_VERSION}` з CI ✅. Akash static SDL — рядок **свідомо ВІДСУТНІЙ** (2026-07-04, B1-клас: порожній-присутній ключ глушить Sentry-autodetect) → інжект реального git-SHA при деплої через Console; `.tpl` — умовний `%{ if }` + tf-var `release_version` (порожньо = рядок омітиться). **2026-07-04 дожим:** умовний інжект додано і в **alloy**-сервіс `.tpl` — до того `release`-external-label у Grafana Cloud був би вічно порожній (Alloy його читає з власного ENV, не з web'ового; S3-аудит). Канон `06_03`.
+- [ ] 👤 верифікувати Sentry release tracking + непорожній `release`-лейбл серій у Grafana (Kamal-шлях авто; Akash — після інжекту значення при деплої)
 
 #### PUMA-IPV6-1 — Верифікація IPv6 bind після першого Kamal-деплою
 - **P2** · 👤 · 🟢 · → `06_05`
@@ -981,9 +993,14 @@
 - **Стан:** Machine-half ✅ — (1) circuit-breaker alert поріг `gt 1`→`gt 0` (gauge=`1.0` при open через `set_circuit_breaker_gauge`; `gt 1` ніколи не firing) + коментар проти регресії; (2) `grafana/alloy` запінено `:latest`→`v1.16.3` (`deploy.yaml`/`.tpl`/`ci.yml` — CI валідує ту саму River-версію, що біжить); (3) знято stale `gaia2`-tag (BIZ.16 dissolved); (4) **2026-07-04: internal routes + multi-process scrape ✅** — web:80 `- service: alloy` (закрито ingress-403), job:9394/coap:9395 service-scope, три таргети з `process`-лейблом, embedded-експортери (`SilkenNet::MetricsExporter`), `refresh_sidekiq_gauges if Sidekiq.server?` проти потрійних серій, `DEPLOYMENT_SLOT` external-label (canopy≢production у Grafana). До цього **всі** job-інкрементовані метрики (money-path SLO, CCM/QATT-security, dead-man switch) були вічними нулями web-процесу — жоден P0-алерт не міг спрацювати. Дім механіки [`06_03 §2.9`](06_03_Prometheus_Observability). Канон `06_03`.
 - [ ] 👤 верифікувати scrape ТРЬОХ таргетів на деплої (web:80 · job:9394 · coap:9395; `sum by (process)`)
 
+#### INF.22 — Resilience/day-2 target-пакет (чесність-пас 06_08 + O3/O4 SHOULD-backlog)
+- **P2** · 🤖+👤 · 🟡 · → [`06_08`](06_08_Resilience_and_Failover_Policy)
+- **Стан:** Аудит 2026-07-04: 06_08 §2.2/§2.3 ✅-ив ~10 механізмів, яких у коді НЕМАЄ — канон переписано чесно (нереалізоване позначено 🟡 target інлайн), а самі механізми зібрано СЮДИ як опційний backlog. ⚠️ НЕ чеклист «зробити все» — кожен проходить YAGNI-фільтр при live-потребі; більшість latent (PATH 1) або спостерігачі. **06_08-target'и:** IotexBackfillWorker-cron · FilecoinReconcileWorker (re-pin з AuditLog) · streamr/celo buffer-lists · anchor gas-gate (`MAX_ANCHOR_GWEI`+пул) · Solana RPC-fallback-каскад · `peaq_long_outage` alert · LINK-monitor (лише при замиканні PATH 1) · TheGraph `eth_getLogs`-fallback · Klima-активація хвости (toggle/manual_review/nonce-lock) · breaker reschedule-on-open. **O4 day-2 (SHOULD-early-live):** Cloud-SQL-proxy supervisor у entrypoint АБО `/up` DB-залежний (зараз мертвий-proxy контейнер живе вічно — Akash не робить readiness-рестартів) · `DB_POOL` vs `max_io_threads 16` (io-bound сплеск > pool 5 → ConnectionTimeout; підняти pool на io-ролях) · Upstash region-pin (europe-west1) + Akash placement-attributes той самий континент + Rack::Attack → MemoryStore поки web count:1 (крос-регіон RTT на кожен запит) · zero-downtime: migration-крок окремо від entrypoint при count≥2 · `/ready`-interval tune 10-15s при INF.10-фліпі. **O3 (SHOULD-post-deploy):** GH Environments для production (секрет-скоупінг money-ключів + wait-timer замість plan-gate) · Loki-pipeline в Alloy (Akash lease-логи ефемерні — гинуть при міграції; зараз виживають лише Sentry-exceptions) · зовнішній synthetic uptime (Grafana Synthetic — самоскрейп гине разом із lease) · WIF для CI→GCP (static SA-key лишається тільки Akash-виняток) · tfsec/checkov + scheduled drift-plan. **Чесний YAGNI-NOW (не робити):** canary/blue-green · cross-region backup (баланс on-chain) · ro-rootfs/cap-drop · burn-rate SLO · PagerDuty · sops · game-days · Dragonfly-on-Akash · SO_RCVBUF (до planetary).
+- [ ] 🔗 при перших live-тижнях: пройти список YAGNI-фільтром → підняти дозрілі в окремі items
+
 #### INF.10 — Kamal-proxy healthcheck → `/ready` (readiness-gated cutover)
 - **P3** · 👤 · 🟢 · → `06_01`
-- **Стан:** Підготовка зацементована — schema-correct inert stub (`proxy.healthcheck.path: /ready`, звірено з kamal 2.12) у `config/deploy.yml`+canopy; first-deploy cutover-runbook → [`06_01 §Чеклист`](06_01_Deployment_Kamal_Terraform) (крок 18); проба `/ready` (DB+Redis+Kredis) → [`06_05`](06_05_Puma_Configuration). Свідомо deferred (design): на холодному старті `/ready` 503→deploy_timeout→rollback, тож bring-up на дефолтному `/up`, фліп на `/ready` коли `/ready→200`. Лишається 👤-фліп:
+- **Стан:** Підготовка зацементована — schema-correct inert stub (`proxy.healthcheck.path: /ready`, звірено з kamal 2.12) у `config/deploy.yml`+canopy; first-deploy cutover-runbook → [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform) (Фаза 5); проба `/ready` (DB+Redis+Kredis) → [`06_05`](06_05_Puma_Configuration). Свідомо deferred (design): на холодному старті `/ready` 503→deploy_timeout→rollback, тож bring-up на дефолтному `/up`, фліп на `/ready` коли `/ready→200`. Лишається 👤-фліп:
 - [ ] 👤 розкоментувати `proxy.healthcheck.path: /ready` на першому деплої (після `/ready→200`) + верифікувати cutover
 
 #### INF.9 — deploy.yml path-gate (infra-relevant changes only)
@@ -1293,6 +1310,9 @@ _Resolved DOC-T → §🗄️ нижче. Нові SSOT doc-drift / tracker-tool
 
 | ID | Пункт | Канон |
 |----|-------|-------|
+| INF.19 | CI Kamal secret-starvation [B1/H2] — machine-half ✅; 👤-residual ЗЛИТО в **S1.1** 2026-07-04 (той самий чекбокс «завести набір → верифікувати»); механіка+гачки — `06_04 §1.4` | `06_04 §1` |
+| INF.3 | TLS termination — ЗЛИТО в **INF.4** 2026-07-04 (був підмножиною його pre-flight кроку) | `06_02 §TLS` |
+| S2.3 | Grafana alerting rules import — ЗЛИТО в **S2.2** 2026-07-04 (одна `import.rb`-сесія: dashboards+alerts+contact point) | `06_03` |
 | E.66 | Toucan bridge — ✂️ PRUNED 2026-07-04 (founder-рішення 07-03, Ruthless Prune): flow був DEAD (0 enqueue-callerів) з money-integrity дірою у failure-path (без `retries_exhausted`, несиметричний rollback, in-flight `locked>balance`) → видалено ЦІЛКОМ (`ToucanBridgeWorker` + `Toucan::BridgeService` + `Wallet#lock_for_toucan_bridge!`/`finalize_spend!` + `toucan_bridged_balance` колонка-міграція + `TOUCAN_BRIDGE_CONTRACT_ADDRESS` з Kamal/Akash + specs). SCC→TCO2 expansion воскресає з git при E.20-go — тоді ж HARD gate: симетричний rollback + інваріант `locked ≤ balance` + ARCH.49 nonce-lock | `04_02 §10` (нота), `04_01` (Wallet) |
 | ARCH.42 | AES-128 LoRa — DECIDED (Variant B); SE-частина ATECC→**SE050** (true-DePIN — SE050-MIGRATION) | `03_05 §3.7` |
 | SEC.6 | SE = **SE050** — ✅ RESOLVED 2026-06-07 (true-DePIN: голос дерева потребує non-extractable Ed25519 → SE050, не ATECC; soft-freeze DNP, populate post-FW.2). Деталі + усі residuals → SE050-MIGRATION | `03_05 §3.7`, §3.4 |

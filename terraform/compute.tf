@@ -231,10 +231,13 @@ Requires=docker.service
 [Service]
 Type=simple
 ExecStartPre=-/usr/bin/docker rm -f silkennet-coap
+# The image already declares ENTRYPOINT /rails/bin/docker-entrypoint (Dockerfile) —
+# repeating it as the first CMD arg made the entrypoint re-exec itself (double
+# schema_migrations wait, tripled cold start). Pass only the daemon command.
 ExecStart=/usr/bin/docker run --name silkennet-coap --network host \
   --env-file /etc/silkennet/coap.env \
   ghcr.io/alexey-lukin/silken_net:latest \
-  /rails/bin/docker-entrypoint bundle exec ruby lib/daemons/coap_listener
+  bundle exec ruby lib/daemons/coap_listener
 ExecStop=/usr/bin/docker stop silkennet-coap
 Restart=always
 RestartSec=10

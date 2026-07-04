@@ -14,6 +14,13 @@ akash_auditor_address = "akash1365yvmc4s7awdyj3n2sav7xfx76axy6czqt24"
 docker_image     = "ghcr.io/alexey-lukin/silken_net:latest"
 rails_master_key = "CHANGE_ME"
 
+# ── FIRST Akash deploy = CANOPY render (founder 2026-07-04) ──────────────────
+# The riskiest path (first-ever Akash deploy) must not debut on production.
+# Uncomment BOTH lines for the canopy render; re-comment (defaults) for the
+# production render only after the canopy smoke passes. See docs/06_01 §Чеклист.
+# deployment_slot   = "canopy"
+# postgres_database = "silken_net_canopy"
+
 # Cloud SQL Auth Proxy — connects to Cloud SQL via Google Cloud API (HTTPS)
 # No public IP on Cloud SQL required. No VPN/Tailscale needed.
 # Component style (config/database.yml): host=127.0.0.1 + user=silken_net are non-secret
@@ -71,6 +78,8 @@ sentry_dsn = "https://CHANGE_ME@o000000.ingest.sentry.io/0000000"
 # DEFAULT_ADMIN_ROLE) for Akash-deployment keys. See docs/06_02 (INF.*).
 # Generate hex private key: openssl rand -hex 32 (then prepend 0x).
 oracle_private_key           = "0xCHANGE_ME_legacy_fallback_oracle_key"
+# Dedicated Celo signer (ARCH.50). Empty ⇒ Celo falls back to oracle_private_key.
+oracle_celo_private_key      = "0xCHANGE_ME_dedicated_celo_cusd_signer"
 oracle_minter_private_key    = "0xCHANGE_ME_holds_MINTER_ROLE_on_SCC_SFC"
 oracle_slasher_private_key   = "0xCHANGE_ME_holds_SLASHER_ROLE_on_SCC_SFC"
 ethereum_anchor_private_key  = "0xCHANGE_ME_separate_wallet_for_weekly_L1_anchor"
@@ -95,6 +104,9 @@ solana_fee_payer_token_account = "CHANGE_ME_base58_usdc_ata_for_fee_payer"
 solana_usdc_mint_address = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 
 # =============================================================================
-# Chainlink oracle-callback HMAC (on-chain dispatch removed — ARCH.53)
+# Webhook HMACs: Chainlink callback (dispatch removed — ARCH.53) + Helium SOS (ARCH.34)
 # =============================================================================
+# Both: ruby -e "require 'securerandom'; puts SecureRandom.hex(32)"
 chainlink_hmac_secret = "CHANGE_ME_hmac_secret_for_callback_signature_verification"
+# Also entered in Helium Console HTTP Integration (X-Helium-Signature).
+helium_webhook_secret = "CHANGE_ME_hmac_secret_for_helium_sos_webhook"

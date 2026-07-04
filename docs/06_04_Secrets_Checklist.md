@@ -57,7 +57,7 @@
 ### 1.1. P0 — Blocking (без цих secrets CI/CD не запуститься)
 
 - [ ] `RAILS_MASTER_KEY` — Rails credentials decryption key. **[B1]** CI читає його як GitHub Secret; `.kamal/secrets` тепер ENV-first (`${RAILS_MASTER_KEY:-$(cat config/master.key)}`) — `config/master.key` gitignored, відсутній у CI checkout, тож GitHub Secret мусить перемогти, інакше boot-decrypt падає.
-- [ ] `KAMAL_MASTER_KEY` — Kamal-encrypted secrets master key
+> ~~`KAMAL_MASTER_KEY`~~ — **ВИДАЛЕНО 2026-07-04 (фантом):** Kamal 2.x не має механізму «encrypted secrets master key»; `.kamal/secrets` — plain `$VAR`-файл, споживача не існувало ніде в репо, а verify-secrets гейтив production на неіснуючу залежність. Не заводити.
 - [ ] `PROVISIONING_MASTER_KEY` — HKDF root для per-device AES-деривації (boot-critical: `config/initializers/master_key_strength_check.rb` raise при відсутності в production). **[B1]** `verify-secrets` перевіряє присутність + довжину ≥64; обидва deploy-workflow маплять його у `kamal deploy`. Генерувати: `ruby -e "require 'securerandom'; puts SecureRandom.hex(32)"`. (Runtime-роль — §2.)
 - [ ] `GCP_SA_KEY` — GCP Service Account JSON ключ (raw або base64). Дозволи: `roles/artifactregistry.writer`, `roles/cloudsql.client`. Створюється в GCP IAM → Service Accounts → Keys.
 - [ ] `GCP_PROJECT_ID` — ID GCP проєкту (наприклад, `silken-net-prod`)
@@ -83,14 +83,14 @@
 
 > Раніше ці жили лише у `.kamal/secrets` (§2) / Akash SDL (§3) / Terraform (§4). **Після B1** обидва deploy-workflow маплять їх із GitHub Secrets у крок `kamal deploy`, тож для CI-деплою вони **мусять існувати як GitHub Repository Secrets**. Повний опис кожного — §2.1 (one-home); тут лише перелік + boot-vs-lazy клас (`verify-secrets` гейтить boot-critical, warn на lazy).
 
-**Boot-critical** (порожній → контейнер падає на boot; `verify-secrets` блокує):
-- [ ] `ORACLE_MINTER_PRIVATE_KEY` · `ORACLE_SLASHER_PRIVATE_KEY` — `web3_network_guard` raise при boot **signer-процесу (Sidekiq job)**, якщо немає ні specific-ключа, ні `ORACLE_PRIVATE_KEY`-fallback. **Money/signing-ключі = JOB-ONLY (2026-07-04):** signing-п'ятірка (`ORACLE_*` ×3 + `ETHEREUM_ANCHOR_PRIVATE_KEY` + `SOLANA_WALLET_KEYPAIR`) живе лише в `job` (Kamal `servers.job.env.secret` / Akash SDL job-сервіс); web/coap бутяться keyless by design (Akash ENV = plaintext провайдеру; guard scoped `signer_process: Sidekiq.server?` — [`04_02 §Web3NetworkGuard`](04_02_Business_Logic_and_Services)).
+**Boot-critical** (порожній → контейнер падає на boot / terraform не apply-неться / kamal не зайде по SSH; `verify-secrets` блокує; з 2026-07-04 гейт покриває і infra-передумови `GCP_PROJECT_ID` + `SSH_PRIVATE_KEY`/`SSH_KNOWN_HOSTS`):
+- [ ] `ORACLE_MINTER_PRIVATE_KEY` · `ORACLE_SLASHER_PRIVATE_KEY` — `web3_network_guard` raise при boot **signer-процесу (Sidekiq job)**, якщо немає ні specific-ключа, ні `ORACLE_PRIVATE_KEY`-fallback. **Money/signing-ключі = JOB-ONLY (2026-07-04):** signing-шістка (`ORACLE_*` ×4 вкл. `ORACLE_CELO_PRIVATE_KEY` + `ETHEREUM_ANCHOR_PRIVATE_KEY` + `SOLANA_WALLET_KEYPAIR`) живе лише в `job` (Kamal `servers.job.env.secret` / Akash SDL job-сервіс); web/coap бутяться keyless by design (Akash ENV = plaintext провайдеру; guard scoped `signer_process: Sidekiq.server?` — [`04_02 §Web3NetworkGuard`](04_02_Business_Logic_and_Services)).
 
 **Lazy runtime** (порожній → фіча degraded на першому use, НЕ boot-crash; `verify-secrets` warn):
-- [ ] `SENTRY_DSN` · `ETHEREUM_ANCHOR_PRIVATE_KEY` · `ORACLE_PRIVATE_KEY` (legacy fallback)
+- [ ] `SENTRY_DSN` · `ETHEREUM_ANCHOR_PRIVATE_KEY` · `ORACLE_PRIVATE_KEY` (legacy fallback) · `ORACLE_CELO_PRIVATE_KEY` (ARCH.50 — порожній = Celo на legacy-fallback, ізоляція вимкнена)
 - [ ] RPC: `ALCHEMY_POLYGON_RPC_URL` · `ALCHEMY_ETHEREUM_RPC_URL` · `SOLANA_RPC_URL` · `POLYGON_RPC_URL` · `CELO_RPC_URL` (порожній RPC `web3_network_guard` толерує; testnet-marker — raise)
 - [ ] Solana: `SOLANA_WALLET_KEYPAIR` · `SOLANA_FEE_PAYER_PUBKEY` · `SOLANA_FEE_PAYER_TOKEN_ACCOUNT` · `SOLANA_USDC_MINT_ADDRESS`
-- [ ] Chainlink: `CHAINLINK_HMAC_SECRET` (лише callback-endpoint; dispatch-секрети вилучено — ARCH.53)
+- [ ] Webhook HMACs: `CHAINLINK_HMAC_SECRET` (callback-endpoint; dispatch вилучено — ARCH.53) · `HELIUM_WEBHOOK_SECRET` (Queen SOS — під `WEB3_STRICT_MODE` контролер raise'ить per-request без нього)
 
 > **🔴 Drift guard:** цей набір = `config/deploy.yml env.secret` = `.kamal/secrets` = deploy-workflow `env:` блок. Розбіжність у будь-яку сторону → порожній інжект → boot-crash. Канонічний список — `config/deploy.yml env.secret` (SSOT).
 
@@ -109,7 +109,7 @@
 > **`KREDIS_REDIS_URL` виведено [B1]** — Kredis auto-derive DB 1 із `REDIS_URL` (`config/redis/shared.yml`). Не оголошуй у `.kamal/secrets` / `env.secret`: порожній або placeholder-інжект truthy для `ENV.fetch` і перебив би derive → Kredis конектиться до сміття. Override лише вказівкою на окремий Redis-інстанс.
 - [ ] `PROVISIONING_MASTER_KEY` — HKDF master key для per-device AES key derivation. Генерувати: `ruby -e "require 'securerandom'; puts SecureRandom.hex(32)"`. ⚠️ **Production guard:** provisioning endpoint **MUST** raise/refuse при відсутності ENV у production (`Rails.env.production?`) — будь-який fallback на raw AES key є **критичною security regression** і допустимий ТІЛЬКИ у TRL4 lab mode (`RAILS_ENV=development|test`). Recommended controller-level guard: `raise "PROVISIONING_MASTER_KEY required in production" if Rails.env.production? && ENV["PROVISIONING_MASTER_KEY"].blank?`
 - [ ] `CHAINLINK_HMAC_SECRET` — HMAC-SHA256 секрет для верифікації `X-Chainlink-Signature` header у `/api/v1/oracle_callbacks`. Генерувати як `SecureRandom.hex(32)`. (Dispatch-секрети `ROUTER`/`SUBSCRIPTION_ID`/`DON_ID` вилучено — ARCH.53 демоут.)
-- [ ] `HELIUM_WEBHOOK_SECRET` — [ARCH.34] HMAC-SHA256 секрет `X-Helium-Signature` для `/api/v1/telemetry/helium` (SOS Королеви; той самий рецепт `SecureRandom.hex(32)`; вписується і у Helium Console HTTP Integration). `WEB3_STRICT_MODE=true` → відсутність = SecurityError.
+- [ ] `HELIUM_WEBHOOK_SECRET` — [ARCH.34] HMAC-SHA256 секрет `X-Helium-Signature` для `/api/v1/telemetry/helium` (SOS Королеви; той самий рецепт `SecureRandom.hex(32)`; вписується і у Helium Console HTTP Integration). `WEB3_STRICT_MODE=true` → відсутність = SecurityError. ✅ 2026-07-04 провід заведено НАСКРІЗНО: Kamal `env.secret` + `.kamal/secrets` + обидва deploy-workflows (RUNTIME-warn) + Akash SDL web (static + `.tpl` + tf-var) — до того секрет був задекларований лише тут, і кожен Kamal/Akash-деплой гарантовано 500-ив Queen-SOS endpoint.
 
 ### 2.1. ENV-only змінні (НЕ у `.kamal/secrets`, потрібні воркерам)
 
@@ -119,12 +119,11 @@
 - [ ] `ORACLE_PRIVATE_KEY` — приватний ключ EVM oracle wallet для мінтингу SCC/SFC. **Критичний.** Гаманець потребує MATIC для газу.
 - [ ] `ETHEREUM_ANCHOR_PRIVATE_KEY` — приватний ключ для тижневого SHA-256 state root anchoring на L1. Потребує ETH для газу.
 - [ ] `ALCHEMY_POLYGON_RPC_URL` — Alchemy/Infura RPC для Polygon (Primary). `Web3::ResilientClient` підтримує fallback cascade — також встанови `ALCHEMY_POLYGON_RPC_URL_FALLBACK_*` за потреби.
-- [ ] `POLYGON_RPC_URL` — **окремий** Polygon RPC для `PriceOracleService` (`Web3::RpcConnectionPool.client_for("POLYGON_RPC_URL")`, `ENV.fetch` без fallback → `KeyError` якщо відсутній). Може дорівнювати `ALCHEMY_POLYGON_RPC_URL` або public endpoint (`https://polygon-rpc.com`). ⚠️ ще не в deploy env-декларації → [`00_07`](00_07_Action_Plan_Tracker) **INF.12**.
+- [ ] `POLYGON_RPC_URL` — **окремий** Polygon RPC для `PriceOracleService` (`Web3::RpcConnectionPool.client_for("POLYGON_RPC_URL")`, `ENV.fetch` без fallback → `KeyError` якщо відсутній). Може дорівнювати `ALCHEMY_POLYGON_RPC_URL` або public endpoint (`https://polygon-rpc.com`). ✅ заведено у Kamal env.secret + `.kamal/secrets` + обидва deploy-workflows (INF.12 machine-half).
 - [ ] `ALCHEMY_ETHEREUM_RPC_URL` — Alchemy RPC для Ethereum L1
-- [ ] `CELO_RPC_URL` — Celo RPC endpoint (без значення — `Forno`-public; для production — Infura/Alchemy)
 - [ ] `SOLANA_RPC_URL` — Solana RPC. ⚠️ **БЕЗ цього ENV дефолт = Solana Devnet** — мікро-винагороди USDC підуть на тестову мережу (`E.47` у [`00_07`](00_07_Action_Plan_Tracker))! Mainnet: Helius/QuickNode.
 - [ ] `CARBON_COIN_CONTRACT_ADDRESS` — адреса SCC контракту після deploy (`BlockchainMintingService`, `ENV.fetch` без default → `KeyError` на першому SCC mint)
-- [ ] `FOREST_COIN_CONTRACT_ADDRESS` — адреса SFC контракту після deploy (той самий `ENV.fetch`-патерн → `KeyError` на першому SFC mint). ⚠️ ще не в deploy env-декларації → [`00_07`](00_07_Action_Plan_Tracker) **INF.12**.
+- [ ] `FOREST_COIN_CONTRACT_ADDRESS` — адреса SFC контракту після deploy (той самий `ENV.fetch`-патерн → `KeyError` на першому SFC mint). ✅ placeholder заведено у Kamal env.clear + Akash SDL (INF.12 machine-half; fill = post-`forge deploy`).
 - [ ] `KLIMA_RETIREMENT_CONTRACT` — адреса KlimaDAO Retirement Aggregator
 - [ ] `DAO_TREASURY_ADDRESS` — DAO Treasury (Dynamic Tax 2% · `BlockchainMintingService`)
 - [ ] `CELO_CUSD_CONTRACT_ADDRESS` — cUSD на Celo (`CommunityRewardService`)
@@ -227,7 +226,7 @@
 - [ ] `PROMETHEUS_AUTH_USER` / `PROMETHEUS_AUTH_PASSWORD` — Basic auth для `/metrics` endpoint
 - [ ] `PROMETHEUS_ALLOWED_IPS` — **[INF.5]** Comma-separated CIDR allowlist для `/metrics` endpoint у `PrometheusCollector` middleware (`app/middleware/prometheus_collector.rb`). Запити з адрес поза `PRIVATE_RANGES` (RFC 1918/4193 + localhost) ТА поза цим списком отримають `403 Forbidden`. Приклади:
   - **GCP-only Kamal:** залишити пустим — внутрішня VPC IP належить RFC 1918 (`10.x`), уже allowed.
-  - **Akash deployment:** залежить від cluster network — Akash може дати немутальний CIDR. Перевір `kubectl get pods -n akash-services` (на Akash provider) або `terraform output akash_pod_cidrs`. Приклад: `PROMETHEUS_ALLOWED_IPS=10.42.0.0/16,10.43.0.0/16`.
+  - **Akash deployment:** залежить від cluster network — Akash може дати немутальний CIDR. Дізнатись фактичний pod-CIDR можна лише з боку провайдера (`akash provider lease-status` / логи) — Terraform-output для цього НЕ існує. Приклад: `PROMETHEUS_ALLOWED_IPS=10.42.0.0/16,10.43.0.0/16`.
   - **Cloudflare Proxy:** додати [Cloudflare IP ranges](https://www.cloudflare.com/ips/) якщо scrape йде через CF. Приклад: `PROMETHEUS_ALLOWED_IPS=173.245.48.0/20,103.21.244.0/22,...`.
   - **Grafana Cloud direct scrape:** не використовуйте direct scrape з `/metrics`; використовуйте Alloy `prometheus.remote_write` — внутрішній push не потребує allowlist.
 
@@ -294,14 +293,11 @@
 
 ### 5.1. Перед першим деплоєм Production
 
-1. [ ] 👤 Створити GCS bucket для Terraform state (S5.6 в [`00_07`](00_07_Action_Plan_Tracker)): `gsutil mb -l europe-west1 gs://<project>-terraform-state`. Включити versioning: `gsutil versioning set on gs://<project>-terraform-state`.
-2. [ ] 👤 Створити `terraform/terraform.tfvars` з §4
-3. [ ] 👤 Виконати `terraform init && terraform apply`
-4. [ ] 👤 Заповнити GitHub Secrets з §1
-5. [ ] 👤 Створити `.kamal/secrets` ENV у CI (з §2)
-6. [ ] 👤 Заповнити Akash SDL секрети з §3 (або через `.tpl` + `terraform output`)
-7. [ ] 👤 Поповнити Web3 wallets газом (MATIC, ETH, SOL, CELO)
-8. [ ] 👤 Верифікувати CI pipeline проходить (`Actions` tab)
+> **One-Home: порядок дня деплою живе у [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform)** (фази −1…6) — старий 8-кроковий список тут суперечив 06_01-порядку (секрети до/після apply). Секрет-специфіка, яку тримає ЦЕЙ дім:
+>
+> - **GitHub Secrets = дві партії:** Batch A (pre-infra, ДО `terraform apply`): `GCP_SA_KEY` · `GCP_PROJECT_ID` · `POSTGRES_PASSWORD` · `SSH_PRIVATE/PUBLIC_KEY` · `RAILS_MASTER_KEY` · `PROVISIONING_MASTER_KEY`. Batch B (post-infra, значення існують лише ПІСЛЯ apply/акаунтів): `SSH_KNOWN_HOSTS` (= `ssh-keyscan <ingress_ip>`) · `REDIS_URL`/`CANOPY_REDIS_URL` (Upstash ×2 — Фаза −1) · RPC×5 · Solana×4 · `SENTRY_DSN` · webhook-HMACs · oracle-ключі.
+> - `.kamal/secrets` вже закомічений ($VAR-форма) — «створювати» його не треба; треба заповнити shell-ENV (CI робить це сам з GitHub Secrets).
+> - Akash SDL секрети — через `.tpl` + `terraform/akash/terraform.tfvars` (§3/§4); gas на гаманцях — Фаза −1/4.
 
 ### 5.2. Ротація секретів
 

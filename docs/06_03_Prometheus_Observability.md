@@ -126,7 +126,7 @@ Gem `sentry-sidekiq` автоматично додає Sentry middleware до Si
 
 ### 1.4 Виключені виключення (Zero Noise Policy)
 
-**34 класи виключень** виключені зі Sentry, щоб уникнути alert fatigue:
+**36 класів виключень** виключені зі Sentry, щоб уникнути alert fatigue:
 
 | Категорія | Приклади |
 |-----------|----------|
@@ -305,23 +305,28 @@ end
 
 > **ЄДИНЕ авторитетне джерело переліку + кількості метрик** — згенеровано з
 > `SilkenNet::Metrics::REGISTRY`, verified vs `config/initializers/prometheus.rb`
-> 2026-06-12. Усі інші згадки (CLAUDE.md, `config.alloy`, підсекції §2.3–2.7 з
-> обґрунтуванням/alert-прикладами) **рефлять сюди**, не дублюють число/перелік.
+> 2026-07-04 (додано ARCH.54 dead-man-switch + ARCH.34 Helium-SOS четвірку). Усі інші
+> згадки (CLAUDE.md, `config.alloy`, підсекції §2.3–2.7 з обґрунтуванням/alert-прикладами)
+> **рефлять сюди**, не дублюють число/перелік.
 > При зміні реєстру в коді — **регенерувати ЛИШЕ цю таблицю** (команда в кінці).
 > Де інкрементується/оновлюється кожна — `grep -rn "SilkenNet::Metrics::<CONST>" app/`.
 >
-> **Разом: 56 метрик = 34 counters + 20 gauges + 2 histograms** (звірено регенерацією нижче).
+> **Разом: 60 метрик = 36 counters + 22 gauges + 2 histograms** (звірено регенерацією нижче).
 
-**Counters (34):**
+**Counters (36):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
 | `silkennet_anchor_missed_weeks_total` | — | Total missed Ethereum L1 anchor weeks detected (gap > 8 days) |
 | `silkennet_circuit_breaker_rejections_total` | `service` | Web3 requests fast-failed because a provider circuit breaker was open |
 | `silkennet_coap_packets_received_total` | `status` | Total CoAP UDP packets received by the telemetry daemon |
-| `silkennet_ews_alerts_total` | `alert_type` | Total EWS alerts dispatched (fire, drought, pest, storm, field_audit) |
+| `silkennet_ews_alerts_total` | `alert_type` | Total EWS alerts dispatched (fire, drought, pest, storm) |
 | `silkennet_fauna_skip_reports_total` | — | FW.42 telemetry packets reporting a fauna session skipped on low Vcap (per-DID attribution in logs) |
 | `silkennet_fw2_fc_degraded_reports_total` | — | FW.2 telemetry packets reporting a lost FC high-water invariant (Flash refusing writes; per-DID attribution in logs) |
+| `silkennet_gateways_offline_total` | — | Total gateway offline transitions detected by the staleness sweeper (queen_offline alerts) |
+| `silkennet_helium_sos_received_total` | `outcome` | Queen SOS frames received via the Helium webhook, by processing outcome |
+| `silkennet_insurance_payout_attempts_total` | — | Parametric insurance payouts attempted by InsurancePayoutWorker (SLO denominator) |
+| `silkennet_insurance_payout_success_total` | — | Parametric insurance payouts executed — Etherisc claim sent / mint initiated (SLO numerator) |
 | `silkennet_m2m_nonce_fallback_total` | — | Total M2M nonce checks falling back from Redis to DB-backed cache (Redis outage indicator) |
 | `silkennet_mint_attempts_total` | `token_type` | Mint transactions attempted by BlockchainMintingService (SLO denominator) |
 | `silkennet_mint_success_total` | `token_type` | Mint transactions successfully broadcast to mempool — status→sent (SLO numerator) |
@@ -332,13 +337,11 @@ end
 | `silkennet_rpc_errors_total` | `network`, `error_type` | Total Web3 RPC errors |
 | `silkennet_scc_minted_total` | `token_type` | Total SCC (SilkenCarbonCoin) tokens minted |
 | `silkennet_scc_slashed_total` | — | Total tokens slashed (burned due to cluster stress) |
-| `silkennet_slash_attempts_total` | — | [ARCH.45] Slash transactions attempted by BlockchainBurningService (success-rate SLO denominator) |
-| `silkennet_slash_success_total` | — | [ARCH.45] Slash transactions broadcast — status→sent (success-rate SLO numerator) |
+| `silkennet_slash_attempts_total` | — | Slash transactions attempted by BlockchainBurningService (SLO denominator) |
+| `silkennet_slash_success_total` | — | Slash transactions successfully broadcast — status→sent (SLO numerator) |
 | `silkennet_slashing_events_total` | `reason` | Total slashing (burn) events by reason |
-| `silkennet_solana_payout_attempts_total` | — | [ARCH.45] Solana batch payouts attempted by BatchPayoutService (success-rate SLO denominator) |
-| `silkennet_solana_payout_success_total` | — | [ARCH.45] Solana batch payouts broadcast — status→sent (success-rate SLO numerator) |
-| `silkennet_insurance_payout_attempts_total` | — | [INS.1] Parametric insurance payouts attempted by InsurancePayoutWorker (success-rate SLO denominator) |
-| `silkennet_insurance_payout_success_total` | — | [INS.1] Parametric insurance payouts executed — Etherisc claim sent / mint initiated (success-rate SLO numerator) |
+| `silkennet_solana_payout_attempts_total` | — | Solana batch payouts attempted by BatchPayoutService (SLO denominator) |
+| `silkennet_solana_payout_success_total` | — | Solana batch payouts successfully broadcast — status→sent (SLO numerator) |
 | `silkennet_streamr_broadcast_failures_total` | — | Total Streamr broadcast failures (P2P real-time telemetry delivery) |
 | `silkennet_telemetry_acoustic_overflow_total` | — | Total telemetry packets with acoustic_events=255 (uint8 saturation) |
 | `silkennet_telemetry_ccm_decrypt_ok_total` | — | FW.2 CCM packets successfully decrypted with valid MIC |
@@ -351,7 +354,7 @@ end
 | `silkennet_treasury_check_errors_total` | `network`, `error_type` | Total treasury monitoring RPC errors |
 | `silkennet_w3bstream_signature_fallback_total` | `reason` | Total W3bstream verifications using SHA256 fallback instead of Ed25519 hardware signature |
 
-**Gauges (20):**
+**Gauges (22):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
@@ -360,6 +363,8 @@ end
 | `silkennet_db_pool_idle` | `database` | Number of idle database connections in the pool |
 | `silkennet_db_pool_size` | `database` | Maximum number of connections in the database pool |
 | `silkennet_db_pool_waiting` | `database` | Number of threads waiting for a database connection |
+| `silkennet_gateway_attest_lapsed` | — | Online QATT-capable gateways whose last Ed25519-attested batch is older than the lapse window |
+| `silkennet_gateways_faulty` | — | Current number of gateways in the faulty state (set on each staleness sweep) |
 | `silkennet_oracle_balance` | `network` | Oracle wallet balance in native currency (wei/lamports) |
 | `silkennet_oracle_balance_ratio` | `network` | Oracle balance as ratio to minimum threshold (below 1.0 = critical) |
 | `silkennet_process_resident_memory_bytes` | — | Resident set size (RSS) of the scraped process in bytes (Linux /proc; 0 elsewhere) |
@@ -372,7 +377,7 @@ end
 | `silkennet_ruby_gc_heap_live_slots` | — | Live objects on the Ruby heap (GC.stat[:heap_live_slots]); sustained growth = leak |
 | `silkennet_ruby_gc_major_count` | — | Major Ruby GC runs since process start (GC.stat[:major_gc_count]) |
 | `silkennet_ruby_threads` | — | Live Ruby threads in the process (Thread.list.size); sustained growth = thread leak |
-| `silkennet_sidekiq_dead_set_size` | — | [ARCH.45] Sidekiq DeadSet size (jobs that exhausted retries — money-path = stranded funds/tx) |
+| `silkennet_sidekiq_dead_set_size` | — | Current size of the Sidekiq DeadSet (jobs that exhausted all retries) |
 | `silkennet_sidekiq_queue_latency_seconds` | `queue` | Latency (age of oldest job) in a Sidekiq queue |
 | `silkennet_sidekiq_queue_size` | `queue` | Current size of a Sidekiq queue |
 
@@ -493,15 +498,15 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 │                     sentry.io (активний)                        │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │  /metrics endpoint (PrometheusCollector middleware)     │   │
-│  │  ✅ custom метрики §2.8  ✅ Всі 9 черг                 │   │
-│  │  ✅ Basic Auth (PROMETHEUS_AUTH_USER/PASSWORD)          │   │
+│  │  /metrics — ТРИ process-таргети (§2.9, INF.14/17):     │   │
+│  │  web:80 (middleware) · job:9394 · coap:9395            │   │
+│  │  (embedded SilkenNet::MetricsExporter; реєстр §2.8)    │   │
 │  └──────────────────────────┬──────────────────────────────┘   │
 │                             │ [Alloy scrapes кожні 15s]        │
 │                             ▼                                   │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │  Grafana Alloy (alloy сервіс в Akash SDL)              │   │
-│  │  ✅ prometheus.scrape → web:80/metrics (Basic Auth)     │   │
+│  │  ✅ prometheus.scrape → 3 таргети, лейбл `process`     │   │
 │  │  ✅ prometheus.remote_write → Grafana Cloud (HTTPS)     │   │
 │  └──────────────────────────┬──────────────────────────────┘   │
 │                             │                                   │

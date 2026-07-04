@@ -7,7 +7,7 @@ service: silken_net
 image: <GCP_PROJECT_ID>/silken-net/silken_net
 
 # Deploy to these servers (Ingress Anchor IP from Terraform: `terraform output ingress_ip`).
-# After infrastructure pivot, GCP hosts only the Ingress Anchor (e2-micro) — Rails runs on Akash.
+# After infrastructure pivot, GCP hosts only the Ingress Anchor (e2-small) — Rails runs on Akash.
 # Kamal is retained for direct GCP deployments (fallback) and deployment tooling.
 servers:
   web:
@@ -27,6 +27,7 @@ servers:
         # presence check via signer_process: Sidekiq.server?). Mirrors the Akash
         # SDL split (job service carries them, web does not).
         - ORACLE_PRIVATE_KEY
+        - ORACLE_CELO_PRIVATE_KEY
         - ORACLE_MINTER_PRIVATE_KEY
         - ORACLE_SLASHER_PRIVATE_KEY
         - ETHEREUM_ANCHOR_PRIVATE_KEY
@@ -105,8 +106,10 @@ env:
     - SOLANA_FEE_PAYER_PUBKEY
     - SOLANA_FEE_PAYER_TOKEN_ACCOUNT
     - SOLANA_USDC_MINT_ADDRESS
-    # --- Chainlink oracle-callback HMAC (endpoint live; on-chain dispatch removed — ARCH.53) ---
+    # --- Webhook HMACs: Chainlink callback (dispatch removed — ARCH.53) + Helium SOS (ARCH.34;
+    #     HeliumSosController raises SecurityError per-request under WEB3_STRICT_MODE without it) ---
     - CHAINLINK_HMAC_SECRET
+    - HELIUM_WEBHOOK_SECRET
   clear:
     # PostgreSQL connection (component style — config/database.yml; port defaults to 5432).
     # Kamal deploys inside the GCP VPC → connect to the Cloud SQL PRIVATE IP directly

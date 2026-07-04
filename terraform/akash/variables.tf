@@ -208,11 +208,28 @@ variable "solana_usdc_mint_address" {
 }
 
 # -----------------------------------------------------------------------------
-# Chainlink oracle-callback HMAC (on-chain dispatch removed — ARCH.53)
+# Dedicated Celo signer (ARCH.50 blast-radius isolation)
+# -----------------------------------------------------------------------------
+
+variable "oracle_celo_private_key" {
+  description = "Dedicated Celo cUSD signer key (hex 0x…). Celo::CommunityRewardService falls back to oracle_private_key when empty — isolation only, not boot-critical."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+# -----------------------------------------------------------------------------
+# Webhook HMACs: Chainlink callback (dispatch removed — ARCH.53) + Helium SOS
 # -----------------------------------------------------------------------------
 
 variable "chainlink_hmac_secret" {
   description = "HMAC-SHA256 secret for verifying X-Chainlink-Signature header in /api/v1/oracle_callbacks (replay protection)."
+  type        = string
+  sensitive   = true
+}
+
+variable "helium_webhook_secret" {
+  description = "HMAC-SHA256 secret for X-Helium-Signature on /api/v1/telemetry/helium (Queen SOS, ARCH.34). Under WEB3_STRICT_MODE the controller raises per-request when absent."
   type        = string
   sensitive   = true
 }

@@ -53,7 +53,7 @@
 | Актив | Сховище | Backup-механізм | Втрата = |
 |---|---|---|---|
 | **PostgreSQL production** (`trees`, `wallets`, `blockchain_transactions`, `telemetry_logs`-партиції) | Cloud SQL `silken-db` | PITR + 30×daily snapshot (§2) | 🔴 Критично — але **канонічний баланс токенів живе on-chain** (Polygon), БД — проєкція |
-| Solid **Cache/Queue/Cable** БД (`*_cache/_queue/_cable`) | Cloud SQL (той самий інстанс) | той самий backup | 🟢 Низько — регенеровні (cache transient, queue re-enqueue, cable ephemeral) |
+| Solid **Cache/Cable** БД (`*_cache/_cable` — Solid Queue pruned, INF.18) | Cloud SQL (той самий інстанс) | той самий backup | 🟢 Низько — регенеровні (cache transient, cable ephemeral; черги живуть у Redis — рядок нижче) |
 | **Terraform state** | GCS `silken-net-terraform-state` | bucket versioning (`S5.6`) | 🟡 Високо — infra drift/lock; відновлюється з версій |
 | **`RAILS_MASTER_KEY`** (`config/master.key`) | git-ignored + vault | ручний (password manager) | 🔴 **Незамінний** — `credentials.yml.enc` без нього не розшифрувати |
 | **`PROVISIONING_MASTER_KEY`** | secrets store | ручний | 🔴 **Незамінний** — без нього не деривувати нові per-device ключі (вже прошиті пристрої працюють; нове provisioning — ні) |

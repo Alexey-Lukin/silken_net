@@ -7,7 +7,7 @@ Infrastructure-as-Code конфіги для Grafana Cloud. Замінюють �
 ```
 deploy/grafana/
 ├── dashboards/
-│   └── silkennet-overview.json   # Головний дашборд (5 секцій)
+│   └── silkennet-overview.json   # Головний дашборд (6 секцій)
 ├── alerts/
 │   └── silkennet-alerts.yaml     # alert rules (P0/P1/P2)
 └── import.rb                     # one-command імпорт обох артефактів
@@ -42,16 +42,20 @@ Alerting → Alert rules → Import → paste `alerts/silkennet-alerts.yaml`
 
 | Секція | Метрики | S2.2 item |
 |--------|---------|-----------|
-| Telemetry Ingest + Fraud | processed_total, fraud_total, acoustic_overflow, panic_replay, cluster_entropy, tinyml_threshold_invalid_reports (FW.18b) | Telemetry ingest rate + fraud detection |
+| Telemetry Ingest + Fraud | processed_total, fraud_total, acoustic_overflow, panic_replay, cluster_entropy, tinyml_threshold_invalid_reports (FW.18b), coap_packets by status | Telemetry ingest rate + fraud detection |
 | Sidekiq Queues | queue_size × 9, queue_latency × 9 | Sidekiq queues (9 черг, size + latency) |
 | Web3 RPC | rpc_errors by network/type, circuit_breaker_open, scc_minted, oracle_dispatch latency | Web3 RPC errors by network |
 | Treasury / Oracle | oracle_balance_ratio, oracle_balance by network | Treasury / Oracle balance monitoring |
 | Database Pool | db_pool_connections / db_pool_size, db_pool_waiting | Database connection pool stats |
+| 💰 Money-Path Reliability [ARCH.45] | mint/slash/solana-payout success-rate (SLO ratio), sidekiq_dead_set_size | Money-path SLO + DeadSet |
 
 ## Alerts: зведення
 
 | ID | Rule | Severity | Поріг |
 |----|------|----------|-------|
+| sn-alert-scrape-target-down | min by(process) up{job="silken_net_scraper"} < 1 (3 таргети; NoData→Alerting = Alloy впав) | critical | 3m |
+| sn-alert-gateway-faulty | gateways_faulty > 0 (dead-man switch ARCH.54) | critical | 5m |
+| sn-alert-mint-slo-breach | mint success/attempts < 0.8 за 1h (guard attempts>0) | critical | 15m |
 | sn-alert-partition-maintenance-failed | partition maintenance failures > 0 за 24h | critical | 0m |
 | sn-alert-web3-queue-critical | web3_critical queue > 100 jobs | critical | 5m |
 | sn-alert-fraud-detected | fraud rate > 0/s | critical | 2m |
@@ -65,7 +69,10 @@ Alerting → Alert rules → Import → paste `alerts/silkennet-alerts.yaml`
 | sn-alert-tinyml-threshold-invalid | tinyml_threshold_invalid_reports rate(15m) > 0 (FW.18b) | warning | 5m |
 | sn-alert-oracle-balance-warning | oracle_balance_ratio < 1.0 | info | 15m |
 | sn-alert-db-pool-saturation | db_pool_waiting > 5 | info | 2m |
+| sn-alert-sidekiq-deadset | sidekiq_dead_set_size > 0 (money-path = stranded tx) | warning | 10m |
 | sn-alert-w3bstream-fallback | w3bstream SHA256 fallback > 0 | info | 5m |
+
+> Повний SSOT правил (18) — сам `alerts/silkennet-alerts.yaml`; ця таблиця — людська шпаргалка, `import.rb` рахує з yaml.
 
 ## Notification channel
 

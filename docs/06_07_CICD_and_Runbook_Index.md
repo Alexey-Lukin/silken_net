@@ -62,7 +62,7 @@
 |---|---|---|
 | `deploy.yml` → **Deploy · Canopy** | `workflow_run` (CI success on `main`) + dispatch | **Canopy** deploy: terraform + `kamal deploy -d canopy`. `verify-secrets` **skips cleanly** (green run) when no deploy secrets are configured — no red noise. |
 | `deploy-production.yml` → **Deploy · Production** | `release: published` + dispatch | **Production**: `verify-secrets` (SEC.11) → terraform apply → `kamal deploy`. The GitHub Release that triggers it is created by **Ops · Release** (release-please). |
-| `coap_smoke.yml` → **Smoke · CoAP UDP** | `workflow_call` (job `coap-smoke` в обох deploy-workflows, `needs: deploy`) + dispatch | Post-deploy CoAP/UDP boundary smoke (INF.6; активується repo Variable `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST`, до того — видимо skipped) |
+| `coap_smoke.yml` → **Smoke · CoAP UDP** | `workflow_call` (job `coap-smoke` в обох deploy-workflows, `needs: deploy`) + **`schedule` кожні 30 хв** (`17,47 * * * *` — безперервний liveness анкора-SPOF, S2.4) + dispatch | Post-deploy CoAP/UDP boundary smoke (INF.6; активується repo Variable `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST`, до того — видимо skipped) |
 | `mirror-ghcr.yml` → **Deploy · GHCR Mirror** | `workflow_run` + `release` + dispatch | Дзеркалить Docker image у GHCR (для Akash pull). **Path-gated** — на workflow_run перебудовує лише коли змінились image-релевантні файли; підписує образ **Sigstore-signed SLSA build-provenance** (`actions/attest-build-provenance`, keyless OIDC→Fulcio/Rekor) + BuildKit SBOM, attestation attached. User-facing verify → `SECURITY.md`. |
 
 ### Repo / Project governance

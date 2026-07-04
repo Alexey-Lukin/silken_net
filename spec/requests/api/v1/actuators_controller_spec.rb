@@ -94,8 +94,9 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
         expect(response).to have_http_status(:accepted)
         first_command_id = response.parsed_body["command_id"]
 
-        # Simulate rack.response_finished callbacks (Puma invokes these after flush)
-        Array(request.env["rack.response_finished"]).each { |cb| cb.call(request.env) }
+        # Simulate rack.response_finished callbacks with the real Rack SPEC arity —
+        # Puma invokes them after flush as (env, status, headers, error).
+        Array(request.env["rack.response_finished"]).each { |cb| cb.call(request.env, response.status, response.headers, nil) }
 
         # Retry with same Idempotency-Key — should return cached response
         post "/api/v1/actuators/#{own_actuator.id}/execute",
@@ -117,11 +118,12 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
         expect(response).to have_http_status(:accepted)
 
         # In test env, rack.response_finished callbacks are collected but not
-        # automatically invoked. Execute them manually to verify the cache write.
+        # automatically invoked. Execute them manually with the real Rack SPEC
+        # arity (env, status, headers, error) — the exact call Puma makes.
         callbacks = request.env["rack.response_finished"]
         expect(callbacks).to be_present
 
-        callbacks.each { |cb| cb.call(request.env) }
+        callbacks.each { |cb| cb.call(request.env, response.status, response.headers, nil) }
 
         cached = Rails.cache.read(cache_key)
         expect(cached).to be_present

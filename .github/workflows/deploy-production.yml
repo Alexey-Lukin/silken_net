@@ -28,16 +28,23 @@ jobs:
           egress-policy: audit
       - name: Assert deploy secrets are present [B1]
         env:
-          # Boot-critical: empty → container crashes on boot or kamal can't decrypt.
-          # Mirror config/deploy.yml env.secret (the kamal-deploy env: block below).
-          KAMAL_MASTER_KEY: ${{ secrets.KAMAL_MASTER_KEY }}
+          # Boot-critical: empty → container crashes on boot, terraform can't apply,
+          # or kamal can't SSH. Mirror config/deploy.yml env.secret (the kamal-deploy
+          # env: block below) + the infra prerequisites (GCP project, SSH transport).
+          # KAMAL_MASTER_KEY removed — phantom: Kamal 2.x has no such mechanism and
+          # nothing in .kamal/ consumes it (plain $VAR secrets file, not encrypted).
           RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           PROVISIONING_MASTER_KEY: ${{ secrets.PROVISIONING_MASTER_KEY }}
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           REDIS_URL: ${{ secrets.REDIS_URL }}
           ORACLE_MINTER_PRIVATE_KEY: ${{ secrets.ORACLE_MINTER_PRIVATE_KEY }}
           ORACLE_SLASHER_PRIVATE_KEY: ${{ secrets.ORACLE_SLASHER_PRIVATE_KEY }}
+          HELIUM_WEBHOOK_SECRET: ${{ secrets.HELIUM_WEBHOOK_SECRET }}
           # Runtime (lazy): feature degraded until provisioned, not a boot crash. Warn only.
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           ETHEREUM_ANCHOR_PRIVATE_KEY: ${{ secrets.ETHEREUM_ANCHOR_PRIVATE_KEY }}
@@ -50,18 +57,16 @@ jobs:
           SOLANA_FEE_PAYER_PUBKEY: ${{ secrets.SOLANA_FEE_PAYER_PUBKEY }}
           SOLANA_FEE_PAYER_TOKEN_ACCOUNT: ${{ secrets.SOLANA_FEE_PAYER_TOKEN_ACCOUNT }}
           SOLANA_USDC_MINT_ADDRESS: ${{ secrets.SOLANA_USDC_MINT_ADDRESS }}
-          CHAINLINK_FUNCTIONS_ROUTER: ${{ secrets.CHAINLINK_FUNCTIONS_ROUTER }}
-          CHAINLINK_SUBSCRIPTION_ID: ${{ secrets.CHAINLINK_SUBSCRIPTION_ID }}
+          ORACLE_CELO_PRIVATE_KEY: ${{ secrets.ORACLE_CELO_PRIVATE_KEY }}
           CHAINLINK_HMAC_SECRET: ${{ secrets.CHAINLINK_HMAC_SECRET }}
-          CHAINLINK_DON_ID: ${{ secrets.CHAINLINK_DON_ID }}
         run: |
           # B1: production gates the FULL boot-critical set fail-loud — a missing secret here
           # would otherwise inject empty → container crashes AFTER a green verify (the exact
           # false-safety that hid the 4-month deploy block). Boot-critical = crashes boot
           # (master-key decrypt / PROVISIONING guard / oracle KeyError per web3_network_guard)
           # or blocks kamal. Runtime = lazy-fail on use (warn, don't block). Canon: docs/06_04 §1+§2.
-          BOOT_CRITICAL="KAMAL_MASTER_KEY RAILS_MASTER_KEY PROVISIONING_MASTER_KEY GCP_SA_KEY POSTGRES_PASSWORD REDIS_URL ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY"
-          RUNTIME="SENTRY_DSN ETHEREUM_ANCHOR_PRIVATE_KEY ALCHEMY_POLYGON_RPC_URL ALCHEMY_ETHEREUM_RPC_URL SOLANA_RPC_URL POLYGON_RPC_URL CELO_RPC_URL SOLANA_WALLET_KEYPAIR SOLANA_FEE_PAYER_PUBKEY SOLANA_FEE_PAYER_TOKEN_ACCOUNT SOLANA_USDC_MINT_ADDRESS CHAINLINK_FUNCTIONS_ROUTER CHAINLINK_SUBSCRIPTION_ID CHAINLINK_HMAC_SECRET CHAINLINK_DON_ID"
+          BOOT_CRITICAL="RAILS_MASTER_KEY PROVISIONING_MASTER_KEY GCP_SA_KEY GCP_PROJECT_ID SSH_PRIVATE_KEY SSH_KNOWN_HOSTS POSTGRES_PASSWORD REDIS_URL ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY"
+          RUNTIME="SENTRY_DSN ETHEREUM_ANCHOR_PRIVATE_KEY ALCHEMY_POLYGON_RPC_URL ALCHEMY_ETHEREUM_RPC_URL SOLANA_RPC_URL POLYGON_RPC_URL CELO_RPC_URL SOLANA_WALLET_KEYPAIR SOLANA_FEE_PAYER_PUBKEY SOLANA_FEE_PAYER_TOKEN_ACCOUNT SOLANA_USDC_MINT_ADDRESS ORACLE_CELO_PRIVATE_KEY CHAINLINK_HMAC_SECRET HELIUM_WEBHOOK_SECRET SSH_PUBLIC_KEY"
 
           missing=""
           for v in $BOOT_CRITICAL; do
@@ -163,8 +168,6 @@ jobs:
 
       - name: Reboot Kamal Proxy
         run: kamal proxy reboot
-        env:
-          KAMAL_MASTER_KEY: ${{ secrets.KAMAL_MASTER_KEY }}
 
       - name: Kamal Deploy to Production
         run: kamal deploy
@@ -203,11 +206,11 @@ jobs:
           SOLANA_FEE_PAYER_PUBKEY: ${{ secrets.SOLANA_FEE_PAYER_PUBKEY }}
           SOLANA_FEE_PAYER_TOKEN_ACCOUNT: ${{ secrets.SOLANA_FEE_PAYER_TOKEN_ACCOUNT }}
           SOLANA_USDC_MINT_ADDRESS: ${{ secrets.SOLANA_USDC_MINT_ADDRESS }}
-          # --- Chainlink Functions Router v1 (Proof of Growth) ---
-          CHAINLINK_FUNCTIONS_ROUTER: ${{ secrets.CHAINLINK_FUNCTIONS_ROUTER }}
-          CHAINLINK_SUBSCRIPTION_ID: ${{ secrets.CHAINLINK_SUBSCRIPTION_ID }}
+          # --- Celo dedicated signer (ARCH.50; falls back to ORACLE_PRIVATE_KEY) ---
+          ORACLE_CELO_PRIVATE_KEY: ${{ secrets.ORACLE_CELO_PRIVATE_KEY }}
+          # --- Webhook HMACs (Chainlink callback — dispatch removed ARCH.53; Helium SOS ARCH.34) ---
           CHAINLINK_HMAC_SECRET: ${{ secrets.CHAINLINK_HMAC_SECRET }}
-          CHAINLINK_DON_ID: ${{ secrets.CHAINLINK_DON_ID }}
+          HELIUM_WEBHOOK_SECRET: ${{ secrets.HELIUM_WEBHOOK_SECRET }}
 
   # [INF.6] Post-deploy gate: FW.56 freeze-contract probes through the real
   # UDP boundary (Ingress Anchor → Akash → coap_listener). HTTP health checks

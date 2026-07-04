@@ -45,7 +45,7 @@
 - [Terraform (GCP) — Детальний Аналіз](#-terraform-gcp--детальний-аналіз)
 - [Docker — Multi-stage Build](#-docker--multi-stage-build)
 - [Akash SDL — Технічний Аналіз](#-akash-sdl--технічний-аналіз)
-- [Чеклист першого деплою (Priority Order)](#-чеклист-першого-деплою-priority-order)
+- [DEPLOY-DAY: перший деплой фазами (Priority Order)](#-deploy-day-перший-деплой-фазами-priority-order)
 - [Масштабування до Планетарного Рівня — CoAP/UDP та Ingress](#-масштабування-до-планетарного-рівня--coapudp-та-ingress)
 - [Змінні Середовища: Web3 та Мультичейн](#-змінні-середовища-web3-та-мультичейн)
 <!-- TOC:AUTO:END -->
@@ -76,8 +76,8 @@
 З десятками API-ключів (12 блокчейнів, GCP, Akash, Starlink, DB, Redis, GitHub) критично мати єдине захищене сховище:
 
 - **Bitwarden** (open-source, self-hostable) або **1Password** — один vault per середовище (canopy / production)
-- Зберігай кожен токен, приватний ключ та credential там **до** створення `.kamal/secrets`
-- Ніколи не комітити у git: `.kamal/secrets`, `.env`, `terraform.tfvars`
+- Зберігай кожен токен, приватний ключ та credential там **до** заповнення shell-ENV перед `kamal deploy`
+- Ніколи не комітити у git RAW-значення: `.env`, `terraform.tfvars`. Сам `.kamal/secrets` **закомічений свідомо** — він містить лише `$VAR`-посилання на shell-ENV (safe-for-git за дизайном Kamal), не значення; не виривай його з git
 
 ---
 
@@ -201,7 +201,7 @@ terraform apply
 │  │  Ingress Anchor (e2-small, silken-net-ingress)      │   │
 │  │    — статична IP, CoAP-демон (PRIMARY) + HAProxy/socat│   │
 │  │    — проксює HTTP/HTTPS/CoAP на Akash deployment   │   │
-│  │  Cloud SQL PostgreSQL 17 (4 бази, HA, приватна IP)  │   │
+│  │  Cloud SQL PostgreSQL 17 (3 бази, HA, приватна IP)  │   │
 │  │  Artifact Registry (Docker images)                   │   │
 │  └──────────────────────────────────────────────────────┘   │
 │  ❌ Memorystore Redis — ВИДАЛЕНО (замінено на Upstash)      │
@@ -373,13 +373,21 @@ servers:
     hosts:
       - 192.168.0.1          # ⚠️ PLACEHOLDER
     cmd: bundle exec sidekiq -C config/sidekiq.yml
+    env:
+      secret:                # Money/signing-ключі = JOB-ONLY (шістка: ORACLE_*×4
+        - ORACLE_PRIVATE_KEY #  + ETHEREUM_ANCHOR + SOLANA_WALLET_KEYPAIR) — web/coap
+        - …                  #  бутяться keyless; guard scoped signer_process:
+                             #  Sidekiq.server? (дзеркало Akash SDL job-сервіса)
+  coap:
+    cmd: bundle exec ruby lib/daemons/coap_listener
+    options:
+      publish: ["5683:5683/udp"]   # UDP повз kamal-proxy (він HTTP-only)
 
 boot:
   proxy:
-    publish:
-      - "80:80"
+    publish:                 # HTTP/S only — kamal-proxy НЕ проксіює UDP;
+      - "80:80"              # 5683/udp публікує coap-роль напряму (вище)
       - "443:443"
-      - "5683:5683/udp"      # CoAP IoT uplink
 
 registry:
   server:   europe-west1-docker.pkg.dev
@@ -398,22 +406,20 @@ env:
     - SENTRY_DSN
     # --- Hardware provisioning gate (config/initializers/master_key_strength_check.rb) ---
     - PROVISIONING_MASTER_KEY
-    # --- Web3 oracle / minter / slasher (dual-key split, B-02 resolved) ---
-    - ORACLE_PRIVATE_KEY           # legacy fallback для existing services
-    - ORACLE_MINTER_PRIVATE_KEY    # SCC/SFC batch mint (BlockchainMintingService)
-    - ORACLE_SLASHER_PRIVATE_KEY   # token burn (BlockchainBurningService)
-    - ETHEREUM_ANCHOR_PRIVATE_KEY  # weekly state-root anchor (Ethereum::StateAnchorService)
+    # --- Money/signing-ключі НЕ ТУТ: JOB-ONLY (servers.job.env.secret вище) —
+    #     шістка ORACLE_PRIVATE/CELO/MINTER/SLASHER + ETHEREUM_ANCHOR + SOLANA_WALLET_KEYPAIR;
+    #     web/coap бутяться keyless (Web3NetworkGuard signer_process: Sidekiq.server?) ---
     # --- RPC endpoints (SSOT names expected by Web3::RpcConnectionPool) ---
     - ALCHEMY_POLYGON_RPC_URL
     - ALCHEMY_ETHEREUM_RPC_URL
     - SOLANA_RPC_URL
-    # --- Solana minting (Solana::MintingService raises without these) ---
-    - SOLANA_WALLET_KEYPAIR
+    # --- Solana публічні ідентифікатори (signing keypair — job-only) ---
     - SOLANA_FEE_PAYER_PUBKEY
     - SOLANA_FEE_PAYER_TOKEN_ACCOUNT
     - SOLANA_USDC_MINT_ADDRESS
-    # --- Chainlink oracle-callback HMAC (endpoint live; dispatch removed — ARCH.53) ---
+    # --- Webhook HMACs: Chainlink callback (dispatch removed — ARCH.53) + Helium SOS (ARCH.34) ---
     - CHAINLINK_HMAC_SECRET
+    - HELIUM_WEBHOOK_SECRET
   clear:
     POSTGRES_HOST: <CLOUD_SQL_PRIVATE_IP>    # component style (config/database.yml; INF.16)
     POSTGRES_USER: silken_net
@@ -459,7 +465,7 @@ terraform/
 ├── main.tf       # Provider (google ~> 7.0), GCP APIs, Artifact Registry
 ├── vpc.tf        # VPC, subnet (10.0.0.0/20), Cloud Router, Cloud NAT, Firewall
 ├── compute.tf    # Ingress Anchor (e2-small, silken-net-ingress), Static IP + CoAP-демон (PRIMARY)
-├── database.tf   # Cloud SQL PostgreSQL 17, 4 databases, Private Service Access
+├── database.tf   # Cloud SQL PostgreSQL 17, 3 databases (primary/cache/cable — Solid Queue pruned INF.18) + canopy-тріо, Private Service Access
 ├── iam.tf        # Service Account silken-net-deploy + 7 IAM roles
 ├── variables.tf  # Всі input variables з валідацією
 └── outputs.tf    # ingress_ip, DB URL тощо
@@ -494,24 +500,26 @@ terraform/akash/
 
 ```
 Service Account: silken-net-deploy@<project>.iam.gserviceaccount.com
-Ролі:
+Ролі (iam.tf — 9):
   - artifactregistry.writer   (push Docker images)
+  - artifactregistry.reader   (pull на анкорі/fallback)
   - compute.instanceAdmin.v1  (Kamal SSH deploy)
+  - compute.osLogin           (OS Login на анкор — SSH-модель, INF.20)
   - iam.serviceAccountUser    (impersonation)
   - logging.logWriter         (Cloud Logging)
   - monitoring.metricWriter   (Cloud Monitoring)
-  - sql.client                (Cloud SQL connect)
-  - storage.objectAdmin       (GCS Terraform state)
+  - cloudsql.client           (Cloud SQL connect)
+  - storage.objectAdmin       (GCS Terraform state, scoped до bucket)
 ```
 
 ### Розрахунок `max_connections` (database.tf)
 
-Поточне значення `400`. Формула пулу — SSOT у `config/database.yml` (коментований блок): `pool = RAILS_MAX_THREADS + 2 (Cable headroom) = 5` на процес, на кожну з 4 баз (primary/cache/queue/cable).
+Поточне значення `400`. Формула пулу — SSOT у `config/database.yml` (коментований блок): `pool = RAILS_MAX_THREADS + 2 (Cable headroom) = 5` на процес, на кожну з 3 баз набору (primary/cache/cable — Solid Queue pruned, INF.18).
 
 | Компонент | З'єднання (піковий checkout) |
 |-----------|------------|
-| Akash web | `WEB_CONCURRENCY` (4) × pool (5) × 4 бази = **~80** |
-| Akash job (Sidekiq) | `:concurrency` (15) → `DB_POOL=17` (встановлено в job env, INF.13) = **~68** (17 × 4 бази) |
+| Akash web | `WEB_CONCURRENCY` (4) × pool (5) × 3 бази = **~60** |
+| Akash job (Sidekiq) | `:concurrency` (15) → `DB_POOL=17` (встановлено в job env, INF.13) = **~51** (17 × 3 бази) |
 | Cloud SQL Auth Proxy + admin/console | **~8** |
 
 Навіть за пікового checkout усіх пулів — суттєво нижче `400`; запас закладено під read-репліки та canopy-репліки на спільному Cloud SQL інстансі. Адекватно.
@@ -575,75 +583,78 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
 
 ---
 
-## 📋 Чеклист першого деплою (Priority Order)
+## 📋 DEPLOY-DAY: перший деплой фазами (Priority Order)
 
-```
-☑ 1. Створити GCS bucket для Terraform State ← ВИПРАВЛЕНО (bootstrap.sh)
-      cd terraform && ./bootstrap.sh
+> Переписано 2026-07-04 після операторського red-team: старий 18-крок чеклист мав
+> ordering-інверсії (Upstash після секретів, що його вимагають), фантом-кроки і
+> доменні суперечності. Машинні «☑ виправлено»-пункти прибрано (вони в git/00_07 §🗄️).
+> Два шляхи НЕ плутати: **твій перший деплой = ручний Akash canopy-render** (Фаза 3);
+> CI `Deploy · Canopy` — то Kamal→GCP web-only **fallback**, він оживе сам, щойно
+> GitHub Secrets заповнені (тримай їх незаповненими до готовності, або path-gate INF.9).
 
-☐ 2. Створити terraform/terraform.tfvars
-      project_id, db_password, ssh_source_ranges=[<your-ip>]
+**Фаза −1 — Акаунти й значення (за дні ДО дня X):**
+GCP project + billing (+budget alert — OPS.11) · Akash-гаманець (`akash keys add`) + ≥5 AKT ескроу ·
+**Upstash ×2** (production + canopy) → 2× `rediss://` URL · Cloudflare + **два домени:
+`silkennet.app`** (HTTPS, proxied) **та `silkennet.com`** (його піддомен `api.silkennet.com` —
+CoAP DNS-only; firmware Queen хардкодить саме його, `COAP_SERVER_HOST`) · Grafana Cloud
+stack (remote_write URL/user/token) · Sentry project (DSN) · Alchemy (Polygon+ETH) +
+Helius/QuickNode (Solana mainnet) RPC · 4+ Web3-гаманці (oracle/minter/slasher/anchor
++ опц. celo) + газ MATIC/ETH/SOL/CELO · SSH ed25519 keypair · згенерувати
+`RAILS_MASTER_KEY`-бекап + `PROVISIONING_MASTER_KEY` → **vault + offline-копія (DR.1)**.
 
-☐ 3. Заповнити всі GitHub Secrets (00_07 S1.1)
-      GCP_SA_KEY, GCP_PROJECT_ID, POSTGRES_PASSWORD (host/user/database non-secret), REDIS_URL, ...
+**Фаза 0 — Bootstrap інфри:**
+`terraform/bootstrap.sh` (GCS state-bucket) → `terraform.tfvars` (project_id, db_password,
+`ssh_source_ranges=[<твій реальний CIDR>]` — приклад у tfvars = TEST-NET-3, НЕ лишай!) →
+GitHub Secrets **Batch A** (pre-infra: `GCP_SA_KEY`, `GCP_PROJECT_ID`, `POSTGRES_PASSWORD`,
+`SSH_PRIVATE/PUBLIC_KEY`, `RAILS_MASTER_KEY`, `PROVISIONING_MASTER_KEY`) →
+`terraform init && plan && apply` → зчитати outputs (`ingress_ip`, `database_private_ip`,
+`artifact_registry_url`). ⚠️ SSH-транспорт на анкор наразі НЕ wired (INF.20: OS Login
+ігнорує metadata-keys, `ssh_public_key` var мертвий) — Kamal-шлях чекає рішення INF.20;
+Akash-шлях (Фаза 3) від SSH НЕ залежить.
 
-☐ 4. terraform init && terraform plan && terraform apply
-      Перевірити outputs: ingress_ip, database_url
+**Фаза 1 — Дротування post-infra:**
+`ssh-keyscan <ingress_ip>` → `SSH_KNOWN_HOSTS` + GitHub Secrets **Batch B** (`REDIS_URL`,
+`CANOPY_REDIS_URL`, RPC×5, Solana×4, `SENTRY_DSN`, `CHAINLINK_HMAC_SECRET`,
+`HELIUM_WEBHOOK_SECRET`, oracle-ключі) → DNS: `api.silkennet.com` **A → ingress_ip
+(DNS-only, сіра хмарка!)** + `silkennet.app` CNAME → Akash ingress (proxied, після Фази 3) →
+Kamal-плейсхолдери: `image:` AR-шлях, servers-IP, `POSTGRES_HOST` (S1.5/INF.15) →
+**заповнити `/etc/silkennet/coap.env` на анкорі** (5 значень: `POSTGRES_PASSWORD`/
+`REDIS_URL`/`RAILS_MASTER_KEY`/`PROVISIONING_MASTER_KEY`/`SENTRY_DSN`; Postgres-host
+уже впечатаний terraform'ом) → `systemctl restart coap-daemon` → `bin/coap_smoke --host <ingress_ip>`.
 
-☐ 5. DNS A-запис створено та поширився
-      api.silkennet.com → $(terraform output -raw ingress_ip)
-      dig api.silkennet.com → правильний IP
+**Фаза 2 — Контракти (до першого mint; можна паралельно з Фазою 3):**
+fund deployer wallet → `forge script contracts/script/Deploy.s.sol --broadcast --verify`
+(ordered SCC→SFC→Anchor→Timelock→Governor→ProtocolParameters — [`05_03`](05_03_Tokenomics_SCC_and_SFC)) →
+зібрати 9 адрес → вписати у `config/deploy.yml` env.clear + Akash SDL (INF.12) → redeploy job.
 
-☑ 6. Kredis DB 1 auto-derive з REDIS_URL ← ВИПРАВЛЕНО (B1 — свідомо НЕ в .kamal/secrets/SDL)
+**Фаза 3 — ПЕРШИЙ деплой = Akash CANOPY-render (founder 2026-07-04):**
+`terraform/akash/terraform.tfvars` з example (розкоментувати canopy-пару
+`deployment_slot`/`postgres_database`!) → `terraform apply` → прийняти bid → send-manifest →
+web/job/coap up → `gcloud compute instances add-metadata silken-net-ingress
+--metadata akash-deployment-ip=<AKASH_IP>` + `reset` (Pre-Flight #10). Найризикованіший
+шлях не дебютує на production; ізольований DB-set `silken_net_canopy` (INF.16).
 
-☑ 7. Cloud SQL доступний з Akash ← ВИПРАВЛЕНО (Cloud SQL Auth Proxy)
+**Фаза 4 — Верифікація (єдиний post-deploy список):**
+`db:prepare` пройшов усі 3 бази (INF.16) · `curl https://silkennet.app/up` → 200 +
+`/ready` → 200 (DB+Redis+Kredis) · `coap_smoke` зелений + задати repo Variables
+`CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST` (INF.6) · метрики: 3 process-таргети живі,
+job-серії ≠ 0 (S2.1/INF.14) · Grafana-сесія: `deploy/grafana/import.rb` (dashboards+alerts)
++ contact point (S2.2/S2.4) · `ss -tlnp | grep 3000` IPv6 (PUMA-IPV6-1) · money fail-closed
+(INF.11) · Sentry release (S5.2) · mailer/DB_POOL/entrypoint (INF.13) · гаманці з газом
+(Pre-Flight #3).
 
-☑ 8. Sidekiq на Akash ← ВИПРАВЛЕНО (job сервіс додано)
+**Фаза 5 — Production-render + hardening:**
+Akash production-render (дефолтні vars) → повтор Фази 4 → `RAILS_ALLOWED_HOSTS=
+silkennet.app,api.silkennet.com` у env.clear/SDL (S6.18 — ОБИДВА легітимні хости:
+app = Cloudflare-HTTPS, api = анкор-шлях) → [INF.10] фліп `proxy.healthcheck.path: /ready`
+у `config/deploy.yml` ЛИШЕ після `/ready`→200 (на холодному старті /ready 503-ить →
+kamal-proxy довбе до deploy_timeout → rollback; дефолт /up прощає bring-up; повільний
+cold-start → підняти deploy_timeout; проба = ReadinessController, [`06_05`](06_05_Puma_Configuration)) →
+CSP burn-in 1-2 тижні → `CSP_ENFORCE=true`.
 
-☑ 8b. CoAP-демон на Akash ← ВИПРАВЛЕНО [INF.17] (виділений coap сервіс: той самий
-       образ, entrypoint → lib/daemons/coap_listener, expose 5683/udp; Kamal-fallback =
-       coap-роль з прямим publish 5683/udp — kamal-proxy UDP не проксіює)
-
-☐ 9. Створити deploy-production.yml workflow (INFO)
-
-☐ 10. Налаштувати Upstash Redis (заміна GCP Memorystore)
-       Створити Upstash інстанс, отримати rediss:// URL
-       Вказати REDIS_URL в Akash SDL (Kredis DB 1 auto-derive з нього)
-
-☐ 11. Деплой на Akash Network — ПЕРШИЙ деплой = CANOPY-render (founder 2026-07-04):
-       cd terraform/akash && terraform apply \
-         -var deployment_slot=canopy -var postgres_database=silken_net_canopy
-       (найризикованіший шлях — перший в житті Akash-деплой — не дебютує на production;
-       ізольований DB-set silken_net_canopy на тому ж інстансі, INF.16)
-       Верифікувати web, job та coap сервіси запущені → smoke → потім production-render
-       (дефолтні vars: deployment_slot=production, postgres_database=silken_net_production)
-
-☐ 12. Верифікувати Ingress Anchor маршрутизацію
-       curl https://api.silkennet.com/up    → 200
-       curl https://api.silkennet.com/ready → 200 {"status":"ready"}  (DB+Redis+Kredis; 503 = not_ready)
-
-☐ 13. Oracle гаманці поповнені газом (MATIC/ETH/SOL/CELO) (Pre-Flight #3)
-
-☐ 14. LoRa-антени підключені до всіх плат (Pre-Flight #4)
-
-☐ 15. AES-ключ Soldier = AES-ключ Queen (побітово) (Pre-Flight #5)
-
-☐ 16. Встановити RAILS_ALLOWED_HOSTS у Kamal env.clear / Akash SDL
-       Приклад: RAILS_ALLOWED_HOSTS=api.silkennet.com,.silkennet.com
-       Без цього Rails логує [SECURITY] попередження при кожному старті.
-
-☐ 17. Вирішити CSP burn-in: спостерігати violation-репорти 1-2 тижні,
-       потім встановити CSP_ENFORCE=true в env.clear для enforced режиму.
-
-☐ 18. [INF.10] Readiness-gated cutover — ПІСЛЯ кроку 12 (коли /ready=200):
-       розкоментувати proxy.healthcheck (path: /ready) у config/deploy.yml
-       (схема Kamal 2.12 готова, закоментована — interval 3 / timeout 5).
-       НЕ раніше: на холодному старті /ready 503-ить, доки БД/Redis/Kredis не готові
-       → kamal-proxy довбе /ready до deploy_timeout → rollback; дефолт /up
-       (liveness) прощає bring-up. Після фліпу: kamal deploy → новий контейнер
-       бере трафік ЛИШЕ при /ready=200; повільний cold-start → підняти
-       deploy_timeout. Проба = ReadinessController (DB SELECT 1 + Redis PING, 06_05).
-```
+**Фаза 6 — Залізо (Pre-Flight #4/#5):**
+антена ДО живлення · AES-парність Soldier↔Queen побітово · прошивка Queens
+(`COAP_SERVER_HOST=api.silkennet.com`) · перший boundary-smoke з Queen/`bin/forest_simulator`.
 
 ---
 

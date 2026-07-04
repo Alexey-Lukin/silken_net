@@ -680,7 +680,7 @@ ENV-блоки `web` та `job` сервісів **дзеркалюють** од
 **Terraform-шаблон додає змінні динамічно** (`deploy.yaml.tpl`):
 
 ```hcl
-# terraform/akash/main.tf — рендеринг шаблону
+# terraform/akash/main.tf — рендеринг шаблону (ілюстрація; повна map — у файлі)
 resource "local_file" "akash_sdl" {
   content = templatefile("deploy/akash/deploy.yaml.tpl", {
     rails_master_key                    = var.rails_master_key    # sensitive = true
@@ -688,16 +688,13 @@ resource "local_file" "akash_sdl" {
     redis_url                           = var.redis_url            # sensitive = true
     cloud_sql_instance_connection_name  = var.cloud_sql_instance_connection_name  # sensitive = true
     gcp_sa_key_base64                   = var.gcp_sa_key_base64   # sensitive = true
-    kredis_redis_url  = var.kredis_redis_url != "" ?
-                        var.kredis_redis_url :
-                        "${trimsuffix(var.redis_url, "/0")}/1"  # auto-derive DB 1
     # ...
   })
   file_permission = "0600"  # Захист файлу із секретами
 }
 ```
 
-> `kredis_redis_url` автоматично виводиться з `redis_url` (заміна `/0` на `/1`) якщо не вказано явно — це зручна поведінка для єдиного Redis instance.
+> **[B1]** `kredis_redis_url` у Terraform **не існує** (variable видалено) — Kredis auto-derive DB 1 із `REDIS_URL` живе на Rails-стороні (`config/redis/shared.yml`), жодної Terraform-логіки для нього немає.
 
 ---
 
@@ -1066,7 +1063,7 @@ L2  Hardware Capsule      BQ25570, EDLC             (не залежить ві�
 L1  Biophysics            Ti-6Al-4V EBFC            (не залежить від Akash)
 ```
 
-**Висновок:** SDL визначає три сервіси: `web` (Rails API + CoAP), `job` (Sidekiq workers), та `alloy` (Grafana Alloy → Grafana Cloud). Cloud SQL Auth Proxy (in-container) забезпечує доступ до PostgreSQL через HTTPS тунель, Upstash serverless Redis (TLS) замінює GCP Memorystore. `job` сервіс використовує entrypoint (`/rails/bin/docker-entrypoint bundle exec sidekiq ...`) для запуску Cloud SQL Proxy і для Sidekiq. `alloy` сервіс (образ запінено `grafana/alloy:v1.16.3` — синхронно з `deploy.yaml.tpl`/`ci.yml`, INF.14) скрейпить `/metrics` endpoint `web` сервісу кожні 15 секунд та пушить метрики у Grafana Cloud через remote_write — вирішуючи BLOCKER'и спостережуваності (06_03). Ingress Anchor (`e2-micro` зі статичним IP) проксіює CoAP-трафік від Queens до Akash. Multi-replica ActionCable працює без sticky sessions завдяки Solid Cable adapter — всі репліки `web` підключені до спільної Cloud SQL БД `silken_net_production_cable`, PostgreSQL `LISTEN/NOTIFY` забезпечує крос-реплікову доставку Turbo Stream broadcasts.
+**Висновок:** SDL визначає **чотири** сервіси: `web` (Rails API), `job` (Sidekiq workers), `coap` (виділений UDP-демон 5683 — INF.17, Akash-**fallback** за socat) та `alloy` (Grafana Alloy → Grafana Cloud). Cloud SQL Auth Proxy (in-container) забезпечує доступ до PostgreSQL через публічний IP інстанса з IAM-авторизацією, Upstash serverless Redis (TLS) замінює GCP Memorystore. `job` сервіс використовує entrypoint (`/rails/bin/docker-entrypoint bundle exec sidekiq ...`) для запуску Cloud SQL Proxy і для Sidekiq. `alloy` сервіс (образ запінено `grafana/alloy:v1.16.3` — синхронно з `deploy.yaml.tpl`/`ci.yml`, INF.14) скрейпить **три** `/metrics`-таргети (`web:80` + `job:9394` + `coap:9395`, лейбл `process` — [`06_03 §2.9`](06_03_Prometheus_Observability)) кожні 15 секунд та пушить метрики у Grafana Cloud через remote_write. Ingress Anchor (`e2-small` зі статичним IP) приймає CoAP **демоном прямо на анкорі** (PRIMARY — INF.17) і проксіює лише HTTP/HTTPS до Akash. Multi-replica ActionCable працює без sticky sessions завдяки Solid Cable adapter — всі репліки `web` підключені до спільної Cloud SQL БД `silken_net_production_cable`, PostgreSQL `LISTEN/NOTIFY` забезпечує крос-реплікову доставку Turbo Stream broadcasts.
 
 ---
 
@@ -1074,7 +1071,7 @@ L1  Biophysics            Ti-6Al-4V EBFC            (не залежить ві�
 
 | TRL | Що потрібно | Статус |
 |-----|------------|--------|
-| **TRL 5** ✅ | SDL-маніфест (`web` + `job` + `alloy`), DB+Redis connectivity, GHCR mirror | ✅ Всі передумови виконані |
+| **TRL 5** ✅ | SDL-маніфест (`web` + `job` + `coap` + `alloy`), DB+Redis connectivity, GHCR mirror | ✅ Всі передумови виконані |
 | **TRL 5** ✅ | Вирішити мережеву ізоляцію (Cloud SQL + Redis) | ✅ Cloud SQL Auth Proxy + Upstash |
 | **TRL 5** ✅ | Додати `job` сервіс в SDL для Sidekiq | ✅ виправлено |
 | **TRL 5** ✅ | Замінити Docker образ на публічний реєстр (GHCR) | ✅ виправлено (`mirror-ghcr.yml`) |

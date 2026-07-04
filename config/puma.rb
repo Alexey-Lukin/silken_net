@@ -145,7 +145,7 @@ port ENV.fetch("PORT", 3000)
 cluster do
   # 6a. Before fork — master disconnects shared resources
   before_fork do
-    # Disconnect all ActiveRecord connection pools (primary, cache, queue, cable).
+    # Disconnect all ActiveRecord connection pools (primary, cache, cable).
     # Workers will establish their own connections on first use via before_worker_boot.
     ActiveRecord::Base.connection_handler.clear_all_connections!(:all)
 
