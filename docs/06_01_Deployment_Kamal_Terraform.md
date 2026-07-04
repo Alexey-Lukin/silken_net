@@ -607,9 +607,13 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
        Створити Upstash інстанс, отримати rediss:// URL
        Вказати REDIS_URL в Akash SDL (Kredis DB 1 auto-derive з нього)
 
-☐ 11. Деплой на Akash Network
-       cd terraform/akash && terraform apply
-       Верифікувати web, job та coap сервіси запущені
+☐ 11. Деплой на Akash Network — ПЕРШИЙ деплой = CANOPY-render (founder 2026-07-04):
+       cd terraform/akash && terraform apply \
+         -var deployment_slot=canopy -var postgres_database=silken_net_canopy
+       (найризикованіший шлях — перший в житті Akash-деплой — не дебютує на production;
+       ізольований DB-set silken_net_canopy на тому ж інстансі, INF.16)
+       Верифікувати web, job та coap сервіси запущені → smoke → потім production-render
+       (дефолтні vars: deployment_slot=production, postgres_database=silken_net_production)
 
 ☐ 12. Верифікувати Ingress Anchor маршрутизацію
        curl https://api.silkennet.com/up    → 200

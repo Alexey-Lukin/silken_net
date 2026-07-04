@@ -19,7 +19,7 @@ services:
       - POSTGRES_PASSWORD=${db_password}
       # DB SET selector (config/database.yml; defaults to silken_net_production if unset).
       # Explicit so a canopy-on-Akash render just overrides to silken_net_canopy. [INF.16]
-      - POSTGRES_DATABASE=silken_net_production
+      - POSTGRES_DATABASE=${postgres_database}
       - CLOUD_SQL_INSTANCE_CONNECTION_NAME=${cloud_sql_instance_connection_name}
       - GCP_SA_KEY_BASE64=${gcp_sa_key_base64}
       - REDIS_URL=${redis_url}
@@ -103,7 +103,7 @@ services:
       - POSTGRES_PASSWORD=${db_password}
       # DB SET selector (config/database.yml; defaults to silken_net_production if unset).
       # Explicit so a canopy-on-Akash render just overrides to silken_net_canopy. [INF.16]
-      - POSTGRES_DATABASE=silken_net_production
+      - POSTGRES_DATABASE=${postgres_database}
       - CLOUD_SQL_INSTANCE_CONNECTION_NAME=${cloud_sql_instance_connection_name}
       - GCP_SA_KEY_BASE64=${gcp_sa_key_base64}
       - REDIS_URL=${redis_url}
@@ -177,7 +177,7 @@ services:
       - POSTGRES_HOST=127.0.0.1
       - POSTGRES_USER=silken_net
       - POSTGRES_PASSWORD=${db_password}
-      - POSTGRES_DATABASE=silken_net_production
+      - POSTGRES_DATABASE=${postgres_database}
       - CLOUD_SQL_INSTANCE_CONNECTION_NAME=${cloud_sql_instance_connection_name}
       - GCP_SA_KEY_BASE64=${gcp_sa_key_base64}
       - REDIS_URL=${redis_url}

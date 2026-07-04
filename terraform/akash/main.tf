@@ -58,7 +58,11 @@ resource "local_file" "akash_sdl" {
     # SDL entirely (a present-but-empty value kills Sentry autodetect, [B1]).
     release_version = var.release_version
     # canopy vs production — Grafana external_labels `slot` (config.alloy).
-    deployment_slot    = var.deployment_slot
+    deployment_slot = var.deployment_slot
+    # DB SET selector: pair silken_net_canopy with deployment_slot=canopy.
+    # FIRST Akash deploy = canopy render (founder 2026-07-04) — the riskiest
+    # path (first-ever Akash) must not debut on production.
+    postgres_database  = var.postgres_database
     web_cpu_units      = var.web_cpu_units
     web_memory_size    = var.web_memory_size
     web_storage_size   = var.web_storage_size

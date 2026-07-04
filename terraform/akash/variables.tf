@@ -338,3 +338,9 @@ variable "deployment_slot" {
   type        = string
   default     = "production"
 }
+
+variable "postgres_database" {
+  description = "Database SET selector (config/database.yml): silken_net_production (default) or silken_net_canopy for a canopy render. First Akash deploy = canopy (founder 2026-07-04) — pair with deployment_slot=canopy."
+  type        = string
+  default     = "silken_net_production"
+}
