@@ -326,3 +326,15 @@ variable "prometheus_auth_password" {
   type        = string
   sensitive   = true
 }
+
+variable "release_version" {
+  description = "Sentry release tag (git SHA or tag). Empty string OMITS the RELEASE_VERSION line from the SDL — a present-but-empty value would kill Sentry's own autodetect (the KREDIS [B1] empty-inject class)."
+  type        = string
+  default     = ""
+}
+
+variable "deployment_slot" {
+  description = "Deployment slot label for Grafana external_labels (config.alloy `slot`): \"production\" or \"canopy\". RAILS_ENV is production for both, so this is the only series-level disambiguator."
+  type        = string
+  default     = "production"
+}

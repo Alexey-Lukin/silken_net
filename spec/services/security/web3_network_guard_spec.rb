@@ -102,5 +102,34 @@ RSpec.describe Security::Web3NetworkGuard do
     it "does NOT flag a collision when minter and slasher differ" do
       expect(described_class.violations(clean_env)).not_to include(a_string_matching(/SAME signer key/))
     end
+
+    # --- process scoping: web/coap boot keyless by design ------------------
+
+    context "when signer_process: false (web / coap containers)" do
+      it "does not demand key presence — a keyless env is clean" do
+        expect(described_class.violations(chain_env, signer_process: false)).to be_empty
+      end
+
+      it "still flags a malformed key that IS present" do
+        env = chain_env.merge("ORACLE_MINTER_PRIVATE_KEY" => "not-a-hex-key")
+        expect(described_class.violations(env, signer_process: false))
+          .to include(a_string_matching(/\[oracle-key\].*hex/))
+      end
+
+      it "still flags a lock-key collision when both keys are present" do
+        env = chain_env.merge(
+          "ORACLE_MINTER_PRIVATE_KEY"  => "e" * 64,
+          "ORACLE_SLASHER_PRIVATE_KEY" => "e" * 64
+        )
+        expect(described_class.violations(env, signer_process: false))
+          .to include(a_string_matching(/SAME signer key/))
+      end
+
+      it "still flags a testnet RPC" do
+        env = chain_env.merge("SOLANA_RPC_URL" => "https://api.devnet.solana.com")
+        expect(described_class.violations(env, signer_process: false))
+          .to include(a_string_matching(/\[chain\].*TESTNET/))
+      end
+    end
   end
 end

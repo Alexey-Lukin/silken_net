@@ -20,6 +20,13 @@ Sidekiq.configure_server do |config|
     pool_timeout: SIDEKIQ_REDIS_TIMEOUT,
     size: SIDEKIQ_REDIS_POOL_SIZE
   }
+
+  # [INF.14 / 06_03 §2.9] Job-контейнер віддає власний /metrics: реєстр
+  # Prometheus — in-process, тож money-path/telemetry-лічильники воркерів
+  # web:80 фізично не бачить. Alloy скрейпить job:9394 другим таргетом.
+  config.on(:startup) do
+    SilkenNet::MetricsExporter.start(port: ENV.fetch("METRICS_PORT", 9394).to_i)
+  end
 end
 
 Sidekiq.configure_client do |config|

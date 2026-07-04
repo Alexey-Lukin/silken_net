@@ -54,15 +54,20 @@ resource "local_file" "akash_sdl" {
     cloud_sql_instance_connection_name = var.cloud_sql_instance_connection_name
     gcp_sa_key_base64                  = var.gcp_sa_key_base64
     redis_url                          = var.redis_url
-    web_cpu_units                      = var.web_cpu_units
-    web_memory_size                    = var.web_memory_size
-    web_storage_size                   = var.web_storage_size
-    persistent_storage                 = var.persistent_storage_size
-    web_replicas                       = var.web_replicas
-    max_price_uakt                     = var.max_price_uakt
-    akash_auditor                      = var.akash_auditor_address
-    web_concurrency                    = var.web_concurrency
-    rails_max_threads                  = var.rails_max_threads
+    # Sentry release tag: empty ⇒ the RELEASE_VERSION line is omitted from the
+    # SDL entirely (a present-but-empty value kills Sentry autodetect, [B1]).
+    release_version = var.release_version
+    # canopy vs production — Grafana external_labels `slot` (config.alloy).
+    deployment_slot    = var.deployment_slot
+    web_cpu_units      = var.web_cpu_units
+    web_memory_size    = var.web_memory_size
+    web_storage_size   = var.web_storage_size
+    persistent_storage = var.persistent_storage_size
+    web_replicas       = var.web_replicas
+    max_price_uakt     = var.max_price_uakt
+    akash_auditor      = var.akash_auditor_address
+    web_concurrency    = var.web_concurrency
+    rails_max_threads  = var.rails_max_threads
     # 🛑 BOOT-CRITICAL: Rails refuses to boot without this (master_key_strength_check.rb)
     provisioning_master_key = var.provisioning_master_key
     # Observability

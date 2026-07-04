@@ -26,7 +26,10 @@ Rails.application.config.after_initialize do
     next
   end
 
-  violations = Security::Web3NetworkGuard.violations(ENV)
+  # Key-PRESENCE is demanded only where keys are consumed: the Sidekiq signer
+  # process. The web/coap containers boot keyless by design (Akash plaintext-ENV
+  # exposure) — a missing key still fails loudly, at job-boot, before any DeadSet.
+  violations = Security::Web3NetworkGuard.violations(ENV, signer_process: Sidekiq.server?)
   next if violations.empty?
 
   raise SecurityError,

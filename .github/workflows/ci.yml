@@ -82,6 +82,7 @@ jobs:
               - 'ruff.toml'
             alloy:
               - 'deploy/**'
+              - 'scripts/sdl_consistency_check.rb'
 
   firmware_test:
     needs: changes
@@ -487,6 +488,12 @@ jobs:
           docker run --rm -v "${{ github.workspace }}/deploy/akash:/cfg" \
             grafana/alloy:v1.16.3 fmt /cfg/config.alloy > /dev/null
           echo "✅ config.alloy parses (River syntax valid)"
+
+      - name: SDL consistency (services ≡ deployment; static ≡ tpl)
+        # A service missing from `deployment:` is silently never leased by an
+        # Akash provider — the INF.17 dead-path class at the manifest level.
+        # Pure ruby+yaml, no bundle needed.
+        run: ruby scripts/sdl_consistency_check.rb
 
   test:
     needs: changes

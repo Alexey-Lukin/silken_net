@@ -46,6 +46,29 @@ fi
 # If running the rails server then create or migrate existing database
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare
+else
+  # Non-server processes (Sidekiq job, CoAP daemon) must not race the web's
+  # db:prepare on a cold FIRST deploy — Akash starts all services in parallel
+  # (no depends_on), and a worker touching a not-yet-migrated table burns
+  # retries / lands money-path jobs in the DeadSet before the schema exists.
+  # Wait for schema_migrations on the primary, fail loud after 60s — the
+  # provider restarts the container and the gate converges once web finishes.
+  if [ -n "$POSTGRES_HOST" ]; then
+    schema_ready=false
+    for i in $(seq 1 60); do
+      if PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$POSTGRES_HOST" -U "$POSTGRES_USER" \
+           -d "${POSTGRES_DATABASE:-silken_net_production}" -tAc \
+           "SELECT 1 FROM schema_migrations LIMIT 1" >/dev/null 2>&1; then
+        schema_ready=true
+        break
+      fi
+      sleep 1
+    done
+    if [ "$schema_ready" != "true" ]; then
+      echo "[entrypoint] FATAL: schema_migrations not reachable after 60s — the web service's db:prepare has not completed yet (cold-deploy race). Aborting instead of burning worker retries." >&2
+      exit 1
+    fi
+  fi
 fi
 
 exec "${@}"

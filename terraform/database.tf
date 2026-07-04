@@ -12,11 +12,16 @@ resource "google_sql_database_instance" "silken_db" {
     disk_autoresize   = true
 
     ip_configuration {
-      # Cloud SQL stays private-only. External access (from Akash Network) is
-      # handled by Cloud SQL Auth Proxy running inside the container. The proxy
-      # tunnels traffic through Google Cloud API (outbound HTTPS) — no public IP
-      # or VPN required. See: Dockerfile + bin/docker-entrypoint.
-      ipv4_enabled    = false
+      # ipv4_enabled MUST be true for the Akash path: the Auth Proxy uses the
+      # Google API only for AUTH (ephemeral certs/IAM) — the actual socket still
+      # dials the instance IP, and from an Akash container (outside the VPC,
+      # no peering possible) only the PUBLIC IP is reachable. private-only here
+      # would crash-loop all Akash services in the entrypoint pg_isready gate.
+      # Exposure stays minimal: authorized_networks is EMPTY (no direct psql
+      # from the internet — only IAM-authorized proxy connections) and
+      # ssl_mode = ENCRYPTED_ONLY. Kamal/GCP fallback keeps using the private
+      # VPC IP directly (config/deploy.yml POSTGRES_HOST).
+      ipv4_enabled    = true
       private_network = google_compute_network.silken_net_vpc.id
       ssl_mode        = "ENCRYPTED_ONLY"
     }
@@ -97,6 +102,32 @@ resource "google_sql_database" "queue" {
 # Solid Cable database
 resource "google_sql_database" "cable" {
   name     = "silken_net_production_cable"
+  instance = google_sql_database_instance.silken_db.name
+}
+
+# ---------------------------------------------------------------------------
+# Canopy database set — isolated DB names on the SAME instance (INF.16).
+# Canopy shares host/user/password with production (config/deploy.canopy.yml
+# overrides only POSTGRES_DATABASE); `db:prepare` expects all four databases
+# of the set to exist, so the full quartet is provisioned.
+# ---------------------------------------------------------------------------
+resource "google_sql_database" "canopy" {
+  name     = "silken_net_canopy"
+  instance = google_sql_database_instance.silken_db.name
+}
+
+resource "google_sql_database" "canopy_cache" {
+  name     = "silken_net_canopy_cache"
+  instance = google_sql_database_instance.silken_db.name
+}
+
+resource "google_sql_database" "canopy_queue" {
+  name     = "silken_net_canopy_queue"
+  instance = google_sql_database_instance.silken_db.name
+}
+
+resource "google_sql_database" "canopy_cable" {
+  name     = "silken_net_canopy_cable"
   instance = google_sql_database_instance.silken_db.name
 }
 

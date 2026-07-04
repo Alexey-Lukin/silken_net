@@ -12,7 +12,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 5 — SDL повністю конфігурований (`web` + `job` + `alloy`), DB+Redis connectivity вирішені (Cloud SQL Auth Proxy + Upstash TLS), GHCR mirror активний; жоден реальний деплой на Akash Mainnet ще не проведений (TRL 6 — після першого успішного деплою).
+- **Поточний TRL:** TRL 5 — SDL повністю конфігурований (`web` + `job` + `coap` + `alloy`), DB+Redis connectivity вирішені (Cloud SQL Auth Proxy + Upstash TLS), GHCR mirror активний; жоден реальний деплой на Akash Mainnet ще не проведений (TRL 6 — після першого успішного деплою).
 - **Конфігуровано:** Cloud SQL Auth Proxy, Upstash Redis (TLS), Solid Cable (multi-replica ActionCable), GHCR mirror, Ingress Anchor, Rails security hardening (`force_ssl`/HSTS/CSP).
 - **Відкрите:** SDL secrets, TLS термінація, GCS state bucket, перший Mainnet деплой → [`00_07`](00_07_Action_Plan_Tracker) (S4.3, INF.4, S5.6).
 
@@ -22,7 +22,7 @@
 
 | Ресурс | Зв'язок |
 |---|---|
-| `deploy/akash/deploy.yaml` · `deploy.yaml.tpl` | SDL: `web` + `job` + `alloy` сервіси |
+| `deploy/akash/deploy.yaml` · `deploy.yaml.tpl` | SDL: `web` + `job` + `coap` + `alloy` сервіси |
 | `deploy/akash/config.alloy` | Grafana Alloy scrape + remote_write |
 | `terraform/akash/` | SDL templating + Akash CLI provisioner |
 | [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) | GCP/Kamal, Ingress Anchor |
@@ -219,7 +219,7 @@ Browser / API client                Queen Gateway (LoRa→CoAP)
 - [ ] **Origin URL відомий:** після `akash provider lease-status`, скопіювати URL виду `https://<lease-id>.ingress.akash.pub`.
 - [ ] **CNAME-запис створено:** `silkennet.app` (або subdomain) → `<lease-id>.ingress.akash.pub`, Proxy status: 🟠 **Proxied** (через CF).
 - [ ] **Ingress Anchor running:** `gcloud compute instances list --filter="name=ingress-anchor"` повертає running. Статичний IP закріплено (`gcloud compute addresses list`).
-- [ ] **Queens сконфігуровані** на `<INGRESS_ANCHOR_IP>:5683` (не на Cloudflare!) у firmware `QUEEN_BACKEND_HOST` або downlink config block.
+- [ ] **Queens бʼють у Ingress Anchor, не в Cloudflare:** firmware резолвить `COAP_SERVER_HOST` (`api.silkennet.com`, `firmware/queen/main.c` — CDNSGIP) → A-запис цього хоста МУСИТЬ бути **DNS-only (сіра хмарка), НЕ proxied**, і вказувати на статичний Ingress-IP. ⚠️ Королева пінить резолв на весь boot (re-resolve лише post-reboot; fail-triggered re-resolve → [`00_07` FW.58](00_07_Action_Plan_Tracker)).
 - [ ] **Rails-side ENVs** не вимикати: `force_ssl=true`, `assume_ssl=true`, `HSTS` активні. CF додає `X-Forwarded-Proto: https`, Rails з `assume_ssl` чесно це поважає.
 - [ ] **`DISABLE_SSL` ENV не встановлений** у `deploy/akash/deploy.yaml` (інакше Rails сам не форсуватиме HTTPS — false sense of security).
 
@@ -275,7 +275,7 @@ coap-client -m get coap://$INGRESS_IP:5683/health -v 6
 | `curl https://… → 525 SSL handshake failed` | Cloudflare→origin не може встановити TLS | Перевірити Akash `*.ingress.akash.pub` URL валідний (`akash provider lease-status`); CF SSL/TLS режим знизити до `Full` (без strict) на час діагностики |
 | `301 → http://...` нескінченний loop | Rails бачить `X-Forwarded-Proto: http`, hot-redirect-loop | Перевірити CF Page Rules — має бути `Always Use HTTPS`. У Rails — `config.force_ssl = true`, `config.ssl_options = { redirect: { exclude: ->(req) { req.path == "/up" } } }` для health-check |
 | WebSocket падає одразу | Hotwire/ActionCable через CF Free плану лімітується | Upgrade до CF Pro (WebSocket unlimited) АБО використати Cloudflare Tunnel з sticky origin |
-| CoAP запити від Queen не доходять | Queen прошитий на CF домен замість Ingress Anchor IP | OTA flash оновити `QUEEN_BACKEND_HOST` через `CMD_SET_BACKEND` downlink config block |
+| CoAP запити від Queen не доходять | A-запис `api.silkennet.com` став CF-proxied (UDP крізь CF не проходить) АБО Королева тримає застарілий DNS-пін | Повернути запис у DNS-only → Ingress-IP; Королева підхопить лише post-reboot (IWDG/цикл живлення) — firmware пінить резолв на весь boot (fail-triggered re-resolve → [`00_07` FW.58](00_07_Action_Plan_Tracker)) |
 | TLS grade B-C на SSL Labs | CF SSL/TLS режим = `Flexible` (CF→origin по HTTP) | Перемкнути на `Full (strict)`; примусово вимкнути TLS 1.0/1.1 в CF Edge Certificates |
 
 ##### Опція B (fallback): Akash hostname operator + Let's Encrypt
@@ -305,6 +305,8 @@ coap-client -m get coap://$INGRESS_IP:5683/health -v 6
 ##### Automation note (🤖 чекбокс)
 
 Якщо обрана Опція B — додати `terraform/akash/hostname-operator.tf` з automation для `accept`-домену у SDL template (`deploy.yaml.tpl`). Для Опції A automation не потрібна — Cloudflare DNS налаштовується вручну один раз. Поточний deploy template (`deploy.yaml.tpl`) НЕ містить hostname operator block — це OK, бо Опція A рекомендована.
+
+> ⚠️ **«Один раз» має виняток — re-lease.** CNAME-origin (`<lease-id>.ingress.akash.pub`) прив'язаний до Akash lease: новий deployment/провайдер (redeploy, multi-provider failover) = новий hostname = ручний CNAME-update у Cloudflare в найгарячіший момент (той самий клас, що `akash-deployment-ip` metadata Ingress Anchor — S1.5). Для першого деплою і стабільного lease — прийнятно руками; коли multi-provider failover стане живою практикою, CNAME-update автоматизувати (Cloudflare API-скрипт або cloudflare terraform-provider) як крок failover-runbook.
 
 ##### Cross-ref
 
@@ -474,32 +476,36 @@ profiles:
 
 ### 1.4 Мережева Архітектура (Exposed Ports)
 
-**Розділ SDL:** `services.web.expose`
+**Розділи SDL:** `services.web.expose` (HTTP/HTTPS) + `services.coap.expose` (UDP — INF.17)
 
 ```yaml
-expose:
-  - port: 80
-    as: 80
-    to:
-      - global: true
+services:
+  web:
+    expose:
+      - port: 80
+        as: 80
+        to:
+          - global: true
 
-  - port: 443
-    as: 443
-    to:
-      - global: true
+      - port: 443
+        as: 443
+        to:
+          - global: true
 
-  - port: 5683
-    as: 5683
-    proto: udp
-    to:
-      - global: true
+  coap:                # виділений UDP-демон (lib/daemons/coap_listener)
+    expose:
+      - port: 5683
+        as: 5683
+        proto: udp
+        to:
+          - global: true
 ```
 
-| Порт | Протокол | Призначення | Відповідність Kamal |
-|------|---------|-------------|---------------------|
-| **80** | TCP (HTTP) | Rails API + Hotwire/Turbo (Thruster reverse proxy) | `boot.proxy.publish "80:80"` |
-| **443** | TCP (HTTPS) | TLS-термінований трафік; TLS через Akash ingress або Cloudflare | `boot.proxy.publish "443:443"` |
-| **5683** | UDP | CoAP — IoT телеметрія від Queen gateway (21-байтні бінарні пакети) | `boot.proxy.publish "5683:5683/udp"` |
+| Порт | Протокол | Сервіс | Призначення | Відповідність Kamal |
+|------|---------|--------|-------------|---------------------|
+| **80** | TCP (HTTP) | `web` | Rails API + Hotwire/Turbo (Thruster reverse proxy) | `boot.proxy.publish "80:80"` |
+| **443** | TCP (HTTPS) | `web` | TLS-термінований трафік; TLS через Akash ingress або Cloudflare | `boot.proxy.publish "443:443"` |
+| **5683** | UDP | `coap` | CoAP — IoT телеметрія від Queen gateway (21-байтні бінарні пакети) | `coap`-роль `options.publish "5683:5683/udp"` (kamal-proxy UDP не проксіює — прямий docker-publish) |
 
 > **Порт 443** оголошений у SDL. TLS термінація потребує налаштування Akash hostname operator або зовнішнього Cloudflare proxy — див. §TLS термінація (00_07 INF.4).
 
@@ -522,10 +528,10 @@ Queen Gateway (STM32 + SIM7070G)
               ▼
 ┌─────────────────────────────────────────┐
 │  Akash Provider (децентралізований)     │
-│  SilkenNet Container                    │
-│  HTTP :80 (Rails 8.1 + Puma)            │
-│  HTTPS :443 (TLS термінація — INF.4)      │
-│  UDP :5683 (CoAP listener)              │
+│  web:  HTTP :80 (Rails 8.1 + Puma)      │
+│        HTTPS :443 (TLS терм. — INF.4)   │
+│  coap: UDP :5683 (окремий контейнер,    │
+│        lib/daemons/coap_listener)       │
 │                                         │
 │  ┌─────────────────────────────────┐    │
 │  │ Cloud SQL Auth Proxy (in-container)│  │
@@ -535,7 +541,9 @@ Queen Gateway (STM32 + SIM7070G)
 │                                         │
 │  ┌─────────────────────────────────┐    │
 │  │ Grafana Alloy (alloy service)   │    │
-│  │ scrapes web:80/metrics (15s)    │    │
+│  │ scrapes web:80 + job:9394 +     │    │
+│  │ coap:9395 /metrics (15s;        │    │
+│  │ реєстр in-process — 06_03 §2.9) │    │
 │  │ remote_write → Grafana Cloud    │    │
 │  └─────────────────────────────────┘    │
 │                                         │

@@ -84,7 +84,7 @@
 > Раніше ці жили лише у `.kamal/secrets` (§2) / Akash SDL (§3) / Terraform (§4). **Після B1** обидва deploy-workflow маплять їх із GitHub Secrets у крок `kamal deploy`, тож для CI-деплою вони **мусять існувати як GitHub Repository Secrets**. Повний опис кожного — §2.1 (one-home); тут лише перелік + boot-vs-lazy клас (`verify-secrets` гейтить boot-critical, warn на lazy).
 
 **Boot-critical** (порожній → контейнер падає на boot; `verify-secrets` блокує):
-- [ ] `ORACLE_MINTER_PRIVATE_KEY` · `ORACLE_SLASHER_PRIVATE_KEY` — `web3_network_guard` raise при boot, якщо немає ні specific-ключа, ні `ORACLE_PRIVATE_KEY`-fallback для minting/slashing.
+- [ ] `ORACLE_MINTER_PRIVATE_KEY` · `ORACLE_SLASHER_PRIVATE_KEY` — `web3_network_guard` raise при boot **signer-процесу (Sidekiq job)**, якщо немає ні specific-ключа, ні `ORACLE_PRIVATE_KEY`-fallback. **Money/signing-ключі = JOB-ONLY (2026-07-04):** signing-п'ятірка (`ORACLE_*` ×3 + `ETHEREUM_ANCHOR_PRIVATE_KEY` + `SOLANA_WALLET_KEYPAIR`) живе лише в `job` (Kamal `servers.job.env.secret` / Akash SDL job-сервіс); web/coap бутяться keyless by design (Akash ENV = plaintext провайдеру; guard scoped `signer_process: Sidekiq.server?` — [`04_02 §Web3NetworkGuard`](04_02_Business_Logic_and_Services)).
 
 **Lazy runtime** (порожній → фіча degraded на першому use, НЕ boot-crash; `verify-secrets` warn):
 - [ ] `SENTRY_DSN` · `ETHEREUM_ANCHOR_PRIVATE_KEY` · `ORACLE_PRIVATE_KEY` (legacy fallback)

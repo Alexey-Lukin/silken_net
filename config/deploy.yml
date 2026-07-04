@@ -21,6 +21,27 @@ servers:
         # Sidekiq concurrency=15 (config/sidekiq.yml); DB pool must match + headroom.
         # Without this, database.yml falls back to RAILS_MAX_THREADS+2=5 → pool starvation at 15.
         DB_POOL: 17
+      secret:
+        # Money/signing keys are JOB-ONLY: every signing call site is a Sidekiq
+        # worker; web/coap boot keyless (Security::Web3NetworkGuard scopes the
+        # presence check via signer_process: Sidekiq.server?). Mirrors the Akash
+        # SDL split (job service carries them, web does not).
+        - ORACLE_PRIVATE_KEY
+        - ORACLE_MINTER_PRIVATE_KEY
+        - ORACLE_SLASHER_PRIVATE_KEY
+        - ETHEREUM_ANCHOR_PRIVATE_KEY
+        - SOLANA_WALLET_KEYPAIR
+  # CoAP/UDP telemetry intake daemon (INF.17) — mirrors the Akash `coap` service.
+  # kamal-proxy is HTTP-only, so UDP bypasses it: the container publishes 5683/udp
+  # directly on the host (NOT via boot.proxy.publish — that would park the port on
+  # the proxy container with no listener behind it).
+  coap:
+    hosts:
+      - 192.168.0.1
+    cmd: bundle exec ruby lib/daemons/coap_listener
+    options:
+      publish:
+        - "5683:5683/udp"
 
 # Kamal proxy configuration.
 # SSL auto-certification via Let's Encrypt. Requires config.assume_ssl and config.force_ssl in production.rb.
@@ -37,13 +58,13 @@ servers:
 #     interval: 3
 #     timeout: 5
 
-# Proxy boot configuration: publish ports including CoAP UDP.
+# Proxy boot configuration (HTTP/HTTPS only — kamal-proxy does not speak UDP;
+# CoAP 5683/udp is published directly by the `coap` role above).
 boot:
   proxy:
     publish:
       - "80:80"
       - "443:443"
-      - "5683:5683/udp"
 
 # Google Artifact Registry for Docker images.
 # Run `gcloud auth configure-docker <region>-docker.pkg.dev` before first deploy.
@@ -71,11 +92,8 @@ env:
     - SENTRY_DSN
     # --- Hardware provisioning gate (config/initializers/master_key_strength_check.rb) ---
     - PROVISIONING_MASTER_KEY
-    # --- Web3 oracle / minter / slasher (dual-key split, B-02 resolved) ---
-    - ORACLE_PRIVATE_KEY
-    - ORACLE_MINTER_PRIVATE_KEY
-    - ORACLE_SLASHER_PRIVATE_KEY
-    - ETHEREUM_ANCHOR_PRIVATE_KEY
+    # --- Web3 money/signing keys: JOB-ONLY (servers.job env.secret above) —
+    #     deliberately NOT global so web/coap containers never carry them ---
     # --- RPC endpoints (SSOT names expected by Web3::RpcConnectionPool) ---
     - ALCHEMY_POLYGON_RPC_URL
     - ALCHEMY_ETHEREUM_RPC_URL
@@ -83,8 +101,7 @@ env:
     # PriceOracleService (POLYGON_RPC_URL) + Celo rewards (CELO_RPC_URL) — separate from ALCHEMY_*.
     - POLYGON_RPC_URL
     - CELO_RPC_URL
-    # --- Solana minting (Solana::MintingService raises without these) ---
-    - SOLANA_WALLET_KEYPAIR
+    # --- Solana public identifiers (the signing keypair is job-only) ---
     - SOLANA_FEE_PAYER_PUBKEY
     - SOLANA_FEE_PAYER_TOKEN_ACCOUNT
     - SOLANA_USDC_MINT_ADDRESS

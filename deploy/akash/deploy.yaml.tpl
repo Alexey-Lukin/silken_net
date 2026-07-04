@@ -26,20 +26,19 @@ services:
       # KREDIS_REDIS_URL omitted — auto-derives from REDIS_URL (config/redis/shared.yml). [B1]
       - RAILS_MAX_THREADS=${rails_max_threads}
       - WEB_CONCURRENCY=${web_concurrency}
-      # Mailer link host (production.rb) + Sentry release tag (config/initializers/sentry.rb).
+      # Mailer link host (production.rb).
       - APP_HOST=silkennet.com
-      - RELEASE_VERSION=
+%{ if release_version != "" }      - RELEASE_VERSION=${release_version}
+%{ endif ~}
       # --- 🛑 BOOT-CRITICAL: master_key_strength_check.rb ---
       - PROVISIONING_MASTER_KEY=${provisioning_master_key}
       # --- Observability ---
       - SENTRY_DSN=${sentry_dsn}
       - PROMETHEUS_AUTH_USER=${prometheus_auth_user}
       - PROMETHEUS_AUTH_PASSWORD=${prometheus_auth_password}
-      # --- Web3 oracle keys (dual-key split) ---
-      - ORACLE_PRIVATE_KEY=${oracle_private_key}
-      - ORACLE_MINTER_PRIVATE_KEY=${oracle_minter_private_key}
-      - ORACLE_SLASHER_PRIVATE_KEY=${oracle_slasher_private_key}
-      - ETHEREUM_ANCHOR_PRIVATE_KEY=${ethereum_anchor_private_key}
+      # --- Web3 money/signing keys DELIBERATELY ABSENT (job-only; Akash ENV is
+      #     plaintext to the provider — the internet-facing web surface must not
+      #     carry them; guard scoped via signer_process: Sidekiq.server?) ---
       # --- RPC endpoints (Web3::RpcConnectionPool) ---
       - ALCHEMY_POLYGON_RPC_URL=${alchemy_polygon_rpc_url}
       - ALCHEMY_ETHEREUM_RPC_URL=${alchemy_ethereum_rpc_url}
@@ -47,8 +46,7 @@ services:
       # Separate from ALCHEMY_*: PriceOracleService (POLYGON_RPC_URL) + Celo rewards (CELO_RPC_URL).
       - POLYGON_RPC_URL=${polygon_rpc_url}
       - CELO_RPC_URL=${celo_rpc_url}
-      # --- Solana minting ---
-      - SOLANA_WALLET_KEYPAIR=${solana_wallet_keypair}
+      # --- Solana public identifiers (signing keypair is job-only) ---
       - SOLANA_FEE_PAYER_PUBKEY=${solana_fee_payer_pubkey}
       - SOLANA_FEE_PAYER_TOKEN_ACCOUNT=${solana_fee_payer_token_account}
       - SOLANA_USDC_MINT_ADDRESS=${solana_usdc_mint_address}
@@ -69,19 +67,18 @@ services:
       - ETHERISC_DIP_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
       - PURO_EARTH_REGISTRY_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
     expose:
+      # `service: alloy` = internal route for the /metrics scrape (INF.14) —
+      # via the public ingress it would die on the IP-allowlist 403.
       - port: 80
         as: 80
         to:
           - global: true
+          - service: alloy
       - port: 443
         as: 443
         to:
           - global: true
-      - port: 5683
-        as: 5683
-        proto: udp
-        to:
-          - global: true
+      # CoAP UDP 5683 lives on the dedicated `coap` service below (INF.17).
     params:
       storage:
         data:
@@ -114,9 +111,10 @@ services:
       - RAILS_MAX_THREADS=${rails_max_threads}
       # Sidekiq concurrency=15 → DB pool must match + headroom (config/sidekiq.yml).
       - DB_POOL=17
-      # Mailer link host (production.rb — deliver_later runs here) + Sentry release tag.
+      # Mailer link host (production.rb — deliver_later runs here).
       - APP_HOST=silkennet.com
-      - RELEASE_VERSION=
+%{ if release_version != "" }      - RELEASE_VERSION=${release_version}
+%{ endif ~}
       # --- 🛑 BOOT-CRITICAL: master_key_strength_check.rb ---
       - PROVISIONING_MASTER_KEY=${provisioning_master_key}
       # --- Observability ---
@@ -155,10 +153,60 @@ services:
       - KLIMA_RETIREMENT_CONTRACT=REQUIRED_SECRET_NOT_SET
       - ETHERISC_DIP_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
       - PURO_EARTH_REGISTRY_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
+    # Embedded /metrics exporter — internal-only route for the Alloy scrape.
+    expose:
+      - port: 9394
+        as: 9394
+        to:
+          - service: alloy
+
+  # CoAP/UDP telemetry intake daemon (INF.17) — mirrors deploy/akash/deploy.yaml.
+  coap:
+    image: ${docker_image}
+    command:
+      - "/rails/bin/docker-entrypoint"
+      - "bundle"
+      - "exec"
+      - "ruby"
+      - "lib/daemons/coap_listener"
+    env:
+      # Boot-critical subset only: loads config/environment, parses PDUs,
+      # enqueues to Redis — no Web3 workers here.
+      - RAILS_ENV=production
+      - RAILS_MASTER_KEY=${rails_master_key}
+      - POSTGRES_HOST=127.0.0.1
+      - POSTGRES_USER=silken_net
+      - POSTGRES_PASSWORD=${db_password}
+      - POSTGRES_DATABASE=silken_net_production
+      - CLOUD_SQL_INSTANCE_CONNECTION_NAME=${cloud_sql_instance_connection_name}
+      - GCP_SA_KEY_BASE64=${gcp_sa_key_base64}
+      - REDIS_URL=${redis_url}
+      # KREDIS_REDIS_URL omitted — auto-derives from REDIS_URL (config/redis/shared.yml). [B1]
+      # --- 🛑 BOOT-CRITICAL: master_key_strength_check.rb ---
+      - PROVISIONING_MASTER_KEY=${provisioning_master_key}
+      # --- Observability ---
+      - SENTRY_DSN=${sentry_dsn}
+%{ if release_version != "" }      - RELEASE_VERSION=${release_version}
+%{ endif ~}
+      # Consistency with web/job (INF.11) — the flag must never differ across surfaces.
+      - WEB3_STRICT_MODE=true
+    expose:
+      - port: 5683
+        as: 5683
+        proto: udp
+        to:
+          - global: true
+      # Embedded /metrics exporter — internal-only route for the Alloy scrape.
+      - port: 9395
+        as: 9395
+        to:
+          - service: alloy
 
   alloy:
     image: grafana/alloy:v1.16.3
     env:
+      # Slot label for external_labels (canopy vs production — config.alloy).
+      - DEPLOYMENT_SLOT=${deployment_slot}
       - GRAFANA_REMOTE_WRITE_URL=${grafana_remote_write_url}
       - GRAFANA_REMOTE_WRITE_USERNAME=${grafana_remote_write_username}
       - GRAFANA_REMOTE_WRITE_TOKEN=${grafana_remote_write_token}
@@ -194,6 +242,14 @@ profiles:
           size: 4Gi
         storage:
           - size: 20Gi
+    coap:
+      resources:
+        cpu:
+          units: 0.5
+        memory:
+          size: 1Gi
+        storage:
+          - size: 10Gi
     alloy:
       resources:
         cpu:
@@ -216,6 +272,9 @@ profiles:
         job:
           denom: uakt
           amount: 5000
+        coap:
+          denom: uakt
+          amount: 2000
         alloy:
           denom: uakt
           amount: 1000
@@ -228,6 +287,10 @@ deployment:
   job:
     silken-dcloud:
       profile: job
+      count: 1
+  coap:
+    silken-dcloud:
+      profile: coap
       count: 1
   alloy:
     silken-dcloud:

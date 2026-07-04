@@ -55,8 +55,13 @@ module Security
     }.freeze
 
     # `env` defaults to ENV but is injectable for tests.
-    def violations(env = ENV)
-      chain_violations(env) + oracle_violations(env)
+    # `signer_process:` scopes the key-PRESENCE requirement to processes that
+    # actually sign (Sidekiq). The web/coap containers never hold money keys
+    # (plaintext-ENV exposure on an untrusted Akash provider), so demanding
+    # presence there would force keys BACK onto the widest attack surface.
+    # Format and collision checks still run everywhere a key IS present.
+    def violations(env = ENV, signer_process: true)
+      chain_violations(env) + oracle_violations(env, signer_process: signer_process)
     end
 
     def chain_violations(env)
@@ -72,7 +77,7 @@ module Security
       end
     end
 
-    def oracle_violations(env)
+    def oracle_violations(env, signer_process: true)
       out = ORACLE_KEY_ENVS.filter_map do |var|
         key = env[var]
         # An empty / whitespace value is NOT skipped: the services resolve via `ENV.fetch(var) { … }`,
@@ -84,12 +89,14 @@ module Security
           "(expected 64 hex chars, optional 0x) — Eth::Key would raise at signing time."
       end
 
-      base = env["ORACLE_PRIVATE_KEY"]
-      SIGNER_FALLBACKS.each do |role, specific_var|
-        next if env[specific_var].present? || base.present?
+      if signer_process
+        base = env["ORACLE_PRIVATE_KEY"]
+        SIGNER_FALLBACKS.each do |role, specific_var|
+          next if env[specific_var].present? || base.present?
 
-        out << "[oracle-key] No #{role} oracle key: neither #{specific_var} nor the " \
-               "ORACLE_PRIVATE_KEY fallback is set — #{role} jobs would KeyError into the Sidekiq DeadSet."
+          out << "[oracle-key] No #{role} oracle key: neither #{specific_var} nor the " \
+                 "ORACLE_PRIVATE_KEY fallback is set — #{role} jobs would KeyError into the Sidekiq DeadSet."
+        end
       end
 
       # [ARCH.47] Lock-key collision. Minting and slashing resolve a signer the same way the

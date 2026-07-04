@@ -325,11 +325,16 @@ module SilkenNet
       buckets: [ 0.5, 1, 2.5, 5, 10, 30, 60 ]
     )
 
-    # CoAP UDP packets received by the daemon
+    # CoAP UDP packets received by the daemon. Status values split by owner
+    # process and never overlap: daemon-level (coap container — enqueued /
+    # malformed / unknown_route / oversized) vs worker-level (job container —
+    # success / decrypt_error / unknown_device / attest_*). The exhaustive
+    # list lives at the call sites (coap_listener + UnpackTelemetryWorker);
+    # sum by (status) across scrape targets is the honest full picture.
     COAP_PACKETS_RECEIVED_TOTAL = REGISTRY.counter(
       :silkennet_coap_packets_received_total,
       docstring: "Total CoAP UDP packets received by the telemetry daemon",
-      labels: [ :status ]  # success, decrypt_error, unknown_device, malformed
+      labels: [ :status ]
     )
 
     # Lorenz attractor computation duration (BigDecimal, 250 iterations)

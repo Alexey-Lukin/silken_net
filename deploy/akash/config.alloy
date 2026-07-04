@@ -25,7 +25,17 @@
 // =============================================================================
 
 prometheus.scrape "silken_net_scraper" {
-  targets         = [{ "__address__" = "web:80" }]
+  // The Prometheus registry is in-process: web never sees worker/daemon
+  // increments, so every Ruby process is its own target (06_03 §2.9).
+  // job:9394 / coap:9395 are exposed service-scope only (`to: service:
+  // alloy` in the SDL) — not reachable from outside the deployment.
+  // The `process` label makes sum/max by (process) queries readable;
+  // `instance` (auto-set from __address__) already disambiguates.
+  targets = [
+    { "__address__" = "web:80",    "process" = "web" },
+    { "__address__" = "job:9394",  "process" = "job" },
+    { "__address__" = "coap:9395", "process" = "coap" },
+  ]
   metrics_path    = "/metrics"
   scrape_interval = "15s"
   scrape_timeout  = "10s"
@@ -69,6 +79,11 @@ prometheus.remote_write "grafanacloud" {
     service = "silken-net",
     source  = "akash-alloy",
     env     = coalesce(sys.env("RAILS_ENV"), "production"),
+    // RAILS_ENV is "production" for BOTH slots (canopy differs only by
+    // POSTGRES_DATABASE), so a canopy-on-Akash render would otherwise merge
+    // its series with production's. DEPLOYMENT_SLOT is set in the alloy
+    // service env (SDL): "production" default, "canopy" for a canopy render.
+    slot    = coalesce(sys.env("DEPLOYMENT_SLOT"), "production"),
     release = sys.env("RELEASE_VERSION"),
   }
 

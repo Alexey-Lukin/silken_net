@@ -11,7 +11,7 @@
 #   - UDP 5683 (CoAP telemetry from Queens) → Akash deployment
 #   - TCP 80/443 (HTTP/HTTPS web traffic)   → Akash deployment
 #
-# Cost: ~$5/month (e2-micro with Always Free tier eligibility)
+# Cost: ~$7/month in europe-west1 (the Always Free e2-micro applies to US regions only)
 # Purpose: Stable IP for IoT devices that cannot discover dynamic Akash IPs
 #
 # The AKASH_DEPLOYMENT_IP must be updated when the Akash deployment migrates
@@ -145,7 +145,14 @@ backend akash_https
     server akash1 $AKASH_IP:443 check
 HAPROXY_CFG
 
-    systemctl restart haproxy || true
+    # Same sentinel guard as the socat unit below: with the placeholder IP
+    # HAProxy cannot parse the backend address and would fail to start —
+    # a swallowed `|| true` here once hid that as a green startup-script.
+    if [ "$AKASH_IP" != "AKASH_IP_NOT_SET" ]; then
+      systemctl restart haproxy
+    else
+      logger -t ingress-anchor "HAProxy NOT started: akash-deployment-ip metadata is unset (AKASH_IP_NOT_SET)"
+    fi
 
     # =========================================================================
     # 5. UDP relay for CoAP (port 5683) via socat

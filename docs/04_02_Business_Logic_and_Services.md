@@ -472,8 +472,8 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Вхід** | `env` (Hash-подібний, типово `ENV`; інжектиться в тестах) |
 | **Що робить** | Чистий content-judge небезпечної Web3-конфігурації (дзеркалить `WeakKeyDetector`). **A1 (chain identity)** — сканує `*_RPC_URL` (Ethereum/Polygon/Celo/Solana) на testnet-маркери (`amoy`/`mumbai`/`sepolia`/`goerli`/`holesky`/`devnet`…, alnum-boundary-anchored проти хибних збігів у API-ключі): mainnet-деплой на testnet мінтив би реальну вартість на throwaway-чейні. Chain-id константи в коді немає, а live `eth_chainId` на boot свідомо НЕ робиться (boot почав би залежати від доступності RPC = гірший failure-mode). **A2 (oracle keys)** — `BlockchainMintingService`/`BlockchainBurningService` резолвлять підписанта через `ENV.fetch("ORACLE_MINTER_PRIVATE_KEY") { ENV.fetch("ORACLE_PRIVATE_KEY") }` (+`ORACLE_SLASHER_PRIVATE_KEY`): відсутність обох → `KeyError` глибоко в Sidekiq-воркері → тихий DeadSet. Перевіряє резолв fallback-ланцюга + hex-формат (64 hex, опц. `0x`). |
 | **Зовнішні виклики** | — (in-memory, без мережі за дизайном). |
-| **Публічні методи** | `.violations(env = ENV) → Array<String>` (порожній = безпечно; кожен рядок — людиночитане порушення з префіксом `[chain]`/`[oracle-key]`) |
-| **Тест coverage** | `spec/services/security/web3_network_guard_spec.rb` — testnet-RPC (Amoy/devnet), alnum-boundary false-positive, missing/malformed/`0x` oracle-key |
+| **Публічні методи** | `.violations(env = ENV, signer_process: true) → Array<String>` (порожній = безпечно; префікси `[chain]`/`[oracle-key]`). `signer_process:` скоупить лише **presence**-вимогу ключів до процесу-підписанта (Sidekiq): web/coap-контейнери свідомо бутяться без money-ключів (Akash ENV = plaintext провайдеру — signing-п'ятірка живе лише в `job`-сервісі SDL/Kamal); формат/колізія/testnet перевіряються скрізь, де ключ Є. |
+| **Тест coverage** | `spec/services/security/web3_network_guard_spec.rb` — testnet-RPC (Amoy/devnet), alnum-boundary false-positive, missing/malformed/`0x` oracle-key, `signer_process: false` scoping (keyless-clean · формат/колізія/testnet і без ключів) |
 | **Інвокери** | `config/initializers/web3_network_guard.rb` (boot-time guard, див. нижче) |
 | **Cross-ref** | [`05_01 §5`](05_01_Multichain_Architecture) (RPC/ENV-конфіг), [`06_04`](06_04_Secrets_Checklist) (ORACLE-ключі), [`00_07` — E.47](00_07_Action_Plan_Tracker). Розширює runtime E.47 Solana-guard на boot-time + EVM. |
 
@@ -482,7 +482,7 @@ peaq_node_url: "https://peaq-node.example.com"
 | | |
 |---|---|
 | **Файл** | `config/initializers/web3_network_guard.rb` |
-| **Що робить** | У `Rails.env.production?`/canopy АБО `WEB3_STRICT_MODE=true` (той самий gate, що IoTeX/Hadron) після `after_initialize` викликає `Security::Web3NetworkGuard.violations(ENV)`; будь-яке порушення → raise `SecurityError` fail-closed ДО прийому трафіку. У dev/test без strict-mode — вимкнений. Asset-build skip через `SECRET_KEY_BASE_DUMMY`. |
+| **Що робить** | У `Rails.env.production?`/canopy АБО `WEB3_STRICT_MODE=true` (той самий gate, що IoTeX/Hadron) після `after_initialize` викликає `Security::Web3NetworkGuard.violations(ENV, signer_process: Sidekiq.server?)`; будь-яке порушення → raise `SecurityError` fail-closed ДО прийому трафіку. Presence-вимога ключів діє лише в signer-процесі (job) — відсутній ключ все одно падає гучно на job-boot, ДО DeadSet; web/coap бутяться keyless by design. У dev/test без strict-mode — вимкнений. Asset-build skip через `SECRET_KEY_BASE_DUMMY`. |
 | **Bypass** | `SILKENNET_SKIP_WEB3_NETWORK_GUARD=1` — для one-off rescue-boot. Логується гучно, не може стати рутиною. |
 
 ### `SilkenNet::DidDerivation` [FW.54]

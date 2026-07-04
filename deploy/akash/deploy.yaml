@@ -137,8 +137,10 @@ services:
       # Maps to: Kamal env.secret SENTRY_DSN
       - SENTRY_DSN=REQUIRED_SECRET_NOT_SET
 
-      # Sentry release tracking — set to git SHA or release tag at deploy time.
-      - RELEASE_VERSION=
+      # RELEASE_VERSION deliberately OMITTED: a present-but-empty value feeds
+      # Sentry `release=""` and kills its own autodetect (the KREDIS [B1]
+      # empty-inject class). Inject the real git SHA / tag at deploy time
+      # (Akash Console) to enable release tracking.
 
       # Basic Auth credentials for /metrics endpoint (Prometheus scraping).
       # Alloy sidecar uses these same credentials to authenticate when scraping.
@@ -146,18 +148,14 @@ services:
       - PROMETHEUS_AUTH_PASSWORD=REQUIRED_SECRET_NOT_SET
 
       # ════════════════════════════════════════════════════════════════════════
-      # Web3 oracle keys (dual-key split, B-02 resolved)
+      # Web3 money/signing keys — DELIBERATELY ABSENT from the web container.
       # ════════════════════════════════════════════════════════════════════════
-      # Legacy fallback used by Celo/Etherisc/Toucan/Klima/PuroEarth services.
-      # Maps to: Kamal env.secret ORACLE_PRIVATE_KEY
-      - ORACLE_PRIVATE_KEY=REQUIRED_SECRET_NOT_SET
-      # Holds MINTER_ROLE on SCC & SFC contracts (BlockchainMintingService:107).
-      - ORACLE_MINTER_PRIVATE_KEY=REQUIRED_SECRET_NOT_SET
-      # Holds SLASHER_ROLE on SCC & SFC contracts (BlockchainBurningService:58).
-      - ORACLE_SLASHER_PRIVATE_KEY=REQUIRED_SECRET_NOT_SET
-      # Separate wallet for weekly Ethereum L1 state-root anchor
-      # (Ethereum::StateAnchorService:147).
-      - ETHEREUM_ANCHOR_PRIVATE_KEY=REQUIRED_SECRET_NOT_SET
+      # ORACLE_PRIVATE_KEY / ORACLE_MINTER_PRIVATE_KEY / ORACLE_SLASHER_PRIVATE_KEY /
+      # ETHEREUM_ANCHOR_PRIVATE_KEY / SOLANA_WALLET_KEYPAIR live ONLY in the `job`
+      # service: every signing call site is a Sidekiq worker, and Akash SDL ENV is
+      # plaintext to the provider — the internet-facing web surface must not carry
+      # money keys. Boot presence-check is scoped to the signer process via
+      # Security::Web3NetworkGuard (signer_process: Sidekiq.server?).
 
       # ════════════════════════════════════════════════════════════════════════
       # RPC endpoints (Web3::RpcConnectionPool — required by ENV.fetch)
@@ -170,9 +168,8 @@ services:
       - CELO_RPC_URL=REQUIRED_SECRET_NOT_SET
 
       # ════════════════════════════════════════════════════════════════════════
-      # Solana minting (Solana::MintingService raises explicit errors)
+      # Solana public identifiers (the signing keypair is job-only, see above)
       # ════════════════════════════════════════════════════════════════════════
-      - SOLANA_WALLET_KEYPAIR=REQUIRED_SECRET_NOT_SET
       - SOLANA_FEE_PAYER_PUBKEY=REQUIRED_SECRET_NOT_SET
       - SOLANA_FEE_PAYER_TOKEN_ACCOUNT=REQUIRED_SECRET_NOT_SET
       - SOLANA_USDC_MINT_ADDRESS=REQUIRED_SECRET_NOT_SET
@@ -201,11 +198,15 @@ services:
     # Maps to: config/deploy.yml → boot.proxy.publish
     expose:
       # HTTP — Rails web traffic via Thruster (HTTP/2 reverse proxy).
+      # `service: alloy` gives the Alloy sidecar an INTERNAL route to
+      # /metrics — without it the scrape would go through the public
+      # ingress and die on the IP-allowlist 403 (INF.14).
       # Kamal equivalent: "80:80"
       - port: 80
         as: 80
         to:
           - global: true
+          - service: alloy
 
       # HTTPS — TLS-terminated traffic for secure browser/API access.
       # Required for WebSocket (ActionCable) over HTTPS and browser security policies.
@@ -217,22 +218,17 @@ services:
         to:
           - global: true
 
-      # CoAP — UDP uplink for tree sensor telemetry (LoRa mesh → Queen → Akash).
-      # This is critical for IoT data ingestion from soldier/queen gateways.
-      # Kamal equivalent: "5683:5683/udp"
-      # See: docs/FIRMWARE.md — CoAP binary telemetry (21-byte packets)
-      - port: 5683
-        as: 5683
-        proto: udp
-        to:
-          - global: true
+      # CoAP UDP 5683 lives on the dedicated `coap` service below (INF.17) —
+      # Thruster/Puma never listen on UDP, so exposing it here was a black hole.
 
     # --- Persistent Storage --------------------------------------------------
     # Maps to: config/deploy.yml → volumes: "silken_net_storage:/rails/storage"
     #
-    # Mount persistent storage for Active Storage uploads and local logs.
-    # The primary data lives in Cloud SQL; this volume keeps file uploads
-    # and Rails logs across container restarts on the Akash provider.
+    # WEB-ONLY volume — job/coap are separate containers with NO shared
+    # filesystem (Akash has no cross-service volumes). Nothing critical
+    # writes here today: Active Storage primary = S3 (+GCS mirror,
+    # config/storage.yml), logs go to STDOUT. Any future feature needing
+    # cross-process state must use Cloud Storage / Redis, not this path.
     params:
       storage:
         data:
@@ -294,7 +290,8 @@ services:
 
       # --- Observability ---
       - SENTRY_DSN=REQUIRED_SECRET_NOT_SET
-      - RELEASE_VERSION=
+      # RELEASE_VERSION omitted — present-but-empty kills Sentry autodetect [B1];
+      # inject the real value at deploy time.
 
       # --- Web3 oracle keys (BlockchainMintingService, BlockchainBurningService,
       #     Ethereum::StateAnchorService, Celo/Etherisc/Toucan/Klima/PuroEarth) ---
@@ -334,6 +331,75 @@ services:
       - ETHERISC_DIP_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
       - PURO_EARTH_REGISTRY_CONTRACT_ADDRESS=REQUIRED_SECRET_NOT_SET
 
+    # Embedded /metrics exporter (SilkenNet::MetricsExporter, Sidekiq
+    # on(:startup) hook) — internal-only route for the Alloy scrape;
+    # NOT published globally. See 06_03 §2.9.
+    expose:
+      - port: 9394
+        as: 9394
+        to:
+          - service: alloy
+
+  # ---------------------------------------------------------------------------
+  # CoAP Service — UDP Telemetry Intake Daemon (INF.17)
+  # ---------------------------------------------------------------------------
+  # Maps to: config/deploy.yml → servers.coap
+  #
+  # Dedicated process for the CoAP/UDP listener (lib/daemons/coap_listener):
+  # Queen gateways → Ingress Anchor (socat UDP relay) → this service → Redis
+  # (UnpackTelemetryWorker via Sidekiq). Runs the same image; entrypoint starts
+  # the Cloud SQL Auth Proxy, then the daemon. Deliberately NOT a puma thread —
+  # UDP inside the web process would couple lifecycles (docs/03_02 §4).
+  #
+  # The INF.6 smoke gate (coap_smoke.yml) expects byte-exact replies from this
+  # listener — without it every probe reads "UDP path dead".
+  coap:
+    image: ghcr.io/alexey-lukin/silken_net:latest
+    command:
+      - "/rails/bin/docker-entrypoint"
+      - "bundle"
+      - "exec"
+      - "ruby"
+      - "lib/daemons/coap_listener"
+    env:
+      # Boot-critical subset only: the daemon loads config/environment (all
+      # initializers), parses PDUs and enqueues to Redis — no Web3 workers here.
+      - RAILS_ENV=production
+      - RAILS_MASTER_KEY=REQUIRED_SECRET_NOT_SET
+      # PostgreSQL components (config/database.yml). Auth Proxy → 127.0.0.1; only password is a secret.
+      - POSTGRES_HOST=127.0.0.1
+      - POSTGRES_USER=silken_net
+      - POSTGRES_PASSWORD=REQUIRED_SECRET_NOT_SET
+      - POSTGRES_DATABASE=silken_net_production
+      - CLOUD_SQL_INSTANCE_CONNECTION_NAME=REQUIRED_SECRET_NOT_SET
+      - GCP_SA_KEY_BASE64=REQUIRED_SECRET_NOT_SET
+      # Sidekiq enqueue target (UnpackTelemetryWorker.perform_async).
+      - REDIS_URL=REQUIRED_SECRET_NOT_SET
+      # KREDIS_REDIS_URL omitted — auto-derives from REDIS_URL (config/redis/shared.yml). [B1]
+      # 🛑 BOOT-CRITICAL: master_key_strength_check.rb raises without this.
+      - PROVISIONING_MASTER_KEY=REQUIRED_SECRET_NOT_SET
+      # Crash reports for the daemon.
+      - SENTRY_DSN=REQUIRED_SECRET_NOT_SET
+      # RELEASE_VERSION omitted — present-but-empty kills Sentry autodetect [B1];
+      # inject the real value at deploy time.
+      # Consistency with web/job (INF.11) — no Web3 calls run here, but the flag
+      # must never differ across surfaces.
+      - WEB3_STRICT_MODE=true
+    expose:
+      # CoAP — UDP uplink for tree sensor telemetry (LoRa mesh → Queen → Akash).
+      # Kamal equivalent: servers.coap options.publish "5683:5683/udp".
+      # See: docs/03_02 §4 — CoAP binary telemetry.
+      - port: 5683
+        as: 5683
+        proto: udp
+        to:
+          - global: true
+      # Embedded /metrics exporter — internal-only route for the Alloy scrape.
+      - port: 9395
+        as: 9395
+        to:
+          - service: alloy
+
   # ---------------------------------------------------------------------------
   # Alloy Service — Grafana Alloy Metrics Agent (OBS.1)
   # ---------------------------------------------------------------------------
@@ -347,6 +413,11 @@ services:
   alloy:
     image: grafana/alloy:v1.16.3
     env:
+      # Deployment slot for the external_labels `slot` (config.alloy):
+      # RAILS_ENV is "production" for BOTH slots, so without this a
+      # canopy-on-Akash render would merge series with production's.
+      # Override to "canopy" in a canopy render.
+      - DEPLOYMENT_SLOT=production
       # REQUIRED: Grafana Cloud Prometheus remote_write endpoint.
       # Format: https://prometheus-prod-XX-prod-XX.grafana.net/api/prom/push
       - GRAFANA_REMOTE_WRITE_URL=REQUIRED_SECRET_NOT_SET
@@ -404,6 +475,17 @@ profiles:
           size: 4Gi
         storage:
           - size: 20Gi
+    # [INF.17] CoAP daemon — IO-bound single-threaded UDP listener with a full
+    # Rails environment loaded. RAM dominated by the Rails boot (~0.5 GB);
+    # storage fits the application image + logs. Scale ceiling ~10k nodes (E.5).
+    coap:
+      resources:
+        cpu:
+          units: 0.5
+        memory:
+          size: 1Gi
+        storage:
+          - size: 10Gi
     # [OBS.1] Grafana Alloy — lightweight metrics agent. Minimal resources
     # sufficient for scraping /metrics every 15s and pushing to Grafana Cloud.
     alloy:
@@ -447,6 +529,9 @@ profiles:
         job:
           denom: uakt
           amount: 5000
+        coap:
+          denom: uakt
+          amount: 2000
         alloy:
           denom: uakt
           amount: 1000
@@ -465,6 +550,10 @@ deployment:
   job:
     silken-dcloud:
       profile: job
+      count: 1
+  coap:
+    silken-dcloud:
+      profile: coap
       count: 1
   alloy:
     silken-dcloud:

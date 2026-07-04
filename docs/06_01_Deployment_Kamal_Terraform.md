@@ -137,7 +137,7 @@ terraform apply
 cd terraform/akash
 terraform init
 terraform apply
-# → Akash розгортає web (Rails + Puma) та job (Sidekiq) сервіси
+# → Akash розгортає web (Rails + Puma), job (Sidekiq) та coap (UDP-демон) сервіси
 # → Cloud SQL Auth Proxy в контейнері тунелює DB-трафік через Google API
 # → Redis через Upstash (зовнішній, TLS)
 
@@ -210,9 +210,10 @@ terraform apply
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │  web сервіс (Rails 8.1 + Puma + Thruster)           │   │
 │  │  4 vCPU / 8 GB RAM / 50 GB ephemeral                │   │
-│  │  Порти: :80 (HTTP) + :5683/UDP (CoAP)               │   │
+│  │  Порти: :80 (HTTP)                                   │   │
 │  │                                                      │   │
 │  │  ✅ job сервіс (Sidekiq, всі воркери)                │   │
+│  │  ✅ coap сервіс (CoAP/UDP :5683 → Sidekiq) [INF.17]  │   │
 │  │  ✅ alloy сервіс (Grafana Alloy → Grafana Cloud)     │   │
 │  │  ✅ Cloud SQL через Auth Proxy (HTTPS tunnel)        │   │
 │  │  ✅ Redis через Upstash (зовнішній, TLS, rediss://) │   │
@@ -242,7 +243,7 @@ terraform apply
 | **Rails web (Puma + Thruster)** | ❌ | ✅ | — | — | Повністю на Akash |
 | **Sidekiq (job role)** | ❌ | ✅ | — | — | `job` сервіс в Akash SDL |
 | **Grafana Alloy (metrics agent)** | ❌ | ✅ | — | — | `alloy` сервіс в Akash SDL, пушить у Grafana Cloud |
-| **CoAP UDP daemon (:5683)** | proxy | ✅ | — | — | Ingress Anchor проксює UDP на Akash |
+| **CoAP UDP daemon (:5683)** | proxy | ✅ | — | — | Виділений `coap` сервіс в Akash SDL + Kamal `coap`-роль (INF.17); Ingress Anchor проксює UDP. Свідомо НЕ puma-thread — UDP у web-процесі сплітає lifecycle |
 | **Cloud SQL PostgreSQL 17** | ✅ | — | — | — | Приватна IP, доступ через Auth Proxy |
 | **ActionCable (Solid Cable)** | ✅ | ✅ | — | — | Спільна Cloud SQL БД `cable`, LISTEN/NOTIFY (без sticky sessions) |
 | **Redis** | ❌ | — | ✅ | — | Upstash Serverless, TLS (`rediss://`) |
@@ -596,6 +597,10 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
 
 ☑ 8. Sidekiq на Akash ← ВИПРАВЛЕНО (job сервіс додано)
 
+☑ 8b. CoAP-демон на Akash ← ВИПРАВЛЕНО [INF.17] (виділений coap сервіс: той самий
+       образ, entrypoint → lib/daemons/coap_listener, expose 5683/udp; Kamal-fallback =
+       coap-роль з прямим publish 5683/udp — kamal-proxy UDP не проксіює)
+
 ☐ 9. Створити deploy-production.yml workflow (INFO)
 
 ☐ 10. Налаштувати Upstash Redis (заміна GCP Memorystore)
@@ -604,7 +609,7 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
 
 ☐ 11. Деплой на Akash Network
        cd terraform/akash && terraform apply
-       Верифікувати web та job сервіси запущені
+       Верифікувати web, job та coap сервіси запущені
 
 ☐ 12. Верифікувати Ingress Anchor маршрутизацію
        curl https://api.silkennet.com/up    → 200

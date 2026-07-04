@@ -45,7 +45,10 @@ class PrometheusCollector
     return forbidden_response unless authorized?(env)
 
     # --- REFRESH ON-SCRAPE GAUGES (Sidekiq queues + DB pool + process/runtime) ---
-    refresh_sidekiq_gauges
+    # Queue/DeadSet gauges — глобальний Redis-факт: семплить лише job-процес
+    # (Sidekiq.server?), інакше три scrape-таргети (web/job/coap — 06_03 §2.9)
+    # віддають три ІДЕНТИЧНІ серії → потрійний page на одну подію.
+    refresh_sidekiq_gauges if Sidekiq.server?
     SilkenNet::Metrics.sample_connection_pool!
     SilkenNet::Metrics.sample_process_runtime!
 
