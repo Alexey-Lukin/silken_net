@@ -234,9 +234,10 @@ ExecStartPre=-/usr/bin/docker rm -f silkennet-coap
 # The image already declares ENTRYPOINT /rails/bin/docker-entrypoint (Dockerfile) —
 # repeating it as the first CMD arg made the entrypoint re-exec itself (double
 # schema_migrations wait, tripled cold start). Pass only the daemon command.
+# Image comes from var.coap_daemon_image (INF.21) — pin sha-/semver for deploys.
 ExecStart=/usr/bin/docker run --name silkennet-coap --network host \
   --env-file /etc/silkennet/coap.env \
-  ghcr.io/alexey-lukin/silken_net:latest \
+  ${var.coap_daemon_image} \
   bundle exec ruby lib/daemons/coap_listener
 ExecStop=/usr/bin/docker stop silkennet-coap
 Restart=always
@@ -253,7 +254,7 @@ SYSTEMD_DAEMON
     # > loud warn. Both units always exist; exactly one binds UDP 5683.
     # ------------------------------------------------------------------------
     if ! grep -q REQUIRED_SECRET_NOT_SET /etc/silkennet/coap.env; then
-      docker pull ghcr.io/alexey-lukin/silken_net:latest || true
+      docker pull ${var.coap_daemon_image} || true
       systemctl disable coap-relay 2>/dev/null || true
       systemctl stop coap-relay 2>/dev/null || true
       systemctl enable coap-daemon

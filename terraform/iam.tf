@@ -19,6 +19,24 @@ resource "google_project_iam_member" "deploy_os_login" {
   member  = "serviceAccount:${google_service_account.deploy.email}"
 }
 
+# IAP admin access (INF.20 (в)) — human operators enter the Anchor through the IAP
+# tunnel with sudo (coap.env is root-owned 0600; systemctl needs it). osAdminLogin,
+# not osLogin: the plain role gets a shell but no sudo. tunnelResourceAccessor lets
+# the same identity open the IAP tunnel itself.
+resource "google_project_iam_member" "iap_admin_os_login" {
+  for_each = toset(var.iap_admin_members)
+  project  = var.project_id
+  role     = "roles/compute.osAdminLogin"
+  member   = each.value
+}
+
+resource "google_project_iam_member" "iap_admin_tunnel" {
+  for_each = toset(var.iap_admin_members)
+  project  = var.project_id
+  role     = "roles/iap.tunnelResourceAccessor"
+  member   = each.value
+}
+
 # Artifact Registry Writer — push Docker images during deployment
 resource "google_project_iam_member" "deploy_artifact_writer" {
   project = var.project_id

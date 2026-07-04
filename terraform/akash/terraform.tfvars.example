@@ -10,8 +10,10 @@ akash_chain_id        = "akashnet-2"
 akash_node            = "https://rpc.akashnet.net:443"
 akash_auditor_address = "akash1365yvmc4s7awdyj3n2sav7xfx76axy6czqt24"
 
-# Application
-docker_image     = "ghcr.io/alexey-lukin/silken_net:latest"
+# Application — [INF.21] pin an immutable tag for any real render (`sha-<commit>`
+# from mirror-ghcr, or `vX.Y.Z` on releases): `:latest` moves under the lease on
+# provider restart/migration and has no rollback target.
+docker_image     = "ghcr.io/alexey-lukin/silken_net:sha-CHANGE_ME"
 rails_master_key = "CHANGE_ME"
 
 # ── FIRST Akash deploy = CANOPY render (founder 2026-07-04) ──────────────────

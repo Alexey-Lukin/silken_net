@@ -90,20 +90,30 @@ variable "enable_deletion_protection" {
 # SSH & Network Access
 # -----------------------------------------------------------------------------
 
-variable "ssh_public_key" {
-  description = "SSH public key for accessing compute instances"
-  type        = string
-  default     = ""
+# INF.20 (в): admin SSH rides the IAP tunnel + OS Login — metadata ssh-keys are NOT
+# used (enable-oslogin=TRUE ignores them; the old ssh_public_key/ssh_user vars were
+# dead — consumed by nothing). Members here get osAdminLogin (sudo) + IAP tunnel access.
+variable "iap_admin_members" {
+  description = "IAM members allowed to SSH into the Ingress Anchor via IAP with sudo (e.g. [\"user:founder@example.com\"])"
+  type        = list(string)
+  default     = []
 }
 
-variable "ssh_user" {
-  description = "SSH username for compute instances"
+# [INF.21] CoAP-daemon image on the Ingress Anchor. Pin to an immutable tag for any
+# real bring-up: mirror-ghcr pushes `sha-<commit>` on every main push and `vX.Y.Z`
+# on releases — `:latest` moves under you on VM reboot/restart and has no rollback
+# target. The default stays :latest only as a dev convenience.
+variable "coap_daemon_image" {
+  description = "Container image for the Anchor coap-daemon systemd unit (pin sha-<commit>/vX.Y.Z for deploys)"
   type        = string
-  default     = "deploy"
+  default     = "ghcr.io/alexey-lukin/silken_net:latest"
 }
 
+# Optional DIRECT ssh (bypassing IAP) — normally stays []: the canonical admin path
+# is the IAP tunnel (allow_iap_ssh is unconditional). Fill only for a break-glass
+# direct-CIDR window.
 variable "ssh_source_ranges" {
-  description = "CIDR ranges allowed to SSH into web nodes — restrict to VPN/office IP in production"
+  description = "CIDR ranges allowed to SSH into web nodes directly (IAP is the normal path; leave [])"
   type        = list(string)
   default     = []
 

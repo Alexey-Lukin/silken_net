@@ -15,7 +15,9 @@ permissions:
 env:
   TF_VAR_project_id: ${{ secrets.GCP_PROJECT_ID }}
   TF_VAR_db_password: ${{ secrets.POSTGRES_PASSWORD }}
-  TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
+  # SSH secrets removed (INF.20 (в)): admin path = IAP tunnel + OS Login; the CI
+  # kamal leg needs the (б) glue (ssh.proxy_command + SA tunnel role) before it can
+  # reach the Anchor — until then the kamal step is honestly non-functional.
 
 jobs:
   verify-secrets:
@@ -28,18 +30,16 @@ jobs:
           egress-policy: audit
       - name: Assert deploy secrets are present [B1]
         env:
-          # Boot-critical: empty → container crashes on boot, terraform can't apply,
-          # or kamal can't SSH. Mirror config/deploy.yml env.secret (the kamal-deploy
-          # env: block below) + the infra prerequisites (GCP project, SSH transport).
+          # Boot-critical: empty → container crashes on boot or terraform can't apply.
+          # Mirror config/deploy.yml env.secret (the kamal-deploy env: block below)
+          # + the infra prerequisites (GCP project). SSH secrets removed — INF.20 (в):
+          # IAP tunnel + OS Login, no key material to provision.
           # KAMAL_MASTER_KEY removed — phantom: Kamal 2.x has no such mechanism and
           # nothing in .kamal/ consumes it (plain $VAR secrets file, not encrypted).
           RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           PROVISIONING_MASTER_KEY: ${{ secrets.PROVISIONING_MASTER_KEY }}
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
-          SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           REDIS_URL: ${{ secrets.REDIS_URL }}
           ORACLE_MINTER_PRIVATE_KEY: ${{ secrets.ORACLE_MINTER_PRIVATE_KEY }}
@@ -65,8 +65,8 @@ jobs:
           # false-safety that hid the 4-month deploy block). Boot-critical = crashes boot
           # (master-key decrypt / PROVISIONING guard / oracle KeyError per web3_network_guard)
           # or blocks kamal. Runtime = lazy-fail on use (warn, don't block). Canon: docs/06_04 §1+§2.
-          BOOT_CRITICAL="RAILS_MASTER_KEY PROVISIONING_MASTER_KEY GCP_SA_KEY GCP_PROJECT_ID SSH_PRIVATE_KEY SSH_KNOWN_HOSTS POSTGRES_PASSWORD REDIS_URL ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY"
-          RUNTIME="SENTRY_DSN ETHEREUM_ANCHOR_PRIVATE_KEY ALCHEMY_POLYGON_RPC_URL ALCHEMY_ETHEREUM_RPC_URL SOLANA_RPC_URL POLYGON_RPC_URL CELO_RPC_URL SOLANA_WALLET_KEYPAIR SOLANA_FEE_PAYER_PUBKEY SOLANA_FEE_PAYER_TOKEN_ACCOUNT SOLANA_USDC_MINT_ADDRESS ORACLE_CELO_PRIVATE_KEY CHAINLINK_HMAC_SECRET HELIUM_WEBHOOK_SECRET SSH_PUBLIC_KEY"
+          BOOT_CRITICAL="RAILS_MASTER_KEY PROVISIONING_MASTER_KEY GCP_SA_KEY GCP_PROJECT_ID POSTGRES_PASSWORD REDIS_URL ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY"
+          RUNTIME="SENTRY_DSN ETHEREUM_ANCHOR_PRIVATE_KEY ALCHEMY_POLYGON_RPC_URL ALCHEMY_ETHEREUM_RPC_URL SOLANA_RPC_URL POLYGON_RPC_URL CELO_RPC_URL SOLANA_WALLET_KEYPAIR SOLANA_FEE_PAYER_PUBKEY SOLANA_FEE_PAYER_TOKEN_ACCOUNT SOLANA_USDC_MINT_ADDRESS ORACLE_CELO_PRIVATE_KEY CHAINLINK_HMAC_SECRET HELIUM_WEBHOOK_SECRET"
 
           missing=""
           for v in $BOOT_CRITICAL; do
@@ -159,12 +159,9 @@ jobs:
       - name: Install Kamal
         run: gem install kamal -v '~> 2.12.0'
 
-      - name: Set up SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          echo "${{ secrets.SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+      # SSH-key setup removed (INF.20 (в)): the Anchor accepts SSH only through the
+      # IAP tunnel + OS Login. The CI kamal leg stays dormant until the (б) glue
+      # (kamal ssh.proxy_command over start-iap-tunnel + SA osLogin/tunnel roles).
 
       - name: Reboot Kamal Proxy
         run: kamal proxy reboot

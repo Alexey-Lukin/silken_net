@@ -64,9 +64,7 @@
 - [ ] `POSTGRES_PASSWORD` — пароль Cloud SQL `silken_net` user (≥16 символів, password manager). **Component style** (`config/database.yml`): host/user/database — non-secret (`config/deploy.yml env.clear`), лише пароль = секрет. Один секрет живить Kamal `POSTGRES_PASSWORD` **і** Terraform `TF_VAR_db_password`. Той самий для production + canopy — ізоляція через `POSTGRES_DATABASE` (canopy = `silken_net_canopy`), НЕ окремий URL. (Замінив `DATABASE_URL`/`DATABASE_PASSWORD`/`CANOPY_DATABASE_URL` — INF.16.)
 - [ ] `REDIS_URL` — Production Redis (DB 0, Upstash): `rediss://default:<password>@<endpoint>.upstash.io:6379/0`
 - [ ] `CANOPY_REDIS_URL` — Canopy Redis (DB 0): `rediss://default:<password>@<endpoint>.upstash.io:6379/0`
-- [ ] `SSH_PRIVATE_KEY` — приватний SSH ключ для Kamal deploy на VM (`ssh-keygen -t ed25519`)
-- [ ] `SSH_PUBLIC_KEY` — публічний SSH ключ (пара до `SSH_PRIVATE_KEY`)
-- [ ] `SSH_KNOWN_HOSTS` — SSH fingerprints production серверів (`ssh-keyscan <server-ip>`)
+> ~~`SSH_PRIVATE_KEY` / `SSH_PUBLIC_KEY` / `SSH_KNOWN_HOSTS`~~ — **ЗНЯТО 2026-07-04 (INF.20 (в)):** SSH на анкор = IAP-тунель + OS Login, ключового матеріалу для провіжна НЕМАЄ (ключі керує OS Login; порт 22 в інтернет не відкритий — firewall лише 35.235.240.0/20). Доступ = IAM: tf-var `iap_admin_members` (osAdminLogin + tunnelResourceAccessor). CI-Kamal при потребі — (б)-клей: `ssh.proxy_command` через `gcloud compute start-iap-tunnel` + ті самі ролі для SA. Не заводити ці секрети.
 
 ### 1.2. P1 — Operations (потрібні для конкретних автоматизацій)
 
@@ -295,7 +293,7 @@
 
 > **One-Home: порядок дня деплою живе у [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform)** (фази −1…6) — старий 8-кроковий список тут суперечив 06_01-порядку (секрети до/після apply). Секрет-специфіка, яку тримає ЦЕЙ дім:
 >
-> - **GitHub Secrets = дві партії:** Batch A (pre-infra, ДО `terraform apply`): `GCP_SA_KEY` · `GCP_PROJECT_ID` · `POSTGRES_PASSWORD` · `SSH_PRIVATE/PUBLIC_KEY` · `RAILS_MASTER_KEY` · `PROVISIONING_MASTER_KEY`. Batch B (post-infra, значення існують лише ПІСЛЯ apply/акаунтів): `SSH_KNOWN_HOSTS` (= `ssh-keyscan <ingress_ip>`) · `REDIS_URL`/`CANOPY_REDIS_URL` (Upstash ×2 — Фаза −1) · RPC×5 · Solana×4 · `SENTRY_DSN` · webhook-HMACs · oracle-ключі.
+> - **GitHub Secrets = дві партії:** Batch A (pre-infra, ДО `terraform apply`): `GCP_SA_KEY` · `GCP_PROJECT_ID` · `POSTGRES_PASSWORD` · `RAILS_MASTER_KEY` · `PROVISIONING_MASTER_KEY` (SSH-секретів НЕМАЄ — INF.20 (в): IAP+OS Login keyless). Batch B (post-infra, значення існують лише ПІСЛЯ apply/акаунтів): `REDIS_URL`/`CANOPY_REDIS_URL` (Upstash ×2 — Фаза −1) · RPC×5 · Solana×4 · `SENTRY_DSN` · webhook-HMACs · oracle-ключі.
 > - `.kamal/secrets` вже закомічений ($VAR-форма) — «створювати» його не треба; треба заповнити shell-ENV (CI робить це сам з GitHub Secrets).
 > - Akash SDL секрети — через `.tpl` + `terraform/akash/terraform.tfvars` (§3/§4); gas на гаманцях — Фаза −1/4.
 

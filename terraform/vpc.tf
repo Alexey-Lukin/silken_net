@@ -66,6 +66,29 @@ resource "google_compute_firewall" "allow_ssh" {
   }
 }
 
+# Firewall: SSH via IAP tunnel — the CANONICAL admin path (INF.20 decision (в)).
+# 35.235.240.0/20 is Google's fixed IAP frontend range: port 22 is never open to
+# the internet; identity is enforced by IAM (OS Login + iap.tunnelResourceAccessor),
+# not by source IP. Entry: gcloud compute ssh silken-net-ingress --tunnel-through-iap
+# (kamal fallback later rides the same tunnel via ssh.proxy_command — INF.20 (б)).
+resource "google_compute_firewall" "allow_iap_ssh" {
+  name        = "silken-net-allow-iap-ssh"
+  network     = google_compute_network.silken_net_vpc.name
+  description = "Allow SSH from Google IAP frontends only (tunnel-through-iap)"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+
+  source_ranges = ["35.235.240.0/20"]
+  target_tags   = ["web-nodes"]
+
+  log_config {
+    metadata = "INCLUDE_ALL_METADATA"
+  }
+}
+
 # Firewall: Allow HTTP/HTTPS (ports 80, 443)
 resource "google_compute_firewall" "allow_web" {
   name        = "silken-net-allow-web"

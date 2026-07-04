@@ -606,14 +606,17 @@ Helius/QuickNode (Solana mainnet) RPC · 4+ Web3-гаманці (oracle/minter/s
 `terraform/bootstrap.sh` (GCS state-bucket) → `terraform.tfvars` (project_id, db_password,
 `ssh_source_ranges=[<твій реальний CIDR>]` — приклад у tfvars = TEST-NET-3, НЕ лишай!) →
 GitHub Secrets **Batch A** (pre-infra: `GCP_SA_KEY`, `GCP_PROJECT_ID`, `POSTGRES_PASSWORD`,
-`SSH_PRIVATE/PUBLIC_KEY`, `RAILS_MASTER_KEY`, `PROVISIONING_MASTER_KEY`) →
+`RAILS_MASTER_KEY`, `PROVISIONING_MASTER_KEY`) → tfvars: `iap_admin_members`
+(твій e-mail) + [INF.21] `coap_daemon_image` = іммутабельний `sha-<commit>` →
 `terraform init && plan && apply` → зчитати outputs (`ingress_ip`, `database_private_ip`,
-`artifact_registry_url`). ⚠️ SSH-транспорт на анкор наразі НЕ wired (INF.20: OS Login
-ігнорує metadata-keys, `ssh_public_key` var мертвий) — Kamal-шлях чекає рішення INF.20;
-Akash-шлях (Фаза 3) від SSH НЕ залежить.
+`artifact_registry_url`). **SSH на анкор = IAP-тунель + OS Login (INF.20 (в), wired):**
+`gcloud compute ssh silken-net-ingress --tunnel-through-iap --zone europe-west1-b` —
+порт 22 в інтернет не відкритий, ключі keyless (керує OS Login); Kamal-нога = (б)-клей
+за потребою (`ssh.proxy_command` через `start-iap-tunnel` + SA-ролі); Akash-шлях
+(Фаза 3) від SSH не залежить.
 
 **Фаза 1 — Дротування post-infra:**
-`ssh-keyscan <ingress_ip>` → `SSH_KNOWN_HOSTS` + GitHub Secrets **Batch B** (`REDIS_URL`,
+GitHub Secrets **Batch B** (`REDIS_URL`,
 `CANOPY_REDIS_URL`, RPC×5, Solana×4, `SENTRY_DSN`, `CHAINLINK_HMAC_SECRET`,
 `HELIUM_WEBHOOK_SECRET`, oracle-ключі) → DNS: `api.silkennet.com` **A → ingress_ip
 (DNS-only, сіра хмарка!)** + `silkennet.app` CNAME → Akash ingress (proxied, після Фази 3) →

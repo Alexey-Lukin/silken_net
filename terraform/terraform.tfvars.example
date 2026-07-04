@@ -14,12 +14,18 @@ db_read_replica_count = 0
 # Protection
 enable_deletion_protection = true
 
-# SSH Access — IMPORTANT: restrict to your IP/VPN CIDR in production.
-# 0.0.0.0/0 is rejected by variable validation. Leave [] to skip the SSH firewall
-# entirely (reach instances via IAP / OS Login / gcloud).
-ssh_user          = "deploy"
-ssh_public_key    = "ssh-ed25519 AAAA... deploy@silken-net"
-ssh_source_ranges = ["203.0.113.0/24"] # CHANGE_ME to your VPN/office CIDR (or [] to skip)
+# SSH Access (INF.20 (в)) — canonical path = IAP tunnel + OS Login (no public :22):
+#   gcloud compute ssh silken-net-ingress --tunnel-through-iap --zone europe-west1-b
+# Members below get osAdminLogin (sudo for coap.env/systemctl) + IAP tunnel access.
+iap_admin_members = ["user:CHANGE_ME@example.com"]
+
+# Optional break-glass DIRECT ssh (bypasses IAP). Normally keep [] — the IAP
+# firewall rule is unconditional; this one only opens :22 to the given CIDR.
+ssh_source_ranges = []
+
+# [INF.21] Anchor coap-daemon image — PIN an immutable tag for bring-up
+# (mirror-ghcr pushes sha-<commit> per main push; vX.Y.Z on releases):
+# coap_daemon_image = "ghcr.io/alexey-lukin/silken_net:sha-<commit>"
 
 # Redis — REMOVED from GCP (Memorystore has no public IP).
 # Use Upstash (serverless Redis with TLS public endpoints) instead.
