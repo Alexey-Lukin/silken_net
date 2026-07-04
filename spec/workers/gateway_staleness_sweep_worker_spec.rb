@@ -37,6 +37,17 @@ RSpec.describe GatewayStalenessSweepWorker, type: :worker do
         .not_to change { EwsAlert.alert_type_queen_offline.count }
     end
 
+    it "друга Королева кластера під активним алертом падає БЕЗ другого алерту (документована стеля guard'а)" do
+      silent_gateway
+      sweep # перша впала → queen_offline активний
+
+      second = silent_gateway # той самий cluster, ще active і вже прострочена
+
+      expect { described_class.new.perform }
+        .not_to change { EwsAlert.alert_type_queen_offline.count }
+      expect(second.reload.state).to eq("faulty")
+    end
+
     it "пропускає maintenance (людина вже знає)" do
       gateway = silent_gateway(state: :maintenance)
       expect { sweep }.not_to change { gateway.reload.state }

@@ -30,6 +30,14 @@ RSpec.describe Codex::Fraction, type: :model do
       mythical = create(:codex_node, realm: realm, lifecycle_status: :mythical)
       expect(build(:codex_fraction, node: mythical)).to be_valid
     end
+
+    it "skips the lifecycle check when node is absent (belongs_to reports it)" do
+      fraction = build(:codex_fraction, node: nil)
+
+      expect(fraction).not_to be_valid
+      expect(fraction.errors[:codex_node_id]).to be_empty
+      expect(fraction.errors[:node]).to include("must exist")
+    end
   end
 
   describe "cooldown helpers" do

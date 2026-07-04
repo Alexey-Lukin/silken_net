@@ -58,11 +58,13 @@ jobs:
         run: forge test -vvv --gas-report
 
       # CONTRACT.1(8): gas-regression gate vs the committed .gas-snapshot baseline.
-      # Deterministic: fuzz seed is pinned in foundry.toml; stateful invariant_
-      # tests are excluded (path-dependent gas). Tolerance absorbs forge-version
-      # codegen noise. Refresh baseline: `forge snapshot --no-match-test "invariant_"`.
+      # Only deterministic unit tests belong here: invariant_ (path-dependent) AND
+      # testFuzz_ (μ/~ drifts with forge codegen even under the pinned seed — a
+      # +3.1% fuzz μ-shift broke main on a docs-only commit) are excluded.
+      # Tolerance absorbs forge-version codegen noise on the rest.
+      # Refresh baseline: `forge snapshot --no-match-test "invariant_|testFuzz_"`.
       - name: Gas snapshot check
-        run: forge snapshot --check --tolerance 3 --no-match-test "invariant_"
+        run: forge snapshot --check --tolerance 3 --no-match-test "invariant_|testFuzz_"
 
       - name: Run coverage (lcov)
         # --ir-minimum enables viaIR for stack-too-deep avoidance in coverage.

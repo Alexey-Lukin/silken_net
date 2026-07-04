@@ -451,5 +451,16 @@ RSpec.describe AuditLog, type: :model do
         expect(Prosopite).to have_received(:resume).at_least(:once)
       end
     end
+
+    it "computes the chain hash without Prosopite (production path)" do
+      # У production гема Prosopite немає (група :development,:test) —
+      # defined?-guard мусить тримати шлях без NameError.
+      hide_const("Prosopite")
+      user = create(:user)
+
+      log = create(:audit_log, user: user, organization: user.organization)
+
+      expect(log.chain_hash).to be_present
+    end
   end
 end
