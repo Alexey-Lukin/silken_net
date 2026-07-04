@@ -874,6 +874,42 @@ end
         expect(tx1.reload.status).to eq("sent")
         expect(tx2.reload.status).to eq("manual_review")
       end
+
+      # [M6] else-branch: an already-:manual_review tx has no valid escalate transition
+      # (may_escalate_to_review? false) → the ambiguous handler is a no-op, not a crash.
+      it "does not re-escalate an already-:manual_review tx on ambiguous individual mint" do
+        wallet1.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
+        tx = wallet1.blockchain_transactions.create!(
+          amount: 100, token_type: :carbon_coin, status: :manual_review,
+          to_address: wallet1.crypto_public_address, tx_hash: "0x" + "e" * 64, locked_points: 1000
+        )
+        service = described_class.new([ tx.id ])
+        allow(mock_client).to receive(:transact).and_raise(Net::ReadTimeout, "timeout")
+
+        expect {
+          service.send(:mint_individual, mock_client, double("contract"), mock_key, "carbon_coin", tx)
+        }.not_to raise_error
+        expect(tx.reload.status).to eq("manual_review")
+      end
+
+      it "does not re-escalate already-:manual_review txs on ambiguous batchMint (send_clean_batch else)" do
+        wallet1.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
+        wallet2.update!(crypto_public_address: "0x" + "c" * 40, hadron_kyc_status: "approved")
+        txs = [ wallet1, wallet2 ].map do |w|
+          w.blockchain_transactions.create!(
+            amount: 100, token_type: :carbon_coin, status: :manual_review,
+            to_address: w.crypto_public_address, tx_hash: "0x" + "f" * 64, locked_points: 1000
+          )
+        end
+        service = described_class.new(txs.map(&:id))
+        allow_any_instance_of(described_class).to receive(:insurance_pool_requires_funding?).and_return(false)
+        allow(mock_client).to receive(:transact).and_raise(Net::ReadTimeout, "timeout")
+
+        expect {
+          service.send(:send_clean_batch, mock_client, double("contract"), mock_key, "carbon_coin", txs)
+        }.not_to raise_error
+        txs.each { |t| expect(t.reload.status).to eq("manual_review") }
+      end
     end
 
     context "when dry-run fails with network error (not revert)" do

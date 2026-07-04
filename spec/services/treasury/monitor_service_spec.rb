@@ -94,6 +94,13 @@ RSpec.describe Treasury::MonitorService do
         expect(SilkenNet::Metrics::BLOCKCHAIN_LIMBO_LOCKED_TOTAL.get).to eq(800) # 500 + 300 (aged sent/review only)
         expect(SilkenNet::Metrics::CHAIN_AUDIT_DELTA.get).to eq(2.5)
       end
+
+      it "does not let a money-path metrics failure break the monitor cycle (rescue)" do
+        allow(ChainAuditService).to receive(:call).and_raise(StandardError, "RPC down")
+        allow(Rails.logger).to receive(:error)
+        expect { described_class.call }.not_to raise_error
+        expect(Rails.logger).to have_received(:error).with(/update_money_path_metrics/)
+      end
     end
 
     context "when Polygon balance is critical" do

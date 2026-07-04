@@ -167,6 +167,8 @@ contract DeploySilkenNet is Script {
         timelock.grantRole(timelock.CANCELLER_ROLE(), safe);
         timelock.grantRole(timelock.DEFAULT_ADMIN_ROLE(), safe);
         timelock.renounceRole(timelock.DEFAULT_ADMIN_ROLE(), deployer);
-        console.log("Timelock wired: Governor PROPOSER+CANCELLER, Safe PROPOSER(bootstrap)+CANCELLER(guardian)+admin; deployer renounced");
+        console.log(
+            "Timelock wired: Governor PROPOSER+CANCELLER, Safe PROPOSER(bootstrap)+CANCELLER(guardian)+admin; deployer renounced"
+        );
     }
 }

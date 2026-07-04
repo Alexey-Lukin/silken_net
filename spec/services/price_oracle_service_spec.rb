@@ -133,7 +133,7 @@ RSpec.describe PriceOracleService do
     it "reads scc_token_address from ENV at runtime (S1 — was a broken '0x...' placeholder)" do
       allow(ENV).to receive(:fetch).and_call_original
       allow(ENV).to receive(:fetch).with("CARBON_COIN_CONTRACT_ADDRESS").and_return("0x#{'a' * 40}")
-      expect(PriceOracleService.scc_token_address).to eq("0x#{'a' * 40}")
+      expect(described_class.scc_token_address).to eq("0x#{'a' * 40}")
     end
 
     it "defines RPC_TIMEOUT_SECONDS" do

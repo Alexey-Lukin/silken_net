@@ -1243,7 +1243,17 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Тригер** | `BlockchainMintingService`, `BlockchainBurningService`, `InsurancePayoutWorker` |
 | **Вхід** | `tx_hash` (String) |
 | **Сервіси** | — |
-| **Side Effects** | `eth_get_transaction_receipt` (Polygon RPC). При `0x1`: `tx.confirm!`. При revert: `tx.fail!`. Retry при pending (ще в мемпулі). **[MEMPOOL LIMBO GUARD]** `sidekiq_retries_exhausted` handler: при вичерпанні всіх 10 ретраїв (~15-20 хвилин поллінгу) делегує до `MintingRollbackService.call(transactions: BlockchainTransaction.where(tx_hash:, status: :sent))`. Запобігає зависанню транзакцій у статусі `:sent` з замороженим `locked_balance` після потрапляння job у Sidekiq Dead queue. |
+| **Side Effects** | `eth_get_transaction_receipt` (Polygon RPC). При `0x1`: `tx.confirm!`. При revert: `tx.fail!` (**[M2]** для mint-tx звільняє `locked_balance` через AASM `fail`-hook — дискримінатор `locked_points`). Retry при pending (ще в мемпулі). **[MEMPOOL LIMBO GUARD]** `sidekiq_retries_exhausted` handler: при вичерпанні всіх 10 ретраїв (~15-20 хвилин поллінгу) делегує до `MintingRollbackService.call(transactions: BlockchainTransaction.where(tx_hash:, status: :sent))`. Запобігає зависанню транзакцій у статусі `:sent` з замороженим `locked_balance` після потрапляння job у Sidekiq Dead queue. |
+
+#### `StuckSentTransactionSweeperWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `web3` |
+| **Retry** | 3, unique_for: 9 хвилин |
+| **Тригер** | Cron `5,35 * * * *` (кожні 30 хв) |
+| **Вхід** | — |
+| **Side Effects** | **[ARCH.55]** Re-arm `BlockchainConfirmationWorker` для tx, що застрягли в `:sent` довше 15 хв (`sent_at < 15.minutes.ago`) — клас, який ConfirmationWorker-`retries_exhausted` не ловить: OOM/евікшн ПІД ЧАС поллінгу (pending-discovery дивиться лише pending/processing; `MintingRollbackService` — тільки з `retries_exhausted`). Ключ на `sent_at` (broadcast-момент), НЕ `created_at` (reset-to-pending тримає старий). Дедуп по tx_hash з earliest created_at (partition-prune). Покриває mint/burn/insurance (спільний ConfirmationWorker). Ідемпотентність дубля з живим поллером = AASM `confirm` (одноразовий; дубль → `InvalidTransition` → retry → no-op). |
 
 #### `MintCarbonCoinWorker`
 

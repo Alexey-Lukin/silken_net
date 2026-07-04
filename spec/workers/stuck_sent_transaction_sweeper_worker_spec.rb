@@ -48,5 +48,19 @@ RSpec.describe StuckSentTransactionSweeperWorker, type: :worker do
         .with(shared, earliest.iso8601).once
       described_class.new.perform
     end
+
+    it "skips a stuck :sent tx with a blank tx_hash (nothing to re-arm)" do
+      tx = build(:blockchain_transaction, wallet: wallet, status: :sent, tx_hash: "0xtmp")
+      tx.save!(validate: false)
+      tx.update_columns(tx_hash: nil, sent_at: 20.minutes.ago)
+      expect(BlockchainConfirmationWorker).not_to receive(:perform_async)
+      described_class.new.perform
+    end
+
+    it "does not log when nothing is stuck (re_armed stays zero)" do
+      sent_tx(sent_ago: 2.minutes.ago) # fresh → not swept
+      expect(Rails.logger).not_to receive(:warn)
+      described_class.new.perform
+    end
   end
 end

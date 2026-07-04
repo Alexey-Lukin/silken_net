@@ -404,6 +404,15 @@ RSpec.describe BlockchainTransaction, type: :model do
 
           expect { mint_tx.fail!("revert") }.to change { wallet.reload.locked_balance }.from(3_000).to(0)
         end
+
+        it "no-ops safely when locked_points present but wallet is gone (return unless wallet)" do
+          allow(Rails.logger).to receive(:error)
+          tx = create(:blockchain_transaction, status: :sent, locked_points: 10_000)
+          allow(tx).to receive(:wallet).and_return(nil)
+
+          expect { tx.fail!("revert") }.not_to raise_error
+          expect(tx.reload).to be_failed
+        end
       end
     end
 
