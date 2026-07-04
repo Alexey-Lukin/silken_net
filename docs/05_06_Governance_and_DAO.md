@@ -26,7 +26,7 @@
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `SystemParameter` model, `Governance::ParameterSyncWorker` |
 | [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | TRL-матриця + beyond-TRL-9 контекст для §5 (Auto-Immune Sentinel R&D) |
 | [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) | DAO Agreement (тип контракту §1.3) |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкрите** (SSOT): mainnet DAO activation, BIZ.* governance backlog |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкрите** (SSOT): mainnet DAO activation → `SEC.1` (поглинув BIZ.4); governance read-path → `GOV.1` |
 
 ## 📑 Зміст
 
@@ -37,7 +37,7 @@
 - [4. ⚠️ Flash Loan Attack Vector (Критичний)](#4--flash-loan-attack-vector-критичний)
 - [5. Beyond TRL 9: Auto-Immune Sentinel — Проактивний Захист від AI-Driven Economic Attack](#5-beyond-trl-9-auto-immune-sentinel--проактивний-захист-від-ai-driven-economic-attack)
 - [6. Bonding Curves — Динамічне Ціноутворення (Перспектива TRL 9+)](#6-bonding-curves--динамічне-ціноутворення-перспектива-trl-9)
-- [7. Governance-Aware Backend (✅ Реалізовано)](#7-governance-aware-backend--реалізовано)
+- [7. Governance-Aware Backend (⚠️ sync-pipeline готовий · read-path частковий)](#7-governance-aware-backend--sync-pipeline-готовий--read-path-частковий)
 <!-- TOC:AUTO:END -->
 
 ---
@@ -95,7 +95,7 @@ TokenomicsEvaluatorWorker (dynamic conversion rate)
 - Використовує `Timeout.timeout(10s)` на кожен RPC-запит
 - 13 параметрів: 8 Lorenz (σ/ρ/β/dt/iterations/z_min/z_max/z_target), 3 tokenomics, 2 slashing
 
-**Друга governance-поверхня — ролі контрактів (не лише параметри).** Той самий шлях Governor → Timelock у production тримає `DEFAULT_ADMIN_ROLE` над токенами та `StateRootAnchor`, тож DAO може видавати/відкликати `MINTER_ROLE`/`SLASHER_ROLE`/`ANCHOR_ROLE` — **ротувати oracle-адреси** — теж лише за 48h-затримкою (`pause` лишається миттєвим у Safe, [SEC.1]). Це і є незворотний крок «transfer admin-ролей → Timelock» (BIZ.4). Розкладка ролей/власників живе в [`05_03`](05_03_Tokenomics_SCC_and_SFC) (токени) + [`05_04`](05_04_Ethereum_L1_State_Anchor) (anchor) — тут лише вказівник.
+**Друга governance-поверхня — ролі контрактів (не лише параметри).** Той самий шлях Governor → Timelock у production тримає `DEFAULT_ADMIN_ROLE` над токенами та `StateRootAnchor`, тож DAO може видавати/відкликати `MINTER_ROLE`/`SLASHER_ROLE`/`ANCHOR_ROLE` — **ротувати oracle-адреси** — теж лише за 48h-затримкою (`pause` лишається миттєвим у Safe, [SEC.1]). Це і є незворотний крок «transfer admin-ролей → Timelock» ([`00_07` SEC.1](00_07_Action_Plan_Tracker) — поглинув BIZ.4). Розкладка ролей/власників живе в [`05_03`](05_03_Tokenomics_SCC_and_SFC) (токени) + [`05_04`](05_04_Ethereum_L1_State_Anchor) (anchor) — тут лише вказівник.
 
 ## 3. Пріоритет та Залежності
 
@@ -169,11 +169,11 @@ contract SilkenGovernor is Governor, GovernorSettings, GovernorCountingSimple,
 
 **Статус:** Перспективна ідея. Не планується до TRL 9+.
 
-## 7. Governance-Aware Backend (✅ Реалізовано)
+## 7. Governance-Aware Backend (⚠️ sync-pipeline готовий · read-path частковий)
 
 ```ruby
+# Цільовий патерн (НЕ поточний факт для всіх — див. ⚠️ нижче):
 # Замість: SIGMA = 10.0
-# Тепер:
 sigma = SystemParameter.current(:lorenz_sigma, default: 10.0)
 
 # Замість: SLASH_THRESHOLD = 0.20
@@ -188,6 +188,8 @@ SystemParameter.set("lorenz_sigma", "12.0", updated_by: admin, source: "governan
 ```
 
 > Значення-дефолти у прикладах (`10.0` / `0.20` / `28.0`) — лише `default:`-fallback, що дзеркалить канон-доми (примітка §1 вище має посилання: Lorenz / slash / курс); governance/admin override має пріоритет.
+
+> ⚠️ **Стан read-path (deep-audit 2026-07-04 — [`00_07` GOV.1](00_07_Action_Plan_Tracker)):** sync-**pipeline** (`ProtocolParameters.sol` → `ParameterSyncWorker` → `SystemParameter`) реалізований і синхронізує 13 параметрів. АЛЕ приклад вище — **цільовий патерн, не поточний факт для всіх споживачів**: (1) **8 Lorenz-параметрів** свідомо лишаються хардкод-константами в `SilkenNet::Attractor` (`BASE_SIGMA`/`BASE_RHO`/`BASE_BETA`…) — **Dual Computation Integrity** вимагає bit-identical Float з прошитим firmware, тож governance-зміна σ/ρ/β **зламала б** device↔server parity → їх sync = mirror, НЕ живий важіль (радше пастка — не читати назад); (2) `emission_threshold`/`slash_threshold`/`stress_threshold` наразі читаються з констант (`TokenomicsEvaluatorWorker::EMISSION_THRESHOLD`, `ContractHealthCheckService` `Rational(1,5)`, `AiInsight::SLASH_STRESS_THRESHOLD`) — недороблений read-path (НЕ DCI-обмежений, має бути governance-aware); (3) `slash_gamma`/`slash_penalty_factor_max` читаються з `SystemParameter` у `BlockchainBurningService` ✅, але їх НЕМАЄ в `ProtocolParameters.sol` keys / `PARAMETER_MAP` → змінні лише admin, не DAO. Живий governance-read-path сьогодні: kill-switches (`parametric_insurance_oracle_enabled`, `slash_cause_uplift_enabled`), `dynamic_tax_rate`/`insurance_pool_threshold` (mint-tax), oracle-balance пороги. Дороблення + узгодження ключів → [`00_07` GOV.1](00_07_Action_Plan_Tracker).
 
 **`SystemParameter` model** (`app/models/system_parameter.rb`):
 - Кеш поточних значень з TTL 24h (invalidation через `after_commit`)

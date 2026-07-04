@@ -23,11 +23,11 @@
 | [`00_01` — Vision Mission and Roadmap](00_01_Vision_Mission_and_Roadmap) | Vision-рівень: місія, NaaS, філософія negligence-vs-force-majeure |
 | [`05_01` — Multichain Architecture](05_01_Multichain_Architecture) | Upstream guard-clause pipeline + 12-chain стек, що передує slash-тригеру |
 | [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Anti-fraud DCI (`SEC.11`, `check_z_divergence!`); `stress_index` pipeline |
-| [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | `slash()` контракт; Dynamic Tax (insurance-pool funding); `ProtocolParameters` (GAMMA, PENALTY_FACTOR_MAX) |
+| [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | `slash()` контракт; Dynamic Tax (insurance-pool funding); GAMMA / PENALTY_FACTOR_MAX — `SystemParameter` (наразі admin/seed; on-chain `ProtocolParameters`-ключі ще НЕ заведені → [`00_07` GOV.1](00_07_Action_Plan_Tracker)) |
 | [`05_04` — Ethereum L1 State Anchor](05_04_Ethereum_L1_State_Anchor) | Slash-burn змінює total_supply, що фіналізується в L1 state-root |
 | [`05_06` — Governance and DAO](05_06_Governance_and_DAO) | DAO peer-review (категорія C): `SilkenGovernor`/`SilkenTimelock`/quorum |
 | [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) | Insurance Layer mechanics (Etherisc, два режими); NaaS breach terms; SFC voting after slash |
-| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `BlockchainBurningService`, `ContractHealthCheckService`, `InsightGeneratorService#stress_index`; divergence registry §11 |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `BlockchainBurningService`, `ContractHealthCheckService`, `InsightGeneratorService#stress_index`; divergence registry §13b |
 | [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) | Партнерський ростер ФОТІУС/ЧНУ + академічний вихід для ground-truth протоколу (сам протокол — §8) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкрите** (SSOT): SLASH-1 cause-gate, BIZ.13 operator-bond |
 
@@ -84,7 +84,7 @@ PENALTY_FACTOR_MAX = 2.0   # стеля застосовується до МНО
 - `d=0.27, pf=1.5` → ~28% (порівнянно зі старим, але без обриву);
 - **повна недбала загибель `d=1.0, pf=1.0` → 100% slash** (мертва зона ліквідована).
 
-Монотонність гарантована: більше шкоди → завжди більший slash, аж до 100%. **Логістична крива тут гірша** за опуклу степеневу — логіста сатурує нижче 1.0 (асимптота), тобто повертає м'яку стелю, і має зайві параметри (k, d₀). Точне калібрування `GAMMA` / `PENALTY_FACTOR_MAX` — DAO-governed через `ProtocolParameters` ([`05_03 §Slashing`](05_03_Tokenomics_SCC_and_SFC)).
+Монотонність гарантована: більше шкоди → завжди більший slash, аж до 100%. **Логістична крива тут гірша** за опуклу степеневу — логіста сатурує нижче 1.0 (асимптота), тобто повертає м'яку стелю, і має зайві параметри (k, d₀). Точне калібрування `GAMMA` / `PENALTY_FACTOR_MAX` — через `SystemParameter` (`slash_gamma` / `slash_penalty_factor_max`, читаються у `BlockchainBurningService`); наразі admin/seed — on-chain `ProtocolParameters`-ключі ще НЕ заведені (canon↔code divergence, узгодження → [`00_07` GOV.1](00_07_Action_Plan_Tracker)).
 
 > **Реалізація cause-routing (поточний стан).** Монолітного `cause_classification` A/B/C-поля у коді свідомо **немає** (defense-in-depth замість single-point-of-failure); причина відводиться розподілено: **C** (cluster-wide blackout) → `ContractHealthCheckService#flag_data_blackout!` (EwsAlert + Field Audit, burn не запускається; §6); **B** (пожежа/стихія) → `Dclimate::VerificationService` (`fire_confirmed` → `InsurancePayoutWorker`; §4); **A** — **positive-A-evidence guard ✅ (§3.2)** на чокпоінті `BlockchainBurningService`: `slash()` лише за прямого доказу A (`Slashing::CauseEvidence`), інакше `:frozen` + Field Audit — відновлює канонічний C-дефолт §2. `#calculate_slash_ratio` рахує лише **розмір** slash (convex §3), причину не визначає.
 
