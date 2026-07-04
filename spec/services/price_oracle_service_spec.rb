@@ -74,6 +74,7 @@ RSpec.describe PriceOracleService do
         allow(mock_client).to receive(:call).and_return(raw_amount_out)
         allow(ENV).to receive(:fetch).and_call_original
         allow(ENV).to receive(:fetch).with("POLYGON_RPC_URL").and_return("https://polygon-rpc.example.com")
+        allow(ENV).to receive(:fetch).with("CARBON_COIN_CONTRACT_ADDRESS").and_return("0x#{'c' * 40}")
         allow(ENV).to receive(:[]).and_call_original
         allow(ENV).to receive(:[]).with("POLYGON_RPC_URL").and_return("https://polygon-rpc.example.com")
       end
@@ -85,7 +86,7 @@ RSpec.describe PriceOracleService do
         expect(mock_client).to have_received(:call).with(
           mock_contract,
           "quoteExactInputSingle",
-          PriceOracleService::SCC_TOKEN,
+          "0x#{'c' * 40}",
           PriceOracleService::USDC_TOKEN,
           PriceOracleService::POOL_FEE,
           10**18,
@@ -127,6 +128,12 @@ RSpec.describe PriceOracleService do
 
     it "defines POOL_FEE as 3000 (0.3%)" do
       expect(PriceOracleService::POOL_FEE).to eq(3000)
+    end
+
+    it "reads scc_token_address from ENV at runtime (S1 — was a broken '0x...' placeholder)" do
+      allow(ENV).to receive(:fetch).and_call_original
+      allow(ENV).to receive(:fetch).with("CARBON_COIN_CONTRACT_ADDRESS").and_return("0x#{'a' * 40}")
+      expect(PriceOracleService.scc_token_address).to eq("0x#{'a' * 40}")
     end
 
     it "defines RPC_TIMEOUT_SECONDS" do

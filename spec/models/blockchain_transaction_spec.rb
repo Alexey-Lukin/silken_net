@@ -367,6 +367,44 @@ RSpec.describe BlockchainTransaction, type: :model do
         expect(Rails.logger).to receive(:error).with(/провалилася/)
         tx.fail!("revert")
       end
+
+      # [M2/ARCH.45] fail! must release the growth_points a mint-tx locked, else the forester's
+      # balance is frozen forever (ConfirmationWorker revert-branch does a bare fail!).
+      describe "locked_points release on fail" do
+        it "releases the wallet's locked_balance for a mint-tx (locked_points present)" do
+          allow(Rails.logger).to receive(:error)
+          wallet = create(:wallet, balance: 50_000, locked_balance: 10_000)
+          mint_tx = create(:blockchain_transaction, wallet: wallet, status: :sent, locked_points: 10_000)
+
+          expect { mint_tx.fail!("EVM revert") }.to change { wallet.reload.locked_balance }.from(10_000).to(0)
+        end
+
+        it "does NOT touch locked_balance for a slash/audit tx (locked_points nil)" do
+          allow(Rails.logger).to receive(:error)
+          wallet = create(:wallet, balance: 50_000, locked_balance: 10_000)
+          slash_tx = create(:blockchain_transaction, wallet: wallet, status: :sent, locked_points: nil)
+
+          expect { slash_tx.fail!("slash revert") }.not_to change { wallet.reload.locked_balance }
+        end
+
+        it "does NOT double-release on a repeated fail! (failed→failed retry)" do
+          allow(Rails.logger).to receive(:error)
+          wallet = create(:wallet, balance: 50_000, locked_balance: 10_000)
+          mint_tx = create(:blockchain_transaction, wallet: wallet, status: :sent, locked_points: 10_000)
+          mint_tx.fail!("first revert")
+
+          expect { mint_tx.fail!("retry revert") }.not_to change { wallet.reload.locked_balance }
+          expect(wallet.reload.locked_balance).to eq(0)
+        end
+
+        it "clamps release to the wallet's current locked_balance (partial rollback already ran)" do
+          allow(Rails.logger).to receive(:error)
+          wallet = create(:wallet, balance: 50_000, locked_balance: 3_000)
+          mint_tx = create(:blockchain_transaction, wallet: wallet, status: :sent, locked_points: 10_000)
+
+          expect { mint_tx.fail!("revert") }.to change { wallet.reload.locked_balance }.from(3_000).to(0)
+        end
+      end
     end
 
     describe "may_ query methods" do
@@ -443,6 +481,35 @@ RSpec.describe BlockchainTransaction, type: :model do
     it "falls back to unscoped lookup with invalid ISO 8601 string" do
       found = described_class.find_with_partition_pruning(tx.id, "not-a-date")
       expect(found).to eq(tx)
+    end
+  end
+
+  describe ".unsettled_within" do
+    let(:wallet) { create(:wallet) }
+
+    it "includes pending/sent within the window" do
+      pending_tx = create(:blockchain_transaction, wallet: wallet, status: :pending, created_at: 30.minutes.ago)
+      sent_tx    = create(:blockchain_transaction, wallet: wallet, status: :sent, created_at: 30.minutes.ago)
+      expect(wallet.blockchain_transactions.unsettled_within(2.hours)).to include(pending_tx, sent_tx)
+    end
+
+    it "excludes pending/sent older than the window (partition-prune preserved)" do
+      old_pending = create(:blockchain_transaction, wallet: wallet, status: :pending, created_at: 3.hours.ago)
+      expect(wallet.blockchain_transactions.unsettled_within(2.hours)).not_to include(old_pending)
+    end
+
+    # [ARCH.45 fix — P0-1] The load-bearing regression: an ambiguous possibly-landed slash/payout
+    # escalated to :manual_review must block re-fire FOREVER, not just within the window — else the
+    # daily slash-cron / hourly Solana-payout re-fires days later → deterministic double-burn/double-pay.
+    it "includes :manual_review regardless of age (age-unbounded)" do
+      aged_review = create(:blockchain_transaction, wallet: wallet, status: :manual_review, created_at: 10.days.ago)
+      expect(wallet.blockchain_transactions.unsettled_within(2.hours)).to include(aged_review)
+    end
+
+    it "excludes terminal states (confirmed/failed) at any age" do
+      confirmed = create(:blockchain_transaction, wallet: wallet, status: :confirmed, created_at: 1.minute.ago)
+      failed    = create(:blockchain_transaction, wallet: wallet, status: :failed, created_at: 1.minute.ago)
+      expect(wallet.blockchain_transactions.unsettled_within(2.hours)).not_to include(confirmed, failed)
     end
   end
 

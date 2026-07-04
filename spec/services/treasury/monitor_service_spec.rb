@@ -76,6 +76,24 @@ RSpec.describe Treasury::MonitorService do
           expect(SilkenNet::Metrics::ORACLE_BALANCE.get(labels: { network: network })).to be_positive
         end
       end
+
+      # [G1/G2] money-path limbo + drift видимість (той самий 15-хв прохід).
+      it "sets manual_review depth, limbo-locked, and chain-audit delta gauges" do
+        allow(ChainAuditService).to receive(:call).and_return(
+          ChainAuditService::Result.new(db_total: 100.0, chain_total: 97.5, delta: 2.5, critical: true, checked_at: Time.current)
+        )
+        wallet = create(:wallet)
+        create(:blockchain_transaction, wallet: wallet, status: :manual_review, locked_points: 500, created_at: 2.hours.ago)
+        create(:blockchain_transaction, wallet: wallet, status: :sent, locked_points: 300, created_at: 2.hours.ago)
+        create(:blockchain_transaction, wallet: wallet, status: :confirmed, locked_points: 999, created_at: 2.hours.ago) # excluded
+        create(:blockchain_transaction, wallet: wallet, status: :sent, locked_points: 111, created_at: 5.minutes.ago)  # too fresh → excluded
+
+        described_class.call
+
+        expect(SilkenNet::Metrics::BLOCKCHAIN_MANUAL_REVIEW_DEPTH.get).to eq(1)
+        expect(SilkenNet::Metrics::BLOCKCHAIN_LIMBO_LOCKED_TOTAL.get).to eq(800) # 500 + 300 (aged sent/review only)
+        expect(SilkenNet::Metrics::CHAIN_AUDIT_DELTA.get).to eq(2.5)
+      end
     end
 
     context "when Polygon balance is critical" do

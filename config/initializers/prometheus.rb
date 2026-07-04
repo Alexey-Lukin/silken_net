@@ -203,6 +203,26 @@ module SilkenNet
       docstring: "Current size of the Sidekiq DeadSet (jobs that exhausted all retries)"
     )
 
+    # [G1] Money-path limbo видимість. `manual_review` = double-spend guard (кошти заблоковані,
+    # on-chain-стан невідомий — потребує людської звірки); `locked_limbo` = growth_points у
+    # locked_balance під незавершеними :sent/:manual_review tx старше 1h. Обидва невидимі без
+    # цих gauge — перша ж грошова аномалія приземлюється у manual_review тихо. Семплить лише
+    # TreasuryMonitorWorker (15-хв прохід). 06_03 §2.8 money-path SLO.
+    BLOCKCHAIN_MANUAL_REVIEW_DEPTH = REGISTRY.gauge(
+      :silkennet_blockchain_manual_review_depth,
+      docstring: "Count of BlockchainTransaction rows stuck in :manual_review (double-spend guard queue)"
+    )
+    BLOCKCHAIN_LIMBO_LOCKED_TOTAL = REGISTRY.gauge(
+      :silkennet_blockchain_limbo_locked_total,
+      docstring: "Sum of locked_points on unsettled (:sent/:manual_review) tx older than 1h (funds in limbo)"
+    )
+    # [G2] db↔on-chain drift — ChainAuditService рахує |Σmints−Σburns − totalSupply|; без gauge
+    # drift невидимий, поки хтось не відкриє сторінку аудиту.
+    CHAIN_AUDIT_DELTA = REGISTRY.gauge(
+      :silkennet_chain_audit_delta,
+      docstring: "Absolute delta between DB SCC total (mints−burns) and on-chain totalSupply"
+    )
+
     # [ARCH.54 Шар 0] Dead-man switch Королеви (GatewayStalenessSweepWorker):
     # переходи offline→faulty (counter) + поточний стан флоту (gauges).
     GATEWAYS_OFFLINE_TOTAL = REGISTRY.counter(

@@ -68,6 +68,9 @@ module Treasury
       # Оновлюємо Prometheus gauges
       update_metrics(results)
 
+      # [G1/G2] Money-path limbo + drift видимість (той самий 15-хв прохід).
+      update_money_path_metrics
+
       # Генеруємо алерти для критичних балансів
       generate_alerts(results)
 
@@ -75,6 +78,26 @@ module Treasury
     end
 
     private
+
+    # [G1] manual_review-глибина + limbo-locked + [G2] chain-audit drift → Prometheus.
+    # Без цих gauge стан «кошти застрягли/розійшлися» невидимий до ручної перевірки.
+    def update_money_path_metrics
+      SilkenNet::Metrics::BLOCKCHAIN_MANUAL_REVIEW_DEPTH.set(
+        BlockchainTransaction.status_manual_review.count
+      )
+
+      limbo = BlockchainTransaction
+              .where(status: [ :sent, :manual_review ])
+              .where("created_at < ?", 1.hour.ago)
+              .sum(:locked_points)
+      SilkenNet::Metrics::BLOCKCHAIN_LIMBO_LOCKED_TOTAL.set(limbo.to_i)
+
+      # ChainAuditService кешується (5хв) — дешевий тут; critical=true теж читає gauge.
+      SilkenNet::Metrics::CHAIN_AUDIT_DELTA.set(ChainAuditService.call.delta.to_f)
+    rescue StandardError => e
+      # Спостережуваність не сміє валити monitor-цикл (баланси важливіші).
+      Rails.logger.error "🛑 [Treasury] update_money_path_metrics: #{e.message}"
+    end
 
     # [E.51] Builds config for a chain by merging network config with governance-aware thresholds.
     # SystemParameter.current reads from 24h cache → no DB hit on every monitor cycle.

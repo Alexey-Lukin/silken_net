@@ -191,7 +191,9 @@ end
         expect(tx.status).to eq("sent")
       end
 
-      it "rejects mint when wallet is NOT Hadron KYC approved (security perimeter)" do
+      # [S2 FIX] Non-approved KYC → per-tx SKIP (не raise на весь батч). tx лишається :pending
+      # (чекає KYC), transact НЕ викликається, батч не абортується.
+      it "skips (does not mint) a non-Hadron-KYC-approved wallet without aborting" do
         tree = create(:tree)
         wallet = tree.wallet
         wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "pending")
@@ -205,17 +207,13 @@ end
         )
 
         expect(mock_client).not_to receive(:transact)
+        expect { described_class.call_batch([ tx.id ]) }.not_to raise_error
 
-        expect {
-          described_class.call_batch([ tx.id ])
-        }.to raise_error(/Compliance Breach: Wallet is not Hadron KYC approved/)
-
-        # Транзакція залишається `pending` — locked_points не звільнені, чекають reconciliation.
-        tx.reload
-        expect(tx.status).to eq("pending")
+        # Транзакція лишається `pending` — locked_points не звільнені, чекають KYC-верифікації.
+        expect(tx.reload.status).to eq("pending")
       end
 
-      it "rejects mint when wallet KYC is rejected (terminal state)" do
+      it "skips a wallet with rejected KYC (terminal state) without aborting" do
         tree = create(:tree)
         wallet = tree.wallet
         wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "rejected")
@@ -228,9 +226,33 @@ end
           locked_points: 1000
         )
 
-        expect {
-          described_class.call_batch([ tx.id ])
-        }.to raise_error(/Compliance Breach/)
+        expect { described_class.call_batch([ tx.id ]) }.not_to raise_error
+        expect(tx.reload.status).to eq("pending")
+      end
+
+      # [S2 blast-radius] The load-bearing regression: one non-approved wallet must NOT block the
+      # rest of the pending pool (old raise aborted the whole batch → mass rollback of others).
+      it "mints approved wallets and skips the non-approved one in the same batch" do
+        tree1 = create(:tree)
+        good = tree1.wallet
+        good.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
+        good_tx = good.blockchain_transactions.create!(
+          amount: 100, token_type: :carbon_coin, status: :pending,
+          to_address: good.crypto_public_address, locked_points: 1000
+        )
+
+        tree2 = create(:tree)
+        bad = tree2.wallet
+        bad.update!(crypto_public_address: "0x" + "c" * 40, hadron_kyc_status: "pending")
+        bad_tx = bad.blockchain_transactions.create!(
+          amount: 100, token_type: :carbon_coin, status: :pending,
+          to_address: bad.crypto_public_address, locked_points: 1000
+        )
+
+        expect { described_class.call_batch([ good_tx.id, bad_tx.id ]) }.not_to raise_error
+
+        expect(good_tx.reload.status).to eq("sent")     # approved minted
+        expect(bad_tx.reload.status).to eq("pending")   # non-approved left waiting, NOT rolled back
       end
     end
   end
@@ -469,7 +491,9 @@ end
   end
 
   describe "Hadron RWA compliance (guard clause)" do
-    it "raises when wallet is not Hadron KYC approved" do
+    # [S2 FIX] non-approved → per-tx SKIP (не raise). Захисний інваріант «не мінтимо non-approved»
+    # збережено (transact не викликається, tx лишається :pending), але без abort всього батчу.
+    it "skips (does not mint) when wallet is not Hadron KYC approved" do
       tree = create(:tree)
       wallet = tree.wallet
       wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "pending")
@@ -479,12 +503,12 @@ end
         to_address: wallet.crypto_public_address, locked_points: 1000
       )
 
-      expect {
-        described_class.call(tx.id)
-      }.to raise_error(RuntimeError, /Compliance Breach: Wallet is not Hadron KYC approved/)
+      expect(mock_client).not_to receive(:transact)
+      expect { described_class.call(tx.id) }.not_to raise_error
+      expect(tx.reload.status).to eq("pending")
     end
 
-    it "raises when wallet KYC status is rejected" do
+    it "skips (does not mint) when wallet KYC status is rejected" do
       tree = create(:tree)
       wallet = tree.wallet
       wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "rejected")
@@ -494,9 +518,9 @@ end
         to_address: wallet.crypto_public_address, locked_points: 1000
       )
 
-      expect {
-        described_class.call(tx.id)
-      }.to raise_error(RuntimeError, /Compliance Breach: Wallet is not Hadron KYC approved/)
+      expect(mock_client).not_to receive(:transact)
+      expect { described_class.call(tx.id) }.not_to raise_error
+      expect(tx.reload.status).to eq("pending")
     end
 
     it "proceeds when wallet KYC is approved" do
@@ -606,25 +630,29 @@ end
     end
 
     context "with batch carbon_coin when insurance pool requires funding" do
-      it "doubles array size with forester and DAO Treasury entries" do
+      # [O2/O4 FIX] N forester + ONE aggregated treasury entry = N+1 (не 2N) — headroom під
+      # on-chain MAX_BATCH_SIZE=100.
+      it "aggregates tax into a single DAO Treasury entry (N+1, not 2N)" do
         expect(mock_client).to receive(:transact) do |_c, _m, recipients, amounts, identifiers, **_|
-          expect(recipients.size).to eq(4)
-          expect(amounts.size).to eq(4)
-          expect(identifiers.size).to eq(4)
+          expect(recipients.size).to eq(3)  # 2 forester + 1 aggregated treasury
+          expect(amounts.size).to eq(3)
+          expect(identifiers.size).to eq(3)
           fake_tx_hash
         end
 
         described_class.call_batch([ tx1.id, tx2.id ])
       end
 
-      it "routes tax entries to DAO_TREASURY_ADDRESS with TAX_ prefix" do
+      it "routes the single aggregated tax entry to DAO_TREASURY_ADDRESS (sum of all txs)" do
         dao_treasury = ENV.fetch("DAO_TREASURY_ADDRESS")
+        # tax_total = 100*0.02 + 200*0.02 = 6 SCC → to_wei(6)
+        expected_tax_wei = Web3::WeiConverter.to_wei(6)
 
-        expect(mock_client).to receive(:transact) do |_c, _m, recipients, _amounts, identifiers, **_|
-          expect(recipients[1]).to eq(dao_treasury)
-          expect(recipients[3]).to eq(dao_treasury)
-          expect(identifiers[1]).to start_with("TAX_")
-          expect(identifiers[3]).to start_with("TAX_")
+        expect(mock_client).to receive(:transact) do |_c, _m, recipients, amounts, identifiers, **_|
+          expect(recipients.last).to eq(dao_treasury)
+          expect(recipients[0...-1]).not_to include(dao_treasury)  # foresters only before the tax entry
+          expect(amounts.last).to eq(expected_tax_wei)
+          expect(identifiers.last).to start_with("TAX_BATCH_")
           fake_tx_hash
         end
 
@@ -818,10 +846,10 @@ end
       end
 
       it "marks only the poisoned entry as failed when individual mint reverts" do
-        # tx1 succeeds individually, tx2 fails
+        # tx1 succeeds individually, tx2 reverts (execution reverted = pre-broadcast, safe fail)
         allow(mock_client).to receive(:transact) do |_c, _method, to_address, *_args, **_opts|
           if to_address == wallet2.crypto_public_address
-            raise StandardError, "KYC revoked for this wallet"
+            raise StandardError, "execution reverted: KYC revoked for this wallet"
           end
           "0x" + "a" * 64
         end
@@ -831,6 +859,20 @@ end
         expect(tx1.reload.status).to eq("sent")
         expect(tx2.reload.status).to eq("failed")
         expect(tx2.reload.error_message).to include("KYC revoked")
+      end
+
+      # [M6] Individual mint on an AMBIGUOUS network error (may have landed) → manual_review,
+      # NOT a blind fail! (which would release locked_points while tokens sit on-chain → double).
+      it "escalates the individual mint to manual_review on an ambiguous broadcast error" do
+        allow(mock_client).to receive(:transact) do |_c, _method, to_address, *_args, **_opts|
+          raise Net::ReadTimeout, "RPC timeout after broadcast" if to_address == wallet2.crypto_public_address
+          "0x" + "a" * 64
+        end
+
+        described_class.call_batch([ tx1.id, tx2.id ])
+
+        expect(tx1.reload.status).to eq("sent")
+        expect(tx2.reload.status).to eq("manual_review")
       end
     end
 
@@ -928,9 +970,9 @@ end
 
       it "marks the poisoned transaction as failed" do
         allow(mock_client).to receive(:transact) do |_c, _method, to_address_or_recipients, *_args, **_opts|
-          # Individual mint for poisoned address fails
+          # Individual mint for poisoned address reverts (execution reverted = pre-broadcast)
           if to_address_or_recipients == poisoned_address
-            raise StandardError, "KYC revoked for this wallet"
+            raise StandardError, "execution reverted: KYC revoked for this wallet"
           end
           "0x" + "f" * 64
         end
@@ -988,12 +1030,12 @@ end
         allow(mock_client).to receive(:call).with(anything, "balanceOf", anything).and_return(0)
       end
 
-      it "falls back to individual mints for the sub-batch if batchMint transact fails" do
+      it "falls back to individual mints for the sub-batch if batchMint transact fails (pre-broadcast)" do
         transact_count = 0
         allow(mock_client).to receive(:transact) do |_c, method, *_args, **_opts|
           transact_count += 1
           if method == "batchMint"
-            raise StandardError, "nonce too low" # simulate transact failure
+            raise StandardError, "nonce too low" # pre-broadcast: tx did NOT land → safe re-mint
           end
           "0x" + "f" * 64 # individual mints succeed
         end
@@ -1003,6 +1045,26 @@ end
         # All txs should still eventually be sent (via individual mint fallback)
         transactions.each do |tx|
           expect(tx.reload.status).to eq("sent")
+        end
+      end
+
+      # [M6] Ambiguous batchMint broadcast (may have landed) → escalate the whole sub-batch to
+      # manual_review, NOT a blind individual re-mint (which would double-mint if it landed).
+      it "escalates the sub-batch to manual_review on an ambiguous batchMint broadcast" do
+        individual_calls = 0
+        allow(mock_client).to receive(:transact) do |_c, method, *_args, **_opts|
+          if method == "batchMint"
+            raise Net::ReadTimeout, "RPC timeout after broadcast" # ambiguous: may have landed
+          end
+          individual_calls += 1
+          "0x" + "f" * 64
+        end
+
+        described_class.call_batch(transactions.map(&:id))
+
+        expect(individual_calls).to eq(0) # NO blind individual re-mints
+        transactions.each do |tx|
+          expect(tx.reload.status).to eq("manual_review")
         end
       end
     end
@@ -1123,38 +1185,39 @@ end
     end
 
     context "when hadron_kyc_status is not approved" do
-      it "blocks minting with KYC pending in oracle-driven flow" do
+      # [S2 FIX] non-approved → SKIP (не raise); tx лишається :pending, transact не викликається.
+      it "blocks minting (skip) with KYC pending in oracle-driven flow" do
         wallet.update!(hadron_kyc_status: "pending")
         log = create(:telemetry_log, :verified_telemetry, tree: tree)
 
-        expect {
-          described_class.call(tx.id, telemetry_log: log)
-        }.to raise_error(RuntimeError, /Compliance Breach: Wallet is not Hadron KYC approved/)
+        expect(mock_client).not_to receive(:transact)
+        expect { described_class.call(tx.id, telemetry_log: log) }.not_to raise_error
+        expect(tx.reload.status).to eq("pending")
       end
 
-      it "blocks minting with KYC pending in batch emission flow" do
+      it "blocks minting (skip) with KYC pending in batch emission flow" do
         wallet.update!(hadron_kyc_status: "pending")
 
-        expect {
-          described_class.call(tx.id)
-        }.to raise_error(RuntimeError, /Compliance Breach: Wallet is not Hadron KYC approved/)
+        expect(mock_client).not_to receive(:transact)
+        expect { described_class.call(tx.id) }.not_to raise_error
+        expect(tx.reload.status).to eq("pending")
       end
 
-      it "blocks minting with KYC rejected in oracle-driven flow" do
+      it "blocks minting (skip) with KYC rejected in oracle-driven flow" do
         wallet.update!(hadron_kyc_status: "rejected")
         log = create(:telemetry_log, :verified_telemetry, tree: tree)
 
-        expect {
-          described_class.call(tx.id, telemetry_log: log)
-        }.to raise_error(RuntimeError, /Compliance Breach: Wallet is not Hadron KYC approved/)
+        expect(mock_client).not_to receive(:transact)
+        expect { described_class.call(tx.id, telemetry_log: log) }.not_to raise_error
+        expect(tx.reload.status).to eq("pending")
       end
 
-      it "blocks minting with KYC rejected in batch emission flow" do
+      it "blocks minting (skip) with KYC rejected in batch emission flow" do
         wallet.update!(hadron_kyc_status: "rejected")
 
-        expect {
-          described_class.call(tx.id)
-        }.to raise_error(RuntimeError, /Compliance Breach: Wallet is not Hadron KYC approved/)
+        expect(mock_client).not_to receive(:transact)
+        expect { described_class.call(tx.id) }.not_to raise_error
+        expect(tx.reload.status).to eq("pending")
       end
 
       it "allows minting with KYC approved in both flows" do
@@ -1188,12 +1251,12 @@ end
         expect(metric.get(labels: { token_type: "carbon_coin" })).to eq(before_val)
       end
 
-      it "does not increment SCC_MINTED_TOTAL when Hadron KYC blocks minting" do
+      it "does not increment SCC_MINTED_TOTAL when Hadron KYC skips minting" do
         wallet.update!(hadron_kyc_status: "pending")
         metric = SilkenNet::Metrics::SCC_MINTED_TOTAL
         before_val = metric.get(labels: { token_type: "carbon_coin" })
 
-        expect { described_class.call(tx.id) }.to raise_error(RuntimeError)
+        expect { described_class.call(tx.id) }.not_to raise_error
 
         expect(metric.get(labels: { token_type: "carbon_coin" })).to eq(before_val)
       end
@@ -1327,10 +1390,11 @@ end
       )
     end
 
-    it "raises Compliance Breach when tx.wallet is nil" do
+    it "skips (does not mint) a tx with a nil wallet without aborting the batch" do
+      # [S2 FIX] missing wallet → per-tx skip (не raise); transact не викликається.
       allow_any_instance_of(BlockchainTransaction).to receive(:wallet).and_return(nil)
-      expect { described_class.call(tx.id) }
-        .to raise_error(RuntimeError, /Compliance Breach: Missing wallet for TX/)
+      expect(mock_client).not_to receive(:transact)
+      expect { described_class.call(tx.id) }.not_to raise_error
     end
   end
 

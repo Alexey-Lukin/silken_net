@@ -94,13 +94,23 @@ class BlockchainMintingService < ApplicationService
 
     # [RWA COMPLIANCE]: Перевірка Hadron KYC для кожного гаманця-отримувача.
     # Інституційні токени (SCC/SFC) мінтяться ТІЛЬКИ для верифікованих гаманців.
-    @wallet_mapping.each_value do |tx|
-      recipient_wallet = tx.wallet
-      raise "Compliance Breach: Missing wallet for TX ##{tx.id}" if recipient_wallet.nil?
-      unless recipient_wallet.hadron_kyc_status == "approved"
-        raise "Compliance Breach: Wallet is not Hadron KYC approved"
-      end
+    # [S2 FIX] Non-approved / no-wallet → per-tx SKIP (НЕ raise на весь батч, дзеркало SEC.13
+    # peaq-skip нижче + DOC.7 PATH 2 «silently skips if any fails»). Голий raise валив УВЕСЬ
+    # pending-пул через один непройдений KYC-гаманець → retries_exhausted → нескопований
+    # MintingRollbackService відкочував до 1000 ЧУЖИХ pending tx щогодини. Skipped tx лишаються
+    # :pending (guard ПЕРЕД :processing) → чекають на KYC, решта батчу мінтиться.
+    missing_wallet = @wallet_mapping.select { |_id, tx| tx.wallet.nil? }
+    if missing_wallet.any?
+      Rails.logger.error "🛑 [Compliance] Mint skipped for #{missing_wallet.size} tx без wallet."
+      missing_wallet.each_key { |id| @wallet_mapping.delete(id) }
     end
+
+    unapproved = @wallet_mapping.select { |_id, tx| tx.wallet.hadron_kyc_status != "approved" }
+    if unapproved.any?
+      Rails.logger.warn "🚫 [Compliance] Mint skipped for #{unapproved.size} non-Hadron-KYC-approved wallet(s)."
+      unapproved.each_key { |id| @wallet_mapping.delete(id) }
+    end
+    return if @wallet_mapping.empty?
 
     # [SEC.13]: Skip minting for trees flagged `peaq_did_compromised` (emergency
     # revocation runbook, 06_04 §5.4) — a forged peaq signing key could mint for a
@@ -210,12 +220,14 @@ class BlockchainMintingService < ApplicationService
           # Оновлюємо статус на :sent і зберігаємо хеш для подальшого аудиту.
           # [TRUSTLESS]: Зберігаємо chainlink_request_id та zk_proof_ref для
           # перманентного зв'язку між on-chain транзакцією та її децентралізованим доказом.
-          update_attrs = { status: :sent, tx_hash: tx_hash }
+          # [ARCH.55] Через AASM mark_as_sent! (НЕ голий update!) — інакше `sent_at` лишається
+          # NULL і stuck-:sent sweeper не має за що зачепитись (ключується на моменті broadcast,
+          # не created_at, який = момент :pending і зсунутий батч-віком).
           if @telemetry_log
-            update_attrs[:chainlink_request_id] = @telemetry_log.chainlink_request_id
-            update_attrs[:zk_proof_ref] = @telemetry_log.zk_proof_ref
+            tx.chainlink_request_id = @telemetry_log.chainlink_request_id
+            tx.zk_proof_ref = @telemetry_log.zk_proof_ref
           end
-          tx.update!(**update_attrs)
+          tx.mark_as_sent!(tx_hash)
           broadcast_tx_update(tx)
 
           # [OBSERVABILITY]: Increment minted token counter for Prometheus
@@ -363,24 +375,37 @@ class BlockchainMintingService < ApplicationService
   end
 
   # Будує масиви recipients/amounts/identifiers для підбатча (з Dynamic Tax).
+  # [O2/O4 FIX] Податок агрегується в ОДИН DAO_TREASURY-запис на батч (не по одному на tx).
+  # Раніше кожна оподаткована tx пушила ДВА записи (forester + treasury) → масив подвоювався,
+  # а `OPTIMAL_BATCH_SIZE == on-chain MAX_BATCH_SIZE == 100`, тож carbon-батч >50 tx перевищував
+  # ліміт і `batchMint` ревертив ІЗ GENESIS (податок ON при treasury<100k = стартовий стан) →
+  # кожен такий батч зайво детурив через binary-search. N+1 записів ≤ 100 при N≤99 + економія газу.
   def build_batch_arrays(txs, token_type)
     recipients = []
     amounts = []
     identifiers = []
+    taxing = token_type == "carbon_coin" && insurance_pool_requires_funding?
+    tax_total = 0
 
     txs.each do |tx|
-      if token_type == "carbon_coin" && insurance_pool_requires_funding?
+      if taxing
         tax_amount = (tx.amount * dynamic_tax_rate).round(4)
-        forester_amount = tx.amount - tax_amount
-
-        recipients.push(tx.to_address, ENV.fetch("DAO_TREASURY_ADDRESS"))
-        amounts.push(to_wei(forester_amount), to_wei(tax_amount))
-        identifiers.push(identifier_for(tx), "TAX_#{identifier_for(tx)}")
+        tax_total += tax_amount
+        recipients.push(tx.to_address)
+        amounts.push(to_wei(tx.amount - tax_amount))
+        identifiers.push(identifier_for(tx))
       else
         recipients.push(tx.to_address)
         amounts.push(to_wei(tx.amount))
         identifiers.push(identifier_for(tx))
       end
+    end
+
+    # Один агрегований treasury-запис на весь підбатч (сума всіх податків).
+    if tax_total.positive?
+      recipients.push(ENV.fetch("DAO_TREASURY_ADDRESS"))
+      amounts.push(to_wei(tax_total))
+      identifiers.push("TAX_BATCH_#{identifier_for(txs.first)}")
     end
 
     [ recipients, amounts, identifiers ]
@@ -409,8 +434,36 @@ class BlockchainMintingService < ApplicationService
 
     Rails.logger.info "✅ [Web3] Clean sub-batch of #{txs.size} sent via batchMint. TX: #{tx_hash}"
   rescue StandardError => e
-    Rails.logger.error "🛑 [Web3] Clean batch failed (#{txs.size} txs): #{e.message}. Falling back to individual mints."
-    txs.each { |tx| mint_individual(client, contract, oracle_key, token_type, tx) }
+    # [M6/ARCH.45] Розрізняємо збій ДО vs ПІСЛЯ broadcast (дзеркало ARCH.48 3-case для burn).
+    # EVM revert = tx НЕ полетіла (rare dry-run race) → безпечний individual-fallback. Мережева
+    # помилка (timeout/connection) = batchMint МІГ полетіти в мемпул до втрати відповіді →
+    # сліпий individual re-mint = DOUBLE-MINT. Ескалюємо у manual_review (звір Polygonscan), НЕ
+    # re-mint наосліп. txs тут у :processing (переведені перед dry-run) → escalate легальний.
+    if transact_error_pre_broadcast?(e)
+      Rails.logger.error "🛑 [Web3] Clean batch pre-broadcast fail (#{txs.size} txs): #{e.message}. Individual fallback."
+      txs.each { |tx| mint_individual(client, contract, oracle_key, token_type, tx) }
+    else
+      Rails.logger.error "🛑 [Web3] Clean batch AMBIGUOUS broadcast (#{txs.size} txs): #{e.message}. " \
+                         "→ manual_review (no blind re-mint — batchMint міг landed)."
+      txs.each do |tx|
+        tx.escalate_to_review!("batchMint ambiguous broadcast — звір Polygonscan ПЕРЕД re-mint: #{e.message}") if tx.may_escalate_to_review?
+        broadcast_tx_update(tx)
+      end
+    end
+  end
+
+  # [M6/ARCH.45] Чи означає помилка transact, що tx ТОЧНО НЕ полетіла в мемпул (безпечно
+  # re-mint / fail). EVM revert + вузол відхилив ДО broadcast (nonce/known/underpriced/
+  # insufficient) — pre-broadcast. Мережева невизначеність (timeout/connection/EOF) → false
+  # → ambiguous → escalate manual_review (сліпий re-mint = double-mint). Дзеркало burn ARCH.48.
+  def transact_error_pre_broadcast?(error)
+    return true if evm_revert?(error)
+
+    msg = error.message.to_s.downcase
+    msg.include?("nonce too low") ||
+      msg.include?("already known") ||
+      msg.include?("replacement transaction underpriced") ||
+      msg.include?("insufficient funds")
   end
 
   # Мінтить одну транзакцію індивідуально з обробкою помилок.
@@ -422,8 +475,16 @@ class BlockchainMintingService < ApplicationService
 
     finalize_sent_transaction(tx, individual_tx_hash, token_type)
   rescue StandardError => e
-    Rails.logger.error "🛑 [Web3] Individual mint failed for TX ##{tx.id}: #{e.message}"
-    tx.fail!(e.message.truncate(200))
+    # [M6] Той самий double-mint guard: pre-broadcast fail → fail! (M2 звільнить locked);
+    # ambiguous (mint міг landed) → manual_review, НЕ голий fail! (інакше бали звільнено, а
+    # токени on-chain → наступний mint = double).
+    if transact_error_pre_broadcast?(e)
+      Rails.logger.error "🛑 [Web3] Individual mint failed (pre-broadcast) TX ##{tx.id}: #{e.message}"
+      tx.fail!(e.message.truncate(200))
+    else
+      Rails.logger.error "🛑 [Web3] Individual mint AMBIGUOUS broadcast TX ##{tx.id}: #{e.message} → manual_review."
+      tx.escalate_to_review!("Individual mint ambiguous broadcast — звір Polygonscan: #{e.message}") if tx.may_escalate_to_review?
+    end
     broadcast_tx_update(tx)
   end
 
@@ -431,12 +492,12 @@ class BlockchainMintingService < ApplicationService
   # [ARCH.52] `confirm_at` = СПІЛЬНИЙ earliest created_at батчу (усі рядки ділять tx_hash) →
   # усі N finalize дають ІДЕНТИЧНІ ConfirmationWorker-args → unique_for дедуплікує до 1.
   def finalize_sent_transaction(tx, tx_hash, token_type, confirm_at = nil)
-    update_attrs = { status: :sent, tx_hash: tx_hash }
+    # [ARCH.55] mark_as_sent! (AASM) проставляє sent_at — sweeper ключується на моменті broadcast.
     if @telemetry_log
-      update_attrs[:chainlink_request_id] = @telemetry_log.chainlink_request_id
-      update_attrs[:zk_proof_ref] = @telemetry_log.zk_proof_ref
+      tx.chainlink_request_id = @telemetry_log.chainlink_request_id
+      tx.zk_proof_ref = @telemetry_log.zk_proof_ref
     end
-    tx.update!(**update_attrs)
+    tx.mark_as_sent!(tx_hash)
     broadcast_tx_update(tx)
 
     SilkenNet::Metrics::SCC_MINTED_TOTAL.increment(labels: { token_type: token_type })

@@ -396,6 +396,79 @@ groups:
           team: ops
 
       # -----------------------------------------------------------------------
+      # P1: BlockchainTransaction stuck in :manual_review [G1]. Double-spend guard
+      # queue — tx з невідомим on-chain-станом і заблокованими коштами. Перша ж
+      # грошова аномалія (ambiguous mint/slash/payout broadcast) осідає сюди тихо.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-manual-review-depth
+        title: "⚠️ BlockchainTransaction manual_review non-empty (funds locked, needs reconcile)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 1800, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: max(silkennet_blockchain_manual_review_depth)
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 15m
+        annotations:
+          summary: "{{ $values.A.Value | printf \"%.0f\" }} tx у :manual_review (кошти заблоковані)."
+          description: "BlockchainTransaction у :manual_review = double-spend guard: on-chain-стан невідомий, кошти в locked_balance до ручної звірки. Звір tx на Polygonscan/Solana Explorer, реконсайл вручну (немає авто-резолву — це навмисно). ARCH.45 / 05_02."
+          runbook_url: "docs/05_02_Proof_of_Growth_Pipeline.md"
+        labels:
+          severity: warning
+          component: web3
+          team: ops
+
+      # -----------------------------------------------------------------------
+      # P0: db↔on-chain SCC drift [G2]. ChainAuditService |Σmints−Σburns − totalSupply|.
+      # Ненульова дельта = ledger-баг або несанкціонований on-chain mint/burn.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-chain-audit-drift
+        title: "🔴 SCC ledger drift (DB total ≠ on-chain totalSupply)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 1800, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: max(silkennet_chain_audit_delta)
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0.0001], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 15m
+        annotations:
+          summary: "SCC drift = {{ $values.A.Value | printf \"%.4f\" }} (DB mints−burns vs on-chain totalSupply)."
+          description: "ChainAuditService виявив розбіжність DB-обліку SCC і on-chain totalSupply понад поріг. Можливий ledger-баг, пропущений confirm/fail, або несанкціонований on-chain mint/burn. Звір ChainAuditService.call, останні confirmed mint/slash tx. 05_02 / 05_03."
+          runbook_url: "docs/05_03_Tokenomics_SCC_and_SFC.md"
+        labels:
+          severity: critical
+          component: web3
+          team: ops
+
+      # -----------------------------------------------------------------------
       # P1: RPC Circuit Breaker Open
       # -----------------------------------------------------------------------
       - uid: sn-alert-circuit-breaker

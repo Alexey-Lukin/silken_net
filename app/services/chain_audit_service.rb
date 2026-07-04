@@ -51,12 +51,19 @@ class ChainAuditService < ApplicationService
     )
   end
 
-  # Сума всіх підтверджених SCC-транзакцій у БД Postgres
+  # DB-дзеркало on-chain totalSupply = Σ(mints) − Σ(burns). Slash-інтенти теж `carbon_coin`
+  # і теж доходять до `:confirmed` (BlockchainBurningService#create_slash_intent! → sourceable:
+  # NaasContract), але on-chain `slash()` ЗМЕНШУЄ totalSupply — тож сумувати їх позитивно
+  # роздуває delta на 2×burn → хибний `critical` після кожного slash. Дискримінатор:
+  # `sourceable_type = "NaasContract"` = burn (єдиний slash-шлях); усе інше (mint / insurance-
+  # payout mint) = емісія. [G4]
   def fetch_db_scc_total
-    BlockchainTransaction
-      .where(token_type: :carbon_coin, status: :confirmed)
-      .sum(:amount)
-      .to_f
+    base  = BlockchainTransaction.where(token_type: :carbon_coin, status: :confirmed)
+    # NULL-safe: mint-tx мають sourceable_type IS NULL — звичайний `!=` відсіяв би їх
+    # (SQL `NULL != 'x'` = NULL, не TRUE), занизивши db_total до −Σburns.
+    mints = base.where("sourceable_type IS DISTINCT FROM 'NaasContract'").sum(:amount)
+    burns = base.where(sourceable_type: "NaasContract").sum(:amount)
+    (mints - burns).to_f
   end
 
   # Загальна емісія SCC у смарт-контракті Polygon (totalSupply) — Thread-cached RPC client

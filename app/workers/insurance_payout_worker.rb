@@ -109,7 +109,9 @@ class InsurancePayoutWorker
           etherisc_tx_hash = within_rpc_limit do
             Etherisc::ClaimService.new(insurance).claim!
           end
-          tx.update!(status: :sent, tx_hash: etherisc_tx_hash)
+          # [ARCH.55] mark_as_sent! (AASM) — проставляє sent_at, щоб stuck-:sent sweeper бачив
+          # момент broadcast (голий update! лишав sent_at NULL).
+          tx.mark_as_sent!(etherisc_tx_hash)
           SilkenNet::Metrics::INSURANCE_PAYOUT_SUCCESS_TOTAL.increment
         end
 

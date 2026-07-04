@@ -105,7 +105,17 @@ class BlockchainTransaction < ApplicationRecord
   # flat `in_flight`-scope (видалено в ARCH.51 як dead code — 0 callerів). DRY-джерело lookup-патерну
   # для BatchPayoutService + InsurancePayoutWorker + BurningService. Anchor має власний
   # `EthereumAnchor.in_flight` (окремий live scope, 1-week вікно).
-  scope :unsettled_within, ->(window) { where(status: [ :pending, :sent, :manual_review ]).where("created_at > ?", window.ago) }
+  #
+  # [ARCH.45 fix] `:manual_review` — БЕЗ часової межі (лише pending/sent зв'язані `window`). Ambiguous
+  # possibly-landed slash/payout переживає re-fire cron через ДНІ: щоденний slash-cron (02:00) і
+  # погодинний Solana-payout інакше re-fire-ять ПІСЛЯ спливу вузького вікна (burn 2h, Solana 7d) →
+  # детермінований double-burn / double-pay (не гонка — календар). manual_review надрідкісний
+  # (потребує людської звірки) + `sourceable`/`wallet_id` індекси звужують lookup, тож втрата
+  # created_at-prune на цій гілці не б'є по гарячому шляху. SQL: (status=5) OR (status∈{0,4} ∧ у вікні).
+  scope :unsettled_within, ->(window) {
+    where(status: [ :pending, :sent, :manual_review ])
+      .where("status = ? OR created_at > ?", statuses[:manual_review], window.ago)
+  }
 
   # --- ДЕЛЕГУВАННЯ ---
   # Навігація через wallet (може бути nil для slashing-аудиту — тоді через cluster)
@@ -155,6 +165,15 @@ class BlockchainTransaction < ApplicationRecord
       end
       after do
         Rails.logger.error "🛑 [Web3] Транзакція ##{id} провалилася: #{error_message}"
+        # [M2/ARCH.45] Mint-tx тримає growth_points у Wallet#locked_balance до фіналізації.
+        # На fail (on-chain revert / permanent RPC error) токенів НЕ створено → бали МУСЯТЬ
+        # повернутись у available, інакше баланс форестера заморожено назавжди. Раніше release
+        # жив ЛИШЕ у MintingRollbackService, який кличеться тільки з retries_exhausted — а
+        # ConfirmationWorker revert-гілка й mint_individual rescue роблять голий fail! → strand.
+        # Дискримінатор `locked_points`: лише growth-points-mint (Wallet#lock_and_mint!) його має;
+        # slash-intent / celo / anchor / insurance-mint audit-tx = nil → no-op. `from_state` guard
+        # не дає повторному fail! (failed→failed retry) звільнити двічі.
+        release_locked_points_on_fail! if aasm.from_state != :failed
       end
       # :failed → :failed дозволяє оновити error_message при повторному збої
       # (напр. sidekiq_retries_exhausted після попереднього fail)
@@ -204,6 +223,25 @@ class BlockchainTransaction < ApplicationRecord
   after_update_commit :broadcast_status_change, if: :saved_change_to_status?
 
   private
+
+  # [M2/ARCH.45] Повертає заблоковані growth_points у available при провалі mint-tx.
+  # Ідемпотентний: клампимо до поточного locked_balance (частковий rollback уже міг звільнити
+  # частину) і виходимо, якщо звільняти нічого. Викликається ЛИШЕ з fail-after при переході
+  # НЕ-з-:failed (guard у події) → подвійного звільнення на retry-fail не буде.
+  def release_locked_points_on_fail!
+    return if locked_points.blank? || locked_points.zero?
+    return unless wallet
+
+    wallet.with_lock do
+      releasable = [ locked_points.to_i, wallet.locked_balance ].min
+      wallet.release_locked_funds!(releasable) if releasable.positive?
+    end
+  rescue StandardError => e
+    # Звільнення — best-effort у after-hook; збій логуємо, але не валимо сам fail-перехід
+    # (tx мусить лишитись :failed навіть якщо wallet тимчасово недоступний). Strand у цьому
+    # вузькому вікні — той самий recoverable клас, що ARCH.55, не double-spend.
+    Rails.logger.error "🛑 [Web3] release_locked_points_on_fail! ##{id}: #{e.message}"
+  end
 
   def broadcast_status_change
     return unless wallet

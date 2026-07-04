@@ -77,6 +77,38 @@ RSpec.describe ChainAuditService do
       end
     end
 
+    context "when a slash burned SCC [G4]" do
+      # on-chain: 1000 minted − 300 slashed = 700 totalSupply
+      let(:chain_total_raw) { 700 * (10**18) }
+
+      before do
+        tree = create(:tree)
+        wallet = tree.wallet
+        wallet.update!(crypto_public_address: "0x#{'d' * 40}")
+        naas = create(:naas_contract, cluster: tree.cluster)
+
+        # Mint: 1000 SCC (no sourceable) — counts as emission
+        wallet.blockchain_transactions.create!(
+          amount: 1000, token_type: :carbon_coin, status: :confirmed,
+          to_address: wallet.crypto_public_address, tx_hash: "0x#{'d' * 64}"
+        )
+        # Slash-intent: 300 SCC (sourceable NaasContract) — a burn, must SUBTRACT
+        wallet.blockchain_transactions.create!(
+          amount: 300, token_type: :carbon_coin, status: :confirmed,
+          sourceable: naas, to_address: wallet.crypto_public_address, tx_hash: "0x#{'e' * 64}"
+        )
+      end
+
+      it "subtracts confirmed slash-intents so db mirrors totalSupply (no false critical)" do
+        result = described_class.call
+
+        expect(result.db_total).to eq(700.0)   # 1000 − 300, NOT 1300
+        expect(result.chain_total).to eq(700.0)
+        expect(result.delta).to eq(0.0)
+        expect(result.critical).to be false
+      end
+    end
+
     context "when delta exceeds threshold" do
       let(:chain_total_raw) { 1000 * (10**18) }
 

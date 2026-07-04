@@ -5,9 +5,17 @@ require "eth"
 class PriceOracleService
   # Адреси в мережі Polygon (приклад)
   QUOTER_ADDRESS = "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6" # Uniswap V3 Quoter
-  SCC_TOKEN = "0x..." # Наш токен SCC
   USDC_TOKEN = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174" # Стейблкоїн для пари
   POOL_FEE = 3000 # 0.3% pool
+
+  # [S1 FIX] SCC-адреса — runtime з ENV (той самий ключ, що BlockchainMintingService/
+  # ChainAuditService), НЕ константа. Раніше `SCC_TOKEN = "0x..."` — битий плейсхолдер:
+  # у staging/prod кожен `quoteExactInputSingle` падав на невалідній адресі → тихий
+  # fallback_price щоцикл (dev/test не спливало — там mock_price). Читаємо runtime
+  # (не eager-константа), щоб boot не падав, поки контракт ще не задеплоєно.
+  def self.scc_token_address
+    ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS")
+  end
 
   # [ВИПРАВЛЕНО: The 429 Trap]: Таймаут для RPC-запитів до Uniswap Quoter.
   # Без цього обмеження client.call() може висіти нескінченно при перевантаженні Polygon RPC.
@@ -41,7 +49,7 @@ class PriceOracleService
       # нескінченному зависанню при перевантаженні Polygon RPC або Alchemy rate limiting.
       raw_amount_out = Timeout.timeout(RPC_TIMEOUT_SECONDS) do
         client.call(quoter, "quoteExactInputSingle",
-                    SCC_TOKEN, USDC_TOKEN, POOL_FEE, amount_in, 0)
+                    scc_token_address, USDC_TOKEN, POOL_FEE, amount_in, 0)
       end
 
       # Конвертуємо з 6 децималів USDC у Float

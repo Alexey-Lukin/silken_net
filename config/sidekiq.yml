@@ -139,6 +139,15 @@
       cron: '15,45 * * * *' # Кожні 30 хв (:15/:45)
       class: InsurancePayoutRecoveryWorker
 
+    # --- ЦИКЛ ВІДНОВЛЕННЯ ЗАСТРЯГЛИХ TX (The Mempool Limbo Net) [ARCH.55] ---
+    # Re-arm BlockchainConfirmationWorker для tx, що застрягли в :sent довше 15 хв
+    # (OOM/евікшн контейнера ПІД ЧАС поллінгу — pending-discovery їх не бачить,
+    # MintingRollbackService кличеться лише з retries_exhausted). Ідемпотентний
+    # (AASM confirm одноразовий; дубль → no-op). Зміщено від :00-піку.
+    stuck_sent_sweep:
+      cron: '5,35 * * * *' # Кожні 30 хв (:05/:35)
+      class: StuckSentTransactionSweeperWorker
+
     # --- [ARCH.54 Шар 0] DEAD-MAN SWITCH КОРОЛЕВИ (The Silence Watcher) ---
     # Тиша шлюзу = кластер осліп (permanence-сторож NaaS, 06_08 §1.3):
     # offline→faulty + EwsAlert(queen_offline), симетричне recover при
