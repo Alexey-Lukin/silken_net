@@ -46,6 +46,7 @@ module TreeChronicle
     def alert_icon(alert_type)
       case alert_type.to_s
       when "fire_detected"     then "\u{1F525}"
+      when "chainsaw_detected" then "\u{1FA9A}"
       when "severe_drought"    then "\u{1F4A7}"
       when "insect_epidemic"   then "\u{1F41B}"
       when "vandalism_breach"  then "\u{1F6A8}"
@@ -59,6 +60,7 @@ module TreeChronicle
     def alert_title(alert)
       case alert.alert_type.to_s
       when "fire_detected"     then "Fire Detected"
+      when "chainsaw_detected" then "Chainsaw Detected"
       when "severe_drought"    then "Severe Drought"
       when "insect_epidemic"   then "Insect Epidemic"
       when "vandalism_breach"  then "Vandalism Breach"

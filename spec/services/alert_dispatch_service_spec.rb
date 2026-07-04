@@ -74,6 +74,60 @@ RSpec.describe AlertDispatchService, type: :service do
     end
   end
 
+  # [SLASH-1] acoustic-vs-thermal: anomaly без жару = вирубка, не вогонь.
+  describe "chainsaw vs fire discriminator" do
+    it "routes acoustic anomaly WITHOUT heat to chainsaw_detected" do
+      log = instance_double(TelemetryLog,
+        tree: tree,
+        bio_status_tamper_detected?: false,
+        voltage_mv: 3300,
+        temperature_c: 25,
+        bio_status_anomaly?: true,
+        panic?: false
+      )
+
+      expect {
+        described_class.analyze_and_trigger!(log)
+      }.to change(EwsAlert, :count).by(1)
+
+      alert = EwsAlert.last
+      expect(alert.alert_type).to eq("chainsaw_detected")
+      expect(alert.severity).to eq("critical")
+      expect(alert.message).to include("Акустична аномалія")
+    end
+
+    it "keeps thermal breach as fire_detected even when anomaly flag is set" do
+      log = instance_double(TelemetryLog,
+        tree: tree,
+        bio_status_tamper_detected?: false,
+        voltage_mv: 3300,
+        temperature_c: 80,
+        bio_status_anomaly?: true
+      )
+
+      expect {
+        described_class.analyze_and_trigger!(log)
+      }.to change(EwsAlert, :count).by(1)
+
+      expect(EwsAlert.last.alert_type).to eq("fire_detected")
+    end
+
+    it "marks panic-TX provenance in the chainsaw message" do
+      log = instance_double(TelemetryLog,
+        tree: tree,
+        bio_status_tamper_detected?: false,
+        voltage_mv: 3300,
+        temperature_c: 25,
+        bio_status_anomaly?: true,
+        panic?: true
+      )
+
+      described_class.analyze_and_trigger!(log)
+
+      expect(EwsAlert.last.message).to include("PANIC-TX")
+    end
+  end
+
   describe "cache invalidation on critical alerts" do
     before do
       allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new)
@@ -395,21 +449,24 @@ RSpec.describe AlertDispatchService, type: :service do
     end
   end
 
-  describe "bio_status_anomaly fires without temperature check" do
-    it "triggers fire_detected when bio_status is anomaly even with normal temperature" do
+  # [SLASH-1] Раніше anomaly без жару падав у fire_detected (конфляція пилка↔пожежа);
+  # спліт маршрутизує його в chainsaw_detected.
+  describe "bio_status_anomaly without thermal breach" do
+    it "triggers chainsaw_detected (NOT fire) when anomaly comes with normal temperature" do
       log = instance_double(TelemetryLog,
         tree: tree,
         bio_status_tamper_detected?: false,
         voltage_mv: 3500,
         temperature_c: 25,  # normal temperature
         bio_status_anomaly?: true,
+        panic?: false,
         bio_status_stress?: false,
         acoustic_events: 10,
         z_value: 20.0
       )
 
       described_class.analyze_and_trigger!(log)
-      expect(EwsAlert.last.alert_type).to eq("fire_detected")
+      expect(EwsAlert.last.alert_type).to eq("chainsaw_detected")
     end
   end
 

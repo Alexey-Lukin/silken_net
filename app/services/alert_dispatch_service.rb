@@ -50,13 +50,26 @@ class AlertDispatchService
       # бо низький вольтаж може бути розрядом батареї, а не вандалізмом.
     end
 
-    # 2. ПОЖЕЖА або ПИЛКА (Thermal and Acoustic Chaos)
+    # 2а. ПОЖЕЖА (Thermal) — температура вище біом-порога.
     # [АДАПТИВНО]: Поріг тепер залежить від біома
-    if telemetry_log.temperature_c >= fire_limit || telemetry_log.bio_status_anomaly?
+    if telemetry_log.temperature_c >= fire_limit
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :critical,
         alert_type: :fire_detected,
-        message: "🔥 КАТАСТРОФА: Температура #{telemetry_log.temperature_c}°C (Поріг: #{fire_limit}). Ризик пожежі/вирубки!"
+        message: "🔥 КАТАСТРОФА: Температура #{telemetry_log.temperature_c}°C (Поріг: #{fire_limit}). Ризик пожежі!"
+      )
+      return
+    end
+
+    # 2б. ПИЛКА (Acoustic — [SLASH-1] chainsaw-спліт). Anomaly без жару = акустичний
+    # хаос при нормальній температурі (TinyML chainsaw/cavitation → StatusByte anomaly),
+    # не вогонь. Окремий тип веде non-fire маршрутом dClimate у Field-Audit замість
+    # FIRMS-«ясне небо»-тавра rejected_fraud на жертві вирубки.
+    if telemetry_log.bio_status_anomaly?
+      create_and_dispatch_alert!(
+        cluster: cluster, tree: tree, severity: :critical,
+        alert_type: :chainsaw_detected,
+        message: "🪚 ВИРУБКА: Акустична аномалія без термального сигналу#{' (PANIC-TX)' if telemetry_log.panic?}. DID: #{tree.did}"
       )
       return
     end

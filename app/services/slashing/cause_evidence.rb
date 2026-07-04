@@ -10,12 +10,14 @@ module Slashing
   # палить-поки-не-відведено. Асиметрія свідома: burn необоротний, freeze — ні.
   #
   # Фаза 1 свідомо КОНСЕРВАТИВНА — лише `vandalism_breach` (tamper) як єдиний однозначний
-  # сигнал A у поточному коді. Канон §3.2 називав ще `chainsaw`/`critical_unmaintained?`,
-  # але в коді chainsaw зашитий у `fire_detected` (нерозрізнимо від природної пожежі без
-  # супутника), а `critical_unmaintained?` рахує й force-majeure-типи (aged `fire_detected`
-  # без maintenance → пропустив би burn на природній пожежі). Розширення A-сету (scoped
-  # unmaintained, окремий chainsaw-сигнал) — 👤 DAO-ратифікація (`05_05 §3.2`, рейка
-  # `ProtocolParameters` → `SystemParameter`, `05_06`).
+  # сигнал A у поточному коді. [SLASH-1] chainsaw-спліт дав окремий `chainsaw_detected`
+  # (acoustic-vs-thermal дискримінатор у AlertDispatchService) — сигнал тепер РОЗРІЗНИМИЙ,
+  # але в A-сет свідомо НЕ входить до field-validation TinyML (chainsaw-клас = synthetic
+  # placeholder, `03_03 §4.2`; slash() необоротний). `critical_unmaintained?` досі рахує
+  # й force-majeure-типи (aged `fire_detected` без maintenance → пропустив би burn на
+  # природній пожежі). Розширення A-сету (scoped unmaintained, chainsaw після
+  # field-validation) — 👤 DAO-ратифікація (`05_05 §3.2`, рейка `ProtocolParameters` →
+  # `SystemParameter`, `05_06`).
   #
   # DCI-divergence / fraud-алерт (`system_fault`) НЕ є самостійним сигналом A — `05_05 §6`
   # (divergence сам ≠ burn; потрібен 2-й некорельований сигнал).

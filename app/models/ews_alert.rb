@@ -38,7 +38,14 @@ class EwsAlert < ApplicationRecord
     # всі власні uplink'и (Starlink/LTE + Q2Q) — телеметрія буферизується у
     # Flash-ринг, потрібна ескалація (виїзд). Дзеркальний до queen_offline:
     # там мовчання, тут — крик через чужі hotspot'и (06_08 §1.2 L3).
-    queen_uplink_lost: 9
+    queen_uplink_lost: 9,
+    # [SLASH-1] Акустична аномалія БЕЗ термального сигналу (TinyML chainsaw/cavitation
+    # → StatusByte anomaly при нормальній температурі) — вирубка, не вогонь. До спліту
+    # жила у fire_detected → FIRMS бачив «ясне небо» → жертву вирубки таврував
+    # rejected_fraud; тепер non-fire маршрут → Field-Audit (перевірити пеньки).
+    # ⚠️ НЕ в A-сет slash'а до field-validation TinyML (клас = synthetic placeholder,
+    # 03_03 §4.2) — DAO-ратифікація, Slashing::CauseEvidence лишається tamper-only.
+    chainsaw_detected: 10
   }, prefix: true
 
   # [COSMIC EYE]: Статус супутникової верифікації через dClimate.
@@ -151,10 +158,13 @@ class EwsAlert < ApplicationRecord
   end
 
   # [COSMIC EYE / INS.1]: Чи потребує цей алерт НЕЗАЛЕЖНОГО Trigger-2-підтвердження (поза нашим AI)?
-  # Усі 3 страхові перили — так (пожежа/посуха/шкідник). Маршрут РІЗНИЙ (Dclimate::VerificationService):
-  # fire → dClimate FIRMS-супутник; не-пожежа → Field Audit (fire-супутник не адьюдикує посуху/шкідника).
+  # 3 страхові перили (пожежа/посуха/шкідник) + chainsaw ([SLASH-1] — НЕ страховий, але
+  # критичний акустичний детект вимагає незалежної перевірки). Маршрут РІЗНИЙ
+  # (Dclimate::VerificationService): fire → dClimate FIRMS-супутник; не-пожежа
+  # (drought/insect/chainsaw) → Field Audit (fire-супутник не адьюдикує).
   def requires_satellite_consensus?
-    alert_type_fire_detected? || alert_type_severe_drought? || alert_type_insect_epidemic?
+    alert_type_fire_detected? || alert_type_severe_drought? || alert_type_insect_epidemic? ||
+      alert_type_chainsaw_detected?
   end
 
   private

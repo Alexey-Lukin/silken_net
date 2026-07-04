@@ -398,6 +398,13 @@ RSpec.describe EwsAlert, type: :model do
       expect(alert.requires_satellite_consensus?).to be true
     end
 
+    # [SLASH-1] chainsaw — НЕ страховий, але критичний acoustic-детект потребує незалежної
+    # перевірки → non-fire маршрут dClimate веде у Field-Audit (без FIRMS-«ясне небо»-тавра).
+    it "returns true for chainsaw_detected" do
+      alert = build(:ews_alert, alert_type: :chainsaw_detected)
+      expect(alert.requires_satellite_consensus?).to be true
+    end
+
     it "returns false for system_fault" do
       alert = build(:ews_alert, alert_type: :system_fault)
       expect(alert.requires_satellite_consensus?).to be false
