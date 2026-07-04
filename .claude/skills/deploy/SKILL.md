@@ -64,11 +64,11 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 | Шар | Шлях |
 |---|---|
 | Kamal deploy | `config/deploy.yml` · `config/deploy.canopy.yml` · `.kamal/secrets` |
-| IaC (GCP) | `terraform/` (`compute.tf` · `database.tf` · `vpc.tf` · `iam.tf` · `main.tf`) |
-| Akash | `deploy/akash/` (`deploy.yaml` SDL · `config.alloy` · `encode-alloy-config.sh`) |
-| Observability | `config/initializers/prometheus.rb` (`SilkenNet::Metrics`) · `app/middleware/prometheus_collector.rb` · `deploy/akash/config.alloy` |
+| IaC (GCP) | `terraform/` (`compute.tf` — incl. анкор-демон systemd/env-file · `database.tf` · `vpc.tf` · `iam.tf` · `main.tf`) |
+| Akash | `deploy/akash/` (`deploy.yaml` SDL · `deploy.yaml.tpl` · `config.alloy` · `encode-alloy-config.sh`); SDL-гейт `ruby scripts/sdl_consistency_check.rb` (services≡deployment, static≡tpl — CI + локально перед комітом SDL-змін) |
+| Observability | `config/initializers/prometheus.rb` (`SilkenNet::Metrics`) · `app/middleware/prometheus_collector.rb` · `lib/silken_net/metrics_exporter.rb` (embedded /metrics job/coap) · `deploy/akash/config.alloy` · Grafana IaC `deploy/grafana/` (`alerts/silkennet-alerts.yaml` · `dashboards/` · `import.rb`) |
 | Web-сервер | `config/puma.rb` |
-| CI/CD | `.github/workflows/` (`deploy.yml` · `deploy-production.yml` · `mirror-ghcr.yml` · `release-please.yml` · `ci.yml` · `docs.yml` · `ssot_guard.yml`) |
+| CI/CD | `.github/workflows/` (`deploy.yml` · `deploy-production.yml` · `coap_smoke.yml` — post-deploy gate + 30хв liveness-schedule · `mirror-ghcr.yml` · `release-please.yml` · `ci.yml` · `docs.yml` · `ssot_guard.yml`) |
 
 ## Gotchas (верифіковані, не з канону)
 

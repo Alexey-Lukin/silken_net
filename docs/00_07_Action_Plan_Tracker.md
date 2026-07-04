@@ -567,6 +567,7 @@
 - **Стан:** SIMCom CoAP App Note ≠ firmware-припущена граматика — реально модем = **UDP-труба**: хост будує сирий RFC 7252 PDU (`CCOAPNEW`/`CCOAPSEND` hex / URC `+CCOAPNMI`, домени через `CDNSGIP`). Три pure-шари + UART-клей (`uart_rx_ring.h` circular-DMA FW.3 / `at_engine.h` токенайзер / `coap_pdu.h` CON-PUT builder+parser golden-vector / `sim7070_coap.h` оркестратор) + host-тести. e2e Queen-PDU↔backend CoAP-intake софтом (golden C-білдер ↔ Rails-парсер + pure `CoapServerPdu` + повний ланцюг до `UnpackTelemetryWorker`). **Зловив/закрив 2 продакшн-баги Брами:** глобальний пошук payload-маркера (кожен 256-й `coap_mid` = фантомна доставка → FW.51 чистив кеш дарма) + Sentinel `route_queen_health` гинув на Sidekiq strict_args під broad-rescue; ACK-семантика тепер чесна до FW.51 (2.04 лише після enqueue, 4.04/RST → Королева тримає кеш). Канон [`03_02 §4`](03_02_Queen_Gateway_Firmware).
 - [ ] 👤 bench: verbatim-звірка SIM7070-ноти V1.03 + реальні URC/таймінги
 - [ ] 🔗 staging-smoke прогін проти задеплоєної Брами (`coap_smoke.yml` post-deploy gate; `bin/coap_smoke` + pure `lib/coap_smoke.rb` freeze-contract готовий — байт-звірка golden-векторів e2e: RST на сміття, 4.04 з 0xFF-MID піном, 2.04-після-enqueue; loopback-довід `coap_smoke_spec.rb`)
+- [ ] 🔗 регресія enqueue-before-ACK: у `coap_listener` `perform_async` МУСИТЬ передувати `socket.send(reply)` (Redis-fail → тиша → Королева тримає CIFO, FW.51) — інваріант зараз тримається лише порядком рядків + коментарем; тест вимагає винесення тіла лупа в тестовану функцію → разом з наступним рефактором демона (знахідка Opus-нори 2026-07-04)
 
 #### FW.58 — Queen DNS-re-resolve on flush-fail (DNS-failover зараз мертвий на живій Королеві)
 - **P1** · 🤖 · 🟢 · → [`03_02 §4`](03_02_Queen_Gateway_Firmware), [`06_08`](06_08_Resilience_and_Failover_Policy)
@@ -950,8 +951,8 @@
 
 #### S5.2 — RELEASE_VERSION ENV для Sentry
 - **P2** · 👤 · 🟢 · → `06_03`
-- **Стан:** `RELEASE_VERSION` заведено у deploy configs. Лишається verify Sentry release tracking. Канон `06_03`.
-- [ ] 👤 верифікувати Sentry release tracking
+- **Стан:** Kamal — `env.clear` `${RELEASE_VERSION}` з CI ✅. Akash static SDL — рядок **свідомо ВІДСУТНІЙ** (2026-07-04, B1-клас: порожній-присутній ключ глушить Sentry-autodetect) → інжект реального git-SHA при деплої через Console; `.tpl` — умовний `%{ if }` + tf-var `release_version` (порожньо = рядок омітиться). Канон `06_03`.
+- [ ] 👤 верифікувати Sentry release tracking (Kamal-шлях авто; Akash — після інжекту значення при деплої)
 
 #### PUMA-IPV6-1 — Верифікація IPv6 bind після першого Kamal-деплою
 - **P2** · 👤 · 🟢 · → `06_05`
