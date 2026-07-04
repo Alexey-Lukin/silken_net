@@ -21,3 +21,6 @@ medusa.tar.gz
 # Halmos solver cache
 .halmos_cache/
 halmos-cache/
+
+# forge coverage local artifact (CI generates its own)
+lcov.info

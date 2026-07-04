@@ -57,12 +57,57 @@ jobs:
       - name: Run tests with gas report
         run: forge test -vvv --gas-report
 
+      # CONTRACT.1(8): gas-regression gate vs the committed .gas-snapshot baseline.
+      # Deterministic: fuzz seed is pinned in foundry.toml; stateful invariant_
+      # tests are excluded (path-dependent gas). Tolerance absorbs forge-version
+      # codegen noise. Refresh baseline: `forge snapshot --no-match-test "invariant_"`.
+      - name: Gas snapshot check
+        run: forge snapshot --check --tolerance 3 --no-match-test "invariant_"
+
       - name: Run coverage (lcov)
         # --ir-minimum enables viaIR for stack-too-deep avoidance in coverage.
         # Tests that use getPastVotes must use hardcoded block numbers (not
         # block.number reads) because Yul CSE can cache block.number across
         # vm.roll calls. See test/SilkenForestCoin.t.sol for details.
         run: forge coverage --ir-minimum --report lcov --report summary
+
+      # CONTRACT.1(8): coverage floor per deployable contract (the lcov Total is
+      # diluted by test harnesses/scripts by design). SilkenTimelock.sol is absent
+      # from lcov — constructor-only OZ subclass, no instrumentable lines.
+      - name: Coverage floor (deployable contracts ≥ 90% lines)
+        run: |
+          python3 - <<'EOF'
+          import sys
+          FLOOR = 90.0
+          TARGETS = {"SilkenCarbonCoin.sol", "SilkenForestCoin.sol", "StateRootAnchor.sol",
+                     "SilkenGovernor.sol", "ProtocolParameters.sol"}
+          seen = {}
+          cur = None
+          lf = lh = 0
+          for line in open("lcov.info"):
+              line = line.strip()
+              if line.startswith("SF:"):
+                  cur = line[3:].split("/")[-1]
+                  lf = lh = 0
+              elif line.startswith("LF:"):
+                  lf = int(line[3:])
+              elif line.startswith("LH:"):
+                  lh = int(line[3:])
+              elif line == "end_of_record" and cur in TARGETS:
+                  seen[cur] = (lh, lf)
+          failed = False
+          for name in sorted(TARGETS):
+              if name not in seen:
+                  print(f"  FAIL {name}: missing from lcov.info")
+                  failed = True
+                  continue
+              lh, lf = seen[name]
+              pct = 100.0 * lh / lf if lf else 100.0
+              ok = pct >= FLOOR
+              failed |= not ok
+              print(f"  {'OK  ' if ok else 'FAIL'} {name}: {pct:.2f}% ({lh}/{lf}) lines")
+          sys.exit(1 if failed else 0)
+          EOF
 
       - name: Upload coverage to artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
