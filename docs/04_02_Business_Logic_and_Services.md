@@ -26,7 +26,7 @@
 ### Конвенція впорядкування розділів
 
 1. **Spine** (§1–§9): Service Objects, згруповані за **доменом відповідальності** (Telemetry → AI/Analytics → Polygon → Verification → Contracts → Emergency → Hardware/Security → Finance Oracles). Усередині домену — за порядком виконання у Proof-of-Growth pipeline (раніше зустрічається у потоці → раніше у документі).
-2. **Multi-chain rails** (§10): сервіси для не-Polygon мереж (Solana, Celo, Ethereum L1, Filecoin, Streamr, The Graph, dClimate, Toucan, Klima, Hadron) — окремою секцією, бо вони побудовані по тому ж API-патерну (`Web3::RpcConnectionPool` + `Eth::Contract` / `Web3::HttpClient`).
+2. **Multi-chain rails** (§10): сервіси для не-Polygon мереж (Solana, Celo, Ethereum L1, Filecoin, Streamr, The Graph, dClimate, Klima, Hadron) — окремою секцією, бо вони побудовані по тому ж API-патерну (`Web3::RpcConnectionPool` + `Eth::Contract` / `Web3::HttpClient`).
 3. **Lore-layer** (§10b): Codex-сервіси — окремий шар, не на критичному шляху телеметрії.
 4. **Workers Registry** (§11): з групуванням за **чергами Sidekiq** у строгому порядку дренування (uplink → … → low), а не за доменом. Це навмисне — спрощує діагностику hot path.
 5. **Call Chains, External Deps, Planned, Math/Security** (§12–кінець): horizontal cross-cuts і RFC-секції.
@@ -47,7 +47,7 @@
 - [7. Домен: Надзвичайне Реагування (Emergency Response)](#-7-домен-надзвичайне-реагування-emergency-response) — `EmergencyResponseService`
 - [8. Домен: Апаратне Забезпечення та Безпека (Hardware, IoT & Security)](#-8-домен-апаратне-забезпечення-та-безпека-hardware-iot--security) — HardwareKey, OTA HMAC, OtaPackager, **WeakKeyDetector**, **Web3NetworkGuard**
 - [9. Домен: Фінансові Оракули (Finance Oracles)](#-9-домен-фінансові-оракули-finance-oracles) — `PriceOracleService`
-- [10. Домен: Мультичейн — Паралельні Рейки (Multi-chain)](#-10-домен-мультичейн--паралельні-рейки-multi-chain) — Solana, Celo, Klima, Hadron, Ethereum L1, Filecoin, Streamr, The Graph, dClimate, Toucan, Treasury
+- [10. Домен: Мультичейн — Паралельні Рейки (Multi-chain)](#-10-домен-мультичейн--паралельні-рейки-multi-chain) — Solana, Celo, Klima, Hadron, Ethereum L1, Filecoin, Streamr, The Graph, dClimate, Treasury
 - [10b. Codex (Lore Layer) Сервіси](#-10b-codex-lore-layer-сервіси)
 - [11. Реєстр Воркерів (Workers Registry)](#-11-реєстр-воркерів-workers-registry) — групування за чергами
 - [12. Карта Ланцюгів Викликів (Call Chains)](#-12-карта-ланцюгів-викликів-call-chains)
@@ -668,15 +668,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | **Зовнішні виклики** | `Web3::HttpClient.get` → dClimate FIRMS API (`DCLIMATE_BASE_URL`). `InsurancePayoutWorker.perform_async` або `BurnCarbonTokensWorker.perform_async`. |
 | **Вихід** | `nil`. Side effects: оновлює `alert.satellite_status` та `alert.dclimate_ref`, тригерує воркери. |
 
-### `Toucan::BridgeService`
-
-| | |
-|---|---|
-| **Файл** | `app/services/toucan/bridge_service.rb` |
-| **Вхід** | `blockchain_transaction_id` (Integer), `created_at_iso` (String, ISO 8601, опціонально) |
-| **Що робить** | SCC → TCO2 bridge через Toucan Protocol на Polygon. `deposit(scc_address, amount_wei)` на ToucanCarbonBridge контракті. Використовує `BlockchainTransaction.find_with_partition_pruning` для partition-aware lookup. |
-| **Зовнішні виклики** | Polygon RPC → `ToucanCarbonBridge.deposit` |
-| **Вихід** | `tx_hash` (String). |
+> **[E.66] Toucan-prune:** `Toucan::BridgeService` + `ToucanBridgeWorker` + `Wallet#lock_for_toucan_bridge!`/`finalize_spend!`/`toucan_bridged_balance` видалено — flow був DEAD (0 enqueue-callerів), failure-path мав money-integrity діру (без `sidekiq_retries_exhausted`, несиметричний rollback, in-flight `locked > balance` вікно). SCC→TCO2 expansion воскресає з git при E.20-go — тоді ж обов'язкові симетричний rollback + інваріант `locked ≤ balance` (гейт зафіксовано в git-історії E.66).
 
 ---
 
@@ -1248,7 +1240,7 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 |----------|----------|
 | **Черга** | `web3_critical` |
 | **Retry** | 10, unique_for: 10 хвилин |
-| **Тригер** | `BlockchainMintingService`, `BlockchainBurningService`, `InsurancePayoutWorker`, `ToucanBridgeWorker` |
+| **Тригер** | `BlockchainMintingService`, `BlockchainBurningService`, `InsurancePayoutWorker` |
 | **Вхід** | `tx_hash` (String) |
 | **Сервіси** | — |
 | **Side Effects** | `eth_get_transaction_receipt` (Polygon RPC). При `0x1`: `tx.confirm!`. При revert: `tx.fail!`. Retry при pending (ще в мемпулі). **[MEMPOOL LIMBO GUARD]** `sidekiq_retries_exhausted` handler: при вичерпанні всіх 10 ретраїв (~15-20 хвилин поллінгу) делегує до `MintingRollbackService.call(transactions: BlockchainTransaction.where(tx_hash:, status: :sent))`. Запобігає зависанню транзакцій у статусі `:sent` з замороженим `locked_balance` після потрапляння job у Sidekiq Dead queue. |
@@ -1289,17 +1281,6 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Вхід** | `telemetry_log_id`, `created_at_iso` |
 | **Сервіси** | `Chainlink::OracleDispatchService.new(log).dispatch!` |
 | **Side Effects** | `log.update!(chainlink_request_id:, oracle_status: "dispatched")`. |
-
-#### `ToucanBridgeWorker`
-
-| Параметр | Значення |
-|----------|----------|
-| **Черга** | `web3_critical` |
-| **Retry** | 5 |
-| **Тригер** | Ручний запуск при bridging request |
-| **Вхід** | `blockchain_transaction_id` (Integer), `created_at_iso` (String, ISO 8601, опціонально) |
-| **Сервіси** | `find_blockchain_tx_with_pruning(blockchain_transaction_id, created_at_iso)`, `Toucan::BridgeService.call(blockchain_transaction_id, created_at_iso)` |
-| **Side Effects** | `tx.mark_as_sent!`. `wallet.locked_balance -= locked_points`, `wallet.toucan_bridged_balance += locked_points`. `BlockchainConfirmationWorker.perform_in(30.seconds, ...)`. |
 
 ---
 
@@ -1609,14 +1590,6 @@ EwsAlert (fire_detected)
               └─→ clear_sky_no_fire → BurnCarbonTokensWorker [critical] (fraud slashing)
 ```
 
-### 🌉 Toucan Bridge Ланцюг
-
-```
-API request → ToucanBridgeWorker [web3_critical]
-  └─→ Toucan::BridgeService (SCC → TCO2)
-        └─→ BlockchainConfirmationWorker [web3_critical]
-```
-
 ### 📦 Audit + Filecoin Ланцюг
 
 ```
@@ -1633,7 +1606,7 @@ Financial action
 
 | Сервіс | Мережа/Протокол | ENV / Credential | Воркер/Сервіс |
 |--------|----------------|-------------------|---------------|
-| **Polygon RPC** (Alchemy) | EVM JSON-RPC | `ALCHEMY_POLYGON_RPC_URL` | BlockchainMintingService, BlockchainBurningService, ChainAuditService, KlimaDao, ToucanBridgeService, PriceOracleService |
+| **Polygon RPC** (Alchemy) | EVM JSON-RPC | `ALCHEMY_POLYGON_RPC_URL` | BlockchainMintingService, BlockchainBurningService, ChainAuditService, KlimaDao, PriceOracleService |
 | **Ethereum L1 RPC** | EVM JSON-RPC | `ALCHEMY_ETHEREUM_RPC_URL` | StateAnchorService |
 | **Solana RPC** | JSON-RPC 2.0 | `SOLANA_RPC_URL`, `SOLANA_WALLET_KEYPAIR` (mandatory), `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS` | Solana::MintingService |
 | **Celo RPC** | EVM JSON-RPC | `CELO_RPC_URL` (primary) + опц. `CELO_RPC_URL_FALLBACK_1`, `CELO_RPC_URL_FALLBACK_2` (E.49 cascade через `Web3::ResilientClient`) | Celo::CommunityRewardService, MintingRollbackService |
@@ -1648,7 +1621,6 @@ Financial action
 | **Etherisc DIP** | On-chain (Polygon) | `ETHERISC_DIP_CONTRACT_ADDRESS` | Etherisc::ClaimService |
 | **Puro.earth D-MRV Registry** | On-chain (Polygon) + HTTPS REST | `PURO_EARTH_REGISTRY_CONTRACT_ADDRESS`, `ORACLE_PRIVATE_KEY` (on-chain); `PURO_EARTH_API_URL` (default: `https://api.puro.earth`), `Rails.credentials.puro_earth.api_key` або `PURO_EARTH_API_KEY` (REST) | PuroEarth::PassportService, PuroEarth::RegistryApiService |
 | **KlimaDAO** | On-chain (Polygon) | `KLIMA_RETIREMENT_CONTRACT` | KlimaDao::RetirementService |
-| **Toucan Protocol** | On-chain (Polygon) | `TOUCAN_BRIDGE_CONTRACT_ADDRESS` | Toucan::BridgeService |
 | **Uniswap V3 Quoter** | On-chain (Polygon) | `POLYGON_RPC_URL` | PriceOracleService |
 | **CoAP Gateway** | CoAP/UDP | `gateway.ip_address` (dynamic) | ActuatorCommandWorker, OtaTransmissionWorker |
 

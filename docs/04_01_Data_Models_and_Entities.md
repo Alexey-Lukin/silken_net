@@ -879,7 +879,6 @@ any ──report_fault──► faulty
 | `balance` | decimal | Основний баланс growth_points (≥ 0) |
 | `locked_balance` | decimal | Заморожені points (в процесі емісії). **Подвійне призначення:** (1) lock під час `lock_and_mint!` між Polygon-mint dispatch і `confirmed` AASM; (2) **finality-lag lock** — коли SCC вже мінтовано на Polygon, але тижневий L1 anchor (`EthereumAnchor`, крок #12) ще не зафіксував state root. У випадку Polygon reorg або catastrophic sidechain failure до anchor — токени технічно повертаються у `locked_balance` через `escalate_to_review`. Це запобігає double-spend сценарію, описаному в [`06_08 §2.2 Manual review terminal state`](06_08_Resilience_and_Failover_Policy). |
 | `esg_retired_balance` | decimal | Списані балансом ESG-retired |
-| `toucan_bridged_balance` | decimal | Bridged через Toucan Protocol |
 | `crypto_public_address` | string | Polygon/Ethereum-адреса гаманця (EIP-55) |
 | `solana_public_address` | string | Solana Base58-адреса (для мікро-нагород) |
 | `hadron_kyc_status` | string | KYC статус Polygon Hadron (default: `pending`) |
@@ -891,11 +890,11 @@ any ──report_fault──► faulty
 | `available_balance` | `balance - locked_balance` |
 | `lock_funds!(amount)` | Переміщує з `balance` до `locked_balance` |
 | `release_locked_funds!(amount)` | Повертає до `balance` |
-| `finalize_spend!(amount)` | Зменшує `locked_balance` (після мінту) |
 | `credit!(points)` | Зараховує з урахуванням `carbon_sequestration_coefficient` породи |
 | `lock_and_mint!(points_to_lock, threshold, token_type)` | Повний цикл емісії SCC (курс — [`05_03`](05_03_Tokenomics_SCC_and_SFC)) |
-| `lock_for_toucan_bridge!(amount)` | Підготовка до Toucan Bridge |
 | `broadcast_balance_update` | Turbo Stream оновлення UI |
+
+> **[E.66] Toucan-prune:** `lock_for_toucan_bridge!` / `finalize_spend!` / `toucan_bridged_balance` видалено (flow DEAD, 0 enqueue-callerів; failure-path мав money-integrity діру — несиметричний rollback). Escrow-примітив воскресає з git при E.20-go (locked у mint-flow = «сконвертовано назавжди» by design — finalize не потрібен).
 
 ---
 

@@ -45,16 +45,6 @@ RSpec.describe "Wallet tokenomics flow end-to-end" do
       expect(wallet.locked_balance).to eq(0)
     end
 
-    it "finalizes spend after blockchain confirmation" do
-      wallet = tree.wallet
-      wallet.credit!(1000)
-      wallet.lock_funds!(500)
-
-      wallet.finalize_spend!(500)
-      expect(wallet.reload.balance).to eq(500)
-      expect(wallet.locked_balance).to eq(0)
-    end
-
     it "prevents double-spend via lock mechanism" do
       wallet = tree.wallet
       wallet.credit!(500)
@@ -62,15 +52,6 @@ RSpec.describe "Wallet tokenomics flow end-to-end" do
 
       expect { wallet.lock_funds!(200) }
         .to raise_error(RuntimeError, /Недостатньо доступних коштів/)
-    end
-
-    it "prevents finalize_spend! exceeding locked balance" do
-      wallet = tree.wallet
-      wallet.credit!(1000)
-      wallet.lock_funds!(300)
-
-      expect { wallet.finalize_spend!(500) }
-        .to raise_error(RuntimeError, /locked_balance/)
     end
   end
 

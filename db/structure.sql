@@ -2437,8 +2437,7 @@ CREATE TABLE public.wallets (
     locked_balance numeric(24,6) DEFAULT 0.0 NOT NULL,
     solana_public_address character varying,
     hadron_kyc_status character varying DEFAULT 'pending'::character varying,
-    esg_retired_balance numeric(24,6) DEFAULT 0.0 NOT NULL,
-    toucan_bridged_balance numeric(24,6) DEFAULT 0.0 NOT NULL
+    esg_retired_balance numeric(24,6) DEFAULT 0.0 NOT NULL
 );
 
 
@@ -7200,6 +7199,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260704060000'),
 ('20260703080407'),
 ('20260703075130'),
 ('20260703043753'),

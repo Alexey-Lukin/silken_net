@@ -128,7 +128,7 @@
 - [ ] `KLIMA_RETIREMENT_CONTRACT` — адреса KlimaDAO Retirement Aggregator
 - [ ] `DAO_TREASURY_ADDRESS` — DAO Treasury (Dynamic Tax 2% · `BlockchainMintingService`)
 - [ ] `CELO_CUSD_CONTRACT_ADDRESS` — cUSD на Celo (`CommunityRewardService`)
-- [ ] `TOUCAN_BRIDGE_CONTRACT_ADDRESS` · `ETHERISC_DIP_CONTRACT_ADDRESS` · `PURO_EARTH_REGISTRY_CONTRACT_ADDRESS` — bridge / параметричне страхування / D-MRV registry
+- [ ] `ETHERISC_DIP_CONTRACT_ADDRESS` · `PURO_EARTH_REGISTRY_CONTRACT_ADDRESS` — параметричне страхування / D-MRV registry (Toucan-адресу вилучено — E.66 prune)
 - [ ] `ETHEREUM_ANCHOR_CONTRACT` — StateRootAnchor (Ethereum L1, weekly anchor)
 - [ ] `PROTOCOL_PARAMETERS_CONTRACT_ADDRESS` — ProtocolParameters.sol (governance sync; `ENV[]` nil-safe → skip-sync)
 - [ ] `CELO_RPC_URL` — Celo RPC. ⚠️ **БЕЗ значення → код fallback на Alfajores TESTNET** (реальні cUSD на testnet, обходить `web3_network_guard`; E.49). Mainnet: Forno/Alchemy.
@@ -189,7 +189,7 @@
 - [ ] `PROMETHEUS_AUTH_USER` / `PROMETHEUS_AUTH_PASSWORD` — Basic Auth для `/metrics`
 
 **Web3 oracle keys (dual-key split, B-02 — без них Sidekiq DeadSet):**
-- [ ] `ORACLE_PRIVATE_KEY` — legacy fallback (Celo/Toucan/Klima/PuroEarth/Etherisc)
+- [ ] `ORACLE_PRIVATE_KEY` — legacy fallback (Celo/Klima/PuroEarth/Etherisc)
 - [ ] `ORACLE_CELO_PRIVATE_KEY` — **[ARCH.50]** dedicated Celo cUSD-підписант (fallback `ORACLE_PRIVATE_KEY`); ізолює blast-radius Celo від спільного Polygon base-key (ARCH.49)
 - [ ] `ORACLE_MINTER_PRIVATE_KEY` — MINTER_ROLE на SCC/SFC (`BlockchainMintingService`)
 - [ ] `ORACLE_SLASHER_PRIVATE_KEY` — SLASHER_ROLE (`BlockchainBurningService`)

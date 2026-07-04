@@ -134,33 +134,6 @@ RSpec.describe Wallet, type: :model do
     end
   end
 
-  describe "#finalize_spend!" do
-    it "decreases both balance and locked_balance" do
-      wallet = create(:tree).wallet
-      wallet.update!(balance: 1000, locked_balance: 500)
-
-      wallet.finalize_spend!(300)
-      wallet.reload
-
-      expect(wallet.balance).to eq(700)
-      expect(wallet.locked_balance).to eq(200)
-    end
-
-    it "raises when locked_balance is less than amount" do
-      wallet = create(:tree).wallet
-      wallet.update!(balance: 1000, locked_balance: 100)
-
-      expect { wallet.finalize_spend!(200) }.to raise_error(RuntimeError, /locked_balance/)
-    end
-
-    it "raises when balance is less than amount" do
-      wallet = create(:tree).wallet
-      wallet.update!(balance: 100, locked_balance: 200)
-
-      expect { wallet.finalize_spend!(200) }.to raise_error(RuntimeError, /balance/)
-    end
-  end
-
   describe "locked_balance validation" do
     it "rejects negative locked_balance" do
       wallet = create(:tree).wallet
@@ -168,86 +141,6 @@ RSpec.describe Wallet, type: :model do
 
       expect(wallet).not_to be_valid
       expect(wallet.errors[:locked_balance]).to include("must be greater than or equal to 0")
-    end
-  end
-
-  describe "toucan_bridged_balance validation" do
-    it "rejects negative toucan_bridged_balance" do
-      wallet = create(:tree).wallet
-      wallet.toucan_bridged_balance = -1
-
-      expect(wallet).not_to be_valid
-      expect(wallet.errors[:toucan_bridged_balance]).to include("must be greater than or equal to 0")
-    end
-  end
-
-  describe "#lock_for_toucan_bridge!" do
-    let(:organization) { create(:organization) }
-    let(:cluster) { create(:cluster, organization: organization) }
-    let(:tree) { create(:tree, cluster: cluster) }
-    let(:wallet) { tree.wallet }
-
-    before do
-      allow_any_instance_of(Tree).to receive(:broadcast_map_update)
-      wallet.update!(balance: 5000)
-    end
-
-    it "deducts amount from balance and adds to locked_balance" do
-      wallet.lock_for_toucan_bridge!(1000)
-      wallet.reload
-
-      expect(wallet.balance).to eq(4000)
-      expect(wallet.locked_balance).to eq(1000)
-    end
-
-    it "creates a pending blockchain transaction with correct notes" do
-      tx = wallet.lock_for_toucan_bridge!(1000)
-
-      expect(tx).to be_persisted
-      expect(tx.status).to eq("pending")
-      expect(tx.token_type).to eq("carbon_coin")
-      expect(tx.locked_points).to eq(1000)
-      expect(tx.notes).to eq("Bridging to Toucan Protocol (TCO2)")
-    end
-
-    it "returns the created blockchain transaction" do
-      tx = wallet.lock_for_toucan_bridge!(1000)
-
-      expect(tx).to be_a(BlockchainTransaction)
-      expect(tx.amount).to eq(1000)
-    end
-
-    it "raises when balance is insufficient" do
-      wallet.update!(balance: 100)
-
-      expect {
-        wallet.lock_for_toucan_bridge!(500)
-      }.to raise_error(RuntimeError, /Недостатньо доступних коштів для Toucan Bridge/)
-    end
-
-    it "raises when neither the wallet nor its organization has a crypto address" do
-      addressless = create(:wallet, crypto_public_address: nil, organization: nil)
-      addressless.update!(balance: 5000)
-
-      expect {
-        addressless.lock_for_toucan_bridge!(100)
-      }.to raise_error(RuntimeError, /Відсутня крипто-адреса для Toucan Bridge/)
-    end
-
-    it "raises when no crypto address is available" do
-      wallet.update!(crypto_public_address: nil)
-      organization.update_column(:crypto_public_address, nil)
-
-      expect {
-        wallet.lock_for_toucan_bridge!(100)
-      }.to raise_error(RuntimeError, /крипто-адреса/)
-    end
-
-    it "uses organization crypto address as fallback" do
-      wallet.update!(crypto_public_address: nil)
-
-      tx = wallet.lock_for_toucan_bridge!(100)
-      expect(tx.to_address).to eq(organization.crypto_public_address)
     end
   end
 
@@ -473,44 +366,6 @@ RSpec.describe Wallet, type: :model do
         expect(wallet).to receive(:with_lock).and_call_original
         wallet.release_locked_funds!(100)
       end
-
-      it "finalize_spend! uses lock! inside transaction" do
-        wallet = create(:tree).wallet
-        wallet.update!(balance: 1000, locked_balance: 500)
-        expect(wallet).to receive(:lock!).and_call_original
-        wallet.finalize_spend!(300)
-      end
-    end
-  end
-
-  describe "#lock_for_toucan_bridge! (crypto address fallback)" do
-    it "raises error when no crypto_public_address on wallet or organization" do
-      tree_record = create(:tree)
-      wallet = tree_record.wallet
-      wallet.update!(balance: 100)
-      wallet.update_column(:crypto_public_address, nil)
-      allow(wallet).to receive(:organization).and_return(
-        double("Organization", crypto_public_address: nil)
-      )
-
-      expect {
-        wallet.lock_for_toucan_bridge!(10)
-      }.to raise_error(RuntimeError, /Відсутня крипто-адреса/)
-    end
-
-    it "uses organization crypto_public_address as fallback" do
-      tree_record = create(:tree)
-      wallet = tree_record.wallet
-      org = wallet.organization
-      wallet.update!(balance: 100)
-      wallet.update_column(:crypto_public_address, nil)
-
-      expect {
-        wallet.lock_for_toucan_bridge!(10)
-      }.to change(BlockchainTransaction, :count).by(1)
-
-      tx = BlockchainTransaction.last
-      expect(tx.to_address).to eq(org.crypto_public_address)
     end
   end
 end

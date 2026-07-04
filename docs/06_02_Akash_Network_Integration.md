@@ -77,7 +77,7 @@
 
 | ENV | Сервіс / Worker | Поведінка |
 |-----|-----------------|-----------|
-| `ORACLE_PRIVATE_KEY` | `Celo::CommunityRewardService` (fallback), `Toucan::BridgeService`, `Klima::RetirementService`, `Etherisc::ClaimService`, `PuroEarth::PassportService`, fallback для minter/slasher | `KeyError` при першому виклику |
+| `ORACLE_PRIVATE_KEY` | `Celo::CommunityRewardService` (fallback), `Klima::RetirementService`, `Etherisc::ClaimService`, `PuroEarth::PassportService`, fallback для minter/slasher | `KeyError` при першому виклику |
 | `ORACLE_CELO_PRIVATE_KEY` | `Celo::CommunityRewardService` (dedicated cUSD-підписант) — **[ARCH.50]** ізолює Celo blast-radius від спільного base-EOA (ARCH.49) | fallback на `ORACLE_PRIVATE_KEY` |
 | `ORACLE_MINTER_PRIVATE_KEY` | `BlockchainMintingService` (MINTER_ROLE) | SCC/SFC mint неможливий |
 | `ORACLE_SLASHER_PRIVATE_KEY` | `BlockchainBurningService` (SLASHER_ROLE) | Slashing зривається |
@@ -91,7 +91,7 @@
 | `SOLANA_USDC_MINT_ADDRESS` | `Solana::MintingService` | Raises explicit error |
 | `CHAINLINK_HMAC_SECRET` | `Api::V1::OracleCallbacksController` | Підпис callback не перевіряється (dev/test); `WEB3_STRICT_MODE` → `SecurityError`. Dispatch-секрети (`ROUTER`/`SUBSCRIPTION_ID`/`DON_ID`) вилучено — ARCH.53 |
 
-> **[ARCH.49] Nonce-serialization спільної base-EOA.** Усі Polygon-підписанти на спільному `ORACLE_PRIVATE_KEY` (mint/burn + `PuroEarth::PassportService`/`Etherisc::ClaimService`; Chainlink-dispatch вибув з флоту — ARCH.53 демоут прибрав його on-chain `transact`) серіалізують `transact` через спільний `Kredis.lock("lock:web3:oracle:#{addr}", expires_in: 30.seconds, after_timeout: :raise)` — eth-gem бере nonce per-call (`eth_getTransactionCount(pending)`), тож без локу конкурентні підписи на одній адресі колізять nonce → orphan «sent-but-never-mined» tx. Celo ізольовано власним chain-prefixed локом + dedicated key (ARCH.50, рядок вище). Chain-prefix свідомо **не** для Polygon: base-EOA = єдиний чейн після Celo-split, а `polygon:`-prefix вимагав би перейменувати й mint/burn lock-key (інакше Polygon-флот розколовся б на дві lock-групи, що не серіалізуються) — money-path-ризик без виграшу. Toucan/Klima той самий патерн, але DEAD (0 enqueue) → lock при активації (E.66).
+> **[ARCH.49] Nonce-serialization спільної base-EOA.** Усі Polygon-підписанти на спільному `ORACLE_PRIVATE_KEY` (mint/burn + `PuroEarth::PassportService`/`Etherisc::ClaimService`; Chainlink-dispatch вибув з флоту — ARCH.53 демоут прибрав його on-chain `transact`) серіалізують `transact` через спільний `Kredis.lock("lock:web3:oracle:#{addr}", expires_in: 30.seconds, after_timeout: :raise)` — eth-gem бере nonce per-call (`eth_getTransactionCount(pending)`), тож без локу конкурентні підписи на одній адресі колізять nonce → orphan «sent-but-never-mined» tx. Celo ізольовано власним chain-prefixed локом + dedicated key (ARCH.50, рядок вище). Chain-prefix свідомо **не** для Polygon: base-EOA = єдиний чейн після Celo-split, а `polygon:`-prefix вимагав би перейменувати й mint/burn lock-key (інакше Polygon-флот розколовся б на дві lock-групи, що не серіалізуються) — money-path-ризик без виграшу. Klima той самий патерн, але DEAD (0 enqueue) → lock при активації; Toucan видалено повністю (E.66 prune, воскресає з git при E.20-go — тоді ж lock обов'язковий).
 
 #### Категорія C — Observability (silent failures)
 
@@ -625,7 +625,7 @@ ENV-блоки `web` та `job` сервісів **дзеркалюють** од
 
 | Змінна | Значення в SDL | Required for | Сервіс |
 |--------|---------------|-------------|--------|
-| `ORACLE_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | Legacy fallback (Celo/Toucan/Klima/PuroEarth/Etherisc) |
+| `ORACLE_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | Legacy fallback (Celo/Klima/PuroEarth/Etherisc) |
 | `ORACLE_CELO_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | **[ARCH.50]** Dedicated Celo cUSD-підписант (fallback `ORACLE_PRIVATE_KEY`) |
 | `ORACLE_MINTER_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | `BlockchainMintingService` (MINTER_ROLE) |
 | `ORACLE_SLASHER_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | `BlockchainBurningService` (SLASHER_ROLE) |
@@ -769,7 +769,7 @@ silken-net-terraform-state/ (GCS bucket)
 
 | Змінна | Валідація |
 |--------|-----------|
-| `oracle_private_key` | Hex `0x…` (legacy fallback для Celo/Toucan/Klima/PuroEarth/Etherisc) |
+| `oracle_private_key` | Hex `0x…` (legacy fallback для Celo/Klima/PuroEarth/Etherisc) |
 | `oracle_minter_private_key` | Hex `0x…` (MINTER_ROLE на SCC/SFC) |
 | `oracle_slasher_private_key` | Hex `0x…` (SLASHER_ROLE на SCC/SFC) |
 | `ethereum_anchor_private_key` | Hex `0x…` (окремий wallet для L1 anchor — MUST differ from `oracle_private_key`) |

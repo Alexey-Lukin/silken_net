@@ -19,7 +19,6 @@ class Wallet < ApplicationRecord
   validates :balance, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :locked_balance, numericality: { greater_than_or_equal_to: 0 }
   validates :esg_retired_balance, numericality: { greater_than_or_equal_to: 0 }
-  validates :toucan_bridged_balance, numericality: { greater_than_or_equal_to: 0 }
 
   # SCC = Silken Carbon Coin — public-facing alias for the internal balance column.
   alias_attribute :scc_balance, :balance
@@ -58,20 +57,6 @@ class Wallet < ApplicationRecord
       raise "⚠️ [Wallet] Спроба розблокувати більше, ніж заблоковано (Заблоковано: #{locked_balance}, Запит: #{amount})" if locked_balance < amount
 
       decrement!(:locked_balance, amount)
-    end
-  end
-
-  # Фіналізація витрати після підтвердження транзакції в блокчейні.
-  # Списуємо кошти з balance та знімаємо блокування.
-  # [E.66] DEAD у проді — mint-flow не викликає (locked = «сконвертовано назавжди» by design); доля → 00_07 E.66.
-  def finalize_spend!(amount)
-    transaction do
-      lock!
-      raise "⚠️ [Wallet] Невідповідність: locked_balance (#{locked_balance}) < amount (#{amount})" if locked_balance < amount
-      raise "⚠️ [Wallet] Невідповідність: balance (#{balance}) < amount (#{amount})" if balance < amount
-
-      decrement!(:locked_balance, amount)
-      decrement!(:balance, amount)
     end
   end
 
@@ -147,32 +132,6 @@ class Wallet < ApplicationRecord
 
     broadcast_balance_update
     tx
-  end
-
-  # --- TOUCAN BRIDGE (TCO2 Interoperability) ---
-
-  # Блокування SCC для бриджингу в Toucan Protocol (TCO2).
-  # Переводить кошти з balance → locked_balance та створює BlockchainTransaction
-  # зі статусом :pending для подальшої обробки ToucanBridgeWorker.
-  # [E.66] Toucan flow DEAD/не-активований; failure-path несиметричний (rollback не відновлює balance) — gate перед активацією → 00_07 E.66.
-  def lock_for_toucan_bridge!(amount)
-    transaction do
-      lock!
-
-      raise "⚠️ [Wallet] Недостатньо доступних коштів для Toucan Bridge (Доступно: #{available_balance}, Потрібно: #{amount})" if available_balance < amount
-
-      decrement!(:balance, amount)
-      increment!(:locked_balance, amount)
-
-      blockchain_transactions.create!(
-        amount: amount,
-        token_type: :carbon_coin,
-        status: :pending,
-        to_address: crypto_public_address.presence || organization&.crypto_public_address || raise("🛑 [Wallet] Відсутня крипто-адреса для Toucan Bridge"),
-        locked_points: amount,
-        notes: "Bridging to Toucan Protocol (TCO2)"
-      )
-    end
   end
 
   # Трансляція оновленого стану гаманця через Turbo Streams
