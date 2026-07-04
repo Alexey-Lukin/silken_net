@@ -125,6 +125,9 @@ class BlockchainTransaction < ApplicationRecord
   # ЖИТТЄВИЙ ЦИКЛ ТРАНЗАКЦІЇ (The Web3 State Machine — AASM)
   # =========================================================================
   aasm column: :status, enum: true, whiny_persistence: true do
+    # [MRV.1] Кожен money-перехід → tamper-evident AuditLog-ланцюг (compliance-trail).
+    after_all_transitions :record_money_audit_trail
+
     state :pending, initial: true
     state :processing
     state :sent
@@ -223,6 +226,42 @@ class BlockchainTransaction < ApplicationRecord
   after_update_commit :broadcast_status_change, if: :saved_change_to_status?
 
   private
+
+  # [MRV.1] Tamper-evident слід money-переходів у SHA-256 AuditLog-ланцюг організації
+  # (ISO 14064/Verra: аудитор простежує хто/коли/чому рухав стан коштів). Асинхронно
+  # (record_async! → AuditLogWorker) — не блокує money-path. Без організації (slashing-audit
+  # без wallet) чи системного юзера аудит неможливий (chain_hash — per-organization) →
+  # свідомий skip з WARN, транзакцію НЕ валимо.
+  def record_money_audit_trail
+    org_id = wallet&.organization_id
+    # Навмисно повторюваний lookup у батч-циклах (по одному на перехід) —
+    # Prosopite.pause за прецедентом AuditLog#compute_chain_hash.
+    actor_id = begin
+      Prosopite.pause if defined?(Prosopite)
+      User.oracle_executioner&.id
+    ensure
+      Prosopite.resume if defined?(Prosopite)
+    end
+
+    if org_id.blank? || actor_id.blank?
+      Rails.logger.warn "📋 [MRV.1] AuditLog skip tx ##{id} (#{aasm.from_state}→#{aasm.to_state}): " \
+                        "organization=#{org_id.inspect}, oracle_executioner=#{actor_id.inspect}"
+      return
+    end
+
+    AuditLog.record_async!(
+      user_id: actor_id,
+      organization_id: org_id,
+      action: "blockchain_tx_#{aasm.current_event.to_s.delete('!')}",
+      auditable_type: self.class.name,
+      auditable_id: id,
+      metadata: {
+        from: aasm.from_state.to_s, to: aasm.to_state.to_s,
+        token_type: token_type, amount: amount.to_s,
+        tx_hash: tx_hash, error: error_message
+      }
+    )
+  end
 
   # [M2/ARCH.45] Повертає заблоковані growth_points у available при провалі mint-tx.
   # Ідемпотентний: клампимо до поточного locked_balance (частковий rollback уже міг звільнити

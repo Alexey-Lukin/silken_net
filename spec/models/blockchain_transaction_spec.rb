@@ -448,8 +448,9 @@ RSpec.describe BlockchainTransaction, type: :model do
       end
 
       it "logs the escalation" do
-        expect(Rails.logger).to receive(:warn).with(/ручної перевірки/)
+        allow(Rails.logger).to receive(:warn) # [MRV.1] audit-skip теж warn-ить без oracle-юзера
         tx.escalate_to_review!("test reason")
+        expect(Rails.logger).to have_received(:warn).with(/ручної перевірки/)
       end
     end
   end
@@ -604,6 +605,36 @@ RSpec.describe BlockchainTransaction, type: :model do
         expect(Turbo::StreamsChannel).not_to receive(:broadcast_replace_later_to)
         tx.send(:broadcast_status_change)
       end
+    end
+  end
+
+  # [MRV.1] Кожен money-перехід → tamper-evident AuditLog-ланцюг організації.
+  describe "money audit-trail (MRV.1)" do
+    let(:tx) { create(:blockchain_transaction, status: :pending, tx_hash: nil) }
+
+    context "when the system actor exists" do
+      let!(:oracle) do
+        create(:user, :super_admin, email_address: "oracle.executioner@system.silken.net",
+                                    first_name: "Oracle", last_name: "Executioner")
+      end
+
+      it "records the transition into the organization AuditLog chain" do
+        expect { tx.process! }.to change { AuditLogWorker.jobs.size }.by(1)
+
+        args = AuditLogWorker.jobs.last["args"].first
+        expect(args["action"]).to eq("blockchain_tx_process")
+        expect(args["organization_id"]).to eq(tx.wallet.organization_id)
+        expect(args["auditable_type"]).to eq("BlockchainTransaction")
+        expect(args["metadata"]).to include("from" => "pending", "to" => "processing")
+      end
+    end
+
+    it "skips with a WARN when the system actor is absent (no chain owner)" do
+      allow(Rails.logger).to receive(:warn)
+
+      expect { tx.process! }.not_to change { AuditLogWorker.jobs.size }
+
+      expect(Rails.logger).to have_received(:warn).with(/AuditLog skip/)
     end
   end
 end

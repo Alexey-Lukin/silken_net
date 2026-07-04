@@ -418,4 +418,28 @@ RSpec.describe Wallet, type: :model do
       expect(wallet.reload.hadron_kyc_status).to eq("approved")
     end
   end
+
+  # [MRV.1] Settled/in-flight money-tx = MRV-докази — destroy заборонений.
+  describe "#guard_mrv_evidence!" do
+    let(:wallet) { create(:tree).wallet }
+
+    it "aborts destroy when a confirmed transaction exists" do
+      wallet.blockchain_transactions.create!(
+        amount: 1, token_type: :carbon_coin, status: :confirmed,
+        to_address: "0x" + "b" * 40, tx_hash: "0x" + "c" * 64
+      )
+
+      expect(wallet.destroy).to be false
+      expect(wallet.errors[:base].first).to include('MRV')
+      expect(described_class.exists?(wallet.id)).to be true
+    end
+
+    it "allows destroying a wallet with only pending transactions" do
+      wallet.blockchain_transactions.create!(
+        amount: 1, token_type: :carbon_coin, status: :pending, to_address: "0x" + "b" * 40
+      )
+
+      expect { wallet.destroy! }.to change(described_class, :count).by(-1)
+    end
+  end
 end

@@ -9,6 +9,12 @@ class Wallet < ApplicationRecord
   # blockchain_transactions, щоб уникнути OOM при видаленні гаманця з мільйонами TX.
   has_many :blockchain_transactions, dependent: :delete_all
 
+  # [MRV.1] Settled/in-flight money-tx = докази під виданими кредитами (ISO 14064/Verra) —
+  # хардделіт гаманця стер би trail (delete_all обходить callbacks). Порожній/чисто-pending
+  # гаманець видаляється вільно; off-board з доказами = деактивація, не destroy.
+  # prepend: true — інакше dependent: :delete_all (оголошений вище) стирає tx ДО guard'а.
+  before_destroy :guard_mrv_evidence!, prepend: true
+
   # ⚡ [ВИПРАВЛЕНО: The Join Abyss]: Прямий зв'язок з організацією через денормалізований FK.
   # Замінює глибокий ланцюг wallet → tree → cluster → organization на один SELECT.
   belongs_to :organization, optional: true
@@ -171,6 +177,14 @@ class Wallet < ApplicationRecord
 
     Rails.cache.write(cache_key, true, expires_in: BROADCAST_THROTTLE_SECONDS.seconds)
     true
+  end
+
+  # [MRV.1] Абортить destroy за наявності settled/in-flight money-tx (докази MRV).
+  def guard_mrv_evidence!
+    return unless blockchain_transactions.where(status: [ :confirmed, :sent, :manual_review ]).exists?
+
+    errors.add(:base, "Wallet має settled/in-flight blockchain-транзакції (MRV-докази) — деактивуй, не видаляй")
+    throw :abort
   end
 
   # [KYC.1] Явний одночасний сет статусу (verify-воркер / seeds) має пріоритет.
