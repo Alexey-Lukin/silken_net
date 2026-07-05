@@ -26,8 +26,13 @@
 - Список усіх файлів: розмір(байти)/рядки/тип. Знайди **викиди** (один файл у рази більший — кандидат на внутрішнє тоншання, але див. крок 4).
 - **1:1 index↔files:** кожен `- [..](file.md)` у `MEMORY.md` → існуючий файл; кожен файл (крім `MEMORY.md`) → має рядок в індексі. **Жодного broken-pointer чи orphan.**
   ```bash
-  for fn in $(grep -oE '\]\((\w+)\.md\)' MEMORY.md | tr -d ']()'); do [ -f "$fn" ] || echo "BROKEN: $fn"; done
-  for f in *.md; do [ "$f" = MEMORY.md ] && continue; grep -q "($f)" MEMORY.md || echo "ORPHAN: $f"; done
+  # health-gate — exit 0 = healthy. Run BEFORE (baseline) + AFTER (zero-loss proof).
+  fail=0
+  for fn in $(grep -oE '\]\(\w+\.md\)' MEMORY.md|tr -d ']()'); do [ -f "$fn" ]||{ echo "BROKEN:$fn"; fail=1; }; done
+  for f in *.md; do [ "$f" = MEMORY.md ]&&continue; grep -q "($f)" MEMORY.md||{ echo "ORPHAN:$f"; fail=1; }; done
+  for l in $(grep -rhoE '\[\[[a-z0-9_]+\]\]' *.md|tr -d '[]'|sort -u); do [ -f "$l.md" ]||{ echo "DANGLING:[[$l]]"; fail=1; }; done  # струни резолвяться
+  for f in *.md; do [ "$f" = MEMORY.md ]&&continue; { grep -q '^name:' "$f"&&grep -q 'type:' "$f"; }||{ echo "FORMAT:$f"; fail=1; }; done
+  exit $fail   # 209-vs-0: ненульовий = зламана струна / формат / integrity
   ```
 
 ### 2. Індекс = ТІЛЬКИ гачки
@@ -44,9 +49,8 @@
 - Тест на видалення: *чи спричинить втрата амнезію (зникне потрібний факт/урок/рішення/відкритий пункт)?* ТАК → лишай. НІ → можна прибрати.
 - **Великий історичний файл (campaign-history тощо) — це дім-деталей за дизайном.** Його вага — норма (він поглинає деталь, щоб індекс був тонкий). НЕ потрошити без явної згоди власника; уроки вплетені в механіку — різати ризиковано. Запропонуй конкретну стару секцію на стиснення, не гати весь запис.
 
-### 5. Дублікація (рідкісна, якщо є `[[links]]`)
-- Пам'яті мають **посилатися** одна на одну через `[[name]]`, а не повторювати зміст. Реальний дубль зазвичай = **index-vs-file** (крок 2).
-- Перевір крос-файл: чи campaign/огляд RESTATE-ить спеціалізовану пам'ять verbatim? Якщо лінкує `[[…]]` — це референс, не дубль. Два РІЗНІ факти однієї категорії (напр. дві DFT-поради) — **не дубль**, не зливай заради косметики.
+### 5. Дублікація (рідкісна)
+- Реальний дубль зазвичай = **index-vs-file** (крок 2); memories лінкують `[[name]]`, не повторюють. Два РІЗНІ факти однієї категорії — **не дубль**. Глибше → family 4 (router).
 
 ### 6. Action-items → 00_07 (щоб пережили будь-яке тоншання)
 - Пройди проєктні пам'яті на відкриті **to-do / to-check / follow-up / pending / residual / awaiting**.
@@ -54,12 +58,11 @@
 - **Якщо НЕ в 00_07** — додай туди коректним item'ом (правильна §-секція за канон-домом; `section-home` guard вимагає, щоб meta-ref модуля = секція). Потім **встав у пам'ять рядок `Tracked in 00_07: <ID>`** — щоб видно було, що не загубиться.
 - Зовнішні треди (партнери/нейминг/рішення) теж лічаться як action-items.
 
-### 7. Стейл-гачки + дрібні правки
-- Звір кожен гачок з поточним станом файлу; онови ті, що розійшлися (зроблені задачі, перенумеровані ID).
+### 7. Стейл-гачки
+- Звір гачок з файлом, онови розійдені (перенумеровані ID, зроблені задачі) → mirror-факти гниють, decay-typing family 5.
 
-### 8. Інструментарій і безпека
-- Для **точкової заміни довгого рядка** (Edit не зматчить 7000-символьний old_string) — Ruby `File.readlines`/`lines[i]=…`/`File.write`, з `abort unless lines[i].include?("очікуваний-маркер")`. Зроби `cp BACKUP` перед і `diff` після.
-- Пам'ять лежить у `~/.claude/projects/…/memory/` — **поза git репо**; коміти не потрібні. Тим уважніше — немає `git revert`, лише твій backup.
+### 8. Безпека
+- Механіка правок (span-replace унікальним маркером, `cp`-backup, glue-guard, set-diff) → family 2. **Пам'ять поза git** (`~/.claude/…`) — немає `git revert`, backup = єдина safety-net.
 
 ---
 
@@ -111,7 +114,7 @@
 - **stale-drift = decay-typing (mirror-факти розпадаються, native — ні):** факт або **ДЗЕРКАЛИТЬ** canon/code/`00_07` (verdict/стан/`file:line`/«shipped X» — **HIGH decay**, гниє щойно source рухається @shipping → verify-vs-source ПЕРШ ніж стверджувати; closing-sweep-ціль [[feedback_task_execution_workflow]]) або **NATIVE** (урок / `⊥`-жертва / cross-domain-trap / founder-«чому» — **LOW decay**, memory Є дім, стабільне). reconcile vs canon = ТОЧКОВО на mirrors (не гати всі факти; спіймано e61/slashing-stale, manifest-overclaims); `⊥`-інваріанти = найстабільніший native-клас. system-reminder «N days old» = ГРУБИЙ проксі — тип точніший за час.
 - **Standardize:** `name:` = filename-slug (= форма `[[link]]`); description = тісний one-line hook (тригери, без дат/інцидентів); кожен `[[link]]` резолвиться.
 - **Frontmatter:** `node_type`/`originSessionId` = **HARNESS-managed** (re-stamp миттєвий на БУДЬ-який запис — file-watcher на `memory/*.md`; Bash-обхід більше не працює) → **НЕ стрипати**; format-guard = `name`+`description`+`metadata.type` присутні.
-- **Tensegrity / recall-струни:** inbound-`[[link]]` = **recall-провідник** — вузол з `in=0` «провисає» (знайдеться лише прямим scan, не резонує через мережу). Пас: зміряй граф (`for f; grep -l [[slug]]` → inbound-count) → isolated (`in=0∧out=0`) = випав, напів-звислі (`in=0`) = провисли → напни recall-струну до **значущих** `in=0` (dormant/done лишай). Струна має нести навантаження в прозі (`sibling`/`causal`/`kin`/`⊥`), не бути декором; не вигадуй струну без семантики. [[feedback_task_execution_workflow]]
+- **Tensegrity / recall-струни:** inbound-`[[link]]` = **recall-провідник** — вузол з `in=0` «провисає» (знайдеться лише прямим scan, не резонує через мережу). Пас: зміряй граф (`for f; grep -l [[slug]]` → inbound-count) → isolated (`in=0∧out=0`) = випав, напів-звислі (`in=0`) = провисли → напни recall-струну до **значущих** `in=0` (dormant/done лишай). Струна має нести навантаження в прозі (`sibling`/`causal`/`kin`/`⊥`), не бути декором; не вигадуй струну без семантики. **Generated maps як лінзи** (`⊥`-жертви · hub-колони · провислі · decay-клас) = **native**, завжди свіжі (grep обчислює з source, не гниє) — АЛЕ map-grep САМ жертва false-negative: наївний `⊥[^*]*⟂` проґавив **4 з 8** на `**bold**`/дужках-між → **verify map-патерн READ-ом** (карта бреше авторитетніше за спогад, бо виглядає точною). [[feedback_task_execution_workflow]]
 
 ### 6 · Multi-file пас = fan-out READ-ONLY агенти, ти = gate
 - Розбий файли на батчі по Sonnet `general-purpose` READ-ONLY; кожен повертає per-file **ПРОПОЗИЦІЇ** (tight-desc · date-класифікація noise-vs-load-bearing · Why/How-гепи · stale-flags · dedup-кандидати) з ТОЧНИМИ old→new — вони **НЕ редагують** (агенти галюцинують; ти = gate). [[feedback_subagent_discipline]]
