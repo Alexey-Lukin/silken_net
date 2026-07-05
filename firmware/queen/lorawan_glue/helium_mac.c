@@ -40,7 +40,10 @@ static FlashKv *g_kv; /* NULL до bench-mount — DevNonce ephemeral */
 #if defined(STM32WLE5xx) || defined(USE_HAL_DRIVER)
 #include "stm32wlxx_hal.h"
 uint32_t Soft_Timer_Now_Ms( void ) { return HAL_GetTick( ); }
-#define HELIUM_PUMP_RADIO_HOOK( ) do { } while (0) /* IRQ справжній */
+/* IRQ справжній; __WFI дрімає між подіями — SysTick (1 кГц, живить
+ * HAL_GetTick) будить щомс, тож полінг-таймери НЕ просипають вікна,
+ * а 20-секундний епізод не палить ядро даремно. */
+#define HELIUM_PUMP_RADIO_HOOK( ) __WFI( )
 #else
 /* host-збірка: тік і відкладені radio-події (IRQ-сурогат) дає тест-харнес */
 extern uint32_t Helium_Test_Tick_Ms( void );
@@ -56,8 +59,9 @@ static int16_t GetTemperature( void )  { return 0; }
 static void GetUniqueId( uint8_t *id )
 {
 #if defined(STM32WLE5xx) || defined(USE_HAL_DRIVER)
-    /* DevEUI з 96-bit HW UID (та сама база, що UNPROV-fallback Queen UID). */
-    const uint8_t *uid = (const uint8_t *)0x1FFF7590UL;
+    /* DevEUI з 96-bit HW UID (та сама база, що UNPROV-fallback Queen UID);
+     * UID_BASE — CMSIS-константа кремнію, не магічна адреса. */
+    const uint8_t *uid = (const uint8_t *)UID_BASE;
     for ( int i = 0; i < 8; i++ ) id[i] = uid[i];
 #else
     for ( int i = 0; i < 8; i++ ) id[i] = (uint8_t)( 0xA0u + i );
@@ -182,16 +186,24 @@ int Helium_Mac_SendSos( const uint8_t sos_frame[HELIUM_SOS_WIRE_LEN],
 {
     uint32_t deadline_tick = Soft_Timer_Now_Ms( ) + deadline_ms;
 
-    if ( !g_initialized ) {
-        LoraInfo_Init( );
-        if ( LmHandlerInit( &g_callbacks, 0x01000000u ) != LORAMAC_HANDLER_SUCCESS ) {
-            return 0;
-        }
-        if ( LmHandlerConfigure( &g_params ) != LORAMAC_HANDLER_SUCCESS ) {
-            return 0;
-        }
-        g_initialized = 1u;
+    /* ПОВНИЙ пере-Init ЩОЕПІЗОДУ — не латч. Semtech-драйвер тримає ОДИН
+     * static-вказівник events: LoRaMacInitialization біндить свою таблицю,
+     * а post-episode main.c повертає Queen'ину (Radio_Reinit_RawLoRa —
+     * інакше Королева ГЛУХНЕ до Солдатів назавжди, знахідка code-review
+     * 2-го епізоду). Отже наступний епізод МУСИТЬ ре-біндити MAC заново;
+     * DeInit best-effort (BUSY після deadline-аборту — Init однаково
+     * перезбирає MacCtx; стан епізоду не переживає — ephemeral by design). */
+    if ( g_initialized ) {
+        ( void )LmHandlerDeInit( );
     }
+    LoraInfo_Init( );
+    if ( LmHandlerInit( &g_callbacks, 0x01000000u ) != LORAMAC_HANDLER_SUCCESS ) {
+        return 0;
+    }
+    if ( LmHandlerConfigure( &g_params ) != LORAMAC_HANDLER_SUCCESS ) {
+        return 0;
+    }
+    g_initialized = 1u;
 
     /* fresh join щоепізоду; DevNonce тягнемо З persist ДО join, назад —
      * ПІСЛЯ (LoRaMacCrypto інкрементить його на кожен JoinRequest). */
@@ -199,6 +211,11 @@ int Helium_Mac_SendSos( const uint8_t sos_frame[HELIUM_SOS_WIRE_LEN],
     g_tx_done = 0u;
     devnonce_restore( );
     LmHandlerJoin( ACTIVATION_TYPE_OTAA, true );
+    /* Persist ОДРАЗУ: на повернення Join nonce вже інкрементнутий, а кадр
+     * ще не обов'язково в ефірі — power-cut/IWDG у pump-вікні коштував би
+     * спалений-але-незбережений nonce → LNS-відмова наступного join
+     * (code-review). Спалити nonce, якого LNS не бачив, — нешкідливо. */
+    devnonce_persist( );
     pump_until( &g_joined, deadline_tick );
 
     if ( !g_joined ) {

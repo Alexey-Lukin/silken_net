@@ -1,8 +1,0 @@
-# [ARCH.34] ВІДОМИЙ vendored-UB (НЕ приглушення свого коду):
-# stm32-mw-lorawan@v2.6.2 RegionCommon.c:608
-#   ( 1 << phyDr ) * 1000000  — signed overflow при SF11/SF12 (2048e6/4096e6
-#   > INT32_MAX); після wrap RX-window symbol-timeout = сміття → на SF12
-#   (наш SOS-датарейт DR_0) RX-вікна биті й НА КРЕМНІЇ.
-# Блокер bench-OTAA + шлях фіксу (upstream-звірка/cherry) — 00_07 ARCH.34.
-# Suppression точковий, щоб ASan/UBSan далі гейтили РЕШТУ MAC-ланцюга.
-signed-integer-overflow:RegionCommon.c

@@ -153,8 +153,10 @@ if(CMAKE_CROSSCOMPILING)
     # queen/lorawan_glue/lorawan_conf.h) + owned glue + adapter крос-компілюються
     # проти ARM/WL-HAL. Link-фаза (radio.c + startup) = board-freeze; host-smoke
     # цієї ж збірки — firmware/test helium_mac_smoke (справжній JoinRequest на
-    # стаб-радіо). ⚠️ Відомий vendored-UB RegionCommonComputeSymbolTimeLoRa (SF11/12 symbol-time
-    # overflow) — блокер bench-OTAA, дім 00_07 ARCH.34.
+    # стаб-радіо). Submodule = НАШ форк v2.6.2-silken.1 (SF11/12 symbol-time
+    # UB-фікс RegionCommonComputeSymbolTimeLoRa; upstream-PR — 00_07 ARCH.34).
+    # ДЗЕРКАЛО: цей TU-список = LORAWAN_SRCS у firmware/test/Makefile —
+    # міняєш тут → синкни там (інакше host-smoke ≠ ARM-lane).
     set(LORAWAN_MW ${SILKEN_EXTERN}/stm32-mw-lorawan)
     add_library(lorawan_mac_check OBJECT
       ${LORAWAN_MW}/Mac/LoRaMac.c

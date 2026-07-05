@@ -328,19 +328,14 @@ coverage:
 # кличуть OPENSSL_cleanup) → LSAN-«still reachable» = хибнопозитив, не buffer-баг;
 # критерій цілить overwrites/UAF/UB, які ASan+UBSan покривають (Monocypher heap
 # не алокує). macOS clang без LSAN → прапор no-op локально, дієвий на Linux CI.
-# signed-integer-overflow = recoverable: no-recover трапить ДО runtime-
-# suppression, і відомий vendored-UB (ubsan_vendored.supp) валив би смугу;
-# recoverable + halt_on_error=1 абортить на першому НЕприглушеному репорті —
-# власний overflow досі фейлить гейт, vendored RegionCommon.c:608 — ні.
 ASAN_CFLAGS = -Wall -Wextra -Wpedantic -std=c11 -I. -O1 -g \
-              -fsanitize=address,undefined -fno-sanitize-recover=all \
-              -fsanitize-recover=signed-integer-overflow -fno-omit-frame-pointer
+              -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer
 
 asan:
 	@$(MAKE) clean >/dev/null
 	@echo "[TEST.5] ASan+UBSan re-instrumented build + прогін усієї host-сюїти…"
 	@ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:detect_leaks=0 \
-	 UBSAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_stacktrace=1:suppressions=./ubsan_vendored.supp \
+	 UBSAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_stacktrace=1 \
 	 $(MAKE) all CFLAGS="$(ASAN_CFLAGS)"
 	@echo "✅ TEST.5: уся host-сюїта чиста під AddressSanitizer + UBSanitizer."
 	@$(MAKE) clean >/dev/null   # ASAN shadow/redzone роздуває .bss/.data → прибрати за собою, інакше наступний size-check міряє інструментовані бінарники й рве 50KB-бюджет

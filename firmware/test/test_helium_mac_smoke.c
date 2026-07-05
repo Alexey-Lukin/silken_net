@@ -14,10 +14,13 @@
  */
 
 #include "../queen/helium_sos.h"
+#include "../common/flash_kv.h"
 #include "radio.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+
+void Helium_Mac_Bind_Nvm( FlashKv *kv );
 
 #define ASSERT_EQ(a, b) do { \
     if ((a) != (b)) { \
@@ -152,6 +155,31 @@ void Helium_Test_Pump_Radio( void )
     }
 }
 
+/* ── RAM-KV: DevNonce-персист ганяється справжнім flash_kv-каналом ────── */
+#define KV_PAGE_DWS 32u
+static uint64_t g_kv_mem[2][KV_PAGE_DWS];
+static uint64_t kv_read( void *io, uint32_t byte_off )
+{
+    ( void )io;
+    uint32_t dw = byte_off / 8u;
+    return g_kv_mem[dw / KV_PAGE_DWS][dw % KV_PAGE_DWS];
+}
+static int kv_program( void *io, uint32_t byte_off, uint64_t v )
+{
+    ( void )io;
+    uint32_t dw = byte_off / 8u;
+    g_kv_mem[dw / KV_PAGE_DWS][dw % KV_PAGE_DWS] = v;
+    return 1;
+}
+static int kv_erase( void *io, uint8_t page )
+{
+    ( void )io;
+    memset( g_kv_mem[page], 0xFF, sizeof g_kv_mem[page] );
+    return 1;
+}
+static const FlashKvOps g_kv_ops = { kv_read, kv_program, kv_erase };
+static FlashKv g_kv;
+
 /* ── тести ────────────────────────────────────────────────────────────── */
 static int test_episode_tx_real_join_request(void) {
     uint8_t sos[HELIUM_SOS_WIRE_LEN];
@@ -169,7 +197,9 @@ static int test_episode_tx_real_join_request(void) {
 }
 
 static int test_devnonce_monotonic_between_episodes(void) {
-    /* DevNonce живе у байтах 17..18 JoinRequest (little-endian на дроті). */
+    /* DevNonce живе у байтах 17..18 JoinRequest (little-endian на дроті).
+     * Другий епізод жене ПОВНИЙ цикл DeInit→Init→re-bind (симетрія епізоду —
+     * фікс events-перебіндингу з code-review). */
     uint16_t nonce1 = (uint16_t)( g_last_tx[17] | ( g_last_tx[18] << 8 ) );
 
     uint8_t sos[HELIUM_SOS_WIRE_LEN];
@@ -182,11 +212,40 @@ static int test_devnonce_monotonic_between_episodes(void) {
     return 0;
 }
 
+static int test_devnonce_survives_reboot_via_kv(void) {
+    /* «Ребут»: KV-канал (persist одразу після Join — вікно power-cut
+     * звужене до мс) мусить тримати монотонність через холодний старт. */
+    uint16_t nonce_before = (uint16_t)( g_last_tx[17] | ( g_last_tx[18] << 8 ) );
+    uint32_t stored = 0u;
+    ASSERT_TRUE( FlashKv_Get32( &g_kv, 0x30u, &stored ) ); /* persist стався */
+    ASSERT_TRUE( (uint16_t)stored >= nonce_before );
+
+    /* Свіжий mount тієї самої "флеші" + re-bind = MCU після ребуту. */
+    FlashKv kv2;
+    ASSERT_TRUE( FlashKv_Mount( &kv2, &g_kv_ops, NULL, KV_PAGE_DWS ) );
+    Helium_Mac_Bind_Nvm( &kv2 );
+
+    uint8_t sos[HELIUM_SOS_WIRE_LEN];
+    Helium_Sos_Pack( sos, 0xA1B2C3D4u, 0u, 4u, 44u, 0u );
+    ( void )Helium_Mac_SendSos( sos, 20000u );
+    uint16_t nonce_after = (uint16_t)( g_last_tx[17] | ( g_last_tx[18] << 8 ) );
+
+    ASSERT_TRUE( nonce_after > nonce_before );
+    printf("  test_devnonce_survives_reboot_via_kv                       ✅\n");
+    return 0;
+}
+
 int main(void) {
     int fails = 0;
     printf("test_helium_mac_smoke — [ARCH.34] справжній LoRaMac на стаб-радіо:\n");
+    if ( !FlashKv_Mount( &g_kv, &g_kv_ops, NULL, KV_PAGE_DWS ) ) {
+        fprintf(stderr, "❌ KV mount failed\n");
+        return 1;
+    }
+    Helium_Mac_Bind_Nvm( &g_kv );
     fails += test_episode_tx_real_join_request();
     fails += test_devnonce_monotonic_between_episodes();
+    fails += test_devnonce_survives_reboot_via_kv();
     if (fails) {
         fprintf(stderr, "❌ test_helium_mac_smoke: %d failed\n", fails);
         return 1;

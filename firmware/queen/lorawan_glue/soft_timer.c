@@ -74,13 +74,18 @@ uint32_t Soft_Timer_Elapsed_Since( uint32_t past_ms )
     return (uint32_t)( Soft_Timer_Now_Ms( ) - past_ms ); /* wrap-safe */
 }
 
+/* Стеля спрацювань за ОДИН Dispatch: period-0 self-restart інакше крутив
+ * би цикл вічно повз deadline (0 >= 0 істинне і зі свіжим now) — polling-
+ * цикл викликача повторить Dispatch, прогрес системи не губиться. */
+#define SOFT_TIMER_DISPATCH_CAP 32u
+
 uint32_t Soft_Timer_Dispatch( void )
 {
     uint32_t fired = 0u;
     uint32_t now   = Soft_Timer_Now_Ms( );
     SoftTimer_t *t = g_active_head;
 
-    while ( t != NULL ) {
+    while ( t != NULL && fired < SOFT_TIMER_DISPATCH_CAP ) {
         /* next знімаємо ДО callback'а: він може Stop/Start себе чи сусіда. */
         SoftTimer_t *next = t->next;
         if ( t->IsRunning && (int32_t)( now - t->target_ms ) >= 0 ) {
@@ -89,8 +94,12 @@ uint32_t Soft_Timer_Dispatch( void )
             Soft_Timer_Stop( t );
             if ( t->callback != NULL ) t->callback( t->context );
             fired++;
-            /* список міг перешитись callback'ом — почати спочатку */
-            t = g_active_head;
+            /* Список міг перешитись callback'ом — рестарт з голови.
+             * [transitional] O(n²)-рестарт: n ≈ десяток MAC-таймерів, стеля
+             * свідома. `now` РЕ-СЕМПЛИМО: період-0 + self-restart проти
+             * застиглого `now` крутився б вічно повз deadline (code-review). */
+            now = Soft_Timer_Now_Ms( );
+            t   = g_active_head;
             continue;
         }
         t = next;

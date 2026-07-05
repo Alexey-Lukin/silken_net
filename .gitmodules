@@ -27,4 +27,4 @@
 	url = https://github.com/STMicroelectronics/stm32-mw-subghz-phy
 [submodule "firmware/extern/stm32-mw-lorawan"]
 	path = firmware/extern/stm32-mw-lorawan
-	url = https://github.com/STMicroelectronics/stm32-mw-lorawan
+	url = https://github.com/Alexey-Lukin/stm32-mw-lorawan

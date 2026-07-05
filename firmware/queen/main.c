@@ -730,6 +730,13 @@ static SoldierCmdQueue soldier_cmd_queue;
 static uint32_t g_last_uplink_ok_tick;   // останній ПІДТВЕРДЖЕНИЙ CoAP-flush
 static uint32_t g_last_helium_sos_tick;  // пауза SOS-ретрансміту
 
+// [ARCH.34] File-scope: Semtech-драйвер тримає ОДИН static-вказівник на
+// events-таблицю — LoRaWAN-епізод перебіндює його на MAC'ову, і повернення
+// вух (Radio_Reinit_RawLoRa_868MHz) МУСИТЬ мати цю таблицю під рукою для
+// re-bind. Локальна в main() ховала б її від функції — Королева глухла б
+// до Солдатів після першого ж SOS (знахідка code-review).
+static RadioEvents_t radio_events;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -805,10 +812,10 @@ int main(void)
   Read_Queen_UID_From_Flash();
 
   // 1. Ініціалізація низькорівневого радіо.
-  // [FW.46 Шлях A] Events-таблиця (static — Semtech-драйвер тримає вказівник):
+  // [FW.46 Шлях A] Events-таблиця (file-scope static — Semtech-драйвер тримає
+  // вказівник, а ARCH.34-reinit ре-біндить її після LoRaWAN-детуру):
   // Королева ЖИВЕ з OnRxDone — з NULL реальний драйвер не стрельнув би жодного
   // кадру, і весь RX-конвеєр (CIFO → CoAP) лишився б глухим. Решта полів NULL.
-  static RadioEvents_t radio_events;
   radio_events.RxDone = OnRxDone;
   Radio.Init(&radio_events);
   Radio.SetChannel(868000000); // 868 МГц (Європа / Україна)
@@ -1437,9 +1444,13 @@ static void Restore_ECB_Mode(void)
 // LoRaWAN-детуру (hard-rule post-condition — 02_05 §6.1 п.3). Поки Королева
 // говорила LoRaWAN на 868.1/.3/.5, панічний preamble Солдата на 868.0 був
 // нечутний апаратно — тому повернення вух БЕЗУМОВНЕ і негайне.
+// НЕСУЧЕ: Radio.Init(&radio_events) ПЕРШИМ — LoRaMac-епізод перебіндив
+// єдиний events-вказівник драйвера на свою таблицю; без re-bind RxDone
+// Солдатів летів би у MAC-обробник назавжди (глуха Королева при живому Rx).
 // =========================================================================
 static void Radio_Reinit_RawLoRa_868MHz(void)
 {
+    Radio.Init(&radio_events);
     Radio.SetChannel(868000000);
     Radio.SetModem(MODEM_LORA);
     Radio.Rx(LORA_RX_INFINITE);

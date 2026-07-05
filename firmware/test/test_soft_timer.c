@@ -124,10 +124,34 @@ static int test_systime_normalization(void) {
     SysTime_t f = SysTimeFromMs( 12345u );
     ASSERT_EQ( f.Seconds, 12u );
     ASSERT_EQ( f.SubSeconds, 345 );
-    /* Клемп до епохи: час не тече назад. */
-    SysTime_t neg = SysTimeSub( b, a );
-    ASSERT_EQ( neg.Seconds, 0u );
+    /* Від'ємна різниця = unsigned wrap (Semtech-семантика — duty-cycle
+     * математика RegionCommon живе на wrap-різницях через rollover тіків). */
+    SysTime_t neg = SysTimeSub( b, a ); /* 3.700−10.200 = −6.5 = −7s+500ms */
+    ASSERT_EQ( neg.Seconds, 0xFFFFFFF9u ); /* (uint32_t)-7 */
+    ASSERT_EQ( neg.SubSeconds, 500 );
     printf("  test_systime_normalization                                 ✅\n");
+    return 0;
+}
+
+static SoftTimer_t g_zero_period;
+static void on_fire_zero_forever( void *ctx )
+{
+    ( void )ctx;
+    g_fired++;
+    Soft_Timer_Start( &g_zero_period ); /* period-0 вічний self-restart */
+}
+
+static int test_dispatch_cap_breaks_zero_period_loop(void) {
+    g_tick = 0u; g_fired = 0;
+    Soft_Timer_Init( &g_zero_period, on_fire_zero_forever );
+    Soft_Timer_Set_Value( &g_zero_period, 0u );
+    Soft_Timer_Start( &g_zero_period );
+    /* Без cap це вічний цикл (0 >= 0 і зі свіжим now) — Dispatch мусить
+     * повернутись, віддавши прогрес полінг-циклу викликача. */
+    uint32_t fired = Soft_Timer_Dispatch( );
+    ASSERT_EQ( fired, 32u );
+    Soft_Timer_Stop( &g_zero_period );
+    printf("  test_dispatch_cap_breaks_zero_period_loop                  ✅\n");
     return 0;
 }
 
@@ -148,6 +172,7 @@ int main(void) {
     fails += test_restart_from_callback();
     fails += test_tick_wrap();
     fails += test_reinit_unlinks_stale();
+    fails += test_dispatch_cap_breaks_zero_period_loop();
     fails += test_systime_normalization();
     fails += test_mcu_time_follows_tick();
     if (fails) {

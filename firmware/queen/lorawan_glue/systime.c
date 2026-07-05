@@ -15,7 +15,10 @@ static SysTime_t normalize( int64_t seconds, int32_t sub_ms )
     SysTime_t out;
     while ( sub_ms < 0 )    { sub_ms += 1000; seconds -= 1; }
     while ( sub_ms >= 1000 ) { sub_ms -= 1000; seconds += 1; }
-    if ( seconds < 0 ) seconds = 0; /* час не тече назад: клемп до епохи */
+    /* Від'ємні секунди НЕ клемпимо — Semtech-семантика: Seconds віднімаються
+     * unsigned wrap'ом, і duty-cycle/backoff математика RegionCommon живе
+     * саме на wrap-різницях. Клемп до нуля ламав би облік на rollover
+     * HAL_GetTick (49.7 діб — Королева always-on, досяжно; code-review). */
     out.Seconds    = (uint32_t)seconds;
     out.SubSeconds = (int16_t)sub_ms;
     return out;
