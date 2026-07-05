@@ -21,14 +21,14 @@
 L8  Ethereum L1       Щотижневий SHA-256 state root (фіналізація)
 L7  Polygon + DeFi    SCC/SFC мінтинг, Solana нагороди, Celo ReFi, KlimaDAO ESG
 L6  Верифікація       peaq DID, IoTeX ZK-proofs, Streamr P2P, Filecoin/IPFS
-L5  Rails Backend     Rails 8.1 API, PostgreSQL, Sidekiq (31+ воркерів)
+L5  Rails Backend     Rails 8.1 API, PostgreSQL, Sidekiq (50+ воркерів)
 L4  LoRa Мережа       868 МГц меш, CoAP/UDP, шлюзи Королеви, Starlink/LTE
 L3  Прошивка + AI     STM32WLE5JC, TinyML (CMSIS-NN), mruby Лоренц, AES-128-ECB/CCM
 L2  Апаратна Капсула  BQ25570 MPPT, суперконденсатор 0.47Ф, Pogo Pin
 L1  Біофізика         Ti-6Al-4V гіроїдний анкер, EBFC Gen 2.0 (dgrFAD-GDH анод + Laccase/ZIF-nanozyme катод)
 ```
 
-Кожен вузол («Солдат») — це STM32WLE5JC, вбудований у титановий гіроїдний анкер у стовбурі дерева. Ензимний біопаливний елемент (EBFC) перетворює глюкозу ксилемного соку на >500 мВ. Енергія заряджає суперконденсатор 0.47Ф, який живить мікроконтролер. Солдат класифікує звуки (пилка, кавітація, пожежа) через TinyML, обчислює гомеостаз дерева через Атрактор Лоренца (mruby) та відправляє 21-байтні AES-256 пакети через LoRa mesh (868 МГц) до шлюзу «Королева».
+Кожен вузол («Солдат») — це STM32WLE5JC, вбудований у титановий гіроїдний анкер у стовбурі дерева. Ензимний біопаливний елемент (EBFC) перетворює глюкозу ксилемного соку на >500 мВ. Енергія заряджає суперконденсатор 0.47Ф, який живить мікроконтролер. Солдат класифікує звуки (5-класовий TinyML: тиша / вітер / пилка / фауна / водно-стресовий проксі), обчислює гомеостаз дерева через Атрактор Лоренца (mruby) та відправляє 21-байтні AES-128 пакети через LoRa mesh (868 МГц) до шлюзу «Королева» (CoAP-батч у хмару йде вже під AES-256-CBC).
 
 ---
 
@@ -80,9 +80,9 @@ Slashing: лише за доведену халатність (cause-gate A/B/C;
 
 | Шар | Технологія |
 |-----|------------|
-| **Backend** | Ruby 4.0.5 / Rails 8.1.2 (Omakase) |
-| **База даних** | PostgreSQL (4 БД: primary, cache, queue, cable) |
-| **Черги** | Sidekiq (31 воркер, 9 пріоритетних черг) + Solid Queue |
+| **Backend** | Ruby 4.0.5 / Rails 8.1 (Omakase) |
+| **База даних** | PostgreSQL + PostGIS (3 БД: primary, cache, cable) |
+| **Черги** | Sidekiq (50+ воркерів, 9 пріоритетних strict-priority черг) |
 | **Frontend** | Phlex + Turbo 8 + Stimulus + Tailwind CSS 4 |
 | **API** | REST v1 (82 ендпоінти), Blueprinter serializers, Pagy |
 | **IoT** | CoAP/UDP listener (порт 5683), LoRa mesh 868 МГц |
@@ -207,7 +207,7 @@ npm ci                           # Встановити OZ + forge-std
 forge build --sizes              # Компіляція + розмір контрактів
 forge test -vvv --gas-report     # Тести з газовим звітом
 forge coverage --report summary  # Покриття (аналог SimpleCov)
-forge coverage --report lcov     # lcov.info для CI/Codecov
+forge coverage --report lcov     # lcov.info (CI coverage-артефакт, ≥90% floor)
 ```
 
 Тестові файли: `contracts/test/*.t.sol` (6 контрактів × ~30-50 тестів кожен).
@@ -255,10 +255,10 @@ kamal deploy
 
 ## 🔐 Безпека Прошивки
 
-- **RDP Level 2:** Апаратне блокування зчитування пам'яті STM32
-- **AES-128-ECB (transitional → CCM):** LoRa пакети шифруються per-device ключем (HKDF). CoAP batch: AES-256-CBC.
-- **Shipping Mode:** Магнітний геркон утримує вузол у глибокому сні (2.1 µА) до монтажу
-- **OTA Updates:** Зашифровані пакети прошивки (512 байт/чанк) через `OtaPackagerService`
+- **RDP (Readout Protection):** цільовий **Level 2** — незворотне апаратне блокування пам'яті STM32, фінальний крок перед першою партією в ліс; поточний стан = Level 0 (розробка), трекінг `SEC.2`
+- **AES-128 (transitional ECB → CCM):** LoRa-**телеметрія** шифрується per-device session-ключем (KEYL, HKDF); **control-plane** (downlink OTA/beacon/CMD) — спільним cluster-ключем KEYB. CoAP-магістраль Queen↔Rails — AES-256-CBC.
+- **Zero-Trust ключі:** усі AES-ключі виводяться HKDF з Protected-Flash master-seed і **не покидають Ruby-процес** у відкритому вигляді (in-process LRU, без Redis-serialize)
+- **OTA Updates:** пакети прошивки (512 байт/чанк) чанкуються + CRC16/32 + HMAC-SHA256 у `OtaPackagerService`, шифруються AES-256-CBC у `OtaTransmissionWorker`
 
 ---
 
@@ -353,9 +353,9 @@ kamal deploy
 | Прошивка Солдата (C + mruby + TinyML) | 6 | Host-based тести проходять |
 | Прошивка Королеви (C + SIM7070G) | 6 | Host-based тести проходять |
 | Апаратна капсула (BOM, MPPT) | 6 | Архітектура заморожена |
-| Ti-6Al-4V гіроїдний анкер | 3 | In-silico: nTop + Lamé press-fit validated (safety 9.9×); фізична DMLS-партія = TRL 4 |
+| Ti-6Al-4V гіроїдний анкер | 3 | In-silico: PicoGK Code-as-CAD генерація + Lamé press-fit (safety 9.9×; nTop = опційний reference); фізична DMLS-партія = TRL 4 |
 | EBFC Gen 2.0 (dgrFAD-GDH + Laccase/ZIF) | 3 | **Zero-Lab L1-L4 PASSED** (in-silico = TRL 3; physical TRL 4 = in-vitro Ti-coin; see `docs/protocols/ebfc/in_silico/SUMMARY.md`) |
-| Академічна мережа (ЧНУ/ФОТІУС/ЧДТУ/ЧІПБ/ЧМА/СЄУ) | 3 | 6 університетів, 35+ публікацій Q1 pipeline |
+| Академічна мережа (ЧНУ+ФОТІУС/ЧДТУ/ЧІПБ/ЧМА/СЄУ) | 3 | 5 університетів під MOIC, 35 статей Q1-pipeline |
 | Розгортання GCP + Kamal | 4 | Код існує, деплой не проводився |
 
 ---

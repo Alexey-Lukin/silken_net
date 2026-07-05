@@ -1698,7 +1698,7 @@ The mobile labels come from `data-label`, which itself is i18n'd through the sta
 - **CSP:** дотримуємося існуючої політики (`csp_meta_tag`); inline-стилі заборонені.
 - **HSTS / X-Frame-Options:** Rails defaults.
 - **Dependency scanning:** GitHub Dependabot + `bundle audit` + `gh-advisory-database` на кожен PR (DoD § 18.9).
-- **Secret scanning:** GitHub native + Gitleaks (вже у CI).
+- **Secret scanning:** GitHub native secret-scanning + push-protection (у CI).
 
 ### 18.4 Performance — Google Web Vitals + Core Performance budgets
 

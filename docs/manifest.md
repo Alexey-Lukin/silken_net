@@ -70,13 +70,15 @@ On-device, an **mruby Bio-Contract** integrates a Lorenz attractor for 250 Euler
 - **ρ** by the TinyML acoustic event score,
 - **β** is FIXED at `8/3` ([E.63] — β no longer carries metabolism: it does not move the Lorenz z-fixed-point `z_eq=ρ−1`, so the old `delta_t`/`vcap`→β coupling proved economically null/inverted). EBFC metabolic vigor (`delta_t_s` recharge time) now drives `growth_points` **directly** via a monotonic `metabolic_health(delta_t)` (03_04 §4.3), decoupled from the chaotic attractor.
 
-The Z-coordinate of the final point classifies the tree into one of three homeostatic regimes:
+The Z-coordinate of the final point gates the tree into one of three homeostatic regimes — a *status* classifier, not a reward function:
 
-| Z range | Status | growth_points |
-|---|---|---|
-| Z < 2 | stress | 1 |
-| 2 ≤ Z ≤ 45 | homeostasis | `clamp(50 − |Z − 29|, 10, 62)` |
-| Z > 45 | anomaly | 0 |
+| Z range | Homeostatic status |
+|---|---|
+| Z < 2 | stress (turgor collapse) |
+| 2 ≤ Z ≤ ρ-relative ceiling (≈ 45 at ρ = 28) | homeostasis |
+| Z > ceiling | anomaly |
+
+Token magnitude is deliberately **decoupled** from this chaotic classifier. In homeostasis, `growth_points` scale with a monotonic function of EBFC metabolic vigor — the `delta_t` supercapacitor recharge time, a direct physical proxy for xylem metabolism — not with Z; stress caps emission at the floor, anomaly zeroes it. The attractor decides *whether* a tree is healthy; its metabolism decides *how much* it earns. (An earlier design keyed emission magnitude to Z directly; empirical testing on the real bio-contract showed that path economically degenerate and temperature-confounded — so the attractor was narrowed to the one role it does load-bearingly well: Dual Computation Integrity, below. The anomaly ceiling is likewise ρ-relative, so a warm day no longer trips a false anomaly.)
 
 The choice of a deterministic chaotic system is not aesthetic. It is the **smallest mathematical object whose output is highly sensitive to physiological inputs yet computationally tractable on a sub-mW microcontroller**, and whose trajectory between cycles can be **continued losslessly** through STOP2 sleep via three RTC backup registers. Server-side, the same `SilkenNet::Attractor` mirror computes Z in IEEE-754 float — bit-identical to firmware across 50,000 random parity tests. Initial state on cold start is derived from a per-device `K_seed` via HKDF + HMAC-SHA256, eliminating the "identifier-as-key" antipattern; warm continuation reads `(x, y, z)` from the previous packet's persisted tail.
 
@@ -107,7 +109,7 @@ L6: Finality      Polygon + L1 — to LEGALLY FIX    (SCC mint, weekly SHA-256 a
 
 Concretely:
 
-- **Hardware authentication:** every LoRa frame is encrypted and authenticated on the STM32's CRYP module with **AES-128-CCM** — the same AEAD construction standardized by IEEE 802.15.4, Zigbee, Thread, and BLE for low-power constrained-radio links. CCM delivers confidentiality, integrity, and replay resistance in a single hardware-accelerated primitive, at bandwidth and energy costs appropriate to a sub-milliwatt budget and a sub-30-byte LoRa frame. Per-device keys are derived via HKDF from a Protected-Flash master seed and never leave the Ruby process boundary in plaintext.
+- **Hardware authentication:** every LoRa frame is encrypted on the STM32's CRYP module with hardware **AES-128**. The shipping build is transitional ECB; the migration target is **AES-128-CCM** — the same AEAD construction standardized by IEEE 802.15.4, Zigbee, Thread, and BLE for low-power constrained-radio links, delivering confidentiality, integrity, and replay resistance in a single hardware-accelerated primitive at costs appropriate to a sub-milliwatt budget and a sub-30-byte LoRa frame. The CCM two-key path is fully integrated behind a bench-attestation gate (§5 names it among the firmware's honest open blockers). Per-device keys are derived via HKDF from a Protected-Flash master seed and never leave the Ruby process boundary in plaintext.
 - **Machine identity:** at provisioning, every Soldier is registered on **peaq** as a Substrate-native DID (`did:peaq:0x{40 hex}`), Ed25519-signed by the deployment operator. The DID is the canonical machine passport across all twelve networks.
 - **Zero-knowledge verification:** each batch of telemetry is verified by an **IoTeX W3bstream** ZK circuit, which proves the batch passed unaltered through the registered pipeline and binds it to the machine's on-chain DID — *without* revealing the raw sensor stream. (Cryptographic proof of *physical origin* — that this exact silicon signed its own data — is the true-DePIN North-Star we are climbing toward; today that origin is custodially attested, with metrological ground-truth complementing it.) The proof reference is anchored back into the telemetry log as `zk_proof_ref`.
 - **Oracle consensus:** the verified result is then dispatched to a **Chainlink DON** for cross-validation against external climate oracles (dClimate, NASA FIRMS) before being relayed to the minting contract. Replay protection uses an HMAC-SHA256 nonce with a Redis TTL of 10 minutes; timing-safe comparison is enforced.
