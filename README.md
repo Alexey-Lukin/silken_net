@@ -3,6 +3,19 @@
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13358/badge)](https://www.bestpractices.dev/projects/13358)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/Alexey-Lukin/silken_net/badge)](https://securityscorecards.dev/viewer/?uri=github.com/Alexey-Lukin/silken_net)
 
+<!-- hero: один представник кожного макро-шару, знизу-вгору (дерево→блокчейн) -->
+<p align="center">
+  <a href="docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md"><img alt="EBFC >500mV (L1 біофізика)" src="https://img.shields.io/badge/EBFC%20%3E500mV-2E7D32?style=flat-square"></a>
+  <a href="docs/02_03_BQ25570_MPPT_Nano_Power.md"><img alt="BQ25570 MPPT (L2 живлення)" src="https://img.shields.io/badge/BQ25570-CC0000?style=flat-square"></a>
+  <a href="https://www.st.com/en/microcontrollers-microprocessors/stm32wle5jc.html"><img alt="STM32WLE5JC (L3 firmware)" src="https://img.shields.io/badge/STM32WLE5-03234B?style=flat-square&logo=stmicroelectronics&logoColor=white"></a>
+  <a href="https://lora-alliance.org/"><img alt="LoRa 868 (L4 мережа)" src="https://img.shields.io/badge/LoRa%20868-5BC236?style=flat-square"></a>
+  <a href="https://rubyonrails.org/"><img alt="Rails 8.1 (L5 backend)" src="https://img.shields.io/badge/Rails%208.1-D30001?style=flat-square&logo=rubyonrails&logoColor=white"></a>
+  <a href="https://www.peaq.xyz/"><img alt="peaq DID (L6 ідентичність)" src="https://img.shields.io/badge/peaq%20DID-FF00A8?style=flat-square"></a>
+  <a href="https://polygon.technology/"><img alt="Polygon (L7 mint)" src="https://img.shields.io/badge/Polygon-7B3FE4?style=flat-square&logo=polygon&logoColor=white"></a>
+  <a href="https://solana.com/"><img alt="Solana (L7 micro-rewards)" src="https://img.shields.io/badge/Solana-9945FF?style=flat-square&logo=solana&logoColor=white"></a>
+  <a href="https://ethereum.org/"><img alt="Ethereum L1 (L8 фіналізація)" src="https://img.shields.io/badge/Ethereum%20L1-3C3C3D?style=flat-square&logo=ethereum&logoColor=white"></a>
+</p>
+
 **Silken Net** — перша у світі trustless D-MRV (Digital Measurement, Reporting, and Verification) платформа для моніторингу здоров'я лісів у планетарному масштабі. Кожне дерево отримує машинний паспорт (peaq DID), стає економічним агентом і заробляє вуглецеві токени (SCC) за підтверджений ріст біомаси.
 
 > *"Ми не просто спостерігаємо за лісом. Ми даємо йому цифрову волю."*
@@ -76,21 +89,21 @@ Slashing: лише за доведену халатність (cause-gate A/B/C;
 
 ---
 
-## 🛠️ Технологічний Стек
+## 🧬 Технологічний Стек — вертикальний зріз стовбура
 
-| Шар | Технологія |
-|-----|------------|
-| **Backend** | Ruby 4.0.5 / Rails 8.1 (Omakase) |
-| **База даних** | PostgreSQL + PostGIS (3 БД: primary, cache, cable) |
-| **Черги** | Sidekiq (50+ воркерів, 9 пріоритетних strict-priority черг) |
-| **Frontend** | Phlex + Turbo 8 + Stimulus + Tailwind CSS 4 |
-| **API** | REST v1 (82 ендпоінти), Blueprinter serializers, Pagy |
-| **IoT** | CoAP/UDP listener (порт 5683), LoRa mesh 868 МГц |
-| **Прошивка** | C (STM32 HAL) + mruby VM + TinyML (CMSIS-NN) |
-| **Смарт-контракти** | Solidity (Foundry), Polygon Amoy/Mainnet |
-| **Розгортання** | Kamal (Docker), Terraform (GCP), Akash Network |
-| **Безпека** | AES-256, argon2id, Pundit, rack-attack, Brakeman |
-| **Моніторинг** | Prometheus, Sentry, Grafana |
+_Знизу вгору, як сік у ксилемі: від кореня в живому дереві (**L1**) до фіналізації в Ethereum (**L8**) — той самий потік даних дерево→блокчейн, що й [8-рівнева конституція](#🏛️-архітектура-8-рівнів-silkennet) вище. `TRL`-мітка кожного рівня каже правду про зрілість заліза, а не лише «ми юзаємо X»._
+
+| Рівень / Layer | Стек / Stack |
+|:---|:---|
+| **L1 · КОРІНЬ**<br><sub>Біофізика · `TRL 3`</sub> | ![Ti-6Al-4V](https://img.shields.io/badge/Ti--6Al--4V-8A8D8F?style=flat-square) ![Gyroid TPMS](https://img.shields.io/badge/Gyroid%20TPMS-556B2F?style=flat-square) ![EBFC >500mV](https://img.shields.io/badge/EBFC%20%3E500mV-2E7D32?style=flat-square) ![PicoGK](https://img.shields.io/badge/PicoGK-6E4B9E?style=flat-square) ![.NET 9](https://img.shields.io/badge/.NET%209-512BD4?style=flat-square&logo=dotnet&logoColor=white) ![AlphaFold 3](https://img.shields.io/badge/AlphaFold%203-2E6FF2?style=flat-square) ![OpenMM](https://img.shields.io/badge/OpenMM-3B7DD8?style=flat-square) ![PySCF](https://img.shields.io/badge/PySCF-1E5C97?style=flat-square) |
+| **L2 · КАПСУЛА**<br><sub>Апаратура · `TRL 6`</sub> | ![BQ25570](https://img.shields.io/badge/BQ25570-CC0000?style=flat-square) ![Supercap 0.47F](https://img.shields.io/badge/Supercap%200.47F-5A6B7B?style=flat-square) ![SIM7070G](https://img.shields.io/badge/SIM7070G-1E88E5?style=flat-square) ![W25Q32](https://img.shields.io/badge/W25Q32-004B87?style=flat-square) ![SE051](https://img.shields.io/badge/SE051-0A6EBD?style=flat-square) |
+| **L3 · МОЗОК**<br><sub>Прошивка + Edge-AI · `TRL 6`</sub> | ![STM32WLE5](https://img.shields.io/badge/STM32WLE5-03234B?style=flat-square&logo=stmicroelectronics&logoColor=white) ![SX1262](https://img.shields.io/badge/SX1262-00A3E0?style=flat-square) ![C](https://img.shields.io/badge/C-A8B9CC?style=flat-square&logo=c&logoColor=white) ![mruby](https://img.shields.io/badge/mruby-4A4A4A?style=flat-square) ![Arm CMSIS](https://img.shields.io/badge/Arm%20CMSIS-0091BD?style=flat-square&logo=arm&logoColor=white) ![TensorFlow](https://img.shields.io/badge/TensorFlow-FF6F00?style=flat-square&logo=tensorflow&logoColor=white) ![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white) |
+| **L4 · ЖИЛИ**<br><sub>Мережа</sub> | ![LoRa 868](https://img.shields.io/badge/LoRa%20868-5BC236?style=flat-square) ![LoRaWAN 1.0.4](https://img.shields.io/badge/LoRaWAN%201.0.4-00295B?style=flat-square) ![CoAP](https://img.shields.io/badge/CoAP-2CA5E0?style=flat-square) ![Helium](https://img.shields.io/badge/Helium-0ACF83?style=flat-square&logo=helium&logoColor=white) |
+| **L5 · СЕРЦЕВИНА**<br><sub>Backend · `TRL 8`</sub> | ![Ruby](https://img.shields.io/badge/Ruby-CC342D?style=flat-square&logo=ruby&logoColor=white) ![Rails](https://img.shields.io/badge/Rails-D30001?style=flat-square&logo=rubyonrails&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white) ![PostGIS](https://img.shields.io/badge/PostGIS-336791?style=flat-square) ![Sidekiq](https://img.shields.io/badge/Sidekiq-B1003E?style=flat-square&logo=sidekiq&logoColor=white) ![Puma](https://img.shields.io/badge/Puma-343A40?style=flat-square) ![Redis](https://img.shields.io/badge/Redis-FF4438?style=flat-square&logo=redis&logoColor=white) ![Kredis](https://img.shields.io/badge/Kredis-D92D2D?style=flat-square) ![Phlex](https://img.shields.io/badge/Phlex-F0453A?style=flat-square) ![Turbo](https://img.shields.io/badge/Turbo-5CD8E5?style=flat-square&logo=turbo&logoColor=white) ![Stimulus](https://img.shields.io/badge/Stimulus-77E8B9?style=flat-square&logo=stimulus&logoColor=white) ![Tailwind CSS](https://img.shields.io/badge/Tailwind-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white) |
+| ⛓ **L6 · КАМБІЙ**<br><sub>Верифікація</sub> | ![peaq](https://img.shields.io/badge/peaq-FF00A8?style=flat-square) ![IoTeX](https://img.shields.io/badge/IoTeX-00C1D4?style=flat-square) ![Streamr](https://img.shields.io/badge/Streamr-FF5C00?style=flat-square) ![Filecoin](https://img.shields.io/badge/Filecoin-0090FF?style=flat-square) ![IPFS](https://img.shields.io/badge/IPFS-65C2CB?style=flat-square&logo=ipfs&logoColor=white) ![The Graph](https://img.shields.io/badge/The%20Graph-6F4CFF?style=flat-square) |
+| ⛓ **L7 · КРОНА**<br><sub>Фінанси</sub> | ![Polygon](https://img.shields.io/badge/Polygon-7B3FE4?style=flat-square&logo=polygon&logoColor=white) ![Solana](https://img.shields.io/badge/Solana-9945FF?style=flat-square&logo=solana&logoColor=white) ![Celo](https://img.shields.io/badge/Celo-FCFF52?style=flat-square) ![Chainlink](https://img.shields.io/badge/Chainlink-375BD2?style=flat-square&logo=chainlink&logoColor=white) ![KlimaDAO](https://img.shields.io/badge/KlimaDAO-0AA152?style=flat-square) ![Hadron](https://img.shields.io/badge/Polygon%20Hadron-7B3FE4?style=flat-square) ![Uniswap V3](https://img.shields.io/badge/Uniswap%20V3-FF007A?style=flat-square) ![Gnosis Safe](https://img.shields.io/badge/Gnosis%20Safe-12FF80?style=flat-square) |
+| ⛓ **L8 · ВЕРШИНА**<br><sub>Фіналізація</sub> | ![Ethereum L1](https://img.shields.io/badge/Ethereum%20L1-3C3C3D?style=flat-square&logo=ethereum&logoColor=white) ![Solidity](https://img.shields.io/badge/Solidity-363636?style=flat-square&logo=solidity&logoColor=white) ![Foundry](https://img.shields.io/badge/Foundry-FF8C00?style=flat-square) ![OpenZeppelin](https://img.shields.io/badge/OpenZeppelin-4E5EE4?style=flat-square&logo=openzeppelin&logoColor=white) |
+| 🌍 **ҐРУНТ**<br><sub>DevOps · CI · Observability</sub> | ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) ![Kamal](https://img.shields.io/badge/Kamal-0E4B6E?style=flat-square) ![Terraform](https://img.shields.io/badge/Terraform-844FBA?style=flat-square&logo=terraform&logoColor=white) ![Google Cloud](https://img.shields.io/badge/Google%20Cloud-4285F4?style=flat-square&logo=googlecloud&logoColor=white) ![Akash](https://img.shields.io/badge/Akash-FF414D?style=flat-square) ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white) ![Sigstore](https://img.shields.io/badge/Sigstore%2FSLSA-003399?style=flat-square) ![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=flat-square&logo=prometheus&logoColor=white) ![Grafana](https://img.shields.io/badge/Grafana-F46800?style=flat-square&logo=grafana&logoColor=white) ![Sentry](https://img.shields.io/badge/Sentry-362D59?style=flat-square&logo=sentry&logoColor=white) ![RSpec](https://img.shields.io/badge/RSpec-E12C3E?style=flat-square) ![RuboCop](https://img.shields.io/badge/RuboCop-000000?style=flat-square&logo=rubocop&logoColor=white) ![Brakeman](https://img.shields.io/badge/Brakeman-FF6600?style=flat-square) ![Slither](https://img.shields.io/badge/Slither-3B3B3B?style=flat-square) ![Halmos](https://img.shields.io/badge/Halmos-5A4FCF?style=flat-square) |
 
 ---
 
