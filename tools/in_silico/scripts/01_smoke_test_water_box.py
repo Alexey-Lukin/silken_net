@@ -10,7 +10,7 @@ Verify that the MD engine (OpenMM + AMBER ff14SB) can:
      parameters yet — ligand parameterization (GAFF / OpenFF) is a separate L2
      milestone, see docs/01_03 §3.4 and scripts 02-05 for ligand parameterization.
   3. Protonate the protein at pH 4.5 (xylem-like).
-  4. Wrap it in a TIP3P water box with NaCl at xylem-relevant ionic strength.
+  4. Wrap it in a TIP3P-FB water box with NaCl at xylem-relevant ionic strength.
   5. Energy-minimise and run 1000 MD steps (≈ 2 ps at 2 fs timestep).
 
 Success criterion
@@ -40,7 +40,7 @@ from openmm.unit import femtosecond, kelvin, kilojoule_per_mole, molar, nanomete
 from pdbfixer import PDBFixer
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import AF3_PDB, IONIC_STRENGTH, PH, REPO_ROOT, TIMESTEP_FS
+from lib.constants import AF3_PDB, IONIC_STRENGTH, PH, REPO_ROOT, TIMESTEP_FS, WATER_MODEL_XML
 from lib.utils import banner, pick_platform
 
 INPUT_PDB = AF3_PDB
@@ -83,7 +83,7 @@ def main() -> int:
     # ---------- 2. Solvate ----------
     banner("Building water box")
     modeller = Modeller(fixer.topology, fixer.positions)
-    forcefield = ForceField("amber14-all.xml", "amber14/tip3pfb.xml")
+    forcefield = ForceField("amber14-all.xml", WATER_MODEL_XML)
     modeller.addSolvent(
         forcefield,
         padding=WATER_PADDING * nanometer,

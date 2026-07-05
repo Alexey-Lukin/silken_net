@@ -87,6 +87,8 @@ from lib.constants import (
     REPO_ROOT,
     RUNS_DIR,
     TIMESTEP_FS,
+    WATER_MODEL_LABEL,
+    WATER_MODEL_XML,
 )
 from lib.geometry import positions_to_nm_array
 from lib.utils import banner, pick_platform, ps_to_steps
@@ -185,8 +187,8 @@ def main() -> int:
     print(f"  Glucose atom indices start: {glucose_start_indices}")
 
     # ── 4. Force field ──
-    banner("Building ForceField (AMBER TIP3P + GAFF for SBMA/glucose)")
-    forcefield = ForceField("amber14/tip3pfb.xml")
+    banner(f"Building ForceField (AMBER {WATER_MODEL_LABEL} + GAFF for SBMA/glucose)")
+    forcefield = ForceField(WATER_MODEL_XML)
     gaff = GAFFTemplateGenerator(
         molecules=[sbma, glucose],
         forcefield=GAFF_VERSION,

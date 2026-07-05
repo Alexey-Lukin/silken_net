@@ -3,7 +3,7 @@ Xylem sap composition profiles for different tree species.
 
 Based on literature and 08_01 §Xylem-Sim protocol. Each profile defines
 the ionic composition for OpenMM solvation to simulate realistic
-xylem-like environments instead of generic TIP3P + NaCl.
+xylem-like environments instead of generic TIP3P-FB + NaCl.
 
 Usage:
     from lib.xylem_sap import SAP_PROFILES, get_sap_profile
@@ -120,7 +120,7 @@ SAP_PROFILES = {
         "Mg_mM": 0.0,
         "Cl_mM": 50.0,
         "resin_acids": False,
-        "notes": "TIP3P + NaCl 0.05M at pH 4.5. Used in all L2 runs to date.",
+        "notes": "TIP3P-FB + NaCl 0.05M at pH 4.5. Used in all L2 runs to date.",
     },
 }
 

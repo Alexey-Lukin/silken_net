@@ -84,6 +84,7 @@ from lib.constants import (
     REPO_ROOT,
     RUNS_DIR,
     TIMESTEP_FS,
+    WATER_MODEL_XML,
     WATER_PADDING_NM,
 )
 from lib.geometry import place_on_sphere, positions_to_nm_array, restraint_protein_heavy_atoms
@@ -147,7 +148,7 @@ def run_single_temperature(temp_k: int, platform: Platform) -> dict:
     place_on_sphere(modeller, cellobiose, N_CELLOBIOSE, protein_center, shell_radius + 0.3, rng, N_GENIPIN + N_CHITOSAN)
 
     # Force field
-    forcefield = ForceField("amber14-all.xml", "amber14/tip3pfb.xml")
+    forcefield = ForceField("amber14-all.xml", WATER_MODEL_XML)
     gaff = GAFFTemplateGenerator(
         molecules=[fad, genipin, chitosan, cellobiose],
         forcefield=GAFF_VERSION, cache=str(CACHE_FILE),

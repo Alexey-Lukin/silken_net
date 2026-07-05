@@ -301,7 +301,7 @@ O₂ + 4H⁺ + 4e⁻ → 2H₂O   (повне 4-електронне відно�
 
 | Метрика L2 baseline | Результат |
 |---|---|
-| Стек | AMBER ff14SB (протеїн) + TIP3P/NaCl 0.05 M + GAFF-2.11 (FAD з AF3 pose, 10 × genipin) |
+| Стек | AMBER ff14SB (протеїн) + TIP3P-FB/NaCl 0.05 M + GAFF-2.11 (FAD з AF3 pose, 10 × genipin) |
 | Розмір системи | 477 413 атомів (1.0 nm padding box) |
 | Pipeline | min → NVT 50 ps (100→298 K, restrained heavy atoms) → NPT 100 ps → production 100 ps |
 | Speed (Apple M-GPU, OpenCL) | 10.37 ns/day |
@@ -316,7 +316,7 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 
 | Метрика L2-extended | Результат |
 |---|---|
-| Стек | AMBER ff14SB + TIP3P/NaCl 0.05 M + GAFF-2.11 (FAD + 10×genipin + 5×chitosan trimer + 8×cellobiose) |
+| Стек | AMBER ff14SB + TIP3P-FB/NaCl 0.05 M + GAFF-2.11 (FAD + 10×genipin + 5×chitosan trimer + 8×cellobiose) |
 | Розмір системи | 467 417 атомів |
 | Matrix atoms | 975 (10×GEN 270 + 5×CSO 345 + 8×CLB 360) |
 | Speed (Apple M-GPU, OpenCL) | 10.83 ns/day |

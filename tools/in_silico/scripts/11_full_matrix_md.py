@@ -79,6 +79,8 @@ from lib.constants import (
     REPO_ROOT,
     RUNS_DIR,
     TIMESTEP_FS,
+    WATER_MODEL_LABEL,
+    WATER_MODEL_XML,
     WATER_PADDING_NM,
 )
 from lib.geometry import place_on_sphere, positions_to_nm_array, restraint_protein_heavy_atoms
@@ -169,8 +171,8 @@ def main() -> int:
     print(f"  +{N_CELLOBIOSE}×CLB: {N_CELLOBIOSE * cellobiose.n_atoms} atoms")
 
     # ── 5. Force field ──
-    banner("Building ForceField (AMBER ff14SB + TIP3P + GAFF for all ligands)")
-    forcefield = ForceField("amber14-all.xml", "amber14/tip3pfb.xml")
+    banner(f"Building ForceField (AMBER ff14SB + {WATER_MODEL_LABEL} + GAFF for all ligands)")
+    forcefield = ForceField("amber14-all.xml", WATER_MODEL_XML)
     gaff = GAFFTemplateGenerator(
         molecules=[fad, genipin, chitosan, cellobiose],
         forcefield=GAFF_VERSION,
@@ -179,7 +181,7 @@ def main() -> int:
     forcefield.registerTemplateGenerator(gaff.generator)
 
     # ── 6. Solvate ──
-    banner("Solvating (TIP3P + 0.05 M NaCl)")
+    banner(f"Solvating ({WATER_MODEL_LABEL} + 0.05 M NaCl)")
     modeller.addSolvent(
         forcefield,
         padding=WATER_PADDING_NM * nanometer,

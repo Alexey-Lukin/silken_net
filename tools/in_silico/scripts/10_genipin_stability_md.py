@@ -23,7 +23,7 @@ What this script assembles
              cached parameters from script 02).
 - Genipin  : N_GENIPIN copies of `genipin.sdf`, scattered around the protein
              surface (GAFF via cached parameters from script 03).
-- Solvent  : TIP3P water box, NaCl at 0.05 M.
+- Solvent  : TIP3P-FB water box, NaCl at 0.05 M.
 
 Stages
 ------
@@ -100,6 +100,8 @@ from lib.constants import (
     REPO_ROOT,
     RUNS_DIR,
     TIMESTEP_FS,
+    WATER_MODEL_LABEL,
+    WATER_MODEL_XML,
     WATER_PADDING_NM,
 )
 from lib.geometry import positions_to_nm_array, restraint_protein_heavy_atoms
@@ -181,8 +183,8 @@ def main() -> int:
     print(f"  +{N_GENIPIN} × GEN: {N_GENIPIN * genipin_template.n_atoms} atoms")
 
     # ---------- 4. Force field with GAFF cache for ligands ----------
-    banner("Building ForceField (AMBER ff14SB + TIP3P + GAFF for FAD/GEN)")
-    forcefield = ForceField("amber14-all.xml", "amber14/tip3pfb.xml")
+    banner(f"Building ForceField (AMBER ff14SB + {WATER_MODEL_LABEL} + GAFF for FAD/GEN)")
+    forcefield = ForceField("amber14-all.xml", WATER_MODEL_XML)
     # GAFFTemplateGenerator matches by graph structure → one Molecule per
     # unique chemical species is enough, even if N copies sit in the topology.
     gaff = GAFFTemplateGenerator(
@@ -193,7 +195,7 @@ def main() -> int:
     forcefield.registerTemplateGenerator(gaff.generator)
 
     # ---------- 5. Solvate ----------
-    banner("Solvating (TIP3P + 0.05 M NaCl)")
+    banner(f"Solvating ({WATER_MODEL_LABEL} + 0.05 M NaCl)")
     modeller.addSolvent(
         forcefield,
         padding=WATER_PADDING_NM * nanometer,

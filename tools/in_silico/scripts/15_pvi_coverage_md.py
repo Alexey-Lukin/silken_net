@@ -63,6 +63,7 @@ from lib.constants import (
     REPO_ROOT,
     RUNS_DIR,
     TIMESTEP_FS,
+    WATER_MODEL_XML,
     WATER_PADDING_NM,
 )
 from lib.geometry import positions_to_nm_array, restraint_protein_heavy_atoms
@@ -153,7 +154,7 @@ def main() -> int:
 
     # Force field
     banner("Building ForceField")
-    forcefield = ForceField("amber14-all.xml", "amber14/tip3pfb.xml")
+    forcefield = ForceField("amber14-all.xml", WATER_MODEL_XML)
     gaff = GAFFTemplateGenerator(
         molecules=[fad, genipin, pvi],
         forcefield=GAFF_VERSION,

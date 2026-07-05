@@ -4,7 +4,7 @@ L2 — xylem sap composition sweep: test enzyme stability across tree species.
 
 Purpose
 -------
-The current L2 MD uses simplified xylem sap (TIP3P + NaCl 0.05M, pH 4.5).
+The current L2 MD uses simplified xylem sap (TIP3P-FB + NaCl 0.05M, pH 4.5).
 Real xylem sap varies significantly between tree species:
   - Pinus sylvestris (pine): pH 5.0, IS 0.015M, low glucose
   - Picea abies (spruce): pH 4.2, IS 0.012M — most acidic
@@ -80,6 +80,7 @@ from lib.constants import (
     REPO_ROOT,
     RUNS_DIR,
     TIMESTEP_FS,
+    WATER_MODEL_XML,
     WATER_PADDING_NM,
 )
 from lib.geometry import place_on_sphere, positions_to_nm_array, restraint_protein_heavy_atoms
@@ -158,7 +159,7 @@ def run_single_sap(species: str, platform) -> dict:
     place_on_sphere(modeller, cellobiose, N_CELLOBIOSE, protein_center, shell_radius + 0.3, rng, N_GENIPIN + N_CHITOSAN)
 
     # Force field with species-specific ionic strength
-    forcefield = ForceField("amber14-all.xml", "amber14/tip3pfb.xml")
+    forcefield = ForceField("amber14-all.xml", WATER_MODEL_XML)
     gaff = GAFFTemplateGenerator(
         molecules=[fad, genipin, chitosan, cellobiose],
         forcefield=GAFF_VERSION, cache=str(CACHE_FILE),

@@ -60,6 +60,7 @@ from lib.constants import (
     REPO_ROOT,
     RUNS_DIR,
     TIMESTEP_FS,
+    WATER_MODEL_XML,
 )
 from lib.geometry import positions_to_nm_array
 from lib.utils import banner, pick_platform, ps_to_steps
@@ -97,7 +98,7 @@ def main() -> int:
 
     # Build small matrix box (no protein — just matrix)
     banner("Building matrix-only box")
-    forcefield = ForceField("amber14/tip3pfb.xml")
+    forcefield = ForceField(WATER_MODEL_XML)
     gaff = GAFFTemplateGenerator(
         molecules=[genipin, chitosan, cellobiose],
         forcefield=GAFF_VERSION,

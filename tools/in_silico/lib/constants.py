@@ -16,6 +16,15 @@ PAPER_FIG_DIR = PAPER_DIR / "figures"
 
 # ── Force field ──
 GAFF_VERSION = "gaff-2.11"
+# Water model — One-Home (кожен MD-скрипт ЧИТАЄ це, не хардкодить XML/ярлик
+# інлайн, інакше load↔label дрейфують). Свідомо TIP3P-**FB** (Wang, Martínez,
+# Pande 2014, JPCL 5:3863 — force-balance reparametrizація TIP3P: краща
+# густина/діелектрик/D_self за той самий 3-site функціонал). ⚠️ ff14SB
+# номінально параметризований на класичному TIP3P; FB широко паровано з ним,
+# розбіжність = bulk-water properties, не protein-specific (для EBFC-enzyme
+# MD прийнятно) — але це ЯВНИЙ вибір, не мовчазний default.
+WATER_MODEL_XML = "amber14/tip3pfb.xml"
+WATER_MODEL_LABEL = "TIP3P-FB"
 
 # ── Physical constants (CODATA 2018) ──
 F_CONST = 96485.33289        # C/mol — Faraday constant
