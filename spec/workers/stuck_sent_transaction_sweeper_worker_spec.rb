@@ -24,6 +24,13 @@ RSpec.describe StuckSentTransactionSweeperWorker, type: :worker do
       described_class.new.perform
     end
 
+    it "ignores a stuck :sent tx on a non-EVM network (ConfirmationWorker is Polygon-specific)" do
+      tx = sent_tx(sent_ago: 20.minutes.ago)
+      tx.update_columns(blockchain_network: "solana")
+      expect(BlockchainConfirmationWorker).not_to receive(:perform_async)
+      described_class.new.perform
+    end
+
     it "ignores terminal states (confirmed/failed) at any age" do
       create(:blockchain_transaction, wallet: wallet, status: :confirmed, created_at: 2.hours.ago)
       create(:blockchain_transaction, wallet: wallet, status: :failed, created_at: 2.hours.ago)

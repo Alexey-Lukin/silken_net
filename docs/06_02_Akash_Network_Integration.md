@@ -398,6 +398,8 @@ services:
 | **Кількість реплік** | `1` | `config/deploy.yml` → `web_node_count = 1` |
 
 > ✅ GHCR образ — публічний, доступний Akash-провайдерам без credentials. Дзеркалюється автоматично `.github/workflows/mirror-ghcr.yml` (`Deploy · GHCR Mirror`) — несе **Sigstore-signed SLSA build-provenance** (keyless OIDC→Fulcio/Rekor) + BuildKit SBOM, тож недовірений Akash-провайдер (або будь-хто) може криптографічно верифікувати походження+вміст образу перед pull. Команда верифікації + деталі — `SECURITY.md` (§Verifying release artifacts). Kamal паралельно пушить у GCP Artifact Registry для GCP деплою.
+>
+> ⚠️ **`:latest` тут — приклад static-SDL, НЕ бойовий пін** ([`00_07` INF.21](00_07_Action_Plan_Tracker)): мутабельний тег перезаписується кожним push у main — рестарт/міграція lease підхопить інший образ без rollback-цілі. Реальний деплой рендериться з `.tpl` через tf-var `docker_image` — на render підставляється іммутабельний `sha-<commit>`/semver (обидва `tfvars.example` несуть приклад).
 
 > **Ingress Anchor:** Важкі GCP web VM замінені `e2-small` інстансом зі статичним IP. Queen шлюзи надсилають CoAP на цей статичний IP, де його приймає **демон прямо на анкорі** (PRIMARY — INF.17, founder 2026-07-04: та сама VPC, що Cloud SQL → приватний IP без Auth Proxy, −1 хоп); HAProxy проксює лише HTTP/HTTPS 80/443 до Akash. Socat-релей → Akash `coap`-сервіс лишається задокументованим fallback'ом (перемикання — `systemctl stop coap-daemon && systemctl start coap-relay`).
 

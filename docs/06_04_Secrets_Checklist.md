@@ -237,7 +237,8 @@
 **Інфраструктура GCP:**
 - [ ] `project_id` — GCP project ID
 - [ ] `db_password` — пароль Cloud SQL (≥16 символів)
-- [ ] `ssh_source_ranges` — список CIDR для SSH allowlist (напр., `["1.2.3.4/32"]`)
+- [ ] `iap_admin_members` — хто входить на Ingress Anchor (INF.20 (в): IAP-тунель keyless; напр., `["user:you@example.com"]` → osAdminLogin+tunnelResourceAccessor)
+- [ ] `ssh_source_ranges` — break-glass-only CIDR (normally `[]` — канонічний SSH-шлях = IAP, правило `allow-ssh` без значень не створюється)
 
 **Akash deployment app/infra (`terraform/akash/terraform.tfvars` рендериться у `deploy.yaml.tpl`):**
 

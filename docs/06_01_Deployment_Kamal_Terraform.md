@@ -490,7 +490,8 @@ terraform/akash/
 
 | Правило | Порти | Джерело |
 |---------|-------|---------|
-| `allow-ssh` | TCP 22 | `ssh_source_ranges` (змінна) |
+| `allow-iap-ssh` | TCP 22 | `35.235.240.0/20` (Google IAP — канонічний SSH-шлях, INF.20 (в): keyless, доступ = `iap_admin_members`) |
+| `allow-ssh` | TCP 22 | `ssh_source_ranges` (break-glass-only; normally `[]` → правило не створюється) |
 | `allow-web` | TCP 80, 443 | `0.0.0.0/0` |
 | `allow-coap` | UDP 5683 | `0.0.0.0/0` |
 | `allow-internal` | Усі | `10.0.0.0/20` |

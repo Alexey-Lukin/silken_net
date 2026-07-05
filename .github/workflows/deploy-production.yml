@@ -174,7 +174,6 @@ jobs:
         # or web3-strict raise. KREDIS_REDIS_URL is intentionally omitted (auto-derives from
         # REDIS_URL). Canon: docs/06_04 §1 + §2.
         env:
-          KAMAL_MASTER_KEY: ${{ secrets.KAMAL_MASTER_KEY }}
           GCP_ARTIFACT_REGISTRY_KEY: ${{ secrets.GCP_SA_KEY }}
           # --- Application core ---
           RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
