@@ -515,15 +515,15 @@ Service Account: silken-net-deploy@<project>.iam.gserviceaccount.com
 
 ### Розрахунок `max_connections` (database.tf)
 
-Поточне значення `400`. Формула пулу — SSOT у `config/database.yml` (коментований блок): `pool = RAILS_MAX_THREADS + 2 (Cable headroom) = 5` на процес, на кожну з 3 баз набору (primary/cache/cable — Solid Queue pruned, INF.18).
+Поточне значення `400`. Формула пулу — SSOT у `config/database.yml` (коментований блок): `pool = RAILS_MAX_THREADS + PUMA_MAX_IO_THREADS + 2 (Cable headroom) = 3 + 16 + 2 = 21` на процес, на кожну з 3 баз набору (primary/cache/cable — Solid Queue pruned, INF.18). IO-доданок — [INF.22]: Puma-8 `max_io_threads` дозволяє io-маркованим запитам (oracle_callbacks/provisioning) бігти ПОНАД `max_threads`, і кожен тримає DB-checkout — пул без цього доданку голодує під сплеском (`ConnectionTimeoutError`). Пул = стеля, не преалокація: з'єднання відкриваються за потребою і реляться, тож фактичне число значно нижче.
 
-| Компонент | З'єднання (піковий checkout) |
+| Компонент | З'єднання (стеля checkout) |
 |-----------|------------|
-| Akash web | `WEB_CONCURRENCY` (4) × pool (5) × 3 бази = **~60** |
+| Akash web | `WEB_CONCURRENCY` (4) × pool (21) × 3 бази = **252 стеля** (факт ≪: io-burst рідкісний, idle реляться) |
 | Akash job (Sidekiq) | `:concurrency` (15) → `DB_POOL=17` (встановлено в job env, INF.13) = **~51** (17 × 3 бази) |
 | Cloud SQL Auth Proxy + admin/console | **~8** |
 
-Навіть за пікового checkout усіх пулів — суттєво нижче `400`; запас закладено під read-репліки та canopy-репліки на спільному Cloud SQL інстансі. Адекватно.
+Навіть за одночасного пікового checkout усіх пулів — нижче `400`; запас під read-репліки/canopy тримається на тому, що web-стеля досяжна лише при повному io-burst усіх воркерів одночасно (не steady-state). Адекватно; ревізит при `WEB_CONCURRENCY` > 4.
 
 ---
 
@@ -535,7 +535,7 @@ Stage 2: build         — bundle install, bootsnap, assets:precompile
 Stage 3: final         — COPY gems + app + Cloud SQL Auth Proxy, USER rails:1000, CMD: thrust ./bin/rails server
 ```
 
-> **Cloud SQL Auth Proxy** вбудовано у фінальний Docker-образ. Proxy запускається автоматично як фоновий процес при наявності ENV `CLOUD_SQL_INSTANCE_CONNECTION_NAME`. Він тунелює PostgreSQL-трафік через Google Cloud API (вихідний HTTPS на порт 443), тому Cloud SQL не потребує публічної IP. **Fail-loud (INF.13):** `bin/docker-entrypoint` чекає готовності proxy до 15 с; якщо не відповідає — `exit 1` (Rails не стартує, замість мовчазного boot без БД).
+> **Cloud SQL Auth Proxy** вбудовано у фінальний Docker-образ. Proxy запускається автоматично як фоновий процес при наявності ENV `CLOUD_SQL_INSTANCE_CONNECTION_NAME`. Він тунелює PostgreSQL-трафік через Google Cloud API (вихідний HTTPS на порт 443), тому Cloud SQL не потребує публічної IP. **Fail-loud (INF.13):** `bin/docker-entrypoint` чекає готовності proxy до 15 с; якщо не відповідає — `exit 1` (Rails не стартує, замість мовчазного boot без БД). **Post-boot supervisor (INF.22, 2026-07-05):** при активному proxy entrypoint далі НЕ `exec`-ає, а тримає app і proxy siblings-процесами: смерть proxy → TERM аппці + `exit 1` (Akash рестартить контейнер лише на вихід PID 1 — без цього мертвий proxy = вічний зомбі, що віддає DB-помилки); вихід аппки → її exit-код пропагується; TERM/INT форвардяться (graceful drain при `docker stop`). Kamal/VPC-шлях (без proxy) лишається чистим `exec`.
 
 ---
 

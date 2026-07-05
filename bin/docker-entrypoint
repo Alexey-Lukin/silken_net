@@ -26,6 +26,7 @@ if [ -n "$CLOUD_SQL_INSTANCE_CONNECTION_NAME" ]; then
   fi
 
   cloud-sql-proxy "${PROXY_ARGS[@]}" &
+  PROXY_PID=$!
 
   # Wait for proxy to be ready (up to 15 seconds)
   proxy_ready=false
@@ -69,6 +70,36 @@ else
       exit 1
     fi
   fi
+fi
+
+# ---------------------------------------------------------------------------
+# [INF.22] Proxy supervisor — a proxy that dies AFTER boot must kill the pod.
+# ---------------------------------------------------------------------------
+# Akash restarts a container only when PID 1 exits; there are no readiness
+# restarts. Without this, a crashed Cloud SQL Auth Proxy leaves a zombie app
+# serving DB errors forever. So when the proxy is active, run the app as a
+# sibling and exit loudly the moment EITHER side dies; TERM/INT are forwarded
+# so `docker stop` / lease teardown still drains gracefully (the boot-time
+# readiness gate above stays the first line of defense — this covers post-boot).
+if [ -n "${PROXY_PID:-}" ]; then
+  "${@}" &
+  APP_PID=$!
+  trap 'kill -TERM "$APP_PID" "$PROXY_PID" 2>/dev/null' TERM INT
+  while :; do
+    if ! kill -0 "$PROXY_PID" 2>/dev/null; then
+      echo "[entrypoint] FATAL: Cloud SQL Auth Proxy died — exiting so the provider restarts the container." >&2
+      kill -TERM "$APP_PID" 2>/dev/null
+      wait "$APP_PID" || true
+      exit 1
+    fi
+    if ! kill -0 "$APP_PID" 2>/dev/null; then
+      app_status=0
+      wait "$APP_PID" || app_status=$?
+      kill -TERM "$PROXY_PID" 2>/dev/null
+      exit "$app_status"
+    fi
+    sleep 2
+  done
 fi
 
 exec "${@}"

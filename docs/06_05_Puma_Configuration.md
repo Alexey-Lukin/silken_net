@@ -52,7 +52,7 @@ threads threads_count, threads_count
 max_io_threads ENV.fetch("PUMA_MAX_IO_THREADS", 16).to_i       # секція 1b
 ```
 
-**Чому `threads = RAILS_MAX_THREADS` (default 3):** кожен потік відкриває власний DB-connection (+2 Cable headroom на процес → `pool 5`, `config/database.yml`; job/Sidekiq-роль override `DB_POOL=17` — concurrency 15 проти дефолтного pool 5, деталі [`06_04 §3.2`](06_04_Secrets_Checklist)). Бюджет з'єднань і запас `max_connections=400` — [`06_01 §Розрахунок max_connections`](06_01_Deployment_Kamal_Terraform).
+**Чому `threads = RAILS_MAX_THREADS` (default 3):** кожен потік відкриває власний DB-connection; пул рахує І io-burst: `pool = RAILS_MAX_THREADS + PUMA_MAX_IO_THREADS + 2 Cable = 21` (`config/database.yml` — SSOT формули; [INF.22]: io-марковані запити біжать понад `max_threads` і теж тримають checkout — пул без них голодує під сплеском; стеля, не преалокація). Job/Sidekiq-роль override `DB_POOL=17` — concurrency 15, деталі [`06_04 §3.2`](06_04_Secrets_Checklist). Бюджет з'єднань і запас `max_connections=400` — [`06_01 §Розрахунок max_connections`](06_01_Deployment_Kamal_Terraform).
 
 **Чому `max_io_threads 16`:** запити до Oracle (`oracle_callbacks` — Chainlink HMAC + Polygon `eth_call` через Alchemy) та provisioning (`provisioning/register` — peaq DID + Hadron KYC) синхронно дзвонять по HTTP (~200-2000ms кожен). При лише 3 CPU-threads три таких запити блокують увесь worker. IO-bound пул дозволяє до 3+16 паралельних threads на worker без OOM (IO-threads майже не споживають CPU).
 

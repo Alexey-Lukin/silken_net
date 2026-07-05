@@ -19,15 +19,23 @@ default: &default
   # opens up to pool × 3 connections to Cloud SQL.
   #
   # Connection consumers inside a Puma worker:
-  #   1. Puma request threads ............ RAILS_MAX_THREADS  (default 3)
-  #   2. ActionCable / Solid Cable ....... +2 headroom (polling + broadcast)
+  #   1. Puma request threads ............ RAILS_MAX_THREADS   (default 3)
+  #   2. IO-bound burst threads .......... PUMA_MAX_IO_THREADS (default 16) —
+  #      Puma 8 max_io_threads: io-marked requests (oracle_callbacks,
+  #      provisioning — MarkWeb3RequestsAsIoBound) run BEYOND max_threads and
+  #      still check out DB connections; a pool sized without them starves
+  #      under burst (ConnectionTimeoutError). [INF.22]
+  #   3. ActionCable / Solid Cable ....... +2 headroom (polling + broadcast)
   #
-  # Formula: pool = RAILS_MAX_THREADS + Cable headroom
-  #        default: 3 + 2 = 5
+  # Formula: pool = RAILS_MAX_THREADS + PUMA_MAX_IO_THREADS + Cable headroom
+  #        default: 3 + 16 + 2 = 21
+  # The pool is a CEILING, not preallocation — connections open on demand and
+  # idle ones get reaped, so non-web processes sharing this default don't
+  # actually hold 21.
   #
-  # Total connections per database across all Puma workers:
-  #   WEB_CONCURRENCY × pool  (e.g., 2 × 5 = 10 per database on GCP)
-  #   3 databases × 10 = 30 connections total (well within Cloud SQL's 400)
+  # Total ceiling per database across all Puma workers:
+  #   WEB_CONCURRENCY × pool  (e.g., 2 × 21 = 42 per database on GCP)
+  #   3 databases × 42 = 126 ceiling (well within Cloud SQL's 400)
   #
   # For Sidekiq workers (separate process), override DB_POOL >= 15
   # in the worker container's environment to match sidekiq.yml :concurrency.
@@ -35,7 +43,7 @@ default: &default
   # Override: set DB_POOL to a fixed value if automatic calculation is unwanted.
   # https://guides.rubyonrails.org/configuring.html#database-pooling
   # ---------------------------------------------------------------------------
-  pool: <%= ENV.fetch("DB_POOL") { ENV.fetch("RAILS_MAX_THREADS", 3).to_i + 2 } %>
+  pool: <%= ENV.fetch("DB_POOL") { ENV.fetch("RAILS_MAX_THREADS", 3).to_i + ENV.fetch("PUMA_MAX_IO_THREADS", 16).to_i + 2 } %>
 
 development:
   <<: *default

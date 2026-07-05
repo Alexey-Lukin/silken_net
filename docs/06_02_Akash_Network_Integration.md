@@ -618,7 +618,7 @@ ENV-блоки `web` та `job` сервісів **дзеркалюють** од
 | `KREDIS_REDIS_URL` | — (auto-derive з `REDIS_URL` → `/1`) | runtime | Kredis distributed locks — **не** задавати в SDL [B1] |
 | `RACK_ATTACK_REDIS_URL` | — (auto-derive з `REDIS_URL` → `/2`) | runtime | Rate-limiting (опц.) |
 | `RAILS_MAX_THREADS` | `3` | runtime | Puma threads/worker — узгоджено з `database.yml` pool |
-| `DB_POOL` | `17` (лише job) | runtime | ActiveRecord pool для job-сервісу — Sidekiq concurrency 15 проти дефолтного pool 5 (INF.13); web лишається default |
+| `DB_POOL` | `17` (лише job) | runtime | ActiveRecord pool для job-сервісу — Sidekiq concurrency 15 (INF.13); web лишається default (io-aware `3+16+2=21` — формула-SSOT `config/database.yml`, INF.22) |
 | `APP_HOST` | `silkennet.com` | runtime | Action Mailer `default_url_options` host (`production.rb`); web+job (INF.13) |
 | `WEB_CONCURRENCY` | `4` | runtime | Puma worker processes (web only) |
 
