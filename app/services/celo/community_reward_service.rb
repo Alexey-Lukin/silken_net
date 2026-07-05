@@ -148,6 +148,13 @@ module Celo
               .first
     end
 
+    # [SLASH-1, founder-ратифікація] День з vm_error-кадром (софт-збій прошивки)
+    # СВІДОМО reward-eligible: stress_index за нього = 0.0 (vm_error ≠ біо-стрес),
+    # сенсорна половина кадру жива (зламаний лише Лоренц-статус), а карати дерево
+    # за НАШ баг — «не карати жертву». Емісія захищена окремо (vm_error → 0 GP
+    # per-frame); маскування стресу через vm_error домінується фейк-homeostasis
+    # (ловить DCI/attest, не цей гейт). Хронічний vm_error = ops-тріаж
+    # (firmware_fault-алерт), не reward-стеля.
     def eligible_for_reward?(insight)
       return false if insight.nil?
       return false if insight.stress_index.nil?

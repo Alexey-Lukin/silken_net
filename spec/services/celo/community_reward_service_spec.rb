@@ -224,6 +224,16 @@ RSpec.describe Celo::CommunityRewardService do
       expect { described_class.new(cluster, target_date).reward_community! }.to change(BlockchainTransaction, :count).by(1)
     end
 
+    # [SLASH-1, founder-ратифікація] vm_error-день (софт-збій прошивки → stress_index
+    # 0.0 після P0-reframe) СВІДОМО reward-eligible — «не карати жертву» нашого бага;
+    # емісія захищена окремо (vm_error-кадри → 0 GP). Пін РІШЕННЯ, не випадковості.
+    it "stays eligible on a vm_error day (stress_index 0.0 — firmware fault is OUR bug)" do
+      stub_healthy_and_eligible
+      AiInsight.last.update!(stress_index: 0.0,
+                             summary: "ЗБІЙ ПРОШИВКИ: пристрій не зміг порахувати біостатус (mruby VM error) — потрібен re-flash/OTA.")
+      expect { described_class.new(cluster, target_date).reward_community! }.to change(BlockchainTransaction, :count).by(1)
+    end
+
     it "skips when fraud is detected" do
       create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
                           target_date: target_date, stress_index: 0.05, fraud_detected: true)
