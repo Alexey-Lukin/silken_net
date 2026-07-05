@@ -45,6 +45,18 @@ AlphaFold 3 Server outputs - NON-COMMERCIAL, under their own Terms:
   notice those Terms require. EXCLUDED from the CC-BY-SA-4.0 grant. AF3 permits
   open-source release + scientific publication of outputs (their restriction #1),
   which is how they appear here.
+    Beyond mere presence, the in-silico pipeline also USES the predicted structure
+    as an MD/DFT input (an R&D step). Our position: (a) restriction #1's exception
+    for use "indirectly via a scientific publication [or] open source release"
+    covers this — the whole pipeline, its inputs, and its results are AGPL-open and
+    published (docs/protocols/ebfc/in_silico/paper, "Стаття 1"); (b) our MD is
+    stability simulation (RMSD / Rg / D_eff), NOT a protein-ligand binding-or-
+    interaction predictor of the Glide/AutoDock class named in restriction #2.
+    Residual interpretive risk is accepted at this pre-commercial stage. Mitigation
+    if the position ever changes: the target sequence lives in
+    alphafold3/fold_dgrgcgdh_fad_v1_job_request.json → an open-weight ESMFold
+    re-prediction can replace the AF3 structure in the R&D path, leaving AF3 outputs
+    for publication-benchmark only (tracked in docs/00_07, HW.5.IS).
 
 Bundled / referenced third-party under their own (permissive) licenses - curated
 inventory in THIRD_PARTY_NOTICES (regen via license_finder):

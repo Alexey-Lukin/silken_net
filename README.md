@@ -350,8 +350,6 @@ kamal deploy
 - [`08_02`](docs/08_02_Academic_Institutions_Registry.md) — Реєстр Академічних Інституцій (ЧНУ+ФОТІУС/ЧДТУ/ЧІПБ/ЧМА/СЄУ: хто → що валідує → канон-дім)
 - [`08_03`](docs/08_03_External_Stakeholders_Registry.md) — External Stakeholders (B2G/B2B + культурний шар; non-hot-path outreach pool)
 
-> _Методологія/процес (колишній Модуль 09) ре-деривовано у **Модуль 00 — Фундамент** (00_02–00_07, вгорі)._
-
 ---
 
 ## 📊 Поточний Стан (TRL Matrix)

@@ -305,6 +305,7 @@
 #### HW.5.IS — In-Silico Stage 0 (Zero-Lab)
 - **P1** · 🤖+👤 · 🟡 · → `01_03 §3.4`
 - **Стан:** Zero-Lab in-silico (TRL 3) ✅ завершено (2026-05-25) — computational reverse-engineering хімії ДО Ti-coin (AlphaFold3+OpenMM+PySCF+scipy, Python→AI-clones); фізичний TRL 4 = Ti-coin in-vitro pending. Q1-paper (`08_01` Стаття 1): ①②④ ✅, ③ cathode borderline-robust (Ru λ=0.78) → текст сабміт-ready (publish-to-protect, UNI.3, `08_01 §2`). Канон `01_03 §3.4`; числа → [`SUMMARY`](protocols/ebfc/in_silico/SUMMARY.md)/[`PIPELINE_STATUS`](protocols/ebfc/in_silico/PIPELINE_STATUS.md). Хімічний working-backlog (CHEM.N + open computes) ↓.
+- [x] 🔗 **AF3 non-commercial × R&D-use** — рішення (founder 2026-07-05): **document + accept** (не re-predict зараз). Юр-позиція в `/NOTICE`: use через open-source+publication (restriction #1 виняток); MD = stability-sim ≠ Glide/AutoDock docking (#2 не apply); residual accepted pre-commercial. Legal-review defer-path вже трекнутий (UNI.16 · UNI-legal §). **ESMFold-mitigation** (open-weight re-predict із `job_request.json` sequence → замінити AF3 у R&D-шляху, лишити AF3 для publication-benchmark) — активувати ЛИШЕ якщо юр-позиція зміниться.
 - [ ] 👤 інфраструктура: workstation RTX 4090 ($5–10K) АБО cloud GPU (AWS p5.2xlarge / GCP g2-standard-12)
 - [ ] 👤 Joint Q1-paper з Мінаєвим (`08_01` Стаття 1 — in-silico electron-transfer energetics; повна назва — дім `08_01 §1`) — текст draft-complete (`paper/`), сабміт-ready
 - [ ] 👤 Fig 1 graphical-abstract (BioRender; code-draft є) + TOC-графіка
