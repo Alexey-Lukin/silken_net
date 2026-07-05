@@ -17,15 +17,57 @@ permissions:
 env:
   TF_VAR_project_id: ${{ secrets.GCP_PROJECT_ID }}
   TF_VAR_db_password: ${{ secrets.POSTGRES_PASSWORD }}
+  # [OPS.11] Must mirror terraform.tfvars once the founder sets billing_account_id
+  # locally — an apply WITHOUT it flips the budget count to 0 and destroys it.
+  # Empty secret = budget simply not managed (count-guard), no failure.
+  TF_VAR_billing_account_id: ${{ secrets.GCP_BILLING_ACCOUNT_ID }}
   # SSH secrets removed (INF.20 (в)): admin path = IAP tunnel + OS Login; the CI
   # kamal leg needs the (б) glue (ssh.proxy_command + SA tunnel role) before it can
   # reach the Anchor — until then the kamal step is honestly non-functional.
 
 jobs:
+  changes:
+    name: Detect deploy-relevant changes [INF.9]
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    outputs:
+      deploy: ${{ steps.decide.outputs.deploy }}
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        with:
+          egress-policy: audit
+      - name: Decide whether the canopy deploy is needed
+        id: decide
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          # [INF.9] Manual dispatch always deploys. A post-CI workflow_run deploys only
+          # when image-relevant (same list as mirror-ghcr — canopy is CONTINUOUS for app
+          # code) or infra files changed; firmware/docs/tools/contracts-only commits used
+          # to drag the whole terraform+kamal chain for nothing. Changed files come from
+          # the GitHub API, not a checkout of head_sha (untrusted-code vector — see
+          # mirror-ghcr.yml). On any ambiguity we deploy — it is idempotent and cheap.
+          if [ "${{ github.event_name }}" != "workflow_run" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if ! changed=$(gh api "repos/${{ github.repository }}/commits/${HEAD_SHA}" -q '.files[].filename' 2>/dev/null); then
+            echo "::warning::Could not list changed files via API — deploying to be safe."
+            echo "deploy=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if echo "$changed" | grep -qE '^(Dockerfile|\.dockerignore|Gemfile|Gemfile\.lock|\.ruby-version|Procfile|Rakefile|config\.ru|app/|lib/|config/|bin/|db/|public/|vendor/|terraform/|\.kamal/|\.github/workflows/deploy\.yml)'; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::No deploy-relevant files changed — skipping the canopy deploy [INF.9]."
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          fi
+
   verify-secrets:
     name: Verify Required Secrets [SEC.11]
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    needs: changes
+    if: ${{ needs.changes.outputs.deploy == 'true' }}
     outputs:
       configured: ${{ steps.check.outputs.configured }}
     steps:

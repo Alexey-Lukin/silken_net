@@ -27,6 +27,12 @@ ssh_source_ranges = []
 # (mirror-ghcr pushes sha-<commit> per main push; vX.Y.Z on releases):
 # coap_daemon_image = "ghcr.io/alexey-lukin/silken_net:sha-<commit>"
 
+# [OPS.11] FinOps: billing budget (50/90/100% + forecasted e-mail thresholds).
+# Find the id: `gcloud billing accounts list`. ⚠️ Set the SAME value as the
+# GitHub secret GCP_BILLING_ACCOUNT_ID, else the next CI apply destroys the budget.
+# billing_account_id = "XXXXXX-XXXXXX-XXXXXX"
+# billing_budget_usd = 100
+
 # Redis — REMOVED from GCP (Memorystore has no public IP).
 # Use Upstash (serverless Redis with TLS public endpoints) instead.
 # Set REDIS_URL=rediss://default:password@endpoint.upstash.io:6379 in secrets.

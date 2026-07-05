@@ -122,3 +122,22 @@ variable "ssh_source_ranges" {
     error_message = "ssh_source_ranges must not include 0.0.0.0/0 (open to the world). Restrict to VPN/office CIDR. Example: [\"203.0.113.0/24\"]"
   }
 }
+
+# -----------------------------------------------------------------------------
+# FinOps (OPS.11)
+# -----------------------------------------------------------------------------
+
+# Empty = billing budget not managed here (count-guard, billing.tf). Once set,
+# mirror the value into the GitHub secret GCP_BILLING_ACCOUNT_ID — a CI apply
+# without it destroys the budget (count flips back to 0).
+variable "billing_account_id" {
+  description = "GCP billing account id (XXXXXX-XXXXXX-XXXXXX) for the [OPS.11] budget guard; empty disables"
+  type        = string
+  default     = ""
+}
+
+variable "billing_budget_usd" {
+  description = "Monthly budget ceiling in USD — thresholds alert at 50/90/100% + forecasted-100% (operator-tuned; default sized for e2-small + Cloud SQL dev-tier)"
+  type        = number
+  default     = 100
+}

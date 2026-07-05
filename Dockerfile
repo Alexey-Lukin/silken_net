@@ -72,7 +72,9 @@ FROM base
 # bypassing Akash's CAP_NET_ADMIN restriction (no VPN/Tailscale possible).
 # Only activates when CLOUD_SQL_INSTANCE_CONNECTION_NAME is set in ENV.
 # See: docs/06_02_Akash_Network_Integration.md
-ADD https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.15.2/cloud-sql-proxy.linux.amd64 /usr/local/bin/cloud-sql-proxy
+# --checksum = sha256 from the release table (github.com/GoogleCloudPlatform/
+# cloud-sql-proxy v2.15.2) — a version-pinned URL alone trusts the bucket forever [INF.21].
+ADD --checksum=sha256:31607582f62be0109ee09c9165dafc7bb585c29108fc6b7b9734f3797acdd357 https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.15.2/cloud-sql-proxy.linux.amd64 /usr/local/bin/cloud-sql-proxy
 RUN chmod +x /usr/local/bin/cloud-sql-proxy
 
 # Run and own only the runtime files as a non-root user for security

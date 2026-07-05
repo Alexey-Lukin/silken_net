@@ -15,6 +15,9 @@ permissions:
 env:
   TF_VAR_project_id: ${{ secrets.GCP_PROJECT_ID }}
   TF_VAR_db_password: ${{ secrets.POSTGRES_PASSWORD }}
+  # [OPS.11] Mirrors terraform.tfvars billing_account_id — an apply without it
+  # destroys the budget (count-guard flips to 0). Empty secret = not managed.
+  TF_VAR_billing_account_id: ${{ secrets.GCP_BILLING_ACCOUNT_ID }}
   # SSH secrets removed (INF.20 (в)): admin path = IAP tunnel + OS Login; the CI
   # kamal leg needs the (б) glue (ssh.proxy_command + SA tunnel role) before it can
   # reach the Anchor — until then the kamal step is honestly non-functional.

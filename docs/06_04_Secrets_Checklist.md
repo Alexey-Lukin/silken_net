@@ -69,6 +69,9 @@
 ### 1.2. P1 — Operations (потрібні для конкретних автоматизацій)
 
 - [ ] `PROJECT_PAT` — GitHub Personal Access Token з `project:write` scope (для `trl_sync.yml` GitHub Action — OPS.1). Тип: classic PAT або fine-grained PAT.
+- [ ] `GCP_BILLING_ACCOUNT_ID` — **[OPS.11]** дзеркало tfvars `billing_account_id` для CI terraform apply (`TF_VAR_billing_account_id` в обох deploy-workflow). ⚠️ Заводиться **разом** із tfvars-значенням: локальний apply з бюджетом + CI-apply без секрета = count→0 → CI **знесе бюджет**. ⚠️ ПЕРЕД активацією — обов'язковий грант CI-SA `roles/billing.costsManager` на billing-акаунті (plan-refresh 403-ить і блокує весь deploy-ланцюг — точна команда/механіка → [`06_02 §4.4`](06_02_Akash_Network_Integration)). Порожній = budget просто не керується (no-op).
+
+> **Repo Variables (не Secrets):** `CANOPY_COAP_HOST` / `PRODUCTION_COAP_HOST` (активують `coap_smoke` — INF.6) · `AKASH_OWNER_ADDRESS` (+опц. `AKASH_MIN_RUNWAY_DAYS`, `AKASH_LCD_BASE`) — активує **Ops · Akash Escrow Watch** [OPS.11] після першого lease. До заповнення обидва workflow видимо skip-clean.
 
 ### 1.3. P2 — Опціонально / Auto-derived
 
@@ -81,7 +84,7 @@
 
 > Раніше ці жили лише у `.kamal/secrets` (§2) / Akash SDL (§3) / Terraform (§4). **Після B1** обидва deploy-workflow маплять їх із GitHub Secrets у крок `kamal deploy`, тож для CI-деплою вони **мусять існувати як GitHub Repository Secrets**. Повний опис кожного — §2.1 (one-home); тут лише перелік + boot-vs-lazy клас (`verify-secrets` гейтить boot-critical, warn на lazy).
 
-**Boot-critical** (порожній → контейнер падає на boot / terraform не apply-неться / kamal не зайде по SSH; `verify-secrets` блокує; з 2026-07-04 гейт покриває і infra-передумови `GCP_PROJECT_ID` + `SSH_PRIVATE_KEY`/`SSH_KNOWN_HOSTS`):
+**Boot-critical** (порожній → контейнер падає на boot / terraform не apply-неться; `verify-secrets` блокує; з 2026-07-04 гейт покриває і infra-передумову `GCP_PROJECT_ID` — SSH-секрети ЗНЯТО, INF.20 (в) IAP keyless, див. §1.1):
 - [ ] `ORACLE_MINTER_PRIVATE_KEY` · `ORACLE_SLASHER_PRIVATE_KEY` — `web3_network_guard` raise при boot **signer-процесу (Sidekiq job)**, якщо немає ні specific-ключа, ні `ORACLE_PRIVATE_KEY`-fallback. **Money/signing-ключі = JOB-ONLY (2026-07-04):** signing-шістка (`ORACLE_*` ×4 вкл. `ORACLE_CELO_PRIVATE_KEY` + `ETHEREUM_ANCHOR_PRIVATE_KEY` + `SOLANA_WALLET_KEYPAIR`) живе лише в `job` (Kamal `servers.job.env.secret` / Akash SDL job-сервіс); web/coap бутяться keyless by design (Akash ENV = plaintext провайдеру; guard scoped `signer_process: Sidekiq.server?` — [`04_02 §Web3NetworkGuard`](04_02_Business_Logic_and_Services)).
 
 **Lazy runtime** (порожній → фіча degraded на першому use, НЕ boot-crash; `verify-secrets` warn):
@@ -239,6 +242,7 @@
 - [ ] `db_password` — пароль Cloud SQL (≥16 символів)
 - [ ] `iap_admin_members` — хто входить на Ingress Anchor (INF.20 (в): IAP-тунель keyless; напр., `["user:you@example.com"]` → osAdminLogin+tunnelResourceAccessor)
 - [ ] `ssh_source_ranges` — break-glass-only CIDR (normally `[]` — канонічний SSH-шлях = IAP, правило `allow-ssh` без значень не створюється)
+- [ ] `billing_account_id` (+опц. `billing_budget_usd`) — **[OPS.11]** budget-guard; порожній = no-op; заповнив → той самий id у GH-секрет `GCP_BILLING_ACCOUNT_ID` (§1.2), інакше CI-apply знесе бюджет
 
 **Akash deployment app/infra (`terraform/akash/terraform.tfvars` рендериться у `deploy.yaml.tpl`):**
 

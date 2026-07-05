@@ -932,6 +932,24 @@ akash tx deployment close \
   --fees 5000uakt
 ```
 
+### 4.4 FinOps guards [OPS.11]
+
+Дві фінансові «тихі смерті» деплою мають по машинному вартовому (обидва — config-SSOT, тут лише механіка):
+
+1. **GCP billing budget** — `terraform/billing.tf`: `google_billing_budget` з порогами 50/90/100% + forecasted-100% (лист летить Billing-адмінам без додаткових notification-каналів). Guard: порожній `billing_account_id` (tf-var) = блок no-op; заповнюєш у `terraform.tfvars` — **той самий** id мусить стояти у GitHub-секреті `GCP_BILLING_ACCOUNT_ID` (обидва deploy-workflow передають `TF_VAR_billing_account_id`), інакше наступний CI-apply побачить count=0 і знесе бюджет. ⚠️ **Грант CI-SA на billing-акаунті = ОБОВ'ЯЗКОВИЙ перед активацією** (Opus-ревю 2026-07-05): billing-ролі живуть в окремій ієрархії (project-ролі не покривають), а `terraform plan` **рефрешить** бюджет щоразу (`billing.budgets.get`) — разовий founder-auth apply НЕ рятує: наступний CI-plan отримує 403 і через `needs: terraform` блокує ВЕСЬ deploy-ланцюг. Разово: `gcloud billing accounts add-iam-policy-binding <ACCT_ID> --member="serviceAccount:silken-net-deploy@<project>.iam.gserviceaccount.com" --role="roles/billing.costsManager"`. Enablement `billingbudgets.googleapis.com` eventually-consistent — перший activation-apply може впасти раз; re-apply проходить.
+2. **AKT escrow runway** — ескроу lease **вигорає щоблоку**; на нулі lease закривається (web+job+coap гинуть разом). Вартовий: `.github/workflows/akash_escrow_watch.yml` (**Ops · Akash Escrow Watch**, daily + dispatch) — читає публічний LCD REST (market `v1beta5` + deployment `v1beta4`; старші версії на mainnet відповідають "Not Implemented"), рахує `runway = (funds − накопичене з settled_at) / (Σ price·blocks/day)` і падає гучно при runway < порога (default 14 діб) **або при нулі активних leases** (= lease уже закрився). Skip-clean до repo Variable `AKASH_OWNER_ADDRESS` (патерн `coap_smoke`); календарний мінімум дня-1 — over-fund ≥2× місячної оцінки — лишається оператору.
+
+   ⚠️ **Не звіряй escrow-структуру з published proto** (`akash-api` main = escrow v1beta3 — застарілий за живою мережею; Opus-ревю 2026-07-05 мало не зарепортило робочі jq-шляхи як баг). Жива форма `deployments/info` (звірено проти mainnet 2026-07-05; `state.funds` == Σ `deposits[].balance`, окремого `state.balance` більше НЕМАЄ; lease `price.amount` — decimal-рядок за блок):
+
+   ```json
+   "escrow_account": { "state": {
+     "state": "open", "settled_at": "27567175",
+     "funds":    [{ "denom": "uact", "amount": "557523.000000000000000000" }],
+     "deposits": [{ "owner": "akash1…", "height": "25869478", "source": "grant",
+                    "balance": { "denom": "uact", "amount": "557523.000000000000000000" } }]
+   } }
+   ```
+
 ---
 
 ## 5. Порівняння: Akash vs GCP Production

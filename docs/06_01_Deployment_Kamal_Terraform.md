@@ -591,7 +591,8 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
 > доменні суперечності. Машинні «☑ виправлено»-пункти прибрано (вони в git/00_07 §🗄️).
 > Два шляхи НЕ плутати: **твій перший деплой = ручний Akash canopy-render** (Фаза 3);
 > CI `Deploy · Canopy` — то Kamal→GCP web-only **fallback**, він оживе сам, щойно
-> GitHub Secrets заповнені (тримай їх незаповненими до готовності, або path-gate INF.9).
+> GitHub Secrets заповнені (тримай їх незаповненими до готовності; path-gate вже стоїть —
+> деплой стріляє лише на deploy-релевантні зміни, [`06_07 §1`](06_07_CICD_and_Runbook_Index)).
 
 **Фаза −1 — Акаунти й значення (за дні ДО дня X):**
 GCP project + billing (+budget alert — OPS.11) · Akash-гаманець (`akash keys add`) + ≥5 AKT ескроу ·
