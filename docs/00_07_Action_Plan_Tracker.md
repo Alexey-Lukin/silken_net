@@ -788,6 +788,12 @@
 - [ ] 🤖 citations/active_contract → конструктор-параметри + controller eager-load (дзеркало `alerts/row`); resolve §6.4 canon-суперечність
 - [ ] 👤 (опц.) axe-core CI-job + contrast-фікс gaia-text-subtle
 
+#### SEC.18 — User/Org PII data-subject-rights (retention-TTL · DSAR-export · anonymization)
+- **P2** · 🤖+👤 · ⚪ · → [`04_01 §7`](04_01_Data_Models_and_Entities), `07_01 §8`
+- **Стан:** Не почато — over-ARCH.57 residual. **Erasure-ядро вже трекає ARCH.57(4)** («GDPR erasure-процедура + encrypt identities» — НЕ дублювати); наявна основа: `data_region`-шардинг ✅ (`04_01`, eu/us/ap), `filter_parameters` scrub'ить PII з логів, tree-дані свідомо ≠ PII (`00_08`), privacy-policy planned (BIZ.3). Ширший residual поза erasure: User/Org/Forester несуть PII (email/phone/telegram_chat_id/push_token), але немає (а) **retention-POLICY** (default-TTL/auto-expiry), (б) **DSAR-export** (право доступу/переносності — віддати суб'єкту дані, ≠ стерти), (в) **anonymization↔immutability reconcile** (стерти PII, зберігши immutable AuditLog — напруга з ARCH.57 (1)/(2)). Pre-commercial-legal, активується при онбордингу EU-лісників. NB: `07_01 §2` «Таблиця SLA» — інша SLA. Канон `04_01 §7`, `07_01 §8`.
+- [ ] 🤖 retention-worker (per-модель TTL) + `AnonymizeUserService` (reconcile з append-only AuditLog ARCH.57) + DSAR-export endpoint
+- [ ] 👤 retention-періоди per-юрисдикція (СЄУ legal, `08_02 §5`) + consent-tracking рішення
+
 ## §05 · Web3 / Економіка / Slashing
 
 > Мультичейн, oracle/chain-конфіг та slashing-механіка — канон `05_xx`.
@@ -979,6 +985,12 @@
 - [ ] 👤 грант CI-SA `roles/billing.costsManager` на billing-акаунті → tfvars `billing_account_id` (+`billing_budget_usd`) + GH-секрет `GCP_BILLING_ACCOUNT_ID` → apply (порядок несучий — [`06_02 §4.4`](06_02_Akash_Network_Integration))
 - [ ] 👤 AKT initial over-fund (≥2× місячна оцінка) при створенні lease + repo Variable `AKASH_OWNER_ADDRESS` → escrow-watch живий
 
+#### SEC.17 — Money-mint-key custody (HSM/KMS для ORACLE_MINTER/SLASHER)
+- **P2** · 🤖+👤 · ⚪ · → [`06_04 §5`](06_04_Secrets_Checklist), `05_03`
+- **Стан:** Не почато — over-baseline gap. Наявний захист money-ключів ✅: `ORACLE_MINTER_PRIVATE_KEY`⊥`ORACLE_SLASHER_PRIVATE_KEY` фізично розділені (E.2, mint≠burn), Gnosis Safe тримає admin/PAUSER (`SilkenForestCoin.sol`), ARCH.47 boot-guard проти key-collision (`Security::Web3NetworkGuard`), WEB3_STRICT_MODE fail-closed. Діра вужча — приватники живуть **plaintext у deploy-ENV/Rails-credentials** (`06_04 §5` = лише «розглянути HSM/Vault»-нотатка, не гейт): у момент mint'у за реальну вартість ENV-ключ мінтера = найбільша одинична точка катастрофи. Потрібне **рішення порогу custody** (Fireblocks MPC / GCP-KMS remote-signer / Safe-module-only-mint) + провіжн. Дзеркалить S6.14 (peaq signing-key custody) на money-рівні. Канон `06_04 §5`, `05_03`.
+- [ ] 👤 обрати custody-поріг (Fireblocks / GCP-KMS / Safe-mint-module) — pre-mainnet security gate
+- [ ] 🤖 (після рішення) remote-signer адаптер для `BlockchainMintingService`/`BlockchainBurningService` замість raw-ENV-приватника
+
 #### S6.14 — peaq_signing_key: rotation & revocation
 - **P2** · 👤 · 🟢 · → `06_04 §5.4`, `04_02 §S6.14`
 - **Стан:** Rotation policy готова — dual-key grace 72h + планова ротація 90д + emergency revocation runbook. Лишається vault-store production-ключа. Канон `06_04 §5.4` (revocation runbook) · `04_02 §S6.14` (policy + код-стан).
@@ -1032,6 +1044,12 @@
 - **P2** · 🤖+👤 · 🟡 · → [`06_08`](06_08_Resilience_and_Failover_Policy)
 - **Стан:** Аудит 2026-07-04: 06_08 §2.2/§2.3 ✅-ив ~10 механізмів, яких у коді НЕМАЄ — канон переписано чесно (нереалізоване позначено 🟡 target інлайн), а самі механізми зібрано СЮДИ як опційний backlog. ⚠️ НЕ чеклист «зробити все» — кожен проходить YAGNI-фільтр при live-потребі; більшість latent (PATH 1) або спостерігачі. **06_08-target'и:** IotexBackfillWorker-cron · FilecoinReconcileWorker (re-pin з AuditLog) · streamr/celo buffer-lists · anchor gas-gate (`MAX_ANCHOR_GWEI`+пул) · Solana RPC-fallback-каскад · `peaq_long_outage` alert · LINK-monitor (лише при замиканні PATH 1) · TheGraph `eth_getLogs`-fallback · Klima-активація хвости (toggle/manual_review/nonce-lock) · breaker reschedule-on-open. **O4 day-2 (SHOULD-early-live):** ~~proxy-supervisor~~ + ~~DB_POOL vs max_io_threads~~ ✅ РОЗГЕЙЧЕНО+SHIPPED 2026-07-05 (founder-go): entrypoint-супервізор (смерть proxy → exit 1 → provider-рестарт; app-код пропагується; TERM-форвард; 4 runnable-сценарії на стабах проти реального файлу) + io-aware pool `3+16+2=21` (`database.yml` SSOT + дзеркала [`06_01 §Розрахунок max_connections`](06_01_Deployment_Kamal_Terraform)/[`06_05`](06_05_Puma_Configuration)) · Upstash region-pin (europe-west1) + Akash placement-attributes той самий континент + Rack::Attack → MemoryStore поки web count:1 (крос-регіон RTT на кожен запит) · zero-downtime: migration-крок окремо від entrypoint при count≥2 · `/ready`-interval tune 10-15s при INF.10-фліпі. **O3 (SHOULD-post-deploy):** GH Environments для production (секрет-скоупінг money-ключів + wait-timer замість plan-gate) · Loki-pipeline в Alloy (Akash lease-логи ефемерні — гинуть при міграції; зараз виживають лише Sentry-exceptions) · зовнішній synthetic uptime (Grafana Synthetic — самоскрейп гине разом із lease) · WIF для CI→GCP (static SA-key лишається тільки Akash-виняток) · tfsec/checkov + scheduled drift-plan. **Чесний YAGNI-NOW (не робити):** canary/blue-green · cross-region backup (баланс on-chain) · ro-rootfs/cap-drop · burn-rate SLO · PagerDuty · sops · game-days · Dragonfly-on-Akash · SO_RCVBUF (до planetary).
 - [ ] 🔗 при перших live-тижнях: пройти список YAGNI-фільтром → підняти дозрілі в окремі items
+
+#### INF.23 — Емпіричний load/throughput benchmark (intake→mint стеля)
+- **P2** · 🤖+👤 · ⚪ · → [`06_08 §2.4`](06_08_Resilience_and_Failover_Policy), [`06_01`](06_01_Deployment_Kamal_Terraform)
+- **Стан:** Не почато — design-без-виміру. Scale-*мислення* глибоке ✅: strict-queue firehose-аналіз + process-ізоляція (`06_08 §2.5` ARCH.52), SLO-цілі intake ≥95% / mint ≥80% (`06_08 §2.4`), autoscale-арх L4-LB+MIG (`06_01`), `bin/forest_simulator` (функціональний multi-Soldier — НЕ load-generator). Діра = **жодного емпіричного виміру** стелі пайплайну CoAP→Sidekiq→chain: k6/locust-гарнесу немає ніде. Бенчмарк має зміряти CoAP intake rps (`lib/daemons/coap_listener`), Sidekiq drain-rate під backlog, mint-worker throughput, точку насичення DB-pool. Грунтує оцінку E.5 «~10k вузлів» (зараз = припущення, не вимір). **Pre-scale:** стелю краще знайти в бенчмарку, ніж у проді. Канон `06_08 §2.4/§2.5`, `06_01`.
+- [ ] 🤖 load-harness (k6/locust): CoAP-intake rps + Sidekiq drain + mint-throughput + DB-pool saturation
+- [ ] 👤 прогнати проти staging/prod після першого деплою → фактична стеля vs E.5-оцінка (дотично E.5/ARCH.2/E.27)
 
 #### INF.10 — Kamal-proxy healthcheck → `/ready` (readiness-gated cutover)
 - **P3** · 👤 · 🟢 · → `06_01`
@@ -1113,6 +1131,12 @@
 - **Стан:** Не почато — корпорації з ESG-зобов'язаннями не триматимуть крипту/ключі заради ретайрменту → потрібен SPV-міст: фіат → SPV купує+ретайрить SCC → сертифікат офсету (CBAM/ISO 14064). Поточний `KlimaRetirementWorker` припускає, що клієнт уже on-chain власник SCC (нот.19). Канон `07_01 §8`.
 - [ ] 👤 юрисдикція SPV + ліцензія на вуглецеві активи + кастодіан крипти (СЄУ Аблязов Д., RWA/MiCA — `08_02 §5`)
 - [ ] 👤 бухгалтерська класифікація + сертифікат-флоу (СЄУ Ус Г.)
+
+#### BIZ.18 — Customer-facing availability-SLA (uptime-гарантія B2B-покупцям)
+- **P2** · 👤 · ⚪ · → `07_01 §8`, [`06_06 §3`](06_06_Disaster_Recovery_and_Backup)
+- **Стан:** Не почато — internal-SLO без customer-SLA. Наявна основа ✅: RTO/RPO-цілі (`06_06 §3` DR-таблиця), internal SLO mint ≥80% + intake ≥95% (`06_08 §2.4`), circuit-breaker/failover (`06_08`), Prometheus-алерти (`06_03`) — це **внутрішні операційні SLO**, не зовнішній контракт. Діра = **customer-facing availability-SLA** (визначений uptime-% + service-credits + incident-comms + публічний status-page), на який B2B-покупець кредитів (Азот CBAM, agri) послатиметься в угоді. Живить BIZ.2 (MSA — SLA = типовий exhibit) + BIZ.15 (SPV). NB: ≠ `07_01 §2` «Таблиця SLA» (legal-event→tx mapping — інше значення). Канон `07_01 §8`, `06_06 §3`.
+- [ ] 👤 визначити availability-target (%/вікна) з перших live-SLO-вікон + service-credit-схема → SLA-exhibit для BIZ.2 MSA
+- [ ] 👤 (опц.) публічний status-page (external synthetic uptime — дотично INF.22 O3)
 
 #### BIZ.14 — SFC Vote-Escrow during breach→slash lag (07_01 SFC vote-escrow residual)
 - **P3** · 🤖 · 🟢 · → `07_01 §8`
