@@ -314,17 +314,27 @@ class InsightGeneratorService < ApplicationService
   # `_avg_temp`/`_avg_z` accepted for signature symmetry with the ML path but
   # NO LONGER used by the heuristic — both were confounds (see below).
   def calculate_stress_index_heuristic(max_status, _avg_temp, max_acoustic, _avg_z, sap_signed_deviation = 0.0)
-    # tamper / VM-error (status 3) = contract-integrity failure → max stress.
-    # A Z-derived ANOMALY (status 2) does NOT slash alone: it gets the same bounded
-    # base as stress (0.6 < 0.83 tree slash threshold, 05_05 §3), and only DIRECT
-    # signals (sap / cavitation) can carry it past the threshold.
-    return 1.0 if max_status >= 3
+    # [SLASH-1] vm_error (status 3) = софт-збій прошивки (mruby crash / unprovisioned),
+    # NOT bio-stress and NOT tamper: the old `>= 3 → 1.0` short-circuit put a firmware
+    # bug ABOVE the slash threshold (0.83) — a cluster-wide bad OTA read as max-stress
+    # on every tree (slash trigger + damage sizing at once). The status channel on a
+    # vm_error day is simply UNKNOWN → contribute 0, let DIRECT signals speak; the
+    # ops-side lives in the :firmware_fault EwsAlert (AlertDispatchService). Deliberate
+    # conservatism: MAX(bio_status) with vm_error masks a same-day stress/anomaly —
+    # undercounting stress < falsely slashing («не карати жертву»).
     # [E.64] Removed two confounded terms: the always-on `avg_z>2 → +0.2` (z_eq=ρ−1≥9,
     # so it never discriminated — a constant sitting at the 0.20 threshold) and the
     # ambient `temp → +0.1` weather term (humid/extreme weather suppresses sap on a
     # HEALTHY tree — the VPD gate DISCOUNTS for that; weather must never ADD stress).
     # Stress now = status-category (Z-categorical, ρ-relative E.64) + DIRECT signals.
-    base_stress = (max_status >= 1 ? 0.6 : 0.0)   # stress(1)/anomaly(2): bounded < slash 0.83
+    # A Z-derived ANOMALY (status 2) does NOT slash alone: bounded 0.6 < 0.83 tree
+    # slash threshold (05_05 §3) — only DIRECT signals (sap / cavitation) can carry
+    # it past the threshold.
+    # Єдине місце поза enum'ом, що трактує bio_status-інти (SQL MAX-агрегат) —
+    # тримаємо прив'язку до TelemetryLog.bio_statuses, не голі літерали.
+    stress_code  = TelemetryLog.bio_statuses.fetch("stress")
+    anomaly_code = TelemetryLog.bio_statuses.fetch("anomaly")
+    base_stress = (max_status.between?(stress_code, anomaly_code) ? 0.6 : 0.0) # bounded < slash 0.83
     # sap_flow↓ and cavitation↑ are CORRELATED drought signals (one root cause) →
     # take the STRONGER, never SUM (00_01 SLASH-SAFETY: corroboration, not double-penalty).
     # Both inert until ENV-calibrated.
@@ -438,7 +448,7 @@ class InsightGeneratorService < ApplicationService
 
   def generate_summary(status, temp)
     case status
-    when 3 then "КРИТИЧНО: Виявлено фізичне пошкодження корпусу."
+    when 3 then "ЗБІЙ ПРОШИВКИ: пристрій не зміг порахувати біостатус (mruby VM error) — потрібен re-flash/OTA."
     when 2 then "АНОМАЛІЯ: Атрактор вказує на хворобу або шкідників."
     when 1 then "СТРЕС: Вузол реагує на зовнішнє середовище (#{temp.round(1)}°C)."
     else "ГОМЕОСТАЗ: Стан дерева ідеальний."

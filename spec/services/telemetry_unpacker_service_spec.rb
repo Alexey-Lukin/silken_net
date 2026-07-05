@@ -230,7 +230,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
   end
 
   describe "interpret_status" do
-    it "maps status codes 1, 2, 3 to stress, anomaly, tamper_detected" do
+    it "maps status codes 1, 2, 3 to stress, anomaly, vm_error" do
       # [FW.29-PACK] Status byte layout: [PanicFlag:1 (bit 7) | Status:2 (bits 6..5) | GP:5 (bits 4..0)]
       # code 1 → :stress (status_byte = 0b010_00000 = 32)
       chunk_stress = build_chunk(did_hex, -70, 3500, 25, 5, 100, 32, 3)
@@ -244,11 +244,11 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       log = TelemetryLog.last
       expect(log.bio_status).to eq("anomaly")
 
-      # code 3 → :tamper_detected (status_byte = 0b110_00000 = 96)
-      chunk_tamper = build_chunk(did_hex, -70, 3500, 25, 5, 100, 96, 3)
-      described_class.call(chunk_tamper)
+      # code 3 → :vm_error (status_byte = 0b110_00000 = 96 = BIO_STATUS_VM_ERROR 0x60)
+      chunk_vm_error = build_chunk(did_hex, -70, 3500, 25, 5, 100, 96, 3)
+      described_class.call(chunk_vm_error)
       log = TelemetryLog.last
-      expect(log.bio_status).to eq("tamper_detected")
+      expect(log.bio_status).to eq("vm_error")
     end
   end
 
@@ -319,7 +319,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         expect(result2).to eq(:anomaly)
 
         result3 = service.send(:interpret_status, 3)
-        expect(result3).to eq(:tamper_detected)
+        expect(result3).to eq(:vm_error)
       end
 
       it "returns nil for an undefined status code" do
@@ -517,10 +517,10 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         service.send(:check_metabolic_divergence!, tree, { bio_status: :stress }, status_byte_for(1, 7))
       end
 
-      it "does not flag anomaly/tamper — GP already neutralised by emission_eligible_growth_points" do
+      it "does not flag anomaly/vm_error — GP already neutralised by emission_eligible_growth_points" do
         expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
         service.send(:check_metabolic_divergence!, tree, { bio_status: :anomaly }, status_byte_for(2, 9))
-        service.send(:check_metabolic_divergence!, tree, { bio_status: :tamper_detected }, status_byte_for(3, 31))
+        service.send(:check_metabolic_divergence!, tree, { bio_status: :vm_error }, status_byte_for(3, 31))
       end
     end
 
@@ -1069,23 +1069,23 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         expect(log.bio_status).to eq("anomaly")
       end
 
-      it "tamper (status=3) survives PANIC_FLAG_BIT mask without being demoted to stress" do
-        # [FW.29-PACK regression]: BIO_STATUS_VM_ERROR = 0xFF, masked to 0x7F.
-        # Pre-fix decoding: `0x7F >> 6 = 1` (stress) — silent tamper demotion.
-        # Post-fix: `(0x7F >> 5) & 0x03 = 3` (tamper).
+      it "vm_error (status=3) survives PANIC_FLAG_BIT mask without being demoted to stress" do
+        # [FW.29-PACK regression]: legacy BIO_STATUS_VM_ERROR = 0xFF, masked to 0x7F.
+        # Pre-fix decoding: `0x7F >> 6 = 1` (stress) — silent status-3 demotion.
+        # Post-fix: `(0x7F >> 5) & 0x03 = 3` (vm_error).
         chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0x7F, 3)
         described_class.call(chunk)
         log = TelemetryLog.last
-        expect(log.bio_status).to eq("tamper_detected")
-        # [FW.29] Emission gate: tamper не карбує — раніше
+        expect(log.bio_status).to eq("vm_error")
+        # [FW.29] Emission gate: vm_error не карбує — раніше
         # legacy VM_ERROR (0xFF→0x7F) приносив (0x7F & 0x1F) * 2 = 62 бали
-        # за КОЖЕН error-пакет. Тепер gp = 0 для anomaly/tamper.
+        # за КОЖЕН error-пакет. Тепер gp = 0 для anomaly/vm_error.
         expect(log.growth_points).to eq(0)
       end
 
       # [FW.29] Emission eligibility gate — канон 04_01/05_02:
-      # емісія лише для homeostasis/stress; anomaly зупиняє, tamper'у не віримо.
-      describe "emission eligibility gate (anomaly/tamper → growth_points 0)" do
+      # емісія лише для homeostasis/stress; anomaly зупиняє, vm_error'у не віримо.
+      describe "emission eligibility gate (anomaly/vm_error → growth_points 0)" do
         it "zeroes growth_points for anomaly even when wire gp bits are non-zero (bit-flip defense)" do
           # status_byte = 0b010_01010 = anomaly(2) + wire gp=10 (зловмисний/бітфліп)
           chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0b010_01010, 3)
@@ -1095,12 +1095,12 @@ RSpec.describe TelemetryUnpackerService, type: :service do
           expect(log.growth_points).to eq(0)
         end
 
-        it "zeroes growth_points for firmware VM_ERROR wire byte 0x60 (tamper, gp=0)" do
-          # Новий firmware BIO_STATUS_VM_ERROR = 0x60: [0|11|00000]
+        it "zeroes growth_points for firmware VM_ERROR wire byte 0x60 (vm_error, gp=0)" do
+          # Firmware BIO_STATUS_VM_ERROR = 0x60: [0|11|00000]
           chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0x60, 3)
           described_class.call(chunk)
           log = TelemetryLog.last
-          expect(log.bio_status).to eq("tamper_detected")
+          expect(log.bio_status).to eq("vm_error")
           expect(log.growth_points).to eq(0)
         end
 

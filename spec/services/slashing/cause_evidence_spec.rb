@@ -5,6 +5,9 @@ require "rails_helper"
 # [SLASH-1 §3.2] Positive-A-evidence — конкретно ЯКІ сигнали = доказ Категорії A.
 # Фаза-1 свідомо КОНСЕРВАТИВНА: лише tamper (vandalism_breach). Force-majeure-типи
 # (fire/drought) НЕ є доказом A → freeze (Категорія C), не burn.
+# [SLASH-1 P0] vandalism_breach не має автоматичного writer'а (wire status=3 =
+# vm_error → firmware_fault) — тут він створюється factory-напряму, що відповідає
+# єдиному живому джерелу: ручній Field-Audit C→A ескалації (06_08 §4).
 RSpec.describe Slashing::CauseEvidence do
   subject(:evidence) { described_class.new(cluster) }
 
@@ -34,6 +37,13 @@ RSpec.describe Slashing::CauseEvidence do
 
     it "is FALSE for a severe_drought alert (force-majeure, not negligence)" do
       create(:ews_alert, cluster: cluster, severity: :critical, alert_type: :severe_drought, status: :active)
+      expect(evidence.positive_a?).to be(false)
+    end
+
+    # [SLASH-1 P0] Софт-збій прошивки (wire vm_error) — НЕ доказ вандалізму:
+    # кластерний OTA-баг не сміє відкривати ворота необоротного slash.
+    it "is FALSE for a firmware_fault alert (software fault ≠ tamper)" do
+      create(:ews_alert, cluster: cluster, severity: :critical, alert_type: :firmware_fault, status: :active)
       expect(evidence.positive_a?).to be(false)
     end
 

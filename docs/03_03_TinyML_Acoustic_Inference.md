@@ -25,7 +25,7 @@
 | [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | `acoustic_events` → атрактор Лоренца |
 | [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Шифрування panic-пакетів EwsAlert |
 | [`04_01` — Data Models and Entities](04_01_Data_Models_and_Entities) | `TelemetryLog.acoustic_events` |
-| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `TelemetryUnpackerService`, `EwsAlertCreatorService` |
+| [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `TelemetryUnpackerService`, `AlertDispatchService` |
 | `firmware/soldier/main.c` · `silken_net_audio_model.h` (self-owned baseline, `FW.4`) · `_stub.h` (fallback) | Phase 1.5 + ISR; INT8 forward-pass інференс приземлено; партнерська модель — опційний апгрейд |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Статус** (SSOT): FW.4 ✅ baseline landed (machine half; ARM-size + bench residual) · FW.18b threshold · FW.25 DSP Path B |
 
@@ -694,17 +694,19 @@ TinyML Inference → ml_event_id → acoustic_events counter
 ### 7.2 Вихід TinyML → EwsAlert (Клас 3)
 
 ```
-ml_event_id == 3 (Chainsaw) + ml_confidence > 0.80
+ml_event_id == 3 (Chainsaw) + confidence ≥ critical-поріг (АБО 3× WARNING-ескалація)
         ↓
-Trigger_Emergency_LoRa_TX() [panic_payload[7] = 0xFF, TTL=5]
+Trigger_Emergency_LoRa_TX() [StatusByte = PANIC_FLAG (status=homeostasis!), acoustic=0xFF, TTL=5]
         ↓
 Queen (CIFO cache: byte[7] = 0xFF → critical priority eviction)
         ↓
-TelemetryUnpackerService detects acoustic_events = 255
+TelemetryUnpackerService: panic = status_byte & PANIC_FLAG_BIT (SEC.10 anti-replay counter)
         ↓
-EwsAlertCreatorService → EwsAlert(severity: :critical, event_type: :chainsaw_detected)
+AlertDispatchService: panic? || bio_status_anomaly? (без термального порога)
+        ↓ [SLASH-1 P0: гейт саме panic?-first — реальна пилка НЕ ставить anomaly-status]
+EwsAlert(severity: :critical, alert_type: :chainsaw_detected, "(PANIC-TX)" у message)
         ↓
-NotificationWorker → WebSocket / SMS / PagerDuty alert
+EwsAlert.after_create_commit → dispatch_notifications! → WebSocket / SMS / PagerDuty
 ```
 
 ### 7.3 TinyML та mruby Lorenz Attractor

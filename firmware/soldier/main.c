@@ -89,10 +89,12 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 // (часті пробудження) лише пришвидшує — вухо й так відкривалось частіше.
 #define OTA_REREQUEST_SILENT_WAKEUPS  10u    // [FW.27-B] тихих пробуджень до re-request
 #define OTA_MISMATCH_RESET_THRESHOLD 3       // [FW.53] N поспіль чужих total → відпустити мертву кампанію
-// Мітка помилки mruby VM на дроті: [panic:0|status:11=tamper|growth:00000].
+// Мітка помилки mruby VM на дроті: [panic:0|status:11=vm_error|growth:00000].
 // [FW.29] Було 0xFF — після FW.29-маски (&~0x80) ставало 0x7F =
-// tamper + growth_points 31 → бекенд (×2) карбував 62 бали за КОЖЕН error-пакет.
+// status=3 + growth_points 31 → бекенд (×2) карбував 62 бали за КОЖЕН error-пакет.
 // 0x60 переживає маску незмінним і чесно каже: довіри нема, емісії нема.
+// [SLASH-1] status=3 — це НАШ софт-збій, не tamper: бекенд декодує його як
+// vm_error → firmware_fault (ops-тріаж), справжня пилка кричить PANIC_FLAG'ом.
 #define BIO_STATUS_VM_ERROR       0x60
 #define VCAP_LISTEN_THRESHOLD     2800       // Поріг напруги для прослуховування ефіру (мВ)
 // [FW.49 S1] delta_t — wall-секунди з RTC-календаря (LSE йде у STOP2);
@@ -2217,7 +2219,8 @@ int main(void)
               lorenz_y = (float)mrb_float(mrb_ary_entry(ruby_result, 2));
               lorenz_z = (float)mrb_float(mrb_ary_entry(ruby_result, 3));
           } else {
-              // Помилка mruby або невалідний результат — позначаємо tamper
+              // Помилка mruby або невалідний результат — чесний VM_ERROR
+              // (бекенд: vm_error → firmware_fault, НЕ вандалізм)
               lora_payload[10] = BIO_STATUS_VM_ERROR;
               lorenz_state_valid = 0; // Скидаємо для наступного циклу
               if (mrb->exc) mrb->exc = NULL;

@@ -637,6 +637,20 @@ RSpec.describe BlockchainBurningService do
                            tree: nil, status: :active, created_at: 1.hour.ago)
         expect(service.send(:critical_unmaintained?)).to be(false)
       end
+
+      # [SLASH-1] firmware_fault (wire vm_error) = vendor-attributable софт-збій:
+      # «не виїхав на mruby-crash» ≠ фізична недбалість оператора (лікується OTA).
+      it "excludes :firmware_fault from critical_unmaintained? (software fault ≠ negligence)" do
+        create(:ews_alert, cluster: cluster, severity: :critical, alert_type: :firmware_fault,
+                           status: :active, created_at: 1.hour.ago)
+        expect(service.send(:critical_unmaintained?)).to be(false)
+      end
+
+      it "excludes :firmware_fault from comms_no_ack? (node is alive — only mruby is broken)" do
+        create(:ews_alert, cluster: cluster, severity: :critical,
+                           alert_type: :firmware_fault, status: :active)
+        expect(service.send(:comms_no_ack?)).to be(false)
+      end
     end
   end
 
@@ -898,6 +912,58 @@ RSpec.describe BlockchainBurningService do
       described_class.call(organization.id, naas_contract.id, source_tree: tree_burn)
 
       expect(naas_contract.reload.status).not_to eq("breached")
+    end
+  end
+
+  # [ARCH.53 TOCTOU] Per-contract claim: дві істинно-конкурентні екзекуції не сміють
+  # обидві пройти guard→transact (double-slash). Partial-UNIQUE-index неможливий
+  # (PARTITION BY RANGE(created_at)), unique_for = Enterprise-шим, Rails.cache =
+  # SolidCache у prod (unless_exist НЕ атомарний для неіснуючого рядка) →
+  # non-blocking Kredis.lock (Redis SET NX + UUID-токен CAS-release).
+  describe "[ARCH.53] per-contract slash claim (TOCTOU double-slash)" do
+    let(:tree_claim) { create(:tree, cluster: cluster) }
+
+    before do
+      create(:blockchain_transaction, wallet: tree_claim.wallet, amount: 100, status: :confirmed)
+      create(:ai_insight, analyzable: tree_claim, insight_type: :daily_health_summary,
+             target_date: cluster.local_yesterday, stress_index: 1.0)
+    end
+
+    it "wraps the slash window in a non-blocking per-contract Kredis claim" do
+      described_class.call(organization.id, naas_contract.id, source_tree: tree_claim)
+
+      expect(Kredis).to have_received(:lock)
+        .with("slash:claim:#{naas_contract.id}", expires_in: described_class::SLASH_CLAIM_TTL)
+    end
+
+    it "raises (→ Sidekiq retry) and creates NO intent when another worker holds the claim" do
+      allow(Kredis).to receive(:lock) do |key, **_kwargs, &blk|
+        raise Kredis::LockTimeout, "held" if key.start_with?("slash:claim:")
+
+        blk.call
+      end
+
+      expect {
+        described_class.call(organization.id, naas_contract.id, source_tree: tree_claim)
+      }.to raise_error(Kredis::LockTimeout)
+
+      expect(BlockchainTransaction.where(sourceable: naas_contract)).to be_empty
+      expect(mock_client).not_to have_received(:transact)
+    end
+
+    it "a sequential re-run after a completed slash sees the intent and does not double-slash" do
+      expect(described_class.call(organization.id, naas_contract.id, source_tree: tree_claim)).to eq(:slashed)
+      expect(described_class.call(organization.id, naas_contract.id, source_tree: tree_claim)).to eq(:slashed)
+      expect(mock_client).to have_received(:transact).once
+    end
+
+    it "does not touch the claim on the freeze path (gate exits before acquisition)" do
+      allow_any_instance_of(Slashing::CauseEvidence).to receive(:positive_a?).and_return(false)
+
+      result = described_class.call(organization.id, naas_contract.id, source_tree: tree_claim)
+
+      expect(result).to eq(:frozen)
+      expect(Kredis).not_to have_received(:lock)
     end
   end
 end

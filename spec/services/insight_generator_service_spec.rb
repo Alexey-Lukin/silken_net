@@ -239,17 +239,17 @@ RSpec.describe InsightGeneratorService, type: :service do
       expect(insight.summary).to include("АНОМАЛІЯ")
     end
 
-    it "generates critical summary for status 3 (tamper_detected)" do
+    it "generates firmware-fault summary for status 3 (vm_error)" do
       create(:telemetry_log, tree: tree,
         temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
         acoustic_events: 2, growth_points: 5,
-        bio_status: :tamper_detected, metabolism_s: 1000,
+        bio_status: :vm_error, metabolism_s: 1000,
         created_at: date.beginning_of_day + 12.hours)
 
       described_class.call(date)
 
       insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
-      expect(insight.summary).to include("КРИТИЧНО")
+      expect(insight.summary).to include("ЗБІЙ ПРОШИВКИ")
     end
 
     it "handles errors gracefully and returns false for problematic trees" do
@@ -327,9 +327,13 @@ RSpec.describe InsightGeneratorService, type: :service do
         expect(insight.stress_index).to eq(0.6)
       end
 
-      it "[E.64] tamper / VM-error (status 3) → 1.0 (contract-integrity failure, not Z-health)" do
+      # [SLASH-1 P0] Інвертовано: старий пін `>= 3 → 1.0` цементував конфляцію
+      # софт-збою з tamper — кластерний OTA-баг читався max-стресом на кожному
+      # дереві (тригер слешу + damage-sizing разом). vm_error = статус НЕВІДОМИЙ
+      # (пристрій не порахував) → 0.0, говорять лише прямі сигнали.
+      it "[SLASH-1] vm_error (status 3) → 0.0 (firmware fault, NOT bio-stress)" do
         service = described_class.new
-        expect(service.send(:calculate_stress_index_heuristic, 3, 25.0, 0, 0.5)).to eq(1.0)
+        expect(service.send(:calculate_stress_index_heuristic, 3, 25.0, 0, 0.5)).to eq(0.0)
       end
 
       it "[E.64] status 1 (stress) → bounded 0.6 (z/temp terms removed)" do

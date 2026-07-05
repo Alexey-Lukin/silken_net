@@ -62,8 +62,8 @@ RSpec.describe TelemetryLog, type: :model do
       expect(log).to be_critical
     end
 
-    it "returns true for tamper status" do
-      log = build(:telemetry_log, :tampered)
+    it "returns true for vm_error status" do
+      log = build(:telemetry_log, :vm_errored)
       expect(log).to be_critical
     end
 
@@ -296,18 +296,6 @@ RSpec.describe TelemetryLog, type: :model do
     end
   end
 
-  describe ".vandalized" do
-    it "returns only tamper_detected records" do
-      tree = create(:tree)
-      tampered = create(:telemetry_log, :tampered, tree: tree)
-      healthy = create(:telemetry_log, :healthy, tree: tree)
-
-      result = described_class.vandalized
-      expect(result).to include(tampered)
-      expect(result).not_to include(healthy)
-    end
-  end
-
   # =========================================================================
   # BIO_STATUS ENUM
   # =========================================================================
@@ -329,9 +317,9 @@ RSpec.describe TelemetryLog, type: :model do
       expect(log).to be_bio_status_anomaly
     end
 
-    it "supports tamper_detected status" do
-      log = build(:telemetry_log, tree: tree, bio_status: :tamper_detected)
-      expect(log).to be_bio_status_tamper_detected
+    it "supports vm_error status" do
+      log = build(:telemetry_log, tree: tree, bio_status: :vm_error)
+      expect(log).to be_bio_status_vm_error
     end
   end
 

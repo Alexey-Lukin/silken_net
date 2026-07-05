@@ -74,6 +74,67 @@ RSpec.describe EwsAlert, type: :model do
       alert = build(:ews_alert)
       expect(alert).to be_satellite_unverified
     end
+
+    it "defines firmware_fault alert type (SLASH-1: wire vm_error, NOT vandalism)" do
+      alert = build(:ews_alert, alert_type: :firmware_fault)
+      expect(alert).to be_alert_type_firmware_fault
+    end
+  end
+
+  # [SLASH-1] Dedup cluster-level Field-Audit ескалацій: одна АКТИВНА на кластер —
+  # щоденні crons (freeze/blackout/insurance no-data) не плодять дубль щодоби.
+  describe ".escalate_field_audit!" do
+    let(:cluster) { create(:cluster) }
+
+    it "creates an active cluster-level field_audit alert" do
+      alert = described_class.escalate_field_audit!(cluster: cluster, message: "Перевірити кластер")
+
+      expect(alert).to be_persisted
+      expect(alert.alert_type).to eq("field_audit")
+      expect(alert.severity).to eq("critical")
+      expect(alert.tree_id).to be_nil
+    end
+
+    it "skips (returns nil) while an active cluster field_audit already exists" do
+      described_class.escalate_field_audit!(cluster: cluster, message: "День 1: blackout")
+
+      expect {
+        result = described_class.escalate_field_audit!(cluster: cluster, message: "День 2: blackout триває")
+        expect(result).to be_nil
+      }.not_to change(described_class, :count)
+    end
+
+    it "creates a fresh escalation after the previous one is resolved" do
+      first = described_class.escalate_field_audit!(cluster: cluster, message: "Епізод 1")
+      first.update!(status: :resolved)
+
+      second = described_class.escalate_field_audit!(cluster: cluster, message: "Епізод 2")
+      expect(second).to be_persisted
+    end
+
+    it "does not dedup across different clusters" do
+      other_cluster = create(:cluster)
+      described_class.escalate_field_audit!(cluster: cluster, message: "Кластер 1")
+
+      expect(described_class.escalate_field_audit!(cluster: other_cluster, message: "Кластер 2")).to be_persisted
+    end
+
+    # Програна unique-гонка МУСИТЬ гаситись SAVEPOINT'ом: викликач (arm_candidate!)
+    # тримає відкриту транзакцію — без requires_new PG-абортована транзакція тихо
+    # перетворює імпліцитний COMMIT на ROLLBACK і trigger! зникає без ексепшена.
+    it "does not poison an enclosing transaction when losing the unique race (savepoint)" do
+      described_class.escalate_field_audit!(cluster: cluster, message: "Переможець")
+      # Сліпимо dedup-скан → create! реально б'ється об partial unique index.
+      allow(described_class).to receive(:active_cluster_field_audit_for).and_return(nil)
+
+      sibling = nil
+      ActiveRecord::Base.transaction do
+        sibling = create(:ews_alert, cluster: cluster, alert_type: :fire_detected, severity: :critical)
+        expect(described_class.escalate_field_audit!(cluster: cluster, message: "Програв гонку")).to be_nil
+      end
+
+      expect(sibling.reload).to be_persisted # зовнішня транзакція КОМІТНУЛАСЬ
+    end
   end
 
   # =========================================================================

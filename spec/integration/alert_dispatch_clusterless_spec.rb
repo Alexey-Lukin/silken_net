@@ -29,13 +29,17 @@ RSpec.describe "AlertDispatchService with clusterless trees" do
       expect(alert.cluster).to eq(cluster)
     end
 
-    it "creates vandalism alert for tamper detection" do
-      log = create(:telemetry_log, tree: tree, bio_status: :tamper_detected,
-                                   temperature_c: 25, voltage_mv: 3500, acoustic_events: 5)
+    # [SLASH-1 P0] status=3 = софт-збій прошивки → firmware_fault, НЕ vandalism_breach.
+    # z_value у межах породи: vm_error більше не обриває аналіз, тож фабричний
+    # z=0.35 (поза 5..45) додав би ще й severe_drought.
+    it "creates firmware_fault alert for a vm_error frame" do
+      log = create(:telemetry_log, tree: tree, bio_status: :vm_error,
+                                   temperature_c: 25, voltage_mv: 3500, acoustic_events: 5,
+                                   z_value: 25.0)
       expect { AlertDispatchService.analyze_and_trigger!(log) }
         .to change(EwsAlert, :count).by(1)
 
-      expect(EwsAlert.last.alert_type).to eq("vandalism_breach")
+      expect(EwsAlert.last.alert_type).to eq("firmware_fault")
     end
 
     it "creates low voltage alert without halting analysis" do

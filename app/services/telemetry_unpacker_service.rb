@@ -556,20 +556,22 @@ class TelemetryUnpackerService < ApplicationService
   end
 
   def interpret_status(code)
-    # Відповідає enum :bio_status у моделі TelemetryLog
+    # Відповідає enum :bio_status у моделі TelemetryLog.
+    # [SLASH-1] Код 3 = BIO_STATUS_VM_ERROR (софт-збій прошивки), НЕ tamper:
+    # mruby pack_status_byte повертає лише 0..2, фізичний tamper їде PANIC_FLAG.
     case code
     when 0 then :homeostasis
     when 1 then :stress
     when 2 then :anomaly
-    when 3 then :tamper_detected
+    when 3 then :vm_error
     end
   end
 
   # [FW.29] Емісія дозволена лише для homeostasis/stress —
-  # канон 04_01/05_02: anomaly зупиняє емісію, tamper їй не довіряє.
-  # Захист від wire-байтів, де status=anomaly/tamper приходить із ненульовими
+  # канон 04_01/05_02: anomaly зупиняє емісію, vm_error їй не довіряє.
+  # Захист від wire-байтів, де status=anomaly/vm_error приходить із ненульовими
   # gp-бітами: бітфліп у ECB-блоці або firmware VM_ERROR. Старий VM_ERROR
-  # (0xFF→0x7F після FW.29-маски) декодувався як tamper + gp=31 → ×2 = 62
+  # (0xFF→0x7F після FW.29-маски) декодувався як status=3 + gp=31 → ×2 = 62
   # бали за кожен error-пакет. Firmware-сторона виправлена (VM_ERROR=0x60,
   # gp=0); цей гейт — defense-in-depth для старих прошивок і бітфліпів.
   EMISSION_ELIGIBLE_STATUSES = %i[homeostasis stress].freeze
@@ -602,7 +604,7 @@ class TelemetryUnpackerService < ApplicationService
       when :stress
         wire_gp == SilkenNet::Attractor::GP_STRESS
       else
-        true # anomaly/tamper GP already neutralised by emission_eligible_growth_points
+        true # anomaly/vm_error GP already neutralised by emission_eligible_growth_points
       end
 
     if conformant

@@ -31,6 +31,18 @@ class BlockchainBurningService < ApplicationService
   # Змініть тут, якщо почнемо підтримувати стейблкоіни з іншою розрядністю (напр. USDC = 6).
   TOKEN_DECIMALS = 18
 
+  # [ARCH.53 TOCTOU] Дві істинно-конкурентні екзекуції одного контракту (zombie-Sidekiq +
+  # свіжий крон) обидві проходили in-flight guard ДО того, як перша створила інтент →
+  # подвійний необоротний slashUpTo. Партиційний partial-UNIQUE-index неможливий
+  # (PARTITION BY RANGE(created_at) вимагає partition-key в unique — вбиває dedup-семантику),
+  # `unique_for` = Sidekiq Enterprise (шим no-op, 04_02 DOC-R.10 — познач залежність,
+  # не костиль). Тому non-blocking per-contract claim через Kredis.lock (SET NX + UUID-токен
+  # + CAS-release — безумовний delete після TTL-експірі знімав би ЧУЖИЙ claim) навколо
+  # вікна guard→transact→mark_as_sent; конкурент → Kredis::LockTimeout → Sidekiq-retry,
+  # який уже бачить інтент переможця (:sent → re-arm; stale :pending → supersede).
+  # TTL страхує hard-kill; CAS-release не блокує легітимний наступний прохід.
+  SLASH_CLAIM_TTL = 2.minutes
+
   # [05_05 §3 Slashing curve — DAO-governed via SystemParameter ← ProtocolParameters.sol (05_03)]
   DEFAULT_SLASH_GAMMA = 1.3          # convex progressive curve (no dead-zone)
   DEFAULT_PENALTY_FACTOR_MAX = 2.0   # ceiling on the penalty MULTIPLIER (not final slash_ratio)
@@ -94,6 +106,19 @@ class BlockchainBurningService < ApplicationService
       return freeze_for_field_audit!
     end
 
+    # [ARCH.53 TOCTOU] Non-blocking claim НАВКОЛО вікна guard→transact→mark_as_sent (шапка
+    # класу). Конфлікт → Kredis::LockTimeout ЗВІДСИ (поза step-3 begin/rescue) → без
+    # audit-сміття і хибного system_fault, чистий Sidekiq-retry.
+    Kredis.lock("slash:claim:#{@naas_contract.id}", expires_in: SLASH_CLAIM_TTL) do
+      execute_slash!(total_minted_amount)
+    end
+  end
+
+  private
+
+  # [ARCH.53] Тіло вироку — виконується ПІД per-contract claim'ом (perform).
+  # Kredis::LockTimeout тут = ОРАКУЛ-лок (step 3), його ловить власний rescue нижче.
+  def execute_slash!(total_minted_amount)
     # [ARCH.45/ARCH.48] In-flight guard ПІСЛЯ positive-A gate (лише slash-шлях, НЕ freeze — інакше
     # intent-сміття для заморожених). `unsettled_within` (вкл. :manual_review), бо ambiguous slash
     # (broadcast невідомий) ескалюється у :manual_review і МУСИТЬ блокувати re-slash:
@@ -254,8 +279,6 @@ class BlockchainBurningService < ApplicationService
     end
   end
 
-  private
-
   # [SLASH-1 §3.2] Чи є прямий доказ Категорії A для цього кластера. Дім сигналів —
   # Slashing::CauseEvidence (фаза-1 = tamper). source_tree пробрасується для майбутнього
   # per-tree звуження.
@@ -286,10 +309,9 @@ class BlockchainBurningService < ApplicationService
     # [SLASH-1] :field_audit (не :system_fault): freeze — це НАШ вирок «слухай, не карай»,
     # а не доказ «вузол offline». Окремий тип не дає freeze самонакручувати penalty_factor
     # через comms_no_ack? (ARCH.46 gap-D) і не конфлатить аудит із comms-fault при дедупі.
-    EwsAlert.create!(
+    # Хелпер дедуплікує: щоденний cron при тривалій деградації не плодить дублі.
+    EwsAlert.escalate_field_audit!(
       cluster: @cluster,
-      severity: :critical,
-      alert_type: :field_audit,
       message: "Слешинг заблоковано (#{context}): #{detail}. Кошти НЕ спалено — потрібен Field Audit (Категорія C, 05_05 §3.2/§5)."
     )
 
@@ -309,10 +331,8 @@ class BlockchainBurningService < ApplicationService
 
     Rails.logger.warn "🏃 [SLASH.2] NaasContract ##{@naas_contract.id} (#{context}): on-chain баланс порушника ≈0 — активи виведено ПЕРЕД слешем (запит #{requested_burn} SCC). Slash не транслюємо (нема чого палити) → Field Audit / юридичний трек."
 
-    EwsAlert.create!(
+    EwsAlert.escalate_field_audit!(
       cluster: @cluster,
-      severity: :critical,
-      alert_type: :field_audit,
       message: "Slash-ухилення (#{context}): доказ Категорії A є, але порушник вивів усі SCC до виконання вироку (запит #{requested_burn} SCC, on-chain баланс ≈0). Спалення неможливе — потрібен юридичний/ручний трек (позов, off-chain clawback; 05_05 §3.2)."
     )
 
@@ -456,8 +476,10 @@ class BlockchainBurningService < ApplicationService
     # [P1-3] Виключаємо і :vandalism_breach — коли він дав `positive_a?` (єдиний шлях до Cat-A
     # slash), «не виїхав на tamper» вже покарано НЕОБОРОТНИМ slash → накручувати penalty на тому
     # самому алерті = self-ref подвійне. Незалежна фізична недбалість = реальні tree/hardware-алерти.
+    # [SLASH-1] І :firmware_fault — софт-збій прошивки vendor-attributable (наш баг,
+    # лікується OTA з бекенду): «не виїхав на mruby-crash» ≠ фізична недбалість оператора.
     stale_critical = @cluster.ews_alerts.severity_critical
-                             .where.not(alert_type: [ :field_audit, :vandalism_breach ])
+                             .where.not(alert_type: [ :field_audit, :vandalism_breach, :firmware_fault ])
                              .where(created_at: ..30.minutes.ago)
     return false unless stale_critical.exists?
 

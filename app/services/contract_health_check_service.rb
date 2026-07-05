@@ -77,10 +77,9 @@ class ContractHealthCheckService < ApplicationService
 
     # [SLASH-1] :field_audit (не :system_fault): дерево замовкло — це НАШ виклик «слухай», окремий
     # від comms-fault, щоб не накручувати penalty_factor (gap-D) і не маскувати сигнали при дедупі.
-    EwsAlert.create!(
+    # Хелпер дедуплікує: багатоденний блекаут не плодить дубль щодоби.
+    EwsAlert.escalate_field_audit!(
       cluster: @cluster,
-      severity: :critical,
-      alert_type: :field_audit,
       message: "Cluster-wide data blackout (#{@target_date}): можлива відмова шлюзу / Starlink-блекаут (force-majeure). Slashing НЕ застосовано — потрібен Field Audit (Category C, 05_05 §5)."
     )
 

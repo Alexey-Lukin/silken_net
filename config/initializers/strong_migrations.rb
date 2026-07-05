@@ -5,10 +5,10 @@
 # навіть "проста" ALTER TABLE може заблокувати таблицю на десятки хвилин.
 #
 # `start_after` вказує на найсвіжіший squash-anchor (init_consolidated).
-# Всі майбутні міграції з timestamp > 20260704210000 проходять
+# Всі майбутні міграції з timestamp > 20260705090000 проходять
 # Strong Migrations перевірки. Bump цього значення під час кожного
 # наступного squash (див. db/migrate/<ts>_init_consolidated.rb).
-StrongMigrations.start_after = 20260704210000
+StrongMigrations.start_after = 20260705090000
 
 # Час очікування lock-у на таблицю перед відміною міграції.
 # 10 секунд — безпечний ліміт для IoT uplink pipeline (телеметрія не чекатиме довше).

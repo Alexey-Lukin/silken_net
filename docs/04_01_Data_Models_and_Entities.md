@@ -518,7 +518,7 @@ any ──report_fault──► faulty
 
 | Поле | Тип | Опис |
 |------|-----|------|
-| `bio_status` | enum | `homeostasis(0) / stress(1) / anomaly(2) / tamper_detected(3)` |
+| `bio_status` | enum | `homeostasis(0) / stress(1) / anomaly(2) / vm_error(3)` — **[SLASH-1 P0]** код 3 = `BIO_STATUS_VM_ERROR` (софт-збій прошивки: mruby-crash/OOM/unprovisioned), НЕ tamper; фізичний tamper їде PANIC_FLAG-каналом (стара назва `tamper_detected` інвертувала semantics → хибний positive-A slash) |
 | `temperature_c` | decimal | Температура (°C) |
 | `voltage_mv` | integer | Напруга EBFC (мВ) |
 | `z_value` | decimal | Z-значення Атрактора Лоренца |
@@ -539,7 +539,7 @@ any ──report_fault──► faulty
 | `zk_proof_ref` | string | Посилання на ZK-proof IoTeX |
 | `gateway_attested` | boolean | **[L1 QATT]** Рядок приїхав під валідним Ed25519-підписом Королеви (default `false`; wire-дім [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security), ladder [`05_02`](05_02_Proof_of_Growth_Pipeline)) |
 | `chainlink_request_id` | string | ID запиту Chainlink Oracle |
-| `tamper_detected` | boolean | Спроба відкриття корпусу капсули |
+| `tamper_detected` | boolean | ⚠️ **DEAD-колонка** — жоден код не читає і не пише (tamper-семантика живе в алертах: panic→`chainsaw_detected`, ручний `vandalism_breach`); кандидат на прибирання або майбутній HW tamper-канал (tamper-switch/SE05x) |
 | `cold_start_flag` | boolean | `true` якщо пакет перший після VBAT loss (initial_state від K_seed, не warm chain) |
 | `lorenz_state_x/y/z` | float | Хвіст траєкторії Лоренца для chain-старту наступного пакету |
 | `time_unsynced_fallback` | boolean | `true` якщо DCI mismatch відновлено через ARCH.41 epoch_day fallback (Soldier мав застарілий RTC після VBAT loss); `CMD_TIME_SYNC` downlink поставлено в чергу автоматично |
@@ -549,13 +549,13 @@ any ──report_fault──► faulty
 | Метод | Опис |
 |-------|------|
 | `relayed_via_mesh?` | `mesh_ttl < стартовий TTL типу пакета` (`panic? ? 5 : 3` — `INITIAL_TTL_PANIC/NORMAL`). До FW.29-персистенції давній default 5 позначав «релейнутим» кожен direct normal-пакет |
-| `critical?` | `anomaly?` або `tamper_detected?` |
+| `critical?` | `anomaly?` або `vm_error?` |
 | `healthy?` | homeostasis + temp < 50 + acoustic < 20 |
 | `optimal?` | healthy + voltage > 3600 + `\|z_value − 29.0\| ≤ 4.0` (`Tree::GLOBAL_LORENZ_Z_OPTIMAL` ± `OPTIMAL_Z_BAND`; реліктовий до-FW.8 діапазон 0.1..0.5 ретирувано) |
 | `recovery_confirmed?` | `healthy? && tree.health_streak >= 3` |
 | `.partition_pruned(iso, metric_caller:)` | **[S6.16]** One-Home pruning-логіки: chainable 1с-вікно по `created_at` (толерантне до секундної точності ISO — стандарт `BlockchainTransaction`) + облік degraded path лічильником `unpruned_lookups`. Воркери/сервіси/контролери делегують сюди, НЕ дублюють |
 
-**Scopes:** `recent`, `anomalies`, `in_timeframe`, `vandalized`.
+**Scopes:** `recent`, `anomalies`, `in_timeframe` (`vandalized` видалено — мертвий scope на хибній tamper-семантиці).
 
 > ⚡ **KENOSIS TITAN:** Валідації видалено з hot path. Перевірка відбувається в `TelemetryUnpackerService.valid_sensor_data?` до INSERT.
 
@@ -1084,7 +1084,7 @@ active/draft ──cancel──► cancelled
 |------|----------|
 | `status` | `active(0) / resolved(1) / ignored(2)` |
 | `severity` | `low(0) / medium(1) / critical(2)` |
-| `alert_type` | `severe_drought(0) / insect_epidemic(1) / vandalism_breach(2) / fire_detected(3) / seismic_anomaly(4) / system_fault(5) / entropy_anomaly(6) / field_audit(7) / queen_offline(8) / queen_uplink_lost(9) / chainsaw_detected(10)` (prefix: true) — `field_audit` = аудит на місці (причина невизначена: no-data blackout / freeze без прямого доказу A / insurance-кандидат), свідомо окремий від `system_fault` (поломка заліза/зв'язку), щоб не накручувати penalty_factor через `comms_no_ack?` (gap-D) і не конфлатити дедуп ([SLASH-1](00_07_Action_Plan_Tracker)); `queen_offline(8)`/`queen_uplink_lost(9)` = дзеркальна пара gateway-health (Rails помітив тишу / Королева кричить через Helium — ARCH.54/34); `chainsaw_detected(10)` = acoustic-anomaly без термального сигналу ([SLASH-1] спліт: TinyML chainsaw/cavitation → anomaly при нормальній t° = вирубка, не вогонь; non-fire маршрут dClimate → Field-Audit; ⚠️ НЕ в A-сет slash'а до field-validation TinyML) |
+| `alert_type` | `severe_drought(0) / insect_epidemic(1) / vandalism_breach(2) / fire_detected(3) / seismic_anomaly(4) / system_fault(5) / entropy_anomaly(6) / field_audit(7) / queen_offline(8) / queen_uplink_lost(9) / chainsaw_detected(10)` (prefix: true) — `field_audit` = аудит на місці (причина невизначена: no-data blackout / freeze без прямого доказу A / insurance-кандидат), свідомо окремий від `system_fault` (поломка заліза/зв'язку), щоб не накручувати penalty_factor через `comms_no_ack?` (gap-D) і не конфлатити дедуп ([SLASH-1](00_07_Action_Plan_Tracker)); `queen_offline(8)`/`queen_uplink_lost(9)` = дзеркальна пара gateway-health (Rails помітив тишу / Королева кричить через Helium — ARCH.54/34); `chainsaw_detected(10)` = acoustic-anomaly АБО panic-TX без термального сигналу ([SLASH-1] спліт + P0-фікс гейта `panic? \|\| bio_status_anomaly?`: реальна пилка їде panic-кадром зі status=homeostasis; non-fire маршрут dClimate → Field-Audit; ⚠️ НЕ в A-сет slash'а до field-validation TinyML); `firmware_fault(11)` = софт-збій прошивки (wire `vm_error`: mruby-crash/OOM/unprovisioned — vendor-attributable ops-тріаж; НЕ в A-сеті, НЕ в `comms_no_ack?`, виключений з `critical_unmaintained?`); `vandalism_breach(2)` — [SLASH-1 P0] авто-writer'а немає, створюється лише ручною Field-Audit C→A ескалацією ([`06_08 §4`](06_08_Resilience_and_Failover_Policy)) |
 | `satellite_status` | `unverified(0) / verified(1) / rejected_fraud(2) / inconclusive(3)` (prefix: :satellite) |
 
 **AASM:** `mark_resolved`, `ignore`, `reopen` (resolved/ignored→active).
@@ -1098,7 +1098,7 @@ active/draft ──cancel──► cancelled
 | `resolved_at` | datetime | Час вирішення |
 | `dclimate_ref` | string | Посилання на dClimate для супутникової верифікації |
 
-**Унікальність:** `alert_type` унікальний в межах `[tree_id, status]` — захист від дублів.
+**Унікальність:** `alert_type` унікальний в межах `[tree_id, status]` — захист від дублів. **[SLASH-1]** cluster-level дзеркало: частковий unique-index `(cluster_id) WHERE alert_type=field_audit AND status=active AND tree_id IS NULL` + One-Home хелпер `EwsAlert.escalate_field_audit!(cluster:, message:)` (exists?-skip → nil; `RecordNotUnique`-rescue) — одна АКТИВНА Field-Audit ескалація на кластер (щоденні crons freeze/blackout/insurance при тривалій деградації плодили дубль щодоби); усі 5 creation-сайтів через хелпер.
 
 **Ключові методи:**
 

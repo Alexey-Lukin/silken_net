@@ -10,14 +10,17 @@ module Slashing
   # палить-поки-не-відведено. Асиметрія свідома: burn необоротний, freeze — ні.
   #
   # Фаза 1 свідомо КОНСЕРВАТИВНА — лише `vandalism_breach` (tamper) як єдиний однозначний
-  # сигнал A у поточному коді. [SLASH-1] chainsaw-спліт дав окремий `chainsaw_detected`
-  # (acoustic-vs-thermal дискримінатор у AlertDispatchService) — сигнал тепер РОЗРІЗНИМИЙ,
-  # але в A-сет свідомо НЕ входить до field-validation TinyML (chainsaw-клас = synthetic
-  # placeholder, `03_03 §4.2`; slash() необоротний). `critical_unmaintained?` досі рахує
-  # й force-majeure-типи (aged `fire_detected` без maintenance → пропустив би burn на
-  # природній пожежі). Розширення A-сету (scoped unmaintained, chainsaw після
-  # field-validation) — 👤 DAO-ратифікація (`05_05 §3.2`, рейка `ProtocolParameters` →
-  # `SystemParameter`, `05_06`).
+  # сигнал A у поточному коді. [SLASH-1 P0] Автоматичного ДЖЕРЕЛА vandalism_breach наразі
+  # НЕМАЄ: wire status=3 виявився BIO_STATUS_VM_ERROR (софт-збій → :firmware_fault,
+  # AlertDispatchService), а справжня пилка їде panic→`chainsaw_detected`. Ворота лишаються
+  # wired і чесно-порожні: до наповнення A-сету КОЖЕН slash-тригер іде freeze/Field-Audit.
+  # Джерела vandalism_breach: ручна C→A ескалація Field-Audit (console, `06_08 §4`) зараз;
+  # chainsaw після field-validation TinyML (клас = synthetic placeholder, `03_03 §4.2`;
+  # slash() необоротний) та майбутній HW tamper-канал (tamper-switch/SE05x) — потім.
+  # `critical_unmaintained?` досі рахує й force-majeure-типи (aged `fire_detected` без
+  # maintenance → пропустив би burn на природній пожежі). Розширення A-сету (scoped
+  # unmaintained, chainsaw після field-validation) — 👤 DAO-ратифікація (`05_05 §3.2`,
+  # рейка `ProtocolParameters` → `SystemParameter`, `05_06`).
   #
   # DCI-divergence / fraud-алерт (`system_fault`) НЕ є самостійним сигналом A — `05_05 §6`
   # (divergence сам ≠ burn; потрібен 2-й некорельований сигнал).
@@ -43,9 +46,11 @@ module Slashing
 
     private
 
-    # Tamper / розкриття корпусу: живий critical-алерт `vandalism_breach`. Його піднімає
-    # `AlertDispatchService` з `TelemetryLog.bio_status_tamper_detected` — однозначна
+    # Tamper / розкриття корпусу: живий critical-алерт `vandalism_breach` — однозначна
     # ознака людського втручання (Категорія A, `05_05 §6` hardware tamper → авто-A).
+    # [SLASH-1 P0] Автоматичний writer знято (wire status=3 = vm_error, не tamper);
+    # алерт створює лише людина (Field-Audit C→A, `06_08 §4`) або майбутнє
+    # validated-джерело — див. шапку класу.
     def tamper_breach?
       @cluster.ews_alerts.critical.alert_type_vandalism_breach.exists?
     end

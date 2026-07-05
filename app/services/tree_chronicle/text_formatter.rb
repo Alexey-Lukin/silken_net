@@ -58,6 +58,7 @@ module TreeChronicle
       when "seismic_anomaly"   then "\u{1F30D}"
       when "system_fault"      then "\u26A0"
       when "field_audit"       then "\u{1F50D}"
+      when "firmware_fault"    then "\u2699"
       else "\u26A0"
       end
     end
@@ -72,6 +73,7 @@ module TreeChronicle
       when "seismic_anomaly"   then "Seismic Anomaly"
       when "system_fault"      then "System Fault"
       when "field_audit"       then "Field Audit"
+      when "firmware_fault"    then "Firmware Fault"
       else alert.alert_type.to_s.humanize
       end
     end

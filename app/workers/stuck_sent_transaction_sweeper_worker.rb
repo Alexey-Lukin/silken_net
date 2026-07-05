@@ -72,5 +72,38 @@ class StuckSentTransactionSweeperWorker
       Rails.logger.warn "🧹 [ARCH.55] Re-armed #{re_armed} stuck-:sent tx_hash(es) " \
                         "(sent_at older than #{STUCK_THRESHOLD.inspect}) for confirmation."
     end
+
+    escalate_stuck_processing!(cutoff)
+  end
+
+  private
+
+  # [ARCH.45 :processing-orphan] non-StandardError крах між `transact("mint")` і
+  # `mark_as_sent` лишає tx у :processing НАЗАВЖДИ: tx_hash невідомий (on-chain
+  # доля ambiguous — мінт МІГ landed), жоден mint-шлях :processing не чіпає
+  # (double-mint неможливий), але баланс форестера висить у locked. Політика
+  # ARCH.48/M6: ambiguous → :manual_review (людська звірка на Polygonscan),
+  # НІКОЛИ blind re-mint. Ключ = updated_at (state-перехід бампає; created_at
+  # труїть reset-to-pending — ARCH.52 trap). Живий batch тримає :processing
+  # секунди — 15min відсіює лише трупи.
+  def escalate_stuck_processing!(cutoff)
+    orphans = BlockchainTransaction.status_processing
+                                   .where(updated_at: ...cutoff)
+                                   .order(:created_at)
+                                   .limit(BATCH_LIMIT)
+                                   .to_a
+    return if orphans.empty?
+
+    orphans.each do |tx|
+      # Reload-guard: між SELECT'ом і цим рядком живий поллер міг довершити
+      # mark_as_sent! — stale in-memory :processing перетер би свіжий :sent
+      # (escalate дозволяє sent→manual_review). Мілісекундний залишок гонки
+      # деградує лише в зайвий manual_review (безпечний напрямок), не в double-act.
+      next unless tx.reload.status_processing?
+
+      tx.escalate_to_review!("[ARCH.45] :processing-orphan >#{STUCK_THRESHOLD.inspect} — крах між transact і mark_as_sent; мінт міг landed → звір на Polygonscan, НЕ re-mint.")
+    end
+
+    Rails.logger.warn "🧹 [ARCH.45] Escalated #{orphans.size} stuck-:processing orphan(s) to :manual_review."
   end
 end

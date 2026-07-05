@@ -64,6 +64,11 @@ class ParametricInsurance < ApplicationRecord
   validates :payout_amount, :threshold_value, presence: true
   validates :threshold_value, numericality: { greater_than: 0, less_than_or_equal_to: 100 }
   validates :required_confirmations, numericality: { greater_than: 0 }
+  # [INS.1] Застрахований перил задається ПРИ СТВОРЕННІ полісу (07_01 §5) — без нього
+  # peril-honest маршрутизація (fire → FIRMS / не-пожежа → Field-Audit) і audit-трейл
+  # сліпі. Прод-шляху створення полісів ще немає (E.20-майбутнє) — валідація гарантує,
+  # що будь-який майбутній шлях перил проставить.
+  validates :trigger_event, presence: true
 
   # Поліморфний зв'язок: виплата буде зафіксована в блокчейні
   has_one :blockchain_transaction, as: :sourceable
@@ -141,10 +146,10 @@ class ParametricInsurance < ApplicationRecord
     # `activate_payout!`), тож PG↔Redis race відсутній — обидва DB-writes у транзакції.
     transaction do
       trigger! # AASM :active → :triggered (кандидат, ще НЕ payout)
-      EwsAlert.create!(
+      # Dedup-хелпер: якщо кластер уже під активним Field-Audit (blackout/freeze) —
+      # аудит-виїзд спільний, дубль не створюємо; insurance-контекст лишається в лозі.
+      EwsAlert.escalate_field_audit!(
         cluster: cluster,
-        severity: :critical,
-        alert_type: :field_audit,
         message: "Страховий кандидат ##{id}: AI-оракул бачить #{percentage}% критичних дерев — потрібне НЕЗАЛЕЖНЕ підтвердження (dClimate satellite / Field Audit) перед виплатою (dual-trigger, 05_05 §6)."
       )
       Rails.logger.warn "🎯 [INSURANCE] Кандидат ##{id} озброєно (#{percentage}% за AI-оракулом) — чекаємо НЕЗАЛЕЖНОГО підтвердження (Trigger-2); payout НЕ запускаємо."
@@ -158,10 +163,8 @@ class ParametricInsurance < ApplicationRecord
   def escalate_no_data_field_audit!(target_date)
     Rails.logger.warn "🌐 [INSURANCE] Кластер ##{cluster.id} / страховка ##{id}: data blackout (#{target_date}) — дерево замовкло. Ескалюємо у Field Audit; НЕ платимо й НЕ обнуляємо."
 
-    EwsAlert.create!(
+    EwsAlert.escalate_field_audit!(
       cluster: cluster,
-      severity: :critical,
-      alert_type: :field_audit,
       message: "Страховий оракул ##{id}: за #{target_date} нуль AiInsight при активних деревах (можлива катастрофа / знищені сенсори). Виплату НЕ обнулено — потрібен Field Audit (Категорія C, 05_05 §5/§6)."
     )
   end

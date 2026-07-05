@@ -33,8 +33,10 @@ FactoryBot.define do
       acoustic_events { 80 }
     end
 
-    trait :tampered do
-      bio_status { :tamper_detected }
+    # [SLASH-1] status=3 = софт-збій прошивки (vm_error), НЕ tamper —
+    # справжня пилка їде panic-каналом (PANIC_FLAG, status=homeostasis).
+    trait :vm_errored do
+      bio_status { :vm_error }
     end
 
     trait :optimal do

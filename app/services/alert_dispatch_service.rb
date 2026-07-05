@@ -26,21 +26,24 @@ class AlertDispatchService
     # Шкідники: коригується індексом сокоруху (чим соковитіше дерево, тим вищий фон)
     pest_limit = family.sap_flow_index ? (DEFAULT_PEST_THRESHOLD * family.sap_flow_index) : DEFAULT_PEST_THRESHOLD
 
-    # 1. ВАНДАЛІЗМ (Zero-Trust Breach)
-    # [ВИПРАВЛЕНО]: Розділено логіку тампера та низького вольтажу.
-    # Якщо корпус відкрито — дані скомпрометовані, подальший аналіз безглуздий.
-    # Якщо ж вольтаж впав через розряд батареї (без тампера) — дерево все ще
-    # може горіти, тому ми фіксуємо тривогу, але НЕ перериваємо аналіз.
-    if telemetry_log.bio_status_tamper_detected?
+    # 1. СОФТ-ЗБІЙ ПРОШИВКИ (wire status=3 = BIO_STATUS_VM_ERROR)
+    # [SLASH-1] Раніше status=3 хибно читався «вандалізмом» (vandalism_breach →
+    # positive_a? → необоротний slash жертви OTA-бага). Насправді 0b11 пише лише
+    # mruby-crash/OOM/unprovisioned; фізичний tamper їде PANIC_FLAG-каналом (гейт 2б).
+    # Сенсорна половина кадру (temp/acoustic/vcap) виміряна ДО mruby і жива —
+    # аналіз пожежі/сейсміки продовжуємо, зламаний лише Лоренц-статус.
+    if telemetry_log.bio_status_vm_error?
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :critical,
-        alert_type: :vandalism_breach,
-        message: "🚨 КРИТИЧНО: Втручання в корпус пристрою! DID: #{tree.did}"
+        alert_type: :firmware_fault,
+        message: "⚙️ ЗБІЙ ПРОШИВКИ: mruby VM error / device unprovisioned — потрібен re-flash/OTA. DID: #{tree.did}"
       )
-      return
     end
 
-    if telemetry_log.voltage_mv < 100
+    # [SLASH-1] Panic-кадри свідомо несуть vcap=0 (legacy-parity обох збирачів —
+    # Trigger_Emergency_LoRa_TX ECB і CCM): «втрата живлення» на них — фантом,
+    # що забруднював comms_no_ack? (system_fault ∈ whitelist) і з'їдав SEC.10-ліміт.
+    if telemetry_log.voltage_mv < 100 && !telemetry_log.panic?
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :critical,
         alert_type: :system_fault,
@@ -65,7 +68,12 @@ class AlertDispatchService
     # хаос при нормальній температурі (TinyML chainsaw/cavitation → StatusByte anomaly),
     # не вогонь. Окремий тип веде non-fire маршрутом dClimate у Field-Audit замість
     # FIRMS-«ясне небо»-тавра rejected_fraud на жертві вирубки.
-    if telemetry_log.bio_status_anomaly?
+    # [SLASH-1] panic? — РЕАЛЬНА пилка: TinyML ml_event_id==3 стріляє panic-TX зі
+    # status=homeostasis + PANIC_FLAG (bit 7, ОКРЕМО від status-бітів), тож гейт лише
+    # на bio_status_anomaly? пропускав її вниз у seismic_anomaly (acoustic=255≥200) повз
+    # chainsaw-маршрут. anomaly? і panic? взаємовиключні на реальному дроті — обидва
+    # ведуть сюди.
+    if telemetry_log.panic? || telemetry_log.bio_status_anomaly?
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :critical,
         alert_type: :chainsaw_detected,

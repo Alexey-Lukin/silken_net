@@ -69,5 +69,27 @@ RSpec.describe StuckSentTransactionSweeperWorker, type: :worker do
       expect(Rails.logger).not_to receive(:warn)
       described_class.new.perform
     end
+
+    # [ARCH.45 :processing-orphan] крах між transact і mark_as_sent — ambiguous
+    # (мінт міг landed, tx_hash невідомий) → :manual_review, НІКОЛИ blind re-mint.
+    describe ":processing-orphan escalation" do
+      it "escalates a :processing tx stuck past the threshold to :manual_review" do
+        tx = create(:blockchain_transaction, wallet: wallet, status: :processing)
+        tx.update_columns(updated_at: 20.minutes.ago)
+
+        described_class.new.perform
+
+        expect(tx.reload.status).to eq("manual_review")
+        expect(tx.error_message).to include("processing-orphan")
+      end
+
+      it "leaves a LIVE :processing tx alone (batch mid-transact)" do
+        tx = create(:blockchain_transaction, wallet: wallet, status: :processing)
+
+        described_class.new.perform
+
+        expect(tx.reload.status).to eq("processing")
+      end
+    end
   end
 end

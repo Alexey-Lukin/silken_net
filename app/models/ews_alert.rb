@@ -17,7 +17,14 @@ class EwsAlert < ApplicationRecord
   enum :alert_type, {
     severe_drought: 0,    # Гідрологічний стрес
     insect_epidemic: 1,   # Короїд (TinyML)
-    vandalism_breach: 2,  # Відкриття корпусу
+    # [SLASH-1] Відкриття корпусу / доведений tamper — ЄДИНИЙ позитивний Кат-A сигнал
+    # (Slashing::CauseEvidence#positive_a? → необоротний slash). ⚠️ Автоматичного джерела
+    # НАРАЗІ НЕМАЄ: wire status=3 = vm_error (софт-збій, НЕ tamper → firmware_fault нижче),
+    # а справжня пилка їде panic→chainsaw_detected (поза A-сетом до field-validation).
+    # Створюється лише вручну — Field-Audit C→A ескалація (console, 06_08 §4) — або
+    # майбутнім validated-джерелом (chainsaw після DAO-ратифікації / HW tamper-канал).
+    # Тип живий свідомо: ворота positive-A лишаються wired, чесно-порожні.
+    vandalism_breach: 2,
     fire_detected: 3,     # Пожежа
     seismic_anomaly: 4,   # Землетрус
     system_fault: 5,      # Поломка шлюзу/актуатора/сенсора
@@ -45,7 +52,13 @@ class EwsAlert < ApplicationRecord
     # rejected_fraud; тепер non-fire маршрут → Field-Audit (перевірити пеньки).
     # ⚠️ НЕ в A-сет slash'а до field-validation TinyML (клас = synthetic placeholder,
     # 03_03 §4.2) — DAO-ратифікація, Slashing::CauseEvidence лишається tamper-only.
-    chainsaw_detected: 10
+    chainsaw_detected: 10,
+    # [SLASH-1] Софт-збій прошивки пристрою: wire status=3 (BIO_STATUS_VM_ERROR —
+    # mruby-crash / VM-OOM / unprovisioned). Vendor-attributable, ops-тріаж (re-flash /
+    # OTA), НЕ біо-сигнал і НЕ вина оператора: не в A-сеті (vandalism_breach ↑), не в
+    # comms_no_ack? whitelist (вузол ЖИВИЙ — радіо працює, зламаний лише mruby) і
+    # виключений з critical_unmaintained? — не карати оператора за наш баг.
+    firmware_fault: 11
   }, prefix: true
 
   # [COSMIC EYE]: Статус супутникової верифікації через dClimate.
@@ -113,6 +126,39 @@ class EwsAlert < ApplicationRecord
   scope :unresolved, -> { status_active }
   scope :critical, -> { severity_critical.unresolved }
   scope :recent, -> { order(created_at: :desc).limit(20) }
+
+  # [SLASH-1] One-Home cluster-level Field-Audit ескалації з dedup-ключем
+  # (cluster_id, :field_audit, :active, tree_id: nil): щоденні crons (freeze
+  # slash-гейта / blackout / insurance no-data) при тривалій деградації плодили
+  # дубль щодоби. Одна АКТИВНА ескалація на кластер — resolve відкриває наступну.
+  # Race-safety = частковий unique-index (..._unique_active_cluster_field_audit).
+  # Повертає алерт або nil (dedup-skip) — виклик-сайти на nil НЕ реагують
+  # (аудит-виїзд спільний, контекст лишається у їхніх логах).
+  def self.escalate_field_audit!(cluster:, message:)
+    existing = active_cluster_field_audit_for(cluster)
+    if existing
+      Rails.logger.info "🔍 [SLASH-1] Field-Audit по кластеру ##{cluster.id} вже активний (##{existing.id}) — дубль не створюємо."
+      return nil
+    end
+
+    # SAVEPOINT обов'язковий: викликач може тримати ВІДКРИТУ транзакцію
+    # (ParametricInsurance#arm_candidate! — trigger! + ескалація атомарно). Без
+    # requires_new програна unique-гонка отруює зовнішню транзакцію на рівні PG —
+    # Ruby-rescue її не лікує, імпліцитний COMMIT тихо стає ROLLBACK і trigger!
+    # зникає без жодного ексепшена.
+    transaction(requires_new: true) do
+      create!(cluster: cluster, severity: :critical, alert_type: :field_audit, message: message)
+    end
+  rescue ActiveRecord::RecordNotUnique
+    Rails.logger.info "🔍 [SLASH-1] Field-Audit dedup-гонку по кластеру ##{cluster.id} програно — активна ескалація вже існує."
+    nil
+  end
+
+  # Виокремлено з escalate_field_audit! (тестований шов гонки: спек стабить nil
+  # при реальному дублі в БД → форсує RecordNotUnique з індексу).
+  def self.active_cluster_field_audit_for(cluster)
+    cluster.ews_alerts.critical.alert_type_field_audit.where(tree_id: nil).first
+  end
 
   # =========================================================================
   # МЕТОДИ (The Lens of Truth)

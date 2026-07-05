@@ -16,12 +16,16 @@ class TelemetryLog < ApplicationRecord
   # belongs_to :bio_contract_firmware, foreign_key: :firmware_version_id, optional: true
 
   # --- СТАТУСИ (The Pulse of Life) ---
-  # [СИНХРОНІЗОВАНО]: Додано tamper_detected для відповідності сервісам
+  # [SLASH-1] Wire-код 3 пише ВИКЛЮЧНО BIO_STATUS_VM_ERROR (0x60, firmware/soldier/main.c):
+  # mruby-crash / VM-OOM / unprovisioned. mruby pack_status_byte повертає лише 0..2;
+  # фізичний tamper (п'єзо → TinyML chainsaw) їде PANIC_FLAG-каналом (FW.29), НЕ статусом.
+  # Стара назва tamper_detected інвертувала semantics: софт-збій читався «вандалізмом»
+  # (positive-A slash жертви OTA-бага), а справжня пилка в A-сет не потрапляла.
   enum :bio_status, {
     homeostasis: 0,      # Здоровий Хаос (Атрактор у нормі)
     stress: 1,           # Раннє попередження (Посуха)
     anomaly: 2,          # Критичний збій / Хвороба
-    tamper_detected: 3   # Вандалізм / Розкриття корпусу
+    vm_error: 3          # Софт-збій прошивки (mruby VM / unprovisioned) — НЕ tamper
   }, prefix: true
 
   # [BLOCKER-12 FIX]: Enum для oracle_status замість plain string.
@@ -82,14 +86,11 @@ class TelemetryLog < ApplicationRecord
 
   # Індекс: idx_telemetry_logs_bio_status_created
   scope :anomalies, -> {
-    where(bio_status: [ :stress, :anomaly, :tamper_detected ])
+    where(bio_status: [ :stress, :anomaly, :vm_error ])
     .or(where("acoustic_events > ?", ACOUSTIC_STORM_MIN))
   }
 
   scope :in_timeframe, ->(start_time, end_time) { where(created_at: start_time..end_time) }
-
-  # [ВИПРАВЛЕНО]: Використовуємо енум замість окремої колонки
-  scope :vandalized, -> { bio_status_tamper_detected }
 
   # --- МЕТОДИ (Topology Analysis) ---
 
@@ -108,7 +109,7 @@ class TelemetryLog < ApplicationRecord
 
   # Швидка перевірка на критичність для UI
   def critical?
-    bio_status_anomaly? || bio_status_tamper_detected?
+    bio_status_anomaly? || bio_status_vm_error?
   end
 
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
