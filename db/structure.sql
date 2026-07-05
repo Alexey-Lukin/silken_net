@@ -683,6 +683,74 @@ CREATE TABLE public.blockchain_transactions_y2026m06 (
 
 
 --
+-- Name: blockchain_transactions_y2026m07; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blockchain_transactions_y2026m07 (
+    id bigint DEFAULT nextval('public.blockchain_transactions_id_seq'::regclass) NOT NULL,
+    wallet_id bigint,
+    amount numeric,
+    token_type integer,
+    status integer,
+    tx_hash character varying,
+    notes text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    to_address character varying,
+    error_message text,
+    sourceable_id bigint,
+    sourceable_type character varying,
+    cluster_id bigint,
+    locked_points bigint,
+    gas_price numeric,
+    gas_used numeric,
+    cumulative_gas_cost numeric,
+    block_number bigint,
+    nonce bigint,
+    sent_at timestamp(6) without time zone,
+    confirmed_at timestamp(6) without time zone,
+    chainlink_request_id character varying,
+    zk_proof_ref character varying,
+    blockchain_network character varying DEFAULT 'evm'::character varying,
+    reward_date date
+);
+
+
+--
+-- Name: blockchain_transactions_y2026m08; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blockchain_transactions_y2026m08 (
+    id bigint DEFAULT nextval('public.blockchain_transactions_id_seq'::regclass) NOT NULL,
+    wallet_id bigint,
+    amount numeric,
+    token_type integer,
+    status integer,
+    tx_hash character varying,
+    notes text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    to_address character varying,
+    error_message text,
+    sourceable_id bigint,
+    sourceable_type character varying,
+    cluster_id bigint,
+    locked_points bigint,
+    gas_price numeric,
+    gas_used numeric,
+    cumulative_gas_cost numeric,
+    block_number bigint,
+    nonce bigint,
+    sent_at timestamp(6) without time zone,
+    confirmed_at timestamp(6) without time zone,
+    chainlink_request_id character varying,
+    zk_proof_ref character varying,
+    blockchain_network character varying DEFAULT 'evm'::character varying,
+    reward_date date
+);
+
+
+--
 -- Name: clusters; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1512,6 +1580,48 @@ CREATE TABLE public.gateway_telemetry_logs_y2026m06 (
 
 
 --
+-- Name: gateway_telemetry_logs_y2026m07; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.gateway_telemetry_logs_y2026m07 (
+    id bigint DEFAULT nextval('public.gateway_telemetry_logs_id_seq'::regclass) NOT NULL,
+    gateway_id bigint NOT NULL,
+    queen_uid character varying,
+    voltage_mv numeric,
+    cellular_signal_csq integer,
+    temperature_c numeric,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    uptime_min integer,
+    cifo_fill integer,
+    lora_rx_drops integer,
+    coap_fail_count integer,
+    health_flags integer
+);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m08; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.gateway_telemetry_logs_y2026m08 (
+    id bigint DEFAULT nextval('public.gateway_telemetry_logs_id_seq'::regclass) NOT NULL,
+    gateway_id bigint NOT NULL,
+    queen_uid character varying,
+    voltage_mv numeric,
+    cellular_signal_csq integer,
+    temperature_c numeric,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    uptime_min integer,
+    cifo_fill integer,
+    lora_rx_drops integer,
+    coap_fail_count integer,
+    health_flags integer
+);
+
+
+--
 -- Name: gateways; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2252,6 +2362,84 @@ CREATE TABLE public.telemetry_logs_y2026m06 (
 
 
 --
+-- Name: telemetry_logs_y2026m07; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.telemetry_logs_y2026m07 (
+    id bigint DEFAULT nextval('public.telemetry_logs_id_seq'::regclass) NOT NULL,
+    acoustic_events integer,
+    bio_status integer,
+    created_at timestamp(6) without time zone NOT NULL,
+    firmware_version_id bigint,
+    growth_points numeric,
+    mesh_ttl integer,
+    metabolism_s integer,
+    queen_uid character varying,
+    rssi integer,
+    tamper_detected boolean,
+    temperature_c numeric,
+    tree_id bigint NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    voltage_mv integer,
+    z_value numeric,
+    sap_flow numeric,
+    verified_by_iotex boolean DEFAULT false NOT NULL,
+    zk_proof_ref character varying,
+    chainlink_request_id character varying,
+    oracle_status character varying DEFAULT 'pending'::character varying,
+    lorenz_state_x double precision,
+    lorenz_state_y double precision,
+    lorenz_state_z double precision,
+    cold_start_flag boolean DEFAULT false NOT NULL,
+    time_unsynced_fallback boolean DEFAULT false NOT NULL,
+    humidity numeric,
+    pressure numeric,
+    vpd numeric,
+    gateway_attested boolean DEFAULT false NOT NULL,
+    panic boolean DEFAULT false NOT NULL
+);
+
+
+--
+-- Name: telemetry_logs_y2026m08; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.telemetry_logs_y2026m08 (
+    id bigint DEFAULT nextval('public.telemetry_logs_id_seq'::regclass) NOT NULL,
+    acoustic_events integer,
+    bio_status integer,
+    created_at timestamp(6) without time zone NOT NULL,
+    firmware_version_id bigint,
+    growth_points numeric,
+    mesh_ttl integer,
+    metabolism_s integer,
+    queen_uid character varying,
+    rssi integer,
+    tamper_detected boolean,
+    temperature_c numeric,
+    tree_id bigint NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    voltage_mv integer,
+    z_value numeric,
+    sap_flow numeric,
+    verified_by_iotex boolean DEFAULT false NOT NULL,
+    zk_proof_ref character varying,
+    chainlink_request_id character varying,
+    oracle_status character varying DEFAULT 'pending'::character varying,
+    lorenz_state_x double precision,
+    lorenz_state_y double precision,
+    lorenz_state_z double precision,
+    cold_start_flag boolean DEFAULT false NOT NULL,
+    time_unsynced_fallback boolean DEFAULT false NOT NULL,
+    humidity numeric,
+    pressure numeric,
+    vpd numeric,
+    gateway_attested boolean DEFAULT false NOT NULL,
+    panic boolean DEFAULT false NOT NULL
+);
+
+
+--
 -- Name: tiny_ml_models; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2511,6 +2699,20 @@ ALTER TABLE ONLY public.blockchain_transactions ATTACH PARTITION public.blockcha
 
 
 --
+-- Name: blockchain_transactions_y2026m07; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_transactions ATTACH PARTITION public.blockchain_transactions_y2026m07 FOR VALUES FROM ('2026-07-01 00:00:00') TO ('2026-08-01 00:00:00');
+
+
+--
+-- Name: blockchain_transactions_y2026m08; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_transactions ATTACH PARTITION public.blockchain_transactions_y2026m08 FOR VALUES FROM ('2026-08-01 00:00:00') TO ('2026-09-01 00:00:00');
+
+
+--
 -- Name: codex_matches_default; Type: TABLE ATTACH; Schema: public; Owner: -
 --
 
@@ -2609,6 +2811,20 @@ ALTER TABLE ONLY public.gateway_telemetry_logs ATTACH PARTITION public.gateway_t
 
 
 --
+-- Name: gateway_telemetry_logs_y2026m07; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateway_telemetry_logs ATTACH PARTITION public.gateway_telemetry_logs_y2026m07 FOR VALUES FROM ('2026-07-01 00:00:00') TO ('2026-08-01 00:00:00');
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m08; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateway_telemetry_logs ATTACH PARTITION public.gateway_telemetry_logs_y2026m08 FOR VALUES FROM ('2026-08-01 00:00:00') TO ('2026-09-01 00:00:00');
+
+
+--
 -- Name: telemetry_logs_default; Type: TABLE ATTACH; Schema: public; Owner: -
 --
 
@@ -2655,6 +2871,20 @@ ALTER TABLE ONLY public.telemetry_logs ATTACH PARTITION public.telemetry_logs_y2
 --
 
 ALTER TABLE ONLY public.telemetry_logs ATTACH PARTITION public.telemetry_logs_y2026m06 FOR VALUES FROM ('2026-06-01 00:00:00') TO ('2026-07-01 00:00:00');
+
+
+--
+-- Name: telemetry_logs_y2026m07; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_logs ATTACH PARTITION public.telemetry_logs_y2026m07 FOR VALUES FROM ('2026-07-01 00:00:00') TO ('2026-08-01 00:00:00');
+
+
+--
+-- Name: telemetry_logs_y2026m08; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_logs ATTACH PARTITION public.telemetry_logs_y2026m08 FOR VALUES FROM ('2026-08-01 00:00:00') TO ('2026-09-01 00:00:00');
 
 
 --
@@ -3011,6 +3241,22 @@ ALTER TABLE ONLY public.blockchain_transactions
 
 
 --
+-- Name: blockchain_transactions_y2026m07 blockchain_transactions_y2026m07_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_transactions_y2026m07
+    ADD CONSTRAINT blockchain_transactions_y2026m07_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: blockchain_transactions_y2026m08 blockchain_transactions_y2026m08_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_transactions_y2026m08
+    ADD CONSTRAINT blockchain_transactions_y2026m08_pkey PRIMARY KEY (id, created_at);
+
+
+--
 -- Name: clusters clusters_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3235,6 +3481,22 @@ ALTER TABLE ONLY public.gateway_telemetry_logs_y2026m06
 
 
 --
+-- Name: gateway_telemetry_logs_y2026m07 gateway_telemetry_logs_y2026m07_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateway_telemetry_logs_y2026m07
+    ADD CONSTRAINT gateway_telemetry_logs_y2026m07_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m08 gateway_telemetry_logs_y2026m08_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateway_telemetry_logs_y2026m08
+    ADD CONSTRAINT gateway_telemetry_logs_y2026m08_pkey PRIMARY KEY (id, created_at);
+
+
+--
 -- Name: gateways gateways_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3384,6 +3646,22 @@ ALTER TABLE ONLY public.telemetry_logs_y2026m05
 
 ALTER TABLE ONLY public.telemetry_logs_y2026m06
     ADD CONSTRAINT telemetry_logs_y2026m06_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m07 telemetry_logs_y2026m07_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_logs_y2026m07
+    ADD CONSTRAINT telemetry_logs_y2026m07_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m08 telemetry_logs_y2026m08_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_logs_y2026m08
+    ADD CONSTRAINT telemetry_logs_y2026m08_pkey PRIMARY KEY (id, created_at);
 
 
 --
@@ -3585,6 +3863,20 @@ CREATE INDEX blockchain_transactions_y2026_sourceable_type_sourceable_i_idx4 ON 
 --
 
 CREATE INDEX blockchain_transactions_y2026_sourceable_type_sourceable_i_idx5 ON public.blockchain_transactions_y2026m06 USING btree (sourceable_type, sourceable_id);
+
+
+--
+-- Name: blockchain_transactions_y2026_sourceable_type_sourceable_i_idx6; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026_sourceable_type_sourceable_i_idx6 ON public.blockchain_transactions_y2026m07 USING btree (sourceable_type, sourceable_id);
+
+
+--
+-- Name: blockchain_transactions_y2026_sourceable_type_sourceable_i_idx7; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026_sourceable_type_sourceable_i_idx7 ON public.blockchain_transactions_y2026m08 USING btree (sourceable_type, sourceable_id);
 
 
 --
@@ -3931,6 +4223,118 @@ CREATE INDEX blockchain_transactions_y2026m06_wallet_id_status_idx ON public.blo
 
 
 --
+-- Name: blockchain_transactions_y2026m07_block_number_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m07_block_number_idx ON public.blockchain_transactions_y2026m07 USING btree (block_number);
+
+
+--
+-- Name: blockchain_transactions_y2026m07_chainlink_request_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m07_chainlink_request_id_idx ON public.blockchain_transactions_y2026m07 USING btree (chainlink_request_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m07_cluster_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m07_cluster_id_idx ON public.blockchain_transactions_y2026m07 USING btree (cluster_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m07_confirmed_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m07_confirmed_at_idx ON public.blockchain_transactions_y2026m07 USING btree (confirmed_at);
+
+
+--
+-- Name: blockchain_transactions_y2026m07_status_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m07_status_created_at_idx ON public.blockchain_transactions_y2026m07 USING btree (status, created_at) WHERE (status = ANY (ARRAY[0, 1]));
+
+
+--
+-- Name: blockchain_transactions_y2026m07_tx_hash_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m07_tx_hash_idx ON public.blockchain_transactions_y2026m07 USING btree (tx_hash) WHERE (tx_hash IS NOT NULL);
+
+
+--
+-- Name: blockchain_transactions_y2026m07_wallet_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m07_wallet_id_idx ON public.blockchain_transactions_y2026m07 USING btree (wallet_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m07_wallet_id_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m07_wallet_id_status_idx ON public.blockchain_transactions_y2026m07 USING btree (wallet_id, status);
+
+
+--
+-- Name: blockchain_transactions_y2026m08_block_number_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m08_block_number_idx ON public.blockchain_transactions_y2026m08 USING btree (block_number);
+
+
+--
+-- Name: blockchain_transactions_y2026m08_chainlink_request_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m08_chainlink_request_id_idx ON public.blockchain_transactions_y2026m08 USING btree (chainlink_request_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m08_cluster_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m08_cluster_id_idx ON public.blockchain_transactions_y2026m08 USING btree (cluster_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m08_confirmed_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m08_confirmed_at_idx ON public.blockchain_transactions_y2026m08 USING btree (confirmed_at);
+
+
+--
+-- Name: blockchain_transactions_y2026m08_status_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m08_status_created_at_idx ON public.blockchain_transactions_y2026m08 USING btree (status, created_at) WHERE (status = ANY (ARRAY[0, 1]));
+
+
+--
+-- Name: blockchain_transactions_y2026m08_tx_hash_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m08_tx_hash_idx ON public.blockchain_transactions_y2026m08 USING btree (tx_hash) WHERE (tx_hash IS NOT NULL);
+
+
+--
+-- Name: blockchain_transactions_y2026m08_wallet_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m08_wallet_id_idx ON public.blockchain_transactions_y2026m08 USING btree (wallet_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m08_wallet_id_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m08_wallet_id_status_idx ON public.blockchain_transactions_y2026m08 USING btree (wallet_id, status);
+
+
+--
 -- Name: idx_codex_matches_realm; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4264,6 +4668,34 @@ CREATE INDEX gateway_telemetry_logs_y2026m06_gateway_id_idx ON public.gateway_te
 --
 
 CREATE INDEX gateway_telemetry_logs_y2026m06_queen_uid_created_at_idx ON public.gateway_telemetry_logs_y2026m06 USING btree (queen_uid, created_at);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m07_gateway_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX gateway_telemetry_logs_y2026m07_gateway_id_idx ON public.gateway_telemetry_logs_y2026m07 USING btree (gateway_id);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m07_queen_uid_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX gateway_telemetry_logs_y2026m07_queen_uid_created_at_idx ON public.gateway_telemetry_logs_y2026m07 USING btree (queen_uid, created_at);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m08_gateway_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX gateway_telemetry_logs_y2026m08_gateway_id_idx ON public.gateway_telemetry_logs_y2026m08 USING btree (gateway_id);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m08_queen_uid_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX gateway_telemetry_logs_y2026m08_queen_uid_created_at_idx ON public.gateway_telemetry_logs_y2026m08 USING btree (queen_uid, created_at);
 
 
 --
@@ -5513,6 +5945,104 @@ CREATE INDEX telemetry_logs_y2026m06_tree_id_idx ON public.telemetry_logs_y2026m
 
 
 --
+-- Name: telemetry_logs_y2026m07_bio_status_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m07_bio_status_created_at_idx ON public.telemetry_logs_y2026m07 USING btree (bio_status, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m07_chainlink_request_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m07_chainlink_request_id_idx ON public.telemetry_logs_y2026m07 USING btree (chainlink_request_id);
+
+
+--
+-- Name: telemetry_logs_y2026m07_oracle_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m07_oracle_status_idx ON public.telemetry_logs_y2026m07 USING btree (oracle_status) WHERE ((oracle_status)::text = 'dispatched'::text);
+
+
+--
+-- Name: telemetry_logs_y2026m07_oracle_status_idx1; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m07_oracle_status_idx1 ON public.telemetry_logs_y2026m07 USING btree (oracle_status) WHERE ((oracle_status)::text = 'failed'::text);
+
+
+--
+-- Name: telemetry_logs_y2026m07_oracle_status_idx2; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m07_oracle_status_idx2 ON public.telemetry_logs_y2026m07 USING btree (oracle_status) WHERE ((oracle_status)::text = 'fulfilled'::text);
+
+
+--
+-- Name: telemetry_logs_y2026m07_tree_id_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m07_tree_id_created_at_idx ON public.telemetry_logs_y2026m07 USING btree (tree_id, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m07_tree_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m07_tree_id_idx ON public.telemetry_logs_y2026m07 USING btree (tree_id);
+
+
+--
+-- Name: telemetry_logs_y2026m08_bio_status_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m08_bio_status_created_at_idx ON public.telemetry_logs_y2026m08 USING btree (bio_status, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m08_chainlink_request_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m08_chainlink_request_id_idx ON public.telemetry_logs_y2026m08 USING btree (chainlink_request_id);
+
+
+--
+-- Name: telemetry_logs_y2026m08_oracle_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m08_oracle_status_idx ON public.telemetry_logs_y2026m08 USING btree (oracle_status) WHERE ((oracle_status)::text = 'dispatched'::text);
+
+
+--
+-- Name: telemetry_logs_y2026m08_oracle_status_idx1; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m08_oracle_status_idx1 ON public.telemetry_logs_y2026m08 USING btree (oracle_status) WHERE ((oracle_status)::text = 'failed'::text);
+
+
+--
+-- Name: telemetry_logs_y2026m08_oracle_status_idx2; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m08_oracle_status_idx2 ON public.telemetry_logs_y2026m08 USING btree (oracle_status) WHERE ((oracle_status)::text = 'fulfilled'::text);
+
+
+--
+-- Name: telemetry_logs_y2026m08_tree_id_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m08_tree_id_created_at_idx ON public.telemetry_logs_y2026m08 USING btree (tree_id, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m08_tree_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m08_tree_id_idx ON public.telemetry_logs_y2026m08 USING btree (tree_id);
+
+
+--
 -- Name: blockchain_transactions_defau_sourceable_type_sourceable_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -5608,6 +6138,20 @@ ALTER INDEX public.index_blockchain_transactions_on_sourceable ATTACH PARTITION 
 --
 
 ALTER INDEX public.index_blockchain_transactions_on_sourceable ATTACH PARTITION public.blockchain_transactions_y2026_sourceable_type_sourceable_i_idx5;
+
+
+--
+-- Name: blockchain_transactions_y2026_sourceable_type_sourceable_i_idx6; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_sourceable ATTACH PARTITION public.blockchain_transactions_y2026_sourceable_type_sourceable_i_idx6;
+
+
+--
+-- Name: blockchain_transactions_y2026_sourceable_type_sourceable_i_idx7; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_sourceable ATTACH PARTITION public.blockchain_transactions_y2026_sourceable_type_sourceable_i_idx7;
 
 
 --
@@ -5951,6 +6495,132 @@ ALTER INDEX public.index_blockchain_transactions_on_wallet_id ATTACH PARTITION p
 --
 
 ALTER INDEX public.index_blockchain_transactions_on_wallet_id_and_status ATTACH PARTITION public.blockchain_transactions_y2026m06_wallet_id_status_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m07_block_number_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_block_number ATTACH PARTITION public.blockchain_transactions_y2026m07_block_number_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m07_chainlink_request_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_chainlink_request_id ATTACH PARTITION public.blockchain_transactions_y2026m07_chainlink_request_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m07_cluster_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_cluster_id ATTACH PARTITION public.blockchain_transactions_y2026m07_cluster_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m07_confirmed_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_confirmed_at ATTACH PARTITION public.blockchain_transactions_y2026m07_confirmed_at_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m07_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.blockchain_transactions_pkey ATTACH PARTITION public.blockchain_transactions_y2026m07_pkey;
+
+
+--
+-- Name: blockchain_transactions_y2026m07_status_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_in_flight ATTACH PARTITION public.blockchain_transactions_y2026m07_status_created_at_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m07_tx_hash_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_tx_hash ATTACH PARTITION public.blockchain_transactions_y2026m07_tx_hash_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m07_wallet_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_wallet_id ATTACH PARTITION public.blockchain_transactions_y2026m07_wallet_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m07_wallet_id_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_wallet_id_and_status ATTACH PARTITION public.blockchain_transactions_y2026m07_wallet_id_status_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m08_block_number_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_block_number ATTACH PARTITION public.blockchain_transactions_y2026m08_block_number_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m08_chainlink_request_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_chainlink_request_id ATTACH PARTITION public.blockchain_transactions_y2026m08_chainlink_request_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m08_cluster_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_cluster_id ATTACH PARTITION public.blockchain_transactions_y2026m08_cluster_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m08_confirmed_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_confirmed_at ATTACH PARTITION public.blockchain_transactions_y2026m08_confirmed_at_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m08_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.blockchain_transactions_pkey ATTACH PARTITION public.blockchain_transactions_y2026m08_pkey;
+
+
+--
+-- Name: blockchain_transactions_y2026m08_status_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_in_flight ATTACH PARTITION public.blockchain_transactions_y2026m08_status_created_at_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m08_tx_hash_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_tx_hash ATTACH PARTITION public.blockchain_transactions_y2026m08_tx_hash_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m08_wallet_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_wallet_id ATTACH PARTITION public.blockchain_transactions_y2026m08_wallet_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m08_wallet_id_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_wallet_id_and_status ATTACH PARTITION public.blockchain_transactions_y2026m08_wallet_id_status_idx;
 
 
 --
@@ -6346,6 +7016,48 @@ ALTER INDEX public.idx_gateway_telemetry_logs_queen_uid_created ATTACH PARTITION
 
 
 --
+-- Name: gateway_telemetry_logs_y2026m07_gateway_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_gateway_telemetry_logs_on_gateway_id ATTACH PARTITION public.gateway_telemetry_logs_y2026m07_gateway_id_idx;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m07_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.gateway_telemetry_logs_pkey ATTACH PARTITION public.gateway_telemetry_logs_y2026m07_pkey;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m07_queen_uid_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_gateway_telemetry_logs_queen_uid_created ATTACH PARTITION public.gateway_telemetry_logs_y2026m07_queen_uid_created_at_idx;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m08_gateway_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_gateway_telemetry_logs_on_gateway_id ATTACH PARTITION public.gateway_telemetry_logs_y2026m08_gateway_id_idx;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m08_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.gateway_telemetry_logs_pkey ATTACH PARTITION public.gateway_telemetry_logs_y2026m08_pkey;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m08_queen_uid_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_gateway_telemetry_logs_queen_uid_created ATTACH PARTITION public.gateway_telemetry_logs_y2026m08_queen_uid_created_at_idx;
+
+
+--
 -- Name: telemetry_logs_default_bio_status_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -6735,6 +7447,118 @@ ALTER INDEX public.index_telemetry_logs_on_tree_id_and_created_at ATTACH PARTITI
 --
 
 ALTER INDEX public.index_telemetry_logs_on_tree_id ATTACH PARTITION public.telemetry_logs_y2026m06_tree_id_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m07_bio_status_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_bio_status_created ATTACH PARTITION public.telemetry_logs_y2026m07_bio_status_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m07_chainlink_request_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_chainlink_request_id ATTACH PARTITION public.telemetry_logs_y2026m07_chainlink_request_id_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m07_oracle_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_dispatched ATTACH PARTITION public.telemetry_logs_y2026m07_oracle_status_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m07_oracle_status_idx1; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_failed ATTACH PARTITION public.telemetry_logs_y2026m07_oracle_status_idx1;
+
+
+--
+-- Name: telemetry_logs_y2026m07_oracle_status_idx2; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_fulfilled ATTACH PARTITION public.telemetry_logs_y2026m07_oracle_status_idx2;
+
+
+--
+-- Name: telemetry_logs_y2026m07_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.telemetry_logs_pkey ATTACH PARTITION public.telemetry_logs_y2026m07_pkey;
+
+
+--
+-- Name: telemetry_logs_y2026m07_tree_id_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_tree_id_and_created_at ATTACH PARTITION public.telemetry_logs_y2026m07_tree_id_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m07_tree_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_tree_id ATTACH PARTITION public.telemetry_logs_y2026m07_tree_id_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m08_bio_status_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_bio_status_created ATTACH PARTITION public.telemetry_logs_y2026m08_bio_status_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m08_chainlink_request_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_chainlink_request_id ATTACH PARTITION public.telemetry_logs_y2026m08_chainlink_request_id_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m08_oracle_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_dispatched ATTACH PARTITION public.telemetry_logs_y2026m08_oracle_status_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m08_oracle_status_idx1; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_failed ATTACH PARTITION public.telemetry_logs_y2026m08_oracle_status_idx1;
+
+
+--
+-- Name: telemetry_logs_y2026m08_oracle_status_idx2; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_fulfilled ATTACH PARTITION public.telemetry_logs_y2026m08_oracle_status_idx2;
+
+
+--
+-- Name: telemetry_logs_y2026m08_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.telemetry_logs_pkey ATTACH PARTITION public.telemetry_logs_y2026m08_pkey;
+
+
+--
+-- Name: telemetry_logs_y2026m08_tree_id_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_tree_id_and_created_at ATTACH PARTITION public.telemetry_logs_y2026m08_tree_id_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m08_tree_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_tree_id ATTACH PARTITION public.telemetry_logs_y2026m08_tree_id_idx;
 
 
 --
