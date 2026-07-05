@@ -118,6 +118,7 @@
 - [ ] 👤 require signed commits (`required_signatures`) — runbook [`06_07 §2`](06_07_CICD_and_Runbook_Index)
 - [x] ✅ **OpenSSF Best Practices — `silver` earned 2026-06-25** (проєкт [13358](https://www.bestpractices.dev/projects/13358); динамічна плашка в README + `00_00` авто-рендерить рівень — markdown без змін). Passing + silver критерії всі Met (FLOSS · CI · тести · `SECURITY.md` · SAST/DAST ASan+UBSan · `crypto_*` · `input_validation` · `hardening` · `signed_releases` Sigstore build-provenance · `assurance_case` → `SECURITY_ASSURANCE_CASE.md`). Закриває Scorecard `CIIBestPractices` (→ silver-level). **Gold не цілимо** (вимагає bus-factor ≥2 maintainers — solo-структурний бар'єр, як `CodeReview`/`SAST`-Scorecard)
 - [ ] 👤 (опц.) secret-scanning validity-checks + non-provider toggles · `SCORECARD_TOKEN` ([`06_04 §1.3`](06_04_Secrets_Checklist))
+- [ ] 🤖 [gap-pass §06] Trivy CVE-scan побудованого образу (проти вже-генерованого SBOM `mirror-ghcr.yml`) → SARIF у Security-tab (дзеркало Slither/Aderyn/Scorecard); образ публічний на GHCR для недовірених Akash-провайдерів
 
 ## §01a · Anchor — Geometry & Metallurgy
 
@@ -284,6 +285,12 @@
 - [ ] 👤 12-місячний польовий тест на тестовому дереві (Черкаський бір)
 - [ ] 👤 Update `07_02 §6` OPEX: forester visit раз на 5–7 років (Черкаський бір)
 
+#### HW.36 — Немає формального FMEA/FMECA / hardware risk-register
+- **P2** · 🤖+👤 · ⚪ · → `01_02 §1.3a`, [`00_03 §3.5`](00_03_TRL_Matrix_HIL_and_Beyond)
+- **Стан:** Gap-pass §01 (2026-07-05) — ~20+ *окремо* названих і трекнутих failure-mode'ів (V-release, PEEK creep, resinosis, H-embrittlement, chloride-corrosion, freeze-thaw, connector-fatigue, overgrowth, biofouling…), але **ніщо не синтезує їх у severity×occurrence×detectability risk-priority-ранжування**. `SECURITY_ASSURANCE_CASE.md` доводить, що орг цей патерн уміє й виконує — для **security** (threat-model→boundaries→guards→residuals); HW-еквіваленту нема. `01_02 §1.3a` називає «Failure Mode A/B/C» але вузько на 3 DMLS-кроки, retrospective. §01a synergy-DAG пріоритезує за work-dependency (що швидше розблоковує), не за risk-severity (що катастрофічне vs косметичне) — обидві осі потрібні, є лише одна. **🤖-half несе більшість (desk-synthesis, нуль лаб-роботи):** я СКЛАДУ FMEA-таблицю з уже-відомих mode'ів (S×O×D → RPN); 👤 = валідувати severity-числа. Прямо живить Stage-2 6-alloy coin bake-off (HW.24) coin-allocation. Канон [`00_03 §3.5`](00_03_TRL_Matrix_HIL_and_Beyond), `01_02 §1.3a`.
+- [ ] 🤖 скласти FMEA/FMECA-таблицю (усі трекнуті failure-mode'и × S×O×D → RPN-ранг) — desk-study з наявного
+- [ ] 👤 валідувати severity-числа + пріоритети (інженерне судження) → живить HW.24 coin-allocation
+
 ## §01b · EBFC — Chemistry & Bio-electrochemistry
 
 > EBFC Gen 2.0 — біоелектрохімія/хімія стека (анод dgrFAD-GDH+Os, катод Laccase/ZIF, цвітеріонна мембрана) + in-silico Zero-Lab. Канон [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell). The Root-рівень стека (огляд — §01a).
@@ -367,6 +374,12 @@
 - [ ] 👤 Stacking: 3-анкерна тестова конфігурація на одному дереві з PEEK-ізоляцією (Zone 2)
 - [ ] 👤 Stacking: оцінка впливу на провіженінг (групова реєстрація DID) та Lorenz-аналітику (декомпозиція V_OC)
 - [ ] 🔗 Залежить від HW.13 (P-V крива EBFC) для правильного бюджетування доповнення
+
+#### HW.38 — Phytotox-скоуп лише tree-only: немає non-target екологічного скріну
+- **P3** · 🤖+👤 · ⚪ · → `01_03 §3.4`, `08_01`
+- **Стан:** Gap-pass §01 (2026-07-05) — «Стаття 29» (`08_01`) явно скоуплена на *Pinus sylvestris* біоакумуляцію/safety-margin. Ніщо не оцінює non-target екологічну долю на planetary fleet-scale: ґрунтовий мікробіом, ґрунтові води, invertebrate/wildlife food-chain exposure до ZIF-нанозиму (Co/Cu/Ce/Ru) чи end-of-life/damaged-unit leachate коли дерево гине / анкер покинуто. Scope-extension, не нова інфраструктура — той самий ICP-MS/in-silico-потік. **Моя рекомендація: трекати як scope-extension Статті 29, P3, важить pre-field TRL5/6 — не блокує зараз** (дешево заскоупити тепер, критично до реального лісового пілоту). **🤖-half:** я складу screening-протокол-чернетку (endpoints/матриці); 👤 = paper-scope + партнер при фіксації ролей. Канон `01_03 §3.4`, `08_01`.
+- [ ] 🤖 чернетка non-target ecoscreen-протоколу (endpoints: soil-microbiome · groundwater-leachate · invertebrate; ZIF Co/Cu/Ce/Ru)
+- [ ] 👤 включити в Статтю 29 scope при фіксації ролей (Суховой/Гусак) — pre-field TRL5/6
 
 ## §02a · Node — Capsule & Electronics
 
@@ -471,6 +484,12 @@
 - [ ] 👤 Verify EXTI wake-on-vibration latency vs стара через-отв. baseline (target < 5 мс)
 - [ ] 👤 **Interrupt-storm mitigation** (нот.5): амплітудний поріг — hardware comparator/RC АБО software fast-amplitude gate, щоб вітер/дощ/гойдання гілок НЕ будили повний аудіо-цикл → drain-захист 0.47 F supercap (поточно лише `BAT54S` voltage-clamp, без порогу; `03_03 §1.2`)
 - [ ] 👤 Lifecycle test: Sil-Pad creep під 30-40% compression × 20 років (Arrhenius accelerated)
+
+#### HW.37 — EDLC calendar-life на cycle-count, не temperature-endurance
+- **P2** · 🤖+👤 · ⚪ · → `02_03 §12.1`, `02_03 §6`
+- **Стан:** Gap-pass §02 (2026-07-05) — `02_03 §12.1` обґрунтовує 20-річний claim для 0.47F EDLC через «>500,000 циклів» (vendor-marketing). Real-world EDLC end-of-life нормально керується **temperature-dependent endurance-hours** (electrolyte dry-out / ESR-rise, Arrhenius) — саме тим строгим трактуванням, що вже дано Ti/PEEK (HW.3/HW.3.IS: Lamé + Prony). Немає Arrhenius-екстраполяції для EDLC проти Eaton/KEMET datasheet endurance-hours-at-temperature. HW.19 (VOC-діагностика) лише *детектує* деградацію post-hoc — не заміна pre-deployment life-qual, а EDLC = single-point-of-failure (смерть = смерть вузла). **🤖-half несе більшість (desk, нуль лаб):** я прожену Arrhenius-екстраполяцію з datasheet endurance-spec (як HW.3 для Ti); 👤 = дати точний datasheet + валідувати. Sibling-методологія HW.3 (не дублікат: HW.3 = Ti/PEEK-матеріал, це = EDLC-компонент). Канон `02_03 §12.1`, `02_03 §6`.
+- [ ] 🤖 Arrhenius endurance-hours-екстраполяція EDLC (з datasheet rated-temp) → 20-рік life vs -40…+70°C (derate/oversize?)
+- [ ] 👤 дати обраний EDLC datasheet endurance-spec + валідувати припущення
 
 ## §02b · Gateway — Queen Hardware
 
@@ -650,6 +669,12 @@
 - [ ] 👤 рішення: RTC-реклемація (§2.3.2) vs Flash-KV persist vs SRAM2-retain — свідомо відкладено до bench (приймати з виміряним 300nA floor PPK2/JS220, RUNBOOK 3.1, не з моделлю)
 - [ ] 👤 bench: HAL_FLASH glue + ECCD-політика + вимір 300nA + persist-roundtrip
 
+#### FW.59 — Немає reset-cause / crash-телеметрії (обидва вузли)
+- **P2** · 🤖 · ⚪ · → [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA), [`03_02 §7`](03_02_Queen_Gateway_Firmware)
+- **Стан:** Gap-pass §03 (2026-07-05) — verified 0 hits: ні Soldier ні Queen не читають STM32 reset-cause-прапори (`RCC_CSR`: IWDG/BOR/PVD/power-on/soft-reset-біти, безкоштовні в кремнії); нема custom `HardFault_Handler` (справжній HardFault → CMSIS weak-default, нуль forensic); нема persist «consecutive-reset»/«last-fault» у телеметрії. RDP замикає SWD by design (SEC.2), флот planetary-remote → **wire = єдиний діагностичний канал**, а він несе нуль сигналу «чому вузол ребутнув» → тихі crash-loop'и (поганий OTA / HAL-edge / brownout-storm) невидимі, поки дерево не згасне. Recovery ≠ reporting: IWDG/PVD-recover (ARCH.21) є, visibility нема. **🤖-half = вся задача (host-authorable зараз):** read-flag→encode→clear — RTC-backup звільнив слот (FW.54) + QATT-v2 `flags` + wire-rev2.1 мають вільне місце (бюджет-дім `03_01 §2`). Канон [`03_01 §2`](03_01_Firmware_Lifecycle_and_DMA), [`03_02 §7`](03_02_Queen_Gateway_Firmware).
+- [ ] 🤖 read `RCC_CSR` reset-cause на boot → encode (RTC-backup / QATT-flags spare / wire-байт) → clear; host-mock як існуючий патерн
+- [ ] 👤 bench: звірити reset-cause-репорт на кремнії (bench-day, як решта firmware)
+
 #### ARCH.43 — Mesh-relay повернення: wire-rev3 addressing (post-CCM star-only)
 - **P3** · 🤖+👤 · 🔗 · → [`03_01 §1.9`](03_01_Firmware_Lifecycle_and_DMA)
 - **Стан:** Звужено — FW.2 гейт (в) закрив uplink/demux-вісь двоключовою моделлю (session KEYL per-device + cluster KEYB, [`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security)); лишається mesh-вісь. У CCM-еру Сценарій Б мертвий by construction (`#if !FW2_CCM_ENABLED`: air-кадр гине на RX-guard сусіда, TTL у ciphertext) → **star-only прийнято** (ухвала FW.2 (а)); стеля масштабу однієї Queen (TTL=3 · relay-буфер без агрегації · CIFO) + масштаб-відповідь «більше Queen» (ARCH.1/ARCH.10) = [`03_01 §1.9.1`](03_01_Firmware_Lifecycle_and_DMA). Повернення mesh = wire-rev3-клас: cleartext TTL/адресація (mesh-TTL rev2-рішення) + opaque pass-through relay без декрипту + `0x9E` DID-таргет (FW.17 gate (ii), [`03_05 §3.8`](03_05_Hardware_Symmetric_Crypto_and_Security)). Активація post-TRL 6, на масштаб-тригер.
@@ -695,6 +720,18 @@
 - [ ] 🔗 **L2 per-tree device-voice** (North-Star, energy-gated Scenario D / 2× anchor): on-chip Ed25519 keygen + device-keygen provisioning (не HKDF-only — ARCH.33) + Merkle-root signing (E.60; примітив = ARCH.12 Фаза-1) + signature-transmission (weekly ≈ 5 LoRa-frames). Post-anchor-TRL.
 - [ ] 🔗 L2 design-gap — **підхід вирішено** (Фаза 0, deep-audit 2026-06-28), реалізація post-anchor-TRL: тижневий device-Merkle-корінь підписується ПІСЛЯ intra-week мінтингу (Queen-relay L1) → **ex-post reconcile + clawback** (device-root vs намінтоване; mismatch = positive-A tamper → наявний `slash()`); pre-mint двофазний = North-Star (energy-gated). Дім політики [`05_05 §3.3`](05_05_Slashing_and_Risk_Policy); механізм Merkle = ARCH.12 / E.60
 - Cross-ref: SEC.6, SEC.14 (роль ✅ provisioning-only — §🗄️), ARCH.42, ARCH.43 (mesh-вісь; uplink-ізоляція ✅ FW.2 (в) двоключова — SE-era: KEYL лишається у Protected Flash, SE Slot 0 reserved urban-варіант; cluster KEYB у Flash як K_ota), E.60 (Merkle), FW.2, FW.23, ARCH.33 (firmware-Ed25519 feasibility), STK.4 (ЗВТ), BIZ.13 (operator-bond).
+
+#### SEC.20 — OTA/bytecode dual-gate без anti-rollback (version-monotonicity)
+- **P2** · 🤖 · ⚪ · → [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning), [`03_05 §2.4`](03_05_Hardware_Symmetric_Crypto_and_Security)
+- **Стан:** Gap-pass §03 (2026-07-05) — verified: FW.23 HMAC-SHA256 dual-gate автентифікує integrity+origin+version-tag-binding, але **ніколи не звіряє** `received_ota_version` проти persisted «last-applied» перед `Write_OTA_Contract_To_Flash` (`flash_ota.h` = лише bytecode-blob, 0 version-metadata). Наслідок: захоплений/архівний старий **валідно-K_ota-підписаний** OTA-broadcast (чи випадковий re-issue) replay'иться по LoRa → тихий downgrade `bio_contract.rb` на версію з вже-полагодженими економічними багами (історія GP-формул E.63/FW.29 доводить, такі існували). Textbook rollback-protection (TUF/SUIT); асиметрія проти того, як важко команда билася з тим самим replay на **uplink** (CCM FC+SETNX+high-water). ≠ downlink-MAC/FC (`03_05 §2.4`, transport-replay) — не спиняє валідно-підписану СТАРУ версію в свіжій сесії. Суміжно: нема consecutive-VM-error-лічильника (bad bytecode → `tamper` вічно, нема auto-fallback; RTC-backup має spare-біти, `03_01 §2`). **🤖-half = вся задача (host-authorable):** persist last-version (RTC-backup слот) + одне порівняння. Канон [`03_06 §4`](03_06_Factory_Flashing_and_Key_Provisioning), [`03_05 §2.4`](03_05_Hardware_Symmetric_Crypto_and_Security).
+- [ ] 🤖 persist «last-applied ota_version» (RTC-backup слот) + monotonic-check перед flash-write; host-test як `FlashKvOps`
+- [ ] 🤖 consecutive-VM-error counter (RTC-backup spare) → auto-fallback на embedded baseline
+
+#### SEC.21 — Немає runtime memory-safety на таргеті (stack-canary + MPU)
+- **P2** · 🤖 · ⚪ · → [`03_05 §9`](03_05_Hardware_Symmetric_Crypto_and_Security), `firmware/cmake`
+- **Стан:** Gap-pass §03 (2026-07-05) — verified 0: `arm-none-eabi.cmake` не ставить `-fstack-protector` (gcc не дефолтить), нема `ARM_MPU_`/`HAL_MPU_` ніде (STM32WLE5 Cortex-M4 має 8-region MPU + CMSIS_6 вже vendors API). Релевантно бо **обидва вузли парсять untrusted attacker-reachable байти в сирому C ДО crypto/MIC-чеку** (LoRa-RX від будь-якого передавача в зоні — threat-model прямо називає; + SIM7070 AT-токенайзер) → stack-overflow у парсері має нуль runtime-backstop, лише `cppcheck` (static). ASan/UBSan = host-lane, не таргет. **🤖-half:** `-fstack-protector-strong` додається ЗАРАЗ + CI-verifiable через `firmware_arm_build` (нуль-заліза: compile+link+size-delta); MPU register-config bench-gated. Канон [`03_05 §9`](03_05_Hardware_Symmetric_Crypto_and_Security), `firmware/cmake`.
+- [ ] 🤖 `-fstack-protector-strong` у `arm-none-eabi.cmake` + `__stack_chk_fail` handler → CI size-delta через `firmware_arm_build`
+- [ ] 🤖 MPU region-config (NX-stack + RO-code) у main.c — host-stub compile, bench-verify активацію
 
 ## §04 · Backend / API / UI
 
@@ -763,6 +800,13 @@
 - [ ] 🤖 планувати `ResetActuatorStateWorker` НЕзалежно/до ack-транзакції (post-PUT close гарантований)
 - [ ] 🤖 periodic safety-sweep: force-idle актуатора, чий newest `:sent`/`:acknowledged`-command старший за `duration_seconds`+margin
 
+#### ARCH.60 — Notification delivery: жоден зовнішній канал не працює (email transport · SMS · push)
+- **P1** · 🤖+👤 · ⚪ · → `04_02 §11`, `04_03 §1`
+- **Стан:** Gap-pass §04 (2026-07-05) — весь зовнішній notification-шар нефункціональний у проді. Email: `application_mailer` `default from: "from@example.com"` (незмінений scaffold) + `production.rb` SMTP закоментований → `deliver_later` падатиме щоразу; SMS/Push: `single_notification_worker#send_sms/#send_push` = закоментовані Twilio/FCM → `Rails.logger.info`-стаби. Наслідок: **password-reset мертвий end-to-end**; критичний wildfire-алерт доходить до людини лише якщо дашборд відкритий (ActionCable-broadcast — єдина жива нога). INF.13 полагодив mailer-**host** (у тілі листа), НЕ sender/transport — residual окремий; E.33 (rate-limits, Post-TRL8) = про ліміти ІСНУЮЧОЇ інтеграції, не її побудову. **🤖-half несе більшість** (усе код: sender-identity + ESP-транспорт config + Twilio/FCM-адаптери за config-гейтом + специ); 👤 вузько = завести акаунти/ключі. Канон `04_02 §11`, `04_03 §1`.
+- [ ] 🤖 ActionMailer SMTP/ESP delivery-config (env-driven) + реальний sender-identity (SPF/DKIM-ready) + specs
+- [ ] 🤖 Twilio SMS + FCM push адаптери за config-гейтом (no-op без ключів) — замінити logger-стаби
+- [ ] 👤 завести ESP + Twilio + FCM акаунти → ключі/sender у deploy-secrets (`06_04`)
+
 #### ARCH.59 — Non-money worker resilience (OTA watchdog · redelivery idempotency · fan-out)
 - **P2** · 🤖 · ⚪ · → `04_02 §11`
 - **Стан:** Audit §04 (2026-07-04, A4/S2/O1). (1) **OTA stuck-`:updating` назавжди:** `OtaTransmissionWorker retry: false` → `sidekiq_retries_exhausted`-блок = мертвий код (JobRetry прокидає raise до death_handlers, минаючи exhausted-block); виняток поза вузьким CoAP-rescue лишає gateway `:updating` → блокує ВСІ downlink (сирена/полив), staleness-sweep ловить лише OFFLINE. (2) **Redelivery non-idempotency:** `Codex::EloRecomputeWorker` additive `update_all` + `AuditLogWorker`/`FractionAuditWorker` `create!` → crash-after-commit-before-ack подвоює; `KeyRotationDownlinkWorker.perform_async` ВСЕРЕДИНІ `HardwareKey.transaction` (commit-fail→key-desync, dormant до FW.2). (3) **Unbounded fan-out:** `ClusterEntropySweep`/`ClusterHealthCheck` `find_each{perform_async}` (1 Redis-RTT/кластер @100K) — сусіди юзають `push_bulk`/`Batch`. `unique_for` = no-op шим (Sidekiq Enterprise, ARCH.53-decision). Канон `04_02 §11` (Workers).
@@ -793,6 +837,18 @@
 - **Стан:** Не почато — over-ARCH.57 residual. **Erasure-ядро вже трекає ARCH.57(4)** («GDPR erasure-процедура + encrypt identities» — НЕ дублювати); наявна основа: `data_region`-шардинг ✅ (`04_01`, eu/us/ap), `filter_parameters` scrub'ить PII з логів, tree-дані свідомо ≠ PII (`00_08`), privacy-policy planned (BIZ.3). Ширший residual поза erasure: User/Org/Forester несуть PII (email/phone/telegram_chat_id/push_token), але немає (а) **retention-POLICY** (default-TTL/auto-expiry), (б) **DSAR-export** (право доступу/переносності — віддати суб'єкту дані, ≠ стерти), (в) **anonymization↔immutability reconcile** (стерти PII, зберігши immutable AuditLog — напруга з ARCH.57 (1)/(2)). Pre-commercial-legal, активується при онбордингу EU-лісників. NB: `07_01 §2` «Таблиця SLA» — інша SLA. Канон `04_01 §7`, `07_01 §8`.
 - [ ] 🤖 retention-worker (per-модель TTL) + `AnonymizeUserService` (reconcile з append-only AuditLog ARCH.57) + DSAR-export endpoint
 - [ ] 👤 retention-періоди per-юрисдикція (СЄУ legal, `08_02 §5`) + consent-tracking рішення
+- [ ] 🤖 [gap-pass §07] outbound breach-notification (GDPR Art.33/34: 72h supervisory-authority + data-subject) — дзеркало SECURITY.md inbound-vuln-ack (ARCH.57 flag'ає `identities` plaintext)
+
+#### ARCH.61 — Sidekiq Web UI не змонтований (ops-рунбук шле на неіснуючий інструмент)
+- **P2** · 🤖 · ⚪ · → `04_02 §11`, `06_03 §2.8`
+- **Стан:** Gap-pass §04 (2026-07-05) — doc-vs-реальність. P1-алерт «Sidekiq DeadSet non-empty» (ARCH.45, `silkennet-alerts.yaml:427`) наказує on-call'у «Перевір Sidekiq Web UI → Dead», але `Sidekiq::Web` **не змонтований ніде** (0 hits у routes/initializers/config.ru) → actioning P1-алерту вимагає live-console замість веб-UI. Class-standard (йде в `sidekiq`-гемі). **🤖-half = вся задача** (нічого на 👤): змонтувати за admin-only route-constraint (дзеркало Pundit `admin_or_above?`) + spec. Канон `04_02 §11`, `06_03 §2.8` (ARCH.45).
+- [ ] 🤖 mount `Sidekiq::Web` за admin-gated constraint (+ CSRF/auth) + route-spec
+
+#### ARCH.63 — B2B integration surface (OpenAPI-контракт + outbound webhooks) [lower-conf]
+- **P3** · 🤖+👤 · ⚪ · → `04_03`, `07_01 §8`
+- **Стан:** Gap-pass §04 (2026-07-05, lower-confidence) — pre-commercial B2B-self-serve. (1) Нема machine-readable API-контракту (OpenAPI/Swagger) — `04_03` = якісний hand-written markdown, але партнер не заімпортує в Postman/codegen (нема `rswag`/`committee`). (2) Нема outbound webhook-підписки для NaaS-клієнтів (`Streamr::BroadcasterService` = публічний unscoped telemetry-firehose, не org-scoped бізнес-події «contract slashed»/«SCC minted»; нема `organizations.webhook_url`+signed-delivery). Обидва demand-gated (нема поточного клієнта). **🤖-half:** rswag-ген + outbound-webhook worker + HMAC — код; активація за першим B2B-інтегратором. Канон `04_03`, `07_01 §8`.
+- [ ] 🤖 (demand-gated) rswag OpenAPI-spec з request-специв → опублікувати
+- [ ] 🤖 (demand-gated) `organizations.webhook_url` + signed outbound-delivery worker (org-scoped події)
 
 ## §05 · Web3 / Економіка / Slashing
 
@@ -876,6 +932,18 @@
 - **P2** · 🤖+👤 · 🟢 · → [`05_02`](05_02_Proof_of_Growth_Pipeline), [`06_08 §4`](06_08_Resilience_and_Failover_Policy)
 - **Стан:** deep-audit 2026-07-04 (O3), machine-half SHIPPED тієї ж доби: (1) **money-переходи → SHA-256 `AuditLog`-ланцюг** (`BlockchainTransaction` AASM `after_all_transitions` → async `record_money_audit_trail`: actor=oracle_executioner, org-ланцюг, metadata from/to/tx_hash; без org/actor — WARN-skip, tx не валимо); (3) **destroy-guard MRV-доказів** (`Wallet#guard_mrv_evidence!` — settled/in-flight tx → abort; чисто-pending видаляється); (4) **web3 incident runbooks** ([`06_08 §4`](06_08_Resilience_and_Failover_Policy): reorg / double-mint+rogue-MINTER / money-key compromise / `manual_review` **console-рецепт** — founder-рішення 2026-07-04: без admin-UI до першої реальної ops-потреби / contract-ops one-shot). Slash-атрибуція on-chain = `contextHash` (CONTRACT.1 §🗄️). Telemetry-ретеншн = політика партицій (drop старих партицій — легітимний шлях, НЕ хардделіт-діра). Дім `05_02` (модель довіри) + `06_08 §4`.
 - [ ] 🤖+👤 (pre-registry-submission, з ARCH.12-споживачем) PATH 2 lineage: SCC-mint → telemetry-batch посилання (Merkle-witness E.60/ARCH.12 — аудитор простежує credit→measurements; зараз оптимістичний mint на `wallet.balance` без лінка)
+
+#### ARCH.62 — Немає mint-volume/velocity anomaly circuit-breaker
+- **P2** · 🤖 · ⚪ · → `05_02`, [`06_03 §2.8`](06_03_Prometheus_Observability)
+- **Стан:** Gap-pass §05 (2026-07-05) — money-path defense-in-depth. Кожен mint-шлях має per-tx guards + абсолютну `MAX_SUPPLY`-стелю, але **агрегатну аномалію обсягу mint'у ніщо не ловить** (verified: `ChainAuditService`/`chain_audit_delta` (CONTRACT.1) ловить DB↔chain-розбіжність — мовчить якщо DB і chain згодні на аномальному числі; `sn-alert-mint-slo-breach` = success-RATE не VOLUME; `silkennet_scc_minted_total` = unalarmed лічильник). PATH-2 (живий) довіряє upstream growth_points-арифметиці без oracle/ZK, MINTER-ключ = ENV-plaintext (SEC.17) → firmware/pipeline-баг чи тихо-зловжитий ключ over-мінтить, поки людина не гляне дашборд. Комплемент, не заміна ex-post-clawback (ARCH.53/SLASH-1 §3.3) — обмежує blast-radius у вікні детекції. **🤖-half = вся задача:** rolling-window mint-volume detector + Prometheus-alert + опц. auto-pause. Суміжно (minor): Polygon mint/burn `transact()` без explicit fee-cap (≠ L1 `MAX_ANCHOR_GWEI`) — low-blast. Канон `05_02`, [`06_03 §2.8`](06_03_Prometheus_Observability).
+- [ ] 🤖 mint-velocity detector (rolling-window обсяг vs baseline) + `sn-alert-mint-volume-anomaly` + опц. circuit-break
+- [ ] 🤖 (minor) explicit fee-cap на Polygon mint/burn `transact()` (дзеркало L1 `MAX_ANCHOR_GWEI`)
+
+#### INS.2 — Insurance Internal-mode payout: незабезпечений mint, відв'язаний від reserve
+- **P2** · 🤖+👤 · ⚪ · → `05_01`, `07_01 §7`
+- **Стан:** Gap-pass §05 (2026-07-05) — verified: `insurance_payout_worker:145` Internal-mode-виплата = `BlockchainMintingService.call` (**мінтить новий SCC/SFC** як payout), тоді як `insurance_pool_requires_funding?` читає `DAO_TREASURY`-баланс лише щоб вирішити 2%-Dynamic-Tax — той баланс payout-шлях ніколи не читає/дебетує. Тобто «insurance pool», що Dynamic-Tax наповнює, **не забезпечує й не капить** Internal-mode-claims. Per-claim обмежений (`damage_ratio×insured_value`), але aggregate/correlated-event cap відсутній — регіональна катастрофа мінтить пропорційно по всіх кластерах без systemic stop-loss окрім `MAX_SUPPLY`. Суміжно: `DAO_TREASURY_ADDRESS` (`06_04 §5`) без custody-вимоги на кшталт `REQUIRE_SAFE_ADMIN` (може бути EOA). `07_01 §7` вже зізнається, що Etherisc-mode «prevents inflationary pressure» (імпліцитно — Internal має). **🤖-half:** reserve-adequacy-gate + aggregate/correlated stop-loss + design; 👤 = політика (розмір reserve/cap = economic). Канон `07_01 §7`, `05_01`.
+- [ ] 🤖 reserve-backing gate: Internal-mint payout звіряє/дебетує DAO_TREASURY-пул + aggregate correlated-event stop-loss
+- [ ] 👤 політика: reserve-adequacy-поріг + correlated-cap числа (economic) + Safe-custody для DAO_TREASURY
 
 #### ARCH.13 — EigenLayer AVS як дешевша L1-anchor альтернатива
 - **P3** · 🤖 · 🌿 · → `05_04`
@@ -1051,6 +1119,12 @@
 - [ ] 🤖 load-harness (k6/locust): CoAP-intake rps + Sidekiq drain + mint-throughput + DB-pool saturation
 - [ ] 👤 прогнати проти staging/prod після першого деплою → фактична стеля vs E.5-оцінка (дотично E.5/ARCH.2/E.27)
 
+#### SEC.19 — Akash placement без region-атрибута: data-in-use residency-діра
+- **P2** · 🤖+👤 · ⚪ · → [`06_02 §1.3`](06_02_Akash_Network_Integration), `04_01`
+- **Стан:** Gap-pass §06/07 (2026-07-05) — verified: `deploy/akash/deploy.yaml` placement (`profiles.placement.silken-dcloud`) фільтрує провайдерів лише `attributes: host: akash` + один `signedBy` — **нуль country/region** (коментар сам зізнається «Akash не має regions»). Data-at-**rest** region-pinned (Cloud SQL `europe-west1` + `04_01 data_region`-шардинг + SEC.18/ARCH.57 PII), але data-**in-use** (Rails-моноліт із User/Org-PII у пам'яті) сідає на будь-якого Akash-провайдера світу → напруга з EU-residency/DPA (майбутня Privacy-Policy BIZ.3). Той самий тригер, що ARCH.57/BIZ.3 EU-PII-онбординг. **🤖-half:** додати region/country placement-attribute-filter (SDL+tpl) + tradeoff-нотатка; 👤 = рішення EU-pin-політики (звужує provider-пул/ціну). Канон [`06_02 §1.3`](06_02_Akash_Network_Integration), `04_01`.
+- [ ] 🤖 region/country placement-attribute (EU-only фільтр) у Akash SDL + `.tpl` + tradeoff-нотатка `06_02`
+- [ ] 👤 рішення: EU-residency-pin зараз vs pre-EU-onboarding (provider-пул/ціна tradeoff)
+
 #### INF.10 — Kamal-proxy healthcheck → `/ready` (readiness-gated cutover)
 - **P3** · 👤 · 🟢 · → `06_01`
 - **Стан:** Підготовка зацементована — schema-correct inert stub (`proxy.healthcheck.path: /ready`, звірено з kamal 2.12) у `config/deploy.yml`+canopy; first-deploy cutover-runbook → [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform) (Фаза 5); проба `/ready` (DB+Redis+Kredis) → [`06_05`](06_05_Puma_Configuration). Свідомо deferred (design): на холодному старті `/ready` 503→deploy_timeout→rollback, тож bring-up на дефолтному `/up`, фліп на `/ready` коли `/ready→200`. Лишається 👤-фліп:
@@ -1098,6 +1172,12 @@
 - [ ] 👤 quotes у 3D Lab PL + Materialise BE → порівняльна таблиця (раніше OPS.5)
 - [ ] 👤 NDA+RFQ зі 3D Lab PL → sample part order (10 шт) quality benchmark → Frame Agreement (+20% premium, 30-day activation). **RFQ-deliverable готовий:** sample part = Ti-coin Stage 2 (HW.24) → STL + **DXF-креслення** (`draw ti_coin`, CEM tolerances/notes — HW.1/`drawings_program.md`)
 
+#### BIZ.20 — Немає юридичної особи «Silken Net» (undefined MSA/grant/trademark counterparty)
+- **P1** · 🤖+👤 · ⚪ · → `07_01 §8`, `08_01 §0.1`
+- **Стан:** Gap-pass §07 (2026-07-05) — DAO-як-юр-особа покрито (BIZ.4/GOV.1/SEC.1, Swiss Verein) + RWA-wrapper для SCC-токена (STK.3, Zug/Wyoming), але **операційна компанія** — ніде. `/NOTICE` вестить copyright на фіз-особу «Oleksii Lukin»; `08_01 §0.1` кастить «Silken Net» окремим актором (IP holder + integrator), але жоден канон не каже, яка юр-форма. Не академічно: `07_03 §1` — **6/7 грантів «Подано»**, BIZ.2 MSA потребує названого counterparty, UNI.15 — trademark-заявника, `08_03 §2.4` — кримінальна exposure за anchor-install («втручання в держмайно»), що неінкорпорований несе особисто без liability-щита. **Моя рекомендація: інкорпорувати ЗАРАЗ — найвищий пріоритет комерційного батча** (гейтить BIZ.2 + гранти + щит; overdue). **🤖-half:** чернетка entity-option matrix (юрисдикція × тип × вартість × грант/RWA/MiCA-сумісність); 👤 = рішення+реєстрація (СЄУ Аблязов). Канон `08_01 §0.1`, `07_01 §8`.
+- [ ] 🤖 чернетка entity-option matrix (юрисдикція UA/EU/Zug/Wyoming × тип × вартість × грант/RWA/MiCA-fit) → живить рішення
+- [ ] 👤 обрати + інкорпорувати операційну особу (Аблязов) — counterparty для BIZ.2/грантів/trademark/liability
+
 #### BIZ.17 — Procurement-workflow operational gaps (post-RFQ-layer dig)
 - **P2** · 👤 · ⚪ · → `07_02 §8`
 - **Стан:** RFQ-layer структура ✅ (`protocols/procurement/` — `rfq_registry` + `ebfc_chem_rfq` + `anchor_alloy_rfq`; concern-шар, `00_06 §2`); deep dig (2 Explore-сповзки) виявив 5 operational-gaps без дому + registry-maintenance — консолідовано тут. Канон `07_02 §8` (BOM/хаби) + registry.
@@ -1138,6 +1218,18 @@
 - [ ] 👤 визначити availability-target (%/вікна) з перших live-SLO-вікон + service-credit-схема → SLA-exhibit для BIZ.2 MSA
 - [ ] 👤 (опц.) публічний status-page (external synthetic uptime — дотично INF.22 O3)
 
+#### BIZ.19 — «SCC = CBAM-офсет» стоїть на неперевіреній (ймовірно хибній) регуляторній премісі
+- **P2** · 🤖+👤 · ⚪ · → `07_01 §8`, `08_03 §5.2`
+- **Стан:** Gap-pass §07 (2026-07-05) — `08_03 §5.2` (STK.6 Азот) + `07_01 §8` (BIZ.15) + 00_07 стверджують як факт, що SCC-retirement = «легальний CO₂-офсет» проти EU-CBAM. Але **CBAM Reg. (EU) 2023/956 знижує certificate-обов'язок імпортера лише через Art.9 — реальну ціну вуглецю, СПЛАЧЕНУ виробником у країні походження (ETS-еквівалент), НЕ купівлю/retirement voluntary-credits**. Поширена плутанина climate-tech-пітчів; жоден док не цитує механізм, що робив би SCC-for-CBAM робочим. Якщо хибно — flagship-наратив Азоту треба переформулювати ДО зовнішнього пітчу. **Моя рекомендація: переформулювати в voluntary Scope 1-3 / net-zero-disclosure офсет (НЕ CBAM-compliance), і НЕ пітчити CBAM-compliance до юр-звірки** (~30 хв на вже-планованій Аблязов-консультації UNI.14/16). **🤖-half:** я складу виправлений CBAM-Art.9-аналіз + переформульований наратив; 👤 = юр-підтвердження + оновити пітч. Канон `08_03 §5.2`, `07_01 §8`.
+- [ ] 🤖 чернетка: CBAM-Art.9-механіка + виправлений voluntary-Scope-наратив (замінити «CBAM-офсет»-claim у 08_03/07_01)
+- [ ] 👤 юр-підтвердження (Аблязов, ~30 хв) → оновити Азот-пітч + канон
+
+#### BIZ.21 — Немає company-level E&O / liability-страхування (≠ INS.1 параметричний продукт)
+- **P2** · 🤖+👤 · ⚪ · → `07_01 §8`, `08_02 §5`
+- **Стан:** Gap-pass §07 (2026-07-05) — INS.1 (параметричне страхування клієнту) + DAO Treasury Insurance Pool страхують *клієнта* від деградації лісу. Ніщо не страхує SilkenNet/founder'а від власної **professional-liability**: покупець оспорює carbon-credit-claim, травма третьої особи при anchor-install, E&O-претензія за неточні D-MRV-дані продані як факт. B2B-MSA-due-diligence (BIZ.2) зазвичай вимагає Certificate of Insurance як signing-exhibit. **Моя рекомендація: отримати E&O/general-liability ДО підпису першого B2B-MSA** (гейтить BIZ.2). **🤖-half:** я складу coverage-requirements-специфікацію (що E&O мусить покривати); 👤 = брокер+поліс (юрисдикція залежить від BIZ.20). Канон `07_01 §8`, `08_02 §5`.
+- [ ] 🤖 чернетка E&O/liability coverage-spec (D-MRV-accuracy · anchor-install · credit-dispute) → живить брокера
+- [ ] 👤 отримати E&O/general-liability поліс (post-BIZ.20-entity) — гейт BIZ.2 signing
+
 #### BIZ.14 — SFC Vote-Escrow during breach→slash lag (07_01 SFC vote-escrow residual)
 - **P3** · 🤖 · 🟢 · → `07_01 §8`
 - **Стан:** Core закрито — `SilkenForestCoin.slash()` (SLASHER_ROLE) зменшує voting power при slashing → атака «купити SFC + навмисне порушення NaaS» неможлива. Residual: ~1–5 хв lag (`web3_critical` черга) між SCC-slash і SFC-slash — у вікні учасник технічно ще може проголосувати. Канон `07_01 §8`.
@@ -1156,6 +1248,7 @@
 - **P0** · 👤 · ⚪ · → `08_02 §5`
 - **Стан:** Не почато (консолідує legacy UNI.8) — перший контакт ректорату СЄУ + СЄУ-робота: (1) MSA/Term Sheet (Аблязов Д., к.ю.н.), (2) KYC/AML юросіб (Hadron), (3) DAO як юрособа (cooperative/Swiss Verein), (4) ESG Accounting (Ус Г.О.). Блокує Economic Whitepaper / Legal Framework / NaaS-шаблони (`07_01` B2B-MSA/B2C-ToS). ⚠️ 7 посад потребують verify. Канон `08_02 §5`.
 - [ ] 👤 зустріч Чудаєва (ректор)/Аблязова Н. + verify 7 посад + MoU СЄУ↔SilkenNet + workshop Аблязов (MSA) + workshop Ус (ESG framework)
+- [ ] 🤖+👤 [gap-pass §07] tax-posture: grant-income + personal-income-on-receipt (UA SCC-holders) + `dynamic_tax`×UA-податкове — 🤖 складе питання-меморандум → 👤 Ус Г.О.
 
 #### UNI.2 — 8 зустрічей з факультетом ФОТІУС
 - **P1** · 👤 · ⚪ · → `08_02`
