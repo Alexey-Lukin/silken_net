@@ -247,8 +247,10 @@ LORAWAN_SRCS = $(LORAWAN_MW)/Mac/LoRaMac.c $(LORAWAN_MW)/Mac/LoRaMacAdr.c \
 # -DAES_DEC_PREKEYED: лише для цього бінаря — мок-LNS ШИФРУЄ JoinAccept
 # AES-decrypt-ом (девайс відновлює encrypt-ом), а девайсова половина стека
 # decrypt-у не потребує ніде, тож vendored lorawan_aes.h тримає його #if 0.
+# -lm: RegionCommon.c кличе floor() — під -O0 (coverage lane) компілятор НЕ
+# інлайнить його як builtin (як на -O1/-O2), тож libm лінкується явно.
 $(BINDIR)/test_helium_mac_smoke: test_helium_mac_smoke.c $(LORAWAN_SRCS) ../queen/helium_sos.h
-	$(CC) $(CFLAGS) -Wno-unused-parameter -DAES_DEC_PREKEYED $(LORAWAN_INC) -o $@ test_helium_mac_smoke.c $(LORAWAN_SRCS)
+	$(CC) $(CFLAGS) -Wno-unused-parameter -DAES_DEC_PREKEYED $(LORAWAN_INC) -o $@ test_helium_mac_smoke.c $(LORAWAN_SRCS) -lm
 
 # [ARCH.42] On-target ECB/CBC self-test (ARCH.42 transitional paths) —
 # host verification via OpenSSL mock (HAL_MOCK_SYM_ENABLED).
