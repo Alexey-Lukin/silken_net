@@ -158,5 +158,4 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   -- verify cem/<x>.json` (metrics.json + exit 0/1) → `dotnet run -- draw cem/<x>.json` (SVG+DXF → out/)
   → `dotnet test`. CI = enterprise 2-job `cad_smoke.yml` (logic = Linux pure-xUnit hard [incl. draw/DXF]
   + render = macOS build-hard + verify best-effort, Library.Go 139 headless).
-- **Update a submodule**: `git -C tools/cad/extern/<repo> pull` + re-pin the gitlink; it stays
-  out of the GitNexus graph (`.gitnexusignore` excludes `tools/cad/extern/`).
+- **Update a submodule**: `git -C tools/cad/extern/<repo> pull` + re-pin the gitlink (vendored LEAP source, kept out of owned code).

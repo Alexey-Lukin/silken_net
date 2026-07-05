@@ -51,7 +51,7 @@ Then **`FactoryFlashing::Session.run`** (after **supervisor-approved**). One `Ac
 | `factory_flashing/audit_trail.rb` | chain-hashed audit log record |
 | `ota_hmac_key_service.rb` | per-cluster OTA HMAC key `fetch_for(cluster_id, master_key: nil)` (Гілка A KOTA block + Гілка B ATECC provisioning) |
 
-> Line numbers drift every commit — `gitnexus_context({name: "Session"})` for live locations rather than a hardcoded table (`[[feedback_no_volatile_counts]]`).
+> Line numbers drift every commit — grep/read `Session` for live locations rather than a hardcoded table (`[[feedback_no_volatile_counts]]`).
 
 ## Gotchas Not Obvious From Code
 
@@ -68,6 +68,6 @@ Then **`FactoryFlashing::Session.run`** (after **supervisor-approved**). One `Ac
 
 ## How to Explore
 
-1. `gitnexus_context({name: "Session", repo: "silken_net"})` — orchestrator callers/callees
-2. `gitnexus_query({query: "factory flashing", repo: "silken_net"})` — related execution flows
+1. grep/read `Session` — orchestrator callers/callees
+2. grep `factory flashing` across `app/services/` — related flows
 3. Read `command_builder.rb` for the exact CLI sequence; `03_05 §3.4` for the threat model

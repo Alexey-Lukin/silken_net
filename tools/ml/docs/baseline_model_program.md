@@ -162,7 +162,7 @@ CMSIS-DSP (лінкується у `silken_common` через `LOGMEL_USE_CMSIS`
 ## 7. Гейти (зелені перед commit)
 `ruff check` · `pytest tools/ml/tests` (parity + нові train/export) · `make -C firmware/test`
 (logmel/tinyml/fauna) · `silken-ml-gen-logmel --check` / `emit_c --check` ·
-`check_ram_budget.sh` (ARM static-RAM) · `gitnexus_detect_changes` (перед commit).
+`check_ram_budget.sh` (ARM static-RAM) · звірка scope діфу (перед commit).
 
 ---
 

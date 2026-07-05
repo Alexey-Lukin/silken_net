@@ -25,11 +25,10 @@
 | Оновлення залежностей (будь-який домен) | `dependency-update` | (polyglot) |
 | SSOT-доки / drift-hunt / wiki-sync | `ssot-maintenance` | `00_02` + `00_06` |
 | Персистентна пам'ять | `memory-maintenance` | `memory/` |
-| Навігація коду / impact / blast-radius | `gitnexus` (MCP — блок наприкінці) | — |
 
 **SSOT one-home (`00_06 §2`):** `docs/NN_NN_*.md` = canon; **`docs/00_07` = дім УСІХ відкритих робіт + блокерів** — ніколи не вважай «resolved» без реального code+canon (не вір TODO/коментарю). Канон / drift / wiki — лише через `ssot-maintenance`. Не дублюй факти між домами.
 
-**Verify / commit:** тести (§3) перед коммітом, full-suite перед push. `db/structure.sql` (НЕ `schema.rb`); dump потребує **pg17 `pg_dump`** + **strip pg17-only `transaction_timeout` рядок** (CI-Postgres <17 інакше падає). Коміт-меседж → `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`; гілка від `main` лише якщо просять. gitnexus: `impact` перед edit символу, `detect_changes` перед commit.
+**Verify / commit:** тести (§3) перед коммітом, full-suite перед push. `db/structure.sql` (НЕ `schema.rb`); dump потребує **pg17 `pg_dump`** + **strip pg17-only `transaction_timeout` рядок** (CI-Postgres <17 інакше падає). Коміт-меседж → `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`; гілка від `main` лише якщо просять. Перед edit широко-вживаного символу — простеж викликачів/blast-radius (auth/money = критичний шлях); перед commit — звір scope діфу проти очікуваного (не find-replace-rename наосліп).
 
 ## 3. Середовище
 
@@ -129,45 +128,3 @@ deploy/akash · terraform · subgraph       # infra / The Graph
 - Ці 3 гейти **доведені Halmos** (`check_*` у `test/symbolic/` — symbolically, не семпл; loop-bound `--loop 3`) + **fuzz-Medusa** (`property_*` у `test/medusa/`), не лише unit-тести.
 
 **Команди + ролі:** `forge test -vvv --gas-report` · `forge build --sizes` (ліміт EIP-170 = 24KB) · `forge coverage --report lcov` (→ CI lcov-артефакт, ≥90% floor). **CI-аудит** (`solidity_audit.yml`, CI-gated не локально): Slither + `aderyn .` **gate-на-high** (static); `halmos --function "^check_"` (symbolic) + `medusa fuzz --config medusa-{scc,sfc}.json` (fuzz) — усі **gating** (fail-on). On-chain адмін-ролі → Timelock (крім `pause`); `slash()` = `SLASHER_ROLE`, `mint()` = `MINTER_ROLE` (фізично розділені ключі, E.2).
-
-<!-- gitnexus:start -->
-# GitNexus — Code Intelligence
-
-This project is indexed by GitNexus as **silken_net**. Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
-
-> Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
-
-## Always Do
-
-- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
-- **MUST run `detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows. For regression review, compare against the default branch: `detect_changes({scope: "compare", base_ref: "main"})`.
-- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
-- When exploring unfamiliar code, use `query({search_query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
-- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `context({name: "symbolName"})`.
-- For security review, `explain({target: "fileOrSymbol"})` lists taint findings (source→sink flows; needs `analyze --pdg`).
-
-## Never Do
-
-- NEVER edit a function, class, or method without first running `impact` on it.
-- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
-- NEVER rename symbols with find-and-replace — use `rename` which understands the call graph.
-- NEVER commit changes without running `detect_changes()` to check affected scope.
-
-## Resources
-
-| Resource | Use for |
-|----------|---------|
-| `gitnexus://repo/silken_net/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/silken_net/clusters` | All functional areas |
-| `gitnexus://repo/silken_net/processes` | All execution flows |
-| `gitnexus://repo/silken_net/process/{name}` | Step-by-step execution trace |
-
-## CLI
-
-| Task | Read this skill file |
-|------|---------------------|
-| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
-| Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
-| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
-
-<!-- gitnexus:end -->

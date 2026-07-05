@@ -1,44 +1,22 @@
-<!-- gitnexus:start -->
-# GitNexus — Code Intelligence
+# AGENTS.md — SilkenNet
 
-This project is indexed by GitNexus as **silken_net**. Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+> **SSOT = `CLAUDE.md` + `docs/` (`00_00`→`08_03`) + [Wiki](https://github.com/Alexey-Lukin/silken_net/wiki). Read those first.**
+> This is the tool-agnostic agent guide (the open [AGENTS.md](https://agents.md) standard) — a **thin pointer**, not a second home. **If anything here conflicts with `CLAUDE.md`, `CLAUDE.md` WINS**: it is the single maintained home (prepended to every session), and this file is kept deliberately thin so it cannot drift. Cursor reads `.cursorrules`, Copilot reads `.github/copilot-instructions.md`, other agents read this — all three are pointers to the same home.
 
-> Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
+**SilkenNet** — planetary Bio-IoT D-MRV platform for forest monitoring: Ti-6Al-4V gyroid anchor + EBFC (~500 mV harvested from xylem, "zero-grid") → STM32 **"Soldier"** (sense → TinyML → Lorenz → encrypt → LoRa 868) → **"Queen"** gateway (CoAP) → Rails 8.1 / Ruby 4.0.5 / PostgreSQL / Sidekiq → 12-chain Web3 Proof-of-Growth → mint SCC. **Polyglot:** Ruby · firmware-C (STM32) · mruby · Solidity (Foundry) · Python (DFT/MD in-silico) · .NET C# (PicoGK CAD).
 
-## Always Do
+## Start here
 
-- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
-- **MUST run `detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows. For regression review, compare against the default branch: `detect_changes({scope: "compare", base_ref: "main"})`.
-- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
-- When exploring unfamiliar code, use `query({search_query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
-- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `context({name: "symbolName"})`.
-- For security review, `explain({target: "fileOrSymbol"})` lists taint findings (source→sink flows; needs `analyze --pdg`).
+`CLAUDE.md` is short (orientation + routing), and the fastest way in:
 
-## Never Do
+- **what-it-is** §1 · **skill-routing table** §2 (domain → skill → doc-home) · **environment/commands** §3 · **style / YAGNI ladder** §4 · **critical invariants** §5 (Sidekiq strict-priority queues, AES key-model, Lorenz/StatusByte) · **cross-domain gotchas** §6 · **repo-map** §7 · **Solidity/Foundry** §8.
+- Depth lives in the numbered `docs/NN_NN_*.md` (the skills route you to the exact one); **open work + active blockers live in `docs/00_07`**.
 
-- NEVER edit a function, class, or method without first running `impact` on it.
-- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
-- NEVER rename symbols with find-and-replace — use `rename` which understands the call graph.
-- NEVER commit changes without running `detect_changes()` to check affected scope.
+## Working here (universal)
 
-## Resources
-
-| Resource | Use for |
-|----------|---------|
-| `gitnexus://repo/silken_net/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/silken_net/clusters` | All functional areas |
-| `gitnexus://repo/silken_net/processes` | All execution flows |
-| `gitnexus://repo/silken_net/process/{name}` | Step-by-step execution trace |
-
-## CLI
-
-| Task | Read this skill file |
-|------|---------------------|
-| Understand architecture / "How does X work?" | `.claude/skills/gitnexus/gitnexus-exploring/SKILL.md` |
-| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
-| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus/gitnexus-debugging/SKILL.md` |
-| Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
-| Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
-| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
-
-<!-- gitnexus:end -->
+- **Minimal, in-scope changes.** Don't touch code outside the task. The best code is the code you don't write (YAGNI ladder — `CLAUDE.md` §4).
+- **Don't trust stale statuses or counts** in any instruction file — verify against the LIVE code + `docs/`. A blocker in `docs/00_07` is an active constraint until a real commit closes it (never "resolved" via a TODO/comment).
+- **Polyglot discipline:** firmware-C ≠ Rails-Ruby ≠ Solidity ≠ Python — distinct domains with distinct budgets (energy/RAM/Flash · gas · request-latency); don't carry assumptions between them.
+- **Before editing a widely-used symbol,** trace its callers / blast-radius first (auth and money paths = highest risk); **before committing,** verify the diff scope matches intent, and don't rename by blind find-and-replace.
+- **Honesty about hardware is load-bearing:** the platform ≠ the spec ideal (the clock drifts, the sensor lies, in-silico ≠ a physical TRL). Keep that honesty in code, comments, and docs.
+- SSOT docs (`docs/NN_NN_*.md`), drift-hunts, and wiki-sync go through the `ssot-maintenance` skill; the exact gotchas per domain live in `CLAUDE.md` §6.

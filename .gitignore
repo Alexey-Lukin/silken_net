@@ -89,7 +89,6 @@ contracts/cache/
 contracts/broadcast/
 
 coverage/
-.gitnexus
 
 # Firmware host-test binaries — build artifacts produced by `make -C firmware/test`.
 # Platform-specific (macOS Mach-O vs Linux ELF) — CI rebuilds them per run.

@@ -3,7 +3,7 @@
 require "set"
 
 # DocsGraph — read-only reference-graph analyzer for the SSOT canon
-# (docs/NN_NN_*.md). GitNexus models the *code* call-graph, but not our NN_NN
+# (docs/NN_NN_*.md). A code call-graph models code, but not our NN_NN
 # doc-link convention, so this is the docs' own directed reference graph:
 #   nodes = canon docs (id "NN_NN")
 #   edges = a `](NN_NN_Name)` markdown link from one doc to another.

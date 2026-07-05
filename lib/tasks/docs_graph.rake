@@ -2,7 +2,7 @@
 
 # docs:graph — read-only reference-graph audit of the SSOT canon (00_06 §3
 # tooling). Complements docs:check_refs (flat per-line drift gates) with the
-# graph view GitNexus can't give us (it models code, not our NN_NN doc links):
+# graph view flat per-line linters can't give us (they check refs, not the NN_NN link graph):
 # orphan / weakly-discoverable pages, in/out-degree skew, one-way sibling links,
 # and a comprehensive #anchor + cross-doc §-ref validation. Engine:
 # lib/docs_graph.rb (+ DocsLinter.section_label_drift), both unit-tested.

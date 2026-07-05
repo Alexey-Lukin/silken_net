@@ -91,6 +91,6 @@ Start here when exploring this area:
 
 ## How to Explore
 
-1. `gitnexus_context({name: "toggle_mfa"})` — see callers and callees
-2. `gitnexus_query({query: "maintenance"})` — find related execution flows
+1. grep/read `toggle_mfa` — see callers and callees
+2. grep `maintenance` across `app/` — find related flows
 3. Read key files listed above for implementation details

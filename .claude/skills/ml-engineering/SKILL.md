@@ -139,7 +139,7 @@ drop-in header swap (the `_stub.h` `__has_include` fallback stays).
 - **Periodic Hann, not `arm_hanning_f32`** (that one is symmetric, denom N−1) → use the precomputed table.
 - **conda `soundfile`** is pulled transitively by `librosa` — don't pin it by name (the conda-forge name bites).
 - **`.c` comments**: Ukrainian + the file's poetic house style (`[[feedback_c_comments_ukrainian]]`).
-- **No commit/push** unless asked; run `gitnexus_detect_changes` before any commit (Ruby side).
+- **No commit/push** unless asked; verify the diff scope before any commit (Ruby side).
 
 ## Keep this skill bounded
 
