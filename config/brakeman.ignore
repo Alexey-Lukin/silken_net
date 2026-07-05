@@ -1,8 +1,8 @@
 {
   "ignored_warnings": [
     {
-      "fingerprint": "e32cf014f47c4d8e000b4d8dcb02ce706da7c6c14629db19b1fe76d94a374e8f",
-      "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is used for the Redis key name in blockchain burning service (ORACLE_SLASHER_PRIVATE_KEY with fallback)."
+      "fingerprint": "09e92c8797442dc827f5a7455e6cbc063d8a57487d0d337fb5b2bb48fc718a5d",
+      "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is used for the Redis key name in blockchain burning service (ORACLE_SLASHER_PRIVATE_KEY with fallback; fingerprint re-pinned after the ARCH.53 execute_slash! extraction moved the call site)."
     },
     {
       "fingerprint": "ba7472990b21494f91cd890baeb0770e75a757a2ba1c624da6c4b4db67ab3f30",
@@ -11,10 +11,6 @@
     {
       "fingerprint": "f7830eea388a42824997c17be873af414cbb1e3c60fa116e4c69c7153a57a189",
       "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is the Redis key name in Celo reward service (ARCH.50: chain-prefixed lock + dedicated ORACLE_CELO_PRIVATE_KEY; the key derives from Eth::Key.address, never user input)."
-    },
-    {
-      "fingerprint": "f23993754214e1f821289a73dda2aff60e23475408c0c9ef0410e69c0891f80e",
-      "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is the Redis key name in Chainlink oracle-dispatch service (ARCH.49: nonce-serialization on the shared base-EOA; the key derives from Eth::Key.address, never user input)."
     },
     {
       "fingerprint": "2ecd371c4d80d2cf5545b129ef51af471bd61046766da8633f905114fabe109b",
