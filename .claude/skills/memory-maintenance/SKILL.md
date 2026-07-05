@@ -40,5 +40,6 @@ Full step-by-step playbook + founder's principles + the zero-loss scripts → **
 - **Memory is OUTSIDE the git repo** (`~/.claude/…`) → no `git revert`; your backup + zero-loss diff is the only safety net.
 - **Verify-before-delete** ([[feedback_verify_canon_before_delete]]) and **no-volatile-counts** ([[feedback_no_volatile_counts]]) apply to memory too (a hook must not hold drift-prone counts; trimmed detail must already live in the file).
 - **De-dup is rare** — memories cross-link via `[[name]]`, not restate; the big duplication is usually index-vs-file. Two distinct facts of the same kind are NOT a duplicate.
+- **The prompt's own §Durable-уроки = a 6-family frame (auto-consolidate — the method applies to itself):** a new lesson gets **melted into the fitting family as a line**, NOT glued on as a fresh date-stamped paragraph (the section already bloated into a wall once and had to be refactored). New family only if it fits none (keep ≤~7); a family past ~6 lines → compress that family the same way.
 
 > If you're tempted to add the memory FORMAT rules or live state here, stop — format → system prompt; state → the memories; the full method → `.claude/prompts/memory_housekeeping.md`. Keep this skill a thin pointer.
