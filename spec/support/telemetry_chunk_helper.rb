@@ -44,7 +44,7 @@ module TelemetryChunkHelper
     header    = [ did_int ].pack("N")
     rssi_byte = [ -rssi ].pack("C")
     payload   = [ did_int, voltage, temp, acoustic, metabolism, status_byte, ttl, pad ]
-                  .pack("N n c C n C C a4")
+                  .pack(TelemetryUnpackerService::PAYLOAD_FORMAT) # SSOT — авто-адаптація під wire-rev
     header + rssi_byte + payload
   end
 

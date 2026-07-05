@@ -1,0 +1,73 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# [INF.23] Load-harness CLI. Boot Rails (drain/provision потребують DB+Sidekiq;
+# flood/microbench теж бутають для Zeitwerk-autoload SilkenNet::LoadTest).
+# Кожен режим друкує СПЕРШУ bottleneck-class банер (dev ≠ capacity, red-team #1),
+# тоді JSON-звіт. Проти живого стека: --drain/--arrival потребують РЕАЛЬНОГО
+# Sidekiq-процесу, що дренажить (інакше wait_for_drain впреться в timeout).
+require_relative "../config/environment"
+require "optparse"
+require "json"
+
+M = SilkenNet::LoadTest
+
+opts = {
+  port: 5683, duration: 5.0, workers: 1, trees: 50, batches: 100,
+  batch_size: 45, history: 0, rps: 500, lambda: nil, iterations: 2_000
+}
+mode = nil
+
+parser = OptionParser.new do |o|
+  o.banner = "Usage: bin/coap_load MODE [options]\n" \
+             "  MODE: --flood | --drain | --arrival | --microbench"
+  o.on("--flood", "intake UDP-flood проти CoAP-listener") { mode = :flood }
+  o.on("--drain", "Sidekiq backlog-drain → μ") { mode = :drain }
+  o.on("--arrival", "arrival-rate λ → sustainable-check") { mode = :arrival }
+  o.on("--microbench", "pure-compute Lorenz GVL-knee") { mode = :microbench }
+  o.on("--host HOST") { |v| opts[:host] = v }
+  o.on("--port PORT", Integer) { |v| opts[:port] = v }
+  o.on("--uid UID", "gateway UID (flood)") { |v| opts[:uid] = v }
+  o.on("--rps N", Integer, "offered rps (flood)") { |v| opts[:rps] = v }
+  o.on("--lambda N", Float, "arrival батчів/с") { |v| opts[:lambda] = v }
+  o.on("--duration SEC", Float) { |v| opts[:duration] = v }
+  o.on("--workers N", Integer) { |v| opts[:workers] = v }
+  o.on("--trees N", Integer, "provision N дерев") { |v| opts[:trees] = v }
+  o.on("--batches N", Integer) { |v| opts[:batches] = v }
+  o.on("--batch-size N", Integer) { |v| opts[:batch_size] = v }
+  o.on("--history N", Integer, "warm history-рядків/дерево") { |v| opts[:history] = v }
+  o.on("--iterations N", Integer, "iter/thread (microbench)") { |v| opts[:iterations] = v }
+end
+parser.parse!
+
+abort parser.help unless mode
+
+puts M::LoadReport.banner
+puts "─" * 72
+
+report =
+  case mode
+  when :flood
+    abort("--host + --uid обов'язкові для --flood") unless opts[:host] && opts[:uid]
+    abort("--rps має бути > 0") unless opts[:rps].positive?
+    M::CoapFlood.run(host: opts[:host], port: opts[:port], gateway_uid: opts[:uid],
+                     offered_rps: opts[:rps], duration_s: opts[:duration], workers: opts[:workers])
+  when :microbench
+    M::LorenzMicrobench.run(iterations_per_thread: opts[:iterations])
+  when :drain, :arrival
+    warn "🌱 provisioning #{opts[:trees]} дерев (history=#{opts[:history]})..."
+    result = M::Provisioning.provision(trees: opts[:trees], history_per_tree: opts[:history])
+    begin
+      if mode == :drain
+        M::DrainBench.run_backlog(result, batches: opts[:batches], batch_size: opts[:batch_size])
+      else
+        abort("--lambda обов'язковий і > 0 для --arrival") unless opts[:lambda]&.positive?
+        M::DrainBench.run_arrival(result, batches: opts[:batches], lambda_per_s: opts[:lambda],
+                                  batch_size: opts[:batch_size])
+      end
+    ensure
+      M::Provisioning.teardown(result)
+    end
+  end
+
+puts JSON.pretty_generate(report)
